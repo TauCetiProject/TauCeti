@@ -25,13 +25,13 @@ point `P` of the quotient Grassmannian whose submodule is the range of `i`.
 
 The quotient sequence `0 → M/S → N/i(S) → N/i(M) → 0` splits by projectivity of its last
 term. No invariant complement, flat coefficient algebra, or reducedness assumption is used.
-The incidence ideal of the pair `(i(S), P)` describes upper containment scheme-theoretically.
+The equivalence `mapEquivOfInjectiveBaseChange` identifies the image over every coefficient
+algebra with the kernels contained in `P`. The scheme-theoretic incidence description is
+proved in `TauCeti.AlgebraicGeometry.Grassmannian.Map`.
 
 ## References
 
 * The Stacks Project, Tag 089R, for the quotient Grassmannian functor.
-* X. Zhu, *An introduction to affine Grassmannians and the geometric Satake equivalence*,
-  §1.1, for closed transitions between finite lattice charts.
 -/
 
 public section
@@ -44,6 +44,12 @@ namespace Module.Grassmannian
 
 variable {R : Type u} [CommRing R] {M : Type v} [AddCommGroup M] [Module R M]
   {N : Type v'} [AddCommGroup N] [Module R N] {r d : ℕ}
+
+private theorem rankAtStalk_quotient_range (i : M →ₗ[R] N) (P : G(d, N; R))
+    (hP : P.toSubmodule = LinearMap.range i) (p : PrimeSpectrum R) :
+    rankAtStalk (R := R) (N ⧸ LinearMap.range i) p = d :=
+  (congrFun (Module.rankAtStalk_eq_of_equiv
+    (Submodule.quotEquivOfEq _ _ hP).symm) p).trans (P.rankAtStalk_eq p)
 
 /-- An injection with finite projective rank-`d` cokernel sends a quotient kernel of rank `r`
 to its image, of quotient rank `r + d`. -/
@@ -60,8 +66,7 @@ noncomputable def mapOfInjective (S : G(r, M; R)) (i : M →ₗ[R] N)
       rankAtStalk_eq p := by
         rw [Module.rankAtStalk_eq_of_equiv e, Module.rankAtStalk_prod]
         simp only [Pi.add_apply, S.rankAtStalk_eq]
-        exact congrArg (r + ·) ((congrFun (Module.rankAtStalk_eq_of_equiv
-          (Submodule.quotEquivOfEq _ _ hP).symm) p).trans (P.rankAtStalk_eq p)) }
+        exact congrArg (r + ·) (rankAtStalk_quotient_range i P hP p) }
 
 /-- The kernel of the image point is the image of the kernel. -/
 @[simp]
@@ -95,10 +100,7 @@ noncomputable def comapOfInjective (T : G(r + d, N; R)) (i : M →ₗ[R] N)
         have h := T.rankAtStalk_eq p
         rw [Module.rankAtStalk_eq_of_equiv e, Module.rankAtStalk_prod] at h
         simp only [Pi.add_apply] at h
-        have hC : rankAtStalk (R := R) (N ⧸ LinearMap.range i) p = d := by
-          exact (congrFun (Module.rankAtStalk_eq_of_equiv
-            (Submodule.quotEquivOfEq _ _ hP).symm) p).trans (P.rankAtStalk_eq p)
-        rw [hC] at h
+        rw [rankAtStalk_quotient_range i P hP p] at h
         omega }
 
 /-- Descent along an injection takes inverse images of kernels. -/
@@ -122,6 +124,38 @@ noncomputable def mapEquivOfInjective (r : ℕ) (i : M →ₗ[R] N) (hi : Functi
     simp only [toSubmodule_mapOfInjective, toSubmodule_comapOfInjective]
     exact Submodule.map_comap_eq_self (T.property.trans hP.le)
 
+/-- Successive image kernels agree with the composite injection, after associating the
+sum of quotient ranks. The point `Q` presents the cokernel of the composite. -/
+theorem mapOfInjective_comp {L : Type*} [AddCommGroup L] [Module R L] {d' : ℕ}
+    (S : G(r, M; R)) (i : M →ₗ[R] N) (hi : Function.Injective i)
+    (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i)
+    (j : N →ₗ[R] L) (hj : Function.Injective j)
+    (P' : G(d', L; R)) (hP' : P'.toSubmodule = LinearMap.range j)
+    (Q : G(d + d', L; R)) (hQ : Q.toSubmodule = LinearMap.range (j ∘ₗ i)) :
+    cast (congrArg (fun n ↦ G(n, L; R)) (Nat.add_assoc r d d'))
+      ((S.mapOfInjective i hi P hP).mapOfInjective j hj P' hP') =
+      S.mapOfInjective (j ∘ₗ i) (hj.comp hi) Q hQ := by
+  have hcast {a b : ℕ} (h : a = b) (T : G(a, L; R)) :
+      (cast (congrArg (fun n ↦ G(n, L; R)) h) T).toSubmodule = T.toSubmodule := by
+    cases h
+    rfl
+  apply Grassmannian.ext
+  rw [hcast (Nat.add_assoc r d d'), toSubmodule_mapOfInjective, toSubmodule_mapOfInjective,
+    toSubmodule_mapOfInjective, Submodule.map_comp]
+
+/-- The forward image equivalence takes the image kernel. -/
+@[simp]
+theorem mapEquivOfInjective_apply_val (S : G(r, M; R)) (i : M →ₗ[R] N)
+    (hi : Function.Injective i) (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i) :
+    (mapEquivOfInjective r i hi P hP S).val = S.mapOfInjective i hi P hP := (rfl)
+
+/-- The inverse image equivalence takes the inverse image of the kernel. -/
+@[simp]
+theorem toSubmodule_mapEquivOfInjective_symm_apply (i : M →ₗ[R] N)
+    (hi : Function.Injective i) (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i)
+    (T : {T : G(r + d, N; R) // T.toSubmodule ≤ P.toSubmodule}) :
+    ((mapEquivOfInjective r i hi P hP).symm T).toSubmodule = T.val.toSubmodule.comap i := (rfl)
+
 /-- The map induced by an injection is injective. -/
 theorem mapOfInjective_injective (i : M →ₗ[R] N) (hi : Function.Injective i)
     (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i) :
@@ -144,7 +178,7 @@ theorem exists_mapOfInjective_eq_iff (T : G(r + d, N; R)) (i : M →ₗ[R] N)
 /-- An intertwined injection reflects as well as preserves stability of an image kernel. -/
 theorem mapOfInjective_mem_invtSubmodule_iff (S : G(r, M; R)) (i : M →ₗ[R] N)
     (hi : Function.Injective i) (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i)
-    (t : Module.End R M) (u : Module.End R N) (htu : ∀ x, i (t x) = u (i x)) :
+    (t : Module.End R M) (u : Module.End R N) (htu : i ∘ₗ t = u ∘ₗ i) :
     (S.mapOfInjective i hi P hP).toSubmodule ∈ u.invtSubmodule ↔
       S.toSubmodule ∈ t.invtSubmodule := by
   rw [toSubmodule_mapOfInjective, Module.End.mem_invtSubmodule,
@@ -152,25 +186,47 @@ theorem mapOfInjective_mem_invtSubmodule_iff (S : G(r, M; R)) (i : M →ₗ[R] N
   constructor
   · intro h x hx
     have hx' : i (t x) ∈ S.toSubmodule.map i := by
-      rw [htu]; exact h ⟨x, hx, rfl⟩
+      simpa only [LinearMap.comp_apply] using
+        (LinearMap.congr_fun htu x).symm ▸ h ⟨x, hx, rfl⟩
     rcases hx' with ⟨y, hy, he⟩
     rw [Submodule.mem_comap, ← hi he]
     exact hy
   · rintro h _ ⟨x, hx, rfl⟩
-    exact ⟨t x, h hx, htu x⟩
+    exact ⟨t x, h hx, LinearMap.congr_fun htu x⟩
 
 section Coefficients
 
 variable {A B : Type w} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B]
 
+/-- A quotient presentation of the cokernel makes an injection universally injective. -/
+theorem baseChange_injective_of_range (P : G(d, N; R)) (i : M →ₗ[R] N)
+    (hi : Function.Injective i) (hP : P.toSubmodule = LinearMap.range i) :
+    Function.Injective (i.baseChange A) :=
+  i.baseChange_injective_of_isComplemented hi (by
+    rw [← hP]; exact P.toSubmodule.isComplemented_of_projective_quotient)
+
+/-- The extended cokernel presentation has kernel the range of the extended injection. -/
+theorem toSubmodule_baseChange_eq_range (P : G(d, N; R)) (i : M →ₗ[R] N)
+    (hP : P.toSubmodule = LinearMap.range i) :
+    (P.baseChange A).toSubmodule = LinearMap.range (i.baseChange A) := by
+  rw [toSubmodule_baseChange, hP, LinearMap.baseChange_range]
+
+/-- Over every coefficient algebra, image kernels identify the source Grassmannian with the
+upper incidence subfunctor. -/
+noncomputable def mapEquivOfInjectiveBaseChange (r : ℕ) (i : M →ₗ[R] N)
+    (hi : Function.Injective i) (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i)
+    (A : Type w) [CommRing A] [Algebra R A] :
+    G(r, A ⊗[R] M; A) ≃
+      {T : G(r + d, A ⊗[R] N; A) // T.toSubmodule ≤ (P.baseChange A).toSubmodule} :=
+  mapEquivOfInjective r (i.baseChange A)
+    (P.baseChange_injective_of_range i hi hP)
+    (P.baseChange A) (P.toSubmodule_baseChange_eq_range i hP)
+
 /-- The injection construction on points over a coefficient algebra. -/
 noncomputable def mapOfInjectiveBaseChange (S : G(r, A ⊗[R] M; A)) (i : M →ₗ[R] N)
     (hi : Function.Injective i) (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i) :
     G(r + d, A ⊗[R] N; A) :=
-  S.mapOfInjective (i.baseChange A)
-    (i.baseChange_injective_of_isComplemented hi (by
-      rw [← hP]; exact P.toSubmodule.isComplemented_of_projective_quotient))
-    (P.baseChange A) (by rw [toSubmodule_baseChange, hP, LinearMap.baseChange_range])
+  (mapEquivOfInjectiveBaseChange r i hi P hP A S).val
 
 /-- On every coefficient algebra the injection construction takes images of kernels. -/
 @[simp]
@@ -190,18 +246,6 @@ theorem baseChange_mapOfInjective (S : G(r, M; R)) (i : M →ₗ[R] N)
   simp only [toSubmodule_baseChange, toSubmodule_mapOfInjective,
     toSubmodule_mapOfInjectiveBaseChange, Submodule.baseChange_map]
 
-/-- Over every coefficient algebra, image kernels identify the source Grassmannian with the
-upper incidence subfunctor. -/
-noncomputable def mapEquivOfInjectiveBaseChange (r : ℕ) (i : M →ₗ[R] N)
-    (hi : Function.Injective i) (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i)
-    (A : Type w) [CommRing A] [Algebra R A] :
-    G(r, A ⊗[R] M; A) ≃
-      {T : G(r + d, A ⊗[R] N; A) // T.toSubmodule ≤ (P.baseChange A).toSubmodule} :=
-  mapEquivOfInjective r (i.baseChange A)
-    (i.baseChange_injective_of_isComplemented hi (by
-      rw [← hP]; exact P.toSubmodule.isComplemented_of_projective_quotient))
-    (P.baseChange A) (by rw [toSubmodule_baseChange, hP, LinearMap.baseChange_range])
-
 /-- The value of the coefficientwise image equivalence is the image-kernel construction. -/
 @[simp]
 theorem mapEquivOfInjectiveBaseChange_apply_val (S : G(r, A ⊗[R] M; A))
@@ -209,6 +253,34 @@ theorem mapEquivOfInjectiveBaseChange_apply_val (S : G(r, A ⊗[R] M; A))
     (hP : P.toSubmodule = LinearMap.range i) :
     (mapEquivOfInjectiveBaseChange r i hi P hP A S).val =
       S.mapOfInjectiveBaseChange i hi P hP := (rfl)
+
+/-- The inverse coefficientwise image equivalence takes the inverse image of the kernel. -/
+@[simp]
+theorem toSubmodule_mapEquivOfInjectiveBaseChange_symm_apply (i : M →ₗ[R] N)
+    (hi : Function.Injective i) (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i)
+    (T : {T : G(r + d, A ⊗[R] N; A) // T.toSubmodule ≤ (P.baseChange A).toSubmodule}) :
+    ((mapEquivOfInjectiveBaseChange r i hi P hP A).symm T).toSubmodule =
+      T.val.toSubmodule.comap (i.baseChange A) := (rfl)
+
+/-- Over every coefficient algebra, successive image kernels agree with the composite
+injection after associating the quotient ranks. -/
+theorem mapOfInjectiveBaseChange_comp {L : Type*} [AddCommGroup L] [Module R L] {d' : ℕ}
+    (S : G(r, A ⊗[R] M; A)) (i : M →ₗ[R] N) (hi : Function.Injective i)
+    (P : G(d, N; R)) (hP : P.toSubmodule = LinearMap.range i)
+    (j : N →ₗ[R] L) (hj : Function.Injective j)
+    (P' : G(d', L; R)) (hP' : P'.toSubmodule = LinearMap.range j)
+    (Q : G(d + d', L; R)) (hQ : Q.toSubmodule = LinearMap.range (j ∘ₗ i)) :
+    cast (congrArg (fun n ↦ G(n, A ⊗[R] L; A)) (Nat.add_assoc r d d'))
+      ((S.mapOfInjectiveBaseChange i hi P hP).mapOfInjectiveBaseChange j hj P' hP') =
+      S.mapOfInjectiveBaseChange (j ∘ₗ i) (hj.comp hi) Q hQ := by
+  simpa only [mapOfInjectiveBaseChange, mapEquivOfInjectiveBaseChange,
+    mapEquivOfInjective_apply_val, LinearMap.baseChange_comp] using
+    mapOfInjective_comp S (i.baseChange A) (P.baseChange_injective_of_range i hi hP)
+      (P.baseChange A) (P.toSubmodule_baseChange_eq_range i hP)
+      (j.baseChange A) (P'.baseChange_injective_of_range j hj hP')
+      (P'.baseChange A) (P'.toSubmodule_baseChange_eq_range j hP')
+      (Q.baseChange A) (by
+        simpa only [LinearMap.baseChange_comp] using Q.toSubmodule_baseChange_eq_range (j ∘ₗ i) hQ)
 
 /-- Taking image kernels commutes with arbitrary coefficient maps. -/
 @[simp]
@@ -230,10 +302,10 @@ theorem mapOfInjectiveBaseChange_mem_invtSubmodule_iff (S : G(r, A ⊗[R] M; A))
     (htu : i ∘ₗ t = u ∘ₗ i) :
     (S.mapOfInjectiveBaseChange i hi P hP).toSubmodule ∈ Module.End.invtSubmodule (u.baseChange A) ↔
       S.toSubmodule ∈ Module.End.invtSubmodule (t.baseChange A) := by
-  apply mapOfInjective_mem_invtSubmodule_iff (t := t.baseChange A) (u := u.baseChange A)
-  intro x
-  exact LinearMap.congr_fun (by
-    simpa only [LinearMap.baseChange_comp] using congrArg (LinearMap.baseChange A) htu) x
+  apply mapOfInjective_mem_invtSubmodule_iff (i := i.baseChange A)
+    (hi := P.baseChange_injective_of_range i hi hP) (P := P.baseChange A)
+    (hP := P.toSubmodule_baseChange_eq_range i hP) (t := t.baseChange A) (u := u.baseChange A)
+  simpa only [LinearMap.baseChange_comp] using congrArg (LinearMap.baseChange A) htu
 
 /-- The stability ideal is unchanged by an intertwined injection. This equality retains the
 scheme structure on nonreduced coefficient algebras. -/

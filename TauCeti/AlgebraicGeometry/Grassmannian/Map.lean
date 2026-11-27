@@ -47,28 +47,32 @@ namespace Module.Grassmannian
 
 variable {R : Type u} [CommRing R] {N : Type u} [AddCommGroup N] [Module R N] {d : ℕ}
 
+private noncomputable def upperIncidenceIdealFamily (r : ℕ) (P : G(d, N; R))
+    {A : Type u} [CommRing A] [Algebra R A] (T : G(r + d, A ⊗[R] N; A)) : Ideal A :=
+  T.incidenceLocus (P.baseChange A)
+
 /-- The closed upper incidence locus: quotient kernels of rank `r + d` contained in the kernel
 of a fixed rank-`d` quotient `P`. -/
 noncomputable def schemeUpperIncidence (r : ℕ) (P : G(d, N; R)) :
     (scheme R N (r + d)).IdealSheafData :=
-  schemeIdealLocus (fun {A} _ _ T ↦ T.incidenceLocus (P.baseChange A))
-    (fun f T ↦ by rw [← map_baseChange f P, incidenceLocus_map])
+  schemeIdealLocus (upperIncidenceIdealFamily r P)
+    (fun f T ↦ incidenceLocus_baseChange_map f T P)
 
 /-- Pulling the upper incidence subscheme back to an affine point gives its incidence ideal. -/
 theorem comap_toSchemeHom_schemeUpperIncidence (r : ℕ) (P : G(d, N; R))
     {A : Type u} [CommRing A] [Algebra R A] (T : G(r + d, A ⊗[R] N; A)) :
     (schemeUpperIncidence r P).comap (toSchemeHom T) =
       ofIdealTop ((T.incidenceLocus (P.baseChange A)).map (Scheme.ΓSpecIso (.of A)).inv.hom) :=
-  comap_toSchemeHom_schemeIdealLocus (fun {A} _ _ T ↦ T.incidenceLocus (P.baseChange A))
-    (fun f T ↦ by rw [← map_baseChange f P, incidenceLocus_map]) T
+  comap_toSchemeHom_schemeIdealLocus (upperIncidenceIdealFamily r P)
+    (fun f T ↦ incidenceLocus_baseChange_map f T P) T
 
 /-- The incidence equations characterize factorization through the upper incidence locus. -/
 theorem schemeUpperIncidence_le_ker_toSchemeHom_iff (r : ℕ) (P : G(d, N; R))
     {A : Type u} [CommRing A] [Algebra R A] (T : G(r + d, A ⊗[R] N; A)) :
     schemeUpperIncidence r P ≤ (toSchemeHom T).ker ↔
       T.toSubmodule ≤ (P.baseChange A).toSubmodule :=
-  (schemeIdealLocus_le_ker_toSchemeHom_iff (fun {A} _ _ T ↦ T.incidenceLocus (P.baseChange A))
-    (fun f T ↦ by rw [← map_baseChange f P, incidenceLocus_map]) T).trans
+  (schemeIdealLocus_le_ker_toSchemeHom_iff (upperIncidenceIdealFamily r P)
+    (fun f T ↦ incidenceLocus_baseChange_map f T P) T).trans
     (incidenceLocus_eq_bot_iff _ _)
 
 /-- The upper incidence closed subscheme represents the kernels contained in `P`. -/
@@ -79,8 +83,8 @@ noncomputable def schemeUpperIncidenceHomEquiv (r : ℕ) (P : G(d, N; R))
         h ≫ (schemeUpperIncidence r P).subschemeι ≫ toSpec R N (r + d) =
           Spec.map (CommRingCat.ofHom (algebraMap R A))} :=
   (Equiv.subtypeEquivRight fun T ↦ (incidenceLocus_eq_bot_iff T _).symm).trans
-    (schemeIdealLocusHomEquiv (fun {A} _ _ T ↦ T.incidenceLocus (P.baseChange A))
-      (fun f T ↦ by rw [← map_baseChange f P, incidenceLocus_map]) A)
+    (schemeIdealLocusHomEquiv (upperIncidenceIdealFamily r P)
+      (fun f T ↦ incidenceLocus_baseChange_map f T P) A)
 
 /-- The incidence point followed by the inclusion classifies its kernel. -/
 @[reassoc (attr := simp)]
@@ -89,8 +93,8 @@ theorem schemeUpperIncidenceHomEquiv_apply_comp_subschemeι (r : ℕ) (P : G(d, 
     (T : {T : G(r + d, A ⊗[R] N; A) // T.toSubmodule ≤ (P.baseChange A).toSubmodule}) :
     (schemeUpperIncidenceHomEquiv r P A T).val ≫ (schemeUpperIncidence r P).subschemeι =
       toSchemeHom T.val :=
-  schemeIdealLocusHomEquiv_apply_comp_subschemeι (fun {A} _ _ T ↦ T.incidenceLocus (P.baseChange A))
-    (fun f T ↦ by rw [← map_baseChange f P, incidenceLocus_map]) _
+  schemeIdealLocusHomEquiv_apply_comp_subschemeι (upperIncidenceIdealFamily r P)
+    (fun f T ↦ incidenceLocus_baseChange_map f T P) _
 
 /-- Recovering a kernel from an incidence point agrees with the ambient classifier. -/
 @[simp]
@@ -102,8 +106,8 @@ theorem toSchemeHom_schemeUpperIncidenceHomEquiv_symm_apply (r : ℕ) (P : G(d, 
     toSchemeHom ((schemeUpperIncidenceHomEquiv r P A).symm h).val =
       h.val ≫ (schemeUpperIncidence r P).subschemeι :=
   toSchemeHom_schemeIdealLocusHomEquiv_symm_apply
-    (fun {A} _ _ T ↦ T.incidenceLocus (P.baseChange A))
-    (fun f T ↦ by rw [← map_baseChange f P, incidenceLocus_map]) _
+    (upperIncidenceIdealFamily r P)
+    (fun f T ↦ incidenceLocus_baseChange_map f T P) _
 
 end Module.Grassmannian
 
@@ -236,7 +240,8 @@ theorem grassmannianStableMap_comp_subschemeι (t : Module.End R M) (u : Module.
 
 /-- On stable points the closed immersion sends the kernel to its image under the injection. -/
 @[reassoc (attr := simp)]
-theorem toSchemeHom_comp_grassmannianStableMap (t : Module.End R M) (u : Module.End R N)
+theorem schemeStableLocusHomEquiv_apply_comp_grassmannianStableMap
+    (t : Module.End R M) (u : Module.End R N)
     (htu : i ∘ₗ t = u ∘ₗ i) {A : Type u} [CommRing A] [Algebra R A]
     (S : {S : G(r, A ⊗[R] M; A) //
       S.toSubmodule ∈ Module.End.invtSubmodule (t.baseChange A)}) :
@@ -287,8 +292,7 @@ theorem ker_grassmannianStableMap_comp_subschemeι (t : Module.End R M) (u : Mod
     (i.grassmannianStableMap hi P hP r t u htu ≫
       (schemeStableLocus (r + d) u).subschemeι).ker =
       schemeIdealLocus (fun {A} _ _ T ↦ T.incidenceLocus (P.baseChange A) ⊔ T.stableLocus u)
-        (fun f T ↦ by rw [← map_baseChange f P, incidenceLocus_map,
-          stableLocus_map, Ideal.map_sup]) := by
+        (fun f T ↦ by rw [incidenceLocus_baseChange_map, stableLocus_map, Ideal.map_sup]) := by
   rw [Scheme.Hom.ker_comp, ker_grassmannianStableMap, map_comap_of_isClosedImmersion,
     ker_subschemeι]
   apply Scheme.IdealSheafData.ext_of_comap_openCover (chartOpenCover R N (r + d))
@@ -352,6 +356,31 @@ theorem isPullback_grassmannianMap_baseChange (R' : Type u) [CommRing R'] [Algeb
     simpa only [grassmannianMap_toSpec] using (isPullback_baseChangeHom R R' M r).flip
   exact hs.of_right (i.grassmannianMap_baseChange_comp_baseChangeHom hi P hP r R' hi' P' hP')
     (isPullback_baseChangeHom R R' N (r + d)).flip
+
+/-- Successive injection morphisms agree with the composite injection after identifying
+`(r + d) + d'` with `r + (d + d')`. -/
+@[reassoc]
+theorem grassmannianMap_comp {L : Type u} [AddCommGroup L] [Module R L] {d' : ℕ}
+    (i : M →ₗ[R] N) (hi : Function.Injective i)
+    (P : G(d, N; R)) (hP : P.toSubmodule = range i)
+    (j : N →ₗ[R] L) (hj : Function.Injective j)
+    (P' : G(d', L; R)) (hP' : P'.toSubmodule = range j)
+    (Q : G(d + d', L; R)) (hQ : Q.toSubmodule = range (j ∘ₗ i)) :
+    i.grassmannianMap hi P hP r ≫ j.grassmannianMap hj P' hP' (r + d) ≫
+      eqToHom (congrArg (scheme R L) (Nat.add_assoc r d d')) =
+      (j ∘ₗ i).grassmannianMap (hj.comp hi) Q hQ r := by
+  have hcast {a b : ℕ} (h : a = b) {A : Type u} [CommRing A] [Algebra R A]
+      (T : G(a, A ⊗[R] L; A)) :
+      toSchemeHom T ≫ eqToHom (congrArg (scheme R L) h) =
+        toSchemeHom (cast (congrArg (fun n ↦ G(n, A ⊗[R] L; A)) h) T) := by
+    cases h
+    simp
+  apply scheme_hom_ext
+  intro A _ _ S
+  rw [toSchemeHom_comp_grassmannianMap_assoc, toSchemeHom_comp_grassmannianMap_assoc,
+    toSchemeHom_comp_grassmannianMap, hcast (Nat.add_assoc r d d')]
+  apply congrArg toSchemeHom
+  exact mapOfInjectiveBaseChange_comp S i hi P hP j hj P' hP' Q hQ
 
 /-- The identity injection gives the identity on the Grassmannian. -/
 @[simp]

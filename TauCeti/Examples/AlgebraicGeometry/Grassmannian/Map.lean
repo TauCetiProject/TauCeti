@@ -58,7 +58,10 @@ theorem graphPoint_toSubmodule (a : A) :
     (graphPoint (R := R) a).toSubmodule =
       Submodule.span A {(1 : A) ⊗ₜ[R] (1, 0) + a • (1 : A) ⊗ₜ[R] (0, 1)} := by
   rw [graphPoint, toSubmodule_chartBasisEquiv_symm]
-  simp [Set.range_unique, chartGraphVector_def, planeBasis, Basis.prod_apply]
+  simp only [planeBasis, Set.range_unique, Fin.default_eq_zero, Fin.isValue,
+    chartGraphVector_def, Basis.prod_apply, LinearMap.coe_inl, Basis.coe_singleton,
+    Pi.comp_one, LinearMap.coe_inr, Sum.elim_inl, Function.const_apply, Finset.univ_unique,
+    Matrix.of_apply, Sum.elim_inr, Finset.sum_const, Finset.card_singleton, one_smul]
   congr 2
   module
 
@@ -79,7 +82,7 @@ theorem graphPoint_le_firstLine_iff (a : A) :
     simp
 
 /-- These graph points are stable for the zero endomorphism. -/
-theorem graphPoint_stable_zero (a : A) :
+theorem graphPoint_mem_invtSubmodule_zero (a : A) :
     (graphPoint (R := R) a).toSubmodule ∈
       Module.End.invtSubmodule ((0 : Module.End R (R × R)).baseChange A) :=
   (stableLocus_eq_bot_iff _ _).mp (stableLocus_zero _)
@@ -91,7 +94,7 @@ theorem map_graphPoint {B : Type u} [CommRing B] [Algebra R B] (f : A →ₐ[R] 
   simp [graphPoint, map_chartBasisEquiv_symm, Matrix.map]
 
 /-- The dual-number graph is outside the incidence image although its reduction belongs to it. -/
-theorem dualNumber_graph_upper_incidence [Nontrivial R] :
+theorem not_graphPoint_eps_le_firstLine_and_map_fstHom_le [Nontrivial R] :
     ¬ (graphPoint (R := R) (DualNumber.eps : DualNumber R)).toSubmodule ≤
       ((firstLine R).baseChange (DualNumber R)).toSubmodule ∧
     (map (TrivSqZeroExt.fstHom R R R)
@@ -107,8 +110,9 @@ example [Nontrivial R] :
       c ≫ (LinearMap.inl R R R).grassmannianStableMap LinearMap.inl_injective
           (firstLine R) (firstLine_toSubmodule R) 0 0 0 (by simp) =
         (schemeStableLocusHomEquiv 1 (0 : Module.End R (R × R)) (DualNumber R)
-          ⟨graphPoint (R := R) (DualNumber.eps : DualNumber R), graphPoint_stable_zero _⟩).val := by
+          ⟨graphPoint (R := R) (DualNumber.eps : DualNumber R),
+            graphPoint_mem_invtSubmodule_zero _⟩).val := by
   rw [LinearMap.exists_comp_grassmannianStableMap_eq_iff]
-  exact (dualNumber_graph_upper_incidence (R := R)).1
+  exact (not_graphPoint_eps_le_firstLine_and_map_fstHom_le (R := R)).1
 
 end TauCeti.Grassmannian.UpperIncidenceExamples
