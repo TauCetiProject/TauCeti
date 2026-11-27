@@ -313,10 +313,9 @@ private theorem neg_one_pow_mul_boundary_eq (q q' : criticalPoints 𝓘(ℝ, E) 
         (t * hX₁.signedMorseBoundary 𝔬₁ hf₁ R (Finsupp.single q' 1) q)) := by
   rw [signedMorseBoundary_single_apply, one_mul]
   by_cases h : manifoldMorseIndex 𝓘(ℝ, E) f₁ q' = manifoldMorseIndex 𝓘(ℝ, E) f₁ q + 1
-  · have hsq : (-1 : R) ^ n * (-1) ^ n = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+  · -- The two factors `(-1) ^ n` cancel, as `(-1) ^ n` is `1` or `-1`.
     rw [h, add_mul, one_mul, pow_add]
-    linear_combination (-((-1 : R) ^ (manifoldMorseIndex 𝓘(ℝ, E) f₁ q * n) *
-      (t * hX₁.signedMorseBoundaryCoeff 𝔬₁ q' q))) * hsq
+    rcases neg_one_pow_eq_or R n with hn | hn <;> simp [hn]
   · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one h]
     simp
 
