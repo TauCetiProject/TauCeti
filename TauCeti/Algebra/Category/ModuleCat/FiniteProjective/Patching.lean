@@ -230,6 +230,13 @@ theorem PatchingTriples.gluing_map {T T' : π₁.PatchingTriples π₂} (φ : T 
       map (RingHom.op π₂) φ.snd.hom.hom (T.gluing x) :=
   congr($(φ.w).hom x)
 
+/-- A surjective leg of `π₁` and `π₂` gives a surjective leg of the square of opposite rings, the
+hypothesis of the module-level patching results. -/
+private theorem surjective_op_or_surjective_op
+    (hπ : Function.Surjective π₁ ∨ Function.Surjective π₂) :
+    Function.Surjective (RingHom.op π₁) ∨ Function.Surjective (RingHom.op π₂) :=
+  hπ.imp (surjective_op_iff _).2 (surjective_op_iff _).2
+
 /-- **Milnor patching**: with a surjective leg, the patched module of a patching triple
 `(P₁, P₂, α)` is a finitely generated projective right module over `A₁ ×_Q A₂`. -/
 theorem finiteProjectiveModules_patchedModule
@@ -239,10 +246,10 @@ theorem finiteProjectiveModules_patchedModule
   finiteProjectiveModules_iff.2
     ⟨finite_patchedModule _ T.gluing
         (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-        (hπ.imp (surjective_op_iff _).2 (surjective_op_iff _).2),
+        (surjective_op_or_surjective_op hπ),
       projective_patchedModule _ T.gluing
         (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-        (hπ.imp (surjective_op_iff _).2 (surjective_op_iff _).2)⟩
+        (surjective_op_or_surjective_op hπ)⟩
 
 variable (π₁ π₂) in
 /-- The **patched module functor** of a fibre product `D = A₁ ×_Q A₂` with a surjective leg: it
@@ -295,10 +302,10 @@ def patchingCounitIso (T : π₁.PatchingTriples π₂) :
   CategoricalPullback.mkIso
     (ObjectProperty.isoMk _ (LinearEquiv.ofBijective _ (PatchedModule.bijective_compareFst _
       T.gluing (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-      (hπ.imp (surjective_op_iff _).2 (surjective_op_iff _).2))).toModuleIso)
+      (surjective_op_or_surjective_op hπ))).toModuleIso)
     (ObjectProperty.isoMk _ (LinearEquiv.ofBijective _ (PatchedModule.bijective_compareSnd _
       T.gluing (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
-      (hπ.imp (surjective_op_iff _).2 (surjective_op_iff _).2))).toModuleIso)
+      (surjective_op_or_surjective_op hπ))).toModuleIso)
     (patchingCounit hπ T).w
 
 /-- The first component of `RingHom.patchingCounitIso` is the comparison map `M ⊗_D A₁ → P₁`,
