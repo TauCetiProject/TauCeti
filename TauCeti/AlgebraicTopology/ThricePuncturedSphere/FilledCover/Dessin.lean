@@ -19,6 +19,14 @@ vertices of the monodromy ribbon graph, the two endpoints of each edge are preci
 `blackEnd` and `whiteEnd`. These identifications describe incidence even when several edges
 join the same pair of vertices. For any such pair, `edgesBetweenEquiv` restricts the
 sheet numbering to a bijection with the segment components incident to both vertices.
+
+## References
+
+* E. Girondo and G. González-Diez, *Introduction to Compact Riemann Surfaces and Dessins
+  d'Enfants*, London Mathematical Society Student Texts 79, Cambridge University Press, 2012,
+  §§4.2–4.3.
+* S. K. Lando and A. K. Zvonkin, *Graphs on Surfaces and Their Applications*, Encyclopaedia of
+  Mathematical Sciences 141, Springer, 2004, §§1.3 and 1.5.
 -/
 
 public noncomputable section
@@ -30,6 +38,12 @@ open Set Topology ThricePuncturedSphere PunctureFilling FilledPoint
 variable {E : Type*} [TopologicalSpace E] {p : E → ThricePuncturedSphere}
   (hp : IsCoveringMap p) {n : ℕ} (ν : p ⁻¹' {basePt} ≃ Fin n)
 
+private theorem incl_mem_preimage_segment_iff (x : E) :
+    incl (chart p) x ∈ fillMap p ⁻¹' (((↑) : ℂ → OnePoint ℂ) '' segment ℝ 0 1) ↔
+      p x ∈ unitSegment := by
+  rw [← preimage_segment_zero_one]
+  simp only [mem_preimage, fillMap_incl, toOnePoint_apply, OnePoint.coe_injective.mem_set_image]
+
 /-- A closed edge projects into the closed segment on the sphere. In particular no edge
 accumulates over infinity. -/
 theorem closure_edge_subset_preimage_segment (i : Fin n) :
@@ -38,8 +52,7 @@ theorem closure_edge_subset_preimage_segment (i : Fin n) :
   apply closure_minimal _ (hs.preimage (continuous_fillMap hp (.of_equiv _ ν.symm)))
   intro z hz
   obtain ⟨x, hx, -, rfl⟩ := (mem_edge_iff hp ν i z).1 hz
-  rw [mem_preimage, fillMap_incl, toOnePoint_apply, OnePoint.coe_injective.mem_set_image]
-  exact (Set.ext_iff.mp preimage_segment_zero_one (p x)).2 hx
+  exact (incl_mem_preimage_segment_iff x).2 hx
 
 /-- The closure of a sheet's open edge consists of the edge and its black and white endpoints
 in the monodromy ribbon graph, identified with points of the two marked fibres. -/
@@ -77,10 +90,7 @@ theorem preimage_segment_eq_iUnion_closure_edge :
   induction z using PunctureFilling.induction with
   | incl x =>
     intro hx
-    have hx' : p x ∈ unitSegment := by
-      rw [← preimage_segment_zero_one]
-      simpa only [mem_preimage, fillMap_incl, toOnePoint_apply,
-        OnePoint.coe_injective.mem_set_image] using hx
+    have hx' := (incl_mem_preimage_segment_iff x).1 hx
     obtain ⟨i, hi⟩ := (hp.finEquivConnectedComponentsUnitSegment ν).surjective
       (ConnectedComponents.mk ⟨x, hx'⟩)
     exact mem_iUnion.2 ⟨i, subset_closure ((incl_mem_edge_iff hp ν i x).2 ⟨hx', hi.symm⟩)⟩
