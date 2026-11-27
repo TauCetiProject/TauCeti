@@ -41,14 +41,14 @@ theorem mapLinearIsometryEquiv_gnsEquivUnitization :
     simp [π, PositiveLinearMap.gnsStarAlgHom_apply]
   have hπ := congrArg StarAlgHom.range (Unitization.starLift.apply_symm_apply π).symm
   rw [Unitization.starLift_range] at hπ
+  have hcoe : (π.range : Set _) = Set.range π := by
+    rw [StarAlgHom.range_eq_map_top]
+    simp
   have hrange : Set.range τ.unitization.gnsStarAlgHom =
       (StarAlgebra.adjoin ℂ (Set.range fun a : A => τ.unitization.gnsNonUnitalStarAlgHom
         (a : Unitization ℂ A)) : Set _) := by
-    simpa only [StarAlgHom.range, StarSubalgebra.coe_mk, Set.ext_iff, SetLike.mem_coe,
-      AlgHom.mem_range, Set.mem_range, StarAlgHom.coe_toAlgHom,
-      NonUnitalStarAlgHom.coe_range, hrestrict] using
-      congrArg (fun S : StarSubalgebra ℂ (τ.unitization.GNS →L[ℂ] τ.unitization.GNS) =>
-        (S : Set (τ.unitization.GNS →L[ℂ] τ.unitization.GNS))) hπ
+    simpa only [hcoe, NonUnitalStarAlgHom.coe_range, hrestrict] using
+      congrArg SetLike.coe hπ
   rw [PositiveLinearMap.gnsVonNeumannAlgebra_def τ.toPositiveLinearMap,
     VonNeumannAlgebra.mapLinearIsometryEquiv_adjoin, ← Set.range_comp,
     PositiveLinearMap.gnsVonNeumannAlgebra_eq_adjoin_range_gnsStarAlgHom, hrange,

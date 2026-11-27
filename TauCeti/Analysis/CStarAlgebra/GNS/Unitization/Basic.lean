@@ -60,23 +60,30 @@ private theorem tendsto_unitization_toGNS {l : Filter A} (hl : l.IsIncreasingApp
     τ.unitization.norm_gnsVector_sub_toGNS_sq_le ((Unitization.inr_nonneg_iff ℂ).mpr he)
       (by simpa only [Unitization.norm_inr] using he₁)
 
+private theorem denseRange_toGNS_inr_of_tendsto {l : Filter A} [l.NeBot]
+    (f : Unitization ℂ A →ₚ[ℂ] ℂ)
+    (hlim : Tendsto (fun e : A => f.toGNS (e : Unitization ℂ A)) l (𝓝 f.gnsVector)) :
+    DenseRange (fun a : A => f.toGNS (a : Unitization ℂ A)) := by
+  intro v
+  refine f.denseRange_toGNS.induction_on v isClosed_closure fun x => ?_
+  have h := ((f.gnsNonUnitalStarAlgHom x).continuous.tendsto _).comp hlim
+  rw [PositiveLinearMap.gnsNonUnitalStarAlgHom_apply_gnsVector,
+    ← PositiveLinearMap.toGNS_apply] at h
+  refine mem_closure_of_tendsto h (.of_forall fun e => ?_)
+  exact ⟨x.fst • e + x.snd * e, by
+    simp only [Function.comp_apply, PositiveLinearMap.gnsNonUnitalStarAlgHom_apply_toGNS,
+      Unitization.mul_inr]⟩
+
 /-- The canonical unitary identifying the GNS space of a positive functional with that of
 its norm-preserving extension to the unitization. -/
-def gnsEquivUnitization : τ.GNS ≃ₗᵢ[ℂ] τ.unitization.GNS := by
-  have hlim := τ.tendsto_unitization_toGNS (CStarAlgebra.increasingApproximateUnit A)
-  have hcyc : DenseRange (fun a : A => τ.unitization.toGNS a) := by
-    intro v
-    refine τ.unitization.denseRange_toGNS.induction_on v isClosed_closure fun x => ?_
-    have h := ((τ.unitization.gnsNonUnitalStarAlgHom x).continuous.tendsto _).comp hlim
-    rw [PositiveLinearMap.gnsNonUnitalStarAlgHom_apply_gnsVector,
-      ← PositiveLinearMap.toGNS_apply] at h
-    refine mem_closure_of_tendsto h (.of_forall fun e => ?_)
-    exact ⟨x.fst • e + x.snd * e, by
-      simp only [Function.comp_apply, PositiveLinearMap.gnsNonUnitalStarAlgHom_apply_toGNS,
-        Unitization.mul_inr]⟩
-  exact τ.gnsEquiv
+def gnsEquivUnitization : τ.GNS ≃ₗᵢ[ℂ] τ.unitization.GNS :=
+  τ.gnsEquiv
     (τ.unitization.gnsNonUnitalStarAlgHom.comp (Unitization.inrNonUnitalStarAlgHom ℂ A))
-    τ.unitization.gnsVector (by simpa using hcyc) (by simp)
+    τ.unitization.gnsVector
+    (by
+      simpa using denseRange_toGNS_inr_of_tendsto τ.unitization.toPositiveLinearMap
+        (τ.tendsto_unitization_toGNS (CStarAlgebra.increasingApproximateUnit A)))
+    (by simp)
 
 /-- The unitization unitary sends the class of `a` to the class of its inclusion. -/
 @[simp]
