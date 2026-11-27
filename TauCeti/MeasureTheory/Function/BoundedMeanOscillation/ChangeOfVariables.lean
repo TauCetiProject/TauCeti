@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 import TauCeti.Analysis.Normed.Group.UniformContinuity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+import TauCeti.Topology.Algebra.Order.Field
 
 /-!
 # Mean oscillation under changes of variables
@@ -179,11 +180,8 @@ theorem MemVMO.comp_of_map_le [SecondCountableTopology Y] (hf : MemVMO f ν)
     (hD : ∀ c s, 0 < s → ν (ball (Φ c) (L * s)) ≤ D * μ (ball c s)) :
     MemVMO (f ∘ Φ) μ := by
   refine memVMO_iff_tendsto.2 ⟨hf.memBMO.comp_of_map_le hΦ hL hmap hD, ?_⟩
-  have hscale : Tendsto (fun r : ℝ => (L : ℝ) * r) (𝓝[>] 0) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-    · simpa using ((continuous_const_mul (L : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds
-    · filter_upwards [self_mem_nhdsWithin] with r hr
-      exact mul_pos (NNReal.coe_pos.2 (pos_iff_ne_zero.2 hL)) hr
+  have hscale : Tendsto (fun r : ℝ => (L : ℝ) * r) (𝓝[>] 0) (𝓝[>] 0) :=
+    tendsto_const_mul_nhdsGT_zero (NNReal.coe_pos.2 (pos_iff_ne_zero.2 hL))
   have hlim := ENNReal.Tendsto.const_mul (hf.tendsto_vmoModulus.comp hscale)
     (Or.inr (show 2 * (K : ℝ≥0∞) * D ≠ ∞ by finiteness))
   rw [mul_zero] at hlim
@@ -289,11 +287,8 @@ theorem MemVMO.bilinear [SecondCountableTopology X] (B : F →L[ℝ] G →L[ℝ]
           (by finiteness) hf.memBMO.bmoSeminorm_lt_top, by finiteness⟩))
     gcongr
     exacts [vmoModulus_le_bmoSeminorm f μ r, hω r]
-  · have hscale : Tendsto (fun r : ℝ => 2 * r) (𝓝[>] 0) (𝓝[>] 0) := by
-      refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _ ?_ ?_
-      · simpa using ((continuous_const_mul (2 : ℝ)).tendsto 0).mono_left nhdsWithin_le_nhds
-      · filter_upwards [self_mem_nhdsWithin] with r hr
-        exact mul_pos two_pos hr
+  · have hscale : Tendsto (fun r : ℝ => 2 * r) (𝓝[>] 0) (𝓝[>] 0) :=
+      tendsto_const_mul_nhdsGT_zero two_pos
     have hlim : Tendsto (fun r => ‖B‖ₑ * (2 * N * vmoModulus f μ r + M * ω r)) (𝓝[>] 0)
         (𝓝 (‖B‖ₑ * (2 * N * 0 + M * 0))) :=
       ENNReal.Tendsto.const_mul ((ENNReal.Tendsto.const_mul hf.tendsto_vmoModulus
