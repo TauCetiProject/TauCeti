@@ -129,6 +129,9 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
 * `TauCeti.neckCutoff`: the cutoff `s ↦ ψ (1 + a s)`, equal to `1` where `0 ≤ a s` and to `0` where
   `1 + a s ≤ 0`, with derivative at most `|a|` times a bound for `ψ'`. These cutoffs splice
   right inverses along a neck of length `2 R`, with slope `O(1 / R)`.
+* `TauCeti.abs_one_sub_neckCutoff_le_one` and `TauCeti.abs_deriv_one_sub_neckCutoff`: the
+  complementary cutoff `1 - neckCutoff a` is bounded by `1`, and its derivative is that of the neck
+  cutoff up to sign.
 * `TauCeti.neckCutoff_neg_two_div_eq_one`, `TauCeti.neckCutoff_neg_two_div_eq_zero` and their
   `two_div` counterparts: where the neck cutoffs for `a = ∓ 2 / R` equal `1` and vanish.
 * `TauCeti.exists_contDiff_antitone_cutoff`: a smooth nonincreasing step from a value `v ≥ 0` on
@@ -863,6 +866,16 @@ theorem abs_deriv_neckCutoff_le {L : ℝ}
   rw [(hasDerivAt_neckCutoff a s).deriv, abs_mul, mul_comm]
   exact mul_le_mul_of_nonneg_left (hL _) (abs_nonneg a)
 
+/-- The complementary neck cutoff `1 - neckCutoff a` takes values in `[-1, 1]`. -/
+theorem abs_one_sub_neckCutoff_le_one (a s : ℝ) : |1 - neckCutoff a s| ≤ 1 :=
+  Real.smoothTransition.abs_one_sub_le_one _
+
+/-- The derivative of the complementary neck cutoff `1 - neckCutoff a` is that of `neckCutoff a` up
+to sign. -/
+theorem abs_deriv_one_sub_neckCutoff (a s : ℝ) :
+    |deriv (fun s ↦ 1 - neckCutoff a s) s| = |deriv (neckCutoff a) s| := by
+  rw [deriv_const_sub, abs_neg]
+
 /-- The neck cutoff is `1` where `0 ≤ a s`. -/
 theorem neckCutoff_eq_one {a s : ℝ} (h : 0 ≤ a * s) : neckCutoff a s = 1 :=
   Real.smoothTransition.one_of_one_le (by linarith)
@@ -1028,6 +1041,24 @@ theorem exists_contDiff_step {a b : ℝ} (hab : a < b) :
     fun r ↦ abs_le.2 ⟨by linarith [hνle r], by linarith [hν₀ r]⟩, fun r hr ↦ by simp [hν1 r hr],
     fun r hr ↦ by simp [hνb r hr], fun r ↦ by rw [deriv_const_sub, abs_neg]; exact hντ r,
     fun r hr ↦ by rw [deriv_const_sub, hν' r hr, neg_zero]⟩
+
+/-- **Interpolating two periodic maps.** Two `C^n` maps `x₋`, `x₊ : ℝ → E` of period `p` are the
+ends of a `C^n` map `u` of `ℝ × ℝ`, of period `p` in the second variable, equal to `x₋` for
+`s ≤ -a` and to `x₊` for `s ≥ a`: `u (s, t) = x₋ t + ψ((s + a) / 2a) (x₊ t - x₋ t)` for the smooth
+transition `ψ`. -/
+theorem exists_contDiff_eq_comp_snd {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {n : ℕ∞} {xm xp : ℝ → E} (hxm : ContDiff ℝ n xm) (hxp : ContDiff ℝ n xp) {p : ℝ}
+    (hxmp : Function.Periodic xm p) (hxpp : Function.Periodic xp p) {a : ℝ} (ha : 0 < a) :
+    ∃ u : ℝ × ℝ → E, ContDiff ℝ n u ∧ (∀ s t, u (s, t + p) = u (s, t)) ∧
+      (∀ s ≤ -a, ∀ t, u (s, t) = xm t) ∧ ∀ s, a ≤ s → ∀ t, u (s, t) = xp t := by
+  refine ⟨fun z ↦ xm z.2 + Real.smoothTransition ((z.1 + a) / (2 * a)) • (xp z.2 - xm z.2),
+    (hxm.comp contDiff_snd).add ((Real.smoothTransition.contDiff.comp
+      ((contDiff_fst.add contDiff_const).div_const _)).smul ((hxp.sub hxm).comp contDiff_snd)),
+    fun s t ↦ by simp only [hxmp t, hxpp t], fun s hs t ↦ ?_, fun s hs t ↦ ?_⟩ <;> dsimp only
+  · rw [Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith)
+      (by linarith)), zero_smul, add_zero]
+  · rw [Real.smoothTransition.one_of_one_le ((one_le_div (by linarith)).2 (by linarith)),
+      one_smul, add_sub_cancel]
 
 /-- **Three cutoffs in `s` summing to one.** For `R ≥ 0` there are smooth cutoffs `βp`, `βm`, `β₀`
 summing to one, with `βp` vanishing for `s ≤ R`, `βm` vanishing for `s ≥ -R` and `β₀` vanishing

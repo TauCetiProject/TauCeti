@@ -35,6 +35,8 @@ each Fourier coefficient is a continuous linear functional of norm at most one.
   `TauCeti.UnitAddTorus.mFourierCoeff_sum_mul_mFourier`.
 * `TauCeti.UnitAddTorus.mFourierCoeff_congr_ae`: the Fourier coefficients only depend on the
   almost-everywhere class of the function.
+* `TauCeti.UnitAddTorus.isProbabilityMeasure_volume`: the product of the Haar probability measures
+  on the circle factors is a probability measure on the torus.
 * `TauCeti.UnitAddTorus.norm_mFourierCoeff_le_norm`: `‖f̂(n)‖ ≤ ‖f‖` in `Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`.
 * `TauCeti.UnitAddTorus.mFourierCoeffCLM`: the `n`-th Fourier coefficient as a continuous linear
   functional on `Lᵖ(𝕋ᵈ)`.
@@ -68,6 +70,16 @@ theorem mFourierCoeff_add {f g : UnitAddTorus d → E} (hf : Integrable f) (hg :
       (Filter.Eventually.of_forall fun z ↦ (norm_mFourier_apply _ z).le)
   simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, Pi.add_apply, smul_add]
   exact integral_add (hφ f hf) (hφ g hg)
+
+/-- Fourier coefficients commute with finite sums of integrable functions. -/
+theorem mFourierCoeff_sum {ι : Type*} {s : Finset ι} {f : ι → UnitAddTorus d → E}
+    (hf : ∀ i ∈ s, Integrable (f i)) (n : d → ℤ) :
+    mFourierCoeff (∑ i ∈ s, f i) n = ∑ i ∈ s, mFourierCoeff (f i) n := by
+  simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, Finset.sum_apply,
+    Finset.smul_sum]
+  exact integral_finsetSum _ fun i hi ↦
+    (hf i hi).bdd_smul 1 (mFourier (-n)).continuous.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun z ↦ (norm_mFourier_apply _ z).le)
 
 /-- Taking Fourier coefficients commutes with scalar multiplication. -/
 @[simp]
@@ -213,6 +225,13 @@ attribute [local instance 2000] instMeasureSpaceUnitAddCircle
 -- are not bounded by the `Lᵖ` norms, `1 ≤ p`, below.
 local instance : IsProbabilityMeasure (volume : Measure UnitAddCircle) :=
   inferInstanceAs (IsProbabilityMeasure AddCircle.haarAddCircle)
+
+/-- The volume of the torus, for the measure given by `instMeasureSpaceUnitAddCircle` on each
+circle factor, is a probability measure. That volume is by definition the product
+`Measure.pi fun _ ↦ AddCircle.haarAddCircle` of the Haar probability measures, so the instance is
+the one Mathlib provides for that product. -/
+theorem isProbabilityMeasure_volume : IsProbabilityMeasure (volume : Measure (UnitAddTorus d)) :=
+  inferInstanceAs (IsProbabilityMeasure (Measure.pi fun _ ↦ AddCircle.haarAddCircle))
 
 /-- Every Fourier coefficient of `f ∈ Lᵖ(𝕋ᵈ)`, `1 ≤ p ≤ ∞`, is bounded by the `Lᵖ` norm of `f`: it
 is bounded by the `L¹` norm, and `𝕋ᵈ` has measure one. -/

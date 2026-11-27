@@ -197,6 +197,12 @@ theorem q_ne_zero : (D.q : ℚ_[ℓ]) ≠ 0 :=
 theorem q_ne_one : (D.q : ℚ_[ℓ]) ≠ 1 :=
   Nat.cast_ne_one.2 (by have := D.two_le_q; lia)
 
+/-- The integer `q` is nonzero in every nontrivial algebra over `ℚ_ℓ`. -/
+theorem natCast_q_ne_zero {E : Type*} [Semiring E] [Nontrivial E] [Algebra ℚ_[ℓ] E] :
+    (D.q : E) ≠ 0 := by
+  rw [← map_natCast (algebraMap ℚ_[ℓ] E)]
+  exact (map_ne_zero _).2 D.q_ne_zero
+
 variable (D) in
 /-- The tame character takes a nonzero value, in additive form. -/
 theorem exists_toAdd_tame_ne_zero : ∃ σ, (D.tame σ).toAdd ≠ 0 := by
@@ -215,6 +221,14 @@ theorem exists_tame_ne_one_of_isOpen (U : Subgroup D.inertia) (hU : IsOpen (U : 
   replace h := congrArg Multiplicative.toAdd h
   rw [map_pow, toAdd_pow, toAdd_one, nsmul_eq_mul] at h
   exact (mul_eq_zero.1 h).resolve_left (Nat.cast_ne_zero.2 hn.ne')
+
+/-- The tame character, viewed in a nontrivial algebra `E` over `ℚ_ℓ`, is not identically zero on
+any open subgroup of inertia. -/
+theorem exists_algebraMap_tame_ne_zero_of_isOpen {E : Type*} [Semiring E] [Nontrivial E]
+    [Algebra ℚ_[ℓ] E] (U : Subgroup D.inertia) (hU : IsOpen (U : Set D.inertia)) :
+    ∃ σ ∈ U, algebraMap ℚ_[ℓ] E (D.tame σ).toAdd ≠ 0 := by
+  obtain ⟨σ, hσ, hσt⟩ := D.exists_tame_ne_one_of_isOpen U hU
+  exact ⟨σ, hσ, (map_ne_zero _).2 fun h0 ↦ hσt (Multiplicative.toAdd.injective h0)⟩
 
 /-- **Conjugation by an element of the class `frobClass ^ n` divides the tame character by
 `q ^ n`**: `t(Φ σ Φ⁻¹) = q⁻ⁿ t(σ)`. -/

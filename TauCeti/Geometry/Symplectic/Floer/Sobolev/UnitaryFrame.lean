@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Stationary
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Sobolev.Cylinder.Frame
-import TauCeti.Analysis.Sobolev.Circle.LinearODE.DeterminantLine
 import TauCeti.Geometry.Symplectic.AlmostComplex.Frame
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Trivialization
@@ -24,7 +23,7 @@ linearized Floer operator is the translation-invariant operator
 `D_u = ∂s + J_t(x(t)) (∂t - S_t)`,  `S_t = dX_{H_t}(x(t))`,
 
 and its realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)`
-(`TauCeti.SymplecticForm.floerSobolevOperator`) is injective as soon as the structures
+(`TauCeti.SymplecticForm.floerSobolevOperator 2`) is injective as soon as the structures
 `J_t(x(t))` are `ω`-compatible
 (`TauCeti.SymplecticForm.ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt`). This file
 proves that it is onto, hence an isomorphism of Banach spaces: the invertible block of a stationary
@@ -38,10 +37,9 @@ invertible maps `Φ_t : F → V` from a finite-dimensional complex inner product
 
 * **The loop in the frame.** Read in the frame, `S` becomes the `C¹` loop
   `S'_t = Φ_t⁻¹ (S_t Φ_t - Φ_t')` (`TauCeti.trivializedCoeff`), infinitesimally symplectic for
-  `Im ⟪·, ·⟫` (`TauCeti.SymplecticForm.im_inner_apply_add_eq_zero_of_trivializedCoeff`), and
-  `det (1 - Ψ'(1)) ≠ 0` for the return map `Ψ'(1)` of `ζ' = S'_t ζ` because the orbit is
-  nondegenerate (`isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff`, in the
-  namespace `TauCeti.SymplecticForm`).
+  `Im ⟪·, ·⟫`, and `det (1 - Ψ'(1)) ≠ 0` for the return map `Ψ'(1)` of `ζ' = S'_t ζ`, since the
+  return maps of `S` and `S'` are conjugate and the orbit is nondegenerate
+  (`TauCeti.SymplecticForm.exists_loop_eq_trivializedCoeff`).
 * **Conjugation.** `D_u` is the stationary cylinder operator `∂s + J_t(x(t)) (∂t - S_t)`
   (`TauCeti.SymplecticForm.floerJetCoeff_eq_stationaryJetCoeff`), so its range is closed
   (`TauCeti.Floer.isClosed_range_stationarySobolevOperator`). For a test section `ζ` of `F`, `Φ ζ`
@@ -128,7 +126,7 @@ include hH hHp hx hxp hΦ hΦp hΦi hΦω in
 read in a unitary frame `Φ`, is a `C¹` loop `S'_t = Φ_t⁻¹ (S_t Φ_t - Φ_t')` on the circle that is
 infinitesimally symplectic for `Im ⟪·, ·⟫` and with `det (1 - Ψ(1)) ≠ 0` for the return map
 `Ψ(1)` of `ζ' = S'_t ζ`. -/
-private theorem exists_loop_eq_trivializedCoeff
+private theorem exists_loop_eq_trivializedCoeff_of_isNondegenerateFixedPt
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
     ∃ S : C(AddCircle (1 : ℝ), F →L[ℝ] F), (fun t : ℝ ↦ S t) =
         trivializedCoeff Φ (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ∧
@@ -137,24 +135,13 @@ private theorem exists_loop_eq_trivializedCoeff
       LinearMap.det ((1 - dysonSeriesLeft (fun t : ℝ ↦ S t) 1 : F →L[ℝ] F) : F →ₗ[ℝ] F) ≠ 0 := by
   have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
   have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
-  have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by norm_num)
-  obtain ⟨S, hS, hS₁⟩ := ω.exists_loop_eq_fderiv_hamiltonianVectorField hH hHp
-    (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx) hxp
-  have hSv : (fun t : ℝ ↦ S t) = fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
-    funext hS
-  have hSvp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 := fun t ↦ by
-    rw [← hSv]
-    simp only [AddCircle.coe_add_period]
-  have hper := periodic_trivializedCoeff hΦp hSvp
-  have hS'₁ := contDiff_trivializedCoeff (n := 1) hΦ hΦi (hSv ▸ hS₁)
-  let S' : C(AddCircle (1 : ℝ), F →L[ℝ] F) :=
-    ⟨hper.lift, continuous_coinduced_dom.2 hS'₁.continuous⟩
-  have hS' (t : ℝ) : S' t = trivializedCoeff Φ _ t := hper.lift_coe t
-  have hdet := (CircleSobolev.isInvertible_loopOperator_iff_det_ne_zero 1 S').1
-    ((ω.isInvertible_loopOperator_iff_isNondegenerateFixedPt_of_trivializedCoeff hX hH₂ hHp hx hxp
-      hΦd hΦp hΦi hS').2 hnd)
-  exact ⟨S', funext hS', funext hS' ▸ hS'₁, ω.im_inner_apply_add_eq_zero_of_trivializedCoeff
-    (fun t ↦ (hH₂.comp (contDiff_prodMk_right t)).contDiffAt) hΦd hΦi hΦω hS', by simpa using hdet⟩
+  exact ω.exists_loop_eq_trivializedCoeff hΦ hΦp hΦi hΦω
+    (ω.contDiff_fderiv_hamiltonianVectorField_comp (n := 1) hH
+      (ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le (by norm_num)) hx))
+    (ω.periodic_fderiv_hamiltonianVectorField_comp hHp hxp)
+    (fun t ↦ ω.apply_fderiv_hamiltonianVectorField_add
+      (hH₂.comp (contDiff_prodMk_right t)).contDiffAt)
+    (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH₂ hx hnd)
 
 include hH hHp hx hxp hΦ hΦp hΦi hΦω hΦJ in
 /-- **The linearized Floer operator at a nondegenerate orbit is onto.** Let `x` be a one-periodic
@@ -167,7 +154,7 @@ finite-dimensional complex inner product space, carrying `Im ⟪·, ·⟫` to `�
 `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the linearized Floer operator is onto. -/
 theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).range = ⊤ := by
   have hH₂ : ContDiff ℝ 2 (Function.uncurry H) := hH.of_le (by norm_num)
   have hΦd : Differentiable ℝ Φ := hΦ.differentiable (by norm_num)
@@ -186,7 +173,7 @@ theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame
     (ω.det_one_sub_dysonSeriesLeft_ne_zero_of_isNondegenerateFixedPt hX hH₂ hx hnd)
   -- The loop `S'` in the frame, and the stationary cylinder operator `D_F = ∂s + i (∂t - S')`.
   obtain ⟨S', hS'f, hS'₁, hS'ω, hdet⟩ :=
-    exists_loop_eq_trivializedCoeff ω hX hH hHp hx hxp hΦ hΦp hΦi hΦω hnd
+    exists_loop_eq_trivializedCoeff_of_isNondegenerateFixedPt ω hX hH hHp hx hxp hΦ hΦp hΦi hΦω hnd
   set DF := Floer.stationarySobolevOperator (fun _ ↦ AlmostComplexStructure.ofComplexModule F)
     fun t : ℝ ↦ S' t
   -- Multiplication by the frame, which maps `L²(F)` onto `L²(V)`.
@@ -226,7 +213,7 @@ the realization `D_u : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` of the lin
 stationary cylinder `u(s, t) = x(t)` is an isomorphism of Banach spaces. -/
 theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   ⟨.ofBijective _ (ker_floerSobolevOperator_eq_bot_of_isNondegenerateFixedPt ω hX
       (hH.of_le (by norm_num)) hx (continuous_toContinuousLinearMap_of_frame hΦ hΦi hΦJ)
@@ -259,7 +246,7 @@ operator is onto. This is the case of the identity frame of
 theorem range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).range = ⊤ :=
   range_floerSobolevOperator_eq_top_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp
@@ -279,7 +266,7 @@ identity frame of
 theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt
     (hω : ∀ v w, ω v w = (inner ℂ v w).im)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator
+    (ω.floerSobolevOperator 2
       (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp
@@ -320,7 +307,7 @@ theorem isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_compatibl
     (hJx₂ : ContDiff ℝ 2 fun t ↦ (J t (x t)).toLinearMap.toContinuousLinearMap)
     (hJxp : Periodic (fun t ↦ J t (x t)) 1)
     (hnd : IsNondegenerateFixedPt 𝓘(ℝ, E) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0)) :
-    (ω.floerSobolevOperator (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w.2 y).toLinearMap.toContinuousLinearMap)
       (fun _ _ ↦ 0) (fun w ↦ H w.2) (fun w ↦ x w.2)).IsInvertible :=
   -- The frame of `J_t(x(t))` is `Ψ_t Φ`, for the unitary frames `Ψ_t` of the loop.
   isInvertible_floerSobolevOperator_of_isNondegenerateFixedPt_of_frame ω hX hH hHp hx hxp

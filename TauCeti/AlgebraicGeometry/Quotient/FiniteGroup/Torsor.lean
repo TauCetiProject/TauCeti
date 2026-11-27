@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Quotient.FiniteGroup.Free
+public import TauCeti.RingTheory.Etale.Torsor.Basic
 
 /-!
 # The torsor square of a free finite-group quotient
@@ -22,7 +23,9 @@ without replacing scheme morphisms by geometric points. In particular, over a di
 scheme the group element relating two lifts can vary between components. The same square, with the
 components reindexed by `g ↦ g⁻¹`, is `isPullback_specAction_of_free`, stated with the covariant
 action `specAction A G g`; this is the form that matches an action of `G` on a scheme by
-automorphisms.
+automorphisms. For a finite étale `G`-torsor `A` over a ring `R`, whose base `R` is the fixed
+subring `Aᴳ`, the square is `isPullback_specComap_of_isFiniteEtaleTorsor`, the kernel pair of
+`Spec A ⟶ Spec R`.
 
 The proof uses the existing Chase–Harrison–Rosenberg isomorphism
 `TauCeti.MulSemiringAction.tensorToPi_bijective`, Mathlib's `sigmaSpec`, and `pullbackSpecIso`.
@@ -115,6 +118,24 @@ theorem isPullback_specAction_of_free [Finite G]
     (Iso.refl _) (Iso.refl _) (Iso.refl _) ?_ ?_ (by simp) (by simp) <;>
   · ext g
     simp [specAction_asIso_hom]
+
+/-- **The kernel pair of a finite étale torsor.** For a finite étale `G`-torsor `A` over `R`, the
+identity and the automorphisms `specComap A G g` on the component of `g` exhibit the disjoint union
+of copies of `Spec A` as the kernel pair of `Spec A ⟶ Spec R`. This is `isPullback_of_free`,
+transported along the isomorphism `R ≃+* Aᴳ`. -/
+theorem isPullback_specComap_of_isFiniteEtaleTorsor (R : Type u) [CommRing R] [Algebra R A]
+    [SMulCommClass G R A] [Finite G] [h : TauCeti.Algebra.IsFiniteEtaleTorsor G R A] :
+    IsPullback (Sigma.desc fun _ : G ↦ 𝟙 (Spec (.of A))) (Sigma.desc fun g : G ↦ specComap A G g)
+      (Spec.algebraMap R A) (Spec.algebraMap R A) := by
+  obtain ⟨_, _, hG⟩ := TauCeti.Algebra.isFiniteEtaleTorsor_iff.mp h
+  refine (isPullback_of_free A G hG).of_iso (Iso.refl _) (Iso.refl _) (Iso.refl _)
+    (Scheme.Spec.mapIso
+      (TauCeti.Algebra.IsInvariant.ringEquivFixedPoints R A G).toCommRingCatIso.op)
+    (by simp) (by simp) ?_ ?_ <;>
+  · simp only [Iso.refl_hom, Category.id_comp, Functor.mapIso_hom, Iso.op_hom,
+      Scheme.Spec_map, projection_def, ← Spec.map_comp]
+    rw [RingEquiv.toCommRingCatIso_hom, Quiver.Hom.unop_op, ← CommRingCat.ofHom_comp,
+      TauCeti.Algebra.IsInvariant.algebraMap_comp_ringEquivFixedPoints]
 
 end Group
 
