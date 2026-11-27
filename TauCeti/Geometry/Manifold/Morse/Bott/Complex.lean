@@ -62,7 +62,10 @@ empty) and `F_CD` off it (`TauCeti.BottChainData.differential`), and `D² = 0`
 (`TauCeti.BottChainData.differential_comp_differential`). If each `M C` is graded so that `∂`
 lowers degree by one and `P_CD` shifts it by `d_CD`, then `D` lowers the total degree
 `chain degree + λ_C` by one (`TauCeti.BottChainData.differential_mem_totalDegree`), and the
-total-degree pieces form a chain complex (`TauCeti.BottChainData.chainComplex`).
+total-degree pieces form a chain complex (`TauCeti.BottChainData.chainComplex`). In finite models,
+where the chains on a component of dimension `d` are its homology `Fin (d + 1) → R`, the grading is
+by coordinates (`TauCeti.coordinateGrading`,
+`TauCeti.BottChainData.mem_totalDegree_coordinateGrading_iff`).
 
 **Orientations.** The chains on `C` have coefficients in the orientation line of its negative
 normal bundle, so reversing that orientation negates them. Reversing the orientations of the
@@ -83,6 +86,7 @@ isomorphism of Bott chain complexes (`TauCeti.BottChainData.chainComplexReorient
   correspondences and the total differential.
 * `TauCeti.BottChainData.totalDegree`, `TauCeti.BottChainData.chainComplex`: the total-degree
   pieces and the Bott chain complex.
+* `TauCeti.coordinateGrading`: the grading of `Fin (d + 1) → R` by coordinates.
 * `TauCeti.BottChainData.ofBoundary`: components without trajectories between them, as for a
   constant function, whose Bott differential is the internal boundary
   (`TauCeti.BottChainData.differential_ofBoundary_apply`).
@@ -273,6 +277,42 @@ theorem negOnePow_bottBrokenFaceExponent_of_eq_add_one {C E D : ι} (hrank : ran
 
 end Signs
 
+/-! ### The coordinate grading -/
+
+section CoordinateGrading
+
+variable (R : Type*) [Semiring R]
+
+/-- **The grading of `Fin (d + 1) → R` by coordinates**: the elements of degree `j` are those
+supported on the coordinate `j`. It grades the chains of finite Bott models whose chains on a
+component are its homology, free of rank one in each degree `0, …, d`. -/
+def coordinateGrading (d : ℕ) (j : ℤ) : Submodule R (Fin (d + 1) → R) :=
+  Submodule.pi {i | (i : ℤ) ≠ j} fun _ ↦ ⊥
+
+variable {R}
+
+/-- An element of `Fin (d + 1) → R` has degree `j` exactly when it vanishes off the coordinate
+`j`. -/
+@[simp]
+theorem mem_coordinateGrading_iff {d : ℕ} {j : ℤ} {x : Fin (d + 1) → R} :
+    x ∈ coordinateGrading R d j ↔ ∀ i : Fin (d + 1), (i : ℤ) ≠ j → x i = 0 := by
+  simp [coordinateGrading]
+
+/-- The map moving the coordinate `a` to the coordinate `b` shifts the coordinate grading by
+`b - a`. -/
+theorem single_comp_proj_mem_coordinateGrading {d e : ℕ} {j : ℤ} (a : Fin (d + 1))
+    (b : Fin (e + 1)) {x : Fin (d + 1) → R} (hx : x ∈ coordinateGrading R d j) :
+    (LinearMap.single R (fun _ ↦ R) b ∘ₗ LinearMap.proj a) x ∈
+      coordinateGrading R e (j + (b - a)) := by
+  rw [mem_coordinateGrading_iff] at hx ⊢
+  intro i hi
+  by_cases ha : (a : ℤ) = j
+  · have : i ≠ b := fun h ↦ hi (by rw [h]; omega)
+    simp [this]
+  · simp [hx a ha]
+
+end CoordinateGrading
+
 /-! ### The total differential -/
 
 /-- **The algebraic data of a Bott complex** over the finite set `ι` of critical components. Each
@@ -397,6 +437,22 @@ theorem mem_totalDegree_iff {k : ℤ} {x : ∀ C, M C} :
     x ∈ B.totalDegree S k ↔ ∀ C, x C ∈ S C (k - B.rank C) := by
   simp [totalDegree]
 
+/-- For Bott data whose chains on `C` are `Fin (d C + 1) → R`, graded by coordinates, a chain has
+total degree `k` exactly when its coordinate `i` on `C` vanishes unless `i = k - λ_C`. -/
+theorem mem_totalDegree_coordinateGrading_iff {d : ι → ℕ}
+    {B : BottChainData R ι fun C ↦ Fin (d C + 1) → R} {k : ℤ} {x : ∀ C, Fin (d C + 1) → R} :
+    x ∈ B.totalDegree (fun C ↦ coordinateGrading R (d C)) k ↔
+      ∀ C (i : Fin (d C + 1)), (i : ℤ) ≠ k - B.rank C → x C i = 0 := by
+  simp only [mem_totalDegree_iff, mem_coordinateGrading_iff]
+
+/-- For Bott data graded by coordinates, a chain of total degree `k` vanishes when no coordinate
+`i` on any component `C` has chain degree `k - λ_C`. -/
+theorem eq_zero_of_mem_totalDegree_coordinateGrading {d : ι → ℕ}
+    {B : BottChainData R ι fun C ↦ Fin (d C + 1) → R} {k : ℤ} {x : ∀ C, Fin (d C + 1) → R}
+    (hx : x ∈ B.totalDegree (fun C ↦ coordinateGrading R (d C)) k)
+    (h : ∀ C (i : Fin (d C + 1)), (i : ℤ) ≠ k - B.rank C) : x = 0 :=
+  funext fun C ↦ funext fun i ↦ mem_totalDegree_coordinateGrading_iff.1 hx C i (h C i)
+
 variable {S}
 
 /-- **The Bott differential has total degree `-1`**: if the boundary of each component lowers the
@@ -451,6 +507,18 @@ theorem chainComplex_d_apply
       B.differential x.val := by
   simp only [chainComplex, ChainComplex.of_d, ModuleCat.hom_ofHom]
   exact LinearMap.coe_restrict_apply _ _
+
+/-- The differential of the Bott chain complex from total degree `i` to total degree `j`, for
+`i = j + 1`, is the Bott differential. -/
+theorem chainComplex_d_apply_of_eq_add_one
+    (hboundary : ∀ C j, ∀ x ∈ S C j, B.boundary C x ∈ S C (j - 1))
+    (hpushforward : ∀ C D j, ∀ x ∈ S C j,
+      B.pushforward C D x ∈ S D (j + bottDegreeShift B.rank C D))
+    {i j : ℤ} (hij : i = j + 1) (x : B.totalDegree S i) :
+    (((B.chainComplex hboundary hpushforward).d i j).hom x : B.totalDegree S j).val =
+      B.differential x.val := by
+  subst hij
+  exact B.chainComplex_d_apply hboundary hpushforward j x
 
 /-- The object of the Bott chain complex in total degree `k` is the total-degree piece. -/
 @[simp]

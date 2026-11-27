@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Complex
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.Tactic.DeriveFintype
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
 
 /-!
 # The finite Bott models of the two-cap and four-component spheres
@@ -52,15 +53,17 @@ homology `R` in degrees `0` and `1`, so the chains on a component of dimension `
   vanishes in every other degree; the cycles of total degree `2` are the multiples of
   `[C₃] + S`.
 
-The computations hold over every ring `R`. The data record the endpoint pushforwards `P_CD`, and
-the correspondences are `F_CD = (-1)^g_CD P_CD` (`TauCeti.BottChainData.correspondence`); every
-nonzero correspondence here has `g_CD = 1`, so `P_CD = -F_CD`. Only the models are constructed
+In total degrees `0` and `2` the homology is identified with `R` by a surjective linear form on
+the cycles, built from their coefficients, that vanishes exactly on the boundaries
+(`HomologicalComplex.nonempty_linearEquiv_homology_of_surjective`). The computations hold over
+every ring `R`. The data record the endpoint pushforwards `P_CD`, and the correspondences are
+`F_CD = (-1)^g_CD P_CD` (`TauCeti.BottChainData.correspondence`); every nonzero correspondence here
+has `g_CD = 1`, so `P_CD = -F_CD`. Only the models are constructed
 here: identifying them with the Bott complexes of geometric chains of the two functions needs the
 trajectory spaces of a rotation- and reflection-invariant metric, which this file does not use.
 
 ## Main definitions
 
-* `TauCeti.coordinateGrading`: the grading of `Fin (d + 1) → R` by coordinates.
 * `TauCeti.BottChainData.twoCapSphere`, `TauCeti.BottChainData.twoCapSphereComplex`: the finite
   model of the two-cap sphere and its Bott complex.
 * `TauCeti.BottChainData.fourComponentSphere`, `TauCeti.BottChainData.fourComponentSphereComplex`:
@@ -88,40 +91,7 @@ open CategoryTheory CategoryTheory.Limits
 
 namespace TauCeti
 
-section CoordinateGrading
-
-variable (R : Type*) [Semiring R]
-
-/-- **The grading of `Fin (d + 1) → R` by coordinates**: the elements of degree `j` are those
-supported on the coordinate `j`. -/
-def coordinateGrading (d : ℕ) (j : ℤ) : Submodule R (Fin (d + 1) → R) :=
-  Submodule.pi {i | (i : ℤ) ≠ j} fun _ ↦ ⊥
-
-variable {R}
-
-/-- An element of `Fin (d + 1) → R` has degree `j` exactly when it vanishes off the coordinate
-`j`. -/
-theorem mem_coordinateGrading_iff {d : ℕ} {j : ℤ} {x : Fin (d + 1) → R} :
-    x ∈ coordinateGrading R d j ↔ ∀ i : Fin (d + 1), (i : ℤ) ≠ j → x i = 0 := by
-  simp [coordinateGrading]
-
-end CoordinateGrading
-
 variable {R : Type*} [Ring R]
-
-namespace BottChainData
-
-variable {ι : Type*} [Fintype ι] {d : ι → ℕ}
-
-/-- For Bott data whose chains on `C` are `Fin (d C + 1) → R`, graded by coordinates, a chain has
-total degree `k` exactly when its coordinate `i` on `C` vanishes unless `i = k - λ_C`. -/
-theorem mem_totalDegree_coordinateGrading_iff
-    {B : BottChainData R ι fun C ↦ Fin (d C + 1) → R} {k : ℤ} {x : ∀ C, Fin (d C + 1) → R} :
-    x ∈ B.totalDegree (fun C ↦ coordinateGrading R (d C)) k ↔
-      ∀ C (i : Fin (d C + 1)), (i : ℤ) ≠ k - B.rank C → x C i = 0 := by
-  simp only [mem_totalDegree_iff, mem_coordinateGrading_iff]
-
-end BottChainData
 
 /-- **The critical components of the two-cap function** `z²` on the round sphere `S² ⊂ ℝ³`: the
 equator, of negative-normal rank `0`, and the two poles, of Morse index `2`. -/
@@ -194,8 +164,34 @@ theorem twoCapSphere_dim : (twoCapSphere R).dim = TwoCapSphereComponent.dim :=
 theorem twoCapSphere_boundary (C : TwoCapSphereComponent) : (twoCapSphere R).boundary C = 0 :=
   (rfl)
 
+/-- The pushforward from the north pole to the equator is `a ↦ -a [C]`. -/
+@[simp]
+theorem twoCapSphere_pushforward_northPole_equator :
+    (twoCapSphere R).pushforward northPole equator =
+      -(LinearMap.single R (fun _ ↦ R) 1 ∘ₗ LinearMap.proj 0) :=
+  (rfl)
+
+/-- The pushforward from the south pole to the equator is `a ↦ -a [C]`. -/
+@[simp]
+theorem twoCapSphere_pushforward_southPole_equator :
+    (twoCapSphere R).pushforward southPole equator =
+      -(LinearMap.single R (fun _ ↦ R) 1 ∘ₗ LinearMap.proj 0) :=
+  (rfl)
+
+/-- The pushforwards of the two-cap model out of the equator vanish: no trajectory leaves it. -/
+@[simp]
+theorem twoCapSphere_pushforward_equator (D : TwoCapSphereComponent) :
+    (twoCapSphere R).pushforward equator D = 0 := by
+  cases D <;> rfl
+
+/-- The pushforwards of the two-cap model into a pole vanish: no trajectory ends there. -/
+@[simp]
+theorem twoCapSphere_pushforward_of_ne_equator (C : TwoCapSphereComponent)
+    {D : TwoCapSphereComponent} (hD : D ≠ equator) : (twoCapSphere R).pushforward C D = 0 := by
+  cases C <;> cases D <;> first | rfl | exact absurd rfl hD
+
 /-- Every correspondence of the two-cap model is the negative of its pushforward. -/
-private theorem correspondence_twoCapSphere_eq_neg (C D : TwoCapSphereComponent) :
+theorem correspondence_twoCapSphere_eq_neg (C D : TwoCapSphereComponent) :
     (twoCapSphere R).correspondence C D = -(twoCapSphere R).pushforward C D := by
   have h (C : TwoCapSphereComponent) (hC : C ≠ equator) :
       (bottCorrespondenceExponent TwoCapSphereComponent.rank TwoCapSphereComponent.dim
@@ -215,7 +211,7 @@ theorem correspondence_twoCapSphere_northPole_equator :
     (twoCapSphere R).correspondence northPole equator =
       LinearMap.single R (fun _ ↦ R) 1 ∘ₗ LinearMap.proj 0 := by
   rw [correspondence_twoCapSphere_eq_neg]
-  simp [twoCapSphere]
+  simp
 
 /-- The correspondence from the south pole to the equator sends the generator to the fundamental
 class `[C]`. -/
@@ -224,34 +220,38 @@ theorem correspondence_twoCapSphere_southPole_equator :
     (twoCapSphere R).correspondence southPole equator =
       LinearMap.single R (fun _ ↦ R) 1 ∘ₗ LinearMap.proj 0 := by
   rw [correspondence_twoCapSphere_eq_neg]
-  simp [twoCapSphere]
+  simp
 
 /-- **The Bott differential of the two-cap model at the equator**: the chain `a N + b S` on the
-poles goes to `(a + b) [C]`. -/
+poles goes to `(a + b) [C]`.
+
+This and the next two evaluation lemmas have high `simp` priority, so that they apply before the
+general expansion `TauCeti.BottChainData.differential_apply` into a sum over the components. -/
+@[simp high]
 theorem differential_twoCapSphere_equator (x : ∀ C, Fin (TwoCapSphereComponent.dim C + 1) → R) :
     (twoCapSphere R).differential x equator =
       Pi.single 1 (x northPole 0 + x southPole 0) := by
   rw [differential_apply, TwoCapSphereComponent.sum_univ]
   simp only [correspondence_twoCapSphere_eq_neg]
-  simp [twoCapSphere, Pi.single_add]
+  simp [Pi.single_add]
 
 /-- The Bott differential of the two-cap model vanishes at the north pole: no trajectory ends
 there. -/
+@[simp high]
 theorem differential_twoCapSphere_northPole
     (x : ∀ C, Fin (TwoCapSphereComponent.dim C + 1) → R) :
     (twoCapSphere R).differential x northPole = 0 := by
   rw [differential_apply, TwoCapSphereComponent.sum_univ]
-  simp only [correspondence_twoCapSphere_eq_neg]
-  simp [twoCapSphere]
+  simp [correspondence_twoCapSphere_eq_neg]
 
 /-- The Bott differential of the two-cap model vanishes at the south pole: no trajectory ends
 there. -/
+@[simp high]
 theorem differential_twoCapSphere_southPole
     (x : ∀ C, Fin (TwoCapSphereComponent.dim C + 1) → R) :
     (twoCapSphere R).differential x southPole = 0 := by
   rw [differential_apply, TwoCapSphereComponent.sum_univ]
-  simp only [correspondence_twoCapSphere_eq_neg]
-  simp [twoCapSphere]
+  simp [correspondence_twoCapSphere_eq_neg]
 
 /-- The pushforwards of the two-cap model shift the coordinate grading by the chain-degree shift
 `d_CD = λ_C - λ_D - 1`: from a pole to the equator, a point goes to a multiple of `[C]`. -/
@@ -260,34 +260,38 @@ theorem twoCapSphere_pushforward_mem (C D : TwoCapSphereComponent) (j : ℤ)
     (hx : x ∈ coordinateGrading R (TwoCapSphereComponent.dim C) j) :
     (twoCapSphere R).pushforward C D x ∈ coordinateGrading R (TwoCapSphereComponent.dim D)
       (j + bottDegreeShift (twoCapSphere R).rank C D) := by
-  rw [mem_coordinateGrading_iff] at hx ⊢
-  intro i hi
-  cases C <;> cases D <;> simp only [twoCapSphere, LinearMap.zero_apply, Pi.zero_apply] at hi ⊢
-  -- The two correspondences from a pole to the equator: `x` has degree `0` unless it vanishes.
+  cases C <;> cases D <;> simp only [twoCapSphere_pushforward_equator,
+    twoCapSphere_pushforward_of_ne_equator, twoCapSphere_pushforward_northPole_equator,
+    twoCapSphere_pushforward_southPole_equator, ne_eq, reduceCtorEq, not_false_eq_true,
+    LinearMap.zero_apply, LinearMap.neg_apply, zero_mem]
+  -- From a pole to the equator, the coordinate `0` moves to the coordinate `1`.
   all_goals
-    have : x 0 = 0 ∨ (i : ℤ) = 0 := by
-      rw [bottDegreeShift_def] at hi
-      by_cases hj : j = 0
-      · fin_cases i <;> simp_all
-      · exact .inl (hx 0 (by simpa [eq_comm] using hj))
-    fin_cases i <;> rcases this with h | h <;> simp_all
+    refine neg_mem ?_
+    convert single_comp_proj_mem_coordinateGrading 0 1 hx using 2
+    simp [bottDegreeShift_def]
 
 variable (R) in
 /-- **The Bott complex of the two-cap model**: `R²` on the poles in total degree `2`, `H₁(C)` and
 `H₀(C)` in total degrees `1` and `0`. -/
-@[expose] noncomputable def twoCapSphereComplex : ChainComplex (ModuleCat R) ℤ :=
+noncomputable def twoCapSphereComplex : ChainComplex (ModuleCat R) ℤ :=
   (twoCapSphere R).chainComplex (S := fun C ↦ coordinateGrading R (TwoCapSphereComponent.dim C))
     (fun C _ _ _ ↦ by simp) twoCapSphere_pushforward_mem
 
-/-- The differential of the Bott complex of the two-cap model is the Bott differential. -/
-theorem twoCapSphereComplex_d_apply {i j : ℤ} (hij : i = j + 1)
-    (x : (twoCapSphere R).totalDegree
-      (fun C ↦ coordinateGrading R (TwoCapSphereComponent.dim C)) i) :
-    (((twoCapSphereComplex R).d i j).hom x : (twoCapSphere R).totalDegree
-      (fun C ↦ coordinateGrading R (TwoCapSphereComponent.dim C)) j).val =
-      (twoCapSphere R).differential x.val := by
-  subst hij
-  exact chainComplex_d_apply _ _ _ _ x
+/-- The Bott complex of the two-cap model is the Bott chain complex of the two-cap model, graded
+by coordinates. -/
+theorem twoCapSphereComplex_def :
+    twoCapSphereComplex R = (twoCapSphere R).chainComplex
+      (S := fun C ↦ coordinateGrading R (TwoCapSphereComponent.dim C))
+      (fun C _ _ _ ↦ by simp) twoCapSphere_pushforward_mem :=
+  (rfl)
+
+/-- The object of the Bott complex of the two-cap model in total degree `k` is the total-degree
+piece. -/
+@[simp]
+theorem twoCapSphereComplex_X (k : ℤ) :
+    (twoCapSphereComplex R).X k = ModuleCat.of R ((twoCapSphere R).totalDegree
+      (fun C ↦ coordinateGrading R (TwoCapSphereComponent.dim C)) k) :=
+  (rfl)
 
 /-- **`H₂ = R` for the two-cap model**: the cycles of total degree `2` are the multiples of
 `N - S`, and nothing has total degree `3`. -/
@@ -297,35 +301,29 @@ theorem nonempty_linearEquiv_homology_two_twoCapSphereComplex :
   set S : ∀ C : TwoCapSphereComponent,
     ℤ → Submodule R (Fin (TwoCapSphereComponent.dim C + 1) → R) :=
     fun C ↦ coordinateGrading R (TwoCapSphereComponent.dim C)
+  have hd (x : K.X 2) : ((K.d 2 1).hom x).val = (twoCapSphere R).differential x.val :=
+    chainComplex_d_apply_of_eq_add_one _ _ _ (by norm_num) x
+  -- The coefficient of `N`, on the cycles of total degree `2`.
   let ψ : LinearMap.ker (K.d 2 1).hom →ₗ[R] R :=
     LinearMap.proj 0 ∘ₗ LinearMap.proj northPole ∘ₗ ((twoCapSphere R).totalDegree S 2).subtype ∘ₗ
       (LinearMap.ker (K.d 2 1).hom).subtype
-  have hψ : Function.Surjective ψ := by
-    intro r
-    let y : ∀ C, Fin (TwoCapSphereComponent.dim C + 1) → R :=
+  have hψ (z : LinearMap.ker (K.d 2 1).hom) : ψ z = (z : K.X 2).val northPole 0 := rfl
+  refine K.nonempty_linearEquiv_homology_of_surjective (m := 1) (by simp) (p := 3) (by simp) ψ
+    (fun r ↦ ?_) fun ⟨⟨x, hx⟩, hdx⟩ ↦ ?_
+  · let y : ∀ C, Fin (TwoCapSphereComponent.dim C + 1) → R :=
       Pi.single northPole (fun _ ↦ r) - Pi.single southPole (fun _ ↦ r)
     have hy : y ∈ (twoCapSphere R).totalDegree S 2 := by
       refine mem_totalDegree_coordinateGrading_iff.2 fun C i hi ↦ ?_
       cases C <;> fin_cases i <;> simp_all [y]
     have hdy : (twoCapSphere R).differential y = 0 := by
       funext C
-      cases C <;> simp only [differential_twoCapSphere_equator, differential_twoCapSphere_northPole,
-        differential_twoCapSphere_southPole] <;> simp [y]
-    exact ⟨⟨⟨y, hy⟩, LinearMap.mem_ker.2 (Subtype.ext
-      ((twoCapSphereComplex_d_apply (by norm_num) ⟨y, hy⟩).trans hdy))⟩,
-      (by simp [y] : y northPole 0 = r)⟩
-  have hker : LinearMap.range (K.sc' 3 2 1).moduleCatToCycles = LinearMap.ker ψ := by
-    refine le_antisymm ?_ ?_
-    · rintro _ ⟨y, rfl⟩
-      have : y = 0 := Subtype.ext (funext fun C ↦ funext fun i ↦
-        mem_totalDegree_coordinateGrading_iff.1 y.property C i
-          (by cases C <;> fin_cases i <;> simp))
-      simp [this]
-    · rintro ⟨⟨x, hx⟩, hdx⟩ hz
-      have hdx' : (twoCapSphere R).differential x = 0 :=
-        (twoCapSphereComplex_d_apply (by norm_num) ⟨x, hx⟩).symm.trans
-          (congrArg Subtype.val (hdx : (K.d 2 1).hom ⟨x, hx⟩ = 0))
-      have hN : x northPole 0 = 0 := hz
+      cases C <;> simp [y]
+    exact ⟨⟨⟨y, hy⟩, LinearMap.mem_ker.2 (Subtype.ext ((hd ⟨y, hy⟩).trans hdy))⟩, by simp [hψ, y]⟩
+  · rw [hψ]
+    dsimp only
+    refine ⟨fun hN ↦ ?_, fun ⟨y, hy⟩ ↦ ?_⟩
+    · have hdx' : (twoCapSphere R).differential x = 0 :=
+        (hd ⟨x, hx⟩).symm.trans (congrArg Subtype.val (hdx : (K.d 2 1).hom ⟨x, hx⟩ = 0))
       have hS : x southPole 0 = 0 := by
         have h := congrFun (congrFun hdx' equator) 1
         rw [differential_twoCapSphere_equator] at h
@@ -334,9 +332,12 @@ theorem nonempty_linearEquiv_homology_two_twoCapSphereComplex :
         cases C <;> fin_cases i <;>
           simp [mem_totalDegree_coordinateGrading_iff.1 hx, hN, hS]
       exact zero_mem _
-  exact ⟨(K.homologyIsoSc' 3 2 1 (by simp) (by simp) ≪≫
-    (K.sc' 3 2 1).moduleCatHomologyIso).toLinearEquiv ≪≫ₗ Submodule.quotEquivOfEq _ _ hker ≪≫ₗ
-      ψ.quotKerEquivOfSurjective hψ⟩
+    · -- There are no chains of total degree `3`.
+      obtain rfl : y = 0 := Subtype.ext (eq_zero_of_mem_totalDegree_coordinateGrading y.property
+        fun C i ↦ by cases C <;> fin_cases i <;> simp)
+      rw [map_zero] at hy
+      obtain rfl : x = 0 := (congrArg Subtype.val hy).symm
+      rfl
 
 /-- **`H₀ = R` for the two-cap model**, spanned by the point class of the equator. -/
 theorem nonempty_linearEquiv_homology_zero_twoCapSphereComplex :
@@ -345,44 +346,36 @@ theorem nonempty_linearEquiv_homology_zero_twoCapSphereComplex :
   set S : ∀ C : TwoCapSphereComponent,
     ℤ → Submodule R (Fin (TwoCapSphereComponent.dim C + 1) → R) :=
     fun C ↦ coordinateGrading R (TwoCapSphereComponent.dim C)
+  have hd (x : K.X 1) : ((K.d 1 0).hom x).val = (twoCapSphere R).differential x.val :=
+    chainComplex_d_apply_of_eq_add_one _ _ _ (by norm_num) x
   -- Every chain of total degree `-1` vanishes.
-  have hX : ∀ y : K.X (-1), y = 0 := fun ⟨y, hy⟩ ↦ Subtype.ext (funext fun C ↦ funext fun i ↦
-    mem_totalDegree_coordinateGrading_iff.1 hy C i (by cases C <;> fin_cases i <;> simp))
+  have hX (y : K.X (-1)) : y = 0 := Subtype.ext (eq_zero_of_mem_totalDegree_coordinateGrading
+    y.property fun C i ↦ by cases C <;> fin_cases i <;> simp)
+  -- The coefficient of the point class of the equator.
   let ψ : LinearMap.ker (K.d 0 (-1)).hom →ₗ[R] R :=
     LinearMap.proj 0 ∘ₗ LinearMap.proj equator ∘ₗ ((twoCapSphere R).totalDegree S 0).subtype ∘ₗ
       (LinearMap.ker (K.d 0 (-1)).hom).subtype
-  have hψ : Function.Surjective ψ := by
-    intro r
-    let y : ∀ C, Fin (TwoCapSphereComponent.dim C + 1) → R :=
+  have hψ (z : LinearMap.ker (K.d 0 (-1)).hom) : ψ z = (z : K.X 0).val equator 0 := rfl
+  refine K.nonempty_linearEquiv_homology_of_surjective (m := -1) (by simp) (p := 1) (by simp) ψ
+    (fun r ↦ ?_) fun ⟨⟨x, hx⟩, hdx⟩ ↦ ?_
+  · let y : ∀ C, Fin (TwoCapSphereComponent.dim C + 1) → R :=
       Pi.single equator (Pi.single 0 r)
     have hy : y ∈ (twoCapSphere R).totalDegree S 0 := by
       refine mem_totalDegree_coordinateGrading_iff.2 fun C i hi ↦ ?_
       cases C <;> fin_cases i <;> simp_all [y]
-    exact ⟨⟨⟨y, hy⟩, hX _⟩, (by simp [y] : y equator 0 = r)⟩
-  have hker : LinearMap.range (K.sc' 1 0 (-1)).moduleCatToCycles = LinearMap.ker ψ := by
-    refine le_antisymm ?_ ?_
-    · rintro _ ⟨⟨y, hy⟩, rfl⟩
-      -- The differential vanishes in total degree `1`: the poles carry no chains there.
-      have hdy : (twoCapSphere R).differential y = 0 := by
-        have hN : y northPole 0 = 0 := mem_totalDegree_coordinateGrading_iff.1 hy _ _ (by simp)
-        have hS : y southPole 0 = 0 := mem_totalDegree_coordinateGrading_iff.1 hy _ _ (by simp)
-        funext C
-        cases C <;> simp only [differential_twoCapSphere_equator,
-          differential_twoCapSphere_northPole, differential_twoCapSphere_southPole] <;>
-          simp [hN, hS]
-      have : (K.sc' 1 0 (-1)).moduleCatToCycles ⟨y, hy⟩ = 0 := Subtype.ext (Subtype.ext
-        ((twoCapSphereComplex_d_apply (by norm_num) ⟨y, hy⟩).trans hdy))
-      rw [this]
-      exact zero_mem _
-    · rintro ⟨⟨x, hx⟩, hdx⟩ hz
-      have hE : x equator 0 = 0 := hz
-      obtain rfl : x = 0 := funext fun C ↦ funext fun i ↦ by
+    exact ⟨⟨⟨y, hy⟩, hX _⟩, by simp [hψ, y]⟩
+  · rw [hψ]
+    dsimp only
+    refine ⟨fun hE ↦ ?_, fun ⟨y, hy⟩ ↦ ?_⟩
+    · obtain rfl : x = 0 := funext fun C ↦ funext fun i ↦ by
         cases C <;> fin_cases i <;>
           simp [mem_totalDegree_coordinateGrading_iff.1 hx, hE]
       exact zero_mem _
-  exact ⟨(K.homologyIsoSc' 1 0 (-1) (by simp) (by simp) ≪≫
-    (K.sc' 1 0 (-1)).moduleCatHomologyIso).toLinearEquiv ≪≫ₗ Submodule.quotEquivOfEq _ _ hker ≪≫ₗ
-      ψ.quotKerEquivOfSurjective hψ⟩
+    · -- The Bott differential lands in the fundamental class `[C]`, not in the point class.
+      have hy' : (twoCapSphere R).differential y.val = x :=
+        (hd y).symm.trans (congrArg Subtype.val hy)
+      rw [← hy']
+      simp
 
 /-- **The other homology groups of the two-cap model vanish.** In total degree `1` the class
 `[C]` is the boundary of the north pole; no other degree carries chains. -/
@@ -401,17 +394,16 @@ theorem isZero_homology_twoCapSphereComplex {k : ℤ} (h0 : k ≠ 0) (h2 : k ≠
         (fun C ↦ coordinateGrading R (TwoCapSphereComponent.dim C)) (1 + 1) := by
       refine mem_totalDegree_coordinateGrading_iff.2 fun C i hi ↦ ?_
       cases C <;> fin_cases i <;> simp_all [y]
-    refine ⟨⟨y, hy⟩, Subtype.ext ((twoCapSphereComplex_d_apply rfl ⟨y, hy⟩).trans ?_)⟩
+    have hd : ((K.d (1 + 1) 1).hom ⟨y, hy⟩).val = (twoCapSphere R).differential y :=
+      chainComplex_d_apply_of_eq_add_one _ _ _ rfl _
+    refine ⟨⟨y, hy⟩, Subtype.ext (hd.trans ?_)⟩
     funext C i
-    cases C <;> simp only [differential_twoCapSphere_equator,
-      differential_twoCapSphere_northPole, differential_twoCapSphere_southPole] <;> fin_cases i
-    all_goals simp [y, mem_totalDegree_coordinateGrading_iff.1 hx]
+    cases C <;> fin_cases i <;> simp [y, mem_totalDegree_coordinateGrading_iff.1 hx]
   · -- Otherwise there are no chains of total degree `k`.
     refine ⟨0, Subtype.ext ?_⟩
     rw [map_zero]
-    funext C i
-    refine (mem_totalDegree_coordinateGrading_iff.1 hx C i ?_).symm
-    cases C <;> fin_cases i <;> simp <;> omega
+    exact (eq_zero_of_mem_totalDegree_coordinateGrading hx fun C i ↦ by
+      cases C <;> fin_cases i <;> simp <;> omega).symm
 
 end BottChainData
 
@@ -493,8 +485,59 @@ theorem fourComponentSphere_boundary (C : FourComponentSphereComponent) :
     (fourComponentSphere R).boundary C = 0 :=
   (rfl)
 
+/-- The pushforward from `C₃` to `C₀` is the identification `φ_*` of the circles by longitude. -/
+@[simp]
+theorem fourComponentSphere_pushforward_highCircle_lowCircle :
+    (fourComponentSphere R).pushforward highCircle lowCircle = LinearMap.id :=
+  (rfl)
+
+/-- The pushforward from `C₃` to `N` is minus the augmentation. -/
+@[simp]
+theorem fourComponentSphere_pushforward_highCircle_northPole :
+    (fourComponentSphere R).pushforward highCircle northPole =
+      -LinearMap.pi fun _ ↦ LinearMap.proj 0 :=
+  (rfl)
+
+/-- The pushforward from `S` to `C₀` is `a ↦ -a [C₀]`. -/
+@[simp]
+theorem fourComponentSphere_pushforward_southPole_lowCircle :
+    (fourComponentSphere R).pushforward southPole lowCircle =
+      -(LinearMap.single R (fun _ ↦ R) 1 ∘ₗ LinearMap.proj 0) :=
+  (rfl)
+
+/-- The pushforwards of the four-component model out of `C₀` vanish: no trajectory leaves it. -/
+@[simp]
+theorem fourComponentSphere_pushforward_lowCircle (D : FourComponentSphereComponent) :
+    (fourComponentSphere R).pushforward lowCircle D = 0 := by
+  cases D <;> rfl
+
+/-- The pushforwards of the four-component model out of `N` vanish: no trajectory leaves it. -/
+@[simp]
+theorem fourComponentSphere_pushforward_northPole (D : FourComponentSphereComponent) :
+    (fourComponentSphere R).pushforward northPole D = 0 := by
+  cases D <;> rfl
+
+/-- The pushforwards of the four-component model from `S` vanish except into `C₀`. -/
+@[simp]
+theorem fourComponentSphere_pushforward_southPole_of_ne_lowCircle
+    {D : FourComponentSphereComponent} (hD : D ≠ lowCircle) :
+    (fourComponentSphere R).pushforward southPole D = 0 := by
+  cases D <;> first | rfl | exact absurd rfl hD
+
+/-- The pushforward of the four-component model from `C₃` to `S` vanishes. -/
+@[simp]
+theorem fourComponentSphere_pushforward_highCircle_southPole :
+    (fourComponentSphere R).pushforward highCircle southPole = 0 :=
+  (rfl)
+
+/-- The pushforward of the four-component model from `C₃` to itself vanishes. -/
+@[simp]
+theorem fourComponentSphere_pushforward_highCircle_highCircle :
+    (fourComponentSphere R).pushforward highCircle highCircle = 0 :=
+  (rfl)
+
 /-- Every correspondence of the four-component model is the negative of its pushforward. -/
-private theorem correspondence_fourComponentSphere_eq_neg (C D : FourComponentSphereComponent) :
+theorem correspondence_fourComponentSphere_eq_neg (C D : FourComponentSphereComponent) :
     (fourComponentSphere R).correspondence C D = -(fourComponentSphere R).pushforward C D := by
   have h (C D : FourComponentSphereComponent) (hCD : bottCorrespondenceExponent
       FourComponentSphereComponent.rank FourComponentSphereComponent.dim C D = 1) :
@@ -513,7 +556,7 @@ private theorem correspondence_fourComponentSphere_eq_neg (C D : FourComponentSp
 theorem correspondence_fourComponentSphere_highCircle_lowCircle :
     (fourComponentSphere R).correspondence highCircle lowCircle = -LinearMap.id := by
   rw [correspondence_fourComponentSphere_eq_neg]
-  simp [fourComponentSphere]
+  simp
 
 /-- The correspondence from `C₃` to `N` is the augmentation, which keeps the coefficient of the
 point class. -/
@@ -522,7 +565,7 @@ theorem correspondence_fourComponentSphere_highCircle_northPole :
     (fourComponentSphere R).correspondence highCircle northPole =
       LinearMap.pi fun _ ↦ LinearMap.proj 0 := by
   rw [correspondence_fourComponentSphere_eq_neg]
-  simp [fourComponentSphere]
+  simp
 
 /-- The correspondence from `S` to `C₀` sends the generator to the fundamental class `[C₀]`. -/
 @[simp]
@@ -530,45 +573,50 @@ theorem correspondence_fourComponentSphere_southPole_lowCircle :
     (fourComponentSphere R).correspondence southPole lowCircle =
       LinearMap.single R (fun _ ↦ R) 1 ∘ₗ LinearMap.proj 0 := by
   rw [correspondence_fourComponentSphere_eq_neg]
-  simp [fourComponentSphere]
+  simp
 
 /-- **The Bott differential of the four-component model at `C₀`**: `b S` and `x` on `C₃` go to
-`b [C₀] - φ_* x`. -/
+`b [C₀] - φ_* x`.
+
+This and the next three evaluation lemmas have high `simp` priority, so that they apply before the
+general expansion `TauCeti.BottChainData.differential_apply` into a sum over the components. -/
+@[simp high]
 theorem differential_fourComponentSphere_lowCircle
     (x : ∀ C, Fin (FourComponentSphereComponent.dim C + 1) → R) :
     (fourComponentSphere R).differential x lowCircle =
       Pi.single 1 (x southPole 0) - x highCircle := by
   rw [differential_apply, FourComponentSphereComponent.sum_univ]
   simp only [correspondence_fourComponentSphere_eq_neg]
-  simp [fourComponentSphere, sub_eq_add_neg]
+  simp [sub_eq_add_neg]
 
 /-- **The Bott differential of the four-component model at `N`**: the coefficient of the point
 class of `C₃`. -/
+@[simp high]
 theorem differential_fourComponentSphere_northPole
     (x : ∀ C, Fin (FourComponentSphereComponent.dim C + 1) → R) :
     (fourComponentSphere R).differential x northPole = fun _ ↦ x highCircle 0 := by
   rw [differential_apply, FourComponentSphereComponent.sum_univ]
   simp only [correspondence_fourComponentSphere_eq_neg]
   funext i
-  simp [fourComponentSphere]
+  simp
 
 /-- The Bott differential of the four-component model vanishes at `S`: no trajectory ends there.
 -/
+@[simp high]
 theorem differential_fourComponentSphere_southPole
     (x : ∀ C, Fin (FourComponentSphereComponent.dim C + 1) → R) :
     (fourComponentSphere R).differential x southPole = 0 := by
   rw [differential_apply, FourComponentSphereComponent.sum_univ]
-  simp only [correspondence_fourComponentSphere_eq_neg]
-  simp [fourComponentSphere]
+  simp [correspondence_fourComponentSphere_eq_neg]
 
 /-- The Bott differential of the four-component model vanishes at `C₃`: no trajectory ends there.
 -/
+@[simp high]
 theorem differential_fourComponentSphere_highCircle
     (x : ∀ C, Fin (FourComponentSphereComponent.dim C + 1) → R) :
     (fourComponentSphere R).differential x highCircle = 0 := by
   rw [differential_apply, FourComponentSphereComponent.sum_univ]
-  simp only [correspondence_fourComponentSphere_eq_neg]
-  simp [fourComponentSphere]
+  simp [correspondence_fourComponentSphere_eq_neg]
 
 /-- The pushforwards of the four-component model shift the coordinate grading by the chain-degree
 shift `d_CD = λ_C - λ_D - 1`. -/
@@ -578,38 +626,49 @@ theorem fourComponentSphere_pushforward_mem (C D : FourComponentSphereComponent)
     (fourComponentSphere R).pushforward C D x ∈
       coordinateGrading R (FourComponentSphereComponent.dim D)
         (j + bottDegreeShift (fourComponentSphere R).rank C D) := by
-  rw [mem_coordinateGrading_iff] at hx ⊢
-  intro i hi
-  cases C <;> cases D <;> simp only [fourComponentSphere, LinearMap.zero_apply, Pi.zero_apply]
-    at hi ⊢
-  all_goals rw [bottDegreeShift_def] at hi
-  · -- From the south pole to the low circle: `x` has degree `0` unless it vanishes.
-    have : x 0 = 0 ∨ (i : ℤ) = 0 := by
-      by_cases hj : j = 0
-      · fin_cases i <;> simp_all
-      · exact .inl (hx 0 (by simpa [eq_comm] using hj))
-    fin_cases i <;> rcases this with h | h <;> simp_all
-  · simpa using hx i (by simpa using hi)
-  · fin_cases i
-    simpa using hx 0 (by simpa using hi)
+  cases C <;> cases D <;> simp only [fourComponentSphere_pushforward_lowCircle,
+    fourComponentSphere_pushforward_northPole,
+    fourComponentSphere_pushforward_southPole_of_ne_lowCircle,
+    fourComponentSphere_pushforward_highCircle_southPole,
+    fourComponentSphere_pushforward_highCircle_highCircle,
+    fourComponentSphere_pushforward_southPole_lowCircle,
+    fourComponentSphere_pushforward_highCircle_lowCircle,
+    fourComponentSphere_pushforward_highCircle_northPole, ne_eq, reduceCtorEq, not_false_eq_true,
+    LinearMap.zero_apply, LinearMap.neg_apply, LinearMap.id_apply, zero_mem]
+  · -- From the south pole to the low circle, the coordinate `0` moves to the coordinate `1`.
+    refine neg_mem ?_
+    convert single_comp_proj_mem_coordinateGrading 0 1 hx using 2
+    simp [bottDegreeShift_def]
+  · simpa [bottDegreeShift_def] using hx
+  · refine neg_mem ?_
+    rw [mem_coordinateGrading_iff] at hx ⊢
+    intro i hi
+    fin_cases i
+    simpa using hx 0 (by simpa [bottDegreeShift_def] using hi)
 
 variable (R) in
 /-- **The Bott complex of the four-component model**: `([C₃], S)`, `(pt_(C₃), [C₀])` and
 `(pt_(C₀), N)` in total degrees `2`, `1` and `0`. -/
-@[expose] noncomputable def fourComponentSphereComplex : ChainComplex (ModuleCat R) ℤ :=
+noncomputable def fourComponentSphereComplex : ChainComplex (ModuleCat R) ℤ :=
   (fourComponentSphere R).chainComplex
     (S := fun C ↦ coordinateGrading R (FourComponentSphereComponent.dim C))
     (fun C _ _ _ ↦ by simp) fourComponentSphere_pushforward_mem
 
-/-- The differential of the Bott complex of the four-component model is the Bott differential. -/
-theorem fourComponentSphereComplex_d_apply {i j : ℤ} (hij : i = j + 1)
-    (x : (fourComponentSphere R).totalDegree
-      (fun C ↦ coordinateGrading R (FourComponentSphereComponent.dim C)) i) :
-    (((fourComponentSphereComplex R).d i j).hom x : (fourComponentSphere R).totalDegree
-      (fun C ↦ coordinateGrading R (FourComponentSphereComponent.dim C)) j).val =
-      (fourComponentSphere R).differential x.val := by
-  subst hij
-  exact chainComplex_d_apply _ _ _ _ x
+/-- The Bott complex of the four-component model is the Bott chain complex of the four-component
+model, graded by coordinates. -/
+theorem fourComponentSphereComplex_def :
+    fourComponentSphereComplex R = (fourComponentSphere R).chainComplex
+      (S := fun C ↦ coordinateGrading R (FourComponentSphereComponent.dim C))
+      (fun C _ _ _ ↦ by simp) fourComponentSphere_pushforward_mem :=
+  (rfl)
+
+/-- The object of the Bott complex of the four-component model in total degree `k` is the
+total-degree piece. -/
+@[simp]
+theorem fourComponentSphereComplex_X (k : ℤ) :
+    (fourComponentSphereComplex R).X k = ModuleCat.of R ((fourComponentSphere R).totalDegree
+      (fun C ↦ coordinateGrading R (FourComponentSphereComponent.dim C)) k) :=
+  (rfl)
 
 /-- The chain `r ([C₃] + S)` is a cycle of total degree `2` of the four-component model. -/
 private theorem fourComponentSphere_isCycle_two (r : R) :
@@ -621,9 +680,7 @@ private theorem fourComponentSphere_isCycle_two (r : R) :
       (Pi.single highCircle (Pi.single 1 r) + Pi.single southPole (fun _ ↦ r)) = 0 := by
   refine ⟨mem_totalDegree_coordinateGrading_iff.2 fun C i hi ↦ ?_, funext fun C ↦ ?_⟩
   · cases C <;> fin_cases i <;> simp_all
-  · cases C <;> simp only [differential_fourComponentSphere_lowCircle,
-      differential_fourComponentSphere_northPole, differential_fourComponentSphere_southPole,
-      differential_fourComponentSphere_highCircle] <;> simp [funext_iff]
+  · cases C <;> simp [funext_iff]
 
 /-- A chain of total degree `0` of the four-component model whose coefficients at the point classes
 of `C₀` and `N` add up to zero is the boundary of a chain of total degree `1`, a multiple of the
@@ -639,10 +696,8 @@ private theorem fourComponentSphere_exists_differential_eq
   refine ⟨Pi.single highCircle (Pi.single 0 (x northPole 0)),
     mem_totalDegree_coordinateGrading_iff.2 fun C i hi ↦ ?_, funext fun C ↦ funext fun i ↦ ?_⟩
   · cases C <;> fin_cases i <;> simp_all
-  · cases C <;> simp only [differential_fourComponentSphere_lowCircle,
-      differential_fourComponentSphere_northPole, differential_fourComponentSphere_southPole,
-      differential_fourComponentSphere_highCircle] <;> fin_cases i
-    all_goals simp [mem_totalDegree_coordinateGrading_iff.1 hx, eq_neg_of_add_eq_zero_left hz]
+  · cases C <;> fin_cases i <;>
+      simp [mem_totalDegree_coordinateGrading_iff.1 hx, eq_neg_of_add_eq_zero_left hz]
 
 /-- **`H₂ = R` for the four-component model**: the cycles of total degree `2` are the multiples of
 `[C₃] + S`, and nothing has total degree `3`. -/
@@ -652,30 +707,22 @@ theorem nonempty_linearEquiv_homology_two_fourComponentSphereComplex :
   set S : ∀ C : FourComponentSphereComponent,
     ℤ → Submodule R (Fin (FourComponentSphereComponent.dim C + 1) → R) :=
     fun C ↦ coordinateGrading R (FourComponentSphereComponent.dim C)
+  have hd (x : K.X 2) : ((K.d 2 1).hom x).val = (fourComponentSphere R).differential x.val :=
+    chainComplex_d_apply_of_eq_add_one _ _ _ (by norm_num) x
   -- The coefficient of `[C₃]`, on the cycles of total degree `2`.
   let ψ : LinearMap.ker (K.d 2 1).hom →ₗ[R] R :=
     LinearMap.proj 1 ∘ₗ LinearMap.proj highCircle ∘ₗ
       ((fourComponentSphere R).totalDegree S 2).subtype ∘ₗ (LinearMap.ker (K.d 2 1).hom).subtype
-  have hψ : Function.Surjective ψ := fun r ↦
-    have ⟨hy, hdy⟩ := fourComponentSphere_isCycle_two (R := R) r
-    ⟨⟨⟨_, hy⟩, LinearMap.mem_ker.2 (Subtype.ext
-      ((fourComponentSphereComplex_d_apply (by norm_num) ⟨_, hy⟩).trans hdy))⟩,
-      (by simp : (Pi.single highCircle (Pi.single 1 r) +
-        Pi.single southPole (fun _ ↦ r) : ∀ C, Fin (FourComponentSphereComponent.dim C + 1) → R)
-          highCircle 1 = r)⟩
-  have hker : LinearMap.range (K.sc' 3 2 1).moduleCatToCycles = LinearMap.ker ψ := by
-    refine le_antisymm ?_ ?_
-    · -- There are no chains of total degree `3`.
-      rintro _ ⟨y, rfl⟩
-      have : y = 0 := Subtype.ext (funext fun C ↦ funext fun i ↦
-        mem_totalDegree_coordinateGrading_iff.1 y.property C i
-          (by cases C <;> fin_cases i <;> simp))
-      simp [this]
-    · rintro ⟨⟨x, hx⟩, hdx⟩ hz
-      have hdx' : (fourComponentSphere R).differential x = 0 :=
-        (fourComponentSphereComplex_d_apply (by norm_num) ⟨x, hx⟩).symm.trans
-          (congrArg Subtype.val (hdx : (K.d 2 1).hom ⟨x, hx⟩ = 0))
-      have hC : x highCircle 1 = 0 := hz
+  have hψ (z : LinearMap.ker (K.d 2 1).hom) : ψ z = (z : K.X 2).val highCircle 1 := rfl
+  refine K.nonempty_linearEquiv_homology_of_surjective (m := 1) (by simp) (p := 3) (by simp) ψ
+    (fun r ↦ ?_) fun ⟨⟨x, hx⟩, hdx⟩ ↦ ?_
+  · have ⟨hy, hdy⟩ := fourComponentSphere_isCycle_two (R := R) r
+    exact ⟨⟨⟨_, hy⟩, LinearMap.mem_ker.2 (Subtype.ext ((hd ⟨_, hy⟩).trans hdy))⟩, by simp [hψ]⟩
+  · rw [hψ]
+    dsimp only
+    refine ⟨fun hC ↦ ?_, fun ⟨y, hy⟩ ↦ ?_⟩
+    · have hdx' : (fourComponentSphere R).differential x = 0 :=
+        (hd ⟨x, hx⟩).symm.trans (congrArg Subtype.val (hdx : (K.d 2 1).hom ⟨x, hx⟩ = 0))
       have hS : x southPole 0 = 0 := by
         have h := congrFun (congrFun hdx' lowCircle) 1
         rw [differential_fourComponentSphere_lowCircle] at h
@@ -684,9 +731,12 @@ theorem nonempty_linearEquiv_homology_two_fourComponentSphereComplex :
         cases C <;> fin_cases i <;>
           simp [mem_totalDegree_coordinateGrading_iff.1 hx, hS, hC]
       exact zero_mem _
-  exact ⟨(K.homologyIsoSc' 3 2 1 (by simp) (by simp) ≪≫
-    (K.sc' 3 2 1).moduleCatHomologyIso).toLinearEquiv ≪≫ₗ Submodule.quotEquivOfEq _ _ hker ≪≫ₗ
-      ψ.quotKerEquivOfSurjective hψ⟩
+    · -- There are no chains of total degree `3`.
+      obtain rfl : y = 0 := Subtype.ext (eq_zero_of_mem_totalDegree_coordinateGrading y.property
+        fun C i ↦ by cases C <;> fin_cases i <;> simp)
+      rw [map_zero] at hy
+      obtain rfl : x = 0 := (congrArg Subtype.val hy).symm
+      rfl
 
 /-- **`H₀ = R` for the four-component model**: the boundaries of total degree `0` are the
 multiples of `N - pt_(C₀)`, so the sum of the two coefficients identifies `H₀` with `R`. -/
@@ -696,9 +746,12 @@ theorem nonempty_linearEquiv_homology_zero_fourComponentSphereComplex :
   set S : ∀ C : FourComponentSphereComponent,
     ℤ → Submodule R (Fin (FourComponentSphereComponent.dim C + 1) → R) :=
     fun C ↦ coordinateGrading R (FourComponentSphereComponent.dim C)
+  have hd (x : K.X (0 + 1)) : ((K.d (0 + 1) 0).hom x).val =
+      (fourComponentSphere R).differential x.val :=
+    chainComplex_d_apply_of_eq_add_one _ _ _ rfl x
   -- Every chain of total degree `-1` vanishes.
-  have hX : ∀ y : K.X (-1), y = 0 := fun ⟨y, hy⟩ ↦ Subtype.ext (funext fun C ↦ funext fun i ↦
-    mem_totalDegree_coordinateGrading_iff.1 hy C i (by cases C <;> fin_cases i <;> simp))
+  have hX (y : K.X (-1)) : y = 0 := Subtype.ext (eq_zero_of_mem_totalDegree_coordinateGrading
+    y.property fun C i ↦ by cases C <;> fin_cases i <;> simp)
   -- The sum of the coefficients of the point classes of `C₀` and of `N`.
   let ψ : LinearMap.ker (K.d 0 (-1)).hom →ₗ[R] R :=
     LinearMap.proj 0 ∘ₗ LinearMap.proj lowCircle ∘ₗ
@@ -707,30 +760,26 @@ theorem nonempty_linearEquiv_homology_zero_fourComponentSphereComplex :
       LinearMap.proj 0 ∘ₗ LinearMap.proj northPole ∘ₗ
         ((fourComponentSphere R).totalDegree S 0).subtype ∘ₗ
           (LinearMap.ker (K.d 0 (-1)).hom).subtype
-  have hψ : Function.Surjective ψ := by
-    intro r
-    let y : ∀ C, Fin (FourComponentSphereComponent.dim C + 1) → R :=
+  have hψ (z : LinearMap.ker (K.d 0 (-1)).hom) :
+      ψ z = (z : K.X 0).val lowCircle 0 + (z : K.X 0).val northPole 0 := rfl
+  refine K.nonempty_linearEquiv_homology_of_surjective (m := -1) (by simp) (p := 0 + 1) (by simp)
+    ψ (fun r ↦ ?_) fun ⟨⟨x, hx⟩, hdx⟩ ↦ ?_
+  · let y : ∀ C, Fin (FourComponentSphereComponent.dim C + 1) → R :=
       Pi.single lowCircle (Pi.single 0 r)
     have hy : y ∈ (fourComponentSphere R).totalDegree S 0 := by
       refine mem_totalDegree_coordinateGrading_iff.2 fun C i hi ↦ ?_
       cases C <;> fin_cases i <;> simp_all [y]
-    exact ⟨⟨⟨y, hy⟩, hX _⟩, (by simp [y] : y lowCircle 0 + y northPole 0 = r)⟩
-  have hker : LinearMap.range (K.sc' 1 0 (-1)).moduleCatToCycles = LinearMap.ker ψ := by
-    refine le_antisymm ?_ ?_
-    · rintro _ ⟨⟨y, hy⟩, rfl⟩
-      -- The boundary of `c` times the point class of `C₃` is `c (N - pt_{C₀})`.
-      have hψy : (fourComponentSphere R).differential y lowCircle 0 +
-          (fourComponentSphere R).differential y northPole 0 = 0 := by
-        rw [differential_fourComponentSphere_lowCircle, differential_fourComponentSphere_northPole]
-        simp
-      exact hψy
-    · rintro ⟨⟨x, hx⟩, hdx⟩ hz
-      obtain ⟨y, hy, hdy⟩ := fourComponentSphere_exists_differential_eq hx hz
-      exact ⟨⟨y, hy⟩, Subtype.ext (Subtype.ext
-        ((fourComponentSphereComplex_d_apply rfl ⟨y, hy⟩).trans hdy))⟩
-  exact ⟨(K.homologyIsoSc' 1 0 (-1) (by simp) (by simp) ≪≫
-    (K.sc' 1 0 (-1)).moduleCatHomologyIso).toLinearEquiv ≪≫ₗ Submodule.quotEquivOfEq _ _ hker ≪≫ₗ
-      ψ.quotKerEquivOfSurjective hψ⟩
+    exact ⟨⟨⟨y, hy⟩, hX _⟩, by simp [hψ, y]⟩
+  · rw [hψ]
+    dsimp only
+    refine ⟨fun hz ↦ ?_, fun ⟨y, hy⟩ ↦ ?_⟩
+    · obtain ⟨y, hy, hdy⟩ := fourComponentSphere_exists_differential_eq hx hz
+      exact ⟨⟨y, hy⟩, Subtype.ext ((hd ⟨y, hy⟩).trans hdy)⟩
+    · -- The boundary of `c` times the point class of `C₃` is `c (N - pt_(C₀))`.
+      have hy' : (fourComponentSphere R).differential y.val = x :=
+        (hd y).symm.trans (congrArg Subtype.val hy)
+      rw [← hy']
+      simp
 
 /-- **The other homology groups of the four-component model vanish.** In total degree `1` a cycle
 is a multiple of `[C₀]`, the boundary of a multiple of `S`; no other degree carries chains. -/
@@ -744,7 +793,8 @@ theorem isZero_homology_fourComponentSphereComplex {k : ℤ} (h0 : k ≠ 0) (h2 
   · -- A cycle of total degree `1` is `d [C₀]`, the boundary of `d S`.
     subst h1
     have hdx' : (fourComponentSphere R).differential x = 0 :=
-      (fourComponentSphereComplex_d_apply (by norm_num) ⟨x, hx⟩).symm.trans
+      (chainComplex_d_apply_of_eq_add_one _ _ _ (by norm_num) ⟨x, hx⟩ :
+          ((K.d 1 (1 - 1)).hom ⟨x, hx⟩).val = _).symm.trans
         (congrArg Subtype.val (hdx : (K.d 1 (1 - 1)).hom ⟨x, hx⟩ = 0))
     have hC : x highCircle 0 = 0 := by
       have h := congrFun (congrFun hdx' northPole) 0
@@ -756,18 +806,16 @@ theorem isZero_homology_fourComponentSphereComplex {k : ℤ} (h0 : k ≠ 0) (h2 
         (fun C ↦ coordinateGrading R (FourComponentSphereComponent.dim C)) (1 + 1) := by
       refine mem_totalDegree_coordinateGrading_iff.2 fun C i hi ↦ ?_
       cases C <;> fin_cases i <;> simp_all [y]
-    refine ⟨⟨y, hy⟩, Subtype.ext ((fourComponentSphereComplex_d_apply rfl ⟨y, hy⟩).trans ?_)⟩
+    have hd : ((K.d (1 + 1) 1).hom ⟨y, hy⟩).val = (fourComponentSphere R).differential y :=
+      chainComplex_d_apply_of_eq_add_one _ _ _ rfl _
+    refine ⟨⟨y, hy⟩, Subtype.ext (hd.trans ?_)⟩
     funext C i
-    cases C <;> simp only [differential_fourComponentSphere_lowCircle,
-      differential_fourComponentSphere_northPole, differential_fourComponentSphere_southPole,
-      differential_fourComponentSphere_highCircle] <;> fin_cases i
-    all_goals simp [y, mem_totalDegree_coordinateGrading_iff.1 hx, hC]
+    cases C <;> fin_cases i <;> simp [y, mem_totalDegree_coordinateGrading_iff.1 hx, hC]
   · -- Otherwise there are no chains of total degree `k`.
     refine ⟨0, Subtype.ext ?_⟩
     rw [map_zero]
-    funext C i
-    refine (mem_totalDegree_coordinateGrading_iff.1 hx C i ?_).symm
-    cases C <;> fin_cases i <;> simp <;> omega
+    exact (eq_zero_of_mem_totalDegree_coordinateGrading hx fun C i ↦ by
+      cases C <;> fin_cases i <;> simp <;> omega).symm
 
 end BottChainData
 
