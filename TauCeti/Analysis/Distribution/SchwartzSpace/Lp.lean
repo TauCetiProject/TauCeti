@@ -14,19 +14,17 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
-# Schwartz functions in `L^∞` and uniform approximation
+# Schwartz functions in `Lᵖ`: extension of functionals, `L^∞` and uniform approximation
 
 A Schwartz function is bounded and continuous, so it has two canonical embeddings into `L^∞(μ)` for
 any measure `μ` of temperate growth: directly via `SchwartzMap.toLp ∞ μ` and via
 `BoundedContinuousFunction.toLpTop μ 𝕜` applied to `SchwartzMap.toBoundedContinuousFunction`. The
 two classes coincide (`SchwartzMap.toLp_top_eq_toLpTop`).
 
-For `p < ∞` the Schwartz functions are dense in `Lᵖ(μ)`, so a linear functional on them bounded by
-a multiple of the `Lᵖ` norm extends to a continuous linear functional on `Lᵖ(μ)` with the same
-bound (`SchwartzMap.exists_strongDual_apply_toLp_eq`).
-
-Whereas Schwartz functions are dense in `Lᵖ(μ)` for `p < ∞` (`SchwartzMap.denseRange_toLpCLM`),
-they are not dense in `L^∞(μ)`. On bounded continuous functions, for any temperate measure `μ`
+Schwartz functions are dense in `Lᵖ(μ)` for `p < ∞` (`SchwartzMap.denseRange_toLpCLM`), so a
+linear functional on them bounded by a multiple of the `Lᵖ` norm extends to a continuous linear
+functional on `Lᵖ(μ)` with the same bound (`SchwartzMap.exists_strongDual_apply_toLp_eq`). They are
+not dense in `L^∞(μ)`. On bounded continuous functions, for any temperate measure `μ`
 positive on nonempty open sets, a bounded continuous function lies in the `L^∞(μ)` closure of the
 Schwartz functions exactly when it vanishes at infinity along `cocompact E`
 (`BoundedContinuousFunction.toLpTop_mem_closure_range_schwartz_toLp_top_iff`): uniform limits of
