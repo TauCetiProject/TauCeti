@@ -62,9 +62,8 @@ right-cancellable polynomial matrix. -/
 theorem isRightRegular_map_C_add_diagonal_X [IsLeftCancelAdd R] [DecidableEq n]
     (A : Matrix n n R) :
     IsRightRegular (A.map C + diagonal (fun _ ↦ (X : R[X]))) := by
-  have h1 : IsRightRegular (1 : Matrix n n R) := fun _ _ h ↦ by simpa only [mul_one] using h
-  have h := isRightRegular_map_C_add_X_smul A 1 h1
-  have hc : (1 : Matrix n n R).map (C : R →+* R[X]) = 1 := (C.mapMatrix).map_one
+  have h := isRightRegular_map_C_add_X_smul A 1 isRegular_one.right
+  have hc : (1 : Matrix n n R).map (C : R → R[X]) = 1 := Matrix.map_one _ C_0 C_1
   simpa only [hc, smul_one_eq_diagonal, smul_eq_mul, mul_one] using h
 
 end Matrix
