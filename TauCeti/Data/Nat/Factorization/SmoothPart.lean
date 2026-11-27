@@ -78,6 +78,15 @@ theorem smoothPart_mul {a b : ℕ} (ha : a ≠ 0) (hb : b ≠ 0) (k : ℕ) :
   rw [smoothPart, List.filter_eq_self.mpr, prod_primeFactorsList hm.1]
   simpa using hm.2
 
+/-- A smooth number divides the smooth part of a nonzero number exactly when it divides
+the original number. -/
+@[simp] theorem dvd_smoothPart_iff {a m k : ℕ} (hm : m ≠ 0) (ha : a ∈ smoothNumbers k) :
+    a ∣ m.smoothPart k ↔ a ∣ m := by
+  refine ⟨fun h ↦ h.trans (smoothPart_dvd m k), ?_⟩
+  rintro ⟨b, rfl⟩
+  rw [smoothPart_mul ha.1 (right_ne_zero_of_mul hm) k, smoothPart_eq_self_iff.mpr ha]
+  exact dvd_mul_right ..
+
 /-- The smooth part is trivial precisely when all prime factors are at least the cutoff. -/
 theorem smoothPart_eq_one_iff {m k : ℕ} :
     m.smoothPart k = 1 ↔ ∀ p ∈ m.primeFactors, k ≤ p := by
