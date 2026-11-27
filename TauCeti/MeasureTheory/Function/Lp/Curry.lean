@@ -160,6 +160,7 @@ private theorem indicator_section (A : Set (α × β)) (c : E) (x : α) :
   funext fun _ ↦ (indicator_comp_right (Prod.mk x)).symm
 
 /-- The section classes of `(x, y) ↦ 𝟙_s(x) g(y)` are `𝟙_s g`. -/
+@[simp]
 theorem curryLp_indicator_prod_univ {s : Set α} (g : Lp E p ν) :
     curryLp p ν ((s ×ˢ univ).indicator fun z ↦ g z.2) = s.indicator fun _ ↦ g := by
   ext1 x
