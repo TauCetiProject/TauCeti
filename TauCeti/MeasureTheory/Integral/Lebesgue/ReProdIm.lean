@@ -41,7 +41,7 @@ periodic functions on half-strips.
   `TauCeti.tendsto_setLIntegral_of_eventually_subset` transported along `ℂ ≃ ℝ × ℝ`. For the
   energy density of a map on a cylindrical end, it says that a finite-energy end carries less and
   less energy far out.
-* **Tonelli on a band.** If `∫_s g(x + iy) dx ≤ C` for every `y ∈ t`, then the integral of `g`
+* **Tonelli on a band.** If `∫_s f(x + iy) dx ≤ C` for every `y ∈ t`, then the integral of `f`
   over `s ×ℂ t` is at most `volume t * C` (`TauCeti.setLIntegral_reProdIm_le`). No measurability
   is assumed.
 -/
@@ -185,8 +185,8 @@ theorem tendsto_setLIntegral_reProdIm_Ioi_atTop {t : Set ℝ} {a : ℝ}
   exact ⟨⟨(le_max_left _ _).trans_lt h₁, hp.2⟩,
     ((le_max_right _ _).trans h₁.le).trans (le_abs_self _)⟩
 
-/-- **Tonelli on a band.** If `∫_s g(x + iy) dx ≤ C` for every `y ∈ t`, then the integral of `g`
-over the band `s ×ℂ t` is at most `volume t * C`. No measurability of `g`, `s` or `t` is
+/-- **Tonelli on a band.** If `∫_s f(x + iy) dx ≤ C` for every `y ∈ t`, then the integral of `f`
+over the band `s ×ℂ t` is at most `volume t * C`. No measurability of `f`, `s` or `t` is
 assumed. -/
 theorem setLIntegral_reProdIm_le {s t : Set ℝ} {C : ℝ≥0∞}
     (hC : ∀ y ∈ t, ∫⁻ x in s, f (x + y * I) ≤ C) :
