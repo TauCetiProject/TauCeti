@@ -10,6 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Topology.MetricSpace.Pseudo.Lemmas
+import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 import TauCeti.Analysis.Normed.Operator.Compact.Spectrum
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -32,7 +33,10 @@ eigenvalues away from `0` transfer to the shifts:
   `0` (`ContinuousLinearMap.isInvertible_iff_injective_of_isInvertible_smul_sub`);
 * only finitely many shifts in a bounded set fail to be invertible
   (`ContinuousLinearMap.finite_inter_setOf_not_isInvertible_smul_sub`), so near every scalar all
-  other shifts are invertible (`ContinuousLinearMap.eventually_isInvertible_smul_sub`).
+  other shifts are invertible (`ContinuousLinearMap.eventually_isInvertible_smul_sub`);
+* every shift has a finite-dimensional kernel, an eigenspace of finite multiplicity
+  (`ContinuousLinearMap.finiteDimensional_ker_smul_sub`), since `(c₀ • ι - A)⁻¹ ∘ (c • ι - A)` is
+  the compact perturbation `1 - (c₀ - c) • K` of the identity.
 
 Neither injectivity of `ι` nor completeness of `H` is assumed. When `ι` is injective and `H` is
 complete these are statements about the partial operator
@@ -61,6 +65,8 @@ such as the spectral flow of the bounded transforms `c A (c ι - A)⁻¹`, are g
 * `ContinuousLinearMap.finite_inter_setOf_not_isInvertible_smul_sub`: the non-invertible shifts
   in a bounded set are finitely many.
 * `ContinuousLinearMap.eventually_isInvertible_smul_sub`: the non-invertible shifts are isolated.
+* `ContinuousLinearMap.finiteDimensional_ker_smul_sub`: every shift has a finite-dimensional
+  kernel.
 * `ContinuousLinearMap.finite_inter_spectrum_domainOperator`: the spectrum of the partial operator
   meets every bounded set in a finite set.
 * `ContinuousLinearMap.exists_mem_Ioo_isInvertible_ofReal_smul_sub`: every open interval contains
@@ -148,6 +154,22 @@ theorem isInvertible_iff_injective_of_isInvertible_smul_sub [CompleteSpace D]
   have h := (isInvertible_smul_sub_iff_injective (c := 0) hcpt h₀).2 fun x y hxy ↦
     hinj (by simpa using hxy)
   rwa [zero_smul, zero_sub, isInvertible_neg_iff] at h
+
+/-- **Finite multiplicity.** If `ι` is compact and one shift `c₀ • ι - A` is invertible, every
+shift `c • ι - A` has a finite-dimensional kernel: `(c₀ • ι - A)⁻¹ ∘ (c • ι - A)` is the compact
+perturbation `1 - (c₀ - c) • (c₀ • ι - A)⁻¹ ∘ ι` of the identity. -/
+theorem finiteDimensional_ker_smul_sub [CompleteSpace 𝕜] (hcpt : IsCompactOperator ι)
+    (h₀ : (c₀ • ι - A).IsInvertible) (c : 𝕜) : FiniteDimensional 𝕜 (c • ι - A).ker := by
+  have hK : IsCompactOperator ((c₀ - c) • ((c₀ • ι - A).inverse ∘L ι)) :=
+    (hcpt.clm_comp _).smul _
+  have := hK.finiteDimensional_ker_one_sub
+  have hle : (c • ι - A).ker ≤
+      LinearMap.ker ((1 - (c₀ - c) • ((c₀ • ι - A).inverse ∘L ι) : D →L[𝕜] D) : D →ₗ[𝕜] D) := by
+    intro x (hx : (c • ι - A) x = 0)
+    rw [LinearMap.mem_ker, ← map_zero (c₀ • ι - A).inverse, ← hx, smul_sub_eq_smul_sub_sub c₀ c,
+      sub_apply, map_sub, h₀.inverse_apply_self]
+    simp
+  exact Submodule.finiteDimensional_of_le hle
 
 /-- If a shift `c • ι - A` is injective, `ι` is injective on the kernel of `A`: a vector killed by
 both `A` and `ι` is killed by `c • ι - A`. -/
