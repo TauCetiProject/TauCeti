@@ -9,6 +9,8 @@ public import Mathlib.Topology.LocallyConstant.Basic
 public import TauCeti.Geometry.Manifold.SymmetricPower.BasepointIntersection.Number
 import TauCeti.Analysis.Analytic.ZeroCount
 import TauCeti.Analysis.Complex.Conformal.Hurwitz
+import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.MetricSpace.SeparatedBalls
 import TauCeti.Topology.Sym.Cons
 import TauCeti.Topology.UniformSpace.HeineCantor
 
@@ -196,41 +198,20 @@ private theorem exists_pos_forall_closedBall_basepointDivisor {f : ℂ → Sym �
     hf.continuousAt (mem_of_superset (hUo.mem_nhds ht) subset_closure)
   have hS : S.Finite := finite_basepointDivisor_intersections_of_frontier z hUo hU hUc hf
     (fun w hw _ => ha w hw) hfr
-  have hrad : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ S, closedBall w r ⊆
-      U ∩ f ⁻¹' (symChartAt (K := ℂ) (f w)).source ∩ {t | t ≠ w → f t ∉ Sym.basepointDivisor z} ∧
-        ∀ w' ∈ S, w ≠ w' → r < dist w w' / 2 := by
-    refine hS.eventually_all.2 fun w hw => (eventually_closedBall_subset ?_).and ?_
-    · have hiso := eventually_nhdsWithin_iff.1 <|
-        eventually_notMem_basepointDivisor_of_isPreconnected z hU hfc (fun w hw _ => ha w hw)
-          (exists_mem_notMem_basepointDivisor_of_frontier ⟨w, hw.1⟩ hUc hf hfr) hw.1 hw.2
-      exact inter_mem (inter_mem (hUo.mem_nhds hw.1) ((hfc w hw.1).preimage_mem_nhds
-        ((symChartAt (K := ℂ) (f w)).open_source.mem_nhds (mem_symChartAt_source _)))) hiso
-    · refine hS.eventually_all.2 fun w' _ => ?_
-      rcases eq_or_ne w w' with rfl | hww'
-      · exact Eventually.of_forall fun _ h => absurd rfl h
-      · filter_upwards [eventually_lt_nhds (half_pos (dist_pos.2 hww'))] with r hr _ using hr
-  obtain ⟨r, hrS, hr⟩ :=
-    ((hrad.filter_mono (nhdsWithin_le_nhds (s := Ioi 0))).and self_mem_nhdsWithin).exists
+  have hnhds : ∀ w ∈ S, U ∩ f ⁻¹' (symChartAt (K := ℂ) (f w)).source ∩
+      {t | t ≠ w → f t ∉ Sym.basepointDivisor z} ∈ 𝓝 w := fun w hw => by
+    have hiso := eventually_nhdsWithin_iff.1 <|
+      eventually_notMem_basepointDivisor_of_isPreconnected z hU hfc (fun w hw _ => ha w hw)
+        (exists_mem_notMem_basepointDivisor_of_frontier ⟨w, hw.1⟩ hUc hf hfr) hw.1 hw.2
+    exact inter_mem (inter_mem (hUo.mem_nhds hw.1) ((hfc w hw.1).preimage_mem_nhds
+      ((symChartAt (K := ℂ) (f w)).open_source.mem_nhds (mem_symChartAt_source _)))) hiso
+  obtain ⟨r, hr, hrS, hsep⟩ := (eventually_mem_nhdsWithin.and
+    (nhdsWithin_le_nhds (eventually_closedBall_subset_and_lt_dist hS hnhds))).exists
+    (f := 𝓝[>] (0 : ℝ))
   refine ⟨r, hr, fun w hw w' hw' hww' => ball_disjoint_ball ?_, fun w hw t ht => ?_⟩
-  · linarith [(hrS w hw).2 w' hw' hww']
-  · obtain ⟨⟨htU, hts⟩, hiso⟩ := (hrS w hw).1 ht
+  · linarith [hsep w hw w' hw' hww']
+  · obtain ⟨⟨htU, hts⟩, hiso⟩ := hrS w hw ht
     exact ⟨htU, hts, hiso⟩
-
-omit [ChartedSpace ℂ α] [IsManifold 𝓘(ℂ) 1 α] in
-/-- If a family `F` is jointly continuous within `P × closure U` at every point of `{p₀} × K`, for
-a compact `K ⊆ closure U` on which `F p₀` misses the basepoint divisor, then `F p` misses the
-divisor on `K` for every `p` near `p₀`. -/
-private theorem eventually_forall_notMem_basepointDivisor {U K : Set ℂ} (hK : IsCompact K)
-    (hKU : K ⊆ closure U)
-    (hF : ∀ t ∈ K, ContinuousWithinAt (uncurry F) (univ ×ˢ closure U) (p₀, t))
-    (hFK : ∀ t ∈ K, F p₀ t ∉ Sym.basepointDivisor z) :
-    ∀ᶠ p in 𝓝 p₀, ∀ t ∈ K, F p t ∉ Sym.basepointDivisor z := by
-  have h := hK.eventually_forall_of_forall_eventually (x₀ := p₀)
-    (P := fun p t => t ∈ closure U → F p t ∉ Sym.basepointDivisor z) fun t ht =>
-      (eventually_nhdsWithin_iff.1 ((hF t ht).preimage_mem_nhdsWithin
-        ((Sym.isClosed_basepointDivisor z).isOpen_compl.mem_nhds (hFK t ht)))).mono
-        fun y hy hy₂ => hy ⟨mem_univ _, hy₂⟩
-  exact h.mono fun p hp t ht => hp t ht (hKU ht)
 
 /-- **Stability of the basepoint intersection number.** Let `U ⊆ ℂ` be a bounded connected open
 set and `F` a family of curves in `Sym α n` that is jointly continuous within
@@ -273,8 +254,9 @@ theorem eventually_basepointIntersectionNumber_eq {U : Set ℂ} (hUo : IsOpen U)
   -- off the discs, `f` misses `V` on a compact set, and so does `F p` for `p` near `p₀`
   set K := closure U \ ⋃ w ∈ S, ball w r
   have hoff : ∀ᶠ p in 𝓝 p₀, ∀ t ∈ K, F p t ∉ V := by
-    refine eventually_forall_notMem_basepointDivisor
-      (hUc.diff (isOpen_biUnion fun _ _ => isOpen_ball)) sdiff_subset (fun t ht => hF t ht.1) ?_
+    refine IsCompact.eventually_forall_mem_of_continuousWithinAt
+      (hUc.diff (isOpen_biUnion fun _ _ => isOpen_ball)) sdiff_subset
+      (Sym.isClosed_basepointDivisor z).isOpen_compl (fun t ht => hF t ht.1) ?_
     rintro t ⟨htU, htB⟩ htV
     by_cases ht : t ∈ U
     · exact htB (mem_biUnion ⟨ht, htV⟩ (mem_ball_self hr))
