@@ -8,12 +8,12 @@ module
 public import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Specific limits for real sequences
+# Specific limits for sequences
 
 This module extends `Mathlib.Analysis.SpecificLimits.Basic` with asymptotic divergence for real
 sequences under eventual multiplicative step growth, with the comparison of two geometric
 sequences of different ratios, and with the summability over `ℤ` of a geometric sequence cut off
-below.
+below. It also gives convergence under a reciprocal distance bound.
 
 ## Main results
 
@@ -25,13 +25,27 @@ below.
   `y ^ n ≤ x ^ n + z ^ n`.
 * `TauCeti.summable_ite_le_zpow`: for `0 < ρ < 1`, `n ↦ ρ ^ n` on `n ≥ N` (and `0` below) is
   summable over `ℤ`.
+* `TauCeti.tendsto_of_dist_le_one_div_add_mul`: a reciprocal distance bound of the form
+  `1 / ((n + 1) * c)` implies convergence, using Mathlib's `squeeze_zero'` and
+  `tendsto_one_div_add_atTop_nhds_zero_nat`.
 -/
 
 public section
 
 open Filter
+open scoped Topology
 
 namespace TauCeti
+
+/-- A sequence whose distance to `a` is eventually bounded by `1 / ((n + 1) * c)`
+converges to `a`. -/
+theorem tendsto_of_dist_le_one_div_add_mul {X : Type*} [PseudoMetricSpace X] {f : ℕ → X}
+    {a : X} {c : ℝ} (h : ∀ᶠ n in atTop, dist (f n) a ≤ 1 / ((n + 1 : ℝ) * c)) :
+    Tendsto f atTop (𝓝 a) := by
+  apply tendsto_iff_dist_tendsto_zero.mpr
+  refine squeeze_zero' (Eventually.of_forall fun _ ↦ dist_nonneg) h ?_
+  simpa only [div_mul_eq_div_div, zero_div] using
+    (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).div_const c
 
 /-- If `1 < c`, `c * v m ≤ v (m + 1)` eventually, and `0 < v m` frequently, then `v n → +∞` as
 `n → ∞`. -/

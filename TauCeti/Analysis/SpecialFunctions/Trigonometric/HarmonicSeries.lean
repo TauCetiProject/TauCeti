@@ -7,13 +7,15 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Complex.Log.UnitCircle
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecificLimits.Basic
 
 /-!
 # Harmonic sine and cosine series
 
 On `(0, 2π)`, `Real.tendsto_sum_Icc_cos_mul_div` gives the cosine series limit
 `-log (2 * sin (θ / 2))`. On the same interval, `Real.tendsto_sum_Icc_sin_mul_div` gives the
-sawtooth series limit `(π - θ) / 2`. Both limits follow from the remainder estimates below.
+sawtooth series limit `(π - θ) / 2`. Both limits follow from the remainder estimates below
+by `TauCeti.tendsto_of_dist_le_one_div_add_mul`.
 
 The remainder estimates `Real.abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le` and
 `Real.abs_neg_log_two_mul_sin_half_sub_sum_Icc_cos_mul_div_le` follow from the joint bound
@@ -94,28 +96,21 @@ theorem abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le {θ : ℝ}
     Complex.ofReal_re, zero_add, Complex.im_sum, Complex.div_natCast_im,
     Complex.exp_ofReal_mul_I_im]
 
-/-- An absolute error bounded by `1 / ((N + 1) * c)` gives convergence to the target. -/
-private theorem tendsto_of_abs_sub_le {f : ℕ → ℝ} {a c : ℝ}
-    (h : ∀ N, |a - f N| ≤ 1 / ((N + 1 : ℝ) * c)) : Tendsto f atTop (𝓝 a) := by
-  rw [tendsto_iff_dist_tendsto_zero]
-  refine squeeze_zero (g := fun N : ℕ ↦ 1 / ((N + 1 : ℝ) * c))
-    (fun _ ↦ dist_nonneg) (fun N ↦ ?_) ?_
-  · rw [dist_comm, Real.dist_eq]
-    exact h N
-  · simpa only [div_mul_eq_div_div, zero_div] using
-      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).div_const c
-
 /-- For `0 < θ < 2π`, the ordered partial sums of `∑ cos (j * θ) / j` converge to
 `-log (2 * sin (θ / 2))`. -/
 theorem tendsto_sum_Icc_cos_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
     Tendsto (fun N : ℕ ↦ ∑ j ∈ Icc 1 N, cos (j * θ) / j) atTop
-      (𝓝 (-log (2 * sin (θ / 2)))) :=
-  tendsto_of_abs_sub_le (abs_neg_log_two_mul_sin_half_sub_sum_Icc_cos_mul_div_le hθ)
+      (𝓝 (-log (2 * sin (θ / 2)))) := by
+  refine TauCeti.tendsto_of_dist_le_one_div_add_mul (c := sin (θ / 2)) (.of_forall fun N ↦ ?_)
+  rw [dist_comm, Real.dist_eq]
+  exact abs_neg_log_two_mul_sin_half_sub_sum_Icc_cos_mul_div_le hθ N
 
 /-- **The sawtooth series.** For `0 < θ < 2π`, the ordered partial sums of `∑ sin (n θ) / n`
 tend to `(π - θ) / 2`. -/
 theorem tendsto_sum_Icc_sin_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
-    Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, sin (n * θ) / n) atTop (𝓝 ((π - θ) / 2)) :=
-  tendsto_of_abs_sub_le (abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le hθ)
+    Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, sin (n * θ) / n) atTop (𝓝 ((π - θ) / 2)) := by
+  refine TauCeti.tendsto_of_dist_le_one_div_add_mul (c := sin (θ / 2)) (.of_forall fun N ↦ ?_)
+  rw [dist_comm, Real.dist_eq]
+  exact abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le hθ N
 
 end Real
