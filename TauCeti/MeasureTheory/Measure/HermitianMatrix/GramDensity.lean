@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+public import TauCeti.Analysis.Matrix.HermitianGram
 public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Corner
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -40,7 +41,6 @@ cancels the Jacobian `r ^ (n - 1)` of `w ↦ √r w`; this leaves the factor
 ## Main definitions
 
 * `TauCeti.unitaryGroupVolume n`: the number `vol U(n)`.
-* `Matrix.hermitianGram Y`: the Gram matrix `Yᴴ Y`, as a Hermitian matrix.
 
 ## Main results
 
@@ -98,33 +98,6 @@ theorem unitaryGroupVolume_pos (n : ℕ) : 0 < unitaryGroupVolume n :=
 
 end TauCeti
 
-namespace Matrix
-
-variable {l m : Type*} [Fintype l]
-
-/-- The Gram matrix `Yᴴ Y` of the columns of a complex matrix `Y`, as a Hermitian matrix. -/
-def hermitianGram (Y : Matrix l m ℂ) : selfAdjoint.submodule ℝ (Matrix m m ℂ) :=
-  ⟨Yᴴ * Y, (isHermitian_conjTranspose_mul_self Y).isSelfAdjoint⟩
-
-/-- The underlying matrix of `hermitianGram Y` is `Yᴴ * Y`. -/
-@[simp] theorem coe_hermitianGram (Y : Matrix l m ℂ) :
-    (hermitianGram Y : Matrix m m ℂ) = Yᴴ * Y := (rfl)
-
-/-- The Gram map is continuous. -/
-@[fun_prop] theorem continuous_hermitianGram :
-    Continuous (hermitianGram : Matrix l m ℂ → _) :=
-  (Continuous.matrix_mul (by fun_prop) continuous_id).subtype_mk _
-
-/-- The Gram map is measurable: each entry of `Yᴴ Y` is a finite sum of products of entries of
-`Y`. -/
-@[fun_prop] theorem measurable_hermitianGram :
-    Measurable (hermitianGram : Matrix l m ℂ → _) := by
-  refine Measurable.subtype_mk (.of_eval fun a ↦ .of_eval fun b ↦ ?_)
-  simp only [Matrix.mul_apply, Matrix.conjTranspose_apply]
-  exact Finset.measurable_sum _ fun i _ ↦ by fun_prop
-
-end Matrix
-
 namespace TauCeti
 
 open Matrix
@@ -177,10 +150,9 @@ private theorem conjTranspose_snocRow_mul_snocRow (X : Matrix (Fin k) (Fin k) �
 private theorem hermitianGram_mul_snocRow {u : Matrix (Fin (k + 1)) (Fin (k + 1)) ℂ}
     (hu : u ∈ unitaryGroup (Fin (k + 1)) ℂ) (X : Matrix (Fin k) (Fin k) ℂ) (w : Fin k → ℂ) :
     hermitianGram (u * snocRow X w) = hermitianGram X + outer w := by
-  refine Subtype.ext ?_
-  rw [coe_hermitianGram, conjTranspose_mul, Matrix.mul_assoc, ← Matrix.mul_assoc uᴴ,
-    ← star_eq_conjTranspose, mem_unitaryGroup_iff'.1 hu, Matrix.one_mul, Submodule.coe_add,
-    coe_hermitianGram, coe_outer, conjTranspose_snocRow_mul_snocRow]
+  refine (hermitianGram_unitary_mul hu _).trans (Subtype.ext ?_)
+  rw [Submodule.coe_add, coe_hermitianGram, coe_hermitianGram, coe_outer,
+    conjTranspose_snocRow_mul_snocRow]
 
 private theorem conjTranspose_mul_snocRow_mulVec {u : Matrix (Fin (k + 1)) (Fin (k + 1)) ℂ}
     (hu : u ∈ unitaryGroup (Fin (k + 1)) ℂ) (X : Matrix (Fin k) (Fin k) ℂ) (w : Fin k → ℂ)
