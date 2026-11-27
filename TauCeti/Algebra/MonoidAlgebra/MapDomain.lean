@@ -53,6 +53,9 @@ induced by a monoid homomorphism `F` restricts along `mapDomain φ` to `lift` of
 * `MonoidAlgebra.coeff_mul_mapDomainRingEquiv_inv_one`: for a commutative group `G`, the
   coefficient of the identity in `x * σ x` is the sum of the squares of the coefficients of `x`,
   where `σ` is the involution of `R[G]` induced by inversion.
+* `MonoidAlgebra.map_mapDomain`, `MonoidAlgebra.mapRingHom_mapDomain`,
+  `MonoidAlgebra.mapAlgHom_mapDomain` (and additive forms): coefficient maps commute with
+  pushing the index domain forward along an arbitrary function.
 -/
 
 public section
@@ -156,6 +159,36 @@ theorem lift_mapDomain {k A : Type*} [CommSemiring k] [Monoid M] [Monoid N] [Sem
   | zero => simp
   | add x y hx hy => rw [mapDomain_add, map_add, map_add, hx, hy]
   | single m r => simp [lift_single]
+
+/-- Mapping coefficients along an additive monoid homomorphism commutes with pushing the domain
+forward along an arbitrary function. -/
+@[to_additive (dont_translate := R S)
+/-- Mapping coefficients along an additive monoid homomorphism commutes with pushing the domain
+forward along an arbitrary function. -/]
+theorem map_mapDomain {S : Type*} [Semiring S] (g : R →+ S) (f : M → N)
+    (x : MonoidAlgebra R M) : map g (mapDomain f x) = mapDomain f (map g x) :=
+  ext <| (Finsupp.mapDomain_mapRange f x.coeff g g.map_zero g.map_add).symm
+
+/-- Mapping coefficients along a ring homomorphism commutes with pushing the domain forward along
+an arbitrary function. -/
+@[to_additive (dont_translate := R S)
+/-- Mapping coefficients along a ring homomorphism commutes with pushing the domain forward along
+an arbitrary function. -/]
+theorem mapRingHom_mapDomain {S : Type*} [Semiring S] [Monoid M] [Monoid N] (g : R →+* S)
+    (f : M → N) (x : MonoidAlgebra R M) :
+    mapRingHom N g (mapDomain f x) = mapDomain f (mapRingHom M g x) :=
+  map_mapDomain (g : R →+ S) f x
+
+/-- Mapping coefficients along an algebra homomorphism commutes with pushing the domain forward
+along an arbitrary function. -/
+@[to_additive (dont_translate := k A B)
+/-- Mapping coefficients along an algebra homomorphism commutes with pushing the domain forward
+along an arbitrary function. -/]
+theorem mapAlgHom_mapDomain {k A B : Type*} [CommSemiring k] [Semiring A] [Semiring B]
+    [Algebra k A] [Algebra k B] [Monoid M] [Monoid N] (φ : A →ₐ[k] B) (f : M → N)
+    (x : MonoidAlgebra A M) :
+    mapAlgHom N φ (mapDomain f x) = mapDomain f (mapAlgHom M φ x) :=
+  map_mapDomain (φ : A →+ B) f x
 
 /-- The ring isomorphism induced by an isomorphism of monoids is `mapDomain` along it. -/
 @[to_additive (dont_translate := R)
