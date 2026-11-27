@@ -98,9 +98,8 @@ theorem isCalibration_volumeForm_kahlerTwoForm (hω : (J.kahlerTwoForm hJ).IsClo
       ⟪J.almostComplexStructureAt x u, J.almostComplexStructureAt x w⟫ = ⟪u, w⟫ := by
     simpa only [almostComplexStructureAt_apply] using hJ x u w
   have hvo : Orthonormal ℝ v := orthonormal_iff_ite.2 fun i i' ↦ by
-    rw [← hv i i', ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
-    -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
-    rfl
+    rw [← hv i i', ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner,
+      Bundle.RiemannianMetric.inner_riemannianBundle]
   rw [volumeForm_kahlerTwoForm_apply hJ, ← Real.norm_eq_abs]
   exact (ContinuousAlternatingMap.opNorm_le_iff_le_orthonormal zero_le_one).1
     (AlmostComplexStructure.norm_kahlerPowerForm_le hJx r) v hvo
@@ -139,8 +138,8 @@ theorem isCalibratedImmersion_volumeForm_kahlerTwoForm (hr : finrank ℝ E' = 2 
           (hfj.isPseudoholomorphicAt x).mfderiv_apply_commute u
   have horth : Orthonormal ℝ b := by
     refine (ContMDiffRiemannianMetric.orthonormal_pullback_iff _ f hf hinj x b).2 fun i i' ↦ ?_
-    rw [ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner]
-    -- `RiemannianBundle` installs `RiemannianBundle.g.inner` as the fibre `Inner.inner`.
+    rw [ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner,
+      ← Bundle.RiemannianMetric.inner_riemannianBundle]
     exact orthonormal_iff_ite.1 hcal.orthonormal i i'
   refine eq_riemannianVolumeForm_of_apply_of_orthonormal _ x _ b
     (by rw [orientationAt_orientation, hb]) horth ?_
