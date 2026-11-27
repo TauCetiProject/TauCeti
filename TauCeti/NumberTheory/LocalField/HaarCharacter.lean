@@ -108,7 +108,7 @@ theorem continuous_indicator_integer {M : Type*} [TopologicalSpace M] [Zero M] [
   (Valuation.isClopen_integer (v := valuation K)).continuous_indicator continuous_const
 
 /-- The indicator `1_𝒪` of the ring of integers has compact support. -/
-theorem hasCompactSupport_indicator_integer {M : Type*} [TopologicalSpace M] [Zero M] [One M] :
+theorem hasCompactSupport_indicator_integer {M : Type*} [Zero M] [One M] :
     HasCompactSupport ((𝒪[K] : Set K).indicator (1 : K → M)) :=
   HasCompactSupport.intro (integerPositiveCompacts K).isCompact
     fun _ hx ↦ Set.indicator_of_notMem hx _
