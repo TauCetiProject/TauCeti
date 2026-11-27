@@ -528,6 +528,14 @@ theorem mem_iff_mfderiv_symm_apply_mem (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
   refine Iff.trans ?_ (hDD' x _).symm
   rw [h.mfderiv_apply_mfderiv_symm_apply hn x w]
 
+/-- If the differential of `h` carries `D` onto `D'`, then the inverse of the differential of `h`
+at `x` carries `D' (h x)` back into `D x`. -/
+theorem inverse_mfderiv_apply_mem (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (hDD' : ∀ x v, v ∈ D x ↔ mfderiv I J h x v ∈ D' (h x)) {x : M}
+    {w : TangentSpace J (h x)} (hw : w ∈ D' (h x)) :
+    (mfderiv I J h x).inverse w ∈ D x :=
+  (hDD' x _).2 <| by rwa [(h.isInvertible_mfderiv hn).self_apply_inverse]
+
 /-- If the differentials of `h` and `g` carry `D` onto `D'` and `D'` onto `D''`, then the
 differential of the composite carries `D` onto `D''`. -/
 theorem mem_iff_mfderiv_trans_apply_mem {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
