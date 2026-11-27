@@ -132,6 +132,7 @@ theorem weilTransform_sub {F G : ℝ → ℝ} {s : ℂ}
   ring
 
 /-- The transform commutes with real scalars, with no integrability hypothesis. -/
+@[simp]
 theorem weilTransform_const_smul (r : ℝ) (F : ℝ → ℝ) (s : ℂ) :
     weilTransform (r • F) s = r * weilTransform F s := by
   rw [weilTransform, weilTransform, ← integral_const_mul]
@@ -140,6 +141,7 @@ theorem weilTransform_const_smul (r : ℝ) (F : ℝ → ℝ) (s : ℂ) :
   ring
 
 /-- The transform commutes with negation, with no integrability hypothesis. -/
+@[simp]
 theorem weilTransform_neg (F : ℝ → ℝ) (s : ℂ) : weilTransform (-F) s = -weilTransform F s := by
   rw [weilTransform, weilTransform, ← integral_neg]
   congr 1 with x
