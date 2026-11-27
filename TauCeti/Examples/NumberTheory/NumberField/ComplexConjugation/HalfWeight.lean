@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.ComplexConjugation.AlgebraicClosure
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Embeddings
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Splitting
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 
 /-!
