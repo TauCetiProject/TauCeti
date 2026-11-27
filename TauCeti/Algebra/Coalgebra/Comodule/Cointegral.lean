@@ -32,6 +32,13 @@ open Comodule
 variable {R H : Type*} [CommSemiring R] [AddCommMonoid H] [One H] [Module R H] [Coalgebra R H]
 variable {I : H →ₗ[R] R} {M : Type*} [AddCommMonoid M] [Module R M] [Comodule R H M]
 
+/-- Contracting the second factor of the coproduct against a left cointegral gives a scalar
+multiple of the unit. -/
+theorem tensorComponent_comul (hI : IsLeftCointegral I) (a : H) :
+    LinearMap.tensorComponent I (Coalgebra.comul a) = I a • (1 : H) := by
+  simpa only [LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe]
+    using (isLeftCointegral_def I).mp hI a
+
 /-- Averaging a right coaction against a left cointegral gives a fixed vector, for any value
 of the integral on the unit. -/
 theorem coactComponent_mem_fixedSubcomodule (hI : IsLeftCointegral I) (m : M) :
@@ -41,8 +48,7 @@ theorem coactComponent_mem_fixedSubcomodule (hI : IsLeftCointegral I) (m : M) :
   | add x y hx hy => simp only [map_add, TensorProduct.add_tmul, hx, hy]
   | tmul x a =>
     simp only [LinearMap.lTensor_tmul, LinearMap.comp_apply, LinearMap.tensorComponent_tmul]
-    rw [LinearMap.tensorComponent_def, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      (isLeftCointegral_def I).mp hI a, TensorProduct.tmul_smul, TensorProduct.smul_tmul']
+    rw [hI.tensorComponent_comul, TensorProduct.tmul_smul, TensorProduct.smul_tmul']
 
 /-- The Reynolds projection of a comodule for a normalized left cointegral. -/
 theorem isProj_coactComponent (hI : IsLeftCointegral I) (h1 : I 1 = 1) (M : Type*)
