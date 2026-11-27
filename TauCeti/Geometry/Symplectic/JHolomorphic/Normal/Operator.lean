@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.NormalBundle
-import Mathlib.Geometry.Manifold.Notation
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.ComplexStructure
 
@@ -82,9 +81,9 @@ class of `L (du · a)` is `TauCeti.normalCauchyRiemannLinearization_add_fderiv_a
 * `TauCeti.SmoothEmbedding.isRealCauchyRiemannOperator_normalCauchyRiemannOperator`: the normal
   Cauchy–Riemann operator of a `C²` pseudoholomorphic embedding is a real Cauchy–Riemann operator
   on its complex normal bundle.
-* `TauCeti.IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt`: at a point where a
-  map is pseudoholomorphic, its coordinate expression solves the Cauchy–Riemann equation at the
-  chart centre.
+* `TauCeti.IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero`: at a point
+  where a map is pseudoholomorphic, its coordinate expression solves the Cauchy–Riemann equation at
+  the chart centre.
 
 ## References
 
@@ -118,7 +117,7 @@ variable {E V H H' M X : Type*}
 /-- At a point where `u` is pseudoholomorphic, its coordinate expression in the charts at `x` and
 at `u x` solves the Cauchy–Riemann equation at the chart centre, with the source structure frozen
 at its value at the chart centre. -/
-theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt
+theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero
     (hu : IsPseudoholomorphicAt j J u x) :
     cauchyRiemannOperator (j.inChart x (extChartAt I x x)) (J.inChart (u x))
       (writtenInExtChartAt I I' x u) (extChartAt I x x) = 0 := by
@@ -287,7 +286,7 @@ theorem isComplexAntilinear_normalChartLinearization {x : M}
       (f.normalChartLinearization hn j J ν x).toLinearMap := by
   have h := isComplexAntilinear_cauchyRiemannLinearization (f.normalChartLift hn ν x)
     (fun v ↦ by rw [j.inChart_extChartAt_self]; exact j.apply_apply x v)
-    (eventually_inChart_inChart x) hfx.cauchyRiemannOperator_writtenInExtChartAt
+    (eventually_inChart_inChart x) hfx.cauchyRiemannOperator_writtenInExtChartAt_eq_zero
   rw [writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)] at h
   -- Read `j x` and `J (f x)` as the structures in the charts at their own centres.
   rw [← j.inChart_extChartAt_self, ← J.inChart_extChartAt_self]
