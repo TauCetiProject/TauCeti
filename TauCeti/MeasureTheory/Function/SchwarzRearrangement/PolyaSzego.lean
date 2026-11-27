@@ -18,6 +18,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.FDeriv.NormComparison
 import TauCeti.Analysis.Convex.Monotone
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.MeasureTheory.Function.Coarea.Critical
 import TauCeti.MeasureTheory.Function.Monotone
 import TauCeti.MeasureTheory.Integral.ReciprocalWeight
@@ -81,6 +82,17 @@ transfers the inequality from `volume` to any additive Haar measure `μ`.
 * `LipschitzWith.integrable_comp_norm_fderiv_toReal_schwarzRearrangement` and
   `LipschitzWith.integral_comp_norm_fderiv_toReal_schwarzRearrangement_le`: Bochner integrability
   and integral comparison for convex nondecreasing `Φ` with `Φ 0 = 0`.
+* `LipschitzWith.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le`,
+  `LipschitzWith.integrable_comp_norm_fderiv_toReal_schwarzRearrangement_norm`, and
+  `LipschitzWith.integral_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le`: signed variants
+  for `‖u ·‖` in extended, integrability, and Bochner-integral form.
+* `LipschitzWith.lintegral_norm_fderiv_toReal_schwarzRearrangement_rpow_le`,
+  `LipschitzWith.integrable_norm_fderiv_toReal_schwarzRearrangement_rpow`,
+  `LipschitzWith.integral_norm_fderiv_toReal_schwarzRearrangement_rpow_le`,
+  `LipschitzWith.lintegral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le`,
+  `LipschitzWith.integrable_norm_fderiv_toReal_schwarzRearrangement_norm_rpow`, and
+  `LipschitzWith.integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le`: `Lᵖ` (`1 ≤ p`)
+  specializations for both the positive part and `‖u ·‖`.
 
 ## References
 
@@ -411,9 +423,7 @@ theorem lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_norm_le
     ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ
         (fun z ↦ (schwarzRearrangement μ (fun y ↦ ENNReal.ofReal ‖u y‖) z).toReal) x‖) ∂μ ≤
       ∫⁻ x, ENNReal.ofReal (Φ ‖fderiv ℝ u x‖) ∂μ := by
-  have hu_norm : LipschitzWith K (fun x ↦ ‖u x‖) := by
-    simpa only [one_mul, Function.comp_def] using
-      (lipschitzWith_one_norm : LipschitzWith 1 (norm : ℝ → ℝ)).comp hu
+  have hu_norm : LipschitzWith K (fun x ↦ ‖u x‖) := hu.norm_comp
   refine (hu_norm.lintegral_ofReal_comp_norm_fderiv_toReal_schwarzRearrangement_le μ hΦ
     hΦ0).trans (lintegral_mono_ae ?_)
   filter_upwards [hu.ae_differentiableAt (μ := μ)] with x hx

@@ -376,7 +376,9 @@ private theorem antitoneOn_tail_rpow_add_linear {n : ℕ} (hn : 2 < n) {f : ℝ 
     have hrpow_split : (r ^ (n - 1)) ^ n * (f r ^ pₙ) ^ (n - 1) ≤
         (R₀ * (r ^ (n - 1) * f r ^ pₙ)) ^ (n - 1) := by
       have hmul_idx : (n - 1) * n = (n - 1) + (n - 1) * (n - 1) := by
-        cases n with | zero => omega | succ m => simp; ring
+        obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
+        simp only [Nat.add_sub_cancel]
+        ring
       rw [mul_pow, mul_pow, ← mul_assoc, ← pow_mul, hmul_idx, pow_add, pow_mul]
       exact mul_le_mul_of_nonneg_right
         (mul_le_mul_of_nonneg_right (pow_le_pow_left₀ hr'.1.le hr.2.le _) (by positivity))

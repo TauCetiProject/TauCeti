@@ -17,7 +17,6 @@ import Mathlib.Analysis.Calculus.FDeriv.Const
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
@@ -25,6 +24,7 @@ import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 import TauCeti.Analysis.RCLike.OperatorNorm
+import TauCeti.MeasureTheory.Constructions.HaarToSphere
 
 /-!
 # Integrability of the applied derivative and of derivative energy densities
@@ -223,18 +223,13 @@ theorem mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq
         ∫ r in Ioi (0 : ℝ), r ^ (Module.finrank ℝ E - 1) *
           (deriv (fun r : ℝ ↦ v (r • e₀)) r) ^ 2) ≤
       ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
-  have : Nontrivial E := ⟨⟨e₀, 0, fun h ↦ by simp [h] at he₀⟩⟩
   set n := Module.finrank ℝ E with hn_def
-  let φ : ℝ → ℝ := fun r ↦ ‖fderiv ℝ v (max r 0 • e₀)‖ ^ 2
   have hv_grad_int := integrable_norm_fderiv_sq_of_lipschitzWith (𝕜 := ℝ) (μ := μ) hv_lip hv_supp
-  have hv_grad_eq : (fun x : E ↦ ‖fderiv ℝ v x‖ ^ 2) = fun x ↦ φ ‖x‖ := funext fun x ↦ by
-    have hnorm : ‖x‖ = ‖‖x‖ • e₀‖ := by rw [norm_smul, Real.norm_eq_abs, abs_norm, he₀, mul_one]
-    simp only [φ, max_eq_left (norm_nonneg x), norm_fderiv_eq_of_norm_eq hv_rad hnorm]
+  have hgrad_rad : ∀ x y : E, ‖x‖ = ‖y‖ → ‖fderiv ℝ v x‖ ^ 2 = ‖fderiv ℝ v y‖ ^ 2 :=
+    fun x y hxy ↦ by rw [norm_fderiv_eq_of_norm_eq hv_rad hxy]
   have hφ_int : IntegrableOn (fun r ↦ r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) (Ioi 0) := by
-    rw [hv_grad_eq] at hv_grad_int
-    exact ((integrable_fun_norm_addHaar μ (f := φ)).mp hv_grad_int).congr_fun
-      (fun r (hr : 0 < r) ↦ by simp [φ, max_eq_left hr.le, smul_eq_mul, ← hn_def])
-      measurableSet_Ioi
+    simpa only [smul_eq_mul, ← hn_def] using
+      (integrable_iff_integrableOn_Ioi_of_radial μ hgrad_rad he₀).mp hv_grad_int
   have hpt : ∀ r ∈ Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤
       r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2 := fun r (hr : 0 < r) ↦
     mul_le_mul_of_nonneg_left (by
@@ -251,21 +246,14 @@ theorem mul_integral_pow_mul_deriv_comp_smul_sq_le_integral_norm_fderiv_sq
   have hrad_le : ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2 ≤
       ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2 :=
     setIntegral_mono_on hderiv_int hφ_int measurableSet_Ioi hpt
-  have hgrad_polar : (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
-      ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) =
-      ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := by
-    rw [hv_grad_eq, integral_fun_norm_addHaar μ φ]
-    simp only [nsmul_eq_mul, smul_eq_mul, ← hn_def]
-    congr 2
-    exact setIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ by
-      simp [φ, max_eq_left hr.le]
   calc (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
         ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * (deriv (fun s : ℝ ↦ v (s • e₀)) r) ^ 2)
       ≤ (n : ℝ) * (μ.real (Metric.ball (0 : E) 1) *
           ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * ‖fderiv ℝ v (r • e₀)‖ ^ 2) :=
         mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left hrad_le measureReal_nonneg)
           (Nat.cast_nonneg n)
-    _ = ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ := hgrad_polar
+    _ = ∫ x, ‖fderiv ℝ v x‖ ^ 2 ∂μ :=
+        (integral_eq_mul_integral_Ioi_of_radial μ hgrad_rad he₀).symm
 
 end Radial
 

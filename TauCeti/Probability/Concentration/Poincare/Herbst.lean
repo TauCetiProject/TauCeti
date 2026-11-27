@@ -9,6 +9,7 @@ public import TauCeti.Probability.Concentration.Poincare.LogSobolev
 public import Mathlib.Probability.Moments.SubGaussian
 import Mathlib.Probability.Moments.MGFAnalytic
 import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Bochner.Fatou
 import TauCeti.Probability.Concentration.SubgaussianTail
@@ -266,7 +267,7 @@ theorem LogSobolevInequality.memLp_of_lipschitzWith {F : Type*} [SeminormedAddGr
     MemLp g p μ := by
   have hnorm : MemLp (fun x ↦ ‖g x‖) p μ :=
     MemLp.ae_eq (.of_forall fun x ↦ sub_add_cancel (‖g x‖) (∫ y, ‖g y‖ ∂μ)) <|
-      ((h.hasSubgaussianMGF_of_lipschitzWith (lipschitzWith_one_norm.comp hg)).memLp p).add
+      ((h.hasSubgaussianMGF_of_lipschitzWith hg.norm_comp).memLp p).add
         (memLp_const (∫ y, ‖g y‖ ∂μ))
   exact hnorm.of_le_eNorm hg.continuous.aestronglyMeasurable
     (.of_forall fun x ↦ by simp [eNorm_le_iff_norm_le])

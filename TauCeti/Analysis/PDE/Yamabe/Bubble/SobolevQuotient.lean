@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Energy
 public import TauCeti.Analysis.PDE.Yamabe.SphereConstant
-import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import TauCeti.MeasureTheory.Constructions.HaarToSphere
 
 /-!
 # The Sobolev quotient of the Yamabe bubbles
@@ -83,12 +83,15 @@ theorem mul_integral_bubbleRadialWeight_eq_roundSphereVolume (hn₀ : 0 < finran
         ∫ s in Ioi (0 : ℝ), bubbleRadialWeight (finrank ℝ E) s) =
       roundSphereVolume (finrank ℝ E) := by
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) hn₀
+  obtain ⟨e₀, he₀⟩ := exists_norm_eq (E := E) zero_le_one
   have h := integral_bubble_rpow_criticalExponent_eq_roundSphereVolume (E := E) hn₀ hn one_pos 0
-  simp_rw [bubble_rpow_criticalExponent hn one_pos, sub_zero] at h
-  rw [integral_fun_norm_addHaar volume (fun s ↦ (2 * 1 / (1 ^ 2 + s ^ 2)) ^ finrank ℝ E),
-    setIntegral_congr_fun (g := bubbleRadialWeight (finrank ℝ E)) measurableSet_Ioi fun s _ ↦ by
-      simp [bubbleRadialWeight_def, smul_eq_mul]] at h
-  simpa only [nsmul_eq_mul, smul_eq_mul, mul_assoc] using h
+  have hrad : ∀ x y : E, ‖x‖ = ‖y‖ →
+      bubble 1 (0 : E) x ^ criticalExponent (finrank ℝ E) =
+        bubble 1 (0 : E) y ^ criticalExponent (finrank ℝ E) := fun x y hxy ↦ by
+    simp only [bubble_rpow_criticalExponent hn one_pos, sub_zero, hxy]
+  rw [integral_eq_mul_integral_Ioi_of_radial volume hrad he₀] at h
+  simpa only [bubble_rpow_criticalExponent hn one_pos, sub_zero, norm_smul, Real.norm_eq_abs, he₀,
+    mul_one, sq_abs, one_pow, ← bubbleRadialWeight_def] using h
 
 /-- **The energy of a bubble**: in dimension `n > 2`, for Lebesgue measure,
 `aₙ ∫ ‖dU_{t,b}‖² = n (n - 1) |Sⁿ|`. -/

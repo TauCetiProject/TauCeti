@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import Mathlib.Analysis.Calculus.Deriv.Abs
 import Mathlib.Analysis.Normed.Lp.SmoothApprox
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
@@ -179,8 +180,8 @@ theorem exists_value_gradient_ae_eq_abs_sub (a b t : ℝ) :
     ext
     simp
   have hL : LipschitzWith 1 (fun x : ℝ ↦ |x - t|) := by
-    simpa only [Function.comp_def, Real.norm_eq_abs, one_mul, sub_eq_add_neg] using
-      (lipschitzWith_one_norm (E := ℝ)).comp (isometry_add_right (-t)).lipschitzWith
+    simpa only [Real.norm_eq_abs, sub_eq_add_neg] using
+      (isometry_add_right (-t)).lipschitzWith.norm_comp
   have hweak := LocallyLipschitzOn.hasWeakFDerivOn hL.locallyLipschitz.locallyLipschitzOn hderiv
   refine ⟨W1p.mk (hv.toLp _) (hg.toLp _) ((hweak.congr_ae hv.coeFn_toLp.symm).congr_ae_deriv ?_),
     by simpa using hv.coeFn_toLp, by simpa using hg.coeFn_toLp⟩

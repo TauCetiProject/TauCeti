@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.EssSup
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Topology.EMetricSpace.Weak
 -- Proof-only: Lebesgue measure and ball volumes for an additive Haar measure.
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -72,7 +73,8 @@ rearrangement, which gives the case `p = ∞`.
 * `TauCeti.addHaar_setOf_lt_schwarzRearrangement`: equimeasurability.
 * `TauCeti.addHaar_inter_setOf_lt_schwarzRearrangement`: intersections of two rearranged
   superlevel sets have the smaller of the original level measures.
-* `TauCeti.lintegral_rpow_schwarzRearrangement`, `TauCeti.eLpNorm_schwarzRearrangement`,
+* `TauCeti.lintegral_rpow_schwarzRearrangement`,
+  `TauCeti.integral_rpow_toReal_schwarzRearrangement`, `TauCeti.eLpNorm_schwarzRearrangement`,
   `TauCeti.memLp_schwarzRearrangement_iff`: equality of integrals of powers and of `Lᵖ`
   seminorms, and preservation of every `Lᵖ` class.
 * `MeasureTheory.Integrable.ae_schwarzRearrangement_ofReal_ne_top`,
@@ -417,6 +419,29 @@ theorem lintegral_rpow_schwarzRearrangement (hf : AEMeasurable f μ) {p : ℝ} (
 theorem lintegral_schwarzRearrangement (hf : AEMeasurable f μ) :
     ∫⁻ x, schwarzRearrangement μ f x ∂μ = ∫⁻ x, f x ∂μ := by
   simpa using lintegral_rpow_schwarzRearrangement μ hf one_pos
+
+/-- **Layer cake for the real-valued Schwarz rearrangement.** For `0 < p`, if both `f` and its
+Schwarz rearrangement are finite almost everywhere, their `p`-th powers of `ENNReal.toReal` have
+the same Bochner integral. -/
+theorem integral_rpow_toReal_schwarzRearrangement (hf : AEMeasurable f μ)
+    (hf_top : ∀ᵐ x ∂μ, f x ≠ ∞) (hs_top : ∀ᵐ x ∂μ, schwarzRearrangement μ f x ≠ ∞)
+    {p : ℝ} (hp : 0 < p) :
+    ∫ x, (schwarzRearrangement μ f x).toReal ^ p ∂μ = ∫ x, (f x).toReal ^ p ∂μ := by
+  have hs_meas : AEStronglyMeasurable (fun x ↦ (schwarzRearrangement μ f x).toReal ^ p) μ :=
+    ((measurable_schwarzRearrangement μ f).ennreal_toReal.pow_const p).aestronglyMeasurable
+  have hf_meas : AEStronglyMeasurable (fun x ↦ (f x).toReal ^ p) μ :=
+    (hf.ennreal_toReal.pow_const p).aestronglyMeasurable
+  rw [integral_eq_lintegral_of_nonneg_ae
+      (ae_of_all _ fun _ ↦ Real.rpow_nonneg ENNReal.toReal_nonneg _) hs_meas,
+    integral_eq_lintegral_of_nonneg_ae
+      (ae_of_all _ fun _ ↦ Real.rpow_nonneg ENNReal.toReal_nonneg _) hf_meas]
+  congr 1
+  refine (lintegral_congr_ae ?_).trans ((lintegral_rpow_schwarzRearrangement μ hf hp).trans
+    (lintegral_congr_ae ?_))
+  · filter_upwards [hs_top] with x hx
+    rw [← ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg hp.le, ENNReal.ofReal_toReal hx]
+  · filter_upwards [hf_top] with x hx
+    rw [← ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg hp.le, ENNReal.ofReal_toReal hx]
 
 variable {μ}
 

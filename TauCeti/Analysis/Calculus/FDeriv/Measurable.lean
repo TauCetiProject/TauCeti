@@ -38,8 +38,6 @@ quotients along a sequence `θ + rⁿ`.
   measurable.
 * `TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero`: the regular part
   `f⁻¹(I) ∩ {Df ≠ 0}` of the preimage of a measurable set is measurable.
-* `TauCeti.measurable_map_norm_fderiv`: composing the norm of `fderiv` with a function continuous
-  on `[0, ∞)` yields a measurable function.
 * `TauCeti.aestronglyMeasurable_deriv_of_ae_differentiableAt`: the derivative in a parameter of
   an almost everywhere differentiable family of measurable functions is measurable.
 -/
@@ -109,17 +107,5 @@ theorem measurableSet_preimage_inter_setOf_fderiv_ne_zero {f : E → F} {I : Set
   simp only [Set.mem_inter_iff, Set.mem_preimage, and_congr_left_iff]
   intro hx
   rw [Set.piecewise_eq_of_mem _ _ _ hx]
-
-omit [MeasurableSpace F] [BorelSpace F] [SecondCountableTopologyEither (E →L[𝕜] F) E] in
-/-- Postcomposing `x ↦ ‖fderiv 𝕜 u x‖` with a map `Φ` continuous on `[0, ∞)` produces a
-measurable function, with no differentiability assumption on `u` and no regularity of `Φ` on
-negative numbers. -/
-theorem measurable_map_norm_fderiv {G : Type*} [TopologicalSpace G] [MeasurableSpace G]
-    [BorelSpace G] {Φ : ℝ → G} (hΦ : ContinuousOn Φ (Set.Ici 0)) (u : E → F) :
-    Measurable fun x ↦ Φ ‖fderiv 𝕜 u x‖ := by
-  have hcont : Continuous fun s : ℝ ↦ Φ (max s 0) :=
-    hΦ.comp_continuous (continuous_id.max continuous_const) fun s ↦ le_max_right s 0
-  exact (funext fun x ↦ by rw [max_eq_left (norm_nonneg (fderiv 𝕜 u x))] :
-    (fun x ↦ Φ (max ‖fderiv 𝕜 u x‖ 0)) = _) ▸ hcont.measurable.comp (measurable_fderiv 𝕜 u).norm
 
 end TauCeti

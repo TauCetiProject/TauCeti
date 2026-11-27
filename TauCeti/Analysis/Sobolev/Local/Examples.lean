@@ -15,6 +15,7 @@ import Mathlib.Analysis.Complex.ReImTopology
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.InnerProductSpace.NormPow
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
 import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
@@ -490,7 +491,7 @@ theorem not_memWkpLoc_two_abs_im {z₀ : ℂ} (hz₀ : z₀ ∈ interior U) (him
   -- `|Re z|` is Lipschitz, so its weak derivative is the classical one, `± re`, off the
   -- imaginary axis.
   have hlip : LocallyLipschitz fun z : ℂ => |z.re| :=
-    (lipschitzWith_one_norm.comp (RCLike.lipschitzWith_re (K := ℂ))).locallyLipschitz
+    (RCLike.lipschitzWith_re (K := ℂ)).norm_comp.locallyLipschitz
   have hae := (ae_restrict_iff' (Opens.interior (ball (0 : ℂ) r)).isOpen.measurableSet).1
     (hD.ae_eq hlip.locallyLipschitzOn.hasWeakFDerivOn_fderiv)
   -- So `(D · 1 + 1) / 2` is the indicator of the right half-plane, which is not `W^{1,p}`.

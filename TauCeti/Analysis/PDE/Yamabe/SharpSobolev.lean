@@ -12,9 +12,11 @@ public import TauCeti.Analysis.Sobolev.D1p0.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
+import TauCeti.Analysis.Normed.Group.Lipschitz
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Cutoff
 import TauCeti.Analysis.PDE.Yamabe.Bubble.Homogeneous
 import TauCeti.Analysis.PDE.Yamabe.WeightedSobolev
+import TauCeti.MeasureTheory.Constructions.HaarToSphere
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.SchwarzRearrangement.PolyaSzego
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -100,12 +102,8 @@ private theorem radial_sharp_sobolev (hn : 2 < finrank ℝ E) {K : ℝ≥0} {v :
   -- Stage 2: Express the critical mass `M` in polar coordinates and verify `f` is normalized.
   have hv_polar : M = (n : ℝ) * (volume.real (ball (0 : E) 1) *
       ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * v (r • e₀) ^ pₙ) := by
-    have hv_eq : (fun x : E ↦ v x ^ pₙ) = fun x ↦ (fun r ↦ v (max r 0 • e₀) ^ pₙ) ‖x‖ :=
-      funext fun x ↦ by
-        dsimp only; rw [max_eq_left (norm_nonneg x), hv_rad x (‖x‖ • e₀) (by simp [norm_smul, he₀])]
-    dsimp only [M]; rw [hv_eq, integral_fun_norm_addHaar volume (fun r ↦ v (max r 0 • e₀) ^ pₙ)]
-    simp only [nsmul_eq_mul, smul_eq_mul, ← hn_def]; congr 2
-    exact setIntegral_congr_fun measurableSet_Ioi fun r (hr : 0 < r) ↦ by rw [max_eq_left hr.le]
+    simpa only [← hn_def] using integral_eq_mul_integral_Ioi_of_radial (E := E) volume
+      (fun x y hxy ↦ by simp [hv_rad x y hxy]) he₀
   have hnorm : ∫ r in Ioi (0 : ℝ), r ^ (n - 1) * f r ^ pₙ = I₀ := by
     have hcp : c ^ pₙ = roundSphereVolume n / M := by
       rw [← Real.rpow_mul hc0, one_div_mul_cancel hpₙ.ne', Real.rpow_one]
@@ -186,9 +184,7 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
   let u_enn : E → ENNReal := fun y ↦ ENNReal.ofReal ‖u y‖
   let v_enn : E → ENNReal := schwarzRearrangement volume u_enn
   let v : E → ℝ := fun z ↦ (v_enn z).toReal
-  have hu_norm : LipschitzWith K (fun y ↦ ‖u y‖) := by
-    simpa only [one_mul, Function.comp_def] using
-      (lipschitzWith_one_norm : LipschitzWith 1 (norm : ℝ → ℝ)).comp hu
+  have hu_norm : LipschitzWith K (fun y ↦ ‖u y‖) := hu.norm_comp
   have hv_lip : LipschitzWith K v := lipschitzWith_toReal_schwarzRearrangement volume hu_norm
   have hsub_supp : {y | 0 < u_enn y} ⊆ tsupport u := fun y hy ↦
     subset_tsupport u (mem_support.2 fun h0 ↦ by simp [u_enn, h0] at hy)
@@ -208,20 +204,10 @@ theorem sphereYamabeConstant_mul_rpow_le_conformalCoefficient_mul_integral_of_li
     hasCompactSupport_toReal_schwarzRearrangement volume hfin0_norm
   -- Stage 2: Equimeasurability of the critical mass and Pólya–Szegő gradient decay.
   have hmass_eq : (∫ x, v x ^ pₙ) = ∫ x, |u x| ^ pₙ := by
-    rw [← ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ Real.rpow_nonneg ENNReal.toReal_nonneg _),
-      ← ENNReal.toReal_ofReal (integral_nonneg fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _)]
-    congr 1
-    rw [ofReal_integral_eq_lintegral_ofReal ((hv_lip.continuous.rpow_const fun _ ↦ .inr hpₙ.le
-        ).integrable_of_hasCompactSupport (hv_supp.rpow_const hpₙ.ne'))
-        (.of_forall fun _ ↦ Real.rpow_nonneg ENNReal.toReal_nonneg _),
-      ofReal_integral_eq_lintegral_ofReal ((hu.continuous.abs.rpow_const fun _ ↦ .inr hpₙ.le
-        ).integrable_of_hasCompactSupport (hsupp.abs.rpow_const hpₙ.ne'))
-        (.of_forall fun _ ↦ Real.rpow_nonneg (abs_nonneg _) _)]
-    refine (lintegral_congr fun x ↦ ?_).trans ((lintegral_rpow_schwarzRearrangement volume
-      hu_norm.continuous.aemeasurable.ennreal_ofReal hpₙ).trans (lintegral_congr fun x ↦ ?_))
-    · rw [← ENNReal.ofReal_rpow_of_nonneg ENNReal.toReal_nonneg hpₙ.le,
-        ENNReal.ofReal_toReal (hv_ne_top x)]
-    · rw [← Real.norm_eq_abs, ← ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hpₙ.le]
+    simpa [v, v_enn, u_enn, ENNReal.toReal_ofReal (norm_nonneg _), Real.norm_eq_abs] using
+      integral_rpow_toReal_schwarzRearrangement volume
+        hu_norm.continuous.aemeasurable.ennreal_ofReal
+        (.of_forall fun _ ↦ ENNReal.ofReal_ne_top) (.of_forall hv_ne_top) hpₙ
   have hps : ∫ x, ‖fderiv ℝ v x‖ ^ 2 ≤ ∫ x, ‖fderiv ℝ u x‖ ^ 2 := by
     simpa only [Real.rpow_two] using
       hu.integral_norm_fderiv_toReal_schwarzRearrangement_norm_rpow_le one_le_two
