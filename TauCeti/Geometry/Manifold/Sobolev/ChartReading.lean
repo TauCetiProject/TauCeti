@@ -12,6 +12,7 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.LocalizedChangeOfVariables
 import TauCeti.Analysis.Sobolev.BesselPotential.LocalizedChangeOfVariables
+import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -36,6 +37,13 @@ of a reading is bounded in every norm in which such localized changes of variabl
 (`BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp`) and of
 `B^s_{p,q}` (`TauCeti.BesovSpace.exists_norm_toBesovSpaceCLM_le_of_eq_smul_comp`).
 
+The readings through a fixed cutoff `φ` are all fixed in every `H^t` by multiplication by one
+Schwartz function
+(`TauCeti.exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz`). So readings
+bounded in `H^s` through finitely many fixed cutoffs form a relatively compact set in `H^r` for
+`r < s`, by Rellich's theorem for a common compact support
+(`TauCeti.isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_norm_le`).
+
 ## Main results
 
 * `TauCeti.cutoffPushforwardSchwartz_mulLeft_ofReal_cutoffPullback_apply`: the reading of `Ψ g` in
@@ -46,6 +54,8 @@ of a reading is bounded in every norm in which such localized changes of variabl
   the chart of a reading costs a constant in the `H^{s,p}` norm.
 * `TauCeti.exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz`: the readings
   through a cutoff are fixed in every `H^t` by multiplication by one Schwartz function.
+* `TauCeti.isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_norm_le`:
+  Rellich's theorem for chart readings, from `H^s` to `H^r` for `r < s`.
 * `TauCeti.exists_norm_toBesovSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`: changing the chart of
   a reading costs a constant in the `B^s_{p,q}` norm.
 
@@ -192,5 +202,44 @@ theorem exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz
   by_cases hy : y ∈ tsupport φ
   · simp [hθ.self_of_nhdsSet y hy]
   · simp [image_eq_zero_of_notMem_tsupport hy]
+
+omit [T2Space M] in
+/-- **Rellich's theorem for chart readings.** Let `φⱼ` be cutoffs in charts `eⱼ` and `gⱼ u` smooth
+functions on `M` depending on a parameter `u`. If the readings `φⱼ · ((gⱼ u) ∘ eⱼ⁻¹)` in `H^s` are
+bounded by `Cⱼ N(u)` for a nonnegative `N`, then for `r < s` their readings
+`(φⱼ · ((gⱼ u) ∘ eⱼ⁻¹))ⱼ` in `H^r`, over the `u` with `N(u) ≤ B`, form a set with compact closure:
+in each chart they are bounded in `H^s` and fixed by multiplication by one Schwartz function, so
+relatively compact in `H^r`
+(`BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq`). -/
+theorem isCompact_closure_image_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_of_norm_le
+    {ν X : Type*} {e : ν → OpenPartialHomeomorph M (CoordinateSpace n)}
+    (he : ∀ j, e j ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (φ : ∀ j, 𝓓(⟨(e j).target, (e j).open_target⟩, ℝ))
+    (g : ν → X → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) {N : X → ℝ} (hN : ∀ u, 0 ≤ N u)
+    {s : ℝ} (hC : ∀ j, ∃ C, ∀ u, ‖SchwartzMap.toBesselPotentialSpaceCLM s 2
+      ((e j).cutoffPushforwardSchwartz (he j) (φ j) (g j u))‖ ≤ C * N u)
+    {r : ℝ} (hrs : r < s) (B : ℝ) :
+    IsCompact (closure ((fun u j ↦ SchwartzMap.toBesselPotentialSpaceCLM r 2
+      ((e j).cutoffPushforwardSchwartz (he j) (φ j) (g j u))) '' {u | N u ≤ B})) := by
+  choose C hC using hC
+  -- The readings in `H^s` in the chart `eⱼ` are bounded.
+  let S (j : ν) := (fun u ↦ SchwartzMap.toBesselPotentialSpaceCLM s 2
+    ((e j).cutoffPushforwardSchwartz (he j) (φ j) (g j u))) '' {u | N u ≤ B}
+  have hS (j : ν) : Bornology.IsBounded (S j) := by
+    refine isBounded_iff_forall_norm_le.2 ⟨|C j| * B, ?_⟩
+    rintro _ ⟨u, hu, rfl⟩
+    exact (hC j u).trans ((mul_le_mul_of_nonneg_right (le_abs_self _) (hN u)).trans
+      (mul_le_mul_of_nonneg_left hu (abs_nonneg _)))
+  -- They are all supported in the fixed compact set `supp φⱼ`, so Rellich's theorem applies.
+  choose θ hθ using fun j ↦
+    exists_smulLeftCLM_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz (he j) (φ j)
+  have hK (j : ν) : IsCompact (closure (BesselPotentialSpace.inclusion hrs.le '' S j)) :=
+    BesselPotentialSpace.isCompact_closure_image_inclusion_of_smulLeftCLM_eq hrs (hS j)
+      (φ := θ j) (by rintro _ ⟨u, -, rfl⟩; exact hθ j _ _)
+  refine (isCompact_univ_pi hK).of_isClosed_subset isClosed_closure
+    (closure_minimal ?_ (isClosed_set_pi fun j _ ↦ isClosed_closure))
+  rintro _ ⟨u, hu, rfl⟩ j -
+  exact subset_closure
+    ⟨_, ⟨u, hu, rfl⟩, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM _ _⟩
 
 end TauCeti
