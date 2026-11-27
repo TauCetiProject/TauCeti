@@ -47,8 +47,8 @@ norm-one quaternion representative belonging to the order. -/
 theorem mem_normOneImage (hΛ : IntegralOrder.IsOrder k Λ) {g : PSL(2, ℝ)} :
     g ∈ S.normOneImage hΛ ↔ ∃ x : unitary ℍ[k,a,b], (x : ℍ[k,a,b]) ∈ Λ ∧
       QuotientGroup.mk (S.unitaryToSpecialLinear x) = g := by
-  simp only [normOneImage, Subgroup.mem_map, IntegralOrder.IsOrder.mem_normOne]
-  rfl
+  simp only [normOneImage, Subgroup.mem_map, IntegralOrder.IsOrder.mem_normOne,
+    MonoidHom.comp_apply, QuotientGroup.mk'_apply]
 
 /-- Inclusion of quaternion orders induces inclusion of their projective norm-one images. -/
 theorem normOneImage_mono (hΛ : IntegralOrder.IsOrder k Λ) (hΓ : IntegralOrder.IsOrder k Γ)

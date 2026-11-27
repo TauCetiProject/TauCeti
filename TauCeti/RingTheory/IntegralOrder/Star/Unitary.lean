@@ -79,9 +79,12 @@ theorem unitarySubgroup_isFiniteRelIndex {K : Type*} [Field K] [Algebra R K]
   have : reduction.ker.FiniteIndex := inferInstance
   rw [Subgroup.isFiniteRelIndex_iff_finiteIndex]
   refine Subgroup.finiteIndex_of_le (H := reduction.ker) fun x hx => ?_
-  have hx' : inclusion x - 1 ∈ J := Ideal.Quotient.eq.mp (by
-    have := congrArg Units.val hx
-    simpa [reduction] using this)
+  have hxred : reduction x = 1 := MonoidHom.mem_ker.mp hx
+  have hxquot : Ideal.Quotient.mk J (inclusion x) = Ideal.Quotient.mk J 1 := by
+    have hxval := congrArg Units.val hxred
+    simpa only [reduction, MonoidHom.coe_toHomUnits, MonoidHom.comp_apply,
+      RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Units.val_one, map_one] using hxval
+  have hx' : inclusion x - 1 ∈ J := Ideal.Quotient.eq.mp hxquot
   rw [Ideal.mem_map_algebraMap_iff, Submodule.ideal_span_singleton_smul] at hx'
   obtain ⟨y, _, hy⟩ := (Submodule.mem_smul_pointwise_iff_exists _ r ⊤).mp hx'
   have hsub : ((inclusion x : Γ) : E) - 1 ∈ Λ := by

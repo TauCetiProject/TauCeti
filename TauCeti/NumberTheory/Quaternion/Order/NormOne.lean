@@ -39,12 +39,7 @@ variable {R F : Type*} [CommRing R] [Field F] [Algebra R F]
 /-- The reduced-norm-one group of a quaternion order, as a subgroup of the ambient norm-one
 group. Inversion is quaternion conjugation, which preserves the order. -/
 def normOne (hΛ : IsOrder F Λ) : Subgroup (unitary ℍ[F,c₁,c₂,c₃]) :=
-  (StarOrder.ofSubalgebra Λ hΛ fun x hx => by
-    have halg : alg = QuaternionAlgebra.instAlgebra :=
-      Algebra.algebra_ext _ _ fun r =>
-        @IsScalarTower.algebraMap_apply R F ℍ[F,c₁,c₂,c₃] _ _ _ _ _ alg tower r
-    subst alg
-    exact hΛ.star_mem hx).unitarySubgroup
+  (StarOrder.ofSubalgebra Λ hΛ fun _ hx => hΛ.star_mem hx).unitarySubgroup
 
 /-- An ambient reduced-norm-one element belongs to the order's norm-one group exactly when its
 underlying quaternion belongs to the order. -/
