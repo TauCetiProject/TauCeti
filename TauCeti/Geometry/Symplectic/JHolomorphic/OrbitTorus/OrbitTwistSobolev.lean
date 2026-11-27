@@ -112,7 +112,7 @@ local instance instCompleteSpaceOrbitTwistSobolev : CompleteSpace F :=
 `∂s + J₀ (∂t + π i / T)` on maps periodic in `s` and antiperiodic in `t` commutes with
 multiplication by complex scalars, the complex structure of the Sobolev spaces acting by `J₀`. -/
 theorem periodicTorusOperator_antiperiodicGaugeLoop_zero_apply_smul (ℓ : ℝ) (c : ℂ)
-    (x : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) :
+    (x : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ)) :
     periodicTorusOperator T ℓ (antiperiodicGaugeLoop T 0) (c • x) =
       c • periodicTorusOperator T ℓ (antiperiodicGaugeLoop T 0) x := by
   rw [antiperiodicGaugeLoop_zero]
@@ -137,7 +137,7 @@ is antiperiodic in `t`, so the kernel is the space of antiperiodic solutions of 
 theorem periodicTorusOperator_antiperiodicGaugeLoop_eq_zero_iff (hℓ : ℓ ≠ 0)
     (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0)
-    (x : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ)) :
+    (x : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ)) :
     periodicTorusOperator T ℓ (antiperiodicGaugeLoop T S) x = 0 ↔ x.2 = 0 ∧ ∀ t : ℝ,
       HasDerivAt (fun y : ℝ ↦ cexp (↑(π / T * y) * I) • toContinuousMap T (by norm_num) x.1 y)
         (S t (cexp (↑(π / T * t) * I) • toContinuousMap T (by norm_num) x.1 t)) t := by
