@@ -207,12 +207,15 @@ theorem _root_.MvPolynomial.expand_eq_map_frobeniusEquiv_symm_pow {σ R : Type*}
   rw [← MvPolynomial.map_frobenius_expand, MvPolynomial.map_expand, MvPolynomial.map_map,
     frobenius_comp_frobeniusEquiv_symm, MvPolynomial.map_id]
 
-/-- Over the prime field, expansion by `p ^ m` is the `m`-fold Frobenius. -/
-theorem _root_.MvPolynomial.expand_prime_pow {σ : Type*} {p : ℕ} [Fact p.Prime]
-    (m : ℕ) (f : MvPolynomial σ (ZMod p)) : MvPolynomial.expand (p ^ m) f = f ^ p ^ m := by
-  have h : iterateFrobenius (ZMod p) p m = RingHom.id _ :=
-    RingHom.ext fun c ↦ ZMod.pow_card_pow c
-  simpa only [h, MvPolynomial.map_id] using MvPolynomial.map_iterateFrobenius_expand p f m
+/-- Expansion by a power of the cardinality of a finite field raises a polynomial to that power. -/
+theorem _root_.FiniteField.MvPolynomial.expand_card_pow {σ K : Type*} [Field K] [Fintype K]
+    (m : ℕ) (f : MvPolynomial σ K) :
+    MvPolynomial.expand (Fintype.card K ^ m) f = f ^ Fintype.card K ^ m := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rw [pow_succ', MvPolynomial.expand_mul, FiniteField.MvPolynomial.expand_card, ih, ← pow_mul,
+      mul_comm]
 
 namespace MvPolynomial
 
