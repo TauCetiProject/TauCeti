@@ -224,7 +224,8 @@ private theorem exists_iteratedLineDerivZeroL_restrictL_ae_eq {x₀ : E} {r : �
   let F : E → ℝ := fun x => ζ x * truncPow k (⟪e, x⟫ - t)
   have hle : ∀ b : Bool, cond b B V ≤ Omega := by
     rintro (_ | _)
-    · exact fun x hx => hx.1
+    · rw [Bool.cond_false, ← SetLike.coe_subset_coe, Opens.coe_mk]
+      exact inter_subset_left
     · exact hsub
   have hcov : Omega ≤ ⨆ b : Bool, cond b B V := by
     intro x hx
@@ -232,7 +233,7 @@ private theorem exists_iteratedLineDerivZeroL_restrictL_ae_eq {x₀ : E} {r : �
     by_cases hxB : x ∈ ball x₀ r
     · exact ⟨true, hxB⟩
     · refine ⟨false, hx, fun hxc => hxB ?_⟩
-      have : dist x x₀ ≤ 3 * r / 4 := hxc
+      have := mem_closedBall.1 hxc
       rw [mem_ball]
       linarith
   obtain ⟨v, hv, -, -⟩ := exists_glue hle hcov k
