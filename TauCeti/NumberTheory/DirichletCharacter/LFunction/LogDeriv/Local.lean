@@ -16,9 +16,9 @@ import TauCeti.Analysis.Meromorphic.Divisor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.PoleClearedGrowth
 
 /-!
-# The conductor-uniform local expansion of `L′/L(s, χ)`
+# The level-uniform local expansion of `L′/L(s, χ)`
 
-Let `χ` be a primitive nonprincipal Dirichlet character of conductor `N`. Fix a real `σ₀ > 1` and
+Let `χ` be a nonprincipal Dirichlet character of level `N`. Fix a real `σ₀ > 1` and
 radii `r < r'`. There is a constant `C`, depending only on `σ₀, r, r'` and not on `N` or `χ`,
 such that for every centre `s₀` with `Re s₀ = σ₀` and every `s` with `‖s - s₀‖ ≤ r` and
 `L(s, χ) ≠ 0`,
@@ -27,9 +27,9 @@ The sum runs over every zero `ρ` of `L(s, χ)` in the closed disc, trivial zero
 by its analytic order `m(ρ)`. With the same uniformity, the zeros in such a disc, counted with
 order, number `O(log(N (|Im s₀| + 2)))`; this count holds for discs centred on any vertical line.
 
-These are the conductor-uniform zero count and local logarithmic derivative used for primitive
-characters in Landau's and Siegel's arguments, in the zero-free regions and in the explicit
-formula. The case `N = 1`, where `L(s, χ) = ζ(s)` has a pole, is
+These are the level-uniform zero count and local logarithmic derivative used, for primitive
+characters of conductor `N`, in Landau's and Siegel's arguments, in the zero-free regions and in
+the explicit formula. The case `N = 1`, where `L(s, χ) = ζ(s)` has a pole, is
 `TauCeti.riemannZeta_local_logDeriv`.
 
 ## Main results
@@ -124,30 +124,30 @@ open DirichletCharacter
 
 namespace TauCeti
 
-/-- **Conductor-uniform relative growth on discs.** For real `σ₀ > 1` and a radius `R` there is
-an exponent `D` such that every primitive nonprincipal Dirichlet character `χ` of conductor `N`
+/-- **Level-uniform relative growth on discs.** For real `σ₀ > 1` and a radius `R` there is
+an exponent `D` such that every nonprincipal Dirichlet character `χ` of level `N`
 satisfies `‖L(w, χ)‖ ≤ (N (|Im s₀| + 2)) ^ D ‖L(s₀, χ)‖` for every centre `s₀` with
 `Re s₀ = σ₀` and every `w` with `‖w - s₀‖ ≤ R`. The exponent depends on `σ₀` and `R` alone. -/
 theorem exists_norm_LFunction_le_rpow_mul {σ₀ : ℝ} (hσ₀ : 1 < σ₀) (R : ℝ) :
-    ∃ D : ℝ, ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N), χ.IsPrimitive → χ ≠ 1 →
+    ∃ D : ℝ, ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N), χ ≠ 1 →
       ∀ s₀ w : ℂ, s₀.re = σ₀ → ‖w - s₀‖ ≤ R →
         ‖χ.LFunction w‖ ≤ (N * (|s₀.im| + 2)) ^ D * ‖χ.LFunction s₀‖ := by
   obtain ⟨D, hD⟩ := exists_norm_entireLFunction_le_rpow_mul hσ₀ R
-  refine ⟨D, fun N _ χ _ hne s₀ w hs₀ hw ↦ ?_⟩
+  refine ⟨D, fun N _ χ hne s₀ w hs₀ hw ↦ ?_⟩
   simpa only [entireLFunction_of_ne_one hne] using hD χ hs₀ hw
 
-/-- **Conductor-uniform count of zeros in discs.** For real `σ₀` and `r` there is a constant `C`
-such that for every primitive nonprincipal Dirichlet character `χ` of conductor `N` and every
+/-- **Level-uniform count of zeros in discs.** For real `σ₀` and `r` there is a constant `C`
+such that for every nonprincipal Dirichlet character `χ` of level `N` and every
 centre `s₀` with `Re s₀ = σ₀`, the zeros of `L(·, χ)` in the closed disc of radius `r` about `s₀`,
 counted with analytic order, number at most `C log(N (|Im s₀| + 2))`. -/
 theorem exists_finsum_analyticOrderAt_LFunction_le (σ₀ r : ℝ) :
-    ∃ C : ℝ, ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N), χ.IsPrimitive → χ ≠ 1 →
+    ∃ C : ℝ, ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N), χ ≠ 1 →
       ∀ s₀ : ℂ, s₀.re = σ₀ →
         ∑ᶠ ρ : {z : ℂ // ‖z - s₀‖ ≤ r ∧ χ.LFunction z = 0},
             ((analyticOrderAt χ.LFunction ρ.val).toNat : ℝ) ≤
           C * Real.log (N * (|s₀.im| + 2)) := by
   obtain ⟨C, hC⟩ := exists_sum_divisor_entireLFunction_le σ₀ r
-  refine ⟨C, fun N _ χ _ hne s₀ hs₀ ↦ ?_⟩
+  refine ⟨C, fun N _ χ hne s₀ hs₀ ↦ ?_⟩
   have hsum := χ.finsum_subtype_LFunction_eq_finsum_divisor (R := ℝ) hne s₀ r fun _ ↦ 1
   simp only [mul_one] at hsum
   have hcast := map_finsum (Int.castRingHom ℝ)
@@ -156,14 +156,14 @@ theorem exists_finsum_analyticOrderAt_LFunction_le (σ₀ r : ℝ) :
   rw [hsum, ← hcast, ← entireLFunction_of_ne_one hne]
   exact hC χ hs₀
 
-/-- **The conductor-uniform local expansion of `L′/L`.** For real `σ₀ > 1` and radii `r < r'`
-there is a constant `C` such that for every primitive nonprincipal Dirichlet character `χ` of
-conductor `N`, every `s₀` with `Re s₀ = σ₀` and every `s` with `‖s - s₀‖ ≤ r` and `L(s, χ) ≠ 0`,
+/-- **The level-uniform local expansion of `L′/L`.** For real `σ₀ > 1` and radii `r < r'`
+there is a constant `C` such that for every nonprincipal Dirichlet character `χ` of
+level `N`, every `s₀` with `Re s₀ = σ₀` and every `s` with `‖s - s₀‖ ≤ r` and `L(s, χ) ≠ 0`,
 `L′/L(s, χ)` differs from `∑ m(ρ)/(s - ρ)` over the zeros `ρ` of `L(·, χ)` with
 `‖ρ - s₀‖ ≤ r'`, counted with analytic order `m(ρ)`, by at most `C log(N (|Im s₀| + 2))`. The
 constant depends on `σ₀, r, r'` alone. -/
 theorem LFunction_local_logDeriv {σ₀ r r' : ℝ} (hσ₀ : 1 < σ₀) (hrr' : r < r') :
-    ∃ C : ℝ, ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N), χ.IsPrimitive → χ ≠ 1 →
+    ∃ C : ℝ, ∀ (N : ℕ) [NeZero N] (χ : DirichletCharacter ℂ N), χ ≠ 1 →
       ∀ s₀ s : ℂ, s₀.re = σ₀ → ‖s - s₀‖ ≤ r → χ.LFunction s ≠ 0 →
         ‖deriv χ.LFunction s / χ.LFunction s -
             ∑ᶠ ρ : {z : ℂ // ‖z - s₀‖ ≤ r' ∧ χ.LFunction z = 0},
@@ -171,10 +171,10 @@ theorem LFunction_local_logDeriv {σ₀ r r' : ℝ} (hσ₀ : 1 < σ₀) (hrr' :
           C * Real.log (N * (|s₀.im| + 2)) := by
   obtain ⟨D, hD⟩ := exists_norm_LFunction_le_rpow_mul hσ₀ (r' + 1)
   obtain ⟨A, hA⟩ := exists_norm_logDeriv_sub_finsum_divisor_le hrr' (lt_add_one r')
-  refine ⟨A * D, fun N _ χ hχ hne s₀ s hs₀ hs hL ↦ ?_⟩
+  refine ⟨A * D, fun N _ χ hne s₀ s hs₀ hs hL ↦ ?_⟩
   have hX : 0 < (N : ℝ) * (|s₀.im| + 2) := by have := NeZero.pos N; positivity
   have key := hA (fun _ _ ↦ χ.analyticAt_LFunction (.inr hne))
-    (fun w hw ↦ hD N χ hχ hne s₀ w hs₀ (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le))
+    (fun w hw ↦ hD N χ hne s₀ w hs₀ (by rw [mem_sphere, dist_eq_norm] at hw; exact hw.le))
     (LFunction_ne_zero_of_one_le_re χ (.inl hne) (by linarith)) hs hL
   have hsum := χ.finsum_subtype_LFunction_eq_finsum_divisor (R := ℂ) hne s₀ r' fun ρ ↦ 1 / (s - ρ)
   simp only [mul_one_div] at hsum

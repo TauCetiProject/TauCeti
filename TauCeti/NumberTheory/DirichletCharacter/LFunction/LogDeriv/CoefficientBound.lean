@@ -18,9 +18,9 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.PoleClearedGrowth
 # Taylor coefficient bounds for Dirichlet logarithmic derivatives
 
 At a centre right of the line `Re s = 1`, the coefficients of `−L′/L` consist of the
-principal-character pole, the divisor-weighted reciprocal powers of nearby zeros, and an
-geometrically decaying error when the divisor disc has radius greater than one. The divisor
-is that of the entire function
+principal-character pole, the divisor-weighted reciprocal powers of the zeros in a disc of
+radius `b`, and an error `O(log(q (|Im z| + 2)) / a^k)` for any Cauchy radius `0 < a < b`, which
+decays geometrically when `a > 1`. The divisor is that of the entire function
 `DirichletCharacter.entireLFunction`, so it has no spurious zero at `1` even for the principal
 character. This is the local expansion used in the Deuring–Heilbronn argument.
 
@@ -76,7 +76,7 @@ theorem re_lt_one_of_divisor_entireLFunction_ne_zero {q : ℕ} [NeZero q]
 
 open Classical in
 /-- The Taylor expansion at any centre on a fixed line `Re z = σ > 1`, with a
-conductor-uniform error bounded by `C log(q (|Im z| + 2)) / a^k`. The zero terms are taken
+level-uniform error bounded by `C log(q (|Im z| + 2)) / a^k`. The zero terms are taken
 from the divisor of the
 pole-cleared L-function on `closedBall z b`, which counts the deleted Euler-factor zeros
 as well. Taking `σ = a = 2` and `b = 3` gives an error `C log(q (|Im z| + 2)) 2⁻ᵏ`. -/
