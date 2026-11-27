@@ -38,6 +38,8 @@ because the Lie algebra of a maximal torus is a maximal abelian subalgebra
   Lie algebra of a compact Lie group with respect to a maximal torus.
 * `TauCeti.Lie.IsMaximalTorus.exists_isRootPlaneDecomposition`: the image of the Lie algebra of a
   maximal torus in `GroupLieAlgebra I G` carries a root-plane decomposition with a regular element.
+* `TauCeti.Lie.IsMaximalTorus.lie_mem_of_isRootPlane`: for `v` in a root plane of a maximal
+  torus with rotation `J`, the bracket `⁅v, J v⁆` lies in `𝔱`.
 
 ## References
 
@@ -125,5 +127,19 @@ theorem IsMaximalTorus.exists_isRootPlaneDecomposition {T : Subgroup G} (hT : Is
   refine he _ (hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero fun D hD ↦ ?_)
   have h := hs Y hYs (e D) (hts.le (he D hD))
   rwa [← e.apply_symm_apply Y, ← LieEquiv.map_lie, EmbeddingLike.map_eq_zero_iff] at h
+
+/-- **The bracket of a root vector with its rotation lies in the Lie algebra of a maximal torus.**
+For a root plane `V` of the Lie algebra `𝔱` of a maximal torus, with rotation `J`, and `v ∈ V`, the
+bracket `⁅v, J v⁆` commutes with `𝔱`, so it lies in `𝔱` by maximality. -/
+theorem IsMaximalTorus.lie_mem_of_isRootPlane {T : Subgroup G} (hT : IsMaximalTorus T)
+    {B : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)}
+    {α : Dual ℝ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
+    {V : Submodule ℝ (LeftInvariantDerivation I G)} {J : Module.End ℝ V}
+    (h : IsRootPlane B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J) (v : V) :
+    ⁅(v : LeftInvariantDerivation I G), (J v : LeftInvariantDerivation I G)⁆ ∈
+      (lieSubalgebraOfSubgroup (I := I) T).toSubmodule :=
+  lie_mem_of_lie_eq_smul (fun z hz ↦ hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero
+      fun Y hY ↦ by rw [← lie_skew, hz ⟨Y, hY⟩, neg_zero])
+    (h.lie_apply · v) fun X ↦ by rw [h.lie_apply, h.apply_apply, Submodule.coe_neg, smul_neg]
 
 end TauCeti.Lie

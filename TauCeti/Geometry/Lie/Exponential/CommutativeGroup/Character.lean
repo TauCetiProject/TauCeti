@@ -77,6 +77,10 @@ a character `χ` acts by `exp(ξ) · z = e^{i α_χ(ξ)} z`.
   weights on the kernel of the exponential and on the period lattice.
 * `ContinuousMonoidHom.lieWeight_injective`, `ContinuousMonoidHom.range_lieWeight`: for connected
   `G`, characters correspond exactly to functionals taking integer values on `Λ_ℤ`.
+* `TauCeti.Lie.exists_apply_eq_intCast_mul_of_apply_lieExp_eq_circleExp`: on a closed subgroup
+  `T`, a map `χ : T → S¹` with `χ (exp X) = e^{i ℓ(X)}` has `ℓ(X) ∈ 2πℤ` whenever `exp X = 1`.
+* `TauCeti.Lie.exists_apply_eq_intCast_of_lieExp_two_pi_smul_eq_one`: such an integral functional
+  on a subspace of the Lie algebra takes integer values on every `c` with `exp(2π c) = 1`.
 * `TauCeti.mem_periodLattice_circle`, `TauCeti.circleExpGenerator_mem_periodLattice`,
   `ContinuousMonoidHom.lieWeight_id_circle`,
   `ContinuousMonoidHom.lieWeight_circleExpGenerator_eq_intCast_iff`: the circle case; a
@@ -470,3 +474,54 @@ theorem range_lieWeight :
 end Integral
 
 end ContinuousMonoidHom
+
+namespace TauCeti.Lie
+
+/-! ### Integrality on a closed subgroup -/
+
+section Subgroup
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
+  [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G]
+
+attribute [local instance] ContMDiffMul.boundarylessManifold
+
+/-- **The differential of a character is integral on the kernel of the exponential.** Let `T` be a
+closed subgroup of `G` and `χ : T → S¹` a map with `χ 1 = 1` whose real differential is `ℓ`, that
+is `χ (exp X) = e^{i ℓ(X)}` for every `X` in the Lie algebra of `T`. Then `ℓ(X) ∈ 2πℤ` whenever
+`exp X = 1`. -/
+theorem exists_apply_eq_intCast_mul_of_apply_lieExp_eq_circleExp {T : Subgroup G}
+    (hT : IsClosed (T : Set G)) {F : Type*} [FunLike F T Circle] [OneHomClass F T Circle] (χ : F)
+    {ℓ : Module.Dual ℝ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
+    (hχ : ∀ X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule,
+      χ ⟨lieExp (I := I) (X : LeftInvariantDerivation I G),
+          lieExp_mem_of_mem_lieSubalgebraOfSubgroup hT
+            ((LieSubalgebra.mem_toSubmodule _).1 X.property)⟩ =
+        Circle.exp (ℓ X))
+    {X : (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
+    (hX : lieExp (I := I) (X : LeftInvariantDerivation I G) = 1) :
+    ∃ n : ℤ, ℓ X = n * (2 * π) := by
+  rw [← Circle.exp_eq_one, ← hχ X, ← map_one χ]
+  exact congrArg χ (Subtype.ext hX)
+
+variable {t : Submodule ℝ (LeftInvariantDerivation I G)} {ℓ : Module.Dual ℝ t} {c : t}
+
+/-- **Integral functionals pair integrally with integral cocharacters.** Let `ℓ ∈ t*` take values
+in `2πℤ` on the kernel of the exponential, as the real differential of a character does
+(`exists_apply_eq_intCast_mul_of_apply_lieExp_eq_circleExp`), and let `c ∈ t` satisfy
+`exp(2π c) = 1`. Then `ℓ(c)` is an integer. -/
+theorem exists_apply_eq_intCast_of_lieExp_two_pi_smul_eq_one
+    (hℓ : ∀ X : t, lieExp (I := I) (X : LeftInvariantDerivation I G) = 1 →
+      ∃ n : ℤ, ℓ X = n * (2 * π))
+    (hc : lieExp (I := I) ((2 * π) • (c : LeftInvariantDerivation I G)) = 1) :
+    ∃ n : ℤ, ℓ c = n := by
+  obtain ⟨n, hn⟩ := hℓ ((2 * π) • c) hc
+  refine ⟨n, mul_right_cancel₀ two_pi_pos.ne' ?_⟩
+  rw [map_smul, smul_eq_mul] at hn
+  linear_combination hn
+
+end Subgroup
+
+end TauCeti.Lie

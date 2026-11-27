@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Weyl.Group
 import TauCeti.Algebra.Lie.InvariantForm.RankOne
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Geometry.Lie.Adjoint.Exponential.Formula
+import TauCeti.Geometry.Lie.Subgroup.Torus.Root.Plane
 import TauCeti.Geometry.Lie.Subgroup.Weyl.Faithful
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
@@ -72,8 +73,6 @@ exponential.
   reflection `H ↦ H - α(H) (2 Z)`.
 * `TauCeti.Lie.lieExp_pi_smul_mem_normalizer_of_lie_eq_smul`: `exp (π x)` normalizes a closed
   connected subgroup with Lie algebra `t`.
-* `TauCeti.Lie.IsMaximalTorus.lie_mem_of_isRootPlane`: for `v` in a root plane of a maximal
-  torus with rotation `J`, the bracket `⁅v, J v⁆` lies in `𝔱`.
 * `TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_eq_reflection`: every real root
   of a maximal torus of a compact Lie group has a representative in the normalizer acting on `𝔱`
   by the orthogonal reflection in the root, lying in `Z_G(X)⁰` whenever `α(X) = 0`.
@@ -186,20 +185,6 @@ end RootPair
 section MaximalTorus
 
 variable [CompactSpace G]
-
-/-- **The bracket of a root vector with its rotation lies in the Lie algebra of a maximal torus.**
-For a root plane `V` of the Lie algebra `𝔱` of a maximal torus, with rotation `J`, and `v ∈ V`, the
-bracket `⁅v, J v⁆` commutes with `𝔱`, so it lies in `𝔱` by maximality. -/
-theorem IsMaximalTorus.lie_mem_of_isRootPlane {T : Subgroup G} (hT : IsMaximalTorus T)
-    {B : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)}
-    {α : Dual ℝ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
-    {V : Submodule ℝ (LeftInvariantDerivation I G)} {J : Module.End ℝ V}
-    (h : IsRootPlane B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J) (v : V) :
-    ⁅(v : LeftInvariantDerivation I G), (J v : LeftInvariantDerivation I G)⁆ ∈
-      (lieSubalgebraOfSubgroup (I := I) T).toSubmodule :=
-  lie_mem_of_lie_eq_smul (fun z hz ↦ hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero
-      fun Y hY ↦ by rw [← lie_skew, hz ⟨Y, hY⟩, neg_zero])
-    (h.lie_apply · v) fun X ↦ by rw [h.lie_apply, h.apply_apply, Submodule.coe_neg, smul_neg]
 
 /-- A nonzero root plane of a maximal torus with nonzero root contains a normalized root pair: the
 images `x, y` of `ê₀, ê₁` under its rank-one homomorphism `so(3) → 𝔤`. -/
