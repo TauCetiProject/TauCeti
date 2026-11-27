@@ -174,7 +174,7 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
     [MeasurableSpace V] [BorelSpace V] {k : ℕ} {E E₁ E₂ : Set V}
 
-/-- If a set `E` contains the line `x + L` through `x`, where `L` is not contained in a subspace
+/-- If a set `E` contains the affine subspace `x + L`, where `L` is not contained in a subspace
 `P`, then `E` does not have `1`-dimensional density zero outside the cones about `P` at `x`. -/
 theorem not_densityZeroOutsideCones_of_not_le {x : V} {L P : Submodule ℝ V}
     (hLE : ∀ z ∈ L, x + z ∈ E) (hLP : ¬ L ≤ P) : ¬ DensityZeroOutsideCones 1 E x P := by
@@ -195,13 +195,8 @@ theorem not_densityZeroOutsideCones_of_not_le {x : V} {L P : Submodule ℝ V}
   have hsub : (fun t : ℝ ↦ x + A t) '' univ ⊆ E := by
     rintro _ ⟨t, -, rfl⟩
     exact hLE _ (L.smul_mem t hvL)
-  have hdens : Tendsto (fun r ↦ volume ((univ : Set ℝ) ∩ cb 0 r) / volume (cb (0 : ℝ) r)) 𝓝₊
-      (𝓝 1) := by
-    refine tendsto_const_nhds.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
-    rw [univ_inter, ENNReal.div_self (measure_closedBall_pos volume _ hr).ne'
-      measure_closedBall_lt_top.ne]
-  have hle := hf.range_le_of_densityZeroOutsideCones hi hsub hdens (by simpa using h)
+  have hle := hf.range_le_of_densityZeroOutsideCones hi hsub
+    (tendsto_volume_inter_closedBall_div_of_mem_nhds univ_mem) (by simpa using h)
   exact hvP (hle ⟨1, by simp [A]⟩)
 
 /-- `P` is an approximate tangent `k`-plane to `E` at `x` (Mattila, Definition 15.17). -/
