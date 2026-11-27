@@ -360,9 +360,10 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero
   have hDisc := setIntegral_norm_sq_le_setIntegral_sobolevDensity
     (isCompact_setOf_norm_equivRealProdCLM_symm_le (Real.exp (2 * π * R))) hηi.integrableOn
     (hg.of_le one_le_two) fun z hz ↦ hgη z (le_trans hz hR0n)
-  have hEnd := setIntegral_norm_sq_le_setIntegral_add (S := D₀ᶜ)
+  have hEnd := setIntegral_le_setIntegral_add_setIntegral (S := D₀ᶜ)
     (measurableSet_le measurable_const Complex.equivRealProdCLM.symm.continuous.norm.measurable)
-    hηi hgi fun z hz ↦ hgη z (not_le.1 hz).le
+    (fun z ↦ by positivity) (fun z ↦ by positivity) hηi hgi
+    fun z hz ↦ by rw [hgη z (not_le.1 hz).le]
   have hEnd' := setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPullback hJ hu hB
     (hg.of_le one_le_two) hgc R
   rw [show {z : ℝ × ℝ | Real.exp (2 * π * R) < ν z} = D₀ᶜ by ext z; simp [D₀]] at hEnd'

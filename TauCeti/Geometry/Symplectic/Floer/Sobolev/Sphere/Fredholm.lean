@@ -422,10 +422,11 @@ private theorem integral_norm_sq_le_of_cutoff (ω : SymplecticForm V)
   have hDisc := Floer.setIntegral_norm_sq_le_setIntegral_sobolevDensity
     (isCompact_setOf_norm_equivRealProdCLM_symm_le R) hηi.integrableOn (hg.of_le one_le_two)
     fun z hz ↦ hgη z (le_trans hz (by linarith))
-  have hEnd := setIntegral_norm_sq_le_setIntegral_add
+  have hEnd := setIntegral_le_setIntegral_add_setIntegral
     (S := {z : ℝ × ℝ | R < ‖Complex.equivRealProdCLM.symm z‖})
-    (measurableSet_le measurable_const hNc.measurable) hηi
-    (hg.continuous.integrable_norm_sq_of_hasCompactSupport hgc) fun z hz ↦ hgη z (not_le.1 hz).le
+    (measurableSet_le measurable_const hNc.measurable) (fun z ↦ by positivity)
+    (fun z ↦ by positivity) hηi (hg.continuous.integrable_norm_sq_of_hasCompactSupport hgc)
+    fun z hz ↦ by rw [hgη z (not_le.1 hz).le]
   have hCV := setIntegral_norm_sq_le_mul_setIntegral_sobolevDensity_covectorPullback_inv hJ hu hB
     (hg.of_le one_le_two) hgc hR
   have hX₁ := setIntegral_nonneg (μ := volume) hD₀ fun z _ ↦ sobolevDensity_nonneg g z
