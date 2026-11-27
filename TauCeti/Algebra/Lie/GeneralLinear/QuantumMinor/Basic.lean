@@ -74,6 +74,15 @@ theorem commute_quantumMinor (E : Matrix ι ι A) (u : K) (a b : Fin n → ι) {
   simp only [quantumMinor_eq_columnDet, ← columnDet_submatrix_left]
   congr 1
 
+/-- Inserting a row at position `i` multiplies the minor with that row first by
+`(-1)^i`. -/
+theorem quantumMinor_insertNth_left (E : Matrix ι ι A) (u : K) (a : Fin n → ι)
+    (b : Fin (n + 1) → ι) (i : Fin (n + 1)) (r : ι) :
+    E.quantumMinor u (i.insertNth r a) b =
+      (-1 : ℤ) ^ i.val • E.quantumMinor u (Fin.cons r a) b := by
+  simp only [← Fin.cons_comp_cycleRange, quantumMinor_comp_perm_left, Fin.sign_cycleRange,
+    Units.smul_def, Units.val_pow_eq_pow_val, Units.coe_neg_one]
+
 /-- A quantum minor with a repeated row index vanishes. -/
 theorem quantumMinor_eq_zero_of_not_injective_left (E : Matrix ι ι A) (u : K) (a b : Fin n → ι)
     (h : ¬ Function.Injective a) : E.quantumMinor u a b = 0 := by
