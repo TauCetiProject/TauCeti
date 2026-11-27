@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.LinearAlgebra.Density.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.ExternalTensor
 import Mathlib.Geometry.Manifold.Algebra.Structures
+import TauCeti.Geometry.Manifold.IsManifold.Basic
 
 /-!
 # Densities on product manifolds
@@ -99,7 +100,8 @@ theorem prod_apply_append {x : M} {y : N} (μ : DensityBundle I M x) (ν : Densi
       μ v * ν w := by
   rw [prod_apply]
   simp only [Function.comp_def, ContinuousLinearEquiv.apply_symm_apply]
-  exact Density.prod_apply_append μ ν rfl rfl finrank_prod.symm v w
+  exact Density.prod_apply_append μ ν (TauCeti.finrank_tangentSpace x)
+    (TauCeti.finrank_tangentSpace y) finrank_prod.symm v w
 
 /-- **The density line of a product manifold.** At `p ∈ M × N`, the fibre of the external tensor
 product `|Λ|_M ⊠ |Λ|_N` of the density bundles of the factors is identified with the density line
@@ -107,8 +109,8 @@ of `M × N` by the product of densities. -/
 def externalTensorEquiv (p : M × N) :
     ExternalTensor ℝ (DensityBundle I M) (DensityBundle J N) p ≃ₗ[ℝ]
       DensityBundle (I.prod J) (M × N) p :=
-  Density.prodTensorEquiv (V := TangentSpace I p.1) (W := TangentSpace J p.2) rfl rfl
-      finrank_prod.symm ≪≫ₗ
+  Density.prodTensorEquiv (V := TangentSpace I p.1) (W := TangentSpace J p.2)
+      (TauCeti.finrank_tangentSpace p.1) (TauCeti.finrank_tangentSpace p.2) finrank_prod.symm ≪≫ₗ
     Density.map (Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).symm.toLinearEquiv
 
 @[simp]
@@ -120,7 +122,8 @@ theorem externalTensorEquiv_tmul (p : M × N) (μ : DensityBundle I M p.1)
   -- lines at `p.1` and `p.2` by definition; `p` and `(p.1, p.2)` agree by eta for pairs.
   exact congrArg
     (Density.map (Manifold.tangentSpaceProdEquiv (I := I) (J := J) p).symm.toLinearEquiv)
-    (Density.prodTensorEquiv_tmul rfl rfl finrank_prod.symm μ ν)
+    (Density.prodTensorEquiv_tmul (TauCeti.finrank_tangentSpace p.1)
+      (TauCeti.finrank_tangentSpace p.2) finrank_prod.symm μ ν)
 
 /-- The inverse of `TauCeti.DensityBundle.externalTensorEquiv` on a product of densities. -/
 @[simp]
@@ -204,12 +207,11 @@ theorem contMDiff_prod {μ : ∀ x, DensityBundle I M x} {ν : ∀ y, DensityBun
   have h₂ := ((Density.contMDiffAt_section_iff p₀.2).1 (hν p₀.2)).comp p₀
     (contMDiffAt_snd (I := I) (J := J))
   -- In the preferred frames the product density is a constant times the product of the two
-  -- factor readings (`prod_apply_trivializationAt_symm`).
-  refine ((contMDiffAt_const (c := |(((finBasis ℝ E).prod (finBasis ℝ E')).reindex
-    (finSumFinEquiv.trans (finCongr finrank_prod.symm))).det (finBasis ℝ (E × E'))|)).mul
-      (h₁.mul h₂)).congr_of_eventuallyEq ?_
-  filter_upwards [(chartAt (ModelProd H H') p₀).open_source.mem_nhds (mem_chart_source _ p₀)]
-    with p hp
-  exact prod_apply_trivializationAt_symm hp (μ p.1) (ν p.2)
+  -- factor readings; the constant is the one of `prod_apply_trivializationAt_symm`, read off by
+  -- unification rather than written out again.
+  exact (contMDiffAt_const.mul (h₁.mul h₂)).congr_of_eventuallyEq <|
+    Filter.eventually_of_mem
+      ((chartAt (ModelProd H H') p₀).open_source.mem_nhds (mem_chart_source _ p₀))
+      fun p hp ↦ prod_apply_trivializationAt_symm hp (μ p.1) (ν p.2)
 
 end TauCeti.DensityBundle
