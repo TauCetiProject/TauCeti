@@ -16,15 +16,13 @@ For distinct coordinate indices `i, j : Fin k`, the diagonal lift
 `spinRotation (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1) t` to the commuting product
 of the two `spinRotation` elements in the first and second `k`-blocks of `ℝ^(k + k)`, with
 Clifford expansion
-`(cos t + sin t · ι e_i ι e_j) * (cos t + sin t · ι e_{k + i} ι e_{k + j})`, which closes to `1`
-at Spin angle `t = π` (a full `2π` rotation in `SO(k)`).
+`(cos t + sin t · ι e_i ι e_j) * (cos t + sin t · ι e_{k + i} ι e_{k + j})`.
 
 ## Main results
 
-* `TauCeti.realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation`,
-  `TauCeti.coe_realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation`, and
-  `TauCeti.realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation_pi`: coordinate-plane
-  rotation formula, Clifford-algebra expansion, and full-turn closure.
+* `TauCeti.realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation` and
+  `TauCeti.coe_realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation`: coordinate-plane
+  rotation formula and Clifford-algebra expansion.
 -/
 
 public section
@@ -91,17 +89,6 @@ theorem coe_realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation {k
     Submonoid.coe_mul, spinRotation_eq_spinCircle, spinRotation_eq_spinCircle,
     coe_spinCircle, coe_spinCircle]
   simp [Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
-
-/-- At Spin angle `π` (a full `2π` rotation in `SO(k)`), the diagonal lift of a coordinate-plane
-rotation closes to `1` in `Spin(k + k)`. -/
-theorem realCliffordSpinDiagonalLift_spinToSpecialOrthogonal_spinRotation_pi {k : ℕ}
-    {i j : Fin k} (hij : i ≠ j) :
-    realCliffordSpinDiagonalLift k
-        (spinToSpecialOrthogonal (realCliffordForm k 0)
-          (spinRotation (realCliffordForm k 0) (Pi.single i 1) (Pi.single j 1)
-            (realCliffordForm_zero_single_one k i) (realCliffordForm_zero_single_one k j)
-            (isOrtho_realCliffordForm_single (p := k) (q := 0) hij 1 1) Real.pi)) = 1 := by
-  rw [spinRotation_pi, spinGroup.spinToSpecialOrthogonal_negOne, map_one]
 
 end
 

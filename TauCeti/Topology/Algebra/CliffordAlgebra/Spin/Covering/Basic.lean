@@ -115,13 +115,16 @@ theorem isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom
     IsCoveringMap (realCliffordSpinDoubleCoverZero n).rightHom :=
   (isQuotientCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n).isCoveringMap
 
-/-- The Spin projection `spinToSpecialOrthogonal (realCliffordForm n 0)` is a covering map
-in positive rank. -/
+/-- The Spin projection `spinToSpecialOrthogonal (realCliffordForm n 0)` is a covering map. -/
 theorem isCoveringMap_spinToSpecialOrthogonal_realCliffordForm
-    (n : ℕ) [NeZero n] :
+    (n : ℕ) :
     IsCoveringMap (spinToSpecialOrthogonal (realCliffordForm n 0)) := by
-  have h := isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n
-  rwa [realCliffordSpinDoubleCoverZero_rightHom] at h
+  obtain rfl | hn := n.eq_zero_or_pos
+  · have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
+    exact .of_discreteTopology _
+  · have : NeZero n := ⟨hn.ne'⟩
+    have h := isCoveringMap_realCliffordSpinDoubleCoverZero_rightHom n
+    rwa [realCliffordSpinDoubleCoverZero_rightHom] at h
 
 /-- The bundled compact real Spin projection is a covering map. -/
 theorem isCoveringMap_realCliffordSpinProjectionZero

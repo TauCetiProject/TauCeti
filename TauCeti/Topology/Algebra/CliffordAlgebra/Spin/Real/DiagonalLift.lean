@@ -257,11 +257,6 @@ theorem eq_realCliffordSpinDiagonalLift_of_continuous_lift (k : ℕ)
       realCliffordSpecialOrthogonalBlockSum k k (g, g))
     (h1 : f 1 = 1) :
     f = realCliffordSpinDiagonalLift k := by
-  obtain rfl | hk := k.eq_zero_or_pos
-  · -- In rank zero `Spin(0)` is trivial (`Fin 0 → ℝ` is subsingleton).
-    have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
-    exact funext fun _ ↦ Subsingleton.elim _ _
-  have : NeZero (k + k) := ⟨by omega⟩
   refine (isCoveringMap_spinToSpecialOrthogonal_realCliffordForm (k + k)).eq_of_comp_eq
     hf (continuous_realCliffordSpinDiagonalLift k) ?_ 1 (by rw [h1, map_one])
   funext g

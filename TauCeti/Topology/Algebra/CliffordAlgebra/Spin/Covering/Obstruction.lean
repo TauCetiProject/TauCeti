@@ -57,10 +57,6 @@ theorem not_exists_continuous_lift_of_spinLift_ne {n N : ℕ}
     ¬ ∃ f : QuadraticMap.specialOrthogonalGroup (realCliffordForm (n + 2) 0) →
         realCliffordSpinGroupZero N,
       Continuous f ∧ ∀ g, spinToSpecialOrthogonal (realCliffordForm N 0) (f g) = φ g := by
-  obtain rfl | hN := Nat.eq_zero_or_pos N
-  · have : Subsingleton (Fin (0 + 0) → ℝ) := inferInstanceAs (Subsingleton (Fin 0 → ℝ))
-    exact absurd (Subsingleton.elim _ _) hψ_ne
-  have : NeZero N := ⟨hN.ne'⟩
   rintro ⟨f, hf_cont, hf_lift⟩
   -- Normalize `f` so that it sends `1` to `ψ 1` while lifting the same map `φ`.
   have hφ1 : spinToSpecialOrthogonal (realCliffordForm N 0) (ψ 1) = φ 1 := by
