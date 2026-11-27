@@ -241,33 +241,47 @@ theorem gwConstant_eq_one_add_sq_div : gwConstant = (1 + gwAngle ^ 2) / (π * gw
 
 /-! ### Numerical bounds -/
 
+/-- Taylor enclosures of `cos y` and `sin y` for `y` in an interval `[a, b] ⊆ [0, 1]`: there the
+cosine decreases and the sine increases, and `cos_bound_six` and `sin_bound_seven` bound them at
+the endpoints. -/
+private lemma cos_sin_mem_Icc {a b y : ℝ} (ha : 0 ≤ a) (hay : a ≤ y) (hyb : y ≤ b) (hb : b ≤ 1) :
+    cos y ∈ Icc (1 - b ^ 2 / 2 + b ^ 4 / 24 - b ^ 6 / 720 - b ^ 8 / 35840)
+      (1 - a ^ 2 / 2 + a ^ 4 / 24 - a ^ 6 / 720 + a ^ 8 / 35840) ∧
+    sin y ∈ Icc (a - a ^ 3 / 6 + a ^ 5 / 120 - a ^ 7 / 5040 - a ^ 9 / 326592)
+      (b - b ^ 3 / 6 + b ^ 5 / 120 - b ^ 7 / 5040 + b ^ 9 / 326592) := by
+  have hπ : (1 : ℝ) ≤ π / 2 := by linarith [pi_gt_three]
+  have hb₀ : 0 ≤ b := ha.trans (hay.trans hyb)
+  have hca := abs_le.1 (cos_bound_six (abs_le.2 ⟨by linarith, by linarith⟩ : |a| ≤ 1))
+  have hsa := abs_le.1 (sin_bound_seven (abs_le.2 ⟨by linarith, by linarith⟩ : |a| ≤ 1))
+  have hcb := abs_le.1 (cos_bound_six (abs_le.2 ⟨by linarith, hb⟩ : |b| ≤ 1))
+  have hsb := abs_le.1 (sin_bound_seven (abs_le.2 ⟨by linarith, hb⟩ : |b| ≤ 1))
+  rw [abs_of_nonneg ha] at hca hsa
+  rw [abs_of_nonneg hb₀] at hcb hsb
+  have h₁ := cos_le_cos_of_nonneg_of_le_pi ha (by linarith) hay
+  have h₂ := cos_le_cos_of_nonneg_of_le_pi (ha.trans hay) (by linarith) hyb
+  have h₃ := sin_le_sin_of_le_of_le_pi_div_two (by linarith) (by linarith) hay
+  have h₄ := sin_le_sin_of_le_of_le_pi_div_two (by linarith) (by linarith) hyb
+  exact ⟨⟨by linarith, by linarith⟩, ⟨by linarith, by linarith⟩⟩
+
+/-- Reflecting `x` to `π - x`: `numer x = 1 + cos (π - x) - x sin (π - x)`. -/
+private lemma numer_eq_pi_sub (x : ℝ) : numer x = 1 + cos (π - x) - x * sin (π - x) := by
+  rw [numer, cos_pi_sub, sin_pi_sub]; ring
+
+/- In the two sign lemmas below, `π - x` lies in `[3.141592 - x, 3.141593 - x] ⊆ [0, 1]` by
+`pi_gt_d6` and `pi_lt_d6`, and `cos_sin_mem_Icc` bounds `cos (π - x)` and `sin (π - x)`. -/
+
 private lemma numer_lt_zero_d2 : numer 2.33 < 0 := by
-  have hc : cos (2.33 : ℝ) = -cos (π - 2.33) := by rw [cos_pi_sub, neg_neg]
-  have hs : sin (2.33 : ℝ) = sin (π - 2.33) := by rw [sin_pi_sub]
-  have h₁ : cos (π - 2.33) ≤ cos 0.811592 :=
-    cos_le_cos_of_nonneg_of_le_pi (by norm_num) (by linarith [pi_gt_d6]) (by linarith [pi_gt_d6])
-  have h₂ : sin 0.811592 ≤ sin (π - 2.33) :=
-    sin_le_sin_of_le_of_le_pi_div_two (by linarith [pi_gt_d6]) (by linarith [pi_lt_d6])
-      (by linarith [pi_gt_d6])
-  have h₃ := abs_le.1 (cos_bound_six (x := 0.811592) (by norm_num [abs_of_pos]))
-  have h₄ := abs_le.1 (sin_bound_seven (x := 0.811592) (by norm_num [abs_of_pos]))
-  norm_num [abs_of_pos] at h₃ h₄
-  rw [numer, hc, hs]
+  obtain ⟨⟨-, hc⟩, ⟨hs, -⟩⟩ := cos_sin_mem_Icc (a := 3.141592 - 2.33) (b := 3.141593 - 2.33)
+    (y := π - 2.33) (by norm_num) (by linarith [pi_gt_d6]) (by linarith [pi_lt_d6]) (by norm_num)
+  norm_num only at hc hs
+  rw [numer_eq_pi_sub]
   linarith
 
 private lemma numer_pos_d3 : 0 < numer 2.332 := by
-  have hc : cos (2.332 : ℝ) = -cos (π - 2.332) := by rw [cos_pi_sub, neg_neg]
-  have hs : sin (2.332 : ℝ) = sin (π - 2.332) := by rw [sin_pi_sub]
-  have h₁ : cos 0.809593 ≤ cos (π - 2.332) :=
-    cos_le_cos_of_nonneg_of_le_pi (by linarith [pi_gt_d6]) (by linarith [pi_gt_d6])
-      (by linarith [pi_lt_d6])
-  have h₂ : sin (π - 2.332) ≤ sin 0.809593 :=
-    sin_le_sin_of_le_of_le_pi_div_two (by linarith [pi_gt_d6]) (by linarith [pi_gt_d6])
-      (by linarith [pi_lt_d6])
-  have h₃ := abs_le.1 (cos_bound_six (x := 0.809593) (by norm_num [abs_of_pos]))
-  have h₄ := abs_le.1 (sin_bound_seven (x := 0.809593) (by norm_num [abs_of_pos]))
-  norm_num [abs_of_pos] at h₃ h₄
-  rw [numer, hc, hs]
+  obtain ⟨⟨hc, -⟩, ⟨-, hs⟩⟩ := cos_sin_mem_Icc (a := 3.141592 - 2.332) (b := 3.141593 - 2.332)
+    (y := π - 2.332) (by norm_num) (by linarith [pi_gt_d6]) (by linarith [pi_lt_d6]) (by norm_num)
+  norm_num only at hc hs
+  rw [numer_eq_pi_sub]
   linarith
 
 /-- A point of `(0, π]` where `numer` is negative lies below `gwAngle`. -/
