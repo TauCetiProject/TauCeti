@@ -603,7 +603,6 @@ theorem exists_memLp_gradient_and_memLp_value_of_vmoModulus_le {p : ℝ≥0∞} 
     exists_memLp_gradient_ball_of_scalar_forcing_of_vmoModulus_le (n := n) hp hp_top lam Lam
   obtain ⟨C, δ₂, hδ₂, hap⟩ :=
     exists_eLpNorm_gradient_ball_le_of_scalar_forcing_of_setAverage_le (n := n) hp hp_top lam Lam
-  have hp1 : 1 ≤ p := one_le_two.trans hp.le
   refine ⟨min δ₁ δ₂, lt_min hδ₁ hδ₂,
     fun {a r₀ κ} hr₀ hκ ham hell hη u G f hG hf hGp hfp hu => ?_⟩
   have hcoeff := (hell.mono_set (subset_univ _)).memLp_energyIntegrand_zero_zero
@@ -643,7 +642,7 @@ theorem exists_memLp_gradient_and_memLp_value_of_vmoModulus_le {p : ℝ≥0∞} 
   -- Integrating the local bounds over all centres.
   have hk : MemLp (fun x => R * ‖f x - κ * W1p.value u x‖ + R⁻¹ * ‖W1p.value u x‖) p volume :=
     (hFp.norm.const_mul R).add (hup.norm.const_mul R⁻¹)
-  have hglob := eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add hp1 hp_top
+  have hglob := eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add (one_le_two.trans hp.le) hp_top
     (W1p.memLp_gradient u).aestronglyMeasurable hG.aestronglyMeasurable hk.aestronglyMeasurable
     (by norm_num : (1 : ℝ) ≤ 4) (half_pos hR) (Eventually.of_forall hlocal)
   exact memLp_iff.2 (hglob.trans_lt (ENNReal.mul_lt_top
