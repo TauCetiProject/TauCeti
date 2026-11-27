@@ -39,6 +39,9 @@ a *free* tuple rather than as the data of a polynomial subtype.
   two constructions are mutually inverse.
 * `TauCeti.Polynomial.ncard_setOf_monic_natDegree_eq_and`: counting monic polynomials of degree
   `n` with a property is counting the coefficient tuples whose polynomial has it.
+* `TauCeti.Polynomial.monicsOfDegree`, `TauCeti.Polynomial.mem_monicsOfDegree`,
+  `TauCeti.Polynomial.card_monicsOfDegree`: the monic polynomials of degree `n` over a finite
+  semiring as a finset, with its membership and its cardinality `#R ^ n`.
 * `TauCeti.Polynomial.sum_monicsOfDegree`: over a finite nontrivial semiring, a sum over the monic
   polynomials of degree `n` is a sum over their lower coefficients.
 * `TauCeti.Polynomial.monicOfCoeff_add_single_zero`: moving the constant coefficient by `t` adds
@@ -66,6 +69,28 @@ namespace TauCeti
 open Polynomial
 
 namespace Polynomial
+
+section MonicsOfDegree
+
+variable (R : Type*) [Semiring R]
+
+/-- The finset of the monic polynomials of degree `d` over a finite semiring. -/
+noncomputable def monicsOfDegree [Finite R] (d : ℕ) : Finset R[X] :=
+  (finite_setOf_monic_natDegree_eq R d).toFinset
+
+variable {R} in
+@[simp]
+theorem mem_monicsOfDegree [Finite R] {d : ℕ} {g : R[X]} :
+    g ∈ monicsOfDegree R d ↔ g.Monic ∧ g.natDegree = d := by
+  simp [monicsOfDegree]
+
+/-- Over a finite nontrivial semiring `R` there are `#R ^ d` monic polynomials of degree `d`. -/
+theorem card_monicsOfDegree [Finite R] [Nontrivial R] (d : ℕ) :
+    (monicsOfDegree R d).card = Nat.card R ^ d := by
+  rw [monicsOfDegree, ← Set.ncard_eq_toFinset_card _ (finite_setOf_monic_natDegree_eq R d),
+    ncard_setOf_monic_natDegree_eq]
+
+end MonicsOfDegree
 
 section OfCoeff
 

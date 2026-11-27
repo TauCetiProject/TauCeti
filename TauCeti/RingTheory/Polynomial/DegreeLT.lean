@@ -44,8 +44,6 @@ map of `g` and `h` on these degree bounds, in the explicit form consumed by Hens
   over a finite coefficient ring there are finitely many monic polynomials of degree `d`, and over
   a nontrivial one there are `#R ^ d` of them, since `Polynomial.monicEquivDegreeLT` matches them
   with `R[X]_d`.
-* `Polynomial.monicsOfDegree`, `Polynomial.mem_monicsOfDegree`, `Polynomial.card_monicsOfDegree`:
-  the same polynomials as a finset, with its membership and its cardinality.
 * `Polynomial.Monic.sub_mem_degreeLT`: the difference of two monic polynomials of the same degree
   `n` has degree `< n`.
 * `Polynomial.Monic.mul_add_mul_eq_iff`: given a Bézout relation `u * g + v * h = 1`, the
@@ -135,22 +133,6 @@ theorem ncard_monic_pred_add_ncard_monic_not_pred [Finite R] [Nontrivial R] (d :
   by_cases h : P f
   · simp [h, hP f h]
   · simp [h]
-
-/-- The finset of the monic polynomials of degree `d` over a finite semiring. -/
-noncomputable def monicsOfDegree [Finite R] (d : ℕ) : Finset R[X] :=
-  (finite_setOf_monic_natDegree_eq R d).toFinset
-
-variable {R} in
-@[simp]
-theorem mem_monicsOfDegree [Finite R] {d : ℕ} {g : R[X]} :
-    g ∈ monicsOfDegree R d ↔ g.Monic ∧ g.natDegree = d := by
-  simp [monicsOfDegree]
-
-/-- Over a finite nontrivial semiring `R` there are `#R ^ d` monic polynomials of degree `d`. -/
-theorem card_monicsOfDegree [Finite R] [Nontrivial R] (d : ℕ) :
-    (monicsOfDegree R d).card = Nat.card R ^ d := by
-  rw [monicsOfDegree, ← Set.ncard_eq_toFinset_card _ (finite_setOf_monic_natDegree_eq R d),
-    ncard_setOf_monic_natDegree_eq]
 
 end Semiring
 

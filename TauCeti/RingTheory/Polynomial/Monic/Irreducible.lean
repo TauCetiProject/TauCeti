@@ -32,8 +32,9 @@ monic quadratic factors, in the domain itself.
 * `Polynomial.mem_monicIrreduciblesOfDegree_iff`: the defining membership condition.
 * `Polynomial.finite_monicIrreduciblesOfDegree`: over a finite coefficient ring there are
   finitely many.
-* `Polynomial.exists_finset_monic_irreducible_natDegree_le`: over a finite coefficient ring, a
-  finite set of monic irreducibles contains every monic irreducible of degree at most `n`.
+* `TauCeti.Polynomial.exists_finset_monic_irreducible_mem_of_natDegree_le`: over a finite
+  coefficient ring, a finite set of monic irreducibles contains every monic irreducible of degree
+  at most `n`.
 * `Polynomial.ncard_monicIrreduciblesOfDegree_one`: over a domain the monic irreducibles of degree
   one are the `X - C a`, as many as the elements of the coefficient ring.
 * `Polynomial.monicIrreduciblesOfDegree_sdiff_singleton_X`: the monic irreducibles other than `X`
@@ -81,21 +82,6 @@ degree.** -/
 theorem finite_monicIrreduciblesOfDegree [Finite R] (d : ℕ) :
     (monicIrreduciblesOfDegree R d).Finite :=
   (finite_setOf_monic_natDegree_eq R d).subset fun _ hg => ⟨hg.1, hg.2.2⟩
-
-/-- Over a finite semiring, some finite set of monic irreducible polynomials contains every monic
-irreducible polynomial of degree at most `n`. -/
-theorem exists_finset_monic_irreducible_natDegree_le [Finite R] (n : ℕ) :
-    ∃ S : Finset R[X], (∀ P ∈ S, P.Monic ∧ Irreducible P) ∧
-      ∀ P : R[X], P.Monic → Irreducible P → P.natDegree ≤ n → P ∈ S := by
-  classical
-  refine ⟨((Finset.range (n + 1)).biUnion (monicsOfDegree R)).filter Irreducible, fun P hP ↦ ?_,
-    fun P hPm hPirr hPn ↦ ?_⟩
-  · obtain ⟨⟨e, -, hPm, -⟩, hPirr⟩ : (∃ e < n + 1, P.Monic ∧ P.natDegree = e) ∧ Irreducible P := by
-      simpa only [Finset.mem_filter, Finset.mem_biUnion, Finset.mem_range, mem_monicsOfDegree]
-        using hP
-    exact ⟨hPm, hPirr⟩
-  · simp only [Finset.mem_filter, Finset.mem_biUnion, Finset.mem_range, mem_monicsOfDegree]
-    exact ⟨⟨P.natDegree, by omega, hPm, rfl⟩, hPirr⟩
 
 variable {R} in
 /-- The monic irreducible polynomials of degree `n` other than `X` are those with nonzero constant
@@ -172,6 +158,29 @@ both sides are `0` by convention (`ncard` of an infinite set and `Nat.card R` ar
 end Domain
 
 end Polynomial
+
+namespace TauCeti.Polynomial
+
+open _root_.Polynomial
+
+variable (R : Type*) [Semiring R]
+
+/-- Over a finite semiring, some finite set of monic irreducible polynomials contains every monic
+irreducible polynomial of degree at most `n`. -/
+theorem exists_finset_monic_irreducible_mem_of_natDegree_le [Finite R] (n : ℕ) :
+    ∃ S : Finset R[X], (∀ P ∈ S, P.Monic ∧ Irreducible P) ∧
+      ∀ P : R[X], P.Monic → Irreducible P → P.natDegree ≤ n → P ∈ S := by
+  classical
+  refine ⟨(Finset.range (n + 1)).biUnion fun e ↦ (finite_monicIrreduciblesOfDegree R e).toFinset,
+    fun P hP ↦ ?_, fun P hPm hPirr hPn ↦ ?_⟩
+  · obtain ⟨e, -, hPe⟩ := Finset.mem_biUnion.1 hP
+    obtain ⟨hPm, hPirr, -⟩ :=
+      mem_monicIrreduciblesOfDegree_iff.1 ((Set.Finite.mem_toFinset _).1 hPe)
+    exact ⟨hPm, hPirr⟩
+  · exact Finset.mem_biUnion.2 ⟨P.natDegree, Finset.mem_range.2 (by omega),
+      (Set.Finite.mem_toFinset _).2 (mem_monicIrreduciblesOfDegree_iff.2 ⟨hPm, hPirr, rfl⟩)⟩
+
+end TauCeti.Polynomial
 
 namespace Polynomial.Monic
 
