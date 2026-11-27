@@ -30,10 +30,10 @@ cohomology is affine: Stacks, Lemma 30.3.1 (01XF), (2) implies (1). The proof ha
   `H¹(X, I) = 0` lift the global function on `Z` that is `1` at `x` and `0` on `X ∖ U` to a global
   function `f` on `X`. Then `x ∈ X_f ⊆ U`, so `X_f` is a basic open of the affine open `U`.
 * A quasi-coherent submodule `M` of a finite free module `𝒪_X^n` has `H¹(X, M) = 0`
-  (`AlgebraicGeometry.Scheme.subsingleton_cohomology_one_of_comp_eq_zero_imp`, stated for `M`
-  with finitely many jointly injective morphisms to `𝒪_X`). By induction on `n`: the image of `M`
-  under the last coordinate is a quasi-coherent ideal sheaf `I`, the kernel of `M ⟶ I` is a
-  submodule of `𝒪_X^{n-1}`, and the long exact sequence concludes.
+  (`AlgebraicGeometry.Scheme.subsingleton_cohomology_one_of_idealSheaf_of_comp_eq_zero_imp`,
+  stated for `M` with finitely many jointly injective morphisms to `𝒪_X`). By induction on `n`:
+  the image of `M` under the last coordinate is a quasi-coherent ideal sheaf `I`, the kernel of
+  `M ⟶ I` is a submodule of `𝒪_X^{n-1}`, and the long exact sequence concludes.
 * Since `X` is quasi-compact, finitely many such `X_{fᵢ}` cover `X` (every point specializes to a
   closed point). Then `(gᵢ) ↦ Σ fᵢ gᵢ` is an epimorphism `⨁ᵢ 𝒪_X ⟶ 𝒪_X` whose kernel is a
   quasi-coherent submodule of `⨁ᵢ 𝒪_X`, so the vanishing of its first cohomology lifts `1` to
@@ -109,8 +109,8 @@ theorem exists_isAffineOpen_basicOpen_mem_of_isClosed (X : Scheme.{u})
 every quasi-coherent `𝒪_X`-module `M` with finitely many jointly injective morphisms
 `φ i : M ⟶ 𝒪_X`, that is, of every quasi-coherent submodule of a finite free module. Stacks,
 proof of Lemma 30.3.1 (01XF). -/
-theorem subsingleton_cohomology_one_of_comp_eq_zero_imp
-    (h : ∀ I : X.IdealSheafData, Subsingleton (Cohomology I.sheaf 1)) {ι : Type u} [Finite ι]
+theorem subsingleton_cohomology_one_of_idealSheaf_of_comp_eq_zero_imp
+    (h : ∀ I : X.IdealSheafData, Subsingleton (Cohomology I.sheaf 1)) {ι : Type*} [Finite ι]
     (M : X.Modules) [M.IsQuasicoherent] (φ : ι → (M ⟶ Scheme.Modules.unit X))
     (hφ : ∀ ⦃Z : X.Modules⦄ (g : Z ⟶ M), (∀ i, g ≫ φ i = 0) → g = 0) :
     Subsingleton (Cohomology M 1) := by
@@ -167,7 +167,7 @@ theorem isAffine_of_subsingleton_cohomology_one_idealSheaf (X : Scheme.{u}) [Com
     isQuasicoherent_kernel (M := SheafOfModules.free (R := X.ringCatSheaf) t)
       (N := SheafOfModules.unit X.ringCatSheaf) _
   -- The coordinate projections of the biproduct `𝒪_X^t` are jointly injective.
-  have hK := subsingleton_cohomology_one_of_comp_eq_zero_imp h
+  have hK := subsingleton_cohomology_one_of_idealSheaf_of_comp_eq_zero_imp h
     (kernel (C := X.Modules) (linearCombination F))
     (fun i ↦ kernel.ι (C := X.Modules) _ ≫ (FiniteLocallyFreeSheaf.freeBicone X t).π i)
     fun Z g hg ↦ by
