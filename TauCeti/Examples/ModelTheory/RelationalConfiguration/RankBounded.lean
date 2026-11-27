@@ -35,9 +35,7 @@ example {K : Set (RelationalConfiguration L ℕ)}
     (h : MeasurableSet {p : K × K | classIso K p.1 p.2}) : ¬ BorelComplete K := by
   refine not_borelComplete_of_rank_bounded (fun _ ↦ 0) (fun α _ ↦ ?_)
     fun _ _ _ ↦ ⟨0, omega_pos 1, fun _ _ ↦ le_rfl⟩
-  have hK : K ∩ {c | (fun _ ↦ (0 : Ordinal.{0})) c ≤ α} = K :=
-    inter_eq_left.2 fun _ _ ↦ zero_le (a := α)
-  rw [hK]
+  rw [show K ∩ {_c | (0 : Ordinal.{0}) ≤ α} = K by simp]
   exact h
 
 -- No rank on the coded graphs satisfies both hypotheses: they are Borel complete.

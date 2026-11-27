@@ -57,20 +57,18 @@ theorem not_borelComplete_of_rank_bounded {K : Set (RelationalConfiguration L �
     ¬ BorelComplete K := by
   intro hK
   obtain ⟨f, hf, hfiso⟩ := Setoid.borelReducible_iff.1 <|
-    borelComplete_iff.1 hK Language.graph graphClass measurableSet_graphClass
-      isomorphismInvariant_graphClass
+    hK.borelReducible measurableSet_graphClass isomorphismInvariant_graphClass
   -- the image of the reduction is analytic, as the image of the Polish space `graphClass`
   have : PolishSpace graphClass := isClosed_graphClass.polishSpace
   have hA : AnalyticSet (range fun x ↦ (f x : RelationalConfiguration L ℕ)) := by
     rw [← image_univ]
     exact MeasurableSet.univ.analyticSet_image (measurable_subtypeVal.comp hf)
   obtain ⟨α, hα, hρ⟩ := hb _ (by rintro _ ⟨x, rfl⟩; exact (f x).property) hA
-  -- so the reduction lands in the level `K_α`
+  -- so the reduction lands in the level `K_α`, whose isomorphism relation is Borel
   let f' : graphClass → ↥(K ∩ {c | ρ c ≤ α}) := fun x ↦ ⟨f x, (f x).property, hρ _ ⟨x, rfl⟩⟩
-  have hf' : Measurable f' := (measurable_subtypeVal.comp hf).subtype_mk
-  apply not_measurableSet_classIso_of_borelComplete borelComplete_graphClass
-  convert (ha α hα).preimage (hf'.prodMap hf') using 1
-  ext p
-  exact hfiso p.1 p.2
+  refine not_borelReducible_classIso_of_borelComplete borelComplete_graphClass (ha α hα)
+    (Setoid.borelReducible_iff.2 ⟨f', (measurable_subtypeVal.comp hf).subtype_mk, fun x y ↦ ?_⟩)
+  -- isomorphism on `K_α` and on `K` are both isomorphism of the underlying codes
+  simpa only [classIso_apply] using hfiso x y
 
 end TauCeti.RelationalConfiguration
