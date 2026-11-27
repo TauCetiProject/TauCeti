@@ -31,7 +31,8 @@ For `G` finite, `Z(R[G])` is a submodule of the finite `R`-module `R[G]`, so it 
 ## Main results
 
 * `MonoidAlgebra.mapRingHom_mem_center`: the coefficient map preserves centrality.
-* `MonoidAlgebra.centerMapRingHom_algebraMap`: the map on centres is compatible with the scalars.
+* `MonoidAlgebra.centerMapRingHom_algebraMap`, `MonoidAlgebra.centerMapRingHom_smul`: the map on
+  centres is compatible with the scalars.
 * `TauCeti.moduleFinite_center_monoidAlgebra`, `TauCeti.isArtinianRing_center_monoidAlgebra`: for
   `G` finite, `Z(R[G])` is a finite `R`-module when `R` is Noetherian, and an Artinian ring when
   `R` is Artinian (instances).
@@ -76,6 +77,13 @@ theorem centerMapRingHom_algebraMap (f : R →+* S) (r : R) :
     centerMapRingHom G f (algebraMap R (Subalgebra.center R R[G]) r) =
       algebraMap S (Subalgebra.center S S[G]) (f r) :=
   Subtype.ext <| RingHom.congr_fun (mapRingHom_comp_algebraMap f) r
+
+/-- The map on centres is `f`-semilinear: it sends `r • z` to `f r • z'`, for `z'` the image of
+`z`. -/
+@[simp]
+theorem centerMapRingHom_smul (f : R →+* S) (r : R) (z : Subalgebra.center R R[G]) :
+    centerMapRingHom G f (r • z) = f r • centerMapRingHom G f z := by
+  rw [Algebra.smul_def, map_mul, centerMapRingHom_algebraMap, ← Algebra.smul_def]
 
 /-- For a commutative monoid `G`, every element of `R[G]` is central, so `R[G]` is isomorphic to its
 centre: the identification sends `x` to `x`, read as an element of the centre. -/
