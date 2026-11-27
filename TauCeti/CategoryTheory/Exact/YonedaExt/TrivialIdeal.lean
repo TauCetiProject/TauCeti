@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Exact.YonedaExt.BaerSum
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
 public import TauCeti.CategoryTheory.Exact.Stable.Injective
+import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Equivalence
 
 /-!
 # The Ext-trivial ideals of an exact category
@@ -37,6 +38,8 @@ for relative injectives.
   factor through every deflation onto their target.
 * `TauCeti.ExactStructure.injectivelyTrivialIdeal E`: the ideal `ℐ_E` of the morphisms that extend
   across every inflation out of their source.
+* `TauCeti.ExactStructure.injectiveStableToTrivialFunctor E`: the full comparison functor from
+  the injective stable category to `E/ℐ_E`, an equivalence with enough relative injectives.
 
 ## Main results
 
@@ -234,6 +237,33 @@ theorem EnoughInjectives.injectivelyTrivialIdeal_eq (h : E.EnoughInjectives) :
     E.factorsThrough_injective_iff_exists_extension P.i (E.isInflation_f P.conflation)
       P.isInjective]
   exact mem_injectivelyTrivialIdeal_iff.mp hf (E.isInflation_f P.conflation)
+
+variable (E) in
+/-- The canonical functor from the injective stable category to the quotient by injectively
+trivial morphisms, induced by the identity on the underlying category. -/
+noncomputable abbrev injectiveStableToTrivialFunctor :
+    E.InjectiveStableCategory ⥤ E.injectivelyTrivialIdeal.Quotient :=
+  E.injectiveStableIdeal.lift E.injectivelyTrivialIdeal.quotientFunctor (by
+    rw [MorphismIdeal.kerIdeal_quotientFunctor]
+    exact injectiveStableIdeal_le_injectivelyTrivialIdeal)
+
+/-- The comparison sends a stable class to the class of the same morphism modulo injectively
+trivial morphisms. -/
+@[simp]
+theorem injectiveStableToTrivialFunctor_map (E : ExactStructure C) (f : X ⟶ Y) :
+    E.injectiveStableToTrivialFunctor.map (E.injectiveStableFunctor.map f) =
+      E.injectivelyTrivialIdeal.quotientFunctor.map f :=
+  Quotient.lift_map_functor_map _ _ _ _
+
+/-- The comparison to the quotient by injectively trivial morphisms is full. -/
+instance (E : ExactStructure C) : E.injectiveStableToTrivialFunctor.Full :=
+  MorphismIdeal.full_lift _ _ _
+
+/-- With enough relative injectives the comparison is an equivalence. -/
+theorem EnoughInjectives.injectiveStableToTrivialFunctor_isEquivalence (h : E.EnoughInjectives) :
+    E.injectiveStableToTrivialFunctor.IsEquivalence := by
+  apply MorphismIdeal.isEquivalence_lift
+  rw [MorphismIdeal.kerIdeal_quotientFunctor, h.injectivelyTrivialIdeal_eq]
 
 /-- **An object is relatively injective exactly when its identity is injectively trivial.** -/
 @[simp high]
