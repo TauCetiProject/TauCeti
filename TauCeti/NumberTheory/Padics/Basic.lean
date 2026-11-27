@@ -23,7 +23,8 @@ coefficient ring for Mathlib's Mahler isometry `PadicInt.mahlerEquiv` and for th
 of measures on `ℤ_p`.
 
 Finally, it records that the inclusion `PadicInt.Coe.ringHom : ℤ_[p] →+* ℚ_[p]` is the structure
-map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding of norm at most `1` whose
+map of the `ℤ_[p]`-algebra `ℚ_[p]`, and that it is a topological embedding
+(`PadicInt.isEmbedding_algebraMap` for the structure map) of norm at most `1` whose
 range is the closed unit ball (`TauCeti.range_padicInt_coe_ringHom`). These are the hypotheses
 under which `ℚ_[p]`-valued measures of norm at most `1` come from `ℤ_[p]`-valued measures. It also
 maps exactly the maximal ideal of `ℤ_[p]` into the open unit ball
@@ -92,6 +93,12 @@ theorem norm_coe_ringHom_lt_one_iff {a : ℤ_[p]} :
 /-- The inclusion `ℤ_[p] → ℚ_[p]` is a topological embedding. -/
 theorem isEmbedding_coe_ringHom : Topology.IsEmbedding (Coe.ringHom (p := p)) :=
   isometry_subtypeVal.isEmbedding
+
+/-- The structure map `ℤ_[p] → ℚ_[p]` of the `ℤ_[p]`-algebra `ℚ_[p]` is a topological
+embedding. -/
+theorem isEmbedding_algebraMap : Topology.IsEmbedding (algebraMap ℤ_[p] ℚ_[p]) := by
+  rw [algebraMap_eq_coe_ringHom]
+  exact isEmbedding_coe_ringHom
 
 /-- A `ℚ_[p]`-linear form whose values on a set `s` have absolute value at most `r` has values of
 absolute value at most `r` on the whole `ℤ_[p]`-span of `s`, by the ultrametric inequality. -/

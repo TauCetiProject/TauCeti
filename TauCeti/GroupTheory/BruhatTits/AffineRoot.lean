@@ -186,6 +186,14 @@ theorem eval_vadd (α : AffineRoot φ) (v : N) (x : Apartment φ) :
     α.eval (v +ᵥ x) = P.root' α.gradient v + α.eval x := by
   simp [α.eval_def, add_assoc]
 
+/-- An affine root restricted to a segment is the affine interpolation of its endpoint values. -/
+@[simp]
+theorem eval_lineMap (α : AffineRoot φ) (x y : Apartment φ) (t : ℝ) :
+    α.eval (AffineMap.lineMap x y t) = AffineMap.lineMap (α.eval x) (α.eval y) t := by
+  have h := α.toAffineMap.apply_lineMap x y t
+  simp only [toAffineMap_apply] at h
+  exact h
+
 /-- Every real value is taken by an affine root, since its gradient evaluates to two
 on its coroot. -/
 theorem eval_surjective (α : AffineRoot φ) : Function.Surjective α.eval := by
@@ -385,6 +393,10 @@ theorem transport_bijective (b : Apartment φ) : Function.Bijective (fun α : Af
     · rfl
     · rw [constant_transport, eval_def, add_comm]
       exact heq
+
+/-- With no roots there are no affine roots. -/
+instance [IsEmpty ι] : IsEmpty (AffineRoot φ) :=
+  ⟨fun α ↦ isEmptyElim α.gradient⟩
 
 end AffineRoot
 

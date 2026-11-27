@@ -16,6 +16,10 @@ Let `N i` be a directed family of submodules of a module `B` with `⨆ i, N i = 
 element of every term of the single complex `B[j]` with `B` in degree `j` comes from the single
 complex `(N i)[j]` for some `i` (`HomologicalComplex.exists_single_map_subtype_f_apply_eq`).
 
+For a complex shape on `ℤ`, the identification `HomologicalComplex.singleObjXSelf` of the term of
+degree `0` of `A[0]` with a module `A` is the identity on elements
+(`HomologicalComplex.singleObjXSelf_inv_apply`).
+
 For a module `X`, the identification of `X` with the degree `0` cycles of the cochain complex
 `X[0]` sends an element `x` to the cycle `x` (`CochainComplex.iCycles_singleObjCyclesSelfIso_inv`).
 -/
@@ -44,6 +48,23 @@ lemma exists_single_map_subtype_f_apply_eq (j : ι') (hN : Directed (· ≤ ·) 
     simp
   · have := ModuleCat.subsingleton_of_isZero (isZero_single_obj_X c j B k hk)
     exact ⟨Classical.arbitrary ι, 0, Subsingleton.elim _ _⟩
+
+end HomologicalComplex
+
+namespace HomologicalComplex
+
+variable {R : Type*} [Ring R]
+
+/-- For every complex shape on `ℤ`, the cochain shape `up ℤ` as well as the chain shape `down ℤ`,
+the identification `singleObjXSelf` of the term of degree `0` of the single complex on a module
+`A` with `A` is the identity on elements: by definition of `single`, that term is `A` itself.
+The degree is the numeral `0` because for a variable degree `j` the decision `j = j` inside
+`single` does not reduce, so `a` is not an element of that term by definition. It is not a
+`simp` lemma: the degree-zero lemmas of units such as `TauCeti.linearHomComplexUnit_f_zero_apply`
+are stated on `(singleObjXSelf _ 0 _).inv r`, which it would rewrite. -/
+lemma singleObjXSelf_inv_apply (c : ComplexShape ℤ) (A : ModuleCat R) (a : A) :
+    (singleObjXSelf c 0 A).inv a = a :=
+  (rfl)
 
 end HomologicalComplex
 
