@@ -87,6 +87,17 @@ universe uP uQ uF
 
 namespace TauCeti
 
+/-- A slice `y ↦ u x y` of a `C^∞` map `↿u` on an open product set `W` is real-differentiable at
+`w` whenever `(x, w) ∈ W`. -/
+private theorem differentiableAt_slice_snd {X Y Z : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    [NormedAddCommGroup Z] [NormedSpace ℝ Z]
+    {u : X → Y → Z} {W : Set (X × Y)} (hW : IsOpen W)
+    (hu : ContDiffOn ℝ ∞ ↿u W) {x : X} {w : Y} (hmem : (x, w) ∈ W) :
+    DifferentiableAt ℝ (u x) w :=
+  ((hu.contDiffAt (hW.mem_nhds hmem)).comp w
+    (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by simp)
+
 /-! ### Finite-rank Runge correction of a single shell -/
 
 section RungeCorrection
@@ -133,8 +144,7 @@ private theorem exists_runge_corrected_shell {s : Set (P × Q)} {Ω K : Set ℂ}
     exact (hv_q x hx w).sub (DifferentiableAt.fun_sum fun i _ ↦ (hv_q x hx (ζ i)).const_smul _)
   · intro x hx w hw
     have hvd : DifferentiableAt ℝ (v x) w :=
-      ((hv_cd.contDiffAt ((hs.prod isOpen_univ).mem_nhds ⟨hx, mem_univ w⟩)).comp w
-        (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by simp)
+      differentiableAt_slice_snd (hs.prod isOpen_univ) hv_cd ⟨hx, mem_univ w⟩
     have had : DifferentiableAt ℂ (a x) w := (ha_hol x).differentiableAt (hΩ.mem_nhds hw)
     have hsub := congrArg (fun L ↦ L 1) (conjWirtingerDeriv_sub hvd (had.restrictScalars ℝ))
     have hu_eq : u x = v x - a x := rfl
@@ -243,6 +253,26 @@ private theorem contDiffOn_shell_series_box {s : Set (P × Q)} {Ω : Set ℂ}
     fun l hl w hw ↦ hu_bd j hj1 l (hl.trans hjk) p.1 (hD_mono hjm (hball_x hp.1)) w
       (hC_mono hjm (interior_subset (hsub_z hw)))
 
+/-- For a series `∑' j, g j` on an open set `V` of a complex normed space whose shifted terms
+`g (j + N)` are holomorphic on `V` and bounded by `(1 / 2) ^ (j + N)`, the sum splits on `V` into
+the first `N` terms plus a `ℂ`-differentiable tail. -/
+private theorem tsum_eqOn_sum_add_tail_and_differentiableOn {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℂ X]
+    (g : ℕ → X → F) {V : Set X} (hV : IsOpen V) (N : ℕ)
+    (hhol : ∀ j, DifferentiableOn ℂ (g (j + N)) V)
+    (hbd : ∀ j, ∀ y ∈ V, ‖g (j + N) y‖ ≤ (1 / 2 : ℝ) ^ (j + N)) :
+    EqOn (fun y ↦ ∑' j, g j y)
+        (fun y ↦ ∑ j ∈ Finset.range N, g j y + ∑' j, g (j + N) y) V ∧
+      DifferentiableOn ℂ (fun y ↦ ∑' j, g (j + N) y) V := by
+  have hsumm : Summable fun j ↦ (1 / 2 : ℝ) ^ (j + N) :=
+    (summable_nat_add_iff N).2 summable_geometric_two
+  refine ⟨fun y hy ↦ ?_, ?_⟩
+  · have hs_y : Summable fun j ↦ g j y :=
+      (summable_nat_add_iff N).1 (.of_norm_bounded hsumm fun j ↦ hbd j y hy)
+    exact (hs_y.sum_add_tsum_nat_add N).symm
+  · exact (tendstoUniformlyOn_tsum hsumm fun j y hy ↦ hbd j y hy).differentiableOn
+      (.of_forall fun _ ↦ DifferentiableOn.fun_sum fun j _ ↦ hhol j) hV
+
 /-- Pointwise `bar∂_z` identity for the shell series `U x w = ∑' j, u j x w`: splitting at
 `m + 1` yields a finite sum whose `bar∂_z` is `f` plus a uniformly convergent holomorphic tail. -/
 private theorem conjWirtingerDeriv_shell_series {s : Set (P × Q)} {Ω : Set ℂ}
@@ -258,28 +288,20 @@ private theorem conjWirtingerDeriv_shell_series {s : Set (P × Q)} {Ω : Set ℂ
     {m : ℕ} {x₀ : P × Q} (hx₀ : x₀ ∈ s) {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) {r : ℝ} (hr : 0 < r)
     (hxD : x₀ ∈ D (m + 1)) (hball_C : ball z₀ r ⊆ interior (C (m + 1))) :
     conjWirtingerDeriv (fun w ↦ ∑' j, u j x₀ w) z₀ 1 = f x₀ z₀ := by
-  have hsumm : Summable fun j ↦ (1 / 2 : ℝ) ^ (j + (m + 1)) :=
-    (summable_nat_add_iff (m + 1)).2 summable_geometric_two
-  have hbd0 (j : ℕ) {w : ℂ} (hw : w ∈ ball z₀ r) :
-      ‖u (j + (m + 1)) x₀ w‖ ≤ (1 / 2 : ℝ) ^ (j + (m + 1)) := by
-    simpa only [norm_iteratedFDeriv_zero] using hu_bd (j + (m + 1)) (by omega) 0 (Nat.zero_le _)
-      x₀ (hD_mono (Nat.le_add_left _ _) hxD) w
-      (hC_mono (Nat.le_add_left _ _) (interior_subset (hball_C hw)))
+  obtain ⟨hsplitOn, htail_hol⟩ :=
+    tsum_eqOn_sum_add_tail_and_differentiableOn (fun j w ↦ u j x₀ w) isOpen_ball (m + 1)
+      (fun j ↦ (hu_hol (j + (m + 1)) (by omega) x₀ hx₀).mono
+        (hball_C.trans (interior_mono (hC_mono (Nat.le_add_left _ _)))))
+      fun j w hw ↦ by
+        simpa only [norm_iteratedFDeriv_zero] using hu_bd (j + (m + 1)) (by omega) 0 (Nat.zero_le _)
+          x₀ (hD_mono (Nat.le_add_left _ _) hxD) w
+          (hC_mono (Nat.le_add_left _ _) (interior_subset (hball_C hw)))
   have hsplit : (fun w ↦ ∑' j, u j x₀ w) =ᶠ[𝓝 z₀]
       (fun w ↦ ∑ j ∈ Finset.range (m + 1), u j x₀ w) +
-        (fun w ↦ ∑' j, u (j + (m + 1)) x₀ w) := by
-    filter_upwards [ball_mem_nhds z₀ hr] with w hw
-    have hs_w : Summable fun j ↦ u j x₀ w := (summable_nat_add_iff (m + 1)).1 <|
-      .of_norm_bounded hsumm fun j ↦ hbd0 j hw
-    exact (hs_w.sum_add_tsum_nat_add (m + 1)).symm
-  have htail_hol : DifferentiableOn ℂ (fun w ↦ ∑' j, u (j + (m + 1)) x₀ w) (ball z₀ r) :=
-    (tendstoUniformlyOn_tsum hsumm fun j w hw ↦ hbd0 j hw).differentiableOn
-      (.of_forall fun _ ↦ DifferentiableOn.fun_sum fun j _ ↦
-        (hu_hol (j + (m + 1)) (by omega) x₀ hx₀).mono
-          (hball_C.trans (interior_mono (hC_mono (Nat.le_add_left _ _))))) isOpen_ball
+        (fun w ↦ ∑' j, u (j + (m + 1)) x₀ w) :=
+    Filter.eventuallyEq_of_mem (ball_mem_nhds z₀ hr) hsplitOn
   have hfin_diff (j : ℕ) : DifferentiableAt ℝ (u j x₀) z₀ :=
-    (((hu_cd j).contDiffAt ((hs.prod hΩ).mem_nhds ⟨hx₀, hz₀⟩)).comp z₀
-      (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt (by simp)
+    differentiableAt_slice_snd (hs.prod hΩ) (hu_cd j) ⟨hx₀, hz₀⟩
   have hfin_dbar : conjWirtingerDeriv (fun w ↦ ∑ j ∈ Finset.range (m + 1), u j x₀ w) z₀ 1 =
       f x₀ z₀ := by
     rw [conjWirtingerDeriv_fun_sum fun j _ ↦ hfin_diff j, sum_apply]
@@ -308,31 +330,19 @@ private theorem differentiableAt_shell_series_param {s : Set (P × Q)} {Ω : Set
     apply hball_x
     rw [mem_ball, Prod.dist_eq, dist_self, max_eq_right dist_nonneg]
     exact hq
-  have hsumm : Summable fun j ↦ (1 / 2 : ℝ) ^ (j + (m + 1)) :=
-    (summable_nat_add_iff (m + 1)).2 summable_geometric_two
-  have hbd0 (j : ℕ) {q : Q} (hq : q ∈ ball x₀.2 ρ) :
-      ‖u (j + (m + 1)) (x₀.1, q) z₀‖ ≤ (1 / 2 : ℝ) ^ (j + (m + 1)) := by
-    simpa only [norm_iteratedFDeriv_zero] using hu_bd (j + (m + 1)) (by omega) 0 (Nat.zero_le _)
-      (x₀.1, q) (hD_mono (Nat.le_add_left _ _) (hq_mem hq))
-      z₀ (hC_mono (Nat.le_add_left _ _) hz_C)
-  have htail_hol : DifferentiableOn ℂ (fun q ↦ ∑' j, u (j + (m + 1)) (x₀.1, q) z₀)
-      (ball x₀.2 ρ) :=
-    (tendstoUniformlyOn_tsum hsumm fun j q hq ↦ hbd0 j hq).differentiableOn
-      (.of_forall fun _ ↦ DifferentiableOn.fun_sum fun j _ q hq ↦
-        (hu_q (j + (m + 1)) (x₀.1, q) (hD_sub (m + 1) (hq_mem hq)) z₀ hz₀).differentiableWithinAt)
-      isOpen_ball
+  obtain ⟨hsplitOn, htail_hol⟩ :=
+    tsum_eqOn_sum_add_tail_and_differentiableOn (fun j q ↦ u j (x₀.1, q) z₀) isOpen_ball (m + 1)
+      (fun j q hq ↦ (hu_q (j + (m + 1)) (x₀.1, q) (hD_sub (m + 1) (hq_mem hq)) z₀ hz₀)
+        |>.differentiableWithinAt)
+      fun j q hq ↦ by
+        simpa only [norm_iteratedFDeriv_zero] using hu_bd (j + (m + 1)) (by omega) 0 (Nat.zero_le _)
+          (x₀.1, q) (hD_mono (Nat.le_add_left _ _) (hq_mem hq))
+          z₀ (hC_mono (Nat.le_add_left _ _) hz_C)
   have hfin_hol : DifferentiableAt ℂ (fun q ↦ ∑ j ∈ Finset.range (m + 1), u j (x₀.1, q) z₀)
       x₀.2 :=
     DifferentiableAt.fun_sum fun j _ ↦ hu_q j x₀ hx₀ z₀ hz₀
-  have hsplit : (fun q ↦ ∑' j, u j (x₀.1, q) z₀) =ᶠ[𝓝 x₀.2]
-      fun q ↦ ∑ j ∈ Finset.range (m + 1), u j (x₀.1, q) z₀ +
-        ∑' j, u (j + (m + 1)) (x₀.1, q) z₀ := by
-    filter_upwards [ball_mem_nhds x₀.2 hρ] with q hq
-    have hs_q : Summable fun j ↦ u j (x₀.1, q) z₀ := (summable_nat_add_iff (m + 1)).1 <|
-      .of_norm_bounded hsumm fun j ↦ hbd0 j hq
-    exact (hs_q.sum_add_tsum_nat_add (m + 1)).symm
   exact (hfin_hol.add (htail_hol.differentiableAt (ball_mem_nhds x₀.2 hρ))).congr_of_eventuallyEq
-    hsplit
+    (Filter.eventuallyEq_of_mem (ball_mem_nhds x₀.2 hρ) hsplitOn)
 
 end SeriesConvergence
 

@@ -30,7 +30,7 @@ on `s` (`TauCeti.contDiffOn_tsum`) and that its iterated derivatives are compute
 eventually (`Filter.cofinite`, i.e. away from finitely many terms), the sum is still `C^N` on `s`
 (`TauCeti.contDiffOn_tsum_of_eventually`).
 
-* `TauCeti.hasFDerivAt_iteratedFDeriv_tsum_of_isOpen`: Fréchet derivative of the termwise `k`-th
+* `TauCeti.hasFDerivAt_tsum_iteratedFDeriv_of_isOpen`: Fréchet derivative of the termwise `k`-th
   iterated derivative series on an open set under summable derivative bounds.
 * `TauCeti.iteratedFDeriv_tsum_apply_of_isOpen`: termwise iterated derivatives of a series on an
   open set under full-index summable derivative bounds.
@@ -87,7 +87,7 @@ variable {α : Type*} {N : ℕ∞} {f : α → E → F} {v : ℕ → α → ℝ}
 /-- On an open set `s`, the series of `k`-th iterated derivatives of a series of `C^N` functions
 with summable uniform derivative bounds through order `k + 1 ≤ N` is Fréchet differentiable at
 every `x ∈ s`, with derivative equal to the termwise sum of `fderiv`. -/
-theorem hasFDerivAt_iteratedFDeriv_tsum_of_isOpen (hs : IsOpen s)
+theorem hasFDerivAt_tsum_iteratedFDeriv_of_isOpen (hs : IsOpen s)
     (hf : ∀ i, ContDiffOn 𝕜 N (f i) s) (hv : ∀ k : ℕ, (k : ℕ∞) ≤ N → Summable (v k))
     (h'f : ∀ (k : ℕ) (i : α), ∀ x ∈ s, (k : ℕ∞) ≤ N → ‖iteratedFDeriv 𝕜 k (f i) x‖ ≤ v k i)
     {k : ℕ} (hk : ((k + 1 : ℕ) : ℕ∞) ≤ N) {x : E} (hx : x ∈ s) :
@@ -121,7 +121,7 @@ theorem iteratedFDeriv_tsum_apply_of_isOpen (hs : IsOpen s) (hf : ∀ i, ContDif
     exact (continuousMultilinearCurryFin0 𝕜 E F).symm.toContinuousLinearEquiv.map_tsum
   | succ k ih =>
     have h'k : (k : ℕ∞) ≤ N := (WithTop.coe_le_coe.2 (Nat.le_succ k)).trans hk
-    have hderiv := hasFDerivAt_iteratedFDeriv_tsum_of_isOpen hs hf hv h'f hk hx
+    have hderiv := hasFDerivAt_tsum_iteratedFDeriv_of_isOpen hs hf hv h'f hk hx
     have heq : iteratedFDeriv 𝕜 k (fun y ↦ ∑' n, f n y) =ᶠ[𝓝 x]
         fun y ↦ ∑' n, iteratedFDeriv 𝕜 k (f n) y :=
       Filter.eventuallyEq_of_mem (hs.mem_nhds hx) fun y hy ↦ ih h'k hy
@@ -149,7 +149,7 @@ theorem contDiffOn_tsum (hs : IsOpen s) (hf : ∀ i, ContDiffOn 𝕜 N (f i) s)
     have hmN : (m : ℕ∞) < N := by exact_mod_cast hm
     have h'm : ((m + 1 : ℕ) : ℕ∞) ≤ N := by
       simpa only [ENat.natCast_add, ENat.natCast_one] using Order.add_one_le_of_lt hmN
-    have hderiv := hasFDerivAt_iteratedFDeriv_tsum_of_isOpen hs hf hv h'f h'm hx
+    have hderiv := hasFDerivAt_tsum_iteratedFDeriv_of_isOpen hs hf hv h'f h'm hx
     have heq : iteratedFDerivWithin 𝕜 m (fun y ↦ ∑' n, f n y) s =ᶠ[𝓝 x]
         fun y ↦ ∑' n, iteratedFDeriv 𝕜 m (f n) y :=
       Filter.eventuallyEq_of_mem (hs.mem_nhds hx) fun y hy ↦ by
@@ -166,8 +166,9 @@ theorem contDiffOn_tsum_of_eventually (hs : IsOpen s) (hf : ∀ i, ContDiffOn �
     ContDiffOn 𝕜 N (fun x ↦ ∑' i, f i x) s := by
   classical
   refine contDiffOn_iff_forall_nat_le.2 fun m hm ↦ ?_
-  have hfin : Set.Finite { i : α | ¬∀ k ∈ Finset.range (m + 1),
-      ∀ x ∈ s, ‖iteratedFDeriv 𝕜 k (f i) x‖ ≤ v k i } := by
+  set S : Set α := { i : α | ¬∀ k ∈ Finset.range (m + 1),
+      ∀ x ∈ s, ‖iteratedFDeriv 𝕜 k (f i) x‖ ≤ v k i }
+  have hfin : S.Finite := by
     refine eventually_cofinite.1 ((eventually_all_finset _).2 fun k hk ↦ ?_)
     exact h'f k ((Nat.cast_le.2 (Nat.le_of_lt_succ (Finset.mem_range.1 hk))).trans hm)
   let T : Finset α := hfin.toFinset
@@ -180,11 +181,8 @@ theorem contDiffOn_tsum_of_eventually (hs : IsOpen s) (hf : ∀ i, ContDiffOn �
   refine ((ContDiffOn.sum fun i _ ↦ (hf i).of_le (mod_cast hm)).add ?_).congr hsplit
   refine contDiffOn_tsum hs (fun i ↦ (hf i).of_le (mod_cast hm))
     (fun k hk ↦ (hv k (hk.trans hm)).subtype _) fun k i x hx hk ↦ ?_
-  have hi : ∀ j ∈ Finset.range (m + 1), ∀ y ∈ s, ‖iteratedFDeriv 𝕜 j (f i.val) y‖ ≤ v j i.val := by
-    have hnot : i.val ∉ { j : α | ¬∀ k ∈ Finset.range (m + 1),
-        ∀ y ∈ s, ‖iteratedFDeriv 𝕜 k (f j) y‖ ≤ v k j } := by
-      simpa [T] using i.property
-    simpa only [Set.mem_ofPred_eq, not_not] using hnot
+  have hi : ∀ j ∈ Finset.range (m + 1), ∀ y ∈ s, ‖iteratedFDeriv 𝕜 j (f i.val) y‖ ≤ v j i.val :=
+    not_not.mp (mt hfin.mem_toFinset.2 i.property)
   exact hi k (Finset.mem_range.2 (Nat.lt_succ_of_le (Nat.cast_le.1 hk))) x hx
 
 end OpenSet
