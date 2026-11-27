@@ -79,7 +79,7 @@ def GHom.equivUnderHom :
 
 /-- The `G`-homomorphism of a morphism under `G` is its underlying homomorphism. -/
 @[simp]
-theorem coe_equivUnderHom_symm (f : Under.mk (GrpCat.ofHom ιH) ⟶ Under.mk (GrpCat.ofHom ιK)) :
+theorem GHom.coe_equivUnderHom_symm (f : Under.mk (GrpCat.ofHom ιH) ⟶ Under.mk (GrpCat.ofHom ιK)) :
     ⇑(GHom.equivUnderHom.symm f) = f.right.hom :=
   (rfl)
 
@@ -107,9 +107,7 @@ theorem GHom.equivUnderHom_comp (ψ : GHom ιK ιL) (φ : GHom ιH ιK) :
   apply GHom.equivUnderHom.symm.injective
   rw [Equiv.symm_apply_apply]
   ext x
-  simp only [coe_comp, Function.comp_apply, coe_equivUnderHom_symm, Under.comp_right,
-    GrpCat.hom_comp, MonoidHom.coe_comp]
-  rfl
+  simp [GHom.equivUnderHom_right_hom_apply, GHom.coe_equivUnderHom_symm]
 
 end Under
 
