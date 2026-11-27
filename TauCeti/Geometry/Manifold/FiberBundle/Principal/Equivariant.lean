@@ -164,6 +164,53 @@ theorem diffeomorphOfEquivariant_op_smul (g : G) (x : ManifoldTotalSpace G P) :
   obtain ⟨⟨b, p⟩, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
   simp [he]
 
+/-- Passing from a smooth equivariant equivalence to a diffeomorphism preserves inverse. -/
+theorem diffeomorphOfEquivariant_symm :
+    diffeomorphOfEquivariant G (fun b ↦ (e b).symm)
+      (fun b g q ↦ by
+        apply (e b).injective
+        simp only [_root_.Equiv.apply_symm_apply, he])
+      (contMDiff_symm_of_equivariant e he hf) =
+      (diffeomorphOfEquivariant G e he hf).symm := by
+  apply Diffeomorph.ext
+  intro x
+  obtain ⟨q, rfl⟩ := (ManifoldTotalSpace.homeomorph G Q).surjective x
+  rw [diffeomorphOfEquivariant_apply, diffeomorphOfEquivariant_symm_apply]
+
+variable {R : B → Type*}
+  [TopologicalSpace (TotalSpace G R)] [∀ b, TopologicalSpace (R b)] [FiberBundle G R]
+  [∀ b, MulAction Gᵐᵒᵖ (R b)] [PrincipalBundle G R]
+
+/-- Passing from smooth equivariant equivalences to diffeomorphisms preserves composition. -/
+theorem diffeomorphOfEquivariant_trans (e' : ∀ b, Q b ≃ R b)
+    (he' : ∀ b (g : G) (q : Q b), e' b (op g • q) = op g • e' b q)
+    (hf' : ContMDiff (IB.prod IG) (IB.prod IG) n (fiberwiseMap (F := G) fun b ↦ e' b)) :
+    diffeomorphOfEquivariant G (fun b ↦ (e b).trans (e' b))
+      (fun b g p ↦ by simp only [_root_.Equiv.trans_apply, he, he'])
+      (by simpa only [_root_.Equiv.coe_trans] using
+        hf'.fiberwiseMap_comp hf) =
+      (diffeomorphOfEquivariant G e he hf).trans
+        (diffeomorphOfEquivariant G e' he' hf') := by
+  apply Diffeomorph.ext
+  intro x
+  obtain ⟨p, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
+  simp
+
 end
+
+/-- The identity fibre equivalence induces the identity diffeomorphism. -/
+@[simp]
+theorem diffeomorphOfEquivariant_refl [LieGroup IG n G] :
+    diffeomorphOfEquivariant (IB := IB) (IG := IG) G
+      (fun b ↦ _root_.Equiv.refl (P b)) (fun _ _ _ ↦ rfl) (by
+        refine contMDiff_id.congr fun x ↦ ?_
+        obtain ⟨p, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
+        simp) = Diffeomorph.refl (IB.prod IG) (ManifoldTotalSpace G P) n := by
+  apply Diffeomorph.ext
+  intro x
+  obtain ⟨p, rfl⟩ := (ManifoldTotalSpace.homeomorph G P).surjective x
+  simpa only [_root_.Equiv.refl_apply, TotalSpace.eta, Diffeomorph.coe_refl, id_eq] using
+    (diffeomorphOfEquivariant_apply (IB := IB) (IG := IG)
+      (fun b ↦ _root_.Equiv.refl (P b)) (fun _ _ _ ↦ rfl) _ p)
 
 end TauCeti.PrincipalBundle

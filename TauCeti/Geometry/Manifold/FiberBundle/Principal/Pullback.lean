@@ -62,9 +62,13 @@ noncomputable def diffeomorphPullback [LieGroup IG n G] :
       (ManifoldTotalSpace G ((f : B' → B) *ᵖ Q)) n := by
   have (b : B) : Nonempty (P b) := ⟨(FiberBundle.homeomorphAt G P b).symm 1⟩
   have (b : B) : Nonempty (Q b) := ⟨(FiberBundle.homeomorphAt G Q b).symm 1⟩
+  have hEquiv : (ψ.pullback f).toEquiv = (fun b ↦ ψ.toEquiv (f b)) :=
+    funext (pullback_toEquiv ψ f)
   exact diffeomorphOfEquivariant (P := (f : B' → B) *ᵖ P) (Q := (f : B' → B) *ᵖ Q) G
-    (fun b ↦ ψ.toEquiv (f b)) (fun b g p ↦ ψ.map_smul (f b) p g)
-    (contMDiff_fiberwiseMap_pullback f f.contMDiff hψ)
+    (ψ.pullback f).toEquiv (fun b g p ↦ (ψ.pullback f).map_smul b p g)
+    (by
+      rw [hEquiv]
+      exact contMDiff_fiberwiseMap_pullback f f.contMDiff hψ)
 
 variable [LieGroup IG n G]
 
@@ -73,14 +77,18 @@ variable [LieGroup IG n G]
 theorem diffeomorphPullback_apply (p : TotalSpace G ((f : B' → B) *ᵖ P)) :
     ψ.diffeomorphPullback f hψ (homeomorph G ((f : B' → B) *ᵖ P) p) =
       homeomorph G ((f : B' → B) *ᵖ Q) ⟨p.proj, ψ.toEquiv (f p.proj) p.snd⟩ := by
-  exact diffeomorphOfEquivariant_apply (IB := IB') (IG := IG) _ _ _ p
+  dsimp only [diffeomorphPullback]
+  rw [diffeomorphOfEquivariant_apply, pullback_toEquiv]
+  rfl
 
 /-- The inverse of the pulled-back diffeomorphism uses the original inverse in each fibre. -/
 @[simp]
 theorem diffeomorphPullback_symm_apply (q : TotalSpace G ((f : B' → B) *ᵖ Q)) :
     (ψ.diffeomorphPullback f hψ).symm (homeomorph G ((f : B' → B) *ᵖ Q) q) =
       homeomorph G ((f : B' → B) *ᵖ P) ⟨q.proj, (ψ.toEquiv (f q.proj)).symm q.snd⟩ := by
-  exact diffeomorphOfEquivariant_symm_apply (IB := IB') (IG := IG) _ _ _ q
+  dsimp only [diffeomorphPullback]
+  rw [diffeomorphOfEquivariant_symm_apply, pullback_toEquiv]
+  rfl
 
 /-- The pulled-back diffeomorphism preserves the point of the new base. -/
 theorem diffeomorphPullback_proj (x : ManifoldTotalSpace G ((f : B' → B) *ᵖ P)) :
@@ -92,9 +100,7 @@ theorem diffeomorphPullback_proj (x : ManifoldTotalSpace G ((f : B' → B) *ᵖ 
 theorem diffeomorphPullback_op_smul (g : G)
     (x : ManifoldTotalSpace G ((f : B' → B) *ᵖ P)) :
     ψ.diffeomorphPullback f hψ (op g • x) = op g • ψ.diffeomorphPullback f hψ x := by
-  obtain ⟨p, rfl⟩ := (homeomorph G ((f : B' → B) *ᵖ P)).surjective x
-  simp only [smul_homeomorph, diffeomorphPullback_apply, EmbeddingLike.apply_eq_iff_eq]
-  exact congrArg (TotalSpace.mk p.proj) (ψ.map_smul (f p.proj) p.snd g)
+  exact diffeomorphOfEquivariant_op_smul (IB := IB') (IG := IG) _ _ _ g x
 
 /-- Lifting after the pulled-back isomorphism agrees with the original isomorphism after lifting.
 Both lifts are read in their original total spaces. -/
@@ -119,22 +125,24 @@ theorem diffeomorphPullback_refl :
       obtain ⟨p, rfl⟩ := (homeomorph G P).surjective x
       simp) =
       Diffeomorph.refl (IB'.prod IG) (ManifoldTotalSpace G ((f : B' → B) *ᵖ P)) n := by
-  apply Diffeomorph.ext
-  intro x
-  obtain ⟨p, rfl⟩ := (homeomorph G ((f : B' → B) *ᵖ P)).surjective x
-  simp
-  rfl
+  dsimp only [diffeomorphPullback]
+  apply Eq.trans ?_ (diffeomorphOfEquivariant_refl (n := n) (IB := IB') (IG := IG)
+    (P := (f : B' → B) *ᵖ P))
+  congr 1
+  funext b
+  rw [pullback_refl, refl_toEquiv]
 
 /-- Pullback commutes with inverse, using the smooth inverse provided by equivariance. -/
 theorem diffeomorphPullback_symm :
     ψ.symm.diffeomorphPullback f (by
       simpa only [symm_toEquiv] using contMDiff_symm_of_equivariant ψ.toEquiv
         (fun b g p ↦ ψ.map_smul b p g) hψ) = (ψ.diffeomorphPullback f hψ).symm := by
-  apply Diffeomorph.ext
-  intro x
-  obtain ⟨q, rfl⟩ := (homeomorph G ((f : B' → B) *ᵖ Q)).surjective x
-  rw [ψ.symm.diffeomorphPullback_apply f _ q, ψ.diffeomorphPullback_symm_apply f hψ q]
-  simp
+  dsimp only [diffeomorphPullback]
+  apply Eq.trans ?_ (diffeomorphOfEquivariant_symm (IB := IB') (IG := IG)
+    (ψ.pullback f).toEquiv (fun b g p ↦ (ψ.pullback f).map_smul b p g) _)
+  congr 1
+  funext b
+  rw [pullback_symm, symm_toEquiv]
 
 variable {R : B → Type*}
   [TopologicalSpace (TotalSpace G R)] [∀ b, TopologicalSpace (R b)] [FiberBundle G R]
@@ -149,10 +157,12 @@ theorem diffeomorphPullback_trans (φ : PrincipalBundle.Equiv G Q R)
       obtain ⟨p, rfl⟩ := (homeomorph G P).surjective x
       simp [Function.comp_def]) =
       (ψ.diffeomorphPullback f hψ).trans (φ.diffeomorphPullback f hφ) := by
-  apply Diffeomorph.ext
-  intro x
-  obtain ⟨p, rfl⟩ := (homeomorph G ((f : B' → B) *ᵖ P)).surjective x
-  simp
-  rfl
+  dsimp only [diffeomorphPullback]
+  apply Eq.trans ?_ (diffeomorphOfEquivariant_trans (IB := IB') (IG := IG)
+    (ψ.pullback f).toEquiv (fun b g p ↦ (ψ.pullback f).map_smul b p g) _
+    (φ.pullback f).toEquiv (fun b g q ↦ (φ.pullback f).map_smul b q g) _)
+  congr 1
+  funext b
+  rw [pullback_trans, trans_toEquiv]
 
 end TauCeti.PrincipalBundle.Equiv
