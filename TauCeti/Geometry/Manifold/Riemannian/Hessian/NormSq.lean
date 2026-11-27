@@ -67,6 +67,7 @@ theorem hessian_norm_sq_comp_of_eq_zero
 
 /-- On a finite-dimensional real inner product space with its flat metric, the Hessian of the
 squared norm is twice the inner product: `Hess ‖·‖² = 2g`. -/
+@[simp]
 theorem hessian_norm_sq_model_space {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
     [FiniteDimensional ℝ F] (x : F) (v w : TangentSpace 𝓘(ℝ, F) x) :
     hessian 𝓘(ℝ, F) (fun y : F ↦ ‖y‖ ^ 2) x v w = 2 * ⟪(v : F), (w : F)⟫ := by
@@ -79,6 +80,7 @@ theorem hessian_norm_sq_model_space {F : Type*} [NormedAddCommGroup F] [InnerPro
 
 /-- On a finite-dimensional real inner product space with its flat metric, the Hessian of the
 negated squared norm is `-2` times the inner product: `Hess (-‖·‖²) = -2g`. -/
+@[simp]
 theorem hessian_neg_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) (v w : TangentSpace 𝓘(ℝ, F) x) :
     hessian 𝓘(ℝ, F) (fun y : F ↦ -‖y‖ ^ 2) x v w = -(2 * ⟪(v : F), (w : F)⟫) := by
