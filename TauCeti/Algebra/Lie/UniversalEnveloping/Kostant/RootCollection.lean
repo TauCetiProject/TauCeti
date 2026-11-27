@@ -74,6 +74,14 @@ private theorem commute_root {α β : ι}
   simp only [LieAlgebra.ExtendScalars.bracket_tmul, one_mul,
     root_lie_root_of_notMem_of_add_ne_zero c hnot hne, TensorProduct.tmul_zero]
 
+private theorem commute_root_of_root_eq_add {α β γ : ι}
+    (hγ : P.root γ = P.root α + P.root β)
+    (hnot : P.root α + P.root γ ∉ Set.range P.root) : Commute (e α) (e γ) := by
+  let := c.isReduced
+  apply commute_root c hnot
+  simpa only [ne_eq, add_eq_zero_iff_eq_neg] using
+    (P.root_ne_and_root_ne_neg_of_root_eq_add hγ).2
+
 /-- Nonopposite root vectors whose sum is absent have commuting divided powers. No
 string-length bound is needed, so this applies to independent roots in every type and
 to pairs in different components. -/
@@ -93,21 +101,15 @@ theorem dividedPower_root_mul_dividedPower_root_of_no_double {α β γ : ι}
       ∑ k ∈ range (min m n + 1), (c.structConst α β ^ k) •
         (dividedPower (n - k) (e β) * dividedPower k (e γ) *
           dividedPower (m - k) (e α)) := by
-  let := c.isReduced
-  have hαγ0 : P.root α + P.root γ ≠ 0 := by
-    simpa only [ne_eq, add_eq_zero_iff_eq_neg] using
-      (P.root_ne_and_root_ne_neg_of_root_eq_add hγ).2
-  have hβγ0 : P.root β + P.root γ ≠ 0 := by
-    simpa only [ne_eq, add_eq_zero_iff_eq_neg] using
-      (P.root_ne_and_root_ne_neg_of_root_eq_add (hγ.trans (add_comm _ _))).2
   rw [dividedPower_mul_dividedPower_of_commutator_eq (ι_root_mul_ι_root_of_root_eq_add c hγ)
-    ((commute_root c hαγ hαγ0).smul_right _) ((commute_root c hβγ hβγ0).smul_right _)]
+    ((commute_root_of_root_eq_add c hγ hαγ).smul_right _)
+    ((commute_root_of_root_eq_add c (hγ.trans (add_comm _ _)) hβγ).smul_right _)]
   apply sum_congr rfl
   intro k _
   simp only [dividedPower_zsmul, mul_smul_comm, smul_mul_assoc]
 
-/-- The leading term in central-bracket collection is the swapped product; every
-correction has strictly smaller total divided-power degree. -/
+/-- Isolate the swapped leading product in central-bracket collection.
+The corrections' degree decrease is given by `TauCeti.Associative.centralBracket_degree_lt`. -/
 theorem dividedPower_root_mul_dividedPower_root_eq_swap_add_of_no_double {α β γ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hαγ : P.root α + P.root γ ∉ Set.range P.root)
@@ -128,19 +130,13 @@ private theorem double_chain_commute {α β γ δ : ι}
     (hδ : P.root δ = P.root α + P.root γ)
     (hlen : P.chainBotCoeff α β + P.chainTopCoeff α β ≤ 2) :
     Commute (e α) (e δ) ∧ Commute (e β) (e γ) := by
-  let := c.isReduced
   have hbot := P.chainBotCoeff_eq_zero_of_chainBotCoeff_add_chainTopCoeff_le_two hγ hδ hlen
   have htop := P.chainTopCoeff_eq_two_of_chainTopCoeff_le_two hγ hδ (by omega)
-  constructor
-  · apply commute_root c
-      (P.root_add_root_notMem_range_root_of_chainTopCoeff_le_two hγ hδ htop.le)
-    simpa only [ne_eq, add_eq_zero_iff_eq_neg] using
-      (P.root_ne_and_root_ne_neg_of_root_eq_add hδ).2
-  · apply commute_root c
+  exact ⟨commute_root_of_root_eq_add c hδ
+      (P.root_add_root_notMem_range_root_of_chainTopCoeff_le_two hγ hδ htop.le),
+    commute_root_of_root_eq_add c (hγ.trans (add_comm _ _))
       (P.root_add_root_notMem_range_root_of_chainBotCoeff_eq_zero_of_chainTopCoeff_eq_two
-        hγ hbot htop)
-    simpa only [ne_eq, add_eq_zero_iff_eq_neg] using
-      (P.root_ne_and_root_ne_neg_of_root_eq_add (hγ.trans (add_comm _ _))).2
+        hγ hbot htop)⟩
 
 /-- Collection along `β, α + β, 2α + β`, with the full integral Chevalley table.
 The double-root coefficient is the product of the first bracket sign and the sign of
@@ -210,14 +206,11 @@ theorem dividedPower_root_mul_dividedPower_root_of_reverse_double_chain {α β �
     hxy hxxy (double_chain_commute c hγ' hδ hlen).1.op
     (double_chain_commute c hγ' hδ hlen).2.op n m
   -- Opposite multiplication reverses every factor; its powers and scalar action are unchanged.
-  have hpow (k : ℕ) (u : Uᵐᵒᵖ) :
-      MulOpposite.unop (dividedPower k u) = dividedPower k (MulOpposite.unop u) := by
-    simp only [dividedPower_def, MulOpposite.unop_smul, MulOpposite.unop_pow]
   simpa only [MulOpposite.unop_mul, Finset.unop_sum, MulOpposite.unop_smul,
-    hpow, MulOpposite.unop_op, mul_assoc] using congrArg MulOpposite.unop h
+    MulOpposite.unop_dividedPower, MulOpposite.unop_op, mul_assoc] using congrArg MulOpposite.unop h
 
-/-- The double-chain correction is an explicit finite integer linear combination in
-`β, γ, δ, α` order, and its terms have smaller total divided-power degree. -/
+/-- Isolate the swapped leading product, with double-chain corrections in `β, γ, δ, α` order.
+Their degree decrease is given by `TauCeti.Associative.chainLeTwoIndex_degree_lt`. -/
 theorem dividedPower_root_mul_dividedPower_root_eq_swap_add_of_double_chain {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root α + P.root γ)
@@ -234,8 +227,8 @@ theorem dividedPower_root_mul_dividedPower_root_eq_swap_add_of_double_chain {α 
   simp only [pow_zero, dividedPower_zero, mul_one, one_smul,
     Nat.sub_zero, Nat.mul_zero]
 
-/-- In the reversed double chain, correction products have `β, δ, γ, α` order.
-Their coefficients are integers and their total divided-power degrees strictly decrease. -/
+/-- Isolate the swapped leading product, with reverse-chain corrections in `β, δ, γ, α` order.
+Their degree decrease is given by `TauCeti.Associative.chainLeTwoIndex_reverse_degree_lt`. -/
 theorem dividedPower_root_mul_dividedPower_root_eq_swap_add_of_reverse_double_chain {α β γ δ : ι}
     (hγ : P.root γ = P.root α + P.root β)
     (hδ : P.root δ = P.root β + P.root γ)
@@ -269,10 +262,9 @@ theorem dividedPower_two_root_mul_root_of_double_chain {α β γ δ : ι}
       (c.structConst α β).sign * (c.structConst α γ).sign := congrArg
         (fun z ↦ z * (c.structConst α γ).sign) hsign
   have h := dividedPower_root_mul_dividedPower_root_of_double_chain c hγ hδ hlen 2 1
-  simpa only [dividedPower_one, chainLeTwoIndex_two_one, mem_insert, Prod.mk.injEq,
-    zero_ne_one, and_true, mem_singleton, and_false, or_self, not_false_eq_true,
-    sum_insert, pow_zero, mul_one, tsub_zero, dividedPower_zero, mul_zero, one_mul,
-    one_ne_zero, and_self, pow_one, tsub_self, Nat.add_one_sub_one, sum_singleton,
+  rw [sum_chainLeTwoIndex_two_one] at h
+  simpa only [dividedPower_one, pow_zero, mul_one, tsub_zero, dividedPower_zero,
+    mul_zero, one_mul, pow_one, tsub_self, Nat.add_one_sub_one,
     one_smul, hprod, add_assoc] using h
 
 end DoubleChain
