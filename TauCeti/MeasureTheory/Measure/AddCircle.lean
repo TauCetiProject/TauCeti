@@ -73,8 +73,7 @@ instance instVAddInvariantMeasureReal {T : ℝ} {μ : Measure (AddCircle T)}
 right-invariant measure, such as circle volume and the normalized Haar measure. -/
 theorem measurePreserving_translationFlow {T : ℝ} (μ : Measure (AddCircle T))
     [μ.IsAddRightInvariant] (t : ℝ) : MeasurePreserving (translationFlow T t) μ μ := by
-  have h : translationFlow T t = (· + (t : AddCircle T)) := funext (translationFlow_apply T t)
-  rw [h]
+  rw [translationFlow_eq_add_right]
   exact measurePreserving_add_right μ _
 
 variable {T : ℝ} [hT : Fact (0 < T)]
