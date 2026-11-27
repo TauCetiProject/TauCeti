@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Group.LIntegral
+import Mathlib.MeasureTheory.Group.Prod
 import Mathlib.MeasureTheory.Measure.Prod
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.MeasureTheory.Integral.OddSymmetric
@@ -36,6 +37,10 @@ For a group `G` acting jointly measurably on `X` and preserving an `s`-finite me
 finite measure `ν` on `G`, the translates `(x, g) ↦ F (g • x)` of an integrable `F` are integrable
 for `μ.prod ν`, and `∫ (∫ F (g • x) dν(g)) dμ(x) = ν(G) • ∫ F dμ` by Fubini's theorem and
 invariance.
+
+For a left-invariant `s`-finite measure `ν` on a group and integrable `A`, `B`, the substitution
+`v = u t` in `∫∫ A(u) B(v) dν(u) dν(v)` gives `(∫ A dν) (∫ B dν) = ∫_t ∫_u A(u) B(u t) dν(u) dν(t)`;
+this is the first step of Tate's proof of the local functional equation.
 
 For a translation-invariant measure, the row and column integrals of a convolution kernel
 `k (ξ - ζ)` with integrable `k ≥ 0` all equal `∫ k`; these are the bounds that Schur's test asks
@@ -70,6 +75,8 @@ need to be measurable.
 * `TauCeti.integrable_smul_prod`, `TauCeti.integral_integral_smul_eq` and their additive versions
   `TauCeti.integrable_vadd_prod`, `TauCeti.integral_integral_vadd_eq`: Fubini's theorem for the
   translates of an integrable function under a measure-preserving action.
+* `TauCeti.integral_mul_integral_eq_integral_integral_mul`: the product of two integrals against
+  a left-invariant measure as an iterated correlation integral.
 * `TauCeti.lintegral_ofReal_sub_left_eq_ofReal_integral`,
   `TauCeti.lintegral_ofReal_sub_right_eq_ofReal_integral`: the row and column integrals of a
   convolution kernel.
@@ -240,6 +247,22 @@ theorem integral_integral_smul_eq [NormedSpace ℝ E] (hF : Integrable F μ) :
   · simp [integral_of_not_completeSpace hE]
 
 end ActionFubini
+
+section Correlation
+
+/-- **Correlation formula.** For a left-invariant s-finite measure `ν` on a group and integrable
+`A`, `B`, `(∫ A) (∫ B) = ∫_t ∫_u A(u) B(u t)`: substitute `v = u t` in the double integral. -/
+theorem integral_mul_integral_eq_integral_integral_mul {G : Type*} [Group G] [MeasurableSpace G]
+    [MeasurableMul₂ G] [MeasurableInv G] (ν : Measure G) [SFinite ν] [ν.IsMulLeftInvariant]
+    {L : Type*} [RCLike L] {A B : G → L} (hA : Integrable A ν) (hB : Integrable B ν) :
+    (∫ u, A u ∂ν) * (∫ v, B v ∂ν) = ∫ t, ∫ u, A u * B (u * t) ∂ν ∂ν := by
+  have hmp := measurePreserving_prod_mul ν ν
+  have he := (MeasurableEquiv.shearMulRight G).measurableEmbedding
+  have hint : Integrable (fun z : G × G ↦ A z.1 * B z.2) (ν.prod ν) := hA.mul_prod hB
+  rw [← integral_prod_mul, ← hmp.integral_comp he]
+  exact integral_prod_symm _ ((hmp.integrable_comp_emb he).2 hint)
+
+end Correlation
 
 section ConvolutionKernel
 

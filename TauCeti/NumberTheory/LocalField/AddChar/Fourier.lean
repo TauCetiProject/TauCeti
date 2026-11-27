@@ -67,6 +67,10 @@ formula and the double duality `Submodule.characterAnnihilator_characterAnnihila
 * `VectorFourier.fourierIntegral_neg_mul_apply`,
   `VectorFourier.integral_mul_fourierIntegral_mul_comm`: on `V = K` with the form `-(x y)`, the
   transform has the positive kernel `ψ(x y)`, and `∫ f 𝓕g(· t) = ∫ g 𝓕f(· t)`.
+* `VectorFourier.isLocallyConstant_hasCompactSupport_fourierIntegral_neg_mul`,
+  `VectorFourier.fourierIntegral_neg_mul_indicator_integer`: on `V = K`, the transform with the
+  positive kernel maps `S(K)` to itself, and fixes `1_𝒪` when `ψ` has conductor exponent `0` and
+  `μ(𝒪[K]) = 1`.
 
 ## References
 
@@ -288,6 +292,57 @@ theorem fourierIntegral_flip_fourierIntegral_of_isLocallyConstant (hψ : Continu
   rw [mul_comm, ← hvol _ hL', hdd]
 
 end Inversion
+
+end VectorFourier
+
+/-! ### The positive kernel on a local field -/
+
+namespace VectorFourier
+
+variable [MeasurableSpace K] [BorelSpace K] {ψ : AddChar K Circle} (μ : Measure K)
+  [μ.IsAddRightInvariant]
+
+/-- For a continuous nontrivial `ψ`, the transform `f ↦ ∫ ψ(x y) f(x) dμ(x)` maps a locally
+constant compactly supported function on `K` to another one. -/
+theorem isLocallyConstant_hasCompactSupport_fourierIntegral_neg_mul (hψ : Continuous ψ)
+    (h1 : ψ ≠ 1) {g : K → ℂ} (hg : IsLocallyConstant g) (hgc : HasCompactSupport g) :
+    IsLocallyConstant (fourierIntegral ψ μ (-LinearMap.mul K K) g) ∧
+      HasCompactSupport (fourierIntegral ψ μ (-LinearMap.mul K K) g) :=
+  ⟨isLocallyConstant_fourierIntegral_of_hasCompactSupport hψ μ _ hgc,
+    hasCompactSupport_fourierIntegral_of_isLocallyConstant hψ h1
+      LinearMap.BilinForm.nondegenerate_neg_mul μ hg hgc⟩
+
+/-- For `ψ` of conductor exponent `0` and `μ(𝒪[K]) = 1`, the transform
+`f ↦ ∫ ψ(x y) f(x) dμ(x)` of `1_𝒪` is `1_𝒪`: the annihilator of `𝒪[K]` for `ψ(x y)` is
+`𝒪[K]`. -/
+theorem fourierIntegral_neg_mul_indicator_integer (hψ : Continuous ψ) (h1 : ψ ≠ 1)
+    (hψ0 : ψ.conductorExponent = 0) (hμ : μ 𝒪[K] = 1) :
+    fourierIntegral ψ μ (-LinearMap.mul K K) ((𝒪[K] : Set K).indicator (1 : K → ℂ)) =
+      (𝒪[K] : Set K).indicator 1 := by
+  have h0 := AddChar.setOf_eq_one_mem_nhds_zero hψ
+  have hO : MeasurableSet ((𝒪[K]).toAddSubgroup : Set K) :=
+    (Valuation.isClopen_integer (v := valuation K)).isClosed.measurableSet
+  have hann : (((𝒪[K]).toAddSubgroup.characterAnnihilator ψ (-LinearMap.mul K K)) : Set K) =
+      𝒪[K] := by
+    ext y
+    have key := AddChar.forall_mul_eq_one_iff_valuation_le h0 h1 0 y
+    rw [hψ0, neg_zero, sub_zero, zpow_zero] at key
+    rw [SetLike.mem_coe, AddSubgroup.mem_characterAnnihilator, SetLike.mem_coe,
+      Valuation.mem_integer_iff, ← key]
+    -- `𝒪[K]` is stable under negation, and `ψ (-(x y))` is `ψ ((-x) y)`.
+    refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
+    · have hx' : -x ∈ (𝒪[K]).toAddSubgroup := neg_mem (show x ∈ 𝒪[K] from
+        (Valuation.mem_integer_iff _ _).2 hx)
+      simpa using h _ hx'
+    · have hx' : valuation K (-x) ≤ uniformizer K ^ (0 : ℤ) := by
+        rw [Valuation.map_neg, zpow_zero]
+        exact (Valuation.mem_integer_iff _ _).1 hx
+      simpa using h _ hx'
+  have h := fourierIntegral_indicator_addSubgroup ψ μ (-LinearMap.mul K K) hO
+    (1 : ℂ)
+  rw [hann, measureReal_def] at h
+  simp only [Pi.one_def]
+  simpa [hμ] using h
 
 end VectorFourier
 

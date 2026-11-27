@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.LocalField.TateZeta.Nonarchimedean
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import TauCeti.MeasureTheory.Group.Correlation
+import TauCeti.MeasureTheory.Group.Integral
 import TauCeti.NumberTheory.LocalField.HaarCharacter
 import TauCeti.NumberTheory.LocalField.NormedField
 import TauCeti.NumberTheory.LocalField.Topology
@@ -42,7 +42,7 @@ maps `S(K)` to itself. Write `z(s, ω; f) = ∫_{Kˣ} f(x) ω(x) |x| ^ s dν(x)`
 
 The proof is Tate's. Since `ω(u) |u| ^ s · ω⁻¹(u) |u| ^ (1 - s) = |u|`, the substitution
 `v = u t` turns the left side into `∫_t (∫_u f(u) 𝓕g(u t) |u| dν(u)) ω⁻¹(t) |t| ^ (1 - s) dν(t)`
-(`MeasureTheory.integral_mul_integral_eq_integral_integral_mul`). The measure `|u| dν(u)` is a
+(`TauCeti.integral_mul_integral_eq_integral_integral_mul`). The measure `|u| dν(u)` is a
 positive multiple of `μ` on `Kˣ`
 (`TauCeti.exists_pos_forall_integral_eq_smul_integral_units`), so the inner integral is
 a multiple of `∫ f(x) 𝓕g(x t) dμ(x) = ∫∫ f(x) g(y) ψ(x y t) dμ(x) dμ(y)`, which is symmetric
@@ -73,8 +73,8 @@ so `γ(s, ω, ψ) = L(1 - s, ω⁻¹) / L(s, ω)` with `L(s, ω) = (1 - ω(ϖ) q
 * `TauCeti.TateZeta.eq_gammaFactor_of_forall`, `TauCeti.TateZeta.gammaFactor_eq`: uniqueness of
   `γ` and its independence of `ν`.
 * `TauCeti.TateZeta.differentiableOn_gammaFactor`: `γ` is holomorphic on `re s + r < 1`.
-* `TauCeti.TateZeta.fourierIntegral_indicator_integer`,
-  `TauCeti.TateZeta.gammaFactor_of_unramified`: the unramified computation.
+* `TauCeti.TateZeta.gammaFactor_of_unramified`: the unramified computation, from
+  `VectorFourier.fourierIntegral_neg_mul_indicator_integer`.
 
 Entire functions agreeing with the zeta integrals and with `γ` on their half-planes, the input to
 the meromorphic continuation, are in `TauCeti.NumberTheory.LocalField.TateZeta.Continuation`.
@@ -117,14 +117,6 @@ section FunctionalEquation
 variable (μ : Measure K) [μ.IsAddHaarMeasure] (ν : Measure Kˣ) [ν.IsHaarMeasure]
   {ψ : AddChar K Circle}
 
-/-- The transform of a test function is again a test function. -/
-theorem isLocallyConstant_hasCompactSupport_fourierIntegral (hψ : Continuous ψ)
-    (h1 : ψ ≠ 1) {g : K → ℂ} (hg : IsLocallyConstant g) (hgc : HasCompactSupport g) :
-    IsLocallyConstant (𝓕[ψ, μ] g) ∧ HasCompactSupport (𝓕[ψ, μ] g) :=
-  ⟨VectorFourier.isLocallyConstant_fourierIntegral_of_hasCompactSupport hψ μ _ hgc,
-    VectorFourier.hasCompactSupport_fourierIntegral_of_isLocallyConstant hψ h1
-      LinearMap.BilinForm.nondegenerate_neg_mul μ hg hgc⟩
-
 /-- Tate's correlation: on the strip, `z(s, ω; f) z(1 - s, ω⁻¹; 𝓕g)` is the integral over `t` of
 `c⁻¹ ∫ f(x) 𝓕g(x t) dμ(x)` against `ω⁻¹(t) |t| ^ (1 - s) dν(t)`, where `c` relates `μ` to
 `|u| dν(u)`. -/
@@ -138,7 +130,8 @@ private theorem localZetaIntegral_mul_fourier_eq (hψ : Continuous ψ) (h1 : ψ 
       ∫ t : Kˣ, ((c : ℂ)⁻¹ * ∫ x, f x * 𝓕[ψ, μ] g (x * t) ∂μ) *
         ((ω⁻¹ t : ℂ) * ((normalizedAbsoluteValue K (t : K) : ℝ) : ℂ) ^ (1 - s)) ∂ν := by
   have := (Units.isEmbedding_val₀ (G₀ := K)).secondCountableTopology
-  obtain ⟨hgl, hgcc⟩ := isLocallyConstant_hasCompactSupport_fourierIntegral μ hψ h1 hg hgc
+  obtain ⟨hgl, hgcc⟩ :=
+    VectorFourier.isLocallyConstant_hasCompactSupport_fourierIntegral_neg_mul μ hψ h1 hg hgc
   have hA := localZetaIntegral_convergent ν ω hf.continuous hfc hs₀
   have hB := localZetaIntegral_convergent ν ω⁻¹ hgl.continuous hgcc
     (one_sub_re_add_characterExponent_inv_pos hs₁)
@@ -305,44 +298,14 @@ theorem eq_gammaFactor_of_forall {s γ : ℂ} (hγ : ∀ f : K → ℂ, IsLocall
 ratio of the two sides of Tate's functional equation. -/
 theorem differentiableOn_gammaFactor (hψ : Continuous ψ) (h1 : ψ ≠ 1) :
     DifferentiableOn ℂ (gammaFactor ω μ ψ) {s | s.re + characterExponent K ω < 1} := by
-  obtain ⟨hl, hc⟩ := isLocallyConstant_hasCompactSupport_fourierIntegral μ hψ h1
-    (isLocallyConstant_gammaTestFunction ω) (hasCompactSupport_gammaTestFunction ω)
+  obtain ⟨hl, hc⟩ := VectorFourier.isLocallyConstant_hasCompactSupport_fourierIntegral_neg_mul μ
+    hψ h1 (isLocallyConstant_gammaTestFunction ω) (hasCompactSupport_gammaTestFunction ω)
   have hd := differentiableOn_localZetaIntegral (unitsHaar K) ω⁻¹ hl.continuous hc
   exact (hd.comp (s := {s | s.re + characterExponent K ω < 1})
     ((differentiable_const 1).sub differentiable_id).differentiableOn
     fun s hs ↦ one_sub_re_add_characterExponent_inv_pos hs).div_const _
 
 /-! ### The unramified gamma factor -/
-
-/-- For `ψ` of conductor exponent `0` and `μ(𝒪[K]) = 1`, the Fourier transform of `1_𝒪` is
-`1_𝒪`: the annihilator of `𝒪[K]` for `ψ(x y)` is `𝒪[K]`. -/
-theorem fourierIntegral_indicator_integer (hψ : Continuous ψ) (h1 : ψ ≠ 1)
-    (hψ0 : ψ.conductorExponent = 0) (hμ : μ 𝒪[K] = 1) :
-    𝓕[ψ, μ] ((𝒪[K] : Set K).indicator (1 : K → ℂ)) = (𝒪[K] : Set K).indicator 1 := by
-  have h0 := AddChar.setOf_eq_one_mem_nhds_zero hψ
-  have hO : MeasurableSet ((𝒪[K]).toAddSubgroup : Set K) :=
-    (Valuation.isClopen_integer (v := valuation K)).isClosed.measurableSet
-  have hann : (((𝒪[K]).toAddSubgroup.characterAnnihilator ψ (-LinearMap.mul K K)) : Set K) =
-      𝒪[K] := by
-    ext y
-    have key := AddChar.forall_mul_eq_one_iff_valuation_le h0 h1 0 y
-    rw [hψ0, neg_zero, sub_zero, zpow_zero] at key
-    rw [SetLike.mem_coe, AddSubgroup.mem_characterAnnihilator, SetLike.mem_coe,
-      Valuation.mem_integer_iff, ← key]
-    -- `𝒪[K]` is stable under negation, and `ψ (-(x y))` is `ψ ((-x) y)`.
-    refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
-    · have hx' : -x ∈ (𝒪[K]).toAddSubgroup := neg_mem (show x ∈ 𝒪[K] from
-        (Valuation.mem_integer_iff _ _).2 hx)
-      simpa using h _ hx'
-    · have hx' : valuation K (-x) ≤ uniformizer K ^ (0 : ℤ) := by
-        rw [Valuation.map_neg, zpow_zero]
-        exact (Valuation.mem_integer_iff _ _).1 hx
-      simpa using h _ hx'
-  have h := VectorFourier.fourierIntegral_indicator_addSubgroup ψ μ (-LinearMap.mul K K) hO
-    (1 : ℂ)
-  rw [hann, measureReal_def] at h
-  simp only [Pi.one_def]
-  simpa [hμ] using h
 
 /-- **The unramified gamma factor.** If `ω` is unramified, `ψ` has conductor exponent `0` and
 `μ(𝒪[K]) = 1`, then on the strip `0 < re s + r < 1`,
@@ -359,7 +322,7 @@ theorem gammaFactor_of_unramified (hψ : Continuous ψ) (h1 : ψ ≠ 1)
   have hX := one_sub_apply_mul_natCard_cpow_ne_zero hϖ hs₀
   have hFE := localZetaIntegral_functional_equation ω μ (unitsHaar K) hψ h1
     (isLocallyConstant_indicator_integer K) (hasCompactSupport_indicator_integer K) hs₀ hs₁
-  rw [fourierIntegral_indicator_integer μ hψ h1 hψ0 hμ,
+  rw [VectorFourier.fourierIntegral_neg_mul_indicator_integer μ hψ h1 hψ0 hμ,
     localZetaIntegral_unitsHaar_indicator_integer_of_unramified hω' hϖ
       (one_sub_re_add_characterExponent_inv_pos hs₁),
     localZetaIntegral_unitsHaar_indicator_integer_of_unramified hω hϖ hs₀,

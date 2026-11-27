@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.Topology.Algebra.Group.Units
 public import TauCeti.NumberTheory.LocalField.NormalizedValuation
 import Mathlib.Topology.Algebra.Group.Pointwise
+import Mathlib.Topology.Algebra.IsOpenUnits
 
 /-!
 # The unit filtration of a nonarchimedean local field
@@ -497,14 +498,8 @@ theorem isCompact_unitFiltration (i : ℕ) : IsCompact (unitFiltration K i : Set
 /-- The image of each step `U(K,i)` of the unit filtration in `K` is open and closed. -/
 theorem isClopen_image_val_unitFiltration (i : ℕ) :
     IsClopen (Units.val '' (unitFiltration K i : Set Kˣ)) := by
-  refine ⟨((isCompact_unitFiltration i).image Units.continuous_val).isClosed, ?_⟩
-  obtain ⟨V, hV, hVU⟩ := (Units.isEmbedding_val₀ (G₀ := K)).isInducing.isOpen_iff.1
-    (isOpen_unitFiltration (K := K) i)
-  have hv : Set.range (Units.val : Kˣ → K) = {0}ᶜ := by
-    ext x
-    exact ⟨by rintro ⟨u, rfl⟩; exact u.ne_zero, fun hx ↦ ⟨Units.mk0 x hx, rfl⟩⟩
-  rw [← hVU, Set.image_preimage_eq_inter_range, hv]
-  exact hV.inter isOpen_compl_singleton
+  exact ⟨((isCompact_unitFiltration i).image Units.continuous_val).isClosed,
+    IsOpenUnits.isOpenEmbedding_unitsVal.isOpenMap _ (isOpen_unitFiltration i)⟩
 
 /-- The unit filtration is a neighbourhood basis of `1` in `Kˣ`. -/
 theorem hasBasis_nhds_one_unitFiltration :

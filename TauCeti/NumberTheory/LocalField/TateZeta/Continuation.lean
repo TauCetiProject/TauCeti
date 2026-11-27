@@ -219,8 +219,8 @@ theorem exists_differentiable_eqOn_gammaFactor_of_ramified (hψ : Continuous ψ)
     ∃ G : ℂ → ℂ, Differentiable ℂ G ∧
       EqOn (gammaFactor ω μ ψ) G {s | s.re + characterExponent K ω < 1} := by
   have hω' : ¬ unitFiltration K 0 ≤ (ω⁻¹).ker := by rwa [ContinuousMonoidHom.ker_inv]
-  obtain ⟨hl, hc⟩ := isLocallyConstant_hasCompactSupport_fourierIntegral μ hψ h1
-    (isLocallyConstant_gammaTestFunction ω) (hasCompactSupport_gammaTestFunction ω)
+  obtain ⟨hl, hc⟩ := VectorFourier.isLocallyConstant_hasCompactSupport_fourierIntegral_neg_mul μ
+    hψ h1 (isLocallyConstant_gammaTestFunction ω) (hasCompactSupport_gammaTestFunction ω)
   obtain ⟨P, hP, hzP⟩ := exists_differentiable_eqOn_localZetaIntegral_of_ramified (unitsHaar K)
     hω' hl hc
   refine ⟨fun s ↦ P (1 - s) / (unitsHaar K).real
@@ -239,8 +239,8 @@ theorem exists_differentiable_eqOn_mul_gammaFactor_of_unramified (hψ : Continuo
       EqOn (fun s ↦ (1 - (ω ϖ : ℂ)⁻¹ * (Nat.card 𝓀[K] : ℂ) ^ (-(1 - s))) * gammaFactor ω μ ψ s) G
         {s | s.re + characterExponent K ω < 1} := by
   have hω' : unitFiltration K 0 ≤ (ω⁻¹).ker := by rwa [ContinuousMonoidHom.ker_inv]
-  obtain ⟨hl, hc⟩ := isLocallyConstant_hasCompactSupport_fourierIntegral μ hψ h1
-    (isLocallyConstant_gammaTestFunction ω) (hasCompactSupport_gammaTestFunction ω)
+  obtain ⟨hl, hc⟩ := VectorFourier.isLocallyConstant_hasCompactSupport_fourierIntegral_neg_mul μ
+    hψ h1 (isLocallyConstant_gammaTestFunction ω) (hasCompactSupport_gammaTestFunction ω)
   obtain ⟨P, hP, hzP⟩ := exists_differentiable_eqOn_mul_localZetaIntegral_of_unramified
     (unitsHaar K) hω' hϖ hl hc
   refine ⟨fun s ↦ P (1 - s) / (unitsHaar K).real
