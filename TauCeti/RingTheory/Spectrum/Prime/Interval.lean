@@ -1,0 +1,172 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RingTheory.Spectrum.Prime.RingHom
+
+/-!
+# Rings of closed intervals in the prime spectrum
+
+The ring of the interval from `p` to `q` is the localization of `R ⧸ p.asIdeal` obtained
+by inverting the images of elements outside `q`. This is the interval ring used in
+Bhatt–Mathew, *The arc-topology*, Definition 4.6, for the spectrum of a valuation domain.
+
+* `PrimeSpectrum.intervalRingLift` and `PrimeSpectrum.intervalRing_hom_ext` give the
+  universal property by composing `Ideal.Quotient.lift` and `IsLocalization.lift`.
+* `PrimeSpectrum.intervalRingOrderIso` identifies the prime spectrum of the interval ring
+  with `Set.Icc p q`, using the quotient and localization order isomorphisms.
+* `PrimeSpectrum.intervalRingMap` restricts from a larger interval to a smaller one.
+* `PrimeSpectrum.isDomain_intervalRing` gives a domain for ordered endpoints. For a valuation
+  domain, this lets the existing quotient and localization instances infer a valuation ring.
+-/
+
+public section
+
+namespace PrimeSpectrum
+
+variable {R : Type*} [CommRing R]
+
+/-- The images of the complement of `q` in the quotient by `p`. -/
+abbrev intervalDenominators (p q : PrimeSpectrum R) : Submonoid (R ⧸ p.asIdeal) :=
+  q.asIdeal.primeCompl.map (Ideal.Quotient.mk p.asIdeal)
+
+/-- The ring of `[p,q]` in the prime spectrum, formed by killing `p` and inverting
+the complement of `q`. This construction also permits empty intervals. -/
+abbrev IntervalRing (p q : PrimeSpectrum R) :=
+  Localization (intervalDenominators p q)
+
+/-- The ring of a nonempty closed interval in the prime spectrum is a domain. -/
+theorem isDomain_intervalRing (p q : PrimeSpectrum R) (h : p ≤ q) :
+    IsDomain (IntervalRing p q) := by
+  apply IsLocalization.isDomain_of_le_nonZeroDivisors (M := intervalDenominators p q)
+  apply le_nonZeroDivisors_of_noZeroDivisors
+  intro hz
+  obtain ⟨x, hx, hzero⟩ := Submonoid.mem_map.mp hz
+  exact hx (h (Ideal.Quotient.eq_zero_iff_mem.mp hzero))
+
+/-- The canonical map from the ambient ring to the ring of `[p,q]`. -/
+def toIntervalRing (p q : PrimeSpectrum R) : R →+* IntervalRing p q :=
+  (algebraMap (R ⧸ p.asIdeal) (IntervalRing p q)).comp (Ideal.Quotient.mk p.asIdeal)
+
+/-- The canonical map sends an element to its quotient class followed by localization.
+This equation is kept out of the simp set so that the lift and restriction rules can simplify
+applications to `toIntervalRing` before expansion. -/
+theorem toIntervalRing_apply (p q : PrimeSpectrum R) (x : R) :
+    p.toIntervalRing q x = algebraMap (R ⧸ p.asIdeal) (IntervalRing p q)
+      (Ideal.Quotient.mk p.asIdeal x) :=
+  (rfl)
+
+/-- The canonical map to the interval ring kills the lower endpoint. -/
+@[simp]
+theorem toIntervalRing_eq_zero (p q : PrimeSpectrum R) {x : R} (hx : x ∈ p.asIdeal) :
+    p.toIntervalRing q x = 0 := by
+  rw [toIntervalRing_apply, Ideal.Quotient.eq_zero_iff_mem.mpr hx, map_zero]
+
+/-- The canonical map to the interval ring inverts elements outside the upper endpoint. -/
+theorem isUnit_toIntervalRing (p q : PrimeSpectrum R) {x : R} (hx : x ∉ q.asIdeal) :
+    IsUnit (p.toIntervalRing q x) := by
+  rw [toIntervalRing_apply]
+  exact IsLocalization.map_units (M := intervalDenominators p q)
+    _ ⟨_, Submonoid.mem_map.mpr ⟨x, hx, rfl⟩⟩
+
+/-- A map killing the lower endpoint and inverting the complement of the upper endpoint
+factors through the interval ring. -/
+noncomputable def intervalRingLift {S : Type*} [CommSemiring S] (p q : PrimeSpectrum R)
+    (f : R →+* S)
+    (hzero : ∀ x ∈ p.asIdeal, f x = 0) (hunit : ∀ x ∉ q.asIdeal, IsUnit (f x)) :
+    IntervalRing p q →+* S :=
+  IsLocalization.lift (M := intervalDenominators p q)
+    (g := Ideal.Quotient.lift p.asIdeal f hzero) fun ⟨y, hy⟩ ↦ by
+      obtain ⟨x, hx, rfl⟩ := Submonoid.mem_map.mp hy
+      simpa only [Ideal.Quotient.lift_mk] using hunit x hx
+
+/-- The factorization through an interval ring agrees with the initial homomorphism on the
+ambient ring. -/
+@[simp]
+theorem intervalRingLift_toIntervalRing {S : Type*} [CommSemiring S]
+    (p q : PrimeSpectrum R) (f : R →+* S)
+    (hzero : ∀ x ∈ p.asIdeal, f x = 0) (hunit : ∀ x ∉ q.asIdeal, IsUnit (f x)) (x : R) :
+    p.intervalRingLift q f hzero hunit (p.toIntervalRing q x) = f x := by
+  rw [toIntervalRing_apply, intervalRingLift, IsLocalization.lift_eq, Ideal.Quotient.lift_mk]
+
+/-- Maps out of an interval ring are determined by their composite with the canonical map. -/
+theorem intervalRing_hom_ext {S : Type*} [Semiring S] (p q : PrimeSpectrum R)
+    {f g : IntervalRing p q →+* S}
+    (h : f.comp (p.toIntervalRing q) = g.comp (p.toIntervalRing q)) : f = g := by
+  apply IsLocalization.ringHom_ext (intervalDenominators p q)
+  apply Ideal.Quotient.ringHom_ext
+  exact RingHom.ext fun x ↦ by
+    simpa only [RingHom.comp_apply, ← toIntervalRing_apply] using RingHom.congr_fun h x
+
+/-- Contraction to the ambient ring identifies the prime spectrum of the interval ring
+with the closed interval between the two endpoints. -/
+noncomputable def intervalRingOrderIso (p q : PrimeSpectrum R) :
+    PrimeSpectrum (IntervalRing p q) ≃o Set.Icc p q :=
+  let M := intervalDenominators p q
+  let e := p.asIdeal.primeSpectrumQuotientOrderIsoZeroLocus
+  have hdisj (r : PrimeSpectrum (R ⧸ p.asIdeal)) :
+      Disjoint (M : Set (R ⧸ p.asIdeal)) r.asIdeal ↔
+        (e r : PrimeSpectrum R) ≤ q := by
+    have hcompl : (q.asIdeal.primeCompl : Set R)ᶜ = (q.asIdeal : Set R) :=
+      compl_compl _
+    have he : (e r : PrimeSpectrum R) = r.comap (Ideal.Quotient.mk p.asIdeal) := rfl
+    -- Pull disjointness back to `R`, then read containment of ideals as the spectrum order.
+    rw [Submonoid.coe_map, Set.disjoint_image_left, ← le_compl_iff_disjoint_left, hcompl]
+    rw [← Ideal.coe_comap, SetLike.coe_subset_coe, ← comap_asIdeal, asIdeal_le_asIdeal, he]
+  (IsLocalization.primeSpectrumOrderIso M (IntervalRing p q)).trans
+    { toFun := fun r ↦ ⟨e r, (e r).property, (hdisj r).mp r.property⟩
+      invFun := fun r ↦ ⟨e.symm ⟨r, r.property.1⟩, (hdisj _).mpr (by
+        rw [e.apply_symm_apply]
+        exact r.property.2)⟩
+      left_inv := fun r ↦ Subtype.ext (e.symm_apply_apply r)
+      right_inv := fun r ↦ by
+        have hr := e.apply_symm_apply ⟨r, r.property.1⟩
+        exact Subtype.ext (congrArg (fun t : zeroLocus (p.asIdeal : Set R) ↦ t.val) hr)
+      map_rel_iff' := e.le_iff_le }
+
+/-- The spectrum identification acts by contraction to the ambient ring.
+This computation rule permits simplification without unfolding the order isomorphism. -/
+@[simp]
+theorem intervalRingOrderIso_apply (p q : PrimeSpectrum R)
+    (r : PrimeSpectrum (IntervalRing p q)) :
+    (p.intervalRingOrderIso q r : PrimeSpectrum R) = r.comap (p.toIntervalRing q) :=
+  (rfl)
+
+/-- Restrict from `[p,q]` to an interval `[p',q']` whose endpoints lie inside it. -/
+noncomputable def intervalRingMap (p q : PrimeSpectrum R) {p' q' : PrimeSpectrum R}
+    (hp : p ≤ p') (hq : q' ≤ q) : IntervalRing p q →+* IntervalRing p' q' :=
+  p.intervalRingLift q (p'.toIntervalRing q')
+    (fun _ hx ↦ p'.toIntervalRing_eq_zero q' (hp hx))
+    (fun _ hx ↦ p'.isUnit_toIntervalRing q' (fun h ↦ hx (hq h)))
+
+/-- Restriction preserves the image of each element of the ambient ring. -/
+@[simp]
+theorem intervalRingMap_toIntervalRing (p q : PrimeSpectrum R) {p' q' : PrimeSpectrum R}
+    (hp : p ≤ p') (hq : q' ≤ q) (x : R) :
+    p.intervalRingMap q hp hq (p.toIntervalRing q x) = p'.toIntervalRing q' x := by
+  rw [intervalRingMap, intervalRingLift_toIntervalRing]
+
+/-- Restriction to the same interval is the identity. -/
+@[simp]
+theorem intervalRingMap_refl (p q : PrimeSpectrum R) :
+    p.intervalRingMap q le_rfl le_rfl = RingHom.id (IntervalRing p q) := by
+  apply p.intervalRing_hom_ext q
+  apply RingHom.ext
+  intro x
+  simp only [RingHom.comp_apply, intervalRingMap_toIntervalRing, RingHom.id_apply]
+
+/-- Restricting in two steps agrees with direct restriction. -/
+@[simp]
+theorem intervalRingMap_comp (p q : PrimeSpectrum R) {p' q' p'' q'' : PrimeSpectrum R}
+    (hp : p ≤ p') (hq : q' ≤ q) (hp' : p' ≤ p'') (hq' : q'' ≤ q') :
+    (p'.intervalRingMap q' hp' hq').comp (p.intervalRingMap q hp hq) =
+      p.intervalRingMap q (hp.trans hp') (hq'.trans hq) := by
+  apply p.intervalRing_hom_ext q
+  apply RingHom.ext
+  intro x
+  simp only [RingHom.comp_apply, intervalRingMap_toIntervalRing]
+
+end PrimeSpectrum
