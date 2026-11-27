@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.OfSection
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
-import TauCeti.Analysis.Distribution.TestFunction.Basic
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Normed.Module.Dual.Reflexive.Basic
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 
@@ -58,8 +58,6 @@ extension of its chart localization along a cutoff equal to `1` on its support.
 
 ## Main results
 
-* `Bundle.Trivialization.isVanishingOn_of_isVanishingOn_chartDistributionCLM`: a functional on
-  bundle tests vanishes over the part of a chart where its local representative vanishes.
 * `TauCeti.BundleDistribution.notMem_singularSupport_ofSection`: a locally integrable section that
   is smooth near `x` has `x` outside its singular support.
 * `TauCeti.BundleDistribution.singularSupport_ofSection_eq_empty`,
@@ -81,67 +79,6 @@ noncomputable section
 
 open Set Filter Function TopologicalSpace Bundle MeasureTheory ContinuousLinearMap
 open scoped Manifold ContDiff Distributions Topology CompactConvergenceCLM
-
-/-! ### Vanishing read in a chart -/
-
-namespace Bundle.Trivialization
-
-open TauCeti
-
-variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
-  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
-  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
-  (t : Trivialization F (π F V)) [MemTrivializationAtlas t] {c : OpenPartialHomeomorph M E}
-  (hc : ContMDiffOn I 𝓘(ℝ, E) ∞ c c.source) (hct : c.source ⊆ t.baseSet)
-
-/-- **Vanishing is read in a chart.** If the local representative of a functional `T` on bundle
-tests in a smooth chart `c` with smooth inverse and a frame `t` vanishes on an open subset `B` of
-the chart target, then `T` vanishes on the part `c.source ∩ c ⁻¹' B` of the chart source. This is
-the converse of `Bundle.Trivialization.isVanishingOn_chartComponent`. -/
-theorem isVanishingOn_of_isVanishingOn_chartDistributionCLM
-    (hcs : ContMDiffOn 𝓘(ℝ, E) I ∞ c.symm c.target) {T : BundleTest I F V →L_c[ℝ] W}
-    {B : Set E} (hB : IsOpen B)
-    (hT : Distribution.IsVanishingOn (t.chartDistributionCLM c hc hct T) B) :
-    BundleTest.IsVanishingOn ⇑T (c.source ∩ c ⁻¹' B) := by
-  refine BundleTest.isVanishingOn_iff.2 fun Φ hΦ ↦ ?_
-  have hK := BundleTest.isCompact_tsupport Φ
-  -- A cutoff `ψ` equal to `1` on the support of `Φ`, with compact support over `B`.
-  obtain ⟨ψ, hψ, hψ1, hψK, hψU, -⟩ :=
-    hK.exists_contMDiff_one_nhds_tsupport_subset I (c.isOpen_inter_preimage hB) hΦ
-  set ψ' : C^∞⟮I, M; ℝ⟯ := ⟨ψ, hψ⟩
-  have hψc : tsupport ψ' ⊆ c.source := hψU.trans inter_subset_left
-  let L : Compacts E := ⟨c '' tsupport ψ', hψK.isCompact.image_of_continuousOn
-    (c.continuousOn.mono hψc)⟩
-  have hL : (L : Set E) ⊆ c.target := image_subset_iff.2 fun _ hz ↦ c.map_source (hψc hz)
-  have hLB : (L : Set E) ⊆ B := image_subset_iff.2 fun _ hz ↦ (hψU hz).2
-  -- `Φ` is the chart extension of its chart localization `Φ'` along `ψ`.
-  have hΦ' : t.chartTestCLM c hc hct (TestFunction.ofSupportedIn hL
-      (t.chartLocalizationCLM c hcs hct ψ' L hL (mapsTo_image _ _) Φ)) = Φ := by
-    refine BundleTest.ext fun z ↦ ?_
-    rw [coe_chartTestCLM, chartLocalizationCLM_apply,
-      chartTestSection_chartLocalization _ _ _ _ _ _ _ _ hc hψc, ContMDiffSection.smul_apply]
-    by_cases hz : z ∈ closure {x | Φ x ≠ 0}
-    · rw [show ψ' z = 1 from hψ1.self_of_nhdsSet z hz, one_smul]
-    · rw [Bundle.apply_eq_zero_of_notMem_closure hz, smul_zero]
-  set Φ' : 𝓓(⟨c.target, c.open_target⟩, F) := TestFunction.ofSupportedIn hL
-    (t.chartLocalizationCLM c hcs hct ψ' L hL (mapsTo_image _ _) Φ)
-  have hΦ'B : tsupport Φ' ⊆ B := by
-    rw [TestFunction.coe_ofSupportedIn]
-    exact (ContDiffMapSupportedIn.tsupport_subset _).trans hLB
-  -- In a basis, `Φ'` splits into real test functions supported in `B` times vectors of `F`.
-  rw [← hΦ', ← TestFunction.sum_postcompCLM_toSpanSingleton_coord (Module.finBasis ℝ F) Φ',
-    map_sum, map_sum]
-  refine Finset.sum_eq_zero fun i _ ↦ ?_
-  rw [← chartDistributionCLM_apply_apply, hT _ (by
-    rw [TestFunction.postcompCLM_apply]
-    exact (tsupport_comp_subset (map_zero _) Φ').trans hΦ'B), zero_apply]
-
-end Bundle.Trivialization
 
 /-! ### Smooth sections -/
 
@@ -206,10 +143,9 @@ theorem notMem_singularSupport_ofSection {u : (x : M) → W x} (hu : LocallyInte
     rw [hz'] at h
     exact (Complex.ofRealCLM.contDiff.comp_contDiffAt _
       (contDiffAt_const.mul (v.contDiff.contDiffAt.comp _ h))).contDiffWithinAt
-  · rw [Trivialization.chartComponent_def, Distribution.mapCLM_apply,
-      ContinuousLinearMap.comp_apply, apply_apply,
-      chartDistributionCLM_ofSection_apply_apply c hc _ hcα hu, hr, Complex.ofRealCLM_apply,
-      ← integral_const_mul, ← integral_complex_ofReal]
+  · rw [Trivialization.chartComponent_apply, ← Trivialization.chartDistributionCLM_apply_apply,
+      chartDistributionCLM_ofSection_apply_apply c hc _ hcα hu, hr, ← integral_const_mul,
+      ← integral_complex_ofReal]
     refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
     simp only [Complex.real_smul, Complex.ofReal_mul]
     ring
@@ -231,15 +167,6 @@ theorem waveFrontSet_ofSection_eq_empty {u : (x : M) → W x}
 
 /-! ### The singular support is where a distributional section is not a smooth section -/
 
-/-- A test function times a function continuous on a neighbourhood of its support is
-integrable. -/
-private theorem integrable_smul_of_continuousOn {Ω : Opens E} (φ : 𝓓(Ω, ℝ)) {f : E → ℂ}
-    {U : Set E} (hf : ContinuousOn f U) (hφ : tsupport φ ⊆ U) :
-    Integrable (fun z ↦ φ z • f z) (volume : Measure E) :=
-  ((φ.continuous.continuousOn.smul (hf.mono hφ)).integrableOn_compact
-    φ.hasCompactSupport.isCompact).integrable_of_forall_notMem_eq_zero
-    fun z hz ↦ by simp [image_eq_zero_of_notMem_tsupport hz]
-
 omit [I.Boundaryless] [SigmaCompactSpace M] in
 /-- **Smooth components give a smooth reading.** If the components of the local representative of
 a distributional section `T` in a chart and a frame are smooth near `z₀`, then near `z₀` the local
@@ -256,20 +183,20 @@ private theorem exists_contDiffOn_chartDistributionCLM_eq_integral
         t.chartDistributionCLM c hc hct T φ v = ∫ z, φ z * g z v := by
   set b := Module.finBasis ℝ (G →L[ℝ] ℝ)
   choose U hU hzU f hf hTf using fun i ↦ (Distribution.notMem_singularSupport_iff
-    (show z₀ ∈ (⟨c.target, c.open_target⟩ : Opens E) from hz₀)).1 (hT (b i))
+    (Opens.mem_mk.2 hz₀)).1 (hT (b i))
   refine ⟨⋂ i, U i, isOpen_iInter_of_finite hU, mem_iInter.2 hzU,
     fun z ↦ ∑ i, (f i z).re • (b.coord i).toContinuousLinearMap, ContDiffOn.sum fun i _ ↦
       ((toSpanSingleton ℝ (b.coord i).toContinuousLinearMap).contDiff.comp_contDiffOn
         (Complex.reCLM.contDiff.comp_contDiffOn ((hf i).mono (iInter_subset _ i)))).congr
           fun z _ ↦ by simp, fun φ hφ v ↦ ?_⟩
-  have hint (i) := integrable_smul_of_continuousOn φ (hf i).continuousOn
+  have hint (i) := φ.integrable_smul_of_continuousOn (μ := volume) (hf i).continuousOn
     (hφ.trans (iInter_subset _ i))
   -- The component along `bᵢ` is a real distribution, given by the real part of `fᵢ`.
   have hi (i) : t.chartDistributionCLM c hc hct T φ (b i) = ∫ z, φ z * (f i z).re := by
     have h := congrArg Complex.re (hTf i φ (hφ.trans (iInter_subset _ i)))
-    rw [Trivialization.chartComponent_def, Distribution.mapCLM_apply,
-      ContinuousLinearMap.comp_apply, apply_apply, Complex.ofRealCLM_apply, Complex.ofReal_re,
-      ← Complex.reCLM_apply, ← ContinuousLinearMap.integral_comp_comm _ (hint i)] at h
+    rw [Trivialization.chartComponent_apply, ← Trivialization.chartDistributionCLM_apply_apply,
+      Complex.ofReal_re, ← Complex.reCLM_apply,
+      ← ContinuousLinearMap.integral_comp_comm _ (hint i)] at h
     simpa using h
   conv_lhs => rw [← b.sum_repr v]
   simp_rw [map_sum, map_smul, hi, smul_eq_mul, ← integral_const_mul]
