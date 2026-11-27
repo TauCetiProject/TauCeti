@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.FiniteRank.Basic
-public import TauCeti.Topology.VectorBundle.Orientation.Complex.FirstChernClass
+public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
+public import TauCeti.Topology.VectorBundle.Orientation.Complex.FirstChernClass.Prod
 
 /-!
 # The first Chern class of a complex finite-rank core
@@ -23,6 +23,11 @@ empty base every first Chern class vanishes (`TauCeti.firstChernClass_eq_zero_of
 first Chern class of a trivial core vanishes (`firstChernClass_trivial`), and that of the core
 presenting an actual complex vector bundle is the first Chern class of the bundle
 (`firstChernClass_ofBundle`).
+
+A trivial summand does not change the first Chern class (`firstChernClass_trivial_whitneySum`,
+`firstChernClass_whitneySum_trivial`): the Whitney sum of cores reconstructs Mathlib's direct-sum
+bundle (`TauCeti.FiniteRankBundleCore.whitneySumTotalSpaceHomeomorph`), so this is
+`TauCeti.firstChernClass_trivial_prod`.
 -/
 
 public section
@@ -88,5 +93,32 @@ theorem firstChernClass_trivial (n : ℕ) : (trivial ℂ B n).firstChernClass = 
     (s := fun i _ ↦ Module.finBasis ℂ (Fin n → ℂ) i)
     (fun _ ↦ continuous_trivial_iff.2 ⟨continuous_id, continuous_const⟩)
     fun _ ↦ (Module.finBasis ℂ (Fin n → ℂ)).linearIndependent
+
+/-- **A trivial summand does not change the first Chern class**: `c₁(ℂⁿ ⊕ D) = c₁(D)`. -/
+@[simp]
+theorem firstChernClass_trivial_whitneySum (n : ℕ) (D : FiniteRankBundleCore ℂ B) :
+    (whitneySum (trivial ℂ B n) D).firstChernClass = D.firstChernClass := by
+  refine (_root_.TauCeti.firstChernClass_eq_of_fiberwise_trivialProd (V := Fin n → ℂ)
+    (φ := fun b ↦ (whitneySumFiberEquiv (trivial ℂ B n) D b).symm) ?_).symm
+  have hsplit (b : B) (w) : splitCoords (𝕜 := ℂ) (trivial ℂ B n).rank D.rank
+      ((whitneySumFiberEquiv (trivial ℂ B n) D b).symm w) = w :=
+    (whitneySumFiberEquiv_apply _ _ _ _).symm.trans
+      ((whitneySumFiberEquiv (trivial ℂ B n) D b).apply_symm_apply w)
+  have hdiag := (FiberBundle.Prod.isInducing_diag (Fin n → ℂ) (Trivial B (Fin n → ℂ))
+    (Fin D.rank → ℂ) D.core.Fiber).continuous
+  refine (continuous_mk_whitneySum_iff (trivial ℂ B n) D).2 ⟨?_, ?_⟩
+  · refine Continuous.congr (f := fun y ↦ (⟨y.proj, y.snd.1⟩ : (trivial ℂ B n).core.TotalSpace))
+      (continuous_trivial_iff.2 ⟨FiberBundle.continuous_proj _ _, continuous_snd.comp
+        ((Trivial.homeomorphProd B _).continuous.comp (continuous_fst.comp hdiag))⟩) fun y ↦ ?_
+    exact TotalSpace.ext rfl (heq_of_eq (congrArg Prod.fst (hsplit y.proj y.snd)).symm)
+  · refine (continuous_snd.comp hdiag).congr fun y ↦ ?_
+    exact TotalSpace.ext rfl (heq_of_eq (congrArg Prod.snd (hsplit y.proj y.snd)).symm)
+
+/-- **A trivial summand does not change the first Chern class**: `c₁(C ⊕ ℂⁿ) = c₁(C)`. -/
+@[simp]
+theorem firstChernClass_whitneySum_trivial (C : FiniteRankBundleCore ℂ B) (n : ℕ) :
+    (whitneySum C (trivial ℂ B n)).firstChernClass = C.firstChernClass := by
+  rw [firstChernClass_eq_of_iso (whitneyCommIso C (trivial ℂ B n)),
+    firstChernClass_trivial_whitneySum]
 
 end TauCeti.FiniteRankBundleCore

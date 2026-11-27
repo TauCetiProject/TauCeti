@@ -53,6 +53,11 @@ theorem splitCoords_apply (x : Fin (n + m) → M) :
       (fun i ↦ x (Fin.castAdd m i), fun i ↦ x (Fin.natAdd n i)) :=
   (rfl)
 
+/-- Splitting a vector into blocks commutes with coordinatewise `star`. -/
+theorem splitCoords_star [Star M] (x : Fin (n + m) → M) :
+    splitCoords (𝕜 := 𝕜) n m (star x) = star (splitCoords (𝕜 := 𝕜) n m x) := by
+  simp only [splitCoords_apply, Prod.star_def, Pi.star_def]
+
 /-- Rejoining two coordinate blocks appends them. -/
 @[simp]
 theorem splitCoords_symm_apply (x : (Fin n → M) × (Fin m → M)) :

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.DoubledBundle
 public import TauCeti.AlgebraicTopology.Cohomology.FundamentalClass
 public import TauCeti.Geometry.Manifold.Complex.FundamentalClass
+public import TauCeti.Topology.VectorBundle.FiniteRank.DoubleAlong.WhitneySum
 public import TauCeti.Topology.VectorBundle.FiniteRank.FirstChernClass
 
 /-!
@@ -40,6 +41,12 @@ isomorphic to the topological double of `C`, compatibly with the lifted involuti
 The trivial pair `(ℂⁿ, ℝⁿ)` has Maslov index zero (`maslovIndex_trivial`): its double is the
 trivial bundle over `Σ_ℂ` (`TauCeti.FiniteRankBundleCore.doubleAlongTrivialIso`).
 
+Adding the trivial pair as a direct summand does not change the Maslov index
+(`maslovIndex_trivial_whitneySum`, `maslovIndex_whitneySum_trivial`): the double of a Whitney sum
+is the Whitney sum of the doubles (`TauCeti.FiniteRankBundleCore.doubleAlongWhitneySumIso`), and a
+trivial summand does not change the first Chern class. This is the additivity of the Maslov index
+under direct sums when one summand is trivial.
+
 ## Main definitions
 
 * `TauCeti.FiniteRankBundleCore.maslovIndex`: the Maslov index `μ(C, F) = c₁(E_F)[Σ_ℂ]` of a
@@ -50,6 +57,9 @@ trivial bundle over `Σ_ℂ` (`TauCeti.FiniteRankBundleCore.doubleAlongTrivialIs
 * `TauCeti.FiniteRankBundleCore.maslovIndex_eq_of_iso`: isomorphic bundle pairs have the same
   Maslov index.
 * `TauCeti.FiniteRankBundleCore.maslovIndex_trivial`: the trivial pair has Maslov index zero.
+* `TauCeti.FiniteRankBundleCore.maslovIndex_trivial_whitneySum`,
+  `TauCeti.FiniteRankBundleCore.maslovIndex_whitneySum_trivial`: adding the trivial pair as a
+  direct summand does not change the Maslov index.
 
 ## References
 
@@ -107,5 +117,31 @@ theorem maslovIndex_trivial (n : ℕ) :
   rw [maslovIndex_def, SchottkyDouble.doubledBundleCore_eq,
     firstChernClass_eq_of_iso (doubleAlongTrivialIso n), firstChernClass_trivial, map_zero,
     ULift.zero_down]
+
+/-- **Adding a trivial summand does not change the Maslov index**:
+`μ((ℂⁿ, ℝⁿ) ⊕ (C, F)) = μ(C, F)`. -/
+@[simp]
+theorem maslovIndex_trivial_whitneySum (n : ℕ) (C : FiniteRankBundleCore ℂ M)
+    (hC : C.IsRealAlong A) :
+    (whitneySum (trivial ℂ M n) C).maslovIndex ((isRealAlong_trivial n A).whitneySum hC) =
+      C.maslovIndex hC := by
+  rw [maslovIndex_def, maslovIndex_def, SchottkyDouble.doubledBundleCore_eq,
+    SchottkyDouble.doubledBundleCore_eq,
+    firstChernClass_eq_of_iso (doubleAlongWhitneySumIso (isRealAlong_trivial n A) hC ≪≫
+      whitneyMapIso (doubleAlongTrivialIso n) (Iso.refl _)),
+    firstChernClass_trivial_whitneySum]
+
+/-- **Adding a trivial summand does not change the Maslov index**:
+`μ((C, F) ⊕ (ℂⁿ, ℝⁿ)) = μ(C, F)`. -/
+@[simp]
+theorem maslovIndex_whitneySum_trivial (C : FiniteRankBundleCore ℂ M) (hC : C.IsRealAlong A)
+    (n : ℕ) :
+    (whitneySum C (trivial ℂ M n)).maslovIndex (hC.whitneySum (isRealAlong_trivial n A)) =
+      C.maslovIndex hC := by
+  rw [maslovIndex_def, maslovIndex_def, SchottkyDouble.doubledBundleCore_eq,
+    SchottkyDouble.doubledBundleCore_eq,
+    firstChernClass_eq_of_iso (doubleAlongWhitneySumIso hC (isRealAlong_trivial n A) ≪≫
+      whitneyMapIso (Iso.refl _) (doubleAlongTrivialIso n)),
+    firstChernClass_whitneySum_trivial]
 
 end TauCeti.FiniteRankBundleCore

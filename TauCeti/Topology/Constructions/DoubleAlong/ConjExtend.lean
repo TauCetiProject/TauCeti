@@ -80,6 +80,14 @@ theorem conjExtend_inr (g : X → E →L[ℂ] F) {x : X} (hx : x ∈ A → IsSel
     exact congrArg ofConv (hx hxA).star_eq.symm
   · exact conjExtend_inr_of_notMem A g hxA
 
+/-- If `g` is real everywhere, its extension is `g` at the folded point on both sheets. -/
+theorem conjExtend_of_forall_isSelfAdjoint {g : X → E →L[ℂ] F}
+    (hg : ∀ x, IsSelfAdjoint (toConv (g x))) (y : DoubleAlong A) :
+    conjExtend A g y = g (fold A y) := by
+  induction y using induction_on with
+  | hl x => rw [conjExtend_inl, fold_inl]
+  | hr x => rw [conjExtend_inr A g fun _ ↦ hg x, (hg x).star_eq, ofConv_toConv, fold_inr]
+
 /-- The extension at a point depends only on the value of `g` at the folded point. -/
 theorem conjExtend_congr {g g' : X → E →L[ℂ] F} {y : DoubleAlong A}
     (h : g (fold A y) = g' (fold A y)) : conjExtend A g y = conjExtend A g' y := by

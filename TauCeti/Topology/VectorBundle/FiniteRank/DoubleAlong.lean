@@ -504,6 +504,15 @@ theorem fiberMap_doubleAlongMap (y : DoubleAlong A) :
   rw [fiberMap_doubleAlongMap, DoubleAlong.conjExtend_inr]
   exact fun hx => (ContinuousLinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2 (hφ x hx)
 
+/-- The double of a bundle map whose fibre maps commute with coordinatewise conjugation at every
+point is the bundle map at the folded point, on both sheets. -/
+theorem fiberMap_doubleAlongMap_of_forall_star
+    (hφ' : ∀ x v, φ.fiberMap x (star v) = star (φ.fiberMap x v)) (y : DoubleAlong A) :
+    (doubleAlongMap hC hC' φ hφ).fiberMap y = φ.fiberMap (DoubleAlong.fold A y) := by
+  rw [fiberMap_doubleAlongMap]
+  exact DoubleAlong.conjExtend_of_forall_isSelfAdjoint A
+    (fun x ↦ (ContinuousLinearMap.IntrinsicStar.isSelfAdjoint_iff_map_star _).2 (hφ' x)) y
+
 /-- Doubling preserves identities. -/
 @[simp] theorem doubleAlongMap_id (h : ∀ a ∈ A, ∀ v, (𝟙 C : C ⟶ C).fiberMap a (star v) =
     star ((𝟙 C : C ⟶ C).fiberMap a v)) :

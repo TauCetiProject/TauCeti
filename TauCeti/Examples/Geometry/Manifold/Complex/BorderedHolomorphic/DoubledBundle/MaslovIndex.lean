@@ -17,7 +17,9 @@ double is the Riemann sphere. The trivial pair `(ℂʳ, ℝʳ)`, the case `k = 0
 trivial bundle over the sphere. The Maslov index of a smooth bundle pair over the disc is
 independent of the choices made to give its doubled bundle a smooth structure: a collar form comes
 with an isomorphism to the pair commuting with conjugation over the circle, so it has the Maslov
-index of the pair (`TauCeti.FiniteRankBundleCore.maslovIndex_eq_of_iso`).
+index of the pair (`TauCeti.FiniteRankBundleCore.maslovIndex_eq_of_iso`). Adding the trivial pair
+`(ℂᵐ, ℝᵐ)` as a direct summand to any bundle pair over the disc does not change its Maslov index,
+the case of the additivity axiom with one trivial summand.
 -/
 
 public section
@@ -34,6 +36,13 @@ local notation "A" => (borderedInterior 𝕔𝔻 : Set 𝕔𝔻)ᶜ
 /-- The trivial pair `(ℂʳ, ℝʳ)` over the closed unit disc has Maslov index `0`. -/
 example (r : ℕ) : (trivial ℂ 𝕔𝔻 r).maslovIndex (isRealAlong_trivial r A) = 0 :=
   maslovIndex_trivial r
+
+/-- Adding the trivial pair `(ℂᵐ, ℝᵐ)` as a direct summand to a bundle pair over the closed unit
+disc does not change its Maslov index. -/
+example (m : ℕ) (C : FiniteRankBundleCore ℂ 𝕔𝔻) (hC : C.IsRealAlong A) :
+    (whitneySum (trivial ℂ 𝕔𝔻 m) C).maslovIndex ((isRealAlong_trivial m A).whitneySum hC) =
+      C.maslovIndex hC :=
+  maslovIndex_trivial_whitneySum m C hC
 
 /-- Every smooth bundle pair over the closed unit disc is isomorphic, by an isomorphism which
 commutes with conjugation over the circle, to a bundle pair with the same Maslov index whose
