@@ -157,7 +157,7 @@ theorem existsUnique_walsh_eq_addChar [Finite ι] (ψ : AddChar (ι → ZMod 2) 
   -- A real character of the cube takes the values `±1` on the points `Pi.single i 1`.
   have hsign (i : ι) : ψ (Pi.single i 1) = 1 ∨ ψ (Pi.single i 1) = -1 := by
     refine mul_self_eq_one_iff.1 ?_
-    rw [← AddChar.map_add_eq_mul, ← Pi.single_add, show (1 + 1 : ZMod 2) = 0 from rfl,
+    rw [← AddChar.map_add_eq_mul, ← Pi.single_add, (by decide : (1 + 1 : ZMod 2) = 0),
       Pi.single_zero, AddChar.map_zero_eq_one]
   set S : Finset ι := {i | ψ (Pi.single i 1) = -1}
   -- Both `ψ` and `walsh S` are additive monoid homomorphisms into `Additive ℝ` that agree on
@@ -205,7 +205,7 @@ lemma sum_walsh (x : ι → ZMod 2) :
     refine prod_eq_zero (mem_univ i) ?_
     generalize x i = a at hi
     obtain rfl : a = 1 := by decide +revert
-    norm_num [show (1 : ZMod 2).val = 1 from rfl]
+    norm_num [ZMod.val_one]
 
 /-! ### Walsh coefficients -/
 
