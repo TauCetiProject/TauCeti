@@ -103,20 +103,6 @@ private def simpleMultiplicitiesInvariant : AdditiveInvariant C (SimpleClasses C
   map_iso _ _ e := by rw [simpleMultiplicities_eq_of_iso e]
   map_biprod X Y := by rw [simpleMultiplicities_biprod, map_add]
 
-/-- The class of an object is the sum of the classes of the simple representatives, each counted
-with its multiplicity in the object. -/
-theorem of_eq_sum (X : C) :
-    (of X : SplitK0 C) = (simpleMultiplicities X).sum fun S n ↦ n • of S.repr := by
-  obtain ⟨ι, hι, f, hf, hbf, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples X
-  let := hι
-  let := hf
-  let := hbf
-  rw [simpleMultiplicities_eq_of_iso_biproduct f e, of_congr e, of_biproduct,
-    ← Finsupp.sum_finsetSum_index (by simp) (by simp [add_smul])]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [Finsupp.sum_single_index (by simp), one_smul,
-    of_congr (SimpleClasses.classOfReprIso (f i))]
-
 omit [EssentiallySmall.{w} C] in
 /-- An additive invariant evaluates on an object as the multiplicity-weighted sum of its values
 on the simple representatives. -/
@@ -133,6 +119,13 @@ theorem AdditiveInvariant.obj_eq_sum [HasBinaryBiproducts C] {G : Type*} [AddCom
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Finsupp.sum_single_index (by simp), one_smul,
     a.map_iso (SimpleClasses.classOfReprIso (f i))]
+
+/-- The class of an object is the sum of the classes of the simple representatives, each counted
+with its multiplicity in the object. -/
+theorem of_eq_sum (X : C) :
+    (of X : SplitK0 C) = (simpleMultiplicities X).sum fun S n ↦ n • of S.repr := by
+  let := Abelian.hasFiniteBiproducts (C := C)
+  simpa only [ofInvariant_obj] using (ofInvariant C).obj_eq_sum X
 
 variable (C) in
 /-- The classes of the simple representatives form a `ℤ`-basis of split `K₀`. -/

@@ -176,8 +176,9 @@ theorem forgetInductionAdjunction_unit_comp_inductionForgetAdjunction_counit_eq_
     (endAlgEquivOfSimple_smul_id (k := k) (End.of (normGlobalDim C a))).symm
   rw [forgetInductionAdjunction_unit_app_comp_inductionForgetAdjunction_counit_app_f k Z a,
     smul_f, id_f]
-  conv_lhs => rw [hsmul]
-  simp [-endAlgEquivOfSimple_smul_id, MonoidalLinear.smul_whiskerRight]
+  conv_lhs =>
+    rw [hsmul, MonoidalLinear.smul_whiskerRight, Linear.smul_comp, Linear.comp_smul,
+      id_whiskerRight, Category.id_comp, Iso.inv_hom_id]
 
 /-- When `normGlobalDim C a ≠ 0`, each component of the unit of `forgetInductionAdjunction` is
 a split monomorphism in `Center C`, retracted by
@@ -361,8 +362,11 @@ private theorem endAlgEquivOfSimple_leftDim_mul_globalDim
         (simpleMultiplicities Z.repr.1 S : k) *
           endAlgEquivOfSimple k (𝟙_ C) (End.of (leftDim Z.repr.1)) := by
   have h := endAlgEquivOfSimple_leftDim_eq_sum k ((induction k C).obj S.repr)
-  simp only [simpleMultiplicities_induction_obj k] at h
-  simpa [leftDim_inductionObj k, End.of_comp, mul_comm] using h
+  simp only [simpleMultiplicities_induction_obj k, endAlgEquivOfSimple_tensorUnit_apply,
+    leftDim_f] at h
+  rw [induction_obj, inductionCenterObj_fst, leftDim_inductionObj k, End.of_comp, map_mul,
+    mul_comm (endAlgEquivOfSimple k (𝟙_ C) (End.of (globalDim C)))] at h
+  exact h
 
 variable (C)
 

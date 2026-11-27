@@ -37,10 +37,12 @@ distinct simple classes hom orthogonal.
 * `TauCeti.SimpleClasses.decompProj`, `TauCeti.SimpleClasses.decompIncl`,
   `TauCeti.SimpleClasses.decompProj_def`, `TauCeti.SimpleClasses.decompIncl_def`,
   `TauCeti.SimpleClasses.decompIncl_comp_decompProj_self`,
-  `TauCeti.SimpleClasses.decompIncl_comp_decompProj_ne`, and
-  `TauCeti.SimpleClasses.sum_decompProj_comp_decompIncl_eq_id`: projections and inclusions through
-  the chosen representatives of a biproduct decomposition into simple objects, their orthogonality,
-  and the resolution of the identity.
+  `TauCeti.SimpleClasses.decompIncl_comp_decompProj_ne`,
+  `TauCeti.SimpleClasses.sum_decompProj_comp_decompIncl_eq_id`,
+  `TauCeti.SimpleClasses.hom_eq_sum_comp_decompProj_comp_decompIncl`, and
+  `TauCeti.SimpleClasses.hom_eq_sum_decompProj_comp_decompIncl_comp`: projections and inclusions
+  through the chosen representatives of a biproduct decomposition into simple objects, their
+  orthogonality, and the resolution of the identity.
 -/
 
 public section
@@ -229,6 +231,24 @@ theorem sum_decompProj_comp_decompIncl_eq_id {D : Type u₁} [Category.{v₁} D]
       = e.hom ≫ (∑ i, biproduct.π a i ≫ biproduct.ι a i) ≫ e.inv := by
           simp only [Preadditive.sum_comp, Preadditive.comp_sum, Category.assoc]
     _ = 𝟙 Y := by rw [biproduct.total, Category.id_comp, e.hom_inv_id]
+
+/-- Factoring a morphism `f : Z ⟶ Y` through the chosen representatives `(classOf (a i)).repr`
+of a simple biproduct decomposition `e : Y ≅ ⨁ a`. -/
+theorem hom_eq_sum_comp_decompProj_comp_decompIncl {D : Type u₁} [Category.{v₁} D] [Preadditive D]
+    {Z Y : D} {ι : Type*} [Fintype ι] (a : ι → D) [∀ i, Simple (a i)] [HasBiproduct a]
+    (e : Y ≅ ⨁ a) (f : Z ⟶ Y) :
+    f = ∑ i : ι, (f ≫ decompProj a e i) ≫ decompIncl a e i := by
+  simp only [Category.assoc, ← Preadditive.comp_sum, sum_decompProj_comp_decompIncl_eq_id,
+    Category.comp_id]
+
+/-- Factoring a morphism `f : Y ⟶ Z` through the chosen representatives `(classOf (a i)).repr`
+of a simple biproduct decomposition `e : Y ≅ ⨁ a`. -/
+theorem hom_eq_sum_decompProj_comp_decompIncl_comp {D : Type u₁} [Category.{v₁} D] [Preadditive D]
+    {Y Z : D} {ι : Type*} [Fintype ι] (a : ι → D) [∀ i, Simple (a i)] [HasBiproduct a]
+    (e : Y ≅ ⨁ a) (f : Y ⟶ Z) :
+    f = ∑ i : ι, decompProj a e i ≫ (decompIncl a e i ≫ f) := by
+  simp only [← Category.assoc, ← Preadditive.sum_comp, sum_decompProj_comp_decompIncl_eq_id,
+    Category.id_comp]
 
 end SimpleClasses
 

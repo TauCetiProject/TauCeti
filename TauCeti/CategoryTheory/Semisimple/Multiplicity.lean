@@ -242,25 +242,43 @@ theorem simpleMultiplicities_apply_classOf_ne_zero_iff (X S : C) [Simple S] :
 
 namespace IsFiniteSemisimpleCategory
 
-/-- For a simple object `S`, the chosen simple decomposition of `S` has a single summand, of the
-same simple class as `S`, whose decomposition projection and inclusion form an isomorphism. -/
-theorem exists_chosenSimple_decompIso (S : C) [Simple S] :
-    ∃ (i : chosenSimpleIndex S) (_ : ∀ j, j = i),
-      SimpleClasses.classOf (chosenSimpleFamily S i) = SimpleClasses.classOf S ∧
-      ∃ u : S ≅ (SimpleClasses.classOf (chosenSimpleFamily S i)).repr,
-        u.hom = SimpleClasses.decompProj (chosenSimpleFamily S) (chosenSimpleIso S) i ∧
-        u.inv = SimpleClasses.decompIncl (chosenSimpleFamily S) (chosenSimpleIso S) i := by
-  obtain ⟨e', he'⟩ := exists_equiv_of_iso_biproduct_simples (chosenSimpleFamily S)
-    (fun _ : Unit ↦ S) ((chosenSimpleIso S).symm ≪≫ (biproductUniqueIso (fun _ : Unit ↦ S)).symm)
-  let : Unique (chosenSimpleIndex S) := e'.unique
-  refine ⟨default, fun j ↦ Subsingleton.elim j default,
-    (SimpleClasses.classOf_eq_iff_nonempty_iso _ _).2 (he' default), ?_⟩
-  refine ⟨⟨SimpleClasses.decompProj (chosenSimpleFamily S) (chosenSimpleIso S) default,
-    SimpleClasses.decompIncl (chosenSimpleFamily S) (chosenSimpleIso S) default, ?_, ?_⟩, rfl, rfl⟩
-  · simpa using SimpleClasses.sum_decompProj_comp_decompIncl_eq_id
+/-- For a simple object `S`, the chosen simple decomposition of `S` has a unique index. -/
+instance uniqueChosenSimpleIndex (S : C) [Simple S] : Unique (chosenSimpleIndex S) :=
+  (exists_equiv_of_iso_biproduct_simples (chosenSimpleFamily S)
+    (fun _ : Unit ↦ S) ((chosenSimpleIso S).symm ≪≫
+      (biproductUniqueIso (fun _ : Unit ↦ S)).symm)).choose.unique
+
+/-- For a simple object `S`, the decomposition projection and inclusion at the unique index of its
+chosen simple decomposition form an isomorphism
+`S ≅ (SimpleClasses.classOf (chosenSimpleFamily S default)).repr`. -/
+def chosenSimpleDecompIso (S : C) [Simple S] :
+    S ≅ (SimpleClasses.classOf (chosenSimpleFamily S default)).repr where
+  hom := SimpleClasses.decompProj (chosenSimpleFamily S) (chosenSimpleIso S) default
+  inv := SimpleClasses.decompIncl (chosenSimpleFamily S) (chosenSimpleIso S) default
+  hom_inv_id := by
+    rw [← Fintype.sum_unique (f := fun i ↦
+      SimpleClasses.decompProj (chosenSimpleFamily S) (chosenSimpleIso S) i ≫
+        SimpleClasses.decompIncl (chosenSimpleFamily S) (chosenSimpleIso S) i)]
+    exact SimpleClasses.sum_decompProj_comp_decompIncl_eq_id
       (chosenSimpleFamily S) (chosenSimpleIso S)
-  · exact SimpleClasses.decompIncl_comp_decompProj_self
-      (chosenSimpleFamily S) (chosenSimpleIso S) default
+  inv_hom_id := SimpleClasses.decompIncl_comp_decompProj_self
+    (chosenSimpleFamily S) (chosenSimpleIso S) default
+
+/-- The forward morphism of `chosenSimpleDecompIso` is the decomposition projection at the unique
+index. -/
+@[simp]
+theorem chosenSimpleDecompIso_hom (S : C) [Simple S] :
+    (chosenSimpleDecompIso S).hom =
+      SimpleClasses.decompProj (chosenSimpleFamily S) (chosenSimpleIso S) default := by
+  rfl
+
+/-- The inverse morphism of `chosenSimpleDecompIso` is the decomposition inclusion at the unique
+index. -/
+@[simp]
+theorem chosenSimpleDecompIso_inv (S : C) [Simple S] :
+    (chosenSimpleDecompIso S).inv =
+      SimpleClasses.decompIncl (chosenSimpleFamily S) (chosenSimpleIso S) default := by
+  rfl
 
 end IsFiniteSemisimpleCategory
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Limits.Shapes.End
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Functor
 public import TauCeti.CategoryTheory.Monoidal.Center.Induction.Basic
+import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 import TauCeti.CategoryTheory.Semisimple.Multiplicity
 
 /-!
@@ -76,21 +77,6 @@ namespace CategoryTheory.Center
 
 attribute [local instance] Abelian.hasFiniteBiproducts
 
-section MateCancel
-
-variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
-
-/-- Double left-whiskering cancels the right adjoint mates of the inverse and forward components
-of an isomorphism `u : Y ≅ Y'`. -/
-@[reassoc]
-theorem whiskerLeft_rightAdjointMate_inv_comp_hom (Z X : C) {Y Y' : C}
-    [HasRightDual Y] [HasRightDual Y'] (u : Y ≅ Y') :
-    Z ◁ X ◁ (u.inv)ᘁ ≫ Z ◁ X ◁ (u.hom)ᘁ = 𝟙 (Z ⊗ X ⊗ Yᘁ) := by
-  rw [← whiskerLeft_comp, ← whiskerLeft_comp, ← comp_rightAdjointMate, u.hom_inv_id,
-    rightAdjointMate_id, whiskerLeft_id, whiskerLeft_id]
-
-end MateCancel
-
 section EndWedge
 
 variable (k : Type w) [Field k] [IsAlgClosed k]
@@ -135,12 +121,6 @@ private theorem endπAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [Fin
   let q := SimpleClasses.decompIncl a e
   let p' := SimpleClasses.decompProj b e'
   let q' := SimpleClasses.decompIncl b e'
-  have hY : ∑ i, p i ≫ q i = 𝟙 Y := SimpleClasses.sum_decompProj_comp_decompIncl_eq_id a e
-  have hY' : ∑ j, p' j ≫ q' j = 𝟙 Y' := SimpleClasses.sum_decompProj_comp_decompIncl_eq_id b e'
-  have hgL (i : ι) : q i ≫ g = ∑ j, (q i ≫ g ≫ p' j) ≫ q' j := by
-    simp only [Category.assoc, ← Preadditive.comp_sum, hY', Category.comp_id]
-  have hgR (j : ι') : g ≫ p' j = ∑ i, p i ≫ (q i ≫ g ≫ p' j) := by
-    simp only [← Category.assoc, ← Preadditive.sum_comp, hY, Category.id_comp]
   -- Fold the summands of `endπAux` in terms of `p`, `q`, `p'`, `q'`.
   change (∑ i, biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
       q i ▷ (X ⊗ (SimpleClasses.classOf (a i)).reprᘁ) ≫ Y ◁ X ◁ (p i)ᘁ) ≫ g ▷ (X ⊗ Yᘁ) =
@@ -155,9 +135,9 @@ private theorem endπAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [Fin
     _ = ∑ i, ∑ j, (biproduct.π (inductionSummand X) (SimpleClasses.classOf (a i)) ≫
           (q i ≫ g ≫ p' j) ▷ (X ⊗ _)) ≫ q' j ▷ (X ⊗ _) ≫ Y' ◁ X ◁ (p i)ᘁ := by
           refine Finset.sum_congr rfl fun i _ ↦ ?_
-          rw [hgL i]
+          rw [SimpleClasses.hom_eq_sum_comp_decompProj_comp_decompIncl b e' (q i ≫ g)]
           simp only [sum_whiskerRight, Preadditive.comp_sum, Preadditive.sum_comp,
-            Category.assoc, comp_whiskerRight]
+            Category.assoc, comp_whiskerRight, p', q']
     _ = ∑ i, ∑ j, biproduct.π (inductionSummand X) (SimpleClasses.classOf (b j)) ≫
           q' j ▷ (X ⊗ _) ≫ Y' ◁ X ◁ ((q i ≫ g ≫ p' j)ᘁ ≫ (p i)ᘁ) := by
           refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
@@ -167,8 +147,11 @@ private theorem endπAux_dinatural {Y Y' : C} {ι ι' : Type*} [Fintype ι] [Fin
           q' j ▷ (X ⊗ _) ≫ Y' ◁ X ◁ (g ≫ p' j)ᘁ := by
           rw [Finset.sum_comm]
           refine Finset.sum_congr rfl fun j _ ↦ ?_
-          conv_rhs => rw [hgR j, rightAdjointMate_sum]
-          simp only [comp_rightAdjointMate, whiskerLeft_sum, Preadditive.comp_sum, Category.assoc]
+          conv_rhs =>
+            rw [SimpleClasses.hom_eq_sum_decompProj_comp_decompIncl_comp a e (g ≫ p' j),
+              rightAdjointMate_sum]
+          simp only [comp_rightAdjointMate, whiskerLeft_sum, Preadditive.comp_sum, Category.assoc,
+            p, q]
     _ = (∑ j, biproduct.π (inductionSummand X) (SimpleClasses.classOf (b j)) ≫
           q' j ▷ (X ⊗ _) ≫ Y' ◁ X ◁ (p' j)ᘁ) ≫ Y' ◁ X ◁ gᘁ := by
           simp only [Preadditive.sum_comp, Category.assoc, ← whiskerLeft_comp,
@@ -209,14 +192,16 @@ biproduct projection onto the `S`-summand. -/
 @[reassoc] -- Not `@[simp]` because `k` cannot be inferred from the LHS.
 theorem inductionEndπ_repr (X : C) (S : SimpleClasses C) :
     inductionEndπ X S.repr = biproduct.π (inductionSummand X) S := by
-  obtain ⟨i, hi, _, u, hu_hom, hu_inv⟩ :=
-    IsFiniteSemisimpleCategory.exists_chosenSimple_decompIso S.repr
+  let u := IsFiniteSemisimpleCategory.chosenSimpleDecompIso S.repr
+  have hmate : S.repr ◁ X ◁ (u.inv)ᘁ ≫ S.repr ◁ X ◁ (u.hom)ᘁ = 𝟙 _ := by
+    have h := (whiskerLeftIso S.repr (whiskerLeftIso X u.rightAdjointMate)).inv_hom_id
+    rwa [whiskerLeftIso_inv, whiskerLeftIso_inv, whiskerLeftIso_hom, whiskerLeftIso_hom,
+      Iso.rightAdjointMate_inv, Iso.rightAdjointMate_hom] at h
   rw [inductionEndπ_eq_endπAux]
   dsimp only [endπAux]
-  rw [Finset.sum_eq_single i (fun j _ hj ↦ absurd (hi j) hj)
-      (fun hi' ↦ absurd (Finset.mem_univ i) hi'),
-    ← hu_hom, ← hu_inv, ← Category.assoc, repr_dinatural k X u.inv, Category.assoc,
-    whiskerLeft_rightAdjointMate_inv_comp_hom, Category.comp_id]
+  rw [Fintype.sum_unique, ← IsFiniteSemisimpleCategory.chosenSimpleDecompIso_hom,
+    ← IsFiniteSemisimpleCategory.chosenSimpleDecompIso_inv, ← Category.assoc,
+    repr_dinatural k X u.inv, Category.assoc, hmate, Category.comp_id]
 
 omit [MonoidalPreadditive C] in
 /-- Naturality of `inductionEndπ` in `X` with respect to `inductionMap f`. -/
