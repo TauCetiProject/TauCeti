@@ -52,13 +52,8 @@ theorem norm_e (n : ℕ) : ‖e n‖ = 1 := by simp [e, lp.norm_single]
 
 /-! ### Compact maps -/
 
-/-- The coefficients `1/(n + 1)` decrease. -/
-theorem antitone_inv_succ : Antitone fun n : ℕ ↦ (1 / (n + 1) : ℝ≥0) := fun m n h ↦ by
-  dsimp only
-  gcongr
-
 /-- The compact diagonal map `j = diag(1/(n + 1))` of `ℓ²`. -/
-noncomputable def j : L2 →L[ℝ] L2 := lp.diagonalCLM (lp.ofAntitone ℝ antitone_inv_succ)
+noncomputable def j : L2 →L[ℝ] L2 := lp.diagonalCLM (lp.ofAntitone ℝ antitone_one_div_add_one)
 
 /-- `j` multiplies the `n`-th coordinate by `1/(n + 1)`. -/
 theorem j_single (n : ℕ) (a : ℝ) : j (lp.single 2 n a) = lp.single 2 n (a / (n + 1)) := by
@@ -104,7 +99,7 @@ theorem isMinOn_norm_sq : IsMinOn (fun u : L2 ↦ ‖u‖ ^ 2) univ 0 :=
 
 /-- The coefficients `1/√(n + 1)` decrease. -/
 theorem antitone_sqrt_inv_succ : Antitone fun n : ℕ ↦ NNReal.sqrt (1 / (n + 1)) :=
-  fun _ _ h ↦ NNReal.sqrt_le_sqrt.2 (antitone_inv_succ h)
+  fun _ _ h ↦ NNReal.sqrt_le_sqrt.2 (antitone_one_div_add_one h)
 
 /-- The diagonal map `k = diag(1/√(n + 1))`, with `‖k u‖² = Σ |uₙ|²/(n + 1)`. -/
 noncomputable def k : L2 →L[ℝ] L2 := lp.diagonalCLM (lp.ofAntitone ℝ antitone_sqrt_inv_succ)

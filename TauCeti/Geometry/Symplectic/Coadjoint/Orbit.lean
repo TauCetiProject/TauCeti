@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.SymplecticMap
 
 import TauCeti.Geometry.Symplectic.Coadjoint
 import TauCeti.Geometry.Lie.RightInvariantVectorField
+import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
 
 /-!
 # The Kirillov–Kostant–Souriau form on a homogeneous coadjoint orbit
@@ -67,7 +68,8 @@ injective immersion into `𝔤*`. The orbit has dimension `dim 𝔤 - dim 𝔤_�
   `ω_ν(dπ ξ^L, dπ η^L) = ν ⁅ξ, η⁆`.
 * `Module.Dual.eval₂_coadjointOrbitForm_fundamentalVectorField`: `ω_ν(ξ_O, η_O) = μ ⁅ξ, η⁆`.
 * `Module.Dual.injective_differential_orbitMap_coadjointRepresentation`: the orbit map is an
-  immersion.
+  immersion; `Module.Dual.injective_mfderiv_orbitMap_coadjointRepresentation_components` is the
+  same statement read in a basis of `𝔤`.
 * `Module.Dual.even_finrank_quotientModelSpace`: the orbit has even dimension.
 
 ## References
@@ -331,5 +333,20 @@ theorem injective_differential_orbitMap_coadjointRepresentation
     rw [SmoothForm.bilinFormAt_apply, hξ, LinearMap.zero_apply]
   rw [ker_bilinFormAt_leftInvariantKirillovForm_eq_ker_mfderiv] at hu
   exact hu
+
+variable {κ : Type*} [Fintype κ]
+
+/-- **The orbit map is an immersion, in coordinates.** Read in a basis `b` of `𝔤`, the
+differential of the orbit map `[g] ↦ Ad*_g ν` is injective at every point. -/
+theorem injective_mfderiv_orbitMap_coadjointRepresentation_components
+    (b : Basis κ ℝ (GroupLieAlgebra I G))
+    (x : G ⧸ (coadjointRepresentation ℝ I G).stabilizer ν) :
+    Function.Injective (mfderiv
+        𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
+        𝓘(ℝ, κ → ℝ) (fun y i ↦ (coadjointRepresentation ℝ I G).orbitMap ν y (b i)) x) := by
+  have h := ν.isEquivariantMomentMap_coadjointOrbitForm.toIsMomentMap
+  intro v w hvw
+  refine ν.injective_differential_orbitMap_coadjointRepresentation x (b.ext fun i ↦ ?_)
+  rw [← h.mfderiv_components_apply, ← h.mfderiv_components_apply, hvw]
 
 end Module.Dual
