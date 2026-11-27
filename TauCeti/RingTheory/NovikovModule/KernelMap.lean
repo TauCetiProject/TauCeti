@@ -318,6 +318,14 @@ theorem kernelComp_apply (m : S₁ → S₀ → R) (m' : S₀ → S₂ → R) (p
     kernelComp m m' p₁ p₂ = ∑ᶠ p₀, m p₁ p₀ * m' p₀ p₂ :=
   (rfl)
 
+/-- Multiplying the first kernel by a scalar that depends only on its input generator, and is
+left-regular there, multiplies the coefficient of the composite at that generator by the same
+scalar. -/
+theorem kernelComp_mul_left {c : S₁ → R} (m : S₁ → S₀ → R) (m' : S₀ → S₂ → R) {p₁ : S₁}
+    (hc : IsLeftRegular (c p₁)) (p₂ : S₂) :
+    kernelComp (fun p p₀ ↦ c p * m p p₀) m' p₁ p₂ = c p₁ * kernelComp m m' p₁ p₂ := by
+  simp only [kernelComp_apply, hc.mul_finsum, mul_assoc]
+
 /-- Composing with the zero kernel gives the zero kernel. -/
 @[simp]
 theorem kernelComp_zero (m : S₁ → S₀ → R) : kernelComp m (0 : S₀ → S₂ → R) = 0 := by

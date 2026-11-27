@@ -67,6 +67,8 @@ the open half-disc for every `p` (`TauCeti.memWkpLoc_sqrt_im_ball_inter_im_pos`)
 * `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg`: for `p > 2`, a map in
   `MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` has a representative that is `Cᵏ` on an open neighbourhood
   of `Ω ∩ {0 ≤ im}`.
+* `TauCeti.MemWkpLoc.contDiffOn_of_continuousOn_inter_setOf_im_nonneg`: for `p > 2`, a continuous
+  map in `MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` is `Cᵏ` on `Ω ∩ {0 ≤ im}`.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact_inter_setOf_im_nonneg`: the
   `k`-th derivative of such a representative is Hölder continuous with exponent `1 - 2 / p` on
   compact subsets of `Ω ∩ {0 ≤ im}`.
@@ -343,6 +345,19 @@ theorem MemWkpLoc.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg (hp : 2 < p)
       ContDiffOn ℝ k g V ∧ u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g := by
   obtain ⟨V, hUV, hVΩ, -, g, hg, -, hug⟩ := hu.exists_planarReflection_contDiffOn_ae_eq hp
   exact ⟨V, hUV, hVΩ, g, hg, hug⟩
+
+/-- **Continuous representatives are `Cᵏ` up to the real axis.** For `2 < p`, a map
+`u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` that is continuous on `Ω ∩ {0 ≤ im}` is `Cᵏ` on
+`Ω ∩ {0 ≤ im}`, including at the points of the real axis: it agrees on `Ω ∩ {0 ≤ im}` with the
+`Cᵏ` representative of `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg`, since
+`Ω ∩ {0 ≤ im}` lies in the closure of its interior. -/
+theorem MemWkpLoc.contDiffOn_of_continuousOn_inter_setOf_im_nonneg (hp : 2 < p)
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u)
+    (hc : ContinuousOn u ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) :
+    ContDiffOn ℝ k u ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
+  obtain ⟨V, hUV, -, g, hg, hug⟩ := hu.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg hp
+  exact (hg.mono hUV).congr (Measure.eqOn_of_ae_eq hug hc (hg.continuousOn.mono hUV)
+    (subset_closure_interior_inter_setOf_im_nonneg Ω.isOpen))
 
 /-- **Morrey's embedding at higher order up to the real axis.** If `2 < p ≤ ∞`, `g` is `Cᵏ` on an
 open set `V` and agrees almost everywhere on `Ω ∩ {0 ≤ im}` with

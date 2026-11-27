@@ -178,7 +178,7 @@ private theorem IsNondegenerate.exists_pos_forall_sq_mul_floerEnergyDensity_le_o
   have hO : IsOpen O := hu.continuousOn.isOpen_inter_preimage hΩ (isOpen_extChartAt_source x)
   have hBO : closedBall z₀ r ⊆ O := fun y hy ↦ ⟨hBΩ hy, (huN hy).1⟩
   obtain ⟨hcd, -⟩ := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub hO
-    (hu.mono inter_subset_left) (fun y hy ↦ hy.2) fun y hy ↦ hfl y hy.1
+    (hu.mono inter_subset_left) (by norm_num) (fun y hy ↦ hy.2) fun y hy ↦ hfl y hy.1
   have hcont : ContinuousOn (fun y ↦ fderiv ℝ (φ ∘ u) y stdComplexLineReal) (closedBall z₀ r) :=
     ((hcd.continuousOn_fderiv_of_isOpen hO (by norm_num)).clm_apply continuousOn_const).mono hBO
   exact hmv hr (ball_subset_closedBall.trans hBD) (hu.mono (ball_subset_closedBall.trans hBΩ))
@@ -572,7 +572,7 @@ private theorem IsNondegenerate.exists_ball_tendstoLocallyUniformlyOn_fderiv_ext
         rw [mem_preimage, ← extChartAt_source I]
         exact (huN n (ball_subset_closedBall hz)).1
   have hchart (n : ℕ) := ω.contDiffOn_extChartAt_comp_and_fderiv_stdComplexLineImag_sub
-    isOpen_ball (((hu (n + N)).mono hBS).of_le (by norm_cast))
+    isOpen_ball (((hu (n + N)).mono hBS).of_le (by norm_cast)) (by norm_num)
     (fun z hz ↦ (huN n (ball_subset_closedBall hz)).1) fun z hz ↦ hfl (n + N) z (hBS hz)
   -- Bounds on the energy densities give bounds on the derivatives in the chart.
   have hbd' (C : Set (ℝ × ℝ)) (hC : IsCompact C) (hCB : C ⊆ ball y r) :

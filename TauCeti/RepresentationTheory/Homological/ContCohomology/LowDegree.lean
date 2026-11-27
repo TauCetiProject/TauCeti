@@ -882,6 +882,10 @@ theorem H1pi_eq_iff {f f' : Z1 G M} :
     (f : H1 G M) = (f' : H1 G M) ↔ (f : G → M) - f' ∈ B1 G M := by
   rw [QuotientAddGroup.eq_iff_sub_mem, AddSubgroup.mem_addSubgroupOf, AddSubgroup.coe_sub]
 
+/-- The kernel of the class map in degree `1` is the group of `1`-coboundaries. -/
+theorem ker_H1pi : (H1pi G M).ker = (B1 G M).addSubgroupOf (Z1 G M) :=
+  QuotientAddGroup.ker_mk' _
+
 /-- **`H¹` inherits the exponent of its coefficients.** If `n` kills the coefficient module `M`,
 then it kills every class in `H¹(G, M)`. -/
 theorem nsmul_H1_eq_zero {n : ℕ} (h : ∀ m : M, n • m = 0) (x : H1 G M) : n • x = 0 := by
@@ -1057,16 +1061,33 @@ distributive scalar action; associativity of the action is needed only to form `
 
 variable {G : Type u} [TopologicalSpace G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribSMul G M] (htriv : ∀ (g : G) (m : M), g • m = m)
+  [DistribSMul G M]
 
-include htriv
-
-/-- For a trivial action a continuous `1`-cocycle is additive. -/
-theorem map_mul_of_smul_eq_self_of_mem_Z1 [Mul G] {f : G → M} (hf : f ∈ Z1 G M) (a b : G) :
+/-- A continuous `1`-cocycle is additive on `a * b` whenever `a` acts trivially on `M`. -/
+theorem map_mul_of_smul_eq_self_of_mem_Z1 [Mul G] {f : G → M} (hf : f ∈ Z1 G M) {a : G}
+    (ha : ∀ m : M, a • m = m) (b : G) :
     f (a * b) = f a + f b := by
   have h := (mem_Z1_iff.1 hf).2 a b
-  rw [htriv a (f b)] at h
+  rw [ha (f b)] at h
   exact h.trans (add_comm _ _)
+
+/-- A continuous `1`-cocycle satisfies `f (a ^ k) = k • f a` whenever `a` acts trivially on `M`. -/
+theorem map_pow_of_smul_eq_self_of_mem_Z1 {G : Type u} [Monoid G] [TopologicalSpace G]
+    {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [DistribMulAction G M] {f : G → M} (hf : f ∈ Z1 G M) {a : G} (ha : ∀ m : M, a • m = m)
+    (k : ℕ) :
+    f (a ^ k) = k • f a := by
+  have hpow (j : ℕ) (m : M) : a ^ j • m = m := by
+    induction j with
+    | zero => simp
+    | succ j ihj => rw [pow_succ', mul_smul, ihj, ha]
+  induction k with
+  | zero => simp [map_one_of_mem_Z1 hf]
+  | succ k ih => rw [pow_succ, map_mul_of_smul_eq_self_of_mem_Z1 hf (hpow k) a, ih, succ_nsmul]
+
+variable (htriv : ∀ (g : G) (m : M), g • m = m)
+
+include htriv
 
 variable [Monoid G]
 
@@ -1086,7 +1107,7 @@ def Z1EquivOfSmulEqSelf : Z1 G M ≃+ Additive (ContinuousMonoidHom G (Multiplic
   toFun f := Additive.ofMul
     { toMonoidHom :=
         MonoidHom.mk' (fun g => Multiplicative.ofAdd ((f : G → M) g)) fun a b => by
-          rw [map_mul_of_smul_eq_self_of_mem_Z1 htriv f.property a b, ofAdd_add]
+          rw [map_mul_of_smul_eq_self_of_mem_Z1 f.property (htriv a) b, ofAdd_add]
       continuous_toFun := (mem_Z1_iff.1 f.property).1 }
   invFun φ :=
     ⟨fun g => Multiplicative.toAdd ((Additive.toMul φ) g),

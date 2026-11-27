@@ -24,6 +24,10 @@ the right after those of the swept cube, and placing time last keeps the coordin
 acting on the left before them; the module operators built from them are in
 `TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Prism`.
 
+A map along which the homotopy does not depend on time pushes the prism to zero
+(`TauCeti.NormalizedCubicalChain.map_prism_eq_zero`): every swept cube becomes degenerate in its
+time coordinate.
+
 In particular, a contraction supplies explicit fillings of cycles. These fillings give the
 acyclicity of the standard cubes needed by the acyclic-models comparison of cubical and
 simplicial chains.
@@ -190,6 +194,23 @@ theorem boundary_prism_zero (H : ContinuousMap.Homotopy f g)
     simpa only [← Submodule.mkQ_apply, map_sub, LinearMap.comp_apply,
       LinearMap.sub_apply] using
       congrArg (Submodule.mkQ (CubicalChain.degenerate Y R 0)) h
+
+/-- **Forgetting time kills the prism**: if `φ (H (t, x))` does not depend on the time `t`, the
+push-forward along `φ` of the prism of `H` vanishes, since every swept cube becomes degenerate in
+its time coordinate. -/
+theorem map_prism_eq_zero {Z : Type*} [TopologicalSpace Z] (H : ContinuousMap.Homotopy f g)
+    {φ : C(Y, Z)} (hφ : ∀ t x, φ (H (t, x)) = φ (H (0, x))) {n : ℕ}
+    (c : NormalizedCubicalChain X R n) : map R φ (n + 1) (prism R H n c) = 0 := by
+  induction c using induction_on with
+  | zero => simp
+  | add a b ha hb => rw [map_add, map_add, ha, hb, add_zero]
+  | smul r a ha => rw [map_smul, map_smul, ha, smul_zero]
+  | ofCube c =>
+    rw [prism_ofCube, map_neg, map_ofCube, ofCube_eq_zero, neg_zero]
+    refine SingularCube.isDegenerate_iff.2 ⟨0, SingularCube.isDegenerateAt_iff.2 fun x t ↦ ?_⟩
+    simp only [ContinuousMap.comp_apply, SingularCube.prism_apply, Function.update_self,
+      Fin.tail_update_zero]
+    rw [hφ t, hφ (x 0)]
 
 end NormalizedCubicalChain
 
