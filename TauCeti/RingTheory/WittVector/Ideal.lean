@@ -56,6 +56,8 @@ nilpotents.
   then `x * p ^ c ∈ W(I)` for all `x ∈ W(J)`.
 * `WittVector.exponentExists_ideal`: in characteristic `p`, the Witt ideal of a nil ideal `N`
   with `a ^ p ^ c = 0` for all `a ∈ N` has an additive exponent.
+* `WittVector.forall_mem_ideal_mul_p_pow_eq_zero_iff`: in characteristic `p`, `p ^ c` kills `W(N)`
+  exactly when `a ^ p ^ c = 0` for all `a ∈ N`.
 
 ## References
 
@@ -268,6 +270,16 @@ theorem exponentExists_ideal {N : Ideal A} {c : ℕ} (h : ∀ a ∈ N, a ^ p ^ c
     AddMonoid.ExponentExists (ideal p N) := by
   refine ⟨p ^ c, pow_pos hp.out.pos c, fun x ↦ Subtype.ext ?_⟩
   simpa [← Nat.cast_pow, Nat.cast_comm] using mul_p_pow_eq_zero_of_mem_ideal h x.property
+
+/-- In characteristic `p`, `p ^ c` kills the Witt ideal `W(N)` exactly when `a ^ p ^ c = 0` for
+every `a ∈ N`. -/
+theorem forall_mem_ideal_mul_p_pow_eq_zero_iff {N : Ideal A} {c : ℕ} :
+    (∀ x ∈ ideal p N, x * (p : 𝕎 A) ^ c = 0) ↔ ∀ a ∈ N, a ^ p ^ c = 0 := by
+  refine ⟨fun h a ha ↦ ?_, fun h _ ↦ mul_p_pow_eq_zero_of_mem_ideal h⟩
+  -- The `c`-th Witt coordinate of `[a] * p ^ c` is `a ^ p ^ c`.
+  have := mul_pow_charP_coeff_succ (p := p) (teichmuller p a) (m := 0) (n := c)
+  rwa [zero_add, h _ (teichmuller_mem_ideal_iff.mpr ha), zero_coeff, teichmuller_coeff_zero,
+    eq_comm] at this
 
 end CharP
 
