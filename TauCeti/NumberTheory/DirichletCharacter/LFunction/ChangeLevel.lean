@@ -21,10 +21,10 @@ Thus passage between an imprimitive character and its primitive character costs 
 small power of the ambient level. This applies in particular to products of primitive quadratic
 characters at their common level, including primes dividing both conductors.
 
-The factors are analytic and nonzero on `Re(s) > 0`, so this passage preserves exact meromorphic
-orders there, including the simple pole at `s = 1` for principal characters.
-`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero` covers all of `Re(s) ≠ 0`, so the
-level change preserves zeros off the imaginary axis. At `s = 1` pointwise L-function comparison
+The factors are analytic everywhere and, by
+`DirichletCharacter.prod_one_sub_mul_prime_cpow_ne_zero`, nonzero off the imaginary axis. So
+raising the level preserves zeros and exact meromorphic orders wherever `Re(s) ≠ 0`, including
+the simple pole at `s = 1` for principal characters. At `s = 1` pointwise L-function comparison
 requires nonprincipal characters, as in the native continuation API.
 
 The exact identity is Mathlib's `DirichletCharacter.LFunction_changeLevel`,

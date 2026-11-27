@@ -34,7 +34,7 @@ namespace DirichletCharacter
 /-- The total absolute contribution of the strictly negative zeros in any finite set to the
 subtracted Perron contour for `(a, b]` is at most `1 / (a - 1)`. At points where the L-function is
 nonzero the analytic multiplicity is zero. -/
-theorem sum_norm_trivialZeros_sub_cpow_div_le {N : ℕ} [NeZero N]
+theorem sum_norm_analyticOrderNatAt_LFunction_mul_sub_cpow_div_le {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) (S : Finset ℂ) {a b : ℝ} (ha : 1 < a) (hab : a ≤ b) :
     ∑ ρ ∈ S with ρ.re < 0,
         ‖(analyticOrderNatAt χ.LFunction ρ : ℂ) *
@@ -87,7 +87,7 @@ theorem sum_norm_trivialZeros_sub_cpow_div_le {N : ℕ} [NeZero N]
 
 /-- The strictly negative zero terms of the subtracted Perron formula are absolutely summable
 when both endpoints exceed `1`. Points where the L-function is nonzero have weight zero. -/
-theorem summable_norm_trivialZeros_sub_cpow_div {N : ℕ} [NeZero N]
+theorem summable_norm_analyticOrderNatAt_LFunction_mul_sub_cpow_div {N : ℕ} [NeZero N]
     (χ : DirichletCharacter ℂ N) {a b : ℝ} (ha : 1 < a) (hb : 1 < b) :
     Summable (fun ρ : {s : ℂ // s.re < 0} ↦
       ‖(analyticOrderNatAt χ.LFunction ρ : ℂ) *
@@ -102,6 +102,7 @@ theorem summable_norm_trivialZeros_sub_cpow_div {N : ℕ} [NeZero N]
     obtain ⟨ρ, _, rfl⟩ := Finset.mem_map.mp hz
     exact ρ.property
   simpa only [hfilter, Finset.sum_map, Function.Embedding.subtype_apply] using
-    χ.sum_norm_trivialZeros_sub_cpow_div_le (S.map (Function.Embedding.subtype _)) ha hab
+    χ.sum_norm_analyticOrderNatAt_LFunction_mul_sub_cpow_div_le
+      (S.map (Function.Embedding.subtype _)) ha hab
 
 end DirichletCharacter

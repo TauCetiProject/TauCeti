@@ -12,6 +12,7 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.ChangeLevel
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.TrivialZeros.Basic
+import TauCeti.NumberTheory.LFunctions.Continued.Dirichlet
 
 /-!
 # Simplicity of the negative trivial zeros of Dirichlet L-functions
@@ -26,6 +27,20 @@ public section
 open Complex Filter TauCeti Topology
 
 namespace DirichletCharacter
+
+/-- At a zero of the gamma factor of a Dirichlet character, the gamma factor has a simple pole:
+its meromorphic order is `-1`. -/
+theorem meromorphicOrderAt_gammaFactor_eq_neg_one_of_eq_zero {N : ℕ}
+    (χ : DirichletCharacter ℂ N) {s : ℂ} (h : χ.gammaFactor s = 0) :
+    meromorphicOrderAt χ.gammaFactor s = -1 := by
+  rcases χ.even_or_odd with heven | hodd
+  · rw [funext heven.gammaFactor_def]
+    exact (meromorphicOrderAt_Gammaℝ_eq_neg_one_iff s).mpr
+      ((gammaFactor_eq_zero_iff_of_even heven).mp h)
+  · have hΓ : χ.gammaFactor = Gammaℝ ∘ fun z : ℂ ↦ z + 1 := funext hodd.gammaFactor_def
+    obtain ⟨n, hn⟩ := (gammaFactor_eq_zero_iff_of_odd hodd).mp h
+    rw [hΓ, meromorphicOrderAt_comp_add_const_eq_meromorphicOrderAt]
+    exact (meromorphicOrderAt_Gammaℝ_eq_neg_one_iff (s + 1)).mpr ⟨n, by linear_combination hn⟩
 
 open scoped Classical in
 /-- In the open left half-plane the meromorphic order of a Dirichlet L-function is `1` at a
@@ -52,28 +67,21 @@ theorem meromorphicOrderAt_LFunction_of_re_neg {N : ℕ} [NeZero N]
         (ψ⁻¹.completedLFunction_ne_zero_of_one_le_re (.inr (by simpa using hs0)) ?_)
       simp only [sub_re, one_re]
       linarith
-    have ha := ψ.analyticAt_completedLFunction (.inl hs0) (.inl hs1)
-    have he : ψ.LFunction =ᶠ[𝓝[≠] s] ψ.completedLFunction / ψ.gammaFactor := by
-      filter_upwards [(eventually_ne_nhds hs0).filter_mono nhdsWithin_le_nhds] with z hz0
-      exact ψ.LFunction_eq_completed_div_gammaFactor z (.inl hz0)
-    rw [meromorphicOrderAt_congr he]
-    rcases ψ.even_or_odd with heven | hodd
-    · rw [funext heven.gammaFactor_def, meromorphicOrderAt_div ha.meromorphicAt
-        (meromorphic_Gammaℝ s), ha.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr hψc,
-        (meromorphicOrderAt_Gammaℝ_eq_neg_one_iff s).mpr
-          ((gammaFactor_eq_zero_iff_of_even heven).mp hΓz)]
-      simp
-    · have hΓ : ψ.gammaFactor = Gammaℝ ∘ fun z : ℂ ↦ z + 1 := funext hodd.gammaFactor_def
-      rw [hΓ, meromorphicOrderAt_div ha.meromorphicAt
-        ((meromorphic_Gammaℝ (s + 1)).comp_analyticAt
-          (g := fun z : ℂ ↦ z + 1) (by fun_prop)),
-        meromorphicOrderAt_comp_add_const_eq_meromorphicOrderAt,
-        ha.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr hψc]
-      have hp := (gammaFactor_eq_zero_iff_of_odd hodd).mp hΓz
-      rw [(meromorphicOrderAt_Gammaℝ_eq_neg_one_iff (s + 1)).mpr (by
-        obtain ⟨n, hn⟩ := hp
-        exact ⟨n, by linear_combination hn⟩)]
-      simp
+    -- the order of `L = completed / gammaFactor` is `0 - (-1)`
+    have hN : ((χ.conductor : ℕ) : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr χ.conductor_ne_zero
+    have hca : AnalyticAt ℂ
+        (fun z ↦ ((χ.conductor : ℕ) : ℂ) ^ (z / 2) * ψ.completedLFunction z) s :=
+      (((differentiable_id.div_const 2).const_cpow (.inl hN)).analyticAt s).mul
+        (ψ.analyticAt_completedLFunction (.inl hs0) (.inl hs1))
+    rw [← LFunctions.dirichletData_continuedL ψ hψ,
+      (LFunctions.dirichletData ψ hψ).meromorphicOrderAt_continuedL
+        (LFunctions.dirichletData_hasMeromorphicContinuation ψ hψ).meromorphic,
+      funext (LFunctions.dirichletData_completed ψ hψ),
+      funext (LFunctions.dirichletData_gammaFactor ψ hψ),
+      hca.meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr
+        (mul_ne_zero (cpow_ne_zero_iff.mpr (.inl hN)) hψc),
+      ψ.meromorphicOrderAt_gammaFactor_eq_neg_one_of_eq_zero hΓz]
+    simp
   · rw [ite_eq_right hz]
     exact (χ.analyticAt_LFunction (.inl hs1)).meromorphicNFAt.meromorphicOrderAt_eq_zero_iff.mpr hz
 
