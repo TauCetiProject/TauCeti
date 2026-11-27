@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.Disintegration
 import TauCeti.Analysis.Calculus.FDeriv.Integral
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -91,20 +92,6 @@ section Slices
 variable {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
   [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
 
-/-- The slice `x₁ ↦ φ (x₁, x₂)` of a differentiable function `φ` on `E₁ × E₂` has as derivative
-the partial derivative of `φ` in the first variable. -/
-private theorem hasFDerivAt_slice_fst {φ : E₁ × E₂ → ℝ} (hφ : Differentiable ℝ φ) (x₁ : E₁)
-    (x₂ : E₂) : HasFDerivAt (fun y => φ (y, x₂))
-      ((fderiv ℝ φ (x₁, x₂)).comp (ContinuousLinearMap.inl ℝ E₁ E₂)) x₁ :=
-  (hφ (x₁, x₂)).hasFDerivAt.comp x₁ (hasFDerivAt_prodMk_left x₁ x₂)
-
-/-- The slice `x₂ ↦ φ (x₁, x₂)` of a differentiable function `φ` on `E₁ × E₂` has as derivative
-the partial derivative of `φ` in the second variable. -/
-private theorem hasFDerivAt_slice_snd {φ : E₁ × E₂ → ℝ} (hφ : Differentiable ℝ φ) (x₁ : E₁)
-    (x₂ : E₂) : HasFDerivAt (fun y => φ (x₁, y))
-      ((fderiv ℝ φ (x₁, x₂)).comp (ContinuousLinearMap.inr ℝ E₁ E₂)) x₂ :=
-  (hφ (x₁, x₂)).hasFDerivAt.comp x₂ (hasFDerivAt_prodMk_right x₁ x₂)
-
 omit [NormedSpace ℝ E₁] [NormedSpace ℝ E₂] in
 /-- The slices `x₁ ↦ φ (x₁, x₂)` of a function are supported in the first projection
 of its support. -/
@@ -149,7 +136,7 @@ private theorem integral_fderiv_inr_smul_eq_zero {φ : E₁ × E₂ → ℝ} (h�
   rw [integral_smul_const]
   have h0 := integral_apply_eq_zero_of_hasFDerivAt_off_countable (μ := μ₂) countable_empty
     (hφ.comp (Continuous.prodMk_right x₁)) (hasCompactSupport_slice_snd hφc x₁)
-    (fun x₂ _ => hasFDerivAt_slice_snd hφd x₁ x₂) w₂
+    (fun x₂ _ => (hφd (x₁, x₂)).hasFDerivAt_slice_snd) w₂
   simp only [ContinuousLinearMap.coe_comp, Function.comp_apply,
     ContinuousLinearMap.inr_apply] at h0
   simp [h0]
@@ -204,8 +191,8 @@ theorem HasWeakFDerivOn.comp_fst {V : Opens E₁} {u : E₁ → F} {U : E₁ →
   rw [← hslice]
   refine integral_congr_ae (ae_of_all _ fun x₁ => ?_)
   simp only
-  rw [((hasFDerivAt_slice_fst hφd x₁ x₂).differentiableAt).lineDeriv_eq_fderiv,
-    (hasFDerivAt_slice_fst hφd x₁ x₂).fderiv]
+  rw [(hφd (x₁, x₂)).hasFDerivAt_slice_fst.differentiableAt.lineDeriv_eq_fderiv,
+    (hφd (x₁, x₂)).hasFDerivAt_slice_fst.fderiv]
   simp
 
 end Prod

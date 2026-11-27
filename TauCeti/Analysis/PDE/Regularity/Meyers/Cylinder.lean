@@ -451,60 +451,21 @@ theorem energyFormH1_smul_cylindricalMeyersCoefficient_eq_zero (hμ0 : 0 < μ) (
 
 /-! ### Integrability of the gradient -/
 
-/-- The candidate gradient has length at most `(1 + |μ - 1|) ‖(x₀, x₁)‖ ^ (μ - 1)`. -/
-private theorem norm_cylGrad_le (x : EuclideanSpace ℝ (Fin (n + 2))) :
-    ‖cylGrad μ x‖ ≤ (1 + |μ - 1|) * ‖proj n x‖ ^ (μ - 1) := by
-  have hx0 : |x 0| ≤ ‖proj n x‖ :=
-    (pow_le_pow_iff_left₀ (abs_nonneg _) (norm_nonneg _) two_ne_zero).1
-      (by rw [sq_abs, norm_proj_sq]; nlinarith [sq_nonneg (x 1)])
-  -- The second term is `|μ - 1| ‖P x‖ ^ (μ - 3) |x₀| ‖P x‖ ≤ |μ - 1| ‖P x‖ ^ (μ - 1)`.
-  have hkey : ‖proj n x‖ ^ (μ - 1 - 2) * |x 0| * ‖proj n x‖ ≤ ‖proj n x‖ ^ (μ - 1) := by
-    rcases (norm_nonneg (proj n x)).eq_or_lt with h | h
-    · rw [← h, mul_zero]
-      positivity
-    calc ‖proj n x‖ ^ (μ - 1 - 2) * |x 0| * ‖proj n x‖
-        ≤ ‖proj n x‖ ^ (μ - 1 - 2) * ‖proj n x‖ * ‖proj n x‖ := by gcongr
-      _ = ‖proj n x‖ ^ (μ - 1) := by
-          rw [mul_assoc, ← sq, ← Real.rpow_natCast, ← Real.rpow_add h]
-          norm_num
-  calc ‖cylGrad μ x‖
-      ≤ ‖proj n x‖ ^ (μ - 1) * 1 + |μ - 1| * (‖proj n x‖ ^ (μ - 1 - 2) * |x 0| * ‖proj n x‖) := by
-        refine (norm_add_le _ _).trans (le_of_eq ?_)
-        rw [norm_smul, norm_smul, norm_lift, PiLp.norm_single, norm_one, Real.norm_eq_abs,
-          Real.norm_eq_abs, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖proj n x‖ ^ (μ - 1)),
-          abs_mul, abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ ‖proj n x‖ ^ (μ - 1 - 2))]
-        ring
-    _ ≤ ‖proj n x‖ ^ (μ - 1) * 1 + |μ - 1| * ‖proj n x‖ ^ (μ - 1) := by gcongr
-    _ = (1 + |μ - 1|) * ‖proj n x‖ ^ (μ - 1) := by ring
-
-/-- For `0 < μ ≤ 1`, off the subspace `x₀ = x₁ = 0`, the candidate gradient has length at least
-`μ ‖(x₀, x₁)‖ ^ (μ - 1)`. -/
-private theorem mul_rpow_le_norm_cylGrad (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
-    {x : EuclideanSpace ℝ (Fin (n + 2))} (hx : proj n x ≠ 0) :
-    μ * ‖proj n x‖ ^ (μ - 1) ≤ ‖cylGrad μ x‖ := by
-  have hρ : 0 < ‖proj n x‖ := norm_pos_iff.2 hx
-  have hc : 0 ≤ 1 - μ ^ 2 := by nlinarith
-  have hx0 : x 0 ^ 2 ≤ ‖proj n x‖ ^ 2 := by rw [norm_proj_sq]; nlinarith [sq_nonneg (x 1)]
-  refine (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 ?_
-  have hn : ‖cylGrad μ x‖ ^ 2 = (‖proj n x‖ ^ (μ - 1)) ^ 2 +
-      2 * ‖proj n x‖ ^ (μ - 1) * ((μ - 1) * ‖proj n x‖ ^ (μ - 1 - 2) * x 0) * x 0 +
-      ((μ - 1) * ‖proj n x‖ ^ (μ - 1 - 2) * x 0) ^ 2 * ‖proj n x‖ ^ 2 := by
-    have hl : ⟪EuclideanSpace.single 0 (1 : ℝ), lift n x⟫_ℝ = x 0 := by
-      rw [real_inner_comm, inner_lift]
-      simp
-    rw [cylGrad, norm_add_sq_real, norm_smul, norm_smul, real_inner_smul_left,
-      real_inner_smul_right, hl, norm_lift, PiLp.norm_single, norm_one,
-      Real.norm_eq_abs, Real.norm_eq_abs, abs_of_nonneg (by positivity : (0 : ℝ) ≤
-        ‖proj n x‖ ^ (μ - 1))]
-    simp only [mul_pow, sq_abs, one_pow]
-    ring
-  have hs : ‖proj n x‖ ^ (μ - 1) = ‖proj n x‖ ^ (μ - 1 - 2) * ‖proj n x‖ ^ 2 := by
-    rw [← Real.rpow_natCast, ← Real.rpow_add hρ]
-    norm_num
-  rw [hn, hs]
-  generalize ‖proj n x‖ ^ (μ - 1 - 2) = t
-  -- The defect is `t² ‖P x‖² (1 - μ²) (‖P x‖² - x₀²) ≥ 0`.
-  nlinarith [mul_nonneg (mul_nonneg (sq_nonneg (t * ‖proj n x‖)) hc) (sub_nonneg.2 hx0)]
+/-- Off the subspace `x₀ = x₁ = 0`, the candidate gradient has the length of the gradient of
+Meyers' planar solution at `(x₀, x₁)`. -/
+private theorem norm_cylGrad {x : EuclideanSpace ℝ (Fin (n + 2))} (hx : proj n x ≠ 0) :
+    ‖cylGrad μ x‖ = ‖∇ (meyersSolution (n := 0) μ) (proj n x)‖ := by
+  have hl : ⟪EuclideanSpace.single 0 (1 : ℝ), lift n x⟫_ℝ = x 0 := by
+    rw [real_inner_comm, inner_lift]
+    simp
+  have hp : ⟪EuclideanSpace.single 0 (1 : ℝ), proj n x⟫_ℝ = x 0 := by
+    rw [real_inner_comm, inner_proj_single_zero]
+  have h0 : proj n x 0 = x 0 := by simp [proj_apply]
+  rw [gradient_meyersSolution hx, h0, show μ - 3 = μ - 1 - 2 by ring]
+  refine (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 ?_
+  rw [cylGrad, norm_add_sq_real, norm_add_sq_real, real_inner_smul_left, real_inner_smul_right,
+    real_inner_smul_left, real_inner_smul_right, hl, hp, norm_smul, norm_smul, norm_smul,
+    norm_smul, norm_lift, PiLp.norm_single, PiLp.norm_single]
 
 private theorem measurable_cylGrad : Measurable (cylGrad (n := n) μ) := by
   unfold cylGrad
@@ -555,10 +516,11 @@ theorem exists_w1p_value_ae_eq_cylindricalMeyersSolution (hμ0 : 0 < μ) {p : �
   have hg : MemLp (cylGrad μ) p (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))) := by
     refine (integrable_norm_rpow_iff measurable_cylGrad.aestronglyMeasurable hp0 hp).1 ?_
     refine (hker.const_mul ((1 + |μ - 1|) ^ p.toReal)).mono'
-      (measurable_cylGrad.norm.pow_const _).aestronglyMeasurable (ae_of_all _ fun x => ?_)
+      (measurable_cylGrad.norm.pow_const _).aestronglyMeasurable ?_
+    filter_upwards [ae_restrict_of_ae ae_proj_ne_zero] with x hx
     rw [Real.norm_of_nonneg (by positivity), mul_comm p.toReal, Real.rpow_mul (norm_nonneg _),
-      ← Real.mul_rpow (by positivity) (by positivity)]
-    exact Real.rpow_le_rpow (norm_nonneg _) (norm_cylGrad_le (μ := μ) x) hpr.le
+      ← Real.mul_rpow (by positivity) (by positivity), norm_cylGrad hx]
+    exact Real.rpow_le_rpow (norm_nonneg _) (norm_gradient_meyersSolution_le hx) hpr.le
   refine ⟨W1p.mk hu.toLp hg.toLp
     (((hasWeakFDerivOn_cylindricalMeyersSolution hμ0 Ω).congr_ae hu.coeFn_toLp.symm).congr_ae_deriv
       (hg.coeFn_toLp.mono fun x hx => by simp only [hx])), ?_⟩
@@ -602,7 +564,9 @@ theorem toReal_mul_one_sub_lt_two_of_memLp_gradient_cylindricalMeyersSolution (h
     rw [Function.comp_apply, Real.norm_of_nonneg (by positivity), mul_comm p.toReal,
       Real.rpow_mul (norm_nonneg _), Real.rpow_neg hμ0.le, le_inv_mul_iff₀ (by positivity),
       ← Real.mul_rpow hμ0.le (by positivity)]
-    exact Real.rpow_le_rpow (by positivity) (mul_rpow_le_norm_cylGrad hμ0 hμ1.le hx) hpr.le
+    rw [norm_cylGrad hx]
+    exact Real.rpow_le_rpow (by positivity) (mul_rpow_le_norm_gradient_meyersSolution hμ0 hμ1.le hx)
+      hpr.le
   obtain ⟨t, ht, hgt⟩ := hpow.exists_mem_nhds_integrableOn_of_comp_surjective (ν := volume) hs'
     proj_surjective
   rw [map_zero] at ht
