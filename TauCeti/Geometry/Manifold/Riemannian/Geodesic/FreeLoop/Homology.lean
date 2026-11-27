@@ -305,7 +305,7 @@ theorem exists_restrictPreimage_cyclicDistanceCutCocone_homotopy
   -- The broken geodesics through `e₀` of the loops of `L` lie in `S`.
   have hmem (γ : L) : (cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app i (e₀ (φ γ)) ∈ S :=
     (ContinuousMap.Homotopic.symm ⟨G₀⟩).apply_mem hS γ.val.property
-  exact ⟨⟨fun γ ↦ ⟨e₀ (φ γ), hmem γ⟩, ((map_continuous e₀).comp (map_continuous φ)).subtype_mk _⟩,
+  refine ⟨⟨fun γ ↦ ⟨e₀ (φ γ), hmem γ⟩, ((map_continuous e₀).comp (map_continuous φ)).subtype_mk _⟩,
     ContinuousMap.Homotopy.codRestrict hS ((G₀.compContinuousMap φ).cast
       (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)),
     ContinuousMap.Homotopy.codRestrict
@@ -313,8 +313,12 @@ theorem exists_restrictPreimage_cyclicDistanceCutCocone_homotopy
       ((H₀.compContinuousMap ψ).cast (ContinuousMap.ext fun _ ↦ rfl)
         (ContinuousMap.ext fun q ↦ (Cocone.coe_preimageFunctor_map_apply
           (cyclicDistanceCutCocone hr hlt hpos.le hδ) S f q.val).symm)),
-    fun _ ↦ rfl, fun p ↦ ContinuousMap.Homotopy.coe_codRestrict_apply _ _ p,
-    fun p ↦ ContinuousMap.Homotopy.coe_codRestrict_apply _ _ p⟩
+    fun _ ↦ rfl, fun p ↦ ?_, fun p ↦ ?_⟩
+  -- The restricted homotopies are the corestrictions of casts of `G₀` and `H₀` precomposed with
+  -- `φ` and `ψ`, which send a point to itself, read in the image.
+  all_goals exact (ContinuousMap.Homotopy.coe_codRestrict_apply _ _ p).trans <|
+    (ContinuousMap.Homotopy.cast_apply _ _ _ p).trans <|
+      ContinuousMap.Homotopy.compContinuousMap_apply _ _ p
 
 include hr in
 /-- **Sampling, straightening and sliding at a common stage over a union of components, keeping the

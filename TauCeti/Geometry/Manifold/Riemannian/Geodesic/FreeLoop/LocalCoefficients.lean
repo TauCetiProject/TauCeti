@@ -956,6 +956,11 @@ private theorem restrictPreimage_cyclicDistanceCutCocone_coherent
   refine homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset (hS _ (Subtype.property _))
     (Path.Homotopic.of_coe_eq (funext fun t ↦ ?_) (funext fun t ↦ ?_)
       (h ⟨x.val.val, mem_image_of_mem _ x.property⟩))
+  -- Pointwise, `Path.map` is composition (`Path.map_coe`), `Path.cast` does not change the path
+  -- (`Path.cast_coe`) and `ContinuousMap.Homotopy.evalAt` evaluates the homotopy at time `t`
+  -- (`ContinuousMap.Homotopy.evalAt_apply`); the map of the parts over `S` is the map of the free
+  -- loops on the underlying points. These hold by definition, and the lemmas cannot be rewritten
+  -- with since the apexes are the free loop space and `S` only up to unfolding.
   · exact congrArg ((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app i) (hH (t, x))
   · exact hG (t, _)
 
