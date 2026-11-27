@@ -32,7 +32,22 @@ open CategoryTheory Limits MorphismProperty Simplicial HomotopicalAlgebra
 
 namespace SSet
 
+open modelCategoryQuillen
+
 variable {X Y S : SSet.{u}}
+
+private theorem forall_rlp_monomorphisms_iff_forall_isWeakHomotopyEquivalence_fiber_map
+    (f : X ⟶ Y) (p : Y ⟶ S)
+    (hp : ∀ s : S _⦋0⦌, KanComplex (fiber p s : SSet.{u}))
+    (hf : ∀ s : S _⦋0⦌, KanComplex (fiber p s : SSet.{u}) →
+      Fibration (fiber.map f (q := f ≫ p) rfl s)) :
+    (∀ s : S _⦋0⦌, (monomorphisms SSet.{u}).rlp (fiber.map f (q := f ≫ p) rfl s)) ↔
+      ∀ s : S _⦋0⦌, IsWeakHomotopyEquivalence (fiber.map f (q := f ≫ p) rfl s) := by
+  apply forall_congr'
+  intro s
+  have := hp s
+  have := hf s (hp s)
+  exact rlp_monomorphisms_iff_isWeakHomotopyEquivalence _
 
 namespace RightFibration
 
@@ -46,13 +61,7 @@ theorem rlp_monomorphisms_iff_forall_fiber_map (f : X ⟶ Y) [RightFibration f]
   refine ⟨fun hf s ↦ (monomorphisms SSet.{u}).rlp.of_isPullback
     (fiber.isPullback_map f rfl s) hf, fun h ↦ ?_⟩
   rw [rlp_monomorphisms_iff_isWeaklyContractible_fiber]
-  intro y
-  apply ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
-    stdSimplex.isTerminalObj₀
-      (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u}))).1 ?_).2
-  intro A B i hi
-  have := h (p.app _ y) i hi
-  exact fiber.hasLiftingProperty_of_map f p y i
+  exact fiber.isWeaklyContractible_of_forall_rlp_map f p h
 
 /-- For a right fibration over `S`, if the fibres of `Y ⟶ S` are Kan complexes,
 triviality is detected by intrinsic weak homotopy equivalences on these fibres. -/
@@ -62,13 +71,12 @@ theorem rlp_monomorphisms_iff_forall_isWeakHomotopyEquivalence_fiber_map
     (monomorphisms SSet.{u}).rlp f ↔
       ∀ s : S _⦋0⦌, IsWeakHomotopyEquivalence (fiber.map f (q := f ≫ p) rfl s) := by
   rw [rlp_monomorphisms_iff_forall_fiber_map f p]
-  apply forall_congr'
-  intro s
-  have := hp s
+  apply forall_rlp_monomorphisms_iff_forall_isWeakHomotopyEquivalence_fiber_map f p hp
+  intro s hs
+  have := hs
   have : RightFibration (fiber.map f (q := f ≫ p) rfl s) :=
     .of_isPullback (fiber.isPullback_map f rfl s)
-  have := RightFibration.fibration_of_kanComplex (fiber.map f (q := f ≫ p) rfl s)
-  exact rlp_monomorphisms_iff_isWeakHomotopyEquivalence _
+  exact RightFibration.fibration_of_kanComplex (fiber.map f (q := f ≫ p) rfl s)
 
 end RightFibration
 
@@ -83,13 +91,7 @@ theorem rlp_monomorphisms_iff_forall_fiber_map (f : X ⟶ Y) [LeftFibration f]
   refine ⟨fun hf s ↦ (monomorphisms SSet.{u}).rlp.of_isPullback
     (fiber.isPullback_map f rfl s) hf, fun h ↦ ?_⟩
   rw [rlp_monomorphisms_iff_isWeaklyContractible_fiber]
-  intro y
-  apply ((rlp_monomorphisms_iff_kanComplex_and_isWeaklyContractible_of_isTerminal
-    stdSimplex.isTerminalObj₀
-      (stdSimplex.isTerminalObj₀.from (fiber f y : SSet.{u}))).1 ?_).2
-  intro A B i hi
-  have := h (p.app _ y) i hi
-  exact fiber.hasLiftingProperty_of_map f p y i
+  exact fiber.isWeaklyContractible_of_forall_rlp_map f p h
 
 /-- For a left fibration over `S`, if the fibres of `Y ⟶ S` are Kan complexes,
 triviality is detected by intrinsic weak homotopy equivalences on these fibres. -/
@@ -99,13 +101,12 @@ theorem rlp_monomorphisms_iff_forall_isWeakHomotopyEquivalence_fiber_map
     (monomorphisms SSet.{u}).rlp f ↔
       ∀ s : S _⦋0⦌, IsWeakHomotopyEquivalence (fiber.map f (q := f ≫ p) rfl s) := by
   rw [rlp_monomorphisms_iff_forall_fiber_map f p]
-  apply forall_congr'
-  intro s
-  have := hp s
+  apply forall_rlp_monomorphisms_iff_forall_isWeakHomotopyEquivalence_fiber_map f p hp
+  intro s hs
+  have := hs
   have : LeftFibration (fiber.map f (q := f ≫ p) rfl s) :=
     .of_isPullback (fiber.isPullback_map f rfl s)
-  have := LeftFibration.fibration_of_kanComplex (fiber.map f (q := f ≫ p) rfl s)
-  exact rlp_monomorphisms_iff_isWeakHomotopyEquivalence _
+  exact LeftFibration.fibration_of_kanComplex (fiber.map f (q := f ≫ p) rfl s)
 
 end LeftFibration
 
