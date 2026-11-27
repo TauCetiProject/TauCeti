@@ -26,7 +26,10 @@ the pointwise product.
 
 Evaluated at `g`, the relation `μ ∗ 𝟙 = 1` says that `U ↦ μ(g|_U)` is the Möbius function
 `U ↦ μ(⊥, U)` of the lattice of `g`-invariant subspaces. This lattice is modular, so by Crapo's
-complementation theorem it is complemented, that is `g` is semisimple, when `μ(g) ≠ 0`. Block
+complementation theorem it is complemented, that is `g` is semisimple, when `μ(g) ≠ 0` (roadmap
+§4.3 (a), proved here only as a private auxiliary: the public statement
+`TauCeti.HallAlgebra.isSemisimple_of_moebius_ne_zero` is in
+https://github.com/TauCetiProject/TauCeti/pull/47127). Block
 averages of `B · μ` only see the block diagonal class, and from this and Mackey's formula `C_η` is
 cuspidal. A cuspidal function vanishes off the classes whose characteristic polynomial is a power
 of an irreducible polynomial: for an irreducible factor `P` of the minimal polynomial, all block
@@ -35,7 +38,6 @@ similar to `g`, since the Sylvester map `y ↦ g y - y g` between the two blocks
 
 ## Main results
 
-* `TauCeti.HallAlgebra.isSemisimple_of_moebius_ne_zero`: if `μ(g) ≠ 0` then `g` is semisimple.
 * `TauCeti.HallAlgebra.blockAverage_moebius`: `δμ(a, ·) = μ(a) · μ`.
 * `TauCeti.HallAlgebra.blockAverage_mul_moebius`: `δ(B · μ)(a, b) = μ(a) μ(b) B(a ⊕ b)`.
 * `TauCeti.HallAlgebra.conj_moebius`: `μ` is real.
@@ -85,8 +87,12 @@ section Moebius
 variable [Finite k]
 
 /-- At the class of `g`, the sum of `μ` at the classes of `g` on the `g`-invariant subspaces is the
-value of the unit `1`. -/
-theorem sum_moebius_ofEnd_invtRestrict (g : Module.End k V) [Fintype g.invtSubmodule] :
+value of the unit `1`. This is kept private: the variant `∑_{U ≤ W} μ(g|_U) = [W = 0]` is
+`TauCeti.HallAlgebra.sum_moebius_ofEnd_invtRestrict` in
+https://github.com/TauCetiProject/TauCeti/pull/47127, and this copy is to be deduplicated against
+it once that lands. -/
+private theorem sum_moebius_invtRestrict_eq_one_apply (g : Module.End k V)
+    [Fintype g.invtSubmodule] :
     ∑ U : g.invtSubmodule, moebius (ofEnd (g.invtRestrict U.prop)) =
       (1 : HallAlgebra k) (ofEnd g) := by
   rw [← moebius_mul_constOne, mul_ofEnd_eq_sum]
@@ -96,16 +102,19 @@ theorem sum_moebius_ofEnd_invtRestrict (g : Module.End k V) [Fintype g.invtSubmo
 theorem moebius_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) : moebius o = 1 := by
   have := Fintype.ofFinite o.rep.invtSubmodule
   have : Subsingleton (Fin o.dim → k) := by rw [h]; infer_instance
-  have key := sum_moebius_ofEnd_invtRestrict o.rep
+  have key := sum_moebius_invtRestrict_eq_one_apply o.rep
   simp only [ofEnd_rep, one_apply, h, ↓reduceIte] at key
   -- The only invariant subspace of the zero space is `⊥`, and its class is `o`.
   rwa [Fintype.sum_subsingleton _ ⊥,
     eq_of_dim_eq_zero (c := ofEnd (o.rep.invtRestrict (⊥ : o.rep.invtSubmodule).prop)) (by simp)
       h] at key
 
-/-- **`μ` vanishes off the semisimple classes.** If `μ(g) ≠ 0`, then `g` is semisimple. -/
-theorem isSemisimple_of_moebius_ne_zero {g : Module.End k V} (h : moebius (ofEnd g) ≠ 0) :
-    g.IsSemisimple := by
+/-- **`μ` vanishes off the semisimple classes.** If `μ(g) ≠ 0`, then `g` is semisimple. This is
+roadmap §4.3 (a), which is `TauCeti.HallAlgebra.isSemisimple_of_moebius_ne_zero` in
+https://github.com/TauCetiProject/TauCeti/pull/47127; this private copy, needed for
+`blockAverage_mul_moebius`, is to be deduplicated against it once that lands. -/
+private theorem isSemisimple_of_moebius_ofEnd_ne_zero {g : Module.End k V}
+    (h : moebius (ofEnd g) ≠ 0) : g.IsSemisimple := by
   classical
   -- Evaluated at `g`, `μ ∗ 𝟙 = 1` makes `U ↦ μ(g|_U)` the Möbius function `U ↦ μ(⊥, U)` of the
   -- modular lattice of `g`-invariant subspaces, so by Crapo's complementation theorem this
@@ -130,7 +139,7 @@ theorem isSemisimple_of_moebius_ne_zero {g : Module.End k V} (h : moebius (ofEnd
   have h_dim : (ofEnd (g.invtRestrict X.prop)).dim ≠ 0 := by
     simpa [Submodule.finrank_eq_zero] using hX'
   simp only [Submodule.ker_subtype, bot_le, Finset.filter_true] at key
-  rw [sum_moebius_ofEnd_invtRestrict, one_apply] at key
+  rw [sum_moebius_invtRestrict_eq_one_apply, one_apply] at key
   simp only [h_dim, ↓reduceIte] at key
   refine (Finset.sum_congr (Finset.filter_congr fun U _ ↦ ?_) fun U hU ↦ ?_).trans key.symm
   · rw [Submodule.range_subtype]
@@ -146,10 +155,10 @@ theorem conj_moebius (c : SimilarityClass k) : conj (moebius c) = moebius c := b
   have h : μ' * constOne = moebius * constOne := by
     refine ext_ofEnd fun _ g ↦ ?_
     have := Fintype.ofFinite g.invtSubmodule
-    have key := congrArg conj (sum_moebius_ofEnd_invtRestrict g)
+    have key := congrArg conj (sum_moebius_invtRestrict_eq_one_apply g)
     rw [map_sum] at key
     rw [mul_ofEnd_eq_sum, mul_ofEnd_eq_sum]
-    simpa [μ', apply_ite conj, sum_moebius_ofEnd_invtRestrict] using key
+    simpa [μ', apply_ite conj, sum_moebius_invtRestrict_eq_one_apply] using key
   exact congrArg (· c) (isUnit_constOne.mul_right_cancel h)
 
 end Moebius
@@ -176,7 +185,7 @@ theorem blockAverage_moebius (c : SimilarityClass k) :
   simp only [blockAverage_constOne] at h_mackey
   rw [mul_ofEnd_eq_sum, mul_ofEnd_eq_sum]
   simp only [F, F', constOne_apply, mul_one, smul_mul_assoc, smul_apply,
-    moebius_mul_constOne, ← Finset.sum_mul, sum_moebius_ofEnd_invtRestrict]
+    moebius_mul_constOne, ← Finset.sum_mul, sum_moebius_invtRestrict_eq_one_apply]
   exact h_mackey.symm
 
 variable [Finite k] in
@@ -188,7 +197,7 @@ private theorem mul_moebius_blockTriangular (B : HallAlgebra k) (a : Module.End 
       B (ofEnd (a.prodMap b)) * moebius (ofEnd (blockTriangular a b x)) := by
   by_cases h : moebius (ofEnd (blockTriangular a b x)) = 0
   · simp [h]
-  · rw [ofEnd_blockTriangular_of_isSemisimple (isSemisimple_of_moebius_ne_zero h)]
+  · rw [ofEnd_blockTriangular_of_isSemisimple (isSemisimple_of_moebius_ofEnd_ne_zero h)]
 
 /-- The block averages of `B · μ` only see the block diagonal class:
 `δ(B · μ)(a, b) = μ(a) μ(b) B(a ⊕ b)`. -/
@@ -375,7 +384,7 @@ private theorem greenCuspidal_eq_neg_moebius_mul :
       eigenvalueSum K η (ofEnd g) * moebius (ofEnd (g.invtRestrict U.prop)) := by
     rw [eigenvalueSum_ofEnd_eq_add K η U.prop]
     ring
-  simp only [h_terms, ← Finset.mul_sum, sum_moebius_ofEnd_invtRestrict, one_apply]
+  simp only [h_terms, ← Finset.mul_sum, sum_moebius_invtRestrict_eq_one_apply, one_apply]
   split_ifs with h
   · simp [eigenvalueSum_of_dim_eq_zero K η h]
   · simp
@@ -413,7 +422,7 @@ theorem isCuspidal_greenCuspidal : (greenCuspidal K η : HallAlgebra k).IsCuspid
   simp only [mul_add, Finset.sum_add_distrib, ← Finset.mul_sum, ← Finset.sum_mul,
     mul_assoc, mul_comm (moebius _) (eigenvalueSum K η _)]
   -- Each part has a factor `Σ_U μ(c|_U) = 1(c)` with `c = a` or `c = b`, of positive size.
-  simp [sum_moebius_ofEnd_invtRestrict, one_apply, ha, hb]
+  simp [sum_moebius_invtRestrict_eq_one_apply, one_apply, ha, hb]
 
 variable {K} [Fintype k] in
 /-- **`C_η` only sees the Frobenius orbits of the eigenvalues.** Let `g` act on a space of
