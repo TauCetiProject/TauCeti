@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.ContMDiff.ContinuousMultilinearMap
 public import TauCeti.Geometry.Manifold.MFDeriv.ContinuousMultilinearMap
 import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 import Mathlib.Geometry.Manifold.Algebra.Monoid
-import Mathlib.LinearAlgebra.Multilinear.Basis
+import TauCeti.Analysis.Normed.Module.Multilinear.Basis
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
@@ -491,25 +491,11 @@ theorem contMDiff_continuousMultilinearMap_iff
   obtain ⟨s, hs, hse⟩ := (trivializationAt F V x₀).exists_contMDiff_eventuallyEq_localFrame
     (I := I) (n := ∞) b le_rfl (mem_baseSet_trivializationAt F V x₀)
   -- A multilinear map on the model fibre is determined by its values on tuples of basis
-  -- vectors, through the products `P J` of the coordinate functionals.
+  -- vectors, through the products `P J` of the coordinate functionals
+  -- (`ContinuousMultilinearMap.sum_smulRight_apply_basis`).
   let P (J : ι → _) : ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) ℝ :=
     (ContinuousMultilinearMap.mkPiAlgebra ℝ ι ℝ).compContinuousLinearMap
       fun i ↦ LinearMap.toContinuousLinearMap (b.coord (J i))
-  have hrec (φ : ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) G) :
-      ∑ J, (P J).smulRight (φ fun i ↦ b (J i)) = φ := by
-    refine ContinuousMultilinearMap.toMultilinearMap_injective <|
-      Module.Basis.ext_multilinear (fun _ ↦ b) fun K ↦ ?_
-    simp only [ContinuousMultilinearMap.coe_coe, sum_apply,
-      ContinuousMultilinearMap.smulRight_apply, P,
-      ContinuousMultilinearMap.compContinuousLinearMap_apply,
-      ContinuousMultilinearMap.mkPiAlgebra_apply, LinearMap.coe_toContinuousLinearMap',
-      Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply]
-    rw [Finset.sum_eq_single K]
-    · simp
-    · intro J _ hJK
-      obtain ⟨i, hi⟩ := Function.ne_iff.1 hJK
-      rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [Ne.symm hi]), zero_smul]
-    · simp
   rw [contMDiffAt_continuousMultilinearMap_bundle]
   refine ⟨contMDiffAt_id, ?_⟩
   -- The coordinates of the evaluations on the frame are smooth near `x₀`.
@@ -528,9 +514,9 @@ theorem contMDiff_continuousMultilinearMap_iff
     (trivializationAt F V x₀).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x₀),
     (trivializationAt G W x₀).open_baseSet.mem_nhds (mem_baseSet_trivializationAt G W x₀)]
     with y hy hye hye'
-  rw [← hrec (inCoordinates F G x₀ y x₀ y (A y))]
+  rw [← (inCoordinates F G x₀ y x₀ y (A y)).sum_smulRight_apply_basis fun _ ↦ b]
   refine Finset.sum_congr rfl fun J _ ↦ ?_
-  simp only [ContinuousMultilinearMap.inCoordinates_apply, symmL_basis_eq_localFrame b hye, ← hy,
-    Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hye']
+  simp only [P, ContinuousMultilinearMap.inCoordinates_apply, symmL_basis_eq_localFrame b hye,
+    ← hy, Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hye']
 
 end TauCeti.Manifold

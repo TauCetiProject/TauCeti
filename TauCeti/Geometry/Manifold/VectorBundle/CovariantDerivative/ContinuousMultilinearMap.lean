@@ -117,11 +117,9 @@ private theorem tensorialAt_multilinearAux
         (E := fun z ↦ ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ V z) (W z)) y (A y)) x)
     (v : TangentSpace I x) (σ : ι → Π x : M, V x) (hσ : ∀ i, MDiffAt (T% (σ i)) x) (i : ι) :
     TensorialAt I F (fun τ ↦ multilinearAux covV covW A x v (Function.update σ i τ)) x := by
-  have hupd {τ : Π x : M, V x} (hτ : MDiffAt (T% τ) x) (j : ι) :
-      MDiffAt (T% (Function.update σ i τ j)) x := by
-    rcases eq_or_ne j i with rfl | hji
-    · simpa using hτ
-    · simpa [hji] using hσ j
+  have hupd {τ : Π x : M, V x} (hτ : MDiffAt (T% τ) x) :
+      ∀ j, MDiffAt (T% (Function.update σ i τ j)) x :=
+    (Function.forall_update_iff σ fun _ s ↦ MDiffAt (T% s) x).2 ⟨hτ, fun j _ ↦ hσ j⟩
   have hev {τ : Π x : M, V x} (hτ : MDiffAt (T% τ) x) :
       MDiffAt (fun y ↦ TotalSpace.mk' G y
         (A y (Function.update (fun j ↦ σ j y) i (τ y)))) x := by
@@ -187,6 +185,19 @@ private theorem multilinearValue_apply
     LinearMap.coe_mk, AddHom.coe_mk]
   exact TensorialAt.mkMultilinear_apply _ hs
 
+/-- `multilinearValue_apply` on fibre vectors, through their local extensions. -/
+private theorem multilinearValue_apply_eq_extend
+    {A : Π x : M, ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ V x) (W x)} {x : M}
+    (hA : MDifferentiableAt I (I.prod 𝓘(𝕜, ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ F) G))
+      (fun y ↦ TotalSpace.mk' (ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ F) G)
+        (E := fun z ↦ ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ V z) (W z)) y (A y)) x)
+    (v : TangentSpace I x) (u : ι → V x) :
+    multilinearValue covV covW A x v u =
+      covW (fun y ↦ A y (fun i ↦ extend F (u i) y)) x v -
+        ∑ i, A x (Function.update u i (covV (extend F (u i)) x v)) := by
+  simpa using multilinearValue_apply covV covW hA
+    (s := fun i ↦ extend F (u i)) (fun _ ↦ mdifferentiableAt_extend ..) v
+
 /-- The connection on the bundle of continuous multilinear maps `(V x)^ι → W x` induced by
 connections on `V` and `W`. It is characterized on differentiable inputs by the Leibniz rule
 `(∇_v A)(s₁, …, sₖ) = ∇_v (A(s₁, …, sₖ)) - ∑ᵢ A(s₁, …, ∇_v sᵢ, …, sₖ)`
@@ -199,36 +210,32 @@ def continuousMultilinearMap :
     add := by
       intro A B x hA hB _
       ext v u
-      let s : ι → Π y : M, V y := fun i ↦ extend F (u i)
-      have hs (i : ι) : MDiffAt (T% (s i)) x := mdifferentiableAt_extend ..
-      have heq : (fun i ↦ s i x) = u := funext fun i ↦ extend_apply_self ..
-      rw [← heq]
-      have hsum : (fun y ↦ (A + B) y (fun i ↦ s i y)) =
-          (fun y ↦ A y (fun i ↦ s i y)) + fun y ↦ B y (fun i ↦ s i y) := by
+      have hs (i : ι) : MDiffAt (T% (extend F (u i))) x := mdifferentiableAt_extend ..
+      have hsum : (fun y ↦ (A + B) y (fun i ↦ extend F (u i) y)) =
+          (fun y ↦ A y (fun i ↦ extend F (u i) y)) + fun y ↦ B y (fun i ↦ extend F (u i) y) := by
         ext y
         simp
-      simp only [add_apply, add_apply,
-        multilinearValue_apply covV covW (mdifferentiableAt_add_section hA hB) hs,
-        multilinearValue_apply covV covW hA hs, multilinearValue_apply covV covW hB hs, hsum,
+      simp only [add_apply,
+        multilinearValue_apply_eq_extend covV covW (mdifferentiableAt_add_section hA hB),
+        multilinearValue_apply_eq_extend covV covW hA,
+        multilinearValue_apply_eq_extend covV covW hB, hsum,
         covW.isCovariantDerivativeOnUniv.add (hA.continuousMultilinearMap_bundle_apply hs)
           (hB.continuousMultilinearMap_bundle_apply hs)]
-      simp only [Pi.add_apply, add_apply,
-        add_apply, Finset.sum_add_distrib]
+      simp only [Pi.add_apply, add_apply, Finset.sum_add_distrib]
       abel
     leibniz := by
       intro A f x hA hf _
       ext v u
-      let s : ι → Π y : M, V y := fun i ↦ extend F (u i)
-      have hs (i : ι) : MDiffAt (T% (s i)) x := mdifferentiableAt_extend ..
-      have heq : (fun i ↦ s i x) = u := funext fun i ↦ extend_apply_self ..
-      rw [← heq]
-      have hsmul : (fun y ↦ (f • A) y (fun i ↦ s i y)) = f • fun y ↦ A y (fun i ↦ s i y) := by
+      have hs (i : ι) : MDiffAt (T% (extend F (u i))) x := mdifferentiableAt_extend ..
+      have hsmul : (fun y ↦ (f • A) y (fun i ↦ extend F (u i) y)) =
+          f • fun y ↦ A y (fun i ↦ extend F (u i) y) := by
         ext y
         simp
-      rw [multilinearValue_apply covV covW (hf.smul_section hA) hs, hsmul,
+      rw [multilinearValue_apply_eq_extend covV covW (hf.smul_section hA), hsmul,
         covW.isCovariantDerivativeOnUniv.leibniz (hA.continuousMultilinearMap_bundle_apply hs) hf]
       simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
-        multilinearValue_apply covV covW hA hs, Pi.smul_apply', smul_sub, Finset.smul_sum]
+        multilinearValue_apply_eq_extend covV covW hA, Pi.smul_apply', smul_sub, Finset.smul_sum,
+        extend_apply_self]
       abel }
 
 /-- **Evaluation of the induced connection** on a differentiable section `A` of the bundle of
@@ -268,9 +275,8 @@ theorem continuousMultilinearMap_apply_eq_extend
     (v : TangentSpace I x) (u : ι → V x) :
     covV.continuousMultilinearMap covW A x v u =
       covW (fun y ↦ A y (fun i ↦ extend F (u i) y)) x v -
-        ∑ i, A x (Function.update u i (covV (extend F (u i)) x v)) := by
-  simpa using continuousMultilinearMap_apply covV covW hA
-    (s := fun i ↦ extend F (u i)) (fun _ ↦ mdifferentiableAt_extend ..) v
+        ∑ i, A x (Function.update u i (covV (extend F (u i)) x v)) :=
+  multilinearValue_apply_eq_extend covV covW hA v u
 
 /-- At a nondifferentiable section the induced connection uses the zero extension. -/
 @[simp] theorem continuousMultilinearMap_eq_zero_of_not_mdifferentiableAt
@@ -316,13 +322,12 @@ theorem continuousMultilinearMap_apply_sub_continuousMultilinearMap_apply
         covV'.continuousMultilinearMap covW' A x v u =
       covW.difference covW' x (A x u) v -
         ∑ i, A x (Function.update u i (covV.difference covV' x (u i) v)) := by
-  let s : ι → Π y : M, V y := fun i ↦ extend F (u i)
-  have hs (i : ι) : MDiffAt (T% (s i)) x := mdifferentiableAt_extend ..
-  have heq : (fun i ↦ s i x) = u := funext fun i ↦ extend_apply_self ..
-  rw [← heq, continuousMultilinearMap_apply covV covW hA hs,
-    continuousMultilinearMap_apply covV' covW' hA hs,
-    covW.difference_apply covW' (hA.continuousMultilinearMap_bundle_apply hs)]
-  simp only [covV.difference_apply covV' (hs _), sub_apply,
+  have hs (i : ι) : MDiffAt (T% (extend F (u i))) x := mdifferentiableAt_extend ..
+  rw [continuousMultilinearMap_apply_eq_extend covV covW hA,
+    continuousMultilinearMap_apply_eq_extend covV' covW' hA]
+  have hW := covW.difference_apply covW' (hA.continuousMultilinearMap_bundle_apply hs) (x := x)
+  simp only [extend_apply_self] at hW
+  simp only [hW, covV.difference_apply_eq_extend covV', sub_apply,
     ContinuousMultilinearMap.map_update_sub, Finset.sum_sub_distrib]
   abel
 
@@ -372,11 +377,8 @@ theorem contMDiff_continuousMultilinearMap
   -- Each term `A(s₁, …, ∇_X sᵢ, …, sₖ)` of the evaluation rule is smooth.
   have hterm (i : ι) : ContMDiff I (I.prod 𝓘(ℝ, G)) ∞ (fun x ↦ TotalSpace.mk' G x
       (A x (Function.update (fun j ↦ s j x) i (covV (s i) x (X x))))) := by
-    have hupd (j : ι) : CMDiff ∞ (T% (Function.update s i (fun x ↦ covV (s i) x (X x)) j)) := by
-      rcases eq_or_ne j i with rfl | hji
-      · simpa using hV j
-      · simpa [hji] using hs j
-    simpa only [apply_update_apply] using hA.continuousMultilinearMap_bundle_apply hupd
+    simpa only [apply_update_apply] using hA.continuousMultilinearMap_bundle_apply
+      ((Function.forall_update_iff s fun _ t ↦ CMDiff ∞ (T% t)).2 ⟨hV i, fun j _ ↦ hs j⟩)
   have hsum := ContMDiff.sum_section (s := Finset.univ)
     (t := fun i x ↦ A x (Function.update (fun j ↦ s j x) i (covV (s i) x (X x))))
     fun i _ ↦ hterm i
