@@ -1349,8 +1349,12 @@ variable (S : TensorSignature.{u, v})
 @[simp] theorem projectObj_of_eq (W : FreeMonoidalCategory S.Obj) :
     FreeMonoidalCategory.projectObj (fun a : S.Obj ↦
       DualitySignature.FreeRigid.of (S := S.toDualitySignature) a) W = ⟨W.toRigidObject⟩ := by
+  -- `mk_unit`/`mk_tensor` are `@[simp]`, but `W.toRigidObject` has type `RigidObject S.Obj`
+  -- rather than `RigidObject S.toDualitySignature.Obj`, which differs across the semireducible
+  -- `def TensorSignature.toDualitySignature`, so `simp`/`rw` cannot match them here.
   induction W with
-  | of _ | unit => simp [FreeMonoidalCategory.projectObj]; rfl
+  | of _ => simp [FreeMonoidalCategory.projectObj, DualitySignature.FreeRigid.of]
+  | unit => simp [FreeMonoidalCategory.projectObj]; rfl
   | tensor _ _ ihX ihY => simp [FreeMonoidalCategory.projectObj, ihX, ihY]; rfl
 
 /-- The canonical strong monoidal functor from the free monoidal category on a tensor signature
@@ -1362,7 +1366,7 @@ variable (S : TensorSignature.{u, v})
       DualitySignature.FreeRigid.coupon (S := S.toDualitySignature) g ≫
       eqToHom (projectObj_of_eq S (S.tgt g)).symm
 
-instance : (toFreeRigid S).Monoidal := by delta toFreeRigid; infer_instance
+instance : (toFreeRigid S).Monoidal := inferInstanceAs (FreeMonoidal.lift _ _).Monoidal
 
 @[simp] theorem toFreeRigid_obj (X : S.FreeMonoidal) :
     (toFreeRigid S).obj X = ⟨X.as.toRigidObject⟩ := projectObj_of_eq S X.as

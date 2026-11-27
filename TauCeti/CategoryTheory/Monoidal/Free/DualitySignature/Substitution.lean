@@ -60,10 +60,13 @@ theorem eval_eq_subst {α : Type w} (f : α → T.FreeRigid) (X : RigidObject α
     RigidObject.eval f X = ⟨RigidObject.subst (fun a ↦ (f a).as) X⟩ := by
   induction X with
   | of _ => rw [RigidObject.eval_of, RigidObject.subst_of]
-  | unit => rw [RigidObject.eval_unit, RigidObject.subst_unit]; rfl
-  | tensor _ _ ihX ihY => rw [RigidObject.eval_tensor, RigidObject.subst_tensor, ihX, ihY]; rfl
-  | rightDual _ ih => rw [RigidObject.eval_rightDual, RigidObject.subst_rightDual, ih]; rfl
-  | leftDual _ ih => rw [RigidObject.eval_leftDual, RigidObject.subst_leftDual, ih]; rfl
+  | unit => rw [RigidObject.eval_unit, RigidObject.subst_unit, mk_unit]
+  | tensor _ _ ihX ihY =>
+    rw [RigidObject.eval_tensor, RigidObject.subst_tensor, ihX, ihY, mk_tensor]
+  | rightDual _ ih =>
+    rw [RigidObject.eval_rightDual, RigidObject.subst_rightDual, ih, mk_rightDual]
+  | leftDual _ ih =>
+    rw [RigidObject.eval_leftDual, RigidObject.subst_leftDual, ih, mk_leftDual]
 
 /-- Underlying `RigidObject` form of `eval_eq_subst`: categorical interpretation into
 `T.FreeRigid` agrees with syntactic substitution `RigidObject.subst`. -/
@@ -190,7 +193,7 @@ its raw substitution `f.subst σ`. -/
   | η_right X => exact lift_map_coevaluation_rightDual _ _ ⟨X⟩
   | ε_left X => exact lift_map_evaluation_leftDual _ _ ⟨X⟩
   | η_left X => exact lift_map_coevaluation_leftDual _ _ ⟨X⟩
-  | coupon g => rw [homMk_coupon, σ.toFunctor_map_coupon]; rfl
+  | coupon g => rw [homMk_coupon, σ.toFunctor_map_coupon, Hom.subst_coupon]
   | comp _ _ hf hg => exact (liftMap_comp _ _ _ _).trans (congrArg₂ (· ≫ ·) hf hg)
   | whiskerLeft X _ hf =>
     exact (lift_map_whiskerLeft _ _ ⟨X⟩ _).trans (congrArg (RigidObject.eval σ.obj X ◁ ·) hf)

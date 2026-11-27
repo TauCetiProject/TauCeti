@@ -145,56 +145,41 @@ private theorem ldual_ldual_base_ev : (ldual (ldual base)).ev = -1 := by decide
 private theorem ldual_ldual_base_od : (ldual (ldual base)).od = 1 := by decide
 end LambekObj
 
-private theorem isEmpty_lift_base [IsEmpty S.Coupon] {X Y : S.FreeRigid}
-    (h : ¬ ((lift (fun _ ↦ LambekObj.base) isEmptyElim).obj X ≤
-      (lift (fun _ ↦ LambekObj.base) isEmptyElim).obj Y)) : IsEmpty (X ⟶ Y) :=
-  ⟨fun f ↦ h (leOfHom ((lift (fun _ ↦ LambekObj.base) isEmptyElim).map f))⟩
+private noncomputable def baseLift (S : DualitySignature.{u, v}) [IsEmpty S.Coupon] :
+    S.FreeRigid ⥤ LambekObj :=
+  lift (fun _ ↦ LambekObj.base) isEmptyElim
 
-private theorem lift_base_of_ev [IsEmpty S.Coupon] (a : S.Obj) :
-    ((lift (fun _ ↦ LambekObj.base) isEmptyElim).obj (of a)).ev = 0 := by
-  rw [lift_obj_of, LambekObj.base_ev]
+private theorem isEmpty_baseLift [IsEmpty S.Coupon] {X Y : S.FreeRigid}
+    (h : ¬ ((baseLift S).obj X ≤ (baseLift S).obj Y)) : IsEmpty (X ⟶ Y) :=
+  ⟨fun f ↦ h (leOfHom ((baseLift S).map f))⟩
 
-private theorem lift_base_of_od [IsEmpty S.Coupon] (a : S.Obj) :
-    ((lift (fun _ ↦ LambekObj.base) isEmptyElim).obj (of a)).od = 0 := by
-  rw [lift_obj_of, LambekObj.base_od]
+@[simp] private theorem baseLift_obj_of [IsEmpty S.Coupon] (a : S.Obj) :
+    (baseLift S).obj (of a) = LambekObj.base :=
+  lift_obj_of _ _ a
 
-private theorem lift_base_doubleRightDual_ev [IsEmpty S.Coupon] (a : S.Obj) :
-    ((lift (fun _ ↦ LambekObj.base) isEmptyElim).obj ((of a)ᘁ)ᘁ).ev = -1 := by
-  rw [lift_obj_rightDual, lift_obj_rightDual, lift_obj_of,
-    LambekObj.rightDual_eq, LambekObj.rightDual_eq, LambekObj.rdual_rdual_base_ev]
+@[simp] private theorem baseLift_obj_rightDual [IsEmpty S.Coupon] (X : S.FreeRigid) :
+    (baseLift S).obj Xᘁ = LambekObj.rdual ((baseLift S).obj X) := by
+  rw [baseLift, lift_obj_rightDual, LambekObj.rightDual_eq]
 
-private theorem lift_base_doubleRightDual_od [IsEmpty S.Coupon] (a : S.Obj) :
-    ((lift (fun _ ↦ LambekObj.base) isEmptyElim).obj ((of a)ᘁ)ᘁ).od = 1 := by
-  rw [lift_obj_rightDual, lift_obj_rightDual, lift_obj_of,
-    LambekObj.rightDual_eq, LambekObj.rightDual_eq, LambekObj.rdual_rdual_base_od]
-
-private theorem lift_base_doubleLeftDual_ev [IsEmpty S.Coupon] (a : S.Obj) :
-    ((lift (fun _ ↦ LambekObj.base) isEmptyElim).obj (ᘁ(ᘁ(of a)))).ev = -1 := by
-  rw [lift_obj_leftDual, lift_obj_leftDual, lift_obj_of,
-    LambekObj.leftDual_eq, LambekObj.leftDual_eq, LambekObj.ldual_ldual_base_ev]
-
-private theorem lift_base_doubleLeftDual_od [IsEmpty S.Coupon] (a : S.Obj) :
-    ((lift (fun _ ↦ LambekObj.base) isEmptyElim).obj (ᘁ(ᘁ(of a)))).od = 1 := by
-  rw [lift_obj_leftDual, lift_obj_leftDual, lift_obj_of,
-    LambekObj.leftDual_eq, LambekObj.leftDual_eq, LambekObj.ldual_ldual_base_od]
+@[simp] private theorem baseLift_obj_leftDual [IsEmpty S.Coupon] (X : S.FreeRigid) :
+    (baseLift S).obj (ᘁX : S.FreeRigid) = LambekObj.ldual ((baseLift S).obj X) := by
+  rw [baseLift, lift_obj_leftDual, LambekObj.leftDual_eq]
 
 /-- In the free rigid category on a coupon-free duality signature, there is no morphism from a
 generating object `of a` to its double right dual `((of a)ᘁ)ᘁ`. -/
 theorem isEmpty_hom_of_doubleRightDual [IsEmpty S.Coupon] (a : S.Obj) :
     IsEmpty (of a ⟶ ((of a)ᘁ)ᘁ) :=
-  isEmpty_lift_base fun h ↦ by
+  isEmpty_baseLift fun h ↦ by
     have hev := LambekObj.ev_le_of_le h
-    rw [lift_base_of_ev, lift_base_doubleRightDual_ev] at hev
-    omega
+    simp [LambekObj.base_ev, LambekObj.rdual_rdual_base_ev] at hev
 
 /-- In the free rigid category on a coupon-free duality signature, there is no morphism from the
 double right dual `((of a)ᘁ)ᘁ` of a generating object back to `of a`. -/
 theorem isEmpty_hom_doubleRightDual_of [IsEmpty S.Coupon] (a : S.Obj) :
     IsEmpty (((of a)ᘁ)ᘁ ⟶ of a) :=
-  isEmpty_lift_base fun h ↦ by
+  isEmpty_baseLift fun h ↦ by
     have hod := LambekObj.od_le_of_le h
-    rw [lift_base_doubleRightDual_od, lift_base_of_od] at hod
-    omega
+    simp [LambekObj.base_od, LambekObj.rdual_rdual_base_od] at hod
 
 /-- In the free rigid category on a coupon-free duality signature, no generating object is
 isomorphic to its double right dual. -/
@@ -206,19 +191,17 @@ theorem isEmpty_iso_of_doubleRightDual [IsEmpty S.Coupon] (a : S.Obj) :
 generating object `of a` to its double left dual `ᘁ(ᘁ(of a))`. -/
 theorem isEmpty_hom_of_doubleLeftDual [IsEmpty S.Coupon] (a : S.Obj) :
     IsEmpty (of a ⟶ ᘁ(ᘁ(of a))) :=
-  isEmpty_lift_base fun h ↦ by
+  isEmpty_baseLift fun h ↦ by
     have hev := LambekObj.ev_le_of_le h
-    rw [lift_base_of_ev, lift_base_doubleLeftDual_ev] at hev
-    omega
+    simp [LambekObj.base_ev, LambekObj.ldual_ldual_base_ev] at hev
 
 /-- In the free rigid category on a coupon-free duality signature, there is no morphism from the
 double left dual `ᘁ(ᘁ(of a))` of a generating object back to `of a`. -/
 theorem isEmpty_hom_doubleLeftDual_of [IsEmpty S.Coupon] (a : S.Obj) :
     IsEmpty ((ᘁ(ᘁ(of a))) ⟶ of a) :=
-  isEmpty_lift_base fun h ↦ by
+  isEmpty_baseLift fun h ↦ by
     have hod := LambekObj.od_le_of_le h
-    rw [lift_base_doubleLeftDual_od, lift_base_of_od] at hod
-    omega
+    simp [LambekObj.base_od, LambekObj.ldual_ldual_base_od] at hod
 
 /-- In the free rigid category on a coupon-free duality signature, no generating object is
 isomorphic to its double left dual. -/
