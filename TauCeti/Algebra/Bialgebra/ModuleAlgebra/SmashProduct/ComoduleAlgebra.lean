@@ -77,20 +77,8 @@ attribute [local instance] Comodule.cofree
 
 /-- Right `H`-comodule structure on `A # H` obtained by transporting the cofree right `H`-comodule
 on `A ⊗[R] H` along `(linearEquivTensor μ).symm`. -/
-noncomputable instance instComodule : Comodule R H (SmashProduct μ) where
-  coact := Comodule.transportCoact (R := R) (C := H) (linearEquivTensor μ).symm
-  coassoc := by
-    rw [← Comodule.transport_coact (R := R) (C := H) (linearEquivTensor μ).symm]
-    exact (Comodule.Transport (R := R) (C := H) (linearEquivTensor μ).symm).coassoc
-  lTensor_counit_comp_coact := by
-    rw [← Comodule.transport_coact (R := R) (C := H) (linearEquivTensor μ).symm]
-    exact (Comodule.Transport (R := R) (C := H)
-      (linearEquivTensor μ).symm).lTensor_counit_comp_coact
-
-private theorem coact_def :
-    Comodule.coact (R := R) (C := H) (M := SmashProduct μ) =
-      Comodule.transportCoact (R := R) (C := H) (linearEquivTensor μ).symm :=
-  rfl
+noncomputable instance instComodule : Comodule R H (SmashProduct μ) :=
+  Comodule.Transport (R := R) (C := H) (linearEquivTensor μ).symm
 
 variable {μ}
 
@@ -99,7 +87,8 @@ theorem coact_pure (a : A) (h : H) :
     Comodule.coact (R := R) (C := H) (pure (μ := μ) a h) =
       (linearEquivTensor μ).symm.toLinearMap.rTensor H
         ((TensorProduct.assoc R A H H).symm (a ⊗ₜ[R] Coalgebra.comul (R := R) h)) := by
-  rw [coact_def, Comodule.transportCoact_apply]
+  rw [Comodule.transport_coact (R := R) (C := H) (linearEquivTensor μ).symm,
+    Comodule.transportCoact_apply]
   simp [LinearMap.rTensor_def]
 
 end CofreeTransport
@@ -119,21 +108,17 @@ theorem coact_pure_eq_sum {h : H} {ι : Type*} (r : Coalgebra.Repr R h ι) (a : 
 @[simp↓]
 theorem retractA_rTensor_coact (x : SmashProduct μ) :
     (retractA μ).rTensor H (Comodule.coact (R := R) (C := H) x) = linearEquivTensor μ x := by
-  have h : (retractA μ).rTensor H ∘ₗ Comodule.coact (R := R) (C := H) =
-      (linearEquivTensor μ).toLinearMap := by
-    refine lhom_ext fun a h => ?_
-    have hcomp : (retractA μ).rTensor H ∘ₗ (linearEquivTensor μ).symm.toLinearMap.rTensor H ∘ₗ
-        (TensorProduct.assoc R A H H).symm.toLinearMap ∘ₗ
-          TensorProduct.mk R A (H ⊗[R] H) a =
-        TensorProduct.map (LinearMap.toSpanSingleton R A a) LinearMap.id ∘ₗ
-          Coalgebra.counit.rTensor H := by
-      ext x y
-      simp
-    rw [LinearMap.comp_apply, coact_pure]
-    refine (LinearMap.congr_fun hcomp (Coalgebra.comul (R := R) h)).trans ?_
-    rw [LinearMap.comp_apply, Coalgebra.rTensor_counit_comul]
-    simp
-  exact LinearMap.congr_fun h x
+  let _ := Comodule.cofree R H A
+  have hretract :
+      retractA μ = (Comodule.cofreeCounit R H A).comp (linearEquivTensor μ).toLinearMap :=
+    lhom_ext fun a h => by simp
+  rw [hretract, Comodule.transport_coact (R := R) (C := H) (linearEquivTensor μ).symm,
+    Comodule.transportCoact_apply, ← LinearMap.rTensor_def, LinearMap.rTensor_comp_apply,
+    ← LinearMap.comp_apply ((linearEquivTensor μ).toLinearMap.rTensor H), ← LinearMap.rTensor_comp]
+  simp only [LinearEquiv.comp_symm, LinearMap.rTensor_id, LinearMap.id_apply,
+    LinearEquiv.symm_symm]
+  exact LinearMap.congr_fun Comodule.rTensor_cofreeCounit_comp_cofreeCoact
+    (linearEquivTensor μ x)
 
 private noncomputable def coactIncludeA (μ : LeftModuleAlgebra R H A) :
     A →ₐ[R] SmashProduct μ ⊗[R] H :=
@@ -153,8 +138,8 @@ private noncomputable def coactLift (μ : LeftModuleAlgebra R H A) :
 
 private theorem coactLift_pure (μ : LeftModuleAlgebra R H A) (a : A) (h : H) :
     coactLift μ (pure a h) = Comodule.coact (R := R) (C := H) (pure (μ := μ) a h) := by
-  simp [coactLift, coactIncludeA, coactIncludeH, ← (ℛ R h).eq, Finset.mul_sum,
-    coact_pure_eq_sum (ℛ R h)]
+  rw [coact_pure_eq_sum (ℛ R h)]
+  simp [coactLift, coactIncludeA, coactIncludeH, ← (ℛ R h).eq, Finset.mul_sum]
 
 private theorem toLinearMap_coactLift (μ : LeftModuleAlgebra R H A) :
     (coactLift μ).toLinearMap = Comodule.coact (R := R) (C := H) (M := SmashProduct μ) :=
@@ -189,14 +174,14 @@ theorem coact_one_pure (h : H) :
 @[simp↓]
 theorem coact_includeA (a : A) :
     Comodule.coact (R := R) (C := H) (includeA (μ := μ) a) = includeA a ⊗ₜ[R] 1 := by
-  simp [includeA_eq_pure]
+  rw [includeA_eq_pure, coact_pure_one, ← includeA_eq_pure]
 
 @[simp↓]
 theorem coact_includeH (h : H) :
     Comodule.coact (R := R) (C := H) (includeH (μ := μ) h) =
       Algebra.TensorProduct.map (includeH (μ := μ)) (AlgHom.id R H)
         (Coalgebra.comul (R := R) h) := by
-  simp [includeH_eq_pure]
+  rw [includeH_eq_pure, coact_one_pure]
 
 @[simp]
 theorem coactAlgHom_comp_includeA (μ : LeftModuleAlgebra R H A) :
