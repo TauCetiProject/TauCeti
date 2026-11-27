@@ -106,8 +106,9 @@ private theorem pairedFrequencyCoupling_compLpL_apply (ξ : ℂ)
     ext1 u
     simp [pairedFrequencyCoupling_apply, J]
   rw [h, ContinuousLinearMap.add_compLpL, ContinuousLinearMap.smul_compLpL,
-    ContinuousLinearMap.smul_compLpL, ContinuousLinearMap.id_compLpL]
-  rfl
+    ContinuousLinearMap.smul_compLpL, ContinuousLinearMap.id_compLpL,
+    add_apply, smul_apply, smul_apply, ContinuousLinearMap.id_apply,
+    ContinuousLinearMap.compLpL_apply]
 
 /-- On `L²`, the paired coupling at `ξ⁻¹` inverts the paired coupling at `ξ ≠ 0`. -/
 private theorem pairedFrequencyCoupling_inv_compLpL_apply {ξ : ℂ} (hξ : ξ ≠ 0)
