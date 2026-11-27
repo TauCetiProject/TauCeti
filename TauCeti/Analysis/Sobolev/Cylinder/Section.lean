@@ -35,8 +35,8 @@ everywhere, with the weak derivatives `ξ_s`, `ξ_t` of `ξ`. The section is rel
 smooth `ξ` with `b = ∂t w` (`TauCeti.CylinderSobolev.quasilinearSection_toW1p_ae`), where this
 equation reads `F(w + ξ) = F(w)`. When moreover `b = ∂t w` and `F(w) = 0`, the pointwise formula
 shows that a zero satisfies `F(u) = 0` almost everywhere for `u = w + ξ`, with the weak derivatives
-of `ξ`; for `p < ∞` and periodic `w`, `A`, `G` of class `C^ℓ`, with `A(z, u z)² = -1`, elliptic
-regularity then makes `u` of class `C^ℓ`
+of `ξ`; for finite-dimensional `V`, `p < ∞`, `ℓ ≥ 1` and periodic `w`, `A`, `G` of class `C^ℓ`,
+with `A(z, u z)² = -1`, elliptic regularity then makes `u` of class `C^ℓ`
 (`TauCeti.CylinderSobolev.contDiff_add_continuousValue_of_ae_eq_zero`). For a reference map with
 `F(w)` in `Lᵖ`, such as a pre-glued map, the section plus the constant `F(w)` agrees with
 `ξ ↦ F(w + ξ)` on such smooth `ξ`, an affine shift with the same derivative.
