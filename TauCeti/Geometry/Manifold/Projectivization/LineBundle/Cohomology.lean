@@ -9,13 +9,14 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Normalize
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Sphere.Twist
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LineBundle.Cech
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Projectivization
-public import TauCeti.Geometry.Manifold.Projectivization.LineBundle
+public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum.Cohomology
+public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 import TauCeti.Topology.Separation.Hausdorff
 import TauCeti.Topology.Sheaves.Cech.Functoriality
 
 /-!
-# The first cohomology of `𝒪(k)` on the complex projective line
+# The first cohomology of `𝒪(k)`, of split bundles and of `ℓ* TℂPⁿ` on the projective line
 
 This file proves that the first Čech cohomology of the sheaf of holomorphic sections of the line
 bundle `𝒪(k)` (`Projectivization.twistCore k`) on the complex projective line
@@ -44,6 +45,20 @@ degree `k`.
 The argument uses no Serre duality: it computes `H¹(ℂℙ¹, 𝒪(k))` from the divisor sheaves of the
 Riemann sphere, whose first cohomology vanishes in degree at least `-1`.
 
+**Split bundles.** The Čech cohomology of the split bundle `⨁ₗ 𝒪(k l)`
+(`Projectivization.twistSumCore k`) is the biproduct of the cohomologies of its summands
+(`Projectivization.twistSumCoreCechCohomologyIso`, in
+`TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum.Cohomology`). On `ℂℙ¹` this gives
+`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.
+
+**The tangent bundle along a line.** The pullback `ℓ* TℂPᵐ⁺¹` of the tangent bundle along the
+coordinate line `ℓ` is biholomorphic to `𝒪(2) ⊕ 𝒪(1)ᵐ`
+(`Projectivization.coordLineTangentDiffeomorph`), so its sheaf of holomorphic sections, and hence
+its Čech cohomology, is that of `𝒪(2) ⊕ 𝒪(1)ᵐ`. Therefore `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`
+(`Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`). For the
+coordinate line, this is the vanishing of `H¹(C, u* TℂPⁿ)` on the line component of a stable map
+of degree one that Fulton–Pandharipande, Lemma 10, use for the regularity of lines.
+
 ## Main declarations
 
 * `Projectivization.projectiveLineToSphere`: the identification of `ℂℙ¹` with the Riemann sphere,
@@ -57,6 +72,12 @@ Riemann sphere, whose first cohomology vanishes in degree at least `-1`.
   and its inverse by `Projectivization.inv_twistCoreDivisorHom_app_apply`.
 * `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le`:
   `H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`.
+* `Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`:
+  `H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.
+* `Projectivization.coordLineTangentCechCohomologyIso`:
+  `Hᵖ(ℂℙ¹, ℓ* TℂPᵐ⁺¹) ≅ Hᵖ(ℂℙ¹, 𝒪(2) ⊕ 𝒪(1)ᵐ)`.
+* `Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`:
+  `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`.
 
 ## References
 
@@ -740,5 +761,91 @@ theorem isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le (hk 
   exact (isZero_divisorCechCohomology_one_sphere_of_neg_one_le_degree hdeg).of_epi
     (TopCat.Hom.cechCohomologyPullback projectiveLineToSphere 1 (twistCoreDivisorHom k))
 
+end Projectivization
+
+/-! ### Split bundles -/
+
+namespace Projectivization
+
+variable {κ : Type} [Fintype κ] (k : κ → ℤ)
+
+/-- **`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.** The first Čech cohomology of the sheaf
+of holomorphic sections of a split bundle on the complex projective line vanishes when all its
+twists are at least `-1`. -/
+theorem isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le
+    (hk : ∀ l, -1 ≤ k l) :
+    IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (κ → ℂ)
+      (twistSumCore (𝕜 := ℂ) (n := 1) k).Fiber 1) :=
+  isZero_holomorphicSectionCechCohomology_twistSumCore k fun l ↦
+    isZero_holomorphicSectionCechCohomology_one_twistCore_of_neg_one_le (k l) (hk l)
+
+/-! ### The tangent bundle along the coordinate line -/
+
+variable (m : ℕ)
+
+/-- The sheaf of holomorphic sections of the pullback `ℓ* TℂPᵐ⁺¹` of the tangent bundle along the
+coordinate line `ℓ` is isomorphic to that of `𝒪(2) ⊕ 𝒪(1)ᵐ`, by the biholomorphism of total
+spaces `Projectivization.coordLineTangentDiffeomorph`. -/
+def coordLineTangentSectionIso :
+    holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ) (CoordLineTangentSpace ℂ m) ≅
+      holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+        (twistSumCore (𝕜 := ℂ) (n := 1) (lineTwist m)).Fiber :=
+  holomorphicSectionSheaf.isoOfLinearEquiv (fun x ↦ (coordLineTangentEquiv x).toLinearEquiv)
+    contMDiff_coordLineTangentEquiv <|
+      (coordLineTangentDiffeomorph ω).symm.contMDiff.congr fun q ↦
+        (coordLineTangentDiffeomorph_symm_apply ω q).symm
+
+/-- The isomorphism `Projectivization.coordLineTangentSectionIso` applies the fibrewise
+isomorphism `T_{ℓ x}ℂPᵐ⁺¹ ≃ (𝒪(2) ⊕ 𝒪(1)ᵐ)ₓ` to a section. -/
+@[simp]
+theorem coordLineTangentSectionIso_hom_app_apply {U : (Opens (TopCat.of (ℙ ℂ (Fin 2 → ℂ))))ᵒᵖ}
+    (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+      (CoordLineTangentSpace ℂ m)).obj.obj U) (x : ↥(unop U)) :
+    (coordLineTangentSectionIso m).hom.hom.app U s x = coordLineTangentEquiv (x : ℙ ℂ _) (s x) :=
+  holomorphicSectionSheaf.isoOfLinearEquiv_hom_app_apply _ _ _ s x
+
+/-- The inverse of `Projectivization.coordLineTangentSectionIso` applies the inverse fibrewise
+isomorphism `(𝒪(2) ⊕ 𝒪(1)ᵐ)ₓ ≃ T_{ℓ x}ℂPᵐ⁺¹` to a section. -/
+@[simp]
+theorem coordLineTangentSectionIso_inv_app_apply {U : (Opens (TopCat.of (ℙ ℂ (Fin 2 → ℂ))))ᵒᵖ}
+    (s : (holomorphicSectionSheaf 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+      (twistSumCore (𝕜 := ℂ) (n := 1) (lineTwist m)).Fiber).obj.obj U) (x : ↥(unop U)) :
+    (coordLineTangentSectionIso m).inv.hom.app U s x =
+      (coordLineTangentEquiv (x : ℙ ℂ _)).symm (s x) :=
+  holomorphicSectionSheaf.isoOfLinearEquiv_inv_app_apply _ _ _ s x
+
+/-- **`Hᵖ(ℂℙ¹, ℓ* TℂPᵐ⁺¹) ≅ Hᵖ(ℂℙ¹, 𝒪(2) ⊕ 𝒪(1)ᵐ)`.** The Čech cohomology of the pullback of
+the tangent bundle of `ℂℙᵐ⁺¹` along the coordinate line `ℓ` is that of the split bundle
+`𝒪(2) ⊕ 𝒪(1)ᵐ`, in every degree: the image of `Projectivization.coordLineTangentSectionIso`. -/
+def coordLineTangentCechCohomologyIso (p : ℕ) :
+    holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+        (CoordLineTangentSpace ℂ m) p ≅
+      holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+        (twistSumCore (𝕜 := ℂ) (n := 1) (lineTwist m)).Fiber p :=
+  (Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) p).mapIso
+    ((sheafToPresheaf _ _).mapIso (coordLineTangentSectionIso m))
+
+@[simp]
+theorem coordLineTangentCechCohomologyIso_hom (p : ℕ) :
+    (coordLineTangentCechCohomologyIso m p).hom =
+      (Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) p).map
+        (coordLineTangentSectionIso m).hom.hom :=
+  (rfl)
+
+@[simp]
+theorem coordLineTangentCechCohomologyIso_inv (p : ℕ) :
+    (coordLineTangentCechCohomologyIso m p).inv =
+      (Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) p).map
+        (coordLineTangentSectionIso m).inv.hom :=
+  (rfl)
+
+/-- **`H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`.** The first Čech cohomology of the sheaf of holomorphic sections
+of the pullback of the tangent bundle of `ℂℙᵐ⁺¹` along the coordinate line `ℓ` vanishes, since
+`ℓ* TℂPᵐ⁺¹ ≅ 𝒪(2) ⊕ 𝒪(1)ᵐ` and `H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`. -/
+theorem isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace :
+    IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+      (CoordLineTangentSpace ℂ m) 1) :=
+  (isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le (lineTwist m)
+    fun l ↦ l.cases (by simp) fun l ↦ by simp).of_iso (coordLineTangentCechCohomologyIso m 1)
 
 end Projectivization
