@@ -53,7 +53,9 @@ The proof has two inputs, and neither suffices alone.
   `NumberField.Set.isUpperDirichletDensityBound_iff_eventually_div_log_one_div_sub_one_lt`: the
   same comparison for one-sided Dirichlet-density bounds.
 * `NumberField.Set.ofReal_primeIdealZetaSum`: `P_S(t)`, cast to `ℂ`, is the complex sum over all
-  primes of the indicator of `S` against `N(𝔭) ^ (-t)`.
+  primes of the indicator of `S` against `N(𝔭) ^ (-t)`, and
+  `NumberField.Set.hasSum_indicator_one_div_absNorm_cpow`: this complex series converges for
+  `t > 1`.
 
 ## References
 
@@ -289,5 +291,24 @@ theorem ofReal_primeIdealZetaSum (S : Set (HeightOneSpectrum (𝓞 K))) (t : ℝ
   refine tsum_congr fun P ↦ ?_
   by_cases h : P ∈ S <;>
     simp [h, Real.rpow_neg (Nat.cast_nonneg _), Complex.ofReal_cpow (Nat.cast_nonneg _)]
+
+/-- **The prime-ideal zeta sum as a convergent complex series.** For real `t > 1`, the series over
+all height-one primes of the indicator of `S` divided by `N(𝔭) ^ t` converges to `P_S(t)`, cast
+to `ℂ`. -/
+theorem hasSum_indicator_one_div_absNorm_cpow (S : Set (HeightOneSpectrum (𝓞 K))) {t : ℝ}
+    (ht : 1 < t) :
+    HasSum (fun P : HeightOneSpectrum (𝓞 K) ↦
+        S.indicator 1 P / (Ideal.absNorm P.asIdeal : ℂ) ^ (t : ℂ))
+      (S.primeIdealZetaSum t : ℂ) := by
+  have hfun : (fun P : HeightOneSpectrum (𝓞 K) ↦
+      S.indicator 1 P / (Ideal.absNorm P.asIdeal : ℂ) ^ (t : ℂ)) =
+      fun P ↦ ((S.indicator (fun P ↦ (Ideal.absNorm P.asIdeal : ℝ) ^ (-t)) P : ℝ) : ℂ) := by
+    funext P
+    by_cases h : P ∈ S <;>
+      simp [h, Real.rpow_neg (Nat.cast_nonneg _), Complex.ofReal_cpow (Nat.cast_nonneg _)]
+  rw [hfun, Set.primeIdealZetaSum_def,
+    tsum_subtype S fun P ↦ (Ideal.absNorm P.asIdeal : ℝ) ^ (-t)]
+  exact Complex.hasSum_ofReal.mpr
+    ((summable_absNorm_rpow_primes_of_one_lt ht).indicator S).hasSum
 
 end NumberField.Set

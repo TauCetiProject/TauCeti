@@ -386,6 +386,21 @@ theorem lieSmoothVectorsDerivative_smul (c : ℝ) (X : LeftInvariantDerivation I
 
 end LieHom
 
+section CommRing
+
+variable {S : Type*} [CommRing S] [Module S V] [Algebra ℝ S] [IsScalarTower ℝ S V]
+  [ContinuousConstSMul S V] {ρ : ContRepresentation S G V}
+
+/-- The derived endomorphism of a real combination `∑ i, c i • X i` is the `S`-combination
+`∑ i, c i • dρ(X_i)` of the derived endomorphisms. -/
+theorem lieSmoothVectorsDerivative_sum_smul {ι : Type*} [Fintype ι]
+    (X : ι → LeftInvariantDerivation I G) (c : ι → ℝ) :
+    lieSmoothVectorsDerivative I ρ (∑ i, c i • X i) =
+      ∑ i, algebraMap ℝ S (c i) • lieSmoothVectorsDerivative I ρ (X i) := by
+  simp [lieSmoothVectorsDerivative_sum, lieSmoothVectorsDerivative_smul, algebraMap_smul]
+
+end CommRing
+
 end Derivative
 
 end ContRepresentation

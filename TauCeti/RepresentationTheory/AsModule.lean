@@ -33,6 +33,11 @@ representation with projective group-algebra module is a retract of Mathlib's fr
   `Representation.IntertwiningMap.equivLinearMapAsModule_symm_apply`: evaluation of the two
   identifications Mathlib leaves definitional, of `ρ.asModule` with `V` and of the intertwining
   map attached to a `k[G]`-linear map.
+* An instance `Module.Free k ρ.asModule` for a representation on a free `k`-module, next to
+  Mathlib's `Module.Finite` one.
+* `Representation.isNoetherian_asModule`, `Representation.isArtinian_asModule`: the
+  `k[G]`-module of a representation on a Noetherian (Artinian) `k`-module is Noetherian (Artinian),
+  so the `k[G]`-module of a finite-dimensional representation over a field has finite length.
 * `Representation.IntertwiningMap.equivLinearMapAsModule_surjective_iff`: an intertwining map
   is surjective exactly when its attached `k[G]`-linear map is.
 * `Representation.finrank_moduleCat_asModule`: bundling the attached module and restricting
@@ -130,11 +135,26 @@ theorem _root_.Representation.asModuleEquiv_symm_apply (x : V) :
     ρ.asModuleEquiv.symm x = x :=
   (rfl)
 
+/-- The `k[G]`-module of a representation on a free `k`-module is free over `k`, being `V` itself
+(`Representation.asModuleEquiv`). This complements Mathlib's instance for `Module.Finite`. -/
+instance [Module.Free k V] : Module.Free k ρ.asModule :=
+  .of_equiv ρ.asModuleEquiv.symm
+
 end Semiring
 
 variable {k G V W : Type*} [CommSemiring k] [Monoid G]
 variable [AddCommMonoid V] [Module k V] [AddCommMonoid W] [Module k W]
 variable {ρ : _root_.Representation k G V} {σ : _root_.Representation k G W}
+
+/-- The `k[G]`-module of a representation on a Noetherian `k`-module is Noetherian. -/
+instance _root_.Representation.isNoetherian_asModule [IsNoetherian k V] :
+    IsNoetherian k[G] ρ.asModule :=
+  isNoetherian_of_tower k (isNoetherian_of_linearEquiv ρ.asModuleEquiv.symm)
+
+/-- The `k[G]`-module of a representation on an Artinian `k`-module is Artinian. -/
+instance _root_.Representation.isArtinian_asModule [IsArtinian k V] :
+    IsArtinian k[G] ρ.asModule :=
+  isArtinian_of_tower k (isArtinian_of_linearEquiv ρ.asModuleEquiv.symm)
 
 /-- **Evaluation of the intertwining map attached to a `k[G]`-linear map.** This is the inverse
 direction of `Representation.IntertwiningMap.equivLinearMapAsModule_apply`, with the changes of

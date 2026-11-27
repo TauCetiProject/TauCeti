@@ -96,12 +96,12 @@ theorem jet_sliceAverage (hξ : ξ ∈ testSection V) (z : ℝ × ℝ) :
 
 /-- The `L²` slice average of the jet of a test section is the jet of its slice average. -/
 theorem sliceAverageLp_jetLp (ξ : testSection V) :
-    sliceAverageLp (jetLp (testSection V) ξ) =
-      jetLp (testSection V) ⟨sliceAverage ξ, sliceAverage_mem_testSection ξ.property⟩ := by
+    sliceAverageLp (jetLp 2 (testSection V) ξ) =
+      jetLp 2 (testSection V) ⟨sliceAverage ξ, sliceAverage_mem_testSection ξ.property⟩ := by
   refine Lp.ext ?_
-  filter_upwards [coeFn_sliceAverageLp (jetLp (testSection V) ξ),
-    sliceAverage_congr_ae (coeFn_jetLp ξ),
-    coeFn_jetLp (⟨sliceAverage ξ, sliceAverage_mem_testSection ξ.property⟩ : testSection V)]
+  filter_upwards [coeFn_sliceAverageLp (jetLp 2 (testSection V) ξ),
+    sliceAverage_congr_ae (coeFn_jetLp 2 ξ),
+    coeFn_jetLp 2 (⟨sliceAverage ξ, sliceAverage_mem_testSection ξ.property⟩ : testSection V)]
     with z h₁ h₂ h₃
   rw [h₁, h₂, h₃, jet_sliceAverage ξ.property]
 
@@ -109,7 +109,7 @@ theorem sliceAverageLp_jetLp (ξ : testSection V) :
 theorem sliceAverageLp_mem_H1 {x : Lp (V × V × V) 2 stripMeasure} (hx : x ∈ H1 V) :
     sliceAverageLp x ∈ H1 V := by
   have hsub : (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) ⊆ sliceAverageLp ⁻¹' (H1 V) :=
-    jetClosure_subset_of_isClosed ((isClosed_jetClosure _).preimage sliceAverageLp.continuous)
+    jetClosure_subset_of_isClosed ((isClosed_jetClosure 2 _).preimage sliceAverageLp.continuous)
       (by
         rintro _ ⟨ξ, rfl⟩
         simp only [mem_preimage, SetLike.mem_coe, sliceAverageLp_jetLp]
@@ -140,14 +140,14 @@ theorem norm_sliceAverageL_le (x : H1 V) : ‖sliceAverageL x‖ ≤ ‖x‖ := 
 
 /-- The slice average on `H1` maps the jet of a test section to the jet of its slice average. -/
 theorem sliceAverageL_jetLp (ξ : testSection V) :
-    sliceAverageL ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ =
-      ⟨jetLp (testSection V) ⟨sliceAverage ξ, sliceAverage_mem_testSection ξ.property⟩,
+    sliceAverageL ⟨jetLp 2 (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ =
+      ⟨jetLp 2 (testSection V) ⟨sliceAverage ξ, sliceAverage_mem_testSection ξ.property⟩,
         jetLp_mem_jetClosure _⟩ :=
   Subtype.ext (sliceAverageLp_jetLp ξ)
 
 /-- The value of the slice average of an element of `H1` is the slice average of its value. -/
 theorem valueL_sliceAverageL (x : H1 V) :
-    valueL (sliceAverageL x) = sliceAverageLp (valueL x) := by
+    valueL 2 (sliceAverageL x) = sliceAverageLp (valueL 2 x) := by
   rw [valueL_eq_compLpL, valueL_eq_compLpL, coe_sliceAverageL, sliceAverageLp_compLpL]
 
 end TauCeti.CylinderSobolev

@@ -46,7 +46,8 @@ sides to differ, as they do for the weights and coweights of a root pairing.
 * `LinearMap.tensorProduct_mk_injective_of_injective`: for a faithful algebra `S`, the map
   `m ↦ 1 ⊗ m` is injective on the nondegenerate side of a pairing.
 * `LinearMap.isPerfPair_baseChangePairing`: the extension of a perfect pairing with a finite free
-  side is perfect.
+  side is perfect; for a bilinear form this is the instance
+  `LinearMap.BilinForm.isPerfPair_baseChange`.
 -/
 
 public section
@@ -120,5 +121,11 @@ theorem BilinForm.baseChange_eq_baseChangePairing (B : LinearMap.BilinForm R M) 
   refine TensorProduct.AlgebraTensorModule.ext fun a m ↦ ?_
   refine TensorProduct.AlgebraTensorModule.ext fun b n ↦ ?_
   simp [Algebra.smul_def, mul_comm]
+
+/-- **Extension of scalars preserves perfect bilinear forms** on a finite free module. -/
+instance BilinForm.isPerfPair_baseChange (B : LinearMap.BilinForm R M) [B.IsPerfPair] [Free R M]
+    [Module.Finite R M] : (B.baseChange S).IsPerfPair := by
+  rw [BilinForm.baseChange_eq_baseChangePairing]
+  infer_instance
 
 end LinearMap

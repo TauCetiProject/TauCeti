@@ -49,17 +49,22 @@ hold in the degenerate cases only through those conventions.
 * `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: its case `s = 1`,
   `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)` for `t ≥ 0`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
+* `TauCeti.differentiableAt_heatKernel_uncurry`: joint differentiability in time and space for
+  `t > 0`.
 * `TauCeti.hasGradientAt_heatKernel`: the gradient of `K_t` at `x` is `-(2t)⁻¹ K_t(x) x`.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
 * `TauCeti.memLp_heatKernel`: for `t > 0`, `K_t` belongs to every `Lᵠ`, `0 ≤ q ≤ ∞`.
 * `TauCeti.laplacian_heatKernel`: `Δ K_t(x) = (‖x‖² / (4t²) - n / (2t)) K_t(x)`.
+* `TauCeti.fderiv_heatKernel_apply_self`: the radial derivative in terms of the kernel and its
+  Laplacian, `D K_t(x) x = -n K_t(x) - 2t Δ K_t(x)`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
 * `TauCeti.fourier_heatKernel`: `𝓕 K_t(ξ) = exp(-4π² t ‖ξ‖²)`.
-* `TauCeti.heatKernel_convolution_cexp_inner`, `TauCeti.heatKernel_convolution_sin_inner`: the
-  plane waves are eigenfunctions of the heat flow,
-  `K_t ⋆ exp (i ⟪ξ, ·⟫) = exp (-t ‖ξ‖²) exp (i ⟪ξ, ·⟫)`, and likewise for `sin ⟪ξ, ·⟫`.
+* `TauCeti.heatKernel_convolution_cexp_inner`, `TauCeti.heatKernel_convolution_sin_inner`,
+  `TauCeti.heatKernel_convolution_cos_inner`: the plane waves are eigenfunctions of the heat flow,
+  `K_t ⋆ exp (i ⟪ξ, ·⟫) = exp (-t ‖ξ‖²) exp (i ⟪ξ, ·⟫)`, and likewise for `sin ⟪ξ, ·⟫` and
+  `cos ⟪ξ, ·⟫`.
 * `TauCeti.fourierInv_exp_neg_mul_norm_sq`: the inverse Fourier transform of `exp(-4π² t ‖ξ‖²)`
   is `K_t`.
 * `TauCeti.fourier_heatKernel_convolution`: `𝓕 (K_t ⋆ f)(ξ) = exp(-4π² t ‖ξ‖²) • 𝓕 f(ξ)` for
@@ -151,6 +156,18 @@ theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 ≤ t) (x : E) :
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
   contDiff_const.mul (((contDiff_norm_sq ℝ).neg.div_const _).exp)
 
+/-- The heat kernel is jointly differentiable in time and space at every positive time. -/
+theorem differentiableAt_heatKernel_uncurry {p : ℝ × E} (hp : 0 < p.1) :
+    DifferentiableAt ℝ (fun q : ℝ × E ↦ heatKernel q.1 q.2) p := by
+  simp only [heatKernel_apply]
+  have hscale : DifferentiableAt ℝ (fun q : ℝ × E ↦ 4 * π * q.1) p := by fun_prop
+  have htime : DifferentiableAt ℝ (fun q : ℝ × E ↦ 4 * q.1) p := by fun_prop
+  have hradial : DifferentiableAt ℝ (fun q : ℝ × E ↦ -‖q.2‖ ^ 2 / (4 * q.1)) p := by
+    simp only [div_eq_mul_inv]
+    exact ((differentiableAt_snd (𝕜 := ℝ) (p := p)).norm_sq ℝ).neg.fun_mul
+      (htime.inv (by positivity))
+  exact (hscale.rpow_const (Or.inl (by positivity))).fun_mul hradial.exp
+
 /-- The gradient of the heat kernel: `∇ K_t(x) = -(2t)⁻¹ K_t(x) x`. The formula holds for every `t`
 (at `t = 0` both sides vanish through Mathlib's conventions for division by zero). -/
 theorem hasGradientAt_heatKernel [CompleteSpace E] (t : ℝ) (x : E) :
@@ -193,6 +210,22 @@ theorem laplacian_heatKernel (t : ℝ) (x : E) :
   have hρc : ContDiff ℝ 2 ρ := contDiff_const.mul ((contDiff_id.neg.div_const _).exp)
   rw [hK, hρc.contDiffAt.laplacian_comp_norm_sq, hddρ, hdρ]
   ring
+
+/-- The derivative of the heat kernel in the radial direction is determined by its value and
+Laplacian. -/
+theorem fderiv_heatKernel_apply_self (t : ℝ) (x : E) :
+    fderiv ℝ (heatKernel t) x x = -(Module.finrank ℝ E * heatKernel t x) -
+      2 * t * Δ (heatKernel t : E → ℝ) x := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · rw [(hasGradientAt_heatKernel 0 x).hasFDerivAt.fderiv]
+    by_cases h : Module.finrank ℝ E = 0
+    · simp [h]
+    · have hd : (Module.finrank ℝ E : ℝ) ≠ 0 := by exact_mod_cast h
+      simp [heatKernel_apply, Real.zero_rpow (div_ne_zero (neg_ne_zero.mpr hd) two_ne_zero)]
+  · simp only [(hasGradientAt_heatKernel t x).hasFDerivAt.fderiv, toDual_apply_apply,
+      real_inner_smul_left, real_inner_self_eq_norm_sq, laplacian_heatKernel]
+    field_simp [ht]
+    ring
 
 /-- **The heat equation.** For `t > 0`, the heat kernel solves `∂ₜ K_t(x) = Δ K_t(x)`. -/
 theorem hasDerivAt_heatKernel {t : ℝ} (ht : 0 < t) (x : E) :
@@ -398,22 +431,36 @@ theorem heatKernel_convolution_cexp_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
   field_simp
   simp [mul_assoc, ← Complex.exp_add]
 
-/-- **The heat flow of a sine wave.** For `t > 0` and `ξ ∈ E`,
-`K_t ⋆ sin ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) sin ⟪ξ, ·⟫`. -/
-theorem heatKernel_convolution_sin_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
-    (heatKernel t ⋆ fun y ↦ sin ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * sin ⟪ξ, x⟫ := by
+/-- **Real parts of the complex plane-wave identity.** If a real-linear functional `L` sends
+`exp (i a)` to `φ a` for every `a`, then `K_t ⋆ φ ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) φ ⟪ξ, ·⟫`: apply `L` to
+`TauCeti.heatKernel_convolution_cexp_inner`. With `L = Im` and `L = Re` this gives the sine and
+cosine plane waves. -/
+private theorem heatKernel_convolution_comp_inner_of_clm {t : ℝ} (ht : 0 < t) (ξ x : E)
+    (L : ℂ →L[ℝ] ℝ) {φ : ℝ → ℝ} (hφ : ∀ a : ℝ, L (Complex.exp (a * Complex.I)) = φ a) :
+    (heatKernel t ⋆ fun y ↦ φ ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * φ ⟪ξ, x⟫ := by
   have hint : Integrable fun y ↦ heatKernel t y • Complex.exp (⟪ξ, x - y⟫ * Complex.I) :=
     (integrable_heatKernel ht).smul_of_top_left (memLp_top_of_bound
       (by fun_prop : Continuous fun y ↦ Complex.exp (⟪ξ, x - y⟫ * Complex.I)).aestronglyMeasurable
       1 (ae_of_all _ fun y ↦ by rw [Complex.norm_exp_ofReal_mul_I]))
-  -- The imaginary part of `r • exp (i a)` is `r sin a`.
-  have him (r a : ℝ) : (r • Complex.exp (a * Complex.I)).im = r * sin a := by
-    rw [Complex.real_smul, Complex.im_ofReal_mul, Complex.exp_ofReal_mul_I_im]
-  have h := congrArg Complex.im (heatKernel_convolution_cexp_inner ht ξ x)
-  rw [convolution_lsmul, ← RCLike.im_to_complex, ← integral_im hint] at h
-  simp only [RCLike.im_to_complex, him] at h
+  have h := congrArg L (heatKernel_convolution_cexp_inner ht ξ x)
+  rw [convolution_lsmul, ← L.integral_comp_comm hint] at h
+  simp only [map_smul, hφ, smul_eq_mul] at h
   rw [convolution_lsmul, ← h]
   simp only [smul_eq_mul]
+
+/-- **The heat flow of a sine wave.** For `t > 0` and `ξ ∈ E`,
+`K_t ⋆ sin ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) sin ⟪ξ, ·⟫`. -/
+theorem heatKernel_convolution_sin_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
+    (heatKernel t ⋆ fun y ↦ sin ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * sin ⟪ξ, x⟫ :=
+  heatKernel_convolution_comp_inner_of_clm ht ξ x Complex.imCLM fun a ↦ by
+    rw [Complex.imCLM_apply, Complex.exp_ofReal_mul_I_im]
+
+/-- **The cosine plane waves are eigenfunctions of the heat flow.** For `t > 0` and `ξ ∈ E`,
+`K_t ⋆ cos ⟪ξ, ·⟫ = exp (-t ‖ξ‖²) cos ⟪ξ, ·⟫`. -/
+theorem heatKernel_convolution_cos_inner {t : ℝ} (ht : 0 < t) (ξ x : E) :
+    (heatKernel t ⋆ fun y ↦ cos ⟪ξ, y⟫) x = exp (-(t * ‖ξ‖ ^ 2)) * cos ⟪ξ, x⟫ :=
+  heatKernel_convolution_comp_inner_of_clm ht ξ x Complex.reCLM fun a ↦ by
+    rw [Complex.reCLM_apply, Complex.exp_ofReal_mul_I_re]
 
 /-- **The heat kernel is the inverse Fourier transform of the heat symbol.** For `t > 0`,
 `𝓕⁻ (ξ ↦ exp(-4π² t ‖ξ‖²)) = K_t`. This is Fourier inversion applied to

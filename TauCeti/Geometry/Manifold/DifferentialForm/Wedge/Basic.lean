@@ -257,6 +257,16 @@ theorem wedgeWith_apply (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
             (ψ x (fun j ↦ v (σ (Fin.natAdd k j)))) :=
   bundleWedgeWith_apply _ _ φ ψ x v
 
+/-- Pairing a degree-zero rough form with a rough form pairs the function value with the form's
+value. -/
+@[simp]
+theorem wedgeWith_apply_zero_left (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+    (φ : RoughForm I M F₁ 0) (ψ : RoughForm I M F₂ l)
+    (x : M) (v : Fin (0 + l) → TangentSpace I x) :
+    φ.wedgeWith μ ψ x v = μ (φ x 0) (ψ x (v ∘ Fin.cast (Nat.zero_add l).symm)) := by
+  rw [wedgeWith_apply']
+  exact ContinuousAlternatingMap.pairedWedge_apply_zero_left μ μ.continuous₂ _ _ v
+
 /-- Pairing a rough form with a degree-zero form pairs its value with the function value. -/
 @[simp]
 theorem wedgeWith_apply_zero_right (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)

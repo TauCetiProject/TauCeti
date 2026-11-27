@@ -9,8 +9,8 @@ public import TauCeti.Algebra.Category.FGModuleCat.Generator.Basic
 public import TauCeti.RingTheory.Morita.Progenerator
 
 import TauCeti.Algebra.Category.FGModuleCat.Generator.Endomorphism
-import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.Algebra.Category.ModuleCat.Injective.AdditiveClosure
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 
 /-!
 # The Morita-Tachikawa correspondence: injectivity on marked pairs
@@ -31,7 +31,7 @@ Write `Γ = Module.End A M`, acting on `M` by evaluation. The proof recovers `A`
    injective, with `A' ≅ Module.End Γ Y`.
 3. Over `Γ`, the finitely generated projective-injective modules are the retracts of finite powers
    of `M` (`TauCeti.exists_comp_eq_id_pi_of_projective_of_injective`). The same holds for `Y`
-   (`TauCeti.exists_comp_eq_id_pi_restrictScalars`), so each of `M` and `Y` is a retract of a
+   (`RingHom.exists_comp_eq_id_pi_restrictScalars`), so each of `M` and `Y` is a retract of a
    finite power of the other.
 4. Two modules `X` and `Y` with this property have Morita equivalent endomorphism rings, by an
    equivalence carrying `X` to `Y` (`TauCeti.exists_moritaEquivalence_moduleEnd_of_comp_eq_id`).
@@ -96,40 +96,35 @@ theorem exists_moritaEquivalence_functor_obj_iso_of_algEquiv_end
   have : Module.IsGenerator A' M'.obj := FGModuleCat.isGenerator_of_isSeparator hs'
   have := hc.injective_end R
   have := hc'.injective_end R
-  let Y := (ModuleCat.restrictScalarsEquivalenceOfRingEquiv e.toRingEquiv).functor.obj
+  let Y := (ModuleCat.restrictScalars e.toRingEquiv.toRingHom).obj
     (ModuleCat.of (Module.End A' M'.obj) M'.obj)
   -- `Y` is `M'` with scalars restricted along `e`, so it is still finitely generated, projective
-  -- and injective. The identity of `M'` is `e.symm`-semilinear onto `Y`, whose action of `γ` is
-  -- that of `e γ` by definition.
+  -- and injective. The identity of `M'` is `e.symm`-semilinear onto `Y`.
   have : Module.Finite (Module.End A M.obj) Y :=
     (e.toRingEquiv.toRingHom.finite_restrictScalars_iff e.toRingEquiv.surjective _).2 inferInstance
   have : Module.Projective (Module.End A M.obj) Y :=
     (e.toRingEquiv.projective_restrictScalars_iff _).2 inferInstance
   have : Module.Injective (Module.End A M.obj) Y :=
     Module.Injective.of_ringEquiv e.toRingEquiv.symm
-      { toFun := fun w ↦ w
-        invFun := fun w ↦ w
-        map_add' := fun _ _ ↦ rfl
-        map_smul' := fun c w ↦ (congrArg (· • w) (e.apply_symm_apply c)).symm
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl : M'.obj ≃ₛₗ[RingHomClass.toRingHom e.toRingEquiv.symm] Y }
+      (e.toRingEquiv.restrictScalarsSemilinearEquiv (ModuleCat.of _ M'.obj)).symm
   -- Each of `M` and `Y` is a retract of a finite power of the other, over `Γ = Module.End A M`.
   obtain ⟨m, s, r, hrs⟩ := exists_comp_eq_id_pi_of_projective_of_injective
     (Γ := Module.End A M.obj) A M.obj Y
-  obtain ⟨n, s', r', hrs'⟩ := exists_comp_eq_id_pi_restrictScalars (A := A') e.toRingEquiv
-    M'.obj M.obj
+  obtain ⟨n, s', r', hrs'⟩ := e.toRingEquiv.toRingHom.exists_comp_eq_id_pi_restrictScalars
+    (A := A') e.toRingEquiv.injective M'.obj M.obj
   obtain ⟨F, ⟨I⟩⟩ := exists_moritaEquivalence_moduleEnd_of_comp_eq_id R hrs hrs'
   -- `A ≅ Module.End Γ M` and `Module.End Γ Y ≅ A'`, by the double centralizer property.
   let α := algEquivEndEndOfIsGenerator A M.obj R
-  let β := (ModuleCat.moduleEndRestrictScalarsAlgEquiv R e M'.obj).trans
+  let β := (e.toAlgHom.moduleEndRestrictScalarsAlgEquiv e.surjective M'.obj).trans
     (algEquivEndEndOfIsGenerator A' M'.obj R).symm
-  obtain ⟨I₁⟩ := nonempty_ofAlgEquiv_functor_obj_iso R α (Z := M.obj)
-    (W := ModuleCat.of _ M.obj) (AddEquiv.refl _)
-    fun φ x ↦ algEquivEndEndOfIsGenerator_symm_smul R φ x
-  obtain ⟨I₂⟩ := nonempty_ofAlgEquiv_functor_obj_iso R β
-    (Z := ModuleCat.of (Module.End (Module.End A M.obj) Y) Y) (W := M'.obj) (AddEquiv.refl _)
-    fun a y ↦ (ModuleCat.moduleEndRestrictScalarsAlgEquiv_symm_apply R e M'.obj _ y).trans
-      (algEquivEndEndOfIsGenerator_apply (R := A') (M := M'.obj) R a y)
+  have I₁ : (MoritaEquivalence.ofAlgEquiv α).eqv.functor.obj M.obj ≅ ModuleCat.of _ M.obj :=
+    RingHom.restrictScalarsIsoOfAddEquiv _ (AddEquiv.refl _)
+      fun φ x ↦ algEquivEndEndOfIsGenerator_symm_smul R φ x
+  have I₂ : (MoritaEquivalence.ofAlgEquiv β).eqv.functor.obj
+      (ModuleCat.of (Module.End (Module.End A M.obj) Y) Y) ≅ M'.obj :=
+    RingHom.restrictScalarsIsoOfAddEquiv _ (AddEquiv.refl _)
+      fun a y ↦ (AlgHom.moduleEndRestrictScalarsAlgEquiv_symm_apply e.toAlgHom e.surjective
+        M'.obj _ y).trans (algEquivEndEndOfIsGenerator_apply (R := A') (M := M'.obj) R a y)
   exact ⟨(MoritaEquivalence.ofAlgEquiv α).trans R (F.trans R (MoritaEquivalence.ofAlgEquiv β)),
     ⟨(MoritaEquivalence.ofAlgEquiv β).eqv.functor.mapIso (F.eqv.functor.mapIso I₁ ≪≫ I) ≪≫ I₂⟩⟩
 

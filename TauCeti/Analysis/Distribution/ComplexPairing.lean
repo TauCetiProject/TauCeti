@@ -45,8 +45,13 @@ continuous linear maps of the values act functorially.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
   function along `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
+* `Distribution.mul_norm_complexPairing_tsum_smul`: a nonnegative weight of the value of a
+  distribution on a series of test functions in `𝓓_K` moves into the coefficients of the series.
 * `Distribution.mapCLM_conj_mapCLM_conj`: conjugating a complex distribution twice gives it
-  back.
+  back, and `Distribution.complexPairing_mapCLM_conjCLE`: the extension of the conjugate of `T` is
+  the conjugate of the extension of `T` at the conjugate test function.
+* `Distribution.mapCLM_ofRealCLM_comp_reCLM`: the real part of a complex distribution is the
+  average of the distribution and its complex conjugate.
 * `Distribution.mapCLM_id`, `Distribution.mapCLM_mapCLM`: continuous linear maps of the values
   act functorially.
 * `Distribution.mapCLM_restrictScalars_eq_smul`, `Distribution.mapCLM_restrictScalars_smul`,
@@ -64,7 +69,7 @@ public section
 noncomputable section
 
 open Complex Filter Set TopologicalSpace TestFunction LineDeriv
-open scoped Distributions Topology
+open scoped Distributions Topology ComplexConjugate
 
 namespace Distribution
 
@@ -115,6 +120,23 @@ theorem complexPairing_smul (c : ℂ) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω
     (c • T).complexPairing φ = c * T.complexPairing φ := by
   simp only [complexPairing_apply]
   simp
+  ring
+
+/-- The complex-linear extension of the complex conjugate of `T`, at a complex test function `φ`,
+is the complex conjugate of the extension of `T` at the conjugate test function `conj ∘ φ`. -/
+theorem complexPairing_mapCLM_conjCLE (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω, ℂ)) :
+    (mapCLM conjCLE.toContinuousLinearMap T).complexPairing φ =
+      conj (T.complexPairing (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ)) := by
+  have hre : postcompCLM (𝕜 := ℝ) reCLM (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) =
+      postcompCLM (𝕜 := ℝ) reCLM φ := by
+    ext x
+    simp
+  have him : postcompCLM (𝕜 := ℝ) imCLM (postcompCLM (𝕜 := ℝ) conjCLE.toContinuousLinearMap φ) =
+      -postcompCLM (𝕜 := ℝ) imCLM φ := by
+    ext x
+    simp
+  simp only [complexPairing_apply, hre, him, map_neg, mapCLM_apply, map_add, map_mul, conj_I,
+    ContinuousLinearEquiv.coe_coe, conjCLE_apply]
   ring
 
 /-- For a fixed complex test function `φ`, the pairing `T ↦ T φ` is continuous in the
@@ -209,6 +231,16 @@ theorem mapCLM_conj_mapCLM_conj (T : 𝓓'^{n}(Ω, ℂ)) :
   ext φ
   simp [mapCLM_apply]
 
+/-- The real part of a complex distribution is the average of the distribution and its complex
+conjugate. -/
+theorem mapCLM_ofRealCLM_comp_reCLM (T : 𝓓'^{n}(Ω, ℂ)) :
+    mapCLM (ofRealCLM ∘L reCLM) T = (2⁻¹ : ℂ) • (T + mapCLM conjCLE.toContinuousLinearMap T) := by
+  ext φ
+  simp only [mapCLM_apply, ContinuousLinearMap.comp_apply, reCLM_apply, ofRealCLM_apply,
+    FunLike.coe_smul, FunLike.coe_add, Pi.smul_apply, Pi.add_apply, ContinuousLinearEquiv.coe_coe,
+    conjCLE_apply, smul_eq_mul, re_eq_add_conj]
+  ring
+
 /-- The complex-linear extension of `T` depends only on the germ of the test function along the
 support of `T`. -/
 theorem complexPairing_eq_of_eventuallyEq (T : 𝓓'^{n}(Ω, ℂ)) {φ ψ : 𝓓^{n}(Ω, ℂ)}
@@ -275,5 +307,20 @@ theorem mapCLM_restrictScalars_smul (A : F →L[ℂ] F') (c : ℂ) (T : 𝓓'^{n
   simp
 
 end ComplexValues
+
+section Series
+
+/-- The weight `w ≥ 0` of the pairing of a distribution with a series in `𝓓_K` moves into the
+coefficients of the series. -/
+theorem mul_norm_complexPairing_tsum_smul (T : 𝓓'(Ω, ℂ)) {K : Compacts E}
+    (hKΩ : (K : Set E) ⊆ Ω) {ι : Type*} {c : ι → ℂ} {v : ι → 𝓓_{K}(E, ℂ)} {w : ℝ}
+    (hw : 0 ≤ w) (hc : Summable fun m ↦ c m • v m) :
+    w * ‖T.complexPairing (TestFunction.ofSupportedIn hKΩ (∑' m, c m • v m))‖ =
+      ‖T.complexPairing (TestFunction.ofSupportedIn hKΩ (∑' m, ((w : ℂ) * c m) • v m))‖ := by
+  simp_rw [mul_smul]
+  rw [hc.tsum_const_smul, ← TestFunction.coe_ofSupportedInCLM (𝕜 := ℂ) hKΩ, map_smul, map_smul,
+    smul_eq_mul, norm_mul, Complex.norm_real, Real.norm_of_nonneg hw]
+
+end Series
 
 end Distribution

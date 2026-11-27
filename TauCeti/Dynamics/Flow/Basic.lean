@@ -22,6 +22,7 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.apply_comm`: the maps of a flow by a commutative time monoid commute.
 * `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
   and conversely.
+* `Flow.apply_eq_self_of_forall_pos`: a point fixed at every positive time is fixed at every time.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
 * `Flow.orbit_eq_iff`: two points have the same orbit exactly when one lies on the orbit of the
   other.
@@ -63,6 +64,15 @@ theorem map_neg_apply_map [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ
 @[simp]
 theorem map_apply_map_neg [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ t (ϕ (-t) x) = x := by
   rw [← ϕ.map_add, add_neg_cancel, ϕ.map_zero_apply]
+
+/-- A point fixed by the flow at every positive time is fixed at every time. -/
+theorem apply_eq_self_of_forall_pos [AddCommGroup τ] [LinearOrder τ] [IsOrderedAddMonoid τ]
+    {ϕ : Flow τ α} {x : α} (h : ∀ t, 0 < t → ϕ t x = x) (t : τ) : ϕ t x = x := by
+  rcases lt_trichotomy t 0 with ht | rfl | ht
+  · conv_lhs => rw [← h (-t) (neg_pos.2 ht)]
+    exact map_apply_map_neg ϕ t x
+  · exact map_zero_apply ϕ x
+  · exact h t ht
 
 /-- All points of an orbit have the same orbit. -/
 @[simp]
