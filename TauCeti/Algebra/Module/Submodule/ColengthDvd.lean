@@ -43,6 +43,10 @@ An endomorphism `y` of `V` is *onto `M` modulo `p ^ n` up to colength `c`* (`p �
   `Submodule.ColengthDvd.exists_smul_mem`: each `x ∈ M` has a multiple `a • x ∈ N` with `a ∣ z`,
   so `z • M ≤ N` (`Submodule.ColengthDvd.smul_le`).
 * `Submodule.ColengthDvd.trans`: `M ⊸_z N` and `N ⊸_a P` give `M ⊸_{z * a} P`.
+* `Submodule.ColengthDvd.inf`, `Finset.colengthDvd_iInf`, `Submodule.ColengthDvd.iInf`:
+  the bounds multiply under finite intersections of target submodules.
+* `Submodule.ColengthDvd.exists_matrix_row_mem`: extract a determinant witness in the
+  standard basis of a finite coordinate module using `Submodule.ColengthDvd.exists_matrix`.
 * `Submodule.ColengthDvd.comap`, `Submodule.ColengthDvd.map`: pull-back and push-forward along a
   linear map.
 * `Submodule.ColengthDvd.map_sup_smul`: if `f(M) ⊆ M`, `M ⊸_z (f(M) + a • M)` and
@@ -53,8 +57,9 @@ An endomorphism `y` of `V` is *onto `M` modulo `p ^ n` up to colength `c`* (`p �
 
 ## References
 
-The statements follow the formal proof in the folder `grh` of https://github.com/lsernau/grh-lean
-at commit 72fead102f663d5c7a407964a13dc0cf9d977207 (`New.ColengthDvd`, `New.ColengthDvd.trans`,
+The statements follow the formal proof in the folder `grh` of grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC) at commit
+`72fead102f663d5c7a407964a13dc0cf9d977207` (`New.ColengthDvd`, `New.ColengthDvd.trans`,
 `New.ColengthDvd.comap`, `New.ColengthDvd.map`, `New.ColengthDvd.comp`,
 `New.IsOntoUpToColength`, `New.IsOntoUpToColength.prod`).
 -/
@@ -169,6 +174,47 @@ theorem ColengthDvd.comap (h : M.ColengthDvd N z) {M' N' : Submodule O U} (f : U
   obtain ⟨m, hdet, hm⟩ := h n (f ∘ Φ) fun k => hM (mem_map_of_mem (hΦ k))
   refine ⟨m, hdet, fun i => hN ⟨sum_mem fun k _ => M'.smul_mem _ (hΦ k), ?_⟩⟩
   simpa [mem_comap, map_sum, map_smul] using hm i
+
+/-- Intersecting two target submodules multiplies their colength bounds over the same source. -/
+theorem ColengthDvd.inf (hN : M.ColengthDvd N z) (hP : M.ColengthDvd P a) :
+    M.ColengthDvd (N ⊓ P) (z * a) := by
+  have hMN : M.ColengthDvd (M ⊓ N) z :=
+    hN.comap (LinearMap.id : V →ₗ[O] V) (by rw [map_id]) (by rw [comap_id])
+  exact hMN.trans
+    (hP.comap (LinearMap.id : V →ₗ[O] V)
+      (by rw [map_id]; exact inf_le_left)
+      (by rw [comap_id]; exact inf_le_inf_right _ inf_le_right))
+
+/-- For targets indexed by a finite set, the colength of their intersection divides the
+product of their individual bounds over the same source. -/
+theorem _root_.Finset.colengthDvd_iInf {ι : Type*} {L : ι → Submodule O V} {b : ι → O}
+    (s : Finset ι) (h : ∀ i ∈ s, M.ColengthDvd (L i) (b i)) :
+    M.ColengthDvd (⨅ i ∈ s, L i) (∏ i ∈ s, b i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty =>
+    rw [Finset.prod_empty]
+    exact ColengthDvd.of_le (le_iInf₂ fun i hi ↦ (Finset.notMem_empty i hi).elim)
+  | insert i s hi ih =>
+    rw [Finset.iInf_insert, Finset.prod_insert hi]
+    exact (h i (Finset.mem_insert_self i s)).inf (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+
+/-- The colength of the intersection over a finite type divides the product of the
+individual bounds over the same source. -/
+theorem ColengthDvd.iInf {ι : Type*} [Fintype ι] {L : ι → Submodule O V} {b : ι → O}
+    (h : ∀ i, M.ColengthDvd (L i) (b i)) :
+    M.ColengthDvd (⨅ i, L i) (∏ i, b i) := by
+  simpa only [Finset.mem_univ, iInf_pos] using
+    Finset.univ.colengthDvd_iInf (fun i _ ↦ h i)
+
+/-- A colength bound on a submodule of a finite coordinate module gives a matrix whose rows
+lie in that submodule and whose determinant divides the bound. -/
+theorem ColengthDvd.exists_matrix_row_mem {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {L : Submodule O (ι → O)} (h : (⊤ : Submodule O (ι → O)).ColengthDvd L z) :
+    ∃ A : Matrix ι ι O, A.det ∣ z ∧ ∀ i, A i ∈ L := by
+  obtain ⟨A, hdet, hA⟩ := h.exists_matrix (fun i : ι ↦ Pi.single i (1 : O)) fun _ ↦ mem_top
+  refine ⟨A, hdet, fun i ↦ ?_⟩
+  simpa only [← Pi.single_smul', smul_eq_mul, mul_one, Finset.univ_sum_single] using hA i
 
 /-- **Push-forward.** Let `f : V → U` be linear and `M', N'` submodules of `U` with
 `M' ⊆ f(M) + N'` and `f(N) ⊆ N'`. Then `M ⊸_z N` gives `M' ⊸_z N'`. -/
