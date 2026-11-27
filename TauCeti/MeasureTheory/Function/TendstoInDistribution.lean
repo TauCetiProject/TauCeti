@@ -14,13 +14,17 @@ Mathlib defines `MeasureTheory.TendstoInDistribution X l Z μ μ'` along an arbi
 packaging pointwise almost-everywhere measurability together with weak convergence of the laws in
 `MeasureTheory.ProbabilityMeasure`. This file supplies basic filter operations for
 `TendstoInDistribution`: precomposition along a `Filter.Tendsto` map of indices, monotonicity in the
-index filter, eventual almost-everywhere congruence along the filter, and the sequential
+index filter, congruence under eventual equality of pushforward laws (allowing different sample
+spaces), eventual almost-everywhere congruence along the filter, and the sequential
 characterization for countably generated index filters.
 
 ## Main statements
 
 * `MeasureTheory.TendstoInDistribution.comp_tendsto` — precompose the index along a filter limit.
 * `MeasureTheory.TendstoInDistribution.mono_left` — weaken the index filter.
+* `MeasureTheory.TendstoInDistribution.congr_map` — transfer convergence in distribution between
+  random variables with eventually equal pushforward laws (possibly on different probability
+  spaces).
 * `MeasureTheory.TendstoInDistribution.congr'` — replace random variables eventually almost
   everywhere along the index filter.
 * `MeasureTheory.tendstoInDistribution_iff_forall_seq_tendsto` — along a countably generated filter,
@@ -57,6 +61,32 @@ protected theorem TendstoInDistribution.mono_left {l₁ l₂ : Filter ι}
     TendstoInDistribution X l₁ Z μ μ' :=
   h.comp_tendsto (tendsto_id'.2 hl)
 
+/-- Convergence in distribution depends only on the eventual pushforward laws of the random
+variables and the law of the limit, allowing both the index sample spaces and the limit space to
+change. Pointwise almost-everywhere measurability of the replacement family and limit is required
+because `TendstoInDistribution` records them globally and `Measure.map` is totalized to a Dirac
+measure on non-almost-everywhere-measurable functions. -/
+protected theorem TendstoInDistribution.congr_map {l : Filter ι}
+    {Ω₂ : ι → Type*} {m₂ : ∀ i, MeasurableSpace (Ω₂ i)}
+    {μ₂ : (i : ι) → Measure (Ω₂ i)} [∀ i, IsProbabilityMeasure (μ₂ i)]
+    {Ω'' : Type*} {m'' : MeasurableSpace Ω''} {μ'' : Measure Ω''} [IsProbabilityMeasure μ'']
+    {X : (i : ι) → Ω i → E} {Y : (i : ι) → Ω₂ i → E} {Z : Ω' → E} {W : Ω'' → E}
+    (h : TendstoInDistribution X l Z μ μ')
+    (hY : ∀ i, AEMeasurable (Y i) (μ₂ i)) (hW : AEMeasurable W μ'')
+    (hXY : ∀ᶠ i in l, (μ i).map (X i) = (μ₂ i).map (Y i))
+    (hZW : μ'.map Z = μ''.map W) :
+    TendstoInDistribution Y l W μ₂ μ'' where
+  forall_aemeasurable := hY
+  aemeasurable_limit := hW
+  tendsto := by
+    have hlim : (⟨μ'.map Z, inferInstance⟩ : ProbabilityMeasure E) =
+        ⟨μ''.map W, inferInstance⟩ :=
+      Subtype.ext hZW
+    rw [← hlim]
+    refine h.tendsto.congr' ?_
+    filter_upwards [hXY] with i hi
+    exact Subtype.ext hi
+
 /-- Convergence in distribution is preserved when the random variables are modified on null sets
 eventually along the index filter and at the limit. Pointwise almost-everywhere measurability of
 the replacement family is required at all indices because `TendstoInDistribution` records it
@@ -65,16 +95,9 @@ protected theorem TendstoInDistribution.congr' {l : Filter ι}
     {X Y : (i : ι) → Ω i → E} {Z T : Ω' → E}
     (h : TendstoInDistribution X l Z μ μ') (hY : ∀ i, AEMeasurable (Y i) (μ i))
     (hXY : ∀ᶠ i in l, X i =ᵐ[μ i] Y i) (hZT : Z =ᵐ[μ'] T) :
-    TendstoInDistribution Y l T μ μ' where
-  forall_aemeasurable := hY
-  aemeasurable_limit := h.aemeasurable_limit.congr hZT
-  tendsto := by
-    have hlim : (⟨μ'.map Z, inferInstance⟩ : ProbabilityMeasure E) = ⟨μ'.map T, inferInstance⟩ :=
-      Subtype.ext (Measure.map_congr hZT)
-    rw [← hlim]
-    refine h.tendsto.congr' ?_
-    filter_upwards [hXY] with i hi
-    exact Subtype.ext (Measure.map_congr hi)
+    TendstoInDistribution Y l T μ μ' :=
+  h.congr_map hY (h.aemeasurable_limit.congr hZT)
+    (hXY.mono fun _ hi ↦ Measure.map_congr hi) (Measure.map_congr hZT)
 
 /-- Along a countably generated filter, convergence in distribution is equivalent to convergence in
 distribution along every sequence tending to that filter. -/

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
 public import TauCeti.Analysis.Pseudodifferential.UniformSobolev
+import TauCeti.Analysis.Pseudodifferential.BesselPotentialSpace
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
@@ -74,41 +75,6 @@ namespace Symbol
 variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {m R : ℝ} {a : Symbol n V W m}
 
-/-- The left parametrix identity on Bessel-potential spaces: if `Op(b) Op(a) = 1 + Op(r)` on
-Schwartz space, then `B (T u) = u + Rr u` as tempered distributions for all Sobolev realizations
-`T` of `Op(a)`, `B` of `Op(b)` and `Rr` of `Op(r)` on `H^σ`, whatever their target orders. -/
-private theorem toDistr_apply_apply_eq_add {hau : a.IsUniform} {b : Symbol n W V (-m)}
-    {hb : b.IsUniform} {r : Symbol n V V 0} {hr : r.IsUniform}
-    (hbar : quantizeUniformCLM b hb ∘L quantizeUniformCLM a hau =
-      ContinuousLinearMap.id ℂ _ + quantizeUniformCLM r hr)
-    {σ ρ ρ' : ℝ} {T : H^{σ}(CoordinateSpace n, V) →L[ℂ] H^{σ - m}(CoordinateSpace n, W)}
-    (hT : T ∘L SchwartzMap.toBesselPotentialSpaceCLM σ 2 =
-      SchwartzMap.toBesselPotentialSpaceCLM (σ - m) 2 ∘L quantizeUniformCLM a hau)
-    {B : H^{σ - m}(CoordinateSpace n, W) →L[ℂ] H^{ρ}(CoordinateSpace n, V)}
-    (hB : B ∘L SchwartzMap.toBesselPotentialSpaceCLM (σ - m) 2 =
-      SchwartzMap.toBesselPotentialSpaceCLM ρ 2 ∘L quantizeUniformCLM b hb)
-    {Rr : H^{σ}(CoordinateSpace n, V) →L[ℂ] H^{ρ'}(CoordinateSpace n, V)}
-    (hRr : Rr ∘L SchwartzMap.toBesselPotentialSpaceCLM σ 2 =
-      SchwartzMap.toBesselPotentialSpaceCLM ρ' 2 ∘L quantizeUniformCLM r hr)
-    (u : H^{σ}(CoordinateSpace n, V)) :
-    (B (T u)).toDistr = u.toDistr + (Rr u).toDistr := by
-  have key : BesselPotentialSpace.inclusion (min_le_left ρ (min σ ρ')) ∘L B ∘L T =
-      BesselPotentialSpace.inclusion ((min_le_right ρ _).trans (min_le_left σ ρ')) +
-        BesselPotentialSpace.inclusion ((min_le_right ρ _).trans (min_le_right σ ρ')) ∘L Rr := by
-    refine BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun w ↦
-      BesselPotentialSpace.ext ?_
-    have hw := congrArg (fun A ↦ (A w : 𝓢'(CoordinateSpace n, V))) hbar
-    have hTw := congrArg (fun A ↦ A w) hT
-    have hBw := congrArg (fun A ↦ A (quantizeUniformCLM a hau w)) hB
-    have hRw := congrArg (fun A ↦ (A w).toDistr) hRr
-    simp only [ContinuousLinearMap.comp_apply, add_apply,
-      ContinuousLinearMap.id_apply, map_add, SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
-      at hw hTw hBw hRw
-    simp only [ContinuousLinearMap.comp_apply, add_apply,
-      BesselPotentialSpace.toDistr_add, BesselPotentialSpace.toDistr_inclusion, hTw, hBw, hRw,
-      SchwartzMap.toDistr_toBesselPotentialSpaceCLM, hw]
-  simpa using congrArg (fun A ↦ (A u).toDistr) key
-
 /-! ### The global elliptic estimate -/
 
 /-- **The global elliptic estimate.** Let `a` be a symbol of order `m` whose estimates hold
@@ -141,8 +107,8 @@ theorem IsUniformlyEllipticAbove.exists_norm_le (ha : a.IsUniformlyEllipticAbove
   -- `u + Op(q) u = Op(b) (T u)` as tempered distributions.
   have hu : ‖u + Q (BesselPotentialSpace.inclusion hrs u)‖ ≤ ‖B (T u)‖ :=
     BesselPotentialSpace.norm_le_of_toDistr_eq (by linarith) (by
-      rw [toDistr_apply_apply_eq_add hbar hT hB hQ' u, ContinuousLinearMap.comp_apply,
-        BesselPotentialSpace.toDistr_add])
+      rw [toDistr_apply_apply_eq_add_of_comp_eq_id_add ENNReal.ofNat_ne_top hbar hT hB hQ' u,
+        ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_add])
   calc ‖u‖ = ‖(u + Q (BesselPotentialSpace.inclusion hrs u)) -
         Q (BesselPotentialSpace.inclusion hrs u)‖ := by rw [add_sub_cancel_right]
     _ ≤ ‖B‖ * ‖T u‖ + ‖Q‖ * ‖BesselPotentialSpace.inclusion hrs u‖ :=
@@ -177,7 +143,8 @@ theorem IsUniformlyEllipticAbove.memSobolev_toDistr_of_memSobolev
     SchwartzMap.toDistr_apply_congr_of_comp_eq ENNReal.ofNat_ne_top hB hB'
       hu.toBesselPotentialSpace_toDistr.symm
   have hid : u.toDistr = (B' hu.toBesselPotentialSpace).toDistr - (Q u).toDistr := by
-    rw [← hBv, toDistr_apply_apply_eq_add hbar hT hB hQ u, add_sub_cancel_right]
+    rw [← hBv, toDistr_apply_apply_eq_add_of_comp_eq_id_add ENNReal.ofNat_ne_top hbar hT hB hQ u,
+      add_sub_cancel_right]
   rw [hid]
   exact (BesselPotentialSpace.memSobolev_toDistr_of_eq _ (by ring)).sub
     (BesselPotentialSpace.memSobolev_toDistr _)

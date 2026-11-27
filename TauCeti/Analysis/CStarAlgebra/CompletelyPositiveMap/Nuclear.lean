@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Order
+import TauCeti.Analysis.CStarAlgebra.Basic
+import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Matrix
+import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Pi
 
 /-!
 # Nuclear completely positive maps and nuclear C⋆-algebras
@@ -50,6 +53,11 @@ between Banach spaces, and from the approximation property of a Banach space.
 * `TauCeti.CStarAlgebra.IsNuclear.of_starAlgEquiv`: nuclearity is invariant under star
   isomorphism, and the matrix algebras `M_n(ℂ)` (`TauCeti.CStarAlgebra.isNuclear_cstarMatrix`)
   and `ℂ` (`TauCeti.CStarAlgebra.isNuclear_complex`) are nuclear.
+* `TauCeti.CStarAlgebra.isNuclear_pi_cstarMatrix`: a finite direct sum `⊕_i M_{n_i}` of full
+  matrix algebras is nuclear. It embeds unitally in `M_N`, `N = Σ n_i`, through
+  `CompletelyPositiveMap.blockDiagonal`, and the compression to the diagonal blocks
+  (`CompletelyPositiveMap.pi` of the `CompletelyPositiveMap.submatrix` maps) is a completely
+  positive contraction back, so the identity factors exactly through one matrix algebra.
 
 ## References
 
@@ -272,5 +280,27 @@ instance isNuclear_cstarMatrix (m : Type*) [Fintype m] :
 /-- The complex numbers form a nuclear C⋆-algebra, through `ℂ ≃ M_1(ℂ)`. -/
 instance isNuclear_complex : IsNuclear ℂ :=
   .of_starAlgEquiv (CStarMatrix.toOneByOne (Fin 1) ℂ ℂ)
+
+/-- **Finite direct sums of matrix algebras are nuclear.** The product `Π i, M_{n i}(ℂ)` embeds in
+`M_{Σ i, n i}(ℂ)` block-diagonally, and the compression to the diagonal blocks is a completely
+positive contraction back, so the identity factors exactly through one matrix algebra. -/
+instance isNuclear_pi_cstarMatrix {ι : Type*} [Fintype ι] (n : ι → Type*) [∀ i, Fintype (n i)] :
+    IsNuclear (∀ i, CStarMatrix (n i) (n i) ℂ) := by
+  classical
+  let σ : (∀ i, CStarMatrix (n i) (n i) ℂ) →CP CStarMatrix (Σ i, n i) (Σ i, n i) ℂ :=
+    blockDiagonal fun i ↦ CompletelyPositiveMapClass.toCompletelyPositiveLinearMap
+      (Pi.evalStarAlgHom ℂ (fun i ↦ CStarMatrix (n i) (n i) ℂ) i)
+  let ρ : CStarMatrix (Σ i, n i) (Σ i, n i) ℂ →CP ∀ i, CStarMatrix (n i) (n i) ℂ :=
+    pi fun i ↦ submatrix (Sigma.mk i)
+  have hσ1 : σ 1 = 1 := blockDiagonal_map_one _ fun i ↦ by simp
+  have hσ : ∀ a, ‖σ a‖ ≤ ‖a‖ :=
+    (CompletelyPositiveMapClass.norm_map_one_le_one_iff σ).1 (hσ1 ▸ CStarRing.norm_one_le)
+  have hρ (x : CStarMatrix (Σ i, n i) (Σ i, n i) ℂ) : ‖ρ x‖ ≤ ‖x‖ := by
+    refine norm_pi_apply_le (fun i ↦ (CompletelyPositiveMapClass.norm_map_one_le_one_iff _).1 ?_) x
+    rw [submatrix_map_one sigma_mk_injective]
+    exact CStarRing.norm_one_le
+  refine .of_retract σ ρ hσ hρ fun a ↦ ?_
+  ext i j k
+  simp [σ, ρ]
 
 end TauCeti.CStarAlgebra

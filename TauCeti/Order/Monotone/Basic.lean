@@ -23,6 +23,9 @@ the new value lies strictly between the values at the points of `s` on either si
 (`StrictMonoOn.update`). For instance, a crossing time may be moved along a parameter interval
 containing no other crossing time without changing the order of the crossings.
 
+A function strictly monotone on `s` maps the part of `s` above `a ∈ s` onto the part of `f '' s`
+above `f a` (`StrictMonoOn.image_Ioi_inter`).
+
 The consecutive intervals `[f i, f (i + 1)]`, `i < n`, of a grid `f` monotone through its last
 point `f n` follow one another: of two distinct ones, one ends before the other starts
 (`MonotoneOn.pairwise_succ_le_or_succ_le`). For a monotone `ℤ`-indexed sequence, a point strictly
@@ -41,6 +44,8 @@ strictly so away from `a` when both halves are strict (`TauCeti.lt_of_strictAnti
   strictly antitone on a set with two points.
 * `StrictMonoOn.update`: a function strictly monotone on `s \ {a}`, updated at `a` to a value
   above its values before `a` and below its values after `a`, is strictly monotone on `s`.
+* `StrictMonoOn.image_Ioi_inter`: `f '' ((a, ∞) ∩ s) = (f a, ∞) ∩ f '' s` for `f` strictly
+  monotone on `s` and `a ∈ s`.
 * `MonotoneOn.pairwise_succ_le_or_succ_le`: distinct consecutive intervals of a monotone grid
   overlap at most at an endpoint.
 * `Monotone.mem_Icc_iff_eq_of_mem_Ioo`: a point strictly inside the interval `(a k, a (k + 1))`
@@ -85,6 +90,18 @@ theorem StrictMonoOn.update {α β : Type*} [Preorder α] [Preorder β] [Decidab
     exact hlt x hx hxy
   rw [update_of_ne hxa, update_of_ne hya]
   exact hf ⟨hx, hxa⟩ ⟨hy, hya⟩ hxy
+
+/-- A function strictly monotone on `s` maps `(a, ∞) ∩ s` onto `(f a, ∞) ∩ f '' s`, for
+`a ∈ s`. -/
+theorem StrictMonoOn.image_Ioi_inter {α β : Type*} [LinearOrder α] [Preorder β] {f : α → β}
+    {s : Set α} (hf : StrictMonoOn f s) {a : α} (ha : a ∈ s) :
+    f '' (Ioi a ∩ s) = Ioi (f a) ∩ f '' s := by
+  ext y
+  constructor
+  · rintro ⟨x, ⟨hax, hx⟩, rfl⟩
+    exact ⟨hf ha hx hax, mem_image_of_mem f hx⟩
+  · rintro ⟨hy, x, hx, rfl⟩
+    exact ⟨x, ⟨(hf.lt_iff_lt ha hx).1 hy, hx⟩, rfl⟩
 
 /-- Distinct consecutive intervals `[f i, f (i + 1)]`, `i < n`, of a grid monotone through its last
 point `f n` overlap at most at an endpoint: one of them ends before the other starts. -/

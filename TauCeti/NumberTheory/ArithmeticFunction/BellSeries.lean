@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.LFunction
 import TauCeti.NumberTheory.Divisors
-import TauCeti.RingTheory.PowerSeries.Geometric
+import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # Bell series of arithmetic functions

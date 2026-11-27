@@ -33,6 +33,7 @@ annihilator, which contains it by `TauCeti.fittingIdeal_zero_le_annihilator`: ov
 * `Submodule.minorsIdeal_prod_finrank`: the maximal minors of `K × L` in `F × G` are the products
   of the maximal minors of `K` in `F` and of `L` in `G`.
 * `TauCeti.fittingIdeal_prod_zero`: `Fitt₀(M × N) = Fitt₀(M) * Fitt₀(N)`.
+* `TauCeti.fittingIdeal_pi_zero`: `Fitt₀(∏ i, M i) = ∏ i, Fitt₀(M i)` for a finite family.
 
 ## References
 
@@ -138,6 +139,28 @@ theorem fittingIdeal_prod_zero (N : Type*) [AddCommGroup N] [Module R N] [Module
   rw [fittingIdeal_eq_minorsIdeal_ker hφ, fittingIdeal_eq_minorsIdeal_ker hψ,
     fittingIdeal_eq_minorsIdeal_ker (φ := φ.prodMap ψ) (hφ.prodMap hψ), ker_prodMap,
     finrank_prod, Nat.sub_zero, Nat.sub_zero, Nat.sub_zero, Submodule.minorsIdeal_prod_finrank]
+
+/-- The zeroth Fitting ideal of a finite product of finite modules is the product of their
+zeroth Fitting ideals: `Fitt₀(∏ i, M i) = ∏ i, Fitt₀(M i)`. -/
+@[simp]
+theorem fittingIdeal_pi_zero {ι : Type*} [Fintype ι] (M : ι → Type*) [∀ i, AddCommGroup (M i)]
+    [∀ i, Module R (M i)] [∀ i, Module.Finite R (M i)] :
+    fittingIdeal R ((i : ι) → M i) 0 = ∏ i, fittingIdeal R (M i) 0 := by
+  nontriviality R
+  revert M
+  refine Fintype.induction_empty_option (P := fun ι _ ↦ ∀ (M : ι → Type _)
+    [∀ i, AddCommGroup (M i)] [∀ i, Module R (M i)] [∀ i, Module.Finite R (M i)],
+    fittingIdeal R ((i : ι) → M i) 0 = ∏ i, fittingIdeal R (M i) 0) ?_ ?_ ?_ ι
+  · intro α β _ e ih M _ _ _
+    let : Fintype α := .ofEquiv β e.symm
+    rw [← fittingIdeal_congr (LinearEquiv.piCongrLeft R M e), ih, ← e.prod_comp]
+  · intro M _ _ _
+    rw [Finset.univ_eq_empty, Finset.prod_empty, Ideal.one_eq_top]
+    exact fittingIdeal_eq_top_of_surjective (φ := (0 : (Fin 0 → R) →ₗ[R] (i : PEmpty) → M i))
+      (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩) finrank_zero_of_subsingleton.le
+  · intro α _ ih M _ _ _
+    rw [fittingIdeal_congr (LinearEquiv.piOptionEquivProd R), fittingIdeal_prod_zero, ih,
+      Fintype.prod_option]
 
 -- Over `ℤ`, `Fitt₀(ℤ/2 × ℤ/2) = (4)` while the annihilator of `ℤ/2 × ℤ/2` is `(2)`: the
 -- containment `fittingIdeal_zero_le_annihilator` can be strict.

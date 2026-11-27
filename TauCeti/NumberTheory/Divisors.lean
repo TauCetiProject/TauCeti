@@ -46,6 +46,9 @@ by their sum and by a positive square discriminant.
 
 `Int.card_divisors` counts the integer divisors of `z` as twice the natural divisors of `|z|`.
 
+`Nat.card_divisors_le_two_mul_sqrt` bounds the number of divisors of `n` by `2 * Nat.sqrt n`,
+pairing each divisor `d > √n` with `n / d`.
+
 `Nat.le_div_two_of_mem_properDivisors` bounds a proper divisor of `n` by `n / 2`. Hence
 `Nat.pow_sub_two_mul_pow_div_two_le_of_le_sum_divisors`: if `q ^ n ≤ 1 + ∑_{d ∣ n} f d` and
 `f d ≤ q ^ d` for the proper divisors `d`, then `q ^ n - 2 q ^ (n / 2) ≤ f n` with the subtraction
@@ -204,6 +207,30 @@ theorem le_div_two_of_mem_properDivisors {n d : ℕ} (hd : d ∈ n.properDivisor
   obtain ⟨k, hk, rfl⟩ :=
     (mem_properDivisors_iff_exists (Nat.ne_zero_of_lt (one_lt_of_mem_properDivisors hd))).mp hd
   exact (Nat.le_div_iff_mul_le two_pos).mpr (Nat.mul_le_mul_left d hk)
+
+open Finset in
+/-- A natural number `n` has at most `2 * Nat.sqrt n` divisors: every divisor `d` of `n` with
+`d > √n` is `n / e` for the divisor `e = n / d ≤ √n`. -/
+theorem card_divisors_le_two_mul_sqrt (n : ℕ) : #n.divisors ≤ 2 * n.sqrt := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  set A := {d ∈ n.divisors | d ≤ n.sqrt}
+  have hA : #A ≤ n.sqrt := by
+    refine (card_le_card fun d hd ↦ ?_).trans (card_Icc 1 n.sqrt).le
+    obtain ⟨hd, hle⟩ := mem_filter.mp hd
+    exact mem_Icc.mpr ⟨pos_of_mem_divisors hd, hle⟩
+  have hsub : n.divisors ⊆ A ∪ A.image (n / ·) := by
+    intro d hd
+    by_cases hle : d ≤ n.sqrt
+    · exact mem_union_left _ (mem_filter.mpr ⟨hd, hle⟩)
+    have hdvd := dvd_of_mem_divisors hd
+    refine mem_union_right _ (mem_image.mpr ⟨n / d, mem_filter.mpr
+      ⟨mem_divisors.mpr ⟨div_dvd_of_dvd hdvd, hn⟩, ?_⟩, Nat.div_div_self hdvd hn⟩)
+    rw [Nat.le_sqrt] at hle ⊢
+    have hmul : n / d * d = n := Nat.div_mul_cancel hdvd
+    nlinarith
+  calc #n.divisors ≤ #A + #(A.image (n / ·)) := (card_le_card hsub).trans (card_union_le _ _)
+    _ ≤ 2 * n.sqrt := by linarith [card_image_le (s := A) (f := (n / ·))]
 
 /-- If `f d ≤ q ^ d` for every proper divisor `d` of `n` and `q ^ n ≤ ∑_{d ∣ n} f d + 1`, then
 `q ^ n - 2 q ^ (n / 2) ≤ f n` in `ℤ` (integer subtraction), with `n / 2` the natural-number

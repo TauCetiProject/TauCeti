@@ -21,7 +21,7 @@ along `finSumFinEquiv`, because `Fin (n + 1)` is the index type the general line
 standard representations are stated over: a `Fin n ⊕ Fin 1` presentation would have to be
 reindexed away again at once.
 
-`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/BlockSucc.lean` deduces from this the **block
+`TauCeti/LinearAlgebra/Matrix/GeneralLinearGroup/Block/Succ.lean` deduces from this the **block
 inclusion** `TauCeti.glBlockSucc : GL (Fin n) k →* GL (Fin (n + 1)) k`, the embedding that fixes
 the last basis vector.
 

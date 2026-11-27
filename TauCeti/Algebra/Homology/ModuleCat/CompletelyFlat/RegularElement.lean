@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ModuleCat.CompletelyFlat.Basic
 import Mathlib.CategoryTheory.Abelian.Projective.Extend
-import TauCeti.Algebra.Category.ModuleCat.ExtendScalarsQuotient
+import TauCeti.Algebra.Category.ModuleCat.ExtendScalars.Quotient
 import TauCeti.Algebra.Category.ModuleCat.Quotient
 import TauCeti.Algebra.Homology.ModuleCat.KFlat.Basic
 import TauCeti.CategoryTheory.Abelian.LeftDerived

@@ -14,6 +14,7 @@ public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
+import TauCeti.Analysis.InnerProductSpace.Spectrum
 
 import Mathlib.Analysis.InnerProductSpace.Trace
 
@@ -369,7 +370,8 @@ theorem sq_singularValues_eq_of_adjoint_comp_self_eigenbasis (A : E →ₗ[𝕜]
   have hm : finrank 𝕜 E = m := by
     rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
   rw [A.sq_singularValues_fin hm k,
-    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e hμ he]
+    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e.toBasis hμ
+      (by simpa using he)]
 
 /-- On the span of the right singular vectors `vᵢ` with `n ≤ i`, `A` stretches every vector by at
 most the `n`-th singular value: `‖A x‖ ≤ σₙ ‖x‖`. -/
@@ -408,6 +410,28 @@ theorem apply_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
   by_cases hc : A.singularValues i = 0
   · rw [(A.apply_rightSingularBasis_eq_zero_iff).mpr hc, smul_zero]
   · rw [mul_inv_cancel₀ (by simpa using hc), one_smul]
+
+/-- A map factors `A` through its modulus exactly when it sends each right singular
+vector of nonzero singular value to its corresponding left singular vector. -/
+theorem comp_operatorAbs_eq_iff_apply_rightSingularBasis (D : E →ₗ[𝕜] F) :
+    D ∘ₗ A.operatorAbs = A ↔
+      ∀ i : Fin (finrank 𝕜 E), A.singularValues i ≠ 0 →
+        D (A.rightSingularBasis i) = A.leftSingularVector i := by
+  constructor
+  · intro h i hi
+    have hσ : ((A.singularValues i : ℝ) : 𝕜) ≠ 0 := by simpa using hi
+    have hv := LinearMap.congr_fun h (A.rightSingularBasis i)
+    rw [comp_apply, A.operatorAbs_rightSingularBasis, map_smul, A.apply_rightSingularBasis i] at hv
+    exact smul_right_injective F hσ hv
+  · intro h
+    apply A.rightSingularBasis.toBasis.ext
+    intro i
+    simp only [OrthonormalBasis.coe_toBasis, comp_apply, A.operatorAbs_rightSingularBasis,
+      map_smul]
+    rw [A.apply_rightSingularBasis i]
+    by_cases hi : A.singularValues i = 0
+    · simp [hi]
+    · rw [h i hi]
 
 /-- The left singular vectors are orthonormal up to the zero vectors at the vanishing singular
 values: `⟪uᵢ, uⱼ⟫` is `1` if `i = j` and `σᵢ ≠ 0`, and `0` otherwise. -/

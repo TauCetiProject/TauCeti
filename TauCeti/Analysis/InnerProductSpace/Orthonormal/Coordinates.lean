@@ -37,7 +37,8 @@ Rotating each coordinate so that `c j ω j²` is real diagonalizes the real quad
   dimension `2 * n`, the complex coordinates `⟪b (2 * j), v⟫ + ⟪b (2 * j + 1), v⟫ i`, as a real
   linear equivalence `V ≃ₗ[ℝ] ℂⁿ`. In dimension four these are
   `(⟪b₀, v⟫ + ⟪b₁, v⟫ i, ⟪b₂, v⟫ + ⟪b₃, v⟫ i)` (`OrthonormalBasis.complexCoords_two_apply`).
-  They preserve norms (`OrthonormalBasis.norm_toLp_complexCoords`).
+  They preserve norms (`OrthonormalBasis.norm_toLp_complexCoords`) and are natural under linear
+  isometries (`OrthonormalBasis.complexCoords_map_apply`).
 
 ## Main statements
 
@@ -277,6 +278,15 @@ theorem complexCoords_two_symm_apply (b : OrthonormalBasis (Fin 4) ℝ V) (z : F
   rw [complexCoords_symm_apply, Fin.sum_univ_two, ← add_assoc]
   -- The frame indices `Fin.cast _ (finProdFinEquiv (j, a))` evaluate to numerals.
   rfl
+
+/-- The complex coordinates are natural under linear isometries: those of `f v` in the frame
+`b.map f` are those of `v` in the frame `b`. -/
+@[simp]
+theorem complexCoords_map_apply {V' : Type*} [NormedAddCommGroup V'] [InnerProductSpace ℝ V']
+    {n : ℕ} (b : OrthonormalBasis (Fin (2 * n)) ℝ V) (f : V ≃ₗᵢ[ℝ] V') (v : V) :
+    (b.map f).complexCoords n (f v) = b.complexCoords n v := by
+  ext j
+  simp [OrthonormalBasis.map_apply, LinearIsometryEquiv.inner_map_map]
 
 end OrthonormalBasis
 
