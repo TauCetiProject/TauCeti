@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Group.Lattice.SpecialLinearTwo
+public import TauCeti.MeasureTheory.Group.Lattice.SpecialLinearTwo.Basic
 
 /-!
 # The covolume of `SL(2, ℤ)` in `SL(2, ℝ)`
@@ -44,18 +44,6 @@ open scoped MatrixGroups ENNReal Pointwise Real
 
 namespace Matrix.SpecialLinearGroup
 
-/-- Almost every orbit of `SL(2, ℤ)` on `ℍ` meets the open modular fundamental domain `𝒟ᵒ`. -/
-private theorem ae_exists_smul_mem_fdo :
-    ∀ᵐ τ : ℍ, ∃ γ : SL(2, ℤ), γ • τ ∈ ModularGroup.fdo := by
-  rw [ae_iff]
-  refine measure_mono_null
-    (t := ⋃ γ : SL(2, ℤ), (γ • ·) ⁻¹' ((ModularGroup.fd : Set ℍ) \ ModularGroup.fdo))
-    (fun τ hτ ↦ ?_) (measure_iUnion_null fun γ ↦
-      (measurePreserving_smul γ (volume : Measure ℍ)).quasiMeasurePreserving.preimage_null
-        (ae_eq_set.mp ModularGroup.fd_ae_eq_fdo).1)
-  obtain ⟨γ, hγ⟩ := ModularGroup.exists_smul_mem_fd τ
-  exact mem_iUnion.mpr ⟨γ, hγ, fun h ↦ hτ ⟨γ, h⟩⟩
-
 /-- **Two elements bring a point into `𝒟ᵒ`.** If `γ₀ • w ∈ 𝒟ᵒ`, then exactly two elements `γ` of
 the image of `SL(2, ℤ)` in `SL(2, ℝ)` have `γ⁻¹ • w ∈ 𝒟ᵒ`, namely `γ₀⁻¹` and `-γ₀⁻¹`. -/
 private theorem tsum_indicator_eq_two {w : ℍ} {γ₀ : SL(2, ℤ)} (h : γ₀ • w ∈ ModularGroup.fdo) :
@@ -63,7 +51,7 @@ private theorem tsum_indicator_eq_two {w : ℍ} {γ₀ : SL(2, ℤ)} (h : γ₀ 
       (ModularGroup.fdo : Set ℍ).indicator (1 : ℍ → ℝ≥0∞) ((γ : SL(2, ℝ))⁻¹ • w) = 2 := by
   classical
   set ι := (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ))
-  have hsmul (δ : SL(2, ℤ)) (z : ℍ) : ι δ • z = δ • z := by simp [ι]
+  have hsmul (δ : SL(2, ℤ)) (z : ℍ) : (ι δ)⁻¹ • z = δ⁻¹ • z := by simp [ι, ← map_inv]
   set a : ι.range := ⟨ι γ₀⁻¹, γ₀⁻¹, rfl⟩
   set b : ι.range := ⟨ι (-γ₀⁻¹), -γ₀⁻¹, rfl⟩
   have hab : a ≠ b := by
@@ -72,35 +60,23 @@ private theorem tsum_indicator_eq_two {w : ℍ} {γ₀ : SL(2, ℤ)} (h : γ₀ 
     have h2 : (1 : SL(2, ℤ)) = -1 := by simpa using congrArg (γ₀ * ·) h1
     have h3 := congrArg (fun g : SL(2, ℤ) ↦ (g : Matrix (Fin 2) (Fin 2) ℤ) 0 0) h2
     norm_num at h3
-  have hga : (ModularGroup.fdo : Set ℍ).indicator (1 : ℍ → ℝ≥0∞) ((a : SL(2, ℝ))⁻¹ • w) = 1 := by
-    rw [indicator_of_mem (by simpa [a, ← map_inv, hsmul] using h), Pi.one_apply]
-  have hgb : (ModularGroup.fdo : Set ℍ).indicator (1 : ℍ → ℝ≥0∞) ((b : SL(2, ℝ))⁻¹ • w) = 1 := by
-    rw [indicator_of_mem (by simpa [b, ← map_inv, hsmul, ModularGroup.SL_neg_smul] using h),
-      Pi.one_apply]
+  have hga : (ModularGroup.fdo : Set ℍ).indicator (1 : ℍ → ℝ≥0∞) ((a : SL(2, ℝ))⁻¹ • w) = 1 :=
+    indicator_of_mem (by simpa [a, hsmul] using h) _
+  have hgb : (ModularGroup.fdo : Set ℍ).indicator (1 : ℍ → ℝ≥0∞) ((b : SL(2, ℝ))⁻¹ • w) = 1 :=
+    indicator_of_mem (by simpa [b, hsmul, ModularGroup.SL_neg_smul] using h) _
   rw [tsum_eq_sum (s := {a, b}) fun γ hγ ↦ ?_, Finset.sum_pair hab, hga, hgb, one_add_one_eq_two]
   refine indicator_of_notMem (fun hδ ↦ ?_) _
   obtain ⟨_, δ, rfl⟩ := γ
-  rw [← map_inv, hsmul] at hδ
+  rw [hsmul] at hδ
   have hδ' : (δ⁻¹ * γ₀⁻¹) • (γ₀ • w) ∈ ModularGroup.fdo := by
     rwa [mul_smul, inv_smul_smul]
-  rcases ModularGroup.eq_one_or_neg_one_of_mem_fdo_mem_fdo h hδ' with h1 | h1
-  · refine hγ (Finset.mem_insert.2 (Or.inl (Subtype.ext ?_)))
-    simp only [a]
-    congr 1
-    rw [mul_eq_one_iff_eq_inv] at h1
-    rw [← inv_inv δ, h1, inv_inv]
-  · refine hγ (Finset.mem_insert.2 (Or.inr (Finset.mem_singleton.2 (Subtype.ext ?_))))
-    simp only [b]
-    congr 1
-    have : δ⁻¹ = -1 * γ₀ := by rw [← h1, inv_mul_cancel_right]
-    rw [neg_one_mul] at this
-    rw [← inv_inv δ, this, inv_neg]
-
-/-- The image of `SL(2, ℤ)` in `SL(2, ℝ)` is countable. -/
-private theorem countable_range :
-    Countable (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range :=
-  have := isLattice_range_map_intCast.discreteTopology
-  countable_of_Lindelof_of_discrete
+  -- so `δ⁻¹ γ₀⁻¹ = ±1`, that is `δ = γ₀⁻¹` or `δ = -γ₀⁻¹`
+  have hδ'' : δ = γ₀⁻¹ ∨ δ = -γ₀⁻¹ := by
+    rcases ModularGroup.eq_one_or_neg_one_of_mem_fdo_mem_fdo h hδ' with h1 | h1
+    · exact Or.inl (by simpa using mul_eq_one_iff_inv_eq.mp h1)
+    · have : (-δ)⁻¹ * γ₀⁻¹ = 1 := by rw [inv_neg, neg_mul, h1, neg_neg]
+      exact Or.inr (by simpa [neg_eq_iff_eq_neg] using mul_eq_one_iff_inv_eq.mp this)
+  rcases hδ'' with rfl | rfl <;> simp [a, b] at hγ
 
 /-- **Every fundamental domain of `SL(2, ℤ)` has measure `π / 6`.** If `D` is a fundamental domain
 for `SL(2, ℤ)` acting on `SL(2, ℝ)` by left multiplication, then `2 μ(D) = π / 3`, the area of
@@ -108,7 +84,6 @@ the modular fundamental domain. -/
 theorem two_mul_volume_of_isFundamentalDomain {D : Set SL(2, ℝ)}
     (hD : IsFundamentalDomain (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range D volume) :
     2 * volume D = ENNReal.ofReal (π / 3) := by
-  have := countable_range
   set A : Set SL(2, ℝ) := (· • I) ⁻¹' ModularGroup.fdo
   have hcont : Continuous fun g : SL(2, ℝ) ↦ g • I := continuous_id.smul continuous_const
   have hA : MeasurableSet A := ModularGroup.isOpen_fdo.measurableSet.preimage hcont.measurable
@@ -119,21 +94,18 @@ theorem two_mul_volume_of_isFundamentalDomain {D : Set SL(2, ℝ)}
       ((measurable_one.indicator hA).comp (measurable_const_smul γ⁻¹)).aemeasurable,
     ← setLIntegral_const]
   refine lintegral_congr_ae (ae_restrict_of_ae ?_)
-  filter_upwards [measurePreserving_smul_I.quasiMeasurePreserving.ae ae_exists_smul_mem_fdo]
-    with g ⟨γ₀, hγ₀⟩
+  filter_upwards [measurePreserving_smul_I.quasiMeasurePreserving.ae
+    ModularGroup.ae_exists_smul_mem_fdo] with g ⟨γ₀, hγ₀⟩
   rw [← tsum_indicator_eq_two hγ₀]
   refine tsum_congr fun γ ↦ ?_
-  simp only [A, indicator, mem_preimage, Subgroup.smul_def, smul_eq_mul, mul_smul,
-    Subgroup.coe_inv, Pi.one_apply]
-  rw [← mul_smul]
-  rfl
+  rw [Subgroup.smul_def, Subgroup.coe_inv, smul_eq_mul, ← mul_smul]
+  -- `A.indicator 1` is `𝒟ᵒ.indicator 1` composed with the orbit map
+  exact (indicator_comp_right (· • I)).symm
 
 /-- **The covolume of `SL(2, ℤ)` acting on `SL(2, ℝ)` by left multiplication** is `π / 6`. -/
 theorem covolume_range_map_intCast :
     covolume (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range SL(2, ℝ) =
       ENNReal.ofReal (π / 6) := by
-  have := isLattice_range_map_intCast.discreteTopology
-  have := countable_range
   obtain ⟨D, -, hD⟩ := Subgroup.exists_isFundamentalDomain_mul_left
     (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range volume
   rw [hD.covolume_eq_volume]
@@ -150,13 +122,9 @@ pushes it forward to the hyperbolic area. -/
 theorem covolume_op_range_map_intCast :
     covolume (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range.op SL(2, ℝ) =
       ENNReal.ofReal (π / 6) := by
-  have := isLattice_range_map_intCast.discreteTopology
-  have := countable_range
-  have : Countable (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range.op :=
-    (Subgroup.equivOp _).symm.injective.countable
-  obtain ⟨D, -, hD⟩ := Subgroup.exists_isFundamentalDomain_mul_left
+  obtain ⟨_, -, hD⟩ := Subgroup.exists_isFundamentalDomain_mul_left
     (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range volume
-  rw [hD.preimage_inv_op.covolume_eq_volume, measure_preimage_inv, ← hD.covolume_eq_volume,
-    covolume_range_map_intCast]
+  exact (Subgroup.covolume_op_eq_covolume (hD.hasFundamentalDomain _)).trans
+    covolume_range_map_intCast
 
 end Matrix.SpecialLinearGroup
