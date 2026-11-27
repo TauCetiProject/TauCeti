@@ -137,6 +137,18 @@ def IsNonzeroEffective (c : CurveSheafClass) : Prop :=
 theorem isNonzeroEffective_iff : c.IsNonzeroEffective ↔ 0 < c.rank ∨ 0 < c.degree :=
   Iff.rfl
 
+/-- A class of positive rank is nonzero effective. -/
+theorem IsNonzeroEffective.of_rank_pos (h : 0 < c.rank) : c.IsNonzeroEffective :=
+  Or.inl h
+
+/-- A class of nonzero rank is nonzero effective. -/
+theorem IsNonzeroEffective.of_rank_ne_zero (h : c.rank ≠ 0) : c.IsNonzeroEffective :=
+  .of_rank_pos (Nat.pos_of_ne_zero h)
+
+/-- A class of positive degree is nonzero effective. -/
+theorem IsNonzeroEffective.of_degree_pos (h : 0 < c.degree) : c.IsNonzeroEffective :=
+  Or.inr h
+
 theorem IsNonzeroEffective.ne_zero (hc : c.IsNonzeroEffective) : c ≠ 0 := by
   rintro rfl
   simp [isNonzeroEffective_iff] at hc
@@ -188,30 +200,16 @@ theorem slope_le_slope_iff (hc : c.IsNonzeroEffective) (hc' : c'.IsNonzeroEffect
     c.slope ≤ c'.slope ↔ (c'.rank : ℤ) * c.degree ≤ c.rank * c'.degree := by
   by_cases h : c.rank = 0
   · have hd := hc.degree_pos_of_rank_eq_zero h
-    rw [slope_of_rank_eq_zero h, top_le_iff, slope_eq_top_iff, h, Nat.cast_zero, zero_mul]
-    constructor
-    · intro h'
-      simp [h']
-    · intro h'
-      have : (c'.rank : ℤ) ≤ 0 := nonpos_of_mul_nonpos_left h' hd
-      omega
+    simp only [slope_of_rank_eq_zero h, top_le_iff, slope_eq_top_iff, h, Nat.cast_zero, zero_mul]
+    exact ⟨fun h' ↦ by simp [h'], fun h' ↦ by nlinarith⟩
   by_cases h' : c'.rank = 0
   · have hd := hc'.degree_pos_of_rank_eq_zero h'
     simp only [slope_of_rank_eq_zero h', le_top, h', Nat.cast_zero, zero_mul, true_iff]
     positivity
   rw [slope_of_rank_ne_zero h, slope_of_rank_ne_zero h', WithTop.coe_le_coe,
     div_le_div_iff₀ (by positivity) (by positivity)]
-  constructor <;> intro hle
-  · have : ((c.degree * c'.rank : ℤ) : ℚ) ≤ ((c'.degree * c.rank : ℤ) : ℚ) := by
-      push_cast
-      exact hle
-    rw [Int.cast_le] at this
-    linarith
-  · have : ((c.degree * c'.rank : ℤ) : ℚ) ≤ ((c'.degree * c.rank : ℤ) : ℚ) := by
-      rw [Int.cast_le]
-      linarith
-    push_cast at this
-    exact this
+  norm_cast
+  constructor <;> intro <;> linarith
 
 /-- Slopes of nonzero effective classes compare strictly by cross-multiplication:
 `μ(c) < μ(c')` if and only if `rk c' deg c < rk c deg c'`. -/
@@ -225,7 +223,7 @@ theorem slope_le_slope_add_iff (hc' : c'.IsNonzeroEffective) :
     c.slope ≤ (c + c').slope ↔ c.slope ≤ c'.slope := by
   by_cases h : c.rank = 0
   · simp [slope_of_rank_eq_zero h, h]
-  have hc : c.IsNonzeroEffective := Or.inl (Nat.pos_of_ne_zero h)
+  have hc : c.IsNonzeroEffective := .of_rank_ne_zero h
   rw [slope_le_slope_iff hc (hc.add hc'), slope_le_slope_iff hc hc', rank_add, degree_add]
   push_cast
   constructor <;> intro <;> linarith
@@ -236,7 +234,7 @@ theorem slope_add_le_slope_iff (hc : c.IsNonzeroEffective) :
     (c + c').slope ≤ c'.slope ↔ c.slope ≤ c'.slope := by
   by_cases h : c'.rank = 0
   · simp [slope_of_rank_eq_zero h]
-  have hc' : c'.IsNonzeroEffective := Or.inl (Nat.pos_of_ne_zero h)
+  have hc' : c'.IsNonzeroEffective := .of_rank_ne_zero h
   rw [slope_le_slope_iff (hc.add hc') hc', slope_le_slope_iff hc hc', rank_add, degree_add]
   push_cast
   constructor <;> intro <;> linarith
@@ -269,25 +267,20 @@ theorem slope_add_le_max_slope (c c' : CurveSheafClass) :
   by_cases h' : c'.rank = 0
   · simp [slope_of_rank_eq_zero h']
   rcases le_total c.slope c'.slope with hle | hle
-  · exact ((slope_add_le_slope_iff (Or.inl (Nat.pos_of_ne_zero h))).2 hle).trans
+  · exact ((slope_add_le_slope_iff (.of_rank_ne_zero h)).2 hle).trans
       (le_max_right _ _)
   · rw [add_comm]
-    exact ((slope_add_le_slope_iff (Or.inl (Nat.pos_of_ne_zero h'))).2 hle).trans
+    exact ((slope_add_le_slope_iff (.of_rank_ne_zero h')).2 hle).trans
       (le_max_left _ _)
 
 /-- A nonzero effective class has nonnegative slope exactly when its degree is nonnegative. -/
-theorem zero_le_slope_iff (hc : c.IsNonzeroEffective) : 0 ≤ c.slope ↔ 0 ≤ c.degree := by
+theorem slope_nonneg_iff (hc : c.IsNonzeroEffective) : 0 ≤ c.slope ↔ 0 ≤ c.degree := by
   by_cases h : c.rank = 0
   · simp [slope_of_rank_eq_zero h, (hc.degree_pos_of_rank_eq_zero h).le]
   · rw [slope_of_rank_ne_zero h, ← WithTop.coe_zero, WithTop.coe_le_coe]
     have : (0 : ℚ) < c.rank := by positivity
-    rw [div_nonneg_iff]
-    constructor
-    · rintro (⟨hd, -⟩ | ⟨-, hr⟩)
-      · exact_mod_cast hd
-      · linarith
-    · intro hd
-      exact Or.inl ⟨by exact_mod_cast hd, this.le⟩
+    rw [le_div_iff₀ this, zero_mul]
+    exact_mod_cast Iff.rfl
 
 /-! ### Twisting by a line bundle -/
 
@@ -464,7 +457,7 @@ private theorem bounds_of_mem_classes {τ : HNType} (hτ : ∀ a ∈ τ.classes,
     {a : CurveSheafClass} (ha : a ∈ τ.classes) :
     a.rank ≤ τ.total.rank ∧ 0 ≤ a.degree ∧ a.degree ≤ τ.total.degree := by
   have hdeg : ∀ b ∈ τ.classes, 0 ≤ b.degree := fun b hb ↦
-    (zero_le_slope_iff (τ.isNonzeroEffective b hb)).1 (hτ b hb)
+    (slope_nonneg_iff (τ.isNonzeroEffective b hb)).1 (hτ b hb)
   refine ⟨?_, hdeg a ha, ?_⟩
   · rw [total_def, rank_list_sum]
     exact List.le_sum_of_mem (List.mem_map_of_mem ha)
@@ -503,7 +496,7 @@ slopes `2 > -1` in this order; the reversed order is not a type. -/
 example : ([⟨1, 2⟩, ⟨1, -1⟩] : List CurveSheafClass).Pairwise (fun c c' ↦ c'.slope < c.slope) ∧
     ¬ ([⟨1, -1⟩, ⟨1, 2⟩] : List CurveSheafClass).Pairwise (fun c c' ↦ c'.slope < c.slope) := by
   have h : (⟨1, -1⟩ : CurveSheafClass).slope < (⟨1, 2⟩ : CurveSheafClass).slope :=
-    (slope_lt_slope_iff (Or.inl one_pos) (Or.inl one_pos)).2 (by norm_num)
+    (slope_lt_slope_iff (.of_rank_pos one_pos) (.of_rank_pos one_pos)).2 (by norm_num)
   simp only [List.pairwise_pair]
   exact ⟨h, lt_asymm h⟩
 
