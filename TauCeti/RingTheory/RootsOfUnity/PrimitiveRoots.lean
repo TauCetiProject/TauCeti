@@ -215,6 +215,31 @@ theorem _root_.IsPrimitiveRoot.autToPow_eq_one_iff {K M : Type*} [CommRing K] [C
     (x : M ≃ₐ[K] M) : hζ.autToPow K x = 1 ↔ x ζ = ζ := by
   rw [← Units.val_eq_one, ← Nat.cast_one, hζ.coe_autToPow_eq_natCast_iff, pow_one]
 
+/-- An automorphism fixes `ζ + ζ⁻¹` exactly when its cyclotomic exponent is `1` or `-1`. -/
+theorem _root_.IsPrimitiveRoot.autToPow_eq_one_or_neg_one_iff {K L : Type*} [CommRing K]
+    [Field L] [Algebra K L] {m : ℕ} [NeZero m] {ζ : L} (hζ : IsPrimitiveRoot ζ m)
+    (σ : L ≃ₐ[K] L) :
+    hζ.autToPow K σ = 1 ∨ hζ.autToPow K σ = -1 ↔ σ (ζ + ζ⁻¹) = ζ + ζ⁻¹ := by
+  have hpow : ζ ^ (m - 1) = ζ⁻¹ := by
+    apply eq_inv_of_mul_eq_one_left
+    rw [← pow_succ, Nat.sub_add_cancel (NeZero.pos m), hζ.pow_eq_one]
+  have hneg : hζ.autToPow K σ = -1 ↔ σ ζ = ζ⁻¹ := by
+    rw [Units.ext_iff, Units.val_neg, Units.val_one, ← hpow,
+      ← hζ.coe_autToPow_eq_natCast_iff, Nat.cast_sub (NeZero.pos m), ZMod.natCast_self]
+    simp
+  rw [hζ.autToPow_eq_one_iff, hneg, map_add, map_inv₀]
+  constructor
+  · rintro (h | h) <;> simp [h, add_comm]
+  · intro h
+    have hζ₀ := hζ.ne_zero (NeZero.ne m)
+    have hσζ : σ ζ ≠ 0 := (map_ne_zero σ).mpr hζ₀
+    -- The two roots of `X² - (ζ + ζ⁻¹)X + 1` are `ζ` and `ζ⁻¹`.
+    have hmul := congrArg (fun y : L ↦ σ ζ * y) h
+    simp only [mul_add, mul_inv_cancel₀ hσζ] at hmul
+    have hfactor : (σ ζ - ζ) * (σ ζ - ζ⁻¹) = 0 := by
+      linear_combination mul_inv_cancel₀ hζ₀ + hmul
+    exact (mul_eq_zero.mp hfactor).imp sub_eq_zero.mp sub_eq_zero.mp
+
 /-- **The cyclotomic character modulo a divisor.** Let `d ∣ m`. An automorphism has cyclotomic
 character congruent to `k` modulo `d` exactly when it raises the primitive `d`-th root of unity
 `ζ ^ (m / d)` to the `k`-th power. -/
