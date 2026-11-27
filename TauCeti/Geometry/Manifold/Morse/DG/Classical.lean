@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Classical.Basic
 public import TauCeti.Geometry.Manifold.Morse.Boundary.LocalCoefficient
 public import TauCeti.Geometry.Manifold.Morse.DG.DegreeZero
+public import TauCeti.Geometry.Manifold.Morse.DG.TwistedComplex
 public import TauCeti.Geometry.Manifold.Morse.Stable.Broken.Slice
 
 /-!
@@ -49,8 +50,25 @@ identifications of the fibres `L(y₀) ≅ L(θ x)` along `θ x = y₀`.
 
 The twisted differential with coefficients concentrated in degree zero is the action of the
 entries of the cocycle (`TauCeti.twistedDifferential_trivialGrading_apply`). Assembling the
-entrywise identity into an isomorphism of the DG Morse complex with coefficients in `L` and the
-Morse complex with coefficients in `θ^* L` is not done here.
+entrywise identity gives the comparison of complexes.
+
+* **The differentials agree.** Transport along `θ x = y₀` at each critical point `x`
+  (`TauCeti.criticalPointsFiberTransportEquiv`) identifies the chains `Crit f → L(y₀)` of the
+  twisted complex with the chains of the Morse complex with coefficients in `θ^* L`, and carries
+  the twisted differential of the Barraud–Cornea cocycle to the Morse boundary with coefficients
+  in `θ^* L`
+  (`IsMorseSmale.criticalPointsFiberTransportEquiv_twistedDifferential`).
+* **`∂² = 0`.** Since the twisted differential squares to zero by the twisting equation, so does
+  the Morse boundary with coefficients in `θ^* L`, for every local system `L` on `Y`
+  (`IsMorseSmale.twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero`). So a signed
+  twisting chain system on the trajectory spaces makes the Morse boundary square to zero with
+  coefficients in every local system pulled back along `θ`.
+* **Classical recovery.** The DG Morse complex with coefficients in `L`, read in degree zero, is
+  isomorphic to the Morse complex with coefficients in `θ^* L`
+  (`IsMorseSmale.dgMorseComplexClassicalIso`), so DG Morse homology with coefficients concentrated
+  in degree zero is Morse homology with local coefficients. When `θ` is homotopic to the identity,
+  as for the map of Barraud, Damian, Humilière and Oancea through the collapse of a tree, `θ^* L`
+  is isomorphic to `L`; that identification is not made here.
 
 ## Main results
 
@@ -66,6 +84,16 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   `IsMorseSmale.classicalAction_barraudCorneaCocycle_m_eq_twistedMorseBoundaryMap_of_charTwo`:
   classical recovery, entry by entry, over any ring for the oriented chain system and in
   characteristic two.
+* `IsMorseSmale.criticalPointsFiberTransportEquiv_twistedDifferential`: transport carries the
+  twisted differential to the Morse boundary with coefficients in `θ^* L`.
+* `IsMorseSmale.twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero`: the Morse
+  boundary with coefficients in `θ^* L` squares to zero.
+* `IsMorseSmale.dgMorseComplexClassicalIso`: the DG Morse complex with coefficients in a classical
+  local system is isomorphic to the Morse complex with coefficients in `θ^* L`.
+
+In the namespace `TauCeti`:
+
+* `criticalPointsFiberTransportEquiv`: the transport of the fibres at the critical points.
 
 ## References
 
@@ -90,6 +118,75 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
   [CompactSpace M] [T2Space M]
   {f : M → ℝ} {X : (x : M) → TangentSpace 𝓘(ℝ, E) x} {ι : Type*}
+
+/-! ### Transport of the fibres at the critical points -/
+
+section FiberTransport
+
+variable {Y : TopCat.{u}} {θ : C(M, Y)} {y₀ : Y} {R : Type u} [CommRing R]
+
+/-- **Transport of the fibres at the critical points.** For a map `θ : M → Y` sending every
+critical point of `f` to `y₀` and a local system `L` on `Y`, the families of elements of `L(y₀)`
+indexed by the critical points are identified with the families `c` with `c x` in the fibre of
+the pullback `θ^* L` at each critical point `x`, by the transport along `θ x = y₀`. This
+identifies the chains of the twisted complex of the fibre `L(y₀)` with the chains of the Morse
+complex with coefficients in `θ^* L`. -/
+noncomputable def criticalPointsFiberTransportEquiv
+    (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀) (L : LocalCoefficientSystem.{u, u, w} R Y) :
+    (criticalPoints 𝓘(ℝ, E) f → L.obj (FundamentalGroupoid.mk y₀)) ≃ₗ[R]
+      ((x : criticalPoints 𝓘(ℝ, E) f) →
+        ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L).obj
+          (FundamentalGroupoid.mk (x : M))) :=
+  LinearEquiv.piCongrRight fun x ↦
+    LocalCoefficientSystem.transport L ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ x))
+
+variable (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀) (L : LocalCoefficientSystem.{u, u, w} R Y)
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+theorem criticalPointsFiberTransportEquiv_apply
+    (g : criticalPoints 𝓘(ℝ, E) f → L.obj (FundamentalGroupoid.mk y₀))
+    (x : criticalPoints 𝓘(ℝ, E) f) :
+    criticalPointsFiberTransportEquiv hθ L g x =
+      LocalCoefficientSystem.transport L ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ x))
+        (g x) :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+theorem criticalPointsFiberTransportEquiv_symm_apply
+    (c : (x : criticalPoints 𝓘(ℝ, E) f) →
+      ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L).obj
+        (FundamentalGroupoid.mk (x : M)))
+    (x : criticalPoints 𝓘(ℝ, E) f) :
+    (criticalPointsFiberTransportEquiv hθ L).symm c x =
+      (LocalCoefficientSystem.transport L
+        ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ x))).symm (c x) :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M] in
+/-- **Transport matches the gradings.** The transport of the fibres at the critical points
+carries the chains of total degree `n` of the twisted complex of `L(y₀)`, concentrated in degree
+zero, onto the families supported on the critical points of Morse index `-n`, the chains of
+degree `n` of the Morse complex with coefficients in `θ^* L`. -/
+theorem map_twistedTotalGrading_criticalPointsFiberTransportEquiv (n : ℤ) :
+    (twistedTotalGrading (trivialGrading R (L.obj (FundamentalGroupoid.mk y₀)))
+        (fun x : criticalPoints 𝓘(ℝ, E) f ↦ (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ)) n).map
+        (criticalPointsFiberTransportEquiv hθ L : _ →ₗ[R] _) =
+      Submodule.pi {x : criticalPoints 𝓘(ℝ, E) f | (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) ≠ -n}
+        fun x ↦ (⊥ : Submodule R (((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj
+          L).obj (FundamentalGroupoid.mk (x : M)))) := by
+  ext c
+  rw [Submodule.mem_map_equiv, mem_twistedTotalGrading_iff, Submodule.mem_pi]
+  refine forall_congr' fun x ↦ ?_
+  -- The inverse transport vanishes exactly where `c` does.
+  have hx : (criticalPointsFiberTransportEquiv hθ L).symm c x = 0 ↔ c x = 0 :=
+    LinearEquiv.map_eq_zero_iff (LocalCoefficientSystem.transport L
+      ((Path.Homotopic.Quotient.refl y₀).cast rfl (hθ x))).symm
+  rw [mem_trivialGrading_iff, Set.mem_ofPred_eq, Submodule.mem_bot, hx,
+    show n + (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) = 0 ↔
+      ¬(manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ) ≠ -n by omega]
+  exact imp_iff_not_or.symm
+
+end FiberTransport
 
 namespace IsAdaptedPseudoGradient
 
@@ -298,6 +395,244 @@ theorem classicalAction_barraudCorneaCocycle_m_eq_twistedMorseBoundaryMap_of_cha
   · rw [Int.cast_neg, Int.cast_one, CharTwo.neg_eq]
 
 end ClassicalAction
+
+/-! ### The DG Morse complex with coefficients in a classical local system -/
+
+section Complex
+
+variable {Y : TopCat.{u}} {θ : C(M, Y)} {y₀ : Y} {R : Type u} [CommRing R]
+  [Fintype (criticalPoints 𝓘(ℝ, E) f)]
+
+/-- **The Barraud–Cornea cocycle acts on a classical local system as the twisted Morse boundary.**
+Under the Morse–Smale condition, let `S` be a twisting chain system graded by the Morse index that
+gives each trajectory between critical points of consecutive index its sign for the orientations
+`𝔬`. For a local system `L` on `Y`, read at `y₀` as a DG local system concentrated in degree zero
+(`TauCeti.classicalDGLocalSystem`), the transport of the fibres at the critical points
+(`TauCeti.criticalPointsFiberTransportEquiv`) carries the twisted differential of the
+Barraud–Cornea cocycle of `S` on the chains `Crit f → L(y₀)` to the Morse boundary of `f` with
+coefficients in `θ^* L` (`TauCeti.IsAdaptedPseudoGradient.twistedMorseBoundary`). -/
+theorem criticalPointsFiberTransportEquiv_twistedDifferential (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
+    (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀)
+    (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
+    (S : TwistingChainSystem (fun x : criticalPoints 𝓘(ℝ, E) f ↦
+      (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ)) (hX.morseBrokenTrajectorySpaceComp hc) R)
+    (𝔬 : MorseOrientation f X)
+    (hS : ∀ (x y : criticalPoints 𝓘(ℝ, E) f)
+      (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f y + 1)
+      (w : hX.morseBrokenTrajectorySpace c x y),
+      NormalizedCubicalChain.zeroEquiv _ R (S.chain x y 0) w =
+        hX.trajectorySign (𝔬.chart x) (𝔬.chart y) (𝔬.orientation x) (𝔬.orientation y) hxy
+          (h.morseBrokenTrajectorySpaceEquivSlice hf (hdense x y) hxy w))
+    (L : LocalCoefficientSystem.{u, u, w} R Y)
+    (g : criticalPoints 𝓘(ℝ, E) f → L.obj (FundamentalGroupoid.mk y₀)) :
+    criticalPointsFiberTransportEquiv hθ L
+        (twistedDifferential (hX.barraudCorneaCocycle hf hdense hθ hc S).m
+          (trivialGrading R (L.obj (FundamentalGroupoid.mk y₀))) 0 g) =
+      hX.twistedMorseBoundary 𝔬 ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L) hf
+        (criticalPointsFiberTransportEquiv hθ L g) := by
+  have := hf.finite_criticalPoints.to_subtype
+  funext y
+  rw [twistedMorseBoundary_apply, finsum_eq_sum_of_fintype,
+    criticalPointsFiberTransportEquiv_apply, twistedDifferential_trivialGrading_apply,
+    LinearMap.zero_apply, zero_add, map_sum]
+  refine Finset.sum_congr rfl fun x _ ↦ ?_
+  -- Each entry of the cocycle acts as the conjugate of the component of the twisted boundary.
+  rw [op_smul_eq_classicalAction,
+    h.classicalAction_barraudCorneaCocycle_m_eq_twistedMorseBoundaryMap hf hdense hθ hc
+      (fun _ ↦ rfl) S 𝔬 hS L x y]
+  -- The fibres of `θ^* L` are those of `L` only up to unfolding the pullback, so the remaining
+  -- cancellation of a transport against its inverse is applied in term mode.
+  exact LinearEquiv.apply_symm_apply _ _
+
+/-- **`∂² = 0` for the Morse boundary with coefficients in a pullback.** Under the Morse–Smale
+condition, if a twisting chain system `S` graded by the Morse index gives each trajectory between
+critical points of consecutive index its sign for the orientations `𝔬`, then for every local
+system `L` on `Y` the Morse boundary of `f` with coefficients in `θ^* L` squares to zero: through
+the transport of the fibres at the critical points it is the twisted differential of the
+Barraud–Cornea cocycle of `S`, which squares to zero by the twisting equation. -/
+theorem twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
+    (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀)
+    (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
+    (S : TwistingChainSystem (fun x : criticalPoints 𝓘(ℝ, E) f ↦
+      (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ)) (hX.morseBrokenTrajectorySpaceComp hc) R)
+    (𝔬 : MorseOrientation f X)
+    (hS : ∀ (x y : criticalPoints 𝓘(ℝ, E) f)
+      (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f y + 1)
+      (w : hX.morseBrokenTrajectorySpace c x y),
+      NormalizedCubicalChain.zeroEquiv _ R (S.chain x y 0) w =
+        hX.trajectorySign (𝔬.chart x) (𝔬.chart y) (𝔬.orientation x) (𝔬.orientation y) hxy
+          (h.morseBrokenTrajectorySpaceEquivSlice hf (hdense x y) hxy w))
+    (L : LocalCoefficientSystem.{u, u, w} R Y) :
+    hX.twistedMorseBoundary 𝔬 ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L) hf ∘ₗ
+        hX.twistedMorseBoundary 𝔬 ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L)
+          hf = 0 := by
+  refine LinearMap.ext fun c ↦ ?_
+  obtain ⟨g, rfl⟩ := (criticalPointsFiberTransportEquiv hθ L).surjective c
+  rw [LinearMap.comp_apply,
+    ← h.criticalPointsFiberTransportEquiv_twistedDifferential hf hdense hθ hc S 𝔬 hS L,
+    ← h.criticalPointsFiberTransportEquiv_twistedDifferential hf hdense hθ hc S 𝔬 hS L,
+    LinearMap.zero_apply]
+  exact (congrArg _ ((hX.barraudCorneaCocycle hf hdense hθ hc S).twistedDifferential_sq_zero
+    0 (isDGRightModule_fiber L) g)).trans (map_zero _)
+
+/-- The degreewise identification of the DG Morse complex with coefficients in a classical local
+system with the Morse complex with local coefficients: the transport of the fibres at the critical
+points, restricted to the chains of each degree. -/
+private noncomputable def dgMorseComplexClassicalXEquiv (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
+    (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀)
+    (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
+    (S : TwistingChainSystem (fun x : criticalPoints 𝓘(ℝ, E) f ↦
+      (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ)) (hX.morseBrokenTrajectorySpaceComp hc) R)
+    (𝔬 : MorseOrientation f X)
+    (hS : ∀ (x y : criticalPoints 𝓘(ℝ, E) f)
+      (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f y + 1)
+      (w : hX.morseBrokenTrajectorySpace c x y),
+      NormalizedCubicalChain.zeroEquiv _ R (S.chain x y 0) w =
+        hX.trajectorySign (𝔬.chart x) (𝔬.chart y) (𝔬.orientation x) (𝔬.orientation y) hxy
+          (h.morseBrokenTrajectorySpaceEquivSlice hf (hdense x y) hxy w))
+    (L : LocalCoefficientSystem.{u, u, w} R Y) (n : ℤ) :
+    (hX.dgMorseComplex hf hdense hθ hc S (classicalDGLocalSystem y₀ L)).X n ≃ₗ[R]
+      (hX.twistedMorseComplex 𝔬 ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L) hf
+        (h.twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero hf hdense hθ hc S 𝔬
+          hS L)).X n :=
+  (twistedCochainComplexXEquiv (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
+      (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting (isDGRightModule_fiber L) n).trans
+    (((criticalPointsFiberTransportEquiv hθ L).ofSubmodules _ _
+      (map_twistedTotalGrading_criticalPointsFiberTransportEquiv hθ L n)).trans
+        (twistedMorseComplexXEquiv hf _ n).symm)
+
+private theorem twistedMorseComplexXEquiv_dgMorseComplexClassicalXEquiv (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
+    (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀)
+    (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
+    (S : TwistingChainSystem (fun x : criticalPoints 𝓘(ℝ, E) f ↦
+      (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ)) (hX.morseBrokenTrajectorySpaceComp hc) R)
+    (𝔬 : MorseOrientation f X)
+    (hS : ∀ (x y : criticalPoints 𝓘(ℝ, E) f)
+      (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f y + 1)
+      (w : hX.morseBrokenTrajectorySpace c x y),
+      NormalizedCubicalChain.zeroEquiv _ R (S.chain x y 0) w =
+        hX.trajectorySign (𝔬.chart x) (𝔬.chart y) (𝔬.orientation x) (𝔬.orientation y) hxy
+          (h.morseBrokenTrajectorySpaceEquivSlice hf (hdense x y) hxy w))
+    (L : LocalCoefficientSystem.{u, u, w} R Y) (n : ℤ)
+    (g : (hX.dgMorseComplex hf hdense hθ hc S (classicalDGLocalSystem y₀ L)).X n) :
+    (twistedMorseComplexXEquiv hf _ n
+        (dgMorseComplexClassicalXEquiv h hf hdense hθ hc S 𝔬 hS L n g) :
+          (x : criticalPoints 𝓘(ℝ, E) f) →
+            ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L).obj
+              (FundamentalGroupoid.mk (x : M))) =
+      criticalPointsFiberTransportEquiv hθ L
+        (twistedCochainComplexXEquiv (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
+          (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting (isDGRightModule_fiber L) n g) :=
+  -- The composite of linear equivalences unfolds to the transport of `g`, read back through the
+  -- inverse of `twistedMorseComplexXEquiv`.
+  congrArg Subtype.val (LinearEquiv.apply_symm_apply (twistedMorseComplexXEquiv hf _ n) _)
+
+/-- **The DG Morse complex with coefficients in a classical local system is the Morse complex with
+local coefficients.** Under the Morse–Smale condition, let `S` be a twisting chain system graded
+by the Morse index that gives each trajectory between critical points of consecutive index its
+sign for the orientations `𝔬`. For a local system `L` on `Y`, the DG Morse complex of `S` with
+coefficients in `L`, read at `y₀` as a DG local system concentrated in degree zero
+(`TauCeti.classicalDGLocalSystem`), is isomorphic to the Morse complex of `f` with coefficients
+in `θ^* L` (`TauCeti.IsAdaptedPseudoGradient.twistedMorseComplex`), through the transport of the
+fibres at the critical points (`TauCeti.criticalPointsFiberTransportEquiv`). So their cohomologies
+agree: DG Morse homology with coefficients concentrated in degree zero is Morse homology with
+local coefficients. -/
+noncomputable def dgMorseComplexClassicalIso (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
+    (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀)
+    (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
+    (S : TwistingChainSystem (fun x : criticalPoints 𝓘(ℝ, E) f ↦
+      (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ)) (hX.morseBrokenTrajectorySpaceComp hc) R)
+    (𝔬 : MorseOrientation f X)
+    (hS : ∀ (x y : criticalPoints 𝓘(ℝ, E) f)
+      (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f y + 1)
+      (w : hX.morseBrokenTrajectorySpace c x y),
+      NormalizedCubicalChain.zeroEquiv _ R (S.chain x y 0) w =
+        hX.trajectorySign (𝔬.chart x) (𝔬.chart y) (𝔬.orientation x) (𝔬.orientation y) hxy
+          (h.morseBrokenTrajectorySpaceEquivSlice hf (hdense x y) hxy w))
+    (L : LocalCoefficientSystem.{u, u, w} R Y) :
+    hX.dgMorseComplex hf hdense hθ hc S (classicalDGLocalSystem y₀ L) ≅
+      hX.twistedMorseComplex 𝔬 ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L) hf
+        (h.twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero hf hdense hθ hc S 𝔬
+          hS L) :=
+  HomologicalComplex.Hom.isoOfComponents
+    (fun n ↦ (dgMorseComplexClassicalXEquiv h hf hdense hθ hc S 𝔬 hS L n).toModuleIso)
+    fun i j hij ↦ by
+      obtain rfl : i + 1 = j := hij
+      refine ModuleCat.hom_ext (LinearMap.ext fun g ↦
+        (twistedMorseComplexXEquiv hf _ (i + 1)).injective (Subtype.ext ?_))
+      -- The differential of the DG Morse complex is the twisted differential.
+      have hd : (twistedCochainComplexXEquiv (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
+            (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting (isDGRightModule_fiber L) (i + 1)
+            (((hX.dgMorseComplex hf hdense hθ hc S (classicalDGLocalSystem y₀ L)).d i
+              (i + 1)).hom g) : criticalPoints 𝓘(ℝ, E) f → L.obj (FundamentalGroupoid.mk y₀)) =
+          twistedDifferential (hX.barraudCorneaCocycle hf hdense hθ hc S).m
+            (trivialGrading R (L.obj (FundamentalGroupoid.mk y₀))) 0
+            (twistedCochainComplexXEquiv (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
+              (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting (isDGRightModule_fiber L) i g) :=
+        twistedCochainComplexXEquiv_d _ _ _ i g
+      -- Both composites send `g` to the transport of its twisted differential.
+      have key : (twistedMorseComplexXEquiv hf _ (i + 1)
+            (((hX.twistedMorseComplex 𝔬
+              ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L) hf
+              (h.twistedMorseBoundary_comp_twistedMorseBoundary_pullback_eq_zero hf hdense hθ hc S
+                𝔬 hS L)).d i (i + 1)).hom
+              (dgMorseComplexClassicalXEquiv h hf hdense hθ hc S 𝔬 hS L i g)) :
+              (x : criticalPoints 𝓘(ℝ, E) f) →
+                ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L).obj
+                  (FundamentalGroupoid.mk (x : M))) =
+          twistedMorseComplexXEquiv hf _ (i + 1)
+            (dgMorseComplexClassicalXEquiv h hf hdense hθ hc S 𝔬 hS L (i + 1)
+              (((hX.dgMorseComplex hf hdense hθ hc S (classicalDGLocalSystem y₀ L)).d i
+                (i + 1)).hom g)) := by
+        rw [twistedMorseComplexXEquiv_d hf _ rfl,
+          twistedMorseComplexXEquiv_dgMorseComplexClassicalXEquiv,
+          twistedMorseComplexXEquiv_dgMorseComplexClassicalXEquiv, hd,
+          h.criticalPointsFiberTransportEquiv_twistedDifferential hf hdense hθ hc S 𝔬 hS L]
+      -- The composites of morphisms of modules unfold to the composites of the linear maps.
+      exact key
+
+/-- On the chains of degree `n`, the isomorphism of the DG Morse complex with coefficients in a
+classical local system with the Morse complex with local coefficients is the transport of the
+fibres at the critical points. -/
+theorem twistedMorseComplexXEquiv_dgMorseComplexClassicalIso_hom_f (h : hX.IsMorseSmale)
+    (hf : IsMorse 𝓘(ℝ, E) f)
+    (hdense : ∀ x y : criticalPoints 𝓘(ℝ, E) f, Ioo (f y) (f x) ⊆ closure (range c))
+    (hθ : ∀ x : criticalPoints 𝓘(ℝ, E) f, θ x = y₀)
+    (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x)
+    (S : TwistingChainSystem (fun x : criticalPoints 𝓘(ℝ, E) f ↦
+      (manifoldMorseIndex 𝓘(ℝ, E) f x : ℤ)) (hX.morseBrokenTrajectorySpaceComp hc) R)
+    (𝔬 : MorseOrientation f X)
+    (hS : ∀ (x y : criticalPoints 𝓘(ℝ, E) f)
+      (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f y + 1)
+      (w : hX.morseBrokenTrajectorySpace c x y),
+      NormalizedCubicalChain.zeroEquiv _ R (S.chain x y 0) w =
+        hX.trajectorySign (𝔬.chart x) (𝔬.chart y) (𝔬.orientation x) (𝔬.orientation y) hxy
+          (h.morseBrokenTrajectorySpaceEquivSlice hf (hdense x y) hxy w))
+    (L : LocalCoefficientSystem.{u, u, w} R Y) (n : ℤ)
+    (g : (hX.dgMorseComplex hf hdense hθ hc S (classicalDGLocalSystem y₀ L)).X n) :
+    (twistedMorseComplexXEquiv hf _ n
+        (((dgMorseComplexClassicalIso h hf hdense hθ hc S 𝔬 hS L).hom.f n).hom g) :
+          (x : criticalPoints 𝓘(ℝ, E) f) →
+            ((LocalCoefficientSystem.pullback (X := TopCat.of M) θ).obj L).obj
+              (FundamentalGroupoid.mk (x : M))) =
+      criticalPointsFiberTransportEquiv hθ L
+        (twistedCochainComplexXEquiv (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
+          (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting (isDGRightModule_fiber L) n g) :=
+  -- The component of the isomorphism is `dgMorseComplexClassicalXEquiv` read as a morphism of
+  -- modules.
+  twistedMorseComplexXEquiv_dgMorseComplexClassicalXEquiv h hf hdense hθ hc S 𝔬 hS L n g
+
+end Complex
 
 end IsMorseSmale
 
