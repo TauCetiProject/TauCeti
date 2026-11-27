@@ -32,7 +32,7 @@ No finiteness of `H` is needed in either direction.
 
 * `TauCeti.unipotentCommHopfAlgProperty.baseChange`: unipotence is preserved by field extension.
 * `TauCeti.unipotentCommHopfAlgProperty.of_baseChange`: unipotence is reflected by field extension.
-* `TauCeti.unipotentCommHopfAlgProperty_baseChange_iff`: the two together.
+* `TauCeti.unipotentCommHopfAlgProperty.baseChange_iff`: the two together.
 
 ## References
 
@@ -61,26 +61,13 @@ theorem baseChange (hH : unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H))
     unipotentCommHopfAlgProperty K (CommHopfAlgCat.of K (K ⊗[k] H)) := by
   refine (unipotentCommHopfAlgProperty_iff K _).mpr fun W _ _ _ _ _ ↦ ?_
   let _ : Module k W := Module.compHom W (algebraMap k K)
-  have : IsScalarTower k K W := ⟨fun a b w ↦ by
-    change (a • b) • w = algebraMap k K a • (b • w)
-    rw [Algebra.smul_def, mul_smul]⟩
+  let _ := IsScalarTower.of_compHom k K W
   let _ := Comodule.restrictScalars (R := k) (A := K) (C := H) (M := W)
   obtain ⟨v, hv, hvc⟩ := hasNonzeroFixedVector_iff.mp (hH.hasNonzeroFixedVector (M := W))
   exact hasNonzeroFixedVector_iff.mpr ⟨v, hv, mem_fixedSubcomodule.mp
     ((mem_fixedSubcomodule_restrictScalars_iff v).mp (mem_fixedSubcomodule.mpr hvc))⟩
 
 end unipotentCommHopfAlgProperty
-
-variable (K) in
-/-- The vector `v ⊗ 1` of `(K ⊗[k] M) ⊗[K] (K ⊗[k] H)` is the distribution of the scalar
-extension of `m ↦ m ⊗ 1`. -/
-private theorem distribBaseChange_baseChange_tmul_one {M : Type*} [AddCommGroup M] [Module k M]
-    (v : K ⊗[k] M) :
-    distribBaseChange k K M H (((TensorProduct.mk k M H).flip 1).baseChange K v) =
-      v ⊗ₜ[K] (1 : K ⊗[k] H) := by
-  induction v using TensorProduct.inductionOn with
-  | tmul a m => simp [Algebra.TensorProduct.one_def]
-  | add v w hv hw => rw [map_add, map_add, hv, hw, TensorProduct.add_tmul]
 
 /-- **Unipotence is reflected by extension of the base field**: if `K ⊗[k] H` is unipotent over
 `K`, then `H` is unipotent over `k`. If `m ↦ ρ(m) - m ⊗ 1` were injective on a nonzero comodule
@@ -106,17 +93,12 @@ theorem unipotentCommHopfAlgProperty.of_baseChange
   rw [map_zero, LinearMap.lTensor_sub, LinearMap.sub_apply, sub_eq_zero]
   apply (distribBaseChange k K M H).injective
   rw [← LinearMap.baseChange_eq_lTensor, ← LinearMap.baseChange_eq_lTensor,
-    distribBaseChange_baseChange_tmul_one, ← hvc, baseChange_coact]
-  have key (w : K ⊗[k] M) : distribBaseChange k K M H ((coact (R := k) (C := H) (M := M)).baseChange
-      K w) = baseChangeCoact (R := k) (H := H) K w := by
-    induction w using TensorProduct.inductionOn with
-    | tmul a m => rw [baseChangeCoact_tmul, LinearMap.baseChange_tmul]
-    | add w w' hw hw' => rw [map_add, map_add, map_add, hw, hw']
-  exact key v
+    distribBaseChange_baseChange_mk_flip, ← Algebra.TensorProduct.one_def, ← hvc, baseChange_coact,
+    baseChangeCoact_apply]
 
 /-- **Unipotence is invariant under extension of the base field** (Milne, Corollary 14.9):
 `K ⊗[k] H` is unipotent over `K` exactly when `H` is unipotent over `k`. -/
-theorem unipotentCommHopfAlgProperty_baseChange_iff :
+theorem unipotentCommHopfAlgProperty.baseChange_iff :
     unipotentCommHopfAlgProperty K (CommHopfAlgCat.of K (K ⊗[k] H)) ↔
       unipotentCommHopfAlgProperty k (CommHopfAlgCat.of k H) :=
   ⟨unipotentCommHopfAlgProperty.of_baseChange, unipotentCommHopfAlgProperty.baseChange⟩
