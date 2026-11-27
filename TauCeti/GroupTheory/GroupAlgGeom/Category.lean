@@ -27,6 +27,10 @@ sets is assumed. Fullness is `TauCeti.GroupAlgGeom.CoordGroup.exists_wordMap_rep
 faithfulness `TauCeti.GroupAlgGeom.CoordGroup.homOfMapsToWordMap_eq_iff`, packaged as
 `TauCeti.GroupAlgGeom.CoordGroup.gHomEquivWordMap`.
 
+An object is an algebraic set `Y ⊆ H^X` that is the solution set of its ideal `I_H(Y)`, so
+that its coordinate group `G[X] ⧸ I_H(Y)` depends only on the points; `V_H(S)` is the object
+`TauCeti.GroupAlgGeom.AlgSetCat.of ι S`.
+
 The variables of the systems live in the universe of `G`, so that every coordinate group is a
 group in that universe.
 
@@ -54,18 +58,28 @@ universe u v
 variable {G : Type u} {H : Type v} [Group G] [Group H]
 
 /-- An algebraic set over the coefficient homomorphism `ι`, as an object of the category of
-algebraic sets: a type of variables and a system of equations in them. Its points are
-`V ι S`. -/
-@[nolint unusedArguments]
+algebraic sets: a set `Y ⊆ H^X` of points that is the solution set of its own ideal,
+`V_H(I_H(Y)) = Y`. Every solution set `V_H(S)` is one (`TauCeti.GroupAlgGeom.AlgSetCat.of`). -/
 structure AlgSetCat (ι : G →* H) where
-  /-- The variables of the system. -/
+  /-- The variables. -/
   X : Type u
-  /-- The system of equations, whose solution set is the algebraic set. -/
-  S : Set (GX G X)
+  /-- The points of the algebraic set. -/
+  carrier : Set (X → H)
+  /-- The set is algebraic: it is the solution set of its ideal. -/
+  V_I_carrier : V ι (I ι carrier : Set (GX G X)) = carrier
 
 namespace AlgSetCat
 
 variable {ι : G →* H}
+
+/-- The defining system of an algebraic set: its ideal `I_H(Y)`. Its coordinate group is
+`G[X] ⧸ I_H(Y)`. -/
+abbrev S (A : AlgSetCat ι) : Set (GX G A.X) := I ι A.carrier
+
+variable (ι) in
+/-- The algebraic set `V_H(S)` of a system `S ⊆ G[X]`. -/
+abbrev of {Y : Type u} (S : Set (GX G Y)) : AlgSetCat ι :=
+  ⟨Y, V ι S, V_I_V S⟩
 
 /-- The points of an algebraic set. -/
 abbrev Pt (A : AlgSetCat ι) : Type (max u v) := V ι A.S
