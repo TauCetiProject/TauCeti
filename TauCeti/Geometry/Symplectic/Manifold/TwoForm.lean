@@ -234,14 +234,9 @@ include hσ in
 nondegenerate form. -/
 theorem IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph {f : M₂ → M}
     (hf : IsLocalDiffeomorph I₂ I ∞ f) :
-    SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ) := by
-  rw [isNondegenerate_iff_separatingLeft] at hσ ⊢
-  intro x v hv
-  -- The differential at `x` is invertible, so `df v` pairs to zero with every tangent vector.
+    SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ) := fun x ↦
   have hinv := hf.isInvertible_mfderiv (by simp) x
-  refine (injective_iff_map_eq_zero _).1 hinv.injective v (hσ (f x) _ fun w ↦ ?_)
-  obtain ⟨u, rfl⟩ := hinv.surjective w
-  simpa only [SmoothForm.eval₂_mpullback] using hv u
+  (nondegenerate_bilinFormAt_mpullback_iff _ σ ⟨hinv.injective, hinv.surjective⟩).2 (hσ (f x))
 
 /-- A two-form whose pullback along a local diffeomorphism `f` is nondegenerate is nondegenerate at
 every point `f x`: a tangent vector at `f x` pairing to zero with every vector is zero. -/
