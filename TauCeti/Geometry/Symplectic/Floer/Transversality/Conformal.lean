@@ -71,7 +71,10 @@ statements hold for these directions, at injective points of `u`.
 
 * `TauCeti.SymplecticForm.almostComplexVariationsOn ω U u J Kt n W` is the set of `L²` classes on
   `U` of the fields `Y(u)(∂ₜu - X_{K_t}(u))` for compactly supported `Cⁿ` fields `Y` with support in
-  `W ⊆ V` and `Y x` in the compatible tangent space of `J x`.
+  `W ⊆ V` and `Y x` in the compatible tangent space of `J x`. Such a field is in `L²` on `U` when
+  the preimage of the support of `Y` under `u` lies in a compact subset of `U`
+  (`TauCeti.SymplecticForm.memLp_almostComplexVariation_of_preimage_subset`), and then its class is
+  in the set (`TauCeti.SymplecticForm.toLp_mem_almostComplexVariationsOn`).
 * **Cokernel detection.** Let `O ⊆ U` be a nonempty open set of injective points of `u` at which
   `J` is tamed by `ω` and `∂ₜu - X_{K_t}` does not vanish, and `W` a neighbourhood of `u(O)`. An
   element of `L²(U, V)` orthogonal to the range of `D_u` and to the almost complex variations
@@ -223,7 +226,9 @@ theorem almostComplexVariationsOn_mono {W' : Set V} (hW : W ⊆ W') :
 
 /-- **Every variation gives an almost complex variation.** For a compactly supported `Cⁿ` field
 `Y` of compatible variations of `J` with support in `W`, the `L²` class of `Y(u)(∂ₜu - X_{K_t}(u))`
-on `U`, when this field is in `L²` on `U`, is an almost complex variation. -/
+on `U`, when this field is in `L²` on `U`, is an almost complex variation. The field is in `L²`
+on `U` when the preimage of the support of `Y` under `u` lies in a compact subset of `U`
+(`TauCeti.SymplecticForm.memLp_almostComplexVariation_of_preimage_subset`). -/
 theorem toLp_mem_almostComplexVariationsOn {Y : V → V →L[ℝ] V} (hY : ContDiff ℝ n Y)
     (hc : HasCompactSupport Y) (hW : tsupport Y ⊆ W)
     (hm : ∀ x, (Y x : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J x))
@@ -237,7 +242,7 @@ theorem toLp_mem_almostComplexVariationsOn {Y : V → V →L[ℝ] V} (hY : ContD
 `K_t` is `C²` along the graph of `u`, when the continuous field `Y` is supported in a set whose
 preimage under `u` lies in a compact subset `N` of `U`: the field is continuous on `U` and vanishes
 on `U` off `N`. -/
-private theorem memLp_almostComplexVariation_of_preimage_subset (hU : IsOpen U)
+theorem memLp_almostComplexVariation_of_preimage_subset (hU : IsOpen U)
     (hKt : ∀ z ∈ U, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ∀ z ∈ U, ContDiffAt ℝ 1 u z)
     {Y : V → V →L[ℝ] V} (hY : Continuous Y) {N : Set (ℝ × ℝ)} (hN : IsCompact N) (hNU : N ⊆ U)
     (hYN : u ⁻¹' tsupport Y ⊆ N) :
