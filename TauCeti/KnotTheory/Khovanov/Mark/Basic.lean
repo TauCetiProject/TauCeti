@@ -170,6 +170,22 @@ theorem khovanovComplexMarkX_f_khovanovComplexπ (hj : j' = j - 2) {i : ℤ}
     simp
   · simp [h]
 
+/-- In cochain degree `i`, the `X` chain action at `p` is the degree-`(i + n₋)` component of the
+cube map induced by `TauCeti.PDCode.resolutionCubeMarkX`, conjugated by the normalization
+identifications `khovanovComplex_X`. -/
+theorem khovanovComplexMarkX_f (hj : j' = j - 2) (i : ℤ) :
+    (D.khovanovComplexMarkX p hD R hj).f i =
+      eqToHom (D.khovanovComplex_X hD R j i) ≫
+        (NatTrans.cubeComplexMap (D.toPDCode.resolutionCubeMarkX p hD R
+          (j := j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)
+          (j' := j' - D.positiveCrossingCount + 2 * D.negativeCrossingCount) (by omega))).f
+          (i + D.negativeCrossingCount) ≫
+        eqToHom (D.khovanovComplex_X hD R j' i).symm := by
+  refine D.khovanovComplex_hom_ext hD R j fun S ↦ ?_
+  rw [khovanovComplexι_khovanovComplexMarkX_f, khovanovComplexι_def D hD R j S, Category.assoc,
+    eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, NatTrans.ι_cubeComplexMap_f_assoc,
+    ← khovanovComplexι_def]
+
 /-- The `X` chain action at a mark squares to zero. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexMarkX_comp_khovanovComplexMarkX (hj : j' = j - 2) (hj' : j'' = j' - 2) :

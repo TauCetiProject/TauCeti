@@ -206,6 +206,15 @@ lemma cubeComplexι_comp_XIsoOfEq_hom {r r' : ℤ} (h : r = r')
   subst h
   simp
 
+/-- Transporting a cube term from an equal height preserves each vertex projection. -/
+@[reassoc (attr := simp)]
+lemma XIsoOfEq_hom_comp_cubeComplexπ {r r' : ℤ} (h : r = r')
+    (S : {S : Finset ι // (#S : ℤ) = r'}) :
+    (F.cubeComplex.XIsoOfEq h).hom ≫ F.cubeComplexπ S =
+      F.cubeComplexπ ⟨S.val, S.property.trans h.symm⟩ := by
+  subst h
+  simp
+
 /-- The inclusion of a vertex followed by the projection onto a vertex of the same height is the
 identity when the vertices agree, and zero otherwise. -/
 @[reassoc]

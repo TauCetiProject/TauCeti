@@ -47,16 +47,17 @@ import TauCeti.Data.Set.PowersetCard
   `Finset.sum_Icc_neg_one_pow_card_sub_card_right` compute the Möbius function of the Boolean
   lattice of finsets: the signed sum over an interval `[s, t]` is `1` if `s = t` and `0`
   otherwise.
-* `Finset.neg_one_pow_card_filter_lt_mul_insert`, `Finset.neg_one_pow_card_filter_lt_mul_erase`
-  and `Finset.neg_one_pow_card_filter_lt_mul_insert_insert` show that inserting a new element and
+* `Finset.neg_one_pow_card_filter_lt_mul_insert`, `Finset.neg_one_pow_card_filter_lt_mul_erase`,
+  `Finset.neg_one_pow_card_filter_lt_mul_insert_insert` and
+  `Finset.neg_one_pow_card_filter_lt_insert_mul_insert` show that inserting a new element and
   deleting an existing element of an ordered finset in either order, deleting two distinct
-  elements in either order, or inserting two distinct new elements in either order, gives
-  opposite Koszul signs.
+  elements in either order, inserting two distinct new elements in either order, or inserting
+  each of two distinct new elements before counting below the other, gives opposite Koszul signs.
 * `Finset.card_filter_lt_add_card_filter_gt_add_one` splits a finset of a linear order at one of its
   elements, and `Finset.filter_lt_subset_Ioo` and `Finset.filter_gt_subset_Ioo` place the two
   halves of a finset inside an open interval between the split point and an endpoint;
   `Finset.add_one_add_card_erase_eq_zero` and `Finset.neg_card_filter_lt_add_neg_card_filter_gt`
-  are the corresponding identities for an integer cancelling the cardinality of the finset.
+  are the corresponding identities for integer-indexed cardinalities and element removal.
 * `Finset.Nonempty.exists_forall_lt_insert_eq` writes a nonempty finset of a linear order as its
   minimum inserted into a finset above it, and `Finset.min'_insert_of_forall_le` recovers that
   minimum.
@@ -107,6 +108,11 @@ import TauCeti.Data.Set.PowersetCard
   replacement by a point outside the finset does not change injectivity.
 * `Finset.sdiff_coe_filter_mem_eq`: removing from a set `U` the points of a finset `S` lying in
   `U` is removing all of `S`.
+* `Finset.notMem_insert_of_notMem_insert_swap`: if `c ∉ s` and `a ∉ insert c s`, then
+  `c ∉ insert a s`.
+* `Finset.exists_notMem_insert_eq_of_mem`: any finset `U` of integer-cast cardinality `r'`
+  containing `c`, where `r + 1 = r'`, is `insert c S` for a finset `S` of integer-cast
+  cardinality `r` avoiding `c`.
 -/
 
 public section
@@ -643,6 +649,20 @@ theorem neg_one_pow_card_filter_lt_mul_insert_insert {α R : Type*} [LinearOrder
     simp only [filter_insert, hji, hji.not_gt, ↓reduceIte, card_insert_of_notMem hj', pow_succ]
     simp [← pow_add, add_comm]
 
+/-- **Inserting each of two distinct new elements before counting below the other gives opposite
+Koszul sign to counting in the original finset.** -/
+theorem neg_one_pow_card_filter_lt_insert_mul_insert {α R : Type*} [LinearOrder α] [Monoid R]
+    [HasDistribNeg R] {s : Finset α} {i j : α} (hi : i ∉ s) (hj : j ∉ s) (hij : i ≠ j) :
+    (-1 : R) ^ ({k ∈ insert i s | k < j}).card * (-1) ^ ({k ∈ insert j s | k < i}).card =
+      -((-1) ^ ({k ∈ s | k < i}).card * (-1) ^ ({k ∈ s | k < j}).card) := by
+  have sq (n : ℕ) : (-1 : R) ^ n * (-1) ^ n = 1 := by
+    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
+  have h := congrArg
+    (fun x ↦ (-1 : R) ^ ({k ∈ s | k < i}).card * x * (-1) ^ ({k ∈ insert j s | k < i}).card)
+    (neg_one_pow_card_filter_lt_mul_insert_insert hi hj hij)
+  rwa [← mul_assoc ((-1 : R) ^ _), sq, one_mul, mul_neg, neg_mul, mul_assoc, mul_assoc, sq,
+    mul_one] at h
+
 /-- Splitting a finset of a linear order at one of its elements: the elements below it and the
 elements above it account for all the others. -/
 theorem card_filter_lt_add_card_filter_gt_add_one {α : Type*} [LinearOrder α] {s : Finset α} {t : α}
@@ -661,6 +681,15 @@ theorem add_one_add_card_erase_eq_zero {α : Type*} [DecidableEq α] {s : Finset
     (ht : t ∈ s) {d : ℤ} (hd : d + #s = 0) : d + 1 + #(s.erase t) = 0 := by
   have := card_erase_add_one ht
   omega
+
+/-- Any finset `U` of integer-cast cardinality `r'` containing `c`, where `r + 1 = r'`, is
+`insert c S` for a finset `S` of integer-cast cardinality `r` avoiding `c`. -/
+theorem exists_notMem_insert_eq_of_mem {α : Type*} [DecidableEq α] {c : α} {r r' : ℤ}
+    (hr : r + 1 = r') (U : {U : Finset α // (#U : ℤ) = r'}) (hc : c ∈ U.val) :
+    ∃ (S : {S : Finset α // (#S : ℤ) = r}) (hcS : c ∉ S.val),
+      U = ⟨insert c S.val, by rw [card_insert_of_notMem hcS, Nat.cast_succ, S.property, hr]⟩ :=
+  ⟨⟨U.val.erase c, by have := card_erase_add_one hc; have := U.property; omega⟩,
+    notMem_erase c U.val, Subtype.ext (insert_erase hc).symm⟩
 
 /-- If an integer `d` cancels the cardinality of a finset `s` of a linear order, then splitting `s`
 at one of its elements `t`, the negated cardinalities of the elements below and above `t` add up to
@@ -849,6 +878,11 @@ theorem sdiff_coe_filter_mem_eq {α : Type*} (S : Finset α) (U : Set α) [Decid
   ext z
   simp only [Set.mem_sdiff, coe_filter, Set.mem_ofPred_eq, mem_coe]
   tauto
+
+/-- If `c ∉ s` and `a ∉ insert c s`, then `c ∉ insert a s`. -/
+theorem notMem_insert_of_notMem_insert_swap {α : Type*} [DecidableEq α] {s : Finset α} {c a : α}
+    (hc : c ∉ s) (ha : a ∉ insert c s) : c ∉ insert a s :=
+  fun hc' ↦ (mem_insert.mp hc').elim (fun hca ↦ ha (hca ▸ mem_insert_self c s)) hc
 
 end Finset
 

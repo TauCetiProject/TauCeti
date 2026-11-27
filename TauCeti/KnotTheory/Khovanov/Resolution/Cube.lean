@@ -180,6 +180,16 @@ theorem cubeState_ne_of_notMem_of_mem {S T : Finset (Fin n)} {a : Fin n} (haS : 
     (haT : a ∈ T) : cubeState S a ≠ cubeState T a := by
   simp [cubeState, haS, haT]
 
+/-- Inserting a crossing `c` into a cube vertex `S` leaves `cubeState` unchanged away from `c`. -/
+theorem cubeState_insert_eq_of_ne {S : Finset (Fin n)} {c : Fin n} (j : Fin n) (hj : j ≠ c) :
+    cubeState (insert c S) j = cubeState S j := by
+  simp [cubeState, hj]
+
+/-- If `c ∉ S`, the states of `insert c S` and `S` differ at `c`. -/
+theorem cubeState_insert_ne {S : Finset (Fin n)} {c : Fin n} (hc : c ∉ S) :
+    cubeState (insert c S) c ≠ cubeState S c :=
+  (cubeState_ne_of_notMem_of_mem hc (mem_insert_self c S)).symm
+
 /-! ### The cube of resolutions -/
 
 /-- The crossing added along an edge `S ⋖ T` of the cube. -/

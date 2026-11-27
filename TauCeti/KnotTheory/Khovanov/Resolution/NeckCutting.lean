@@ -6,21 +6,26 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Khovanov.Resolution.Edge
-import TauCeti.KnotTheory.Khovanov.Mark
+public import TauCeti.KnotTheory.PDCode.ResolvedCircle.Mark
+import TauCeti.KnotTheory.Khovanov.Mark.Basic
 
 /-!
 # Reverse saddles and neck cutting
 
 An unsigned resolution saddle followed by the reverse saddle acts by the sum of the `X`
-actions at slots `0` and `2` of the changing crossing. On the two-circle side this is the
-neck-cutting identity `Δm = X ⊗ id + id ⊗ X`; on the one-circle side it is the handle identity
-`mΔ = 2X`. These equations hold on the actual indexed resolution tensors, retaining all other
-circle factors, including individually labelled crossing-free circles.
+actions at slots `0` and `2` of the changing crossing, and therefore by `X_p + X_q` for any
+opposite arc marks `p` and `q` at the crossing
+(`TauCeti.PDCode.resolutionEdgeMap_comp_resolutionEdgeMap_eq_circleX_add_circleX`). On the
+two-circle side this is the neck-cutting identity `Δm = X ⊗ id + id ⊗ X`; on the one-circle side it
+is the handle identity `mΔ = 2X`. These equations hold on the actual indexed resolution tensors,
+retaining all other circle factors, including individually labelled crossing-free circles.
 
-The saddle also intertwines `X` at slot `0` with `X` at slot `2` on the opposite resolution.
-These are the local algebraic identities used in the reverse-saddle homotopy for sliding a
-mark through a crossing. No signed-cube homotopy is asserted here. Planarity is unnecessary
-once the local edge is known to be a merge or split.
+Every saddle at `c` also intertwines `X` at any slot `k` of `c` with `X` at
+`oppositeCrossingSlot k` on the opposite resolution
+(`TauCeti.PDCode.resolutionEdgeMap_circleX_oppositeCrossingSlot`). These are the local algebraic
+identities used in the reverse-saddle homotopy for sliding a mark through a crossing. No
+signed-cube homotopy is asserted here. Planarity is unnecessary once the local edge is known to be
+a merge or split.
 
 ## References
 
@@ -36,6 +41,22 @@ open Finset PiTensorProduct DualNumber
 namespace TauCeti.PDCode
 
 universe u
+
+/-- In any state `s`, the sum of the `X` actions at the two opposite slots `k` and
+`oppositeCrossingSlot k` of `c` equals the sum of the `X` actions on the circles through slots `0`
+and `2` of `c`. -/
+theorem circleX_resolvedCircle_onArc_add_oppositeCrossingSlot {n : ℕ} (D : PDCode n)
+    (R : Type u) [CommSemiring R] (s : Fin n → Bool) (c : Fin n) (k : Fin 4) :
+    Khovanov.circleX R ((Mark.onArc D (D.crossing c k)).resolvedCircle s) +
+      Khovanov.circleX R
+        ((Mark.onArc D (D.crossing c (oppositeCrossingSlot k))).resolvedCircle s) =
+    Khovanov.circleX R (.inl ⟦D.crossing c 0⟧) +
+      Khovanov.circleX R (.inl ⟦D.crossing c 2⟧) := by
+  rw [Mark.resolvedCircle_onArc, Mark.resolvedCircle_onArc]
+  rcases CrossingCircle.mk_crossing_oppositeCrossingSlot_pair (D := D) (s := s) c k with
+    ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+  · rw [h₁, h₂]
+  · rw [h₁, h₂, add_comm]
 
 variable {n : ℕ} (D : PDCode n) {s t : Fin n → Bool} {c : Fin n}
   (hst : ∀ j, j ≠ c → s j = t j) (hc : s c ≠ t c)
@@ -114,19 +135,41 @@ theorem resolutionEdgeMap_reverse_resolutionEdgeMap
     rw [AlgHom.toLinearMap_apply, D.resolutionMergeMap_resolutionSplitMap hst hc R ht,
       ((D.card_circlesAt_eq_one_iff s c).mp hs).symm, two_smul]
 
-/-- A resolution saddle carries `X` at slot `0` to `X` at slot `2` of the same crossing
-on the other resolution. This is the dot-intertwining identity for a mark slide. -/
-theorem resolutionEdgeMap_circleX_crossing
+/-- Composing a saddle map at `c` with its reverse equals `X_p + X_q` for the two opposite arc marks
+at any slot `k` of `c`. -/
+theorem resolutionEdgeMap_comp_resolutionEdgeMap_eq_circleX_add_circleX (k : Fin 4) :
+    D.resolutionEdgeMap (fun j hj ↦ (hst j hj).symm) hc.symm h.symm R ∘ₗ
+        D.resolutionEdgeMap hst hc h R =
+      Khovanov.circleX R ((Mark.onArc D (D.crossing c k)).resolvedCircle s) +
+        Khovanov.circleX R
+          ((Mark.onArc D (D.crossing c (oppositeCrossingSlot k))).resolvedCircle s) := by
+  refine LinearMap.ext fun x ↦ ?_
+  rw [LinearMap.comp_apply, D.resolutionEdgeMap_reverse_resolutionEdgeMap hst hc R h x,
+    ← LinearMap.add_apply, D.circleX_resolvedCircle_onArc_add_oppositeCrossingSlot R s c k]
+
+/-- **Every saddle at `c` intertwines `X` on opposite slots of `c`.** Because one of `s` or `t` has
+a single circle passing through `c` (on which `k` and `oppositeCrossingSlot k` select the same
+circle), applying `X` at slot `k` before the saddle equals applying `X` at `oppositeCrossingSlot k`
+after it. -/
+theorem resolutionEdgeMap_circleX_oppositeCrossingSlot (k : Fin 4)
     (x : Khovanov.CircleTensor R (D.ResolvedCircle s)) :
-    D.resolutionEdgeMap hst hc h R (Khovanov.circleX R (.inl ⟦D.crossing c 0⟧) x) =
-      Khovanov.circleX R (.inl ⟦D.crossing c 2⟧) (D.resolutionEdgeMap hst hc h R x) := by
-  rcases h with hs | ht
-  · have ht := D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hst hc hs
-    simpa only [Mark.resolvedCircle_onArc, ((D.card_circlesAt_eq_one_iff t c).mp ht).symm] using
-      D.resolutionEdgeMap_circleX (Mark.onArc D (D.crossing c 0)) hst hc R (Or.inl hs) x
-  · have hs := D.card_circlesAt_eq_one_of_card_circlesAt_eq_two
-      (fun j hj ↦ (hst j hj).symm) hc.symm ht
-    simpa only [Mark.resolvedCircle_onArc, (D.card_circlesAt_eq_one_iff s c).mp hs] using
-      D.resolutionEdgeMap_circleX (Mark.onArc D (D.crossing c 2)) hst hc R (Or.inr ht) x
+    D.resolutionEdgeMap hst hc h R
+        (Khovanov.circleX R ((Mark.onArc D (D.crossing c k)).resolvedCircle s) x) =
+      Khovanov.circleX R
+        ((Mark.onArc D (D.crossing c (oppositeCrossingSlot k))).resolvedCircle t)
+        (D.resolutionEdgeMap hst hc h R x) := by
+  by_cases hs : #(D.circlesAt s c) = 2
+  · have ht1 : #(D.circlesAt t c) = 1 :=
+      D.card_circlesAt_eq_one_of_card_circlesAt_eq_two hst hc hs
+    rw [← Mark.resolvedCircle_onArc_crossing_eq_oppositeCrossingSlot_of_card_circlesAt_eq_one
+      D ht1 k]
+    exact D.resolutionEdgeMap_circleX (Mark.onArc D (D.crossing c k)) hst hc R h x
+  · have ht : #(D.circlesAt t c) = 2 := h.resolve_left hs
+    have hs1 : #(D.circlesAt s c) = 1 :=
+      D.card_circlesAt_eq_one_of_card_circlesAt_eq_two (fun j hj ↦ (hst j hj).symm) hc.symm ht
+    rw [Mark.resolvedCircle_onArc_crossing_eq_oppositeCrossingSlot_of_card_circlesAt_eq_one
+      D hs1 k]
+    exact D.resolutionEdgeMap_circleX
+      (Mark.onArc D (D.crossing c (oppositeCrossingSlot k))) hst hc R h x
 
 end TauCeti.PDCode
