@@ -16,9 +16,10 @@ Laplacian when `A` is a Hessian. Pulling `A` back along a linear isometry `e : E
 (`LinearIsometryEquiv.iteratedGradientCongr`) conjugates it by `e`, so the trace does not change
 (`LinearIsometryEquiv.trace_iteratedGradientCongr_symm_one`). This is the invariance of the
 Laplacian under isometries, at the level of the Hessian fields that weak second derivatives
-take values in. More generally, the trace of `B ∘ A` for an endomorphism `B` of `E` is that of
-`(e B e⁻¹) ∘ A` (`LinearIsometryEquiv.trace_comp_iteratedGradientCongr_symm_one`): a constant
-coefficient operator `tr (B ∘ D²u)` transforms by conjugating its coefficient.
+take values in. More generally, for an endomorphism `B` of `E`, the trace of `B` composed with
+the pullback of `A` along `e` is that of `(e B e⁻¹) ∘ A`
+(`LinearIsometryEquiv.trace_comp_iteratedGradientCongr_symm_one`): a constant coefficient
+operator `tr (B ∘ D²u)` transforms by conjugating its coefficient.
 -/
 
 public section
