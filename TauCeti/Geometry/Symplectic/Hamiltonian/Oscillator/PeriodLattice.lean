@@ -554,11 +554,25 @@ variable {G : 𝕍₂ × 𝕍₂ → Fin 2 → ℝ} (hG : ContMDiff 𝓘(ℝ, �
   (hGE : ∀ x, G x = !![2, 1; 0, 1] *ᵥ oscillatorEnergies 1 1 x)
 include hGE
 
+/-- **The period lattice of a recombination of two oscillators as a preimage.** For the
+recombination `G = A E = (2E₀ + E₁, E₁)` of the energies `E` of two oscillators of unit mass and
+frequency, the stabilizer of `x` for `G` is the preimage of the stabilizer of `x` for `E` under
+`w ↦ w A`. -/
+theorem hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec_oscillatorEnergies (x : 𝕍₂ × 𝕍₂) :
+    (SymplecticForm.isSymplectic_constSmooth stdSymplecticForm).hamiltonianFlowStabilizer
+        hG hcommG hcG x =
+      ((SymplecticForm.isSymplectic_constSmooth stdSymplecticForm).hamiltonianFlowStabilizer
+        (contDiff_oscillatorEnergies 1 1).contMDiff (poissonBracket_oscillatorEnergies_eq_zero 1 1)
+        (fun _ ↦ isCompleteVectorField_hamiltonianVectorField_oscillatorEnergies (m := 1) (ν := 1)
+          one_ne_zero one_ne_zero) x).comap !![2, 1; 0, 1].vecMulLinear.toAddMonoidHom :=
+  SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec _ _ _ _ hG hcommG hcG
+    _ hGE x
+
 /-- **The period lattice of a recombination of two oscillators.** Let `G = (2E₀ + E₁, E₁)` be the
 recombination of the energies `E = (E₀, E₁)` of two oscillators of unit mass and frequency, whose
 actions are the energies themselves; its components Poisson-commute and have complete Hamiltonian
-vector fields (`TauCeti.SmoothTwoForm.poissonBracket_mulVec_eq_zero`,
-`TauCeti.SmoothTwoForm.IsSymplectic.isCompleteVectorField_hamiltonianVectorField_mulVec`). At a
+vector fields (`TauCeti.SmoothTwoForm.poissonBracket_dotProduct_eq_zero`,
+`TauCeti.SmoothTwoForm.IsSymplectic.isCompleteVectorField_hamiltonianVectorField_dotProduct`). At a
 point at which neither phase plane coordinate pair vanishes, the vector `w` acts through `G` by
 turning the two phase planes through the angles `2w₀` and `w₀ + w₁`, so the period lattice of `G`
 is `{π (a, 2b - a) | a, b ∈ ℤ}`, spanned by `π (1, -1)` and `2π (0, 1)`. -/
@@ -567,18 +581,16 @@ theorem mem_hamiltonianFlowStabilizer_iff_of_eq_mulVec_oscillatorEnergies {x : �
     w ∈ (SymplecticForm.isSymplectic_constSmooth stdSymplecticForm).hamiltonianFlowStabilizer
         hG hcommG hcG x ↔
       ∃ a b : ℤ, w = ![π * a, π * (2 * b - a)] := by
-  rw [SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec _
-      (contDiff_oscillatorEnergies 1 1).contMDiff (poissonBracket_oscillatorEnergies_eq_zero 1 1)
-      (fun _ ↦ isCompleteVectorField_hamiltonianVectorField_oscillatorEnergies (m := 1) (ν := 1)
-        one_ne_zero one_ne_zero) hG hcommG hcG _ hGE,
+  have hwA : w ᵥ* !![2, 1; 0, 1] = ![2 * w 0, w 0 + w 1] := by
+    ext i
+    fin_cases i <;> simp [Matrix.vecMul, dotProduct, Fin.sum_univ_two, mul_comm]
+  rw [hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec_oscillatorEnergies hG hcommG hcG hGE,
     hamiltonianFlowStabilizer_oscillatorEnergies (m := 1) (ν := 1) (fun _ ↦ one_ne_zero)
-      (fun _ ↦ one_ne_zero) hx]
-  simp only [AddSubgroup.mem_comap, LinearMap.toAddMonoidHom_coe, Matrix.vecMulLinear_apply,
-    AddSubgroup.mem_pi, mem_univ, true_imp_iff, Fin.forall_fin_two, AddSubgroup.mem_zmultiples_iff,
-    zsmul_eq_mul, Pi.one_apply, div_one, Fin.isValue, Matrix.vecMul_cons, Matrix.smul_cons,
-    smul_eq_mul, mul_one, Matrix.smul_empty, mul_zero, Matrix.empty_vecMul, add_zero, Pi.add_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.vecHead,
-    Matrix.vecTail, Function.comp_apply, Fin.succ_zero_eq_one]
+      (fun _ ↦ one_ne_zero) hx, AddSubgroup.mem_comap, LinearMap.toAddMonoidHom_coe,
+    Matrix.vecMulLinear_apply, hwA]
+  simp only [AddSubgroup.mem_pi, mem_univ, true_imp_iff, Fin.forall_fin_two,
+    AddSubgroup.mem_zmultiples_iff, zsmul_eq_mul, Pi.one_apply, div_one, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_fin_one]
   constructor
   · rintro ⟨⟨a, ha⟩, ⟨b, hb⟩⟩
     refine ⟨a, b, funext fun i ↦ ?_⟩
@@ -599,10 +611,7 @@ theorem hamiltonianFlowStabilizer_eq_transposeLattice_of_eq_mulVec_oscillatorEne
         hG hcommG hcG x =
       ((2 * π) •
         (Matrix.toLin' !![1 / 2, -1 / 2; 0, 1]).toContinuousLinearMap).transposeLattice := by
-  rw [SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec _
-      (contDiff_oscillatorEnergies 1 1).contMDiff (poissonBracket_oscillatorEnergies_eq_zero 1 1)
-      (fun _ ↦ isCompleteVectorField_hamiltonianVectorField_oscillatorEnergies (m := 1) (ν := 1)
-        one_ne_zero one_ne_zero) hG hcommG hcG _ hGE,
+  rw [hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec_oscillatorEnergies hG hcommG hcG hGE,
     hamiltonianFlowStabilizer_oscillatorEnergies_eq_transposeLattice (m := 1) (ν := 1)
       (fun _ ↦ one_ne_zero) (fun _ ↦ one_ne_zero) hx]
   -- The actions of the energies are the energies themselves.

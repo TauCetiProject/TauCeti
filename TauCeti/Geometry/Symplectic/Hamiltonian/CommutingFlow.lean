@@ -459,30 +459,6 @@ theorem flowOf_flowOf_comm (hf : ContMDiff I 𝓘(ℝ) 3 f) (hg : ContMDiff I �
 
 end IsSymplectic
 
-/-! ### Linear combinations of Poisson-commuting functions -/
-
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
-/-- **Linear combinations of Poisson-commuting functions Poisson-commute.** If functions `Fᵢ`,
-differentiable at `x`, pairwise Poisson-commute at `x`, so do any two of their linear combinations
-`v ⬝ᵥ F` and `w ⬝ᵥ F`. -/
-theorem poissonBracket_dotProduct_eq_zero {ι : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
-    (hF : ∀ i, MDifferentiableAt I 𝓘(ℝ) (F · i) x)
-    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) (v w : ι → ℝ) :
-    σ.poissonBracket (fun y ↦ v ⬝ᵥ F y) (fun y ↦ w ⬝ᵥ F y) x = 0 := by
-  rw [poissonBracket_def, hamiltonianVectorField_dotProduct hF,
-    hamiltonianVectorField_dotProduct hF, ← SmoothForm.bilinFormAt_apply]
-  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
-    SmoothForm.bilinFormAt_apply, ← poissonBracket_def, hcomm, smul_zero, Finset.sum_const_zero]
-
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
-/-- The components of a linear recombination `A F` of functions that are differentiable and pairwise
-Poisson-commute at `x` pairwise Poisson-commute at `x`. -/
-theorem poissonBracket_mulVec_eq_zero {ι κ : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
-    (hF : ∀ i, MDifferentiableAt I 𝓘(ℝ) (F · i) x)
-    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) (A : Matrix κ ι ℝ) (k l : κ) :
-    σ.poissonBracket (fun y ↦ (A *ᵥ F y) k) (fun y ↦ (A *ᵥ F y) l) x = 0 :=
-  poissonBracket_dotProduct_eq_zero hF hcomm (A k) (A l)
-
 /-! ### Poisson-commuting Hamiltonian flows commute -/
 
 namespace IsSymplectic
@@ -808,13 +784,6 @@ theorem isCompleteVectorField_hamiltonianVectorField_dotProduct (v : ι → ℝ)
   isCompleteVectorField_of_forall_exists_isMIntegralCurve fun x ↦
     ⟨_, by rw [zero_smul, hσ.hamiltonianFlowAction_zero_apply],
       hσ.isMIntegralCurve_hamiltonianFlowAction_smul hF hcomm hc v x⟩
-
-include hF hcomm hc in
-/-- The components of a linear recombination `A F` of the functions have complete Hamiltonian
-vector fields. -/
-theorem isCompleteVectorField_hamiltonianVectorField_mulVec {κ : Type*} (A : Matrix κ ι ℝ) (k : κ) :
-    IsCompleteVectorField (σ.hamiltonianVectorField fun y ↦ (A *ᵥ F y) k) :=
-  hσ.isCompleteVectorField_hamiltonianVectorField_dotProduct hF hcomm hc (A k)
 
 variable {κ : Type*} [Fintype κ] {G : M → κ → ℝ} (hG : ContMDiff I 𝓘(ℝ, κ → ℝ) ∞ G)
   (hcommG : ∀ i j x, σ.poissonBracket (G · i) (G · j) x = 0)
