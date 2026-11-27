@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.WithSeminorms
 public import TauCeti.Geometry.Diffeomorphism.Topology
 public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Comp
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Prod
@@ -16,6 +17,7 @@ import TauCeti.Topology.Instances.AddCircle.Lift
 import TauCeti.Geometry.Diffeomorphism.Diffeotopy.AddCircle
 import TauCeti.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
+import Mathlib.Analysis.Complex.Isometry
 
 /-!
 # Straightening circle diffeomorphisms
@@ -70,6 +72,8 @@ of the circle deformation retracts onto its isometry group, a copy of `O(2)`.
   `AddCircle.exists_straightenDiffeomorph_one_eq_add_zsmul`,
   `AddCircle.straightenDiffeomorph_of_forall_eq_add_zsmul`: the homotopy ends at the isometries
   and fixes them; `AddCircle.straighteningRetraction_coe`: the retraction fixes the isometries.
+* `AddCircle.mem_isometryDiffeomorphs_iff_exists_linearIsometryEquiv`: read through
+  `AddCircle.toCircle`, the isometries are the restrictions of the real linear isometries of `ℂ`.
 
 ## References
 
@@ -361,6 +365,33 @@ theorem mem_isometryDiffeomorphs {f : AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ
     f ∈ isometryDiffeomorphs T n ↔
       ∃ (a : AddCircle T) (e : ℤ), e * e = 1 ∧ ∀ θ, f θ = a + e • θ :=
   Iff.rfl
+
+/-- A circle diffeomorphism is one of the isometries `θ ↦ a ± θ` exactly when, read through
+`AddCircle.toCircle : AddCircle T → Circle ⊆ ℂ`, it is the restriction of a real linear isometry
+of `ℂ`: a rotation `z ↦ u * z` for `θ ↦ a + θ`, and a rotation composed with conjugation for
+`θ ↦ a - θ`, where `u = toCircle a`. -/
+theorem mem_isometryDiffeomorphs_iff_exists_linearIsometryEquiv
+    {f : AddCircle T ≃ₘ^n⟮𝓘(ℝ), 𝓘(ℝ)⟯ AddCircle T} :
+    f ∈ isometryDiffeomorphs T n ↔
+      ∃ L : ℂ ≃ₗᵢ[ℝ] ℂ, ∀ θ, (toCircle (f θ) : ℂ) = L (toCircle θ) := by
+  have hT : T ≠ 0 := (Fact.out : 0 < T).ne'
+  rw [mem_isometryDiffeomorphs]
+  constructor
+  · rintro ⟨a, e, he, hf⟩
+    rcases Int.eq_one_or_neg_one_of_mul_eq_one he with rfl | rfl
+    · exact ⟨rotation a.toCircle, fun θ ↦ by simp [hf, toCircle_add]⟩
+    · exact ⟨Complex.conjLIE.trans (rotation a.toCircle), fun θ ↦ by
+        simp [hf, toCircle_add, toCircle_neg, Complex.inv_eq_conj]⟩
+  · rintro ⟨L, hL⟩
+    obtain ⟨u, hu⟩ := linear_isometry_complex L
+    -- Every point of the circle is `toCircle a` for some `a`.
+    obtain ⟨a, rfl⟩ : ∃ a : AddCircle T, a.toCircle = u := by
+      refine ⟨(homeomorphCircle hT).symm u, ?_⟩
+      rw [← homeomorphCircle_apply hT, Homeomorph.apply_symm_apply]
+    rcases hu with rfl | rfl
+    · exact ⟨a, 1, rfl, fun θ ↦ injective_toCircle hT (Circle.ext (by simp [hL, toCircle_add]))⟩
+    · exact ⟨a, -1, rfl, fun θ ↦ injective_toCircle hT (Circle.ext (by
+        simp [hL, toCircle_add, toCircle_neg, Complex.inv_eq_conj]))⟩
 
 /-- **The straightening retraction** of `Diff(AddCircle T)` onto its isometries: a circle
 diffeomorphism `f` goes to the isometry `θ ↦ f 0 + d • θ`, where `d = ±1` is the degree of a

@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Diffeomorphism.Topology
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.Analysis.Matrix.EuclideanLin
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
 # The orthogonal group acts on the sphere by diffeomorphisms
@@ -61,7 +62,7 @@ continuity proved here.
 * `Continuous.toContMDiffMap_unitSphereDiffeomorph`: the restriction to the unit sphere of a
   continuous family of linear isometry equivalences is continuous in the weak Whitney topology.
 * `TauCeti.continuous_orthogonalToDiffSphere`: the reference inclusion `O(n + 1) → Diff(Sⁿ)` is
-  continuous.
+  continuous, and `TauCeti.isClosedEmbedding_orthogonalToDiffSphere`: it is a closed embedding.
 * `TauCeti.continuousOrthogonalToDiffSphere`: the reference inclusion packaged as a continuous
   map.
 
@@ -316,6 +317,15 @@ theorem continuous_orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
   refine Diffeomorph.continuous_weakWhitney_iff.mpr ?_
   simpa only [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply] using
     Matrix.UnitaryGroup.continuous_toLinearIsometryEquiv.toContMDiffMap_unitSphereDiffeomorph
+
+open scoped TauCeti.DiffeomorphWeakWhitney in
+/-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` is a closed embedding for the weak Whitney
+`C^m` topology: it is a continuous injection of the compact group `O(n + 1)` into a Hausdorff
+space. So `O(n + 1)` is homeomorphic to its image in `Diff(Sⁿ)`. -/
+theorem isClosedEmbedding_orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
+    Topology.IsClosedEmbedding (orthogonalToDiffSphere n m) :=
+  (continuous_orthogonalToDiffSphere n m).isClosedEmbedding
+    (orthogonalToDiffSphere_injective n m)
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)`, packaged as a continuous map. -/
 noncomputable def continuousOrthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
