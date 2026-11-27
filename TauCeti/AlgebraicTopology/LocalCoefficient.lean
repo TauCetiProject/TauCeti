@@ -21,7 +21,9 @@ groupoid laws give all compatibility with concatenation and reversal of paths.
 
 This file provides the categorical operations needed before constructing singular chains with
 local coefficients: constant systems, pullback along continuous maps, evaluation at a point,
-path transport, compatibility of pullback with tensor products, and the monodromy representation
+path transport, compatibility of pullback and transport with tensor products (transport in
+`L ⊗ K` is the tensor product of the transports, `TauCeti.LocalCoefficientSystem.transport_tensor`),
+and the monodromy representation
 of the fundamental group. It also proves that these constructions interact in the expected way.
 In particular, a morphism of local systems induces an intertwining map on monodromy representations,
 and transport along a path identifies
@@ -539,6 +541,42 @@ theorem transport_naturality {x y : X} {L K : LocalCoefficientSystem.{u, v, w} R
     η.app (FundamentalGroupoid.mk y) (transport L p a) =
       transport K p (η.app (FundamentalGroupoid.mk x) a) := by
   exact η.naturality_apply p a
+
+section TensorTransport
+
+open MonoidalCategory
+open scoped TensorProduct
+
+variable {S : Type w} [CommRing S] (L K : LocalCoefficientSystem.{w, v, w} S X)
+
+/-- The fibre of the pointwise tensor product `L ⊗ K` of two local coefficient systems at `x` is
+the tensor product of the fibres of `L` and `K` at `x`. -/
+def tensorObjEquiv (x : FundamentalGroupoid X) :
+    (L ⊗ K).obj x ≃ₗ[S] L.obj x ⊗[S] K.obj x :=
+  -- The pointwise monoidal structure on functors to `ModuleCat` gives this fibre by definition.
+  LinearEquiv.refl S _
+
+/-- **Transport in a tensor product** of local coefficient systems is the tensor product of the
+two transports. -/
+theorem transport_tensor {x y : X} (p : Path.Homotopic.Quotient x y) :
+    transport (L ⊗ K) p =
+      (tensorObjEquiv L K _ ≪≫ₗ TensorProduct.congr (transport L p) (transport K p)) ≪≫ₗ
+        (tensorObjEquiv L K _).symm := by
+  apply LinearEquiv.toLinearMap_injective
+  -- The action of `p` on `L ⊗ K` is the tensor product of the actions, by definition of the
+  -- pointwise monoidal structure; compare the two maps on pure tensors.
+  refine TensorProduct.ext' fun a b ↦ ?_
+  rfl
+
+/-- Transport in a tensor product of local coefficient systems, on a pure tensor. -/
+theorem transport_tensor_tensorObjEquiv_symm_tmul {x y : X} (p : Path.Homotopic.Quotient x y)
+    (a : L.obj (FundamentalGroupoid.mk x)) (b : K.obj (FundamentalGroupoid.mk x)) :
+    transport (L ⊗ K) p ((tensorObjEquiv L K _).symm (a ⊗ₜ[S] b)) =
+      (tensorObjEquiv L K _).symm (transport L p a ⊗ₜ[S] transport K p b) := by
+  rw [transport_tensor, LinearEquiv.trans_apply, LinearEquiv.trans_apply,
+    LinearEquiv.apply_symm_apply, TensorProduct.congr_tmul]
+
+end TensorTransport
 
 /-- Pullback transport is transport along the image path. -/
 @[simp]
