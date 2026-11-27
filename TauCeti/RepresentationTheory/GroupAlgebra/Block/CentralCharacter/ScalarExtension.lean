@@ -101,6 +101,7 @@ theorem IsBlockIdempotent.exists_algHom_of_forall_exists_mul_classSumCenter
   · rintro _ ⟨C, rfl⟩
     exact h C
 
+omit [Finite G] in
 /-- **Blocks on which the class sums act by scalars stay blocks.** If `e_B` is a block idempotent
 of `k[G]` and `e_B K_C ∈ k e_B` for every class `C`, then the image of `e_B` in `k'[G]` is a block
 idempotent for every field homomorphism `f : k →+* k'`, and it again satisfies the hypothesis
