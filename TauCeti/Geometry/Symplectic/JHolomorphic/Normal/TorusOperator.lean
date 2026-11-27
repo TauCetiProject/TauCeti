@@ -148,6 +148,14 @@ private theorem zeroOrder_apply (x : ℂ ⧸ Λ) (ξ v : ℂ) :
   simp [zeroOrder]
   ring
 
+omit [DiscreteTopology Λ] in
+/-- `zeroOrder Λ ν μ x ξ` is `(ν x ξ + μ x conj ξ) • dzbar`, with `dzbar = conj`. -/
+private theorem zeroOrder_eq_smul (x : ℂ ⧸ Λ) (ξ : ℂ) :
+    zeroOrder Λ ν μ x ξ = (ν x * ξ + μ x * conj ξ) • (Complex.conjCLE : ℂ →L[ℝ] ℂ) := by
+  ext v
+  rw [zeroOrder_apply, smul_apply, ContinuousLinearEquiv.coe_coe, Complex.conjCLE_apply,
+    smul_eq_mul]
+
 variable (ν μ) in
 /-- `torusCauchyRiemannOperator` is a **real Cauchy–Riemann operator** on the trivial line over
 `ℂ ⧸ Λ`: `∂bar` is one, and `(ν σ + μ conj σ) dzbar` is a real-linear zeroth-order term with values
@@ -157,9 +165,10 @@ theorem isRealCauchyRiemannOperator_torusCauchyRiemannOperator :
       (torusCauchyRiemannOperator Λ ν μ) := by
   have h := (ofComplexManifold ℂ (ℂ ⧸ Λ)).isRealCauchyRiemannOperator_dbarFunction.add_zeroOrder
     (V := Trivial (ℂ ⧸ Λ) ℂ) (fun x ↦ zeroOrder Λ ν μ x) fun x ξ ↦ isZeroOneForm_iff.2 fun v ↦ ?_
-  · -- By `zeroOrder_apply`, the zeroth-order term `zeroOrder Λ ν μ x (σ x)` is
-    -- `(ν x σ x + μ x conj σ x) • dzbar` on the tangent space `ℂ`, so `h` is the claim.
-    exact h
+  · -- `h` is the claim: its zeroth-order term is `(ν σ + μ conj σ) • dzbar`, with `dzbar` the
+    -- form `torusConjForm Λ x = Complex.conjCLE` on the tangent space `ℂ`.
+    convert h using 3
+    exact congrArg (_ + ·) (zeroOrder_eq_smul _ _).symm
   · -- The tangent space `TangentSpace 𝓘(ℝ, ℂ) x` is `ℂ` by definition; restate `v` as a complex
     -- number to evaluate `zeroOrder`, whose type uses the instances of `ℂ`.
     obtain ⟨w, rfl⟩ : ∃ w : ℂ, w = v := ⟨v, rfl⟩
@@ -240,21 +249,12 @@ theorem comp_quotientMk_mem_cauchyRiemannKernel_iff {σ : ℂ ⧸ Λ → ℂ} :
   · obtain ⟨z, rfl⟩ := QuotientAddGroup.mk_surjective x
     refine ContinuousLinearMap.ext fun v ↦
       (torusCauchyRiemannOperator_quotientMk_apply σ z v).trans ?_
-    rw [h z, zero_mul]
-    rfl
+    rw [h z, zero_mul, zero_apply]
   · have h1 : (conjWirtingerDeriv (fun z : ℂ ↦ σ z) z 1 + ν z * σ z + μ z * conj (σ z)) *
         conj 1 = 0 :=
       (torusCauchyRiemannOperator_quotientMk_apply (ν := ν) (μ := μ) σ z 1).symm.trans
-        (by rw [h z]; rfl)
+        (by rw [h z]; exact zero_apply _)
     simpa using h1
-
-omit [DiscreteTopology Λ] in
-/-- The lift `σ ∘ (↑)` of a function on `ℂ ⧸ Λ` is `Λ`-periodic. -/
-theorem comp_quotientMk_mem_signTwisted_zero (σ : ℂ ⧸ Λ → ℂ) :
-    (fun z : ℂ ↦ σ z) ∈ signTwisted ℝ Λ.subtype 0 :=
-  mem_signTwisted_zero.2 fun g z ↦ by
-    simp only [AddSubgroup.coe_subtype]
-    rw [QuotientAddGroup.mk_add_of_mem z g.property]
 
 /-! ### The Sobolev realization -/
 
@@ -307,6 +307,13 @@ private def liftKer (hp : 1 < p) :
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
+@[simp]
+private theorem coe_liftKer_apply (hp : 1 < p)
+    (t : (torusCauchyRiemannSobolevL A hν hμ p).ker.comap
+      (SobolevSection.ofContMDiffSection A volume p 1)) :
+    (liftKer A hν hμ hp t : ℂ → ℂ) = fun z : ℂ ↦ t.val z :=
+  rfl
+
 /-- **The kernel of the realization on the plane.** Every element of the kernel of the
 realization, `p > 1`, is the Sobolev section of a smooth function `σ` on `ℂ ⧸ Λ`
 (`TauCeti.IsRealCauchyRiemannOperator.exists_contMDiff_of_sobolevL_eq_zero`); this linear map sends
@@ -329,8 +336,7 @@ theorem coe_kerTorusCauchyRiemannSobolevLLift_ofContMDiffSection (hp : 1 < p)
   -- (its `simp` unfolding times out on the kernel types).
   change (liftKer A hν hμ hp ((IsRealCauchyRiemannOperator.kerSobolevLEquivComap A _ _ hp).symm
     ⟨_, hσ⟩) : ℂ → ℂ) = _
-  rw [IsRealCauchyRiemannOperator.kerSobolevLEquivComap_symm_ofContMDiffSection]
-  rfl
+  rw [IsRealCauchyRiemannOperator.kerSobolevLEquivComap_symm_ofContMDiffSection, coe_liftKer_apply]
 
 private theorem liftKer_injective (hp : 1 < p) : Function.Injective (liftKer A hν hμ hp) := by
   refine (injective_iff_map_eq_zero _).2 fun t ht ↦ Subtype.ext (ContMDiffSection.ext fun x ↦ ?_)
@@ -357,14 +363,11 @@ theorem mem_range_kerTorusCauchyRiemannSobolevLLift_iff (hp : 1 < p)
     have ht := (Trivial.contMDiff_mk_iff.1 t.val.contMDiff).2.comp
       ((Λ.isLocalDiffeomorph_quotientMk (I := 𝓘(ℝ, ℂ)) (n := ∞)).contMDiff.of_le (by simp))
     exact contMDiff_iff_contDiff.1 ht
-  -- Descend `v` to `ℂ ⧸ Λ` through representatives.
-  have hper := (mem_signTwisted_zero (R := ℝ)).1 (Submodule.mem_inf.1 v.property).1
-  set σ : ℂ ⧸ Λ → ℂ := fun x ↦ (v : ℂ → ℂ) x.out
-  have hσ (z : ℂ) : σ z = (v : ℂ → ℂ) z := by
-    obtain ⟨g, hg⟩ := QuotientAddGroup.mk_out_eq_add Λ z
-    simp only [σ, hg]
-    exact hper g z
-  have hσv : (fun z : ℂ ↦ σ z) = (v : ℂ → ℂ) := funext hσ
+  -- Descend the periodic map `v` to `ℂ ⧸ Λ`.
+  set σ : ℂ ⧸ Λ → ℂ :=
+    signTwistedZeroEquivQuotientFun ℝ Λ ⟨(v : ℂ → ℂ), (Submodule.mem_inf.1 v.property).1⟩
+  have hσv : (fun z : ℂ ↦ σ z) = (v : ℂ → ℂ) :=
+    funext fun z ↦ signTwistedZeroEquivQuotientFun_apply_mk _ z
   have hσs : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ((1 : ℕ) : WithTop ℕ∞) σ := by
     refine (Λ.contMDiff_quotient_iff (I := 𝓘(ℝ, ℂ)) (n := ∞) (by simp) σ).2 ?_
     rw [show σ ∘ QuotientAddGroup.mk = fun z : ℂ ↦ σ z from rfl, hσv]

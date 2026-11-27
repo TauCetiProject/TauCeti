@@ -93,9 +93,11 @@ theorem contMDiffAt_oneForm_quotient_iff {n : ℕ∞ω} {g : E ⧸ N → E →L[
   refine (and_iff_right contMDiffAt_id).trans (Filter.EventuallyEq.contMDiffAt_iff ?_)
   filter_upwards [(chartAt E x₀).open_source.mem_nhds (mem_chart_source E x₀)] with x hx
   ext v
-  simp [ContinuousLinearMap.inCoordinates, symmL_trivializationAt_quotient hx]
-  -- composing with the identity of `E`
-  rfl
+  simp only [ContinuousLinearMap.inCoordinates, Trivial.fiberBundle_trivializationAt',
+    Trivial.continuousLinearMapAt_trivialization, symmL_trivializationAt_quotient hx,
+    ContinuousLinearMap.id_comp]
+  exact (ContinuousLinearMap.comp_apply _ _ v).trans
+    (congrArg (g x) (ContinuousLinearMap.id_apply (R₁ := 𝕜) v))
 
 /-- **Differentials on `E ⧸ N` are derivatives of lifts.** The differential of a function `σ` on
 `E ⧸ N` at the class of `z` is the derivative of its lift `σ ∘ (↑)` at `z`. There is no
@@ -106,18 +108,13 @@ theorem mvfderiv_quotientMk_apply (σ : E ⧸ N → F) (z v : E) :
   have h := (N.isLocalDiffeomorph_quotientMk (I := 𝓘(𝕜, E)) (n := ∞) z).mfderiv_comp
     (I' := 𝓘(𝕜, F)) (by simp) σ
   rw [N.mfderiv_quotientMk] at h
-  have hv : mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) (fun w : E ↦ σ w) z v =
-      mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) σ (z : E ⧸ N) v := by
-    rw [show (fun w : E ↦ σ w) = σ ∘ QuotientAddGroup.mk from rfl, h]
-    -- composing with the identity of `E`
-    rfl
-  have hf : fderiv 𝕜 (fun w : E ↦ σ w) z v = mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) (fun w : E ↦ σ w) z v := by
-    rw [mfderiv_eq_fderiv]
-    -- the identifications `NormedSpace.fromTangentSpace` of tangent spaces with `E` and `F` are
-    -- the identity
-    rfl
-  rw [hf, hv]
-  -- `mvfderiv` is `mfderiv` followed by `NormedSpace.fromTangentSpace`, the identity of `F`
-  rfl
+  -- Pass from `mvfderiv` to `mfderiv` on both sides, then use the chain rule `h`.
+  refine (mvfderiv_apply_eq_mfderiv_apply σ _ v).trans ?_
+  refine Eq.trans ?_ (TauCeti.mvfderiv_eq_fderiv_apply (σ ∘ QuotientAddGroup.mk) z v)
+  refine Eq.trans ?_ (mvfderiv_apply_eq_mfderiv_apply (F := F) (σ ∘ QuotientAddGroup.mk) z v).symm
+  rw [h]
+  exact (congrArg _ (ContinuousLinearMap.id_apply (R₁ := 𝕜) v)).symm.trans
+    (ContinuousLinearMap.comp_apply (mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) σ (z : E ⧸ N))
+      (ContinuousLinearMap.id 𝕜 E) v).symm
 
 end AddSubgroup
