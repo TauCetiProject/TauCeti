@@ -51,9 +51,10 @@ The stabilization criteria for degeneration, under which the map from the page `
   `H_map_comp_spectralSequencePageXToEInfty_EInftyToAbutment`.
 * `CategoryTheory.Abelian.SpectralObject.isIso_EInftyToAbutment`: the edge map is onto the
   abutment when `F_{q+1} H^n` is the whole abutment.
-* `CategoryTheory.Abelian.SpectralObject.abutmentToEInfty`, characterized by
-  `abutmentFiltrationι_abutmentToEInfty`, and
-  `CategoryTheory.Abelian.SpectralObject.EInftyToAbutment_shortExact`: the short exact sequence
+* `CategoryTheory.Abelian.SpectralObject.abutmentToEInfty`: when `F_{q+1} H^n` is the whole
+  abutment, the projection onto `X.EInfty q n`, characterized by
+  `abutmentFiltrationι_abutmentToEInfty`, with kernel `F_q H^n` (`abutmentToEInfty_exact`).
+* `CategoryTheory.Abelian.SpectralObject.EInftyToAbutment_shortExact`: the short exact sequence
   of a two-step filtration.
 -/
 
@@ -260,46 +261,64 @@ lemma isIso_EInftyToAbutment (q n : ℤ) (h : IsZero (X.abutmentFiltration q n))
   rw [EInftyToAbutment_eq]
   infer_instance
 
-/-- When the piece `F_{q+2} H^n` is the whole abutment, the projection of the abutment onto the
-graded piece `X.EInfty (q + 1) n = F_{q+2} H^n / F_{q+1} H^n`. -/
-noncomputable def abutmentToEInfty (q n : ℤ) [IsIso (X.abutmentFiltrationι (q + 1 + 1) n)] :
-    X.abutment n ⟶ X.EInfty (q + 1) n :=
-  inv (X.abutmentFiltrationι (q + 1 + 1) n) ≫ cokernel.π (X.abutmentFiltrationMap (q + 1) n) ≫
-    (X.EInftyIsoCokernel (q + 1) n).inv
+/-- When the piece `F_{q+1} H^n` is the whole abutment, the projection of the abutment onto the
+graded piece `X.EInfty q n = F_{q+1} H^n / F_q H^n`. -/
+noncomputable def abutmentToEInfty (q n : ℤ) [IsIso (X.abutmentFiltrationι (q + 1) n)] :
+    X.abutment n ⟶ X.EInfty q n :=
+  inv (X.abutmentFiltrationι (q + 1) n) ≫ cokernel.π (X.abutmentFiltrationMap q n) ≫
+    (X.EInftyIsoCokernel q n).inv
 
-/-- `X.abutmentToEInfty` is the inverse of the embedding of `F_{q+2} H^n`, followed by the
+/-- `X.abutmentToEInfty` is the inverse of the embedding of `F_{q+1} H^n`, followed by the
 projection onto the graded piece and the identification `EInftyIsoCokernel`. -/
-lemma abutmentToEInfty_def (q n : ℤ) [IsIso (X.abutmentFiltrationι (q + 1 + 1) n)] :
-    X.abutmentToEInfty q n = inv (X.abutmentFiltrationι (q + 1 + 1) n) ≫
-      cokernel.π (X.abutmentFiltrationMap (q + 1) n) ≫ (X.EInftyIsoCokernel (q + 1) n).inv :=
+lemma abutmentToEInfty_def (q n : ℤ) [IsIso (X.abutmentFiltrationι (q + 1) n)] :
+    X.abutmentToEInfty q n = inv (X.abutmentFiltrationι (q + 1) n) ≫
+      cokernel.π (X.abutmentFiltrationMap q n) ≫ (X.EInftyIsoCokernel q n).inv :=
   (rfl)
 
-/-- On the piece `F_{q+2} H^n`, the projection `X.abutmentToEInfty q n` is the projection onto
-the graded piece `F_{q+2} H^n / F_{q+1} H^n`, followed by the identification `EInftyIsoCokernel`. -/
+/-- On the piece `F_{q+1} H^n`, the projection `X.abutmentToEInfty q n` is the projection onto
+the graded piece `F_{q+1} H^n / F_q H^n`, followed by the identification `EInftyIsoCokernel`. -/
 @[reassoc (attr := simp)]
 lemma abutmentFiltrationι_abutmentToEInfty (q n : ℤ)
-    [IsIso (X.abutmentFiltrationι (q + 1 + 1) n)] :
-    X.abutmentFiltrationι (q + 1 + 1) n ≫ X.abutmentToEInfty q n =
-      cokernel.π (X.abutmentFiltrationMap (q + 1) n) ≫ (X.EInftyIsoCokernel (q + 1) n).inv := by
+    [IsIso (X.abutmentFiltrationι (q + 1) n)] :
+    X.abutmentFiltrationι (q + 1) n ≫ X.abutmentToEInfty q n =
+      cokernel.π (X.abutmentFiltrationMap q n) ≫ (X.EInftyIsoCokernel q n).inv := by
   rw [abutmentToEInfty_def, IsIso.hom_inv_id_assoc]
 
 /-- The projection `X.abutmentToEInfty q n` of the abutment onto the graded piece is an
 epimorphism. -/
-instance (q n : ℤ) [IsIso (X.abutmentFiltrationι (q + 1 + 1) n)] :
+instance (q n : ℤ) [IsIso (X.abutmentFiltrationι (q + 1) n)] :
     Epi (X.abutmentToEInfty q n) := by
   rw [abutmentToEInfty_def]
   infer_instance
 
-/-- The edge map `X.EInftyToAbutment q n` followed by `X.abutmentToEInfty q n` vanishes. -/
+/-- The embedding of the piece `F_q H^n` followed by the projection `X.abutmentToEInfty q n`
+vanishes. -/
+@[reassoc (attr := simp)]
+lemma abutmentFiltrationι_abutmentToEInfty_eq_zero (q n : ℤ)
+    [IsIso (X.abutmentFiltrationι (q + 1) n)] :
+    X.abutmentFiltrationι q n ≫ X.abutmentToEInfty q n = 0 := by
+  rw [← X.abutmentFiltrationMap_ι q n, Category.assoc, abutmentFiltrationι_abutmentToEInfty,
+    cokernel.condition_assoc, zero_comp]
+
+/-- **The kernel of the projection onto the graded piece.** When the piece `F_{q+1} H^n` is the
+whole abutment, the sequence `F_q H^n ⟶ H^n(⊥ ≤ ⊤) ⟶ X.EInfty q n` is exact: the projection onto
+the graded piece kills exactly the piece `F_q H^n`. -/
+theorem abutmentToEInfty_exact (q n : ℤ) [IsIso (X.abutmentFiltrationι (q + 1) n)] :
+    (ShortComplex.mk _ _ (X.abutmentFiltrationι_abutmentToEInfty_eq_zero q n)).Exact :=
+  -- It is the cokernel sequence of `F_q H^n ⟶ F_{q+1} H^n`, through the embedding of
+  -- `F_{q+1} H^n` and the identification `EInftyIsoCokernel`.
+  ShortComplex.exact_of_iso (ShortComplex.isoMk (Iso.refl (X.abutmentFiltration q n))
+    (asIso (X.abutmentFiltrationι (q + 1) n)) (X.EInftyIsoCokernel q n).symm
+    (by simp) (by simp)) (ShortComplex.exact_cokernel (X.abutmentFiltrationMap q n))
+
+/-- The edge map `X.EInftyToAbutment q n` followed by `X.abutmentToEInfty (q + 1) n` vanishes. -/
 @[reassoc (attr := simp)]
 lemma EInftyToAbutment_abutmentToEInfty (q n : ℤ) (h : IsZero (X.abutmentFiltration q n))
     [IsIso (X.abutmentFiltrationι (q + 1 + 1) n)] :
-    X.EInftyToAbutment q n h ≫ X.abutmentToEInfty q n = 0 := by
+    X.EInftyToAbutment q n h ≫ X.abutmentToEInfty (q + 1) n = 0 := by
   rw [← cancel_epi (X.EInftyIsoCokernel q n).inv, ← cancel_epi (cokernel.π _)]
-  simp only [EInftyToAbutment_def, abutmentToEInfty_def, Category.assoc, Iso.inv_hom_id_assoc,
-    cokernel.π_desc_assoc, comp_zero]
-  rw [← X.abutmentFiltrationMap_ι (q + 1) n, Category.assoc, IsIso.hom_inv_id_assoc,
-    cokernel.condition_assoc, zero_comp]
+  simp only [EInftyToAbutment_def, Category.assoc, Iso.inv_hom_id_assoc, cokernel.π_desc_assoc,
+    abutmentFiltrationι_abutmentToEInfty_eq_zero, comp_zero]
 
 /-- **The two-step filtration.** If the pieces `F_q H^n` and `F_{q+2} H^n` of the filtration of the
 abutment are zero and everything, the abutment is an extension of the graded piece
