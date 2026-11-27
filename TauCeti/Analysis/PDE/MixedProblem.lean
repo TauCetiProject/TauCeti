@@ -119,7 +119,7 @@ almost everywhere symmetric inverse-coercive `a`, no drift and `c ≥ 0`.
   theorem of the same name in the namespace `TauCeti.PDE.IsUniformlyEllipticAE`: the same on a
   bounded connected Lipschitz domain of `EuclideanSpace ℝ ι`, with a Dirichlet part of positive
   surface measure.
-* `existsUnique_frontierTraceOfIsLipschitzDomain_ae_eq_and_forall_energyFormH1_eq`, in the
+* `existsUnique_frontierTraceOfIsLipschitzDomain_ae_eq_forall_energyFormH1_eq`, in the
   namespace `TauCeti.PDE.IsUniformlyEllipticAE`: the same for an admissible Dirichlet part, with
   the Dirichlet condition `T u = T g` on `Γ`.
 * `TauCeti.PDE.isMinOn_w1pVanishingOn_iff_forall_energyFormH1_eq`: Dirichlet's principle for the
@@ -890,7 +890,7 @@ one `u ∈ H¹(Ω)` with `T u = T g` `σ`-almost everywhere on `Γ` and
 
 By the trace characterization of `H¹_Γ(Ω)` for admissible `Γ`, the Dirichlet condition on the
 trace is the condition `u - g ∈ H¹_Γ(Ω)` of the weak formulation. -/
-theorem existsUnique_frontierTraceOfIsLipschitzDomain_ae_eq_and_forall_energyFormH1_eq
+theorem existsUnique_frontierTraceOfIsLipschitzDomain_ae_eq_forall_energyFormH1_eq
     {E'' : Type*} [NormedAddCommGroup E''] [InnerProductSpace ℝ E''] [MeasurableSpace E'']
     [BorelSpace E'']
     (hA : IsUniformlyEllipticAE volume (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
