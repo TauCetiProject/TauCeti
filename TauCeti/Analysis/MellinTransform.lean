@@ -132,4 +132,14 @@ theorem comp_mul_right {f : ℝ → E} {s : ℂ} {m : E} (h : HasMellin f s m)
   · simpa only [mul_comm] using (MellinConvergent.comp_mul_left (f := f) (s := s) ha).mpr h.1
   · rw [mellin_comp_mul_right f s ha, h.2]
 
+/-- Replacing `f(t)` by `c • f(t / a)` for positive `a` preserves Mellin convergence
+and multiplies the transform at `s` by `c * a^s`. -/
+theorem const_smul_comp_div {f : ℝ → E} {s : ℂ} {m : E} (h : HasMellin f s m)
+    (c : ℂ) {a : ℝ} (ha : 0 < a) :
+    HasMellin (fun t ↦ c • f (t / a)) s ((c * (a : ℂ) ^ s) • m) := by
+  have hd := h.comp_mul_right (inv_pos.mpr ha)
+  have hc := hasMellin_const_smul hd.1 c
+  rw [hd.2, ofReal_inv, inv_cpow_ofReal_nonneg ha.le, cpow_neg, inv_inv, ← mul_smul] at hc
+  simpa only [div_eq_mul_inv] using hc
+
 end HasMellin

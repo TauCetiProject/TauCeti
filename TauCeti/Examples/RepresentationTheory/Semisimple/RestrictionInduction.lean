@@ -11,12 +11,16 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Borel
 public import TauCeti.RepresentationTheory.Augmentation.Semisimple
 public import TauCeti.RepresentationTheory.ClassicalGroups.Standard
 public import TauCeti.RepresentationTheory.Semisimple.NonSemisimple
+public import TauCeti.RepresentationTheory.Induction.Transitivity
 public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 
 /-!
-# Checks for semisimplicity under restriction
+# Checks for semisimplicity under restriction and induction
 
 * For `H = G`, restriction to `H` changes nothing, so it preserves and reflects semisimplicity.
+* For `H = G`, induction from `H` returns the original representation: inducing the restriction
+  of `ρ` to `⊤` gives a representation equivalent to `ρ` (`Representation.indTopEquiv`), which is
+  semisimple exactly when `ρ` is.
 * In characteristic `p`, the regular representation of the cyclic group of order `p` restricts
   semisimply to the trivial subgroup but is not semisimple: ascent along a subgroup needs the
   index to be invertible.
@@ -27,6 +31,8 @@ public import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 -/
 
 public section
+
+universe u v
 
 open Representation
 
@@ -39,6 +45,22 @@ example {k G V : Type*} [Field k] [Group G] [AddCommGroup V] [Module k V]
       IsSemisimpleRepresentation ρ :=
   MonoidHom.isSemisimpleRepresentation_comp_surjective_iff _
     (fun g ↦ ⟨⟨g, Subgroup.mem_top g⟩, rfl⟩) ρ
+
+section Top
+
+variable {k : Type u} {G : Type v} {V : Type (max u v)} [Field k] [Group G] [AddCommGroup V]
+  [Module k V]
+
+/-- For `H = G`, induction from `H` preserves and reflects semisimplicity. -/
+example (ρ : Representation k G V) :
+    IsSemisimpleRepresentation (ind (⊤ : Subgroup G).subtype (ρ.comp (⊤ : Subgroup G).subtype)) ↔
+      IsSemisimpleRepresentation ρ :=
+  ⟨fun _ ↦ ρ.indTopEquiv.toIntertwiningMap.isSemisimpleRepresentation_of_surjective
+      ρ.indTopEquiv.toLinearEquiv.surjective,
+    fun _ ↦ ρ.indTopEquiv.symm.toIntertwiningMap.isSemisimpleRepresentation_of_surjective
+      ρ.indTopEquiv.symm.toLinearEquiv.surjective⟩
+
+end Top
 
 section Cyclic
 

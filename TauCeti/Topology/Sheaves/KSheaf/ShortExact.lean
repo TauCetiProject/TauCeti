@@ -41,6 +41,10 @@ length two of Pardon's Lemma A.2.11.
   in the short exact sequence `G ⟶ cone τ ⟶ F⟦1⟧`, whose third term, the shift of `F`, is
   the cokernel of `F ⟶ cone (𝟙 F)` into the acyclic mapping cone of the identity
   (`CategoryTheory.NatTrans.shortExact_mappingConeInrShortComplex`).
+* **Shifts** (`TopCat.KPresheaf.IsHomotopyKSheaf.comp_shiftFunctor`,
+  `TopCat.KPresheaf.isHomotopyKSheaf_comp_shiftFunctor_iff`). The shift `K ↦ F(K)⟦n⟧` of a
+  homotopy K-sheaf is one for every `n : ℤ`: the shift by `1` is the cokernel of
+  `F ⟶ cone (𝟙 F)`, and `F` is the kernel of `cone (𝟙 F) ⟶ F⟦1⟧`.
 
 The colimit axiom uses that filtered colimits in `C` are exact and that `X` is weakly locally
 compact, as in Pardon's setting of locally compact Hausdorff spaces.
@@ -52,6 +56,8 @@ compact, as in Pardon's setting of locally compact Hausdorff spaces.
 * `TopCat.KPresheaf.isHomotopyKSheaf_of_acyclic`: acyclic K-presheaves are homotopy K-sheaves.
 * `TopCat.KPresheaf.isHomotopyKSheaf_mappingConeFunctor`: mapping cones of morphisms of homotopy
   K-sheaves are homotopy K-sheaves.
+* `TopCat.KPresheaf.IsHomotopyKSheaf.comp_shiftFunctor`: homotopy K-sheaves are closed under
+  shifts.
 
 ## References
 
@@ -257,17 +263,71 @@ theorem isHomotopyKSheaf_of_acyclic {F : KPresheaf (CochainComplex C ℤ) X}
       ((isColimitOfPreserves (homologyFunctor C (ComplexShape.up ℤ) n)
         (colimit.isColimit _)).hom_ext fun L ↦ ((hF _ n).isZero_homology).eq_of_src _ _)
 
-variable {F G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
+/-- The mapping cone `K ↦ cone (𝟙 F(K))` of the identity is a homotopy K-sheaf, being acyclic. -/
+private theorem isHomotopyKSheaf_mappingConeFunctor_id (F : KPresheaf (CochainComplex C ℤ) X) :
+    IsHomotopyKSheaf (NatTrans.mappingConeFunctor (𝟙 F)) :=
+  isHomotopyKSheaf_of_acyclic fun K ↦
+    (quasiIso_iff_acyclic_mappingCone (𝟙 (F.obj (op K)))).1 inferInstance
+
+variable {F : KPresheaf (CochainComplex C ℤ) X}
+
+/-- The shift by `1` of a homotopy K-sheaf is a homotopy K-sheaf: it is the cokernel of
+`F ⟶ cone (𝟙 F)`, whose middle term is acyclic. -/
+private theorem IsHomotopyKSheaf.comp_shiftFunctor_one (hF : F.IsHomotopyKSheaf) :
+    IsHomotopyKSheaf (F ⋙ shiftFunctor (CochainComplex C ℤ) (1 : ℤ)) :=
+  (NatTrans.shortExact_mappingConeInrShortComplex (𝟙 F)).isHomotopyKSheaf_X₃ hF
+    (isHomotopyKSheaf_mappingConeFunctor_id F)
+
+/-- A K-presheaf whose shift by `1` is a homotopy K-sheaf is a homotopy K-sheaf: it is the kernel
+of `cone (𝟙 F) ⟶ F⟦1⟧`, whose middle term is acyclic. -/
+private theorem IsHomotopyKSheaf.of_comp_shiftFunctor_one
+    (hF : IsHomotopyKSheaf (F ⋙ shiftFunctor (CochainComplex C ℤ) (1 : ℤ))) :
+    F.IsHomotopyKSheaf :=
+  (NatTrans.shortExact_mappingConeInrShortComplex (𝟙 F)).isHomotopyKSheaf_X₁
+    (isHomotopyKSheaf_mappingConeFunctor_id F) hF
+
+variable {G : KPresheaf (CochainComplex C ℤ) X} (τ : F ⟶ G)
 
 /-- **Pardon, Lemma A.2.11, for mapping cones.** The mapping cone `K ↦ cone (τ_K)` of a morphism
 `τ : F ⟶ G` of homotopy K-sheaves is a homotopy K-sheaf. -/
 theorem isHomotopyKSheaf_mappingConeFunctor (hF : F.IsHomotopyKSheaf) (hG : G.IsHomotopyKSheaf) :
-    IsHomotopyKSheaf (NatTrans.mappingConeFunctor τ) := by
+    IsHomotopyKSheaf (NatTrans.mappingConeFunctor τ) :=
   -- the shift `F⟦1⟧` of `F` is the cokernel of `F ⟶ cone (𝟙 F)`, whose middle term is acyclic
-  have hcone : IsHomotopyKSheaf (NatTrans.mappingConeFunctor (𝟙 F)) :=
-    isHomotopyKSheaf_of_acyclic fun K ↦
-      (quasiIso_iff_acyclic_mappingCone (𝟙 (F.obj (op K)))).1 inferInstance
-  exact (NatTrans.shortExact_mappingConeInrShortComplex τ).isHomotopyKSheaf_X₂ hG
-    ((NatTrans.shortExact_mappingConeInrShortComplex (𝟙 F)).isHomotopyKSheaf_X₃ hF hcone)
+  (NatTrans.shortExact_mappingConeInrShortComplex τ).isHomotopyKSheaf_X₂ hG
+    hF.comp_shiftFunctor_one
+
+end TopCat.KPresheaf
+
+/-! ### Shifts -/
+
+namespace TopCat.KPresheaf
+
+variable {X : TopCat.{w}} [T2Space X] {C : Type u} [Category.{v} C] [Abelian C]
+  [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] [WeaklyLocallyCompactSpace X]
+  {F : KPresheaf (CochainComplex C ℤ) X}
+
+/-- The shift `K ↦ F(K)⟦n⟧` of a homotopy K-sheaf is a homotopy K-sheaf, for every `n : ℤ`. -/
+theorem IsHomotopyKSheaf.comp_shiftFunctor (hF : F.IsHomotopyKSheaf) (n : ℤ) :
+    IsHomotopyKSheaf (F ⋙ shiftFunctor (CochainComplex C ℤ) n) := by
+  induction n using Int.induction_on with
+  | zero =>
+    exact hF.of_iso
+      (Functor.isoWhiskerLeft F (CategoryTheory.shiftFunctorZero _ ℤ) ≪≫ F.rightUnitor).symm
+  | succ n ih =>
+    exact ih.comp_shiftFunctor_one.of_iso (Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft F
+      (CategoryTheory.shiftFunctorAdd' (CochainComplex C ℤ) (n : ℤ) 1 (n + 1) rfl).symm)
+  | pred n ih =>
+    refine of_comp_shiftFunctor_one (ih.of_iso ?_)
+    exact Functor.isoWhiskerLeft F (CategoryTheory.shiftFunctorAdd' (CochainComplex C ℤ)
+      (-(n : ℤ) - 1) 1 (-(n : ℤ)) (by omega)) ≪≫ (Functor.associator _ _ _).symm
+
+/-- A K-presheaf of cochain complexes is a homotopy K-sheaf exactly when its shift by `n` is. -/
+theorem isHomotopyKSheaf_comp_shiftFunctor_iff (n : ℤ) :
+    IsHomotopyKSheaf (F ⋙ shiftFunctor (CochainComplex C ℤ) n) ↔ F.IsHomotopyKSheaf :=
+  ⟨fun h ↦ (h.comp_shiftFunctor (-n)).of_iso (Functor.associator _ _ _ ≪≫
+    Functor.isoWhiskerLeft F
+      (CategoryTheory.shiftFunctorCompIsoId (CochainComplex C ℤ) n (-n) (by omega)) ≪≫
+    F.rightUnitor),
+    fun h ↦ h.comp_shiftFunctor n⟩
 
 end TopCat.KPresheaf
