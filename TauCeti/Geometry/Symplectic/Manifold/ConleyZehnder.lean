@@ -8,10 +8,12 @@ module
 public import TauCeti.Geometry.Symplectic.ConleyZehnder.FrameChange
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
+import TauCeti.Geometry.Symplectic.ConleyZehnder.Parity
 import TauCeti.Geometry.Symplectic.ExistsCompatible
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Polar
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.UnitaryFrame
 import TauCeti.Geometry.Symplectic.WittExtension
+import TauCeti.LinearAlgebra.Eigenspace.Det
 import TauCeti.Topology.VectorBundle.Contractible
 
 /-!
@@ -62,8 +64,15 @@ index of the capped orbit, which grades the generators of the capped Floer compl
 ## Main results
 
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_add_maslovIndex`: the change of frame law.
+* `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_eq_of_square`: frames along `γ` extended over a
+  square, with change of frame a loop on every segment and constant along the far edge, give the
+  same index.
 * `TauCeti.SmoothTwoForm.frameConleyZehnderIndex_comp_eq`: independence of the frame over a cap.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_isSymplecticFrame`: existence of symplectic frames.
+* `TauCeti.SmoothTwoForm.exists_int_frameConleyZehnderIndex_eq`: in a periodic frame, the index
+  of a family from the identity whose endpoint fixes no nonzero vector is an integer.
+* `TauCeti.SmoothTwoForm.exists_int_frameConleyZehnderIndex_eq_and_negOnePow_eq`: its parity,
+  `(-1) ^ (n - k) = sign det (1 - P)` for the end value `P` of the family.
 
 ## References
 
@@ -112,12 +121,19 @@ theorem comp (hφ : IsSymplecticFrame σ ω₀ f φ) {Z : Type*} [TopologicalSpa
   ⟨hφ.continuous.comp ((hg.comp continuous_fst).prodMk continuous_snd),
     fun z ↦ hφ.apply_apply (g z)⟩
 
+/-- A symplectic frame precomposed with a continuous family `A` of linear symplectomorphisms of
+models `A(y) : W' ≃ W`, `y ↦ φ(y) ∘ A(y)`, is a symplectic frame with model `W'`. -/
+theorem trans_of_continuous (hφ : IsSymplecticFrame σ ω₀ f φ) {A : Y → W' ≃L[ℝ] W}
+    (hA : Continuous fun y ↦ (A y : W' →L[ℝ] W)) (hAω : ∀ y v w, ω₀ (A y v) (A y w) = ω' v w) :
+    IsSymplecticFrame σ ω' f fun y ↦ (A y).trans (φ y) :=
+  ⟨hφ.continuous.comp (continuous_fst.prodMk ((hA.comp continuous_fst).clm_apply continuous_snd)),
+    fun y v w ↦ by simp only [ContinuousLinearEquiv.trans_apply, hφ.apply_apply, hAω]⟩
+
 /-- A symplectic frame precomposed with a linear symplectomorphism of models `e : W' ≃ W` is a
 symplectic frame with model `W'`. -/
 theorem trans (hφ : IsSymplecticFrame σ ω₀ f φ) (e : W' ≃L[ℝ] W)
     (he : ∀ v w, ω₀ (e v) (e w) = ω' v w) : IsSymplecticFrame σ ω' f fun y ↦ e.trans (φ y) :=
-  ⟨hφ.continuous.comp (continuous_fst.prodMk (e.continuous.comp continuous_snd)), fun y v w ↦ by
-    simp only [ContinuousLinearEquiv.trans_apply, hφ.apply_apply, he]⟩
+  hφ.trans_of_continuous (A := fun _ ↦ e) continuous_const fun _ ↦ he
 
 /-- Two symplectic frames along the same map differ by linear symplectic maps of the model:
 `ψ(y)⁻¹ ∘ φ(y)` preserves `ω₀`. -/
@@ -236,6 +252,84 @@ theorem frameConleyZehnderIndex_trans [FiniteDimensional ℝ W] [FiniteDimension
     rw [Path.map_coe, Function.comp_apply]
     simp
 
+/-- **The index of a nondegenerate return map is an integer.** Let `χ` be a symplectic frame along
+`γ` taking the same values at the two ends, for instance a periodic frame along a loop, and let `Φ`
+be a family of linear maps along `γ` preserving `σ` which starts at the identity and whose endpoint
+`Φ(1)` fixes no nonzero vector, as the linearized flow along a nondegenerate periodic orbit does.
+Then the Conley–Zehnder index of `Φ` read in `χ` is an integer. -/
+theorem exists_int_frameConleyZehnderIndex_eq [FiniteDimensional ℝ W]
+    (hχ : IsSymplecticFrame σ ω₀ γ χ) (hχ₁ : ∀ v, χ 0 v = χ 1 v)
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) (hΦ₀ : ∀ v, Φ 0 v = v)
+    (hΦ₁ : ∀ v, Φ 1 v = v → v = 0) :
+    ∃ k : ℤ, frameConleyZehnderIndex ω₀ hχ hΦ hΦσ = k := by
+  -- Read in `χ`, the path starts at the identity of the model.
+  have hA : (1 : W →L[ℝ] W) = (((χ 0).trans (Φ 0)).trans (χ 0).symm : W ≃L[ℝ] W) := by
+    refine ContinuousLinearMap.ext fun v ↦ ?_
+    -- Unfold the composite pointwise: its middle factor `Φ 0` maps `T_(γ 0) M` to itself only
+    -- up to the definitional equality of tangent spaces, which `simp` lemmas cannot match.
+    change v = (χ 0).symm (Φ 0 (χ 0 v))
+    rw [hΦ₀, ContinuousLinearEquiv.symm_apply_apply]
+  -- and its endpoint `χ(1)⁻¹ ∘ Φ(1) ∘ χ(0)` fixes no nonzero vector of the model.
+  have hB : End.eigenspace (((((χ 0).trans (Φ 1)).trans (χ 1).symm : W ≃L[ℝ] W) : W →L[ℝ] W) :
+      W →ₗ[ℝ] W) 1 = ⊥ := by
+    refine (Submodule.eq_bot_iff _).2 fun v hv ↦ ?_
+    rw [End.mem_eigenspace_iff, one_smul] at hv
+    -- The same unfolding of the composite, applied to `v`.
+    have hv' : (χ 1).symm (Φ 1 (χ 0 v)) = v := hv
+    exact (χ 0).map_eq_zero_iff.1 (hΦ₁ _ (((χ 1).symm_apply_eq.1 hv').trans (hχ₁ v).symm))
+  obtain ⟨k, hk, -⟩ := ω₀.exists_int_conleyZehnderIndex_eq_of_one
+    ((framePath hχ.continuous hΦ).cast hA rfl) (apply_framePath_apply hχ hΦ hΦσ) hB
+  exact ⟨k, (ω₀.conleyZehnderIndex_congr (framePath hχ.continuous hΦ)
+    ((framePath hχ.continuous hΦ).cast hA rfl) _ fun _ ↦ rfl).trans hk⟩
+
+/-- **The parity of the index in a periodic frame.** Let `χ` be a symplectic frame along a loop
+`γ` in a manifold of dimension `2 n` that takes the same values at the two ends of the loop, and
+let `Φ` be a continuous family of linear maps along `γ` preserving `σ`, starting at the identity,
+whose end value is an endomorphism `P` of `T_(γ 0) M` without the eigenvalue `1`, such as the
+linearized flow along a nondegenerate periodic orbit. Then the Conley–Zehnder index of `Φ` read in
+`χ` is an integer `k` with `(-1) ^ (n - k) = sign det (1 - P)`. -/
+theorem exists_int_frameConleyZehnderIndex_eq_and_negOnePow_eq [FiniteDimensional ℝ W]
+    (hχ : IsSymplecticFrame σ ω₀ γ χ) (hχ₁ : ∀ v, χ 0 v = χ 1 v)
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) (hΦ₀ : ∀ v, Φ 0 v = v)
+    {P : TangentSpace I (γ 0) →ₗ[ℝ] TangentSpace I (γ 0)} (hP : ∀ v, Φ 1 v = P v)
+    (hPdet : LinearMap.det (1 - P) ≠ 0) :
+    ∃ k : ℤ, frameConleyZehnderIndex ω₀ hχ hΦ hΦσ = k ∧
+      ((((finrank ℝ E / 2 : ℕ) : ℤ) - k).negOnePow : ℤ) =
+        SignType.sign (LinearMap.det (1 - P)) := by
+  -- Read in `χ`, the path starts at the identity of the model.
+  have hA : (1 : W →L[ℝ] W) = (((χ 0).trans (Φ 0)).trans (χ 0).symm : W ≃L[ℝ] W) := by
+    refine ContinuousLinearMap.ext fun v ↦ ?_
+    change v = (χ 0).symm (Φ 0 (χ 0 v))
+    rw [hΦ₀, ContinuousLinearEquiv.symm_apply_apply]
+  -- Its end value is the conjugate of `P` by `χ 0`, as `χ 1 = χ 0`.
+  have hsymm (w : E) : (χ 1).symm w = (χ 0).symm w := by
+    apply (χ 1).injective
+    exact ((χ 1).apply_symm_apply w).trans (((hχ₁ _).symm).trans ((χ 0).apply_symm_apply w)).symm
+  have hdet : LinearMap.det (1 - (((((χ 0).trans (Φ 1)).trans (χ 1).symm : W ≃L[ℝ] W) :
+      W →L[ℝ] W) : W →ₗ[ℝ] W)) = LinearMap.det (1 - P) := by
+    rw [← LinearMap.det_conj _ (χ 0).symm.toLinearEquiv]
+    congr 1
+    refine LinearMap.ext fun v ↦ ?_
+    change v - (χ 1).symm (Φ 1 (χ 0 v)) = (χ 0).symm (χ 0 v - P (χ 0 v))
+    rw [hP, map_sub, ContinuousLinearEquiv.symm_apply_apply]
+    exact congrArg (v - ·) (hsymm _)
+  have hB : End.eigenspace (((((χ 0).trans (Φ 1)).trans (χ 1).symm : W ≃L[ℝ] W) : W →L[ℝ] W) :
+      W →ₗ[ℝ] W) 1 = ⊥ := by
+    rw [← End.det_smul_one_sub_ne_zero_iff, one_smul, hdet]
+    exact hPdet
+  have hW : finrank ℝ W = finrank ℝ E := (χ 0).toLinearEquiv.finrank_eq
+  obtain ⟨k, hk, hpar⟩ := ω₀.exists_int_conleyZehnderIndex_eq_of_one
+    ((framePath hχ.continuous hΦ).cast hA rfl) (apply_framePath_apply hχ hΦ hΦσ) hB
+  refine ⟨k, ?_, ?_⟩
+  · exact (ω₀.conleyZehnderIndex_congr (framePath hχ.continuous hΦ)
+      ((framePath hχ.continuous hΦ).cast hA rfl) _ fun _ ↦ rfl).trans hk
+  · rw [← hW, ← hdet]
+    exact hpar
+
 omit [IsManifold I ∞ M] [FiniteDimensional ℝ E] in
 /-- The change of frame `t ↦ χ(t)⁻¹ ∘ χ'(t)` between two frames along `γ` takes the same value at
 the two ends when both frames do: this is the loop condition of
@@ -309,6 +403,49 @@ theorem frameConleyZehnderIndex_eq_add_maslovIndex [FiniteDimensional ℝ W]
     ext v
     rw [SymplecticForm.frameChange_apply]
     simp
+
+/-- **Frames along `γ` extended over a square.** Let `ψ` and `ψ'` be symplectic frames along a map
+`g` of the unit square whose change of frame `p ↦ ψ(p)⁻¹ ∘ ψ'(p)` takes the same value at the two
+ends of every segment `s = const` and is constant along the edge `s = 1`. Then symplectic frames
+`χ`, `χ'` along `γ` which agree with `ψ` and `ψ'` on the edge `s = 0` give the same Conley–Zehnder
+index of `Φ`: their change of frame is contracted through loops over the square. -/
+theorem frameConleyZehnderIndex_eq_of_square [FiniteDimensional ℝ W]
+    (hχ : IsSymplecticFrame σ ω₀ γ χ) (hχ' : IsSymplecticFrame σ ω₀ γ χ')
+    {g : unitInterval × unitInterval → M} {ψ ψ' : ∀ p, W ≃L[ℝ] TangentSpace I (g p)}
+    (hψ : IsSymplecticFrame σ ω₀ g ψ) (hψ' : IsSymplecticFrame σ ω₀ g ψ')
+    (hχψ : ∀ t v, χ t v = ψ (0, t) v) (hχψ' : ∀ t v, χ' t v = ψ' (0, t) v)
+    (hper : ∀ s, (ψ' (s, 0)).trans (ψ (s, 0)).symm = (ψ' (s, 1)).trans (ψ (s, 1)).symm)
+    (hone : ∀ t, (ψ' (1, t)).trans (ψ (1, t)).symm = (ψ' (1, 0)).trans (ψ (1, 0)).symm)
+    (hΦ : Continuous fun q : unitInterval × TangentSpace I (γ 0) ↦
+      (⟨γ q.1, Φ q.1 q.2⟩ : TangentBundle I M))
+    (hΦσ : ∀ t u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) :
+    frameConleyZehnderIndex ω₀ hχ' hΦ hΦσ = frameConleyZehnderIndex ω₀ hχ hΦ hΦσ := by
+  -- Along `γ` the change of frame is that of `ψ` and `ψ'` along the edge `s = 0`.
+  have hedge (t : unitInterval) : (χ' t).trans (χ t).symm = (ψ' (0, t)).trans (ψ (0, t)).symm := by
+    ext v
+    rw [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.trans_apply, hχψ']
+    -- `χ t` and `ψ (0, t)` take values in the tangent spaces at `γ t` and `g (0, t)`, equal only
+    -- definitionally, so the inverse is cancelled by explicit terms rather than `rw`.
+    exact (χ t).symm_apply_eq.2 ((hχψ t _).trans ((ψ (0, t)).apply_symm_apply _)).symm
+  have hloop := (hedge 0).trans ((hper 0).trans (hedge 1).symm)
+  rw [frameConleyZehnderIndex_eq_add_maslovIndex hχ hχ' hloop]
+  suffices hm : ω₀.maslovIndex (transitionLoop hχ.continuous hχ'.continuous hloop)
+      (apply_transitionLoop_apply hχ hχ' hloop) = 0 by
+    rw [hm, Int.cast_zero, mul_zero, add_zero]
+  -- The change of frame over the square is a homotopy through loops from the change of frame
+  -- along `γ` to the constant loop at its value at the corner `(1, 0)`.
+  let F : C(unitInterval × unitInterval, W →L[ℝ] W) :=
+    ⟨fun p ↦ ((ψ' p).trans (ψ p).symm : W ≃L[ℝ] W),
+      continuous_trans_symm_of_continuous_frame hψ'.continuous hψ.continuous⟩
+  refine (ω₀.maslovIndex_eq_of_homotopy _
+    (Path.refl (((ψ' (1, 0)).trans (ψ (1, 0)).symm : W ≃L[ℝ] W) : W →L[ℝ] W)) F
+    (hψ'.apply_trans_symm_apply hψ) (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)).trans
+    (ω₀.maslovIndex_refl _ _)
+  · ext v
+    rw [transitionLoop_apply, ContinuousMap.coe_mk, ContinuousLinearEquiv.coe_coe, ← hedge t,
+      ContinuousLinearEquiv.trans_apply]
+  · rw [Path.refl_apply, ContinuousMap.coe_mk, hone t]
+  · rw [ContinuousMap.coe_mk, hper s]
 
 /-- **The Conley–Zehnder index over a cap does not depend on the frame.** Let `f : Y → M` be a
 continuous map from a contractible space, `β` a loop in `Y`, and `Φ` a family of linear

@@ -13,6 +13,7 @@ public import Mathlib.GroupTheory.Index
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 public import TauCeti.GroupTheory.DoubleCoset.Orbits
 public import TauCeti.GroupTheory.QuotientGroup.Basic
+import TauCeti.GroupTheory.DoubleCoset.Fiber
 
 /-!
 # Finiteness of the double-coset quotient
@@ -36,6 +37,8 @@ for `Nat.card`.
 ## Main statements
 
 * `TauCeti.finite_doubleCosetQuotient`: `H \ G / K` is finite when `K` has finite index in `G`.
+* `TauCeti.finite_doubleCoset_of_le`: for `J ≤ K` of finite relative index, `Γ \ G / J` is
+  finite when `Γ \ G / K` is.
 * `TauCeti.card_doubleCoset_mul_card_inf_conj_smul`: the double-coset size formula
   `|KsH| · |K ⊓ sHs⁻¹| = |K| · |H|`.
 * `TauCeti.card_doubleCoset_eq_card_mul_relIndex`: the same formula as an index,
@@ -134,6 +137,16 @@ theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) :
       rw [(mul_eq_zero.1 hrel).resolve_right Nat.card_pos.ne', mul_zero]
     · have : Infinite K := not_finite_iff_infinite.1 hK
       rw [Nat.card_eq_zero_of_infinite (α := K), zero_mul]
+
+/-- For `J ⊂ K` of finite index, if `Γ \ G / K` is finite, so is `Γ \ G / J`. -/
+theorem finite_doubleCoset_of_le {Γ J K : Subgroup G} (hJK : J ≤ K) [J.IsFiniteRelIndex K]
+    [Finite (DoubleCoset.Quotient (Γ : Set G) K)] :
+    Finite (DoubleCoset.Quotient (Γ : Set G) J) := by
+  -- pass to the orbits of `J` and `K` on `G ⧸ Γ`
+  have : Finite (orbitRel.Quotient K (G ⧸ Γ)) :=
+    .of_equiv _ (doubleCosetQuotientEquivOrbitRelQuotient Γ K)
+  have := finite_orbitRelQuotient_of_le (X := G ⧸ Γ) hJK
+  exact .of_equiv _ (doubleCosetQuotientEquivOrbitRelQuotient Γ J).symm
 
 end TauCeti
 

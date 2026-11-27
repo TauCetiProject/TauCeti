@@ -458,7 +458,8 @@ theorem mem_matrixLieAlgebra_fromBlocksProd_iff {X : Matrix (n ⊕ m) (n ⊕ m) 
     -- The off-diagonal entries of `exp (t • X)` vanish for every `t`, hence so do those of `X`.
     have hoff : X.toBlocks₁₂ = 0 ∧ X.toBlocks₂₁ = 0 := by
       refine ⟨?_, ?_⟩ <;>
-      · refine Matrix.ext fun i j ↦ Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero fun t ↦ ?_
+      · refine Matrix.ext fun i j ↦
+          Matrix.apply_eq_zero_of_forall_exp_smul_apply_eq_zero (𝕂 := ℝ) fun t ↦ ?_
         obtain ⟨g₁, -, g₂, -, he⟩ := hexp t
         simp [he]
     have hdiag (t : ℝ) : ∃ g₁ ∈ G₁, ∃ g₂ ∈ G₂, (g₁ : Matrix n n 𝕜) = exp (t • X.toBlocks₁₁) ∧

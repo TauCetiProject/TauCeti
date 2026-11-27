@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.AEZeroOff
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Exponent
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.SMul
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 import TauCeti.Analysis.Sobolev.Local.Coordinates
@@ -72,6 +73,7 @@ changes of chart and trivialization
   `TauCeti.SobolevSection.denseRange_ofContMDiffSection_comp_ofLE`: the `C^∞` sections are dense in
   `W^{k,p}(V)` for every `k` and `1 ≤ p < ∞`.
 * `TauCeti.SobolevSection.denseRange_ofContMDiffSection`: the `Cᵏ` sections are dense.
+* `TauCeti.SobolevSection.denseRange_ofExponentLEL`: lowering the exponent has dense range.
 * `TauCeti.SobolevSection.hasExtensionByZero`: over surfaces, extension by zero holds for `Cⁿ`
   bundles at orders `k ≤ n`; `hasExtensionByZero_of_le_one` is the case
   `k ≤ 1` for `C¹` bundles.
@@ -143,7 +145,8 @@ private theorem exists_mem_range_value_ae {i : Fin A.n} {ψ : M → ℝ}
     rw [funext hG]
     exact ContDiffOn.sum fun j _ ↦ (hf j).smul contDiffOn_const
   obtain ⟨s, hs⟩ : ∃ s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯, ⇑s = fun x ↦ ψ x • A.chartSection i G x :=
-    ⟨⟨_, contMDiff_smul_chartSection hψ hψi hGs⟩, rfl⟩
+    ⟨⟨_, contMDiff_smul_chartSection hψ (A.image i).isOpen
+      (hψi.trans (A.dom_subset_dom_inter_preimage_image i)) hGs⟩, rfl⟩
   have has (i' : Fin A.n) := chartValueL_ofContMDiffSection_ae A μ p k
     (ContMDiffSection.ofLE ENat.LEInfty.out s) i'
   simp only [ContMDiffSection.coe_ofLE, hs] at has
@@ -205,8 +208,8 @@ private theorem mem_closure_range_of_mem_aeZeroOff [T2Space M] (hp : p ≠ ⊤)
     have hT' := (T.continuous.tendsto _).comp (hlim j)
     rw [hTu j] at hT'
     exact hT'
-  have hE := ((extendByZeroL h (isClosed_tsupport ψ) hψi).continuous.tendsto _).comp hconv
-  simp only [Function.comp_def, extendByZeroL_chartRestrictL] at hE
+  have hE := tendsto_subtype_rng.1 (tendsto_of_tendsto_chartRestrictL h (isClosed_tsupport ψ) hψi
+    hconv)
   exact (Submodule.isClosed_topologicalClosure _).mem_of_tendsto hE
     (Eventually.of_forall fun m ↦ Submodule.le_topologicalClosure _ (ha m))
 
@@ -409,7 +412,8 @@ private theorem mem_closure_smoothSubmodule_of_contMDiffSMulL_eq (hp : p ≠ ⊤
   have hfu (l : Fin (finrank ℝ F)) : (Wkp.value k (u l) : E → ℝ) =ᵐ[μ.restrict (A.image i)]
       fun y ↦ (finBasis ℝ F).repr (f y) l :=
     (hgu l).trans (Eventually.of_forall fun y ↦ by simp only [f]; rw [Basis.repr_sum_self])
-  have ht := contMDiff_smul_chartSection hψ hψi hf
+  have ht := contMDiff_smul_chartSection hψ (A.image i).isOpen
+    (hψi.trans (A.dom_subset_dom_inter_preimage_image i)) hf
   set s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯ := ⟨_, ht.of_le (by exact_mod_cast le_top)⟩
   refine ⟨ofContMDiffSection A μ p k s, ⟨s, ht, rfl⟩, ?_⟩
   -- `χ` fixes the difference between the approximation and `z`, so the difference is controlled
@@ -484,6 +488,19 @@ variable (A μ p k) in
 `TauCeti.SobolevSection.dense_ofContMDiffSection_contMDiff` for density of `C^∞` sections. -/
 theorem denseRange_ofContMDiffSection (hp : p ≠ ⊤) : DenseRange (ofContMDiffSection A μ p k) :=
   (dense_ofContMDiffSection_contMDiff A μ p k hp).mono (by rintro _ ⟨s, -, rfl⟩; exact ⟨s, rfl⟩)
+
+variable (A μ k) in
+/-- **Lowering the exponent has dense range.** For `1 ≤ p ≤ q`, the inclusion
+`W^{k,q}(V) → W^{k,p}(V)` (`TauCeti.SectionChartData.ofExponentLEL`) has dense range. For `p < ∞`
+its range contains the `Cᵏ` sections, which are dense; for `p = ∞` it is the identity. -/
+theorem denseRange_ofExponentLEL {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q) :
+    DenseRange (A.sectionChartData.ofExponentLEL μ k hpq) := by
+  rcases eq_or_ne p ⊤ with rfl | hp
+  · obtain rfl := top_le_iff.1 hpq
+    exact Function.Surjective.denseRange fun w ↦ ⟨w, SectionChartData.ofExponentLEL_self w⟩
+  refine (denseRange_ofContMDiffSection A μ p k hp).mono ?_
+  rintro _ ⟨s, rfl⟩
+  exact ⟨ofContMDiffSection A μ q k s, ofExponentLEL_ofContMDiffSection hpq s⟩
 
 end Unconditional
 

@@ -33,6 +33,8 @@ meromorphic order to every point of `closedBall c R`.
   forces meromorphic order exactly `-1`.
 * `Filter.BoundedAtFilter.meromorphicOrderAt_nonneg`: boundedness on a punctured neighbourhood
   forces nonnegative meromorphic order.
+* `exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero`: a negative meromorphic order is `-(m + 1)`
+  for some `m : ℕ`.
 * `AnalyticOnNhd.meromorphicOrderAt_ne_top_of_exists_ne_zero`: a nonzero value on a connected
   set rules out infinite order throughout the set.
 * `AnalyticAt.meromorphicOrderAt_pos_iff_eq_zero`: an analytic function at `x` has positive
@@ -46,6 +48,8 @@ meromorphic order to every point of `closedBall c R`.
   at-worst-simple poles has meromorphic order at least `-1` throughout an open set.
 * `AnalyticAt.meromorphicOrderAt_nonpos_iff`: at a point of analyticity the order is at most `0`
   exactly when the value is nonzero.
+* `AnalyticAt.meromorphicOrderAt_fun_sub_nonneg_iff`: subtracting `F` from a function analytic at
+  `x` leaves `x` a pole exactly when it is a pole of `F`.
 * `MeromorphicAt.meromorphicAt_smul_iff_of_meromorphicOrderAt_ne_top`: a meromorphic scalar factor
   that does not vanish identically does not change whether a function is meromorphic.
 * `MeromorphicAt.meromorphicOrderAt_smul_nonpos`,
@@ -57,6 +61,8 @@ meromorphic order to every point of `closedBall c R`.
   `MeromorphicAt.meromorphicOrderAt_mul_nonpos`, `MeromorphicAt.meromorphicOrderAt_mul_nonpos_iff`,
   `MeromorphicAt.meromorphicOrderAt_mul_of_meromorphicOrderAt_eq_zero`: the same for a product of
   scalar functions.
+* `le_meromorphicOrderAt_sum`: a common lower bound on the orders of finitely many meromorphic
+  summands bounds the order of their sum.
 -/
 
 public section
@@ -159,6 +165,15 @@ theorem _root_.Filter.BoundedAtFilter.meromorphicOrderAt_nonneg
       (tendsto_cobounded_of_meromorphicOrderAt_neg (not_le.mp hlt)))
     ((Asymptotics.isBigO_one_iff (F := ℝ)).mp hbdd)
 
+/-- A negative meromorphic order is `-(m + 1)` for some `m : ℕ`: this is the form of the pole
+order taken by `Contour.exists_laurent_data_of_meromorphicOrderAt_eq_neg_succ`. -/
+theorem exists_meromorphicOrderAt_eq_neg_succ_of_lt_zero (h : meromorphicOrderAt g x < 0) :
+    ∃ m : ℕ, meromorphicOrderAt g x = (-(↑(m + 1) : ℤ) : WithTop ℤ) := by
+  obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.mp h.ne_top
+  have hn' : n < 0 := WithTop.coe_lt_coe.mp (hn ▸ h)
+  obtain ⟨m, rfl⟩ := Int.eq_negSucc_of_lt_zero hn'
+  exact ⟨m, by simpa [Int.negSucc_eq] using hn.symm⟩
+
 end Bounded
 
 section Mul
@@ -174,6 +189,32 @@ theorem AnalyticAt.meromorphicOrderAt_nonpos_iff (hf : AnalyticAt 𝕜 f x) :
   induction analyticOrderAt f x using ENat.recTopCoe with
   | top => simp
   | coe n => simp
+
+/-- Subtracting `F` from a function analytic at `x` leaves `x` a pole exactly when it is a pole
+of `F`. If `F` is not meromorphic at `x`, both orders are the junk value `0`. -/
+theorem AnalyticAt.meromorphicOrderAt_fun_sub_nonneg_iff {P F : 𝕜 → E} {x : 𝕜}
+    (hP : AnalyticAt 𝕜 P x) :
+    0 ≤ meromorphicOrderAt (fun z ↦ P z - F z) x ↔ 0 ≤ meromorphicOrderAt F x := by
+  have hsub : (fun z ↦ P z - F z) = P + fun z ↦ -F z := funext fun z ↦ sub_eq_add_neg _ _
+  rw [hsub]
+  constructor
+  · intro h
+    by_contra! hp
+    have hlt : meromorphicOrderAt (fun z ↦ -F z) x < meromorphicOrderAt P x := by
+      rw [← meromorphicOrderAt_fun_neg]
+      exact hp.trans_le hP.meromorphicOrderAt_nonneg
+    rw [meromorphicOrderAt_add_eq_right_of_lt hP.meromorphicAt hlt,
+      ← meromorphicOrderAt_fun_neg] at h
+    exact h.not_gt hp
+  · intro h
+    by_cases hF : MeromorphicAt F x
+    · refine (le_min hP.meromorphicOrderAt_nonneg ?_).trans
+        (meromorphicOrderAt_add hP.meromorphicAt hF.fun_neg)
+      rwa [← meromorphicOrderAt_fun_neg]
+    · rw [meromorphicOrderAt_of_not_meromorphicAt fun hm ↦ hF ?_]
+      convert hP.meromorphicAt.sub hm using 1
+      funext z
+      simp
 
 /-- Multiplying by a scalar function `g` that is meromorphic at `x` and does not vanish identically
 near `x` does not change whether a function is meromorphic at `x`. For `g` analytic and nonzero at
@@ -266,5 +307,29 @@ theorem MeromorphicAt.meromorphicOrderAt_mul_nonpos_iff {f g : 𝕜 → 𝕜} (h
   hf.meromorphicOrderAt_smul_nonpos_iff hg hfg hgf
 
 end Mul
+
+section Sum
+
+/-- A common lower bound on the meromorphic orders of the summands also bounds the order of
+the sum from below. In particular, a finite sum cannot acquire a pole of higher order than
+those of its summands. -/
+theorem le_meromorphicOrderAt_sum {𝕜 E ι : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {s : Finset ι} {f : ι → 𝕜 → E} {z : 𝕜}
+    {m : WithTop ℤ} (hf : ∀ i ∈ s, MeromorphicAt (f i) z)
+    (hm : ∀ i ∈ s, m ≤ meromorphicOrderAt (f i) z) :
+    m ≤ meromorphicOrderAt (∑ i ∈ s, f i) z := by
+  classical
+  induction s using Finset.cons_induction with
+  | empty =>
+    rw [Finset.sum_empty, Pi.zero_def, meromorphicOrderAt_const]
+    simp
+  | cons i s hi ih =>
+    have hf' j (hj : j ∈ s) := hf j (Finset.mem_cons_of_mem hj)
+    rw [Finset.sum_cons]
+    exact (le_min (hm i (Finset.mem_cons_self i s))
+      (ih hf' fun j hj ↦ hm j (Finset.mem_cons_of_mem hj))).trans
+        (meromorphicOrderAt_add (hf i (Finset.mem_cons_self i s)) (MeromorphicAt.sum hf'))
+
+end Sum
 
 end
