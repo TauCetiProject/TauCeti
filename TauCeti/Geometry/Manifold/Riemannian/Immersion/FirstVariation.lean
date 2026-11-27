@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.Deriv.Matrix
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.MeanCurvature
 public import TauCeti.Geometry.Manifold.Riemannian.Immersion.Weingarten
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Relative.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Metric
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Surface
-import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # The first variation of volume of an immersion
@@ -31,21 +29,22 @@ the relative volume `V(t) = ∫ (J_t - 1) dV_{g_{t₀}}` of the induced metrics 
   surface `(t, s) ↦ Φ t (c s)` (`CovariantDerivative.alongCurve_curveVelocity_comm`) turns the
   `t`-derivative of `dΦ_t v` into `∇_v X` (`TauCeti.alongCurve_mfderiv_family`), and metric
   compatibility along `t ↦ Φ t x` gives the product rule.
-* **The variation of the relative volume density**
-  (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolumeDensity`): if the inner products
-  of `g_t` at `x` have parameter derivative `k`, then `∂_t J_t = ½ ∑ᵢ k(eᵢ, eᵢ)` at `t₀` in a
-  `g_{t₀}`-orthonormal basis, by Jacobi's formula for the Gram determinant. For induced metrics
-  this is `∑ᵢ ⟪∇_{eᵢ} X, dΦ eᵢ⟫` (`TauCeti.hasDerivAt_relativeVolumeDensity_pullback_family`).
+* **The variation of the relative volume density**: the variation `½ tr_{g_{t₀}} ∂_t g_t` of the
+  relative volume density of a family of metrics
+  (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolumeDensity`) is, for induced metrics,
+  `∑ᵢ ⟪∇_{eᵢ} X, dΦ eᵢ⟫` in a `g_{t₀}`-orthonormal basis
+  (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolumeDensity_pullback_family`).
 * **Normal variations**: if `X` is normal to `Φ t₀`, the pointwise Weingarten equation
   `⟪∇_v X, dΦ w⟫ = -⟪B(v, w), X⟫` (`TauCeti.inner_alongMap_mfderiv_of_eventually_mem`) turns the
   sum into `-⟪∑ᵢ B(eᵢ, eᵢ), X⟫ = -m ⟪H, X⟫`, `m = dim M`, with `H` the mean curvature vector
-  (`TauCeti.hasDerivAt_relativeVolumeDensity_pullback_family_of_normal`). Integrating gives the
-  **first variation formula** `δVol = -m ∫ ⟪H, X⟫ dV` for normal variations of a compact
-  boundaryless immersion (`TauCeti.hasDerivAt_relativeVolume_pullback_of_normal`) and for
+  (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolumeDensity_pullback_family_of_normal`).
+  Integrating gives the **first variation formula** `δVol = -m ∫ ⟪H, X⟫ dV` for normal
+  variations of a compact boundaryless immersion
+  (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_normal`) and for
   compactly supported normal variations of a noncompact one
-  (`TauCeti.hasDerivAt_relativeVolume_pullback_of_isCompact_of_normal`). In particular a minimal
-  immersion, `H = 0`, is stationary for these variations
-  (`TauCeti.hasDerivAt_relativeVolume_pullback_of_normal_of_minimal`).
+  (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_isCompact_of_normal`).
+  In particular a minimal immersion, `H = 0`, is stationary for these variations
+  (`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_normal_of_minimal`).
 
 The metric of `M` used for the mean curvature vector is an arbitrary instance, assumed to be the
 metric induced by `Φ t₀`, and the metric `h` of `N` that is pulled back is assumed to be the
@@ -58,14 +57,12 @@ inner product of the instance on `TN` with which `∇` is compatible.
 ## Main results
 
 * `TauCeti.hasDerivAt_inner_mfderiv_family`: the variation of the induced metric.
-* `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolumeDensity`: the variation of the
-  relative volume density of a family of metrics.
-* `TauCeti.hasDerivAt_relativeVolumeDensity_pullback_family`,
-  `TauCeti.hasDerivAt_relativeVolumeDensity_pullback_family_of_normal`: the pointwise first
-  variation for a family of immersions, and for a normal variation.
-* `TauCeti.hasDerivAt_relativeVolume_pullback_of_normal`,
-  `TauCeti.hasDerivAt_relativeVolume_pullback_of_isCompact_of_normal`: the first variation of
-  volume `-m ∫ ⟪H, X⟫ dV` for normal variations.
+* `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolumeDensity_pullback_family`,
+  `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolumeDensity_pullback_family_of_normal`:
+  the pointwise first variation for a family of immersions, and for a normal variation.
+* `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_normal`,
+  `Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_isCompact_of_normal`:
+  the first variation of volume `-m ∫ ⟪H, X⟫ dV` for normal variations.
 
 ## References
 
@@ -80,39 +77,6 @@ open TauCeti.Manifold
 open scoped ContDiff Manifold Topology InnerProductSpace
 
 noncomputable section
-
-namespace Bundle.ContMDiffRiemannianMetric
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {n : ℕ∞ω}
-
-/-- **The variation of the relative volume density.** Let `g_t` be a family of metrics whose inner
-products at `x` have parameter derivative `h` at `t₀`. Then the relative volume density of `g_t`
-with respect to `g_{t₀}` has derivative `½ ∑ᵢ h(eᵢ, eᵢ)` at `t₀`, for every `g_{t₀}`-orthonormal
-basis `(eᵢ)` of `T_x M`: half the `g_{t₀}`-trace of `h`. -/
-theorem hasDerivAt_relativeVolumeDensity {g : ℝ → ContMDiffRiemannianMetric I n E
-    (fun x : M ↦ TangentSpace I x)} {x : M} {t₀ : ℝ}
-    {h : TangentSpace I x → TangentSpace I x → ℝ} {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι ℝ (TangentSpace I x))
-    (hb : ∀ i j, (g t₀).inner x (b i) (b j) = if i = j then 1 else 0)
-    (hg : ∀ v w, HasDerivAt (fun t ↦ (g t).inner x v w) (h v w) t₀) :
-    HasDerivAt (fun t ↦ relativeVolumeDensity (g t₀) (g t) x) (2⁻¹ * ∑ i, h (b i) (b i)) t₀ := by
-  let G : ℝ → Matrix ι ι ℝ := fun t ↦ Matrix.of fun i j ↦ (g t).inner x (b i) (b j)
-  have hG : G t₀ = 1 := by
-    ext i j
-    simp [G, hb, Matrix.one_apply]
-  have hdet := Matrix.hasDerivAt_det_of_entries (A := G)
-    (A' := Matrix.of fun i j ↦ h (b i) (b j)) (fun i j ↦ hg _ _) (by simp [hG])
-  have hsqrt := hdet.sqrt (by simp [hG])
-  have heq : (fun t ↦ relativeVolumeDensity (g t₀) (g t) x) = fun t ↦ √(G t).det :=
-    funext fun t ↦ b.relativeVolumeDensity_eq_sqrt_det_of_orthonormal hb
-  rw [heq]
-  convert hsqrt using 1
-  simp [hG, Matrix.trace]
-  ring
-
-end Bundle.ContMDiffRiemannianMetric
 
 namespace TauCeti
 
@@ -134,19 +98,34 @@ def familyVariationField (y : M) : TangentSpace J (Φ t₀ y) :=
   curveVelocity J (fun t ↦ Φ t y) t₀
 
 omit [TopologicalSpace M] in
-/-- The definition of the variation field. -/
-theorem familyVariationField_def (y : M) :
+/-- The defining formula for the variation field. -/
+theorem familyVariationField_apply (y : M) :
     familyVariationField J Φ t₀ y = curveVelocity J (fun t ↦ Φ t y) t₀ :=
   (rfl)
 
-/-- The velocity of `f ∘ c` is `df` applied to the velocity of `c`. -/
-private theorem curveVelocity_map {f : M → N} {c : ℝ → M} {s : ℝ}
-    (hf : MDifferentiableAt I J f (c s)) (hc : MDifferentiableAt 𝓘(ℝ, ℝ) I c s) :
-    curveVelocity J (fun r ↦ f (c r)) s = mfderiv I J f (c s) (curveVelocity I c s) := by
-  have h := curveVelocityWithin_map (f := f) (γ := c) (s := Set.univ) hf
-    uniqueDiffWithinAt_univ hc.mdifferentiableWithinAt
-  rw [curveVelocityWithin_univ, curveVelocityWithin_univ] at h
-  exact h
+omit [TopologicalSpace M] in
+/-- The variation field as a function of the point: the unapplied form of
+`familyVariationField_apply`. -/
+theorem familyVariationField_def :
+    familyVariationField J Φ t₀ = fun y ↦ curveVelocity J (fun t ↦ Φ t y) t₀ :=
+  (rfl)
+
+omit [TopologicalSpace M] in
+/-- At a point which the maps of the family near `t₀` all send to the same image, the variation
+field vanishes. -/
+@[simp]
+theorem familyVariationField_eq_zero {y : M} (h : ∀ᶠ t in 𝓝 t₀, Φ t y = Φ t₀ y) :
+    familyVariationField J Φ t₀ y = 0 := by
+  rw [familyVariationField_apply, curveVelocity_apply,
+    Filter.EventuallyEq.mfderiv_eq (f := fun _ ↦ Φ t₀ y) h, mfderiv_const]
+  exact zero_apply _
+
+/-- The variation field is the differential of the uncurried family in the direction of the
+parameter. -/
+theorem familyVariationField_eq_mfderiv {y : M}
+    (hΦ : MDifferentiableAt (𝓘(ℝ).prod I) J (uncurry Φ) (t₀, y)) :
+    familyVariationField J Φ t₀ y = mfderiv (𝓘(ℝ).prod I) J (uncurry Φ) (t₀, y) (1, 0) :=
+  hΦ.curveVelocity_eq_mfderiv_uncurry_apply_mk_zero (g := id) (hasDerivAt_id t₀)
 
 variable [IsManifold I 2 M] [IsManifold J 2 N]
 
@@ -210,7 +189,8 @@ private theorem differentiableAt_sectionCoord_mfderiv_family
     (f := fun t s ↦ Φ t (c s)) hσ hy
   refine hd.congr_of_eventuallyEq ?_
   filter_upwards [eventually_mdifferentiableAt_family hΦ] with t ht
-  simp only [sectionCoord_apply, curveVelocity_map ht hc1]
+  simp only [sectionCoord_apply]
+  exact congrArg _ (curveVelocity_map ht hc1).symm
 
 /-! ### The variation of the induced metric -/
 
@@ -235,7 +215,7 @@ theorem alongCurve_mfderiv_family (ht : cov.IsTorsionFree)
       (fun t ↦ curveVelocity J (fun s ↦ Φ t (c s)) 0) t₀ :=
     CovariantDerivative.alongCurve_congr cov _ _
       ((eventually_mdifferentiableAt_family hΦ).mono fun t ht ↦
-      (curveVelocity_map ht hc1).symm)
+      (curveVelocity_map (γ := c) ht hc1).symm)
   rw [hfield]
   have : IsManifold J (minSmoothness ℝ 2) N := by
     rw [minSmoothness_of_isRCLikeNormedField]
@@ -273,48 +253,24 @@ theorem hasDerivAt_inner_mfderiv_family
     (differentiableAt_sectionCoord_mfderiv_family hΦ hx w _ hbase)
   rwa [alongCurve_mfderiv_family ht hΦ hx, alongCurve_mfderiv_family ht hΦ hx] at h
 
-/-! ### Normal variations -/
+end TauCeti
 
-variable [FiniteDimensional ℝ E]
+namespace Bundle.ContMDiffRiemannianMetric
 
-/-- **The Weingarten equation, pointwise.** For a metric-compatible connection, a map `f` which is
-`C²` at `x` and a field `ν` along `f` which is normal near `x` with differentiable reading at `x`,
-`⟪∇_v ν, df w⟫ = -⟪B_x(v, w), ν⟫`. -/
-theorem inner_alongMap_mfderiv_of_eventually_mem
-    (hcov : CovariantDerivative.IsMetricCompatible (I := J) (V := fun y : N ↦ TangentSpace J y) cov)
-    {f : M → N} (hf : ContMDiffAt I J 2 f x) {ν : Π y : M, TangentSpace J (f y)}
-    (hν : MDifferentiableAt I 𝓘(ℝ, F) (sectionCoord ℝ (F := F) f ν (f x)) x)
-    (hνn : ∀ᶠ y in 𝓝 x, ν y ∈ orthogonalNormalSpace I J f y) (v w : TangentSpace I x) :
-    ⟪cov.alongMap I f ν x v, mfderiv I J f x w⟫_ℝ =
-      -⟪immersionSecondFundamentalFormAt cov f x v w, ν x⟫_ℝ := by
-  set V : Π y : M, TangentSpace I y := FiberBundle.extend E v
-  set W : Π y : M, TangentSpace I y := FiberBundle.extend E w
-  have hV : MDifferentiableAt I I.tangent (fun y ↦ (V y : TangentBundle I M)) x :=
-    FiberBundle.mdifferentiableAt_extend I E v
-  have hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x :=
-    FiberBundle.mdifferentiableAt_extend I E w
-  have hdW : MDifferentiableAt I 𝓘(ℝ, F)
-      (sectionCoord ℝ (F := F) f (fun y ↦ mfderiv I J f y (W y)) (f x)) x := by
-    have h := hf.contMDiffAt_tangentMap (X := (W x : TangentBundle I M)) (m := 1) (by norm_num)
-    exact mdifferentiableAt_sectionCoord f _ ((h.mdifferentiableAt one_ne_zero).comp
-      x hW) (FiberBundle.mem_baseSet_trivializationAt F (TangentSpace J) (f x))
-  have h0 : (fun y ↦ inner ℝ (ν y) (mfderiv I J f y (W y))) =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) :=
-    hνn.mono fun y hy ↦ inner_coe_orthogonalNormalSpace_mfderiv ⟨_, hy⟩ (W y)
-  have hd := hcov.mvfderiv_inner_alongMap (hf.mdifferentiableAt (by norm_num)) hν hdW v
-  rw [h0.mvfderiv_eq, mvfderiv_const, zero_apply] at hd
-  have hB : immersionSecondFundamentalFormAt cov f x v w =
-      immersionSecondFundamentalForm cov f V W x := by
-    simpa only [V, W, FiberBundle.extend_apply_self] using
-      immersionSecondFundamentalFormAt_apply hf hV hW
-  have hνx : ν x ∈ orthogonalNormalSpace I J f x := hνn.self_of_nhds
-  rw [hB, inner_immersionSecondFundamentalForm_of_mem V W hνx]
-  simp only [V, W, FiberBundle.extend_apply_self] at hd ⊢
-  linarith [real_inner_comm (ν x)
-    (cov.alongMap I f (fun y ↦ mfderiv I J f y (FiberBundle.extend E w y)) x v)]
+open TauCeti
 
-section Pullback
-
-variable {n : ℕ∞ω} (h : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y))
+variable
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 2 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {G : Type*} [TopologicalSpace G] {J : ModelWithCorners ℝ F G}
+  {N : Type*} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 2 N]
+  [RiemannianBundle (fun y : N ↦ TangentSpace J y)]
+  [IsContMDiffRiemannianBundle J 1 F (fun y : N ↦ TangentSpace J y)]
+  {cov : CovariantDerivative J F (fun y : N ↦ TangentSpace J y)}
+  {Φ : ℝ → M → N} {t₀ : ℝ} {x : M}
+  {n : ℕ∞ω} (h : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y))
 
 /-- **The first variation of the relative volume density of a family of immersions.** Let
 `Φ t : M → N` be a jointly `C^(n+1)` family of immersions, `n ≥ 1`, into a manifold whose metric
@@ -340,7 +296,7 @@ theorem hasDerivAt_relativeVolumeDensity_pullback_family
     refine (hΦ (t₀, x)).of_le ?_
     calc (2 : ℕ∞ω) = 1 + 1 := by norm_num
       _ ≤ n + 1 := by gcongr
-  have hd := ContMDiffRiemannianMetric.hasDerivAt_relativeVolumeDensity
+  have hd := hasDerivAt_relativeVolumeDensity
     (g := fun t ↦ h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t)) (t₀ := t₀) b
     (by simpa only [ContMDiffRiemannianMetric.pullback_inner, hh] using hb)
     (fun v w ↦ by
@@ -466,8 +422,8 @@ theorem hasDerivAt_relativeVolume_pullback_of_normal [CompactSpace M] [Boundaryl
     BoundarylessManifold.isInteriorPoint (hM _) (Eventually.of_forall hX)).deriv).symm
 
 /-- **Minimal immersions are stationary for normal variations.** Under the hypotheses of
-`TauCeti.hasDerivAt_relativeVolume_pullback_of_normal`, if the mean curvature vector of `Φ t₀`
-vanishes, the relative volume of `Φ_t^* h` has derivative `0` at `t₀`. -/
+`Bundle.ContMDiffRiemannianMetric.hasDerivAt_relativeVolume_pullback_of_normal`, if the mean
+curvature vector of `Φ t₀` vanishes, the relative volume of `Φ_t^* h` has derivative `0` at `t₀`. -/
 theorem hasDerivAt_relativeVolume_pullback_of_normal_of_minimal [CompactSpace M]
     [BoundarylessManifold I M] [RiemannianBundle (fun y : M ↦ TangentSpace I y)] {n₀ : ℕ∞ω}
     (g₀ : ContMDiffRiemannianMetric I n₀ E (fun x : M ↦ TangentSpace I x))
@@ -484,6 +440,4 @@ theorem hasDerivAt_relativeVolume_pullback_of_normal_of_minimal [CompactSpace M]
         (h.pullback (Φ t) (hΦ.curry_right (x := t)) (hinj t))) 0 t₀ := by
   simpa [hH] using hasDerivAt_relativeVolume_pullback_of_normal h g₀ hh hcov ht hn hΦ hinj hM hX
 
-end Pullback
-
-end TauCeti
+end Bundle.ContMDiffRiemannianMetric

@@ -279,6 +279,16 @@ theorem curveVelocityWithin_map
   rw [mfderiv_comp_mfderivWithin t hf hγ hs.uniqueMDiffWithinAt]
   rfl
 
+/-- The velocity of the image of a curve under a differentiable map is the differential of the
+map applied to the velocity of the curve: the `s = Set.univ` case of `curveVelocityWithin_map`. -/
+theorem curveVelocity_map
+    {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 F H'}
+    {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] {f : M → N}
+    (hf : MDifferentiableAt I J f (γ t)) (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t) :
+    curveVelocity J (f ∘ γ) t = mfderiv I J f (γ t) (curveVelocity I γ t) := by
+  simpa only [curveVelocityWithin_univ] using
+    curveVelocityWithin_map hf uniqueDiffWithinAt_univ hγ.mdifferentiableWithinAt
+
 /-- A continuous linear map out of the scalar model is determined by its value at `1`; this is the
 shape in which Mathlib's integral-curve API presents the velocity of a curve. -/
 private theorem mfderivWithin_eq_smulRight_curveVelocityWithin (γ : 𝕜 → M) (s : Set 𝕜) (t : 𝕜) :
