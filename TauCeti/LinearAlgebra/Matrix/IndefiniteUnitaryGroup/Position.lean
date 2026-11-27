@@ -70,11 +70,16 @@ discrete series coefficients with a large gap.
 * H. He, *On the Gan–Gross–Prasad conjecture for `U(p, q)`*, Invent. Math. 209 (2017), 837–884.
 * The shorter formal proof of the Riemann hypothesis for Dirichlet `L`-functions,
   <https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207/grh>
-  (Apache 2.0): the definitions, the two trace identities and their proofs are adapted from
+  (Apache 2.0): the definitions, the trace identities and their proofs are adapted from
   `New.DiscreteSeries.IsPosition`, `New.DiscreteSeries.LowersFlag`, `New.DiscreteSeries.InducesOn`,
-  `New.DiscreteSeries.IsStationary`, `New.DiscreteSeries.IsPosition.trace_eq` and
-  `New.DiscreteSeries.IsStationary.phase_eq` in `src/New/Appendix/DiscreteSeries/Positions.lean`,
-  stated here for arbitrary invertible Hermitian Gram matrices and weights.
+  `New.DiscreteSeries.IsStationary`, `New.DiscreteSeries.IsPosition.trace_eq`,
+  `New.DiscreteSeries.IsStationary.phase_eq` and
+  `New.DiscreteSeries.IsStationary.trace_eq_and_phase_eq`, with the form adjoint `i₀†` and `Y†`
+  following `New.DiscreteSeries.formAdjoint`, and the lemmas about the vectors `v_j` from
+  `New.DiscreteSeries.IsStationary.pow_mulVec_col_zero` and
+  `New.DiscreteSeries.IsStationary.gram_pow_mulVec`, all in
+  `src/New/Appendix/DiscreteSeries/Positions.lean`; they are stated here for arbitrary
+  invertible Hermitian Gram matrices and weights.
 -/
 
 public section
@@ -112,6 +117,13 @@ theorem inducesModFlag_iff {v : Matrix n (Fin (d + 1)) K} {i₀ : Matrix n m K} 
       Y * i₀ = i₀ * Y' + v.submatrix id Fin.castSucc * C :=
   Iff.rfl
 
+/-- A left inverse `T` of `v` restricts to a left inverse of the columns of `v` indexed by an
+injective `e`. -/
+private theorem submatrix_mul_submatrix_eq_one {k : Type*} [DecidableEq k]
+    {v : Matrix n k K} {T : Matrix k n K} {l : Type*} [DecidableEq l] {e : l → k}
+    (he : Function.Injective e) (hT : T * v = 1) : T.submatrix e id * v.submatrix id e = 1 := by
+  rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, hT, submatrix_one _ he]
+
 /-- **The sum of a flag-lowering matrix is unique**: if the vectors `v_j` are independent and `Y`
 lowers their flag with the sums `σ` and `σ'`, then `σ = σ'`. -/
 theorem LowersFlag.sum_eq_of_linearIndependent {v : Matrix n (Fin (d + 1)) K} {Y : Matrix n n K}
@@ -120,9 +132,7 @@ theorem LowersFlag.sum_eq_of_linearIndependent {v : Matrix n (Fin (d + 1)) K} {Y
   obtain ⟨N, -, hN, rfl⟩ := hσ
   obtain ⟨N', -, hN', rfl⟩ := hσ'
   obtain ⟨T, hT⟩ := exists_mul_eq_one_of_linearIndependent_col hv
-  have hZ : T.submatrix Fin.castSucc id * v.submatrix id Fin.castSucc = 1 := by
-    rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, hT,
-      submatrix_one _ (Fin.castSucc_injective d)]
+  have hZ := submatrix_mul_submatrix_eq_one (Fin.castSucc_injective d) hT
   have h_eq : N = N' := by
     rw [← Matrix.one_mul N, ← Matrix.one_mul N', ← hZ, Matrix.mul_assoc, Matrix.mul_assoc, ← hN,
       ← hN']
@@ -143,9 +153,16 @@ private theorem trace_submatrix_mul_mul_eq_sum {v : Matrix n (Fin (d + 1)) K}
         = (v.submatrix id Fin.castSucc * N₀.submatrix id t * Z).trace := by
         rw [trace_mul_comm, ← Matrix.mul_assoc, h_cols]
     _ = (N₀.submatrix id t).trace := by rw [trace_mul_cycle, hZ, Matrix.one_mul]
-    _ = ∑ a : Fin d, N₀ a (t a) := rfl
+    _ = ∑ a : Fin d, N₀ a (t a) := by simp [Matrix.trace]
 
 variable [StarRing K]
+
+/-- The products `⟨v_{t a}, M y⟩_J` with the vectors `v_{t a}` are the rows `t a` of `vᴴ J M`. -/
+private theorem submatrix_conjTranspose_mul_mul_eq_submatrix {k l p : Type*}
+    (v : Matrix n k K) (t : l → k) (J : Matrix n n K) (M : Matrix n p K) :
+    (v.submatrix id t)ᴴ * J * M = (vᴴ * J * M).submatrix t id := by
+  rw [conjTranspose_submatrix, Matrix.mul_assoc, Matrix.mul_assoc,
+    submatrix_mul _ _ _ _ _ Function.bijective_id, submatrix_id_id]
 
 /-- A **position** of `U(J')` in `U(J)` with `d + 1` vectors: the columns `v₁, …, v_{d+1}` of `v`
 are independent, their products `⟨v_a, v_b⟩_J = (vᴴ J v)_{ab}` vanish except that
@@ -173,17 +190,17 @@ variable {J : Matrix n n K} {J' : Matrix m m K} {v : Matrix n (Fin (d + 1)) K}
   {i₀ : Matrix n m K}
 
 /-- The vectors `v_j` are orthogonal to the image of `i₀`. -/
-theorem conjTranspose_mul_mul (hP : IsUnitaryPosition J J' d v i₀) (hJ : J.IsHermitian) :
+theorem conjTranspose_mul_mul_eq_zero (hP : IsUnitaryPosition J J' d v i₀) (hJ : J.IsHermitian) :
     vᴴ * J * i₀ = 0 := by
   simpa [Matrix.mul_assoc, hJ.eq] using congrArg conjTranspose hP.orthogonal
 
 /-- All the vectors `v_j` are orthogonal to the first `d` of them. -/
-theorem conjTranspose_mul_mul_submatrix (hP : IsUnitaryPosition J J' d v i₀) :
+theorem conjTranspose_mul_mul_submatrix_eq_zero (hP : IsUnitaryPosition J J' d v i₀) :
     vᴴ * J * v.submatrix id Fin.castSucc = 0 :=
   Matrix.ext fun a b ↦ hP.gram_eq_zero a b.castSucc (Or.inr b.castSucc_ne_last)
 
 /-- The first `d` vectors `v₁, …, v_d` are orthogonal to all the `v_j`. -/
-theorem submatrix_conjTranspose_mul_mul (hP : IsUnitaryPosition J J' d v i₀) :
+theorem submatrix_conjTranspose_mul_mul_eq_zero (hP : IsUnitaryPosition J J' d v i₀) :
     (v.submatrix id Fin.castSucc)ᴴ * J * v = 0 :=
   Matrix.ext fun a b ↦ hP.gram_eq_zero a.castSucc b (Or.inl a.castSucc_ne_last)
 
@@ -216,9 +233,8 @@ theorem exists_mul_eq_zero_and_mul_submatrix_eq_one (hP : IsUnitaryPosition J J'
     (hJ' : IsUnit J'.det) :
     ∃ Z : Matrix (Fin d) n K, Z * i₀ = 0 ∧ Z * v.submatrix id Fin.castSucc = 1 := by
   obtain ⟨Z, hZ₀, hZ₁⟩ := hP.exists_mul_eq_zero_and_mul_eq_one hJ'
-  refine ⟨Z.submatrix Fin.castSucc id, congrArg (·.submatrix Fin.castSucc id) hZ₀, ?_⟩
-  rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, hZ₁,
-    submatrix_one _ (Fin.castSucc_injective d)]
+  exact ⟨Z.submatrix Fin.castSucc id, congrArg (·.submatrix Fin.castSucc id) hZ₀,
+    submatrix_mul_submatrix_eq_one (Fin.castSucc_injective d) hZ₁⟩
 
 /-- The columns of `i₀` together with the vectors `v_j` are independent: `[i₀ v]` has a left
 inverse. -/
@@ -273,10 +289,9 @@ theorem exists_eq_mul_of_orthogonal (hP : IsUnitaryPosition J J' d v i₀) (hJ :
   have h_eq : LinearMap.range combination = LinearMap.ker pairing := by
     refine Submodule.eq_of_le_of_finrank_eq ?_ ?_
     · rw [LinearMap.range_le_ker_iff, ← mulVecLin_mul, mul_fromCols]
-      have h₁ : (v.submatrix id Fin.castSucc)ᴴ * J * i₀ = 0 := by
-        ext a j
-        simpa [Matrix.mul_apply] using congrFun₂ (hP.conjTranspose_mul_mul hJ) a.castSucc j
-      rw [h₁, hP.submatrix_conjTranspose_mul_mul, fromCols_zero, mulVecLin_zero]
+      rw [submatrix_conjTranspose_mul_mul_eq_submatrix, hP.conjTranspose_mul_mul_eq_zero hJ,
+        submatrix_zero, Pi.zero_apply, Pi.zero_apply, hP.submatrix_conjTranspose_mul_mul_eq_zero,
+        fromCols_zero, mulVecLin_zero]
     · have h_range : Module.finrank K (LinearMap.range combination) =
           Fintype.card m + (d + 1) := by
         simp [LinearMap.finrank_range_of_inj h_inj]
@@ -285,11 +300,11 @@ theorem exists_eq_mul_of_orthogonal (hP : IsUnitaryPosition J J' d v i₀) (hJ :
       have h_rank : d + Module.finrank K (LinearMap.ker pairing) = Fintype.card m + 2 * d + 1 := by
         simpa [h_pairing, hP.card_eq] using pairing.finrank_range_add_finrank_ker
       omega
-  have h_col (j : p) : ∃ x, combination x = Mᵀ j := by
-    rw [← LinearMap.mem_range, h_eq, LinearMap.mem_ker]
-    exact funext fun a ↦ congrFun₂ hM a j
-  choose T hT using h_col
-  exact ⟨(of T)ᵀ, Matrix.ext fun i j ↦ (congrFun (hT j) i).symm⟩
+  have h_col (j : p) : M.col j ∈ LinearMap.range combination := by
+    rw [h_eq, LinearMap.mem_ker]
+    simp only [pairing, mulVecLin_apply, ← col_mul_eq_mulVec_col, hM, col_zero, Pi.zero_apply]
+  obtain ⟨T, hT⟩ := exists_mul_eq_of_range_le h_col
+  exact ⟨T, hT.symm⟩
 
 /-- Let `Y` map the vectors `v_j` into the span of `v₁, …, v_d`, with matrix `N`, and induce `Y'`
 on the image of `i₀`. If `M` vanishes on `v₁, …, v_d` and its image is orthogonal to them, then
@@ -344,13 +359,13 @@ theorem trace_mul_eq_trace_add_sum (hP : IsUnitaryPosition J J' d v i₀) (hJ : 
     simp only [Matrix.mul_assoc]
   have h_adj_flag : formAdjoint J J μ₁ * v.submatrix id Fin.castSucc = 0 := by
     have h_zero : (v.submatrix id t)ᴴ * J * v.submatrix id Fin.castSucc = 0 := by
-      ext a b
-      simpa [Matrix.mul_apply] using congrFun₂ hP.conjTranspose_mul_mul_submatrix (t a) b
+      rw [submatrix_conjTranspose_mul_mul_eq_submatrix,
+        hP.conjTranspose_mul_mul_submatrix_eq_zero, submatrix_zero, Pi.zero_apply, Pi.zero_apply]
     rw [h_adj, Matrix.mul_assoc, h_zero, Matrix.mul_zero]
   have h_adj_i₀ : formAdjoint J J μ₁ * i₀ = 0 := by
     have h_zero : (v.submatrix id t)ᴴ * J * i₀ = 0 := by
-      ext a j
-      simpa [Matrix.mul_apply] using congrFun₂ (hP.conjTranspose_mul_mul hJ) (t a) j
+      rw [submatrix_conjTranspose_mul_mul_eq_submatrix, hP.conjTranspose_mul_mul_eq_zero hJ,
+        submatrix_zero, Pi.zero_apply, Pi.zero_apply]
     rw [h_adj, Matrix.mul_assoc, h_zero, Matrix.mul_zero]
   -- The rest `M` is self-adjoint and vanishes on `A`, so its image is orthogonal to `A`.
   set M : Matrix n n K := μ - μ₁ - formAdjoint J J μ₁ with hM
@@ -419,8 +434,9 @@ theorem pow_mulVec_col_zero (hP : IsStationaryPosition J J' μ μ' ι ι' d v i�
   induction a using Fin.induction with
   | zero => simp
   | succ a ih =>
-    rw [Fin.val_succ, pow_succ', ← mulVec_mulVec, ← Fin.val_castSucc, ih]
-    exact congrArg (·.col a) hP.mul_submatrix_castSucc
+    rw [Fin.val_succ, pow_succ', ← mulVec_mulVec, ← Fin.val_castSucc, ih, ← col_mul_eq_mulVec_col]
+    funext i
+    simpa [col_apply, Matrix.mul_apply] using congrFun₂ hP.mul_submatrix_castSucc i a
 
 /-- In a stationary position with a `J`-self-adjoint weight `μ`, for `a + b ≤ 2 d` the product
 `⟨μ ^ a v₁, μ ^ b v₁⟩_J` is `⟨v_{d+1}, v_{d+1}⟩_J` if `a + b = 2 d` and `0` otherwise. -/
@@ -443,8 +459,9 @@ theorem star_dotProduct_pow_mulVec (hP : IsStationaryPosition J J' μ μ' ι ι'
   obtain ⟨a', b', h_split⟩ : ∃ a' b' : Fin (d + 1), a + b = a'.val + b'.val :=
     ⟨⟨min (a + b) d, by omega⟩, ⟨a + b - min (a + b) d, by omega⟩, by simp⟩
   have h_gram : star (v.col a') ⬝ᵥ J *ᵥ v.col b' = (vᴴ * J * v) a' b' := by
-    rw [dotProduct_mulVec, Matrix.mul_apply']
-    rfl
+    simp only [Matrix.mul_apply, dotProduct, mulVec, col_apply, conjTranspose_apply,
+      Pi.star_apply, Finset.mul_sum, Finset.sum_mul, mul_assoc]
+    exact Finset.sum_comm
   rw [h_sum, h_split, ← h_sum, hP.pow_mulVec_col_zero, hP.pow_mulVec_col_zero, h_gram]
   split_ifs with h_eq
   · rw [Fin.eq_last_of_not_lt (i := a') (by omega), Fin.eq_last_of_not_lt (i := b') (by omega)]
