@@ -163,38 +163,6 @@ section Mul
 
 variable (g : Additive X.functionFieldˣ)
 
-/-- Multiplying by a nonzero rational function `g` carries the stalk of `𝒪_X(D)` at `x` into
-the stalk of `𝒪_X(D - div g)`, since it adds `ord_x g` to every order of vanishing. -/
-lemma mul_mem_stalkSubmodule_sub_principalDivisor {x : CodimensionOnePoint X}
-    {f : X.functionField} (hf : f ∈ stalkSubmodule D x) :
-    ((Additive.toMul g : X.functionFieldˣ) : X.functionField) * f ∈
-      stalkSubmodule (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) x := by
-  rw [mem_stalkSubmodule] at hf ⊢
-  rcases eq_or_ne f 0 with rfl | h0
-  · exact Or.inl (mul_zero _)
-  refine Or.inr ?_
-  have hf' := hf.resolve_left h0
-  rw [coeff_sub_principalDivisor, Scheme.ord_mul (Units.ne_zero _) h0]
-  omega
-
-/-- Multiplication by a nonzero rational function `g` on the local principal parts at `x`,
-`K(X) / 𝒪_X(D)_x → K(X) / 𝒪_X(D - div g)_x`. -/
-def principalPartMapOfMul (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X) :
-    PrincipalPart D x →ₗ[X.presheaf.stalk (x : X)]
-      PrincipalPart (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) x :=
-  Submodule.mapQ _ _
-    (LinearMap.mulLeft (X.presheaf.stalk (x : X))
-      ((Additive.toMul g : X.functionFieldˣ) : X.functionField))
-    fun _ hf ↦ mul_mem_stalkSubmodule_sub_principalDivisor g hf
-
-/-- Multiplication by `g` sends the class of `f` to the class of `g * f`. -/
-@[simp]
-lemma principalPartMapOfMul_mk (D : SchemeWeilDivisor X) (x : CodimensionOnePoint X)
-    (f : X.functionField) :
-    principalPartMapOfMul g D x (Submodule.Quotient.mk f) =
-      Submodule.Quotient.mk (((Additive.toMul g : X.functionFieldˣ) : X.functionField) * f) :=
-  (Submodule.mapQ_apply (x := f) ..).trans (congrArg _ (LinearMap.mulLeft_apply ..))
-
 /-- Multiplication by a nonzero rational function `g`, as a morphism of principal-parts sheaves
 `principalParts D ⟶ principalParts (D - div g)`. It is the map induced on the cokernels of the
 principal-parts resolutions by `SchemeWeilDivisor.sheafMul`
@@ -210,6 +178,50 @@ lemma principalPartsMul_app_apply (D : SchemeWeilDivisor X) (U : X.Opens)
     (s : Γ(principalParts D, U)) (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) :
     principalPartsSectionsEquiv _ U ((principalPartsMul g D).app U s) x =
       principalPartMapOfMul g D x.val (principalPartsSectionsEquiv D U s x) :=
+  principalPartsHomMk_app_apply _ U s x
+
+/-- Multiplication by `g` is an isomorphism of principal-parts sheaves. -/
+def principalPartsMulIso (D : SchemeWeilDivisor X) :
+    principalParts D ≅
+      principalParts (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g) where
+  hom := principalPartsMul g D
+  inv := principalPartsHomMk fun x ↦ (principalPartMulEquiv g D x).symm.toLinearMap
+  hom_inv_id := by
+    refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+    ext s
+    apply (principalPartsSectionsEquiv D U).injective
+    apply DFinsupp.ext
+    intro x
+    simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+      principalPartsHomMk_app_apply, principalPartsMul_app_apply,
+      ← principalPartMulEquiv_toLinearMap,
+      LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply, Scheme.Modules.Hom.id_app,
+      ConcreteCategory.id_apply]
+  inv_hom_id := by
+    refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+    ext s
+    apply (principalPartsSectionsEquiv _ U).injective
+    apply DFinsupp.ext
+    intro x
+    simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply,
+      principalPartsHomMk_app_apply, principalPartsMul_app_apply,
+      ← principalPartMulEquiv_toLinearMap,
+      LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply, Scheme.Modules.Hom.id_app,
+      ConcreteCategory.id_apply]
+
+/-- The forward morphism of the principal-parts isomorphism is multiplication by `g`. -/
+@[simp]
+lemma principalPartsMulIso_hom (D : SchemeWeilDivisor X) :
+    (principalPartsMulIso g D).hom = principalPartsMul g D :=
+  (by rw [principalPartsMulIso])
+
+/-- The inverse acts on each local quotient by the inverse multiplication equivalence. -/
+@[simp]
+lemma principalPartsMulIso_inv_app_apply (D : SchemeWeilDivisor X) (U : X.Opens)
+    (s : Γ(principalParts (D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g), U))
+    (x : {x : CodimensionOnePoint X // (x : X) ∈ U}) :
+    principalPartsSectionsEquiv D U ((principalPartsMulIso g D).inv.app U s) x =
+      (principalPartMulEquiv g D x.val).symm (principalPartsSectionsEquiv _ U s x) :=
   principalPartsHomMk_app_apply _ U s x
 
 /-- Taking principal parts commutes with multiplication by `g`. -/

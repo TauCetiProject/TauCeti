@@ -186,11 +186,8 @@ theorem bijective_residueTraceDualityHom_sheaf (D : SchemeWeilDivisor X) :
     Function.Bijective (residueTraceDualityHom hF hk hex hdim (SchemeWeilDivisor.sheaf D)) := by
   obtain ⟨t, ht, _⟩ := exists_transcendental_and_isSeparable_adjoin_of_isInvertible (k := k) hF
   exact bijective_residueTraceDualityHom_sheaf_of_separating hF hk hex hdim ht
-    ((SchemeWeilDivisor.equivFunctionFieldDivisor hex hdim).symm
-      (weilDifferentialDivisor hF hk (weilDifferentialOfSeparating hF ht).property
-        (coe_weilDifferentialOfSeparating_ne_zero hF ht)))
-    (fun y ↦ by simp only [SchemeWeilDivisor.coeff_equivFunctionFieldDivisor_symm,
-      coeff_weilDifferentialDivisor]) D
+    (canonicalDivisorOfSeparating ht hF hk hdim hex)
+    (coeff_canonicalDivisorOfSeparating ht hF hk hdim hex) D
 
 /-- The trace duality map is bijective for `F` exactly when it is bijective for a sheaf `G`
 isomorphic to `F`: along `e : F ≅ G` the two maps differ by the bijections `(e.inv ≫ ·)` and the
