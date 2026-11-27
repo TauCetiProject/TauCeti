@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Group.TypeTags.Finite
 public import Mathlib.Data.Fintype.Pi
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
-public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.ComponentCenter
+public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Component.Center
 
 /-!
 # Checks for the centre of a disjoint union of copies of `B(C₃)`
