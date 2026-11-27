@@ -15,6 +15,7 @@ public import TauCeti.RepresentationTheory.BaseChange
 public import TauCeti.RepresentationTheory.LinearCharacter.Basic
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Units
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.LinearAlgebra.TensorProduct.Submodule
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.CompactOpen
 
 /-!
@@ -688,11 +689,7 @@ private theorem continuous_baseChange_action (ρ : ContinuousRep Γ A M) :
       map_smul' a x := by simp [TensorProduct.tmul_smul, algebraMap_smul] }
   have hι : Continuous ι := IsModuleTopology.continuous_of_linearMapₛₗ (continuous_algebraMap A B) ι
   -- The family `1 ⊗ m i` spans `B ⊗[A] M`, and its orbits `g ↦ 1 ⊗ ρ g (m i)` are continuous.
-  have hspan : Submodule.span B (Set.range fun i => (1 : B) ⊗ₜ[A] m i) = ⊤ := by
-    have hrange : (Set.range fun i => (1 : B) ⊗ₜ[A] m i) =
-        TensorProduct.mk A B M 1 '' Set.range m :=
-      Set.range_comp (TensorProduct.mk A B M 1) m
-    rw [hrange, ← Submodule.baseChange_span, hm, Submodule.baseChange_top]
+  have hspan := span_one_tmul_eq_top (A := B) hm
   refine (IsModuleTopology.continuous_linearMap_apply_iff_of_span_eq_top
     (Representation.baseChange B ρ.toRepresentation) hspan).mpr fun i => ?_
   refine (hι.comp (ρ.continuous_orbit (m i))).congr fun g => ?_

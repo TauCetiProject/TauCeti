@@ -62,6 +62,9 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
   are the corresponding statements for a function differentiable everywhere.
 * `TauCeti.analyticOnNhd_iff_differentiableOn_of_finiteDimensional`: on an open subset of a
   finite-dimensional complex normed space, analyticity and complex differentiability agree.
+* `TauCeti.analyticAt_iff_eventually_differentiableAt_of_finiteDimensional`: on a
+  finite-dimensional complex normed space, analyticity at a point is equivalent to complex
+  differentiability on a neighbourhood of that point.
 * `AnalyticAt.star_star`: on a finite-dimensional complex normed space with conjugations,
   `star ∘ f ∘ star` is analytic at `star z` whenever `f` is analytic at `z`.
 * `TauCeti.hasFDerivAt_integral_smul_of_analyticAt`: an integral `q ↦ ∫ a, g a • f (q, φ a) ∂μ`,
@@ -450,6 +453,15 @@ only if it is complex differentiable. This is the several-variable form of
 theorem analyticOnNhd_iff_differentiableOn_of_finiteDimensional (hs : IsOpen s) :
     AnalyticOnNhd ℂ f s ↔ DifferentiableOn ℂ f s :=
   ⟨AnalyticOnNhd.differentiableOn, fun hd => hd.analyticOnNhd_of_finiteDimensional hs⟩
+
+/-- On a finite-dimensional complex normed space, a function is analytic at a point if and only if
+it is complex differentiable on a neighbourhood of that point. This is the several-variable form of
+`Complex.analyticAt_iff_eventually_differentiableAt`. -/
+theorem analyticAt_iff_eventually_differentiableAt_of_finiteDimensional :
+    AnalyticAt ℂ f z ↔ ∀ᶠ w in 𝓝 z, DifferentiableAt ℂ f w :=
+  ⟨fun h => h.eventually_analyticAt.mono fun _ hw => hw.differentiableAt,
+    fun h => DifferentiableOn.analyticAt_of_finiteDimensional
+      (s := {w | DifferentiableAt ℂ f w}) (fun _ hw => hw.differentiableWithinAt) h⟩
 
 /-- If `f` is analytic at `z`, then `star ∘ f ∘ star` is analytic at `star z`, for a function on
 a finite-dimensional complex normed space with conjugations. This is the analytic form of

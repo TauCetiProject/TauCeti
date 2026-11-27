@@ -72,28 +72,16 @@ open scoped omega sigma
 /-- Distinct-prime-factor powers are bounded by fixed-order divisor coefficients. -/
 theorem pow_cardDistinctFactors_le_zeta_pow (k : ℕ) {n : ℕ} (hn : n ≠ 0) :
     k ^ ω n ≤ (ζ ^ k : ArithmeticFunction ℕ) n := by
-  cases k with
-  | zero =>
-    by_cases hn1 : n = 1
-    · simp [hn1]
-    · have hn_gt : 1 < n := by omega
-      have hω : ω n ≠ 0 := (cardDistinctFactors_pos.mpr hn_gt).ne'
-      simp [hn1, hω]
-  | succ k =>
-    rw [(isMultiplicative_zeta.pow (k := k + 1)).multiplicative_factorization _ hn,
-      prod_factorization_eq_prod_primeFactors]
-    calc
-      (k + 1) ^ ω n = ∏ p ∈ n.primeFactors, (k + 1) := by
-        rw [prod_const, cardDistinctFactors_eq_card_primeFactors]
-      _ ≤ _ := by
-        apply prod_le_prod
-        intro p hp
-        rw [zeta_pow_succ_apply_prime_pow k _ (prime_of_mem_primeFactors hp)]
-        have ha : 1 ≤ n.factorization p :=
-          (prime_of_mem_primeFactors hp).factorization_pos_of_dvd hn (dvd_of_mem_primeFactors hp)
-        calc
-          k + 1 = (k + 1).choose k := (Nat.choose_succ_self_right k).symm
-          _ ≤ _ := Nat.choose_le_choose k (by omega)
+  rw [isMultiplicative_zeta.pow.multiplicative_factorization _ hn,
+    prod_factorization_eq_prod_primeFactors, cardDistinctFactors_eq_card_primeFactors]
+  -- Each prime power `p ^ a` dividing `n` exactly has `a ≥ 1`, so its coefficient is at least `k`.
+  refine pow_card_le_prod _ _ _ fun p hp ↦ ?_
+  obtain _ | k := k
+  · exact Nat.zero_le _
+  have hpp := prime_of_mem_primeFactors hp
+  rw [zeta_pow_succ_apply_prime_pow k _ hpp, ← Nat.choose_succ_self_right k]
+  exact Nat.choose_le_choose k
+    (Nat.lt_add_of_pos_left (hpp.factorization_pos_of_dvd hn (dvd_of_mem_primeFactors hp)))
 
 /-- A positive integer has at most `log₂ n` distinct prime factors: `2 ^ ω n ≤ n`, since each
 distinct prime factor is at least `2` and their product divides `n`. -/

@@ -176,15 +176,6 @@ private theorem setIntegral_cylindricalWeight_mul_add_le (p : PSSPlane) {ξ : �
   set band := {s : ℝ | R < p.endSign * s} ×ˢ Ico (0 : ℝ) 1
   have hband : MeasurableSet band :=
     (measurableSet_lt measurable_const (measurable_id.const_mul _)).prod measurableSet_Ico
-  have himage : realChart p.cylindricalEndLift '' band =
-      {z : ℝ × ℝ | Real.exp (2 * π * R) < ‖Complex.equivRealProdCLM.symm z‖} := by
-    ext z
-    constructor
-    · rintro ⟨ζ, hζ, rfl⟩
-      exact p.exp_lt_norm_symm_realChart_cylindricalEndLift_iff.2 hζ.1
-    · intro hz
-      obtain ⟨ζ, hζ1, hζ2, hζz⟩ := p.exists_realChart_cylindricalEndLift_eq hz
-      exact ⟨ζ, ⟨hζ1, hζ2⟩, hζz⟩
   -- The lift of `ξ` vanishes far out on the end, so its energy density is integrable there.
   obtain ⟨N, hN⟩ := p.exists_eventuallyEq_zero_comp_realChart_cylindricalEndLift hξc
   obtain ⟨a, b, -, hab, -, -⟩ := exists_Icc_eq_preimage_endSign_mul p (le_max_left R N)
@@ -192,7 +183,8 @@ private theorem setIntegral_cylindricalWeight_mul_add_le (p : PSSPlane) {ξ : �
     (measurableSet_lt measurable_const (measurable_id.const_mul _)) fun ζ hζ hζab ↦
       hN ζ ((le_max_right R N).trans_lt
         (not_le.1 fun h ↦ hζab ((hab ζ.1).2 ⟨le_of_lt hζ, h⟩)))).const_mul (4 * π ^ 2)
-  rw [← himage, integral_image_eq_integral_of_eq_abs_det_smul hband
+  rw [← p.image_realChart_cylindricalEndLift_prod_Ico,
+    integral_image_eq_integral_of_eq_abs_det_smul hband
     ((p.injOn_realChart_cylindricalEndLift 0).mono
       (prod_mono (subset_univ _) (by rw [zero_add])))
     (fun ζ _ ↦ (contDiff_realChart (n := 1) p.contDiff_cylindricalEndLift).differentiable

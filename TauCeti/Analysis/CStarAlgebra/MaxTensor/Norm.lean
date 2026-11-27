@@ -20,7 +20,13 @@ the star homomorphism `A ⊗[ℂ] B → B(H)`, `a ⊗ b ↦ π a * ρ b`
 the supremum of `‖(π × ρ) x‖` over all commuting pairs (`TauCeti.maxTensorNorm`). The Hilbert
 spaces range over the universe `max u v` when `A : Type u` and `B : Type v`; this universe
 contains the Hilbert tensor product of faithful representations of `A` and `B`, which is what
-makes the supremum a norm.
+makes the supremum a norm. A **pair of representations** (`TauCeti.RepresentationPair A B`) is
+a pair `π : A → B(E)`, `ρ : B → B(F)` on Hilbert spaces in the universes of `A` and `B`; its
+spatial pair `a ↦ π a ⊗ 1`, `b ↦ 1 ⊗ ρ b` on `E ⊗₂ F` is a commuting pair.
+
+The norm properties hold for the supremum `TauCeti.supTensorNorm f` of `‖(f i).tensorHom x‖` over
+any family `f` of commuting pairs, and the maximal norm is the case of all commuting pairs. The
+minimal norm `TauCeti.minTensorNorm` is the case of the spatial pairs.
 
 The supremum is finite: a star homomorphism between C*-algebras is contractive, so
 `‖(π × ρ)(Σ aᵢ ⊗ bᵢ)‖ ≤ Σ ‖aᵢ‖ ‖bᵢ‖` (`TauCeti.maxTensorNorm_le_sum`). The maximal norm is a
@@ -35,15 +41,16 @@ representations (`TauCeti.CommutingRepresentationPair.tensorHom_spatial_injectiv
 The maximal norm dominates every norm obtained from a commuting pair in the universe `max u v`
 (`TauCeti.norm_tensorHom_le_maxTensorNorm`), every norm obtained from commuting star homomorphisms
 into a C*-algebra in that universe (`TauCeti.norm_liftNonUnitalStarAlgHom_le_maxTensorNorm`), and
-in particular the spatial norm of concrete closed operator algebras
-(`NonUnitalStarSubalgebra.spatialNorm_le_maxTensorNorm`, `‖·‖_min ≤ ‖·‖_max` relative to the
-given representations).
+the supremum over any family of commuting pairs (`TauCeti.supTensorNorm_le_maxTensorNorm`).
 
 ## Main declarations
 
 * `TauCeti.CommutingRepresentationPair A B`: commuting pairs of representations, with
   `TauCeti.CommutingRepresentationPair.tensorHom` and the spatial pair
   `TauCeti.CommutingRepresentationPair.spatial`.
+* `TauCeti.RepresentationPair A B`: pairs of representations, with the spatial commuting pair
+  `TauCeti.RepresentationPair.spatial`.
+* `TauCeti.supTensorNorm f`: the supremum of the norms of a family of commuting pairs.
 * `TauCeti.maxTensorNorm A B`: the maximal C*-norm on `A ⊗[ℂ] B`.
 
 The completion `A ⊗max B`, its universal property, the comparison of an arbitrary C*-norm with
@@ -183,19 +190,75 @@ theorem tensorHom_spatial_injective {π : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)} {
 
 end Spatial
 
+end CommutingRepresentationPair
+
+/-- A **pair of representations** of `A` and `B`: star homomorphisms `left : A → B(E)` and
+`right : B → B(F)` on complex Hilbert spaces `E` and `F` in the universes of `A` and `B`. -/
+structure RepresentationPair where
+  /-- The Hilbert space of the representation of `A`. -/
+  E : Type u
+  /-- The Hilbert space of the representation of `B`. -/
+  F : Type v
+  /-- The norm of `E`. -/
+  [instNormedAddCommGroupE : NormedAddCommGroup E]
+  /-- The inner product of `E`. -/
+  [instInnerProductSpaceE : InnerProductSpace ℂ E]
+  /-- `E` is complete. -/
+  [instCompleteSpaceE : CompleteSpace E]
+  /-- The norm of `F`. -/
+  [instNormedAddCommGroupF : NormedAddCommGroup F]
+  /-- The inner product of `F`. -/
+  [instInnerProductSpaceF : InnerProductSpace ℂ F]
+  /-- `F` is complete. -/
+  [instCompleteSpaceF : CompleteSpace F]
+  /-- The representation of `A`. -/
+  left : A →⋆ₙₐ[ℂ] (E →L[ℂ] E)
+  /-- The representation of `B`. -/
+  right : B →⋆ₙₐ[ℂ] (F →L[ℂ] F)
+
+attribute [instance] RepresentationPair.instNormedAddCommGroupE
+  RepresentationPair.instInnerProductSpaceE RepresentationPair.instCompleteSpaceE
+  RepresentationPair.instNormedAddCommGroupF RepresentationPair.instInnerProductSpaceF
+  RepresentationPair.instCompleteSpaceF
+
+namespace RepresentationPair
+
+variable {A B}
+
+/-- The commuting spatial pair `a ↦ π a ⊗ 1`, `b ↦ 1 ⊗ ρ b` on `E ⊗₂ F` of a pair of
+representations. -/
+abbrev spatial (p : RepresentationPair A B) : CommutingRepresentationPair A B :=
+  CommutingRepresentationPair.spatial p.left p.right
+
 variable (A B) in
+/-- There is a pair of representations whose spatial commuting pair has injective integrated
+form, with norm `‖a‖ ‖b‖` at every `a ⊗ b`: a pair of faithful representations. -/
+theorem exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul :
+    ∃ p : RepresentationPair A B, Function.Injective p.spatial.tensorHom ∧
+      ∀ a b, ‖p.spatial.tensorHom (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
+  obtain ⟨E, _, _, _, π, hπ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A
+  obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B
+  refine ⟨⟨E, F, π, ρ⟩, CommutingRepresentationPair.tensorHom_spatial_injective hπ hρ,
+    fun a b ↦ ?_⟩
+  rw [CommutingRepresentationPair.norm_tensorHom_spatial_tmul, NonUnitalStarAlgHom.norm_map π hπ,
+    NonUnitalStarAlgHom.norm_map ρ hρ]
+
+instance : Nonempty (RepresentationPair A B) :=
+  (exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul A B).nonempty
+
+end RepresentationPair
+
+namespace CommutingRepresentationPair
+
 /-- There is a commuting pair whose integrated form is injective and has norm `‖a‖ ‖b‖` at every
 `a ⊗ b`: the spatial pair of faithful representations. -/
 theorem exists_tensorHom_injective_and_norm_tensorHom_tmul :
     ∃ p : CommutingRepresentationPair A B, Function.Injective p.tensorHom ∧
-      ∀ a b, ‖p.tensorHom (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
-  obtain ⟨E, _, _, _, π, hπ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation A
-  obtain ⟨F, _, _, _, ρ, hρ, -⟩ := CStarAlgebra.exists_faithful_nondegenerate_representation B
-  refine ⟨spatial π ρ, tensorHom_spatial_injective hπ hρ, fun a b ↦ ?_⟩
-  rw [norm_tensorHom_spatial_tmul, NonUnitalStarAlgHom.norm_map π hπ,
-    NonUnitalStarAlgHom.norm_map ρ hρ]
+      ∀ a b, ‖p.tensorHom (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ :=
+  let ⟨p, h⟩ :=
+    RepresentationPair.exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul A B
+  ⟨p.spatial, h⟩
 
-variable (A B) in
 /-- There is a commuting pair whose integrated form is injective. -/
 theorem exists_tensorHom_injective :
     ∃ p : CommutingRepresentationPair A B, Function.Injective p.tensorHom :=
@@ -208,11 +271,118 @@ end CommutingRepresentationPair
 
 open CommutingRepresentationPair
 
+/-! ### The supremum of the norms of a family of commuting pairs -/
+
+section SupTensorNorm
+
+variable {A B} {ι : Sort*} (f : ι → CommutingRepresentationPair A B)
+
+/-- The supremum `⨆ i, ‖(f i).tensorHom x‖` of the norms on `A ⊗[ℂ] B` coming from a family `f`
+of commuting pairs. The maximal norm `TauCeti.maxTensorNorm` is the supremum over all commuting
+pairs, and the minimal norm `TauCeti.minTensorNorm` the supremum over the spatial pairs. -/
+def supTensorNorm (x : A ⊗[ℂ] B) : ℝ :=
+  ⨆ i, ‖(f i).tensorHom x‖
+
+/-- Unfolding `TauCeti.supTensorNorm`. -/
+theorem supTensorNorm_def (x : A ⊗[ℂ] B) : supTensorNorm f x = ⨆ i, ‖(f i).tensorHom x‖ :=
+  (rfl)
+
+/-- The supremum dominates the norm coming from each member of the family. -/
+theorem norm_tensorHom_le_supTensorNorm (i : ι) (x : A ⊗[ℂ] B) :
+    ‖(f i).tensorHom x‖ ≤ supTensorNorm f x :=
+  let ⟨c, hc⟩ := bddAbove_range_norm_tensorHom x
+  le_ciSup (f := fun i ↦ ‖(f i).tensorHom x‖) ⟨c, by rintro _ ⟨j, rfl⟩; exact hc ⟨f j, rfl⟩⟩ i
+
+/-- To bound the supremum by `c ≥ 0` it suffices to bound every member of the family. -/
+theorem supTensorNorm_le_of_forall {x : A ⊗[ℂ] B} {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ i, ‖(f i).tensorHom x‖ ≤ c) : supTensorNorm f x ≤ c :=
+  Real.iSup_le h hc
+
+theorem supTensorNorm_nonneg (x : A ⊗[ℂ] B) : 0 ≤ supTensorNorm f x :=
+  Real.iSup_nonneg fun _ ↦ norm_nonneg _
+
+/-- The supremum at `Σ aᵢ ⊗ bᵢ` is at most `Σ ‖aᵢ‖ ‖bᵢ‖`. -/
+theorem supTensorNorm_le_sum {κ : Type*} (s : Finset κ) (a : κ → A) (b : κ → B) :
+    supTensorNorm f (∑ i ∈ s, a i ⊗ₜ b i) ≤ ∑ i ∈ s, ‖a i‖ * ‖b i‖ :=
+  supTensorNorm_le_of_forall f (by positivity) fun i ↦ (f i).norm_tensorHom_sum_le s a b
+
+theorem supTensorNorm_tmul_le (a : A) (b : B) : supTensorNorm f (a ⊗ₜ b) ≤ ‖a‖ * ‖b‖ := by
+  simpa using supTensorNorm_le_sum f {()} (fun _ ↦ a) (fun _ ↦ b)
+
+@[simp]
+theorem supTensorNorm_zero : supTensorNorm f 0 = 0 :=
+  le_antisymm (supTensorNorm_le_of_forall f le_rfl fun _ ↦ by simp) (supTensorNorm_nonneg f 0)
+
+theorem supTensorNorm_add_le (x y : A ⊗[ℂ] B) :
+    supTensorNorm f (x + y) ≤ supTensorNorm f x + supTensorNorm f y :=
+  supTensorNorm_le_of_forall f (add_nonneg (supTensorNorm_nonneg f x) (supTensorNorm_nonneg f y))
+    fun i ↦ by
+      rw [map_add]
+      exact (norm_add_le _ _).trans (add_le_add (norm_tensorHom_le_supTensorNorm f i x)
+        (norm_tensorHom_le_supTensorNorm f i y))
+
+theorem supTensorNorm_smul (c : ℂ) (x : A ⊗[ℂ] B) :
+    supTensorNorm f (c • x) = ‖c‖ * supTensorNorm f x := by
+  simp_rw [supTensorNorm_def, map_smul, norm_smul]
+  exact (Real.mul_iSup_of_nonneg (norm_nonneg c) _).symm
+
+@[simp]
+theorem supTensorNorm_neg (x : A ⊗[ℂ] B) : supTensorNorm f (-x) = supTensorNorm f x := by
+  simpa using supTensorNorm_smul f (-1) x
+
+@[simp]
+theorem supTensorNorm_star (x : A ⊗[ℂ] B) : supTensorNorm f (star x) = supTensorNorm f x := by
+  simp_rw [supTensorNorm_def, map_star, norm_star]
+
+theorem supTensorNorm_mul_le (x y : A ⊗[ℂ] B) :
+    supTensorNorm f (x * y) ≤ supTensorNorm f x * supTensorNorm f y :=
+  supTensorNorm_le_of_forall f (mul_nonneg (supTensorNorm_nonneg f x) (supTensorNorm_nonneg f y))
+    fun i ↦ by
+      rw [map_mul]
+      exact (norm_mul_le _ _).trans (mul_le_mul (norm_tensorHom_le_supTensorNorm f i x)
+        (norm_tensorHom_le_supTensorNorm f i y) (norm_nonneg _) (supTensorNorm_nonneg f x))
+
+/-- **The C*-identity** for the supremum of the norms of a family of commuting pairs. -/
+theorem supTensorNorm_star_mul_self (x : A ⊗[ℂ] B) :
+    supTensorNorm f (star x * x) = supTensorNorm f x ^ 2 := by
+  have hp (i : ι) : ‖(f i).tensorHom (star x * x)‖ = ‖(f i).tensorHom x‖ ^ 2 := by
+    rw [map_mul, map_star, CStarRing.norm_star_mul_self, sq]
+  refine le_antisymm (supTensorNorm_le_of_forall f (sq_nonneg _) fun i ↦ ?_) ?_
+  · rw [hp]
+    exact pow_le_pow_left₀ (norm_nonneg _) (norm_tensorHom_le_supTensorNorm f i x) 2
+  · have h : supTensorNorm f x ≤ √(supTensorNorm f (star x * x)) :=
+      supTensorNorm_le_of_forall f (Real.sqrt_nonneg _) fun i ↦ by
+        rw [← Real.sqrt_sq (norm_nonneg ((f i).tensorHom x)), ← hp]
+        exact Real.sqrt_le_sqrt (norm_tensorHom_le_supTensorNorm f i _)
+    calc supTensorNorm f x ^ 2 ≤ √(supTensorNorm f (star x * x)) ^ 2 :=
+          pow_le_pow_left₀ (supTensorNorm_nonneg f x) h 2
+      _ = supTensorNorm f (star x * x) := Real.sq_sqrt (supTensorNorm_nonneg f _)
+
+/-- If the family contains a commuting pair with injective integrated form, the supremum is
+definite: it vanishes only at `0`. -/
+theorem supTensorNorm_eq_zero_iff (hf : ∃ i, Function.Injective (f i).tensorHom)
+    {x : A ⊗[ℂ] B} : supTensorNorm f x = 0 ↔ x = 0 := by
+  refine ⟨fun hx ↦ ?_, fun hx ↦ hx ▸ supTensorNorm_zero f⟩
+  obtain ⟨i, hi⟩ := hf
+  refine hi ?_
+  rw [map_zero, ← norm_eq_zero]
+  exact le_antisymm (hx ▸ norm_tensorHom_le_supTensorNorm f i x) (norm_nonneg _)
+
+/-- If some member of the family has norm `‖a‖ ‖b‖` at `a ⊗ b`, so does the supremum. -/
+theorem supTensorNorm_tmul {a : A} {b : B} (h : ∃ i, ‖(f i).tensorHom (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖) :
+    supTensorNorm f (a ⊗ₜ b) = ‖a‖ * ‖b‖ := by
+  obtain ⟨i, hi⟩ := h
+  exact le_antisymm (supTensorNorm_tmul_le f a b) (hi ▸ norm_tensorHom_le_supTensorNorm f i _)
+
+end SupTensorNorm
+
+/-! ### The maximal norm -/
+
 /-- The **maximal C*-norm** `‖x‖_max` on `A ⊗[ℂ] B`: the supremum of `‖(π × ρ) x‖` over all
 commuting pairs of representations `π` of `A` and `ρ` of `B` on Hilbert spaces in the universe
 `max u v`. -/
 def maxTensorNorm (x : A ⊗[ℂ] B) : ℝ :=
-  ⨆ p : CommutingRepresentationPair A B, ‖p.tensorHom x‖
+  supTensorNorm id x
 
 /-- Unfolding `TauCeti.maxTensorNorm`. -/
 theorem maxTensorNorm_def (x : A ⊗[ℂ] B) :
@@ -224,87 +394,70 @@ variable {A B}
 /-- The maximal norm dominates the norm coming from every commuting pair. -/
 theorem norm_tensorHom_le_maxTensorNorm (p : CommutingRepresentationPair A B) (x : A ⊗[ℂ] B) :
     ‖p.tensorHom x‖ ≤ maxTensorNorm A B x :=
-  le_ciSup (bddAbove_range_norm_tensorHom x) p
+  norm_tensorHom_le_supTensorNorm id p x
 
 /-- To bound the maximal norm it suffices to bound every commuting pair. -/
 theorem maxTensorNorm_le_of_forall {x : A ⊗[ℂ] B} {c : ℝ}
-    (h : ∀ p : CommutingRepresentationPair A B, ‖p.tensorHom x‖ ≤ c) : maxTensorNorm A B x ≤ c :=
-  ciSup_le h
+    (h : ∀ p : CommutingRepresentationPair A B, ‖p.tensorHom x‖ ≤ c) : maxTensorNorm A B x ≤ c := by
+  rw [maxTensorNorm_def]
+  exact ciSup_le h
 
 theorem maxTensorNorm_nonneg (x : A ⊗[ℂ] B) : 0 ≤ maxTensorNorm A B x :=
-  (norm_nonneg _).trans (norm_tensorHom_le_maxTensorNorm (Classical.arbitrary _) x)
+  supTensorNorm_nonneg id x
+
+/-- The supremum over any family of commuting pairs is at most the maximal norm. -/
+theorem supTensorNorm_le_maxTensorNorm {ι : Sort*} (f : ι → CommutingRepresentationPair A B)
+    (x : A ⊗[ℂ] B) : supTensorNorm f x ≤ maxTensorNorm A B x :=
+  supTensorNorm_le_of_forall f (maxTensorNorm_nonneg x) fun i ↦
+    norm_tensorHom_le_maxTensorNorm (f i) x
 
 /-- The maximal norm of `Σ aᵢ ⊗ bᵢ` is at most `Σ ‖aᵢ‖ ‖bᵢ‖`. -/
 theorem maxTensorNorm_le_sum {ι : Type*} (s : Finset ι) (a : ι → A) (b : ι → B) :
     maxTensorNorm A B (∑ i ∈ s, a i ⊗ₜ b i) ≤ ∑ i ∈ s, ‖a i‖ * ‖b i‖ :=
-  maxTensorNorm_le_of_forall fun p ↦ p.norm_tensorHom_sum_le s a b
+  supTensorNorm_le_sum id s a b
 
-theorem maxTensorNorm_tmul_le (a : A) (b : B) : maxTensorNorm A B (a ⊗ₜ b) ≤ ‖a‖ * ‖b‖ := by
-  simpa using maxTensorNorm_le_sum {()} (fun _ ↦ a) (fun _ ↦ b)
+theorem maxTensorNorm_tmul_le (a : A) (b : B) : maxTensorNorm A B (a ⊗ₜ b) ≤ ‖a‖ * ‖b‖ :=
+  supTensorNorm_tmul_le id a b
 
 @[simp]
 theorem maxTensorNorm_zero : maxTensorNorm A B 0 = 0 :=
-  le_antisymm (maxTensorNorm_le_of_forall fun p ↦ by simp) (maxTensorNorm_nonneg 0)
+  supTensorNorm_zero id
 
 theorem maxTensorNorm_add_le (x y : A ⊗[ℂ] B) :
     maxTensorNorm A B (x + y) ≤ maxTensorNorm A B x + maxTensorNorm A B y :=
-  maxTensorNorm_le_of_forall fun p ↦ by
-    rw [map_add]
-    exact (norm_add_le _ _).trans (add_le_add (norm_tensorHom_le_maxTensorNorm p x)
-      (norm_tensorHom_le_maxTensorNorm p y))
+  supTensorNorm_add_le id x y
 
 theorem maxTensorNorm_smul (c : ℂ) (x : A ⊗[ℂ] B) :
-    maxTensorNorm A B (c • x) = ‖c‖ * maxTensorNorm A B x := by
-  simp_rw [maxTensorNorm, map_smul, norm_smul]
-  exact (Real.mul_iSup_of_nonneg (norm_nonneg c) _).symm
+    maxTensorNorm A B (c • x) = ‖c‖ * maxTensorNorm A B x :=
+  supTensorNorm_smul id c x
 
 @[simp]
-theorem maxTensorNorm_neg (x : A ⊗[ℂ] B) : maxTensorNorm A B (-x) = maxTensorNorm A B x := by
-  simpa using maxTensorNorm_smul (-1) x
+theorem maxTensorNorm_neg (x : A ⊗[ℂ] B) : maxTensorNorm A B (-x) = maxTensorNorm A B x :=
+  supTensorNorm_neg id x
 
 @[simp]
-theorem maxTensorNorm_star (x : A ⊗[ℂ] B) : maxTensorNorm A B (star x) = maxTensorNorm A B x := by
-  simp_rw [maxTensorNorm, map_star, norm_star]
+theorem maxTensorNorm_star (x : A ⊗[ℂ] B) : maxTensorNorm A B (star x) = maxTensorNorm A B x :=
+  supTensorNorm_star id x
 
 theorem maxTensorNorm_mul_le (x y : A ⊗[ℂ] B) :
     maxTensorNorm A B (x * y) ≤ maxTensorNorm A B x * maxTensorNorm A B y :=
-  maxTensorNorm_le_of_forall fun p ↦ by
-    rw [map_mul]
-    exact (norm_mul_le _ _).trans (mul_le_mul (norm_tensorHom_le_maxTensorNorm p x)
-      (norm_tensorHom_le_maxTensorNorm p y) (norm_nonneg _) (maxTensorNorm_nonneg x))
+  supTensorNorm_mul_le id x y
 
 /-- **The C*-identity** for the maximal norm. -/
 theorem maxTensorNorm_star_mul_self (x : A ⊗[ℂ] B) :
-    maxTensorNorm A B (star x * x) = maxTensorNorm A B x ^ 2 := by
-  have hp (p : CommutingRepresentationPair A B) :
-      ‖p.tensorHom (star x * x)‖ = ‖p.tensorHom x‖ ^ 2 := by
-    rw [map_mul, map_star, CStarRing.norm_star_mul_self, sq]
-  refine le_antisymm (maxTensorNorm_le_of_forall fun p ↦ ?_) ?_
-  · rw [hp]
-    exact pow_le_pow_left₀ (norm_nonneg _) (norm_tensorHom_le_maxTensorNorm p x) 2
-  · have h : maxTensorNorm A B x ≤ √(maxTensorNorm A B (star x * x)) :=
-      maxTensorNorm_le_of_forall fun p ↦ by
-        rw [← Real.sqrt_sq (norm_nonneg (p.tensorHom x)), ← hp]
-        exact Real.sqrt_le_sqrt (norm_tensorHom_le_maxTensorNorm p _)
-    calc maxTensorNorm A B x ^ 2 ≤ √(maxTensorNorm A B (star x * x)) ^ 2 :=
-          pow_le_pow_left₀ (maxTensorNorm_nonneg x) h 2
-      _ = maxTensorNorm A B (star x * x) := Real.sq_sqrt (maxTensorNorm_nonneg _)
+    maxTensorNorm A B (star x * x) = maxTensorNorm A B x ^ 2 :=
+  supTensorNorm_star_mul_self id x
 
 /-- The maximal norm is definite: it vanishes only at `0`. -/
 @[simp]
-theorem maxTensorNorm_eq_zero_iff {x : A ⊗[ℂ] B} : maxTensorNorm A B x = 0 ↔ x = 0 := by
-  refine ⟨fun hx ↦ ?_, fun hx ↦ hx ▸ maxTensorNorm_zero⟩
-  obtain ⟨p, hp⟩ := exists_tensorHom_injective A B
-  refine hp ?_
-  rw [map_zero, ← norm_eq_zero]
-  exact le_antisymm (hx ▸ norm_tensorHom_le_maxTensorNorm p x) (norm_nonneg _)
+theorem maxTensorNorm_eq_zero_iff {x : A ⊗[ℂ] B} : maxTensorNorm A B x = 0 ↔ x = 0 :=
+  supTensorNorm_eq_zero_iff id (exists_tensorHom_injective A B)
 
 /-- The maximal norm is a **cross norm**: `‖a ⊗ b‖_max = ‖a‖ ‖b‖`. -/
 @[simp]
-theorem maxTensorNorm_tmul (a : A) (b : B) : maxTensorNorm A B (a ⊗ₜ b) = ‖a‖ * ‖b‖ := by
-  refine le_antisymm (maxTensorNorm_tmul_le a b) ?_
-  obtain ⟨p, -, hp⟩ := exists_tensorHom_injective_and_norm_tensorHom_tmul A B
-  exact hp a b ▸ norm_tensorHom_le_maxTensorNorm p (a ⊗ₜ b)
+theorem maxTensorNorm_tmul (a : A) (b : B) : maxTensorNorm A B (a ⊗ₜ b) = ‖a‖ * ‖b‖ :=
+  supTensorNorm_tmul id <|
+    (exists_tensorHom_injective_and_norm_tensorHom_tmul A B).imp fun _ h ↦ h.2 a b
 
 /-- **Universal bound.** Commuting star homomorphisms `φ : A → C` and `ψ : B → C` into a
 C*-algebra `C` in the universe `max u v` integrate to a star homomorphism `A ⊗[ℂ] B → C` bounded
@@ -328,20 +481,3 @@ theorem norm_liftNonUnitalStarAlgHom_le_maxTensorNorm {C : Type (max u v)} [NonU
   exact norm_tensorHom_le_maxTensorNorm p x
 
 end TauCeti
-
-namespace NonUnitalStarSubalgebra
-
-open TauCeti TauCeti.CommutingRepresentationPair
-
-/-- **The spatial norm is at most the maximal norm**: for closed concrete operator algebras
-`A ⊆ B(E)` and `B ⊆ B(F)`, `‖x‖_min ≤ ‖x‖_max`. -/
-theorem spatialNorm_le_maxTensorNorm {E : Type u} {F : Type v} [NormedAddCommGroup E]
-    [InnerProductSpace ℂ E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-    [CompleteSpace F] (A : NonUnitalStarSubalgebra ℂ (E →L[ℂ] E))
-    (B : NonUnitalStarSubalgebra ℂ (F →L[ℂ] F)) [IsClosed (A : Set (E →L[ℂ] E))]
-    [IsClosed (B : Set (F →L[ℂ] F))] (x : A ⊗[ℂ] B) :
-    A.spatialNorm B x ≤ maxTensorNorm A B x := by
-  rw [spatialNorm_def, spatialTensorHom_def, ← tensorHom_spatial]
-  exact norm_tensorHom_le_maxTensorNorm _ x
-
-end NonUnitalStarSubalgebra
