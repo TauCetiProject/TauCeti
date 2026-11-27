@@ -106,13 +106,18 @@ private theorem rootMultiplicity_one_charpoly_lsmul [Finite ι] [DecidableEq ι]
     (Algebra.lsmul k k M a).charpoly.rootMultiplicity 1 =
       jordanHolderMultiplicity A M (T i) * finrank k (T i) := by
   have := Fintype.ofFinite ι
-  rw [charpoly_lsmul_eq_prod hT hM, ← Finset.mul_prod_erase _ _ (Finset.mem_univ i),
-    Finset.prod_congr rfl fun j hj => by
-      rw [ha j, ite_eq_right (Finset.ne_of_mem_erase hj), LinearMap.charpoly_zero, ← pow_mul],
-    Finset.prod_pow_eq_pow_sum, ha i, ite_eq_left rfl, LinearMap.charpoly_one, ← pow_mul,
-    mul_comm ((X - 1 : k[X]) ^ _), ← C_1,
-    rootMultiplicity_mul_X_sub_C_pow (pow_ne_zero _ X_ne_zero),
-    rootMultiplicity_eq_zero (by simp), zero_add, mul_comm]
+  -- The `T j` with `j ≠ i` contribute a power of `X`, and `T i` a power of `X - 1`.
+  have hcharpoly : (Algebra.lsmul k k M a).charpoly =
+      X ^ (∑ j ∈ Finset.univ.erase i, finrank k (T j) * jordanHolderMultiplicity A M (T j)) *
+        (X - C 1) ^ (jordanHolderMultiplicity A M (T i) * finrank k (T i)) := by
+    rw [charpoly_lsmul_eq_prod hT hM, ← Finset.mul_prod_erase _ _ (Finset.mem_univ i), mul_comm]
+    congr 1
+    · rw [← Finset.prod_pow_eq_pow_sum]
+      refine Finset.prod_congr rfl fun j hj => ?_
+      simp [ha j, Finset.ne_of_mem_erase hj, pow_mul]
+    · simp [ha i, LinearMap.charpoly_one, ← pow_mul, mul_comm]
+  rw [hcharpoly, rootMultiplicity_mul_X_sub_C_pow (pow_ne_zero _ X_ne_zero),
+    rootMultiplicity_eq_zero (by simp), zero_add]
 
 end Decomposition
 
