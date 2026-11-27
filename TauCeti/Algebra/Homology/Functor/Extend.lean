@@ -169,11 +169,15 @@ lemma mapHomotopyCategoryExtendIso_hom_app_naturality (F : C ⥤ D) {G : C ⥤ D
         HomologicalComplex.extendMap_f _ e rfl]
       simp only [Category.assoc, Iso.inv_hom_id_assoc, ← τ.naturality_assoc]
     · exact (F.map_isZero (L.isZero_extend_X e i' (by simpa using hi))).eq_of_src _ _
-  -- On the classes of complexes both sides are induced by the corresponding chain maps.
+  -- On a quotient object, the induced transformation and extension by zero both act
+  -- by applying the quotient functor to the corresponding chain maps.
   rw [mapHomotopyCategoryExtendIso_hom_app_quotient_obj,
     mapHomotopyCategoryExtendIso_hom_app_quotient_obj]
-  exact (((HomotopyCategory.quotient D c').map_comp _ _).symm.trans
-    (congrArg ((HomotopyCategory.quotient D c').map) h)).trans
-    ((HomotopyCategory.quotient D c').map_comp _ _)
+  let Q := HomotopyCategory.quotient D c'
+  change Q.map ((τ.mapHomologicalComplex c').app (L.extend e)) ≫
+      Q.map (G.mapHomologicalComplexExtendObjIso e L).hom =
+    Q.map (F.mapHomologicalComplexExtendObjIso e L).hom ≫
+      Q.map (HomologicalComplex.extendMap ((τ.mapHomologicalComplex c).app L) e)
+  rw [← Functor.map_comp, h, Functor.map_comp]
 
 end CategoryTheory.Functor

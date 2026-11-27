@@ -177,21 +177,23 @@ def rightDerivedSupportedSubmodulePresheafIso (n : ℕ) :
         (rightDerivedSupportedSubmoduleSectionsIso_hom_restrict (R := R) S i.unop n)
       simp only [supportedSubmoduleSectionsRestrict_eq_whiskerLeft_evaluation,
         NatTrans.comp_app, Functor.whiskerLeft_app, Quiver.Hom.op_unop] at hr
-      simp only [NatTrans.comp_app, Functor.whiskerLeft_app, evaluation_map_app] at he
+      simp only [NatTrans.comp_app, Functor.whiskerLeft_app] at he
       simp only [Iso.trans_hom, Iso.app_hom]
-      -- The two evaluation functors act by the respective presheaf restrictions.
-      erw [← Category.assoc, he, Category.assoc]
-      rw [Category.assoc]
-      exact congrArg (_ ≫ ·) hr))
+      rw [evaluation_map_app] at he
+      rw [reassoc_of% he, hr, evaluation_map_app, Category.assoc]))
     (fun f ↦ by
       apply NatTrans.ext
       funext W
       simp only [NatTrans.comp_app, NatIso.ofComponents_hom_app, Iso.trans_hom, Iso.app_hom,
         Category.assoc]
-      -- Convert the presheaf components to the maps of the evaluated functors.
-      erw [((P).rightDerivedEvaluationIso n W).hom.naturality_assoc,
-        (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W.unop n).hom.naturality]
-      rfl)
+      have he := ((P).rightDerivedEvaluationIso n W).hom.naturality f
+      have hr := (rightDerivedSupportedSubmoduleSectionsIso (R := R) S W.unop n).hom.naturality f
+      simp only [Functor.comp_map, evaluation_obj_map] at he hr
+      -- Evaluating the supported-submodule presheaf at `W` is the functor of
+      -- supported sections on `W.unop`.
+      change _ = _ ≫ ((supportedSubmoduleSectionsFunctor (R := R) S W.unop).rightDerived n).map f
+        at he
+      rw [reassoc_of% he, hr])
 
 /-- The presheaf comparison on an open is evaluation followed by the Ext comparison
 for supported sections on that open. -/

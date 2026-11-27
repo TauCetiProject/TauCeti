@@ -66,24 +66,27 @@ lemma Functor.rightDerivedEvaluationIso_hom_app_injectiveResolution (n : ℕ) (j
         -- The degree-zero object of the single complex is X, and the identity functor
         -- leaves the resolution complex unchanged.
         exact (Category.comp_id _).trans (Category.id_comp _).symm) G n
-    -- Use the map-of-identity laws on each side of the resolution naturality square.
-    refine ((Category.id_comp _).symm.trans
-      (congrArg (· ≫ (J₀.isoRightDerivedObj G n).inv)
-        ((G.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor D _ n).map_id
-          I.cocomplex).symm)).trans (h.symm.trans ?_)
-    exact (congrArg ((I.isoRightDerivedObj G n).inv ≫ ·)
-      ((G.rightDerived n).map_id X)).trans (Category.comp_id _)
+    -- The mapped resolution has cocomplex `I.cocomplex` since the functor is the identity.
+    change (I.isoRightDerivedObj G n).inv ≫ (G.rightDerived n).map (𝟙 X) =
+      (G.mapHomologicalComplex c ⋙ HomologicalComplex.homologyFunctor D c n).map
+        (𝟙 I.cocomplex) ≫ (J₀.isoRightDerivedObj G n).inv at h
+    rw [Functor.map_id, Functor.map_id, Category.comp_id] at h
+    -- The left identity is on the homology of `I.cocomplex`, also the source of
+    -- the comparison for `J₀` after unfolding the identity functor on complexes.
+    erw [Category.id_comp] at h
+    exact h.symm
   rw [← Iso.app_hom]
   rw [rightDerivedEvaluationIso, NatIso.trans_app,
     Functor.rightDerivedCompIso_app_injectiveResolution F ((ev).obj j) (𝟭 C) G _ I]
-  -- The identity precomposition leaves the evaluated complex unchanged. Unification
-  -- identifies the two presentations of this complex when applying hcomp.
-  refine (Category.comp_id _).trans (congrArg (_ ≫ ·) (congrArg (_ ≫ ·) ?_))
-  exact (congrArg (fun k ↦ (HomologicalComplex.homologyFunctor D c n).map k ≫
-      (J₀.isoRightDerivedObj G n).inv) hcomp).trans
-    ((congrArg (· ≫ (J₀.isoRightDerivedObj G n).inv)
-      ((HomologicalComplex.homologyFunctor D c n).map_id _)).trans
-    ((Category.id_comp _).trans hres))
+  simp only [Iso.trans_hom, Iso.app_hom, Functor.leftUnitor_hom_app]
+  -- With identity precomposition, the comparison of mapped complexes is an
+  -- endomorphism of the same evaluated cocomplex.
+  change (_ ≫ _ ≫ (HomologicalComplex.homologyFunctor D c n).map
+      ((Functor.mapHomologicalComplexCompIso (Functor.leftUnitor G).symm c).app I.cocomplex ≪≫
+        ((Functor.mapHomologicalComplexCompIso (Iso.refl (𝟭 C ⋙ G)) c).app I.cocomplex).symm).hom ≫
+      (J₀.isoRightDerivedObj G n).inv) ≫ 𝟙 ((G.rightDerived n).obj X) = _
+  erw [Category.comp_id, hcomp, Functor.map_id, hres, Category.id_comp]
+  simp only [Functor.mapIso_hom, Iso.symm_hom, Iso.app_inv, G]
 
 /-- The evaluation comparison is natural in the indexing category of the diagrams. -/
 @[reassoc]
@@ -108,12 +111,11 @@ lemma Functor.rightDerivedEvaluationIso_hom_naturality (n : ℕ) {i j : J} (f : 
     Functor.mapHomologicalComplexCompHomologyFunctorIso_inv_app]
   have h := NatTrans.app_homology ((ev).map f) (K.sc n)
   simp only [evaluation_map_app] at h
-  calc
-    _ = (K.sc n).homology.map f ≫ ((K.sc n).mapHomologyIso ((ev).obj j)).inv ≫
-        (I.isoRightDerivedObj (F ⋙ (ev).obj j) n).inv := rfl
-    _ = _ := by
-      simp only [h, Category.assoc, Iso.hom_inv_id_assoc]
-      -- Both maps come from evaluating each term of the same cochain complex along `f`.
-      rfl
+  -- The degree-`n` homology is that of `K.sc n`. The chain map of the derived
+  -- evaluation transformation restricts to `mapNatTrans` on this short complex.
+  change (K.sc n).homology.map f ≫ ((K.sc n).mapHomologyIso ((ev).obj j)).inv ≫ _ =
+    ((K.sc n).mapHomologyIso ((ev).obj i)).inv ≫
+      ShortComplex.homologyMap ((K.sc n).mapNatTrans ((ev).map f)) ≫ _
+  rw [reassoc_of% h, Iso.hom_inv_id_assoc]
 
 end CategoryTheory

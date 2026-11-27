@@ -146,6 +146,8 @@ lemma Functor.rightDerivedFunctorPlusHomologyIso_hom_app (n : ℕ) (X : C) :
     NatTrans.comp_app, Functor.associator_hom_app, Functor.associator_inv_app,
     Functor.isoWhiskerLeft_hom, Functor.isoWhiskerRight_hom, Functor.whiskerLeft_app,
     Functor.whiskerRight_app, hunit, Category.id_comp, Category.comp_id, Category.assoc]
+  -- The composite map on `(injectiveResolutionsPlusCompιIso C).hom.app X` is the
+  -- successive application of the mapped homotopy functor and homology.
   rfl
 
 variable {F} {G : C ⥤ D} [G.Additive]
@@ -191,12 +193,19 @@ lemma Functor.rightDerivedFunctorPlusHomologyIso_hom_naturality (τ : F ⟶ G) (
   have hι := congrArg Hℤ.map (τ.mapHomotopyCategoryPlusCompι_hom_app_naturality K)
   have hK' := congrArg Hℤ.map hK.symm
   simp only [Functor.map_comp] at hA hU' hι hK' hE
-  have hR : (τ.rightDerived n).app X = Hℕ.map ((τ.mapHomotopyCategory (.up ℕ)).app I) :=
+  have hR : (τ.rightDerived n).app X = Hℕ.map ((τ.mapHomotopyCategory (.up ℕ)).app I) := by
+    dsimp only [NatTrans.rightDerived, NatTrans.rightDerivedToHomotopyCategory,
+      whiskerRight, whiskerLeft, Hℕ, I]
     rfl
   simp only [NatTrans.comp_app, whiskerLeft_app, whiskerRight_app,
     rightDerivedFunctorPlusHomologyIso_hom_app, hR]
+  -- The squares use composite functor objects for the images of the resolution under
+  -- `Plus.Qh`, `Plus.ι` and extension by zero. The component formula uses nested
+  -- applications. Extension by zero sends the index `n` to `(n : ℤ)`.
   erw [reassoc_of% hA, reassoc_of% hU', reassoc_of% hH, reassoc_of% hι,
     reassoc_of% hK', reassoc_of% hE, hN]
+  -- Reassociate across the target `(G.rightDerived n).obj X`, which is the
+  -- homology of the chosen resolution after applying `G`.
   repeat' erw [Category.assoc]
   rfl
 
