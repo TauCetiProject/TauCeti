@@ -35,14 +35,13 @@ multiplication on `ℂ` (`TauCeti.normalConnectionForm`), it is `TauCeti.minimal
 (`TauCeti.normalCouplingForm_eq_minimalCouplingForm`). It is the model symplectic form on the
 normal disk bundle of `C` with which Taubes compares the ambient symplectic form, and the taming
 form `Ω = K π^* ω + dλ` controlling the mass of the currents near `C`. This file computes it and
-proves the following; the fibre, horizontal, kernel, regularity and closedness statements are
-specializations of the general minimal coupling form results.
+proves the following; the value, fibre, horizontal, kernel, regularity and closedness statements
+are specializations of the general minimal coupling form results.
 
 * **Value.** On a pair of tangent vectors `u = (v, n)`, `u' = (v', n')` at `(z, w)`,
   `ω_N(u, u') = ω(v, v') + Im (conj (∇_u w) ∇_{u'} w) + (|w|² / 2) dA(v, v')`, with
-  `∇_{(v, n)} w = n + i A(v) w` (`TauCeti.normalCouplingForm_apply_pair`). This rests on the
-  differential of the phase form weighted by `|α|²`,
-  `TauCeti.SeibergWitten.extDeriv_cutoffPhaseForm_id_apply_pair`.
+  `∇_{(v, n)} w = n + i A(v) w` (`TauCeti.normalCouplingForm_apply_pair`), the general formula
+  `TauCeti.extDeriv_minimalCouplingPrimitive_apply_pair_eq_add_curvature` for the curvature `i dA`.
 * **The fibres.** On each normal fibre `ω_N` restricts to the area form `Im (conj n n')` of `ℂ`
   (`TauCeti.normalCouplingForm_apply_inr_inr`), and so it tames multiplication by `i` there,
   `ω_N((0, n), (0, i n)) = |n|²` (`TauCeti.normalCouplingForm_apply_inr_inr_I_mul`).
@@ -149,37 +148,6 @@ theorem contDiff_normalCouplingPrimitive {n : WithTop ℕ∞} (hA : ContDiff ℝ
     ContDiff ℝ n (normalCouplingPrimitive A) :=
   contDiff_iff_contDiffAt.2 fun p ↦ contDiffAt_normalCouplingPrimitive hA.contDiffAt p.2
 
-/-- **The differential of the coupling primitive.** Where `A` is differentiable,
-
-`dλ((v, n), (v', n')) = Im (conj (n + i A(v) w) (n' + i A(v') w)) + (|w|² / 2) dA(v, v')`. -/
-theorem extDeriv_normalCouplingPrimitive_apply_pair (hA : DifferentiableAt ℝ A z) (v v' : E)
-    (n n' : ℂ) :
-    extDeriv (normalCouplingPrimitive A) (z, w) ![(v, n), (v', n')] =
-      (conj (n + I * A z (fun _ ↦ v) * w) * (n' + I * A z (fun _ ↦ v') * w)).im +
-        normSq w / 2 * extDeriv A z ![v, v'] := by
-  have hb := differentiableAt_pullback_continuousLinearMap (ContinuousLinearMap.fst ℝ E ℂ)
-    (x := (z, w)) hA
-  have hpull := (ContinuousLinearMap.fst ℝ E ℂ).extDeriv_pullback (ω := A) (x := (z, w)) hA
-  simp only [ContinuousLinearMap.coe_fst'] at hb hpull
-  rw [normalCouplingPrimitive_eq_smul_cutoffPhaseForm, extDeriv_smul,
-    ContinuousAlternatingMap.smul_apply,
-    extDeriv_cutoffPhaseForm_id_apply_pair contDiff_snd.contDiffAt hb]
-  simp only [covariantDeriv_apply, fderiv_snd, ContinuousLinearMap.coe_snd',
-    compContinuousLinearMap_apply, Function.comp_def, ContinuousLinearMap.coe_fst',
-    Complex.real_smul]
-  rw [hpull, compContinuousLinearMap_apply, ContinuousLinearMap.coe_fst', Matrix.comp_vec2,
-    smul_eq_mul]
-  ring_nf
-
-/-- On a normal fibre, the differential of the coupling primitive is the area form of `ℂ`:
-`dλ((0, n), (0, n')) = Im (conj n n')`. -/
-theorem extDeriv_normalCouplingPrimitive_apply_inr_inr (hA : DifferentiableAt ℝ A z) (n n' : ℂ) :
-    extDeriv (normalCouplingPrimitive A) (z, w) ![(0, n), (0, n')] = (conj n * n').im := by
-  have hA₀ : A z (fun _ ↦ 0) = 0 := (A z).map_coord_zero 0 rfl
-  have hdA₀ : extDeriv A z ![0, 0] = 0 := (extDeriv A z).map_coord_zero 0 rfl
-  rw [extDeriv_normalCouplingPrimitive_apply_pair hA, hA₀, hdA₀]
-  simp
-
 /-! ### The coupling form -/
 
 /-- The **coupling form** `ω_N = π^* ω + dλ` on `E × ℂ` of a two-form `ω` on the base and the
@@ -260,6 +228,30 @@ theorem normalCouplingPrimitive_eq_minimalCouplingPrimitive (A : E → E [⋀^Fi
   have hu : u = fun _ ↦ u 0 := funext fun i ↦ by rw [Subsingleton.elim i 0]
   rw [hu, normalCouplingPrimitive_apply, minimalCouplingPrimitive_apply]
   simp [Complex.areaForm]
+
+/-- **The differential of the coupling primitive.** Where `A` is differentiable,
+
+`dλ((v, n), (v', n')) = Im (conj (n + i A(v) w) (n' + i A(v') w)) + (|w|² / 2) dA(v, v')`. -/
+theorem extDeriv_normalCouplingPrimitive_apply_pair (hA : DifferentiableAt ℝ A z) (v v' : E)
+    (n n' : ℂ) :
+    extDeriv (normalCouplingPrimitive A) (z, w) ![(v, n), (v', n')] =
+      (conj (n + I * A z (fun _ ↦ v) * w) * (n' + I * A z (fun _ ↦ v') * w)).im +
+        normSq w / 2 * extDeriv A z ![v, v'] := by
+  rw [normalCouplingPrimitive_eq_minimalCouplingPrimitive,
+    extDeriv_minimalCouplingPrimitive_apply_pair_eq_add_curvature
+      Complex.orientation.areaForm_swap (areaForm'_normalConnectionForm_apply A z)
+      (differentiableAt_normalConnectionForm hA), connectionCurvature_normalConnectionForm_apply hA]
+  simp [Complex.areaForm, normSq_apply]
+  ring
+
+/-- On a normal fibre, the differential of the coupling primitive is the area form of `ℂ`:
+`dλ((0, n), (0, n')) = Im (conj n n')`. -/
+theorem extDeriv_normalCouplingPrimitive_apply_inr_inr (hA : DifferentiableAt ℝ A z) (n n' : ℂ) :
+    extDeriv (normalCouplingPrimitive A) (z, w) ![(0, n), (0, n')] = (conj n * n').im := by
+  have hA₀ : A z (fun _ ↦ 0) = 0 := (A z).map_coord_zero 0 rfl
+  have hdA₀ : extDeriv A z ![0, 0] = 0 := (extDeriv A z).map_coord_zero 0 rfl
+  rw [extDeriv_normalCouplingPrimitive_apply_pair hA, hA₀, hdA₀]
+  simp
 
 /-- The coupling form is the minimal coupling form of the connection form `i A` for the area form
 of `ℂ`. -/
