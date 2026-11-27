@@ -35,9 +35,9 @@ by the class `H` of a line (`LinearMap.mul ℤ ℤ`), and `κ = -3 H`.
 * With candidate curves all in the class of a line, the weighted count through some points in
   the class `H` is the weight of the unique candidate through all of them
   (`pointConfigurationCount_one_eq`). Through two ordered points, with the line counted with
-  sign `+1`, the count is `1`, and it does not depend on the order of the points
-  (`TauCeti.pointConfigurationCount_map_equiv`): it is not divided by the `2!` orderings of the
-  points.
+  sign `+1`, the count is `1`, the weight of the single line, so it is not divided by the `2!`
+  orderings of the points. It also does not depend on the order of the points
+  (`TauCeti.pointConfigurationCount_map_equiv`).
 
 **The blown-up K3 surface.** A K3 surface has `κ = 0`; its blowup at a point has `κ = E` for the
 exceptional class `E`, of square `-1`. The statements below need only these two numbers, so they
@@ -185,14 +185,15 @@ theorem pointConfigurationCount_one_eq (hc₀ : c₀ ∈ s)
 
 /-- **One line through two points.** With candidates in the class `H` of `ℂP²`, only one of which
 passes through two given points, and that line counted with sign `+1`, the count through the two
-points in the class `H` is `1`. -/
+points in the class `H` is `1`, the weight of the single line: the count is not divided by the
+`2!` orderings of the points. -/
 example {pts : ι → Finset (Fin 2)} (hc₀ : c₀ ∈ s)
     (huniq : ∀ c ∈ s, (∀ p, p ∈ pts c) → c = c₀) (hcov : ∀ p, p ∈ pts c₀) (hw : w c₀ 1 = 1) :
     pointConfigurationCount r (fun _ ↦ (1 : ℤ)) pts w s 1 = 1 :=
   (pointConfigurationCount_one_eq hc₀ huniq hcov).trans hw
 
 /-- The count through two points does not depend on their order: exchanging the two points
-leaves it unchanged, so it is not divided by the `2!` orderings. -/
+leaves it unchanged. -/
 example {pts : ι → Finset (Fin 2)} :
     pointConfigurationCount r (fun _ ↦ (1 : ℤ)) (fun c ↦ (pts c).map (Equiv.swap 0 1).toEmbedding)
       w s 1 = pointConfigurationCount r (fun _ ↦ (1 : ℤ)) pts w s 1 :=
