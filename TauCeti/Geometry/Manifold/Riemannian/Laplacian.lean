@@ -1192,7 +1192,8 @@ theorem hessian_norm_sq_model_space
   have hgrad : DifferentiableAt ℝ (∇ fun y : F ↦ ‖y‖ ^ 2) x :=
     ((contDiff_norm_sq ℝ (n := 2)).gradient_right (m := 1) (by norm_num)).differentiable
       (by norm_num) x
-  rw [hessian_eq_iteratedFDeriv_model_space hgrad, iteratedFDeriv_two_apply]
+  rw [hessian_eq_iteratedFDeriv_model_space hgrad, iteratedFDeriv_two_apply,
+    Matrix.cons_val_zero, Matrix.cons_val_one]
   exact TauCeti.fderiv_fderiv_norm_sq_apply x _ _
 
 /-- At a point `x` where `∇ f` is differentiable, the Laplace–Beltrami operator of the standard

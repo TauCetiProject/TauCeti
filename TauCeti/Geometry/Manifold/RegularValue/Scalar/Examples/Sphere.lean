@@ -17,12 +17,12 @@ public import TauCeti.Geometry.Manifold.RegularValue.Scalar.Boundary
 In a real inner product space `E` of dimension `n + 1`, the value `1` of `x ↦ ‖x‖²` is regular
 (`TauCeti.isRegularValue_norm_sq`), so the level `{‖x‖² = 1}` carries the level atlas
 `TauCeti.regularLevelChartedSpace`, modelled on `Fin n → ℝ`, and the closed unit ball
-`{‖x‖² ≤ 1}` carries the half-space atlas `TauCeti.scalarRegularSublevelChartedSpace`, whose
-manifold boundary is the unit sphere (`TauCeti.boundary_scalarRegularSublevel_norm_sq`).
+`{‖x‖² ≤ 1}` carries the half-space atlas `TauCeti.scalarRegularSublevelChartedSpace`.
 
 More generally, for `c > 0` the closed ball `{‖x‖² ≤ c}` of radius `√c` carries the half-space
-atlas `TauCeti.normSqLeChartedSpace`, of which the atlas of the unit ball is the case `c = 1`; its
-boundary points have norm `√c` (`TauCeti.norm_eq_sqrt_of_mem_boundary_normSqLe`).
+atlas `TauCeti.normSqSublevelChartedSpace`, of which the atlas of the unit ball is the case
+`c = 1`; its manifold boundary is the sphere `{‖x‖² = c}` (`TauCeti.boundary_normSqSublevel`), whose
+points have norm `√c` (`TauCeti.norm_eq_sqrt_of_mem_boundary_normSqSublevel`).
 
 This file compares the level `{‖x‖² = 1}` and the boundary of the closed unit ball with Mathlib's
 unit sphere `Metric.sphere (0 : E) 1`, with its stereographic atlas modelled on
@@ -62,34 +62,43 @@ variable {c : ℝ} (hc : 0 < c) (hn : finrank ℝ E = n + 1)
 
 /-- The sublevel atlas `TauCeti.scalarRegularSublevelChartedSpace` of the closed ball
 `{‖x‖² ≤ c}` of radius `√c`, modelled on the half-space of dimension `n + 1`. -/
-noncomputable abbrev normSqLeChartedSpace :
+noncomputable abbrev normSqSublevelChartedSpace :
     ChartedSpace (EuclideanHalfSpace (n + 1)) {x : E | ‖x‖ ^ 2 ≤ c} :=
   scalarRegularSublevelChartedSpace (contDiff_norm_sq ℝ).contMDiff
     (isRegularValue_norm_sq hc.ne') hn
 
 /-- The closed ball `{‖x‖² ≤ c}` is a `C^m` manifold with boundary for its sublevel atlas, for
 every `m ≥ 1`. -/
-theorem isManifold_normSqLe {m : ℕ∞ω} (hm : 1 ≤ m) :
-    letI := normSqLeChartedSpace hc hn
+theorem isManifold_normSqSublevel {m : ℕ∞ω} (hm : 1 ≤ m) :
+    letI := normSqSublevelChartedSpace hc hn
     IsManifold (𝓡∂ (n + 1)) m {x : E | ‖x‖ ^ 2 ≤ c} :=
   isManifold_scalarRegularSublevel (isRegularValue_norm_sq hc.ne') hn hm
     (contDiff_norm_sq ℝ).contMDiff
 
+/-- **The boundary of the ball of radius `√c` is the sphere of radius `√c`.** For its sublevel
+atlas, the manifold boundary of the closed ball `{‖x‖² ≤ c}` consists of its points with
+`‖x‖² = c`. -/
+theorem boundary_normSqSublevel :
+    letI := normSqSublevelChartedSpace hc hn
+    (𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ c} =
+      {x : {x : E | ‖x‖ ^ 2 ≤ c} | ‖(x : E)‖ ^ 2 = c} :=
+  boundary_scalarRegularSublevel (isRegularValue_norm_sq hc.ne') hn le_rfl
+    (contDiff_norm_sq ℝ).contMDiff
+
 /-- A boundary point of the closed ball `{‖x‖² ≤ c}`, for its sublevel atlas, lies on the
 sphere: `‖x‖² = c`. -/
-theorem norm_sq_eq_of_mem_boundary_normSqLe
-    (q : letI := normSqLeChartedSpace hc hn
+theorem norm_sq_eq_of_mem_boundary_normSqSublevel
+    (q : letI := normSqSublevelChartedSpace hc hn
       (𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ c}) :
     ‖((q : {x : E | ‖x‖ ^ 2 ≤ c}) : E)‖ ^ 2 = c :=
-  (Set.ext_iff.1 (boundary_scalarRegularSublevel (isRegularValue_norm_sq hc.ne') hn le_rfl
-    (contDiff_norm_sq ℝ).contMDiff) q).1 q.property
+  (Set.ext_iff.1 (boundary_normSqSublevel hc hn) q).1 q.property
 
 /-- A boundary point of the closed ball `{‖x‖² ≤ c}`, for its sublevel atlas, has norm `√c`. -/
-theorem norm_eq_sqrt_of_mem_boundary_normSqLe
-    (q : letI := normSqLeChartedSpace hc hn
+theorem norm_eq_sqrt_of_mem_boundary_normSqSublevel
+    (q : letI := normSqSublevelChartedSpace hc hn
       (𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ c}) :
     ‖((q : {x : E | ‖x‖ ^ 2 ≤ c}) : E)‖ = √c := by
-  rw [← Real.sqrt_sq (norm_nonneg _), norm_sq_eq_of_mem_boundary_normSqLe hc hn q]
+  rw [← Real.sqrt_sq (norm_nonneg _), norm_sq_eq_of_mem_boundary_normSqSublevel hc hn q]
 
 end Radius
 
@@ -102,14 +111,7 @@ noncomputable abbrev normSqLevelChartedSpace : ChartedSpace (Fin n → ℝ) {x :
   regularLevelChartedSpace (fun _ _ ↦ (contDiff_norm_sq ℝ).contMDiff.contMDiffAt)
     (isRegularValue_norm_sq one_ne_zero) (finrank_sub_finrank_real_eq Fact.out)
 
-variable (E n) in
-/-- The sublevel atlas of the closed unit ball `{‖x‖² ≤ 1}`, modelled on the half-space of
-dimension `n + 1`: `TauCeti.normSqLeChartedSpace` at radius one. -/
-noncomputable abbrev normSqSublevelChartedSpace :
-    ChartedSpace (EuclideanHalfSpace (n + 1)) {x : E | ‖x‖ ^ 2 ≤ 1} :=
-  normSqLeChartedSpace one_pos Fact.out
-
-attribute [local instance] normSqLevelChartedSpace normSqSublevelChartedSpace
+attribute [local instance] normSqLevelChartedSpace
 
 /-- The level `{‖x‖² = 1}` is homeomorphic to the unit sphere by the identity of points. -/
 private def normSqLevelHomeomorphSphere : {x : E // ‖x‖ ^ 2 = 1} ≃ₜ sphere (0 : E) 1 :=
@@ -148,6 +150,7 @@ sublevel atlas, onto the unit sphere with its stereographic atlas; both are mode
 `TauCeti.scalarRegularSublevelBoundaryDiffeomorph` followed by
 `TauCeti.normSqLevelDiffeomorphSphere`. -/
 noncomputable def normSqSublevelBoundaryDiffeomorphSphere :
+    letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
     ↥((𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ 1}) ≃ₘ⟮𝓡 n, 𝓡 n⟯ sphere (0 : E) 1 :=
   (scalarRegularSublevelBoundaryDiffeomorph (contDiff_norm_sq ℝ).contMDiff
     (isRegularValue_norm_sq one_ne_zero) Fact.out ∞).trans normSqLevelDiffeomorphSphere
@@ -155,7 +158,8 @@ noncomputable def normSqSublevelBoundaryDiffeomorphSphere :
 /-- `TauCeti.normSqSublevelBoundaryDiffeomorphSphere` is the identity of points. -/
 @[simp]
 theorem coe_normSqSublevelBoundaryDiffeomorphSphere_apply
-    (x : ↥((𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ 1})) :
+    (x : letI := normSqSublevelChartedSpace (E := E) one_pos (Fact.out : finrank ℝ E = n + 1)
+      ↥((𝓡∂ (n + 1)).boundary {x : E | ‖x‖ ^ 2 ≤ 1})) :
     (normSqSublevelBoundaryDiffeomorphSphere x : E) = x.val.val := by
   simp [normSqSublevelBoundaryDiffeomorphSphere]
 
