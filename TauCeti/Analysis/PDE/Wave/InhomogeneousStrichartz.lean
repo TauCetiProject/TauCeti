@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Wave.MixedNorm
 import TauCeti.Analysis.Fourier.Bernstein
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Analysis.PDE.Strichartz.LittlewoodPaley
 import TauCeti.Analysis.PDE.Wave.Endpoint
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Analysis.SpecificLimits.DyadicSum
@@ -15,6 +16,7 @@ import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
+import TauCeti.MeasureTheory.Function.LpSeminorm.SquareSum
 
 /-!
 # The retarded Strichartz estimate for the wave equation with Besov forcing
@@ -46,6 +48,17 @@ The same estimate holds at the pairs `(∞, r)`, `2 ≤ r ≤ ∞`, with `γ = n
 pair as above with `r₁ ≥ 2`, where `q₁ = 2` only at the endpoint
 (`ContDiffBump.exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum`); at
 `(∞, ∞)` it bounds `u` uniformly in space and time.
+
+For `r < ∞` the dyadic `ℓ¹` sum improves to the square sum
+
+`‖u‖_{L^q_t L^r_x} ≤ C (∑ⱼ 2^{2j(γ + γ₁ - 1)} ‖Pⱼ F‖²_{L^{p₁}_t L^{r₁'}_x})^{1/2}`
+
+(`ContDiffBump.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sq_rpow`), at
+the same pairs as above with `r < ∞`, and at the pairs `(∞, r)` with `2 ≤ r < ∞`
+(`ContDiffBump.exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sq_rpow`).
+These are the finite-`r` square-function forms of the retarded estimates of Tao, Theorem 2.6. At
+`r = ∞` the Littlewood–Paley inequality is not available, and the `ℓ¹` estimates remain the
+statement there.
 
 ## The argument
 
@@ -80,6 +93,14 @@ It is summed over the blocks as follows, along any time exponent `q ≥ 1`.
   `L^q_t`, the frequency-localized estimate and the bound for `Qₗ` give
   `‖u‖_{L^q_t L^r_x} ≤ C ∑ₗ ∑_{|j - l| < L} 2^{j(γ + γ₁ - 1)} ‖Pₗ F‖_{L^{p₁}_t L^{r₁'}_x}`, and
   `2^{j(γ + γ₁ - 1)}` is comparable to `2^{l(γ + γ₁ - 1)}` for `|j - l| < L`.
+* **Square sums.** For `2 ≤ r < ∞`, the reverse Littlewood–Paley inequality
+  (`TauCeti.exists_eLpNorm_le_mul_eLpNorm_tsum_enorm_fourierMultiplierCLM_littlewoodPaley_sq_rpow`)
+  bounds `‖u(t)‖_r` by the `L^r` norm of `(∑ₗ |Pₗ u(t)|²)^{1/2}`, and since `q, r ≥ 2`,
+  Minkowski's inequality for square sums (`MeasureTheory.eLpNorm_tsum_sq_rpow_le`), first in
+  `L^r_x` and then in `L^q_t`, leaves `(∑ₗ ‖Pₗ u‖²_{L^q_t L^r_x})^{1/2}`
+  (`ContDiffBump.exists_eLpNorm_eLpNorm_le_mul_tsum_eLpNorm_eLpNorm_fourierMultiplierCLM_sq_rpow`).
+  Each block `Pₗ u` is bounded as above by `C 2^{l(γ + γ₁ - 1)} ‖Pₗ F‖_{L^{p₁}_t L^{r₁'}_x}`. No
+  Littlewood–Paley inequality is needed on the side of the forcing, so `r₁ = ∞` is allowed there.
 
 ## Main declarations
 
@@ -89,6 +110,9 @@ It is summed over the blocks as follows, along any time exponent `q ≥ 1`.
   retarded Strichartz estimate for the wave equation with forcing in the dyadic `ℓ¹` class.
 * `ContDiffBump.exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum`: the
   same estimate at the pairs `(∞, r)`.
+* `ContDiffBump.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sq_rpow` and
+  `ContDiffBump.exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sq_rpow`:
+  the retarded Strichartz estimates with forcing in square-sum form, for `r < ∞`.
 
 ## References
 
@@ -261,25 +285,27 @@ theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodP
 
 variable [Nontrivial E]
 
-/-- At each time, the retarded Duhamel integral `u(t)` satisfies
-`‖u(t)‖_r ≤ ∑ₗ ∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r`, where `Φⱼₗ` is the retarded integral of
-`Pⱼ Pⱼ Qₗ Pₗ F`: by `‖u(t)‖_r ≤ ∑ₗ ‖Pₗ u(t)‖_r` and `Pₗ = ∑_{|d| < L} P_{d + l} P_{d + l} Qₗ Pₗ`. -/
-private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum {L : ℕ}
+omit [Nontrivial E] in
+/-- At each time, the block `Pₗ u(t)` of the retarded Duhamel integral `u(t)` satisfies
+`‖Pₗ u(t)‖_r ≤ ∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r`, where `Φⱼₗ` is the retarded integral of
+`Pⱼ Pⱼ Qₗ Pₗ F`: the block commutes with the integral and with the propagator, and
+`Pₗ = ∑_{|d| < L} P_{d + l} P_{d + l} Qₗ Pₗ`. -/
+private theorem eLpNorm_fourierMultiplierCLM_setIntegral_Iio_waveSinPropagator_sub_le_sum
+    {L : ℕ}
     (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
     {m : ℤ → Lp ℂ ∞ (volume : Measure E)}
     (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
-    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : Integrable F) {r : ℝ≥0∞} (hr : 1 ≤ r) (t : ℝ) :
-    eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
+    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : Integrable F) {r : ℝ≥0∞} (hr : 1 ≤ r) (l : ℤ)
+    (t : ℝ) :
+    eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
         Lp ℂ 2 (volume : Measure E))) r volume ≤
-      ∑' l, ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, eLpNorm ((∫ s in Set.Iio t,
+      ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, eLpNorm ((∫ s in Set.Iio t,
         waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
           (Lp.fourierMultiplierCLM ℂ (m (d + l))
             (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
           Lp ℂ 2 (volume : Measure E))) r volume := by
   by_cases hint : IntegrableOn (fun s ↦ waveSinPropagator ℂ (t - s) (F s)) (Set.Iio t)
-  · refine (φ.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM hm
-      (ContinuousLinearMap.id ℂ _) _ hr).trans (tsum_le_tsum fun l ↦ ?_)
-    rw [ContinuousLinearMap.id_apply, ← ContinuousLinearMap.integral_comp_comm _ hint]
+  · rw [← ContinuousLinearMap.integral_comp_comm _ hint]
     have hdec (s : ℝ) :
         Lp.fourierMultiplierCLM ℂ (m l) (waveSinPropagator ℂ (t - s) (F s)) =
           ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, waveSinPropagator ℂ (t - s)
@@ -295,8 +321,93 @@ private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum {L : �
           ((Lp.fourierMultiplierCLM ℂ (m (d + l))).integrable_comp hH) t).integrableOn,
       eLpNorm_congr_ae (Lp.coeFn_finsetSum _ _)]
     exact eLpNorm_sum_le hr
-  · rw [integral_undef hint, eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
+  · rw [integral_undef hint, map_zero, eLpNorm_congr_ae (Lp.coeFn_zero _ _ _), eLpNorm_zero]
     exact zero_le
+
+/-- At each time, the retarded Duhamel integral `u(t)` satisfies
+`‖u(t)‖_r ≤ ∑ₗ ∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r`, where `Φⱼₗ` is the retarded integral of
+`Pⱼ Pⱼ Qₗ Pₗ F`: by `‖u(t)‖_r ≤ ∑ₗ ‖Pₗ u(t)‖_r` and the bound on each block. -/
+private theorem eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum {L : ℕ}
+    (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : E, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
+    {m : ℤ → Lp ℂ ∞ (volume : Measure E)}
+    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
+    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : Integrable F) {r : ℝ≥0∞} (hr : 1 ≤ r) (t : ℝ) :
+    eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
+        Lp ℂ 2 (volume : Measure E))) r volume ≤
+      ∑' l, ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, eLpNorm ((∫ s in Set.Iio t,
+        waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
+          (Lp.fourierMultiplierCLM ℂ (m (d + l))
+            (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+          Lp ℂ 2 (volume : Measure E))) r volume :=
+  (φ.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM hm (ContinuousLinearMap.id ℂ _) _
+    hr).trans (tsum_le_tsum fun l ↦
+      φ.eLpNorm_fourierMultiplierCLM_setIntegral_Iio_waveSinPropagator_sub_le_sum hL hm hF hr l t)
+
+omit [Nontrivial E] in
+/-- The retarded integral `Φⱼₗ` of `Pⱼ Pⱼ Qₗ Pₗ F` has an almost everywhere measurable `L^r` norm
+in time. -/
+private theorem aemeasurable_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_dyadicMultiplier
+    {m : ℤ → Lp ℂ ∞ (volume : Measure E)} {F : ℝ → Lp ℂ 2 (volume : Measure E)}
+    (hF : Integrable F) (r : ℝ≥0∞) (j l : ℤ) :
+    AEMeasurable (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
+      (Lp.fourierMultiplierCLM ℂ (m j) (Lp.fourierMultiplierCLM ℂ (m j)
+        (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+          Lp ℂ 2 (volume : Measure E))) r volume) volume :=
+  (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+    ((Lp.fourierMultiplierCLM ℂ (m j) ∘L Lp.fourierMultiplierCLM ℂ (m j)).integrable_comp
+      ((φ.dyadicMultiplier ℂ φ.invSumSq l).integrable_comp
+        ((Lp.fourierMultiplierCLM ℂ (m l)).integrable_comp hF))).aestronglyMeasurable
+    ).aemeasurable_eLpNorm_Lp .rfl r
+
+omit [Nontrivial E] in
+/-- The `L^q_t` norm of `∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r`, where `Φⱼₗ` is the retarded integral of
+`Pⱼ Pⱼ Qₗ Pₗ F`, is at most `C K K₀ 2^{lσ} ‖Pₗ F‖_{L^{p₁}_t L^{r₁'}_x}`, given the
+frequency-localized estimate with constant `C` and exponent `σ`, where `K` bounds `Qₗ` on `L^{r₁'}`
+and `K₀ = ∑_{|d| < L} 2^{dσ}`. -/
+private theorem eLpNorm_sum_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le
+    {q r p₁ r₁' : ℝ≥0∞} (hq : 1 ≤ q) (hr₁' : 1 ≤ r₁') {σ : ℝ} {C : ℝ≥0}
+    (hC : ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ G : ℝ → Lp ℂ 2 (volume : Measure E), Integrable G →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
+            (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (G s))) :
+              Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
+            eLpNorm (fun s ↦ eLpNorm (G s) r₁' volume) p₁ volume)
+    (L : ℕ) {m : ℤ → Lp ℂ ∞ (volume : Measure E)}
+    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ))
+    {F : ℝ → Lp ℂ 2 (volume : Measure E)} (hF : Integrable F) (l : ℤ) :
+    eLpNorm (fun t ↦ ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, eLpNorm ((∫ s in Set.Iio t,
+        waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
+          (Lp.fourierMultiplierCLM ℂ (m (d + l))
+            (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+          Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
+      C * eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invSumSq 0)) 1 volume *
+        ((∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
+        (ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) *
+          eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (F s)) r₁' volume) p₁
+            volume) := by
+  have hPF := (Lp.fourierMultiplierCLM ℂ (m l)).integrable_comp hF
+  calc _ ≤ ∑ d ∈ Finset.Ioo (-(L : ℤ)) L, eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t,
+        waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
+          (Lp.fourierMultiplierCLM ℂ (m (d + l))
+            (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+          Lp ℂ 2 (volume : Measure E))) r volume) q volume := by
+        rw [← Finset.sum_fn]
+        exact eLpNorm_sum_le hq
+    _ ≤ ∑ d ∈ Finset.Ioo (-(L : ℤ)) L,
+          C * eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invSumSq 0)) 1 volume *
+            (ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) *
+              eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (F s)) r₁' volume) p₁
+                volume) :=
+        Finset.sum_le_sum fun d _ ↦ (hC (d + l) (m (d + l)) (hm (d + l)) _
+          ((φ.dyadicMultiplier ℂ φ.invSumSq l).integrable_comp hPF)).trans <| by
+            rw [mul_assoc, mul_assoc, mul_left_comm (eLpNorm _ 1 volume)]
+            gcongr
+            exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invSumSq l hPF.aestronglyMeasurable hr₁'
+    _ = _ := by
+        rw [← Finset.mul_sum, sum_ofReal_two_zpow_add_rpow_mul]
+        ring
 
 /-- **Littlewood–Paley summation of the retarded estimates.** Let `1 ≤ q` and `1 ≤ r`. If the
 retarded Duhamel integrals of the squared blocks `Pⱼ Pⱼ G` satisfy
@@ -326,42 +437,34 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
   set K := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invSumSq 0)) 1 volume
   set S := Finset.Ioo (-(L : ℤ)) L
   refine ⟨C * K.toNNReal * ∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal, fun m hm F hF ↦ ?_⟩
-  -- `Hₗ = Qₗ Pₗ F` and `a j l t = ‖Φⱼₗ(t)‖_r`, with `Φⱼₗ` the retarded integral of `Pⱼ Pⱼ Hₗ`.
-  have hPF (l : ℤ) := (Lp.fourierMultiplierCLM ℂ (m l)).integrable_comp hF
-  have hH (l : ℤ) := (φ.dyadicMultiplier ℂ φ.invSumSq l).integrable_comp (hPF l)
-  set a : ℤ → ℤ → ℝ → ℝ≥0∞ := fun j l t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
-    (Lp.fourierMultiplierCLM ℂ (m j) (Lp.fourierMultiplierCLM ℂ (m j)
-      (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
-        Lp ℂ 2 (volume : Measure E))) r volume
+  -- `‖u(t)‖_r ≤ ∑ₗ bₗ(t)` with `bₗ(t) = ∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r`; then Minkowski's
+  -- inequality in `L^q_t` and the bound on each `‖bₗ‖_{L^q_t}`.
   have hpt := φ.eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sum hL hm hF hr
   calc eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
           Lp ℂ 2 (volume : Measure E))) r volume) q volume
-      ≤ eLpNorm (fun t ↦ ∑' l, ∑ d ∈ S, a (d + l) l t) q volume :=
+      ≤ eLpNorm (fun t ↦ ∑' l, ∑ d ∈ S, eLpNorm ((∫ s in Set.Iio t,
+        waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
+          (Lp.fourierMultiplierCLM ℂ (m (d + l))
+            (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+          Lp ℂ 2 (volume : Measure E))) r volume) q volume :=
         eLpNorm_mono_eNorm ((aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
           hF.aestronglyMeasurable).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
           fun t ↦ by simpa only [eNorm_eq_self] using hpt t
-    _ ≤ ∑' l, ∑ d ∈ S, eLpNorm (a (d + l) l) q volume :=
-        (eLpNorm_tsum_le (fun l ↦ Finset.aemeasurable_fun_sum _ fun d _ ↦
-          (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub ((Lp.fourierMultiplierCLM ℂ
-            _ ∘L Lp.fourierMultiplierCLM ℂ _).integrable_comp (hH l)).aestronglyMeasurable
-              ).aemeasurable_eLpNorm_Lp .rfl r) hq).trans
-          (tsum_le_tsum fun l ↦ by
-            rw [← Finset.sum_fn]
-            exact eLpNorm_sum_le hq)
-    -- The frequency-localized estimate and the bound for `Qₗ`.
-    _ ≤ ∑' l, ∑ d ∈ S, C * K * (ENNReal.ofReal (((2 : ℝ) ^ (d + l)) ^ σ) * eLpNorm (fun s ↦
-          eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (F s)) r₁' volume) p₁ volume) :=
-        tsum_le_tsum fun l ↦ Finset.sum_le_sum fun d _ ↦
-          (hC (d + l) (m (d + l)) (hm (d + l)) _ (hH l)).trans <| by
-            rw [mul_assoc, mul_assoc, mul_left_comm K]
-            gcongr
-            exact φ.eLpNorm_eLpNorm_dyadicMultiplier_le φ.invSumSq l (hPF l).aestronglyMeasurable
-              hr₁'
+    _ ≤ ∑' l, eLpNorm (fun t ↦ ∑ d ∈ S, eLpNorm ((∫ s in Set.Iio t,
+        waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
+          (Lp.fourierMultiplierCLM ℂ (m (d + l))
+            (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+          Lp ℂ 2 (volume : Measure E))) r volume) q volume :=
+        eLpNorm_tsum_le (fun l ↦ Finset.aemeasurable_fun_sum _ fun d _ ↦
+          φ.aemeasurable_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_dyadicMultiplier hF r
+            (d + l) l) hq
+    _ ≤ ∑' l, C * K * ((∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
+          (ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) * eLpNorm (fun s ↦
+            eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (F s)) r₁' volume) p₁ volume) :=
+        tsum_le_tsum fun l ↦
+          φ.eLpNorm_sum_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le hq hr₁' hC L hm hF l
     _ = _ := by
-        simp_rw [← Finset.mul_sum]
-        rw [ENNReal.tsum_mul_left, tsum_sum_ofReal_two_zpow_add_rpow_mul, ENNReal.coe_mul,
-          ENNReal.coe_mul, hK]
-        ring
+        rw [ENNReal.tsum_mul_left, ENNReal.coe_mul, ENNReal.coe_mul, hK]
 
 /-- **The retarded Strichartz estimate for the wave equation with Besov forcing.** Let `E` be
 nontrivial of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier with the Littlewood–Paley
@@ -442,5 +545,155 @@ theorem exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum
       (p₁ := p₁) (r₁' := r₁') hr hq₁ hr₁ hqr₁ hq₁2
   exact φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_of_le le_top
     (one_le_two.trans hr) (ENNReal.HolderConjugate.one_le r₁' r₁) hC
+
+/-! ### The retarded estimate in square-sum form -/
+
+/-- **Littlewood–Paley summation of the retarded estimates in square-sum form.** Let `2 ≤ q`,
+`2 ≤ r < ∞` and `1 ≤ r₁'`. If the retarded Duhamel integrals of the squared blocks `Pⱼ Pⱼ G`
+satisfy
+`‖∫_{s < t} D⁻¹ sin((t - s)D) Pⱼ Pⱼ G(s) ds‖_{L^q_t L^r_x} ≤ C 2^{jσ} ‖G‖_{L^{p₁}_t L^{r₁'}_x}`
+uniformly in `j`, then the retarded Duhamel integral `u` of every integrable `F` satisfies
+`‖u‖_{L^q_t L^r_x} ≤ C' (∑ⱼ 2^{2jσ} ‖Pⱼ F‖²_{L^{p₁}_t L^{r₁'}_x})^{1/2}`. -/
+private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sq_rpow_of_le
+    {q r p₁ r₁' : ℝ≥0∞} (hq : 2 ≤ q) (hr : 2 ≤ r) (hr_top : r ≠ ∞) (hr₁' : 1 ≤ r₁') {σ : ℝ}
+    {C : ℝ≥0}
+    (hC : ∀ (j : ℤ) (m : Lp ℂ ∞ (volume : Measure E)),
+      m =ᵐ[volume] (fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ G : ℝ → Lp ℂ 2 (volume : Measure E), Integrable G →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s)
+            (Lp.fourierMultiplierCLM ℂ m (Lp.fourierMultiplierCLM ℂ m (G s))) :
+              Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
+          C * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
+            eLpNorm (fun s ↦ eLpNorm (G s) r₁' volume) p₁ volume) :
+    ∃ C' : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
+            Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
+          C' * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
+            eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m j) (F s)) r₁' volume) p₁
+              volume) ^ 2) ^ (2⁻¹ : ℝ) := by
+  obtain ⟨A, hA⟩ :=
+    φ.exists_eLpNorm_eLpNorm_le_mul_tsum_eLpNorm_eLpNorm_fourierMultiplierCLM_sq_rpow
+      (F := ℂ) (ρ := (volume : Measure ℝ)) hq hr hr_top
+  obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
+  have hK := ENNReal.coe_toNNReal (φ.memLp_fourierInv_dyadicDilate φ.invSumSq 0 1).eLpNorm_ne_top
+  set K := eLpNorm (𝓕⁻ ⇑(φ.dyadicDilate φ.invSumSq 0)) 1 volume
+  set S := Finset.Ioo (-(L : ℤ)) L
+  set K₀ : ℝ≥0 := ∑ d ∈ S, (((2 : ℝ) ^ d) ^ σ).toNNReal
+  refine ⟨A * (C * K.toNNReal * K₀), fun m hm F hF ↦ ?_⟩
+  -- `bₗ(t) = ∑_{|d| < L} ‖Φ_{d + l, l}(t)‖_r` bounds `‖Pₗ u(t)‖_r`, where `Φⱼₗ` is the retarded
+  -- integral of `Pⱼ Pⱼ Qₗ Pₗ F`.
+  set b : ℤ → ℝ → ℝ≥0∞ := fun l t ↦ ∑ d ∈ S, eLpNorm ((∫ s in Set.Iio t,
+        waveSinPropagator ℂ (t - s) (Lp.fourierMultiplierCLM ℂ (m (d + l))
+          (Lp.fourierMultiplierCLM ℂ (m (d + l))
+            (φ.dyadicMultiplier ℂ φ.invSumSq l (Lp.fourierMultiplierCLM ℂ (m l) (F s))))) :
+          Lp ℂ 2 (volume : Measure E))) r volume
+  -- The square-function bound, the decomposition of each block and the bound on each
+  -- `‖bₗ‖_{L^q_t}`.
+  calc eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
+          Lp ℂ 2 (volume : Measure E))) r volume) q volume
+      ≤ A * (∑' l, eLpNorm (fun t ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m l)
+          (∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) : Lp ℂ 2 (volume : Measure E)))
+            r volume) q volume ^ 2) ^ (2⁻¹ : ℝ) :=
+        hA m hm _ (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+          hF.aestronglyMeasurable)
+    _ ≤ A * (∑' l, eLpNorm (b l) q volume ^ 2) ^ (2⁻¹ : ℝ) := by
+        gcongr with l
+        exact eLpNorm_mono_eNorm (((Lp.fourierMultiplierCLM ℂ (m l)).continuous
+          |>.comp_aestronglyMeasurable (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub
+            hF.aestronglyMeasurable)).aemeasurable_eLpNorm_Lp .rfl r).aestronglyMeasurable
+          fun t ↦ by
+            simpa only [eNorm_eq_self] using
+              φ.eLpNorm_fourierMultiplierCLM_setIntegral_Iio_waveSinPropagator_sub_le_sum hL hm hF
+                (one_le_two.trans hr) l t
+    _ ≤ A * (∑' l, (C * K * K₀ * (ENNReal.ofReal (((2 : ℝ) ^ l) ^ σ) * eLpNorm (fun s ↦
+          eLpNorm (Lp.fourierMultiplierCLM ℂ (m l) (F s)) r₁' volume) p₁ volume)) ^ 2) ^
+            (2⁻¹ : ℝ) := by
+        gcongr with l
+        exact φ.eLpNorm_sum_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le
+          (one_le_two.trans hq) hr₁' hC L hm hF l
+    _ = _ := by
+        rw [ENNReal.tsum_mul_sq_rpow_inv_two, ENNReal.coe_mul, ENNReal.coe_mul, ENNReal.coe_mul,
+          hK]
+        ring
+
+/-- **The retarded Strichartz estimate for the wave equation with forcing in square-sum form.**
+Let `E` be nontrivial of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier with the
+Littlewood–Paley cutoff `ψⱼ` built from `φ` as symbol, let `(q, r)` be wave-admissible,
+`2 / q + (n - 1) / r ≤ (n - 1) / 2`, with `2 ≤ q < ∞` and `r < ∞`, and let `(q₁, r₁)` be
+wave-admissible with `2 ≤ q₁ ≤ ∞`, with Hölder conjugates `p₁` and `r₁'`, where the time exponent
+`2` is allowed, on either side or on both, in dimension `n ≥ 4`. Put `γ = n / 2 - n / r - 1 / q` and
+`γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for every integrable forcing term
+`F : ℝ → L²(E)`, the retarded Duhamel integral `u(t) = ∫_{s < t} D⁻¹ sin((t - s)D) F(s) ds`
+satisfies
+
+`‖u‖_{L^q_t L^r_x} ≤ C (∑ⱼ 2^{2j(γ + γ₁ - 1)} ‖Pⱼ F‖²_{L^{p₁}_t L^{r₁'}_x})^{1/2}`.
+
+The square sum is at most the `ℓ¹` sum of
+`ContDiffBump.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum`, so for `r < ∞`
+this estimate is the stronger one. Here `u(t)` is a Bochner integral, taken to be `0` where it does
+not exist. -/
+theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sq_rpow
+    {q r : ℝ≥0∞} (hq : 2 ≤ q) (hq_top : q ≠ ∞) (hr_top : r ≠ ∞)
+    (hqr : 2 * (q⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq2 : q = 2 → 3 < Module.finrank ℝ E)
+    {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁] [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁)
+    (hqr₁ : 2 * (q₁⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
+            Lp ℂ 2 (volume : Measure E))) r volume) q volume ≤
+          C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ (((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal - (q⁻¹).toReal) + ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r₁⁻¹).toReal - (q₁⁻¹).toReal) - 1)) *
+            eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m j) (F s)) r₁' volume) p₁
+              volume) ^ 2) ^ (2⁻¹ : ℝ) := by
+  rcases eq_or_ne r 0 with rfl | hr0
+  · exact ⟨0, fun _ _ _ _ ↦ by simp [eLpNorm_exponent_zero, Lp.aestronglyMeasurable]⟩
+  obtain ⟨-, hr2⟩ :=
+    two_le_finrank_of_waveAdmissible_of_two_le hq hq_top hr0 hqr Module.finrank_pos
+  obtain ⟨C, hC⟩ :=
+    φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
+      (p₁ := p₁) (r₁' := r₁') hq hq_top hqr hq2 hq₁ hqr₁ hq₁2
+  exact φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sq_rpow_of_le hq
+    hr2 hr_top (ENNReal.HolderConjugate.one_le r₁' r₁) hC
+
+/-- **The retarded Strichartz estimate for the wave equation at the pairs `(∞, r)` with forcing in
+square-sum form.** Let `E` be nontrivial of dimension `n`, let `Pⱼ` be the `L²` Fourier multiplier
+with the Littlewood–Paley cutoff `ψⱼ` built from `φ` as symbol, let `2 ≤ r < ∞` and let
+`γ = n / 2 - n / r`. Let `(q₁, r₁)` be wave-admissible with `2 ≤ q₁ ≤ ∞` and `2 ≤ r₁`, with Hölder
+conjugates `p₁` and `r₁'`, where `q₁ = 2` only if `1 + (n - 1) / r₁ = (n - 1) / 2` in dimension
+`n ≥ 4`, and put `γ₁ = n / 2 - n / r₁ - 1 / q₁`. There is `C` such that for every integrable
+forcing term `F : ℝ → L²(E)`, the retarded Duhamel integral
+`u(t) = ∫_{s < t} D⁻¹ sin((t - s)D) F(s) ds` satisfies
+
+`‖u‖_{L^∞_t L^r_x} ≤ C (∑ⱼ 2^{2j(γ + γ₁ - 1)} ‖Pⱼ F‖²_{L^{p₁}_t L^{r₁'}_x})^{1/2}`. -/
+theorem exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sq_rpow
+    {r : ℝ≥0∞} (hr : 2 ≤ r) (hr_top : r ≠ ∞) {p₁ q₁ r₁ r₁' : ℝ≥0∞} [p₁.HolderConjugate q₁]
+    [r₁'.HolderConjugate r₁] (hq₁ : 2 ≤ q₁) (hr₁ : 2 ≤ r₁)
+    (hqr₁ : 2 * (q₁⁻¹).toReal + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal ≤
+      ((Module.finrank ℝ E : ℝ) - 1) / 2)
+    (hq₁2 : q₁ = 2 → 3 < Module.finrank ℝ E ∧
+      1 + ((Module.finrank ℝ E : ℝ) - 1) * (r₁⁻¹).toReal = ((Module.finrank ℝ E : ℝ) - 1) / 2) :
+    ∃ C : ℝ≥0, ∀ m : ℤ → Lp ℂ ∞ (volume : Measure E),
+      (∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) →
+      ∀ F : ℝ → Lp ℂ 2 (volume : Measure E), Integrable F →
+        eLpNorm (fun t ↦ eLpNorm ((∫ s in Set.Iio t, waveSinPropagator ℂ (t - s) (F s) :
+            Lp ℂ 2 (volume : Measure E))) r volume) ∞ volume ≤
+          C * (∑' j : ℤ, (ENNReal.ofReal (((2 : ℝ) ^ j) ^ (((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r⁻¹).toReal) + ((Module.finrank ℝ E : ℝ) / 2 -
+            Module.finrank ℝ E * (r₁⁻¹).toReal - (q₁⁻¹).toReal) - 1)) *
+            eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m j) (F s)) r₁' volume) p₁
+              volume) ^ 2) ^ (2⁻¹ : ℝ) := by
+  obtain ⟨C, hC⟩ :=
+    φ.exists_eLpNorm_top_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_littlewoodPaley_le
+      (p₁ := p₁) (r₁' := r₁') hr hq₁ hr₁ hqr₁ hq₁2
+  exact φ.exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_tsum_sq_rpow_of_le le_top
+    hr hr_top (ENNReal.HolderConjugate.one_le r₁' r₁) hC
 
 end ContDiffBump

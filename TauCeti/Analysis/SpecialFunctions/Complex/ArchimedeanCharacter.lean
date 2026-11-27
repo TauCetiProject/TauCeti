@@ -54,6 +54,8 @@ angular frequency `k` of a character of `ℂˣ` from its restriction to the unit
   classification of the continuous characters of `ℂˣ`.
 * `TauCeti.realUnitsCharacter_map_normSq`, `TauCeti.complexUnitsCharacter_map_conj`: the
   pullbacks of these characters along the norm `ℂˣ → ℝˣ` and along complex conjugation.
+* `TauCeti.complexUnitsCharacter_comp_starMulAut_ne_iff`: `complexUnitsCharacter s k` is fixed
+  by complex conjugation exactly when `k = 0`.
 * `TauCeti.existsUnique_norm_coe_realUnits_eq_rpow`,
   `TauCeti.existsUnique_norm_coe_complexUnits_eq_rpow`: every quasi-character has a unique real
   exponent `σ` with `‖ω(x)‖ = |x| ^ σ`, for the normalized absolute values `|x|` of `ℝ` and
@@ -424,6 +426,32 @@ theorem complexUnitsCharacter_injective2 : Function.Injective2 complexUnitsChara
 theorem complexUnitsCharacter_inj {s t : ℂ} {k l : ℤ} :
     complexUnitsCharacter s k = complexUnitsCharacter t l ↔ s = t ∧ k = l := by
   exact complexUnitsCharacter_injective2.eq_iff
+
+/-- Precomposing `complexUnitsCharacter s k` with complex conjugation gives
+`complexUnitsCharacter s (-k)`. -/
+theorem complexUnitsCharacter_comp_starMulAut (s : ℂ) (k : ℤ) :
+    (complexUnitsCharacter s k : ℂˣ →* ℂˣ).comp (starMulAut : MulAut ℂˣ).toMonoidHom =
+      (complexUnitsCharacter s (-k) : ℂˣ →* ℂˣ) := by
+  ext z
+  have h := complexUnitsCharacter_map_conj s k z
+  have hz : Units.map (starRingEnd ℂ : ℂ →* ℂ) z = star z := Units.ext (by simp)
+  rw [hz] at h
+  simp [h]
+
+/-- The character `complexUnitsCharacter s k` is fixed by complex conjugation exactly when
+`k = 0`. -/
+theorem complexUnitsCharacter_comp_starMulAut_ne_iff (s : ℂ) (k : ℤ) :
+    (complexUnitsCharacter s k : ℂˣ →* ℂˣ).comp (starMulAut : MulAut ℂˣ).toMonoidHom ≠
+      (complexUnitsCharacter s k : ℂˣ →* ℂˣ) ↔ k ≠ 0 := by
+  rw [complexUnitsCharacter_comp_starMulAut, Ne, Ne, not_iff_not]
+  constructor
+  · intro h
+    have h' : complexUnitsCharacter s (-k) = complexUnitsCharacter s k :=
+      ContinuousMonoidHom.toMonoidHom_injective h
+    rw [complexUnitsCharacter_inj] at h'
+    omega
+  · intro h
+    simp [h]
 
 /-- **Classification of the continuous characters of `ℂˣ`.** The continuous characters of `ℂˣ`
 are exactly the characters `z ↦ |z| ^ s * (z / |z|) ^ k`, for unique `s : ℂ` and `k : ℤ`, and

@@ -43,6 +43,8 @@ pairing `tr (T* U) = tr (T U)` is real.
 ## Main results
 
 * `LinearMap.trace_adjoint`, `ContinuousLinearMap.trace_adjoint`: `tr T* = conj (tr T)`.
+* `LinearMap.trace_adjoint_comp_eq_sum_inner`: `tr (A† B) = ∑ᵢ ⟪A bᵢ, B bᵢ⟫` for every
+  orthonormal basis `(bᵢ)`.
 * `LinearMap.trace_adjoint_comp_self_eq_sum_norm_apply_sq`: `tr (A† A) = ∑ᵢ ‖A bᵢ‖²` for every
   orthonormal basis `(bᵢ)`.
 * `LinearMap.trace_eq_zero_of_inner_left_eq_neg`: a skew-adjoint endomorphism of a real inner
@@ -86,6 +88,15 @@ variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpac
 theorem trace_adjoint (T : E →ₗ[𝕜] E) : trace 𝕜 E T.adjoint = conj (trace 𝕜 E T) := by
   let b := stdOrthonormalBasis 𝕜 E
   simp [trace_eq_sum_inner _ b, adjoint_inner_right, map_sum]
+
+/-- **The Hilbert–Schmidt inner product as a trace.** In an orthonormal basis `(bᵢ)` of the
+source, `tr (A† B) = ∑ᵢ ⟪A bᵢ, B bᵢ⟫`. -/
+theorem trace_adjoint_comp_eq_sum_inner {F ι : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F] [Fintype ι] (b : OrthonormalBasis ι 𝕜 E)
+    (A B : E →ₗ[𝕜] F) :
+    trace 𝕜 E (A.adjoint ∘ₗ B) = ∑ i, ⟪A (b i), B (b i)⟫_𝕜 := by
+  rw [trace_eq_sum_inner _ b]
+  exact Finset.sum_congr rfl fun i _ ↦ adjoint_inner_right A _ _
 
 /-- The trace of `A† A` is `∑ᵢ ‖A bᵢ‖²` for every orthonormal basis `(bᵢ)` of the source. -/
 theorem trace_adjoint_comp_self_eq_sum_norm_apply_sq {F ι : Type*} [NormedAddCommGroup F]

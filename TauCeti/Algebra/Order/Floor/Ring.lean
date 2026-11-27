@@ -53,6 +53,8 @@ only finitely many rounded families have entries in `[-R, R]`.
   `⌈L / δ⌉₊` multiples of `δ > 0`.
 * `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
   with `⌊a * t⌋₊ = ⌊b * t⌋₊` differ by less than `1 / t`.
+* `TauCeti.finite_inter_Icc_of_forall_le_sub`: a set whose distinct points are at least `ε > 0`
+  apart meets every closed interval in a finite set.
 -/
 
 public section
@@ -209,5 +211,27 @@ theorem abs_sub_lt_one_div_of_natFloor_mul_eq {a b t : K} (ht : 0 < t) (ha : 0 �
   rw [← sub_mul, abs_mul, abs_of_pos ht] at hcell
   rw [lt_div_iff₀ ht]
   exact hcell
+
+
+/-- **Separated sets are locally finite.** A set whose distinct points are at least `ε > 0` apart
+meets every closed interval `[r, s]` in a finite set: the index `⌊(t - r) / ε⌋` of its cell of
+width `ε` is injective on it and lies in `[0, ⌊(s - r) / ε⌋]`. -/
+theorem finite_inter_Icc_of_forall_le_sub {S : Set K} {ε : K} (hε : 0 < ε)
+    (hS : ∀ a ∈ S, ∀ b ∈ S, a < b → ε ≤ b - a) (r s : K) : (S ∩ Set.Icc r s).Finite := by
+  refine Set.Finite.of_finite_image ((Set.finite_Icc 0 ⌊(s - r) / ε⌋).subset ?_)
+    (f := fun t ↦ ⌊(t - r) / ε⌋) ?_
+  · rintro _ ⟨t, ⟨_, hrt, hts⟩, rfl⟩
+    exact ⟨Int.floor_nonneg.mpr (div_nonneg (sub_nonneg.mpr hrt) hε.le),
+      Int.floor_le_floor (div_le_div_of_nonneg_right (by linarith) hε.le)⟩
+  · -- two points in the same cell are less than `ε` apart, so they are equal
+    intro a ha b hb he
+    have hlt : |a - b| < ε := by
+      simpa [← sub_div, abs_div, abs_of_pos hε, div_lt_one hε] using
+        Int.abs_sub_lt_one_of_floor_eq_floor he
+    rw [abs_sub_lt_iff] at hlt
+    by_contra hab
+    rcases lt_or_gt_of_ne hab with hab | hab
+    · linarith [hS a ha.1 b hb.1 hab]
+    · linarith [hS b hb.1 a ha.1 hab]
 
 end TauCeti

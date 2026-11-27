@@ -31,7 +31,8 @@ Dually, for a single orbit: if `G` acts on `X` with continuous orbit map `g ↦ 
 `s` of the orbit map, continuous on an open set `U`, trivializes the orbit map over `U` with fibre
 the stabilizer of `x₀`, by `g ↦ (g • x₀, s (g • x₀)⁻¹ * g)` with inverse `(z, h) ↦ s z * h`. This
 is `Subgroup.localSectionTrivializationOfCosetFibers` for the orbit map, whose fibres are the left
-cosets of the stabilizer; see Steenrod, *The Topology of Fibre Bundles*, §7.
+cosets of the stabilizer; see Steenrod, *The Topology of Fibre Bundles*, §7. A section continuous
+on all of `X` makes the orbit map a trivial bundle: `G ≃ₜ X × stabilizer G x₀`.
 
 The same local section trivializes any continuous `G`-equivariant map `p : E → X` over `U`, with
 fibre `p⁻¹ {x₀}`, by `e ↦ (p e, s (p e)⁻¹ • e)` with inverse `(z, e) ↦ s z • e`. This adapts the
@@ -50,6 +51,8 @@ to an action on `E`.
   set, with fibre the stabilizer of `x₀`, determined by a continuous local section.
 * `TauCeti.orbitMapTrivialization_apply_mul`: it intertwines right multiplication by the
   stabilizer on `G` with right multiplication on the fibre.
+* `TauCeti.orbitMapHomeomorph`: the homeomorphism `G ≃ₜ X × stabilizer G x₀` determined by a
+  continuous global section of the orbit map.
 * `TauCeti.orbitMap_mem_serreFibrations`: an orbit map with continuous local sections around
   every point is a Serre fibration, with fibre the stabilizer.
 * `ContinuousMap.comp_mulRight_eq_of_mem_stabilizer`: right translation by an element of the
@@ -201,6 +204,47 @@ theorem orbitMapTrivialization_apply_mul {g : G} (hg : g • x₀ ∈ U) (h : st
       ((orbitMapTrivialization x₀ hx₀ U hU s hs hsec g).1,
         (orbitMapTrivialization x₀ hx₀ U hU s hs hsec g).2 * h) :=
   Subgroup.localSectionTrivializationOfCosetFibers_apply_mul (K := stabilizer G x₀) hg h
+
+end TauCeti
+
+/-! ### Orbit maps with global sections -/
+
+namespace TauCeti
+
+variable {G X : Type*} [Group G] [MulAction G X]
+variable [TopologicalSpace G] [ContinuousMul G] [ContinuousInv G] [TopologicalSpace X]
+  {x₀ : X} {hx₀ : Continuous fun g : G ↦ g • x₀} {s : X → G} {hs : Continuous s}
+  {hsec : ∀ z, s z • x₀ = z}
+
+/-- **A continuous global section trivializes the orbit map.** Let `G` act on `X` with continuous
+orbit map `g ↦ g • x₀`, and let `s` be a continuous section of it defined on all of `X`. Then
+`g ↦ (g • x₀, s (g • x₀)⁻¹ * g)` is a homeomorphism `G ≃ₜ X × stabilizer G x₀`, with inverse
+`(z, h) ↦ s z * h`: the orbit map is a trivial principal bundle with fibre the stabilizer of `x₀`.
+This is the chart `TauCeti.orbitMapTrivialization` of `s` over all of `X`. -/
+noncomputable def orbitMapHomeomorph (x₀ : X) (hx₀ : Continuous fun g : G ↦ g • x₀) (s : X → G)
+    (hs : Continuous s) (hsec : ∀ z, s z • x₀ = z) : G ≃ₜ X × stabilizer G x₀ :=
+  let e := orbitMapTrivialization x₀ hx₀ univ isOpen_univ s hs.continuousOn fun z _ ↦ hsec z
+  e.toOpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv
+    (by rw [e.source_eq, orbitMapTrivialization_baseSet, preimage_univ])
+    (by rw [e.target_eq, orbitMapTrivialization_baseSet, univ_prod_univ])
+
+/-- The base coordinate of `orbitMapHomeomorph` is the orbit map. -/
+@[simp]
+theorem orbitMapHomeomorph_apply_fst (g : G) :
+    (orbitMapHomeomorph x₀ hx₀ s hs hsec g).1 = g • x₀ :=
+  Trivialization.coe_fst' _ (by rw [orbitMapTrivialization_baseSet]; exact mem_univ _)
+
+/-- The fibre coordinate of `orbitMapHomeomorph` is `s (g • x₀)⁻¹ * g`. -/
+@[simp]
+theorem coe_orbitMapHomeomorph_apply_snd (g : G) :
+    ((orbitMapHomeomorph x₀ hx₀ s hs hsec g).2 : G) = (s (g • x₀))⁻¹ * g :=
+  orbitMapTrivialization_fiberCoordinate (mem_univ _)
+
+/-- The inverse of `orbitMapHomeomorph` multiplies the section by the fibre coordinate. -/
+@[simp]
+theorem orbitMapHomeomorph_symm_apply (p : X × stabilizer G x₀) :
+    (orbitMapHomeomorph x₀ hx₀ s hs hsec).symm p = s p.1 * p.2 :=
+  orbitMapTrivialization_symm_apply p
 
 end TauCeti
 

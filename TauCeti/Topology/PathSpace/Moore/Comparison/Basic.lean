@@ -162,6 +162,21 @@ theorem toUnitPath_ofUnitPath (f : C(I, X)) : (ofUnitPath f).toUnitPath = f := b
   rw [toUnitPath_apply, ofUnitPath_apply, length_ofUnitPath, one_mul]
   exact congr_arg f (projIcc_val zero_le_one s)
 
+/-- The image of `ofUnitPath f` under a continuous map is `ofUnitPath` of the image of `f`. -/
+@[simp]
+theorem map_ofUnitPath {Y : Type*} [TopologicalSpace Y] (F : C(X, Y)) (f : C(I, X)) :
+    (ofUnitPath f).map F = ofUnitPath (F.comp f) :=
+  ext (by rw [length_map, length_ofUnitPath, length_ofUnitPath]) fun t ↦ by
+    rw [map_apply, ofUnitPath_apply, ofUnitPath_apply, ContinuousMap.comp_apply]
+
+/-- Reparametrizing the image of a Moore path to the unit interval is taking the image of its
+reparametrization. -/
+@[simp]
+theorem toUnitPath_map {Y : Type*} [TopologicalSpace Y] (F : C(X, Y)) (γ : MoorePath X) :
+    (γ.map F).toUnitPath = F.comp γ.toUnitPath :=
+  ContinuousMap.ext fun s ↦ by
+    rw [toUnitPath_apply, map_apply, length_map, ContinuousMap.comp_apply, toUnitPath_apply]
+
 /-- The constant Moore path of length zero becomes the constant path. -/
 @[simp]
 theorem toUnitPath_refl (x : X) : (refl x).toUnitPath = .const I x :=

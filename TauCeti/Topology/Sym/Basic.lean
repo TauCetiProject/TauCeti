@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Algebra.Monoid.Defs
 public import Mathlib.Topology.Compactness.Compact
 public import Mathlib.Topology.Constructions
 public import Mathlib.Topology.Separation.Hausdorff
 public import TauCeti.Data.Sym.Basic
+import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Topology.Algebra.Monoid
 import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
@@ -44,6 +47,8 @@ facts about it used below.
   open set.
 * `Sym.continuous_append` and `Sym.isOpenMap_append`: concatenation of symmetric
   powers is continuous and open.
+* `Sym.continuous_sum_map`: the sum of a continuous function over the points of an unordered
+  tuple, counted with multiplicity, is continuous.
 * `Sym.instCompactSpace` and `Sym.instT2Space`: the symmetric power of a compact
   space is compact, and that of a Hausdorff space is Hausdorff.
 
@@ -173,6 +178,23 @@ theorem isOpenMap_append :
   rw [(isOpenQuotientMap_ofFn.prodMap isOpenQuotientMap_ofFn).isOpenMap_iff,
     append_comp_prodMap_ofFn, ← hcoe]
   exact isOpenMap_ofFn.comp (Fin.appendHomeomorph n m).isOpenMap
+
+/-! ### Sums over the points of a tuple -/
+
+/-- Summing a continuous function over the points of an unordered tuple, counted with
+multiplicity, is continuous on the symmetric power: read on ordered tuples it is
+`f ↦ ∑ i, g (f i)`. -/
+@[continuity, fun_prop]
+theorem continuous_sum_map {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [ContinuousAdd M]
+    {g : α → M} (hg : Continuous g) :
+    Continuous fun s : Sym α n => ((s : Multiset α).map g).sum := by
+  rw [continuous_iff_comp_ofFn]
+  have h : (fun s : Sym α n => ((s : Multiset α).map g).sum) ∘ ofFn =
+      fun f : Fin n → α => ∑ i, g (f i) := by
+    funext f
+    simp [Fin.sum_ofFn]
+  rw [h]
+  exact continuous_finsetSum _ fun i _ => hg.comp (continuous_apply i)
 
 /-! ### Separation and compactness -/
 

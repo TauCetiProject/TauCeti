@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mod
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
+public import TauCeti.CategoryTheory.Monoidal.Mod.Basic
 
 /-!
 # Products and base-change factorizations in a slice category
@@ -24,6 +26,9 @@ This file also records `CategoryTheory.Over.exists_pullback_snd_comp_eq_of_pullb
 the base change of `f : X ⊗ Y ⟶ Z` in `Over S` along `y ≫ Y.hom` factors through the second
 projection in `Over R`, then the restriction of `f.left` to the fibre of
 `pullback.snd X.hom Y.hom` over `y : R ⟶ Y.left` factors through the projection to `R`.
+
+`CategoryTheory.Over.mapPullbackAdj_homEquiv_symm_smul` identifies the transpose of an action
+on base-changed points with the action on their transposes.
 
 Finally, `CategoryTheory.Over.mapGrpPullbackComp` lifts Mathlib's `Over.pullbackComp` to group
 objects: base change of group objects along `f ≫ g` is base change along `g` followed by base change
@@ -68,6 +73,30 @@ end TauCeti.CategoryTheory.Over
 namespace CategoryTheory.Over
 
 variable {C : Type*} [Category* C] [HasPullbacks C] {S : C}
+
+open scoped Obj
+
+/-- The transpose along `Over.map p ⊣ Over.pullback p` of `g • y`, for points `g` and `y` of the
+base changes of `M` and `Y`, is the action of the transpose of `g` on the transpose of `y`. -/
+lemma mapPullbackAdj_homEquiv_symm_smul
+    {S' : C} (p : S' ⟶ S) {M Y : Over S} [MonObj M] [ModObj M Y]
+    {T : Over S'} (g : T ⟶ (Over.pullback p).obj M) (y : T ⟶ (Over.pullback p).obj Y) :
+    letI := (Over.pullback p).modObjObj M Y
+    ((Over.mapPullbackAdj p).homEquiv _ _).symm (g • y) =
+      ((Over.mapPullbackAdj p).homEquiv _ _).symm g •
+        ((Over.mapPullbackAdj p).homEquiv _ _).symm y := by
+  let := (Over.pullback p).modObjObj M Y
+  have h : ((Over.mapPullbackAdj p).homEquiv _ _).symm
+      (lift g y ≫ Functor.LaxMonoidal.μ (Over.pullback p) M Y) =
+        lift (((Over.mapPullbackAdj p).homEquiv _ _).symm g)
+          (((Over.mapPullbackAdj p).homEquiv _ _).symm y) := by
+    ext1
+    · rw [lift_fst, ← Adjunction.homEquiv_naturality_right_symm, Category.assoc,
+        Functor.Monoidal.μ_fst, lift_fst]
+    · rw [lift_snd, ← Adjunction.homEquiv_naturality_right_symm, Category.assoc,
+        Functor.Monoidal.μ_snd, lift_snd]
+  rw [Hom.smul_def, Hom.smul_def, Functor.modObjObj_smul, ← Category.assoc,
+    Adjunction.homEquiv_naturality_right_symm, h]
 
 /-! ### Multiplicative morphisms between slices over different bases -/
 

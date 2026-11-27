@@ -28,6 +28,8 @@ import Mathlib.Data.Finset.Basic
   `S ∪ {a}` to `S`. Mathlib's `Finset.induction_on'` is the upward analogue.
 * `Finset.card_sdiff_lt_of_card_eq_min`: if `F ⊆ U` has `min k #U` elements of a nonempty `U`
   and `T ⊆ U` has fewer than `k`, then fewer elements of `T` lie outside `F` than in `F`.
+* `Finset.disjoint_and_injOn_of_add_le_card_image_union`: if `#S + #B ≤ #(S.image f ∪ B)`, then
+  `S.image f` and `B` are disjoint and `f` is injective on `S`.
 -/
 
 public section
@@ -78,6 +80,16 @@ theorem card_sdiff_lt_of_card_eq_min {F T U : Finset ι} {k : ℕ}
   · exact (card_le_card sdiff_subset).trans_lt (by omega)
   · rw [eq_of_subset_of_card_le hFU (by omega), sdiff_eq_empty_iff_subset.2 hTU, card_empty]
     exact hU.card_pos
+
+/-- If `#S + #B ≤ #(S.image f ∪ B)`, then `S.image f` and `B` are disjoint and `f` is injective
+on `S`. -/
+theorem disjoint_and_injOn_of_add_le_card_image_union {α β : Type*} [DecidableEq β]
+    {S : Finset α} {B : Finset β} {f : α → β} (h : #S + #B ≤ #(S.image f ∪ B)) :
+    Disjoint (S.image f) B ∧ Set.InjOn f S := by
+  have hunion := card_union_add_card_inter (S.image f) B
+  have hle : #(S.image f) ≤ #S := card_image_le
+  refine ⟨disjoint_iff_inter_eq_empty.2 (card_eq_zero.1 (by omega)),
+    card_image_iff.1 (by omega)⟩
 
 end Finset
 
