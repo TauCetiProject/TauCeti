@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Order.Filter.AtTopBot.Archimedean
 import Mathlib.Tactic.LinearCombination
 
@@ -54,6 +55,10 @@ variables. For `p > 0` the substitution `t ↦ t + √(t² + p)` is positive and
 of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive values as `u → 0⁺` when
 `c > 0`), `α / (β y + √(y² + c)) → 0` as `y → +∞` for `β ≠ -1`, and the forward difference
 `√x (√(x + 1) - √x)` tends to `1/2` as `x → ∞`.
+
+The natural floor of a square root is the integer square root of the natural floor, also after
+dividing by a natural number `k`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k)`, which extends Mathlib's
+`Real.nat_floor_real_sqrt_eq_nat_sqrt` from natural numbers to real arguments.
 
 ## Main results
 
@@ -117,6 +122,10 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
   and `1 ≤ r`.
 * `Real.tendsto_sqrt_nhds_zero_iff`: an eventually nonnegative function tends to `0` exactly when
   its square root does.
+* `Nat.floor_sqrt_div_natCast`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k)` for real `x` and natural `k`.
+* `Real.nat_sqrt_floor_le_real_sqrt`, `Real.real_sqrt_lt_nat_sqrt_floor_add_one`,
+  `Real.nat_floor_real_sqrt_eq_nat_sqrt_floor`: for every real `x`, the natural square root of
+  `⌊x⌋₊` satisfies `Nat.sqrt ⌊x⌋₊ ≤ √x < Nat.sqrt ⌊x⌋₊ + 1`, so `⌊√x⌋₊ = Nat.sqrt ⌊x⌋₊`.
 * `TauCeti.sum_range_inv_sqrt_add_one_le`: the sum of the reciprocal square roots of `1` through
   `n` is at most `2√n`.
 * `TauCeti.tendsto_sqrt_natCast_add_one_atTop`: `√(n + 1) → ∞` along the natural numbers, the
@@ -825,7 +834,46 @@ theorem tendsto_sqrt_nhds_zero_iff {α : Type*} {l : Filter α} {f : α → ℝ}
   refine (by simpa using h.pow 2 : Tendsto (fun x ↦ √(f x) ^ 2) l (𝓝 0)).congr' ?_
   filter_upwards [hf] with x hx using sq_sqrt hx
 
+/-- For every real `x`, the natural square root of `⌊x⌋₊` is at most `√x`. For `x < 0` both
+sides are zero. This extends Mathlib's `Real.nat_sqrt_le_real_sqrt` from natural to real `x`. -/
+theorem nat_sqrt_floor_le_real_sqrt (x : ℝ) : ((⌊x⌋₊.sqrt : ℕ) : ℝ) ≤ √x := by
+  rcases le_or_gt 0 x with hx | hx
+  · exact nat_sqrt_le_real_sqrt.trans (sqrt_le_sqrt (Nat.floor_le hx))
+  · simp [Nat.floor_of_nonpos hx.le, sqrt_eq_zero_of_nonpos hx.le]
+
+/-- For every real `x`, `√x` is less than the natural square root of `⌊x⌋₊` plus one. This
+extends Mathlib's `Real.real_sqrt_lt_nat_sqrt_succ` from natural to real `x`. -/
+theorem real_sqrt_lt_nat_sqrt_floor_add_one (x : ℝ) : √x < (⌊x⌋₊.sqrt : ℕ) + 1 := by
+  rw [sqrt_lt' (by positivity)]
+  have h : ((⌊x⌋₊ + 1 : ℕ) : ℝ) ≤ ((⌊x⌋₊.sqrt + 1) ^ 2 : ℕ) :=
+    Nat.cast_le.2 (Nat.add_one_le_iff.2 (Nat.sqrt_lt'.1 (Nat.lt_add_one _)))
+  push_cast at h
+  linarith [Nat.lt_floor_add_one x]
+
+/-- For every real `x`, the floor of `√x` is the natural square root of `⌊x⌋₊`. This extends
+Mathlib's `Real.nat_floor_real_sqrt_eq_nat_sqrt` from natural to real `x`. -/
+@[simp]
+theorem nat_floor_real_sqrt_eq_nat_sqrt_floor (x : ℝ) : ⌊√x⌋₊ = ⌊x⌋₊.sqrt :=
+  (Nat.floor_eq_iff (sqrt_nonneg x)).2
+    ⟨nat_sqrt_floor_le_real_sqrt x, real_sqrt_lt_nat_sqrt_floor_add_one x⟩
+
 end Real
+
+namespace Nat
+
+/-- For real `x` and natural `k`, the natural floor of `√(x / k)` is the integer square root of
+`⌊x⌋₊ / k`: `⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k)`. -/
+theorem floor_sqrt_div_natCast (x : ℝ) (k : ℕ) :
+    ⌊√(x / k)⌋₊ = Nat.sqrt (⌊x⌋₊ / k) := by
+  rw [← Nat.floor_div_natCast]
+  rcases lt_or_ge (x / k) 0 with hy | hy
+  · rw [Real.sqrt_eq_zero'.2 hy.le, Nat.floor_zero, Nat.floor_eq_zero.2 (hy.trans one_pos),
+      Nat.sqrt_zero]
+  refine eq_of_forall_le_iff fun d ↦ ?_
+  rw [Nat.le_floor_iff (Real.sqrt_nonneg _), Real.le_sqrt (Nat.cast_nonneg _) hy, Nat.le_sqrt',
+    Nat.le_floor_iff hy, Nat.cast_pow]
+
+end Nat
 
 namespace TauCeti
 

@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 
 /-!
 # Differential forms on nested open subsets
@@ -19,7 +20,11 @@ inclusion `TopologicalSpace.Opens.inclusion`. The differential of that inclusion
 the model space, so restriction does not change the values of the form
 (`TauCeti.mpullback_inclusion_apply`), and the charts of `U` are restrictions of those of `W`, so
 the coordinate expressions agree near every point of `U`. The same holds for restriction from `M`
-itself (`TauCeti.mpullback_subtype_val_apply`).
+itself (`TauCeti.mpullback_subtype_val_apply`). Restricting to `W` and then to `U` is restricting
+to `U` (`TauCeti.mpullback_inclusion_mpullback_subtype_val`), and a restriction `f : U → V` of a
+map `A : M → M'` to open subsets pulls the restriction of a form back to the restriction of its
+pullback along `A` (`TauCeti.mpullback_mpullback_subtype_val_of_comp_eq`), with no
+differentiability assumption.
 
 Consequently regularity of forms is local (`TauCeti.contMDiffAt_mpullback_inclusion_iff`): a form
 on `W` is `C^n` as soon as its restrictions to the members of an open cover of `W` are
@@ -48,7 +53,9 @@ diffeomorphism, viewed as a diffeomorphism between its source and target, pulls 
 of a form to its target as it pulls back the form itself
 (`TauCeti.mpullback_toDiffeomorphSourceTarget_apply`). So a construction carried out on an open
 submanifold, such as a flow defined only where some condition on the forms holds, transfers to the
-ambient manifold.
+ambient manifold. In particular, a partial diffeomorphism of the source of a partial
+diffeomorphism `Ψ` fixing a set `K` corrects `Ψ` to a partial diffeomorphism agreeing with `Ψ` on
+`K` (`PartialDiffeomorph.exists_eqOn_mpullback_apply_eq_of_opens`).
 
 On a product `U × M` with an open subset `U` of a normed space, the differential of the first
 coordinate reads the first coordinate of a tangent vector
@@ -88,6 +95,35 @@ theorem mpullback_subtype_val_apply {U : Opens M} (γ : RoughForm I M F k) (x : 
   simp only [mpullback_apply, Manifold.mfderiv_subtype_val, ContinuousLinearEquiv.coe_coe,
     Manifold.tangentSpaceOpenEquiv_apply]
   rfl
+
+/-- Restricting a form on `M` to an open subset `W` and then to an open subset `U ≤ W` is
+restricting it to `U`. -/
+@[simp]
+theorem mpullback_inclusion_mpullback_subtype_val {U W : Opens M} (h : U ≤ W)
+    (γ : RoughForm I M F k) :
+    mpullback I I (Opens.inclusion h) (mpullback I I (Subtype.val : W → M) γ) =
+      mpullback I I (Subtype.val : U → M) γ := by
+  funext x
+  rw [mpullback_inclusion_apply, mpullback_subtype_val_apply, mpullback_subtype_val_apply]
+
+/-- **Pullback along a restricted map.** Let `f : U → V` be the restriction of a map `A : M → M'`
+to open subsets, that is `Subtype.val ∘ f = A ∘ Subtype.val`. Then `f` pulls the restriction to `V`
+of a form `γ` on `M'` back to the restriction to `U` of the pullback of `γ` along `A`. No
+differentiability is needed: where `A` is not differentiable, neither is `f`. -/
+theorem mpullback_mpullback_subtype_val_of_comp_eq {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {U : Opens M} {V : Opens M'} {f : U → V} {A : M → M'}
+    (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (γ : RoughForm I' M' F k) :
+    mpullback I I' f (mpullback I' I' (Subtype.val : V → M') γ) =
+      mpullback I I (Subtype.val : U → M) (mpullback I I' A γ) := by
+  funext x
+  ext v
+  have hx : ((f x : V) : M') = A x := congrFun hcomp x
+  simp only [mpullback_apply, mpullback_subtype_val_apply,
+    Manifold.mfderiv_apply_of_subtype_val_comp_eq hcomp]
+  -- The points `f x` of `V` and `A x` of `M'` agree, and the tangent spaces are the model space.
+  rw [hx]
+  exact (mpullback_apply (I := I) A γ (x : M) v).symm
 
 /-- The extension by zero of a rough form on an open subset `U` to an open subset `W`: it agrees
 with the form at the points of `W` lying in `U` and vanishes at the others. -/
@@ -469,5 +505,42 @@ theorem mpullback_toDiffeomorphSourceTarget_apply {E' H' M' : Type*} [NormedAddC
     (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero), hcomp,
     mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
       (Ψ.mdifferentiableAt hn x.property), mpullback_subtype_val_apply]
+
+omit [IsManifold I 1 M] in
+/-- **Correcting a partial diffeomorphism on its source.** Let `Ψ` be a partial diffeomorphism from
+`M` to `M'`, let `K` be a subset of its source, and let `Θ` be a partial diffeomorphism of the
+source of `Ψ`, read as an open subset of `M`, whose source and target contain the points of `K` and
+which fixes them. Then there is a partial diffeomorphism `φ` from `M` to `M'` (`Θ` read in `M`,
+followed by `Ψ`) whose source contains `K`, which agrees with `Ψ` on `K`, and which at each point
+of its source pulls every form back as `Θ` pulls back the pullback of the form along the
+restriction of `Ψ` to its source. -/
+theorem _root_.PartialDiffeomorph.exists_eqOn_mpullback_apply_eq_of_opens {E' H' M' : Type*}
+    [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] {n : WithTop ℕ∞}
+    (Ψ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0) {K : Set M} (hK : K ⊆ Ψ.source)
+    (Θ : PartialDiffeomorph I I (⟨Ψ.source, Ψ.open_source⟩ : Opens M)
+      (⟨Ψ.source, Ψ.open_source⟩ : Opens M) n)
+    (hsrc : Subtype.val ⁻¹' K ⊆ Θ.source) (htgt : Subtype.val ⁻¹' K ⊆ Θ.target)
+    (hfix : ∀ y ∈ Subtype.val ⁻¹' K, Θ y = y) :
+    ∃ φ : PartialDiffeomorph I I' M M' n, K ⊆ φ.source ∧ EqOn φ Ψ K ∧
+      ∀ x ∈ φ.source, ∃ y ∈ Θ.source, (y : M) = x ∧
+        ∀ {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] {l : ℕ} (ω : RoughForm I' M' G l),
+          mpullback I I' φ ω x =
+            mpullback I I Θ (mpullback I I' (Ψ ∘ (Subtype.val : _ → M)) ω) y := by
+  obtain ⟨Φ, hΦs, -, hΦfix, hΦ⟩ := exists_partialDiffeomorph_mpullback_apply_eq_of_opens hn hK Θ
+    hsrc htgt hfix
+  refine ⟨Φ.trans Ψ, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · rw [PartialDiffeomorph.trans_source]
+    exact ⟨hΦs hx, by rw [mem_preimage, hΦfix x hx]; exact hK hx⟩
+  · rw [PartialDiffeomorph.coe_trans, Function.comp_apply, hΦfix x hx]
+  rw [PartialDiffeomorph.trans_source] at hx
+  obtain ⟨y, hy, rfl, hΦy⟩ := hΦ x hx.1
+  refine ⟨y, hy, rfl, fun ω ↦ ?_⟩
+  rw [PartialDiffeomorph.coe_trans,
+    mpullback_comp_at (Φ.mdifferentiableAt hn hx.1) (Ψ.mdifferentiableAt hn hx.2), hΦy]
+  -- On the source of `Ψ`, restricting `Ψ^* ω` is pulling `ω` back along the restriction of `Ψ`.
+  ext v
+  rw [mpullback_apply Θ, mpullback_apply Θ, mpullback_comp_at
+    (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) (Ψ.mdifferentiableAt hn (Θ y).property)]
 
 end TauCeti

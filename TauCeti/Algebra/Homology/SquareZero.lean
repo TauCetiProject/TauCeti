@@ -651,6 +651,15 @@ theorem homologyEquiv_mk (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (he : e 
         ⟨f z, LinearMap.map_mem_ker_of_comp_eq (d := d) (e := e) f.toLinearMap hf z.property⟩ :=
   LinearMap.homologyMap_mk f.toLinearMap hd he hf z
 
+/-- As a function, the equivalence of homologies induced by `f` is the map induced by `f` on
+homology. -/
+theorem coe_homologyEquiv (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0)
+    (hf : f.toLinearMap ∘ₛₗ d = e ∘ₛₗ f.toLinearMap) :
+    ⇑(f.homologyEquiv hd he hf) = LinearMap.homologyMap f.toLinearMap hd he hf :=
+  funext fun z => by
+    obtain ⟨z, rfl⟩ := Submodule.Quotient.mk_surjective _ z
+    simp
+
 /-- A semilinear equivalence `f` induces an equivalence from the homology of a square-zero
 endomorphism `d` to that of its conjugate `f ∘ d ∘ f⁻¹`. -/
 noncomputable def conjHomologyEquiv (f : M ≃ₛₗ[σ] M') (hd : d ∘ₗ d = 0) :

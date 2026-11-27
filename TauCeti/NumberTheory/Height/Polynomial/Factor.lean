@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Height.Polynomial.Basic
 public import Mathlib.NumberTheory.Height.NumberField
-public import TauCeti.RingTheory.Polynomial.GaussNorm
+public import TauCeti.RingTheory.Polynomial.Gauss.Norm
 import TauCeti.Analysis.Polynomial.SupNorm.Factor
 import Mathlib.Algebra.FiniteSupport.Basic
 

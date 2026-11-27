@@ -59,6 +59,8 @@ The last statement is the infinitesimal input to the comparison of `G`-stable an
   stabilizer Hopf ideals from agreement on all value algebras.
 * `Submodule.stabilizerHopfIdeal_map_transport`: transporting a comodule along a linear equivalence
   preserves subspace stabilizer Hopf ideals.
+* `Submodule.stabilizerHopfIdeal_map_of_injective`: an injective morphism of representations
+  does not change stabilizers.
 * `Submodule.mem_lieSubalgebra_stabilizerHopfIdeal_iff`: its Lie algebra is the stabilizer of
   `W` under the differentiated representation.
 
@@ -391,6 +393,26 @@ theorem stabilizerHopfIdeal_eq_of_forall_mem_quotientPointsSubgroup_iff
   ext g
   rw [mem_quotientPointsSubgroup_stabilizerHopfIdeal_iff_endOfPoint]
   exact (h A g).symm
+
+section Map
+
+variable {V W : Type*} [AddCommGroup V] [Module k V] [Comodule k H V] [AddCommGroup W]
+  [Module k W] [Comodule k H W]
+
+/-- **Stabilizers along an injective morphism.** An injective morphism `f : V → W` of
+representations does not change stabilizers: `f(L)` and `L` have the same stabilizer Hopf ideal. -/
+theorem stabilizerHopfIdeal_map_of_injective (f : Comodule.Hom k H V W)
+    (hf : Function.Injective f) (L : Submodule k V) :
+    (L.map f.toLinearMap).stabilizerHopfIdeal H = L.stabilizerHopfIdeal H := by
+  refine eq_of_forall_ge_iff fun J ↦ ?_
+  -- Test both stabilizers against the quotient point `H → H ⧸ J`, whose kernel is `J`.
+  let g := WithConv.toConv (Ideal.Quotient.mkₐ k J.toIdeal)
+  have hJ : RingHom.ker g.ofConv = J.toIdeal := Ideal.Quotient.mkₐ_ker k _
+  rw [← HopfIdeal.toIdeal_le_toIdeal, ← HopfIdeal.toIdeal_le_toIdeal, ← hJ,
+    stabilizerHopfIdeal_le_ker_iff, stabilizerHopfIdeal_le_ker_iff]
+  exact Comodule.Hom.map_endOfPoint_baseChange_eq_iff f hf L _
+
+end Map
 
 end Hopf
 
