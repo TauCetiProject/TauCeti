@@ -67,8 +67,7 @@ private lemma aeval_glnHeckePolynomial_succ_apply (U : End ℂ V) (m : ℕ) (q :
         ((-1) ^ (m + 1) * q ^ (m + 1).choose 2 * T (Fin.last (m + 1))) • y := by
   rw [glnHeckePolynomial_succ]
   simp only [map_add, LinearMap.add_apply, map_mul, aeval_X, mul_apply_eq_comp,
-    aeval_C, Module.algebraMap_end_apply, smul_smul, ← mul_assoc]
-  rfl
+    aeval_C, Module.algebraMap_end_apply, smul_smul, ← mul_assoc, Function.comp_def]
 
 /-- `Fin.castLE` sends `Fin.last k` to `⟨k, h⟩`. -/
 private lemma castLE_last {k m : ℕ} (h : k + 1 ≤ m) :
