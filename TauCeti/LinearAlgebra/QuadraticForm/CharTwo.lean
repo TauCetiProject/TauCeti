@@ -14,7 +14,7 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.CharP.Two
-import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
+import TauCeti.LinearAlgebra.BilinearForm.Lagrangian.Basis
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 import TauCeti.LinearAlgebra.Dimension.Basis

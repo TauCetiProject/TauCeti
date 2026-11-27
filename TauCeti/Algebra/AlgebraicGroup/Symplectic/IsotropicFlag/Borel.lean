@@ -15,7 +15,7 @@ import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 import TauCeti.Algebra.AlgebraicGroup.Smooth.GeometricallyReduced
 import TauCeti.Algebra.AlgebraicGroup.Solvable.Lagrangian
 import TauCeti.Algebra.Coalgebra.Comodule.Flag.Extension
-import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
+import TauCeti.LinearAlgebra.BilinearForm.Lagrangian.Basis
 import TauCeti.RepresentationTheory.ClassicalGroups.Symplectic
 
 /-!

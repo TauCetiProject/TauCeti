@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.ConleyZehnder.FrameChange
 public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 import TauCeti.Analysis.Matrix.SymplecticGroup.Maslov.Lagrangian
 import TauCeti.LinearAlgebra.Basis.Basic
-import TauCeti.LinearAlgebra.BilinearForm.LagrangianBasis
+import TauCeti.LinearAlgebra.BilinearForm.Lagrangian.Basis
 
 /-!
 # Loops of linear symplectic maps preserving a Lagrangian subspace
