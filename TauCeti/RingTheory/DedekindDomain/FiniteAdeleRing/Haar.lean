@@ -83,6 +83,12 @@ place, `μ_f` is not finite: multiplication by a uniformizer at one place scales
   2nd ed., Cambridge University Press (2023), §3.5, pp. 186–189 (the modulus of an automorphism
   and Lemma 3.63 with the restricted product of Haar measures following it).
 * A. V. Sutherland, *Number Theory I*, MIT 18.785 lecture notes, Lecture 23, §23.3, p. 6.
+* A. Weil, *Basic Number Theory*, Chapter I, §2 (the module of an automorphism of a
+  finite-dimensional vector space is the module of its determinant).
+* grh-lean states the scaling of Haar measure on `(𝔸ᶠ)ⁿ` by `GL_n` as
+  `New.map_mulVec_haar_finAdele` (`src/Lib/Adelic/Adeles/IdeleModulus.lean`;
+  https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC); no code of
+  that file is used here.
 -/
 
 public section
