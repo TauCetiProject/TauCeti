@@ -73,6 +73,9 @@ by these integrals.
 
 * `TestFunction.integral_smul_congr_of_eqOn`: `∫ φ • g₁ ∂μ = ∫ φ • g₂ ∂μ` whenever `g₁ = g₂` on `Ω`.
 
+* `TestFunction.integrable_smul_of_continuousOn`: `x ↦ φ x • f x` is integrable for `f` continuous
+  on a set containing the support of `φ`.
+
 * `TestFunction.integrable_inner_subtype`: the pairing `⟪φ x, v x⟫` of a test vector field with a
   locally integrable field is integrable.
 
@@ -210,6 +213,15 @@ theorem integral_smul_congr_of_eqOn (φ : 𝓓^{n}(Ω, ℝ)) {μ : Measure E} {g
   by_cases hx : x ∈ (Ω : Set E)
   · simp only [h hx]
   · simp [φ.zero_on_compl hx]
+
+/-- A real test function times a function continuous on a set containing its support is integrable
+for a measure finite on compact sets. -/
+theorem integrable_smul_of_continuousOn [OpensMeasurableSpace E] (φ : 𝓓^{n}(Ω, ℝ))
+    {μ : Measure E} [IsFiniteMeasureOnCompacts μ] {f : E → F} {U : Set E} (hf : ContinuousOn f U)
+    (hφ : tsupport φ ⊆ U) : Integrable (fun x => φ x • f x) μ :=
+  ((φ.continuous.continuousOn.smul (hf.mono hφ)).integrableOn_compact
+    φ.hasCompactSupport.isCompact).integrable_of_forall_notMem_eq_zero
+    fun x hx => by simp [image_eq_zero_of_notMem_tsupport hx]
 
 section InnerPairing
 
