@@ -40,10 +40,9 @@ total variation `eVariationOn`. This is the `p`-variation of rough path theory
 
 ## Implementation notes
 
-The definition follows the shape of the open Mathlib pull request #38055 on the `r`-variation,
-so that the two can be identified when that pull request lands. The definition and the results
-up to `rEVariationOn_anti` need only an extended distance `[EDist E]` on `E`; the comparison
-with `eVariationOn` takes Mathlib's `[WeakPseudoEMetricSpace E]`.
+The definition and the results up to `rEVariationOn_anti` need only an extended distance
+`[EDist E]` on `E`; the comparison with `eVariationOn` takes Mathlib's
+`[WeakPseudoEMetricSpace E]`.
 -/
 
 public section
@@ -139,6 +138,7 @@ section WeakPseudoEMetricSpace
 variable {α E : Type*} [LinearOrder α] [TopologicalSpace E] [WeakPseudoEMetricSpace E]
 
 /-- The `1`-variation is Mathlib's total variation `eVariationOn`. -/
+@[simp]
 theorem rEVariationOn_one (f : α → E) (s : Set α) : rEVariationOn 1 f s = eVariationOn f s := by
   simp [rEVariationOn, eVariationOn]
 
