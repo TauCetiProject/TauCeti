@@ -47,7 +47,7 @@ theorem congr (hh : IsBoundaryHeight R h) (hhh' : Set.EqOn h h' (boundaryVertice
   exact hh.sub_eq he
 
 /-- Adding a constant to a boundary height gives a boundary height. -/
-theorem add_const (hh : IsBoundaryHeight R h) (a : ℤ) : IsBoundaryHeight R (h + fun _ => a) :=
+theorem add_const (hh : IsBoundaryHeight R h) (a : ℤ) : IsBoundaryHeight R fun u => h u + a :=
   isBoundaryHeight_def.2 fun e he => by
     simpa using hh.sub_eq he
 
