@@ -17,16 +17,18 @@ entropy is a two-sided generator when the σ-algebras of the labels `ξ ∘ e^[k
 `h_μ(e) = h_μ(e, ξ)`.
 
 The proof runs the one-sided argument with the windows
-`windowLabel e ξ N x = (ξ (e^[j - N] x))_{0 ≤ j ≤ 2 N}`, the itinerary of length `2 N + 1` started
-at `e.symm^[N] x`. Their σ-algebras increase (`TauCeti.monotone_comap_windowLabel`) and contain
-those of the forward and backward labels (`TauCeti.iSup_comap_le_iSup_comap_windowLabel`), and each
-has entropy rate at most `h_μ(e, ξ)`, since `e.symm^[N]` is a factor map from `e` to
-itself (`TauCeti.partitionEntropyRate_windowLabel_le`); then
+`windowLabel e ξ N x = (ξ (e^[j] (e.symm^[N] x)))_{j < 2 N + 1}`, the itinerary of length
+`2 N + 1` started at `e.symm^[N] x`, that is the labels of `e^k x` for `-N ≤ k ≤ N`. Their
+σ-algebras increase (`TauCeti.monotone_comap_windowLabel`) and contain those of the forward and
+backward labels (`TauCeti.iSup_comap_le_iSup_comap_windowLabel`), and each has entropy rate at
+most `h_μ(e, ξ)`, since `e.symm^[N]` is a factor map from `e` to itself
+(`TauCeti.partitionEntropyRate_windowLabel_le`); then
 `TauCeti.partitionEntropyRate_le_of_monotone_comap` applies.
 
 ## Main definitions
 
-* `TauCeti.windowLabel e ξ N`: the labels `ξ ∘ e^[j - N]`, `0 ≤ j ≤ 2 N`, of a point.
+* `TauCeti.windowLabel e ξ N`: the labels `ξ (e^[j] (e.symm^[N] x))`, `j < 2 N + 1`, of a
+  point `x`.
 
 ## Main results
 
@@ -50,15 +52,21 @@ namespace TauCeti
 variable {X ι κ : Type*} {mX : MeasurableSpace X} {μ : Measure X}
 
 /-- The window of width `2 N + 1` of a label `ξ` along an invertible map `e`: the labels
-`ξ (e^[j] (e.symm^[N] x))`, `j < 2 N + 1`, that is `ξ ∘ e^[j - N]` for `0 ≤ j ≤ 2 N`. -/
+`ξ (e^[j] (e.symm^[N] x))`, `j < 2 N + 1`. This is `ξ (e.symm^[N - j] x)` for `j ≤ N` and
+`ξ (e^[j - N] x)` for `N ≤ j`: the labels of `e^k x` for `-N ≤ k ≤ N`. -/
 noncomputable def windowLabel (e : X ≃ X) (ξ : X → ι) (N : ℕ) : X → (Fin (2 * N + 1) → ι) :=
   iteratedPartitionLabel e ξ (2 * N + 1) ∘ e.symm^[N]
+
+/-- A window is the itinerary of length `2 N + 1` started at `e.symm^[N] x`. -/
+theorem windowLabel_def (e : X ≃ X) (ξ : X → ι) (N : ℕ) :
+    windowLabel e ξ N = iteratedPartitionLabel e ξ (2 * N + 1) ∘ e.symm^[N] :=
+  (rfl)
 
 /-- The entries of a window. -/
 @[simp]
 theorem windowLabel_apply (e : X ≃ X) (ξ : X → ι) (N : ℕ) (x : X) (j : Fin (2 * N + 1)) :
     windowLabel e ξ N x j = ξ (e^[j] (e.symm^[N] x)) := by
-  rw [windowLabel, comp_apply, iteratedPartitionLabel_apply]
+  rw [windowLabel_def, comp_apply, iteratedPartitionLabel_apply]
 
 /-- A narrower window is a function of a wider one. -/
 theorem windowLabel_eq_comp_of_le (e : X ≃ X) (ξ : X → ι) {N N' : ℕ} (h : N ≤ N') :
@@ -109,7 +117,7 @@ theorem partitionEntropyRate_windowLabel_le [IsZeroOrProbabilityMeasure μ] (e :
   have hcomm : Function.Commute e.symm e := fun x ↦ by simp
   have hπ : IsFactorMap (e.symm^[N]) e e μ μ :=
     .of_semiconj (he.symm.iterate N) (hcomm.iterate_left N)
-  rw [windowLabel, MeasurableEquiv.coe_toEquiv_symm]
+  rw [windowLabel_def, MeasurableEquiv.coe_toEquiv_symm]
   calc partitionEntropyRate μ e (iteratedPartitionLabel e ξ (2 * N + 1) ∘ e.symm^[N])
       = partitionEntropyRate μ e (iteratedPartitionLabel e ξ (2 * N + 1)) :=
         hπ.partitionEntropyRate_comp he.quasiMeasurePreserving e.measurable
