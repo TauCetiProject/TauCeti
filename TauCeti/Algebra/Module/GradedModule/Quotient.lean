@@ -204,6 +204,23 @@ noncomputable def kerPieceEquivKerRestrict [IsScalarTower R S N] (p : ι) :
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
 
+/-- The forward map of `kerPieceEquivKerRestrict` preserves the underlying element of `M`. -/
+@[simp]
+theorem coe_kerPieceEquivKerRestrict_apply [IsScalarTower R S N] (p : ι)
+    (z : (G.ker hf).piece p) :
+    ((G.kerPieceEquivKerRestrict hf p z : G.piece p) : M) = ((z : _root_.LinearMap.ker f) : M) := by
+  rw [kerPieceEquivKerRestrict]
+  rfl
+
+/-- The inverse map of `kerPieceEquivKerRestrict` preserves the underlying element of `M`. -/
+@[simp]
+theorem coe_kerPieceEquivKerRestrict_symm_apply [IsScalarTower R S N] (p : ι)
+    (w : _root_.LinearMap.ker ((f.restrictScalars R).comp (G.piece p).subtype)) :
+    (((G.kerPieceEquivKerRestrict hf p).symm w : _root_.LinearMap.ker f) : M) =
+      ((w : G.piece p) : M) := by
+  rw [kerPieceEquivKerRestrict]
+  rfl
+
 /-- The grading of the kernel of `f` vanishes in every degree in which the grading of `M` does. -/
 theorem ker_piece_eq_bot {p : ι} (hp : G.piece p = ⊥) : (G.ker hf).piece p = ⊥ :=
   (Submodule.eq_bot_iff _).mpr fun _ hz ↦ Subtype.ext <|

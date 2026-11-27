@@ -156,20 +156,8 @@ noncomputable instance (G : InternalGrading R M ι) : DirectSum.Decomposition G.
 homogeneous element of `H` decomposes in `G` into components that also lie in the corresponding
 pieces of `H`. -/
 theorem eq_of_piece_le {G H : InternalGrading R M ι} (h : ∀ p, G.piece p ≤ H.piece p) :
-    G = H := by
-  ext p x
-  refine ⟨fun hx ↦ h p hx, fun hx ↦ ?_⟩
-  suffices ∀ y : M, (DirectSum.decompose H.piece y p : M) ∈ G.piece p by
-    simpa [DirectSum.decompose_of_mem_same H.piece hx] using this x
-  intro y
-  induction y using DirectSum.Decomposition.inductionOn G.piece with
-  | zero => simp
-  | @homogeneous q z =>
-    by_cases hqp : q = p
-    · subst p
-      simp [DirectSum.decompose_of_mem_same H.piece (h q z.property)]
-    · simp [DirectSum.decompose_of_mem_ne H.piece (h q z.property) hqp]
-  | add y₁ y₂ hy₁ hy₂ => simpa using (G.piece p).add_mem hy₁ hy₂
+    G = H :=
+  InternalGrading.ext (congrFun (DirectSum.Decomposition.eq_of_subset G.piece H.piece h))
 
 /-- The internal grading carried by a family of submodules with a `DirectSum.Decomposition`.  This
 is the bridge from Mathlib's decomposition typeclass, under which graded algebras are stated, to

@@ -261,12 +261,7 @@ noncomputable def bigradedUnblockedHomologyPieceEquivOfMem
       e y ∈ G'.bigradedUnblockedHomologyPiece R g)
     (g : ℤ × ℤ) :
     G.bigradedUnblockedHomologyPiece R g ≃ₗ[R] G'.bigradedUnblockedHomologyPiece R g :=
-  e.ofSubmodules _ _ (by
-    ext y
-    rw [Submodule.mem_map_equiv]
-    have h := G.mem_bigradedUnblockedHomologyPiece_iff_of_linearEquiv R G' e he g (e.symm y)
-    rw [LinearEquiv.apply_symm_apply] at h
-    exact h.symm)
+  (G.isHomogeneous_of_mem_bigradedUnblockedHomologyPiece R G' e he).pieceEquiv g
 
 /-- On underlying homology classes, `bigradedUnblockedHomologyPieceEquivOfMem` agrees with the
 ambient linear equivalence. -/
@@ -279,7 +274,7 @@ theorem coe_bigradedUnblockedHomologyPieceEquivOfMem
     (g : ℤ × ℤ) (y : G.bigradedUnblockedHomologyPiece R g) :
     (G.bigradedUnblockedHomologyPieceEquivOfMem R G' e he g y : G'.val.unblockedHomology R) =
       e y :=
-  LinearEquiv.ofSubmodules_apply _ _ _
+  (G.isHomogeneous_of_mem_bigradedUnblockedHomologyPiece R G' e he).coe_pieceEquiv_apply g y
 
 /-- On underlying homology classes, `(bigradedUnblockedHomologyPieceEquivOfMem).symm` agrees with
 `e.symm`. -/
@@ -292,7 +287,7 @@ theorem coe_bigradedUnblockedHomologyPieceEquivOfMem_symm
     (g : ℤ × ℤ) (y : G'.bigradedUnblockedHomologyPiece R g) :
     ((G.bigradedUnblockedHomologyPieceEquivOfMem R G' e he g).symm y :
         G.val.unblockedHomology R) = e.symm y :=
-  LinearEquiv.ofSubmodules_symm_apply _ _ _
+  (G.isHomogeneous_of_mem_bigradedUnblockedHomologyPiece R G' e he).coe_pieceEquiv_symm_apply g y
 
 /-- A semilinear equivalence between unblocked grid homologies along a ring homomorphism commuting
 with `algebraMap R` that preserves every Maslov--Alexander piece also reflects every piece. -/
