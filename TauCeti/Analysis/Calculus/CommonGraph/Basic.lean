@@ -50,9 +50,9 @@ variable {E F : Type*}
 The vertical component of `f` on `V` is the height `u` evaluated at the horizontal component. -/
 structure IsGraphPresentation (f : F → WithLp 2 (E × ℝ)) (V : Set F) (D : Set E)
     (u : E → ℝ) : Prop where
-  injOn : InjOn (fun x ↦ (WithLp.ofLp (f x)).1) V
-  image_eq : (fun x ↦ (WithLp.ofLp (f x)).1) '' V = D
-  snd_eq : ∀ x ∈ V, (WithLp.ofLp (f x)).2 = u (WithLp.ofLp (f x)).1
+  injOn : InjOn (fun x ↦ (f x).fst) V
+  image_eq : (fun x ↦ (f x).fst) '' V = D
+  snd_eq : ∀ x ∈ V, (f x).snd = u (f x).fst
 
 namespace IsGraphPresentation
 
@@ -61,31 +61,40 @@ variable {f : F → WithLp 2 (E × ℝ)} {V : Set F} {D : Set E} {u : E → ℝ}
 /-- A graph presentation writes each point of `V` as the graph point of its horizontal
 component. -/
 theorem eq_toLp (h : IsGraphPresentation f V D u) {x : F} (hx : x ∈ V) :
-    f x = WithLp.toLp 2 ((WithLp.ofLp (f x)).1, u (WithLp.ofLp (f x)).1) := by
-  rw [← h.snd_eq x hx, Prod.mk.eta, WithLp.toLp_ofLp]
+    f x = WithLp.toLp 2 ((f x).fst, u (f x).fst) := by
+  rw [← h.snd_eq x hx, ← WithLp.ofLp_fst, ← WithLp.ofLp_snd,
+    Prod.mk.eta, WithLp.toLp_ofLp]
 
 /-- Every graph point over `D` is attained in `V`. -/
 theorem exists_eq_toLp (h : IsGraphPresentation f V D u) {y : E} (hy : y ∈ D) :
-    ∃ x ∈ V, (WithLp.ofLp (f x)).1 = y ∧ f x = WithLp.toLp 2 (y, u y) := by
+    ∃ x ∈ V, (f x).fst = y ∧ f x = WithLp.toLp 2 (y, u y) := by
   rw [← h.image_eq] at hy
   obtain ⟨x, hx, rfl⟩ := hy
   exact ⟨x, hx, rfl, h.eq_toLp hx⟩
 
+/-- A property holding on a parametrized surface holds at every point of its graph. -/
+theorem forall_graph_of_forall {P : WithLp 2 (E × ℝ) → Prop}
+    (h : IsGraphPresentation f V D u) (hP : ∀ x ∈ V, P (f x)) :
+    ∀ y ∈ D, P (WithLp.toLp 2 (y, u y)) := by
+  intro y hy
+  obtain ⟨x, hx, -, hfx⟩ := h.exists_eq_toLp hy
+  exact hfx ▸ hP x hx
+
 /-- A graph presentation restricts to every subset of its base. -/
 theorem restrict (h : IsGraphPresentation f V D u) {D' : Set E} (hD' : D' ⊆ D) :
-    IsGraphPresentation f (V ∩ (fun x ↦ (WithLp.ofLp (f x)).1) ⁻¹' D') D' u where
+    IsGraphPresentation f (V ∩ (fun x ↦ (f x).fst) ⁻¹' D') D' u where
   injOn := h.injOn.mono inter_subset_left
   image_eq := by rw [image_inter_preimage, h.image_eq, inter_eq_right.mpr hD']
   snd_eq x hx := h.snd_eq x hx.1
 
 /-- The horizontal component of a graph presentation maps `V` into `D`. -/
 theorem mapsTo (h : IsGraphPresentation f V D u) :
-    MapsTo (fun x ↦ (WithLp.ofLp (f x)).1) V D := fun _ hx ↦
+    MapsTo (fun x ↦ (f x).fst) V D := fun _ hx ↦
   h.image_eq ▸ mem_image_of_mem _ hx
 
 /-- The horizontal component of a graph presentation is a bijection from `V` onto `D`. -/
 theorem bijOn (h : IsGraphPresentation f V D u) :
-    BijOn (fun x ↦ (WithLp.ofLp (f x)).1) V D :=
+    BijOn (fun x ↦ (f x).fst) V D :=
   ⟨h.mapsTo, h.injOn, h.image_eq ▸ surjOn_image _ _⟩
 
 /-- A graph presentation maps `V` onto the graph of `u` over `D`. -/
@@ -108,7 +117,7 @@ theorem eqOn {u' : E → ℝ} (h : IsGraphPresentation f V D u)
 /-- A graph presentation restricts to every subset of its parameter domain, over the image of
 that subset. -/
 theorem mono (h : IsGraphPresentation f V D u) {V' : Set F} (hV' : V' ⊆ V) :
-    IsGraphPresentation f V' ((fun x ↦ (WithLp.ofLp (f x)).1) '' V') u where
+    IsGraphPresentation f V' ((fun x ↦ (f x).fst) '' V') u where
   injOn := h.injOn.mono hV'
   image_eq := rfl
   snd_eq x hx := h.snd_eq x (hV' hx)
@@ -131,12 +140,12 @@ bijectively onto the graph of a height `u`, `Cᵏ` on the open image `D` of `V` 
 theorem exists_isGraphPresentation [CompleteSpace E] [CompleteSpace F]
     {f : F → WithLp 2 (E × ℝ)} {U : Set F} {a : F} {k : WithTop ℕ∞} (hk : k ≠ 0)
     (hU : IsOpen U) (ha : a ∈ U) (hf : ContDiffOn ℝ k f U)
-    (hbij : Bijective fun v ↦ (WithLp.ofLp (fderiv ℝ f a v)).1) :
+    (hbij : Bijective fun v ↦ (fderiv ℝ f a v).fst) :
     ∃ V ⊆ U, IsOpen V ∧ a ∈ V ∧ ∃ D : Set E, IsOpen D ∧ ∃ u : E → ℝ,
       ContDiffOn ℝ k u D ∧ IsGraphPresentation f V D u := by
   let π := WithLp.fstL 2 ℝ E ℝ
   let ν := WithLp.sndL 2 ℝ E ℝ
-  let g := π ∘ f
+  let g := fun x ↦ (f x).fst
   have hg : ContDiffOn ℝ k g U := π.contDiff.comp_contDiffOn hf
   have hfd {x : F} (hx : x ∈ U) : HasFDerivAt g (π.comp (fderiv ℝ f x)) x :=
     π.hasFDerivAt.comp x ((hf.contDiffAt (hU.mem_nhds hx)).differentiableAt hk).hasFDerivAt
@@ -151,12 +160,10 @@ theorem exists_isGraphPresentation [CompleteSpace E] [CompleteSpace F]
   refine ⟨φ.source, hφU, φ.open_source, haφ, φ.target, φ.open_target,
     fun y ↦ ν (f (φ.symm y)), ?_, ⟨?_, ?_, fun x hx ↦ ?_⟩⟩
   · exact (ν.contDiff.comp_contDiffOn hf).comp hφc (φ.mapsTo_symm.mono_right hφU)
-  · intro x hx y hy hxy
-    apply φ.injOn hx hy
-    simpa [hφ, g, π] using hxy
-  · simpa [hφ, g, π] using φ.image_source_eq_target
-  · have hgx : (f x).fst = φ x := by simp [hφ, g, π]
-    simp [hgx, φ.left_inv hx, ν]
+  · simpa only [hφ] using φ.injOn
+  · simpa only [hφ] using φ.image_source_eq_target
+  · have hgx : (f x).fst = φ x := congrFun hφ.symm x
+    simp only [hgx, φ.left_inv hx, ν, WithLp.sndL_apply]
 
 /-- **One-sidedness gives ordered heights.** Let `ρ` be strictly differentiable at
 `(x₀, t₀)`, with derivative positive on the vertical direction. If the graph of `u₂` lies in
@@ -217,12 +224,12 @@ theorem exists_common_isGraphPresentation_le [CompleteSpace E] [CompleteSpace F]
     {a₁ : F} {a₂ : F₂}
     {k : WithTop ℕ∞} (hk : k ≠ 0) (hU₁ : IsOpen U₁) (hU₂ : IsOpen U₂) (ha₁ : a₁ ∈ U₁)
     (ha₂ : a₂ ∈ U₂) (hf₁ : ContDiffOn ℝ k f₁ U₁) (hf₂ : ContDiffOn ℝ k f₂ U₂)
-    (hbij₁ : Bijective fun v ↦ (WithLp.ofLp (fderiv ℝ f₁ a₁ v)).1)
-    (hbij₂ : Bijective fun v ↦ (WithLp.ofLp (fderiv ℝ f₂ a₂ v)).1) (hp : f₁ a₁ = f₂ a₂)
+    (hbij₁ : Bijective fun v ↦ (fderiv ℝ f₁ a₁ v).fst)
+    (hbij₂ : Bijective fun v ↦ (fderiv ℝ f₂ a₂ v).fst) (hp : f₁ a₁ = f₂ a₂)
     {ρ : WithLp 2 (E × ℝ) → ℝ} {ρ' : WithLp 2 (E × ℝ) →L[ℝ] ℝ}
     (hρ : HasStrictFDerivAt ρ ρ' (f₁ a₁)) (hρv : 0 < ρ' (WithLp.toLp 2 (0, 1)))
     (hρ₁ : ∀ x ∈ U₁, ρ (f₁ x) ≤ 0) (hρ₂ : ∀ x ∈ U₂, 0 ≤ ρ (f₂ x)) :
-    ∃ D : Set E, IsOpen D ∧ (WithLp.ofLp (f₁ a₁)).1 ∈ D ∧
+    ∃ D : Set E, IsOpen D ∧ (f₁ a₁).fst ∈ D ∧
       ∃ V₁ ⊆ U₁, IsOpen V₁ ∧ a₁ ∈ V₁ ∧ ∃ V₂ ⊆ U₂, IsOpen V₂ ∧ a₂ ∈ V₂ ∧
       ∃ u₁ u₂ : E → ℝ, ContDiffOn ℝ k u₁ D ∧ ContDiffOn ℝ k u₂ D ∧
         IsGraphPresentation f₁ V₁ D u₁ ∧ IsGraphPresentation f₂ V₂ D u₂ ∧
@@ -231,9 +238,9 @@ theorem exists_common_isGraphPresentation_le [CompleteSpace E] [CompleteSpace F]
     exists_isGraphPresentation hk hU₁ ha₁ hf₁ hbij₁
   obtain ⟨V₂, hV₂U, hV₂, haV₂, D₂, hD₂, u₂, hu₂, hG₂⟩ :=
     exists_isGraphPresentation hk hU₂ ha₂ hf₂ hbij₂
-  set x₀ : E := (WithLp.ofLp (f₁ a₁)).1 with hx₀
-  set t₀ : ℝ := (WithLp.ofLp (f₁ a₁)).2 with ht₀
-  have hx₀₂ : (WithLp.ofLp (f₂ a₂)).1 = x₀ := by rw [hx₀, hp]
+  set x₀ : E := (f₁ a₁).fst with hx₀
+  set t₀ : ℝ := (f₁ a₁).snd with ht₀
+  have hx₀₂ : (f₂ a₂).fst = x₀ := by rw [hx₀, hp]
   have hx₀D₁ : x₀ ∈ D₁ := hG₁.mapsTo haV₁
   have hx₀D₂ : x₀ ∈ D₂ := hx₀₂ ▸ hG₂.mapsTo haV₂
   have hu₁₀ : u₁ x₀ = t₀ := (hG₁.snd_eq a₁ haV₁).symm
@@ -241,16 +248,13 @@ theorem exists_common_isGraphPresentation_le [CompleteSpace E] [CompleteSpace F]
     rw [← hx₀₂, ← hG₂.snd_eq a₂ haV₂, ht₀, hp]
   have hD : IsOpen (D₁ ∩ D₂) := hD₁.inter hD₂
   have hx₀D : x₀ ∈ D₁ ∩ D₂ := ⟨hx₀D₁, hx₀D₂⟩
-  have hρ₁' : ∀ y ∈ D₁, ρ (WithLp.toLp 2 (y, u₁ y)) ≤ 0 := by
-    intro y hy
-    obtain ⟨x, hx, -, hfx⟩ := hG₁.exists_eq_toLp hy
-    exact hfx ▸ hρ₁ x (hV₁U hx)
-  have hρ₂' : ∀ y ∈ D₂, 0 ≤ ρ (WithLp.toLp 2 (y, u₂ y)) := by
-    intro y hy
-    obtain ⟨x, hx, -, hfx⟩ := hG₂.exists_eq_toLp hy
-    exact hfx ▸ hρ₂ x (hV₂U hx)
+  have hρ₁' := hG₁.forall_graph_of_forall (P := fun z ↦ ρ z ≤ 0)
+    (fun x hx ↦ hρ₁ x (hV₁U hx))
+  have hρ₂' := hG₂.forall_graph_of_forall (P := fun z ↦ 0 ≤ ρ z)
+    (fun x hx ↦ hρ₂ x (hV₂U hx))
   have hρp : HasStrictFDerivAt ρ ρ' (WithLp.toLp 2 (x₀, t₀)) := by
-    rwa [hx₀, ht₀, Prod.mk.eta, WithLp.toLp_ofLp]
+    simpa only [WithLp.ofLp_fst, WithLp.ofLp_snd] using
+      (WithLp.toLp_ofLp 2 (f₁ a₁)) ▸ hρ
   have hle := eventually_le_of_hasStrictFDerivAt hρp hρv
     ((hu₁.continuousOn.continuousAt (hD₁.mem_nhds hx₀D₁)))
     ((hu₂.continuousOn.continuousAt (hD₂.mem_nhds hx₀D₂))) hu₁₀ hu₂₀
@@ -258,15 +262,14 @@ theorem exists_common_isGraphPresentation_le [CompleteSpace E] [CompleteSpace F]
   obtain ⟨O, hOle, hO, hx₀O⟩ := eventually_nhds_iff.mp hle
   let D := (D₁ ∩ D₂) ∩ O
   have hDo : IsOpen D := hD.inter hO
-  have hcont₁ : ContinuousOn (fun x ↦ (WithLp.ofLp (f₁ x)).1) V₁ :=
-    (WithLp.fstL 2 ℝ E ℝ).continuous.comp_continuousOn (hf₁.continuousOn.mono hV₁U)
-  have hcont₂ : ContinuousOn (fun x ↦ (WithLp.ofLp (f₂ x)).1) V₂ :=
-    (WithLp.fstL 2 ℝ E ℝ).continuous.comp_continuousOn (hf₂.continuousOn.mono hV₂U)
   refine ⟨D, hDo, ⟨hx₀D, hx₀O⟩,
-    V₁ ∩ (fun x ↦ (WithLp.ofLp (f₁ x)).1) ⁻¹' D, fun x hx ↦ hV₁U hx.1,
-    hcont₁.isOpen_inter_preimage hV₁ hDo, ⟨haV₁, hx₀D, hx₀O⟩,
-    V₂ ∩ (fun x ↦ (WithLp.ofLp (f₂ x)).1) ⁻¹' D, fun x hx ↦ hV₂U hx.1,
-    hcont₂.isOpen_inter_preimage hV₂ hDo, ⟨haV₂, by rw [mem_preimage, hx₀₂]; exact ⟨hx₀D, hx₀O⟩⟩,
+    V₁ ∩ (fun x ↦ (f₁ x).fst) ⁻¹' D, fun x hx ↦ hV₁U hx.1,
+    ((WithLp.continuous_fst 2 E ℝ).comp_continuousOn
+      (hf₁.continuousOn.mono hV₁U)).isOpen_inter_preimage hV₁ hDo, ⟨haV₁, hx₀D, hx₀O⟩,
+    V₂ ∩ (fun x ↦ (f₂ x).fst) ⁻¹' D, fun x hx ↦ hV₂U hx.1,
+    ((WithLp.continuous_fst 2 E ℝ).comp_continuousOn
+      (hf₂.continuousOn.mono hV₂U)).isOpen_inter_preimage hV₂ hDo,
+    ⟨haV₂, by rw [mem_preimage, hx₀₂]; exact ⟨hx₀D, hx₀O⟩⟩,
     u₁, u₂, hu₁.mono fun y hy ↦ hy.1.1, hu₂.mono fun y hy ↦ hy.1.2,
     hG₁.restrict fun y hy ↦ hy.1.1, hG₂.restrict fun y hy ↦ hy.1.2,
     fun y hy ↦ hOle y hy.2⟩
