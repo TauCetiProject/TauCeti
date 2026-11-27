@@ -39,7 +39,7 @@ preserve `Θ` (`TauCeti.AppellHumbertData.twistedTranslateEnd`). This file prove
   `LinearMap.BilinForm.dualSubmodule_flip_dualSubmodule_of_isZLattice` for the Riemann form;
 * the restrictions of the `U_a`, `a ∈ L^⊥`, span `End_ℂ (Θ)`, and those attached to representatives
   of `L^⊥ / L` are linearly independent
-  (`TauCeti.AppellHumbertData.IsPositive.span_range_twistedTranslateEnd`,
+  (`TauCeti.AppellHumbertData.IsPositive.span_range_twistedTranslateEnd_eq_top`,
   `TauCeti.AppellHumbertData.IsPositive.linearIndependent_twistedTranslateEnd_out`);
 * **Frobenius' dimension formula** `(dim Θ)² = [L^⊥ : L]`
   (`TauCeti.AppellHumbertData.IsPositive.finrank_thetaSpace_sq`);
@@ -319,7 +319,8 @@ private theorem IsPositive.eq_zero_of_forall_torusMean_eq_zero (hD : D.IsPositiv
       simp only [a, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, hE,
         mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true, Pi.neg_apply]
     have h_char (φ : Free.ChooseBasisIndex ℤ L → ℝ) :=
-      D.exp_riemannForm_equivFun_symm_eq_mFourier (latticeBasis L) hn φ
+      UnitAddTorus.exp_two_pi_I_mul_equivFun_symm_eq_mFourier (latticeBasis L) (D.riemannForm a)
+        hn φ
     have := h a ha
     simp only [torusMean, h_char] at this
     exact this
@@ -479,12 +480,6 @@ section Dimension
 
 variable [FiniteDimensional ℂ V] [DiscreteTopology L] [IsZLattice ℝ L]
 
-omit [NormedSpace ℂ V] [FiniteDimensional ℂ V] [DiscreteTopology L] [IsZLattice ℝ L] in
-private theorem mem_submoduleOf_toAddSubgroup {N : Submodule ℤ V} (x : N) :
-    x ∈ (L.submoduleOf N).toAddSubgroup ↔ (x : V) ∈ L := by
-  rw [Submodule.mem_toAddSubgroup, Submodule.submoduleOf, Submodule.mem_comap,
-    Submodule.subtype_apply]
-
 variable (D) in
 /-- The quotient `L^⊥ / L` of the dual of `L` for the Riemann form by `L`. -/
 abbrev DualQuotient : Type _ :=
@@ -583,7 +578,7 @@ theorem IsPositive.linearIndependent_twistedTranslateEnd_out (hD : D.IsPositive)
         hk'']
       ring
     refine Quotient.out_equiv_out.mp (QuotientAddGroup.leftRel_apply.mpr
-      ((mem_submoduleOf_toAddSubgroup _).mpr ?_))
+      ((Submodule.mem_submoduleOf_toAddSubgroup _).mpr ?_))
     simpa [neg_add_eq_sub] using h_mem
   have h_eigen (q : D.DualQuotient) (y : D.riemannForm.dualSubmodule L) :
       D.twistedTranslateEnd (-y) * D.twistedTranslateEnd q.out * D.twistedTranslateEnd y =
@@ -627,7 +622,7 @@ theorem IsPositive.relIndex_eq_finrank_end (hD : D.IsPositive) :
 
 /-- **The translations span the endomorphisms.** For a positive datum, the twisted translations
 by the dual lattice span the endomorphisms of the space of theta functions. -/
-theorem IsPositive.span_range_twistedTranslateEnd (hD : D.IsPositive) :
+theorem IsPositive.span_range_twistedTranslateEnd_eq_top (hD : D.IsPositive) :
     Submodule.span ℂ (range D.twistedTranslateEnd) = ⊤ := by
   have := finite_dualQuotient hD.nondegenerate
   have := hD.finiteDimensional_thetaSpace
@@ -668,7 +663,7 @@ theorem IsPositive.thetaSpace_le_of_twistedTranslate_mem (hD : D.IsPositive) {f 
   have hW (B : Module.End ℂ D.thetaSpace) : B ∈ W ↔ ((B ⟨f, hf⟩ : D.thetaSpace) : V → ℂ) ∈ S := by
     rw [Submodule.mem_comap, LinearMap.applyₗ_apply_apply, Submodule.submoduleOf,
       Submodule.mem_comap, Submodule.subtype_apply]
-  have hA_mem : A ∈ W := Submodule.mem_span.mp (hD.span_range_twistedTranslateEnd.ge
+  have hA_mem : A ∈ W := Submodule.mem_span.mp (hD.span_range_twistedTranslateEnd_eq_top.ge
     Submodule.mem_top) W (range_subset_iff.mpr fun a ↦ (hW _).mpr (by
       rw [coe_twistedTranslateEnd_apply]
       exact hS a a.property))
@@ -682,7 +677,7 @@ theorem IsPositive.exists_eq_smul_one_of_commute (hD : D.IsPositive)
     ∃ c : ℂ, T = c • 1 := by
   have central (A : Module.End ℂ D.thetaSpace) : Commute A T :=
     Commute.span_left (forall_mem_range.mpr hT) A
-      (hD.span_range_twistedTranslateEnd.ge Submodule.mem_top)
+      (hD.span_range_twistedTranslateEnd_eq_top.ge Submodule.mem_top)
   exact (Algebra.IsCentral.mem_center_iff ℂ).mp
     (Subalgebra.mem_center_iff.mpr fun A ↦ (central A).eq)
 

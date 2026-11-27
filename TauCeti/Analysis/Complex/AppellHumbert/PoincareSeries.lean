@@ -11,8 +11,8 @@ public import Mathlib.Analysis.Fourier.AddCircleMulti
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Complex.UniformLimit
-import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Fourier.Torus.FourierCoeff
+import TauCeti.Analysis.Fourier.Torus.Periodic
 
 /-!
 # Positive Appell–Humbert data have nonzero theta functions
@@ -37,8 +37,6 @@ constant coefficient is `1`; so it is not identically zero.
 
 ## Main declarations
 
-* `TauCeti.AppellHumbertData.exp_riemannForm_equivFun_symm_eq_mFourier`: in the coordinates of a
-  basis, a character `exp (2πi E (a, ·))` with integral pairings is a Fourier monomial.
 * `TauCeti.AppellHumbertData.poincareSeries`: the Poincaré series `P_ξ`.
 * `TauCeti.AppellHumbertData.poincareSeries_mem_thetaSpace`: `P_ξ` is a theta function.
 * `TauCeti.AppellHumbertData.IsPositive.exists_mem_thetaSpace_ne_zero`: a positive datum has a
@@ -74,21 +72,6 @@ namespace TauCeti.AppellHumbertData
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] {L : Submodule ℤ V}
   (D : AppellHumbertData L)
 
-/-! ### Characters in coordinates -/
-
-/-- In the coordinates `φ` of a real basis `b` of `V`, the character `exp (2πi E (a, ·))` of a
-vector `a` whose pairings `E (a, b i) = n i` with the basis vectors are integers is the Fourier
-monomial `mFourier n` of the torus, at the image of `φ`. -/
-theorem exp_riemannForm_equivFun_symm_eq_mFourier {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι ℝ V) {a : V} {n : ι → ℤ} (hn : ∀ i, D.riemannForm a (b i) = n i)
-    (φ : ι → ℝ) :
-    exp (2 * π * I * D.riemannForm a (b.equivFun.symm φ)) =
-      UnitAddTorus.mFourier n (fun i ↦ (φ i : UnitAddCircle)) := by
-  rw [UnitAddTorus.mFourier_coe_apply, Module.Basis.equivFun_symm_apply, map_sum]
-  simp only [map_smul, smul_eq_mul, hn]
-  push_cast
-  exact congrArg (fun t ↦ exp (2 * π * I * t)) (Finset.sum_congr rfl fun i _ ↦ mul_comm _ _)
-
 /-! ### Poincaré series -/
 
 /-- The **Poincaré series** `P_ξ (y) = ∑_{l ∈ L} e_l (y)⁻¹ exp (B₁ (y + l, y + l) / 2 + ξ (y + l))`
@@ -97,6 +80,12 @@ the complex bilinear part of `B`. For a positive datum it converges and is a the
 (`TauCeti.AppellHumbertData.poincareSeries_mem_thetaSpace`). -/
 noncomputable def poincareSeries (ξ : V →L[ℂ] ℂ) (y : V) : ℂ :=
   ∑' l : L, (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l))
+
+/-- The Poincaré series as its sum. -/
+theorem poincareSeries_def (ξ : V →L[ℂ] ℂ) (y : V) :
+    D.poincareSeries ξ y =
+      ∑' l : L, (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l)) :=
+  (rfl)
 
 /-- The terms of the Poincaré series, rearranged: the exponent is
 `B₁ (y, y) / 2 + ξ y - (B - B₁) (l, y) - (B - B₁) (l, l) / 2 + ξ l`. -/
@@ -182,7 +171,7 @@ theorem poincareSeries_hermitianPart (y : V) :
       exp (D.symmetricPart y y / 2 + D.hermitianPart y y) *
         ∑' l : L, (D.semichar l : ℂ)⁻¹ * exp (-(D.hermitianPart l l / 2)) *
           exp (2 * π * I * D.riemannForm l y) := by
-  rw [poincareSeries, ← tsum_mul_left]
+  rw [poincareSeries_def, ← tsum_mul_left]
   refine tsum_congr fun l ↦ ?_
   rw [factor_inv_mul_exp_eq, ← mul_assoc, mul_comm (exp _), mul_assoc, mul_assoc, ← exp_add,
     ← exp_add]
@@ -223,7 +212,7 @@ theorem IsPositive.poincareSeries_mem_thetaSpace (hD : D.IsPositive) (ξ : V →
             exp (D.symmetricPart (y + ↑(l + m)) (y + ↑(l + m)) / 2 + ξ (y + ↑(l + m)))) := by
       rw [D.factor_cocycle l m y, Submodule.coe_add, add_comm (l : V) m, ← add_assoc]
       field_simp [D.factor_ne_zero]
-    simp only [poincareSeries, h, tsum_mul_left]
+    simp only [poincareSeries_def, h, tsum_mul_left]
     congr 1
     exact (Equiv.addRight m).tsum_eq fun l ↦
       (D.factor l y)⁻¹ * exp (D.symmetricPart (y + l) (y + l) / 2 + ξ (y + l))
@@ -240,11 +229,11 @@ private theorem IsPositive.summable_norm_semichar_inv_mul_exp (hD : D.IsPositive
   exact Real.exp_le_exp.mpr (by nlinarith [hle l, Real.pi_pos])
 
 /-- **A positive datum has a nonzero theta function.** If the Riemann form of `D` is positive, some
-theta function of `D` does not vanish identically. The Poincaré series `P_ξ` at
-`ξ = (B - B₁) (y, ·)` does not vanish at some `y`, since on the diagonal it is a Fourier series on
-the torus `V ⧸ L` with constant coefficient `1`. -/
+theta function of `D` does not vanish identically. -/
 theorem IsPositive.exists_mem_thetaSpace_ne_zero [IsZLattice ℝ L] (hD : D.IsPositive) :
     ∃ f ∈ D.thetaSpace, f ≠ 0 := by
+  -- The Poincaré series `P_ξ` at `ξ = (B - B₁) (y, ·)` is, on the diagonal, a Fourier series on
+  -- the torus `V ⧸ L` with constant coefficient `1`, so it does not vanish at some `y`.
   -- It suffices that `P_ξ (y) ≠ 0` for some `y`, with `ξ = (B - B₁) (y, ·)`.
   suffices ∃ y : V, D.poincareSeries (D.hermitianPart y) y ≠ 0 by
     obtain ⟨y, hy⟩ := this
@@ -262,7 +251,7 @@ theorem IsPositive.exists_mem_thetaSpace_ne_zero [IsZLattice ℝ L] (hD : D.IsPo
     simpa [bR] using D.exists_riemannForm_eq_intCast l (b i)
   choose n hn using h_int
   have h_char (l : L) (φ : Module.Free.ChooseBasisIndex ℤ L → ℝ) :=
-    D.exp_riemannForm_equivFun_symm_eq_mFourier bR (hn l) φ
+    UnitAddTorus.exp_two_pi_I_mul_equivFun_symm_eq_mFourier bR (D.riemannForm l) (hn l) φ
   have hn_inj : Function.Injective n := by
     intro l l' h
     have h_zero : ∀ i, D.riemannForm ((l : V) - l') (bR i) = 0 := fun i ↦ by

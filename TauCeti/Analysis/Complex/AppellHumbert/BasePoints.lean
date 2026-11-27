@@ -17,7 +17,9 @@ import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 Let `D = (B, χ)` be an Appell–Humbert datum for a full lattice `L` in a finite-dimensional complex
 normed space `V`, with Riemann form `E` (`TauCeti.AppellHumbertData`). If `E` is positive, then for
 every `n ≥ 2` the theta functions of the multiple `n D = (n B, χⁿ)` have no common zero
-(`TauCeti.AppellHumbertData.IsPositive.exists_mem_thetaSpace_nsmul_apply_ne_zero`). Write
+(`TauCeti.AppellHumbertData.IsPositive.exists_mem_thetaSpace_nsmul_apply_ne_zero`); this only
+uses that `D` has a nonzero theta function
+(`TauCeti.AppellHumbertData.exists_mem_thetaSpace_nsmul_apply_ne_zero`). Write
 `n = m + 1` and take a nonzero theta function `f` of `D`. For every `a ∈ V` the product of the
 twisted translates of `f ^ m` by `a` and of `f` by `-m a` is a theta function of `n D`: the twists
 of the semicharacters, `exp (± 2πi m E (a, ·))`, cancel. At a common zero `z` this product is a
@@ -61,15 +63,14 @@ private theorem riemannChar_nsmul_mul_riemannChar_neg (m : ℕ) (a : V) :
   rw [mul_apply, riemannChar_apply, riemannChar_apply, ← Circle.exp_add, ← mul_add, h0, mul_zero,
     Circle.exp_zero, one_apply]
 
-/-- **Multiples without base points.** For an Appell–Humbert datum `D` with positive Riemann form
-and `n ≥ 2`, the theta functions of `n D` have no common zero: for every `z` some theta function of
-`n D` does not vanish at `z`. -/
-theorem IsPositive.exists_mem_thetaSpace_nsmul_apply_ne_zero [FiniteDimensional ℂ V]
-    [DiscreteTopology L] [IsZLattice ℝ L] (hD : D.IsPositive) {n : ℕ} (hn : 2 ≤ n) (z : V) :
-    ∃ f ∈ (n • D).thetaSpace, f z ≠ 0 := by
+/-- **Multiples without base points.** If an Appell–Humbert datum `D` has a nonzero theta function
+`f` and `n ≥ 2`, the theta functions of `n D` have no common zero: for every `z` some theta function
+of `n D` does not vanish at `z`. -/
+theorem exists_mem_thetaSpace_nsmul_apply_ne_zero [FiniteDimensional ℂ V] {f : V → ℂ}
+    (hf : f ∈ D.thetaSpace) (hf_ne : f ≠ 0) {n : ℕ} (hn : 2 ≤ n) (z : V) :
+    ∃ g ∈ (n • D).thetaSpace, g z ≠ 0 := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
   have hm : m ≠ 0 := by omega
-  obtain ⟨f, hf, hf_ne⟩ := hD.exists_mem_thetaSpace_ne_zero
   have hf_diff := differentiable_of_mem_thetaSpace hf
   by_contra! h_zero
   -- For each `a`, the product of the translates of `f ^ m` by `a` and of `f` by `-m a`.
@@ -114,5 +115,14 @@ theorem IsPositive.exists_mem_thetaSpace_nsmul_apply_ne_zero [FiniteDimensional 
   have := congrFun h_right ((m : ℂ)⁻¹ • (z - w))
   simp only [F₂, smul_smul, mul_inv_cancel₀ hm', one_smul, sub_sub_cancel, Pi.zero_apply] at this
   exact hw' this
+
+/-- **Multiples without base points.** For an Appell–Humbert datum `D` with positive Riemann form
+and `n ≥ 2`, the theta functions of `n D` have no common zero: for every `z` some theta function of
+`n D` does not vanish at `z`. -/
+theorem IsPositive.exists_mem_thetaSpace_nsmul_apply_ne_zero [FiniteDimensional ℂ V]
+    [DiscreteTopology L] [IsZLattice ℝ L] (hD : D.IsPositive) {n : ℕ} (hn : 2 ≤ n) (z : V) :
+    ∃ f ∈ (n • D).thetaSpace, f z ≠ 0 :=
+  let ⟨_, hf, hf_ne⟩ := hD.exists_mem_thetaSpace_ne_zero
+  AppellHumbertData.exists_mem_thetaSpace_nsmul_apply_ne_zero hf hf_ne hn z
 
 end TauCeti.AppellHumbertData
