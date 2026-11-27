@@ -164,10 +164,9 @@ private theorem zero_fin_isRepresentedBy_presentedForm :
         ((hyperbolicPlane K).prod (presentedForm q)) :=
       hline_rep.prod (ih q hq_loc)
     have hzero_split : (0 : _root_.QuadraticForm K (Fin (k + 1) → K)).Equivalent
-        ((0 : _root_.QuadraticForm K K).prod (0 : _root_.QuadraticForm K (Fin k → K))) :=
-      (zero_equivalent_zero_of_finrank_eq (by simp [Module.finrank_prod]; omega)).trans <|
-        ⟨{ toLinearEquiv := LinearEquiv.refl K (K × (Fin k → K))
-           map_app' := fun _ => by simp }⟩
+        ((0 : _root_.QuadraticForm K K).prod (0 : _root_.QuadraticForm K (Fin k → K))) := by
+      rw [zero_prod_zero]
+      exact zero_equivalent_zero_of_finrank_eq (by simp [Module.finrank_prod]; omega)
     exact (hzero_split.isRepresentedBy_congr hq).mpr hprod_rep
 
 /-- A zero form locally represented by `0_Z ⊥ T` (with `T` regular) is globally represented by
@@ -202,10 +201,9 @@ private theorem zero_isRepresentedBy_zero_prod_of_locallyRepresents
     have hT_rep : (0 : _root_.QuadraticForm K (Fin k → K)).IsRepresentedBy T :=
       (zero_fin_isRepresentedBy_presentedForm k p hp_loc).trans hp.symm.isRepresentedBy
     have hsplit : (0 : _root_.QuadraticForm K U).Equivalent
-        ((0 : _root_.QuadraticForm K Z).prod (0 : _root_.QuadraticForm K (Fin k → K))) :=
-      (zero_equivalent_zero_of_finrank_eq (by simp [Module.finrank_prod]; omega)).trans <|
-        ⟨{ toLinearEquiv := LinearEquiv.refl K (Z × (Fin k → K))
-           map_app' := fun _ => by simp }⟩
+        ((0 : _root_.QuadraticForm K Z).prod (0 : _root_.QuadraticForm K (Fin k → K))) := by
+      rw [zero_prod_zero]
+      exact zero_equivalent_zero_of_finrank_eq (by simp [Module.finrank_prod]; omega)
     exact hsplit.isRepresentedBy.trans ((IsRepresentedBy.refl _).prod hT_rep)
 
 /-- **Hasse–Minkowski theorem for representation of forms** (O'Meara 66:3): a quadratic form over a

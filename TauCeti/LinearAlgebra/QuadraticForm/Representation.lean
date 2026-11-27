@@ -91,9 +91,9 @@ theorem IsRepresentedBy.prod
     (Q₁.prod Q₂).IsRepresentedBy (Q₁'.prod Q₂') := by
   obtain ⟨f₁, hf₁⟩ := h₁
   obtain ⟨f₂, hf₂⟩ := h₂
-  refine ⟨f₁.prodMap f₂, fun x y hxy ↦ ?_⟩
-  exact Prod.ext (hf₁ (by simpa using congrArg Prod.fst hxy))
-    (hf₂ (by simpa using congrArg Prod.snd hxy))
+  exact ⟨f₁.prodMap f₂, by
+    simpa only [Function.Injective, Isometry.prodMap_apply, Prod.map] using
+      hf₁.prodMap hf₂⟩
 
 /-- Every quadratic map is represented by itself. -/
 @[refl]
@@ -347,16 +347,11 @@ theorem IsRepresentedBy.exists_equivalent_prod [Invertible (2 : K)]
     (hQ₁ : Q₁.Nondegenerate) (hQ : Q.Nondegenerate) :
     ∃ P : Submodule K V, (Q.restrict P).Nondegenerate ∧ Q.Equivalent (Q₁.prod (Q.restrict P)) := by
   obtain ⟨f, hf⟩ := h
-  obtain ⟨e⟩ := f.equivalent_prod_orthogonal_range hf hQ₁
-  have hprod := e.symm.nondegenerate_iff.mpr hQ
-  refine ⟨_, ?_, ⟨e⟩⟩
-  rw [nondegenerate_iff_radical_eq_bot, eq_bot_iff]
-  intro x hx
-  have hx' : ((0 : V₁), x) ∈ (Q₁.prod (Q.restrict _)).radical := by
-    rw [radical_prod]
-    exact ⟨Submodule.zero_mem _, hx⟩
-  rw [hprod.radical_eq_bot] at hx'
-  exact (Prod.mk_eq_zero.mp hx').2
+  let e : Q₁.IsometryEquiv (Q.restrict (LinearMap.range f.toLinearMap)) :=
+    { toLinearEquiv := LinearEquiv.ofInjective f.toLinearMap hf
+      map_app' := f.map_app }
+  have hW := e.nondegenerate_iff.mp hQ₁
+  exact ⟨_, hQ.nondegenerate_restrict_orthogonal hW, f.equivalent_prod_orthogonal_range hf hQ₁⟩
 
 /-- For a quadratic form with trivial radical, every nonzero isotropic vector `x` has an
 isotropic partner `y` with `polar Q x y = 1`, so that `x, y` is a hyperbolic pair. -/
