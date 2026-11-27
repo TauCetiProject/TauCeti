@@ -33,7 +33,9 @@ quotient.
   `TwoSidedIdeal.map_mk_eq_top_iff`.
 * `TwoSidedIdeal.quotEquivOfEq`: ring equivalence between quotients by equal two-sided ideals.
 * `TwoSidedIdeal.Quotient.comapMkRelIso`: order isomorphism between two-sided ideals of `A ⧸ I`
-  and two-sided ideals of `A` containing `I`.
+  and two-sided ideals of `A` containing `I`, with endpoint lemmas
+  `TwoSidedIdeal.Quotient.comap_mk_eq_iff_eq_bot` and
+  `TwoSidedIdeal.Quotient.comap_mk_eq_top_iff`.
 -/
 
 public section
@@ -341,6 +343,18 @@ theorem coe_comapMkRelIso (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
   rw [comapMkRelIso_apply]
   ext a
   exact TwoSidedIdeal.mem_comap (mk I)
+
+/-- Pulling back `J : TwoSidedIdeal (A ⧸ I)` along `mk I` yields `I` if and only if `J = ⊥`. -/
+@[simp]
+theorem comap_mk_eq_iff_eq_bot {I : TwoSidedIdeal A} {J : TwoSidedIdeal (A ⧸ I)} :
+    J.comap (mk I) = I ↔ J = ⊥ := by
+  rw [← comapMkRelIso_apply I J, ← Set.Ici.eq_bot_iff, map_eq_bot_iff]
+
+/-- Pulling back `J : TwoSidedIdeal (A ⧸ I)` along `mk I` yields `⊤` if and only if `J = ⊤`. -/
+@[simp]
+theorem comap_mk_eq_top_iff {I : TwoSidedIdeal A} {J : TwoSidedIdeal (A ⧸ I)} :
+    J.comap (mk I) = ⊤ ↔ J = ⊤ := by
+  rw [← comapMkRelIso_apply I J, ← Set.Ici.coe_top (a := I), Subtype.coe_inj, map_eq_top_iff]
 
 end Quotient
 

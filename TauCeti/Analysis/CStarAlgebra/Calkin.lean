@@ -121,10 +121,16 @@ theorem eq_bot_or_eq_top_of_isClosed [SeparableSpace H] (J : TwoSidedIdeal (Calk
     exact hJ.preimage (TwoSidedIdeal.Quotient.continuous_mk (compactOperatorIdeal ℂ H))
   rcases eq_bot_or_eq_compactOperatorIdeal_or_eq_top_of_isClosed hI_closed with
     hbot | hcpt | htop
-  · exact Or.inl ((Set.Ici.eq_bot_iff.symm.trans (map_eq_bot_iff e)).mp
-      (le_antisymm (hbot ▸ bot_le) (Set.mem_Ici.mp (e J).property)))
-  · exact Or.inl ((Set.Ici.eq_bot_iff.symm.trans (map_eq_bot_iff e)).mp hcpt)
-  · exact Or.inr ((map_eq_top_iff e).mp (Subtype.ext (htop.trans (Set.Ici.coe_top _).symm)))
+  · rw [TwoSidedIdeal.Quotient.comapMkRelIso_apply] at hbot
+    have hle : compactOperatorIdeal ℂ H ≤
+        J.comap (TwoSidedIdeal.Quotient.mk (compactOperatorIdeal ℂ H)) := by
+      simpa only [e, Set.mem_Ici, TwoSidedIdeal.Quotient.comapMkRelIso_apply] using (e J).property
+    exact Or.inl <| TwoSidedIdeal.Quotient.comap_mk_eq_iff_eq_bot.mp <|
+      le_antisymm (hbot ▸ bot_le) hle
+  · rw [TwoSidedIdeal.Quotient.comapMkRelIso_apply] at hcpt
+    exact Or.inl <| TwoSidedIdeal.Quotient.comap_mk_eq_iff_eq_bot.mp hcpt
+  · rw [TwoSidedIdeal.Quotient.comapMkRelIso_apply] at htop
+    exact Or.inr <| TwoSidedIdeal.Quotient.comap_mk_eq_top_iff.mp htop
 
 /-- **Simplicity of the Calkin algebra.** When `H` is a separable infinite-dimensional complex
 Hilbert space, `CalkinAlgebra ℂ H` is algebraically simple: it is nontrivial and has no proper
@@ -147,15 +153,19 @@ theorem isSimpleRing_iff :
   let K : Set.Ici (compactOperatorIdeal ℂ H) :=
     ⟨separableRangeIdeal ℂ H, compactOperatorIdeal_le_separableRangeIdeal⟩
   let J := e.symm K
-  have hJ : (e J).val = separableRangeIdeal ℂ H :=
-    congrArg Subtype.val (e.apply_symm_apply K)
-  have hlt_bot : compactOperatorIdeal ℂ H < (e J).val :=
+  have hJ : J.comap (TwoSidedIdeal.Quotient.mk (compactOperatorIdeal ℂ H)) =
+      separableRangeIdeal ℂ H := by
+    rw [← TwoSidedIdeal.Quotient.comapMkRelIso_apply]
+    exact congrArg Subtype.val (e.apply_symm_apply K)
+  have hlt_bot : compactOperatorIdeal ℂ H <
+      J.comap (TwoSidedIdeal.Quotient.mk (compactOperatorIdeal ℂ H)) :=
     hJ ▸ compactOperatorIdeal_lt_separableRangeIdeal hsep
-  have hlt_top : (e J).val < ⊤ := hJ ▸ separableRangeIdeal_lt_top hsep
+  have hlt_top : J.comap (TwoSidedIdeal.Quotient.mk (compactOperatorIdeal ℂ H)) < ⊤ :=
+    hJ ▸ separableRangeIdeal_lt_top hsep
   rcases IsSimpleOrder.eq_bot_or_eq_top J with h0 | h1
-  · rw [Set.Ici.eq_bot_iff.mp ((map_eq_bot_iff e).mpr h0)] at hlt_bot
+  · rw [TwoSidedIdeal.Quotient.comap_mk_eq_iff_eq_bot.mpr h0] at hlt_bot
     exact hlt_bot.false
-  · rw [((map_eq_top_iff e).mpr h1), Set.Ici.coe_top] at hlt_top
+  · rw [TwoSidedIdeal.Quotient.comap_mk_eq_top_iff.mpr h1] at hlt_top
     exact hlt_top.false
 
 /-- For any infinite index type `ι`, `CalkinAlgebra ℂ ℓ²(ι, ℂ)` is nontrivial. -/

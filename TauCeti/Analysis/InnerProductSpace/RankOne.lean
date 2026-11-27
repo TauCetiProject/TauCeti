@@ -24,8 +24,8 @@ of a real-linear coefficient by a complex-linear one along the solution in Step 
 of McDuff–Salamon's Theorem 2.3.5.
 
 Sandwiching any continuous linear map `T` with `T x ≠ 0` between `rankOneDivNormSq 𝕜 u (T x)` and
-`rankOne 𝕜 x v` recovers `rankOne 𝕜 u v` (`ContinuousLinearMap.rankOneDivNormSq_comp_comp_rankOne`,
-`ContinuousLinearMap.rankOneDivNormSq_mul_mul_rankOne`). Both `rankOne` and `rankOneDivNormSq`
+`rankOne 𝕜 x v` recovers `rankOne 𝕜 u v` (`TauCeti.rankOneDivNormSq_comp_comp_rankOne`,
+`TauCeti.rankOneDivNormSq_mul_mul_rankOne`). Both `rankOne` and `rankOneDivNormSq`
 are compact operators (`InnerProductSpace.isCompactOperator_rankOne`,
 `TauCeti.isCompactOperator_rankOneDivNormSq`).
 
@@ -142,6 +142,12 @@ theorem norm_rankOneDivNormSq_map_le (C : E →L[𝕜'] F) (x : E) :
   rw [norm_rankOneDivNormSq]
   exact C.ratio_le_opNorm x
 
+end ContinuousLinearMap
+
+namespace TauCeti
+
+open InnerProductSpace
+
 /-- Sandwiching a continuous linear map `T` with `T x ≠ 0` between
 `rankOneDivNormSq 𝕜 u (T x)` and `InnerProductSpace.rankOne 𝕜 x v` produces
 `InnerProductSpace.rankOne 𝕜 u v`. -/
@@ -163,13 +169,9 @@ theorem rankOneDivNormSq_mul_mul_rankOne {𝕜 H : Type*} [RCLike 𝕜]
     {T : H →L[𝕜] H} {x : H} (hx : T x ≠ 0) (u v : H) :
     rankOneDivNormSq 𝕜 u (T x) * T * InnerProductSpace.rankOne 𝕜 x v =
       InnerProductSpace.rankOne 𝕜 u v := by
-  simpa [mul_def, comp_assoc] using rankOneDivNormSq_comp_comp_rankOne hx u v
+  simpa [ContinuousLinearMap.mul_def, ContinuousLinearMap.comp_assoc] using
+    rankOneDivNormSq_comp_comp_rankOne hx u v
 
-end ContinuousLinearMap
-
-namespace TauCeti
-
-open InnerProductSpace
 open scoped RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]

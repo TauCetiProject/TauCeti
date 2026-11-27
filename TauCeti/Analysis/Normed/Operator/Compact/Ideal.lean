@@ -39,9 +39,10 @@ extraction with the norm-convergent singular value expansion of compact operator
   two-sided ideals are `⊥` and `⊤`, with `⊥ ≠ ⊤` whenever `H` is nontrivial.
 * Every nonzero closed two-sided ideal of `H →L[𝕜] H` contains `TauCeti.compactOperatorIdeal 𝕜 H`.
 * When `H` is nonseparable,
-  `TauCeti.compactOperatorIdeal 𝕜 H < TauCeti.separableRangeIdeal 𝕜 H < ⊤`,
-  witnessed by the orthogonal projection onto the closed span of a countably infinite orthonormal
-  sequence.
+  `TauCeti.compactOperatorIdeal 𝕜 H < TauCeti.separableRangeIdeal 𝕜 H < ⊤`, where the first
+  strict inclusion is witnessed by the orthogonal projection onto the closed span of a countably
+  infinite orthonormal sequence and the second holds because `1` has separable range if and only if
+  `H` is separable (`TauCeti.separableRangeIdeal_eq_top_iff`).
 
 ## Main declarations
 
@@ -260,7 +261,7 @@ variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpac
 theorem rankOne_mem_of_ne_zero {I : TwoSidedIdeal (H →L[𝕜] H)} {T : H →L[𝕜] H}
     (hTI : T ∈ I) (hT0 : T ≠ 0) (u v : H) : rankOne 𝕜 u v ∈ I := by
   obtain ⟨x, hx⟩ := DFunLike.ne_iff.mp hT0
-  rw [← ContinuousLinearMap.rankOneDivNormSq_mul_mul_rankOne hx u v]
+  rw [← rankOneDivNormSq_mul_mul_rankOne hx u v]
   exact I.mul_mem_right _ _ (I.mul_mem_left _ _ hTI)
 
 /-- Any closed additive submonoid of `H →L[𝕜] H` containing every rank-one operator contains every
@@ -306,7 +307,7 @@ theorem twoSidedIdeal_compactOperatorIdeal_eq_bot_or_eq_top_of_isClosed
       ⟨rankOne 𝕜 x v,
         mem_compactOperatorIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne x v)⟩
     refine ⟨L * T * R, J.mul_mem_right _ R (J.mul_mem_left L T hTJ), ?_⟩
-    simpa [L, R] using ContinuousLinearMap.rankOneDivNormSq_mul_mul_rankOne hx u v
+    simpa [L, R] using rankOneDivNormSq_mul_mul_rankOne hx u v
   obtain ⟨K', hK'J, hK'eq⟩ := mem_of_isCompactOperator_of_forall_rankOne_mem
     hs_closed hrank (mem_compactOperatorIdeal.mp K.property)
   have hK' : K' = K := Subtype.ext hK'eq
