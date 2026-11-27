@@ -30,8 +30,10 @@ statements are what the elliptic conjugacy classes of `GL₂(𝔽_q)` are read o
   involution. `TauCeti.FiniteField.pow_natCard_ne` and
   `TauCeti.FiniteField.pow_natCard_notMem_range_algebraMap` say that an element outside `K` is
   moved by the map and stays outside `K`; neither needs the quadratic hypothesis.
-* `TauCeti.FiniteField.pow_card_eq_neg_sub_of_not_exists_root`: the `q`-power map exchanges the two
-  roots of a monic quadratic over `K` that has no root in `K`.
+* `TauCeti.FiniteField.pow_card_eq_neg_sub_of_notMem_range_algebraMap`: the `q`-power map sends a
+  root outside `K` of a monic quadratic over `K` to the other root, and
+  `TauCeti.FiniteField.pow_card_eq_neg_sub_of_not_exists_root` its form for a monic quadratic over
+  `K` that has no root in `K`.
 * `TauCeti.FiniteField.units_map_algebraMap_pow_natCard` and
   `TauCeti.FiniteField.units_pow_natCard_pow_natCard`: the fixed-point and involution statements
   as equalities of units, the form in which a character of `Lˣ` consumes them, with
@@ -211,6 +213,29 @@ theorem _root_.AlgHom.frobeniusAlgHom_comm {K L Ω : Type*} [Field K] [Fintype K
   ext x
   simp [_root_.FiniteField.coe_frobeniusAlgHom]
 
+/-- **The `q`-power map sends a root outside `K` of a monic quadratic over `K` to the other
+root.** If `α` is a root of `t ^ 2 + b * t + c` in a domain `L` over the field `K` with `q` elements
+and `α` does not come from `K`, then `α ^ q = -b - α`. -/
+theorem pow_card_eq_neg_sub_of_notMem_range_algebraMap {K L : Type*} [Field K] [Fintype K]
+    [CommRing L] [IsDomain L] [Algebra K L] {b c : K} {α : L}
+    (hαK : α ∉ Set.range (algebraMap K L))
+    (hα : α ^ 2 + algebraMap K L b * α + algebraMap K L c = 0) :
+    α ^ Fintype.card K = -algebraMap K L b - α := by
+  -- `α ^ q` is again a root, being the image of `α` under the `q`-power `K`-algebra
+  -- endomorphism, which fixes the coefficients (`AlgHom.commutes`)
+  have hroot : (α ^ Fintype.card K) ^ 2 + algebraMap K L b * α ^ Fintype.card K +
+      algebraMap K L c = 0 := by
+    have := congrArg (_root_.FiniteField.frobeniusAlgHom K L) hα
+    simp only [_root_.map_add, _root_.map_mul, _root_.map_pow, AlgHom.commutes,
+      _root_.map_zero] at this
+    simpa only [_root_.FiniteField.frobeniusAlgHom_apply] using this
+  -- and it is not `α`, which does not come from `K`
+  have hne : α ^ Fintype.card K - α ≠ 0 := sub_ne_zero.2 fun h' ↦
+    hαK ((pow_card_eq_self_iff_mem_range_algebraMap α).1 h')
+  have : (α ^ Fintype.card K - α) * (α ^ Fintype.card K - (-algebraMap K L b - α)) = 0 := by
+    linear_combination hroot - hα
+  exact sub_eq_zero.1 ((mul_eq_zero.1 this).resolve_left hne)
+
 /-- **The `q`-power map exchanges the two roots of a monic quadratic over `K` without a root in
 `K`.** If `t ^ 2 + b * t + c` has no root in the field `K` with `q` elements, then every root `α`
 of it in an extension `L` of `K` satisfies `α ^ q = -b - α`, the other root. -/
@@ -220,24 +245,11 @@ theorem pow_card_eq_neg_sub_of_not_exists_root {K L : Type*} [Field K] [Fintype 
     (hα : α ^ 2 + algebraMap K L b * α + algebraMap K L c = 0) :
     α ^ Fintype.card K = -algebraMap K L b - α := by
   -- `α` does not come from `K`, since the quadratic has no root there
-  have hαK : α ∉ Set.range (algebraMap K L) := by
-    rintro ⟨t, rfl⟩
-    refine hno ⟨t, (algebraMap K L).injective ?_⟩
-    simp only [_root_.map_add, _root_.map_mul, _root_.map_pow, _root_.map_zero]
-    exact hα
-  -- `α ^ q` is again a root, being the image of `α` under the `q`-power `K`-algebra
-  -- endomorphism, which fixes the coefficients (`AlgHom.commutes`)
-  have hroot : (α ^ Fintype.card K) ^ 2 + algebraMap K L b * α ^ Fintype.card K +
-      algebraMap K L c = 0 := by
-    have := congrArg (_root_.FiniteField.frobeniusAlgHom K L) hα
-    simp only [_root_.map_add, _root_.map_mul, _root_.map_pow, AlgHom.commutes,
-      _root_.map_zero] at this
-    simpa only [_root_.FiniteField.frobeniusAlgHom_apply] using this
-  have hne : α ^ Fintype.card K - α ≠ 0 := sub_ne_zero.2 fun h' ↦
-    hαK ((pow_card_eq_self_iff_mem_range_algebraMap α).1 h')
-  have : (α ^ Fintype.card K - α) * (α ^ Fintype.card K - (-algebraMap K L b - α)) = 0 := by
-    linear_combination hroot - hα
-  exact sub_eq_zero.1 ((mul_eq_zero.1 this).resolve_left hne)
+  refine pow_card_eq_neg_sub_of_notMem_range_algebraMap ?_ hα
+  rintro ⟨t, rfl⟩
+  refine hno ⟨t, (algebraMap K L).injective ?_⟩
+  simp only [_root_.map_add, _root_.map_mul, _root_.map_pow, _root_.map_zero]
+  exact hα
 
 end FiniteField
 

@@ -125,8 +125,9 @@ theorem complexConj_algebraMap (L : Type*) [Field L] [CharZero L] [IsCMField L]
 /-- Complex conjugation of the ring of integers of a CM field is an involution. -/
 @[simp]
 theorem ringOfIntegersComplexConj_apply_apply (x : 𝓞 K) :
-    ringOfIntegersComplexConj K (ringOfIntegersComplexConj K x) = x :=
-  RingOfIntegers.ext (complexConj_apply_apply K (x : K))
+    ringOfIntegersComplexConj K (ringOfIntegersComplexConj K x) = x := by
+  refine RingOfIntegers.ext ?_
+  rw [coe_ringOfIntegersComplexConj, coe_ringOfIntegersComplexConj, complexConj_apply_apply]
 
 section Pow
 

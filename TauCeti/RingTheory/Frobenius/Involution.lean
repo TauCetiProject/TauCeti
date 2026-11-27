@@ -15,16 +15,18 @@ import TauCeti.FieldTheory.Finite.FrobeniusFixed
 Let `S` be an `R`-algebra and `σ` an `R`-algebra involution of `S` whose fixed elements all come
 from `R`, as for the nontrivial automorphism of a quadratic extension. Every `x ∈ S` is then a
 root of the polynomial `X ^ 2 - (x + σ x) X + x σ x`, whose coefficients come from `R`. Let `Q` be
-a prime of `S` with `σ Q ⊆ Q` and finite residue ring `R ⧸ Q ∩ R` of cardinality `q`. The
-`q`-power map of `S ⧸ Q` fixes the coefficients of the reduction of that polynomial, so it sends
-its root `x` to a root, `x` or `σ x`; and it fixes `x` only when `x` comes from `R ⧸ Q ∩ R`, where
-`σ` fixes it too.
+a prime of `S` with `σ Q ⊆ Q` and finite residue ring `R ⧸ Q ∩ R` of cardinality `q`. If `x`
+comes from `R ⧸ Q ∩ R` modulo `Q`, then `x ^ q ≡ x` and `σ` fixes `x` modulo `Q` too. Otherwise
+the `q`-power map of `S ⧸ Q`, which fixes the coefficients of the reduction of that polynomial,
+sends its root `x` to the other root `σ x`
+(`TauCeti.FiniteField.pow_card_eq_neg_sub_of_notMem_range_algebraMap`).
 So `σ x ≡ x ^ q` modulo `Q`: `σ` is an arithmetic Frobenius at `Q`
 (`AlgHom.IsArithFrobAt.of_involutive`). No hypothesis on the ramification of `Q` is needed: at a
 ramified prime both sides are `x` modulo `Q`.
 
-When an involution is a Frobenius at `Q` and does not act trivially on `S ⧸ Q`, the `q`-power map
-is an automorphism of order two of the finite field `S ⧸ Q` over `R ⧸ Q ∩ R`, so `S ⧸ Q` has `q ^ 2`
+When an involution is a Frobenius at `Q` and does not act trivially on `S ⧸ Q`, the map it induces
+on `S ⧸ Q` (`AlgHom.IsArithFrobAt.restrict`), which is the `q`-power map, is an automorphism of
+order two of the finite field `S ⧸ Q` over `R ⧸ Q ∩ R`, so `S ⧸ Q` has `q ^ 2`
 elements (`AlgHom.IsArithFrobAt.natCard_quotient_eq_sq`). For the complex conjugation of a CM
 field this says that the residue field of a prime fixed by conjugation, at which conjugation acts
 nontrivially, has square cardinality, and that conjugation acts on it as the `q`-power Frobenius.
@@ -59,37 +61,29 @@ theorem of_involutive [Q.IsPrime] [_root_.Finite (R ⧸ Q.under R)] (hσ : Funct
   have : P.IsMaximal := Ideal.Quotient.maximal_of_isField P (Finite.isField_of_domain (R ⧸ P))
   let := Ideal.Quotient.field P
   let := Fintype.ofFinite (R ⧸ P)
-  let f := FiniteField.frobeniusAlgHom (R ⧸ P) (S ⧸ Q)
   intro x
   rw [← Ideal.Quotient.eq, map_pow, Nat.card_eq_fintype_card]
   set θ := Ideal.Quotient.mk Q x
-  set θ' := Ideal.Quotient.mk Q (σ x)
-  -- the coefficients `x + σ x` and `x * σ x` of the quadratic polynomial come from `R`
-  obtain ⟨a, ha⟩ := hfix (x + σ x) (by rw [map_add, hσ x, add_comm])
-  obtain ⟨b, hb⟩ := hfix (x * σ x) (by rw [map_mul, hσ x, mul_comm])
-  have hroot : θ ^ 2 - algebraMap (R ⧸ P) (S ⧸ Q) (Ideal.Quotient.mk P a) * θ +
-      algebraMap (R ⧸ P) (S ⧸ Q) (Ideal.Quotient.mk P b) = 0 := by
-    simp only [Ideal.Quotient.algebraMap_mk_of_liesOver, ha, hb, map_add, map_mul, θ]
-    ring
-  -- so `θ ^ q` is a root as well, that is, `θ` or `θ'`
-  have hfroot := congrArg f hroot
-  simp only [map_add, map_sub, map_mul, map_pow, AlgHom.commutes, map_zero] at hfroot
-  have hprod : (f θ - θ) * (f θ - θ') = 0 := by
-    rw [← hfroot]
-    simp only [Ideal.Quotient.algebraMap_mk_of_liesOver, ha, hb, map_add, map_mul, θ, θ']
-    ring
-  rw [FiniteField.frobeniusAlgHom_apply] at hprod
-  rcases mul_eq_zero.mp hprod with h | h
-  · -- if `θ ^ q = θ`, then `θ` comes from `R`, where `σ` acts trivially
-    rw [sub_eq_zero] at h
-    obtain ⟨c, hc⟩ := (TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap θ).mp h
+  by_cases hθ : θ ∈ Set.range (algebraMap (R ⧸ P) (S ⧸ Q))
+  · -- if `θ` comes from `R`, then `θ ^ q = θ`, and `σ` acts trivially on `θ`
+    rw [(TauCeti.FiniteField.pow_card_eq_self_iff_mem_range_algebraMap θ).mpr hθ,
+      Ideal.Quotient.eq]
+    obtain ⟨c, hc⟩ := hθ
     obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective c
     rw [Ideal.Quotient.algebraMap_mk_of_liesOver, Ideal.Quotient.eq] at hc
-    rw [h, Ideal.Quotient.eq]
     have := hQ hc
     rw [Ideal.mem_comap, map_sub, AlgHom.commutes] at this
     simpa only [sub_sub_sub_cancel_left] using Q.sub_mem hc this
-  · exact (sub_eq_zero.mp h).symm
+  · -- otherwise `θ ^ q` is the other root of `X ^ 2 - (x + σ x) X + x σ x`, whose coefficients
+    -- come from `R`, namely `σ x`
+    obtain ⟨a, ha⟩ := hfix (x + σ x) (by rw [map_add, hσ x, add_comm])
+    obtain ⟨b, hb⟩ := hfix (x * σ x) (by rw [map_mul, hσ x, mul_comm])
+    rw [TauCeti.FiniteField.pow_card_eq_neg_sub_of_notMem_range_algebraMap
+      (b := -Ideal.Quotient.mk P a) (c := Ideal.Quotient.mk P b) hθ]
+    · simp only [map_neg, neg_neg, Ideal.Quotient.algebraMap_mk_of_liesOver, ha, map_add, θ,
+        add_sub_cancel_left]
+    · simp only [map_neg, Ideal.Quotient.algebraMap_mk_of_liesOver, ha, hb, map_add, map_mul, θ]
+      ring
 
 /-- **The residue field at which an involutive Frobenius acts nontrivially has square order.** If
 an involution `σ` of `S` is an arithmetic Frobenius at a prime `Q` and `σ x ≢ x` modulo `Q` for
@@ -102,11 +96,20 @@ theorem natCard_quotient_eq_sq [Q.IsPrime] (H : σ.IsArithFrobAt Q) (hσ : Funct
   have : P.IsMaximal := Ideal.Quotient.maximal_of_isField P (Finite.isField_of_domain (R ⧸ P))
   let := Ideal.Quotient.field P
   let := Fintype.ofFinite (R ⧸ P)
-  -- the `q ^ 2`-power map is the identity of `S ⧸ Q`, since it is induced by `σ ^ 2 = 1`
-  have hq2 (θ : S ⧸ Q) : θ ^ Fintype.card (R ⧸ P) ^ 2 = θ := by
+  -- the map `H.restrict` that `σ` induces on `S ⧸ Q` squares to the identity, as `σ ^ 2 = 1`, and
+  -- is not the identity
+  have h2 : H.restrict ^ 2 = 1 := by
+    ext θ
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective θ
-    rw [sq, pow_mul, ← Nat.card_eq_fintype_card, ← H.mk_apply, ← H.mk_apply, hσ x]
-  -- so `S ⧸ Q` is finite, hence a field
+    rw [pow_two, AlgHom.mul_apply, H.restrict_mk, H.restrict_mk, hσ x, AlgHom.one_apply]
+  have h1 : H.restrict ≠ 1 := by
+    obtain ⟨x, hx⟩ := hne
+    refine fun h ↦ hx (Ideal.Quotient.eq.mp ?_)
+    rw [← H.restrict_mk, h, AlgHom.one_apply]
+  -- so the `q ^ 2`-power map is the identity of `S ⧸ Q`, which is therefore finite, hence a field
+  have hq2 (θ : S ⧸ Q) : θ ^ Fintype.card (R ⧸ P) ^ 2 = θ := by
+    rw [← Nat.card_eq_fintype_card, sq, pow_mul, ← H.restrict_apply, ← H.restrict_apply,
+      ← AlgHom.mul_apply, ← sq, h2, AlgHom.one_apply]
   have : _root_.Finite (S ⧸ Q) := by
     have := TauCeti.FiniteField.finite_frobeniusFixedSubalgebra (K := R ⧸ P) (A := S ⧸ Q)
       two_ne_zero
@@ -116,19 +119,12 @@ theorem natCard_quotient_eq_sq [Q.IsPrime] (H : σ.IsArithFrobAt Q) (hσ : Funct
     rw [Nat.card_eq_fintype_card, hq2]
   have : Q.IsMaximal := Ideal.Quotient.maximal_of_isField Q (Finite.isField_of_domain (S ⧸ Q))
   let := Ideal.Quotient.field Q
-  -- the `q`-power Frobenius of `S ⧸ Q` over `R ⧸ P` has order two
-  let frob := FiniteField.frobeniusAlgEquivOfAlgebraic (R ⧸ P) (S ⧸ Q)
-  have h2 : frob ^ 2 = 1 := by
+  -- `H.restrict` is the `q`-power Frobenius of `S ⧸ Q` over `R ⧸ P`, which has order the degree
+  have hfrob : H.restrict = FiniteField.frobeniusAlgHom (R ⧸ P) (S ⧸ Q) := by
     ext θ
-    rw [AlgEquiv.coe_pow, FiniteField.coe_frobeniusAlgEquivOfAlgebraic_iterate, AlgEquiv.one_apply]
-    exact hq2 θ
-  have h1 : frob ≠ 1 := by
-    obtain ⟨x, hx⟩ := hne
-    refine fun h ↦ hx (Ideal.Quotient.eq.mp ?_)
-    rw [H.mk_apply, Nat.card_eq_fintype_card]
-    exact DFunLike.congr_fun h (Ideal.Quotient.mk Q x)
-  have hrank := FiniteField.orderOf_frobeniusAlgEquivOfAlgebraic (R ⧸ P) (S ⧸ Q)
-  rw [orderOf_eq_prime h2 h1] at hrank
+    rw [H.restrict_apply, FiniteField.frobeniusAlgHom_apply, Nat.card_eq_fintype_card]
+  have hrank := FiniteField.orderOf_frobeniusAlgHom (R ⧸ P) (S ⧸ Q)
+  rw [← hfrob, orderOf_eq_prime h2 h1] at hrank
   rw [Module.natCard_eq_pow_finrank (K := R ⧸ P), ← hrank]
 
 end AlgHom.IsArithFrobAt

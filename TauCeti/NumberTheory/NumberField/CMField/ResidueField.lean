@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.Frobenius
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.NumberTheory.NumberField.CMField.Basic
 import TauCeti.RingTheory.Frobenius.Involution
+import TauCeti.RingTheory.RootsOfUnity.FourthAndSixth
+import TauCeti.RingTheory.RootsOfUnity.Seventh
 
 /-!
 # Residue fields of a CM field at the primes fixed by complex conjugation
@@ -27,11 +29,13 @@ If `K` contains a square root `i` of `-1` and an algebraic integer `α` with `α
 `α * conj α = 2`, such as `α = (1 + √-7) / 2`, the two facts combine into a congruence on `q`. A
 prime fixed by conjugation does not lie over `2`, since otherwise it would contain `α` or
 `conj α`, hence both, hence `α + conj α = 1`. So conjugation, which sends `i` to `-i`, acts
-nontrivially on `𝓞 K ⧸ w`, and `i ^ q = -i` there. As `i` has order four in the residue field,
-`q ≡ 3 (mod 4)`. Both elements exist when `K` contains a primitive fourth and a primitive seventh
-root of unity `ζ₇`, with `α = -(ζ₇ + ζ₇ ^ 2 + ζ₇ ^ 4)`, for instance when `K` contains a primitive
-`5040`-th root of unity. Then every residue field of `K` at a prime fixed by conjugation has
-cardinality `r ^ 2` with `r ≡ 3 (mod 4)`
+nontrivially on `𝓞 K ⧸ w`. As a Frobenius at a prime not containing `4` it also sends the fourth
+root of unity `i` to `i ^ q` (`AlgHom.IsArithFrobAt.apply_of_pow_eq_one`), so `i ^ q = -i = i ^ 3`
+and, as `i` has order four, `q ≡ 3 (mod 4)`. Both elements exist when `K` contains a primitive
+fourth and a primitive seventh root of unity `ζ₇`, with `α = -(ζ₇ + ζ₇ ^ 2 + ζ₇ ^ 4)`
+(`NumberField.IsCMField.add_eq_one_and_mul_eq_two_of_isPrimitiveRoot_seven`), for instance when
+`K` contains a primitive `5040`-th root of unity. Then every residue field of `K` at a prime fixed
+by conjugation has cardinality `r ^ 2` with `r ≡ 3 (mod 4)`
 (`NumberField.IsCMField.exists_natCard_quotient_eq_sq_and_mod_four_eq_three`).
 
 ## Main results
@@ -42,6 +46,9 @@ cardinality `r ^ 2` with `r ≡ 3 (mod 4)`
   modulo `w`, then `#(𝓞 K ⧸ w) = #(𝓞 K⁺ ⧸ w ∩ 𝓞 K⁺) ^ 2`.
 * `NumberField.IsCMField.two_notMem_of_add_eq_one_of_mul_eq_two`: if `α + conj α = 1` and
   `α * conj α = 2`, no prime fixed by conjugation contains `2`.
+* `NumberField.IsCMField.add_eq_one_and_mul_eq_two_of_isPrimitiveRoot_seven`: for a primitive
+  seventh root of unity `η`, the Gauss period `α = -(η + η ^ 2 + η ^ 4)` has `α + conj α = 1` and
+  `α * conj α = 2`.
 * `NumberField.IsCMField.natCard_quotient_under_mod_four_eq_three`: if `i ^ 2 = -1` and `2 ∉ w`,
   then `#(𝓞 K⁺ ⧸ w ∩ 𝓞 K⁺) ≡ 3 (mod 4)`.
 * `NumberField.IsCMField.exists_natCard_quotient_eq_sq_and_mod_four_eq_three`: if `K` contains a
@@ -88,6 +95,28 @@ theorem two_notMem_of_add_eq_one_of_mul_eq_two (w : Ideal (𝓞 K)) [w.IsPrime]
     · simpa using hconj h
   exact Ideal.IsPrime.ne_top ‹_› ((Ideal.eq_top_iff_one _).mpr (h₁ ▸ add_mem hα (hconj hα)))
 
+/-- **The Gauss period of a seventh root of unity has trace `1` and norm `2` over `K⁺`.** If `η`
+is a primitive seventh root of unity in `𝓞 K`, then `α = -(η + η ^ 2 + η ^ 4)` satisfies
+`α + conj α = 1` and `α * conj α = 2`. -/
+theorem add_eq_one_and_mul_eq_two_of_isPrimitiveRoot_seven {η : 𝓞 K} (hη : IsPrimitiveRoot η 7) :
+    -(η + η ^ 2 + η ^ 4) + ringOfIntegersComplexConj K (-(η + η ^ 2 + η ^ 4)) = 1 ∧
+      -(η + η ^ 2 + η ^ 4) * ringOfIntegersComplexConj K (-(η + η ^ 2 + η ^ 4)) = 2 := by
+  -- `conj η = η⁻¹ = η ^ 6`, so conjugation sends `η ^ k` to `η ^ (6 * k % 7)`
+  have hc : ringOfIntegersComplexConj K η = η ^ 6 := by
+    linear_combination (-ringOfIntegersComplexConj K η) * hη.pow_eq_one +
+      η ^ 6 * mul_ringOfIntegersComplexConj_eq_one_of_pow_eq_one (by norm_num) hη.pow_eq_one
+  have hconj : ringOfIntegersComplexConj K (-(η + η ^ 2 + η ^ 4)) = -(η ^ 6 + η ^ 5 + η ^ 3) := by
+    rw [map_neg, map_add, map_add, map_pow, map_pow, hc, ← pow_mul, ← pow_mul,
+      pow_eq_pow_mod (6 * 2) hη.pow_eq_one, pow_eq_pow_mod (6 * 4) hη.pow_eq_one]
+  -- the trace is `-(η + ⋯ + η ^ 6) = 1`
+  have hadd : -(η + η ^ 2 + η ^ 4) + ringOfIntegersComplexConj K (-(η + η ^ 2 + η ^ 4)) = 1 := by
+    rw [hconj]
+    linear_combination -hη.geom_sum_eq_zero_of_seven
+  -- and `(1 - 2 * α) ^ 2 = -7` gives `4 * α * conj α = 4 * α * (1 - α) = 8`
+  refine ⟨hadd, mul_left_cancel₀ (by norm_num : (4 : 𝓞 K) ≠ 0) ?_⟩
+  linear_combination 4 * -(η + η ^ 2 + η ^ 4) * hadd -
+    hη.one_add_two_mul_add_sq_add_pow_four_sq_of_seven
+
 end General
 
 variable {K : Type*} [Field K] [NumberField K] [IsCMField K]
@@ -123,22 +152,18 @@ elements with `q ≡ 3 (mod 4)`. -/
 theorem natCard_quotient_under_mod_four_eq_three (w : Ideal (𝓞 K)) [w.IsMaximal]
     (hw : w.map (ringOfIntegersComplexConj K) = w) {i : 𝓞 K} (hi : i ^ 2 = -1)
     (h2 : (2 : 𝓞 K) ∉ w) : Nat.card (𝓞 K⁺ ⧸ w.under (𝓞 K⁺)) % 4 = 3 := by
-  have h := (isArithFrobAt_ringOfIntegersComplexConj w hw).mk_apply i
-  simp only [AlgEquiv.coe_toAlgHom, ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one hi,
-    map_neg] at h
-  set θ := Ideal.Quotient.mk w i
-  have hθ2 : θ ^ 2 = -1 := by rw [← map_pow, hi, map_neg, map_one]
-  -- `θ` has order four, since `-1 ≠ 1` in the residue field
-  have horder : orderOf θ = 4 := by
-    refine orderOf_eq_prime_pow (p := 2) (n := 1) (fun h1 ↦ h2 ?_) ?_
-    · rw [← Ideal.Quotient.eq_zero_iff_mem, map_ofNat]
-      linear_combination hθ2 - h1
-    · linear_combination (θ ^ 2 - 1) * hθ2
-  have hfin : IsOfFinOrder θ := orderOf_pos_iff.mp (by rw [horder]; norm_num)
-  have hpow : θ ^ Nat.card (𝓞 K⁺ ⧸ w.under (𝓞 K⁺)) = θ ^ 3 := by
-    linear_combination -h - θ * hθ2
-  have := hfin.pow_inj_mod.mp hpow
-  rwa [horder] at this
+  -- `i` is a primitive fourth root of unity, and `4 = 2 * 2 ∉ w`
+  have hi4 : IsPrimitiveRoot i 4 :=
+    (TauCeti.isPrimitiveRoot_four_of_sq_eq_neg_one (θ := (i : K)) (by exact_mod_cast hi))
+      |>.of_map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
+  have h4 : ((4 : ℕ) : 𝓞 K) ∉ w := fun h ↦
+    h2 (Ideal.IsPrime.mem_of_pow_mem inferInstance 2 (by norm_num at h ⊢; exact h))
+  -- so conjugation, the Frobenius at `w`, sends `i` to `i ^ q`; it also sends `i` to `-i = i ^ 3`
+  have h := (isArithFrobAt_ringOfIntegersComplexConj w hw).apply_of_pow_eq_one hi4.pow_eq_one h4
+  rw [AlgEquiv.coe_toAlgHom, ringOfIntegersComplexConj_eq_neg_of_sq_eq_neg_one hi] at h
+  have hpow : i ^ Nat.card (𝓞 K⁺ ⧸ w.under (𝓞 K⁺)) = i ^ 3 := by
+    linear_combination -h - i * hi
+  rwa [(hi4.isOfFinOrder four_ne_zero).pow_inj_mod, ← hi4.eq_orderOf] at hpow
 
 /-- **The residue fields of a CM field with fourth and seventh roots of unity at the primes fixed
 by conjugation.** Let `K` be a CM field containing a primitive fourth and a primitive seventh root
@@ -157,21 +182,8 @@ theorem exists_natCard_quotient_eq_sq_and_mod_four_eq_three {ζ₄ ζ₇ : K}
   replace h₇ := h₇.of_map_of_injective (FaithfulSMul.algebraMap_injective (𝓞 K) K)
   have hi : i ^ 2 = -1 := (h₄.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
   -- the Gauss period `α = -(η + η ^ 2 + η ^ 4)` has `α + conj α = 1` and `α * conj α = 2`
-  have h7 := h₇.pow_eq_one
-  have hsum := h₇.geom_sum_eq_zero (by norm_num)
-  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, pow_one] at hsum
-  have hc : ringOfIntegersComplexConj K η = η ^ 6 := by
-    linear_combination (-ringOfIntegersComplexConj K η) * h7 +
-      η ^ 6 * mul_ringOfIntegersComplexConj_eq_one_of_pow_eq_one (by norm_num) h7
-  have hc2 : ringOfIntegersComplexConj K η ^ 2 = η ^ 5 := by
-    linear_combination (ringOfIntegersComplexConj K η + η ^ 6) * hc + η ^ 5 * h7
-  have hc4 : ringOfIntegersComplexConj K η ^ 4 = η ^ 3 := by
-    linear_combination (ringOfIntegersComplexConj K η ^ 2 + η ^ 5) * hc2 + η ^ 3 * h7
-  have h2 : (2 : 𝓞 K) ∉ w := by
-    refine two_notMem_of_add_eq_one_of_mul_eq_two w hw (α := -(η + η ^ 2 + η ^ 4)) ?_ ?_ <;>
-      rw [map_neg, map_add, map_add, map_pow, map_pow, hc2, hc4, hc]
-    · linear_combination -hsum
-    · linear_combination hsum + (3 + η + η ^ 2 + η ^ 3) * h7
+  obtain ⟨hadd, hmul⟩ := add_eq_one_and_mul_eq_two_of_isPrimitiveRoot_seven h₇
+  have h2 : (2 : 𝓞 K) ∉ w := two_notMem_of_add_eq_one_of_mul_eq_two w hw hadd hmul
   -- conjugation moves `i` modulo `w`
   have hne : ringOfIntegersComplexConj K i - i ∉ w := by
     have hneg : -i - i = -(2 * i) := by ring
