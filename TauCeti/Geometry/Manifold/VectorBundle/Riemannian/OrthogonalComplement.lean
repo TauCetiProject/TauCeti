@@ -11,6 +11,8 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Topology.Algebra.Module.Equiv.RestrictScalars
+import Mathlib.Topology.Algebra.Module.Equiv.Prod
+import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import TauCeti.Analysis.InnerProductSpace.OrthonormalSplitting
 import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
@@ -345,6 +347,7 @@ theorem mem_orthogonalSpanFamily_iff {x : B} {w : V x} :
     w ∈ g.orthogonalSpanFamily hI s x ↔ ∀ i, ⟪s i x, w⟫_ℂ = 0 := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let := g.complexInnerProductSpace hI x
+  rw [orthogonalSpanFamily_eq]
   exact Submodule.mem_orthogonal_span_range_iff
 
 /-- The total space of `s^⊥` carries the subspace topology of the total space of `V`. -/
@@ -381,6 +384,7 @@ theorem sub_sum_inner_smul_mem_orthogonalSpanFamily {x : B}
     v - ∑ i, ⟪s i x, v⟫_ℂ • s i x ∈ g.orthogonalSpanFamily hI s x := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let := g.complexInnerProductSpace hI x
+  rw [orthogonalSpanFamily_eq]
   exact hon.sub_sum_inner_smul_mem_orthogonal v
 
 /-- On the orthogonal complement of the family, removing the components along the family does
@@ -492,8 +496,8 @@ theorem contMDiff_trivialProdOrthogonalSpanFamily_sum :
 
 /-- The fibres of the smooth splitting `V ≅ (B × ℂ^ι) ⊕ s^⊥`: for an orthonormal family `s`, the
 complex linear isomorphism `(c, w) ↦ ∑ i, c i • s i x + w` from `ℂ^ι × s^⊥` onto `V x`
-(`Orthonormal.prodOrthogonalEquiv`). Its inverse sends `v` to its coefficients `⟪s i x, v⟫` and to
-`v - ∑ i, ⟪s i x, v⟫ • s i x`. -/
+(`Orthonormal.prodOrthogonalEquiv`, transported along `orthogonalSpanFamily_eq`). Its inverse sends
+`v` to its coefficients `⟪s i x, v⟫` and to `v - ∑ i, ⟪s i x, v⟫ • s i x`. -/
 def trivialProdOrthogonalSpanFamilyEquiv
     (hon : letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
       letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
@@ -501,7 +505,9 @@ def trivialProdOrthogonalSpanFamilyEquiv
     (Bundle.Trivial B (ι → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x) x ≃L[ℂ] V x :=
   letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   letI := g.complexInnerProductSpace hI x
-  (hon x).prodOrthogonalEquiv
+  ((ContinuousLinearEquiv.refl ℂ (ι → ℂ)).prodCongr
+    (ContinuousLinearEquiv.ofEq _ _ (g.orthogonalSpanFamily_eq hI s x))).trans
+      (hon x).prodOrthogonalEquiv
 
 omit [ContMDiffVectorBundle n F V IB] in
 /-- The fibre isomorphism of the splitting sends `(c, w)` to `∑ i, c i • s i x + w`. -/
@@ -515,7 +521,9 @@ theorem trivialProdOrthogonalSpanFamilyEquiv_apply
       ∑ i, (v.1 : ι → ℂ) i • s i x + (v.2 : V x) := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let := g.complexInnerProductSpace hI x
-  exact (hon x).prodOrthogonalEquiv_apply v
+  -- `ContinuousLinearEquiv.ofEq` is the identity on underlying vectors.
+  simp [trivialProdOrthogonalSpanFamilyEquiv, ContinuousLinearEquiv.ofEq,
+    LinearEquiv.coe_ofEq_apply]
 
 omit [ContMDiffVectorBundle n F V IB] in
 /-- The inverse fibre isomorphism of the splitting sends `v ∈ V x` to its coefficients
@@ -533,7 +541,8 @@ theorem trivialProdOrthogonalSpanFamilyEquiv_symm_apply
           g.sub_sum_inner_smul_mem_orthogonalSpanFamily hI s (hon x) v⟩) := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let := g.complexInnerProductSpace hI x
-  exact (hon x).prodOrthogonalEquiv_symm_apply v
+  rw [ContinuousLinearEquiv.symm_apply_eq, trivialProdOrthogonalSpanFamilyEquiv_apply]
+  exact (add_sub_cancel _ _).symm
 
 variable (hon : letI : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   letI : ∀ x, InnerProductSpace ℂ (V x) := g.complexInnerProductSpace hI
