@@ -131,6 +131,17 @@ def liftToModuleCatForgetIso :
     simp only [Functor.comp_map, Iso.refl_hom]
     rfl)
 
+-- Simplify the application before simp rewrites the objects in its type.
+/-- The forgetful comparison acts as the identity on elements. -/
+@[simp↓]
+theorem liftToModuleCatForgetIso_hom_app_apply (X : D) (x : F.obj.obj X) :
+    ((liftToModuleCatForgetIso R F).hom.app X) x = x := (rfl)
+
+/-- The inverse forgetful comparison acts as the identity on elements. -/
+@[simp↓]
+theorem liftToModuleCatForgetIso_inv_app_apply (X : D) (x : F.obj.obj X) :
+    ((liftToModuleCatForgetIso R F).inv.app X) x = x := (rfl)
+
 variable (D) in
 /-- The module-valued lift on additive functors and their natural transformations. -/
 @[expose]
@@ -144,6 +155,11 @@ def liftToModuleCatFunctor : (D ⥤+ AddCommGrpCat.{w}) ⥤ D ⥤ ModuleCat.{w} 
         ConcreteCategory.congr_hom (α.hom.naturality f) x }
   map_id F := by ext X x; rfl
   map_comp α β := by ext X x; rfl
+
+/-- The lift functor equips an additive functor with its source-induced scalar action. -/
+@[simp]
+theorem liftToModuleCatFunctor_obj :
+    (liftToModuleCatFunctor D R).obj F = F.liftToModuleCat R := (rfl)
 
 /-- The component of a lifted natural transformation is the original additive map. -/
 @[simp]
@@ -248,6 +264,43 @@ theorem linearModuleFunctorEquiv_functor :
 @[simp]
 theorem linearModuleFunctorEquiv_inverse :
     (linearModuleFunctorEquiv.{w} R D).inverse = linearModuleFunctorForget R D := (rfl)
+
+-- The casts identify the carriers via the forward and inverse functor formulas.
+-- Simplify the applications before simp rewrites their source and target objects.
+/-- The unit of the scalar lift equivalence acts as the identity on elements. -/
+@[simp↓]
+theorem linearModuleFunctorEquiv_unitIso_hom_app_apply (F : D ⥤+ AddCommGrpCat.{w})
+    (X : D) (x : F.obj.obj X) :
+    (((linearModuleFunctorEquiv R D).unitIso.hom.app F).hom.app X) x =
+      cast (by rw [linearModuleFunctorEquiv_functor, linearModuleFunctorEquiv_inverse]; rfl) x :=
+  (rfl)
+
+/-- The inverse unit of the scalar lift equivalence acts as the identity on elements. -/
+@[simp↓]
+theorem linearModuleFunctorEquiv_unitIso_inv_app_apply (F : D ⥤+ AddCommGrpCat.{w})
+    (X : D) (x : (((linearModuleFunctorEquiv R D).functor ⋙
+      (linearModuleFunctorEquiv R D).inverse).obj F).obj.obj X) :
+    (((linearModuleFunctorEquiv R D).unitIso.inv.app F).hom.app X) x =
+      cast (by rw [linearModuleFunctorEquiv_functor, linearModuleFunctorEquiv_inverse]; rfl) x :=
+  (rfl)
+
+/-- The counit of the scalar lift equivalence acts as the identity on elements. -/
+@[simp↓]
+theorem linearModuleFunctorEquiv_counitIso_hom_app_apply
+    (F : (linearModuleFunctor.{w} R D).FullSubcategory) (X : D)
+    (x : (((linearModuleFunctorEquiv R D).inverse ⋙
+      (linearModuleFunctorEquiv R D).functor).obj F).obj.obj X) :
+    (((linearModuleFunctorEquiv R D).counitIso.hom.app F).hom.app X) x =
+      cast (by rw [linearModuleFunctorEquiv_functor, linearModuleFunctorEquiv_inverse]; rfl) x :=
+  (rfl)
+
+/-- The inverse counit of the scalar lift equivalence acts as the identity on elements. -/
+@[simp↓]
+theorem linearModuleFunctorEquiv_counitIso_inv_app_apply
+    (F : (linearModuleFunctor.{w} R D).FullSubcategory) (X : D) (x : F.obj.obj X) :
+    (((linearModuleFunctorEquiv R D).counitIso.inv.app F).hom.app X) x =
+      cast (by rw [linearModuleFunctorEquiv_functor, linearModuleFunctorEquiv_inverse]; rfl) x :=
+  (rfl)
 
 section SourceLinear
 
