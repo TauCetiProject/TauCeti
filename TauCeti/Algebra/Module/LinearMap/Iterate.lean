@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
-public import Mathlib.Algebra.Module.LinearMap.Basic
+public import Mathlib.Algebra.Module.LinearMap.Defs
 public import Mathlib.Algebra.Module.Rat
+import TauCeti.GroupTheory.GroupAction.Hom
 
 /-!
 # Iterates of additive and linear maps
@@ -63,8 +64,4 @@ theorem LinearMap.iterate_map_sum_smulₛₗ {R M ι : Type*} [Semiring R] [AddC
     {σ : R →+* R} (f : M →ₛₗ[σ] M) (n : ℕ) (s : Finset ι) (a : ι → R) (v : ι → M) :
     f^[n] (∑ i ∈ s, a i • v i) = ∑ i ∈ s, σ^[n] (a i) • f^[n] (v i) := by
   rw [TauCeti.iterate_map_sum]
-  have hsmul (r : R) (x : M) : f^[n] (r • x) = σ^[n] r • f^[n] x := by
-    induction n with
-    | zero => rfl
-    | succ n ih => simp only [Function.iterate_succ_apply' _ n, ih, map_smulₛₗ]
-  simp only [hsmul]
+  simp only [TauCeti.iterate_map_smulₛₗ (σ := σ)]

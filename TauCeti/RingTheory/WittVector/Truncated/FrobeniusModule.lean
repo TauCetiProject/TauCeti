@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Submodule.Pointwise
 public import TauCeti.LinearAlgebra.Semilinear.Algebraic
 public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
@@ -14,11 +13,10 @@ public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
 Over the length-`n` Witt vectors of a ring of characteristic `p`, an algebraic Frobenius
 module has a bijective Witt-semilinear Frobenius and every element satisfies a monic
-relation in its iterates. Algebraicity of a bijective Frobenius can be checked on the
-successive quotients `p^i M / p^{i+1} M` for `i < n`. Each quotient has bijective Frobenius,
-and multiplication by `p^i` gives a Frobenius-equivariant surjection onto it from `M / pM`,
-so the first quotient suffices. Alternatively, the monic relation condition can be checked
-on the submodule `M[p]` killed by `p`.
+relation in its iterates. Both conditions can be checked on the successive quotients
+`p^i M / p^{i+1} M` for `i < n`. Multiplication by `p^i` gives a Frobenius-equivariant
+surjection from `M / pM` onto each quotient, so the first quotient suffices for the monic
+relation condition. That condition can also be checked on the submodule `M[p]` killed by `p`.
 
 The quotients here use the ordinary submodules of scalar multiples. The arguments apply
 when the underlying module has `p`-torsion.
@@ -31,7 +29,7 @@ when the underlying module has `p`-torsion.
 
 public section
 
-open Function Set TauCeti
+open Function
 open scoped Pointwise
 
 namespace LinearMap
@@ -57,101 +55,73 @@ theorem isAlgebraicWittFrobenius_iff (F : M →ₛₗ[φ] M) :
 /-- The Witt Frobenius induced on the ordinary quotient `p^i M / p^{i+1} M`. -/
 noncomputable def wittFrobeniusGraded (F : M →ₛₗ[φ] M) (i : ℕ) :
     (P i ⧸ (P (i + 1)).comap (P i).subtype) →ₛₗ[φ] (P i ⧸ (P (i + 1)).comap (P i).subtype) :=
-  F.subquotientMap (P i) (P (i + 1)) (F.mapsTo_smul_top_of_fixed (by simp))
-    (F.mapsTo_smul_top_of_fixed (by simp))
+  F.smulPowGraded (map_natCast φ p) i
 
 /-- The induced Witt Frobenius sends the class of a vector to the class of its Frobenius. -/
 @[simp]
 theorem wittFrobeniusGraded_mk (F : M →ₛₗ[φ] M) (i : ℕ) (x : P i) :
     F.wittFrobeniusGraded i (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk ⟨F x, F.mapsTo_smul_top_of_fixed (by simp) x.property⟩ := by
-  unfold wittFrobeniusGraded
-  exact subquotientMap_mk (P i) (P (i + 1)) _ _ x
+      Submodule.Quotient.mk ⟨F x, F.mapsTo_smul_top_of_fixed (by simp) x.property⟩ :=
+  smulPowGraded_mk F (map_natCast φ p) i x
 
 variable {F : M →ₛₗ[TruncatedWittVector.map (p := p) n (_root_.frobenius R p)] M}
 
+private theorem p_pow_eq_zero : (p : W) ^ n = 0 := by
+  rw [← Nat.cast_pow]
+  exact CharP.cast_eq_zero W (p ^ n)
+
+private theorem p_pow_smul_top_eq_bot : P n = ⊥ := by
+  simp only [p_pow_eq_zero, zero_smul, Submodule.zero_eq_bot]
+
 /-- A bijective Witt Frobenius induces a bijective Frobenius on each successive quotient. -/
 theorem bijective_wittFrobeniusGraded (hF : Bijective F) (i : ℕ) :
-    Bijective (F.wittFrobeniusGraded i) := by
-  rw [wittFrobeniusGraded]
-  apply bijective_subquotientMap _ _ _ _ (F.surjOn_smul_top_of_fixed hF.2 (by simp))
-  intro x _ hx
-  obtain ⟨y, hy, hyF⟩ := F.surjOn_smul_top_of_fixed hF.2 (a := (p : W) ^ (i + 1)) (by simp) hx
-  exact hF.1 hyF ▸ hy
+    Bijective (F.wittFrobeniusGraded i) :=
+  bijective_smulPowGraded hF (map_natCast φ p) i
 
 /-- Each successive quotient of an algebraic Witt Frobenius module is algebraic. -/
 theorem IsAlgebraicWittFrobenius.wittFrobeniusGraded
     (hF : F.IsAlgebraicWittFrobenius) (i : ℕ) :
     (F.wittFrobeniusGraded i).IsAlgebraicWittFrobenius :=
-  ⟨bijective_wittFrobeniusGraded hF.1 i, hF.2.subquotientMap _ _ _ _⟩
+  ⟨bijective_wittFrobeniusGraded hF.1 i, hF.2.smulPowGraded (map_natCast φ p) i⟩
 
 /-- A Witt-semilinear Frobenius satisfies monic relations precisely when the induced maps on
 the successive quotients of the `p`-power filtration do. -/
 theorem isAlgebraic_iff_wittFrobeniusGraded :
-    F.IsAlgebraic ↔ ∀ i < n, (F.wittFrobeniusGraded i).IsAlgebraic := by
-  constructor
-  · intro h i _
-    exact h.subquotientMap _ _ _ _
-  · intro h
-    have hnil : (p : W) ^ n = 0 := by
-      rw [← Nat.cast_pow]
-      exact CharP.cast_eq_zero W (p ^ n)
-    have hbot : P n = ⊥ := by
-      simp only [hnil, zero_smul, Submodule.zero_eq_bot]
-    have hdesc : Antitone (P : ℕ → Submodule W M) := fun _ _ hij ↦ by
-      simpa only [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul] using
-        Submodule.pow_smul_top_le (Ideal.span {(p : W)}) M hij
-    have h₀ := isAlgebraic_restrict_of_filtration P (fun _ ↦ F.mapsTo_smul_top_of_fixed (by simp))
-      hdesc hbot h
-    refine h₀.of_surjective (P 0).subtype (fun _ ↦ rfl) fun x ↦ ⟨⟨x, ?_⟩, rfl⟩
-    simp
+    F.IsAlgebraic ↔ ∀ i < n, (F.wittFrobeniusGraded i).IsAlgebraic :=
+  F.isAlgebraic_iff_smulPowGraded (map_natCast φ p) p_pow_smul_top_eq_bot
 
-/-- For a bijective Witt Frobenius, Bhatt–Lurie algebraicity is equivalent to algebraicity
-of the successive `p`-power subquotients. -/
-theorem isAlgebraicWittFrobenius_iff_wittFrobeniusGraded (hF : Bijective F) :
+/-- Bhatt–Lurie algebraicity is equivalent to algebraic Witt Frobenius on all successive
+`p`-power subquotients. -/
+theorem isAlgebraicWittFrobenius_iff_wittFrobeniusGraded :
     F.IsAlgebraicWittFrobenius ↔ ∀ i < n, (F.wittFrobeniusGraded i).IsAlgebraicWittFrobenius :=
   ⟨fun h i _ ↦ h.wittFrobeniusGraded i,
-    fun h ↦ ⟨hF, isAlgebraic_iff_wittFrobeniusGraded.mpr fun i hi ↦ (h i hi).2⟩⟩
+    fun h ↦ ⟨bijective_of_smulPowGraded (map_natCast φ p) p_pow_smul_top_eq_bot
+      (fun i hi ↦ (h i hi).1), isAlgebraic_iff_wittFrobeniusGraded.mpr fun i hi ↦ (h i hi).2⟩⟩
 
 /-- Witt Frobenius descends to the reduction `M / pM`. -/
 noncomputable def wittFrobeniusModP (F : M →ₛₗ[φ] M) :
     (M ⧸ ((p : W) • (⊤ : Submodule W M))) →ₛₗ[φ] (M ⧸ ((p : W) • (⊤ : Submodule W M))) :=
-  ((p : W) • (⊤ : Submodule W M)).mapQ _ F fun _ hx ↦
-    F.mapsTo_smul_top_of_fixed (by simp) hx
+  Submodule.mapQ ((p : W) • (⊤ : Submodule W M)) ((p : W) • ⊤) F
+    (F.mapsTo_smul_top_of_fixed (map_natCast φ p))
 
 @[simp]
 theorem wittFrobeniusModP_mk (F : M →ₛₗ[φ] M) (x : M) :
     F.wittFrobeniusModP (Submodule.Quotient.mk x) = Submodule.Quotient.mk (F x) :=
   (rfl)
 
-private theorem smulPowQuotientMap_semiconj (F : M →ₛₗ[φ] M) (i : ℕ) :
-    Semiconj (smulPowQuotientMap (p : W) i) F.wittFrobeniusModP (F.wittFrobeniusGraded i) := by
-  intro z
-  obtain ⟨x, rfl⟩ := ((p : W) • (⊤ : Submodule W M)).mkQ_surjective z
-  simp only [Submodule.mkQ_apply, wittFrobeniusModP_mk, smulPowQuotientMap_mk,
-    wittFrobeniusGraded_mk]
-  congr 1
-  exact Subtype.ext (by simp [map_smulₛₗ])
-
 /-- The monic relation condition over truncated Witt vectors is equivalent to that for the
 induced Frobenius on `M / pM`. -/
 theorem isAlgebraic_iff_wittFrobeniusModP :
-    F.IsAlgebraic ↔ F.wittFrobeniusModP.IsAlgebraic := by
-  let Q : Submodule W M := (p : W) • ⊤
-  refine ⟨fun h ↦ h.of_surjective Q.mkQ (fun x ↦ (wittFrobeniusModP_mk F x).symm)
-    Q.mkQ_surjective, ?_⟩
-  intro h
-  exact isAlgebraic_iff_wittFrobeniusGraded.mpr fun i _ ↦
-    h.of_surjective (smulPowQuotientMap (p : W) i) (smulPowQuotientMap_semiconj F i)
-      (smulPowQuotientMap_surjective (p : W) i)
+    F.IsAlgebraic ↔ F.wittFrobeniusModP.IsAlgebraic :=
+  F.isAlgebraic_iff_mapQ_smul_top (map_natCast φ p) p_pow_smul_top_eq_bot
 
 /-- The restriction of Witt Frobenius to the submodule `M[p]` annihilated by `p`. -/
 noncomputable def wittFrobeniusPTorsion (F : M →ₛₗ[φ] M) :=
-  F.restrict (F.mapsTo_ker_smul_of_fixed (a := (p : W)) (map_natCast φ p))
+  F.restrict (F.mapsTo_torsionBy_of_fixed (a := (p : W)) (map_natCast φ p))
 
 @[simp]
 theorem coe_wittFrobeniusPTorsion_apply (F : M →ₛₗ[φ] M)
-    (x : ker (DistribSMul.toLinearMap W M (p : W))) :
+    (x : Submodule.torsionBy W M (p : W)) :
     ↑(F.wittFrobeniusPTorsion x) = F x :=
   (rfl)
 
@@ -159,8 +129,7 @@ theorem coe_wittFrobeniusPTorsion_apply (F : M →ₛₗ[φ] M)
 restricted Frobenius on the submodule killed by `p`. -/
 theorem isAlgebraic_iff_wittFrobeniusPTorsion :
     F.IsAlgebraic ↔ F.wittFrobeniusPTorsion.IsAlgebraic := by
-  refine isAlgebraic_iff_restrict_ker_smul_of_isNilpotent F (map_natCast φ p) ⟨n, ?_⟩
-  rw [← Nat.cast_pow]
-  exact CharP.cast_eq_zero W (p ^ n)
+  exact F.isAlgebraic_iff_restrict_torsionBy (map_natCast φ p)
+    (fun x ↦ ⟨n, by rw [p_pow_eq_zero, zero_smul]⟩)
 
 end LinearMap

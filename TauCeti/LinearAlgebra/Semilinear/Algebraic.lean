@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Submodule.Ker
-public import TauCeti.LinearAlgebra.Quotient.Basic
+public import TauCeti.Algebra.Module.Torsion.Basic
+public import TauCeti.LinearAlgebra.Quotient.ScalarMap
 import TauCeti.Algebra.Module.LinearMap.Iterate
 import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 
@@ -155,19 +155,10 @@ theorem isAlgebraic_restrict_of_filtration (P : ℕ → Submodule R M)
   refine Nat.decreasingInduction (motive := fun i _ ↦ (Fᵢ i).IsAlgebraic)
     (fun i hi ih ↦ ?_) hbase (Nat.zero_le n)
   let Q := (P (i + 1)).comap (P i).subtype
-  have hQ : MapsTo (Fᵢ i) Q Q := fun x hx ↦ hP (i + 1) (x := x.val) hx
-  let e := Submodule.comapSubtypeEquivOfLe (hdesc (Nat.le_succ i))
-  have he : Semiconj e.toLinearMap ((Fᵢ i).restrict hQ) (Fᵢ (i + 1)) := by
-    intro x
-    apply Subtype.ext
-    calc
-      (e.toLinearMap ((Fᵢ i).restrict hQ x) : M) =
-          (((Fᵢ i).restrict hQ x : Q) : P i).val :=
-        Submodule.comapSubtypeEquivOfLe_apply_coe _ _
-      _ = (Fᵢ i (x : P i) : M) := congrArg Subtype.val (coe_restrict_apply hQ x)
-      _ = F (x : P i) := coe_restrict_apply (hP i) _
-      _ = F (e x : M) := congrArg F (Submodule.comapSubtypeEquivOfLe_apply_coe _ _).symm
-      _ = (Fᵢ (i + 1) (e x) : M) := (coe_restrict_apply (hP (i + 1)) _).symm
+  have hQ := mapsTo_restrict_comap_subtype (hP i) (hP (i + 1))
+  let hle := hdesc (Nat.le_succ i)
+  let e := Submodule.comapSubtypeEquivOfLe hle
+  have he := semiconj_comapSubtypeEquivOfLe_restrict hle (hP i) (hP (i + 1))
   exact (isAlgebraic_iff_restrict_and_mapQ Q hQ).mpr
     ⟨ih.of_injective e.toLinearMap he e.injective,
       by simpa only [subquotientMap_eq_mapQ] using halg i hi⟩
@@ -178,12 +169,47 @@ section FixedScalar
 
 variable {A V : Type*} [CommRing A] [AddCommGroup V] [Module A V] {τ : A →+* A}
 
-/-- For a fixed nilpotent scalar, algebraicity can be checked on the submodule it annihilates. -/
-theorem isAlgebraic_iff_restrict_ker_smul_of_isNilpotent (f : V →ₛₗ[τ] V)
-    {a : A} (ha : τ a = a) (hnil : IsNilpotent a) :
-    f.IsAlgebraic ↔ (f.restrict (f.mapsTo_ker_smul_of_fixed ha)).IsAlgebraic := by
-  let K := ker (DistribSMul.toLinearMap A V a)
-  let fK := f.restrict (f.mapsTo_ker_smul_of_fixed ha)
+open scoped Pointwise
+
+/-- Algebraicity passes to each graded piece for a fixed scalar. -/
+theorem IsAlgebraic.smulPowGraded {f : V →ₛₗ[τ] V} (hf : f.IsAlgebraic)
+    {a : A} (ha : τ a = a) (i : ℕ) : (f.smulPowGraded ha i).IsAlgebraic := by
+  rw [smulPowGraded_eq_subquotientMap]
+  exact hf.subquotientMap _ _ _ _
+
+/-- For a fixed scalar with a finite power filtration, algebraicity can be checked on the
+successive quotients. -/
+theorem isAlgebraic_iff_smulPowGraded (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) {n : ℕ}
+    (hbot : a ^ n • (⊤ : Submodule A V) = ⊥) :
+    f.IsAlgebraic ↔ ∀ i < n, (f.smulPowGraded ha i).IsAlgebraic := by
+  let P (i : ℕ) := a ^ i • (⊤ : Submodule A V)
+  have hP (i : ℕ) : MapsTo f (P i) (P i) :=
+    f.mapsTo_smul_top_of_fixed (a := a ^ i) (by simp [ha])
+  refine ⟨fun h i _ ↦ h.smulPowGraded ha i, fun h ↦ ?_⟩
+  have hdesc : Antitone P := fun _ _ hij ↦ Submodule.smul_top_le_smul_top_of_dvd (pow_dvd_pow a hij)
+  have h₀ := isAlgebraic_restrict_of_filtration P hP hdesc hbot
+    (fun i hi ↦ by simpa only [smulPowGraded_eq_subquotientMap] using h i hi)
+  exact h₀.of_surjective (P 0).subtype (fun _ ↦ rfl) fun x ↦ ⟨⟨x, by simp [P]⟩, rfl⟩
+
+/-- If the scalar-power filtration terminates, algebraicity is equivalent to algebraicity of
+the induced map on `V / aV`. -/
+theorem isAlgebraic_iff_mapQ_smul_top (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) {n : ℕ}
+    (hbot : a ^ n • (⊤ : Submodule A V) = ⊥) :
+    f.IsAlgebraic ↔ (Submodule.mapQ (a • (⊤ : Submodule A V)) (a • ⊤) f
+      (f.mapsTo_smul_top_of_fixed ha)).IsAlgebraic := by
+  let Q : Submodule A V := a • ⊤
+  refine ⟨fun h ↦ ((isAlgebraic_iff_restrict_and_mapQ Q (f.mapsTo_smul_top_of_fixed ha)).mp h).2,
+    fun h ↦ (f.isAlgebraic_iff_smulPowGraded ha hbot).mpr fun i _ ↦ ?_⟩
+  exact h.of_surjective (TauCeti.smulPowQuotientMap a i) (f.smulPowQuotientMap_semiconj ha i)
+    (TauCeti.smulPowQuotientMap_surjective a i)
+
+/-- If every vector is killed by a power of a fixed scalar, algebraicity can be checked on
+the submodule killed by that scalar. -/
+theorem isAlgebraic_iff_restrict_torsionBy (f : V →ₛₗ[τ] V)
+    {a : A} (ha : τ a = a) (hnil : ∀ x : V, ∃ k : ℕ, a ^ k • x = 0) :
+    f.IsAlgebraic ↔ (f.restrict (f.mapsTo_torsionBy_of_fixed ha)).IsAlgebraic := by
+  let K := Submodule.torsionBy A V a
+  let fK := f.restrict (f.mapsTo_torsionBy_of_fixed ha)
   have hKi : Semiconj K.subtype fK f := fun _ ↦ rfl
   refine ⟨fun h ↦ h.of_injective K.subtype hKi K.subtype_injective, ?_⟩
   intro h
@@ -200,7 +226,7 @@ theorem isAlgebraic_iff_restrict_ker_smul_of_isNilpotent (f : V →ₛₗ[τ] V)
       obtain ⟨d, c, he⟩ := hasMonicRelation_iff_exists_sum.mp (ih _ hax)
       let r := f^[d] x - ∑ j, c j • f^[j.val] x
       have hr : r ∈ K := by
-        rw [LinearMap.mem_ker, DistribSMul.toLinearMap_apply]
+        rw [Submodule.mem_torsionBy_iff]
         calc
           a • r = f^[d] (a • x) - ∑ j, c j • f^[j.val] (a • x) := by
             dsimp only [r]
@@ -210,8 +236,9 @@ theorem isAlgebraic_iff_restrict_ker_smul_of_isNilpotent (f : V →ₛₗ[τ] V)
             rw [smul_comm a, (hc.iterate_right j.val).eq]
           _ = 0 := sub_eq_zero.mpr he
       exact HasMonicRelation.of_residual c ((h ⟨r, hr⟩).map K.subtype hKi)
-  obtain ⟨k, hk⟩ := hnil
-  exact fun x ↦ hpow k x (by simp [hk])
+  intro x
+  obtain ⟨k, hk⟩ := hnil x
+  exact hpow k x hk
 
 end FixedScalar
 

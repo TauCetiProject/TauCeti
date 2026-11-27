@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.Ker
-public import Mathlib.Algebra.Module.LinearMap.Basic
 
 import Mathlib.LinearAlgebra.Span.Defs
 
@@ -70,18 +69,3 @@ theorem mem_inf_ker_sup_inf_ker_iff {R M : Type*} [Semiring R] [AddCommMonoid M]
         (by simp [hc h₂₂, hz'])⟩
 
 end TauCeti.End
-
-namespace LinearMap
-
-variable {A V : Type*} [CommSemiring A] [AddCommMonoid V] [Module A V] {τ : A →+* A}
-
-/-- The submodule annihilated by a fixed scalar is stable under a semilinear endomorphism. -/
-theorem mapsTo_ker_smul_of_fixed (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) :
-    Set.MapsTo f (ker (DistribSMul.toLinearMap A V a)) (ker (DistribSMul.toLinearMap A V a)) := by
-  intro x hx
-  have hz : a • x = 0 := LinearMap.mem_ker.mp hx
-  have hfz : f (a • x) = 0 := by rw [hz, map_zero]
-  apply LinearMap.mem_ker.mpr
-  simpa only [DistribSMul.toLinearMap_apply, map_smulₛₗ, ha] using hfz
-
-end LinearMap

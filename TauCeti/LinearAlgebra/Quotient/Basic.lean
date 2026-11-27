@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Regular.IsSMulRegular
+import Mathlib.Algebra.Exact.Basic
+import Mathlib.Algebra.FiveLemma
 
 /-!
 # Basic facts about quotient modules
@@ -63,19 +64,28 @@ open Function Set
 variable {R M : Type*} [Ring R] [AddCommGroup M] [Module R M] {σ : R →+* R}
   {F : M →ₛₗ[σ] M}
 
+/-- Restricting to a stable submodule preserves stability of the pulled-back submodule. -/
+theorem mapsTo_restrict_comap_subtype {P Q : Submodule R M}
+    (hP : MapsTo F P P) (hQ : MapsTo F Q Q) :
+    MapsTo (F.restrict hP) (Q.comap P.subtype) (Q.comap P.subtype) := by
+  intro x hx
+  apply Submodule.mem_comap.mpr
+  rw [Submodule.subtype_apply, coe_restrict_apply hP]
+  exact hQ (Submodule.mem_comap.mp hx)
+
 /-- The map induced by a semilinear endomorphism on the quotient of a stable submodule
 `P` by its intersection with another stable submodule `Q`. -/
 def subquotientMap (F : M →ₛₗ[σ] M) (P Q : Submodule R M)
     (hP : MapsTo F P P) (hQ : MapsTo F Q Q) :
     (P ⧸ Q.comap P.subtype) →ₛₗ[σ] (P ⧸ Q.comap P.subtype) :=
-  (Q.comap P.subtype).mapQ _ (F.restrict hP) fun x hx ↦ hQ (x := x.val) hx
+  (Q.comap P.subtype).mapQ _ (F.restrict hP) (mapsTo_restrict_comap_subtype hP hQ)
 
 /-- The stable subquotient map is the quotient map induced by the restriction to its numerator. -/
 theorem subquotientMap_eq_mapQ (F : M →ₛₗ[σ] M) (P Q : Submodule R M)
     (hP : MapsTo F P P) (hQ : MapsTo F Q Q) :
     F.subquotientMap P Q hP hQ =
       (Q.comap P.subtype).mapQ (Q.comap P.subtype) (F.restrict hP)
-        (fun x hx ↦ hQ (x := x.val) hx) :=
+        (mapsTo_restrict_comap_subtype hP hQ) :=
   (rfl)
 
 /-- The stable subquotient map sends the class of a vector to the class of its image. -/
@@ -92,51 +102,63 @@ theorem bijective_subquotientMap (P Q : Submodule R M)
     (hP : MapsTo F P P) (hQ : MapsTo F Q Q)
     (hs : SurjOn F P P) (hi : ∀ x ∈ P, F x ∈ Q → x ∈ Q) :
     Bijective (F.subquotientMap P Q hP hQ) := by
-  refine ⟨(Submodule.mapQ_injective_iff _ _ _ _).mpr (fun x hx ↦ hi x x.property hx), ?_⟩
-  apply Submodule.mapQ_surjective
+  refine ⟨(Submodule.mapQ_injective_iff _ _ _ _).mpr ?_,
+    Submodule.mapQ_surjective _ _ _ _ (hP.restrict_surjective_iff.mpr hs)⟩
+  intro x hx
+  simpa only [Submodule.mem_comap, Submodule.subtype_apply] using
+    hi x x.property (by
+      simpa only [Submodule.mem_comap, Submodule.subtype_apply, coe_restrict_apply hP] using hx)
+
+/-- The equivalence between a submodule of `P` pulled back along the inclusion and the
+original submodule intertwines the two restrictions of the same endomorphism. -/
+theorem semiconj_comapSubtypeEquivOfLe_restrict {P Q : Submodule R M} (hle : Q ≤ P)
+    (hP : MapsTo F P P) (hQ : MapsTo F Q Q) :
+    Semiconj (Submodule.comapSubtypeEquivOfLe hle)
+      ((F.restrict hP).restrict (mapsTo_restrict_comap_subtype hP hQ)) (F.restrict hQ) := by
   intro x
-  obtain ⟨z, hz, hzx⟩ := hs x.property
-  exact ⟨⟨z, hz⟩, Subtype.ext hzx⟩
+  apply Subtype.ext
+  rw [Submodule.comapSubtypeEquivOfLe_apply_coe hle,
+    coe_restrict_apply hQ, Submodule.comapSubtypeEquivOfLe_apply_coe hle]
+  exact (congrArg Subtype.val (coe_restrict_apply (mapsTo_restrict_comap_subtype hP hQ) x)).trans
+    (coe_restrict_apply hP _)
+
+/-- Bijectivity on a stable submodule and its quotient implies bijectivity on the module. -/
+theorem bijective_of_restrict_of_mapQ (P : Submodule R M) (hP : MapsTo F P P)
+    (h₁ : Bijective (F.restrict hP)) (h₂ : Bijective (P.mapQ P F (fun _ hx ↦ hP hx))) :
+    Bijective F := by
+  have he := exact_subtype_mkQ P
+  have hi : P.subtype.toAddMonoidHom.comp (F.restrict hP).toAddMonoidHom =
+      F.toAddMonoidHom.comp P.subtype.toAddMonoidHom := rfl
+  have hq : P.mkQ.toAddMonoidHom.comp F.toAddMonoidHom =
+      (P.mapQ P F (fun _ hx ↦ hP hx)).toAddMonoidHom.comp P.mkQ.toAddMonoidHom := rfl
+  exact AddMonoidHom.bijective_of_surjective_of_bijective_of_bijective_of_injective
+    (0 : PUnit.{1} →+ P) P.subtype.toAddMonoidHom P.mkQ.toAddMonoidHom (0 : (M ⧸ P) →+ PUnit.{1})
+    (0 : PUnit.{1} →+ P) P.subtype.toAddMonoidHom P.mkQ.toAddMonoidHom (0 : (M ⧸ P) →+ PUnit.{1})
+    (0 : PUnit.{1} →+ PUnit.{1}) (F.restrict hP).toAddMonoidHom F.toAddMonoidHom
+    (P.mapQ P F (fun _ hx ↦ hP hx)).toAddMonoidHom (0 : PUnit.{1} →+ PUnit.{1})
+    (by simp) hi hq (by simp)
+    (fun x ↦ by simp [eq_comm]) he (fun x ↦ by simp [P.mkQ_surjective.range_eq])
+    (fun x ↦ by simp [eq_comm]) he (fun x ↦ by simp [P.mkQ_surjective.range_eq])
+    (bijective_of_subsingleton _).2 h₁ h₂ (injective_of_subsingleton _)
+
+/-- Bijectivity on the successive quotients of a finite descending stable filtration
+implies bijectivity on its initial submodule. -/
+theorem bijective_restrict_of_filtration (P : ℕ → Submodule R M)
+    (hP : ∀ i, MapsTo F (P i) (P i)) (hdesc : Antitone P) {n : ℕ} (hbot : P n = ⊥)
+    (hbij : ∀ i < n, Bijective (F.subquotientMap (P i) (P (i + 1)) (hP i) (hP (i + 1)))) :
+    Bijective (F.restrict (hP 0)) := by
+  have hbase : Bijective (F.restrict (hP n)) := by
+    have : Subsingleton (P n) := hbot ▸ inferInstance
+    exact bijective_of_subsingleton _
+  refine Nat.decreasingInduction (motive := fun i _ ↦ Bijective (F.restrict (hP i)))
+    (fun i hi ih ↦ ?_) hbase (Nat.zero_le n)
+  let Q := (P (i + 1)).comap (P i).subtype
+  have hQ := mapsTo_restrict_comap_subtype (hP i) (hP (i + 1))
+  let hle := hdesc (Nat.le_succ i)
+  let e := Submodule.comapSubtypeEquivOfLe hle
+  have he := semiconj_comapSubtypeEquivOfLe_restrict hle (hP i) (hP (i + 1))
+  apply bijective_of_restrict_of_mapQ Q hQ _ (hbij i hi)
+  rw [← Function.Bijective.of_comp_iff' e.bijective, he.comp_eq]
+  exact ih.comp e.bijective
 
 end LinearMap
-
-namespace TauCeti
-
-open scoped Pointwise
-
-variable {A M : Type*} [CommRing A] [AddCommGroup M] [Module A M]
-
-/-- Multiplication by `a^i` induces a map from `M / aM` to `a^i M / a^{i+1} M`. -/
-noncomputable def smulPowQuotientMap (a : A) (i : ℕ) :
-    M ⧸ (a • (⊤ : Submodule A M)) →ₗ[A]
-      ((a ^ i • (⊤ : Submodule A M) : Submodule A M) ⧸
-        (a ^ (i + 1) • (⊤ : Submodule A M)).comap (a ^ i • (⊤ : Submodule A M)).subtype) := by
-  let f := (DistribSMul.toLinearMap A M (a ^ i)).codRestrict (a ^ i • ⊤) fun x ↦
-    Submodule.smul_mem_pointwise_smul x _ _ Submodule.mem_top
-  refine (a • (⊤ : Submodule A M)).mapQ _ f ?_
-  intro x hx
-  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  have hmem : a ^ i • (a • y) ∈ a ^ (i + 1) • (⊤ : Submodule A M) := by
-    rw [← mul_smul, pow_succ]
-    exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
-  exact hmem
-
-/-- On a quotient class, `smulPowQuotientMap` multiplies its representative by `a^i`. -/
-@[simp]
-theorem smulPowQuotientMap_mk (a : A) (i : ℕ) (x : M) :
-    smulPowQuotientMap a i (Submodule.Quotient.mk x) =
-      Submodule.Quotient.mk
-        (⟨a ^ i • x, Submodule.smul_mem_pointwise_smul x _ _ Submodule.mem_top⟩ :
-          (a ^ i • ⊤ : Submodule A M)) :=
-  (rfl)
-
-/-- Every class in `a^i M / a^{i+1} M` comes from multiplication by `a^i` on `M / aM`. -/
-theorem smulPowQuotientMap_surjective (a : A) (i : ℕ) :
-    Function.Surjective (smulPowQuotientMap (M := M) a i) := by
-  unfold smulPowQuotientMap
-  apply Submodule.mapQ_surjective
-  intro y
-  obtain ⟨x, -, hx⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp y.property
-  exact ⟨x, Subtype.ext hx⟩
-
-end TauCeti

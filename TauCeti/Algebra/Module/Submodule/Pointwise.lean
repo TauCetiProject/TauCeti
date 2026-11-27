@@ -15,6 +15,7 @@ public import Mathlib.RingTheory.Ideal.Span
 import TauCeti.Algebra.Module.Submodule.Map
 import Mathlib.Algebra.Order.Group.Action
 import Mathlib.Algebra.Ring.Action.Pointwise.Set
+import Mathlib.GroupTheory.GroupAction.Pointwise
 import TauCeti.GroupTheory.Index.Exact
 
 /-!
@@ -368,18 +369,17 @@ variable {A V : Type*} [CommSemiring A] [AddCommMonoid V] [Module A V] {τ : A �
 /-- The image of multiplication by a fixed scalar is stable under a semilinear endomorphism. -/
 theorem mapsTo_smul_top_of_fixed (f : V →ₛₗ[τ] V) {a : A} (ha : τ a = a) :
     MapsTo f (a • (⊤ : Submodule A V)) (a • (⊤ : Submodule A V)) := by
-  intro x hx
-  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  rw [map_smulₛₗ, ha]
-  exact Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top
+  -- Express the pointwise scalar image as a set so the equivariant image lemma applies.
+  change MapsTo f (a • (univ : Set V)) (a • univ)
+  rw [Set.mapsTo_iff_image_subset, image_smul_setₛₗ (σ := τ), ha]
+  exact smul_set_mono (subset_univ _)
 
 /-- A surjective semilinear endomorphism is surjective on the image of multiplication
 by a fixed scalar. -/
 theorem surjOn_smul_top_of_fixed (f : V →ₛₗ[τ] V) (hf : Surjective f) {a : A} (ha : τ a = a) :
     SurjOn f (a • (⊤ : Submodule A V)) (a • (⊤ : Submodule A V)) := by
-  intro x hx
-  obtain ⟨y, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
-  obtain ⟨z, rfl⟩ := hf y
-  exact ⟨a • z, Submodule.smul_mem_pointwise_smul _ _ _ Submodule.mem_top, by rw [map_smulₛₗ, ha]⟩
+  -- Express the pointwise scalar image as a set so the equivariant image lemma applies.
+  change SurjOn f (a • (univ : Set V)) (a • univ)
+  rw [SurjOn, image_smul_setₛₗ (σ := τ), ha, Set.image_univ_of_surjective hf]
 
 end LinearMap
