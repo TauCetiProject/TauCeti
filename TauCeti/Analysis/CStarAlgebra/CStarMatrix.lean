@@ -23,6 +23,7 @@ import Mathlib.Analysis.CStarAlgebra.Hom
 import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Data.Matrix.Composition
 import TauCeti.LinearAlgebra.Matrix.PartialIsometry
+public import TauCeti.LinearAlgebra.Matrix.MurrayVonNeumann
 import TauCeti.LinearAlgebra.Trace.Idempotent
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -73,6 +74,7 @@ embeddings into block-diagonal matrices.
   `A` as the invertible elements of `CStarMatrix n n A`, an isomorphism of topological groups.
 * `Matrix.toCStarMatrixUnitary`: unitary matrices over a unital C⋆-algebra `A` as the unitaries
   of `CStarMatrix n n A`, a homeomorphism.
+* `CStarMatrix.norm_le_sum_norm_entry`: `‖M‖ ≤ Σ j, Σ i, ‖M i j‖`.
 * `CStarMatrix.isStarProjection_ofMatrix_symm_iff`, `CStarMatrix.isStarProjection_ofMatrix_iff`:
   a C⋆-matrix is a star projection exactly when the underlying matrix is; companions
   `CStarMatrix.isSelfAdjoint_ofMatrix_iff` and `CStarMatrix.ofMatrix_mem_unitary_iff` do the same
@@ -399,6 +401,16 @@ lemma isStarProjection_ofMatrix_symm_iff [Fintype n] [NonUnitalSemiring A] [Star
 lemma isStarProjection_ofMatrix_iff [Fintype n] [NonUnitalSemiring A] [StarRing A]
     {M : Matrix n n A} : IsStarProjection (ofMatrix M) ↔ IsStarProjection M := by
   rw [← isStarProjection_ofMatrix_symm_iff, Equiv.symm_apply_apply]
+
+/-- An element `v` of `CStarMatrix n n A` with `v⋆v = p` and `vv⋆ = q` makes the underlying
+matrices of the projections `p` and `q` Murray–von Neumann equivalent. -/
+theorem isMurrayVonNeumannEquivalent_of_star_mul_self_eq [Fintype n] [NonUnitalSemiring A]
+    [StarRing A] {p q v : CStarMatrix n n A} (hp : IsStarProjection p) (hq : IsStarProjection q)
+    (h₁ : star v * v = p) (h₂ : v * star v = q) :
+    Matrix.IsMurrayVonNeumannEquivalent (ofMatrix.symm p) (ofMatrix.symm q) :=
+  ⟨isStarProjection_ofMatrix_symm_iff.2 hp, isStarProjection_ofMatrix_symm_iff.2 hq,
+    ofMatrix.symm v, by rw [← ofMatrix_symm_star, ← ofMatrix_symm_mul, h₁],
+    by rw [← ofMatrix_symm_star, ← ofMatrix_symm_mul, h₂]⟩
 
 /-- A matrix is self-adjoint exactly when it is self-adjoint as a C⋆-matrix. -/
 @[simp]
@@ -1311,6 +1323,38 @@ theorem norm_compress_le {ι ι' : Type*} [Fintype ι] [Fintype ι'] {e : ι →
     _ = _ := by simp only [coe_nnNorm]; ring
 
 end Compression
+
+section EntryNorm
+
+open WithCStarModule
+
+variable {m n A : Type*} [Fintype m] [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A]
+  [StarOrderedRing A]
+
+/-- The norm of a matrix over a C⋆-algebra is at most the sum of the norms of its entries. The
+statement and proof are the first step of the private `CStarMatrix.antilipschitzWith_toMatrixAux`
+in `Mathlib/Analysis/CStarAlgebra/CStarMatrix.lean`. -/
+theorem norm_le_sum_norm_entry (M : CStarMatrix m n A) : ‖M‖ ≤ ∑ j, ∑ i, ‖M i j‖ := by
+  rw [norm_def]
+  refine (toCLM M).opNorm_le_bound (by positivity) fun v => ?_
+  simp only [toCLM_apply_eq_sum, Finset.sum_mul]
+  refine (pi_norm_le_sum_norm _).trans ?_
+  gcongr with j _
+  refine (norm_sum_le _ _).trans ?_
+  gcongr with i _
+  refine (norm_mul_le _ _).trans ?_
+  rw [mul_comm]
+  gcongr
+  exact norm_apply_le_norm v i
+
+/-- If every entry of a matrix has norm at most `ε`, its norm is at most `card m * card n * ε`. -/
+theorem norm_le_card_mul_of_forall_norm_entry_le (M : CStarMatrix m n A) {ε : ℝ}
+    (h : ∀ i j, ‖M i j‖ ≤ ε) : ‖M‖ ≤ Fintype.card m * Fintype.card n * ε := by
+  refine (norm_le_sum_norm_entry M).trans ?_
+  calc ∑ j, ∑ i, ‖M i j‖ ≤ ∑ _j : n, ∑ _i : m, ε := by gcongr with j _ i _; exact h i j
+    _ = _ := by simp [Finset.card_univ]; ring
+
+end EntryNorm
 
 section DiagonalNorm
 
