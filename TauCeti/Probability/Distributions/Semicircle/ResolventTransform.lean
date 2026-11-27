@@ -167,18 +167,16 @@ theorem resolventTransform_semicircleReal_quadratic_eq_zero
   -- A point inside the disc is not real, so it lies in a half-plane meeting the exterior.
   have hR0 : 0 ≤ R := by positivity
   rcases lt_trichotomy z.im 0 with him | him | him
-  · have hneg : -(R + 1) < 0 := by linarith
-    refine quadratic_eq_zero_of_convex (isOpen_lt continuous_im continuous_const)
+  · refine quadratic_eq_zero_of_convex (isOpen_lt continuous_im continuous_const)
       (convex_halfSpace_im_lt 0) (fun _ h ↦ h.ne) (z₀ := ⟨a, -(R + 1)⟩)
-      hneg (lt_norm_mk_sub (lt_abs.2 (.inr (by linarith)))) him
+      (show -(R + 1) < (0 : ℝ) by linarith) (lt_norm_mk_sub (lt_abs.2 (.inr (by linarith)))) him
   · refine absurd ⟨z.re, ?_, Complex.ext rfl (by simp [him])⟩ hz
     have h := abs_le.1 ((abs_re_le_norm (z - a)).trans (not_lt.1 hzR))
     simp only [sub_re, ofReal_re] at h
     constructor <;> linarith [h.1, h.2]
-  · have hpos : 0 < R + 1 := by linarith
-    refine quadratic_eq_zero_of_convex (isOpen_lt continuous_const continuous_im)
+  · refine quadratic_eq_zero_of_convex (isOpen_lt continuous_const continuous_im)
       (convex_halfSpace_im_gt 0) (fun _ h ↦ h.ne') (z₀ := ⟨a, R + 1⟩)
-      hpos (lt_norm_mk_sub (lt_abs.2 (.inl (by linarith)))) him
+      (show (0 : ℝ) < R + 1 by linarith) (lt_norm_mk_sub (lt_abs.2 (.inl (by linarith)))) him
 
 /-- The standard semicircle resolvent satisfies `m² + z m + 1 = 0` at every nonreal point. -/
 theorem resolventTransform_semicircleReal_zero_one_quadratic_eq_zero (hz : z.im ≠ 0) :
@@ -354,9 +352,8 @@ theorem hasDerivWithinAt_resolventTransform_semicircleReal_variance (hz : 0 < z.
 theorem resolventTransform_semicircleReal_zero_one_I :
     resolventTransform (semicircleReal 0 1) I = ((√5 - 1) / 2 : ℝ) * I := by
   have h5 : (1 : ℝ) < √5 := (Real.lt_sqrt zero_le_one).2 (by norm_num)
-  have h5nonneg : (0 : ℝ) ≤ 5 := by norm_num
   have h5c : ((√5 : ℝ) : ℂ) ^ 2 = 5 := by
-    exact_mod_cast Real.sq_sqrt h5nonneg
+    exact_mod_cast Real.sq_sqrt (show (0 : ℝ) ≤ 5 by norm_num)
   refine ((eq_resolventTransform_semicircleReal_iff (by simp)).2
     ⟨by rw [mul_I_im, ofReal_re]; linarith, ?_⟩).symm
   push_cast
