@@ -89,8 +89,9 @@ theorem countablePartitionEntropy_le_ofReal_log_card {ι : Type*} [IsZeroOrProba
     countablePartitionEntropy μ a ≤ ENNReal.ofReal (Real.log s.card) := by
   set b : X → s := fun x ↦ ⟨a x, hs x⟩
   have hb : Measurable b := ha.subtype_mk
-  rw [show a = Subtype.val ∘ b from rfl,
-    countablePartitionEntropy_comp_of_injective b Subtype.val_injective]
+  -- `b` is `a` with its codomain corestricted to `s`, so `a` factors through it by definition.
+  have hab : Subtype.val ∘ b = a := rfl
+  rw [← hab, countablePartitionEntropy_comp_of_injective b Subtype.val_injective]
   rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
   · simp
   rw [countablePartitionEntropy_eq_ofReal_labelEntropy]
