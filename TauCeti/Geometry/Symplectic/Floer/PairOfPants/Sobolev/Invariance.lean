@@ -632,8 +632,8 @@ private theorem floerConformalSobolevOperator_pairOfPants_eq_of_sub (ω : Symple
       rw [hud]; exact (hKt' z hz).comp (u' z) (contDiffAt_const.prodMk contDiffAt_id)
     exact (h.eventually (by simp)).mono fun y hy ↦ hy.differentiableAt (by norm_num)
   conv_lhs => rw [show u' = fun w ↦ u w + (u' w - u w) from funext fun w ↦ (hud w).symm]
-  exact ω.floerConformalSobolevOperator_fun_add_eq_comp_add_right isOpen_thricePuncturedSphereReal _
-    Ks Kt
+  exact ω.floerConformalSobolevOperator_fun_add_eq_comp_add_right
+    isOpen_thricePuncturedSphereReal.measurableSet _ Ks Kt
     (fun z hz ↦ (hu z hz).differentiableAt one_ne_zero)
     (fun z hz ↦ (hd z hz).differentiableAt (by norm_num)) hKtd
 

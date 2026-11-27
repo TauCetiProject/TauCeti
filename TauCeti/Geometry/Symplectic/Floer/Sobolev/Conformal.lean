@@ -381,19 +381,19 @@ theorem floerConformalSobolevOperator_congr_of_eqOn (ω : SymplecticForm V) (hU 
   rw [floerConformalSobolevOperator_def, floerConformalSobolevOperator_def,
     jetOperator_congr_ae ((ae_restrict_iff' hU).2 (Filter.Eventually.of_forall h))]
 
-/-- **Moving the map is moving the data.** On an open set `U` on which `u` and `d` are
+/-- **Moving the map is moving the data.** On a measurable set `U` on which `u` and `d` are
 differentiable and each `K_t(z)` is differentiable near `u(z) + d(z)`, the conformal Sobolev
 realization of the linearized Floer operator along `u + d` is that along `u` of the data read at
 the moved target point `y + d(z)`, with `K_t` corrected by the linear function `-ω(∂t d(z), ·)`
 (`floerConformalJetCoeff_fun_add_eq_comp_add_right`). -/
 theorem floerConformalSobolevOperator_fun_add_eq_comp_add_right (ω : SymplecticForm V)
-    (hU : IsOpen U) (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u d : ℝ × ℝ → V}
+    (hU : MeasurableSet U) (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u d : ℝ × ℝ → V}
     (hu : ∀ z ∈ U, DifferentiableAt ℝ u z) (hd : ∀ z ∈ U, DifferentiableAt ℝ d z)
     (hKt : ∀ z ∈ U, ∀ᶠ y in 𝓝 (u z + d z), DifferentiableAt ℝ (Kt z) y) :
     ω.floerConformalSobolevOperator U ρ J Ks Kt (fun w ↦ u w + d w) =
       ω.floerConformalSobolevOperator U ρ (fun w y ↦ J w (y + d w)) (fun w y ↦ Ks w (y + d w))
         (fun w y ↦ Kt w (y + d w) - ω (fderiv ℝ d w stdComplexLineImag) y) u :=
-  ω.floerConformalSobolevOperator_congr_of_eqOn hU.measurableSet fun z hz ↦
+  ω.floerConformalSobolevOperator_congr_of_eqOn hU fun z hz ↦
     ω.floerConformalJetCoeff_fun_add_eq_comp_add_right ρ J Ks Kt (hu z hz) (hd z hz) (hKt z hz)
 
 /-- When the coefficient field on conformal jets is essentially bounded on `U`, the conformal
