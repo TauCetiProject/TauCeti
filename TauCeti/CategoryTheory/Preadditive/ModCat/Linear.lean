@@ -120,8 +120,9 @@ instance : (liftToModuleCat R F).Additive where
   map_add := by
     intro X Y f g
     ext x
-    simp
-    rfl
+    simp only [ModuleCat.hom_add, LinearMap.add_apply, liftToModuleCat_map_apply]
+    exact (ConcreteCategory.congr_hom (F.obj.map_add (f := f) (g := g)) x).trans
+      (AddCommGrpCat.hom_add_apply (F.obj.map f) (F.obj.map g) x)
 
 /-- Forgetting the scalars of the lift recovers the original abelian-group-valued functor. -/
 def liftToModuleCatForgetIso :
@@ -178,8 +179,9 @@ instance (F : D ⥤+ AddCommGrpCat.{w}) :
     (F.liftToModuleCat R).Linear R :=
   (Functor.linear_iff R _).2 fun X r ↦ by
     ext x
-    simp
-    rfl
+    simp only [ModuleCat.hom_smul, LinearMap.smul_apply, ModuleCat.hom_id, LinearMap.id_apply]
+    exact (AdditiveFunctor.liftToModuleCat_map_apply R F (r • 𝟙 X) x).trans
+      (AdditiveFunctor.liftToModuleCat_smul R F X r x).symm
 
 variable (R D) in
 /-- The object property of being an additive and `R`-linear functor to `R`-modules. -/
@@ -255,7 +257,7 @@ def linearModuleFunctorEquiv :
       intro F G α
       apply ObjectProperty.hom_ext
       ext X x
-      simp [liftForgetIso]
+      -- The counit components act as the identity on elements.
       rfl))
 
 /-- The forward functor of the equivalence is the canonical scalar lift. -/
