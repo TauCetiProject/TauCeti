@@ -35,9 +35,9 @@ an odd variable of `K` and a smaller odd variable of `L`, the swaps needed to no
 coefficient of a product is thus a finite sum, even with infinitely many labels and series with
 infinitely many monomials of each word length; the coefficients in word length below `m + n` of a
 product vanish when those of the factors vanish below `m` and `n`
-(`TauCeti.SuperMvPowerSeries.coeff_mul_eq_zero_of_degree_lt`), so the product is continuous for
-the topology of word length. Only the variables are completed: the coefficients `a_J` are
-arbitrary elements of `Q`.
+(`TauCeti.SuperMvPowerSeries.coeff_mul_eq_zero_of_degree_lt`), so the word-length filtration is
+multiplicative; the word-length topology itself is not introduced here. Only the variables are
+completed: the coefficients `a_J` are arbitrary elements of `Q`.
 
 In rational symplectic field theory, with `Γ` the good Reeb orbits, `p_γ` the variables of the
 positive ends and `Q` the supercommutative algebra of polynomials in the variables `q_γ`, this is
@@ -92,6 +92,9 @@ def OddSquarefree (J : Γ →₀ ℕ) : Prop :=
 
 variable {par}
 
+theorem oddSquarefree_iff {J : Γ →₀ ℕ} : OddSquarefree par J ↔ ∀ γ, par γ = 1 → J γ ≤ 1 :=
+  Iff.rfl
+
 theorem OddSquarefree.mono {J K : Γ →₀ ℕ} (hJ : OddSquarefree par J) (hK : K ≤ J) :
     OddSquarefree par K :=
   fun γ hγ => (hK γ).trans (hJ γ hγ)
@@ -112,13 +115,12 @@ theorem not_oddSquarefree_single_add_single {γ : Γ} (hγ : par γ = 1) :
 
 /-- The number of odd variables in a monomial, counted with multiplicity. -/
 def oddDegree : (Γ →₀ ℕ) →+ ℕ :=
-  Finsupp.liftAddHom fun γ => if par γ = 1 then AddMonoidHom.id ℕ else 0
+  Finsupp.weight fun γ => if par γ = 1 then 1 else 0
 
 @[simp]
 theorem oddDegree_single (γ : Γ) (n : ℕ) :
     oddDegree par (Finsupp.single γ n) = if par γ = 1 then n else 0 := by
-  simp only [oddDegree, Finsupp.liftAddHom_apply_single]
-  split_ifs <;> rfl
+  simp [oddDegree, Finsupp.weight_single]
 
 section koszulExponent
 
@@ -137,7 +139,7 @@ theorem koszulExponent_single_single (γ η : Γ) (m n : ℕ) :
     koszulExponent par (Finsupp.single γ m) (Finsupp.single η n) =
       if η < γ ∧ par γ = 1 ∧ par η = 1 then n * m else 0 := by
   simp only [koszulExponent, Finsupp.liftAddHom_apply_single, AddMonoidHom.flip_apply]
-  split_ifs <;> rfl
+  split_ifs <;> simp
 
 end koszulExponent
 
@@ -164,6 +166,15 @@ variable {par} {σ : Q →ₐ[R] Q}
 
 theorem coeff_injective : Function.Injective (coeff (Q := Q) (par := par) (σ := σ)) :=
   fun _ _ => SuperMvPowerSeries.ext
+
+/-- Two power series agree once their coefficients agree on the odd-squarefree monomials, since
+both vanish on the others. -/
+theorem ext_of_oddSquarefree {x y : SuperMvPowerSeries par σ}
+    (h : ∀ J, OddSquarefree par J → x.coeff J = y.coeff J) : x = y := by
+  ext J
+  by_cases hJ : OddSquarefree par J
+  · exact h J hJ
+  · rw [x.coeff_eq_zero_of_not_oddSquarefree hJ, y.coeff_eq_zero_of_not_oddSquarefree hJ]
 
 /-! #### Additive structure -/
 
@@ -233,34 +244,55 @@ theorem coeff_monomial_same {J : Γ →₀ ℕ} (hJ : OddSquarefree par J) (a : 
     (monomial par σ J a).coeff J = a :=
   ite_eq_left ⟨hJ, rfl⟩
 
-theorem coeff_monomial_of_ne {J K : Γ →₀ ℕ} (h : K ≠ J) (a : Q) :
+theorem coeff_monomial_ne {J K : Γ →₀ ℕ} (h : K ≠ J) (a : Q) :
     (monomial par σ J a).coeff K = 0 :=
   ite_eq_right fun h' => h h'.2
 
-theorem monomial_eq_zero {J : Γ →₀ ℕ} (hJ : ¬OddSquarefree par J) (a : Q) :
+theorem coeff_monomial [DecidableEq Γ] {K : Γ →₀ ℕ} (hK : OddSquarefree par K) (J : Γ →₀ ℕ)
+    (a : Q) : (monomial par σ J a).coeff K = if K = J then a else 0 := by
+  split_ifs with h
+  · exact h ▸ coeff_monomial_same hK a
+  · exact coeff_monomial_ne h a
+
+theorem monomial_eq_zero_of_not_oddSquarefree {J : Γ →₀ ℕ} (hJ : ¬OddSquarefree par J) (a : Q) :
     monomial par σ J a = 0 := by
   ext K
   by_cases hK : K = J
   · exact coeff_eq_zero_of_not_oddSquarefree _ (hK ▸ hJ)
-  · exact coeff_monomial_of_ne hK a
+  · exact coeff_monomial_ne hK a
 
 variable (par σ) in
 /-- The variable `p_γ`. -/
 def X (γ : Γ) : SuperMvPowerSeries par σ :=
   monomial par σ (Finsupp.single γ 1) 1
 
+theorem X_def (γ : Γ) : X par σ γ = monomial par σ (Finsupp.single γ 1) 1 := (rfl)
+
 @[simp]
 theorem coeff_X_same (γ : Γ) : (X par σ γ).coeff (Finsupp.single γ 1) = 1 :=
   coeff_monomial_same (oddSquarefree_single_one par γ) 1
 
-theorem coeff_X_of_ne {γ : Γ} {J : Γ →₀ ℕ} (hJ : J ≠ Finsupp.single γ 1) :
+theorem coeff_X_ne {γ : Γ} {J : Γ →₀ ℕ} (hJ : J ≠ Finsupp.single γ 1) :
     (X par σ γ).coeff J = 0 :=
-  coeff_monomial_of_ne hJ 1
+  coeff_monomial_ne hJ 1
+
+theorem coeff_X [DecidableEq Γ] (γ : Γ) (J : Γ →₀ ℕ) :
+    (X par σ γ).coeff J = if J = Finsupp.single γ 1 then 1 else 0 := by
+  split_ifs with h
+  · exact h ▸ coeff_X_same γ
+  · exact coeff_X_ne h
 
 instance : One (SuperMvPowerSeries par σ) :=
   ⟨monomial par σ 0 1⟩
 
 theorem one_def : (1 : SuperMvPowerSeries par σ) = monomial par σ 0 1 := (rfl)
+
+@[simp]
+theorem coeff_one [DecidableEq Γ] (J : Γ →₀ ℕ) :
+    (1 : SuperMvPowerSeries par σ).coeff J = if J = 0 then 1 else 0 := by
+  split_ifs with h
+  · exact h ▸ coeff_monomial_same (oddSquarefree_zero par) 1
+  · exact coeff_monomial_ne h 1
 
 /-! #### Multiplication -/
 
@@ -287,12 +319,13 @@ private theorem mulCoeff_assoc_summand (f g h : (Γ →₀ ℕ) → Q) (i j k : 
       ((-1 : ℤˣ) ^ koszulExponent par i (j + k)) •
         (f i * (σ ^ oddDegree par i) (((-1 : ℤˣ) ^ koszulExponent par j k) •
           (g j * (σ ^ oddDegree par j) (h k)))) := by
-  rw [map_zsmul_unit, map_mul, mul_smul_comm, smul_mul_assoc, smul_smul, smul_smul, map_add,
-    map_add, map_add, pow_add, AlgHom.mul_apply, mul_assoc, AddMonoidHom.add_apply, ← pow_add,
-    ← pow_add]
-  congr 2
-  omega
+  simp only [map_zsmul_unit, map_mul, map_add, AddMonoidHom.add_apply, pow_add, AlgHom.mul_apply,
+    smul_mul_assoc, mul_smul_comm, smul_smul, mul_assoc]
+  congr 1
+  simp only [mul_comm, mul_left_comm]
 
+/-- Associativity of the twisted Cauchy product. The reindexing of the double antidiagonal is
+adapted from the proof of `MvPowerSeries.mul_assoc` in Mathlib. -/
 private theorem mulCoeff_assoc (f g h : (Γ →₀ ℕ) → Q) (J : Γ →₀ ℕ) :
     mulCoeff (par := par) (σ := σ) (mulCoeff (par := par) (σ := σ) f g) h J =
       mulCoeff (par := par) (σ := σ) f (mulCoeff (par := par) (σ := σ) g h) J := by
@@ -314,11 +347,6 @@ instance : Mul (SuperMvPowerSeries par σ) :=
         (x.coeff p.1 * (σ ^ oddDegree par p.1) (y.coeff p.2))
     else 0, fun hJ => ite_eq_right hJ⟩⟩
 
-private theorem coeff_mul_eq_mulCoeff (x y : SuperMvPowerSeries par σ) {J : Γ →₀ ℕ}
-    (hJ : OddSquarefree par J) :
-    (x * y).coeff J = mulCoeff (par := par) (σ := σ) x.coeff y.coeff J :=
-  ite_eq_left hJ
-
 /-- **The coefficients of a product are finite sums.** At an odd-squarefree monomial `J`, the
 coefficient of `x * y` is the signed, twisted sum over the finitely many ways of writing `J` as a
 sum `K + L`. -/
@@ -336,7 +364,7 @@ private theorem coeff_monomial_zero_mul (a : Q) (x : SuperMvPowerSeries par σ) 
       have hi : i ≠ 0 := by
         rintro rfl
         exact hne (by simpa using hp)
-      simp [coeff_monomial_of_ne hi]
+      simp [coeff_monomial_ne hi]
     · simp
   · simp [coeff_eq_zero_of_not_oddSquarefree _ hJ]
 
@@ -349,61 +377,42 @@ private theorem coeff_mul_monomial_zero (x : SuperMvPowerSeries par σ) (a : Q) 
       have hj : j ≠ 0 := by
         rintro rfl
         exact hne (by simpa using hp)
-      simp [coeff_monomial_of_ne hj]
+      simp [coeff_monomial_ne hj]
     · simp
   · simp [coeff_eq_zero_of_not_oddSquarefree _ hJ]
 
 instance : Ring (SuperMvPowerSeries par σ) where
   __ := (inferInstance : AddCommGroup (SuperMvPowerSeries par σ))
-  mul_assoc x y z := by
-    ext J
-    by_cases hJ : OddSquarefree par J
-    · rw [coeff_mul_eq_mulCoeff _ _ hJ, coeff_mul_eq_mulCoeff _ _ hJ,
-        mulCoeff_congr (fun K hK => coeff_mul_eq_mulCoeff x y (hJ.mono hK)) fun _ _ => rfl,
-        mulCoeff_assoc,
-        mulCoeff_congr (fun _ _ => rfl) fun K hK => (coeff_mul_eq_mulCoeff y z (hJ.mono hK)).symm]
-    · simp [coeff_eq_zero_of_not_oddSquarefree _ hJ]
+  mul_assoc x y z := ext_of_oddSquarefree fun J hJ => by
+    rw [coeff_mul _ _ hJ, coeff_mul _ _ hJ]
+    -- The sums produced by `coeff_mul` are `mulCoeff` unfolded.
+    change mulCoeff (par := par) (σ := σ) (x * y).coeff z.coeff J =
+      mulCoeff (par := par) (σ := σ) x.coeff (y * z).coeff J
+    rw [mulCoeff_congr (f' := mulCoeff (par := par) (σ := σ) x.coeff y.coeff)
+        (fun K hK => coeff_mul x y (hJ.mono hK)) fun _ _ => rfl, mulCoeff_assoc,
+      mulCoeff_congr (g := mulCoeff (par := par) (σ := σ) y.coeff z.coeff) (fun _ _ => rfl)
+        fun K hK => (coeff_mul y z (hJ.mono hK)).symm]
   one_mul x := by
     ext J
     exact (coeff_monomial_zero_mul 1 x J).trans (one_mul _)
   mul_one x := by
     ext J
     exact (coeff_mul_monomial_zero x 1 J).trans (by rw [map_one, mul_one])
-  left_distrib x y z := by
-    ext J
-    by_cases hJ : OddSquarefree par J
-    · simp only [coeff_mul _ _ hJ, coeff_add, map_add, mul_add, smul_add, sum_add_distrib]
-    · simp [coeff_eq_zero_of_not_oddSquarefree _ hJ]
-  right_distrib x y z := by
-    ext J
-    by_cases hJ : OddSquarefree par J
-    · simp only [coeff_mul _ _ hJ, coeff_add, add_mul, smul_add, sum_add_distrib]
-    · simp [coeff_eq_zero_of_not_oddSquarefree _ hJ]
-  zero_mul x := by
-    ext J
-    by_cases hJ : OddSquarefree par J
-    · simp [coeff_mul _ _ hJ]
-    · simp [coeff_eq_zero_of_not_oddSquarefree _ hJ]
-  mul_zero x := by
-    ext J
-    by_cases hJ : OddSquarefree par J
-    · simp [coeff_mul _ _ hJ]
-    · simp [coeff_eq_zero_of_not_oddSquarefree _ hJ]
+  left_distrib x y z := ext_of_oddSquarefree fun J hJ => by
+    simp only [coeff_mul _ _ hJ, coeff_add, map_add, mul_add, smul_add, sum_add_distrib]
+  right_distrib x y z := ext_of_oddSquarefree fun J hJ => by
+    simp only [coeff_mul _ _ hJ, coeff_add, add_mul, smul_add, sum_add_distrib]
+  zero_mul x := ext_of_oddSquarefree fun J hJ => by simp [coeff_mul _ _ hJ]
+  mul_zero x := ext_of_oddSquarefree fun J hJ => by simp [coeff_mul _ _ hJ]
 
 instance : Algebra R (SuperMvPowerSeries par σ) :=
   Algebra.ofModule
-    (fun r x y => by
-      ext J
-      by_cases hJ : OddSquarefree par J
-      · simp only [coeff_mul _ _ hJ, coeff_smul, smul_mul_assoc, smul_sum]
-        exact sum_congr rfl fun _ _ => smul_comm _ _ _
-      · simp [coeff_eq_zero_of_not_oddSquarefree _ hJ])
-    (fun r x y => by
-      ext J
-      by_cases hJ : OddSquarefree par J
-      · simp only [coeff_mul _ _ hJ, coeff_smul, map_smul, mul_smul_comm, smul_sum]
-        exact sum_congr rfl fun _ _ => smul_comm _ _ _
-      · simp [coeff_eq_zero_of_not_oddSquarefree _ hJ])
+    (fun r x y => ext_of_oddSquarefree fun J hJ => by
+      simp only [coeff_mul _ _ hJ, coeff_smul, smul_mul_assoc, smul_sum]
+      exact sum_congr rfl fun _ _ => smul_comm _ _ _)
+    (fun r x y => ext_of_oddSquarefree fun J hJ => by
+      simp only [coeff_mul _ _ hJ, coeff_smul, map_smul, mul_smul_comm, smul_sum]
+      exact sum_congr rfl fun _ _ => smul_comm _ _ _)
 
 /-- **The product of two monomials.** `a p^J * b p^K = (-1) ^ ε(J, K) • (a σ^|J|₁(b)) p^(J + K)`,
 which vanishes when `J + K` is not odd-squarefree. -/
@@ -411,27 +420,25 @@ theorem monomial_mul_monomial (J K : Γ →₀ ℕ) (a b : Q) :
     monomial par σ J a * monomial par σ K b =
       ((-1 : ℤˣ) ^ koszulExponent par J K) •
         monomial par σ (J + K) (a * (σ ^ oddDegree par J) b) := by
-  ext L
-  by_cases hL : OddSquarefree par L
-  · rw [coeff_mul _ _ hL, coeff_smul]
-    by_cases hJK : L = J + K
-    · subst hJK
-      rw [sum_eq_single (J, K), coeff_monomial_same hL,
-        coeff_monomial_same (hL.mono le_self_add), coeff_monomial_same (hL.mono le_add_self)]
-      · rintro ⟨i, j⟩ hp hne
-        rcases eq_or_ne i J with rfl | hi
-        · have hj : j ≠ K := fun hj => hne (by rw [hj])
-          simp [coeff_monomial_of_ne hj]
-        · simp [coeff_monomial_of_ne hi]
-      · simp
-    · rw [coeff_monomial_of_ne hJK, smul_zero]
-      refine sum_eq_zero fun ⟨i, j⟩ hp => ?_
-      rw [HasAntidiagonal.mem_antidiagonal] at hp
+  refine ext_of_oddSquarefree fun L hL => ?_
+  rw [coeff_mul _ _ hL, coeff_smul]
+  by_cases hJK : L = J + K
+  · subst hJK
+    rw [sum_eq_single (J, K), coeff_monomial_same hL,
+      coeff_monomial_same (hL.mono le_self_add), coeff_monomial_same (hL.mono le_add_self)]
+    · rintro ⟨i, j⟩ hp hne
       rcases eq_or_ne i J with rfl | hi
-      · have hj : j ≠ K := by rintro rfl; exact hJK hp.symm
-        simp [coeff_monomial_of_ne hj]
-      · simp [coeff_monomial_of_ne hi]
-  · simp [coeff_eq_zero_of_not_oddSquarefree _ hL]
+      · have hj : j ≠ K := fun hj => hne (by rw [hj])
+        simp [coeff_monomial_ne hj]
+      · simp [coeff_monomial_ne hi]
+    · simp
+  · rw [coeff_monomial_ne hJK, smul_zero]
+    refine sum_eq_zero fun ⟨i, j⟩ hp => ?_
+    rw [HasAntidiagonal.mem_antidiagonal] at hp
+    rcases eq_or_ne i J with rfl | hi
+    · have hj : j ≠ K := by rintro rfl; exact hJK hp.symm
+      simp [coeff_monomial_ne hj]
+    · simp [coeff_monomial_ne hi]
 
 /-! #### Constants and variables -/
 
@@ -447,11 +454,11 @@ def C : Q →+* SuperMvPowerSeries par σ where
 theorem C_apply (a : Q) : C par σ a = monomial par σ 0 a := (rfl)
 
 @[simp]
-theorem coeff_C_zero (a : Q) : (C par σ a).coeff 0 = a :=
+theorem coeff_zero_C (a : Q) : (C par σ a).coeff 0 = a :=
   coeff_monomial_same (oddSquarefree_zero par) a
 
-theorem coeff_C_of_ne {J : Γ →₀ ℕ} (hJ : J ≠ 0) (a : Q) : (C par σ a).coeff J = 0 :=
-  coeff_monomial_of_ne hJ a
+theorem coeff_C_of_ne_zero {J : Γ →₀ ℕ} (hJ : J ≠ 0) (a : Q) : (C par σ a).coeff J = 0 :=
+  coeff_monomial_ne hJ a
 
 /-- Left multiplication by a constant `a` multiplies every coefficient on the left by `a`. -/
 @[simp]
@@ -466,10 +473,9 @@ theorem coeff_mul_C (x : SuperMvPowerSeries par σ) (a : Q) (J : Γ →₀ ℕ) 
     (x * C par σ a).coeff J = x.coeff J * (σ ^ oddDegree par J) a :=
   coeff_mul_monomial_zero x a J
 
-theorem algebraMap_eq (r : R) :
+theorem algebraMap_apply (r : R) :
     algebraMap R (SuperMvPowerSeries par σ) r = C par σ (algebraMap R Q r) := by
-  rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, C_apply, map_smul]
-  rfl
+  rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, C_apply, map_smul, one_def]
 
 theorem C_mul_monomial (a b : Q) (J : Γ →₀ ℕ) :
     C par σ a * monomial par σ J b = monomial par σ J (a * b) := by
@@ -481,24 +487,24 @@ theorem monomial_mul_C (J : Γ →₀ ℕ) (a b : Q) :
 
 theorem C_mul_X (a : Q) (γ : Γ) :
     C par σ a * X par σ γ = monomial par σ (Finsupp.single γ 1) a := by
-  rw [X, C_mul_monomial, mul_one]
+  rw [X_def, C_mul_monomial, mul_one]
 
 /-- An odd variable moves past a coefficient on its right by applying `σ` to it. -/
 theorem X_mul_C_of_odd {γ : Γ} (hγ : par γ = 1) (a : Q) :
     X par σ γ * C par σ a = C par σ (σ a) * X par σ γ := by
-  rw [C_mul_X, X, monomial_mul_C, one_mul]
+  rw [C_mul_X, X_def, monomial_mul_C, one_mul]
   simp [hγ]
 
 /-- An even variable commutes with every coefficient. -/
 theorem commute_X_C_of_even {γ : Γ} (hγ : par γ = 0) (a : Q) :
     Commute (X par σ γ) (C par σ a) := by
-  rw [Commute, SemiconjBy, C_mul_X, X, monomial_mul_C, one_mul]
+  rw [Commute, SemiconjBy, C_mul_X, X_def, monomial_mul_C, one_mul]
   simp [hγ]
 
 /-- **Odd variables square to zero.** -/
 theorem X_mul_self {γ : Γ} (hγ : par γ = 1) : X par σ γ * X par σ γ = 0 := by
-  rw [X, monomial_mul_monomial, monomial_eq_zero (not_oddSquarefree_single_add_single par hγ),
-    smul_zero]
+  rw [X_def, monomial_mul_monomial,
+    monomial_eq_zero_of_not_oddSquarefree (not_oddSquarefree_single_add_single par hγ), smul_zero]
 
 /-- **The variables supercommute**: `p_γ p_η = (-1) ^ (par γ * par η) p_η p_γ`. -/
 theorem X_mul_X (γ η : Γ) :
@@ -508,7 +514,7 @@ theorem X_mul_X (γ η : Γ) :
   · rcases h2 (par γ) with hγ | hγ
     · simp [hγ]
     · simp [X_mul_self hγ]
-  · simp only [X, monomial_mul_monomial, one_mul, map_one, smul_smul,
+  · simp only [X_def, monomial_mul_monomial, one_mul, map_one, smul_smul,
       add_comm (Finsupp.single η 1), koszulExponent_single_single]
     congr 1
     rcases hne.lt_or_gt with h | h <;> rcases h2 (par γ) with hγ | hγ <;>
@@ -518,9 +524,9 @@ theorem X_mul_X (γ η : Γ) :
 
 /-- **The word-length filtration is multiplicative.** If the coefficients of `x` vanish on the
 monomials of degree less than `m`, and those of `y` on the monomials of degree less than `n`, then
-those of `x * y` vanish on the monomials of degree less than `m + n`. In particular, each
-coefficient of a product only depends on finitely many coefficients of the factors, and the
-product is continuous for the topology of word length. -/
+those of `x * y` vanish on the monomials of degree less than `m + n`. This is what makes the
+product continuous for the word-length topology, once that topology is introduced; that each
+coefficient of a product is a finite sum is `coeff_mul`. -/
 theorem coeff_mul_eq_zero_of_degree_lt {x y : SuperMvPowerSeries par σ} {m n : ℕ}
     (hx : ∀ K, K.degree < m → x.coeff K = 0) (hy : ∀ K, K.degree < n → y.coeff K = 0)
     {J : Γ →₀ ℕ} (hJ : J.degree < m + n) : (x * y).coeff J = 0 := by
