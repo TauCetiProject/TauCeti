@@ -28,7 +28,7 @@ source weighted variables. The generator criterion
 `TauCeti.Huber.Pair.Hom.isQuotientMapping_of_isIntegral_weighted` then controls the entire
 completed plus ring.
 
-The unweighted pair-composition theorem `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.comp`
+The pair-composition theorem `TauCeti.Huber.Pair.Hom.IsTopologicallyFiniteType.comp`
 uses `TauCeti.Huber.Pair.Hom.IsQuotientMapping.weightedMapCompletion`.
 
 ## References
