@@ -688,11 +688,6 @@ theorem chartValuesL_lowerOrdersL (d : ℕ) (w : C.sobolevSections μ p (k + d))
     -- The orders `k + d + 1` and `k + (d + 1)` agree by the definition of `Nat.add`.
     rfl
 
-/-- Forgetting the highest derivative of the Sobolev sections is injective. -/
-theorem lowerOrderL_injective : Function.Injective (C.lowerOrderL μ p k) :=
-  fun w w' h ↦ C.chartValuesL_injective μ p (k + 1) <| by
-    rw [← chartValuesL_lowerOrderL, h, chartValuesL_lowerOrderL]
-
 /-- The inclusion of the Sobolev sections of order `k + d` into those of order `k` is injective. -/
 theorem lowerOrdersL_injective (d : ℕ) : Function.Injective (C.lowerOrdersL μ p k d) :=
   fun w w' h ↦ C.chartValuesL_injective μ p (k + d) <| by

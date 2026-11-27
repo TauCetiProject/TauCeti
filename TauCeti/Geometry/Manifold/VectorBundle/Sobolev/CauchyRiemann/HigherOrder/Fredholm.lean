@@ -123,6 +123,25 @@ private theorem exists_lowerOrderL_eq_of_sobolevSuccL_eq (hp : 1 < p) (hp_top : 
   rw [SectionChartData.chartValuesL_lowerOrderL, hζ, hξ]
 
 include hD hDs in
+/-- The inputs of the regularity comparison between the realizations at orders `k + 2` and
+`k + 1`, with `i` forgetting the highest weak derivative of a section and `j` that of a
+`(0,1)`-form: the square commutes, `i` and `j` are injective, and the square has the regularity
+property. -/
+private theorem regularity_sobolevSuccL (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ) :
+    (∀ x : SobolevSection A volume p (k + 1 + 1),
+      hD.sobolevSuccL A hDs volume p k (A.sectionChartData.lowerOrderL volume p (k + 1) x) =
+        zeroOneLowerOrdersL A volume p k 1 (hD.sobolevSuccL A hDs volume p (k + 1) x)) ∧
+    Function.Injective (A.sectionChartData.lowerOrderL volume p (k + 1)) ∧
+    Function.Injective (zeroOneLowerOrdersL A volume p k 1) ∧
+    ∀ x y, hD.sobolevSuccL A hDs volume p k x = zeroOneLowerOrdersL A volume p k 1 y →
+      ∃ x', A.sectionChartData.lowerOrderL volume p (k + 1) x' = x := by
+  refine ⟨fun x ↦ (zeroOneLowerOrdersL_sobolevSuccL A hD hDs volume p k x).symm, ?_,
+    zeroOneLowerOrdersL_injective 1,
+    fun _ _ h ↦ exists_lowerOrderL_eq_of_sobolevSuccL_eq A hD hDs hp hp_top h⟩
+  rw [← SectionChartData.lowerOrdersL_one]
+  exact A.sectionChartData.lowerOrdersL_injective volume p (k + 1) 1
+
+include hD hDs in
 /-- The realization from `W^{k+1,p}` is Fredholm with the index of the realization from
 `W^{1,p}`, by induction on `k`. -/
 private theorem isFredholm_sobolevSuccL_and_index_eq (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ) :
@@ -134,13 +153,8 @@ private theorem isFredholm_sobolevSuccL_and_index_eq (hp : 1 < p) (hp_top : p �
     exact ⟨isFredholm_sobolevL A hD hDs hp hp_top, rfl⟩
   | succ k ih =>
     obtain ⟨hT, hidx⟩ := ih
-    have hcomm (x : SobolevSection A volume p (k + 1 + 1)) :=
-      (zeroOneLowerOrdersL_sobolevSuccL A hD hDs volume p k x).symm
-    have hi := A.sectionChartData.lowerOrderL_injective volume p (k + 1)
-    have hj := zeroOneLowerOrdersL_injective (A := A) (μ := volume) (p := p) (k := k) 1
+    obtain ⟨hcomm, hi, hj, hreg⟩ := regularity_sobolevSuccL A hD hDs hp hp_top k
     have hjd := denseRange_zeroOneLowerOrdersL A volume k hp_top 1
-    have hreg (x) (y) (h) := exists_lowerOrderL_eq_of_sobolevSuccL_eq A hD hDs hp hp_top
-      (k := k) (x := x) (y := y) h
     exact ⟨hT.of_regularity hcomm hi hj hjd hreg,
       (hT.index_eq_of_regularity hcomm hi hj hjd hreg).trans hidx⟩
 
@@ -177,10 +191,10 @@ theorem index_sobolevSuccL_eq {p' : ℝ≥0∞} [Fact (1 ≤ p')] (hp : 1 < p) (
 highest weak derivative. -/
 private def kerSobolevSuccLEquivSucc (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ) :
     (hD.sobolevSuccL A hDs volume p (k + 1)).ker ≃ₗ[ℝ] (hD.sobolevSuccL A hDs volume p k).ker :=
-  LinearMap.kerEquivOfRegularity
-    (fun x ↦ (zeroOneLowerOrdersL_sobolevSuccL A hD hDs volume p k x).symm)
-    (A.sectionChartData.lowerOrderL_injective volume p (k + 1)) (zeroOneLowerOrdersL_injective 1)
-    fun _ _ h ↦ exists_lowerOrderL_eq_of_sobolevSuccL_eq A hD hDs hp hp_top h
+  LinearMap.kerEquivOfRegularity (regularity_sobolevSuccL A hD hDs hp hp_top k).1
+    (regularity_sobolevSuccL A hD hDs hp hp_top k).2.1
+    (regularity_sobolevSuccL A hD hDs hp hp_top k).2.2.1
+    (regularity_sobolevSuccL A hD hDs hp hp_top k).2.2.2
 
 /-- **The kernel does not depend on the order** (McDuff–Salamon, Theorem C.1.10 (i), for smooth
 operators on closed surfaces). For `1 < p < ∞`, the kernel of the realization
@@ -198,6 +212,21 @@ def kerSobolevSuccLEquiv (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ) :
       (sobolevSuccL_zero A hD hDs volume p)))
     (fun k e ↦ (kerSobolevSuccLEquivSucc A hD hDs hp hp_top k).trans e) k
 
+/-- At order one the equivalence of kernels is the identity on underlying sections. -/
+private theorem coe_kerSobolevSuccLEquiv_zero (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (x : (hD.sobolevSuccL A hDs volume p 0).ker) :
+    (kerSobolevSuccLEquiv A hD hDs hp hp_top 0 x : SobolevSection A volume p 1) = x :=
+  -- `Nat.rec` at `0` reduces to `LinearEquiv.ofEq`, which keeps the underlying element.
+  rfl
+
+/-- One step of the recursion defining the equivalence of kernels. -/
+private theorem kerSobolevSuccLEquiv_succ (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ)
+    (x : (hD.sobolevSuccL A hDs volume p (k + 1)).ker) :
+    kerSobolevSuccLEquiv A hD hDs hp hp_top (k + 1) x =
+      kerSobolevSuccLEquiv A hD hDs hp hp_top k (kerSobolevSuccLEquivSucc A hD hDs hp hp_top k x) :=
+  -- `Nat.rec` at `k + 1` reduces to its step, applied to the value at `k`.
+  rfl
+
 /-- The equivalence of kernels keeps the chart data. -/
 @[simp]
 theorem chartValuesL_kerSobolevSuccLEquiv (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ)
@@ -206,11 +235,11 @@ theorem chartValuesL_kerSobolevSuccLEquiv (hp : 1 < p) (hp_top : p ≠ ⊤) (k :
         (kerSobolevSuccLEquiv A hD hDs hp hp_top k x : SobolevSection A volume p 1) =
       A.sectionChartData.chartValuesL volume p (k + 1) (x : SobolevSection A volume p (k + 1)) := by
   induction k with
-  | zero => rfl
+  | zero => rw [coe_kerSobolevSuccLEquiv_zero]
   | succ k ih =>
-    refine (ih (kerSobolevSuccLEquivSucc A hD hDs hp hp_top k x)).trans ?_
-    rw [kerSobolevSuccLEquivSucc, LinearMap.coe_kerEquivOfRegularity_apply,
-      ContinuousLinearMap.coe_coe, SectionChartData.chartValuesL_lowerOrderL]
+    rw [kerSobolevSuccLEquiv_succ, ih, kerSobolevSuccLEquivSucc,
+      LinearMap.coe_kerEquivOfRegularity_apply, ContinuousLinearMap.coe_coe,
+      SectionChartData.chartValuesL_lowerOrderL]
 
 include hD hDs in
 /-- **The dimension of the kernel does not depend on the order.** -/
