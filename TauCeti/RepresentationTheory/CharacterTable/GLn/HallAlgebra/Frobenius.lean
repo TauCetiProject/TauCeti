@@ -46,7 +46,7 @@ the Hall algebra is Harish-Chandra (parabolic) induction from the Levi factor `�
   Lecture Notes in Math. 869 (1981).
 * Adapted from `src/Lib/LocalGL/Green/HallAlgebra.lean` in grh-lean
   (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC):
-  `New.simClassOf_submatrix`, `New.exists_eq_evalGL` and `New.classInner_evalGL_prod`, with the
+  `New.exists_eq_evalGL` and `New.classInner_evalGL_prod`, with the
   parabolic subgroup `New.parabolic` and its blocks `New.blockHom` replaced by
   `TauCeti.blockTriangularGroup` and `TauCeti.BlockTriangularGroup.diagBlock`.
 -/
@@ -57,42 +57,6 @@ open Module Matrix TauCeti.SimilarityClass ComplexConjugate
 open scoped BigOperators
 
 namespace TauCeti
-
-namespace SimilarityClass
-
-variable {k : Type*} [Field k]
-
-/-- Reindexing the rows and the columns of a square matrix by one bijection does not change its
-similarity class. -/
-theorem ofEnd_toLin'_submatrix {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
-    [DecidableEq n] (e : m ≃ n) (M : Matrix n n k) :
-    ofEnd (toLin' (M.submatrix e e)) = ofEnd (toLin' M) :=
-  ofEnd_eq_of_apply_eq (LinearEquiv.funCongrLeft k k e.symm) fun x ↦ by
-    ext j
-    simp [LinearEquiv.funCongrLeft_apply]
-
-/-- The class of a block upper triangular matrix is that of the block map
-`(v, w) ↦ (A v + M w, C w)`. -/
-theorem ofEnd_toLin'_fromBlocks {n₁ n₂ : Type*} [Fintype n₁] [DecidableEq n₁] [Fintype n₂]
-    [DecidableEq n₂] (A : Matrix n₁ n₁ k) (M : Matrix n₁ n₂ k) (C : Matrix n₂ n₂ k) :
-    ofEnd (toLin' (fromBlocks A M 0 C)) =
-      ofEnd (Module.End.blockTriangular (toLin' A) (toLin' C) (toLin' M)) :=
-  ofEnd_eq_of_apply_eq (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k) fun x ↦ by
-    ext <;> simp [fromBlocks_mulVec, Module.End.blockTriangular_apply] <;> rfl
-
-/-- Elements of `GL n k` whose matrices have the same similarity class are conjugate. -/
-theorem isConj_of_ofEnd_toLin'_eq {n : Type*} [Fintype n] [DecidableEq n] {g h : GL n k}
-    (hgh : ofEnd (toLin' (g : Matrix n n k)) = ofEnd (toLin' (h : Matrix n n k))) :
-    IsConj g h := by
-  obtain ⟨e, he⟩ := ofEnd_eq_iff.1 hgh
-  -- The matrix of `e` conjugates `g` to `h`.
-  let u : GL n k := Matrix.GeneralLinearGroup.toLin.symm
-    (LinearMap.GeneralLinearGroup.ofLinearEquiv e)
-  refine isConj_iff.2 ⟨u, mul_inv_eq_of_eq_mul (Matrix.GeneralLinearGroup.toLin.injective
-    (Units.ext (LinearMap.ext fun x ↦ ?_)))⟩
-  simpa [u, Matrix.GeneralLinearGroup.coe_toLin, Matrix.toLin'_apply'] using he x
-
-end SimilarityClass
 
 namespace HallAlgebra
 
@@ -295,9 +259,11 @@ private theorem ofEnd_diagBlock_assemble (hm : ∀ i, b i ≤ m)
   ext i j
   have hi : ¬b i = m := fun h ↦ ha (i.property.symm.trans h)
   have hj : ¬b j = m := fun h ↦ ha (j.property.symm.trans h)
-  simp [assemble, coe_assembleGL, toSquareBlock_def, splitEquiv_symm_apply_of_ne hi,
-    splitEquiv_symm_apply_of_ne hj, σ]
-  rfl
+  simp only [assemble, BlockTriangularGroup.coe_diagBlock, coe_assembleGL, toSquareBlock_def,
+    submatrix_apply, of_apply, splitEquiv_symm_apply_of_ne hi, splitEquiv_symm_apply_of_ne hj,
+    fromBlocks_apply₁₁, σ]
+  -- What is left: `σ` keeps the underlying index.
+  exact congrArg₂ _ (Subtype.ext (by simp)) (Subtype.ext (by simp))
 
 end Assemble
 

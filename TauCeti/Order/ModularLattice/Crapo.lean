@@ -14,10 +14,10 @@ import Mathlib.Order.WellFoundedSet
 # Crapo's complementation theorem
 
 Let `μ` be a function on a finite modular lattice `L` with values in a commutative monoid, whose
-sum over the elements below `X` vanishes for every `X ≠ ⊥`; for the Möbius function `μ(U) = μ(U, ⊤)`
-read upside down this is its defining recursion. If `μ ⊤ ≠ 0`, then `L` is complemented. This is
-one half of Crapo's complementation theorem: the Möbius number of a modular lattice vanishes unless
-the lattice is complemented.
+sum over the elements below `X` vanishes for every `X ≠ ⊥`; this is the defining recursion of the
+Möbius function `U ↦ μ(⊥, U)`. If `μ ⊤ ≠ 0`, then `L` is complemented. For the Möbius function
+this is one half of Crapo's complementation theorem: if `μ(⊥, ⊤) ≠ 0`, the modular lattice is
+complemented.
 
 ## Main results
 

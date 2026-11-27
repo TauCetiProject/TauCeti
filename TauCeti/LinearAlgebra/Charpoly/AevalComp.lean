@@ -25,12 +25,15 @@ multiplicative. As a consequence, an endomorphism `f` of a finite-dimensional ve
   characteristic polynomial of `Y` divides `(q(Y)).charpoly.comp q`.
 * `LinearMap.exists_charpoly_eq_pow_of_isNilpotent_aeval`: if `P(f)` is nilpotent, with `P`
   monic and irreducible, the characteristic polynomial of `f` is a power of `P`.
+* `minpoly.not_isUnit_aeval_of_dvd`: a factor `P` of positive degree of the minimal polynomial of
+  `x` is not invertible at `x`.
 
 ## References
 
 * Adapted from grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026
-  Anthropic PBC): `New.charpoly_dvd_charpoly_aeval_comp` and `New.map_aeval_matrix` in
-  `src/Lib/General/LinearAlgebra/MatrixPolynomials.lean`, and
+  Anthropic PBC): `New.charpoly_dvd_charpoly_aeval_comp` in
+  `src/Lib/General/LinearAlgebra/MatrixPolynomials.lean` (with Mathlib's
+  `Polynomial.map_aeval_eq_aeval_map` in place of `New.map_aeval_matrix`), and
   `New.charpoly_eq_pow_of_isNilpotent` in `src/Lib/LocalGL/Green/CuspidalFunctions.lean`.
 -/
 
@@ -42,13 +45,6 @@ namespace Matrix
 
 variable {R n : Type*} [CommRing R] [Fintype n] [DecidableEq n]
 
-/-- Applying a ring map to the entries of `q(Y)` gives the image of `q` at the image of `Y`. -/
-private theorem map_aeval {S : Type*} [CommRing S] (ψ : R →+* S) (Y : Matrix n n R) (q : R[X]) :
-    (aeval Y q).map ψ = aeval (Y.map ψ) (q.map ψ) := by
-  induction q using Polynomial.induction_on' with
-  | add p q hp hq => simp [Matrix.map_add, hp, hq]
-  | monomial m a => simp [algebraMap_eq_diagonal, Matrix.map_mul, Matrix.map_pow, Pi.algebraMap_def]
-
 /-- The characteristic polynomial of `Y` divides `χ ∘ q`, with `χ` the characteristic polynomial
 of `q(Y)`. -/
 theorem charpoly_dvd_charpoly_aeval_comp (Y : Matrix n n R) (q : R[X]) :
@@ -57,8 +53,11 @@ theorem charpoly_dvd_charpoly_aeval_comp (Y : Matrix n n R) (q : R[X]) :
   -- `Y`: as matrices over `R[X]`, `X - Y` divides `q(X) - q(Y)`; take determinants.
   have h_poly : (C X - X : R[X][X]) ∣ C q - q.map C := by
     simpa [eval_map] using ((q.map C).map C).sub_dvd_eval_sub (C X) X
+  have h_map : (aeval Y q).map C = aeval (Y.map C) (q.map C) :=
+    map_aeval_eq_aeval_map (ψ := (C : R →+* R[X]).mapMatrix)
+      (RingHom.ext fun r ↦ by simp [algebraMap_eq_diagonal, Pi.algebraMap_def]) q Y
   have h_mat : charmatrix Y ∣ scalar n q - (aeval Y q).map C := by
-    simpa [charmatrix, map_aeval, algebraMap_eq_diagonal, Pi.algebraMap_def] using
+    simpa [charmatrix, h_map, algebraMap_eq_diagonal, Pi.algebraMap_def] using
       aeval_dvd (x := Y.map C) h_poly
   have h_det : det (scalar n q - (aeval Y q).map C) = (aeval Y q).charpoly.comp q := by
     rw [← eval_charpoly, charpoly_map, eval_map, Polynomial.comp]
@@ -77,7 +76,9 @@ theorem charpoly_dvd_charpoly_aeval_comp (f : Module.End R M) (q : R[X]) :
     f.charpoly ∣ (aeval f q).charpoly.comp q := by
   let b := Module.Free.chooseBasis R M
   have h := (toMatrix b b f).charpoly_dvd_charpoly_aeval_comp q
-  have he (g : Module.End R M) : toMatrixAlgEquiv b g = toMatrix b b g := rfl
+  have he (g : Module.End R M) : toMatrixAlgEquiv b g = toMatrix b b g := by
+    ext i j
+    rw [toMatrixAlgEquiv_apply, toMatrix_apply]
   have h_aeval : aeval (toMatrix b b f) q = toMatrix b b (aeval f q) := by
     rw [← he, ← he, ← AlgEquiv.coe_toAlgHom, aeval_algHom_apply]
   rwa [charpoly_toMatrix, h_aeval, charpoly_toMatrix] at h
@@ -95,3 +96,25 @@ theorem exists_charpoly_eq_pow_of_isNilpotent_aeval {K V : Type*} [Field K] [Add
   exact ⟨j, eq_of_monic_of_associated f.charpoly_monic (hP_monic.pow j) hj⟩
 
 end LinearMap
+
+namespace minpoly
+
+/-- If a polynomial `P` of positive degree divides the minimal polynomial of `x`, then `P(x)` is
+not invertible. -/
+theorem not_isUnit_aeval_of_dvd {k A : Type*} [Field k] [Ring A] [Algebra k A] {x : A}
+    (hx : IsIntegral k x) {P : k[X]} (hP : 0 < P.natDegree) (h : P ∣ minpoly k x) :
+    ¬IsUnit (Polynomial.aeval x P) := by
+  intro hu
+  obtain ⟨Q, hQ⟩ := h
+  -- Then `Q(x) = 0`, although `Q` has smaller degree than the minimal polynomial.
+  have hQ_zero : Polynomial.aeval x Q = 0 := by
+    have h_min := minpoly.aeval k x
+    rwa [hQ, map_mul, hu.mul_right_eq_zero] at h_min
+  have hQ_ne : Q ≠ 0 := by
+    rintro rfl
+    exact minpoly.ne_zero hx (by simpa using hQ)
+  have h_deg := natDegree_le_of_dvd (minpoly.dvd k x hQ_zero) hQ_ne
+  rw [hQ, natDegree_mul (ne_zero_of_natDegree_gt hP) hQ_ne] at h_deg
+  omega
+
+end minpoly

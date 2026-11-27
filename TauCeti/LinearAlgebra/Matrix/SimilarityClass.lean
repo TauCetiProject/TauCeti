@@ -8,11 +8,14 @@ module
 public import Mathlib.Algebra.Group.Conj
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.End.Invariant
 import Mathlib.Algebra.Module.PID
 import Mathlib.Algebra.Polynomial.Module.FiniteDimensional
 import TauCeti.LinearAlgebra.BilinearForm.PolynomialQuotient
+import TauCeti.LinearAlgebra.Charpoly.Quotient
 
 /-!
 # Similarity classes of square matrices of all sizes
@@ -50,6 +53,14 @@ These classes index the class functions on all square matrices of the Hall algeb
   `TauCeti.SimilarityClass.ofEnd_invtQuot_dualAnnihilator`: the transpose of `g` on the annihilator
   of an invariant subspace `W`, and on the quotient by it, has the class of `g` on `V ⧸ W`, and on
   `W`.
+* `TauCeti.SimilarityClass.ofEnd_toLin'_fromBlocks`: a block upper triangular matrix has the
+  class of the corresponding block map `Module.End.blockTriangular`.
+* `TauCeti.SimilarityClass.ofEnd_blockTriangular_of_isSemisimple`: a semisimple block triangular
+  map is similar to its block diagonal part.
+* `TauCeti.SimilarityClass.isConj_of_ofEnd_toLin'_eq`: invertible matrices of the same class are
+  conjugate in `GL n k`.
+* `Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot`: the characteristic polynomial is the
+  product of those on an invariant subspace and on the quotient.
 
 ## References
 
@@ -62,6 +73,10 @@ These classes index the class functions on all square matrices of the Hall algeb
   `src/Lib/LocalGL/Green/HallAlgebra.lean` in grh-lean (https://github.com/lsernau/grh-lean,
   Apache 2.0, Copyright 2026 Anthropic PBC), here with `Mathlib`'s `ConjClasses` of matrices as
   the carrier.
+* Adapted from grh-lean as above: `New.simClassOf_submatrix` in
+  `src/Lib/LocalGL/Green/HallAlgebra.lean`, and the similarity of a semisimple block triangular map
+  with its block diagonal part from `src/Lib/LocalGL/Green/CuspidalFunctions.lean`, here proved
+  with an invariant complement of the first summand rather than with a projection.
 -/
 
 public section
@@ -271,6 +286,97 @@ theorem ofEnd_invtQuot_invtRestrict_comap_mkQ {U : Submodule k V} (hU : U ∈ g.
 
 end Invariant
 
+/-! ### Block matrices and block maps -/
+
+section Block
+
+/-- Reindexing the rows and the columns of a square matrix by one bijection does not change its
+similarity class. -/
+theorem ofEnd_toLin'_submatrix {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
+    [DecidableEq n] (e : m ≃ n) (M : Matrix n n k) :
+    ofEnd (Matrix.toLin' (M.submatrix e e)) = ofEnd (Matrix.toLin' M) :=
+  ofEnd_eq_of_apply_eq (LinearEquiv.funCongrLeft k k e.symm) fun x ↦ by
+    ext j
+    simp [LinearEquiv.funCongrLeft_apply]
+
+/-- The class of a block upper triangular matrix is that of the block map
+`(v, w) ↦ (A v + M w, C w)`. -/
+theorem ofEnd_toLin'_fromBlocks {n₁ n₂ : Type*} [Fintype n₁] [DecidableEq n₁] [Fintype n₂]
+    [DecidableEq n₂] (A : Matrix n₁ n₁ k) (M : Matrix n₁ n₂ k) (C : Matrix n₂ n₂ k) :
+    ofEnd (Matrix.toLin' (Matrix.fromBlocks A M 0 C)) =
+      ofEnd (Module.End.blockTriangular (Matrix.toLin' A) (Matrix.toLin' C) (Matrix.toLin' M)) :=
+  ofEnd_eq_of_apply_eq (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k) fun x ↦ by
+    -- The two components of `x` are its restrictions to `n₁` and to `n₂`.
+    have h₁ (y : n₁ ⊕ n₂ → k) : (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k y).1 = y ∘ Sum.inl :=
+      funext (LinearEquiv.sumArrowLequivProdArrow_apply_fst y)
+    have h₂ (y : n₁ ⊕ n₂ → k) : (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k y).2 = y ∘ Sum.inr :=
+      funext (LinearEquiv.sumArrowLequivProdArrow_apply_snd y)
+    ext <;> simp [Matrix.fromBlocks_mulVec, Module.End.blockTriangular_apply, h₁, h₂]
+
+/-- Elements of `GL n k` whose matrices have the same similarity class are conjugate. -/
+theorem isConj_of_ofEnd_toLin'_eq {n : Type*} [Fintype n] [DecidableEq n] {g h : GL n k}
+    (hgh : ofEnd (Matrix.toLin' (g : Matrix n n k)) = ofEnd (Matrix.toLin' (h : Matrix n n k))) :
+    IsConj g h := by
+  obtain ⟨e, he⟩ := ofEnd_eq_iff.1 hgh
+  -- The matrix of `e` conjugates `g` to `h`.
+  let u : GL n k := Matrix.GeneralLinearGroup.toLin.symm
+    (LinearMap.GeneralLinearGroup.ofLinearEquiv e)
+  refine isConj_iff.2 ⟨u, mul_inv_eq_of_eq_mul (Matrix.GeneralLinearGroup.toLin.injective
+    (Units.ext (LinearMap.ext fun x ↦ ?_)))⟩
+  simpa [u, Matrix.GeneralLinearGroup.coe_toLin, Matrix.toLin'_apply'] using he x
+
+variable {V W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
+  [AddCommGroup W] [Module k W] [Module.Finite k W]
+
+open Module.End (blockTriangular blockTriangular_apply) in
+/-- A semisimple block upper triangular map `(v, w) ↦ (a v + x w, b w)` is similar to the block
+diagonal map `a ⊕ b`. -/
+theorem ofEnd_blockTriangular_of_isSemisimple {a : Module.End k V} {b : Module.End k W}
+    {x : W →ₗ[k] V} (h : (blockTriangular a b x).IsSemisimple) :
+    ofEnd (blockTriangular a b x) = ofEnd (a.prodMap b) := by
+  set g := blockTriangular a b x
+  -- `V × 0` is invariant; take an invariant complement `C`, which maps isomorphically onto `W`.
+  have hK : LinearMap.ker (LinearMap.snd k V W) ∈ g.invtSubmodule :=
+    (Module.End.mem_invtSubmodule _).2 fun p hp ↦ by
+      simp_all [g, blockTriangular_apply]
+  obtain ⟨C, hC, hKC⟩ := Module.End.isSemisimple_iff.1 h _ hK
+  -- The second coordinate is an isomorphism from `C` onto `W`.
+  have h_inj : Function.Injective (LinearMap.snd k V W ∘ₗ C.subtype) := by
+    refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
+    have : (c : V × W) ∈ LinearMap.ker (LinearMap.snd k V W) ⊓ C := ⟨hc, c.prop⟩
+    simpa [hKC.inf_eq_bot] using this
+  have h_surj : Function.Surjective (LinearMap.snd k V W ∘ₗ C.subtype) := by
+    intro w
+    obtain ⟨u, hu, c, hc, huc⟩ := Submodule.mem_sup.1 (hKC.sup_eq_top ▸ Submodule.mem_top :
+      ((0, w) : V × W) ∈ LinearMap.ker (LinearMap.snd k V W) ⊔ C)
+    refine ⟨⟨c, hc⟩, ?_⟩
+    have h₂ : u.2 + c.2 = w := congrArg Prod.snd huc
+    have hu₂ : u.2 = 0 := hu
+    simp [← h₂, hu₂]
+  let eC := LinearEquiv.ofBijective _ ⟨h_inj, h_surj⟩
+  -- `(v, w) ↦ (v, 0) + c(w)`, with `c(w) ∈ C` the element of second coordinate `w`, conjugates
+  -- `a ⊕ b` to `g`.
+  let φ : Module.End k (V × W) :=
+    LinearMap.coprod (LinearMap.inl k V W) (C.subtype ∘ₗ eC.symm.toLinearMap)
+  have hφ_snd (w : W) : ((eC.symm w : C) : V × W).2 = w :=
+    eC.apply_symm_apply w
+  have h_comm (p : V × W) : φ (a.prodMap b p) = g (φ p) := by
+    -- `g` preserves `C`, and on `C` it acts on the second coordinate as `b`.
+    have hgc : g (eC.symm p.2) = (eC.symm (b p.2) : V × W) := by
+      have h_mem : g (eC.symm p.2) ∈ C := (Module.End.mem_invtSubmodule _).1 hC (eC.symm p.2).prop
+      have := h_inj (a₁ := ⟨_, h_mem⟩) (a₂ := eC.symm (b p.2)) (by
+        simp [hφ_snd, g, blockTriangular_apply])
+      exact congrArg Subtype.val this
+    simp [φ, map_add, hgc, g, blockTriangular_apply]
+  have hφ_inj : Function.Injective φ := by
+    refine (injective_iff_map_eq_zero _).2 fun p hp ↦ ?_
+    have h₂ : p.2 = 0 := by simpa [φ, hφ_snd] using congrArg Prod.snd hp
+    have h₁ : p.1 = 0 := by simpa [φ, h₂] using congrArg Prod.fst hp
+    exact Prod.ext h₁ h₂
+  exact (ofEnd_eq_of_apply_eq (LinearEquiv.ofInjectiveEndo φ hφ_inj) h_comm).symm
+
+end Block
+
 end SimilarityClass
 
 /-! ### An endomorphism is similar to its transpose -/
@@ -329,3 +435,20 @@ theorem SimilarityClass.ofEnd_invtQuot_dualAnnihilator {V : Type*} [AddCommGroup
 end Transpose
 
 end TauCeti
+
+/-- The characteristic polynomial of `g` is the product of those of `g` on an invariant subspace
+and on the quotient. -/
+theorem Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot {k V : Type*} [Field k]
+    [AddCommGroup V] [Module k V] [Module.Finite k V] {g : Module.End k V} {U : Submodule k V}
+    (hU : U ∈ g.invtSubmodule) :
+    (g.invtRestrict hU).charpoly * (g.invtQuot hU).charpoly = g.charpoly := by
+  open TauCeti.SimilarityClass in
+  have hU' := (Module.End.mem_invtSubmodule g).1 hU
+  -- Replace the two maps by `LinearMap.restrict` and `Submodule.mapQ`, which have the same
+  -- classes; the definitions of `invtRestrict` and `invtQuot` are not exposed here.
+  rw [← charpoly_ofEnd (g.invtRestrict hU), ← charpoly_ofEnd (g.invtQuot hU),
+    ofEnd_invtRestrict_eq_of_injective (g := g.restrict hU') U.subtype (fun _ ↦ rfl) hU
+      U.injective_subtype U.range_subtype,
+    ofEnd_invtQuot_eq_of_surjective U.mkQ (g' := U.mapQ U g hU') (fun _ ↦ rfl) hU
+      U.mkQ_surjective U.ker_mkQ, charpoly_ofEnd, charpoly_ofEnd,
+    LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ U g hU']

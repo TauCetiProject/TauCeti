@@ -12,7 +12,7 @@ import Mathlib.RingTheory.Adjoin.Polynomial.Basic
 import Mathlib.RingTheory.Artinian.Module
 import TauCeti.FieldTheory.Finite.ArootsOrbit
 import TauCeti.LinearAlgebra.Charpoly.AevalComp
-import TauCeti.LinearAlgebra.Charpoly.Quotient
+import TauCeti.LinearAlgebra.Charpoly.Degree
 import TauCeti.Order.ModularLattice.Crapo
 
 /-!
@@ -24,8 +24,8 @@ function `𝟙` for the induction product, and Green's cuspidal function of `η 
 `C_η = (β_η · μ) ∗ 𝟙` (`TauCeti.HallAlgebra.greenCuspidal`), with `β_η` the eigenvalue sum and `·`
 the pointwise product.
 
-Evaluated at `g`, the relation `μ ∗ 𝟙 = 1` says that `U ↦ μ(g|_U)` is the Möbius function of the
-lattice of `g`-invariant subspaces, read from the top. This lattice is modular, so by Crapo's
+Evaluated at `g`, the relation `μ ∗ 𝟙 = 1` says that `U ↦ μ(g|_U)` is the Möbius function
+`U ↦ μ(⊥, U)` of the lattice of `g`-invariant subspaces. This lattice is modular, so by Crapo's
 complementation theorem it is complemented, that is `g` is semisimple, when `μ(g) ≠ 0`. Block
 averages of `B · μ` only see the block diagonal class, and from this and Mackey's formula `C_η` is
 cuspidal. A cuspidal function vanishes off the classes whose characteristic polynomial is a power
@@ -61,10 +61,9 @@ similar to `g`, since the Sylvester map `y ↦ g y - y g` between the two blocks
   `New.Hall.conj_moebius`, `New.Hall.greenCuspidal_mul_constOne`,
   `New.Hall.greenCuspidal_eq_zero_of_dim_lt_one`, `New.Hall.isCuspidal_greenCuspidal`,
   `New.Hall.IsCuspidal.exists_charpoly_eq_pow` and `New.greenCuspidal_simClassOf_eq_mul`. The
-  pointwise product `New.Hall.mulMoebius` is written out here, the similarity of a semisimple
-  block triangular map with its block diagonal part is proved with an invariant complement of
-  the first summand rather than with a projection, and the irreducible factor `P` is taken from
-  the minimal polynomial.
+  pointwise product `New.Hall.mulMoebius` is written out here, and the irreducible factor `P` is
+  taken from the minimal polynomial. The similarity of a semisimple block triangular map with its
+  block diagonal part is `TauCeti.SimilarityClass.ofEnd_blockTriangular_of_isSemisimple`.
 -/
 
 public section
@@ -78,53 +77,6 @@ namespace TauCeti.HallAlgebra
 
 variable {k : Type*} [Field k] {V W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
   [AddCommGroup W] [Module k W] [Module.Finite k W]
-
-/-! ### Semisimple block triangular maps -/
-
-/-- A semisimple block upper triangular map `(v, w) ↦ (a v + x w, b w)` is similar to the block
-diagonal map `a ⊕ b`: an invariant complement `C` of `V × 0` maps isomorphically onto `W`. -/
-theorem ofEnd_blockTriangular_of_isSemisimple {a : Module.End k V} {b : Module.End k W}
-    {x : W →ₗ[k] V} (h : (blockTriangular a b x).IsSemisimple) :
-    ofEnd (blockTriangular a b x) = ofEnd (a.prodMap b) := by
-  set g := blockTriangular a b x
-  have hK : LinearMap.ker (LinearMap.snd k V W) ∈ g.invtSubmodule :=
-    (Module.End.mem_invtSubmodule _).2 fun p hp ↦ by
-      simp_all [g, blockTriangular_apply]
-  obtain ⟨C, hC, hKC⟩ := Module.End.isSemisimple_iff.1 h _ hK
-  -- The second coordinate is an isomorphism from `C` onto `W`.
-  have h_inj : Function.Injective (LinearMap.snd k V W ∘ₗ C.subtype) := by
-    refine (injective_iff_map_eq_zero _).2 fun c hc ↦ ?_
-    have : (c : V × W) ∈ LinearMap.ker (LinearMap.snd k V W) ⊓ C := ⟨hc, c.prop⟩
-    simpa [hKC.inf_eq_bot] using this
-  have h_surj : Function.Surjective (LinearMap.snd k V W ∘ₗ C.subtype) := by
-    intro w
-    obtain ⟨u, hu, c, hc, huc⟩ := Submodule.mem_sup.1 (hKC.sup_eq_top ▸ Submodule.mem_top :
-      ((0, w) : V × W) ∈ LinearMap.ker (LinearMap.snd k V W) ⊔ C)
-    refine ⟨⟨c, hc⟩, ?_⟩
-    have h₂ : u.2 + c.2 = w := congrArg Prod.snd huc
-    have hu₂ : u.2 = 0 := hu
-    simp [← h₂, hu₂]
-  let eC := LinearEquiv.ofBijective _ ⟨h_inj, h_surj⟩
-  -- `(v, w) ↦ (v, 0) + c(w)`, with `c(w) ∈ C` the element of second coordinate `w`, conjugates
-  -- `a ⊕ b` to `g`.
-  let φ : Module.End k (V × W) :=
-    LinearMap.coprod (LinearMap.inl k V W) (C.subtype ∘ₗ eC.symm.toLinearMap)
-  have hφ_snd (w : W) : ((eC.symm w : C) : V × W).2 = w :=
-    eC.apply_symm_apply w
-  have h_comm (p : V × W) : φ (a.prodMap b p) = g (φ p) := by
-    -- `g` preserves `C`, and on `C` it acts on the second coordinate as `b`.
-    have hgc : g (eC.symm p.2) = (eC.symm (b p.2) : V × W) := by
-      have h_mem : g (eC.symm p.2) ∈ C := (Module.End.mem_invtSubmodule _).1 hC (eC.symm p.2).prop
-      have := h_inj (a₁ := ⟨_, h_mem⟩) (a₂ := eC.symm (b p.2)) (by
-        simp [hφ_snd, g, blockTriangular_apply])
-      exact congrArg Subtype.val this
-    simp [φ, map_add, hgc, g, blockTriangular_apply]
-  have hφ_inj : Function.Injective φ := by
-    refine (injective_iff_map_eq_zero _).2 fun p hp ↦ ?_
-    have h₂ : p.2 = 0 := by simpa [φ, hφ_snd] using congrArg Prod.snd hp
-    have h₁ : p.1 = 0 := by simpa [φ, h₂] using congrArg Prod.fst hp
-    exact Prod.ext h₁ h₂
-  exact (ofEnd_eq_of_apply_eq (LinearEquiv.ofInjectiveEndo φ hφ_inj) h_comm).symm
 
 /-! ### The inverse `μ` of `𝟙` -/
 
@@ -151,12 +103,13 @@ theorem moebius_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) : moebius
     eq_of_dim_eq_zero (c := ofEnd (o.rep.invtRestrict (⊥ : o.rep.invtSubmodule).prop)) (by simp)
       h] at key
 
-/-- **`μ` vanishes off the semisimple classes.** Evaluated at `g`, `μ ∗ 𝟙 = 1` makes
-`U ↦ μ(g|_U)` the Möbius function of the modular lattice of `g`-invariant subspaces, so by
-Crapo's complementation theorem this lattice is complemented when `μ(g) ≠ 0`. -/
+/-- **`μ` vanishes off the semisimple classes.** If `μ(g) ≠ 0`, then `g` is semisimple. -/
 theorem isSemisimple_of_moebius_ne_zero {g : Module.End k V} (h : moebius (ofEnd g) ≠ 0) :
     g.IsSemisimple := by
   classical
+  -- Evaluated at `g`, `μ ∗ 𝟙 = 1` makes `U ↦ μ(g|_U)` the Möbius function `U ↦ μ(⊥, U)` of the
+  -- modular lattice of `g`-invariant subspaces, so by Crapo's complementation theorem this
+  -- lattice is complemented when `μ(g) ≠ 0`.
   have := Fintype.ofFinite g.invtSubmodule
   -- The `g`-invariant subspaces form a modular lattice, as a sublattice of `Submodule k V`.
   have : IsModularLattice g.invtSubmodule :=
@@ -207,26 +160,6 @@ section BlockAverage
 
 variable [Fintype k]
 
-/-- The block average of `𝟙` is `𝟙`. -/
-@[simp]
-theorem blockAverage_constOne (c : SimilarityClass k) :
-    blockAverage (constOne : HallAlgebra k) c = constOne := by
-  refine ext fun c' ↦ ?_
-  have : Finite ((Fin c'.dim → k) →ₗ[k] Fin c.dim → k) := Module.finite_of_finite k
-  have := Fintype.ofFinite ((Fin c'.dim → k) →ₗ[k] Fin c.dim → k)
-  rw [← ofEnd_rep c, ← ofEnd_rep c', blockAverage_ofEnd]
-  simp
-
-/-- The block average of the unit at two classes is the product of the values of the unit. -/
-theorem blockAverage_one_ofEnd (a : Module.End k V) (b : Module.End k W) :
-    blockAverage (1 : HallAlgebra k) (ofEnd a) (ofEnd b) =
-      (1 : HallAlgebra k) (ofEnd a) * (1 : HallAlgebra k) (ofEnd b) := by
-  have : Finite (W →ₗ[k] V) := Module.finite_of_finite k
-  have := Fintype.ofFinite (W →ₗ[k] V)
-  rw [blockAverage_ofEnd]
-  simp only [one_apply, dim_ofEnd, Module.finrank_prod, Nat.add_eq_zero_iff]
-  split_ifs <;> simp_all
-
 /-- The block average of `μ`: `δμ(a, ·) = μ(a) · μ`. -/
 theorem blockAverage_moebius (c : SimilarityClass k) :
     blockAverage moebius c = moebius c • moebius := by
@@ -275,23 +208,6 @@ end BlockAverage
 /-! ### Supports of cuspidal functions -/
 
 section CuspidalSupport
-
-/-- If an irreducible `P` divides the minimal polynomial of `g`, then `P(g)` is not invertible. -/
-private theorem not_isUnit_aeval_of_dvd_minpoly {g : Module.End k V} {P : k[X]}
-    (hP : Irreducible P) (h : P ∣ minpoly k g) : ¬IsUnit (aeval g P) := by
-  intro hu
-  obtain ⟨Q, hQ⟩ := h
-  have h_int : IsIntegral k g := Algebra.IsIntegral.isIntegral g
-  have hQ_zero : aeval g Q = 0 := by
-    have h_min := minpoly.aeval k g
-    rwa [hQ, map_mul, hu.mul_right_eq_zero] at h_min
-  have hQ_ne : Q ≠ 0 := by
-    rintro rfl
-    exact minpoly.ne_zero h_int (by simpa using hQ)
-  have h_deg := Polynomial.natDegree_le_of_dvd (minpoly.dvd k g hQ_zero) hQ_ne
-  rw [hQ, natDegree_mul hP.ne_zero hQ_ne] at h_deg
-  have := hP.natDegree_pos
-  omega
 
 variable {g T : Module.End k V} {C : Submodule k V} (hC : C ∈ g.invtSubmodule)
   (hCT : LinearMap.ker T = C) (hN : IsCompl C (LinearMap.range T))
@@ -419,20 +335,20 @@ private theorem isNilpotent_aeval_of_isCuspidal {A : HallAlgebra k} (hA : A.IsCu
     exact ⟨N, hT₀⟩
 
 /-- **Supports of cuspidal functions.** If `A` is cuspidal and `A(g) ≠ 0`, the characteristic
-polynomial of `g` is a power of an irreducible polynomial `P`: for an irreducible factor `P` of
-the minimal polynomial, `P(g)` is not invertible, hence nilpotent. -/
+polynomial of `g` is a power of an irreducible polynomial. -/
 theorem IsCuspidal.exists_charpoly_eq_pow {A : HallAlgebra k} (hA : A.IsCuspidal)
     {g : Module.End k V} (hg : A (ofEnd g) ≠ 0) :
     ∃ (P : k[X]) (j : ℕ), Irreducible P ∧ g.charpoly = P ^ j := by
   by_cases hV : Module.finrank k V = 0
-  · refine ⟨X, 0, irreducible_X, ?_⟩
-    rw [pow_zero]
-    exact (Polynomial.Monic.natDegree_eq_zero (LinearMap.charpoly_monic g)).1
-      (by rw [LinearMap.charpoly_natDegree, hV])
+  · have := Module.finrank_zero_iff.1 hV
+    exact ⟨X, 0, irreducible_X, by rw [pow_zero, LinearMap.charpoly_eq_one_of_subsingleton]⟩
   have : Nontrivial V := Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero hV)
+  -- For an irreducible factor `P` of the minimal polynomial, `P(g)` is not invertible, hence
+  -- nilpotent.
   obtain ⟨P, hP_monic, hP, hP_dvd⟩ := exists_monic_irreducible_factor _ (minpoly.not_isUnit k g)
   obtain ⟨j, hj⟩ := g.exists_charpoly_eq_pow_of_isNilpotent_aeval hP hP_monic
-    (isNilpotent_aeval_of_isCuspidal hA hg (not_isUnit_aeval_of_dvd_minpoly hP hP_dvd))
+    (isNilpotent_aeval_of_isCuspidal hA hg (minpoly.not_isUnit_aeval_of_dvd
+      (Algebra.IsIntegral.isIntegral g) hP.natDegree_pos hP_dvd))
   exact ⟨P, j, hP, hj⟩
 
 end CuspidalSupport
@@ -442,47 +358,6 @@ end CuspidalSupport
 section Green
 
 variable (K : Type*) [Field K] [Algebra k K] (η : K → ℂ)
-
-/-- The characteristic polynomial of `g` is the product of those of `g` on an invariant subspace
-and on the quotient. -/
-theorem _root_.Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot {g : Module.End k V}
-    {U : Submodule k V} (hU : U ∈ g.invtSubmodule) :
-    (g.invtRestrict hU).charpoly * (g.invtQuot hU).charpoly = g.charpoly := by
-  have hU' := (Module.End.mem_invtSubmodule g).1 hU
-  -- Replace the two maps by `LinearMap.restrict` and `Submodule.mapQ`, which have the same
-  -- classes.
-  rw [← charpoly_ofEnd (g.invtRestrict hU), ← charpoly_ofEnd (g.invtQuot hU),
-    ofEnd_invtRestrict_eq_of_injective (g := g.restrict hU') U.subtype (fun _ ↦ rfl) hU
-      U.injective_subtype U.range_subtype,
-    ofEnd_invtQuot_eq_of_surjective U.mkQ (g' := U.mapQ U g hU') (fun _ ↦ rfl) hU
-      U.mkQ_surjective U.ker_mkQ, charpoly_ofEnd, charpoly_ofEnd,
-    LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ U g hU']
-
-/-- The eigenvalue sum is additive along an invariant subspace and its quotient. -/
-theorem eigenvalueSum_ofEnd_eq_add {g : Module.End k V} {U : Submodule k V}
-    (hU : U ∈ g.invtSubmodule) :
-    eigenvalueSum K η (ofEnd g) = eigenvalueSum K η (ofEnd (g.invtRestrict hU)) +
-      eigenvalueSum K η (ofEnd (g.invtQuot hU)) := by
-  simp only [eigenvalueSum_ofEnd, ← Module.End.charpoly_invtRestrict_mul_charpoly_invtQuot hU]
-  rw [aroots_mul (mul_ne_zero (LinearMap.charpoly_monic _).ne_zero
-    (LinearMap.charpoly_monic _).ne_zero), Multiset.map_add, Multiset.sum_add]
-
-/-- The eigenvalue sum of a block diagonal map is the sum of those of the blocks. -/
-theorem eigenvalueSum_ofEnd_prodMap (a : Module.End k V) (b : Module.End k W) :
-    eigenvalueSum K η (ofEnd (a.prodMap b)) =
-      eigenvalueSum K η (ofEnd a) + eigenvalueSum K η (ofEnd b) := by
-  simp only [eigenvalueSum_ofEnd, LinearMap.charpoly_prodMap]
-  rw [aroots_mul (mul_ne_zero (LinearMap.charpoly_monic _).ne_zero
-    (LinearMap.charpoly_monic _).ne_zero), Multiset.map_add, Multiset.sum_add]
-
-/-- The eigenvalue sum vanishes on the class of size `0`. -/
-theorem eigenvalueSum_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) :
-    eigenvalueSum K η o = 0 := by
-  rw [← ofEnd_rep o, eigenvalueSum_ofEnd]
-  have h_one : o.rep.charpoly = 1 :=
-    (Polynomial.Monic.natDegree_eq_zero (LinearMap.charpoly_monic _)).1
-      (by rw [LinearMap.charpoly_natDegree, Module.finrank_fin_fun, h])
-  simp [h_one]
 
 variable [Finite k]
 
@@ -522,10 +397,11 @@ theorem greenCuspidal_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) :
   rw [eigenvalueSum_of_dim_eq_zero K η (by simp [Module.finrank_zero_of_subsingleton]), zero_mul]
 
 variable [Fintype k] in
-/-- **`C_η` is cuspidal.** By Mackey's formula and the block averages of `β_η · μ`, the block
-average of `C_η` at `(a, b)` is a sum of terms each with a factor `Σ_U μ(c|_U) = 1(c)`, `c = a` or
-`c = b`, which vanishes as `a` and `b` have positive size. -/
+/-- **`C_η` is cuspidal.** -/
 theorem isCuspidal_greenCuspidal : (greenCuspidal K η : HallAlgebra k).IsCuspidal := by
+  -- By Mackey's formula and the block averages of `β_η · μ`, the block average of `C_η` at
+  -- `(a, b)` is a sum of terms each with a factor `Σ_U μ(c|_U) = 1(c)`, `c = a` or `c = b`, which
+  -- vanishes as `a` and `b` have positive size.
   refine isCuspidal_iff.2 fun a b ha hb ↦ ?_
   rw [← ofEnd_rep a, ← ofEnd_rep b]
   have := Fintype.ofFinite a.rep.invtSubmodule
