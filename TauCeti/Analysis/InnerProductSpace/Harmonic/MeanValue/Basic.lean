@@ -73,7 +73,9 @@ The same identity bounds the growth of `Φ` from above by the mass of `Δ f`. Th
 attached to a nonnegative `ψ` supported in `(a, R)` is bounded by `2 (∫ ψ) / a ^ (n - 1)`
 (`TauCeti.integral_abs_div_sqrt_pow_le`), so `-∫ ψ' • Φ ≤ (∫ ψ) / a ^ (n - 1) * ∫_{ball 0 R} Δ f`,
 and `s ↦ c s - Φ s` is monotone on `(a, R)` for `c = (∫_{ball 0 R} Δ f) / a ^ (n - 1)`:
-`Φ r₂ - Φ r₁ ≤ (r₂ - r₁) / a ^ (n - 1) * ∫_{ball 0 R} Δ f` for `a < r₁ ≤ r₂ < R`.
+`Φ r₂ - Φ r₁ ≤ (r₂ - r₁) / a ^ (n - 1) * ∫_{ball 0 R} Δ f` for `a < r₁ ≤ r₂ < R`. Letting `a`
+tend to `r₁` gives the same bound with `r₁ ^ (n - 1)` in place of `a ^ (n - 1)`, for
+`0 < r₁ ≤ r₂ < R`.
 
 ## Main declarations
 
@@ -224,9 +226,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.integral_toSphere_eq {x₀ : E}
     (hu : HarmonicOnNhd u (closedBall x₀ R)) (hR : 0 ≤ R) :
     ∫ θ : sphere (0 : E) 1, u (x₀ + R • (θ : E)) ∂μ.toSphere = μ.toSphere.real univ • u x₀ := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have : IsEmpty (sphere (0 : E) 1) :=
-      ⟨fun θ ↦ by simpa [Subsingleton.elim (θ : E) 0] using norm_eq_of_mem_sphere θ⟩
-    simp [integral_of_isEmpty, Measure.eq_zero_of_isEmpty]
+  · simp [integral_of_isEmpty, Measure.eq_zero_of_isEmpty]
   have h := integral_toSphere_eq_of_harmonicOnNhd_zero (μ := μ)
     ((harmonicOnNhd_comp_add_right_closedBall_zero_iff x₀ R).mpr hu) hR
   simpa [add_comm] using h
@@ -363,6 +363,21 @@ private lemma mul_le_integral_toSphere_of_laplacian_nonneg_zero [Nontrivial E]
   have h := integral_toSphere_le_of_laplacian_nonneg_zero (μ := μ) hf hfc hΔ le_rfl hR
   simpa [integral_const] using h
 
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The hypotheses of the sub-mean-value inequality on `ball x₀ R`, translated to the origin. -/
+private lemma comp_add_right_of_laplacian_nonneg {x₀ : E}
+    (hf : ContDiffOn ℝ 2 f (ball x₀ R)) (hfc : ContinuousOn f (closedBall x₀ R))
+    (hΔ : ∀ x ∈ ball x₀ R, 0 ≤ Δ f x) :
+    ContDiffOn ℝ 2 (fun y ↦ f (y + x₀)) (ball 0 R) ∧
+      ContinuousOn (fun y ↦ f (y + x₀)) (closedBall 0 R) ∧
+      ∀ y ∈ ball (0 : E) R, 0 ≤ Δ (fun y ↦ f (y + x₀)) y :=
+  ⟨sub_self x₀ ▸ hf.comp_add_right_ball x₀,
+    hfc.comp (continuousOn_id.add continuousOn_const) fun y hy ↦ by
+      simpa [mem_closedBall, dist_eq_norm] using hy,
+    fun y hy ↦ by
+      rw [laplacian_comp_add_right]
+      exact hΔ _ (by simpa [mem_ball, dist_eq_norm] using hy)⟩
+
 /-- **The sub-mean-value inequality on spheres.** If `f` is `C²` on the ball `ball x₀ R`,
 continuous on its closure, and has nonnegative Laplacian on the ball, then `f x₀` times the total
 surface measure is at most the integral of `f` over the sphere of radius `R` about `x₀`,
@@ -372,17 +387,9 @@ theorem mul_le_integral_toSphere_of_laplacian_nonneg {x₀ : E}
     (hΔ : ∀ x ∈ ball x₀ R, 0 ≤ Δ f x) (hR : 0 ≤ R) :
     μ.toSphere.real univ * f x₀ ≤ ∫ θ : sphere (0 : E) 1, f (x₀ + R • (θ : E)) ∂μ.toSphere := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have : IsEmpty (sphere (0 : E) 1) :=
-      ⟨fun θ ↦ by simpa [Subsingleton.elim (θ : E) 0] using norm_eq_of_mem_sphere θ⟩
-    simp [integral_of_isEmpty, Measure.eq_zero_of_isEmpty]
-  have h := mul_le_integral_toSphere_of_laplacian_nonneg_zero (μ := μ)
-    (sub_self x₀ ▸ hf.comp_add_right_ball x₀ :
-      ContDiffOn ℝ 2 (fun y ↦ f (y + x₀)) (ball 0 R))
-    (hfc.comp (continuousOn_id.add continuousOn_const) fun y hy ↦ by
-      simpa [mem_closedBall, dist_eq_norm] using hy)
-    (fun y hy ↦ by
-      rw [laplacian_comp_add_right]
-      exact hΔ _ (by simpa [mem_ball, dist_eq_norm] using hy)) hR
+  · simp [integral_of_isEmpty, Measure.eq_zero_of_isEmpty]
+  obtain ⟨hf', hfc', hΔ'⟩ := comp_add_right_of_laplacian_nonneg hf hfc hΔ
+  have h := mul_le_integral_toSphere_of_laplacian_nonneg_zero (μ := μ) hf' hfc' hΔ' hR
   simpa [add_comm] using h
 
 /-- **The sub-mean-value inequality on spheres, average form.** A function which is `C²` on the
@@ -428,14 +435,8 @@ theorem mul_le_setIntegral_ball_of_laplacian_nonneg {x₀ : E}
   · -- In the trivial space `f` is constant, with value `f x₀`.
     rw [setIntegral_congr_fun measurableSet_ball (g := fun _ ↦ f x₀)
       fun x _ ↦ congrArg f (Subsingleton.elim x x₀), setIntegral_const, smul_eq_mul]
-  have h := mul_le_setIntegral_ball_of_laplacian_nonneg_zero (μ := μ)
-    (sub_self x₀ ▸ hf.comp_add_right_ball x₀ :
-      ContDiffOn ℝ 2 (fun y ↦ f (y + x₀)) (ball 0 R))
-    (hfc.comp (continuousOn_id.add continuousOn_const) fun y hy ↦ by
-      simpa [mem_closedBall, dist_eq_norm] using hy)
-    (fun y hy ↦ by
-      rw [laplacian_comp_add_right]
-      exact hΔ _ (by simpa [mem_ball, dist_eq_norm] using hy))
+  obtain ⟨hf', hfc', hΔ'⟩ := comp_add_right_of_laplacian_nonneg hf hfc hΔ
+  have h := mul_le_setIntegral_ball_of_laplacian_nonneg_zero (μ := μ) hf' hfc' hΔ'
   rw [zero_add] at h
   rw [Measure.addHaar_real_ball_center, setIntegral_ball_eq_setIntegral_ball_zero_add]
   exact h
@@ -465,17 +466,9 @@ theorem integral_toSphere_le_integral_toSphere_of_laplacian_nonneg {x₀ : E}
     ∫ θ : sphere (0 : E) 1, f (x₀ + s • (θ : E)) ∂μ.toSphere ≤
       ∫ θ : sphere (0 : E) 1, f (x₀ + R • (θ : E)) ∂μ.toSphere := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have : IsEmpty (sphere (0 : E) 1) :=
-      ⟨fun θ ↦ by simpa [Subsingleton.elim (θ : E) 0] using norm_eq_of_mem_sphere θ⟩
-    simp [integral_of_isEmpty]
-  have h := integral_toSphere_le_of_laplacian_nonneg_zero (μ := μ)
-    (sub_self x₀ ▸ hf.comp_add_right_ball x₀ :
-      ContDiffOn ℝ 2 (fun y ↦ f (y + x₀)) (ball 0 R))
-    (hfc.comp (continuousOn_id.add continuousOn_const) fun y hy ↦ by
-      simpa [mem_closedBall, dist_eq_norm] using hy)
-    (fun y hy ↦ by
-      rw [laplacian_comp_add_right]
-      exact hΔ _ (by simpa [mem_ball, dist_eq_norm] using hy)) hs hsR
+  · simp [integral_of_isEmpty]
+  obtain ⟨hf', hfc', hΔ'⟩ := comp_add_right_of_laplacian_nonneg hf hfc hΔ
+  have h := integral_toSphere_le_of_laplacian_nonneg_zero (μ := μ) hf' hfc' hΔ' hs hsR
   simpa [add_comm] using h
 
 /-- The integral of a subharmonic function over a ball about the origin is at most the measure of
@@ -522,17 +515,9 @@ theorem mul_setIntegral_ball_le_mul_integral_toSphere_of_laplacian_nonneg {x₀ 
     μ.toSphere.real univ * ∫ x in ball x₀ R, f x ∂μ ≤
       μ.real (ball x₀ R) * ∫ θ : sphere (0 : E) 1, f (x₀ + R • (θ : E)) ∂μ.toSphere := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have : IsEmpty (sphere (0 : E) 1) :=
-      ⟨fun θ ↦ by simpa [Subsingleton.elim (θ : E) 0] using norm_eq_of_mem_sphere θ⟩
-    simp [integral_of_isEmpty, Measure.eq_zero_of_isEmpty]
-  have h := mul_setIntegral_ball_le_of_laplacian_nonneg_zero (μ := μ)
-    (sub_self x₀ ▸ hf.comp_add_right_ball x₀ :
-      ContDiffOn ℝ 2 (fun y ↦ f (y + x₀)) (ball 0 R))
-    (hfc.comp (continuousOn_id.add continuousOn_const) fun y hy ↦ by
-      simpa [mem_closedBall, dist_eq_norm] using hy)
-    (fun y hy ↦ by
-      rw [laplacian_comp_add_right]
-      exact hΔ _ (by simpa [mem_ball, dist_eq_norm] using hy))
+  · simp [integral_of_isEmpty, Measure.eq_zero_of_isEmpty]
+  obtain ⟨hf', hfc', hΔ'⟩ := comp_add_right_of_laplacian_nonneg hf hfc hΔ
+  have h := mul_setIntegral_ball_le_of_laplacian_nonneg_zero (μ := μ) hf' hfc' hΔ'
   rw [Measure.addHaar_real_ball_center, setIntegral_ball_eq_setIntegral_ball_zero_add]
   simpa [add_comm] using h
 
@@ -575,8 +560,27 @@ private lemma neg_integral_deriv_mul_integral_toSphere_le [Nontrivial E]
     _ ≤ 2 * (∫ s, ψ s) / a ^ (Module.finrank ℝ E - 1) * D / 2 := by gcongr
     _ = (∫ s, ψ s) / a ^ (Module.finrank ℝ E - 1) * D := by ring
 
-/-- The increment bound for the sphere integrals about the origin. -/
-private lemma integral_toSphere_sub_le_zero [Nontrivial E]
+/-- Integration by parts against the identity: for a compactly supported `C¹` function `ψ` on `ℝ`,
+`x ↦ x ψ' x` is integrable and `∫ x ψ' x = -∫ ψ`. -/
+private lemma integrable_mul_deriv_and_integral_mul_deriv_eq_neg_integral {ψ : ℝ → ℝ}
+    (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) :
+    (Integrable fun x ↦ x * deriv ψ x) ∧ ∫ x, x * deriv ψ x = -∫ x, ψ x := by
+  have hI : Integrable fun x ↦ x * deriv ψ x :=
+    (continuous_id.mul (hψ.continuous_deriv le_rfl)).integrable_of_hasCompactSupport
+      (hψc.deriv.mul_left (f := fun x : ℝ ↦ x))
+  refine ⟨hI, ?_⟩
+  have h := integral_mul_deriv_eq_deriv_mul_of_integrable (u := fun x : ℝ ↦ x)
+    (u' := fun _ ↦ 1) (v := ψ) (v' := deriv ψ) (fun x _ ↦ hasDerivAt_id x)
+    (fun x _ ↦ (hψ.differentiable one_ne_zero x).hasDerivAt) hI
+    ((continuous_const.mul hψ.continuous).integrable_of_hasCompactSupport
+      (hψc.mul_left (f := fun _ : ℝ ↦ (1 : ℝ))))
+    ((continuous_id.mul hψ.continuous).integrable_of_hasCompactSupport
+      (hψc.mul_left (f := fun x : ℝ ↦ x)))
+  simpa using h
+
+/-- The increment bound for the sphere integrals about the origin, with an auxiliary inner
+radius `a < r₁`. -/
+private lemma integral_toSphere_sub_le_of_lt_zero [Nontrivial E]
     (hf : ContDiffOn ℝ 2 f (ball (0 : E) R)) (hfc : ContinuousOn f (closedBall (0 : E) R))
     (hΔ : ∀ x ∈ ball (0 : E) R, 0 ≤ Δ f x) (hΔi : IntegrableOn (Δ f) (ball (0 : E) R) μ)
     {a r₁ r₂ : ℝ} (ha : 0 < a) (har₁ : a < r₁) (hr : r₁ ≤ r₂) (hr₂R : r₂ < R) :
@@ -596,19 +600,7 @@ private lemma integral_toSphere_sub_le_zero [Nontrivial E]
       (hψs.trans Ioo_subset_Icc_self)
     have hψ1 : ContDiff ℝ 1 ψ := hψ.of_le (by simp)
     have hdψ : Continuous (deriv ψ) := hψ1.continuous_deriv le_rfl
-    have hI₁ : Integrable fun x ↦ x * deriv ψ x :=
-      (continuous_id.mul hdψ).integrable_of_hasCompactSupport
-        (hψc.deriv.mul_left (f := fun x : ℝ ↦ x))
-    -- Integration by parts: `∫ x ψ' x = -∫ ψ`.
-    have hparts : ∫ x, x * deriv ψ x = -∫ x, ψ x := by
-      have h := integral_mul_deriv_eq_deriv_mul_of_integrable (u := fun x : ℝ ↦ x)
-        (u' := fun _ ↦ 1) (v := ψ) (v' := deriv ψ) (fun x _ ↦ hasDerivAt_id x)
-        (fun x _ ↦ (hψ1.differentiable one_ne_zero x).hasDerivAt) hI₁
-        ((continuous_const.mul hψ.continuous).integrable_of_hasCompactSupport
-          (hψc.mul_left (f := fun _ : ℝ ↦ (1 : ℝ))))
-        ((continuous_id.mul hψ.continuous).integrable_of_hasCompactSupport
-          (hψc.mul_left (f := fun x : ℝ ↦ x)))
-      simpa using h
+    obtain ⟨hI₁, hparts⟩ := integrable_mul_deriv_and_integral_mul_deriv_eq_neg_integral hψ1 hψc
     have hIΦ : Integrable fun x ↦ deriv ψ x * Φ x := by
       refine IntegrableOn.integrable_of_forall_notMem_eq_zero (s := tsupport ψ)
         ((hdψ.continuousOn.mul (hΦc.mono ?_)).integrableOn_compact hψc) fun x hx ↦ ?_
@@ -636,37 +628,47 @@ private lemma integral_toSphere_sub_le_zero [Nontrivial E]
         simp only [c]
         ring
 
+/-- The increment bound for the sphere integrals about the origin. -/
+private lemma integral_toSphere_sub_le_zero [Nontrivial E]
+    (hf : ContDiffOn ℝ 2 f (ball (0 : E) R)) (hfc : ContinuousOn f (closedBall (0 : E) R))
+    (hΔ : ∀ x ∈ ball (0 : E) R, 0 ≤ Δ f x) (hΔi : IntegrableOn (Δ f) (ball (0 : E) R) μ)
+    {r₁ r₂ : ℝ} (hr₁ : 0 < r₁) (hr : r₁ ≤ r₂) (hr₂R : r₂ < R) :
+    ∫ θ : sphere (0 : E) 1, f (r₂ • (θ : E)) ∂μ.toSphere -
+        ∫ θ : sphere (0 : E) 1, f (r₁ • (θ : E)) ∂μ.toSphere ≤
+      (r₂ - r₁) / r₁ ^ (Module.finrank ℝ E - 1) * ∫ x in ball (0 : E) R, Δ f x ∂μ := by
+  -- Let the auxiliary radius `a < r₁` tend to `r₁`.
+  have ht : Tendsto (fun a : ℝ ↦ (r₂ - r₁) / a ^ (Module.finrank ℝ E - 1) *
+      ∫ x in ball (0 : E) R, Δ f x ∂μ) (𝓝[<] r₁)
+      (𝓝 ((r₂ - r₁) / r₁ ^ (Module.finrank ℝ E - 1) * ∫ x in ball (0 : E) R, Δ f x ∂μ)) :=
+    ((continuousAt_const.div (continuousAt_pow _ _) (pow_ne_zero _ hr₁.ne')).mul
+      continuousAt_const).tendsto.mono_left nhdsWithin_le_nhds
+  refine ge_of_tendsto ht ?_
+  filter_upwards [Ioo_mem_nhdsLT hr₁] with a ha
+  exact integral_toSphere_sub_le_of_lt_zero hf hfc hΔ hΔi ha.1 ha.2 hr hr₂R
+
 /-- **Growth of the sphere integrals of a subharmonic function.** Let `f` be `C²` on the ball
 `ball x₀ R`, continuous on its closure, with nonnegative and integrable Laplacian on the ball.
-For radii `0 < a < r₁ ≤ r₂ < R`, the integrals of `f` over the spheres of radii `r₁` and `r₂`
-about `x₀` differ by at most `(r₂ - r₁) / a ^ (n - 1)` times the integral of `Δ f` over the
+For radii `0 < r₁ ≤ r₂ < R`, the integrals of `f` over the spheres of radii `r₁` and `r₂`
+about `x₀` differ by at most `(r₂ - r₁) / r₁ ^ (n - 1)` times the integral of `Δ f` over the
 ball, `n` being the dimension. -/
 theorem integral_toSphere_sub_integral_toSphere_le {x₀ : E}
     (hf : ContDiffOn ℝ 2 f (ball x₀ R)) (hfc : ContinuousOn f (closedBall x₀ R))
     (hΔ : ∀ x ∈ ball x₀ R, 0 ≤ Δ f x) (hΔi : IntegrableOn (Δ f) (ball x₀ R) μ)
-    {a r₁ r₂ : ℝ} (ha : 0 < a) (har₁ : a < r₁) (hr : r₁ ≤ r₂) (hr₂R : r₂ < R) :
+    {r₁ r₂ : ℝ} (hr₁ : 0 < r₁) (hr : r₁ ≤ r₂) (hr₂R : r₂ < R) :
     ∫ θ : sphere (0 : E) 1, f (x₀ + r₂ • (θ : E)) ∂μ.toSphere -
         ∫ θ : sphere (0 : E) 1, f (x₀ + r₁ • (θ : E)) ∂μ.toSphere ≤
-      (r₂ - r₁) / a ^ (Module.finrank ℝ E - 1) * ∫ x in ball x₀ R, Δ f x ∂μ := by
+      (r₂ - r₁) / r₁ ^ (Module.finrank ℝ E - 1) * ∫ x in ball x₀ R, Δ f x ∂μ := by
   rcases subsingleton_or_nontrivial E with hE | hE
-  · have : IsEmpty (sphere (0 : E) 1) :=
-      ⟨fun θ ↦ by simpa [Subsingleton.elim (θ : E) 0] using norm_eq_of_mem_sphere θ⟩
-    simp only [integral_of_isEmpty, sub_self]
-    exact mul_nonneg (div_nonneg (by linarith) (pow_nonneg ha.le _))
+  · simp only [integral_of_isEmpty, sub_self]
+    exact mul_nonneg (div_nonneg (by linarith) (pow_nonneg hr₁.le _))
       (setIntegral_nonneg measurableSet_ball hΔ)
   have hΔi' : IntegrableOn (fun y ↦ Δ f (y + x₀)) (ball (0 : E) R) μ := by
     have h := ((measurePreserving_add_right μ x₀).integrableOn_comp_preimage
       (measurableEmbedding_addRight x₀)).2 hΔi
     rwa [preimage_add_right_ball, sub_self] at h
-  have h := integral_toSphere_sub_le_zero (μ := μ)
-    (sub_self x₀ ▸ hf.comp_add_right_ball x₀ :
-      ContDiffOn ℝ 2 (fun y ↦ f (y + x₀)) (ball 0 R))
-    (hfc.comp (continuousOn_id.add continuousOn_const) fun y hy ↦ by
-      simpa [mem_closedBall, dist_eq_norm] using hy)
-    (fun y hy ↦ by
-      rw [laplacian_comp_add_right]
-      exact hΔ _ (by simpa [mem_ball, dist_eq_norm] using hy))
-    (by rwa [laplacian_comp_add_right]) ha har₁ hr hr₂R
+  obtain ⟨hf', hfc', hΔ'⟩ := comp_add_right_of_laplacian_nonneg hf hfc hΔ
+  have h := integral_toSphere_sub_le_zero (μ := μ) hf' hfc' hΔ'
+    (by rwa [laplacian_comp_add_right]) hr₁ hr hr₂R
   rw [laplacian_comp_add_right] at h
   rw [setIntegral_ball_eq_setIntegral_ball_zero_add]
   simpa [add_comm] using h

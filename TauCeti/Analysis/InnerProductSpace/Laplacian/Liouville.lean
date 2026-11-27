@@ -112,6 +112,15 @@ private lemma exists_add_mul_lt_mul_four_pow {c : ℝ} (hc : 0 < c) (A B : ℝ) 
   obtain ⟨k, hk⟩ := (h.eventually (gt_mem_nhds hc)).exists
   exact ⟨k, by rwa [div_lt_iff₀ (by positivity)] at hk⟩
 
+/-- `r / r ^ (n - 1) * (3 r) ^ (n - 2) = 3 ^ (n - 2)` for `r ≠ 0` and `n ≥ 1`. -/
+private lemma div_pow_mul_three_mul_zpow_eq {r : ℝ} (hr : r ≠ 0) {n : ℕ} (hn : n ≠ 0) :
+    r / r ^ (n - 1) * (3 * r) ^ ((n : ℤ) - 2) = 3 ^ ((n : ℤ) - 2) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn
+  rw [zpow_sub₀ (mul_ne_zero three_ne_zero hr), zpow_sub₀ three_ne_zero, zpow_natCast,
+    zpow_natCast, zpow_ofNat, zpow_ofNat, Nat.add_sub_cancel]
+  field_simp
+  ring
+
 /-- The sphere integrals about `x₀` of a subharmonic `v` whose Laplacian has integral at most
 `C Rⁿ⁻²` over the balls of radius `R ≥ 1` grow at most linearly in `k` along the radii `2 ^ k`. -/
 private lemma integral_toSphere_two_pow_le (hv : ContDiff ℝ 2 v) (hΔ : ∀ x, 0 ≤ Δ v x)
@@ -119,27 +128,22 @@ private lemma integral_toSphere_two_pow_le (hv : ContDiff ℝ 2 v) (hΔ : ∀ x,
     (x₀ : E) (k : ℕ) :
     ∫ θ : sphere (0 : E) 1, v (x₀ + (2 : ℝ) ^ k • (θ : E)) ∂μ.toSphere ≤
       ∫ θ : sphere (0 : E) 1, v (x₀ + (θ : E)) ∂μ.toSphere +
-        k * (2 ^ (Module.finrank ℝ E - 1) * 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C) := by
+        k * (3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C) := by
   -- One doubling step: from the radius `r ≥ 1` to `2 r`, through the ball of radius `3 r`.
   have hstep : ∀ r : ℝ, 1 ≤ r → ∫ θ : sphere (0 : E) 1, v (x₀ + (2 * r) • (θ : E)) ∂μ.toSphere -
       ∫ θ : sphere (0 : E) 1, v (x₀ + r • (θ : E)) ∂μ.toSphere ≤
-        2 ^ (Module.finrank ℝ E - 1) * 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C := by
+        3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C := by
     intro r hr
     have hr0 : 0 < r := by linarith
     have h := integral_toSphere_sub_integral_toSphere_le (μ := μ) (x₀ := x₀) (R := 3 * r)
       hv.contDiffOn hv.continuous.continuousOn (fun x _ ↦ hΔ x)
       ((hv.continuous_laplacian.continuousOn.integrableOn_compact
-        (isCompact_closedBall x₀ _)).mono_set ball_subset_closedBall) (a := r / 2)
-      (by positivity) (by linarith) (by linarith : r ≤ 2 * r) (by linarith)
+        (isCompact_closedBall x₀ _)).mono_set ball_subset_closedBall)
+      hr0 (by linarith : r ≤ 2 * r) (by linarith)
     refine h.trans ((mul_le_mul_of_nonneg_left (hΔC x₀ (3 * r) (by linarith))
       (div_nonneg (by linarith) (by positivity))).trans_eq ?_)
-    -- `(2 r - r) / (r / 2) ^ (n - 1) * C (3 r) ^ (n - 2) = 2 ^ (n - 1) 3 ^ (n - 2) C`.
-    obtain ⟨m, hm⟩ := Nat.exists_eq_add_one_of_ne_zero (Module.finrank_pos (R := ℝ) (M := E)).ne'
-    rw [hm, Nat.add_sub_cancel, show ((m + 1 : ℕ) : ℤ) - 2 = (m : ℤ) - 1 by push_cast; ring,
-      mul_zpow, zpow_sub_one₀ (by norm_num : (3 : ℝ) ≠ 0), zpow_sub_one₀ hr0.ne', zpow_natCast,
-      zpow_natCast, div_pow]
-    field_simp
-    ring
+    rw [show 2 * r - r = r by ring, mul_left_comm,
+      div_pow_mul_three_mul_zpow_eq hr0.ne' (Module.finrank_pos (R := ℝ) (M := E)).ne', mul_comm]
   induction k with
   | zero => simp
   | succ k ih =>
@@ -177,24 +181,25 @@ private lemma mul_le_two_pow_mul_integral_toSphere (hv : ContDiff ℝ 2 v) (hv�
     _ = μ.real (ball y R) * (2 ^ Module.finrank ℝ E *
         ∫ θ : sphere (0 : E) 1, v (x₀ + (2 * R) • (θ : E)) ∂μ.toSphere) := by rw [hball]; ring
 
-/-- The estimate at the scale `R = 2 ^ k` behind the growth argument: if `v` is a nonnegative
+/-- The estimate at the scales `R = 2 ^ k` behind the growth argument: if `v` is a nonnegative
 subharmonic function with codimension-two growth, then `4ᵏ V₁ v x₀ ≤ C (1 + T_k)`, where `V₁` is
-the measure of the unit ball and `T_k` bounds `v` on the ball of radius `2 ^ k` about `x₀`, of
-order `k`. -/
-private lemma mul_four_pow_le (hv : ContDiff ℝ 2 v) (hv₀ : ∀ x, 0 ≤ v x) (hΔ : ∀ x, 0 ≤ Δ v x)
+the measure of the unit ball and `T_k` bounds `v` on the ball of radius `2 ^ k` about `x₀`. Since
+`T_k` is affine in `k`, so is the bound. -/
+private lemma exists_mul_four_pow_le (hv : ContDiff ℝ 2 v) (hv₀ : ∀ x, 0 ≤ v x)
+    (hΔ : ∀ x, 0 ≤ Δ v x)
     (hΔC : ∀ y R, 1 ≤ R → ∫ x in ball y R, Δ v x ∂μ ≤ C * R ^ ((Module.finrank ℝ E : ℤ) - 2))
     (hvC : ∀ y R, 1 ≤ R →
       ∫ x in ball y R, min (v x) 1 ∂μ ≤ C * R ^ ((Module.finrank ℝ E : ℤ) - 2))
-    (hS : 0 < μ.toSphere.real univ) (x₀ : E) (k : ℕ) :
-    μ.real (ball (0 : E) 1) * v x₀ * 4 ^ k ≤
-      C * (1 + 2 ^ Module.finrank ℝ E * (∫ θ : sphere (0 : E) 1, v (x₀ + (θ : E)) ∂μ.toSphere +
-        (k + 1) * (2 ^ (Module.finrank ℝ E - 1) * 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C)) /
-          μ.toSphere.real univ) := by
+    (hS : 0 < μ.toSphere.real univ) (x₀ : E) :
+    ∃ A B : ℝ, ∀ k : ℕ, μ.real (ball (0 : E) 1) * v x₀ * 4 ^ k ≤ A + B * k := by
+  set I := ∫ θ : sphere (0 : E) 1, v (x₀ + (θ : E)) ∂μ.toSphere
+  set K := 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C
+  set S := μ.toSphere.real univ
+  refine ⟨C * (1 + 2 ^ Module.finrank ℝ E * (I + K) / S), C * (2 ^ Module.finrank ℝ E * K / S),
+    fun k ↦ ?_⟩
   have hR1 : (1 : ℝ) ≤ 2 ^ k := one_le_pow₀ (by norm_num)
   have hR0 : (0 : ℝ) < 2 ^ k := by positivity
-  set T := 2 ^ Module.finrank ℝ E * (∫ θ : sphere (0 : E) 1, v (x₀ + (θ : E)) ∂μ.toSphere +
-    (k + 1) * (2 ^ (Module.finrank ℝ E - 1) * 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C)) /
-      μ.toSphere.real univ
+  set T := 2 ^ Module.finrank ℝ E * (I + (k + 1) * K) / S
   -- `v ≤ T` on the ball of radius `2 ^ k`, by the sub-mean-value inequality and the growth of
   -- the sphere integrals.
   have hT : ∀ y ∈ ball x₀ (2 ^ k), v y ≤ T := fun y hy ↦ by
@@ -228,15 +233,16 @@ private lemma mul_four_pow_le (hv : ContDiff ℝ 2 v) (hv₀ : ∀ x, 0 ≤ v x)
   -- `(2 ^ k)ⁿ = (2 ^ k)ⁿ⁻² 4ᵏ`; divide the two bounds on the integral of `min v 1` by `(2 ^ k)ⁿ⁻²`.
   have hRn : ((2 : ℝ) ^ k) ^ Module.finrank ℝ E =
       ((2 : ℝ) ^ k) ^ ((Module.finrank ℝ E : ℤ) - 2) * 4 ^ k := by
-    rw [show (4 : ℝ) ^ k = ((2 : ℝ) ^ k) ^ 2 by rw [← pow_mul, mul_comm, pow_mul]; norm_num,
-      ← zpow_natCast, ← zpow_natCast _ 2, ← zpow_add₀ hR0.ne']
-    congr 1
-    ring
+    rw [zpow_sub₀ hR0.ne', zpow_natCast, zpow_ofNat, show (4 : ℝ) ^ k = ((2 : ℝ) ^ k) ^ 2 by
+      rw [← pow_mul, mul_comm, pow_mul]; norm_num, div_mul_cancel₀ _ (by positivity)]
   rw [μ.addHaar_real_ball_of_pos x₀ hR0, hRn] at hlow
   have h := hlow.trans (hvC x₀ _ hR1)
   have hz : 0 < ((2 : ℝ) ^ k) ^ ((Module.finrank ℝ E : ℤ) - 2) := zpow_pos hR0 _
   rw [div_le_iff₀ (by positivity)] at h
-  nlinarith
+  calc μ.real (ball (0 : E) 1) * v x₀ * 4 ^ k ≤ C * (1 + T) := by nlinarith
+    _ = _ := by
+        simp only [T]
+        ring
 
 /-- **A Liouville theorem under codimension-two growth.** Let `v` be a nonnegative `C²` function
 on a nontrivial finite-dimensional real inner product space of dimension `n`, with nonnegative
@@ -254,28 +260,10 @@ theorem eq_zero_of_laplacian_nonneg_of_setIntegral_ball_le (hv : ContDiff ℝ 2 
   have : NeZero μ.toSphere := ⟨μ.toSphere_ne_zero⟩
   have hS : 0 < μ.toSphere.real univ := measureReal_univ_pos
   have hc : 0 < μ.real (ball (0 : E) 1) * v x₀ := mul_pos (measureReal_ball_pos μ 0 one_pos) hpos
-  -- The bound of `mul_four_pow_le` is affine in `k`; it fails for large `k`.
-  obtain ⟨k, hk⟩ := exists_add_mul_lt_mul_four_pow hc
-    (C * (1 + 2 ^ Module.finrank ℝ E * (∫ θ : sphere (0 : E) 1, v (x₀ + (θ : E)) ∂μ.toSphere +
-      2 ^ (Module.finrank ℝ E - 1) * 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C) /
-        μ.toSphere.real univ))
-    (C * (2 ^ Module.finrank ℝ E *
-      (2 ^ (Module.finrank ℝ E - 1) * 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C) /
-        μ.toSphere.real univ))
-  have h := mul_four_pow_le (μ := μ) hv hv₀ hΔ hΔC hvC hS x₀ k
-  have heq : C * (1 + 2 ^ Module.finrank ℝ E *
-      (∫ θ : sphere (0 : E) 1, v (x₀ + (θ : E)) ∂μ.toSphere + (k + 1) *
-        (2 ^ (Module.finrank ℝ E - 1) * 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C)) /
-          μ.toSphere.real univ) =
-      C * (1 + 2 ^ Module.finrank ℝ E * (∫ θ : sphere (0 : E) 1, v (x₀ + (θ : E)) ∂μ.toSphere +
-        2 ^ (Module.finrank ℝ E - 1) * 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C) /
-          μ.toSphere.real univ) +
-      C * (2 ^ Module.finrank ℝ E *
-        (2 ^ (Module.finrank ℝ E - 1) * 3 ^ ((Module.finrank ℝ E : ℤ) - 2) * C) /
-          μ.toSphere.real univ) * k := by
-    field_simp
-    ring
-  linarith
+  -- The bound of `exists_mul_four_pow_le` is affine in `k`; it fails for large `k`.
+  obtain ⟨A, B, h⟩ := exists_mul_four_pow_le (μ := μ) hv hv₀ hΔ hΔC hvC hS x₀
+  obtain ⟨k, hk⟩ := exists_add_mul_lt_mul_four_pow hc A B
+  exact (h k).not_gt hk
 
 end CodimensionTwo
 

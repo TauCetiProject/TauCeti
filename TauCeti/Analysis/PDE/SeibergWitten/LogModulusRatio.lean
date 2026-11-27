@@ -185,6 +185,27 @@ theorem tendsto_log_norm_sq_of_tendsto {L : Filter E} (hα : α = h * α')
   rw [Pi.div_apply, hα, Pi.mul_apply, norm_mul, mul_pow,
     mul_div_cancel_right₀ _ (pow_ne_zero 2 hy)]
 
+/-- A vanishing log-modulus ratio gives a gauge transformation: if `α = h α'` for a nowhere
+vanishing `C²` function `h` with `log |h|² = 0`, where `∂bar_a α = 0`, `∂bar_(a') α' = 0` and `α'`
+is differentiable and nonzero on a dense set, then `|h| = 1` and `b = b' - Im (h⁻¹ dh)`. -/
+private lemma norm_eq_one_and_eq_sub_phaseForm_of_log_eq_zero (hb : Differentiable ℝ b)
+    (hb' : Differentiable ℝ b') (hh : ContDiff ℝ 2 h) (hα' : Differentiable ℝ α')
+    (hh₀ : ∀ y, h y ≠ 0) (hα : α = h * α') (hdense : Dense {y | α' y ≠ 0})
+    (hdbar : ∀ y, covariantDBar J b α y = 0) (hdbar' : ∀ y, covariantDBar J b' α' y = 0)
+    (hw₀ : (fun y ↦ Real.log (‖h y‖ ^ 2)) = 0) :
+    (∀ y, ‖h y‖ = 1) ∧ b = b' - phaseForm h := by
+  refine ⟨fun y ↦ (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1
+    (Real.eq_one_of_pos_of_log_eq_zero (by have := hh₀ y; positivity) (congrFun hw₀ y)),
+    funext fun y ↦ ?_⟩
+  -- The phase form `Im (h⁻¹ dh) + (b - b')` is `d^c_J log |h|² = 0`.
+  have hratio := covariantDBar_sub_eq_zero_of_dense J hb.continuous hb'.continuous
+    (hh.of_le (by norm_num)) hα' hα hdense hdbar hdbar'
+  have hτ := covariantPhaseForm_eq_twistedDifferential_log J (hh.differentiable (by simp) y)
+    (hh₀ y) (congrFun hratio y)
+  rw [hw₀, J.twistedDifferential_zero, Pi.zero_apply, covariantPhaseForm_apply, Pi.sub_apply] at hτ
+  rw [Pi.sub_apply, ← sub_eq_zero, ← hτ]
+  abel
+
 /-- **Flat vortex fields with the same zeros differ by a gauge transformation.** Let `J` be
 orthogonal, `(eᵢ)` an orthonormal basis, `κ ≥ 0`, and let `(b, α)` and `(b', α')` solve the flat
 vortex equations `∂bar_a α = 0`, `∑ᵢ db(eᵢ, J eᵢ) = κ (|α|² - 1)` with differentiable connection
@@ -216,18 +237,9 @@ theorem norm_eq_one_and_eq_sub_phaseForm_of_tendsto (hJ : ∀ v w, ⟪J v, J w�
     rcases le_total (‖h y‖ ^ 2) 1 with h1 | h1
     · nlinarith [mul_nonneg (neg_nonneg.2 (Real.log_nonpos (hpos y).le h1)) (sub_nonneg.2 h1)]
     · nlinarith [mul_nonneg (Real.log_nonneg h1) (sub_nonneg.2 h1)]
-  have hw₀ := eq_zero_of_tendsto_comap_norm_starProjection_of_mul_laplacian_nonneg hK hw hsign
-    hbdd (tendsto_log_norm_sq_of_tendsto hα hlim hlim')
-  refine ⟨fun y ↦ (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1
-    (Real.eq_one_of_pos_of_log_eq_zero (hpos y) (congrFun hw₀ y)), funext fun y ↦ ?_⟩
-  -- The phase form `Im (h⁻¹ dh) + (b - b')` is `d^c_J log |h|² = 0`.
-  have hratio := covariantDBar_sub_eq_zero_of_dense J hb.continuous hb'.continuous
-    (hh.of_le (by norm_num)) hα' hα hdense hdbar hdbar'
-  have hτ := covariantPhaseForm_eq_twistedDifferential_log J (hh.differentiable (by simp) y)
-    (hh₀ y) (congrFun hratio y)
-  rw [hw₀, J.twistedDifferential_zero, Pi.zero_apply, covariantPhaseForm_apply, Pi.sub_apply] at hτ
-  rw [Pi.sub_apply, ← sub_eq_zero, ← hτ]
-  abel
+  exact norm_eq_one_and_eq_sub_phaseForm_of_log_eq_zero hb hb' hh hα' hh₀ hα hdense hdbar hdbar'
+    (eq_zero_of_tendsto_comap_norm_starProjection_of_mul_laplacian_nonneg hK hw hsign hbdd
+      (tendsto_log_norm_sq_of_tendsto hα hlim hlim'))
 
 /-- **The log-modulus ratio is bounded.** Let `J` be orthogonal, `n` a unit vector, and let
 `(b, α)` and `(b', α')` satisfy `∂bar_a α = 0` and `∂bar_(a') α' = 0`, with differentiable
@@ -348,14 +360,14 @@ private lemma setIntegral_ball_min_neg_log_le (hα : Continuous α) (hα₀ : �
       min_neg_log_one_le (hpos x) (pow_le_one₀ (norm_nonneg _) (hα₁ x))
 
 /-- **Zero-free flat vortex fields with codimension-two defect growth are the vacuum.** Let `J` be
-orthogonal on a nontrivial space of dimension `n`, `(eᵢ)` an orthonormal basis, `κ > 0`, and let
+orthogonal on a nontrivial space of dimension `n`, `(eᵢ)` an orthonormal basis, `κ ≥ 0`, and let
 `(b, α)` solve the flat vortex equations `∂bar_a α = 0`, `∑ᵢ db(eᵢ, J eᵢ) = κ (|α|² - 1)`, with a
 differentiable connection form and a `C²` section `α` that vanishes nowhere and has `|α| ≤ 1`. If
 the defect `1 - |α|²` has integral at most `C Rⁿ⁻²` over every ball of radius `R ≥ 1`, then
 `|α| = 1` and `b = -Im (α⁻¹ dα)`: the pair is the gauge transform of the vacuum `(0, 1)` by the
 unimodular function `α`. -/
 theorem norm_eq_one_and_eq_neg_phaseForm_of_setIntegral_ball_le
-    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (e : OrthonormalBasis ι ℝ E) {κ : ℝ} (hκ : 0 < κ)
+    (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫) (e : OrthonormalBasis ι ℝ E) {κ : ℝ} (hκ : 0 ≤ κ)
     (hb : Differentiable ℝ b) (hα : ContDiff ℝ 2 α) (hα₀ : ∀ y, α y ≠ 0) (hα₁ : ∀ y, ‖α y‖ ≤ 1)
     (hdbar : ∀ y, covariantDBar J b α y = 0)
     (hF : ∀ y, ∑ i, extDeriv b y ![e i, J (e i)] = κ * (‖α y‖ ^ 2 - 1)) {C : ℝ}
@@ -386,7 +398,7 @@ theorem norm_eq_one_and_eq_neg_phaseForm_of_setIntegral_ball_le
   have hΔC (y : E) (R : ℝ) (hR : 1 ≤ R) : ∫ x in ball y R, Δ (fun y ↦ -Real.log (‖α y‖ ^ 2)) x ∂μ ≤
       max (κ * C) (2 * C) * R ^ ((Module.finrank ℝ E : ℤ) - 2) := by
     rw [setIntegral_congr_fun measurableSet_ball fun x _ ↦ hΔ x, integral_const_mul]
-    refine (mul_le_mul_of_nonneg_left (hC y R hR) hκ.le).trans ?_
+    refine (mul_le_mul_of_nonneg_left (hC y R hR) hκ).trans ?_
     rw [← mul_assoc]
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (hzpow R hR)
   have hvC (y : E) (R : ℝ) (hR : 1 ≤ R) : ∫ x in ball y R, min (-Real.log (‖α x‖ ^ 2)) 1 ∂μ ≤
@@ -398,20 +410,11 @@ theorem norm_eq_one_and_eq_neg_phaseForm_of_setIntegral_ball_le
   have hv := eq_zero_of_laplacian_nonneg_of_setIntegral_ball_le (μ := μ)
     ((ContDiff.log (hα.norm_sq ℝ) fun y ↦ (hpos y).ne').neg)
     (fun y ↦ neg_nonneg.2 (Real.log_nonpos (hpos y).le (hle y)))
-    (fun y ↦ by rw [hΔ]; exact mul_nonneg hκ.le (sub_nonneg.2 (hle y))) hΔC hvC
-  have hw₀ : (fun y ↦ Real.log (‖α y‖ ^ 2)) = 0 := funext fun y ↦ by
-    simpa using congrFun hv y
-  refine ⟨fun y ↦ (pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero).1
-    (Real.eq_one_of_pos_of_log_eq_zero (hpos y) (congrFun hw₀ y)), funext fun y ↦ ?_⟩
-  -- The phase form `Im (α⁻¹ dα) + b` is `d^c_J log |α|² = 0`.
-  have hratio := covariantDBar_sub_eq_zero_of_dense J hb.continuous continuous_const
-    (hα.of_le (by norm_num)) (differentiable_const _) hα1 hdense hdbar hdbar₁
-  have hτ := covariantPhaseForm_eq_twistedDifferential_log J (hα.differentiable (by simp) y)
-    (hα₀ y) (congrFun hratio y)
-  rw [hw₀, J.twistedDifferential_zero, Pi.zero_apply, covariantPhaseForm_apply, Pi.sub_apply,
-    sub_zero] at hτ
-  rw [Pi.neg_apply]
-  exact eq_neg_of_add_eq_zero_right hτ
+    (fun y ↦ by rw [hΔ]; exact mul_nonneg hκ (sub_nonneg.2 (hle y))) hΔC hvC
+  have h := norm_eq_one_and_eq_sub_phaseForm_of_log_eq_zero hb (differentiable_const _) hα
+    (differentiable_const _) hα₀ hα1 hdense hdbar hdbar₁ (funext fun y ↦ by
+      simpa using congrFun hv y)
+  rwa [← Pi.zero_def, zero_sub] at h
 
 end ZeroFree
 
