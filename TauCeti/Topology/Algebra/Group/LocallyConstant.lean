@@ -23,6 +23,7 @@ compact group a homomorphism with open kernel has finite range
 (`MonoidHom.finite_range_of_isOpen_ker`). Conversely, a continuous homomorphism to a `T₁` space
 with finite range has open kernel (`MonoidHom.isOpen_ker_of_finite_range`), so on a compact group
 the kernel is open exactly when the range is finite (`MonoidHom.isOpen_ker_iff_finite_range`).
+These three criteria also have additive forms.
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
 the neighbourhood on which it is constant depends on the point. On a *compact* group the
@@ -70,12 +71,16 @@ theorem isLocallyConstant_of_isOpen_ker [MulOneClass A] (χ : G →* A)
   exact χ.eq_iff.mpr hy
 
 /-- A homomorphism with open kernel on a compact group has finite range. -/
+@[to_additive /-- An additive homomorphism with open kernel on a compact additive group has finite
+range. -/]
 theorem finite_range_of_isOpen_ker [CompactSpace G] [MulOneClass A] (χ : G →* A)
     (hχ : IsOpen (χ.ker : Set G)) : (Set.range χ).Finite :=
   (χ.isLocallyConstant_of_isOpen_ker hχ).range_finite
 
 omit [SeparatelyContinuousMul G] in
 /-- A continuous homomorphism to a `T₁` space with finite range has open kernel. -/
+@[to_additive /-- A continuous additive homomorphism to a `T₁` space with finite range has open
+kernel. -/]
 theorem isOpen_ker_of_finite_range [MulOneClass A] [TopologicalSpace A] [T1Space A]
     (χ : G →* A) (hχ : Continuous χ) (hfin : (Set.range χ).Finite) :
     IsOpen (χ.ker : Set G) :=
@@ -86,6 +91,8 @@ its range is finite. Compactness is needed for the forward direction: the identi
 the discrete topology has open kernel and infinite range. The `T₁` condition is needed for the
 converse: the identity of a two-element group with the indiscrete topology has finite range and a
 kernel that is not open. -/
+@[to_additive /-- A continuous additive homomorphism from a compact additive group to a `T₁` space
+has open kernel exactly when its range is finite. -/]
 theorem isOpen_ker_iff_finite_range [CompactSpace G] [MulOneClass A] [TopologicalSpace A]
     [T1Space A] (χ : G →* A) (hχ : Continuous χ) :
     IsOpen (χ.ker : Set G) ↔ (Set.range χ).Finite :=
