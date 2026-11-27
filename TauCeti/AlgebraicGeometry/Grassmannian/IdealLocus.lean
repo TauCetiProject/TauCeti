@@ -34,12 +34,14 @@ point of the Grassmannian over `Γ(G(k, M), U)`, and the ideal of the closed sub
 the ideal `I` of that point. These ideals are compatible with restriction to basic opens because
 the formation of `I` commutes with base change.
 
-These closed subschemes are compatible with base change along `Spec R' ⟶ Spec R`
-(`Module.Grassmannian.baseChangeHom`): if the ideal `I'` of a point of `G(k, R' ⊗[R] M)` over an
-`R'`-algebra `A` is the ideal `I` of its image in `G(k, A ⊗[R] M; A)`, then the closed subscheme
-cut out by `I'` is the inverse image of the one cut out by `I`
-(`Module.Grassmannian.comap_baseChangeHom_schemeIdealLocus`), hence its base change to `Spec R'`
-(`Module.Grassmannian.isPullback_baseChangeHom_schemeIdealLocus`). Both ideal sheaves are
+These closed subschemes are compatible with base change along `Spec R' ⟶ Spec R`: for a base
+change `f : M → M'` of modules along `R → R'` (`IsBaseChange.grassmannianSchemeHom`), if the ideal
+`I'` of a point of `G(k, M')` over an `R'`-algebra `A` is the ideal `I` of its image in
+`G(k, A ⊗[R] M; A)`, then the closed subscheme cut out by `I'` is the inverse image of the one cut
+out by `I` (`IsBaseChange.comap_grassmannianSchemeHom_schemeIdealLocus`), hence its base change
+to `Spec R'` (`IsBaseChange.isPullback_grassmannianSchemeHom_schemeIdealLocus`). The tensor
+product `M' = R' ⊗[R] M` (`Module.Grassmannian.baseChangeHom`) is the special case
+`Module.Grassmannian.comap_baseChangeHom_schemeIdealLocus`. Both ideal sheaves are
 determined by their inverse images along morphisms from affine schemes, which classify points.
 
 ## Main definitions
@@ -60,9 +62,11 @@ determined by their inverse images along morphisms from affine schemes, which cl
   `G(k, M)` via pullbacks to the standard charts.
 * `Module.Grassmannian.schemeIdealLocus_le_ker_toSchemeHom_iff`: **the universal property**; the
   morphism classifying `N` factors through the closed subscheme exactly when `I N = ⊥`.
-* `Module.Grassmannian.comap_baseChangeHom_schemeIdealLocus` and
-  `Module.Grassmannian.isPullback_baseChangeHom_schemeIdealLocus`: base change of the closed
-  subschemes cut out by ideals of points.
+* `IsBaseChange.comap_grassmannianSchemeHom_schemeIdealLocus` and
+  `IsBaseChange.isPullback_grassmannianSchemeHom_schemeIdealLocus`: base change of the closed
+  subschemes cut out by ideals of points, along a base change of modules `M → M'`;
+  `Module.Grassmannian.comap_baseChangeHom_schemeIdealLocus` and
+  `Module.Grassmannian.isPullback_baseChangeHom_schemeIdealLocus` are the case `M' = R' ⊗[R] M`.
 
 ## References
 
@@ -225,6 +229,67 @@ theorem toSchemeHom_schemeIdealLocusHomEquiv_symm_apply {A : Type u} [CommRing A
 
 end Module.Grassmannian
 
+namespace IsBaseChange
+
+open Module.Grassmannian
+
+variable {R R' : Type u} [CommRing R] [CommRing R'] [Algebra R R'] {M M' : Type u}
+  [AddCommGroup M] [Module R M] [AddCommGroup M'] [Module R' M'] [Module R M']
+  [IsScalarTower R R' M'] {f : M →ₗ[R] M'} (hf : IsBaseChange R' f) {k : ℕ}
+  (I : ∀ {A : Type u} [CommRing A] [Algebra R A], G(k, A ⊗[R] M; A) → Ideal A)
+  (hI : ∀ {A B : Type u} [CommRing A] [Algebra R A] [CommRing B] [Algebra R B] (f : A →ₐ[R] B)
+    (N : G(k, A ⊗[R] M; A)), I (map f N) = Ideal.map f (I N))
+  (I' : ∀ {A : Type u} [CommRing A] [Algebra R' A], G(k, A ⊗[R'] M'; A) → Ideal A)
+  (hI' : ∀ {A B : Type u} [CommRing A] [Algebra R' A] [CommRing B] [Algebra R' B]
+    (f : A →ₐ[R'] B) (N : G(k, A ⊗[R'] M'; A)), I' (map f N) = Ideal.map f (I' N))
+
+/-- **Base change of a closed subscheme cut out by ideals of points, along a base change of
+modules.** Let `f : M → M'` be a base change along `R → R'`, `I` a base-change-compatible ideal
+of points of `G(k, M)`, and `I'` one of points of `G(k, M')`, such that `I'` of a point over an
+`R'`-algebra is `I` of its image under `IsBaseChange.grassmannianEquiv`. Then the inverse image
+of the closed subscheme cut out by `I` along `IsBaseChange.grassmannianSchemeHom` is the closed
+subscheme cut out by `I'`. -/
+theorem comap_grassmannianSchemeHom_schemeIdealLocus
+    (h : ∀ {A : Type u} [CommRing A] [Algebra R' A] [Algebra R A] [IsScalarTower R R' A]
+      (N : G(k, A ⊗[R'] M'; A)), I (hf.grassmannianEquiv A N) = I' N) :
+    (schemeIdealLocus I hI).comap (hf.grassmannianSchemeHom k) = schemeIdealLocus I' hI' := by
+  -- compare the pullbacks along every morphism from an affine scheme, which classifies a point
+  have key (B : CommRingCat.{u}) (a : Spec B ⟶ scheme R' M' k) :
+      ((schemeIdealLocus I hI).comap (hf.grassmannianSchemeHom k)).comap a =
+        (schemeIdealLocus I' hI').comap a := by
+    refine affinePoint_induction (R₀ := R) (fun A _ _ _ _ N ↦ ?_) a
+    rw [← comap_comp, toSchemeHom_comp_grassmannianSchemeHom, comap_toSchemeHom_schemeIdealLocus,
+      comap_toSchemeHom_schemeIdealLocus, h]
+  exact ext_of_comap_openCover (scheme R' M' k).affineCover fun i ↦ key _ _
+
+/-- **The closed subscheme cut out by ideals of points commutes with base change of modules.**
+Under the hypothesis of `IsBaseChange.comap_grassmannianSchemeHom_schemeIdealLocus`, the closed
+subscheme of `G(k, M')` cut out by `I'`, as a scheme over `Spec R'`, is the base change along
+`Spec R' ⟶ Spec R` of the closed subscheme of `G(k, M)` cut out by `I`, as a scheme over
+`Spec R`. -/
+theorem isPullback_grassmannianSchemeHom_schemeIdealLocus
+    (h : ∀ {A : Type u} [CommRing A] [Algebra R' A] [Algebra R A] [IsScalarTower R R' A]
+      (N : G(k, A ⊗[R'] M'; A)), I (hf.grassmannianEquiv A N) = I' N) :
+    IsPullback
+      (subschemeMap (schemeIdealLocus I' hI') (schemeIdealLocus I hI) (hf.grassmannianSchemeHom k)
+        (le_map_iff_comap_le.2
+          (hf.comap_grassmannianSchemeHom_schemeIdealLocus I hI I' hI' h).le))
+      ((schemeIdealLocus I' hI').subschemeι ≫ toSpec R' M' k)
+      ((schemeIdealLocus I hI).subschemeι ≫ toSpec R M k)
+      (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
+  -- the closed subscheme of `I'` is the inverse image of that of `I`, and inverse images of
+  -- closed subschemes along a base change are base changes
+  have key (J : (scheme R' M' k).IdealSheafData)
+      (hJ : (schemeIdealLocus I hI).comap (hf.grassmannianSchemeHom k) = J) (hle) :
+      IsPullback (subschemeMap J (schemeIdealLocus I hI) (hf.grassmannianSchemeHom k) hle)
+        (J.subschemeι ≫ toSpec R' M' k) ((schemeIdealLocus I hI).subschemeι ≫ toSpec R M k)
+        (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
+    subst hJ
+    exact isPullback_subschemeMap_comap _ _ (hf.isPullback_grassmannianSchemeHom k)
+  exact key _ (hf.comap_grassmannianSchemeHom_schemeIdealLocus I hI I' hI' h) _
+
+end IsBaseChange
+
 namespace Module.Grassmannian
 
 section BaseChange
@@ -247,14 +312,10 @@ theorem comap_baseChangeHom_schemeIdealLocus
     (h : ∀ {A : Type u} [CommRing A] [Algebra R' A] [Algebra R A] [IsScalarTower R R' A]
       (N : G(k, A ⊗[R'] (R' ⊗[R] M); A)), I (baseChangeEquiv R' N) = I' N) :
     (schemeIdealLocus I hI).comap (baseChangeHom R R' M k) = schemeIdealLocus I' hI' := by
-  -- compare the pullbacks along every morphism from an affine scheme, which classifies a point
-  have key (B : CommRingCat.{u}) (a : Spec B ⟶ scheme R' (R' ⊗[R] M) k) :
-      ((schemeIdealLocus I hI).comap (baseChangeHom R R' M k)).comap a =
-        (schemeIdealLocus I' hI').comap a := by
-    refine affinePoint_induction (R₀ := R) (fun A _ _ _ _ N ↦ ?_) a
-    rw [← comap_comp, toSchemeHom_comp_baseChangeHom, comap_toSchemeHom_schemeIdealLocus,
-      comap_toSchemeHom_schemeIdealLocus, h]
-  exact ext_of_comap_openCover (scheme R' (R' ⊗[R] M) k).affineCover fun i ↦ key _ _
+  rw [baseChangeHom_eq_grassmannianSchemeHom]
+  exact IsBaseChange.comap_grassmannianSchemeHom_schemeIdealLocus
+    (TensorProduct.isBaseChange R M R') I hI I' hI'
+    fun N ↦ by rw [← baseChangeEquiv_eq_grassmannianEquiv, h]
 
 /-- **The closed subscheme cut out by ideals of points commutes with base change.** Under the
 hypothesis of `Module.Grassmannian.comap_baseChangeHom_schemeIdealLocus`, the closed subscheme of
@@ -270,17 +331,10 @@ theorem isPullback_baseChangeHom_schemeIdealLocus
       ((schemeIdealLocus I' hI').subschemeι ≫ toSpec R' (R' ⊗[R] M) k)
       ((schemeIdealLocus I hI).subschemeι ≫ toSpec R M k)
       (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
-  -- the closed subscheme of `I'` is the inverse image of that of `I`, and inverse images of
-  -- closed subschemes along a base change are base changes
-  have key (J : (scheme R' (R' ⊗[R] M) k).IdealSheafData)
-      (hJ : (schemeIdealLocus I hI).comap (baseChangeHom R R' M k) = J) (hle) :
-      IsPullback (subschemeMap J (schemeIdealLocus I hI) (baseChangeHom R R' M k) hle)
-        (J.subschemeι ≫ toSpec R' (R' ⊗[R] M) k)
-        ((schemeIdealLocus I hI).subschemeι ≫ toSpec R M k)
-        (Spec.map (CommRingCat.ofHom (algebraMap R R'))) := by
-    subst hJ
-    exact isPullback_subschemeMap_comap _ _ (isPullback_baseChangeHom R R' M k)
-  exact key _ (comap_baseChangeHom_schemeIdealLocus I hI I' hI' h) _
+  have H := IsBaseChange.isPullback_grassmannianSchemeHom_schemeIdealLocus
+    (TensorProduct.isBaseChange R M R') I hI I' hI'
+    fun N ↦ by rw [← baseChangeEquiv_eq_grassmannianEquiv, h]
+  simpa only [← baseChangeHom_eq_grassmannianSchemeHom] using H
 
 end BaseChange
 

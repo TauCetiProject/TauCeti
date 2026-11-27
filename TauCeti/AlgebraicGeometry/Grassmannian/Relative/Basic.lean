@@ -43,6 +43,8 @@ over arbitrary `X`-schemes are not treated here.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianToBase E k`: its structure morphism to `X`.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianι E k U`: the inclusion of `G(k, Γ(E, U))` as the
   part over the affine open `U`.
+* `AlgebraicGeometry.Scheme.Modules.grassmannianOpenCover E k`: its open cover by the
+  `G(k, Γ(E, U))`, locally directed along `grassmannianChartMap`.
 * `AlgebraicGeometry.Scheme.Modules.grassmannianCocone E k` and
   `AlgebraicGeometry.Scheme.Modules.isColimitGrassmannianCocone E k`: the relative Grassmannian as
   the colimit of the `G(k, Γ(E, U))`.
@@ -150,7 +152,7 @@ theorem isPullback_grassmannianChartMap {U V : X.affineOpens} (h : V.val ≤ U.v
 
 /-- For affine opens `V ≤ U`, the comparison morphism `G(k, Γ(E, V)) ⟶ G(k, Γ(E, U))` is an open
 immersion, as the base change of the open immersion `Spec Γ(X, V) ⟶ Spec Γ(X, U)`. -/
-instance {U V : X.affineOpens} (h : V.val ≤ U.val) :
+instance isOpenImmersion_grassmannianChartMap {U V : X.affineOpens} (h : V.val ≤ U.val) :
     IsOpenImmersion (grassmannianChartMap E k h) :=
   haveI := U.property.isOpenImmersion_SpecMap_presheaf_map V.property (homOfLE h).op
   MorphismProperty.of_isPullback (P := @IsOpenImmersion)
@@ -308,6 +310,12 @@ theorem grassmannianCocone_ι_app (U : X.directedAffineCover.I₀) :
   change grassmannianι E k U = 𝟙 _ ≫ grassmannianι E k U ≫ 𝟙 _
   rw [Category.id_comp, Category.comp_id]
 
+/-- **The parts over the affine opens cover the relative Grassmannian.** Every point of the
+relative Grassmannian lies in the image of `G(k, Γ(E, U))` for some affine open `U` of `X`. -/
+theorem exists_mem_range_grassmannianι (x : grassmannian E k) :
+    ∃ U : X.affineOpens, x ∈ Set.range (grassmannianι E k U) :=
+  (grassmannianGluingData E k).cover.exists_eq x
+
 /-- **The relative Grassmannian over an affine open.** For an affine open `U` of `X`, the part of
 the relative Grassmannian over `U` is `G(k, Γ(E, U))`: the square formed by the inclusion of
 `U ≅ Spec Γ(X, U)` and the structure morphisms is a pullback square. -/
@@ -318,9 +326,75 @@ theorem isPullback_grassmannianι (U : X.affineOpens) :
 
 /-- The inclusion `grassmannianι E k U` of the part of the relative Grassmannian over an affine
 open `U` is an open immersion, as the base change of the open immersion `U ⟶ X`. -/
-instance (U : X.affineOpens) : IsOpenImmersion (grassmannianι E k U) :=
+instance isOpenImmersion_grassmannianι (U : X.affineOpens) :
+    IsOpenImmersion (grassmannianι E k U) :=
   MorphismProperty.of_isPullback (P := @IsOpenImmersion) (isPullback_grassmannianι E k U)
     inferInstance
+
+/-- **The parts over the affine opens are locally directed.** A point of the intersection of the
+parts of the relative Grassmannian over two affine opens `U` and `V` of `X` comes from its part
+over an affine open `W ≤ U, V`. -/
+theorem exists_grassmannianChartMap_lift_eq {U V : X.affineOpens}
+    (x : ↥(Limits.pullback (grassmannianι E k U) (grassmannianι E k V))) :
+    ∃ (W : X.affineOpens) (hWU : W ⟶ U) (hWV : W ⟶ V) (y : grassmannianChart E k W),
+      (pullback.lift (grassmannianChartMap E k (leOfHom hWU))
+        (grassmannianChartMap E k (leOfHom hWV)) (by simp) :
+          grassmannianChart E k W ⟶ Limits.pullback (grassmannianι E k U)
+            (grassmannianι E k V)) y = x :=
+  -- the parts over the affine opens form the open cover of the glued scheme by the members of the
+  -- gluing datum, which is locally directed along the comparison morphisms
+  (grassmannianGluingData E k).cover.exists_lift_trans_eq x
+
+/-- The open cover of the relative Grassmannian by the Grassmannians `G(k, Γ(E, U))` of the sections
+over the affine opens `U` of `X`, with members `grassmannianChart E k U`
+(`AlgebraicGeometry.Scheme.Modules.grassmannianOpenCover_X`), inclusions `grassmannianι E k U`
+(`AlgebraicGeometry.Scheme.Modules.grassmannianOpenCover_f`), and transition maps
+`grassmannianChartMap` (`AlgebraicGeometry.Scheme.Modules.grassmannianOpenCover_trans`). Data on
+the relative Grassmannian, such as ideal sheaves, can be glued along it. -/
+@[expose] noncomputable def grassmannianOpenCover : (grassmannian E k).OpenCover where
+  I₀ := X.directedAffineCover.I₀
+  X := grassmannianChart E k
+  f := grassmannianι E k
+  mem₀ := by
+    rw [presieve₀_mem_precoverage_iff]
+    exact ⟨exists_mem_range_grassmannianι E k,
+      isOpenImmersion_grassmannianι E k⟩
+
+instance : Category (grassmannianOpenCover E k).I₀ :=
+  inferInstanceAs (Category X.directedAffineCover.I₀)
+
+instance : Quiver.IsThin (grassmannianOpenCover E k).I₀ :=
+  inferInstanceAs (Quiver.IsThin X.directedAffineCover.I₀)
+
+instance : Small.{u} (grassmannianOpenCover E k).I₀ :=
+  inferInstanceAs (Small.{u} X.affineOpens)
+
+noncomputable instance : (grassmannianOpenCover E k).LocallyDirected where
+  trans h := grassmannianChartMap E k (leOfHom h)
+  trans_id U := grassmannianChartMap_self E k U
+  trans_comp h h' := (grassmannianChartMap_comp E k (leOfHom h) (leOfHom h')).symm
+  w h := grassmannianChartMap_grassmannianι E k (leOfHom h)
+  directed := exists_grassmannianChartMap_lift_eq E k
+  property_trans h := isOpenImmersion_grassmannianChartMap E k (leOfHom h)
+
+/-- The member of `grassmannianOpenCover` at an affine open `U` is `G(k, Γ(E, U))`. -/
+theorem grassmannianOpenCover_X (U : X.affineOpens) :
+    (grassmannianOpenCover E k).X U = grassmannianChart E k U :=
+  (rfl)
+
+/-- The inclusion of the member of `grassmannianOpenCover` at an affine open `U` is
+`grassmannianι E k U`. -/
+@[simp]
+theorem grassmannianOpenCover_f (U : X.affineOpens) :
+    (grassmannianOpenCover E k).f U = grassmannianι E k U :=
+  (rfl)
+
+/-- The transition map of `grassmannianOpenCover` for affine opens `V ≤ U` is
+`grassmannianChartMap`. -/
+@[simp]
+theorem grassmannianOpenCover_trans {U V : X.affineOpens} (h : V ⟶ U) :
+    (grassmannianOpenCover E k).trans h = grassmannianChartMap E k (leOfHom h) :=
+  (rfl)
 
 /-- **The relative Grassmannian over an affine open**, with base `Spec Γ(X, U)`: the square formed
 by `Spec Γ(X, U) ⟶ X` and the structure morphisms is a pullback square. -/
