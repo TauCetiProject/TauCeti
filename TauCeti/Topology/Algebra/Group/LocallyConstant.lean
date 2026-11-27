@@ -26,7 +26,9 @@ dependence disappears: there is a single open subgroup `V` with `f (x * v) = f x
 `TauCeti.rightTranslationStabilizer f`, and its openness,
 `TauCeti.isOpen_rightTranslationStabilizer`. The same holds on any topological group for a
 locally constant function with compact support, which vanishes off a compact set
-(`TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport`).
+(`TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport`). These have additive forms,
+`TauCeti.addRightTranslationStabilizer` and
+`TauCeti.isOpen_addRightTranslationStabilizer_of_hasCompactSupport`.
 
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
 *discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
@@ -83,6 +85,9 @@ variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {A : Type*}
 a family of right translations `σ : P → G` continuous at `p₀` leaves `x ↦ f (x * σ p)` unchanged
 on a neighbourhood of `p₀`, uniformly in `x ∈ K`. Only `K` must be compact; no group structure
 or continuity of `σ` away from `p₀` is needed. -/
+@[to_additive /-- For a locally constant `f` on a space with continuous addition and a compact set
+`K`, a family of right translations `σ : P → G` continuous at `p₀` leaves `x ↦ f (x + σ p)`
+unchanged on a neighbourhood of `p₀`, uniformly in `x ∈ K`. -/]
 theorem exists_isOpen_forall_mem_mul_right_eq
     {f : G → A} (hf : IsLocallyConstant f) {K : Set G} (hK : IsCompact K) {P : Type*}
     [TopologicalSpace P] {σ : P → G} (p₀ : P) (hσ : ContinuousAt σ p₀) :
@@ -113,13 +118,15 @@ variable {G : Type*} [Group G] {A : Type*}
 `f (x * g) = f x` for every `x : G`. For a locally constant `f` on a compact group it is open
 (`TauCeti.isOpen_rightTranslationStabilizer`), which is the sense in which `f` is *uniformly*
 locally constant. -/
+@[to_additive addRightTranslationStabilizer /-- The **right-translation stabilizer** of
+`f : G → A`: the additive subgroup of those `g` with `f (x + g) = f x` for every `x : G`. -/]
 def rightTranslationStabilizer (f : G → A) : Subgroup G where
   carrier := {g | ∀ x : G, f (x * g) = f x}
   one_mem' x := by rw [mul_one]
   mul_mem' {g g'} hg hg' x := by rw [← mul_assoc, hg' (x * g), hg x]
   inv_mem' {g} hg x := by rw [← hg (x * g⁻¹), inv_mul_cancel_right]
 
-@[simp]
+@[to_additive (attr := simp) mem_addRightTranslationStabilizer]
 theorem mem_rightTranslationStabilizer {f : G → A} {g : G} :
     g ∈ rightTranslationStabilizer f ↔ ∀ x : G, f (x * g) = f x := Iff.rfl
 
@@ -139,6 +146,9 @@ theorem isOpen_rightTranslationStabilizer [TopologicalSpace G] [ContinuousMul G]
 /-- A locally constant function with compact support on a topological group is *uniformly*
 locally constant: its right-translation stabilizer is an open subgroup. The group need not be
 compact, since the function vanishes off its compact support. -/
+@[to_additive isOpen_addRightTranslationStabilizer_of_hasCompactSupport /-- A locally constant
+function with compact support on an additive topological group is *uniformly* locally constant:
+its right-translation stabilizer is an open additive subgroup. -/]
 theorem isOpen_rightTranslationStabilizer_of_hasCompactSupport [TopologicalSpace G]
     [IsTopologicalGroup G] [Zero A] {f : G → A} (hf : IsLocallyConstant f)
     (hfc : HasCompactSupport f) : IsOpen (rightTranslationStabilizer f : Set G) := by
