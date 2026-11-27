@@ -606,15 +606,22 @@ theorem IsMorseSmale.tensorSignLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg
       (Equiv.subtypeEquivRight_apply_coe _ _)
     rw [LinearMap.smul_apply, LinearEquiv.coe_coe]
     -- The fibres are read at the points `Set.equivOfEq criticalPoints_neg p` of `f` and `p` of
-    -- `-f`, equal only after unfolding, so the steps are chained as terms rather than rewritten.
-    refine (map_zsmul _ _ _).trans ((trajectorySign_smul_tensorSignLocalSystemFiberEquiv_transport
-      𝔬 hf o' L.dual hMS q p hpq' hqp ⟨hy.1, hy.2.1⟩ _ (hP.trans (by
+    -- `-f`, equal only after unfolding, so each step is applied by `Eq.trans` rather than `rw`.
+    -- Pull out the sign of the trajectory for `-f`.
+    refine (map_zsmul _ _ _).trans ?_
+    -- The sign rule along the trajectory, with `L^∨ ⊗ o(TM)` read at the orientations of `p`, `q`.
+    refine (trajectorySign_smul_tensorSignLocalSystemFiberEquiv_transport 𝔬 hf o' L.dual hMS q p
+      hpq' hqp ⟨hy.1, hy.2.1⟩ _ (hP.trans (by
         rw [trajectoryPathClass_def]
-        exact (Path.Homotopic.Quotient.mk_symm _).symm)) c).trans
-      ((congrArg (_ • ·) (LinearEquiv.congr_fun ((congrArg (LocalCoefficientSystem.transport
-        L.dual) hP).trans (LocalCoefficientSystem.transport_dual_symm L _)) _)).trans
-        ((mul_smul _ _ _).trans (congrArg (_ • ·) (LinearMap.congr_fun
-          (map_zsmul (Module.Dual.transpose (R := S)) _ _) _).symm))))
+        exact (Path.Homotopic.Quotient.mk_symm _).symm)) c).trans ?_
+    -- Transport in `L^∨` along the reversed path is the dual map of transport in `L`.
+    refine (congrArg (_ • ·) (LinearEquiv.congr_fun ((congrArg (LocalCoefficientSystem.transport
+      L.dual) hP).trans (LocalCoefficientSystem.transport_dual_symm L _)) _)).trans ?_
+    -- Split off the sign of the trajectory for `f`, and move it inside the dual map; the last
+    -- step `(s • φ) x = s • φ x` is `LinearMap.smul_apply`, which `rw` cannot use across the
+    -- fibres of `L^∨` and `Module.Dual S L`.
+    rw [mul_smul, map_zsmul]
+    rfl
   · have hq' : manifoldMorseIndex 𝓘(ℝ, E) (-f) q ≠ manifoldMorseIndex 𝓘(ℝ, E) (-f) p + 1 := by
       have := hp.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
       have := hq.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank

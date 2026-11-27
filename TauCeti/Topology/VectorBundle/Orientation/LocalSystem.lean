@@ -579,17 +579,18 @@ theorem tensorSignLocalSystemFiberEquiv_transport_mk {b b' : B} (γ : Path b b')
       (LocalCoefficientSystem.transport (N ⊗ signLocalSystem F E S hι) (.mk γ)).toLinearMap =
       (LocalCoefficientSystem.transport N (.mk γ)).toLinearMap ∘ₗ
         (tensorSignLocalSystemFiberEquiv hι N o).toLinearMap :=
-    TensorProduct.ext' fun n φ ↦
-      (congrArg (tensorSignLocalSystemFiberEquiv hι N o')
-        (LocalCoefficientSystem.transport_tensor_tmul N _ (.mk γ) n φ)).trans
-        ((tensorSignLocalSystemFiberEquiv_tmul hι N o' _ _).trans
-          (((by rw [signLocalSystemFiberEquiv_transport_mk hι γ h, map_smul]) :
-            signLocalSystemFiberEquiv hι o'
-                (LocalCoefficientSystem.transport (signLocalSystem F E S hι) (.mk γ) φ) •
-              LocalCoefficientSystem.transport N (.mk γ) n =
-              LocalCoefficientSystem.transport N (.mk γ)
-                (signLocalSystemFiberEquiv hι o φ • n)).trans
-            (congrArg _ (tensorSignLocalSystemFiberEquiv_tmul hι N o n φ).symm)))
+    TensorProduct.ext' fun n φ ↦ calc
+      tensorSignLocalSystemFiberEquiv hι N o'
+          (LocalCoefficientSystem.transport (N ⊗ signLocalSystem F E S hι) (.mk γ) (n ⊗ₜ[S] φ))
+      _ = signLocalSystemFiberEquiv hι o'
+            (LocalCoefficientSystem.transport (signLocalSystem F E S hι) (.mk γ) φ) •
+          LocalCoefficientSystem.transport N (.mk γ) n := by
+        rw [LocalCoefficientSystem.transport_tensor_tmul, tensorSignLocalSystemFiberEquiv_tmul]
+      _ = LocalCoefficientSystem.transport N (.mk γ) (signLocalSystemFiberEquiv hι o φ • n) := by
+        rw [signLocalSystemFiberEquiv_transport_mk hι γ h, map_smul]
+      _ = LocalCoefficientSystem.transport N (.mk γ)
+          (tensorSignLocalSystemFiberEquiv hι N o (n ⊗ₜ[S] φ)) := by
+        rw [tensorSignLocalSystemFiberEquiv_tmul]
   exact LinearMap.congr_fun hlin c
 
 end Tensor
