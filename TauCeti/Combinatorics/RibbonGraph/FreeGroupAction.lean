@@ -332,22 +332,21 @@ noncomputable def edgeEquivalence :
     (A : Action FintypeCat.{u} (FreeGroup (Fin 2))) :
     edgeEquivalence.inverse.obj A = A.toBipartiteRibbonGraph := (rfl)
 
-/-- On edges, the inverse equivalence acts by the underlying map of the action morphism. -/
+/-- On edges, the inverse equivalence acts by the underlying map of the action morphism,
+transported along the identifications with the reconstructed graphs. -/
 @[simp] theorem _root_.Action.edgeEquivalence_inverse_map_edge_apply
     {A B : Action FintypeCat.{u} (FreeGroup (Fin 2))} (f : A ⟶ B)
     (x : (edgeEquivalence.inverse.obj A).E) :
-    B.toBipartiteRibbonGraphEdgeEquiv
-        (cast (congrArg BipartiteRibbonGraph.E B.edgeEquivalence_inverse_obj)
-          ((edgeEquivalence.inverse.map f).edge x)) =
-      f.hom (A.toBipartiteRibbonGraphEdgeEquiv
-        (cast (congrArg BipartiteRibbonGraph.E A.edgeEquivalence_inverse_obj) x)) := by
+    (edgeEquivalence.inverse.map f).edge x =
+      cast (congrArg BipartiteRibbonGraph.E B.edgeEquivalence_inverse_obj.symm)
+        (B.toBipartiteRibbonGraphEdgeEquiv.symm (f.hom (A.toBipartiteRibbonGraphEdgeEquiv
+          (cast (congrArg BipartiteRibbonGraph.E A.edgeEquivalence_inverse_obj) x)))) := by
   -- The object equalities in the casts are reflexive by the definition of the inverse.
   let y : A.toBipartiteRibbonGraph.E := x
-  have h : B.toBipartiteRibbonGraphEdgeEquiv
-      ((fullyFaithfulEdgeFunctor.preimage
+  have h : (fullyFaithfulEdgeFunctor.preimage
         (A.toBipartiteRibbonGraphEdgeIso.hom ≫
-          f ≫ B.toBipartiteRibbonGraphEdgeIso.inv)).edge y) =
-      f.hom (A.toBipartiteRibbonGraphEdgeEquiv y) := by
+          f ≫ B.toBipartiteRibbonGraphEdgeIso.inv)).edge y =
+      B.toBipartiteRibbonGraphEdgeEquiv.symm (f.hom (A.toBipartiteRibbonGraphEdgeEquiv y)) := by
     simp only [fullyFaithfulEdgeFunctor_preimage_edge_apply, Action.comp_hom, FintypeCat.comp_apply,
       Action.toBipartiteRibbonGraphEdgeIso_hom_apply,
       Action.toBipartiteRibbonGraphEdgeIso_inv_apply, Equiv.apply_symm_apply]
