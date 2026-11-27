@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 
 /-!
 # Relative dimension and total-space dimension of models over a discrete valuation ring

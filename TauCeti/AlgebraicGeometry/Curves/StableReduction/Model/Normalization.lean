@@ -14,7 +14,7 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.Isomorphism
 
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
-import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.FiniteType.Sections
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
 import TauCeti.AlgebraicGeometry.Normalization.Finite

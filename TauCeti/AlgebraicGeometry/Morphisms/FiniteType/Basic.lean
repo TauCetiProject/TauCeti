@@ -6,10 +6,7 @@ Authors: Codex
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Finite
-public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.Topology.JacobsonSpace
-
-import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 
 /-!
 # Closed points in the image of a finite-type morphism
@@ -22,12 +19,8 @@ on closed points is exactly the closed-point part of its full topological image.
 The file also records the affine charts of a morphism `X ⟶ Spec A` locally of finite type:
 every point lies in an affine open `Spec R ⟶ X` with `R` of finite type over `A`
 (`Scheme.Hom.exists_isOpenImmersion_finiteType`), and the sections over every affine open are of
-finite type over `A` (`Scheme.Hom.finiteType_ΓSpecIso_inv_comp_appLE`, and
-`TauCeti.AlgebraicGeometry.finiteType_sections_of_locallyOfFiniteType` for a scheme over
-`Spec R`), together with the continuation-passing helper
-`TauCeti.AlgebraicGeometry.with_finiteType_algebraIsPushout_of_isPullback` for cartesian squares
-over `Spec S ⟶ Spec R`. For a quasi-compact source, `Scheme.Hom.exists_finite_affine_charts`
-gives a finite family of such charts. The structure
+finite type over `A` (`Scheme.Hom.finiteType_ΓSpecIso_inv_comp_appLE`). For a quasi-compact
+source, `Scheme.Hom.exists_finite_affine_charts` gives a finite family of such charts. The structure
 morphism `Spec B ⟶ Spec k` of a `k`-algebra `B` is locally of finite type exactly when `B` is of
 finite type over `k` (`LocallyOfFiniteType.Spec_algebraMap_iff`, a case of
 `LocallyOfFiniteType.SpecMap_iff` for any ring map), and it is registered as an instance in the
@@ -137,62 +130,3 @@ theorem image_closedPoints_eq_range_inter_closedPoints :
     exact ⟨x, hx, rfl⟩
 
 end AlgebraicGeometry.Scheme.Hom
-
-namespace TauCeti.AlgebraicGeometry
-
-open _root_.AlgebraicGeometry Opposite
-
-/-- If `X` is locally of finite type over `Spec R`, then the ring of functions `Γ(X, U)` on every
-affine open `U` is a finitely generated `R`-algebra. -/
-theorem finiteType_sections_of_locallyOfFiniteType (R : Type u) [CommRing R] (X : Scheme.{u})
-    [X.Over (Spec (.of R))] [LocallyOfFiniteType (X ↘ Spec (.of R))] (U : X.affineOpens) :
-    letI : Algebra R Γ(X, U) :=
-      ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
-    Algebra.FiniteType R Γ(X, U) := by
-  let : Algebra R Γ(X, U) :=
-    ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
-  refine RingHom.finiteType_algebraMap.mp ?_
-  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
-  exact (X ↘ Spec (.of R)).finiteType_ΓSpecIso_inv_comp_appLE U.property
-
-/-- Continuation-passing helper for an affine open `U` of a scheme `X` locally of finite type over
-`Spec R`, in a cartesian square with `Y` over `Spec S`: installs the canonical section-ring algebra
-structures and scalar towers, and supplies the pushout
-`Algebra.IsPushout R Γ(X, U) S Γ(Y, g ⁻¹ᵁ U)`, finite type of `Γ(X, U)` over `R`, the affine-chart
-identity over `Spec R`, the `S`-algebra map of `Γ(Y, g ⁻¹ᵁ U)`, and the equality identifying the
-`Γ(X, U)`-algebra structure with `g.app U`. -/
-theorem with_finiteType_algebraIsPushout_of_isPullback
-    {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
-    {X Y : Scheme.{u}} {toR : X ⟶ Spec (.of R)} [LocallyOfFiniteType toR]
-    {toS : Y ⟶ Spec (.of S)} {g : Y ⟶ X}
-    (H : IsPullback g toS toR (Spec.map (CommRingCat.ofHom (algebraMap R S))))
-    {U : X.Opens} (hU : IsAffineOpen U) {P : Prop}
-    (hP : ∀ [Algebra R Γ(X, U)] [Algebra S Γ(Y, g ⁻¹ᵁ U)]
-      [instXY : Algebra Γ(X, U) Γ(Y, g ⁻¹ᵁ U)] [Algebra R Γ(Y, g ⁻¹ᵁ U)]
-      [IsScalarTower R Γ(X, U) Γ(Y, g ⁻¹ᵁ U)] [IsScalarTower R S Γ(Y, g ⁻¹ᵁ U)]
-      [Algebra.IsPushout R Γ(X, U) S Γ(Y, g ⁻¹ᵁ U)] [Algebra.FiniteType R Γ(X, U)],
-      hU.fromSpec ≫ toR = Spec.map (CommRingCat.ofHom (algebraMap R Γ(X, U))) →
-      algebraMap S Γ(Y, g ⁻¹ᵁ U) =
-        ((Scheme.ΓSpecIso (.of S)).inv ≫ toS.appLE ⊤ (g ⁻¹ᵁ U) le_top).hom →
-      instXY = (g.app U).hom.toAlgebra → P) : P := by
-  let : X.Over (Spec (.of R)) := ⟨toR⟩
-  let : Y.Over (Spec (.of S)) := ⟨toS⟩
-  have : LocallyOfFiniteType (X ↘ Spec (.of R)) := ‹_›
-  refine Scheme.with_algebraIsPushout_baseRingToStructurePresheaf_of_isAffineOpen
-    (R := R) (S := S) (Y := Y) H hU fun hpush hRX hSY hXY ↦ ?_
-  have : Algebra.IsPushout R Γ(X, U) S Γ(Y, g ⁻¹ᵁ U) := hpush.symm
-  have : Algebra.FiniteType R Γ(X, U) :=
-    hRX ▸ finiteType_sections_of_locallyOfFiniteType R X ⟨U, hU⟩
-  have hcomp : hU.fromSpec ≫ toR = Spec.map (CommRingCat.ofHom (algebraMap R Γ(X, U))) := by
-    -- `X ↘ Spec (.of R)` is definitionally `toR` via the local `Over` instance above.
-    change hU.fromSpec ≫ (X ↘ Spec (.of R)) = _
-    rw [hU.fromSpec_comp_eq_SpecMap (X ↘ Spec (.of R)), hRX, RingHom.algebraMap_toAlgebra,
-      Scheme.baseRingToStructurePresheaf_app_eq_appLE, CommRingCat.ofHom_hom]
-  have hS : algebraMap S Γ(Y, g ⁻¹ᵁ U) =
-      ((Scheme.ΓSpecIso (.of S)).inv ≫ toS.appLE ⊤ (g ⁻¹ᵁ U) le_top).hom := by
-    -- `Y ↘ Spec (.of S)` is definitionally `toS` via the local `Over` instance above.
-    change _ = ((Scheme.ΓSpecIso (.of S)).inv ≫ (Y ↘ Spec (.of S)).appLE ⊤ (g ⁻¹ᵁ U) le_top).hom
-    rw [hSY, RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
-  exact hP hcomp hS hXY
-
-end TauCeti.AlgebraicGeometry
