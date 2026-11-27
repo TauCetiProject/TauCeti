@@ -94,13 +94,14 @@ theorem tendsto_countdownKernel_map_pred_pow_apply_zero (ν : Measure ℕ) [IsPr
     have hm := μ.countdownKernel.lintegral_hittingAfter_markovChainLaw_subtype
       μ.measurableSet_countdownStates (dirac z) (measurableSet_singleton 0) 1
     rw [hpre, map_dirac' measurable_subtypeVal] at hm
-    have hret : (∫⁻ ω, (hittingAfter (fun n ω => ω n) {z} 1 ω).recTopCoe ⊤
-        (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (dirac z) κ) = ∞ := by
+    have hret : κ.meanReturnTime z = ∞ := by
+      rw [Kernel.meanReturnTime_def]
+      simp_rw [← WithTop.recTopCoe_top_natCast_eq_toENNReal]
       rw [hm]
       simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
       exact (ν.lintegral_hittingAfter_countdownKernel_map_pred hν).trans hmean
     simpa only [hmass, hmean, ENNReal.inv_top, ENNReal.toReal_zero] using
-      κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top
+      κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top
         haper hret (dirac z)
   · obtain ⟨ρ, hρ, hstat, hz⟩ := exists_invariant_countdownKernel_subtype ν hν hmean
     let := hρ

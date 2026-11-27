@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.MarkovChain.EntranceLimits
+public import TauCeti.Probability.MarkovChain.Invariant
 public import TauCeti.Probability.MarkovChain.ReturnGaps
 public import TauCeti.Probability.Process.Occupation
 public import TauCeti.Probability.Process.ReturnGapRenewal
@@ -40,7 +41,15 @@ law, the limit of the mean occupation frequency
 (`MeasureTheory.Measure.tendsto_integral_visitCount_div_markovChainLaw`,
 `ProbabilityTheory.HasLaw.tendsto_integral_visitCount_div_markovChainLaw`); started at `y`, this
 gives the Cesàro limit of the positive-time return probabilities
-(`ProbabilityTheory.Kernel.tendsto_cesaro_pow_real_singleton_self`).
+(`ProbabilityTheory.Kernel.tendsto_cesaro_pow_real_singleton_self`). Consequently, positive
+recurrence is equivalent to a strictly positive expected or almost-sure limiting visit fraction
+starting from `y`
+(`ProbabilityTheory.Kernel.isPositiveRecurrent_iff_exists_pos_tendsto_integral_visitCount_div`,
+`ProbabilityTheory.Kernel.isPositiveRecurrent_iff_exists_pos_ae_tendsto_visitCount_div`), and for
+non-positive-recurrent states the visit fraction and its expectation tend to zero from any
+initial law (`MeasureTheory.Measure.ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent`,
+`MeasureTheory.Measure.tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent`, and their
+`ProbabilityTheory.HasLaw` counterparts).
 
 ## References
 
@@ -200,6 +209,33 @@ theorem tendsto_cesaro_pow_real_singleton_self (κ : Kernel α α) [IsMarkovKern
   simpa only [integral_div, κ.integral_visitCount_succ_markovChainLaw_dirac] using
     κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y
 
+/-- **Expected occupation characterization of positive recurrence.** A state `y` is positive
+recurrent if and only if its expected positive-time visit fraction starting from `y` converges to a
+strictly positive limit. -/
+theorem isPositiveRecurrent_iff_exists_pos_tendsto_integral_visitCount_div
+    {κ : Kernel α α} [IsMarkovKernel κ] {y : α} :
+    κ.IsPositiveRecurrent y ↔
+      ∃ r > 0, Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ) / n
+        ∂markovChainLaw (Measure.dirac y) κ) atTop (𝓝 r) := by
+  rw [← inv_meanReturnTime_toReal_pos_iff]
+  refine ⟨fun hpos => ⟨_, hpos, κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y⟩, ?_⟩
+  rintro ⟨r, hr, hlim⟩
+  exact (tendsto_nhds_unique (κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y) hlim) ▸ hr
+
+/-- **Almost-sure occupation characterization of positive recurrence.** A state `y` is positive
+recurrent if and only if, starting from `y`, its positive-time visit fraction converges almost
+surely to a strictly positive deterministic limit. -/
+theorem isPositiveRecurrent_iff_exists_pos_ae_tendsto_visitCount_div
+    {κ : Kernel α α} [IsMarkovKernel κ] {y : α} :
+    κ.IsPositiveRecurrent y ↔
+      ∃ r > 0, ∀ᵐ ω ∂markovChainLaw (Measure.dirac y) κ,
+        Tendsto (fun n : ℕ => (visitCount (fun k => ω (k + 1)) y n : ℝ) / n) atTop (𝓝 r) := by
+  rw [← inv_meanReturnTime_toReal_pos_iff]
+  refine ⟨fun hpos => ⟨_, hpos, κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y⟩, ?_⟩
+  rintro ⟨r, hr, hae⟩
+  obtain ⟨ω, hω₁, hω₂⟩ := ((κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y).and hae).exists
+  exact (tendsto_nhds_unique hω₁ hω₂) ▸ hr
+
 end ProbabilityTheory.Kernel
 
 namespace MeasureTheory.Measure
@@ -229,6 +265,25 @@ theorem tendsto_integral_visitCount_div_markovChainLaw (y : α) :
         (κ.meanReturnTime y)⁻¹.toReal)) :=
   tendsto_integral_visitCount_div_of_ae_tendsto_dirac ν κ
     (κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y)
+
+omit [IsFiniteMeasure ν] in
+/-- From any initial measure `ν`, the positive-time visit fraction at a non-positive-recurrent
+state tends to zero almost surely. -/
+theorem ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent {y : α}
+    (hy : ¬ κ.IsPositiveRecurrent y) :
+    ∀ᵐ ω ∂markovChainLaw ν κ,
+      Tendsto (fun n : ℕ => (visitCount (fun k => ω (k + 1)) y n : ℝ) / n) atTop (𝓝 0) := by
+  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
+  simpa only [h0, ite_self] using ν.ae_tendsto_visitCount_div_markovChainLaw κ y
+
+/-- From any finite initial measure `ν`, the expected positive-time visit fraction at a
+non-positive-recurrent state tends to zero. -/
+theorem tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent {y : α}
+    (hy : ¬ κ.IsPositiveRecurrent y) :
+    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ) / n
+        ∂markovChainLaw ν κ) atTop (𝓝 0) := by
+  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
+  simpa only [h0, mul_zero] using ν.tendsto_integral_visitCount_div_markovChainLaw κ y
 
 end MeasureTheory.Measure
 
@@ -276,5 +331,23 @@ theorem tendsto_integral_visitCount_div_markovChainLaw [IsFiniteMeasure ν]
     hX.measureReal_eq hE
   simp_rw [heq, hreal]
   exact ν.tendsto_integral_visitCount_div_markovChainLaw κ y
+
+/-- On any realization of a Markov chain from any initial law `ν`, the positive-time visit fraction
+at a non-positive-recurrent state tends to zero almost surely. -/
+theorem ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent {y : α}
+    (hX : HasLaw X (markovChainLaw ν κ) P) (hy : ¬ κ.IsPositiveRecurrent y) :
+    ∀ᵐ ω ∂P,
+      Tendsto (fun n : ℕ => (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n) atTop (𝓝 0) := by
+  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
+  simpa only [h0, ite_self] using hX.ae_tendsto_visitCount_div_markovChainLaw y
+
+/-- On any realization of a Markov chain from a finite initial law `ν`, the expected positive-time
+visit fraction at a non-positive-recurrent state tends to zero. -/
+theorem tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent [IsFiniteMeasure ν] {y : α}
+    (hX : HasLaw X (markovChainLaw ν κ) P) (hy : ¬ κ.IsPositiveRecurrent y) :
+    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P)
+      atTop (𝓝 0) := by
+  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
+  simpa only [h0, mul_zero] using hX.tendsto_integral_visitCount_div_markovChainLaw y
 
 end ProbabilityTheory.HasLaw

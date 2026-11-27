@@ -37,13 +37,11 @@ mass (`Kernel.cycleOccupation_univ_eq_top_of_not_isPositiveRecurrent`) and fails
 vanishing theorems for non-positive-recurrent states in `TauCeti.Probability.MarkovChain.Invariant`
 apply via `IsNullRecurrent.not_isPositiveRecurrent`.
 
-On countable state spaces with measurable singletons, the occupation strong law characterizes
-positive and null recurrence via long-run visit frequencies: positive recurrence is equivalent to a
-strictly positive expected (or almost-sure) limiting visit fraction starting from the state, while
-null recurrence is equivalent to recurrence with vanishing expected (or almost-sure) limiting visit
-fraction. From any initial law `ν`, visit fractions at non-positive-recurrent states tend to zero
-almost surely (and in expectation for finite `ν`), both on the canonical path space and on
-arbitrary `HasLaw` realizations.
+On countable state spaces with measurable singletons, the occupation strong law in
+`TauCeti.Probability.MarkovChain.Occupation` characterizes positive recurrence and yields
+vanishing long-run visit fractions at non-positive-recurrent states; combining this with
+recurrence characterizes null recurrence via vanishing expected (or almost-sure) limiting visit
+fraction starting from the state.
 
 Finally, restricting to a finite closed communicating class transfers finite irreducible positive
 recurrence to arbitrary ambient state spaces with measurable singletons: every state in a finite
@@ -69,11 +67,9 @@ remains in the closed communicating class of a positive recurrent state.
   `ProbabilityTheory.Kernel.Communicates.isNullRecurrent_iff`: class property of null recurrence.
 * `Kernel.forall_isTransient_or_forall_isPositiveRecurrent_or_forall_isNullRecurrent`:
   global recurrence trichotomy for counting-measure-irreducible chains.
-* `Kernel.isPositiveRecurrent_iff_exists_pos_tendsto_integral_visitCount_div`,
-  `Kernel.isPositiveRecurrent_iff_exists_pos_ae_tendsto_visitCount_div`,
-  `Kernel.isNullRecurrent_iff_isRecurrent_and_tendsto_integral_visitCount_div_zero`, and
+* `Kernel.isNullRecurrent_iff_isRecurrent_and_tendsto_integral_visitCount_div_zero` and
   `Kernel.isNullRecurrent_iff_isRecurrent_and_ae_tendsto_visitCount_div_zero`:
-  expected and almost-sure occupation-frequency characterizations of positive and null recurrence.
+  expected and almost-sure occupation-frequency characterizations of null recurrence.
 * `Kernel.IsClosedSet.isPositiveRecurrent_of_finite_communicatingClass`,
   `Kernel.IsClosedSet.existsUnique_invariant_probability_communicatingClass_of_isPositiveRecurrent`,
   `Kernel.IsClosedSet.existsUnique_invariant_probability_of_finite_communicatingClass`,
@@ -303,31 +299,6 @@ section Countable
 
 variable [Countable S] [MeasurableSingletonClass S]
 
-/-- **Expected occupation characterization of positive recurrence.** A state `y` is positive
-recurrent if and only if its expected positive-time visit fraction starting from `y` converges to a
-strictly positive limit. -/
-theorem isPositiveRecurrent_iff_exists_pos_tendsto_integral_visitCount_div :
-    κ.IsPositiveRecurrent y ↔
-      ∃ r > 0, Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ) / n
-        ∂markovChainLaw (Measure.dirac y) κ) atTop (𝓝 r) := by
-  rw [← inv_meanReturnTime_toReal_pos_iff]
-  refine ⟨fun hpos => ⟨_, hpos, κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y⟩, ?_⟩
-  rintro ⟨r, hr, hlim⟩
-  exact (tendsto_nhds_unique (κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y) hlim) ▸ hr
-
-/-- **Almost-sure occupation characterization of positive recurrence.** A state `y` is positive
-recurrent if and only if, starting from `y`, its positive-time visit fraction converges almost
-surely to a strictly positive deterministic limit. -/
-theorem isPositiveRecurrent_iff_exists_pos_ae_tendsto_visitCount_div :
-    κ.IsPositiveRecurrent y ↔
-      ∃ r > 0, ∀ᵐ ω ∂markovChainLaw (Measure.dirac y) κ,
-        Tendsto (fun n : ℕ => (visitCount (fun k => ω (k + 1)) y n : ℝ) / n) atTop (𝓝 r) := by
-  rw [← inv_meanReturnTime_toReal_pos_iff]
-  refine ⟨fun hpos => ⟨_, hpos, κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y⟩, ?_⟩
-  rintro ⟨r, hr, hae⟩
-  obtain ⟨ω, hω₁, hω₂⟩ := ((κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y).and hae).exists
-  exact (tendsto_nhds_unique hω₁ hω₂) ▸ hr
-
 /-- **Expected occupation characterization of null recurrence.** A state `y` is null recurrent if
 and only if it is recurrent and its expected positive-time visit fraction starting from `y` tends
 to zero. -/
@@ -457,58 +428,7 @@ end FiniteClass
 
 end ProbabilityTheory.Kernel
 
-namespace MeasureTheory.Measure
-
-variable {S : Type*} [MeasurableSpace S] [MeasurableSingletonClass S] [Countable S]
-  (ν : Measure S) (κ : Kernel S S) [IsMarkovKernel κ] {y : S}
-
-/-- From any initial measure `ν`, the positive-time visit fraction at a non-positive-recurrent
-state tends to zero almost surely. -/
-theorem ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent
-    (hy : ¬ κ.IsPositiveRecurrent y) :
-    ∀ᵐ ω ∂markovChainLaw ν κ,
-      Tendsto (fun n : ℕ => (visitCount (fun k => ω (k + 1)) y n : ℝ) / n) atTop (𝓝 0) := by
-  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
-  simpa only [h0, ite_self] using ν.ae_tendsto_visitCount_div_markovChainLaw κ y
-
-/-- From any finite initial measure `ν`, the expected positive-time visit fraction at a
-non-positive-recurrent state tends to zero. -/
-theorem tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent [IsFiniteMeasure ν]
-    (hy : ¬ κ.IsPositiveRecurrent y) :
-    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ) / n
-        ∂markovChainLaw ν κ) atTop (𝓝 0) := by
-  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
-  simpa only [h0, mul_zero] using ν.tendsto_integral_visitCount_div_markovChainLaw κ y
-
-end MeasureTheory.Measure
-
 namespace ProbabilityTheory.HasLaw
-
-section Occupation
-
-variable {Ω S : Type*} [MeasurableSpace Ω] [MeasurableSpace S]
-  [MeasurableSingletonClass S] [Countable S] {P : Measure Ω}
-  {X : Ω → ℕ → S} {ν : Measure S} {κ : Kernel S S} [IsMarkovKernel κ] {y : S}
-
-/-- On any realization of a Markov chain from any initial law `ν`, the positive-time visit fraction
-at a non-positive-recurrent state tends to zero almost surely. -/
-theorem ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent
-    (hX : HasLaw X (markovChainLaw ν κ) P) (hy : ¬ κ.IsPositiveRecurrent y) :
-    ∀ᵐ ω ∂P,
-      Tendsto (fun n : ℕ => (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n) atTop (𝓝 0) := by
-  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
-  simpa only [h0, ite_self] using hX.ae_tendsto_visitCount_div_markovChainLaw y
-
-/-- On any realization of a Markov chain from a finite initial law `ν`, the expected positive-time
-visit fraction at a non-positive-recurrent state tends to zero. -/
-theorem tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent [IsFiniteMeasure ν]
-    (hX : HasLaw X (markovChainLaw ν κ) P) (hy : ¬ κ.IsPositiveRecurrent y) :
-    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P)
-      atTop (𝓝 0) := by
-  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
-  simpa only [h0, mul_zero] using hX.tendsto_integral_visitCount_div_markovChainLaw y
-
-end Occupation
 
 section Finite
 

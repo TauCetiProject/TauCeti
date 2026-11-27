@@ -84,6 +84,24 @@ noncomputable def invariantProbabilitySubtypeEquiv (κ : Kernel S S) (hs : Measu
   left_inv := fun ⟨ν, _, _⟩ => Subtype.ext ((MeasurableEmbedding.subtypeVal hs).comap_map ν)
   right_inv := fun ⟨μ, _, _, hμ⟩ => Subtype.ext (μ.map_comap_subtype_coe_eq_self hs hμ)
 
+/-- Forward application of `invariantProbabilitySubtypeEquiv` pushes the underlying measure forward
+along `Subtype.val`. -/
+@[simp]
+theorem coe_invariantProbabilitySubtypeEquiv_apply (κ : Kernel S S) (hs : MeasurableSet s)
+    (hclosed : κ.IsClosedSet s)
+    (ν : {ν : Measure s // IsProbabilityMeasure ν ∧ (κ.subtype hs).Invariant ν}) :
+    (invariantProbabilitySubtypeEquiv κ hs hclosed ν : Measure S) =
+      (ν : Measure s).map Subtype.val := by rfl
+
+/-- Inverse application of `invariantProbabilitySubtypeEquiv` pulls the underlying measure back
+along `Subtype.val`. -/
+@[simp]
+theorem coe_invariantProbabilitySubtypeEquiv_symm_apply (κ : Kernel S S) (hs : MeasurableSet s)
+    (hclosed : κ.IsClosedSet s)
+    (μ : {μ : Measure S // IsProbabilityMeasure μ ∧ κ.Invariant μ ∧ μ sᶜ = 0}) :
+    ((invariantProbabilitySubtypeEquiv κ hs hclosed).symm μ : Measure s) =
+      (μ : Measure S).comap Subtype.val := by rfl
+
 /-- A closed-state restriction has an invariant probability exactly when the ambient kernel
 has an invariant probability concentrated on those states. This includes the empty set:
 neither side can then have a probability witness. -/

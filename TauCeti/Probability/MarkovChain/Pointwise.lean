@@ -87,9 +87,11 @@ theorem tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent
     (fun _ => measureReal_nonneg) hshift hb
     (fun n k _ => κ.sum_range_pow_comp_real_singleton_div_le ν y n k)
 
-/-- If an irreducible aperiodic chain has infinite extended mean positive return time at `y`,
-then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`. -/
-private theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top
+/-- **Pointwise decay at an infinite-mean state.** For an irreducible
+aperiodic Markov kernel, if the extended mean positive return time to `y` is infinite,
+then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`.
+The mean assigns infinity to nonreturn, so no recurrence assumption is needed. -/
+theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top
     [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
     (hy : κ.meanReturnTime y = ⊤) (ν : Measure α) [IsProbabilityMeasure ν] :
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
@@ -101,21 +103,6 @@ private theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime
       κ.tendsto_cesaro_pow_real_singleton_self y
   · exact κ.tendsto_pow_comp_apply_singleton_of_parallelComp_return_lt_one ν
       (isTransient_iff_return_probability_lt_one.mp (isTransient_iff.mpr hr))
-
-/-- **Pointwise decay at an infinite-mean state.** For an irreducible
-aperiodic Markov kernel, if the expected first positive return time to `y` is infinite,
-then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`.
-The mean assigns infinity to nonreturn, so no recurrence assumption is needed. -/
-theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top
-    [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
-    (hy : (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
-      (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ) = ⊤)
-    (ν : Measure α) [IsProbabilityMeasure ν] :
-    Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
-  have hm : κ.meanReturnTime y = ⊤ := by
-    rw [meanReturnTime_def, ← hy]
-    simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
-  exact κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top hκ hm ν
 
 end Aperiodic
 
@@ -327,7 +314,10 @@ theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_lintegral_return_eq_top
   have heq (n : ℕ) : P.real {ω | X n ω = y} = ((κ ^ n) ∘ₘ ν).real {y} :=
     (hX.eval_markovChainLaw ν κ n).measureReal_eq (measurableSet_singleton y)
   simp_rw [heq]
-  exact κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ hy ν
+  have hm : κ.meanReturnTime y = ⊤ := by
+    rw [Kernel.meanReturnTime_def, ← hy]
+    simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
+  exact κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top hκ hm ν
 
 /-- On any realization of a counting-measure-irreducible chain (periodic or aperiodic) started from
 a finite initial law, the time-`n` measure of occupying a non-positive-recurrent state tends to

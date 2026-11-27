@@ -63,16 +63,8 @@ theorem tendsto_pow_comp_real_singleton_of_isAperiodic
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop
       (𝓝 (κ.meanReturnTime y)⁻¹.toReal) := by
   by_cases hy : κ.meanReturnTime y = ⊤
-  · have hmean : (∫⁻ ω, (hittingAfter (fun n ω => ω n) {y} 1 ω).recTopCoe ⊤
-        (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ) = ⊤ := by
-      calc
-        _ = κ.meanReturnTime y := by
-          rw [meanReturnTime_def]
-          refine lintegral_congr fun ω => ?_
-          induction hittingAfter (fun n ω => ω n) {y} 1 ω using WithTop.recTopCoe <;> rfl
-        _ = ⊤ := hy
-    simpa only [hy, ENNReal.inv_top, ENNReal.toReal_zero] using
-      κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ hmean ν
+  · simpa only [hy, ENNReal.inv_top, ENNReal.toReal_zero] using
+      κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_meanReturnTime_eq_top hκ hy ν
   · have hpos : κ.IsPositiveRecurrent y :=
       (isPositiveRecurrent_iff κ y).mpr (lt_top_iff_ne_top.mpr hy)
     obtain ⟨π, ⟨hprob, hπ⟩, _⟩ := hpos.existsUnique_invariant_probability
