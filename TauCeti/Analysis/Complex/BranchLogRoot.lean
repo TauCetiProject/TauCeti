@@ -16,6 +16,7 @@ import Mathlib.Analysis.Convex.Contractible
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.Topology.Algebra.Module.LocallyConvex
 
 /-!
 # Holomorphic branches of `log` and of `n`-th roots on a simply connected domain
@@ -78,6 +79,8 @@ vanishes identically near `z₀`, of order `⊤`, is its own `n`-th root.
 ## Main statements
 
 * `TauCeti.exists_differentiableOn_eqOn_exp_comp` — a holomorphic branch of `log ∘ g`.
+* `Convex.exists_continuousOn_differentiableOn_eqOn_exp_comp` — on a convex set that need not be
+  open, a branch of `log ∘ g` continuous on the set and holomorphic in its interior.
 * `TauCeti.exists_contDiffOn_eqOn_exp_comp` — a real `Cⁿ` branch of `log ∘ g` for real `Cⁿ` `g`.
 * `TauCeti.exists_contDiff_eq_exp_ofReal_mul_I` — a real `Cⁿ` phase of a unimodular real `Cⁿ` map
   on the plane.
@@ -182,6 +185,40 @@ theorem exists_differentiableOn_eqOn_exp_comp {U : Set ℂ} (hUc : IsSimplyConne
     Complex.exists_continuousOn_eqOn_exp_comp hUc hUo hg.continuousOn hU₀
   refine ⟨L, fun z hz => ?_, hLeq⟩
   exact ((differentiableAt_of_continuousOn_exp_comp hUo hLc hLeq hg hz).differentiableWithinAt)
+
+/-- **A branch of `log ∘ g` on a convex set, holomorphic in its interior.** If `g` is continuous
+and nowhere zero on a convex set `S ⊆ ℂ` and holomorphic in its interior, there is `f`, continuous
+on `S` and holomorphic in its interior, with `exp ∘ f = g` on `S`. The set need not be open: on a
+closed vertical strip, for instance, this is a logarithm continuous up to the boundary lines. -/
+theorem _root_.Convex.exists_continuousOn_differentiableOn_eqOn_exp_comp {S : Set ℂ}
+    (hS : Convex ℝ S) {g : ℂ → ℂ} (hgc : ContinuousOn g S)
+    (hgd : DifferentiableOn ℂ g (interior S)) (hS₀ : 0 ∉ g '' S) :
+    ∃ f : ℂ → ℂ, ContinuousOn f S ∧ DifferentiableOn ℂ f (interior S) ∧
+      EqOn (Complex.exp ∘ f) g S := by
+  classical
+  rcases S.eq_empty_or_nonempty with rfl | hne
+  · exact ⟨0, continuousOn_empty _, by simp, by simp⟩
+  -- The continuous branch comes from Mathlib's lifting theorem on the space `S` itself, which is
+  -- locally path connected and contractible because it is convex.
+  have := hS.locallyPathConnectedSpace
+  have hsc : IsSimplyConnected (univ : Set S) := by
+    have : ContractibleSpace S := hS.contractibleSpace hne
+    rw [← Topology.IsEmbedding.subtypeVal.isSimplyConnected_image, image_univ,
+      Subtype.range_coe]
+    exact SimplyConnectedSpace.ofContractible _
+  obtain ⟨L, hLc, hLeq⟩ := Complex.exists_continuousOn_eqOn_exp_comp hsc isOpen_univ
+    (g := g ∘ Subtype.val) (hgc.comp_continuous continuous_subtypeVal Subtype.prop).continuousOn
+    (by rintro ⟨x, -, hx⟩; exact hS₀ ⟨x, x.property, hx⟩)
+  let f : ℂ → ℂ := fun z ↦ if hz : z ∈ S then L ⟨z, hz⟩ else 0
+  have hfc : ContinuousOn f S := by
+    rw [continuousOn_iff_continuous_domRestrict]
+    convert continuousOn_univ.1 hLc using 1
+    ext ⟨z, hz⟩
+    simp [f, hz]
+  have hfeq : EqOn (Complex.exp ∘ f) g S := fun z hz ↦ by
+    simpa [f, hz] using hLeq (mem_univ ⟨z, hz⟩)
+  exact ⟨f, hfc, fun z hz ↦ (differentiableAt_of_continuousOn_exp_comp isOpen_interior
+    (hfc.mono interior_subset) (hfeq.mono interior_subset) hgd hz).differentiableWithinAt, hfeq⟩
 
 /-- **A real-smooth branch of `log ∘ g` on a simply connected domain.** If `g` is real `Cⁿ` and
 nowhere zero on a simply connected open `U ⊆ ℂ`, there is a real `Cⁿ` function `f` on `U` with

@@ -27,6 +27,8 @@ curvature in metric geometry.
   function lies below the chord joining its values at `0` and `1`.
 * `TauCeti.convexOn_of_midpoint` — on a convex subset of a real topological vector space, an
   upper semicontinuous midpoint-convex function is convex.
+* `TauCeti.Icc_subset_of_isClosed_of_midpoint_mem` — the set version on the line: a closed set of
+  reals that contains the midpoint of any two of its points contains the interval between them.
 
 ## References
 
@@ -97,5 +99,33 @@ theorem convexOn_of_midpoint {E : Type*} [AddCommGroup E] [Module ℝ E] [Topolo
   rw [AffineMap.lineMap_apply_zero, AffineMap.lineMap_apply_one, AffineMap.lineMap_apply_module,
     ← eq_sub_of_add_eq hab] at key
   simpa only [smul_eq_mul] using key
+
+/-- **A closed midpoint-convex set of reals is order-connected.** If a closed set `S ⊆ ℝ`
+contains the midpoint of any two of its points `x < y`, then it contains `[a, b]` whenever it
+contains `a` and `b`. This is how a property is propagated from the two ends of an interval to all
+of it when it is preserved under passing to midpoints and under limits, as in the bisection form of
+convexity arguments. -/
+theorem Icc_subset_of_isClosed_of_midpoint_mem {S : Set ℝ} (hS : IsClosed S)
+    (hmid : ∀ x ∈ S, ∀ y ∈ S, x < y → midpoint ℝ x y ∈ S) {a b : ℝ} (ha : a ∈ S) (hb : b ∈ S) :
+    Icc a b ⊆ S := by
+  -- If `σ ∈ [a, b]` were missing, the closest points `u < σ < v` of `S` on either side of it
+  -- would have their midpoint in `S`, strictly between `u` and `v`, contradicting their choice.
+  intro σ hσ
+  by_contra hσS
+  have hS₁ : IsClosed (S ∩ Icc a σ) := hS.inter isClosed_Icc
+  have hS₂ : IsClosed (S ∩ Icc σ b) := hS.inter isClosed_Icc
+  have hbdd₁ : BddAbove (S ∩ Icc a σ) := ⟨σ, fun x hx ↦ hx.2.2⟩
+  have hbdd₂ : BddBelow (S ∩ Icc σ b) := ⟨σ, fun x hx ↦ hx.2.1⟩
+  have hu := hS₁.csSup_mem ⟨a, ha, left_mem_Icc.2 hσ.1⟩ hbdd₁
+  have hv := hS₂.csInf_mem ⟨b, hb, right_mem_Icc.2 hσ.2⟩ hbdd₂
+  set u := sSup (S ∩ Icc a σ)
+  set v := sInf (S ∩ Icc σ b)
+  have huσ : u < σ := hu.2.2.lt_of_ne fun h ↦ hσS (h ▸ hu.1)
+  have hσv : σ < v := hv.2.1.lt_of_ne' fun h ↦ hσS (h ▸ hv.1)
+  have hm := hmid u hu.1 v hv.1 (huσ.trans hσv)
+  rw [midpoint_eq_smul_add, smul_eq_mul, invOf_eq_inv] at hm
+  rcases le_total (2⁻¹ * (u + v)) σ with h | h
+  · linarith [le_csSup hbdd₁ ⟨hm, by linarith [hu.2.1], h⟩]
+  · linarith [csInf_le hbdd₂ ⟨hm, h, by linarith [hv.2.2]⟩]
 
 end TauCeti
