@@ -18,7 +18,7 @@ cocontinuous, and let `G` be a sheaf of groups on `D`. The restriction `u_* Q` o
 This gives a map `NonabelianH1.restrict J u : H¹(G) → H¹(u_* G)`.
 
 When `u` is moreover representably flat, so that it defines a morphism of sites, restriction is
-inverse to the pullback of torsors along the unit morphism `u_* G ⟶ u_* G`
+inverse to the pullback of torsors along the identity of `u_* G`
 (`CategoryTheory.Sheaf.NonabelianH1.pullback`): the class of a torsor is determined by its
 restriction (`NonabelianH1.restrictEquiv J u G : H¹(G) ≃ H¹(u_* G)`). This applies to the inclusion
 of a dense subsite, and to an equivalence of sites.
@@ -74,13 +74,17 @@ def restrictMap {Q R : Torsor G} (f : Q ⟶ R) : Q.restrict J u ⟶ R.restrict J
   hom := (u.sheafPushforwardContinuous (Type w) J K).map f.hom
   map_smul U g p := f.map_smul (u.op.obj U) g p
 
+@[simp]
+lemma restrictMap_hom {Q R : Torsor G} (f : Q ⟶ R) :
+    (Torsor.restrictMap J u f).hom = (u.sheafPushforwardContinuous (Type w) J K).map f.hom :=
+  (rfl)
+
 end Torsor
 
 namespace NonabelianH1
 
 /-- The map `H¹(G) → H¹(u_* G)` sending the class of a `G`-torsor to the class of its restriction
 along a continuous and cocontinuous functor `u`. -/
-@[expose]
 def restrict :
     NonabelianH1 G → NonabelianH1 ((u.sheafPushforwardContinuous GrpCat.{w} J K).obj G) :=
   lift (fun Q ↦ mk (Q.restrict J u)) fun _ _ f ↦ mk_eq_mk_of_hom (Torsor.restrictMap J u f)
@@ -113,7 +117,6 @@ lemma restrict_pullback
 variable (G) in
 /-- For a continuous, cocontinuous and representably flat functor `u`, restriction of torsors is a
 bijection `H¹(G) ≃ H¹(u_* G)`, with inverse the pullback along the identity of `u_* G`. -/
-@[expose]
 def restrictEquiv :
     NonabelianH1 G ≃ NonabelianH1 ((u.sheafPushforwardContinuous GrpCat.{w} J K).obj G) where
   toFun := restrict J u
@@ -123,13 +126,13 @@ def restrictEquiv :
 
 @[simp]
 lemma restrictEquiv_apply (x : NonabelianH1 G) : restrictEquiv J u G x = restrict J u x :=
-  rfl
+  (rfl)
 
 @[simp]
 lemma restrictEquiv_symm_apply
     (x : NonabelianH1 ((u.sheafPushforwardContinuous GrpCat.{w} J K).obj G)) :
     (restrictEquiv J u G).symm x = pullback (𝟙 _) x :=
-  rfl
+  (rfl)
 
 end NonabelianH1
 

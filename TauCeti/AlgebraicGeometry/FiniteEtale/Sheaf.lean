@@ -60,8 +60,8 @@ finite coproducts, quotients by finite groups and epimorphisms.
 * `TauCeti.FiniteEtaleScheme.preservesColimit_toSheaf`,
   `TauCeti.FiniteEtaleScheme.preservesLimit_toSheaf`: the sheaf-of-sections functor preserves
   the colimits and finite limits preserved by all geometric fibre functors.
-* Instances: `toSheaf S` preserves finite limits, finite coproducts, quotients by finite groups
-  and epimorphisms.
+* Instances: `toEtale S` preserves finite limits and is representably flat; `toSheaf S`
+  preserves finite limits, finite coproducts, quotients by finite groups and epimorphisms.
 
 ## References
 
@@ -118,6 +118,18 @@ noncomputable def toEtaleFullyFaithful : (toEtale S).FullyFaithful :=
 instance : (toEtale S).Full := (toEtaleFullyFaithful S).full
 
 instance : (toEtale S).Faithful := (toEtaleFullyFaithful S).faithful
+
+/-- The inclusion of finite étale `S`-schemes into the small étale site of `S` preserves finite
+limits: followed by the fully faithful forgetful functor of the étale site it is the inclusion of
+finite étale `S`-schemes among `S`-schemes, which preserves them. -/
+instance preservesFiniteLimits_toEtale : PreservesFiniteLimits (toEtale S) :=
+  have : PreservesFiniteLimits (toEtale S ⋙ Scheme.Etale.forget S) := by
+    rw [toEtale_comp_forget]
+    infer_instance
+  preservesFiniteLimits_of_reflects_of_preserves (toEtale S) (Scheme.Etale.forget S)
+
+instance representablyFlat_toEtale : RepresentablyFlat (toEtale S) :=
+  flat_of_preservesFiniteLimits _
 
 /-- The étale sheaf of sections of a finite étale `S`-scheme `X`: its value on a scheme `U`
 étale over `S` is the set of morphisms `U ⟶ X` over `S`. -/

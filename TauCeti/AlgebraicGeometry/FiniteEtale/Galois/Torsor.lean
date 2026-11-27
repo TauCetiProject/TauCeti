@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.Galois.SmoothSheaf
-public import TauCeti.AlgebraicGeometry.FiniteEtale.Limits
 public import TauCeti.CategoryTheory.Galois.Torsor.Classification
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.Restrict
 
@@ -52,20 +51,6 @@ universe u
 
 namespace TauCeti.FiniteEtaleScheme
 
-variable (S : Scheme.{u})
-
-/-- The inclusion of finite étale `S`-schemes into the small étale site of `S` preserves finite
-limits: followed by the fully faithful forgetful functor of the étale site it is the inclusion of
-finite étale `S`-schemes among `S`-schemes, which preserves them. -/
-instance preservesFiniteLimits_toEtale : PreservesFiniteLimits (toEtale S) :=
-  have : PreservesFiniteLimits (toEtale S ⋙ Scheme.Etale.forget S) := by
-    rw [toEtale_comp_forget]
-    infer_instance
-  preservesFiniteLimits_of_reflects_of_preserves (toEtale S) (Scheme.Etale.forget S)
-
-instance representablyFlat_toEtale : RepresentablyFlat (toEtale S) :=
-  flat_of_preservesFiniteLimits _
-
 variable (K : Type u) [Field K] (Ω : Type u) [Field Ω] [Algebra K Ω] [IsSepClosed Ω]
   [IsGalois K Ω]
 
@@ -106,8 +91,9 @@ restriction. -/
 @[simp]
 lemma nonabelianH1EquivGaloisSite_mk (P : Sheaf.Torsor 𝒢) :
     nonabelianH1EquivGaloisSite K Ω 𝒢 (Sheaf.NonabelianH1.mk P) =
-      Sheaf.NonabelianH1.mk (P.restrict _ (galoisSiteFunctor K Ω)) :=
-  Sheaf.NonabelianH1.restrict_mk _ _ P
+      Sheaf.NonabelianH1.mk (P.restrict _ (galoisSiteFunctor K Ω)) := by
+  rw [nonabelianH1EquivGaloisSite, Sheaf.NonabelianH1.restrictEquiv_apply,
+    Sheaf.NonabelianH1.restrict_mk]
 
 variable [TopologicalSpace ((ContAction.point Gal(Ω/K)).GrpStalk (galoisSheaf K Ω 𝒢).obj)]
   [DiscreteTopology ((ContAction.point Gal(Ω/K)).GrpStalk (galoisSheaf K Ω 𝒢).obj)]
@@ -115,8 +101,8 @@ variable [TopologicalSpace ((ContAction.point Gal(Ω/K)).GrpStalk (galoisSheaf K
 /-- **Étale torsors over a field are classified by continuous Galois cohomology.** For a field
 `K` with separable closure `Ω` and an étale sheaf of groups `𝒢` on `Spec K`, the classes of étale
 `𝒢`-torsors are in bijection with the continuous nonabelian cohomology `H¹(Gal(Ω/K), A)`, where
-`A` is the stalk of `𝒢` at the point of the Galois site, with the discrete topology: restrict to
-finite continuous `Gal(Ω/K)`-sets, then take stalks. -/
+`A` is the stalk of `galoisSheaf K Ω 𝒢` (the restriction of `𝒢` to the Galois site) at its point,
+with the discrete topology: restrict to finite continuous `Gal(Ω/K)`-sets, then take stalks. -/
 def nonabelianH1EquivGalois :
     Sheaf.NonabelianH1 𝒢 ≃
       TauCeti.NonabelianH1 Gal(Ω/K)
