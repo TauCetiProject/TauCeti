@@ -16,6 +16,7 @@ import TauCeti.LinearAlgebra.Matrix.Charpoly.Separable
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.ClassFunction
 import TauCeti.RingTheory.MvPolynomial.LocalizationAwayProdX
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Vieta
+import TauCeti.RingTheory.Polynomial.Vieta
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
