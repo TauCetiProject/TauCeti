@@ -19,6 +19,14 @@ factor `TauCeti.weierstrassDiscrFactor R = 4 X₀³ + 27 X₁² = -TauCeti.depre
 homogeneous of weight `12` over any commutative ring, and prime over any integral domain `R` with
 `(2 : R) ≠ 0` and `(3 : R) ≠ 0`.
 
+For a Weierstrass curve `W` in short normal form (`W.a₁ = W.a₂ = W.a₃ = 0`), Mathlib's full
+elliptic-curve discriminant is `W.Δ = -16 * (4 * W.a₄ ^ 3 + 27 * W.a₆ ^ 2)`
+(`WeierstrassCurve.Δ_of_isShortNF` in `Mathlib.AlgebraicGeometry.EllipticCurve.NormalForms`), which
+equals `-16` times `TauCeti.weierstrassDiscrFactor R` evaluated at `(W.a₄, W.a₆)`. When `2` is not
+a unit (for example over `ℤ`), `-16` is a non-unit, so primality applies to the factor
+`TauCeti.weierstrassDiscrFactor R` itself rather than to the full elliptic-curve discriminant `W.Δ`
+(which is prime at `(W.a₄, W.a₆)` only after `2` becomes invertible).
+
 ## Main definitions
 
 * `TauCeti.weierstrassDiscrFactor`: the Weierstrass cubic discriminant factor `4 X₀³ + 27 X₁²`.

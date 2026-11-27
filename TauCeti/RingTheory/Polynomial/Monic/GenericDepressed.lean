@@ -323,6 +323,11 @@ private theorem tschirnhausToDepressed_comp_tschirnhausFromDepressed {R : Type*}
     simpa [tschirnhausFromDepressed, Polynomial.aevalTower_C] using hcoeff
   · simpa [tschirnhausFromDepressed] using tschirnhausToDepressed_tschirnhausNegBarycenter hmu
 
+private theorem tschirnhausFromDepressed_X {R : Type*} [CommRing R] {m : ℕ}
+    (hmu : IsUnit (m : R)) :
+    tschirnhausFromDepressed hmu Polynomial.X = tschirnhausNegBarycenter hmu := by
+  rw [tschirnhausFromDepressed, Polynomial.aevalTower_X]
+
 private theorem tschirnhausFromDepressed_comp_tschirnhausToDepressed {R : Type*} [CommRing R]
     {m : ℕ} (hmu : IsUnit (m : R)) :
     (tschirnhausFromDepressed hmu).comp (tschirnhausToDepressed R m) = AlgHom.id R _ := by
@@ -331,16 +336,13 @@ private theorem tschirnhausFromDepressed_comp_tschirnhausToDepressed {R : Type*}
       (tschirnhausFromDepressed hmu).toRingHom = freeMonic R m := by
     rw [map_tschirnhausToDepressed_freeMonic, Polynomial.map_comp, Polynomial.map_map,
       map_tschirnhausFromDepressed_comp_C_genericDepressed]
-    have hX_from :
-        tschirnhausFromDepressed hmu Polynomial.X = tschirnhausNegBarycenter hmu := by
-      rw [tschirnhausFromDepressed, Polynomial.aevalTower_X]
     have hX_inv : (Polynomial.X + Polynomial.C (Polynomial.X :
           (MvPolynomial (Fin (m - 1)) R)[X])).map
         (tschirnhausFromDepressed hmu).toRingHom =
         Polynomial.X + Polynomial.C (tschirnhausNegBarycenter hmu) := by
       simp only [Polynomial.map_add, Polynomial.map_X, Polynomial.map_C]
       simpa only [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom] using
-        congrArg (fun q ↦ Polynomial.X + Polynomial.C q) hX_from
+        congrArg (fun q ↦ Polynomial.X + Polynomial.C q) (tschirnhausFromDepressed_X hmu)
     rw [hX_inv, tschirnhausCentered]
     have htay := Polynomial.taylor_neg_taylor (-tschirnhausNegBarycenter hmu) (freeMonic R m)
     rw [neg_neg, Polynomial.taylor_apply, Polynomial.taylor_apply, map_neg,
@@ -364,6 +366,11 @@ private theorem tschirnhausAlgEquiv_toAlgHom {R : Type*} [CommRing R] {m : ℕ}
     (hmu : IsUnit (m : R)) :
     (tschirnhausAlgEquiv hmu).toAlgHom = tschirnhausToDepressed R m :=
   AlgEquiv.toAlgHom_ofAlgHom _ _ _ _
+
+private theorem tschirnhausAlgEquiv_symm_X_eq_tschirnhausNegBarycenter {R : Type*} [CommRing R]
+    {m : ℕ} (hmu : IsUnit (m : R)) :
+    (tschirnhausAlgEquiv hmu).symm Polynomial.X = tschirnhausNegBarycenter hmu := by
+  rw [tschirnhausAlgEquiv, AlgEquiv.ofAlgHom_symm_apply, tschirnhausFromDepressed_X]
 
 /-- Mapping `Polynomial.freeMonic R m` along `TauCeti.tschirnhausAlgEquiv` produces the generic
 depressed polynomial translated by `Polynomial.X`. -/
@@ -409,8 +416,8 @@ theorem tschirnhausAlgEquiv_symm_X {R : Type*} [CommRing R] {m : ℕ} (hmu : IsU
     (hm : m - 1 < m) :
     (tschirnhausAlgEquiv hmu).symm Polynomial.X =
       (↑hmu.unit⁻¹ : R) • MvPolynomial.X ⟨m - 1, hm⟩ := by
-  rw [tschirnhausAlgEquiv, AlgEquiv.ofAlgHom_symm_apply, tschirnhausFromDepressed,
-    Polynomial.aevalTower_X, tschirnhausNegBarycenter, dite_eq_left hm]
+  rw [tschirnhausAlgEquiv_symm_X_eq_tschirnhausNegBarycenter, tschirnhausNegBarycenter,
+    dite_eq_left hm]
 
 /-- Mapping `TauCeti.genericDepressed R m` along `(tschirnhausAlgEquiv hmu).symm` composed with
 `Polynomial.C` centers `Polynomial.freeMonic R m` at
@@ -420,10 +427,7 @@ theorem map_tschirnhausAlgEquiv_symm_comp_C_genericDepressed {R : Type*} [CommRi
     (genericDepressed R m).map ((tschirnhausAlgEquiv hmu).symm.toRingHom.comp Polynomial.C) =
       (freeMonic R m).comp
         (Polynomial.X - Polynomial.C ((tschirnhausAlgEquiv hmu).symm Polynomial.X)) := by
-  have hX : (tschirnhausAlgEquiv hmu).symm Polynomial.X = tschirnhausNegBarycenter hmu := by
-    rw [tschirnhausAlgEquiv, AlgEquiv.ofAlgHom_symm_apply, tschirnhausFromDepressed,
-      Polynomial.aevalTower_X]
-  rw [hX]
+  rw [tschirnhausAlgEquiv_symm_X_eq_tschirnhausNegBarycenter]
   exact map_tschirnhausFromDepressed_comp_C_genericDepressed hmu
 
 /-- The inverse of `TauCeti.tschirnhausAlgEquiv` maps `Polynomial.C (MvPolynomial.X i)` to the

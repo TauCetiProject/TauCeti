@@ -23,33 +23,46 @@ When `(m : R)` is invertible, the Tschirnhaus `R`-algebra equivalence
 `TauCeti.tschirnhausAlgEquiv : MvPolynomial (Fin m) R ≃ₐ[R] (MvPolynomial (Fin (m - 1)) R)[X]`
 carries `(Polynomial.freeMonic R m).discr` to `Polynomial.C (TauCeti.depressedDiscr R m)` by
 translation invariance of the discriminant (`TauCeti.tschirnhausAlgEquiv_discr_freeMonic`). Over any
-integral domain `R` with `(2 : R) ≠ 0` and `IsUnit (m : R)`, this gives primality of
-`TauCeti.depressedDiscr R m` for every `m ≥ 2` (`TauCeti.depressedDiscr_prime`).
+integral domain `R` with `2 ≤ m` and `IsUnit (m : R)`, this gives the primality characterization
+`Prime (TauCeti.depressedDiscr R m) ↔ (2 : R) ≠ 0` (`TauCeti.prime_depressedDiscr_iff_of_isUnit`),
+extending the field corollary `TauCeti.prime_depressedDiscr_of_ne_zero` (proved from
+`TauCeti.depressedDiscr_prime` in `TauCeti.RingTheory.Polynomial.Resultant.GenericDepressed.Basic`).
 
-For `3 ≤ m` over any integral domain `R` with `(2 : R) ≠ 0` and `(m : R) ≠ 0`, specializing to
-`X ^ m - 1` and `X ^ m - X` shows that every constant divisor of `TauCeti.depressedDiscr R m` is a
-unit (`TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`). Localizing away from `m` gives
-primality over `Rₘ`, and specializing `X ^ m + a_{m-1} X` modulo `m` exhibits a unit coefficient
-`±1` in `depressedDiscr (R ⧸ Ideal.span {(m : R)}) m`, which by McCoy's regularity lemma makes the
-discriminant ideal saturated with respect to `m`. Hence `TauCeti.depressedDiscr R m` is prime
-over any integral domain `R` with `(2 : R) ≠ 0` and `(m : R) ≠ 0` (`3 ≤ m`), without requiring
-unique factorization (`TauCeti.prime_depressedDiscr_of_three_le`).
+Over any commutative ring `R` with `3 ≤ m`, specializing to `X ^ m - 1` and `X ^ m - X` shows that
+every constant divisor of `TauCeti.depressedDiscr R m` is a unit
+(`TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`).
 
-For `m = 2`, `TauCeti.depressedDiscr R 2 = -4 X₀` is prime over an integral domain `R` if and only
-if `IsUnit (2 : R)` (`TauCeti.prime_depressedDiscr_two_iff`), and counterexamples when `2 = 0`,
-when `3 = 0`, and over `ℤ` show sharpness.
+For `3 ≤ m` over an integral domain `R` with `(2 : R) ≠ 0` and `(m : R) ≠ 0`, localizing away
+from `m` gives primality over `Rₘ`, and specializing `X ^ m + a_{m-1} X` modulo `m` exhibits a
+unit coefficient `±1` in `depressedDiscr (R ⧸ Ideal.span {(m : R)}) m`, which by McCoy's
+regularity lemma makes the discriminant ideal saturated with respect to `m`. Hence
+`TauCeti.depressedDiscr R m` is prime over any integral domain `R` with `(2 : R) ≠ 0` and
+`(m : R) ≠ 0` (`3 ≤ m`), without requiring unique factorization
+(`TauCeti.prime_depressedDiscr_of_three_le`).
+
+In low degrees, the quadratic (`m = 2`) discriminant `TauCeti.depressedDiscr R 2 = -4 X₀` is prime
+over an integral domain `R` if and only if `IsUnit (2 : R)`
+(`TauCeti.prime_depressedDiscr_two_iff`). Sharpness counterexamples are given in degree `2`
+(quadratic) when `(2 : R) = 0` (`TauCeti.not_prime_depressedDiscr_two_of_two_eq_zero`) and over `ℤ`
+(`TauCeti.not_prime_depressedDiscr_int_two`), and in degree `3` (cubic) when `(3 : R) = 0`
+(`TauCeti.not_prime_depressedDiscr_three_of_three_eq_zero`).
 
 ## Main results
 
 * `TauCeti.tschirnhausAlgEquiv_discr_freeMonic`,
-  `TauCeti.prime_depressedDiscr_iff_prime_discr_freeMonic_of_isUnit`: identification of generic
-  monic and depressed discriminants when `m` is invertible.
-* `TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`,
-  `TauCeti.prime_depressedDiscr_of_three_le`, `TauCeti.prime_depressedDiscr_of_ne_zero`: every
-  constant divisor is a unit for `3 ≤ m` and integral-domain primality of `depressedDiscr`.
-* `TauCeti.prime_depressedDiscr_two_iff`, `TauCeti.not_prime_depressedDiscr_two_of_two_eq_zero`,
-  `TauCeti.not_prime_depressedDiscr_three_of_three_eq_zero`,
-  `TauCeti.not_prime_depressedDiscr_int_two`: degree-`2` criterion and sharpness counterexamples.
+  `TauCeti.prime_depressedDiscr_iff_prime_discr_freeMonic_of_isUnit`,
+  `TauCeti.prime_depressedDiscr_iff_of_isUnit`: Tschirnhaus transport of the discriminant and
+  integral-domain primality criterion when `m` is invertible.
+* `TauCeti.prime_depressedDiscr_of_ne_zero`: field corollary when `(2 : K) ≠ 0` and `(m : K) ≠ 0`.
+* `TauCeti.isUnit_of_C_dvd_depressedDiscr_of_three_le`: over any commutative ring `R` with `3 ≤ m`,
+  every constant divisor of `depressedDiscr R m` is a unit.
+* `TauCeti.prime_depressedDiscr_of_three_le`: integral-domain primality of `depressedDiscr R m` for
+  `3 ≤ m` when `(2 : R) ≠ 0` and `(m : R) ≠ 0`.
+* `TauCeti.prime_depressedDiscr_two_iff`: degree-`2` primality criterion over an integral domain.
+* `TauCeti.not_prime_depressedDiscr_two_of_two_eq_zero`,
+  `TauCeti.not_prime_depressedDiscr_int_two`: quadratic (`m = 2`) sharpness counterexamples.
+* `TauCeti.not_prime_depressedDiscr_three_of_three_eq_zero`: cubic (`m = 3`) sharpness
+  counterexample.
 
 ## References
 
@@ -204,6 +217,32 @@ private theorem coeff_aeval_ite_X {A σ : Type*} [CommRing A] [DecidableEq σ]
         simp [Finsupp.single_add]
     · simp [hi, MvPolynomial.coeff_mul_X']
 
+/-- Specializing the `X`-variable `⟨m - 3, _⟩` of `genericDepressed A m` (`3 ≤ m`) to
+`Polynomial.X` and all other variables to `0` produces `X ^ m + C X * X` over `A[X]`. -/
+private theorem map_aeval_single_X_genericDepressed (A : Type*) [CommSemiring A] {m : ℕ}
+    (hm : 3 ≤ m) :
+    (genericDepressed A m).map
+        (MvPolynomial.aeval fun j : Fin (m - 1) ↦
+          if j = ⟨m - 3, by omega⟩ then (Polynomial.X : A[X]) else 0).toRingHom =
+      Polynomial.X ^ m + Polynomial.C (Polynomial.X : A[X]) * Polynomial.X := by
+  ext k : 2
+  rw [Polynomial.coeff_map, coeff_genericDepressed, Polynomial.coeff_add, Polynomial.coeff_X_pow]
+  split_ifs with hkm hk
+  · subst hkm
+    rw [map_one, Polynomial.coeff_C_mul_X, ite_eq_right (by omega), add_zero]
+  · have hk1 : (⟨m - 2 - k, by omega⟩ : Fin (m - 1)) = ⟨m - 3, by omega⟩ ↔ k = 1 := by
+      rw [Fin.ext_iff]
+      dsimp only
+      omega
+    rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, MvPolynomial.aeval_X,
+      zero_add, Polynomial.coeff_C_mul_X]
+    rcases eq_or_ne k 1 with rfl | hk_ne
+    · simp [hk1.mpr rfl]
+    · have hne : (⟨m - 2 - k, by omega⟩ : Fin (m - 1)) ≠ ⟨m - 3, by omega⟩ :=
+        fun h ↦ hk_ne (hk1.mp h)
+      simp [hne, hk_ne]
+  · rw [map_zero, zero_add, Polynomial.coeff_C_mul_X, ite_eq_right (by omega)]
+
 /-- Over a quotient `R₀ = R ⧸ Ideal.span {(m : R)}` with `3 ≤ m`, `depressedDiscr R₀ m` has a
 unit coefficient and is therefore regular in `MvPolynomial (Fin (m - 1)) R₀`. -/
 private theorem isRegular_depressedDiscr_quotient {R : Type*} [CommRing R] {m : ℕ} (hm : 3 ≤ m) :
@@ -215,45 +254,25 @@ private theorem isRegular_depressedDiscr_quotient {R : Type*} [CommRing R] {m : 
     exact Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.subset_span (Set.mem_singleton _))
   have hm1 : ((m - 1 : ℕ) : R₀) = -1 := by
     rw [Nat.cast_sub (by omega : 1 ≤ m), Nat.cast_one, hm0, zero_sub]
-  -- Specialize the variable for `X` (`j₀ = m - 3`) to `Polynomial.X` and all others to `0`,
-  -- sending `genericDepressed R₀ m` to `X ^ m + X * X`.
   let j₀ : Fin (m - 1) := ⟨m - 3, by omega⟩
   let φ : MvPolynomial (Fin (m - 1)) R₀ →ₐ[R₀] R₀[X] :=
     MvPolynomial.aeval fun j : Fin (m - 1) ↦ if j = j₀ then Polynomial.X else 0
   have hgen : (genericDepressed R₀ m).map φ.toRingHom =
       Polynomial.X ^ m - Polynomial.C (-Polynomial.X : R₀[X]) * Polynomial.X := by
-    have hrhs : Polynomial.X ^ m - Polynomial.C (-Polynomial.X : R₀[X]) * Polynomial.X =
-        Polynomial.X ^ m + Polynomial.C (Polynomial.X : R₀[X]) * Polynomial.X := by
-      rw [map_neg]; ring
-    rw [hrhs]
-    ext k : 2
-    rw [Polynomial.coeff_map, coeff_genericDepressed, Polynomial.coeff_add, Polynomial.coeff_X_pow]
-    split_ifs with hkm hk
-    · subst hkm
-      rw [map_one, Polynomial.coeff_C_mul_X, ite_eq_right (by omega), add_zero]
-    · have hk1 : (⟨m - 2 - k, by omega⟩ : Fin (m - 1)) = j₀ ↔ k = 1 := by
-        simp [Fin.ext_iff, j₀]; omega
-      rw [AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, MvPolynomial.aeval_X,
-        zero_add, Polynomial.coeff_C_mul_X]
-      rcases eq_or_ne k 1 with rfl | hk_ne
-      · simp [hk1.mpr rfl]
-      · have hne : (⟨m - 2 - k, by omega⟩ : Fin (m - 1)) ≠ j₀ :=
-          fun h ↦ hk_ne (hk1.mp h)
-        simp [hne, hk_ne]
-    · rw [map_zero, zero_add, Polynomial.coeff_C_mul_X, ite_eq_right (by omega)]
+    rw [show φ = MvPolynomial.aeval fun j : Fin (m - 1) ↦
+        if j = ⟨m - 3, by omega⟩ then (Polynomial.X : R₀[X]) else 0 from rfl,
+      map_aeval_single_X_genericDepressed R₀ hm, map_neg]
+    ring
   let u : R₀ˣ := (-1) ^ ((m - 1) * (m - 2) / 2 + (m - 1))
   have hdiscr_val : φ (depressedDiscr R₀ m) = Polynomial.monomial m (u : R₀) := by
     rw [aeval_depressedDiscr, hgen, Polynomial.discr_X_pow_sub_C_mul_X (-Polynomial.X) (by omega)]
     have hm1_cast : ((m - 1 : ℕ) : R₀[X]) = -1 := by
       rw [← map_natCast (Polynomial.C : R₀ →+* R₀[X]), hm1, map_neg, map_one]
-    rw [hm1_cast, neg_neg]
-    calc (-1 : R₀[X]) ^ ((m - 1) * (m - 2) / 2) * (-1) ^ (m - 1) * Polynomial.X ^ m
-        = Polynomial.C ((-1 : R₀) ^ ((m - 1) * (m - 2) / 2) * (-1) ^ (m - 1)) *
-            Polynomial.X ^ m := by simp
-      _ = Polynomial.monomial m (u : R₀) := by
-          rw [Polynomial.C_mul_X_pow_eq_monomial]
-          congr 1
-          simp [u, pow_add]
+    rw [hm1_cast, neg_neg, ← Polynomial.C_mul_X_pow_eq_monomial]
+    have hu : Polynomial.C (u : R₀) =
+        (-1 : R₀[X]) ^ ((m - 1) * (m - 2) / 2) * (-1) ^ (m - 1) := by
+      simp [u, pow_add]
+    rw [← hu]
   have hunit : IsUnit ((depressedDiscr R₀ m).coeff (Finsupp.single j₀ m)) := by
     rw [← coeff_aeval_ite_X j₀ (depressedDiscr R₀ m) m, hdiscr_val, Polynomial.coeff_monomial_same]
     exact u.isUnit
