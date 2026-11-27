@@ -389,8 +389,7 @@ theorem cohomologyMap_homologyπ_eq_of_forall_nhds {f g : C(X, Y)} {n : ℕ}
   have hi (k : C(X, Y)) : ((cochainComplex R X M).iCycles n).hom
       ((HomologicalComplex.cyclesMap (cochainComplexMap R M k) n).hom z) =
         ((cochainComplexMap R M k).f n).hom (cochainClass R Y M n φ) := by
-    rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
-      hz]
+    rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hz]
   cases n with
   | zero =>
     -- In degree zero the pullbacks of `φ` along `f` and `g` agree.
