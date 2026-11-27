@@ -15,7 +15,8 @@ import TauCeti.LinearAlgebra.Matrix.Range
 
 For an integer vector `u : ι → ℤ` and an additive commutative group `G`, the straight circle of
 direction `u` is the homomorphism `g ↦ (u i • g)ᵢ` from `G` to `ι → G`
-(`TauCeti.straightCircleHom`). For `G = AddCircle p` it parametrizes the image in the torus
+(`TauCeti.straightCircleHom`), with range the subgroup `TauCeti.straightCircle G u`. For
+`G = AddCircle p` it parametrizes the image in the torus
 `ι → AddCircle p` of the line through `0` spanned by `p u`. For two coordinates which are
 coprime it is injective (`TauCeti.straightCircleHom_injective`), so that its image is an embedded
 circle. On the two-torus these are the attaching circles of the standard genus-one Heegaard
@@ -43,6 +44,7 @@ up whenever `s u + t v` is an integer vector
 ## Main definitions
 
 * `TauCeti.straightCircleHom`: the straight circle `g ↦ (u i • g)ᵢ` of direction `u`.
+* `TauCeti.straightCircle`: its range, a subgroup of `ι → G`.
 * `TauCeti.straightCircleInfEquiv`: the intersection of two injective straight circles is the
   kernel of the matrix with columns their directions.
 * `TauCeti.straightCircleInfQuotientEquiv`: on a torus `Fin 2 → AddCircle p`, the intersection of
@@ -80,6 +82,11 @@ theorem straightCircleHom_apply (u : ι → ℤ) (g : G) (i : ι) :
     straightCircleHom G u g i = u i • g :=
   (rfl)
 
+/-- The straight circle of direction `u : ι → ℤ` as a subgroup of `ι → G`, the range of
+`TauCeti.straightCircleHom`. -/
+abbrev straightCircle (u : ι → ℤ) : AddSubgroup (ι → G) :=
+  (straightCircleHom G u).range
+
 variable {G}
 
 /-- **A straight circle of primitive direction is injective.** If the two coordinates of
@@ -109,17 +116,24 @@ theorem smulVecHom_transpose_of_apply (u v : ι → ℤ) (x : Fin 2 → G) :
   ext i
   simp
 
+/-- A point `(σ, τ)` lies in the kernel of the matrix with columns `u` and `v` exactly when
+`(u i • σ + v i • τ)ᵢ = 0`. -/
+theorem mem_ker_smulVecHom_transpose_of_iff (u v : ι → ℤ) (x : Fin 2 → G) :
+    x ∈ ((Matrix.of ![u, v])ᵀ.smulVecHom G : (Fin 2 → G) →+ (ι → G)).ker ↔
+      straightCircleHom G u (x 0) + straightCircleHom G v (x 1) = 0 := by
+  rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, smulVecHom_transpose_of_apply]
+
 /-- A point `(σ, τ)` of the kernel of the matrix with columns `u` and `v` gives the point
 `(u i • σ)ᵢ = ((-v i) • τ)ᵢ` of both straight circles. -/
 private def kerToStraightCircleInf (u v : ι → ℤ) :
     ((Matrix.of ![u, v])ᵀ.smulVecHom G : (Fin 2 → G) →+ (ι → G)).ker →+
-      ↥((straightCircleHom G u).range ⊓ (straightCircleHom G v).range) :=
+      ↥(straightCircle G u ⊓ straightCircle G v) :=
   AddMonoidHom.codRestrict
     ((straightCircleHom G u).comp ((Pi.evalAddMonoidHom (fun _ ↦ G) 0).comp
       (AddSubgroup.subtype _))) _ fun x ↦ by
     refine ⟨⟨_, rfl⟩, -(x : Fin 2 → G) 1, ?_⟩
     have hx := x.property
-    rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, smulVecHom_transpose_of_apply] at hx
+    rw [mem_ker_smulVecHom_transpose_of_iff] at hx
     simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddSubgroup.coe_subtype,
       Pi.evalAddMonoidHom_apply, map_neg]
     exact neg_eq_of_add_eq_zero_left hx
@@ -137,13 +151,12 @@ private theorem bijective_kerToStraightCircleInf {u v : ι → ℤ}
   · have hx0 : (x : Fin 2 → G) 0 = 0 :=
       hu (by rw [← coe_kerToStraightCircleInf, hx, map_zero, AddSubgroup.coe_zero])
     have hker := x.property
-    rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, smulVecHom_transpose_of_apply, hx0,
-      map_zero, zero_add] at hker
+    rw [mem_ker_smulVecHom_transpose_of_iff, hx0, map_zero, zero_add] at hker
     have hx1 : (x : Fin 2 → G) 1 = 0 := hv (by rw [hker, map_zero])
     exact Subtype.ext (funext fun i ↦ by fin_cases i <;> simp [hx0, hx1])
   · obtain ⟨⟨σ, hσ⟩, τ, hτ⟩ := z.property
     refine ⟨⟨![σ, -τ], ?_⟩, Subtype.ext ?_⟩
-    · rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, smulVecHom_transpose_of_apply]
+    · rw [mem_ker_smulVecHom_transpose_of_iff]
       simp [hσ, hτ]
     · rw [coe_kerToStraightCircleInf]
       simpa using hσ
@@ -154,7 +167,7 @@ private theorem bijective_kerToStraightCircleInf {u v : ι → ℤ}
 (`TauCeti.straightCircleInfEquiv_apply`). -/
 def straightCircleInfEquiv {u v : ι → ℤ} (hu : Function.Injective (straightCircleHom G u))
     (hv : Function.Injective (straightCircleHom G v)) :
-    ↥((straightCircleHom G u).range ⊓ (straightCircleHom G v).range) ≃+
+    ↥(straightCircle G u ⊓ straightCircle G v) ≃+
       ((Matrix.of ![u, v])ᵀ.smulVecHom G : (Fin 2 → G) →+ (ι → G)).ker :=
   (AddEquiv.ofBijective _ (bijective_kerToStraightCircleInf hu hv)).symm
 
@@ -172,11 +185,11 @@ parameters `σ` on the first circle and `τ` on the second one. -/
 theorem straightCircleInfEquiv_apply {u v : ι → ℤ}
     (hu : Function.Injective (straightCircleHom G u))
     (hv : Function.Injective (straightCircleHom G v))
-    (z : ↥((straightCircleHom G u).range ⊓ (straightCircleHom G v).range)) {σ τ : G}
+    (z : ↥(straightCircle G u ⊓ straightCircle G v)) {σ τ : G}
     (hσ : straightCircleHom G u σ = z) (hτ : straightCircleHom G v τ = z) :
     (straightCircleInfEquiv hu hv z : Fin 2 → G) = ![σ, -τ] := by
   have hmem : ![σ, -τ] ∈ ((Matrix.of ![u, v])ᵀ.smulVecHom G : (Fin 2 → G) →+ (ι → G)).ker := by
-    rw [AddMonoidHom.mem_ker, AddMonoidHom.coe_ofClass, smulVecHom_transpose_of_apply]
+    rw [mem_ker_smulVecHom_transpose_of_iff]
     simp [hσ, hτ]
   have hz : z = (straightCircleInfEquiv hu hv).symm ⟨_, hmem⟩ :=
     Subtype.ext (by rw [coe_straightCircleInfEquiv_symm_apply]; simpa using hσ.symm)
@@ -196,21 +209,21 @@ coordinates meet in exactly `|u₀ v₁ - u₁ v₀|` points. When `u₀ v₁ - 
 infinitely many points and `Nat.card` takes the junk value `0`. -/
 theorem natCard_straightCircle_inf (hp : p ≠ 0) {u v : Fin 2 → ℤ} (hu : IsCoprime (u 0) (u 1))
     (hv : IsCoprime (v 0) (v 1)) :
-    Nat.card ↥((straightCircleHom (AddCircle p) u).range ⊓
-        (straightCircleHom (AddCircle p) v).range) = (u 0 * v 1 - u 1 * v 0).natAbs := by
+    Nat.card ↥(straightCircle (AddCircle p) u ⊓ straightCircle (AddCircle p) v) =
+      (u 0 * v 1 - u 1 * v 0).natAbs := by
   rw [Nat.card_congr (straightCircleInfEquiv (straightCircleHom_injective hu)
     (straightCircleHom_injective hv)).toEquiv, Matrix.natCard_ker_smulVecHom p _ hp,
-    Matrix.det_transpose_of_fin_two]
+    Matrix.det_transpose_of_cons_cons]
 
 /-- A straight circle of the torus `Fin 2 → AddCircle p` meets another one in finitely many points
 exactly when their directions are not parallel. -/
 theorem finite_straightCircle_inf_iff {u v : Fin 2 → ℤ} (hu : IsCoprime (u 0) (u 1))
     (hv : IsCoprime (v 0) (v 1)) :
-    Finite ↥((straightCircleHom (AddCircle p) u).range ⊓
-        (straightCircleHom (AddCircle p) v).range) ↔ u 0 * v 1 - u 1 * v 0 ≠ 0 := by
+    Finite ↥(straightCircle (AddCircle p) u ⊓ straightCircle (AddCircle p) v) ↔
+      u 0 * v 1 - u 1 * v 0 ≠ 0 := by
   rw [(straightCircleInfEquiv (straightCircleHom_injective hu)
     (straightCircleHom_injective hv)).toEquiv.finite_iff, Matrix.finite_ker_smulVecHom_iff,
-    Matrix.det_transpose_of_fin_two]
+    Matrix.det_transpose_of_cons_cons]
 
 omit [CharZero K] [TopologicalSpace K] [IsTopologicalAddGroup K] in
 /-- **Lattice displacements close up.** If `s u + t v = n` is an integer vector, the points of the
@@ -235,11 +248,11 @@ a point is the class of `s u + t v` for `s` and `t` in `K` with `p (s u + t v) �
 the point is the image of `p s u` (`TauCeti.straightCircleInfQuotientEquiv_apply`). -/
 def straightCircleInfQuotientEquiv (hp : p ≠ 0) {u v : Fin 2 → ℤ} (hu : IsCoprime (u 0) (u 1))
     (hv : IsCoprime (v 0) (v 1)) (hdet : u 0 * v 1 - u 1 * v 0 ≠ 0) :
-    ↥((straightCircleHom (AddCircle p) u).range ⊓ (straightCircleHom (AddCircle p) v).range) ≃+
+    ↥(straightCircle (AddCircle p) u ⊓ straightCircle (AddCircle p) v) ≃+
       (Fin 2 → ℤ) ⧸ (Submodule.span ℤ {u, v}).toAddSubgroup :=
   (straightCircleInfEquiv (straightCircleHom_injective hu) (straightCircleHom_injective hv)).trans
     ((Matrix.quotientRangeEquivKerSmulVecHom p _
-      (by rwa [Matrix.det_transpose_of_fin_two]) hp).symm.trans
+      (by rwa [Matrix.det_transpose_of_cons_cons]) hp).symm.trans
       (QuotientAddGroup.quotientAddEquivOfEq (by
         rw [Matrix.range_mulVecLin_transpose_of_cons_cons])))
 
@@ -251,11 +264,11 @@ circle and back along the second one lifts to the path from `0` to `p s u` and o
 `p (s u + t v) = p n`. -/
 theorem straightCircleInfQuotientEquiv_apply (hp : p ≠ 0) {u v : Fin 2 → ℤ}
     (hu : IsCoprime (u 0) (u 1)) (hv : IsCoprime (v 0) (v 1)) (hdet : u 0 * v 1 - u 1 * v 0 ≠ 0)
-    (z : ↥((straightCircleHom (AddCircle p) u).range ⊓ (straightCircleHom (AddCircle p) v).range))
+    (z : ↥(straightCircle (AddCircle p) u ⊓ straightCircle (AddCircle p) v))
     {s t : K} {n : Fin 2 → ℤ} (hn : ∀ i, s * u i + t * v i = n i)
     (hz : straightCircleHom (AddCircle p) u ((s * p : K) : AddCircle p) = z) :
     straightCircleInfQuotientEquiv p hp hu hv hdet z = QuotientAddGroup.mk n := by
-  have hdet' : (Matrix.of ![u, v])ᵀ.det ≠ 0 := by rwa [Matrix.det_transpose_of_fin_two]
+  have hdet' : (Matrix.of ![u, v])ᵀ.det ≠ 0 := by rwa [Matrix.det_transpose_of_cons_cons]
   -- The image of `-p t v` is `z` too, since `p (s u + t v) = p n` lies in `p ℤ²`.
   have hτ : straightCircleHom (AddCircle p) v (-((t * p : K) : AddCircle p)) = z := by
     rw [map_neg, ← hz]
@@ -276,7 +289,7 @@ theorem straightCircleInfQuotientEquiv_apply (hp : p ≠ 0) {u v : Fin 2 → ℤ
     rw [Matrix.coe_quotientRangeEquivKerSmulVecHom_mk, Matrix.inv_mulVec_eq_vec hA.symm,
       straightCircleInfEquiv_apply _ _ z hz hτ, neg_neg]
     ext i
-    fin_cases i <;> rfl
+    fin_cases i <;> simp
   rw [straightCircleInfQuotientEquiv, AddEquiv.trans_apply, AddEquiv.trans_apply, ← hQ,
     AddEquiv.symm_apply_apply, QuotientAddGroup.quotientAddEquivOfEq_mk]
 

@@ -33,8 +33,9 @@ the arc of `β` to the segment from there on by `t v`; the loop closes up in `T�
 an integer vector `n`, the class of the loop in `H₁(T²) = ℤ²`, and `ε(x, y)` is its class in
 `ℤ² / ⟨u, v⟩` (`TauCeti.straightDiagramEpsilon_eq`). Changing the arcs by whole turns changes `n`
 by multiples of `u` and `v`. Here `ε` is defined as `ε(x, y) = E (y - x)` for the isomorphism
-`E = TauCeti.straightCircleInfQuotientEquiv` of the generators with `ℤ² / ⟨u, v⟩`, which reads
-the displacement of the loop through `0` and `y - x`. Consequently:
+`E = TauCeti.straightCircleInfQuotientEquiv` of the generators with `ℤ² / ⟨u, v⟩`
+(`TauCeti.straightDiagramEpsilon_def`), which reads the displacement of the loop through `0` and
+`y - x`. Consequently:
 
 * `ε(x, y) + ε(y, w) = ε(x, w)` (`TauCeti.straightDiagramEpsilon_add_straightDiagramEpsilon`);
 * `ε(x, y) = 0` in `ℤ² / ⟨u, v⟩` only for `x = y` (`TauCeti.straightDiagramEpsilon_eq_zero_iff`);
@@ -94,7 +95,7 @@ variable (u v : Fin 2 → ℤ)
 the straight circles `α` and `β` of directions `u` and `v`: the intersection points of `α` and
 `β`, a subgroup of the torus. -/
 abbrev straightDiagramGenerators : AddSubgroup (UnitAddTorus (Fin 2)) :=
-  (straightCircleHom UnitAddCircle u).range ⊓ (straightCircleHom UnitAddCircle v).range
+  straightCircle UnitAddCircle u ⊓ straightCircle UnitAddCircle v
 
 theorem mem_straightDiagramGenerators_iff {x : UnitAddTorus (Fin 2)} :
     x ∈ straightDiagramGenerators u v ↔
@@ -122,6 +123,13 @@ def straightDiagramEpsilon (x y : straightDiagramGenerators u v) :
     (Fin 2 → ℤ) ⧸ (Submodule.span ℤ {u, v}).toAddSubgroup :=
   straightCircleInfQuotientEquiv 1 one_ne_zero hu hv hdet (y - x)
 
+/-- `ε(x, y)` is the class of `y - x` under the isomorphism
+`TauCeti.straightCircleInfQuotientEquiv` of the generators with `ℤ² / ⟨u, v⟩`. -/
+theorem straightDiagramEpsilon_def (x y : straightDiagramGenerators u v) :
+    straightDiagramEpsilon hu hv hdet x y =
+      straightCircleInfQuotientEquiv 1 one_ne_zero hu hv hdet (y - x) :=
+  (rfl)
+
 /-- **`ε(x, y)` is the lattice displacement of a loop.** Let `s`, `t` be real and `n` integral with
 `s u + t v = n`. If moving `x` by `s` along the direction `u` reaches `y`, then moving `y` by `t`
 along the direction `v` returns to `x` (`TauCeti.straightCircleHom_add_straightCircleHom_eq_zero`),
@@ -136,26 +144,26 @@ theorem straightDiagramEpsilon_eq {x y : straightDiagramGenerators u v} {s t : �
 @[simp]
 theorem straightDiagramEpsilon_self (x : straightDiagramGenerators u v) :
     straightDiagramEpsilon hu hv hdet x x = 0 := by
-  rw [straightDiagramEpsilon, sub_self, map_zero]
+  rw [straightDiagramEpsilon_def, sub_self, map_zero]
 
 /-- `ε(x, y) + ε(y, w) = ε(x, w)`. -/
 @[simp]
 theorem straightDiagramEpsilon_add_straightDiagramEpsilon (x y w : straightDiagramGenerators u v) :
     straightDiagramEpsilon hu hv hdet x y + straightDiagramEpsilon hu hv hdet y w =
       straightDiagramEpsilon hu hv hdet x w := by
-  rw [straightDiagramEpsilon, straightDiagramEpsilon, straightDiagramEpsilon, ← map_add,
+  rw [straightDiagramEpsilon_def, straightDiagramEpsilon_def, straightDiagramEpsilon_def, ← map_add,
     sub_add_sub_cancel']
 
 @[simp]
 theorem neg_straightDiagramEpsilon (x y : straightDiagramGenerators u v) :
     -straightDiagramEpsilon hu hv hdet x y = straightDiagramEpsilon hu hv hdet y x := by
-  rw [straightDiagramEpsilon, straightDiagramEpsilon, ← map_neg, neg_sub]
+  rw [straightDiagramEpsilon_def, straightDiagramEpsilon_def, ← map_neg, neg_sub]
 
 /-- **Distinct generators have distinct classes.** `ε(x, y) = 0` exactly when `x = y`. -/
 @[simp]
 theorem straightDiagramEpsilon_eq_zero_iff {x y : straightDiagramGenerators u v} :
     straightDiagramEpsilon hu hv hdet x y = 0 ↔ x = y := by
-  rw [straightDiagramEpsilon, AddEquivClass.map_eq_zero_iff, sub_eq_zero, eq_comm]
+  rw [straightDiagramEpsilon_def, AddEquivClass.map_eq_zero_iff, sub_eq_zero, eq_comm]
 
 /-- **One generator in each class.** For every generator `x`, `y ↦ ε(x, y)` is a bijection from
 the generators onto `ℤ² / ⟨u, v⟩`. -/
@@ -267,6 +275,8 @@ theorem lensQuotientEquiv_straightDiagramEpsilon_three
       fin_cases i <;> simp
   rw [← neg_straightDiagramEpsilon _ _ _ 0 y, h, ← QuotientAddGroup.mk_neg, lensQuotientEquiv_mk,
     lensQuotientEquiv_mk]
+  simp only [Matrix.cons_val_one, Matrix.cons_val_zero, Pi.neg_apply, Int.cast_neg, Int.cast_one,
+    neg_neg]
   decide
 
 end TauCeti

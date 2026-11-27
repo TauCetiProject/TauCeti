@@ -120,8 +120,8 @@ theorem col_mem_range_mulVecLin (L : Matrix m ι R) (j : ι) :
 /-- The column range of the matrix with the two columns `u` and `v` is the span of `u` and `v`. -/
 theorem range_mulVecLin_transpose_of_cons_cons (u v : m → R) :
     LinearMap.range (of ![u, v])ᵀ.mulVecLin = Submodule.span R {u, v} := by
-  rw [range_mulVecLin, col_transpose, ← range_cons_cons_empty u v ![]]
-  rfl
+  rw [range_mulVecLin, col_transpose, row_def, ← range_cons_cons_empty u v ![]]
+  exact congrArg (fun f ↦ Submodule.span R (Set.range f)) (funext₂ (of_apply ![u, v]))
 
 /-- If every column of `L'` lies in the range of `L`, then `L' = L * G` for some `G`.
 The index type of the columns of `L'` need not be finite. -/
