@@ -19,7 +19,7 @@ law, is inverted by reversing time, and preserves the standard symplectic form. 
 is `(p, -q)`, the Hamiltonian vector field of the oscillator energy. As a family of linear maps
 it is `R(t) = cos t · 1 + sin t · A` (`TauCeti.oscillatorEvolution_eq_cos_smul_add_sin_smul`)
 and solves the variational equation `R' = A R` for its generator `A = [[0, 1], [-1, 0]]`
-(`TauCeti.hasDerivAt_oscillatorEvolution_eq_comp`).
+(`TauCeti.hasDerivAt_oscillatorEvolution_comp`).
 
 More generally, `TauCeti.oscillatorHamiltonian m ν` is the energy `p² / (2m) + m ν² q² / 2` of a
 harmonic oscillator of mass `m` and angular frequency `ν`, and
@@ -90,13 +90,15 @@ theorem oscillatorEvolution_eq_cos_smul_add_sin_smul (t : ℝ) :
     oscillatorEvolution t = Real.cos t • ContinuousLinearMap.id ℝ (ℝ × ℝ) +
       Real.sin t • (snd ℝ ℝ ℝ).prod (-fst ℝ ℝ ℝ) := by
   refine ContinuousLinearMap.ext fun x ↦ Prod.ext ?_ ?_
-  · simp [oscillatorEvolution_apply]
-  · simp [oscillatorEvolution_apply]
+  · simp only [oscillatorEvolution_apply, add_apply, smul_apply, id_apply,
+      ContinuousLinearMap.prod_apply, coe_snd', Prod.fst_add, Prod.smul_fst, smul_eq_mul]
+  · simp only [oscillatorEvolution_apply, add_apply, smul_apply, id_apply,
+      ContinuousLinearMap.prod_apply, coe_fst', neg_apply, Prod.snd_add, Prod.smul_snd, smul_eq_mul]
     ring
 
 /-- **The variational equation of the oscillator.** As a family of linear maps, the evolution
 `R(t)` solves `R' = A R` for its generator `A = [[0, 1], [-1, 0]]`. -/
-theorem hasDerivAt_oscillatorEvolution_eq_comp (t : ℝ) :
+theorem hasDerivAt_oscillatorEvolution_comp (t : ℝ) :
     HasDerivAt oscillatorEvolution (((snd ℝ ℝ ℝ).prod (-fst ℝ ℝ ℝ)).comp (oscillatorEvolution t))
       t := by
   have h := ((Real.hasDerivAt_cos t).smul_const (ContinuousLinearMap.id ℝ (ℝ × ℝ))).add
