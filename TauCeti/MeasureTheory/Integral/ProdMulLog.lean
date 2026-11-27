@@ -22,6 +22,14 @@ open MeasureTheory Set
 
 namespace MeasureTheory.Measure
 
+private theorem mul_normalized_mul_log (c a : ℝ) (hc : c ≠ 0) :
+    c * ((c⁻¹ * a) * Real.log (c⁻¹ * a)) =
+      a * Real.log a - a * Real.log c := by
+  have h := congrArg (fun t : ℝ ↦ c * t) (Real.mul_log_mul c⁻¹ a)
+  simp only [Real.log_inv] at h
+  field_simp [hc] at h ⊢
+  linarith
+
 /-- For an a.e. nonnegative function, integrability of `g` and `g log g` passes to the marginal
 and its `x log x` transform when both measures are finite. -/
 private theorem integrable_marginal_mul_log_left_of_nonneg
@@ -39,8 +47,7 @@ private theorem integrable_marginal_mul_log_left_of_nonneg
   have hc : 0 < c := measureReal_univ_pos
   have hmeas : AEStronglyMeasurable (fun x ↦ (∫ y, g (x, y) ∂ν) *
       Real.log (∫ y, g (x, y) ∂ν)) μ :=
-    (Real.continuous_mul_log.measurable.comp_aemeasurable
-      hg.integral_prod_left.aestronglyMeasurable.aemeasurable).aestronglyMeasurable
+    Real.continuous_mul_log.comp_aestronglyMeasurable hg.integral_prod_left.aestronglyMeasurable
   apply ((hlog.integral_prod_left.norm.add (integrable_const 1)).add
     (hg.integral_prod_left.norm.mul_const |Real.log c|)).mono' hmeas
   filter_upwards [ae_ae_of_ae_prod hnonneg, hg.prod_right_ae, hlog.prod_right_ae]
@@ -51,25 +58,22 @@ private theorem integrable_marginal_mul_log_left_of_nonneg
     Real.continuous_mul_log.continuousOn isClosed_Ici hx hxi hli
   have hc_eq : ν.real univ = c := rfl
   simp only [average_eq, smul_eq_mul, hc_eq] at hupper
-  have hlog_eq :
-      c * ((c⁻¹ * ∫ y, g (x, y) ∂ν) * Real.log (c⁻¹ * ∫ y, g (x, y) ∂ν)) =
-        (∫ y, g (x, y) ∂ν) * Real.log (∫ y, g (x, y) ∂ν) -
-          (∫ y, g (x, y) ∂ν) * Real.log c := by
-    have h := congrArg (fun t : ℝ ↦ c * t)
-      (Real.mul_log_mul c⁻¹ (∫ y, g (x, y) ∂ν))
-    simp only [Real.log_inv] at h
-    field_simp at h ⊢
-    linarith
   have hupper' := mul_le_mul_of_nonneg_left hupper hc.le
-  rw [hlog_eq, mul_inv_cancel_left₀ hc.ne'] at hupper'
+  rw [mul_normalized_mul_log c _ hc.ne', mul_inv_cancel_left₀ hc.ne'] at hupper'
+  -- The upper bound follows from Jensen; the lower bound follows from `self_sub_one_le_mul_log`.
+  have hbound :
+      |(∫ y, g (x, y) ∂ν) * Real.log (∫ y, g (x, y) ∂ν)| ≤
+        |∫ y, g (x, y) * Real.log (g (x, y)) ∂ν| + 1 +
+          (∫ y, g (x, y) ∂ν) * |Real.log c| := by
+    apply abs_le.mpr
+    constructor
+    · linarith [abs_nonneg (∫ y, g (x, y) * Real.log (g (x, y)) ∂ν),
+        mul_nonneg ha (abs_nonneg (Real.log c))]
+    · nlinarith [le_abs_self (∫ y, g (x, y) * Real.log (g (x, y)) ∂ν),
+        le_abs_self (Real.log c)]
   simp only [Pi.add_apply, Real.norm_eq_abs]
   rw [abs_of_nonneg ha]
-  apply abs_le.mpr
-  constructor
-  · linarith [abs_nonneg (∫ y, g (x, y) * Real.log (g (x, y)) ∂ν),
-      mul_nonneg ha (abs_nonneg (Real.log c))]
-  · nlinarith [le_abs_self (∫ y, g (x, y) * Real.log (g (x, y)) ∂ν),
-      le_abs_self (Real.log c)]
+  exact hbound
 
 /-- Integrability of a function and its `x log x` transform passes to the marginal's `x log x`
 transform for finite measures, including signed functions. -/
@@ -88,8 +92,7 @@ theorem integrable_marginal_mul_log_left {α β : Type*} [MeasurableSpace α] [M
     simpa [gabs, Real.norm_eq_abs] using hg.norm.aestronglyMeasurable
   have hlogabs_meas : AEStronglyMeasurable
       (fun p ↦ gabs p * Real.log (gabs p)) (μ.prod ν) :=
-    (Real.continuous_mul_log.measurable.comp_aemeasurable
-      hgabs_meas.aemeasurable).aestronglyMeasurable
+    Real.continuous_mul_log.comp_aestronglyMeasurable hgabs_meas
   have hlogabs : Integrable (fun p ↦ gabs p * Real.log (gabs p)) (μ.prod ν) := by
     refine hlog.norm.mono' hlogabs_meas ?_
     filter_upwards with p
@@ -101,8 +104,7 @@ theorem integrable_marginal_mul_log_left {α β : Type*} [MeasurableSpace α] [M
     integrable_marginal_mul_log_left_of_nonneg μ ν hnonneg hgabs hlogabs
   have hm : Integrable m μ := hg.integral_prod_left
   have hmeas : AEStronglyMeasurable (fun x ↦ m x * Real.log (m x)) μ :=
-    (Real.continuous_mul_log.measurable.comp_aemeasurable
-      hm.aestronglyMeasurable.aemeasurable).aestronglyMeasurable
+    Real.continuous_mul_log.comp_aestronglyMeasurable hm.aestronglyMeasurable
   have hbound : ∀ᵐ x ∂μ,
       ‖m x * Real.log (m x)‖ ≤ ‖M x * Real.log (M x)‖ + 1 := by
     filter_upwards with x
