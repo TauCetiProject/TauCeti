@@ -95,7 +95,7 @@ private theorem subsingleton_completedTensor :
 /-- The generic fibre `(ℤ_[p], ℤ_[p]) → (ℚ_[p], ℤ_[p])`. -/
 noncomputable def generic : Pair.Hom (Pair.powerBounded ℤ_[p]) (Pair.powerBounded ℚ_[p]) where
   toRingHom := algebraMap ℤ_[p] ℚ_[p]
-  continuous_toRingHom := continuous_subtypeVal
+  continuous_toRingHom := Padic.continuous_algebraMap
   map_mem_plus a _ := by
     rw [Pair.powerBounded_plus]
     exact mem_powerBoundedSubring.mpr (IsPowerBounded.of_norm_le_one a.property)
