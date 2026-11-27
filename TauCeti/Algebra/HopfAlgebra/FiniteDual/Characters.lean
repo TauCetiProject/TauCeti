@@ -184,7 +184,7 @@ correspond to all coefficient-valued characters of the finite convolution dual. 
 noncomputable def groupLikeEquivAlgHomOfIsIntegrallyClosedIn :
     GroupLike R A ≃ (ConvolutionDual R A →ₐ[R] S) :=
   (groupLikeEquivAlgHom R A).trans
-    (algHomEquivOfIsIntegrallyClosedIn R (ConvolutionDual R A) S)
+    (algHomEquivAlgHomOfIsIntegrallyClosedIn R (ConvolutionDual R A) S)
 
 /-- The rational character correspondence composes evaluation at a group-like element with
 the algebra map into the coefficient ring. -/
@@ -193,7 +193,7 @@ theorem groupLikeEquivAlgHomOfIsIntegrallyClosedIn_apply (u : GroupLike R A)
     (φ : ConvolutionDual R A) :
     groupLikeEquivAlgHomOfIsIntegrallyClosedIn R A S u φ = algebraMap R S (φ.ofConv u.val) := by
   simp only [groupLikeEquivAlgHomOfIsIntegrallyClosedIn, Equiv.trans_apply,
-    algHomEquivOfIsIntegrallyClosedIn_apply, groupLikeEquivAlgHom_apply]
+    algHomEquivAlgHomOfIsIntegrallyClosedIn_apply, groupLikeEquivAlgHom_apply]
 
 /-- Evaluation at the inverse rational character correspondence recovers the character. -/
 @[simp, grind =]
@@ -211,9 +211,8 @@ theorem existsUnique_groupLike_algHom (f : ConvolutionDual R A →ₐ[R] S) :
     ∃! u : GroupLike R A, ∀ φ : ConvolutionDual R A, f φ = algebraMap R S (φ.ofConv u.val) := by
   let e := groupLikeEquivAlgHomOfIsIntegrallyClosedIn R A S
   refine ⟨e.symm f, ?_, ?_⟩
-  · intro φ
-    simpa only [e, groupLikeEquivAlgHomOfIsIntegrallyClosedIn_apply] using
-      (DFunLike.congr_fun (e.apply_symm_apply f) φ).symm
+  · exact fun φ ↦ (algebraMap_groupLikeEquivAlgHomOfIsIntegrallyClosedIn_symm_apply_apply
+      R A S f φ).symm
   · intro u hu
     apply e.injective
     rw [e.apply_symm_apply]
