@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Set.Card
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
-public import Mathlib.RingTheory.AlgebraicIndependent.Transcendental
+public import Mathlib.RingTheory.AlgebraicIndependent.TranscendenceBasis
 public import Mathlib.SetTheory.Cardinal.ENat
 public import Mathlib.Topology.Algebra.Algebra.Equiv
+public import TauCeti.FieldTheory.IntermediateField.Adjoin.AlgebraicIndependent
+import Mathlib.FieldTheory.AlgebraicClosure
+import Mathlib.RingTheory.AlgebraicIndependent.AlgebraicClosure
 
 /-!
-# Topological transcendence degree
+# Topological transcendence degree and topological algebraic independence
 
 For a field extension `L / K` where `L` carries a topology, the *topological transcendence
 degree* `TauCeti.topologicalTrdeg K L : ℕ∞` is the smallest transcendence degree over `K` of an
@@ -24,6 +28,15 @@ Scholze, *Étale cohomology of diamonds*, Definition 21.2, used there to bound t
 cohomological dimension of points of diamonds. Unlike `Algebra.trdeg K L`, it sees the
 topology: the algebraic closure of `ℚ_p` is dense in `ℂ_p`, so the topological transcendence
 degree of `ℂ_p` over `ℚ_p` is zero, although `ℂ_p` has infinite transcendence degree over `ℚ_p`.
+
+Temkin's dual notion measures independence instead of generation. A set `s ⊆ L` is
+*topologically algebraically independent* over `K` (`TauCeti.IsTopAlgIndependent`) if no
+`x ∈ s` lies in the closure of the elements of `L` algebraic over `K(s \ {x})`, and the
+*topological independence degree* `TauCeti.topologicalIndependenceDegree K L : ℕ∞` is the
+supremum of the sizes of finite such sets. For extensions of complete algebraically closed
+nonarchimedean fields of finite topological transcendence degree, Temkin shows that the two
+degrees agree; for an arbitrary topology both vanish under the same condition, density of the
+algebraic elements.
 
 ## Main declarations
 
@@ -43,10 +56,23 @@ degree of `ℂ_p` over `ℚ_p` is zero, although `ℂ_p` has infinite transcende
   transcendence degree.
 * `TauCeti.topologicalTrdeg_eq_zero_iff_surjective`: over an algebraically closed field whose
   image is closed, the invariant vanishes exactly for the trivial extension.
+* `TauCeti.IsTopAlgIndependent`: topological algebraic independence, with
+  `TauCeti.IsTopAlgIndependent.mono` and `TauCeti.IsTopAlgIndependent.algebraicIndependent`; it is
+  algebraic independence for the discrete topology
+  (`TauCeti.isTopAlgIndependent_iff_algebraicIndependent`).
+* `TauCeti.topologicalIndependenceDegree K L`: the topological independence degree, with the
+  bounds `TauCeti.topologicalIndependenceDegree_le_iff` and
+  `TauCeti.natCast_le_topologicalIndependenceDegree_iff`.
+* `TauCeti.topologicalIndependenceDegree_eq_zero_iff`: the degree vanishes if and only if the
+  elements algebraic over `K` are dense, that is, if and only if the topological transcendence
+  degree vanishes (`TauCeti.topologicalIndependenceDegree_eq_zero_iff_topologicalTrdeg_eq_zero`).
+* `TauCeti.topologicalIndependenceDegree_of_discreteTopology`: for the discrete topology the
+  degree is the transcendence degree.
 
 ## References
 
 * P. Scholze, *Étale cohomology of diamonds*, Definition 21.2.
+* M. Temkin, *Topological transcendence degree*, J. Algebra 568 (2021), §2.1.
 -/
 
 public section
@@ -213,5 +239,170 @@ theorem topologicalTrdeg_eq_zero_iff_surjective [IsAlgClosed K]
     (h : IsClosed (Set.range (algebraMap K L))) :
     topologicalTrdeg K L = 0 ↔ Function.Surjective (algebraMap K L) := by
   rw [topologicalTrdeg_eq_zero_iff_denseRange, DenseRange, h.dense_iff, Set.range_eq_univ]
+
+section Independence
+
+variable (K) in
+/-- A set `s ⊆ L` is *topologically algebraically independent* over `K` if no `x ∈ s` lies in the
+closure in `L` of the set of elements algebraic over the field `K(s \ {x})` generated over `K` by
+the other elements of `s`. This is Temkin's *topgebraic independence*. Such a set is
+algebraically independent over `K` (`TauCeti.IsTopAlgIndependent.algebraicIndependent`), and for
+the discrete topology the two notions agree
+(`TauCeti.isTopAlgIndependent_iff_algebraicIndependent`). -/
+def IsTopAlgIndependent (s : Set L) : Prop :=
+  ∀ x ∈ s, x ∉ closure {y : L | IsAlgebraic (IntermediateField.adjoin K (s \ {x})) y}
+
+variable {s t : Set L}
+
+/-- Unfolding lemma for `TauCeti.IsTopAlgIndependent`. -/
+theorem isTopAlgIndependent_iff :
+    IsTopAlgIndependent K s ↔
+      ∀ x ∈ s, x ∉ closure {y : L | IsAlgebraic (IntermediateField.adjoin K (s \ {x})) y} :=
+  Iff.rfl
+
+/-- The empty set is topologically algebraically independent. -/
+@[simp]
+theorem isTopAlgIndependent_empty : IsTopAlgIndependent K (∅ : Set L) := by
+  simp [isTopAlgIndependent_iff]
+
+/-- A subset of a topologically algebraically independent set is topologically algebraically
+independent. -/
+theorem IsTopAlgIndependent.mono (ht : IsTopAlgIndependent K t) (hst : s ⊆ t) :
+    IsTopAlgIndependent K s := fun x hx hcl ↦
+  ht x (hst hx) <| closure_mono (fun _ hy ↦ IsAlgebraic.tower_top_of_subalgebra_le
+    (IntermediateField.toSubalgebra_le_toSubalgebra.mpr <|
+      IntermediateField.adjoin.mono K _ _ (Set.sdiff_subset_sdiff_left hst)) hy) hcl
+
+/-- A singleton `{x}` is topologically algebraically independent over `K` if and only if `x` is not
+in the closure of the elements of `L` algebraic over `K`. -/
+@[simp]
+theorem isTopAlgIndependent_singleton_iff {x : L} :
+    IsTopAlgIndependent K {x} ↔ x ∉ closure {y : L | IsAlgebraic K y} := by
+  have : {y : L | IsAlgebraic (⊥ : IntermediateField K L) y} = {y : L | IsAlgebraic K y} :=
+    Set.ext fun y ↦ ⟨fun h ↦ h.restrictScalars K, fun h ↦ h.tower_top _⟩
+  simp only [isTopAlgIndependent_iff, Set.mem_singleton_iff, forall_eq]
+  rw [Set.sdiff_self, IntermediateField.adjoin_empty, this]
+
+/-- An element of a topologically algebraically independent set is not in the closure of the
+elements of `L` algebraic over `K`. -/
+theorem IsTopAlgIndependent.notMem_closure_isAlgebraic (hs : IsTopAlgIndependent K s) {x : L}
+    (hx : x ∈ s) : x ∉ closure {y : L | IsAlgebraic K y} :=
+  isTopAlgIndependent_singleton_iff.mp (hs.mono (Set.singleton_subset_iff.mpr hx))
+
+/-- A topologically algebraically independent set is algebraically independent. For the discrete
+topology the converse holds, see `isTopAlgIndependent_iff_algebraicIndependent`. -/
+theorem IsTopAlgIndependent.algebraicIndependent (hs : IsTopAlgIndependent K s) :
+    AlgebraicIndependent K ((↑) : s → L) :=
+  algebraicIndependent_iff_forall_transcendental_adjoin.mpr fun x hx halg ↦
+    hs x hx (subset_closure halg)
+
+/-- For the discrete topology, topological algebraic independence is algebraic independence. -/
+theorem isTopAlgIndependent_iff_algebraicIndependent [DiscreteTopology L] :
+    IsTopAlgIndependent K s ↔ AlgebraicIndependent K ((↑) : s → L) := by
+  simp [isTopAlgIndependent_iff, algebraicIndependent_iff_forall_transcendental_adjoin,
+    Transcendental]
+
+variable (K L) in
+/-- Temkin's topological independence degree of `L` over `K`: the supremum in `ℕ∞` of the
+cardinalities of finite topologically algebraically independent subsets of `L`.
+
+For complete algebraically closed nonarchimedean fields with finite topological transcendence
+degree, it is Temkin's `top.tr.deg`, which is compared there with `TauCeti.topologicalTrdeg`. -/
+noncomputable def topologicalIndependenceDegree : ℕ∞ :=
+  ⨆ (s : Finset L) (_ : IsTopAlgIndependent K (s : Set L)), (s.card : ℕ∞)
+
+/-- Every topologically algebraically independent set, finite or not, has cardinality at most the
+topological independence degree. -/
+theorem IsTopAlgIndependent.encard_le_topologicalIndependenceDegree
+    (hs : IsTopAlgIndependent K s) : s.encard ≤ topologicalIndependenceDegree K L := by
+  refine ENat.forall_natCast_le_iff_le.mp fun n hn ↦ ?_
+  obtain ⟨t, hts, htn⟩ := Set.exists_subset_encard_eq hn
+  lift t to Finset L using Set.finite_of_encard_eq_coe htn
+  rw [← htn, Set.encard_coe_eq_coe_finsetCard]
+  exact le_iSup₂_of_le (f := fun (s : Finset L) (_ : IsTopAlgIndependent K (s : Set L)) ↦
+    (s.card : ℕ∞)) t (hs.mono hts) le_rfl
+
+/-- The topological independence degree is at most `m` if and only if every topologically
+algebraically independent set has cardinality at most `m`. -/
+theorem topologicalIndependenceDegree_le_iff {m : ℕ∞} :
+    topologicalIndependenceDegree K L ≤ m ↔
+      ∀ s : Set L, IsTopAlgIndependent K s → s.encard ≤ m :=
+  ⟨fun h _ hs ↦ hs.encard_le_topologicalIndependenceDegree.trans h,
+    fun h ↦ iSup₂_le fun s hs ↦ by simpa using h s hs⟩
+
+/-- For a natural number `n`, the topological independence degree is at most `n` if and only if
+every finite topologically algebraically independent set has at most `n` elements. -/
+theorem topologicalIndependenceDegree_le_natCast_iff {n : ℕ} :
+    topologicalIndependenceDegree K L ≤ n ↔
+      ∀ s : Finset L, IsTopAlgIndependent K (s : Set L) → s.card ≤ n := by
+  simp [topologicalIndependenceDegree]
+
+/-- For a natural number `n`, the topological independence degree is at least `n` if and only if
+some topologically algebraically independent set has exactly `n` elements. -/
+theorem natCast_le_topologicalIndependenceDegree_iff {n : ℕ} :
+    (n : ℕ∞) ≤ topologicalIndependenceDegree K L ↔
+      ∃ s : Finset L, IsTopAlgIndependent K (s : Set L) ∧ s.card = n := by
+  refine ⟨fun h ↦ ?_, fun ⟨s, hs, hn⟩ ↦ by
+    simpa [hn] using hs.encard_le_topologicalIndependenceDegree⟩
+  obtain ⟨s, hs, hns⟩ : ∃ s : Finset L, IsTopAlgIndependent K (s : Set L) ∧ n ≤ s.card := by
+    by_contra! hlt
+    cases n with
+    | zero => simpa using hlt ∅
+    | succ m =>
+      have : topologicalIndependenceDegree K L ≤ m :=
+        topologicalIndependenceDegree_le_natCast_iff.mpr fun s hs ↦ Nat.lt_succ_iff.mp (hlt s hs)
+      exact absurd (h.trans this) (by norm_cast; omega)
+  obtain ⟨t, hts, rfl⟩ := Finset.exists_subset_card_eq hns
+  exact ⟨t, hs.mono (by exact_mod_cast hts), rfl⟩
+
+/-- The topological independence degree is at most the transcendence degree. -/
+theorem topologicalIndependenceDegree_le_toENat_trdeg :
+    topologicalIndependenceDegree K L ≤ toENat (Algebra.trdeg K L) :=
+  topologicalIndependenceDegree_le_iff.mpr fun s hs ↦ by
+    rw [← Set.toENat_cardinalMk]
+    exact toENat.monotone' hs.algebraicIndependent.cardinalMk_le_trdeg
+
+/-- The topological independence degree vanishes if and only if the elements of `L` algebraic over
+`K` are dense in `L`. -/
+theorem topologicalIndependenceDegree_eq_zero_iff :
+    topologicalIndependenceDegree K L = 0 ↔ Dense {y : L | IsAlgebraic K y} := by
+  rw [← Order.lt_one_iff, ← not_le, ← Nat.cast_one,
+    natCast_le_topologicalIndependenceDegree_iff, Dense]
+  simp [Finset.card_eq_one, isTopAlgIndependent_singleton_iff]
+
+/-- The topological independence degree vanishes exactly when the topological transcendence degree
+does: both say that the elements algebraic over `K` are dense. -/
+theorem topologicalIndependenceDegree_eq_zero_iff_topologicalTrdeg_eq_zero :
+    topologicalIndependenceDegree K L = 0 ↔ topologicalTrdeg K L = 0 := by
+  have hcl : ((algebraicClosure K L : IntermediateField K L) : Set L) =
+      {y : L | IsAlgebraic K y} := Set.ext fun _ ↦ mem_algebraicClosure_iff
+  rw [topologicalIndependenceDegree_eq_zero_iff, topologicalTrdeg_eq_zero_iff]
+  refine ⟨fun h ↦ ⟨algebraicClosure K L, hcl ▸ h, inferInstance⟩, fun ⟨A, hA, _⟩ ↦
+    hA.mono fun y hy ↦ ?_⟩
+  exact (IntermediateField.isAlgebraic_iff (x := ⟨y, hy⟩)).mp (Algebra.IsAlgebraic.isAlgebraic _)
+
+/-- An algebraic extension has topological independence degree zero, for every topology. -/
+theorem topologicalIndependenceDegree_eq_zero_of_isAlgebraic [Algebra.IsAlgebraic K L] :
+    topologicalIndependenceDegree K L = 0 :=
+  topologicalIndependenceDegree_eq_zero_iff_topologicalTrdeg_eq_zero.mpr
+    topologicalTrdeg_eq_zero_of_isAlgebraic
+
+/-- A field has topological independence degree zero over itself, for every topology. -/
+@[simp]
+theorem topologicalIndependenceDegree_self (K : Type u) [Field K] [TopologicalSpace K] :
+    topologicalIndependenceDegree K K = 0 :=
+  topologicalIndependenceDegree_eq_zero_of_isAlgebraic
+
+/-- For the discrete topology the topological independence degree is the transcendence degree. -/
+@[simp]
+theorem topologicalIndependenceDegree_of_discreteTopology [DiscreteTopology L] :
+    topologicalIndependenceDegree K L = toENat (Algebra.trdeg K L) := by
+  refine le_antisymm topologicalIndependenceDegree_le_toENat_trdeg ?_
+  obtain ⟨b, hb⟩ := exists_isTranscendenceBasis K L
+  rw [← hb.cardinalMk_eq_trdeg, Set.toENat_cardinalMk]
+  exact (isTopAlgIndependent_iff_algebraicIndependent.mpr hb.1)
+    |>.encard_le_topologicalIndependenceDegree
+
+end Independence
 
 end TauCeti
