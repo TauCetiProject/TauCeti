@@ -183,7 +183,7 @@ theorem submatrix_bettiPoincarePowerSeriesMatrix_eq_gradedBettiMatrixA2 :
   rw [Matrix.submatrix_apply,
     PathAlgebra.bettiPoincarePowerSeriesMatrix_gradedVertexSimple_apply k (Kronecker A) _
       (fun l => PathAlgebra.isMinimal_gradedVertexSimpleProjectiveResolution k (Kronecker A) l)]
-  fin_cases i <;> fin_cases j <;> simp [gradedBettiMatrixA2, Nat.card_eq_fintype_card]
+  fin_cases i <;> fin_cases j <;> simp [Nat.card_eq_fintype_card]
 
 end Categorical
 
