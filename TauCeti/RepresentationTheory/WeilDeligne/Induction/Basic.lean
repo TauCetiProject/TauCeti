@@ -22,7 +22,8 @@ Its monodromy is `(N F)(w) = q ^ deg w • N' (F w)`, which is again `W'`-equiva
 nilpotent, and satisfies the conjugation relation for `q`. When `ι` is an open map whose image has
 finite index, the kernel of the action is open (`Representation.isOpen_ker_coind`). For an image of
 finite index the coinduced representation is the induced one; this file works with the function
-model and does not compare it with the tensor-product model `W ⊗_{W'} V'` in left-coset notation.
+model, and `TauCeti.RepresentationTheory.WeilDeligne.Induction.Tensor` compares it with the
+tensor-product model `W ⊗_{W'} V'` in left-coset notation.
 
 Induction is right adjoint to restriction: morphisms from the restriction of a parameter `D` for
 `W` to `D'` correspond to morphisms from `D` to the induced parameter
