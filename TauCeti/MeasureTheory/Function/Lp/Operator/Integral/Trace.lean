@@ -109,7 +109,7 @@ theorem trace_integralOperatorL2_comp_eq_integral_integral (K₁ : Lp 𝕜 2 (μ
     (integralOperatorL2 μ ν K₁ ∘L integralOperatorL2 ν μ K₂).trace =
       ∫ x, ∫ y, K₁ (x, y) * K₂ (y, x) ∂ν ∂μ := by
   rw [trace_integralOperatorL2_comp, integral_prod _ (integrable_mul_comp_swap K₁ K₂)]
-  rfl
+  simp only [Prod.swap_prod_mk]
 
 /-- **The diagonal trace formula.** Let `K₁, K₂ ∈ L²(μ ⊗ μ)`. If a function `K` on `α × α` has
 diagonal values `K (x, x) = ∫ K₁ (x, y) K₂ (y, x) dμ(y)` for almost every `x`, then
