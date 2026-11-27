@@ -56,6 +56,8 @@ logarithmic derivative `q'(t) / q(t) = ∑ⱼ 1 / (t - rⱼ)` is positive.
 
 * `MvPolynomial.isOpen_gardingCone`, `MvPolynomial.starConvex_gardingCone`,
   `MvPolynomial.smul_mem_gardingCone`: `Γ(p, a)` is an open cone, star-convex with respect to `a`.
+* `MvPolynomial.smul_notMem_gardingCone`: for `p` of positive degree, `Γ(p, a)` contains no
+  nonpositive multiple of `a`.
 * `MvPolynomial.comp_mem_gardingCone`: `Γ(p, a)` is invariant under the permutations of the
   variables that fix both `p` and `a`.
 * `MvPolynomial.eval_pos_of_mem_gardingCone`: `p > 0` on `Γ(p, a)`.
@@ -125,6 +127,12 @@ theorem add_smul_mem_gardingCone (hx : x ∈ gardingCone p a) {s : ℝ} (hs : 0 
 theorem smul_mem_gardingCone (hp : p.IsHomogeneous m) (hx : x ∈ gardingCone p a) {s : ℝ}
     (hs : 0 < s) : s • x ∈ gardingCone p a := fun t ht ↦
   (eval_smul_add_smul_ne_zero_iff hp hs.ne' t).2 (hx _ (div_nonneg ht hs.le))
+
+/-- The Gårding cone of a homogeneous polynomial of positive degree contains no nonpositive
+multiple `s • a` of the direction, since `p(s • a + (-s) • a) = p(0) = 0`. -/
+theorem smul_notMem_gardingCone (hp : p.IsHomogeneous m) (hm : m ≠ 0) {s : ℝ} (hs : s ≤ 0) :
+    s • a ∉ gardingCone p a := fun h ↦
+  h (-s) (neg_nonneg.2 hs) (by simpa [zero_pow hm] using hp.eval_smul (0 : ℝ) a)
 
 /-- The Gårding cone of a polynomial invariant under a permutation `e` of the variables, in a
 direction fixed by `e`, is invariant under `e`. -/
@@ -232,11 +240,9 @@ cone `Γ(p, a)` if and only if every real root of `t ↦ p(x + t • a)` is nega
 theorem mem_gardingCone_iff_forall_mem_roots (hp : p.IsHomogeneous m) (ha : eval a p ≠ 0) :
     x ∈ gardingCone p a ↔ ∀ t ∈
       (aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p).roots, t < 0 := by
-  have hne : aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C (a i) * Polynomial.X) p ≠ 0 :=
-    fun h ↦ ha <| by
-      rw [← coeff_aeval_C_add_C_mul_X_of_isHomogeneous hp x a, h, Polynomial.coeff_zero]
-  simp only [mem_gardingCone, Polynomial.mem_roots hne, Polynomial.IsRoot.def,
-    eval_aeval_C_add_C_mul_X]
+  simp only [mem_gardingCone,
+    Polynomial.mem_roots (aeval_C_add_C_mul_X_ne_zero_of_isHomogeneous hp x ha),
+    Polynomial.IsRoot.def, eval_aeval_C_add_C_mul_X]
   exact ⟨fun h t ht ↦ not_le.1 fun ht' ↦ h t ht' ht, fun h t ht h0 ↦ (h t h0).not_ge ht⟩
 
 /-- A positive constant is hyperbolic of degree `0` in every direction. -/

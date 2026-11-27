@@ -10,9 +10,11 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.LinearAlgebra.Span.Defs
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
+import TauCeti.Analysis.Normed.Operator.Banach
 import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Smul
 
@@ -72,7 +74,12 @@ coordinate change from the first, is the fibrewise inverse of the first
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
 point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`). Over the base set, pulling continuous
 linear maps on the model fibre back to a fibre through a linear trivialization is injective
-(`Bundle.Trivialization.injective_comp_continuousLinearMapAt`).
+(`Bundle.Trivialization.injective_comp_continuousLinearMapAt`), and a linear map between the
+fibres of two vector bundles is determined by its readings in linear trivializations of both
+(`Bundle.Trivialization.linearMap_ext`). Between Banach model fibres, a continuous linear map
+reading a bijective linear map of fibres in such frames is invertible, and its inverse reads the
+inverse of the fibre map (`Bundle.Trivialization.isInvertible_of_bijective_conj`,
+`Bundle.Trivialization.inverse_apply_of_bijective_conj`).
 
 Transport through a preferred fibre equivalence also shows that a family spanning a fibre with
 nontrivial model has a nonzero member (`VectorBundle.exists_ne_zero_of_span_range_eq_top`).
@@ -97,7 +104,11 @@ including its zero extension off the base set
 vector bundle with finite-dimensional model fibre are closed (`VectorBundle.isClosed_submodule`).
 
 Reconstruction at equal base points agrees with the equality cast between fibres
-(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`).
+(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`), and over the base set a fibre
+vector is the combination of the frame vectors `e⁻¹ bⱼ` with the coordinates of its reading in a
+basis `(bⱼ)` of the model fibre (`Bundle.Trivialization.sum_repr_smul_symmL`). Likewise a linear
+map between the fibres of two vector bundles is reassembled from its matrix entries in two
+trivializations (`Bundle.Trivialization.sum_sum_coord_smul_symm`).
 
 A vector bundle with model fibre `𝕜` is a line bundle. In a fibre `E b` a nonzero vector `v` is a
 basis, and `TauCeti.VectorBundle.lineCoord 𝕜 hv : E b ≃L[𝕜] 𝕜` is the coordinate along it, so that
@@ -290,6 +301,17 @@ theorem symmL_continuousLinearMapAt_eq_cast {x₀ x₁ : B} (h : x₀ = x₁)
   subst x₁
   exact e.symmL_continuousLinearMapAt he v
 
+variable {𝕜} in
+/-- **A vector in a frame.** Over the base set of a linear trivialization `e`, a vector `v` of the
+fibre is the combination of the frame vectors `e⁻¹ bⱼ`, for a basis `(bⱼ)` of the model fibre, with
+the coordinates of `e v` in that basis. -/
+theorem sum_repr_smul_symmL {ι : Type*} [Fintype ι] (b : Module.Basis ι 𝕜 F) {x : B}
+    (hx : x ∈ e.baseSet) (v : E x) :
+    ∑ j, b.repr (e.continuousLinearMapAt 𝕜 x v) j • e.symmL 𝕜 x (b j) = v := by
+  calc _ = e.symmL 𝕜 x (∑ j, b.repr (e.continuousLinearMapAt 𝕜 x v) j • b j) := by
+        simp only [map_sum, map_smul]
+    _ = v := by rw [b.sum_repr, e.symmL_continuousLinearMapAt hx]
+
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :
     e.homeomorphTrivial he v = TotalSpace.mk' F v.proj (e.continuousLinearEquivAt 𝕜 v.proj
@@ -328,6 +350,84 @@ theorem injective_comp_continuousLinearMapAt {G : Type*} [NormedAddCommGroup G] 
   intro c c' h
   ext v
   simpa [e.continuousLinearMapAt_symmL hb] using DFunLike.congr_fun h (e.symmL 𝕜 b v)
+
+/-- **Linear maps between fibres are determined in frames.** For linear trivializations `e` of `E`
+and `e'` of `E'` whose base sets contain `b`, two linear maps `E_b → E'_b` are equal when they
+agree on every vector `e⁻¹ v` after reading in `e'`. -/
+theorem linearMap_ext {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] {E' : B → Type*}
+    [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)] [∀ b, Module 𝕜 (E' b)]
+    [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] (e' : Trivialization F' (π F' E'))
+    [e'.IsLinear 𝕜] {b : B} (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) {A A' : E b →ₗ[𝕜] E' b}
+    (h : ∀ v, e'.continuousLinearMapAt 𝕜 b (A (e.symm b v)) =
+      e'.continuousLinearMapAt 𝕜 b (A' (e.symm b v))) :
+    A = A' := by
+  ext w
+  rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hb w, e.symmL_apply hb,
+    ← e'.symmL_continuousLinearMapAt (R := 𝕜) hb' (A _),
+    ← e'.symmL_continuousLinearMapAt (R := 𝕜) hb' (A' _), h]
+
+variable {𝕜} in
+/-- **A linear map in frames.** Over the common base set of linear trivializations `e` of `E` and
+`e'` of `E'`, a linear map `L : E_x → E'_x` is reassembled from its matrix entries
+`b'ⱼ*(e'ₓ (L (e⁻¹ₓ bₖ)))` in bases `(bₖ)` of `F` and `(b'ⱼ)` of `F'`. -/
+theorem sum_sum_coord_smul_symm {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {E' : B → Type*} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)]
+    [∀ b, Module 𝕜 (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E']
+    (e' : Trivialization F' (π F' E')) [e'.IsLinear 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (b : Module.Basis ι 𝕜 F) (b' : Module.Basis κ 𝕜 F') {x : B} (hx : x ∈ e.baseSet)
+    (hx' : x ∈ e'.baseSet) (L : E x →ₗ[𝕜] E' x) (u : E x) :
+    ∑ j, ∑ k, (b'.coord j (e'.continuousLinearMapAt 𝕜 x (L (e.symm x (b k)))) *
+        b.coord k (e.continuousLinearMapAt 𝕜 x u)) • e'.symm x (b' j) = L u := by
+  conv_rhs => rw [← e.sum_repr_smul_symmL b hx u, map_sum]
+  simp only [map_smul]
+  conv_rhs => arg 2; ext k; rw [← e'.sum_repr_smul_symmL b' hx' (L (e.symmL 𝕜 x (b k))),
+    Finset.smul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [smul_smul, e.symmL_apply hx, e'.symmL_apply hx', Module.Basis.coord_apply,
+    Module.Basis.coord_apply, mul_comm]
+
+section Conj
+
+variable {𝕜} [CompleteSpace F] {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [CompleteSpace F'] {E' : B → Type*} [TopologicalSpace (TotalSpace F' E')]
+  [∀ b, AddCommMonoid (E' b)] [∀ b, Module 𝕜 (E' b)] [∀ b, TopologicalSpace (E' b)]
+  [FiberBundle F' E'] {e' : Trivialization F' (π F' E')} [e'.IsLinear 𝕜] {b : B}
+  {S : E b →ₗ[𝕜] E' b} {A : F →L[𝕜] F'}
+
+/-- **A map reading a bijection in frames is invertible.** For linear trivializations `e` of `E`
+and `e'` of `E'` whose base sets contain `b`, with Banach model fibres, a continuous linear map
+`A : F → F'` reading a bijective linear map `S : E_b → E'_b` in these frames,
+`A v = e'_b (S (e_b⁻¹ v))`, is invertible. -/
+theorem isInvertible_of_bijective_conj (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet)
+    (hS : Function.Bijective S) (hA : ∀ v, A v = e'.continuousLinearMapAt 𝕜 b (S (e.symm b v))) :
+    A.IsInvertible := by
+  -- In these frames `A` is `S` conjugated by the fibre equivalences at `b`.
+  have hAeq : ⇑A = ⇑(e'.continuousLinearEquivAt 𝕜 b hb') ∘ S ∘
+      ⇑(e.continuousLinearEquivAt 𝕜 b hb).symm := by
+    ext v
+    rw [hA, Function.comp_apply, Function.comp_apply, continuousLinearEquivAt_symm_apply,
+      e'.coe_continuousLinearEquivAt_eq (R := 𝕜) hb']
+  refine ContinuousLinearMap.isInvertible_iff_bijective.2 ?_
+  rw [hAeq]
+  exact (e'.continuousLinearEquivAt 𝕜 b hb').bijective.comp
+    (hS.comp (e.continuousLinearEquivAt 𝕜 b hb).symm.bijective)
+
+/-- **The inverse of a map reading a bijection in frames.** For linear trivializations `e` of `E`
+and `e'` of `E'` whose base sets contain `b`, with Banach model fibres, let a continuous linear map
+`A : F → F'` read a bijective linear map `S : E_b → E'_b` in these frames,
+`A v = e'_b (S (e_b⁻¹ v))`. Then the inverse of `A` reads a right inverse `S'` of `S`. -/
+theorem inverse_apply_of_bijective_conj (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet)
+    (hS : Function.Bijective S) {S' : E' b →ₗ[𝕜] E b} (hSS' : ∀ y, S (S' y) = y)
+    (hA : ∀ v, A v = e'.continuousLinearMapAt 𝕜 b (S (e.symm b v))) (w : F') :
+    A.inverse w = e.continuousLinearMapAt 𝕜 b (S' (e'.symm b w)) := by
+  have hw : A (e.continuousLinearMapAt 𝕜 b (S' (e'.symm b w))) = w := by
+    rw [hA, ← e.symmL_apply (R := 𝕜) hb, e.symmL_continuousLinearMapAt hb, hSS',
+      ← e'.symmL_apply (R := 𝕜) hb', e'.continuousLinearMapAt_symmL hb']
+  conv_lhs => rw [← hw]
+  exact (e.isInvertible_of_bijective_conj hb hb' hS hA).inverse_apply_self _
+
+end Conj
 
 variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
 

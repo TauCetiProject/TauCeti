@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors, Matteo Cipollina
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.Basic.Real.Sign
@@ -15,7 +16,10 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Measure.Lebesgue.Integral
+import TauCeti.Analysis.Contour.LogDerivFTC
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.LevelSet
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.MeasureTheory.Integral.OddSymmetric
 
@@ -60,10 +64,22 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_inv_mul_one_add_mul`:
   `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
   `C ≥ 0`.
+* `TauCeti.integral_inv_linear_mul_eq_log_sub`:
+  `∫ t in a₀..b₀, (z₀ + t * d)⁻¹ * d = log (u * (z₀ + b₀ * d)) - log (u * (z₀ + a₀ * d))`
+  when `u * (z₀ + t * d) ∈ Complex.slitPlane` on `uIcc a₀ b₀`.
 * `TauCeti.integral_log_div_self`: `∫ x in a..b, log x / x = ((log b)² - (log a)²) / 2` on an
   interval avoiding `0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
+* `TauCeti.integral_cexp_intCast_mul_mul_I_arc`: `∫_α^{2π−α} e^{imθ} dθ = −2 sin(mα) / m` for
+  `m ≠ 0`.
+* `TauCeti.inv_mul_integral_cexp_intCast_mul_mul_I_arc`,
+  `TauCeti.inv_mul_integral_cexp_zero_mul_mul_I_arc`:
+  the normalised arc integral `(2π)⁻¹ ∫_α^{2π−α} e^{imθ} dθ` is
+  `(−1)^m sin(m (π − α)) / (π m)` for `m ≠ 0` and `(π − α) / π` for `m = 0`.
+* `TauCeti.setIntegral_Ioc_eq_intervalIntegral_arc`: for `α ∈ [0, π]`, a function on
+  `(0, 2π]` equal to `g θ` where `cos θ < cos α` and to `0` where `cos θ > cos α`
+  integrates to `∫_α^{2π−α} g θ dθ`, the level set `cos θ = cos α` being null.
 * `TauCeti.setIntegral_cexp_intCast_mul_add_intCast_mul_mul_I`:
   `∫∫_{(0,2π]²} exp ((d₁ θ + d₂ φ) i)` is `4π²` for `d = 0` in `ℤ²` and `0` otherwise, the
   orthogonality of the characters of the torus.
@@ -82,6 +98,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   normalized Poisson kernel on an oriented interval, with half weight at each endpoint.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
   `b ≥ 0`.
+* `TauCeti.integral_sub_inv`: `∫ t in a..b, (t - c)⁻¹ = log |b - c| - log |a - c|` for
+  `c ∉ uIcc a b`.
 * `Complex.hasSum_integral_exp_mul_cos_mul_cexp`: `∫ θ in -π..π, e^{z cos θ} exp (n θ i)` as the
   sum of the termwise integrals of the exponential series of `e^{z cos θ}`, for complex `z`.
 * `Complex.hasSum_pow_div_factorial_integral_exp_mul_cos_mul_cexp`: for integer `n`, the same
@@ -397,6 +415,78 @@ theorem integral_cexp_intCast_mul_mul_I (k : ℤ) :
     simp_rw [mul_right_comm _ _ Complex.I]
     rw [integral_exp_mul_complex hc, ite_eq_right hk, hper, sub_self, zero_div]
 
+open Complex in
+open scoped Real in
+/-- `∫_α^{2π−α} e^{imθ} dθ = −2 sin(mα) / m` for `m ≠ 0`. -/
+theorem integral_cexp_intCast_mul_mul_I_arc (α : ℝ) {m : ℤ} (hm : m ≠ 0) :
+    ∫ θ in α..2 * π - α, exp (m * θ * I) = -2 * (Real.sin (m * α) : ℂ) / m := by
+  have hm' : (m : ℂ) ≠ 0 := Int.cast_ne_zero.2 hm
+  have hc : (m : ℂ) * I ≠ 0 := mul_ne_zero hm' I_ne_zero
+  simp_rw [mul_right_comm _ _ I]
+  rw [integral_exp_mul_complex hc]
+  have h2π : exp (m * I * ((2 * π - α : ℝ) : ℂ)) = exp (-((m * α : ℝ) : ℂ) * I) := by
+    rw [show m * I * ((2 * π - α : ℝ) : ℂ) = m * (2 * π * I) + -((m * α : ℝ) : ℂ) * I by
+      push_cast; ring, exp_add, exp_int_mul_two_pi_mul_I, one_mul]
+  have hα : exp (m * I * (α : ℂ)) = exp (((m * α : ℝ) : ℂ) * I) := by
+    congr 1; push_cast; ring
+  have h := Complex.two_sin ((m * α : ℝ) : ℂ)
+  have hAB : exp (-((m * α : ℝ) : ℂ) * I) - exp (((m * α : ℝ) : ℂ) * I) =
+      -2 * I * Complex.sin ((m * α : ℝ) : ℂ) := by
+    linear_combination I * h +
+      (exp (-((m * α : ℝ) : ℂ) * I) - exp (((m * α : ℝ) : ℂ) * I)) * I_sq
+  rw [h2π, hα, hAB, ofReal_sin]
+  field_simp
+
+open Complex in
+open scoped Real in
+/-- `(2π)⁻¹ ∫_α^{2π−α} dθ = (π − α) / π`, the `m = 0` case of
+`TauCeti.inv_mul_integral_cexp_intCast_mul_mul_I_arc`. -/
+theorem inv_mul_integral_cexp_zero_mul_mul_I_arc (α : ℝ) :
+    (2 * π : ℂ)⁻¹ * ∫ θ in α..2 * π - α, exp ((0 : ℂ) * θ * I) = ((π - α) / π : ℝ) := by
+  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
+  simp only [zero_mul, exp_zero, intervalIntegral.integral_const, real_smul, mul_one]
+  push_cast
+  field_simp
+  ring
+
+open Complex in
+open scoped Real in
+/-- `(2π)⁻¹ ∫_α^{2π−α} e^{imθ} dθ = (−1)^m sin(m (π − α)) / (π m)` for `m ≠ 0`. -/
+theorem inv_mul_integral_cexp_intCast_mul_mul_I_arc (α : ℝ) {m : ℤ} (hm : m ≠ 0) :
+    (2 * π : ℂ)⁻¹ * ∫ θ in α..2 * π - α, exp (m * θ * I) =
+      ((-1 : ℝ) ^ m * Real.sin (m * (π - α)) / (π * m) : ℝ) := by
+  have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.2 Real.pi_ne_zero
+  have hm' : (m : ℂ) ≠ 0 := Int.cast_ne_zero.2 hm
+  have hs : Real.sin (m * α) = -((-1) ^ m * Real.sin (m * (π - α))) := by
+    rw [← Real.sin_int_mul_pi_sub]
+    ring_nf
+  rw [integral_cexp_intCast_mul_mul_I_arc α hm, hs]
+  push_cast
+  field_simp
+
+open Complex Set in
+open scoped Real in
+/-- An integrand over `(0, 2π]` that equals `g θ` where `cos θ < cos α` and `0` where
+`cos θ > cos α` integrates to `∫_α^{2π−α} g θ dθ`, for `α ∈ [0, π]`. -/
+theorem setIntegral_Ioc_eq_intervalIntegral_arc {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {α : ℝ} (hα : α ∈ Icc 0 π) {f g : ℝ → E}
+    (hf : ∀ θ, Real.cos θ ≠ Real.cos α → f θ = if Real.cos θ < Real.cos α then g θ else 0) :
+    ∫ θ in Ioc 0 (2 * π), f θ = ∫ θ in α..2 * π - α, g θ := by
+  have hae : ∀ᵐ θ : ℝ, Real.cos θ ≠ Real.cos α :=
+    MeasureTheory.measure_eq_zero_iff_ae_notMem.1 (Real.volume_setOf_cos_eq (Real.cos α))
+  have hsub : Ioo α (2 * π - α) ⊆ Ioc 0 (2 * π) := fun x hx =>
+    ⟨by linarith [hα.1, hx.1], by linarith [hα.1, hx.2]⟩
+  rw [MeasureTheory.setIntegral_congr_ae measurableSet_Ioc (g := (Ioo α (2 * π - α)).indicator g)
+      (hae.mono fun θ hθ hmem => ?_),
+    MeasureTheory.setIntegral_indicator measurableSet_Ioo, inter_eq_right.2 hsub,
+    ← MeasureTheory.integral_Ioc_eq_integral_Ioo,
+    ← intervalIntegral.integral_of_le (by linarith [hα.2])]
+  replace hmem := Ioc_subset_Icc_self hmem
+  rw [hf θ hθ]
+  rcases em (θ ∈ Ioo α (2 * π - α)) with h | h
+  · rw [indicator_of_mem h, ite_eq_left ((Real.cos_lt_cos_iff_mem_Ioo hα hmem).2 h)]
+  · rw [indicator_of_notMem h, ite_eq_right (mt (Real.cos_lt_cos_iff_mem_Ioo hα hmem).1 h)]
+
 open MeasureTheory Set in
 /-- The integral of the Fourier character `(θ, φ) ↦ exp ((d₁ θ + d₂ φ) i)` over the torus
 `(0, 2π]²`, for `d ∈ ℤ²`: it is `4π²` when `d = 0`, and vanishes otherwise. It is the product of
@@ -610,6 +700,30 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
 
+/-- Fundamental theorem of calculus for `t ↦ (z₀ + t * d)⁻¹ * d` along a real segment mapped into
+`Complex.slitPlane` after rotation by a constant `u`. -/
+theorem integral_inv_linear_mul_eq_log_sub {u z₀ d : ℂ} {a₀ b₀ : ℝ}
+    (hslit : ∀ t ∈ Set.uIcc a₀ b₀, u * (z₀ + (t : ℂ) * d) ∈ Complex.slitPlane) :
+    ∫ t in a₀..b₀, (z₀ + (t : ℂ) * d)⁻¹ * d =
+      Complex.log (u * (z₀ + (b₀ : ℂ) * d)) - Complex.log (u * (z₀ + (a₀ : ℂ) * d)) := by
+  have hu : u ≠ 0 :=
+    (mul_ne_zero_iff.mp (Complex.slitPlane_ne_zero (hslit a₀ Set.left_mem_uIcc))).1
+  have heq : (fun t : ℝ => (u * d) / (u * (z₀ + (t : ℂ) * d))) =
+      fun t : ℝ => (z₀ + (t : ℂ) * d)⁻¹ * d :=
+    funext fun t => by rw [mul_div_mul_left _ _ hu, div_eq_inv_mul]
+  have hint : IntervalIntegrable (fun t : ℝ => (z₀ + (t : ℂ) * d)⁻¹ * d)
+      MeasureTheory.volume a₀ b₀ :=
+    ContinuousOn.intervalIntegrable fun t ht =>
+      (((continuous_const.add (Complex.continuous_ofReal.mul continuous_const)).continuousAt.inv₀
+        (mul_ne_zero_iff.mp (Complex.slitPlane_ne_zero (hslit t ht))).2).mul
+          continuousAt_const).continuousWithinAt
+  simpa only [heq] using TauCeti.Contour.integral_deriv_div_eq_log_sub_log
+    (f := fun t : ℝ => u * (z₀ + (t : ℂ) * d)) (f' := fun _ => u * d) (P := ∅)
+    Set.countable_empty (by fun_prop)
+    (fun t _ => by
+      simpa using (((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const d).const_add z₀).const_mul u)
+    hslit (heq.symm ▸ hint)
+
 open MeasureTheory Set in
 /-- The integral of `t⁻²` over the tails `|t| > T` of the real line is `2/T`. At `T = 0` the
 integrand is not integrable and both sides are `0`. -/
@@ -658,6 +772,18 @@ theorem integral_inv_add_abs {σ T : ℝ} (hσ : 0 < σ) (hT : 0 ≤ T) :
   rw [← intervalIntegral.integral_add_adjacent_intervals (b := 0) (hc.intervalIntegrable _ _)
     (hc.intervalIntegrable _ _), hneg, hpos]
   ring
+
+open Real Set in
+/-- The integral of `(t - c)⁻¹` over any interval avoiding `c` is `log |b - c| - log |a - c|`. -/
+theorem integral_sub_inv {a b c : ℝ} (hc : c ∉ uIcc a b) :
+    ∫ t in a..b, (t - c)⁻¹ = log |b - c| - log |a - c| := by
+  have h0 : (0 : ℝ) ∉ uIcc (a - c) (b - c) := fun h ↦ hc <| by
+    rcases mem_uIcc.mp h with ⟨h1, h2⟩ | ⟨h1, h2⟩
+    · exact mem_uIcc.mpr (Or.inl ⟨by linarith, by linarith⟩)
+    · exact mem_uIcc.mpr (Or.inr ⟨by linarith, by linarith⟩)
+  rw [intervalIntegral.integral_comp_sub_right (fun u : ℝ ↦ u⁻¹) c, integral_inv h0,
+    log_div (fun h ↦ h0 (h ▸ right_mem_uIcc)) (fun h ↦ h0 (h ▸ left_mem_uIcc)),
+    log_abs, log_abs]
 
 end TauCeti
 

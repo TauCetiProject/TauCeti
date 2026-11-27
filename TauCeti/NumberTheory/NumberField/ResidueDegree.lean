@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.Ideal.Int
 public import Mathlib.RingTheory.RamificationInertia.Inertia
 public import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import Mathlib.RingTheory.DedekindDomain.Factorization
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.NumberTheory.RamificationInertia.Tower
 import TauCeti.RingTheory.DedekindDomain.PrimesAbove
 
@@ -35,13 +36,19 @@ objects that description involves and records their elementary theory.
 * `TauCeti.absNorm_eq_rationalPrimeBelow_pow`: the absolute norm of `𝔭` is the rational prime
   below it raised to the residue degree.
 * `TauCeti.mem_higherDegreePrimes_iff_not_prime_absNorm`: a height-one prime has residue degree
-  above one exactly when its absolute norm is not a prime number.
+  above one exactly when its absolute norm is not a prime number;
+  `TauCeti.notMem_higherDegreePrimes_iff_prime_absNorm` and `TauCeti.compl_higherDegreePrimes`
+  state the complementary form.
 * `TauCeti.rationalPrimeBelow_pow_le_absNorm`: the norm of `𝔭` is at least the rational prime
   below it raised to any power at most the residue degree.
+* `IsDedekindDomain.HeightOneSpectrum.four_le_absNorm`: if `𝓞 K` contains roots of `X² + X + 1`
+  and of `X² + 1`, every height-one prime has absolute norm at least `4`.
 * `TauCeti.mem_higherDegreePrimes_of_one_lt_inertiaDeg`: residue degree above one over an
   intermediate number field forces residue degree above one over `ℚ`.
 * `IsDedekindDomain.HeightOneSpectrum.absNorm_eq_absNorm_under_of_inertiaDeg_eq_one`: a prime of
   residue degree one over an intermediate number field has the norm of the prime below it.
+* `TauCeti.notMem_higherDegreePrimes_iff_of_under_eq`: a prime above a prime `𝔭` of an
+  intermediate number field has prime norm exactly when `𝔭` does and their norms agree.
 * `TauCeti.card_filter_rationalPrimeBelow_le_finrank`: at most `[K : ℚ]` height-one primes have
   a given rational prime below them.
 * `IsDedekindDomain.HeightOneSpectrum.encard_setOf_under_eq_le_finrank`: at most `[E : K]`
@@ -134,6 +141,16 @@ theorem mem_higherDegreePrimes_iff_not_prime_absNorm {𝔭 : HeightOneSpectrum (
     ← Nat.prime_iff, not_and_or, or_iff_right (not_not_intro (prime_rationalPrimeBelow 𝔭))]
   omega
 
+/-- A height-one prime has residue degree one exactly when its absolute norm is a prime number. -/
+theorem notMem_higherDegreePrimes_iff_prime_absNorm {𝔭 : HeightOneSpectrum (𝓞 K)} :
+    𝔭 ∉ higherDegreePrimes K ↔ (Ideal.absNorm 𝔭.asIdeal).Prime := by
+  rw [mem_higherDegreePrimes_iff_not_prime_absNorm, not_not]
+
+/-- The primes of residue degree one are the height-one primes of prime absolute norm. -/
+theorem compl_higherDegreePrimes :
+    (higherDegreePrimes K)ᶜ = {𝔭 : HeightOneSpectrum (𝓞 K) | (Ideal.absNorm 𝔭.asIdeal).Prime} :=
+  Set.ext fun _ ↦ notMem_higherDegreePrimes_iff_prime_absNorm
+
 /-- The absolute norm of a height-one prime is at least the rational prime below it raised to any
 exponent bounded by the residue degree.  The matching bound from above is the divisibility
 `IsDedekindDomain.HeightOneSpectrum.absNorm_dvd_rationalPrimeBelow_pow_finrank`.  Use
@@ -144,6 +161,24 @@ theorem rationalPrimeBelow_pow_le_absNorm {𝔭 : HeightOneSpectrum (𝓞 K)} {n
   -- the norm is `p ^ f`, and `p` is at least `2`, so the power is monotone in the exponent
   absNorm_eq_rationalPrimeBelow_pow 𝔭 ▸
     Nat.pow_le_pow_right (prime_rationalPrimeBelow 𝔭).one_lt.le hn
+
+/-- **Residue fields of order at least four.** If `𝓞 K` contains a root `ω` of `X² + X + 1` and a
+root `i` of `X² + 1`, then every height-one prime of `𝓞 K` has absolute norm at least `4`: its
+residue field contains their reductions, so it is neither `𝔽₂`, where `X² + X + 1` has no root,
+nor `𝔽₃`, where `X² + 1` has none. -/
+theorem _root_.IsDedekindDomain.HeightOneSpectrum.four_le_absNorm (𝔭 : HeightOneSpectrum (𝓞 K))
+    {ω i : 𝓞 K} (hω : ω ^ 2 + ω + 1 = 0) (hi : i ^ 2 + 1 = 0) :
+    4 ≤ Ideal.absNorm 𝔭.asIdeal := by
+  let := Ideal.Quotient.field 𝔭.asIdeal
+  rw [Ideal.absNorm_apply, Submodule.cardQuot_apply]
+  have h1 : 1 < Nat.card (𝓞 K ⧸ 𝔭.asIdeal) := Finite.one_lt_card
+  have h2 := TauCeti.FiniteField.natCard_ne_two_of_sq_add_self_add_one_eq_zero
+    (ω := Ideal.Quotient.mk 𝔭.asIdeal ω) (by
+      simpa using congrArg (Ideal.Quotient.mk 𝔭.asIdeal) hω)
+  have h3 := TauCeti.FiniteField.natCard_ne_three_of_sq_add_one_eq_zero
+    (i := Ideal.Quotient.mk 𝔭.asIdeal i) (by
+      simpa using congrArg (Ideal.Quotient.mk 𝔭.asIdeal) hi)
+  omega
 
 /-- A height-one prime of `𝓞 E` whose residue degree over a number field `K` below `E` exceeds one
 has residue degree above one over `ℚ`, since residue degrees multiply along `ℤ → 𝓞 K → 𝓞 E`. -/
@@ -161,6 +196,21 @@ theorem _root_.IsDedekindDomain.HeightOneSpectrum.absNorm_eq_absNorm_under_of_in
     (h : 𝔓.asIdeal.inertiaDeg (𝓞 K) = 1) :
     Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (𝔓.under (𝓞 K)).asIdeal := by
   rw [← Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal, h, pow_one]
+
+/-- A height-one prime `𝔓` of `𝓞 E` above a prime `𝔭` of a number field `K` below `E` has prime
+absolute norm exactly when `𝔭` has prime absolute norm and `N(𝔓) = N(𝔭)`, since `N(𝔓)` is a
+positive power of `N(𝔭)`. -/
+theorem notMem_higherDegreePrimes_iff_of_under_eq {E : Type*} [Field E] [NumberField E]
+    [Algebra K E] {𝔭 : HeightOneSpectrum (𝓞 K)} {𝔓 : HeightOneSpectrum (𝓞 E)}
+    (h : 𝔓.under (𝓞 K) = 𝔭) :
+    𝔓 ∉ higherDegreePrimes E ↔
+      𝔭 ∉ higherDegreePrimes K ∧ Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm 𝔭.asIdeal := by
+  subst h
+  have hpow := Ideal.absNorm_pow_inertiaDeg (𝔓.under (𝓞 K)).asIdeal 𝔓.asIdeal
+  simp only [notMem_higherDegreePrimes_iff_prime_absNorm]
+  refine ⟨fun hP ↦ ?_, fun ⟨hp, heq⟩ ↦ heq ▸ hp⟩
+  obtain ⟨heq, -⟩ := hP.pow_eq_iff.mp hpow
+  exact ⟨heq ▸ hP, heq.symm⟩
 
 /-! ### Fibring the primes over the rational primes below them -/
 

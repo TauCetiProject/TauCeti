@@ -25,7 +25,9 @@ group algebra and evaluating group-like elements gives the coordinate morphism. 
 opposite to the represented group morphism `det : GLₙ ⟶ 𝔾ₘ`.
 
 The antipode of a generic entry is the inverse determinant `S(det)` times an entry of the
-adjugate, so the generic entries and `S(det)` generate the coordinate algebra.
+adjugate, so the generic entries and `S(det)` generate the coordinate algebra. A property of its
+elements which passes to generated subalgebras and to inverses of units is therefore checked on
+the generic entries.
 
 On algebra-valued convolution points, precomposition with this coordinate morphism agrees with
 the ordinary unit-valued determinant of an invertible matrix. This comparison is compatible with
@@ -41,10 +43,14 @@ of the coordinate morphism, and hence injectivity of that morphism.
   group-like element.
 * `TauCeti.GeneralLinear.det_genericMatrix`: the determinant of the generic matrix is that
   group-like element.
+* `TauCeti.GeneralLinear.ringInverse_det_genericMatrix`: the inverse of the generic determinant
+  is the antipode of the determinant.
 * `TauCeti.GeneralLinear.antipode_genericMatrix`: the antipode of a generic entry is the inverse
   determinant times an adjugate entry.
 * `TauCeti.GeneralLinear.adjoin_genericMatrix_union_antipode_determinant`: the generic entries
   and the inverse determinant generate the coordinate algebra.
+* `TauCeti.GeneralLinear.coordinateHopfAlgebra_induction`: the resulting induction principle,
+  checking a property on the generic entries.
 * `TauCeti.GeneralLinear.determinantCoordinateMap`: the coordinate Hopf-algebra morphism from
   `D(Multiplicative ℤ)` to `GLₙ`.
 * `TauCeti.GeneralLinear.determinantCoordinateMap_single`: its value on every group-algebra
@@ -97,18 +103,22 @@ theorem det_genericMatrix :
     simp [localizedGenericMatrix_apply]
   rw [hmap, ← AlgEquiv.map_det, determinantGroupLike_val]
 
+/-- The inverse of the generic determinant of `GLₙ` is the antipode `S(det)` of the determinant
+group-like element. -/
+theorem ringInverse_det_genericMatrix :
+    Ring.inverse (genericMatrix R n).det =
+      HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n) := by
+  rw [det_genericMatrix]
+  exact Ring.inverse_unit (GroupLike.toUnits R (determinantGroupLike R n))
+
 /-- The antipode of a generic entry of `GLₙ`, an entry of the inverse generic matrix, is the
 inverse determinant `S(det)` times the corresponding entry of the adjugate. -/
 theorem antipode_genericMatrix (i j : Fin n) :
     HopfAlgebra.antipode R (genericMatrix R n i j) =
       HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n) *
         (genericMatrix R n).adjugate i j := by
-  have hinv : Ring.inverse (genericMatrix R n).det =
-      HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n) := by
-    rw [det_genericMatrix]
-    exact Ring.inverse_unit (GroupLike.toUnits R (determinantGroupLike R n))
   rw [genericMatrix_apply, coordinateHopfAlgebra_antipode_X, ← genericMatrix_inv_apply,
-    Matrix.inv_def, hinv, Matrix.smul_apply, smul_eq_mul]
+    Matrix.inv_def, ringInverse_det_genericMatrix, Matrix.smul_apply, smul_eq_mul]
 
 /-- The generic entries and the inverse determinant generate the coordinate algebra of `GLₙ`. -/
 theorem adjoin_genericMatrix_union_antipode_determinant :
@@ -130,6 +140,35 @@ theorem adjoin_genericMatrix_union_antipode_determinant :
   · exact hentry i j
   · rw [antipode_genericMatrix]
     exact mul_mem (Algebra.subset_adjoin (Or.inr rfl)) (hadj i j)
+
+/-- **Properties of the coordinate algebra of `GLₙ` are checked on the entries.** A property of
+the elements of the coordinate Hopf algebra which holds on the generic entries, passes from a set
+to the subalgebra it generates, and passes from a unit to its inverse, holds everywhere: the
+generic entries and the inverse determinant generate the coordinate algebra. -/
+@[elab_as_elim]
+theorem coordinateHopfAlgebra_induction {motive : coordinateHopfAlgebra R n → Prop}
+    (hadjoin : ∀ s : Set (coordinateHopfAlgebra R n), (∀ a ∈ s, motive a) →
+      ∀ a ∈ Algebra.adjoin R s, motive a)
+    (hinv : ∀ a, IsUnit a → motive a → motive (Ring.inverse a))
+    (hentry : ∀ i j, motive (genericMatrix R n i j)) (f : coordinateHopfAlgebra R n) :
+    motive f := by
+  let entries := Set.range fun ij : Fin n × Fin n ↦ genericMatrix R n ij.1 ij.2
+  have hentries : ∀ a ∈ entries, motive a := by
+    rintro _ ⟨ij, rfl⟩
+    exact hentry ij.1 ij.2
+  -- The determinant is a polynomial in the entries.
+  have hdet : (genericMatrix R n).det ∈ Algebra.adjoin R entries := by
+    rw [Matrix.det_apply]
+    exact Subalgebra.sum_mem _ fun σ _ ↦ Subalgebra.zsmul_mem _
+      (Subalgebra.prod_mem _ fun i _ ↦ Algebra.subset_adjoin (Set.mem_range_self (σ i, i))) _
+  refine hadjoin (entries ∪
+    {HopfAlgebra.antipode R (determinantGroupLike R n : coordinateHopfAlgebra R n)}) ?_ f ?_
+  · rintro a (ha | rfl)
+    · exact hentries a ha
+    · rw [← ringInverse_det_genericMatrix]
+      exact hinv _ (isUnit_det_genericMatrix R n) (hadjoin _ hentries _ hdet)
+  · rw [adjoin_genericMatrix_union_antipode_determinant]
+    exact Algebra.mem_top
 
 /-- The determinant coordinate morphism
 `O(𝔾ₘ) = R[Multiplicative ℤ] ⟶ O(GLₙ)`, packaged between the underlying commutative

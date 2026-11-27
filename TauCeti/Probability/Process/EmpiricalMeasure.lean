@@ -469,6 +469,14 @@ theorem integral_empiricalMeasure [NormedAddCommGroup E] [NormedSpace ℝ E] [Co
   rw [empiricalMeasure, integral_empiricalMeasureOfFintype hf, Fintype.card_fin,
     Fin.sum_univ_eq_sum_range (fun i => f (x i))]
 
+/-- Integrating against the uniform probability measure on `{1, …, m + 1}` is averaging the values
+at `1, …, m + 1`. -/
+theorem integral_empiricalMeasure_add_one [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [CompleteSpace E] (m : ℕ) (f : ℕ → E) :
+    ∫ n, f n ∂(empiricalMeasure (· + 1) m : Measure ℕ) =
+      (m + 1 : ℝ)⁻¹ • ∑ k ∈ Finset.range (m + 1), f (k + 1) := by
+  rw [integral_empiricalMeasure .of_discrete, Nat.cast_add_one]
+
 /-- The Lebesgue integral against an empirical measure is the average of the sampled values. -/
 theorem lintegral_empiricalMeasure {x : ℕ → α} {n : ℕ} {f : α → ℝ≥0∞} (hf : Measurable f) :
     ∫⁻ y, f y ∂(empiricalMeasure x n : Measure α) =

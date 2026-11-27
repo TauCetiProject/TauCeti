@@ -57,11 +57,15 @@ Perturbing one entry `a s` by a series `e` of order at least `n ≥ 1` changes `
 `e` by a series `q` scales it by the constant coefficient of `q`
 (`MvPowerSeries.coeff_mul_eq_coeff_mul_constantCoeff_of_le_order`).
 
+A series with order at least some `n ≠ 0` has zero constant coefficient
+(`MvPowerSeries.constantCoeff_eq_zero_of_le_order`).
 A common lower bound on the orders of two series bounds the orders of their sum and difference
 (`MvPowerSeries.le_order_add`, `MvPowerSeries.le_order_sub`), and one on finitely many series
-bounds the order of their sum (`MvPowerSeries.le_order_sum`). Over a commutative ring, if `f` and
-`g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of `f - g` for
-`n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
+bounds the order of their sum (`MvPowerSeries.le_order_sum`). A sequence whose `n`-th and
+`(n + 1)`-st terms agree below degree `n` converges: some series agrees with its `n`-th term below
+degree `n` for every `n` (`MvPowerSeries.exists_forall_le_order_sub`). Over a commutative ring,
+if `f` and `g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of
+`f - g` for `n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
 The degree-zero component of a series is its constant term
 (`MvPowerSeries.homogeneousComponent_zero`), a constant series has no component in positive degree
 (`MvPowerSeries.homogeneousComponent_C_of_ne_zero`), over a nontrivial semiring every coordinate
@@ -90,6 +94,11 @@ theorem le_order_iff [Semiring R] {f : MvPowerSeries σ R} :
     n ≤ f.order ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → coeff d f = 0 :=
   ⟨fun h _ hd ↦ coeff_of_lt_order (lt_of_lt_of_le hd h), le_order⟩
 
+/-- A series of order at least some `n ≠ 0` has zero constant coefficient. -/
+theorem constantCoeff_eq_zero_of_le_order [Semiring R] {f : MvPowerSeries σ R} (hn : n ≠ 0)
+    (h : n ≤ f.order) : constantCoeff f = 0 :=
+  one_le_order_iff_constCoeff_eq_zero.mp (h.trans' (Order.one_le_iff_ne_zero.mpr hn))
+
 /-- A lower bound on the orders of two series bounds the order of their sum. -/
 theorem le_order_add [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
     (hg : n ≤ g.order) : n ≤ (f + g).order :=
@@ -106,6 +115,30 @@ theorem le_order_sub [Ring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
     (hg : n ≤ g.order) : n ≤ (f - g).order := by
   rw [sub_eq_add_neg]
   exact le_order_add hf (by rwa [order_neg])
+
+/-- **Limits of Cauchy sequences for the order.** If consecutive terms of a sequence of
+multivariate power series agree below total degree `n`, then there is a power series agreeing with
+its `n`-th term below total degree `n` for every `n`. -/
+theorem exists_forall_le_order_sub [Ring R] {f : ℕ → MvPowerSeries σ R}
+    (hf : ∀ n : ℕ, (n : ℕ∞) ≤ (f (n + 1) - f n).order) :
+    ∃ g : MvPowerSeries σ R, ∀ n : ℕ, (n : ℕ∞) ≤ (g - f n).order := by
+  -- later terms agree with the `n`-th one below degree `n`
+  have hstab (n k : ℕ) : (n : ℕ∞) ≤ (f (n + k) - f n).order := by
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [show f (n + (k + 1)) - f n = (f (n + k + 1) - f (n + k)) + (f (n + k) - f n) by
+        rw [← add_assoc]; abel]
+      exact le_order_add ((hf (n + k)).trans' (by exact_mod_cast Nat.le_add_right n k)) ih
+  -- the coefficient in degree `|d|` is read off any term of index greater than `|d|`
+  let g : MvPowerSeries σ R := fun d ↦ coeff d (f (d.degree + 1))
+  have hg (d : σ →₀ ℕ) : coeff d g = coeff d (f (d.degree + 1)) := coeff_apply g d
+  refine ⟨g, fun n ↦ nat_le_order fun d hd ↦ ?_⟩
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hd
+  have h := coeff_of_lt_order ((hstab (d.degree + 1) k).trans_lt'
+    (by exact_mod_cast d.degree.lt_succ_self))
+  rw [map_sub, sub_eq_zero] at h
+  rw [map_sub, hg, show d.degree + k + 1 = d.degree + 1 + k by omega, h, sub_self]
 
 /-- If `f` and `g` have zero constant coefficient and `2 ≤ n`, then the order of `f ^ n - g ^ n`
 exceeds that of `f - g`: it is `f - g` times `∑ fⁱ gⁿ⁻¹⁻ⁱ`, whose constant coefficient vanishes. -/
@@ -280,6 +313,15 @@ theorem homogeneousComponent_degree_prod_pow {ι : Type*} {a : ι → MvPowerSer
   · simpa using le_order_pow_of_constantCoeff_eq_zero (d i) (ha₀ i)
 
 end Products
+
+/-- Substitution by a substitutable family of series with zero constant coefficient cannot
+decrease order. -/
+theorem order_le_order_subst {σ τ R : Type*} [CommRing R] {Z : σ → MvPowerSeries τ R}
+    (ha : HasSubst Z) (hZ : ∀ x, constantCoeff (Z x) = 0) (f : MvPowerSeries σ R) :
+    f.order ≤ (f.subst Z).order :=
+  (ENat.self_le_mul_left _ (ne_of_gt (lt_of_lt_of_le zero_lt_one
+    (le_iInf fun x ↦ one_le_order_iff_constCoeff_eq_zero.2 (hZ x))))).trans
+    (le_order_subst ha f)
 
 section Subst
 

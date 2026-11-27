@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.FlatBoundary
-public import TauCeti.Analysis.PDE.Regularity.HalfSpace
+public import TauCeti.Analysis.PDE.Regularity.HalfSpace.Basic
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
+import TauCeti.Analysis.PDE.Ellipticity.Extension
+import TauCeti.Analysis.PDE.EnergyForm.Restriction
+import TauCeti.Analysis.PDE.Regularity.FlatBoundary
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Analysis.PDE.Regularity.Hessian.DivergenceForm
 import TauCeti.Analysis.Sobolev.W1p.Extension
@@ -42,6 +45,12 @@ derivatives of `u` have `α`-Hölder precise representatives up to the boundary 
   `H¹(H)` and the precise representative of its gradient is `α`-Hölder on the closed half-ball
   `closedBall y₀ (r / 8) ∩ {c₀ ≤ ⟪y, ν⟫}`
   (`exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_restrict_gradient`).
+* **Near a flat portion of the boundary.** The same holds locally for an open set `Ω` with
+  `Ω ∩ B(y₀, r) = H ∩ B(y₀, r)` and a weak solution `u ∈ H¹(Ω)` of `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω` that
+  vanishes on `∂Ω ∩ B(y₀, r)`, with regularity and ellipticity hypotheses on `a` and `f` only on
+  `B(y₀, r)` and `f ∈ L²(Ω)`: every `∂_w u` lies in `H¹(Ω ∩ B(y₀, r / 16))`, with gradient equal
+  almost everywhere there to a field that is `α`-Hölder on `closedBall y₀ (r / 16) ∩ {c₀ ≤ ⟪y, ν⟫}`
+  (`exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq`).
 
 This is the boundary counterpart of interior `C^{2,α}` regularity for divergence-form equations
 with `C^{1,α}` coefficients
@@ -88,6 +97,13 @@ coefficients on a half-space.
   continuous on the closed half-ball has that field as its precise representative there
   (`TauCeti.MeasureTheory.preciseRepresentative_restrict_setOf_lt_inner_eq_of_continuousOn`).
   A general direction `w` is `⟪e, w⟫ e` plus a tangential direction.
+* **Localization.** Near `closedBall y₀ (3r/4)` the field `a` agrees with a Lipschitz field `a'`
+  uniformly elliptic on the whole space (`UniformlyEllipticOn.exists_lipschitzWith_eqOn`). For a
+  cutoff `ψ` equal to one near `closedBall y₀ (r / 2)`, the product `ψ u`, extended by zero, lies
+  in `H¹₀(H)` and solves `-∂ᵢ(a'ⁱʲ ∂ⱼw) = g` in `H`, where `g = f` and `ψ u = u` on
+  `B(y₀, r / 2) ∩ H` since `ψ = 1` near there
+  (`exists_isWeakSolutionDirichlet_ae_eq_on_of_inter_eq`). The half-space theorem applies to it on
+  `B(y₀, r / 2)`.
 
 ## Main declarations
 
@@ -95,6 +111,9 @@ coefficients on a half-space.
   tangential second derivatives of the solution are `α`-Hölder up to the flat boundary.
 * `exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_restrict_gradient`: all
   second derivatives of the solution are `α`-Hölder up to the flat boundary.
+* `exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq`: all second derivatives
+  of a solution vanishing on a flat portion of the boundary of a general domain are `α`-Hölder up
+  to that portion.
 
 ## References
 
@@ -110,7 +129,7 @@ coefficients on a half-space.
 public section
 
 open InnerProductSpace LineDeriv MeasureTheory Metric Set TopologicalSpace TauCeti.MeasureTheory
-open scoped Distributions Gradient InnerProductSpace NNReal
+open scoped ContDiff Distributions Gradient InnerProductSpace NNReal Topology
 
 namespace TauCeti
 
@@ -453,8 +472,7 @@ private theorem eq_smul_add_sum_of_sum_sum_eq_neg {e : E} (he : ‖e‖ = 1)
     rw [inner_add_right, real_inner_smul_right, hvt, mul_comm]
   -- The coefficient of `⟪v, e⟫` is `⟪e, A e⟫ = ∑ᵢⱼ ⟪e, bᵢ⟫ Aᵢⱼ ⟪e, bⱼ⟫`.
   have hAe : matrixBilinearForm A e e = ∑ i, ∑ j, A i j * (⟪e, b j⟫_ℝ * ⟪e, b i⟫_ℝ) := by
-    simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec, b,
-      EuclideanSpace.inner_basisFun_real, Finset.mul_sum]
+    simp only [matrixBilinearForm_apply_eq_sum, b, EuclideanSpace.inner_basisFun_real]
     exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
   have key : matrixBilinearForm A e e * ⟪v, e⟫_ℝ = -s - ∑ i, ∑ j,
       (X i j + A i j * (⟪e, b j⟫_ℝ * ⟪t i, e⟫_ℝ + ⟪t j, b i⟫_ℝ)) := by
@@ -763,6 +781,171 @@ theorem exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_res
       ⟨closedBall_subset_ball (by linarith) hx.1, hx.2⟩
     rw [← hHs] at h
     exact h.symm
+
+/-! ### Near a flat portion of the boundary -/
+
+/-- **Localizing a solution near a flat portion of the boundary.** Let `Ω` and `H` be open with
+`Ω ∩ B(y₀, r) = H ∩ B(y₀, r)`, let `a` be uniformly elliptic with `C¹` entries on `B(y₀, r)`, and
+let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω` with `f ∈ L²(Ω)` and vanish on `∂Ω ∩ B(y₀, r)`.
+Then there are a Lipschitz field `a'`, uniformly elliptic on the whole space with the constants of
+`a` and equal to `a` on `B(y₀, r / 2)`, a forcing `g ∈ L²(H)` equal to `f` on `B(y₀, r / 2)`, and
+a weak solution `w ∈ H¹₀(H)` of `-∂ᵢ(a'ⁱʲ ∂ⱼw) = g` in `H` that agrees with `u` on
+`Ω ∩ B(y₀, r / 2)`. -/
+private theorem exists_localized_problem {H Ω : Opens E} {y₀ : E} {r : ℝ} (hr : 0 < r)
+    (hΩ : (Ω : Set E) ∩ ball y₀ r = (H : Set E) ∩ ball y₀ r)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
+    (hell : UniformlyEllipticOn (ball y₀ r) a lam Lam)
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Ω)) {u : W1p volume Ω 2}
+    (hu : ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 0 u (v : W1p volume Ω 2) =
+      ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x)
+    (hu0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ ball y₀ r →
+      ∃ v : W1p0 volume Ω 2,
+        W1p.value (v : W1p volume Ω 2) =ᵐ[volume.restrict Ω] fun x => ψ x * W1p.value u x) :
+    ∃ a' : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ, ∃ K : ℝ≥0,
+      UniformlyEllipticOn univ a' lam Lam ∧ LipschitzWith K (fun x => matrixBilinearForm (a' x)) ∧
+      EqOn a' a (ball y₀ (r / 2)) ∧ ∃ g : E → ℝ, MemLp g 2 (volume.restrict H) ∧
+      EqOn g f (ball y₀ (r / 2)) ∧ ∃ w : W1p0 volume H 2,
+        (∀ v : W1p0 volume H 2, energyFormH1 a' 0 0 (w : W1p volume H 2) (v : W1p volume H 2) =
+          ∫ x in H, g x * W1p.value (v : W1p volume H 2) x) ∧
+        W1p.value (w : W1p volume H 2) =ᵐ[volume.restrict ((Ω : Set E) ∩ ball y₀ (r / 2))]
+          W1p.value u := by
+  classical
+  -- Near `closedBall y₀ (3r/4)`, `a` agrees with a Lipschitz field `a'` elliptic everywhere.
+  obtain ⟨a', K, U, hSU, hUB, hell', hK', haa'⟩ :=
+    hell.exists_lipschitzWith_eqOn (Omega := ⟨ball y₀ r, isOpen_ball⟩)
+      (locallyLipschitzOn_matrixBilinearForm_of_contDiffOn isOpen_ball ha)
+      (isCompact_closedBall y₀ (3 * r / 4)) (closedBall_subset_ball (by linarith))
+  have hUr : (U : Set E) ⊆ ball y₀ r := hUB
+  have hhalf : closedBall y₀ (r / 2) ⊆ U := (closedBall_subset_closedBall (by linarith)).trans hSU
+  -- On `Ω ∩ U` the restriction of `u` solves the equation with `a'`.
+  have hfU : MemLp f 2 (volume.restrict (Ω ⊓ U : Opens E)) :=
+    hf.mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr inf_le_left) le_rfl)
+  have hu₁ : ∀ v : W1p0 volume (Ω ⊓ U) 2,
+      energyFormH1 a' 0 0 (W1p.restrictL inf_le_left u) (v : W1p volume (Ω ⊓ U) 2) =
+        ∫ x in Ω ⊓ U, hfU.toLp f x * W1p.value (v : W1p volume (Ω ⊓ U) 2) x := fun v => by
+    rw [energyFormH1_restrictL_eq_setIntegral_of_eqOn inf_le_left (fun x hx => haa' hx.2) hu v]
+    exact integral_congr_ae (hfU.coeFn_toLp.mono fun x hx => by simp only [hx])
+  -- Near `closedBall y₀ (r / 2)`, `u` agrees with a solution on `H` with forcing `f`.
+  obtain ⟨w, g, hw, hwu, -, hgf⟩ := exists_isWeakSolutionDirichlet_ae_eq_on_of_inter_eq
+    (U := ⟨ball y₀ r, isOpen_ball⟩) (fun x => hell'.opNorm_matrixBilinearForm_le (mem_univ x))
+    hK' hΩ hUr (isCompact_closedBall y₀ (r / 2)) hhalf hu₁ hu0
+  -- Inside `B(y₀, r)` the open sets `Ω` and `H` agree.
+  have hHΩ : (H : Set E) ∩ ball y₀ r ⊆ Ω := fun x hx => by
+    rw [← hΩ] at hx
+    exact hx.1
+  have hΩH : (Ω : Set E) ∩ ball y₀ r ⊆ H := fun x hx => by
+    rw [hΩ] at hx
+    exact hx.1
+  -- The forcing `g` is `f` on `B(y₀, r / 2)` almost everywhere; take `f` there exactly.
+  have hg₀ : (ball y₀ (r / 2)).piecewise f g =ᵐ[volume.restrict H] g := by
+    filter_upwards [hgf, ae_restrict_of_ae (ae_imp_of_ae_restrict hfU.coeFn_toLp),
+      ae_restrict_mem H.isOpen.measurableSet] with x hgx hfx hxH
+    by_cases hx : x ∈ ball y₀ (r / 2)
+    · have hxU := hhalf (ball_subset_closedBall hx)
+      rw [piecewise_eq_of_mem _ _ _ hx, hgx (ball_subset_closedBall hx),
+        hfx ⟨hHΩ ⟨hxH, hUr hxU⟩, hxU⟩]
+    · rw [piecewise_eq_of_notMem _ _ _ hx]
+  have hwu' : W1p.value (w : W1p volume H 2) =ᵐ[volume.restrict ((Ω : Set E) ∩ ball y₀ (r / 2))]
+      W1p.value u := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset
+        (fun x hx => hΩH ⟨hx.1, hUr (hhalf (ball_subset_closedBall hx.2))⟩) hwu,
+      ae_restrict_mem (Ω.isOpen.inter isOpen_ball).measurableSet] with x h hx
+    exact h (ball_subset_closedBall hx.2)
+  refine ⟨a', K, hell', hK', fun x hx => haa' (hhalf (ball_subset_closedBall hx)),
+    (ball y₀ (r / 2)).piecewise f g, (Lp.memLp g).ae_eq hg₀.symm,
+    fun x hx => piecewise_eq_of_mem _ _ _ hx, w, fun v' => ?_, hwu'⟩
+  rw [(isWeakSolutionDirichlet_iff g w).1 hw v']
+  exact integral_congr_ae (hg₀.mono fun x hx => by simp only [hx])
+
+/-- **Every second derivative is Hölder up to a flat portion of the boundary.** Let `0 < α < 1`,
+let `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `y₀` lie on the boundary hyperplane, and let `Ω` be
+open with `Ω ∩ B(y₀, r) = H ∩ B(y₀, r)`, so that `∂Ω ∩ B(y₀, r)` is a piece of the hyperplane.
+Suppose that `a` is uniformly elliptic on `B(y₀, r)`, that its entries are `C¹` there with first
+derivatives `α`-Hölder near each point of the ball, and that `f ∈ L²(Ω)` is `α`-Hölder up to the
+boundary near each point of `B(y₀, r) ∩ {c₀ ≤ ⟪y, ν⟫}`. Let `u ∈ H¹(Ω)` be a weak solution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) = f` in `Ω`, that is `∫_Ω ⟨a ∇u, ∇v⟩ = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, such that
+`ψ u ∈ H¹₀(Ω)` for every smooth `ψ` compactly supported in `B(y₀, r)`: `u` vanishes on
+`∂Ω ∩ B(y₀, r)`.
+
+Then for every direction `w`, normal ones included, the weak derivative `∂_w u` exists in `H¹` of
+the half-ball `Ω ∩ B(y₀, r / 16)`, and its gradient agrees almost everywhere there with a field
+that is `α`-Hölder on the closed half-ball `closedBall y₀ (r / 16) ∩ {c₀ ≤ ⟪y, ν⟫}`. So the weak
+second derivatives of `u` have `α`-Hölder representatives up to the flat boundary portion near
+`y₀`.
+
+No regularity of `a` or `f` and no shape of `∂Ω` is assumed away from `B(y₀, r)`: this is the
+local form, near a flat piece of the boundary of an arbitrary open set, of
+`exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_restrict_gradient`, which
+treats the Dirichlet problem on the whole half-space with coefficients Lipschitz on all of `H`. -/
+theorem exists_hasWeakLineDerivOn_and_holderOnWith_gradient_of_inter_ball_eq
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) {H Ω : Opens E} {ν : E} {c₀ : ℝ} (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) {y₀ : E} (hy₀ : ⟪y₀, ν⟫_ℝ = c₀) {r : ℝ} (hr : 0 < r)
+    (hΩ : (Ω : Set E) ∩ ball y₀ r = (H : Set E) ∩ ball y₀ r)
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ}
+    (ha : ∀ i j, ContDiffOn ℝ 1 (fun x => a x i j) (ball y₀ r))
+    (hell : UniformlyEllipticOn (ball y₀ r) a lam Lam)
+    (hda : ∀ x ∈ ball y₀ r, ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a y i j)) (ball x ρ))
+    {f : E → ℝ} (hf : MemLp f 2 (volume.restrict Ω))
+    (hfH : ∀ x ∈ ball y₀ r ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α f (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}))
+    {u : W1p volume Ω 2}
+    (hu : ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 0 u (v : W1p volume Ω 2) =
+      ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x)
+    (hu0 : ∀ ψ : E → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ → tsupport ψ ⊆ ball y₀ r →
+      ∃ v : W1p0 volume Ω 2,
+        W1p.value (v : W1p volume Ω 2) =ᵐ[volume.restrict Ω] fun x => ψ x * W1p.value u x)
+    (w : E) :
+    ∃ d : W1p volume (Ω ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩ : Opens E) 2,
+      HasWeakLineDerivOn volume (Ω ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩ : Opens E) (W1p.value u)
+        (W1p.value d) w ∧
+      ∃ G : E → E, (∃ C : ℝ≥0, HolderOnWith C α G
+          (closedBall y₀ (r / 16) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ})) ∧
+        (W1p.gradient d : E → E) =ᵐ[volume.restrict ((Ω : Set E) ∩ ball y₀ (r / 16))] G := by
+  obtain ⟨a', K, hell', hK', haa', g, hg, hgf, w', hw', hwu⟩ :=
+    exists_localized_problem hr hΩ ha hell hf hu hu0
+  have hball : ball y₀ (r / 2) ⊆ ball y₀ r := ball_subset_ball (by linarith)
+  -- The hypotheses of the half-space theorem hold for `a'` and `g` on `B(y₀, r / 2)`, on balls
+  -- about each point shrunk to fit inside `B(y₀, r / 2)`, where `a' = a` and `g = f`.
+  have hda' : ∀ x ∈ ball y₀ (r / 2), ∃ ρ > 0, ∃ L : ℝ≥0, ∀ i j,
+      HolderOnWith L α (fderiv ℝ (fun y => a' y i j)) (ball x ρ) := fun x hx => by
+    obtain ⟨ρ, hρ, L, hL⟩ := hda x (hball hx)
+    obtain ⟨ρ', hρ', hsub⟩ := Metric.mem_nhds_iff.1
+      ((isOpen_ball.inter isOpen_ball).mem_nhds ⟨mem_ball_self hρ, hx⟩)
+    refine ⟨ρ', hρ', L, fun i j => ((hL i j).mono (hsub.trans inter_subset_left)).congr
+      fun y hy => ?_⟩
+    exact (Filter.eventuallyEq_of_mem (isOpen_ball.mem_nhds (hsub hy).2)
+      fun z hz => by simp only [haa' hz]).fderiv_eq
+  have hgH : ∀ x ∈ ball y₀ (r / 2) ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}, ∃ ρ > 0, ∃ L : ℝ≥0,
+      HolderOnWith L α g (ball x ρ ∩ {y | c₀ ≤ ⟪y, ν⟫_ℝ}) := fun x hx => by
+    obtain ⟨ρ, hρ, L, hL⟩ := hfH x ⟨hball hx.1, hx.2⟩
+    obtain ⟨ρ', hρ', hsub⟩ := Metric.mem_nhds_iff.1
+      ((isOpen_ball.inter isOpen_ball).mem_nhds ⟨mem_ball_self hρ, hx.1⟩)
+    exact ⟨ρ', hρ', L, (hL.mono (inter_subset_inter_left _ (hsub.trans inter_subset_left))).congr
+      fun y hy => (hgf (hsub hy.1).2).symm⟩
+  obtain ⟨d, hd, C, hC⟩ :=
+    exists_hasWeakLineDerivOn_w1p_and_holderOnWith_preciseRepresentative_restrict_gradient hα hα1
+      hν hH (hell'.mono_set (subset_univ _)) hK'.lipschitzOnWith hy₀ (half_pos hr)
+      (fun i j => ((ha i j).mono hball).congr fun x hx => by simp only [haa' hx])
+      (hell'.mono_set (subset_univ _)) hda' hg hgH hw' w
+  rw [show r / 2 / 8 = r / 16 by ring] at hC
+  -- On `Ω ∩ B(y₀, r / 16) ⊆ H ∩ B(y₀, r / 16)`, the localized solution `w'` is `u`.
+  set Ω' : Opens E := Ω ⊓ ⟨ball y₀ (r / 16), isOpen_ball⟩
+  have hΩ' : (Ω' : Set E) ⊆ ball y₀ (r / 16) ∩ H := fun x hx => by
+    have hx' : x ∈ (Ω : Set E) ∩ ball y₀ r := ⟨hx.1, ball_subset_ball (by linarith) hx.2⟩
+    rw [hΩ] at hx'
+    exact ⟨hx.2, hx'.1⟩
+  have hΩ'H : Ω' ≤ H := fun x hx => (hΩ' hx).2
+  have hΩ'half : (Ω' : Set E) ⊆ (Ω : Set E) ∩ ball y₀ (r / 2) := fun x hx =>
+    ⟨hx.1, ball_subset_ball (by linarith) hx.2⟩
+  refine ⟨W1p.restrictL hΩ'H d, ((hd.mono hΩ'H).congr_ae
+      (ae_restrict_of_ae_restrict_of_subset hΩ'half hwu)).congr_ae_deriv
+      (W1p.value_restrictL_ae hΩ'H d).symm, _, ⟨C, hC⟩, ?_⟩
+  filter_upwards [W1p.gradient_restrictL_ae hΩ'H d, ae_restrict_of_ae_restrict_of_subset hΩ'
+    (W1p.gradient_ae_eq_preciseRepresentative_restrict d isOpen_ball inter_subset_right)]
+    with x h1 h2
+  rw [h1, h2]
 
 end PDE
 

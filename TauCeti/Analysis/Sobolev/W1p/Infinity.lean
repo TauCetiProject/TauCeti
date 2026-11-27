@@ -94,14 +94,10 @@ theorem W1p.one_le_dist_of_value_ae_eq_infDist_compl (hne : (Omega : Set E).None
   refine w1p0Submodule_subset_of_isClosed
     (isClosed_le continuous_const (continuous_const.dist continuous_id)) (fun φ ↦ ?_) hv
   -- Outside the support of `φ` the gradient of `u - φ` is that of `u`. That region of `Ω` is a
-  -- nonempty open set, since otherwise `Ω` would be clopen.
+  -- nonempty open set, since `Ω` is not compact: otherwise it would be clopen.
   set U := (Omega : Set E) \ tsupport φ
-  have hUne : U.Nonempty := by
-    refine sdiff_nonempty.2 fun hsub ↦ hΩ ?_
-    have hcl : IsClosed (Omega : Set E) := by
-      rw [subset_antisymm hsub φ.tsupport_subset]
-      exact isClosed_tsupport _
-    exact IsClopen.eq_univ ⟨hcl, Omega.isOpen⟩ hne
+  have hUne : U.Nonempty := φ.sdiff_tsupport_nonempty_of_not_isCompact fun hc ↦
+    hΩ (IsClopen.eq_univ ⟨hc.isClosed, Omega.isOpen⟩ hne)
   have hUΩ : U ⊆ Omega := sdiff_subset
   have : (ae (mu.restrict U)).NeBot := ae_restrict_neBot.2
     ((Omega.isOpen.sdiff (isClosed_tsupport _)).measure_ne_zero mu hUne)
