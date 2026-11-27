@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.CycleGraph
 public import TauCeti.Combinatorics.SimpleGraph.Density
+public import TauCeti.Combinatorics.SimpleGraph.Connectivity.PairCutCapacity
 public import Mathlib.Algebra.Order.Archimedean.Real.Basic
 public import Mathlib.Data.Fintype.Order
 import Mathlib.Algebra.BigOperators.Group.Finset.Lemmas
@@ -33,6 +34,8 @@ whose isoperimetric constants are bounded away from `0` is a family of expanders
 ## Main results
 
 * `SimpleGraph.card_edgeBoundary_compl`: `|∂Sᶜ| = |∂S|`.
+* `SimpleGraph.card_edgeBoundary_eq_unitCutCapacity`: `|∂S|` is the number
+  `SimpleGraph.unitCutCapacity G S` of edges of `G` crossing the cut `(S, Sᶜ)`.
 * `SimpleGraph.sum_degree_eq_card_interedges_add_card_edgeBoundary`: the degrees in `S` add up
   to the ordered adjacent pairs inside `S` plus `|∂S|`; the former number is even
   (`SimpleGraph.even_card_interedges_self`). Hence in a preconnected graph every nonempty proper
@@ -123,6 +126,29 @@ theorem edgeBoundary_singleton (v : V) :
 @[simp]
 theorem card_edgeBoundary_singleton (v : V) : #(G.edgeBoundary {v}) = G.degree v := by
   rw [edgeBoundary_singleton, card_map, card_neighborFinset_eq_degree]
+
+/-- The size of the edge boundary of `S` is the unit cut capacity of `S`: the number of edges
+of `G` crossing the cut. -/
+theorem card_edgeBoundary_eq_unitCutCapacity (S : Finset V) :
+    #(G.edgeBoundary S) = G.unitCutCapacity S := by
+  rw [unitCutCapacity_eq_ncard, ← Set.ncard_coe_finset]
+  refine Set.ncard_congr (fun p _ ↦ s(p.1, p.2)) ?_ ?_ ?_
+  · rintro ⟨a, b⟩ h
+    rw [mem_coe, mk_mem_edgeBoundary] at h
+    exact ⟨h.2.2, Sym2.crosses_mk_iff.2 (.inl ⟨mod_cast h.1, mod_cast h.2.1⟩)⟩
+  · rintro ⟨a, b⟩ ⟨a', b'⟩ h h' he
+    rw [mem_coe, mk_mem_edgeBoundary] at h h'
+    rcases Sym2.eq_iff.1 he with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+    · rfl
+    · exact absurd h.1 h'.2.1
+  · intro e ⟨heG, heS⟩
+    induction e using Sym2.ind with
+    | _ a b =>
+      rw [Set.mem_ofPred_eq, Sym2.crosses_mk_iff] at heS
+      rcases heS with ⟨ha, hb⟩ | ⟨hb, ha⟩
+      · exact ⟨(a, b), mk_mem_edgeBoundary.2 ⟨mod_cast ha, mod_cast hb, heG⟩, rfl⟩
+      · exact ⟨(b, a), mk_mem_edgeBoundary.2 ⟨mod_cast hb, mod_cast ha, heG.symm⟩,
+          Sym2.eq_swap⟩
 
 variable {G} in
 /-- If `u ∈ S` can reach `v ∉ S`, then the edge boundary of `S` is nonempty. -/
