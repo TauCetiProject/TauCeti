@@ -10,7 +10,7 @@ public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import Mathlib.NumberTheory.Padics.PadicVal.Basic
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.RamificationInertia.Inertia
-import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Frobenius.Tower
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat

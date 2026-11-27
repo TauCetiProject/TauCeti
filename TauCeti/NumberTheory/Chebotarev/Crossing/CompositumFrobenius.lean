@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.Chebotarev.FrobeniusPrimeSet
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Compositum
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius.Basic
 
 /-!
 # Frobenius fibres in a cyclotomic compositum

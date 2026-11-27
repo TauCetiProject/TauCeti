@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Cyclotomic.Gal
-public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
+public import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius.Basic
 public import TauCeti.NumberTheory.NumberField.Frobenius.DecompositionGroup
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 

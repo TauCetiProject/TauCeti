@@ -57,14 +57,7 @@ theorem exists_mem_frobeniusCoset_of_mem_stabilizer {N p : ℕ} [NeZero N]
   let F := IntermediateField.adjoin ℚ ({ζ} : Set L)
   have : IsCyclotomicExtension {M} ℚ F := hζ.intermediateField_adjoin_isCyclotomicExtension ℚ
   have : IsGalois ℚ F := IsCyclotomicExtension.isGalois {M} ℚ F
-  have hstab : σ.restrictNormal F ∈ stabilizer (F ≃ₐ[ℚ] F) (Q.under (𝓞 F)) := by
-    have hfix : σ • Q = Q := MulAction.mem_stabilizer_iff.mp hσ
-    rw [MulAction.mem_stabilizer_iff]
-    ext x
-    have hinv : (σ.restrictNormal F)⁻¹ = (σ⁻¹).restrictNormal F :=
-      (map_inv (AlgEquiv.restrictNormalHom (F := ℚ) (K₁ := L) F) σ).symm
-    rw [Ideal.mem_pointwise_smul_iff_inv_smul_mem, Ideal.mem_under, Ideal.mem_under, hinv,
-      algebraMap_restrictNormal_smul, ← Ideal.mem_pointwise_smul_iff_inv_smul_mem, hfix]
+  have hstab := restrictNormal_mem_stabilizer_under (M := F) hσ
   have : Fact p.Prime := ⟨hp⟩
   have : (Q.under (𝓞 F)).LiesOver (Ideal.span {(p : ℤ)}) :=
     ⟨by rw [Ideal.under_under, Ideal.over_def Q (Ideal.span {(p : ℤ)})]⟩

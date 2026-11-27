@@ -9,8 +9,9 @@ public import Mathlib.NumberTheory.LegendreSymbol.Basic
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Galois
 public import TauCeti.NumberTheory.DirichletCharacter.FrobeniusCoset
 public import TauCeti.NumberTheory.NumberField.SplitsCompletely.CMField
-import TauCeti.NumberTheory.NumberField.Cyclotomic.FrobeniusCoset
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius.Coset
 import TauCeti.NumberTheory.NumberField.Cyclotomic.MaximalRealSubfield
+import TauCeti.NumberTheory.NumberField.Frobenius.Restriction
 
 /-!
 # Excluding complex conjugation at the ramified auxiliary prime
@@ -101,7 +102,7 @@ theorem ncard_primesOver_eq_two_of_auxiliary_congruences {N q d : ℕ} [NeZero N
     have hdq : d = q := (Nat.dvd_prime (Fact.out : q.Prime)).mp h |>.resolve_left hd.ne_one
     exact hd.not_dvd_one ((Nat.dvd_add_iff_right (dvd_refl d)).mpr (hdq.symm ▸ hqd))
   have h16 : 16 ∣ ordCompl[d] N := Nat.dvd_ordCompl_of_dvd_not_dvd h16N fun h ↦ by
-    have h2 := hd.dvd_of_dvd_pow (show d ∣ 2 ^ 4 from h)
+    have h2 : d ∣ 2 := hd.dvd_of_dvd_pow (n := 4) (by norm_num [h])
     have : d = 2 := (Nat.dvd_prime Nat.prime_two).mp h2 |>.resolve_left hd.ne_one
     omega
   have hodd : quadraticChar (ZMod q) (-1) = -1 :=
@@ -132,8 +133,8 @@ theorem ncard_primesOver_eq_two_of_auxiliary_congruences {N q d : ℕ} [NeZero N
   have : Q.LiesOver (Ideal.span {(d : ℤ)}) := LiesOver.trans Q P _
   have hstab : (complexConj E).restrictScalars ℚ ∈ MulAction.stabilizer (E ≃ₐ[ℚ] E)
       (Q.under (𝓞 E)) := by
-    rw [← Q.over_def P]
-    exact MulAction.mem_stabilizer_iff.mpr (MulAction.mem_stabilizer_iff.mp h)
+    rw [← Q.over_def P, MulAction.mem_stabilizer_iff, restrictScalars_smul_ideal]
+    exact MulAction.mem_stabilizer_iff.mp h
   obtain ⟨i, hi⟩ := Q.exists_mem_frobeniusCoset_of_mem_stabilizer (N := N) hd E hstab
   exact f.map_neg_one_notMem_frobeniusCoset_of_quadraticChar hd hq h16 hodd (hdq ▸ hodd)
     (hdm ▸ by decide) (hdm ▸ by decide) (hdm ▸ by decide)

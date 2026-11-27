@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.NumberField.Frobenius.FixedField.Inertia
 public import TauCeti.NumberTheory.NumberField.Frobenius.Tower
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.SeventhCyclotomic.Quadratic
 import TauCeti.NumberTheory.NumberField.Frobenius.Restriction
-import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 

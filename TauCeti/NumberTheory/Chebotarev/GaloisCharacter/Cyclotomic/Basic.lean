@@ -9,7 +9,7 @@ public import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Basic
 public import TauCeti.NumberTheory.NumberField.Ideal.ArtinMap
 import Mathlib.NumberTheory.Cyclotomic.Gal
-import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Frobenius.Basic
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.RingTheory.Ideal.Extended
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
