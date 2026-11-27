@@ -113,6 +113,21 @@ theorem cmOmega_eq_complexGenerator_add :
   rw [neg_neg]
   ring
 
+/-- For `d ≡ 3 mod 4`, the generator `TauCeti.QuadraticOrder.complexGenerator (-d)` of the embedded
+quadratic order is `ω - (d + 1) / 2`. -/
+theorem complexGenerator_eq_cmOmega_sub (hd : d % 4 = 3) :
+    QuadraticOrder.complexGenerator (-d) = cmOmega d - ((d + 1) / 2 : ℕ) := by
+  obtain ⟨e, he⟩ : ∃ e : ℕ, d + 1 = 2 * e := ⟨(d + 1) / 2, by omega⟩
+  have he' : ((d : ℂ) + 1) = 2 * e := by exact_mod_cast he
+  rw [cmOmega_eq_complexGenerator_add, he', show (d + 1) / 2 = e by omega]
+  ring
+
+/-- For `d ≡ 3 mod 4`, `ω` lies in the embedded quadratic order `ℤ[ω]` of discriminant `-d`. -/
+theorem cmOmega_mem_complexOrder (hd : d % 4 = 3) {hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1} :
+    cmOmega d ∈ QuadraticOrder.complexOrder (-d) (by simp) hD := by
+  rw [← sub_add_cancel (cmOmega d) ((d + 1) / 2 : ℕ), ← complexGenerator_eq_cmOmega_sub hd]
+  exact add_mem (QuadraticOrder.complexGenerator_mem_complexOrder _ _ _) (natCast_mem _ _)
+
 end TauCeti
 
 namespace PeriodPair
@@ -233,6 +248,17 @@ private theorem cmOmega_mul_conj_mul_mem_of_even {n : ℕ}
   rw [← mul_assoc, ← hn]
   convert L.lattice.smul_mem (m : ℤ) hz using 1
   rw [zsmul_eq_mul]
+  push_cast
+  ring
+
+/-- For `d ≡ 7 mod 8`, `ω conj(ω) = (d + 1) / 4` is even, so it kills every half-period of a
+lattice. -/
+theorem cmOmega_mul_conj_mul_mem (hd : d % 8 = 7) {z : ℂ} (hz : 2 * z ∈ L.lattice) :
+    cmOmega d * ((starRingEnd ℂ) (cmOmega d) * z) ∈ L.lattice := by
+  obtain ⟨k, hk⟩ : ∃ k : ℕ, d + 1 = 8 * k := ⟨(d + 1) / 8, by omega⟩
+  have hk' : ((d : ℂ) + 1) = 8 * k := by exact_mod_cast hk
+  refine cmOmega_mul_conj_mul_mem_of_even (n := 2 * k) ?_ (even_two_mul k) hz
+  rw [cmOmega_mul_conj, hk']
   push_cast
   ring
 
@@ -428,22 +454,10 @@ theorem complexOrder_le_leftOrder_of_cmOmega_mul_mem
     (hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1) :
     QuadraticOrder.complexOrder (-d) (by simp) hD ≤ L.lattice.leftOrder := by
   intro x hx
-  rw [Submodule.mem_leftOrder_iff]
-  intro l hl
   obtain ⟨m, k, rfl⟩ := (QuadraticOrder.mem_complexOrder_iff _ _ _).mp hx
-  obtain ⟨j, hj⟩ : ∃ j : ℕ, d + 1 = 2 * j :=
-    ⟨(d + 1) / 2, by have := mod_four_eq_three_of_cmOmega_mul_mem hL; omega⟩
-  have hg : QuadraticOrder.complexGenerator (-d) = cmOmega d - j := by
-    rw [cmOmega_eq_complexGenerator_add]
-    have : ((d : ℂ) + 1) = 2 * j := by exact_mod_cast hj
-    rw [this]
-    ring
-  rw [hg]
-  convert add_mem (L.lattice.smul_mem (m - k * j : ℤ) hl)
-    (L.lattice.smul_mem k (hL l hl)) using 1
-  rw [zsmul_eq_mul, zsmul_eq_mul]
-  push_cast
-  ring
+  rw [complexGenerator_eq_cmOmega_sub (mod_four_eq_three_of_cmOmega_mul_mem hL)]
+  exact add_mem (intCast_mem _ m) (mul_mem (intCast_mem _ k)
+    (sub_mem (Submodule.mem_leftOrder_iff.mpr hL) (natCast_mem _ _)))
 
 /-- A multiplier `α` of a lattice stable under `ω`, for `d` squarefree, is `j + m ω` with integers
 `j`, `m`: the integers `2 Re α`, `2 Re (α conj(ω))` and `|α|²` force `2 Im α = m √d`, with
@@ -510,29 +524,15 @@ theorem leftOrder_eq_complexOrder_of_cmOmega_mul_mem (hsq : Squarefree d)
     L.lattice.leftOrder = QuadraticOrder.complexOrder (-d) (by simp) hD := by
   refine le_antisymm (fun α hα ↦ ?_) (complexOrder_le_leftOrder_of_cmOmega_mul_mem hL hD)
   obtain ⟨j, m, rfl⟩ := exists_intCast_add_intCast_mul_cmOmega hsq hL hα
-  obtain ⟨e, he⟩ : ∃ e : ℕ, d + 1 = 2 * e :=
-    ⟨(d + 1) / 2, by have := mod_four_eq_three_of_cmOmega_mul_mem hL; omega⟩
-  refine (QuadraticOrder.mem_complexOrder_iff _ _ _).mpr ⟨j + m * e, m, ?_⟩
-  rw [cmOmega_eq_complexGenerator_add]
-  have : ((d : ℂ) + 1) = 2 * e := by exact_mod_cast he
-  rw [this]
-  push_cast
-  ring
+  exact add_mem (intCast_mem _ j)
+    (mul_mem (intCast_mem _ m) (cmOmega_mem_complexOrder (mod_four_eq_three_of_cmOmega_mul_mem hL)))
 
 /-- A lattice whose multiplier ring is the quadratic order of discriminant `-d` is stable under
 `ω = (1 + √-d) / 2`, for `d ≡ 3 mod 4`. -/
 theorem cmOmega_mul_mem_of_leftOrder_eq (hd : d % 4 = 3)
     {hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1}
     (hL : L.lattice.leftOrder = QuadraticOrder.complexOrder (-d) (by simp) hD) {l : ℂ}
-    (hl : l ∈ L.lattice) : cmOmega d * l ∈ L.lattice := by
-  refine Submodule.mem_leftOrder_iff.mp ?_ l hl
-  rw [hL, QuadraticOrder.mem_complexOrder_iff]
-  obtain ⟨e, he⟩ : ∃ e : ℕ, d + 1 = 2 * e := ⟨(d + 1) / 2, by omega⟩
-  refine ⟨e, 1, ?_⟩
-  rw [cmOmega_eq_complexGenerator_add]
-  have : ((d : ℂ) + 1) = 2 * e := by exact_mod_cast he
-  rw [this]
-  push_cast
-  ring
+    (hl : l ∈ L.lattice) : cmOmega d * l ∈ L.lattice :=
+  Submodule.mem_leftOrder_iff.mp (hL ▸ cmOmega_mem_complexOrder hd) l hl
 
 end PeriodPair

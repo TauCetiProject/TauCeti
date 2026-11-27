@@ -261,6 +261,13 @@ theorem coe_cmHomothetyClassEquivGal_symm (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ
       posDefProperClassToHomothetyClass n ((posDefProperClassEquivGal n hn).symm σ) :=
   coe_cmHomothetyClassEquivPosDefProperClass_symm n hn ((posDefProperClassEquivGal n hn).symm σ)
 
+/-- There are finitely many homothety classes of complex period lattices with left order
+`complexOrder (-n)`: they correspond to the proper classes of forms of discriminant `-n`. -/
+instance finite_cmHomothetyClass (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :
+    Finite {x : PeriodPairHomothetyClass // x.leftOrder = QuadraticOrder.complexOrder (-n)
+      (Int.neg_nonpos_of_nonneg (Nat.cast_nonneg n)) hn} :=
+  Finite.of_equiv _ (cmHomothetyClassEquivPosDefProperClass n hn).symm
+
 /-- The number of homothety classes of complex period lattices with left order
 `complexOrder (-n)` equals `#Pic(O_{-n})`. -/
 theorem nat_card_cmHomothetyClass (hn : (-n : ℤ) % 4 = 0 ∨ (-n : ℤ) % 4 = 1) :

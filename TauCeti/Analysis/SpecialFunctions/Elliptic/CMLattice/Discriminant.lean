@@ -41,11 +41,12 @@ is the discriminant `a₁⁴ - 64`. Hence `‖ι (a₁⁴ - 64)‖ = 1` and `‖
 * `PeriodPair.IsCMPoint.scaledDiscr_add_add_eq`, `PeriodPair.IsCMPoint.scaledDiscr_mul_mul_eq`:
   the sum and product of `s_Λ` at `b t`, `(1 - b) t`, `t`.
 * `PeriodPair.IsCMPoint.cmOmega_mul_mem_of_mem_iff`: `Λ + ℤ b t` is stable under `ω`.
-* `PeriodPair.IsCMPoint.mem_iff_of_mem_iff`: `Λ = 2 Λ' + (1 - b) Λ'`.
+* `PeriodPair.IsCMPoint.mem_lattice_iff_exists_two_mul_add_one_sub_mul_of_mem_iff`:
+  `Λ = 2 Λ' + (1 - b) Λ'`.
 * `PeriodPair.IsCMPoint.scaledDiscr_mul_scaledDiscr_eq_of_mem_iff`,
   `PeriodPair.IsCMPoint.scaledDiscr_mul_scaledDiscr_eq_neg_of_mem_iff`: the two relations along
   the isogeny.
-* `PeriodPair.prod_scaledDiscr_eq_neg_one_pow`: the product of `s(t)` over the homothety classes
+* `PeriodPair.finprod_scaledDiscr_eq_neg_one_pow`: the product of `s(t)` over the homothety classes
   of lattices stable under `ω` is `(-1)^h`.
 * `PeriodPair.IsCMPoint.norm_map_scaledDiscr_mul_le_one`,
   `PeriodPair.IsCMPoint.norm_map_scaledDiscr_eq_one`: integrality, and the unit property at `t`.
@@ -90,17 +91,11 @@ half-period. -/
 private theorem mul_one_sub_mul_mem (hd : d % 8 = 7)
     (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOmega d)) {z : ℂ} (hz : 2 * z ∈ L.lattice) :
     b * (1 - b) * z ∈ L.lattice := by
-  have hbb : b * (1 - b) = cmOmega d * (starRingEnd ℂ) (cmOmega d) := by
-    have h := cmOmega_add_conj (d := d)
-    rcases hb with rfl | rfl
-    · linear_combination (-cmOmega d) * h
-    · linear_combination (-(starRingEnd ℂ) (cmOmega d)) * h
-  obtain ⟨k, hk⟩ : ∃ k : ℕ, d + 1 = 8 * k := ⟨(d + 1) / 8, by omega⟩
-  have hk' : ((d : ℂ) + 1) = 8 * k := by exact_mod_cast hk
-  convert L.lattice.smul_mem (k : ℤ) hz using 1
-  rw [hbb, cmOmega_mul_conj, hk', zsmul_eq_mul]
-  push_cast
-  ring
+  convert L.cmOmega_mul_conj_mul_mem hd hz using 1
+  have h := cmOmega_add_conj (d := d)
+  rcases hb with rfl | rfl
+  · linear_combination (-cmOmega d * z) * h
+  · linear_combination (-(starRingEnd ℂ) (cmOmega d) * z) * h
 
 namespace IsCMPoint
 
@@ -211,7 +206,7 @@ theorem cmOmega_mul_mem_of_mem_iff (hd : d % 8 = 7)
 
 /-- **Recovering `Λ` from `Λ' = Λ + ℤ b t`**: for `d ≡ 7 mod 8` and `b = ω` or `conj(ω)`, the
 lattice `Λ` is `2 Λ' + (1 - b) Λ'`, the image of the dual isogeny. -/
-theorem mem_iff_of_mem_iff (hd : d % 8 = 7)
+theorem mem_lattice_iff_exists_two_mul_add_one_sub_mul_of_mem_iff (hd : d % 8 = 7)
     (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOmega d))
     (hM : ∀ x, x ∈ M.lattice ↔ x ∈ L.lattice ∨ x + b * t ∈ L.lattice) (z : ℂ) :
     z ∈ L.lattice ↔ ∃ m ∈ M.lattice, ∃ m' ∈ M.lattice, 2 * m + (1 - b) * m' = z := by
@@ -305,6 +300,13 @@ theorem IsCMPoint.scaledDiscr_mul_eq_of_homothetic (hd : d % 8 = 7) {L₁ L₂ :
     ring
   rw [hshift, scaledDiscr_add_coe, scaledDiscr_eq_of_lattice_eq hc, scaledDiscr_smul]
 
+/-- **`s_Λ` at the CM point depends only on the homothety class.** For `d ≡ 7 mod 8`, if `Λ₁` and
+`Λ₂` are homothetic with CM points `t₁` and `t₂`, then `s_{Λ₂}(t₂) = s_{Λ₁}(t₁)`. -/
+theorem IsCMPoint.scaledDiscr_eq_of_homothetic (hd : d % 8 = 7) {L₁ L₂ : PeriodPair}
+    {t₁ t₂ : ℂ} (h₁ : L₁.IsCMPoint d t₁) (h₂ : L₂.IsCMPoint d t₂) (hL : L₁.Homothetic L₂) :
+    L₂.scaledDiscr t₂ = L₁.scaledDiscr t₁ := by
+  simpa only [one_mul] using h₁.scaledDiscr_mul_eq_of_homothetic hd h₂ hL (b := 1) fun _ ↦ by simp
+
 /-- The homothety class of `Λ' = Λ + ℤ b t` determines that of `Λ`, as `Λ = 2 Λ' + (1 - b) Λ'`. -/
 private theorem IsCMPoint.homothetic_of_homothetic_of_mem_iff (hd : d % 8 = 7)
     {L₁ L₂ M₁ M₂ : PeriodPair} {t₁ t₂ : ℂ} (h₁ : L₁.IsCMPoint d t₁) (h₂ : L₂.IsCMPoint d t₂)
@@ -317,7 +319,8 @@ private theorem IsCMPoint.homothetic_of_homothetic_of_mem_iff (hd : d % 8 = 7)
   have hmem (N : PeriodPair) (z : ℂ) : z ∈ (c • N).lattice ↔ (c : ℂ)⁻¹ * z ∈ N.lattice := by
     rw [← N.mul_mem_lattice_smul_iff c, mul_inv_cancel_left₀ hc0]
   refine homothetic_def.mpr ⟨c, Submodule.ext fun z ↦ ?_⟩
-  rw [hmem, h₂.mem_iff_of_mem_iff hd hb hM₂, h₁.mem_iff_of_mem_iff hd hb hM₁, hc]
+  rw [hmem, h₂.mem_lattice_iff_exists_two_mul_add_one_sub_mul_of_mem_iff hd hb hM₂,
+    h₁.mem_lattice_iff_exists_two_mul_add_one_sub_mul_of_mem_iff hd hb hM₁, hc]
   constructor
   · rintro ⟨m, hm, m', hm', rfl⟩
     rw [hmem] at hm hm'
@@ -336,15 +339,6 @@ variable (hd : d % 8 = 7) (hsq : Squarefree d) {hD : (-d : ℤ) % 4 = 0 ∨ (-d 
 include hd hsq
 
 omit hsq in
-/-- The homothety classes of lattices stable under `ω` are finitely many: they are the classes with
-multiplier ring the order of discriminant `-d`, which correspond to its proper form classes. -/
-private theorem finite_homothetyClass :
-    Finite {x : PeriodPairHomothetyClass // x.leftOrder =
-      QuadraticOrder.complexOrder (-d) (by simp) hD} :=
-  have : NeZero d := ⟨by omega⟩
-  Finite.of_equiv _ (BinaryQuadraticForm.cmHomothetyClassEquivPosDefProperClass d hD).symm
-
-omit hsq in
 /-- A representative of each homothety class with multiplier ring `ℤ[ω]`, with a CM point. -/
 private theorem exists_family : ∃ (L : {x : PeriodPairHomothetyClass // x.leftOrder =
       QuadraticOrder.complexOrder (-d) (by simp) hD} → PeriodPair) (t : _ → ℂ),
@@ -359,6 +353,19 @@ private theorem exists_family : ∃ (L : {x : PeriodPairHomothetyClass // x.left
   choose t ht using fun x ↦ (L x).exists_isCMPoint (hω x)
   exact ⟨L, t, hL, ht⟩
 
+omit hd in
+/-- A lattice with a CM point is homothetic to the representative of its class: its multiplier ring
+is `ℤ[ω]`. -/
+private theorem IsCMPoint.exists_homothetic (h : L.IsCMPoint d t)
+    (Lr : {x : PeriodPairHomothetyClass // x.leftOrder =
+      QuadraticOrder.complexOrder (-d) (by simp) hD} → PeriodPair)
+    (hLr : ∀ x, PeriodPairHomothetyClass.mk (Lr x) = x.val) : ∃ x, (Lr x).Homothetic L := by
+  have hx : (PeriodPairHomothetyClass.mk L).leftOrder =
+      QuadraticOrder.complexOrder (-d) (by simp) hD := by
+    rw [PeriodPairHomothetyClass.leftOrder_mk]
+    exact leftOrder_eq_complexOrder_of_cmOmega_mul_mem hsq (fun _ ↦ h.cmOmega_mul_mem) hD
+  exact ⟨⟨_, hx⟩, PeriodPairHomothetyClass.mk_eq_mk_iff.mp (hLr ⟨_, hx⟩)⟩
+
 /-- **The chain of isogenies of degree two is a permutation of the homothety classes.** For a
 family of representatives `Λ_x` with CM points `t_x`, there is a permutation `σ` with
 `s(b t_x) s((1 - b) t_{σ x}) = 2¹²` and `s(b t_{σ x}) s(t_{σ x}) = -s(b t_x)`. -/
@@ -371,7 +378,7 @@ private theorem exists_perm (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOme
       (L x).scaledDiscr (b * t x) * (L (σ x)).scaledDiscr ((1 - b) * t (σ x)) = 2 ^ 12 ∧
       (L (σ x)).scaledDiscr (b * t (σ x)) * (L (σ x)).scaledDiscr (t (σ x)) =
         -(L x).scaledDiscr (b * t x) := by
-  have := finite_homothetyClass hd (hD := hD)
+  have : NeZero d := ⟨by omega⟩
   have hb' := one_sub_eq_cmOmega_or_eq_conj hb
   choose M hM using fun x ↦ (L x).exists_mem_lattice_iff_of_two_mul_mem
     ((ht x).two_mul_mul_mem hb)
@@ -396,10 +403,7 @@ private theorem exists_perm (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOme
   simp only [Equiv.ofBijective_apply]
   rw [(ht' x).scaledDiscr_mul_eq_of_homothetic hd (ht (f x)) hσ fun _ ↦ (ht (f x)).mul_mem hb',
     (ht' x).scaledDiscr_mul_eq_of_homothetic hd (ht (f x)) hσ fun _ ↦ (ht (f x)).mul_mem hb]
-  have h₀ := (ht' x).scaledDiscr_mul_eq_of_homothetic hd (ht (f x)) hσ (b := 1) fun _ ↦ by
-    simp
-  simp only [one_mul] at h₀
-  rw [h₀]
+  rw [(ht' x).scaledDiscr_eq_of_homothetic hd (ht (f x)) hσ]
   exact ⟨(ht x).scaledDiscr_mul_scaledDiscr_eq_of_mem_iff hd hb (hM x) (ht' x),
     (ht x).scaledDiscr_mul_scaledDiscr_eq_neg_of_mem_iff hd hb (hM x) (ht' x)⟩
 
@@ -407,14 +411,14 @@ private theorem exists_perm (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOme
 and representatives `Λ_x` with CM points `t_x` of the homothety classes of lattices whose
 multiplier ring is the order `ℤ[ω]` of discriminant `-d`, `∏ₓ s_{Λ_x}(t_x) = (-1)^h`, where `h` is
 the number of these classes. -/
-theorem prod_scaledDiscr_eq_neg_one_pow
+theorem finprod_scaledDiscr_eq_neg_one_pow
     (L : {x : PeriodPairHomothetyClass // x.leftOrder =
       QuadraticOrder.complexOrder (-d) (by simp) hD} → PeriodPair)
     (hL : ∀ x, PeriodPairHomothetyClass.mk (L x) = x.val) (t : _ → ℂ)
     (ht : ∀ x, (L x).IsCMPoint d (t x)) :
     ∏ᶠ x, (L x).scaledDiscr (t x) = (-1) ^ Nat.card {x : PeriodPairHomothetyClass //
       x.leftOrder = QuadraticOrder.complexOrder (-d) (by simp) hD} := by
-  have := finite_homothetyClass hd (hD := hD)
+  have : NeZero d := ⟨by omega⟩
   have := Fintype.ofFinite {x : PeriodPairHomothetyClass //
     x.leftOrder = QuadraticOrder.complexOrder (-d) (neg_nonpos.mpr (Nat.cast_nonneg _)) hD}
   obtain ⟨σ, hσ⟩ := exists_perm hd hsq (.inl rfl) L hL t ht
@@ -428,12 +432,19 @@ theorem prod_scaledDiscr_eq_neg_one_pow
       = ∏ x, s (σ x) * (L (σ x)).scaledDiscr (t (σ x)) := by
         rw [← Finset.prod_mul_distrib]
         exact (Equiv.prod_comp σ fun x ↦ s x * (L x).scaledDiscr (t x)).symm
+    _ = ∏ x, -s x := Finset.prod_congr rfl fun x _ ↦ (hσ x).2
     _ = (∏ x, s x) * (-1) ^ Fintype.card _ := by
-        simp only [s, fun x ↦ (hσ x).2, Finset.prod_neg, mul_comm, Finset.card_univ]
+        rw [Finset.prod_neg, Finset.card_univ, mul_comm]
 
 section Integral
 
 variable {R : Type*} [SeminormedRing R] [NormOneClass R] [NormMulClass R] [IsUltrametricDist R]
+
+omit hd hsq [NormMulClass R] in
+/-- `‖ι (-48)‖ ≤ 1` in an ultrametric ring. -/
+private theorem norm_map_neg_forty_eight_le_one (ι : ℂ →+* R) : ‖ι (-48)‖ ≤ 1 := by
+  rw [map_neg, norm_neg, map_ofNat]
+  exact_mod_cast IsUltrametricDist.norm_natCast_le_one R 48
 
 /-- **The numbers `s_Λ(b t)` are integral at every prime.** For `d ≡ 7 mod 8` squarefree, a lattice
 `Λ` with CM point `t`, `b = ω` or `conj(ω)`, and a ring homomorphism `ι` from `ℂ` into an
@@ -442,12 +453,9 @@ theorem IsCMPoint.norm_map_scaledDiscr_mul_le_one (h : L.IsCMPoint d t)
     (hb : b = cmOmega d ∨ b = (starRingEnd ℂ) (cmOmega d)) (ι : ℂ →+* R) :
     ‖ι (L.scaledDiscr (b * t))‖ ≤ 1 := by
   have hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1 := .inr (by omega)
-  have := finite_homothetyClass hd (hD := hD)
+  have : NeZero d := ⟨by omega⟩
   obtain ⟨Lr, tr, hLr, htr⟩ := exists_family hd (hD := hD)
   obtain ⟨σ, hσ⟩ := exists_perm hd hsq hb Lr hLr tr htr
-  have h48 : ‖ι (-48)‖ ≤ 1 := by
-    rw [map_neg, norm_neg, map_ofNat]
-    exact_mod_cast IsUltrametricDist.norm_natCast_le_one R 48
   have h2 : ‖ι (2 ^ 12)‖ ≤ 1 := by
     rw [map_pow, map_ofNat, norm_pow]
     exact pow_le_one₀ (norm_nonneg _) (by exact_mod_cast IsUltrametricDist.norm_natCast_le_one R 2)
@@ -455,17 +463,14 @@ theorem IsCMPoint.norm_map_scaledDiscr_mul_le_one (h : L.IsCMPoint d t)
     (s := fun x ↦ ι ((Lr x).scaledDiscr (b * tr x)))
     (s' := fun x ↦ ι ((Lr x).scaledDiscr ((1 - b) * tr x)))
     (s₀ := fun x ↦ ι ((Lr x).scaledDiscr (tr x)))
-    (fun x ↦ by simpa only [← map_add, (htr x).scaledDiscr_add_add_eq hb] using h48)
+    (fun x ↦ by
+      simpa only [← map_add, (htr x).scaledDiscr_add_add_eq hb] using
+        norm_map_neg_forty_eight_le_one ι)
     (fun x ↦ by simpa only [← map_mul, (hσ x).1] using h2)
     (fun x ↦ by simp only [← map_mul, (hσ x).2, map_neg, norm_neg])
   -- `Λ` is homothetic to the representative of its class
-  have hx : (PeriodPairHomothetyClass.mk L).leftOrder =
-      QuadraticOrder.complexOrder (-d) (by simp) hD := by
-    rw [PeriodPairHomothetyClass.leftOrder_mk]
-    exact leftOrder_eq_complexOrder_of_cmOmega_mul_mem hsq (fun _ ↦ h.cmOmega_mul_mem) hD
-  have hhom : (Lr ⟨_, hx⟩).Homothetic L :=
-    PeriodPairHomothetyClass.mk_eq_mk_iff.mp (hLr ⟨_, hx⟩)
-  rw [(htr _).scaledDiscr_mul_eq_of_homothetic hd h hhom fun _ ↦ h.mul_mem hb]
+  obtain ⟨x₀, hhom⟩ := h.exists_homothetic hsq Lr hLr
+  rw [(htr x₀).scaledDiscr_mul_eq_of_homothetic hd h hhom fun _ ↦ h.mul_mem hb]
   exact hcycle _
 
 /-- **`s_Λ(t)` is integral at every prime**, for `d ≡ 7 mod 8` squarefree and a lattice `Λ` with CM
@@ -473,13 +478,10 @@ point `t`: `s_Λ(t) = -48 - s_Λ(ω t) - s_Λ(conj(ω) t)`. -/
 theorem IsCMPoint.norm_map_scaledDiscr_le_one (h : L.IsCMPoint d t) (ι : ℂ →+* R) :
     ‖ι (L.scaledDiscr t)‖ ≤ 1 := by
   have hω : cmOmega d = cmOmega d ∨ cmOmega d = (starRingEnd ℂ) (cmOmega d) := .inl rfl
-  have h48 : ‖ι (-48)‖ ≤ 1 := by
-    rw [map_neg, norm_neg, map_ofNat]
-    exact_mod_cast IsUltrametricDist.norm_natCast_le_one R 48
   rw [eq_sub_of_add_eq' (h.scaledDiscr_add_add_eq hω), ← sub_sub, map_sub, map_sub,
     sub_eq_add_neg, sub_eq_add_neg]
   refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ((IsUltrametricDist.norm_add_le_max
-    _ _).trans (max_le h48 ?_)) ?_) <;> rw [norm_neg]
+    _ _).trans (max_le (norm_map_neg_forty_eight_le_one ι) ?_)) ?_) <;> rw [norm_neg]
   exacts [h.norm_map_scaledDiscr_mul_le_one hd hsq hω ι,
     h.norm_map_scaledDiscr_mul_le_one hd hsq (one_sub_eq_cmOmega_or_eq_conj hω) ι]
 
@@ -492,11 +494,11 @@ theorem IsCMPoint.norm_map_scaledDiscr_eq_one {R : Type*} [SeminormedCommRing R]
     [NormMulClass R] [IsUltrametricDist R] (h : L.IsCMPoint d t) (ι : ℂ →+* R) :
     ‖ι (L.scaledDiscr t)‖ = 1 := by
   have hD : (-d : ℤ) % 4 = 0 ∨ (-d : ℤ) % 4 = 1 := .inr (by omega)
-  have := finite_homothetyClass hd (hD := hD)
+  have : NeZero d := ⟨by omega⟩
   have := Fintype.ofFinite {x : PeriodPairHomothetyClass //
     x.leftOrder = QuadraticOrder.complexOrder (-d) (neg_nonpos.mpr (Nat.cast_nonneg _)) hD}
   obtain ⟨Lr, tr, hLr, htr⟩ := exists_family hd (hD := hD)
-  have hprod := prod_scaledDiscr_eq_neg_one_pow hd hsq Lr hLr tr htr
+  have hprod := finprod_scaledDiscr_eq_neg_one_pow hd hsq Lr hLr tr htr
   rw [finprod_eq_prod_of_fintype] at hprod
   have hle (x : _) : ‖ι ((Lr x).scaledDiscr (tr x))‖ ≤ 1 :=
     (htr x).norm_map_scaledDiscr_le_one hd hsq ι
@@ -504,20 +506,12 @@ theorem IsCMPoint.norm_map_scaledDiscr_eq_one {R : Type*} [SeminormedCommRing R]
     rw [← norm_prod, ← map_prod, hprod, map_pow, map_neg, map_one, norm_pow, norm_neg, norm_one,
       one_pow]
   -- `Λ` is homothetic to the representative of its class `x₀`
-  have hx : (PeriodPairHomothetyClass.mk L).leftOrder =
-      QuadraticOrder.complexOrder (-d) (by simp) hD := by
-    rw [PeriodPairHomothetyClass.leftOrder_mk]
-    exact leftOrder_eq_complexOrder_of_cmOmega_mul_mem hsq (fun _ ↦ h.cmOmega_mul_mem) hD
-  have hhom : (Lr ⟨_, hx⟩).Homothetic L :=
-    PeriodPairHomothetyClass.mk_eq_mk_iff.mp (hLr ⟨_, hx⟩)
-  have hs := (htr ⟨_, hx⟩).scaledDiscr_mul_eq_of_homothetic hd h hhom (b := 1) fun _ ↦ by
-    simp
-  simp only [one_mul] at hs
-  rw [hs]
+  obtain ⟨x₀, hhom⟩ := h.exists_homothetic hsq Lr hLr
+  rw [(htr x₀).scaledDiscr_eq_of_homothetic hd h hhom]
   -- a product of numbers in `[0, 1]` equal to `1` has every factor equal to `1`
   classical
   refine le_antisymm (hle _) ?_
-  rw [← hnorm, ← Finset.mul_prod_erase _ _ (Finset.mem_univ ⟨_, hx⟩)]
+  rw [← hnorm, ← Finset.mul_prod_erase _ _ (Finset.mem_univ x₀)]
   exact mul_le_of_le_one_right (norm_nonneg _)
     (Finset.prod_le_one₀ (fun _ _ ↦ norm_nonneg _) fun x _ ↦ hle x)
 
