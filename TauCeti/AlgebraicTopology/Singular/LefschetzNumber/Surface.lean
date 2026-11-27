@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FlatCoefficients
 public import TauCeti.AlgebraicTopology.Singular.Reduced
 import Mathlib.Algebra.Module.Rat
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.Cohomology
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Charpoly
 
 /-!
@@ -212,19 +213,10 @@ private theorem isAlt_and_nondegenerate_and_isIsometry_singularCupPairing (h2 : 
 variable [FiniteCWType M]
 
 omit [T2Space M] [CompactSpace M] [ConnectedSpace M] in
-/-- Over a field, `H¹(M; k)` is finite-dimensional, like `H₁(M; k)`. -/
-private theorem finite_singularCohomology_one :
-    Module.Finite k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat k)) k (𝟙_ (ModuleCat k)) 1) :=
-  -- The singular homology functor is by definition the homology of `singularChains k`
-  -- (`TauCeti.singularHomologyFunctor_obj_obj`).
-  ((TopCat.of M).finite_singularCohomology_iff 1).2
-    (finiteDimensional_singularChains_homology M k 1)
-
-omit [T2Space M] [CompactSpace M] [ConnectedSpace M] in
 /-- Over a field, `f_*` on `H₁(M; k)` has the characteristic polynomial, the dimension and the
 determinant `det (1 - ·)` of `f^*` on `H¹(M; k)`, its transpose. -/
 private theorem charpoly_and_finrank_and_det_singularHomologyMap_one (f : C(M, M)) :
-    haveI := finite_singularCohomology_one (M := M) k
+    haveI := finite_singularCohomology_of_finiteCWType M k 1
     (ContinuousMap.singularHomologyMap k 1 f).charpoly =
         (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat k)) (k := k) (M := 𝟙_ (ModuleCat k))
           (TopCat.ofHom f) 1).hom.charpoly ∧
@@ -235,7 +227,7 @@ private theorem charpoly_and_finrank_and_det_singularHomologyMap_one (f : C(M, M
           (k := k) (M := 𝟙_ (ModuleCat k)) (TopCat.ofHom f) 1).hom) := by
   -- `f_*` is by definition the map of the singular homology functor on `f`
   -- (`ContinuousMap.singularHomologyMap_eq_singularHomologyFunctor_map`).
-  have := finite_singularCohomology_one (M := M) k
+  have := finite_singularCohomology_of_finiteCWType M k 1
   have : Module.Finite k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) 1).obj
       (ModuleCat.of k k)).obj (TopCat.of M)) := finiteDimensional_singularChains_homology M k 1
   exact ⟨(TopCat.charpoly_singularCohomologyMap _ 1).symm,
@@ -253,7 +245,7 @@ theorem reflect_reverse_charpoly_singularHomologyMap_one (h2 : (2 : k) ≠ 0) {f
         (finrank k (((singularChains k).obj (TopCat.of M)).homology 1)) =
       (ContinuousMap.singularHomologyMap k 1 f).charpoly.reverse := by
   obtain ⟨hB, hnd, hf'⟩ := o.isAlt_and_nondegenerate_and_isIsometry_singularCupPairing hE k h2 hf
-  have := finite_singularCohomology_one (M := M) k
+  have := finite_singularCohomology_of_finiteCWType M k 1
   obtain ⟨hchar, hrank, -⟩ := charpoly_and_finrank_and_det_singularHomologyMap_one k f
   rw [hchar, hrank]
   exact hf'.reflect_reverse_charpoly hB hnd
@@ -268,7 +260,7 @@ theorem derivative_eval_one_reverse_charpoly_singularHomologyMap_one (h2 : (2 : 
       ((finrank k (((singularChains k).obj (TopCat.of M)).homology 1) / 2 : ℕ) : k) *
         LinearMap.det (LinearMap.id - ContinuousMap.singularHomologyMap k 1 f) := by
   obtain ⟨hB, hnd, hf'⟩ := o.isAlt_and_nondegenerate_and_isIsometry_singularCupPairing hE k h2 hf
-  have := finite_singularCohomology_one (M := M) k
+  have := finite_singularCohomology_of_finiteCWType M k 1
   obtain ⟨hchar, hrank, hdet⟩ := charpoly_and_finrank_and_det_singularHomologyMap_one k f
   rw [hchar, hrank, hdet, ← Module.End.one_eq_id]
   exact hf'.derivative_eval_one_reverse_charpoly hB hnd
@@ -289,7 +281,7 @@ theorem coeff_lefschetzZeta_of_degree_eq_one [Algebra ℚ k] {f : C(M, M)}
   have : CharZero k := algebraRat.charZero k
   have h2 : (2 : k) ≠ 0 := two_ne_zero
   obtain ⟨hB, hnd, hf'⟩ := o.isAlt_and_nondegenerate_and_isIsometry_singularCupPairing hE k h2 hf
-  have := finite_singularCohomology_one (M := M) k
+  have := finite_singularCohomology_of_finiteCWType M k 1
   obtain ⟨hchar, hrank, hdet⟩ := charpoly_and_finrank_and_det_singularHomologyMap_one k f
   rw [hrank] at ha ⊢
   -- Over a field, `((1 - t) ^ 2)⁻¹ = (∑ tⁿ) ^ 2`.
