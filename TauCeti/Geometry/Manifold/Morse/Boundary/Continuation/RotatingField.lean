@@ -15,17 +15,18 @@ import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 /-!
 # Continuation fields along paths of rotations of the circle
 
-On the circle `S¹ = ℝ ⧸ 2πℤ` the functions `f_r(θ) = δ cos (2 (θ - r))`
-(`TauCeti.circleCosTwo δ r`) are the rotations of `f_0` by the angle `r`. This file builds
+On the circle `S¹ = ℝ ⧸ pℤ`, the rotation of a function `f` by the angle `r` is
+`θ ↦ f (θ - r)`; for instance the functions `f_r(θ) = δ cos (2 (θ - r))`
+(`TauCeti.circleCosTwo δ r`) on `ℝ ⧸ 2πℤ` are the rotations of `f_0`. This file builds
 continuation data along a path of angles `t ↦ r t` from adapted pseudo-gradients, and shows that
 for large rates the transition diffeomorphism of the slab is the composite of the two end flows and
-of a map moving every angle as little as we like. The rotations of vector fields, the rotating
-continuation field and the drift estimate make sense on a circle `ℝ ⧸ pℤ` of any period.
+of a map moving every angle as little as we like.
 
-**Rotated pseudo-gradients.** Let `X` be a pseudo-gradient adapted to `f_0`. Its rotation
+**Rotated pseudo-gradients.** Let `X` be a pseudo-gradient adapted to `f`. Its rotation
 `θ ↦ X (θ - r)` (`TauCeti.circleRotatedField X r`) is the pullback of `X` along the rotation
-`θ ↦ θ - r`, which carries `f_0` to `f_r`, so it is a pseudo-gradient adapted to `f_r`
-(`TauCeti.IsAdaptedPseudoGradient.circleRotatedField`).
+`θ ↦ θ - r`, which carries `f` to its rotation by `r`, so it is a pseudo-gradient adapted to that
+rotation (`TauCeti.IsAdaptedPseudoGradient.circleRotatedField`); for `f = f_0` it is adapted to
+`f_r` (`TauCeti.IsAdaptedPseudoGradient.circleRotatedField_circleCosTwo`).
 
 **The rotating continuation field.** For a smooth path `r` and a rate `C`, the field
 `C t (1 - t²) ∂_t + X (θ - r t)` on the cylinder `S¹ × ℝ`
@@ -52,16 +53,17 @@ angle by at most `L |t - s|` from the time `s` to the time `t`
 `ε > 0` and all large rates `C` the flow across the window, forwards and backwards, moves every
 angle by less than `ε`
 (`TauCeti.eventually_dist_timeDependentFlowOf_circleRotatingContinuationField_lt`).
-This is the estimate of the circle continuation examples that the transition diffeomorphism across
-the window moves every lifted angle by less than `π / 12`, forwards and backwards. There it is
-obtained for the gradient field of `f_r` by taking the amplitude `δ` small; an adapted
-pseudo-gradient is linear in Morse charts with weights `±1`, so it cannot be scaled down, and the
-rate `C` is made large instead, which is the same after rescaling time.
+An adapted pseudo-gradient is linear in Morse charts with weights `±1`, so it cannot be scaled
+down to make this drift small; the rate `C` is made large instead, which shortens the window.
 
 ## Main results
 
-* `TauCeti.IsAdaptedPseudoGradient.circleRotatedField`: rotating an adapted pseudo-gradient of
-  `f_0` by `r` gives one of `f_r`.
+* `TauCeti.circleRotatedField_zero`, `TauCeti.circleRotatedField_circleRotatedField`: rotating
+  by `0` does nothing, and rotations compose.
+* `TauCeti.IsAdaptedPseudoGradient.circleRotatedField`,
+  `TauCeti.IsAdaptedPseudoGradient.circleRotatedField_circleCosTwo`: rotating an adapted
+  pseudo-gradient of `f` by `r` gives one of the rotation of `f` by `r`, in particular rotating
+  one of `f_0` gives one of `f_r`.
 * `TauCeti.isContinuationField_circleRotatingContinuationField`,
   `TauCeti.contMDiff_circleRotatingContinuationField`: the rotating field is a smooth continuation
   field.
@@ -99,6 +101,18 @@ noncomputable def circleRotatedField (X : (θ : AddCircle p) → TangentSpace �
 theorem circleRotatedField_apply (r : ℝ) (θ : AddCircle p) :
     circleRotatedField X r θ = X (θ - r) :=
   (rfl)
+
+/-- Rotating a vector field on the circle by the angle `0` does not change it. -/
+@[simp]
+theorem circleRotatedField_zero : circleRotatedField X 0 = X :=
+  funext fun θ ↦ by rw [circleRotatedField_apply, AddCircle.coe_zero, sub_zero]
+
+/-- Rotating a vector field on the circle by `r` and then by `s` is rotating it by `r + s`. -/
+theorem circleRotatedField_circleRotatedField (r s : ℝ) :
+    circleRotatedField (circleRotatedField X r) s = circleRotatedField X (r + s) :=
+  funext fun θ ↦ by
+    rw [circleRotatedField_apply, circleRotatedField_apply, circleRotatedField_apply,
+      AddCircle.coe_add, sub_sub, add_comm (s : AddCircle p)]
 
 /-- **The rotating continuation field** of a vector field `X` on the circle along a path of angles
 `r`, at rate `C`: the field `C t (1 - t²) ∂_t + X (θ - r t)` on the cylinder `S¹ × ℝ`, whose space
@@ -258,33 +272,30 @@ theorem eventually_dist_timeDependentFlowOf_circleRotatingContinuationField_lt (
 
 end Window
 
-/-! ### Rotated adapted pseudo-gradients of `δ cos (2 θ)` -/
+/-! ### Rotated adapted pseudo-gradients -/
 
 section Adapted
 
-local instance circleRotatingTwoPiPos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+variable {f₀ : AddCircle p → ℝ}
 
-variable {δ : ℝ} {X : (θ : AddCircle (2 * π)) → TangentSpace 𝓘(ℝ) θ}
-
-/-- **Rotated adapted pseudo-gradients.** If `X` is a pseudo-gradient adapted to `δ cos (2 θ)`, its
-rotation by `r` is a pseudo-gradient adapted to `δ cos (2 (θ - r))`: it is the pullback of `X`
-along the rotation `θ ↦ θ - r`, a diffeomorphism of the circle whose differential is the
-identity. -/
+/-- **Rotated adapted pseudo-gradients.** If `X` is a pseudo-gradient adapted to `f₀`, its
+rotation by `r` is a pseudo-gradient adapted to the rotation `θ ↦ f₀ (θ - r)` of `f₀`: it is the
+pullback of `X` along the rotation `θ ↦ θ - r`, a diffeomorphism of the circle whose differential
+is the identity. -/
 protected theorem IsAdaptedPseudoGradient.circleRotatedField
-    (hX : IsAdaptedPseudoGradient (circleCosTwo δ 0) X) (r : ℝ) :
-    IsAdaptedPseudoGradient (circleCosTwo δ r) (circleRotatedField X r) := by
-  set σ := Lie.addZSMulDiffeomorph 𝓘(ℝ) ∞ (-(r : AddCircle (2 * π))) 1 (by norm_num)
-  have hσ : ⇑σ = (· + (-(r : AddCircle (2 * π)))) := funext fun θ ↦ by
+    (hX : IsAdaptedPseudoGradient f₀ X) (r : ℝ) :
+    IsAdaptedPseudoGradient (fun θ ↦ f₀ (θ - r)) (circleRotatedField X r) := by
+  set σ := Lie.addZSMulDiffeomorph 𝓘(ℝ) ∞ (-(r : AddCircle p)) 1 (by norm_num)
+  have hσ : ⇑σ = (· + (-(r : AddCircle p))) := funext fun θ ↦ by
     simp only [σ, Lie.addZSMulDiffeomorph_apply, one_zsmul, add_comm]
   have h := hX.mpullback σ
-  have hσθ (θ : AddCircle (2 * π)) : σ θ = θ - r := by rw [hσ, sub_eq_add_neg]
-  have hf : circleCosTwo δ 0 ∘ σ = circleCosTwo δ r := funext fun θ ↦ by
-    rw [comp_apply, hσθ, circleCosTwo_zero_apply_sub]
+  have hσθ (θ : AddCircle p) : σ θ = θ - r := by rw [hσ, sub_eq_add_neg]
+  have hf : f₀ ∘ σ = fun θ ↦ f₀ (θ - r) := funext fun θ ↦ by rw [comp_apply, hσθ]
   -- The differential of the rotation is the identity, so the pullback of `X` is `X ∘ σ`.
   have hV : VectorField.mpullback 𝓘(ℝ) 𝓘(ℝ) σ X = circleRotatedField X r := funext fun θ ↦ by
     have hd : mfderiv 𝓘(ℝ) 𝓘(ℝ) σ θ = ContinuousLinearMap.id ℝ ℝ := by
       rw [hσ]
-      exact AddCircle.mfderiv_add_right (2 * π) (-(r : AddCircle (2 * π))) θ
+      exact AddCircle.mfderiv_add_right p (-(r : AddCircle p)) θ
     have h₁ := σ.mfderiv_apply_mpullback (by simp) X θ
     rw [hd] at h₁
     rw [circleRotatedField_apply, ← hσθ]
@@ -292,7 +303,7 @@ protected theorem IsAdaptedPseudoGradient.circleRotatedField
     exact h₁
   rwa [hf, hV] at h
 
-variable {r : ℝ → ℝ} {r₀ r₁ t₀ t₁ C : ℝ} (hX : IsAdaptedPseudoGradient (circleCosTwo δ 0) X)
+variable {r : ℝ → ℝ} {r₀ r₁ t₀ t₁ C : ℝ} (hX : IsAdaptedPseudoGradient f₀ X)
   (hr : ContDiff ℝ ∞ r) (ht₀ : t₀ ∈ Ioo 0 1) (ht₁ : t₁ ∈ Ioo 0 1) (hr₀ : ∀ t ≤ t₀, r t = r₀)
   (hr₁ : ∀ t ≥ t₁, r t = r₁) (hC : 0 < C) {s₀ s₁ a b : ℝ}
   (hs₀ : s₀ < intervalBaseTimeCoordinate t₀ / C) (hs₁ : intervalBaseTimeCoordinate t₁ / C < s₁)
@@ -304,7 +315,7 @@ include hX hr ht₀ ht₁ hr₀ hr₁ hC hs₀ hs₁ ha hb
 time `b ≥ s₁` is the flow of the rotation of `X` by `r₀` for the time `s₀ - a`, then the
 time-dependent flow across the window from `s₀` to `s₁`, then the flow of the rotation of `X` by
 `r₁` for the time `b - s₁`. -/
-theorem continuationTransition_circleRotatingContinuationField_apply (θ : AddCircle (2 * π)) :
+theorem continuationTransition_circleRotatingContinuationField_apply (θ : AddCircle p) :
     continuationTransition C (contMDiff_circleRotatingContinuationField hX.contMDiff hr C) a b θ =
       (hX.circleRotatedField r₁).flow (b - s₁)
         (timeDependentFlowOf (continuationSpaceField C (circleRotatingContinuationField X r C))
@@ -321,8 +332,7 @@ theorem continuationTransition_circleRotatingContinuationField_apply (θ : AddCi
 field from a time `a ≤ s₀` to a time `b ≥ s₁` is the flow of the rotation of `X` by `r₁` for the
 time `s₁ - b`, then the time-dependent flow back across the window from `s₁` to `s₀`, then the flow
 of the rotation of `X` by `r₀` for the time `a - s₀`. -/
-theorem continuationTransition_circleRotatingContinuationField_symm_apply
-    (θ : AddCircle (2 * π)) :
+theorem continuationTransition_circleRotatingContinuationField_symm_apply (θ : AddCircle p) :
     (continuationTransition C (contMDiff_circleRotatingContinuationField hX.contMDiff hr C)
         a b).symm θ =
       (hX.circleRotatedField r₀).flow (a - s₀)
@@ -336,5 +346,19 @@ theorem continuationTransition_circleRotatingContinuationField_symm_apply
     hs₀ hs₁ ha hb θ
 
 end Adapted
+
+section CircleCosTwo
+
+local instance circleRotatingTwoPiPos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
+
+/-- **Rotated adapted pseudo-gradients of `δ cos (2 θ)`.** If `X` is a pseudo-gradient adapted to
+`δ cos (2 θ)`, its rotation by `r` is a pseudo-gradient adapted to `δ cos (2 (θ - r))`. -/
+theorem IsAdaptedPseudoGradient.circleRotatedField_circleCosTwo {δ : ℝ}
+    {X : (θ : AddCircle (2 * π)) → TangentSpace 𝓘(ℝ) θ}
+    (hX : IsAdaptedPseudoGradient (circleCosTwo δ 0) X) (r : ℝ) :
+    IsAdaptedPseudoGradient (circleCosTwo δ r) (circleRotatedField X r) := by
+  simpa only [circleCosTwo_zero_apply_sub] using hX.circleRotatedField r
+
+end CircleCosTwo
 
 end TauCeti

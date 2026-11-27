@@ -126,15 +126,10 @@ theorem dist_le_mul_of_hasMFDerivAt {γ : ℝ → AddCircle p} {v : ℝ → ℝ}
   have hΓγ : (fun u ↦ (Γ u : AddCircle p)) = γ := funext hlift
   have hderiv (u : ℝ) : HasDerivAt Γ (v u) u :=
     hasDerivAt_of_hasMFDerivAt_coe_comp Γ.continuous.continuousAt (hΓγ ▸ hγ u)
-  have hbound : ‖Γ t - Γ s‖ ≤ L * ‖t - s‖ := by
-    rcases le_total s t with hst | hst
-    · exact norm_image_sub_le_of_norm_deriv_le_segment' (fun u _ ↦ (hderiv u).hasDerivWithinAt)
-        (fun u hu ↦ hv u (Icc_subset_uIcc (Ico_subset_Icc_self hu))) t (right_mem_Icc.2 hst)
-        |>.trans_eq (by rw [Real.norm_of_nonneg (sub_nonneg.2 hst)])
-    · rw [norm_sub_rev, norm_sub_rev t s]
-      exact norm_image_sub_le_of_norm_deriv_le_segment' (fun u _ ↦ (hderiv u).hasDerivWithinAt)
-        (fun u hu ↦ hv u (Icc_subset_uIcc' (Ico_subset_Icc_self hu))) s (right_mem_Icc.2 hst)
-        |>.trans_eq (by rw [Real.norm_of_nonneg (sub_nonneg.2 hst)])
+  have hbound : ‖Γ t - Γ s‖ ≤ L * ‖t - s‖ :=
+    (convex_uIcc s t).norm_image_sub_le_of_norm_hasDerivWithin_le
+      (fun u _ ↦ (hderiv u).hasDerivWithinAt) (fun u hu ↦ (Real.norm_eq_abs _).trans_le (hv u hu))
+      left_mem_uIcc right_mem_uIcc
   rw [← hlift t, ← hlift s, dist_eq_norm, ← coe_sub, ← Real.norm_eq_abs]
   exact (QuotientAddGroup.norm_mk_le_norm (S := AddSubgroup.zmultiples p)).trans hbound
 
