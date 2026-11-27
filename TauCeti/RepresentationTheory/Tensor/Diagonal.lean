@@ -7,14 +7,12 @@ module
 
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.LinearAlgebra.End.CharP
 
-import Mathlib.LinearAlgebra.TensorProduct.Pi
+import TauCeti.LinearAlgebra.TensorProduct.Finiteness
 
 /-!
 # Diagonal tensor products of a representation with a module over a group algebra
@@ -55,9 +53,9 @@ universe u v w
 
 section DiagonalTensor
 
-variable {R : Type u} [Ring R] {Δ : Type*} [Monoid Δ] {k : Type*} [CommRing k]
-  {W : Type w} [AddCommGroup W] [Module k W] (σ : Representation k Δ W)
-  (N : Type v) [AddCommGroup N] [Module R[Δ] N] [Module k N] [SMulCommClass R[Δ] k N]
+variable {R : Type u} [Semiring R] {Δ : Type*} [Monoid Δ] {k : Type*} [CommSemiring k]
+  {W : Type w} [AddCommMonoid W] [Module k W] (σ : Representation k Δ W)
+  (N : Type v) [AddCommMonoid N] [Module R[Δ] N] [Module k N] [SMulCommClass R[Δ] k N]
 
 /-- The diagonal action of `R[Δ]` on `W ⊗[k] N`: an element `g` of `Δ` acts by `σ g ⊗ g`, and a
 scalar of `R` acts on the second factor only. -/
@@ -66,13 +64,20 @@ noncomputable def diagonalTensorAction : R[Δ] →+* Module.End k (W ⊗[k] N) :
     (RingHom.comp (RingHom.comp (Module.End.lTensorAlgHom k N W).toRingHom
       (Module.toModuleEnd k N)) (MonoidAlgebra.singleOneRingHom (R := R) (M := Δ)))
     (σ.tprod ((Module.toModuleEnd k N).toMonoidHom.comp (MonoidAlgebra.of R Δ)))
-    fun r g ↦ TensorProduct.ext' fun w n ↦ by
-      simp only [mul_apply_eq_comp, Representation.tprod_apply, TensorProduct.map_tmul,
-        RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe,
-        Module.End.lTensorAlgHom_apply_apply, TensorProduct.liftAux_tmul, LinearMap.compl₂_apply,
-        TensorProduct.mk_apply, MonoidHom.comp_apply, Module.toModuleEnd_apply,
-        MonoidAlgebra.of_apply]
-      simp [MonoidAlgebra.singleOneRingHom, ← mul_smul, MonoidAlgebra.single_mul_single]
+    fun r g ↦ by
+      -- `single 1 r` commutes with `single g 1`, so `1 ⊗ single 1 r` commutes with
+      -- `σ g ⊗ single g 1`.
+      have h := ((MonoidAlgebra.single_commute_single (Commute.one_left g)
+        (Commute.one_right r)).map (Module.toModuleEnd k (S := R[Δ]) N)).eq
+      -- `lTensorAlgHom` sends `a` to `1 ⊗ a` by definition.
+      have hl (a : Module.End k N) : Module.End.lTensorAlgHom k N W a = a.lTensor W := rfl
+      simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hl,
+        Representation.tprod_apply, MonoidHom.comp_apply, MonoidAlgebra.of_apply,
+        MonoidAlgebra.singleOneRingHom_apply, ZeroHom.toFun_eq_coe, AddMonoidHom.toZeroHom_coe,
+        MonoidAlgebra.singleAddHom_apply, LinearMap.lTensor_def]
+      rw [commute_iff_eq, ← TensorProduct.map_mul, ← TensorProduct.map_mul, ← Module.End.one_eq_id,
+        one_mul, mul_one]
+      exact congrArg (TensorProduct.map (σ g)) h
 
 /-- On a pure tensor, `single g r` acts by `σ g` on the first factor and by `single g r` on the
 second. -/
@@ -96,7 +101,7 @@ theorem diagonalTensorAction_of_eq_lTensor {g : Δ} (hg : σ g = 1) :
   simp [hg]
 
 /-- The diagonal action intertwines `f ⊗ 1` for an equivariant `f`. -/
-theorem rTensor_comp_diagonalTensorAction {W' : Type*} [AddCommGroup W'] [Module k W']
+theorem rTensor_comp_diagonalTensorAction {W' : Type*} [AddCommMonoid W'] [Module k W']
     {σ' : Representation k Δ W'} (f : W →ₗ[k] W') (hf : ∀ g, f ∘ₗ σ g = σ' g ∘ₗ f) (a : R[Δ]) :
     f.rTensor N ∘ₗ diagonalTensorAction σ N a = diagonalTensorAction σ' N a ∘ₗ f.rTensor N := by
   induction a using MonoidAlgebra.induction_linear with
@@ -224,14 +229,10 @@ theorem diagonalTensorTrivialEquiv_symm_apply {τ : Representation k Δ k} (hτ 
     (n : N) : (diagonalTensorTrivialEquiv N hτ).symm n = (1 : k) ⊗ₜ[k] n :=
   TensorProduct.lid_symm_apply n
 
-/-- The diagonal tensor product of a finitely generated module with a finite module is finite: it
-is a quotient of `(Fin n → k) ⊗[k] N`, that is of `Fin n → N`. -/
-instance [Module.Finite k W] [Finite N] : Finite (diagonalTensor σ N) := by
-  obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' k W
-  have : Finite ((Fin n → k) ⊗[k] N) :=
-    .of_equiv _ ((TensorProduct.comm k _ _).trans
-      (TensorProduct.piScalarRight k k N (Fin n))).symm.toEquiv
-  exact .of_surjective (f.rTensor N) (LinearMap.rTensor_surjective N hf)
+/-- The diagonal tensor product of a finitely generated module with a finite module is finite, as
+the tensor product `W ⊗[k] N` is (`TauCeti.finite_tensorProduct`). -/
+instance [Module.Finite k W] [Finite N] : Finite (diagonalTensor σ N) :=
+  inferInstanceAs (Finite (W ⊗[k] N))
 
 end DiagonalTensorModule
 

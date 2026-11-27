@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.RepresentationTheory.Augmentation.Basic
 public import TauCeti.RepresentationTheory.NormSplit.Permutation
-public import TauCeti.RepresentationTheory.Tensor.Diagonal
 public import TauCeti.RepresentationTheory.GrothendieckGroup.GroupAlgebra.Universal
 public import TauCeti.RepresentationTheory.Induction.Artin.Spanning
 
@@ -21,7 +20,8 @@ Let `Δ` be a finite group, `z` a central element of `Δ`, `ℓ` a prime and `R`
 and consider the finite `R[Δ]`-modules killed by `ℓ` on which `z` fixes no nonzero vector. This
 file proves that a function `φ` on modules with values in `ℚ≥0`, multiplicative in the short exact
 sequences whose middle term is such a module, is identically `1` on these modules as soon as it is
-`1` on those that satisfy Higman's criterion: some additive `τ : P → P` has `∑ g, g τ g⁻¹ = 1`.
+`1` on those that satisfy Higman's criterion (`TauCeti.HigmanCriterion`): some additive
+`τ : P → P` has `∑ g, g τ g⁻¹ = 1`.
 Over `ZMod ℓ`, Higman's criterion characterizes the projective modules of a group algebra, so this
 says that such an invariant is determined by its values on projective modules; it is a form of the
 finiteness of the cokernel of the Cartan map.
@@ -41,13 +41,15 @@ with values in the torsion-free group of positive rationals. By the modular Arti
 (`TauCeti.exists_linearCombination_indK0_resK0_eq_natCard_nsmul`), `|Δ ⧸ C|` times the class of
 the trivial representation is an integral combination of permutation classes `[ZMod ℓ[(Δ ⧸ C) ⧸ D]]`
 for subgroups `D` of order prime to `ℓ`. The modules `ZMod ℓ[(Δ ⧸ C) ⧸ D] ⊗ M` satisfy Higman's
-criterion (`TauCeti.exists_sum_smul_inv_smul_eq_diagonalTensor_ofMulAction`), because the
+criterion (`TauCeti.higmanCriterion_diagonalTensor_ofMulAction_comp_mk'`), because the
 stabilizers in `Δ` of the cosets have order `|C| |D|`, prime to `ℓ`; so
 `φ (M) ^ |Δ ⧸ C| = 1`, and `φ M = 1`.
 
 ## Main results
 
 * `TauCeti.eq_one_of_multiplicative_of_eq_one_of_higman`: `φ = 1` on the class.
+* `CategoryTheory.ShortComplex.ShortExact.moduleCat_endpoints_of_X₂`: both ends of a short exact
+  sequence whose middle term lies in the class lie in it too.
 
 ## References
 
@@ -67,6 +69,42 @@ public section
 open CategoryTheory TensorProduct
 open scoped MonoidAlgebra
 
+namespace CategoryTheory.ShortComplex.ShortExact
+
+/-- **The ends of a short exact sequence stay in the class.** If the middle term of a short exact
+sequence of `A`-modules is finite, killed by `n` and fixes no nonzero vector under `a`, then so
+are both ends. For the quotient, `x ↦ a • x - x` is injective on the finite middle term, hence
+surjective, so it is surjective, hence injective, on the finite quotient. -/
+theorem moduleCat_endpoints_of_X₂ {A : Type*} [Ring A] {S : ShortComplex (ModuleCat A)}
+    (hS : S.ShortExact) [Finite S.X₂] {n : ℕ} (hn : ∀ m : S.X₂, n • m = 0) {a : A}
+    (ha : ∀ m : S.X₂, a • m = m → m = 0) :
+    (Finite S.X₁ ∧ (∀ m : S.X₁, n • m = 0) ∧ ∀ m : S.X₁, a • m = m → m = 0) ∧
+      (Finite S.X₃ ∧ (∀ m : S.X₃, n • m = 0) ∧ ∀ m : S.X₃, a • m = m → m = 0) := by
+  have hf := hS.moduleCat_injective_f
+  have hg := hS.moduleCat_surjective_g
+  have : Finite S.X₃ := .of_surjective _ hg
+  -- The additive map `x ↦ a • x - x`, on any `A`-module.
+  let u (M : ModuleCat A) : M →+ M := DistribSMul.toAddMonoidHom M a - AddMonoidHom.id M
+  have hu (M : ModuleCat A) (m : M) : u M m = 0 ↔ a • m = m := by
+    simp [u, sub_eq_zero]
+  have hu₂ : Function.Surjective (u S.X₂) :=
+    Finite.injective_iff_surjective.1 ((injective_iff_map_eq_zero _).2 fun m hm ↦
+      ha m ((hu _ m).1 hm))
+  have hu₃ : Function.Injective (u S.X₃) := by
+    refine Finite.injective_iff_surjective.2 fun y ↦ ?_
+    obtain ⟨x, rfl⟩ := hg y
+    obtain ⟨x', rfl⟩ := hu₂ x
+    exact ⟨S.g.hom x', by simp [u]⟩
+  refine ⟨⟨.of_injective _ hf, fun m ↦ hf ?_, fun m hm ↦ hf ?_⟩,
+    ⟨inferInstance, fun m ↦ ?_, fun m hm ↦ (injective_iff_map_eq_zero _).1 hu₃ m ((hu _ m).2 hm)⟩⟩
+  · rw [map_nsmul, hn, map_zero]
+  · rw [map_zero]
+    exact ha _ (by rw [← map_smul, hm])
+  · obtain ⟨m, rfl⟩ := hg m
+    rw [← map_nsmul, hn, map_zero]
+
+end CategoryTheory.ShortComplex.ShortExact
+
 namespace TauCeti
 
 universe u v w
@@ -84,10 +122,7 @@ variable [Fintype Δ] {z : Δ} {φ : ModuleCat.{v} R[Δ] → ℚ≥0}
     (∀ m : S.X₂, ℓ • m = 0) → (∀ m : S.X₂, MonoidAlgebra.of R Δ z • m = m → m = 0) →
     φ S.X₂ = φ S.X₁ * φ S.X₃)
   (h_higman : ∀ P : ModuleCat.{v} R[Δ], Finite P → (∀ m : P, ℓ • m = 0) →
-    (∀ m : P, MonoidAlgebra.of R Δ z • m = m → m = 0) →
-    (∃ τ : P →+ P, ∀ x : P,
-      ∑ g : Δ, MonoidAlgebra.of R Δ g • τ (MonoidAlgebra.of R Δ g⁻¹ • x) = x) →
-    φ P = 1)
+    (∀ m : P, MonoidAlgebra.of R Δ z • m = m → m = 0) → HigmanCriterion R Δ P → φ P = 1)
 
 omit [Fact ℓ.Prime] in
 include h_mul h_higman in
@@ -97,7 +132,7 @@ private theorem phi_eq_of_linearEquiv {X Y : ModuleCat.{v} R[Δ]} (e : X ≃ₗ[
     φ Y = φ X := by
   have h0 : φ (ModuleCat.of R[Δ] PUnit.{v + 1}) = 1 :=
     h_higman _ inferInstance (fun _ ↦ Subsingleton.elim _ _) (fun _ _ ↦ Subsingleton.elim _ _)
-      ⟨0, fun _ ↦ Subsingleton.elim _ _⟩
+      ((higmanCriterion_iff ..).2 ⟨0, fun _ ↦ Subsingleton.elim _ _⟩)
   have hS := (ShortComplex.Splitting.ofIsIsoOfIsZero
     (S := ShortComplex.mk e.toModuleIso.hom (0 : Y ⟶ ModuleCat.of R[Δ] PUnit.{v + 1}) (by simp))
     inferInstance (ModuleCat.isZero_of_subsingleton _)).shortExact
@@ -113,14 +148,14 @@ private theorem phi_ne_zero {C : Subgroup Δ} [C.Normal] (hC : ¬ ℓ ∣ Nat.ca
   set X := (Δ ⧸ C) ⧸ (⊥ : Subgroup (Δ ⧸ C))
   set ρ : Representation (ZMod ℓ) Δ (ZMod ℓ)[X] :=
     (Representation.ofMulAction (ZMod ℓ) (Δ ⧸ C) X).comp (QuotientGroup.mk' C)
-  -- The augmentation of the permutation module of `Δ ⧸ C`, inflated to `Δ`.
+  -- The augmentation of the permutation module of `Δ ⧸ C`, restricted to `Δ`.
   let e : ρ.diagonalTensor N →ₗ[R[Δ]] N :=
     (Representation.diagonalTensorTrivialEquiv N fun _ ↦ rfl).toLinearMap ∘ₗ
-      (Representation.diagonalTensorMap N (σ := ρ)
-        (σ' := Representation.trivial (ZMod ℓ) Δ (ZMod ℓ))
-        (permutationAugmentation (ZMod ℓ) (Δ ⧸ C) X).hom.toLinearMap
-        fun g ↦ (permutationAugmentation (ZMod ℓ) (Δ ⧸ C) X).hom.isIntertwining'
-          (QuotientGroup.mk' C g)).hom
+      (Representation.diagonalTensorMap N
+        (Rep.resMap (QuotientGroup.mk' C)
+          (permutationAugmentation (ZMod ℓ) (Δ ⧸ C) X)).hom.toLinearMap
+        (Rep.resMap (QuotientGroup.mk' C)
+          (permutationAugmentation (ZMod ℓ) (Δ ⧸ C) X)).hom.isIntertwining').hom
   have he : Function.Surjective e := by
     refine (Representation.diagonalTensorTrivialEquiv N fun _ ↦ rfl).surjective.comp fun y ↦ ?_
     obtain ⟨x, hx⟩ := LinearMap.rTensor_surjective N
@@ -130,7 +165,7 @@ private theorem phi_ne_zero {C : Subgroup Δ} [C.Normal] (hC : ¬ ℓ ∣ Nat.ca
     simp [ρ, (QuotientGroup.eq_one_iff _).2 hw]
   have h1 := h_higman _ inferInstance (ZModModule.char_nsmul_eq_zero ℓ)
     (Representation.eq_zero_of_smul_eq_self_diagonalTensor _ N hzN hσ)
-    (exists_sum_smul_inv_smul_eq_diagonalTensor_ofMulAction N ⊥ hC
+    (higmanCriterion_diagonalTensor_ofMulAction_comp_mk' N ⊥ hC
       (by simpa using (Fact.out : ℓ.Prime).ne_one))
   have h2 := h_mul _ (LinearMap.shortExact_shortComplexKer he) inferInstance
     (ZModModule.char_nsmul_eq_zero ℓ)
@@ -142,18 +177,21 @@ private theorem phi_ne_zero {C : Subgroup Δ} [C.Normal] (hC : ¬ ℓ ∣ Nat.ca
 variable (C : Subgroup Δ) [C.Normal] (N : ModuleCat.{v} R[Δ]) [Module (ZMod ℓ) N]
   [SMulCommClass R[Δ] (ZMod ℓ) N]
 
-/-- The diagonal tensor product of `N` with a finite representation of `Δ ⧸ C`, inflated to `Δ`. -/
+/-- The diagonal tensor product of `N` with a finite representation of `Δ ⧸ C`, restricted to
+`Δ`. -/
 private noncomputable abbrev inflTensor (V : FDRep (ZMod ℓ) (Δ ⧸ C)) : ModuleCat.{v} R[Δ] :=
-  Representation.diagonalTensor
-    (((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).obj V).ρ.comp
-      (QuotientGroup.mk' C)) N
+  Representation.diagonalTensor (Rep.res (QuotientGroup.mk' C)
+    ((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).obj V)).ρ N
 
 omit [Fintype Δ] in
 /-- The inflated tensor product of `FDRep.of ρ` is the diagonal tensor product of `N` with `ρ`
 inflated to `Δ`. -/
 private theorem inflTensor_of {V : Type} [AddCommGroup V] [Module (ZMod ℓ) V]
     [Module.Finite (ZMod ℓ) V] (ρ : Representation (ZMod ℓ) (Δ ⧸ C) V) :
-    inflTensor C N (FDRep.of ρ) = Representation.diagonalTensor (ρ.comp (QuotientGroup.mk' C)) N :=
+    inflTensor C N (FDRep.of ρ) =
+      Representation.diagonalTensor (ρ.comp (QuotientGroup.mk' C)) N := by
+  rw [inflTensor, Rep.res_obj_ρ, FDRep.forget₂_ρ, FDRep.of_ρ']
+  -- Only the carriers remain: `((forget₂ _ _).obj (FDRep.of ρ)).V` is `V` by definition.
   rfl
 
 omit [Fintype Δ] in
@@ -173,17 +211,6 @@ private theorem eq_zero_of_of_smul_inflTensor_eq {a : ℕ} (hw : z ^ ℓ ^ a ∈
     (by rw [MonoidHom.comp_apply, QuotientGroup.mk'_apply, (QuotientGroup.eq_one_iff _).2 hw,
       map_one]) x hx
 
-omit [Fintype Δ] [SMulCommClass R[Δ] (ZMod ℓ) N] [Module (ZMod ℓ) N] in
-/-- The equivariant linear map underlying a morphism of finite representations, inflated. -/
-private theorem inflTensor_intertwining {V V' : FDRep (ZMod ℓ) (Δ ⧸ C)} (f : V ⟶ V') (g : Δ) :
-    ((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).map f).hom.toLinearMap ∘ₗ
-        ((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).obj V).ρ.comp
-          (QuotientGroup.mk' C) g =
-      ((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).obj V').ρ.comp
-          (QuotientGroup.mk' C) g ∘ₗ
-        ((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).map f).hom.toLinearMap :=
-  ((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).map f).hom.isIntertwining' _
-
 omit [Fintype Δ] in
 include h_mul in
 /-- `φ` is multiplicative on the inflated tensor products of a short exact sequence of finite
@@ -194,8 +221,12 @@ private theorem phi_inflTensor_mul {a : ℕ} (hw : z ^ ℓ ^ a ∈ C) [Finite N]
     φ (inflTensor C N S.X₂) = φ (inflTensor C N S.X₁) * φ (inflTensor C N S.X₃) := by
   have h := hS.map_of_exact (forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C)) ⋙
     forget₂ (Rep (ZMod ℓ) (Δ ⧸ C)) (ModuleCat (ZMod ℓ)))
-  have hS' := Representation.shortExact_diagonalTensorMap N (inflTensor_intertwining C S.f)
-    (inflTensor_intertwining C S.g) h.moduleCat_injective_f
+  have hS' := Representation.shortExact_diagonalTensorMap N
+    (Rep.resMap (QuotientGroup.mk' C)
+      ((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).map S.f)).hom.isIntertwining'
+    (Rep.resMap (QuotientGroup.mk' C)
+      ((forget₂ (FDRep (ZMod ℓ) (Δ ⧸ C)) (Rep (ZMod ℓ) (Δ ⧸ C))).map S.g)).hom.isIntertwining'
+    h.moduleCat_injective_f
     ((ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1 h.exact)
     h.moduleCat_surjective_g
   exact h_mul _ hS' (finite_inflTensor C N _) (ZModModule.char_nsmul_eq_zero ℓ)
@@ -237,7 +268,7 @@ private theorem phi_eq_one_of_quotient {a : ℕ} (hC : ¬ ℓ ∣ Nat.card C) (h
     rw [inflTensor_of]
     exact h_higman _ inferInstance (ZModModule.char_nsmul_eq_zero ℓ)
       (Representation.eq_zero_of_smul_eq_self_diagonalTensor _ N hzM (hσ _))
-      (exists_sum_smul_inv_smul_eq_diagonalTensor_ofMulAction N D.val hC D.property.2)
+      (higmanCriterion_diagonalTensor_ofMulAction_comp_mk' N D.val hC D.property.2)
   have h1 : Nat.card (Δ ⧸ C) • Φ 1 = 0 := by
     rw [← map_nsmul, ← hc 1, Finsupp.linearCombination_apply, map_finsuppSum]
     exact Finset.sum_eq_zero fun D _ ↦ by simp only [map_zsmul, hperm, zsmul_zero]
@@ -264,8 +295,9 @@ Let `Δ` be a finite group, `z` a central element of `Δ`, `ℓ` a prime and `R`
 Consider the finite `R[Δ]`-modules killed by `ℓ` on which `z` fixes no nonzero vector. Let `φ`
 assign to every `R[Δ]`-module a nonnegative rational number, multiplicative in the short exact
 sequences `0 → M' → M → M'' → 0` whose middle term `M` is such a module, and equal to `1` on
-those such modules `P` that satisfy Higman's criterion: some additive `τ : P → P` has
-`∑ g, g ∘ τ ∘ g⁻¹ = 1`. Then `φ M = 1` for every such module `M`.
+those such modules `P` that satisfy Higman's criterion (`TauCeti.HigmanCriterion`): some additive
+`τ : P → P` has `∑ g, g ∘ τ ∘ g⁻¹ = 1`. Then `φ M = 1` for every such module `M`. Both ends of
+such a sequence lie in the class too (`ShortComplex.ShortExact.moduleCat_endpoints_of_X₂`).
 
 Over `ZMod ℓ` Higman's criterion characterizes the projective `ZMod ℓ[Δ]`-modules, so this is the
 statement that such an invariant is determined by its values on projective modules. -/
@@ -276,9 +308,7 @@ theorem eq_one_of_multiplicative_of_eq_one_of_higman {R : Type u} [Ring R] {Δ :
       (∀ m : S.X₂, ℓ • m = 0) → (∀ m : S.X₂, MonoidAlgebra.of R Δ z • m = m → m = 0) →
       φ S.X₂ = φ S.X₁ * φ S.X₃)
     (h_higman : ∀ P : ModuleCat.{v} R[Δ], Finite P → (∀ m : P, ℓ • m = 0) →
-      (∀ m : P, MonoidAlgebra.of R Δ z • m = m → m = 0) →
-      (∃ τ : P →+ P, ∀ x : P,
-        ∑ g : Δ, MonoidAlgebra.of R Δ g • τ (MonoidAlgebra.of R Δ g⁻¹ • x) = x) → φ P = 1)
+      (∀ m : P, MonoidAlgebra.of R Δ z • m = m → m = 0) → HigmanCriterion R Δ P → φ P = 1)
     (M : ModuleCat.{v} R[Δ]) [Finite M] (hℓM : ∀ m : M, ℓ • m = 0)
     (hzM : ∀ m : M, MonoidAlgebra.of R Δ z • m = m → m = 0) : φ M = 1 := by
   have := Fact.mk hℓ
