@@ -16,8 +16,9 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Integral.Functional
-import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Function.Lp.One
@@ -125,6 +126,12 @@ the homogeneous Besov spaces `\dot B^γ_{2,1}` and `\dot B^{-γ}_{2,∞}`. Since
 is lower semicontinuous on `L²`, the reconstruction also gives `‖A f‖_r ≤ ∑ⱼ ‖A Pⱼ f‖_r` for
 every bounded operator `A` on `L²` and `1 ≤ r ≤ ∞`
 (`ContDiffBump.eLpNorm_apply_le_tsum_eLpNorm_apply_fourierMultiplierCLM`).
+
+Blocks `L` or more apart, for the overlap length `L` of the cutoffs, compose to zero
+(`ContDiffBump.fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley_eq_zero`), so a nonzero
+block is a nonzero datum with finitely many nonzero blocks
+(`ContDiffBump.exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero`). The blocks under the
+dyadic dilations of `L²` are in `TauCeti.Analysis.Fourier.LittlewoodPaley.Dilation`.
 
 ## Dyadic multipliers and squared blocks
 
@@ -998,6 +1005,53 @@ theorem sum_fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley {L : ℕ}
   simp only [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply]
   conv_rhs => rw [← hsym]
   rw [Lp.fourierMultiplierCLM_sum, FunLike.coe_sum, Finset.sum_apply]
+
+/-- **Far blocks compose to zero.** If the cutoffs whose indices differ by at least `L` have
+disjoint supports, as for the `L` of `ContDiffBump.exists_littlewoodPaley_mul_eq_zero φ`, then
+`Pⱼ Pₖ f = 0` for every `f ∈ L²(V, F)` once `|j - k| ≥ L`, where `Pⱼ` is the `L²` Fourier
+multiplier with any symbol in `L^∞` almost everywhere equal to `ψⱼ`. -/
+theorem fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley_eq_zero {L : ℕ}
+    (hL : ∀ j k : ℤ, j + L ≤ k → ∀ ξ : V, φ.littlewoodPaley j ξ * φ.littlewoodPaley k ξ = 0)
+    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
+    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) {j k : ℤ} (hjk : L ≤ |j - k|)
+    (f : Lp F 2 (volume : Measure V)) :
+    Lp.fourierMultiplierCLM F (m j) (Lp.fourierMultiplierCLM F (m k) f) = 0 := by
+  -- The symbol `ψⱼ ψₖ` of `Pⱼ Pₖ` vanishes.
+  rw [Lp.fourierMultiplierCLM_fourierMultiplierCLM_apply,
+    Lp.fourierMultiplierCLM_of_ae_eq_const (c := 0), _root_.smul_apply, zero_smul]
+  filter_upwards [Lp.coeFn_lpSMul (r := ∞) (m j) (m k), hm j, hm k] with ξ h₁ h₂ h₃
+  rw [h₁, Pi.smul_apply', h₂, h₃, smul_eq_mul, ← Complex.ofReal_mul, Complex.ofReal_eq_zero]
+  rcases le_abs'.1 hjk with hjk | hjk
+  · exact hL j k (by omega) ξ
+  · exact mul_comm (φ.littlewoodPaley j ξ) _ ▸ hL k j (by omega) ξ
+
+/-- **A nonzero datum with finitely many nonzero blocks.** On a nontrivial space, some nonzero
+`f₀ ∈ L²(V, F)` has only finitely many nonzero homogeneous Littlewood–Paley blocks: a nonzero block
+`f₀ = P_{j₀} g`, whose blocks `Pⱼ P_{j₀} g` vanish for `|j - j₀|` large. Each symbol enters as any
+element of `L^∞` almost everywhere equal to `ψⱼ`. -/
+theorem exists_ne_zero_forall_notMem_fourierMultiplierCLM_eq_zero [Nontrivial V] [Nontrivial F]
+    {m : ℤ → Lp ℂ ∞ (volume : Measure V)}
+    (hm : ∀ j, m j =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    ∃ f₀ : Lp F 2 (volume : Measure V), f₀ ≠ 0 ∧
+      ∃ S : Finset ℤ, ∀ j ∉ S, Lp.fourierMultiplierCLM F (m j) f₀ = 0 := by
+  -- A nonzero vector on the unit ball is a nonzero element of `L²`.
+  obtain ⟨v, hv⟩ := exists_ne (0 : F)
+  obtain ⟨g, hg⟩ : ∃ g : Lp F 2 (volume : Measure V), g ≠ 0 :=
+    ⟨indicatorConstLp 2 (Metric.isOpen_ball (x := (0 : V)) (ε := 1)).measurableSet
+      measure_ball_lt_top.ne v, fun h ↦ (TauCeti.indicatorConstLp_eq_zero_iff.1 h).elim
+        (Metric.measure_ball_pos volume (0 : V) one_pos).ne' hv⟩
+  -- Some block of `g` is nonzero, since the blocks reconstruct `g`.
+  obtain ⟨j₀, hj₀⟩ : ∃ j₀, Lp.fourierMultiplierCLM F (m j₀) g ≠ 0 := by
+    by_contra! hall
+    have hlim := φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm g
+    simp only [hall, Finset.sum_const_zero] at hlim
+    exact hg (tendsto_nhds_unique hlim tendsto_const_nhds)
+  obtain ⟨L, hL⟩ := φ.exists_littlewoodPaley_mul_eq_zero φ
+  refine ⟨_, hj₀, Finset.Ioo (j₀ - L) (j₀ + L), fun j hj ↦
+    φ.fourierMultiplierCLM_fourierMultiplierCLM_littlewoodPaley_eq_zero hL hm ?_ g⟩
+  rw [Finset.mem_Ioo] at hj
+  rw [le_abs']
+  omega
 
 /-- **Duality of the dyadic `ℓ¹` and `ℓ^∞` norms on `L²`.** On a nontrivial space, for every
 `γ ∈ ℝ` there is `K` such that for all `f, g ∈ L²(V, F)`, if the homogeneous Littlewood–Paley

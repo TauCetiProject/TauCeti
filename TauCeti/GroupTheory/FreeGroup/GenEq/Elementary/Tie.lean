@@ -633,8 +633,7 @@ theorem exists_solution_tieNew_iff (U : Ω.Solution) :
   have m₂ := U.prefixLength_mono hk₁
   have m₃ := U.prefixLength_mono (Nat.add_one_le_iff.2 hk₂)
   -- The word of `h_k` spans the positions from `P(k)` to `P(k + 1)`.
-  have hlen := U.length_substituteVars_segment_add_prefixLength true (Nat.le_add_right (k : ℕ) 1)
-  rw [Ω.segment_succ k true, FreeGroup.substituteVars_singleton_inl] at hlen
+  have hlen := U.prefixLength_succ k
   constructor
   · rintro ⟨U', rfl⟩
     have := prefixLength_ofTieNew_lt hp hk hk' U'

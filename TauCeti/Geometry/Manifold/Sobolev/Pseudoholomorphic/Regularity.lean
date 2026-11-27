@@ -46,7 +46,8 @@ The Sobolev conclusion needs `p < ∞`: a `W^{1,∞}` solution for a `C¹` struc
 `W^{2,∞}` (`TauCeti.not_memWkpLoc_two_top_graph_logLogExample`). The `C^ℓ` conclusion holds for
 `p = ∞` as well, since a `W^{1,∞}_loc` solution is a `W^{1,q}_loc` solution for finite `q > 2`.
 Boundary regularity, for maps sending the boundary of a bordered surface into a totally real
-submanifold, is not treated here.
+submanifold, is in `TauCeti.Geometry.Manifold.Sobolev.Pseudoholomorphic.Bordered.Regularity` for a
+structure independent of the domain point and the zero inhomogeneous term.
 
 ## References
 

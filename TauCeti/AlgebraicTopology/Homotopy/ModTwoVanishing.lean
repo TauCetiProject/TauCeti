@@ -7,6 +7,8 @@ module
 
 public import TauCeti.AlgebraicTopology.Homotopy.AcyclicCover
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.TwoDivisible
+public import TauCeti.AlgebraicTopology.Sphere.HomotopyGroup
+public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
 import TauCeti.AlgebraicTopology.PathComponent
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Basic
@@ -61,7 +63,17 @@ homotopy group at a time, along the Whitehead tower.
   (`TauCeti.prop_homotopyGroup_of_subsingleton_singularHomology`).
 
 The Eilenberg--Mac Lane fibre sits over the `(n - 1)`-connected stage `Z`, never over the original
-space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between successive stages is used.
+space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between successive stages is used. Over the
+two-sphere, for instance, a Serre fibration whose fibre is simply connected, such as a
+`K(π₃(S²), 2)`, has a total space with nontrivial `π₂`, since `π₂(S²) ≅ ℤ`
+(`TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations_sphere` with `n = 0`). So no
+fibration `K(π₃(S²), 2) → E → S²` has a `3`-connected total space, as the tower over `S²` itself
+would need.
+
+The hypothesis on mod-two homology cannot be dropped: for `n ≥ 2`, the sphere `Sⁿ` is simply
+connected, its `πₙ ≅ ℤ` is not uniquely two-divisible
+(`TauCeti.not_isUniquelyTwoDivisible_homotopyGroup_sphere`), and indeed `Hₙ(Sⁿ; 𝔽₂) ≠ 0`
+(`TauCeti.nontrivial_singularHomology_sphere`).
 
 ## Main results
 
@@ -73,6 +85,10 @@ space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between success
 * `TauCeti.isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pathComponent`:
   if the fundamental group of `Y` at `y` is trivial and the path component of `y` has the mod-two
   homology of a point, the higher homotopy groups of `Y` at `y` are uniquely two-divisible.
+* `TauCeti.not_isUniquelyTwoDivisible_homotopyGroup_sphere`: `π_{n+2}(S^{n+2}) ≅ ℤ` is not
+  uniquely two-divisible, so the conclusion fails for spheres, which are not mod-two acyclic.
+* `TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations_sphere`: a Serre fibration over
+  `S^{n+2}` whose fibre has trivial `π_{n+1}` has a total space with nontrivial `π_{n+2}`.
 
 ## References
 
@@ -154,5 +170,38 @@ theorem isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology_pa
   (isUniquelyTwoDivisible_homotopyGroup_of_subsingleton_singularHomology e hY
     (pathComponentSelf y) n).of_addEquiv
       (HomotopyGroup.subtypeValMulEquivOfPathComponentSubset subset_rfl rfl).toAdditive
+
+/-! ### Spheres -/
+
+section Sphere
+
+open Metric
+
+variable {n : ℕ}
+
+/-- **The conclusion of mod-two vanishing fails for spheres.** For every `n`, the homotopy group
+`π_{n+2}(S^{n+2}, x) ≅ ℤ` of the simply connected sphere `S^{n+2}`, the unit sphere of an
+`(n + 3)`-dimensional real normed space, is not uniquely two-divisible. This is consistent with
+the theorem, whose hypothesis fails for `S^{n+2}` since `H_{n+2}(S^{n+2}; 𝔽₂) ≠ 0`
+(`TauCeti.nontrivial_singularHomology_sphere`). -/
+theorem not_isUniquelyTwoDivisible_homotopyGroup_sphere {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (hE : Module.finrank ℝ E = n + 3) (x : sphere (0 : E) 1) :
+    ¬ IsUniquelyTwoDivisible (Additive (π_ (n + 2) (sphere (0 : E) 1) x)) := fun hx ↦
+  not_isUniquelyTwoDivisible_int (hx.of_addEquiv (homotopyGroupSphereAddEquivOfFinrankEq hE x))
+
+/-- **No fibre with trivial `π_{n+1}` over `S^{n+2}` has a total space with trivial
+`π_{n+2}`.** Let `p : X → S^{n+2}` be a Serre fibration whose fibre over `y` has trivial
+`π_{n+1}` at `e`, as a `K(A, n + 2)` space does. Then `π_{n+2}(X, e)` is nontrivial, since
+`π_{n+2}(S^{n+2}) ≅ ℤ` is (`TauCeti.TopCat.nontrivial_homotopyGroup_of_mem_serreFibrations`). In
+particular, for `n = 0`, there is no fibration `K(π₃(S²), 2) → X → S²` with `X` `3`-connected. -/
+theorem nontrivial_homotopyGroup_of_mem_serreFibrations_sphere {E : Type u}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (hE : Module.finrank ℝ E = n + 3) {X : TopCat.{u}}
+    {p : X ⟶ TopCat.of (sphere (0 : E) 1)} (hp : TopCat.serreFibrations p)
+    {y : sphere (0 : E) 1} (e : p.fiber y) [Subsingleton (π_ (n + 1) (p.fiber y) e)] :
+    Nontrivial (π_ (n + 2) X e.val) :=
+  have := nontrivial_homotopyGroup_sphere hE y
+  TopCat.nontrivial_homotopyGroup_of_mem_serreFibrations hp
+
+end Sphere
 
 end TauCeti

@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Kaehler.Basic
-public import TauCeti.RingTheory.Huber.TensorProduct.Map
+public import TauCeti.RingTheory.Huber.TensorProduct.Map.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Lift
+
+import TauCeti.RingTheory.Huber.TensorProduct.Quotient.Basic
 
 /-!
 # Change of rings for continuous differentials
@@ -23,10 +25,15 @@ the scalar extension uses `LinearMap.liftBaseChange`. The caller's algebra struc
 parameters in the scalar-extended map. Continuity of the map on the coefficient rings is not
 needed: that map only supplies the commuting square.
 
+This file also provides the tower specialization `mapTower : Ωᶜ[C⁄A] →ₗ[C] Ωᶜ[C⁄B]` and
+base-change specialization `mapBaseChange : C ⊗[B] Ωᶜ[B⁄A] →ₗ[C] Ωᶜ[C⁄A]` together with their
+functoriality (`mapTower_mapTower`, `mapTower_mapBaseChange`) and surjectivity of `mapTower`
+(`mapTower_surjective`).
+
 ## References
 
 * R. Huber, *Étale cohomology of rigid analytic varieties and adic spaces*, Aspects of
-  Mathematics E30 (1996), §1.6, Definition 1.6.1 and (1.6.2).
+  Mathematics E30 (1996), §1.6, Definition 1.6.1, (1.6.2), and Proposition 1.6.3(i)–(ii).
 -/
 
 public section
@@ -195,5 +202,150 @@ theorem map_comp (b'' : B'') (b' : B') (ω : ContinuousKaehlerDifferential A B) 
     (H _ _ _ _ _ _ (IsScalarTower.algebraMap_eq B B' B'').symm)
 
 end Composition
+
+/-! ### Maps in a tower `A → B → C` -/
+
+section MapTower
+
+variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
+  [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+  [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [IsTopologicalRing B]
+  [UniformSpace C] [IsUniformAddGroup C] [NonarchimedeanRing C] [CompleteSpace C] [T0Space C]
+  [IsAdicHom (algebraMap A C)] [IsAdicHom (algebraMap B C)]
+
+/-- The relative projection `Ωᶜ[C⁄A] →ₗ[C] Ωᶜ[C⁄B]` in a tower `A → B → C`. -/
+noncomputable def mapTower :
+    ContinuousKaehlerDifferential A C →ₗ[C] ContinuousKaehlerDifferential B C :=
+  mapSemilinear (algebraMap A B) (RingHom.id C)
+    (by ext a; exact IsScalarTower.algebraMap_apply A B C a) continuous_id
+
+/-- `mapTower` agrees with the semilinear change-of-rings map along `A → B` and `id_C`. -/
+theorem mapTower_eq_mapSemilinear :
+    mapTower A B C =
+      mapSemilinear (algebraMap A B) (RingHom.id C)
+        (by ext a; exact IsScalarTower.algebraMap_apply A B C a) continuous_id := (rfl)
+
+/-- `mapTower` sends a diagonal class in `ideal A C` to the class of its image in `ideal B C`. -/
+@[simp] theorem mapTower_fromIdeal (x : ideal A C) :
+    mapTower A B C (fromIdeal A C x) =
+      fromIdeal B C
+        ⟨CompletedTensor.map (algebraMap A B) (RingHom.id C) (RingHom.id C)
+            (by ext a; exact IsScalarTower.algebraMap_apply A B C a)
+            (by ext a; exact IsScalarTower.algebraMap_apply A B C a)
+            continuous_id continuous_id x,
+          ideal_le_comap_map (algebraMap A B) (RingHom.id C) _ continuous_id x.property⟩ :=
+  mapSemilinear_fromIdeal _ _ _ continuous_id x
+
+/-- `mapTower` carries `d_A c` to `d_B c`. -/
+@[simp] theorem mapTower_D (c : C) : mapTower A B C (D A C c) = D B C c :=
+  mapSemilinear_D _ _ _ continuous_id c
+
+/-- **Surjectivity in the first fundamental sequence** (Huber 1996, Proposition 1.6.3(i)): in a
+tower `A → B → C` with `A → C` and `B → C` adic into complete Hausdorff nonarchimedean `C`,
+`Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is surjective, with no finite-type, noetherian, or Huber hypotheses. -/
+theorem mapTower_surjective : Function.Surjective (mapTower A B C) := by
+  have h : (RingHom.id C).comp (algebraMap A C) = (algebraMap B C).comp (algebraMap A B) := by
+    ext a; exact IsScalarTower.algebraMap_apply A B C a
+  let F := CompletedTensor.map (algebraMap A B) (RingHom.id C) (RingHom.id C)
+    h h continuous_id continuous_id
+  have hF := (CompletedTensor.isOpenQuotientMap_map_base (algebraMap A B) h h).surjective
+  intro ω
+  obtain ⟨⟨y, hy⟩, rfl⟩ := fromIdeal_surjective B C ω
+  obtain ⟨x, hxF⟩ := hF y
+  have hx : x ∈ ideal A C := (mem_ideal_iff).mpr <| by
+    simpa [F, hxF, mem_ideal_iff.mp hy] using
+      (CompletedTensor.mulRingHom_map (algebraMap A B) (RingHom.id C) h continuous_id x).symm
+  exact ⟨fromIdeal A C ⟨x, hx⟩, by simp [hxF]⟩
+
+end MapTower
+
+section MapTowerComp
+
+variable (A B C E : Type*) [CommRing A] [CommRing B] [CommRing C] [CommRing E]
+  [Algebra A B] [Algebra B C] [Algebra C E] [Algebra A C] [Algebra B E] [Algebra A E]
+  [IsScalarTower B C E] [IsScalarTower A B E] [IsScalarTower A C E]
+  [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [IsTopologicalRing B]
+  [TopologicalSpace C] [IsTopologicalRing C]
+  [UniformSpace E] [IsUniformAddGroup E] [NonarchimedeanRing E] [CompleteSpace E] [T0Space E]
+  [IsAdicHom (algebraMap A E)] [IsAdicHom (algebraMap B E)] [IsAdicHom (algebraMap C E)]
+
+/-- Applying two consecutive relative projections in a tower `A → B → C → E` equals the single
+projection `Ωᶜ[E⁄A] → Ωᶜ[E⁄C]`. -/
+@[simp] theorem mapTower_mapTower (ω : ContinuousKaehlerDifferential A E) :
+    mapTower B C E (mapTower A B E ω) = mapTower A C E ω := by
+  rw [mapTower_eq_mapSemilinear, mapTower_eq_mapSemilinear, mapTower_eq_mapSemilinear,
+    mapSemilinear_comp]
+  obtain ⟨x, rfl⟩ := fromIdeal_surjective A E ω
+  simp only [mapSemilinear_fromIdeal]; congr 1; ext
+  exact congrArg (fun f : CompletedTensor A E E →+* CompletedTensor C E E ↦ f x) <|
+    CompletedTensor.hom_ext (CompletedTensor.continuous_map ..)
+      (CompletedTensor.continuous_map ..) (by ext e; simp) (by ext e; simp)
+
+/-- Composing relative projections in a tower `A → B → C → E` equals `mapTower A C E`. -/
+@[simp] theorem mapTower_comp_mapTower : (mapTower B C E).comp (mapTower A B E) = mapTower A C E :=
+  LinearMap.ext (mapTower_mapTower A B C E)
+
+end MapTowerComp
+
+section MapBaseChange
+
+variable (A B C : Type*) [CommRing A] [CommRing B] [CommRing C]
+  [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+  [TopologicalSpace A] [IsTopologicalRing A]
+  [UniformSpace B] [IsUniformAddGroup B] [NonarchimedeanRing B] [CompleteSpace B] [T0Space B]
+  [UniformSpace C] [IsUniformAddGroup C] [NonarchimedeanRing C] [CompleteSpace C] [T0Space C]
+
+/-- The scalar-extended map `C ⊗[B] Ωᶜ[B⁄A] →ₗ[C] Ωᶜ[C⁄A]` in a tower `A → B → C`. -/
+noncomputable def mapBaseChange [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
+    (hc : Continuous (algebraMap B C)) :
+    C ⊗[B] ContinuousKaehlerDifferential A B →ₗ[C] ContinuousKaehlerDifferential A C :=
+  map (RingHom.id A) (by ext a; exact (IsScalarTower.algebraMap_apply A B C a).symm) hc
+
+/-- `mapBaseChange` is the scalar-extended change-of-rings map along `id_A` and `B → C`. -/
+theorem mapBaseChange_eq_map [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
+    (hc : Continuous (algebraMap B C)) :
+    mapBaseChange A B C hc =
+      map (RingHom.id A) (by ext a; exact (IsScalarTower.algebraMap_apply A B C a).symm) hc :=
+  (rfl)
+
+/-- Evaluating `mapBaseChange` on a pure tensor `c ⊗ₜ ω`. -/
+@[simp] theorem mapBaseChange_tmul [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
+    (hc : Continuous (algebraMap B C)) (c : C) (ω : ContinuousKaehlerDifferential A B) :
+    mapBaseChange A B C hc (c ⊗ₜ[B] ω) =
+      c • mapSemilinear (RingHom.id A) (algebraMap B C)
+        (by ext a; exact (IsScalarTower.algebraMap_apply A B C a).symm) hc ω :=
+  map_tmul _ _ hc c ω
+
+/-- Evaluating `mapBaseChange` on `c ⊗ₜ d b` yields `c • d (algebraMap B C b)`. -/
+theorem mapBaseChange_tmul_D [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap A C)]
+    (hc : Continuous (algebraMap B C)) (c : C) (b : B) :
+    mapBaseChange A B C hc (c ⊗ₜ[B] D A B b) = c • D A C (algebraMap B C b) := by
+  rw [mapBaseChange_tmul, mapSemilinear_D]
+
+/-- The composite `C ⊗[B] Ωᶜ[B⁄A] → Ωᶜ[C⁄A] → Ωᶜ[C⁄B]` is zero on every class, without any
+noetherian or finite-type hypotheses. -/
+@[simp] theorem mapTower_mapBaseChange [IsAdicHom (algebraMap A B)] [IsAdicHom (algebraMap B C)]
+    [IsAdicHom (algebraMap A C)] (hc : Continuous (algebraMap B C))
+    (z : C ⊗[B] ContinuousKaehlerDifferential A B) :
+    mapTower A B C (mapBaseChange A B C hc z) = 0 := by
+  induction z using TensorProduct.inductionOn with
+  | tmul c ω =>
+    rw [mapBaseChange_tmul, map_smul, mapTower_eq_mapSemilinear, mapSemilinear_comp]
+    obtain ⟨⟨x, hx⟩, rfl⟩ := fromIdeal_surjective A B ω
+    rw [mapSemilinear_fromIdeal]
+    have hmap : CompletedTensor.map ((algebraMap A B).comp (RingHom.id A))
+        ((RingHom.id C).comp (algebraMap B C)) ((RingHom.id C).comp (algebraMap B C))
+        rfl rfl (continuous_id.comp hc) (continuous_id.comp hc) =
+        (inl B C C).comp ((algebraMap B C).comp (mulRingHom A B)) :=
+      CompletedTensor.hom_ext (CompletedTensor.continuous_map ..)
+        ((continuous_inl B C C).comp (hc.comp (continuous_mulRingHom A B)))
+        (by ext b; simp) (by ext b; simp)
+    have hzero : (⟨_, ideal_le_comap_map ((algebraMap A B).comp (RingHom.id A))
+        ((RingHom.id C).comp (algebraMap B C)) _ (continuous_id.comp hc) hx⟩ : ideal B C) = 0 :=
+      Subtype.ext <| (RingHom.congr_fun hmap x).trans (by simp [mem_ideal_iff.mp hx])
+    rw [hzero, map_zero, smul_zero]
+  | add x y hx hy => rw [map_add, map_add, hx, hy, add_zero]
+
+end MapBaseChange
 
 end TauCeti.Huber.ContinuousKaehlerDifferential

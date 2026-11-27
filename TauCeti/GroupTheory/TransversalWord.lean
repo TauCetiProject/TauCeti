@@ -31,6 +31,8 @@ This file records the word calculus through `TauCeti.lWord` and the three identi
 useful: `TauCeti.lWord_mem`, `TauCeti.lWord_mul_lWord`, and
 `TauCeti.transversal_mul_lWord`, the last of which is the rewriting rule
 `t u * ℓᵗ_u(γ) = γ * t (γ⁻¹ • u)` that turns a `U`-cocycle relation into a `G`-cocycle relation.
+Along `n` steps of the inverse orbit of `g` the words telescope to the word of `g ^ n`
+(`TauCeti.prod_ofFn_lWord_eq_lWord_pow`).
 It also records how the word changes when the transversal does (`TauCeti.transversalDiff` and
 `TauCeti.transversalDiff_mul_lWord`), computes the word of the composite transversal
 `Subgroup.compositeTransversal` of a tower `V ≤ U ≤ G` as the word of `V ≤ U` evaluated at the word
@@ -112,6 +114,23 @@ theorem lWord_inv (u : G ⧸ U) (γ : G) : lWord U t u γ⁻¹ = (lWord U t (γ 
   have h := lWord_mul_lWord U t u γ⁻¹ γ
   rw [inv_inv, inv_mul_cancel, lWord_one] at h
   exact mul_eq_one_iff_eq_inv.mp h
+
+/-- Telescoping product of `TauCeti.lWord` along `n` steps of the inverse orbit of `g`: by the
+cocycle law `TauCeti.lWord_mul_lWord`, it is the transversal word of `g ^ n`. -/
+theorem prod_ofFn_lWord_eq_lWord_pow (g : G) (q : G ⧸ U) (n : ℕ) :
+    (List.ofFn fun k : Fin n ↦ lWord U t ((g⁻¹ ^ (k : ℕ)) • q) g).prod =
+      lWord U t q (g ^ n) := by
+  induction n generalizing q with
+  | zero => simp
+  | succ n ih =>
+    rw [List.ofFn_succ, List.prod_cons]
+    have hshift :
+        (fun k : Fin n ↦ lWord U t ((g⁻¹ ^ (k.succ : ℕ)) • q) g) =
+          fun k : Fin n ↦ lWord U t ((g⁻¹ ^ (k : ℕ)) • (g⁻¹ • q)) g := by
+      funext k
+      simp [pow_succ, mul_smul]
+    rw [hshift, ih (g⁻¹ • q), Fin.val_zero, pow_zero, one_smul, lWord_mul_lWord,
+      ← pow_succ']
 
 /-- At the coset of the identity, the transversal word of an element of `U` is that element
 conjugated by the chosen representative of that coset: no hypothesis on `t` is needed, and for a

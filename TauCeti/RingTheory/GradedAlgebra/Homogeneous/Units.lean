@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Units.Opposite
 public import Mathlib.Algebra.Module.Equiv.Basic
 public import Mathlib.GroupTheory.QuotientGroup.Defs
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Algebra.Module.LinearMap.End
 public import TauCeti.Data.ZMod.Quotient.Group
 public import TauCeti.RingTheory.GradedAlgebra.Basic
 
@@ -217,9 +217,7 @@ variable {𝒜 ℳ}
 generator of `ℳ`: a unit of degree `-d`. -/
 theorem _root_.LinearEquiv.isUnit_apply_one_and_apply_one_mem {d : ι} (φ : A ≃ₗ[A] A)
     (hφ : ∀ n x, φ x ∈ ℳ n ↔ x ∈ 𝒜 (n + d)) : IsUnit (φ 1) ∧ φ 1 ∈ ℳ (-d) := by
-  -- `Module.End A A ≃+* Aᵐᵒᵖ` sends an endomorphism to its value at `1`.
-  refine ⟨(((Module.End.isUnit_iff φ.toLinearMap).2 φ.bijective).map
-    (RingEquiv.moduleEndSelf A).symm).unop, (hφ _ _).mpr ?_⟩
+  refine ⟨φ.isUnit_apply_one, (hφ _ _).mpr ?_⟩
   rw [neg_add_cancel]
   exact SetLike.one_mem_graded 𝒜
 

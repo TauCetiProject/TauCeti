@@ -29,6 +29,8 @@ the tails of the series obey `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ 
 * `MeasureTheory.exists_eLpNorm_sub_sum_le_tsum_compl`: a series of `Lᵖ` functions whose `L^r`
   seminorms are summable has a sum in `L^r`, with the tail bound
   `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ s} ‖xᵢ‖_{L^r}`.
+* `MeasureTheory.ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum`: a sum in `L^r` agrees almost
+  everywhere with a limit in `Lᵖ` of partial sums along an exhausting sequence of finite sets.
 -/
 
 public section
@@ -112,5 +114,20 @@ theorem exists_eLpNorm_sub_sum_le_tsum_compl [CompleteSpace F] {x : ι → Lp F 
     rw [← hnorm _ s] at hlim
     refine hlim.congr fun t ↦ ?_
     rw [eLpNorm_congr_ae ((hcoe t).sub (hcoe s) |>.trans (Lp.coeFn_sub _ _).symm), ← Lp.eNorm_def]
+
+/-- **A sum in `L^r` agrees with a limit in `Lᵖ` of its partial sums.** If the partial sums
+`∑_{i ∈ s} gᵢ` of `gᵢ ∈ Lᵖ(μ)` converge to `U` in `L^r(μ)` along the finite sets `s` of indices,
+and along an exhausting sequence `sₙ` of finite sets they converge to `v` in `Lᵖ(μ)`, then `U = v`
+almost everywhere: both limits are limits in measure. -/
+theorem ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum [Fact (1 ≤ p)] {g : ι → Lp F p μ}
+    {U : Lp F r μ}
+    (hU : Tendsto (fun s : Finset ι ↦ eLpNorm (⇑U - ⇑(∑ i ∈ s, g i)) r μ) atTop (𝓝 0))
+    {s : ℕ → Finset ι} (hs : Tendsto s atTop atTop) {v : Lp F p μ}
+    (hv : Tendsto (fun n ↦ ∑ i ∈ s n, g i) atTop (𝓝 v)) :
+    ⇑U =ᵐ[μ] ⇑v := by
+  refine tendstoInMeasure_ae_unique ?_ (tendstoInMeasure_of_tendsto_Lp hv)
+  refine tendstoInMeasure_of_tendsto_eLpNorm (zero_lt_one.trans_le (Fact.out : 1 ≤ r)).ne' ?_
+  refine (hU.comp hs).congr fun n ↦ ?_
+  rw [Function.comp_apply, eLpNorm_sub_comm]
 
 end MeasureTheory

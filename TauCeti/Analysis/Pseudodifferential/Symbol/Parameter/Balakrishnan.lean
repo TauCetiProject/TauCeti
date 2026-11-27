@@ -74,6 +74,11 @@ terms are the integrals of the `bⱼ` at large frequencies
 (`TauCeti.ParameterSymbol.classicalBalakrishnanIntegral`). Where `b₀` inverts `A + t` along the
 axis, its principal symbol is `A ^ (-σ)`
 (`TauCeti.ParameterSymbol.coefficient_principal_classicalBalakrishnanIntegral_eq_rpow`).
+Applied to the formal right inverse of an expansion `a ∼ ∑ⱼ aⱼ` of orders `m - j` whose terms are
+quasi-homogeneous at large frequencies, the cut-off terms of Seeley's resolvent parametrix, this
+shows that Seeley's symbol of the negative power is classical of order `-m - 2 σ + 2`, with
+principal symbol `σ(A) ^ (-σ)`
+(`TauCeti.ParameterSymbol.exists_classicalSymbol_balakrishnanIntegral_expansionRightInverseTerms`).
 
 ## Main declarations
 
@@ -86,6 +91,8 @@ axis, its principal symbol is `A ^ (-σ)`
   inverse of `A + t` along the axis is `A ^ (-σ)`.
 * `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse`: the integral of the inverse
   of a symbol `a` elliptic with parameter, equal to `A + t` along the axis, is `A ^ (-σ)`.
+* `TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse_of_smul_one`: the same for a
+  scalar symbol, equal to `(q + t) • 1` along the axis, whose integral is `q ^ (-σ) • 1`.
 * `TauCeti.ParameterSymbol.exists_coefficient_balakrishnanIntegral_rightParametrix_eq_rpow_add`:
   the integral of a truncated right parametrix is `A ^ (-σ)` up to one fixed symbol of lower
   order.
@@ -100,6 +107,9 @@ axis, its principal symbol is `A ^ (-σ)`
   (`TauCeti.ParameterSymbol.coefficient_term_classicalBalakrishnanIntegral`) and principal symbol
   (`TauCeti.ParameterSymbol.coefficient_principal_classicalBalakrishnanIntegral`,
   `TauCeti.ParameterSymbol.coefficient_principal_classicalBalakrishnanIntegral_eq_rpow`).
+* `TauCeti.ParameterSymbol.exists_classicalSymbol_balakrishnanIntegral_expansionRightInverseTerms`:
+  the Balakrishnan integral of an asymptotic sum of the formal right inverse of an expansion that
+  is quasi-homogeneous at large frequencies is classical, with principal symbol `A ^ (-σ)`.
 
 ## References
 
@@ -505,6 +515,25 @@ theorem coefficient_balakrishnanIntegral_inverse (hσ0 : 0 < σ) (hm : -m - 2 * 
   rw [← hpA t ht]
   exact coefficient_inverse_comp_coefficient ha p.1 p.2 hmem
 
+/-- **The Balakrishnan integral of the inverse of a scalar symbol.** Let `a` be a symbol of order
+`m` elliptic with parameter whose value at `p` along the negative real axis is the scalar
+`a(p, -t) = (q + t) • 1`, `t > 0`, for a real `q > 0`. Then for `0 < σ < 1` the Balakrishnan
+integral of the inverse symbol `a⁻¹` at `p` is `q ^ (-σ) • 1`: the case `A = q • 1` of
+`TauCeti.ParameterSymbol.coefficient_balakrishnanIntegral_inverse`. -/
+theorem coefficient_balakrishnanIntegral_inverse_of_smul_one (hσ0 : 0 < σ)
+    (hm : -m - 2 * σ + 2 < 0) {a : ParameterSymbol n Λ V V m} (ha : a.IsElliptic)
+    {p : CoordinateSpace n × CoordinateSpace n} {q : ℝ} (hq : 0 < q)
+    (hpq : ∀ t : ℝ, 0 < t → a.coefficient (p, -(t : ℂ)) = (q + t) • (1 : V →L[ℂ] V)) :
+    ((a.inverse ha).balakrishnanIntegral hΛ hσ hm).coefficient p =
+      q ^ (-σ) • (1 : V →L[ℂ] V) := by
+  obtain ⟨r, hr⟩ : ∃ r : NNReal, (r : ℝ) = q := ⟨⟨_, hq.le⟩, rfl⟩
+  have hr0 : 0 < r := by rwa [← NNReal.coe_pos, hr]
+  have hmap (r : NNReal) : algebraMap NNReal (V →L[ℂ] V) r = (r : ℝ) • (1 : V →L[ℂ] V) := by
+    rw [Algebra.algebraMap_eq_smul_one, NNReal.smul_def]
+  rw [coefficient_balakrishnanIntegral_inverse hΛ hσ hσ0 hm ha (A := algebraMap NNReal _ r)
+    (isStrictlyPositive_algebraMap hr0) fun t ht ↦ by rw [hpq t ht, hmap, hr, add_smul],
+    CFC.rpow_algebraMap, hmap, NNReal.coe_rpow, hr]
+
 /-- **The principal part of Seeley's symbol of a negative power.** Let `a` be a symbol of order
 `m` elliptic with parameter, and `N : ℕ`. The Balakrishnan integral of its truncated right
 parametrix `Bₙ₊₁` (`TauCeti.ParameterSymbol.rightParametrix`) satisfies: there is one symbol `d`
@@ -529,6 +558,41 @@ theorem exists_coefficient_balakrishnanIntegral_rightParametrix_eq_rpow_add (hσ
     Pi.add_apply, coefficient_balakrishnanIntegral_inverse hΛ hσ hσ0 hm ha hA hpA,
     Symbol.coefficient_inclusion]
 
+/-- **Seeley's symbol of a negative power is classical.** Let `a ∼ ∑ⱼ aⱼ` be an expansion into
+parameter-dependent symbols `aⱼ` of orders `m - j`, each quasi-homogeneous of degree `m - j` above
+the radius `R`, whose leading term is elliptic with parameter: for an elliptic differential
+operator `P` of order `m = 2`, the symbol of `P - λ` split into its homogeneous parts, the
+leading part modified near `(ξ, λ) = (0, 0)` so that it is invertible there. The terms of its
+formal right inverse (`TauCeti.ParameterSymbol.expansionRightInverseTerms`) are then the terms
+of Seeley's resolvent parametrix, quasi-homogeneous at large frequencies
+(`TauCeti.ParameterSymbol.isQuasiHomogeneousAbove_expansionRightInverseTerms`). They have an
+asymptotic sum `b` of order `-m`, and for `0 < σ < 1` with `-m - 2 σ + 2 < 0` the Balakrishnan
+integral of `b` is a classical symbol `c` of order `-m - 2 σ + 2`
+(`TauCeti.ParameterSymbol.classicalBalakrishnanIntegral`). At every nonzero frequency `ξ` with
+`R < ‖ξ‖` where the leading term is `a₀((x, ξ), -t) = A + t` along the negative real axis, for a
+strictly positive operator `A`, the principal symbol of `c` is `A ^ (-σ)`. -/
+theorem exists_classicalSymbol_balakrishnanIntegral_expansionRightInverseTerms (hσ0 : 0 < σ)
+    (hm : -m - 2 * σ + 2 < 0) (a : (j : ℕ) → ParameterSymbol n Λ V V (m - j))
+    (ha : (a 0).IsElliptic) {R : ℝ} (hhom : ∀ j, (a j).IsQuasiHomogeneousAbove (m - j) R) :
+    ∃ (b : ParameterSymbol n Λ V V (-m)) (c : ClassicalSymbol n V V (-m - 2 * σ + 2)),
+      IsAsymptoticSum (m := fun j : ℕ ↦ -m - j) (inclusion (by simp) b)
+        (expansionRightInverseTerms a ha) ∧
+      c.toSymbol = b.balakrishnanIntegral hΛ hσ hm ∧
+      ∀ x ξ, R < ‖ξ‖ → ξ ≠ 0 → ∀ A : V →L[ℂ] V, IsStrictlyPositive A →
+        (∀ t : ℝ, 0 < t → (a 0).coefficient ((x, ξ), -(t : ℂ)) = A + t • 1) →
+          c.principal.coefficient (x, ξ) = A ^ (-σ) := by
+  have hbs : ∀ j, ∃ R', (expansionRightInverseTerms a ha j).IsQuasiHomogeneousAbove (-m - j) R' :=
+    fun j ↦ ⟨R + 1, isQuasiHomogeneousAbove_expansionRightInverseTerms a ha hhom (by linarith) j⟩
+  obtain ⟨b, hb⟩ := exists_asymptoticSum_sub_natCast (expansionRightInverseTerms a ha)
+  refine ⟨b, classicalBalakrishnanIntegral hΛ hσ hm b _ hbs hb, hb,
+    toSymbol_classicalBalakrishnanIntegral .., fun x ξ hξ hξ0 A hA hpA ↦ ?_⟩
+  refine coefficient_principal_classicalBalakrishnanIntegral_eq_rpow hΛ hσ hσ0 hm b _ hbs hb
+    (isQuasiHomogeneousAbove_expansionRightInverseTerms a ha hhom hξ 0) le_rfl hξ0 hA
+    fun t ht ↦ ?_
+  have hmem : -(t : ℂ) ∈ Λ := by simpa using hΛ (-t) (by linarith)
+  rw [coefficient_expansionRightInverseTerms_zero, ← coefficient_inverse _ ha, ← hpA t ht]
+  exact coefficient_inverse_comp_coefficient ha x ξ hmem
+
 end Power
 
 /-! ### The shifted Laplacian -/
@@ -548,16 +612,10 @@ theorem coefficient_balakrishnanIntegral_inverse_shiftedLaplacian {V : Type*}
     (x ξ : CoordinateSpace n) :
     (((shiftedLaplacian V s).inverse h).balakrishnanIntegral hΛ hσ hm).coefficient (x, ξ) =
       ((s + ‖ξ‖ ^ 2) ^ (-σ) : ℝ) • (1 : V →L[ℂ] V) := by
-  have hq : 0 < s + ‖ξ‖ ^ 2 := by positivity
-  obtain ⟨q, hq_def⟩ : ∃ q : NNReal, (q : ℝ) = s + ‖ξ‖ ^ 2 := ⟨⟨_, hq.le⟩, rfl⟩
-  have hq0 : 0 < q := by rwa [← NNReal.coe_pos, hq_def]
-  have hmap (r : NNReal) : algebraMap NNReal (V →L[ℂ] V) r = (r : ℝ) • (1 : V →L[ℂ] V) := by
-    rw [Algebra.algebraMap_eq_smul_one, NNReal.smul_def]
-  rw [coefficient_balakrishnanIntegral_inverse hΛ hσ (by linarith) hm h (A := algebraMap NNReal _ q)
-    (isStrictlyPositive_algebraMap hq0) fun t ht ↦ ?_, CFC.rpow_algebraMap, hmap, NNReal.coe_rpow,
-    hq_def]
+  refine coefficient_balakrishnanIntegral_inverse_of_smul_one hΛ hσ (by linarith) hm h
+    (by positivity) fun t ht ↦ ?_
   have hmem : -(t : ℂ) ∈ Λ := by simpa using hΛ (-t) (by linarith)
-  rw [coefficient_shiftedLaplacian s x ξ hmem, hmap, hq_def, ← add_smul, ← Complex.coe_smul]
+  rw [coefficient_shiftedLaplacian s x ξ hmem, ← ContinuousLinearMap.one_def, ← Complex.coe_smul]
   congr 1
   push_cast
   ring
