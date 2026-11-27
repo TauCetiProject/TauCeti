@@ -23,23 +23,23 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.Probability
 
-/-- Averaging a function that is `K`-Lipschitz on the nonnegative ray against a Gamma law changes
+/-- Averaging a function that is `K`-Lipschitz on the positive ray against a Gamma law changes
 its value at the mean `a / r` by at most `K * √a / r`. -/
 theorem norm_integral_gammaMeasure_sub_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [CompleteSpace E] {a r : ℝ} (ha : 0 < a) (hr : 0 < r) {f : ℝ → E} {K : ℝ≥0}
-    (hf : LipschitzOnWith K f (Ici 0)) :
+    (hf : LipschitzOnWith K f (Ioi 0)) :
     ‖(∫ x, f x ∂gammaMeasure a r) - f (a / r)‖ ≤ (K : ℝ) * √a / r := by
   set μ := gammaMeasure a r
   have : IsProbabilityMeasure μ := isProbabilityMeasure_gammaMeasure ha hr
-  have hμ : ∀ᵐ x ∂μ, x ∈ Ici (0 : ℝ) := (ae_pos_gammaMeasure a r).mono fun _ hx ↦ hx.le
+  have hμ : ∀ᵐ x ∂μ, x ∈ Ioi (0 : ℝ) := ae_pos_gammaMeasure a r
   have hmeas : AEStronglyMeasurable f μ := by
     rw [← Measure.restrict_eq_self_of_ae_mem hμ]
-    exact hf.continuousOn.aestronglyMeasurable measurableSet_Ici
+    exact hf.continuousOn.aestronglyMeasurable measurableSet_Ioi
   have hX : MemLp id 2 μ := memLp_id_gammaMeasure ha hr
   have hY : MemLp (fun x ↦ x - a / r) 2 μ := hX.sub (memLp_const _)
   have hbound : ∀ᵐ x ∂μ, ‖f x - f (a / r)‖ ≤ (K : ℝ) * ‖x - a / r‖ := by
     filter_upwards [hμ] with x hx
-    simpa only [dist_eq_norm] using hf.dist_le_mul x hx (a / r) (div_nonneg ha.le hr.le)
+    simpa only [dist_eq_norm] using hf.dist_le_mul x hx (a / r) (div_pos ha hr)
   have hdom := hY.norm.integrable (by norm_num : (1 : ℝ≥0∞) ≤ 2)
   have hdom' := hdom.const_mul (K : ℝ)
   have hdiff : Integrable (fun x ↦ f x - f (a / r)) μ :=
