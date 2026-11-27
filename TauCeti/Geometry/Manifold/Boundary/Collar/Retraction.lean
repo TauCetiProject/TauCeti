@@ -39,6 +39,8 @@ closed in `M`. That is where compactness of `N` and the Hausdorff property of `M
   the image of the collar.
 * `TauCeti.IsCollar.complHomotopyEquiv`: the inclusion `M \ f(N) → M` of the complement of a
   collared compact set, as a homotopy equivalence.
+* `TauCeti.IsCollar.homotopyEquivOfRangeEq`: an embedding onto `M \ f(N)`, such as the interior
+  of a compact manifold with collared boundary, as a homotopy equivalence.
 
 ## Main results
 
@@ -207,22 +209,6 @@ private theorem push_of_notMem_image (s : I) {x : M}
     rw [hc.push_apply, pushCoord_of_le s (le_of_lt (not_le.1 fun h ↦ hx ⟨p, h, rfl⟩))]
   · exact push_of_notMem_range s hxc
 
-/-- The part `c(N × [0, 1/2])` of a collar of a compact space in a Hausdorff space is closed. -/
-private theorem isClosed_image_le [CompactSpace N] [T2Space M] :
-    IsClosed (c '' {p | (p.2 : ℝ) ≤ 1 / 2}) := by
-  have hS : IsCompact {t : Ico (0 : ℝ) 1 | (t : ℝ) ≤ 1 / 2} := by
-    rw [Subtype.isCompact_iff]
-    convert isCompact_Icc (a := (0 : ℝ)) (b := 1 / 2) using 1
-    ext t
-    refine ⟨fun ⟨u, hu, hut⟩ ↦ hut ▸ ⟨u.property.1, hu⟩, fun ht ↦ ⟨⟨t, ht.1, ?_⟩, ht.2, rfl⟩⟩
-    linarith [ht.2]
-  have h : {p : N × Ico (0 : ℝ) 1 | (p.2 : ℝ) ≤ 1 / 2} =
-      univ ×ˢ {t : Ico (0 : ℝ) 1 | (t : ℝ) ≤ 1 / 2} := by
-    ext p
-    simp
-  rw [h]
-  exact ((isCompact_univ.prod hS).image hc.isOpenEmbedding.continuous).isClosed
-
 /-- The push is continuous: on the open image of the collar it is the push of collar coordinates,
 and on the open complement of `c(N × [0, 1/2])` it is the identity. -/
 private theorem continuous_push [CompactSpace N] [T2Space M] : Continuous (push c) := by
@@ -237,14 +223,10 @@ private theorem continuous_push [CompactSpace N] [T2Space M] : Continuous (push 
     rw [h]
     exact (hc.isOpenEmbedding.continuous.comp continuous_pushCoord).continuousAt
   · have hU : (univ ×ˢ (c '' {p | (p.2 : ℝ) ≤ 1 / 2})ᶜ : Set (I × M)) ∈ 𝓝 (s, x) :=
-      prod_mem_nhds Filter.univ_mem (hc.isClosed_image_le.isOpen_compl.mem_nhds hx)
+      prod_mem_nhds Filter.univ_mem
+        ((hc.isCompact_image_le (by norm_num)).isClosed.isOpen_compl.mem_nhds hx)
     refine continuousAt_snd.congr (Filter.mem_of_superset hU fun q hq ↦ ?_)
     exact (hc.push_of_notMem_image q.1 hq.2).symm
-
-/-- A point of the collar on the boundary `f(N)` has depth `0`. -/
-private theorem coe_snd_eq_zero_of_apply_mem_range {p : N × Ico (0 : ℝ) 1}
-    (hp : c p ∈ range f) : (p.2 : ℝ) = 0 :=
-  congrArg Subtype.val (hc.preimage_range.subset hp).2
 
 /-- A point outside the collar is not on the boundary `f(N)`. -/
 private theorem notMem_range_of_notMem_range_collar {x : M} (hx : x ∉ range c) : x ∉ range f :=
@@ -258,7 +240,7 @@ private theorem push_notMem_range (s : I) {x : M} (hx : x ∉ range f) :
     rw [hc.push_apply]
     intro hmem
     have hp : (p.2 : ℝ) = 0 := le_antisymm
-      ((le_pushCoord s p).trans (hc.coe_snd_eq_zero_of_apply_mem_range hmem).le) p.2.property.1
+      ((le_pushCoord s p).trans ((hc.apply_mem_range_iff).1 hmem).le) p.2.property.1
     refine hx ⟨p.1, ?_⟩
     rw [← hc.apply_zero]
     exact congrArg c (Prod.ext rfl (Subtype.ext hp.symm))
@@ -270,7 +252,7 @@ private theorem push_one_notMem_range (x : M) : push c (1, x) ∉ range f := by
   by_cases hxc : x ∈ range c
   · obtain ⟨p, rfl⟩ := hxc
     rw [hc.push_apply]
-    exact fun hmem ↦ (pos_pushCoord_one p).ne' (hc.coe_snd_eq_zero_of_apply_mem_range hmem)
+    exact fun hmem ↦ (pos_pushCoord_one p).ne' ((hc.apply_mem_range_iff).1 hmem)
   · rw [push_of_notMem_range 1 hxc]
     exact hc.notMem_range_of_notMem_range_collar hxc
 
@@ -306,6 +288,22 @@ noncomputable def complHomotopyEquiv : ContinuousMap.HomotopyEquiv ((range f)ᶜ
 @[simp]
 theorem coe_complHomotopyEquiv : ⇑hc.complHomotopyEquiv = Subtype.val :=
   (rfl)
+
+/-- **An embedding onto the complement of a collared boundary is a homotopy equivalence**, for a
+compact boundary parameter space in a Hausdorff space: the interior of a compact manifold with
+collared boundary is homotopy equivalent to the manifold. -/
+noncomputable def homotopyEquivOfRangeEq {P : Type*} [TopologicalSpace P] {ι : P → M}
+    (hι : IsEmbedding ι) (hιf : range ι = (range f)ᶜ) : ContinuousMap.HomotopyEquiv P M :=
+  ((hι.toHomeomorph.trans (Homeomorph.setCongr hιf)).toHomotopyEquiv).trans hc.complHomotopyEquiv
+
+/-- The homotopy equivalence of an embedding onto the complement of the boundary is the
+embedding. -/
+@[simp]
+theorem coe_homotopyEquivOfRangeEq {P : Type*} [TopologicalSpace P] {ι : P → M}
+    (hι : IsEmbedding ι) (hιf : range ι = (range f)ᶜ) :
+    ⇑(hc.homotopyEquivOfRangeEq hι hιf) = ι := by
+  rw [homotopyEquivOfRangeEq]
+  exact funext fun x ↦ congrFun hc.coe_complHomotopyEquiv _
 
 /-- The homotopy inverse of the inclusion `M \ f(N) → M` is the push at time `1`. -/
 private theorem coe_complHomotopyEquiv_symm_eq_push (x : M) :

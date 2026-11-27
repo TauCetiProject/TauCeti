@@ -42,7 +42,7 @@ rather than installing them locally at each use site. The `Algebra` instance car
 compatible maps between localisations at primes.
 
 The height-one-prime specialisation, where the localisation is moreover a discrete valuation ring,
-and its valuation bound are in `TauCeti/RingTheory/DedekindDomain/LocalizationAtPrime.lean`.
+and its valuation bound are in `TauCeti/RingTheory/DedekindDomain/Localization/AtPrime.lean`.
 -/
 
 public section

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Conjugation
+public import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 public import TauCeti.Analysis.LocallyConvex.PointwiseConvergence
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 
@@ -39,6 +40,8 @@ the Bessel-potential spaces `H^{s,p}` for every real `s`, including negative ord
 * `TemperedDistribution.conjPostcompCLM_toTemperedDistributionCLM_eq`,
   `TemperedDistribution.conjPostcompCLM_toTemperedDistribution_eq`: it extends `f ↦ L ∘ f` from
   Schwartz functions and from `Lᵖ` functions.
+* `TemperedDistribution.mapCLM_re_toDistribution`: on real test functions, the real part of a
+  scalar tempered distribution `u` is `(u + conj u) / 2`.
 * `TemperedDistribution.fourier_conjPostcompCLM`, `TemperedDistribution.fourierInv_conjPostcompCLM`:
   `𝓕 (L u) = L (𝓕⁻ u)` and `𝓕⁻ (L u) = L (𝓕 u)`.
 * `TemperedDistribution.fourierMultiplierCLM_conjPostcompCLM`: conjugation of Fourier multipliers.
@@ -80,6 +83,23 @@ theorem conjPostcompCLM_conjPostcompCLM {H : Type*} [NormedAddCommGroup H] [Norm
       PointwiseConvergenceCLM.postcomp _ (L'.comp L) u := by
   ext φ
   simp
+
+/-- **The real part of a tempered distribution.** On the real test functions of an open set `Ω`,
+the real part of a scalar tempered distribution `u` is the restriction of `(u + conj u) / 2`, where
+`conj u` is `φ ↦ conj (u (conj φ))`. -/
+theorem mapCLM_re_toDistribution (Ω : TopologicalSpace.Opens E) (u : 𝓢'(E, ℂ)) :
+    Distribution.mapCLM (Complex.ofRealCLM ∘L Complex.reCLM) (toDistribution Ω u) =
+      toDistribution Ω ((2⁻¹ : ℂ) •
+        (u + conjPostcompCLM (starL ℂ : ℂ ≃L⋆[ℂ] ℂ).toContinuousLinearMap u)) := by
+  ext φ
+  -- A real test function is fixed by the conjugation of Schwartz functions.
+  have hφ : SchwartzMap.conjCLM
+      (SchwartzMap.postcompCLM Complex.ofRealCLM (TestFunction.toSchwartzMapCLM ℝ φ)) =
+      SchwartzMap.postcompCLM Complex.ofRealCLM (TestFunction.toSchwartzMapCLM ℝ φ) := by
+    ext x
+    simp [SchwartzMap.conjCLM_apply]
+  simp [hφ, Complex.re_eq_add_conj]
+  ring
 
 variable [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] [CompleteSpace G]
 

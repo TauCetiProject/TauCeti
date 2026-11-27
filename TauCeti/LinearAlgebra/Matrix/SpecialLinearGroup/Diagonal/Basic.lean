@@ -29,6 +29,8 @@ a unit whose square is not one supplies such separation.
   condition for coordinate separation over a commutative ring.
 * `Matrix.GeneralLinearGroup.exists_toGL_mul_eq`: every invertible matrix is a determinant-one
   matrix times a diagonal matrix.
+* `Matrix.GeneralLinearGroup.slFactor`: in rank two, the explicit determinant-one factor `g` of
+  `γ = g diag(1, det γ)` (`Matrix.GeneralLinearGroup.toGL_slFactor_mul_diagGL`).
 * `Matrix.SpecialLinearGroup.map_diag2nUnit`: naturality under a ring homomorphism.
 * `Matrix.SpecialLinearGroup.diag2nUnit_decompose`: a two-coordinate unit diagonal matrix is a
   product of six transvections.
@@ -182,6 +184,59 @@ theorem _root_.Matrix.GeneralLinearGroup.exists_toGL_mul_eq {R : Type u} [CommRi
   refine ⟨x, u⁻¹, ?_⟩
   have hx : Matrix.SpecialLinearGroup.toGL x = g * diagGL u := Units.ext rfl
   rw [hx, map_inv, mul_inv_cancel_right]
+
+/-- The special linear factor `g = γ diag(1, det γ)⁻¹` of an invertible `2 × 2` matrix `γ`, so
+that `γ = g diag(1, det γ)` (`Matrix.GeneralLinearGroup.toGL_slFactor_mul_diagGL`). Unlike
+`Matrix.GeneralLinearGroup.exists_toGL_mul_eq`, it is an explicit choice of factor. -/
+def _root_.Matrix.GeneralLinearGroup.slFactor {R : Type u} [CommRing R] (γ : GL (Fin 2) R) :
+    Matrix.SpecialLinearGroup (Fin 2) R :=
+  ⟨(γ * (diagGL ![1, Matrix.GeneralLinearGroup.det γ])⁻¹ : GL (Fin 2) R), by
+    rw [← Matrix.GeneralLinearGroup.val_det_apply, map_mul, map_inv, det_diagGL_one_left,
+      mul_inv_cancel, Units.val_one]⟩
+
+section slFactor
+
+variable {R : Type u} [CommRing R]
+
+/-- The special linear factor of `γ` is `γ diag(1, det γ)⁻¹`. -/
+theorem _root_.Matrix.GeneralLinearGroup.toGL_slFactor (γ : GL (Fin 2) R) :
+    Matrix.SpecialLinearGroup.toGL γ.slFactor =
+      γ * (diagGL ![1, Matrix.GeneralLinearGroup.det γ])⁻¹ :=
+  Units.ext <| by
+    rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix, Matrix.GeneralLinearGroup.slFactor]
+
+/-- An invertible `2 × 2` matrix `γ` is its special linear factor times `diag(1, det γ)`. -/
+@[simp]
+theorem _root_.Matrix.GeneralLinearGroup.toGL_slFactor_mul_diagGL (γ : GL (Fin 2) R) :
+    Matrix.SpecialLinearGroup.toGL γ.slFactor * diagGL ![1, Matrix.GeneralLinearGroup.det γ] =
+      γ := by
+  rw [Matrix.GeneralLinearGroup.toGL_slFactor, inv_mul_cancel_right]
+
+/-- An invertible `2 × 2` matrix of determinant one is its own special linear factor. -/
+theorem _root_.Matrix.GeneralLinearGroup.toGL_slFactor_of_det_eq_one {γ : GL (Fin 2) R}
+    (hγ : Matrix.GeneralLinearGroup.det γ = 1) :
+    Matrix.SpecialLinearGroup.toGL γ.slFactor = γ := by
+  have h : diagGL ![(1 : Rˣ), 1] = 1 := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp
+  simp [Matrix.GeneralLinearGroup.toGL_slFactor, hγ, h]
+
+/-- The special linear factor of an element of `SL(2, R)` is the element itself. -/
+@[simp]
+theorem _root_.Matrix.GeneralLinearGroup.slFactor_toGL (g : Matrix.SpecialLinearGroup (Fin 2) R) :
+    (Matrix.SpecialLinearGroup.toGL g).slFactor = g :=
+  Matrix.SpecialLinearGroup.toGL_injective <|
+    Matrix.GeneralLinearGroup.toGL_slFactor_of_det_eq_one
+      (Matrix.SpecialLinearGroup.coeToGL_det g)
+
+/-- The special linear factor of `diag(1, d)` is the identity. -/
+@[simp]
+theorem _root_.Matrix.GeneralLinearGroup.slFactor_diagGL (d : Rˣ) :
+    (diagGL ![1, d]).slFactor = 1 := by
+  apply Matrix.SpecialLinearGroup.toGL_injective
+  rw [Matrix.GeneralLinearGroup.toGL_slFactor, map_one, det_diagGL_one_left, mul_inv_cancel]
+
+end slFactor
 
 end
 

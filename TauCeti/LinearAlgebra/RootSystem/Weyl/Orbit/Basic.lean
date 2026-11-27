@@ -30,6 +30,10 @@ height reaches a simple root from anywhere.
   roots and preserved by the simple reflections holds at every root.
 * `RootPairing.Base.exists_weylGroupToPerm_eq_of_isSimplyLaced`: **in a simply laced irreducible
   root system the Weyl group is transitive on the roots.**
+* `RootPairing.Base.orbit_root_eq_range_of_isSimplyLaced` and
+  `RootPairing.Base.card_weylGroup_eq_card_mul_card_stabilizer_of_isSimplyLaced`: the Weyl orbit of
+  any root is the set of all roots, so the Weyl group has order the number of roots times the order
+  of the stabilizer of a root.
 * `RootPairing.RootPositiveForm.rootLength_weylGroupToPerm`: root length is a Weyl-group
   invariant, with `RootPairing.RootPositiveForm.rootLength_reflectionPerm` the special case
   of a single reflection.
@@ -146,6 +150,33 @@ theorem _root_.RootPairing.Base.exists_weylGroupToPerm_eq_of_isSimplyLaced [Char
   rw [map_mul, map_mul, map_inv, Equiv.Perm.mul_apply, Equiv.Perm.mul_apply,
     Equiv.Perm.inv_def, Equiv.symm_apply_apply]
   exact congrArg (P.weylGroupToPerm v) hw
+
+/-- **In a simply laced irreducible root system the Weyl orbit of any root is the set of all
+roots.** This is `RootPairing.Base.exists_weylGroupToPerm_eq_of_isSimplyLaced`, stated on the
+roots themselves. -/
+theorem _root_.RootPairing.Base.orbit_root_eq_range_of_isSimplyLaced [CharZero R] [Finite ι]
+    [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] (b : P.Base)
+    (hsl : b.cartanMatrix.IsSimplyLaced) (i : ι) :
+    MulAction.orbit P.weylGroup (P.root i) = Set.range P.root := by
+  ext x
+  refine ⟨?_, ?_⟩
+  · rintro ⟨w, rfl⟩
+    exact ⟨_, (P.weylGroup_apply_root w i).symm⟩
+  · rintro ⟨j, rfl⟩
+    obtain ⟨w, hw⟩ := b.exists_weylGroupToPerm_eq_of_isSimplyLaced hsl i j
+    exact ⟨w, (P.weylGroup_apply_root w i).trans (congrArg P.root hw)⟩
+
+/-- **The order of the Weyl group of a simply laced irreducible root system** is the number of
+roots times the order of the stabilizer of any one of them, by the orbit-stabilizer theorem and
+`RootPairing.Base.orbit_root_eq_range_of_isSimplyLaced`. -/
+theorem _root_.RootPairing.Base.card_weylGroup_eq_card_mul_card_stabilizer_of_isSimplyLaced
+    [CharZero R] [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
+    (b : P.Base) (hsl : b.cartanMatrix.IsSimplyLaced) (i : ι) :
+    Nat.card P.weylGroup =
+      Nat.card ι * Nat.card (MulAction.stabilizer P.weylGroup (P.root i)) := by
+  rw [← Subgroup.card_mul_index (MulAction.stabilizer P.weylGroup (P.root i)),
+    MulAction.index_stabilizer, ← Nat.card_coe_set_eq, b.orbit_root_eq_range_of_isSimplyLaced hsl,
+    Nat.card_range_of_injective P.root.injective, mul_comm]
 
 section
 

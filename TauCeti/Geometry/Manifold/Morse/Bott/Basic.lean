@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Quotient.Bilinear
 public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 import TauCeti.Geometry.Manifold.MFDeriv.Constancy
@@ -63,6 +64,9 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
   zero, Morse–Bott means Morse.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_ofOpens_const`: a constant function
   is Morse–Bott along every open subset, a critical submanifold of full dimension.
+* `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold.compLocalDiffeomorph`: precomposing
+  with a local diffeomorphism which is a topological embedding, such as the inclusion of an open
+  subset of the source, preserves Morse–Bott critical submanifolds.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd`: the model example, the
   slice `M × {y}` for `(x, v) ↦ q v` with `q` nondegenerate at `y`.
 * `TauCeti.SmoothEmbedding.isNondegenerateCriticalSubmanifold_comp_snd_iff`: conversely, the slice
@@ -451,6 +455,26 @@ theorem isNondegenerateCriticalSubmanifold_ofOpens_const [IsManifold I n M] (hn 
       (Manifold.IsImmersion.mem_tangentRange_iff _ x hn v).1 <| by
     rw [tangentRange_ofOpens]
     exact Submodule.mem_top
+
+/-- **Precomposition with a local diffeomorphism preserves Morse–Bott critical submanifolds.**
+If `g : S' → S` is a local diffeomorphism and a topological embedding, for instance the inclusion
+of an open subset of `S`, and `i` is a Morse–Bott critical submanifold of `f`, then so is `i ∘ g`:
+the differential of `g` is onto at every point, so `i ∘ g` has the tangent spaces of `i`. -/
+theorem IsNondegenerateCriticalSubmanifold.compLocalDiffeomorph {S' : Type*}
+    [TopologicalSpace S'] [ChartedSpace H' S'] [IsManifold J n S'] (hn : n ≠ 0)
+    (h : i.IsNondegenerateCriticalSubmanifold f) {g : S' → S} (hg : IsLocalDiffeomorph J J n g)
+    (hge : IsEmbedding g) :
+    (i.compLocalDiffeomorph g hg hge).IsNondegenerateCriticalSubmanifold f where
+  contMDiffAt s := by
+    rw [compLocalDiffeomorph_apply]
+    exact h.contMDiffAt (g s)
+  mem_criticalPoints s := by
+    rw [compLocalDiffeomorph_apply]
+    exact h.mem_criticalPoints (g s)
+  ker_criticalHessian_le s v hv := by
+    rw [compLocalDiffeomorph_apply] at hv
+    rw [coe_compLocalDiffeomorph, (hg s).range_mfderiv_comp hn]
+    exact h.ker_criticalHessian_le (g s) hv
 
 section Prod
 

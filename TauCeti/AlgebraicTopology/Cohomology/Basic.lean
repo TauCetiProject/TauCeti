@@ -256,6 +256,21 @@ lemma singularCohomologyChainCoefficientIso_inv (X : TopCat.{w}) (k : Type*) [Ri
       X.singularCohomologyChainCoefficientMap k M e.inv n :=
   (rfl)
 
+/-- The change of chain coefficients does not depend on how the `k`-linear structure of `C` is
+presented: along an equality `L₁ = L₂` of `k`-linear structures, the identification `eqToHom` of
+the two cohomology modules commutes with `TopCat.singularCohomologyChainCoefficientMap`. -/
+@[reassoc]
+lemma singularCohomologyChainCoefficientMap_comp_eqToHom (X : TopCat.{w}) (k : Type*) [Ring k]
+    (L₁ L₂ : Linear k C) (h : L₁ = L₂) (M : C) (f : R' ⟶ R) (n : ℕ) :
+    @TopCat.singularCohomologyChainCoefficientMap _ _ _ _ R R' X k _ L₁ M f n ≫
+        eqToHom (congrArg (fun L : Linear k C ↦
+          @TopCat.singularCohomology _ _ _ _ R' k _ L M X n) h) =
+      eqToHom (congrArg (fun L : Linear k C ↦
+          @TopCat.singularCohomology _ _ _ _ R k _ L M X n) h) ≫
+        @TopCat.singularCohomologyChainCoefficientMap _ _ _ _ R R' X k _ L₂ M f n := by
+  subst h
+  simp
+
 end ChainCoefficients
 
 end TopCat
