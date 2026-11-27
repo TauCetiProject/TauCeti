@@ -8,20 +8,17 @@ module
 public import TauCeti.AlgebraicGeometry.AbelianScheme.Basic
 
 /-!
-# Scheme-level projections, isomorphisms, Hom groups, and zero object of abelian schemes
+# Scheme-level projections, Hom groups, and zero object of abelian schemes
 
 This file extends `TauCeti.AlgebraicGeometry.AbelianScheme.Basic` with:
 
 * `AbelianScheme.toSchemeFunctor` (faithful) and `AbelianScheme.toSchemeHom`: the forgetful functor
   to `Scheme` and the underlying scheme morphism of a homomorphism;
-* `AbelianScheme.isoMk`: constructing isomorphisms of abelian schemes from monoid-homomorphism
-  isomorphisms in `Over S` via `Grp.mkIso'` and `fullyFaithfulInducedFunctor.preimageIso`;
 * `AbelianScheme.instCommGroup`, `AbelianScheme.homMulEquiv`, and `AbelianScheme.toOverHom_one`,
   `toOverHom_mul`, `toOverHom_inv`, `toOverHom_div`: when the target has a commutative group law
   (`[IsCommMonObj B.toOver]`), `A ⟶ B` is a commutative group under the pointwise operations;
-* `AbelianScheme.isTerminalIdentity`, `AbelianScheme.isInitialIdentity`, and
-  `AbelianScheme.isZeroIdentity`: `AbelianScheme.identity S` is a zero object of
-  `AbelianScheme S`.
+* `AbelianScheme.isInitialIdentity` and `AbelianScheme.isZeroIdentity`: `AbelianScheme.identity S`
+  is a zero object of `AbelianScheme S`.
 -/
 
 public section
@@ -94,24 +91,6 @@ morphisms to `S`. -/
 lemma toSchemeHom_comp_hom {A B : AbelianScheme S} (f : A ⟶ B) :
     toSchemeHom f ≫ B.toOver.hom = A.toOver.hom :=
   (toOverHom f).w
-
-/-! ### Isomorphisms -/
-
-/-- Construct an isomorphism of abelian schemes from an isomorphism of their underlying schemes
-over `S` whose forward morphism is a monoid-object homomorphism. -/
-def isoMk {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] : A ≅ B :=
-  (fullyFaithfulInducedFunctor fun X : AbelianScheme S ↦ Grp.mk X.toOver).preimageIso
-    (Grp.mkIso' e)
-
-@[simp]
-lemma toOverHom_isoMk_hom {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] :
-    toOverHom (isoMk e).hom = e.hom :=
-  (rfl)
-
-@[simp]
-lemma toOverHom_isoMk_inv {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] :
-    toOverHom (isoMk e).inv = e.inv :=
-  (rfl)
 
 /-! ### Pointwise commutative group structure on homomorphisms -/
 
@@ -226,10 +205,6 @@ lemma toSchemeHom_fromIdentity (A : AbelianScheme S) :
     eqToHom (identity_toScheme S).symm ≫ toSchemeHom (fromIdentity A) = A.zeroSection := by
   rw [← Over.eqToHom_left (identity_toOver S).symm]
   exact congrArg Over.Hom.left (toOverHom_fromIdentity A)
-
-/-- The identity abelian scheme is terminal in `AbelianScheme S`. -/
-def isTerminalIdentity (S : Scheme.{u}) : IsTerminal (identity S) :=
-  IsTerminal.ofUnique _
 
 /-- The identity abelian scheme is initial in `AbelianScheme S`. -/
 def isInitialIdentity (S : Scheme.{u}) : IsInitial (identity S) :=

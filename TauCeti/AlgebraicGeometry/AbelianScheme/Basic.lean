@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import Mathlib.AlgebraicGeometry.Morphisms.Proper
 public import Mathlib.AlgebraicGeometry.Morphisms.Smooth
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
 public import TauCeti.AlgebraicGeometry.Geometrically.Integral
 public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 public import TauCeti.AlgebraicGeometry.Morphisms.OverTensorUnit
@@ -32,10 +34,14 @@ The file also provides:
   scheme over `S`, defined via `CategoryTheory.GrpObj.zpowMap`.
 * `AbelianScheme.ofGroupScheme`: constructor packaging a proper, smooth, geometrically connected
   group scheme over `S` as an abelian scheme.
+* `AbelianScheme.baseChange`: for `f : T ⟶ S`, the pullback of `A` along `f`, with the group law
+  transported by the monoidal pullback functor. Its group object is
+  `(Over.pullback f).mapGrp.obj (Grp.mk A.toOver)` (`grpMk_baseChange_toOver`), so the point-group
+  identification `TauCeti.GroupScheme.baseChangePointMulEquiv` applies to it directly.
 * `AbelianScheme.identity`: the base `S ⟶ S` with its trivial group law, the abelian scheme of
   relative dimension zero.
 * the category of abelian schemes over `S`, whose morphisms are morphisms of `Over S` preserving
-  the group law (`IsMonHom`).
+  the group law (`IsMonHom`), and the base-change functor `AbelianScheme.baseChangeFunctor`.
 
 A smooth morphism with geometrically connected fibres is geometrically integral
 (`TauCeti.AlgebraicGeometry.Smooth.geometricallyIntegral`). That instance lives in
@@ -82,7 +88,7 @@ structure AbelianScheme (S : Scheme.{u}) where
 
 namespace AbelianScheme
 
-variable {S : Scheme.{u}}
+variable {S T : Scheme.{u}}
 
 attribute [instance] AbelianScheme.grpObj AbelianScheme.isProper AbelianScheme.smooth
   AbelianScheme.geometricallyConnected
@@ -191,6 +197,53 @@ and smooth with geometrically connected fibres. -/
 lemma ofGroupScheme_toOver (G : Over S) [GrpObj G] [IsProper G.hom] [Smooth G.hom]
     [GeometricallyConnected G.hom] : (ofGroupScheme G).toOver = G :=
   (rfl)
+
+/-! ### Base change -/
+
+/-- The base change of an abelian scheme along a morphism `f : T ⟶ S`, obtained by pulling back
+the group scheme along `f`.
+
+Properness, smoothness and geometric connectedness are stable under base change, and the monoidal
+pullback functor carries the group-object structure (`Functor.grpObjObj`). -/
+@[expose] noncomputable def baseChange (A : AbelianScheme S) (f : T ⟶ S) : AbelianScheme T where
+  toOver := (Over.pullback f).obj A.toOver
+  grpObj := Functor.grpObjObj
+  isProper := inferInstanceAs (IsProper (pullback.snd A.toOver.hom f))
+  smooth := inferInstanceAs (Smooth (pullback.snd A.toOver.hom f))
+  geometricallyConnected := inferInstanceAs (GeometricallyConnected (pullback.snd A.toOver.hom f))
+
+@[simp]
+lemma baseChange_toOver (A : AbelianScheme S) (f : T ⟶ S) :
+    (A.baseChange f).toOver = (Over.pullback f).obj A.toOver :=
+  (rfl)
+
+/-- The underlying scheme of a base change is the fibre product of `A` with `T` over `S`. -/
+lemma baseChange_toScheme (A : AbelianScheme S) (f : T ⟶ S) :
+    (A.baseChange f).toScheme = pullback A.toOver.hom f :=
+  (rfl)
+
+/-- The group object underlying a base change is the image of the group object of `A` under the
+pullback functor on group objects. In particular the points of the base change are identified
+with points of `A` by `TauCeti.GroupScheme.baseChangePointMulEquiv`. -/
+lemma grpMk_baseChange_toOver (A : AbelianScheme S) (f : T ⟶ S) :
+    Grp.mk (A.baseChange f).toOver = (Over.pullback f).mapGrp.obj (Grp.mk A.toOver) :=
+  (rfl)
+
+/-- The zero section of a base change is the pullback of the zero section of `A`: the point of
+`pullback A.toOver.hom f` given by `f ≫ A.zeroSection` and `𝟙 T`. -/
+lemma zeroSection_baseChange (A : AbelianScheme S) (f : T ⟶ S) :
+    (A.baseChange f).zeroSection = pullback.lift (f ≫ A.zeroSection) (𝟙 T) (by
+      rw [Category.assoc, zeroSection_comp_toOver_hom, Category.comp_id, Category.id_comp]) := by
+  refine pullback.hom_ext ?_ ((A.baseChange f).zeroSection_comp_toOver_hom.trans
+    (pullback.lift_snd _ _ _).symm)
+  -- The unit of the transported group law is `ε (Over.pullback f) ≫ (Over.pullback f).map η`.
+  have hη : η[(A.baseChange f).toOver] =
+      Functor.LaxMonoidal.ε (Over.pullback f) ≫ (Over.pullback f).map η[A.toOver] :=
+    Functor.obj.η_def _
+  rw [zeroSection, hη, Over.comp_left, Over.ε_pullback_left, Category.assoc, IsIso.inv_comp_eq,
+    pullback.lift_fst]
+  simp only [Over.pullback_map_left, pullback.lift_fst, Over.tensorUnit_hom]
+  rw [← pullback.condition_assoc, Category.id_comp]
 
 /-! ### The identity abelian scheme -/
 
@@ -360,6 +413,40 @@ as its morphism over `S`. -/
 lemma toOverHom_homEquivIsMonHom_symm_apply {A B : AbelianScheme S}
     (g : {f : A.toOver ⟶ B.toOver // IsMonHom f}) :
     toOverHom ((homEquivIsMonHom A B).symm g) = g.val :=
+  (rfl)
+
+/-- Construct an isomorphism of abelian schemes from an isomorphism of the underlying schemes over
+`S` that preserves the group law. -/
+def isoMk {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] : A ≅ B :=
+  InducedCategory.isoMk (Grp.mkIso' e)
+
+@[simp]
+lemma toOverHom_isoMk_hom {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] :
+    toOverHom (isoMk e).hom = e.hom :=
+  (rfl)
+
+@[simp]
+lemma toOverHom_isoMk_inv {A B : AbelianScheme S} (e : A.toOver ≅ B.toOver) [IsMonHom e.hom] :
+    toOverHom (isoMk e).inv = e.inv :=
+  (rfl)
+
+/-- The base-change functor along `f : T ⟶ S`, sending an abelian scheme `A` to `A.baseChange f`
+and a homomorphism to its pullback. -/
+@[expose] def baseChangeFunctor (f : T ⟶ S) : AbelianScheme S ⥤ AbelianScheme T where
+  obj A := A.baseChange f
+  map g := InducedCategory.homMk ((Over.pullback f).mapGrp.map g.hom)
+  map_id A := InducedCategory.hom_ext ((Over.pullback f).mapGrp.map_id (Grp.mk A.toOver))
+  map_comp g h := InducedCategory.hom_ext ((Over.pullback f).mapGrp.map_comp g.hom h.hom)
+
+@[simp]
+lemma baseChangeFunctor_obj (f : T ⟶ S) (A : AbelianScheme S) :
+    (baseChangeFunctor f).obj A = A.baseChange f :=
+  (rfl)
+
+/-- The base change of a homomorphism is its image under the pullback functor of `Over S`. -/
+@[simp]
+lemma toOverHom_baseChangeFunctor_map (f : T ⟶ S) {A B : AbelianScheme S} (g : A ⟶ B) :
+    toOverHom ((baseChangeFunctor f).map g) = (Over.pullback f).map (toOverHom g) :=
   (rfl)
 
 end

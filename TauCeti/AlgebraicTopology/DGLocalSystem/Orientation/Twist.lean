@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Sign
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character.Basic
 
 /-!
 # The orientation twist on the free loop space
@@ -88,6 +88,16 @@ theorem freeLoopOrientationTwist_def (hι : Fintype.card ι = finrank ℝ F)
     freeLoopOrientationTwist F E R hι γ₀ =
       (isCoveringMap_proj (F := F) (E := E) hι).freeLoopSignTwist R (finite_fiber hι) γ₀ :=
   (rfl)
+
+/-- **The orientation twist of a real vector bundle is defined over `ℤ`**: extending its
+coefficients along a ring homomorphism `φ : R →+* R'` gives the orientation twist with
+coefficients in `R'`. -/
+@[simp]
+theorem mapRingHom_freeLoopOrientationTwist {R' : Type*} [CommRing R'] (φ : R →+* R')
+    (hι : Fintype.card ι = finrank ℝ F) (γ₀ : MooreFreeLoopSpace B) :
+    RankOneLocalSystem.mapRingHom φ (freeLoopOrientationTwist F E R hι γ₀) =
+      freeLoopOrientationTwist F E R' hι γ₀ :=
+  (isCoveringMap_proj hι).mapRingHom_freeLoopSignTwist (finite_fiber hι) φ γ₀
 
 end TauCeti.VectorBundleOrientationCover
 

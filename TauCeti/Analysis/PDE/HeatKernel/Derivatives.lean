@@ -51,6 +51,8 @@ the constant function `1`.
   `C t^(-m / 2) K_{2t}(x)`.
 * `TauCeti.exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: the weighted bound by
   `C t^((α - m) / 2) K_{4t}(x)`.
+* `TauCeti.exists_eventually_norm_iteratedFDeriv_heatKernel_mul_rpow_le`: weighted derivative
+  bounds uniform in space for times near a positive time.
 * `TauCeti.integrable_norm_iteratedFDeriv_heatKernel_mul_rpow`: integrability of the weighted
   derivatives.
 * `TauCeti.integrable_norm_rpow_mul_heatKernel`: integrability of the weight `‖x‖^α K_t(x)`.
@@ -277,6 +279,29 @@ theorem exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le (m : ℕ) {α : ℝ} (
     _ = C₁ * C₂ * (t ^ (-(m : ℝ) / 2) * (2 * t) ^ (α / 2)) * heatKernel (2 * (2 * t)) x := by
         ring
     _ = _ := by rw [hpow, h4]; ring
+
+/-- Weighted spatial derivatives of the heat kernel are uniformly bounded in space locally
+in positive time. In particular, integrating against an arbitrary finite measure needs no
+moment condition. -/
+theorem exists_eventually_norm_iteratedFDeriv_heatKernel_mul_rpow_le {t : ℝ} (ht : 0 < t) (k : ℕ)
+    {α : ℝ} (hα : 0 ≤ α) :
+    ∃ B : ℝ, ∀ᶠ v in nhds t, ∀ z : E,
+      ‖iteratedFDeriv ℝ k (heatKernel v) z‖ * ‖z‖ ^ α ≤ B := by
+  obtain ⟨C, hC₀, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_mul_rpow_le
+    (E := E) k hα
+  let b : ℝ → ℝ := fun v ↦ C * v ^ ((α - k) / 2) *
+    (4 * π * (4 * v)) ^ (-(Module.finrank ℝ E : ℝ) / 2)
+  have hb : ContinuousAt b t := by
+    have hv : ContinuousAt (fun v : ℝ ↦ v ^ ((α - k) / 2)) t :=
+      continuousAt_id.rpow_const (Or.inl ht.ne')
+    have hs : ContinuousAt (fun v : ℝ ↦ 4 * π * (4 * v)) t := by
+      fun_prop
+    exact (continuousAt_const.mul hv).mul (hs.rpow_const (Or.inl (by positivity)))
+  refine ⟨b t + 1, ?_⟩
+  filter_upwards [eventually_gt_nhds ht, hb.eventually (eventually_lt_nhds (lt_add_one (b t)))]
+    with v hv hbv z
+  exact ((hC v hv z).trans (mul_le_mul_of_nonneg_left (heatKernel_le (by positivity) z)
+    (by positivity))).trans hbv.le
 
 /-- **Mean value estimate for the time differences of the derivatives of the heat kernel.** For
 every order `m` there is a constant `C > 0` such that for `0 < a ≤ b`,

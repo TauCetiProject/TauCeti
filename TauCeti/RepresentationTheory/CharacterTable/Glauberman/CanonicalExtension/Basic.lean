@@ -43,6 +43,8 @@ The extension is irreducible because its restriction to `Γ` is
 * `TauCeti.existsUnique_canonicalExtension`: existence and uniqueness of the canonical extension.
 * `TauCeti.isCanonicalExtension_one`, `TauCeti.IsCanonicalExtension.eq_one`: the canonical
   extension of the trivial character is trivial.
+* `TauCeti.isCanonicalExtension_one_left`: for the trivial action, the canonical extension of `χ`
+  is `x ↦ χ x.left`.
 * `TauCeti.det_inr_eq_one_iff_exists_det_pow_eq_one`,
   `TauCeti.isCanonicalExtension_iff_exists_det_pow_eq_one`: for `|Γ|` and `|S|` coprime, the
   determinant of a representation of `Γ ⋊[φ] S` is trivial on `S` exactly when its order is coprime
@@ -95,6 +97,18 @@ theorem isCanonicalExtension_one : IsCanonicalExtension φ (fun _ : Γ => (1 : k
       rw [Representation.char_trivial, Module.finrank_fin_fun, Nat.cast_one]
   refine ⟨one_mem_irreducibleCharacters, rfl, 1, Representation.trivial k _ _, hchar, fun _ => ?_⟩
   exact LinearMap.det_id
+
+/-- **Trivial action**: for the trivial action, `Γ ⋊[1] S ≅ Γ × S`, and the canonical extension of
+an irreducible character `χ` of `Γ` is `χ × 1_S`, read through the first coordinate. -/
+theorem isCanonicalExtension_one_left {χ : Γ → k} (hχ : χ ∈ irreducibleCharacters k Γ) :
+    IsCanonicalExtension (1 : S →* MulAut Γ) χ fun x => χ x.left := by
+  obtain ⟨n, ρ, -, rfl⟩ := mem_irreducibleCharacters_iff.1 hχ
+  let π : Γ ⋊[(1 : S →* MulAut Γ)] S →* Γ := (MonoidHom.fst Γ S).comp mulEquivProd.toMonoidHom
+  have hπ : Function.Surjective π := fun g => ⟨inl g, rfl⟩
+  refine isCanonicalExtension_iff.2
+    ⟨π.comp_mem_irreducibleCharacters hπ hχ, rfl, n, ρ.comp π, rfl, fun s => ?_⟩
+  have hπs : π (inr s) = 1 := by simp [π]
+  rw [MonoidHom.comp_apply, hπs, map_one, map_one]
 
 end Predicate
 

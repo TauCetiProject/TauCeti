@@ -26,7 +26,8 @@ union of its unit translates (`Projectivization.preimage_image_mk'`). These two 
 from Zayn Blore's Mathlib pull request
 [mathlib4#44117](https://github.com/leanprover-community/mathlib4/pull/44117). Equivalently,
 two nonzero vectors give the same point exactly when the first lies on the line spanned by the
-second (`Projectivization.mk_eq_mk_iff_mem_span`).
+second (`Projectivization.mk_eq_mk_iff_mem_span`), and equal nonzero vectors give the same point
+whatever the proofs that they are nonzero (`Projectivization.mk_eq_mk_of_eq`).
 
 A linear map `G : V →ₗ[K] W` induces the map `Projectivization.linearProjection G`, sending
 `[v]` to `[G v]` on the set `Projectivization.linearProjectionDomain G` of points where `G` does
@@ -44,8 +45,13 @@ The file also records `Projectivization.submodule_map`: the line of the image of
 point under an injective semilinear map is the image of its line. A semilinear equivalence induces
 a bijection of projective spaces (`LinearEquiv.mapProjectivization`), and a vector lies on the line
 of a point exactly when it is zero or spans that point (`Projectivization.mem_submodule_iff`).
+Rescaling an injective semilinear map by a nonzero scalar does not change the map it induces on
+projective spaces (`Projectivization.map_smul_eq_map`), and a point lies in the projectivization
+of a submodule exactly when its representative lies in the submodule
+(`Submodule.mem_projectivization_iff_rep_mem`).
 Over a field, `Projectivization.mk_eq_mk_iff_forall_mul_eq` characterizes equality of projective
-points by vanishing of all their `2 × 2` homogeneous minors.
+points by vanishing of all their `2 × 2` homogeneous minors; on the projective line this is the
+vanishing of a single determinant (`Projectivization.mk_eq_mk_iff_det_eq_zero`).
 
 The normalization lemmas are adapted from Ralf Stephan's `ArithmeticHeights/Northcott.lean` in
 [`rwst/Subspace-Theorems`](https://github.com/rwst/Subspace-Theorems/blob/e443c2479e19f7665b31d8e94e2317c8ced1ca06/ArithmeticHeights/Northcott.lean),
@@ -73,6 +79,13 @@ spanned by the second. -/
 theorem mk_eq_mk_iff_mem_span {v w : V} (hv : v ≠ 0) (hw : w ≠ 0) :
     mk K v hv = mk K w hw ↔ v ∈ K ∙ w := by
   rw [mk_eq_mk_iff', Submodule.mem_span_singleton]
+
+variable {K} in
+/-- Equal nonzero vectors span the same projective point, whatever the nonvanishing proofs. -/
+theorem mk_eq_mk_of_eq {v w : V} (h : v = w) {hv : v ≠ 0} {hw : w ≠ 0} :
+    mk K v hv = mk K w hw := by
+  subst h
+  rfl
 
 variable {K} in
 /-- The projectivization of a vector space of dimension at most one has at most one point: all
@@ -188,6 +201,16 @@ theorem mk_eq_mk_iff_forall_mul_eq {x y : ι → K} (hx : x ≠ 0) (hy : y ≠ 0
     refine ⟨x j₀ / y j₀, funext fun i ↦ ?_⟩
     simp only [Pi.smul_apply, smul_eq_mul, div_mul_eq_mul_div, div_eq_iff hj₀]
     exact (h i j₀).symm
+
+/-- Two nonzero vectors of `K²` span the same line if and only if the `2 × 2` matrix with rows
+these vectors has determinant zero. -/
+theorem mk_eq_mk_iff_det_eq_zero {x y : Fin 2 → K} (hx : x ≠ 0) (hy : y ≠ 0) :
+    mk K x hx = mk K y hy ↔ (Matrix.of ![x, y]).det = 0 := by
+  rw [mk_eq_mk_iff_forall_mul_eq, Matrix.det_fin_two]
+  simp only [Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one, sub_eq_zero]
+  refine ⟨fun h ↦ h 0 1, fun h i j ↦ ?_⟩
+  fin_cases i <;> fin_cases j
+  exacts [rfl, h, h.symm, rfl]
 
 /-- At any nonzero coordinate of a projective point, there is a representative normalized
 to `1` whose coordinates are the ratios of the chosen representative's coordinates. -/
@@ -306,4 +329,27 @@ theorem mem_submodule_iff {x : Projectivization K V} {v : V} :
   · simp [hv]
   · simp [hv, submodule_mk, mk_eq_mk_iff_mem_span hv hw]
 
+/-- Rescaling an injective semilinear map by a nonzero scalar does not change the induced map of
+projective spaces. -/
+theorem map_smul_eq_map {K L V W : Type*} [DivisionRing K] [Field L] [AddCommGroup V]
+    [Module K V] [AddCommGroup W] [Module L W] {σ : K →+* L} {f : V →ₛₗ[σ] W}
+    (hf : Function.Injective f) {c : L} (hcf : Function.Injective (c • f)) :
+    map (c • f) hcf = map f hf := by
+  funext x
+  induction x using ind with | h v hv =>
+  rw [map_mk, map_mk, mk_eq_mk_iff']
+  exact ⟨c, by simp⟩
+
 end Projectivization
+
+namespace Submodule
+
+variable {K V : Type*} [DivisionRing K] [AddCommGroup V] [Module K V]
+
+/-- A projective point lies in the projectivization of a submodule exactly when its representative
+lies in the submodule. -/
+theorem mem_projectivization_iff_rep_mem (s : Submodule K V) (x : Projectivization K V) :
+    x ∈ s.projectivization ↔ x.rep ∈ s := by
+  rw [← mk_mem_projectivization_iff s x.rep_ne_zero, Projectivization.mk_rep]
+
+end Submodule

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.AbelianScheme.BaseChange
+public import TauCeti.AlgebraicGeometry.AbelianScheme.Basic
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.GeometricallyIntegral
 
