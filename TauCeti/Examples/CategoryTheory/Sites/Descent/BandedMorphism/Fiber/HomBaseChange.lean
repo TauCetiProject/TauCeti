@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.FiberHomBaseChange
+public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.Fiber.HomBaseChange
 
 /-!
 # Checks for the base change of the fibre morphism sheaves

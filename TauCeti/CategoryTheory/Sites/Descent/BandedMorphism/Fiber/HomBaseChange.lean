@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.FiberHomSheaf
+public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.Fiber.HomSheaf
 public import TauCeti.CategoryTheory.Sites.Descent.BandedMorphism.Restriction
 public import TauCeti.CategoryTheory.Sites.Descent.IsomTorsor.Basic
 
@@ -117,6 +117,10 @@ theorem fiberHomBaseChangeIso_hom_app (X : HomCategory bF bG) (T : (Over V)ᵒ�
   change (G.presheafHomPostcomp _ (restrictionIso f X.obj x).hom).app T
     ((G.overMapCompPresheafHomIso y _ f).hom.app T p) = _
   rw [presheafHomPostcomp_app_apply]
+  -- `p` is a morphism in the fibre over `((Over.map f).obj T.unop).left`, which is the fibre over
+  -- `T.unop.left` only up to unfolding `Over.map`. So neither `rw`/`simp only` with
+  -- `overMapCompPresheafHomIso_hom_app` and `Category.assoc` matches, and `erw` unfolds
+  -- `mapComp'`; the rewrite and the associativity steps are given as terms.
   exact (congrArg (· ≫ _) (G.overMapCompPresheafHomIso_hom_app y _ f T p)).trans <|
     (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Category.assoc _ _ _))
 
@@ -137,6 +141,8 @@ theorem fiberHomBaseChangeIso_inv_app (X : HomCategory bF bG) (T : (Over V)ᵒ�
   change (G.overMapCompPresheafHomIso y _ f).inv.app T
     ((G.presheafHomPostcomp _ (restrictionIso f X.obj x).inv).app T q) = _
   rw [overMapCompPresheafHomIso_inv_app]
+  -- As in `fiberHomBaseChangeIso_hom_app`, `presheafHomPostcomp_app_apply` and `Category.assoc`
+  -- do not rewrite, because the fibre containing `q` matches only up to unfolding `Over.map`.
   exact congrArg (_ ≫ ·) ((congrArg (· ≫ _) (G.presheafHomPostcomp_app_apply _ _ T q)).trans
     (Category.assoc _ _ _))
 
@@ -162,7 +168,9 @@ theorem fiberHomBaseChangeIso_modification {X Y : HomCategory bF bG} (m : X ⟶ 
     (fiberHomSheafFunctor_map_hom_app _ _ m T _).symm)
   -- `erw`: the sections of the fibre morphism sheaves are hom types only up to unfolding.
   erw [fiberHomSheafFunctor_map_hom_app, fiberHomBaseChangeIso_hom_app]
-  -- Both sides are `k(y)⁻¹ ≫ p ≫ _`; compare the tails after `p`.
+  -- Both sides are `k(y)⁻¹ ≫ p ≫ _`; compare the tails after `p`. As in
+  -- `fiberHomBaseChangeIso_hom_app`, `Category.assoc` and the `_assoc` form of the tail lemma
+  -- do not rewrite around `p`, whose fibre matches only up to unfolding `Over.map`.
   exact (congrArg (_ ≫ ·) ((Category.assoc _ _ _).trans <|
     (congrArg (p ≫ ·) (mapComp'_hom_restrictionIso_hom_modification f x T.unop.hom m)).trans <|
       (congrArg (p ≫ ·) (Category.assoc _ _ _).symm).trans (Category.assoc _ _ _).symm)).trans
