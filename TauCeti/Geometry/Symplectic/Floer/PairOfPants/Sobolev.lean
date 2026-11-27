@@ -216,6 +216,15 @@ theorem inv_sqrt_cylindricalWeight_le_norm_sub_endCenter (q : Puncture) {z : ℝ
   Real.inv_sqrt_le_of_inv_sq_le (norm_pos_iff.2 (sub_ne_zero.2 hz))
     (inv_norm_sub_endCenter_sq_le_cylindricalWeight q z)
 
+/-- The cylindrical weight is positive at every point `φ'_q(ζ)` of an end chart, which is not the
+center of the end. -/
+theorem sqrt_cylindricalWeight_positiveEndChart_pos (q : Puncture) (ζ : ℝ × ℝ) :
+    0 < √(cylindricalWeight (positiveEndChart q ζ)) := by
+  have hd := norm_pos_iff.2
+    (sub_ne_zero.2 (equivRealProdCLM_symm_positiveEndChart_ne_endCenter q ζ))
+  exact Real.sqrt_pos.2 ((inv_pos.2 (pow_pos hd 2)).trans_le
+    (inv_norm_sub_endCenter_sq_le_cylindricalWeight q _))
+
 /-- **The cylindrical weight under a horizontal translation.** Far from the punctures, at
 `|w| ≥ 4`, translating by `c ∈ [0, 1]` changes the cylindrical weight `ρ` of the pair of pants by
 at most a factor `8`: `ρ(w + c) ≤ 8 ρ(w)`. -/

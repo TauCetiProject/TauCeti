@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Conj
 public import Mathlib.LinearAlgebra.Charpoly.ToMatrix
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.LinearAlgebra.Semisimple
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import TauCeti.LinearAlgebra.End.Invariant
@@ -51,6 +52,10 @@ These classes index the class functions on all square matrices of the Hall algeb
   `TauCeti.SimilarityClass.ofEnd_invtQuot_dualAnnihilator`: the transpose of `g` on the annihilator
   of an invariant subspace `W`, and on the quotient by it, has the class of `g` on `V ⧸ W`, and on
   `W`.
+* `TauCeti.SimilarityClass.ofEnd_toLin'_fromBlocks`: a block upper triangular matrix has the
+  class of the corresponding block map `Module.End.blockTriangular`.
+* `TauCeti.SimilarityClass.isConj_of_ofEnd_toLin'_eq`: invertible matrices of the same class are
+  conjugate in `GL n k`.
 * `TauCeti.SimilarityClass.ofEnd_blockTriangular_of_isSemisimple`: a semisimple block triangular
   map is similar to its block diagonal part.
 * `TauCeti.SimilarityClass.ofEnd_blockTriangular_eq_of_sylvester`: on a Fitting component
@@ -69,6 +74,8 @@ These classes index the class functions on all square matrices of the Hall algeb
   `src/Lib/LocalGL/Green/HallAlgebra.lean` in grh-lean (https://github.com/lsernau/grh-lean,
   Apache 2.0, Copyright 2026 Anthropic PBC), here with `Mathlib`'s `ConjClasses` of matrices as
   the carrier.
+* Adapted from grh-lean as above: `New.simClassOf_submatrix` in
+  `src/Lib/LocalGL/Green/HallAlgebra.lean`.
 * Adapted from grh-lean as above: the similarity of a semisimple block triangular map with its
   block diagonal part from `src/Lib/LocalGL/Green/CuspidalFunctions.lean`, here proved with an
   invariant complement of the first summand rather than with a projection.
@@ -285,9 +292,44 @@ theorem ofEnd_invtQuot_invtRestrict_comap_mkQ {U : Submodule k V} (hU : U ∈ g.
 
 end Invariant
 
-/-! ### Block triangular maps -/
+/-! ### Block matrices and block maps -/
 
 section Block
+
+/-- Reindexing the rows and the columns of a square matrix by one bijection does not change its
+similarity class. -/
+theorem ofEnd_toLin'_submatrix {m n : Type*} [Fintype m] [DecidableEq m] [Fintype n]
+    [DecidableEq n] (e : m ≃ n) (M : Matrix n n k) :
+    ofEnd (Matrix.toLin' (M.submatrix e e)) = ofEnd (Matrix.toLin' M) :=
+  ofEnd_eq_of_apply_eq (LinearEquiv.funCongrLeft k k e.symm) fun x ↦ by
+    ext j
+    simp [LinearEquiv.funCongrLeft_apply]
+
+/-- The class of a block upper triangular matrix is that of the block map
+`(v, w) ↦ (A v + M w, C w)`. -/
+theorem ofEnd_toLin'_fromBlocks {n₁ n₂ : Type*} [Fintype n₁] [DecidableEq n₁] [Fintype n₂]
+    [DecidableEq n₂] (A : Matrix n₁ n₁ k) (M : Matrix n₁ n₂ k) (C : Matrix n₂ n₂ k) :
+    ofEnd (Matrix.toLin' (Matrix.fromBlocks A M 0 C)) =
+      ofEnd (Module.End.blockTriangular (Matrix.toLin' A) (Matrix.toLin' C) (Matrix.toLin' M)) :=
+  ofEnd_eq_of_apply_eq (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k) fun x ↦ by
+    -- The two components of `x` are its restrictions to `n₁` and to `n₂`.
+    have h₁ (y : n₁ ⊕ n₂ → k) : (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k y).1 = y ∘ Sum.inl :=
+      funext (LinearEquiv.sumArrowLequivProdArrow_apply_fst y)
+    have h₂ (y : n₁ ⊕ n₂ → k) : (LinearEquiv.sumArrowLequivProdArrow n₁ n₂ k k y).2 = y ∘ Sum.inr :=
+      funext (LinearEquiv.sumArrowLequivProdArrow_apply_snd y)
+    ext <;> simp [Matrix.fromBlocks_mulVec, Module.End.blockTriangular_apply, h₁, h₂]
+
+/-- Elements of `GL n k` whose matrices have the same similarity class are conjugate. -/
+theorem isConj_of_ofEnd_toLin'_eq {n : Type*} [Fintype n] [DecidableEq n] {g h : GL n k}
+    (hgh : ofEnd (Matrix.toLin' (g : Matrix n n k)) = ofEnd (Matrix.toLin' (h : Matrix n n k))) :
+    IsConj g h := by
+  obtain ⟨e, he⟩ := ofEnd_eq_iff.1 hgh
+  -- The matrix of `e` conjugates `g` to `h`.
+  let u : GL n k := Matrix.GeneralLinearGroup.toLin.symm
+    (LinearMap.GeneralLinearGroup.ofLinearEquiv e)
+  refine isConj_iff.2 ⟨u, mul_inv_eq_of_eq_mul (Matrix.GeneralLinearGroup.toLin.injective
+    (Units.ext (LinearMap.ext fun x ↦ ?_)))⟩
+  simpa [u, Matrix.GeneralLinearGroup.coe_toLin, Matrix.toLin'_apply'] using he x
 
 variable {V W : Type*} [AddCommGroup V] [Module k V] [Module.Finite k V]
   [AddCommGroup W] [Module k W] [Module.Finite k W]

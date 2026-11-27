@@ -42,6 +42,8 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
   `TauCeti.Probability.mgf_id_map_natCast` restates this for the real cast of a law on `ℕ`.
 * `TauCeti.Probability.integrable_pow_of_abs_le_one` — on `[-1, 1]` the integrand is
   integrable under a finite measure.
+* `TauCeti.Probability.abs_pgf_le` — on `[-1, 1]` the generating function is bounded by the total
+  mass.
 * `TauCeti.Probability.IndepFun.pgf_add` and `TauCeti.Probability.iIndepFun.pgf_sum` —
   multiplicativity over binary and finite sums of independent random variables when the factor
   integrands are integrable.
@@ -167,6 +169,15 @@ theorem integrable_pow_of_abs_le_one [IsFiniteMeasure μ] {X : Ω → ℕ} (hX :
   refine (integrable_const (1 : ℝ)).mono' (hX.const_pow t).aestronglyMeasurable ?_
   filter_upwards with ω
   simpa only [Real.norm_eq_abs, abs_pow, norm_one] using pow_le_one₀ (abs_nonneg t) ht
+
+/-- On `[-1, 1]` the probability-generating function of a random variable under a finite measure
+is bounded in absolute value by the total mass; for a probability measure it maps `[-1, 1]` into
+itself. -/
+theorem abs_pgf_le [IsFiniteMeasure μ] (X : Ω → ℕ) {t : ℝ} (ht : |t| ≤ 1) :
+    |pgf X μ t| ≤ μ.real Set.univ := by
+  rw [pgf_def, ← Real.norm_eq_abs, ← one_mul (μ.real Set.univ)]
+  refine norm_integral_le_of_norm_le_const (Filter.Eventually.of_forall fun ω => ?_)
+  simpa only [Real.norm_eq_abs, abs_pow] using pow_le_one₀ (abs_nonneg t) ht
 
 /-- For a probability law on `ℕ`, the error in the approximation
 `pgf id ν z ≈ 1 + (z - 1) * ν.real {1}` is bounded by twice the multiple-occurrence probability.
