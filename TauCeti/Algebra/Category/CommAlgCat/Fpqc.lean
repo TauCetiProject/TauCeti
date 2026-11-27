@@ -58,6 +58,6 @@ instance isContinuous_algSpec_fpqc (R : Type u) [CommRing R] :
     (algSpec (CommRingCat.of R)).IsContinuous (fpqcTopology R)
       (Scheme.fpqcTopology.over (Spec (CommRingCat.of R))) := by
   rw [fpqcTopology_def]
-  exact Functor.le_inducedTopology_iff.mp le_rfl
+  infer_instance
 
 end TauCeti.CommAlgCat
