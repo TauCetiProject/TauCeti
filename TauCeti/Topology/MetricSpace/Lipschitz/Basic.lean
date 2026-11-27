@@ -14,6 +14,8 @@ import TauCeti.Algebra.Order.Field.Basic
 This file collects elementary `LipschitzWith` facts and bounded-gauge estimates:
 
 * The shifted positive part `t ↦ max (t - k) 0` is `1`-Lipschitz on the real line.
+* The plateau `x ↦ max (min t (ρ - dist x x₀)) 0` is a `1`-Lipschitz function with values in
+  `[0, t]`, equal to `t` near `x₀` and vanishing at distance at least `ρ` from `x₀`.
 * Pointwise infima `x ↦ sInf ((F x) '' S)` of uniformly `K`-Lipschitz families bounded below at
   each point are `K`-Lipschitz.
 * A `K`-Lipschitz map with `1 ≤ K` scales the bounded-metric gauge `d / (1 + d)` by at most `K`,
@@ -25,6 +27,8 @@ This file collects elementary `LipschitzWith` facts and bounded-gauge estimates:
 ## Main results
 
 * `TauCeti.lipschitzWith_max_sub_const_zero`: the shifted positive part is `1`-Lipschitz.
+* `TauCeti.exists_lipschitzWith_one_plateau`: a `1`-Lipschitz plateau of height `t ≤ 1` about
+  a point, vanishing off a ball.
 * `TauCeti.lipschitzWith_sInf_image`: pointwise infimum over an index set `S` preserves a uniform
   Lipschitz constant `K` when each slice `(F x) '' S` is bounded below.
 * `LipschitzWith.dist_div_one_add_dist_le_mul`: bounded-gauge estimate for a `K`-Lipschitz map
@@ -51,6 +55,25 @@ theorem lipschitzWith_max_sub_const_zero (k : ℝ) :
   LipschitzWith.of_dist_le_mul fun x y => by
     simpa only [NNReal.coe_one, one_mul, Real.dist_eq, sub_sub_sub_cancel_right] using
       abs_max_sub_max_le_abs (x - k) (y - k) 0
+
+/-- **A Lipschitz plateau.** For `0 ≤ t ≤ 1`, a centre `x₀` and a radius `ρ`, there is a
+`1`-Lipschitz function `g` with values in `[0, t]`, equal to `t` within `ρ - t` of `x₀` and to `0`
+at distance at least `ρ` from `x₀`, namely `max (min t (ρ - dist x x₀)) 0`. It is a test function
+for the bounded-Lipschitz distance that separates a ball from the complement of a larger one. -/
+theorem exists_lipschitzWith_one_plateau {X : Type*} [PseudoMetricSpace X] {t : ℝ} (ht₀ : 0 ≤ t)
+    (ht₁ : t ≤ 1) (x₀ : X) (ρ : ℝ) :
+    ∃ g : X → ℝ, LipschitzWith 1 g ∧ (∀ x, 0 ≤ g x ∧ g x ≤ t) ∧ (∀ x, |g x| ≤ 1) ∧
+      (∀ x, dist x x₀ ≤ ρ - t → g x = t) ∧ ∀ x, ρ ≤ dist x x₀ → g x = 0 := by
+  refine ⟨fun x ↦ max (min t (ρ - dist x x₀)) 0, ?_, fun x ↦ ⟨le_max_right _ _,
+    max_le (min_le_left _ _) ht₀⟩, fun x ↦ ?_, fun x hx ↦ ?_, fun x hx ↦ ?_⟩
+  · refine ((LipschitzWith.of_dist_le_mul fun x y ↦ ?_).const_min t).max_const 0
+    rw [Real.dist_eq, sub_sub_sub_cancel_left, NNReal.coe_one, one_mul, abs_sub_comm]
+    exact abs_dist_sub_le x y x₀
+  · rw [abs_of_nonneg (le_max_right _ _)]
+    exact max_le ((min_le_left _ _).trans ht₁) zero_le_one
+  · dsimp only
+    rw [min_eq_left (by linarith), max_eq_left ht₀]
+  · exact max_eq_right ((min_le_right _ _).trans (by linarith))
 
 /-- Pointwise infimum over `S` preserves a uniform Lipschitz constant `K` when each slice is
 bounded below. -/

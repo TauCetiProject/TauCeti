@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.SliceMeasure
 public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Localization
+import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
 # Roots of the Newton polynomial of a slice and the zeros of the field
@@ -53,7 +54,7 @@ within every `ρ > ε` of a point of `S` the density does not vanish
 (`TauCeti.SeibergWitten.exists_mem_closedBall_dist_lt_ne_zero`), and a subdisc of radius `ρ₁`
 carrying charge `κ` has a point of `S` within `ρ` once `ε < (ρ - ρ₁) (κ - ν)`, where `ν` bounds
 the negative mass (`TauCeti.SeibergWitten.exists_mem_dist_lt_of_le_setIntegral`). Both are
-tested against a Lipschitz plateau (`TauCeti.SeibergWitten.exists_lipschitzWith_one_plateau`).
+tested against a Lipschitz plateau (`TauCeti.exists_lipschitzWith_one_plateau`).
 
 ## References
 
@@ -73,22 +74,6 @@ namespace TauCeti.SeibergWitten
 universe u
 
 /-! ### Atoms of a bounded-Lipschitz approximation -/
-
-/-- **A Lipschitz plateau.** For `0 ≤ t ≤ 1`, a centre `w₀` and a radius `ρ`, there is a
-`1`-Lipschitz function `g` with values in `[0, t]`, equal to `t` within `ρ - t` of `w₀` and to `0`
-at distance at least `ρ` from `w₀`, namely `max (min t (ρ - |w - w₀|)) 0`. It is a test function
-for the bounded-Lipschitz distance that separates a disc from the complement of a larger one. -/
-theorem exists_lipschitzWith_one_plateau {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t ≤ 1) (w₀ : ℂ) (ρ : ℝ) :
-    ∃ g : ℂ → ℝ, LipschitzWith 1 g ∧ (∀ w, 0 ≤ g w ∧ g w ≤ t) ∧ (∀ w, |g w| ≤ 1) ∧
-      (∀ w, dist w w₀ ≤ ρ - t → g w = t) ∧ ∀ w, ρ ≤ dist w w₀ → g w = 0 := by
-  refine ⟨fun w ↦ max (min t (ρ - dist w w₀)) 0, ?_, fun w ↦ ⟨le_max_right _ _,
-    max_le (min_le_left _ _) ht₀⟩, fun w ↦ ?_, fun w hw ↦ ?_, fun w hw ↦ ?_⟩
-  · simpa using (((LipschitzWith.const ρ).sub (LipschitzWith.dist_left w₀)).const_min t).max_const 0
-  · rw [abs_of_nonneg (le_max_right _ _)]
-    exact max_le ((min_le_left _ _).trans ht₁) zero_le_one
-  · dsimp only
-    rw [min_eq_left (by linarith), max_eq_left ht₀]
-  · exact max_eq_right ((min_le_right _ _).trans (by linarith))
 
 /-- **No point of the approximating multiset is missed.** Let `f` be a density whose normalized
 slice `f dλ / 2π` on the closed disc of radius `R` is within `ε < 1` of the counting measure of a

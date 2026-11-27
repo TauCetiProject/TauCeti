@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.RootSupport
+public import TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.Root.Support
+import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
 /-!
 # The charge of a vacuum circle counts the roots of the Newton polynomial
@@ -18,7 +19,7 @@ multiplicity, of the local branches of the limiting curve in the normal fibre. O
 the field itself carries a local integer charge around every circle in the vacuum
 `χ(|α|²) = 1`: the winding number of `α ∘ σ` around it, which is the integral of the slice over
 the enclosed disc (`TauCeti.SeibergWitten.exists_int_integral_cutoffCurrent_comp_closedBall`).
-`TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.RootSupport` compares the roots of `P` with the
+`TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.Root.Support` compares the roots of `P` with the
 places where the slice lives, as sets. This file compares them with multiplicity: once the
 negative mass and the Newton variance of the slice are small, the charge of a circle of radius
 `ρ₁` bounding a vacuum annulus of width `κ` is the number of roots of `P` within `ρ₁ + κ / 2` of
@@ -33,7 +34,7 @@ between `ρ₁ + κ / 4` and `ρ₁ + 3 κ / 4`
 not vanish (`TauCeti.SeibergWitten.exists_mem_closedBall_dist_lt_ne_zero`).
 
 **The charge counts the points inside the middle circle of the annulus.** Test the slice against
-the plateau function (`TauCeti.SeibergWitten.exists_lipschitzWith_one_plateau`) equal to
+the plateau function (`TauCeti.exists_lipschitzWith_one_plateau`) equal to
 `t = min (κ / 2) 1` within `ρ₁ + κ / 4` of `w₀` and to `0` beyond `ρ₁ + 3 κ / 4`. On the closed
 disc of radius `ρ₁` it equals `t`, on the annulus the density vanishes, and beyond it the plateau
 vanishes, so the slice integrates it to `t` times the charge `(2π)⁻¹ ∫_{|w - w₀| ≤ ρ₁} f`. Since no
@@ -54,7 +55,7 @@ the number of roots of the Newton polynomial of the slice within `ρ₁ + κ / 2
 (`TauCeti.SeibergWitten.exists_forall_windingNumber_eq_countP_roots`). In particular it is
 nonnegative, and it is positive exactly when some root lies within that distance.
 
-As in `TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.RootSupport`, the tolerance `δ` is chosen
+As in `TauCeti.Analysis.PDE.SeibergWitten.DiscCharge.Root.Support`, the tolerance `δ` is chosen
 before the field, the disc, the circle and the slice, and the smallness of the Newton variance,
 which the coupled equations have to supply, is a hypothesis.
 
