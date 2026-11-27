@@ -29,6 +29,8 @@ is `O` of a slower one, so a decay estimate at one rate gives one at every slowe
 * `TauCeti.exp_neg_mul_sub`: `exp (-c (t - R)) = exp (c R) exp (-c t)`.
 * `TauCeti.exp_neg_half_mul_sq`: `exp (-(c / 2) t) ^ 2 = exp (-c t)`.
 * `TauCeti.tendsto_exp_neg_mul_norm_cocompact`: for `c > 0`, `exp (-c ‖x‖) → 0` at infinity.
+* `TauCeti.tendsto_cocompact_nhds_zero_of_norm_le_mul_exp`: for `c > 0`, a function at most
+  `K exp (-c ‖x‖)` outside a ball tends to zero at infinity.
 * `TauCeti.nonpos_of_forall_le_mul_exp`: a value at most `M exp (-b ρ)` for every `ρ`, with
   `b > 0`, is nonpositive.
 * `TauCeti.isBigO_exp_neg_mul_norm_of_le`: `exp (-c' ‖x‖) = O(exp (-c ‖x‖))` for `c ≤ c'`, so a
@@ -63,6 +65,16 @@ theorem tendsto_exp_neg_mul_norm_cocompact {E : Type*} [NormedAddCommGroup E] [P
     {c : ℝ} (hc : 0 < c) : Tendsto (fun x : E ↦ Real.exp (-(c * ‖x‖))) (cocompact E) (𝓝 0) :=
   Real.tendsto_exp_neg_atTop_nhds_zero.comp
     ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc)
+
+open Filter Topology in
+/-- A function at most `K exp (-c ‖x‖)` outside a ball, with `c > 0`, tends to zero at
+infinity. -/
+theorem tendsto_cocompact_nhds_zero_of_norm_le_mul_exp {E F : Type*} [NormedAddCommGroup E]
+    [ProperSpace E] [SeminormedAddGroup F] {f : E → F} {R K c : ℝ} (hc : 0 < c)
+    (hf : ∀ x : E, R ≤ ‖x‖ → ‖f x‖ ≤ K * Real.exp (-(c * ‖x‖))) :
+    Tendsto f (cocompact E) (𝓝 0) :=
+  squeeze_zero_norm' ((tendsto_norm_cocompact_atTop (E := E)).eventually_ge_atTop R |>.mono hf)
+    (by simpa using (tendsto_exp_neg_mul_norm_cocompact hc).const_mul K)
 
 /-- A value bounded by `M exp (-(b ρ))` for every `ρ`, with `0 < b`, is nonpositive. -/
 theorem nonpos_of_forall_le_mul_exp {y M b : ℝ} (hb : 0 < b)

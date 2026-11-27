@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ModularForms.CuspFormSubmodule
 public import Mathlib.NumberTheory.ModularForms.QExpansion
 public import TauCeti.Analysis.Complex.Periodic
+import TauCeti.Topology.LimUnder
 
 /-!
 # The `q`-expansion as a linear map, and uniqueness of coefficients for raw functions
@@ -233,7 +234,7 @@ theorem UpperHalfPlane.cuspFunction_eventuallyEq_nhds
   simp only [cuspFunction]
   rw [Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne,
     Function.Periodic.cuspFunction_zero_eq_limUnder_nhds_ne]
-  exact congrArg lim (Filter.map_congr hfg)
+  exact Filter.limUnder_congr hfg
 
 /-- A cusp function which agrees off `q = 0` with a function continuous at `0` agrees with it
 near `0`. -/
