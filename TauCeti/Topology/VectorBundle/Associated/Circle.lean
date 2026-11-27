@@ -137,22 +137,6 @@ end Inverse
 
 /-! ### The line of the tensor product -/
 
-/-- **Pure tensors of lines in fixed frames**: for associated bundles with scalar model fibre,
-`[p, a] ⊗ [q, c] = (a c) ([p, 1] ⊗ [q, 1])`. -/
-theorem _root_.TauCeti.AssociatedBundle.mk_tmul_mk_eq_smul {𝕜 G G' : Type*}
-    [NontriviallyNormedField 𝕜] [Group G] [TopologicalSpace G] [Group G'] [TopologicalSpace G']
-    {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
-    [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
-    {Q : B → Type*} [TopologicalSpace (TotalSpace G' Q)] [∀ b, TopologicalSpace (Q b)]
-    [FiberBundle G' Q] [∀ b, MulAction G'ᵐᵒᵖ (Q b)] [PrincipalBundle G' Q]
-    [DistribMulAction G 𝕜] [SMulCommClass G 𝕜 𝕜] [ContinuousSMul G 𝕜]
-    [DistribMulAction G' 𝕜] [SMulCommClass G' 𝕜 𝕜] [ContinuousSMul G' 𝕜]
-    {b : B} (p : P b) (q : Q b) (a c : 𝕜) :
-    AssociatedBundle.mk G p a ⊗ₜ[𝕜] AssociatedBundle.mk G' q c =
-      (a * c) • (AssociatedBundle.mk G p (1 : 𝕜) ⊗ₜ[𝕜] AssociatedBundle.mk G' q (1 : 𝕜)) := by
-  rw [AssociatedBundle.mk_eq_smul_mk_one p a, AssociatedBundle.mk_eq_smul_mk_one q c,
-    TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', smul_smul, mul_comm c a]
-
 section Tensor
 
 /-- The identification of lines read in the frames `[(p₀, q₀), 1]`, `p₀` and `q₀`:
