@@ -11,7 +11,7 @@ public import TauCeti.LinearAlgebra.Matrix.FormAdjoint
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import Mathlib.LinearAlgebra.Matrix.ToLin
-import TauCeti.LinearAlgebra.Matrix.Nonsingular.LeftInverse
+import TauCeti.LinearAlgebra.Matrix.Range
 
 /-!
 # Positions of a smaller unitary group in a larger one
@@ -119,7 +119,7 @@ theorem LowersFlag.sum_eq_of_linearIndependent {v : Matrix n (Fin (d + 1)) K} {Y
     (hσ' : LowersFlag v Y σ') : σ = σ' := by
   obtain ⟨N, -, hN, rfl⟩ := hσ
   obtain ⟨N', -, hN', rfl⟩ := hσ'
-  obtain ⟨T, hT⟩ := linearIndependent_col_iff_exists_left_inverse.1 hv
+  obtain ⟨T, hT⟩ := exists_mul_eq_one_of_linearIndependent_col hv
   have hZ : T.submatrix Fin.castSucc id * v.submatrix id Fin.castSucc = 1 := by
     rw [← submatrix_mul _ _ _ _ _ Function.bijective_id, hT,
       submatrix_one _ (Fin.castSucc_injective d)]
@@ -205,7 +205,7 @@ theorem formAdjoint_mul_eq_zero (hP : IsUnitaryPosition J J' d v i₀) :
 `i₀`: `Z i₀ = 0` and `Z v = 1`. -/
 theorem exists_mul_eq_zero_and_mul_eq_one (hP : IsUnitaryPosition J J' d v i₀)
     (hJ' : IsUnit J'.det) : ∃ Z : Matrix (Fin (d + 1)) n K, Z * i₀ = 0 ∧ Z * v = 1 := by
-  obtain ⟨T, hT⟩ := linearIndependent_col_iff_exists_left_inverse.1 hP.linearIndependent
+  obtain ⟨T, hT⟩ := exists_mul_eq_one_of_linearIndependent_col hP.linearIndependent
   refine ⟨T - T * i₀ * formAdjoint J' J i₀, ?_, ?_⟩
   · simp [Matrix.mul_assoc, Matrix.sub_mul, hP.formAdjoint_mul_self hJ']
   · simp [Matrix.mul_assoc, Matrix.sub_mul, hP.formAdjoint_mul_eq_zero, hT]
