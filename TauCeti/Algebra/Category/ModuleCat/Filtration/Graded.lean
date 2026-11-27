@@ -13,13 +13,14 @@ public import TauCeti.CategoryTheory.Filtration.Decreasing
 # Graded pieces of decreasing filtrations of modules
 
 An antitone family `F : ℤ → Submodule R M`, read at `ℤᵒᵖ`, is a decreasingly filtered module
-(`CategoryTheory.FilteredObject.ofSubmodules`). Its graded piece `gr^p = F^p / F^{p+1}`
+(`CategoryTheory.FilteredObject.ofAntitone`). Its graded piece `gr^p = F^p / F^{p+1}`
 (`CategoryTheory.FilteredObject.gr`, a cokernel) is the quotient module of `F p` by `F (p + 1)`,
 seen inside `F p`.
 
 ## Main results
 
-* `CategoryTheory.FilteredObject.grIsoOfAntitone`: `gr^p ≅ F p ⧸ F (p + 1)`.
+* `CategoryTheory.FilteredObject.grIsoOfAntitone`: `gr^p ≅ F p ⧸ F (p + 1)`, carrying the
+  projection `F^p ⟶ gr^p` to the quotient map (`cokernel_π_grIsoOfAntitone_hom`).
 * `CategoryTheory.FilteredObject.card_step_eq_card_mul_card_gr`:
   `|F p| = |F (p + 1)| · |gr^p|`.
 -/
@@ -33,20 +34,7 @@ universe v u
 namespace CategoryTheory.FilteredObject
 
 variable {R : Type u} [Ring R] {M : Type v} [AddCommGroup M] [Module R M]
-
-/-- The linear map underlying the inclusion of steps `F_i ⟶ F_j` of `ofSubmodules F hF` along a
-morphism `f : i ⟶ j` is the inclusion of `F i` in `F j`. -/
-theorem hom_stepMap_ofSubmodules {I : Type*} [Category* I] (F : I → Submodule R M)
-    (hF : ∀ ⦃i j⦄, (i ⟶ j) → F i ≤ F j) {i j : I} (f : i ⟶ j) :
-    ((ofSubmodules F hF).stepMap f).hom = Submodule.inclusion (hF f) := by
-  rw [← filtrationDiagram_map]
-  rfl
-
-variable (F : ℤ → Submodule R M) (hF : Antitone F)
-
-/-- The decreasingly filtered module with steps `F^p = F p`, for an antitone family `F`. -/
-noncomputable abbrev ofAntitone : FilteredObject (ModuleCat.{v} R) ℤᵒᵖ :=
-  ofSubmodules (fun p : ℤᵒᵖ ↦ F p.unop) fun _ _ f ↦ hF (leOfHom f.unop)
+  (F : ℤ → Submodule R M) (hF : Antitone F)
 
 /-- The graded piece `gr^p = F^p / F^{p+1}` of the filtration of a module by an antitone family
 `F` of submodules is the quotient of `F p` by `F (p + 1)`, seen inside `F p`. -/
@@ -57,6 +45,18 @@ noncomputable def grIsoOfAntitone (p : ℤ) :
     (Submodule.quotEquivOfEq _ _ 
       ((congrArg LinearMap.range (hom_stepMap_ofSubmodules _ _ _)).trans
         (Submodule.range_inclusion _ _ _))).toModuleIso
+
+/-- The projection `F^p ⟶ gr^p` onto the graded piece, followed by `grIsoOfAntitone`, is the
+quotient map of `F p` by `F (p + 1)`, seen inside `F p`. -/
+@[reassoc (attr := simp)]
+theorem cokernel_π_grIsoOfAntitone_hom (p : ℤ) :
+    cokernel.π ((ofAntitone F hF).stepMap (homOfLE (Int.le_add_one le_rfl)).op) ≫
+        (grIsoOfAntitone F hF p).hom =
+      ModuleCat.ofHom ((F (p + 1)).comap (F p).subtype).mkQ := by
+  -- Mathlib identifies the cokernel projection with the quotient map by the range of
+  -- `F^{p+1} ⟶ F^p`, which `Submodule.quotEquivOfEq` then carries to the quotient by `F (p + 1)`.
+  exact (Category.assoc _ _ _).symm.trans
+    ((ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom _ =≫ _).trans rfl)
 
 /-- In the filtration of a module by an antitone family `F` of submodules, the cardinality of a
 step is the product of the cardinalities of the next step and of the graded piece:

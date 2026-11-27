@@ -16,11 +16,12 @@ public import TauCeti.CategoryTheory.Filtration.Basic
 A family `F : I → Submodule R M` of submodules, indexed by a category `I` and with `F i ≤ F j`
 for every morphism `i ⟶ j`, is a filtered object of `ModuleCat R` indexed by `I`
 (`CategoryTheory.FilteredObject.ofSubmodules`), whose step `F_i` is the subobject of `F i`
-(`step_ofSubmodules`). An antitone family `ℤ → Submodule R M`, read at `ℤᵒᵖ`, is a decreasing
-filtration, and a monotone family on a preorder an increasing one. Mathlib's order isomorphism
-`ModuleCat.subobjectModule` between subobjects and submodules carries the steps to the submodules
-`F i` (`subobjectModule_step_ofSubmodules`), so the lattice conditions on the steps read in the
-lattice of submodules.
+(`step_ofSubmodules`), and whose inclusions of steps are the inclusions of submodules
+(`hom_stepMap_ofSubmodules`). An antitone family `ℤ → Submodule R M`, read at `ℤᵒᵖ`, is a
+decreasing filtration (`ofAntitone`), and a monotone family on a preorder an increasing one.
+Mathlib's order isomorphism `ModuleCat.subobjectModule` between subobjects and submodules carries
+the steps to the submodules `F i` (`subobjectModule_step_ofSubmodules`), so the lattice conditions
+on the steps read in the lattice of submodules.
 
 ## Main results
 
@@ -55,6 +56,11 @@ noncomputable abbrev ofSubmodules (F : I → Submodule R M) (hF : ∀ ⦃i j⦄,
         (ModuleCat.ofHom (F i).subtype)
       map f := MonoOver.homMk (ModuleCat.ofHom (Submodule.inclusion (hF f))) rfl }
 
+/-- The decreasingly filtered module with steps `F^p = F p`, for an antitone family `F`. -/
+noncomputable abbrev ofAntitone (F : ℤ → Submodule R M) (hF : Antitone F) :
+    FilteredObject (ModuleCat.{v} R) ℤᵒᵖ :=
+  ofSubmodules (fun p : ℤᵒᵖ ↦ F p.unop) fun _ _ f ↦ hF (leOfHom f.unop)
+
 variable (F : I → Submodule R M) (hF : ∀ ⦃i j⦄, (i ⟶ j) → F i ≤ F j)
 
 /-- The inclusion of the step `F_i` of `ofSubmodules F hF` is the inclusion of `F i`. -/
@@ -71,6 +77,13 @@ theorem hom_stepι_ofSubmodules (i : I) : ((ofSubmodules F hF).stepι i).hom = (
   -- implicit objects, which are `ModuleCat.of R (F i)` and `ModuleCat.of R M` only up to
   -- unfolding, so `ModuleCat.hom_ofHom` is applied by `exact` rather than by `rw`.
   exact ModuleCat.hom_ofHom _
+
+/-- The linear map underlying the inclusion of steps `F_i ⟶ F_j` of `ofSubmodules F hF` along a
+morphism `f : i ⟶ j` is the inclusion of `F i` in `F j`. -/
+theorem hom_stepMap_ofSubmodules {i j : I} (f : i ⟶ j) :
+    ((ofSubmodules F hF).stepMap f).hom = Submodule.inclusion (hF f) := by
+  rw [← filtrationDiagram_map]
+  rfl
 
 /-- The step `F_i` of `ofSubmodules F hF` is the subobject of `F i`. -/
 theorem step_ofSubmodules (i : I) :
