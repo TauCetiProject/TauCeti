@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.DoubleDual
-public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.MeasureTheory.Function.Lp.Restriction
 public import TauCeti.MeasureTheory.Function.Lp.ScalarEvaluation
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
@@ -36,7 +36,10 @@ The file develops the general weak set integral: uniqueness through scalar tests
 `f`, invariance under almost-everywhere equality, finite and countable additivity in the set,
 restriction of the measure, change of the tests along a bounded linear map, functoriality along a
 bounded linear map `T : X → W` through the restricted adjoint, its value at an indicator vector, and
-agreement with the Bochner set integral for Bochner-integrable `f`.
+agreement with the Bochner set integral for Bochner-integrable `f`. The Dunford and weak-star set
+integrals inherit linearity, invariance under almost-everywhere equality, additivity in the set and
+restriction of the measure from it, and the Dunford set integral is functorial along bounded linear
+maps (`TauCeti.dunfordSetIntegral_comp_left`).
 
 ## References
 
@@ -71,8 +74,7 @@ operator `TauCeti.scalarEvalLp f ι : Y → L¹(μ)` applied to the set-integral
 (`TauCeti.weakSetIntegral_eq_comp_scalarEvalLp`). -/
 def weakSetIntegral (f : S → X) (ι : Y →L[𝕜] StrongDual 𝕜 X)
     (hf : ∀ y, Integrable (fun s ↦ ι y (f s)) μ) (A : Set S) : StrongDual 𝕜 Y :=
-  ((L1.integralCLM' 𝕜).comp (LpToLpRestrictCLM S 𝕜 𝕜 μ 1 A)).comp
-    (scalarEvalLp f ι fun y ↦ memLp_one_iff_integrable.2 (hf y))
+  (L1.setIntegralCLM 𝕜 A).comp (scalarEvalLp f ι fun y ↦ memLp_one_iff_integrable.2 (hf y))
 
 variable {f g : S → X} {ι : Y →L[𝕜] StrongDual 𝕜 X}
   {hf : ∀ y, Integrable (fun s ↦ ι y (f s)) μ} {hg : ∀ y, Integrable (fun s ↦ ι y (g s)) μ}
@@ -82,7 +84,7 @@ variable {f g : S → X} {ι : Y →L[𝕜] StrongDual 𝕜 X}
 applied to the set-integral functional `φ ↦ ∫ s in A, φ s ∂μ` on `L¹(μ)`. -/
 theorem weakSetIntegral_eq_comp_scalarEvalLp :
     weakSetIntegral f ι hf A =
-      ((L1.integralCLM' 𝕜).comp (LpToLpRestrictCLM S 𝕜 𝕜 μ 1 A)).comp
+      (L1.setIntegralCLM 𝕜 A).comp
         (scalarEvalLp f ι fun y ↦ memLp_one_iff_integrable.2 (hf y)) := (rfl)
 
 /-- The value of the weak set integral at `y` is the set integral of the `L¹` class
@@ -91,8 +93,7 @@ theorem weakSetIntegral_apply_eq_setIntegral_scalarEvalLp (y : Y) :
     weakSetIntegral f ι hf A y =
       ∫ s in A, scalarEvalLp f ι (fun y ↦ memLp_one_iff_integrable.2 (hf y)) y s ∂μ := by
   rw [weakSetIntegral_eq_comp_scalarEvalLp, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, ← L1.integral_eq', L1.integral_eq_integral]
-  exact integral_congr_ae (LpToLpRestrictCLM_coeFn 𝕜 A _)
+    L1.setIntegralCLM_apply]
 
 /-- The value of the weak set integral at a test `y` is the set integral of the scalar test
 `s ↦ ι y (f s)`. -/
@@ -123,14 +124,17 @@ theorem norm_weakSetIntegral_le :
     _ = ‖T y‖ := (L1.norm_eq_integral_norm _).symm
     _ ≤ ‖T‖ * ‖y‖ := T.le_opNorm y
 
-/-- The weak set integral only depends on the scalar tests up to almost-everywhere equality. -/
-theorem weakSetIntegral_congr (hfg : ∀ y, (fun s ↦ ι y (f s)) =ᵐ[μ] fun s ↦ ι y (g s)) :
+/-- The weak set integral over `A` only depends on the scalar tests up to almost-everywhere
+equality on `A`. -/
+theorem weakSetIntegral_congr
+    (hfg : ∀ y, (fun s ↦ ι y (f s)) =ᵐ[μ.restrict A] fun s ↦ ι y (g s)) :
     weakSetIntegral f ι hf A = weakSetIntegral g ι hg A := by
   ext y
-  simpa using integral_congr_ae (ae_restrict_of_ae (hfg y))
+  simpa using integral_congr_ae (hfg y)
 
-/-- The weak set integral is invariant under almost-everywhere equality of functions. -/
-theorem weakSetIntegral_congr_ae (hfg : f =ᵐ[μ] g) :
+/-- The weak set integral over `A` is invariant under almost-everywhere equality of functions
+on `A`. -/
+theorem weakSetIntegral_congr_ae (hfg : f =ᵐ[μ.restrict A] g) :
     weakSetIntegral f ι hf A = weakSetIntegral g ι hg A :=
   weakSetIntegral_congr fun _ ↦ hfg.mono fun s hs ↦ by simp only [hs]
 
@@ -272,7 +276,7 @@ theorem WeaklyIntegrable.restrict (hf : WeaklyIntegrable 𝕜 f μ) (A : Set S) 
 
 /-- The image of a weakly integrable function under a bounded linear map is weakly integrable. -/
 theorem _root_.ContinuousLinearMap.weaklyIntegrable_comp (T : X →L[𝕜] W)
-    (hf : WeaklyIntegrable 𝕜 f μ) : WeaklyIntegrable 𝕜 (fun s ↦ T (f s)) μ :=
+    (hf : WeaklyIntegrable 𝕜 f μ) : WeaklyIntegrable 𝕜 (T ∘ f) μ :=
   fun w' ↦ by simpa using hf (w'.comp T)
 
 /-- The Dunford set integral of a weakly integrable function `f` over `A`: the functional
@@ -303,6 +307,58 @@ theorem dunfordSetIntegral_of_integrable [NormedSpace ℝ X] [CompleteSpace X]
     dunfordSetIntegral f hf A = NormedSpace.inclusionInDoubleDual 𝕜 X (∫ s in A, f s ∂μ) := by
   ext x'
   rw [dunfordSetIntegral_eq_weakSetIntegral, weakSetIntegral_apply_of_integrable hfi]
+  simp
+
+/-- The Dunford set integral of the zero function vanishes. -/
+@[simp]
+theorem dunfordSetIntegral_zero (h0 : WeaklyIntegrable 𝕜 (0 : S → X) μ) (A : Set S) :
+    dunfordSetIntegral 0 h0 A = 0 := by
+  simp [dunfordSetIntegral_eq_weakSetIntegral]
+
+/-- The Dunford set integral is additive in the function. -/
+theorem dunfordSetIntegral_add (hf : WeaklyIntegrable 𝕜 f μ) (hg : WeaklyIntegrable 𝕜 g μ)
+    (A : Set S) :
+    dunfordSetIntegral (f + g) (hf.add hg) A =
+      dunfordSetIntegral f hf A + dunfordSetIntegral g hg A := by
+  simp only [dunfordSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_add _
+
+/-- The Dunford set integral is homogeneous in the function. -/
+theorem dunfordSetIntegral_smul (hf : WeaklyIntegrable 𝕜 f μ) (c : 𝕜) (A : Set S) :
+    dunfordSetIntegral (c • f) (hf.const_smul c) A = c • dunfordSetIntegral f hf A := by
+  simp only [dunfordSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_smul c _
+
+/-- The Dunford set integral over `A` is invariant under almost-everywhere equality of functions
+on `A`. -/
+theorem dunfordSetIntegral_congr_ae (hf : WeaklyIntegrable 𝕜 f μ) (hg : WeaklyIntegrable 𝕜 g μ)
+    {A : Set S} (hfg : f =ᵐ[μ.restrict A] g) :
+    dunfordSetIntegral f hf A = dunfordSetIntegral g hg A := by
+  simp only [dunfordSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_congr_ae hfg
+
+/-- The Dunford set integral is additive over disjoint sets. -/
+theorem dunfordSetIntegral_union (hf : WeaklyIntegrable 𝕜 f μ) {A B : Set S}
+    (hAB : Disjoint A B) (hB : MeasurableSet B) :
+    dunfordSetIntegral f hf (A ∪ B) = dunfordSetIntegral f hf A + dunfordSetIntegral f hf B := by
+  simp only [dunfordSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_union hAB hB
+
+/-- Restricting the measure to a measurable set `B` restricts the Dunford set integrals to
+subsets of `B`. -/
+theorem dunfordSetIntegral_restrict (hf : WeaklyIntegrable 𝕜 f μ) {A B : Set S}
+    (hB : MeasurableSet B) :
+    dunfordSetIntegral (μ := μ.restrict B) f (hf.restrict B) A =
+      dunfordSetIntegral f hf (A ∩ B) := by
+  simp only [dunfordSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_restrict hB
+
+/-- **Functoriality.** For a bounded linear map `T : X → W`, the Dunford set integral of `T ∘ f`
+is that of `f` composed with the adjoint `w' ↦ w' ∘ T` of `T`. -/
+theorem dunfordSetIntegral_comp_left (T : X →L[𝕜] W) (hf : WeaklyIntegrable 𝕜 f μ) (A : Set S) :
+    dunfordSetIntegral (T ∘ f) (T.weaklyIntegrable_comp hf) A =
+      (dunfordSetIntegral f hf A).comp (ContinuousLinearMap.precomp 𝕜 T) := by
+  ext w'
   simp
 
 end Dunford
@@ -351,6 +407,54 @@ theorem weakStarSetIntegral_of_integrable (hf : ∀ x, Integrable (fun s ↦ f s
     (hfi : Integrable f μ) (A : Set S) : weakStarSetIntegral f hf A = ∫ s in A, f s ∂μ := by
   ext x
   rw [weakStarSetIntegral_apply, ContinuousLinearMap.integral_apply hfi.integrableOn]
+
+variable {g : S → StrongDual 𝕜 X} {A B : Set S}
+
+/-- The weak-star set integral of the zero function vanishes. -/
+@[simp]
+theorem weakStarSetIntegral_zero (h0 : ∀ x, Integrable (fun s ↦ (0 : S → StrongDual 𝕜 X) s x) μ) :
+    weakStarSetIntegral 0 h0 A = 0 := by
+  ext x
+  simp
+
+/-- The weak-star set integral is additive in the function. -/
+theorem weakStarSetIntegral_add (hf : ∀ x, Integrable (fun s ↦ f s x) μ)
+    (hg : ∀ x, Integrable (fun s ↦ g s x) μ) (hfg : ∀ x, Integrable (fun s ↦ (f + g) s x) μ) :
+    weakStarSetIntegral (f + g) hfg A =
+      weakStarSetIntegral f hf A + weakStarSetIntegral g hg A := by
+  simp only [weakStarSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_add _
+
+/-- The weak-star set integral is homogeneous in the function. -/
+theorem weakStarSetIntegral_smul (hf : ∀ x, Integrable (fun s ↦ f s x) μ) (c : 𝕜)
+    (hcf : ∀ x, Integrable (fun s ↦ (c • f) s x) μ) :
+    weakStarSetIntegral (c • f) hcf A = c • weakStarSetIntegral f hf A := by
+  simp only [weakStarSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_smul c _
+
+/-- The weak-star set integral over `A` is invariant under almost-everywhere equality of functions
+on `A`. -/
+theorem weakStarSetIntegral_congr_ae (hf : ∀ x, Integrable (fun s ↦ f s x) μ)
+    (hg : ∀ x, Integrable (fun s ↦ g s x) μ) (hfg : f =ᵐ[μ.restrict A] g) :
+    weakStarSetIntegral f hf A = weakStarSetIntegral g hg A := by
+  simp only [weakStarSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_congr_ae hfg
+
+/-- The weak-star set integral is additive over disjoint sets. -/
+theorem weakStarSetIntegral_union (hf : ∀ x, Integrable (fun s ↦ f s x) μ) (hAB : Disjoint A B)
+    (hB : MeasurableSet B) :
+    weakStarSetIntegral f hf (A ∪ B) = weakStarSetIntegral f hf A + weakStarSetIntegral f hf B := by
+  simp only [weakStarSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_union hAB hB
+
+/-- Restricting the measure to a measurable set `B` restricts the weak-star set integrals to
+subsets of `B`. -/
+theorem weakStarSetIntegral_restrict (hf : ∀ x, Integrable (fun s ↦ f s x) μ)
+    (hB : MeasurableSet B) :
+    weakStarSetIntegral (μ := μ.restrict B) f (fun x ↦ (hf x).restrict) A =
+      weakStarSetIntegral f hf (A ∩ B) := by
+  simp only [weakStarSetIntegral_eq_weakSetIntegral]
+  exact weakSetIntegral_restrict hB
 
 end WeakStar
 

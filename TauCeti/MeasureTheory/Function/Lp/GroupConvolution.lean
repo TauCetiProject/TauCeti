@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Order
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Group.Convolution.Support
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 
@@ -267,11 +268,8 @@ theorem convolutionL_toL1_ae_eq [CompleteSpace E] {h : G → 𝕜} {f : G → E}
       (hasCompactSupport_integral_of_inv_mul_mem μ hhs hfs hFsupp)
   refine (L1.integrable_coeFn _).ae_eq_of_forall_setIntegral_eq _ _ hint fun s _ _ => ?_
   -- Integration over `s` is a continuous linear functional on `L¹`.
-  let T : Lp E 1 μ →L[𝕜] E :=
-    (L1.integralCLM' (μ := μ.restrict s) 𝕜).comp (LpToLpRestrictCLM G E 𝕜 μ 1 s)
-  have hT (u : Lp E 1 μ) : T u = ∫ x in s, u x ∂μ := by
-    rw [ContinuousLinearMap.comp_apply, ← L1.integral_eq', L1.integral_eq_integral]
-    exact integral_congr_ae (LpToLpRestrictCLM_coeFn 𝕜 s u)
+  let T : Lp E 1 μ →L[𝕜] E := L1.setIntegralCLM 𝕜 s
+  have hT (u : Lp E 1 μ) : T u = ∫ x in s, u x ∂μ := L1.setIntegralCLM_apply s u
   have hL (y : G) : ∫ x in s, leftTranslation μ 1 𝕜 y (hfi.toL1 f) x ∂μ =
       ∫ x in s, f (y⁻¹ * x) ∂μ := by
     refine integral_congr_ae (ae_restrict_of_ae ?_)

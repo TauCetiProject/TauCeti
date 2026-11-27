@@ -88,13 +88,8 @@ theorem tendsto_setIntegral_of_tendsto_toWeakSpace {ι : Type*} {l : Filter ι}
       (𝓝 (toWeakSpace 𝕜 (Lp 𝕜 1 μ) f)))
     (S : Set α) :
     Tendsto (fun k ↦ ∫ x in S, (u k : α → 𝕜) x ∂μ) l (𝓝 (∫ x in S, (f : α → 𝕜) x ∂μ)) := by
-  have hS' := TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim
-    ((L1.integralCLM' 𝕜).comp (LpToLpRestrictCLM α 𝕜 𝕜 μ 1 S))
-  have heval (g : Lp 𝕜 1 μ) :
-      (L1.integralCLM' 𝕜).comp (LpToLpRestrictCLM α 𝕜 𝕜 μ 1 S) g = ∫ x in S, g x ∂μ := by
-    rw [ContinuousLinearMap.comp_apply, ← L1.integral_eq', L1.integral_eq_integral]
-    exact integral_congr_ae (LpToLpRestrictCLM_coeFn 𝕜 S g)
-  simpa only [heval] using hS'
+  simpa only [L1.setIntegralCLM_apply] using
+    TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.1 hlim (L1.setIntegralCLM 𝕜 S)
 
 variable [IsFiniteMeasure μ]
 
