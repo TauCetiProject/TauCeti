@@ -93,12 +93,8 @@ def frameAlgEquiv {b : B} (p : Fr b) : C ≃ₐ[ℝ] CliffordAlgebraBundle F E V
 @[simp]
 theorem frameAlgEquiv_apply {b : B} (p : Fr b) (x : C) :
     frameAlgEquiv p x = AssociatedBundle.mk OG p x := by
-  calc
-    frameAlgEquiv p x = (frameAlgEquiv p).toLinearEquiv x :=
-      (congrFun (AlgEquiv.coe_toLinearEquiv _) x).symm
-    _ = AssociatedBundle.mk OG p x := by
-      simp only [frameAlgEquiv, AlgEquiv.toLinearEquiv_ofLinearEquiv,
-        ContinuousLinearEquiv.coe_toLinearEquiv, AssociatedBundle.mkContinuousLinearEquiv_apply]
+  simp only [frameAlgEquiv, AlgEquiv.ofLinearEquiv_apply,
+    ContinuousLinearEquiv.coe_toLinearEquiv, AssociatedBundle.mkContinuousLinearEquiv_apply]
 
 @[simp]
 theorem star_mk {b : B} (p : Fr b) (x : C) :

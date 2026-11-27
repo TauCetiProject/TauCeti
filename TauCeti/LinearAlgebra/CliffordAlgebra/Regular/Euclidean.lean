@@ -68,7 +68,7 @@ theorem regularBilinForm_eq_gramForm (x y : CliffordAlgebra (negNormSqForm V)) :
       LinearMap.compl₁₂_apply]
     simp only [f, LinearEquiv.coe_coe, equivExterior_basis, ExteriorAlgebra.gramForm_basis_basis]
   rw [heq, LinearMap.compl₁₂_apply]
-  rfl
+  simp only [f, LinearEquiv.coe_coe, Q]
 
 variable (V)
 
