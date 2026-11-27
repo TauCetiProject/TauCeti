@@ -99,6 +99,8 @@ hypothesis that `σ` is nonconstant is needed.
 * `ContinuousMap.zeroCharge_eq_sum_analyticOrderNatAt`: if `f ∘ σ` extends holomorphically, the
   zero charge is the sum of the orders of vanishing.
 * `ContinuousMap.zeroCharge_pos`: it is positive on such discs meeting `Z`.
+* `TauCeti.finite_preimage_preimage_zero_of_norm_le`: if `f ∘ σ` extends to a function satisfying
+  a Cauchy–Riemann inequality, a compact `σ⁻¹(Z)` is finite.
 * `ContinuousMap.zeroCharge_pos_of_norm_le`: it is positive on discs meeting `Z` along which
   `f` satisfies a Cauchy–Riemann inequality.
 
@@ -333,6 +335,45 @@ theorem finite_preimage_preimage_zero {f : C(Y, ℂ)} {σ : C(𝔻, Y)}
     ⟨mem_image_of_mem _ hz, ?_⟩
   simpa [hφ z] using hz
 
+/-- If `f ∘ σ` extends to a `C¹` function `b` on the unit disc satisfying the Cauchy–Riemann
+inequality `‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖` and `σ⁻¹(f⁻¹(0))` is compact, the zeros of `b` do not accumulate
+at any point of the disc: otherwise `b` would vanish on it. -/
+private theorem eventually_ne_zero_of_norm_le {f : C(Y, ℂ)} {σ : C(𝔻, Y)}
+    (h : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) {b : ℂ → ℂ} (hb : ∀ z : 𝔻, b z = f (σ z))
+    (hbC : ContDiffOn ℝ 1 b (ball 0 1)) {M : ℂ → ℝ}
+    (hM : ∀ z ∈ ball (0 : ℂ) 1, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
+    (hle : ∀ z ∈ ball (0 : ℂ) 1, ‖fderiv ℝ b z 1 + Complex.I • fderiv ℝ b z Complex.I‖ ≤
+      M z * ‖b z‖) {z : ℂ} (hz : z ∈ ball (0 : ℂ) 1) :
+    ∀ᶠ w in 𝓝[≠] z, b w ≠ 0 := by
+  obtain ⟨w₀, hw₀, hbw₀⟩ := exists_mem_ball_ne_zero h hb
+  by_contra hfreq
+  have h0 := eqOn_zero_of_frequently_eq_zero_of_norm_add_I_smul_le isOpen_ball
+    (convex_ball _ _).isPreconnected hbC hM hle hz (by simpa using hfreq)
+  exact hbw₀ (h0 hw₀)
+
+/-- **Finiteness for nearly holomorphic discs.** If `f ∘ σ` extends to a `C¹` function `b` on the
+unit disc satisfying the Cauchy–Riemann inequality `‖∂ₛb + i ∂ₜb‖ ≤ M ‖b‖`, for a function `M`
+bounded above near every point of the disc, a compact preimage `σ⁻¹(f⁻¹(0))` is finite: by the
+similarity principle the zeros of `b` are isolated. For `M = 0` this is
+`TauCeti.finite_preimage_preimage_zero`. -/
+theorem finite_preimage_preimage_zero_of_norm_le {f : C(Y, ℂ)} {σ : C(𝔻, Y)}
+    (h : IsCompact (σ ⁻¹' (f ⁻¹' {0}))) {b : ℂ → ℂ} (hb : ∀ z : 𝔻, b z = f (σ z))
+    (hbC : ContDiffOn ℝ 1 b (ball 0 1)) {M : ℂ → ℝ}
+    (hM : ∀ z ∈ ball (0 : ℂ) 1, ∃ K, ∀ᶠ w in 𝓝 z, M w ≤ K)
+    (hle : ∀ z ∈ ball (0 : ℂ) 1, ‖fderiv ℝ b z 1 + Complex.I • fderiv ℝ b z Complex.I‖ ≤
+      M z * ‖b z‖) :
+    (σ ⁻¹' (f ⁻¹' {0})).Finite := by
+  -- The image of the preimage in `ℂ` is compact and discrete, so finite.
+  have himg : IsDiscrete (((↑) : 𝔻 → ℂ) '' (σ ⁻¹' (f ⁻¹' {0}))) := by
+    refine isDiscrete_iff_nhdsNE.2 fun _ ⟨z, _, hzx⟩ ↦ inf_principal_eq_bot.2 ?_
+    subst hzx
+    filter_upwards [eventually_ne_zero_of_norm_le h hb hbC hM hle
+      (mem_ball_zero_iff.2 z.norm_lt_one)] with w hw ⟨w', hw', hww'⟩
+    subst hww'
+    exact hw (by simpa [hb w'] using hw')
+  exact ((h.image Complex.UnitDisc.continuous_coe).finite himg).of_finite_image
+    Complex.UnitDisc.coe_injective.injOn
+
 /-- The local index of `f ∘ σ` at a zero `z` is the order of vanishing at `z` of a holomorphic
 extension `φ` of `f ∘ σ`. -/
 private theorem localIndex_eq_analyticOrderNatAt {f : C(Y, ℂ)} {σ : C(𝔻, Y)} {φ : ℂ → ℂ}
@@ -442,24 +483,7 @@ theorem zeroCharge_pos_of_norm_le (h : IsCompact (σ ⁻¹' (f ⁻¹' {0})))
     (hle : ∀ z ∈ ball (0 : ℂ) 1, ‖fderiv ℝ b z 1 + Complex.I • fderiv ℝ b z Complex.I‖ ≤
       M z * ‖b z‖)
     (hZ : ∃ z, f (σ z) = 0) : 0 < f.zeroCharge σ := by
-  -- The zeros of `b` do not accumulate in the disc: otherwise `b` would vanish on it, while by
-  -- compactness it does not vanish at some `w₀`.
-  obtain ⟨w₀, hw₀, hbw₀⟩ := TauCeti.exists_mem_ball_ne_zero h hb
-  have hiso (z : ℂ) (hz : z ∈ ball (0 : ℂ) 1) : ∀ᶠ w in 𝓝[≠] z, b w ≠ 0 := by
-    by_contra hfreq
-    have h0 := eqOn_zero_of_frequently_eq_zero_of_norm_add_I_smul_le isOpen_ball
-      (convex_ball _ _).isPreconnected hbC hM hle hz (by simpa using hfreq)
-    exact hbw₀ (h0 hw₀)
-  -- Hence the image of the preimage in `ℂ` is compact and discrete, so finite.
-  have himg : IsDiscrete (((↑) : 𝔻 → ℂ) '' (σ ⁻¹' (f ⁻¹' {0}))) := by
-    refine isDiscrete_iff_nhdsNE.2 fun _ ⟨z, _, hzx⟩ ↦ inf_principal_eq_bot.2 ?_
-    subst hzx
-    filter_upwards [hiso z (mem_ball_zero_iff.2 z.norm_lt_one)] with w hw ⟨w', hw', hww'⟩
-    subst hww'
-    exact hw (by simpa [hb w'] using hw')
-  have hfin : (σ ⁻¹' (f ⁻¹' {0})).Finite :=
-    ((h.image Complex.UnitDisc.continuous_coe).finite himg).of_finite_image
-      Complex.UnitDisc.coe_injective.injOn
+  have hfin := TauCeti.finite_preimage_preimage_zero_of_norm_le h hb hbC hM hle
   have hfib : (f.comp σ) ⁻¹' {0} = σ ⁻¹' (f ⁻¹' {0}) := by
     rw [ContinuousMap.coe_comp, Set.preimage_comp]
   rw [ContinuousMap.zeroCharge, HomologicalOrientation.localDegree_eq_sum_localIndex _ _ _
@@ -470,7 +494,8 @@ theorem zeroCharge_pos_of_norm_le (h : IsCompact (σ ⁻¹' (f ⁻¹' {0})))
   -- Near `z`, `b` is a nonvanishing continuous function times a holomorphic one.
   obtain ⟨v, s', hv, hv₀, hs', hbvs⟩ := exists_eventually_eq_mul_of_norm_le isOpen_ball hbC hM hle
     (mem_ball_zero_iff.2 z.norm_lt_one)
-  exact localIndex_pos_of_eventually_eq_mul hb hz' (hiso z (mem_ball_zero_iff.2 z.norm_lt_one))
+  exact localIndex_pos_of_eventually_eq_mul hb hz'
+    (TauCeti.eventually_ne_zero_of_norm_le h hb hbC hM hle (mem_ball_zero_iff.2 z.norm_lt_one))
     hv hv₀ hs' hbvs
 
 end ContinuousMap

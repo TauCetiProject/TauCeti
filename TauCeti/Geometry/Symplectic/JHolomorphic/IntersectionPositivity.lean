@@ -16,9 +16,10 @@ import TauCeti.Geometry.Symplectic.Complex.Module.Conjugacy
 Let `J : V → (V →L[ℝ] V)` be an almost complex structure on a real normed space `V` of
 dimension four, written in coordinates, and let `u₀ : ℂ → V` be a `J`-holomorphic disc,
 `∂ₛu₀ + J(u₀) ∂ₜu₀ = 0`, immersed at a point `a₀`. The structure `J` need not be integrable. This
-file proves that every `J`-holomorphic disc meets `u₀` near `u₀ a₀` positively: the zero charge
-(`ContinuousMap.zeroCharge`) of a disc, counting its intersections with `u₀` with their
-topological multiplicities, is positive as soon as the disc meets `u₀`.
+file proves that `J`-holomorphic discs meet `u₀` near `u₀ a₀` positively: for a `C¹`
+`J`-holomorphic disc with values in the target of a chart adapted to `u₀`, whose preimage of `u₀`
+is compact, the zero charge (`ContinuousMap.zeroCharge`) of the disc, counting its intersections
+with `u₀` with their topological multiplicities, is positive as soon as the disc meets `u₀`.
 
 * **Adapted coordinates with a complex normal coordinate.** In dimension four the normal space of
   `u₀` is a complex line, so the coordinates adapted to `u₀` of
