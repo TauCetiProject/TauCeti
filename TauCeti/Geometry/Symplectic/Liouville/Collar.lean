@@ -13,6 +13,8 @@ public import TauCeti.Geometry.Symplectic.Liouville.ContactType
 public import TauCeti.Geometry.Symplectic.Liouville.Scaling
 public import TauCeti.Topology.MetricSpace.InjectiveNeighborhood
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.PartialDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 
 /-!
 # The local Liouville flow out of a hypersurface
@@ -62,6 +64,10 @@ with a collar of `{0} × S` in the symplectization `(ℝ × S, d(eᵗ ι^* α))`
 in the `TauCeti` namespace).
 The inverse needs a nonempty `S`, since `M` maps back into `ℝ × S`.
 
+Conversely, the boundary form `β` of any partial diffeomorphism `Φ : ℝ × S ⇀ X` pulling a
+one-form `α` with nondegenerate `dα` back to `eᵗ β` is a contact form, as soon as the source of `Φ`
+meets every line `ℝ × {s}` (`PartialDiffeomorph.isContactForm_of_mpullback_eq_symplectization`).
+
 ## Main results
 
 * `TauCeti.mpullback_flowOf_comp_apply_eq_symplectization`: `Φ^* α = eᵗ ι^* α` on `D`.
@@ -80,6 +86,8 @@ The inverse needs a nonempty `S`, since `M` maps back into `ℝ × S`.
   `IsRestrictedContactType.exists_pos_partialDiffeomorph_mpullback_eq_symplectization`
   (in the `TauCeti` namespace): a neighbourhood of a hypersurface of restricted contact type is
   symplectomorphic to a collar in the symplectization of its contact form.
+* `PartialDiffeomorph.isContactForm_of_mpullback_eq_symplectization`: the boundary form of a
+  Liouville collar is a contact form.
 
 ## References
 
@@ -428,3 +436,49 @@ theorem IsRestrictedContactType.exists_pos_partialDiffeomorph_mpullback_eq_sympl
   exact hΦdα
 
 end TauCeti
+
+/-! ### The boundary form of a Liouville collar -/
+
+namespace PartialDiffeomorph
+
+open TauCeti
+
+variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} {S X : Type*} [TopologicalSpace S] [ChartedSpace G S]
+  [IsManifold J ∞ S] [TopologicalSpace X] [ChartedSpace (ModelProd ℝ G) X]
+  [IsManifold (𝓘(ℝ).prod J) ∞ X]
+  {Φ : PartialDiffeomorph (𝓘(ℝ).prod J) (𝓘(ℝ).prod J) (ℝ × S) X ∞}
+  {α : SmoothForm (𝓘(ℝ).prod J) X ℝ 1} {β : SmoothForm J S ℝ 1}
+
+/-- **The boundary form of a Liouville collar is a contact form.** If `Φ` pulls `α` back to the
+symplectization form `eᵗ β` on its source, `dα` is nondegenerate, and the source meets every line
+`ℝ × {s}`, then `β` is a contact form: at a point of the source, `d(eᵗ β)` is the pullback of the
+nondegenerate form `dα` along a local diffeomorphism. -/
+theorem isContactForm_of_mpullback_eq_symplectization
+    (hα : SmoothTwoForm.IsNondegenerate (mextDerivₗ (𝓘(ℝ).prod J) 1 α))
+    (hαβ : ∀ y ∈ Φ.source,
+      mpullback (𝓘(ℝ).prod J) (𝓘(ℝ).prod J) Φ α.val y = β.symplectization.val y)
+    (hs : ∀ s : S, ∃ t : ℝ, (t, s) ∈ Φ.source) : β.IsContactForm := by
+  rw [SmoothForm.isContactForm_iff_forall_isContactFormAt]
+  intro s
+  obtain ⟨t, ht⟩ := hs s
+  rw [← SmoothForm.nondegenerate_bilinFormAt_mextDerivₗ_symplectization_iff β (t, s),
+    LinearMap.BilinForm.Nondegenerate,
+    (SmoothForm.isAlt_bilinFormAt _ (t, s)).isRefl.nondegenerate_iff_separatingLeft]
+  intro v hv
+  have hinv := Φ.isInvertible_mfderiv (by simp) ht
+  refine (injective_iff_map_eq_zero _).1 hinv.injective v
+    (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1 hα (Φ (t, s)) _ fun w ↦ ?_)
+  obtain ⟨u, rfl⟩ := hinv.surjective w
+  -- `dα(dΦ v, dΦ u) = (Φ^* dα)(v, u) = d(eᵗ β)(v, u) = 0`.
+  have hvu : (fun i ↦ mfderiv (𝓘(ℝ).prod J) (𝓘(ℝ).prod J) Φ (t, s) (![v, u] i)) =
+      ![mfderiv (𝓘(ℝ).prod J) (𝓘(ℝ).prod J) Φ (t, s) v,
+        mfderiv (𝓘(ℝ).prod J) (𝓘(ℝ).prod J) Φ (t, s) u] := by
+    ext i
+    fin_cases i <;> rfl
+  have h := hv u
+  rw [SmoothForm.bilinFormAt_apply, SmoothBundleForm.eval₂_apply,
+    ← Φ.mpullback_mextDerivₗ_apply hαβ ht, mpullback_apply, hvu] at h
+  rwa [SmoothBundleForm.eval₂_apply]
+
+end PartialDiffeomorph
