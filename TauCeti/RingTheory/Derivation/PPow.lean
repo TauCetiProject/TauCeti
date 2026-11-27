@@ -44,8 +44,9 @@ multiplication by `a : A` satisfies **Hochschild's formula** (`Derivation.pPow_s
 `(a • D).pPow p = a ^ p • D.pPow p + ((a • D)^[p - 1] a) • D`, which follows from the vanishing
 of the middle coefficients `smulIterCoeff D a p k`, `2 ≤ k < p`, of the expansion
 `(a • D)^[p] = ∑ smulIterCoeff D a p k * D^[k]` (`smulIterCoeff_eq_zero_of_mem_Ico`). For
-`p = 1`, the scaling identity `(a • D).pPow 1 = a ^ 1 • D.pPow 1` follows directly from
-`pPow 1 = D` (`Derivation.pPow_smul_of_apply_eq_zero`).
+`p = 1`, the scaling identity `(a • D).pPow 1 = a ^ 1 • D.pPow 1` holds directly from
+`pPow 1 = D`; for any exponential characteristic `p`, `Derivation.pPow_smul_of_apply_eq_zero` gives
+`(a • D).pPow p = a ^ p • D.pPow p` whenever `D a = 0`.
 
 The `p`-th power is the `p`-map making `Derivation R A A` a restricted Lie algebra in the sense of
 Jacobson, and it is the correction term in the `p`-curvature `(∇_D)^p - ∇_{D^[p]}` of a connection
@@ -255,24 +256,32 @@ theorem smulIterCoeff_eq_zero_of_mem_Ico (p : ℕ) [Fact p.Prime] [CharP A p]
   exact (TauCeti.isUnit_natCast_factorial_of_lt p hkp).mul_left_inj.mp
     (by rw [hrhs.symm.trans hlhs, zero_mul])
 
+/-- The expansion `iterate_smul_apply_eq_sum` for `n ≥ 2`, with its extreme coefficients
+`c n 0 = 0` and `c n n = b ^ n` made explicit. -/
+private theorem iterate_smul_apply_eq_add_sum (D : Derivation R A A) (b y : A) {n : ℕ}
+    (hn : 2 ≤ n) : (b • D)^[n] y = b ^ n * D^[n] y + smulIterCoeff D b n 1 * D y +
+      ∑ k ∈ Finset.Ico 2 n, smulIterCoeff D b n k * D^[k] y := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' (by omega : 1 ≤ n)
+  -- Split off the top term `k = n`, then the bottom terms `k = 0` and `k = 1`.
+  rw [iterate_smul_apply_eq_sum, Finset.sum_range_succ, Finset.range_eq_Ico,
+    Finset.sum_eq_sum_Ico_succ_bot (by omega), Finset.sum_eq_sum_Ico_succ_bot (by omega)]
+  simp only [smulIterCoeff_self, smulIterCoeff_succ_zero, zero_mul, zero_add,
+    Function.iterate_one]
+  ring
+
 /-- **Hochschild's formula** (Hochschild 1955; Katz, Proposition 5.3, due to Deligne): for an
 algebra element `a : A` and a derivation `D : Derivation R A A` in prime characteristic `p` over any
 commutative semiring `A`, `(a • D).pPow p = a ^ p • D.pPow p + ((a • D)^[p - 1] a) • D`. -/
 theorem pPow_smul (p : ℕ) [Fact p.Prime] [CharP A p] (a : A) (D : Derivation R A A) :
     (a • D).pPow p = a ^ p • D.pPow p + ((a • D)^[p - 1] a) • D := by
   have hp : p.Prime := Fact.out
-  obtain ⟨q, rfl⟩ : ∃ q, p = q + 1 := ⟨p - 1, (Nat.sub_add_cancel hp.one_le).symm⟩
-  ext b
-  rw [pPow_apply, add_apply, smul_apply, smul_apply, pPow_apply, smul_eq_mul, smul_eq_mul,
-    iterate_smul_apply_eq_sum D a b (q + 1), Finset.sum_range_succ, smulIterCoeff_self, add_comm]
-  congr 1
-  rw [Finset.sum_eq_single_of_mem 1 (Finset.mem_range.mpr hp.one_lt)]
-  · rw [Function.iterate_one, smulIterCoeff_succ_one, Nat.add_sub_cancel]
-  · intro k hk hk1
-    rcases eq_or_ne k 0 with rfl | hk0
-    · rw [smulIterCoeff_succ_zero, zero_mul]
-    · rw [smulIterCoeff_eq_zero_of_mem_Ico (q + 1) D a
-        (Finset.mem_Ico.mpr ⟨by omega, Finset.mem_range.mp hk⟩), zero_mul]
+  have h₁ : smulIterCoeff D a p 1 = (a • D)^[p - 1] a := by
+    obtain ⟨q, hq⟩ := Nat.exists_eq_add_one_of_ne_zero hp.ne_zero
+    rw [hq, smulIterCoeff_succ_one, Nat.add_sub_cancel]
+  ext y
+  rw [pPow_apply, iterate_smul_apply_eq_add_sum D a y hp.two_le,
+    Finset.sum_eq_zero fun k hk ↦ by rw [smulIterCoeff_eq_zero_of_mem_Ico p D a hk, zero_mul], h₁]
+  simp [pPow_apply]
 
 /-- In exponential characteristic `p`, if `D a = 0`, then `(a • D).pPow p = a ^ p • D.pPow p`:
 in prime characteristic `p`, Hochschild's correction term vanishes; at `p = 1`, this follows from

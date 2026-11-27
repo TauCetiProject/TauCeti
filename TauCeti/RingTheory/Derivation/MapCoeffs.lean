@@ -52,22 +52,11 @@ noncomputable def mapCoeffsToPolynomial (D : Derivation R A A) : Derivation R A[
   ((D.baseChange R[X]).restrictScalars R).conjAlgEquiv
     ((Algebra.TensorProduct.comm R R[X] A).trans (polyEquivTensor R A).symm)
 
-private theorem polyEquivTensor_symm_tmul_X_pow (n : ℕ) (a : A) :
-    (polyEquivTensor R A).symm (a ⊗ₜ[R] (X ^ n : R[X])) = monomial n a := by
-  rw [polyEquivTensor_symm_apply_tmul_eq_smul, Polynomial.map_pow, Polynomial.map_X,
-    ← C_mul_X_pow_eq_monomial, Algebra.smul_def, Polynomial.algebraMap_eq]
-
 /-- Applying `D.mapCoeffsToPolynomial` to a monomial differentiates its coefficient. -/
 @[simp]
 theorem mapCoeffsToPolynomial_monomial (D : Derivation R A A) (n : ℕ) (a : A) :
     D.mapCoeffsToPolynomial (monomial n a) = monomial n (D a) := by
-  have hpoly : polyEquivTensor R A (monomial n a) = a ⊗ₜ[R] (X ^ n : R[X]) :=
-    (polyEquivTensor R A).symm.injective <| by
-      rw [AlgEquiv.symm_apply_apply, polyEquivTensor_symm_tmul_X_pow]
-  rw [mapCoeffsToPolynomial, conjAlgEquiv_apply, AlgEquiv.trans_apply, AlgEquiv.symm_trans_apply,
-    AlgEquiv.symm_symm, hpoly, Algebra.TensorProduct.comm_symm_tmul,
-    Derivation.restrictScalars_apply, Derivation.baseChange_tmul,
-    Algebra.TensorProduct.comm_tmul, polyEquivTensor_symm_tmul_X_pow]
+  simp [mapCoeffsToPolynomial, ← C_mul_X_pow_eq_monomial, Algebra.smul_def]
 
 /-- Applying `D.mapCoeffsToPolynomial` to a constant polynomial `C a` gives `C (D a)`. -/
 @[simp]

@@ -220,13 +220,9 @@ theorem jacobsonCoeff_smul_smul (c : R) (x y : L) (k j : ℕ) :
   induction k generalizing j with
   | zero => cases j <;> simp
   | succ k ih =>
-    cases j with
-    | zero =>
-      rw [jacobsonCoeff_succ_zero, ih, smul_lie, lie_smul, smul_smul, ← pow_succ',
-        jacobsonCoeff_succ_zero]
-    | succ j =>
-      rw [jacobsonCoeff_succ_succ, ih, ih, smul_lie, lie_smul, smul_lie, lie_smul, smul_smul,
-        smul_smul, ← pow_succ', ← smul_add, jacobsonCoeff_succ_succ]
+    cases j <;>
+      simp [jacobsonCoeff_succ_zero, jacobsonCoeff_succ_succ, ih, smul_smul, pow_succ', smul_add,
+        mul_comm]
 
 /-- Homogeneity of Jacobson's Lie polynomial:
 `Λ_p(c • x, c • y) = c ^ p • Λ_p(x, y)`. -/

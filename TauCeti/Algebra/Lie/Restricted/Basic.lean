@@ -48,10 +48,10 @@ exponential characteristic `p` form a restricted Lie algebra under `D ↦ D^[p]`
 * `TauCeti.RestrictedLieHom.id`, `TauCeti.RestrictedLieHom.comp`: identity and composition.
 * `TauCeti.RestrictedLieHom.ad`: `LieAlgebra.ad R L` as a restricted morphism.
 * `TauCeti.RestrictedLieSubalgebra R L p`: a bundled Lie subalgebra closed under `pMap`, with
-  induced restricted structure, order lattice, `RestrictedLieHom.range`, and
-  `RestrictedLieHom.rangeRestrict`.
+  induced restricted structure, partial order with `⊤`, `⊥`, and `⊓`, `RestrictedLieHom.range`,
+  and `RestrictedLieHom.rangeRestrict`.
 * `TauCeti.RestrictedLieIdeal R L p`: a bundled Lie ideal closed under `pMap`, with induced
-  restricted structure, order lattice, and `RestrictedLieHom.ker`.
+  restricted structure, partial order with `⊤`, `⊥`, and `⊓`, and `RestrictedLieHom.ker`.
 * `TauCeti.RestrictedLieAlgebra.ofAssociativeAlgebra`: the restricted structure `a ↦ a ^ p` on an
   associative algebra of exponential characteristic `p`.
 * `TauCeti.RestrictedLieAlgebra.ofModuleEnd`: the restricted structure `f ↦ f ^ p` on
@@ -105,6 +105,16 @@ class RestrictedLieAlgebra (R L : Type*) [CommRing R] [LieRing L] [LieAlgebra R 
   pMap_add (x y : L) : pMap (x + y) = pMap x + pMap y + jacobson p x y
 
 namespace RestrictedLieAlgebra
+
+/-- Two restricted Lie algebra structures on the same Lie algebra are equal if and only if their
+`p`-maps agree pointwise. -/
+@[ext]
+theorem ext {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L] {p : ℕ}
+    {i j : RestrictedLieAlgebra R L p} (h : ∀ x, i.pMap x = j.pMap x) : i = j := by
+  cases i
+  cases j
+  congr
+  exact funext h
 
 section Basic
 
@@ -264,10 +274,19 @@ def ofModuleEnd (R M : Type*) [CommRing R] [AddCommGroup M] [Module R M]
     pMap_add := hfields.2 }
 
 /-- The `p`-map of `ofModuleEnd` is the ordinary `p`-th power `f ↦ f ^ p`. -/
+@[simp]
 theorem ofModuleEnd_pMap (R M : Type*) [CommRing R] [AddCommGroup M]
     [Module R M] (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0) (f : Module.End R M) :
     (ofModuleEnd R M p hM).pMap f = f ^ p :=
   (rfl)
+
+/-- When `Module.End R M` has exponential characteristic `p`, `ofModuleEnd` agrees with
+`ofAssociativeAlgebra`. -/
+theorem ofModuleEnd_eq_ofAssociativeAlgebra (R M : Type*) [CommRing R] [AddCommGroup M]
+    [Module R M] (p : ℕ) [Fact p.Prime] (hM : ∀ m : M, p • m = 0)
+    [ExpChar (Module.End R M) p] :
+    ofModuleEnd R M p hM = ofAssociativeAlgebra R (Module.End R M) p :=
+  ext fun _ ↦ rfl
 
 end Associative
 
@@ -935,7 +954,7 @@ theorem coe_lie (I : RestrictedLieIdeal R L p) (x y : I) :
 restricted Lie algebra. -/
 instance instRestrictedLieAlgebra (I : RestrictedLieIdeal R L p) :
     RestrictedLieAlgebra R I p :=
-  inferInstanceAs <| RestrictedLieAlgebra R I.toRestrictedLieSubalgebra p
+  I.toLieIdeal.toLieSubalgebra.restrictedLieAlgebra fun _ hx ↦ I.pMap_mem hx
 
 /-- The `p`-map on a restricted Lie ideal coerces to the ambient `p`-map. -/
 @[simp]
@@ -944,8 +963,9 @@ theorem coe_pMap (I : RestrictedLieIdeal R L p) (x : I) :
   (rfl)
 
 /-- The canonical inclusion `I → L` of a restricted Lie ideal as a restricted morphism. -/
-def incl (I : RestrictedLieIdeal R L p) : RestrictedLieHom R I L p :=
-  I.toRestrictedLieSubalgebra.incl
+def incl (I : RestrictedLieIdeal R L p) : RestrictedLieHom R I L p where
+  toLieHom := I.toLieIdeal.incl
+  map_pMap' _ := rfl
 
 @[simp]
 theorem incl_apply (I : RestrictedLieIdeal R L p) (x : I) : I.incl x = x :=
@@ -1083,7 +1103,7 @@ example (R : Type*) [CommRing R] [Nontrivial R] (p : ℕ) [Fact p.Prime] [CharP 
     TauCeti.RestrictedLieAlgebra.ofAbelianZero R R p (Fact.out : p.Prime).ne_zero ≠
       TauCeti.RestrictedLieAlgebra.ofAssociativeAlgebra R R p := by
   intro _ h
-  have h1 := congrArg (fun inst ↦ inst.pMap (1 : R)) h
+  have h1 := (TauCeti.RestrictedLieAlgebra.ext_iff.mp h) (1 : R)
   simp only [TauCeti.RestrictedLieAlgebra.ofAbelianZero_pMap,
     TauCeti.RestrictedLieAlgebra.pMap_ofAssociativeAlgebra, one_pow] at h1
   exact zero_ne_one h1
