@@ -194,11 +194,6 @@ theorem sum_theta_rpow_le_mul_sum_rpow {c x : ℝ} (hc : ∀ y, 2 ≤ y → θ y
   rw [mul_sum]
   exact sum_le_sum fun k _ ↦ theta_le_mul_of_two_le (rpow_nonneg hx _) hc
 
-private lemma one_div_sub_one_third_nonpos {k : ℕ} (hk : 3 ≤ k) :
-    (1 : ℝ) / k - 1 / 3 ≤ 0 := by
-  have hk3 : (3 : ℝ) ≤ k := Nat.cast_le.mpr hk
-  linarith [one_div_le_one_div_of_le (by norm_num) hk3]
-
 /-- The roots `x^{1/k}` with `3 ≤ k ≤ log x / log 2` add up to at most
 `(log x / log 2 − 2)⁺ x^{1/3}`, for `x ≥ 0`. -/
 theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
@@ -212,8 +207,8 @@ theorem sum_rpow_one_div_le {x : ℝ} (hx : 0 ≤ x) :
     positivity
   refine (TauCeti.sum_Icc_floor_le_max_mul (div_nonneg (log_nonneg hx1) (log_nonneg one_le_two))
     (rpow_nonneg hx ((1 : ℝ) / 3)) 3 fun k hk ↦
-      rpow_le_rpow_of_exponent_le hx1 (sub_nonpos.mp
-        (one_div_sub_one_third_nonpos (mem_Icc.mp hk).1))).trans_eq ?_
+      rpow_le_rpow_of_exponent_le hx1
+        (one_div_le_one_div_of_le (by norm_num) (by exact_mod_cast (mem_Icc.mp hk).1))).trans_eq ?_
   congr 2
   push_cast
   ring
@@ -614,7 +609,9 @@ theorem antitoneOn_psiSubThetaTailCoeff_Ico_two_pow (n : ℕ) :
   rw [psiSubThetaTailCoeff_eq_sum_of_mem_Ico hx, psiSubThetaTailCoeff_eq_sum_of_mem_Ico hy]
   have hx0 : 0 < x := lt_of_lt_of_le (by positivity) hx.1
   exact sum_le_sum fun k hk ↦
-    rpow_le_rpow_of_nonpos hx0 hxy (one_div_sub_one_third_nonpos (mem_Icc.mp hk).1)
+    rpow_le_rpow_of_nonpos hx0 hxy
+      (sub_nonpos.mpr
+        (one_div_le_one_div_of_le (by norm_num) (by exact_mod_cast (mem_Icc.mp hk).1)))
 
 /-- On every dyadic interval `[2 ^ n, 2 ^ (n + 1))` with `n ≥ 4`, `psiSubThetaTailCoeff` is
 strictly decreasing. -/
@@ -625,7 +622,8 @@ theorem strictAntiOn_psiSubThetaTailCoeff_Ico_two_pow {n : ℕ} (hn : 4 ≤ n) :
   have hx0 : 0 < x := lt_of_lt_of_le (by positivity) hx.1
   exact sum_lt_sum
     (fun k hk ↦ rpow_le_rpow_of_nonpos hx0 hxy.le
-      (one_div_sub_one_third_nonpos (mem_Icc.mp hk).1))
+      (sub_nonpos.mpr (one_div_le_one_div_of_le (by norm_num)
+        (by exact_mod_cast (mem_Icc.mp hk).1))))
     ⟨4, mem_Icc.mpr ⟨by omega, hn⟩, rpow_lt_rpow_of_neg hx0 hxy (by norm_num)⟩
 
 private lemma two_rpow_mul_sub_psiSubThetaTailCoeff_two_pow {n : ℕ} (hn : 3 ≤ n) :
@@ -658,10 +656,6 @@ private lemma two_rpow_mul_sub_psiSubThetaTailCoeff_two_pow {n : ℕ} (hn : 3 �
           ((n : ℝ) + 1) / k by ring]
   · rw [← rpow_add zero_lt_two, add_sub_cancel, rpow_one]
 
-private lemma zero_le_two_rpow_one_third_sub_sub_one {k : ℕ} (hk : 3 ≤ k) :
-    0 ≤ (2 : ℝ) ^ ((1 : ℝ) / 3 - 1 / k) - 1 :=
-  sub_nonneg.mpr <| one_le_rpow one_le_two <| by linarith [one_div_sub_one_third_nonpos hk]
-
 private lemma two_lt_sum_Icc_four_nine_term :
     (2 : ℝ) < ∑ k ∈ Icc (4 : ℕ) 9,
       (2 : ℝ) ^ ((10 : ℝ) / k) * ((2 : ℝ) ^ ((1 : ℝ) / 3 - 1 / k) - 1) := by
@@ -676,9 +670,8 @@ private lemma two_lt_sum_Icc_four_nine_term :
     have hk9 : (k : ℝ) ≤ 9 := Nat.cast_le.mpr (mem_Icc.mp hk).2
     have hu1 : 0 ≤ (10 : ℝ) / k - 1 :=
       sub_nonneg.mpr ((one_le_div (by linarith)).mpr (by linarith))
-    have hu2 : 0 ≤ (1 : ℝ) / 3 - 1 / k := by
-      have hk4' : 4 ≤ k := (mem_Icc.mp hk).1
-      linarith [one_div_sub_one_third_nonpos (k := k) (by omega)]
+    have hu2 : 0 ≤ (1 : ℝ) / 3 - 1 / k :=
+      sub_nonneg.mpr (one_div_le_one_div_of_le (by norm_num) (by linarith))
     have h1 : 2 * (1 + ((10 : ℝ) / k - 1) * L + (((10 : ℝ) / k - 1) * L) ^ 2 / 2) ≤
         (2 : ℝ) ^ ((10 : ℝ) / k) := by
       calc 2 * (1 + ((10 : ℝ) / k - 1) * L + (((10 : ℝ) / k - 1) * L) ^ 2 / 2)
@@ -720,15 +713,18 @@ theorem psiSubThetaTailCoeff_two_pow_succ_lt {n : ℕ} (hn : 9 ≤ n) :
             (2 : ℝ) ^ (((n : ℝ) + 1) / k) * ((2 : ℝ) ^ ((1 : ℝ) / 3 - 1 / k) - 1) := by
           refine sum_le_sum fun k hk ↦ ?_
           have hk4 : 4 ≤ k := (mem_Icc.mp hk).1
-          have hfac := zero_le_two_rpow_one_third_sub_sub_one (k := k) (by omega)
+          have hfac : 0 ≤ (2 : ℝ) ^ ((1 : ℝ) / 3 - 1 / k) - 1 := sub_nonneg.mpr <|
+            one_le_rpow one_le_two <| sub_nonneg.mpr <|
+              one_div_le_one_div_of_le (by norm_num) (by exact_mod_cast (by omega : 3 ≤ k))
           have h10 : (10 : ℝ) ≤ (n : ℝ) + 1 := by exact_mod_cast (by omega : 10 ≤ n + 1)
           gcongr
           exact one_le_two
       _ ≤ ∑ k ∈ Icc 4 n,
             (2 : ℝ) ^ (((n : ℝ) + 1) / k) * ((2 : ℝ) ^ ((1 : ℝ) / 3 - 1 / k) - 1) :=
           sum_le_sum_of_subset_of_nonneg (Icc_subset_Icc_right hn) fun k hk _ ↦
-            mul_nonneg (by positivity)
-              (zero_le_two_rpow_one_third_sub_sub_one (by have := (mem_Icc.mp hk).1; omega))
+            mul_nonneg (by positivity) <| sub_nonneg.mpr <| one_le_rpow one_le_two <|
+              sub_nonneg.mpr <| one_div_le_one_div_of_le (by norm_num)
+                (by exact_mod_cast (by have := (mem_Icc.mp hk).1; omega : 3 ≤ k))
   linarith [two_lt_sum_Icc_four_nine_term]
 
 /-- Monotonicity of `psiSubThetaTailCoeff` along powers of `2` for `9 ≤ m ≤ n`. -/
@@ -913,11 +909,13 @@ noncomputable def psiSubThetaSqrtCoeff (ε : ℝ → ℝ) (x₁ b : ℝ) : ℝ :
   if b ≤ 2 * log x₁ then 1 + ε (log x₁) else 1 + ε (b / 2)
 
 /-- Evaluation of `psiSubThetaSqrtCoeff` in the small-`b` regime `b ≤ 2 * log x₁`. -/
+@[simp]
 theorem psiSubThetaSqrtCoeff_of_le {ε : ℝ → ℝ} {x₁ b : ℝ} (h : b ≤ 2 * log x₁) :
     psiSubThetaSqrtCoeff ε x₁ b = 1 + ε (log x₁) := by
   simp [psiSubThetaSqrtCoeff, h]
 
 /-- Evaluation of `psiSubThetaSqrtCoeff` in the large-`b` regime `2 * log x₁ < b`. -/
+@[simp]
 theorem psiSubThetaSqrtCoeff_of_lt {ε : ℝ → ℝ} {x₁ b : ℝ} (h : 2 * log x₁ < b) :
     psiSubThetaSqrtCoeff ε x₁ b = 1 + ε (b / 2) := by
   simp [psiSubThetaSqrtCoeff, h.not_ge]
