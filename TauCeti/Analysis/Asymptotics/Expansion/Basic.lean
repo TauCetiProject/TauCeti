@@ -52,8 +52,8 @@ elimination lemmas `IsAsymptoticScale.isLittleO`, `HasAsymptoticExpansion.isBigO
   `t ^ (-w k)` into one at `0+` in the powers `t ^ w k`.
 * `Asymptotics.HasAsymptoticExpansion.isLittleO`: the remainder after `N + 1` terms is `o(φ N)`.
 * `Asymptotics.HasAsymptoticExpansion.unique`: uniqueness of the coefficients.
-* `Asymptotics.hasAsymptoticExpansion_iff_tendsto`: ratio-limit characterization when `φ n` is
-  eventually nonzero.
+* `Asymptotics.IsAsymptoticScale.hasAsymptoticExpansion_iff_tendsto`: ratio-limit
+  characterization when `φ n` is eventually nonzero.
 * `Asymptotics.isAsymptoticScale_pow`: the powers of a function tending to `0` form a scale.
 
 The definitions and proofs are adapted from the lean-DLMF project
@@ -358,7 +358,7 @@ theorem isAsymptoticScale_pow {w : α → 𝕜} (hw : Tendsto w l (𝓝 0)) :
 
 /-- Ratio-limit characterization of an asymptotic expansion when the scale functions are eventually
 nonzero along `l`. -/
-theorem hasAsymptoticExpansion_iff_tendsto {a : ℕ → E} {f : α → E}
+theorem IsAsymptoticScale.hasAsymptoticExpansion_iff_tendsto {a : ℕ → E} {f : α → E}
     (hφ : IsAsymptoticScale l φ) (hne : ∀ n, ∀ᶠ x in l, φ n x ≠ 0) :
     HasAsymptoticExpansion l φ a f ↔
       ∀ n, Tendsto (fun x => (φ n x)⁻¹ • (f x - ∑ s ∈ range n, φ s x • a s))

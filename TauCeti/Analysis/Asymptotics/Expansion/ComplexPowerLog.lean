@@ -25,7 +25,7 @@ in `Complex.slitPlane` (NIST DLMF §2.1(iii)).
 * `Asymptotics.hasAsymptoticExpansion_pow_log`: principal complex logarithm `Complex.log ∘ f`
   for `constantCoeff P ∈ Complex.slitPlane`.
 * `Asymptotics.hasAsymptoticExpansion_pow_cpow`: principal complex power `fun x => f x ^ r`
-  using `PowerSeries.formalCpow (Complex.log (constantCoeff P)) r P`.
+  using `P.formalCpow (Complex.log (constantCoeff P)) r`.
 
 ## References
 
@@ -112,7 +112,7 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
     (hP : constantCoeff P ∈ Complex.slitPlane)
     (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f) (r : ℂ) :
     HasAsymptoticExpansion l (fun n x => w x ^ n)
-      (fun n => coeff n (formalCpow (Complex.log (constantCoeff P)) r P))
+      (fun n => coeff n (P.formalCpow (Complex.log (constantCoeff P)) r))
       fun x => f x ^ r := by
   set p₀ : ℂ := constantCoeff P
   set ℓ : ℂ := Complex.log p₀
