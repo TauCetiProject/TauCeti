@@ -57,7 +57,7 @@ bounded functions. -/
 def boundedContinuousFunctionEquiv :
     Mean G ≃ {m : (G →ᵇ ℝ) →ₚ[ℝ] ℝ // m 1 = 1} :=
   (equivNormalizedPositiveLinearMap G).trans
-    (PositiveLinearMap.normalizedEquivOfAlgEquiv (UCB.discreteAlgEquiv G)
+    ((UCB.discreteAlgEquiv G).normalizedPositiveLinearMapCongrLeft
       UCB.discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff)
 
 @[simp]
@@ -166,7 +166,7 @@ functionals on all bounded functions. -/
 def boundedContinuousFunctionEquiv :
     AddMean A ≃ {m : (A →ᵇ ℝ) →ₚ[ℝ] ℝ // m 1 = 1} :=
   (equivNormalizedPositiveLinearMap A).trans
-    (PositiveLinearMap.normalizedEquivOfAlgEquiv (AddUCB.discreteAlgEquiv A)
+    ((AddUCB.discreteAlgEquiv A).normalizedPositiveLinearMapCongrLeft
       AddUCB.discreteAlgEquiv_symm_le_discreteAlgEquiv_symm_iff)
 
 @[simp]

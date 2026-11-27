@@ -156,14 +156,6 @@ theorem compRightAlgHomOfDiscrete_id :
     compRightAlgHomOfDiscrete (id : G → G) = AlgHom.id ℝ (UCB G) :=
   (compRightAlgHomOfDiscrete_coe (ContinuousMonoidHom.id G)).trans compRightAlgHom_id
 
-/-- Pulling back along `s ∘ r` is pulling back along `s` and then along `r`. -/
-@[to_additive /-- Pulling back along `s ∘ r` is pulling back along `s` and then along `r`. -/]
-theorem compRightAlgHomOfDiscrete_comp {K : Type*} [Group K] [TopologicalSpace K]
-    [IsTopologicalGroup K] [DiscreteTopology H] (s : H → K) (r : G → H) :
-    compRightAlgHomOfDiscrete (s ∘ r) =
-      (compRightAlgHomOfDiscrete r).comp (compRightAlgHomOfDiscrete s) :=
-  AlgHom.ext fun _ => ext fun _ => by simp
-
 /-- Pulling back along `s` and then along `r` collapses to pulling back along `s ∘ r`. -/
 @[to_additive (attr := simp)
   /-- Pulling back along `s` and then along `r` collapses to pulling back along `s ∘ r`. -/]
@@ -171,7 +163,7 @@ theorem compRightAlgHomOfDiscrete_comp_compRightAlgHomOfDiscrete {K : Type*} [Gr
     [TopologicalSpace K] [IsTopologicalGroup K] [DiscreteTopology H] (s : H → K) (r : G → H) :
     (compRightAlgHomOfDiscrete r).comp (compRightAlgHomOfDiscrete s) =
       compRightAlgHomOfDiscrete (s ∘ r) :=
-  (compRightAlgHomOfDiscrete_comp s r).symm
+  AlgHom.ext fun _ => ext fun _ => by simp
 
 /-- The pullback preserves the pointwise order. -/
 @[to_additive /-- The pullback preserves the pointwise order. -/]

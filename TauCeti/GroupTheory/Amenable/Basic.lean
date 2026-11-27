@@ -270,7 +270,7 @@ variable {A : Type*} [AddGroup A] [TopologicalSpace A] [IsTopologicalAddGroup A]
 `UCB (Multiplicative A)`. -/
 def equivMultiplicative : AddMean A ≃ Mean (Multiplicative A) :=
   ((equivNormalizedPositiveLinearMap A).trans
-    (PositiveLinearMap.normalizedEquivOfAlgEquiv AddUCB.equivMultiplicative
+    (AddUCB.equivMultiplicative.normalizedPositiveLinearMapCongrLeft
       AddUCB.equivMultiplicative_symm_le_equivMultiplicative_symm_iff)).trans
     (Mean.equivNormalizedPositiveLinearMap (Multiplicative A)).symm
 
