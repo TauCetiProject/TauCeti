@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
+public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 import Mathlib.Analysis.Complex.Angle
 import Mathlib.Analysis.InnerProductSpace.Calculus
@@ -52,6 +53,7 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_im_neg`: if `x.im < 0` and `y.im < 0`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_re_pos`: if `0 < x.re` and `0 < y.re`, then `arg (x / y) = arg x - arg y`.
+* `Complex.log_div_of_re_pos`: if `0 < x.re` and `0 < y.re`, then `log (x / y) = log x - log y`.
 * `Complex.arg_add_arg_mem_Ioo_of_im_mul_nonpos`: two points of the slit plane whose imaginary
   parts do not have the same strict sign have arguments adding up to a value in `(-π, π)`.
 * `Complex.arg_sub_one_add_arg_add_one_mem_Ioc`: for `0 < re z`,
@@ -152,6 +154,18 @@ theorem arg_div_of_re_pos {x y : ℂ} (hx : 0 < x.re) (hy : 0 < y.re) :
   have hy' := abs_lt.1 (abs_arg_lt_pi_div_two_iff.2 (Or.inl hy))
   exact (arg_div_eq_sub_arg_iff (fun h ↦ hx.ne' (by rw [h, zero_re]))
     (fun h ↦ hy.ne' (by rw [h, zero_re]))).2 ⟨by linarith, by linarith⟩
+
+/-- The principal logarithm of the quotient of two points of the open right half-plane is the
+difference of their principal logarithms. -/
+theorem log_div_of_re_pos {x y : ℂ} (hx : 0 < x.re) (hy : 0 < y.re) :
+    log (x / y) = log x - log y := by
+  have hx₀ : x ≠ 0 := fun h ↦ hx.ne' (by rw [h, zero_re])
+  have hy₀ : y ≠ 0 := fun h ↦ hy.ne' (by rw [h, zero_re])
+  refine Complex.ext ?_ ?_
+  · simp only [log_re, norm_div, sub_re]
+    exact Real.log_div (norm_ne_zero_iff.mpr hx₀) (norm_ne_zero_iff.mpr hy₀)
+  · simp only [log_im, sub_im]
+    exact arg_div_of_re_pos hx hy
 
 /-- Swapping numerator and denominator preserves the absolute value of the argument of a
 quotient. -/
