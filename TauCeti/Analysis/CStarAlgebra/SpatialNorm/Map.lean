@@ -34,6 +34,8 @@ representation independence, which is proved over `ℂ`. For inclusions `A ≤ A
 
 ## Main declarations
 
+* `NonUnitalStarAlgHom.spatialTensorHom_mapNonUnitalStarAlgHom`: the spatial tensor homomorphism
+  of `π` and `ρ` at `(φ ⊗ ψ)(x)` is that of `π ∘ φ` and `ρ ∘ ψ` at `x`.
 * `NonUnitalStarSubalgebra.spatialNorm_mapNonUnitalStarAlgHom_le`: `‖(φ ⊗ ψ)(x)‖_min ≤ ‖x‖_min`.
 * `NonUnitalStarSubalgebra.spatialNorm_mapNonUnitalStarAlgHom`: equality for injective `φ`, `ψ`.
 * `NonUnitalStarSubalgebra.minTensorMapOfLE φ ψ h`: the extension of a contractive `φ ⊗ ψ`.
@@ -59,11 +61,43 @@ noncomputable section
 
 open UniformSpace TensorProduct ContinuousLinearMap
 
+open Algebra.TensorProduct (mapNonUnitalStarAlgHom coe_mapNonUnitalStarAlgHom
+  mapNonUnitalStarAlgHom_tmul mapNonUnitalStarAlgHom_id mapNonUnitalStarAlgHom_comp)
+
+/-! ### Tensor products of star homomorphisms -/
+
+namespace NonUnitalStarAlgHom
+
+variable {𝕜 A B A' B' E F : Type*} [RCLike 𝕜] [NonUnitalRing A] [StarRing A] [Module 𝕜 A]
+  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [StarModule 𝕜 A]
+  [NonUnitalRing B] [StarRing B] [Module 𝕜 B]
+  [SMulCommClass 𝕜 B B] [IsScalarTower 𝕜 B B] [StarModule 𝕜 B]
+  [NonUnitalRing A'] [StarRing A'] [Module 𝕜 A']
+  [SMulCommClass 𝕜 A' A'] [IsScalarTower 𝕜 A' A'] [StarModule 𝕜 A']
+  [NonUnitalRing B'] [StarRing B'] [Module 𝕜 B']
+  [SMulCommClass 𝕜 B' B'] [IsScalarTower 𝕜 B' B'] [StarModule 𝕜 B']
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
+
+/-- The spatial tensor homomorphism of representations `π` of `A'` and `ρ` of `B'` at
+`(φ ⊗ ψ)(x)` is that of the representations `π ∘ φ` of `A` and `ρ ∘ ψ` of `B` at `x`. -/
+theorem spatialTensorHom_mapNonUnitalStarAlgHom (π : A' →⋆ₙₐ[𝕜] (E →L[𝕜] E))
+    (ρ : B' →⋆ₙₐ[𝕜] (F →L[𝕜] F)) (φ : A →⋆ₙₐ[𝕜] A') (ψ : B →⋆ₙₐ[𝕜] B') (x : A ⊗[𝕜] B) :
+    π.spatialTensorHom ρ (mapNonUnitalStarAlgHom φ ψ x) =
+      (π.comp φ).spatialTensorHom (ρ.comp ψ) x := by
+  induction x using TensorProduct.inductionOn with
+  | add x y hx hy =>
+    -- `map_add` on the bundled star homomorphism times out synthesizing `AddHomClass` for
+    -- `A ⊗[𝕜] B →⋆ₙₐ[𝕜] A' ⊗[𝕜] B'`, so unfold it to the linear map `TensorProduct.map`.
+    rw [coe_mapNonUnitalStarAlgHom] at hx hy ⊢
+    rw [map_add, map_add, map_add, hx, hy]
+  | tmul a b => simp
+
+end NonUnitalStarAlgHom
+
 namespace NonUnitalStarSubalgebra
 
 open TauCeti
-open Algebra.TensorProduct (mapNonUnitalStarAlgHom coe_mapNonUnitalStarAlgHom
-  mapNonUnitalStarAlgHom_tmul mapNonUnitalStarAlgHom_id mapNonUnitalStarAlgHom_comp)
 
 section RCLike
 
@@ -74,23 +108,6 @@ variable {𝕜 E F E' F' : Type*} [RCLike 𝕜]
   [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F'] [CompleteSpace F']
   {A : NonUnitalStarSubalgebra 𝕜 (E →L[𝕜] E)} {B : NonUnitalStarSubalgebra 𝕜 (F →L[𝕜] F)}
   {A' : NonUnitalStarSubalgebra 𝕜 (E' →L[𝕜] E')} {B' : NonUnitalStarSubalgebra 𝕜 (F' →L[𝕜] F')}
-
-/-! ### Tensor products of star homomorphisms -/
-
-/-- The spatial operator of `(φ ⊗ ψ)(x)` is that of `x` in the representations
-`A → A' ⊆ B(E')` and `B → B' ⊆ B(F')`. -/
-theorem spatialTensorHom_mapNonUnitalStarAlgHom (φ : A →⋆ₙₐ[𝕜] A') (ψ : B →⋆ₙₐ[𝕜] B')
-    (x : A ⊗[𝕜] B) :
-    spatialTensorHom A' B' (mapNonUnitalStarAlgHom φ ψ x) =
-      ((NonUnitalStarSubalgebraClass.subtype A').comp φ).spatialTensorHom
-        ((NonUnitalStarSubalgebraClass.subtype B').comp ψ) x := by
-  induction x using TensorProduct.inductionOn with
-  | add x y hx hy =>
-    -- `map_add` on the bundled star homomorphism times out synthesizing `AddHomClass` for
-    -- `A ⊗[𝕜] B →⋆ₙₐ[𝕜] A' ⊗[𝕜] B'`, so unfold it to the linear map `TensorProduct.map`.
-    rw [coe_mapNonUnitalStarAlgHom] at hx hy ⊢
-    rw [map_add, map_add, map_add, hx, hy]
-  | tmul a b => simp
 
 /-! ### Extension to the spatial tensor products -/
 
@@ -134,7 +151,8 @@ private theorem minTensorMapCLM_toMinTensor' (x : A ⊗[𝕜] B) :
     minTensorMapCLM φ ψ (toMinTensor A B x) =
       ((NonUnitalStarSubalgebraClass.subtype A').comp φ).spatialTensorHom
         ((NonUnitalStarSubalgebraClass.subtype B').comp ψ) x := by
-  rw [minTensorMapCLM_toMinTensor φ ψ h, spatialTensorHom_mapNonUnitalStarAlgHom]
+  rw [minTensorMapCLM_toMinTensor φ ψ h, spatialTensorHom_def,
+    NonUnitalStarAlgHom.spatialTensorHom_mapNonUnitalStarAlgHom]
 
 include h in
 private theorem minTensorMapCLM_mem (u : minTensor A B) :
@@ -240,7 +258,8 @@ concrete operator algebras, with `A` and `B` closed, give `‖(φ ⊗ ψ)(x)‖_
 theorem spatialNorm_mapNonUnitalStarAlgHom_le (φ : A →⋆ₙₐ[ℂ] A') (ψ : B →⋆ₙₐ[ℂ] B')
     (x : A ⊗[ℂ] B) :
     spatialNorm A' B' (mapNonUnitalStarAlgHom φ ψ x) ≤ spatialNorm A B x := by
-  rw [spatialNorm_def, spatialTensorHom_mapNonUnitalStarAlgHom,
+  rw [spatialNorm_def, spatialTensorHom_def,
+    NonUnitalStarAlgHom.spatialTensorHom_mapNonUnitalStarAlgHom,
     NonUnitalStarAlgHom.spatialTensorHom_apply]
   exact norm_spatialTensorLinearMap_map_le_spatialNorm A B _ _ x
 
@@ -249,7 +268,8 @@ theorem spatialNorm_mapNonUnitalStarAlgHom_le (φ : A →⋆ₙₐ[ℂ] A') (ψ 
 theorem spatialNorm_mapNonUnitalStarAlgHom {φ : A →⋆ₙₐ[ℂ] A'} {ψ : B →⋆ₙₐ[ℂ] B'}
     (hφ : Function.Injective φ) (hψ : Function.Injective ψ) (x : A ⊗[ℂ] B) :
     spatialNorm A' B' (mapNonUnitalStarAlgHom φ ψ x) = spatialNorm A B x := by
-  rw [spatialNorm_def, spatialTensorHom_mapNonUnitalStarAlgHom,
+  rw [spatialNorm_def, spatialTensorHom_def,
+    NonUnitalStarAlgHom.spatialTensorHom_mapNonUnitalStarAlgHom,
     NonUnitalStarAlgHom.spatialTensorHom_apply]
   exact norm_spatialTensorLinearMap_map_eq_spatialNorm A B _ _
     (Subtype.val_injective.comp hφ) (Subtype.val_injective.comp hψ) x
@@ -345,8 +365,8 @@ theorem minTensorMap_inclusion {A₁ : NonUnitalStarSubalgebra ℂ (E →L[ℂ] 
   have hB' : (NonUnitalStarSubalgebraClass.subtype B₁).comp (inclusion hB) =
       NonUnitalStarSubalgebraClass.subtype B :=
     NonUnitalStarAlgHom.ext (val_inclusion hB)
-  rw [val_inclusion, coe_toMinTensor, coe_toMinTensor, spatialTensorHom_mapNonUnitalStarAlgHom,
-    hA', hB', spatialTensorHom_def]
+  rw [val_inclusion, coe_toMinTensor, coe_toMinTensor, spatialTensorHom_def A₁ B₁,
+    NonUnitalStarAlgHom.spatialTensorHom_mapNonUnitalStarAlgHom, hA', hB', spatialTensorHom_def]
 
 omit [IsClosed (A : Set (E →L[ℂ] E))] [IsClosed (B : Set (F →L[ℂ] F))] in
 open scoped CStarAlgebra in
@@ -356,9 +376,7 @@ open scoped CStarAlgebra in
 theorem minTensor_nonUnitalStarAlgHom_ext {G : Type*} [NonUnitalCStarAlgebra G]
     {f g : minTensor A B →⋆ₙₐ[ℂ] G}
     (h : ∀ a b, f (toMinTensor A B (a ⊗ₜ b)) = g (toMinTensor A B (a ⊗ₜ b))) : f = g := by
-  have hc (f : minTensor A B →⋆ₙₐ[ℂ] G) : Continuous f := by
-    have := isClosed_minTensor A B
-    exact map_continuous f
+  have hc (f : minTensor A B →⋆ₙₐ[ℂ] G) : Continuous f := map_continuous f
   exact DFunLike.coe_injective congr(⇑$(minTensor_continuousLinearMap_ext
     (f := ⟨LinearMap.ofClass f, hc f⟩) (g := ⟨LinearMap.ofClass g, hc g⟩) h))
 
