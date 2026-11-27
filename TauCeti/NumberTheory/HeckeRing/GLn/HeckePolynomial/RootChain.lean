@@ -16,6 +16,7 @@ import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.Positivity
+import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.LinearAlgebra.SesquilinearForm.Complex
 import TauCeti.LinearAlgebra.SesquilinearForm.Polynomial
 
@@ -31,27 +32,29 @@ file `src/Lib/LocalGL/SphericalChainLemma.lean` (`New.Patching.chain_lemma_of_ad
 `New.Patching.le_norm_sq_of_isRoot_of_not_isRoot_mul`, and `New.Patching.isRoot_chain_of_norm`).
 
 Given a positive-definite sesquilinear form `B` on a complex vector space `V`, an endomorphism
-`U : Module.End ℂ V` with left adjoint `U'`, a real scale `q > 1`, and vectors `T₀, …, Tₙ`
-satisfying the two hyperplane-count recursions attached to
-`P = glnHeckePolynomial (n + 1) (q : ℂ) t`:
+`U : Module.End ℂ V` with left adjoint `U'`, a real scale `q > 1`, coefficients `t` with
+`t 0 • T 0 = T 0` and `t (Fin.last (n + 1)) ≠ 0`, and vectors `T₀, …, Tₙ` satisfying the
+hyperplane-count recursions attached to `P = glnHeckePolynomial (n + 1) (q : ℂ) t` — namely, `U`
+sends `T j` to `q ^ j • (t (j + 1) • T 0 - T (j + 1))` with `U (T n) = q ^ n • t (n + 1) • T 0`,
+while `U'` satisfies the reversed recursion starting from `U' (T 0) = q ^ n • t (n + 1)⁻¹ • T n`:
 
-* `Module.End.div_sq_le_norm_sq_of_isRoot_glnHeckePolynomial`: every root `c` of `P` such that
-  `q * c` is not a root satisfies `q ^ (n + 1) / q ^ 2 ≤ ‖c‖ ^ 2`.
+* `Module.End.div_sq_le_norm_sq_of_isRoot_glnHeckePolynomial`: when `T 0 ≠ 0`, every root `c` of
+  `P` such that `q * c` is not a root satisfies `q ^ (n + 1) / q ^ 2 ≤ ‖c‖ ^ 2`.
 * `Module.End.aeval_map_starRingEnd_apply_eq_zero_of_isRoot_glnHeckePolynomial`: if `d ≠ 0`,
   `q ^ k / d` is a root of `P`, and `P = (∏ i < k, (C d * X - C (q ^ i))) * R`, then
   `aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0`.
-* `TauCeti.isRoot_of_glnHeckePolynomial_star_mul_eq` derives the root symmetry
+* `TauCeti.isRoot_glnHeckePolynomial_of_star_mul_eq` derives the root symmetry
   `y ↦ q ^ (N - 1) / star y` from coefficient duality `star (t d) * b₀ = t d.rev * z`.
-* `TauCeti.isRoot_mul_pow_of_norm_sq_mul_pow_eq` combines that root symmetry with the top-root
-  lower bound: any root `c` with `‖c‖ ^ 2 * q ^ k = q ^ N` generates the full root chain
-  `c, c * q, …, c * q ^ (k - 1)`.
+* `TauCeti.isRoot_glnHeckePolynomial_mul_pow_of_norm_sq_mul_pow_eq` combines that root symmetry
+  with the top-root lower bound: any root `c` with `‖c‖ ^ 2 * q ^ k = q ^ N` generates the full
+  root chain `c, c * q, …, c * q ^ (k - 1)`.
 
 ## Main declarations
 
 * `Module.End.div_sq_le_norm_sq_of_isRoot_glnHeckePolynomial`
 * `Module.End.aeval_map_starRingEnd_apply_eq_zero_of_isRoot_glnHeckePolynomial`
-* `TauCeti.isRoot_of_glnHeckePolynomial_star_mul_eq`
-* `TauCeti.isRoot_mul_pow_of_norm_sq_mul_pow_eq`
+* `TauCeti.isRoot_glnHeckePolynomial_of_star_mul_eq`
+* `TauCeti.isRoot_glnHeckePolynomial_mul_pow_of_norm_sq_mul_pow_eq`
 -/
 
 public section
@@ -358,9 +361,11 @@ private lemma glnHeckePolynomial_adjoint_core {B : V →ₛₗ[starRingEnd ℂ] 
 
 /-- **Top-root lower bound for `GL_N` Hecke polynomials.** Let `B` be a positive-definite
 sesquilinear form on `V`, `U'` left-adjoint to `U` for `B`, `q > 1` real,
-`P = glnHeckePolynomial (n + 1) (q : ℂ) t`, and `T : Fin (n + 1) → V` satisfying the forward and
-backward hyperplane-count recursions. Then every root `c` of `P` such that `q * c` is not a root
-satisfies `q ^ (n + 1) / q ^ 2 ≤ ‖c‖ ^ 2`. -/
+`P = glnHeckePolynomial (n + 1) (q : ℂ) t`, and `T : Fin (n + 1) → V` with `T 0 ≠ 0`,
+`t 0 • T 0 = T 0`, and `t (Fin.last (n + 1)) ≠ 0`. Assume `U` sends each `T j` to
+`q ^ j • (t (j + 1) • T 0 - T (j + 1))` with `U (T n) = q ^ n • t (n + 1) • T 0`, while `U'`
+satisfies the reversed recursion starting from `U' (T 0) = q ^ n • t (n + 1)⁻¹ • T n`. Then every
+root `c` of `P` such that `q * c` is not a root satisfies `q ^ (n + 1) / q ^ 2 ≤ ‖c‖ ^ 2`. -/
 theorem Module.End.div_sq_le_norm_sq_of_isRoot_glnHeckePolynomial
     {B : V →ₛₗ[starRingEnd ℂ] V →ₗ[ℂ] ℂ}
     (U U' : End ℂ V) {n : ℕ} {q : ℝ} {t : Fin (n + 2) → ℂ} (T : Fin (n + 1) → V)
@@ -418,7 +423,7 @@ section RootSymmetry
 /-- Root symmetry of a `GL_N` Hecke polynomial under Hermitian coefficient duality:
 if `star (t d) * b₀ = t d.rev * z` with `b₀ ≠ 0` and `q ≠ 0`, then `P(y') = 0` and
 `star y * y' * q = q ^ N` imply `P(y) = 0`. -/
-theorem isRoot_of_glnHeckePolynomial_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N + 1) → ℂ}
+theorem isRoot_glnHeckePolynomial_of_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N + 1) → ℂ}
     {b₀ z y y' : ℂ} (hq : q ≠ 0) (hb₀ : b₀ ≠ 0)
     (h_dual : ∀ d : Fin (N + 1), star (t d) * b₀ = t d.rev * z)
     (hy : star y * y' * (q : ℂ) = (q : ℂ) ^ N)
@@ -438,12 +443,8 @@ theorem isRoot_of_glnHeckePolynomial_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N
     have h_arg : (q : ℂ) ^ n * y'⁻¹ = star y := by
       rw [← hy_prod, mul_inv_cancel_right₀ hy'_ne]
     have h_refl := congrArg (eval y'⁻¹) (C_mul_glnHeckePolynomial_rev_comp (q : ℂ) t)
-    have h_eval_refl : eval y'⁻¹ (reflect (n + 1) P) = 0 := by
-      have : Invertible y' := invertibleOfNonzero hy'_ne
-      have h := (eval₂_reflect_eq_zero_iff (RingHom.id ℂ) y' (n + 1) P
-        (natDegree_glnHeckePolynomial_le _ _)).mpr hy'.eq_zero
-      rw [invOf_eq_inv] at h
-      exact h
+    have h_eval_refl : eval y'⁻¹ (reflect (n + 1) P) = 0 :=
+      (isRoot_reflect_inv_iff P (natDegree_glnHeckePolynomial_le _ _) hy'_ne).mpr hy'
     have hP_rev_zero : P_rev.eval (star y) = 0 := by
       dsimp only [P, P_rev] at h_eval_refl ⊢
       simp only [eval_mul, eval_C, eval_comp, eval_X, Nat.add_sub_cancel, h_arg, h_eval_refl,
@@ -471,8 +472,8 @@ theorem isRoot_of_glnHeckePolynomial_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N
 /-- Root-chain propagation for a `GL_N` Hecke polynomial: combining the top-root lower bound with
 Hermitian coefficient duality, any root `c` satisfying `‖c‖ ^ 2 * q ^ k = q ^ N` generates the
 full chain of roots `c * q ^ i` for `i < k`. -/
-theorem isRoot_mul_pow_of_norm_sq_mul_pow_eq {N k : ℕ} {q : ℝ} {t : Fin (N + 1) → ℂ}
-    {b₀ z c : ℂ} (hq : 1 < q) (hb₀ : b₀ ≠ 0)
+theorem isRoot_glnHeckePolynomial_mul_pow_of_norm_sq_mul_pow_eq {N k : ℕ} {q : ℝ}
+    {t : Fin (N + 1) → ℂ} {b₀ z c : ℂ} (hq : 1 < q) (hb₀ : b₀ ≠ 0)
     (h_dual : ∀ d : Fin (N + 1), star (t d) * b₀ = t d.rev * z)
     (h_top : ∀ r : ℂ, (glnHeckePolynomial N (q : ℂ) t).IsRoot r →
       ¬ (glnHeckePolynomial N (q : ℂ) t).IsRoot ((q : ℂ) * r) → q ^ N / q ^ 2 ≤ ‖r‖ ^ 2)
@@ -483,7 +484,7 @@ theorem isRoot_mul_pow_of_norm_sq_mul_pow_eq {N k : ℕ} {q : ℝ} {t : Fin (N +
   induction i using Nat.strongRec with | ind i ih => ?_
   obtain ⟨j, rfl⟩ : ∃ j : ℕ, i + 1 + j = k := Nat.le.dest hi
   obtain hji | hij : j < i ∨ i ≤ j := lt_or_ge j i
-  · refine isRoot_of_glnHeckePolynomial_star_mul_eq hq0 hb₀ h_dual ?_ (ih j hji (by omega))
+  · refine isRoot_glnHeckePolynomial_of_star_mul_eq hq0 hb₀ h_dual ?_ (ih j hji (by omega))
     have hC : (‖c‖ : ℂ) ^ 2 * (q : ℂ) ^ (i + 1 + j) = (q : ℂ) ^ N := by exact_mod_cast h_norm
     have hcm : (starRingEnd ℂ) c * c = (‖c‖ : ℂ) ^ 2 := Complex.conj_mul' c
     rw [← hC]
