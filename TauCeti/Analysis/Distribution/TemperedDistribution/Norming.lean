@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import TauCeti.MeasureTheory.Function.Lp.Dual
-import TauCeti.MeasureTheory.Function.L1Space.Dual
-import Mathlib.Analysis.Normed.Operator.Extend
+import TauCeti.Analysis.Distribution.SchwartzSpace.Lp
 import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.MeasureTheory.Function.L1Space.Dual
 
 /-!
 # Norming `Lᵠ` functions by Schwartz functions
@@ -24,12 +24,13 @@ dual space `Lᵠ(μ)`: an `Lᵠ` function `h` whose pairings with Schwartz funct
 
 Conversely, for `1 ≤ p < ∞` every tempered distribution `u` with `‖u g‖ ≤ B ‖g‖_p` for all
 Schwartz functions `g` is an `Lᵠ` function of norm at most `B`
-(`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`): the bound extends `u` from
-the dense Schwartz functions to a continuous linear functional on `Lᵖ(μ)`, and the dual of `Lᵖ(μ)`
-is `Lᵠ(μ)` (`MeasureTheory.Lp.dualEquiv` for `1 < p`, `MeasureTheory.Lp.exists_toDual_eq` for
-`p = 1`, where `q = ∞`). This is how an `Lᵠ` estimate for a distribution is
-obtained by duality from estimates on test functions alone, for instance for the blocks of a
-distribution in a Besov space of negative order.
+(`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`). The bound extends `u` from
+the dense Schwartz functions to a continuous linear functional on `Lᵖ(μ)`
+(`SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le`), and the dual of `Lᵖ(μ)` is `Lᵠ(μ)`:
+`MeasureTheory.Lp.dualEquiv` for `1 < p`, and for `p = 1`, where `q = ∞`, the dual of `L¹` of the
+σ-finite measure `μ` (`MeasureTheory.Lp.exists_toDual_eq`). This is how an `Lᵠ` estimate for a
+distribution is obtained by duality from estimates on test functions alone, for instance for the
+blocks of a distribution in a Besov space of negative order.
 
 ## References
 
@@ -40,7 +41,7 @@ public section
 
 noncomputable section
 
-open scoped ENNReal SchwartzMap
+open scoped ENNReal NNReal SchwartzMap
 
 namespace MeasureTheory.Lp
 
@@ -104,17 +105,8 @@ theorem exists_eq_toTemperedDistribution_and_norm_le (hp_top : p ≠ ∞)
     ∃ h : Lp ℂ q μ, (h : 𝓢'(E, ℂ)) = u ∧ ‖h‖ ≤ B := by
   have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   -- Extend `u` from the dense Schwartz functions to a functional `Λ` on `Lᵖ`.
-  set e : 𝓢(E, ℂ) →ₗ[ℂ] Lp ℂ p μ := (SchwartzMap.toLpCLM ℂ ℂ p μ).toLinearMap
-  have he : DenseRange e := by
-    have hcoe : ⇑e = ⇑(SchwartzMap.toLpCLM ℝ ℂ p μ) := by
-      ext g : 1
-      simp [e]
-    rw [DenseRange, hcoe]
-    exact SchwartzMap.denseRange_toLpCLM hp_top
-  set S : 𝓢(E, ℂ) →ₗ[ℂ] ℂ := (u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ)
-  have hS : ∀ g, ‖S g‖ ≤ B * ‖e g‖ := fun g ↦ by simpa [S, e] using hu g
-  set Λ := S.extendOfNorm e
-  have hΛ : ‖Λ‖ ≤ B := Λ.opNorm_le_bound hB (LinearMap.norm_extendOfNorm_apply_le he B hS)
+  obtain ⟨Λ, hΛu, hΛ⟩ :=
+    SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le hp_top (u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) hB hu
   -- `Λ` is integration against some `h ∈ Lᵠ`: the dual of `L¹` is `L^∞`, and for `1 < p` the dual
   -- of `Lᵖ` is `Lᵠ`.
   obtain ⟨h, hh⟩ : ∃ h : Lp ℂ q μ, Lp.toDual ℂ μ q p h = Λ := by
@@ -126,7 +118,6 @@ theorem exists_eq_toTemperedDistribution_and_norm_le (hp_top : p ≠ ∞)
   -- `h` represents `u`.
   refine ⟨h, ?_, by rwa [← (Lp.toDual ℂ μ q p).norm_map h, hh]⟩
   ext g
-  rw [Lp.toTemperedDistribution_apply_eq_toDual_apply (p := p), hh]
-  simpa [S, e] using LinearMap.extendOfNorm_eq he ⟨B, hS⟩ g
+  rw [Lp.toTemperedDistribution_apply_eq_toDual_apply (p := p), hh, hΛu, LinearMap.coe_ofClass]
 
 end TemperedDistribution

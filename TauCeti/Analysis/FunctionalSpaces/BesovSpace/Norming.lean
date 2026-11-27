@@ -30,7 +30,7 @@ half of the duality `(B^s_{p,q})^* = B^{-s}_{p',q'}` for `1 ≤ p < ∞` and `q 
 bound of the pairing between `B^{-s}_{p',q'}` and `B^s_{p,q}` and the density of the Schwartz
 functions in `B^s_{p,q}`, it gives the identification itself, `TauCeti.BesovSpace.strongDualEquiv`
 in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.StrongDual`. At `p = 1` the blocks of `u` are
-bounded functions, by the duality between `L¹` and `L^∞`.
+`L^∞` functions and `B^{-s}_{∞,q'}` is the dual of `B^s_{1,q}`.
 
 ## The argument
 
@@ -42,7 +42,7 @@ blocks of Schwartz functions has Besov norm at most `K ‖w‖_{ℓ^q}` whenever
 
 * *Each block is an `L^{p'}` function.* With a single block, `‖(Δⱼ u) g‖ ≤ A K 2^{js} ‖g‖_p`, so
   `Δⱼ u` is an `L^{p'}` function `hⱼ` with `‖hⱼ‖_{p'} ≤ A K 2^{js}`
-  (`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`, which uses `p < ∞`).
+  (`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`, for `1 ≤ p < ∞`).
 * *The weighted norms are in `ℓ^{q'}`.* Choose Schwartz functions `gⱼ` with `‖gⱼ‖_p ≤ 1` and
   `‖hⱼ‖_{p'} ≤ 2 ‖(Δⱼ u) gⱼ‖`, by norming `L^{p'}` with Schwartz functions. For a finite set `t`
   the functional `c ↦ ∑_{j ∈ t} cⱼ 2^{-js} (Δⱼ u) gⱼ` on `ℓ^q` is

@@ -18,8 +18,8 @@ identifies the dual of the Besov space `B^s_{p,q}` with `B^{-s}_{p',q'}`:
 
 `(B^s_{p,q})^* ≃ B^{-s}_{p',q'}` for `1 ≤ p < ∞` and `1 ≤ q < ∞`,
 
-through the pairing `⟨v, f⟩` of tempered distributions with Schwartz functions, which for
-functions is the bilinear `L²` pairing `∫ v f`.
+including the endpoint `(B^s_{1,q})^* ≃ B^{-s}_{∞,q'}`, through the pairing `⟨v, f⟩` of tempered
+distributions with Schwartz functions, which for functions is the bilinear `L²` pairing `∫ v f`.
 
 For `p, q < ∞` the Schwartz functions are dense in `B^s_{p,q}`
 (`SchwartzMap.denseRange_toBesovSpaceCLM`), and `|⟨v, f⟩| ≤ C ‖v‖_{B^{-s}_{p',q'}} ‖f‖_{B^s_{p,q}}`
@@ -29,7 +29,7 @@ map `TauCeti.BesovSpace.toStrongDualCLM` from `B^{-s}_{p',q'}` to the dual of `B
 is injective because an element of a Besov space is determined by its tempered distribution. Here
 `v` may take values in any complex Banach space `F`, and the functionals are then `F`-valued.
 
-For scalar `v` and `p < ∞` the map is also onto: every continuous linear functional `Λ` on
+For scalar `v` and `1 ≤ p < ∞` the map is also onto: every continuous linear functional `Λ` on
 `B^s_{p,q}` agrees on the Schwartz functions with the pairing against some `v ∈ B^{-s}_{p',q'}`
 with `‖v‖ ≤ C ‖Λ‖` (`TauCeti.BesovSpace.exists_toDistr_apply_eq_and_norm_le`,
 Bahouri–Chemin–Danchin, Proposition 2.76), and the two functionals then agree everywhere by
@@ -150,8 +150,8 @@ theorem exists_norm_toStrongDualCLM_le :
   obtain ⟨C, hC0, hC⟩ := exists_norm_toDistr_apply_le (F := F) φ s
   exact ⟨C, hC0, fun {p p' q q'} _ _ _ _ _ _ hp hq v ↦ norm_pairing_le φ s hp hq hC0 hC v⟩
 
-/-- Every continuous linear functional `Λ` on `B^s_{p,q}`, `p, q < ∞`, is the pairing with some
-`v ∈ B^{-s}_{p',q'}` of norm at most `C ‖Λ‖`, with `C` depending only on `φ` and `s`. -/
+/-- Every continuous linear functional `Λ` on `B^s_{p,q}`, `p, q < ∞`, is the pairing
+with some `v ∈ B^{-s}_{p',q'}` of norm at most `C ‖Λ‖`, with `C` depending only on `φ` and `s`. -/
 private theorem exists_toStrongDualCLM_eq_and_norm_le :
     ∃ C : ℝ, ∀ {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)]
       [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q'] (hp : p ≠ ∞) (hq : q ≠ ∞)
@@ -210,13 +210,13 @@ theorem toDistr_strongDualEquiv_symm_apply (hp : p ≠ ∞) (hq : q ≠ ∞)
     ContinuousLinearEquiv.apply_symm_apply]
 
 /-- **The inverse of the duality is bounded uniformly in the exponents.** There is `C`, depending
-only on `φ` and `s`, such that for all Hölder conjugate pairs `p, p'` and `q, q'` with `p, q < ∞`,
-the element of `B^{-s}_{p',q'}` representing a continuous linear functional `Λ` on
+only on `φ` and `s`, such that for all Hölder conjugate pairs `p, p'` and `q, q'` with `p < ∞`
+and `q < ∞`, the element of `B^{-s}_{p',q'}` representing a continuous linear functional `Λ` on
 `B^s_{p,q}` has norm at most `C ‖Λ‖`. -/
 theorem exists_norm_strongDualEquiv_symm_apply_le :
     ∃ C : ℝ, ∀ {p p' q q' : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ p')] [Fact (1 ≤ q)]
-      [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q'] (hp : p ≠ ∞)
-      (hq : q ≠ ∞) (Λ : StrongDual ℂ (BesovSpace ℂ φ s p q)),
+      [Fact (1 ≤ q')] [p.HolderConjugate p'] [q.HolderConjugate q']
+      (hp : p ≠ ∞) (hq : q ≠ ∞) (Λ : StrongDual ℂ (BesovSpace ℂ φ s p q)),
       ‖(strongDualEquiv (p' := p') (q' := q') φ s hp hq).symm Λ‖ ≤ C * ‖Λ‖ := by
   obtain ⟨C, hC⟩ := exists_toStrongDualCLM_eq_and_norm_le φ s
   refine ⟨C, fun {p p' q q'} _ _ _ _ _ _ hp hq Λ ↦ ?_⟩
