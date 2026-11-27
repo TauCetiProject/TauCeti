@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.SpectralObject.EpiMono
 public import TauCeti.Algebra.Homology.SpectralObject.Stabilization
 public import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 public import Mathlib.Algebra.Homology.SpectralObject.SpectralSequence
@@ -58,6 +59,12 @@ maps `E_r ⟶ E_{r+1}` of the spectral sequence itself.
   as soon as the differentials at `(p, q)` vanish on the pages `r ≤ r' < r₁`, where `r₁` is a page
   from which the object is known to be the limit object, for instance when their sources and
   targets vanish on the page `r`.
+* `CategoryTheory.Abelian.SpectralObject.isIso_spectralSequencePageXToEInfty_of_mono`:
+  stabilization at the top. The map from the page `r` onto `X.EInfty q n` is an isomorphism as
+  soon as `H^n(⊥ ≤ q + r - 1) ⟶ H^n(⊥ ≤ ⊤)` is a monomorphism.
+* `CategoryTheory.Abelian.SpectralObject.page_d_eq_zero_of_isIso_spectralSequencePageXToPageX`:
+  conversely to stabilization by degeneration, when the map from the page `r` to the page `r + 1`
+  at `(p, q)` is an isomorphism, both differentials at `(p, q)` vanish on the page `r`.
 
 ## References
 
@@ -301,6 +308,58 @@ theorem isIso_spectralSequencePageXToEInfty_of_isZero (r₁ : ℤ) (pq : ℤ × 
           (Or.inl (hd r' hr' hr'₁).1) r' hr',
         (X.spectralSequence coreE₂Cohomological).page_d_eq_zero_of_le hr
           (Or.inr (hd r' hr' hr'₁).2) r' hr'⟩
+
+/-- **Stabilization at the top.** Let `pq = (p, q)` and `n = p + q`. When `H^{n+1}(⊥ ≤ q - r + 2)`
+vanishes and the map `H^n(⊥ ≤ q + r - 1) ⟶ H^n(⊥ ≤ ⊤)` is a monomorphism, the epimorphism
+`spectralSequencePageXToEInfty` from the page `r` onto `X.EInfty q n` is an isomorphism. This
+weakens the vanishing of `H^{n-1}(q + r - 1 ≤ ⊤)` assumed by `spectralSequencePageXIsoEInfty`. -/
+theorem isIso_spectralSequencePageXToEInfty_of_mono (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (n : ℤ)
+    (hn : n = pq.1 + pq.2)
+    (h₀ : IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt))))))
+    (h₃ : Mono ((X.H n).map
+      (twoδ₂Toδ₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 + r - 1 : ℤ) : EInt)))
+        (homOfLE (le_top : ((pq.2 + r - 1 : ℤ) : EInt) ≤ ⊤)) (homOfLE bot_le)
+        (Subsingleton.elim _ _)))) :
+    IsIso (X.spectralSequencePageXToEInfty r hr pq n hn h₀) := by
+  have := X.isIso_mapFourδ₄Toδ₃'_of_mono ⊥ pq.2 ((pq.2 + 1 : ℤ) : EInt)
+    ((pq.2 + r - 1 : ℤ) : EInt) ⊤ bot_le (coe_le_coe_add_one pq.2) (by simp; lia) le_top
+    (n - 1) n (n + 1) h₃
+  rw [spectralSequencePageXToEInfty_def]
+  infer_instance
+
+/-- **Degeneration from stabilization.** Let `pq = (p, q)` and `n = p + q`. When
+`H^{n+1}(⊥ ≤ q - r + 2)` and `H^{n+1}(⊥ ≤ q - r + 1)` vanish and the canonical map
+`X.spectralSequencePageXToPageX r (r + 1)` at `pq` is an isomorphism, both differentials at `pq`
+vanish on the page `r`. This is the converse of the inductive step of
+`isIso_spectralSequencePageXToEInfty_of_d_eq_zero`. -/
+theorem page_d_eq_zero_of_isIso_spectralSequencePageXToPageX (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (n : ℤ) (hn : n = pq.1 + pq.2)
+    (h₀ : IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - r + 2 : ℤ) : EInt))))))
+    (h₀' : IsZero ((X.H (n + 1)).obj
+      (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ((pq.2 - (r + 1) + 2 : ℤ) : EInt))))))
+    [IsIso (X.spectralSequencePageXToPageX r (r + 1) hr (by lia) pq n hn h₀ h₀')]
+    {i j : ℤ × ℤ} (hij : i = pq ∨ j = pq) :
+    ((X.spectralSequence coreE₂Cohomological).page r hr).d i j = 0 := by
+  -- on cycles, the isomorphism from the page `r` to the page `r + 1` is the projection onto the
+  -- homology of the page `r`
+  have e := X.iCycles_spectralSequencePageXToPageX r (r + 1) rfl hr pq n hn h₀ h₀'
+  rcases hij with rfl | rfl
+  · -- every element of the page `r` at `pq` is a cycle
+    have : Epi (((X.spectralSequence coreE₂Cohomological).page r hr).iCycles i) := by
+      rw [(IsIso.eq_comp_inv _).2 e]
+      infer_instance
+    rw [← cancel_epi (((X.spectralSequence coreE₂Cohomological).page r hr).iCycles i),
+      HomologicalComplex.iCycles_d, comp_zero]
+  · -- no cycle of the page `r` at `pq` is a boundary
+    have : Mono (((X.spectralSequence coreE₂Cohomological).page r hr).homologyπ j) := by
+      rw [(IsIso.eq_comp_inv _).2 e.symm]
+      infer_instance
+    have h₀ : ((X.spectralSequence coreE₂Cohomological).page r hr).toCycles i j = 0 := by
+      rw [← cancel_mono (((X.spectralSequence coreE₂Cohomological).page r hr).homologyπ j),
+        HomologicalComplex.toCycles_comp_homologyπ, zero_comp]
+    rw [← HomologicalComplex.toCycles_i, h₀, zero_comp]
 
 end EInt
 
