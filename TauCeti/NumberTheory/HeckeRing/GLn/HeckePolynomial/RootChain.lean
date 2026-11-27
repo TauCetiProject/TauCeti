@@ -18,6 +18,7 @@ import Mathlib.Tactic.Module
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.Polynomial.Reverse
 import TauCeti.Data.Fin.Basic
+import TauCeti.LinearAlgebra.Eigenspace.Aeval
 import TauCeti.LinearAlgebra.SesquilinearForm.Complex
 import TauCeti.LinearAlgebra.SesquilinearForm.Polynomial
 
@@ -80,45 +81,6 @@ private lemma aeval_glnHeckePolynomial_succ_apply (U : End ℂ V) (m : ℕ) (q :
 private lemma pow_succ_sub_one_pos {q : ℝ} (hq : 1 < q) (n : ℕ) :
     (0 : ℂ) < (q : ℂ) ^ (n + 1) - 1 :=
   sub_pos.mpr (one_lt_pow₀ (by exact_mod_cast hq) n.succ_ne_zero)
-
-/-- If `P (U)` kills `y` and `(P / (X - c)) (U)` still kills `y` whenever `c ≠ 0` and `q * c` are
-both roots of `P`, then any geometric chain `q ^ i / d` (`i < k`) ending below a root `q ^ k / d`
-cancels from `P`. -/
-private lemma aeval_apply_eq_zero_of_eq_prod_mul {U : End ℂ V} {y : V} {P : ℂ[X]} {q : ℝ} {d : ℂ}
-    (hq : 1 < q) (aeval_P : aeval U P y = 0)
-    (two_roots :
-      ∀ {c : ℂ} (F : ℂ[X]), (X - C c) * F = P → P.IsRoot ((q : ℂ) * c) → c ≠ 0 →
-        aeval U F y = 0)
-    (hd : d ≠ 0) (k : ℕ) (R : ℂ[X]) (hroot : P.IsRoot ((q : ℂ) ^ k / d))
-    (hP : P = (∏ i ∈ range k, (C d * X - C ((q : ℂ) ^ i))) * R) :
-    aeval U R y = 0 := by
-  have hq0 : (q : ℂ) ≠ 0 := by exact_mod_cast (zero_lt_one.trans hq).ne'
-  induction k generalizing R with
-  | zero => simpa [hP] using aeval_P
-  | succ k ih =>
-    simp only [prod_range_succ, mul_assoc, pow_succ', mul_div_assoc] at hP hroot
-    have h_root_k : P.IsRoot ((q : ℂ) ^ k / d) := by simp [hP, field]
-    have eigen_R : U (aeval U R y) = (d⁻¹ * (q : ℂ) ^ k) • aeval U R y := by
-      simpa [sub_eq_zero, ← eq_inv_smul_iff₀ hd, smul_smul, -map_pow] using ih _ h_root_k hP
-    set Q : ℂ[X] := ∏ i ∈ range k, (C d * X - C ((q : ℂ) ^ i))
-    have cancel : (X - C ((q : ℂ) ^ k / d)) * (d • Q * R) = P := by
-      rw [hP, smul_eq_C_mul]
-      have h1 : (X - C ((q : ℂ) ^ k / d)) * C d = C d * X - C ((q : ℂ) ^ k) := by
-        rw [sub_mul, ← map_mul, div_mul_cancel₀ _ hd, mul_comm X]
-      linear_combination (Q * R) * h1
-    have killed : aeval U Q (aeval U R y) = 0 := by
-      simpa [hd] using two_roots _ cancel hroot (div_ne_zero (pow_ne_zero k hq0) hd)
-    have eval_ne : Q.eval (d⁻¹ * (q : ℂ) ^ k) ≠ 0 := by
-      intro h0
-      rw [eval_prod, Finset.prod_eq_zero_iff] at h0
-      obtain ⟨i, hi, h_eq⟩ := h0
-      simp only [mem_range, eval_sub, eval_mul, eval_C, eval_X, sub_eq_zero] at hi h_eq
-      have h_pow : (q : ℂ) ^ k = (q : ℂ) ^ i := by
-        simpa [← mul_assoc, mul_inv_cancel₀ hd] using h_eq
-      have h_powR : q ^ k = q ^ i := by exact_mod_cast h_pow
-      exact (pow_lt_pow_right₀ hq hi).ne' h_powR
-    rwa [Module.End.aeval_apply_of_mem_apply_eq_smul (p := Q) eigen_R,
-      smul_eq_zero_iff_right eval_ne] at killed
 
 /-- If `R (U)` kills every `T j` (`j : Fin (n + 1)`) and the adjoint `U'` preserves their span,
 then `aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0`. -/
@@ -341,8 +303,10 @@ private lemma glnHeckePolynomial_adjoint_core {B : V →ₛₗ[starRingEnd ℂ] 
     aeval_quot_eq_zero_of_two_roots hB adj' hq (by simpa [P] using hD c) hF hqc hc (U'_z c)
       (pair_x c (by simp [← hF]))
   intro d hd k R hroot hP
+  have hq_inj : Function.Injective ((q : ℂ) ^ · : ℕ → ℂ) := fun a b hab ↦
+    (pow_right_strictMono₀ hq).injective (Complex.ofReal_injective (by simpa using hab))
   have kills_x : aeval U R (T 0) = 0 :=
-    aeval_apply_eq_zero_of_eq_prod_mul hq aeval_P two_roots hd k R hroot hP
+    Module.End.aeval_apply_eq_zero_of_eq_prod_mul hq_inj aeval_P two_roots hd k R hroot hP
   refine aeval_conj_eq_zero hB adj (fun j ↦ ?_) (U'_first.trans (smul_smul _ _ _)) rec_U'
   set Pj := glnHeckePolynomial j.val (q : ℂ) (t ∘ Fin.castLE (by omega))
   have hcomm : aeval U R (aeval U Pj (T 0)) = aeval U Pj (aeval U R (T 0)) := by
