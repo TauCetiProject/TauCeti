@@ -55,6 +55,8 @@ and empty blocks.
 ## Main results
 
 * `Matrix.blockDiagonal'AlgHom_apply`: evaluation of `Matrix.blockDiagonal'AlgHom`.
+* `Matrix.sum_smul_fromBlocks_zero₁₂_zero₂₁`: a block-diagonal matrix acts separately on the two
+  parts of a family of vectors.
 * `Matrix.toBlocks₁₁_mul`, `Matrix.toBlocks₁₂_mul`, `Matrix.toBlocks₂₁_mul`,
   `Matrix.toBlocks₂₂_mul`: the four blocks of a product of block matrices.
 * `Matrix.toBlocks₁₁_add`, `Matrix.toBlocks₁₁_sub`, `Matrix.toBlocks₁₁_smul` and their analogues
@@ -109,6 +111,15 @@ public theorem forall_abs_mul_le_fromBlocks_zero₁₂_zero₂₁_iff {m n p q �
         (∀ i j, i ≠ j → |D (row₂ i) j * D (row₂ j) i| ≤ bound) := by
   have hzero : |(0 : α)| = 0 := by simp [abs]
   simp [Sum.forall, hzero, hbound]
+
+/-- A block-diagonal matrix acts on a sum-indexed family by taking linear combinations separately
+in each block. -/
+public theorem sum_smul_fromBlocks_zero₁₂_zero₂₁ {m n p q R E : Type*}
+    [Fintype p] [Fintype q] [Zero R] [AddCommMonoid E] [SMulWithZero R E]
+    (A : Matrix m p R) (D : Matrix n q R) (x : p → E) (y : q → E) (i : m ⊕ n) :
+    (∑ j, fromBlocks A 0 0 D i j • Sum.elim x y j) =
+      Sum.elim (fun a ↦ ∑ j, A a j • x j) (fun d ↦ ∑ j, D d j • y j) i := by
+  cases i <;> simp [Fintype.sum_sum_type]
 
 section ToBlocksMul
 
