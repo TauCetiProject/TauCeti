@@ -29,8 +29,9 @@ base ring to any prescribed element `z ∈ Ω` transcendental over that ring.
 The cardinality result imported from
 `TauCeti.RingTheory.AlgebraicIndependent.TranscendenceBasis` says that over a countable
 commutative ring acting faithfully, an uncountable integral domain has transcendence degree
-equal to its cardinality. Applied to `Ω = ℂ`, these statements extend a given embedding of a
-countable field into `ℂ` to a field of cardinality at most the continuum.
+equal to its cardinality. Applied to `Ω = ℂ`, these statements extend a given injective
+homomorphism from a countable commutative ring into `ℂ` to any domain containing that ring
+of cardinality at most the continuum.
 
 ## Main results
 
@@ -90,12 +91,16 @@ theorem exists_algHom_apply_eq {E : Type*} [CommRing E] [IsDomain E] [Algebra R 
     (algebraicIndependent_iff_injective_aeval.1 hw).comp hv.1.aevalEquiv.symm.injective
   let : Algebra (Algebra.adjoin R (Set.range v)) Ω := ψ.toRingHom.toAlgebra
   have : Module.IsTorsionFree (Algebra.adjoin R (Set.range v)) Ω :=
-    Module.isTorsionFree_iff_algebraMap_injective.2 hψ
+    Module.isTorsionFree_iff_algebraMap_injective.2 (by
+      simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+        AlgHom.coe_toRingHom] using hψ)
   have := hv.isAlgebraic
   -- `E` is algebraic over `R[v]`, so `ψ` extends to `E`.
   let f : E →ₐ[Algebra.adjoin R (Set.range v)] Ω := IsAlgClosed.lift
   let : Algebra E Ω := f.toRingHom.toAlgebra
-  have hf_inj : Function.Injective f := Algebra.IsAlgebraic.injective_tower_top E hψ
+  have hf_inj : Function.Injective f := by
+    simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom] using Algebra.IsAlgebraic.injective_tower_top E hψ
   have hf (a : Algebra.adjoin R (Set.range v)) : f a = ψ a := f.commutes a
   refine ⟨{ f.toRingHom with commutes' := fun r ↦ (hf (algebraMap R _ r)).trans (ψ.commutes r) },
     hf_inj, fun i ↦ ?_⟩

@@ -15,8 +15,8 @@ public import Mathlib.Analysis.Complex.Polynomial.Basic
 Let `k` be a countable commutative ring with an injective ring homomorphism `σ : k →+* ℂ`,
 viewed as the `k`-algebra structure `σ.toAlgebra` on `ℂ`, and let `E` be a domain containing `k`.
 
-* If `#E ≤ 𝔠`, then `σ` extends to `E`: there is a `k`-algebra homomorphism `E →ₐ[k] ℂ`,
-  a field embedding when `E` is a field.
+* If `#E ≤ 𝔠`, then `σ` extends to `E`: there is an injective `k`-algebra homomorphism
+  `E →ₐ[k] ℂ`.
 * If moreover `E` is algebraically closed with `#E = 𝔠`, then `σ` extends to a field
   isomorphism `E ≃ₐ[k] ℂ`.
 * In both cases a prescribed element `α ∈ E` transcendental over `k` may be sent to any
@@ -32,8 +32,9 @@ absolute values.
 
 * `TauCeti.Complex.trdeg_eq_continuum`: `ℂ` has transcendence degree `𝔠` over a countable
   commutative ring acting faithfully.
-* `TauCeti.Complex.nonempty_algHom`, `TauCeti.Complex.nonempty_algEquiv`: extension of a complex
-  embedding of a countable commutative ring to a homomorphism, respectively an isomorphism.
+* `TauCeti.Complex.exists_algHom_injective`, `TauCeti.Complex.nonempty_algEquiv`: extension of a
+  complex embedding of a countable commutative ring to an injective homomorphism, respectively
+  an isomorphism.
 * `TauCeti.Complex.exists_algHom_apply_eq`, `TauCeti.Complex.exists_algEquiv_apply_eq`: the same
   over a countable commutative ring, with a transcendental element sent to a prescribed
   transcendental complex number.
@@ -80,11 +81,12 @@ private theorem lift_trdeg_le [CommRing E] [Algebra k E] (hE : #E ≤ 𝔠) :
   exact (trdeg_le_cardinalMk k E).trans hE
 
 /-- Every complex embedding of a countable commutative ring `k`, given as a faithful `k`-algebra
-structure on `ℂ`, extends to every domain `E` containing `k` with `#E ≤ 𝔠`. -/
-theorem nonempty_algHom [CommRing E] [IsDomain E] [Algebra k E] [FaithfulSMul k E]
+structure on `ℂ`, extends to an injective homomorphism on every domain `E` containing `k`
+with `#E ≤ 𝔠`. -/
+theorem exists_algHom_injective [CommRing E] [IsDomain E] [Algebra k E] [FaithfulSMul k E]
     (hE : #E ≤ 𝔠) :
-    Nonempty (E →ₐ[k] ℂ) :=
-  let ⟨φ, _⟩ := IsAlgClosed.exists_algHom_injective_of_lift_trdeg_le (lift_trdeg_le hE); ⟨φ⟩
+    ∃ φ : E →ₐ[k] ℂ, Function.Injective φ :=
+  IsAlgClosed.exists_algHom_injective_of_lift_trdeg_le (lift_trdeg_le hE)
 
 /-- Every complex embedding of a countable commutative ring `k`, given as a faithful `k`-algebra
 structure on `ℂ`, extends to an isomorphism with `ℂ` of every algebraically closed field `E`
@@ -96,13 +98,13 @@ theorem nonempty_algEquiv [Field E] [IsAlgClosed E] [Algebra k E] [FaithfulSMul 
 
 omit [FaithfulSMul k ℂ] in
 /-- For a domain `E` over a countable commutative ring `k` with `#E ≤ 𝔠`, an element `α ∈ E`
-transcendental over `k` and a complex number `z` transcendental over `k`, some `k`-algebra
+transcendental over `k` and a complex number `z` transcendental over `k`, some injective `k`-algebra
 homomorphism `E →ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algHom_apply_eq [CommRing E] [IsDomain E] [Algebra k E] (hE : #E ≤ 𝔠) {α : E}
-    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E →ₐ[k] ℂ, φ α = z := by
+    {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) :
+    ∃ φ : E →ₐ[k] ℂ, Function.Injective φ ∧ φ α = z := by
   have := hz.faithfulSMul
-  obtain ⟨φ, _, hφ⟩ := hα.exists_algHom_apply_eq hz (lift_trdeg_le hE)
-  exact ⟨φ, hφ⟩
+  exact hα.exists_algHom_apply_eq hz (lift_trdeg_le hE)
 
 omit [FaithfulSMul k ℂ] in
 /-- For an algebraically closed field `E` over a countable commutative ring `k` with `#E = 𝔠`,
