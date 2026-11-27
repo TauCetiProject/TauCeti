@@ -22,6 +22,7 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
 * `Flow.apply_comm`: the maps of a flow by a commutative time monoid commute.
 * `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
   and conversely.
+* `Flow.apply_eq_self_of_forall_pos`: a point fixed at every positive time is fixed at every time.
 * `Flow.orbit_apply`: flowing a point does not change its orbit.
 * `Flow.orbit_eq_iff`: two points have the same orbit exactly when one lies on the orbit of the
   other.
@@ -29,6 +30,11 @@ This file supplements Mathlib's `IsInvariant` predicate and `Flow` API from
   have these two orbits.
 * `Flow.orbit_reverse`: reversing time does not change the orbits.
 * `Flow.prod`: the product of two flows with the same time.
+* `Flow.continuous_eval_const`: the flow line `t ↦ ϕ t x` through a point is continuous.
+* `Flow.map_nsmul`: the time-`(k • t)` map is the `k`-th iterate of the time-`t` map.
+* `Flow.coe_toHomeomorph`, `Flow.coe_toHomeomorph_symm`: the homeomorphism `ϕ.toHomeomorph t` is
+  the time-`t` map, with inverse the time-`(-t)` map.
+* `Flow.timeChange`: the time change `t ↦ ϕ (c * t)` of a flow by a factor `c`.
 * `Flow.exists_forall_exists_mem_Ioo_apply_mem`: if the forward orbits of the points of a compact
   set all meet an open set, they all meet it before a common time.
 * `Flow.homotopic_of_eq_apply`: maps sending each point to two times of its flow line are homotopic.
@@ -63,6 +69,15 @@ theorem map_neg_apply_map [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ
 @[simp]
 theorem map_apply_map_neg [AddGroup τ] (ϕ : Flow τ α) (t : τ) (x : α) : ϕ t (ϕ (-t) x) = x := by
   rw [← ϕ.map_add, add_neg_cancel, ϕ.map_zero_apply]
+
+/-- A point fixed by the flow at every positive time is fixed at every time. -/
+theorem apply_eq_self_of_forall_pos [AddCommGroup τ] [LinearOrder τ] [IsOrderedAddMonoid τ]
+    {ϕ : Flow τ α} {x : α} (h : ∀ t, 0 < t → ϕ t x = x) (t : τ) : ϕ t x = x := by
+  rcases lt_trichotomy t 0 with ht | rfl | ht
+  · conv_lhs => rw [← h (-t) (neg_pos.2 ht)]
+    exact map_apply_map_neg ϕ t x
+  · exact map_zero_apply ϕ x
+  · exact h t ht
 
 /-- All points of an orbit have the same orbit. -/
 @[simp]
@@ -112,6 +127,43 @@ def prod {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ α) (ψ :
 @[simp]
 theorem prod_apply {β : Type*} [TopologicalSpace β] [AddZero τ] (ϕ : Flow τ α) (ψ : Flow τ β)
     (t : τ) (p : α × β) : ϕ.prod ψ t p = (ϕ t p.1, ψ t p.2) :=
+  (rfl)
+
+/-- The flow line `t ↦ ϕ t x` through a point `x` is continuous. -/
+theorem continuous_eval_const [AddZero τ] (ϕ : Flow τ α) (x : α) : Continuous fun t ↦ ϕ t x :=
+  ϕ.continuous continuous_id continuous_const
+
+/-- The time-`(k • t)` map of a flow is the `k`-th iterate of its time-`t` map. -/
+theorem map_nsmul [AddMonoid τ] (ϕ : Flow τ α) (k : ℕ) (t : τ) : ϕ (k • t) = (ϕ t)^[k] := by
+  induction k with
+  | zero => simp [ϕ.map_zero]
+  | succ k ih =>
+    funext x
+    rw [succ_nsmul', ϕ.map_add, ih, Function.iterate_succ_apply']
+
+/-- The homeomorphism `ϕ.toHomeomorph t` is the time-`t` map. -/
+@[simp]
+theorem coe_toHomeomorph [AddGroup τ] (ϕ : Flow τ α) (t : τ) : ⇑(ϕ.toHomeomorph t) = ϕ t :=
+  (rfl)
+
+/-- The inverse of the homeomorphism `ϕ.toHomeomorph t` is the time-`(-t)` map. -/
+@[simp]
+theorem coe_toHomeomorph_symm [AddGroup τ] (ϕ : Flow τ α) (t : τ) :
+    ⇑(ϕ.toHomeomorph t).symm = ϕ (-t) :=
+  (rfl)
+
+/-- The **time change** of a flow by a factor `c`: the flow `t ↦ ϕ (c * t)`. -/
+def timeChange [NonUnitalNonAssocSemiring τ] [ContinuousMul τ] (ϕ : Flow τ α) (c : τ) :
+    Flow τ α where
+  toFun t := ϕ (c * t)
+  cont' := ϕ.continuous (continuous_const.mul continuous_fst) continuous_snd
+  map_add' t s x := by rw [mul_add, ϕ.map_add]
+  map_zero' x := by rw [mul_zero, ϕ.map_zero_apply]
+
+/-- The time-`t` map of the time change by `c` is the time-`(c * t)` map. -/
+@[simp]
+theorem timeChange_apply [NonUnitalNonAssocSemiring τ] [ContinuousMul τ] (ϕ : Flow τ α)
+    (c t : τ) : ϕ.timeChange c t = ϕ (c * t) :=
   (rfl)
 
 /-- **A uniform time to reach an open set.** If the forward orbit of every point of a compact set

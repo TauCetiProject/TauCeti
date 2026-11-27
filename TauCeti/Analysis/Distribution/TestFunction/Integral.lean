@@ -35,7 +35,8 @@ function that is locally integrable for a measure on `Ω`.
 Every nonempty open subset of the domain also contains a nonnegative integral-one test, for any
 locally finite measure positive on nonempty open sets. The construction normalizes Mathlib's
 `exists_contDiff_tsupport_subset` by its positive integral. These tests recover the coefficient
-of a constant distribution, including on arbitrarily small overlap neighborhoods.
+of a constant distribution, including on arbitrarily small overlap neighborhoods. For such a
+measure, finite on compact sets, a nonzero real test function has positive square integral.
 
 Against an additive Haar measure, the directional derivative of a test function has integral
 zero, by Mathlib's integration by parts against the constant function `1`.
@@ -59,6 +60,8 @@ by these integrals.
 * `TestFunction.exists_nonneg_integral_eq_one`: a nonnegative integral-one test supported in any
   nonempty open subset of the domain.
 
+* `TestFunction.setIntegral_sq_pos`: `0 < ∫_Ω φ²` for a nonzero real test function `φ`.
+
 * `TestFunction.norm_integral_le_measureReal_mul_norm`: `‖∫ φ dν‖ ≤ ν(K) ‖φ‖_∞` for a test
   function `φ` supported in a compact `K ⊆ Ω`.
 
@@ -69,6 +72,9 @@ by these integrals.
   right-hand side `-(f + ∑ᵢⱼ Gᵢⱼ)` of a weak derivative equation.
 
 * `TestFunction.integral_smul_congr_of_eqOn`: `∫ φ • g₁ ∂μ = ∫ φ • g₂ ∂μ` whenever `g₁ = g₂` on `Ω`.
+
+* `TestFunction.integralAgainstBilinCLM_congr_ae`: Mathlib's pairing
+  `TestFunction.integralAgainstBilinCLM B μ g` only depends on `g` almost everywhere on `Ω`.
 
 * `TestFunction.integrable_inner_subtype`: the pairing `⟪φ x, v x⟫` of a test vector field with a
   locally integrable field is integrable.
@@ -208,6 +214,31 @@ theorem integral_smul_congr_of_eqOn (φ : 𝓓^{n}(Ω, ℝ)) {μ : Measure E} {g
   · simp only [h hx]
   · simp [φ.zero_on_compl hx]
 
+section CongrAE
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [Algebra ℝ 𝕜] [NormedSpace 𝕜 F]
+  [IsScalarTower ℝ 𝕜 F] {F₂ F₃ : Type*} [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  [NormedAddCommGroup F₃] [NormedSpace 𝕜 F₃] [NormedSpace ℝ F₃] [IsScalarTower ℝ 𝕜 F₃]
+
+/-- Integration against a function `g` through a continuous bilinear map `B` only depends on `g`
+almost everywhere on `Ω`. This is Mathlib's `Distribution.ofFun_congr_ae` for the general pairing
+`TestFunction.integralAgainstBilinCLM`. -/
+theorem integralAgainstBilinCLM_congr_ae [OpensMeasurableSpace E] (B : F →L[𝕜] F₂ →L[𝕜] F₃)
+    {μ : Measure E} {g₁ g₂ : E → F₂} (h : g₁ =ᵐ[μ.restrict Ω] g₂) :
+    (integralAgainstBilinCLM B μ g₁ : 𝓓^{n}(Ω, F) →L[𝕜] F₃) = integralAgainstBilinCLM B μ g₂ := by
+  by_cases hg : LocallyIntegrableOn g₁ Ω μ
+  · ext φ
+    rw [integralAgainstBilinCLM_eq_integral hg, integralAgainstBilinCLM_eq_integral (hg.congr h)]
+    refine integral_congr_ae ?_
+    filter_upwards [(ae_restrict_iff' Ω.isOpen.measurableSet).1 h] with x hx
+    by_cases hxΩ : x ∈ (Ω : Set E)
+    · rw [hx hxΩ]
+    · simp [φ.zero_on_compl hxΩ]
+  · rw [integralAgainstBilinCLM_eq_zero hg,
+      integralAgainstBilinCLM_eq_zero fun h' ↦ hg (h'.congr h.symm)]
+
+end CongrAE
+
 section InnerPairing
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G] [OpensMeasurableSpace E]
@@ -267,6 +298,23 @@ theorem exists_nonneg_integral_eq_one {U : Set E} (hU : IsOpen U) (hne : U.Nonem
     exact inv_mul_cancel₀ hpos.ne'
 
 end IntegralOne
+
+section Positivity
+
+variable [OpensMeasurableSpace E] {μ : Measure E} [IsFiniteMeasureOnCompacts μ]
+  [μ.IsOpenPosMeasure]
+
+/-- A nonzero real test function has positive square integral over its domain, for a measure
+finite on compact sets and positive on nonempty open sets. -/
+theorem setIntegral_sq_pos {φ : 𝓓^{n}(Ω, ℝ)} (hφ : φ ≠ 0) : 0 < ∫ x in Ω, φ x ^ 2 ∂μ := by
+  obtain ⟨x, hx⟩ := DFunLike.ne_iff.1 hφ
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
+    rw [image_eq_zero_of_notMem_tsupport fun h ↦ hy (φ.tsupport_subset h), sq, mul_zero]]
+  exact (φ.continuous.pow 2).integral_pos_of_hasCompactSupport_nonneg_ne_zero
+    (by simpa only [sq] using φ.hasCompactSupport.mul_right (f' := φ)) (fun y ↦ sq_nonneg _)
+    (pow_ne_zero 2 (by simpa using hx))
+
+end Positivity
 
 section LineDeriv
 

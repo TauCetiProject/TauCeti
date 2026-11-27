@@ -28,7 +28,9 @@ and the field. Maschke supplies semisimplicity independently of scalar Schur.
 These results do not require algebraic closure or characteristic zero. They separate
 the splitting condition from the invertibility of the group order.
 The converse recovers scalar Schur from any split presentation, so the two
-conditions are equivalent when the group order is invertible.
+conditions are equivalent when the group order is invertible. Without that hypothesis,
+scalar Schur still gives a one-dimensional endomorphism space for every simple module of the group
+algebra (`TauCeti.finrank_end_eq_one_of_scalarSchur`).
 
 ## References
 
@@ -48,6 +50,31 @@ universe u v
 
 variable (k : Type u) (G : Type v) [Field k] [Group G] [Finite G]
 
+variable {k G} in
+/-- **Scalar Schur for simple modules.** If every simple finite-dimensional representation of
+`G` over `k` has a one-dimensional endomorphism space, then so does every simple `k[G]`-module,
+as a module over the group algebra. No finite-dimensionality hypothesis on the module is needed. -/
+theorem finrank_end_eq_one_of_scalarSchur
+    (hk : ∀ V : FDRep k G, Simple V → Module.finrank k (V ⟶ V) = 1)
+    (M : Type*) [AddCommGroup M] [Module k[G] M] [Module k M] [IsScalarTower k k[G] M]
+    [IsSimpleModule k[G] M] :
+    Module.finrank k (Module.End k[G] M) = 1 := by
+  have : Module.Finite k M := Module.Finite.trans k[G] M
+  let ρ := _root_.Representation.ofModule' (k := k) (G := G) M
+  let V := FDRep.ofShrink ρ
+  let e : _root_.Representation.asModule V.ρ ≃ₗ[k[G]] M :=
+    (Representation.asModuleLinearEquivOfEquiv (FDRep.ofShrinkEquiv ρ)).trans
+      (Representation.ofModule'AsModuleEquiv M)
+  have : IsSimpleModule k[G] (_root_.Representation.asModule V.ρ) := .congr e
+  have : Simple V := (FDRep.simple_iff_isIrreducible V).mpr
+    ((_root_.Representation.irreducible_iff_isSimpleModule_asModule V.ρ).mpr inferInstance)
+  calc
+    Module.finrank k (Module.End k[G] M) =
+        Module.finrank k (Module.End k[G] (_root_.Representation.asModule V.ρ)) :=
+      (e.symm.conjAlgEquiv k).toLinearEquiv.finrank_eq
+    _ = Module.finrank k (V ⟶ V) := (FDRep.finrank_end_eq_finrank_moduleEnd V).symm
+    _ = 1 := hk V inferInstance
+
 /-- Scalar Schur for finite-dimensional representations is equivalent to the
 one-dimensionality of the endomorphism algebras of simple left ideals of the group
 algebra, when the group order is invertible in the coefficient field. -/
@@ -58,23 +85,7 @@ theorem forall_finrank_end_eq_one_iff_forall_ideal_finrank_end_eq_one
         Module.finrank k (Module.End k[G] S) = 1 := by
   have : NeZero (Nat.card G : k) := ⟨hG.ne_zero⟩
   constructor
-  · intro h S hS
-    have : IsSimpleModule k[G] S := hS
-    have : FiniteDimensional k S := inferInstance
-    let ρ := _root_.Representation.ofModule' (k := k) (G := G) S
-    let V := FDRep.ofShrink ρ
-    let e : _root_.Representation.asModule V.ρ ≃ₗ[k[G]] S :=
-      (Representation.asModuleLinearEquivOfEquiv (FDRep.ofShrinkEquiv ρ)).trans
-        (Representation.ofModule'AsModuleEquiv S)
-    have : IsSimpleModule k[G] (_root_.Representation.asModule V.ρ) := .congr e
-    have : Simple V := (FDRep.simple_iff_isIrreducible V).mpr
-      ((_root_.Representation.irreducible_iff_isSimpleModule_asModule V.ρ).mpr inferInstance)
-    calc
-      Module.finrank k (Module.End k[G] S) =
-          Module.finrank k (Module.End k[G] (_root_.Representation.asModule V.ρ)) :=
-        (e.symm.conjAlgEquiv k).toLinearEquiv.finrank_eq
-      _ = Module.finrank k (V ⟶ V) := (FDRep.finrank_end_eq_finrank_moduleEnd V).symm
-      _ = 1 := h V inferInstance
+  · exact fun h S _ => finrank_end_eq_one_of_scalarSchur h S
   · intro h V hV
     have : Simple V := hV
     obtain ⟨S, ⟨e⟩⟩ :=

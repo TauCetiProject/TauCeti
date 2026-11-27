@@ -5,12 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
--- `TauCeti.Combinatorics.Brauer.Flip` is imported for the reflection of a Brauer diagram, whose
--- fixed point `TauCeti.BrauerDiagram.flip_capCup` below is; it re-exports
--- `TauCeti.Combinatorics.Brauer.LoopCount`, which supplies the middle-loop count the relations
--- below are stated with.
+-- `TauCeti.Combinatorics.Brauer.Flip` is imported for `flip_composeDiagram`,
+-- `middleLoopCount_flip`, and `BrauerDiagram.flip_capCup` used in the mirror stacking formulas
+-- below; it re-exports `TauCeti.Combinatorics.Brauer.LoopCount`, which supplies the middle-loop
+-- count the relations below are stated with.
 public import TauCeti.Combinatorics.Brauer.Flip
-public import TauCeti.Combinatorics.Brauer.PropagatingNumber
 
 /-!
 # The Brauer generators and their relations
@@ -20,7 +19,7 @@ Besides the permutation diagrams, the Brauer diagrams on `k` strands are generat
 whose only horizontal arcs are the cap joining the bottom points `a` and `b` and the cup joining
 the top points `a` and `b`, every other boundary point lying on the through strand joining the two
 points with its index. These are the diagrams written `e` in Brauer's presentation; the classical
-generator `eᵢ` of `B_k(δ)` is the cap-cup diagram on a pair of consecutive indices, the two indices
+generator `eᵢ` is the cap-cup diagram on a pair of consecutive indices, the two indices
 of `Fin k` with values `i` and `i + 1` where `i + 1 < k` — writing that pair as `i` and `i + 1` in
 `Fin k` would be wrong at the last index, where the successor wraps back to `0`. Nothing below
 needs the pair to be adjacent, so the pair is arbitrary throughout.
@@ -33,9 +32,11 @@ identity diagram, so it carries that strand to itself and leaves the matching un
 `capCup a a` is the identity diagram (`TauCeti.capCup_self`), and the lemmas below carry the
 distinctness `a ≠ b` exactly where they need it.
 
-This file builds these diagrams and proves, on the diagram basis, the relations that the loop-
-weighted multiplication `D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂` of the
-Brauer algebra turns into Brauer's relations:
+This file studies the relations on `TauCeti.capCup` (defined together with its arc, recognition,
+degeneracy, and distinctness lemmas in `TauCeti/Combinatorics/Brauer/Diagram.lean`) and proves, on
+the diagram basis, the relations that the loop-weighted multiplication
+`D₁ * D₂ = δ ^ middleLoopCount D₁ D₂ • composeDiagram D₁ D₂` of the Brauer algebra turns into
+Brauer's relations:
 
 * `e * e = δ • e`: stacking a cap-cup diagram on itself returns that diagram
   (`TauCeti.composeDiagram_capCup_capCup`) and closes up exactly one loop in the middle
@@ -63,24 +64,8 @@ The Brauer relation `s * s = 1` is `TauCeti.composeDiagram_permToBrauer` togethe
 in `Equiv.Perm (Fin k)`; both are already available on the permutation diagrams and are not
 restated here.
 
-## Main definitions
-
-* `TauCeti.capCup`: the cap-cup diagram on a pair of indices, the Brauer generator `e`.
-
 ## Main results
 
-* `TauCeti.eq_capCup_iff`: a diagram is `capCup a b` exactly when it caps `a` to `b`, cups `a` to
-  `b` and sends every other point through.
-* `TauCeti.capCup_comm`, `TauCeti.capCup_eq_capCup_iff`: a cap-cup diagram depends exactly on the
-  unordered pair it caps.
-* `TauCeti.BrauerDiagram.bottomCap_capCup`, `TauCeti.BrauerDiagram.topCup_capCup`: its cap and its
-  cup are the pair, and `TauCeti.BrauerDiagram.bottomThrough_capCup`,
-  `TauCeti.BrauerDiagram.topThrough_capCup`: its through strands are the rest.
-* `TauCeti.capCup_ne_permToBrauer` and `TauCeti.permToBrauer_ne_capCup`: a cap-cup diagram on a
-  pair of distinct indices is not a permutation diagram, in either orientation.
-* `TauCeti.BrauerDiagram.propagatingNumber_capCup`: a cap-cup diagram propagates `k - 2` strands,
-  so the propagating number is not constant.
-* `TauCeti.BrauerDiagram.flip_capCup`: a cap-cup diagram is its own reflection.
 * `TauCeti.composeDiagram_capCup_left`, `TauCeti.composeDiagram_capCup_right`,
   `TauCeti.middleLoopCount_capCup_left`, `TauCeti.middleLoopCount_capCup_right`: stacking a cap-cup
   diagram onto any diagram reconnects the two endpoints of its pair and closes up one loop when the
@@ -109,298 +94,6 @@ public section
 namespace TauCeti
 
 variable {k : ℕ} {a b c d i j : Fin k}
-
-/-- **The cap-cup diagram** on the pair `{a, b}`: the Brauer diagram whose only horizontal arcs
-are the cap joining the bottom points `a` and `b` and the cup joining the top points `a` and `b`.
-It is the Brauer generator `e` of the pair; the classical generator `eᵢ` is the case of a
-consecutive pair, the two indices of `Fin k` with values `i` and `i + 1` where `i + 1 < k`.
-
-It is the identity diagram transported along the transposition exchanging the top point `a` with
-the bottom point `b`, which bends the strands ending at `a` and at `b` into a cap and a cup. On
-the degenerate pair `a = a` that transposition exchanges the two ends of a single identity strand,
-so it carries that strand to itself and `TauCeti.capCup_self` gives back the identity diagram. -/
-def capCup (a b : Fin k) : BrauerDiagram k :=
-  PerfectMatching.congr (Equiv.swap (Sum.inr a) (Sum.inl b)) (permToBrauer 1)
-
-/-- The cap-cup generator `capCup a b` is the identity diagram transported along the boundary
-transposition exchanging `Sum.inr a` with `Sum.inl b`. -/
-theorem capCup_def (a b : Fin k) :
-    capCup a b = PerfectMatching.congr (Equiv.swap (Sum.inr a) (Sum.inl b)) (permToBrauer 1) :=
-  (rfl)
-
-/-- The arcs of a cap-cup diagram, read off the transported identity diagram. -/
-private theorem capCup_val_apply (a b : Fin k) (x : Fin k ⊕ Fin k) :
-    (capCup a b).val x =
-      Equiv.swap (Sum.inr a) (Sum.inl b) (Equiv.swap (Sum.inr a) (Sum.inl b) x).swap := by
-  rw [capCup, PerfectMatching.congr_val_apply, Equiv.symm_swap]
-  generalize Equiv.swap (Sum.inr a) (Sum.inl b) x = y
-  rcases y with i | i
-  · simp
-  · simp [Equiv.Perm.one_def]
-
-/-- **A cap-cup diagram on a degenerate pair is the identity diagram**: the transposition that
-transports it exchanges the top point `a` with the bottom point `a`, which are the two ends of a
-single strand of the identity diagram, so it carries that strand to itself and leaves the matching
-unchanged. -/
-@[simp]
-theorem capCup_self (a : Fin k) : capCup a a = permToBrauer 1 := by
-  ext x
-  rw [capCup_val_apply]
-  rcases x with i | i <;> rcases eq_or_ne i a with rfl | hia
-  · simp
-  · simp [Equiv.swap_apply_of_ne_of_ne, hia]
-  · simp [Equiv.Perm.one_def]
-  · simp [Equiv.Perm.one_def, Equiv.swap_apply_of_ne_of_ne, hia]
-
-/-! ### The arcs of a cap-cup diagram -/
-
-/-- The cap of `capCup a b` joins the bottom point `a` to the bottom point `b`. -/
-@[simp]
-theorem capCup_val_inl_left (hab : a ≠ b) : (capCup a b).val (Sum.inl a) = Sum.inl b := by
-  simp [capCup_val_apply, Equiv.swap_apply_of_ne_of_ne, hab]
-
-/-- The cap of `capCup a b` joins the bottom point `b` to the bottom point `a`. -/
-@[simp]
-theorem capCup_val_inl_right (hab : a ≠ b) : (capCup a b).val (Sum.inl b) = Sum.inl a := by
-  simp [capCup_val_apply, Equiv.swap_apply_of_ne_of_ne, hab]
-
-/-- Away from the capped pair, `capCup a b` joins the bottom point `i` to the top point `i`. -/
-@[simp]
-theorem capCup_val_inl_of_ne (hia : i ≠ a) (hib : i ≠ b) :
-    (capCup a b).val (Sum.inl i) = Sum.inr i := by
-  simp [capCup_val_apply, Equiv.swap_apply_of_ne_of_ne, hia, hib]
-
-/-- The cup of `capCup a b` joins the top point `a` to the top point `b`. -/
-@[simp]
-theorem capCup_val_inr_left (hab : a ≠ b) : (capCup a b).val (Sum.inr a) = Sum.inr b := by
-  simp [capCup_val_apply, Equiv.swap_apply_of_ne_of_ne, hab.symm]
-
-/-- The cup of `capCup a b` joins the top point `b` to the top point `a`. -/
-@[simp]
-theorem capCup_val_inr_right (hab : a ≠ b) : (capCup a b).val (Sum.inr b) = Sum.inr a := by
-  simp [capCup_val_apply, Equiv.swap_apply_of_ne_of_ne, hab.symm]
-
-/-- Away from the cupped pair, `capCup a b` joins the top point `j` to the bottom point `j`. -/
-@[simp]
-theorem capCup_val_inr_of_ne (hja : j ≠ a) (hjb : j ≠ b) :
-    (capCup a b).val (Sum.inr j) = Sum.inl j := by
-  simp [capCup_val_apply, Equiv.swap_apply_of_ne_of_ne, hja, hjb]
-
-/-- **Recognising a cap-cup diagram**: a Brauer diagram is `capCup a b` exactly when it caps the
-bottom point `a` to the bottom point `b`, cups the top point `a` to the top point `b`, and sends
-every other bottom point through to the top point with the same index. The remaining arcs are
-then forced, since a perfect matching is determined by the partners it assigns. -/
-theorem eq_capCup_iff {D : BrauerDiagram k} (hab : a ≠ b) :
-    D = capCup a b ↔ D.val (Sum.inl a) = Sum.inl b ∧ D.val (Sum.inr a) = Sum.inr b ∧
-      ∀ i, i ≠ a → i ≠ b → D.val (Sum.inl i) = Sum.inr i := by
-  refine ⟨fun h => ?_, fun ⟨h₁, h₂, h₃⟩ => ?_⟩
-  · subst h
-    exact ⟨capCup_val_inl_left hab, capCup_val_inr_left hab,
-      fun _ hia hib => capCup_val_inl_of_ne hia hib⟩
-  · ext x
-    rcases x with i | i <;> rcases eq_or_ne i a with rfl | hia
-    · rw [h₁, capCup_val_inl_left hab]
-    · rcases eq_or_ne i b with rfl | hib
-      · rw [D.apply_eq_of_apply_eq h₁, capCup_val_inl_right hab]
-      · rw [h₃ i hia hib, capCup_val_inl_of_ne hia hib]
-    · rw [h₂, capCup_val_inr_left hab]
-    · rcases eq_or_ne i b with rfl | hib
-      · rw [D.apply_eq_of_apply_eq h₂, capCup_val_inr_right hab]
-      · rw [D.apply_eq_of_apply_eq (h₃ i hia hib), capCup_val_inr_of_ne hia hib]
-
-namespace BrauerDiagram
-
-/-- **A cap-cup diagram caps exactly its pair**: a bottom point of `capCup a b` lies on a cap
-exactly when it is `a` or `b`. -/
-@[simp]
-theorem isCap_capCup_inl_iff (hab : a ≠ b) :
-    (capCup a b).IsCap (Sum.inl i) ↔ i = a ∨ i = b := by
-  rcases eq_or_ne i a with rfl | hia
-  · simp [isCap_def, hab]
-  · rcases eq_or_ne i b with rfl | hib
-    · simp [isCap_def, hab]
-    · simp [isCap_def, capCup_val_inl_of_ne hia hib, hia, hib]
-
-/-- **A cap-cup diagram cups exactly its pair**: a top point of `capCup a b` lies on a cup
-exactly when it is `a` or `b`. -/
-@[simp]
-theorem isCup_capCup_inr_iff (hab : a ≠ b) :
-    (capCup a b).IsCup (Sum.inr j) ↔ j = a ∨ j = b := by
-  rcases eq_or_ne j a with rfl | hja
-  · simp [isCup_def, hab]
-  · rcases eq_or_ne j b with rfl | hjb
-    · simp [isCup_def, hab]
-    · simp [isCup_def, capCup_val_inr_of_ne hja hjb, hja, hjb]
-
-/-- **The through strands of a cap-cup diagram** are the ones off its pair, read at the bottom
-boundary: a bottom point goes through exactly when it does not lie on the cap. -/
-@[simp]
-theorem isThrough_capCup_inl_iff (hab : a ≠ b) :
-    (capCup a b).IsThrough (Sum.inl i) ↔ i ≠ a ∧ i ≠ b := by
-  rw [← not_iff_not, ← isCap_inl_iff, isCap_capCup_inl_iff hab]
-  simp [or_iff_not_imp_left]
-
-/-- **The through strands of a cap-cup diagram** are the ones off its pair, read at the top
-boundary: a top point goes through exactly when it does not lie on the cup. -/
-@[simp]
-theorem isThrough_capCup_inr_iff (hab : a ≠ b) :
-    (capCup a b).IsThrough (Sum.inr j) ↔ j ≠ a ∧ j ≠ b := by
-  rw [← not_iff_not, ← isCup_inr_iff, isCup_capCup_inr_iff hab]
-  simp [or_iff_not_imp_left]
-
-/-- The capped bottom points of `capCup a b` are `a` and `b`. -/
-@[simp]
-theorem bottomCap_capCup (hab : a ≠ b) : (capCup a b).bottomCap = {a, b} := by
-  ext i
-  rw [mem_bottomCap, isCap_capCup_inl_iff hab]
-  simp
-
-/-- The cupped top points of `capCup a b` are `a` and `b`. -/
-@[simp]
-theorem topCup_capCup (hab : a ≠ b) : (capCup a b).topCup = {a, b} := by
-  ext j
-  rw [mem_topCup, isCup_capCup_inr_iff hab]
-  simp
-
-/-- The bottom endpoints of the through strands of `capCup a b` are the points off the pair, the
-complement of its cap.
-
-Not a `simp` lemma: `simp` rewrites the complement of a pair further, so the right-hand side is
-not in simp-normal form. -/
-theorem bottomThrough_capCup (hab : a ≠ b) : (capCup a b).bottomThrough = {a, b}ᶜ := by
-  rw [← compl_compl (capCup a b).bottomThrough, ← bottomCap_eq_compl, bottomCap_capCup hab]
-
-/-- The top endpoints of the through strands of `capCup a b` are the points off the pair, the
-complement of its cup.
-
-Not a `simp` lemma, for the reason given for `TauCeti.BrauerDiagram.bottomThrough_capCup`. -/
-theorem topThrough_capCup (hab : a ≠ b) : (capCup a b).topThrough = {a, b}ᶜ := by
-  rw [← compl_compl (capCup a b).topThrough, ← topCup_eq_compl, topCup_capCup hab]
-
-/-- **A cap-cup diagram loses exactly the two strands it bends**, so its propagating number is
-`k - 2`. -/
-@[simp]
-theorem propagatingNumber_capCup (hab : a ≠ b) : (capCup a b).propagatingNumber = k - 2 := by
-  have hsum := (capCup a b).propagatingNumber_add_card_bottomCap
-  rw [bottomCap_capCup hab, Finset.card_pair hab] at hsum
-  omega
-
--- On two strands a cap-cup diagram propagates nothing, so the bound
--- `TauCeti.BrauerDiagram.propagatingNumber_le` is far from an equality in general.
-example : (capCup (0 : Fin 2) 1).propagatingNumber = 0 := by
-  rw [propagatingNumber_capCup (by decide)]
-
-end BrauerDiagram
-
-/-- **A cap-cup diagram on a pair of distinct indices is not a permutation diagram**: it has a
-cap, and every arc of a permutation diagram goes through. -/
-@[simp]
-theorem capCup_ne_permToBrauer (hab : a ≠ b) (σ : Equiv.Perm (Fin k)) :
-    capCup a b ≠ permToBrauer σ := by
-  intro h
-  have hcap : (capCup a b).IsCap (Sum.inl a) :=
-    (BrauerDiagram.isCap_capCup_inl_iff hab).mpr (Or.inl rfl)
-  rw [h] at hcap
-  exact BrauerDiagram.not_isThrough_of_isCap _ _ hcap
-    (BrauerDiagram.isThrough_permToBrauer σ (Sum.inl a))
-
-/-- **A permutation diagram is not a cap-cup diagram on a pair of distinct indices**, the other
-orientation of `TauCeti.capCup_ne_permToBrauer`, which `simp` needs to rewrite an equation whose
-left-hand side is the permutation diagram. -/
-@[simp]
-theorem permToBrauer_ne_capCup (hab : a ≠ b) (σ : Equiv.Perm (Fin k)) :
-    permToBrauer σ ≠ capCup a b :=
-  (capCup_ne_permToBrauer hab σ).symm
-
-/-! ### A cap-cup diagram depends only on the unordered pair -/
-
-/-- **A cap-cup diagram depends only on the unordered pair it caps.** -/
-theorem capCup_comm (a b : Fin k) : capCup b a = capCup a b := by
-  rcases eq_or_ne a b with rfl | hab
-  · rfl
-  exact (eq_capCup_iff hab).mpr ⟨capCup_val_inl_right hab.symm, capCup_val_inr_right hab.symm,
-    fun _ hia hib => capCup_val_inl_of_ne hib hia⟩
-
-/-- **Two cap-cup diagrams agree exactly when they cap the same unordered pair**, once one of
-them is built on a pair of distinct indices. -/
-@[simp]
-theorem capCup_eq_capCup_iff (hab : a ≠ b) :
-    capCup a b = capCup c d ↔ (a = c ∧ b = d) ∨ (a = d ∧ b = c) := by
-  refine ⟨fun h => ?_, ?_⟩
-  · rcases eq_or_ne c d with rfl | hcd
-    · rw [capCup_self] at h
-      exact absurd h (capCup_ne_permToBrauer hab 1)
-    · have hpair : ({a, b} : Finset (Fin k)) = {c, d} := by
-        rw [← BrauerDiagram.bottomCap_capCup hab, ← BrauerDiagram.bottomCap_capCup hcd, h]
-      rw [← Finset.coe_inj] at hpair
-      simp only [Finset.coe_insert, Finset.coe_singleton] at hpair
-      exact Set.pair_eq_pair_iff.mp hpair
-  · rintro (⟨rfl, rfl⟩ | ⟨rfl, rfl⟩)
-    · rfl
-    · exact capCup_comm _ _
-
-/-! ### Reflecting a cap-cup diagram -/
-
-namespace BrauerDiagram
-
-/-- **A cap-cup diagram is its own reflection**: its cap and its cup are the same pair `{a, b}`,
-so turning the diagram upside down exchanges them and changes nothing. With
-`TauCeti.flip_composeDiagram` and `TauCeti.middleLoopCount_flip`, reflection therefore carries
-each Brauer relation on cap-cup diagrams to its mirror, the same stack read upside down. -/
-@[simp]
-theorem flip_capCup (a b : Fin k) : (capCup a b).flip = capCup a b := by
-  rcases eq_or_ne a b with rfl | hab
-  · rw [capCup_self, flip_permToBrauer, inv_one]
-  exact (eq_capCup_iff hab).mpr ⟨by simp [capCup_val_inr_left hab],
-    by simp [capCup_val_inl_left hab], fun i hia hib => by simp [capCup_val_inr_of_ne hia hib]⟩
-
-end BrauerDiagram
-
-/-! ### Relabelling a cap-cup diagram -/
-
-namespace BrauerDiagram
-
-/-- **Relabelling both boundaries of a cap-cup diagram by the same permutation** moves it to the
-renamed pair: relabelling conjugates the underlying matching by `Equiv.Perm.sumCongr σ σ`, which
-carries the transposition that bends the identity diagram into `capCup a b` to the one that bends
-it into `capCup (σ a) (σ b)` and fixes the identity diagram itself. -/
-@[simp]
-theorem relabel_capCup (a b : Fin k) (σ : Equiv.Perm (Fin k)) :
-    (capCup a b).relabel σ σ = capCup (σ a) (σ b) := by
-  have hone : PerfectMatching.congr (Equiv.Perm.sumCongr σ σ)⁻¹
-      (permToBrauer (1 : Equiv.Perm (Fin k))) = permToBrauer 1 := by
-    rw [Equiv.Perm.inv_def, Equiv.Perm.sumCongr_symm, ← relabel_def, relabel_permToBrauer,
-      mul_one, mul_inv_cancel]
-  have hswap := Equiv.swap_apply_apply (Equiv.Perm.sumCongr σ σ) (Sum.inr a) (Sum.inl b)
-  simp only [Equiv.Perm.sumCongr_apply, Sum.map_inr, Sum.map_inl] at hswap
-  rw [capCup, capCup, hswap, relabel_def, Equiv.Perm.mul_def, Equiv.Perm.mul_def,
-    ← PerfectMatching.congr_trans, hone, ← PerfectMatching.congr_trans]
-
-/-- **Renaming the top boundary by the transposition of the pair fixes a cap-cup diagram**: for
-`a ≠ b` the cap and the cup of `capCup a b` are both the pair `{a, b}`, which the transposition
-preserves. On the degenerate pair the transposition is trivial (`Equiv.swap_self`) and the diagram
-is the identity diagram (`TauCeti.capCup_self`), so it is fixed for that reason instead. -/
-@[simp]
-theorem relabel_one_swap_capCup (a b : Fin k) :
-    (capCup a b).relabel 1 (Equiv.swap a b) = capCup a b := by
-  rcases eq_or_ne a b with rfl | hab
-  · rw [Equiv.swap_self, ← Equiv.Perm.one_def, relabel_one_one]
-  rw [eq_capCup_iff hab]
-  refine ⟨by simp [Equiv.Perm.one_def, hab], by simp [Equiv.Perm.one_def, hab], fun i hia hib => ?_⟩
-  simp [Equiv.Perm.one_def, capCup_val_inl_of_ne hia hib, Equiv.swap_apply_of_ne_of_ne hia hib]
-
-/-- **Renaming the bottom boundary by the transposition of the pair fixes a cap-cup diagram.**
-Renaming both boundaries renames the pair, which the transposition leaves unordered. -/
-@[simp]
-theorem relabel_swap_one_capCup (a b : Fin k) :
-    (capCup a b).relabel (Equiv.swap a b) 1 = capCup a b := by
-  have h : ((capCup a b).relabel 1 (Equiv.swap a b)).relabel (Equiv.swap a b) (Equiv.swap a b)
-      = (capCup a b).relabel (Equiv.swap a b) 1 := by
-    rw [relabel_relabel, mul_one, Equiv.swap_mul_self]
-  rw [← h, relabel_one_swap_capCup, relabel_capCup, Equiv.swap_apply_left, Equiv.swap_apply_right,
-    capCup_comm]
-
-end BrauerDiagram
 
 /-! ### Stacking a cap-cup generator onto an arbitrary diagram -/
 

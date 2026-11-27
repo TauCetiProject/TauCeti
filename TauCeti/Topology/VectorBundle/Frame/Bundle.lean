@@ -16,6 +16,8 @@ public import Mathlib.Topology.VectorBundle.Hom
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
+import TauCeti.Algebra.Group.Units.UnitOrOne
+
 /-!
 # The general linear frame bundle of a vector bundle
 
@@ -270,15 +272,15 @@ theorem matrixIn_smul (g : (GL (Fin n) 𝕜)ᵐᵒᵖ) (v : FrameBundle 𝕜 n F
   ext w
   simp
 
-open Classical in
-/-- The invertible matrix of a frame in the local frame of `e`, over the base set of `e`; it is
-`1` elsewhere. -/
+/-- The matrix of a frame in the local frame of `e`, as a unit when invertible and `1` otherwise.
+It is invertible whenever the frame lies over the base set of `e`. -/
 def unitIn (v : FrameBundle 𝕜 n F E) : GL (Fin n) 𝕜 :=
-  if h : IsUnit (e.matrixIn σ v) then h.unit else 1
+  Units.unitOrOne (e.matrixIn σ v)
 
+/-- Over the base set of `e`, the underlying matrix of `unitIn` is `matrixIn`. -/
 theorem coe_unitIn {v : FrameBundle 𝕜 n F E} (hv : v.proj ∈ e.baseSet) :
     (e.unitIn σ v : Matrix (Fin n) (Fin n) 𝕜) = e.matrixIn σ v := by
-  simp only [unitIn, e.isUnit_matrixIn σ hv, ↓reduceDIte, IsUnit.unit_spec]
+  rw [unitIn, Units.val_unitOrOne_of_isUnit (e.isUnit_matrixIn σ hv)]
 
 open Classical in
 /-- The local frame of `E` determined by `e` and `σ` at a point `x` of the base set of `e`: the

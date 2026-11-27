@@ -7,9 +7,13 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Analysis.Hofer
+import TauCeti.Analysis.Normed.Module.Ball.Rescale
+import TauCeti.Geometry.Manifold.ContMDiff.AddSmul
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
+import TauCeti.Geometry.Symplectic.Floer.Chart
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Limit
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -39,6 +43,15 @@ equation for the rescaled perturbation `ε K(c + ε w)` and the structure `J(c +
 
 None of these needs differentiability: the chain rule for the affine reparametrization
 `w ↦ c + ε w` holds for arbitrary maps (`TauCeti.mfderiv_comp_const_add_smul_apply`).
+
+For the zero perturbation the rescaled perturbation is again zero, so rescaling preserves
+pseudoholomorphic maps
+(`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_zero_rescale_iff`) and multiplies
+their energy density by `ε²` (`TauCeti.SmoothTwoForm.floerEnergyDensity_zero_rescale`). For a
+nondegenerate `ω` taming the structure, the rescaled map of a `C¹` pseudoholomorphic map with
+integrable energy density on the ball `B_{ε r}(c)` has integrable energy density on `B_r(0)`, with
+at most the same energy
+(`TauCeti.SmoothTwoForm.IsNondegenerate.integrableOn_and_setIntegral_rescale_le`).
 
 As the scale tends to zero the rescaled perturbation tends to zero and the rescaled structure
 freezes at the limit `z₀` of the centres. So a limit of rescaled solutions is pseudoholomorphic for
@@ -84,6 +97,8 @@ plane are not carried out here.
 * `TauCeti.SmoothTwoForm.lintegral_floerEnergyDensity_rescale`,
   `TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_rescale`: the energy and the
   curvature allowance are invariant under rescaling.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.integrableOn_and_setIntegral_rescale_le`: the energy of a
+  rescaled pseudoholomorphic map over `B_r(0)` is at most that of the map over `B_{ε r}(c)`.
 * `TauCeti.SmoothTwoForm.isComplexLinearMap_of_tendsto_rescale`: limits of rescaled solutions
   solve the Cauchy–Riemann equation for the frozen structure.
 * `TauCeti.SmoothTwoForm.tendsto_floerEnergyDensity_rescale`: the energy densities of the rescaled
@@ -164,6 +179,29 @@ theorem floerEnergyDensity_rescale (ω : SmoothTwoForm I M) :
     SmoothBundleForm.eval₂_smul_right, smul_eq_mul]
   ring
 
+/-- **Rescaled pseudoholomorphic maps.** For a nonzero scale `ε` and the zero perturbation, the
+rescaled map `w ↦ u(c + ε w)` is `J`-holomorphic at `w` exactly when `u` is at `c + ε w`. -/
+theorem isComplexLinearMap_perturbedMFDeriv_zero_rescale_iff (ω : SmoothTwoForm I M)
+    {J : AlmostComplexStructure (TangentSpace I (u (c + ε • w)))} (hε : ε ≠ 0) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+        (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ _ ↦ 0) (fun w ↦ u (c + ε • w)) w).toLinearMap ↔
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+        (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ _ ↦ 0) u (c + ε • w)).toLinearMap := by
+  have h := ω.isComplexLinearMap_perturbedMFDeriv_rescale_iff (Ks := fun _ _ ↦ 0)
+    (Kt := fun _ _ ↦ 0) (u := u) (c := c) (w := w) (J := J) hε
+  simp only [mul_zero] at h
+  exact h
+
+/-- **The energy density of a rescaled pseudoholomorphic map.** For the zero perturbation, the
+energy density of `w ↦ u(c + ε w)` is `ε²` times that of `u` at `c + ε w`. -/
+theorem floerEnergyDensity_zero_rescale (ω : SmoothTwoForm I M) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) (fun w ↦ u (c + ε • w)) w =
+      ε ^ 2 * ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u (c + ε • w) := by
+  have h := ω.floerEnergyDensity_rescale (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0) (u := u)
+    (c := c) (ε := ε) (w := w)
+  simp only [mul_zero] at h
+  exact h
+
 /-- **The curvature of rescaled data.** The curvature of the rescaled perturbation
 `ε K(c + ε w)` is `ε²` times the curvature of `K` at `c + ε w`. -/
 theorem hamiltonianCurvature_rescale (ω : SmoothTwoForm I M) {x : M} :
@@ -223,6 +261,55 @@ theorem lintegral_enorm_hamiltonianCurvature_rescale (ω : SmoothTwoForm I M) (h
     ((hasFDerivAt_id w).const_smul ε).const_add c
   rw [h.fderiv, ω.hamiltonianCurvature_rescale]
   simp [ContinuousLinearMap.det, sq]
+
+open Metric in
+/-- **The energy of a rescaled pseudoholomorphic map.** Let `ω` be nondegenerate on a boundaryless
+manifold, taming structures `J`, and let `u` be `C¹` on an open set `U` containing the ball
+`B_{ε r}(c)`, `ε > 0`, and `J`-holomorphic on that ball, with integrable energy density there.
+Then the rescaled map `w ↦ u(c + ε w)` has integrable energy density on the ball `B_r(0)`, and its
+energy there is at most the energy of `u` over `B_{ε r}(c)`. -/
+theorem IsNondegenerate.integrableOn_and_setIntegral_rescale_le [I.Boundaryless]
+    {ω : SmoothTwoForm I M} (hω : ω.IsNondegenerate)
+    {J : (x : M) → AlmostComplexStructure (TangentSpace I x)}
+    (hJ : ∀ x, (hω.symplecticFormAt x).Tames (J x)) {U : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hε : 0 < ε) {r : ℝ} (hcU : ball c (ε * r) ⊆ U)
+    (hhol : ∀ y ∈ ball c (ε * r), IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (u y))
+      (ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun _ _ ↦ 0) u y).toLinearMap)
+    (hint : IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u) (ball c (ε * r))) :
+    IntegrableOn (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) (fun w ↦ u (c + ε • w)))
+        (ball 0 r) ∧
+      ∫ w in ball 0 r, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0)
+          (fun w ↦ u (c + ε • w)) w ≤
+        ∫ y in ball c (ε * r), ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u y := by
+  set ρ := ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u
+  have hρ0 : ∀ y ∈ ball c (ε * r), 0 ≤ ρ y := fun y hy ↦
+    floerEnergyDensity_nonneg hω (hJ _) (hhol y hy)
+  have hmaps : MapsTo (fun w : ℝ × ℝ ↦ c + ε • w) (ball 0 r) (ball c (ε * r)) :=
+    fun _ hw ↦ add_smul_mem_ball hε hw
+  -- The energy density of the rescaled map is continuous on the open preimage of `U`.
+  have hcont := ω.continuousOn_floerEnergyDensity_of_continuousOn_inChartAt
+    (hU.preimage (continuous_const.add (continuous_const_smul ε))) (hu.comp_add_smul c ε)
+    (fun α ↦ (contDiffOn_hamiltonianVectorFieldInChartAt_zero ω α (n := 0)).continuousOn)
+    (fun α ↦ (contDiffOn_hamiltonianVectorFieldInChartAt_zero ω α (n := 0)).continuousOn)
+  have hmeas := (hcont.mono fun w hw ↦ hcU (hmaps hw)).aestronglyMeasurable (μ := volume)
+    (measurableSet_ball (x := (0 : ℝ × ℝ)) (ε := r))
+  have hnn : 0 ≤ᵐ[volume.restrict (ball (0 : ℝ × ℝ) r)]
+      ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) (fun w ↦ u (c + ε • w)) :=
+    (ae_restrict_iff' measurableSet_ball).2 <| Eventually.of_forall fun w hw ↦ by
+      rw [floerEnergyDensity_zero_rescale]
+      exact mul_nonneg (sq_nonneg ε) (hρ0 _ (hmaps hw))
+  -- The energy of the rescaled map over `B_r(0)` is that of `u` over the image of the ball.
+  have hl := ω.lintegral_floerEnergyDensity_rescale (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
+    (u := u) (c := c) hε.ne' (measurableSet_ball (x := (0 : ℝ × ℝ)) (ε := r))
+  simp only [mul_zero] at hl
+  have hE : ∫⁻ w in ball 0 r, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+      (fun _ _ ↦ 0) (fun w ↦ u (c + ε • w)) w) ≤
+        ENNReal.ofReal (∫ y in ball c (ε * r), ρ y) := by
+    rw [hl, ofReal_integral_eq_lintegral_ofReal hint
+      ((ae_restrict_iff' measurableSet_ball).2 (Eventually.of_forall hρ0))]
+    exact lintegral_mono_set (image_subset_iff.2 hmaps)
+  exact MeasureTheory.integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le hmeas hnn
+    subset_rfl (setIntegral_nonneg measurableSet_ball hρ0) hE
 
 end Integral
 

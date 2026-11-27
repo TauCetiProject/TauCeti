@@ -373,9 +373,9 @@ private theorem bijective_toPatchedModule_pi (n : ℕ) :
     have h₁ := congrArg (fun x ↦ piScalarRight p₁ (Fin n) (PatchedModule.fst x) i) hd
     have h₂ := congrArg (fun x ↦ piScalarRight p₂ (Fin n) (PatchedModule.snd x) i) hd
     simp only [PatchedModule.fst_toPatchedModule, PatchedModule.snd_toPatchedModule,
-      PatchedModule.fst_zero, PatchedModule.snd_zero, piScalarRight_tmul, one_mul, map_zero,
+      PatchedModule.fst_zero, PatchedModule.snd_zero, piScalarRight_tmul, one_mul, _root_.map_zero,
       Pi.zero_apply] at h₁ h₂
-    exact (hD 0 0 (by simp)).unique ⟨h₁, h₂⟩ ⟨map_zero p₁, map_zero p₂⟩
+    exact (hD 0 0 (by simp)).unique ⟨h₁, h₂⟩ ⟨_root_.map_zero p₁, _root_.map_zero p₂⟩
   · intro m
     have key := (commSqEquiv_one_tmul_eq_iff h (Fin n) _ _).1 (PatchedModule.apply_one_tmul_fst m)
     choose d hd using fun i ↦ (hD _ _ (key i)).exists

@@ -33,6 +33,12 @@ elsewhere.
 * Off the width-two collar `Re z > L - 2` of the end `q` it is the receiving structure, and off
   the width-two collar `Re z < 2 - L` of the end at `∞` its pullback along `ψ` is the inserted
   structure.
+* For `L ≥ 2` and end structures of period one, it is the end structure far out on each of the
+  three input ends and on the output end: `Ja r t` at the image under `ψ` of the part `s ≥ 2` of
+  the input end `r` of the inserted piece
+  (`TauCeti.SmoothTwoForm.Compatible.plumbedAlmostComplex_plumbingMap_cylindricalEndLift`), and
+  `Jb r t` on the part `±s ≥ 2` of an end `r ≠ q` of the receiving piece
+  (`TauCeti.SmoothTwoForm.Compatible.plumbedAlmostComplex_cylindricalEndLift`).
 * For `L > 4` it is `C^n` jointly in the neck length, the domain point and the target point, as
   a section of the tangent endomorphism bundle, when the end families of both pieces have period
   one and are jointly `C^n` on `ℝ × M`
@@ -99,6 +105,16 @@ theorem plumbedAlmostComplex_def (w : ℂ) (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠
           ⟨(w - q.endCenter) / q.plumbingFactor L,
             q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw⟩
       else hᵦ.pairOfPantsAlmostComplex Jb hJb ⟨w, hw.1⟩ := (rfl)
+
+/-- The plumbed structure depends only on the end structures, not on the proofs of their
+tameness. -/
+theorem plumbedAlmostComplex_congr {Ja' Jb' : Puncture → ℝ → SmoothAlmostComplexStructure I M}
+    (hJa' : ∀ r t, σ.Tames (Ja' r t)) (hJb' : ∀ r t, σ.Tames (Jb' r t)) (ea : Ja = Ja')
+    (eb : Jb = Jb') (w : ℂ) (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) :
+    hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb q L w hw =
+      hₐ.plumbedAlmostComplex hᵦ Ja' Jb' hJa' hJb' q L w hw := by
+  subst ea eb
+  rfl
 
 /-- On every tangent fiber, the plumbed structure is the linear plumbed structure of the fiberwise
 end data. -/
@@ -169,6 +185,47 @@ theorem plumbedAlmostComplex_eq_inserted (hq : q ≠ inf) (hab : Jb q = Ja inf) 
     rw [almostComplexStructureAt_plumbedAlmostComplex,
       almostComplexStructureAt_pairOfPantsAlmostComplex,
       Floer.plumbedAlmostComplex_eq_inserted _ _ hq (by simp only [hab]) h2]
+
+/-- **The plumbed structure far out on the inserted inputs.** For `L ≥ 2`, at the point of the
+plumbed sphere which the plumbing map carries from the part `s ≥ 2` of the input end `r` of the
+inserted pair of pants, with end coordinates `z = s + i t`, the plumbed structure is `Ja r t`. -/
+theorem plumbedAlmostComplex_plumbingMap_cylindricalEndLift (hq : q ≠ inf) (hab : Jb q = Ja inf)
+    (hL : 2 ≤ L) {r : Puncture} (hr : r ≠ inf) (hJap : Function.Periodic (Ja r) 1) {z : ℂ}
+    (hz : 2 ≤ z.re)
+    (hw : (q.plumbingMap L (r.cylindricalEndLift z) ≠ 0 ∧
+      q.plumbingMap L (r.cylindricalEndLift z) ≠ 1) ∧
+      q.plumbingMap L (r.cylindricalEndLift z) ≠ q.plumbingMap L 1) :
+    hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb q L (q.plumbingMap L (r.cylindricalEndLift z)) hw =
+      Ja r z.im := by
+  have hr₁ : r.endSign = 1 := by cases r <;> simp_all
+  have hpos : 0 < r.endSign * (r.endCoord (r.cylindricalEndLift z)).re := by
+    rw [re_endCoord_cylindricalEndLift, hr₁]
+    linarith
+  -- The inserted input `r` is disjoint from the inserted output end, far from its collar.
+  have hinf := endSign_mul_re_endCoord_nonpos hr hpos
+  rw [endSign_inf] at hinf
+  rw [plumbedAlmostComplex_plumbingMap hₐ hᵦ Ja Jb hJa hJb hq hab
+    (r.cylindricalEndLift_ne_zero_and_ne_one (by rw [hr₁]; linarith)) hw (by linarith)]
+  exact pairOfPantsAlmostComplex_cylindricalEndLift hₐ Ja hJa _ hJap rfl (by rw [hr₁]; linarith)
+
+/-- **The plumbed structure far out on the receiving ends.** For `L ≥ 2`, on the part
+`±s ≥ 2` of an end `r ≠ q` of the receiving pair of pants, with end coordinates `z = s + i t`,
+the plumbed structure is `Jb r t`. -/
+theorem plumbedAlmostComplex_cylindricalEndLift (hq : q ≠ inf) (hab : Jb q = Ja inf)
+    (hL : 2 ≤ L) {r : Puncture} (hrq : r ≠ q) (hJbp : Function.Periodic (Jb r) 1) {z : ℂ}
+    (hz : 2 ≤ r.endSign * z.re)
+    (hw : (r.cylindricalEndLift z ≠ 0 ∧ r.cylindricalEndLift z ≠ 1) ∧
+      r.cylindricalEndLift z ≠ q.plumbingMap L 1) :
+    hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb q L (r.cylindricalEndLift z) hw = Jb r z.im := by
+  have hpos : 0 < r.endSign * (r.endCoord (r.cylindricalEndLift z)).re := by
+    rw [re_endCoord_cylindricalEndLift]
+    linarith
+  -- The end `r` is disjoint from the receiving end `q`, which carries the neck.
+  have hq₁ : q.endSign = 1 := by cases q <;> simp_all
+  have hle := endSign_mul_re_endCoord_nonpos hrq hpos
+  rw [hq₁, one_mul] at hle
+  rw [plumbedAlmostComplex_of_re_endCoord_le hₐ hᵦ Ja Jb hJa hJb hq hab hw (by linarith)]
+  exact pairOfPantsAlmostComplex_cylindricalEndLift hᵦ Jb hJb _ hJbp rfl hz
 
 /-- **Joint smoothness of the plumbed structure.** For neck lengths `L > 4`, the plumbed structure
 is `C^n` jointly in the neck length, the domain point and the target point, along any `C^n`
