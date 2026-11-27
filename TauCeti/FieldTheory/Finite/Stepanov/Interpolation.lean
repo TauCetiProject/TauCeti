@@ -42,7 +42,7 @@ degree at most `ℓ m + deg B`, and it is linear in `B`. At `x ∈ S` we have `x
 `f(x)^(i c) = 1`, so `f(x)^ℓ (D^ℓ R)(x) = T_ℓ(x)` for `T_ℓ = ∑_{i,j} G_{i c, ℓ}(B_{ij}) X^j`.
 The conditions `T_ℓ = 0` for `ℓ < M` are `∑_{ℓ<M} (ℓ m + D + J)` linear equations in the
 `e J (D + 1)` coefficients of the `B_{ij}`, so they have a nonzero solution
-(`Polynomial.exists_ne_zero_forall_coeff_eq_zero`). This argument needs `c > 0`, so that
+(`TauCeti.Polynomial.exists_ne_zero_forall_coeff_eq_zero`). This argument needs `c > 0`, so that
 `f(x) ≠ 0` on `S`. For `c = 0` the sum `R` does not depend on `f`, and the case `f = 1`, `c = 1`
 gives the statement. The main result is stated over a domain: a finite domain is a field, and
 over an infinite domain `Nat.card` is `0`, so `M = 0` and only the degree conditions remain.
@@ -136,7 +136,8 @@ private theorem exists_eval_hasseDeriv_sum_pow_mul_eval_X_pow_eq_zero_of_pos {c 
   have hT (ℓ : ℕ) (a) : T ℓ a =
       ∑ i : Fin e, ∑ j : Fin J, stepanovMap f ((i : ℕ) * c) ℓ (B i j a) * X ^ (j : ℕ) := by
     simp [T]
-  obtain ⟨a, ha, hTa⟩ := exists_ne_zero_forall_coeff_eq_zero T (fun ℓ => ℓ * f.natDegree + D + J)
+  obtain ⟨a, ha, hTa⟩ := TauCeti.Polynomial.exists_ne_zero_forall_coeff_eq_zero T
+    (fun ℓ => ℓ * f.natDegree + D + J)
     (by simpa [Module.finrank_fintype_fun_eq_card, mul_assoc] using hcount)
   have hB (i j) : (B i j a).natDegree ≤ D := Nat.lt_succ_iff.mp (ofFn_natDegree_lt (by omega) _)
   refine ⟨fun i => ofFn J fun j => B i j a, ?_, fun i n => ?_, fun i => ofFn_natDegree_lt hJ _,
