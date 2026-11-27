@@ -14,7 +14,8 @@ public import Mathlib.Geometry.Manifold.ContMDiffMap
 For `C^n` maps `f` on `M` and `g` on `N` into a manifold `G` with `C^n` multiplication, the map
 `(x, y) ↦ f x * g y` on `M × N` is `C^n` (`ContMDiffMap.mulProd`). When `G` has a zero absorbing
 multiplication, its closed support lies in the product of the closed supports of `f` and `g`
-(`ContMDiffMap.tsupport_mulProd_subset`).
+(`ContMDiffMap.tsupport_mulProd_subset`). For `C^n` maps `f : M → M'` and `g : N → N'`, the
+product map `(x, y) ↦ (f x, g y)` is `C^n` (`ContMDiffMap.prodMap`).
 -/
 
 public section
@@ -32,6 +33,28 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F K : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace K]
   {I' : ModelWithCorners 𝕜 F K} {G : Type*} [TopologicalSpace G] [ChartedSpace K G]
   {n : WithTop ℕ∞}
+
+section ProdMap
+
+variable {F' K' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [TopologicalSpace K']
+  {J' : ModelWithCorners 𝕜 F' K'} {N' : Type*} [TopologicalSpace N'] [ChartedSpace K' N']
+
+/-- The `C^n` map `(x, y) ↦ (f x, g y)` on `M × N`, for `C^n` maps `f` on `M` and `g` on `N`. -/
+def prodMap (f : C^n⟮I, M; I', G⟯) (g : C^n⟮J, N; J', N'⟯) :
+    C^n⟮I.prod J, M × N; I'.prod J', G × N'⟯ :=
+  ⟨Prod.map f g, f.contMDiff.prodMap g.contMDiff⟩
+
+@[simp]
+theorem coe_prodMap (f : C^n⟮I, M; I', G⟯) (g : C^n⟮J, N; J', N'⟯) :
+    ⇑(f.prodMap g) = Prod.map f g :=
+  (rfl)
+
+@[simp]
+theorem prodMap_apply (f : C^n⟮I, M; I', G⟯) (g : C^n⟮J, N; J', N'⟯) (z : M × N) :
+    f.prodMap g z = (f z.1, g z.2) :=
+  (rfl)
+
+end ProdMap
 
 section Mul
 
