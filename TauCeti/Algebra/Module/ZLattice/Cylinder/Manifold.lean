@@ -156,10 +156,7 @@ private theorem contMDiff_orbitRelQuotientCylinderEquiv_symm :
     have hs : (ContinuousLinearEquiv.sumPiEquivProdPi ℝ ι κ fun _ ↦ ℝ).symm (t, y) =
         Sum.elim t y := by
       ext (i | k) <;> rfl
-    rw [Function.comp_apply, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.trans_apply, hs, LinearEquiv.coe_toContinuousLinearEquiv_symm',
-      Prod.map_apply, id_eq]
-    exact B.orbitRelQuotientCylinderEquiv_symm_apply hL t y
+    simpa [hs] using B.orbitRelQuotientCylinderEquiv_symm_apply hL t y
   rw [h]
   -- `(fst, snd)` passes from the product model to the model of the product vector space.
   exact (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℝ, E)) (n := n)).contMDiff.comp
