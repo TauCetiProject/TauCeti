@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Expect
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.Group.Subgroup.Ker
 public import Mathlib.SetTheory.Cardinal.Finite
@@ -56,6 +57,8 @@ therefore take a point in the fiber as an argument, while the finiteness result 
   kernel.
 * `TauCeti.card_zsmul_fiber_eq_card_zsmul_eq_zero`: the same for `n • ·` on an additive commutative
   group, with the kernel written as the `n`-torsion.
+* `AddMonoidHom.expect_comp_of_surjective`: the mean of `φ ∘ f` along a surjective homomorphism
+  of finite groups is the mean of `φ`.
 
 ## Provenance
 
@@ -68,6 +71,10 @@ homomorphism of groups, the commutative hypothesis appearing only where an unord
 taken. Like the source, the equivalence is built directly: Mathlib's `fiberEquivKer` requires a
 group codomain, while this version only needs `MulOneClass` (additively, `AddZeroClass`). On the
 overlap the two equivalences use the same translations.
+
+`AddMonoidHom.expect_comp_of_surjective` is the `Finset.expect` form of
+`New.finMean_comp_surjective` of `src/Lib/General/Groups/CharacterTheory.lean` in grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic PBC).
 -/
 
 public section
@@ -181,6 +188,20 @@ theorem MonoidHom.natCard_preimage_of_surjective {G H : Type*} [Group G] [MulOne
   exact Nat.card_congr <| (Equiv.sigmaSubtypeFiberEquivSubtype f fun _ ↦ Iff.rfl).symm.trans <|
     (Equiv.sigmaCongrRight fun y : t ↦ f.subtypeFiberEquivKer (hs y)).trans
       (Equiv.sigmaEquivProd _ _)
+
+open scoped BigOperators in
+/-- **A mean along a surjective homomorphism.** Every fiber of a surjective `f : G →+ H` of finite
+groups is a copy of its kernel, so the mean of `φ ∘ f` over `G` is the mean of `φ` over `H`. -/
+theorem AddMonoidHom.expect_comp_of_surjective {G H M : Type*} [AddGroup G] [AddZeroClass H]
+    [Fintype G] [Fintype H] [AddCommMonoid M] [Module ℚ≥0 M] (f : G →+ H)
+    (hf : Function.Surjective f) (φ : H → M) : 𝔼 x, φ (f x) = 𝔼 y, φ y := by
+  -- Counting `G` along `f` gives `#G = #ker f * #H`; `#ker f` cancels from the sum form.
+  have h_card : Fintype.card G = Nat.card f.ker * Fintype.card H := by
+    simpa using f.sum_comp_of_surjective hf fun _ ↦ (1 : ℕ)
+  have h_ker : (Nat.card f.ker : ℚ≥0) ≠ 0 := Nat.cast_ne_zero.2 Nat.card_pos.ne'
+  rw [Finset.expect, Finset.expect, f.sum_comp_of_surjective hf, Finset.card_univ,
+    Finset.card_univ, h_card, Nat.cast_mul, mul_inv_rev, mul_smul,
+    ← Nat.cast_smul_eq_nsmul ℚ≥0, inv_smul_smul₀ h_ker]
 
 namespace TauCeti
 

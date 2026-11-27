@@ -121,7 +121,7 @@ variable {n : ℕ} {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
 
 /-- **The heat equation leaves `H¹₀` at time zero.** Let `Ω ⊆ ℝ^{n+1}` be open, `T > 0`, and let
 `u₀ ∈ L²(Ω)` lie outside `H¹₀(Ω)`, for instance a nonzero constant when `Ω` is bounded and nonempty
-(`TauCeti.W1p.not_value_ae_eq_const_of_mem_w1p0Submodule`). The weak solution of the heat equation
+(`TauCeti.W1p.const_notMem_w1p0Submodule`). The weak solution of the heat equation
 `∂ₜu - Δu = 0` in `(0, T) × Ω` with zero boundary values and initial value `u₀` lies in
 `L²(0, T; H¹₀(Ω))`, its image in `H⁻¹(Ω)` has a weak time derivative `u' ∈ L²(0, T; H⁻¹(Ω))`, and
 `t ↦ u(t) ∈ L²(Ω)` has a representative `w` continuous on `[0, T]` with `w(0) = u₀`. Yet

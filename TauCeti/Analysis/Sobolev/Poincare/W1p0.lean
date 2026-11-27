@@ -26,15 +26,16 @@ The estimate for a single test function is
 
 The slab hypothesis is load-bearing: no such inequality holds on the whole space, by
 `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`. So is the boundary condition: the
-constant function `1` on a nonempty bounded open `Ω` lies in `W^{1,p}(Ω)` with zero gradient.
+constant function `1` on a nonempty bounded open `Ω` lies in `W^{1,p}(Ω)` with zero gradient, and
+not in `W^{1,p}_0(Ω)` (`TauCeti.W1p.const_notMem_w1p0Submodule`).
 
 ## Main declarations
 
 * `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_subset_slab`: Poincaré on a slab-contained
   domain.
 * `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_subset_ball`: the bounded-ball corollary.
-* `TauCeti.W1p.not_value_ae_eq_const_of_mem_w1p0Submodule`: on a nonempty bounded open `Ω`, no
-  element of `W^{1,p}_0(Ω)` is a nonzero constant.
+* `TauCeti.W1p.const_notMem_w1p0Submodule`: on a nonempty bounded domain, nonzero constants do
+  not lie in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p0.not_surjective_valueL`: consequently the value map
   `W^{1,p}_0(Ω) → Lᵖ(Ω)` is not onto.
 
@@ -137,34 +138,23 @@ theorem W1p.norm_value_le_mul_norm_gradient_of_subset_ball
   simpa only [hwidth] using W1p.norm_value_le_mul_norm_gradient_of_subset_slab
     hslab hu
 
-/-- **Nonzero constants do not vanish on the boundary.** On a nonempty bounded open
-`Ω ⊆ ℝ^{n+1}`, no element of `W^{1,p}_0(Ω)` is almost everywhere equal to a constant `c ≠ 0`. -/
-theorem W1p.not_value_ae_eq_const_of_mem_w1p0Submodule
-    (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-    (hne : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty) {c : ℝ} (hc : c ≠ 0)
-    {u : W1p volume Omega p} (hu : u ∈ w1p0Submodule volume Omega p) :
-    ¬ W1p.value u =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))]
-      fun _ ↦ c := by
-  intro huc
-  have : IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    isFiniteMeasure_restrict.2 hOmega.measure_lt_top.ne
-  have hconst : u = W1p.const c := W1p.ext_value (Lp.ext (huc.trans (W1p.value_const_ae c).symm))
-  -- The gradient of a constant vanishes, so the Poincaré inequality forces `u = 0`; but `Ω` has
-  -- positive volume.
-  obtain ⟨R, hR⟩ := hOmega.subset_ball 0
-  have hzero : W1p.value u = 0 := by
-    have hle := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hR hu
-    rw [hconst, W1p.gradient_const, norm_zero, mul_zero] at hle
-    rw [hconst]
-    exact norm_le_zero_iff.1 hle
-  have := ae_restrict_neBot.2 (Omega.isOpen.measure_pos volume hne).ne'
-  obtain ⟨x, hx, h0⟩ := (huc.and (hzero ▸ Lp.coeFn_zero _ _ _)).exists
-  exact hc (hx.symm.trans h0)
+/-- **Nonzero constants have nonzero boundary values.** On a nonempty bounded open
+`Ω ⊆ ℝ^{n+1}`, the constant function `c ≠ 0` lies in `W^{1,p}(Ω)` but not in `W^{1,p}_0(Ω)`: its
+gradient vanishes, so the Poincaré inequality would force it to vanish. -/
+theorem W1p.const_notMem_w1p0Submodule
+    [IsFiniteMeasure (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))]
+    (hne : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty)
+    (hbdd : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))) {c : ℝ}
+    (hc : c ≠ 0) : (W1p.const c : W1p volume Omega p) ∉ w1p0Submodule volume Omega p := by
+  intro hmem
+  obtain ⟨R, -, hball⟩ := hbdd.subset_ball_lt 0 0
+  have h := W1p.norm_value_le_mul_norm_gradient_of_subset_ball hball hmem
+  rw [W1p.gradient_const, norm_zero, mul_zero] at h
+  exact W1p.value_const_ne_zero hne hc (norm_le_zero_iff.1 h)
 
 /-- **The value map of `W^{1,p}_0(Ω)` is not onto `Lᵖ(Ω)`** for a nonempty bounded open
 `Ω ⊆ ℝ^{n+1}` and every `p`: the constant `1` lies in `Lᵖ(Ω)`, since `Ω` has finite volume, but is
-not the value of a function in `W^{1,p}_0(Ω)`
-(`TauCeti.W1p.not_value_ae_eq_const_of_mem_w1p0Submodule`). -/
+not the value of a function in `W^{1,p}_0(Ω)` (`TauCeti.W1p.const_notMem_w1p0Submodule`). -/
 theorem W1p0.not_surjective_valueL
     (hOmega : Bornology.IsBounded (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))
     (hne : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))).Nonempty) :
@@ -174,7 +164,8 @@ theorem W1p0.not_surjective_valueL
     isFiniteMeasure_restrict.2 hOmega.measure_lt_top.ne
   obtain ⟨v, hv⟩ := hsurj ((memLp_const (1 : ℝ)).toLp _)
   rw [W1p0.valueL_apply] at hv
-  exact W1p.not_value_ae_eq_const_of_mem_w1p0Submodule hOmega hne one_ne_zero v.property
-    (hv ▸ MemLp.coeFn_toLp _)
+  have hconst : (v : W1p volume Omega p) = W1p.const 1 :=
+    W1p.ext_value (Lp.ext ((hv ▸ MemLp.coeFn_toLp _).trans (W1p.value_const_ae 1).symm))
+  exact W1p.const_notMem_w1p0Submodule hne hOmega one_ne_zero (hconst ▸ v.property)
 
 end TauCeti
