@@ -51,7 +51,12 @@ every section `s` is `∑ᵢ θ ρ bᵢ*(t₀ s) ρ t₀⁻¹ bᵢ + (1 - θ) s`
 (`Bundle.Trivialization.smul_eq_sum_smul_cutoffFrameSection_add`). Applied with `θ = 1` near a
 point `x`, this shows that an operator between sections of complex bundles which is linear over the
 complex-valued smooth functions, from a bundle of finite rank, is pointwise: `(P s)(x)` only depends
-on `s(x)` (`TauCeti.apply_eq_apply_of_map_smul`).
+on `s(x)` (`TauCeti.apply_eq_apply_of_map_smul`). Read in a second trivialization
+`t'`, a frame vector `t_b⁻¹ w` is smooth in `b` on the overlap of the base sets, as the coordinate
+change from `t` to `t'` applied to `w`
+(`Bundle.Trivialization.contMDiffOn_continuousLinearMapAt_symmL`), and a complex-linear functional
+`φ` on a fibre takes the value `g(x) φ(tₓ⁻¹ w)` on the cut-off frame section `g t⁻¹ w`
+(`Bundle.Trivialization.apply_cutoffFrameSection`).
 
 In a chart `e` whose source lies in the base set of `t`, a Schwartz function `u` on the model space
 and a cutoff `ψ` with compact support in the chart target give the **chart cut-off section**
@@ -198,6 +203,27 @@ theorem cutoffFrameSection_apply_eq_symmL (g : C^n⟮I, M; ℝ⟯) (hg : tsuppor
     t.cutoffFrameSection g hg v x = t.symmL ℂ x ((g x : ℂ) • v) := by
   rw [cutoffFrameSection_apply, ← t.symmL_apply (R := ℝ) hx, ← map_smul, ← Complex.coe_smul,
     t.symmL_apply (R := ℝ) hx, t.symmL_apply (R := ℂ) hx]
+
+/-- A complex-linear functional `φ` on a fibre takes the value `g(x) φ(tₓ⁻¹ v)` on the real cut-off
+frame section `g t⁻¹ v`, also off the base set of `t`, where both sides vanish. -/
+theorem apply_cutoffFrameSection (g : C^n⟮I, M; ℝ⟯) (hg : tsupport g ⊆ t.baseSet) (v : W) {x : M}
+    (φ : F x →L[ℂ] ℂ) : φ (t.cutoffFrameSection g hg v x) = (g x : ℂ) * φ (t.symmL ℂ x v) := by
+  by_cases hx : x ∈ t.baseSet
+  · rw [t.cutoffFrameSection_apply_eq_symmL g hg v hx, map_smul, map_smul, smul_eq_mul]
+  · have h0 : g x = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hx (hg h)
+    simp [h0]
+
+/-- **Frame vectors in another trivialization.** Read in a second trivialization `t'` of the atlas,
+the frame vector `t_b⁻¹ w` is `C^n` in `b` on the overlap of the base sets: it is the coordinate
+change from `t` to `t'` applied to `w`. -/
+theorem contMDiffOn_continuousLinearMapAt_symmL (t' : Trivialization W (π W F))
+    [MemTrivializationAtlas t'] (w : W) :
+    ContMDiffOn I 𝓘(ℝ, W) n (fun b ↦ t'.continuousLinearMapAt ℂ b (t.symmL ℂ b w))
+      (t.baseSet ∩ t'.baseSet) := by
+  refine ((contMDiffOn_coordChangeL (IB := I) t t').clm_apply
+    (contMDiffOn_const (c := w))).congr fun b hb ↦ ?_
+  rw [t'.continuousLinearMapAt_apply_of_mem ℂ hb.2, t.symmL_apply (R := ℂ) hb.1,
+    ContinuousLinearEquiv.coe_coe, t.coordChangeL_apply (R := ℝ) t' hb w]
 
 /-- In one trivialization `t`, with the same function `g` cutting off the frame and the
 coefficients, the cut-off frame sections `g t⁻¹ bⱼ` multiplied by the cut-off frame coefficients
