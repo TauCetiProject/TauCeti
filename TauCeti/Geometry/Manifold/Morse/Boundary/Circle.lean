@@ -36,12 +36,17 @@ minima, which are therefore `q_0` and `q_1`
   `ε_j = ±1` (`exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq` in the
   namespace `TauCeti.IsAdaptedPseudoGradient`).
 
-These signs are determined by the orientations. The point `r + j π + π / 4`, where `f = 0`, lies
+These signs are determined by the orientations. For every adapted pseudo-gradient, the stable
+manifold of the minimum `q_j` is the open arc `(r + j π, r + j π + π)` between its two neighbouring
+maxima (`mem_stableSet_circleCosTwoMin_iff`), and the unstable manifold of the maximum `p_j` is the
+open arc `(r + j π - π / 2, r + j π + π / 2)` between its two neighbouring minima
+(`mem_unstableSet_circleCosTwoMax_iff`): an orbit cannot cross a maximum forward in time, nor a
+minimum backward, since `f` is monotone along it and takes its extreme values only there
+(`coe_mem_stableSet_circleCosTwo_of_mem_Ioo`, `coe_mem_unstableSet_circleCosTwo_of_mem_Ioo`, for
+any lifts of the critical points). In particular the point `r + j π + π / 4`, where `f = 0`, lies
 on the trajectory from `p_j` to `q_j` (`coe_mem_unstableSet_circleCosTwoMax`,
-`coe_mem_stableSet_circleCosTwoMin`): its orbit cannot cross the maxima `r + j π` and
-`r + (j + 1) π` forward in time, nor the minima `r + j π ∓ π / 2` backward, since `f` is monotone
-along it. That trajectory leaves `p_j` in the direction `+∂_θ`, along which `f` decreases, and its
-sign is read off the orientation of the circle
+`coe_mem_stableSet_circleCosTwoMin`). That trajectory leaves `p_j` in the direction `+∂_θ`, along
+which `f` decreases, and its sign is read off the orientation of the circle
 (`fundamentalSign_mul_trajectorySign_of_finrank_eq_one`). With `ε_j` the fundamental sign of `p_j`
 for the positive orientation `AddCircle.orientation` of the circle, `1` exactly when `W^u(p_j)` is
 oriented by `+∂_θ`, and `η_i` the augmentation sign of `q_i`, the coefficient of `q_i` in the
@@ -87,6 +92,11 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   is the sum of the two minima.
 * `exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq`: the weighted integral
   boundary coefficients of `p_j` at `q_0` and `q_1` are `ε_j` and `-ε_j`.
+* `coe_mem_stableSet_circleCosTwo_of_mem_Ioo`, `coe_mem_unstableSet_circleCosTwo_of_mem_Ioo`: the
+  open arc between two consecutive maxima flows to the minimum between them, and the open arc
+  between two consecutive minima flows from the maximum between them.
+* `mem_stableSet_circleCosTwoMin_iff`, `mem_unstableSet_circleCosTwoMax_iff`: the stable manifold
+  of `q_j` and the unstable manifold of `p_j` are exactly these open arcs.
 * `coe_mem_stableSet_circleCosTwoMin`, `coe_mem_unstableSet_circleCosTwoMax`: the point
   `r + j π + π / 4` lies on a trajectory from `p_j` to `q_j`.
 * `morseTrajectorySlice_circleCosTwo_eq`: it is the only trajectory from `p_j` to `q_j`.
@@ -268,23 +278,17 @@ private theorem circleCosTwo_coe_add_pi_div_four (δ r : ℝ) (j : ℕ) :
   rw [circleCosTwo_coe, show 2 * (r + j * π + π / 4 - r) = π / 2 + (j : ℝ) * (2 * π) by ring,
     Real.cos_add_nat_mul_two_pi, Real.cos_pi_div_two, mul_zero]
 
-/-- At the maxima `r + n π`, `f = δ`. -/
-private theorem circleCosTwo_coe_add_nat_mul_pi (δ r : ℝ) (n : ℕ) :
+/-- At the maxima `r + n π`, `n ∈ ℤ`, `f = δ`. -/
+private theorem circleCosTwo_coe_add_int_mul_pi (δ r : ℝ) (n : ℤ) :
     circleCosTwo δ r ((r + n * π : ℝ) : AddCircle (2 * π)) = δ := by
   rw [circleCosTwo_coe, show 2 * (r + n * π - r) = (n : ℝ) * (2 * π) by ring,
-    Real.cos_nat_mul_two_pi, mul_one]
+    Real.cos_int_mul_two_pi, mul_one]
 
-/-- At the minimum `r + j π - π / 2`, `f = -δ`. -/
-private theorem circleCosTwo_coe_add_nat_mul_pi_sub_pi_div_two (δ r : ℝ) (j : ℕ) :
-    circleCosTwo δ r ((r + j * π - π / 2 : ℝ) : AddCircle (2 * π)) = -δ := by
-  rw [circleCosTwo_coe, show 2 * (r + j * π - π / 2 - r) = -π + (j : ℝ) * (2 * π) by ring,
-    Real.cos_add_nat_mul_two_pi, Real.cos_neg, Real.cos_pi, mul_neg_one]
-
-/-- At the minimum `r + j π + π / 2`, `f = -δ`. -/
-private theorem circleCosTwo_coe_add_nat_mul_pi_add_pi_div_two (δ r : ℝ) (j : ℕ) :
-    circleCosTwo δ r ((r + j * π + π / 2 : ℝ) : AddCircle (2 * π)) = -δ := by
-  rw [circleCosTwo_coe, show 2 * (r + j * π + π / 2 - r) = π + (j : ℝ) * (2 * π) by ring,
-    Real.cos_add_nat_mul_two_pi, Real.cos_pi, mul_neg_one]
+/-- At the minima `r + n π + π / 2`, `n ∈ ℤ`, `f = -δ`. -/
+private theorem circleCosTwo_coe_add_int_mul_pi_add_pi_div_two (δ r : ℝ) (n : ℤ) :
+    circleCosTwo δ r ((r + n * π + π / 2 : ℝ) : AddCircle (2 * π)) = -δ := by
+  rw [circleCosTwo_coe, show 2 * (r + n * π + π / 2 - r) = π + (n : ℝ) * (2 * π) by ring,
+    Real.cos_add_int_mul_two_pi, Real.cos_pi, mul_neg_one]
 
 /-- At the point `r + j π + π / 4`, the sine `sin (2 (θ - r))` is `1`. -/
 private theorem sin_two_mul_add_pi_div_four_sub (r : ℝ) (j : ℕ) :
@@ -292,60 +296,242 @@ private theorem sin_two_mul_add_pi_div_four_sub (r : ℝ) (j : ℕ) :
   rw [show 2 * (r + j * π + π / 4 - r) = π / 2 + (j : ℝ) * (2 * π) by ring,
     Real.sin_add_nat_mul_two_pi, Real.sin_pi_div_two]
 
-/-- The angle `c + i π` of the circle has a lift in `[c + j π - π / 2, c + j π + π / 2]` only for
-`i = j`. -/
-private theorem eq_of_coe_eq_coe_add_mul_pi {c x : ℝ} {i j : Fin 2}
-    (h : (x : AddCircle (2 * π)) = ((c + i * π : ℝ) : AddCircle (2 * π)))
-    (hx : x ∈ Icc (c + j * π - π / 2) (c + j * π + π / 2)) : i = j := by
+/-- Within `π` of `r + n π`, `cos (2 (y - r)) = 1` only at `y = r + n π`. -/
+private theorem cos_two_mul_sub_eq_one_iff {n : ℤ} {y : ℝ} (h₁ : r + n * π - π < y)
+    (h₂ : y < r + n * π + π) : Real.cos (2 * (y - r)) = 1 ↔ y = r + n * π := by
+  rw [← Real.cos_sub_int_mul_two_pi _ n,
+    Real.cos_eq_one_iff_of_lt_of_lt (by linarith) (by linarith)]
+  constructor <;> intro h <;> linarith
+
+/-- Within `π` of `r + n π + π / 2`, `cos (2 (y - r)) = -1` only at `y = r + n π + π / 2`. -/
+private theorem cos_two_mul_sub_eq_neg_one_iff {n : ℤ} {y : ℝ} (h₁ : r + n * π - π / 2 < y)
+    (h₂ : y < r + n * π + 3 * π / 2) :
+    Real.cos (2 * (y - r)) = -1 ↔ y = r + n * π + π / 2 := by
+  rw [show 2 * (y - r) = 2 * (y - (r + π / 2)) + π by ring, Real.cos_add_pi, neg_inj,
+    cos_two_mul_sub_eq_one_iff (n := n) (by linarith) (by linarith)]
+  constructor <;> intro h <;> linarith
+
+/-- On the open arc `(r + n π, r + n π + π)` between two consecutive maxima, `f < δ`. -/
+private theorem circleCosTwo_coe_lt (hδ : 0 < δ) {n : ℤ} {y : ℝ}
+    (hy : y ∈ Ioo (r + n * π) (r + n * π + π)) :
+    circleCosTwo δ r (y : AddCircle (2 * π)) < δ := by
   have hπ := Real.pi_pos
-  obtain ⟨hx₁, hx₂⟩ := hx
-  -- Both lifts lie within `3π / 2 < 2π` of each other, so they are equal.
-  have hxc : x = c + i * π := AddCircle.eq_of_coe_eq_of_abs_sub_lt h (by
-    rw [abs_lt]
-    fin_cases i <;> fin_cases j <;> simp at hx₁ hx₂ ⊢ <;> constructor <;> linarith)
-  fin_cases i <;> fin_cases j <;> simp at hxc hx₁ hx₂ ⊢ <;> linarith
+  rw [circleCosTwo_coe]
+  refine mul_lt_of_lt_one_right hδ ((Real.cos_le_one _).lt_of_ne fun h ↦ ?_)
+  have := (cos_two_mul_sub_eq_one_iff (n := n) (by linarith [hy.1]) hy.2).1 h
+  linarith [hy.1]
+
+/-- On the open arc `(r + n π - π / 2, r + n π + π / 2)` between two consecutive minima,
+`-δ < f`. -/
+private theorem lt_circleCosTwo_coe (hδ : 0 < δ) {n : ℤ} {y : ℝ}
+    (hy : y ∈ Ioo (r + n * π - π / 2) (r + n * π + π / 2)) :
+    -δ < circleCosTwo δ r (y : AddCircle (2 * π)) := by
+  have hπ := Real.pi_pos
+  rw [circleCosTwo_coe, ← mul_neg_one δ]
+  refine mul_lt_mul_of_pos_left ((Real.neg_one_le_cos _).lt_of_ne fun h ↦ ?_) hδ
+  have := (cos_two_mul_sub_eq_neg_one_iff (n := n - 1) (by push_cast; linarith [hy.1])
+    (by push_cast; linarith [hy.2])).1 h.symm
+  push_cast at this
+  linarith [hy.1]
+
+/-- A lift in `[r + n π, r + n π + π]` of a point where `f = -δ` is the minimum
+`r + n π + π / 2`. -/
+private theorem eq_of_mem_Icc_of_circleCosTwo_eq_neg (hδ : δ ≠ 0) {n : ℤ} {x : ℝ}
+    (hx : x ∈ Icc (r + n * π) (r + n * π + π))
+    (h : circleCosTwo δ r (x : AddCircle (2 * π)) = -δ) : x = r + n * π + π / 2 := by
+  have hπ := Real.pi_pos
+  rw [circleCosTwo_coe, ← mul_neg_one δ] at h
+  exact (cos_two_mul_sub_eq_neg_one_iff (by linarith [hx.1]) (by linarith [hx.2])).1
+    (mul_left_cancel₀ hδ h)
+
+/-- A lift in `[r + n π - π / 2, r + n π + π / 2]` of a point where `f = δ` is the maximum
+`r + n π`. -/
+private theorem eq_of_mem_Icc_of_circleCosTwo_eq (hδ : δ ≠ 0) {n : ℤ} {x : ℝ}
+    (hx : x ∈ Icc (r + n * π - π / 2) (r + n * π + π / 2))
+    (h : circleCosTwo δ r (x : AddCircle (2 * π)) = δ) : x = r + n * π := by
+  have hπ := Real.pi_pos
+  rw [circleCosTwo_coe] at h
+  exact (cos_two_mul_sub_eq_one_iff (by linarith [hx.1]) (by linarith [hx.2])).1
+    (mul_left_cancel₀ hδ (h.trans (mul_one δ).symm))
+
+/-- **The open arc between two consecutive maxima flows to the minimum between them.** For
+`δ > 0`, every adapted pseudo-gradient and every integer `n`, the points of the arc
+`(r + n π, r + n π + π)` lie on the stable manifold of the minimum `r + n π + π / 2`. -/
+theorem coe_mem_stableSet_circleCosTwo_of_mem_Ioo (hδ : 0 < δ)
+    (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) {n : ℤ} {y : ℝ}
+    (hy : y ∈ Ioo (r + n * π) (r + n * π + π)) :
+    (y : AddCircle (2 * π)) ∈ hX.flow.stableSet ((r + n * π + π / 2 : ℝ) : AddCircle (2 * π)) := by
+  obtain ⟨c, hc, hyc⟩ := hX.exists_mem_stableSet (y : AddCircle (2 * π))
+  -- Along the forward orbit of `y`, `f ≤ f y < δ`.
+  have hle (t : ℝ) (ht : 0 ≤ t) :
+      circleCosTwo δ r (hX.flow t (y : AddCircle (2 * π))) ≤ circleCosTwo δ r y := by
+    simpa only [Flow.map_zero_apply] using hX.antitone_flow (y : AddCircle (2 * π)) ht
+  have hfy := circleCosTwo_coe_lt hδ hy
+  -- So it never meets the maxima `r + m π`, where `f = δ`, and the limit `c` has a lift `x` in
+  -- `[r + n π, r + n π + π]`.
+  have hne (t : ℝ) (ht : 0 ≤ t) (m : ℤ) :
+      hX.flow t (y : AddCircle (2 * π)) ≠ ((r + m * π : ℝ) : AddCircle (2 * π)) := fun he ↦ by
+    have h := hle t ht
+    rw [he, circleCosTwo_coe_add_int_mul_pi] at h
+    linarith
+  obtain ⟨x, hx, hxc⟩ := exists_mem_Icc_coe_eq_of_tendsto hX (Ioo_subset_Icc_self hy)
+    (fun t ht ↦ by rw [uIcc_of_le ht]; exact fun s hs ↦ hs.1)
+    (fun t ht ↦ ⟨hne t ht n, fun he ↦ hne t ht (n + 1) (by rw [he]; congr 1; push_cast; ring)⟩)
+    (Ici_mem_atTop 0) (Flow.mem_stableSet.1 hyc)
+  -- As `f c < δ`, `c` is not a maximum: it is a minimum, so `x = r + n π + π / 2`.
+  have hfc : circleCosTwo δ r c < δ :=
+    (le_of_tendsto (((contMDiff_circleCosTwo δ r).continuous.tendsto c).comp
+      (Flow.mem_stableSet.1 hyc)) (eventually_atTop.2 ⟨0, hle⟩)).trans_lt hfy
+  obtain ⟨i, hi | hi⟩ := (mem_criticalPoints_circleCosTwo_iff_exists hδ.ne' r).1
+    (mem_criticalPoints_iff_mfderiv_eq_zero.2 hc)
+  · rw [hi, circleCosTwo_circleCosTwoMax] at hfc
+    exact absurd hfc (lt_irrefl δ)
+  · have hfx : circleCosTwo δ r (x : AddCircle (2 * π)) = -δ := by
+      rw [hxc, hi, circleCosTwo_circleCosTwoMin]
+    rwa [← eq_of_mem_Icc_of_circleCosTwo_eq_neg hδ.ne' hx hfx, hxc]
+
+/-- **The open arc between two consecutive minima flows from the maximum between them.** For
+`δ > 0`, every adapted pseudo-gradient and every integer `n`, the points of the arc
+`(r + n π - π / 2, r + n π + π / 2)` lie on the unstable manifold of the maximum `r + n π`. -/
+theorem coe_mem_unstableSet_circleCosTwo_of_mem_Ioo (hδ : 0 < δ)
+    (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) {n : ℤ} {y : ℝ}
+    (hy : y ∈ Ioo (r + n * π - π / 2) (r + n * π + π / 2)) :
+    (y : AddCircle (2 * π)) ∈ hX.flow.unstableSet ((r + n * π : ℝ) : AddCircle (2 * π)) := by
+  obtain ⟨c, hc, hyc⟩ := hX.exists_mem_unstableSet (y : AddCircle (2 * π))
+  -- Along the backward orbit of `y`, `-δ < f y ≤ f`.
+  have hge (t : ℝ) (ht : t ≤ 0) :
+      circleCosTwo δ r y ≤ circleCosTwo δ r (hX.flow t (y : AddCircle (2 * π))) := by
+    simpa only [Flow.map_zero_apply] using hX.antitone_flow (y : AddCircle (2 * π)) ht
+  have hfy := lt_circleCosTwo_coe hδ hy
+  -- So it never meets the minima `r + m π + π / 2`, where `f = -δ`, and the limit `c` has a lift
+  -- `x` in `[r + n π - π / 2, r + n π + π / 2]`.
+  have hne (t : ℝ) (ht : t ≤ 0) (m : ℤ) :
+      hX.flow t (y : AddCircle (2 * π)) ≠ ((r + m * π + π / 2 : ℝ) : AddCircle (2 * π)) :=
+    fun he ↦ by
+      have h := hge t ht
+      rw [he, circleCosTwo_coe_add_int_mul_pi_add_pi_div_two] at h
+      linarith
+  obtain ⟨x, hx, hxc⟩ := exists_mem_Icc_coe_eq_of_tendsto hX (Ioo_subset_Icc_self hy)
+    (fun t ht ↦ by rw [uIcc_of_ge ht]; exact fun s hs ↦ hs.2)
+    (fun t ht ↦ ⟨fun he ↦ hne t ht (n - 1) (by rw [he]; congr 1; push_cast; ring), hne t ht n⟩)
+    (Iic_mem_atBot 0) (Flow.mem_unstableSet.1 hyc)
+  -- As `-δ < f c`, `c` is not a minimum: it is a maximum, so `x = r + n π`.
+  have hfc : -δ < circleCosTwo δ r c :=
+    hfy.trans_le (ge_of_tendsto (((contMDiff_circleCosTwo δ r).continuous.tendsto c).comp
+      (Flow.mem_unstableSet.1 hyc)) (eventually_atBot.2 ⟨0, hge⟩))
+  obtain ⟨i, hi | hi⟩ := (mem_criticalPoints_circleCosTwo_iff_exists hδ.ne' r).1
+    (mem_criticalPoints_iff_mfderiv_eq_zero.2 hc)
+  · have hfx : circleCosTwo δ r (x : AddCircle (2 * π)) = δ := by
+      rw [hxc, hi, circleCosTwo_circleCosTwoMax]
+    rwa [← eq_of_mem_Icc_of_circleCosTwo_eq hδ.ne' hx hfx, hxc]
+  · rw [hi, circleCosTwo_circleCosTwoMin] at hfc
+    exact absurd hfc (lt_irrefl _)
+
+/-- The minimum `q_j` is the class of `r + j π + π / 2`, with `j` read as an integer. -/
+private theorem circleCosTwoMin_eq_coe_int (r : ℝ) (j : Fin 2) :
+    circleCosTwoMin r j = ((r + ((j : ℕ) : ℤ) * π + π / 2 : ℝ) : AddCircle (2 * π)) := by
+  rw [circleCosTwoMin_def]
+  congr 1
+  push_cast
+  ring
+
+/-- The maximum `p_j` is the class of `r + j π`, with `j` read as an integer. -/
+private theorem circleCosTwoMax_eq_coe_int (r : ℝ) (j : Fin 2) :
+    circleCosTwoMax r j = ((r + ((j : ℕ) : ℤ) * π : ℝ) : AddCircle (2 * π)) := by
+  rw [circleCosTwoMax_def]
+  push_cast
+  rfl
+
+/-- **The stable manifold of a minimum is the open arc between its two neighbouring maxima.** For
+`δ > 0` and every adapted pseudo-gradient, a point lies on the stable manifold of the minimum
+`q_j = r + π / 2 + j π` exactly when it is the class of a point of `(r + j π, r + j π + π)`. -/
+theorem mem_stableSet_circleCosTwoMin_iff (hδ : 0 < δ)
+    (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) (j : Fin 2) {x : AddCircle (2 * π)} :
+    x ∈ hX.flow.stableSet (circleCosTwoMin r j) ↔
+      ∃ y ∈ Ioo (r + j * π) (r + j * π + π), (y : AddCircle (2 * π)) = x := by
+  have hπ := Real.pi_pos
+  rw [circleCosTwoMin_eq_coe_int]
+  refine ⟨fun hx ↦ ?_, fun ⟨y, hy, hyx⟩ ↦
+    hyx ▸ coe_mem_stableSet_circleCosTwo_of_mem_Ioo hδ hX (by push_cast; exact hy)⟩
+  -- Lift `x` to `[r + j π, r + j π + 2 π)`.
+  obtain ⟨y, hy, rfl⟩ : ∃ y ∈ Ico (r + j * π) (r + j * π + 2 * π),
+      (y : AddCircle (2 * π)) = x := by
+    rw [← mem_image, AddCircle.coe_image_Ico_eq]
+    exact mem_univ x
+  -- The maxima are fixed by the flow, so they do not flow to `q_j`.
+  have hmax (m : ℤ) : ((r + m * π : ℝ) : AddCircle (2 * π)) ∉
+      hX.flow.stableSet ((r + ((j : ℕ) : ℤ) * π + π / 2 : ℝ) : AddCircle (2 * π)) := fun h ↦ by
+    obtain ⟨i, hi⟩ := exists_circleCosTwoMax_eq r m
+    rw [← hi, ← circleCosTwoMin_eq_coe_int] at h
+    exact circleCosTwoMax_ne_circleCosTwoMin r i j (Flow.eq_of_mem_stableSet
+      (hX.flow_apply_of_mfderiv_eq_zero (mem_criticalPoints_iff_mfderiv_eq_zero.1
+        (circleCosTwoMax_mem_criticalPoints δ r i))) h)
+  rcases hy.1.eq_or_lt with hy₁ | hy₁
+  · exact absurd hx (by rw [← hy₁]; simpa using hmax (j : ℕ))
+  rcases lt_trichotomy y (r + j * π + π) with hy₂ | rfl | hy₂
+  · exact ⟨y, ⟨hy₁, hy₂⟩, rfl⟩
+  · exact absurd hx (by simpa [add_mul, add_assoc] using hmax ((j : ℕ) + 1))
+  -- A point of `(r + j π + π, r + j π + 2 π)` flows to the other minimum instead.
+  have h := coe_mem_stableSet_circleCosTwo_of_mem_Ioo hδ hX (n := (j : ℕ) + 1) (y := y)
+    ⟨by push_cast; linarith, by push_cast; linarith [hy.2]⟩
+  refine absurd (tendsto_nhds_unique (Flow.mem_stableSet.1 h) (Flow.mem_stableSet.1 hx)) ?_
+  rw [AddCircle.coe_eq_coe_iff_of_mem_Ico (a := r + j * π)
+    (by push_cast; constructor <;> linarith) (by push_cast; constructor <;> linarith)]
+  push_cast
+  intro he
+  linarith
+
+/-- **The unstable manifold of a maximum is the open arc between its two neighbouring minima.**
+For `δ > 0` and every adapted pseudo-gradient, a point lies on the unstable manifold of the
+maximum `p_j = r + j π` exactly when it is the class of a point of
+`(r + j π - π / 2, r + j π + π / 2)`. -/
+theorem mem_unstableSet_circleCosTwoMax_iff (hδ : 0 < δ)
+    (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) (j : Fin 2) {x : AddCircle (2 * π)} :
+    x ∈ hX.flow.unstableSet (circleCosTwoMax r j) ↔
+      ∃ y ∈ Ioo (r + j * π - π / 2) (r + j * π + π / 2), (y : AddCircle (2 * π)) = x := by
+  have hπ := Real.pi_pos
+  rw [circleCosTwoMax_eq_coe_int]
+  refine ⟨fun hx ↦ ?_, fun ⟨y, hy, hyx⟩ ↦
+    hyx ▸ coe_mem_unstableSet_circleCosTwo_of_mem_Ioo hδ hX (by push_cast; exact hy)⟩
+  -- Lift `x` to `[r + j π - π / 2, r + j π + 3 π / 2)`.
+  obtain ⟨y, hy, rfl⟩ : ∃ y ∈ Ico (r + j * π - π / 2) (r + j * π - π / 2 + 2 * π),
+      (y : AddCircle (2 * π)) = x := by
+    rw [← mem_image, AddCircle.coe_image_Ico_eq]
+    exact mem_univ x
+  -- The minima are fixed by the flow, so they do not flow from `p_j`.
+  have hmin (m : ℤ) : ((r + m * π + π / 2 : ℝ) : AddCircle (2 * π)) ∉
+      hX.flow.unstableSet ((r + ((j : ℕ) : ℤ) * π : ℝ) : AddCircle (2 * π)) := fun h ↦ by
+    obtain ⟨i, hi⟩ := exists_circleCosTwoMin_eq r m
+    rw [show r + m * π + π / 2 = r + π / 2 + m * π by ring, ← hi,
+      ← circleCosTwoMax_eq_coe_int] at h
+    exact circleCosTwoMax_ne_circleCosTwoMin r j i (hX.eq_of_mem_unstableSet_of_mfderiv_eq_zero
+      (mem_criticalPoints_iff_mfderiv_eq_zero.1 (circleCosTwoMin_mem_criticalPoints δ r i)) h).symm
+  rcases hy.1.eq_or_lt with hy₁ | hy₁
+  · refine absurd hx ?_
+    rw [← hy₁,
+      show r + j * π - π / 2 = r + (((j : ℕ) - 1 : ℤ) : ℝ) * π + π / 2 by push_cast; ring]
+    exact hmin _
+  rcases lt_trichotomy y (r + j * π + π / 2) with hy₂ | rfl | hy₂
+  · exact ⟨y, ⟨hy₁, hy₂⟩, rfl⟩
+  · exact absurd hx (by simpa using hmin (j : ℕ))
+  -- A point of `(r + j π + π / 2, r + j π + 3 π / 2)` flows from the other maximum instead.
+  have h := coe_mem_unstableSet_circleCosTwo_of_mem_Ioo hδ hX (n := (j : ℕ) + 1) (y := y)
+    ⟨by push_cast; linarith, by push_cast; linarith [hy.2]⟩
+  refine absurd (tendsto_nhds_unique (Flow.mem_unstableSet.1 h) (Flow.mem_unstableSet.1 hx)) ?_
+  rw [AddCircle.coe_eq_coe_iff_of_mem_Ico (a := r + j * π - π / 2)
+    (by push_cast; constructor <;> linarith) (by push_cast; constructor <;> linarith)]
+  push_cast
+  intro he
+  linarith
 
 /-- **The point `r + j π + π / 4` flows to the minimum `q_j`.** For `δ > 0` and every adapted
 pseudo-gradient, the point halfway between the maximum `p_j = r + j π` and the minimum
 `q_j = r + π / 2 + j π` lies on the stable manifold of `q_j`. -/
 theorem coe_mem_stableSet_circleCosTwoMin (hδ : 0 < δ)
     (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) (j : Fin 2) :
-    ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ∈ hX.flow.stableSet (circleCosTwoMin r j) := by
+    ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ∈ hX.flow.stableSet (circleCosTwoMin r j) :=
   have hπ := Real.pi_pos
-  obtain ⟨c, hc, hac⟩ := hX.exists_mem_stableSet
-    ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))
-  -- Along the forward orbit of `r + j π + π / 4`, where `f` starts at `0`, `f ≤ 0`.
-  have hle (t : ℝ) (ht : 0 ≤ t) :
-      circleCosTwo δ r (hX.flow t ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))) ≤ 0 := by
-    simpa only [Flow.map_zero_apply, circleCosTwo_coe_add_pi_div_four] using
-      hX.antitone_flow ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ht
-  -- So it never meets the maxima `r + j π` and `r + j π + π`, where `f = δ`, and the limit `c`
-  -- has a lift between them.
-  obtain ⟨x, hx, hxc⟩ := exists_mem_Icc_coe_eq_of_tendsto hX (u := r + j * π)
-    (v := r + j * π + π) (by constructor <;> linarith)
-    (fun t ht ↦ by rw [uIcc_of_le ht]; exact fun s hs ↦ hs.1)
-    (fun t ht ↦ ⟨fun he ↦ by
-      have h := hle t ht
-      rw [he, circleCosTwo_coe_add_nat_mul_pi] at h
-      linarith, fun he ↦ by
-      have h := hle t ht
-      rw [he, show r + j * π + π = r + ((j + 1 : ℕ) : ℝ) * π by push_cast; ring,
-        circleCosTwo_coe_add_nat_mul_pi] at h
-      linarith⟩)
-    (Ici_mem_atTop 0) (Flow.mem_stableSet.1 hac)
-  -- As `f c ≤ 0`, `c` is the minimum `q_j`.
-  have hfc : circleCosTwo δ r c ≤ 0 :=
-    le_of_tendsto (((contMDiff_circleCosTwo δ r).continuous.tendsto c).comp
-      (Flow.mem_stableSet.1 hac))
-      (eventually_atTop.2 ⟨0, hle⟩)
-  obtain ⟨i, hi | hi⟩ := (mem_criticalPoints_circleCosTwo_iff_exists hδ.ne' r).1
-    (mem_criticalPoints_iff_mfderiv_eq_zero.2 hc)
-  · rw [hi, circleCosTwo_circleCosTwoMax] at hfc
-    linarith
-  · rw [hi, circleCosTwoMin_def] at hxc
-    obtain rfl := eq_of_coe_eq_coe_add_mul_pi (j := j) hxc
-      (by constructor <;> linarith [hx.1, hx.2])
-    exact hi ▸ hac
+  (mem_stableSet_circleCosTwoMin_iff hδ hX j).2 ⟨_, ⟨by linarith, by linarith⟩, rfl⟩
 
 /-- **The point `r + j π + π / 4` comes from the maximum `p_j`.** For `δ > 0` and every adapted
 pseudo-gradient, the point halfway between the maximum `p_j = r + j π` and the minimum
@@ -353,40 +539,9 @@ pseudo-gradient, the point halfway between the maximum `p_j = r + j π` and the 
 theorem coe_mem_unstableSet_circleCosTwoMax (hδ : 0 < δ)
     (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) (j : Fin 2) :
     ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ∈
-      hX.flow.unstableSet (circleCosTwoMax r j) := by
+      hX.flow.unstableSet (circleCosTwoMax r j) :=
   have hπ := Real.pi_pos
-  obtain ⟨c, hc, hac⟩ := hX.exists_mem_unstableSet
-    ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))
-  -- Along the backward orbit of `r + j π + π / 4`, where `f` starts at `0`, `f ≥ 0`.
-  have hge (t : ℝ) (ht : t ≤ 0) :
-      0 ≤ circleCosTwo δ r (hX.flow t ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π))) := by
-    simpa only [Flow.map_zero_apply, circleCosTwo_coe_add_pi_div_four] using
-      hX.antitone_flow ((r + j * π + π / 4 : ℝ) : AddCircle (2 * π)) ht
-  -- So it never meets the minima `r + j π ∓ π / 2`, where `f = -δ`, and the limit `c` has a lift
-  -- between them.
-  obtain ⟨x, hx, hxc⟩ := exists_mem_Icc_coe_eq_of_tendsto hX (u := r + j * π - π / 2)
-    (v := r + j * π + π / 2) (by constructor <;> linarith)
-    (fun t ht ↦ by rw [uIcc_of_ge ht]; exact fun s hs ↦ hs.2)
-    (fun t ht ↦ ⟨fun he ↦ by
-      have h := hge t ht
-      rw [he, circleCosTwo_coe_add_nat_mul_pi_sub_pi_div_two] at h
-      linarith, fun he ↦ by
-      have h := hge t ht
-      rw [he, circleCosTwo_coe_add_nat_mul_pi_add_pi_div_two] at h
-      linarith⟩)
-    (Iic_mem_atBot 0) (Flow.mem_unstableSet.1 hac)
-  -- As `f c ≥ 0`, `c` is the maximum `p_j`.
-  have hfc : 0 ≤ circleCosTwo δ r c :=
-    ge_of_tendsto (((contMDiff_circleCosTwo δ r).continuous.tendsto c).comp
-      (Flow.mem_unstableSet.1 hac))
-      (eventually_atBot.2 ⟨0, hge⟩)
-  obtain ⟨i, hi | hi⟩ := (mem_criticalPoints_circleCosTwo_iff_exists hδ.ne' r).1
-    (mem_criticalPoints_iff_mfderiv_eq_zero.2 hc)
-  · rw [hi, circleCosTwoMax_def] at hxc
-    obtain rfl := eq_of_coe_eq_coe_add_mul_pi hxc hx
-    exact hi ▸ hac
-  · rw [hi, circleCosTwo_circleCosTwoMin] at hfc
-    linarith
+  (mem_unstableSet_circleCosTwoMax_iff hδ hX j).2 ⟨_, ⟨by linarith, by linarith⟩, rfl⟩
 
 /-! ### The integral Morse differential for the orientation of the circle -/
 

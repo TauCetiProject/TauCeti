@@ -78,8 +78,8 @@ existence theorems above.
 
 The counts here are unsigned. Their identification with the mod-two continuation map
 `TauCeti.morseContinuationMap` of the cylinder `S¹ × ℝ` is in
-`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Circle`; the signs and the chain homotopy
-between `I` and `S` are not treated.
+`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Circle.Basic`; the signs and the chain
+homotopy between `I` and `S` are not treated.
 
 ## References
 
