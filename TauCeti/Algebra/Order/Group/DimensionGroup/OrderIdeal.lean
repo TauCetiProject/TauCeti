@@ -270,11 +270,12 @@ theorem mem_top_iff [Preorder G] [IsOrderedAddMonoid G] {x : G} :
 theorem top_toAddSubgroup [Preorder G] [IsOrderedAddMonoid G] :
     (⊤ : OrderIdeal G).toAddSubgroup = AddSubgroup.closure (Set.Ici (0 : G)) := by
   ext x
-  refine ⟨fun ⟨a, b, ha, hb, hx⟩ ↦ ?_, fun hx ↦ ?_⟩
-  · rw [← hx]
+  rw [mem_toAddSubgroup]
+  refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+  · obtain ⟨a, b, ha, hb, rfl⟩ := mem_top_iff.1 hx
     exact sub_mem (AddSubgroup.subset_closure ha) (AddSubgroup.subset_closure hb)
   · induction hx using AddSubgroup.closure_induction with
-    | mem y hy => exact ⟨y, 0, hy, le_rfl, sub_zero y⟩
+    | mem y hy => exact mem_top_iff.2 ⟨y, 0, hy, le_rfl, sub_zero y⟩
     | zero => exact zero_mem (⊤ : OrderIdeal G)
     | add _ _ _ _ ih₁ ih₂ => exact add_mem ih₁ ih₂
     | neg _ _ ih => exact neg_mem ih
@@ -287,7 +288,7 @@ instance [Preorder G] [IsOrderedAddMonoid G] : OrderTop (OrderIdeal G) where
 theorem mem_top [Preorder G] [IsOrderedAddMonoid G] [IsDirectedOrder G] {x : G} :
     x ∈ (⊤ : OrderIdeal G) := by
   obtain ⟨c, hc0, hxc⟩ := exists_ge_ge (0 : G) x
-  exact ⟨c, c - x, hc0, sub_nonneg.2 hxc, sub_sub_cancel c x⟩
+  exact mem_top_iff.2 ⟨c, c - x, hc0, sub_nonneg.2 hxc, sub_sub_cancel c x⟩
 
 /-- In an upward-directed ordered abelian group, `(⊤ : OrderIdeal G)` has underlying subgroup
 `⊤`. -/
@@ -391,13 +392,15 @@ theorem mem_closure {S : Set G} {hS : ∀ s ∈ S, 0 ≤ s} {g : G} :
 /-- Every element of `S` lies in `closure S hS`. -/
 theorem subset_closure {S : Set G} (hS : ∀ s ∈ S, 0 ≤ s) : S ⊆ closure S hS := by
   intro s hs
-  exact ⟨s, AddSubmonoid.subset_closure hs, (neg_nonpos.2 (hS s hs)).trans (hS s hs), le_rfl⟩
+  exact mem_closure.2
+    ⟨s, AddSubmonoid.subset_closure hs, (neg_nonpos.2 (hS s hs)).trans (hS s hs), le_rfl⟩
 
 /-- Universal property of `closure`: `closure S hS ≤ I` iff `S ⊆ I`. -/
 @[simp]
 theorem closure_le {S : Set G} {hS : ∀ s ∈ S, 0 ≤ s} {I : OrderIdeal G} :
     closure S hS ≤ I ↔ S ⊆ I := by
-  refine ⟨fun h ↦ (subset_closure hS).trans h, fun hSI g ⟨s, hs, hsg, hgs⟩ ↦ ?_⟩
+  refine ⟨fun h ↦ (subset_closure hS).trans h, fun hSI g hg ↦ ?_⟩
+  obtain ⟨s, hs, hsg, hgs⟩ := mem_closure.1 hg
   have hsI : s ∈ I := (AddSubmonoid.closure_le (M := G)).2 hSI hs
   exact I.mem_of_le_of_le (neg_mem hsI) hsI hsg hgs
 

@@ -262,7 +262,10 @@ theorem lift_injective (I : OrderIdeal G) (f : G →+o H) (hf : ∀ x ∈ I, f x
   rw [lift_mk] at hq
   have h0le : 0 ≤ mk I x := mk_nonneg_iff.2 (hlift x (hq ▸ le_rfl))
   have hfnx : f (-x) = 0 := by
-    simpa [hq] using (map_add f x (-x)).symm.trans (by rw [add_neg_cancel, map_zero])
+    calc f (-x) = 0 + f (-x) := (zero_add (f (-x))).symm
+      _ = f x + f (-x) := by rw [hq]
+      _ = f (x + -x) := (map_add f x (-x)).symm
+      _ = 0 := by rw [add_neg_cancel, map_zero]
   have hle0 : mk I x ≤ 0 := by
     rw [← neg_nonneg, ← map_neg]
     exact mk_nonneg_iff.2 (hlift (-x) (hfnx ▸ le_rfl))
