@@ -49,12 +49,6 @@ namespace TauCeti.DeligneTorus
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [Comodule ℝ S V] [Module.Finite ℝ V] {n : ℤ}
   (hV : ∀ p q, p + q ≠ n → hodgeComponent V p q = ⊥) {d : ℕ} (e : Module.Basis (Fin d) ℝ V)
 
-omit [Comodule ℝ S V] [Module.Finite ℝ V] in
-/-- The complexification of a real basis is fixed by the conjugation of `ℂ ⊗[ℝ] V`. -/
-theorem complexificationConjugation_baseChange (i : Fin d) :
-    (Hodge.complexificationConjugation V).toEquiv (e.baseChange ℂ i) = e.baseChange ℂ i := by
-  simp
-
 /-- **From a representation of `S` to a Hodge structure and back, on coordinate rings.** For a
 real representation `V` of `S` pure of weight `n` with a basis `e`, the coordinate morphism
 `S → GL_{d,ℝ}` of the Hodge structure formed by the Hodge components of `V`, in the
@@ -62,21 +56,18 @@ complexification of `e`, is the coordinate morphism of `V` in `e`. -/
 theorem realCoordinateBialgHom_ofDecomposition :
     (Hodge.HodgeStructureOn.ofDecomposition
         (isHodgeDecomposition_hodgeComponent hV)).realCoordinateBialgHom
-      (complexificationConjugation_baseChange e) = Comodule.coordinateBialgHom e := by
+      e.complexificationConjugation_toEquiv_baseChange = Comodule.coordinateBialgHom e := by
   set hs := Hodge.HodgeStructureOn.ofDecomposition (isHodgeDecomposition_hodgeComponent hV)
   let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
+  -- the splitting `ℂ ⊗[ℝ] S ≅ ℂ[ℤ²]`, as a coalgebra map
+  let f : ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
+    (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
   -- the matrix coefficients of the complexified representation, read in `ℂ[ℤ²]`
-  have hcoeff (i j : Fin d) :
-      (letI := Comodule.Corestrict (R := ℂ) (M := ℂ ⊗[ℝ] V) (C := ℂ ⊗[ℝ] S)
-          (D := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-          ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
-            ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)));
-        Comodule.coefficientMatrix (C := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-          (e.baseChange ℂ) i j) = hs.splitCoordinateMatrix (e.baseChange ℂ) i j := by
-    let _ := Comodule.Corestrict (R := ℂ) (M := ℂ ⊗[ℝ] V) (C := ℂ ⊗[ℝ] S)
-      (D := MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-      ((splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ))) :
-        ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+  have hcoeff : (Comodule.coefficientMatrix (C := ℂ ⊗[ℝ] S) (e.baseChange ℂ)).map f =
+      hs.splitCoordinateMatrix (e.baseChange ℂ) := by
+    let _ := Comodule.Corestrict (R := ℂ) (C := ℂ ⊗[ℝ] S) (M := ℂ ⊗[ℝ] V) f
+    rw [← Comodule.coefficientMatrix_corestrict]
+    refine Matrix.ext fun i j ↦ ?_
     rw [Hodge.HodgeStructureOn.splitCoordinateMatrix_apply, Comodule.coefficientMatrix_apply,
       Comodule.matrixCoefficient_def]
     conv_lhs => rw [← hs.sum_proj_hodgeSupport (e.baseChange ℂ j)]
@@ -84,12 +75,10 @@ theorem realCoordinateBialgHom_ofDecomposition :
     refine Finset.sum_congr rfl fun p _ ↦ ?_
     have hp : hs.proj p (e.baseChange ℂ j) ∈ hodgeComponent V p (n - p) := by
       simpa [hs] using hs.proj_mem p (e.baseChange ℂ j)
-    rw [hodgeComponent_def, DiagonalizableGroup.mem_weightSpace] at hp
+    rw [hodgeComponent_def, DiagonalizableGroup.mem_weightSpace, neg_sub] at hp
     rw [Comodule.corestrict_coact_apply, hp,
       TensorProduct.map_tmul, TensorProduct.lid_tmul, Module.Basis.coord_apply,
       LinearMap.id_apply, MonoidAlgebra.smul_single', mul_one]
-    congr 3
-    ring
   have hinj : Function.Injective fun s : S ↦
       splittingBialgEquiv ((1 : ℂ) ⊗ₜ[ℝ] s) :=
     splittingBialgEquiv.injective.comp
@@ -99,8 +88,8 @@ theorem realCoordinateBialgHom_ofDecomposition :
   rw [Hodge.HodgeStructureOn.one_tmul_realCoordinateBialgHom,
     Hodge.HodgeStructureOn.complexCoordinateBialgHom_one_tmul_X,
     BialgEquiv.apply_symm_apply, Comodule.coordinateBialgHom_X, ← hcoeff,
-    Comodule.coefficientMatrix_corestrict, Comodule.coefficientMatrix_baseChange]
-  rfl
+    Comodule.coefficientMatrix_baseChange]
+  simp only [Matrix.map_apply, TensorProduct.mk_apply, f, BialgHom.coe_toCoalgHom, BialgHom.coe_coe]
 
 /-- **From a representation of `S` to a Hodge structure and back.** The representation of `S`
 on `V` read off, through the basis `e`, from the Hodge structure formed by the Hodge components
@@ -109,7 +98,7 @@ theorem comoduleOfCoordinateBialgHom_ofDecomposition :
     e.comoduleOfCoordinateBialgHom
         ((Hodge.HodgeStructureOn.ofDecomposition
           (isHodgeDecomposition_hodgeComponent hV)).realCoordinateBialgHom
-            (complexificationConjugation_baseChange e)) = ‹Comodule ℝ S V› := by
+            e.complexificationConjugation_toEquiv_baseChange) = ‹Comodule ℝ S V› := by
   rw [realCoordinateBialgHom_ofDecomposition hV,
     Module.Basis.comoduleOfCoordinateBialgHom_coordinateBialgHom]
 
