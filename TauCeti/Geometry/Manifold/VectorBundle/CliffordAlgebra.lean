@@ -10,8 +10,10 @@ public import TauCeti.Geometry.Manifold.VectorBundle.OrthonormalFrame
 import TauCeti.Geometry.Manifold.FiberBundle.Associated.Map
 import TauCeti.Geometry.Manifold.FiberBundle.Associated.Principal
 import TauCeti.Geometry.Manifold.VectorBundle.Associated.Bilinear
+public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
+import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
 
 /-!
 # The real Clifford algebra bundle of a Riemannian vector bundle
@@ -88,9 +90,12 @@ def frameAlgEquiv {b : B} (p : Fr b) : C ≃ₐ[ℝ] CliffordAlgebraBundle F E V
 @[simp]
 theorem frameAlgEquiv_apply {b : B} (p : Fr b) (x : C) :
     frameAlgEquiv p x = AssociatedBundle.mk OG p x := by
-  -- The algebra equivalence has the forward map of the associated linear equivalence.
-  change AssociatedBundle.mkContinuousLinearEquiv ℝ OG p x = _
-  exact AssociatedBundle.mkContinuousLinearEquiv_apply p x
+  calc
+    frameAlgEquiv p x = (frameAlgEquiv p).toLinearEquiv x :=
+      (congrFun (AlgEquiv.coe_toLinearEquiv _) x).symm
+    _ = AssociatedBundle.mk OG p x := by
+      simp only [frameAlgEquiv, AlgEquiv.toLinearEquiv_ofLinearEquiv,
+        ContinuousLinearEquiv.coe_toLinearEquiv, AssociatedBundle.mkContinuousLinearEquiv_apply]
 
 @[simp]
 theorem star_mk {b : B} (p : Fr b) (x : C) :
@@ -99,18 +104,6 @@ theorem star_mk {b : B} (p : Fr b) (x : C) :
   rw [Unitary.cliffordAlgEquiv_def]
   exact (CliffordAlgebra.map_star
     (Unitary.linearIsometryEquiv _).negNormSqFormIsometryEquiv.toIsometry x).symm
-
-private theorem equivOfIsometry_trans_apply {U W X : Type*}
-    [NormedAddCommGroup U] [InnerProductSpace ℝ U]
-    [NormedAddCommGroup W] [InnerProductSpace ℝ W]
-    [NormedAddCommGroup X] [InnerProductSpace ℝ X]
-    (e : U ≃ₗᵢ[ℝ] W) (f : W ≃ₗᵢ[ℝ] X) (x : CliffordAlgebra (negNormSqForm U)) :
-    CliffordAlgebra.equivOfIsometry f.negNormSqFormIsometryEquiv
-        (CliffordAlgebra.equivOfIsometry e.negNormSqFormIsometryEquiv x) =
-      CliffordAlgebra.equivOfIsometry (e.trans f).negNormSqFormIsometryEquiv x := by
-  simpa only [AlgEquiv.trans_apply, LinearIsometryEquiv.negNormSqFormIsometryEquiv_trans] using
-    DFunLike.congr_fun (CliffordAlgebra.equivOfIsometry_trans
-      e.negNormSqFormIsometryEquiv f.negNormSqFormIsometryEquiv) x
 
 /-- The canonical algebra identification of the associated fibre with the Clifford algebra
 of the negative squared norm on the actual fibre. -/
@@ -137,7 +130,17 @@ theorem fiberAlgEquiv_mk {b : B} (p : Fr b) (x : C) :
     exact ((AssociatedBundle.mk_eq_mk_iff (p := p₀) (q := p)).2 rfl).symm
   rw [hc]
   simp only [fiberAlgEquiv, p₀, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply,
-    Unitary.smul_clifford_eq, Unitary.cliffordAlgEquiv_def, equivOfIsometry_trans_apply, ← hp]
+    Unitary.smul_clifford_eq, Unitary.cliffordAlgEquiv_def,
+    CliffordAlgebra.equivOfIsometry_trans_apply,
+    ← LinearIsometryEquiv.negNormSqFormIsometryEquiv_trans, hp]
+
+/-- The intrinsic fibre identification preserves Clifford conjugation. -/
+@[simp]
+theorem fiberAlgEquiv_star (b : B) (x : CliffordAlgebraBundle F E V b) :
+    fiberAlgEquiv b (star x) = star (fiberAlgEquiv b x) := by
+  obtain ⟨p, y, rfl⟩ := AssociatedBundle.exists_mk (G := ↥OG) (P := Fr) (F := C) x
+  simp only [star_mk, fiberAlgEquiv_mk, CliffordAlgebra.equivOfIsometry_apply,
+    CliffordAlgebra.map_star]
 
 /-- The fibre's Clifford norm is the intrinsic scalar-part norm of its image. -/
 theorem norm_eq_regularNorm (b : B) (x : CliffordAlgebraBundle F E V b) :
@@ -169,6 +172,17 @@ def ι (b : B) : E b →ₗ[ℝ] CliffordAlgebraBundle F E V b :=
 theorem fiberAlgEquiv_ι (b : B) (v : E b) :
     fiberAlgEquiv b (ι (F := F) (V := V) b v) = CliffordAlgebra.ι (negNormSqForm (E b)) v := by
   simp [ι]
+
+/-- The fibrewise generator inclusion preserves norms. -/
+@[simp]
+theorem norm_ι (b : B) (v : E b) : ‖ι (F := F) (V := V) b v‖ = ‖v‖ := by
+  rw [norm_eq_regularNorm, fiberAlgEquiv_ι, CliffordAlgebra.regularNorm_ι]
+  · simp [Real.sqrt_sq (norm_nonneg v)]
+  · simp
+
+/-- The fibrewise generator inclusion is injective. -/
+theorem ι_injective (b : B) : Function.Injective (ι (F := F) (E := E) (V := V) b) :=
+  (fiberAlgEquiv b).symm.injective.comp (CliffordAlgebra.ι_injective (negNormSqForm (E b)))
 
 /-- In an orthonormal frame, fibrewise Clifford inclusion is the model generator inclusion. -/
 @[simp]
@@ -240,6 +254,12 @@ theorem finrank_eq (b : B) :
 def involute (b : B) : CliffordAlgebraBundle F E V b ≃ₐ[ℝ] CliffordAlgebraBundle F E V b :=
   (fiberAlgEquiv b).trans (CliffordAlgebra.involuteEquiv.trans (fiberAlgEquiv b).symm)
 
+/-- The intrinsic fibre identification intertwines the grade involutions. -/
+@[simp]
+theorem fiberAlgEquiv_involute (b : B) (x : CliffordAlgebraBundle F E V b) :
+    fiberAlgEquiv b (involute b x) = CliffordAlgebra.involute (fiberAlgEquiv b x) := by
+  simp [involute]
+
 @[simp]
 theorem involute_frame {b : B} (p : Fr b) (x : C) :
     involute b (AssociatedBundle.mk OG p x) =
@@ -270,7 +290,7 @@ local notation "A" => CliffordAlgebraBundle F E V
 private theorem mulCLM_equivariant (g : OG) (x y : C) :
     CliffordAlgebra.NegativeMetric.mulCLM V (g • x) (g • y) =
       g • CliffordAlgebra.NegativeMetric.mulCLM V x y := by
-  simp only [CliffordAlgebra.NegativeMetric.mulCLM_apply, Unitary.smul_clifford_eq, map_mul]
+  simp only [CliffordAlgebra.NegativeMetric.mulCLM_apply, smul_mul']
 
 /-- Clifford multiplication, viewed as a continuous bilinear map on each fibre. -/
 def mulCLM (b : B) : A b →L[ℝ] A b →L[ℝ] A b :=
@@ -293,6 +313,24 @@ theorem contMDiff_mulCLM :
         b (mulCLM b)) :=
   AssociatedBundle.contMDiff_bilinearMap _ _
 
+/-- Fibrewise multiplication preserves smooth families over the same base map. -/
+theorem contMDiff_mul_sectionAlong
+    {M EM HM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM]
+    [TopologicalSpace HM] {IM : ModelWithCorners ℝ EM HM} [TopologicalSpace M] [ChartedSpace HM M]
+    {f : M → B} {x y : ∀ m, A (f m)}
+    (hx : ContMDiff IM (IB.prod 𝓘(ℝ, C)) n (fun m ↦ (⟨f m, x m⟩ : TotalSpace C A)))
+    (hy : ContMDiff IM (IB.prod 𝓘(ℝ, C)) n (fun m ↦ (⟨f m, y m⟩ : TotalSpace C A))) :
+    ContMDiff IM (IB.prod 𝓘(ℝ, C)) n (fun m ↦ (⟨f m, x m * y m⟩ : TotalSpace C A)) := by
+  refine (hx.associatedBundleBilinearMap (CliffordAlgebra.NegativeMetric.mulCLM V)
+    (mulCLM_equivariant (V := V)) hy).congr fun m ↦ ?_
+  exact congrArg (TotalSpace.mk' C (f m)) (mulCLM_apply (f m) (x m) (y m)).symm
+
+/-- Fibrewise multiplication is smooth on the total space of pairs in the same Clifford fibre. -/
+theorem contMDiff_mul :
+    ContMDiff (IB.prod 𝓘(ℝ, C × C)) (IB.prod 𝓘(ℝ, C)) n
+      (fun z : TotalSpace (C × C) (A ×ᵇ A) ↦ (⟨z.proj, z.snd.1 * z.snd.2⟩ : TotalSpace C A)) :=
+  contMDiff_mul_sectionAlong Bundle.Prod.contMDiff_fst Bundle.Prod.contMDiff_snd
+
 /-- The Clifford unit is a smooth section. -/
 theorem contMDiff_one :
     ContMDiff IB (IB.prod 𝓘(ℝ, C)) n (fun b ↦ (⟨b, 1⟩ : TotalSpace C A)) := by
@@ -309,30 +347,26 @@ private def ιEquivariant : V →[OG] C where
   toFun := CliffordAlgebra.ι (negNormSqForm V)
   map_smul' g v := (Unitary.cliffordAlgEquiv_ι g v).symm
 
+private theorem ιEquivariant_apply (v : V) :
+    ιEquivariant v = CliffordAlgebra.ι (negNormSqForm V) v := rfl
+
 variable [ENat.LEInfty n] [ContMDiffVectorBundle n F E IB] [IsContMDiffRiemannianBundle IB n F E] in
 /-- The generator inclusion is smooth on total spaces. -/
 theorem contMDiff_ι :
     ContMDiff (IB.prod 𝓘(ℝ, F)) (IB.prod 𝓘(ℝ, C)) n
       (fun z : TotalSpace F E ↦ (⟨z.proj, ι (F := F) (V := V) z.proj z.snd⟩ : TotalSpace C A)) := by
   let d := OrthonormalFrameBundle.associatedBundleDiffeomorph n IB F E V
-  have hι : ContMDiff 𝓘(ℝ, V) 𝓘(ℝ, C) n (ιEquivariant (V := V)) :=
-    (CliffordAlgebra.ι (negNormSqForm V)).toContinuousLinearMap.contMDiff
-  have h := (ManifoldTotalSpace.contMDiff_homeomorph_symm n C A IB).comp
-    ((AssociatedBundle.contMDiff_totalSpaceMap (P := Fr) (IB := IB) ιEquivariant hι).comp
-      ((ManifoldTotalSpace.contMDiff_homeomorph n V (AssociatedBundle OG Fr V) IB).comp
-        d.symm.contMDiff))
+  have hι : ContMDiff 𝓘(ℝ, V) 𝓘(ℝ, C) n (ιEquivariant (V := V)) := by
+    refine (CliffordAlgebra.ι (negNormSqForm V)).toContinuousLinearMap.contMDiff.congr fun v ↦ ?_
+    rw [ιEquivariant_apply, LinearMap.coe_toContinuousLinearMap']
+  have h := (AssociatedBundle.contMDiff_totalSpaceMap_native
+    (P := Fr) (IB := IB) ιEquivariant hι).comp d.symm.contMDiff
   refine h.congr fun z ↦ ?_
-  rw [Function.comp_apply, Function.comp_apply, Function.comp_apply,
-    Homeomorph.symm_apply_apply, Homeomorph.symm_apply_apply]
   obtain ⟨b, v⟩ := z
   let p := (FiberBundle.homeomorphAt OG Fr b).symm 1
-  dsimp only [d]
-  rw [OrthonormalFrameBundle.associatedBundleDiffeomorph_symm_mk_apply (n := n) (IB := IB) p v,
-    AssociatedBundle.totalSpaceMap_mk]
-  -- The equivariant map in this chart is the model generator.
-  change (⟨b, ι (F := F) (V := V) b v⟩ : TotalSpace C A) =
-    ⟨b, AssociatedBundle.mk OG p (CliffordAlgebra.ι (negNormSqForm V) (p.frame.symm v))⟩
-  rw [← ι_frame, p.frame.apply_symm_apply]
+  simp only [Function.comp_apply, d,
+    OrthonormalFrameBundle.associatedBundleDiffeomorph_symm_mk_apply (n := n) (IB := IB) p v,
+    AssociatedBundle.totalSpaceMap_mk, ιEquivariant_apply, ← ι_frame, p.frame.apply_symm_apply]
 
 private def starEquivariant : C →[OG] C where
   toFun := star
@@ -340,20 +374,16 @@ private def starEquivariant : C →[OG] C where
     simp only [Unitary.smul_clifford_eq, Unitary.cliffordAlgEquiv_def,
       id_eq, CliffordAlgebra.equivOfIsometry_apply, CliffordAlgebra.map_star]
 
+private theorem starEquivariant_apply (x : C) : starEquivariant x = star x := rfl
+
 private def involuteEquivariant : C →[OG] C where
   toFun := CliffordAlgebra.involute
   map_smul' g x := by
     simp only [Unitary.smul_clifford_eq, Unitary.cliffordAlgEquiv_def,
       id_eq, CliffordAlgebra.equivOfIsometry_apply, CliffordAlgebra.map_involute]
 
-private theorem contMDiff_inducedCliffordMap (f : C →[OG] C)
-    (hf : ContMDiff 𝓘(ℝ, C) 𝓘(ℝ, C) n f) :
-    ContMDiff (IB.prod 𝓘(ℝ, C)) (IB.prod 𝓘(ℝ, C)) n
-      (AssociatedBundle.totalSpaceMap (P := Fr) f) := by
-  have h := (ManifoldTotalSpace.contMDiff_homeomorph_symm n C A IB).comp
-    ((AssociatedBundle.contMDiff_totalSpaceMap (P := Fr) (IB := IB) f hf).comp
-      (ManifoldTotalSpace.contMDiff_homeomorph n C A IB))
-  exact h.congr fun x ↦ by simp only [Function.comp_apply, Homeomorph.symm_apply_apply]
+private theorem involuteEquivariant_apply (x : C) :
+    involuteEquivariant x = CliffordAlgebra.involute x := rfl
 
 /-- Clifford conjugation is smooth on the algebra bundle. -/
 theorem contMDiff_star :
@@ -361,26 +391,27 @@ theorem contMDiff_star :
       (fun z : TotalSpace C A ↦ (⟨z.proj, star z.snd⟩ : TotalSpace C A)) := by
   let f : C →ₗ[ℝ] C :=
     CliffordAlgebra.reverse.comp (CliffordAlgebra.involute (Q := negNormSqForm V)).toLinearMap
-  have hf : ContMDiff 𝓘(ℝ, C) 𝓘(ℝ, C) n (starEquivariant (V := V)) :=
-    f.toContinuousLinearMap.contMDiff
-  refine (contMDiff_inducedCliffordMap (E := E) starEquivariant hf).congr fun ⟨b, x⟩ ↦ ?_
+  have hf : ContMDiff 𝓘(ℝ, C) 𝓘(ℝ, C) n (starEquivariant (V := V)) := by
+    refine f.toContinuousLinearMap.contMDiff.congr fun x ↦ ?_
+    simp only [starEquivariant_apply, CliffordAlgebra.star_def,
+      LinearMap.coe_toContinuousLinearMap', f, LinearMap.comp_apply, AlgHom.toLinearMap_apply]
+  refine (AssociatedBundle.contMDiff_totalSpaceMap_native
+    (P := Fr) (IB := IB) starEquivariant hf).congr fun ⟨b, x⟩ ↦ ?_
   obtain ⟨p, x, rfl⟩ := AssociatedBundle.exists_mk (G := ↥OG) (P := Fr) (F := C) x
-  rw [AssociatedBundle.totalSpaceMap_mk]
-  apply congrArg (TotalSpace.mk' C b)
-  -- The equivariant map in this chart is model Clifford conjugation.
-  change star (AssociatedBundle.mk OG p x) = AssociatedBundle.mk OG p (star x)
-  exact star_mk p x
+  simp only [AssociatedBundle.totalSpaceMap_mk, starEquivariant_apply, star_mk]
 
 /-- The grade involution is smooth on the algebra bundle. -/
 theorem contMDiff_involute :
     ContMDiff (IB.prod 𝓘(ℝ, C)) (IB.prod 𝓘(ℝ, C)) n
       (fun z : TotalSpace C A ↦ (⟨z.proj, involute z.proj z.snd⟩ : TotalSpace C A)) := by
-  have hf : ContMDiff 𝓘(ℝ, C) 𝓘(ℝ, C) n (involuteEquivariant (V := V)) :=
-    (CliffordAlgebra.involute (Q := negNormSqForm V)).toLinearMap.toContinuousLinearMap.contMDiff
-  refine (contMDiff_inducedCliffordMap (E := E) involuteEquivariant hf).congr fun ⟨b, x⟩ ↦ ?_
+  have hf : ContMDiff 𝓘(ℝ, C) 𝓘(ℝ, C) n (involuteEquivariant (V := V)) := by
+    refine (CliffordAlgebra.involute (Q := negNormSqForm V)).toLinearMap.toContinuousLinearMap
+      |>.contMDiff.congr fun x ↦ ?_
+    rw [involuteEquivariant_apply, LinearMap.coe_toContinuousLinearMap', AlgHom.toLinearMap_apply]
+  refine (AssociatedBundle.contMDiff_totalSpaceMap_native
+    (P := Fr) (IB := IB) involuteEquivariant hf).congr fun ⟨b, x⟩ ↦ ?_
   obtain ⟨p, x, rfl⟩ := AssociatedBundle.exists_mk (G := ↥OG) (P := Fr) (F := C) x
-  rw [AssociatedBundle.totalSpaceMap_mk]
-  exact congrArg (TotalSpace.mk' C b) (involute_frame p x)
+  simp only [AssociatedBundle.totalSpaceMap_mk, involuteEquivariant_apply, involute_frame]
 
 end Smooth
 
@@ -420,7 +451,9 @@ theorem map_trans {F'' : Type*} [NormedAddCommGroup F''] [NormedSpace ℝ F'']
       map (fun b ↦ (Φ b).trans (Ψ b)) b := by
   apply AlgEquiv.ext
   intro x
-  simp only [map, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply, equivOfIsometry_trans_apply]
+  simp only [map, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply,
+    CliffordAlgebra.equivOfIsometry_trans_apply,
+    LinearIsometryEquiv.negNormSqFormIsometryEquiv_trans]
 
 @[simp]
 theorem map_mk {b : B} (p : Fr b) (x : C) :
@@ -428,7 +461,24 @@ theorem map_mk {b : B} (p : Fr b) (x : C) :
       AssociatedBundle.mk OG (OrthonormalFrameBundle.Fiber.map (F' := F') Φ p) x := by
   apply (fiberAlgEquiv b).injective
   simp only [map, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply, fiberAlgEquiv_mk,
-    OrthonormalFrameBundle.Fiber.frame_map, equivOfIsometry_trans_apply]
+    OrthonormalFrameBundle.Fiber.frame_map, CliffordAlgebra.equivOfIsometry_trans_apply,
+    LinearIsometryEquiv.negNormSqFormIsometryEquiv_trans]
+
+/-- Isometric transport of Clifford fibres preserves conjugation. -/
+@[simp]
+theorem map_star (b : B) (x : CliffordAlgebraBundle F E V b) :
+    map (F' := F') Φ b (star x) = star (map Φ b x) := by
+  apply (fiberAlgEquiv b).injective
+  simp only [fiberAlgEquiv_star, map, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply,
+    CliffordAlgebra.equivOfIsometry_apply, CliffordAlgebra.map_star]
+
+/-- Isometric transport of Clifford fibres intertwines the grade involutions. -/
+@[simp]
+theorem map_involute (b : B) (x : CliffordAlgebraBundle F E V b) :
+    map (F' := F') Φ b (involute b x) = involute b (map Φ b x) := by
+  apply (fiberAlgEquiv b).injective
+  simp only [fiberAlgEquiv_involute, map, AlgEquiv.trans_apply, AlgEquiv.apply_symm_apply,
+    CliffordAlgebra.equivOfIsometry_apply, CliffordAlgebra.map_involute]
 
 @[simp]
 theorem map_ι (b : B) (v : E b) :
@@ -468,13 +518,9 @@ theorem contMDiff_map
       rw [← ManifoldTotalSpace.fiberwiseMap_eq]
       exact OrthonormalFrameBundle.contMDiff_fiberwiseMap_map (V := V) hΦ)
     (fun _ _ ↦ rfl)
-  have h := (ManifoldTotalSpace.contMDiff_homeomorph_symm n C
-    (CliffordAlgebraBundle F' E' V) IB).comp
-    (e.contMDiff.comp (ManifoldTotalSpace.contMDiff_homeomorph n C
-      (CliffordAlgebraBundle F E V) IB))
-  refine h.congr fun ⟨b, x⟩ ↦ ?_
+  refine (ManifoldTotalSpace.contMDiff_toTotalSpace e.contMDiff).congr fun ⟨b, x⟩ ↦ ?_
   obtain ⟨p, v, rfl⟩ := AssociatedBundle.exists_mk (G := ↥OG) (P := Fr) (F := C) x
-  simp only [Function.comp_apply, e, AssociatedBundle.diffeomorphOfEquivariant_mk,
+  simp only [e, AssociatedBundle.diffeomorphOfEquivariant_mk,
     Homeomorph.symm_apply_apply, map_mk]
 
 end Naturality

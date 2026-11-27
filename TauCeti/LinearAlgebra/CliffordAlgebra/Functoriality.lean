@@ -289,6 +289,14 @@ theorem equivOfIsometry_ι (e : Q₁.IsometryEquiv Q₂) (v : M₁) :
     equivOfIsometry e (ι Q₁ v) = ι Q₂ (e v) := by
   rw [equivOfIsometry_apply, map_apply_ι, IsometryEquiv.toIsometry_apply]
 
+/-- Applying two isometry-induced Clifford equivalences is the same as applying the
+equivalence induced by the composite isometry. -/
+theorem equivOfIsometry_trans_apply {M₃ : Type*} [AddCommGroup M₃] [Module R M₃]
+    {Q₃ : QuadraticForm R M₃} (e : Q₁.IsometryEquiv Q₂) (f : Q₂.IsometryEquiv Q₃)
+    (x : CliffordAlgebra Q₁) :
+    equivOfIsometry f (equivOfIsometry e x) = equivOfIsometry (e.trans f) x := by
+  simpa only [AlgEquiv.trans_apply] using DFunLike.congr_fun (equivOfIsometry_trans e f) x
+
 /-- Mapping a unit along the equivalence induced by an isometry equivalence `e`, and back along
 the one induced by `e.symm`, gives it back. -/
 @[simp]

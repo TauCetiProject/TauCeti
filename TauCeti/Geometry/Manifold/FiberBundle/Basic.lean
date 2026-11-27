@@ -720,6 +720,17 @@ theorem contMDiff_homeomorph_symm :
   Bundle.contMDiffAt_totalSpace_iff.2 ⟨contMDiff_proj n F E IB 𝓘(𝕜, F) x,
     contMDiffAt_trivializationAt_snd n IB 𝓘(𝕜, F) x⟩
 
+variable {F' : Type*} {E' : B → Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  [∀ b, TopologicalSpace (E' b)] [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E']
+
+/-- A smooth map between the manifold copies of normed-fibre bundles gives a smooth map
+between their native total spaces. The model fibres may differ. -/
+theorem contMDiff_toTotalSpace {f : ManifoldTotalSpace F E → ManifoldTotalSpace F' E'}
+    (hf : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F')) n f) :
+    ContMDiff (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F')) n
+      (fun x ↦ (homeomorph F' E').symm (f (homeomorph F E x))) :=
+  (contMDiff_homeomorph_symm n F' E' IB).comp (hf.comp (contMDiff_homeomorph n F E IB))
+
 end ManifoldTotalSpace
 
 end NormedFiber

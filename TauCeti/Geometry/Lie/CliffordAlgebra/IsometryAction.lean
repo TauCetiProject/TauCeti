@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Regular.Euclidean
 public import TauCeti.Geometry.Manifold.Instances.Unitary
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
+import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 
 /-!
 # Orthogonal action on a negative Clifford algebra
@@ -46,25 +47,28 @@ theorem cliffordAlgEquiv_def (g : unitary (V →L[ℝ] V)) :
 theorem cliffordAlgEquiv_ι (g : unitary (V →L[ℝ] V)) (v : V) :
     cliffordAlgEquiv g (CliffordAlgebra.ι (negNormSqForm V) v) =
       CliffordAlgebra.ι (negNormSqForm V) (g • v) := by
-  rw [cliffordAlgEquiv, CliffordAlgebra.equivOfIsometry_apply, CliffordAlgebra.map_apply_ι,
-    QuadraticMap.IsometryEquiv.toIsometry_apply,
-    LinearIsometryEquiv.negNormSqFormIsometryEquiv_apply]
-  exact congrArg (CliffordAlgebra.ι (negNormSqForm V))
-    (congrArg (fun f : V →L[ℝ] V ↦ f v) (coe_linearIsometryEquiv_apply g))
+  have hv : linearIsometryEquiv g v = g • v :=
+    congrArg (fun f : V →L[ℝ] V ↦ f v) (coe_linearIsometryEquiv_apply g)
+  simp only [cliffordAlgEquiv_def, CliffordAlgebra.equivOfIsometry_ι,
+    LinearIsometryEquiv.negNormSqFormIsometryEquiv_apply, hv]
 
-/-- The orthogonal action is linear and extends the action on the generating space. -/
-instance instDistribMulActionCliffordAlgebra : DistribMulAction (unitary (V →L[ℝ] V)) C where
+private theorem cliffordAlgEquiv_one : cliffordAlgEquiv (1 : unitary (V →L[ℝ] V)) =
+    AlgEquiv.refl := by
+  simp [cliffordAlgEquiv_def, LinearIsometryEquiv.one_def]
+
+private theorem cliffordAlgEquiv_mul (g h : unitary (V →L[ℝ] V)) :
+    cliffordAlgEquiv (g * h) = (cliffordAlgEquiv h).trans (cliffordAlgEquiv g) := by
+  simp [cliffordAlgEquiv_def, LinearIsometryEquiv.mul_def]
+
+/-- The orthogonal group acts by semiring automorphisms extending its action on generators. -/
+instance instMulSemiringActionCliffordAlgebra : MulSemiringAction (unitary (V →L[ℝ] V)) C where
   smul g x := cliffordAlgEquiv g x
   smul_zero g := map_zero (cliffordAlgEquiv g)
   smul_add g := map_add (cliffordAlgEquiv g)
-  one_smul x := by
-    -- The action laws reduce to composition of the defining algebra equivalences.
-    change cliffordAlgEquiv (1 : unitary (V →L[ℝ] V)) x = x
-    simp [cliffordAlgEquiv, LinearIsometryEquiv.one_def]
-  mul_smul g h x := by
-    change cliffordAlgEquiv (g * h) x = cliffordAlgEquiv g (cliffordAlgEquiv h x)
-    simp [cliffordAlgEquiv, LinearIsometryEquiv.mul_def,
-      ← CliffordAlgebra.equivOfIsometry_trans]
+  smul_one g := map_one (cliffordAlgEquiv g)
+  smul_mul g := map_mul (cliffordAlgEquiv g)
+  one_smul x := by exact DFunLike.congr_fun cliffordAlgEquiv_one x
+  mul_smul g h x := by exact DFunLike.congr_fun (cliffordAlgEquiv_mul g h) x
 
 /-- A Clifford algebra action by orthogonal transformations commutes with real scalars. -/
 instance instSMulCommClassCliffordAlgebra : SMulCommClass (unitary (V →L[ℝ] V)) ℝ C where

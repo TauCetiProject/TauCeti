@@ -105,6 +105,18 @@ theorem contMDiff_totalSpaceMap (f : F →[G] F') (hf : ContMDiff IF IF' n f) :
   ContMDiff.associatedBundleTotalSpaceMap f hf
     (contMDiff_id.congr fun v ↦ (ManifoldTotalSpace.homeomorph F _).apply_symm_apply v)
 
+/-- A smooth equivariant map between normed model fibres descends to a smooth map of native
+associated total spaces. -/
+theorem contMDiff_totalSpaceMap_native
+    {F₁ F₂ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+    [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] [MulAction G F₁] [ContinuousSMul G F₁]
+    [MulAction G F₂] [ContinuousSMul G F₂]
+    (f : F₁ →[G] F₂) (hf : ContMDiff 𝓘(𝕜, F₁) 𝓘(𝕜, F₂) n f) :
+    ContMDiff (IB.prod 𝓘(𝕜, F₁)) (IB.prod 𝓘(𝕜, F₂)) n (totalSpaceMap (P := P) f) := by
+  refine (ManifoldTotalSpace.contMDiff_toTotalSpace
+    (contMDiff_totalSpaceMap (P := P) (IB := IB) f hf)).congr fun x ↦ ?_
+  simp only [Homeomorph.symm_apply_apply]
+
 /-- An equivariant diffeomorphism of fibres induces a diffeomorphism of associated bundles. -/
 noncomputable def diffeomorph (f : F ≃ₘ^n⟮IF, IF'⟯ F')
     (hf : ∀ (g : G) v, f (g • v) = g • f v) :

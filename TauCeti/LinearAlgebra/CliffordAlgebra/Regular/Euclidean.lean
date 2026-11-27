@@ -36,6 +36,12 @@ scoped instance instNormedAddCommGroup : NormedAddCommGroup (CliffordAlgebra (ne
 scoped instance instInnerProductSpace : InnerProductSpace ℝ (CliffordAlgebra (negNormSqForm V)) :=
   InnerProductSpace.ofCore (regularInnerProductCore _ (posDef_neg_negNormSqForm V)).toCore
 
+open scoped RealInnerProductSpace in
+/-- The Euclidean inner product is the intrinsic scalar-part pairing. -/
+theorem inner_eq_regularBilinForm (x y : CliffordAlgebra (negNormSqForm V)) :
+    ⟪x, y⟫ = regularBilinForm (negNormSqForm V) x y :=
+  regularInnerProductCore_inner _ (posDef_neg_negNormSqForm V) x y
+
 /-- The norm agrees with the intrinsic scalar-part norm. -/
 theorem norm_eq_regularNorm (x : CliffordAlgebra (negNormSqForm V)) :
     ‖x‖ = regularNorm _ x :=
