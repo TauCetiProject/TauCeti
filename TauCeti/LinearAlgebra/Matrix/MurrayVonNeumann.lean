@@ -561,7 +561,7 @@ theorem isMurrayVonNeumannEquivalent_comp_map_singleNonUnitalStarRingHom [Decida
     ext ⟨b, y⟩ a'
     by_cases hy : y = i
     · simp only [v, Matrix.mul_apply, of_apply, hy, ↓reduceIte]
-      exact congrFun (congrFun hpp b) a'
+      rw [← Matrix.mul_apply, hpp]
     · simp [v, Matrix.mul_apply, hy]
   have h := isMurrayVonNeumannEquivalent_of_mul_conjTranspose_mul_self_eq (v := v)
     (by rw [Matrix.mul_assoc, hvp, hv])
