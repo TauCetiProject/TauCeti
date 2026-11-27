@@ -9,6 +9,7 @@ public import TauCeti.Analysis.ODE.DiracSystem.HermiteBiehler.Basic
 import Mathlib.Analysis.Complex.BranchLogRoot
 import TauCeti.Analysis.Complex.ContinuousLog.Basic
 import TauCeti.Analysis.Convex.SimplyConnected
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.Polar
 import TauCeti.Analysis.ODE.DiracSystem.ZeroFree
 
 /-!
@@ -31,7 +32,8 @@ Let `q` be a potential, locally integrable on `[0, ∞)`, with Dirac fundamental
 and does not vanish for real `z = x` (`TauCeti.diracHermiteBiehler_ne_zero`), so
 the continuous function `(t, x) ↦ E(max t 0, x)` on the simply connected plane has a continuous
 logarithm `L` (`Complex.exists_continuousOn_eqOn_exp_comp`). As `E(0, x) = 1`, the imaginary part
-of `L(t, x) - L(0, x)` is the argument.
+of `L(t, x) - L(0, x)` is the argument, by the polar form `exp w = ‖exp w‖ e^{i Im w}`
+(`Complex.norm_exp_mul_exp_im_mul_I`).
 
 ## References
 
@@ -85,23 +87,17 @@ theorem exists_continuousOn_diracHermiteBiehler_eq_norm_mul_exp_prod
   refine ⟨fun p ↦ (L p).im - (L (0, p.2)).im, (Complex.continuous_im.comp hLc' |>.sub
     (Complex.continuous_im.comp (hLc'.comp (by fun_prop)))).continuousOn, fun x ↦ sub_self _,
     fun t ht x ↦ ?_⟩
-  -- `exp (L (0, x)) = E(0, x) = 1`, so `L (0, x) = i Im L (0, x)` and `exp (i Im L (0, x)) = 1`.
+  -- `exp (L (0, x)) = E(0, x) = 1`, so the polar form of `exp (L (0, x))` gives
+  -- `exp (i Im L (0, x)) = 1`.
   have h0 : exp (L (0, x)) = 1 := by simp [hexp, g, diracHermiteBiehler_zero]
-  have hre0 : (L (0, x)).re = 0 := by
-    have := congrArg norm h0
-    rwa [norm_exp, norm_one, Real.exp_eq_one_iff] at this
   have hI0 : exp (I * (L (0, x)).im) = 1 := by
-    rw [← h0]; congr 1; apply Complex.ext <;> simp [hre0]
+    have := norm_exp_mul_exp_im_mul_I (L (0, x))
+    rwa [h0, norm_one, ofReal_one, one_mul, mul_comm] at this
   have hgt : g (t, x) = diracHermiteBiehler q t x := by simp [g, max_eq_left ht]
-  -- Splitting `w = Re w + i Im w` gives `exp w = |exp w| e^{i Im w}`.
-  have hpolar (w : ℂ) : exp w = ‖exp w‖ * exp (I * w.im) := by
-    rw [norm_exp, ofReal_exp, ← exp_add]
-    congr 1
-    apply Complex.ext <;> simp
   have hshift : exp (I * ((L (t, x)).im - (L (0, x)).im : ℝ)) = exp (I * (L (t, x)).im) := by
     rw [ofReal_sub, mul_sub, exp_sub, hI0, div_one]
-  rw [hshift, ← hgt, ← hexp]
-  exact hpolar _
+  rw [hshift, ← hgt, ← hexp, mul_comm I]
+  exact (norm_exp_mul_exp_im_mul_I _).symm
 
 /-- **Uniqueness of the argument.** For `q` locally integrable on `[0, ∞)`, two functions
 continuous on `[0, ∞) × ℝ`, vanishing at `t = 0` and arguments of `E(t, x)` there, agree on
