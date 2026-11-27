@@ -24,18 +24,19 @@ Over a field, give each `C.X j` a basis `c j`, and the term of parity `r` of the
 of the bases `c j` of the degrees of parity `r`, in an order `e r` (`ChainComplex.parityFoldBasis`).
 Then the torsion `HomologicalComplex.parityTorsion` of the based two-periodic complex is, up to
 sign, the Reidemeister torsion `HomologicalComplex.reidemeisterTorsion` of `C`
-(`ChainComplex.parityTorsion_parityFold_eq_or_eq_neg`). Both torsions are made of the same
-brackets: the torsion of `C` is the alternating product `∏ⱼ [bⱼ sⱼ₋₁ / cⱼ] ^ ((-1) ^ (j + 1))`, the
-brackets of odd degrees in the numerator, and the torsion of the fold is the bracket of its odd
-term over the bracket of its even term. Taking the bases of the boundaries and the lifts of the fold
-to be those of `C`, each concentrated in its degree, the vectors whose determinant is the bracket of
-the fold in parity `r` are those of the brackets of `C` in the degrees of parity `r`, each
-concentrated in its degree, in another order. The determinant of such a block family in the product
-basis is the product of the determinants of the blocks (`Module.Basis.det_pi_single`), and the
-reordering contributes a sign. The sign depends on the orders `e` and on the dimensions of the
-boundaries, and torsions of parity complexes are in any case only defined up to sign when their
-bases come from unordered generators; reordering the bases changes the torsion of the fold by the
-signs of the permutations (`HomologicalComplex.parityTorsion_reindex`).
+(`ChainComplex.homologicalComplex_parityTorsion_parityFold_eq_or_eq_neg`). Both torsions are
+made of the same brackets: the torsion of `C` is the alternating product
+`∏ⱼ [bⱼ sⱼ₋₁ / cⱼ] ^ ((-1) ^ (j + 1))`, the brackets of odd degrees in the numerator, and the
+torsion of the fold is the bracket of its odd term over the bracket of its even term. Taking the
+bases of the boundaries and the lifts of the fold to be those of `C`, each concentrated in its
+degree, the vectors whose determinant is the bracket of the fold in parity `r` are those of the
+brackets of `C` in the degrees of parity `r`, each concentrated in its degree, in another order. The
+determinant of such a block family in the product basis is the product of the determinants of the
+blocks (`Module.Basis.det_pi_single`), and the reordering contributes a sign. The sign depends on
+the orders `e` and on the dimensions of the boundaries, and torsions of parity complexes are in any
+case only defined up to sign when their bases come from unordered generators; reordering the bases
+changes the torsion of the fold by the signs of the permutations
+(`HomologicalComplex.parityTorsion_reindex`).
 
 ## Main definitions
 
@@ -44,8 +45,8 @@ signs of the permutations (`HomologicalComplex.parityTorsion_reindex`).
 
 ## Main results
 
-* `ChainComplex.parityTorsion_parityFold_eq_or_eq_neg`: the torsion of the based parity fold is,
-  up to sign, the Reidemeister torsion of `C`.
+* `ChainComplex.homologicalComplex_parityTorsion_parityFold_eq_or_eq_neg`: the torsion of the
+  based parity fold is, up to sign, the Reidemeister torsion of `C`.
 
 ## References
 
@@ -403,7 +404,7 @@ based by `c` and vanishing outside the finite set of degrees `S`, and give each 
 fold the basis made of the bases of the terms of `C` of that parity, in any order `e`. Then the
 torsion of the parity fold is, up to sign, the Reidemeister torsion of `C`. Both vanish when `C` is
 not acyclic. -/
-theorem parityTorsion_parityFold_eq_or_eq_neg (hS : ∀ j ∉ S, n j = 0) :
+theorem homologicalComplex_parityTorsion_parityFold_eq_or_eq_neg (hS : ∀ j ∉ S, n j = 0) :
     (C.parityFold S).parityTorsion (parityFoldBasis S c e) = C.reidemeisterTorsion c ∨
       (C.parityFold S).parityTorsion (parityFoldBasis S c e) = -C.reidemeisterTorsion c := by
   have hS' : ∀ j ∉ S, IsZero (C.X j) := fun j hj ↦ by
