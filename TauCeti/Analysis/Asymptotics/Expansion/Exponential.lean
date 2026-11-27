@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Analysis.Asymptotics.Expansion.Basic
 
-import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+import TauCeti.Analysis.SpecialFunctions.Exp.StretchedDecay
+import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
 # Exponentially small functions and non-uniqueness of Poincaré expansions
@@ -50,39 +51,27 @@ theorem hasAsymptoticExpansion_zero_cexp_neg_cpow_sector {r δ : ℝ} (hr : 0 < 
   intro N
   by_cases hδpi : δ ≤ π / 2
   · have hsin : 0 < Real.sin δ := Real.sin_pos_of_pos_of_lt_pi hδ (by linarith [Real.pi_pos])
-    have hu : Tendsto (fun z : ℂ => ‖z‖ ^ r)
-        (Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |r * Complex.arg z| ≤ π / 2 - δ}) atTop :=
-      (tendsto_rpow_atTop hr).comp (tendsto_norm_cobounded_atTop.mono_left inf_le_left)
     have hdecay : (fun z : ℂ => Real.exp (-Real.sin δ * ‖z‖ ^ r)) =O[
         Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |r * Complex.arg z| ≤ π / 2 - δ}]
-        fun z : ℂ => (‖z‖ ^ r) ^ (-(N : ℝ) / r) :=
-      ((isLittleO_exp_neg_mul_rpow_atTop hsin (-(N : ℝ) / r)).isBigO).comp_tendsto hu
+        fun z : ℂ => ‖z‖ ^ (-(N : ℝ)) :=
+      ((TauCeti.isLittleO_exp_neg_mul_rpow_rpow_atTop hsin hr (-(N : ℝ))).isBigO).comp_tendsto
+        (tendsto_norm_cobounded_atTop.mono_left inf_le_left)
     have hnorm : (fun z : ℂ => Complex.exp (-z ^ (r : ℂ))) =O[
         Bornology.cobounded ℂ ⊓ 𝓟 {z : ℂ | |r * Complex.arg z| ≤ π / 2 - δ}]
         fun z : ℂ => Real.exp (-Real.sin δ * ‖z‖ ^ r) := by
       refine IsBigO.of_bound 1 ?_
-      filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop 0).filter_mono inf_le_left,
-        Filter.mem_inf_of_right (mem_principal_self _)] with z hzpos hsec
-      have hzne : z ≠ 0 := norm_pos_iff.mp hzpos
-      have hre : (z ^ (r : ℂ)).re = ‖z‖ ^ r * Real.cos (r * Complex.arg z) := by
-        rw [Complex.cpow_def_of_ne_zero hzne, Complex.exp_re]
-        simp only [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, mul_zero, sub_zero,
-          Complex.log_re, Complex.mul_im, Complex.log_im, zero_add]
-        rw [Real.rpow_def_of_pos hzpos, mul_comm (Complex.arg z) r]
-      have hcos : Real.sin δ ≤ Real.cos (r * Complex.arg z) := by
-        rw [← Real.cos_pi_div_two_sub, ← Real.cos_abs (r * Complex.arg z)]
-        exact Real.strictAntiOn_cos.antitoneOn
-          ⟨abs_nonneg _, hsec.trans (by linarith)⟩
-          ⟨by linarith, by linarith⟩ hsec
-      rw [one_mul, Complex.norm_exp, Complex.neg_re, hre,
-        Real.norm_of_nonneg (Real.exp_nonneg _)]
-      exact Real.exp_le_exp.mpr (by nlinarith [Real.rpow_pos_of_pos hzpos r])
+      filter_upwards [Filter.mem_inf_of_right (mem_principal_self _)] with z hsec
+      have hcone := TauCeti.cos_mul_norm_rpow_le_re_exp_mul_cpow (z := z) (y := r) (φ := 0)
+        (δ := π / 2 - δ) (by simpa [sub_zero, mul_comm] using hsec) (by linarith [Real.pi_pos])
+      simp only [neg_zero, Complex.ofReal_zero, zero_mul, Complex.exp_zero, one_mul,
+        Real.cos_pi_div_two_sub] at hcone
+      rw [one_mul, Complex.norm_exp, Complex.neg_re, Real.norm_of_nonneg (Real.exp_nonneg _)]
+      exact Real.exp_le_exp.mpr (by linarith)
     rw [← isBigO_norm_right]
-    refine (hnorm.trans hdecay).congr' (Eventually.of_forall fun z => by simp) ?_
-    filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop 0).filter_mono inf_le_left]
-      with z hzpos
-    rw [← Real.rpow_mul hzpos.le, mul_div_cancel₀ _ hr.ne', Real.rpow_neg hzpos.le,
-      Real.rpow_natCast, norm_inv, norm_pow]
+    refine (hnorm.trans hdecay).congr' (Eventually.of_forall fun z => by simp)
+      (Eventually.of_forall fun z => ?_)
+    dsimp only
+    rw [Real.rpow_neg (norm_nonneg z), Real.rpow_natCast, norm_inv, norm_pow]
   · have hemp : {z : ℂ | |r * Complex.arg z| ≤ π / 2 - δ} = ∅ := by
       ext z
       simp only [mem_ofPred_eq, mem_empty_iff_false, iff_false, not_le]
