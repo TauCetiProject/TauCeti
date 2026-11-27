@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.NumberTheory.LocalField.Topology
 
 /-!
 # Lattices over a nonarchimedean local field
@@ -42,6 +43,9 @@ topological commutative ring.
 * `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite `E`-basis is open.
 * `Submodule.IsFullLattice.isOpen`, `Submodule.IsFullLattice.isClosed`,
   `Submodule.IsFullLattice.isCompact`: a lattice is open, closed and compact.
+* `Submodule.exists_isFullLattice_subset_of_isCompact`,
+  `Submodule.exists_isFullLattice_subset_of_mem_nhds`: every compact subset of `V` lies in a
+  lattice, and every neighbourhood of `0` contains one.
 * `Submodule.IsFullLattice.isModuleTopology`: the subspace topology on a lattice is its
   `𝒪[E]`-module topology.
 * `Submodule.IsFullLattice.isOpen_setOf_mapsTo`, `Submodule.IsFullLattice.isCompact_setOf_mapsTo`:
@@ -99,6 +103,23 @@ theorem IsFullLattice.isOpen : IsOpen (L : Set V) := by
 theorem IsFullLattice.isClosed : IsClosed (L : Set V) := by
   have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
   exact AddSubgroup.isClosed_of_isOpen L.toAddSubgroup (IsFullLattice.isOpen L)
+
+omit L [IsFullLattice E L] in
+/-- **Every compact set lies in a lattice.** Finitely many translates `c + L₀` of the lattice
+`L₀` spanned by a basis cover a compact set `C`, and `C` lies in the lattice spanned by `L₀` and the
+centres `c`. -/
+theorem exists_isFullLattice_subset_of_isCompact [FiniteDimensional E V] {C : Set V}
+    (hC : IsCompact C) : ∃ L : Submodule 𝒪[E] V, L.IsFullLattice E ∧ C ⊆ L := by
+  have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+  let b := Module.finBasis E V
+  obtain ⟨T, -, hCT⟩ := hC.elim_nhds_subcover (fun c ↦ (· - c) ⁻¹' (span 𝒪[E] (range b) : Set V))
+    fun c _ ↦ (b.isOpen_span_range.preimage (continuous_sub_right c)).mem_nhds (by simp)
+  refine ⟨span 𝒪[E] (range b ∪ T), isFullLattice_span ((finite_range b).union T.finite_toSet)
+    (eq_top_iff.2 (b.span_eq ▸ span_mono subset_union_left)), fun x hx ↦ ?_⟩
+  obtain ⟨c, hcT, hxc⟩ := mem_iUnion₂.1 (hCT hx)
+  -- `x = c + (x - c)` with `c` a centre and `x - c` in the span of the basis.
+  rw [← sub_add_cancel x c]
+  exact add_mem (span_mono subset_union_left hxc) (subset_span (subset_union_right hcT))
 
 /-- **A lattice carries the module topology.** The subspace topology on a lattice `L ⊆ V` is its
 `𝒪[E]`-module topology. -/
@@ -295,6 +316,23 @@ theorem IsFullLattice.isCompact_stabilizer :
     simp [T, e, LinearEquiv.smul_def, ← TauCeti.coe_generalLinearContinuousMulEquiv_apply]
   rw [h]
   exact (Submonoid.units_isCompact (IsFullLattice.isCompact_setOf_mapsTo L)).image e.continuous
+
+omit L [IsFullLattice E L] in
+/-- **Every neighbourhood of `0` contains a lattice.** Small scalars map the compact lattice `L₀`
+spanned by a basis into the neighbourhood (tube lemma), and `a • L₀` is a lattice for `a ≠ 0`. -/
+theorem exists_isFullLattice_subset_of_mem_nhds [FiniteDimensional E V] {N : Set V}
+    (hN : N ∈ nhds (0 : V)) : ∃ L : Submodule 𝒪[E] V, L.IsFullLattice E ∧ (L : Set V) ⊆ N := by
+  let L₀ := span 𝒪[E] (range (Module.finBasis E V))
+  have hL₀ : L₀.IsFullLattice E :=
+    isFullLattice_span (finite_range _) (Module.finBasis E V).span_eq
+  have hev : ∀ᶠ a in nhds (0 : E), ∀ v ∈ (L₀ : Set V), a • v ∈ N :=
+    (IsFullLattice.isCompact L₀).eventually_forall_of_forall_eventually fun v _ ↦
+      (continuous_smul.tendsto ((0 : E), v)).eventually (by simpa using hN)
+  obtain ⟨a, ha, ha0⟩ := ((hev.filter_mono (nhdsWithin_le_nhds (s := {0}ᶜ))).and
+    (self_mem_nhdsWithin (s := {(0 : E)}ᶜ))).exists
+  refine ⟨Units.mk0 a ha0 • L₀, IsFullLattice.smul E L₀ _, fun x hx ↦ ?_⟩
+  obtain ⟨v, hv, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hx
+  exact ha v hv
 
 end LocalField
 
