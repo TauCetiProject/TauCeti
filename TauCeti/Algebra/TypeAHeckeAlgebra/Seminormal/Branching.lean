@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Seminormal
-public import TauCeti.Combinatorics.Young.StandardTableau.CornerFun
+public import TauCeti.Combinatorics.Young.StandardTableau.Corner.Fun
 
 /-!
 # Branching of the seminormal representations
@@ -33,8 +33,9 @@ tableau bases:
   `H_n(q)` (`TauCeti.TypeAHeckeAlgebra.seminormalRep_cast_strandIncl_cornerFunEquiv`).
 
 The diagrams `erase μ c` are distinct for distinct corners `c`
-(`YoungDiagram.erase_inj`), so each appears once. The hypothesis on `μ` is the
-split-semisimplicity criterion for the diagrams `erase μ c` with `n` cells, so every summand is a
+(`YoungDiagram.erase_inj`), so each appears once. The hypothesis on `μ` carries over to the
+diagrams `erase μ c` (`TauCeti.TypeAHeckeAlgebra.additiveContent_ne_zero_of_card_le`), and it is
+the split-semisimplicity criterion for these diagrams with `n` cells, so every summand is a
 simple module (`TauCeti.TypeAHeckeAlgebra.isSimpleModule_seminormalRep`).
 
 ## Main results
@@ -42,8 +43,6 @@ simple module (`TauCeti.TypeAHeckeAlgebra.isSimpleModule_seminormalRep`).
 * `TauCeti.TypeAHeckeAlgebra.seminormalRep_cast_strandIncl_comp_extendByZero`: extension by zero
   from the tableaux with the largest label at a corner intertwines the restricted action.
 * `TauCeti.TypeAHeckeAlgebra.seminormalRep_cast_strandIncl_cornerFunEquiv`: the branching rule.
-* `TauCeti.TypeAHeckeAlgebra.additiveContent_ne_zero_of_card_le`: the hypothesis on `μ` carries
-  over to every diagram with at most as many cells, such as the diagrams `erase μ c`.
 
 ## Implementation notes
 
@@ -68,14 +67,6 @@ open YoungTableau StandardYoungTableau Function.ExtendByZero
 
 variable {K : Type*} [Field K] {q : Kˣ} {μ : YoungDiagram} {c : ℕ × ℕ}
   {hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent ((q : K) ^ 2) d ≠ 0}
-
-/-- The hypothesis defining the seminormal representation of `μ` carries over to every
-diagram `ν` with at most as many cells, such as the diagram `erase μ c` obtained by removing a
-corner `c`. -/
-theorem additiveContent_ne_zero_of_card_le {Q : K} {ν : YoungDiagram} (hνμ : ν.card ≤ μ.card)
-    (hμ : ∀ d : ℕ, 0 < d → d < μ.card → additiveContent Q d ≠ 0) :
-    ∀ d : ℕ, 0 < d → d < ν.card → additiveContent Q d ≠ 0 :=
-  fun d hd hdν => hμ d hd (hdν.trans_le hνμ)
 
 /-- The branching rule on a generator, at a single corner. -/
 private theorem seminormalRep_cast_strandIncl_T_extendByZero (hc : YoungDiagram.IsCorner μ c)

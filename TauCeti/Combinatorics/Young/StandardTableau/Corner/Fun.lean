@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Young.StandardTableau.Corner
+public import TauCeti.Combinatorics.Young.StandardTableau.Corner.Basic
 public import TauCeti.LinearAlgebra.ExtendByZero
 
 /-!
@@ -21,8 +21,8 @@ along `TauCeti.StandardYoungTableau.extend`
 (`TauCeti.StandardYoungTableau.cornerFunEquiv_single`).
 
 This is the splitting of tableau-indexed bases used by branching rules, kept apart from
-`TauCeti.Combinatorics.Young.StandardTableau.Corner` so that the combinatorics there does not
-import linear algebra.
+`TauCeti.Combinatorics.Young.StandardTableau.Corner.Basic` so that the combinatorics there does
+not import linear algebra.
 
 ## Main definitions
 

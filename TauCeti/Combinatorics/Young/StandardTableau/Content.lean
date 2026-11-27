@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Young.StandardTableau.Corner
+public import TauCeti.Combinatorics.Young.StandardTableau.Corner.Basic
 import TauCeti.Combinatorics.Young.HookLength.Basic
 import TauCeti.Combinatorics.Young.StandardTableau.Order
 import TauCeti.Combinatorics.Young.StandardTableau.Separation

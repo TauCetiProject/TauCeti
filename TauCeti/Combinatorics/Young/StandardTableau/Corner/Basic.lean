@@ -327,11 +327,12 @@ private noncomputable def maxCorner (hμ : 0 < μ.card) (T : StandardYoungTablea
     {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ} :=
   ⟨maxCell hμ T, YoungDiagram.mem_corners.mpr (isCorner_maxCell hμ T)⟩
 
-/-- **The corner decomposition** of the standard Young tableaux of a nonempty shape `μ`: a
-tableau is recorded by the corner `c` carrying its largest label together with the tableau of
-shape `erase μ c` left after deleting that corner
-(`TauCeti.StandardYoungTableau.sigmaCornerEquiv_symm_apply`). The inverse direction restores the
-corner (`TauCeti.StandardYoungTableau.sigmaCornerEquiv_apply`). -/
+/-- **The corner decomposition** of the standard Young tableaux of a nonempty shape `μ`. The
+forward map sends a corner `c` and a tableau of shape `erase μ c` to the tableau of shape `μ`
+obtained by restoring `c` with the largest label
+(`TauCeti.StandardYoungTableau.sigmaCornerEquiv_apply`). Its inverse reads off the corner
+carrying the largest label and deletes it
+(`TauCeti.StandardYoungTableau.sigmaCornerEquiv_symm_apply`). -/
 noncomputable def sigmaCornerEquiv (hμ : 0 < μ.card) :
     (Σ c : {c : ℕ × ℕ // c ∈ YoungDiagram.corners μ},
       StandardYoungTableau (YoungDiagram.erase μ c.val)) ≃ StandardYoungTableau μ :=
