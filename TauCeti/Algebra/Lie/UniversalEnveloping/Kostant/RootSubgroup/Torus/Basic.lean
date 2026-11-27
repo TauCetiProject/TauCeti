@@ -262,7 +262,7 @@ coordinate by `wt y j`. -/
 theorem repr_kostantCartanOperator
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V)) (j : κ) (m : M) (y : η) :
     b.repr (kostantCartanOperator e h ρ M hM j m) y = wt y j * b.repr m y :=
-  b.repr_apply_of_apply_basis
+  b.repr_apply_eq_mul_of_apply_eq_smul b
     (fun x => kostantCartanOperator_apply_of_isCartanWeightVector e h ρ M hM (hwt x) j) m y
 
 /-- A weight basis separates weights: a weight vector of weight `μ` has vanishing coordinates at
