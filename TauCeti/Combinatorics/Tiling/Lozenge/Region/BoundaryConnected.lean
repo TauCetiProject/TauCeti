@@ -8,11 +8,12 @@ module
 public import TauCeti.Combinatorics.Tiling.Lozenge.Hole
 
 /-!
-# The boundary of a finite simply connected region is connected
+# The boundary of a finite simply connected region is preconnected
 
 For a finite simply connected region `R` of the triangular lattice, the boundary graph
-`boundaryGraph R` (the boundary vertices `∂R`, joined along the boundary edges) is connected
-(`TauCeti.IsSimplyConnectedRegion.boundaryGraph_preconnected`).
+`boundaryGraph R` (the boundary vertices `∂R`, joined along the boundary edges) is preconnected
+(`TauCeti.IsSimplyConnectedRegion.preconnected_boundaryGraph`): any two boundary vertices are
+joined by a path of boundary edges.
 
 The route goes through functions on the vertices
 (`TauCeti.IsSimplyConnectedRegion.eq_of_forall_boundaryEdges`): if `h` takes equal values at the
@@ -24,7 +25,7 @@ plane. `G` is constant on each face outside `R`, hence, the faces outside `R` be
 through shared edges (`TauCeti.IsSimplyConnectedRegion.connected_induce_compl`), constant on all
 their vertices, which include `∂R`. On `R`, which is connected, `G` and `h` are primitives of the
 same cochain, so they differ by a constant on the vertices of `R`, and `h` is constant on `∂R`.
-Applied to the indicator of a component of the boundary graph, this gives connectedness.
+Applied to the indicator of a component of the boundary graph, this gives preconnectedness.
 
 ## References
 
@@ -50,18 +51,6 @@ private theorem boundaryCochain_eq_zero {h : ℤ × ℤ → ℤ}
   · rw [hh e (mem_boundaryEdges.2 ⟨heR, f, hf, he⟩), sub_self]
   · rfl
 
-/-- A primitive of a cochain on the plane is constant on a face where the cochain vanishes. -/
-private theorem eq_of_mem_vertices {c : TriEdge → ℤ} {G : ℤ × ℤ → ℤ}
-    (hG : IsCochainPrimitiveOn Set.univ c G) {f : TriFace} (hc : ∀ e ∈ f.edges, c e = 0)
-    {x y : ℤ × ℤ} (hx : x ∈ f.vertices) (hy : y ∈ f.vertices) : G x = G y := by
-  rcases eq_or_ne x y with rfl | hxy
-  · rfl
-  obtain ⟨e, he, hexy⟩ := TriFace.exists_mem_edges_endpoints_eq hx hy hxy
-  have h₀ : G e.target - G e.v = 0 := by
-    rw [← isCochainPrimitiveOn_def.1 hG e (by simp [mem_regionEdges_iff]), hc e he]
-  rw [TriEdge.endpoints_def, Sym2.eq_iff] at hexy
-  rcases hexy with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;> omega
-
 /-- **Functions constant along the boundary are constant on the boundary.** Let `R` be a finite
 simply connected region and `h : ℤ × ℤ → ℤ` take equal values at the two endpoints of every
 boundary edge of `R`. Then `h` is constant on the boundary vertices `∂R`. -/
@@ -83,17 +72,23 @@ theorem IsSimplyConnectedRegion.eq_of_forall_boundaryEdges (hR : IsSimplyConnect
       exact isClosedCochainOn_def.1 (isClosedCochainOn_coboundary Set.univ h) f (Set.mem_univ f)
     · simp only [hout f hf _ (f.edge_mem_edges _), add_zero]
   obtain ⟨G, hG⟩ := isExactCochainOn_def.1 hclosed.isExactCochainOn_univ
-  -- `G` is constant on the vertices of the faces outside `R`
+  -- `G` is constant on the vertices of each face outside `R`, where `c` vanishes
+  have hface {f : TriFace} (hf : f ∉ R) {x y : ℤ × ℤ} (hx : x ∈ f.vertices)
+      (hy : y ∈ f.vertices) : G x = G y := by
+    simpa using (isConnectedRegion_singleton f).sub_eq_sub_of_isCochainPrimitiveOn
+      (g' := fun _ => 0) (hG.mono (Set.subset_univ _))
+      (isCochainPrimitiveOn_singleton.2 fun e he => by simpa using hout f hf e he)
+      (by simpa using hx) (by simpa using hy)
+  -- hence on the vertices of all faces outside `R`
   have hcompl : ∀ a b : (Rᶜ : Set TriFace), (hexGraph.induce Rᶜ).Reachable a b →
       ∀ x ∈ (a : TriFace).vertices, ∀ y ∈ (b : TriFace).vertices, G x = G y := by
     intro a b ⟨p⟩
     induction p with
-    | @nil a => exact fun x hx y hy => eq_of_mem_vertices hG (hout _ a.property) hx hy
+    | @nil a => exact fun x hx y hy => hface a.property hx hy
     | @cons a b _ hab _ ih =>
       intro x hx y hy
       obtain ⟨-, e, hea, heb⟩ := hexGraph_adj.1 (SimpleGraph.induce_adj.1 hab)
-      exact (eq_of_mem_vertices hG (hout _ a.property) hx
-        (TriFace.v_mem_vertices_of_mem_edges hea)).trans
+      exact (hface a.property hx (TriFace.v_mem_vertices_of_mem_edges hea)).trans
         (ih _ (TriFace.v_mem_vertices_of_mem_edges heb) y hy)
   have hbdry {x : ℤ × ℤ} (hx : x ∈ boundaryVertices R) :
       ∃ f : (Rᶜ : Set TriFace), x ∈ (f : TriFace).vertices := by
@@ -110,8 +105,9 @@ theorem IsSimplyConnectedRegion.eq_of_forall_boundaryEdges (hR : IsSimplyConnect
     hhR (boundaryVertices_subset_regionVertices hu) (boundaryVertices_subset_regionVertices hu')
   omega
 
-/-- **The boundary graph of a finite simply connected region is connected.** -/
-theorem IsSimplyConnectedRegion.boundaryGraph_preconnected (hR : IsSimplyConnectedRegion R)
+/-- **The boundary graph of a finite simply connected region is preconnected**: any two boundary
+vertices are joined by a path of boundary edges. -/
+theorem IsSimplyConnectedRegion.preconnected_boundaryGraph (hR : IsSimplyConnectedRegion R)
     (hfin : R.Finite) : (boundaryGraph R).Preconnected := by
   classical
   intro u u'
