@@ -37,6 +37,9 @@ counterpart of `TauCeti.LFunctions.PrimitiveRayClassCharacter`, built on Mathlib
   `TauCeti.PrimitiveDirichletCharacter.of_changeLevel`,
   `TauCeti.PrimitiveDirichletCharacter.of_one`, `TauCeti.PrimitiveDirichletCharacter.of_inv`: the
   bundle of the character of a bundle, of a lift, of a principal character and of an inverse.
+* `TauCeti.PrimitiveDirichletCharacter.of_eq_one_iff`,
+  `TauCeti.PrimitiveDirichletCharacter.of_ofUnitHom_comp_eq_one_iff`: the bundle of a character,
+  or of its pullback along a surjection, is trivial exactly when the character is.
 -/
 
 public section
@@ -168,6 +171,22 @@ theorem character_one_apply (n : ℕ) : (1 : PrimitiveDirichletCharacter).charac
 @[simp]
 theorem of_one [NeZero N] : of (1 : DirichletCharacter ℂ N) = 1 :=
   of_eq_iff.2 ⟨one_dvd N, changeLevel_one _⟩
+
+/-- The bundle of a character is trivial exactly when the character is principal. -/
+@[simp]
+theorem of_eq_one_iff [NeZero N] {χ : DirichletCharacter ℂ N} : of χ = 1 ↔ χ = 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ of_one⟩
+  obtain ⟨hd, hχ⟩ := of_eq_iff.1 h
+  rw [← hχ, character_one, changeLevel_one]
+
+/-- The bundle of the pullback of a character `χ` along a surjection `f` onto its domain is
+trivial exactly when `χ` is. -/
+theorem of_ofUnitHom_comp_eq_one_iff [NeZero N] {G : Type*} [MulOneClass G]
+    {f : (ZMod N)ˣ →* G} (hf : Function.Surjective f) {χ : G →* ℂˣ} :
+    of (MulChar.ofUnitHom (χ.comp f)) = 1 ↔ χ = 1 := by
+  rw [of_eq_one_iff]
+  change MulChar.mulEquivToUnitHom.symm (χ.comp f) = 1 ↔ χ = 1
+  rw [MulEquiv.map_eq_one_iff, ← MonoidHom.one_comp f, MonoidHom.cancel_right hf]
 
 /-- A bundle is trivial exactly when its character is the principal character of its level. -/
 theorem character_eq_one_iff (ψ : PrimitiveDirichletCharacter) : ψ.character = 1 ↔ ψ = 1 :=

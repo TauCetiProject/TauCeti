@@ -13,7 +13,7 @@ import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 /-!
 # The character average of a Frobenius Riesz remainder
 
-For a quadratic character of a finite abelian quotient of cyclotomic units, restrict the
+For a quadratic character of a finite abelian quotient of `(ZMod N)ˣ`, restrict the
 prime-power ramps to the complement of its kernel. Translate this complement into the kernel to
 read off the caps. The difference between twice this prime sum and its main term is the average
 of the first Riesz remainders of the primitive Dirichlet pullbacks. Only the principal and
@@ -57,23 +57,20 @@ theorem frobeniusRieszMainTerm_def [Fintype G] (f : (ZMod N)ˣ →* G) (q : G �
 @[simp] theorem conj_frobeniusRieszMainTerm [Fintype G] (f : (ZMod N)ˣ →* G) (q : G →* ℂˣ)
     (hq : q * q = 1) (w : G → ℝ) (a : ℝ) :
     conj (f.frobeniusRieszMainTerm q w a) = f.frobeniusRieszMainTerm q w a := by
-  let χ := MulChar.ofUnitHom (q.comp f)
-  have hsq : χ * χ = 1 := by
+  have hsq : MulChar.ofUnitHom (q.comp f) * MulChar.ofUnitHom (q.comp f) = 1 := by
     apply MulChar.mulEquivToUnitHom.injective
-    have hχ : MulChar.mulEquivToUnitHom χ = q.comp f :=
+    have hχ : MulChar.mulEquivToUnitHom (MulChar.ofUnitHom (q.comp f)) = q.comp f :=
       MulChar.mulEquivToUnitHom.apply_symm_apply _
     rw [map_mul, map_one, hχ]
     exact DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun hq (f u)
-  let ψ := PrimitiveDirichletCharacter.of χ
-  have hp : ψ⁻¹ = ψ := by
+  have hp : (PrimitiveDirichletCharacter.of (MulChar.ofUnitHom (q.comp f)))⁻¹ =
+      PrimitiveDirichletCharacter.of (MulChar.ofUnitHom (q.comp f)) := by
     rw [← PrimitiveDirichletCharacter.of_inv, inv_eq_of_mul_eq_one_right hsq]
-  have hd := ψ.character.logDeriv_LFunction_inv_conj 1
-  rw [← PrimitiveDirichletCharacter.character_inv, map_one] at hd
-  have hreal := hd.symm.trans
-    (congrArg (fun ξ : PrimitiveDirichletCharacter ↦ logDeriv ξ.character.LFunction 1) hp)
-  simp only [ψ, χ] at hreal
+  -- The pullback of `q` is its own inverse, so its logarithmic derivative at `1` is real.
+  have hreal := PrimitiveDirichletCharacter.logDeriv_LFunction_conj_of_inv_eq hp 1
+  rw [map_one] at hreal
   simp only [frobeniusRieszMainTerm_def, map_mul, map_sub, map_add, Complex.conj_ofReal,
-    map_one, expect_eq_sum_div_card, map_div₀, map_sum, map_natCast, hreal]
+    map_one, expect_eq_sum_div_card, map_div₀, map_sum, map_natCast, ← hreal]
 
 /-- The character average for the Frobenius Riesz sum off the kernel of `q`. The argument `c`
 translates the complement into the kernel (when `q` is quadratic and `q c ≠ 1`). Each term
@@ -99,20 +96,6 @@ private noncomputable abbrev pullback (f : (ZMod N)ˣ →* G) (χ : G →* ℂˣ
     PrimitiveDirichletCharacter :=
   PrimitiveDirichletCharacter.of (MulChar.ofUnitHom (χ.comp f))
 
-private theorem pullback_eq_one_iff (f : (ZMod N)ˣ →* G) (hf : Surjective f) (χ : G →* ℂˣ) :
-    pullback f χ = 1 ↔ χ = 1 := by
-  rw [PrimitiveDirichletCharacter.of_eq_iff]
-  simp only [PrimitiveDirichletCharacter.level_one]
-  constructor
-  · rintro ⟨_, h⟩
-    rw [PrimitiveDirichletCharacter.character_one, DirichletCharacter.changeLevel_one] at h
-    ext g
-    obtain ⟨u, rfl⟩ := hf g
-    have he := DFunLike.congr_fun h (u : ZMod N)
-    simpa using he.symm
-  · rintro rfl
-    exact ⟨one_dvd N, by simp [← MulChar.mulEquivToUnitHom_symm_apply]⟩
-
 open scoped Classical in
 private theorem mul_expect_rieszSum_sub_charAverage [Fintype G]
     (f : (ZMod N)ˣ →* G) (hf : Surjective f) (q : G →* ℂˣ) (c : G)
@@ -128,9 +111,11 @@ private theorem mul_expect_rieszSum_sub_charAverage [Fintype G]
   refine expect_congr rfl fun g _ ↦ ?_
   rw [← add_sum_erase _ _ (mem_univ (1 : G →* ℂˣ)),
     ← add_sum_erase _ _ (mem_univ (1 : G →* ℂˣ))]
-  have h₁ : pullback f (1 : G →* ℂˣ) = 1 := (pullback_eq_one_iff f hf _).2 rfl
+  have h₁ : pullback f (1 : G →* ℂˣ) = 1 :=
+    (PrimitiveDirichletCharacter.of_ofUnitHom_comp_eq_one_iff hf).2 rfl
   have hχ : ∀ χ ∈ (univ : Finset (G →* ℂˣ)).erase 1, pullback f χ ≠ 1 :=
-    fun χ hχ ↦ (pullback_eq_one_iff f hf χ).not.mpr (mem_erase.mp hχ).1
+    fun χ hχ ↦
+      (PrimitiveDirichletCharacter.of_ofUnitHom_comp_eq_one_iff hf).not.mpr (mem_erase.mp hχ).1
   simp only [h₁, one_apply, Units.val_one, map_one, one_mul,
     PrimitiveDirichletCharacter.rieszRemainder_one]
   have hsum : (∑ χ ∈ (univ : Finset (G →* ℂˣ)).erase 1,
@@ -168,19 +153,12 @@ theorem frobeniusRieszSum_sub_main [Fintype G]
   have : IsMulCommutative G := hf.isMulCommutative
   let S := univ.filter fun g ↦ q g ≠ 1
   have hc' := (q.apply_ne_one_iff_of_mul_self_eq_one hq c).mp hc
+  have hq₁ : q ≠ 1 := fun h ↦ hc (by simp [h])
   have hmem (g : G) : g ∈ S ↔ q (c * g) = 1 := by
-    rcases q.apply_eq_one_or_eq_neg_one_of_mul_self_eq_one hq g with hg | hg
-    · simp [S, hg, hc]
-    · have hcn := Units.val_eq_neg_one.mp hc'
-      simp only [S, mem_filter, mem_univ, true_and, hg, map_mul, hcn]
-      simp
-  have hcard := card_equiv (Equiv.mulLeft c) (t := univ.filter fun h ↦ q h = 1)
-    (fun g ↦ by simpa using hmem g)
-  have htotal := card_filter_add_card_filter_not (s := univ) (fun g ↦ q g = 1)
-  rw [← hcard, card_univ] at htotal
+    simpa [S] using q.apply_ne_one_iff_apply_mul_eq_one hq hc g
   have hnorm : 2 * (Nat.card G : ℂ)⁻¹ = (S.card : ℂ)⁻¹ := by
-    rw [Nat.card_eq_fintype_card, ← htotal, Nat.cast_add, ← two_mul, mul_inv_rev,
-      mul_left_comm, mul_inv_cancel₀ (by norm_num : (2 : ℂ) ≠ 0), mul_one]
+    rw [Nat.card_eq_fintype_card, ← q.two_mul_card_filter_apply_ne_one hq hq₁, Nat.cast_mul,
+      Nat.cast_ofNat, mul_inv, ← mul_assoc, mul_inv_cancel₀ two_ne_zero, one_mul]
   -- The factor of two changes the full-group normalization to a mean over the coset.
   rw [f.ofReal_frobeniusRieszSum_eq_sum_rieszSum S _ a (fun g hg ↦
     hw _ (MonoidHom.mem_ker.mpr ((hmem g).mp hg))), ← mul_assoc, hnorm, ← div_eq_inv_mul,

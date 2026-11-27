@@ -46,6 +46,35 @@ theorem apply_ne_one_iff_of_mul_self_eq_one {G K : Type*} [Monoid G] [CommRing K
     _ = 1 + -1 := by rw [← h']
     _ = 0 := add_neg_cancel 1
 
+/-- Left translation by an element `c` off the kernel of a character `q` whose square is trivial
+exchanges the kernel and its complement. -/
+theorem apply_ne_one_iff_apply_mul_eq_one {G K : Type*} [Monoid G] [CommRing K] [IsDomain K]
+    (q : G →* Kˣ) (hq : q * q = 1) {c : G} (hc : q c ≠ 1) (g : G) :
+    q g ≠ 1 ↔ q (c * g) = 1 := by
+  have hc' : q c = -1 := (q.apply_eq_one_or_eq_neg_one_of_mul_self_eq_one hq c).resolve_left hc
+  rcases q.apply_eq_one_or_eq_neg_one_of_mul_self_eq_one hq g with hg | hg
+  · simp [hg, hc]
+  · rw [map_mul, hg, hc']
+    exact ⟨fun _ ↦ by simp, fun _ ↦ hc' ▸ hc⟩
+
+/-- A nontrivial character whose square is trivial is nontrivial on exactly half of a finite
+group. -/
+theorem two_mul_card_filter_apply_ne_one {G K : Type*} [Group G] [Fintype G] [CommRing K]
+    [IsDomain K] (q : G →* Kˣ) [DecidablePred fun g ↦ q g ≠ 1]
+    (hq : q * q = 1) (hq₁ : q ≠ 1) :
+    2 * (Finset.univ.filter fun g ↦ q g ≠ 1).card = Fintype.card G := by
+  classical
+  obtain ⟨c, hc⟩ : ∃ c, q c ≠ 1 := by
+    by_contra! h
+    exact hq₁ (MonoidHom.ext h)
+  have hcard := Finset.card_equiv (Equiv.mulLeft c) (s := Finset.univ.filter fun g ↦ q g ≠ 1)
+    (t := Finset.univ.filter fun h ↦ q h = 1)
+    (fun g ↦ by simpa using q.apply_ne_one_iff_apply_mul_eq_one hq hc g)
+  rw [two_mul]
+  nth_rw 1 [hcard]
+  rw [← Finset.card_univ]
+  convert Finset.card_filter_add_card_filter_not (s := Finset.univ) (fun g ↦ q g = 1)
+
 /-- The mean of a linear character off the kernel of a nontrivial quadratic character `q`.
 Only the trivial character and `q` have nonzero mean there. -/
 theorem expect_filter_apply_ne_one_apply_of_mul_self_eq_one {G K : Type*} [Group G] [Fintype G]
@@ -66,9 +95,7 @@ theorem expect_filter_apply_ne_one_apply_of_mul_self_eq_one {G K : Type*} [Group
     · simp [hg]
     · simp [hg, (q.apply_ne_one_iff_of_mul_self_eq_one hq g).mp hg, two_mul]
   have hcard : 2 * ((Finset.univ.filter fun g ↦ q g ≠ 1).card : K) = Fintype.card G := by
-    have h := htwice 1
-    rw [mul_one q, sum_hom_units_eq_zero _ ((hcomp q).not.mpr hq₁)] at h
-    simpa using h
+    exact_mod_cast q.two_mul_card_filter_apply_ne_one hq hq₁
   have hne : ((Finset.univ.filter fun g ↦ q g ≠ 1).card : K) ≠ 0 := by
     intro hz
     exact (Nat.cast_ne_zero.mpr (Fintype.card_ne_zero (α := G)) :
