@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Pi
 public import TauCeti.Probability.Density
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Integral.Bochner.WithDensity
+import TauCeti.Topology.Constructions.Pi
 
 /-!
 # The finite beta gas
@@ -105,32 +106,6 @@ theorem betaGasPartitionFunction_nonneg (n : ℕ) (β : ℝ) (V : ℝ → ℝ) :
     0 ≤ betaGasPartitionFunction n β V :=
   integral_nonneg (betaGasWeight_nonneg n β V)
 
-private theorem isOpen_injective_configurations (n : ℕ) :
-    IsOpen {x : Fin n → ℝ | Function.Injective x} := by
-  have heq : {x : Fin n → ℝ | Function.Injective x} =
-      ⋂ i, ⋂ j, {x : Fin n → ℝ | i ≠ j → x i ≠ x j} := by
-    ext x
-    simp only [Set.mem_ofPred_eq, Set.mem_iInter]
-    constructor
-    · intro hx i j hij h
-      exact hij (hx h)
-    · intro hx i j h
-      by_contra hij
-      exact hx i j hij h
-  rw [heq]
-  apply isOpen_iInter_of_finite
-  intro i
-  apply isOpen_iInter_of_finite
-  intro j
-  by_cases hij : i = j
-  · simp [hij]
-  · have hset : {x : Fin n → ℝ | i ≠ j → x i ≠ x j} =
-        {x : Fin n → ℝ | x i ≠ x j} := by
-      ext x
-      simp [hij]
-    rw [hset]
-    exact (isClosed_eq (continuous_apply i) (continuous_apply j)).isOpen_compl
-
 /-- Every integrable beta-gas weight has positive partition function. -/
 theorem betaGasPartitionFunction_pos_of_integrable (n : ℕ) (β : ℝ) (V : ℝ → ℝ)
     (hint : Integrable (betaGasWeight n β V)
@@ -147,7 +122,7 @@ theorem betaGasPartitionFunction_pos_of_integrable (n : ℕ) (β : ℝ) (V : ℝ
   apply (integral_pos_iff_support_of_nonneg (betaGasWeight_nonneg n β V) hint).mpr
   exact lt_of_lt_of_le
     ((volume : Measure (Fin n → ℝ)).measure_pos_of_mem_nhds
-      ((isOpen_injective_configurations n).mem_nhds hx₀)) (measure_mono hsupport)
+      (TauCeti.isOpen_setOf_injective.mem_nhds hx₀)) (measure_mono hsupport)
 
 /-- The beta-gas weight divided by its partition function. It integrates to one when the weight
 is integrable and the partition function is positive. -/
