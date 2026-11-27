@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
-public import TauCeti.NumberTheory.LSeries.GaussianTheta
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.Basic
 import TauCeti.Analysis.Complex.VerticalStrip.PowerBounds
 import TauCeti.Analysis.MellinTransform.UpperTail
@@ -64,10 +64,13 @@ theorem gaussianMollifier_def {N : ℕ} (χ : DirichletCharacter ℂ N)
     ∫ t : ℝ in Ioi r, (t : ℂ) ^ (s - 1) *
       gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t := (rfl)
 
-/-- The coefficients of the reciprocal Dirichlet series have norm at most one. -/
-private theorem norm_mul_moebius_le_one {N : ℕ} (χ : DirichletCharacter ℂ N) (n : ℕ) :
-    ‖χ n * (μ n : ℂ)‖ ≤ 1 := by
-  exact (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n)
+/-- Specializing the upper-tail kernel at `-s` gives the mollifier integrand. -/
+private theorem upperTail_gaussianMollifier_integrand {N : ℕ} (χ : DirichletCharacter ℂ N)
+    (j : ℕ) (s : ℂ) (t : ℝ) :
+    gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t * (t : ℂ) ^ (-(-s + 1)) =
+      (t : ℂ) ^ (s - 1) * gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) t := by
+  have hexp : -(-s + 1) = s - 1 := by ring
+  rw [hexp, mul_comm]
 
 /-- The theta kernel of the mollifier decays faster than every power at infinity. -/
 private theorem isBigO_gaussianMollifier_kernel {N : ℕ} (χ : DirichletCharacter ℂ N) (j : ℕ)
@@ -78,7 +81,8 @@ private theorem isBigO_gaussianMollifier_kernel {N : ℕ} (χ : DirichletCharact
     refine IsBigO.of_bound ((j.factorial : ℝ) * Real.exp 1 / (1 - Real.exp (-1))) ?_
     filter_upwards [eventually_ge_atTop (1 : ℝ)] with t ht
     simpa only [one_mul, Real.norm_eq_abs, abs_of_nonneg (Real.exp_nonneg _)] using
-      norm_gaussianDirichletTheta_le_mul_exp_neg j (fun n _ ↦ χ.norm_mul_moebius_le_one n)
+      norm_gaussianDirichletTheta_le_mul_exp_neg j
+        (fun n _ ↦ (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n))
         zero_lt_one ht
   exact h.trans (by simpa only [neg_one_mul] using
     (isLittleO_exp_neg_mul_rpow_atTop zero_lt_one a).isBigO)
@@ -95,8 +99,9 @@ theorem integrableOn_gaussianMollifier_integrand {N : ℕ} (χ : DirichletCharac
         (measurable_gaussianDirichletTheta j _).aestronglyMeasurable ?_
     filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
     simpa only [one_mul] using norm_gaussianDirichletTheta_le_mul_exp_neg j
-      (fun n _ ↦ χ.norm_mul_moebius_le_one n) hr (mem_Ioi.mp ht).le
-  simpa only [neg_add', neg_neg, sub_eq_add_neg, mul_comm] using
+      (fun n _ ↦ (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n))
+      hr (mem_Ioi.mp ht).le
+  simpa only [upperTail_gaussianMollifier_integrand] using
     integrableOn_mul_cpow_of_isBigO hr
       ((integrableOn_Ici_iff_integrableOn_Ioi (by finiteness)).mpr hθ).locallyIntegrableOn
       (χ.isBigO_gaussianMollifier_kernel j ((-s).re - 1)) (sub_one_lt (-s).re)
@@ -111,8 +116,7 @@ theorem differentiable_gaussianMollifier {N : ℕ} (χ : DirichletCharacter ℂ 
   have hd := h.differentiableAt (IsOpen.mem_nhds (isOpen_lt continuous_const continuous_re) hs)
   have hcomp := hd.comp s differentiableAt_id.neg
   rw [funext (χ.gaussianMollifier_def j r)]
-  simpa only [Function.comp_def, id_eq, neg_add', neg_neg, sub_eq_add_neg,
-    mul_comm (gaussianDirichletTheta j (fun n ↦ χ n * (μ n : ℂ)) _)] using hcomp
+  simpa only [Function.comp_def, id_eq, upperTail_gaussianMollifier_integrand] using hcomp
 
 /-- A bound independent of the imaginary part, on the whole strip from `1/2` to `2`.
 It is uniform in the modulus, character, and choice of Gaussian parity. -/
@@ -138,7 +142,8 @@ theorem norm_gaussianMollifier_le_of_re_mem_Icc {N : ℕ} (χ : DirichletCharact
   calc
     _ ≤ t ^ (s.re - 1) * (3 * Real.exp (-t) / t) := by
       gcongr
-      exact norm_gaussianTheta_le (fun n ↦ χ.norm_mul_moebius_le_one n) ht₀
+      exact norm_gaussianTheta_le
+        (fun n ↦ (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n)) ht₀
     _ = 3 * t ^ (s.re - 2) * Real.exp (-t) := by
       have hexponent : s.re - 2 = (s.re - 1) - 1 := by ring
       rw [hexponent, Real.rpow_sub_one ht₀.ne' (s.re - 1)]
@@ -196,7 +201,8 @@ theorem norm_LFunction_mul_gaussianMollifier_sub (j : ℕ) :
       gcongr
       · exact hχ.trans (by linarith)
       · rw [gaussianMollifier_def]
-        exact norm_integral_gaussianDirichletTheta_sub j (fun n _ ↦ χ.norm_mul_moebius_le_one n)
+        exact norm_integral_gaussianDirichletTheta_sub j
+          (fun n _ ↦ (ArithmeticFunction.norm_mul_moebius_le n (χ n)).trans (χ.norm_le_one n))
           hr hs
     _ = _ := by ring
 
