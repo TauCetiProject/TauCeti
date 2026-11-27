@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Tactic.LinearCombination
-public import TauCeti.Algebra.Ring.QPochhammer
+public import TauCeti.Algebra.Ring.QPochhammer.Basic
 import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
