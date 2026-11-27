@@ -75,7 +75,8 @@ theorem two_nsmul_legendreNegOneHalf :
   have hslope :
       (scaledLegendre (1 : K) (-1)).toAffine.slope i i (1 - i) (1 - i) = -(1 + i) := by
     rw [slope_of_Y_ne rfl hy, div_eq_iff (sub_ne_zero.mpr hy)]
-    simp
+    simp only [negY, a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF, scaledLegendre_a₂,
+      scaledLegendre_a₄]
     linear_combination hi
   rw [two_nsmul, legendreNegOneHalf_eq_some, Point.add_self_of_Y_ne hy,
     scaledLegendreRootPoint_eq_some, Point.some.injEq]
