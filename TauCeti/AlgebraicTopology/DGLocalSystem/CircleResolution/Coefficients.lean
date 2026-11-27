@@ -14,13 +14,15 @@ public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Coefficients
 
 Let `γ` be a Moore loop at `b` and `K` the free module of the twisting cocycle
 `TauCeti.loopCellCocycle R γ`, with generators `e₀` of index `0` and `e₁` of index `1` and
-`D e₁ = ([γ] - [1]) e₀`. For a circle and a loop `γ` going once around, `K` is Brown's semi-free
-resolution of `R` over the chains `C_*(Ω_b B; R)` on the Moore loops
-(`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_eq_zero`). So the
-twisted complex `𝓕 ⊗ K` with coefficients in a DG local system `𝓕` represents the derived tensor
-product `𝓕 ⊗^𝐋 R`, the homology of the circle with coefficients in `𝓕`; for the complex unit
-circle and its loop `Circle.expLoop` this is
-`TauCeti.nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`.
+`D e₁ = ([γ] - [1]) e₀`. For the complex unit circle and its counterclockwise loop
+`Circle.expLoop`, `K` is Brown's semi-free resolution of `R` over the chains `C_*(Ω S¹; R)` on the
+Moore loops
+(`TauCeti.exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_eq_zero`), so
+the twisted complex `𝓕 ⊗ K` with coefficients in a DG local system `𝓕` represents the derived
+tensor product `𝓕 ⊗^𝐋 R`, the homology of the circle with coefficients in `𝓕`
+(`TauCeti.nonempty_loopCellCocycle_localizedFunctor_iso_derivedTensor_loopChainAugmentation`).
+For other loops going once around a circle, such as `AddCircle.zsmulLoop 1 0 1` on `ℝ ⧸ ℤ`, this
+is expected but not proved; the computation below does not use it and holds for any Moore loop.
 
 This file computes that twisted complex when `𝓕` is concentrated in degree zero, as the DG local
 system of a covering map is (`IsCoveringMap.isConcentratedInDegreeZero_liftingLocalSystem`). Write
