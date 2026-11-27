@@ -113,6 +113,11 @@ theorem newtonianKernel_sub_comm (n : ℕ) (x a : EuclideanSpace ℝ (Fin n)) :
     newtonianKernel n (x - a) = newtonianKernel n (a - x) := by
   simp [newtonianKernel, norm_sub_rev]
 
+/-- The Newtonian kernel is radial: its values at two points of the same norm agree. -/
+theorem newtonianKernel_eq_of_norm_eq (n : ℕ) {x y : EuclideanSpace ℝ (Fin n)}
+    (h : ‖x‖ = ‖y‖) : newtonianKernel n x = newtonianKernel n y := by
+  rw [newtonianKernel_def, newtonianKernel_def, h]
+
 /-- Real dilation scales the Newtonian kernel with radial homogeneity `2 - n`. -/
 theorem newtonianKernel_smul (n : ℕ) (r : ℝ)
     (x : EuclideanSpace ℝ (Fin n)) :
@@ -437,7 +442,7 @@ theorem harmonicOnNhd_newtonianKernel_sub (n : ℕ)
 theorem newtonianKernel_one (x : EuclideanSpace ℝ (Fin 1)) :
     newtonianKernel 1 x = -‖x‖ / 2 := by
   have hvol : volume.real (ball (0 : EuclideanSpace ℝ (Fin 1)) 1) = 2 := by
-    rw [Measure.real_def, InnerProductSpace.volume_ball_of_dim_odd (k := 0) (by simp)]
+    rw [Measure.real_def, EuclideanSpace.volume_ball_fin_one]
     norm_num
   rw [newtonianKernel_def, hvol]
   norm_num

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.GradedMulAction
 public import Mathlib.Algebra.Module.Submodule.Lattice
 public import Mathlib.Algebra.Module.Submodule.LinearMap
 public import Mathlib.Algebra.Module.Submodule.Range
+public import Mathlib.LinearAlgebra.Span.Defs
 
 /-!
 # Homogeneous linear maps
@@ -42,6 +43,8 @@ The multilinear counterpart, and the degree calculus for substitution, are in
 * `LinearMap.IsHomogeneous.comp`: degrees add under composition of linear maps.
 * `LinearMap.IsHomogeneous.pow`: the `k`-th power of an endomorphism of degree `q` has degree
   `k • q`.
+* `LinearMap.isHomogeneous_span_iff`: a linear map out of a module whose pieces are spanned by
+  given sets is homogeneous exactly when it moves the spanning vectors to the right degree.
 * `LinearMap.IsHomogeneous.iSup_range_inf_eq`: the range of a homogeneous map out of a module
   spanned by its pieces is spanned by its intersections with the target pieces.
 * `LinearMap.IsHomogeneous.restrict_zero`, `LinearMap.IsHomogeneous.restrict_id`, and
@@ -199,6 +202,23 @@ theorem IsHomogeneous.restrict_comp {P : Type uP} [AddCommMonoid P] [Module R P]
 end AddZeroClass
 
 end Semiring
+
+section Span
+
+variable {R : Type uR} {S : Type*} {ι : Type uι} {M : Type uM} {N : Type uN}
+  [Semiring R] [Semiring S] [Add ι] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module R N] [Module S M] [Module S N] [CompatibleSMul M N R S]
+
+/-- A linear map out of a module whose degree-`p` piece is spanned by a set `s p` has degree `q`
+exactly when it maps each vector of each `s p` into the degree-`p + q` piece of the target. The
+map may be linear over a larger semiring `S` than the semiring `R` of the pieces. -/
+theorem isHomogeneous_span_iff {f : M →ₗ[S] N} {s : ι → Set M} {ℬ : ι → Submodule R N}
+    {q : ι} :
+    IsHomogeneous f (fun p ↦ Submodule.span R (s p)) ℬ q ↔ ∀ p, ∀ x ∈ s p, f x ∈ ℬ (p + q) :=
+  ⟨fun hf _ _ hx ↦ hf (Submodule.subset_span hx), fun h p _ hx ↦
+    (Submodule.span_le (p := (ℬ (p + q)).comap (f.restrictScalars R))).2 (h p) hx⟩
+
+end Span
 
 section Neg
 

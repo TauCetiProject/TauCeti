@@ -7,9 +7,9 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Basic
-import Mathlib.GroupTheory.Index
 import TauCeti.Algebra.BigOperators.Finset.Filter
 import TauCeti.GroupTheory.Coset.Fiber
+import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Lipschitz
 
 /-!
 # Riesz sums with two cutoffs on a group of places
@@ -49,13 +49,23 @@ theorem sum_sum_mul_max_eq_rieszSum [MulOneClass H] (π : G →* H) (B : Finset 
   have hscaled (v : ℕ → ℝ) {y : ℝ} (hy : 0 < y) (hyN : ⌊y⌋₊ ≤ N) :
       ∑ n ∈ Icc 1 N, v n * max (a / n - a / y) 0 =
         a * (rieszSum (fun n ↦ (v n : ℂ)) y).re / y := by
-    rw [rieszSum_eq_sum_max_of_floor_le _ hyN, Complex.re_sum, mul_div_right_comm, mul_sum]
-    refine sum_congr rfl fun n _ ↦ ?_
-    have hramp : a / y * max (y / (n : ℝ) - 1) 0 = max (a / n - a / y) 0 := by
-      rw [mul_max_of_nonneg _ _ (div_nonneg ha hy.le)]
-      simp [mul_sub, ← mul_div_assoc, hy.ne']
-    rw [← hramp]
-    simp [Complex.mul_re, mul_left_comm]
+    obtain rfl | ha := ha.eq_or_lt
+    · simp
+    have hcut : a / (a / y) = y := by field_simp
+    have h := mul_rieszSum_div_eq_sum_max (fun n ↦ (v n : ℂ)) (a := a) (div_pos ha hy) le_rfl
+    rw [hcut] at h
+    have hre := congrArg Complex.re h
+    simp only [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, zero_mul, sub_zero,
+      Complex.re_sum] at hre
+    rw [mul_div_right_comm, hre]
+    -- The extra indices above the natural floor of the cutoff contribute zero.
+    refine (sum_subset (Icc_subset_Icc_right hyN) ?_).symm
+    intro n hn hny
+    have hyn : y ≤ n := by
+      apply (Nat.lt_of_floor_lt ?_).le
+      exact lt_of_not_ge fun hle ↦ hny (mem_Icc.mpr ⟨(mem_Icc.mp hn).1, hle⟩)
+    have hdiv := div_le_div_of_nonneg_left ha.le hy hyn
+    simp [max_eq_right (sub_nonpos.mpr hdiv)]
   rw [sum_comm]
   have hs (n : ℕ) :
       (∑ t ∈ A, w n * max (a / n - (if g n * t ∈ B then a / x else a / X)) 0) =
@@ -82,7 +92,7 @@ theorem sum_sum_mul_max_eq_rieszSum [MulOneClass H] (π : G →* H) (B : Finset 
 `R_c(x) - R_c(X)`, weighted by the sizes of the kernel and `B` respectively.
 Here `C` is the baseline constant. The constant `Cc` for the residue class cancels in
 `R_c(x) - R_c(X)`, so it can be chosen independently. -/
-theorem sum_sub_log_eq_rieszSum_sub_log [Group H] (π : G →* H) [Fintype H]
+theorem sum_sub_log_eq_rieszSum_sub_log [MulOneClass H] (π : G →* H) [Fintype H]
     (hπ : Function.Surjective π) (B : Finset G) {c : H} (hB : ∀ b ∈ B, π b = c)
     (g : ℕ → G) (w : ℕ → ℝ) (C Cc : ℝ) {a x X : ℝ} {N : ℕ} (ha : 0 ≤ a) (hx : 0 < x) (hX : 0 < X)
     (hN : ⌊max x X⌋₊ ≤ N) :
@@ -103,7 +113,7 @@ theorem sum_sub_log_eq_rieszSum_sub_log [Group H] (π : G →* H) [Fintype H]
       rw [Nat.card_eq_fintype_card, Fintype.card_subtype]
       exact congrArg Finset.card (Finset.filter_congr fun t _ ↦ (π.mem_ker (x := t)).symm)
     rw [hker, ← Nat.card_eq_fintype_card (α := H), ← Nat.card_eq_fintype_card (α := G)]
-    exact Subgroup.card_ker_mul_card_of_surjective hπ
+    simpa [mul_comm] using (π.natCard_preimage_of_surjective hπ Set.univ).symm
   have hG : (Fintype.card G : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hH : (Fintype.card H : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr Fintype.card_ne_zero
   have hratio : (A.card : ℝ) / Fintype.card G = 1 / Fintype.card H := by

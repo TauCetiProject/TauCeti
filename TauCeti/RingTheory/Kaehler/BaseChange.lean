@@ -40,6 +40,8 @@ map `Ω[B⁄R] → Ω[B⁄S]` sending `d_R b` to `d_S b`.
 * `TauCeti.map_comp_mapBaseChange_eq_tensorKaehlerEquiv`
 * `KaehlerDifferential.mapBaseChange_surjective_of_formallyUnramified`: if `B` is formally
   unramified over `A`, then `B ⊗[A] Ω[A⁄R] → Ω[B⁄R]` is surjective.
+* `KaehlerDifferential.isBaseChange_map`: for `B = S ⊗[R] A`, the map `Ω[A⁄R] → Ω[B⁄S]` is a base
+  change along `A → B`.
 * `TauCeti.finrank_kaehlerDifferential_le_of_formallyUnramified_mvPolynomial`: a field formally
   unramified over a polynomial ring `K[X_i]` has Kähler differentials over `K` of dimension at most
   the number of variables.
@@ -139,6 +141,19 @@ theorem mapBaseChange_surjective_of_formallyUnramified (R S A : Type*) [CommRing
   LinearMap.range_eq_top.mp <|
     (TauCeti.subsingleton_kaehlerDifferential_iff_range_mapBaseChange_eq_top R S A).mp
       inferInstance
+
+/-- For a base change `B = S ⊗[R] A`, the map `KaehlerDifferential.map R S A B : Ω[A⁄R] → Ω[B⁄S]`
+exhibits `Ω[B⁄S]` as the base change of `Ω[A⁄R]` along `A → B`. Compare
+`KaehlerDifferential.isBaseChange`, the base change along `R → S`. -/
+theorem isBaseChange_map (R S A B : Type*) [CommRing R] [CommRing S] [CommRing A] [CommRing B]
+    [Algebra R S] [Algebra R A] [Algebra R B] [Algebra A B] [Algebra S B] [IsScalarTower R A B]
+    [IsScalarTower R S B] [Algebra.IsPushout R S A B] :
+    IsBaseChange B (map R S A B) :=
+  .of_equiv (tensorKaehlerEquiv R S A B) fun ω => by
+    suffices h : (tensorKaehlerEquiv R S A B).toLinearMap.restrictScalars A ∘ₗ
+        TensorProduct.mk A B Ω[A⁄R] 1 = map R S A B from LinearMap.congr_fun h ω
+    ext a
+    simp
 
 end KaehlerDifferential
 

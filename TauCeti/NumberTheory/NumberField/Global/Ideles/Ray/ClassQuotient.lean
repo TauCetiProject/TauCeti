@@ -392,7 +392,8 @@ theorem rayClassQuotient_ofAdicCompletion_of_isUniformizer {v : HeightOneSpectru
   rw [IdeleClassGroup.ofAdicCompletion_apply, rayClassQuotient_mk_of_mem hmem]
   refine congrArg _ (Subtype.ext ?_)
   dsimp only
-  rw [toFractionalIdeal_toFiniteIdele_ofAdicCompletion_of_eq_exp_neg_one v
+  rw [IdeleGroup.toFiniteIdele_ofAdicCompletion,
+    toFractionalIdeal_unitsOfAdicCompletion_of_valued_eq_exp_neg_one v
     (v.isUniformizer_iff_valued_eq_exp_neg_one.1 hπ)]
   exact Units.ext ((coe_unitOfPrime v K).trans hI.symm)
 

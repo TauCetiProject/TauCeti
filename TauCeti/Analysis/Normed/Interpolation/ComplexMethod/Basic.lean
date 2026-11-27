@@ -594,7 +594,7 @@ theorem lift_unique (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ 
 
 end Lift
 
-@[simp] theorem norm_lift {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
+theorem norm_lift {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
     (A : C.stripTraces →L[ℂ] E) (hA : ∀ g, C.stripEval θ g = 0 → A g = 0) :
     ‖lift A hA‖ = ‖A‖ := (C.stripEval θ).ker.norm_liftQL A hA
 
