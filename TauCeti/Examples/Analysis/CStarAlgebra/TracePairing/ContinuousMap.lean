@@ -42,12 +42,15 @@ theorem evalTrace_kZeroPairing_of_mk (x : X) {p : Matrix m m C(X, ℂ)} (hp : Is
     (evalTrace x).kZeroPairing (GrothendieckAddGroup.of (ProjectionMonoid.mk p hp)) =
       (p.map fun f ↦ f x).rank := by
   classical
+  have hmap : (ContinuousMap.evalAlgHom ℂ ℂ x).mapMatrix p = p.map fun f ↦ f x := by
+    ext; simp
   have hidem : IsIdempotentElem (p.map fun f ↦ f x) :=
-    hp.isIdempotentElem.map (ContinuousMap.evalAlgHom ℂ ℂ x).mapMatrix
+    hmap ▸ hp.isIdempotentElem.map (ContinuousMap.evalAlgHom ℂ ℂ x).mapMatrix
   have htr := hidem.trace_eq_rank
+  simp only [Matrix.trace, Matrix.diag_apply, Matrix.map_apply] at htr
   rw [PositiveTracialFunctional.kZeroPairing_of_mk]
   simp only [evalTrace_apply]
-  rw [show (∑ i, p i i x) = (p.map fun f ↦ f x).trace from rfl, htr]
+  rw [htr]
   simp
 
 /-- The pairing with `δ_x` of the class of a projection is a natural number. -/
