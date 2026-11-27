@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.OperatorIdeal.Family.HilbertSchmidt
 public import TauCeti.Analysis.OperatorIdeal.Family.TraceClass.Trace
+import TauCeti.Analysis.Normed.Operator.Completion
 
 /-!
 # Products of Hilbert–Schmidt operators
@@ -74,7 +75,7 @@ namespace ContinuousLinearMap
 variable {E : Type v} {F : Type w} {G : Type x}
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
-  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] [CompleteSpace G] {ι κ : Type*}
+  [NormedAddCommGroup G] [InnerProductSpace 𝕜 G] {ι κ : Type*}
 
 /-- **A composite as a nuclear series.** For `T : E → F`, `S : F → G` and a Hilbert basis `(cᵢ)` of
 `F` with `∑ᵢ ‖T† cᵢ‖ ‖S cᵢ‖ < ∞`, the composite is the operator-norm sum
@@ -82,15 +83,25 @@ variable {E : Type v} {F : Type w} {G : Type x}
 theorem hasSum_rankOne_comp (S : F →L[𝕜] G) (T : E →L[𝕜] F) (c : HilbertBasis κ 𝕜 F)
     (h : Summable fun i ↦ ‖adjoint T (c i)‖ * ‖S (c i)‖) :
     HasSum (fun i ↦ rankOne 𝕜 (S (c i)) (adjoint T (c i))) (S ∘L T) := by
-  have hs : Summable fun i ↦ rankOne 𝕜 (S (c i)) (adjoint T (c i)) :=
-    Summable.of_norm (by simpa [mul_comm] using h)
+  -- The series is absolutely summable, so it has a sum once `G` is replaced by its completion.
+  -- Composing with the embedding `j` of `G` into its completion is isometric, so the sum pulls
+  -- back.
+  let j : G →L[𝕜] UniformSpace.Completion G := UniformSpace.Completion.toComplL
+  have hj : Topology.IsInducing (compL 𝕜 E G _ j) :=
+    (AddMonoidHomClass.isometry_of_norm _ fun A ↦ norm_toComplL_comp A).isUniformInducing.isInducing
+  have hs : Summable fun i ↦ rankOne 𝕜 (j (S (c i))) (adjoint T (c i)) :=
+    Summable.of_norm (by simpa [j, mul_comm] using h)
+  rw [← hj.hasSum_iff]
   convert hs.hasSum using 1
+  · ext i y
+    simp [j]
   ext y
-  -- Expanding `T y = ∑ᵢ ⟪cᵢ, T y⟫ cᵢ` and applying `S` gives the series evaluated at `y`.
-  have h₁ : HasSum (fun i ↦ rankOne 𝕜 (S (c i)) (adjoint T (c i)) y) (S (T y)) := by
-    simpa [adjoint_inner_left, c.repr_apply_apply] using (c.hasSum_repr (T y)).mapL S
-  exact h₁.unique (hs.hasSum.mapL (apply 𝕜 G y))
+  -- Expanding `T y = ∑ᵢ ⟪cᵢ, T y⟫ cᵢ` and applying `j S` gives the series evaluated at `y`.
+  have h₁ : HasSum (fun i ↦ rankOne 𝕜 (j (S (c i))) (adjoint T (c i)) y) (j (S (T y))) := by
+    simpa [adjoint_inner_left, c.repr_apply_apply] using (c.hasSum_repr (T y)).mapL (j ∘L S)
+  simpa using h₁.unique (hs.hasSum.mapL (apply 𝕜 _ y))
 
+omit [CompleteSpace E] [CompleteSpace F] in
 /-- **The trace norm of a composite.** For `T : E → F`, `S : F → G` and Hilbert bases `b` of `E`
 and `c` of `F`, `ν(S T) ≤ E_c(S)^(1/2) E_b(T)^(1/2)`. There is no hypothesis on `S` or `T`: the
 right-hand side is infinite unless both have finite Hilbert–Schmidt energy or one of them is
@@ -99,6 +110,8 @@ theorem nuclearENorm_comp_le (S : F →L[𝕜] G) (T : E →L[𝕜] F) (b : Hilb
     (c : HilbertBasis κ 𝕜 F) :
     (S ∘L T).nuclearENorm ≤
       S.hilbertSchmidtEnergy c ^ (1 / 2 : ℝ) * T.hilbertSchmidtEnergy b ^ (1 / 2 : ℝ) := by
+  have : CompleteSpace E := b.completeSpace
+  have : CompleteSpace F := c.completeSpace
   have hbound := tsum_enorm_apply_mul_enorm_apply_le (adjoint T) S c
   rw [hilbertSchmidtEnergy_adjoint T b c, mul_comm] at hbound
   rcases eq_or_ne (∑' i, ‖adjoint T (c i)‖ₑ * ‖S (c i)‖ₑ) ∞ with htop | hne
