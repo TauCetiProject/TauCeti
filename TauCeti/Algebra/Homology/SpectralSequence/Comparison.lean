@@ -28,6 +28,8 @@ page, and, by induction, on every object of every page `r' ≥ r`.
 * `ComplexShape.add_two_mul_eq_of_up'_rel`: the differentials of the page `r` of a cohomological
   spectral sequence shift `a + 2b` at the position `(a, b)` by `±(2 - r)`, so those of the page `2`
   preserve the lines `a + 2b = const`.
+* `ComplexShape.snd_eq_of_up'_rel`: the differentials of the page `r` of a cohomological spectral
+  sequence shift the row `b` at the position `(a, b)` by `±(1 - r)`.
 
 An isomorphism of spectral sequences is an isomorphism on every page (an instance on `f.hom r`).
 
@@ -54,6 +56,18 @@ lemma add_two_mul_eq_of_up'_rel {r : ℤ} {pq pq' : ℤ × ℤ}
     lia
   · right
     simp only [Prod.fst_add, Prod.snd_add]
+    lia
+
+/-- A differential of the page `r` of a cohomological spectral sequence shifts the row `b` of the
+position `(a, b)` by `1 - r` in one direction or the other. -/
+lemma snd_eq_of_up'_rel {r : ℤ} {pq pq' : ℤ × ℤ}
+    (h : (up' ((r, 1 - r) : ℤ × ℤ)).Rel pq pq' ∨ (up' ((r, 1 - r) : ℤ × ℤ)).Rel pq' pq) :
+    pq'.2 = pq.2 + (1 - r) ∨ pq'.2 = pq.2 - (1 - r) := by
+  rcases h with rfl | rfl
+  · left
+    rfl
+  · right
+    simp only [Prod.snd_add]
     lia
 
 end ComplexShape

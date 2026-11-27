@@ -165,13 +165,9 @@ theorem isIso_serreCohomologySpectralSequenceProj_hom_two_f (hp : serreFibration
     IsIso (((serreCohomologySpectralSequenceProj p R k M C).hom 2).f st) :=
   (serreCohomologySpectralSequenceProj p R k M C).isIso_hom_f_add_one 1 le_rfl st fun st' hst' ↦
     isIso_serreCohomologySpectralSequenceProj_hom_one_f R k M hp hconn st' (by
-      rcases hst' with rfl | h | h
+      rcases hst' with rfl | h
       · exact ht
-      · rw [← h, Prod.snd_add, ht]
-        norm_num
-      · have := congrArg Prod.snd h
-        rw [Prod.snd_add, ht] at this
-        lia)
+      · rcases ComplexShape.snd_eq_of_up'_rel h with h | h <;> lia)
 
 end Row
 
@@ -219,12 +215,7 @@ lemma isZero_serreCohomologySpectralSequence_id_page_two_X_of_rel {C D : Set B}
     IsZero (((serreCohomologySpectralSequence C (𝟙 B) R k M).page 2).X st') :=
   (serreCohomologySpectralSequence C (𝟙 B) R k M).isZero_page_X_of_le (r := 1) le_rfl
     (isZero_serreCohomologySpectralSequence_id_page_one_X R k M st' (by
-      rcases hst' with h | h
-      · rw [← h, Prod.snd_add, ht]
-        lia
-      · have := congrArg Prod.snd h
-        rw [Prod.snd_add, ht] at this
-        lia)) 2 (by norm_num)
+      rcases ComplexShape.snd_eq_of_up'_rel hst' with h | h <;> lia)) 2 (by norm_num)
 
 variable [CWComplex (univ : Set B)]
 
@@ -265,16 +256,35 @@ def cokernelSerreCohomologySpectralObjectIdAbutmentFiltrationMapIso (s : ℕ) (a
       B.singularCohomology (ModuleCat.of R R) k M s := by
   subst ha hn
   -- The piece `F^{s+1} H^s` vanishes, since the filtration vanishes above the degree.
-  have := cokernel.π_of_zero ((isZero_serreCohomologySpectralObject_abutmentFiltration
-    (MorphismProperty.id_mem _ B) R k M (univ : Set B) (subset_univ _) (s := s + 1)
-      (by lia)).eq_of_src
-      ((serreCohomologySpectralObject univ (𝟙 B) R k M).abutmentFiltrationMap (-(s + 1)) s) 0)
-  rw [show -(s : ℤ) - 1 = -((s : ℤ) + 1) by ring]
+  have hz : IsZero ((serreCohomologySpectralObject univ (𝟙 B) R k M).abutmentFiltration
+      (-(s : ℤ) - 1) s) := by
+    simpa only [neg_add'] using isZero_serreCohomologySpectralObject_abutmentFiltration
+      (MorphismProperty.id_mem _ B) R k M (univ : Set B) (subset_univ _) (s := (s : ℤ) + 1)
+      (n := s) (by lia)
+  have := cokernel.π_of_zero (hz.eq_of_src
+    ((serreCohomologySpectralObject univ (𝟙 B) R k M).abutmentFiltrationMap (-(s : ℤ) - 1) s) 0)
   have := isIso_serreCohomologySpectralObject_id_abutmentFiltrationι (B := B) R k M s
-    (a := -((s : ℤ) + 1) + 1) (by lia)
+    (a := -(s : ℤ) - 1 + 1) (by lia)
   exact (asIso (cokernel.π _)).symm ≪≫
     asIso ((serreCohomologySpectralObject univ (𝟙 B) R k M).abutmentFiltrationι _ _) ≪≫
     filteredSpaceCohomologyAbutmentIso (ModuleCat.of R R) k M (monotone_preimageSkeleton (𝟙 B)) s
+
+/-- The identification of the graded piece `F^s H^s / F^{s+1} H^s` with `H^s(B; M)` is induced by
+the inclusion of `F^s H^s` into the abutment, followed by the identification of the abutment with
+`H^s(B; M)`. -/
+@[reassoc (attr := simp)]
+lemma π_cokernelSerreCohomologySpectralObjectIdAbutmentFiltrationMapIso_hom (s : ℕ) (a n : ℤ)
+    (ha : a = -s - 1) (hn : n = s) :
+    cokernel.π _ ≫
+        (cokernelSerreCohomologySpectralObjectIdAbutmentFiltrationMapIso R k M s a n ha hn).hom =
+      (serreCohomologySpectralObject univ (𝟙 B) R k M).abutmentFiltrationι (a + 1) n ≫
+        eqToHom (congrArg (serreCohomologySpectralObject univ (𝟙 B) R k M).abutment hn) ≫
+        (filteredSpaceCohomologyAbutmentIso (ModuleCat.of R R) k M
+          (monotone_preimageSkeleton (𝟙 B)) s).hom := by
+  subst ha hn
+  simp only [cokernelSerreCohomologySpectralObjectIdAbutmentFiltrationMapIso, Iso.trans_hom,
+    Iso.symm_hom, asIso_inv, IsIso.hom_inv_id_assoc, eqToHom_refl, Category.id_comp]
+  rfl
 
 /-- **The row `t = 0` of the second page of the skeletal filtration.** For a CW complex `B`, the
 object `E₂^{s,0}` of the cohomological Serre spectral sequence of the identity of `B` is
@@ -295,7 +305,8 @@ def serreCohomologySpectralSequenceIdSecondPageXIsoSingularCohomology (s : ℕ) 
 /-- The identification of the row `t = 0` of the second page of the skeletal filtration with
 `H^s(B; M)` is the passage to a late page, where the object is the graded piece
 `F^s H^s / F^{s+1} H^s` of the filtration of the abutment, followed by the identification of that
-graded piece with `H^s(B; M)`. -/
+graded piece with `H^s(B; M)`
+(`TauCeti.TopCat.π_cokernelSerreCohomologySpectralObjectIdAbutmentFiltrationMapIso_hom`). -/
 lemma serreCohomologySpectralSequenceIdSecondPageXIsoSingularCohomology_hom (s : ℕ) (st : ℤ × ℤ)
     (hs : st.1 = s) (ht : st.2 = 0) :
     (serreCohomologySpectralSequenceIdSecondPageXIsoSingularCohomology R k M s st hs ht).hom =
