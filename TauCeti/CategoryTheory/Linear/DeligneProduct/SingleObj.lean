@@ -40,9 +40,8 @@ private theorem singleObj_homEquiv_comp {X Y Z : LinearTensor R (SingleObj A) (S
   | tmul a b =>
     induction g using hom_induction_on with
     | tmul c d =>
-      simp only [tmul_comp_tmul]
-      -- Both factor compositions are reversed multiplication in their one-object categories.
-      exact (Algebra.TensorProduct.tmul_mul_tmul c a d b).symm
+      rw [tmul_comp_tmul, homEquiv_tmul, homEquiv_tmul, homEquiv_tmul]
+      simp only [SingleObj.comp_as_mul, Algebra.TensorProduct.tmul_mul_tmul]
     | add g g' h h' => simp only [Preadditive.comp_add, map_add, add_mul, h, h']
   | add f f' h h' => simp only [Preadditive.add_comp, map_add, mul_add, h, h']
 
@@ -54,12 +53,19 @@ noncomputable def singleObjEquiv :
   functor :=
     { obj _ := SingleObj.star _
       map {X Y} f := homEquiv X Y f
-      map_id _ := rfl
+      map_id X := by
+        rcases X with ⟨X₁, X₂⟩
+        rw [← tmul_id_id (k := R) X₁ X₂, homEquiv_tmul, SingleObj.id_as_one A X₁,
+          SingleObj.id_as_one B X₂, SingleObj.id_as_one (A ⊗[R] B),
+          Algebra.TensorProduct.one_def]
       map_comp f g := singleObj_homEquiv_comp f g }
   inverse :=
     { obj _ := ⟨SingleObj.star A, SingleObj.star B⟩
       map f := (homEquiv _ _).symm f
-      map_id _ := rfl
+      map_id X := by
+        rw [SingleObj.id_as_one (A ⊗[R] B) X, Algebra.TensorProduct.one_def,
+          ← SingleObj.id_as_one A (SingleObj.star A), ← SingleObj.id_as_one B (SingleObj.star B),
+          homEquiv_symm_tmul, tmul_id_id]
       map_comp f g := by
         apply (homEquiv _ _).injective
         rw [singleObj_homEquiv_comp]
