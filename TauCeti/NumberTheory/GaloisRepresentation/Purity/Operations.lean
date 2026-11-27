@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.GaloisRepresentation.Purity
 public import TauCeti.NumberTheory.WeilNumber.Pure
 import Mathlib.NumberTheory.Real.Irrational
-import TauCeti.LinearAlgebra.Charpoly.Quotient
+import Mathlib.RepresentationTheory.Rep.Basic
 import TauCeti.RepresentationTheory.Dual
 import TauCeti.RepresentationTheory.Intertwining
 import TauCeti.RepresentationTheory.Quotient
@@ -99,32 +99,6 @@ variable {E G V V₁ V₂ κ : Type*} [Field E] [Group G] [AddCommGroup V] [Modu
   {σ : Representation E G V₁} {τ : Representation E G V₂} {I : κ → Subgroup G} {F : κ → G}
   {q : κ → ℕ} {T : Set κ}
 
-/-- Along a short exact sequence `0 → σ → ρ → τ → 0` of intertwining maps, the characteristic
-polynomial of `ρ g` is the product of those of `σ g` and `τ g`. -/
-private theorem IntertwiningMap.charpoly_eq_mul_of_exact (i : IntertwiningMap σ ρ)
-    (π : IntertwiningMap ρ τ) (hi : Function.Injective i) (hπ : Function.Surjective π)
-    (hex : Function.Exact i π) (g : G) :
-    (ρ g).charpoly = (σ g).charpoly * (τ g).charpoly :=
-  LinearMap.charpoly_eq_mul_of_exact (i := i.toLinearMap) (π := π.toLinearMap) hi hπ hex
-    (i.isIntertwining' g).symm (π.isIntertwining' g)
-
-/-- The inclusion of an invariant submodule, as an intertwining map from the subrepresentation. -/
-private def subrepresentationSubtype (U : Submodule E V) (hU : ∀ g, U ≤ U.comap (ρ g)) :
-    IntertwiningMap (ρ.subrepresentation U hU) ρ where
-  toLinearMap := U.subtype
-  isIntertwining' g := by
-    ext
-    simp
-
-/-- The projection onto the quotient by an invariant submodule, as an intertwining map to the
-quotient representation. -/
-private def quotientMkQ (U : Submodule E V) (hU : ∀ g, U ≤ U.comap (ρ g)) :
-    IntertwiningMap ρ (ρ.quotient U hU) where
-  toLinearMap := U.mkQ
-  isIntertwining' g := by
-    ext
-    simp
-
 /-! ### Purity of an integer weight -/
 
 section IsPureOutside
@@ -160,7 +134,7 @@ theorem isPureOutside_iff_of_exact (i : IntertwiningMap σ ρ) (π : Intertwinin
   isPureOutside_iff_of_charpoly_eq_mul
     (fun h ↦ h.of_ker_le (i.ker_le_ker_of_injective hi))
     (fun h ↦ h.of_ker_le (π.ker_le_ker_of_surjective hπ))
-    fun v ↦ i.charpoly_eq_mul_of_exact π hi hπ hex (F v)
+    fun v ↦ i.charpoly_apply_eq_mul_of_exact π hi hπ hex (F v)
 
 /-- A representation is pure of weight `w` outside `T` exactly when it is unramified outside `T`
 and its restriction to an invariant submodule and the induced representation on the quotient are
@@ -170,7 +144,7 @@ theorem isPureOutside_iff_subrepresentation_quotient (U : Submodule E V)
     ρ.IsPureOutside I F q T w ↔ ρ.IsUnramifiedOutside I T ∧
       (ρ.subrepresentation U hU).IsPureOutside I F q T w ∧
       (ρ.quotient U hU).IsPureOutside I F q T w :=
-  isPureOutside_iff_of_exact (subrepresentationSubtype U hU) (quotientMkQ U hU)
+  isPureOutside_iff_of_exact (Rep.subtype (Rep.of ρ) U hU).hom (Rep.mkQ (Rep.of ρ) U hU).hom
     U.injective_subtype U.mkQ_surjective (LinearMap.exact_subtype_mkQ U)
 
 /-- A direct sum is pure of weight `w` outside `T` exactly when both summands are. -/
@@ -231,7 +205,7 @@ theorem isIotaPureOutside_iff_of_exact (i : IntertwiningMap σ ρ) (π : Intertw
   isIotaPureOutside_iff_of_charpoly_eq_mul
     (fun h ↦ h.of_ker_le (i.ker_le_ker_of_injective hi))
     (fun h ↦ h.of_ker_le (π.ker_le_ker_of_surjective hπ))
-    fun v ↦ i.charpoly_eq_mul_of_exact π hi hπ hex (F v)
+    fun v ↦ i.charpoly_apply_eq_mul_of_exact π hi hπ hex (F v)
 
 /-- A representation is `ι`-pure of weight `r` outside `T` exactly when it is unramified outside
 `T` and its restriction to an invariant submodule and the induced representation on the quotient
@@ -241,7 +215,7 @@ theorem isIotaPureOutside_iff_subrepresentation_quotient (U : Submodule E V)
     ρ.IsIotaPureOutside ι I F q T r ↔ ρ.IsUnramifiedOutside I T ∧
       (ρ.subrepresentation U hU).IsIotaPureOutside ι I F q T r ∧
       (ρ.quotient U hU).IsIotaPureOutside ι I F q T r :=
-  isIotaPureOutside_iff_of_exact (subrepresentationSubtype U hU) (quotientMkQ U hU)
+  isIotaPureOutside_iff_of_exact (Rep.subtype (Rep.of ρ) U hU).hom (Rep.mkQ (Rep.of ρ) U hU).hom
     U.injective_subtype U.mkQ_surjective (LinearMap.exact_subtype_mkQ U)
 
 /-- A direct sum is `ι`-pure of weight `r` outside `T` exactly when both summands are. -/
