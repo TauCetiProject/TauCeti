@@ -33,8 +33,7 @@ boundary has nonzero first coordinate, since it lies on the line `v₁ = 3x² v�
   (`TauCeti.not_isOpen_setOf_isConvexAt_cubicEpigraph`): it contains the origin, but not the
   points `(-t, -t³)`, `t > 0`, which tend to it.
 
-This is the Check of RiemannianManifoldsWithConvexBoundary §2.3 that convexity without strictness
-is not an open condition, unlike strict convexity.
+So convexity of the boundary, without strictness, is not an open condition.
 -/
 
 public section
@@ -53,10 +52,9 @@ local notation "π₁" => (EuclideanSpace.proj (1 : Fin 2) : EuclideanSpace ℝ 
 /-- The derivative of `f(x, y) = x³ - y` is `v ↦ 3x² v₀ - v₁`. -/
 private theorem hasFDerivAt_cubicSub (p : EuclideanSpace ℝ (Fin 2)) :
     HasFDerivAt (fun p : EuclideanSpace ℝ (Fin 2) ↦ p 0 ^ (3 : ℕ) - p 1)
-      ((3 * p 0 ^ 2) • π₀ - π₁) p := by
-  have h := ((π₀).hasFDerivAt.pow 3).sub (π₁).hasFDerivAt (x := p)
-  convert h using 2 <;> congr 1
-  simp [nsmul_eq_mul]
+      ((3 * p 0 ^ 2) • π₀ - π₁) p :=
+  (((π₀).hasFDerivAt.pow 3).sub (π₁).hasFDerivAt (x := p)).congr_fderiv
+    (by ext v; simp [nsmul_eq_mul])
 
 /-- The smoothness of `f(x, y) = x³ - y` on the plane. -/
 theorem contMDiff_cubicSub {k : ℕ∞ω} :
@@ -95,8 +93,8 @@ private theorem hessian_cubicSub (p : EuclideanSpace ℝ (Fin 2))
       (((3 : ℝ) • ((2 * p 0) • π₀)).smulRight π₀) p := by
     have hc : HasFDerivAt (fun q : EuclideanSpace ℝ (Fin 2) ↦ 3 * q 0 ^ 2)
         ((3 : ℝ) • ((2 * p 0) • π₀)) p := by
-      convert ((π₀).hasFDerivAt.pow 2).const_mul (3 : ℝ) (x := p) using 2 <;> congr 1
-      simp [nsmul_eq_mul]
+      exact (((π₀).hasFDerivAt.pow 2).const_mul (3 : ℝ) (x := p)).congr_fderiv
+        (by ext v; simp [nsmul_eq_mul])
     exact (hc.smul_const π₀).sub_const π₁
   rw [hD, h2.fderiv]
   have key : ∀ a b : EuclideanSpace ℝ (Fin 2),
@@ -264,13 +262,33 @@ theorem proj_zero_mfderiv_cubicEpigraph_ne_zero
   rw [map_zero, map_zero]
   exact hV
 
-/-- A nonzero tangent vector of the boundary of the region above the cubic. -/
-private theorem exists_ne_zero_tangentSpace_cubicEpigraph
+/-- On the tangent line of the cubic `y = x³` at `q = (x, x³)`, `II_q(u, u) = c b(u, u)` with
+`c = 6x / |grad f|` and the positive definite form `b(u, w) = (dj dι u)₀ (dj dι w)₀`. -/
+private theorem exists_boundarySecondFundamentalForm_cubicEpigraph_eq_mul
     (q : letI := cubicEpigraphChartedSpace
       (𝓡∂ (1 + 1)).boundary cubicEpigraph) :
-    ∃ u : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) q, u ≠ 0 := by
-  obtain ⟨u, hu⟩ := exists_ne (0 : EuclideanSpace ℝ (Fin 1))
-  exact ⟨u, hu⟩
+    letI := cubicEpigraphChartedSpace
+    haveI := isManifold_cubicEpigraph
+    letI := cubicEpigraphRiemannianBundle
+    haveI := isContMDiffRiemannianBundle_cubicEpigraph
+    ∃ b : LinearMap.BilinForm ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) q),
+      (∀ u, u ≠ 0 → 0 < b u u) ∧ ∀ u, boundarySecondFundamentalForm q u u =
+        6 * (q : ℝ²) 0 / ‖Manifold.mgradient 𝓘(ℝ, ℝ²)
+          (fun p : ℝ² ↦ p 0 ^ (3 : ℕ) - p 1) (q : ℝ²)‖ * b u u := by
+  let := cubicEpigraphChartedSpace
+  have := isManifold_cubicEpigraph
+  let := cubicEpigraphRiemannianBundle
+  have := isContMDiffRiemannianBundle_cubicEpigraph
+  let φ : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) q →L[ℝ] ℝ :=
+    π₀ ∘L mfderiv (𝓡∂ (1 + 1)) 𝓘(ℝ, ℝ²) (Subtype.val : cubicEpigraph → ℝ²) q ∘L
+      mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) (𝓡∂ (1 + 1))
+        (Subtype.val : (𝓡∂ (1 + 1)).boundary cubicEpigraph → cubicEpigraph) q
+  let b : LinearMap.BilinForm ℝ (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) q) :=
+    (LinearMap.mul ℝ ℝ).compl₁₂ (φ : TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) q →ₗ[ℝ] ℝ) φ
+  -- `b u u` unfolds to `φ u * φ u`, the square of the first coordinate of `dj dι u`.
+  refine ⟨b, fun u hu ↦ mul_self_pos.2 (proj_zero_mfderiv_cubicEpigraph_ne_zero q hu), fun u ↦ ?_⟩
+  rw [boundarySecondFundamentalForm_cubicEpigraph_apply]
+  exact (by intro x a g; ring : ∀ x a g : ℝ, 6 * x * a * a / g = 6 * x / g * (a * a)) _ _ _
 
 /-- **Convexity of the cubic `y = x³`.** The boundary of the region above the cubic is convex at
 `q = (x, x³)` exactly when `x ≥ 0`. -/
@@ -286,24 +304,9 @@ theorem isConvexAt_cubicEpigraph_iff
   have := isManifold_cubicEpigraph
   let := cubicEpigraphRiemannianBundle
   have := isContMDiffRiemannianBundle_cubicEpigraph
-  have hg := norm_mgradient_cubicSub_pos (q : ℝ²)
-  rw [isConvexAt_iff]
-  constructor
-  · intro h
-    obtain ⟨u, hu⟩ := exists_ne_zero_tangentSpace_cubicEpigraph q
-    have ha := proj_zero_mfderiv_cubicEpigraph_ne_zero q hu
-    have h' := h u
-    rw [boundarySecondFundamentalForm_cubicEpigraph_apply, le_div_iff₀ hg, zero_mul] at h'
-    have := mul_self_pos.2 ha
-    nlinarith
-  · intro hx u
-    rw [boundarySecondFundamentalForm_cubicEpigraph_apply]
-    refine div_nonneg ?_ hg.le
-    have := mul_self_nonneg (π₀ (mfderiv (𝓡∂ (1 + 1)) 𝓘(ℝ, ℝ²)
-            (Subtype.val : cubicEpigraph → ℝ²) q
-            (mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) (𝓡∂ (1 + 1))
-              (Subtype.val : (𝓡∂ (1 + 1)).boundary cubicEpigraph → cubicEpigraph) q u)))
-    nlinarith
+  obtain ⟨b, hb, h⟩ := exists_boundarySecondFundamentalForm_cubicEpigraph_eq_mul q
+  rw [isConvexAt_iff_of_eq_mul hb h, le_div_iff₀ (norm_mgradient_cubicSub_pos _), zero_mul,
+    mul_nonneg_iff_of_pos_left (by norm_num)]
 
 /-- **Strict convexity of the cubic `y = x³`.** The boundary of the region above the cubic is
 strictly convex at `q = (x, x³)` exactly when `x > 0`. -/
@@ -319,21 +322,9 @@ theorem isStrictlyConvexAt_cubicEpigraph_iff
   have := isManifold_cubicEpigraph
   let := cubicEpigraphRiemannianBundle
   have := isContMDiffRiemannianBundle_cubicEpigraph
-  have hg := norm_mgradient_cubicSub_pos (q : ℝ²)
-  rw [isStrictlyConvexAt_iff]
-  constructor
-  · intro h
-    obtain ⟨u, hu⟩ := exists_ne_zero_tangentSpace_cubicEpigraph q
-    have ha := proj_zero_mfderiv_cubicEpigraph_ne_zero q hu
-    have h' := h u hu
-    rw [boundarySecondFundamentalForm_cubicEpigraph_apply, lt_div_iff₀ hg, zero_mul] at h'
-    have := mul_self_pos.2 ha
-    nlinarith
-  · intro hx u hu
-    rw [boundarySecondFundamentalForm_cubicEpigraph_apply]
-    refine div_pos ?_ hg
-    have := mul_self_pos.2 (proj_zero_mfderiv_cubicEpigraph_ne_zero q hu)
-    nlinarith
+  obtain ⟨b, hb, h⟩ := exists_boundarySecondFundamentalForm_cubicEpigraph_eq_mul q
+  rw [isStrictlyConvexAt_iff_of_eq_mul hb h, div_pos_iff_of_pos_right
+    (norm_mgradient_cubicSub_pos _), mul_pos_iff_of_pos_left (by norm_num)]
 
 /-- **Convexity is not an open condition.** The set of points of the cubic `y = x³` at which the
 boundary of the region above it is convex is `{x ≥ 0}`, which is not open in the boundary: the
@@ -357,25 +348,25 @@ theorem not_isOpen_setOf_isConvexAt_cubicEpigraph :
       (⟨!₂[-t, -t ^ 3], hmem t⟩ : cubicEpigraph) ∈ (𝓡∂ (1 + 1)).boundary cubicEpigraph := fun t ↦
     (Set.ext_iff.1 (boundary_scalarRegularSublevel (isRegularValue_cubicSub 0)
       (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2)) le_rfl (contMDiff_cubicSub (k := 1))) _).2
-      (by simp; ring)
+      (by
+        simp only [mem_ofPred_eq, Matrix.cons_val_zero, Matrix.cons_val_one,
+          Matrix.cons_val_fin_one, sub_neg_eq_add]
+        ring)
   let γ : ℝ → (𝓡∂ (1 + 1)).boundary cubicEpigraph := fun t ↦ ⟨⟨!₂[-t, -t ^ 3], hmem t⟩, hbd t⟩
   have hγ : Continuous γ := by
     refine Continuous.subtype_mk (Continuous.subtype_mk ?_ _) _
     exact (PiLp.continuous_toLp 2 _).comp (by fun_prop)
   intro hU
   have h0 : (0 : ℝ) ∈ γ ⁻¹' {q | IsConvexAt q} := by
-    change IsConvexAt (γ 0)
-    rw [isConvexAt_cubicEpigraph_iff]
+    rw [Set.mem_preimage, Set.mem_ofPred_eq, isConvexAt_cubicEpigraph_iff]
     simp [γ]
   obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (hU.preimage hγ) 0 h0
   have ht : ε / 2 ∈ Metric.ball (0 : ℝ) ε := by
     rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_pos (half_pos hε)]
     exact half_lt_self hε
   have h := hball ht
-  change IsConvexAt (γ (ε / 2)) at h
-  rw [isConvexAt_cubicEpigraph_iff] at h
-  simp only [γ] at h
-  simp at h
+  rw [Set.mem_preimage, Set.mem_ofPred_eq, isConvexAt_cubicEpigraph_iff] at h
+  simp only [γ, Matrix.cons_val_zero, Left.nonneg_neg_iff] at h
   linarith
 
 end TauCeti
