@@ -64,8 +64,8 @@ containing `E₀` — that fixes the embedded model `M₀` pointwise
 * `TauCeti.AlgebraicBelyiPair.DescentDatum.baseChangeEquiv`: the base-change isomorphism
   `L ⊗[K] F₀ ≃ F`.
 * `TauCeti.AlgebraicBelyiPair.DescentDatum.model`: the descended pair as a model of `X` over `K`.
-* `TauCeti.AlgebraicBelyiPair.Model.descentDatum`: the continuous descent datum induced by a model
-  of `X` over `K`.
+* `TauCeti.AlgebraicBelyiPair.Model.descentDatum`: the canonical descent datum induced by a
+  model of `X` over `K` (continuous when `L / K` is algebraic).
 
 ## Main results
 
@@ -545,8 +545,10 @@ end DescentDatum
 
 namespace Model
 
-/-- The **canonical descent datum** of a model `M` of `X` over `K`: each `σ ∈ Gal(L/K)` acts by
-`M.conjAlgEquiv σ : X^σ ≃ X`, corresponding to `id ⊗ σ` on `M.pair ⊗[K] L`. -/
+/-- The **canonical descent datum** of a model `M` of `X` over `K`: for an arbitrary extension
+`L / K`, each `σ ∈ Aut(L/K)` acts by `M.conjAlgEquiv σ : X^σ ≃ X`, corresponding to extending
+`id ⊗ σ` on `M.pair ⊗[K] L` to its fraction field. When `L / K` is algebraic, this descent datum
+is continuous (`IsContinuous`). -/
 noncomputable def descentDatum [CharZero K] {X : AlgebraicBelyiPair L}
     (M : Model K X) : DescentDatum K X where
   iso σ := M.conjAlgEquiv σ
@@ -560,8 +562,8 @@ theorem descentDatum_iso [CharZero K] {X : AlgebraicBelyiPair L}
     M.descentDatum.iso σ = M.conjAlgEquiv σ :=
   (rfl)
 
-/-- The descent datum induced by a model over `K` is continuous: `Gal(L/K)` fixes the embedded
-model pointwise. -/
+/-- When `L / K` is algebraic, the descent datum induced by a model over `K` is continuous:
+`Gal(L/K)` fixes the embedded model pointwise. -/
 instance [CharZero K] [Algebra.IsAlgebraic K L] {X : AlgebraicBelyiPair L} (M : Model K X) :
     M.descentDatum.IsContinuous :=
   DescentDatum.IsContinuous.of_openSubgroup_fixes_embedding M.descentDatum M (U := ⊤) isOpen_univ

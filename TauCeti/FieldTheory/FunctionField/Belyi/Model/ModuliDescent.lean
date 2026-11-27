@@ -111,7 +111,7 @@ private noncomputable def modelOverPointedFieldOfModuliAux {P : Place k X} {q : 
     (ratFuncMapRingHom (X.pointedFieldOfModuli P) k).toAlgebra
   letI := X.ratFuncAlgebra (X.pointedFieldOfModuli P)
   haveI : IsScalarTower (RatFunc (X.pointedFieldOfModuli P)) (RatFunc k) X :=
-    IsScalarTower.of_algebraMap_eq' rfl
+    X.isScalarTower_ratFuncAlgebra (X.pointedFieldOfModuli P)
   have h := X.exists_generator_finrank_adjoin_eq hq₀ hq₁ hPa hP
     (ratFuncMapRingHom_C (X.pointedFieldOfModuli P) k)
     (ratFuncMapRingHom_X (X.pointedFieldOfModuli P) k)

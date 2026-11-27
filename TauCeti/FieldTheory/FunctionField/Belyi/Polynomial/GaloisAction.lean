@@ -48,7 +48,8 @@ compares a polynomial Belyi map with its conjugates.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_ofPolynomial_eq_iff`: `g` fixes the class of
   `ofPolynomial q` exactly when `q(a X + b) = q^g` for some `a ≠ 0` and `b`.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_ofPolynomial_eq_self`: automorphisms of `k` fixing
-  a subfield containing the coefficients of `q` fix the class of `ofPolynomial q`.
+  the image of a commutative semiring `K → k` whose image contains the coefficients of `q` fix the
+  class of `ofPolynomial q`.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.stabilizer_mk_ofPolynomial_eq_top` and
   `TauCeti.AlgebraicBelyiPair.IsoClass.trueOrbitSize_mk_ofPolynomial`: for rational coefficients
   the class is fixed by `Gal(k/ℚ)`, and its true orbit size is `1`.

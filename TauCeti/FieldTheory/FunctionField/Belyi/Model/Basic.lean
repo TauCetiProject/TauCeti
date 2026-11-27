@@ -7,7 +7,6 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.FieldOfModuli
 public import Mathlib.RingTheory.TensorProduct.Basic
-import TauCeti.FieldTheory.AlgebraicClosure
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Parameter
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.Regular
 import TauCeti.FieldTheory.FunctionField.ConstantExtension.TensorProduct
@@ -98,10 +97,32 @@ variable {k : Type u} [Field k] [CharZero k]
 
 /-- The `RatFunc K`-algebra structure on `X` induced by `K(t) → k(t) → X` via
 `TauCeti.ratFuncMapRingHom K k`. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 noncomputable def ratFuncAlgebra (X : AlgebraicBelyiPair k) (K : Type v) [Field K] [Algebra K k] :
     Algebra (RatFunc K) X :=
   ((algebraMap (RatFunc k) X).comp (ratFuncMapRingHom K k)).toAlgebra
+
+/-- The structure map of `X.ratFuncAlgebra K` sends `r : RatFunc K` through
+`TauCeti.ratFuncMapRingHom K k`. -/
+@[simp]
+theorem algebraMap_ratFuncAlgebra_apply (X : AlgebraicBelyiPair k) (K : Type v) [Field K]
+    [Algebra K k] (r : RatFunc K) :
+    letI := X.ratFuncAlgebra K
+    algebraMap (RatFunc K) X r = algebraMap (RatFunc k) X (ratFuncMapRingHom K k r) := by
+  let _ := X.ratFuncAlgebra K
+  rw [ratFuncAlgebra, RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
+
+/-- The `RatFunc K`-algebra structure `X.ratFuncAlgebra K` forms a scalar tower with
+`(ratFuncMapRingHom K k).toAlgebra`. -/
+theorem isScalarTower_ratFuncAlgebra (X : AlgebraicBelyiPair k) (K : Type v) [Field K]
+    [Algebra K k] :
+    letI : Algebra (RatFunc K) (RatFunc k) := (ratFuncMapRingHom K k).toAlgebra
+    letI := X.ratFuncAlgebra K
+    IsScalarTower (RatFunc K) (RatFunc k) X :=
+  letI : Algebra (RatFunc K) (RatFunc k) := (ratFuncMapRingHom K k).toAlgebra
+  letI := X.ratFuncAlgebra K
+  IsScalarTower.of_algebraMap_eq fun r ↦ by
+    rw [algebraMap_ratFuncAlgebra_apply, RingHom.algebraMap_toAlgebra]
 
 variable {K : Type v} [Field K] [CharZero K] [Algebra K k]
 
@@ -542,12 +563,7 @@ theorem IsDefinedOver.extendScalars {F : Type*} [Field F] [Algebra F k]
     c.IsDefinedOver (IntermediateField.extendScalars h) := by
   obtain ⟨X, rfl, ⟨M⟩⟩ := hc
   let e : K₀ ≃+* IntermediateField.extendScalars h :=
-    { toFun x := ⟨x.val, (IntermediateField.mem_extendScalars h).mpr x.property⟩
-      invFun x := ⟨x.val, (IntermediateField.mem_extendScalars h).mp x.property⟩
-      left_inv _ := Subtype.ext rfl
-      right_inv _ := Subtype.ext rfl
-      map_mul' _ _ := Subtype.ext (by simp)
-      map_add' _ _ := Subtype.ext (by simp) }
+    RingEquiv.subfieldCongr (IntermediateField.extendScalars_toSubfield h).symm
   exact isDefinedOver_mk_iff.mpr ⟨M.congrConstants e fun _ ↦ rfl⟩
 
 /-- If a class is defined over a field `K`, then every automorphism of `k` fixing `K` fixes the

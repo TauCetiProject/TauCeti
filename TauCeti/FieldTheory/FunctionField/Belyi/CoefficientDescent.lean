@@ -99,9 +99,9 @@ theorem relfinrank_pointedFieldOfModuli_pos {P : Place k X} {q : ℚ}
     (X.pointedStabilizer_le_stabilizer P) (X.relIndex_pointedStabilizer_ne_zero hP)
   exact Module.finrank_pos
 
-/-- Over a finite point `t = q` with `q : ℚ`, the pointed fixed field has degree at most the degree
-of the cover over the field of moduli. No algebraicity of the original constant field is
-required. -/
+/-- Over a finite point `t = q` with `q : ℚ`, the degree of the pointed fixed field over the
+field of moduli is at most the Belyi degree `[X : k(t)]`. No algebraicity of the original constant
+field is required. -/
 theorem relfinrank_pointedFieldOfModuli_le {P : Place k X} {q : ℚ}
     (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible (irreducible_X_sub_C (q : k))) :
     (IsoClass.mk X).fieldOfModuli.relfinrank (X.pointedFieldOfModuli P) ≤

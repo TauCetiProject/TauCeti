@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.FieldTheory.FunctionField.Belyi.Model.Basic
-import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
-import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
+public import TauCeti.FieldTheory.FunctionField.Belyi.BaseChange
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.RatFunc
 
 /-!
 # Constructing a Belyi model by adjoining a primitive element
@@ -27,6 +27,10 @@ satisfying `[K(t)⟮z⟯ : K(t)] = [F : k(t)]` defines a model of `X` over `K`
 
 ## Main results
 
+* `TauCeti.AlgebraicBelyiPair.modelOfAdjoinSimple_pair_carrier`: the underlying field of the
+  constructed model is `K(t)⟮z⟯`.
+* `TauCeti.AlgebraicBelyiPair.modelOfAdjoinSimple_embedding`: the embedding of the constructed
+  model is the inclusion `K(t)⟮z⟯ →+* X`.
 * `TauCeti.AlgebraicBelyiPair.fieldRange_modelOfAdjoinSimple_embedding`: the embedding image of the
   constructed model is `K(t)⟮z⟯`.
 -/
@@ -45,6 +49,7 @@ variable {k : Type u} [Field k] [CharZero k] (X : AlgebraicBelyiPair k)
 to a model of `X` over `K`, using the canonical coefficient-extension map
 `TauCeti.ratFuncMapRingHom K k : K(t) →+* k(t)` (which respects `K → k` and fixes `t`) and the
 induced `K(t)`-action on `X` factoring through `k(t)`. -/
+@[expose]
 noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algebra K k]
     {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
     (hfinrank :
@@ -53,13 +58,13 @@ noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algeb
     Model K X :=
   letI : Algebra (RatFunc K) (RatFunc k) := (ratFuncMapRingHom K k).toAlgebra
   letI := X.ratFuncAlgebra K
-  haveI : IsScalarTower (RatFunc K) (RatFunc k) X := IsScalarTower.of_algebraMap_eq' rfl
+  haveI : IsScalarTower (RatFunc K) (RatFunc k) X := X.isScalarTower_ratFuncAlgebra K
   letI : Algebra K X := ((algebraMap k X).comp (algebraMap K k)).toAlgebra
   haveI : IsScalarTower K k X := IsScalarTower.of_algebraMap_eq' rfl
   haveI : IsScalarTower K (RatFunc K) X :=
     IsScalarTower.of_algebraMap_eq (R := K) (S := RatFunc K) (A := X) fun c ↦ by
       rw [IsScalarTower.algebraMap_apply K k X, IsScalarTower.algebraMap_apply k (RatFunc k) X,
-        RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
+        algebraMap_ratFuncAlgebra_apply]
       simp only [_root_.RatFunc.algebraMap_eq_C, ratFuncMapRingHom_C]
   let E : IntermediateField (RatFunc K) X := (RatFunc K)⟮z⟯
   letI : Algebra K E := ((algebraMap (RatFunc K) E).comp (algebraMap K (RatFunc K))).toAlgebra
@@ -92,7 +97,20 @@ noncomputable def modelOfAdjoinSimple {K : Type u} [Field K] [CharZero K] [Algeb
     embedding_algebraMap_X := hX_E
     adjoin_range_embedding := hadj }
 
-private theorem modelOfAdjoinSimple_embedding {K : Type u} [Field K] [CharZero K] [Algebra K k]
+/-- The underlying field of the model constructed from `z` is `K(t)⟮z⟯`. -/
+@[simp]
+theorem modelOfAdjoinSimple_pair_carrier {K : Type u} [Field K] [CharZero K] [Algebra K k]
+    {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
+    (hfinrank :
+      letI := X.ratFuncAlgebra K
+      Module.finrank (RatFunc K) (RatFunc K)⟮z⟯ = Module.finrank (RatFunc k) X) :
+    (X.modelOfAdjoinSimple hgen hfinrank).pair.carrier =
+      (letI := X.ratFuncAlgebra K
+      ↥(RatFunc K)⟮z⟯) :=
+  (rfl)
+
+/-- The embedding of the model constructed from `z` is the inclusion of `K(t)⟮z⟯` into `X`. -/
+theorem modelOfAdjoinSimple_embedding {K : Type u} [Field K] [CharZero K] [Algebra K k]
     {z : X} (hgen : (RatFunc k)⟮z⟯ = ⊤)
     (hfinrank :
       letI := X.ratFuncAlgebra K
@@ -100,7 +118,7 @@ private theorem modelOfAdjoinSimple_embedding {K : Type u} [Field K] [CharZero K
     (X.modelOfAdjoinSimple hgen hfinrank).embedding =
       (letI := X.ratFuncAlgebra K
       algebraMap (RatFunc K)⟮z⟯ X) :=
-  rfl
+  (rfl)
 
 /-- The embedding image of the model constructed from `z` is `K(t)⟮z⟯`. -/
 @[simp]
