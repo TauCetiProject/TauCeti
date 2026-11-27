@@ -96,6 +96,13 @@ variable [F.IsGerbe J]
 
 /-! ### The presheaf isomorphism -/
 
+/-- The component of `centerFromBandingPresheaf` at `U` is the forward map of
+`centerFromBandingEquiv U`, viewed as an isomorphism of additive groups. -/
+private theorem toAddCommGrpIso_centerFromBandingEquiv_hom (U : Cᵒᵖ) :
+    (MulEquiv.toAdditiveRight (b.centerFromBandingEquiv U.unop)).toAddCommGrpIso.hom =
+      b.centerFromBandingPresheaf.app U :=
+  AddCommGrpCat.ext fun _ ↦ congrArg Additive.ofMul (b.centerFromBandingEquiv_apply _ _)
+
 /-- The **presheaf comparison** of a banding: the natural isomorphism from the coefficient presheaf
 `A` to `U ↦ Additive ZF(U)` whose component at `U` is `centerFromBandingEquiv U`, so whose forward
 map is `centerFromBandingPresheaf`. -/
@@ -103,18 +110,14 @@ noncomputable def centerFromBandingPresheafIso : A.obj ≅ IntrinsicBandSections
   NatIso.ofComponents
     (fun U ↦ (MulEquiv.toAdditiveRight (b.centerFromBandingEquiv U.unop)).toAddCommGrpIso)
     (fun f ↦ by
-      have h (U : Cᵒᵖ) :
-          (MulEquiv.toAdditiveRight (b.centerFromBandingEquiv U.unop)).toAddCommGrpIso.hom =
-            b.centerFromBandingPresheaf.app U :=
-        AddCommGrpCat.ext fun a ↦ congrArg Additive.ofMul (b.centerFromBandingEquiv_apply _ _)
-      simpa only [h] using b.centerFromBandingPresheaf.naturality f)
+      simpa only [toAddCommGrpIso_centerFromBandingEquiv_hom] using
+        b.centerFromBandingPresheaf.naturality f)
 
 /-- The forward map of `centerFromBandingPresheafIso` is `centerFromBandingPresheaf`. -/
 @[simp]
 theorem centerFromBandingPresheafIso_hom :
     b.centerFromBandingPresheafIso.hom = b.centerFromBandingPresheaf :=
-  NatTrans.ext (funext fun U ↦ AddCommGrpCat.ext fun a ↦
-    congrArg Additive.ofMul (b.centerFromBandingEquiv_apply U.unop (.ofAdd a)))
+  NatTrans.ext (funext b.toAddCommGrpIso_centerFromBandingEquiv_hom)
 
 /-- The inverse component of `centerFromBandingPresheafIso` at `U` sends `z` to the coefficient
 `(centerFromBandingEquiv U)⁻¹ z`. -/
