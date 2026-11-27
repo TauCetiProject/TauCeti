@@ -38,6 +38,10 @@ open scoped Real
 
 namespace TauCeti
 
+/-- The open upper half-plane lies in the closed one. -/
+theorem upperHalfPlaneSet_subset_im_nonneg : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} :=
+  ofPred_subset_ofPred.mpr fun _ => le_of_lt
+
 /-- The principal logarithm maps the upper half-plane bijectively onto the open
 horizontal strip of height `π`. -/
 theorem bijOn_log_upperHalfPlaneSet :

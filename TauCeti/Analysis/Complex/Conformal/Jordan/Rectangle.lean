@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.UpperHalfPlane
 public import TauCeti.Analysis.Complex.UpperHalfPlane.StripDoubleCover
 import TauCeti.Analysis.Complex.AbsMax
 import TauCeti.Analysis.Complex.Conformal.Inverse.Function
+import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Topology.Separation.InvFunOn
 
 /-!
@@ -162,7 +163,7 @@ private theorem exists_prevertices_mul_pos {Ω : Set ℂ} {f : ℂ → ℂ} {x�
   simp only [Set.mem_sdiff, mem_insert_iff, mem_singleton_iff, not_or] at hy₁ hy₂
   have hpre (z : ℂ) (hz : z ∈ frontier Ω) (hzy : z ≠ y₂) : ∃ a : ℝ, f a = z := by
     obtain ⟨w, hw, hfw⟩ := hfR.surjOn ⟨hz, hzy⟩
-    exact ⟨w.re, by rw [← hfw]; congr 1; exact conj_eq_iff_re.mp (conj_eq_iff_im.mpr hw)⟩
+    exact ⟨w.re, by rw [← hfw]; congr 1; exact RCLike.re_eq_self_of_im_eq_zero hw⟩
   obtain ⟨a₁, hfa₁⟩ := hpre x₁ hx₁ (Ne.symm hy₂.2.1)
   obtain ⟨a₂, hfa₂⟩ := hpre x₂ hx₂ (Ne.symm hy₂.2.2)
   obtain ⟨c, hfc₁⟩ := hpre y₁ hy₁.1 hy₁y₂
@@ -172,10 +173,6 @@ private theorem exists_prevertices_mul_pos {Ω : Set ℂ} {f : ℂ → ℂ} {x�
   exact ⟨a₁, a₂, c, hfa₁, hfa₂, hfc₁, ha₁c, ha₂c, mul_pos_of_notMem_connectedComponentIn hfc hinj
     (fun t => (hfR.mapsTo (show (t : ℂ) ∈ {z : ℂ | z.im = 0} by simp)).1) hfy hy₂' hfa₁ hfa₂
     hfc₁ ha₁c ha₂c hsep⟩
-
-/-- The open upper half-plane lies in the closed one. -/
-private theorem upperHalfPlaneSet_subset_im_nonneg : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} :=
-  ofPred_subset_ofPred.mpr fun _ => le_of_lt
 
 /-- The inverse `invFunOn f {z | 0 ≤ z.im}` of a Carathéodory map `f` of the closed upper
 half-plane onto `closure Ω \ {y₂}`, with `f` tending to `y₂` at infinity, is continuous on

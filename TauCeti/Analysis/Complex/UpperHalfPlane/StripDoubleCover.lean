@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Log
 import TauCeti.Analysis.Complex.UpperLogContinuity
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.Analysis.RCLike.Basic
 public import Mathlib.Data.Set.Card
 import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -149,7 +150,7 @@ theorem mapsTo_log_sub_mul_sub_div_sub_div_pi_boundary (p q r : ℝ) :
   rintro w ⟨hw, hwpqr⟩
   simp only [mem_insert_iff, mem_singleton_iff, not_or] at hwpqr
   obtain ⟨hwp, hwq, hwr⟩ := hwpqr
-  have hwre : (w.re : ℂ) = w := conj_eq_iff_re.mp (conj_eq_iff_im.mpr hw)
+  have hwre : (w.re : ℂ) = w := RCLike.re_eq_self_of_im_eq_zero hw
   set t : ℝ := (w.re - p) * (w.re - r) / (w.re - q)
   have ht : (w - p) * (w - r) / (w - q) = (t : ℂ) := by
     rw [← hwre]
