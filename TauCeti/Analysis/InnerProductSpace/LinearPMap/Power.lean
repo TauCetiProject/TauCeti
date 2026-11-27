@@ -383,7 +383,7 @@ theorem isResolventAt_neg_neg_cfc {t : ℝ} (ht : 0 ≤ t) :
   refine ⟨hmem, fun y ↦ ?_, fun x ↦ ?_⟩
   · have e : (⟨(-K) y, hmem y⟩ : A.domain) =
         ⟨G (-(y - t • K y)), A.greenOperator_mem_domain hA h _⟩ := Subtype.ext (hK y)
-    rw [e, A.apply_greenOperator_of_ker_eq_bot hA h hker, _root_.neg_apply, neg_smul,
+    rw [e, A.apply_greenOperator_of_ker_eq_bot hA h hker, _root_.neg_apply, _root_.neg_smul,
       Complex.coe_smul]
     module
   · -- `x = G (A x)`, so `(-K) (-t x - A x) = (K + t K G) (A x) = G (A x) = x`.

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.PreciseRepresentative
 import TauCeti.Analysis.Sobolev.W1p.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical

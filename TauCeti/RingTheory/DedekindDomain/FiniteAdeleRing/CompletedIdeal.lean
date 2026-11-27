@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.FractionalIdeal
+import TauCeti.Algebra.Algebra.NatCast
 
 /-!
 # The completion of an integral ideal in the integral finite adeles
@@ -18,8 +20,9 @@ is chosen.
 For `N ≠ ⊥`, the ideal `NÔ` is the trace on `Ô` of the finite adelic extension
 `IsDedekindDomain.FiniteAdeleRing.finiteAdelicIdeal` of `N`, viewed as a nonzero fractional ideal.
 It is open and closed in `Ô`, its rational points are `N`, and the diagonal map induces a ring
-isomorphism `R ⧸ N ≃ Ô ⧸ NÔ`. The proofs use only that `R` is dense in `Ô` and that `aÔ` is open
-in the finite adeles for every nonzero `a ∈ R`; no ideal factorization is needed.
+isomorphism `R ⧸ N ≃ Ô ⧸ NÔ`, so `NÔ` has the same index in `Ô` as `N` in `R`. The proofs use
+only that `R` is dense in `Ô` and that `aÔ` is open in the finite adeles for every nonzero
+`a ∈ R`; no ideal factorization is needed.
 
 ## Main declarations
 
@@ -34,6 +37,7 @@ in the finite adeles for every nonzero `a ∈ R`; no ideal factorization is need
   in `Ô`.
 * `IsDedekindDomain.FiniteAdeleRing.quotientEquivQuotientCompletedIdeal`: the diagonal ring
   isomorphism `R ⧸ N ≃ Ô ⧸ NÔ` for `N ≠ ⊥`.
+* `IsDedekindDomain.FiniteAdeleRing.cardQuot_completedIdeal`: `[Ô : NÔ] = [R : N]` for `N ≠ ⊥`.
 
 ## References
 
@@ -126,13 +130,11 @@ theorem isOpen_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
     (isOpen_integralAdeles R K).preimage (continuous_const.mul continuous_subtypeVal)
   have hUN : U ⊆ completedIdeal K N := by
     intro y hy
-    have hca : algebraMap R 𝔸ᶠ[R, K] a * c = 1 := by
-      rw [IsScalarTower.algebraMap_apply R K, ← map_mul,
-        mul_inv_cancel₀ ((map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr ha), map_one]
     have hy' : y = algebraMap R (integralAdeles R K) a * ⟨_, hy⟩ := by
       refine Subtype.ext ?_
       simp only [Subalgebra.coe_mul, Subalgebra.coe_algebraMap]
-      rw [← mul_assoc, hca, one_mul]
+      rw [← mul_assoc, TauCeti.algebraMap_mul_algebraMap_inv
+        ((map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr ha), one_mul]
     rw [SetLike.mem_coe, hy']
     exact Ideal.mul_mem_right _ _ (algebraMap_mem_completedIdeal haN)
   have h0 : (0 : integralAdeles R K) ∈ U := by
@@ -211,6 +213,14 @@ theorem quotientEquivQuotientCompletedIdeal_mk {N : Ideal R} (hN : N ≠ ⊥) (r
       Ideal.Quotient.mk _ (algebraMap R (integralAdeles R K) r) := by
   rw [quotientEquivQuotientCompletedIdeal, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk,
     RingHom.quotientKerEquivOfSurjective_apply_mk, RingHom.comp_apply]
+
+variable (K) in
+/-- For `N ≠ ⊥`, the completion `NÔ` has the same index in `Ô` as `N` has in `R`. -/
+@[simp]
+theorem cardQuot_completedIdeal {N : Ideal R} (hN : N ≠ ⊥) :
+    (completedIdeal K N).cardQuot = N.cardQuot := by
+  rw [Submodule.cardQuot_apply, Submodule.cardQuot_apply,
+    Nat.card_congr (quotientEquivQuotientCompletedIdeal K hN).toEquiv]
 
 variable (K) in
 /-- For `N ≠ ⊥` with `R ⧸ N` finite, for instance over the ring of integers of a number field,

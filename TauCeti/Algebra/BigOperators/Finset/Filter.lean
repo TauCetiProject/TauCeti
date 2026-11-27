@@ -37,11 +37,35 @@ level `m ≥ 1`.
   last coordinate off a filtered product or sum over `s ×ˢ t ×ˢ u` with a conjunctive predicate.
 * `Finset.prod_prod_filter_eq_prod_pow_card`, `Finset.sum_sum_filter_eq_sum_card_nsmul`: a product
   or sum over `k` of filtered products or sums over `i` counts, for each `i`, the `k` selecting it.
+* `Finset.prod_ite_one_eq_pow`, `Finset.sum_ite_zero_eq_nsmul`: multiplying (or summing) a constant
+  gated by `p` over `s` raises it to (or scales it by) `#{i ∈ s | p i}`.
+* `Finset.prod_ite_eq_pow_card_mul`, `Finset.sum_ite_eq_card_nsmul_add`: a two-valued product or
+  sum counts a baseline at every index and a correction at the indices satisfying the predicate.
 -/
 
 public section
 
 namespace Finset
+
+/-- Multiplying `if p i then a else 1` over `s` raises `a` to the number of elements of `s`
+satisfying `p`. -/
+@[to_additive /-- Summing `if p i then a else 0` over `s` scales `a` by the
+number of elements of `s` satisfying `p`. -/]
+theorem prod_ite_one_eq_pow {ι M : Type*} [CommMonoid M] (s : Finset ι) (p : ι → Prop)
+    [DecidablePred p] (a : M) :
+    (∏ i ∈ s, if p i then a else 1) = a ^ #{i ∈ s | p i} := by
+  rw [← prod_filter, prod_const]
+
+/-- In a two-valued product, count `v` at every index and multiply by `u / v` at the indices
+satisfying `p`. -/
+@[to_additive sum_ite_eq_card_nsmul_add /-- In a two-valued sum, count `v` at every index and add
+`u - v` at the indices satisfying `p`. -/]
+theorem prod_ite_eq_pow_card_mul {ι M : Type*} [CommGroup M] (s : Finset ι) (p : ι → Prop)
+    [DecidablePred p] (u v : M) :
+    (∏ i ∈ s, if p i then u else v) = v ^ s.card * (u / v) ^ (s.filter p).card := by
+  rw [← prod_ite_one_eq_pow s p, pow_card_mul_prod]
+  refine prod_congr rfl fun i _ ↦ ?_
+  split_ifs <;> simp
 
 /-- Adjoining a point `c` with `¬P c` to the condition `P` of a filtered product over `s`
 multiplies it by the factor at `c` exactly when `c ∈ s`. -/

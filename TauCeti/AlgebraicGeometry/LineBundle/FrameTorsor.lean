@@ -130,7 +130,7 @@ theorem isSheaf_frameSubfunctor [M.IsQuasicoherent] (hJ : J ≤ fpqcTopology) :
     Presieve.IsSheaf (J.over S) (frameSubfunctor M).toFunctor := by
   have h : Presieve.IsSheaf (J.over S) (modulesPseudofunctor.presheafHom (𝟙_ S.Modules) M) :=
     Presieve.isSheaf_iso _ (bigPresheafCompForgetIso M) (Presieve.isSheaf_of_le _
-      (fun _ _ hR ↦ hJ _ hR) (isSheaf_bigPresheaf_comp_forget_fpqcTopology M))
+      (GrothendieckTopology.over_mono hJ S) (isSheaf_bigPresheaf_comp_forget_fpqcTopology M))
   exact ((frameSubfunctor M).isSheaf_iff h).2 fun _ e he ↦ isIso_of_mem_sieveOfSection hJ e he
 
 /-- The sheaf of frames of a quasi-coherent `𝒪_S`-module `M` on the big site of `S`, for a topology

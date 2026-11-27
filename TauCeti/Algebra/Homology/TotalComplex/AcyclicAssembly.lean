@@ -289,15 +289,12 @@ private lemma acyclic_total_of_isZero_X (k : ℕ) :
     -- Split off the column `a` by the short exact sequence `σ^{≥ a + 1} L ⟶ L ⟶ σ^{≤ a} L`.
     intro a L _ hL hc
     have h₁ : ∀ p, p < a + 1 ∨ a + 1 + k ≤ p →
-        IsZero ((L.stupidTrunc (ComplexShape.embeddingUpIntGE (a + 1))).X p) := by
-      rintro p (hp | hp)
-      · exact CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X L (a + 1) hp
-      · exact L.isZero_stupidTrunc_X_of_isZero _ (hL p (by omega))
-    have h₃ : ∀ p, p ≠ a → IsZero ((L.stupidTrunc (ComplexShape.embeddingUpIntLE a)).X p) := by
-      intro p hp
-      rcases lt_or_gt_of_ne hp with hp | hp
-      · exact L.isZero_stupidTrunc_X_of_isZero _ (hL p (by omega))
-      · exact CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X L a hp
+        IsZero ((L.stupidTrunc (ComplexShape.embeddingUpIntGE (a + 1))).X p) := fun p hp ↦
+      CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X_of_isZero L (a + 1) (a + k)
+        (fun q hq ↦ hL q (by omega)) (by omega)
+    have h₃ : ∀ p, p ≠ a → IsZero ((L.stupidTrunc (ComplexShape.embeddingUpIntLE a)).X p) :=
+      fun p hp ↦ CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X_of_isZero L a a
+        (fun q hq ↦ hL q (by omega)) (by omega)
     have := hasTotal_of_isZero_X _ (a + 1) (a + k) fun p hp ↦ h₁ p (by omega)
     have := hasTotal_of_isZero_X _ a a fun p hp ↦ h₃ p (by omega)
     exact (totalShortComplex_shortExact (ComplexShape.up ℤ)

@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.SymmetricPower.Derivation
+public import TauCeti.LinearAlgebra.SymmetricPower.FinTwo
 import Mathlib.Data.ZMod.Basic
-import Mathlib.LinearAlgebra.SymmetricAlgebra.Basis
-import Mathlib.Data.Fintype.Fin
 
 /-!
 # Jordan blocks of the differential of a symmetric power
@@ -41,30 +39,16 @@ variable {R : Type*} [CommRing R]
 noncomputable abbrev nilpotentTwo (R : Type*) [CommRing R] : Module.End R (Fin 2 → R) :=
   LinearMap.single R (fun _ ↦ R) 0 ∘ₗ LinearMap.proj 1
 
-/-- The monomial `e₁^{n-j} e₂^j` in `Sym[R]^n R²`. -/
-noncomputable abbrev monomialTwo (R : Type*) [CommRing R] (n j : ℕ) : Sym[R]^n (Fin 2 → R) :=
-  ⨂ₛ[R] i : Fin n, if (i : ℕ) < n - j then Pi.single 0 1 else Pi.single 1 1
-
-private theorem toSymmetricAlgebra_monomialTwo {n j : ℕ} (hj : j ≤ n) :
-    toSymmetricAlgebra R (Fin 2 → R) n (monomialTwo R n j) =
-      SymmetricAlgebra.ι R _ (Pi.single 0 1) ^ (n - j) *
-        SymmetricAlgebra.ι R _ (Pi.single 1 1) ^ j := by
-  rw [toSymmetricAlgebra_tprod]
-  simp only [apply_ite (SymmetricAlgebra.ι R (Fin 2 → R)), Finset.prod_ite,
-    Finset.prod_const, Fin.card_filter_val_lt, Finset.filter_not, Finset.card_sdiff_of_subset
-      (Finset.filter_subset _ _), Finset.card_univ, Fintype.card_fin]
-  congr 2 <;> omega
-
 /-- **The differential on monomials**: `d Symⁿ(N) (e₁^{n-j-1} e₂^{j+1}) = (j + 1) • e₁^{n-j} e₂^j`.
 The monomials form a single Jordan block of size `n + 1` only when `1, …, n` are invertible in
 `R`. -/
-theorem differential_nilpotentTwo_monomialTwo {n j : ℕ} (hj : j + 1 ≤ n) :
-    differential R _ n (nilpotentTwo R) (monomialTwo R n (j + 1)) =
-      (j + 1) • monomialTwo R n j := by
+theorem differential_nilpotentTwo_symFinTwoMonomial {n j : ℕ} (hj : j + 1 ≤ n) :
+    differential R _ n (nilpotentTwo R) (symFinTwoMonomial R n (j + 1)) =
+      (j + 1) • symFinTwoMonomial R n j := by
   apply toSymmetricAlgebra_injective n
   obtain ⟨m, rfl⟩ : ∃ m, n = j + 1 + m := ⟨n - (j + 1), by omega⟩
-  rw [toSymmetricAlgebra_differential, map_nsmul, toSymmetricAlgebra_monomialTwo hj,
-    toSymmetricAlgebra_monomialTwo (by omega)]
+  rw [toSymmetricAlgebra_differential, map_nsmul, toSymmetricAlgebra_symFinTwoMonomial hj,
+    toSymmetricAlgebra_symFinTwoMonomial (by omega)]
   simp [Derivation.leibniz, Derivation.leibniz_pow, show j + 1 + m - j = m + 1 by omega]
   ring
 
@@ -77,35 +61,30 @@ theorem nilpotentTwo_sq : nilpotentTwo R ^ 2 = 0 := by
 example : differential R _ 2 (nilpotentTwo R) ^ 3 = 0 :=
   differential_pow_eq_zero 2 (k := 2) nilpotentTwo_sq
 
-private theorem monomialTwo_ne_zero {n j : ℕ} (hj : j ≤ n) : monomialTwo ℚ n j ≠ 0 := by
-  intro h
-  have h₂ := congr(SymmetricAlgebra.equivMvPolynomial (Pi.basisFun ℚ (Fin 2))
-    (toSymmetricAlgebra ℚ _ n $h))
-  rw [toSymmetricAlgebra_monomialTwo hj, map_mul, map_pow, map_pow, map_zero, map_zero] at h₂
-  simp only [← Pi.basisFun_apply, SymmetricAlgebra.equivMvPolynomial_ι_apply] at h₂
-  norm_num at h₂
-
 /-- `d Sym²(N)² ≠ 0` over `ℚ`: it sends `e₂²` to `2 e₁²`. -/
 example : differential ℚ _ 2 (nilpotentTwo ℚ) ^ 2 ≠ 0 := by
   intro h
-  have h₂ := congr($h (monomialTwo ℚ 2 2))
-  rw [pow_two, mul_apply_eq_comp, differential_nilpotentTwo_monomialTwo le_rfl, map_nsmul,
-    differential_nilpotentTwo_monomialTwo (by norm_num), LinearMap.zero_apply] at h₂
+  have h₂ := congr($h (symFinTwoMonomial ℚ 2 2))
+  rw [pow_two, mul_apply_eq_comp, differential_nilpotentTwo_symFinTwoMonomial le_rfl, map_nsmul,
+    differential_nilpotentTwo_symFinTwoMonomial (by norm_num), LinearMap.zero_apply] at h₂
   rw [← Nat.cast_smul_eq_nsmul ℚ, ← Nat.cast_smul_eq_nsmul ℚ, smul_smul] at h₂
-  exact smul_ne_zero (by norm_num) (monomialTwo_ne_zero (by norm_num)) h₂
+  exact smul_ne_zero (by norm_num) (symFinTwoMonomial_ne_zero _ _) h₂
 
 /-- Over `𝔽₃`, `d Sym³(N)` kills `e₂³`. -/
-example : differential (ZMod 3) _ 3 (nilpotentTwo (ZMod 3)) (monomialTwo (ZMod 3) 3 3) = 0 := by
-  rw [differential_nilpotentTwo_monomialTwo le_rfl]
+example :
+    differential (ZMod 3) _ 3 (nilpotentTwo (ZMod 3)) (symFinTwoMonomial (ZMod 3) 3 3) = 0 := by
+  rw [differential_nilpotentTwo_symFinTwoMonomial le_rfl]
   rw [← Nat.cast_smul_eq_nsmul (ZMod 3), show ((2 + 1 : ℕ) : ZMod 3) = 0 by decide, zero_smul]
 
 /-- `d Sym³(N)` kills `e₁³`. -/
-example : differential R _ 3 (nilpotentTwo R) (monomialTwo R 3 0) = 0 := by
-  simp
+example : differential R _ 3 (nilpotentTwo R) (symFinTwoMonomial R 3 0) = 0 := by
+  apply toSymmetricAlgebra_injective 3
+  simp [toSymmetricAlgebra_differential, toSymmetricAlgebra_symFinTwoMonomial,
+    Derivation.leibniz_pow]
 
 /-- Over `ℚ`, `d Sym³(N)` does not kill `e₂³`. -/
-example : differential ℚ _ 3 (nilpotentTwo ℚ) (monomialTwo ℚ 3 3) ≠ 0 := by
-  rw [differential_nilpotentTwo_monomialTwo le_rfl, ← Nat.cast_smul_eq_nsmul ℚ]
-  exact smul_ne_zero (by norm_num) (monomialTwo_ne_zero (by norm_num))
+example : differential ℚ _ 3 (nilpotentTwo ℚ) (symFinTwoMonomial ℚ 3 3) ≠ 0 := by
+  rw [differential_nilpotentTwo_symFinTwoMonomial le_rfl, ← Nat.cast_smul_eq_nsmul ℚ]
+  exact smul_ne_zero (by norm_num) (symFinTwoMonomial_ne_zero _ _)
 
 end TauCeti.Examples

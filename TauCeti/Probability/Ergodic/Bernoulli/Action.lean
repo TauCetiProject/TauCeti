@@ -30,6 +30,13 @@ is null or conull: the action is ergodic.
   `ErgodicSMul` for the action `arrowAction`, and
   `TauCeti.Probability.ergodicSMul_arrowAction_infinitePi_const_of_proper` for a proper action of
   an infinite group.
+* `TauCeti.Probability.ergodicSMul_arrowAction_self_infinitePi_const`: the Bernoulli action
+  `(g • x) h = x (g⁻¹ * h)` of a countable infinite group `Γ` on `Γ → S` is ergodic. This action is
+  the shift by `g⁻¹` (`SymbolicDynamics.FullShift.arrowAction_smul_eq_mulShift`).
+* `TauCeti.Probability.ergodicSMul_arrowAction_multiplicative_infinitePi_const`: for a countable
+  infinite additive group `Λ`, the Bernoulli action of `Multiplicative Λ` on `Λ → S` is ergodic.
+  This action is the shift by `-toAdd g`
+  (`SymbolicDynamics.FullShift.arrowAction_multiplicative_smul_eq_shift`).
 
 For the finitely supported permutations of `ℕ` acting on `ℕ → α`, Hewitt–Savage gives the same
 conclusion: `TauCeti.Probability.ergodicSMul_infinitePi_const`.
@@ -103,6 +110,28 @@ theorem ergodicSMul_arrowAction_infinitePi_const_of_proper [Countable ι] [Infin
     letI := arrowAction (G := Γ) (A := ι) (B := S)
     ErgodicSMul Γ (ι → S) (Measure.infinitePi fun _ => ν) :=
   ergodicSMul_arrowAction_infinitePi_const (exists_forall_smul_notMem_of_proper hproper)
+
+/-- **The Bernoulli action of a countable infinite group is ergodic.** For a probability measure
+`ν` on `S`, the action `(g • x) h = x (g⁻¹ * h)` of a countable infinite group `Γ` on `Γ → S` is
+ergodic for the Bernoulli measure `ν^{⊗Γ}`. -/
+theorem ergodicSMul_arrowAction_self_infinitePi_const [Countable Γ] [Infinite Γ] :
+    letI := arrowAction (G := Γ) (A := Γ) (B := S)
+    ErgodicSMul Γ (Γ → S) (Measure.infinitePi fun _ => ν) :=
+  ergodicSMul_arrowAction_infinitePi_const exists_forall_smul_notMem_self
+
+/-- **The Bernoulli action of a countable infinite additive group is ergodic.** For an additive
+group `Λ` acting on itself by translation, and a probability measure `ν` on `S`, the action
+`(g • x) n = x (-toAdd g + n)` of `Multiplicative Λ` on `Λ → S` is ergodic for `ν^{⊗Λ}`, when `Λ`
+is countable and infinite. -/
+theorem ergodicSMul_arrowAction_multiplicative_infinitePi_const {Λ : Type*} [AddGroup Λ]
+    [Countable Λ] [Infinite Λ] :
+    letI := arrowAction (G := Multiplicative Λ) (A := Λ) (B := S)
+    ErgodicSMul (Multiplicative Λ) (Λ → S) (Measure.infinitePi fun _ => ν) := by
+  have : Infinite (Multiplicative Λ) := inferInstanceAs (Infinite Λ)
+  -- `Multiplicative Λ` acts freely: `g • i = toAdd g + i` is injective in `g`.
+  exact ergodicSMul_arrowAction_infinitePi_const_of_proper
+    (finite_setOf_exists_smul_mem_of_injective fun i =>
+      (add_left_injective i).comp Multiplicative.toAdd.injective)
 
 end Probability
 

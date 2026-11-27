@@ -22,6 +22,9 @@ The factor `hadamardFactor f x y`, the averaged derivative of `f` along the segm
 at `x`, it is invertible for all `x` and `y` near a point where the derivative of `f` is
 invertible (`ContDiff.exists_mem_nhds_isUnit_hadamardFactor`), and it stays within `C` of a linear
 map `A` when the derivative of `f` does along the segment (`norm_hadamardFactor_sub_le`).
+For a family `Φ : P × ℝ → F` it gives Hadamard division in the real variable,
+`Φ (p, h) - Φ (p, 0) = h • D (p, h)` with `D` jointly `C^k` when `Φ` is `C^(k + 1)`
+(`ContDiff.exists_contDiff_sub_eq_smul`).
 
 Its higher-order analogue is `TauCeti.taylorRemainderFactor n f x y`, the averaged `(n + 1)`-st
 derivative of `f` along the segment from `x` to `y` with the weight of Taylor's integral remainder.
@@ -185,6 +188,20 @@ the basepoint and the endpoint jointly. -/
 theorem ContDiff.contDiff_hadamardFactor_uncurry (f : E → F) (hf : ContDiff ℝ ∞ f) :
     ContDiff ℝ ∞ (fun p : E × E ↦ hadamardFactor f p.1 p.2) := by
   simpa using ContDiff.contDiff_hadamardFactor_uncurry_of_succ (⊤ : ℕ∞) f (by simpa using hf)
+
+/-- **Hadamard division in a real variable, with parameters.** If `Φ : P × ℝ → F` is `C^(k + 1)`,
+then `Φ (p, h) - Φ (p, 0) = h • D (p, h)` for a function `D` that is `C^k` jointly in the parameter
+`p` and the variable `h`. -/
+theorem ContDiff.exists_contDiff_sub_eq_smul [CompleteSpace F]
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {k : ℕ∞} {Φ : P × ℝ → F}
+    (hΦ : ContDiff ℝ (k + 1 : ℕ∞) Φ) :
+    ∃ D : P × ℝ → F, ContDiff ℝ k D ∧ ∀ p h, Φ (p, h) - Φ (p, 0) = h • D (p, h) := by
+  refine ⟨fun q ↦ hadamardFactor Φ (q.1, 0) q ((0 : P), (1 : ℝ)), ?_, fun p h ↦ ?_⟩
+  · exact ((ContDiff.contDiff_hadamardFactor_uncurry_of_succ k Φ hΦ).comp
+      (by fun_prop : ContDiff ℝ k fun q : P × ℝ ↦ ((q.1, (0 : ℝ)), q))).clm_apply contDiff_const
+  · have hd : ((p, h) : P × ℝ) - (p, 0) = h • ((0 : P), (1 : ℝ)) := by ext <;> simp
+    rw [ContDiff.sub_eq_hadamardFactor_apply Φ (hΦ.of_le (by exact_mod_cast le_add_self)) (p, 0)
+      (p, h), hd, map_smul]
 
 /-- Near a point where the derivative of a `C¹` map `f : E → E` is invertible, the averaged
 derivative `hadamardFactor f y x` is invertible for all basepoints `y` and endpoints `x`. -/

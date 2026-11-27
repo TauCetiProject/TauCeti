@@ -30,6 +30,8 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
 
 * `FundamentalGroup.map_id`: the identity induces the identity homomorphism.
 * `FundamentalGroup.map_comp`: induced maps preserve composition.
+* `FundamentalGroup.toPath_fromPath`: converting a loop homotopy class to `FundamentalGroup` and
+  back is the identity.
 * `FundamentalGroup.fromPath_mk_out`: every element of the fundamental group is the class of a
   chosen representative loop.
 * `FundamentalGroup.mapOfEq_comp`: the induced map of a composite is the composite of the
@@ -51,6 +53,8 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   induced-map range contained in any target subgroup.
 * `TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton`: the same triviality for the
   basepoint-transported induced map `FundamentalGroup.mapOfEq`.
+* `TauCeti.FundamentalGroup.mapOfEq_range_eq_of_subsingleton`: two such transported induced maps
+  into the same `π₁(X, x)` have the same range.
 * `TauCeti.FundamentalGroup.mapOfEq_comp_eq_of_mapOfEq_eq`: maps inducing the same homomorphism
   on fundamental groups still do after precomposition with any pointed map.
 * `TauCeti.FundamentalGroup.mk_map_comp_eq_of_mapOfEq_eq`: two maps inducing the same
@@ -90,6 +94,13 @@ theorem map_comp {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topo
     (g : C(Y, Z)) (f : C(X, Y)) (x : X) :
     map (g.comp f) x = (map g (f x)).comp (map f x) :=
   MonoidHom.ext fun p ↦ End.ext (FundamentalGroupoid.map_comp_map g f p.asHom)
+
+/-- Converting a path-homotopy class of loops to the fundamental group and back is the identity. -/
+@[simp]
+theorem toPath_fromPath {X : Type*} [TopologicalSpace X] {x : X}
+    (q : Path.Homotopic.Quotient x x) :
+    toPath (fromPath q) = q :=
+  rfl
 
 /-- Every element of the fundamental group is the class of a chosen representative loop. -/
 @[simp]
@@ -265,6 +276,17 @@ theorem FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton
   have : Subsingleton ((_root_.FundamentalGroup.mapOfEq f h).range) :=
     (Set.subsingleton_coe _).mpr ((_root_.FundamentalGroup.mapOfEq f h).subsingleton_coe_range)
   exact Subgroup.eq_bot_of_subsingleton _
+
+/-- Two maps into `X` from spaces whose fundamental groups are subsingletons, transported to a
+common basepoint `x`, have the same (trivial) range in `π₁(X, x)`. For instance two simply
+connected covers of `X` recover the same subgroup. -/
+theorem FundamentalGroup.mapOfEq_range_eq_of_subsingleton
+    [Subsingleton (_root_.FundamentalGroup A a₀)] [Subsingleton (_root_.FundamentalGroup E e₀)]
+    (f : C(A, X)) (g : C(E, X)) {x : X} (hf : f a₀ = x) (hg : g e₀ = x) :
+    (_root_.FundamentalGroup.mapOfEq f hf).range =
+      (_root_.FundamentalGroup.mapOfEq g hg).range := by
+  rw [FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton,
+    FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton]
 
 /-- Two maps `f g : X → Y` inducing the same homomorphism on `π₁(X, x₀)` still do after
 precomposition with any map `e : A → X` sending `a₀` to `x₀`. -/

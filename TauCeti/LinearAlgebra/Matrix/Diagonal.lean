@@ -33,6 +33,8 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 
 * `Matrix.dvd_diagonal_apply`: a scalar divides the entries of a diagonal matrix
   whose diagonal contains it.
+* `Matrix.vecMul_diagonal_vec2`: a row vector times `diag(a, b)` scales its two coordinates by
+  `a` and `b`.
 * `TauCeti.diagonal_mul_single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on the left and right by
   diagonal matrices rescales its entry by the corresponding diagonal coefficients.
 * `TauCeti.diagonal_mul_single`, `TauCeti.single_mul_diagonal`: multiplying `Eᵢⱼ(c)` on one side
@@ -40,6 +42,8 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
 * `TauCeti.isUnit_diagonal_iff`: a diagonal matrix over a possibly noncommutative semiring is a
   unit exactly when its diagonal is.
 * `TauCeti.isUnit_diagonal_snoc_one_iff`: `diagonal (1, …, 1, x)` is a unit exactly when `x` is.
+* `TauCeti.diagonal_vec2_one_mul_mul_diagonal_vec2_one_inv`: conjugating a `2 × 2` matrix by
+  `diag(1, c⁻¹)` multiplies its upper right entry by `c⁻¹` and its lower left entry by `c`.
 * `TauCeti.apply_eq_zero_of_commute_diagonal`: a matrix commuting with a diagonal matrix has
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
 * `TauCeti.commute_diagonal_of_apply_eq_zero`: conversely, a matrix vanishing wherever a diagonal
@@ -62,6 +66,12 @@ namespace Matrix
 theorem dvd_diagonal_apply {ι α : Type*} [DecidableEq ι] [MonoidWithZero α]
     (d : ι → α) (i j : ι) : d j ∣ diagonal d i j := by
   by_cases hij : i = j <;> simp [diagonal, hij]
+
+/-- A row vector times the diagonal matrix `diag(a, b)` has coordinates `v 0 * a` and `v 1 * b`. -/
+theorem vecMul_diagonal_vec2 {α : Type*} [NonUnitalNonAssocSemiring α] (v : Fin 2 → α)
+    (a b : α) : v ᵥ* diagonal ![a, b] = ![v 0 * a, v 1 * b] := by
+  ext i
+  fin_cases i <;> simp [vecMul_diagonal]
 
 end Matrix
 
@@ -110,6 +120,14 @@ theorem isUnit_diagonal_iff {R : Type*} [Semiring R] {v : n → R} :
 theorem isUnit_diagonal_snoc_one_iff {R : Type*} [Semiring R] {d : ℕ} (x : R) :
     IsUnit (diagonal (Fin.snoc (α := fun _ ↦ R) (1 : Fin d → R) x)) ↔ IsUnit x := by
   simp [isUnit_diagonal_iff, Pi.isUnit_iff, Fin.forall_fin_succ']
+
+/-- Conjugating a `2 × 2` matrix by `diag(1, c⁻¹)` multiplies its upper right entry by `c⁻¹` and
+its lower left entry by `c`. -/
+theorem diagonal_vec2_one_mul_mul_diagonal_vec2_one_inv {K : Type*} [Semifield K] {c : K}
+    (hc : c ≠ 0) (M : Matrix (Fin 2) (Fin 2) K) :
+    diagonal ![1, c] * M * diagonal ![1, c⁻¹] = !![M 0 0, M 0 1 * c⁻¹; c * M 1 0, M 1 1] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [diagonal_mul, mul_diagonal, mul_right_comm _ _ c⁻¹, hc]
 
 section Commute
 
