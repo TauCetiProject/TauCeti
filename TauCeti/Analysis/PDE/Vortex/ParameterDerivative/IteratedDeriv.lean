@@ -321,8 +321,8 @@ private theorem eLpNorm_exp_mul_smul_iteratedDeriv_orthogonalKerProjection_le_of
       _ = _ := by
           push_cast
           ring
-  · rw [hT.inner_iteratedDeriv_orthogonalKerProjection_apply_comm sobolevFieldValues_injective
-      hsurj hd e k, real_inner_comm]
+  · rw [hT.inner_iteratedDeriv_orthogonalKerProjection_apply_left_eq_right
+      sobolevFieldValues_injective hsurj hd e k, real_inner_comm]
     simp only [Finset.univ_unique, Finset.sum_singleton]
     exact le_rfl
   -- The complement component, through `-Q₀ (∑_{i<N} C(N,i) Z(a_(N-i), πᵢ e))`.

@@ -25,9 +25,9 @@ the `i`-th derivatives of `T`, `π`, `Q` at `t₀`. Near `t₀` these satisfy
 `⟪ι (Q t y), ι (π t e)⟫ = 0`,  `⟪ι (π t e), ι e'⟫ = ⟪ι e, ι (π t e')⟫`,
 
 the last because an orthogonal projection is symmetric for the `ι`-pairing
-(`ContinuousLinearMap.IsOrthogonalKerProjection.inner_apply_comm`). Differentiating each identity
-`n` times by Leibniz's rule (`ContinuousLinearMap.iteratedDeriv_of_bilinear`) gives the identities
-of this file, which determine `Qₙ` and `πₙ` from the derivatives of lower order:
+(`ContinuousLinearMap.IsOrthogonalKerProjection.inner_apply_left_eq_right`). Differentiating each
+identity `n` times by Leibniz's rule (`ContinuousLinearMap.iteratedDeriv_of_bilinear`) gives the
+identities of this file, which determine `Qₙ` and `πₙ` from the derivatives of lower order:
 
 * `T₀ (Qₙ y) = -∑_{i < n} (n choose i) T_(n-i) (Qᵢ y)` for `n ≥ 1`, so the component of `Qₙ y`
   in the `ι`-orthogonal complement of `ker T₀` is
@@ -41,7 +41,7 @@ of this file, which determine `Qₙ` and `πₙ` from the derivatives of lower o
 * on the kernel, `π₀ (π_(m+1) k) = -∑_{i < m} (m + 1 choose i + 1) π_(i+1) (π_(m-i) k)`
   (`IsFredholm.orthogonalKerProjection_iteratedDeriv_orthogonalKerProjection_of_mem_ker`),
   and the pairings of `πₙ` are symmetric
-  (`IsFredholm.inner_iteratedDeriv_orthogonalKerProjection_apply_comm`), so the kernel
+  (`IsFredholm.inner_iteratedDeriv_orthogonalKerProjection_apply_left_eq_right`), so the kernel
   component of `πₙ e` is determined by `⟪ι (πₙ e), ι k⟫ = ⟪ι e, ι (πₙ k)⟫` and the two previous
   identities applied to `k`.
 
@@ -177,9 +177,9 @@ theorem IsFredholm.sum_iteratedDeriv_orthogonalKerProjection_apply_apply
 /-- **The derivatives of the orthogonal kernel projections are symmetric:**
 `⟪ι (πₙ e), ι e'⟫ = ⟪ι e, ι (πₙ e')⟫` for every `n`, in the setting of
 `IsFredholm.sum_iteratedDeriv_apply_iteratedDeriv_orthogonalKerProjection_apply`. -/
-theorem IsFredholm.inner_iteratedDeriv_orthogonalKerProjection_apply_comm (hι : Injective ι)
-    (hT : IsFredholm (T t₀)) (hsurj : Surjective (T t₀)) (hd : ContDiffAt ℝ n T t₀)
-    (e e' : E) :
+theorem IsFredholm.inner_iteratedDeriv_orthogonalKerProjection_apply_left_eq_right
+    (hι : Injective ι) (hT : IsFredholm (T t₀)) (hsurj : Surjective (T t₀))
+    (hd : ContDiffAt ℝ n T t₀) (e e' : E) :
     ⟪ι (iteratedDeriv n (fun t ↦ orthogonalKerProjection ι (T t)) t₀ e), ι e'⟫_ℝ =
       ⟪ι e, ι (iteratedDeriv n (fun t ↦ orthogonalKerProjection ι (T t)) t₀ e')⟫_ℝ := by
   have hπ : ContDiffAt ℝ n (fun t ↦ orthogonalKerProjection ι (T t)) t₀ :=
@@ -192,7 +192,7 @@ theorem IsFredholm.inner_iteratedDeriv_orthogonalKerProjection_apply_comm (hι :
         (hT.eventually_isOrthogonalKerProjection_and_isOrthogonalRightInverse hι hsurj)]
       with t ht
     simp only [L, Function.comp_apply, sub_apply, coe_comp, apply_apply, innerSL_apply_apply]
-    rw [real_inner_comm, ht.1.inner_apply_comm e e', sub_self]
+    rw [real_inner_comm, ht.1.inner_apply_left_eq_right e e', sub_self]
   have h := L.iteratedDeriv_comp_left hπ le_rfl
   simp only [h0.iteratedDeriv_eq n, iteratedDeriv_const, ite_self] at h
   simp only [L, sub_apply, coe_comp, Function.comp_apply, apply_apply, innerSL_apply_apply]

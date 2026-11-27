@@ -95,7 +95,7 @@ complement of `ker (T x₀)` the derivative of these adjoints is
   complement splits every `e` as `e = π e + Q (T e)`.
 * `ContinuousLinearMap.eq_zero_of_mem_ker_of_forall_inner_eq_zero`: an element of the kernel
   `ι`-orthogonal to the kernel vanishes.
-* `ContinuousLinearMap.IsOrthogonalKerProjection.inner_apply_comm`: the orthogonal kernel
+* `ContinuousLinearMap.IsOrthogonalKerProjection.inner_apply_left_eq_right`: the orthogonal kernel
   projection is symmetric for the `ι`-pairing, `⟪ι (π e), ι e'⟫ = ⟪ι e, ι (π e')⟫`.
 * `ContinuousLinearMap.apply_eq_of_ker_projection_conj` and
   `ContinuousLinearMap.apply_eq_of_rightInverse_conj`: an equivalence `e` carrying the kernel of
@@ -264,7 +264,7 @@ theorem IsOrthogonalKerProjection.real_inner_apply_eq_norm_sq [Module ℝ E] [Mo
 
 /-- **An orthogonal kernel projection is symmetric for the `ι`-pairing:**
 `⟪ι (π e), ι e'⟫ = ⟪ι e, ι (π e')⟫`, both sides being `⟪ι (π e), ι (π e')⟫`. -/
-theorem IsOrthogonalKerProjection.inner_apply_comm {π : E →L[𝕜] E}
+theorem IsOrthogonalKerProjection.inner_apply_left_eq_right {π : E →L[𝕜] E}
     (h : IsOrthogonalKerProjection ι T π) (e e' : E) : ⟪ι (π e), ι e'⟫_𝕜 = ⟪ι e, ι (π e')⟫_𝕜 := by
   have h₁ := h.inner_sub_eq_zero e' (π e) (h.mem_ker e)
   have h₂ := h.inner_sub_eq_zero e (π e') (h.mem_ker e')
