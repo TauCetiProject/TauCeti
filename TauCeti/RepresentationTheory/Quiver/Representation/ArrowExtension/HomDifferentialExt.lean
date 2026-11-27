@@ -12,9 +12,14 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 /-!
 # Arrow families and extension classes of quiver representations
 
-The comparison `homDifferentialCokerEquivExt` sends an arrow family to its upper triangular
-extension class in `Ext¹(M,N)`. It uses `QuiverRep.exists_arrowExtension_hom_fixing_ends_iff`
-for injectivity and `ShortComplex.ShortExact.exists_extClass_eq` for surjectivity.
+The linear map `arrowExtensionExtClass` sends each arrow family to the class of its upper
+triangular extension in `Ext¹(M,N)`. When the category of quiver representations has enough
+projectives, `homDifferentialCokerEquivExt` identifies the cokernel of `homDifferential M N` with
+`Ext¹(M,N)`. For pointwise finite-dimensional representations of a finite quiver, this comparison
+turns `eulerForm_eq_finrank_hom_sub_finrank_coker` into the Hom-minus-Ext dimension identity.
+
+The comparison builds on the classification `exists_arrowExtension_hom_fixing_ends_iff`
+and the realization theorem `ShortComplex.ShortExact.exists_extClass_eq`.
 
 See W. Crawley-Boevey, *Lectures on Representations of Quivers*, §1, consequence (3),
 and H. Derksen and J. Weyman, *An Introduction to Quiver Representations*, Chapter 1.
@@ -46,13 +51,14 @@ theorem arrowExtension_extClass_naturality (c : HomArrow M N) (d : HomArrow M' N
       intro i j a
       apply ModuleCat.hom_ext
       refine LinearMap.ext fun (x : vertexSpace k Q N i × vertexSpace k Q M i) ↦ ?_
-      -- Evaluate the naturality square in the product coordinates of the two extensions.
+      have ha := LinearMap.congr_fun (h i j a) x.2
+      simp only [LinearMap.comp_apply] at ha
+      -- The lift square is typed over path objects. Retype it at the vertices so
+      -- the arrow and vertex evaluation lemmas can match at default transparency.
       change (homVertex N N' g j ((arrowExtension M N c).map a.toPath x).1,
           homVertex M M' f j ((arrowExtension M N c).map a.toPath x).2) =
         (arrowExtension M' N' d).map a.toPath
           (homVertex N N' g i x.1, homVertex M M' f i x.2)
-      have ha := LinearMap.congr_fun (h i j a) x.2
-      simp only [LinearMap.comp_apply] at ha
       simp only [arrowExtension_map_toPath, map_add, homVertex_naturality, ha])
   have hb (i : Q) (x : vertexSpace k Q N i × vertexSpace k Q M i) :
       (b.app ((Paths.of Q).obj i)).hom x =
@@ -62,26 +68,33 @@ theorem arrowExtension_extClass_naturality (c : HomArrow M N) (d : HomArrow M' N
   have hl : g ≫ arrowExtensionInl M' N' d = arrowExtensionInl M N c ≫ b := by
     refine NatTrans.ext (funext fun (i : Q) ↦ ModuleCat.hom_ext ?_)
     refine LinearMap.ext fun (x : vertexSpace k Q N i) ↦ ?_
-    -- Use pointwise composition at the underlying vertex.
+    -- Retype the components at the included vertex so their application lemmas can match.
     change ((arrowExtensionInl M' N' d).app ((Paths.of Q).obj i)).hom
         ((g.app ((Paths.of Q).obj i)).hom x) = (b.app ((Paths.of Q).obj i)).hom
           (((arrowExtensionInl M N c).app ((Paths.of Q).obj i)).hom x)
-    rw [arrowExtensionInl_app_apply, hb, map_zero]
-    exact (congrArg (fun y : vertexSpace k Q N' i ↦
-      ((arrowExtensionInl M' N' d).app ((Paths.of Q).obj i)).hom y)
-      (homVertex_apply N N' g i x).symm).trans (arrowExtensionInl_app_apply M' N' d i _)
+    rw [← homVertex_apply N N' g i x, arrowExtensionInl_app_apply, arrowExtensionInl_app_apply,
+      hb, map_zero]
   have hr : b ≫ arrowExtensionSnd M' N' d = arrowExtensionSnd M N c ≫ f := by
     refine NatTrans.ext (funext fun (i : Q) ↦ ModuleCat.hom_ext ?_)
     refine LinearMap.ext fun (x : vertexSpace k Q N i × vertexSpace k Q M i) ↦ ?_
-    -- Use pointwise composition at the underlying vertex.
+    -- The projection formulas likewise match at the included vertex.
     change ((arrowExtensionSnd M' N' d).app ((Paths.of Q).obj i)).hom
         ((b.app ((Paths.of Q).obj i)).hom x) =
       (f.app ((Paths.of Q).obj i)).hom (((arrowExtensionSnd M N c).app ((Paths.of Q).obj i)).hom x)
-    rw [hb, arrowExtensionSnd_app_apply, arrowExtensionSnd_app_apply]
-    exact homVertex_apply M M' f i x.2
+    simp only [hb, arrowExtensionSnd_app_apply, homVertex_apply]
   let φ : arrowExtensionComplex M N c ⟶ arrowExtensionComplex M' N' d := ⟨g, b, f, hl, hr⟩
   exact (arrowExtensionComplex_shortExact M N c).extClass_naturality
     (arrowExtensionComplex_shortExact M' N' d) φ
+
+/-- Pushing out an arrow extension along a map of its left endpoint gives the class of the
+arrow family obtained by postcomposing each component. -/
+theorem arrowExtension_extClass_comp_mk₀ (c : HomArrow M N) (d : HomArrow M N')
+    (g : N ⟶ N') (h : ∀ i j (a : i ⟶ j), (homVertex N N' g j).comp (c i j a) = d i j a) :
+    (arrowExtensionComplex_shortExact M N c).extClass.comp (Ext.mk₀ g) (add_zero 1) =
+      (arrowExtensionComplex_shortExact M N' d).extClass := by
+  have he := arrowExtension_extClass_naturality c d (𝟙 M) g
+    (by simpa only [homVertex_id, LinearMap.comp_id] using h)
+  exact he.trans (Ext.mk₀_id_comp _)
 
 /-- The class of an arrow extension depends linearly on its arrow family. -/
 noncomputable def arrowExtensionExtClass (M N : QuiverRep.{u, v, w, t} k Q) :
@@ -95,47 +108,27 @@ noncomputable def arrowExtensionExtClass (M N : QuiverRep.{u, v, w, t} k Q) :
         (homVertex (N ⊞ N) N g j).comp (b i j a) =
           (homVertex N N (biprod.inl ≫ g) j).comp (c i j a) +
             (homVertex N N (biprod.inr ≫ g) j).comp (d i j a) := by
-      have hcomp (ι : N ⟶ N ⊞ N) (x : vertexSpace k Q N j) :
-          homVertex N N (ι ≫ g) j x =
-            homVertex (N ⊞ N) N g j (homVertex N (N ⊞ N) ι j x) :=
-        (homVertex_apply N N (ι ≫ g) j x).trans
-          ((congrArg (fun y ↦ (g.app ((Paths.of Q).obj j)).hom y)
-            (homVertex_apply N (N ⊞ N) ι j x).symm).trans
-            (homVertex_apply (N ⊞ N) N g j _).symm)
-      ext x
-      simp only [b, LinearMap.comp_apply, LinearMap.add_apply, map_add, hcomp]
-    have hid (X : QuiverRep.{u, v, w, t} k Q) (i : Q) :
-        homVertex X X (𝟙 X) i = LinearMap.id :=
-      LinearMap.ext fun x ↦ homVertex_apply X X (𝟙 X) i x
-    have hz (i : Q) : homVertex N N 0 i = 0 :=
-      LinearMap.ext fun x ↦ homVertex_apply N N 0 i x
-    have h₁ := arrowExtension_extClass_naturality b c (𝟙 M) biprod.fst (by
-      intro i j a
-      simp only [hb, biprod.inl_fst, biprod.inr_fst, hid, hz,
-        LinearMap.id_comp, LinearMap.zero_comp, add_zero, LinearMap.comp_id])
-    have h₂ := arrowExtension_extClass_naturality b d (𝟙 M) biprod.snd (by
-      intro i j a
-      simp only [hb, biprod.inl_snd, biprod.inr_snd, hz, hid,
-        LinearMap.zero_comp, LinearMap.id_comp, zero_add, LinearMap.comp_id])
-    have h := arrowExtension_extClass_naturality b (c + d) (𝟙 M) (biprod.fst + biprod.snd) (by
-      intro i j a
+      simp only [b, LinearMap.comp_add, homVertex_comp, LinearMap.comp_assoc]
+    have h₁ := arrowExtension_extClass_comp_mk₀ b c biprod.fst (by
+      simp only [hb, biprod.inl_fst, biprod.inr_fst, homVertex_id, homVertex_zero,
+        LinearMap.id_comp, LinearMap.zero_comp, add_zero, implies_true])
+    have h₂ := arrowExtension_extClass_comp_mk₀ b d biprod.snd (by
+      simp only [hb, biprod.inl_snd, biprod.inr_snd, homVertex_zero, homVertex_id,
+        LinearMap.zero_comp, LinearMap.id_comp, zero_add, implies_true])
+    have h := arrowExtension_extClass_comp_mk₀ b (c + d) (biprod.fst + biprod.snd) (by
       simp only [hb, Preadditive.comp_add, biprod.inl_fst, biprod.inl_snd, biprod.inr_fst,
-        biprod.inr_snd, add_zero, zero_add, hid, LinearMap.id_comp, LinearMap.comp_id,
-        Pi.add_apply])
+        biprod.inr_snd, add_zero, zero_add, homVertex_id, LinearMap.id_comp, Pi.add_apply,
+        implies_true])
     let β : Ext.{e} M (N ⊞ N) 1 := (arrowExtensionComplex_shortExact M (N ⊞ N) b).extClass
-    have hadd := (congrArg (fun y ↦ β.comp y rfl) (Ext.mk₀_add biprod.fst biprod.snd)).trans
-      (Ext.comp_add β _ _ (add_zero 1))
-    exact ((Ext.mk₀_id_comp _).symm.trans h.symm).trans
-      (hadd.trans (congrArg₂ (· + ·) (h₁.trans (Ext.mk₀_id_comp _))
-        (h₂.trans (Ext.mk₀_id_comp _))))
+    have hadd : β.comp (Ext.mk₀ (biprod.fst + biprod.snd)) (add_zero 1) =
+        β.comp (Ext.mk₀ biprod.fst) (add_zero 1) + β.comp (Ext.mk₀ biprod.snd) (add_zero 1) := by
+      rw [Ext.mk₀_add, Ext.comp_add]
+    exact h.symm.trans (hadd.trans (congrArg₂ (· + ·) h₁ h₂))
   map_smul' r c := by
-    have h := arrowExtension_extClass_naturality c (r • c) (𝟙 M) (r • 𝟙 N) (by
-      intro i j a
-      ext x
-      simp only [LinearMap.comp_apply, homVertex_apply, NatTrans.app_smul, NatTrans.id_app,
-        ModuleCat.hom_smul, ModuleCat.hom_id]
-      rfl)
-    exact ((Ext.mk₀_id_comp _).symm.trans h.symm).trans
+    have h := arrowExtension_extClass_comp_mk₀ c (r • c) (r • 𝟙 N) (by
+      simp only [homVertex_smul, homVertex_id, LinearMap.smul_comp, LinearMap.id_comp,
+        Pi.smul_apply, implies_true])
+    exact h.symm.trans
       (Ext.smul_eq_comp_mk₀ (arrowExtensionComplex_shortExact M N c).extClass r).symm
 
 /-- The arrow-family map evaluates to the native extension class. -/
@@ -152,10 +145,8 @@ theorem arrowExtensionExtClass_eq_iff {c d : HomArrow M N} :
         Submodule.Quotient.mk d := by
   rw [arrowExtensionExtClass_apply, arrowExtensionExtClass_apply,
     ← exists_arrowExtension_hom_fixing_ends_iff]
-  have h := (arrowExtensionComplex_shortExact M N c).exists_hom_iff_extClass_comp_eq
-    (arrowExtensionComplex_shortExact M N d) (𝟙 N) (𝟙 M)
-  refine (h.trans ⟨fun hh ↦ (Ext.comp_mk₀_id _).symm.trans (hh.trans (Ext.mk₀_id_comp _)),
-    fun hh ↦ (Ext.comp_mk₀_id _).trans (hh.trans (Ext.mk₀_id_comp _).symm)⟩).symm.trans ⟨?_, ?_⟩
+  refine ((arrowExtensionComplex_shortExact M N c).exists_hom_iff_extClass_eq
+    (arrowExtensionComplex_shortExact M N d)).symm.trans ⟨?_, ?_⟩
   · rintro ⟨φ, h₁, h₃⟩
     refine ⟨φ.τ₂, φ.comm₁₂.symm.trans ?_, φ.comm₂₃.trans ?_⟩
     · exact (congrArg (· ≫ (arrowExtensionComplex M N d).f) h₁).trans (Category.id_comp _)
@@ -187,9 +178,9 @@ noncomputable def homDifferentialCokerEquivExt :
     let φ : arrowExtensionComplex M N c ⟶ ShortComplex.mk i p hip :=
       ⟨𝟙 N, iso.hom, 𝟙 M, (Category.id_comp i).trans hin.symm,
         hout.trans (Category.comp_id _).symm⟩
-    have h := (arrowExtensionComplex_shortExact M N c).extClass_naturality hS φ
     exact ⟨Submodule.Quotient.mk c,
-      (Ext.comp_mk₀_id _).symm.trans (h.trans (Ext.mk₀_id_comp _))⟩
+      ((arrowExtensionComplex_shortExact M N c).exists_hom_iff_extClass_eq hS).mp
+        ⟨φ, rfl, rfl⟩⟩
 
 /-- The cokernel comparison sends the class of an arrow family to its extension class. -/
 @[simp]
