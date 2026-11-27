@@ -13,9 +13,11 @@ import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Distribution.TestFunction.Compact
 import TauCeti.Analysis.Distribution.TestFunction.DominatedSeries
 import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
+import TauCeti.Analysis.Distribution.TestFunction.LatticeSeries
 import TauCeti.Analysis.Distribution.TestFunction.Schwartz
 import TauCeti.Analysis.Fourier.Continuous
 import TauCeti.Analysis.Fourier.Decay
+import TauCeti.Analysis.Convex.Cone.InfDist
 import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -59,10 +61,11 @@ coefficients `𝓕 ψ (ξ + m.fst)` decay rapidly in `ξ` and `m` jointly, and t
 pairing of `T` with a single test function: the Fourier series
 `∑ m, (covolume L)⁻¹ 𝓕 ψ (ξ + m.fst) χ e_(-m)` restricted to these `m`, which converges in the
 smooth functions supported in `tsupport χ` (`localFourier_pullbackInl_eq_add`). Weighted by
-`(1 + ‖ξ‖) ^ N`, these test functions depend continuously on `ξ ∈ V` and tend to zero at infinity
-(`ContDiffMapSupportedIn.tendsto_tsum_smul_of_dominated`), so together with `0` they form a
-compact set, on which `T` is bounded by a continuous seminorm of `𝓓'(W)`. For the topology of
-`𝓓'(U)`, a compact set of test functions has its supports in one compact set `K`
+`(1 + ‖ξ‖) ^ N`, these test functions depend continuously on `ξ ∈ V` and tend to zero at infinity,
+so together with `0` they form a compact set
+(`ContDiffMapSupportedIn.isCompact_insert_range_tsum_one_add_pow_mul_smul_modulate`), on which
+`T` is bounded by a continuous seminorm of `𝓓'(W)`. For the topology of `𝓓'(U)`, a compact set of
+test functions has its supports in one compact set `K`
 (`TestFunction.exists_compacts_forall_tsupport_subset_of_isCompact`), and the same test functions
 depend continuously on `ψ` in that compact set.
 
@@ -112,12 +115,10 @@ private theorem isClosed_bigCone (V : Set E) (ε : ℝ) : IsClosed (bigCone D V 
   isClosed_le ((continuous_infDist_pt V).comp (by fun_prop)) (continuous_const.mul continuous_norm)
 
 omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] in
-private theorem smul_mem_bigCone {V : Set E} (hV0 : (0 : E) ∈ V)
+private theorem smul_mem_bigCone {V : Set E}
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ε : ℝ} (t : ℝ) (ht : 0 < t)
     (ζ : WithLp 2 (E × D)) (hζ : ζ ∈ bigCone D V ε) : t • ζ ∈ bigCone D V ε := by
-  have hsub : t • V ⊆ V := by rintro _ ⟨ξ, hξ, rfl⟩; exact hVcone t ht ξ hξ
-  have hle := infDist_le_infDist_of_subset hsub ⟨t • (0 : E), 0, hV0, rfl⟩ (x := t • ζ.fst)
-  rw [infDist_smul₀, Real.norm_of_nonneg ht.le] at hle
+  have hle := (infDist_smul_of_smul_mem hVcone ht ζ.fst).le
   simp only [bigCone, mem_ofPred_eq, WithLp.smul_fst, norm_smul, Real.norm_of_nonneg ht.le] at hζ ⊢
   nlinarith
 
@@ -258,14 +259,14 @@ private theorem exists_cutoff_disjoint_bigCone
   exact ⟨ε, hε, δ, hδ, χ, hχ1, disjoint_left.2 fun ⟨p, ζ⟩ ⟨hp, hζ⟩ ↦ hGΓ p (hχG hp) ζ hζ⟩
 
 /-- The data `(χ, A, N)` of a seminorm of `𝓓'_Γ(W)`, for the cone `A` of `bigCone`. -/
-private def bigConeIndex {χ : 𝓓(W, ℂ)} {V : Set E} (hV0 : (0 : E) ∈ V)
+private def bigConeIndex {χ : 𝓓(W, ℂ)} {V : Set E}
     (hVcone : ∀ t : ℝ, 0 < t → ∀ ξ ∈ V, t • ξ ∈ V) {ε : ℝ}
     (hχ : Disjoint (tsupport χ ×ˢ bigCone D V ε) Γ) (N : ℕ) : WaveFrontSeminormIndex W Γ where
   cutoff := χ
   cone := bigCone D V ε
   order := N
   isClosed_cone := isClosed_bigCone V ε
-  smul_mem_cone := smul_mem_bigCone hV0 hVcone
+  smul_mem_cone := smul_mem_bigCone hVcone
   disjoint := hχ
 
 /-! ### Splitting the lattice series of the pullback -/
@@ -469,80 +470,16 @@ private theorem pow_mul_one_add_pow_mul_norm_badCoeff_le
             ‖f (ξ + (m : WithLp 2 (E × D)).fst)‖) := by gcongr
       _ ≤ ‖(ZLattice.covolume L : ℂ)⁻¹‖ * B := by gcongr; exact hB _
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [InnerProductSpace ℝ D]
-  [FiniteDimensional ℝ D] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace D] [BorelSpace D] in
-private theorem one_add_pow_mul_one_add_pow_le {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) {i j M : ℕ}
-    (h : i + j ≤ M) : (1 + s) ^ i * (1 + t) ^ j ≤ (1 + s + t) ^ M :=
-  calc (1 + s) ^ i * (1 + t) ^ j ≤ (1 + s + t) ^ i * (1 + s + t) ^ j :=
-        mul_le_mul (pow_le_pow_left₀ (by linarith) (by linarith) i)
-          (pow_le_pow_left₀ (by linarith) (by linarith) j) (by positivity) (by positivity)
-    _ = (1 + s + t) ^ (i + j) := (pow_add _ _ _).symm
-    _ ≤ (1 + s + t) ^ M := pow_le_pow_right₀ (by linarith) h
-
-/-- **The terms off `A`, weighted.** The products of the coefficients off `A`, weighted by
-`(1 + ‖ξ‖) ^ N`, with the seminorms of the modulated cutoffs are dominated by a summable sequence,
-uniformly in `ξ ∈ V`. -/
-private theorem one_add_pow_mul_norm_badCoeff_mul_seminorm_le
+/-- The decay estimate of `pow_mul_one_add_pow_mul_norm_badCoeff_le`, with the constant
+`(ε / (2 + ε)) ^ M` moved to the right-hand side. -/
+private theorem one_add_add_pow_mul_norm_badCoeff_le
     (L : Submodule ℤ (WithLp 2 (E × D))) {V : Set E}
-    {ε : ℝ} (hε : 0 < ε) (χ : 𝓓(W, ℂ)) {f : E → ℂ} {N M k q : ℕ} (hM : N + k + q ≤ M) {B : ℝ}
-    (hB : ∀ η, (1 + ‖η‖) ^ M * ‖f η‖ ≤ B) {ξ : E} (hξ : ξ ∈ V) (m : ZLattice.dual L) :
-    (1 + ‖ξ‖) ^ N * ‖badCoeff L (bigCone D V ε) f ξ m‖ *
-        N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
-          ((cutoffK χ).modulate (m : WithLp 2 (E × D))) ≤
-      ‖(ZLattice.covolume L : ℂ)⁻¹‖ * B * (ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤
-        ⟨tsupport χ, χ.hasCompactSupport.isCompact⟩ k (cutoffK χ) * (1 + 2 * π) ^ k) /
-          (ε / (2 + ε)) ^ M * ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹ := by
-  set c := ε / (2 + ε)
-  set s := ‖ξ‖
-  set t := ‖(m : WithLp 2 (E × D))‖
-  set Sk := ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤
-    ⟨tsupport χ, χ.hasCompactSupport.isCompact⟩ k (cutoffK χ)
-  have hbad := pow_mul_one_add_pow_mul_norm_badCoeff_le L hε hB hξ m
-  -- The derivatives of the modulated cutoff grow at most polynomially.
-  have hmod : N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
-      ((cutoffK χ).modulate (m : WithLp 2 (E × D))) ≤ Sk * (1 + 2 * π) ^ k * (1 + t) ^ k := by
-    calc _ ≤ Sk * (1 + 2 * π * t) ^ k := ContDiffMapSupportedIn.seminorm_modulate_le _ _ k
-      _ ≤ Sk * ((1 + 2 * π) * (1 + t)) ^ k := by
-          gcongr
-          nlinarith [Real.pi_pos, norm_nonneg (m : WithLp 2 (E × D))]
-      _ = Sk * (1 + 2 * π) ^ k * (1 + t) ^ k := by rw [mul_pow, mul_assoc]
-  rw [le_mul_inv_iff₀ (by positivity), le_div_iff₀ (by positivity)]
-  calc (1 + s) ^ N * ‖badCoeff L (bigCone D V ε) f ξ m‖ *
-        N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
-          ((cutoffK χ).modulate (m : WithLp 2 (E × D))) * (1 + t) ^ q * c ^ M
-      ≤ (1 + s) ^ N * ‖badCoeff L (bigCone D V ε) f ξ m‖ * (Sk * (1 + 2 * π) ^ k * (1 + t) ^ k) *
-          (1 + t) ^ q * c ^ M := by gcongr
-    _ = c ^ M * ((1 + s) ^ N * ((1 + t) ^ k * (1 + t) ^ q)) *
-          ‖badCoeff L (bigCone D V ε) f ξ m‖ * (Sk * (1 + 2 * π) ^ k) := by ring
-    _ ≤ c ^ M * (1 + s + t) ^ M * ‖badCoeff L (bigCone D V ε) f ξ m‖ *
-          (Sk * (1 + 2 * π) ^ k) := by
-        have hpow : (1 + s) ^ N * ((1 + t) ^ k * (1 + t) ^ q) ≤ (1 + s + t) ^ M := by
-          rw [← pow_add]
-          exact one_add_pow_mul_one_add_pow_le (norm_nonneg _) (norm_nonneg _) (by omega)
-        gcongr
-    _ ≤ ‖(ZLattice.covolume L : ℂ)⁻¹‖ * B * (Sk * (1 + 2 * π) ^ k) :=
-        mul_le_mul_of_nonneg_right hbad (by positivity)
-    _ = _ := by ring
-
-/-- **The coefficients off `A` tend to zero.** Weighted by `(1 + ‖ξ‖) ^ N`, the coefficients off
-`A` still decay like `(1 + ‖ξ‖)⁻¹`, for a decay estimate of `f` of order `M ≥ N + 1`. -/
-private theorem one_add_pow_mul_norm_badCoeff_le
-    (L : Submodule ℤ (WithLp 2 (E × D))) {V : Set E}
-    {ε : ℝ} (hε : 0 < ε) {f : E → ℂ} {N M : ℕ} (hM : N + 1 ≤ M) {B : ℝ}
-    (hB : ∀ η, (1 + ‖η‖) ^ M * ‖f η‖ ≤ B) {ξ : E} (hξ : ξ ∈ V) (m : ZLattice.dual L) :
-    (1 + ‖ξ‖) ^ N * ‖badCoeff L (bigCone D V ε) f ξ m‖ ≤
-      ‖(ZLattice.covolume L : ℂ)⁻¹‖ * B / (ε / (2 + ε)) ^ M * (1 + ‖ξ‖)⁻¹ := by
-  have hbad := pow_mul_one_add_pow_mul_norm_badCoeff_le L hε hB hξ m
-  have hpow : (1 + ‖ξ‖) ^ (N + 1) * (1 + ‖(m : WithLp 2 (E × D))‖) ^ 0 ≤
-      (1 + ‖ξ‖ + ‖(m : WithLp 2 (E × D))‖) ^ M :=
-    one_add_pow_mul_one_add_pow_le (norm_nonneg _) (norm_nonneg _) (by omega)
-  rw [pow_zero, mul_one] at hpow
-  rw [le_mul_inv_iff₀ (by positivity), le_div_iff₀ (by positivity)]
-  calc (1 + ‖ξ‖) ^ N * ‖badCoeff L (bigCone D V ε) f ξ m‖ * (1 + ‖ξ‖) * (ε / (2 + ε)) ^ M
-      = (ε / (2 + ε)) ^ M * (1 + ‖ξ‖) ^ (N + 1) * ‖badCoeff L (bigCone D V ε) f ξ m‖ := by ring
-    _ ≤ (ε / (2 + ε)) ^ M * (1 + ‖ξ‖ + ‖(m : WithLp 2 (E × D))‖) ^ M *
-          ‖badCoeff L (bigCone D V ε) f ξ m‖ := by gcongr
-    _ ≤ _ := hbad
+    {ε : ℝ} (hε : 0 < ε) {f : E → ℂ} {M : ℕ} {B : ℝ} (hB : ∀ η, (1 + ‖η‖) ^ M * ‖f η‖ ≤ B)
+    {ξ : E} (hξ : ξ ∈ V) (m : ZLattice.dual L) :
+    (1 + ‖ξ‖ + ‖(m : WithLp 2 (E × D))‖) ^ M * ‖badCoeff L (bigCone D V ε) f ξ m‖ ≤
+      ‖(ZLattice.covolume L : ℂ)⁻¹‖ * B / (ε / (2 + ε)) ^ M := by
+  rw [le_div_iff₀ (by positivity)]
+  linarith [pow_mul_one_add_pow_mul_norm_badCoeff_le L hε hB hξ m]
 
 /-- **Domination of the Fourier series off `A`.** For a family `F` of functions decaying rapidly,
 uniformly, the products of the coefficients off `A`, weighted by `(1 + ‖ξ‖) ^ N`, with the
@@ -556,20 +493,17 @@ private theorem exists_summable_one_add_pow_mul_norm_badCoeff_mul_seminorm_le
       ∀ f ∈ F, ∀ ξ ∈ V, ∀ k m, (1 + ‖ξ‖) ^ N * ‖badCoeff L (bigCone D V ε) f ξ m‖ *
         N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
           ((cutoffK χ).modulate (m : WithLp 2 (E × D))) ≤ b k m := by
-  set q := Module.finrank ℤ (ZLattice.dual L) + 1
-  have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
-  choose B hB using fun k : ℕ ↦ hF (N + k + q)
-  set b : ℕ → ZLattice.dual L → ℝ := fun k m ↦
-    ‖(ZLattice.covolume L : ℂ)⁻¹‖ * max (B k) 0 * (ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤
-      ⟨tsupport χ, χ.hasCompactSupport.isCompact⟩ k (cutoffK χ) * (1 + 2 * π) ^ k) /
-        (ε / (2 + ε)) ^ (N + k + q) * ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹
-  have hb (k : ℕ) : Summable (b k) := hq.mul_left _
-  refine ⟨b, hb, fun k m ↦ ?_, fun f hf ξ hξ k m ↦ ?_⟩
-  · have := apply_nonneg (ContDiffMapSupportedIn.supSeminorm ℂ (WithLp 2 (E × D)) ℂ ⊤
-      ⟨tsupport χ, χ.hasCompactSupport.isCompact⟩ k) (cutoffK χ)
-    positivity
-  · exact one_add_pow_mul_norm_badCoeff_mul_seminorm_le L hε χ le_rfl
-      (fun η ↦ (hB k f hf η).trans (le_max_left _ _)) hξ m
+  have ha (M : ℕ) : ∃ C, ∀ (p : {p : (E → ℂ) × E // p.1 ∈ F ∧ p.2 ∈ V}) (m : ZLattice.dual L),
+      (1 + ‖p.val.2‖ + ‖(m : WithLp 2 (E × D))‖) ^ M *
+        ‖badCoeff L (bigCone D V ε) p.val.1 p.val.2 m‖ ≤ C := by
+    obtain ⟨B, hB⟩ := hF M
+    exact ⟨_, fun p m ↦
+      one_add_add_pow_mul_norm_badCoeff_le L hε (hB p.val.1 p.property.1) p.property.2 m⟩
+  obtain ⟨b, hb, hb0, hbound⟩ :=
+    ContDiffMapSupportedIn.exists_summable_one_add_pow_mul_norm_mul_seminorm_modulate_le
+      (ZLattice.dual L) (w := fun p : {p : (E → ℂ) × E // p.1 ∈ F ∧ p.2 ∈ V} ↦ ‖p.val.2‖)
+      (fun _ ↦ norm_nonneg _) ha (cutoffK χ) N
+  exact ⟨b, hb, hb0, fun f hf ξ hξ ↦ hbound ⟨(f, ξ), hf, hξ⟩⟩
 
 /-- The Fourier series off `A` converges in `𝓓_K`, for a rapidly decreasing `f`. -/
 private theorem summable_badCoeff_smul_modulate (L : Submodule ℤ (WithLp 2 (E × D)))
@@ -586,22 +520,6 @@ private theorem summable_badCoeff_smul_modulate (L : Submodule ℤ (WithLp 2 (E 
 
 /-! ### Compact sets of test functions -/
 
-/-- The coefficients off `A`, weighted by `(1 + ‖ξ‖) ^ N`, tend to zero at infinity in `V`. -/
-private theorem tendsto_one_add_pow_mul_badCoeff (L : Submodule ℤ (WithLp 2 (E × D)))
-    {V : Set E} (hV : IsClosed V) {ε : ℝ} (hε : 0 < ε)
-    {f : E → ℂ} {N : ℕ} (hB : ∃ B, ∀ η, (1 + ‖η‖) ^ (N + 1) * ‖f η‖ ≤ B) (m : ZLattice.dual L) :
-    Tendsto (fun ξ : V ↦ (((1 + ‖(ξ : E)‖) ^ N : ℝ) : ℂ) * badCoeff L (bigCone D V ε) f ξ m)
-      (cocompact V) (𝓝 0) := by
-  obtain ⟨B, hB⟩ := hB
-  have hnormV : Tendsto (fun ξ : V ↦ ‖(ξ : E)‖) (cocompact V) atTop :=
-    tendsto_norm_cocompact_atTop.comp hV.isClosedEmbedding_subtypeVal.tendsto_cocompact
-  have hinv := (tendsto_inv_atTop_zero.comp (tendsto_atTop_add_const_left _ 1 hnormV)).const_mul
-    (‖(ZLattice.covolume L : ℂ)⁻¹‖ * B / (ε / (2 + ε)) ^ (N + 1))
-  rw [mul_zero] at hinv
-  refine squeeze_zero_norm (fun ξ ↦ ?_) hinv
-  rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-  exact one_add_pow_mul_norm_badCoeff_le L hε le_rfl hB ξ.property m
-
 /-- **The weighted Fourier series off `A` form a compact set.** For `ξ ∈ V`, the series of the
 modulated cutoffs with the coefficients off `A` weighted by `(1 + ‖ξ‖) ^ N` depends continuously on
 `ξ` and tends to zero at infinity, so these series and `0` form a compact set. -/
@@ -610,50 +528,18 @@ private theorem isCompact_insert_range_tsum (L : Submodule ℤ (WithLp 2 (E × D
     (χ : 𝓓(W, ℂ)) (φ : 𝓓(U, ℂ)) (N : ℕ) :
     IsCompact (insert 0 (range fun ξ : V ↦ ∑' m : ZLattice.dual L,
       ((((1 + ‖(ξ : E)‖) ^ N : ℝ) : ℂ) * badCoeff L (bigCone D V ε) (𝓕 (φ : E → ℂ)) ξ m) •
-        (cutoffK χ).modulate (m : WithLp 2 (E × D)))) := by
-  obtain ⟨b, hb, hb0', hbound'⟩ := exists_summable_one_add_pow_mul_norm_badCoeff_mul_seminorm_le
-    (V := V) L hε χ N (F := {𝓕 (φ : E → ℂ)}) fun M ↦
-      (exists_one_add_norm_pow_mul_norm_fourier_le φ.contDiff φ.hasCompactSupport M).imp
-        fun B hB g hg ↦ by
-          rw [mem_singleton_iff.1 hg]
-          exact hB
-  set c : V → ZLattice.dual L → ℂ := fun ξ m ↦
-    (((1 + ‖(ξ : E)‖) ^ N : ℝ) : ℂ) * badCoeff L (bigCone D V ε) (𝓕 (φ : E → ℂ)) ξ m
-  have hnorm (ξ : V) (m : ZLattice.dual L) :
-      ‖c ξ m‖ = (1 + ‖(ξ : E)‖) ^ N * ‖badCoeff L (bigCone D V ε) (𝓕 (φ : E → ℂ)) ξ m‖ := by
-    rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (by positivity)]
-  have hbound (ξ : V) (k : ℕ) (m : ZLattice.dual L) :
-      ‖c ξ m‖ * N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
-        ((cutoffK χ).modulate (m : WithLp 2 (E × D))) ≤ b k m := by
-    rw [hnorm]
-    exact hbound' _ rfl ξ ξ.property k m
-  have hb0 (k : ℕ) (m : ZLattice.dual L) : ‖(0 : ℂ)‖ *
-      N[ℂ]_{⟨tsupport χ, χ.hasCompactSupport.isCompact⟩, k}
-        ((cutoffK χ).modulate (m : WithLp 2 (E × D))) ≤ b k m := by
-    rw [norm_zero, zero_mul]
-    exact hb0' k m
-  -- Each coefficient is continuous in `ξ`.
-  have hcont (m : ZLattice.dual L) : Continuous fun ξ : V ↦ c ξ m :=
-    (Complex.continuous_ofReal.comp ((continuous_const.add
-      (continuous_norm.comp continuous_subtypeVal)).pow N)).mul (continuous_badCoeff L
-        ((φ.continuous.integrable_of_hasCompactSupport
-          φ.hasCompactSupport).continuous_fourier.comp
-            (continuous_subtypeVal.add continuous_const)))
-  -- Each coefficient tends to zero at infinity in `V`.
-  have hlim (m : ZLattice.dual L) : Tendsto (fun ξ : V ↦ c ξ m) (cocompact V) (𝓝 0) :=
-    tendsto_one_add_pow_mul_badCoeff L hV hε
-      (exists_one_add_norm_pow_mul_norm_fourier_le φ.contDiff φ.hasCompactSupport (N + 1)) m
-  have hF : Continuous fun ξ : V ↦ ∑' m, c ξ m • (cutoffK χ).modulate (m : WithLp 2 (E × D)) :=
-    continuous_iff_continuousAt.2 fun ξ₀ ↦
-      ContDiffMapSupportedIn.tendsto_tsum_smul_of_dominated hb (Eventually.of_forall (hbound ·))
-        (hbound ξ₀) fun m ↦ (hcont m).continuousAt
-  have hF0 : Tendsto (fun ξ : V ↦ ∑' m, c ξ m • (cutoffK χ).modulate (m : WithLp 2 (E × D)))
-      (cocompact V) (𝓝 0) := by
-    have h := ContDiffMapSupportedIn.tendsto_tsum_smul_of_dominated (c₀ := 0) hb
-      (Eventually.of_forall (hbound ·)) hb0 hlim
-    simp only [Pi.zero_apply, zero_smul, tsum_zero] at h
-    exact h
-  exact hF0.isCompact_insert_range_of_cocompact hF
+        (cutoffK χ).modulate (m : WithLp 2 (E × D)))) :=
+  ContDiffMapSupportedIn.isCompact_insert_range_tsum_one_add_pow_mul_smul_modulate
+    (ZLattice.dual L) (w := fun ξ : V ↦ ‖(ξ : E)‖)
+    (a := fun ξ m ↦ badCoeff L (bigCone D V ε) (𝓕 (φ : E → ℂ)) ξ m) (fun _ ↦ norm_nonneg _)
+    (continuous_norm.comp continuous_subtypeVal)
+    (tendsto_norm_cocompact_atTop.comp hV.isClosedEmbedding_subtypeVal.tendsto_cocompact)
+    (fun _ ↦ continuous_badCoeff L ((φ.continuous.integrable_of_hasCompactSupport
+      φ.hasCompactSupport).continuous_fourier.comp (continuous_subtypeVal.add continuous_const)))
+    (fun M ↦ by
+      obtain ⟨B, hB⟩ := exists_one_add_norm_pow_mul_norm_fourier_le φ.contDiff φ.hasCompactSupport M
+      exact ⟨_, fun ξ m ↦ one_add_add_pow_mul_norm_badCoeff_le L hε hB ξ.property m⟩)
+    (cutoffK χ) N
 
 /-- **The Fourier series off `A` for a compact set of cutoffs.** At `ξ = 0`, the series of the
 modulated cutoffs with the coefficients off `A` depends continuously on the cutoff `ψ`, so over a
@@ -679,9 +565,7 @@ private theorem isCompact_range_tsum (L : Submodule ℤ (WithLp 2 (E × D)))
   have hcont (m : ZLattice.dual L) : Continuous fun ψ : Q ↦
       badCoeff L (bigCone D {0} ε) (𝓕 ((ψ : 𝓓(U, ℂ)) : E → ℂ)) 0 m :=
     continuous_badCoeff L ((continuous_fourier_apply (Ω := U) _).comp continuous_subtypeVal)
-  exact isCompact_range <| continuous_iff_continuousAt.2 fun ψ₀ ↦
-    ContDiffMapSupportedIn.tendsto_tsum_smul_of_dominated hb (Eventually.of_forall (hbound ·))
-      (hbound ψ₀) fun m ↦ (hcont m).continuousAt
+  exact isCompact_range (ContDiffMapSupportedIn.continuous_tsum_smul_of_dominated hb hbound hcont)
 
 omit [MeasurableSpace E] [BorelSpace E] [MeasurableSpace D] [BorelSpace D] in
 /-- A distribution with wave front set in `Γ` has no conormal covector of `E × {0}` over `U` in
@@ -691,19 +575,6 @@ private theorem notMem_waveFrontSet
     (u : WaveFrontSpace W Γ) : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
       (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ u.toDistribution.waveFrontSet :=
   fun x hx η hη hmem ↦ hN x hx η hη (u.waveFrontSet_toDistribution_subset hmem)
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ D] [MeasurableSpace E] [BorelSpace E]
-  [MeasurableSpace D] [BorelSpace D] in
-/-- The weight `w ≥ 0` of the pairing of a distribution with a series in `𝓓_K` moves into the
-coefficients of the series. -/
-private theorem mul_norm_complexPairing_tsum_smul (T : 𝓓'(W, ℂ)) {K : Compacts (WithLp 2 (E × D))}
-    (hK : (K : Set (WithLp 2 (E × D))) ⊆ W) {ι : Type*} {c : ι → ℂ}
-    {v : ι → 𝓓_{K}(WithLp 2 (E × D), ℂ)} {w : ℝ} (hw : 0 ≤ w) (hc : Summable fun m ↦ c m • v m) :
-    w * ‖T.complexPairing (ofSupportedIn hK (∑' m, c m • v m))‖ =
-      ‖T.complexPairing (ofSupportedIn hK (∑' m, ((w : ℂ) * c m) • v m))‖ := by
-  simp_rw [mul_smul]
-  rw [hc.tsum_const_smul, ← coe_ofSupportedInCLM (𝕜 := ℂ) hK, map_smul, map_smul, smul_eq_mul,
-    norm_mul, Complex.norm_real, Real.norm_of_nonneg hw]
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup D]
   [InnerProductSpace ℝ D] [FiniteDimensional ℝ D] [MeasurableSpace E] [BorelSpace E]
@@ -749,7 +620,7 @@ private theorem exists_seminorm_localFourier_pullbackInl_le_of_isCompact
   have hq := ZLattice.summable_one_add_norm_pow_inv (ZLattice.dual L) (r := q) (by omega)
   obtain ⟨p', hp', hp'le⟩ := exists_continuous_seminorm_norm_complexPairing_le (Γ := Γ)
     ((hS L hε χ).image (continuous_ofSupportedIn χ.tsupport_subset))
-  set i := bigConeIndex hV0 hVcone hχΓ (N + q)
+  set i := bigConeIndex hVcone hχΓ (N + q)
   set K₀ : ℝ := ‖(ZLattice.covolume L : ℂ)⁻¹‖ * max B 0 *
     ∑' m : ZLattice.dual L, ((1 + ‖(m : WithLp 2 (E × D))‖) ^ q)⁻¹
   have hK₀ : 0 ≤ K₀ := by positivity
@@ -758,7 +629,7 @@ private theorem exists_seminorm_localFourier_pullbackInl_le_of_isCompact
   set T := u.toDistribution
   -- The decay of `T` on the cone `A`, from the seminorms `‖T‖_{χ,A,M}`.
   have hdecay (M : ℕ) : ∃ C, ∀ ζ ∈ bigCone D V ε, (1 + ‖ζ‖) ^ M * ‖T.localFourier χ ζ‖ ≤ C :=
-    ⟨_, fun ζ hζ ↦ le_seminorm (bigConeIndex hV0 hVcone hχΓ M) u hζ⟩
+    ⟨_, fun ζ hζ ↦ le_seminorm (bigConeIndex hVcone hχΓ M) u hζ⟩
   -- The series off `A` converges.
   have hbad := summable_badCoeff_smul_modulate L hε χ
     (exists_one_add_norm_pow_mul_norm_fourier_le (φ x).contDiff (φ x).hasCompactSupport) (hξV x)

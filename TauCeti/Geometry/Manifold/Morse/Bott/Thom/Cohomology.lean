@@ -48,10 +48,13 @@ These are the cohomology forms of the homology statements in
 corollaries, which assume that `f` is already in a quadratic normal form on a tube and that the
 negative disc bundle is parametrized by the disc bundle of some vector bundle.
 
-The untwisted Thom isomorphism `TauCeti.thomEquivOfCompactSpace` needs the model fibre
-`Fin r → ℝ` of `ν⁻` in the universe of its base, so in the statements with a Thom class the
-manifolds, their models and the coefficient ring live in `Type`. The twisted statement holds with
-the manifolds and the ring in any one universe.
+In the statements with a Thom class, the manifolds, their models and the coefficient ring live in
+`Type`. The cohomology Thom isomorphism `TauCeti.thomEquivOfCompactSpace` takes a model fibre in
+any universe, but the existence of Thom classes for an oriented `ν⁻` or in characteristic two
+(`TauCeti.VectorBundleOrientation.exists_isThomClass`,
+`TauCeti.exists_isThomClass_of_two_eq_zero`) still needs the model fibre `Fin r → ℝ` of `ν⁻` in the
+universe of its base. The twisted statement holds with the manifolds and the ring in any one
+universe.
 
 ## Main results
 

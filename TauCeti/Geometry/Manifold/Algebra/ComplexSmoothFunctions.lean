@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 
 /-!
@@ -28,11 +27,7 @@ the input and output of a complex-linear map, `f ↦ conj (P (conj f))`, gives a
 and `B` complexifications
 (`ContMDiffMap.exists_complexifyLinearMap_add_I_smul_complexifyLinearMap_eq`), namely of
 `u ↦ Re (P u)` and `u ↦ Im (P u)` on real-valued functions
-(`ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp`). For a
-complex differential operator `P`, in Grothendieck's sense for commutators with multiplication by
-complex-valued functions, these real and imaginary parts are real differential operators of the
-same order (`ContMDiffMap.re_comp_restrictScalars_comp_ofReal_mem_differentialOperators`,
-`ContMDiffMap.im_comp_restrictScalars_comp_ofReal_mem_differentialOperators`).
+(`ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp`).
 Differentiation commutes with real and imaginary parts at every nonzero differentiability
 order. Precomposition with a smooth map is a complex algebra homomorphism
 (`ContMDiffMap.compRightComplexAlgHom`), used to pull back complex-valued differential data.
@@ -566,38 +561,6 @@ theorem complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp
       Complex.I • complexifyLinearMap (im ∘ₗ P.restrictScalars ℝ ∘ₗ ofReal.toLinearMap) = P :=
   linearMap_ext_ofReal fun u ↦ by
     simpa [complexifyLinearMap_ofReal] using ofReal_re_add_I_smul_im (P (ofReal u))
-
-open TauCeti in
-/-- **Real parts of complex differential operators.** If `Q` is a complex differential operator
-of order at most `m` on the complex-valued `C^n` functions, in Grothendieck's sense for
-commutators with multiplication by complex-valued functions, then `u ↦ Re (Q u)` is a real
-differential operator of order at most `m` on the real-valued `C^n` functions. -/
-theorem re_comp_restrictScalars_comp_ofReal_mem_differentialOperators {m : ℕ}
-    {Q : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
-    (hQ : Q ∈ differentialOperators ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
-    re ∘ₗ Q.restrictScalars ℝ ∘ₗ ofReal.toLinearMap ∈
-      differentialOperators ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ m :=
-  -- The inclusion of real functions and the real part intertwine multiplication by a real
-  -- function `b` with multiplication by `b` as a complex function.
-  comp_comp_mem_differentialOperators
-    (fun b ↦ ⟨ofReal b, fun u ↦ map_mul ofReal b u, fun y ↦ by ext x; simp [re_apply]⟩)
-    (restrictScalars_mem_differentialOperators hQ)
-
-open TauCeti in
-/-- **Imaginary parts of complex differential operators.** If `Q` is a complex differential
-operator of order at most `m` on the complex-valued `C^n` functions, in Grothendieck's sense for
-commutators with multiplication by complex-valued functions, then `u ↦ Im (Q u)` is a real
-differential operator of order at most `m` on the real-valued `C^n` functions. -/
-theorem im_comp_restrictScalars_comp_ofReal_mem_differentialOperators {m : ℕ}
-    {Q : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯}
-    (hQ : Q ∈ differentialOperators ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯
-      C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ m) :
-    im ∘ₗ Q.restrictScalars ℝ ∘ₗ ofReal.toLinearMap ∈
-      differentialOperators ℝ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ C^n⟮I, M; ℝ⟯ m :=
-  comp_comp_mem_differentialOperators
-    (fun b ↦ ⟨ofReal b, fun u ↦ map_mul ofReal b u, fun y ↦ by ext x; simp [im_apply]⟩)
-    (restrictScalars_mem_differentialOperators hQ)
 
 variable {U V : TopologicalSpace.Opens M}
 

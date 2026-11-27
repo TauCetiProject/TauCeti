@@ -43,7 +43,9 @@ active at some vertex, and both measures vanish off `Δ`.
 
 For the standard examples this gives the symplectic volumes `(2π)ⁿ aⁿ / n!` of `ℂPⁿ`, from the
 simplex of size `a`, `2π a` of the two-sphere, from the interval `[0, a]`, and
-`(2π)² (a b - k b² / 2)` of the Hirzebruch surfaces, in particular `(2π)² a b` of `S² × S²`.
+`(2π)² (a b - k b² / 2)` of the Hirzebruch surfaces, in particular `(2π)² a b` of `S² × S²`, and
+`(2π)ⁿ (aⁿ - εⁿ) / n!` of `ℂPⁿ` blown up at a point, from the simplex of size `a` with a corner
+chopped at depth `0 < ε < a`.
 
 ## Main results
 
@@ -53,8 +55,9 @@ simplex of size `a`, `2π a` of the two-sphere, from the interval `[0, a]`, and
   volume of `M_Δ` is `(2π)ⁿ vol(Δ)`.
 * `TauCeti.Toric.liouvilleMeasure_univ_delzantQuotientSymplecticForm_simplex`,
   `TauCeti.Toric.liouvilleMeasure_univ_delzantQuotientSymplecticForm_interval`,
-  `TauCeti.Toric.liouvilleMeasure_univ_delzantQuotientSymplecticForm_hirzebruch`: the volumes of
-  `ℂPⁿ`, of the two-sphere and of the Hirzebruch surfaces.
+  `TauCeti.Toric.liouvilleMeasure_univ_delzantQuotientSymplecticForm_hirzebruch`,
+  `TauCeti.Toric.liouvilleMeasure_univ_delzantQuotientSymplecticForm_simplex_cornerChop`: the
+  volumes of `ℂPⁿ`, of the two-sphere, of the Hirzebruch surfaces and of `ℂPⁿ` blown up at a point.
 
 ## References
 
@@ -350,5 +353,34 @@ theorem liouvilleMeasure_univ_delzantQuotientSymplecticForm_hirzebruch {k : ℤ}
       ENNReal.ofReal (2 * π) ^ 2 * ENNReal.ofReal (a * b - k * b ^ 2 / 2) := by
   rw [(isDelzant_hirzebruch hb ha hab).liouvilleMeasure_univ_delzantQuotientSymplecticForm,
     dualMeasure_facetPolyhedron_hirzebruch ha.le hab.le]
+
+/-- **The symplectic volume of `ℂPⁿ` blown up at a point.** For `n ≥ 2` and `0 < ε < a`, the
+Delzant quotient of the standard simplex of size `a` in `ℝⁿ` with the corner `0` chopped at depth
+`ε` has symplectic volume `(2π)ⁿ (aⁿ - εⁿ) / n!`: the blowup removes the volume `(2π)ⁿ εⁿ / n!` of
+a ball from `ℂPⁿ`. -/
+theorem liouvilleMeasure_univ_delzantQuotientSymplecticForm_simplex_cornerChop {n : ℕ}
+    (hn : 2 ≤ n) {a ε : ℝ} (hε : 0 < ε) (hεa : ε < a)
+    [MeasurableSpace (DelzantQuotient ((Int.castAddHom ℝ).compLeft (Fin n))
+      (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
+      (cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε))]
+    [BorelSpace (DelzantQuotient ((Int.castAddHom ℝ).compLeft (Fin n))
+      (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some))
+      (cornerChopSupport (simplexSupport a) (Finset.univ.map .some) ε))] :
+    letI := (isDelzant_simplex_cornerChop hn hε hεa).delzantQuotientChartedSpace
+      (isIntegralLattice_intCast n)
+    haveI : Fact (finrank ℝ (ProperSMul.QuotientModelSpace
+        (kernelTorusLieAlgebra ((Int.castAddHom ℝ).compLeft (Fin n))
+          (cornerChopNormal (simplexNormal (Fin n)) (Finset.univ.map .some)))
+        (Fin (Fintype.card (Option (Option (Fin n))) + finrank ℝ (Fin n → ℝ)) → ℝ)) = 2 * n) :=
+      ⟨by rw [(isDelzant_simplex_cornerChop hn hε hεa).finrank_delzantQuotientModelSpace
+        (isIntegralLattice_intCast n), Module.finrank_fin_fun]⟩
+    haveI := (isDelzant_simplex_cornerChop hn hε hεa).isManifold_delzantQuotient
+      (isIntegralLattice_intCast n)
+    haveI := compactSpace_delzantQuotient (isDelzant_simplex_cornerChop hn hε hεa).isBounded
+    ((isDelzant_simplex_cornerChop hn hε hεa).delzantQuotientSymplecticForm
+        (isIntegralLattice_intCast n)).liouvilleMeasure n univ =
+      ENNReal.ofReal (2 * π) ^ n * ENNReal.ofReal ((a ^ n - ε ^ n) / n.factorial) := by
+  rw [(isDelzant_simplex_cornerChop hn hε hεa).liouvilleMeasure_univ_delzantQuotientSymplecticForm,
+    dualMeasure_facetPolyhedron_simplex_cornerChop n (hε.trans hεa).le hε]
 
 end TauCeti.Toric

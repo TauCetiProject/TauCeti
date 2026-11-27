@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Ba
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Pow
+import TauCeti.Geometry.Manifold.DifferentialOperator.Complexification
 
 /-!
 # Classical pseudodifferential operators on a manifold
@@ -100,7 +101,11 @@ values on compactly supported functions, and hence by its chart compressions.
 * `TauCeti.mem_classicalPseudodifferentialOperators_of_mem_differentialOperators`: more generally,
   a complex-linear differential operator of order at most `m` on the complex-valued smooth
   functions, for commutators with complex-valued functions, is a classical pseudodifferential
-  operator of order `m`, being `A + i B` for complexifications `A` and `B` of real ones.
+  operator of order `m`, being `A + i B` for complexifications `A` and `B` of real ones: the real
+  and imaginary parts `u ↦ Re (Q u)` and `u ↦ Im (Q u)` on real-valued functions are real
+  differential operators of order at most `m`
+  (`TauCeti.re_comp_restrictScalars_comp_ofReal_mem_differentialOperators`,
+  `TauCeti.im_comp_restrictScalars_comp_ofReal_mem_differentialOperators`).
 
 ## References
 
@@ -822,11 +827,11 @@ theorem mem_classicalPseudodifferentialOperators_of_mem_differentialOperators
       m) :
     Q ∈ classicalPseudodifferentialOperators (n := n) (M := M) m := by
   -- `Q = A + i B` for the complexifications of the real differential operators `A u = Re (Q u)`
-  -- and `B u = Im (Q u)` on real-valued functions.
+  -- and `B u = Im (Q u)`.
   rw [← ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp Q]
   exact add_mem (complexifyLinearMap_mem_classicalPseudodifferentialOperators
-      (ContMDiffMap.re_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ))
+      (re_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ))
     (Submodule.smul_mem _ _ (complexifyLinearMap_mem_classicalPseudodifferentialOperators
-      (ContMDiffMap.im_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ)))
+      (im_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ)))
 
 end TauCeti

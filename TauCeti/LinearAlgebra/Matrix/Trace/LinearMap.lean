@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.StdBasis
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Algebra.Algebra.Bilinear
+import TauCeti.LinearAlgebra.Matrix.StdBasis
 
 /-!
 # Traces of multiplication operators on square matrices
@@ -46,10 +47,8 @@ variable {n R : Type*} [Fintype n] [CommSemiring R]
 theorem LinearMap.trace_eq_sum_apply_single_apply [DecidableEq n]
     (f : Matrix n n R →ₗ[R] Matrix n n R) :
     LinearMap.trace R (Matrix n n R) f = ∑ i, ∑ j, f (Matrix.single i j 1) i j := by
-  have hrepr (M : Matrix n n R) (p : n × n) : (stdBasis R n n).repr M p = M p.1 p.2 := by
-    simp [stdBasis]
   rw [LinearMap.trace_eq_matrix_trace R (stdBasis R n n), Matrix.trace, Fintype.sum_prod_type]
-  simp only [diag_apply, LinearMap.toMatrix_apply, stdBasis_eq_single, hrepr]
+  simp only [diag_apply, LinearMap.toMatrix_apply, stdBasis_eq_single, stdBasis_repr_apply]
 
 namespace Matrix
 

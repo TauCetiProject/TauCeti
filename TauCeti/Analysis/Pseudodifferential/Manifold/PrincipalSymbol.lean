@@ -10,6 +10,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Pseudodifferential.CoordinateChange.Chart
 import TauCeti.Analysis.Pseudodifferential.OutputSupport.Basic
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
+import TauCeti.Geometry.Manifold.DifferentialOperator.Complexification
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
 /-!
@@ -82,10 +83,10 @@ depends on the cutoffs only through their values at the point.
 * `TauCeti.classicalPrincipalSymbol_complexifyLinearMap`: the principal symbol of the
   complexification of a differential operator `D` of order at most `m` is `i ^ m` times its
   geometric principal symbol (`TauCeti.smoothPrincipalSymbol`) at nonzero covectors, the
-  angular-frequency convention `σ(∂ⱼ) = i ξⱼ`.
-* `TauCeti.classicalPrincipalSymbol_mvfderiv`: for a complex differential operator `Q` of order
-  at most `k` and a real function `f` with `df_x ≠ 0`,
-  `σ_k(Q)(x, df_x) = (i ^ k / k!) ([⋯[Q, f], …, f] 1)(x)`.
+  angular-frequency convention `σ(∂ⱼ) = i ξⱼ`. More generally, for a complex differential operator
+  `Q` of order at most `m`, `σ_m(Q)(x, df_x) = (i ^ m / m!) ([⋯[Q, f], …, f] 1)(x)` at every
+  nonzero differential of a real-valued function `f`
+  (`TauCeti.classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators`).
 * `TauCeti.classicalPrincipalSymbol_conj`: naturality under diffeomorphisms. Transporting `P`
   along a diffeomorphism `Φ : N → M` pulls its principal symbol back by the cotangent map,
   `σ_m(Φ^* P)(y, η ∘ dΦ_y) = σ_m(P)(Φ y, η)`.
@@ -911,52 +912,37 @@ theorem classicalPrincipalSymbol_complexifyLinearMap {m : ℕ}
   simpa [hχ] using h
 
 /-- **The principal symbol of a complex differential operator.** Let `Q` be a complex-linear
-differential operator of order at most `k` on the complex-valued smooth functions on `M`, in
-Grothendieck's sense for commutators with multiplication by complex-valued smooth functions. For a
-real smooth function `f` whose differential `df_x` at `x` is nonzero,
+differential operator of order at most `m` on the complex-valued smooth functions on `M`, in
+Grothendieck's sense for commutators with multiplication by complex-valued smooth functions. At
+the differential `df_x` of a real-valued smooth function `f`, if it is nonzero, the principal
+symbol of order `m` of `Q` is
 
-`σ_k(Q)(x, df_x) = (i ^ k / k!) ([⋯[Q, f], …, f] 1)(x)`,
+`σ_m(Q)(x, df_x) = (i ^ m / m!) ([⋯[Q, f], …, f] 1)(x)`,
 
-with `k` commutators `[Q, f] = Q ∘ f - f ∘ Q`. This is the angular-frequency convention
-`σ(∂ⱼ) = i ξⱼ`. For the complexification of a real operator it is
-`TauCeti.classicalPrincipalSymbol_complexifyLinearMap`. -/
-theorem classicalPrincipalSymbol_mvfderiv {k : ℕ}
+with `m` copies of `f`. This extends `TauCeti.classicalPrincipalSymbol_complexifyLinearMap` from
+complexifications of real differential operators to all complex ones. -/
+theorem classicalPrincipalSymbol_mvfderiv_of_mem_differentialOperators {m : ℕ}
     {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
     (hQ : Q ∈ differentialOperators ℂ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
       C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯
-      k)
+      m)
     (f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) {x : M}
     (hf : mvfderiv 𝓘(ℝ, CoordinateSpace n) f x ≠ 0) :
-    classicalPrincipalSymbol k Q x (mvfderiv 𝓘(ℝ, CoordinateSpace n) f x) =
-      Complex.I ^ k * (k.factorial : ℂ)⁻¹ *
-        (smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) Q 1 x := by
-  -- `Q = A + i B` for the complexifications of the real differential operators
-  -- `A u = Re (Q u)` and `B u = Im (Q u)`, whose commutators with `f` are the real and imaginary
-  -- parts of those of `Q`.
-  have hA := ContMDiffMap.re_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ
-  have hB := ContMDiffMap.im_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ
-  have hcB := complexifyLinearMap_mem_classicalPseudodifferentialOperators hB
-  have hcomm (σ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℝ]
-      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hσ : ∀ y, σ (ContMDiffMap.ofReal f • y) = f • σ y) :
-      (smulCommutator ℝ f ^ k) (σ ∘ₗ Q.restrictScalars ℝ ∘ₗ ContMDiffMap.ofReal.toLinearMap) 1 =
-        σ ((smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) Q 1) := by
-    rw [smulCommutator_pow_comp_comp (a := ContMDiffMap.ofReal f)
-      (fun u ↦ map_mul ContMDiffMap.ofReal f u) hσ, smulCommutator_pow_restrictScalars]
-    simp
-  have hre := hcomm ContMDiffMap.re fun y ↦ by ext; simp [ContMDiffMap.re_apply]
-  have him := hcomm ContMDiffMap.im fun y ↦ by ext; simp [ContMDiffMap.im_apply]
-  conv_lhs =>
-    rw [← ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp Q]
-  rw [classicalPrincipalSymbol_add (complexifyLinearMap_mem_classicalPseudodifferentialOperators hA)
-      (Submodule.smul_mem _ _ hcB), classicalPrincipalSymbol_smul hcB,
+    classicalPrincipalSymbol m Q x (mvfderiv 𝓘(ℝ, CoordinateSpace n) f x) =
+      Complex.I ^ m / m.factorial * (smulCommutator ℂ (ContMDiffMap.ofReal f) ^ m) Q 1 x := by
+  -- `Q = A + i B` for the complexifications of the real differential operators `A u = Re (Q u)`
+  -- and `B u = Im (Q u)`, and both sides are additive in `Q`.
+  have hA := re_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ
+  have hB := im_comp_restrictScalars_comp_ofReal_mem_differentialOperators hQ
+  rw [← ContMDiffMap.complexifyLinearMap_re_comp_add_I_smul_complexifyLinearMap_im_comp Q,
+    classicalPrincipalSymbol_add (complexifyLinearMap_mem_classicalPseudodifferentialOperators hA)
+      (Submodule.smul_mem _ _ (complexifyLinearMap_mem_classicalPseudodifferentialOperators hB)),
+    classicalPrincipalSymbol_smul (complexifyLinearMap_mem_classicalPseudodifferentialOperators hB),
     classicalPrincipalSymbol_complexifyLinearMap hA x hf,
-    classicalPrincipalSymbol_complexifyLinearMap hB x hf, smoothPrincipalSymbol_mvfderiv,
-    smoothPrincipalSymbol_mvfderiv]
-  simp only [hre, him, ContMDiffMap.re_apply, ContMDiffMap.im_apply]
-  set z := (smulCommutator ℂ (ContMDiffMap.ofReal f) ^ k) Q 1 x
-  conv_rhs => rw [← Complex.re_add_im z]
-  push_cast
+    classicalPrincipalSymbol_complexifyLinearMap hB x hf]
+  -- Writing `1` as the complex inclusion of the real `1`, its imaginary part vanishes.
+  simp [smoothPrincipalSymbol_mvfderiv, ← map_one ContMDiffMap.ofReal, -map_one]
   ring
 
 /-! ### Invariance under diffeomorphisms -/

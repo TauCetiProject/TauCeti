@@ -30,6 +30,11 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
 * `mem_differentialOperators_iff_forall_list_prod`: order at most `m` means that every
   `(m + 1)`-fold iterated commutator vanishes; the commutators with different elements commute
   (`smulCommutator_comm`).
+* `sum_smulCommutator_smulCommutator_eq`: for `∑ᵢ aᵢ ^ 2 = 1`,
+  `∑ᵢ [[D, aᵢ], aᵢ] = 2 • (D - ∑ᵢ aᵢ • D (aᵢ • ·))`, so localizing over a square partition of
+  unity changes an operator only by double commutators. When `2` is invertible in `R`, `D` minus
+  the operator `x ↦ ∑ᵢ aᵢ • D (aᵢ • x)` is `⅟2 • ∑ᵢ [[D, aᵢ], aᵢ]`
+  (`sub_sum_smul_comp_lsmul_eq`).
 * `differentialOperators_mono` and `comp_mem_differentialOperators`: the orders are increasing
   and add under composition, so the operators on `M` form a filtered ring
   (`SetLike.GradedMonoid`).
@@ -189,6 +194,35 @@ theorem list_prod_smulCommutator_apply_smul {m : ℕ} (a : Fin m → A) (g : A) 
   | zero => simp
   | succ m ih =>
     simp only [List.ofFn_succ, List.prod_cons, mul_apply_eq_comp, ih, smulCommutator_apply_smul]
+
+/-- **Double commutators along a square partition of unity.** If `∑ᵢ aᵢ ^ 2 = 1`, then
+`∑ᵢ [[D, aᵢ], aᵢ] = 2 (D - ∑ᵢ aᵢ D aᵢ)`: the operator `x ↦ ∑ᵢ aᵢ • D (aᵢ • x)` differs from `D`
+by a sum of double commutators. -/
+theorem sum_smulCommutator_smulCommutator_eq {ι : Type*} {s : Finset ι} {a : ι → A}
+    (ha : ∑ i ∈ s, a i ^ 2 = 1) (D : M →ₗ[R] N) :
+    ∑ i ∈ s, smulCommutator R (a i) (smulCommutator R (a i) D) =
+      2 • (D - ∑ i ∈ s, a i • D ∘ₗ Algebra.lsmul R R M (a i)) := by
+  ext x
+  -- Pointwise, `[[D, a], a] x = D (a ^ 2 • x) - 2 • a • D (a • x) + a ^ 2 • D x`.
+  have hsq (b : A) : smulCommutator R b (smulCommutator R b D) x =
+      D (b ^ 2 • x) - 2 • b • D (b • x) + b ^ 2 • D x := by
+    simp only [smulCommutator_apply_apply, smul_sub, smul_smul, sq, two_nsmul]
+    abel
+  -- Summing, `∑ᵢ aᵢ ^ 2 = 1` turns the outer terms into `D x`.
+  simp only [LinearMap.sum_apply, hsq, Finset.sum_add_distrib, Finset.sum_sub_distrib, ← map_sum,
+    ← Finset.sum_smul, ha, one_smul, LinearMap.smul_apply, LinearMap.sub_apply,
+    LinearMap.comp_apply, Algebra.lsmul_coe, ← Finset.smul_sum]
+  abel
+
+/-- **Square partitions reproduce an operator up to double commutators.** If `2` is invertible in
+`R` and `∑ᵢ aᵢ ^ 2 = 1`, then `D` minus the operator `x ↦ ∑ᵢ aᵢ • D (aᵢ • x)` is
+`⅟2 • ∑ᵢ [[D, aᵢ], aᵢ]`. -/
+theorem sub_sum_smul_comp_lsmul_eq [Invertible (2 : R)] {ι : Type*} {s : Finset ι} {a : ι → A}
+    (ha : ∑ i ∈ s, a i ^ 2 = 1) (D : M →ₗ[R] N) :
+    D - ∑ i ∈ s, a i • D ∘ₗ Algebra.lsmul R R M (a i) =
+      (⅟2 : R) • ∑ i ∈ s, smulCommutator R (a i) (smulCommutator R (a i) D) := by
+  rw [sum_smulCommutator_smulCommutator_eq ha, ← ofNat_smul_eq_nsmul (R := R), smul_smul,
+    invOf_mul_self, one_smul]
 
 /-- The Leibniz rule for commutators of a composition:
 `[P ∘ Q, a] = P ∘ [Q, a] + [P, a] ∘ Q`. -/
@@ -510,16 +544,6 @@ theorem smulCommutator_restrictScalars (a : A) (D : M →ₗ[S] N) :
     smulCommutator R a (D.restrictScalars R) = (smulCommutator S a D).restrictScalars R := by
   ext x
   simp
-
-/-- The iterated form of `TauCeti.smulCommutator_restrictScalars`. -/
-@[simp]
-theorem smulCommutator_pow_restrictScalars (a : A) (D : M →ₗ[S] N) (k : ℕ) :
-    (smulCommutator R a ^ k) (D.restrictScalars R) =
-      ((smulCommutator S a ^ k) D).restrictScalars R := by
-  induction k with
-  | zero => rfl
-  | succ k ih => rw [pow_succ', mul_apply_eq_comp, ih, smulCommutator_restrictScalars, pow_succ',
-      mul_apply_eq_comp]
 
 /-- **Restriction of scalars preserves the order.** For a tower `R → S → A`, an `S`-linear
 differential operator of order at most `m` over `A` is also one when viewed as an `R`-linear map.

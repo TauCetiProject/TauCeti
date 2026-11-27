@@ -83,7 +83,9 @@ suffices, since the chart compressions only see such inputs
   differential operator of order at most `m` between the bundles, in Grothendieck's sense for
   commutators with complex-valued smooth functions, is a classical pseudodifferential operator of
   order `m`, since its matrix entries are differential operators of order at most `m`
-  (`TauCeti.sectionEntry_mem_differentialOperators`).
+  (`TauCeti.sectionEntry_mem_differentialOperators`). The entries of the iterated commutators of
+  the operator with multiplication by a function are the iterated commutators of its entries
+  (`TauCeti.sectionEntry_smulCommutator_pow`).
 * `TauCeti.mem_sectionClassicalPseudodifferentialOperators_zero_of_map_smul`: in particular an
   operator which is linear over the complex-valued smooth functions, that is, a smooth bundle map,
   has order `0`; so does the identity.
@@ -285,34 +287,22 @@ theorem sectionEntry_apply_eq_cutoffFrameCoeff
       t'.cutoffFrameCoeff χ hχ ℓ (P (f • t.cutoffFrameSection ψ hψ v)) :=
   (rfl)
 
-/-- The matrix entry of `P` sandwiches `P` between the cut-off frame section map
-`f ↦ f · ψ t⁻¹ v` and the cut-off frame coefficient `h ↦ χ · ℓ(t' h)`. -/
-theorem sectionEntry_eq_comp
-    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
-    sectionEntry t ψ hψ v t' χ hχ ℓ P = t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
-      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ :=
-  (rfl)
-
-/-- The commutator of a matrix entry of `P` with multiplication by a complex-valued smooth function
-`g` is the matrix entry of the commutator of `P` with `g`. -/
-theorem smulCommutator_sectionEntry (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
-    smulCommutator ℂ g (sectionEntry t ψ hψ v t' χ hχ ℓ P) =
-      sectionEntry t ψ hψ v t' χ hχ ℓ (smulCommutator ℂ g P) := by
-  rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
-  exact smulCommutator_comp_comp (fun f ↦ by simp [mul_smul])
-    (t'.cutoffFrameCoeff_smul_of_normedAlgebra χ hχ ℓ g) P
-
-/-- The iterated form of `TauCeti.smulCommutator_sectionEntry`: the iterated commutators of a
-matrix entry of `P` are the matrix entries of the iterated commutators of `P`. -/
-theorem smulCommutator_pow_sectionEntry (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯)
-    (k : ℕ) :
-    (smulCommutator ℂ g ^ k) (sectionEntry t ψ hψ v t' χ hχ ℓ P) =
-      sectionEntry t ψ hψ v t' χ hχ ℓ ((smulCommutator ℂ g ^ k) P) := by
-  rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
-  exact smulCommutator_pow_comp_comp (fun f ↦ by simp [mul_smul])
-    (t'.cutoffFrameCoeff_smul_of_normedAlgebra χ hχ ℓ g) P k
+/-- **Entries of scalar operators tensored with cut-off frames.** For an operator `A` on the
+complex-valued smooth functions, a cut-off frame coefficient `ρ ℓ₀(e s)` of the sections `s` of `E`
+and a smooth section `σ` of `F`, the matrix entry of `s ↦ A (ρ ℓ₀(e s)) σ` is `A` multiplied on the
+left by the coefficient `χ ℓ(t' σ)` and on the right by the coefficient `ρ ℓ₀(e (ψ t⁻¹ v))`. -/
+theorem sectionEntry_toSpanSingleton_comp_comp_cutoffFrameCoeff
+    (A : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (e : Trivialization V (π V E)) [MemTrivializationAtlas e]
+    (ρ : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯) (hρ : tsupport ρ ⊆ e.baseSet) (ℓ₀ : V →L[ℂ] ℂ)
+    (σ : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    sectionEntry t ψ hψ v t' χ hχ ℓ
+        ((LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ e.cutoffFrameCoeff ρ hρ ℓ₀) =
+      LinearMap.mulLeft ℂ (t'.cutoffFrameCoeff χ hχ ℓ σ) ∘ₗ A ∘ₗ
+        LinearMap.mulLeft ℂ (e.cutoffFrameCoeff ρ hρ ℓ₀ (t.cutoffFrameSection ψ hψ v)) := by
+  ext f x
+  simp [mul_comm, mul_assoc]
 
 /-- The entries of a properly supported operator are properly supported. -/
 theorem IsSectionProperlySupported.sectionEntry
@@ -331,6 +321,28 @@ theorem IsSectionProperlySupported.sectionEntry
   · rw [sectionEntry_apply, hP₂ _ (hf.mono fun y hy ↦ by simp [hy]) x hx]
     simp
 
+/-- The matrix entry of `P` is `P` sandwiched between the cut-off frame coefficient and
+multiplication of the cut-off frame section by functions. -/
+private theorem sectionEntry_eq_comp
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯) :
+    TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P = t'.cutoffFrameCoeff χ hχ ℓ ∘ₗ P ∘ₗ
+      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ :=
+  (rfl)
+
+/-- The maps `f ↦ f · ψ t⁻¹ v` and `h ↦ χ · ℓ(t' h)` sandwiching `P` in its matrix entry are linear
+over the complex-valued smooth functions. -/
+private theorem sectionEntry_intertwine (b : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    (∀ f : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ (b • f) =
+        b • (LinearMap.toSpanSingleton _ _ (t.cutoffFrameSection ψ hψ v)).restrictScalars ℂ f) ∧
+      ∀ h, t'.cutoffFrameCoeff χ hχ ℓ (b • h) = b • t'.cutoffFrameCoeff χ hχ ℓ h := by
+  refine ⟨fun f ↦ by simp [mul_smul], fun h ↦ ?_⟩
+  ext x
+  simp only [Bundle.Trivialization.cutoffFrameCoeff_apply,
+    ContMDiffSection.smul_apply_of_normedAlgebra, map_smul, smul_eq_mul, ContMDiffMap.coe_mul,
+    Pi.mul_apply, Complex.real_smul]
+  ring
+
 /-- **The entries of a differential operator are differential operators.** If `P : Γ(E) → Γ(F)` is
 a differential operator of order at most `m` in Grothendieck's sense, for commutators with
 multiplication by complex-valued smooth functions, then so is each of its matrix entries
@@ -345,8 +357,19 @@ theorem sectionEntry_mem_differentialOperators {m : ℕ}
         C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ m := by
   rw [sectionEntry_eq_comp]
   exact comp_comp_mem_differentialOperators
-    (fun g ↦ ⟨g, fun f ↦ by simp [mul_smul], t'.cutoffFrameCoeff_smul_of_normedAlgebra χ hχ ℓ g⟩)
-    hP
+    (fun b ↦ ⟨b, sectionEntry_intertwine t ψ hψ v t' χ hχ ℓ b⟩) hP
+
+/-- **Entries of iterated commutators.** The matrix entry of the `k`-fold commutator of `P` with
+multiplication by a complex-valued smooth function `g` is the `k`-fold commutator with `g` of the
+corresponding matrix entry of `P`. -/
+theorem sectionEntry_smulCommutator_pow (g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯)
+    (P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯)
+    (k : ℕ) :
+    TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ ((smulCommutator ℂ g ^ k) P) =
+      (smulCommutator ℂ g ^ k) (TauCeti.sectionEntry t ψ hψ v t' χ hχ ℓ P) := by
+  rw [sectionEntry_eq_comp, sectionEntry_eq_comp]
+  obtain ⟨hρ, hσ⟩ := sectionEntry_intertwine t ψ hψ v t' χ hχ ℓ g
+  exact (smulCommutator_pow_comp_comp hρ hσ P k).symm
 
 end Entry
 
@@ -499,13 +522,7 @@ theorem toSpanSingleton_comp_comp_cutoffFrameCoeff_mem_sectionClassicalPseudodif
         (inter_subset_left.trans (hA₁ _ hCs))
     · have h0 := hA₂ (t.cutoffFrameCoeff ρ hρ ℓ s) (hs.mono fun y hy ↦ by simp [hy]) x hx
       simp [h0]
-  · have hentry : sectionEntry T ψ hψ v T' χ hχ ℓ'
-        ((LinearMap.toSpanSingleton _ _ σ).restrictScalars ℂ ∘ₗ A ∘ₗ t.cutoffFrameCoeff ρ hρ ℓ) =
-        LinearMap.mulLeft ℂ (T'.cutoffFrameCoeff χ hχ ℓ' σ) ∘ₗ A ∘ₗ
-          LinearMap.mulLeft ℂ (t.cutoffFrameCoeff ρ hρ ℓ (T.cutoffFrameSection ψ hψ v)) := by
-      ext f x
-      simp [mul_comm, mul_assoc]
-    rw [hentry]
+  · rw [sectionEntry_toSpanSingleton_comp_comp_cutoffFrameCoeff]
     exact mulLeft_comp_mem_classicalPseudodifferentialOperators
       (comp_mulLeft_mem_classicalPseudodifferentialOperators hA _) _
 
