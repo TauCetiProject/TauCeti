@@ -83,10 +83,7 @@ theorem exists_hilbertBasis_laguerreFunction (hα : -1 < α) :
   have hac := absolutelyContinuous_withDensity_ofReal hm hw
   filter_upwards [coeFn_weightL2Isometry 𝕜 _ _ hw hm (b n), (hb n).filter_mono hac.ae_le,
     ae_restrict_mem measurableSet_Ioi] with x hImage hVector (hx : 0 < x)
-  have hWeight : sqrt (x ^ α * exp (-x)) = x ^ (α / 2) * exp (-x / 2) := by
-    rw [sqrt_mul (rpow_nonneg hx.le α), ← exp_half]
-    rw [sqrt_eq_rpow, ← rpow_mul hx.le, div_eq_mul_one_div α 2]
-  rw [hImage, hVector, hWeight]
+  rw [hImage, hVector, sqrt_laguerreWeight hx.le]
   rw [Algebra.smul_def, ← map_mul]
   congr 1
   ring
