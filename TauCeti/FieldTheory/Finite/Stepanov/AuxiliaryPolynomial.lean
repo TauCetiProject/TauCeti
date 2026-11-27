@@ -9,7 +9,6 @@ public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Polynomial.BigOperators
 import Mathlib.Algebra.Polynomial.OfFn
-import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.RingTheory.Localization.FractionRing
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Polynomial.Bivariate.Basic
@@ -88,16 +87,11 @@ private theorem aeval_div_eq_zero_of_dvd {e E : ℕ} {f : F[X]} (hf₀ : f ≠ 0
     (hdvd : (X - C a) ^ Nat.card F ∣ Q.eval (f ^ (Nat.card F - 1))) :
     aeval (algebraMap F[X] (FractionRing F[X]) (C (f.eval a)) /
       algebraMap F[X] (FractionRing F[X]) f) Q = 0 := by
-  set q := Nat.card F with hq
+  set q := Nat.card F
   set G : F[X] := ∑ j ∈ Finset.range e, Q.coeff j * C (f.eval a) ^ j * f ^ (e - 1 - j)
   -- `f ^ q ≡ f(a)` modulo `(X - a) ^ q`, so `G ≡ f ^ (e - 1) · Q(f ^ (q - 1)) ≡ 0`.
-  have hfq : (X - C a) ^ q ∣ f ^ q - C (f.eval a) := by
-    have := Fintype.ofFinite F
-    have h₁ : f ^ q = (f.map C).eval (X ^ q) := by
-      rw [eval_map, hq, Nat.card_eq_fintype_card, ← FiniteField.Polynomial.expand_card,
-        coe_expand]
-    rw [h₁, ← eval₂_at_apply, ← eval_map]
-    exact X_sub_C_pow_natCard_dvd_eval_sub_eval a _
+  have hfq : (X - C a) ^ q ∣ f ^ q - C (f.eval a) :=
+    X_sub_C_pow_natCard_dvd_pow_natCard_sub_C_eval a f
   have hG : (X - C a) ^ q ∣ G := by
     have hq1 : 1 ≤ q := Nat.one_le_iff_ne_zero.2 Nat.card_pos.ne'
     rw [← dvd_sub_right (dvd_mul_of_dvd_right hdvd (f ^ (e - 1))), eval_eq_sum_range' hQdeg,

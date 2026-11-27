@@ -78,7 +78,10 @@ theorem irreducible_X_pow_sub_C_div {e : ℕ} (he : e ≠ 0) {f : F[X]} {c : F} 
   have h4K0 : (-4 : K) ≠ 0 := by
     rw [h4K]
     exact (map_ne_zero_iff _ hinj).2 (C_ne_zero.2 h4F)
-  rw [div_eq_mul_inv c, C_mul, map_mul, hCinv, ← h4K, mul_comm (algebraMap F[X] K (C c)),
-    mul_div_assoc, ← hb, ← mul_assoc, inv_mul_cancel₀ h4K0, one_mul]
+  -- `C (c / -4)` is `C c / -4` in `K`, and `hb` says `-4 * b ^ 4 = C c / f`.
+  have hdiv : algebraMap F[X] K (C (c / -4)) = algebraMap F[X] K (C c) / -4 := by
+    rw [h4K]
+    exact map_div₀ ((algebraMap F[X] K).comp C) c (-4)
+  rw [hdiv, div_right_comm, ← hb, mul_div_cancel_left₀ _ h4K0]
 
 end Polynomial

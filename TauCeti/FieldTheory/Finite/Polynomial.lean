@@ -93,6 +93,24 @@ theorem X_sub_C_pow_natCard_dvd_eval_sub_eval (a : K) (A : K[X][X]) :
     rw [Nat.card_eq_zero_of_infinite, pow_zero]
     exact one_dvd _
 
+omit [Finite K] in
+/-- Over a finite field with `q` elements, `f ^ q ≡ f(a)` modulo `(X - a) ^ q` for every
+`f ∈ K[X]`: `f ^ q = f(X ^ q)` with the coefficients of `f` fixed, so this is
+`X_sub_C_pow_natCard_dvd_eval_sub_eval` for `f` read in `K[X][Y]`. Over an infinite field
+`Nat.card K = 0`, and the statement is `1 ∣ _`. -/
+theorem X_sub_C_pow_natCard_dvd_pow_natCard_sub_C_eval (a : K) (f : K[X]) :
+    (X - C a) ^ Nat.card K ∣ f ^ Nat.card K - C (f.eval a) := by
+  cases finite_or_infinite K with
+  | inl _ =>
+    have := Fintype.ofFinite K
+    have h : f ^ Nat.card K = (f.map C).eval (X ^ Nat.card K) := by
+      rw [eval_map, Nat.card_eq_fintype_card, ← FiniteField.Polynomial.expand_card, coe_expand]
+    rw [h, ← eval₂_at_apply, ← eval_map]
+    exact X_sub_C_pow_natCard_dvd_eval_sub_eval a _
+  | inr _ =>
+    rw [Nat.card_eq_zero_of_infinite, pow_zero]
+    exact one_dvd _
+
 /-- If `f ≠ 0` in `K[X]` and `A ≠ 0` in `K[X][X]` have degrees with sum less than `#K`, some
 `a ∈ K` has `f a ≠ 0` and `A (C a) ≠ 0`. -/
 theorem exists_eval_ne_zero_and_eval_C_ne_zero {f : K[X]} (hf : f ≠ 0) {A : K[X][X]} (hA : A ≠ 0)
