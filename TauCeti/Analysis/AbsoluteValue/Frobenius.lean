@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.AbsoluteValue.RamificationComparison
 public import TauCeti.Analysis.AbsoluteValue.ValuationSubring
 public import TauCeti.RingTheory.Invariant.Profinite.ValuationSubring
 
@@ -38,9 +39,13 @@ with `B^G = R` and `w ≤ 1` on `R` (hence on `B`, which is integral over `R`, b
   exists when `R ⧸ Q ∩ R` is finite;
 * any such element and the inertia group generate the stabilizer of `A_w` topologically.
 
-The results are stated with the stabilizer of the valuation subring `A_w`. For places
-(`ℚ`-normalised absolute values) this is also the stabilizer of `w`; that comparison is not proved
-here.
+The results are stated with the stabilizer of the valuation subring `A_w`. For a finite place `w`
+(a `ℚ`-normalised nonarchimedean absolute value, `AbsoluteValue.Place`) this is the stabilizer of
+`w` itself (`AbsoluteValue.Place.stabilizer_valuationSubring`), and the inertia group of `Q` is the
+inertia group `AbsoluteValue.inertia G w` of `w`
+(`AbsoluteValue.Place.inertia_eq_inertia_of_isCenteredAt`). The last section restates the results
+in these terms, with no ideal in the statements of the generation theorems other than in their
+hypotheses.
 
 ## Main results
 
@@ -53,6 +58,10 @@ here.
 * `AbsoluteValue.topologicalClosure_zpowers_mul_inertia_eq_stabilizer_valuationSubring` and
   `AbsoluteValue.topologicalClosure_zpowers_sup_inertia_eq_stabilizer_valuationSubring`: a
   Frobenius element and inertia generate the stabilizer of `A_w`.
+* `AbsoluteValue.Place.exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one`,
+  `AbsoluteValue.Place.topologicalClosure_zpowers_mul_inertia_eq_stabilizer` and
+  `AbsoluteValue.Place.topologicalClosure_zpowers_sup_inertia_eq_stabilizer`: the same for a
+  finite place `w`, with the stabilizer of `w` and the inertia group of `w`.
 
 ## References
 
@@ -169,3 +178,78 @@ theorem topologicalClosure_zpowers_sup_inertia_eq_stabilizer_valuationSubring
     ((forall_mem_valuationSubring_smul_sub_pow_mem_nonunits_iff hw).mpr hσ)
 
 end AbsoluteValue
+
+/-! ### Places -/
+
+namespace AbsoluteValue.Place
+
+open MulAction
+
+variable {L : Type*} [Field L] [CharZero L] {B : Type*} [CommRing B] [Algebra B L]
+  [IsFractionRing B L] {G : Type*} [Group G] [MulSemiringAction G B] [MulSemiringAction G L]
+  [SMulDistribClass G B L] {Q : Ideal B} [Q.IsPrime] [PreValuationRing (Localization.AtPrime Q)]
+
+/-- **The inertia group of a place is that of its centre.** If `w ≤ 1` on `B`, with
+`Q = {b | w b < 1}` and `B_Q` a valuation ring, the inertia group of the finite place `w` is the
+inertia group of `Q`. -/
+theorem inertia_eq_inertia_of_forall_apply_le_one (w : Place L) (hw : IsNonarchimedean w.val)
+    (hB : ∀ b : B, w.val (algebraMap B L b) ≤ 1)
+    (hQ : ∀ b : B, b ∈ Q ↔ w.val (algebraMap B L b) < 1) :
+    w.val.inertia G = Q.inertia G :=
+  inertia_eq_inertia_of_isCenteredAt w hw (isCenteredAt_valuationSubring hw hB hQ)
+
+/-- **Elements acting on residues by a power map fix the place.** If `w ≤ 1` on `B`, with
+`Q = {b | w b < 1}` and `B_Q` a valuation ring, an element `σ` with `w (σ • x - x ^ q) < 1`
+whenever `w x ≤ 1` lies in the decomposition group of the finite place `w`. -/
+theorem mem_stabilizer_of_forall_apply_smul_sub_pow_lt_one (w : Place L)
+    (hw : IsNonarchimedean w.val) (hB : ∀ b : B, w.val (algebraMap B L b) ≤ 1)
+    (hQ : ∀ b : B, b ∈ Q ↔ w.val (algebraMap B L b) < 1) {σ : G} {q : ℕ}
+    (hσ : ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ q) < 1) : σ ∈ stabilizer G w :=
+  stabilizer_valuationSubring (G := G) w hw ▸
+    (isCenteredAt_valuationSubring hw hB hQ).mem_stabilizer_of_forall_smul_sub_pow_mem_nonunits
+      ((forall_mem_valuationSubring_smul_sub_pow_mem_nonunits_iff hw).mpr hσ)
+
+variable [TopologicalSpace G] [CompactSpace G] [TotallyDisconnectedSpace G] [IsTopologicalGroup G]
+  [TopologicalSpace L] [DiscreteTopology L] [ContinuousSMul G L]
+  {R : Type*} [CommRing R] [Algebra R B] [SMulCommClass G R B]
+
+/-- **Frobenius elements exist at a finite place.** Let a profinite group `G` act continuously on
+`L` with the discrete topology and on a ring `B` with fraction field `L`, with `B^G = R`. If
+`w ≤ 1` on `R`, `Q = {b ∈ B | w b < 1}` has `B_Q` a valuation ring and `R ⧸ Q ∩ R` is finite,
+then some `σ` in the decomposition group of the finite place `w` satisfies
+`w (σ • x - x ^ #(R ⧸ Q ∩ R)) < 1` whenever `w x ≤ 1`. -/
+theorem exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one (w : Place L)
+    (hw : IsNonarchimedean w.val) [Algebra R L] [IsScalarTower R B L] [Algebra.IsInvariant R B G]
+    (hR : ∀ r : R, w.val (algebraMap R L r) ≤ 1)
+    (hQ : ∀ b : B, b ∈ Q ↔ w.val (algebraMap B L b) < 1) [Finite (R ⧸ Q.under R)] :
+    ∃ σ : G, σ ∈ stabilizer G w ∧
+      ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ Nat.card (R ⧸ Q.under R)) < 1 := by
+  obtain ⟨σ, hσ, h⟩ :=
+    AbsoluteValue.exists_mem_stabilizer_forall_apply_smul_sub_pow_lt_one (G := G) hw hR hQ
+  exact ⟨σ, stabilizer_valuationSubring (G := G) w hw ▸ hσ, h⟩
+
+/-- **A Frobenius element and inertia generate the decomposition group of a finite place**, as a
+product of subsets: if `w ≤ 1` on `B`, `Q = {b | w b < 1}` has `B_Q` a valuation ring, and `σ`
+satisfies `w (σ • x - x ^ #(R ⧸ Q ∩ R)) < 1` whenever `w x ≤ 1`, then every element of the
+decomposition group of the finite place `w` is `s * i` with `s` in the closure of the powers of
+`σ` and `i` in the inertia group of `w`. -/
+theorem topologicalClosure_zpowers_mul_inertia_eq_stabilizer (w : Place L)
+    (hw : IsNonarchimedean w.val) (hB : ∀ b : B, w.val (algebraMap B L b) ≤ 1)
+    (hQ : ∀ b : B, b ∈ Q ↔ w.val (algebraMap B L b) < 1) {σ : G}
+    (hσ : ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ Nat.card (R ⧸ Q.under R)) < 1) :
+    ((Subgroup.zpowers σ).topologicalClosure : Set G) * w.val.inertia G = stabilizer G w := by
+  rw [inertia_eq_inertia_of_forall_apply_le_one w hw hB hQ, ← stabilizer_valuationSubring w hw]
+  exact topologicalClosure_zpowers_mul_inertia_eq_stabilizer_valuationSubring hw hB hQ hσ
+
+/-- **A Frobenius element and inertia generate the decomposition group of a finite place**: under
+the hypotheses of `AbsoluteValue.Place.topologicalClosure_zpowers_mul_inertia_eq_stabilizer`, the
+decomposition group of `w` is generated by the closure of `⟨σ⟩` and the inertia group of `w`. -/
+theorem topologicalClosure_zpowers_sup_inertia_eq_stabilizer (w : Place L)
+    (hw : IsNonarchimedean w.val) (hB : ∀ b : B, w.val (algebraMap B L b) ≤ 1)
+    (hQ : ∀ b : B, b ∈ Q ↔ w.val (algebraMap B L b) < 1) {σ : G}
+    (hσ : ∀ x, w.val x ≤ 1 → w.val (σ • x - x ^ Nat.card (R ⧸ Q.under R)) < 1) :
+    (Subgroup.zpowers σ).topologicalClosure ⊔ w.val.inertia G = stabilizer G w := by
+  rw [inertia_eq_inertia_of_forall_apply_le_one w hw hB hQ, ← stabilizer_valuationSubring w hw]
+  exact topologicalClosure_zpowers_sup_inertia_eq_stabilizer_valuationSubring hw hB hQ hσ
+
+end AbsoluteValue.Place
