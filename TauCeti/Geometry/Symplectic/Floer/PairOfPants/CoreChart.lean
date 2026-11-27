@@ -587,10 +587,17 @@ private theorem coreLobe_three_quarters_mk_zero {r : ℝ} (hr : r ∈ Icc 0 1) :
     Complex.exp_sub, Complex.exp_sub, Complex.exp_pi_mul_I, Complex.exp_two_pi_mul_I]
   ring
 
+/-- At `s = 1` a lobe of the core reaches the output circle, on the ray from `1/2` at the angle
+`lobeAngle a r`. -/
+private theorem coreLobe_mk_one_of_mem {a r : ℝ} (hr : r ∈ Icc 0 1) :
+    coreLobe a (1, r) = Complex.equivRealProdCLM
+      (circleMap (1 / 2) (coreOuterRadius (lobeAngle a r)) (lobeAngle a r)) := by
+  rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
+    add_sub_cancel]
+
 private theorem norm_symm_coreLobe_mk_one (a : ℝ) {r : ℝ} (hr : r ∈ Icc 0 1) :
     ‖Complex.equivRealProdCLM.symm (coreLobe a (1, r))‖ = 2 := by
-  rw [coreLobe_of_mem hr, lobeChart, ContinuousLinearEquiv.symm_apply_apply,
-    smoothTransition.one, lobePoint, lobeRadius, one_mul, add_sub_cancel]
+  rw [coreLobe_mk_one_of_mem hr, ContinuousLinearEquiv.symm_apply_apply]
   exact norm_circleMap_half_coreOuterRadius _
 
 /-- The core chart is `1`-periodic in its second variable. -/
@@ -656,8 +663,7 @@ theorem pairOfPantsCoreChart_mk_one (t : ℝ) :
         ((-Real.sin (π * z.2) + √(Real.sin (π * z.2) ^ 2 + 15)) / 2) (-(3 * π / 2) - π * z.2)))
       (1, t) := by
   refine loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_) <;>
-    rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
-      add_sub_cancel, coreOuterRadius]
+    rw [coreLobe_mk_one_of_mem hr, coreOuterRadius]
   · rw [cos_lobeAngle_quarter, neg_neg, neg_sq,
       show lobeAngle (1 / 4) r = -(π / 2) - π * r by rw [lobeAngle]; ring]
   · rw [cos_lobeAngle_three_quarters,
@@ -826,10 +832,8 @@ private theorem pairOfPantsCoreChart_mk_one_eq (t : ℝ) :
     rw [← periodic_circleMap (1 / 2 : ℂ), neg_add_cancel_right]
   refine (loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_)).trans
     (loopwiseTrans_eq_comp_coreStair hQ 1 t)
-  · rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
-      add_sub_cancel]
-  · rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
-      add_sub_cancel,
+  · rw [coreLobe_mk_one_of_mem hr]
+  · rw [coreLobe_mk_one_of_mem hr,
       show lobeAngle (3 / 4) r = lobeAngle (1 / 4) (r + 1) by rw [lobeAngle, lobeAngle]; ring]
 
 /-- The **lift of the output loop of the core chart** to the angular coordinate of the output end:
