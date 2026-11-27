@@ -365,7 +365,7 @@ private theorem exists_eventually_norm_conjWirtingerDeriv_div_le {n : ℕ}
     ∃ M, 0 ≤ M ∧ ∀ᶠ w in 𝓝[Ω ∩ {z | 0 ≤ z.im}] z₁, w ∈ Ω ∩ {z | 0 < z.im} →
       ‖conjWirtingerDeriv (fun w ↦ Ψ.symm (u w - x₀)) w 1‖ / ‖Ψ.symm (u w - x₀)‖ ≤ M := by
   obtain ⟨B, hB0, hB⟩ := hu.exists_eventually_norm_fderiv_le
-    (by rw [inter_comm]; exact (uniqueDiffOn_setOfPred_le_im 0).inter hΩ) le_rfl hz₁
+    hΩ.uniqueDiffOn_inter_setOf_im_nonneg le_rfl hz₁
   by_cases h₀ : u z₁ = x₀
   · -- near a zero of `η`: the frozen error term is a multiple of `‖∂ₛu‖ ‖η‖`
     obtain ⟨K, t, ht, hK⟩ := hJ
