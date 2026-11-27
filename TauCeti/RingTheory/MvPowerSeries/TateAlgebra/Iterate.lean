@@ -220,6 +220,12 @@ theorem restrictedOptionEquiv_algebraMap (a : Inner) :
   rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply]
   exact AlgEquiv.apply_symm_apply _ _
 
+/-- The coefficient-algebra embedding agrees with the original action of `R`. -/
+instance instIsScalarTowerIsRestrictedSubringOption : IsScalarTower R Inner Flat :=
+  IsScalarTower.of_algebraMap_eq fun r ↦ restrictedOptionEquiv.injective <| by
+    rw [AlgEquiv.commutes, restrictedOptionEquiv_algebraMap,
+      ← IsScalarTower.algebraMap_apply R Inner Iter]
+
 /-- Splitting off one variable is an algebra equivalence over the restricted series in the
 remaining variables. -/
 noncomputable def restrictedOptionCoeffAlgEquiv : Flat ≃ₐ[Inner] Iter :=
@@ -230,6 +236,11 @@ noncomputable def restrictedOptionCoeffAlgEquiv : Flat ≃ₐ[Inner] Iter :=
 @[simp]
 theorem restrictedOptionCoeffAlgEquiv_apply (f : Flat) :
     restrictedOptionCoeffAlgEquiv f = restrictedOptionEquiv f := (rfl)
+
+/-- The inverse of the coefficient-algebra comparison is the original flattening map. -/
+@[simp]
+theorem restrictedOptionCoeffAlgEquiv_symm_apply (g : Iter) :
+    restrictedOptionCoeffAlgEquiv.symm g = restrictedOptionEquiv.symm g := (rfl)
 
 private theorem restrictedOptionEquiv_symm_apply (g : Iter) :
     restrictedOptionEquiv.symm g = restrictedOptionFlatten g := by
@@ -253,6 +264,20 @@ theorem coeff_restrictedOptionEquiv (f : Flat) (n : ℕ) :
     (a : MvPowerSeries (Option σ) R))) ((restrictedOptionEquiv (c := c)).symm_apply_apply f)
   rw [coe_restrictedOptionEquiv_symm, AlgEquiv.apply_symm_apply, PowerSeries.coeff_map] at h
   exact h
+
+/-- A restricted coefficient series uses only monomials with exponent zero at `none`. -/
+@[simp]
+theorem coeff_algebraMap_isRestrictedSubringOption (a : Inner) (t : Option σ →₀ ℕ) :
+    coeff t (algebraMap Inner Flat a : MvPowerSeries (Option σ) R) =
+      if t none = 0 then coeff t.some (a : MvPowerSeries σ R) else 0 := by
+  have h := congrArg (fun g : Iter ↦ coeff t.some
+    (PowerSeries.coeff (R := Inner) (t none) (g : PowerSeries Inner) : MvPowerSeries σ R))
+    (restrictedOptionEquiv_algebraMap a)
+  simp only [coeff_restrictedOptionEquiv, coeff_coeff_optionEquivLeft, Finsupp.optionElim_some,
+    TauCeti.PowerSeries.coe_algebraMap_isRestrictedSubring, Algebra.algebraMap_self_apply,
+    PowerSeries.coeff_C] at h
+  by_cases ht : t none = 0 <;> simpa only [ht, ite_true, ite_false, ZeroMemClass.coe_zero,
+    map_zero] using h
 
 /-- The coefficient of degree `n` of the iterated series vanishes exactly when `f` has no
 monomial in which the separated variable occurs with exponent `n`. -/
