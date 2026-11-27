@@ -20,11 +20,11 @@ import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Schmidt
 
 For a topological module `M` over a ring `R`, the continuous linear endomorphisms whose range is
 contained in the closure of a countable subset of `M` (`IsSeparable (Set.range f)`) form a
-two-sided ideal `ContinuousLinearMap.separableRangeIdeal R M`, with `separableRangeIdeal R M = ⊤` if
+two-sided ideal `TauCeti.separableRangeIdeal R M`, with `separableRangeIdeal R M = ⊤` if
 and only if `M` is separable. On a seminormed space `E` over a nontrivially normed field `𝕜`,
 membership in `separableRangeIdeal 𝕜 E` is equivalent to intrinsic separability
 `SeparableSpace (Set.range f)` of the range subtype
-(`ContinuousLinearMap.mem_separableRangeIdeal_iff_separableSpace`), and `separableRangeIdeal 𝕜 E`
+(`TauCeti.mem_separableRangeIdeal_iff_separableSpace`), and `separableRangeIdeal 𝕜 E`
 is closed in the operator-norm topology; on a normed space `E`, `separableRangeIdeal 𝕜 E` contains
 the compact-operator ideal `TauCeti.compactOperatorIdeal 𝕜 E`. Over a locally compact nontrivially
 normed field `𝕜`, a normed space `E` satisfies `compactOperatorIdeal 𝕜 E = ⊤` if and only if `E` is
@@ -39,16 +39,16 @@ extraction with the norm-convergent singular value expansion of compact operator
   two-sided ideals are `⊥` and `⊤`, with `⊥ ≠ ⊤` whenever `H` is nontrivial.
 * Every nonzero closed two-sided ideal of `H →L[𝕜] H` contains `TauCeti.compactOperatorIdeal 𝕜 H`.
 * When `H` is nonseparable,
-  `TauCeti.compactOperatorIdeal 𝕜 H < ContinuousLinearMap.separableRangeIdeal 𝕜 H < ⊤`,
+  `TauCeti.compactOperatorIdeal 𝕜 H < TauCeti.separableRangeIdeal 𝕜 H < ⊤`,
   witnessed by the orthogonal projection onto the closed span of a countably infinite orthonormal
   sequence.
 
 ## Main declarations
 
-* `ContinuousLinearMap.separableRangeIdeal`: the two-sided ideal of continuous linear endomorphisms
+* `TauCeti.separableRangeIdeal`: the two-sided ideal of continuous linear endomorphisms
   of `M` whose range lies in the closure of a countable subset of `M`, characterized by
-  `SeparableSpace (Set.range f)` (`ContinuousLinearMap.mem_separableRangeIdeal_iff_separableSpace`)
-  and closed (`ContinuousLinearMap.isClosed_separableRangeIdeal`) on seminormed spaces over a
+  `SeparableSpace (Set.range f)` (`TauCeti.mem_separableRangeIdeal_iff_separableSpace`)
+  and closed (`TauCeti.isClosed_separableRangeIdeal`) on seminormed spaces over a
   nontrivially normed field, and containing `TauCeti.compactOperatorIdeal`
   (`TauCeti.compactOperatorIdeal_le_separableRangeIdeal`) on normed spaces.
 * `TauCeti.compactOperatorIdeal_eq_top_iff_finiteDimensional` and
@@ -59,7 +59,7 @@ extraction with the norm-convergent singular value expansion of compact operator
 * `TauCeti.compactOperatorIdeal_le_of_isClosed_of_ne_bot`: every nonzero closed two-sided ideal of
   `H →L[𝕜] H` contains `TauCeti.compactOperatorIdeal 𝕜 H`.
 * `TauCeti.compactOperatorIdeal_lt_separableRangeIdeal`: on a nonseparable Hilbert space,
-  `TauCeti.compactOperatorIdeal 𝕜 H < ContinuousLinearMap.separableRangeIdeal 𝕜 H`.
+  `TauCeti.compactOperatorIdeal 𝕜 H < TauCeti.separableRangeIdeal 𝕜 H`.
 
 ## References
 
@@ -147,10 +147,6 @@ instance instNontrivialCompactOperatorIdeal [Nontrivial E] :
 
 end NormedNontrivial
 
-end TauCeti
-
-namespace ContinuousLinearMap
-
 section SeparableRangeIdeal
 
 section Topological
@@ -199,8 +195,8 @@ theorem coe_separableRangeIdeal :
 subset of `M` if and only if `M` itself is a separable space. -/
 @[simp]
 theorem separableRangeIdeal_eq_top_iff : separableRangeIdeal R M = ⊤ ↔ SeparableSpace M := by
-  rw [← TwoSidedIdeal.one_mem_iff, mem_separableRangeIdeal, one_def, coe_id', Set.range_id,
-    isSeparable_univ_iff]
+  rw [← TwoSidedIdeal.one_mem_iff, mem_separableRangeIdeal, ContinuousLinearMap.one_def,
+    ContinuousLinearMap.coe_id', Set.range_id, isSeparable_univ_iff]
 
 /-- On a separable space, `separableRangeIdeal` is the whole endomorphism ring. -/
 theorem separableRangeIdeal_eq_top [SeparableSpace M] : separableRangeIdeal R M = ⊤ :=
@@ -243,28 +239,20 @@ end Normed
 
 end SeparableRangeIdeal
 
-end ContinuousLinearMap
-
-namespace TauCeti
-
 /-- Every compact operator on a normed space over a nontrivially normed field has separable
 range. -/
 theorem compactOperatorIdeal_le_separableRangeIdeal {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] :
-    compactOperatorIdeal 𝕜 E ≤ ContinuousLinearMap.separableRangeIdeal 𝕜 E := by
+    compactOperatorIdeal 𝕜 E ≤ separableRangeIdeal 𝕜 E := by
   intro f hf
-  rw [ContinuousLinearMap.mem_separableRangeIdeal]
+  rw [mem_separableRangeIdeal]
   choose K hK hsub using fun n : ℕ ↦
     (mem_compactOperatorIdeal.mp hf).image_closedBall_subset_compact (f := f.toLinearMap) n
   refine (IsSeparable.iUnion fun n ↦ (hK n).isSeparable).mono ?_
   rw [← Set.image_univ, ← Metric.iUnion_closedBall_nat (0 : E), Set.image_iUnion]
   exact Set.iUnion_mono hsub
 
-end TauCeti
-
 section RankOneAndSimplicity
-
-namespace ContinuousLinearMap
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
 
@@ -272,7 +260,7 @@ variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpac
 theorem rankOne_mem_of_ne_zero {I : TwoSidedIdeal (H →L[𝕜] H)} {T : H →L[𝕜] H}
     (hTI : T ∈ I) (hT0 : T ≠ 0) (u v : H) : rankOne 𝕜 u v ∈ I := by
   obtain ⟨x, hx⟩ := DFunLike.ne_iff.mp hT0
-  rw [← rankOneDivNormSq_mul_mul_rankOne hx u v]
+  rw [← ContinuousLinearMap.rankOneDivNormSq_mul_mul_rankOne hx u v]
   exact I.mul_mem_right _ _ (I.mul_mem_left _ _ hTI)
 
 /-- Any closed additive submonoid of `H →L[𝕜] H` containing every rank-one operator contains every
@@ -286,11 +274,9 @@ theorem mem_of_isCompactOperator_of_forall_rankOne_mem [CompleteSpace H] {S : Ty
   rw [← smul_apply, ← map_smul]
   exact hrank _ _
 
-end ContinuousLinearMap
+section Complete
 
-namespace TauCeti
-
-variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
+variable [CompleteSpace H]
 
 /-- **Topological simplicity of `K(H)`.** Every closed two-sided ideal of
 `↥(compactOperatorIdeal 𝕜 H)` is either `⊥` or `⊤`. When `H` is nontrivial, `⊥ ≠ ⊤` by
@@ -321,7 +307,7 @@ theorem twoSidedIdeal_compactOperatorIdeal_eq_bot_or_eq_top_of_isClosed
         mem_compactOperatorIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne x v)⟩
     refine ⟨L * T * R, J.mul_mem_right _ R (J.mul_mem_left L T hTJ), ?_⟩
     simpa [L, R] using ContinuousLinearMap.rankOneDivNormSq_mul_mul_rankOne hx u v
-  obtain ⟨K', hK'J, hK'eq⟩ := ContinuousLinearMap.mem_of_isCompactOperator_of_forall_rankOne_mem
+  obtain ⟨K', hK'J, hK'eq⟩ := mem_of_isCompactOperator_of_forall_rankOne_mem
     hs_closed hrank (mem_compactOperatorIdeal.mp K.property)
   have hK' : K' = K := Subtype.ext hK'eq
   exact hK' ▸ hK'J
@@ -334,8 +320,8 @@ theorem compactOperatorIdeal_le_of_isClosed_of_ne_bot {I : TwoSidedIdeal (H →L
   obtain ⟨T, hTI, hT0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hne)
   rw [TwoSidedIdeal.mem_bot] at hT0
   exact fun K hK ↦
-    ContinuousLinearMap.mem_of_isCompactOperator_of_forall_rankOne_mem hI
-      (ContinuousLinearMap.rankOne_mem_of_ne_zero hTI hT0) (mem_compactOperatorIdeal.mp hK)
+    mem_of_isCompactOperator_of_forall_rankOne_mem hI
+      (rankOne_mem_of_ne_zero hTI hT0) (mem_compactOperatorIdeal.mp hK)
 
 /-- Every closed two-sided ideal of `H →L[𝕜] H` is either `⊥` or contains
 `compactOperatorIdeal 𝕜 H`. -/
@@ -344,7 +330,7 @@ theorem eq_bot_or_compactOperatorIdeal_le_of_isClosed {I : TwoSidedIdeal (H →L
     I = ⊥ ∨ compactOperatorIdeal 𝕜 H ≤ I :=
   or_iff_not_imp_left.mpr (compactOperatorIdeal_le_of_isClosed_of_ne_bot hI)
 
-end TauCeti
+end Complete
 
 end RankOneAndSimplicity
 
@@ -355,9 +341,9 @@ variable {𝕜 H : Type*} [RCLike 𝕜]
 
 /-- On a nonseparable Hilbert space, `compactOperatorIdeal` is strictly contained in
 `separableRangeIdeal`. -/
-theorem TauCeti.compactOperatorIdeal_lt_separableRangeIdeal (hH : ¬ SeparableSpace H) :
-    TauCeti.compactOperatorIdeal 𝕜 H < ContinuousLinearMap.separableRangeIdeal 𝕜 H := by
-  refine lt_of_le_of_ne TauCeti.compactOperatorIdeal_le_separableRangeIdeal fun heq ↦ ?_
+theorem compactOperatorIdeal_lt_separableRangeIdeal (hH : ¬ SeparableSpace H) :
+    compactOperatorIdeal 𝕜 H < separableRangeIdeal 𝕜 H := by
+  refine lt_of_le_of_ne compactOperatorIdeal_le_separableRangeIdeal fun heq ↦ ?_
   obtain ⟨w, b, -⟩ := exists_hilbertBasis 𝕜 H
   have hnot_count : ¬ Countable w := fun _ ↦ hH (b.separableSpace_iff_countable.mpr ‹Countable w›)
   have : Infinite w := not_finite_iff_infinite.mp fun _ ↦ hnot_count inferInstance
@@ -370,11 +356,11 @@ theorem TauCeti.compactOperatorIdeal_lt_separableRangeIdeal (hH : ¬ SeparableSp
   have hrange : Set.range U.starProjection = (U : Set H) := by
     have hU := congrArg (SetLike.coe : Submodule 𝕜 H → Set H) U.range_starProjection
     rwa [LinearMap.coe_range, ContinuousLinearMap.coe_coe] at hU
-  have hmem_sep : U.starProjection ∈ ContinuousLinearMap.separableRangeIdeal 𝕜 H := by
-    rw [ContinuousLinearMap.mem_separableRangeIdeal, hrange]
+  have hmem_sep : U.starProjection ∈ separableRangeIdeal 𝕜 H := by
+    rw [mem_separableRangeIdeal, hrange]
     exact (Set.countable_range v).isSeparable.span.closure
   have hmem_cpt : IsCompactOperator U.starProjection :=
-    TauCeti.mem_compactOperatorIdeal.mp (heq.symm ▸ hmem_sep)
+    mem_compactOperatorIdeal.mp (heq.symm ▸ hmem_sep)
   have hvU : ∀ n : ℕ, U.starProjection (v n) = (1 : 𝕜) • v n := fun n ↦ by
     rw [one_smul, Submodule.starProjection_eq_self_iff]
     exact Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨n, rfl⟩)
@@ -383,5 +369,7 @@ theorem TauCeti.compactOperatorIdeal_lt_separableRangeIdeal (hH : ¬ SeparableSp
   exact Set.infinite_univ hfin
 
 end Nonseparable
+
+end TauCeti
 
 end

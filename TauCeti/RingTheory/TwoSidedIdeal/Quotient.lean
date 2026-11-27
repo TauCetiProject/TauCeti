@@ -342,28 +342,6 @@ theorem coe_comapMkRelIso (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
   ext a
   exact TwoSidedIdeal.mem_comap (mk I)
 
-/-- Under `comapMkRelIso`, `J : TwoSidedIdeal (A ⧸ I)` equals `⊥` if and only if its preimage
-ideal equals `I`. -/
-theorem comapMkRelIso_val_eq_iff_eq_bot (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
-    (comapMkRelIso I J).val = I ↔ J = ⊥ := by
-  have hbot : (comapMkRelIso I ⊥).val = I := by
-    rw [comapMkRelIso_apply]
-    ext a
-    simp [TwoSidedIdeal.mem_comap]
-  refine ⟨fun h => (comapMkRelIso I).injective (Subtype.ext (h.trans hbot.symm)),
-    fun h => h ▸ hbot⟩
-
-/-- Under `comapMkRelIso`, `J : TwoSidedIdeal (A ⧸ I)` equals `⊤` if and only if its preimage
-ideal equals `⊤`. -/
-theorem comapMkRelIso_val_eq_top_iff (I : TwoSidedIdeal A) (J : TwoSidedIdeal (A ⧸ I)) :
-    (comapMkRelIso I J).val = ⊤ ↔ J = ⊤ := by
-  have htop : (comapMkRelIso I ⊤).val = ⊤ := by
-    rw [comapMkRelIso_apply]
-    ext a
-    simp [TwoSidedIdeal.mem_comap]
-  refine ⟨fun h => (comapMkRelIso I).injective (Subtype.ext (h.trans htop.symm)),
-    fun h => h ▸ htop⟩
-
 end Quotient
 
 end NonUnitalRing
