@@ -22,7 +22,8 @@ is none. It is Mathlib's hitting time `MeasureTheory.hittingAfter` of the orbit 
 
 **Kac's lemma** (`TauCeti.kac_return_time_integral`): for an ergodic measurable equivalence `T` of
 a probability space and a measurable set `A` of positive measure, the return time is finite
-almost everywhere on `A`, it is integrable on `A`, and `∫ x in A, positiveReturnTime T A x dμ = 1`.
+almost everywhere on `A`, it is integrable on `A`, and
+`∫ x in A, ((positiveReturnTime T A x).toNat : ℝ) ∂μ = 1`.
 Thus the mean return time for the conditional probability on `A` is `1 / μ A`.
 
 For a measure-preserving equivalence alone, `TauCeti.lintegral_positiveReturnTime_eq_measure`
