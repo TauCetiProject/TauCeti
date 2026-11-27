@@ -15,7 +15,6 @@ import TauCeti.Analysis.PDE.Vortex.WeightedEstimate
 import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
-import TauCeti.MeasureTheory.Function.Lp.Adjoint
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 
 /-!
@@ -710,20 +709,14 @@ private theorem lintegral_ofReal_sq_mul_norm_sq_le (hx : ContDiff ℝ 1 x)
   -- The estimate for the bounded weight `V = W / (1 + W / (n + 1))`.
   have hε : 0 < 1 / ((n : ℝ) + 1) := by positivity
   set V : ℂ → ℝ := fun z ↦ W z / (1 + 1 / ((n : ℝ) + 1) * W z)
-  have hd (z : ℂ) : 0 < 1 + 1 / ((n : ℝ) + 1) * W z := by have := hW₀ z; positivity
-  have hV : ContDiff ℝ 2 V :=
-    hW.div (contDiff_const.add (contDiff_const.mul hW)) fun z ↦ (hd z).ne'
-  have hV₀ (z : ℂ) : 0 ≤ V z := div_nonneg (hW₀ z).le (hd z).le
-  have hVW (z : ℂ) : V z ≤ W z := div_le_self (hW₀ z).le (le_add_of_nonneg_right
-    (mul_nonneg hε.le (hW₀ z).le))
-  have hVB (z : ℂ) : V z ^ 2 ≤ (1 / (1 / ((n : ℝ) + 1))) ^ 2 := by
-    refine pow_le_pow_left₀ (hV₀ z) ((div_le_div_iff₀ (hd z) hε).2 ?_) 2
-    nlinarith [hW₀ z]
+  have hV : ContDiff ℝ 2 V := hW.div_one_add_mul (fun z ↦ (hW₀ z).le) hε.le
+  have hV₀ (z : ℂ) : 0 ≤ V z := div_one_add_mul_nonneg (hW₀ z).le hε.le
+  have hVB (z : ℂ) : V z ^ 2 ≤ (1 / (1 / ((n : ℝ) + 1))) ^ 2 :=
+    pow_le_pow_left₀ (hV₀ z) (div_one_add_mul_le_one_div (hW₀ z).le hε) 2
   have hdV (z : ℂ) : ‖fderiv ℝ V z‖ ≤ g z * V z :=
     norm_fderiv_div_one_add_mul_le (hW.differentiable (by simp) z) (hW₀ z) hε.le (hdW z)
-  have hdV₂ (z : ℂ) : ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2 := by
-    have h := (hdV z).trans (mul_le_mul_of_nonneg_right (hg z) (hV₀ z))
-    simpa only [mul_pow, sq_abs] using pow_le_pow_left₀ (norm_nonneg _) h 2
+  have hdV₂ (z : ℂ) : ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2 :=
+    norm_fderiv_sq_le_of_norm_fderiv_le (hg z) (hV₀ z) (hdV z)
   have h := integral_sq_mul_norm_sq_le_of_forall_exists_lt hx hy hf hweak
     (fun ε hε ↦ exists_integral_norm_sub_gaugeFixedAdjoint_sq_lt hx.continuous horth hε) hc₀
     hgap hV hVB hdV₂ hδ (hcoer V hV hV₀ hdV)
@@ -735,46 +728,7 @@ private theorem lintegral_ofReal_sq_mul_norm_sq_le (hx : ContDiff ℝ 1 x)
     ofReal_integral_eq_lintegral_ofReal (hwt hf) (ae_of_all _ fun z ↦ by positivity)]
   gcongr with z
   · exact hV₀ z
-  · exact hVW z
-
-omit [μ.IsAddHaarMeasure] in
-/-- From a weight `W` to a comparable weight `w`: if `w² ≤ E W²` and `W² ≤ E w²`, a bound
-`∫ W² |y|² ≤ K₀ ∫ W² |f|²` gives `‖w y‖₂ ≤ √(E² K₀) ‖w f‖₂`. -/
-private theorem eLpNorm_smul_le_of_lintegral_le {w W : ℂ → ℝ} (hw : Continuous w) {E K₀ : ℝ}
-    (hE : 0 ≤ E) (hK₀ : 0 ≤ K₀) (hwW : ∀ z, w z ^ 2 ≤ E * W z ^ 2)
-    (hWw : ∀ z, W z ^ 2 ≤ E * w z ^ 2) {f y : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
-    (h : ∫⁻ z, ENNReal.ofReal (W z ^ 2 * ‖y z‖ ^ 2) ∂μ ≤
-      ENNReal.ofReal K₀ * ∫⁻ z, ENNReal.ofReal (W z ^ 2 * ‖f z‖ ^ 2) ∂μ) :
-    eLpNorm (fun z ↦ w z • y z) 2 μ ≤
-      Real.toNNReal √(E * E * K₀) * eLpNorm (fun z ↦ w z • f z) 2 μ := by
-  have hcmp {u v : ℂ → ℝ} (huv : ∀ z, u z ^ 2 ≤ E * v z ^ 2)
-      (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
-      ∫⁻ z, ENNReal.ofReal (u z ^ 2 * ‖g z‖ ^ 2) ∂μ ≤
-        ENNReal.ofReal E * ∫⁻ z, ENNReal.ofReal (v z ^ 2 * ‖g z‖ ^ 2) ∂μ := by
-    rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-    refine lintegral_mono fun z ↦ ?_
-    rw [← ENNReal.ofReal_mul hE, ← mul_assoc]
-    exact ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_right (huv z) (sq_nonneg _))
-  have hwy := hcmp hwW y
-  have hWf := hcmp hWw f
-  -- Convert to `L²` norms.
-  have hsm (g : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
-      AEStronglyMeasurable (fun z ↦ w z • g z) μ :=
-    hw.aestronglyMeasurable.smul (Lp.aestronglyMeasurable g)
-  rw [eLpNorm_two_smul_eq_lintegral_ofReal_rpow (hsm y),
-    eLpNorm_two_smul_eq_lintegral_ofReal_rpow (hsm f)]
-  have hK : (Real.toNNReal √(E * E * K₀) : ℝ≥0∞) = ENNReal.ofReal (E * E * K₀) ^ (1 / 2 : ℝ) := by
-    rw [ENNReal.ofReal_rpow_of_nonneg (by positivity) (by norm_num),
-      ← Real.sqrt_eq_rpow, ← ENNReal.ofReal_coe_nnreal, Real.coe_toNNReal _ (Real.sqrt_nonneg _)]
-  rw [hK, ← ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
-  gcongr
-  calc ∫⁻ z, ENNReal.ofReal (w z ^ 2 * ‖y z‖ ^ 2) ∂μ
-      ≤ ENNReal.ofReal E * (ENNReal.ofReal K₀ *
-          (ENNReal.ofReal E * ∫⁻ z, ENNReal.ofReal (w z ^ 2 * ‖f z‖ ^ 2) ∂μ)) :=
-        hwy.trans (by gcongr; exact h.trans (by gcongr))
-    _ = ENNReal.ofReal (E * E * K₀) * ∫⁻ z, ENNReal.ofReal (w z ^ 2 * ‖f z‖ ^ 2) ∂μ := by
-        rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_mul hE]
-        ring
+  · exact div_one_add_mul_le_self (hW₀ z).le hε.le
 
 /-- **The exponentially weighted estimate for the weak right inverse, from a spectral gap and an
 exterior mass.** Let `c₀ > 0`, `c² < a ≤ 1/4` and `R` be real numbers, and `ρ(z) = √(1 + |z|²)`.
@@ -816,10 +770,10 @@ theorem exists_forall_eLpNorm_exp_mul_smul_le_of_integral_inner_gaugeFixedAdjoin
       (μ := μ) hc₀ ha hca R
   have hb₀ : 0 < b := by linarith
   exact ⟨_, fun x hx hsol hgap hR f y hweak horth ↦
-    eLpNorm_smul_le_of_lintegral_le (continuous_exp_mul_sqrt_add_norm_sq c) (by positivity)
-      (by positivity)
+    eLpNorm_two_smul_le_of_lintegral_le_of_sq_le
+      (continuous_exp_mul_sqrt_add_norm_sq c).aestronglyMeasurable (by positivity) (by positivity)
       (fun z ↦ by simpa only [abs_sub_comm 1 b] using sq_exp_mul_sqrt_add_norm_sq_le c 1 b z)
-      (sq_exp_mul_sqrt_add_norm_sq_le c b 1)
+      (sq_exp_mul_sqrt_add_norm_sq_le c b 1) (Lp.aestronglyMeasurable f) (Lp.aestronglyMeasurable y)
       (lintegral_ofReal_sq_mul_norm_sq_le hx hweak horth hc₀ hgap
         (contDiff_exp_mul_sqrt_add_norm_sq c hb₀) (fun z ↦ Real.exp_pos _)
         (g := fun z ↦ |c| * (‖z‖ / √(b + ‖z‖ ^ 2)))
@@ -1114,10 +1068,12 @@ theorem exists_forall_eLpNorm_exp_mul_infDist_smul_le_of_integral_inner_gaugeFix
   -- the weights `exp (c Φ)` and `exp (c d_D)` are comparable.
   have hcmp := abs_softMinDist_sub_infDist_le hb.le
     ((Multiset.toFinset_card_le D).trans (hD.card_eq_of_tendsto_mul_inv_pow hframe).le)
-  exact eLpNorm_smul_le_of_lintegral_le (continuous_const.mul (Metric.continuous_infDist_pt _)).rexp
+  exact eLpNorm_two_smul_le_of_lintegral_le_of_sq_le
+    (continuous_const.mul (Metric.continuous_infDist_pt _)).rexp.aestronglyMeasurable
     (by positivity) (by positivity)
     (fun z ↦ sq_exp_mul_le_of_abs_sub_le ((abs_sub_comm _ _).trans_le (hcmp z)))
-    (fun z ↦ sq_exp_mul_le_of_abs_sub_le (hcmp z)) hΦ
+    (fun z ↦ sq_exp_mul_le_of_abs_sub_le (hcmp z)) (Lp.aestronglyMeasurable f)
+    (Lp.aestronglyMeasurable y) hΦ
 
 /-- **The weighted estimate for the adjoint of the weak right inverse with weights centred on the
 zeros, uniformly over the moduli space.** For every degree `m` and rate `|c| < 1/2` there is a
@@ -1152,15 +1108,9 @@ theorem exists_forall_eLpNorm_exp_mul_infDist_smul_adjoint_apply_le (m : ℕ) {c
   obtain ⟨K, hK⟩ :=
     exists_forall_eLpNorm_exp_mul_infDist_smul_le_of_integral_inner_gaugeFixedAdjoint_eq (μ := μ) m
       (c := -c) (by rwa [abs_neg])
-  refine ⟨K, fun x D hx hsol hframe hD Q hweak horth g ↦ ?_⟩
-  -- The weights `exp(c d_D)` and `exp(-c d_D)` are reciprocal, and `Q†† = Q`.
-  set w : ℂ → ℝ := fun z ↦ Real.exp (c * Metric.infDist z (D.toFinset : Set ℂ))
-  have hw : Continuous w := (continuous_const.mul (Metric.continuous_infDist_pt _)).rexp
-  have h := (ContinuousLinearMap.adjoint Q).eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le (𝕜 := ℝ)
-    (p := 2) (p' := 2) (q := 2) (q' := 2) (u := w) (w := w)
-    (ae_of_all _ fun z ↦ (Real.exp_pos _).ne') hw.aestronglyMeasurable (C := K) (fun f ↦ ?_) g
-  · simpa using h
-  · simpa [w, ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using
-      hK x D hx hsol hframe hD f (Q f) (hweak f) (horth f)
+  exact ⟨K, fun x D hx hsol hframe hD Q hweak horth ↦
+    Q.eLpNorm_exp_mul_smul_adjoint_apply_le_of_aestronglyMeasurable
+      (Metric.continuous_infDist_pt _).aestronglyMeasurable
+      fun f ↦ hK x D hx hsol hframe hD f (Q f) (hweak f) (horth f)⟩
 
 end TauCeti.Vortex

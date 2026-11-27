@@ -23,8 +23,10 @@ norm of its derivative is `|c| ‖z‖ / √(b + ‖z‖²)` times the weight, s
 times the weight, and by an arbitrarily small multiple of the weight on a fixed ball once `b` is
 large. The usual choice is `b = 1`, and changing `b` changes the weight by at most a constant
 factor. The truncated weights `W / (1 + ε W)`, `ε > 0`, are smooth, lie between `0` and
-`min W (1 / ε)`, and have logarithmic gradient at most that of `W`; the last holds for every
-positive weight `W` (`norm_fderiv_div_one_add_mul_le`).
+`min W (1 / ε)`, and have logarithmic gradient at most that of `W`. These facts hold for every
+positive weight `W` (`ContDiff.div_one_add_mul`, `div_one_add_mul_nonneg`,
+`div_one_add_mul_le_self`, `div_one_add_mul_le_one_div`, `norm_fderiv_div_one_add_mul_le`), and a
+logarithmic gradient at most `|c|` gives `‖dV‖² ≤ c² V²` (`norm_fderiv_sq_le_of_norm_fderiv_le`).
 
 The weights `exp(c √(b + ‖z‖²))` and `exp(-c √(b + ‖z‖²))` are reciprocal, so either can be moved
 across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`
@@ -35,7 +37,9 @@ if `‖u‖₂² ≤ ∑ᵢ |⟪eᵢ, Aᵢ⟫|` with `‖exp(-c ρ) eᵢ‖₂ �
 `‖exp(c ρ) u‖₂ ≤ a ∑ᵢ qᵢ ‖exp(c ρ) Aᵢ‖₂` (`eLpNorm_exp_mul_smul_le_of_sq_le_sum_abs_inner`). By the
 same duality, an operator on `L²` that preserves decay at the rate `-c` has an adjoint that
 preserves decay at the rate `c`, with the same constant
-(`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`).
+(`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le`); this holds for the weights
+`exp(c φ)` of any measurable `φ`
+(`ContinuousLinearMap.eLpNorm_exp_mul_smul_adjoint_apply_le_of_aestronglyMeasurable`).
 -/
 
 public section
@@ -93,14 +97,36 @@ theorem norm_fderiv_exp_mul_sqrt_add_norm_sq_le (c : ℝ) (hb : 0 < b) (z : E) :
   rw [norm_fderiv_exp_mul_sqrt_add_norm_sq c hb]
   exact mul_le_of_le_one_right (by positivity) (norm_div_sqrt_add_norm_sq_le_one hb.le z)
 
-/-- A nonnegative weight whose logarithmic gradient is at most that of the radial exponential
-weight, `|c| ‖z‖ / √(b + ‖z‖²)`, satisfies `‖dV‖² ≤ c² V²`. -/
-theorem norm_fderiv_sq_le_of_norm_fderiv_le {V : E → ℝ} (c : ℝ) (hb : 0 ≤ b) {z : E}
-    (hV : 0 ≤ V z) (hdV : ‖fderiv ℝ V z‖ ≤ |c| * (‖z‖ / √(b + ‖z‖ ^ 2)) * V z) :
+omit [InnerProductSpace ℝ E] in
+/-- A nonnegative weight whose logarithmic gradient at `z` is at most `g ≤ |c|` satisfies
+`‖dV z‖² ≤ c² V(z)²`. For the radial exponential weight, `g = |c| ‖z‖ / √(b + ‖z‖²)`
+(`norm_div_sqrt_add_norm_sq_le_one`). -/
+theorem norm_fderiv_sq_le_of_norm_fderiv_le [NormedSpace ℝ E] {V : E → ℝ} {z : E} {c g : ℝ}
+    (hg : g ≤ |c|) (hV : 0 ≤ V z) (hdV : ‖fderiv ℝ V z‖ ≤ g * V z) :
     ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * V z ^ 2 := by
-  have h := hdV.trans (mul_le_mul_of_nonneg_right
-    (mul_le_of_le_one_right (abs_nonneg c) (norm_div_sqrt_add_norm_sq_le_one hb z)) hV)
+  have h := hdV.trans (mul_le_mul_of_nonneg_right hg hV)
   simpa only [mul_pow, sq_abs] using pow_le_pow_left₀ (norm_nonneg _) h 2
+
+omit [InnerProductSpace ℝ E] in
+/-- The truncation `W / (1 + ε W)`, `ε ≥ 0`, of a nonnegative `Cⁿ` weight `W` is `Cⁿ`. -/
+theorem _root_.ContDiff.div_one_add_mul [NormedSpace ℝ E] {W : E → ℝ} {n : WithTop ℕ∞}
+    (hW : ContDiff ℝ n W) (hW₀ : ∀ z, 0 ≤ W z) {ε : ℝ} (hε : 0 ≤ ε) :
+    ContDiff ℝ n fun z ↦ W z / (1 + ε * W z) :=
+  hW.div (contDiff_const.add (contDiff_const.mul hW)) fun z ↦ by have := hW₀ z; positivity
+
+/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε ≥ 0`, is nonnegative. -/
+theorem div_one_add_mul_nonneg {w ε : ℝ} (hw : 0 ≤ w) (hε : 0 ≤ ε) : 0 ≤ w / (1 + ε * w) := by
+  positivity
+
+/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε ≥ 0`, is at most `w`. -/
+theorem div_one_add_mul_le_self {w ε : ℝ} (hw : 0 ≤ w) (hε : 0 ≤ ε) : w / (1 + ε * w) ≤ w :=
+  div_le_self hw (le_add_of_nonneg_right (by positivity))
+
+/-- The truncation `w / (1 + ε w)` of `w ≥ 0`, `ε > 0`, is at most `1 / ε`. -/
+theorem div_one_add_mul_le_one_div {w ε : ℝ} (hw : 0 ≤ w) (hε : 0 < ε) :
+    w / (1 + ε * w) ≤ 1 / ε := by
+  rw [div_le_div_iff₀ (by positivity) hε]
+  linarith [mul_comm w ε]
 
 /-- The truncated radial exponential weight `W / (1 + ε W)`, `W = exp(c √(b + ‖z‖²))`, is smooth
 for `ε ≥ 0`, of every order. -/
@@ -108,28 +134,26 @@ theorem contDiff_exp_div_one_add_mul_exp (c : ℝ) (hb : 0 < b) {ε : ℝ} (hε 
     {n : WithTop ℕ∞} :
     ContDiff ℝ n (fun z : E ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) /
       (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2)))) :=
-  have hW := contDiff_exp_mul_sqrt_add_norm_sq (E := E) (n := n) c hb
-  hW.div (contDiff_const.add (contDiff_const.mul hW)) fun _ ↦ by positivity
+  (contDiff_exp_mul_sqrt_add_norm_sq c hb).div_one_add_mul (fun _ ↦ (Real.exp_pos _).le) hε
 
 omit [InnerProductSpace ℝ E] in
 /-- The truncated radial exponential weight `W / (1 + ε W)`, `ε ≥ 0`, is nonnegative. -/
 theorem exp_div_one_add_mul_exp_nonneg (c : ℝ) {ε : ℝ} (hε : 0 ≤ ε) (z : E) :
-    0 ≤ Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) := by
-  positivity
+    0 ≤ Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) :=
+  div_one_add_mul_nonneg (Real.exp_pos _).le hε
 
 omit [InnerProductSpace ℝ E] in
 /-- The truncated radial exponential weight `W / (1 + ε W)`, `ε ≥ 0`, is at most `W`. -/
 theorem exp_div_one_add_mul_exp_le_exp (c : ℝ) {ε : ℝ} (hε : 0 ≤ ε) (z : E) :
     Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) ≤
       Real.exp (c * √(b + ‖z‖ ^ 2)) :=
-  div_le_self (Real.exp_pos _).le (le_add_of_nonneg_right (by positivity))
+  div_one_add_mul_le_self (Real.exp_pos _).le hε
 
 omit [InnerProductSpace ℝ E] in
 /-- The truncated radial exponential weight `W / (1 + ε W)`, `ε > 0`, is bounded by `1 / ε`. -/
 theorem exp_div_one_add_mul_exp_le_one_div (c : ℝ) {ε : ℝ} (hε : 0 < ε) (z : E) :
-    Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) ≤ 1 / ε := by
-  rw [div_le_div_iff₀ (by positivity) hε]
-  linarith [mul_comm (Real.exp (c * √(b + ‖z‖ ^ 2))) ε]
+    Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2))) ≤ 1 / ε :=
+  div_one_add_mul_le_one_div (Real.exp_pos _).le hε
 
 omit [InnerProductSpace ℝ E] in
 /-- **Truncation keeps a bound on the logarithmic gradient.** If a positive weight `W`,
@@ -316,6 +340,26 @@ variable {b : ℝ} {X F : Type*} [NormedAddCommGroup X] [MeasurableSpace X]
   [OpensMeasurableSpace X] {μ : Measure X} [SigmaFinite μ]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
 
+omit [NormedAddCommGroup X] [OpensMeasurableSpace X] in
+/-- **Exponential weights pass to the adjoint.** Let `φ` be an almost everywhere strongly
+measurable real function and let `T` be a bounded operator on `L²(μ; F)` with
+`‖exp(-c φ) T f‖₂ ≤ C ‖exp(-c φ) f‖₂` for every `f`. Then its Hilbert space adjoint satisfies
+`‖exp(c φ) T† g‖₂ ≤ C ‖exp(c φ) g‖₂` for every `g`, where either side may be infinite. -/
+theorem eLpNorm_exp_mul_smul_adjoint_apply_le_of_aestronglyMeasurable {φ : X → ℝ}
+    (hφ : AEStronglyMeasurable φ μ) {c : ℝ} {C : ℝ≥0∞} (T : Lp F 2 μ →L[ℝ] Lp F 2 μ)
+    (hT : ∀ f, eLpNorm (fun z ↦ Real.exp (-c * φ z) • T f z) 2 μ ≤
+      C * eLpNorm (fun z ↦ Real.exp (-c * φ z) • f z) 2 μ)
+    (g : Lp F 2 μ) :
+    eLpNorm (fun z ↦ Real.exp (c * φ z) • ContinuousLinearMap.adjoint T g z) 2 μ ≤
+      C * eLpNorm (fun z ↦ Real.exp (c * φ z) • g z) 2 μ := by
+  have h := eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
+    (ContinuousLinearMap.adjoint T) (p := 2) (p' := 2) (q := 2) (q' := 2)
+    (ae_of_all _ fun z ↦ (Real.exp_pos (c * φ z)).ne')
+    (Real.continuous_exp.comp_aestronglyMeasurable (hφ.const_mul c)) (C := C) (fun f ↦ ?_) g
+  · simpa using h
+  · -- `T†† = T`, and `exp(c φ)⁻¹ = exp(-c φ)`.
+    simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using hT f
+
 /-- **Exponentially weighted estimates pass to the adjoint.** Let `ρ(z) = √(b + ‖z‖²)` and let
 `T` be a bounded operator on `L²(μ; F)` with `‖exp(-c ρ) T f‖₂ ≤ C ‖exp(-c ρ) f‖₂` for every `f`.
 Then its Hilbert space adjoint satisfies `‖exp(c ρ) T† g‖₂ ≤ C ‖exp(c ρ) g‖₂` for every `g`, where
@@ -325,13 +369,8 @@ theorem eLpNorm_exp_mul_smul_adjoint_apply_le {c : ℝ} {C : ℝ≥0∞} (T : Lp
       C * eLpNorm (fun z ↦ Real.exp (-c * √(b + ‖z‖ ^ 2)) • f z) 2 μ)
     (g : Lp F 2 μ) :
     eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • ContinuousLinearMap.adjoint T g z) 2 μ ≤
-      C * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) 2 μ := by
-  have h := eLpNorm_smul_le_of_eLpNorm_smul_adjoint_le
-    (ContinuousLinearMap.adjoint T) (p := 2) (p' := 2) (q := 2) (q' := 2)
-    (ae_of_all _ fun z ↦ (Real.exp_pos (c * √(b + ‖z‖ ^ 2))).ne')
-    (continuous_exp_mul_sqrt_add_norm_sq (b := b) c).aestronglyMeasurable (C := C) (fun f ↦ ?_) g
-  · simpa using h
-  · -- `T†† = T`, and `exp(c ρ)⁻¹ = exp(-c ρ)`.
-    simpa [ContinuousLinearMap.adjoint_adjoint, ← Real.exp_neg, neg_mul] using hT f
+      C * eLpNorm (fun z ↦ Real.exp (c * √(b + ‖z‖ ^ 2)) • g z) 2 μ :=
+  T.eLpNorm_exp_mul_smul_adjoint_apply_le_of_aestronglyMeasurable
+    (continuous_const.add (continuous_norm.pow 2)).sqrt.aestronglyMeasurable hT g
 
 end ContinuousLinearMap

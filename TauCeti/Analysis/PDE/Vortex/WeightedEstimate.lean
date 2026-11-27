@@ -508,7 +508,9 @@ theorem exists_pos_forall_mul_integral_sq_mul_norm_sq_le_integral_sq_mul_inner_g
     (fun z ↦ by simp only [mul_pow]; rw [← mul_add, Real.cos_sq_add_sin_sq, mul_one])
     (fun z hz ↦ ?_)
     (min_mul_sq_le_sub_norm_fderiv_sq (hV.differentiable (by simp)) (hθ.differentiable (by simp))
-      hV₀ (fun z ↦ norm_fderiv_sq_le_of_norm_fderiv_le c hb₀.le (hV₀ z) (hdV z))
+      hV₀ (fun z ↦ norm_fderiv_sq_le_of_norm_fderiv_le
+        (mul_le_of_le_one_right (abs_nonneg c) (norm_div_sqrt_add_norm_sq_le_one hb₀.le z))
+        (hV₀ z) (hdV z))
       (S := {z | ‖z‖ ≤ R₂}) hdV₂ (fun z hz ↦ hθout z (lt_of_not_ge hz)) hθd hm.le) hη hηc
   -- The weight `V sin θ` vanishes on the disc of radius `max R 0`.
   have hθz : θ z ≠ 0 := fun h ↦ hz (by simp [h])
@@ -620,8 +622,8 @@ theorem exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mu
   refine ⟨(1 + 4 * c ^ 2) * K₁ + 1, by positivity, fun η hη hηc ↦ ?_⟩
   have hA := integral_sq_mul_norm_sq_gaugeFixedAdjoint_le_add (μ := μ) hx hη hηc
     (contDiff_exp_mul_sqrt_add_norm_sq c one_pos) fun z ↦
-      norm_fderiv_sq_le_of_norm_fderiv_le c zero_le_one (Real.exp_pos _).le
-        ((norm_fderiv_exp_mul_sqrt_add_norm_sq c one_pos z).trans (mul_right_comm _ _ _)).le
+      norm_fderiv_sq_le_of_norm_fderiv_le le_rfl (Real.exp_pos _).le
+        (norm_fderiv_exp_mul_sqrt_add_norm_sq_le c one_pos z)
   have : 0 ≤ ∫ z, Real.exp (c * √(1 + ‖z‖ ^ 2)) ^ 2 *
       ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ :=
     integral_nonneg fun z ↦ by positivity
@@ -951,8 +953,8 @@ theorem exists_integral_gaugeFixedGradientDensity_exp_smul_gaugeFixedAdjoint_le
   set w : ℂ → ℝ := fun z ↦ Real.exp (c * √(1 + ‖z‖ ^ 2))
   have hw : ContDiff ℝ 2 w := contDiff_exp_mul_sqrt_add_norm_sq c one_pos
   have hdw (z : ℂ) : ‖fderiv ℝ w z‖ ^ 2 ≤ c ^ 2 * w z ^ 2 :=
-    norm_fderiv_sq_le_of_norm_fderiv_le c zero_le_one (Real.exp_pos _).le
-      ((norm_fderiv_exp_mul_sqrt_add_norm_sq c one_pos z).trans (mul_right_comm _ _ _)).le
+    norm_fderiv_sq_le_of_norm_fderiv_le le_rfl (Real.exp_pos _).le
+      (norm_fderiv_exp_mul_sqrt_add_norm_sq_le c one_pos z)
   have hu : ContDiff ℝ 2 (gaugeFixedAdjoint x η) :=
     contDiff_gaugeFixedAdjoint hx (hη.of_le (by norm_num))
   have h₁ := hG w c hw hdw _ hu (hasCompactSupport_gaugeFixedAdjoint hηc)
