@@ -36,10 +36,6 @@ normalized Haar measure on the ideles; it is the multiplicative counterpart of
 
 ## Main results
 
-* `IsDedekindDomain.FiniteAdeleRing.isOpen_units_adicCompletionIntegers`: the local integral units
-  `𝒪_vˣ` are open in `K_vˣ`.
-* `IsDedekindDomain.FiniteAdeleRing.preimage_unitsContinuousMulEquiv_box`: under
-  `unitsContinuousMulEquiv`, `Ôˣ` is the coordinate box with factors `𝒪_vˣ`.
 * `IsDedekindDomain.FiniteAdeleRing.haarMeasure_integralUnits_eq_map_restrictedHaar`: the Haar
   measure on the finite ideles giving `Ôˣ` mass one is the restricted product of local Haar
   measures giving each `𝒪_vˣ` mass one.
@@ -63,36 +59,6 @@ open HeightOneSpectrum
 
 variable (R : Type*) [CommRing R] [IsDedekindDomain R]
 variable (K : Type*) [Field K] [Algebra R K] [IsFractionRing R K]
-
-/-- The local integral units `𝒪_vˣ` are open in the unit group `K_vˣ` of the completion. -/
-theorem isOpen_units_adicCompletionIntegers (v : HeightOneSpectrum R) :
-    IsOpen ((Submonoid.ofClass (v.adicCompletionIntegers K)).units :
-      Set (v.adicCompletion K)ˣ) :=
-  Submonoid.isOpen_units (Valued.isOpen_valuationSubring _)
-
-/-- The local integral units are open at every place, in the form in which the restricted
-products of Haar measures (`TauCeti.restrictedHaar`) take this hypothesis. -/
-instance instFactIsOpenUnitsAdicCompletionIntegers :
-    Fact (∀ v : HeightOneSpectrum R, IsOpen
-      ((Submonoid.ofClass (v.adicCompletionIntegers K)).units : Set (v.adicCompletion K)ˣ)) :=
-  ⟨isOpen_units_adicCompletionIntegers R K⟩
-
-/-- Under the isomorphism `unitsContinuousMulEquiv` of the finite ideles with the restricted
-product of the `K_vˣ`, the everywhere-integral finite ideles are the preimage of the coordinate
-box with factors the local integral units `𝒪_vˣ`. -/
-theorem preimage_unitsContinuousMulEquiv_box :
-    unitsContinuousMulEquiv R K ⁻¹' box (fun v : HeightOneSpectrum R ↦
-        ((Submonoid.ofClass (v.adicCompletionIntegers K)).units : Set (v.adicCompletion K)ˣ)) =
-      integralUnits R K := by
-  ext x
-  simp only [Set.mem_preimage, mem_box, SetLike.mem_coe, Submonoid.mem_units_iff,
-    mem_integralUnits_iff_forall_mem_adicCompletionIntegers]
-  refine forall_congr' fun v ↦ ?_
-  rw [← RestrictedProduct.inv_apply, ← map_inv, coe_unitsContinuousMulEquiv_apply,
-    coe_unitsContinuousMulEquiv_apply]
-  -- The two sides read the coordinates of `x` and `x⁻¹` through the coercions of
-  -- `FiniteAdeleRing R K` and of the underlying restricted product, which agree by definition.
-  rfl
 
 section PositiveCompacts
 
