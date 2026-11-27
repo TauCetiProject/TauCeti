@@ -6,36 +6,32 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
-public import Mathlib.Data.Finset.Lattice.Fold
-public import Mathlib.Data.Fintype.BigOperators
+public import Mathlib.Data.Fintype.Defs
 public import Mathlib.Order.ConditionallyCompleteLattice.Indexed
 
+import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 import Mathlib.Algebra.Order.Group.CompleteLattice
+import Mathlib.Data.Fintype.Basic
 
 /-!
-# Sums of componentwise maxima and mixed-choice sums
+# Conditional suprema and mixed-choice sums
 
-For a finite family of nonempty finite index sets `H : ι → Finset I` and a family of values
-`f : ι → I → β` in a linearly ordered additive commutative monoid with order-preserving addition,
-the sum of the componentwise maxima `∑ j, (H j).sup' (hne j) (f j)` equals the maximum of the
-mixed-choice sums `∑ j, f j (choice j)` over all selections `choice ∈ Fintype.piFinset H`.
-Consequently, bounding the sum of componentwise maxima by `b` is equivalent to bounding every
-mixed-choice sum by `b`.
-
-The conditional-supremum variant allows an arbitrary nonempty common index type when the codomain is
-a conditionally complete lattice with an additive commutative group structure and order-preserving
-addition, provided every component family is bounded above.
+For a finite index type `ι` and a nonempty (possibly infinite) index type `κ`, given a family
+`f : ι → κ → β` in a conditionally complete lattice ordered additive commutative group with
+order-preserving addition, the sum of componentwise conditional suprema `∑ j, ⨆ i, f j i` is at
+most `b` if and only if every mixed-choice sum `∑ j, f j (choice j)` is at most `b`, provided each
+component family `f j` is bounded above (`TauCeti.sum_ciSup_le_iff_forall_choice`). Uniformly
+bounding all mixed-choice sums by `b` already forces every component family to be bounded above in
+any preordered additive commutative group with order-preserving addition
+(`TauCeti.bddAbove_range_of_forall_choice_sum_le`).
 
 ## Main results
 
-* `TauCeti.sum_sup'_le_iff_forall_choice`: `∑ j, (H j).sup' (hne j) (f j) ≤ b` holds if and only
-  if `∑ j, f j (choice j) ≤ b` for every choice function `choice` with `choice j ∈ H j`.
 * `TauCeti.bddAbove_range_of_forall_choice_sum_le`: uniform bounds on all mixed-choice sums
   imply componentwise upper bounds in any preordered additive commutative group with
   order-preserving addition.
-* `TauCeti.sum_ciSup_le_iff_forall_choice`: the bounded conditional-supremum variant.
-* `TauCeti.sum_sup'_eq_sup'_piFinset`: the sum of componentwise maxima equals the maximum of the
-  sums over `Fintype.piFinset H`.
+* `TauCeti.sum_ciSup_le_iff_forall_choice`: bounding a finite sum of componentwise conditional
+  suprema is equivalent to bounding every mixed-choice sum.
 -/
 
 public section
@@ -43,21 +39,6 @@ public section
 open Finset
 
 namespace TauCeti
-
-/-- Bounding a finite sum of nonempty finite maxima in a linearly ordered additive commutative
-monoid with order-preserving addition is equivalent to bounding every mixed choice of one element
-from each finite set. -/
-theorem sum_sup'_le_iff_forall_choice {ι I β : Type*} [Fintype ι]
-    [AddCommMonoid β] [LinearOrder β] [IsOrderedAddMonoid β]
-    (H : ι → Finset I) (hne : ∀ j, (H j).Nonempty) (f : ι → I → β) (b : β) :
-    (∑ j, (H j).sup' (hne j) (f j)) ≤ b ↔
-      ∀ choice : ι → I, (∀ j, choice j ∈ H j) → (∑ j, f j (choice j)) ≤ b := by
-  refine ⟨fun h choice hchoice =>
-    (sum_le_sum fun j _ => le_sup' (f j) (hchoice j)).trans h, fun h => ?_⟩
-  have hex : ∀ j, ∃ i ∈ H j, (H j).sup' (hne j) (f j) = f j i :=
-    fun j => exists_mem_eq_sup' (hne j) (f j)
-  choose choice hmem heq using hex
-  simpa only [heq] using h choice hmem
 
 /-- If every mixed-choice sum `∑ j, f j (choice j)` is bounded above by `b` in a preordered
 additive commutative group with order-preserving addition, then each component family `f j` is
@@ -109,20 +90,5 @@ theorem sum_ciSup_le_iff_forall_choice {ι κ β : Type*} [Fintype ι] [Nonempty
       congr 1
       exact sum_congr rfl fun k hk => by rw [Function.update_of_ne (ne_of_mem_of_not_mem hk hj)]
   exact key Finset.univ b hall
-
-/-- In a linearly ordered additive commutative monoid with order-preserving addition, a finite sum
-of nonempty finite maxima equals the maximum of the sums over all choices in the Cartesian product
-`Fintype.piFinset H`. -/
-theorem sum_sup'_eq_sup'_piFinset {ι I β : Type*} [Fintype ι] [DecidableEq ι]
-    [AddCommMonoid β] [LinearOrder β] [IsOrderedAddMonoid β]
-    (H : ι → Finset I) (hne : ∀ j, (H j).Nonempty) (f : ι → I → β) :
-    ∑ j, (H j).sup' (hne j) (f j) =
-      (Fintype.piFinset H).sup' (Fintype.piFinset_nonempty.2 hne) fun choice =>
-        ∑ j, f j (choice j) := by
-  refine le_antisymm ?_ ?_
-  · exact (sum_sup'_le_iff_forall_choice H hne f _).2 fun choice hchoice =>
-      le_sup' (fun c : ι → I => ∑ j, f j (c j)) (Fintype.mem_piFinset.2 hchoice)
-  · refine sup'_le _ _ fun choice hchoice => ?_
-    exact sum_le_sum fun j _ => le_sup' (f j) (Fintype.mem_piFinset.1 hchoice j)
 
 end TauCeti

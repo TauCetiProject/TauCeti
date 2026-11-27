@@ -20,16 +20,13 @@ neighbourhood of `x` in the domain is a subgradient relative to the whole domain
 The same holds when the function touching `u` from below at `x` is only differentiable there
 rather than affine: if `u - g` has a local minimum at `x` relative to `s` and `g` has derivative
 `ℓ` at `x` within `s`, then `x' ↦ u x + ℓ (x' - x)` lies below `u` on all of `s`
-(`ConvexOn.add_le_of_isLocalMinOn_sub`). No differentiability of `u` is needed; in particular,
-`ConvexOn.add_le_of_isLocalMinOn_sub` gives the first-order condition used for transport costs
-`h (x - y)` with `h` convex but not differentiable, as in Gangbo and McCann. Taking `g = u`
-yields the first-order tangent-support inequality for a differentiable convex function
-(`ConvexOn.add_le_of_hasFDerivAt`), without any interior-point or open-domain assumption.
+(`ConvexOn.add_le_of_isLocalMinOn_sub`). No differentiability of `u` is needed. This is the
+first-order condition used for transport costs `h (x - y)` with `h` convex but not
+differentiable, as in Gangbo and McCann.
 
-All results hold for functions on a real topological vector space with values in an ordered real
-vector space. `ConvexOn.add_le_of_isLocalMinOn_sub` and the first-order tangent-support
-corollary also require a vector space topology on the codomain with closed lower rays
-(`ClosedIicTopology`); real-valued functions are the case of interest.
+Both results hold for functions on a real topological vector space with values in an ordered real
+vector space (carrying an order-closed vector space topology for the second); the case of
+real-valued functions is the one of interest.
 
 ## References
 
@@ -43,11 +40,9 @@ open Filter
 
 open scoped Topology
 
-section
-
-variable {E β : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℝ E]
-  [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [AddCommGroup β] [PartialOrder β]
-  [IsOrderedAddMonoid β] [Module ℝ β] [IsOrderedModule ℝ β] {s : Set E} {u : E → β} {x : E}
+variable {E β : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℝ E] [IsTopologicalAddGroup E]
+  [ContinuousSMul ℝ E] [AddCommGroup β] [PartialOrder β] [IsOrderedAddMonoid β]
+  [Module ℝ β] [IsOrderedModule ℝ β] [PosSMulReflectLE ℝ β] {s : Set E} {u g : E → β} {x : E}
 
 /-- **Local supporting hyperplanes of a convex function are global.** If `u` is convex on `s`,
 `x ∈ s`, and the affine function `x' ↦ u x + ℓ (x' - x)` lies below `u` at the points of `s`
@@ -60,12 +55,7 @@ theorem ConvexOn.add_le_of_eventually_add_le (hu : ConvexOn ℝ s u) (hx : x ∈
   simp_rw [key] at h ⊢
   exact IsMinOn.of_isLocalMinOn_of_convexOn hx h (hu.sub (ℓ.concaveOn hu.1))
 
-end
-
-variable {E β : Type*} [AddCommGroup E] [TopologicalSpace E] [Module ℝ E] [ContinuousAdd E]
-  [ContinuousSMul ℝ E] [AddCommGroup β] [PartialOrder β] [IsOrderedAddMonoid β]
-  [Module ℝ β] [IsOrderedModule ℝ β] [TopologicalSpace β] [ContinuousAdd β]
-  [ContinuousSMul ℝ β] [ClosedIicTopology β] {s : Set E} {u g : E → β} {x : E}
+variable [TopologicalSpace β] [ContinuousAdd β] [ContinuousSMul ℝ β] [OrderClosedTopology β]
 
 /-- **A differentiable function touching a convex function from below supports it.** If `u` is
 convex on `s`, `x ∈ s`, `u - g` has a local minimum at `x` relative to `s`, and `g` has
@@ -101,12 +91,3 @@ theorem ConvexOn.add_le_of_isLocalMinOn_sub (hu : ConvexOn ℝ s u) (hx : x ∈ 
     rw [inv_smul_smul₀ ht.ne']
   rw [← le_sub_iff_add_le']
   exact le_of_tendsto hslope hev
-
-/-- **First-order tangent support of a convex function.** If `u` is convex on `s`, `x ∈ s`, and
-`u` has Fréchet derivative `ℓ` at `x`, then the tangent `x' ↦ u x + ℓ (x' - x)` lies below `u` on
-all of `s`. No open-domain or interior-point hypothesis is needed. -/
-theorem ConvexOn.add_le_of_hasFDerivAt (hu : ConvexOn ℝ s u) (hx : x ∈ s)
-    {ℓ : E →L[ℝ] β} (h : HasFDerivAt u ℓ x) :
-    ∀ x' ∈ s, u x + ℓ (x' - x) ≤ u x' :=
-  hu.add_le_of_isLocalMinOn_sub hx h.hasFDerivWithinAt
-    (by simpa only [sub_self] using isLocalMinOn_const)
