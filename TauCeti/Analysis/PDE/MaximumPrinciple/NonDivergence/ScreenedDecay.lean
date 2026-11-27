@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.InteriorDecay
+import TauCeti.Analysis.Matrix.QuadraticBounds
 import TauCeti.Analysis.PDE.MaximumPrinciple.HopfLemma
 
 /-!
@@ -43,8 +45,8 @@ on `n`, `Λ` and `β`.
 
 The estimates apply to the Laplace–Beltrami operator of a Riemannian metric written in a chart,
 `Δ_g u = gⁱʲ ∂ᵢ∂ⱼu - gⁱʲ Γᵏᵢⱼ ∂ₖu`, which is in non-divergence form with `a = g⁻¹` and a drift
-bounded by the Christoffel symbols, so the constants depend on the metric only through bounds on
-`g⁻¹` and on its first derivatives. This is the comparison step behind the decay estimates
+`gⁱʲ Γᵏᵢⱼ` bounded in terms of `‖g‖`, `‖g⁻¹‖` and `‖∂g‖`, so the constants depend on the metric
+only through those bounds. This is the comparison step behind the decay estimates
 `C / r + C exp (-c √r d)`, with `d` the distance to the zero set of a spinor component, in
 Taubes's analysis of the Seiberg–Witten equations on a symplectic four-manifold at large
 parameter `r`, once the screened inequality is read in a chart of a curved metric rather than in
@@ -90,25 +92,6 @@ open Matrix Metric Set Filter Topology RealInnerProductSpace
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The exponent `μ = c² / (4 c R s + 2 T)` of the Gaussian barrier satisfies
-`4 s² R² μ² + 2 T μ ≤ c²`. -/
-private theorem four_mul_sq_mul_sq_mul_sq_add_two_mul_mul_le {c R s T : ℝ} (hc : 0 < c)
-    (hR : 0 ≤ R) (hs : 0 ≤ s) (hT : 0 ≤ T) :
-    4 * s ^ 2 * R ^ 2 * (c ^ 2 / (4 * c * R * s + 2 * T)) ^ 2 +
-      2 * T * (c ^ 2 / (4 * c * R * s + 2 * T)) ≤ c ^ 2 := by
-  set D := 4 * c * R * s + 2 * T
-  set μ := c ^ 2 / D
-  rcases (show 0 ≤ D by positivity).eq_or_lt with hD | hD
-  · simp [μ, ← hD, sq_nonneg]
-  have hμ : 0 ≤ μ := by positivity
-  have hμD : μ * D = c ^ 2 := div_mul_cancel₀ _ hD.ne'
-  have hsRμ : 0 ≤ s * R * μ := by positivity
-  -- From `μ D = c²` and `D ≥ 4 c R s`: `4 s R μ ≤ c`, so `4 s² R² μ² ≤ 4 c s R μ = μ D - 2 T μ`.
-  have hle : 4 * (s * R * μ) ≤ c := by
-    have : c * (4 * (s * R * μ)) ≤ c * c := by nlinarith [mul_nonneg hT hμ]
-    exact le_of_mul_le_mul_left this hc
-  nlinarith [mul_le_mul_of_nonneg_left hle hsRμ]
-
 /-- **The Gaussian barrier.** Let the matrix `A` satisfy `ξᵀ A ξ ≤ s² ‖ξ‖²` and let
 `tr A + ⟪y - x, v⟫ ≤ T`. If `‖y - x‖ ≤ R`, then the barrier
 `g = M exp (μ (‖· - x‖² - R²))`, `μ = c² / (4 c R s + 2 T)`, satisfies
@@ -127,23 +110,17 @@ private theorem sum_mul_fderiv_fderiv_add_fderiv_gaussian_le {A : Matrix ι ι �
   set r := M * Real.exp (-(μ * R ^ 2))
   -- The barrier is a constant multiple of the Gaussian `exp (μ ‖· - x‖²)`.
   have hfun : (fun z : EuclideanSpace ℝ ι ↦ M * Real.exp (μ * (‖z - x‖ ^ 2 - R ^ 2))) =
-      r • fun z ↦ Real.exp (-(-μ) * ‖z - x‖ ^ 2) := by
+      0 + r • fun z ↦ Real.exp (-(-μ) * ‖z - x‖ ^ 2) := by
     funext z
-    simp only [r, Pi.smul_apply, smul_eq_mul, mul_assoc, ← Real.exp_add]
+    simp only [r, Pi.add_apply, Pi.zero_apply, zero_add, Pi.smul_apply, smul_eq_mul, mul_assoc,
+      ← Real.exp_add]
     ring_nf
-  have hG := sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq A (-μ) x y v
-  rw [hfun, fderiv_fderiv_const_smul, fderiv_const_smul_field]
-  simp only [Pi.smul_apply, _root_.smul_apply, smul_eq_mul]
-  have hlin : ∑ i, ∑ j, A i j * (r * fderiv ℝ (fderiv ℝ fun z ↦ Real.exp (-(-μ) * ‖z - x‖ ^ 2))
-      y (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) +
-      r * fderiv ℝ (fun z ↦ Real.exp (-(-μ) * ‖z - x‖ ^ 2)) y v =
-      r * (∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z ↦ Real.exp (-(-μ) * ‖z - x‖ ^ 2)) y
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
-        fderiv ℝ (fun z ↦ Real.exp (-(-μ) * ‖z - x‖ ^ 2)) y v) := by
-    simp only [mul_add, Finset.mul_sum]
-    congr 1
-    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-  rw [hlin, hG]
+  have hGd : ContDiffAt ℝ 2 (fun z : EuclideanSpace ℝ ι ↦ Real.exp (-(-μ) * ‖z - x‖ ^ 2)) y :=
+    (contDiff_const.mul ((contDiff_id.sub contDiff_const).norm_sq ℝ)).exp.contDiffAt
+  rw [hfun, sum_mul_fderiv_fderiv_add_fderiv_add_smul (f := 0) contDiffAt_const hGd,
+    sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq A (-μ) x y v]
+  simp only [fderiv_zero, Pi.zero_apply, _root_.zero_apply, mul_zero, Finset.sum_const_zero,
+    add_zero, zero_add]
   set G := Real.exp (-(-μ) * ‖y - x‖ ^ 2)
   have hrG : r * G = M * Real.exp (μ * (‖y - x‖ ^ 2 - R ^ 2)) := by
     simp only [r, G, mul_assoc, ← Real.exp_add]
@@ -196,17 +173,9 @@ private theorem trace_add_inner_le {A : Matrix ι ι ℝ} {x y v : EuclideanSpac
     (hΛ : ∀ ξ : EuclideanSpace ℝ ι, A.toQuadraticForm' ξ ≤ Λ * ‖ξ‖ ^ 2) (hv : ‖v‖ ≤ β)
     (hy : ‖y - x‖ ≤ R) :
     0 ≤ Fintype.card ι * Λ + β * R ∧ A.trace + ⟪y - x, v⟫ ≤ Fintype.card ι * Λ + β * R := by
-  have hdiag (i : ι) : A.toQuadraticForm' (Pi.single i 1) = A i i := by
-    simp [toQuadraticForm'_apply, dotProduct, mulVec, Pi.single_apply]
-  have hle (i : ι) : A i i ≤ Λ := by
-    have h := hΛ (EuclideanSpace.single i 1)
-    simpa [hdiag] using h
-  have htr : 0 ≤ A.trace ∧ A.trace ≤ Fintype.card ι * Λ := by
-    refine ⟨Finset.sum_nonneg fun i _ ↦ ?_, ?_⟩
-    · simpa [hdiag] using ha (EuclideanSpace.single i 1)
-    calc A.trace = ∑ i, A i i := rfl
-      _ ≤ ∑ _i : ι, Λ := Finset.sum_le_sum fun i _ ↦ hle i
-      _ = Fintype.card ι * Λ := by simp
+  have htr : 0 ≤ A.trace ∧ A.trace ≤ Fintype.card ι * Λ :=
+    ⟨trace_nonneg_of_toQuadraticForm'_nonneg fun ξ ↦ ha (WithLp.toLp 2 ξ),
+      trace_le_card_mul_of_toQuadraticForm'_le hΛ⟩
   have hinner : ⟪y - x, v⟫ ≤ β * R :=
     (real_inner_le_norm _ _).trans (by
       rw [mul_comm β]
@@ -248,12 +217,8 @@ theorem le_div_sq_add_mul_exp_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv
     (show ‖x - x‖ ≤ R by simpa using hR.le)).1
   -- The upper bound on `a` in the form `ξᵀ a ξ ≤ (√Λ)² ‖ξ‖²`, valid also when `Λ < 0`.
   have hΛ' (y : EuclideanSpace ℝ ι) (hy : y ∈ ball x R) (ξ : EuclideanSpace ℝ ι) :
-      (a y).toQuadraticForm' ξ ≤ √Λ ^ 2 * ‖ξ‖ ^ 2 := by
-    rcases le_total 0 Λ with h | h
-    · rw [Real.sq_sqrt h]
-      exact hΛ y hy ξ
-    · rw [Real.sqrt_eq_zero'.mpr h]
-      nlinarith [hΛ y hy ξ, mul_nonneg (neg_nonneg.mpr h) (sq_nonneg ‖ξ‖)]
+      (a y).toQuadraticForm' ξ ≤ √Λ ^ 2 * ‖ξ‖ ^ 2 :=
+    (hΛ y hy ξ).trans (by rw [Real.sq_sqrt']; gcongr; exact le_max_left _ _)
   -- Compare `u - K / c²` with the barrier `g` through the maximum principle for `-L + V`.
   have key := le_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_le_frontier_of_pos
     (isCompact_closedBall x R) (a := a) (b := b) (c := V) (m := 0)
@@ -280,35 +245,6 @@ theorem le_div_sq_add_mul_exp_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fderiv
     simp only [μ]
     ring
   rw [hμR] at key
-  linarith
-
-/-- The barrier exponent `c² s² / (4 c s σ + 2 (P + β s))` of the decay estimate on the ball of
-radius `s` is at least `c² s / (4 c σ + 2 β) - n / 8` when `0 ≤ P ≤ n σ²`. -/
-private theorem neg_div_le_div_eight_add_neg_div {c s σ β P n : ℝ} (hc : 0 < c) (hs : 0 < s)
-    (hσ : 0 ≤ σ) (hβ : 0 ≤ β) (hn : 0 ≤ n) (hP : 0 ≤ P) (hPn : P ≤ n * σ ^ 2) :
-    -(c ^ 2 * s ^ 2 / (4 * c * s * σ + 2 * (P + β * s))) ≤
-      n / 8 + -(c ^ 2 * s / (4 * c * σ + 2 * β)) := by
-  set A := 4 * c * σ + 2 * β
-  have hDA : 4 * c * s * σ + 2 * (P + β * s) = s * A + 2 * P := by ring
-  rw [hDA]
-  rcases (show 0 ≤ A by positivity).eq_or_lt with hA | hA
-  · -- Then `σ = β = 0`, so `P = 0` and both exponents vanish.
-    have hσ0 : σ = 0 := by nlinarith
-    have hP0 : P = 0 := le_antisymm (by simpa [hσ0] using hPn) hP
-    simp only [← hA, hP0, mul_zero, add_zero, div_zero, neg_zero]
-    positivity
-  -- The difference of the exponents is `2 c² s P / (A (s A + 2 P)) ≤ 2 c² P / A² ≤ n / 8`.
-  have h1 : c ^ 2 * s / A - c ^ 2 * s ^ 2 / (s * A + 2 * P) =
-      2 * c ^ 2 * s * P / (A * (s * A + 2 * P)) := by
-    field_simp
-    ring
-  have h2 : 2 * c ^ 2 * s * P / (A * (s * A + 2 * P)) ≤ 2 * c ^ 2 * P / A ^ 2 := by
-    rw [div_le_div_iff₀ (by positivity) (by positivity)]
-    nlinarith [mul_nonneg (mul_nonneg (sq_nonneg c) hP) (mul_nonneg hA.le hP)]
-  have h3 : 2 * c ^ 2 * P / A ^ 2 ≤ n / 8 := by
-    rw [div_le_div_iff₀ (by positivity) (by norm_num)]
-    have hA2 : 16 * c ^ 2 * σ ^ 2 ≤ A ^ 2 := by nlinarith [mul_nonneg hc.le hσ]
-    nlinarith [mul_le_mul_of_nonneg_left hPn (sq_nonneg c), mul_le_mul_of_nonneg_left hA2 hn]
   linarith
 
 /-- **Exponential decay of subsolutions of a screened non-divergence operator inside a ball.** On
@@ -342,10 +278,9 @@ theorem le_div_sq_add_exp_mul_mul_exp_of_mul_sub_le_sum_mul_fderiv_fderiv_add_fd
     simpa using (trace_add_inner_le (ha x hx) (hΛ x hx) (hb x hx)
       (show ‖x - x‖ ≤ 0 by simp)).1
   have hnσ : n * Λ ≤ n * √Λ ^ 2 := by
-    rcases le_total 0 Λ with h | h
-    · rw [Real.sq_sqrt h]
-    · rw [Real.sqrt_eq_zero'.mpr h]
-      nlinarith [mul_nonneg (Nat.cast_nonneg (α := ℝ) (Fintype.card ι)) (neg_nonneg.mpr h)]
+    rw [Real.sq_sqrt']
+    gcongr
+    exact le_max_left _ _
   -- The bound holds on every smaller closed ball, and `F` is continuous in the radius.
   have hsmall : ∀ s ∈ Ioo 0 R, u x ≤ F s := by
     rintro s ⟨hs, hsR⟩
