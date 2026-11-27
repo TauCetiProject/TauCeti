@@ -74,9 +74,7 @@ When the frontier is empty, `Ω` is empty, since it is bounded and `F` is nontri
 * `TauCeti.W1p.frontierTraceOfIsLipschitzDomain_ae_eq_frontierTrace_compAffineIsometryEquivL`: for
   Lebesgue measure, in the coordinates of any affine isometry carrying `Ω` onto a bounded Lipschitz
   domain of the model space, the trace is the model-space trace, so results about
-  `TauCeti.W1p.frontierTrace` transfer to Euclidean domains. Such an isometry carries the surface
-  measure of `Ω` to that of its image
-  (`AffineIsometryEquiv.measurePreserving_euclideanHausdorffMeasure_finrank_sub_one`).
+  `TauCeti.W1p.frontierTrace` transfer to Euclidean domains.
 
 ## References
 
@@ -139,18 +137,6 @@ private theorem denseRange_restrictL_ofTestFunctionₗ_top_of_image (hp : p ≠ 
     with x h1 h2 h3
   rw [h1, Function.comp_apply, h2, h3]
   exact congrFun (TestFunction.coe_mk (f := fun x => φ (g x))) x
-
-/-- An affine isometry `g` of `F` onto the model space `ℝ × E`, with `s = g⁻¹ W`, carries
-`(dim F - 1)`-dimensional Euclidean Hausdorff measure on `frontier s`, the surface measure of the
-trace on a domain of `F`, to `(dim E)`-dimensional Euclidean Hausdorff measure on `frontier W`, the
-surface measure of the model-space trace. -/
-theorem _root_.AffineIsometryEquiv.measurePreserving_euclideanHausdorffMeasure_finrank_sub_one
-    (g : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) {s : Set F} {W : Set (WithLp 2 (ℝ × E))}
-    (hsW : s = g ⁻¹' W) :
-    MeasurePreserving g ((μHE[finrank ℝ F - 1] : Measure F).restrict (frontier s))
-      ((μHE[finrank ℝ E] : Measure (WithLp 2 (ℝ × E))).restrict (frontier W)) := by
-  rw [g.linearIsometryEquiv.finrank_snd]
-  exact g.toIsometryEquiv.measurePreserving_euclideanHausdorffMeasure_restrict_frontier hsW _
 
 /-- The trace of `u ∘ g⁻¹` on `frontier W`, read back on `F` through `g`, is a representative `f`
 of `u` continuous up to the boundary, for every measure carried by `g` to surface measure on
@@ -375,8 +361,8 @@ theorem W1p.frontierTraceOfIsLipschitzDomain_ae_eq_frontierTrace_compAffineIsome
       (frontier (Ω : Set F))]
       fun x => W1p.frontierTrace hp hW hbW (W1p.compAffineIsometryEquivL g.symm hWΩ u) (g x) := by
   have hΩW : (Ω : Set F) = g ⁻¹' W := by
-    rw [hWΩ, ← preimage_comp, show ⇑g.symm ∘ ⇑g = id from funext g.symm_apply_apply, preimage_id]
-  have hmp := AffineIsometryEquiv.measurePreserving_euclideanHausdorffMeasure_finrank_sub_one g hΩW
+    rw [hWΩ]; ext; simp
+  have hmp := g.measurePreserving_euclideanHausdorffMeasure_finrank_sub_one_restrict_frontier hΩW
   -- The model-space trace read back through `g` is a trace operator, hence the trace.
   let T : W1p volume Ω p →L[ℝ]
       Lp ℝ p ((μHE[finrank ℝ F - 1] : Measure F).restrict (frontier (Ω : Set F))) :=

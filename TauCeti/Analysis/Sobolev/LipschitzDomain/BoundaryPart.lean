@@ -14,6 +14,7 @@ import TauCeti.Analysis.Normed.Module.DiamFrontier
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.Localization
+import TauCeti.Geometry.Euclidean.Volume.Measure
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -54,9 +55,11 @@ The hypothesis `σ(Γ) > 0` cannot be dropped: for `Γ = ∅` the constant `1` h
 nonzero norm. Neither can connectedness: on two disjoint balls with `Γ` on the frontier of the
 first, the function equal to `0` on the first ball and `1` on the second is a counterexample.
 
-The other facts also hold on a bounded Lipschitz domain `U` of a finite-dimensional inner
-product space `F` such as `EuclideanSpace ℝ ι`, where boundary-value problems are stated, with the
-trace `TauCeti.W1p.frontierTraceOfIsLipschitzDomain` and `(dim F - 1)`-dimensional surface measure.
+Beyond the empty case, stated above in that generality, three facts also hold on a bounded
+Lipschitz domain `U` of a finite-dimensional inner product space `F` such as `EuclideanSpace ℝ ι`,
+where boundary-value problems are stated: zero trace on `Γ`, the trace characterization when the
+relative boundary of `Γ` is empty, and the Poincaré–Friedrichs inequality. They use the trace
+`TauCeti.W1p.frontierTraceOfIsLipschitzDomain` and `(dim F - 1)`-dimensional surface measure.
 Both traces vanish on `Γ` by `TauCeti.W1p.apply_ae_eq_zero_of_mem_w1pVanishingOnSubmodule`, the
 intrinsic one for every additive Haar measure. The trace characterization for a boundary part
 with empty relative boundary and the Poincaré–Friedrichs inequality are transported from the model
@@ -413,10 +416,10 @@ private theorem frontierTrace_compAffineIsometryEquivL_ae_eq_zero [Nontrivial F]
       ((μHE[finrank ℝ E₀] : Measure (WithLp 2 (ℝ × E₀))).restrict
         (frontier (W : Set _))).restrict (g.symm ⁻¹' Γ')] 0 := by
   have hUW : (U : Set F) = g ⁻¹' W := by
-    rw [hWU, ← preimage_comp, show ⇑g.symm ∘ ⇑g = id from funext g.symm_apply_apply, preimage_id]
+    rw [hWU]; ext; simp
   -- `g` carries surface measure on `Γ'` to surface measure on `g Γ'`.
   have hge : MeasurableEmbedding g := g.toHomeomorph.measurableEmbedding
-  have hmpΓ := (AffineIsometryEquiv.measurePreserving_euclideanHausdorffMeasure_finrank_sub_one g
+  have hmpΓ := (g.measurePreserving_euclideanHausdorffMeasure_finrank_sub_one_restrict_frontier
     hUW).restrict_preimage_emb hge (g.symm ⁻¹' Γ')
   rw [show ⇑g ⁻¹' (⇑g.symm ⁻¹' Γ') = Γ' by ext; simp] at hmpΓ
   rw [Filter.EventuallyEq, ← hmpΓ.map_eq, hge.ae_map_iff]
