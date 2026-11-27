@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Composition
 public import TauCeti.LinearAlgebra.Matrix.ProjectionMonoid.KZero
 import Mathlib.Data.Matrix.Basis
+import Mathlib.LinearAlgebra.Matrix.Hermitian
 
 /-!
 # Matrix stability of the projection monoid and of `K₀`
@@ -20,7 +21,7 @@ homomorphism. It induces isomorphisms `V(R) ≃+ V(M_n(R))`
 
 The proof goes through the identification `M_k(M_n(R)) ≅ M_{k × n}(R)` of Mathlib's
 `Matrix.comp`, which is multiplicative and commutes with conjugate transposes also for
-rectangular matrices (`Matrix.comp_mul_comp`, `Matrix.comp_conjTranspose`). Hence two
+rectangular matrices (`Matrix.comp_mul_comp`, Mathlib's `Matrix.conjTranspose_comp'`). Hence two
 projections over `M_n(R)` are Murray–von Neumann equivalent exactly when their flattenings over
 `R` are (`Matrix.isMurrayVonNeumannEquivalent_comp_iff`). The flattening of the entrywise corner
 image of a projection `p` over `R` is `p` placed on the rows and columns `(a, i)`, which is
@@ -56,19 +57,12 @@ theorem comp_mul_comp [NonUnitalNonAssocSemiring R] (A : Matrix I J (Matrix L L 
   ext ⟨i, k⟩ ⟨j, l⟩
   simp only [comp_apply, Matrix.mul_apply, Fintype.sum_prod_type, Matrix.sum_apply]
 
-omit [Fintype J] [Fintype L] in
-/-- Flattening commutes with conjugate transposes. -/
-theorem comp_conjTranspose [Star R] (A : Matrix I J (Matrix L L R)) :
-    comp J I L L R Aᴴ = (comp I J L L R A)ᴴ := by
-  ext ⟨j, l⟩ ⟨i, k⟩
-  simp [comp_apply, conjTranspose_apply]
-
 omit [Fintype J] in
 /-- Flattening preserves and reflects star projections. -/
 theorem isStarProjection_comp_iff [Fintype I] [NonUnitalSemiring R] [StarRing R]
     {p : Matrix I I (Matrix L L R)} : IsStarProjection (comp I I L L R p) ↔ IsStarProjection p := by
-  simp only [isStarProjection_iff, IsIdempotentElem, IsSelfAdjoint, star_eq_conjTranspose,
-    ← comp_mul_comp, ← comp_conjTranspose, (comp I I L L R).injective.eq_iff]
+  simp only [isStarProjection_iff, IsIdempotentElem, ← isHermitian_iff_isSelfAdjoint,
+    isHermitian_comp_iff, ← comp_mul_comp, (comp I I L L R).injective.eq_iff]
 
 omit [Fintype J] in
 /-- **Flattening and Murray–von Neumann equivalence.** Projections over `M_n(R)` are equivalent
@@ -81,15 +75,15 @@ theorem isMurrayVonNeumannEquivalent_comp_iff [Fintype I] [Fintype K] [NonUnital
   · rintro ⟨hp, hq, v, hvp, hvq⟩
     refine ⟨isStarProjection_comp_iff.1 hp, isStarProjection_comp_iff.1 hq,
       (comp K I L L R).symm v, ?_, ?_⟩
-    · rw [← (comp I I L L R).injective.eq_iff, comp_mul_comp, comp_conjTranspose,
+    · rw [← (comp I I L L R).injective.eq_iff, comp_mul_comp, ← conjTranspose_comp',
         Equiv.apply_symm_apply, hvp]
-    · rw [← (comp K K L L R).injective.eq_iff, comp_mul_comp, comp_conjTranspose,
+    · rw [← (comp K K L L R).injective.eq_iff, comp_mul_comp, ← conjTranspose_comp',
         Equiv.apply_symm_apply, hvq]
   · rintro ⟨hp, hq, v, hvp, hvq⟩
     refine ⟨isStarProjection_comp_iff.2 hp, isStarProjection_comp_iff.2 hq,
       comp K I L L R v, ?_, ?_⟩
-    · rw [← comp_conjTranspose, ← comp_mul_comp, hvp]
-    · rw [← comp_conjTranspose, ← comp_mul_comp, hvq]
+    · rw [conjTranspose_comp', ← comp_mul_comp, hvp]
+    · rw [conjTranspose_comp', ← comp_mul_comp, hvq]
 
 end Matrix
 
@@ -99,11 +93,9 @@ variable (R : Type*) [Semiring R] [StarRing R] {n : Type*} [Fintype n] [Decidabl
 
 /-- The **corner embedding** `R → M_n(R)`, `r ↦ r eᵢᵢ`, as a nonunital star ring homomorphism. -/
 def cornerStarRingHom (i : n) : R →⋆ₙ+* Matrix n n R where
-  toFun r := single i i r
-  map_zero' := by simp
-  map_add' r s := single_add i i r s
+  __ := (singleAddMonoidHom i i : R →+ Matrix n n R)
   map_mul' r s := (single_mul_single_same r i i i s).symm
-  map_star' r := by rw [star_eq_conjTranspose, conjTranspose_single]
+  map_star' r := (conjTranspose_single i i r).symm
 
 variable {R}
 
