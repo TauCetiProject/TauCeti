@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Garding
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Esymm
+public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Symmetric
 public import TauCeti.Analysis.MvPolynomial.NewtonMaclaurin
 public import TauCeti.Analysis.PDE.FullyNonlinear.AdmissiblePair
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Homogeneous
@@ -28,6 +29,12 @@ hyperbolic polynomials (`MvPolynomial.IsHyperbolic.convex_gardingCone`), every `
 (`TauCeti.convex_hessianCone`); for `k > n` it is empty, since `σ_{n+1} = 0`
 (`TauCeti.hessianCone_eq_empty`).
 
+More generally, the Gårding cone `Γ(p, e)` of a symmetric polynomial `p` of positive degree,
+hyperbolic in the direction `e`, is an admissible cone as soon as every coordinate vector lies in
+its closure (`TauCeti.isAdmissibleCone_gardingCone`): it then contains the positive orthant
+(`MvPolynomial.IsHyperbolic.setOf_forall_pos_subset_iff`), and it lies in the half-space
+`σ_1 > 0` by symmetry (`MvPolynomial.IsHyperbolic.sum_pos_of_mem_gardingCone`).
+
 ## Main results
 
 * `TauCeti.gardingCone_esymm_eq_hessianCone`: `Γ(σ_k, e) = Γ_k`.
@@ -37,6 +44,8 @@ hyperbolic polynomials (`MvPolynomial.IsHyperbolic.convex_gardingCone`), every `
 * `TauCeti.isAdmissibleCone_hessianCone`: for `1 ≤ k ≤ n`, `Γ_k` is an admissible cone.
 * `TauCeti.hessianCone_eq_empty`: `Γ_k` is empty for `k > n`.
 * `TauCeti.convex_hessianCone`: `Γ_k` is convex.
+* `TauCeti.isAdmissibleCone_gardingCone`: the Gårding cone of a symmetric hyperbolic polynomial
+  whose closure contains the coordinate vectors is an admissible cone.
 
 ## References
 
@@ -105,5 +114,19 @@ theorem convex_hessianCone (n k : ℕ) : Convex ℝ (hessianCone n k) := by
     exact (isHyperbolic_esymm (σ := Fin n) (by simpa using hkn)).convex_gardingCone
   · rw [hessianCone_eq_empty hkn]
     exact convex_empty
+
+/-- **Symmetric Gårding cones whose closure contains the coordinate vectors are admissible.**
+For a symmetric polynomial `p` of degree `m ≥ 1`, hyperbolic in the direction `e = (1, …, 1)`,
+whose Gårding cone `Γ(p, e)` has every coordinate vector in its closure, `Γ(p, e)` is an
+admissible cone. -/
+theorem isAdmissibleCone_gardingCone {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {p : MvPolynomial ι ℝ} {m : ℕ} (hp : p.IsHyperbolic m 1) (hm : 1 ≤ m)
+    (hsymm : p.IsSymmetric) (he : ∀ i, (Pi.single i 1 : ι → ℝ) ∈ closure (gardingCone p 1)) :
+    IsAdmissibleCone (gardingCone p 1) where
+  isOpen := isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne'
+  comp_perm_mem σ _ hμ := comp_mem_gardingCone (hsymm σ) rfl hμ
+  smul_mem ht _ hμ := smul_mem_gardingCone hp.isHomogeneous hμ ht
+  mem_of_forall_pos hμ := (hp.setOf_forall_pos_subset_iff.2 he) hμ
+  sum_pos hμ := hp.sum_pos_of_mem_gardingCone hm hsymm hμ
 
 end TauCeti
