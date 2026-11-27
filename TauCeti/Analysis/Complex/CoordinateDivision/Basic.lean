@@ -153,6 +153,7 @@ private theorem exists_eq_add_sum_mul_eval_of_list [Finite ι] {f : (ι → ℂ)
     exact ⟨f, fun _ ↦ 0, hf, fun _ ↦ differentiable_const 0, fun z ↦ by simp,
       fun _ hj ↦ by simp at hj, fun _ hi ↦ by simp at hi⟩
   | cons i l' ih =>
+    -- Phase 1: apply the induction hypothesis on `l'` and normalise `P i` to monic `P₁`.
     obtain ⟨hilt, hsort'⟩ := List.pairwise_cons.mp hsort
     have hil' : i ∉ l' := fun h ↦ lt_irrefl i (hilt i h)
     obtain ⟨r', g', hr', hg', hdiv', hdeg_r', hdeg_g'⟩ := ih hsort'
@@ -160,6 +161,7 @@ private theorem exists_eq_add_sum_mul_eval_of_list [Finite ι] {f : (ι → ℂ)
     have hP₁ : P₁.Monic := monic_mul_leadingCoeff_inv (hP i)
     have hP₁_deg : P₁.degree = (P i).degree :=
       degree_mul_C (inv_ne_zero (leadingCoeff_ne_zero.mpr (hP i)))
+    -- Phase 2: divide `r'` by `P₁(z i)` and update `g'` at `i` to form `(f₀, g)`.
     let f₀ : (ι → ℂ) → ℂ := partialModByMonic i r' P₁
     let gi : (ι → ℂ) → ℂ := fun z ↦ (P i).leadingCoeff⁻¹ * partialDivByMonic i r' P₁ z
     have hf₀ : Differentiable ℂ f₀ := differentiable_partialModByMonic hr' i P₁
@@ -172,6 +174,7 @@ private theorem exists_eq_add_sum_mul_eval_of_list [Finite ι] {f : (ι → ℂ)
       · subst hm; simpa [g] using hgi
       · simpa [g, hm] using hg' m
     refine ⟨f₀, g, hf₀, hg, ?_, ?_, ?_⟩
+    -- Phase 3: verify the division identity along `i :: l'`.
     · intro z
       have hi_not : i ∉ l'.toFinset := by simpa using hil'
       rw [List.toFinset_cons, sum_insert hi_not]
@@ -184,10 +187,12 @@ private theorem exists_eq_add_sum_mul_eval_of_list [Finite ι] {f : (ι → ℂ)
       rw [hsum_eq, hdiv' z, hdiv_i]
       simp only [g, update_self, f₀, gi]
       ring
+    -- Phase 4: verify the remainder degree bounds in coordinate `i` and along `l'`.
     · intro j hj z
       rcases List.mem_cons.mp hj with rfl | hjl'
       · simpa only [hP₁_deg] using exists_degree_lt_partialModByMonic hP₁ hr' j z
       · exact exists_degree_lt_partialModByMonic_of_ne hr' (hilt j hjl').ne' P₁ (hdeg_r' j hjl') z
+    -- Phase 5: verify the triangular quotient degree bounds for `i < b` and within `l'`.
     · intro a ha b hb hab z
       rcases List.mem_cons.mp ha with rfl | hal'
       · have hbl' : b ∈ l' := (List.mem_cons.mp hb).resolve_left hab.ne'
@@ -334,9 +339,8 @@ theorem norm_le_of_eq_add_sum_mul_eval_of_monic [Fintype ι]
     (hM : ∀ w ∈ closedBall c R, ‖f w‖ ≤ M) {z : ι → ℂ} (hz : z ∈ closedBall c R) :
     ‖f₀ z‖ ≤ 3 ^ (∑ j, (P j).natDegree) * M ∧
     ∀ i, ‖g i z‖ ≤ 3 ^ (∑ j, (P j).natDegree) / R ^ (P i).natDegree * M := by
-  have hsum_eq : (univ.sort.map fun j ↦ (P j).natDegree).sum = ∑ j, (P j).natDegree := by
-    rw [Finset.sum_eq_multiset_sum, ← Finset.sort_eq univ (· ≤ ·), Multiset.map_coe,
-      Multiset.sum_coe]
+  have hsum_eq : (univ.sort.map fun j ↦ (P j).natDegree).sum = ∑ j, (P j).natDegree :=
+    ((univ.sort_perm_toList _).map _).sum_eq.trans (univ.sum_map_toList _)
   obtain ⟨h0, hgi⟩ := norm_le_of_eq_add_sum_mul_eval_of_list hP hR hrR hroots hM (univ.sort)
     (Finset.sortedLT_sort univ).pairwise hf₀ (fun i _ ↦ hg i)
     (by simpa only [Finset.sort_toFinset] using hdiv) (fun j _ ↦ hdeg₀ j)

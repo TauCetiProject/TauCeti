@@ -14,6 +14,7 @@ import Mathlib.LinearAlgebra.Lagrange
 import TauCeti.Analysis.Calculus.DSlope.Basic
 import TauCeti.Analysis.Complex.DividedDifference.Analytic
 import TauCeti.Analysis.Complex.IteratedDeriv
+import TauCeti.RingTheory.Polynomial.DegreeLT
 
 /-!
 # Coordinate polynomial degree control for `partialDslope`
@@ -77,38 +78,34 @@ theorem exists_degree_lt_and_partialDslope_eq_eval [Finite ι] {f : (ι → ℂ)
     obtain ⟨P, hPdeg, hP⟩ := hdeg z
     exact ⟨P /ₘ (X - C ζ), (degree_divByMonic_le P _).trans_lt hPdeg,
       partialDslope_update_eq_eval_divByMonic hP⟩
-  cases d with
-  | bot =>
-    obtain ⟨Q, hQ, _⟩ := hdeg z
-    exact (not_lt_bot hQ).elim
-  | coe d =>
-    have := Fintype.ofFinite ι
-    let s : Finset ℕ := Finset.range d
-    let v : ℕ → ℂ := fun m ↦ (m : ℂ)
-    have hv : Set.InjOn v s := Nat.cast_injective.injOn
-    refine ⟨Lagrange.interpolate s v (fun m ↦ partialDslope i f ζ (update z j (v m))), ?_,
-      fun w ↦ ?_⟩
-    · simpa only [s, Finset.card_range, Nat.cast_withBot] using
-        Lagrange.degree_interpolate_lt (fun m ↦ partialDslope i f ζ (update z j (v m))) hv
-    · have hfun : (fun u ↦ f (update (update z j w) i u)) =
-          fun u ↦ ∑ m ∈ s, (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u) := by
-        ext u
-        obtain ⟨Qu, hQu_deg, hQu⟩ := hdeg (update z i u)
-        have hQu_eq : Qu = Lagrange.interpolate s v (fun m ↦ f (update (update z i u) j (v m))) :=
-          Lagrange.eq_interpolate_of_eval_eq _ hv
-            (by simpa only [s, Finset.card_range, Nat.cast_withBot] using hQu_deg)
-            fun m _ ↦ (hQu (v m)).symm
-        rw [update_comm hij, hQu w, hQu_eq, Lagrange.interpolate_apply, eval_finsetSum]
-        refine Finset.sum_congr rfl fun m _ ↦ ?_
-        rw [eval_mul, eval_C, mul_comm, update_comm (Ne.symm hij)]
-      have hdiff (m : ℕ) (_ : m ∈ s) : DifferentiableAt ℂ
-          (fun u ↦ (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u)) ζ :=
-        ((hf _).comp ζ (hasFDerivAt_update (update z j (v m)) ζ).differentiableAt).const_mul _
-      rw [partialDslope_apply, update_of_ne (Ne.symm hij), hfun,
-        congrFun (dslope_sum s hdiff) (z i), Lagrange.interpolate_apply, eval_finsetSum]
+  obtain ⟨d, rfl, _⟩ := Polynomial.exists_mem_evalDegreeLT_of_exists_degree_lt (hdeg z)
+  have := Fintype.ofFinite ι
+  let s : Finset ℕ := Finset.range d
+  let v : ℕ → ℂ := fun m ↦ (m : ℂ)
+  have hv : Set.InjOn v s := Nat.cast_injective.injOn
+  refine ⟨Lagrange.interpolate s v (fun m ↦ partialDslope i f ζ (update z j (v m))), ?_,
+    fun w ↦ ?_⟩
+  · simpa only [s, Finset.card_range] using
+      Lagrange.degree_interpolate_lt (fun m ↦ partialDslope i f ζ (update z j (v m))) hv
+  · have hfun : (fun u ↦ f (update (update z j w) i u)) =
+        fun u ↦ ∑ m ∈ s, (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u) := by
+      ext u
+      obtain ⟨Qu, hQu_deg, hQu⟩ := hdeg (update z i u)
+      have hQu_eq : Qu = Lagrange.interpolate s v (fun m ↦ f (update (update z i u) j (v m))) :=
+        Lagrange.eq_interpolate_of_eval_eq _ hv
+          (by simpa only [s, Finset.card_range] using hQu_deg)
+          fun m _ ↦ (hQu (v m)).symm
+      rw [update_comm hij, hQu w, hQu_eq, Lagrange.interpolate_apply, eval_finsetSum]
       refine Finset.sum_congr rfl fun m _ ↦ ?_
-      rw [congrFun (dslope_const_mul _ _ ζ) (z i), eval_mul, eval_C, mul_comm, partialDslope_apply,
-        update_of_ne (Ne.symm hij)]
+      rw [eval_mul, eval_C, mul_comm, update_comm (Ne.symm hij)]
+    have hdiff (m : ℕ) (_ : m ∈ s) : DifferentiableAt ℂ
+        (fun u ↦ (Lagrange.basis s v m).eval w * f (update (update z j (v m)) i u)) ζ :=
+      ((hf _).comp ζ (hasFDerivAt_update (update z j (v m)) ζ).differentiableAt).const_mul _
+    rw [partialDslope_apply, update_of_ne (Ne.symm hij), hfun,
+      congrFun (dslope_sum s hdiff) (z i), Lagrange.interpolate_apply, eval_finsetSum]
+    refine Finset.sum_congr rfl fun m _ ↦ ?_
+    rw [congrFun (dslope_const_mul _ _ ζ) (z i), eval_mul, eval_C, mul_comm, partialDslope_apply,
+      update_of_ne (Ne.symm hij)]
 
 section PartialDeriv
 

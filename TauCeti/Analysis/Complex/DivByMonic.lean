@@ -14,6 +14,7 @@ import TauCeti.Analysis.Complex.DividedDifference.Analytic
 import TauCeti.Analysis.Complex.DividedDifference.Degree
 import TauCeti.Analysis.Complex.DividedDifference.Estimate
 import TauCeti.Analysis.Complex.PartialDeriv.Degree
+import TauCeti.RingTheory.Polynomial.DegreeLT
 import TauCeti.Topology.MetricSpace.Pseudo.Pi
 
 /-!
@@ -564,11 +565,9 @@ private theorem exists_degree_lt_of_comm_iterate_partialDeriv
     (hT0 : T 0 = 0) {d : WithBot ℕ}
     (hfj : ∀ y, ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, f (update y j w) = Q.eval w) (z : ι → ℂ) :
     ∃ Q : ℂ[X], Q.degree < d ∧ ∀ w, T f (update z j w) = Q.eval w := by
-  cases d with
-  | bot => exact absurd (hfj z).choose_spec.1 not_lt_bot
-  | coe n =>
-    refine (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hTf j n).mp ?_ z
-    rw [hcomm n, (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hf j n).mpr hfj, hT0]
+  obtain ⟨n, rfl, _⟩ := Polynomial.exists_mem_evalDegreeLT_of_exists_degree_lt (hfj z)
+  refine (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hTf j n).mp ?_ z
+  rw [hcomm n, (iterate_partialDeriv_eq_zero_iff_exists_degree_lt hf j n).mpr hfj, hT0]
 
 /-- **Coordinate degree preservation for the quotient.** If `f` is entire and a polynomial of
 degree `< d` in another coordinate `j ≠ i`, then so is `partialDivByMonic i f P`. -/
