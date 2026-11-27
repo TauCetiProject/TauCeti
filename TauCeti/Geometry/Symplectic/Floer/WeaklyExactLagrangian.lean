@@ -134,10 +134,9 @@ theorem mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'
     {f : M → M'} (hf : ContMDiff I I' 2 f) :
     IsWeaklyExactRel I (TauCeti.mpullback I I' f ψ) (f ⁻¹' L) := by
   intro u γ hu hγ
-  obtain ⟨x, hu⟩ := isCap_iff.1 hu
   rw [rectangleIntegral_mpullback ψ (fun z _ ↦ hf.mdifferentiable two_ne_zero (u z))
     (fun z _ ↦ hu.contMDiff.mdifferentiable two_ne_zero z)]
-  exact h (isCap_iff.2 ⟨f x, hu.comp hf⟩) hγ
+  exact h (hu.comp hf) hγ
 
 end IsWeaklyExactRel
 
@@ -195,20 +194,17 @@ theorem IsWeaklyExact.isWeaklyExactRel_twistedProd_graph {σ : SmoothTwoForm I M
     (hφστ : SmoothForm.mpullback φ hφ τ = σ) :
     IsWeaklyExactRel (I.prod J) (SmoothTwoForm.twistedProd σ τ).val (Function.graph φ) := by
   intro u γ hu hγ
-  obtain ⟨x, hu⟩ := isCap_iff.1 hu
   have hu₁ := hu.comp (contMDiff_fst (n := 2))
   have hu₂ := hu.comp (contMDiff_snd (n := 2))
   -- `φ ∘ u₁` caps the loop `φ ∘ γ₁`, which is the second component `γ₂` of the boundary.
   have hφu₁ : IsCap J (φ ∘ Prod.fst ∘ u) (Prod.snd ∘ γ) := by
     have h := hu₁.comp (hφ.of_le (by simp))
-    rw [show φ ∘ Prod.fst ∘ γ = Prod.snd ∘ γ from funext fun t ↦ Function.mem_graph.1 (hγ t)] at h
-    exact isCap_iff.2 ⟨φ x.1, h⟩
+    rwa [show φ ∘ Prod.fst ∘ γ = Prod.snd ∘ γ from funext fun t ↦ Function.mem_graph.1 (hγ t)] at h
   rw [SmoothTwoForm.rectangleIntegral_twistedProd σ τ (hu.contMDiff.of_le one_le_two), ← hφστ,
     SmoothForm.coe_mpullback, rectangleIntegral_mpullback _
       (fun z _ ↦ (hφ.mdifferentiable (by simp)) _)
       fun z _ ↦ hu₁.contMDiff.mdifferentiable two_ne_zero z,
-    hτ.rectangleIntegral_eq_of_isCap (τ.isSmoothForm.of_le (by simp)) hφu₁
-      (isCap_iff.2 ⟨x.2, hu₂⟩), sub_self]
+    hτ.rectangleIntegral_eq_of_isCap (τ.isSmoothForm.of_le (by simp)) hφu₁ hu₂, sub_self]
 
 /-- **Weak exactness relative to a graph forces weak exactness.** If the twisted product form
 `pr₁^* σ - pr₂^* τ` is weakly exact relative to the graph of a map `φ : M → N`, then `σ` is weakly
@@ -239,21 +235,18 @@ theorem IsWeaklyExact.isWeaklyExactRel_twistedProd_inv_graph {σ : SmoothTwoForm
     (hφστ : SmoothForm.mpullback φ hφ σ = τ) :
     IsWeaklyExactRel (I.prod J) (SmoothTwoForm.twistedProd σ τ).val (Function.graph φ).inv := by
   intro u γ hu hγ
-  obtain ⟨x, hu⟩ := isCap_iff.1 hu
   have hu₁ := hu.comp (contMDiff_fst (n := 2))
   have hu₂ := hu.comp (contMDiff_snd (n := 2))
   -- `φ ∘ u₂` caps the loop `φ ∘ γ₂`, which is the first component `γ₁` of the boundary.
   have hφu₂ : IsCap I (φ ∘ Prod.snd ∘ u) (Prod.fst ∘ γ) := by
     have h := hu₂.comp (hφ.of_le (by simp))
-    rw [show φ ∘ Prod.snd ∘ γ = Prod.fst ∘ γ from
+    rwa [show φ ∘ Prod.snd ∘ γ = Prod.fst ∘ γ from
       funext fun t ↦ Function.mem_graph.1 (SetRel.mem_inv.1 (hγ t))] at h
-    exact isCap_iff.2 ⟨φ x.2, h⟩
   rw [SmoothTwoForm.rectangleIntegral_twistedProd σ τ (hu.contMDiff.of_le one_le_two), ← hφστ,
     SmoothForm.coe_mpullback, rectangleIntegral_mpullback _
       (fun z _ ↦ (hφ.mdifferentiable (by simp)) _)
       fun z _ ↦ hu₂.contMDiff.mdifferentiable two_ne_zero z,
-    hσ.rectangleIntegral_eq_of_isCap (σ.isSmoothForm.of_le (by simp)) (isCap_iff.2 ⟨x.1, hu₁⟩)
-      hφu₂, sub_self]
+    hσ.rectangleIntegral_eq_of_isCap (σ.isSmoothForm.of_le (by simp)) hu₁ hφu₂, sub_self]
 
 /-- **Weak exactness relative to a transposed graph forces weak exactness.** If the twisted product
 form `pr₁^* σ - pr₂^* τ` is weakly exact relative to the transposed graph `{(φ y, y)}` of a map

@@ -17,7 +17,8 @@ coordinate `t`, with `w (0, ·) = γ₀` and `w (1, ·) = γ₁`. Cylinders comp
 (`TauCeti.IsLoopCylinder.trans`, by `TauCeti.rectangleTrans`) and reverse
 (`TauCeti.IsLoopCylinder.symm`), and their images under `C²` maps are cylinders
 (`TauCeti.IsLoopCylinder.comp`). A **cap** of `γ` (`TauCeti.IsCap`) is a cylinder from `γ` to a
-constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`. Every `C²` map of the
+constant loop: a disc bounding `γ`, with the centre of the disc at `s = 1`; images of caps under
+`C²` maps are caps (`TauCeti.IsCap.comp`). Every `C²` map of the
 plane, read in polar coordinates on the closed unit disc, caps its boundary loop
 (`TauCeti.isLoopCylinder_comp_polar`). A cylinder between two constant loops is a **sphere**.
 
@@ -224,6 +225,24 @@ theorem comp_add_snd (hw : IsLoopCylinder I w γ₀ γ₁) (θ : ℝ) :
   apply_one t := by simpa only [Prod.mk_add_mk, add_zero] using hw.apply_one (t + θ)
 
 end IsLoopCylinder
+
+namespace IsCap
+
+variable {u : ℝ × ℝ → M} {γ : ℝ → M}
+
+/-- A cap is `C²`. -/
+theorem contMDiff (hu : IsCap I u γ) : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u := by
+  obtain ⟨_, hu⟩ := hu
+  exact hu.contMDiff
+
+/-- The image of a cap of `γ` under a `C²` map `f` is a cap of `f ∘ γ`. -/
+theorem comp {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+    {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M']
+    (hu : IsCap I u γ) {f : M → M'} (hf : ContMDiff I I' 2 f) : IsCap I' (f ∘ u) (f ∘ γ) := by
+  obtain ⟨_, hu⟩ := hu
+  exact (hu.comp hf).isCap
+
+end IsCap
 
 /-- A `C²` map `w`, `1`-periodic in its second coordinate, sweeps out a cylinder from its loop
 `w (s, ·)` to its loop `w (s₀, ·)`: its restriction to `[s, s₀] × ℝ`, reparametrized affinely
