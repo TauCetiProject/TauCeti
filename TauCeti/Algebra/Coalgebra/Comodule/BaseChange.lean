@@ -78,6 +78,13 @@ theorem baseChangeCoact_tmul (a : A) (m : M) :
   rw [baseChangeCoact, LinearMap.coe_comp, Function.comp_apply,
     LinearMap.baseChange_tmul, LinearEquiv.coe_coe]
 
+/-- The base-changed coaction is the scalar extension of the original coaction followed by the
+distributivity equivalence. -/
+theorem baseChangeCoact_apply (x : A ⊗[R] M) :
+    baseChangeCoact (R := R) (H := H) A x =
+      TensorProduct.AlgebraTensorModule.distribBaseChange R A M H
+        ((coact (R := R) (C := H) (M := M)).baseChange A x) := (rfl)
+
 /-- Collapse a threefold tensor product of scalar extensions to the scalar extension of the
 original threefold tensor product. -/
 private noncomputable def collapseTriple :
