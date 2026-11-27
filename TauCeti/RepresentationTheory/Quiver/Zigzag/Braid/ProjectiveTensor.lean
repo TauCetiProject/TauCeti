@@ -317,8 +317,7 @@ theorem isZero_zigzagBraidProjectiveTensor {i j : V} (hij : i ≠ j) (hadj : ¬ 
     rw [cornerSubmodule_zigzagAlgebra_eq_bot_of_ne_of_not_adj k G hij hadj]
     infer_instance
   have := (zigzagBraidProjectiveTensorCornerEquiv k G i j).toEquiv.subsingleton
-  exact (IsZero.iff_id_eq_zero _).mpr
-    (GradedModuleCat.hom_ext (LinearMap.ext fun _ ↦ Subsingleton.elim _ _))
+  exact GradedModuleCat.isZero_of_subsingleton _
 
 /-- **`Z ⊗_Z P_j ≅ P_j`**: the regular bimodule acts as the identity on the vertex projective. -/
 def zigzagBraidProjectiveUnitTensorIso (j : V) :

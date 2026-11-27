@@ -34,7 +34,10 @@ The main results are:
   frequencies to every frequency;
 * `TauCeti.Symbol.ofContDiffHomogeneous`: a coefficient that is smooth on all of `ℝⁿ × ℝⁿ` and
   homogeneous of degree `m` away from `ξ = 0` is a symbol of order `m`, since it agrees with its
-  cut-off term at large frequencies.
+  cut-off term at large frequencies;
+* `TauCeti.Symbol.IsHomogeneousAbove a μ R`: the symbol `a` is homogeneous of degree `μ` at the
+  frequencies of norm at least `R`, as the cut-off term of a homogeneous symbol is above the
+  radius `2` (`TauCeti.Symbol.isHomogeneousAbove_cutoffSymbol`).
 
 ## References
 
@@ -152,33 +155,13 @@ vanishes. -/
 theorem eq_zero_of_coefficient_eq_cutoffSymbol {m' : ℝ} (hm : m' < m)
     {a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m} (b : Symbol n V W m')
     (hb : b.coefficient = (cutoffSymbol χ a).coefficient) : a = 0 := by
-  refine ext_of_ne_zero fun x ξ hξ => ?_
-  rw [coefficient_zero, Pi.zero_apply, ← norm_le_zero_iff]
-  have hξ0 : 0 < ‖ξ‖ := norm_pos_iff.2 hξ
-  obtain ⟨C, hC, hbC⟩ := b.exists_bound {x} isCompact_singleton [] []
-  set D := C * 2 ^ (|m'| / 2) * ‖ξ‖ ^ m'
-  -- For `t ≥ 2 / ‖ξ‖`, homogeneity at `t • ξ` and the bound of order `m'` there give
-  -- `t ^ m ‖a (x, ξ)‖ ≤ D t ^ m'`.
-  have key : ∀ᶠ t in atTop, ‖a.coefficient (x, ξ)‖ ≤ D * t ^ (m' - m) := by
-    filter_upwards [eventually_ge_atTop (2 / ‖ξ‖), eventually_gt_atTop 0] with t ht ht0
-    have htξ : 2 ≤ ‖t • ξ‖ := by
-      rwa [norm_smul, Real.norm_of_nonneg ht0.le, ← div_le_iff₀ hξ0]
-    have h := hbC x rfl (t • ξ)
-    have hw := one_add_norm_sq_rpow_le_norm_rpow (by linarith : 1 ≤ ‖t • ξ‖) m'
-    rw [mixedDeriv_nil_nil, hb, coefficient_cutoffSymbol_of_two_le_norm χ a htξ,
-      a.norm_homogeneous x ξ ht0] at h
-    simp only [List.length_nil, Nat.cast_zero, sub_zero, norm_smul, Real.norm_of_nonneg ht0.le,
-      Real.mul_rpow ht0.le hξ0.le] at h hw
-    refine le_of_mul_le_mul_left ?_ (Real.rpow_pos_of_pos ht0 m)
-    calc t ^ m * ‖a.coefficient (x, ξ)‖
-        ≤ C * (2 ^ (|m'| / 2) * (t ^ m' * ‖ξ‖ ^ m')) := h.trans (mul_le_mul_of_nonneg_left hw hC)
-      _ = t ^ m * (D * t ^ (m' - m)) := by
-          rw [Real.rpow_sub ht0]
-          field_simp
-          ring
-  have hlim : Tendsto (fun t : ℝ => D * t ^ (m' - m)) atTop (𝓝 0) := by
-    simpa [neg_sub] using (tendsto_rpow_neg_atTop (by linarith : 0 < m - m')).const_mul D
-  exact ge_of_tendsto hlim key
+  refine ext_of_ne_zero fun x ξ _ => ?_
+  obtain ⟨C, -, hbC⟩ := b.exists_bound {x} isCompact_singleton [] []
+  refine (coefficient_eq_zero_of_norm_le hm a (C := C) (R := 2) (fun η hη => ?_) ξ).trans
+    (by rw [coefficient_zero, Pi.zero_apply])
+  have h := hbC x rfl η
+  rwa [mixedDeriv_nil_nil, hb, coefficient_cutoffSymbol_of_two_le_norm χ a hη, List.length_nil,
+    Nat.cast_zero, sub_zero] at h
 
 end HomogeneousSymbol
 
@@ -211,6 +194,38 @@ theorem coefficient_ofContDiffHomogeneous (f : CoordinateSpace n × CoordinateSp
     (hhom : ∀ x ξ, ξ ≠ 0 → ∀ t : ℝ, 0 < t → f (x, t • ξ) = t ^ m • f (x, ξ)) :
     (ofContDiffHomogeneous f hf hhom : Symbol n V W m).coefficient = f :=
   (rfl)
+
+/-! ### Symbols homogeneous at large frequencies -/
+
+/-- A symbol `a` is *homogeneous of degree `μ` above the radius `R`* if `a(x, t ξ) = t ^ μ a(x, ξ)`
+for every `t ≥ 1` and every frequency `ξ` of norm at least `R`. The cut-off term of a homogeneous
+symbol of degree `m` is homogeneous of degree `m` above the radius `2`
+(`TauCeti.Symbol.isHomogeneousAbove_cutoffSymbol`). A symbol of order `m` homogeneous of degree
+`m` above some radius is classical (`TauCeti.ClassicalSymbol.ofIsHomogeneousAbove`). -/
+def IsHomogeneousAbove (a : Symbol n V W m) (μ R : ℝ) : Prop :=
+  ∀ x ξ, R ≤ ‖ξ‖ → ∀ t : ℝ, 1 ≤ t → a.coefficient (x, t • ξ) = t ^ μ • a.coefficient (x, ξ)
+
+variable {μ R R' : ℝ}
+
+theorem isHomogeneousAbove_iff {a : Symbol n V W m} :
+    a.IsHomogeneousAbove μ R ↔ ∀ x ξ, R ≤ ‖ξ‖ → ∀ t : ℝ, 1 ≤ t →
+      a.coefficient (x, t • ξ) = t ^ μ • a.coefficient (x, ξ) :=
+  Iff.rfl
+
+theorem IsHomogeneousAbove.mono {a : Symbol n V W m} (ha : a.IsHomogeneousAbove μ R)
+    (h : R ≤ R') : a.IsHomogeneousAbove μ R' :=
+  fun x ξ hξ => ha x ξ (h.trans hξ)
+
+/-- The cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol of degree `m` is homogeneous of degree
+`m` above the radius `2`, where the cutoff is `1`. -/
+theorem isHomogeneousAbove_cutoffSymbol (χ : FrequencyCutoff (CoordinateSpace n))
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    (cutoffSymbol χ a).IsHomogeneousAbove m 2 := fun x ξ hξ t ht => by
+  have htξ : 2 ≤ ‖t • ξ‖ := by
+    rw [norm_smul, Real.norm_of_nonneg (by linarith)]
+    nlinarith
+  rw [coefficient_cutoffSymbol_of_two_le_norm χ a htξ,
+    coefficient_cutoffSymbol_of_two_le_norm χ a hξ, a.homogeneous x ξ t (by linarith)]
 
 end Symbol
 

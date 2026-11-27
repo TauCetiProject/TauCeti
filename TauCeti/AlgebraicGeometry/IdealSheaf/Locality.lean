@@ -11,16 +11,22 @@ import TauCeti.AlgebraicGeometry.Scheme.Opens
 /-!
 # Locality of ideal sheaf data
 
-An ideal sheaf is determined by its pullbacks to an open cover. This lets affine
-computations of ideal sheaves, such as Fitting ideals, be glued on an arbitrary scheme.
-For a morphism `f : X ⟶ Y`, it suffices to compare pullbacks along affine charts of `X`
-mapping into affine opens of `Y` (`ext_of_comap_fromSpec_over`).
+An ideal sheaf is determined by its pullbacks to an open cover
+(`IdealSheafData.ext_of_comap_openCover`), or along any family of open immersions whose ranges
+cover the scheme (`IdealSheafData.ext_of_comap_iSup_opensRange_eq_top`). This lets affine
+computations of ideal sheaves, such as Fitting ideals, be glued on an arbitrary scheme. For a
+morphism `f : X ⟶ Y`, it suffices to compare pullbacks along affine charts of `X` mapping into
+affine opens of `Y` (`ext_of_comap_fromSpec_over`).
 
 Vanishing of the sections of an ideal sheaf under a morphism also passes to smaller affine opens
 (`AlgebraicGeometry.Scheme.IdealSheafData.ideal_le_ker_appLE_of_le`), so it can be checked
 locally on an affine basis. An ideal sheaf lies in the kernel of a quasi-compact morphism as soon
 as it lies in the kernel of the morphism's restriction to each member of an open cover of the
-source (`AlgebraicGeometry.Scheme.Hom.le_ker_iff_of_openCover`).
+source (`AlgebraicGeometry.Scheme.Hom.le_ker_iff_of_openCover`). The inverse image of the kernel
+of a morphism along that morphism vanishes (`AlgebraicGeometry.Scheme.Hom.comap_ker_self`), and
+for a commutative square `φ' ≫ g = p ≫ φ`, if `φ` factors through the closed subscheme `V(D)`
+then `φ'` factors through its inverse image along `g`
+(`AlgebraicGeometry.Scheme.IdealSheafData.comap_le_ker_of_le_ker`).
 
 -/
 
@@ -117,6 +123,17 @@ theorem IdealSheafData.ext_of_comap_openCover
   rw [← I.iInf_map_comap_openCover 𝒰, ← J.iInf_map_comap_openCover 𝒰]
   simp only [h]
 
+/-- Ideal sheaves on `X` are equal as soon as their pullbacks agree along open immersions whose
+ranges cover `X`. -/
+theorem IdealSheafData.ext_of_comap_iSup_opensRange_eq_top {I J : X.IdealSheafData}
+    {ι : Type*} {Z : ι → Scheme.{u}} (u : ∀ i, Z i ⟶ X) [∀ i, IsOpenImmersion (u i)]
+    (hu : ⨆ i, (u i).opensRange = ⊤) (h : ∀ i, I.comap (u i) = J.comap (u i)) :
+    I = J := by
+  refine ext_of_comap_openCover (X.openCoverOfIsOpenCover (fun i ↦ (u i).opensRange) hu) ?_
+  dsimp only [Scheme.openCoverOfIsOpenCover]
+  intro i
+  rw [← (u i).isoOpensRange_inv_comp, comap_comp, h i, ← comap_comp]
+
 /-- An ideal sheaf `I` on `Y` lies in the kernel of a quasi-compact morphism `f : X ⟶ Y` if and
 only if it lies in the kernel of `𝒰.f a ≫ f` for every member `a` of an open cover `𝒰` of `X`. -/
 theorem Hom.le_ker_iff_of_openCover {X Y : Scheme.{u}} (f : X ⟶ Y)
@@ -140,5 +157,19 @@ theorem IdealSheafData.eq_of_forall_le_ker_iff {I J : X.IdealSheafData}
     (h : ∀ {T : Scheme.{u}} (r : T ⟶ X), I ≤ r.ker ↔ J ≤ r.ker) : I = J :=
   le_antisymm (((h _).2 J.ker_subschemeι.ge).trans J.ker_subschemeι.le)
     (((h _).1 I.ker_subschemeι.ge).trans I.ker_subschemeι.le)
+
+/-- Pulling the kernel ideal sheaf of any morphism `f` back along `f` itself gives `⊥`. -/
+@[simp]
+theorem Hom.comap_ker_self {Y : Scheme.{u}} (f : X ⟶ Y) : f.ker.comap f = ⊥ :=
+  le_bot_iff.mp (le_map_iff_comap_le.mp (map_bot f).symm.le)
+
+/-- **Factorization through a closed subscheme pulls back along commutative squares.** For a
+commutative square `φ' ≫ g = p ≫ φ`, if `φ` factors through `V(D)`, then `φ'` factors through the
+inverse image of `V(D)` along `g`. -/
+theorem IdealSheafData.comap_le_ker_of_le_ker {X' Y Y' : Scheme.{u}} {D : Y.IdealSheafData}
+    {g : Y' ⟶ Y} {p : X' ⟶ X} {φ' : X' ⟶ Y'} {φ : X ⟶ Y} (w : φ' ≫ g = p ≫ φ)
+    (hD : D ≤ φ.ker) : D.comap g ≤ φ'.ker := by
+  rw [← le_map_iff_comap_le, map_ker, w]
+  exact hD.trans (Hom.le_ker_comp _ _)
 
 end AlgebraicGeometry.Scheme

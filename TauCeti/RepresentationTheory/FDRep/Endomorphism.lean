@@ -14,7 +14,7 @@ import TauCeti.CategoryTheory.Linear.Endomorphism
 The endomorphism algebra of a finite-dimensional representation is the algebra of
 intertwining operators on its underlying module. This comparison lets computations
 of a commutant on a concrete carrier supply the native categorical endomorphism algebra.
-It combines `FDRep.forget₂HomLinearEquiv` and `Rep.homLinearEquiv` with
+It combines `FDRep.homLinearEquiv` with
 `CategoryTheory.End.linearEquiv`, retaining the multiplication of the operator algebra.
 -/
 
@@ -33,18 +33,21 @@ operators, with the same composition and scalar multiplication. -/
 noncomputable def endIntertwiningAlgEquiv (A : FDRep k G) :
     End A ≃ₐ[k] Representation.IntertwiningMap A.ρ A.ρ :=
   AlgEquiv.ofLinearEquiv
-    ((End.linearEquiv (R := k)).trans ((forget₂HomLinearEquiv A A).symm.trans
-      (Rep.homLinearEquiv _ _))) (by ext x; rfl) (by intro f g; ext x; rfl)
+    ((End.linearEquiv (R := k)).trans (homLinearEquiv A A))
+    (by ext x; simp) (by intro f g; ext x; simp)
 
 /-- The endomorphism comparison retains the underlying operator. -/
 @[simp]
 theorem endIntertwiningAlgEquiv_apply (A : FDRep k G) (f : End A) (x : A) :
-    A.endIntertwiningAlgEquiv f x = f.asHom.hom.hom.hom x := (rfl)
+    A.endIntertwiningAlgEquiv f x = f.asHom.hom.hom.hom x := by
+  simp [endIntertwiningAlgEquiv]; rfl
 
 /-- The inverse comparison bundles the same intertwining operator. -/
 @[simp]
 theorem endIntertwiningAlgEquiv_symm_apply (A : FDRep k G)
     (f : Representation.IntertwiningMap A.ρ A.ρ) (x : A) :
-    (A.endIntertwiningAlgEquiv.symm f).asHom.hom.hom.hom x = f x := (rfl)
+    (A.endIntertwiningAlgEquiv.symm f).asHom.hom.hom.hom x = f x := by
+  change ((homLinearEquiv A A).symm f) x = f x
+  simp
 
 end FDRep

@@ -11,16 +11,32 @@ public import Mathlib.MeasureTheory.VectorMeasure.Operations
 # Operations on vector measures
 
 The evaluation lemma for `MeasureTheory.VectorMeasure.mapRangeL`, the vector measure obtained by
-applying a continuous linear map to the values of a vector measure.
+applying a continuous linear map to the values of a vector measure, together with same-set
+idempotence of `MeasureTheory.VectorMeasure.restrict`.
 
 ## Main declarations
 
 * `MeasureTheory.VectorMeasure.mapRangeL_apply`: `mapRangeL f v s = f (v s)`.
+* `MeasureTheory.VectorMeasure.restrict_idem`: `(v.restrict s).restrict s = v.restrict s`.
 -/
 
 public section
 
 namespace MeasureTheory.VectorMeasure
+
+section
+
+variable {α M : Type*} [MeasurableSpace α] [AddCommMonoid M] [TopologicalSpace M]
+
+/-- Restricting a vector measure twice to the same set is idempotent. -/
+@[simp]
+theorem restrict_idem (v : VectorMeasure α M) (s : Set α) :
+    (v.restrict s).restrict s = v.restrict s := by
+  by_cases hs : MeasurableSet s
+  · rw [restrict_restrict v hs hs, Set.inter_self]
+  · simp [restrict_not_measurable, hs]
+
+end
 
 variable {α M N R : Type*} [MeasurableSpace α] [Semiring R]
   [TopologicalSpace M] [AddCommMonoid M] [Module R M] [ContinuousAdd M] [ContinuousConstSMul R M]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Basic
 public import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Meromorphic
+import TauCeti.Analysis.Complex.RiemannSurface.Divisor.Cohomology.Map
 import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Divisor
 
 /-!
@@ -17,10 +18,10 @@ Let `X` be a compact connected Riemann surface. Its *analytic genus* is
 sheaf. For a divisor `D`, write `h⁰(D)` and `h¹(D)` for the dimensions of the global sections and of
 the first Čech cohomology of the divisor sheaf `𝒪(D)`.
 
-The finiteness of `H¹(X, 𝒪)` is an analytic theorem which is not proved here; every statement that
-needs it takes it as an explicit instance argument. Under that hypothesis `H¹(X, 𝒪(D))` is
-finite-dimensional for every divisor `D`, because finiteness is unchanged by a point twist
-(`TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one`), and this file proves:
+When `X` is Hausdorff, `H¹(X, 𝒪)` is finite-dimensional
+(`TauCeti.RiemannSurface.finiteDimensional_cechCohomology_one_holomorphicStructureSheafModules`),
+hence so is `H¹(X, 𝒪(D))` for every divisor `D`, because finiteness is unchanged by a point twist
+(`TauCeti.RiemannSurface.finiteDimensional_divisorCechCohomology_one`). This file proves:
 
 * **Riemann–Roch for divisor sheaves**: `h⁰(D) - h¹(D) = deg D + 1 - g_an`
   (`finrank_divisorSheaf_euler_characteristic`). The proof is induction over the point twists
@@ -39,6 +40,11 @@ Combined with the vanishing `h⁰(D) = 0` for `deg D < 0`
 (`finrank_divisorSheaf_eq_zero_of_degree_neg`, which needs no finiteness hypothesis), Riemann–Roch
 computes `h¹(D) = g_an - 1 - deg D` for divisors of negative degree.
 
+Along the staircase `D, D + [x], D + 2[x], …` the numbers `h¹(D + k[x])` decrease
+(`finrank_divisorCechCohomology_one_le_of_le`), so they are eventually constant, and from then on
+Riemann–Roch forces `h⁰` to rise by exactly one at every step. No Serre duality or vanishing
+theorem for `h¹` is needed for this.
+
 ## Main declarations
 
 * `TauCeti.RiemannSurface.analyticGenus`: the analytic genus `dim H¹(X, 𝒪)`;
@@ -48,6 +54,10 @@ computes `h¹(D) = g_an - 1 - deg D` for divisors of negative degree.
   sheaves;
 * `TauCeti.RiemannSurface.finrank_divisorCechCohomology_one_of_degree_neg`:
   `h¹(D) = g_an - 1 - deg D` if `deg D < 0`;
+* `TauCeti.RiemannSurface.eventually_finrank_divisorSheaf_add_nsmul_ofPoint_succ`: for all large
+  `k`, `h⁰(D + (k + 1)[x]) = h⁰(D + k[x]) + 1`;
+* `TauCeti.RiemannSurface.exists_meromorphicFunction_notMem_range_algebraMap`: a nonconstant
+  meromorphic function;
 * `TauCeti.RiemannSurface.exists_finiteHolomorphicMap_of_analyticGenus_lt_degree` and
   `TauCeti.RiemannSurface.exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one`: finite
   holomorphic maps to `ℙ¹` from Riemann–Roch.
@@ -59,7 +69,7 @@ computes `h¹(D) = g_an - 1 - deg D` for divisors of negative degree.
 
 public noncomputable section
 
-open CategoryTheory Opposite TopologicalSpace
+open CategoryTheory Filter Opposite TopologicalSpace
 open TauCeti.Topology TauCeti.AlgebraicGeometry
 open scoped Manifold
 
@@ -72,8 +82,8 @@ variable [TopologicalSpace X] [ChartedSpace ℂ X]
 variable (X) in
 /-- The **analytic genus** `g_an = dim H¹(X, 𝒪)` of a Riemann surface: the dimension of the first
 Čech cohomology of its holomorphic structure sheaf. This is a `Module.finrank`, so it is `0` when
-the cohomology is infinite-dimensional; statements about it carry the finiteness of `H¹(X, 𝒪)` as
-a hypothesis. -/
+the cohomology is infinite-dimensional, which does not happen on a compact Hausdorff Riemann
+surface. -/
 def analyticGenus : ℕ :=
   Module.finrank ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
     (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)
@@ -91,11 +101,9 @@ theorem analyticGenus_eq_finrank_divisorCechCohomology :
   (divisorCechCohomologyZeroIso X 1).toLinearEquiv.finrank_eq.symm
 
 variable [IsManifold 𝓘(ℂ) 1 X] [CompactSpace X] [T2Space X] [ConnectedSpace X]
-  [FiniteDimensional ℂ ((cechCohomology (TopCat.of X) (ModuleCat.{0} ℂ) 1).obj
-  (holomorphicStructureSheafModules 𝓘(ℂ) X).obj)]
 
-/-- **Riemann–Roch for divisor sheaves.** On a compact connected Riemann surface with
-finite-dimensional `H¹(X, 𝒪)`, every divisor `D` satisfies
+/-- **Riemann–Roch for divisor sheaves.** On a compact connected Riemann surface,
+every divisor `D` satisfies
 `h⁰(D) - h¹(D) = deg D + 1 - g_an`. -/
 theorem finrank_divisorSheaf_euler_characteristic (D : WeilDivisor X) :
     (Module.finrank ℂ ((divisorSheaf D).obj.obj (op ⊤)) : ℤ) -
@@ -128,8 +136,29 @@ theorem finrank_divisorCechCohomology_one_of_degree_neg {D : WeilDivisor X}
   rw [finrank_divisorSheaf_eq_zero_of_degree_neg hD] at h
   omega
 
-/-- **A finite map to the sphere from Riemann–Roch.** On a compact connected Riemann surface with
-finite-dimensional `H¹(X, 𝒪)`, every divisor `D` with `g_an < deg D` admits a finite holomorphic
+/-- **The Riemann–Roch staircase.** On a compact connected Riemann surface,
+adding a point `x` again and again to a divisor `D` eventually
+raises `h⁰` by exactly one at every step: `h⁰(D + (k + 1)[x]) = h⁰(D + k[x]) + 1` for all
+large `k`. -/
+theorem eventually_finrank_divisorSheaf_add_nsmul_ofPoint_succ (D : WeilDivisor X) (x : X) :
+    ∀ᶠ k : ℕ in atTop,
+      Module.finrank ℂ ((divisorSheaf (D + (k + 1) • WeilDivisor.ofPoint x)).obj.obj (op ⊤)) =
+        Module.finrank ℂ ((divisorSheaf (D + k • WeilDivisor.ofPoint x)).obj.obj (op ⊤)) + 1 := by
+  -- `h¹(D + k[x])` is a decreasing sequence of natural numbers, so it is constant from any index
+  -- at which it attains its minimum.
+  let a (k : ℕ) : ℕ := Module.finrank ℂ (divisorCechCohomology (D + k • WeilDivisor.ofPoint x) 1)
+  have ha : Antitone a := fun k l hkl ↦ finrank_divisorCechCohomology_one_le_of_le
+    (add_le_add_right (nsmul_le_nsmul_left (WeilDivisor.ofPoint_nonneg x) hkl) D)
+  refine eventually_atTop.2 ⟨Function.argmin a, fun k hk ↦ ?_⟩
+  have h₁ : a (k + 1) = a k :=
+    (ha k.le_succ).antisymm ((ha hk).trans (Function.argmin_le a (k + 1)))
+  have hχ := finrank_pointTwist_euler_characteristic (D + k • WeilDivisor.ofPoint x) x
+  rw [add_assoc, ← succ_nsmul] at hχ
+  simp only [a] at h₁
+  omega
+
+/-- **A finite map to the sphere from Riemann–Roch.** On a compact connected Riemann surface,
+every divisor `D` with `g_an < deg D` admits a finite holomorphic
 map `F : X → ℙ¹` whose affine part has meromorphic order at least `-D x` at every point `x`. -/
 theorem exists_finiteHolomorphicMap_of_analyticGenus_lt_degree {D : WeilDivisor X}
     (hD : (analyticGenus X : ℤ) < WeilDivisor.degree D) :
@@ -141,7 +170,24 @@ theorem exists_finiteHolomorphicMap_of_analyticGenus_lt_degree {D : WeilDivisor 
   rw [(divisorSheafSectionsEquiv D ⊤).finrank_eq] at h
   omega
 
-/-- A compact connected Riemann surface with finite-dimensional `H¹(X, 𝒪)` admits a finite
+variable (X) in
+/-- **Nonconstant meromorphic functions exist.** A compact connected Riemann surface carries a
+meromorphic function which is not constant: by Riemann–Roch the divisor `(g_an + 1) · x` has two
+independent global sections. -/
+theorem exists_meromorphicFunction_notMem_range_algebraMap :
+    ∃ f : MeromorphicFunction X, f ∉ Set.range (algebraMap ℂ (MeromorphicFunction X)) := by
+  obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := X)
+  have hdeg : WeilDivisor.degree ((analyticGenus X + 1) • WeilDivisor.ofPoint x) =
+      analyticGenus X + 1 := by
+    simp [map_nsmul, WeilDivisor.degree_ofPoint]
+  have h := degree_add_one_sub_analyticGenus_le_finrank_divisorSheaf
+    ((analyticGenus X + 1) • WeilDivisor.ofPoint x)
+  rw [(divisorSheafSectionsEquiv _ ⊤).finrank_eq] at h
+  obtain ⟨s, hs⟩ := divisorSections.exists_toMeromorphic_notMem_range_algebraMap
+    ((analyticGenus X + 1) • WeilDivisor.ofPoint x) (by omega)
+  exact ⟨_, hs⟩
+
+/-- A compact connected Riemann surface admits a finite
 holomorphic map to `ℙ¹` of degree at most `g_an + 1`. -/
 theorem exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one :
     ∃ F : FiniteHolomorphicMap X (OnePoint ℂ), degree F ≤ analyticGenus X + 1 := by
@@ -157,7 +203,7 @@ theorem exists_finiteHolomorphicMap_degree_le_analyticGenus_add_one :
   rw [hdeg] at this
   omega
 
-/-- A compact connected Riemann surface with finite-dimensional `H¹(X, 𝒪)` and analytic genus `0`
+/-- A compact connected Riemann surface with analytic genus `0`
 admits a finite holomorphic map to `ℙ¹` of degree `1`. -/
 theorem exists_finiteHolomorphicMap_degree_eq_one_of_analyticGenus_eq_zero
     (h : analyticGenus X = 0) : ∃ F : FiniteHolomorphicMap X (OnePoint ℂ), degree F = 1 := by

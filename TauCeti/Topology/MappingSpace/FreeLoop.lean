@@ -11,7 +11,9 @@ public import TauCeti.Topology.Circle.Loop
 public import TauCeti.Topology.CompactOpen
 public import TauCeti.Topology.ContinuousMap.Precomp
 public import TauCeti.Topology.MappingSpace.Evaluation
+public import TauCeti.Topology.MappingSpace.Group
 public import Mathlib.Topology.Homotopy.Basic
+public import Mathlib.Topology.Homotopy.HomotopyGroup
 import TauCeti.Topology.Homotopy.Homotopic.With
 import TauCeti.Topology.PathComponent
 
@@ -25,11 +27,20 @@ closed unit-interval paths `{p : C(I, Q) // p 0 = p 1}` (`circleMapHomeomorphClo
 compatibly with evaluation at `1 ∈ S¹`, constant loops, and the based loop fibre
 `BasedMap Circle Q 1 x ≃ₜ Path x x` (`basedMapCircleOneHomeomorphPath`).
 
+The free loop space of a topological group `G` is the product of the group and its based loop
+space at `1`, `G × ΩG ≃ₜ C(S¹, G)` (`TauCeti.circleMapGroupHomeomorphLoopSpace`), through this
+identification of loops based at `1 ∈ S¹` with paths.
+
 Its subspace `𝓛₀Q` of **contractible** loops (`TauCeti.contractibleLoops`) consists of the loops
 joined by a path in the free loop space to a constant loop, equivalently to the constant loop at
 their own basepoint (`mem_contractibleLoops_iff_joined_const`), so `𝓛₀Q` is the union of the
 path components of the constant loops (`pathComponent_const_subset_contractibleLoops`), and so is
-open when the free loop space is locally path-connected (`TauCeti.isOpen_contractibleLoops`). The
+open when the free loop space is locally path-connected (`TauCeti.isOpen_contractibleLoops`). It
+contains the path component of each of its points
+(`TauCeti.pathComponent_subset_contractibleLoops`), so it inherits local path-connectedness from
+the free loop space (`TauCeti.locallyPathConnectedSpace_contractibleLoops`). For
+a path-connected `Q` it is a single path component (`TauCeti.contractibleLoops_eq_pathComponent`),
+so `𝓛₀Q` is path connected (`TauCeti.isPathConnected_contractibleLoops`). The
 constant loops embed in `𝓛₀Q` (`TauCeti.isEmbedding_constContractibleLoop`), with retraction
 `TauCeti.basepointContractibleLoop` given by evaluation at `1`. A path in the free loop space
 that starts at a constant loop stays in `𝓛₀Q` (`TauCeti.constLoopPath_mem_contractibleLoops`),
@@ -40,7 +51,13 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
 
 * `TauCeti.ClosedUnitPath`, `TauCeti.circleMapHomeomorphClosedUnitPath`:
   `C(Circle, Q) ≃ₜ {p : C(I, Q) // p 0 = p 1}`.
+* `TauCeti.unitAddCircleMapHomeomorphClosedUnitPath`: the same for maps from `UnitAddCircle`.
+* `GenLoop.exists_unitAddCircle_apply_eq`: a generalized loop of dimension one is traced by a map
+  from `UnitAddCircle`.
 * `TauCeti.basedMapCircleOneHomeomorphPath`: `BasedMap Circle Q 1 x ≃ₜ Path x x`.
+* `TauCeti.circleMapGroupHomeomorphLoopSpace`: `G × ΩG ≃ₜ C(S¹, G)` for a topological group `G`,
+  sending `(g, γ)` to the loop `t ↦ g γ(t)`, with the characteristic lemmas `_apply_unitToCircle`,
+  `_symm_fst` and `_symm_snd_apply`.
 * `Path.continuous_toCircle`: reading loops as circle maps is continuous.
 * `Path.joined_toCircle_iff_homotopicWith`: two loops are joined in `C(Circle, Q)` exactly when
   they are homotopic through closed paths `I → Q`.
@@ -48,6 +65,9 @@ such paths in `𝓛₀Q` (`TauCeti.constLoopPathHomeomorph`).
   `𝓛₀Q` and basepoint evaluation `𝓛₀Q → Q` at `1 ∈ Circle`.
 * `TauCeti.constContractibleLoop`: the constant loops as a continuous map `Q → 𝓛₀Q`, an
   embedding by `TauCeti.isEmbedding_constContractibleLoop`.
+* `TauCeti.isPathConnected_contractibleLoops`: `𝓛₀Q` is path connected when `Q` is.
+* `TauCeti.locallyPathConnectedSpace_contractibleLoops`: `𝓛₀Q` is locally path-connected when
+  `C(S¹, Q)` is.
 * `TauCeti.ConstLoopPath`, `TauCeti.ContractibleConstLoopPath`, `TauCeti.constLoopPathHomeomorph`,
   `TauCeti.BasedConstLoopPath`, `TauCeti.BasedContractibleConstLoopPath`.
 -/
@@ -56,7 +76,7 @@ public section
 
 noncomputable section
 
-open scoped unitInterval
+open scoped unitInterval Topology.Homotopy
 
 namespace TauCeti
 
@@ -233,6 +253,35 @@ theorem circleMapHomeomorphClosedUnitPath_symm_const (q : Q) :
       ContinuousMap.const Circle q :=
   circleMapHomeomorphClosedUnitPath.injective (by simp)
 
+/-- **Maps from `UnitAddCircle` are closed unit-interval paths**:
+`circleMapHomeomorphClosedUnitPath` after identifying `UnitAddCircle` with `Circle` by
+`AddCircle.homeomorphCircle`. -/
+def unitAddCircleMapHomeomorphClosedUnitPath : C(UnitAddCircle, Q) ≃ₜ ClosedUnitPath Q :=
+  ((AddCircle.homeomorphCircle one_ne_zero).arrowCongr (Homeomorph.refl Q)).trans
+    circleMapHomeomorphClosedUnitPath
+
+@[simp]
+theorem unitAddCircleMapHomeomorphClosedUnitPath_apply (γ : C(UnitAddCircle, Q)) (t : I) :
+    (unitAddCircleMapHomeomorphClosedUnitPath γ).val t = γ ((t : ℝ) : UnitAddCircle) := by
+  rw [unitAddCircleMapHomeomorphClosedUnitPath, Homeomorph.trans_apply,
+    circleMapHomeomorphClosedUnitPath_apply]
+  exact congrArg γ (homeomorphCircle_symm_unitToCircle t)
+
+/-- The map from `UnitAddCircle` of a closed path `p` sends the class of `t` to `p t`. -/
+@[simp]
+theorem unitAddCircleMapHomeomorphClosedUnitPath_symm_apply (p : ClosedUnitPath Q) (t : I) :
+    unitAddCircleMapHomeomorphClosedUnitPath.symm p ((t : ℝ) : UnitAddCircle) = p.val t := by
+  rw [← unitAddCircleMapHomeomorphClosedUnitPath_apply, Homeomorph.apply_symm_apply]
+
+/-- A generalized loop of dimension one is traced by a map from the circle `ℝ / ℤ`. -/
+theorem _root_.GenLoop.exists_unitAddCircle_apply_eq {x : Q} (p : Ω^ (Fin 1) Q x) :
+    ∃ ℓ : C(UnitAddCircle, Q), ∀ t : I, ℓ (t : ℝ) = p (fun _ ↦ t) :=
+  ⟨unitAddCircleMapHomeomorphClosedUnitPath.symm
+      ⟨⟨fun t ↦ p (fun _ ↦ t), by fun_prop⟩,
+        (GenLoop.boundary p _ ⟨0, Or.inl rfl⟩).trans
+          (GenLoop.boundary p _ ⟨0, Or.inr rfl⟩).symm⟩,
+    fun t ↦ unitAddCircleMapHomeomorphClosedUnitPath_symm_apply _ t⟩
+
 /-- Restricting `circleMapHomeomorphClosedUnitPath` to the fibre of evaluation at `1 ∈ Circle` over
 `x` gives the homeomorphism `BasedMap Circle Q 1 x ≃ₜ Path x x`. -/
 def basedMapCircleOneHomeomorphPath (x : Q) : BasedMap Circle Q 1 x ≃ₜ Path x x :=
@@ -273,6 +322,43 @@ theorem coe_basedMapCircleOneHomeomorphPath_symm (x : Q) (ω : Path x x) :
   obtain ⟨t, rfl⟩ := unitToCircle_surjective z
   rw [basedMapCircleOneHomeomorphPath_symm_unitToCircle, ω.toCircle_unitToCircle]
 
+/-! ### The free loop space of a topological group -/
+
+section TopologicalGroup
+
+variable (G : Type*) [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
+
+/-- **The free loop space of a topological group is a product**, `G × ΩG ≃ₜ C(S¹, G)`: the pair
+`(g, γ)` of a group element and a loop at `1` goes to the free loop `t ↦ g γ(t)`, read on the
+circle through `TauCeti.basedMapCircleOneHomeomorphPath`. The inverse records the value at `1 ∈ S¹`
+and translates the loop back to `1`. -/
+def circleMapGroupHomeomorphLoopSpace : G × Path (1 : G) 1 ≃ₜ C(Circle, G) :=
+  (Homeomorph.prodCongr (Homeomorph.refl G) (basedMapCircleOneHomeomorphPath (1 : G)).symm).trans
+    (mappingSpaceGroupHomeomorph 1)
+
+variable {G}
+
+/-- The free loop of `(g, γ)` at the image `unitToCircle t` of a time `t` is `g γ(t)`. -/
+@[simp]
+theorem circleMapGroupHomeomorphLoopSpace_apply_unitToCircle (g : G) (γ : Path (1 : G) 1)
+    (t : unitInterval) :
+    circleMapGroupHomeomorphLoopSpace G (g, γ) (unitToCircle t) = g * γ t := by
+  simp [circleMapGroupHomeomorphLoopSpace]
+
+/-- The group coordinate of a free loop in `G` is its value at `1 ∈ S¹`. -/
+@[simp]
+theorem circleMapGroupHomeomorphLoopSpace_symm_fst (f : C(Circle, G)) :
+    ((circleMapGroupHomeomorphLoopSpace G).symm f).1 = f 1 :=
+  mappingSpaceGroupHomeomorph_symm_fst 1 f
+
+/-- The loop coordinate of a free loop `f` in `G` is the loop `t ↦ f(1)⁻¹ f(t)` at `1`. -/
+@[simp]
+theorem circleMapGroupHomeomorphLoopSpace_symm_snd_apply (f : C(Circle, G)) (t : unitInterval) :
+    ((circleMapGroupHomeomorphLoopSpace G).symm f).2 t = (f 1)⁻¹ * f (unitToCircle t) := by
+  simp [circleMapGroupHomeomorphLoopSpace]
+
+end TopologicalGroup
+
 /-! ### Basepoint evaluation on contractible free loops -/
 
 /-- Basepoint evaluation `𝓛₀Q → Q` at `1 ∈ Circle`. -/
@@ -298,6 +384,33 @@ theorem pathComponent_const_subset_contractibleLoops (q : Q) :
     pathComponent (ContinuousMap.const Circle q) ⊆ contractibleLoops Q :=
   fun _ h ↦ mem_contractibleLoops_iff.2 ⟨q, h.symm⟩
 
+/-- The contractible free loops contain the path component of each of their points. -/
+theorem pathComponent_subset_contractibleLoops {γ : C(Circle, Q)} (hγ : γ ∈ contractibleLoops Q) :
+    pathComponent γ ⊆ contractibleLoops Q := by
+  obtain ⟨q, hq⟩ := mem_contractibleLoops_iff.1 hγ
+  exact (pathComponent_congr hq.symm).subset.trans (pathComponent_const_subset_contractibleLoops q)
+
+/-- For a path-connected `Q`, the contractible free loops are the path component of any constant
+loop. -/
+theorem contractibleLoops_eq_pathComponent [PathConnectedSpace Q] (q : Q) :
+    contractibleLoops Q = pathComponent (ContinuousMap.const Circle q) := by
+  refine Set.Subset.antisymm (fun γ ⟨q', hq'⟩ ↦ ?_) (pathComponent_const_subset_contractibleLoops q)
+  exact ((PathConnectedSpace.joined q q').map
+    (ContinuousMap.continuous_const' (X := Circle) (Y := Q))).trans hq'.symm
+
+variable (Q) in
+/-- For a path-connected `Q`, the contractible free loops `𝓛₀Q` are path connected. -/
+theorem isPathConnected_contractibleLoops [PathConnectedSpace Q] :
+    IsPathConnected (contractibleLoops Q) := by
+  obtain ⟨q⟩ := PathConnectedSpace.nonempty (X := Q)
+  rw [contractibleLoops_eq_pathComponent q]
+  exact isPathConnected_pathComponent
+
+/-- For a path-connected `Q`, the contractible free loops `𝓛₀Q` form a path-connected space. -/
+instance pathConnectedSpace_contractibleLoops [PathConnectedSpace Q] :
+    PathConnectedSpace (contractibleLoops Q) :=
+  isPathConnected_iff_pathConnectedSpace.mp (isPathConnected_contractibleLoops Q)
+
 /-- A circle loop is contractible if and only if it is joined in `C(Circle, Q)` to the constant
 loop at its own basepoint `γ 1`. -/
 theorem mem_contractibleLoops_iff_joined_const {γ : C(Circle, Q)} :
@@ -319,6 +432,12 @@ theorem isOpen_contractibleLoops [LocallyPathConnectedSpace C(Circle, Q)] :
     exact exists_congr fun _ => ⟨Joined.symm, Joined.symm⟩
   rw [this]
   exact isOpen_iUnion fun q => IsOpen.pathComponent _
+
+/-- The contractible free loops `𝓛₀Q` are locally path-connected when the free loop space is:
+they form an open subset of it. -/
+instance locallyPathConnectedSpace_contractibleLoops [LocallyPathConnectedSpace C(Circle, Q)] :
+    LocallyPathConnectedSpace (contractibleLoops Q) :=
+  (isOpen_contractibleLoops Q).locallyPathConnectedSpace
 
 end TauCeti
 

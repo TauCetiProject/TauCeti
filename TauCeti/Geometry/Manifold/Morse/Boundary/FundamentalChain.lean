@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Augmentation
 public import TauCeti.Geometry.Manifold.Morse.Boundary.Integral
+public import TauCeti.Geometry.Manifold.Morse.Boundary.SignedAugmentation
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+import TauCeti.Geometry.Manifold.Morse.Boundary.OneDimensional
 import TauCeti.Geometry.Manifold.Morse.Stable.Orientation
 import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.LinearAlgebra.Determinant.Prod
@@ -68,6 +70,17 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `map_unstableFrame_eq_orientationAt_iff`: the unstable frame of a critical point of top index
   compares orientations in the same way at every point of its unstable manifold.
+* `bijective_mvfderiv_prod_stableNormal`, `fundamentalSign_mul_trajectorySign`: along a trajectory
+  from a critical point of top index to one of index `n - 1`, the map `v ↦ (df v, N_q v)` is an
+  isomorphism, and the sign of the trajectory times the fundamental sign of its source compares,
+  through this map, the orientation of `M` with the standard orientation of `ℝ` followed by the
+  orientation of the unstable manifold of `q`.
+* `augmentationSign_add_fundamentalSign_mul_self_of_finrank_eq_one`: on a manifold of dimension
+  `1`, the sum of the augmentation and fundamental signs of a critical point squares to `1`.
+* `fundamentalSign_mul_trajectorySign_of_finrank_eq_one`: on an oriented manifold of dimension
+  `1`, the sign of a trajectory from a critical point of index `1` to one of index `0`, weighted by
+  the fundamental sign of its source and the augmentation sign of its end, is the sign of the
+  derivative of `f` in the positive direction at any of its points.
 * `IsMorseSmale.finsum_fundamentalSign_mul_signedMorseBoundaryCoeff`: the boundary coefficients of
   a critical point, weighted by the fundamental signs of their sources, add up to zero.
 * `IsMorseSmale.signedMorseBoundary_signedMorseFundamentalChain`: `∂ [M] = 0`.
@@ -176,6 +189,13 @@ theorem fundamentalSign_eq_one_or_eq_neg_one {p : criticalPoints 𝓘(ℝ, E) f}
   rw [fundamentalSign_of_morseIndex_eq hp]
   split_ifs <;> simp
 
+/-- At a critical point of top index the fundamental sign squares to `1`, in every ring. -/
+theorem fundamentalSign_mul_self {R : Type*} [NonAssocRing R] {p : criticalPoints 𝓘(ℝ, E) f}
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
+    (hX.fundamentalSign 𝔬 oM p : R) * hX.fundamentalSign 𝔬 oM p = 1 := by
+  rcases fundamentalSign_eq_one_or_eq_neg_one (hX := hX) (𝔬 := 𝔬) (oM := oM) hp with h | h <;>
+    simp [h]
+
 /-- Modulo two, the fundamental sign is `1` at the critical points of top index and `0`
 elsewhere, whatever the orientations. -/
 theorem intCast_fundamentalSign (p : criticalPoints 𝓘(ℝ, E) f) :
@@ -186,6 +206,22 @@ theorem intCast_fundamentalSign (p : criticalPoints 𝓘(ℝ, E) f) :
     rcases fundamentalSign_eq_one_or_eq_neg_one (𝔬 := 𝔬) (oM := oM) hp with h | h <;>
       rw [h] <;> decide
   · rw [ite_eq_right hp, fundamentalSign_of_morseIndex_ne hp, Int.cast_zero]
+
+/-- **The signs of a critical point in dimension one.** On a manifold of dimension `1`, a critical
+point `p` has index `0`, where the fundamental sign vanishes and the augmentation sign is `±1`, or
+index `1`, where the augmentation sign vanishes and the fundamental sign is `±1`. So the sum of the
+two signs at `p` squares to `1`. -/
+theorem augmentationSign_add_fundamentalSign_mul_self_of_finrank_eq_one (hE : finrank ℝ E = 1)
+    (p : criticalPoints 𝓘(ℝ, E) f) :
+    (𝔬.augmentationSign p + hX.fundamentalSign 𝔬 oM p) *
+      (𝔬.augmentationSign p + hX.fundamentalSign 𝔬 oM p) = 1 := by
+  have hp₁ : manifoldMorseIndex 𝓘(ℝ, E) f p ≤ 1 := hE ▸ manifoldMorseIndex_le_finrank
+  rcases Nat.le_one_iff_eq_zero_or_eq_one.1 hp₁ with hp | hp
+  · rw [fundamentalSign_of_morseIndex_ne (hX := hX) (by omega), add_zero]
+    rcases 𝔬.augmentationSign_eq_one_or_eq_neg_one hp with h | h <;> simp [h]
+  · rw [MorseOrientation.augmentationSign_of_morseIndex_ne_zero _ (by omega), zero_add]
+    rcases fundamentalSign_eq_one_or_eq_neg_one (hX := hX) (𝔬 := 𝔬) (oM := oM) (hp.trans hE.symm)
+      with h | h <;> simp [h]
 
 /-- **Reversing the orientation of `M` reverses the fundamental signs.** -/
 @[simp]
@@ -268,11 +304,8 @@ private theorem exists_flow_eq_smul_single {q : M}
     ∃ T b : ℝ, 0 ∈ hX.linearForwardTimes φ (hX.flow T y) ∧ P (hX.flow T y) ∧ b ≠ 0 ∧
       φ.coord (φ.toChart (hX.flow T y)) = b • Pi.single j 1 := by
   obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
-  have hc : ContinuousAt (fun z ↦ ‖φ.coord (φ.toChart z)‖) q :=
-    φ.continuous_coord.norm.continuousAt.comp (φ.toChart.continuousAt φ.mem_source)
   have hnear : ∀ᶠ z in 𝓝 q, P z ∧ z ∈ φ.toChart.source ∧ ‖φ.coord (φ.toChart z)‖ < ε :=
-    hP.and ((φ.toChart.open_source.eventually_mem φ.mem_source).and
-      (hc.eventually (gt_mem_nhds (by simp [hε]))))
+    hP.and (φ.eventually_mem_source_norm_coord_lt hε)
   obtain ⟨T, hT, hPT, hsrc, hsmall⟩ := ((hX.eventually_mem_linearForwardTimes hφ hy).and
     ((Flow.mem_stableSet.1 hy).eventually hnear)).exists
   have hzs : hX.flow T y ∈ hX.flow.stableSet q := (Flow.apply_mem_stableSet_iff _ T).2 hy
@@ -426,7 +459,7 @@ private theorem exists_linearEquiv_stableComparison {q : M} {φ : MorseChart E f
       refine (congrArg φ.negativeCoord (e.apply_symm_apply _)).trans ?_
       dsimp only
       funext i
-      rw [MorseChart.negativeCoord_apply, LinearEquiv.apply_symm_apply,
+      rw [MorseBottChart.negativeCoord_apply, LinearEquiv.apply_symm_apply,
         Pi.single_eq_of_ne (fun h ↦ (lt_irrefl (0 : ℝ)) (by
           have := i.property
           rw [h, hj] at this
@@ -493,7 +526,7 @@ private theorem map_stableComparison_eq_neg {q : M} {φ : MorseChart E f q}
 point `z` of a trajectory from a critical point `p` of index `n` to a critical point `q` of index
 `n - 1`, the map `v ↦ (df_z v, N_q v)` is an isomorphism: it is the comparison map after the
 inverse of the unstable frame of `p`. -/
-private theorem bijective_stableComparison (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
+theorem bijective_mvfderiv_prod_stableNormal (hMS : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     {p q : M} {φp : MorseChart E f p} {φq : MorseChart E f q}
     (hφp : ∀ y ∈ φp.toChart.source, φp.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φp.toChart y (X y)) =
       fun i ↦ -(φp.weight i * φp.coord (φp.toChart y) i))
@@ -515,7 +548,7 @@ Let `p` have index `n` and `q` index `n - 1`, and let `z` lie on a trajectory fr
 sign of the trajectory, multiplied by the fundamental sign of `p`, is `1` exactly when the map
 `v ↦ (df_z v, N_q v)` carries the orientation of `M` at `z` to the standard orientation of `ℝ`
 followed by the orientation of the unstable manifold of `q`. -/
-private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
+theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
     (hf : IsMorse 𝓘(ℝ, E) f) (𝔬 : MorseOrientation f X)
     (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E))) {p q : criticalPoints 𝓘(ℝ, E) f}
     (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E)
@@ -563,6 +596,107 @@ private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
   refine Orientation.ite_map_mul_ite_map_trans 𝓕 𝒜 op (Fintype.card_fin _) ?_
   rw [Fintype.card_fin, (𝔬.chart q).finrank_prod_negativeWeight_fun]
   omega
+
+/-! ### Trajectories on an oriented one-dimensional manifold -/
+
+omit [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] in
+/-- On a manifold of dimension `1`, at a point `z` where `df_z` does not vanish, `df_z` does not
+vanish on the vector of a basis of `T_z M`: it does not vanish on `X z`, a multiple of it. -/
+private theorem mvfderiv_apply_ne_zero_of_finrank_eq_one (hX : IsAdaptedPseudoGradient f X)
+    (hE : finrank ℝ E = 1) {z : M}
+    (hz : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f z ≠ 0)
+    (b : Module.Basis (Fin (finrank ℝ E)) ℝ (TangentSpace 𝓘(ℝ, E) z)) (k : Fin (finrank ℝ E)) :
+    mvfderiv 𝓘(ℝ, E) f z (b k) ≠ 0 := by
+  have : Unique (Fin (finrank ℝ E)) := by rw [hE]; infer_instance
+  have hlt := hX.mvfderiv_apply_lt_zero z hz
+  intro h0
+  rw [← b.sum_repr (X z), Fintype.sum_unique, map_smul, Subsingleton.elim default k, h0,
+    smul_zero] at hlt
+  exact lt_irrefl 0 hlt
+
+/-- On a manifold of dimension `1`, let `q` have index `0`, let the stable comparison map
+`v ↦ (df_z v, N_q v)` at `z` be bijective, and let `B₀` be a basis of `ℝ × V`, for `V = 0` the
+space of coordinates of negative weight at `q`, whose vectors have first coordinate `1`. Then the
+stable comparison map carries the orientation of a basis `b` of `T_z M` to that of `B₀`, scaled by
+the inverse of `d = df_z (b k)`. -/
+private theorem map_orientation_stableComparison_eq (hE : finrank ℝ E = 1) {q : M}
+    (φq : MorseChart E f q) (hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0) {z : M}
+    (hA : Bijective ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φq z)))
+    (b : Module.Basis (Fin (finrank ℝ E)) ℝ (TangentSpace 𝓘(ℝ, E) z)) (k : Fin (finrank ℝ E))
+    (hd : mvfderiv 𝓘(ℝ, E) f z (b k) ≠ 0)
+    (B₀ : Module.Basis (Fin (finrank ℝ E)) ℝ (ℝ × ({i // φq.weight i < 0} → ℝ)))
+    (hB₀ : ∀ j, (B₀ j).1 = 1) :
+    Orientation.map _ (LinearEquiv.ofBijective
+        ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φq z)).toLinearMap hA) b.orientation =
+      (Units.mk0 _ hd)⁻¹ • B₀.orientation := by
+  have : Unique (Fin (finrank ℝ E)) := by rw [hE]; infer_instance
+  have hsub : Subsingleton ({i // φq.weight i < 0} → ℝ) :=
+    Module.finrank_zero_iff.1 (φq.finrank_negativeWeight_fun.trans hq)
+  -- The stable comparison map sends `b` to `d` times `B₀`.
+  have hmap : b.map (LinearEquiv.ofBijective
+      ((mvfderiv 𝓘(ℝ, E) f z).prod (hX.stableNormal φq z)).toLinearMap hA) =
+      B₀.unitsSMul fun _ ↦ Units.mk0 _ hd := by
+    refine Module.Basis.eq_of_apply_eq fun i ↦ Prod.ext ?_ (Subsingleton.elim _ _)
+    obtain rfl : i = k := Subsingleton.elim _ _
+    rw [Module.Basis.map_apply, LinearEquiv.ofBijective_apply, ContinuousLinearMap.coe_coe,
+      ContinuousLinearMap.prod_apply, Module.Basis.unitsSMul_apply, Units.smul_def,
+      Units.val_mk0, Prod.smul_fst, hB₀, smul_eq_mul, mul_one]
+  rw [← Module.Basis.orientation_map, hmap, Module.Basis.orientation_unitsSMul,
+    Fintype.prod_unique]
+
+/-- **The sign of a trajectory on an oriented one-dimensional manifold.** Let `M` have dimension
+`1`, let `p` and `q` be critical points with `ind p = ind q + 1`, so of index `1` and `0`, and let
+`z` lie on a trajectory from `p` to `q`. For a positive basis `b` of `T_z M`, the sign of the
+trajectory, multiplied by the fundamental sign of `p`, is the augmentation sign of `q` times the
+sign of `df_z (b k)`. So when `W^u(p)` is oriented like `M` and `q` positively, the trajectory
+counts positively exactly when it runs against the orientation of `M`, along which `f` then
+increases. -/
+theorem fundamentalSign_mul_trajectorySign_of_finrank_eq_one (hf : IsMorse 𝓘(ℝ, E) f)
+    (hE : finrank ℝ E = 1) (𝔬 : MorseOrientation f X)
+    (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E))) {p q : criticalPoints 𝓘(ℝ, E) f}
+    (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) {z : M}
+    (hz : z ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
+    (b : Module.Basis (Fin (finrank ℝ E)) ℝ (TangentSpace 𝓘(ℝ, E) z))
+    (hb : b.orientation = oM.orientationAt z) (k : Fin (finrank ℝ E)) :
+    hX.fundamentalSign 𝔬 oM p * hX.trajectorySign (𝔬.chart p) (𝔬.chart q) (𝔬.orientation p)
+        (𝔬.orientation q) hpq z =
+      𝔬.augmentationSign q * (SignType.sign (mvfderiv 𝓘(ℝ, E) f z (b k)) : ℤ) := by
+  classical
+  have hMS := hX.isMorseSmale_of_finrank_eq_one hf hE
+  -- In dimension `1`, the source has index `1` and the target index `0`.
+  have hp₁ : manifoldMorseIndex 𝓘(ℝ, E) f p ≤ finrank ℝ E := manifoldMorseIndex_le_finrank
+  have hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0 := by omega
+  have hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E := by omega
+  have hA := bijective_mvfderiv_prod_stableNormal hMS hf (𝔬.coord_mfderiv_chart p)
+    (𝔬.coord_mfderiv_chart q) hp hpq hz
+  rw [fundamentalSign_mul_trajectorySign hMS hf 𝔬 oM hp hpq hz hA,
+    𝔬.augmentationSign_of_morseIndex_eq_zero hq]
+  have hd := mvfderiv_apply_ne_zero_of_finrank_eq_one hX hE
+    (hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet
+      (fun he ↦ by rw [Subtype.ext he] at hpq; omega) hz) b k
+  set d := mvfderiv 𝓘(ℝ, E) f z (b k)
+  -- The target orientation is that of a basis `B₀` whose vectors are `(1, 0)`, or its reverse.
+  obtain ⟨B₀, hB₀, hT⟩ := (𝔬.chart q).exists_basis_fst_eq_one_orientation_eq hq
+    (by omega : 1 + manifoldMorseIndex 𝓘(ℝ, E) f q = finrank ℝ E)
+  set b₀ := Module.finBasisOfFinrankEq ℝ _ (𝔬.chart q).finrank_negativeWeight_fun
+  rw [← hb, map_orientation_stableComparison_eq hE (𝔬.chart q) hq hA b k hd B₀ hB₀]
+  -- Compare the two orientations according to the signs of `d` and of the orientation at `q`.
+  have hne := Module.Ray.ne_neg_self B₀.orientation
+  rcases hd.lt_or_gt with hneg | hpos
+  · rw [Module.Ray.units_smul_of_neg _ (by
+      rw [Units.val_inv_eq_inv_val, Units.val_mk0]; exact inv_lt_zero.2 hneg), sign_neg hneg]
+    rcases b₀.orientation_eq_or_eq_neg (𝔬.orientation q) with ho | ho <;> rw [ho]
+    · rw [hT]
+      simp [hne.symm]
+    · rw [Orientation.prod_neg_right, Orientation.reindex_neg, hT]
+      simp
+  · rw [Module.Ray.units_smul_of_pos _ (by
+      rw [Units.val_inv_eq_inv_val, Units.val_mk0]; exact inv_pos.2 hpos), sign_pos hpos]
+    rcases b₀.orientation_eq_or_eq_neg (𝔬.orientation q) with ho | ho <;> rw [ho]
+    · rw [hT]
+      simp
+    · rw [Orientation.prod_neg_right, Orientation.reindex_neg, hT]
+      simp [hne]
 
 /-! ### The fundamental chain is a cycle -/
 
@@ -612,8 +746,8 @@ private theorem fundamentalSign_mul_trajectorySign_eq_neg {q : criticalPoints �
     ⟨(Flow.apply_mem_unstableSet_iff _ _).2 (hw i).1, (Flow.apply_mem_stableSet_iff _ _).2 (hw i).2⟩
   have hcritz (i : Fin 2) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f (z i) ≠ 0 :=
     hX.mfderiv_ne_zero_of_mem_unstableSet_inter_stableSet (hne i) (hz i)
-  have hA (i : Fin 2) := bijective_stableComparison h hf (𝔬.coord_mfderiv_chart (a i)) hφ (ha i)
-    (hpq i) (hz i)
+  have hA (i : Fin 2) :=
+    bijective_mvfderiv_prod_stableNormal h hf (𝔬.coord_mfderiv_chart (a i)) hφ (ha i) (hpq i) (hz i)
   -- The two points are on opposite sides of `q`.
   have hz1 : z 1 ∉ hX.flow.orbit (z 0) := fun hmem ↦ hw1 (by
     obtain ⟨t, ht⟩ := (hX.flow.mem_orbit_iff).1 hmem

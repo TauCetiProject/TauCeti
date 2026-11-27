@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.Conjugation.Basic
@@ -60,6 +61,8 @@ shrinking part.
   morphisms.
 * `TauCeti.CommHopfAlgCat.isIso_of_isIso_mapPointsFunctor`: a coordinate morphism is an
   isomorphism when its induced natural map on points is an isomorphism.
+* `TauCeti.CommHopfAlgCat.mapPointsFunctor_app_bijective_of_isIso`: conversely, an isomorphism
+  of coordinate Hopf algebras is bijective on points.
 * `TauCeti.CommHopfAlgCat.homOfPointsMap`: the coordinate morphism a natural map of points
   functors comes from, with `TauCeti.CommHopfAlgCat.mapPointsFunctor_homOfPointsMap` its
   defining property, `TauCeti.CommHopfAlgCat.homOfPointsMap_mapPointsFunctor` the converse
@@ -86,7 +89,7 @@ open scoped CategoryTheory.MonObj
 
 namespace TauCeti
 
-universe u v
+universe u v w
 
 section CorepresentableByToIso
 
@@ -539,6 +542,14 @@ theorem isIso_of_isIso_mapPointsFunctor {H K : _root_.CommHopfAlgCat.{u} R} (f :
       (pointsFunctor.{u, u, u} (R := R))).isIso_of_isIso_map f.op
   exact isIso_of_op f
 
+/-- An isomorphism of coordinate commutative Hopf algebras is bijective on points; this is the
+converse of `isIso_of_isIso_mapPointsFunctor`. -/
+theorem mapPointsFunctor_app_bijective_of_isIso {H K : _root_.CommHopfAlgCat.{v} R} (f : H ⟶ K)
+    [IsIso f] (A : CommAlgCat.{w} R) :
+    Function.Bijective ((CommHopfAlgCat.Hom.mapPointsFunctor f).app A) := by
+  have h := ConcreteCategory.bijective_of_isIso (((pointsFunctor (R := R)).map f.op).app A)
+  rwa [pointsFunctor_map, Quiver.Hom.unop_op] at h
+
 /-- The coordinate Hopf-algebra morphism that a natural transformation of group-valued points
 functors comes from, recovered by fullness of the functor of points.
 
@@ -567,6 +578,23 @@ theorem mapPointsFunctor_homOfPointsMap {H K : _root_.CommHopfAlgCat.{u} R}
   exact Functor.map_preimage
     (pointsFunctor.{u, u, u} (R := R) :
       (_root_.CommHopfAlgCat.{u} R)ᵒᵖ ⥤ CommAlgCat.{u} R ⥤ GrpCat.{u}) _
+
+/-- **Universe lifting for `TauCeti.CommHopfAlgCat.homOfPointsMap`**: over value algebras of any
+universe, the recovered coordinate morphism sends a point `q` to the image under `q` of the
+generic point `α (𝟙 H)`. A points map defined at every universe and natural in the value algebra
+is thus determined by its value on the generic point. -/
+theorem mapPointsFunctor_homOfPointsMap_app {H K : _root_.CommHopfAlgCat.{u} R}
+    (α : HopfAlgebra.pointsFunctor (R := R) (H := H) ⟶
+      HopfAlgebra.pointsFunctor (R := R) (H := K))
+    (A : CommAlgCat.{w} R) (q : HopfAlgebra.points (R := R) (H := H) A) :
+    (CommHopfAlgCat.Hom.mapPointsFunctor (homOfPointsMap α)).app A q =
+      AlgHom.mapValue (H := K) q.ofConv
+        (α.app (CommAlgCat.of R H) (toConv (AlgHom.id R H))) := by
+  have h := congrArg (fun τ => τ.app (CommAlgCat.of R H) (toConv (AlgHom.id R H)))
+    (mapPointsFunctor_homOfPointsMap α)
+  rw [← h, CommHopfAlgCat.Hom.mapPointsFunctor_app_apply,
+    CommHopfAlgCat.Hom.mapPointsFunctor_app_apply, AlgHom.mapValue_apply, ofConv_toConv,
+    AlgHom.id_comp, ofConv_toConv]
 
 /-- Recovering a coordinate morphism from the points map it induces returns that morphism.
 With `TauCeti.CommHopfAlgCat.mapPointsFunctor_homOfPointsMap` this makes

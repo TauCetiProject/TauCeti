@@ -12,6 +12,7 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.IteratedFDeriv
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Converse
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
+import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
@@ -115,10 +116,6 @@ private theorem finrank_orthogonal_unit (v : U) : finrank ℝ (ℝ ∙ (v : E))�
 projection onto the hyperplane. -/
 private abbrev foot (v : U) : E →L[ℝ] (ℝ ∙ (v : E))ᗮ := (ℝ ∙ (v : E))ᗮ.orthogonalProjectionOnto
 
-private theorem coe_foot (v : U) (x : E) : (foot v x : E) = x - ⟪(v : E), x⟫ • (v : E) := by
-  rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
-    Submodule.starProjection_unit_singleton ℝ v.property]
-
 /-- On the hyperplane, the Poisson kernel with a pole `x` at height `t > 0` is a rescaled and
 translated copy of the Japanese bracket `(1 + ‖·‖ ^ 2) ^ (-n / 2)`. -/
 private theorem halfSpacePoissonKernel_eq_rpow_one_add (v : U) {x : E}
@@ -129,7 +126,8 @@ private theorem halfSpacePoissonKernel_eq_rpow_one_add (v : U) {x : E}
         (1 + ‖⟪(v : E), x⟫⁻¹ • (y - foot v x)‖ ^ 2) ^ (-(n : ℝ) / 2) := by
   have hy : ⟪(v : E), y⟫ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.1 y.property
   have hnorm : ‖y - foot v x‖ = ‖(y : E) - (x - ⟪(v : E), x⟫ • (v : E))‖ := by
-    rw [← coe_foot, ← Submodule.coe_sub, Submodule.norm_coe]
+    rw [← Submodule.coe_orthogonalProjectionOnto_orthogonal_singleton v.property x,
+      ← Submodule.coe_sub, Submodule.norm_coe]
   have h1 : ‖(y : E) - x‖ ^ 2 =
       ⟪(v : E), x⟫ ^ 2 * (1 + ‖⟪(v : E), x⟫⁻¹ • (y - foot v x)‖ ^ 2) := by
     rw [norm_smul, mul_pow, hnorm, norm_sub_sq_eq_of_inner_eq_zero v.property x hy,
@@ -515,7 +513,8 @@ theorem exists_harmonicOnNhd_continuousOn_halfSpace_eq (v : U) {g : (ℝ ∙ (v 
 /-- A point at height `t ≥ 0` above the hyperplane lies at distance `t` from its foot. -/
 private theorem norm_sub_foot (v : U) {x : E} (hx : 0 ≤ ⟪(v : E), x⟫) :
     ‖x - foot v x‖ = ⟪(v : E), x⟫ := by
-  rw [coe_foot, sub_sub_cancel, norm_smul, v.property, mul_one, Real.norm_eq_abs, abs_of_nonneg hx]
+  rw [Submodule.coe_orthogonalProjectionOnto_orthogonal_singleton v.property x, sub_sub_cancel,
+    norm_smul, v.property, mul_one, Real.norm_eq_abs, abs_of_nonneg hx]
 
 /-- **Hölder moments of the Poisson kernel.** For `0 ≤ α < 1` there is a constant `A` with
 `∫_H K(x, y) ‖y - x'‖^α dy = A ⟪v, x⟫^α` for every pole `x` in the open half-space, `x'` its foot:

@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Order.Ring.Units
 public import TauCeti.Data.ZMod.ExactDivisor
 public import TauCeti.NumberTheory.LocalField.Padic
-public import TauCeti.NumberTheory.LocalField.UnitsDecomposition
+public import TauCeti.NumberTheory.LocalField.Units.Decomposition
 public import TauCeti.NumberTheory.Padics.RingHoms
 import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.Data.ZMod.Units

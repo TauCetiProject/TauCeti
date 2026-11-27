@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Normed.Operator.SNumbers.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Basic
 public import TauCeti.Analysis.Normed.Module.Quotient
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Lp.PiLp.ModuleTopology
+import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 /-!
 # Kolmogorov numbers
@@ -19,15 +21,22 @@ even when the subspace is not closed. This definition works over every nontrivia
 field; its closed-unit-ball interpretation requires a densely normed field.
 
 We prove the norm, monotonicity, perturbation, ideal and rank laws, invariance under
-precomposition with normed quotient maps (`NormedAddGroupHom.IsQuotient`), and the bound by
-approximation numbers. Over a
-complete scalar field, finite-dimensional subspaces are closed, and the Kolmogorov numbers
-form a strict s-number sequence. No completeness of the domain or codomain is needed.
+precomposition with normed quotient maps (`NormedAddGroupHom.IsQuotient`), so that the
+Kolmogorov numbers are surjective, the bound by approximation numbers, and the index laws: the
+Kolmogorov numbers are additive, `d_{m+n}(S + T) ≤ dₘ(S) + dₙ(T)`, and multiplicative,
+`d_{m+n}(S T) ≤ dₘ(S) dₙ(T)`; with one index zero these recover the perturbation and
+postcomposition laws. The Kolmogorov numbers form an s-number sequence over every nontrivially
+normed field, since all subspaces of finite Euclidean coordinate spaces are closed. Over a complete
+scalar field, finite-dimensional subspaces of any normed space are closed, giving a strict
+s-number sequence.
 
 ## References
 
-* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §4.
+* A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §4, and
+  Theorem 9.5 for additivity.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
+* M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
+  blueprint Theorems 3.6 and 3.8, for the multiplicativity of Gelfand and Kolmogorov numbers.
 -/
 
 public section
@@ -114,18 +123,24 @@ theorem kolmogorovNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ}
     exact (Submodule.Quotient.mk_eq_zero _).mpr (LinearMap.mem_range_self _ x)
   simpa [hz] using T.kolmogorovNumber_le hT
 
+/-- **Mixed-index additivity.** `d_{m+n}(S + T) ≤ dₘ(S) + dₙ(T)`: quotient by the sum of
+subspaces admissible for `S` and for `T`, of dimension at most `m + n`. -/
+theorem kolmogorovNumber_add_index_le (S T : E →L[𝕜] F) (m n : ℕ) :
+    (S + T).kolmogorovNumber (m + n) ≤ S.kolmogorovNumber m + T.kolmogorovNumber n := by
+  rw [kolmogorovNumber_def S, kolmogorovNumber_def T]
+  refine NNReal.le_iInf_add_iInf fun V W ↦ ?_
+  have hrank : Module.rank 𝕜 ↥(V.val ⊔ W.val) ≤ ↑(m + n) := by
+    rw [Nat.cast_add]
+    exact (Submodule.rank_add_le_rank_add_rank _ _).trans (add_le_add V.property W.property)
+  refine ((S + T).kolmogorovNumber_le hrank).trans ?_
+  rw [comp_add]
+  exact (nnNorm_add_le _ _).trans (add_le_add (Submodule.nnnorm_mkQL_comp_le_of_le le_sup_left S)
+    (Submodule.nnnorm_mkQL_comp_le_of_le le_sup_right T))
+
 /-- The Kolmogorov number of `S + T` exceeds that of `S` by at most `‖T‖₊`. -/
 theorem kolmogorovNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
     (S + T).kolmogorovNumber n ≤ S.kolmogorovNumber n + ‖T‖₊ := by
-  have h (V : {V : Submodule 𝕜 F // Module.rank 𝕜 V ≤ n}) :
-      (S + T).kolmogorovNumber n ≤ ‖V.val.mkQL ∘L S‖₊ + ‖T‖₊ := by
-    refine ((S + T).kolmogorovNumber_le V.property).trans ?_
-    rw [comp_add]
-    refine (nnNorm_add_le _ _).trans ?_
-    gcongr
-    exact V.val.nnnorm_mkQL_comp_le T
-  simpa only [kolmogorovNumber_def, ciInf_const] using
-    (NNReal.le_iInf_add_iInf (g := fun _ : Unit ↦ ‖T‖₊) fun V _ ↦ h V)
+  simpa using S.kolmogorovNumber_add_index_le T n 0
 
 /-- Precomposition scales Kolmogorov numbers by at most the operator norm. -/
 theorem kolmogorovNumber_comp_le_right (T : F →L[𝕜] G) (A : E →L[𝕜] F) (n : ℕ) :
@@ -134,29 +149,39 @@ theorem kolmogorovNumber_comp_le_right (T : F →L[𝕜] G) (A : E →L[𝕜] F)
   refine le_ciInf fun V ↦ ((T ∘L A).kolmogorovNumber_le V.property).trans ?_
   simpa only [comp_assoc] using opNNNorm_comp_le (V.val.mkQL ∘L T) A
 
+/-- **Mixed-index multiplicativity.** `d_{m+n}(S T) ≤ dₘ(S) dₙ(T)`: for `V` admissible for `T`
+and `W` admissible for `S`, quotient by `W + S(V)`, of dimension at most `m + n`. -/
+theorem kolmogorovNumber_comp_add_le_mul (S : F →L[𝕜] G) (T : E →L[𝕜] F) (m n : ℕ) :
+    (S ∘L T).kolmogorovNumber (m + n) ≤ S.kolmogorovNumber m * T.kolmogorovNumber n := by
+  rw [kolmogorovNumber_def S, kolmogorovNumber_def T, NNReal.iInf_mul]
+  refine le_ciInf fun W ↦ ?_
+  rw [NNReal.mul_iInf]
+  refine le_ciInf fun V ↦ ?_
+  let U := W.val ⊔ V.val.map S.toLinearMap
+  have hU : Module.rank 𝕜 U ≤ ↑(m + n) := by
+    have hV : Module.rank 𝕜 (V.val.map S.toLinearMap) ≤ n := by
+      have h := (lift_rank_map_le S.toLinearMap V.val).trans (Cardinal.lift_le.mpr V.property)
+      simpa only [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] using h
+    rw [Nat.cast_add]
+    exact (Submodule.rank_add_le_rank_add_rank _ _).trans (add_le_add W.property hV)
+  -- `S` maps `V` into `U`, so the quotient map `F → G ⧸ U` descends to `F ⧸ V`.
+  have hker : V.val ≤ (U.mkQL ∘L S).ker := fun x hx ↦
+    (Submodule.Quotient.mk_eq_zero U).mpr (le_sup_right (a := W.val) ⟨x, hx, rfl⟩)
+  let D := V.val.liftQL (U.mkQL ∘L S) hker
+  have hD : ‖D‖₊ ≤ ‖W.val.mkQL ∘L S‖₊ := by
+    rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm, V.val.norm_liftQL]
+    exact Submodule.norm_mkQL_comp_le_of_le le_sup_left S
+  have heq : U.mkQL ∘L (S ∘L T) = D ∘L (V.val.mkQL ∘L T) := by
+    ext x
+    simp [D]
+  refine ((S ∘L T).kolmogorovNumber_le hU).trans ?_
+  rw [heq]
+  exact (opNNNorm_comp_le _ _).trans (by gcongr)
+
 /-- Postcomposition scales Kolmogorov numbers by at most the operator norm. -/
 theorem kolmogorovNumber_comp_le_left (B : F →L[𝕜] G) (T : E →L[𝕜] F) (n : ℕ) :
     (B ∘L T).kolmogorovNumber n ≤ ‖B‖₊ * T.kolmogorovNumber n := by
-  rw [kolmogorovNumber_def T, NNReal.mul_iInf]
-  refine le_ciInf fun V ↦ ?_
-  let W := V.val.map B.toLinearMap
-  have hW : Module.rank 𝕜 W ≤ n := by
-    have h := (lift_rank_map_le B.toLinearMap V.val).trans
-      (Cardinal.lift_le.mpr V.property)
-    simpa only [Cardinal.lift_natCast, Cardinal.lift_le_nat_iff] using h
-  have hker : V.val ≤ (W.mkQL ∘L B).ker := by
-    intro x hx
-    exact (Submodule.Quotient.mk_eq_zero W).mpr ⟨x, hx, rfl⟩
-  let D := V.val.liftQL (W.mkQL ∘L B) hker
-  have hD : ‖D‖₊ ≤ ‖B‖₊ := by
-    exact_mod_cast (V.val.norm_liftQL_le (W.mkQL ∘L B) hker).trans (W.norm_mkQL_comp_le B)
-  have heq : W.mkQL ∘L (B ∘L T) = D ∘L (V.val.mkQL ∘L T) := by
-    ext x
-    simp [D]
-  exact ((B ∘L T).kolmogorovNumber_le hW).trans (by
-    rw [heq]
-    refine (opNNNorm_comp_le _ _).trans ?_
-    gcongr)
+  simpa using B.kolmogorovNumber_comp_add_le_mul T 0 n
 
 /-- The two-sided ideal inequality for Kolmogorov numbers. -/
 theorem kolmogorovNumber_comp_comp_le (B : G →L[𝕜] H) (T : F →L[𝕜] G)
@@ -209,34 +234,37 @@ end ContinuousLinearMap
 
 namespace ContinuousLinearMap
 
-variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜]
+
+/-- The identity has Kolmogorov number one below the dimension if every admissible subspace
+is closed. -/
+theorem kolmogorovNumber_id_eq_one_of_isClosed [SeminormedAddCommGroup X] [NormedSpace 𝕜 X]
+    {n : ℕ} (hn : (n : Cardinal) < Module.rank 𝕜 X)
+    (hclosed : ∀ V : Submodule 𝕜 X, Module.rank 𝕜 V ≤ n → IsClosed (V : Set X)) :
+    (ContinuousLinearMap.id 𝕜 X).kolmogorovNumber n = 1 := by
+  have hnorm : ‖ContinuousLinearMap.id 𝕜 X‖₊ ≤ 1 := by
+    exact_mod_cast norm_id_le (𝕜 := 𝕜) (E := X)
+  refine le_antisymm (((ContinuousLinearMap.id 𝕜 X).kolmogorovNumber_le_nnnorm n).trans hnorm)
+    (le_kolmogorovNumber_iff.mpr fun V hV ↦ ?_)
+  have hnot : ¬ Dense (V : Set X) := by
+    rw [Submodule.dense_iff_topologicalClosure_eq_top,
+      (hclosed V hV).submodule_topologicalClosure_eq]
+    rintro rfl
+    exact hn.not_ge (by simpa only [rank_top] using hV)
+  rw [comp_id]
+  exact_mod_cast (V.norm_mkQL hnot).ge
 
 /-- Over a complete scalar field, the identity has Kolmogorov number one below the
 cardinal dimension, and zero from the dimension onwards. -/
 @[simp]
-theorem kolmogorovNumber_id (n : ℕ) :
+theorem kolmogorovNumber_id [CompleteSpace 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X] (n : ℕ) :
     (ContinuousLinearMap.id 𝕜 X).kolmogorovNumber n =
       if (n : Cardinal) < Module.rank 𝕜 X then 1 else 0 := by
   split_ifs with hn
-  · apply le_antisymm
-    · exact ((ContinuousLinearMap.id 𝕜 X).kolmogorovNumber_le_nnnorm n).trans (by
-        exact_mod_cast norm_id_le (𝕜 := 𝕜) (E := X))
-    · apply le_kolmogorovNumber_iff.mpr
-      intro V hV
-      have : FiniteDimensional 𝕜 V :=
-        Module.rank_lt_aleph0_iff.mp (hV.trans_lt Cardinal.natCast_lt_aleph0)
-      have hproper : V ≠ ⊤ := by
-        intro h
-        subst V
-        exact hn.not_ge (by simpa using hV)
-      have hnot : ¬ Dense (V : Set X) := by
-        intro h
-        apply hproper
-        apply SetLike.coe_injective
-        exact V.isClosed_of_finiteDimensional.closure_eq.symm.trans h.closure_eq
-      rw [comp_id]
-      exact_mod_cast (V.norm_mkQL hnot).ge
+  · refine kolmogorovNumber_id_eq_one_of_isClosed hn fun V hV ↦ ?_
+    have : FiniteDimensional 𝕜 V :=
+      Module.rank_lt_aleph0_iff.mp (hV.trans_lt Cardinal.natCast_lt_aleph0)
+    exact V.isClosed_of_finiteDimensional
   · exact kolmogorovNumber_eq_zero_of_rank_le
       ((LinearMap.rank_le_domain _).trans (le_of_not_gt hn))
 
@@ -257,21 +285,29 @@ theorem kolmogorov_apply {X Y : Type u}
     [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
     (T : X →L[𝕜] Y) (n : ℕ) : kolmogorov T n = T.kolmogorovNumber n := (rfl)
 
+/-- The Kolmogorov numbers are surjective: precomposing with a metric surjection leaves them
+unchanged, over every nontrivially normed field. -/
+theorem isSurjective_kolmogorov : IsSurjective (kolmogorov (𝕜 := 𝕜)) where
+  comp_of_isQuotient T _ hQ n := T.kolmogorovNumber_comp_of_isQuotient hQ n
+
+/-- Kolmogorov numbers satisfy the s-number axioms over every nontrivially normed field. -/
+theorem isSNumberSequence_kolmogorov : IsSNumberSequence (kolmogorov (𝕜 := 𝕜)) where
+  norm T := T.kolmogorovNumber_zero
+  antitone T := T.antitone_kolmogorovNumber
+  add_le S T n := S.kolmogorovNumber_add_le T n
+  comp_le B T A n := B.kolmogorovNumber_comp_comp_le T A n
+  eq_zero_of_rank_le := ContinuousLinearMap.kolmogorovNumber_eq_zero_of_rank_le
+  normalize n := by
+    apply ContinuousLinearMap.kolmogorovNumber_id_eq_one_of_isClosed
+    · rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq, rank_fin_fun]
+      exact_mod_cast n.lt_succ_self
+    · exact fun V _ ↦ V.isClosed_of_isModuleTopology
+
 /-- Over a complete scalar field, Kolmogorov numbers are a strict s-number sequence.
 The normed spaces themselves need not be complete. -/
 theorem isStrictSNumberSequence_kolmogorov [CompleteSpace 𝕜] :
-    IsStrictSNumberSequence (kolmogorov (𝕜 := 𝕜)) :=
-  .of_normalize_of_lt_rank
-    (fun T ↦ T.kolmogorovNumber_zero)
-    (fun T ↦ T.antitone_kolmogorovNumber)
-    (fun S T n ↦ S.kolmogorovNumber_add_le T n)
-    (fun B T A n ↦ B.kolmogorovNumber_comp_comp_le T A n)
-    ContinuousLinearMap.kolmogorovNumber_eq_zero_of_rank_le
-    fun n hn ↦ by simp [ContinuousLinearMap.kolmogorovNumber_id, hn]
-
-/-- Kolmogorov numbers satisfy the s-number axioms over complete scalar fields. -/
-theorem isSNumberSequence_kolmogorov [CompleteSpace 𝕜] :
-    IsSNumberSequence (kolmogorov (𝕜 := 𝕜)) :=
-  isStrictSNumberSequence_kolmogorov.toIsSNumberSequence
+    IsStrictSNumberSequence (kolmogorov (𝕜 := 𝕜)) where
+  toIsSNumberSequence := isSNumberSequence_kolmogorov
+  normalize_of_lt_rank n hn := by simp [ContinuousLinearMap.kolmogorovNumber_id, hn]
 
 end TauCeti.SNumbers

@@ -9,6 +9,7 @@ public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.Order.Filter.AtTopBot.Basic
 public import Mathlib.RingTheory.ZMod.UnitsCyclic
 public import TauCeti.GroupTheory.OrderOfElement.NegOne
+import TauCeti.NumberTheory.Multiplicity
 
 /-!
 # Orders of residues
@@ -37,12 +38,15 @@ modulo `n` is one modulo every divisor of `n`, and for an odd prime `p` a primit
 `p ²` is one modulo every power of `p`.
 
 The order of `q` modulo `n` decides which of the numbers `q ^ k - 1` are divisible by `n`: those
-with `k` a multiple of the order. Modulo a prime `p`, an element of even order `2 * m` has `m`-th
-power `-1`, so if `a / b` has order `2 * m` then `p` divides `a ^ k + b ^ k` exactly for the odd
-multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible by `p`.
+with `k` a multiple of the order. In particular `p > 1` has order `f` modulo `p ^ f - 1`. Modulo
+a prime `p`, an element of even order `2 * m` has `m`-th power `-1`, so if `a / b` has order
+`2 * m` then `p` divides `a ^ k + b ^ k` exactly for the odd multiples `k` of `m`; for `b = 1` this
+decides which `q ^ k + 1` are divisible by `p`.
 
 ## Main results
 
+* `ZMod.orderOf_one_add_natCast_mul_two_pow`: the order of `1 + m` modulo `m * 2 ^ s`
+  is `2 ^ s` if `m` is a nonzero multiple of `4`.
 * `ZMod.orderOf_natCast_pos_iff`, `ZMod.orderOf_natCast_pos_of_not_dvd`: `(a : ZMod n)` has
   positive multiplicative order iff `a.Coprime n`, and in particular whenever `a` is a prime not
   dividing `n`.
@@ -52,6 +56,8 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
   `q` modulo `n` divides `k`.
 * `ZMod.eventually_pow_dvd_orderOf_natCast`: for `a ≠ 1` and every `j`, `ℓ ^ j` divides the
   order of `a` modulo `ℓ ^ r` for all large `r`.
+* `ZMod.two_pow_le_mul_succ_of_pow_eq_one`: if `a > 1` and `a ^ n ≡ 1` modulo `2 ^ (s + 1)`
+  for `n > 0`, then `2 ^ s ≤ n * (a + 1)`.
 * `ZMod.two_dvd_exponent_units`: for `n ≠ 1, 2`, `2` divides the exponent of `(ℤ/n)ˣ`.
 * `ZMod.isUnit_of_orderOf_eq_totient`, `ZMod.zpowers_eq_top_of_orderOf_eq_totient`: a residue of
   order `φ(n)` is a unit, and generates `(ℤ/n)ˣ`.
@@ -62,6 +68,8 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
   modulo every divisor of `n`.
 * `ZMod.orderOf_natCast_prime_pow_eq_totient`: for odd `p`, a primitive root modulo `p ²` is a
   primitive root modulo every `p ^ e`.
+* `TauCeti.ZMod.orderOf_natCast_pow_sub_one`: for `p > 1`, the order of `p` modulo `p ^ f - 1` is
+  `f`.
 * `Nat.Prime.dvd_pow_add_pow_iff_of_orderOf_eq_two_mul`: if `a / b` has order `2 * m ≠ 0` modulo
   a prime `p`, then `p ∣ a ^ k + b ^ k` iff `m ∣ k` and `¬ 2 * m ∣ k`.
 * `Nat.Prime.dvd_pow_add_one_iff_of_orderOf_natCast_eq_two_mul`: if `q` has order `2 * m ≠ 0`
@@ -76,6 +84,31 @@ multiples `k` of `m`; for `b = 1` this decides which `q ^ k + 1` are divisible b
 public section
 
 namespace ZMod
+
+/-- If `m` is a nonzero multiple of `4`, then the order of `1 + m` modulo `m * 2 ^ s` is `2 ^ s`.
+The odd factor of the modulus does not contribute to the order. -/
+theorem orderOf_one_add_natCast_mul_two_pow {m : ℕ} (hm : m ≠ 0) (h₄ : 4 ∣ m) (s : ℕ) :
+    orderOf (1 + (m : ZMod (m * 2 ^ s))) = 2 ^ s := by
+  obtain ⟨v, u, hu, rfl⟩ := Nat.exists_eq_two_pow_mul_odd hm
+  have hcop : (2 ^ 2).Coprime u := hu.coprime_two_left.pow_left 2
+  have hv : 2 ≤ v := (Nat.pow_dvd_pow_iff_le_right (by decide : 1 < (2 : ℕ))).mp
+    (hcop.dvd_of_dvd_mul_right (by simpa using h₄ : 2 ^ 2 ∣ 2 ^ v * u))
+  have hmod : 2 ^ v * u * 2 ^ s = 2 ^ (s + v) * u := by rw [pow_add]; ac_rfl
+  have hodd : ((2 ^ v * u : ℕ) : ZMod u) = 0 :=
+    (natCast_eq_zero_iff _ _).mpr (dvd_mul_left _ _)
+  rw [hmod]
+  let e := chineseRemainder (hu.coprime_two_left.pow_left (s + v))
+  have he : orderOf (e (1 + (2 ^ v * u : ℕ))) = orderOf (1 + (2 ^ v * u : ℕ) :
+      ZMod (2 ^ (s + v) * u)) := orderOf_injective e.toMonoidHom e.injective _
+  rw [← he]
+  simp only [map_add, map_one, map_natCast, Prod.orderOf, Prod.fst_add, Prod.snd_add,
+    Prod.fst_one, Prod.snd_one, Prod.fst_natCast, Prod.snd_natCast, hodd, add_zero, orderOf_one,
+    Nat.lcm_one_right]
+  have hu' : ¬ (2 : ℤ) ∣ (u : ℤ) := by
+    rw [← even_iff_two_dvd, Int.not_even_iff_odd]
+    exact_mod_cast hu
+  simpa only [Nat.cast_mul, Nat.cast_pow, Nat.cast_ofNat, Int.cast_natCast] using
+    orderOf_one_add_mul_prime_pow Nat.prime_two v (by omega) (u : ℤ) hu' s
 
 /-- For any natural numbers `a` and `n` (including `n = 0`), the residue of `a` modulo `n` has
 positive multiplicative order if and only if `a` and `n` are coprime. -/
@@ -105,6 +138,52 @@ theorem dvd_pow_sub_one_iff_orderOf_natCast_dvd {n q : ℕ} (hq : 0 < q) (k : �
     n ∣ q ^ k - 1 ↔ orderOf (q : ZMod n) ∣ k := by
   rw [orderOf_dvd_iff_pow_eq_one, ← natCast_eq_zero_iff]
   simp [Nat.cast_sub (Nat.one_le_pow _ _ hq), sub_eq_zero]
+
+/-- If a positive power of an integer `a > 1` is one modulo `2^(s+1)`, then the exponent
+times `a + 1` is at least `2^s`. -/
+theorem two_pow_le_mul_succ_of_pow_eq_one {a n s : ℕ} (ha : 1 < a) (hn : 0 < n)
+    (h : (a : ZMod (2 ^ (s + 1))) ^ n = 1) : 2 ^ s ≤ n * (a + 1) := by
+  have hd : 2 ^ (s + 1) ∣ a ^ n - 1 :=
+    (dvd_pow_sub_one_iff_orderOf_natCast_dvd (by omega) n).2 (orderOf_dvd_of_pow_eq_one h)
+  have hpow : 1 < a ^ n := Nat.one_lt_pow hn.ne' ha
+  have hao : Odd a := by
+    refine Nat.not_even_iff_odd.mp fun he => ?_
+    have h₁ := (dvd_pow_self 2 (by omega : s + 1 ≠ 0)).trans hd
+    have h₂ := dvd_pow (even_iff_two_dvd.1 he) hn.ne'
+    omega
+  have hle := (Nat.pow_dvd_iff_le_multiplicity (by decide : (2 : ℕ) ≠ 1)
+    (Nat.sub_ne_zero_of_lt hpow)).1 hd
+  have hminus : 2 ^ multiplicity 2 (a - 1) ≤ a - 1 :=
+    Nat.le_of_dvd (by omega) (pow_multiplicity_dvd _ _)
+  by_cases hne : Even n
+  swap
+  · have hv := Nat.multiplicity_pow_two_sub_pow_of_odd hao odd_one (Nat.not_even_iff_odd.mp hne)
+    rw [one_pow] at hv
+    rw [hv] at hle
+    calc
+      2 ^ s ≤ 2 ^ multiplicity 2 (a - 1) := Nat.pow_le_pow_right (by decide) (by omega)
+      _ ≤ a + 1 := hminus.trans (by omega)
+      _ ≤ n * (a + 1) := Nat.le_mul_of_pos_left _ hn
+  have hv := Nat.multiplicity_pow_two_sub_one ha hao.not_two_dvd_nat hn.ne' hne
+  have hlow : multiplicity 2 (a + 1) ≤ 1 ∨ multiplicity 2 (a - 1) ≤ 1 := by
+    have hcases : ¬4 ∣ a + 1 ∨ ¬4 ∣ a - 1 := by omega
+    have hval (b : ℕ) (hb : b ≠ 0) (h4 : ¬4 ∣ b) : multiplicity 2 b ≤ 1 := by
+      have hnot : ¬2 ≤ multiplicity 2 b := fun hh =>
+        h4 ((Nat.pow_dvd_iff_le_multiplicity (by decide : (2 : ℕ) ≠ 1) hb).2 hh)
+      omega
+    exact hcases.imp (hval _ (by omega)) (hval _ (by omega))
+  have hn' : 2 ^ multiplicity 2 n ≤ n := Nat.le_of_dvd hn (pow_multiplicity_dvd _ _)
+  rcases hlow with hl | hl
+  · calc
+      2 ^ s ≤ 2 ^ (multiplicity 2 n + multiplicity 2 (a - 1)) :=
+        Nat.pow_le_pow_right (by decide) (by omega)
+      _ ≤ n * (a + 1) := by rw [pow_add]; gcongr; omega
+  · have hplus : 2 ^ multiplicity 2 (a + 1) ≤ a + 1 :=
+      Nat.le_of_dvd (by omega) (pow_multiplicity_dvd _ _)
+    calc
+      2 ^ s ≤ 2 ^ (multiplicity 2 n + multiplicity 2 (a + 1)) :=
+        Nat.pow_le_pow_right (by decide) (by omega)
+      _ ≤ n * (a + 1) := by rw [pow_add]; gcongr
 
 /-- The case of `eventually_pow_dvd_orderOf_natCast` where `ℓ` is a prime not dividing `a`. -/
 private theorem eventually_pow_dvd_orderOf_natCast_of_prime {ℓ : ℕ} (hℓ : ℓ.Prime) {a : ℕ}
@@ -282,6 +361,21 @@ theorem orderOf_natCast_prime_pow_eq_totient {p g : ℕ} (hp : p.Prime) (hp2 : p
   rw [Nat.totient_prime_pow_succ hp, ← hpow, Nat.div_mul_cancel hdvd]
 
 end ZMod
+
+namespace TauCeti.ZMod
+
+/-- For `1 < p`, the order of `p` modulo `p ^ f - 1` is `f`. At `f = 0` the modulus is `0`, and
+the order `0` in `ZMod 0 = ℤ` means that `p` has infinite multiplicative order. -/
+@[simp]
+theorem orderOf_natCast_pow_sub_one {p : ℕ} (hp : 1 < p) (f : ℕ) :
+    orderOf (p : ZMod (p ^ f - 1)) = f := by
+  have hdvd := (ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (by omega) f).1
+    dvd_rfl
+  have ho := (ZMod.dvd_pow_sub_one_iff_orderOf_natCast_dvd (n := p ^ f - 1) (q := p) (by omega)
+    (orderOf (p : ZMod (p ^ f - 1)))).2 dvd_rfl
+  exact Nat.dvd_antisymm hdvd ((Nat.pow_sub_one_dvd_pow_sub_one_iff hp).mp ho)
+
+end TauCeti.ZMod
 
 /-! ### Divisibility of `a ^ k + b ^ k` -/
 

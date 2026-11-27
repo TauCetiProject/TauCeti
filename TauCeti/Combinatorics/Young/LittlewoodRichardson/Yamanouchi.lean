@@ -45,10 +45,9 @@ Consequently the Littlewood–Richardson coefficient may be read off either side
 
 * `SemistandardYoungTableau.isYamanouchi_iff_rowCount`: Stembridge's Yamanouchi condition in terms
   of row counts.
-* `TauCeti.natCard_lrTableau_eq_natCard_isYamanouchi`: the two counts of `c^ν_{λ μ}` agree.
-* `TauCeti.natCard_boundedSSYT_isYamanouchi_eq_natCard_lrTableau`: when `ν` has at most `n` rows,
-  the number of `λ`-Yamanouchi `T : BoundedSSYT n μ` with `λ + c(T) = ν` equals
-  `Nat.card (LRTableau λ ν μ)`.
+* `TauCeti.natCard_lrTableau_eq_natCard_isYamanouchi`,
+  `TauCeti.card_boundedYamanouchi_eq_natCard_lrTableau`: the two counts of `c^ν_{λ μ}` agree, and
+  for `ν` with at most `n` rows the `n`-bounded `λ`-Yamanouchi count matches `Nat.card`.
 
 ## References
 
@@ -359,17 +358,20 @@ theorem natCard_lrTableau_eq_natCard_isYamanouchi (lam ν μ : YoungDiagram) :
   Nat.card_congr (lrTableauEquivYamanouchi lam ν μ)
 
 /-- When `ν` has at most `n` rows, every `λ`-Yamanouchi tableau `T` of shape `μ` with
-`λ + c(T) = ν` has entries below `n`, so the number of `λ`-Yamanouchi `T : BoundedSSYT n μ`
-with `λ + c(T) = ν` equals `Nat.card (LRTableau λ ν μ)`. -/
-theorem natCard_boundedSSYT_isYamanouchi_eq_natCard_lrTableau {n : ℕ} (hν : ν.colLen 0 ≤ n) :
-    Nat.card {T : BoundedSSYT n μ // T.val.IsYamanouchi lam ∧
-        ∀ i, lam.rowLen i + T.val.content i = ν.rowLen i} =
+`λ + c(T) = ν` has entries below `n`, so the bounded `λ`-Yamanouchi tableaux in the alphabet
+`{0, …, n - 1}` have cardinality `Nat.card (LRTableau lam ν μ)`. -/
+theorem card_boundedYamanouchi_eq_natCard_lrTableau {n : ℕ} {lam μ ν : YoungDiagram}
+    (hν : ν.colLen 0 ≤ n) [Fintype {T : BoundedSSYT n μ //
+      T.val.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.val.content i = ν.rowLen i}] :
+    Fintype.card {T : BoundedSSYT n μ //
+      T.val.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.val.content i = ν.rowLen i} =
       Nat.card (LRTableau lam ν μ) := by
-  rw [natCard_lrTableau_eq_natCard_isYamanouchi]
+  rw [natCard_lrTableau_eq_natCard_isYamanouchi, ← Nat.card_eq_fintype_card]
   exact Nat.card_congr <| Equiv.subtypeSubtypeEquivSubtype
     (q := fun T : _root_.SemistandardYoungTableau μ =>
       T.IsYamanouchi lam ∧ ∀ i, lam.rowLen i + T.content i = ν.rowLen i)
     fun hT i c hc =>
-      (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq hT.2 hc).trans_le hν
+      (SemistandardYoungTableau.apply_lt_colLen_zero_of_rowLen_add_content_eq hT.right hc).trans_le
+        hν
 
 end TauCeti

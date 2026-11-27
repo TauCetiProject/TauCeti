@@ -26,10 +26,10 @@ bump function and on `s`, not on the exponents
 Proposition 2.76). In particular every continuous linear functional `Λ` on `B^s_{p,q}` is, on the
 Schwartz functions, the pairing with an element of `B^{-s}_{p',q'}` of norm at most `C ‖Λ‖`
 (`TauCeti.BesovSpace.exists_toDistr_apply_eq_and_norm_le`). Mathematically, this is the converse
-half of the duality `(B^s_{p,q})^* = B^{-s}_{p',q'}` for `1 < p < ∞` and `q < ∞`. The other
-ingredients, the bound of the pairing between `B^{-s}_{p',q'}` and `B^s_{p,q}` and the density of
-the Schwartz functions in `B^s_{p,q}`, are not proved here, so this file does not construct the
-identification itself. The case `p = 1` is not covered.
+half of the duality `(B^s_{p,q})^* = B^{-s}_{p',q'}` for `1 < p < ∞` and `q < ∞`. With the
+bound of the pairing between `B^{-s}_{p',q'}` and `B^s_{p,q}` and the density of the Schwartz
+functions in `B^s_{p,q}`, it gives the identification itself, `TauCeti.BesovSpace.strongDualEquiv`
+in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.StrongDual`. The case `p = 1` is not covered.
 
 ## The argument
 
@@ -192,47 +192,22 @@ private theorem norm_sum_mul_littlewoodPaleyBlock_apply_le {p q : ℝ≥0∞} [F
           fun j ↦ (norm_norm (c j)).le
 
 /-- **Assembling the blocks.** Let `u` be a tempered distribution whose blocks `Δⱼ u` are
-`L^{p'}` functions `hⱼ` with `‖hⱼ‖ ≤ B 2^{js}`. If there are `zⱼ` with `2^{-js} ‖hⱼ‖ ≤ 2 ‖zⱼ‖`
-whose finite pairings with `ℓ^q` satisfy `‖∑_{j ∈ t} cⱼ zⱼ‖ ≤ B ‖c‖_q`, then `u` is an element of
-`B^{-s}_{p',q'}` of norm at most `2 B`. -/
+`L^{p'}` functions `hⱼ`. If there are `zⱼ` with `2^{-js} ‖hⱼ‖ ≤ 2 ‖zⱼ‖` whose finite pairings with
+`ℓ^q` satisfy `‖∑_{j ∈ t} cⱼ zⱼ‖ ≤ B ‖c‖_q`, then `u` is an element of `B^{-s}_{p',q'}` of norm at
+most `2 B`. -/
 private theorem exists_toDistr_eq_and_norm_le_of_forall_norm_sum_mul_le {p' q q' : ℝ≥0∞}
     [Fact (1 ≤ p')] [Fact (1 ≤ q)] [Fact (1 ≤ q')] [q'.HolderConjugate q] {s B : ℝ} (hB : 0 ≤ B)
     (u : 𝓢'(E, ℂ)) (h : ℕ → Lp ℂ p' (volume : Measure E))
-    (hh : ∀ j, littlewoodPaleyBlock ℂ φ j u = h j) (hhB : ∀ j : ℕ, ‖h j‖ ≤ B * 2 ^ (s * j))
+    (hh : ∀ j, littlewoodPaleyBlock ℂ φ j u = h j)
     (z : ℕ → ℂ) (hz : ∀ j : ℕ, (2 : ℝ) ^ (-s * j) * ‖h j‖ ≤ 2 * ‖z j‖)
     (hzc : ∀ (t : Finset ℕ) (c : lp (fun _ : ℕ ↦ ℂ) q), ‖∑ j ∈ t, c j * z j‖ ≤ B * ‖c‖) :
     ∃ v : BesovSpace ℂ φ (-s) p' q', v.toDistr = u ∧ ‖v‖ ≤ 2 * B := by
-  have hle (j : ℕ) : ‖(2 : ℝ) ^ (-s * j) * ‖h j‖‖ ≤ 2 * B := by
-    rw [Real.norm_of_nonneg (by positivity)]
-    calc (2 : ℝ) ^ (-s * j) * ‖h j‖ ≤ 2 ^ (-s * j) * (B * 2 ^ (s * j)) := by gcongr; exact hhB j
-      _ = B := by
-          rw [mul_left_comm, ← Real.rpow_add two_pos, neg_mul, neg_add_cancel, Real.rpow_zero,
-            mul_one]
-      _ ≤ 2 * B := by linarith
-  rcases eq_or_ne q' ∞ with rfl | hq'
-  · -- For `q' = ∞` the single-block bounds suffice.
-    obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq h
-      (⟨_, memℓp_infty ⟨2 * B, by rintro _ ⟨j, rfl⟩; exact hle j⟩⟩ : lp (fun _ : ℕ ↦ ℝ) ∞) hh
-      fun j ↦ le_rfl
-    exact ⟨v, hv, hvn.trans (lp.norm_le_of_forall_le (by positivity) hle)⟩
-  · -- For `q' < ∞` the partial sums are bounded through the coordinates of the pairing.
-    have hq'0 : 0 < q'.toReal := ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hq'
-    have hsum (t : Finset ℕ) :
-        ∑ j ∈ t, ‖(2 : ℝ) ^ (-s * j) * ‖h j‖‖ ^ q'.toReal ≤ (2 * B) ^ q'.toReal := by
-      calc ∑ j ∈ t, ‖(2 : ℝ) ^ (-s * j) * ‖h j‖‖ ^ q'.toReal
-          ≤ ∑ j ∈ t, (2 * ‖z j‖) ^ q'.toReal := Finset.sum_le_sum fun j _ ↦
-            Real.rpow_le_rpow (norm_nonneg _)
-              ((Real.norm_of_nonneg (by positivity)).trans_le (hz j)) hq'0.le
-        _ = 2 ^ q'.toReal * ∑ j ∈ t, ‖z j‖ ^ q'.toReal := by
-            rw [Finset.mul_sum]
-            exact Finset.sum_congr rfl fun j _ ↦ Real.mul_rpow zero_le_two (norm_nonneg _)
-        _ ≤ 2 ^ q'.toReal * B ^ q'.toReal := by
-            gcongr
-            exact lp.sum_norm_rpow_le_of_forall_norm_sum_mul_le hq' t z hB (hzc t)
-        _ = (2 * B) ^ q'.toReal := (Real.mul_rpow zero_le_two hB).symm
-    obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq h
-      (⟨_, memℓp_gen' hsum⟩ : lp (fun _ : ℕ ↦ ℝ) q') hh fun j ↦ le_rfl
-    exact ⟨v, hv, hvn.trans (lp.norm_le_of_forall_sum_le hq'0 (by positivity) hsum)⟩
+  obtain ⟨hx, hxn⟩ := lp.exists_memℓp_and_norm_le_of_forall_norm_sum_mul_le (p := q')
+    (x := fun j : ℕ ↦ (2 : ℝ) ^ (-s * j) * ‖h j‖) z zero_le_two hB
+    (fun j ↦ (Real.norm_of_nonneg (by positivity)).trans_le (hz j)) hzc
+  obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq h ⟨_, hx⟩ hh
+    fun j ↦ le_rfl
+  exact ⟨v, hv, hvn.trans hxn⟩
 
 /-- **Besov norms of negative order by duality** (Bahouri–Chemin–Danchin, Proposition 2.76). Let
 `s : ℝ`. There is `C`, depending only on `φ` and `s`, with the following property. Let
@@ -266,7 +241,7 @@ theorem exists_toDistr_eq_and_norm_le_of_norm_apply_le (s : ℝ) :
     rw [Finset.sum_singleton, lp.norm_single (zero_lt_one.trans_le Fact.out),
       Real.norm_of_nonneg (by positivity)] at this
     exact this.trans_eq (by ring)
-  choose h hh hhn using hblock
+  choose h hh _ using hblock
   -- Schwartz functions `gⱼ` with `‖gⱼ‖_p ≤ 1` nearly norming `hⱼ`.
   have hnear (j : ℕ) : ∃ g : 𝓢(E, ℂ), ‖g.toLp p‖ ≤ 1 ∧ ‖h j‖ ≤ 2 * ‖(h j : 𝓢'(E, ℂ)) g‖ := by
     rcases (norm_nonneg (h j)).eq_or_lt with h0 | h0
@@ -285,7 +260,7 @@ theorem exists_toDistr_eq_and_norm_le_of_norm_apply_le (s : ℝ) :
           exact hg j
       _ = 2 * (2 ^ (-(s * j)) * ‖(h j : 𝓢'(E, ℂ)) (g j)‖) := by ring
   obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_forall_norm_sum_mul_le φ (q' := q')
-    (by positivity) u h (fun j ↦ (hh j).symm) hhn _ hz
+    (by positivity) u h (fun j ↦ (hh j).symm) _ hz
     (norm_sum_mul_littlewoodPaleyBlock_apply_le φ (by positivity) u g hg1 hpair)
   exact ⟨v, hv, hvn.trans_eq (by ring)⟩
 

@@ -25,6 +25,9 @@ containing `K` by exactly one `K`-algebra map.
 * `IsCyclotomicExtension.autEquivPow_symm_inv_unitOfCoprime_apply`: the inverse of the
   arithmetic Frobenius `x ↦ x ^ ℓ` raises `n`-th roots of unity to the power `(ℓ⁻¹ : ZMod n).val`.
 * `IsCyclotomicExtension.neZero_of_nontrivial_aut`: a nontrivial Galois group forces `n ≠ 0`.
+* `IsCyclotomicExtension.algebraMap_autEquivPow_symm_unitsMap_apply`: for `F ⊆ K ⊆ L` of levels
+  `m ∣ n`, the automorphism of `L` given by `t ∈ (ZMod n)ˣ` restricts to the one of `K` given by
+  `t` modulo `m`.
 * `IsPrimitiveRoot.existsUnique_algHom_apply_eq`: exactly one `K`-algebra map sends a given
   primitive root to any other when `Φ_n` is irreducible.
 
@@ -95,6 +98,37 @@ theorem isCyclic_aut [IsCyclic (ZMod n)ˣ] : IsCyclic Gal(L/K) := by
     infer_instance
   · have : NeZero n := ⟨hn⟩
     exact isCyclic_of_injective _ ((zeta_spec n K L).autToPow_injective K)
+
+/-- **The Galois action on roots of unity is compatible with restriction.** Let `K ⊆ L` be `m`-th
+and `n`-th cyclotomic extensions of `F` with `m ∣ n`, over which `Φ_m` and `Φ_n` are irreducible.
+The automorphism of `L` acting on `n`-th roots of unity through `t ∈ (ZMod n)ˣ` restricts on `K`
+to the automorphism acting on `m`-th roots of unity through the reduction of `t` modulo `m`. -/
+theorem algebraMap_autEquivPow_symm_unitsMap_apply {F K L : Type*} [Field F] [CommRing K]
+    [IsDomain K] [CommRing L] [IsDomain L] [Algebra F K] [Algebra F L] [Algebra K L]
+    [IsScalarTower F K L] {m n : ℕ} [NeZero m] [NeZero n] [IsCyclotomicExtension {m} F K]
+    [IsCyclotomicExtension {n} F L] (hK : Irreducible (cyclotomic m F))
+    (hL : Irreducible (cyclotomic n F)) (hmn : m ∣ n) (t : (ZMod n)ˣ) (x : K) :
+    algebraMap K L ((autEquivPow K hK).symm (ZMod.unitsMap hmn t) x) =
+      (autEquivPow L hL).symm t (algebraMap K L x) := by
+  -- Both sides are `F`-algebra maps `K → L`, so it suffices to compare them on `m`-th roots of
+  -- unity, which generate `K`.
+  suffices h : (IsScalarTower.toAlgHom F K L).comp
+      ((autEquivPow K hK).symm (ZMod.unitsMap hmn t)).toAlgHom =
+      ((autEquivPow L hL).symm t).toAlgHom.comp (IsScalarTower.toAlgHom F K L) from
+    AlgHom.congr_fun h x
+  refine AlgHom.ext_of_adjoin_eq_top ((iff_adjoin_eq_top {m} F K).1 ‹_›).2 ?_
+  rintro b ⟨k, hk, -, hb⟩
+  rw [Set.mem_singleton_iff] at hk
+  rw [hk] at hb
+  have hbm : algebraMap K L b ^ m = 1 := by rw [← map_pow, hb, map_one]
+  have hbn : algebraMap K L b ^ n = 1 := by
+    obtain ⟨c, rfl⟩ := hmn
+    rw [pow_mul, hbm, one_pow]
+  simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, IsScalarTower.coe_toAlgHom']
+  rw [autEquivPow_apply_of_pow_eq_one K hK _ hb, autEquivPow_apply_of_pow_eq_one L hL _ hbn,
+    MulEquiv.apply_symm_apply, MulEquiv.apply_symm_apply, map_pow]
+  refine pow_eq_pow_of_modEq ?_ hbm
+  rw [← ZMod.natCast_eq_natCast_iff, ZMod.natCast_zmod_val, ZMod.natCast_val, ZMod.unitsMap_val]
 
 end IsCyclotomicExtension
 

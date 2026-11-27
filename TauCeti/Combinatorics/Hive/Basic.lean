@@ -68,7 +68,7 @@ weakly along each side (`Hive.boundary_antitone`), making each side of an intege
   `TauCeti.Hive.apply_ofChart_self`.
 * `TauCeti.Hive.rotate_rotate_apply`, `TauCeti.Hive.rotate_rotate_apply_ofChart`,
   `TauCeti.Hive.boundary_rotate`, `TauCeti.Hive.boundaryWeight_reflect`,
-  `TauCeti.Hive.boundary_injective_two`, `TauCeti.Hive.eq_of_boundary_eq_of_interior_eq_three`.
+  `TauCeti.Hive.boundary_injective_two`.
 
 ## References
 
@@ -504,7 +504,8 @@ def map {S : Type*} [AddCommMonoid S] [Preorder S] (φ : R →+o S) (h : Hive n 
 theorem coe_map {S : Type*} [AddCommMonoid S] [Preorder S]
     (φ : R →+o S) (h : Hive n R) : ⇑(h.map φ) = φ ∘ ⇑h := (rfl)
 
-@[simp] theorem map_id (h : Hive n R) : h.map (OrderAddMonoidHom.id R) = h := by ext p; simp
+@[simp] theorem map_id (h : Hive n R) : h.map (OrderAddMonoidHom.id R) = h := by
+  ext p; simp
 
 @[simp] theorem map_map {S T : Type*} [AddCommMonoid S] [Preorder S]
     [AddCommMonoid T] [Preorder T] (ψ : S →+o T) (φ : R →+o S) (h : Hive n R) :
@@ -546,11 +547,13 @@ instance instModuleNonneg {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRi
     (fun _ _ => by simp only [coeAddMonoidHom_apply, coe_smul_nonneg, Nonneg.coe_smul])
 
 @[simp] theorem map_add {S : Type*} [AddCommMonoid S] [Preorder S] [IsOrderedAddMonoid S]
-    (φ : R →+o S) (h₁ h₂ : Hive n R) : (h₁ + h₂).map φ = h₁.map φ + h₂.map φ := by ext p; simp
+    (φ : R →+o S) (h₁ h₂ : Hive n R) : (h₁ + h₂).map φ = h₁.map φ + h₂.map φ := by
+  ext p; simp
 
 /-- Pushforward commutes with natural scaling, as every additive map does. -/
 @[simp] theorem map_nsmul {S : Type*} [AddCommMonoid S] [Preorder S] [IsOrderedAddMonoid S]
-    (φ : R →+o S) (k : ℕ) (h : Hive n R) : (k • h).map φ = k • h.map φ := by ext p; simp
+    (φ : R →+o S) (k : ℕ) (h : Hive n R) : (k • h).map φ = k • h.map φ := by
+  ext p; simp
 
 end OrderedAdd
 
@@ -562,7 +565,8 @@ def affine (n : ℕ) (β γ : R) : Hive n R where
     simpa [barycentricLinear] using isRhombusConcave_barycentricLinear (n := n) (0 : R) 0 β γ hr
 
 /-- The labelling underlying an affine hive. -/
-theorem coe_affine (β γ : R) : ⇑(affine n β γ) = fun p => p.y • β + p.z • γ := (rfl)
+theorem coe_affine (β γ : R) :
+    ⇑(affine n β γ) = fun p => p.y • β + p.z • γ := (rfl)
 
 @[simp] theorem affine_apply (β γ : R) (p : Vertex n) : affine n β γ p = p.y • β + p.z • γ := (rfl)
 
@@ -587,7 +591,8 @@ theorem coe_affine (β γ : R) : ⇑(affine n β γ) = fun p => p.y • β + p.z
 
 /-- Pushforward of an affine hive applies the map to its slopes. -/
 @[simp] theorem map_affine {S : Type*} [AddCommMonoid S] [Preorder S]
-    (φ : R →+o S) (β γ : R) : (affine n β γ).map φ = affine n (φ β) (φ γ) := by ext p; simp
+    (φ : R →+o S) (β γ : R) : (affine n β γ).map φ = affine n (φ β) (φ γ) := by
+  ext p; simp
 
 end Algebra
 
@@ -628,7 +633,8 @@ variable [IsOrderedAddMonoid R]
   ext p
   simp only [ofRhombusConcave_apply, barycentricLinear_apply, affine_apply,
     Vertex.cornerA_x, Vertex.cornerA_y, Vertex.cornerA_z, zero_nsmul, add_zero, nsmul_sub]
-  have hn : n • α = p.x • α + p.y • α + p.z • α := by rw [← add_nsmul, ← add_nsmul, p.sum_eq]
+  have hn : n • α = p.x • α + p.y • α + p.z • α := by
+    rw [← add_nsmul, ← add_nsmul, p.sum_eq]
   rw [hn]; abel
 
 /-- Restrict a hive on `Δ_{m + k}` to the subtriangle of side `k` translated by `p : Δ_m`,
@@ -664,12 +670,14 @@ theorem coe_subtriangle {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) :
 /-- Restriction commutes with nonnegative scaling. -/
 @[simp] theorem subtriangle_smul_nonneg {S : Type*} [Semiring S] [PartialOrder S]
     [Module S R] [PosSMulMono S R] {m k : ℕ} (c : Nonneg S) (h : Hive (m + k) R)
-    (p : Vertex m) : (c • h).subtriangle p = c • h.subtriangle p := by ext q; simp [smul_sub]
+    (p : Vertex m) : (c • h).subtriangle p = c • h.subtriangle p := by
+  ext q; simp [smul_sub]
 
 /-- Restriction commutes with pushforward along an ordered additive map. -/
 @[simp] theorem map_subtriangle {S : Type*} [AddCommGroup S] [Preorder S]
     [IsOrderedAddMonoid S] (φ : R →+o S) {m k : ℕ} (h : Hive (m + k) R) (p : Vertex m) :
-    (h.subtriangle p).map φ = (h.map φ).subtriangle p := by ext q; simp [map_sub]
+    (h.subtriangle p).map φ = (h.map φ).subtriangle p := by
+  ext q; simp [map_sub]
 
 /-- Restriction preserves the slopes of an affine hive. -/
 @[simp] theorem subtriangle_affine {m k : ℕ} (u v : R) (p : Vertex m) :
@@ -812,10 +820,12 @@ theorem counterexampleSeven_nonunit_mixedDiff_pos :
       HasStep p pv v ∧ HasStep p pw w ∧ HasStep p pvw (v + w) ∧
       (counterexampleSeven pvw - counterexampleSeven pw) -
         (counterexampleSeven pv - counterexampleSeven p) = 12 := by
-  refine ⟨by decide, by decide, by decide,
-    hasStep_iff.mpr fun i => by fin_cases i <;> simp,
-    hasStep_iff.mpr fun i => by fin_cases i <;> simp,
-    hasStep_iff.mpr fun i => by fin_cases i <;> simp, by norm_num [counterexampleSeven_apply]⟩
+  refine ⟨by decide, by decide, by decide, hasStep_iff.mpr fun i => ?_,
+    hasStep_iff.mpr fun i => ?_, hasStep_iff.mpr fun i => ?_, ?_⟩
+  · fin_cases i <;> simp
+  · fin_cases i <;> simp
+  · fin_cases i <;> simp
+  · norm_num [counterexampleSeven_apply]
 
 end UnitSteps
 
@@ -846,7 +856,8 @@ variable [AddCommGroup R] (S : Type*) [Semiring S] [Module S R]
 theorem coe_boundaryLinear :
     ⇑(boundaryLinear S n R) = fun f s i =>
       f (Vertex.edgePoint n s i.succ) - f (Vertex.edgePoint n s i.castSucc) := by
-  funext f s i; exact boundaryLinear_apply S f s i
+  funext f s i
+  exact boundaryLinear_apply S f s i
 
 /-- Reflecting a labelling reverses the side order and negates the reversed differences. -/
 @[simp] theorem boundaryLinear_reflect (f : Vertex n → R) :
@@ -955,7 +966,8 @@ theorem boundary_apply (h : Hive n R) (s : Fin 3) (i : Fin n) :
     (h.subtriangle p).boundary = boundaryLinear ℤ n R (fun q => h (p.add q)) :=
   boundary_ofRhombusConcave (fun q => h (p.add q)) _
 
-@[simp] theorem boundary_zero : (0 : Hive n R).boundary = 0 := _root_.map_zero _
+@[simp] theorem boundary_zero : (0 : Hive n R).boundary = 0 :=
+  _root_.map_zero (boundaryLinear ℤ n R)
 
 @[simp] theorem boundary_add [IsOrderedAddMonoid R] (h₁ h₂ : Hive n R) :
     (h₁ + h₂).boundary = h₁.boundary + h₂.boundary := _root_.map_add (boundaryLinear ℤ n R) ⇑h₁ ⇑h₂
@@ -1103,7 +1115,8 @@ theorem boundary_antitone [IsOrderedAddMonoid R] (h : Hive n R) (s : Fin 3) :
 end HiveBoundary
 
 @[simp] theorem boundary_ofInt [Ring R] [PartialOrder R] [IsOrderedRing R] (h : IntegerHive n) :
-    (ofInt R h).boundary = fun s i => (h.boundary s i : R) := by ext s i; simp [boundary_apply]
+    (ofInt R h).boundary = fun s i => (h.boundary s i : R) := by
+  ext s i; simp [boundary_apply]
 
 /-- Side `s` of an integer hive packaged as a `TauCeti.DominantWeight`. -/
 def boundaryWeight (h : IntegerHive n) (s : Fin 3) : DominantWeight n :=
@@ -1123,7 +1136,8 @@ def boundaryWeight (h : IntegerHive n) (s : Fin 3) : DominantWeight n :=
 
 /-- Side weights commute with natural scaling. -/
 @[simp] theorem boundaryWeight_nsmul (k : ℕ) (h : IntegerHive n) (s : Fin 3) :
-    (k • h).boundaryWeight s = k • h.boundaryWeight s := by ext i; simp [coe_boundaryWeight]
+    (k • h).boundaryWeight s = k • h.boundaryWeight s := by
+  ext i; simp [coe_boundaryWeight]
 
 /-- The cyclic boundary `(λ, μ, γ*)` counting the multiplicity of `V_γ` in `V_λ ⊗ V_μ`. -/
 def productBoundary (lam μ γ : DominantWeight n) : Fin 3 → Fin n → ℤ := ![lam.val, μ.val,
@@ -1249,7 +1263,8 @@ theorem coe_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
 @[simp] theorem ofInt_rotate {R : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
     (h : IntegerHive n) : ofInt R h.rotate = (ofInt R h).rotate := by ext p; simp
 
-@[simp] theorem rotate_zero [IsOrderedAddMonoid R] : (0 : Hive n R).rotate = 0 := by ext p; simp
+@[simp] theorem rotate_zero [IsOrderedAddMonoid R] : (0 : Hive n R).rotate = 0 := by
+  ext p; simp
 
 @[simp] theorem rotate_add [IsOrderedAddMonoid R] (h₁ h₂ : Hive n R) :
     (h₁ + h₂).rotate = h₁.rotate + h₂.rotate := by
@@ -1260,14 +1275,16 @@ theorem coe_rotate [IsOrderedAddMonoid R] (h : Hive n R) :
 
 @[simp] theorem rotate_smul_nonneg [IsOrderedAddMonoid R]
     {S : Type*} [Semiring S] [PartialOrder S] [Module S R] [PosSMulMono S R]
-    (c : Nonneg S) (h : Hive n R) : (c • h).rotate = c • h.rotate := by ext p; simp [smul_sub]
+    (c : Nonneg S) (h : Hive n R) : (c • h).rotate = c • h.rotate := by
+  ext p; simp [smul_sub]
 
 @[simp] theorem rotate_affine [IsOrderedAddMonoid R] (β γ : R) :
     (affine n β γ).rotate = affine n (γ - β) (-β) := by
   ext p
   simp only [rotate_apply, affine_apply, Vertex.rotate_y, Vertex.rotate_z,
     Vertex.cornerA_x, Vertex.cornerA_y, zero_nsmul, add_zero, nsmul_sub, smul_neg]
-  have hn : n • β = p.x • β + p.y • β + p.z • β := by rw [← add_nsmul, ← add_nsmul, p.sum_eq]
+  have hn : n • β = p.x • β + p.y • β + p.z • β := by
+    rw [← add_nsmul, ← add_nsmul, p.sum_eq]
   rw [hn]; abel
 
 @[simp] theorem rhombusSlack_reflect (h : Hive n R) (a b c d : Vertex n) :
@@ -1381,33 +1398,16 @@ variable {R : Type*} [AddCommGroup R] [Preorder R]
     (equivOne.symm (b, c)).boundary = ![fun _ => b, fun _ => c - b, fun _ => -c] := by
   ext s i; fin_cases i; fin_cases s <;> simp [boundary_apply]
 
-private theorem apply_eq_of_boundary_eq {n : ℕ} {h₁ h₂ : Hive n R}
-    (hb : h₁.boundary = h₂.boundary) {p : Vertex n} (hp : p.z = 0 ∨ p.x = 0 ∨ p.y = 0) :
-    h₁ p = h₂ p := by
-  have := p.sum_eq
-  rcases hp with hz | hx | hy
-  · have hp' : p = Vertex.edgePoint n 0 ⟨p.y, by omega⟩ := by ext <;> simp [hz]; omega
-    rw [hp', apply_edgePoint_zero, apply_edgePoint_zero, hb]
-  · have hp' : p = Vertex.edgePoint n 1 ⟨p.z, by omega⟩ := by ext <;> simp [hx]; omega
-    rw [hp', apply_edgePoint_one, apply_edgePoint_one, hb]
-  · have hp' : p = Vertex.edgePoint n 2 ⟨p.x, by omega⟩ := by ext <;> simp [hy]; omega
-    rw [hp', apply_edgePoint_two, apply_edgePoint_two, hb]
-
 /-- At size `2`, `Δ₂` has no strictly interior vertices, so `boundary` is injective. -/
 theorem boundary_injective_two : Function.Injective (boundary (n := 2) (R := R)) := by
   intro h₁ h₂ hb; ext p; have := p.sum_eq
-  exact apply_eq_of_boundary_eq hb (by omega)
-
-/-- At size `3`, `(1, 1, 1)` is the unique strictly interior vertex of `Δ₃`, so a hive is
-determined by its boundary and its value at `(1, 1, 1)`. -/
-theorem eq_of_boundary_eq_of_interior_eq_three {h₁ h₂ : Hive 3 R}
-    (hb : h₁.boundary = h₂.boundary) (hm : h₁ ⟨1, 1, 1, rfl⟩ = h₂ ⟨1, 1, 1, rfl⟩) : h₁ = h₂ := by
-  refine ext fun p => ?_; have := p.sum_eq
-  rcases (by omega : (p.z = 0 ∨ p.x = 0 ∨ p.y = 0) ∨ p.x = 1 ∧ p.y = 1 ∧ p.z = 1) with
-    hp | ⟨hx, hy, hz⟩
-  · exact apply_eq_of_boundary_eq hb hp
-  · have hp : p = ⟨1, 1, 1, rfl⟩ := by ext <;> simp [hx, hy, hz]
-    rw [hp, hm]
+  rcases (by omega : p.z = 0 ∨ p.x = 0 ∨ p.y = 0) with hz | hx | hy
+  · rw [show p = Vertex.edgePoint 2 0 ⟨p.y, by omega⟩ by ext <;> simp [hz]; omega,
+      apply_edgePoint_zero, apply_edgePoint_zero, hb]
+  · rw [show p = Vertex.edgePoint 2 1 ⟨p.z, by omega⟩ by ext <;> simp [hx]; omega,
+      apply_edgePoint_one, apply_edgePoint_one, hb]
+  · rw [show p = Vertex.edgePoint 2 2 ⟨p.x, by omega⟩ by ext <;> simp [hy]; omega,
+      apply_edgePoint_two, apply_edgePoint_two, hb]
 
 /-- Chirality check at size `2`: `isRhombus_at_cornerA` has slack `-(λ₂ + μ₁ + ν₂)`. -/
 theorem rhombusSlack_at_cornerA_two (h : Hive 2 R) :

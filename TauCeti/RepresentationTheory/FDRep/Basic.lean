@@ -62,8 +62,6 @@ of `Representation.Equiv` apply to isomorphic objects.
 
 * `FDRep.homLinearEquiv`: linear equivalence identifying morphisms `X ⟶ Y` in `FDRep R G` with
   intertwining maps `Representation.IntertwiningMap X.ρ Y.ρ`.
-* `FDRep.tensorEquivTprod`: equivalence identifying the representation carried by `X ⊗ Y` in
-  `FDRep R G` with the unbundled tensor product `Representation.tprod X.ρ Y.ρ`.
 * `FDRep.ofShrink`: a module-finite representation on a carrier in an arbitrary universe, as an
   object of `FDRep k G`.
 * `LinearEquiv.toFDRepIso`: an isomorphism in `FDRep R G` from an equivariant linear
@@ -100,8 +98,9 @@ of `Representation.Equiv` apply to isomorphic objects.
 * `FDRep.comp_hom_hom_hom_apply`: a composite of finite-representation morphisms evaluates
   by successive application on the underlying vectors.
 * `FDRep.op_smul_apply`: the opposite-endomorphism action is precomposition on underlying vectors.
-* `FDRep.tensorUnit_ρ` and `FDRep.tensor_ρ`: the actions on the tensor unit and on a tensor
-  product, read on the underlying linear maps.
+* `FDRep.tensorUnit_ρ`, `FDRep.tensor_ρ`, and `FDRep.tprodEquiv`: the actions on the tensor unit
+  and on a tensor product, read on the underlying linear maps and as a `Representation.Equiv` with
+  `Representation.tprod`.
 * `FDRep.of_ρ_eq_self`: rebundling the representation carried by an object returns that object.
 * `FDRep.ofShrinkEquiv`: `FDRep.ofShrink ρ` carries a representation equivalent to `ρ`, whence
   `FDRep.finrank_ofShrink` and `FDRep.character_ofShrink`.
@@ -377,28 +376,35 @@ theorem tensor_ρ {R : Type u} {G : Type v} [CommRing R] [Monoid G] (X Y : FDRep
     (X ⊗ Y).ρ g = TensorProduct.map (X.ρ g) (Y.ρ g) := (rfl)
 
 open MonoidalCategory in
-/-- Equivalence between the representation carried by a categorical tensor product `X ⊗ Y` in
-`FDRep R G` and the unbundled tensor product `Representation.tprod X.ρ Y.ρ`, constructed from
-`FDRep.tensor_ρ`. -/
-noncomputable def tensorEquivTprod {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+/-- **Unbundled tensor-product identification for `FDRep.ρ` on `X ⊗ Y`**: the monoidal product in
+`FDRep R G = Action (FGModuleCat R) G` carries the carrier `↥X ⊗[R] ↥Y` definitionally, so
+`LinearEquiv.refl` intertwines `(X ⊗ Y).ρ` with `Representation.tprod X.ρ Y.ρ`. -/
+noncomputable def tprodEquiv {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) : Representation.Equiv (X ⊗ Y).ρ (Representation.tprod X.ρ Y.ρ) :=
+  .mk (LinearEquiv.refl R ↥(X ⊗ Y)) fun g => by
+    simpa [Representation.tprod_apply] using tensor_ρ X Y g
+
+open MonoidalCategory in
+/-- The linear equivalence underlying `FDRep.tprodEquiv` is the identity. -/
+@[simp]
+theorem toLinearEquiv_tprodEquiv {R : Type u} {G : Type v} [CommRing R] [Monoid G]
     (X Y : FDRep R G) :
-    Representation.Equiv (X ⊗ Y).ρ (Representation.tprod X.ρ Y.ρ) :=
-  Representation.Equiv.mk (LinearEquiv.refl R _) fun g => by
-    rw [tensor_ρ, Representation.tprod_apply]
-    rfl
+    (tprodEquiv X Y).toLinearEquiv = LinearEquiv.refl R ↥(X ⊗ Y) :=
+  (rfl)
 
 open MonoidalCategory in
-/-- Applying `FDRep.tensorEquivTprod` leaves elements unchanged on the underlying tensor product. -/
-theorem tensorEquivTprod_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
-    (X Y : FDRep R G) (x : (X ⊗ Y : FDRep R G)) :
-    tensorEquivTprod X Y x = x := (rfl)
+/-- Applying `FDRep.tprodEquiv` is the identity on underlying tensors. -/
+theorem tprodEquiv_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (z : ↥(X ⊗ Y)) :
+    tprodEquiv X Y z = z :=
+  (rfl)
 
 open MonoidalCategory in
-/-- Applying the inverse of `FDRep.tensorEquivTprod` leaves elements unchanged on the underlying
-tensor product. -/
-theorem tensorEquivTprod_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
-    (X Y : FDRep R G) (x : TensorProduct R X.V Y.V) :
-    (tensorEquivTprod X Y).symm x = x := (rfl)
+/-- Applying `(FDRep.tprodEquiv X Y).symm` is the identity on underlying tensors. -/
+theorem tprodEquiv_symm_apply {R : Type u} {G : Type v} [CommRing R] [Monoid G]
+    (X Y : FDRep R G) (z : ↥(X ⊗ Y)) :
+    (tprodEquiv X Y).symm z = z :=
+  (rfl)
 
 section Shrink
 

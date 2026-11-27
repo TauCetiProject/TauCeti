@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Etale
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
-public import TauCeti.CategoryTheory.MorphismProperty.Representable
+public import TauCeti.CategoryTheory.MorphismProperty.Representable.Basic
 
 /-!
 # Algebraic spaces

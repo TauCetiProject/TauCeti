@@ -19,8 +19,9 @@ import TauCeti.Data.Finset.Basic
 The free cumulants of a word are obtained from its block moments by Möbius inversion on the
 lattice `NC(s)` of noncrossing partitions, so the values of its Möbius function `μ` are the
 coefficients expressing cumulants through moments. This file computes the values `μ(0̂, π)`,
-identifies `μ(π, 1̂)` with `μ(0̂, Kπ)` using the Kreweras complement, and so computes the values
-`μ(π, 1̂)` on the noncrossing partitions of `n` ordered positions.
+identifies `μ(π, 1̂)` with `μ(0̂, Kπ)` using the Kreweras complement, and, factoring every interval
+`[σ, π]` over the parts of `π`, computes `μ(σ, π)` on all intervals of `NC(s)` for every finite
+set `s` of positions.
 
 First, `μ(0̂, π)` is multiplicative: the lower interval `[0̂, π]` is the product of the lattices
 `NC(B)` over the parts `B` of `π`, and accordingly `μ(0̂, π) = ∏_{B ∈ π} μ_{NC(B)}(0̂, 1̂)`.
@@ -32,9 +33,15 @@ are exactly the partitions into the positions after `m₁` up to some position `
 positions. Together with multiplicativity this gives the recurrence
 `μ_n = -∑_{0 < i < n} μ_i μ_(n-i)`, which is the recurrence of the signed Catalan numbers.
 
-Third, on `NC(n)` the Kreweras complement `K` reverses the order and maps the upper interval
-`[π, 1̂]` onto the lower interval `[0̂, K(π)]`, so `μ(π, 1̂) = μ(0̂, K(π))`. These are the
-coefficients of the formula expressing free cumulants through moments.
+Third, the Kreweras complement `K` reverses the order and maps the upper interval `[π, 1̂]` onto
+the lower interval `[0̂, K(π)]`, so `μ(π, 1̂) = μ(0̂, K(π))`. These are the coefficients of the
+formula expressing free cumulants through moments.
+
+Finally, every interval `[σ, π]` is the product over the parts `B` of `π` of the upper intervals
+`[σ|_B, 1_B]` of `NC(B)`, so `μ(σ, π) = ∏_{B ∈ π} μ_{NC(B)}(σ|_B, 1̂)`, and with the Kreweras
+complement on each `NC(B)` this gives a blockwise formula for all values of `μ`. The two directions
+of Möbius inversion on `NC(s)` are the general `IncidenceAlgebra.moebius_inversion_bot` and
+`IncidenceAlgebra.sum_Iic_sum_Iic_mu_mul`.
 
 ## Main results
 
@@ -42,15 +49,19 @@ coefficients of the formula expressing free cumulants through moments.
 * `TauCeti.NoncrossingPartition.mu_bot_top` — `μ(0̂, 1̂) = (-1)^(|s|-1) C_(|s|-1)` on `NC(s)`, and
   `TauCeti.NoncrossingPartition.mu_bot_top_fin` — `μ(0_n, 1_n) = (-1)^(n-1) C_(n-1)` on `NC(n)`.
 * `TauCeti.NoncrossingPartition.mu_top_eq_mu_bot_kreweras` — Kreweras duality of upper and
-  lower Möbius intervals on `NC(n)`.
+  lower Möbius intervals.
 * `TauCeti.NoncrossingPartition.mu_bot_eq_prod` — the blockwise formula
   `μ(0̂, π) = ∏_{B ∈ π} (-1)^(|B|-1) C_(|B|-1)`.
-* `TauCeti.NoncrossingPartition.mu_top_eq_prod_kreweras` — on `NC(n)`,
-  `μ(π, 1_n) = ∏_{B ∈ K(π)} (-1)^(|B|-1) C_(|B|-1)`, with `K` the Kreweras complement.
+* `TauCeti.NoncrossingPartition.mu_top_eq_prod_kreweras` —
+  `μ(π, 1̂) = ∏_{B ∈ K(π)} (-1)^(|B|-1) C_(|B|-1)`, with `K` the Kreweras complement.
+* `TauCeti.NoncrossingPartition.mu_eq_prod_mu_restrict` — for `σ ≤ π`,
+  `μ(σ, π) = ∏_{B ∈ π} μ_{NC(B)}(σ|_B, 1̂)`.
+* `TauCeti.NoncrossingPartition.mu_eq_prod_prod_kreweras` — for `σ ≤ π`,
+  `μ(σ, π) = ∏_{B ∈ π} ∏_{C ∈ K_B(σ|_B)} (-1)^(|C|-1) C_(|C|-1)`.
 
 ## References
 
-* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lecture 10
+* A. Nica, R. Speicher, *Lectures on the Combinatorics of Free Probability*, Lectures 9 and 10
   (Proposition 10.15).
 * G. Kreweras, *Sur les partitions non croisées d'un cycle*, Discrete Math. 1 (1972), 333–350.
 * L. Weisner, *Abstract theory of inversion of finite series*, Trans. Amer. Math. Soc. 38 (1935),
@@ -63,45 +74,43 @@ open Finset Finpartition IncidenceAlgebra
 
 namespace TauCeti.NoncrossingPartition
 
-variable {α 𝕜 : Type*} [LinearOrder α] [CommRing 𝕜] {s : Finset α}
+variable {α 𝕜 : Type*} [LinearOrder α] {s : Finset α}
+
+section CommRing
+
+variable [CommRing 𝕜]
+
+/-- *Multiplicativity of the Möbius function* of `NC(s)`: for `σ ≤ π`, `μ(σ, π)` is the product
+over the parts `B` of `π` of the values `μ(σ|_B, 1̂)` on the lattices `NC(B)`. This reflects the
+factorisation `[σ, π] ≅ ∏_{B ∈ π} [σ|_B, 1_B]` (`TauCeti.NoncrossingPartition.iccOrderIso`). -/
+theorem mu_eq_prod_mu_restrict {σ π : NoncrossingPartition s} (h : σ ≤ π) :
+    mu 𝕜 σ π = ∏ B : π.val.parts, mu 𝕜 (σ.restrict (π.val.le B.property)) ⊤ := by
+  induction σ using WellFoundedGT.induction with
+  | _ σ ih =>
+  rcases h.eq_or_lt with rfl | hlt
+  · rw [mu_self, eq_comm]
+    exact prod_eq_one fun B _ => by rw [restrict_of_mem_parts _ B.property, mu_self]
+  -- Some part `B` of `π` has `σ|_B ≠ 1_B`, since the restrictions determine `σ ≤ π`.
+  obtain ⟨B, hB⟩ : ∃ B : π.val.parts, σ.restrict (π.val.le B.property) ≠ ⊤ := by
+    by_contra! H
+    refine hlt.ne (congrArg Subtype.val (π.iicOrderIso.injective (a₁ := ⟨σ, h⟩)
+      (a₂ := ⟨π, Set.self_mem_Iic⟩) (funext fun B => ?_)))
+    rw [iicOrderIso_apply, iicOrderIso_apply, H B, restrict_of_mem_parts _ B.property]
+  -- Summing the right-hand side over `[σ, π]` gives `∏_B ∑_{ρ ≥ σ|_B} μ(ρ, 1̂) = 0`.
+  have hsum :=
+    sum_Icc_prod_restrict_eq_prod_sum h fun B ρ => mu 𝕜 ρ (⊤ : NoncrossingPartition B.val)
+  rw [prod_eq_zero (mem_univ B) (by rw [Ici_eq_Icc, sum_Icc_mu_left, ite_eq_right hB]),
+    Icc_eq_cons_Ioc h, sum_cons, add_eq_zero_iff_eq_neg] at hsum
+  rw [hsum, mu_eq_neg_sum_Ioc_of_ne hlt.ne]
+  exact congrArg _ (sum_congr rfl fun τ hτ => ih τ (mem_Ioc.1 hτ).1 (mem_Ioc.1 hτ).2)
 
 /-- *Multiplicativity of the Möbius function* of `NC(s)` on lower intervals: `μ(0̂, π)` is the
 product over the parts `B` of `π` of the values `μ(0̂, 1̂)` on the lattices `NC(B)`. -/
 theorem mu_bot_eq_prod_mu (π : NoncrossingPartition s) :
     mu 𝕜 ⊥ π = ∏ B ∈ π.val.parts, mu 𝕜 (⊥ : NoncrossingPartition B) ⊤ := by
-  induction hn : #s using Nat.strong_induction_on generalizing s with
-  | _ n ih =>
-  subst hn
-  induction π using WellFoundedLT.induction with
-  | _ π ihπ =>
-  by_cases hbot : π = ⊥
-  · subst hbot
-    rw [mu_self, eq_comm]
-    refine prod_eq_one fun B hB => ?_
-    obtain ⟨i, -, rfl⟩ := Finpartition.mem_bot_iff.1 hB
-    rw [Subsingleton.elim (⊥ : NoncrossingPartition {i}) ⊤, mu_self]
-  by_cases htop : π = ⊤
-  · subst htop
-    have hs : s ≠ ∅ := fun hs => hbot (eq_bot_of_eq_empty hs _)
-    rw [coe_top, Finpartition.parts_top hs, prod_singleton]
-  -- Each part of `π` has fewer positions than `s`, and some part has at least two.
-  have hlt : ∀ B ∈ π.val.parts, #B < #s := fun B hB => card_lt_card <|
-    (π.val.le hB).ssubset_of_ne fun h =>
-      htop (Subtype.ext (Finpartition.eq_top_of_mem_parts (h ▸ hB)))
-  obtain ⟨B, hB, hB1⟩ : ∃ B ∈ π.val.parts, 1 < #B := by
-    by_contra! h
-    exact hbot (Subtype.ext (Finpartition.eq_bot_iff_forall_card_eq_one.2 fun B hB =>
-      le_antisymm (h B hB) (π.val.nonempty_of_mem_parts hB).card_pos))
-  have hsum : ∑ σ ∈ Iic π, ∏ C ∈ σ.val.parts, mu 𝕜 (⊥ : NoncrossingPartition C) ⊤ = 0 := by
-    rw [sum_Iic_prod_parts_eq_prod_sum]
-    refine prod_eq_zero hB ?_
-    rw [sum_congr rfl fun τ _ => (ih #B (hlt B hB) τ rfl).symm, ← Icc_bot_top,
-      sum_Icc_mu_right, ite_eq_right (bot_ne_top_of_one_lt_card hB1)]
-  rw [Iic_eq_cons_Iio, sum_cons, add_eq_zero_iff_eq_neg] at hsum
-  rw [hsum, mu_eq_neg_sum_Ico_of_ne (Ne.symm hbot), Ico_bot]
-  exact congrArg _ (sum_congr rfl fun σ hσ => ihπ σ (mem_Iio.1 hσ))
-
-
+  rw [mu_eq_prod_mu_restrict bot_le]
+  simp only [restrict_bot]
+  exact prod_coe_sort _ fun B => mu 𝕜 (⊥ : NoncrossingPartition B) ⊤
 
 section Recurrence
 
@@ -220,12 +229,11 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
 
 end Recurrence
 
-/-- **The Möbius function of the lattice of noncrossing partitions**: on the noncrossing
-partitions of a set `s` of `n` positions, `μ(0̂, 1̂) = (-1)^(n-1) C_(n-1)`, where `C_k` is the
-`k`-th Catalan number. For `n = 0` both sides are `1`. -/
-@[simp]
-theorem mu_bot_top (s : Finset α) :
-    mu 𝕜 (⊥ : NoncrossingPartition s) ⊤ = (-1) ^ (#s - 1) * catalan (#s - 1) := by
+end CommRing
+
+/-- `mu_bot_top` with integer coefficients, from which it is transported to any ring. -/
+private theorem mu_bot_top_int (s : Finset α) :
+    mu ℤ (⊥ : NoncrossingPartition s) ⊤ = (-1) ^ (#s - 1) * catalan (#s - 1) := by
   induction hn : #s using Nat.strong_induction_on generalizing s with
   | _ n ih =>
   subst hn
@@ -244,17 +252,17 @@ theorem mu_bot_top (s : Finset α) :
   have hpair : {m₁, m₂} ⊆ s :=
     insert_subset hm₁ (singleton_subset_iff.2 (mem_of_mem_erase hm₂))
   -- Weisner's theorem at the atom joining `m₁` and `m₂`.
-  have hW := sum_filter_sup_eq_top_mu_bot_eq_zero (𝕜 := 𝕜)
-    (a := ⟨pairPartition s _ _ hpair, isNoncrossing_pairPartition hpair⟩)
-    fun h => pairPartition_ne_bot (hij := hpair) (ne_of_mem_erase hm₂).symm
-      (congrArg Subtype.val h)
+  have hW := sum_filter_sup_eq_mu_eq_zero (𝕜 := ℤ)
+    (a := (⟨_, isNoncrossing_pairPartition hpair⟩ : NoncrossingPartition s)) (d := ⊤)
+    fun h => pairPartition_ne_bot (hij := hpair) (ne_of_mem_erase hm₂).symm <| by
+      simpa only [coe_bot] using congrArg Subtype.val (le_bot_iff.1 h)
   have htop : (⊤ : NoncrossingPartition s) ∈ ({x | x ⊔ ⟨pairPartition s _ _ hpair,
       isNoncrossing_pairPartition hpair⟩ = ⊤} : Finset (NoncrossingPartition s)) := by simp
   rw [Icc_bot_top, ← add_sum_erase _ _ htop, sum_erase_top_mu_bot hpair hmin₁ hm₂ hmin₂] at hW
   -- By induction, each summand is a product of signed Catalan numbers.
   have hterm (y : α) (hy : y ∈ s.erase m₁) :
-      mu 𝕜 (⊥ : NoncrossingPartition {z ∈ s.erase m₁ | z ≤ y}) ⊤ *
-        mu 𝕜 (⊥ : NoncrossingPartition (s \ {z ∈ s.erase m₁ | z ≤ y})) ⊤ =
+      mu ℤ (⊥ : NoncrossingPartition {z ∈ s.erase m₁ | z ≤ y}) ⊤ *
+        mu ℤ (⊥ : NoncrossingPartition (s \ {z ∈ s.erase m₁ | z ≤ y})) ⊤ =
       (-1) ^ #{z ∈ s.erase m₁ | z < y} * catalan #{z ∈ s.erase m₁ | z < y} *
         ((-1) ^ #{z ∈ s.erase m₁ | y < z} * catalan #{z ∈ s.erase m₁ | y < z}) := by
     have hle : #{z ∈ s.erase m₁ | z ≤ y} = #{z ∈ s.erase m₁ | z < y} + 1 := by
@@ -272,38 +280,62 @@ theorem mu_bot_top (s : Finset α) :
     rw [ih _ (by omega) _ rfl, ih _ (by omega) _ rfl, hle, hsdiff, Nat.add_sub_cancel,
       Nat.add_sub_cancel]
   rw [sum_congr rfl hterm, sum_card_filter_lt_card_filter_gt (s.erase m₁)
-    (fun i j => (-1 : 𝕜) ^ i * catalan i * ((-1) ^ j * catalan j)), hcard,
+    (fun i j => (-1 : ℤ) ^ i * catalan i * ((-1) ^ j * catalan j)), hcard,
     Nat.add_sub_cancel, sum_range_neg_one_pow_mul_catalan] at hW
   rw [eq_neg_of_add_eq_zero_left hW, hk, show k + 2 - 1 = k + 1 by omega, pow_succ]
   ring
 
+/-- **The Möbius function of the lattice of noncrossing partitions**: on the noncrossing
+partitions of a set `s` of `n` positions, `μ(0̂, 1̂) = (-1)^(n-1) C_(n-1)`, where `C_k` is the
+`k`-th Catalan number. For `n = 0` both sides are `1`. -/
+@[simp]
+theorem mu_bot_top [Ring 𝕜] (s : Finset α) :
+    mu 𝕜 (⊥ : NoncrossingPartition s) ⊤ = (-1) ^ (#s - 1) * catalan (#s - 1) := by
+  rw [← map_mu (Int.castRingHom 𝕜) (map_one _), mu_bot_top_int]
+  simp
+
 /-- The Möbius function of `NC(n)`: `μ(0_n, 1_n) = (-1)^(n-1) C_(n-1)` on the noncrossing
 partitions of the `n` ordered positions of `Fin n`. -/
-theorem mu_bot_top_fin (n : ℕ) :
+theorem mu_bot_top_fin [Ring 𝕜] (n : ℕ) :
     mu 𝕜 (⊥ : NoncrossingPartition (univ : Finset (Fin n))) ⊤ =
       (-1) ^ (n - 1) * catalan (n - 1) := by
   rw [mu_bot_top, card_univ, Fintype.card_fin]
 
 /-- The blockwise formula for the Möbius function of `NC(s)`: `μ(0̂, π)` is the product over the
 parts `B` of `π` of `(-1)^(|B|-1) C_(|B|-1)`. -/
-theorem mu_bot_eq_prod (π : NoncrossingPartition s) :
+theorem mu_bot_eq_prod [CommRing 𝕜] (π : NoncrossingPartition s) :
     mu 𝕜 ⊥ π = ∏ B ∈ π.val.parts, (-1) ^ (#B - 1) * (catalan (#B - 1) : 𝕜) := by
   rw [mu_bot_eq_prod_mu]
   exact prod_congr rfl fun B _ => mu_bot_top B
 
 /-! ### Upper intervals -/
 
-/-- The Kreweras complement identifies an upper Möbius interval with a lower one. -/
-theorem mu_top_eq_mu_bot_kreweras {𝕜 : Type*} [Ring 𝕜] {n : ℕ}
-    (π : NoncrossingPartition (univ : Finset (Fin n))) :
+/-- The Kreweras complement identifies an upper Möbius interval with a lower one:
+`μ(π, 1̂) = μ(0̂, K(π))` on `NC(s)`. -/
+theorem mu_top_eq_mu_bot_kreweras [AddCommGroup 𝕜] [One 𝕜] (π : NoncrossingPartition s) :
     mu 𝕜 π ⊤ = mu 𝕜 ⊥ (kreweras π) := by
-  have h := OrderIso.mu_map (𝕜 := 𝕜) (krewerasOrderIso n) π ⊤
-  simpa only [krewerasOrderIso_apply, kreweras_top, mu_toDual] using h.symm
+  -- `mu_toDual` needs a ring, so compare over `ℤ` and transport along `k ↦ k • 1`.
+  have h := OrderIso.mu_map (𝕜 := ℤ) (krewerasOrderIso s) π ⊤
+  simp only [krewerasOrderIso_apply, kreweras_top, mu_toDual] at h
+  simpa using congrArg (zmultiplesHom 𝕜 1) h.symm
 
-/-- The blockwise formula for the Möbius function of `NC(n)` on upper intervals: `μ(π, 1_n)` is
-the product over the parts `B` of the Kreweras complement `K(π)` of `(-1)^(|B|-1) C_(|B|-1)`. -/
-theorem mu_top_eq_prod_kreweras {n : ℕ} (π : NoncrossingPartition (univ : Finset (Fin n))) :
+/-- The blockwise formula for the Möbius function of `NC(s)` on upper intervals: `μ(π, 1̂)` is the
+product over the parts `B` of the Kreweras complement `K(π)` of `(-1)^(|B|-1) C_(|B|-1)`. -/
+theorem mu_top_eq_prod_kreweras [CommRing 𝕜] (π : NoncrossingPartition s) :
     mu 𝕜 π ⊤ = ∏ B ∈ (kreweras π).val.parts, (-1) ^ (#B - 1) * (catalan (#B - 1) : 𝕜) := by
   rw [mu_top_eq_mu_bot_kreweras, mu_bot_eq_prod]
+
+/-! ### General intervals -/
+
+/-- The blockwise formula for the Möbius function of `NC(s)` on all intervals: for `σ ≤ π`,
+`μ(σ, π) = ∏_{B ∈ π} ∏_{C ∈ K_B(σ|_B)} (-1)^(|C|-1) C_(|C|-1)`, where `K_B` is the Kreweras
+complement on `NC(B)`. In the lattice of all partitions, `μ(σ, π)` only depends on the number of
+parts of `σ` inside each part of `π`; in `NC(s)` it also depends on how they are arranged, for
+instance `μ({1,2}{3}{4}, 1_4) = 2` while `μ({1,3}{2}{4}, 1_4) = 1`. -/
+theorem mu_eq_prod_prod_kreweras [CommRing 𝕜] {σ π : NoncrossingPartition s} (h : σ ≤ π) :
+    mu 𝕜 σ π = ∏ B : π.val.parts, ∏ C ∈ (kreweras (σ.restrict (π.val.le B.property))).val.parts,
+      (-1) ^ (#C - 1) * (catalan (#C - 1) : 𝕜) := by
+  rw [mu_eq_prod_mu_restrict h]
+  exact prod_congr rfl fun B _ => mu_top_eq_prod_kreweras _
 
 end TauCeti.NoncrossingPartition

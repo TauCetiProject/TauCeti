@@ -33,6 +33,9 @@ divisor sums with pullback.
   `I.comap f` is the inverse image of the complement of the support of `I`.
 * `AlgebraicGeometry.Scheme.IdealSheafData.comap_eq_top_iff`: `I.comap f` is the unit ideal sheaf
   exactly when `f` maps into the complement of the support of `I`.
+* `AlgebraicGeometry.Scheme.IdealSheafData.comap_injective_of_isIso`,
+  `AlgebraicGeometry.Scheme.IdealSheafData.comap_inj_of_isIso`: pulling back along an
+  isomorphism of schemes is injective on ideal sheaves.
 -/
 
 public section
@@ -153,5 +156,31 @@ theorem comap_eq_top_iff (I : Y.IdealSheafData) (f : X ⟶ Y) :
   rw [← support_eq_bot_iff, ← compl_support_comap, ← TopologicalSpace.Closeds.coe_eq_empty,
     ← TopologicalSpace.Opens.coe_eq_univ]
   simp [TopologicalSpace.Closeds.compl]
+
+/-- Pulling back along an isomorphism of schemes is injective on ideal sheaves. -/
+theorem comap_injective_of_isIso (f : X ⟶ Y) [IsIso f] :
+    Function.Injective (·.comap f : Y.IdealSheafData → X.IdealSheafData) := by
+  intro I J h
+  dsimp only at h
+  calc
+    I = (I.comap f).comap (inv f) := by rw [← comap_comp, IsIso.inv_hom_id, comap_id]
+    _ = J := by rw [h, ← comap_comp, IsIso.inv_hom_id, comap_id]
+
+/-- Along an isomorphism of schemes, two ideal sheaves have equal pullbacks if and only if they
+are equal. -/
+@[simp]
+theorem comap_inj_of_isIso {I J : Y.IdealSheafData} (f : X ⟶ Y) [IsIso f] :
+    I.comap f = J.comap f ↔ I = J :=
+  (comap_injective_of_isIso f).eq_iff
+
+/-- **The inclusion of an inverse image lies over the inclusion of the closed subscheme.** For a
+commutative square `g ≫ q = q' ≫ f`, the closed subscheme of the inverse image `I.comap g`, as a
+scheme over `S'` through `q'`, maps to the closed subscheme of `I`, as a scheme over `S` through
+`q`, over `f`. The square need not be a pullback square. -/
+theorem comap_subschemeι_comp_comp {X' S S' : Scheme.{u}} (I : X.IdealSheafData) {g : X' ⟶ X}
+    {q : X ⟶ S} {q' : X' ⟶ S'} {f : S' ⟶ S} (w : g ≫ q = q' ≫ f) :
+    ((I.comap g).subschemeι ≫ q') ≫ f =
+      subschemeMap (I.comap g) I g (I.le_map_comap g) ≫ I.subschemeι ≫ q := by
+  rw [subschemeMap_subschemeι_assoc, w, Category.assoc]
 
 end AlgebraicGeometry.Scheme.IdealSheafData

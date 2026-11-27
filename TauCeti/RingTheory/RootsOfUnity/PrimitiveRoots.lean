@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
+public import Mathlib.Data.ZMod.Units
 public import Mathlib.FieldTheory.Normal.Defs
 public import Mathlib.GroupTheory.Abelianization.Defs
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
@@ -42,12 +43,19 @@ A primitive root of unity in an extension of a field pulls back: if `ζ` is a pr
 If `q²` is a primitive `l`-th root of unity, then `q^(l(l+1)) = (-1)^(l+1)`, the sign that appears
 when quantum binomial coefficients are evaluated at such a `q`.
 
+The product of all `n`-th roots of unity is `(-1) ^ (n + 1)`, read off from the constant term of
+`X ^ n - 1`.
+
 An eigenvalue `μ` of an element `g` of finite order acting linearly on a nonzero vector is a
 primitive root of unity of order `orderOf g` as soon as `μ ^ l = 1` forces `g ^ l = 1`.
 
 For a primitive `n`-th root of unity `ζ` with `0 < n`, factoring `1 - X ^ n` via the powers of `ζ`
 gives the reciprocal cyclotomic factorization `∏ i < n, (1 - ζ ^ i X) = 1 - X ^ n` and its
 evaluated scalar form.
+Applied to the primitive `n`-th root `ζ ^ m`, where `ζ` is a primitive `m * n`-th root of unity,
+it factors `1 - ζ ^ (b * n)` into the `n` differences `1 - ζ ^ (b + j * m)`. For `ζ` of order
+`p ^ a`, `n = p ^ r` with `r < a` and `b` prime to `p`, this writes a difference whose exponent is
+divisible by `p ^ r` as a product of differences with exponents prime to `p`.
 
 ## Main results
 
@@ -63,6 +71,9 @@ evaluated scalar form.
   cyclotomic character is read off from the action on a primitive `d`-th root of unity.
 * `IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq`: the same for the restriction of an
   automorphism of an extension field to a normal intermediate field containing the root.
+* `IsPrimitiveRoot.autToPow_restrictNormal`: the cyclotomic character of the restriction of an
+  automorphism to a normal subextension, at a primitive `m`-th root `ζ ^ (n / m)` of unity, is its
+  cyclotomic character at the primitive `n`-th root `ζ` reduced modulo `m`.
 * `AlgEquiv.apply_eq_apply_of_abelianization_of_eq`: two automorphisms with the same image in the
   abelianization agree on every root of unity.
 * `IsPrimitiveRoot.exists_algEquiv_apply_eq_pow_of_coprime`: every coprime power of a primitive
@@ -77,12 +88,17 @@ evaluated scalar form.
   `n ≠ 0`, exactly `n` elements have `n`-th power `1`.
 * `IsPrimitiveRoot.pow_mul_add_one_eq_neg_one_pow`: if `q²` is a primitive `l`-th root of unity
   with `l > 0`, then `q^(l(l+1)) = (-1)^(l+1)`.
+* `IsPrimitiveRoot.prod_range_pow_eq_neg_one_pow`: for a primitive `n`-th root of unity `ζ` in a
+  domain with `0 < n`, the product of the `n`-th roots of unity is
+  `∏ i ∈ range n, ζ ^ i = (-1) ^ (n + 1)`.
 * `TauCeti.isPrimitiveRoot_orderOf_of_smul_eq`: if `g • v = μ • v` for a nonzero `v`, and
   `μ ^ l = 1` forces `g ^ l = 1`, then `μ` is a primitive root of unity of order `orderOf g`.
 * `IsPrimitiveRoot.prod_one_sub_pow_mul_X`: for a primitive `n`-th root of unity `ζ` in a domain
   with `0 < n`, `∏ i ∈ range n, (1 - C (ζ ^ i) * X) = 1 - X ^ n` in `R[X]`.
 * `IsPrimitiveRoot.prod_one_sub_pow_mul`: the evaluated form
   `∏ i ∈ range n, (1 - ζ ^ i * z) = 1 - z ^ n`.
+* `IsPrimitiveRoot.prod_one_sub_pow_add_mul`: for a primitive `m * n`-th root of unity `ζ`,
+  `1 - ζ ^ (b * n)` is the product of the differences `1 - ζ ^ (b + j * m)` over `j < n`.
 
 ## References
 
@@ -230,6 +246,20 @@ theorem _root_.IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq {K L : Type*} 
       exact hκ _ (by rw [← pow_mul, Nat.div_mul_cancel hd,
         (IsPrimitiveRoot.coe_submonoidClass_iff.2 hζ').pow_eq_one])
 
+/-- **Restriction reduces the cyclotomic character.** Let `E` be a normal subextension of `L / K`,
+`ζ ∈ L` a primitive `n`-th root of unity and `ζ' ∈ E` a primitive `m`-th root of unity mapping to
+`ζ ^ (n / m)`, where `m ∣ n`. If an automorphism `σ` of `L / K` raises `ζ` to the power `a`, then
+its restriction to `E` raises `ζ'` to the power `a` modulo `m`. -/
+theorem _root_.IsPrimitiveRoot.autToPow_restrictNormal {K E L : Type*} [Field K] [Field E]
+    [Field L] [Algebra K E] [Algebra K L] [Algebra E L] [IsScalarTower K E L] [Normal K E]
+    {m n : ℕ} [NeZero m] [NeZero n] (hmn : m ∣ n) {ζ : L} (hζ : IsPrimitiveRoot ζ n) {ζ' : E}
+    (hζ' : IsPrimitiveRoot ζ' m) (h : algebraMap E L ζ' = ζ ^ (n / m)) (σ : L ≃ₐ[K] L) :
+    hζ'.autToPow K (σ.restrictNormal E) = ZMod.unitsMap hmn (hζ.autToPow K σ) := by
+  refine Units.ext ?_
+  rw [ZMod.unitsMap_val, ← ZMod.natCast_zmod_val (hζ'.autToPow K (σ.restrictNormal E) : ZMod m)]
+  refine ((hζ.cast_autToPow_eq_natCast_iff hmn).2 ?_).symm
+  rw [← h, ← AlgEquiv.restrictNormal_commutes, ← map_pow, hζ'.autToPow_spec K]
+
 /-- **Roots of unity only see the abelianization.** Two automorphisms with the same image in the
 abelianization agree on every root of unity: on the roots of unity of order `d` they act through
 the commutative group `(ZMod d)ˣ` (`IsPrimitiveRoot.autToPow`). -/
@@ -252,6 +282,20 @@ theorem isPrimitiveRoot_orderOf_of_smul_eq {G K M : Type*} [Monoid G] [CommRing 
     (h : ∀ l : ℕ, μ ^ l = 1 → g ^ l = 1) : IsPrimitiveRoot μ (orderOf g) := by
   refine ⟨(smul_left_inj hv).1 ?_, fun l hl ↦ orderOf_dvd_of_pow_eq_one (h l hl)⟩
   rw [← pow_smul_eq_of_smul_eq hg, pow_orderOf_eq_one, one_smul, one_smul]
+
+open Polynomial in
+/-- **The product of the `n`-th roots of unity.** If `ζ` is a primitive `n`-th root of unity in an
+integral domain and `0 < n`, then `∏ i < n, ζ ^ i = (-1) ^ (n + 1)`: up to the sign `(-1) ^ n`, it
+is the constant term of `X ^ n - 1 = ∏ i < n, (X - ζ ^ i)`. -/
+theorem _root_.IsPrimitiveRoot.prod_range_pow_eq_neg_one_pow {n : ℕ} {ζ : R}
+    (hζ : IsPrimitiveRoot ζ n) (hn : 0 < n) : ∏ i ∈ Finset.range n, ζ ^ i = (-1) ^ (n + 1) := by
+  have h0 := congrArg (eval 0) (X_pow_sub_C_eq_prod hζ hn (one_pow n))
+  simp only [eval_sub, eval_pow, eval_X, eval_C, zero_pow hn.ne', zero_sub, eval_prod, mul_one,
+    Finset.prod_neg, Finset.card_range] at h0
+  calc ∏ i ∈ Finset.range n, ζ ^ i
+      = ((-1) ^ n * (-1) ^ n) * ∏ i ∈ Finset.range n, ζ ^ i := by
+        rw [← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+    _ = (-1) ^ (n + 1) := by rw [mul_assoc, ← h0, pow_succ]
 
 open Polynomial in
 /-- **Reciprocal cyclotomic factorization of `1 - X ^ n`.** If `ζ` is a primitive `n`-th root of
@@ -289,5 +333,17 @@ theorem _root_.IsPrimitiveRoot.prod_one_sub_pow_mul {n : ℕ} {ζ : R} (hζ : Is
     (hn : 0 < n) (z : R) : ∏ i ∈ Finset.range n, (1 - ζ ^ i * z) = 1 - z ^ n := by
   have h := congrArg (Polynomial.eval z) (hζ.prod_one_sub_pow_mul_X hn)
   simpa [Polynomial.eval_prod] using h
+
+/-- **Factorization of `1 - ζ ^ (b * n)` into differences.** If `ζ` is a primitive `m * n`-th root
+of unity in an integral domain `R` with `0 < m` and `0 < n`, then `1 - ζ ^ (b * n)` is the product
+of the differences `1 - ζ ^ (b + j * m)` over `j < n`. -/
+theorem _root_.IsPrimitiveRoot.prod_one_sub_pow_add_mul {m n : ℕ} {ζ : R}
+    (hζ : IsPrimitiveRoot ζ (m * n)) (hm : 0 < m) (hn : 0 < n) (b : ℕ) :
+    ∏ j ∈ Finset.range n, (1 - ζ ^ (b + j * m)) = 1 - ζ ^ (b * n) := by
+  have h := (hζ.pow (Nat.mul_pos hm hn) rfl).prod_one_sub_pow_mul hn (ζ ^ b)
+  rw [← pow_mul] at h
+  rw [← h]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  rw [← pow_mul, ← pow_add, add_comm, mul_comm m j]
 
 end TauCeti
