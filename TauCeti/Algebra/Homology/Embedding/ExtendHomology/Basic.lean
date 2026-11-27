@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomology
 public import Mathlib.Algebra.Homology.HomologySequence
 public import Mathlib.Algebra.Homology.Embedding.ExtendHomotopy
-public import TauCeti.Algebra.Homology.Embedding.MapExtend
+public import TauCeti.Algebra.Homology.Functor.Extend
 
 /-!
 # Opcycles and extension by zero
@@ -146,7 +146,7 @@ noncomputable def extendFunctorCompMapHomologyFunctorIso {j : ι} {j' : ι'} (hj
     e.extendFunctor C ⋙ F.mapHomologicalComplex c' ⋙ homologyFunctor D c' j' ≅
       F.mapHomologicalComplex c ⋙ homologyFunctor D c j :=
   (Functor.associator _ _ _).symm ≪≫
-    Functor.isoWhiskerRight (e.extendFunctorCompMapHomologicalComplexIso F) _ ≪≫
+    Functor.isoWhiskerRight (F.mapHomologicalComplexExtendIso e) _ ≪≫
     Functor.associator _ _ _ ≪≫
     Functor.isoWhiskerLeft (F.mapHomologicalComplex c)
       (e.extendFunctorCompHomologyFunctorIso D hj')
@@ -156,7 +156,7 @@ noncomputable def extendFunctorCompMapHomologyFunctorIso {j : ι} {j' : ι'} (hj
 lemma extendFunctorCompMapHomologyFunctorIso_hom_app {j : ι} {j' : ι'} (hj' : e.f j = j')
     (K : HomologicalComplex C c) :
     (e.extendFunctorCompMapHomologyFunctorIso F hj').hom.app K =
-      homologyMap (HomologicalComplex.mapExtendIso F K e).hom j' ≫
+      homologyMap (F.mapHomologicalComplexExtendObjIso e K).hom j' ≫
         (((F.mapHomologicalComplex c).obj K).extendHomologyIso e hj').hom := by
   dsimp [extendFunctorCompMapHomologyFunctorIso]
   simp

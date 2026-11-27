@@ -109,7 +109,8 @@ lemma cocomplexPlusHomologyIso_hom {X : C} (I : InjectiveResolution X)
     (F : C ⥤ D) [F.PreservesZeroMorphisms] (n : ℕ) :
     (I.cocomplexPlusHomologyIso F n).hom =
       HomologicalComplex.homologyMap
-          (HomologicalComplex.mapExtendIso F I.cocomplex ComplexShape.embeddingUpNat).hom (n : ℤ) ≫
+          (F.mapHomologicalComplexExtendObjIso ComplexShape.embeddingUpNat I.cocomplex).hom
+          (n : ℤ) ≫
         (((F.mapHomologicalComplex (.up ℕ)).obj I.cocomplex).extendHomologyIso
           ComplexShape.embeddingUpNat (ComplexShape.embeddingUpNat_f n)).hom :=
   ComplexShape.Embedding.extendFunctorCompMapHomologyFunctorIso_hom_app
