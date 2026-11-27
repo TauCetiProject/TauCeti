@@ -18,6 +18,8 @@ import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.LineDeriv
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Pseudodifferential.Composition.Parametrix
+import TauCeti.Analysis.Pseudodifferential.Microlocal
+import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Elliptic
 import TauCeti.Analysis.Pseudodifferential.InteriorRegularity
 import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
@@ -45,6 +47,24 @@ at every point of `Ω` shifts the `H^s` singular support exactly by its order:
 for instance `singsupp_s(Δ T) = singsupp_(s + 2)(T)` for the Laplacian
 (`Distribution.sobolevSingularSupport_laplacianCLM`).
 
+Elliptic regularity also holds **microlocally**. Let `ξ` be noncharacteristic for `P` at `x`: the
+principal symbol with the coefficients frozen at `x`, `TauCeti.principalSymbol`, does not vanish at
+`ξ`. If `P T` is microlocally `H^s` at `(x, ξ)`, then `T` is microlocally `H^(s + M)` there
+(`Distribution.IsMicrolocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`). In terms of
+the `H^s` wave front sets,
+
+`WF_(s + M)(T) ⊆ WF_s(P T) ∪ Char(P)`
+
+(`sobolevWaveFrontSet_subset_sobolevWaveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_union`
+in the namespace `Distribution`), where `Char(P)` is the characteristic set
+`TauCeti.characteristicSet`. Together with the mapping property `WF_s(P T) ⊆ WF_(s + M)(T)`, an
+operator elliptic at every point of `Ω` shifts the `H^s` wave front set exactly by its order. These
+are the variable-coefficient forms of the statements for constant coefficients, such as
+`sobolevWaveFrontSet_subset_sobolevWaveFrontSet_sum_smul_iteratedLineDerivOp_union`, and the
+`H^s` refinements of the statements for the wave front set, such as
+`waveFrontSet_subset_waveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_union`, all in the
+namespace `Distribution`.
+
 ## The argument
 
 The statement is reduced to interior elliptic regularity on the Bessel-potential spaces `H^{r,p}`
@@ -68,6 +88,15 @@ the namespace `TauCeti.Symbol`), which rests on the parametrix of the pseudodiff
 
 The regularity theorem on `H^{r,p}` then gives `φ (χ T) = φ T ∈ H^{s + M,p}` for every cutoff `φ`
 supported where `ψ = 1`.
+
+For the microlocal statement at `(x, ξ)` no freezing is needed. If `ψ = 1` near `x`, the principal
+symbol of the cut-off operator at `(x, ξ)` is that of `P`, so it is elliptic in a conic
+neighbourhood of `(x, ξ)` at large frequencies
+(`TauCeti.ClassicalSymbol.exists_isEllipticOn_of_isInvertible_coefficient_principal`). Microlocal
+elliptic regularity on `H^r` for symbols with compact spatial support
+(`HasCompactSpatialSupport.isMicrolocallySobolevAt_toDistribution_of_quantizeSobolev` in the
+namespace `TauCeti.Symbol`) then passes from `ψ P T` to `χ T`, which agree with `P T` and `T` near
+`x`.
 
 The same cutoffs give **interior elliptic regularity on the Besov scale** `B^s_{p,q}`, for
 `1 < p ≤ ∞` and `1 ≤ q ≤ ∞`
@@ -94,6 +123,13 @@ gives the **local Schauder theorem**: for `0 < α < 1`,
   regularity on `H^{s,p}` and on `H^s`, and
   `Distribution.isLocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff`, its combination
   with the mapping property.
+* `Distribution.IsMicrolocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`,
+  `Distribution.isMicrolocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff`: microlocal
+  elliptic regularity on `H^s`, and its combination with the mapping property.
+* `sobolevWaveFrontSet_subset_sobolevWaveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_union`
+  and `sobolevWaveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero`, in the
+  namespace `Distribution`:
+  `WF_(s + M)(T) ⊆ WF_s(P T) ∪ Char(P)`, and `WF_s(P T) = WF_(s + M)(T)` for elliptic `P`.
 * `Distribution.IsLocallyMemBesovAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`,
   `Distribution.IsLocallyCkHolderAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp`: interior elliptic
   regularity on `B^s_{p,q}` and the local Schauder theorem on `C^{j,α}`, `0 < α < 1`.
@@ -153,9 +189,8 @@ theorem ClassicalSymbol.isElliptic_ofDifferentialSymbol_smul_id_iff (M : ℕ)
   · -- A multiple `0 • id` of the identity is not an isomorphism of `ℂ`.
     have he1 := congrArg (fun L : ℂ →L[ℂ] ℂ ↦ L 1) he
     simp [h0] at he1
-  · rw [ContinuousLinearMap.isInvertible_smul_iff
-      (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) h)]
-    exact ⟨ContinuousLinearEquiv.refl ℂ ℂ, rfl⟩
+  · exact ContinuousLinearMap.isInvertible_smul_id_iff.2
+      (mul_ne_zero (pow_ne_zero _ Complex.I_ne_zero) h)
 
 open Metric in
 /-- **Freezing the coefficients away from a point.** If the principal symbol of
@@ -230,6 +265,22 @@ private theorem sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered
   simp [ψi, cutoffTempered_smulLeftCLM]
 
 /-- The operator `P = ∑ i ∈ t, c i g i ∂^(m i)` with coefficients cut off by `ψ`: its coefficients
+`c i (g i ψ)` are smooth and compactly supported, and so its symbol has compact spatial support. -/
+private theorem exists_hasCompactSpatialSupport_cutoff (hg : ∀ i, ContDiff ℝ ∞ (g i)) {M : ℕ}
+    (hk : ∀ i ∈ t, k i ≤ M) (ψ : 𝓓(Ω, ℂ)) :
+    ∃ hβ : ∀ i ∈ t, ContDiff ℝ ∞ fun y ↦ c i * TestFunction.smulLeftCLM (hg i) ψ y,
+      (∀ i ∈ t, HasCompactSupport fun y ↦ c i * TestFunction.smulLeftCLM (hg i) ψ y) ∧
+      (ClassicalSymbol.ofDifferentialSymbol M t m
+        (fun i y ↦ (c i * TestFunction.smulLeftCLM (hg i) ψ y) • ContinuousLinearMap.id ℂ ℂ)
+        (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.HasCompactSpatialSupport := by
+  have hβc (i : ι) (_ : i ∈ t) :
+      HasCompactSupport fun y ↦ c i * TestFunction.smulLeftCLM (hg i) ψ y :=
+    (TestFunction.smulLeftCLM (hg i) ψ).hasCompactSupport.mul_left
+  exact ⟨fun i _ ↦ contDiff_const.mul (TestFunction.smulLeftCLM (hg i) ψ).contDiff, hβc,
+    ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol M t m _ _ hk
+      fun i hi ↦ (hβc i hi).smul_right⟩
+
+/-- The operator `P = ∑ i ∈ t, c i g i ∂^(m i)` with coefficients cut off by `ψ`: its coefficients
 `c i (g i ψ)` are smooth and compactly supported, and where `ψ = 1` and the coefficients of `b`
 are those of `P` near the support of `φ`, its symbol agrees with that of `b` there. -/
 private theorem exists_cutoff_coefficient_eq (hg : ∀ i, ContDiff ℝ ∞ (g i)) {M : ℕ}
@@ -247,12 +298,8 @@ private theorem exists_cutoff_coefficient_eq (hg : ∀ i, ContDiff ℝ ∞ (g i)
           (fun i y ↦ (c i * TestFunction.smulLeftCLM (hg i) ψ y) • ContinuousLinearMap.id ℂ ℂ)
           (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).toSymbol.coefficient (y, ξ) =
         (ClassicalSymbol.ofDifferentialSymbol M t m b hb hk).toSymbol.coefficient (y, ξ) := by
-  have hβc (i : ι) (_ : i ∈ t) :
-      HasCompactSupport fun y ↦ c i * TestFunction.smulLeftCLM (hg i) ψ y :=
-    (TestFunction.smulLeftCLM (hg i) ψ).hasCompactSupport.mul_left
-  refine ⟨fun i _ ↦ contDiff_const.mul (TestFunction.smulLeftCLM (hg i) ψ).contDiff, hβc,
-    ClassicalSymbol.hasCompactSpatialSupport_toSymbol_ofDifferentialSymbol M t m _ _ hk
-      fun i hi ↦ (hβc i hi).smul_right, ?_⟩
+  obtain ⟨hβ, hβc, hc⟩ := exists_hasCompactSpatialSupport_cutoff (c := c) (m := m) hg hk ψ
+  refine ⟨hβ, hβc, hc, ?_⟩
   filter_upwards [hbψ] with y ⟨hψy, hby⟩ ξ
   simp only [ClassicalSymbol.coefficient_toSymbol_ofDifferentialSymbol, differentialSymbol_def,
     hby, TestFunction.smulLeftCLM_apply, hψy, Complex.real_smul, mul_one]
@@ -410,6 +457,114 @@ theorem sobolevSingularSupport_laplacianCLM (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
   simp only [ofReal_one, one_mul]
   rw [constCoeffPrincipalSymbol_laplacian]
   exact_mod_cast (pow_pos (norm_pos_iff.2 hξ) 2).ne'
+
+/-! ### Microlocal Sobolev regularity -/
+
+/-- **Microlocal Sobolev elliptic regularity for differential operators.** Let
+`P = ∑ i ∈ t, c i g i ∂^(m i)` have smooth real coefficients `g i`, complex constants `c i` and
+orders `k i ≤ M`, and let `ξ` be noncharacteristic for `P` at `x`: the principal symbol with the
+coefficients frozen at `x`, `principalSymbol t (fun i y ↦ c i * g i y) m M x`, does not vanish at
+`ξ`. If `P T` is microlocally `H^s` at `(x, ξ)`, then `T` is microlocally `H^(s + M)` there. -/
+theorem IsMicrolocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp
+    (hg : ∀ i, ContDiff ℝ ∞ (g i)) {M : ℕ} (hk : ∀ i ∈ t, k i ≤ M) {T : 𝓓'(Ω, ℂ)}
+    {x ξ : CoordinateSpace n} {s : ℝ}
+    (hPT : (∑ i ∈ t, c i • Distribution.smulLeftCLM (hg i) (∂^{m i} T)).IsMicrolocallySobolevAt s
+      x ξ)
+    (hξ : principalSymbol t (fun i y ↦ c i * g i y) m M x ξ ≠ 0) :
+    T.IsMicrolocallySobolevAt (s + M) x ξ := by
+  rcases eq_or_ne ξ 0 with rfl | hξ0
+  · -- At `ξ = 0` this is local regularity: the principal symbol at `0` is `0 ^ M` times its value
+    -- at any `η`, so it vanishes nowhere.
+    refine (IsLocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk (fun η _ ↦ ?_)
+      (isMicrolocallySobolevAt_zero_covector_iff.1 hPT)).isMicrolocallySobolevAt 0
+    have h0 := principalSymbol_smul t (fun i y ↦ c i * g i y) m M x 0 η
+    rw [zero_smul] at h0
+    have hη := right_ne_zero_of_mul (h0 ▸ hξ)
+    rwa [principalSymbol_def] at hη
+  obtain ⟨ε, hε, hεΩ⟩ := Metric.isOpen_iff.1 Ω.isOpen x hPT.mem
+  -- Nested cutoffs: `ψ = 1` near `closedBall x (ε / 4)` with support in `B(x, ε / 2)`, and
+  -- `χ = 1` near `closedBall x (ε / 2)`.
+  obtain ⟨ψ, hψ1, hψs⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    (isCompact_closedBall x (ε / 4)) isOpen_ball (closedBall_subset_ball (by linarith))
+    ((ball_subset_ball (by linarith : ε / 2 ≤ ε)).trans hεΩ)
+  obtain ⟨χ, hχ1, -⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤)
+    (isCompact_closedBall x (ε / 2)) isOpen_ball (closedBall_subset_ball (by linarith)) hεΩ
+  have hψx (y : CoordinateSpace n) (hy : y ∈ ball x (ε / 4)) : ψ y = 1 :=
+    hψ1.self_of_nhdsSet y (ball_subset_closedBall hy)
+  have hχx (y : CoordinateSpace n) (hy : y ∈ ball x (ε / 4)) : χ y = 1 :=
+    hχ1.self_of_nhdsSet y (closedBall_subset_closedBall (by linarith) (ball_subset_closedBall hy))
+  have hx4 : x ∈ ball x (ε / 4) := mem_ball_self (by positivity)
+  -- `χ T` is some `u ∈ H^r`, and the operator with coefficients cut off by `ψ` sends it to `ψ P T`.
+  obtain ⟨r, hr⟩ := T.exists_memSobolev_cutoffTempered χ
+  obtain ⟨hβ, hβc, hc⟩ := exists_hasCompactSpatialSupport_cutoff (c := c) (m := m) hg hk ψ
+  have hu := ClassicalSymbol.toDistr_quantizeSobolev_ofDifferentialSymbol M t m hk
+    (fun i hi ↦ (hβc i hi).hasTemperateGrowth (hβ i hi)) hc r hr.toBesselPotentialSpace
+  rw [hr.toBesselPotentialSpace_toDistr, sum_smulLeftCLM_iteratedLineDerivOp_cutoffTempered hg T
+    fun y hy ↦ hχ1.self_of_nhdsSet y (ball_subset_closedBall (hψs hy))] at hu
+  -- Since `ψ x = 1`, the cut-off symbol has the principal symbol of `P` at `(x, ξ)`.
+  have hprin : ((ClassicalSymbol.ofDifferentialSymbol M t m
+      (fun i y ↦ (c i * TestFunction.smulLeftCLM (hg i) ψ y) • ContinuousLinearMap.id ℂ ℂ)
+      (fun i hi ↦ (hβ i hi).smul contDiff_const) hk).principal.coefficient
+        (x, ξ)).IsInvertible := by
+    rw [ClassicalSymbol.coefficient_principal_ofDifferentialSymbol _ _ _ _ _ _ hξ0,
+      differentialSymbol_filter_smul_id]
+    exact ContinuousLinearMap.isInvertible_smul_id_iff.2 (mul_ne_zero (pow_ne_zero _ I_ne_zero)
+      (by simpa [principalSymbol_def, hψx x hx4] using hξ))
+  obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, R, hell⟩ :=
+    ClassicalSymbol.exists_isEllipticOn_of_isInvertible_coefficient_principal hξ0 hprin
+  -- `ψ P T` agrees with `P T` near `x`, and `χ T` with `T`.
+  have hD := hc.isMicrolocallySobolevAt_toDistribution_of_quantizeSobolev hU hΓ hcone hξΓ hell
+    (by rw [hu]; exact (isMicrolocallySobolevAt_iff_of_isVanishingOn_sub isOpen_ball hx4
+      (isVanishingOn_sub_toDistribution_cutoffTempered _ hψx)).1 hPT)
+  rw [hr.toBesselPotentialSpace_toDistr] at hD
+  exact (isMicrolocallySobolevAt_iff_of_isVanishingOn_sub isOpen_ball hx4
+    (isVanishingOn_sub_toDistribution_cutoffTempered T hχx)).2 hD
+
+/-- At a noncharacteristic covector `(x, ξ)` of `P = ∑ i ∈ t, c i g i ∂^(m i)`, with smooth real
+coefficients `g i` and orders `k i ≤ M`, `P T` is microlocally `H^s` exactly when `T` is
+microlocally `H^(s + M)`. -/
+theorem isMicrolocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff
+    (hg : ∀ i, ContDiff ℝ ∞ (g i)) {M : ℕ} (hk : ∀ i ∈ t, k i ≤ M) {T : 𝓓'(Ω, ℂ)}
+    {x ξ : CoordinateSpace n} {s : ℝ}
+    (hξ : principalSymbol t (fun i y ↦ c i * g i y) m M x ξ ≠ 0) :
+    (∑ i ∈ t, c i • smulLeftCLM (hg i) (∂^{m i} T)).IsMicrolocallySobolevAt s x ξ ↔
+      T.IsMicrolocallySobolevAt (s + M) x ξ :=
+  ⟨fun h ↦ h.of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk hξ, fun h ↦ by
+    simpa using h.sum_smul_smulLeftCLM_iteratedLineDerivOp t c hg m hk⟩
+
+/-- **Microlocal Sobolev elliptic regularity for differential operators**:
+`WF_(s + M)(T) ⊆ WF_s(P T) ∪ Char(P)` for `P = ∑ i ∈ t, c i g i ∂^(m i)` with smooth real
+coefficients `g i` and orders `k i ≤ M`, where
+`Char(P) = characteristicSet t (fun i y ↦ c i * g i y) m M` is the set of `(x, ξ)` with `ξ ≠ 0` at
+which the principal symbol with the coefficients frozen at `x` vanishes. -/
+theorem
+    sobolevWaveFrontSet_subset_sobolevWaveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_union
+    (s : ℝ) (t : Finset ι) (c : ι → ℂ) (hg : ∀ i, ContDiff ℝ ∞ (g i))
+    (m : ∀ i, Fin (k i) → CoordinateSpace n) {M : ℕ} (hk : ∀ i ∈ t, k i ≤ M) (T : 𝓓'(Ω, ℂ)) :
+    T.sobolevWaveFrontSet (s + M) ⊆
+      (∑ i ∈ t, c i • smulLeftCLM (hg i) (∂^{m i} T)).sobolevWaveFrontSet s ∪
+        characteristicSet t (fun i y ↦ c i * g i y) m M := by
+  rintro ⟨x, ξ⟩ hp
+  obtain ⟨hx, hξ, hT⟩ := mem_sobolevWaveFrontSet_iff.1 hp
+  by_contra h
+  rw [mem_union, not_or, mem_sobolevWaveFrontSet_iff, mem_characteristicSet_iff] at h
+  exact hT (IsMicrolocallySobolevAt.of_sum_smul_smulLeftCLM_iteratedLineDerivOp hg hk
+    (by simpa [hx, hξ] using h.1) fun h0 ↦ h.2 ⟨hξ, h0⟩)
+
+/-- **Elliptic differential operators shift the `H^s` wave front set by their order.** If the
+principal symbol of `P = ∑ i ∈ t, c i g i ∂^(m i)` of order `M`, with smooth real coefficients
+`g i` frozen at any point of `Ω`, vanishes at no `ξ ≠ 0`, then `WF_s(P T) = WF_(s + M)(T)`. -/
+theorem sobolevWaveFrontSet_sum_smul_smulLeftCLM_iteratedLineDerivOp_of_forall_ne_zero (s : ℝ)
+    (t : Finset ι) (c : ι → ℂ) (hg : ∀ i, ContDiff ℝ ∞ (g i))
+    (m : ∀ i, Fin (k i) → CoordinateSpace n) {M : ℕ} (hk : ∀ i ∈ t, k i ≤ M)
+    (hσ : ∀ x ∈ Ω, ∀ ξ, ξ ≠ 0 → principalSymbol t (fun i y ↦ c i * g i y) m M x ξ ≠ 0)
+    (T : 𝓓'(Ω, ℂ)) :
+    (∑ i ∈ t, c i • smulLeftCLM (hg i) (∂^{m i} T)).sobolevWaveFrontSet s =
+      T.sobolevWaveFrontSet (s + M) := by
+  ext ⟨x, ξ⟩
+  simp only [mem_sobolevWaveFrontSet_iff, and_congr_right_iff]
+  exact fun hx hξ ↦ not_congr
+    (isMicrolocallySobolevAt_sum_smul_smulLeftCLM_iteratedLineDerivOp_iff hg hk (hσ x hx ξ hξ))
 
 /-! ### Besov and Hölder regularity -/
 
