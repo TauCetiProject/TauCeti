@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
@@ -233,22 +234,11 @@ private def smulSchwartzMapSupportedInCLM (ψ : 𝓓(Ω, ℝ)) :
       refine ⟨{0} ×ˢ Finset.range (i + 1), ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * |M j|,
         fun u ↦ ((P u).seminorm_le_iff ℝ (mul_nonneg (Finset.sum_nonneg fun _ _ ↦ by positivity)
           (apply_nonneg _ _)) i).2 fun _ x _ ↦ ?_⟩
-      refine (norm_iteratedFDeriv_smul_le ψ.contDiff (u.smooth ⊤) x (mod_cast le_top)).trans ?_
-      rw [Finset.sum_mul]
-      refine Finset.sum_le_sum fun j hj ↦ ?_
-      have hj : j ≤ i := Nat.lt_succ_iff.1 (Finset.mem_range.1 hj)
-      have hψj : ‖iteratedFDeriv ℝ j ψ x‖ ≤ |M j| := (hM j ⟨x, rfl⟩).trans (le_abs_self _)
-      have hmem : ((0, i - j) : ℕ × ℕ) ∈ ({0} ×ˢ Finset.range (i + 1)) := by
-        simp only [Finset.mem_product, Finset.mem_singleton, Finset.mem_range, true_and]
-        omega
-      have huj : ‖iteratedFDeriv ℝ (i - j) u x‖ ≤
-          (({0} ×ˢ Finset.range (i + 1)).sup (schwartzSeminormFamily ℝ E F)) u :=
-        (SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ u (i - j) x).trans
-          (Seminorm.le_finset_sup_apply (p := schwartzSeminormFamily ℝ E F) hmem)
-      calc (i.choose j : ℝ) * ‖iteratedFDeriv ℝ j ψ x‖ * ‖iteratedFDeriv ℝ (i - j) u x‖
-          ≤ (i.choose j : ℝ) * |M j| *
-              (({0} ×ˢ Finset.range (i + 1)).sup (schwartzSeminormFamily ℝ E F)) u := by
-            gcongr }
+      refine TauCeti.norm_iteratedFDeriv_smul_le_of_forall_le ψ.contDiff (u.smooth ⊤) x
+        (mod_cast le_top) (fun j _ ↦ (hM j ⟨x, rfl⟩).trans (le_abs_self _)) fun j hj ↦ ?_
+      exact (SchwartzMap.norm_iteratedFDeriv_le_seminorm ℝ u j x).trans
+        (Seminorm.le_finset_sup_apply (p := schwartzSeminormFamily ℝ E F) (i := (0, j))
+          (Finset.mem_product.2 ⟨Finset.mem_singleton_self 0, Finset.mem_range.2 (by omega)⟩)) }
 
 /-- **Cutting off Schwartz functions.** The product `ψ • u` of a real test function `ψ` on `Ω`
 and a Schwartz function `u` (`TestFunction.smulSchwartzMap`), as a continuous linear map from

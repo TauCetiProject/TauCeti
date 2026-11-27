@@ -187,8 +187,8 @@ private theorem continuous_of_dim_eq_zero (hn : n = 0)
   -- A test function is determined by its values at the finitely many points of `M`.
   let ev : BundleTest 𝓘(ℝ, CoordinateSpace 0) ℂ (Bundle.Trivial M ℂ) →ₗ[ℝ] M → ℂ :=
     { toFun u x := u x
-      map_add' _ _ := (rfl)
-      map_smul' _ _ := (rfl) }
+      map_add' u v := funext (BundleTest.add_apply u v)
+      map_smul' c u := funext (BundleTest.smul_apply c u) }
   have : FiniteDimensional ℝ (BundleTest 𝓘(ℝ, CoordinateSpace 0) ℂ (Bundle.Trivial M ℂ)) :=
     Module.Finite.of_injective ev fun u v huv ↦ BundleTest.ext (congrFun huv)
   exact L.continuous_of_finiteDimensional
