@@ -49,59 +49,27 @@ namespace Reconstruction
 This abbreviation retains the native basis carriers for the biproduct component API. -/
 private abbrev rawObj (X : Model P) : C := ⨁ fun a ↦ ⨁ fun _ : X.basis a ↦ S a
 
-/-- The inclusion of the copy of `S a` indexed by the basis vector `x`. -/
-private def rawIncl (X : Model P) (a : ι) (x : X.basis a) : S a ⟶ rawObj P S X :=
-  biproduct.ι (fun _ : X.basis a ↦ S a) x ≫
-    biproduct.ι (fun a ↦ ⨁ fun _ : X.basis a ↦ S a) a
-
-/-- The projection to the copy of `S a` indexed by the basis vector `x`. -/
-private def rawProj (X : Model P) (a : ι) (x : X.basis a) : rawObj P S X ⟶ S a :=
-  biproduct.π (fun a ↦ ⨁ fun _ : X.basis a ↦ S a) a ≫
-    biproduct.π (fun _ : X.basis a ↦ S a) x
-
 /-- Realize a matrix morphism by its scalar entries on each grade. -/
 private def map {X Y : Model P} (f : X ⟶ Y) : rawObj P S X ⟶ rawObj P S Y :=
   biproduct.map fun a ↦ biproduct.desc fun x ↦ biproduct.lift fun y ↦ f a x y • 𝟙 (S a)
 
-@[reassoc (attr := simp)]
-private theorem incl_map_proj {X Y : Model P} (f : X ⟶ Y) (a : ι)
-    (x : X.basis a) (y : Y.basis a) :
-    rawIncl P S X a x ≫ map P S f ≫ rawProj P S Y a y = f a x y • 𝟙 (S a) := by
-  simp [rawObj, rawIncl, rawProj, map, Category.assoc]
-
-omit [Linear R C] in
-/-- Maps between realizations are determined by their entries on all basis vectors. -/
-private theorem raw_hom_ext {X Y : Model P} {f g : rawObj P S X ⟶ rawObj P S Y}
-    (h : ∀ a b (x : X.basis a) (y : Y.basis b),
-      rawIncl P S X a x ≫ f ≫ rawProj P S Y b y =
-        rawIncl P S X a x ≫ g ≫ rawProj P S Y b y) : f = g := by
+@[simp]
+private theorem map_id (X : Model P) : map P S (𝟙 X) = 𝟙 (rawObj P S X) := by
   apply biproduct.hom_ext'
   intro a
   apply biproduct.hom_ext'
   intro x
   apply biproduct.hom_ext
   intro b
-  apply biproduct.hom_ext
-  intro y
-  simpa [rawObj, rawIncl, rawProj, Category.assoc] using h a b x y
-
-@[reassoc (attr := simp)]
-private theorem incl_map_proj_of_ne {X Y : Model P} (f : X ⟶ Y) {a b : ι}
-    (h : a ≠ b) (x : X.basis a) (y : Y.basis b) :
-    rawIncl P S X a x ≫ map P S f ≫ rawProj P S Y b y = 0 := by
-  simp [rawObj, rawIncl, rawProj, map, Category.assoc, h]
-
-@[simp]
-private theorem map_id (X : Model P) : map P S (𝟙 X) = 𝟙 (rawObj P S X) := by
-  apply raw_hom_ext P S
-  intro a b x y
   by_cases h : a = b
   · subst b
+    apply biproduct.hom_ext
+    intro y
     by_cases hxy : x = y
     · subst y
-      simp [rawObj, rawIncl, rawProj, map, Category.assoc]
-    · simp [rawObj, rawIncl, rawProj, map, Category.assoc, hxy]
-  · simp [rawObj, rawIncl, rawProj, map, Category.assoc, h]
+      simp [rawObj, map, Category.assoc]
+    · simp [rawObj, map, Category.assoc, hxy]
+  · simp [rawObj, map, Category.assoc, h]
 
 @[simp]
 private theorem map_comp {X Y Z : Model P} (f : X ⟶ Y) (g : Y ⟶ Z) :
@@ -129,23 +97,33 @@ def functor : Model P ⥤ C where
 
 /-- The inclusion of the copy of `S a` indexed by the basis vector `x`. -/
 def incl (X : Model P) (a : ι) (x : X.basis a) : S a ⟶ (functor P S).obj X :=
-  rawIncl P S X a x
+  biproduct.ι (fun _ : X.basis a ↦ S a) x ≫
+    biproduct.ι (fun a ↦ ⨁ fun _ : X.basis a ↦ S a) a
 
 /-- The projection to the copy of `S a` indexed by the basis vector `x`. -/
 def proj (X : Model P) (a : ι) (x : X.basis a) : (functor P S).obj X ⟶ S a :=
-  rawProj P S X a x
+  biproduct.π (fun a ↦ ⨁ fun _ : X.basis a ↦ S a) a ≫
+    biproduct.π (fun _ : X.basis a ↦ S a) x
 
 /-- Maps between realized objects are determined by all their native matrix components. -/
+@[ext]
 theorem hom_ext {X Y : Model P}
     {f g : (functor P S).obj X ⟶ (functor P S).obj Y}
     (h : ∀ a b (x : X.basis a) (y : Y.basis b),
       incl P S X a x ≫ f ≫ proj P S Y b y =
         incl P S X a x ≫ g ≫ proj P S Y b y) : f = g := by
-  apply raw_hom_ext P S
-  exact h
+  dsimp only [functor, rawObj] at f g h ⊢
+  apply biproduct.hom_ext'
+  intro a
+  apply biproduct.hom_ext'
+  intro x
+  apply biproduct.hom_ext
+  intro b
+  apply biproduct.hom_ext
+  intro y
+  simpa [incl, proj, functor, rawObj, Category.assoc] using h a b x y
 
 /-- The realized object is the iterated biproduct of the copies of `S a` in each grade. -/
-@[simp]
 theorem functor_obj (X : Model P) :
     (functor P S).obj X = ⨁ fun a ↦ ⨁ fun _ : X.basis a ↦ S a := (rfl)
 
@@ -155,14 +133,14 @@ theorem functor_map_entry {X Y : Model P} (f : X ⟶ Y) (a : ι)
     (x : X.basis a) (y : Y.basis a) :
     incl P S X a x ≫ (functor P S).map f ≫ proj P S Y a y =
       f a x y • 𝟙 (S a) := by
-  exact incl_map_proj P S f a x y
+  simp [incl, proj, functor, map, Category.assoc]
 
 /-- Realization has zero components between distinct grades. -/
 @[reassoc (attr := simp)]
 theorem functor_map_entry_of_ne {X Y : Model P} (f : X ⟶ Y) {a b : ι}
     (h : a ≠ b) (x : X.basis a) (y : Y.basis b) :
     incl P S X a x ≫ (functor P S).map f ≫ proj P S Y b y = 0 := by
-  exact incl_map_proj_of_ne P S f h x y
+  simp [incl, proj, functor, map, Category.assoc, h]
 
 /-- Inclusions and projections in a fixed grade are the coordinate Kronecker deltas. -/
 @[reassoc (attr := simp)]
@@ -182,6 +160,39 @@ theorem incl_proj_of_ne (X : Model P) {a b : ι} (h : a ≠ b)
   have h' := functor_map_entry_of_ne P S (𝟙 X) h x y
   rw [(functor P S).map_id] at h'
   simpa only [Category.id_comp] using h'
+
+/-- The native basis inclusions and projections resolve the identity of a realized object. -/
+@[simp]
+theorem sum_proj_incl (X : Model P) :
+    ∑ a, ∑ x : X.basis a, proj P S X a x ≫ incl P S X a x =
+      𝟙 ((functor P S).obj X) := by
+  calc
+    _ = ∑ a, biproduct.π (fun a ↦ ⨁ fun _ : X.basis a ↦ S a) a ≫
+        (∑ x : X.basis a, biproduct.π (fun _ : X.basis a ↦ S a) x ≫
+          biproduct.ι (fun _ : X.basis a ↦ S a) x) ≫
+        biproduct.ι (fun a ↦ ⨁ fun _ : X.basis a ↦ S a) a := by
+      simp only [proj, incl, functor, rawObj, Preadditive.comp_sum, Preadditive.sum_comp,
+        Category.assoc]
+      rfl
+    _ = _ := by simp [functor, rawObj]
+
+/-- Realization acts on a basis inclusion by the corresponding row of its matrix. -/
+@[reassoc]
+theorem incl_functor_map {X Y : Model P} (f : X ⟶ Y) (a : ι) (x : X.basis a) :
+    incl P S X a x ≫ (functor P S).map f =
+      ∑ y : Y.basis a, f a x y • incl P S Y a y := by
+  simp [incl, functor, rawObj, map, biproduct.lift_eq, Category.assoc, Preadditive.sum_comp,
+    Linear.smul_comp]
+  rfl
+
+/-- Realization acts on a basis projection by the corresponding column of its matrix. -/
+@[reassoc]
+theorem functor_map_proj {X Y : Model P} (f : X ⟶ Y) (a : ι) (y : Y.basis a) :
+    (functor P S).map f ≫ proj P S Y a y =
+      ∑ x : X.basis a, f a x y • proj P S X a x := by
+  simp [proj, functor, rawObj, map, biproduct.desc_eq, Category.assoc, Preadditive.comp_sum,
+    Preadditive.sum_comp, Linear.comp_smul]
+  rfl
 
 instance : (functor P S).Additive where
   map_add {X Y} f g := by
@@ -259,8 +270,15 @@ def homLinearEquiv (X Y : Model P) :
     left_inv := map_coordinates P S hEnd hOrth
     right_inv := coordinates_map P S hEnd }
 
-/-- An entry of the coordinate matrix is characterized by the corresponding scalar component. -/
+/-- Evaluate a native matrix coordinate by pairing the corresponding inclusion and projection. -/
 theorem homLinearEquiv_apply {X Y : Model P}
+    (g : (functor P S).obj X ⟶ (functor P S).obj Y) (a : ι)
+    (x : X.basis a) (y : Y.basis a) :
+    homLinearEquiv P S hEnd hOrth X Y g a x y =
+      homPairingOfBijective (hEnd a) _ (incl P S X a x) (g ≫ proj P S Y a y) := (rfl)
+
+/-- An entry of the coordinate matrix is characterized by the corresponding scalar component. -/
+theorem homLinearEquiv_apply_smul_id {X Y : Model P}
     (g : (functor P S).obj X ⟶ (functor P S).obj Y) (a : ι)
     (x : X.basis a) (y : Y.basis a) :
     homLinearEquiv P S hEnd hOrth X Y g a x y • 𝟙 (S a) =
