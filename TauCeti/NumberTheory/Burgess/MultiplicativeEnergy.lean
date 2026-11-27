@@ -22,13 +22,13 @@ import TauCeti.Data.Int.CardIntervalMod
 /-!
 # The multiplicative energy count of Burgess's method
 
-Let `p` be a prime, `𝒜` a finite set of positive integers at most `A`, and `I = (M, M + N]` an
-interval of `N` integers. For `x ∈ ZMod p` let `v(x)` be the number of pairs `(a, n) ∈ 𝒜 × I`
-with `n ≡ a x (mod p)`. Burgess's method for character sums needs the second moment
-`V₂ = ∑_x v(x)²`, the multiplicative energy of `𝒜` and `I` modulo `p`.
+Let `p` be a modulus (a prime for the bounds), `𝒜` a finite set of positive integers at most
+`A`, and `I = (M, M + N]` an interval of `N` integers. For `x ∈ ZMod p` let `v(x)` be the number
+of pairs `(a, n) ∈ 𝒜 × I` with `n ≡ a x (mod p)`. Burgess's method for character sums needs
+the second moment `V₂ = ∑_x v(x)²`, the multiplicative energy of `𝒜` and `I` modulo `p`.
 
-If every `a ∈ 𝒜` is prime to `p`, then `v(x)²` counts the pairs `(a₁, n₁)`, `(a₂, n₂)` with
-`n₁ ≡ a₁ x` and `n₂ ≡ a₂ x`, and `x = n₁ / a₁` is determined by the first pair. So `V₂` counts the
+If every `a ∈ 𝒜` is a unit modulo `p`, then `v(x)²` counts the pairs `(a₁, n₁)`, `(a₂, n₂)` with
+`n₁ ≡ a₁ x` and `n₂ ≡ a₂ x`, and `x = n₁ a₁⁻¹` is determined by the first pair. So `V₂` counts the
 quadruples with `a₂ n₁ ≡ a₁ n₂ (mod p)`. If `2 A N ≤ p`, two solutions `(n₁, n₂)` and `(n₁', n₂')`
 for the same `(a₁, a₂)` satisfy `a₂ (n₁ - n₁') = a₁ (n₂ - n₂')` in `ℤ`, because the difference of
 the two sides is divisible by `p` and smaller than `p` in absolute value. With
@@ -40,17 +40,18 @@ determine `n₁`, so there are at most `N g / a₂ + 1` solutions. For `a₁ = a
 
 ## Main results
 
-* `TauCeti.sum_card_filter_eq_card_mul_card`: `V₁ = ∑_x v(x) = #𝒜 #I`.
-* `TauCeti.sum_card_filter_sq_eq_sum_sum_card`: `V₂` is the sum over `(a₁, a₂) ∈ 𝒜 × 𝒜` of the
+* `TauCeti.burgessCount` and `TauCeti.burgessEnergy`: the count `v(x)` and the energy `V₂`.
+* `TauCeti.sum_burgessCount`: `V₁ = ∑_x v(x) = #𝒜 #I`.
+* `TauCeti.burgessEnergy_eq_sum_sum_card`: `V₂` is the sum over `(a₁, a₂) ∈ 𝒜 × 𝒜` of the
   number of `(n₁, n₂) ∈ I × I` with `a₂ n₁ ≡ a₁ n₂ (mod p)`.
 * `TauCeti.card_filter_mul_eq_mul_le`: if `(a₁ + a₂) N ≤ p`, there are at most
   `N gcd(a₁, a₂) / a₂ + 1` such pairs `(n₁, n₂)`; `TauCeti.card_filter_mul_eq_mul_le_max` is the
   same bound with `max(a₁, a₂)` in place of `a₂`.
-* `TauCeti.sum_card_filter_sq_le`: if `2 A N ≤ p`, then
+* `TauCeti.burgessEnergy_le`: if `2 A N ≤ p`, then
   `V₂ ≤ #𝒜 N + ∑_{a₁ ≠ a₂} (N gcd(a₁, a₂) / max(a₁, a₂) + 1)`.
 * `TauCeti.sum_sum_filter_ne_max_eq`: the sum of `g(max(a₁, a₂))` over the ordered pairs of
   distinct elements of `𝒜` is `2 ∑_{a ∈ 𝒜} #{b ∈ 𝒜 | b < a} g(a)`.
-* `TauCeti.sum_card_filter_primesLE_sq_le`: McGown's bound for the primes up to `A`.
+* `TauCeti.burgessEnergy_primesLE_le`: McGown's bound for the primes up to `A`.
 
 ## References
 
@@ -68,29 +69,53 @@ namespace TauCeti
 
 variable {p : ℕ}
 
-/-- **The first moment.** If every `a ∈ 𝒜` is nonzero modulo `p`, each pair `(a, n) ∈ 𝒜 × I`
-has exactly one `x = n / a` with `n ≡ a x (mod p)`, so `∑_x v(x) = #𝒜 #I`. -/
-theorem sum_card_filter_eq_card_mul_card [Fact p.Prime] (𝒜 : Finset ℕ) (I : Finset ℤ)
-    (h𝒜 : ∀ a ∈ 𝒜, (a : ZMod p) ≠ 0) :
-    ∑ x : ZMod p, #{y ∈ 𝒜 ×ˢ I | (y.2 : ZMod p) = y.1 * x} = #𝒜 * #I := by
-  rw [← card_product, card_eq_sum_card_fiberwise (s := 𝒜 ×ˢ I)
-    (f := fun y : ℕ × ℤ ↦ (y.2 : ZMod p) / y.1) (t := univ) fun _ _ ↦ mem_coe.mpr (mem_univ _)]
-  refine sum_congr rfl fun x _ ↦ congr_arg card (filter_congr fun y hy ↦ ?_)
-  rw [div_eq_iff (h𝒜 y.1 (mem_product.mp hy).1), mul_comm]
+/-- The count `v(x)`: the number of pairs `(a, n) ∈ 𝒜 × I` with `n ≡ a x (mod p)`. -/
+def burgessCount (p : ℕ) (𝒜 : Finset ℕ) (I : Finset ℤ) (x : ZMod p) : ℕ :=
+  #{y ∈ 𝒜 ×ˢ I | (y.2 : ZMod p) = y.1 * x}
 
-/-- **The energy as a count of quadruples.** If every `a ∈ 𝒜` is nonzero modulo `p`, then
-`∑_x v(x)²` is the sum over `(a₁, a₂) ∈ 𝒜 × 𝒜` of the number of `(n₁, n₂) ∈ I × I` with
-`a₂ n₁ ≡ a₁ n₂ (mod p)`, where `v(x)` counts the `(a, n) ∈ 𝒜 × I` with `n ≡ a x`. -/
-theorem sum_card_filter_sq_eq_sum_sum_card [Fact p.Prime] (𝒜 : Finset ℕ) (I : Finset ℤ)
-    (h𝒜 : ∀ a ∈ 𝒜, (a : ZMod p) ≠ 0) :
-    ∑ x : ZMod p, #{y ∈ 𝒜 ×ˢ I | (y.2 : ZMod p) = y.1 * x} ^ 2 =
+theorem burgessCount_def (𝒜 : Finset ℕ) (I : Finset ℤ) (x : ZMod p) :
+    burgessCount p 𝒜 I x = #{y ∈ 𝒜 ×ˢ I | (y.2 : ZMod p) = y.1 * x} :=
+  (rfl)
+
+/-- The multiplicative energy `V₂ = ∑_x v(x)²` of `𝒜` and `I` modulo `p`. -/
+def burgessEnergy (p : ℕ) [NeZero p] (𝒜 : Finset ℕ) (I : Finset ℤ) : ℕ :=
+  ∑ x : ZMod p, burgessCount p 𝒜 I x ^ 2
+
+theorem burgessEnergy_def [NeZero p] (𝒜 : Finset ℕ) (I : Finset ℤ) :
+    burgessEnergy p 𝒜 I = ∑ x : ZMod p, burgessCount p 𝒜 I x ^ 2 :=
+  (rfl)
+
+/-- **The first moment.** If every `a ∈ 𝒜` is a unit modulo `p`, each pair `(a, n) ∈ 𝒜 × I`
+has exactly one `x = n a⁻¹` with `n ≡ a x (mod p)`, so `V₁ = ∑_x v(x) = #𝒜 #I`. -/
+theorem sum_burgessCount [NeZero p] (𝒜 : Finset ℕ) (I : Finset ℤ)
+    (h𝒜 : ∀ a ∈ 𝒜, IsUnit (a : ZMod p)) : ∑ x : ZMod p, burgessCount p 𝒜 I x = #𝒜 * #I := by
+  simp only [burgessCount_def]
+  rw [← card_product, card_eq_sum_card_fiberwise (s := 𝒜 ×ˢ I)
+    (f := fun y : ℕ × ℤ ↦ (y.2 : ZMod p) * (y.1 : ZMod p)⁻¹) (t := univ)
+    fun _ _ ↦ mem_coe.mpr (mem_univ _)]
+  refine sum_congr rfl fun x _ ↦ congr_arg card (filter_congr fun y hy ↦ ?_)
+  have hu := h𝒜 y.1 (mem_product.mp hy).1
+  constructor
+  · intro h
+    rw [h, mul_comm, ← mul_assoc, ZMod.inv_mul_of_unit _ hu, one_mul]
+  · rintro rfl
+    rw [mul_comm (y.2 : ZMod p), ← mul_assoc, ZMod.mul_inv_of_unit _ hu, one_mul]
+
+/-- **The energy as a count of quadruples.** If every `a ∈ 𝒜` is a unit modulo `p`, then
+`V₂ = ∑_x v(x)²` is the sum over `(a₁, a₂) ∈ 𝒜 × 𝒜` of the number of `(n₁, n₂) ∈ I × I` with
+`a₂ n₁ ≡ a₁ n₂ (mod p)`. -/
+theorem burgessEnergy_eq_sum_sum_card [NeZero p] (𝒜 : Finset ℕ) (I : Finset ℤ)
+    (h𝒜 : ∀ a ∈ 𝒜, IsUnit (a : ZMod p)) :
+    burgessEnergy p 𝒜 I =
       ∑ a₁ ∈ 𝒜, ∑ a₂ ∈ 𝒜, #{n ∈ I ×ˢ I | (a₂ : ZMod p) * n.1 = a₁ * n.2} := by
   classical
+  simp only [burgessEnergy_def, burgessCount_def]
   -- Both sides count the pairs `((a₁, n₁), (a₂, n₂))` with `a₂ n₁ = a₁ n₂`, fibred over
   -- `x = n₁ / a₁` on the left.
   have hleft : ∑ x : ZMod p, #{y ∈ 𝒜 ×ˢ I | (y.2 : ZMod p) = y.1 * x} ^ 2 =
       #{z ∈ (𝒜 ×ˢ I) ×ˢ (𝒜 ×ˢ I) | (z.2.1 : ZMod p) * z.1.2 = z.1.1 * z.2.2} := by
-    rw [card_eq_sum_card_fiberwise (f := fun z : (ℕ × ℤ) × (ℕ × ℤ) ↦ (z.1.2 : ZMod p) / z.1.1)
+    rw [card_eq_sum_card_fiberwise
+      (f := fun z : (ℕ × ℤ) × (ℕ × ℤ) ↦ (z.1.2 : ZMod p) * (z.1.1 : ZMod p)⁻¹)
       (t := univ) fun _ _ ↦ mem_coe.mpr (mem_univ _)]
     refine sum_congr rfl fun x _ ↦ ?_
     rw [sq, ← card_product]
@@ -102,11 +127,12 @@ theorem sum_card_filter_sq_eq_sum_sum_card [Fact p.Prime] (𝒜 : Finset ℕ) (I
       refine ⟨⟨⟨⟨ha₁, hn₁⟩, ha₂, hn₂⟩, ?_⟩, ?_⟩
       · rw [h₁, h₂]
         ring
-      · rw [h₁, mul_div_cancel_left₀ _ (h𝒜 a₁ ha₁)]
+      · rw [h₁, mul_comm, ← mul_assoc, ZMod.inv_mul_of_unit _ (h𝒜 a₁ ha₁), one_mul]
     · rintro ⟨⟨⟨⟨ha₁, hn₁⟩, ha₂, hn₂⟩, h⟩, rfl⟩
       refine ⟨⟨⟨ha₁, hn₁⟩, ?_⟩, ⟨ha₂, hn₂⟩, ?_⟩
-      · rw [← mul_div_assoc, mul_div_cancel_left₀ _ (h𝒜 a₁ ha₁)]
-      · rw [← mul_div_assoc, h, mul_div_cancel_left₀ _ (h𝒜 a₁ ha₁)]
+      · rw [mul_comm (n₁ : ZMod p), ← mul_assoc, ZMod.mul_inv_of_unit _ (h𝒜 a₁ ha₁), one_mul]
+      · rw [← mul_assoc, h, mul_comm (a₁ : ZMod p), mul_assoc, ZMod.mul_inv_of_unit _ (h𝒜 a₁ ha₁),
+          mul_one]
   rw [hleft]
   simp only [card_filter, sum_product]
   exact sum_congr rfl fun a₁ _ ↦ sum_comm
@@ -234,27 +260,28 @@ private theorem card_filter_mul_eq_mul_self_le {a : ℕ} (ha : 0 < a) (M : ℤ) 
   rwa [Int.card_Ioc, add_sub_cancel_left, Int.toNat_natCast] at this
 
 /-- **The multiplicative energy count.** Let `𝒜` be a finite set of positive integers at most
-`A`, and `v(x)` the number of `(a, n) ∈ 𝒜 × (M, M + N]` with `n ≡ a x (mod p)`. If `2 A N ≤ p`,
-then `∑_x v(x)² ≤ #𝒜 N + ∑_{a₁ ≠ a₂} (N gcd(a₁, a₂) / max(a₁, a₂) + 1)`. -/
-theorem sum_card_filter_sq_le [Fact p.Prime] (𝒜 : Finset ℕ) {A : ℕ}
+`A`. If `2 A N ≤ p`, then the energy `V₂` of `𝒜` and `(M, M + N]` satisfies
+`V₂ ≤ #𝒜 N + ∑_{a₁ ≠ a₂} (N gcd(a₁, a₂) / max(a₁, a₂) + 1)`. -/
+theorem burgessEnergy_le [Fact p.Prime] (𝒜 : Finset ℕ) {A : ℕ}
     (h𝒜 : ∀ a ∈ 𝒜, 0 < a ∧ a ≤ A) (M : ℤ) (N : ℕ) (h : 2 * A * N ≤ p) :
-    ((∑ x : ZMod p, #{y ∈ 𝒜 ×ˢ Ioc M (M + N) | (y.2 : ZMod p) = y.1 * x} ^ 2 : ℕ) : ℝ) ≤
+    (burgessEnergy p 𝒜 (Ioc M (M + N)) : ℝ) ≤
       #𝒜 * N + ∑ a₁ ∈ 𝒜, ∑ a₂ ∈ 𝒜 with a₂ ≠ a₁, ((N * Nat.gcd a₁ a₂ / max a₁ a₂ : ℝ) + 1) := by
   classical
   have hpair {a₁ a₂ : ℕ} (ha₁ : a₁ ∈ 𝒜) (ha₂ : a₂ ∈ 𝒜) : (a₁ + a₂) * N ≤ p :=
     le_trans (Nat.mul_le_mul_right N (by have := (h𝒜 a₁ ha₁).2; have := (h𝒜 a₂ ha₂).2; omega)) h
   rcases Nat.eq_zero_or_pos N with rfl | hN
-  · simp only [add_zero, Ioc_self, product_empty, filter_empty, card_empty, ne_eq,
+  · simp only [burgessEnergy_def, burgessCount_def, add_zero, Ioc_self, product_empty,
+      filter_empty, card_empty, ne_eq,
       OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, sum_const_zero, CharP.cast_eq_zero,
       mul_zero, zero_mul, zero_div, zero_add]
     positivity
   -- Every multiplier is a unit modulo `p`, since `0 < a ≤ A < p`.
-  have h𝒜p (a : ℕ) (ha : a ∈ 𝒜) : (a : ZMod p) ≠ 0 := by
-    rw [Ne, ZMod.natCast_eq_zero_iff]
+  have h𝒜p (a : ℕ) (ha : a ∈ 𝒜) : IsUnit (a : ZMod p) := by
+    rw [isUnit_iff_ne_zero, Ne, ZMod.natCast_eq_zero_iff]
     refine Nat.not_dvd_of_pos_of_lt (h𝒜 a ha).1 ?_
     have := Nat.mul_le_mul_left (2 * A) hN
     nlinarith [(h𝒜 a ha).1, (h𝒜 a ha).2]
-  rw [sum_card_filter_sq_eq_sum_sum_card 𝒜 _ h𝒜p, Nat.cast_sum, ← nsmul_eq_mul, ← sum_const,
+  rw [burgessEnergy_eq_sum_sum_card 𝒜 _ h𝒜p, Nat.cast_sum, ← nsmul_eq_mul, ← sum_const,
     ← sum_add_distrib]
   refine sum_le_sum fun a₁ ha₁ ↦ ?_
   rw [Nat.cast_sum, ← add_sum_erase _ _ ha₁, filter_ne']
@@ -264,11 +291,12 @@ theorem sum_card_filter_sq_le [Fact p.Prime] (𝒜 : Finset ℕ) {A : ℕ}
   exact card_filter_mul_eq_mul_le_max (lt_max_of_lt_right (h𝒜 a₂ ha₂').1) M (hpair ha₁ ha₂')
 
 /-- The sum of `g(max(a₁, a₂))` over the ordered pairs of distinct elements of a finite set `𝒜`
-of natural numbers is twice the sum over `a ∈ 𝒜` of `g(a)` times the number of elements of `𝒜`
+in a linear order is twice the sum over `a ∈ 𝒜` of `g(a)` times the number of elements of `𝒜`
 below `a`. -/
-theorem sum_sum_filter_ne_max_eq (𝒜 : Finset ℕ) (g : ℕ → ℝ) :
+theorem sum_sum_filter_ne_max_eq {α β : Type*} [LinearOrder α] [CommSemiring β] (𝒜 : Finset α)
+    (g : α → β) :
     ∑ a₁ ∈ 𝒜, ∑ a₂ ∈ 𝒜 with a₂ ≠ a₁, g (max a₁ a₂) = 2 * ∑ a ∈ 𝒜, #{b ∈ 𝒜 | b < a} * g a := by
-  have hsplit (a₁ a₂ : ℕ) : (if a₂ ≠ a₁ then g (max a₁ a₂) else 0) =
+  have hsplit (a₁ a₂ : α) : (if a₂ ≠ a₁ then g (max a₁ a₂) else 0) =
       (if a₂ < a₁ then g a₁ else 0) + (if a₁ < a₂ then g a₂ else 0) := by
     rcases lt_trichotomy a₂ a₁ with h | rfl | h
     · simp [h, h.ne, lt_asymm h, max_eq_left h.le]
@@ -288,11 +316,11 @@ theorem sum_sum_filter_ne_max_eq (𝒜 : Finset ℕ) (g : ℕ → ℝ) :
 prime `a ≤ A` and `n ∈ (M, M + N]` with `n ≡ a x (mod p)`. If `2 A N ≤ p`, then
 `∑_x v(x)² ≤ π(A) N + 2 N ∑_a (π(a) - 1) / a + 2 ∑_a (π(a) - 1)`, the sums over the primes
 `a ≤ A`. -/
-theorem sum_card_filter_primesLE_sq_le [Fact p.Prime] {A : ℕ} (M : ℤ) (N : ℕ) (h : 2 * A * N ≤ p) :
-    ((∑ x : ZMod p, #{y ∈ A.primesLE ×ˢ Ioc M (M + N) | (y.2 : ZMod p) = y.1 * x} ^ 2 : ℕ) : ℝ) ≤
+theorem burgessEnergy_primesLE_le [Fact p.Prime] {A : ℕ} (M : ℤ) (N : ℕ) (h : 2 * A * N ≤ p) :
+    (burgessEnergy p A.primesLE (Ioc M (M + N)) : ℝ) ≤
       A.primeCounting * N + 2 * N * ∑ a ∈ A.primesLE, ((a.primeCounting : ℝ) - 1) / a +
         2 * ∑ a ∈ A.primesLE, ((a.primeCounting : ℝ) - 1) := by
-  refine (sum_card_filter_sq_le _ (fun a ha ↦ ⟨(Nat.prime_of_mem_primesLE ha).pos,
+  refine (burgessEnergy_le _ (fun a ha ↦ ⟨(Nat.prime_of_mem_primesLE ha).pos,
     Nat.le_of_mem_primesLE ha⟩) M N h).trans_eq ?_
   -- Distinct primes are coprime, and `π(a) - 1` primes up to `A` are below a prime `a ≤ A`.
   have hgcd (a₁ : ℕ) (ha₁ : a₁ ∈ A.primesLE) :
@@ -305,23 +333,20 @@ theorem sum_card_filter_primesLE_sq_le [Fact p.Prime] {A : ℕ} (M : ℤ) (N : �
   have hbelow (a : ℕ) (ha : a ∈ A.primesLE) :
       (#{b ∈ A.primesLE | b < a} : ℝ) = a.primeCounting - 1 := by
     have haA := Nat.le_of_mem_primesLE ha
-    have hfilter : {b ∈ A.primesLE | b < a} = a.primesBelow := by
+    have hmem : a ∈ a.primesLE := Nat.mem_primesLE.2 ⟨le_rfl, Nat.prime_of_mem_primesLE ha⟩
+    have hfilter : {b ∈ A.primesLE | b < a} = a.primesLE.erase a := by
       ext b
-      simp only [mem_filter, Nat.mem_primesLE, Nat.mem_primesBelow]
-      constructor
-      · rintro ⟨⟨-, hb⟩, hba⟩
-        exact ⟨hba, hb⟩
-      · rintro ⟨hba, hb⟩
-        exact ⟨⟨by omega, hb⟩, hba⟩
-    rw [hfilter, Nat.primesBelow_card_eq_primeCounting', Nat.primeCounting_eq_primeCounting'_succ,
-      Nat.primeCounting', Nat.count_succ]
-    simp [Nat.prime_of_mem_primesLE ha]
+      simp only [mem_filter, mem_erase, Nat.mem_primesLE]
+      exact ⟨fun ⟨⟨_, hb⟩, hba⟩ ↦ ⟨hba.ne, hba.le, hb⟩,
+        fun ⟨hne, hba, hb⟩ ↦ ⟨⟨hba.trans haA, hb⟩, lt_of_le_of_ne hba hne⟩⟩
+    rw [hfilter, card_erase_of_mem hmem, Nat.cast_sub (card_pos.2 ⟨a, hmem⟩),
+      Nat.primesLE_card_eq_primeCounting, Nat.cast_one]
   have hsum : ∑ a ∈ A.primesLE, ((a.primeCounting : ℝ) - 1) * ((N : ℝ) / a + 1) =
       N * ∑ a ∈ A.primesLE, ((a.primeCounting : ℝ) - 1) / a +
         ∑ a ∈ A.primesLE, ((a.primeCounting : ℝ) - 1) := by
     rw [mul_sum, ← sum_add_distrib]
     exact sum_congr rfl fun a _ ↦ by ring
-  rw [sum_congr rfl hgcd, sum_sum_filter_ne_max_eq _ fun m ↦ (N : ℝ) / m + 1,
+  rw [sum_congr rfl hgcd, sum_sum_filter_ne_max_eq _ fun m : ℕ ↦ (N : ℝ) / m + 1,
     Nat.primesLE_card_eq_primeCounting, sum_congr rfl fun a ha ↦ by rw [hbelow a ha], hsum]
   ring
 
