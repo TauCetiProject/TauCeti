@@ -17,7 +17,7 @@ import TauCeti.Analysis.CStarAlgebra.Representation.Ideal
 import TauCeti.Analysis.LocallyConvex.Mazur
 import TauCeti.Analysis.Normed.Ring.ApproximateUnit
 import TauCeti.Analysis.SpecificLimits.Normed
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # Quasicentral approximate units for closed two-sided ideals

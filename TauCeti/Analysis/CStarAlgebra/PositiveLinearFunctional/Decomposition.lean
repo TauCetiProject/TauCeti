@@ -17,7 +17,7 @@ import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.LocallyConvex.WeakDual.Basic
 import TauCeti.Analysis.Normed.Module.HahnBanach.Basic
 import TauCeti.Analysis.Normed.Operator.IntrinsicStar
-import TauCeti.Topology.Algebra.Module.WeakSpace
+import TauCeti.Topology.Algebra.Module.WeakSpace.Basic
 
 /-!
 # Jordan and four-positive decompositions of bounded functionals

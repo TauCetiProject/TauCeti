@@ -6,13 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
+public import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import Mathlib.Analysis.LocallyConvex.Barrelled
 import Mathlib.Analysis.Normed.Group.Tannery
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
-import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Distribution.TestFunction.FourierAtom
 import TauCeti.Analysis.Distribution.TestFunction.Frechet
 import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
@@ -207,6 +207,50 @@ theorem exists_cutoff_eq_one_prod_closedBall {K : Set E} (hK : IsCompact K)
     simp [h1]
   · rw [postcompCLM_apply]
     exact (tsupport_comp_subset (map_zero ofRealCLM) χ).trans (hχG.trans inter_subset_left)
+
+/-- The test function `ψ ⊗ σ` is supported in `supp ψ × closedBall 0 (rOut σ)`. -/
+theorem tsupport_tensorBump_subset [MeasurableSpace D] [BorelSpace D] (ψ : 𝓓(U, ℝ))
+    (σ : ContDiffBump (0 : D))
+    (hW : ∀ x ∈ tsupport ψ, ∀ y ∈ closedBall (0 : D) σ.rOut, toLp 2 (x, y) ∈ W) :
+    tsupport (tensorBump ψ σ hW) ⊆ toLp 2 '' (tsupport ψ ×ˢ closedBall (0 : D) σ.rOut) :=
+  closure_minimal (support_subset_iff'.2 fun _ hp ↦
+    mul_normed_eq_zero_of_notMem ψ σ (mt (mem_image_of_mem (toLp 2)) hp))
+    (isCompact_image_toLp_tsupport_prod_closedBall ψ σ.rOut).isClosed
+
+/-- **Integrals against `ψ ⊗ ρ_n` concentrate on `E × {0}`.** Let `ρ_n` be the normalized bumps of
+`ContDiffBump.shrinking (r / 2)`. If `G` is continuous at the points `(x, y)` with `x ∈ supp ψ` and
+`‖y‖ < r`, then `∫ (ψ ⊗ ρ_n) • G → ∫ ψ x • G (x, 0) dx`. -/
+theorem tendsto_integral_tensorBump_smul [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] [MeasurableSpace D] [BorelSpace D] {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] [CompleteSpace V] (ψ : 𝓓(U, ℝ)) {r : ℝ} (hr : 0 < r)
+    (hW : ∀ n, ∀ x ∈ tsupport ψ,
+      ∀ y ∈ closedBall (0 : D) (ContDiffBump.shrinking (c := (0 : D)) (half_pos hr) n).rOut,
+      toLp 2 (x, y) ∈ W)
+    {G : WithLp 2 (E × D) → V}
+    (hG : ∀ x ∈ tsupport ψ, ∀ y : D, ‖y‖ < r → ContinuousAt G (toLp 2 (x, y))) :
+    Tendsto (fun n ↦ ∫ p, tensorBump ψ _ (hW n) p • G p) atTop
+      (𝓝 (∫ x, ψ x • G (toLp 2 (x, 0)))) := by
+  -- `H (x, y) = ψ x • G (x, y)` is continuous on `E × ball 0 r`.
+  set H : E × D → V := fun q ↦ ψ q.1 • G (toLp 2 q)
+  have hH : ContinuousOn H (univ ×ˢ ball (0 : D) r) := by
+    rintro ⟨x, y⟩ ⟨-, hy⟩
+    refine ContinuousAt.continuousWithinAt ?_
+    by_cases hx : x ∈ tsupport ψ
+    · exact (ψ.continuous.comp continuous_fst).continuousAt.smul
+        (ContinuousAt.comp (f := fun q : E × D ↦ toLp 2 q)
+          (hG x hx y (mem_ball_zero_iff.1 hy)) (prod_continuous_toLp 2 E D).continuousAt)
+    · refine (continuousAt_const : ContinuousAt (fun _ : E × D ↦ (0 : V)) (x, y)).congr ?_
+      filter_upwards [continuous_fst.continuousAt.eventually
+        (notMem_tsupport_iff_eventuallyEq.1 hx)] with q hq
+      simp [H, hq]
+  refine (ContDiffBump.tendsto_integral_shrinking_normed_smul (μ := volume) (ν := volume)
+    ψ.hasCompactSupport.isCompact (fun x y hx ↦ by simp [H, image_eq_zero_of_notMem_tsupport hx])
+    hr hH).congr fun n ↦ ?_
+  rw [← (volume_preserving_symm_measurableEquiv_toLp_prod E D).symm.integral_comp',
+    Measure.volume_eq_prod]
+  refine integral_congr_ae (Eventually.of_forall fun q ↦ ?_)
+  simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, tensorBump_apply, toLp_fst,
+    toLp_snd, H, mul_comm, mul_smul]
 
 end TestFunction
 
@@ -581,6 +625,67 @@ theorem tendsto_pullbackInl [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ
     Tendsto (fun i ↦ T (f i)) l (𝓝 (T.pullbackInl hU h ψ)) := by
   rw [pullbackInl_apply]
   exact tendsto_pullbackInlValue T hU h ψ hρM hρ1 hρr hr hf
+
+/-- **The pullback to `E × {0}` as a limit over bumps.** If `σ i` are bumps centred at `0` whose
+outer radii tend to zero, and `f i` are the test functions `(x, y) ↦ ψ x σ_i y` for the normalized
+bumps (for instance `TestFunction.tensorBump`), then `T (f i)` tends to the pullback of `T`
+evaluated at `ψ`. -/
+theorem tendsto_pullbackInl_bump [MeasurableSpace D] [BorelSpace D] (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : D))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : D, η ≠ 0 →
+      (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet) (ψ : 𝓓(U, ℝ))
+    {ι : Type*} {l : Filter ι} {σ : ι → ContDiffBump (0 : D)}
+    (hσ : Tendsto (fun i ↦ (σ i).rOut) l (𝓝 0)) {f : ι → 𝓓(W, ℝ)}
+    (hf : ∀ᶠ i in l, ∀ p, f i p = ψ p.fst * (σ i).normed volume p.snd) :
+    Tendsto (fun i ↦ T (f i)) l (𝓝 (T.pullbackInl hU h ψ)) :=
+  tendsto_pullbackInl T hU h ψ (ρ := fun i ↦ (σ i).normed volume) (M := 1)
+    (Eventually.of_forall fun i ↦ by
+      simp_rw [abs_of_nonneg ((σ i).nonneg_normed _), (σ i).integral_normed, le_refl])
+    (by simp_rw [ContDiffBump.integral_normed, tendsto_const_nhds])
+    (Eventually.of_forall fun i ↦ by
+      simpa only [(σ i).support_normed_eq] using ball_subset_closedBall)
+    hσ hf
+
+/-- **The pullback to `E × {0}` as a limit over products of bumps.** Let `D₁ × D₂` be a product of
+finite-dimensional spaces. If `ρ i` and `σ i` are bumps centred at `0` in `D₁` and `D₂` whose outer
+radii tend to zero, and `f i` are the test functions `(x, (y, z)) ↦ ψ x ρ_i y σ_i z` for the
+normalized bumps, then `T (f i)` tends to the pullback of `T` evaluated at `ψ`. -/
+theorem tendsto_pullbackInl_prod_bump {D₁ D₂ : Type*} [NormedAddCommGroup D₁]
+    [InnerProductSpace ℝ D₁] [FiniteDimensional ℝ D₁] [MeasurableSpace D₁] [BorelSpace D₁]
+    [NormedAddCommGroup D₂] [InnerProductSpace ℝ D₂] [FiniteDimensional ℝ D₂] [MeasurableSpace D₂]
+    [BorelSpace D₂] {W : Opens (WithLp 2 (E × WithLp 2 (D₁ × D₂)))} (T : 𝓓'(W, ℂ))
+    (hU : MapsTo (fun x ↦ toLp 2 (x, (0 : WithLp 2 (D₁ × D₂)))) (U : Set E) W)
+    (h : ∀ x ∈ U, ∀ η : WithLp 2 (D₁ × D₂), η ≠ 0 →
+      (toLp 2 (x, (0 : WithLp 2 (D₁ × D₂))), toLp 2 ((0 : E), η)) ∉ T.waveFrontSet)
+    (ψ : 𝓓(U, ℝ)) {ι : Type*} {l : Filter ι} {ρ : ι → ContDiffBump (0 : D₁)}
+    {σ : ι → ContDiffBump (0 : D₂)} (hr : Tendsto (fun i ↦ (ρ i).rOut + (σ i).rOut) l (𝓝 0))
+    {f : ι → 𝓓(W, ℝ)} (hf : ∀ᶠ i in l, ∀ p,
+      f i p = ψ p.fst * ((ρ i).normed volume p.snd.fst * (σ i).normed volume p.snd.snd)) :
+    Tendsto (fun i ↦ T (f i)) l (𝓝 (T.pullbackInl hU h ψ)) := by
+  -- The products `ρ_i ⊗ σ_i` are nonnegative of integral one, supported in the closed balls of
+  -- radii `rOut (ρ i) + rOut (σ i)`.
+  have hprod (i : ι) :
+      ∫ d : WithLp 2 (D₁ × D₂), (ρ i).normed volume d.fst * (σ i).normed volume d.snd = 1 := by
+    rw [← (volume_preserving_symm_measurableEquiv_toLp_prod D₁ D₂).symm.integral_comp']
+    simp only [MeasurableEquiv.symm_symm, MeasurableEquiv.coe_toLp, toLp_fst, toLp_snd]
+    rw [Measure.volume_eq_prod, integral_prod_mul, ContDiffBump.integral_normed,
+      ContDiffBump.integral_normed, one_mul]
+  refine tendsto_pullbackInl T hU h ψ
+    (ρ := fun i d ↦ (ρ i).normed volume d.fst * (σ i).normed volume d.snd) (M := 1)
+    (Eventually.of_forall fun i ↦ ?_) (by simp_rw [hprod, tendsto_const_nhds])
+    (Eventually.of_forall fun i d hd ↦ ?_) hr hf
+  · exact ((integral_congr_ae (Eventually.of_forall fun d ↦ abs_of_nonneg
+      (mul_nonneg ((ρ i).nonneg_normed _) ((σ i).nonneg_normed _)))).trans (hprod i)).le
+  · rw [mem_support, mul_ne_zero_iff] at hd
+    have h₁ : d.fst ∈ ball (0 : D₁) (ρ i).rOut := by
+      rw [← (ρ i).support_normed_eq (μ := volume)]
+      exact hd.1
+    have h₂ : d.snd ∈ ball (0 : D₂) (σ i).rOut := by
+      rw [← (σ i).support_normed_eq (μ := volume)]
+      exact hd.2
+    rw [mem_ball_zero_iff] at h₁ h₂
+    exact mem_closedBall_zero_iff.2
+      ((WithLp.prod_norm_le_norm_fst_add_norm_snd d).trans (add_le_add h₁.le h₂.le))
 
 /-! ### Linearity and agreement with the restriction of continuous functions -/
 

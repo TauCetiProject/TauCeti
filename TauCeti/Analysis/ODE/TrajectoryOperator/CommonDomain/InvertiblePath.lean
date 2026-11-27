@@ -5,8 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Fredholm.Spectral.CommonDomain
+public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Fredholm
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
+import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.IndexLocalization
 
 /-!
 # The index of the trajectory operator between limits joined by invertible operators
@@ -29,6 +33,17 @@ is, when no eigenvalue of `B` lies between `a` and `b`, a family from `B - a ι`
 an operator of index zero
 (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_zero_of_isInvertible_sub_smul`).
 
+When the family `A` is itself a continuous path of invertible operators, its operator has index
+zero (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible`),
+and so, since such a path has no spectral flow, the index of `D_A` is the spectral flow of `A`
+over every interval
+(`index_familyDomainTrajectoryOperator_eq_domainSpectralFlow_of_forall_isInvertible`). Combined
+with the catenation law (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_add`),
+the limit at `∞` of a family can be moved along any continuous path of invertible operators
+without changing the index
+(`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_of_forall_isInvertible`): the
+index can change only when the limits pass through noninvertible operators.
+
 For each `t`, the family `M_t(s) = B₀ + ψ(s) (γ t - B₀)`, where `ψ` is
 `Real.smoothTransition`, runs from `B₀` to `γ t`. Its trajectory operator is Fredholm for every
 `t`, since `γ t` is invertible, and it depends continuously on `t`, so its index does not depend
@@ -42,6 +57,10 @@ on `t`. At `t = 0` the family is constant, with index zero, and at `t = 1` it ha
 * `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_zero_of_isInvertible_sub_smul`:
   the index vanishes between the shifts `B - a ι` and `B - b ι` when every intermediate shift is
   invertible.
+* `index_familyDomainTrajectoryOperator_eq_domainSpectralFlow_of_forall_isInvertible`: for a
+  continuous path of invertible operators, the index is the spectral flow of the path.
+* `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_of_forall_isInvertible`: moving
+  the limit at `∞` along a path of invertible operators does not change the index.
 
 ## References
 
@@ -191,5 +210,55 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_isInvertible_sub_smul [C
     congr 1
     simp only [γ, Path.coe_mk_mk, sub_apply, smul_apply]
     module
+
+/-- **The index is the spectral flow, for a path of invertible operators.** Under the hypotheses
+of `TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible`,
+the index of `u ↦ (ι ∘ u)' + A u` is the spectral flow of `A` over every interval `[a, b]`; both
+vanish. -/
+theorem index_familyDomainTrajectoryOperator_eq_domainSpectralFlow_of_forall_isInvertible
+    [CompleteSpace D] [CompleteSpace H] (hι : IsCompactOperator ι) {A : ℝ → D →L[ℝ] H}
+    (hA : Continuous A) (hSymm : ∀ s x y, ⟪A s x, ι y⟫_ℝ = ⟪ι x, A s y⟫_ℝ)
+    (hinv : ∀ s, (A s).IsInvertible) {Bbot Btop : D →L[ℝ] H} (hBbot : Bbot.IsInvertible)
+    (hBtop : Btop.IsInvertible) {AL : Lp (D →L[ℝ] H) ∞ μ₀} (hAL : AL =ᵐ[μ₀] A)
+    (hbot : Tendsto A atBot (𝓝 Bbot)) (htop : Tendsto A atTop (𝓝 Btop))
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - Btop) x‖ ≤ c * ‖ι x‖)
+    {a b : ℝ} (hab : a ≤ b) :
+    (familyDomainTrajectoryOperator (p := 2) ι AL).index = domainSpectralFlow ι A a b := by
+  rw [index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible hι hA hSymm hinv hBbot
+    hBtop hAL hbot htop hc, domainSpectralFlow_eq_zero_of_forall_isInvertible hι hab
+    hA.continuousOn (fun t _ ↦ hSymm t) fun t _ ↦ hinv t]
+
+/-- **Deforming the limit at `∞` through invertible operators preserves the index.** Let `ι` be
+compact, and let `A` run from `B₀` at `-∞` to `B₁` at `∞` and `A'` from `B₀` to `B₂`, each
+differing from its limit at `∞` on every bounded interval by an operator bounded through `ι`, with
+`B₀`, `B₁`, `B₂` invertible, `B₀` symmetric through `ι` and `B₁ - B₂` bounded through `ι`. If a
+continuous path `γ` of invertible `ι`-symmetric operators runs from `B₁` at `-∞` to `B₂` at `∞`,
+differing from `B₂` on every bounded interval by operators bounded through `ι`, then
+`u ↦ (ι ∘ u)' + A u` and `u ↦ (ι ∘ u)' + A' u` have the same index. -/
+theorem index_familyDomainTrajectoryOperator_eq_of_forall_isInvertible [CompleteSpace D]
+    [CompleteSpace H] (hι : IsCompactOperator ι)
+    {B₀ B₁ B₂ : D →L[ℝ] H} (hSymm₀ : ∀ x y : D, ⟪B₀ x, ι y⟫_ℝ = ⟪ι x, B₀ y⟫_ℝ)
+    (hB₀ : B₀.IsInvertible) (hB₁ : B₁.IsInvertible) (hB₂ : B₂.IsInvertible)
+    (h₁₂ : ∃ c, ∀ x, ‖(B₁ - B₂) x‖ ≤ c * ‖ι x‖) {γ : ℝ → D →L[ℝ] H} (hγ : Continuous γ)
+    (hγSymm : ∀ s x y, ⟪γ s x, ι y⟫_ℝ = ⟪ι x, γ s y⟫_ℝ) (hγinv : ∀ s, (γ s).IsInvertible)
+    {γL : Lp (D →L[ℝ] H) ∞ μ₀} (hγL : γL =ᵐ[μ₀] γ) (hγbot : Tendsto γ atBot (𝓝 B₁))
+    (hγtop : Tendsto γ atTop (𝓝 B₂))
+    (hγc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(γ s - B₂) x‖ ≤ c * ‖ι x‖)
+    {A A' : ℝ → D →L[ℝ] H} {AL AL' : Lp (D →L[ℝ] H) ∞ μ₀}
+    (hAL : AL =ᵐ[μ₀] A) (hbot : Tendsto A atBot (𝓝 B₀)) (htop : Tendsto A atTop (𝓝 B₁))
+    (hc : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A s - B₁) x‖ ≤ c * ‖ι x‖)
+    (hAL' : AL' =ᵐ[μ₀] A') (hbot' : Tendsto A' atBot (𝓝 B₀)) (htop' : Tendsto A' atTop (𝓝 B₂))
+    (hc' : ∀ T, ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x, ‖(A' s - B₂) x‖ ≤ c * ‖ι x‖) :
+    (familyDomainTrajectoryOperator (p := 2) ι AL').index =
+      (familyDomainTrajectoryOperator (p := 2) ι AL).index := by
+  -- Catenate `A` with `γ`; the operator of `γ` has index zero.
+  rw [index_familyDomainTrajectoryOperator_eq_add hι hSymm₀ hB₀
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hγbot
+      (.of_forall (hγSymm · x y))) hB₁
+    (fun x y ↦ ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto hγtop
+      (.of_forall (hγSymm · x y))) hB₂ h₁₂
+    hAL hbot htop hc hγL hγbot hγtop hγc hAL' hbot' htop' hc',
+    index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible hι hγ hγSymm hγinv hB₁ hB₂
+      hγL hγbot hγtop hγc, add_zero]
 
 end TauCeti.WeakDerivStep
