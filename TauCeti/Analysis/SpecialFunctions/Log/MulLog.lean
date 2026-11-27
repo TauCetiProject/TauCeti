@@ -6,6 +6,7 @@ Authors: the Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+import Mathlib.Analysis.Convex.Jensen
 
 /-!
 # Estimates for `x ↦ x * log x` and the logarithm
@@ -62,6 +63,33 @@ matching upper bound by the `χ²` integrand `(u - a) ^ 2 / a`.
 public section
 
 namespace Real
+
+/-- The `x log x` transform of a product, including zero and signed inputs. -/
+theorem mul_log_mul (c t : ℝ) :
+    (c * t) * log (c * t) = c * (t * log t) + (c * log c) * t := by
+  have h := negMulLog_mul c t
+  simp only [negMulLog_eq_neg] at h
+  linear_combination -h
+
+/-- If `|s| ≤ t`, the `x log x` transform at `s` is bounded by the norm of
+the transform at `t`, up to the uniform bound on its negative part. -/
+theorem norm_mul_log_le_of_abs_le {s t : ℝ} (hst : |s| ≤ t) :
+    ‖s * log s‖ ≤ ‖t * log t‖ + 1 := by
+  have ht : 0 ≤ t := (abs_nonneg s).trans hst
+  have hnorm : ‖s * log s‖ = ‖|s| * log |s|‖ := by simp [log_abs]
+  rw [hnorm, Real.norm_eq_abs]
+  have hupper := convexOn_mul_log.le_max_of_mem_Icc
+    (Set.mem_Ici.mpr (le_refl 0)) (Set.mem_Ici.mpr ht)
+    (Set.mem_Icc.mpr ⟨abs_nonneg s, hst⟩)
+  have hlower := self_sub_one_le_mul_log (abs_nonneg s)
+  simp only [zero_mul, log_zero] at hupper
+  apply abs_le.mpr
+  constructor
+  · linarith [norm_nonneg (t * log t), abs_nonneg s]
+  · have hmax : max 0 (t * log t) ≤ ‖t * log t‖ := by
+      rw [Real.norm_eq_abs]
+      exact max_le (abs_nonneg _) (le_abs_self _)
+    linarith
 
 /-- The supporting line of the convex function `u ↦ u * log u` at a positive point `a` lies below
 the graph at every nonnegative `u`: with the slope `log a + 1` of `Real.deriv_mul_log`,

@@ -59,24 +59,18 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
-/-- For `A = ∫ f dμ` and `B = ∫ h dμ`, the log-sum inequality is
-`A log (A / B) ≤ ∫ (f log f - f log h) dμ`. A zero of `h` must also be a zero of `f` almost
-everywhere. Integrability is required for the difference, not for each logarithmic term. -/
-theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
+private theorem withDensity_ofReal_ac_and_llr {α : Type*} [MeasurableSpace α] (μ : Measure α)
     {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
     (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
-    (hfi : Integrable f μ) (hhi : Integrable h μ)
-    (hdiff : Integrable (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) μ) :
-    (∫ x, f x ∂μ) * Real.log ((∫ x, f x ∂μ) / (∫ x, h x ∂μ)) ≤
-      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
+    (hfm : AEMeasurable f μ) (hhm : AEMeasurable h μ)
+    [IsFiniteMeasure (μ.withDensity fun x ↦ ENNReal.ofReal (h x))] :
+    let ρ := μ.withDensity fun x ↦ ENNReal.ofReal (f x)
+    let η := μ.withDensity fun x ↦ ENNReal.ofReal (h x)
+    ρ ≪ η ∧ llr ρ η =ᵐ[ρ] fun x ↦ Real.log (f x / h x) := by
   let ρ := μ.withDensity fun x ↦ ENNReal.ofReal (f x)
   let η := μ.withDensity fun x ↦ ENNReal.ofReal (h x)
   let d : α → ℝ≥0∞ := fun x ↦ ENNReal.ofReal (f x / h x)
-  have hfm : AEMeasurable f μ := hfi.aestronglyMeasurable.aemeasurable
-  have hhm : AEMeasurable h μ := hhi.aestronglyMeasurable.aemeasurable
   have hdm : AEMeasurable d μ := (hfm.div hhm).ennreal_ofReal
-  have : IsFiniteMeasure ρ := isFiniteMeasure_withDensity_ofReal hfi.2
-  have : IsFiniteMeasure η := isFiniteMeasure_withDensity_ofReal hhi.2
   have hρμ : ρ ≪ μ := withDensity_absolutelyContinuous μ _
   have hημ : η ≪ μ := withDensity_absolutelyContinuous μ _
   have heq : η.withDensity d = ρ := by
@@ -96,9 +90,28 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
   have hrn : ρ.rnDeriv η =ᵐ[η] d := by
     rw [← heq]
     exact Measure.rnDeriv_withDensity₀ η (hdm.mono_ac hημ)
-  have hllr : llr ρ η =ᵐ[ρ] fun x ↦ Real.log (f x / h x) := by
-    filter_upwards [hac.ae_le hrn, hρμ.ae_le hf, hρμ.ae_le hh] with x hdx hfx hhx
-    simp only [llr, hdx, d, ENNReal.toReal_ofReal (div_nonneg hfx hhx)]
+  refine ⟨hac, ?_⟩
+  show llr ρ η =ᵐ[ρ] fun x ↦ Real.log (f x / h x)
+  filter_upwards [hac.ae_le hrn, hρμ.ae_le hf, hρμ.ae_le hh] with x hdx hfx hhx
+  simp only [llr, hdx, d, ENNReal.toReal_ofReal (div_nonneg hfx hhx)]
+
+/-- For `A = ∫ f dμ` and `B = ∫ h dμ`, the log-sum inequality is
+`A log (A / B) ≤ ∫ (f log f - f log h) dμ`. A zero of `h` must also be a zero of `f` almost
+everywhere. Integrability is required for the difference, not for each logarithmic term. -/
+theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
+    (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
+    (hfi : Integrable f μ) (hhi : Integrable h μ)
+    (hdiff : Integrable (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) μ) :
+    (∫ x, f x ∂μ) * Real.log ((∫ x, f x ∂μ) / (∫ x, h x ∂μ)) ≤
+      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
+  let ρ := μ.withDensity fun x ↦ ENNReal.ofReal (f x)
+  let η := μ.withDensity fun x ↦ ENNReal.ofReal (h x)
+  have hfm : AEMeasurable f μ := hfi.aestronglyMeasurable.aemeasurable
+  have hhm : AEMeasurable h μ := hhi.aestronglyMeasurable.aemeasurable
+  have : IsFiniteMeasure ρ := isFiniteMeasure_withDensity_ofReal hfi.2
+  have : IsFiniteMeasure η := isFiniteMeasure_withDensity_ofReal hhi.2
+  have ⟨hac, hllr⟩ := withDensity_ofReal_ac_and_llr μ hf hh hzero hfm hhm
   have hweight : (fun x ↦ f x * Real.log (f x / h x)) =ᵐ[μ]
       fun x ↦ f x * Real.log (f x) - f x * Real.log (h x) := by
     filter_upwards [hzero] with x hz
@@ -123,42 +136,14 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
           (TauCeti.MeasureTheory.integral_withDensity_ofReal hfm hf
             (fun x ↦ Real.log (f x / h x)))
       _ = _ := integral_congr_ae hweight
-  have hmassf : ρ.real univ = ∫ x, f x ∂μ := by
-    simpa only [ρ, Measure.restrict_univ, setIntegral_univ] using
+  have hmass {g : α → ℝ} (hg : 0 ≤ᵐ[μ] g) (hgm : AEMeasurable g μ) :
+      (μ.withDensity fun x ↦ ENNReal.ofReal (g x)).real univ = ∫ x, g x ∂μ := by
+    simpa only [Measure.restrict_univ, setIntegral_univ] using
       (TauCeti.MeasureTheory.measureReal_withDensity_ofReal (s := univ)
-        (by simpa using hf) MeasurableSet.univ.nullMeasurableSet (by simpa using hfm))
-  have hmassh : η.real univ = ∫ x, h x ∂μ := by
-    simpa only [η, Measure.restrict_univ, setIntegral_univ] using
-      (TauCeti.MeasureTheory.measureReal_withDensity_ofReal (s := univ)
-        (by simpa using hh) MeasurableSet.univ.nullMeasurableSet (by simpa using hhm))
+        (by simpa using hg) MeasurableSet.univ.nullMeasurableSet (by simpa using hgm))
   have hbound := InformationTheory.mul_log_le_toReal_klDiv hac hint
-  rw [InformationTheory.toReal_klDiv hac hint, hint_eq, hmassf, hmassh] at hbound
+  rw [InformationTheory.toReal_klDiv hac hint, hint_eq, hmass hf hfm, hmass hh hhm] at hbound
   linarith
-
-/-- The split-log form of the integral log-sum inequality, including zero total masses. -/
-theorem integral_log_sum_split_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
-    {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
-    (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
-    (hfi : Integrable f μ) (hhi : Integrable h μ)
-    (hdiff : Integrable (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) μ) :
-    (∫ x, f x ∂μ) * Real.log (∫ x, f x ∂μ) -
-        (∫ x, f x ∂μ) * Real.log (∫ x, h x ∂μ) ≤
-      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
-  have hsum := integral_log_sum_le μ hf hh hzero hfi hhi hdiff
-  by_cases hB : (∫ x, h x ∂μ) = 0
-  · have hhzero : h =ᵐ[μ] fun _ ↦ 0 :=
-      (integral_eq_zero_iff_of_nonneg_ae hh hhi).mp hB
-    have hfzero : f =ᵐ[μ] fun _ ↦ 0 := by
-      filter_upwards [hzero, hhzero] with x hx hhx
-      exact hx hhx
-    have hA : (∫ x, f x ∂μ) = 0 := by
-      rw [integral_congr_ae hfzero]
-      simp
-    simpa [hA] using hsum
-  · by_cases hA : (∫ x, f x ∂μ) = 0
-    · simpa [hA] using hsum
-    · rw [Real.log_div hA hB] at hsum
-      linarith
 
 end MeasureTheory.Measure
 

@@ -7,8 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Integral.Entropy.Basic
 import TauCeti.InformationTheory.KullbackLeibler.Convex
-import TauCeti.MeasureTheory.Integral.Prod
-import Mathlib.Analysis.SpecialFunctions.Log.Monotone
+public import TauCeti.MeasureTheory.Integral.ProdMulLog
 
 /-!
 # Functional entropy and product measures
@@ -19,7 +18,8 @@ convexity under unnormalized mixtures and product subadditivity for a.e. nonnega
 The mixture inequality integrates both sides against the mixing measure without dividing by its
 mass. For finite factors, integrability of `g` and `g log g` on the product suffices. The s-finite
 mixture and subadditivity results require both marginal transforms to be integrable; the chain
-rule and averaging inequality require only the first.
+rule and averaging inequality require only the first. Averaging assumes a probability second
+factor and an a.e. nonnegative function; the mixture inequality needs no normalization.
 Product subadditivity bounds joint entropy by the sum of integrated coordinate entropies;
 factorwise logarithmic Sobolev bounds can therefore be applied to the sections for tensorization.
 -/
@@ -29,6 +29,31 @@ public section
 open MeasureTheory Set
 
 namespace MeasureTheory.Measure
+
+/-- Swapping both factors and the function's arguments preserves product entropy. -/
+@[simp]
+theorem entropy_prod_swap {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν] (g : α × β → ℝ) :
+    entropy (ν.prod μ) (g ∘ Prod.swap) = entropy (μ.prod ν) g := by
+  rw [← measurePreserving_swap.map_eq]
+  have hswap : MeasurableEmbedding (Prod.swap : α × β → β × α) :=
+    MeasurableEquiv.prodComm.measurableEmbedding
+  rw [entropy_map hswap]
+  simp [Function.comp_def]
+
+/-- Integrating first-coordinate section entropies subtracts the marginal
+`x log x` integral from the joint `x log x` integral. -/
+private theorem integral_entropy_prod_left {α β : Type*}
+    [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) (ν : Measure β)
+    [SFinite μ] [SFinite ν] (g : α × β → ℝ)
+    (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν))
+    (hmarg : Integrable (fun x ↦ (∫ y, g (x, y) ∂ν) *
+      Real.log (∫ y, g (x, y) ∂ν)) μ) :
+    (∫ x, entropy ν (fun y ↦ g (x, y)) ∂μ) =
+      (∫ p, g p * Real.log (g p) ∂(μ.prod ν)) -
+        ∫ x, (∫ y, g (x, y) ∂ν) * Real.log (∫ y, g (x, y) ∂ν) ∂μ := by
+  simp only [entropy_def]
+  rw [integral_sub hlog.integral_prod_left hmarg, ← integral_prod _ hlog]
 
 /-- The functional entropy chain rule when `g`, `g log g`, and the first marginal's `x log x`
 transform are integrable. -/
@@ -41,9 +66,9 @@ theorem entropy_prod_eq {α β : Type*} [MeasurableSpace α] [MeasurableSpace β
     entropy (μ.prod ν) g =
       (∫ x, entropy ν (fun y ↦ g (x, y)) ∂μ) +
         entropy μ (fun x ↦ ∫ y, g (x, y) ∂ν) := by
+  rw [integral_entropy_prod_left μ ν g hlog hmarg]
   simp only [entropy_def]
-  rw [integral_prod g hg, integral_prod _ hlog,
-    integral_sub hlog.integral_prod_left hmarg]
+  rw [integral_prod g hg]
   ring
 
 /-- Section entropies are integrable when the joint and first marginal `x log x`
@@ -71,141 +96,6 @@ theorem integrable_entropy_prod_right {α β : Type*}
   convert hlog.integral_prod_right.sub hmarg using 1
   funext y
   simp only [entropy_def, Pi.sub_apply]
-
-private theorem norm_mul_log_le_of_abs_le {s t : ℝ} (hst : |s| ≤ t) :
-    ‖s * Real.log s‖ ≤ ‖t * Real.log t‖ + 1 := by
-  have ht : 0 ≤ t := (abs_nonneg s).trans hst
-  have hnorm : ‖s * Real.log s‖ = ‖|s| * Real.log |s|‖ := by simp [Real.log_abs]
-  rw [hnorm]
-  by_cases hs : |s| ≤ 1
-  · have hnonpos := Real.mul_log_nonpos (abs_nonneg s) hs
-    calc
-      _ = -(|s| * Real.log |s|) := by
-        rw [Real.norm_eq_abs, abs_of_nonpos hnonpos]
-      _ = Real.negMulLog |s| := by simp [Real.negMulLog_eq_neg]
-      _ ≤ 1 - |s| := Real.negMulLog_le_one_sub_self (abs_nonneg s)
-      _ ≤ 1 := by linarith [abs_nonneg s]
-      _ ≤ ‖t * Real.log t‖ + 1 := by linarith [norm_nonneg (t * Real.log t)]
-  · have hsone : 1 < |s| := lt_of_not_ge hs
-    have htone : 1 < t := lt_of_lt_of_le hsone hst
-    have hexp : Real.exp (-1) ≤ 1 := (Real.exp_lt_one_iff.mpr (by norm_num)).le
-    have hmul := Real.mul_log_strictMonoOn.monotoneOn
-      (show |s| ∈ Set.Ici (Real.exp (-1)) from hexp.trans hsone.le)
-      (show t ∈ Set.Ici (Real.exp (-1)) from hexp.trans htone.le) hst
-    have hleft : 0 ≤ |s| * Real.log |s| :=
-      mul_nonneg (abs_nonneg _) (Real.log_nonneg hsone.le)
-    have hright : 0 ≤ t * Real.log t :=
-      mul_nonneg ht (Real.log_nonneg htone.le)
-    calc
-      ‖|s| * Real.log |s|‖ = |s| * Real.log |s| := by
-        rw [Real.norm_eq_abs, abs_of_nonneg hleft]
-      _ ≤ t * Real.log t := hmul
-      _ ≤ ‖t * Real.log t‖ + 1 := by
-        rw [Real.norm_eq_abs, abs_of_nonneg hright]
-        linarith
-
-/-- For an a.e. nonnegative function, integrability of `g` and `g log g` passes to the marginal
-and its `x log x` transform when both measures are finite. -/
-private theorem integrable_marginal_mul_log_left_of_nonneg
-    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    (μ : Measure α) (ν : Measure β) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    {g : α × β → ℝ} (hnonneg : 0 ≤ᵐ[μ.prod ν] g)
-    (hg : Integrable g (μ.prod ν))
-    (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
-    Integrable (fun x ↦ (∫ y, g (x, y) ∂ν) *
-      Real.log (∫ y, g (x, y) ∂ν)) μ := by
-  by_cases hν : ν = 0
-  · simp [hν]
-  have : NeZero ν := ⟨hν⟩
-  let c : ℝ := ν.real univ
-  have hc : 0 < c := measureReal_univ_pos
-  have hmeas : AEStronglyMeasurable (fun x ↦ (∫ y, g (x, y) ∂ν) *
-      Real.log (∫ y, g (x, y) ∂ν)) μ :=
-    (Real.continuous_mul_log.measurable.comp_aemeasurable
-      hg.integral_prod_left.aestronglyMeasurable.aemeasurable).aestronglyMeasurable
-  apply ((hlog.integral_prod_left.norm.add (integrable_const 1)).add
-    (hg.integral_prod_left.norm.mul_const |Real.log c|)).mono' hmeas
-  filter_upwards [ae_ae_of_ae_prod hnonneg, hg.prod_right_ae, hlog.prod_right_ae]
-    with x hx hxi hli
-  have ha := integral_nonneg_of_ae hx
-  have hlower := Real.self_sub_one_le_mul_log ha
-  have hupper := Real.convexOn_mul_log.map_average_le
-    Real.continuous_mul_log.continuousOn isClosed_Ici hx hxi hli
-  have hc_eq : ν.real univ = c := rfl
-  simp only [average_eq, smul_eq_mul, hc_eq] at hupper
-  have hlog_eq :
-      c * ((c⁻¹ * ∫ y, g (x, y) ∂ν) * Real.log (c⁻¹ * ∫ y, g (x, y) ∂ν)) =
-        (∫ y, g (x, y) ∂ν) * Real.log (∫ y, g (x, y) ∂ν) -
-          (∫ y, g (x, y) ∂ν) * Real.log c := by
-    have h := congrArg (fun t : ℝ ↦ -c * t)
-      (Real.negMulLog_mul c⁻¹ (∫ y, g (x, y) ∂ν))
-    simp only [Real.negMulLog_eq_neg, Real.log_inv] at h
-    field_simp at h ⊢
-    linarith
-  have hupper' := mul_le_mul_of_nonneg_left hupper hc.le
-  rw [hlog_eq, mul_inv_cancel_left₀ hc.ne'] at hupper'
-  simp only [Pi.add_apply, Real.norm_eq_abs]
-  rw [abs_of_nonneg ha]
-  apply abs_le.mpr
-  constructor
-  · linarith [abs_nonneg (∫ y, g (x, y) * Real.log (g (x, y)) ∂ν),
-      mul_nonneg ha (abs_nonneg (Real.log c))]
-  · nlinarith [le_abs_self (∫ y, g (x, y) * Real.log (g (x, y)) ∂ν),
-      le_abs_self (Real.log c)]
-
-/-- Integrability of a function and its `x log x` transform passes to the marginal's `x log x`
-transform for finite measures, including signed functions. -/
-theorem integrable_marginal_mul_log_left {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    (μ : Measure α) (ν : Measure β) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    {g : α × β → ℝ} (hg : Integrable g (μ.prod ν))
-    (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
-    Integrable (fun x ↦ (∫ y, g (x, y) ∂ν) *
-      Real.log (∫ y, g (x, y) ∂ν)) μ := by
-  let gabs : α × β → ℝ := fun p ↦ |g p|
-  let m : α → ℝ := fun x ↦ ∫ y, g (x, y) ∂ν
-  let M : α → ℝ := fun x ↦ ∫ y, gabs (x, y) ∂ν
-  have hgabs : Integrable gabs (μ.prod ν) := by
-    simpa [gabs] using hg.norm
-  have hgabs_meas : AEStronglyMeasurable gabs (μ.prod ν) := by
-    simpa [gabs, Real.norm_eq_abs] using hg.norm.aestronglyMeasurable
-  have hlogabs_meas : AEStronglyMeasurable
-      (fun p ↦ gabs p * Real.log (gabs p)) (μ.prod ν) :=
-    (Real.continuous_mul_log.measurable.comp_aemeasurable
-      hgabs_meas.aemeasurable).aestronglyMeasurable
-  have hlogabs : Integrable (fun p ↦ gabs p * Real.log (gabs p)) (μ.prod ν) := by
-    refine hlog.norm.mono' hlogabs_meas ?_
-    filter_upwards with p
-    simp [gabs, Real.norm_eq_abs, Real.log_abs]
-  have hnonneg : 0 ≤ᵐ[μ.prod ν] gabs := by
-    filter_upwards with p
-    exact abs_nonneg (g p)
-  have hMlog : Integrable (fun x ↦ M x * Real.log (M x)) μ :=
-    integrable_marginal_mul_log_left_of_nonneg μ ν hnonneg hgabs hlogabs
-  have hm : Integrable m μ := hg.integral_prod_left
-  have hmeas : AEStronglyMeasurable (fun x ↦ m x * Real.log (m x)) μ :=
-    (Real.continuous_mul_log.measurable.comp_aemeasurable
-      hm.aestronglyMeasurable.aemeasurable).aestronglyMeasurable
-  have hbound : ∀ᵐ x ∂μ,
-      ‖m x * Real.log (m x)‖ ≤ ‖M x * Real.log (M x)‖ + 1 := by
-    filter_upwards with x
-    have hm_bound : |m x| ≤ M x := by
-      simpa [m, M, gabs, Real.norm_eq_abs] using
-        norm_integral_le_integral_norm (fun y ↦ g (x, y))
-    exact norm_mul_log_le_of_abs_le hm_bound
-  have hmarg : Integrable (fun x ↦ m x * Real.log (m x)) μ :=
-    (hMlog.norm.add (integrable_const (1 : ℝ))).mono' hmeas hbound
-  simpa [m] using hmarg
-
-/-- Integrability of a function and its `x log x` transform passes to the second marginal's
-`x log x` transform for finite measures, including signed functions. -/
-theorem integrable_marginal_mul_log_right {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    (μ : Measure α) (ν : Measure β) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    {g : α × β → ℝ} (hg : Integrable g (μ.prod ν))
-    (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
-    Integrable (fun y ↦ (∫ x, g (x, y) ∂μ) *
-      Real.log (∫ x, g (x, y) ∂μ)) ν := by
-  simpa only [Function.comp_apply, Prod.swap_prod_mk] using
-    integrable_marginal_mul_log_left ν μ hg.swap hlog.swap
 
 /-- Averaging out a probability-measure coordinate cannot increase functional entropy for an
 a.e. nonnegative function, when the function, its `x log x` transform, and the marginal `x log x`
@@ -250,8 +140,47 @@ private theorem integral_entropy_prod_right {α β : Type*}
     (∫ y, entropy μ (fun x ↦ g (x, y)) ∂ν) =
       (∫ p, g p * Real.log (g p) ∂(μ.prod ν)) -
         ∫ y, (∫ x, g (x, y) ∂μ) * Real.log (∫ x, g (x, y) ∂μ) ∂ν := by
-  simp only [entropy_def]
-  rw [integral_sub hlog.integral_prod_right hmargy, ← integral_prod_symm _ hlog]
+  have h := integral_entropy_prod_left ν μ (g ∘ Prod.swap) hlog.swap hmargy
+  have hswap : (∫ p : β × α, g p.swap * Real.log (g p.swap) ∂(ν.prod μ)) =
+      ∫ p : α × β, g p * Real.log (g p) ∂(μ.prod ν) :=
+    integral_prod_swap (fun p ↦ g p * Real.log (g p))
+  simpa only [Function.comp_apply, Prod.swap_prod_mk, hswap] using h
+
+private theorem integral_mul_comp_snd_eq {α β : Type*}
+    [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) (ν : Measure β)
+    [SFinite μ] [SFinite ν] (g : α × β → ℝ) (w : β → ℝ)
+    (h : Integrable (fun p ↦ g p * w p.2) (μ.prod ν)) :
+    (∫ p, g p * w p.2 ∂(μ.prod ν)) =
+      ∫ y, (∫ x, g (x, y) ∂μ) * w y ∂ν := by
+  rw [integral_prod_symm _ h]
+  apply integral_congr_ae
+  filter_upwards with y
+  exact integral_mul_const (μ := μ) (w y) (fun x : α ↦ g (x, y))
+
+/-- The split-log form of the integral log-sum inequality, including zero total masses. -/
+private theorem integral_log_sum_split_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
+    (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
+    (hfi : Integrable f μ) (hhi : Integrable h μ)
+    (hdiff : Integrable (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) μ) :
+    (∫ x, f x ∂μ) * Real.log (∫ x, f x ∂μ) -
+        (∫ x, f x ∂μ) * Real.log (∫ x, h x ∂μ) ≤
+      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
+  have hsum := integral_log_sum_le μ hf hh hzero hfi hhi hdiff
+  by_cases hB : (∫ x, h x ∂μ) = 0
+  · have hhzero : h =ᵐ[μ] fun _ ↦ 0 :=
+      (integral_eq_zero_iff_of_nonneg_ae hh hhi).mp hB
+    have hfzero : f =ᵐ[μ] fun _ ↦ 0 := by
+      filter_upwards [hzero, hhzero] with x hx hhx
+      exact hx hhx
+    have hA : (∫ x, f x ∂μ) = 0 := by
+      rw [integral_congr_ae hfzero]
+      simp
+    simpa [hA] using hsum
+  · by_cases hA : (∫ x, f x ∂μ) = 0
+    · simpa [hA] using hsum
+    · rw [Real.log_div hA hB] at hsum
+      linarith
 
 /-- For an a.e. nonnegative function, entropy is convex under mixtures if
 the function, its `x log x` transform, both marginal `x log x` terms, and the marginal cross-log
@@ -291,15 +220,8 @@ private theorem entropy_integral_le_integral_entropy_aux {α β : Type*}
   have hright := (hlog.sub hcross).integral_prod_left
   have hint := integral_mono_ae hleft hright hpoint
   have hcross_eq : (∫ p, g p * Real.log (b p.2) ∂(μ.prod ν)) =
-      ∫ y, b y * Real.log (b y) ∂ν := by
-    rw [integral_prod_symm _ hcross]
-    apply integral_congr_ae
-    filter_upwards with y
-    exact integral_mul_const (μ := μ) (Real.log (b y)) (fun x : α ↦ g (x, y))
-  have hfubini : (∫ x, ∫ y, g (x, y) * Real.log (g (x, y)) -
-      g (x, y) * Real.log (b y) ∂ν ∂μ) =
-      ∫ p, g p * Real.log (g p) - g p * Real.log (b p.2) ∂(μ.prod ν) := by
-    simpa only [Pi.sub_apply] using (integral_prod _ (hlog.sub hcross)).symm
+      ∫ y, b y * Real.log (b y) ∂ν :=
+    integral_mul_comp_snd_eq μ ν g (fun y ↦ Real.log (b y)) hcross
   have hint' : (∫ x, a x * Real.log (a x) - a x * Real.log m ∂μ) ≤
       ∫ x, ∫ y, g (x, y) * Real.log (g (x, y)) -
         g (x, y) * Real.log (b y) ∂ν ∂μ := by
@@ -311,7 +233,8 @@ private theorem entropy_integral_le_integral_entropy_aux {α β : Type*}
       g (x, y) * Real.log (b y) ∂ν ∂μ) =
       (∫ p, g p * Real.log (g p) ∂(μ.prod ν)) -
         ∫ y, b y * Real.log (b y) ∂ν := by
-    rw [hfubini, integral_sub hlog hcross, hcross_eq]
+    rw [integral_integral_sub hlog hcross, ← integral_prod _ hlog,
+      ← integral_prod _ hcross, hcross_eq]
   rw [hleft_eq, hright_eq] at hint'
   rw [entropy_def, ham]
   rw [integral_entropy_prod_right μ ν g hlog hmargy]

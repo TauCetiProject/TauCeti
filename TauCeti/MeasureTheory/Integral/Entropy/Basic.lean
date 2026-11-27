@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.Convex.Integral
-import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
 # Entropy of a function with respect to a measure
@@ -85,9 +85,8 @@ theorem entropy_smul_measure {α : Type*} [MeasurableSpace α] (μ : Measure α)
     entropy (c • μ) g =
       c.toReal * entropy μ g - (c.toReal * (∫ x, g x ∂μ)) * Real.log c.toReal := by
   simp only [entropy_def, integral_smul_measure, smul_eq_mul]
-  have h := Real.negMulLog_mul c.toReal (∫ x, g x ∂μ)
-  simp only [Real.negMulLog_eq_neg] at h
-  linear_combination h
+  rw [Real.mul_log_mul]
+  ring
 
 /-- Scaling a function scales its entropy by the same factor, when the function and its
 `x log x` transform are integrable. -/
@@ -95,16 +94,10 @@ theorem entropy_const_mul {α : Type*} [MeasurableSpace α] (μ : Measure α) (c
     (g : α → ℝ) (hg : Integrable g μ)
     (hlog : Integrable (fun x ↦ g x * Real.log (g x)) μ) :
     entropy μ (fun x ↦ c * g x) = c * entropy μ g := by
-  have hmul (t : ℝ) :
-      (c * t) * Real.log (c * t) =
-        c * (t * Real.log t) + (c * Real.log c) * t := by
-    have h := Real.negMulLog_mul c t
-    simp only [Real.negMulLog_eq_neg] at h
-    linear_combination -h
   have hlog_ae : (fun x ↦ (c * g x) * Real.log (c * g x)) =ᵐ[μ]
       fun x ↦ c * (g x * Real.log (g x)) + (c * Real.log c) * g x := by
     filter_upwards with x
-    exact hmul (g x)
+    exact Real.mul_log_mul c (g x)
   have hlog_integral :
       (∫ x, (c * g x) * Real.log (c * g x) ∂μ) =
         c * (∫ x, g x * Real.log (g x) ∂μ) +
@@ -113,7 +106,7 @@ theorem entropy_const_mul {α : Type*} [MeasurableSpace α] (μ : Measure α) (c
       (hg.const_mul (c * Real.log c)), integral_const_mul, integral_const_mul]
   have hmass : (∫ x, c * g x ∂μ) = c * ∫ x, g x ∂μ := integral_const_mul _ _
   rw [entropy_def, entropy_def, hlog_integral, hmass]
-  have h := hmul (∫ x, g x ∂μ)
+  have h := Real.mul_log_mul c (∫ x, g x ∂μ)
   linear_combination -h
 
 /-- Functional entropy is nonnegative under a probability measure for an a.e. nonnegative

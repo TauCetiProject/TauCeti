@@ -19,6 +19,14 @@ marginal hypotheses for finite factors.
 open scoped ENNReal
 open MeasureTheory MeasureTheory.Measure
 
+example : ‖(-2 : ℝ) * Real.log (-2)‖ ≤ ‖(2 : ℝ) * Real.log 2‖ + 1 :=
+  Real.norm_mul_log_le_of_abs_le (by norm_num)
+
+example (t : ℝ) :
+    ((-2) * t) * Real.log ((-2) * t) =
+      (-2) * (t * Real.log t) + ((-2) * Real.log (-2)) * t :=
+  Real.mul_log_mul (-2) t
+
 example {α : Type*} [MeasurableSpace α] (μ : Measure α) [IsProbabilityMeasure μ] (c : ℝ) :
     entropy μ (fun _ ↦ c) = 0 := by
   simp
@@ -34,12 +42,8 @@ example {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
 example {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν] (g : α × β → ℝ) :
-    entropy (ν.prod μ) (g ∘ Prod.swap) = entropy (μ.prod ν) g := by
-  rw [← measurePreserving_swap.map_eq]
-  have hswap : MeasurableEmbedding (Prod.swap : α × β → β × α) :=
-    MeasurableEquiv.prodComm.measurableEmbedding
-  rw [entropy_map hswap]
-  simp [Function.comp_def]
+    entropy (ν.prod μ) (g ∘ Prod.swap) = entropy (μ.prod ν) g :=
+  entropy_prod_swap μ ν g
 
 example {α : Type*} [MeasurableSpace α] (μ : Measure α) {f : α → ℝ}
     (hf : 0 ≤ᵐ[μ] f) (hfi : Integrable f μ) :

@@ -259,6 +259,11 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
 
+private theorem ae_ae_snd_of_ae_prod (μ : Measure α) (ν : Measure β)
+    [SFinite μ] [SFinite ν] {P : α × β → Prop} (h : ∀ᵐ p ∂μ.prod ν, P p) :
+    ∀ᵐ y ∂ν, ∀ᵐ x ∂μ, P (x, y) :=
+  ae_ae_of_ae_prod (measurePreserving_swap.quasiMeasurePreserving.ae h)
+
 /-- An a.e. nonnegative, a.e. strongly measurable function with a.e. integrable sections vanishes
 almost everywhere where its second marginal vanishes. -/
 theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero
@@ -277,10 +282,8 @@ theorem _root_.MeasureTheory.Measure.ae_eq_zero_of_marginal_right_eq_zero
   have hbad : NullMeasurableSet bad (ν.prod μ) :=
     (nullMeasurableSet_eq_fun hbmeas aemeasurable_const).inter
       (nullMeasurableSet_eq_fun hgmeas aemeasurable_const).compl
-  have hswap : ∀ᵐ p ∂ν.prod μ, 0 ≤ g (p.2, p.1) :=
-    measurePreserving_swap.quasiMeasurePreserving.ae hnonneg
   have hnull_sections : ∀ᵐ y ∂ν, μ (Prod.mk y ⁻¹' bad) = 0 := by
-    filter_upwards [ae_ae_of_ae_prod hswap, hsections] with y hy hyi
+    filter_upwards [ae_ae_snd_of_ae_prod μ ν hnonneg, hsections] with y hy hyi
     by_cases hz : b y = 0
     · have hzero := (integral_eq_zero_iff_of_nonneg_ae hy hyi).mp hz
       apply measure_eq_zero_iff_ae_notMem.2
@@ -302,8 +305,7 @@ theorem _root_.MeasureTheory.Measure.ae_nonneg_integral_prod_right
     (μ : Measure α) (ν : Measure β) [SFinite μ] [SFinite ν] {g : α × β → ℝ}
     (hnonneg : 0 ≤ᵐ[μ.prod ν] g) :
     0 ≤ᵐ[ν] fun y ↦ ∫ x, g (x, y) ∂μ := by
-  filter_upwards [ae_ae_of_ae_prod
-    (measurePreserving_swap.quasiMeasurePreserving.ae hnonneg)] with _ hy
+  filter_upwards [ae_ae_snd_of_ae_prod μ ν hnonneg] with _ hy
   exact integral_nonneg_of_ae hy
 
 /-- An a.e. nonnegative, a.e. strongly measurable product function with a.e. integrable sections
@@ -326,8 +328,8 @@ theorem _root_.MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_margi
   · filter_upwards [hsections] with y hy
     exact hy.mul_const _
   · apply hmarg.norm.congr
-    filter_upwards [μ.ae_nonneg_integral_prod_right ν hnonneg,
-      ae_ae_of_ae_prod (measurePreserving_swap.quasiMeasurePreserving.ae hnonneg)] with y hb hy
+    filter_upwards [ae_ae_snd_of_ae_prod μ ν hnonneg] with y hy
+    have hb : 0 ≤ b y := integral_nonneg_of_ae hy
     calc
       ‖b y * w y‖ = b y * ‖w y‖ := by
         rw [norm_mul, Real.norm_eq_abs, abs_of_nonneg hb]
@@ -335,7 +337,7 @@ theorem _root_.MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_margi
       _ = ∫ x, ‖g (x, y) * w y‖ ∂μ := by
         apply integral_congr_ae
         filter_upwards [hy] with x hx
-        simp only [Pi.zero_apply, Prod.swap_prod_mk] at hx
+        simp only [Pi.zero_apply] at hx
         simp only [norm_mul, Real.norm_eq_abs, abs_of_nonneg hx]
 
 /-- If two integrals over the second factor of a product measure with a probability first factor
