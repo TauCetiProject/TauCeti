@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.RepresentationTheory.NormSplit.Higman
 public import TauCeti.RepresentationTheory.Tensor.Diagonal
 import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
@@ -14,7 +15,7 @@ import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 
 Let `Δ` be a finite group acting on a set `X` with stabilizers of order prime to a prime `ℓ`,
 and let `N` be an `R[Δ]`-module killed by `ℓ`. The diagonal tensor product of `N` with the
-permutation module `ZMod ℓ[X]` satisfies Higman's criterion (`TauCeti.HigmanCriterion`): some
+permutation module `ZMod ℓ[X]` satisfies Higman's criterion (`TauCeti.IsHigmanProjective`): some
 additive `τ` has `∑ g, g τ g⁻¹ = 1`. On `ZMod ℓ[X]`, `τ` projects onto one chosen point of each
 orbit, rescaled by the inverse of the order of its stabilizer, since the elements of `Δ` carrying
 a point of the orbit to the chosen one form a coset of that stabilizer.
@@ -25,9 +26,9 @@ in `Δ` then have order `|C| |D|`.
 
 ## Main results
 
-* `TauCeti.higmanCriterion_diagonalTensor_ofMulAction`: Higman's criterion for the diagonal
+* `TauCeti.isHigmanProjective_diagonalTensor_ofMulAction`: Higman's criterion for the diagonal
   tensor product with a permutation module whose stabilizers have order prime to `ℓ`.
-* `TauCeti.higmanCriterion_diagonalTensor_ofMulAction_comp_mk'`: its instance for the
+* `TauCeti.isHigmanProjective_diagonalTensor_ofMulAction_comp_mk'`: its instance for the
   permutation module of `(Δ ⧸ C) ⧸ D`, inflated from `Δ ⧸ C`.
 
 ## References
@@ -45,14 +46,14 @@ namespace TauCeti
 open Finset
 
 variable {R : Type*} [Ring R] {Δ : Type*} [Group Δ] [Fintype Δ] {ℓ : ℕ} [Fact ℓ.Prime]
-  (N : ModuleCat R[Δ]) [Module (ZMod ℓ) N] [SMulCommClass R[Δ] (ZMod ℓ) N]
+  (N : ModuleCat R[Δ]) [Module (ZMod ℓ) N]
 
 /-- **Higman's criterion for permutation modules.** If the stabilizers of the action of `Δ` on `X`
 have order prime to `ℓ`, the diagonal tensor product of `N` with the permutation module of `X`
 satisfies Higman's criterion. -/
-theorem higmanCriterion_diagonalTensor_ofMulAction {X : Type*} [MulAction Δ X]
+theorem isHigmanProjective_diagonalTensor_ofMulAction {X : Type*} [MulAction Δ X]
     (hX : ∀ x : X, ¬ ℓ ∣ Nat.card (MulAction.stabilizer Δ x)) :
-    HigmanCriterion R Δ (Representation.diagonalTensor
+    IsHigmanProjective R Δ (Representation.diagonalTensor
       (Representation.ofMulAction (ZMod ℓ) Δ X) N) := by
   classical
   -- The chosen point of the orbit of `y`, and the order of its stabilizer, read in `ZMod ℓ`.
@@ -100,7 +101,7 @@ theorem higmanCriterion_diagonalTensor_ofMulAction {X : Type*} [MulAction Δ X]
         Finset.sum_const_zero, add_zero, Finset.sum_const, hcard, ← Nat.cast_smul_eq_nsmul (ZMod ℓ),
         smul_smul]
       rw [mul_inv_cancel₀ (hc (o y)), one_smul, one_apply_eq_self]
-  refine (higmanCriterion_iff ..).2
+  refine (isHigmanProjective_iff ..).2
     ⟨AddMonoidHom.mk' (fun x ↦ proj.rTensor N x) (map_add _), fun x ↦ ?_⟩
   -- The identity `hF` of endomorphisms of `W ⊗ N`, evaluated at `x`.
   exact (LinearMap.sum_apply _ _ x).symm.trans (LinearMap.congr_fun hF x)
@@ -108,29 +109,22 @@ theorem higmanCriterion_diagonalTensor_ofMulAction {X : Type*} [MulAction Δ X]
 /-- **Higman's criterion for permutation modules of an iterated quotient.** If `C` and `D` have
 order prime to `ℓ`, the diagonal tensor product of `N` with the permutation module of
 `(Δ ⧸ C) ⧸ D`, inflated from `Δ ⧸ C`, satisfies Higman's criterion. -/
-theorem higmanCriterion_diagonalTensor_ofMulAction_comp_mk' {C : Subgroup Δ} [C.Normal]
+theorem isHigmanProjective_diagonalTensor_ofMulAction_comp_mk' {C : Subgroup Δ} [C.Normal]
     (D : Subgroup (Δ ⧸ C)) (hC : ¬ ℓ ∣ Nat.card C) (hD : ¬ ℓ ∣ Nat.card D) :
-    HigmanCriterion R Δ (Representation.diagonalTensor ((Representation.ofMulAction (ZMod ℓ)
+    IsHigmanProjective R Δ (Representation.diagonalTensor ((Representation.ofMulAction (ZMod ℓ)
       (Δ ⧸ C) ((Δ ⧸ C) ⧸ D)).comp (QuotientGroup.mk' C)) N) := by
   -- Let `Δ` act through `Δ ⧸ C`; its permutation representation is then the inflated one, as
   -- `Representation.ofMulAction` is defined through the action.
   let := MulAction.compHom ((Δ ⧸ C) ⧸ D) (QuotientGroup.mk' C)
-  refine higmanCriterion_diagonalTensor_ofMulAction N fun x ↦ ?_
-  -- The stabilizer of `x` is carried by `g ↦ g⁻¹` onto the elements sending `x` to the base
-  -- coset, which number `|C| |D|`.
+  refine isHigmanProjective_diagonalTensor_ofMulAction N fun x ↦ ?_
+  -- The stabilizer of `x` in `Δ` is `C` times its stabilizer in `Δ ⧸ C`, which has the order of the
+  -- stabilizer `D` of the base coset, as `x` is a translate of it.
   have h : Nat.card (MulAction.stabilizer Δ x) = Nat.card C * Nat.card D := by
+    rw [card_stabilizer_eq_card_subgroup_mul_card_stabilizer_quotient C x fun _ ↦ rfl]
     obtain ⟨q, rfl⟩ := QuotientGroup.mk_surjective x
-    obtain ⟨g₀, rfl⟩ := QuotientGroup.mk_surjective q
-    have hS := natCard_smul_mem_eq_natCard_mul_natCard_stabilizer (G := Δ)
-      (QuotientGroup.mk (QuotientGroup.mk g₀ : Δ ⧸ C) : (Δ ⧸ C) ⧸ D)
-      (S := {QuotientGroup.mk 1}) (Set.singleton_subset_iff.2 ⟨g₀⁻¹, by
-        beta_reduce
-        rw [MulAction.compHom_smul_def, QuotientGroup.mk'_apply, MulAction.Quotient.smul_mk,
-          smul_eq_mul, ← QuotientGroup.mk_mul, inv_mul_cancel, QuotientGroup.mk_one]⟩)
-    rw [Nat.card_unique (α := ({QuotientGroup.mk 1} : Set ((Δ ⧸ C) ⧸ D))), one_mul] at hS
-    rw [← hS, ← natCard_inv_smul_eq_mk_one C D]
-    exact Nat.card_congr ((Equiv.inv Δ).subtypeEquiv fun g ↦ by
-      rw [Set.mem_singleton_iff, Equiv.inv_apply, map_inv, inv_inv, MulAction.compHom_smul_def])
+    have hq : (q : (Δ ⧸ C) ⧸ D) = q • (QuotientGroup.mk 1 : (Δ ⧸ C) ⧸ D) := by
+      rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one]
+    rw [hq, card_stabilizer_smul, MulAction.stabilizer_quotient]
   rw [h, (Fact.out : ℓ.Prime).dvd_mul]
   tauto
 

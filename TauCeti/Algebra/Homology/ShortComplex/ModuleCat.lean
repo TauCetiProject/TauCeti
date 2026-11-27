@@ -36,6 +36,13 @@ Mathlib's conjugated short complex `ModuleCat.shortComplexOfConj`
 (`ModuleCat.shortComplexOfConj_f`, `ModuleCat.shortComplexOfConj_g`); the first is a monomorphism
 when the original map is injective (`ModuleCat.mono_shortComplexOfConj_f`).
 
+Lastly, for an element `a` of the ring, the property of fixing no nonzero vector passes back along
+an injective linear map (`LinearMap.eq_zero_of_smul_eq_self_of_injective`) and forward along a
+surjective one with finite source (`LinearMap.eq_zero_of_smul_eq_self_of_surjective`). So both
+ends of a short exact sequence whose middle term is finite, killed by `n` and fixes no nonzero
+vector under `a` have these properties too
+(`CategoryTheory.ShortComplex.ShortExact.moduleCat_endpoints_of_X₂`).
+
 ## References
 
 * Charles A. Weibel, *An Introduction to Homological Algebra*, Sections 1.1 and 1.3.
@@ -46,6 +53,38 @@ public section
 open CategoryTheory Limits Module Cardinal
 
 universe u v
+
+namespace LinearMap
+
+variable {A M N : Type*} [Semiring A] [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
+
+/-- If `a` fixes no nonzero vector of `N`, it fixes no nonzero vector of a module mapped
+injectively into `N`. -/
+theorem eq_zero_of_smul_eq_self_of_injective (f : M →ₗ[A] N) (hf : Function.Injective f) {a : A}
+    (ha : ∀ n : N, a • n = n → n = 0) (m : M) (hm : a • m = m) : m = 0 :=
+  hf (by rw [map_zero]; exact ha _ (by rw [← map_smul, hm]))
+
+/-- If `a` fixes no nonzero vector of a finite module `M`, it fixes no nonzero vector of a quotient
+of `M`. The map `x ↦ a • x - x` is injective on the finite module `M`, hence surjective, so it is
+surjective, hence injective, on the finite quotient. -/
+theorem eq_zero_of_smul_eq_self_of_surjective [Finite M] (f : M →ₗ[A] N)
+    (hf : Function.Surjective f) {a : A} (ha : ∀ m : M, a • m = m → m = 0) (n : N)
+    (hn : a • n = n) : n = 0 := by
+  have : Finite N := .of_surjective _ hf
+  -- The additive maps `x ↦ a • x - x` on `M` and on `N`.
+  let uM : M →+ M := DistribSMul.toAddMonoidHom M a - AddMonoidHom.id M
+  let uN : N →+ N := DistribSMul.toAddMonoidHom N a - AddMonoidHom.id N
+  have huM : Function.Surjective uM :=
+    Finite.injective_iff_surjective.1 ((injective_iff_map_eq_zero _).2 fun m hm ↦
+      ha m (by simpa [uM, sub_eq_zero] using hm))
+  have huN : Function.Injective uN := by
+    refine Finite.injective_iff_surjective.2 fun y ↦ ?_
+    obtain ⟨x, rfl⟩ := hf y
+    obtain ⟨x', rfl⟩ := huM x
+    exact ⟨f x', by simp [uM, uN]⟩
+  exact (injective_iff_map_eq_zero _).1 huN n (by simp [uN, hn])
+
+end LinearMap
 
 namespace CategoryTheory.ShortComplex
 
@@ -143,6 +182,22 @@ theorem ShortExact.moduleCatOpDual (hS : S.ShortExact)
     (LinearMap.lcomp_injective_of_surjective _ hS.moduleCat_surjective_g) hext
 
 end OpDual
+
+/-- **The ends of a short exact sequence stay in the class.** If the middle term of a short exact
+sequence of `A`-modules is finite, killed by `n` and fixes no nonzero vector under `a`, then so
+are both ends. -/
+theorem ShortExact.moduleCat_endpoints_of_X₂ {A : Type*} [Ring A] {S : ShortComplex (ModuleCat A)}
+    (hS : S.ShortExact) [_root_.Finite S.X₂] {n : ℕ} (hn : ∀ m : S.X₂, n • m = 0) {a : A}
+    (ha : ∀ m : S.X₂, a • m = m → m = 0) :
+    (_root_.Finite S.X₁ ∧ (∀ m : S.X₁, n • m = 0) ∧ ∀ m : S.X₁, a • m = m → m = 0) ∧
+      (_root_.Finite S.X₃ ∧ (∀ m : S.X₃, n • m = 0) ∧ ∀ m : S.X₃, a • m = m → m = 0) := by
+  have hf := hS.moduleCat_injective_f
+  have hg := hS.moduleCat_surjective_g
+  refine ⟨⟨.of_injective _ hf, fun m ↦ hf ?_, S.f.hom.eq_zero_of_smul_eq_self_of_injective hf ha⟩,
+    ⟨.of_surjective _ hg, fun m ↦ ?_, S.g.hom.eq_zero_of_smul_eq_self_of_surjective hg ha⟩⟩
+  · rw [map_nsmul, hn, map_zero]
+  · obtain ⟨m, rfl⟩ := hg m
+    rw [← map_nsmul, hn, map_zero]
 
 end CategoryTheory.ShortComplex
 

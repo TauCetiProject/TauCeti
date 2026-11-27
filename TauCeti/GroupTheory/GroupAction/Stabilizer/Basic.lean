@@ -95,8 +95,6 @@ normality of it is equivalent to freeness of the action of the image.
   and so for a finite group is at most, the order of the group.
 * `TauCeti.natCard_smul_mem_eq_natCard_mul_natCard_stabilizer`: the elements carrying a base point
   into a subset `S` of its orbit number `|S|` times the order of its stabiliser.
-* `TauCeti.natCard_inv_smul_eq_mk_one`: its instance for an iterated quotient `(G ⧸ C) ⧸ D`, where
-  the elements of `G` carrying a coset to the base coset number `|C| |D|`.
 * `TauCeti.card_stabilizer_congr`: the stabiliser order is preserved by a map carrying one action
   to another along a group isomorphism, if it separates the point from its translates.
 * `TauCeti.cardStabilizerOnOrbit_orbitRelQuotientCongr`: the orbit-space equivalence
@@ -573,25 +571,6 @@ theorem natCard_smul_mem_eq_natCard_mul_natCard_stabilizer (b : α) {S : Set α}
           (Equiv.prodSubtypeFstEquivSubtypeProd (p := fun o : orbit G b ↦ (o : α) ∈ S))
     _ = Nat.card S * Nat.card (stabilizer G b) := by
         rw [Nat.card_prod, Nat.card_congr (Equiv.subtypeSubtypeEquivSubtype fun hx ↦ hS hx)]
-
-/-- **Elements carrying a coset of an iterated quotient to the base coset.** For a normal subgroup
-`C` of `G` and a subgroup `D` of `G ⧸ C`, the elements `g` of `G` with `g⁻¹ • x` the base coset
-of `(G ⧸ C) ⧸ D` number `|C| |D|`. -/
-theorem natCard_inv_smul_eq_mk_one (C : Subgroup G) [C.Normal] (D : Subgroup (G ⧸ C))
-    (x : (G ⧸ C) ⧸ D) :
-    Nat.card {g : G // (QuotientGroup.mk' C g)⁻¹ • x = (QuotientGroup.mk 1 : (G ⧸ C) ⧸ D)} =
-      Nat.card C * Nat.card D := by
-  -- In `G ⧸ C`, the elements carrying the base coset to `x` form a coset of its stabilizer `D`.
-  set T : Set (G ⧸ C) := {q | q • (QuotientGroup.mk 1 : (G ⧸ C) ⧸ D) ∈ ({x} : Set _)}
-  have hT : Nat.card T = Nat.card D := by
-    have h := natCard_smul_mem_eq_natCard_mul_natCard_stabilizer (G := G ⧸ C)
-      (QuotientGroup.mk 1 : (G ⧸ C) ⧸ D) (S := {x}) fun y _ ↦ by
-        obtain ⟨y, rfl⟩ := QuotientGroup.mk_surjective y
-        exact ⟨y, by simp⟩
-    rwa [Nat.card_unique (α := ({x} : Set _)), one_mul, _root_.MulAction.stabilizer_quotient] at h
-  -- Their preimage in `G` consists of `|C|` elements over each of them.
-  rw [← hT, ← Nat.card_prod, ← Nat.card_congr (QuotientGroup.preimageMkEquivSubgroupProdSet C T)]
-  exact Nat.card_congr (Equiv.subtypeEquivRight fun g ↦ by simp [T, inv_smul_eq_iff, eq_comm])
 
 section PrimeCard
 

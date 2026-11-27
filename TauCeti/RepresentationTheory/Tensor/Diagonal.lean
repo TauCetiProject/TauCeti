@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.LinearAlgebra.Basis.VectorSpace
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.End.CharP
@@ -37,9 +35,9 @@ quotient of `Δ`, the construction `W ↦ W ⊗[k] N` turns representations of t
 
 * `Representation.shortExact_diagonalTensorMap`: for `N` flat over `k`, an equivariant short exact
   sequence of representations gives a short exact sequence of diagonal tensor products.
-* `Representation.eq_zero_of_smul_eq_self_diagonalTensor`: over `ZMod ℓ`, if an element `z` of
-  `Δ` fixes no nonzero vector of `N` and `z ^ ℓ ^ a` acts trivially on `W`, then `z` fixes no
-  nonzero vector of `W ⊗ N`.
+* `Representation.eq_zero_of_smul_eq_self_diagonalTensor`: in characteristic `ℓ`, for `W` flat, if
+  an element `z` of `Δ` fixes no nonzero vector of `N` and `z ^ ℓ ^ a` acts trivially on `W`, then
+  `z` fixes no nonzero vector of `W ⊗ N`.
 -/
 
 public section
@@ -85,12 +83,16 @@ second. -/
 theorem diagonalTensorAction_single_tmul (g : Δ) (r : R) (w : W) (n : N) :
     diagonalTensorAction σ N (MonoidAlgebra.single g r) (w ⊗ₜ n) =
       σ g w ⊗ₜ (MonoidAlgebra.single g r • n) := by
-  simp only [diagonalTensorAction, MonoidAlgebra.liftNCRingHom_single, mul_apply_eq_comp,
-    Representation.tprod_apply, TensorProduct.map_tmul, RingHom.comp_apply,
-    AlgHom.toRingHom_eq_coe, RingHom.coe_coe, Module.End.lTensorAlgHom_apply_apply,
-    TensorProduct.liftAux_tmul, LinearMap.compl₂_apply, TensorProduct.mk_apply,
-    MonoidHom.comp_apply, Module.toModuleEnd_apply, MonoidAlgebra.of_apply]
-  simp [MonoidAlgebra.singleOneRingHom, ← mul_smul, MonoidAlgebra.single_mul_single]
+  -- `lTensorAlgHom` sends `a` to `1 ⊗ a` by definition.
+  have hl (a : Module.End k N) : Module.End.lTensorAlgHom k N W a = a.lTensor W := rfl
+  rw [diagonalTensorAction, MonoidAlgebra.liftNCRingHom_single]
+  simp only [RingHom.comp_apply, AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hl,
+    mul_apply_eq_comp, Representation.tprod_apply, MonoidHom.comp_apply,
+    TensorProduct.map_tmul, LinearMap.lTensor_tmul, MonoidAlgebra.of_apply,
+    MonoidAlgebra.singleOneRingHom_apply, ZeroHom.toFun_eq_coe, AddMonoidHom.toZeroHom_coe,
+    MonoidAlgebra.singleAddHom_apply, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass,
+    Module.toModuleEnd_apply, DistribSMul.toLinearMap_apply]
+  rw [← mul_smul, MonoidAlgebra.single_mul_single, one_mul, mul_one]
 
 /-- An element `g` of `Δ` acting trivially on `W` acts on `W ⊗[k] N` through the second factor
 only. -/
@@ -168,6 +170,25 @@ theorem diagonalTensorMap_id :
   rw [diagonalTensorMap_hom_apply, ModuleCat.id_apply]
   exact LinearMap.rTensor_id_apply N W x
 
+/-- The map `0 ⊗ 1` is zero. -/
+@[simp]
+theorem diagonalTensorMap_zero {W' : Type w} [AddCommGroup W'] [Module k W']
+    {σ' : Representation k Δ W'} :
+    diagonalTensorMap N (0 : W →ₗ[k] W')
+        (fun g ↦ by rw [LinearMap.zero_comp, LinearMap.comp_zero]) =
+      (0 : diagonalTensor σ N ⟶ diagonalTensor σ' N) := by
+  ext x
+  rw [diagonalTensorMap_hom_apply, LinearMap.rTensor_zero, ModuleCat.hom_zero]
+  -- The carrier of `diagonalTensor σ' N` is `W' ⊗[k] N` by definition.
+  exact LinearMap.zero_apply (M := W ⊗[k] N) (M₂ := W' ⊗[k] N) x
+
+variable {σ} in
+/-- The map `f ⊗ 1` is surjective when `f` is. -/
+theorem diagonalTensorMap_surjective {W' : Type w} [AddCommGroup W'] [Module k W']
+    {σ' : Representation k Δ W'} {f : W →ₗ[k] W'} (hf : ∀ g, f ∘ₗ σ g = σ' g ∘ₗ f)
+    (hsurj : Function.Surjective f) : Function.Surjective (diagonalTensorMap N f hf).hom :=
+  LinearMap.rTensor_surjective N hsurj
+
 variable {σ} in
 /-- Composition of the maps `f ⊗ 1` between diagonal tensor products. -/
 theorem diagonalTensorMap_comp {W' W'' : Type w} [AddCommGroup W'] [Module k W'] [AddCommGroup W'']
@@ -189,15 +210,11 @@ theorem shortExact_diagonalTensorMap [Module.Flat k N] {W' W'' : Type w} [AddCom
     {f' : W' →ₗ[k] W''} (hf' : ∀ g, f' ∘ₗ σ' g = σ'' g ∘ₗ f') (hinj : Function.Injective f)
     (hex : Function.Exact f f') (hsurj : Function.Surjective f') :
     (ShortComplex.mk (diagonalTensorMap N f hf) (diagonalTensorMap N f' hf') (by
-      rw [diagonalTensorMap_comp]
-      ext x
-      simp only [diagonalTensorMap_hom_apply, hex.linearMap_comp_eq_zero, LinearMap.rTensor_zero,
-        ModuleCat.hom_zero, LinearMap.zero_apply]
-      -- The carrier of `diagonalTensor σ'' N` is `W'' ⊗[k] N` by definition.
-      exact LinearMap.zero_apply (M := W ⊗[k] N) (M₂ := W'' ⊗[k] N) x)).ShortExact :=
+      simp only [diagonalTensorMap_comp, hex.linearMap_comp_eq_zero,
+        diagonalTensorMap_zero])).ShortExact :=
   ModuleCat.shortComplex_shortExact _ (rTensor_exact N hex hsurj)
     (Module.Flat.rTensor_preserves_injective_linearMap f hinj)
-    (LinearMap.rTensor_surjective N hsurj)
+    (diagonalTensorMap_surjective N hf' hsurj)
 
 /-- The diagonal tensor product with a trivial line is `N` itself, through `c ⊗ n ↦ c • n`. -/
 noncomputable def diagonalTensorTrivialEquiv {τ : Representation k Δ k} (hτ : ∀ g, τ g = 1) :
@@ -236,19 +253,21 @@ instance [Module.Finite k W] [Finite N] : Finite (diagonalTensor σ N) :=
 
 end DiagonalTensorModule
 
-section ZMod
+section CharP
 
 variable {R : Type u} [Ring R] {Δ : Type*} [Monoid Δ] {ℓ : ℕ} [Fact ℓ.Prime]
+  {k : Type*} [CommRing k] [CharP k ℓ]
 
-variable {W : Type w} [AddCommGroup W] [Module (ZMod ℓ) W] (σ : Representation (ZMod ℓ) Δ W)
-  (N : ModuleCat.{v} R[Δ]) [Module (ZMod ℓ) N] [SMulCommClass R[Δ] (ZMod ℓ) N]
+variable {W : Type w} [AddCommGroup W] [Module k W] [Module.Flat k W] (σ : Representation k Δ W)
+  (N : ModuleCat.{v} R[Δ]) [Module k N] [SMulCommClass R[Δ] k N]
 
-/-- **Fixed vectors of a central element.** If `z` fixes no nonzero vector of `N` and
-`z ^ ℓ ^ a` acts trivially on `W`, then `z` fixes no nonzero vector of `W ⊗ N`. -/
+/-- **Fixed vectors of a central element.** In characteristic `ℓ`, for `W` flat, if `z` fixes no
+nonzero vector of `N` and `z ^ ℓ ^ a` acts trivially on `W`, then `z` fixes no nonzero vector of
+`W ⊗ N`. -/
 theorem eq_zero_of_smul_eq_self_diagonalTensor {z : Δ}
     (hN : ∀ n : N, MonoidAlgebra.of R Δ z • n = n → n = 0) {a : ℕ} (hσ : σ (z ^ ℓ ^ a) = 1)
     (x : diagonalTensor σ N) (hx : MonoidAlgebra.of R Δ z • x = x) : x = 0 := by
-  set y := Module.toModuleEnd (ZMod ℓ) (S := R[Δ]) N (MonoidAlgebra.of R Δ z)
+  set y := Module.toModuleEnd k (S := R[Δ]) N (MonoidAlgebra.of R Δ z)
   have hy : Function.Injective ⇑(y - 1) := by
     rw [injective_iff_map_eq_zero]
     intro n hn
@@ -267,6 +286,6 @@ theorem eq_zero_of_smul_eq_self_diagonalTensor {z : Δ}
     (Module.Flat.lTensor_preserves_injective_linearMap _
       (Module.End.injective_pow_char_pow_sub_one hy a)) x hx'
 
-end ZMod
+end CharP
 
 end Representation
