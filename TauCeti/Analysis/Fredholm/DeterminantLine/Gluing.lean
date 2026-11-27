@@ -205,11 +205,11 @@ theorem detLineGluingEquiv_symm_congr_eq_detLineFourTermEquiv [FiniteDimensional
       ((parameterToCoker_surjective_iff_coprod_surjective D j).2 h) y =
         (-1 : 𝕜) ^ c • detLineStabilizationEquiv D j h y := by
     intro y
-    rw [detLineStabilizationEquiv_apply, smul_smul, ← pow_add, ← two_mul, pow_mul, neg_one_sq,
-      one_pow, one_smul, detLineCoprodEquiv_def]
+    rw [detLineStabilizationEquiv_apply, smul_smul, ← pow_add, Even.neg_one_pow ⟨c, rfl⟩,
+      one_smul, detLineCoprodEquiv_def]
   rw [hcongr, hS, smul_smul, ← pow_add, LinearEquiv.symm_apply_eq, LinearEquiv.map_smul,
     detLineGluingEquiv_detLineStabilizationEquiv, smul_smul, ← pow_add,
-    show a + c + c + a = 2 * (a + c) by ring, pow_mul, neg_one_sq, one_pow, one_smul]
+    show a + c + c + a = (a + c) + (a + c) by ring, Even.neg_one_pow ⟨a + c, rfl⟩, one_smul]
 
 /-- **Changing the identification of the stabilized kernels.** Replacing `e` by `e'` multiplies
 the gluing isomorphism by the determinant of the automorphism `e'⁻¹ ∘ e` of `E₁' × E₂'`. -/
@@ -263,15 +263,11 @@ theorem detLineGluingEquiv_kerCoprodProdMapEquiv (h₁ : Function.Surjective (D�
   set b : ℕ := finrank 𝕜 (F₁ ⧸ D₁.range) * finrank 𝕜 (F₂ ⧸ D₂.range)
   -- The direct sum law of the normalized stabilizations, extended from pure tensors.
   have hS : ∀ w, S (G w) = (-1 : 𝕜) ^ (a + b) • P.symm (TensorProduct.congr
-      (detLineStabilizationEquiv D₁ j₁ h₁) (detLineStabilizationEquiv D₂ j₂ h₂) w) := by
-    intro w
-    induction w using TensorProduct.inductionOn with
-    | tmul y y' => exact detLineStabilizationEquiv_prodMap h₁ h₂ y y'
-    | add w w' hw hw' =>
-      rw [LinearEquiv.map_add, LinearEquiv.map_add, hw, hw', LinearEquiv.map_add,
-        LinearEquiv.map_add, smul_add]
-      -- The two sides differ only in how the addition of `det (D₁ ⊕ D₂)` is elaborated.
-      rfl
+      (detLineStabilizationEquiv D₁ j₁ h₁) (detLineStabilizationEquiv D₂ j₂ h₂) w) :=
+    LinearMap.congr_fun (f := S.toLinearMap ∘ₗ G.toLinearMap)
+      (g := (-1 : 𝕜) ^ (a + b) • (P.symm.toLinearMap ∘ₗ (TensorProduct.congr
+        (detLineStabilizationEquiv D₁ j₁ h₁) (detLineStabilizationEquiv D₂ j₂ h₂)).toLinearMap))
+      (TensorProduct.ext' fun y y' ↦ detLineStabilizationEquiv_prodMap h₁ h₂ y y')
   -- Every element of `det (D₁ ⊕ D₂)` is `S (G w)` for some `w`.
   obtain ⟨w, rfl⟩ : ∃ w, S (G w) = x :=
     ⟨G.symm (S.symm x), by rw [G.apply_symm_apply]; exact S.apply_symm_apply x⟩
@@ -279,8 +275,7 @@ theorem detLineGluingEquiv_kerCoprodProdMapEquiv (h₁ : Function.Surjective (D�
     (kerCoprodProdMapEquiv D₁ j₁ D₂ j₂) h₁ h₂ (surjective_coprod_prodMap h₁ h₂) w
   simp only [G, LinearEquiv.trans_apply] at hS ⊢
   rw [hval, hS, LinearEquiv.map_smul, LinearEquiv.apply_symm_apply, smul_smul, ← pow_add,
-    show b + (a + b) = a + 2 * b by ring, pow_add, pow_mul (-1 : 𝕜) 2 b, neg_one_sq, one_pow,
-    mul_one]
+    show b + (a + b) = a + (b + b) by ring, pow_add, Even.neg_one_pow ⟨b, rfl⟩, mul_one]
 
 end DirectSum
 

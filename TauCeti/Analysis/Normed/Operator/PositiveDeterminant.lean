@@ -86,21 +86,17 @@ theorem det_mul_det_pos_of_forall_injective {K : Type*} [AddCommGroup K] [Module
   have hcont : ContinuousOn (fun t : ℝ ↦ LinearMap.det (f + t • (g - f))) (Set.Icc 0 1) := by
     simp only [hdet]
     exact (Continuous.matrix_det (by fun_prop)).continuousOn
-  by_contra hle
-  -- Otherwise `0` lies between the two determinants, and the intermediate value theorem gives a
-  -- non-injective map on the segment.
-  obtain ⟨t, ht, ht0⟩ : ∃ t ∈ Set.Icc (0 : ℝ) 1, LinearMap.det (f + t • (g - f)) = 0 := by
-    have h₀ : f + (0 : ℝ) • (g - f) = f := by simp
-    have h₁ : f + (1 : ℝ) • (g - f) = g := by simp
-    have hm := isPreconnected_Icc.intermediate_value (a := (0 : ℝ)) (b := 1)
-      (Set.left_mem_Icc.2 zero_le_one) (Set.right_mem_Icc.2 zero_le_one) hcont
-    have hm' := isPreconnected_Icc.intermediate_value (a := (1 : ℝ)) (b := 0)
-      (Set.right_mem_Icc.2 zero_le_one) (Set.left_mem_Icc.2 zero_le_one) hcont
-    simp only [h₀, h₁] at hm hm'
-    rcases mul_nonpos_iff.1 (not_lt.1 hle) with hfg | hfg
-    · exact hm' ⟨hfg.2, hfg.1⟩
-    · exact hm ⟨hfg.1, hfg.2⟩
-  exact LinearMap.det_eq_zero_iff_ker_ne_bot.1 ht0 (LinearMap.ker_eq_bot.2 (h t ht))
+  -- The determinant does not vanish on the segment, so it keeps its sign there.
+  have hne : ∀ t ∈ Set.Icc (0 : ℝ) 1, LinearMap.det (f + t • (g - f)) ≠ 0 := fun t ht h0 ↦
+    LinearMap.det_eq_zero_iff_ker_ne_bot.1 h0 (LinearMap.ker_eq_bot.2 (h t ht))
+  have hsign := isPreconnected_Icc.sign_eq_of_continuousOn hcont hne
+    (Set.left_mem_Icc.2 zero_le_one) (Set.right_mem_Icc.2 zero_le_one)
+  have h₀ : f + (0 : ℝ) • (g - f) = f := by simp
+  have h₁ : f + (1 : ℝ) • (g - f) = g := by simp
+  rw [h₀, h₁] at hsign
+  rcases (hne 0 (Set.left_mem_Icc.2 zero_le_one)).lt_or_gt with hf | hf <;> rw [h₀] at hf
+  · exact mul_pos_of_neg_of_neg hf (sign_eq_neg_one_iff.1 (hsign ▸ sign_neg hf))
+  · exact mul_pos hf (sign_eq_one_iff.1 (hsign ▸ sign_pos hf))
 
 end LinearMap
 

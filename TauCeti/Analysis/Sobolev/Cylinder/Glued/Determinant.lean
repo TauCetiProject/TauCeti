@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Gluing
-public import TauCeti.Analysis.Sobolev.Cylinder.GluedIndex
+public import TauCeti.Analysis.Sobolev.Cylinder.Glued.Index
 import TauCeti.Analysis.Normed.Operator.PositiveDeterminant
 
 /-!
@@ -31,15 +31,17 @@ isomorphism of the exact sequence of linear gluing
 pieces (`detLineGluingEquiv_symm_congr_eq_detLineFourTermEquiv_gluingObstruction`): through the
 gluing map this sequence is the stabilization sequence of `A_R`.
 
-The gluing map depends on the right inverse `Q`, but the orientations it induces do not. Right
-inverses of `A_R` form an affine space, and the gluing map is affine in `Q`
-(`TauCeti.CylinderSobolev.gluingKerMap_apply_of_eq_add_smul_sub`). Along the segment from `Q` to
-another right inverse `Q'` of norm at most `C` all right inverses have norm at most `C`, so for
-long necks all their gluing maps are isomorphisms. Hence `det (G_{Q'}⁻¹ ∘ G_Q)` does not vanish
-along the segment and is positive, and the two determinant-line isomorphisms differ by a positive
-factor (`TauCeti.CylinderSobolev.exists_forall_ge_exists_pos_detLineGluingEquiv_eq_smul`). Over
-`ℝ`, for fixed stabilizers, the orientation of `det D_R` glued from orientations of `det D₁` and
-`det D₂` therefore does not depend on the right inverse.
+The gluing map depends on the right inverse `Q`, but for long necks the orientations induced by
+right inverses of norm at most `C` do not. Right inverses of `A_R` form an affine space, and the
+gluing map is affine in `Q` (`TauCeti.CylinderSobolev.gluingKerMap_apply_of_eq_add_smul_sub`).
+Along the segment from `Q` to another right inverse `Q'` of norm at most `C` all right inverses
+have norm at most `C`, so for long necks all their gluing maps are isomorphisms. Hence
+`det (G_{Q'}⁻¹ ∘ G_Q)` does not vanish along the segment and is positive, and the two
+determinant-line isomorphisms differ by a positive factor
+(`TauCeti.CylinderSobolev.exists_forall_ge_exists_pos_detLineGluingEquiv_eq_smul`). Over `ℝ`, for
+fixed stabilizers, a bound `C` and every neck of length `2 R` with `R ≥ R₀(C)`, the orientation of
+`det D_R` glued from orientations of `det D₁` and `det D₂` therefore does not depend on the choice
+of right inverse of norm at most `C`.
 
 ## Main results
 
