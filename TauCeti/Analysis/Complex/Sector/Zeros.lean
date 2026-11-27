@@ -9,12 +9,12 @@ public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Data.Set.Card
+public import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Analysis.Complex.Conformal.Rouche
 import TauCeti.Analysis.Normed.Group.BallSphere
-import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Data.Set.Card
 import TauCeti.Order.Northcott.Enumeration
 
@@ -62,66 +62,6 @@ opposite ray (`θ - θ₁ ≤ π`, `θ₂ - θ ≤ π`) (`TauCeti.sectorZero_cos
 public section
 
 open Complex Metric Set Filter
-
-/-! ### The polar-lexicographic strict total order on `ℂ` -/
-
-namespace Complex
-
-/-- Polar-lexicographic strict order on `ℂ`: `w.polarLt z` holds when `‖w‖ < ‖z‖`, or when
-`‖w‖ = ‖z‖` and `w.arg < z.arg`. -/
-def polarLt (w z : ℂ) : Prop :=
-  toLex (‖w‖, w.arg) < toLex (‖z‖, z.arg)
-
-/-- Unfolding lemma for `Complex.polarLt`. -/
-@[grind =]
-theorem polarLt_def (w z : ℂ) :
-    w.polarLt z ↔ ‖w‖ < ‖z‖ ∨ ‖w‖ = ‖z‖ ∧ w.arg < z.arg :=
-  Prod.Lex.toLex_lt_toLex
-
-/-- `Complex.polarLt` is a strict total order on `ℂ`. -/
-instance instIsStrictTotalOrderPolarLt : IsStrictTotalOrder ℂ polarLt :=
-  toLex_norm_arg_injective.isStrictTotalOrder_onFun (· < ·)
-
-/-- Strict norm inequality implies `Complex.polarLt`. -/
-theorem polarLt_of_norm_lt {w z : ℂ} (h : ‖w‖ < ‖z‖) : w.polarLt z :=
-  Prod.Lex.toLex_lt_toLex.mpr (.inl h)
-
-/-- Equal norms and strict argument inequality imply `Complex.polarLt`. -/
-theorem polarLt_of_norm_eq_of_arg_lt {w z : ℂ} (hn : ‖w‖ = ‖z‖) (ha : w.arg < z.arg) :
-    w.polarLt z :=
-  Prod.Lex.toLex_lt_toLex.mpr (.inr ⟨hn, ha⟩)
-
-/-- `Complex.polarLt` is compatible with nondecreasing norms. -/
-theorem polarLt.norm_le {w z : ℂ} (h : w.polarLt z) : ‖w‖ ≤ ‖z‖ :=
-  ((polarLt_def w z).mp h).elim le_of_lt fun h' => h'.1.le
-
-/-- Nothing precedes `0` in `Complex.polarLt`. -/
-@[simp]
-theorem not_polarLt_zero (w : ℂ) : ¬ w.polarLt 0 := by
-  rw [polarLt_def]
-  rintro (h | ⟨hn, ha⟩)
-  · exact (norm_nonneg w).not_gt (by simpa using h)
-  · rw [norm_zero, norm_eq_zero] at hn
-    subst hn
-    exact lt_irrefl _ ha
-
-/-- `0` precedes every nonzero complex number in `Complex.polarLt`. -/
-@[simp]
-theorem zero_polarLt_iff {z : ℂ} : (0 : ℂ).polarLt z ↔ z ≠ 0 :=
-  ⟨fun h hz => not_polarLt_zero 0 (hz ▸ h),
-    fun hz => polarLt_of_norm_lt (by simpa using norm_pos_iff.mpr hz)⟩
-
-/-- Along a single ray (`w.arg = z.arg`), `Complex.polarLt` reduces to strict norm comparison. -/
-theorem polarLt_iff_of_arg_eq {w z : ℂ} (h : w.arg = z.arg) : w.polarLt z ↔ ‖w‖ < ‖z‖ :=
-  ⟨fun hp => ((polarLt_def w z).mp hp).elim id fun ⟨_, ha⟩ => absurd (h ▸ ha) (lt_irrefl _),
-    polarLt_of_norm_lt⟩
-
-/-- On a circle (`‖w‖ = ‖z‖`), `Complex.polarLt` reduces to strict argument comparison. -/
-theorem polarLt_iff_of_norm_eq {w z : ℂ} (h : ‖w‖ = ‖z‖) : w.polarLt z ↔ w.arg < z.arg :=
-  ⟨fun hp => ((polarLt_def w z).mp hp).elim (fun hn => absurd (h ▸ hn) (lt_irrefl _)) And.right,
-    polarLt_of_norm_eq_of_arg_lt h⟩
-
-end Complex
 
 /-! ### Polar-ordered enumeration of zeros in an open sector -/
 
@@ -192,8 +132,14 @@ theorem sectorZero_eq_of_ncard
     u ∈ sectorZeros θ₁ θ₂ f ∧ {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt u}.ncard = k - 1
   have hPz : P z := ⟨hz, hcard⟩
   have hPe : P (sectorZero θ₁ θ₂ f k) := Classical.epsilon_spec ⟨z, hPz⟩
+  have hEq : {w ∈ sectorZeros θ₁ θ₂ f | toLex (‖w‖, w.arg) < toLex (‖sectorZero θ₁ θ₂ f k‖,
+        (sectorZero θ₁ θ₂ f k).arg)}.ncard =
+      {w ∈ sectorZeros θ₁ θ₂ f | toLex (‖w‖, w.arg) < toLex (‖z‖, z.arg)}.ncard := by
+    simpa only [← Complex.polarLt_iff_toLex_norm_arg] using hPe.2.trans hcard.symm
   exact Complex.toLex_norm_arg_injective.injOn.injOn_ncard_sep_lt
-    (fun a _ => finite_sectorZeroInit hfin a) hPe.1 hz (hPe.2.trans hcard.symm)
+    (fun a _ => by
+      simpa only [Complex.polarLt_iff_toLex_norm_arg] using finite_sectorZeroInit hfin a)
+    hPe.1 hz hEq
 
 /-- **Completeness of `sectorZero` under local norm-finiteness.** When `f` has finitely many sector
 zeros in every closed ball, every `z ∈ sectorZeros θ₁ θ₂ f` appears in the sequence
@@ -214,10 +160,13 @@ private theorem exists_mem_sectorZeros_ncard_eq
     {k : ℕ} (hk : 1 ≤ k)
     (hle : (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard) :
     ∃ z ∈ sectorZeros θ₁ θ₂ f,
-      {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.ncard = k - 1 :=
-  Set.exists_mem_ncard_sep_lt_eq (f := fun w : ℂ => toLex (‖w‖, w.arg))
-    Complex.toLex_norm_arg_injective.injOn (fun a _ => finite_sectorZeroInit hfin a)
-    (lt_of_lt_of_le (by exact_mod_cast Nat.sub_lt hk Nat.zero_lt_one) hle)
+      {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt z}.ncard = k - 1 := by
+  simpa only [← Complex.polarLt_iff_toLex_norm_arg] using
+    Set.exists_mem_ncard_sep_lt_eq (f := fun w : ℂ => toLex (‖w‖, w.arg))
+      Complex.toLex_norm_arg_injective.injOn
+      (fun a _ => by
+        simpa only [Complex.polarLt_iff_toLex_norm_arg] using finite_sectorZeroInit hfin a)
+      (lt_of_lt_of_le (by exact_mod_cast Nat.sub_lt hk Nat.zero_lt_one) hle)
 
 /-- Under local norm-finiteness, when `1 ≤ k` and `(k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard`,
 the epsilon `sectorZero θ₁ θ₂ f k` attains its defining predicate. -/
@@ -238,14 +187,13 @@ theorem polarLt_sectorZero_of_lt_of_le_encard
     (sectorZero θ₁ θ₂ f j).polarLt (sectorZero θ₁ θ₂ f k) := by
   have hspec_j := sectorZero_spec_of_le_encard hfin hj ((Nat.cast_le.mpr hjk.le).trans hle)
   have hspec_k := sectorZero_spec_of_le_encard hfin (hj.trans hjk.le) hle
-  change toLex (‖sectorZero θ₁ θ₂ f j‖, (sectorZero θ₁ θ₂ f j).arg) <
-    toLex (‖sectorZero θ₁ θ₂ f k‖, (sectorZero θ₁ θ₂ f k).arg)
+  rw [Complex.polarLt_iff_toLex_norm_arg]
   by_contra! hle'
   rcases hle'.lt_or_eq with hlt | heq
   · have hcard := Set.ncard_sep_lt_lt_ncard_sep_lt (f := fun w : ℂ => toLex (‖w‖, w.arg))
-      hspec_k.1 hlt (finite_sectorZeroInit hfin _)
-    change {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (sectorZero θ₁ θ₂ f k)}.ncard <
-      {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (sectorZero θ₁ θ₂ f j)}.ncard at hcard
+      hspec_k.1 hlt
+      (by simpa only [← Complex.polarLt_iff_toLex_norm_arg] using finite_sectorZeroInit hfin _)
+    simp_rw [← Complex.polarLt_iff_toLex_norm_arg] at hcard
     omega
   · have hcard := hspec_k.2
     rw [Complex.toLex_norm_arg_injective heq, hspec_j.2] at hcard
@@ -259,7 +207,8 @@ theorem injOn_sectorZero
       {k : ℕ | 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard} := by
   have hmono : StrictMonoOn (fun k => toLex (‖sectorZero θ₁ θ₂ f k‖, (sectorZero θ₁ θ₂ f k).arg))
       {k : ℕ | 1 ≤ k ∧ (k : ℕ∞) ≤ (sectorZeros θ₁ θ₂ f).encard} :=
-    fun _ hj _ hk hjk => polarLt_sectorZero_of_lt_of_le_encard hfin hj.1 hjk hk.2
+    fun _ hj _ hk hjk => (Complex.polarLt_iff_toLex_norm_arg _ _).mp
+      (polarLt_sectorZero_of_lt_of_le_encard hfin hj.1 hjk hk.2)
   exact fun _ hj _ hk hEq => hmono.injOn hj hk (congrArg (fun z => toLex (‖z‖, z.arg)) hEq)
 
 /-- Under local norm-finiteness, `sectorZero θ₁ θ₂ f` restricts to a bijection from
@@ -383,8 +332,11 @@ private theorem sectorZero_add_eq_of_tail
     (n : ℕ) :
     sectorZero θ₁ θ₂ f (A.ncard + 1 + n) = zSeq n := by
   have hcard := Set.ncard_sep_lt_eq_ncard_add (f := fun w : ℂ => toLex (‖w‖, w.arg))
-    hA_fin hA_sub hzS (fun _ _ h => hstrict h) (fun w hw => hA_lt w hw 0) hexh n
-  change {w ∈ sectorZeros θ₁ θ₂ f | w.polarLt (zSeq n)}.ncard = A.ncard + n at hcard
+    hA_fin hA_sub hzS
+    (fun _ _ h => (Complex.polarLt_iff_toLex_norm_arg _ _).mp (hstrict h))
+    (fun w hw => (Complex.polarLt_iff_toLex_norm_arg _ _).mp (hA_lt w hw 0))
+    hexh n
+  simp_rw [← Complex.polarLt_iff_toLex_norm_arg] at hcard
   exact sectorZero_eq_of_ncard hfin (hzS n) (by omega)
 
 /-- A sequence of annularly separated discs inside the open sector `z ≠ 0`, `θ₁ < arg z < θ₂`, each
@@ -564,8 +516,8 @@ private theorem mem_sectorZeros_cos_iff {θ₁ θ₂ θ : ℝ}
       rcases le_or_gt θ 0 with hθ_le | hθ_pos
       · rw [toIocMod_eq_self Real.two_pi_pos |>.mpr ⟨by linarith, by linarith⟩] at hz_arg
         linarith
-      · rw [← toIocMod_sub Real.two_pi_pos (-Real.pi) (θ + Real.pi),
-          show θ + Real.pi - 2 * Real.pi = θ - Real.pi by ring,
+      · have hsub : θ + Real.pi - 2 * Real.pi = θ - Real.pi := by ring
+        rw [← toIocMod_sub Real.two_pi_pos (-Real.pi) (θ + Real.pi), hsub,
           toIocMod_eq_self Real.two_pi_pos |>.mpr ⟨by linarith, by linarith⟩] at hz_arg
         linarith
   · rintro ⟨n, rfl⟩
@@ -598,8 +550,8 @@ theorem sectorZero_cos_cexp_neg_mul_I_mul {θ₁ θ₂ θ : ℝ}
     (fun hij => Complex.polarLt_of_norm_lt (hstrict hij))
     (fun _ hwA _ => False.elim hwA)
     (fun w hwS => .inr ((mem_sectorZeros_cos_iff hθ₁ h₁ h₂ hθ₂ hlo hhi).mp hwS)) n
-  simp only [Set.ncard_empty, zero_add] at hEq
-  rw [show 1 + n = k by omega] at hEq
+  have hk_eq : 1 + n = k := by omega
+  simp only [Set.ncard_empty, zero_add, hk_eq] at hEq
   rw [hEq, rotatedCosZero, circleMap_zero]
   congr 1
   have hk_cast : (k : ℂ) = (n : ℂ) + 1 := by exact_mod_cast (by omega : k = n + 1)

@@ -83,8 +83,9 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.sin_arg_sub_arg_one_sub`: `sin (arg ξ - arg (1 - ξ)) = Im ξ / (|ξ| |1 - ξ|)`; for `ξ`
   in the upper half-plane, the sine of the angle at `ξ` of the triangle `0, 1, ξ`.
-* `Complex.toLex_norm_arg_injective`: the lexicographic norm–argument key `z ↦ toLex (‖z‖, arg z)`
-  is injective on `ℂ`.
+* `Complex.toLex_norm_arg_injective`, `Complex.polarLt`, `Complex.instIsStrictTotalOrderPolarLt`:
+  the lexicographic norm–argument key `z ↦ toLex (‖z‖, arg z)` is injective on `ℂ` and induces the
+  polar-lexicographic strict total order `Complex.polarLt` on `ℂ`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -417,6 +418,66 @@ theorem sin_arg_sub_arg_one_sub (ξ : ℂ) :
 /-- Injectivity of the lexicographic norm–argument key `z ↦ toLex (‖z‖, arg z)` on `ℂ`. -/
 theorem toLex_norm_arg_injective : Function.Injective fun z : ℂ ↦ toLex (‖z‖, arg z) :=
   fun _ _ h ↦ let ⟨h₁, h₂⟩ := Prod.ext_iff.1 (toLex.injective h); ext_norm_arg h₁ h₂
+
+/-- Polar-lexicographic strict order on `ℂ`: `w.polarLt z` holds when `‖w‖ < ‖z‖`, or when
+`‖w‖ = ‖z‖` and `w.arg < z.arg`. -/
+def polarLt (w z : ℂ) : Prop :=
+  toLex (‖w‖, w.arg) < toLex (‖z‖, z.arg)
+
+/-- `Complex.polarLt` is comparison of the lexicographic norm–argument key
+`z ↦ toLex (‖z‖, z.arg)`. -/
+theorem polarLt_iff_toLex_norm_arg (w z : ℂ) :
+    w.polarLt z ↔ toLex (‖w‖, w.arg) < toLex (‖z‖, z.arg) :=
+  Iff.rfl
+
+/-- Unfolding lemma for `Complex.polarLt`. -/
+@[grind =]
+theorem polarLt_def (w z : ℂ) :
+    w.polarLt z ↔ ‖w‖ < ‖z‖ ∨ ‖w‖ = ‖z‖ ∧ w.arg < z.arg :=
+  Prod.Lex.toLex_lt_toLex
+
+/-- `Complex.polarLt` is a strict total order on `ℂ`. -/
+instance instIsStrictTotalOrderPolarLt : IsStrictTotalOrder ℂ polarLt :=
+  toLex_norm_arg_injective.isStrictTotalOrder_onFun (· < ·)
+
+/-- Strict norm inequality implies `Complex.polarLt`. -/
+theorem polarLt_of_norm_lt {w z : ℂ} (h : ‖w‖ < ‖z‖) : w.polarLt z :=
+  Prod.Lex.toLex_lt_toLex.mpr (.inl h)
+
+/-- Equal norms and strict argument inequality imply `Complex.polarLt`. -/
+theorem polarLt_of_norm_eq_of_arg_lt {w z : ℂ} (hn : ‖w‖ = ‖z‖) (ha : w.arg < z.arg) :
+    w.polarLt z :=
+  Prod.Lex.toLex_lt_toLex.mpr (.inr ⟨hn, ha⟩)
+
+/-- `Complex.polarLt` is compatible with nondecreasing norms. -/
+theorem polarLt.norm_le {w z : ℂ} (h : w.polarLt z) : ‖w‖ ≤ ‖z‖ :=
+  ((polarLt_def w z).mp h).elim le_of_lt fun h' => h'.1.le
+
+/-- Nothing precedes `0` in `Complex.polarLt`. -/
+@[simp]
+theorem not_polarLt_zero (w : ℂ) : ¬ w.polarLt 0 := by
+  rw [polarLt_def]
+  rintro (h | ⟨hn, ha⟩)
+  · exact (norm_nonneg w).not_gt (by simpa using h)
+  · rw [norm_zero, norm_eq_zero] at hn
+    subst hn
+    exact lt_irrefl _ ha
+
+/-- `0` precedes every nonzero complex number in `Complex.polarLt`. -/
+@[simp]
+theorem zero_polarLt_iff {z : ℂ} : (0 : ℂ).polarLt z ↔ z ≠ 0 :=
+  ⟨fun h hz => not_polarLt_zero 0 (hz ▸ h),
+    fun hz => polarLt_of_norm_lt (by simpa using norm_pos_iff.mpr hz)⟩
+
+/-- Along a single ray (`w.arg = z.arg`), `Complex.polarLt` reduces to strict norm comparison. -/
+theorem polarLt_iff_of_arg_eq {w z : ℂ} (h : w.arg = z.arg) : w.polarLt z ↔ ‖w‖ < ‖z‖ :=
+  ⟨fun hp => ((polarLt_def w z).mp hp).elim id fun ⟨_, ha⟩ => absurd (h ▸ ha) (lt_irrefl _),
+    polarLt_of_norm_lt⟩
+
+/-- On a circle (`‖w‖ = ‖z‖`), `Complex.polarLt` reduces to strict argument comparison. -/
+theorem polarLt_iff_of_norm_eq {w z : ℂ} (h : ‖w‖ = ‖z‖) : w.polarLt z ↔ w.arg < z.arg :=
+  ⟨fun hp => ((polarLt_def w z).mp hp).elim (fun hn => absurd (h ▸ hn) (lt_irrefl _)) And.right,
+    polarLt_of_norm_eq_of_arg_lt h⟩
 
 end Complex
 

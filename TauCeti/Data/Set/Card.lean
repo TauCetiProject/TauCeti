@@ -353,7 +353,7 @@ theorem exists_mem_ncard_sep_lt_eq {ι α : Type*} [LinearOrder α] {f : ι → 
   have heq : r '' {i ∈ s | f i < f b} = Iio (r b) :=
     eq_of_subset_of_ncard_le hsub
       (by rw [ncard_Iio_nat]; exact (hrinj.mono (sep_subset s _)).ncard_image.ge) (finite_Iio _)
-  obtain ⟨a, ha, hra⟩ := heq.symm.subset (show n ∈ Iio (r b) from h)
+  obtain ⟨a, ha, hra⟩ := heq.symm.subset (mem_Iio.mpr h)
   exact ⟨a, ha.1, hra⟩
 
 /-- For a set `s` partitioned into a finite prefix `a ⊆ s` and a strictly `f`-increasing tail

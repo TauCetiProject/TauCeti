@@ -257,8 +257,8 @@ theorem abs_arg_one_add_lt_of_norm_lt_sin {u : ℂ} {δ : ℝ}
     abs_arg_lt_pi_div_two_iff.mpr (.inl hre_pos)
   have hu_sq : Real.sin (1 + u).arg ^ 2 ≤ ‖u‖ ^ 2 := by
     have h1 := norm_circleMap_sub_circleMap_sq 0 ‖1 + u‖ 1 (1 + u).arg 0
-    rw [circleMap_zero_norm_arg, show circleMap 0 1 0 = 1 by simp [circleMap_zero],
-      add_sub_cancel_left, one_pow, mul_one, sub_zero] at h1
+    have hcm : circleMap 0 1 0 = 1 := by simp [circleMap_zero]
+    rw [circleMap_zero_norm_arg, hcm, add_sub_cancel_left, one_pow, mul_one, sub_zero] at h1
     have hcs := Real.sin_sq_add_cos_sq (1 + u).arg
     nlinarith [sq_nonneg (‖1 + u‖ - Real.cos (1 + u).arg)]
   have hsin_lt : Real.sin |(1 + u).arg| < Real.sin δ := by
