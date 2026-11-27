@@ -160,7 +160,6 @@ theorem characteristicOrbit_addTwoMulVec (k : P.characteristicVectors) (x : V �
 /-! ### The characteristic orbits as a torsor -/
 
 /-- Shifting by twice the image `A x` of a lattice point is `addTwoMulVec`. -/
-@[simp]
 theorem addTwoMul_mulVec (k : P.characteristicVectors) (x : V → ℤ) :
     P.addTwoMul k (P.intersectionMatrix.mulVec x) = P.addTwoMulVec k x :=
   (rfl)
