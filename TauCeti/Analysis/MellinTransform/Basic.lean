@@ -41,6 +41,8 @@ substitution rescales the parameter, and multiplying the kernel by a complex pow
   upper-tail indicator is integrability of the upper Mellin integrand.
 * `TauCeti.mellin_indicator_Ioi`, `TauCeti.mellin_indicator_Ici`: the Mellin transform of an
   open or closed upper-tail indicator is the upper Mellin integral.
+* `TauCeti.norm_mellin_indicator_Ioi_le_integral_rpow_mul_norm`: the norm of the upper Mellin
+  integral is bounded by the absolute moment at `Re s`.
 * `TauCeti.mellinConvergent_indicator_iff_of_subset_Ioi`,
   `TauCeti.mellin_indicator_of_subset_Ioi`: the same for the indicator of any measurable subset of
   `(0, ∞)`.
@@ -162,6 +164,15 @@ theorem mellinConvergent_indicator_Ioi_iff {f : ℝ → E} {a : ℝ} (ha : 0 ≤
 theorem mellin_indicator_Ioi (f : ℝ → E) {a : ℝ} (ha : 0 ≤ a) (s : ℂ) :
     mellin ((Ioi a).indicator f) s = ∫ (u : ℝ) in Ioi a, (u : ℂ) ^ (s - 1) • f u :=
   mellin_indicator_of_subset_Ioi f measurableSet_Ioi (Ioi_subset_Ioi ha) s
+
+/-- Bound the norm of a truncated Mellin transform by the absolute moment at `Re s`.
+On the imaginary axis this is the `dt / t` mass of the kernel's norm above the cutoff. -/
+theorem norm_mellin_indicator_Ioi_le_integral_rpow_mul_norm (f : ℝ → E) {r : ℝ} (hr : 0 ≤ r)
+    (s : ℂ) : ‖mellin ((Ioi r).indicator f) s‖ ≤ ∫ t in Ioi r, t ^ (s.re - 1) * ‖f t‖ := by
+  rw [mellin_indicator_Ioi _ hr]
+  refine (norm_integral_le_integral_norm _).trans_eq ?_
+  refine setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+  rw [norm_smul, norm_cpow_eq_rpow_re_of_pos (hr.trans_lt ht), sub_re, one_re]
 
 /-- The Mellin transform of an upper closed-ray indicator equals the upper Mellin integral.
 The boundary point has measure zero; the cutoff may be zero. -/
