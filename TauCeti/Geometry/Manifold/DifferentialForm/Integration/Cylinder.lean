@@ -107,6 +107,8 @@ even when it vanishes on spheres: for `f = id` on a torus, the loop of seamed pa
 
 * `TauCeti.rectangleIntegral_comp_add_snd_of_periodic`: rotation invariance in the second
   coordinate over a full period.
+* `TauCeti.rectangleIntegral_add_of_isSmoothForm`, `TauCeti.rectangleIntegral_sub_of_isSmoothForm`:
+  linearity in continuous forms.
 * `TauCeti.rectangleIntegral_add_adjacent_fst`: additivity in the first coordinate.
 * `TauCeti.rectangleIntegral_comp_prodMap_affine`: reparametrization by an affine function in the
   first coordinate.
@@ -201,6 +203,28 @@ theorem continuous_integral_mpullback {φ : RoughForm I M F 2} (hφ : IsSmoothFo
     Continuous fun s ↦ ∫ t in a₂..b₂, mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (s, t) ![(1, 0), (0, 1)] :=
   intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (μ := volume)
     ((hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).congr fun _ ↦ rfl) a₂ b₂
+
+/-- The integral of a sum of continuous forms over a `C¹` map is the sum of the integrals. -/
+theorem rectangleIntegral_add_of_isSmoothForm {φ ψ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a b : ℝ × ℝ) :
+    rectangleIntegral (φ + ψ) u a b = rectangleIntegral φ u a b + rectangleIntegral ψ u a b := by
+  have hint {θ : RoughForm I M F 2} (hθ : IsSmoothForm I 0 θ) (s : ℝ) : IntervalIntegrable
+      (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I u θ (s, t) ![(1, 0), (0, 1)]) volume a.2 b.2 :=
+    ((hθ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).comp
+      (Continuous.prodMk_right s)).intervalIntegrable _ _
+  exact rectangleIntegral_add (fun s _ ↦ hint hφ s) (fun s _ ↦ hint hψ s)
+    ((continuous_integral_mpullback hφ hu _ _).intervalIntegrable _ _)
+    ((continuous_integral_mpullback hψ hu _ _).intervalIntegrable _ _)
+
+/-- The integral of a difference of continuous forms over a `C¹` map is the difference of the
+integrals. -/
+theorem rectangleIntegral_sub_of_isSmoothForm {φ ψ : RoughForm I M F 2}
+    (hφ : IsSmoothForm I 0 φ) (hψ : IsSmoothForm I 0 ψ) {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a b : ℝ × ℝ) :
+    rectangleIntegral (φ - ψ) u a b = rectangleIntegral φ u a b - rectangleIntegral ψ u a b := by
+  rw [sub_eq_add_neg φ, sub_eq_add_neg, rectangleIntegral_add_of_isSmoothForm hφ hψ.neg hu,
+    rectangleIntegral_neg]
 
 /-- **Additivity in the first coordinate.** For a continuous form and a `C¹` map, the integral
 over `[a.1, b.1] × [a.2, b.2]` is the sum of the integrals over `[a.1, c] × [a.2, b.2]` and
@@ -379,6 +403,26 @@ theorem rectangleTrans_apply_add_snd {u₁ u₂ : ℝ × ℝ → M} {T : ℝ}
     (h₁ : ∀ z : ℝ × ℝ, u₁ (z.1, z.2 + T) = u₁ z) (h₂ : ∀ z : ℝ × ℝ, u₂ (z.1, z.2 + T) = u₂ z)
     (z : ℝ × ℝ) : rectangleTrans u₁ u₂ (z.1, z.2 + T) = rectangleTrans u₁ u₂ z := by
   simp only [rectangleTrans, h₁ (_, z.2), h₂ (_, z.2)]
+
+omit [TopologicalSpace M] in
+/-- A map applied to a concatenation is the concatenation of the composites. -/
+theorem apply_rectangleTrans {N : Type*} (f : M → N) (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    f (rectangleTrans u₁ u₂ z) = rectangleTrans (f ∘ u₁) (f ∘ u₂) z := by
+  rw [rectangleTrans, rectangleTrans]
+  rcases le_or_gt z.1 2⁻¹ with h | h
+  · rw [curveConcat_of_le h, curveConcat_of_le h, Function.comp_apply]
+  · rw [curveConcat_of_lt h, curveConcat_of_lt h, Function.comp_apply]
+
+omit [TopologicalSpace M] in
+/-- The concatenation of two maps with values in a set `A` has values in `A`. -/
+theorem rectangleTrans_mem {u₁ u₂ : ℝ × ℝ → M} {A : Set M} (h₁ : ∀ z, u₁ z ∈ A)
+    (h₂ : ∀ z, u₂ z ∈ A) (z : ℝ × ℝ) : rectangleTrans u₁ u₂ z ∈ A := by
+  rw [rectangleTrans]
+  rcases le_or_gt z.1 2⁻¹ with h | h
+  · rw [curveConcat_of_le h]
+    exact h₁ _
+  · rw [curveConcat_of_lt h]
+    exact h₂ _
 
 omit [TopologicalSpace M] in
 /-- Below `s = 2/3` the concatenation is a reparametrization of the first map. -/

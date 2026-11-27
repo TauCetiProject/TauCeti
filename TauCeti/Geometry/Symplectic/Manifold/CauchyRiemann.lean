@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Symplectic.Manifold.Energy
 public import TauCeti.LinearAlgebra.Complex.LinearPart
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The Cauchy–Riemann section of a map between almost complex manifolds
@@ -34,6 +37,10 @@ convention of McDuff–Salamon; the operator `du + J ∘ du ∘ j` used by Wendl
   Differentiability cannot be dropped: Mathlib's `mfderiv` is `0` where `u` is not
   differentiable, so there `∂bar_J u` is `0` as well
   (`TauCeti.cauchyRiemannSection_eq_zero_of_not_mdifferentiableAt`).
+* **In charts.** The coordinate expression of a map pseudoholomorphic at `x`, in the charts at
+  `x` and at `u x`, solves the coordinate Cauchy–Riemann equation `TauCeti.cauchyRiemannOperator`
+  at the chart centre
+  (`TauCeti.IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero`).
 * **Naturality.** Precomposing with a map pseudoholomorphic for the source structures, such as a
   biholomorphism of Riemann surfaces or a holomorphic chart, precomposes the section with its
   derivative (`TauCeti.cauchyRiemannSection_comp_of_isPseudoholomorphicAt_right`), and
@@ -215,6 +222,28 @@ theorem cauchyRiemannSection_neg_neg (j : SmoothAlmostComplexStructure I M)
   simp only [cauchyRiemannSection_apply, SmoothAlmostComplexStructure.neg_apply, map_neg, neg_neg]
 
 end Basic
+
+/-! ### The Cauchy–Riemann equation in charts -/
+
+section Chart
+
+variable [I.Boundaryless] {j : SmoothAlmostComplexStructure I M}
+  {J : SmoothAlmostComplexStructure I' M'} {u : M → M'} {x : M}
+
+/-- At a point where `u` is pseudoholomorphic, its coordinate expression in the charts at `x` and
+at `u x` solves the Cauchy–Riemann equation at the chart centre, with the source structure frozen
+at its value at the chart centre. -/
+theorem IsPseudoholomorphicAt.cauchyRiemannOperator_writtenInExtChartAt_eq_zero
+    (hu : IsPseudoholomorphicAt j J u x) :
+    cauchyRiemannOperator (j.inChart x (extChartAt I x x)) (J.inChart (u x))
+      (writtenInExtChartAt I I' x u) (extChartAt I x x) = 0 := by
+  ext v
+  rw [cauchyRiemannOperator_apply, zero_apply, hu.mdifferentiableAt.fderiv_writtenInExtChartAt,
+    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x), J.inChart_extChartAt_self,
+    j.inChart_extChartAt_self]
+  exact sub_eq_zero.2 (hu.mfderiv_apply_commute v)
+
+end Chart
 
 /-! ### Naturality -/
 
