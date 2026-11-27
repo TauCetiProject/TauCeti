@@ -10,6 +10,7 @@ public import Mathlib.Topology.ContinuousMap.Algebra
 public import TauCeti.Algebra.DirectSum.Ring
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Product.Basic
 import Mathlib.Data.List.OfFn
+import TauCeti.Topology.ContinuousMap.Pi
 
 /-!
 # The cup product on continuous inhomogeneous cochains
@@ -231,23 +232,16 @@ theorem comp_inhomogeneousCup_piMap (f : C(Fin p → G, R)) (g : C(Fin q → G, 
     (ψ : C(R, S)).comp ((f.inhomogeneousCup g).comp (piMap fun _ ↦ (φ : C(H, G)))) =
       ((ψ : C(R, S)).comp (f.comp (piMap fun _ ↦ (φ : C(H, G))))).inhomogeneousCup
         ((ψ : C(R, S)).comp (g.comp (piMap fun _ ↦ (φ : C(H, G))))) := by
+  have pullback {n : ℕ} (x : Fin n → H) :
+      piMap (fun _ ↦ (φ : C(H, G))) x = fun i ↦ φ (x i) := by
+    funext i
+    simp only [piMap_apply, ContinuousMap.coe_ofClass]
   ext t
-  simp only [comp_apply, piMap_apply, inhomogeneousCup_apply, Function.comp_def,
+  simp only [comp_apply, pullback, inhomogeneousCup_apply, Function.comp_def,
     ContinuousMap.coe_ofClass, map_mul]
   rw [List.ofFn_comp' _ φ, ← map_list_prod, hψ]
-  -- The remaining `piMap` applications reduce to applying `φ` coordinatewise.
-  rfl
 
 end Naturality
-
-/-- Precomposing with the cast between equal tuple lengths preserves the continuous map
-up to heterogeneous equality. -/
-theorem comp_precomp_fin_cast_heq {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
-    {i j : ℕ} (f : C(Fin j → X, Y)) (e : i = j) :
-    HEq (f.comp (precomp (X := fun _ ↦ X) (Fin.cast e.symm))) f := by
-  subst e
-  -- Casting along reflexivity acts as the identity on tuples.
-  rfl
 
 end ContinuousMap
 
@@ -281,6 +275,14 @@ section Ring
 
 variable (G R) [Ring R] [IsTopologicalRing R] [MulSemiringAction G R] [ContinuousSMul G R]
 
+-- This form rewrites the product before simplifying the index of the dependent pair.
+@[local simp]
+private theorem inhomogeneousCupLinearMap_toAddMonoidHom_apply {p q : ℕ}
+    (f : C(Fin p → G, R)) (g : C(Fin q → G, R)) :
+    (LinearMap.toAddMonoidHom'.comp (inhomogeneousCupLinearMap ℤ p q).toAddMonoidHom) f g =
+      f.inhomogeneousCup g := by
+  simp
+
 /-- The graded ring of continuous inhomogeneous cochains, with the translated cup as
 multiplication and the constant one in degree zero as unit. -/
 @[expose, instance_reducible]
@@ -289,17 +291,15 @@ def inhomogeneousCochainGRing : DirectSum.GRing (fun n : ℕ ↦ C(Fin n → G, 
     (fun p q ↦ LinearMap.toAddMonoidHom'.comp (inhomogeneousCupLinearMap ℤ p q).toAddMonoidHom)
     (1 : C(Fin 0 → G, R))
     (fun {i} f ↦ by
-      simp only [GradedMonoid.mk, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply,
-        LinearMap.toAddMonoidHom_coe, inhomogeneousCupLinearMap_apply, one_inhomogeneousCup]
+      simp only [GradedMonoid.mk, inhomogeneousCupLinearMap_toAddMonoidHom_apply,
+        one_inhomogeneousCup]
       apply Sigma.ext (Nat.zero_add i)
       simpa only [Fin.natAdd_zero] using f.comp_precomp_fin_cast_heq (Nat.zero_add i))
     (fun {i} f ↦ by
-      simp only [GradedMonoid.mk, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply,
-        LinearMap.toAddMonoidHom_coe, inhomogeneousCupLinearMap_apply]
+      simp only [GradedMonoid.mk, inhomogeneousCupLinearMap_toAddMonoidHom_apply]
       exact Sigma.ext (Nat.add_zero i) (inhomogeneousCup_one f).heq)
     (fun {i j k} f g h ↦ by
-      simp only [GradedMonoid.mk, AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply,
-        LinearMap.toAddMonoidHom_coe, inhomogeneousCupLinearMap_apply]
+      simp only [GradedMonoid.mk, inhomogeneousCupLinearMap_toAddMonoidHom_apply]
       rw [inhomogeneousCup_assoc]
       exact Sigma.ext (Nat.add_assoc i j k) (comp_precomp_fin_cast_heq _ (Nat.add_assoc i j k)))
 
@@ -309,9 +309,7 @@ variable {G R}
 @[simp]
 theorem inhomogeneousCochainGRing_mul {p q : ℕ} (f : C(Fin p → G, R)) (g : C(Fin q → G, R)) :
     (inhomogeneousCochainGRing G R).mul f g = f.inhomogeneousCup g := by
-  simp only [TauCeti.DirectSum.gRingOfMul_gMul,
-    AddMonoidHom.comp_apply, LinearMap.toAddMonoidHom'_apply, LinearMap.toAddMonoidHom_coe,
-    inhomogeneousCupLinearMap_apply]
+  simp only [TauCeti.DirectSum.gRingOfMul_gMul, inhomogeneousCupLinearMap_toAddMonoidHom_apply]
 
 /-- The homogeneous unit is the degree-zero constant one. -/
 @[simp]
