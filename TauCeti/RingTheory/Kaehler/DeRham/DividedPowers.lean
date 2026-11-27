@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Kaehler.DeRham.Basic
+public import TauCeti.RingTheory.Kaehler.DeRham.Quotient
 public import TauCeti.RingTheory.Kaehler.DividedPowers
-import TauCeti.Algebra.Algebra.Subalgebra.Centralizer
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.Basic
+import TauCeti.Algebra.Subalgebra.Centralizer
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
@@ -58,27 +57,12 @@ theorem ofKaehler_ι (ω : Ω[B⁄R]) :
 theorem ofKaehler_surjective : Function.Surjective (ofKaehler R δ) :=
   ExteriorAlgebra.map_surjective_iff.mpr (Submodule.mkQ_surjective _)
 
-private def preDerivOne : Ω[B⁄R] →ₗ[R] Forms R δ :=
-  ((ofKaehler R δ).toLinearMap.restrictScalars R).comp
-    ((KaehlerDeRham.extDeriv R B).comp ((ExteriorAlgebra.ι B).restrictScalars R))
-
-private theorem preDerivOne_apply (ω : Ω[B⁄R]) :
-    preDerivOne δ ω = ofKaehler R δ (KaehlerDeRham.extDeriv R B (ExteriorAlgebra.ι B ω)) :=
-  (rfl)
-
-private theorem preDerivOne_smul (b : B) (ω : Ω[B⁄R]) :
-    preDerivOne δ (b • ω) =
-      ExteriorAlgebra.ι B (PDKaehlerDifferential.d R δ b) *
-        ExteriorAlgebra.ι B (PDKaehlerDifferential.mkQ R δ ω) + b • preDerivOne δ ω := by
-  simp only [preDerivOne_apply, map_smul, KaehlerDeRham.extDeriv_smul, map_add, map_mul,
-    ofKaehler_ι, Submodule.mkQ_apply, PDKaehlerDifferential.mk_D]
-
-private theorem preDerivOne_D (b : B) : preDerivOne δ (D R B b) = 0 := by
-  simp only [preDerivOne_apply, KaehlerDeRham.extDeriv_ι_D, map_zero]
-
 private theorem preDerivOne_relation (n : ℕ) {x : B} (hx : x ∈ I) :
-    preDerivOne δ (D R B (δ.dpow (n + 1) x) - δ.dpow n x • D R B x) = 0 := by
-  simp only [map_sub, preDerivOne_smul, preDerivOne_D, smul_zero, add_zero,
+    KaehlerDeRham.preExtDerivOne (PDKaehlerDifferential.mkQ R δ)
+      (D R B (δ.dpow (n + 1) x) - δ.dpow n x • D R B x) = 0 := by
+  have hd (b : B) : KaehlerDeRham.preExtDerivOne (PDKaehlerDifferential.mkQ R δ) (D R B b) = 0 := by
+    rw [KaehlerDeRham.preExtDerivOne_apply, KaehlerDeRham.extDeriv_ι_D, map_zero]
+  simp only [map_sub, KaehlerDeRham.preExtDerivOne_smul, hd, smul_zero, add_zero,
     Submodule.mkQ_apply, PDKaehlerDifferential.mk_D, zero_sub, neg_eq_zero]
   cases n with
   | zero => simp [δ.dpow_zero hx]
@@ -86,61 +70,32 @@ private theorem preDerivOne_relation (n : ℕ) {x : B} (hx : x ∈ I) :
     rw [PDKaehlerDifferential.d_dpow_succ R δ n hx, map_smul, smul_mul_assoc,
       ExteriorAlgebra.ι_sq_zero, smul_zero]
 
-private theorem preDerivOne_eq_zero {ω : Ω[B⁄R]}
-    (hω : ω ∈ PDKaehlerDifferential.relations R δ) : preDerivOne δ ω = 0 := by
-  -- The exterior derivative is only linear over R. Its kernel intersects the kernel of
-  -- the quotient in a B-submodule, by the scalar Leibniz rule.
-  let N : Submodule B Ω[B⁄R] :=
-    { carrier := {η | PDKaehlerDifferential.mkQ R δ η = 0 ∧ preDerivOne δ η = 0}
-      zero_mem' := by simp
-      add_mem' := fun ⟨hq, hd⟩ ⟨hq', hd'⟩ ↦ by simp only [Set.mem_ofPred_eq, map_add, hq, hd,
-        hq', hd', add_zero, and_self]
-      smul_mem' := fun b η ⟨hq, hd⟩ ↦ by
-        simp only [Set.mem_ofPred_eq, preDerivOne_smul, map_smul, hq, hd, map_zero, mul_zero,
-          smul_zero, add_zero, and_self] }
-  have hN : PDKaehlerDifferential.relations R δ ≤ N :=
-    (PDKaehlerDifferential.relations_le_iff R δ).mpr fun n x hx ↦
-      ⟨by simp only [map_sub, map_smul, Submodule.mkQ_apply, PDKaehlerDifferential.mk_D,
-          PDKaehlerDifferential.d_dpow_succ R δ n hx, sub_self],
-        preDerivOne_relation δ n hx⟩
-  exact (hN hω).right
-
-private def derivOne : PDKaehlerDifferential R δ →ₗ[R] Forms R δ :=
-  ((PDKaehlerDifferential.relations R δ).restrictScalars R).liftQ
-    (preDerivOne δ) fun _ hω ↦ preDerivOne_eq_zero δ hω
-
-private theorem derivOne_mkQ (ω : Ω[B⁄R]) :
-    derivOne δ (PDKaehlerDifferential.mkQ R δ ω) = preDerivOne δ ω :=
-  (rfl)
-
-private theorem derivOne_smul (b : B) (ω : PDKaehlerDifferential R δ) :
-    derivOne δ (b • ω) =
-      ExteriorAlgebra.ι B (PDKaehlerDifferential.d R δ b) * ExteriorAlgebra.ι B ω +
-        b • derivOne δ ω := by
-  obtain ⟨ω, rfl⟩ := Submodule.mkQ_surjective (PDKaehlerDifferential.relations R δ) ω
-  rw [← map_smul, derivOne_mkQ, derivOne_mkQ, preDerivOne_smul]
-
-private theorem derivOne_mem_exteriorPower_two (ω : PDKaehlerDifferential R δ) :
-    derivOne δ ω ∈ ⋀[B]^2 (PDKaehlerDifferential R δ) := by
-  obtain ⟨ω, rfl⟩ := Submodule.mkQ_surjective (PDKaehlerDifferential.relations R δ) ω
-  rw [derivOne_mkQ, preDerivOne_apply]
-  exact (PDKaehlerDifferential.mkQ R δ).exteriorAlgebra_map_mem_exteriorPower
-    (KaehlerDeRham.extDeriv_mem_exteriorPower (ExteriorAlgebra.ι_mem_exteriorPower_one ω))
+private theorem preDerivOne_eq_zero {ω : Ω[B⁄R]} (hω : PDKaehlerDifferential.mkQ R δ ω = 0) :
+    KaehlerDeRham.preExtDerivOne (PDKaehlerDifferential.mkQ R δ) ω = 0 := by
+  let q := PDKaehlerDifferential.mkQ R δ
+  let L := (LinearMap.ker (KaehlerDeRham.preExtDerivOneKer q)).map (LinearMap.ker q).subtype
+  have hq : LinearMap.ker q = PDKaehlerDifferential.relations R δ :=
+    Submodule.ker_mkQ (PDKaehlerDifferential.relations R δ)
+  have hL : PDKaehlerDifferential.relations R δ ≤ L :=
+    (PDKaehlerDifferential.relations_le_iff R δ).mpr fun n x hx ↦ by
+      have hrel : D R B (δ.dpow (n + 1) x) - δ.dpow n x • D R B x ∈ LinearMap.ker q := by
+        rw [hq]
+        exact (PDKaehlerDifferential.relations_le_iff R δ).mp le_rfl n x hx
+      refine ⟨⟨_, hrel⟩, LinearMap.mem_ker.mpr ?_, rfl⟩
+      rw [KaehlerDeRham.preExtDerivOneKer_apply]
+      exact preDerivOne_relation δ n hx
+  have hω' : ω ∈ PDKaehlerDifferential.relations R δ := by
+    rw [← hq]
+    exact LinearMap.mem_ker.mpr hω
+  obtain ⟨η, hη, rfl⟩ := hL hω'
+  exact (KaehlerDeRham.preExtDerivOneKer_apply q η).symm.trans (LinearMap.mem_ker.mp hη)
 
 variable (R) in
 /-- The exterior derivative on divided power forms, extending the universal PD derivation
 and satisfying the graded Leibniz rule. -/
 def extDeriv : Forms R δ →ₗ[R] Forms R δ :=
-  ExteriorAlgebra.liftTwistedDerivation
-    (involute (Q := (0 : QuadraticForm B (PDKaehlerDifferential R δ))))
-    ((ExteriorAlgebra.ι B).compDer (PDKaehlerDifferential.d R δ))
-    (fun b ω ↦ by
-      simpa using ExteriorAlgebra.ι_mul_eq_involute_mul (PDKaehlerDifferential.d R δ b)
-        (ExteriorAlgebra.ι B ω))
-    (derivOne δ)
-    (fun b ω ↦ by simpa using derivOne_smul δ b ω)
-    (fun ω ↦ ExteriorAlgebra.mul_ι_add_involute_ι_mul_of_mem_exteriorPower even_two
-      (derivOne_mem_exteriorPower_two δ ω) ω)
+  KaehlerDeRham.extDerivDescend (PDKaehlerDifferential.mkQ R δ) (Submodule.mkQ_surjective _)
+    (fun _ hω ↦ preDerivOne_eq_zero δ hω)
 
 variable {δ}
 
@@ -149,53 +104,31 @@ variable {δ}
 theorem extDeriv_algebraMap (b : B) :
     extDeriv R δ (algebraMap B (Forms R δ) b) =
       ExteriorAlgebra.ι B (PDKaehlerDifferential.d R δ b) := by
-  simp [extDeriv, Derivation.coe_comp]
+  rw [extDeriv, KaehlerDeRham.extDerivDescend_algebraMap, Submodule.mkQ_apply,
+    PDKaehlerDifferential.mk_D]
 
 /-- Exact one-forms are closed. -/
 @[simp]
 theorem extDeriv_ι_d (b : B) :
     extDeriv R δ (ExteriorAlgebra.ι B (PDKaehlerDifferential.d R δ b)) = 0 := by
-  rw [← PDKaehlerDifferential.mk_D, ← Submodule.mkQ_apply]
-  simpa only [extDeriv, ExteriorAlgebra.liftTwistedDerivation_ι, derivOne_mkQ] using
-    preDerivOne_D δ b
+  rw [← PDKaehlerDifferential.mk_D, ← Submodule.mkQ_apply, extDeriv]
+  exact KaehlerDeRham.extDerivDescend_ι_map_D _ _ _ b
 
 /-- The exterior derivative satisfies the graded Leibniz rule expressed by the grade involution. -/
 theorem extDeriv_mul (x y : Forms R δ) :
     extDeriv R δ (x * y) = extDeriv R δ x * y +
       involute (Q := (0 : QuadraticForm B (PDKaehlerDifferential R δ))) x * extDeriv R δ y :=
-  ExteriorAlgebra.liftTwistedDerivation_mul _ _ _ _ _ _ x y
-
-private theorem ofKaehler_involute (x : ExteriorAlgebra B Ω[B⁄R]) :
-    ofKaehler R δ (involute (Q := (0 : QuadraticForm B Ω[B⁄R])) x) =
-      involute (Q := (0 : QuadraticForm B (PDKaehlerDifferential R δ))) (ofKaehler R δ x) := by
-  have h : (ofKaehler R δ).comp involute = involute.comp (ofKaehler R δ) := by
-    apply ExteriorAlgebra.hom_ext
-    apply LinearMap.ext
-    intro ω
-    simp only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, AlgHom.comp_apply,
-      involute_ι, map_neg, ofKaehler_ι]
-  exact DFunLike.congr_fun h x
+  KaehlerDeRham.extDerivDescend_mul _ _ _ x y
 
 /-- The quotient by the divided power relations commutes with exterior differentiation. -/
 theorem extDeriv_ofKaehler (x : ExteriorAlgebra B Ω[B⁄R]) :
-    extDeriv R δ (ofKaehler R δ x) = ofKaehler R δ (KaehlerDeRham.extDeriv R B x) := by
-  induction x using KaehlerDeRham.inductionOn with
-  | algebraMap b =>
-    rw [AlgHom.commutes, extDeriv_algebraMap, KaehlerDeRham.extDeriv_algebraMap, ofKaehler_ι,
-      Submodule.mkQ_apply, PDKaehlerDifferential.mk_D]
-  | ι_D b =>
-    rw [ofKaehler_ι, Submodule.mkQ_apply, PDKaehlerDifferential.mk_D, extDeriv_ι_d,
-      KaehlerDeRham.extDeriv_ι_D, map_zero]
-  | mul x y hx hy =>
-    simp only [map_mul, map_add, extDeriv_mul, KaehlerDeRham.extDeriv_mul,
-      ofKaehler_involute, hx, hy]
-  | add x y hx hy => simp only [map_add, hx, hy]
+    extDeriv R δ (ofKaehler R δ x) = ofKaehler R δ (KaehlerDeRham.extDeriv R B x) :=
+  KaehlerDeRham.extDerivDescend_map _ _ _ x
 
 /-- The exterior derivative on divided power forms squares to zero. -/
 @[simp]
-theorem extDeriv_extDeriv (x : Forms R δ) : extDeriv R δ (extDeriv R δ x) = 0 := by
-  obtain ⟨x, rfl⟩ := ofKaehler_surjective δ x
-  rw [extDeriv_ofKaehler, extDeriv_ofKaehler, KaehlerDeRham.extDeriv_extDeriv, map_zero]
+theorem extDeriv_extDeriv (x : Forms R δ) : extDeriv R δ (extDeriv R δ x) = 0 :=
+  KaehlerDeRham.extDerivDescend_sq _ _ _ x
 
 variable (R δ)
 
@@ -222,17 +155,8 @@ theorem algebraMap_mem_grading_zero (b : B) :
 
 /-- The exterior derivative raises exterior degree by one. -/
 theorem extDeriv_mem_grading {n : ℤ} {x : Forms R δ}
-    (hx : x ∈ grading R δ n) : extDeriv R δ x ∈ grading R δ (n + 1) := by
-  exact ExteriorAlgebra.liftTwistedDerivation_mem_integerGrading _ _ _ _ _ _ (r := 1)
-    (fun ω ↦ by
-      rw [involute_ι]
-      exact neg_mem (TauCeti.ExteriorAlgebra.ι_mem_integerGrading_one ω))
-    (fun b ↦ TauCeti.ExteriorAlgebra.ι_mem_integerGrading_one _)
-    (fun ω ↦ by
-      rw [one_add_one_eq_two, ← Nat.cast_ofNat (n := 2),
-        TauCeti.ExteriorAlgebra.integerGrading_natCast]
-      exact derivOne_mem_exteriorPower_two δ ω)
-    hx
+    (hx : x ∈ grading R δ n) : extDeriv R δ x ∈ grading R δ (n + 1) :=
+  KaehlerDeRham.extDerivDescend_mem_integerGrading _ _ _ hx
 
 /-- Divided power forms with the exterior differential are a differential graded algebra. -/
 theorem isDGAlgebra : IsDGAlgebra (grading R δ) (extDeriv R δ) where
@@ -267,10 +191,9 @@ private def factorAlgHom (F : ExteriorAlgebra B Ω[B⁄R] →ₐ[R] P)
     { G : Forms R δ →ₐ[R] P // ∀ ω, G (ofKaehler R δ ω) = F ω } := by
   let f := F.comp (IsScalarTower.toAlgHom R B (ExteriorAlgebra B Ω[B⁄R]))
   let S := Subalgebra.centralizer R (Set.range f)
-  let fS := f.codRestrict S (Subalgebra.apply_mem_centralizer_range R f)
-  letI : Algebra B S := fS.toRingHom.toAlgebra' fun b y ↦ Subtype.ext <|
-    (Subalgebra.mem_centralizer_iff R).mp y.property (f b) ⟨b, rfl⟩
-  letI : IsScalarTower R B S := IsScalarTower.of_algebraMap_eq' fS.comp_algebraMap.symm
+  letI : Algebra B S := f.centralizerRangeAlgebra
+  letI : IsScalarTower R B S := f.centralizerRangeIsScalarTower
+  have hS (b : B) : (algebraMap B S b : P) = f b := f.coe_algebraMap_centralizerRange b
   have hi (ω : Ω[B⁄R]) : F (ExteriorAlgebra.ι B ω) ∈ S := by
     apply (Subalgebra.mem_centralizer_iff R).mpr
     rintro _ ⟨b, rfl⟩
@@ -280,7 +203,7 @@ private def factorAlgHom (F : ExteriorAlgebra B Ω[B⁄R] →ₐ[R] P)
     { toFun := fun ω ↦ ⟨F (ExteriorAlgebra.ι B ω), hi ω⟩
       map_add' := fun x y ↦ Subtype.ext <| by simp
       map_smul' := fun b ω ↦ Subtype.ext <| by
-        simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra', fS, f] }
+        simp [Algebra.smul_def, hS, f] }
   let L' := (PDKaehlerDifferential.relations R δ).liftQ L <| by
     rw [PDKaehlerDifferential.relations_le_iff]
     intro n x hx
@@ -298,7 +221,7 @@ private def factorAlgHom (F : ExteriorAlgebra B Ω[B⁄R] →ₐ[R] P)
   induction ω using ExteriorAlgebra.induction with
   | algebraMap b =>
     rw [AlgHom.commutes, AlgHom.comp_apply, AlgHom.coe_restrictScalars', AlgHom.commutes]
-    rfl
+    exact hS b
   | ι ω =>
     rw [ofKaehler_ι, AlgHom.comp_apply, AlgHom.coe_restrictScalars',
       ExteriorAlgebra.lift_ι_apply]

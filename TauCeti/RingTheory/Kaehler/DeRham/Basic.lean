@@ -9,7 +9,7 @@ public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Basic
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.IntegerGrading
 public import TauCeti.RingTheory.Kaehler.Basic
 public import TauCeti.RingTheory.Kaehler.MapSemilinear
-import TauCeti.Algebra.Algebra.Subalgebra.Centralizer
+import TauCeti.Algebra.Subalgebra.Centralizer
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
@@ -483,19 +483,17 @@ private noncomputable def liftAlgHomAuxWithSpec (hB : TauCeti.IsDGAlgebra ℬ dB
       (∀ s : S, F (algebraMap S (ExteriorAlgebra S Ω[S⁄R]) s) = f s) ∧
       (∀ s : S, F (ExteriorAlgebra.ι S (KaehlerDifferential.D R S s)) = dB (f s)) } :=
   let C := Subalgebra.centralizer R (Set.range f)
-  let fC : S →ₐ[R] C := f.codRestrict C (Subalgebra.apply_mem_centralizer_range R f)
-  letI : Algebra S C :=
-    fC.toRingHom.toAlgebra' fun s c ↦ Subtype.ext <|
-      (Subalgebra.mem_centralizer_iff R).mp c.property (f s) ⟨s, rfl⟩
-  letI : IsScalarTower R S C := IsScalarTower.of_algebraMap_eq' fC.comp_algebraMap.symm
+  letI : Algebra S C := f.centralizerRangeAlgebra
+  letI : IsScalarTower R S C := f.centralizerRangeIsScalarTower
+  have hC (s : S) : (algebraMap S C s : B) = f s := f.coe_algebraMap_centralizerRange s
   let D₀ : Derivation R S C :=
     { toFun := fun s ↦ ⟨dB (f s), dB_mem_centralizer f hcomm s⟩
       map_add' := fun s t ↦ Subtype.ext <| by simp
       map_smul' := fun r s ↦ Subtype.ext <| by simp
       map_one_eq_zero' := Subtype.ext <| by simp [hB.map_one_eq_zero]
       leibniz' := fun s t ↦ Subtype.ext <| by
-        simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra', fC,
-          hB.toIsNonUnitalDGAlgebra.leibniz_of_mem_zero (hf₀ s), hcomm t s, add_comm] }
+        simp [Algebra.smul_def, hC, hB.toIsNonUnitalDGAlgebra.leibniz_of_mem_zero (hf₀ s),
+          hcomm t s, add_comm] }
   let φ : Ω[S⁄R] →ₗ[S] C := D₀.liftKaehlerDifferential
   have hanti : ∀ ω₁ ω₂ : Ω[S⁄R], φ ω₁ * φ ω₂ + φ ω₂ * φ ω₁ = 0 := by
     intro ω₁ ω₂
@@ -525,7 +523,8 @@ private noncomputable def liftAlgHomAuxWithSpec (hB : TauCeti.IsDGAlgebra ℬ dB
       simp only [map_add, add_mul, mul_add, ih₁, ih₂, zero_add, add_zero]
       exact hanti ω₂ ω₁
   ⟨C.val.comp ((ExteriorAlgebra.lift S ⟨φ, hφ_sq⟩).restrictScalars R),
-    fun s ↦ congrArg Subtype.val (AlgHom.commutes (ExteriorAlgebra.lift S ⟨φ, hφ_sq⟩) s),
+    fun s ↦ (congrArg Subtype.val (AlgHom.commutes (ExteriorAlgebra.lift S ⟨φ, hφ_sq⟩) s)).trans
+      (hC s),
     fun s ↦ by
       rw [AlgHom.comp_apply, AlgHom.coe_restrictScalars', ExteriorAlgebra.lift_ι_apply]
       exact congrArg Subtype.val (D₀.liftKaehlerDifferential_comp_D s)⟩

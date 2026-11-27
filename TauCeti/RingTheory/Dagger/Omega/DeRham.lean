@@ -8,8 +8,7 @@ module
 public import TauCeti.RingTheory.Dagger.Omega.Basic
 public import TauCeti.RingTheory.Dagger.Noetherian
 public import TauCeti.RingTheory.Kaehler.DeRham.Basic
-import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
-import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.Basic
+import TauCeti.RingTheory.Kaehler.DeRham.Quotient
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 
 /-!
@@ -100,87 +99,36 @@ theorem exteriorAlgebra_inductionOn {motive : ExteriorAlgebra A (Omega K A) → 
 
 section DegreeOne
 
-/-- The algebraic exterior derivative of a Kähler `1`-form, pushed forward to universally finite
-differential forms. -/
-private noncomputable def preExtDerivOne : Ω[A⁄K] →ₗ[K] ExteriorAlgebra A (Omega K A) :=
-  (ExteriorAlgebra.map (ofKaehler K A)).toLinearMap.restrictScalars K ∘ₗ
-    KaehlerDeRham.extDeriv K A ∘ₗ (ExteriorAlgebra.ι A).restrictScalars K
-
-private theorem preExtDerivOne_apply (ω : Ω[A⁄K]) :
-    preExtDerivOne K A ω =
-      ExteriorAlgebra.map (ofKaehler K A) (KaehlerDeRham.extDeriv K A (ExteriorAlgebra.ι A ω)) :=
-  (rfl)
-
-variable {K A}
-
-private theorem preExtDerivOne_smul (a : A) (ω : Ω[A⁄K]) :
-    preExtDerivOne K A (a • ω) =
-      ExteriorAlgebra.ι A (d K A a) * ExteriorAlgebra.ι A (ofKaehler K A ω) +
-        a • preExtDerivOne K A ω := by
-  simp [preExtDerivOne_apply]
-
-private theorem preExtDerivOne_mem (ω : Ω[A⁄K]) :
-    preExtDerivOne K A ω ∈ ⋀[A]^2 (Omega K A) :=
-  (ofKaehler K A).exteriorAlgebra_map_mem_exteriorPower
-    (KaehlerDeRham.extDeriv_mem_exteriorPower (ExteriorAlgebra.ι_mem_exteriorPower_one ω))
-
-/-- On the kernel of `Ω[A⁄K] → Ω¹_A`, the pushed-forward derivative is `A`-linear. -/
-private noncomputable def preExtDerivOneKer :
-    LinearMap.ker (ofKaehler K A) →ₗ[A] ExteriorAlgebra A (Omega K A) where
-  toFun ω := preExtDerivOne K A ω
-  map_add' ω η := map_add _ _ _
-  map_smul' a ω := by
-    rw [Submodule.coe_smul, preExtDerivOne_smul, LinearMap.mem_ker.mp ω.property, map_zero,
-      mul_zero, zero_add, RingHom.id_apply]
-
-variable [IsNoetherianRing A] [Module.Finite A (Omega K A)]
+variable {K A} [IsNoetherianRing A] [Module.Finite A (Omega K A)]
 
 /-- The pushed-forward derivative kills the kernel of `Ω[A⁄K] → Ω¹_A`. -/
 private theorem preExtDerivOne_eq_zero {ω : Ω[A⁄K]} (hω : ofKaehler K A ω = 0) :
-    preExtDerivOne K A ω = 0 := by
-  -- The submodule of the kernel on which the derivative vanishes.
-  let L : Submodule A Ω[A⁄K] :=
-    { carrier := {η | ofKaehler K A η = 0 ∧ preExtDerivOne K A η = 0}
-      add_mem' := fun h₁ h₂ ↦ by simp [h₁.1, h₂.1, h₁.2, h₂.2]
-      zero_mem' := by simp
-      smul_mem' := fun a η h ↦ by simp [preExtDerivOne_smul, h.1, h.2] }
+    KaehlerDeRham.preExtDerivOne (ofKaehler K A) ω = 0 := by
+  let q := ofKaehler K A
+  let dKer := KaehlerDeRham.preExtDerivOneKer q
+  let L := (LinearMap.ker dKer).map (LinearMap.ker q).subtype
   -- The range of the derivative on the kernel is finite, as a submodule of the finite `⋀²`.
   have : IsNoetherian A (⋀[A]^2 (Omega K A)) := isNoetherian_of_isNoetherianRing_of_finite _ _
-  have : IsNoetherian A (LinearMap.range (preExtDerivOneKer (K := K) (A := A))) :=
-    isNoetherian_of_le (by rintro _ ⟨η, rfl⟩; exact preExtDerivOne_mem η.val)
-  have : Module.Finite A (LinearMap.ker (ofKaehler K A) ⧸ LinearMap.ker preExtDerivOneKer) :=
-    .equiv preExtDerivOneKer.quotKerEquivRange.symm
+  have : IsNoetherian A (LinearMap.range dKer) :=
+    isNoetherian_of_le (t := ⋀[A]^2 (Omega K A)) <| by
+      rintro _ ⟨η, rfl⟩
+      rw [show dKer η = KaehlerDeRham.preExtDerivOne q η from
+        KaehlerDeRham.preExtDerivOneKer_apply q η]
+      exact KaehlerDeRham.preExtDerivOne_mem q η.val
+  have : Module.Finite A (LinearMap.ker q ⧸ LinearMap.ker dKer) :=
+    .equiv dKer.quotKerEquivRange.symm
   -- `Ω[A⁄K] ⧸ L` is an extension of `Ω¹_A` by a quotient of that range, hence finite.
-  have hexact := ((LinearMap.exact_subtype_ker_map (ofKaehler K A)).exact_mapQ_iff
-    (p := LinearMap.ker preExtDerivOneKer) (q := L) (r := ⊥)
-    (fun η hη ↦ ⟨LinearMap.mem_ker.mp η.property, LinearMap.mem_ker.mp hη⟩)
-    (fun _ hη ↦ (Submodule.mem_bot A).mpr hη.1)).mpr (by simp)
+  have hexact := ((LinearMap.exact_subtype_ker_map q).exact_mapQ_iff
+    (p := LinearMap.ker dKer) (q := L) (r := ⊥)
+    (fun η hη ↦ ⟨η, hη, rfl⟩)
+    (fun _ ⟨η, _, hη⟩ ↦ (Submodule.mem_bot A).mpr (hη ▸ LinearMap.mem_ker.mp η.property))).mpr
+    (by simp)
   have : Module.Finite A (Ω[A⁄K] ⧸ L) := .of_exact hexact fun y ↦ by
     obtain ⟨ω, rfl⟩ := Submodule.mkQ_surjective _ y
     obtain ⟨η, rfl⟩ := ofKaehler_surjective K A ω
     exact ⟨Submodule.Quotient.mk η, rfl⟩
-  exact (ofKaehler_eq_zero_iff.mp hω L this).2
-
-variable (K A) in
-/-- The exterior derivative of universally finite `1`-forms. -/
-private noncomputable def extDerivOne : Omega K A →ₗ[K] ExteriorAlgebra A (Omega K A) :=
-  ((ofKaehler K A).restrictScalars K).liftOfSurjective (ofKaehler_surjective K A)
-    ⟨preExtDerivOne K A, fun _ hω ↦ preExtDerivOne_eq_zero hω⟩
-
-private theorem extDerivOne_ofKaehler (ω : Ω[A⁄K]) :
-    extDerivOne K A (ofKaehler K A ω) = preExtDerivOne K A ω :=
-  LinearMap.equivOfSurjective_apply (f := (ofKaehler K A).restrictScalars K) _ _
-
-private theorem extDerivOne_smul (a : A) (ω : Omega K A) :
-    extDerivOne K A (a • ω) =
-      ExteriorAlgebra.ι A (d K A a) * ExteriorAlgebra.ι A ω + a • extDerivOne K A ω := by
-  obtain ⟨ω, rfl⟩ := ofKaehler_surjective K A ω
-  rw [← map_smul, extDerivOne_ofKaehler, extDerivOne_ofKaehler, preExtDerivOne_smul]
-
-private theorem extDerivOne_mem (ω : Omega K A) : extDerivOne K A ω ∈ ⋀[A]^2 (Omega K A) := by
-  obtain ⟨ω, rfl⟩ := ofKaehler_surjective K A ω
-  rw [extDerivOne_ofKaehler]
-  exact preExtDerivOne_mem ω
+  obtain ⟨η, hη, rfl⟩ := ofKaehler_eq_zero_iff.mp hω L this
+  exact (KaehlerDeRham.preExtDerivOneKer_apply q η).symm.trans (LinearMap.mem_ker.mp hη)
 
 end DegreeOne
 
@@ -196,14 +144,8 @@ the `K`-linear map extending the universal derivation `d : A → Ω¹_A` in degr
 exact `1`-forms `d a`, and satisfying the graded Leibniz rule
 `d (x * y) = d x * y + involute x * d y`. -/
 noncomputable def extDeriv : ExteriorAlgebra A (Omega K A) →ₗ[K] ExteriorAlgebra A (Omega K A) :=
-  ExteriorAlgebra.liftTwistedDerivation (involute (Q := (0 : QuadraticForm A (Omega K A))))
-    ((ExteriorAlgebra.ι A).compDer (d K A))
-    (fun a ω ↦ by
-      simpa using ExteriorAlgebra.ι_mul_eq_involute_mul (d K A a) (ExteriorAlgebra.ι A ω))
-    (extDerivOne K A)
-    (fun a ω ↦ by simpa using extDerivOne_smul a ω)
-    (fun ω ↦ ExteriorAlgebra.mul_ι_add_involute_ι_mul_of_mem_exteriorPower even_two
-      (extDerivOne_mem ω) ω)
+  KaehlerDeRham.extDerivDescend (ofKaehler K A) (ofKaehler_surjective K A)
+    (fun _ hω ↦ preExtDerivOne_eq_zero hω)
 
 variable {K A}
 
@@ -212,12 +154,14 @@ variable {K A}
 theorem extDeriv_algebraMap (a : A) :
     extDeriv K A (algebraMap A (ExteriorAlgebra A (Omega K A)) a) =
       ExteriorAlgebra.ι A (d K A a) := by
-  simp [extDeriv]
+  rw [← ofKaehler_D, extDeriv]
+  exact KaehlerDeRham.extDerivDescend_algebraMap _ _ _ a
 
 /-- The exterior derivative kills `1`. -/
 @[simp]
 theorem extDeriv_one : extDeriv K A 1 = 0 := by
-  simp [extDeriv]
+  simpa only [map_one, Derivation.map_one_eq_zero, map_zero] using
+    extDeriv_algebraMap (K := K) (A := A) 1
 
 /-- The exterior derivative kills the constants `K`. -/
 @[simp]
@@ -228,20 +172,21 @@ theorem extDeriv_algebraMap_base (r : K) :
 /-- The exterior derivative kills exact `1`-forms. -/
 @[simp]
 theorem extDeriv_ι_d (a : A) : extDeriv K A (ExteriorAlgebra.ι A (d K A a)) = 0 := by
-  rw [extDeriv, ExteriorAlgebra.liftTwistedDerivation_ι, ← ofKaehler_D, extDerivOne_ofKaehler,
-    preExtDerivOne_apply, KaehlerDeRham.extDeriv_ι_D, map_zero]
+  rw [← ofKaehler_D, extDeriv]
+  exact KaehlerDeRham.extDerivDescend_ι_map_D _ _ _ a
 
 /-- **The graded Leibniz rule** for the exterior derivative, via the grade involution. -/
 theorem extDeriv_mul (x y : ExteriorAlgebra A (Omega K A)) :
     extDeriv K A (x * y) =
       extDeriv K A x * y + involute (Q := (0 : QuadraticForm A (Omega K A))) x * extDeriv K A y :=
-  ExteriorAlgebra.liftTwistedDerivation_mul _ _ _ _ _ _ x y
+  KaehlerDeRham.extDerivDescend_mul _ _ _ x y
 
 /-- The Leibniz rule for multiplication by a function: `d (a • x) = da ∧ x + a • d x`. -/
 @[simp]
 theorem extDeriv_smul (a : A) (x : ExteriorAlgebra A (Omega K A)) :
     extDeriv K A (a • x) = ExteriorAlgebra.ι A (d K A a) * x + a • extDeriv K A x := by
-  simp [extDeriv]
+  rw [Algebra.smul_def, extDeriv_mul, extDeriv_algebraMap, involute.commutes,
+    ← Algebra.smul_def]
 
 /-- The graded Leibniz rule for a left factor in the `n`-th exterior power. -/
 theorem extDeriv_mul_of_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra A (Omega K A)}
@@ -251,10 +196,11 @@ theorem extDeriv_mul_of_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra A (Omeg
 
 /-- The exterior derivative maps `⋀ⁿ_A Ω¹_A` into `⋀ⁿ⁺¹_A Ω¹_A`. -/
 theorem extDeriv_mem_exteriorPower {n : ℕ} {x : ExteriorAlgebra A (Omega K A)}
-    (hx : x ∈ ⋀[A]^n (Omega K A)) : extDeriv K A x ∈ ⋀[A]^(n + 1) (Omega K A) :=
-  ExteriorAlgebra.liftTwistedDerivation_mem_exteriorPower _ _ _ _ _ _ (r := 1)
-    (fun ω ↦ by rw [involute_ι]; exact neg_mem (ExteriorAlgebra.ι_mem_exteriorPower_one ω))
-    (fun _ ↦ ExteriorAlgebra.ι_mem_exteriorPower_one _) extDerivOne_mem hx
+    (hx : x ∈ ⋀[A]^n (Omega K A)) : extDeriv K A x ∈ ⋀[A]^(n + 1) (Omega K A) := by
+  rw [← TauCeti.ExteriorAlgebra.integerGrading_natCast, Nat.cast_add, Nat.cast_one]
+  have hx' : x ∈ TauCeti.ExteriorAlgebra.integerGrading A (Omega K A) n := by
+    rwa [TauCeti.ExteriorAlgebra.integerGrading_natCast]
+  exact KaehlerDeRham.extDerivDescend_mem_integerGrading _ _ _ hx'
 
 /-- The exterior derivative kills products of exact `1`-forms `db₁ ∧ ⋯ ∧ dbₙ`. -/
 @[simp]
@@ -280,23 +226,14 @@ by `Ω[A⁄K] → Ω¹_A` carries the algebraic exterior derivative to the exter
 universally finite differential forms. -/
 theorem map_ofKaehler_extDeriv (x : ExteriorAlgebra A Ω[A⁄K]) :
     ExteriorAlgebra.map (ofKaehler K A) (KaehlerDeRham.extDeriv K A x) =
-      extDeriv K A (ExteriorAlgebra.map (ofKaehler K A) x) := by
-  induction x using KaehlerDeRham.inductionOn with
-  | algebraMap a => simp
-  | ι_D a => simp
-  | mul x y ihx ihy =>
-    rw [KaehlerDeRham.extDeriv_mul, map_add, map_mul, map_mul, ihx, ihy, map_mul, extDeriv_mul,
-      ExteriorAlgebra.map_involute]
-  | add x y ihx ihy => rw [map_add, map_add, ihx, ihy, map_add, map_add]
+      extDeriv K A (ExteriorAlgebra.map (ofKaehler K A) x) :=
+  (KaehlerDeRham.extDerivDescend_map _ _ _ x).symm
 
 /-- **The exterior derivative squares to zero.** -/
 @[simp]
 theorem extDeriv_extDeriv (x : ExteriorAlgebra A (Omega K A)) :
-    extDeriv K A (extDeriv K A x) = 0 := by
-  obtain ⟨x, rfl⟩ :=
-    ExteriorAlgebra.map_surjective_iff.mpr (ofKaehler_surjective K A) x
-  rw [← map_ofKaehler_extDeriv, ← map_ofKaehler_extDeriv, KaehlerDeRham.extDeriv_extDeriv,
-    map_zero]
+    extDeriv K A (extDeriv K A x) = 0 :=
+  KaehlerDeRham.extDerivDescend_sq _ _ _ x
 
 /-- As a `K`-linear endomorphism, the exterior derivative composes with itself to zero. -/
 @[simp]

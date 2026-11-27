@@ -134,3 +134,34 @@ theorem finrank_centralizerSubalgebraOrderIso [StrongRankCondition R]
       (Module.finrank_mul_finrank R S T).symm
 
 end Subalgebra
+
+namespace AlgHom
+
+open scoped IsMulCommutative
+
+variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [Semiring B]
+  [Algebra R A] [Algebra R B] (f : A →ₐ[R] B)
+
+/-- The centralizer of the range of an algebra map from a commutative algebra is an algebra over
+its domain, by restricting scalars along the map to its range. -/
+@[instance_reducible]
+def centralizerRangeAlgebra : Algebra A (Subalgebra.centralizer R (Set.range f)) :=
+  letI : IsMulCommutative f.range := f.rangeRestrict_surjective.isMulCommutative
+  Algebra.compHom (Subalgebra.centralizer R (f.range : Set B)) f.rangeRestrict.toRingHom
+
+/-- The scalar map of the centralizer, viewed in the ambient algebra, is the original map. -/
+theorem coe_algebraMap_centralizerRange (a : A) :
+    letI := f.centralizerRangeAlgebra
+    (algebraMap A (Subalgebra.centralizer R (Set.range f)) a : B) = f a := by
+  let : IsMulCommutative f.range := f.rangeRestrict_surjective.isMulCommutative
+  exact Subalgebra.coe_algebraMap_centralizer f.range (f.rangeRestrict a)
+
+/-- The scalar action on the centralizer of the range is compatible with the original base. -/
+theorem centralizerRangeIsScalarTower :
+    letI := f.centralizerRangeAlgebra
+    IsScalarTower R A (Subalgebra.centralizer R (Set.range f)) :=
+  letI := f.centralizerRangeAlgebra
+  IsScalarTower.of_algebraMap_eq fun r ↦ Subtype.ext <|
+    (f.commutes r).symm.trans (f.coe_algebraMap_centralizerRange (algebraMap R A r)).symm
+
+end AlgHom
