@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
-public import Mathlib.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.Finsupp.SignReversal
+public import TauCeti.LinearAlgebra.TensorProduct.Dual
 
 /-!
 # Tensor products with spaces of finitely supported functions
@@ -34,9 +34,8 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
 * `LinearMap.mul'_map_lapply_lapply`, `LinearMap.mul'_map_apply_eq_sum`: the product of two linear
   forms evaluated on `(α →₀ R) ⊗ (β →₀ R)` reads the coefficients, weighted by the values of the
   forms on the basis.
-* `LinearMap.cupProduct`, `LinearMap.cupProduct_apply`, `LinearMap.cupProduct_apply_eq_sum`: the
-  bilinear cup product `a ∪ b = (a ⊗ b) ∘ Δ` of linear forms along a map `Δ` into a tensor product,
-  and its value in coordinates.
+* `LinearMap.cupProduct_apply_eq_sum`: the value in coordinates of the cup product
+  `a ∪ b = (a ⊗ b) ∘ Δ` of linear forms along a map `Δ` into `(α →₀ R) ⊗ (β →₀ R)`.
 * `LinearMap.cupProduct_comp_eq_iff_comp_eq_rTensor_add_map_comp`: the cup products along a map
   `Δ` into `(α →₀ R) ⊗ (β →₀ R)` satisfy the Leibniz rule for `d₀`, `d₁` and `d₂`, twisted by `ε`
   on the first factor, exactly when `Δ ∘ d₀ = (d₁ ⊗ 1 + ε ⊗ d₂) ∘ Δ`;
@@ -158,25 +157,6 @@ theorem mul'_map_apply_eq_sum [Fintype α] [Fintype β] (f : (α →₀ R) →�
     rw [finsuppTensorFinsupp'_apply_apply, smul_eq_mul, smul_eq_mul]
     ring
   | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
-
-/-- **The cup product along `Δ`.** For a linear map `Δ : M → N₁ ⊗ N₂`, the `R`-bilinear product
-of linear forms `a ∪ b = (a ⊗ b) ∘ Δ` on `N₁` and on `N₂`, a linear form on `M`, through the
-evaluation `TensorProduct.dualDistrib` of `a ⊗ b` on tensors. Dual to a diagonal of chain
-complexes, it is a cup product of cochains. -/
-noncomputable def cupProduct {M N₁ N₂ : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N₁]
-    [Module R N₁] [AddCommMonoid N₂] [Module R N₂] (Δ : M →ₗ[R] N₁ ⊗[R] N₂) :
-    (N₁ →ₗ[R] R) →ₗ[R] (N₂ →ₗ[R] R) →ₗ[R] M →ₗ[R] R :=
-  (TensorProduct.mk R _ _).compr₂ (Δ.dualMap ∘ₗ TensorProduct.dualDistrib R _ _)
-
-/-- The cup product `a ∪ b` along `Δ` is `μ ∘ (a ⊗ b) ∘ Δ`, for the multiplication `μ` of `R`. -/
-theorem cupProduct_apply {M N₁ N₂ : Type*} [AddCommMonoid M] [Module R M] [AddCommMonoid N₁]
-    [Module R N₁] [AddCommMonoid N₂] [Module R N₂] (Δ : M →ₗ[R] N₁ ⊗[R] N₂) (a : N₁ →ₗ[R] R)
-    (b : N₂ →ₗ[R] R) :
-    Δ.cupProduct a b = mul' R R ∘ₗ TensorProduct.map a b ∘ₗ Δ := by
-  have h : TensorProduct.dualDistrib R _ _ (a ⊗ₜ b) = mul' R R ∘ₗ TensorProduct.map a b :=
-    TensorProduct.ext' fun _ _ ↦ by simp
-  rw [cupProduct, compr₂_apply, TensorProduct.mk_apply, comp_apply, h, dualMap_apply',
-    comp_assoc]
 
 /-- **The cup product along `Δ` in coordinates.** For finite `α` and `β` and
 `Δ : M → (α →₀ R) ⊗ (β →₀ R)`, the value of `a ∪ b` at `m` is the sum over `(p, q)` of the
