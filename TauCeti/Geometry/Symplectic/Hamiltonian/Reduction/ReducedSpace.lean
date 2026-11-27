@@ -69,6 +69,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
 * `orbitRelQuotientChartedSpace`, `isManifold_orbitRelQuotient`,
   `isSubmersion_quotientMk_levelSubMulAction`: the reduced space `μ⁻¹(c) / G_c` is a smooth
   manifold and the orbit projection is a submersion.
+* `diffeomorphOfOrbitSubmersion`, `diffeomorphOfOrbitSubmersion_mk`: a surjective submersion out
+  of the level whose fibres are the `G_c`-orbits descends to a diffeomorphism of the reduced space.
 * `ker_mfderiv_quotientMk_levelSubMulAction`: the vertical directions of the orbit projection.
 * `contMDiffSMul_orbitRelQuotient`, `contMDiffConstSMul_orbitRelQuotient`: a smooth action on the
   level commuting with `G_c`, or an action by smooth maps commuting with it, descends to one on the
@@ -322,6 +324,53 @@ theorem isSubmersion_quotientMk_levelSubMulAction :
   let := h.levelSubMulActionChartedSpace c hreg hn
   obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
   exact ProperSMul.isSubmersion_quotientMk
+
+variable (c) in
+/-- **The reduced space is the target of any orbit submersion.** If `p : μ⁻¹(c) → Q` is a
+surjective smooth submersion whose fibres are the orbits of the coadjoint stabilizer `G_c`, then `p`
+descends to a diffeomorphism `μ⁻¹(c) / G_c ≃ Q` sending `[z]` to `p z`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.diffeomorphOfOrbitSubmersion_mk`): this is
+`ProperSMul.diffeomorphOfOrbitSubmersion` for the reduced space. -/
+def diffeomorphOfOrbitSubmersion
+    {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
+    {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
+    (p : h.levelSubMulAction c → Q)
+    (hp : letI := h.levelSubMulActionChartedSpace c hreg hn
+      Manifold.IsSubmersion 𝓘(ℝ, Fin n → ℝ) JQ ∞ p)
+    (hp_surj : Function.Surjective p)
+    (hfib : ∀ z z', p z = p z' ↔ ∃ k : (Lie.coadjointRepresentation ℝ I G).stabilizer c,
+      k • z' = z) :
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+        (h.levelSubMulAction c) ≃ₘ⟮𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ)), JQ⟯ Q :=
+  letI := d.chartedSpace
+  letI := h.levelSubMulActionChartedSpace c hreg hn
+  haveI := (h.quotient_hypotheses hreg hn d).1
+  haveI := (h.quotient_hypotheses hreg hn d).2.1
+  haveI := (h.quotient_hypotheses hreg hn d).2.2.1
+  haveI := (h.quotient_hypotheses hreg hn d).2.2.2
+  letI := h.orbitRelQuotientChartedSpace c hreg hn d
+  ProperSMul.diffeomorphOfOrbitSubmersion 𝓘(ℝ, F) le_rfl p hp hp_surj hfib
+
+/-- The diffeomorphism of the reduced space induced by an orbit submersion `p` sends the orbit
+`[z]` to `p z`. -/
+@[simp]
+theorem diffeomorphOfOrbitSubmersion_mk
+    {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ] [TopologicalSpace HQ]
+    {JQ : ModelWithCorners ℝ EQ HQ} [TopologicalSpace Q] [ChartedSpace HQ Q]
+    (p : h.levelSubMulAction c → Q)
+    (hp : letI := h.levelSubMulActionChartedSpace c hreg hn
+      Manifold.IsSubmersion 𝓘(ℝ, Fin n → ℝ) JQ ∞ p)
+    (hp_surj : Function.Surjective p)
+    (hfib : ∀ z z', p z = p z' ↔ ∃ k : (Lie.coadjointRepresentation ℝ I G).stabilizer c,
+      k • z' = z)
+    (z : h.levelSubMulAction c) :
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    h.diffeomorphOfOrbitSubmersion c hreg hn d p hp hp_surj hfib (Quotient.mk _ z) = p z := by
+  let := d.chartedSpace
+  let := h.levelSubMulActionChartedSpace c hreg hn
+  obtain ⟨_, _, _, _⟩ := h.quotient_hypotheses hreg hn d
+  exact ProperSMul.diffeomorphOfOrbitSubmersion_mk 𝓘(ℝ, F) le_rfl p hp hp_surj hfib z
 
 omit [I'.Boundaryless] [ProperSMul G M] [FiniteDimensional ℝ F]
   [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in

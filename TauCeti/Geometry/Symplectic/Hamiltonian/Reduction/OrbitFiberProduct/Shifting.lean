@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 import TauCeti.Geometry.Manifold.Diffeomorph.Subtype
 import TauCeti.Geometry.Manifold.Submersion.Diffeomorph
 import TauCeti.Geometry.Manifold.Submersion.Split
+import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.Quotient
 
 /-!
 # The shifting theorem
@@ -147,31 +148,6 @@ theorem forall_differential_surjective_prod_neg_coadjointOrbitForm
   rw [← (h.prod_neg_coadjointOrbitForm c).isRegularPoint_components_iff b]
   simpa only [LinearMap.sub_apply] using hreg₀
 
-/-- **The coadjoint stabilizer of zero acts freely on the zero level of the shifting moment map**
-when `G_c` acts freely on the level `μ⁻¹(c)`. -/
-theorem isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm
-    [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] :
-    IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer 0)
-      ((h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) := by
-  refine isCancelSMul_iff_eq_one_of_smul_eq.2 fun k p hk ↦ ?_
-  have hk' : (k : G) • p.val = p.val := congrArg Subtype.val hk
-  obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective p.val.2
-  have hx : (k : G) • p.val.1 = p.val.1 := by rw [← Prod.smul_fst, hk']
-  have ho : (k : G) • (g : G ⧸ (Lie.coadjointRepresentation ℝ I G).stabilizer c) = g := by
-    rw [hg, ← Prod.smul_snd, hk']
-  have hp : μ (g⁻¹ • p.val.1) = c := by
-    rw [h.apply_smul, h.mem_levelSubMulAction_prod_neg_coadjointOrbitForm.1 p.property, ← hg,
-      Representation.orbitMap_mk, Representation.inv_self_apply]
-  rw [MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq] at ho
-  -- The element `(k g)⁻¹ g = g⁻¹ k⁻¹ g` of `G_c` fixes the point `g⁻¹ • x` of the level.
-  have hfix : (⟨_, ho⟩ : (Lie.coadjointRepresentation ℝ I G).stabilizer c) •
-      (⟨g⁻¹ • p.val.1, h.mem_levelSubMulAction.2 hp⟩ : h.levelSubMulAction c) =
-      ⟨g⁻¹ • p.val.1, h.mem_levelSubMulAction.2 hp⟩ := by
-    refine Subtype.ext ?_
-    simp [mul_smul, inv_smul_eq_iff.2 hx.symm]
-  refine Subtype.ext ?_
-  simpa [mul_assoc, inv_mul_eq_one] using congrArg Subtype.val (IsCancelSMul.eq_one_of_smul hfix)
-
 end Level
 
 /-! ### The reduced space of `M × O⁻` at zero -/
@@ -188,6 +164,24 @@ variable [FiniteDimensional ℝ E'] [I'.Boundaryless] [ProperSMul G M]
       ((Lie.coadjointRepresentation ℝ I G).stabilizer c)) - finrank ℝ (GroupLieAlgebra I G) = n₀)
   {F₀ : Type*} [NormedAddCommGroup F₀] [NormedSpace ℝ F₀] [FiniteDimensional ℝ F₀]
   (d₀ : Lie.EmbeddedLieSubgroupData I ((Lie.coadjointRepresentation ℝ I G).stabilizer 0) F₀)
+
+omit [I'.Boundaryless] [ProperSMul G M] in
+/-- **The coadjoint stabilizer of zero acts freely on the zero level of the shifting moment map**
+when `G_c` acts freely on the level `μ⁻¹(c)`: the zero level is the orbit fibre product, on which
+`G` acts freely (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.isCancelSMul_orbitFiberProduct`). -/
+theorem isCancelSMul_levelSubMulAction_prod_neg_coadjointOrbitForm :
+    IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer 0)
+      ((h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) := by
+  let _ := h.orbitFiberProductMulAction c (Module.finBasis ℝ (GroupLieAlgebra I G))
+  have := h.isCancelSMul_orbitFiberProduct (c := c) (Module.finBasis ℝ (GroupLieAlgebra I G))
+  refine isCancelSMul_iff_eq_one_of_smul_eq.2 fun k p hk ↦ Subtype.ext ?_
+  -- `k` fixes `p`, read as a point of the orbit fibre product.
+  let q : OrbitFiberProduct μ c (Module.finBasis ℝ (GroupLieAlgebra I G)) :=
+    ⟨p.val, (components_eq_orbitMap_iff_apply_eq _).2
+      (h.mem_levelSubMulAction_prod_neg_coadjointOrbitForm.1 p.property)⟩
+  have hk' : (k : G) • p.val = p.val := congrArg Subtype.val hk
+  exact IsCancelSMul.eq_one_of_smul (x := q)
+    (Subtype.ext ((h.coe_smul_orbitFiberProduct _ (k : G) q).trans hk'))
 
 omit [ProperSMul G M]
   [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
@@ -339,31 +333,6 @@ private theorem orbitFiberProductProj_levelDiffeomorph_eq_iff
   · rintro ⟨k, rfl⟩
     exact ⟨(k : G)⁻¹, by rw [SubMulAction.val_smul, Subgroup.smul_def, inv_smul_smul]⟩
 
-omit [ProperSMul G M]
-  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
-/-- The bijection `Ψ⁻¹(0) ⧸ G_0 ≃ μ⁻¹(c) ⧸ G_c`, `[(x, g G_c)] ↦ [g⁻¹ • x]`, induced by the
-map `(x, g G_c) ↦ [g⁻¹ • x]`, which is onto and has the `G_0`-orbits as fibres. -/
-private def shiftingReducedSpaceEquiv :
-    MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer 0)
-        ((h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) ≃
-      MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
-        (h.levelSubMulAction c) :=
-  (Quotient.congrRight fun p p' ↦
-    (h.orbitFiberProductProj_levelDiffeomorph_eq_iff hreg hn₀ p p').symm).trans
-    (Setoid.quotientKerEquivOfSurjective _ ((h.orbitFiberProductProj_surjective _).comp
-      (h.levelDiffeomorphOrbitFiberProduct hreg hn₀).surjective))
-
-omit [ProperSMul G M]
-  [IsCancelSMul ((Lie.coadjointRepresentation ℝ I G).stabilizer c) (h.levelSubMulAction c)] in
-/-- The bijection of reduced spaces sends the orbit of `p` to the image of `p` under
-`(x, g G_c) ↦ [g⁻¹ • x]`. This holds by definition: `Quotient.congrRight` and
-`Setoid.quotientKerEquivOfSurjective` both act on representatives. -/
-private theorem shiftingReducedSpaceEquiv_mk
-    (p : (h.prod_neg_coadjointOrbitForm c).levelSubMulAction 0) :
-    h.shiftingReducedSpaceEquiv hreg hn₀ (Quotient.mk _ p) =
-      h.orbitFiberProductProj c _ (h.levelDiffeomorphOrbitFiberProduct hreg hn₀ p) :=
-  (rfl)
-
 variable (c) in
 /-- **The shifting diffeomorphism of reduced spaces.** With the hypotheses of the
 Marsden–Weinstein–Meyer theorem at `c` (`G` acts properly on `M`, `c` is a regular value of the
@@ -397,14 +366,15 @@ def shiftingReducedSpaceDiffeomorph :
   letI := (h.prod_neg_coadjointOrbitForm c).orbitRelQuotientChartedSpace 0
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
   letI := h.orbitRelQuotientChartedSpace c hreg hn d
-  -- Smoothness of `Φ` and of its inverse is checked on the two surjective submersions out of
-  -- `Ψ⁻¹(0)`: the orbit projection, and `(x, g G_c) ↦ [g⁻¹ • x]`.
-  (h.shiftingReducedSpaceEquiv hreg hn₀).diffeomorphOfSubmersions
-    ((h.prod_neg_coadjointOrbitForm c).isSubmersion_quotientMk_levelSubMulAction
-      (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀)
-    Quotient.mk_surjective
+  -- `(x, g G_c) ↦ [g⁻¹ • x]` is a surjective submersion out of `Ψ⁻¹(0)` whose fibres are the
+  -- `G_0`-orbits.
+  (h.prod_neg_coadjointOrbitForm c).diffeomorphOfOrbitSubmersion 0
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
+    (h.orbitFiberProductProj c _ ∘ h.levelDiffeomorphOrbitFiberProduct hreg hn₀)
     (h.isSubmersion_orbitFiberProductProj_comp_levelDiffeomorph hreg hn d hn₀)
-    (funext (h.shiftingReducedSpaceEquiv_mk hreg hn₀))
+    ((h.orbitFiberProductProj_surjective _).comp
+      (h.levelDiffeomorphOrbitFiberProduct hreg hn₀).surjective)
+    (h.orbitFiberProductProj_levelDiffeomorph_eq_iff hreg hn₀)
 
 /-- **The shifting diffeomorphism on the zero level**: `Φ ∘ π₀ = q_W ∘ j`, where `π₀` is the orbit
 projection of `Ψ⁻¹(0)`, `j` identifies `Ψ⁻¹(0)` with the orbit fibre product
@@ -429,8 +399,8 @@ theorem shiftingReducedSpaceDiffeomorph_comp_quotientMk :
     (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀
   let _ := h.orbitFiberProductChartedSpace c hreg (Module.finBasis ℝ (GroupLieAlgebra I G))
   let _ := h.orbitRelQuotientChartedSpace c hreg hn d
-  exact funext fun p ↦ (Equiv.diffeomorphOfSubmersions_apply _ _ _ _ _ _).trans
-    (h.shiftingReducedSpaceEquiv_mk hreg hn₀ p)
+  exact funext fun p ↦ (h.prod_neg_coadjointOrbitForm c).diffeomorphOfOrbitSubmersion_mk
+    (h.forall_differential_surjective_prod_neg_coadjointOrbitForm hreg) hn₀ d₀ _ _ _ _ p
 
 /-- **The shifting diffeomorphism on a point of the zero level**: `Φ [p] = q_W (j p)`, where `j`
 identifies `Ψ⁻¹(0)` with the orbit fibre product
