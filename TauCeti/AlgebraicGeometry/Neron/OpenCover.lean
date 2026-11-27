@@ -54,24 +54,15 @@ universe v u
 variable {η S : Scheme.{u}} {j : η ⟶ S} {𝒰 : S.OpenCover.{v}} {η' : 𝒰.I₀ → Scheme.{u}}
   {j' : ∀ i, η' i ⟶ 𝒰.X i} {g' : ∀ i, η' i ⟶ η}
 
-/-- The pullback of an open cover `𝒰` of `S` along `f : T ⟶ S`, as an open cover of `T` indexed
-by `𝒰.I₀` itself. This is Mathlib's `Scheme.Cover.pullback₁` with its members exposed reducibly,
-so that a member of `𝒰` and the corresponding member of the pullback share their index without
-unfolding `pullback₁`. -/
-private abbrev pullbackCover (𝒰 : S.OpenCover.{v}) {T : Scheme.{u}} (f : T ⟶ S) :
-    T.OpenCover.{v} where
-  I₀ := 𝒰.I₀
-  X i := pullback f (𝒰.f i)
-  f i := pullback.fst f (𝒰.f i)
-  mem₀ := (𝒰.pullback₁ f).mem₀
-
 /-- Two `S`-morphisms out of an `S`-scheme `Y` agree once they agree on the restrictions
 `Y ×_S 𝒰.X i ⟶ Y` of `Y` to the members of an open cover of `S`. -/
 private theorem hom_ext_of_counit (𝒰 : S.OpenCover.{v}) {Y T : Over S} {f₁ f₂ : Y ⟶ T}
     (h : ∀ i, (Over.mapPullbackAdj (𝒰.f i)).counit.app Y ≫ f₁ =
       (Over.mapPullbackAdj (𝒰.f i)).counit.app Y ≫ f₂) : f₁ = f₂ := by
   ext1
-  exact Scheme.Cover.hom_ext (pullbackCover 𝒰 Y.hom) _ _ fun i ↦ by simpa using congr($(h i).left)
+  refine Scheme.Cover.hom_ext (𝒰.pullback₁ Y.hom) _ _ fun (i : 𝒰.I₀) ↦ ?_
+  change pullback.fst Y.hom (𝒰.f i) ≫ f₁.left = pullback.fst Y.hom (𝒰.f i) ≫ f₂.left
+  simpa using congr($(h i).left)
 
 /-- Two `η`-morphisms out of the base change `Y ×_S η` of an `S`-scheme `Y` along `j` agree once
 they agree on the base changes along `j` of the restrictions of `Y` to the members of an open
@@ -80,18 +71,22 @@ private theorem pullback_hom_ext_of_counit (𝒰 : S.OpenCover.{v}) (j : η ⟶ 
     {T : Over η} {φ₁ φ₂ : (Over.pullback j).obj Y ⟶ T}
     (h : ∀ i, (Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y) ≫ φ₁ =
       (Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y) ≫ φ₂) : φ₁ = φ₂ := by
-  let 𝒱 := pullbackCover 𝒰 Y.hom
-  let 𝒲 := pullbackCover 𝒱 (pullback.fst Y.hom j)
   ext1
-  refine Scheme.Cover.hom_ext 𝒲 _ _ fun i ↦ ?_
-  -- The `i`-th member of `𝒲` factors through the base change of the `i`-th restriction of `Y`.
+  refine Scheme.Cover.hom_ext ((𝒰.pullback₁ Y.hom).pullback₁ (pullback.fst Y.hom j)) _ _
+    fun (i : 𝒰.I₀) ↦ ?_
+  change pullback.fst (pullback.fst Y.hom j) (pullback.fst Y.hom (𝒰.f i)) ≫ φ₁.left =
+      pullback.fst (pullback.fst Y.hom j) (pullback.fst Y.hom (𝒰.f i)) ≫ φ₂.left
+  -- The `i`-th member of the cover factors through the base change of the `i`-th restriction
+  -- of `Y`.
   obtain ⟨m, hm⟩ : ∃ m, m ≫
-      ((Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y)).left = 𝒲.f i :=
+      ((Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y)).left =
+        pullback.fst (pullback.fst Y.hom j) (pullback.fst Y.hom (𝒰.f i)) :=
     ⟨pullback.lift (pullback.snd _ _) (pullback.fst _ _ ≫ pullback.snd Y.hom j) (by
       dsimp
       rw [Category.assoc, ← pullback.condition, ← pullback.condition]
-      exact (pullback.condition_assoc (f := pullback.fst Y.hom j) (g := 𝒱.f i) Y.hom).symm), by
-      apply pullback.hom_ext <;> simp [𝒲, 𝒱, pullback.condition]⟩
+      exact (pullback.condition_assoc (f := pullback.fst Y.hom j)
+        (g := pullback.fst Y.hom (𝒰.f i)) Y.hom).symm), by
+      apply pullback.hom_ext <;> simp [pullback.condition]⟩
   rw [← hm, Category.assoc, Category.assoc, ← Over.comp_left, ← Over.comp_left, h i]
 
 namespace MappingProperty
@@ -113,21 +108,22 @@ private theorem pullback_fst_comp_left_eq_pullback_snd_comp_left {X Y : Over S} 
       (Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y) ≫ φ)
     (hψk : (Over.pullback j).map ψk =
       (Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f k)).counit.app Y) ≫ φ) :
-    pullback.fst ((pullbackCover 𝒰 Y.hom).f i) ((pullbackCover 𝒰 Y.hom).f k) ≫ ψi.left =
-      pullback.snd ((pullbackCover 𝒰 Y.hom).f i) ((pullbackCover 𝒰 Y.hom).f k) ≫ ψk.left := by
-  let 𝒱 := pullbackCover 𝒰 Y.hom
+    pullback.fst (pullback.fst Y.hom (𝒰.f i)) (pullback.fst Y.hom (𝒰.f k)) ≫ ψi.left =
+      pullback.snd (pullback.fst Y.hom (𝒰.f i)) (pullback.fst Y.hom (𝒰.f k)) ≫ ψk.left := by
   -- The overlap, as a `P`-scheme over `𝒰.X i`, with its two maps to the restrictions of `Y`.
   let W : Over (𝒰.X i) :=
-    Over.mk (pullback.fst (𝒱.f i) (𝒱.f k) ≫ ((Over.pullback (𝒰.f i)).obj Y).hom)
+    Over.mk (pullback.fst (pullback.fst Y.hom (𝒰.f i)) (pullback.fst Y.hom (𝒰.f k)) ≫
+      ((Over.pullback (𝒰.f i)).obj Y).hom)
   have hW : P W.hom := MorphismProperty.RespectsLeft.precomp (Q := @IsOpenImmersion) _
-    (MorphismProperty.pullback_fst _ _ (𝒱.map_prop k)) _ (P.pullback_snd _ _ hY)
+    inferInstance _ (P.pullback_snd _ _ hY)
   let α : (Over.map (𝒰.f i)).obj W ⟶ (Over.map (𝒰.f i)).obj ((Over.pullback (𝒰.f i)).obj Y) :=
-    Over.homMk (pullback.fst (𝒱.f i) (𝒱.f k))
+    Over.homMk (pullback.fst _ _)
   let β : (Over.map (𝒰.f i)).obj W ⟶ (Over.map (𝒰.f k)).obj ((Over.pullback (𝒰.f k)).obj Y) :=
-    Over.homMk (pullback.snd (𝒱.f i) (𝒱.f k)) (by
+    Over.homMk (pullback.snd (pullback.fst Y.hom (𝒰.f i)) (pullback.fst Y.hom (𝒰.f k))) (by
       dsimp [W]
       rw [Category.assoc, ← pullback.condition, ← pullback.condition]
-      exact (pullback.condition_assoc (f := 𝒱.f i) (g := 𝒱.f k) Y.hom).symm)
+      exact (pullback.condition_assoc (f := pullback.fst Y.hom (𝒰.f i))
+        (g := pullback.fst Y.hom (𝒰.f k)) Y.hom).symm)
   have hαβ : α ≫ (Over.mapPullbackAdj (𝒰.f i)).counit.app Y =
       β ≫ (Over.mapPullbackAdj (𝒰.f k)).counit.app Y := by
     ext1
@@ -155,7 +151,7 @@ theorem of_openCover (sq : ∀ i, IsPullback (j' i) (g' i) (𝒰.f i) j) {X : Ov
     -- Extend `φ` on each restriction of `Y`, and glue the extensions.
     choose ψ hψ using fun i ↦ (hloc i _ (hY' i)).2
       ((Over.pullback j).map ((Over.mapPullbackAdj (𝒰.f i)).counit.app Y) ≫ φ)
-    let 𝒱 := pullbackCover 𝒰 Y.hom
+    let 𝒱 : Y.left.OpenCover := 𝒰.pullback₁ Y.hom
     have compat (i k : 𝒰.I₀) := pullback_fst_comp_left_eq_pullback_snd_comp_left hY
       (fun Z hZ ↦ (hloc i Z hZ).1) (hψ i) (hψ k)
     let G : Y ⟶ X := Over.homMk (Scheme.Cover.glueMorphisms 𝒱 (fun i ↦ (ψ i).left) compat)
