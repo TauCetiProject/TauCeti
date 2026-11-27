@@ -99,6 +99,14 @@ theorem maximalSpectrumComap_comp {C : Type*} [CommRing C] [Algebra K C]
   apply MaximalSpectrum.ext
   exact (Ideal.comap_comapₐ f g).symm
 
+/-- A maximal ideal `P` of `B` containing the extension `m B` of a maximal ideal `m` of `A` lies
+over `m`. -/
+theorem maximalSpectrumComap_eq_of_map_le (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)
+    {m : MaximalSpectrum A} {P : MaximalSpectrum B} (hle : m.asIdeal.map f ≤ P.asIdeal) :
+    hB.maximalSpectrumComap f P = m :=
+  MaximalSpectrum.ext (m.isMaximal.eq_of_le (Ideal.IsPrime.comap _).ne_top
+    (Ideal.map_le_iff_le_comap.mp hle)).symm
+
 /-- A surjective algebra map into an affinoid algebra induces an injective map on maximal
 spectra. -/
 theorem maximalSpectrumComap_injective (hB : IsAffinoidAlgebra K B) (f : A →ₐ[K] B)

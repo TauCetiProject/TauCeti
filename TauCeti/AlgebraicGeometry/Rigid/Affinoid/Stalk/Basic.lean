@@ -200,6 +200,7 @@ theorem stalkLift_germ {S : Type u} [CommRing S]
       (weakGTopology.pointElement x (by simpa using hx))) f
 
 /-- Ring homomorphisms out of the analytic stalk agree once they agree on germs. -/
+@[ext]
 theorem stalk_ringHom_ext {S : Type*} [Semiring S] {φ ψ : stalk K x →+* S}
     (h : ∀ (U : AffinoidSubdomain K A) (hx : x ∈ U) (f : U.sections),
       φ (germ U hx f) = ψ (germ U hx f)) : φ = ψ := by

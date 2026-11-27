@@ -117,8 +117,16 @@ theorem _root_.TauCeti.IsAffinoidSubdomainMap.coe_imageSubdomain {B : Type u} [C
       hU.isAffinoidAlgebra.maximalSpectrumComap φ '' (W : Set (MaximalSpectrum B)) :=
   coe_ofMap _
 
-/-- The image of a point of `W` lies in the image subdomain. -/
+/-- The points of the image subdomain are the images of the points of `W`. -/
+@[simp]
 theorem _root_.TauCeti.IsAffinoidSubdomainMap.mem_imageSubdomain {B : Type u} [CommRing B]
+    [Algebra K B] {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)} (hU : IsAffinoidSubdomainMap φ U)
+    (hA : IsAffinoidAlgebra K A) {W : AffinoidSubdomain K B} {x : MaximalSpectrum A} :
+    x ∈ hU.imageSubdomain hA W ↔ ∃ y ∈ W, hU.isAffinoidAlgebra.maximalSpectrumComap φ y = x :=
+  Iff.rfl
+
+/-- The image of a point of `W` lies in the image subdomain. -/
+theorem _root_.TauCeti.IsAffinoidSubdomainMap.mem_imageSubdomain_of_mem {B : Type u} [CommRing B]
     [Algebra K B] {φ : A →ₐ[K] B} {U : Set (MaximalSpectrum A)} (hU : IsAffinoidSubdomainMap φ U)
     (hA : IsAffinoidAlgebra K A) {W : AffinoidSubdomain K B} {y : MaximalSpectrum B}
     (hy : y ∈ W) : hU.isAffinoidAlgebra.maximalSpectrumComap φ y ∈ hU.imageSubdomain hA W :=

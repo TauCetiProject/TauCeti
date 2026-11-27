@@ -196,14 +196,14 @@ theorem bijective_stalkMap (hU : IsAffinoidSubdomainMap φ U) (y : MaximalSpectr
     rw [AlgHom.stalkMap_germ, germ_eq_zero_iff] at hs
     obtain ⟨W, hWV, hyW, hW⟩ := hs
     refine (germ_eq_zero_iff hx f).mpr ⟨hU.imageSubdomain hA.out W, hU.imageSubdomain_le hWV,
-      hU.mem_imageSubdomain hA.out hyW, (hU.imageSectionsAlgEquiv hA.out W).injective ?_⟩
+      hU.mem_imageSubdomain_of_mem hA.out hyW, (hU.imageSectionsAlgEquiv hA.out W).injective ?_⟩
     rw [hU.imageSectionsAlgEquiv_restrict hWV, hW, map_zero]
   · -- A germ on `W ∋ y` is the pullback of the corresponding germ on the image of `W`.
     obtain ⟨W, hy, g, rfl⟩ := exists_germ_eq s
     have hWW : W ≤ (hU.imageSubdomain hA.out W).comap φ := fun w hw ↦
-      (mem_comap _ φ w).mpr (hU.mem_imageSubdomain hA.out hw)
-    refine ⟨germ _ (hU.mem_imageSubdomain hA.out hy) ((hU.imageSectionsAlgEquiv hA.out W).symm g),
-      ?_⟩
+      (mem_comap _ φ w).mpr (hU.mem_imageSubdomain_of_mem hA.out hw)
+    refine ⟨germ _ (hU.mem_imageSubdomain_of_mem hA.out hy)
+      ((hU.imageSectionsAlgEquiv hA.out W).symm g), ?_⟩
     rw [AlgHom.stalkMap_germ, ← germ_restrict hWW hy, ← hU.imageSectionsAlgEquiv_restrict hWW,
       restrict_refl, AlgHom.id_apply, AlgEquiv.apply_symm_apply]
 

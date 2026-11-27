@@ -137,9 +137,7 @@ private theorem exists_pow_le_map_of_injective {φ : A →ₐ[K] B}
   refine le_sInf fun P ⟨hle, hP⟩ ↦ ?_
   -- A maximal ideal `P ⊇ 𝔪_{φ(y)} B` lies over `𝔪_{φ(y)}`, so it is the point `y` by injectivity.
   have hPy : (⟨P, hP⟩ : MaximalSpectrum B) = y :=
-    hinj (MaximalSpectrum.ext ((IsAffinoidAlgebra.maximalSpectrumComap_asIdeal _ _ _).trans
-      ((MaximalSpectrum.isMaximal _).eq_of_le (Ideal.IsPrime.comap _).ne_top
-        (Ideal.map_le_iff_le_comap.mp hle)).symm))
+    hinj (hB.out.maximalSpectrumComap_eq_of_map_le φ (P := ⟨P, hP⟩) hle)
   exact (congrArg MaximalSpectrum.asIdeal hPy).ge
 
 /-- For a locally closed immersion `φ : A → B` and a classical point `x` of `Sp A`, every
@@ -151,9 +149,8 @@ private theorem IsLocallyClosedImmersion.exists_sub_mem_map {φ : A →ₐ[K] B}
   · exact ⟨0, htop ▸ Submodule.mem_top⟩
   -- Otherwise a maximal ideal `y ⊇ 𝔪ₓ B` is a classical point over `x`.
   obtain ⟨P, hP, hle⟩ := Ideal.exists_le_maximal _ htop
-  have hy : hB.out.maximalSpectrumComap φ ⟨P, hP⟩ = x := MaximalSpectrum.ext
-    ((IsAffinoidAlgebra.maximalSpectrumComap_asIdeal _ _ _).trans
-      (x.isMaximal.eq_of_le (Ideal.IsPrime.comap _).ne_top (Ideal.map_le_iff_le_comap.mp hle)).symm)
+  have hy : hB.out.maximalSpectrumComap φ ⟨P, hP⟩ = x :=
+    hB.out.maximalSpectrumComap_eq_of_map_le φ hle
   obtain ⟨n, hn⟩ := exists_pow_le_map_of_injective h.maximalSpectrumComap_injective ⟨P, hP⟩
   obtain ⟨a, ha⟩ := AlgHom.exists_sub_mem_pow_of_surjective_stalkMap (h.surjective_stalkMap _) n b
   exact ⟨a, hy ▸ hn ha⟩
@@ -169,11 +166,12 @@ theorem IsLocallyClosedImmersion.surjective_of_finite {φ : A →ₐ[K] B}
     fun m hm b _ ↦ by
       obtain ⟨a, ha⟩ := h.exists_sub_mem_map ⟨m, hm⟩ b
       rw [← sub_add_cancel b (algebraMap A B a)]
-      refine add_mem (Submodule.mem_sup_right ?_) (Submodule.mem_sup_left ⟨a, rfl⟩)
-      rw [Ideal.smul_top_eq_map]
-      exact ha
+      refine add_mem (Submodule.mem_sup_right ?_)
+        (Submodule.mem_sup_left (LinearMap.mem_range_self _ a))
+      rwa [Ideal.smul_top_eq_map, RingHom.algebraMap_toAlgebra]
   intro b
-  obtain ⟨a, ha⟩ := hN ▸ Submodule.mem_top (x := b)
+  obtain ⟨a, ha⟩ := LinearMap.mem_range.mp (hN ▸ Submodule.mem_top (x := b))
+  rw [Algebra.linearMap_apply, RingHom.algebraMap_toAlgebra] at ha
   exact ⟨a, ha⟩
 
 end Finite
