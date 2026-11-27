@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Transversality.WeakCokernel
 import TauCeti.LinearAlgebra.Submodule.Quotient
 
 /-!
-# Hamiltonian variations and the cokernel of the linearized Floer operator on `W^{1,2}`
+# Variations of the data and the cokernel of the linearized Floer operator on `W^{1,2}`
 
 Let `U ⊆ ℝ × ℝ` be a connected open set with a conformal weight `ρ`, such as the pair of pants
 `ℂ ∖ {0, 1}` with its cylindrical weight, and let `D_u : W^{1,2}_0(U, V) → L²(U, V)` be the
@@ -63,14 +63,47 @@ Hamiltonian perturbation is free, the universal operator has dense range, and it
   a finite-dimensional family of perturbations `K_s + ∑ cᵢ δKᵢ`, the input of the Sard–Smale
   argument for regular moduli spaces.
 
+On a sphere component of a Floer configuration the almost complex structure is frozen, a target
+structure `J(x)` independent of the domain point, and there are no free Hamiltonian directions:
+transversality uses variations `Y` of `J` alone. Along the line `J + τ Y` the Floer operator moves
+by `Y(u)(∂ₜu - X_{K_t}(u))` (`TauCeti.SymplecticForm.hasDerivAt_floerOperator_add_smul`). The same
+statements hold for these directions, at injective points of `u`.
+
+* `TauCeti.SymplecticForm.almostComplexVariationsOn ω U u J Kt n W` is the set of `L²` classes on
+  `U` of the fields `Y(u)(∂ₜu - X_{K_t}(u))` for compactly supported `Cⁿ` fields `Y` with support in
+  `W ⊆ V` and `Y x` in the compatible tangent space of `J x`.
+* **Cokernel detection.** Let `O ⊆ U` be a nonempty open set of injective points of `u` at which
+  `J` is tamed by `ω` and `∂ₜu - X_{K_t}` does not vanish, and `W` a neighbourhood of `u(O)`. An
+  element of `L²(U, V)` orthogonal to the range of `D_u` and to the almost complex variations
+  supported in `W` is zero
+  (`eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator_of_almostComplex`, in the
+  namespace `TauCeti.SymplecticForm`). This is the weak vanishing theorem for frozen structures
+  (`ae_eq_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator`), applied to the
+  variations supported near a single injective point `z₀ ∈ O`: there a neighbourhood of `u z₀` has
+  preimage under `u` inside a compact neighbourhood of `z₀` in `O`, so these variations are
+  compactly supported along `u` and lie in `L²(U, V)` with no integrability hypothesis on
+  `∂ₜu - X_{K_t}`.
+* **Density and surjectivity.** The range of `D_u` and the span of these variations are dense in
+  `L²(U, V)`, by
+`topologicalClosure_range_floerConformalSobolevOperator_sup_span_almostComplexVariationsOn_eq_top`;
+  they span it when the range of `D_u` is closed and of finite codimension
+  (`range_floerConformalSobolevOperator_sup_span_almostComplexVariationsOn_eq_top`), and then
+  finitely many variations suffice
+  (`exists_finset_subset_almostComplexVariationsOn_range_sup_span_eq_top`), all in the namespace
+  `TauCeti.SymplecticForm`.
+
+That the injective points of a simple curve form a dense open set is not proved here: the set `O`
+is a hypothesis.
+
 The target is a finite-dimensional real inner product space `V` with a symplectic form `ω`; the
 inner product identifies `L²(U, V)` with its dual, and need not be related to `ω`.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, 2nd ed., AMS
-  Colloquium Publications 52, 2012, Proposition 3.2.1 and Section 8.1, on the surjectivity of the
-  universal linearized operator and on Hamiltonian perturbations.
+  Colloquium Publications 52, 2012, Proposition 3.2.1, Lemma 3.2.2 and Section 8.1, on the
+  surjectivity of the universal linearized operator, on variations of the almost complex structure
+  at injective points and on Hamiltonian perturbations.
 * A. Floer, H. Hofer and D. Salamon, *Transversality in elliptic Morse theory for the symplectic
   action*, Duke Math. J. 80 (1995), 251–292.
 -/
@@ -152,6 +185,87 @@ theorem toLp_mem_hamiltonianVariationsOn {δK : ℝ × ℝ → V → ℝ}
   ⟨δK, hδK, hc, hW, hX.coeFn_toLp⟩
 
 end Variations
+
+section AlmostComplexVariations
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+
+/-- The **almost complex variations** of the Floer operator along `u` on `U`, for a frozen almost
+complex structure `J`, a time component `K_t` of the perturbation, and variations of class `Cⁿ`
+supported in `W ⊆ V`: the `L²` classes on `U` of the fields `Y(u)(∂ₜu - X_{K_t}(u))` for compactly
+supported `Cⁿ` fields `Y` of endomorphisms with support in `W` and `Y x` in the compatible tangent
+space of `J x`. The field `Y(u)(∂ₜu - X_{K_t}(u))` is the derivative of the Floer operator along
+the line of structures `J + τ Y` (`TauCeti.SymplecticForm.hasDerivAt_floerOperator_add_smul`). -/
+def almostComplexVariationsOn (ω : SymplecticForm V) (U : Set (ℝ × ℝ)) (u : ℝ × ℝ → V)
+    (J : V → AlmostComplexStructure V) (Kt : ℝ × ℝ → V → ℝ) (n : ℕ∞) (W : Set V) :
+    Set (Lp V 2 (volume.restrict U)) :=
+  {g | ∃ Y : V → V →L[ℝ] V, ContDiff ℝ n Y ∧ HasCompactSupport Y ∧ tsupport Y ⊆ W ∧
+    (∀ x, (Y x : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J x)) ∧
+      (g : ℝ × ℝ → V) =ᵐ[volume.restrict U]
+        fun z ↦ Y (u z) (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z))}
+
+variable {ω : SymplecticForm V} {U : Set (ℝ × ℝ)} {u : ℝ × ℝ → V}
+  {J : V → AlmostComplexStructure V} {Kt : ℝ × ℝ → V → ℝ} {n : ℕ∞} {W : Set V}
+
+/-- Membership in the almost complex variations. -/
+theorem mem_almostComplexVariationsOn_iff {g : Lp V 2 (volume.restrict U)} :
+    g ∈ ω.almostComplexVariationsOn U u J Kt n W ↔ ∃ Y : V → V →L[ℝ] V,
+      ContDiff ℝ n Y ∧ HasCompactSupport Y ∧ tsupport Y ⊆ W ∧
+        (∀ x, (Y x : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J x)) ∧
+          (g : ℝ × ℝ → V) =ᵐ[volume.restrict U] fun z ↦
+            Y (u z) (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)) :=
+  Iff.rfl
+
+/-- The almost complex variations grow with the set `W` in which the variations are supported. -/
+theorem almostComplexVariationsOn_mono {W' : Set V} (hW : W ⊆ W') :
+    ω.almostComplexVariationsOn U u J Kt n W ⊆ ω.almostComplexVariationsOn U u J Kt n W' :=
+  fun _ ⟨Y, hY, hc, hs, hm, hg⟩ ↦ ⟨Y, hY, hc, hs.trans hW, hm, hg⟩
+
+/-- **Every variation gives an almost complex variation.** For a compactly supported `Cⁿ` field
+`Y` of compatible variations of `J` with support in `W`, the `L²` class of `Y(u)(∂ₜu - X_{K_t}(u))`
+on `U`, when this field is in `L²` on `U`, is an almost complex variation. -/
+theorem toLp_mem_almostComplexVariationsOn {Y : V → V →L[ℝ] V} (hY : ContDiff ℝ n Y)
+    (hc : HasCompactSupport Y) (hW : tsupport Y ⊆ W)
+    (hm : ∀ x, (Y x : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J x))
+    (hX : MemLp (fun z ↦ Y (u z)
+      (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z))) 2
+        (volume.restrict U)) :
+    hX.toLp _ ∈ ω.almostComplexVariationsOn U u J Kt n W :=
+  ⟨Y, hY, hc, hW, hm, hX.coeFn_toLp⟩
+
+/-- A variation `Y(u)(∂ₜu - X_{K_t}(u))` is in `L²` on an open set `U` on which `u` is `C¹` and
+`K_t` is `C²` along the graph of `u`, when the continuous field `Y` is supported in a set whose
+preimage under `u` lies in a compact subset `N` of `U`: the field is continuous on `U` and vanishes
+on `U` off `N`. -/
+private theorem memLp_almostComplexVariation_of_preimage_subset (hU : IsOpen U)
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ∀ z ∈ U, ContDiffAt ℝ 1 u z)
+    {Y : V → V →L[ℝ] V} (hY : Continuous Y) {N : Set (ℝ × ℝ)} (hN : IsCompact N) (hNU : N ⊆ U)
+    (hYN : u ⁻¹' tsupport Y ⊆ N) :
+    MemLp (fun z ↦ Y (u z)
+      (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z))) 2
+        (volume.restrict U) := by
+  set f : ℝ × ℝ → V := fun z ↦ Y (u z)
+    (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z))
+  have hf : ContinuousOn f U := fun z hz ↦ by
+    have hX := (ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) (hKt z hz)).continuousAt.comp
+      (x := z) (continuousAt_id.prodMk (hu z hz).continuousAt)
+    exact ((hY.continuousAt.comp (hu z hz).continuousAt).clm_apply
+      ((((hu z hz).continuousAt_fderiv one_ne_zero).clm_apply continuousAt_const).sub
+        hX)).continuousWithinAt
+  -- Off `N` the point `u z` lies outside the support of `Y`.
+  have h0 (z : ℝ × ℝ) (hz : z ∉ N) : f z = 0 := by
+    simp only [f, image_eq_zero_of_notMem_tsupport fun h ↦ hz (hYN h), zero_apply]
+  obtain ⟨C, hC⟩ := hN.exists_bound_of_continuousOn (hf.mono hNU)
+  refine MemLp.mono_exponent_of_measure_support_ne_top
+    (memLp_top_of_bound (hf.aestronglyMeasurable hU.measurableSet) (max C 0)
+      (ae_of_all _ fun z ↦ ?_)) (s := N) h0
+    (ne_top_of_le_ne_top hN.measure_lt_top.ne (Measure.restrict_apply_le _ _)) le_top
+  by_cases hz : z ∈ N
+  · exact (hC z hz).trans (le_max_left _ _)
+  · rw [h0 z hz, norm_zero]
+    exact le_max_right _ _
+
+end AlmostComplexVariations
 
 section Cokernel
 
@@ -394,5 +508,180 @@ theorem exists_finset_subset_hamiltonianVariationsOn_range_sup_span_eq_top
       hKt hu hM hO hOne hOU hW hcl hco)
 
 end Cokernel
+
+section AlmostComplexCokernel
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+variable {ω : SymplecticForm V} {U : Set (ℝ × ℝ)} {ρ : ℝ × ℝ → ℝ}
+  {J : V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {n : ℕ∞}
+
+/-- **Variations of a frozen almost complex structure detect the cokernel of the linearized Floer
+operator on `W^{1,2}`.** Let `U` be a connected open set with a conformal weight `ρ`, let `J` be a
+frozen `Cⁿ` family of complex structures preserving `ω`, with `2 ≤ n`, and let the Hamiltonians
+`K_s`, `K_t` be `C³` near the graph of a map `u` which is `C²` on `U`. Let the coefficient field of
+the linearized operator on conformal jets be essentially bounded on `U`, so that
+`D_u : W^{1,2}_0(U, V) → L²(U, V)` realizes the linearized Floer operator. Suppose that on a
+nonempty open set `O ⊆ U` every point `z` is an injective point of `u`, with `J` tamed by `ω` at
+`u z` and `∂ₜu - X_{K_t} ≠ 0` at `z`, and let `W` be a neighbourhood of `u(O)`. An element
+`h ∈ L²(U, V)` orthogonal to the range of `D_u` and to the almost complex variations of class `Cⁿ`
+supported in `W` is zero. -/
+theorem eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator_of_almostComplex
+    (hρ : IsWeight U ρ) (hUc : IsPreconnected U)
+    (hJ : ContDiff ℝ n fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) (hn : 2 ≤ n)
+    (hJω : ∀ x, ω.Invariant (J x)) (hKs : ∀ z ∈ U, ContDiffAt ℝ 3 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 3 (uncurry Kt) (z, u z)) (hu : ∀ z ∈ U, ContDiffAt ℝ 2 u z)
+    (hM : MemLp (ω.floerConformalJetCoeff ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u) ∞
+        (volume.restrict U))
+    {O : Set (ℝ × ℝ)} (hO : IsOpen O) (hOne : O.Nonempty) (hOU : O ⊆ U)
+    (hJ₀ : ∀ z ∈ O, ω.Tames (J (u z))) (hinj : ∀ z ∈ O, (𝓝 (u z)).comap u ≤ 𝓝 z)
+    (hξ₀ : ∀ z ∈ O, fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z) ≠ 0)
+    {W : Set V} (hW : ∀ z ∈ O, W ∈ 𝓝 (u z)) {h : Lp V 2 (volume.restrict U)}
+    (hD : h ∈ (ω.floerConformalSobolevOperator U ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).rangeᗮ)
+    (hvar : h ∈ (Submodule.span ℝ (ω.almostComplexVariationsOn U u J Kt n W))ᗮ) : h = 0 := by
+  have hUo := hρ.isOpen
+  have hUm := hUo.measurableSet
+  have huc : ContinuousOn u U := fun z hz ↦ (hu z hz).continuousAt.continuousWithinAt
+  -- Localize at an injective point `z₀ ∈ O`: a compact neighbourhood `N ⊆ O` of `z₀`, and an open
+  -- neighbourhood `W' ⊆ W` of `u z₀` whose preimage under `u` lies in `N`. The variations supported
+  -- in `W'` are then supported in `N` along `u`, hence in `L²` on `U`.
+  obtain ⟨z₀, hz₀⟩ := hOne
+  obtain ⟨N, hN, hz₀N, hNO⟩ := exists_compact_subset hO hz₀
+  obtain ⟨W'', hW'', hW''N⟩ :=
+    Filter.mem_comap.1 (hinj z₀ hz₀ (mem_interior_iff_mem_nhds.1 hz₀N))
+  have hW'o : IsOpen (interior (W ∩ W'')) := isOpen_interior
+  have hW'N : u ⁻¹' interior (W ∩ W'') ⊆ N := fun z hz ↦ hW''N (interior_subset hz).2
+  have hO' : IsOpen (O ∩ u ⁻¹' interior (W ∩ W'')) :=
+    (huc.mono hOU).isOpen_inter_preimage hO hW'o
+  have hη := ae_eq_zero_of_integral_floerLinearization_of_integral_deriv_floerOperator (ω := ω)
+    hJ hn hJω hUo hUc hKs hKt hu (by norm_num) (memLpLoc_innerField hUm h)
+    (fun ξ hξ hξc hξU ↦ ?_) hO'
+    ⟨z₀, hz₀, mem_interior_iff_mem_nhds.2 (Filter.inter_mem (hW z₀ hz₀) hW'')⟩
+    (inter_subset_left.trans hOU) (fun z hz ↦ hJ₀ z hz.1) (fun z hz ↦ hinj z hz.1)
+    (fun z hz ↦ hξ₀ z hz.1) (fun z hz ↦ hW'o.mem_nhds hz.2) (fun Y hY hc hYW hm ↦ ?_)
+  · -- `⟪h z, ·⟫ = 0` almost everywhere on `U`, hence `h = 0`.
+    refine Lp.eq_zero_iff_ae_eq_zero.2 ?_
+    filter_upwards [hη, ae_restrict_mem hUm] with z hz hzU
+    have hn := congrArg norm hz
+    rw [innerField, indicator_of_mem hzU, innerSL_apply_norm] at hn
+    simpa using hn
+  · -- Orthogonality to the range of `D_u`, on the jet of the test section `ξ`.
+    rw [integral_innerField_apply hUm]
+    exact setIntegral_inner_floerLinearization_eq_zero_of_mem_orthogonal_range hρ hM hD
+      (mem_testSection_iff.2 ⟨hξ.of_le (WithTop.coe_le_coe.2 le_top), hξc, hξU⟩)
+  · -- Orthogonality to the variation `Y`, whose derivative of the Floer operator is
+    -- `Y(u)(∂ₜu - X_{K_t}(u))`.
+    have hX := memLp_almostComplexVariation_of_preimage_subset (ω := ω) hUo
+      (fun z hz ↦ (hKt z hz).of_le (by norm_num)) (fun z hz ↦ (hu z hz).of_le (by norm_num))
+      hY.continuous hN (hNO.trans hOU) ((preimage_mono hYW).trans hW'N)
+    have hmem := toLp_mem_almostComplexVariationsOn hY hc
+      (hYW.trans (interior_subset.trans inter_subset_left)) hm hX
+    have h0 := (Submodule.mem_orthogonal' _ _).1 hvar _ (Submodule.subset_span hmem)
+    rw [MeasureTheory.L2.inner_def] at h0
+    simp only [(hasDerivAt_floerOperator_add_smul ω _ (fun _ ↦ Y) Ks Kt u _ 0).deriv]
+    rw [integral_innerField_apply hUm, ← h0]
+    refine integral_congr_ae ?_
+    filter_upwards [hX.coeFn_toLp] with z hz
+    rw [hz]
+
+/-- **Variations of a frozen almost complex structure give the linearized operator dense range.**
+Under the hypotheses of
+`eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator_of_almostComplex`,
+the range of `D_u : W^{1,2}_0(U, V) → L²(U, V)` and the almost complex variations supported in `W`
+together span a dense subspace of `L²(U, V)`. -/
+theorem
+    topologicalClosure_range_floerConformalSobolevOperator_sup_span_almostComplexVariationsOn_eq_top
+    (hρ : IsWeight U ρ) (hUc : IsPreconnected U)
+    (hJ : ContDiff ℝ n fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) (hn : 2 ≤ n)
+    (hJω : ∀ x, ω.Invariant (J x)) (hKs : ∀ z ∈ U, ContDiffAt ℝ 3 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 3 (uncurry Kt) (z, u z)) (hu : ∀ z ∈ U, ContDiffAt ℝ 2 u z)
+    (hM : MemLp (ω.floerConformalJetCoeff ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u) ∞
+        (volume.restrict U))
+    {O : Set (ℝ × ℝ)} (hO : IsOpen O) (hOne : O.Nonempty) (hOU : O ⊆ U)
+    (hJ₀ : ∀ z ∈ O, ω.Tames (J (u z))) (hinj : ∀ z ∈ O, (𝓝 (u z)).comap u ≤ 𝓝 z)
+    (hξ₀ : ∀ z ∈ O, fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z) ≠ 0)
+    {W : Set V} (hW : ∀ z ∈ O, W ∈ 𝓝 (u z)) :
+    ((ω.floerConformalSobolevOperator U ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).range ⊔
+        Submodule.span ℝ (ω.almostComplexVariationsOn U u J Kt n W)).topologicalClosure = ⊤ := by
+  rw [Submodule.topologicalClosure_eq_top_iff, ← Submodule.inf_orthogonal, eq_bot_iff]
+  exact fun h hh ↦ eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator_of_almostComplex
+    hρ hUc hJ hn hJω hKs hKt hu hM hO hOne hOU hJ₀ hinj hξ₀ hW hh.1 hh.2
+
+/-- **Variations of a frozen almost complex structure make the linearized operator onto.** Under
+the hypotheses of
+`eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator_of_almostComplex`,
+if the range of `D_u : W^{1,2}_0(U, V) → L²(U, V)` is closed and of finite codimension, as when
+`D_u` is Fredholm, then this range and the almost complex variations supported in `W` span
+`L²(U, V)`. -/
+theorem range_floerConformalSobolevOperator_sup_span_almostComplexVariationsOn_eq_top
+    (hρ : IsWeight U ρ) (hUc : IsPreconnected U)
+    (hJ : ContDiff ℝ n fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) (hn : 2 ≤ n)
+    (hJω : ∀ x, ω.Invariant (J x)) (hKs : ∀ z ∈ U, ContDiffAt ℝ 3 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 3 (uncurry Kt) (z, u z)) (hu : ∀ z ∈ U, ContDiffAt ℝ 2 u z)
+    (hM : MemLp (ω.floerConformalJetCoeff ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u) ∞
+        (volume.restrict U))
+    {O : Set (ℝ × ℝ)} (hO : IsOpen O) (hOne : O.Nonempty) (hOU : O ⊆ U)
+    (hJ₀ : ∀ z ∈ O, ω.Tames (J (u z))) (hinj : ∀ z ∈ O, (𝓝 (u z)).comap u ≤ 𝓝 z)
+    (hξ₀ : ∀ z ∈ O, fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z) ≠ 0)
+    {W : Set V} (hW : ∀ z ∈ O, W ∈ 𝓝 (u z))
+    (hcl : IsClosed ((ω.floerConformalSobolevOperator U ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).range :
+        Set (Lp V 2 (volume.restrict U))))
+    (hco : (ω.floerConformalSobolevOperator U ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).range.CoFG) :
+    (ω.floerConformalSobolevOperator U ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).range ⊔
+        Submodule.span ℝ (ω.almostComplexVariationsOn U u J Kt n W) = ⊤ := by
+  -- `CoFG` is the finiteness of the quotient; put it in scope as an instance.
+  have : Module.Finite ℝ (_ ⧸ (ω.floerConformalSobolevOperator U ρ
+    (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).range) := hco
+  -- The sum contains the closed range, of finite codimension, so it is closed.
+  have hK := Submodule.isClosed_mono_of_finiteDimensional_quotient hcl
+    (le_sup_left (b := Submodule.span ℝ (ω.almostComplexVariationsOn U u J Kt n W)))
+  rw [← hK.submodule_topologicalClosure_eq]
+  exact
+    topologicalClosure_range_floerConformalSobolevOperator_sup_span_almostComplexVariationsOn_eq_top
+      hρ hUc hJ hn hJω hKs hKt hu hM hO hOne hOU hJ₀ hinj hξ₀ hW
+
+/-- **Finitely many variations of a frozen almost complex structure make the linearized operator
+onto.** Under the hypotheses of
+`eq_zero_of_mem_orthogonal_range_floerConformalSobolevOperator_of_almostComplex`,
+if the range of `D_u : W^{1,2}_0(U, V) → L²(U, V)` is closed and of finite codimension, as when
+`D_u` is Fredholm, then finitely many almost complex variations supported in `W` span `L²(U, V)`
+together with the range of `D_u`. -/
+theorem exists_finset_subset_almostComplexVariationsOn_range_sup_span_eq_top
+    (hρ : IsWeight U ρ) (hUc : IsPreconnected U)
+    (hJ : ContDiff ℝ n fun x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) (hn : 2 ≤ n)
+    (hJω : ∀ x, ω.Invariant (J x)) (hKs : ∀ z ∈ U, ContDiffAt ℝ 3 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 3 (uncurry Kt) (z, u z)) (hu : ∀ z ∈ U, ContDiffAt ℝ 2 u z)
+    (hM : MemLp (ω.floerConformalJetCoeff ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u) ∞
+        (volume.restrict U))
+    {O : Set (ℝ × ℝ)} (hO : IsOpen O) (hOne : O.Nonempty) (hOU : O ⊆ U)
+    (hJ₀ : ∀ z ∈ O, ω.Tames (J (u z))) (hinj : ∀ z ∈ O, (𝓝 (u z)).comap u ≤ 𝓝 z)
+    (hξ₀ : ∀ z ∈ O, fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z) ≠ 0)
+    {W : Set V} (hW : ∀ z ∈ O, W ∈ 𝓝 (u z))
+    (hcl : IsClosed ((ω.floerConformalSobolevOperator U ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).range :
+        Set (Lp V 2 (volume.restrict U))))
+    (hco : (ω.floerConformalSobolevOperator U ρ
+      (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).range.CoFG) :
+    ∃ t : Finset (Lp V 2 (volume.restrict U)),
+      (t : Set _) ⊆ ω.almostComplexVariationsOn U u J Kt n W ∧
+        (ω.floerConformalSobolevOperator U ρ
+          (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).range ⊔
+            Submodule.span ℝ t = ⊤ := by
+  -- `CoFG` is the finiteness of the quotient; put it in scope as an instance.
+  have : Module.Finite ℝ (_ ⧸ (ω.floerConformalSobolevOperator U ρ
+    (fun _ x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap) Ks Kt u).range) := hco
+  exact Submodule.exists_finset_subset_sup_span_eq_top
+    (range_floerConformalSobolevOperator_sup_span_almostComplexVariationsOn_eq_top hρ hUc hJ hn
+      hJω hKs hKt hu hM hO hOne hOU hJ₀ hinj hξ₀ hW hcl hco)
+
+end AlmostComplexCokernel
 
 end TauCeti.SymplecticForm
