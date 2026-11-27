@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Recentring
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.MeasureTheory.Group.Measure
 import TauCeti.Topology.Algebra.Support
