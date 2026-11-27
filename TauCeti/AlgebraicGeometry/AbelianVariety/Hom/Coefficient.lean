@@ -404,46 +404,55 @@ as a coefficient homomorphism. -/
     endAlgEquiv A f = CoefficientHom.endEquiv R A.toAbelianVariety
       (homLinearEquiv A A f.asHom) := (rfl)
 
-/-- A ring homomorphism extends coefficients functorially. The object formula computes the
-endpoints of a map in the new coefficient category. -/
-@[expose] def extendFunctor {S : Type*} [CommRing S] (φ : R →+* S) :
+/-- A ring homomorphism extends coefficients functorially. -/
+def extendFunctor {S : Type*} [CommRing S] (φ : R →+* S) :
     WithCoefficients R K ⥤ WithCoefficients S K where
   obj A := ⟨A.toAbelianVariety⟩
   map f := CoefficientHom.extend φ f
   map_id A := CoefficientHom.extend_id φ A.toAbelianVariety
   map_comp f g := CoefficientHom.extend_comp φ f g
 
+/-- Extending the coefficient ring keeps the same underlying abelian variety. -/
+@[simp] lemma extendFunctor_obj {S : Type*} [CommRing S] (φ : R →+* S)
+    (A : WithCoefficients R K) : (extendFunctor φ).obj A = ⟨A.toAbelianVariety⟩ := (rfl)
+
 /-- On Hom spaces the change-of-coefficients functor applies the ring map to the coefficients. -/
-@[simp] lemma homLinearEquiv_extendFunctor_map {S : Type*} [CommRing S] (φ : R →+* S)
-    {A B : WithCoefficients R K} (f : A ⟶ B) :
-    homLinearEquiv ((extendFunctor φ).obj A) ((extendFunctor φ).obj B)
-      ((extendFunctor φ).map f) =
-        CoefficientHom.extend φ (homLinearEquiv A B f) := (rfl)
+@[simp] lemma extendFunctor_map {S : Type*} [CommRing S] (φ : R →+* S)
+    {A B : WithCoefficients R K} (f : A ⟶ B) : (extendFunctor φ).map f =
+      eqToHom (extendFunctor_obj φ A) ≫
+        (homLinearEquiv _ _).symm (CoefficientHom.extend φ (homLinearEquiv A B f)) ≫
+        eqToHom (extendFunctor_obj φ B).symm :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 /-- Extension of the ground field defines a functor on abelian varieties with coefficient
-homomorphisms. The object formula computes the endpoints of a base-changed map. -/
-@[expose] def baseChangeFunctor (L : Type u) [Field L] [Algebra K L] :
+homomorphisms. -/
+def baseChangeFunctor (L : Type u) [Field L] [Algebra K L] :
     WithCoefficients R K ⥤ WithCoefficients R L where
   obj A := ⟨A.toAbelianVariety.baseChange L⟩
   map f := CoefficientHom.baseChange L f
   map_id A := CoefficientHom.baseChange_id L A.toAbelianVariety
   map_comp f g := CoefficientHom.baseChange_comp L f g
 
+/-- The ground-field extension sends each object to the base change of its abelian variety. -/
+@[simp] lemma baseChangeFunctor_obj (L : Type u) [Field L] [Algebra K L]
+    (A : WithCoefficients R K) : (baseChangeFunctor L).obj A =
+      ⟨A.toAbelianVariety.baseChange L⟩ := (rfl)
+
 /-- On Hom spaces the field-extension functor acts by base change of the field. -/
-@[simp] lemma homLinearEquiv_baseChangeFunctor_map (L : Type u) [Field L] [Algebra K L]
-    {A B : WithCoefficients R K} (f : A ⟶ B) :
-    homLinearEquiv ((baseChangeFunctor L).obj A) ((baseChangeFunctor L).obj B)
-      ((baseChangeFunctor L).map f) =
-        CoefficientHom.baseChange L (homLinearEquiv A B f) := (rfl)
+@[simp] lemma baseChangeFunctor_map (L : Type u) [Field L] [Algebra K L]
+    {A B : WithCoefficients R K} (f : A ⟶ B) : (baseChangeFunctor L).map f =
+      eqToHom (baseChangeFunctor_obj L A) ≫
+        (homLinearEquiv _ _).symm (CoefficientHom.baseChange L (homLinearEquiv A B f)) ≫
+        eqToHom (baseChangeFunctor_obj L B).symm :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 end
 
 end WithCoefficients
 
 /-- The functor from native abelian varieties to abelian varieties with coefficient
-homomorphisms sends each integral map to its tensor with one. The object formula computes the
-endpoints of the image of a native map. -/
-@[expose] noncomputable def coefficientFunctor (R : Type v) [CommRing R] :
+homomorphisms sends each integral map to its tensor with one. -/
+noncomputable def coefficientFunctor (R : Type v) [CommRing R] :
     AbelianVariety K ⥤ WithCoefficients R K where
   obj A := ⟨A⟩
   map f := CoefficientHom.ofHom R f
@@ -454,11 +463,12 @@ endpoints of the image of a native map. -/
 @[simp] lemma coefficientFunctor_obj (R : Type v) [CommRing R] (A : AbelianVariety K) :
     (coefficientFunctor R).obj A = ⟨A⟩ := (rfl)
 
-/-- Under the Hom space comparison, the coefficient functor sends a native morphism
-to its tensor with one. -/
-@[simp] lemma homLinearEquiv_coefficientFunctor_map (R : Type v) [CommRing R]
-    {A B : AbelianVariety K} (f : A ⟶ B) :
-    WithCoefficients.homLinearEquiv _ _ ((coefficientFunctor R).map f) =
-      CoefficientHom.ofHom R f := (rfl)
+/-- The coefficient functor sends a native morphism to its tensor with one. -/
+@[simp] lemma coefficientFunctor_map (R : Type v) [CommRing R]
+    {A B : AbelianVariety K} (f : A ⟶ B) : (coefficientFunctor R).map f =
+      eqToHom (coefficientFunctor_obj R A) ≫
+        (WithCoefficients.homLinearEquiv _ _).symm (CoefficientHom.ofHom R f) ≫
+        eqToHom (coefficientFunctor_obj R B).symm :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
 
 end TauCeti.AlgebraicGeometry.AbelianVariety
