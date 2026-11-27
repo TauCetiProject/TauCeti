@@ -27,8 +27,11 @@ statements include dimension zero and retain both orientation signs there.
 
 An orientation `ω` of a real normed space `F` of dimension `n + 1` selects a local orientation of
 `F` at the origin (`Orientation.localOrientation`), and so an integral generator of
-`Hⁿ⁺¹(F, F ∖ {0}; ℤ)` (`Orientation.localCohomologyClass`), indexed in the same degree. The
-opposite orientation selects the opposite generator, and a continuous linear equivalence
+`Hⁿ⁺¹(F, F ∖ {0}; ℤ)` (`Orientation.localCohomologyClass`), indexed in the same degree. A class of
+that group is determined by its pairing with the local orientation of `ω`
+(`Orientation.localCohomology_ext`). The opposite orientation selects the opposite generator, the
+two orientations select the two generators (`Orientation.localCohomologyClass_injective`,
+`Orientation.exists_eq_localCohomologyClass`), and a continuous linear equivalence
 `f : F ≃L[ℝ] G` pulls the generator selected by `ω.map f` back to the generator selected by `ω`
 (`Orientation.singularCohomologyMap_localCohomologyClass`), so an orientation-preserving
 automorphism fixes it. These are the normalized fibre values of the integral Thom class of an
@@ -288,6 +291,79 @@ theorem localCohomologyClass_neg (ω : Orientation ℝ F (Fin (n + 1)))
   rw [eq_localCohomologyClass_iff, localOrientation_neg]
   simp only [map_neg, ModuleCat.hom_neg, LinearMap.neg_apply, LocalOrientation.coe_neg, neg_neg]
   exact ω.kronecker_localCohomologyClass hF
+
+/-- A class of `Hⁿ⁺¹(F, F ∖ {0}; ℤ)` is determined by its pairing with the local orientation
+selected by `ω`. -/
+theorem localCohomology_ext (ω : Orientation ℝ F (Fin (n + 1))) (hF : finrank ℝ F = n + 1)
+    {α β : (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularCohomology
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1)}
+    (h : ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ (n + 1) α).hom
+        (ω.localOrientation hF).val =
+      ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ (n + 1) β).hom
+        (ω.localOrientation hF).val) :
+    α = β := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  -- In the degree `finrank ℝ F`, this is `TauCeti.LocalOrientation.cohomology_ext` in the identity
+  -- chart.
+  have key {d : ℕ} (hd : finrank ℝ F = d) (o : LocalOrientation F 0 d)
+      {α β : (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularCohomology
+        (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) d}
+      (h : ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ d α).hom o.val =
+        ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ d β).hom o.val) :
+      α = β := by
+    subst hd
+    exact LocalOrientation.cohomology_ext o (OpenPartialHomeomorph.refl F)
+      (OpenPartialHomeomorph.mem_refl_source 0) _ h
+  exact key hF (ω.localOrientation hF) h
+
+/-- Distinct orientations select distinct local cohomology generators. -/
+theorem localCohomologyClass_injective (hF : finrank ℝ F = n + 1) :
+    Function.Injective fun ω : Orientation ℝ F (Fin (n + 1)) ↦ ω.localCohomologyClass hF := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  intro ω ω' h
+  rcases ω.eq_or_eq_neg ω' (by rw [Nat.card_fin, hF]) with h' | h'
+  · exact h'
+  · -- The generators of `-ω'` and `ω'` pair with the local orientation of `ω'` to `-1` and `1`.
+    have hk := congrArg (fun α : (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularCohomology
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1) ↦
+      (((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ (n + 1) α).hom
+        (ω'.localOrientation hF).val).down) h
+    simp only [h', localCohomologyClass_neg, map_neg, ModuleCat.hom_neg, LinearMap.neg_apply,
+      ω'.kronecker_localCohomologyClass hF] at hk
+    simp at hk
+
+/-- Two orientations select the same local cohomology generator exactly when they are equal. -/
+@[simp]
+theorem localCohomologyClass_inj {ω ω' : Orientation ℝ F (Fin (n + 1))}
+    (hF : finrank ℝ F = n + 1) :
+    ω.localCohomologyClass hF = ω'.localCohomologyClass hF ↔ ω = ω' :=
+  (localCohomologyClass_injective hF).eq_iff
+
+/-- **Every generator is selected by an orientation.** A class generating `Hⁿ⁺¹(F, F ∖ {0}; ℤ)` is
+the generator selected by one of the two orientations of `F`. -/
+theorem exists_eq_localCohomologyClass (hF : finrank ℝ F = n + 1)
+    {x : (TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularCohomology
+      (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) (n + 1)}
+    (hx : Submodule.span ℤ {x} = ⊤) :
+    ∃ ω : Orientation ℝ F (Fin (n + 1)), x = ω.localCohomologyClass hF := by
+  have := FiniteDimensional.of_finrank_eq_succ hF
+  let ω₀ : Orientation ℝ F (Fin (n + 1)) := (Module.finBasisOfFinrankEq ℝ F hF).orientation
+  -- The generator `g` of `ω₀` is `c • x`, so `x` pairs with the local orientation of `ω₀` to a
+  -- unit `t` of `ℤ`, and `x` is the generator of `ω₀` or of `-ω₀` according to its sign.
+  obtain ⟨c, hc⟩ := Submodule.mem_span_singleton.1
+    (hx.ge (Submodule.mem_top (x := ω₀.localCohomologyClass hF)))
+  set t := ((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ (n + 1) x).hom
+    (ω₀.localOrientation hF).val with ht
+  have hk := ω₀.kronecker_localCohomologyClass hF
+  -- The scalar action of the span is the `ℤ`-module action; `map_zsmul` needs `zsmul`.
+  rw [← (int_smul_eq_zsmul _ c x).symm.trans hc, map_zsmul, ModuleCat.hom_zsmul,
+    LinearMap.smul_apply, ← ht] at hk
+  have hk' : c * t.down = 1 := congrArg ULift.down hk
+  rcases Int.eq_one_or_neg_one_of_mul_eq_one' hk' with ⟨-, h1⟩ | ⟨-, h1⟩
+  · exact ⟨ω₀, (ω₀.eq_localCohomologyClass_iff hF x).2 (ULift.ext h1)⟩
+  · refine ⟨-ω₀, ((-ω₀).eq_localCohomologyClass_iff hF x).2 ?_⟩
+    rw [localOrientation_neg, LocalOrientation.coe_neg, map_neg, ← ht]
+    exact ULift.ext (by simp [h1])
 
 /-- **Naturality of the selected generators.** A continuous linear equivalence `f : F ≃L[ℝ] G`
 pulls the local cohomology generator selected by the transported orientation `ω.map f` back to the
