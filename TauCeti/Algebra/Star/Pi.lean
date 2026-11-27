@@ -39,6 +39,7 @@ public section
 namespace TauCeti
 
 /-- Composing a vector with `starRingEnd` is taking its `star`. -/
+@[simp]
 theorem starRingEnd_comp_eq_star {m S : Type*} [CommSemiring S] [StarRing S] (v : m → S) :
     starRingEnd S ∘ v = star v := by
   ext i
