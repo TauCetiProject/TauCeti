@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.AffineSpace
 public import Mathlib.AlgebraicGeometry.QuasiAffine
 
+import TauCeti.AlgebraicGeometry.AffineSpace.Basic
 import TauCeti.AlgebraicGeometry.Morphisms.Immersion
 import TauCeti.RingTheory.Localization.Away.FiniteType
 
@@ -31,25 +32,6 @@ open CategoryTheory TopologicalSpace Opposite
 universe u
 
 namespace AlgebraicGeometry
-
-namespace AffineSpace
-
-/-- Restricting the coordinates before pulling them back along `homOfVector` gives the
-corresponding restricted entries of the coordinate family. -/
-@[simp]
-lemma homOfVector_appLE_coord {X S : Scheme.{u}} {ι : Type u}
-    (f : X ⟶ S) (v : ι → Γ(X, ⊤)) (W : 𝔸(ι; S).Opens) (U : X.Opens)
-    (e : U ≤ AffineSpace.homOfVector f v ⁻¹ᵁ W) (i : ι) :
-    (AffineSpace.homOfVector f v).appLE W U e
-      (𝔸(ι; S).presheaf.map (homOfLE le_top).op (AffineSpace.coord S i)) =
-        X.presheaf.map (homOfLE (show U ≤ ⊤ from le_top)).op (v i) := by
-  rw [← CommRingCat.comp_apply, Scheme.Hom.map_appLE]
-  -- At the top open, `appLE` is `appTop` followed by restriction.
-  change X.presheaf.map _ ((homOfVector f v).appTop _) = _
-  rw [homOfVector_appTop_coord]
-  rfl
-
-end AffineSpace
 
 namespace Scheme.Hom
 
@@ -139,9 +121,7 @@ theorem exists_isImmersion_affineSpace {X S : Scheme.{u}} [X.IsQuasiAffine]
   refine ⟨ι, inferInstance, AffineSpace.homOfVector f v, ?_,
     AffineSpace.homOfVector_over f v⟩
   let : MorphismProperty.HasOfPostcompProperty @IsImmersion @IsOpenImmersion :=
-    ⟨fun a b _ h ↦ by
-      have := h
-      exact IsImmersion.of_comp a b⟩
+    MorphismProperty.HasOfPostcompProperty.of_le _ ⊤ le_top
   refine IsZariskiLocalAtTarget.of_forall_source_exists_preimage _ fun x ↦ ?_
   obtain ⟨y, hyt, hxy⟩ := Set.mem_iUnion₂.mp (ht (Set.mem_univ x))
   let j : t := ⟨y, hyt⟩

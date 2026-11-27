@@ -41,9 +41,7 @@ theorem nonempty_compactification_over (ι : Type u) [Finite ι] (S : Scheme.{u}
   let g : S ⟶ S₀ := specULiftZIsTerminal.from S
   let p : 𝔸(ι; S₀) ⟶ S₀ := 𝔸(ι; S₀) ↘ S₀
   have : Smooth p := (smoothOfRelativeDimension ι S₀).smooth
-  have : LocallyOfFiniteType p :=
-    ⟨fun {_} hU {_} hV e ↦
-      RingHom.FiniteType.of_finitePresentation (p.smooth_appLE hU hV e).finitePresentation⟩
+  have : LocallyOfFiniteType p := inferInstance
   obtain ⟨C⟩ := TauCeti.nonempty_denseCompactification_of_isAffine p
   let h := isPullback_map (n := ι) g
   exact ⟨(C.obj.baseChange g).precomp h.isoPullback.hom h.isoPullback_hom_snd⟩
