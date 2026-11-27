@@ -189,6 +189,17 @@ theorem kerSobolevLEval_eq_domRestrict (hp : 1 < p)
   ext w i
   simp [kerSobolevLEval_apply_eq_toSection]
 
+/-- As a function, `TauCeti.IsRealCauchyRiemannOperator.kerSobolevLEval` is the restriction to the
+kernel of `D_p` of the continuous point evaluation, the form taken by the constraint criteria
+`ContinuousLinearMap.surjective_prod_iff` and `ContinuousLinearMap.injective_prod_iff`. -/
+theorem coe_kerSobolevLEval_eq_domRestrict (hp : 1 < p)
+    (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) {ι : Type*} (x : ι → M) :
+    ⇑(kerSobolevLEval A hD hDs hp x) =
+      ⇑((ContinuousLinearMap.pi fun i ↦ SobolevSection.evalL hc (x i)).domRestrict
+        (hD.sobolevL A hDs volume p).ker) := by
+  rw [kerSobolevLEval_eq_domRestrict A hD hDs hp hc,
+    ← ContinuousLinearMap.toLinearMap_domRestrict, ContinuousLinearMap.coe_coe]
+
 /-- **Regularity of the constrained problem.** The incidence operator is onto exactly when `D_p` is
 onto and every family of values at the points is the family of values of a smooth solution of
 `D ξ = 0`. -/
@@ -197,8 +208,7 @@ theorem sobolevLIncidence_surjective_iff (hp : 1 < p)
     Surjective (sobolevLIncidence A hD hDs hc x) ↔
       Surjective (hD.sobolevL A hDs volume p) ∧ Surjective (kerSobolevLEval A hD hDs hp x) := by
   rw [sobolevLIncidence_def, ContinuousLinearMap.surjective_prod_iff,
-    ← ContinuousLinearMap.coe_coe (ContinuousLinearMap.domRestrict _ _),
-    ContinuousLinearMap.toLinearMap_domRestrict, kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
+    coe_kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
 
 /-- The incidence operator is injective exactly when no nonzero element of the kernel of `D_p`, a
 smooth solution of `D ξ = 0`, vanishes at all the points. -/
@@ -206,8 +216,7 @@ theorem sobolevLIncidence_injective_iff (hp : 1 < p)
     (hc : SobolevSection.HasContinuousRepresentatives A volume p 1) {ι : Type*} (x : ι → M) :
     Injective (sobolevLIncidence A hD hDs hc x) ↔ Injective (kerSobolevLEval A hD hDs hp x) := by
   rw [sobolevLIncidence_def, ContinuousLinearMap.injective_prod_iff,
-    ← ContinuousLinearMap.coe_coe (ContinuousLinearMap.domRestrict _ _),
-    ContinuousLinearMap.toLinearMap_domRestrict, kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
+    coe_kerSobolevLEval_eq_domRestrict A hD hDs hp hc]
 
 /-- **The incidence operator is Fredholm.** For `1 < p < ∞` and finitely many points, the
 incidence operator differs from `D_p` by the finite-rank evaluation, so it is Fredholm. -/
