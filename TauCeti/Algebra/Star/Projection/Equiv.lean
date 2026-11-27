@@ -12,7 +12,8 @@ public import Mathlib.Algebra.Star.StarProjection
 # Star algebra equivalences on star projections
 
 A star algebra equivalence restricts to an equivalence of the subtypes of star projections.
-Its restriction preserves and reflects zero products over nonunital nonassociative semirings.
+Its restriction preserves and reflects zero products when zero is an additive identity on
+both sides.
 -/
 
 public section
@@ -47,11 +48,11 @@ theorem starProjectionCongr_symm_apply (φ : A ≃⋆ₐ[R] B) (q : {q : B // Is
 
 end
 
-/-- A star algebra equivalence of nonunital nonassociative semirings preserves and reflects zero
-products of projections. -/
+/-- A star algebra equivalence preserves and reflects zero products of projections when zero
+is an additive identity in the domain and codomain. -/
 theorem starProjectionCongr_mul_eq_zero_iff {R A B : Type*}
-    [NonUnitalNonAssocSemiring A] [Star A] [SMul R A]
-    [NonUnitalNonAssocSemiring B] [Star B] [SMul R B]
+    [AddZeroClass A] [Mul A] [Star A] [SMul R A]
+    [AddZeroClass B] [Mul B] [Star B] [SMul R B]
     (φ : A ≃⋆ₐ[R] B) (p q : {x : A // IsStarProjection x}) :
     (φ.starProjectionCongr p).val * (φ.starProjectionCongr q).val = 0 ↔ p.val * q.val = 0 := by
   simp only [starProjectionCongr_apply, ← map_mul, map_eq_zero_iff φ φ.injective]
