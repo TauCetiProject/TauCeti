@@ -102,8 +102,11 @@ theorem measure_setOf_norm_le_and_norm_inv_le_le (ν : Measure S) [ν.IsMulLeftI
         field_simp
 
 open MulOpposite in
-/-- The right-invariant polynomial covering bound, with the same reference ball
-and dimension exponent as the left-invariant version. -/
+/-- Let `ν` be a right-invariant measure, `j : S →* Eˣ` and `y : Eˣ`. For `ε > 0`,
+
+`ν {s | ‖j s * y‖ ≤ R ∧ ‖(j s * y)⁻¹‖ ≤ R'} ≤ (1 + 2 R R' / ε) ^ d * ν {s | ‖j s - 1‖ ≤ ε}`,
+
+where `d` is the real dimension of the normed algebra `E`. -/
 theorem measure_setOf_norm_le_and_norm_inv_le_le_of_isMulRightInvariant
     (ν : Measure S) [ν.IsMulRightInvariant] (j : S →* Eˣ) (y : Eˣ)
     {ε R R' : ℝ} (hε : 0 < ε) :
@@ -118,11 +121,11 @@ theorem measure_setOf_norm_le_and_norm_inv_le_le_of_isMulRightInvariant
   let unitsOp : Eˣᵐᵒᵖ ≃* (Eᵐᵒᵖ)ˣ := Units.opEquiv.symm
   let jOp : Sᵐᵒᵖ →* (Eᵐᵒᵖ)ˣ := unitsOp.toMonoidHom.comp j.op
   let yOp : (Eᵐᵒᵖ)ˣ := unitsOp (op y)
-  have hprod (s : S) : yOp * jOp (op s) = unitsOp (op (j s * y)) :=
-    (unitsOp.map_mul (op y) (op (j s))).symm
   have hjOp (s : S) : jOp (op s) = unitsOp (op (j s)) := by
     simp only [jOp, MulEquiv.toMonoidHom_eq_coe, MonoidHom.comp_apply, MonoidHom.op_apply_apply,
       Function.comp_apply, unop_op, MonoidHom.coe_ofClass]
+  have hprod (s : S) : yOp * jOp (op s) = unitsOp (op (j s * y)) := by
+    rw [hjOp, op_mul, map_mul]
   have hnormInv (u : Eˣ) :
       ‖(((unitsOp (op u))⁻¹ : (Eᵐᵒᵖ)ˣ) : Eᵐᵒᵖ)‖ = ‖((u⁻¹ : Eˣ) : E)‖ := by
     calc

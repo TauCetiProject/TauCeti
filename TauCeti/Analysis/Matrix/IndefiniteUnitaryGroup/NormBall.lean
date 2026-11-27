@@ -32,10 +32,11 @@ For the unitary group `unitaryGroupOf J` of a unitary Gram matrix `J`, with the 
 `Matrix.one_le_norm_val_of_mem_unitaryGroupOf`). Hence the sets `{s | ‖y * j s‖ ≤ R}` have
 measure at most `(3 R²) ^ d ν B` for `R ≥ 1` and `ε = 1`, where `d = dim_ℝ M_n(𝕜)`, which is
 `2 n²` over `ℂ` and `n²` over `ℝ`. By the layer-cake bound of
-`TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow`, for continuous `j` the function
-`s ↦ ‖y * j s‖ ^ (-A)` is integrable for every `A > 2 d` when `B` has finite measure. The same
-holds for `s ↦ ‖j s * y‖ ^ (-A)` with a right-invariant measure, with a bound uniform in `y`. In
-particular, for a Haar measure on `unitaryGroupOf J` itself, such as `U(p, q)` with
+`TauCeti.lintegral_ofReal_rpow_neg_le_of_measure_le_rpow`, the lower-integral estimate is uniform
+in `y` when the translated norm is almost everywhere measurable. For continuous `j` and a finite
+reference ball, `s ↦ ‖y * j s‖ ^ (-A)` is integrable for `A > 2 d`. The same holds for
+`s ↦ ‖j s * y‖ ^ (-A)` with a right-invariant measure. In particular,
+for a Haar measure on `unitaryGroupOf J` itself, such as `U(p, q)` with
 `J = diag(1, …, 1, -1, …, -1)`, every inverse power `‖g‖ ^ (-A)` with `A > 2 d` of the operator
 norm is integrable. The threshold `2 d` comes from the crude covering argument and is not sharp.
 
@@ -158,9 +159,12 @@ private theorem lintegral_norm_rpow_neg_le_of_cover
     exact mul_le_mul_left (normBallFactor_le_rpow _ hR) C
   · rw [← mul_assoc, ← ENNReal.ofReal_mul (by positivity), mul_comm (A / _), mul_div_assoc]
 
-/-- Inverse powers of the operator norm of `j s * y` under a right-invariant measure.
-If `s ↦ ‖j s * y‖` is almost everywhere measurable and `A > 2 d`, the bound is uniform in `y`,
-where `d` is the real matrix dimension. -/
+/-- For a unitary Gram matrix `J` and a right-invariant measure `ν`, suppose the translated
+operator norm `s ↦ ‖j s * y‖` is almost everywhere measurable. For `A > 2 d`,
+
+`∫⁻ ‖j s * y‖ ^ (-A) ∂ν ≤ 3 ^ d A / (A - 2 d) * ν {s | ‖j s - 1‖ ≤ 1}`,
+
+where `d` is the real matrix dimension. The bound is uniform in `y`. -/
 theorem lintegral_norm_mul_rpow_neg_le_of_isMulRightInvariant
     (ν : Measure S) [ν.IsMulRightInvariant]
     (hJ : J ∈ unitary (Matrix n n 𝕜)) (j : S →* unitaryGroupOf J) (y : unitaryGroupOf J)
@@ -223,9 +227,11 @@ theorem integrable_norm_mul_rpow_neg (ν : Measure S) [ν.IsMulLeftInvariant]
   exact (lintegral_norm_mul_rpow_neg_le ν hJ j y
     (continuous_norm_val_mul hj y).aemeasurable hA).trans_lt (by finiteness)
 
-/-- For a continuous homomorphism `j` and a right-invariant measure, the function
-`s ↦ ‖j s * y‖ ^ (-A)` is integrable for `A > 2 d` when the radius-one ball around the identity
-has finite measure. Here `d` is the real dimension of the matrices. -/
+/-- **Integrability of inverse norm powers under a right-invariant measure.** Let `S` be a group
+with a topology whose open sets are measurable, `ν` a right-invariant measure on `S`, and
+`j : S →* unitaryGroupOf J` continuous, with `J` unitary. If the ball `{s | ‖j s - 1‖ ≤ 1}`
+has finite measure, then `s ↦ ‖j s * y‖ ^ (-A)` is integrable for every `A > 2 d`, where `d` is
+the real matrix dimension. -/
 theorem integrable_norm_mul_rpow_neg_of_isMulRightInvariant
     (ν : Measure S) [ν.IsMulRightInvariant]
     (hJ : J ∈ unitary (Matrix n n 𝕜)) {j : S →* unitaryGroupOf J} (hj : Continuous j)
