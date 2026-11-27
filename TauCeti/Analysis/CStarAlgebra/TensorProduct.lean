@@ -29,8 +29,8 @@ homomorphism `TauCeti.CStarTensorProduct.of N : A ⊗[ℂ] B → TauCeti.CStarTe
 is injective, isometric for `N` and has dense range. A star homomorphism `A ⊗[ℂ] B → C` into a
 C*-algebra bounded by `N` extends to `TauCeti.CStarTensorProduct N`
 (`TauCeti.CStarTensorProduct.extend`), isometrically and injectively if it preserves `N`, and
-surjectively if it has dense range. A linear map `A ⊗[ℂ] B → A' ⊗[ℂ] B'` bounded for C*-norms
-`N` and `N'` extends to a continuous linear map between the C*-tensor products
+surjectively if it has dense range. A linear map `A ⊗[ℂ] B → E` into a Banach space bounded by a
+multiple of `N` extends to a continuous linear map on `TauCeti.CStarTensorProduct N`
 (`TauCeti.CStarTensorProduct.extendLinear`).
 
 The maximal and minimal tensor products `TauCeti.MaxTensorProduct A B` and
@@ -48,8 +48,8 @@ The maximal and minimal tensor products `TauCeti.MaxTensorProduct A B` and
   `TauCeti.CStarTensorProduct.continuousLinearMap_ext`.
 * `TauCeti.CStarTensorProduct.extend`: extension of star homomorphisms bounded by `N`, with
   `TauCeti.CStarTensorProduct.extend_injective` and `TauCeti.CStarTensorProduct.extend_surjective`.
-* `TauCeti.CStarTensorProduct.extendLinear`: extension of linear maps
-  `A ⊗[ℂ] B → A' ⊗[ℂ] B'` bounded for C*-norms `N` and `N'`.
+* `TauCeti.CStarTensorProduct.extendLinear`: extension of linear maps `A ⊗[ℂ] B → E` into a
+  Banach space bounded by a multiple of `N`.
 
 ## References
 
@@ -337,27 +337,24 @@ theorem extend_surjective {C : Type*} [NonUnitalCStarAlgebra C] (f : A ⊗[ℂ] 
 
 section ExtendLinear
 
-variable {A' B' : Type*} [NonUnitalCStarAlgebra A'] [NonUnitalCStarAlgebra B']
-  {N' : CStarTensorNorm A' B'}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
-variable (N N') in
-/-- The extension of a linear map `f : A ⊗[ℂ] B → A' ⊗[ℂ] B'` to a continuous linear map
-`CStarTensorProduct N → CStarTensorProduct N'`. If `N' (f x) ≤ c * N x` for all `x`, it extends
-`f` (`TauCeti.CStarTensorProduct.extendLinear_of`) and has norm at most `c`
+variable (N) in
+/-- The extension of a linear map `f : A ⊗[ℂ] B → E` into a Banach space to a continuous linear
+map `CStarTensorProduct N → E`. If `‖f x‖ ≤ c * N x` for all `x`, it extends `f`
+(`TauCeti.CStarTensorProduct.extendLinear_of`) and has norm at most `c`
 (`TauCeti.CStarTensorProduct.norm_extendLinear_le`). -/
-def extendLinear (f : A ⊗[ℂ] B →ₗ[ℂ] A' ⊗[ℂ] B') :
-    CStarTensorProduct N →L[ℂ] CStarTensorProduct N' :=
-  ((of N' : A' ⊗[ℂ] B' →ₗ[ℂ] CStarTensorProduct N').comp f).extendOfNorm
-    (of N : A ⊗[ℂ] B →ₗ[ℂ] CStarTensorProduct N)
+def extendLinear (f : A ⊗[ℂ] B →ₗ[ℂ] E) : CStarTensorProduct N →L[ℂ] E :=
+  f.extendOfNorm (of N : A ⊗[ℂ] B →ₗ[ℂ] CStarTensorProduct N)
 
 /-- On `A ⊗[ℂ] B`, the extension of a bounded linear map `f` is `f`. -/
-theorem extendLinear_of {f : A ⊗[ℂ] B →ₗ[ℂ] A' ⊗[ℂ] B'} {c : ℝ} (hf : ∀ x, N' (f x) ≤ c * N x)
-    (x : A ⊗[ℂ] B) : extendLinear N N' f (of N x) = of N' (f x) :=
+theorem extendLinear_of {f : A ⊗[ℂ] B →ₗ[ℂ] E} {c : ℝ} (hf : ∀ x, ‖f x‖ ≤ c * N x)
+    (x : A ⊗[ℂ] B) : extendLinear N f (of N x) = f x :=
   LinearMap.extendOfNorm_eq denseRange_of ⟨c, fun x ↦ by simpa using hf x⟩ x
 
-/-- If `N' (f x) ≤ c * N x` for all `x`, the extension of `f` has norm at most `c`. -/
-theorem norm_extendLinear_le {f : A ⊗[ℂ] B →ₗ[ℂ] A' ⊗[ℂ] B'} {c : ℝ} (hc : 0 ≤ c)
-    (hf : ∀ x, N' (f x) ≤ c * N x) : ‖extendLinear N N' f‖ ≤ c :=
+/-- If `‖f x‖ ≤ c * N x` for all `x`, the extension of `f` has norm at most `c`. -/
+theorem norm_extendLinear_le {f : A ⊗[ℂ] B →ₗ[ℂ] E} {c : ℝ} (hc : 0 ≤ c)
+    (hf : ∀ x, ‖f x‖ ≤ c * N x) : ‖extendLinear N f‖ ≤ c :=
   LinearMap.opNorm_extendOfNorm_le denseRange_of hc fun x ↦ by simpa using hf x
 
 end ExtendLinear

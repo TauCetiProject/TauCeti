@@ -173,13 +173,15 @@ variable (B) in
 bounded linear map `MinTensorProduct A B → MinTensorProduct A' B` extending `φ ⊗ id`, of norm at
 most `‖φ‖` (`TauCeti.MinTensorProduct.norm_rTensorCP_le`). -/
 def rTensorCP (φ : A →CP A') : MinTensorProduct A B →L[ℂ] MinTensorProduct A' B :=
-  extendLinear _ _ (φ.toLinearMap.rTensor B)
+  extendLinear _
+    ((LinearMap.ofClass (of (minCStarTensorNorm A' B))).comp (φ.toLinearMap.rTensor B))
 
 @[simp]
 theorem rTensorCP_of (φ : A →CP A') (x : A ⊗[ℂ] B) :
     rTensorCP B φ (of (minCStarTensorNorm A B) x) =
       of (minCStarTensorNorm A' B) (φ.toLinearMap.rTensor B x) :=
-  extendLinear_of (by simpa only [minCStarTensorNorm_apply] using minTensorNorm_rTensor_le φ) x
+  extendLinear_of (by simpa only [LinearMap.comp_apply, LinearMap.coe_ofClass, norm_of,
+      minCStarTensorNorm_apply] using minTensorNorm_rTensor_le φ) x
 
 theorem rTensorCP_of_tmul (φ : A →CP A') (a : A) (b : B) :
     rTensorCP B φ (of (minCStarTensorNorm A B) (a ⊗ₜ b)) =
@@ -190,7 +192,8 @@ theorem rTensorCP_of_tmul (φ : A →CP A') (a : A) (b : B) :
 theorem norm_rTensorCP_le (φ : A →CP A') :
     ‖rTensorCP B φ‖ ≤ ‖φ.toContinuousLinearMap‖ :=
   norm_extendLinear_le (norm_nonneg _) <| by
-    simpa only [minCStarTensorNorm_apply] using minTensorNorm_rTensor_le φ
+    simpa only [LinearMap.comp_apply, LinearMap.coe_ofClass, norm_of,
+      minCStarTensorNorm_apply] using minTensorNorm_rTensor_le φ
 
 @[simp]
 theorem rTensorCP_id : rTensorCP B (CompletelyPositiveMap.id A) = .id ℂ _ :=
@@ -212,13 +215,15 @@ variable (A) in
 bounded linear map `MinTensorProduct A B → MinTensorProduct A B'` extending `id ⊗ ψ`, of norm at
 most `‖ψ‖` (`TauCeti.MinTensorProduct.norm_lTensorCP_le`). -/
 def lTensorCP (ψ : B →CP B') : MinTensorProduct A B →L[ℂ] MinTensorProduct A B' :=
-  extendLinear _ _ (ψ.toLinearMap.lTensor A)
+  extendLinear _
+    ((LinearMap.ofClass (of (minCStarTensorNorm A B'))).comp (ψ.toLinearMap.lTensor A))
 
 @[simp]
 theorem lTensorCP_of (ψ : B →CP B') (x : A ⊗[ℂ] B) :
     lTensorCP A ψ (of (minCStarTensorNorm A B) x) =
       of (minCStarTensorNorm A B') (ψ.toLinearMap.lTensor A x) :=
-  extendLinear_of (by simpa only [minCStarTensorNorm_apply] using minTensorNorm_lTensor_le ψ) x
+  extendLinear_of (by simpa only [LinearMap.comp_apply, LinearMap.coe_ofClass, norm_of,
+      minCStarTensorNorm_apply] using minTensorNorm_lTensor_le ψ) x
 
 theorem lTensorCP_of_tmul (ψ : B →CP B') (a : A) (b : B) :
     lTensorCP A ψ (of (minCStarTensorNorm A B) (a ⊗ₜ b)) =
@@ -229,7 +234,8 @@ theorem lTensorCP_of_tmul (ψ : B →CP B') (a : A) (b : B) :
 theorem norm_lTensorCP_le (ψ : B →CP B') :
     ‖lTensorCP A ψ‖ ≤ ‖ψ.toContinuousLinearMap‖ :=
   norm_extendLinear_le (norm_nonneg _) <| by
-    simpa only [minCStarTensorNorm_apply] using minTensorNorm_lTensor_le ψ
+    simpa only [LinearMap.comp_apply, LinearMap.coe_ofClass, norm_of,
+      minCStarTensorNorm_apply] using minTensorNorm_lTensor_le ψ
 
 @[simp]
 theorem lTensorCP_id : lTensorCP A (CompletelyPositiveMap.id B) = .id ℂ _ :=
@@ -251,13 +257,16 @@ variable [PartialOrder A] [StarOrderedRing A] [PartialOrder A'] [StarOrderedRing
 `ψ : B → B'` give the bounded linear map `MinTensorProduct A B → MinTensorProduct A' B'`
 extending `φ ⊗ ψ`, of norm at most `‖φ‖ ‖ψ‖` (`TauCeti.MinTensorProduct.norm_mapCP_le`). -/
 def mapCP (φ : A →CP A') (ψ : B →CP B') : MinTensorProduct A B →L[ℂ] MinTensorProduct A' B' :=
-  extendLinear _ _ (TensorProduct.map φ.toLinearMap ψ.toLinearMap)
+  extendLinear _
+    ((LinearMap.ofClass (of (minCStarTensorNorm A' B'))).comp
+      (TensorProduct.map φ.toLinearMap ψ.toLinearMap))
 
 @[simp]
 theorem mapCP_of (φ : A →CP A') (ψ : B →CP B') (x : A ⊗[ℂ] B) :
     mapCP φ ψ (of (minCStarTensorNorm A B) x) =
       of (minCStarTensorNorm A' B') (TensorProduct.map φ.toLinearMap ψ.toLinearMap x) :=
-  extendLinear_of (by simpa only [minCStarTensorNorm_apply] using minTensorNorm_map_le φ ψ) x
+  extendLinear_of (by simpa only [LinearMap.comp_apply, LinearMap.coe_ofClass, norm_of,
+      minCStarTensorNorm_apply] using minTensorNorm_map_le φ ψ) x
 
 theorem mapCP_of_tmul (φ : A →CP A') (ψ : B →CP B') (a : A) (b : B) :
     mapCP φ ψ (of (minCStarTensorNorm A B) (a ⊗ₜ b)) =
@@ -268,7 +277,8 @@ theorem mapCP_of_tmul (φ : A →CP A') (ψ : B →CP B') (a : A) (b : B) :
 theorem norm_mapCP_le (φ : A →CP A') (ψ : B →CP B') :
     ‖mapCP φ ψ‖ ≤ ‖φ.toContinuousLinearMap‖ * ‖ψ.toContinuousLinearMap‖ :=
   norm_extendLinear_le (mul_nonneg (norm_nonneg _) (norm_nonneg _)) <| by
-    simpa only [minCStarTensorNorm_apply] using minTensorNorm_map_le φ ψ
+    simpa only [LinearMap.comp_apply, LinearMap.coe_ofClass, norm_of,
+      minCStarTensorNorm_apply] using minTensorNorm_map_le φ ψ
 
 /-- `φ ⊗ ψ = (φ ⊗ id) ∘ (id ⊗ ψ)` on the minimal tensor product. -/
 theorem mapCP_eq_rTensorCP_comp_lTensorCP (φ : A →CP A') (ψ : B →CP B') :
