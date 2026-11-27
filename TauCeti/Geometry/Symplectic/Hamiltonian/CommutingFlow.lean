@@ -71,7 +71,15 @@ restricts to the flow of `Fᵢ` on the `i`-th coordinate axis, preserves `σ` an
 is itself a Hamiltonian flow: `t ↦ (t • v) • x` is the flow line through `x` of the combination
 `v ⬝ᵥ F = ∑ i, vᵢ Fᵢ`
 (`TauCeti.SmoothTwoForm.IsSymplectic.flowOf_hamiltonianVectorField_dotProduct`), so `v` acts by
-the time-one map of that flow. On an open subset `V` where the restrictions of the `Fᵢ` still
+the time-one map of that flow. In particular every combination `v ⬝ᵥ F` has a complete
+Hamiltonian vector field, and any two combinations Poisson-commute
+(`TauCeti.SmoothTwoForm.IsSymplectic.isCompleteVectorField_hamiltonianVectorField_dotProduct`,
+`TauCeti.SmoothTwoForm.poissonBracket_dotProduct_eq_zero`). So the flow action only
+depends on the functions through their linear combinations: if a second such family `G` satisfies
+`w ⬝ᵥ G = v ⬝ᵥ F`, then `w` acts through `G` as `v` acts through `F`, and for a linear
+recombination `G = A F` by a matrix `A` the vector `w` acts through `G` as `w A` acts through `F`
+(`TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_of_eq_mulVec`). On an open
+subset `V` where the restrictions of the `Fᵢ` still
 have complete Hamiltonian vector fields, the flow action of the restricted family is the
 restriction of the flow action of `F`
 (`TauCeti.SmoothTwoForm.IsSymplectic.coe_hamiltonianFlowAction_mpullback_subtype_val_apply`). More
@@ -124,6 +132,9 @@ connected regular fibre with a torus.
 * `TauCeti.SmoothTwoForm.IsSymplectic.isMIntegralCurve_hamiltonianFlowAction_smul` and
   `TauCeti.SmoothTwoForm.IsSymplectic.flowOf_hamiltonianVectorField_dotProduct`: the action of
   `t • v` is the time-`t` map of the Hamiltonian flow of `v ⬝ᵥ F`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_eq_of_dotProduct_eq` and
+  `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowAction_apply_of_eq_mulVec`: two families with
+  a common linear combination act alike, so `w` acts through `A F` as `w A` acts through `F`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.coe_hamiltonianFlowAction_mpullback_subtype_val_apply`: on
   an open subset where the restricted flows are complete, the flow action of the restricted family
   is the restriction of the flow action.
@@ -448,6 +459,30 @@ theorem flowOf_flowOf_comm (hf : ContMDiff I 𝓘(ℝ) 3 f) (hg : ContMDiff I �
 
 end IsSymplectic
 
+/-! ### Linear combinations of Poisson-commuting functions -/
+
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+/-- **Linear combinations of Poisson-commuting functions Poisson-commute.** If functions `Fᵢ`,
+differentiable at `x`, pairwise Poisson-commute at `x`, so do any two of their linear combinations
+`v ⬝ᵥ F` and `w ⬝ᵥ F`. -/
+theorem poissonBracket_dotProduct_eq_zero {ι : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
+    (hF : ∀ i, MDifferentiableAt I 𝓘(ℝ) (F · i) x)
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) (v w : ι → ℝ) :
+    σ.poissonBracket (fun y ↦ v ⬝ᵥ F y) (fun y ↦ w ⬝ᵥ F y) x = 0 := by
+  rw [poissonBracket_def, hamiltonianVectorField_dotProduct hF,
+    hamiltonianVectorField_dotProduct hF, ← SmoothForm.bilinFormAt_apply]
+  simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply,
+    SmoothForm.bilinFormAt_apply, ← poissonBracket_def, hcomm, smul_zero, Finset.sum_const_zero]
+
+omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [I.Boundaryless] in
+/-- The components of a linear recombination `A F` of functions that are differentiable and pairwise
+Poisson-commute at `x` pairwise Poisson-commute at `x`. -/
+theorem poissonBracket_mulVec_eq_zero {ι κ : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
+    (hF : ∀ i, MDifferentiableAt I 𝓘(ℝ) (F · i) x)
+    (hcomm : ∀ i j, σ.poissonBracket (F · i) (F · j) x = 0) (A : Matrix κ ι ℝ) (k l : κ) :
+    σ.poissonBracket (fun y ↦ (A *ᵥ F y) k) (fun y ↦ (A *ᵥ F y) l) x = 0 :=
+  poissonBracket_dotProduct_eq_zero hF hcomm (A k) (A l)
+
 /-! ### Poisson-commuting Hamiltonian flows commute -/
 
 namespace IsSymplectic
@@ -762,6 +797,50 @@ theorem flowOf_hamiltonianVectorField_dotProduct (v : ι → ℝ) (t : ℝ) (x :
   have h := flowOf_eq_of_isMIntegralCurve hv
     (hσ.isMIntegralCurve_hamiltonianFlowAction_smul hF hcomm hc v x) t
   rwa [zero_smul, hσ.hamiltonianFlowAction_zero_apply] at h
+
+/-! ### Linear recombinations of the functions -/
+
+include hF hcomm hc in
+/-- **Linear combinations of the functions have complete Hamiltonian vector fields.** The
+Hamiltonian flow of `v ⬝ᵥ F` is the action of the line through `v`, defined at all times. -/
+theorem isCompleteVectorField_hamiltonianVectorField_dotProduct (v : ι → ℝ) :
+    IsCompleteVectorField (σ.hamiltonianVectorField fun y ↦ v ⬝ᵥ F y) :=
+  isCompleteVectorField_of_forall_exists_isMIntegralCurve fun x ↦
+    ⟨_, by rw [zero_smul, hσ.hamiltonianFlowAction_zero_apply],
+      hσ.isMIntegralCurve_hamiltonianFlowAction_smul hF hcomm hc v x⟩
+
+include hF hcomm hc in
+/-- The components of a linear recombination `A F` of the functions have complete Hamiltonian
+vector fields. -/
+theorem isCompleteVectorField_hamiltonianVectorField_mulVec {κ : Type*} (A : Matrix κ ι ℝ) (k : κ) :
+    IsCompleteVectorField (σ.hamiltonianVectorField fun y ↦ (A *ᵥ F y) k) :=
+  hσ.isCompleteVectorField_hamiltonianVectorField_dotProduct hF hcomm hc (A k)
+
+variable {κ : Type*} [Fintype κ] {G : M → κ → ℝ} (hG : ContMDiff I 𝓘(ℝ, κ → ℝ) ∞ G)
+  (hcommG : ∀ i j x, σ.poissonBracket (G · i) (G · j) x = 0)
+  (hcG : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField (G · i)))
+
+/-- **Two families with a common linear combination.** Let `G : M → (κ → ℝ)` be a second smooth
+family of pairwise Poisson-commuting functions with complete Hamiltonian vector fields. If
+`w ⬝ᵥ G = v ⬝ᵥ F`, then `w` acts through `G` as `v` acts through `F`: both act by the time-one map
+of the Hamiltonian flow of this common function. -/
+theorem hamiltonianFlowAction_apply_eq_of_dotProduct_eq {v : ι → ℝ} {w : κ → ℝ}
+    (h : ∀ y, w ⬝ᵥ G y = v ⬝ᵥ F y) (x : M) :
+    (hσ.hamiltonianFlowAction hG hcommG hcG w).toMul x =
+      (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x := by
+  have h₁ := hσ.flowOf_hamiltonianVectorField_dotProduct hG hcommG hcG w 1 x
+  simp only [h, hσ.flowOf_hamiltonianVectorField_dotProduct hF hcomm hc v 1 x, one_smul] at h₁
+  exact h₁.symm
+
+/-- **The flow action of a linear recombination of the functions.** If `G = A F` for a matrix
+`A`, that is `Gₖ = ∑ᵢ Aₖᵢ Fᵢ`, then `w` acts through `G` as `w A`, the vector `Aᵀ w`, acts through
+`F`. -/
+theorem hamiltonianFlowAction_apply_of_eq_mulVec (A : Matrix κ ι ℝ) (hGF : ∀ y, G y = A *ᵥ F y)
+    (w : κ → ℝ) (x : M) :
+    (hσ.hamiltonianFlowAction hG hcommG hcG w).toMul x =
+      (hσ.hamiltonianFlowAction hF hcomm hc (w ᵥ* A)).toMul x :=
+  hσ.hamiltonianFlowAction_apply_eq_of_dotProduct_eq hF hcomm hc hG hcommG hcG
+    (fun y ↦ by rw [hGF, Matrix.dotProduct_mulVec]) x
 
 /-! ### Restriction to open subsets -/
 
