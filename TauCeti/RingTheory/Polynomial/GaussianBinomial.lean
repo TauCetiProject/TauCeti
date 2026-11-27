@@ -381,6 +381,12 @@ theorem gaussianBinomialInt_natCast (t : R) (n k : ℕ) :
     gaussianBinomialInt t n k = gaussianBinomial t n k :=
   (rfl)
 
+/-- `gaussianBinomialInt` vanishes on a negative lower index `-(m + 1)`. -/
+@[simp]
+theorem gaussianBinomialInt_negSucc (t : R) (n m : ℕ) :
+    gaussianBinomialInt t n (Int.negSucc m) = 0 :=
+  (rfl)
+
 /-- `[n 0]_t = 1` for the integer lower index `0`. -/
 @[simp]
 theorem gaussianBinomialInt_zero_right (t : R) (n : ℕ) : gaussianBinomialInt t n 0 = 1 :=
@@ -399,6 +405,13 @@ theorem gaussianBinomialInt_of_neg (t : R) (n : ℕ) {k : ℤ} (hk : k < 0) :
   rcases m with _ | m
   · simp at hk
   · rfl
+
+/-- `gaussianBinomialInt` as a single equation: `[n k]_t` truncated to `0` for `k < 0`. -/
+theorem gaussianBinomialInt_def (t : R) (n : ℕ) (k : ℤ) :
+    gaussianBinomialInt t n k = if 0 ≤ k then gaussianBinomial t n k.toNat else 0 := by
+  split_ifs with hk
+  · exact gaussianBinomialInt_of_nonneg t n hk
+  · exact gaussianBinomialInt_of_neg t n (not_le.1 hk)
 
 /-- `gaussianBinomialInt` vanishes on a lower index larger than the upper one. -/
 theorem gaussianBinomialInt_eq_zero_of_lt (t : R) {n : ℕ} {k : ℤ} (h : n < k) :

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Finprod
+public import TauCeti.Algebra.Ring.NegOnePow
 public import TauCeti.RingTheory.Polynomial.GaussianBinomial
 import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Data.Int.Interval
@@ -39,8 +40,8 @@ difference of two consecutive values of one sequence, so the defects telescope o
 * `TauCeti.rogersRamanujanSum t n`, `TauCeti.rogersRamanujanSumTwo t n`: the sums
   `∑_{j ≤ n} t^(j²) [n-j j]_t` and `∑_{j ≤ n} t^(j²+j) [n-j j]_t`.
 * `TauCeti.schurAlternatingSum t n`, `TauCeti.schurAlternatingSumTwo t n`: Schur's alternating sums
-  `∑ᶠ h : ℤ, (-1)^|h| t^(h(5h+1)/2) [n ⌊(n-5h)/2⌋]_t` and
-  `∑ᶠ h : ℤ, (-1)^|h| t^(h(5h+3)/2) [n+1 ⌊(n-5h)/2⌋]_t`.
+  `∑ᶠ h : ℤ, (-1)^h t^(h(5h+1)/2) [n ⌊(n-5h)/2⌋]_t` and
+  `∑ᶠ h : ℤ, (-1)^h t^(h(5h+3)/2) [n+1 ⌊(n-5h)/2⌋]_t`, with the sign `TauCeti.negOnePowCast`.
 
 ## Main results
 
@@ -145,14 +146,14 @@ variable {R : Type*} [CommRing R]
 the first of Schur's polynomial identities. Only the finitely many `h` with
 `0 ≤ ⌊(n-5h)/2⌋ ≤ n` contribute. -/
 noncomputable def schurAlternatingSum (t : R) (n : ℕ) : R :=
-  ∑ᶠ h : ℤ, (-1) ^ h.natAbs * t ^ (h * (5 * h + 1) / 2).toNat *
+  ∑ᶠ h : ℤ, negOnePowCast R h * t ^ (h * (5 * h + 1) / 2).toNat *
     gaussianBinomialInt t n (((n : ℤ) - 5 * h) / 2)
 
 /-- Schur's alternating sum `∑_{h ∈ ℤ} (-1)^h t^(h(5h+3)/2) [n+1 ⌊(n-5h)/2⌋]_t`, the right side of
 the second of Schur's polynomial identities. Only the finitely many `h` with
 `0 ≤ ⌊(n-5h)/2⌋ ≤ n + 1` contribute. -/
 noncomputable def schurAlternatingSumTwo (t : R) (n : ℕ) : R :=
-  ∑ᶠ h : ℤ, (-1) ^ h.natAbs * t ^ (h * (5 * h + 3) / 2).toNat *
+  ∑ᶠ h : ℤ, negOnePowCast R h * t ^ (h * (5 * h + 3) / 2).toNat *
     gaussianBinomialInt t (n + 1) (((n : ℤ) - 5 * h) / 2)
 
 /-- A function on `ℤ` vanishing wherever `[m ⌊(N-5h)/2⌋]_t` does has finite support. -/
@@ -178,38 +179,28 @@ private theorem pow_mul_gaussianBinomialInt_congr (t : R) {m : ℕ} {k : ℤ} {x
   · rw [hxy hk hkm]
   · rw [gaussianBinomialInt_eq_zero_of_lt t hkm, mul_zero, mul_zero]
 
-/-- The sign `(-1)^|h|` changes from `h` to `h + 1`. -/
-private theorem neg_one_pow_natAbs_add_one (h : ℤ) :
-    (-1 : R) ^ (h + 1).natAbs = -(-1) ^ h.natAbs := by
-  rw [neg_one_pow_eq_pow_mod_two, neg_one_pow_eq_pow_mod_two (n := h.natAbs)]
-  rcases Nat.mod_two_eq_zero_or_one h.natAbs with h₀ | h₁
-  · rw [h₀, show (h + 1).natAbs % 2 = 1 by omega]
-    simp
-  · rw [h₁, show (h + 1).natAbs % 2 = 0 by omega]
-    simp
-
-/-- The common shape `∑ᶠ h, (-1)^|h| t^(e h) [n+a ⌊(n-5h)/2⌋]_t` of Schur's two alternating sums,
+/-- The common shape `∑ᶠ h, (-1)^h t^(e h) [n+a ⌊(n-5h)/2⌋]_t` of Schur's two alternating sums,
 for an exponent function `e`. -/
 private noncomputable def altSum (t : R) (a : ℕ) (e : ℤ → ℕ) (n : ℕ) : R :=
-  ∑ᶠ h : ℤ, (-1) ^ h.natAbs * t ^ e h * gaussianBinomialInt t (n + a) (((n : ℤ) - 5 * h) / 2)
+  ∑ᶠ h : ℤ, negOnePowCast R h * t ^ e h * gaussianBinomialInt t (n + a) (((n : ℤ) - 5 * h) / 2)
 
 /-- The sequence whose consecutive differences are the defects of the recurrence of `altSum`: it
 is supported on the `h` with `n - 5h` even. -/
 private noncomputable def altSumDefect (t : R) (a : ℕ) (e : ℤ → ℕ) (n : ℕ) (h : ℤ) : R :=
   (if ((n : ℤ) - 5 * h) % 2 = 0 then
-      (-1) ^ h.natAbs * t ^ e h * t ^ (((n : ℤ) + 2 - 5 * h) / 2).toNat else 0) *
+      negOnePowCast R h * t ^ e h * t ^ (((n : ℤ) + 2 - 5 * h) / 2).toNat else 0) *
     gaussianBinomialInt t (n + a) (((n : ℤ) + 2 - 5 * h) / 2)
 
 /-- The defect of the recurrence `F (n + 2) = F (n + 1) + t^(n+1+a) F n` at the term of index `h`
 of `altSum` is a difference of consecutive values of `altSumDefect`. -/
 private theorem altSum_term_sub (t : R) (a : ℕ) (e : ℤ → ℕ)
     (he : ∀ h, (e (h + 1) : ℤ) = e h + 5 * h + 3 + a) (n : ℕ) (h : ℤ) :
-    (-1) ^ h.natAbs * t ^ e h *
+    negOnePowCast R h * t ^ e h *
         gaussianBinomialInt t (n + 2 + a) ((((n + 2 : ℕ) : ℤ) - 5 * h) / 2) -
-      (-1) ^ h.natAbs * t ^ e h *
+      negOnePowCast R h * t ^ e h *
         gaussianBinomialInt t (n + 1 + a) ((((n + 1 : ℕ) : ℤ) - 5 * h) / 2) -
       t ^ (n + 1 + a) *
-        ((-1) ^ h.natAbs * t ^ e h * gaussianBinomialInt t (n + a) (((n : ℤ) - 5 * h) / 2)) =
+        (negOnePowCast R h * t ^ e h * gaussianBinomialInt t (n + a) (((n : ℤ) - 5 * h) / 2)) =
     altSumDefect t a e n h - altSumDefect t a e n (h + 1) := by
   set k := ((n : ℤ) + 2 - 5 * h) / 2 with hk
   rw [show n + 2 + a = n + a + 1 + 1 by omega, show n + 1 + a = n + a + 1 by omega]
@@ -217,7 +208,7 @@ private theorem altSum_term_sub (t : R) (a : ℕ) (e : ℤ → ℕ)
   rcases Int.emod_two_eq_zero_or_one ((n : ℤ) - 5 * h) with hpar | hpar
   · -- `n - 5h = 2k - 2`: only `altSumDefect t a e n h` is nonzero.
     have hb : altSumDefect t a e n h =
-        (-1) ^ h.natAbs * t ^ e h * t ^ k.toNat * gaussianBinomialInt t (n + a) k := by
+        negOnePowCast R h * t ^ e h * t ^ k.toNat * gaussianBinomialInt t (n + a) k := by
       rw [altSumDefect, ite_eq_left hpar]
     have hb₁ : altSumDefect t a e n (h + 1) = 0 := by
       rw [altSumDefect, ite_eq_right (by omega), zero_mul]
@@ -229,16 +220,17 @@ private theorem altSum_term_sub (t : R) (a : ℕ) (e : ℤ → ℕ)
         t ^ (n + 1 + a) * gaussianBinomialInt t (n + a) (k - 1) := by
       rw [← mul_assoc, ← pow_add]
       exact pow_mul_gaussianBinomialInt_congr t fun _ _ ↦ by omega
-    linear_combination ((-1) ^ h.natAbs * t ^ e h) * key
+    linear_combination (negOnePowCast R h * t ^ e h) * key
   · -- `n - 5h = 2k - 1`: only `altSumDefect t a e n (h + 1)` is nonzero.
     have hb : altSumDefect t a e n h = 0 := by
       rw [altSumDefect, ite_eq_right (by omega), zero_mul]
-    have hb₁ : altSumDefect t a e n (h + 1) = (-1) ^ (h + 1).natAbs * t ^ e (h + 1) *
+    have hb₁ : altSumDefect t a e n (h + 1) = negOnePowCast R (h + 1) * t ^ e (h + 1) *
         t ^ (k - 2).toNat * gaussianBinomialInt t (n + a) (k - 2) := by
       rw [altSumDefect, ite_eq_left (by omega),
         show ((n : ℤ) + 2 - 5 * (h + 1)) / 2 = k - 2 by omega]
     rw [← hk, show ((n : ℤ) + 1 - 5 * h) / 2 = k by omega,
-      show ((n : ℤ) - 5 * h) / 2 = k - 1 by omega, hb, hb₁, neg_one_pow_natAbs_add_one,
+      show ((n : ℤ) - 5 * h) / 2 = k - 1 by omega, hb, hb₁, negOnePowCast_add, negOnePowCast_one,
+      mul_neg_one,
       gaussianBinomialInt_succ' t (n + a + 1) k, gaussianBinomialInt_succ t (n + a) (k - 1),
       show k - 1 - 1 = k - 2 by ring]
     have key₁ : t ^ ((↑(n + a + 1) : ℤ) + 1 - k).toNat * (t ^ (k - 1).toNat *
@@ -252,7 +244,7 @@ private theorem altSum_term_sub (t : R) (a : ℕ) (e : ℤ → ℕ)
       rw [← mul_assoc, ← mul_assoc, ← pow_add, ← pow_add]
       have := he h
       exact pow_mul_gaussianBinomialInt_congr t fun _ _ ↦ by omega
-    linear_combination (-1) ^ h.natAbs * key₂ + ((-1) ^ h.natAbs * t ^ e h) * key₁
+    linear_combination negOnePowCast R h * key₂ + (negOnePowCast R h * t ^ e h) * key₁
 
 /-- The recurrence `F (n + 2) = F (n + 1) + t^(n+1+a) F n` of `altSum`, for an exponent function
 `e` with `e (h + 1) = e h + 5h + 3 + a`, as for `e h = h (5h + 1) / 2 + a h`. -/
@@ -299,6 +291,16 @@ private theorem toNat_ediv_two_succ {c d : ℤ} (hc : 0 ≤ c) (hc' : c ≤ 5) (
     Int.toNat_of_nonneg (Int.ediv_nonneg h₀ (by norm_num)), hexp]
   omega
 
+/-- For `n ≤ 1`, `a ≤ 1` and `e 0 = 0`, `altSum` is `1`: only `h = 0` contributes. -/
+private theorem altSum_eq_one (t : R) {a : ℕ} (ha : a ≤ 1) (e : ℤ → ℕ) (he : e 0 = 0) {n : ℕ}
+    (hn : n ≤ 1) : altSum t a e n = 1 := by
+  rw [altSum, finsum_eq_single _ 0 fun h hh ↦ by
+    rcases lt_or_gt_of_ne hh with hlt | hgt
+    · rw [gaussianBinomialInt_eq_zero_of_lt t (by omega), mul_zero]
+    · rw [gaussianBinomialInt_of_neg t _ (by omega), mul_zero]]
+  rw [show ((n : ℤ) - 5 * 0) / 2 = 0 by omega]
+  simp [he]
+
 /-- `schurAlternatingSum` is `altSum` with `a = 0` and `e h = h(5h+1)/2`. -/
 private theorem schurAlternatingSum_eq_altSum (t : R) (n : ℕ) :
     schurAlternatingSum t n = altSum t 0 (fun h ↦ (h * (5 * h + 1) / 2).toNat) n := by
@@ -329,38 +331,26 @@ theorem schurAlternatingSumTwo_add_two (t : R) (n : ℕ) :
 /-- The first alternating sum at `n = 0` is `1`: only `h = 0` contributes. -/
 @[simp]
 theorem schurAlternatingSum_zero (t : R) : schurAlternatingSum t 0 = 1 := by
-  rw [schurAlternatingSum, finsum_eq_single _ 0 fun h hh ↦ by
-    rcases lt_or_gt_of_ne hh with hlt | hgt
-    · rw [gaussianBinomialInt_eq_zero_of_lt t (by omega), mul_zero]
-    · rw [gaussianBinomialInt_of_neg t 0 (by omega), mul_zero]]
-  simp
+  rw [schurAlternatingSum_eq_altSum]
+  exact altSum_eq_one t zero_le_one _ (by simp) zero_le_one
 
 /-- The first alternating sum at `n = 1` is `1`: only `h = 0` contributes. -/
 @[simp]
 theorem schurAlternatingSum_one (t : R) : schurAlternatingSum t 1 = 1 := by
-  rw [schurAlternatingSum, finsum_eq_single _ 0 fun h hh ↦ by
-    rcases lt_or_gt_of_ne hh with hlt | hgt
-    · rw [gaussianBinomialInt_eq_zero_of_lt t (by omega), mul_zero]
-    · rw [gaussianBinomialInt_of_neg t 1 (by omega), mul_zero]]
-  simp
+  rw [schurAlternatingSum_eq_altSum]
+  exact altSum_eq_one t zero_le_one _ (by simp) le_rfl
 
 /-- The second alternating sum at `n = 0` is `1`: only `h = 0` contributes. -/
 @[simp]
 theorem schurAlternatingSumTwo_zero (t : R) : schurAlternatingSumTwo t 0 = 1 := by
-  rw [schurAlternatingSumTwo, finsum_eq_single _ 0 fun h hh ↦ by
-    rcases lt_or_gt_of_ne hh with hlt | hgt
-    · rw [gaussianBinomialInt_eq_zero_of_lt t (by omega), mul_zero]
-    · rw [gaussianBinomialInt_of_neg t _ (by omega), mul_zero]]
-  simp
+  rw [schurAlternatingSumTwo_eq_altSum]
+  exact altSum_eq_one t le_rfl _ (by simp) zero_le_one
 
 /-- The second alternating sum at `n = 1` is `1`: only `h = 0` contributes. -/
 @[simp]
 theorem schurAlternatingSumTwo_one (t : R) : schurAlternatingSumTwo t 1 = 1 := by
-  rw [schurAlternatingSumTwo, finsum_eq_single _ 0 fun h hh ↦ by
-    rcases lt_or_gt_of_ne hh with hlt | hgt
-    · rw [gaussianBinomialInt_eq_zero_of_lt t (by omega), mul_zero]
-    · rw [gaussianBinomialInt_of_neg t _ (by omega), mul_zero]]
-  simp
+  rw [schurAlternatingSumTwo_eq_altSum]
+  exact altSum_eq_one t le_rfl _ (by simp) le_rfl
 
 /-- **Schur's first polynomial identity**:
 `∑_{j ≤ n} t^(j²) [n-j j]_t = ∑_{h ∈ ℤ} (-1)^h t^(h(5h+1)/2) [n ⌊(n-5h)/2⌋]_t`. -/
