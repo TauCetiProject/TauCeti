@@ -18,7 +18,6 @@ import TauCeti.Analysis.Complex.Parameter.MixedDeriv
 import TauCeti.Analysis.Complex.Runge.Operator
 import TauCeti.Analysis.Complex.Runge.Parameter
 import TauCeti.Analysis.Complex.UniformLimit
-import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Complex.Wirtinger.Potential
 import TauCeti.Analysis.Normed.Module.Exhaustion
 
