@@ -121,7 +121,7 @@ variable {r : ℝ}
 
 /-- A circle of regular values about `(1, 0)` runs above the curve of relative equilibria off the
 axis `j = 0`. -/
-private theorem mem_sphericalPendulumTurningPointDomain_circle (hr : 0 < r)
+theorem mem_sphericalPendulumTurningPointDomain_circle (hr : 0 < r)
     (hU : U ≤ sphericalPendulumRegularValues) (hγU : ∀ t, ![1 + r * cos t, r * sin t] ∈ U)
     {t : ℝ} (hs : sin t ≠ 0) :
     (1 + r * cos t, r * sin t) ∈ sphericalPendulumTurningPointDomain := by

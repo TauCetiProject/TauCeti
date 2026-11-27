@@ -51,6 +51,8 @@ of `AdjoinRoot g`, in particular of the truncated polynomial algebra `k[X]/(X ^ 
   unity.
 * `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
   of `a`, over any commutative ring. Mathlib states this only over a field.
+* `AdjoinRoot.root_X_pow_sub_C_pow_eq_mul_pow_mod`: the `k`th power of that root is
+  `a ^ (k / n)` times its `(k % n)`th power.
 * `AdjoinRoot.isUnit_root_X_pow_sub_C`: that root is a unit when `a` is a unit and `n ≠ 0`.
 * `AdjoinRoot.basisXPowSubC`: for `n ≠ 0`, the basis `1, root, …, root ^ (n - 1)` of
   `R[X]/(X ^ n - C a)` indexed by `Fin n`, over any nontrivial commutative ring. It is Mathlib's
@@ -258,6 +260,14 @@ theorem root_X_pow_sub_one_pow (n : ℕ) : root (X ^ n - 1 : R[X]) ^ n = 1 := by
 @[simp]
 protected theorem root_X_pow_sub_C_pow (n : ℕ) (a : R) : root (X ^ n - C a) ^ n = of _ a := by
   rw [← sub_eq_zero, ← eval₂_root, eval₂_sub, eval₂_C, eval₂_pow, eval₂_X]
+
+/-- Euclidean reduction of powers of the class of `X` in `R[X]/(X ^ n - C a)`: since its `n`th
+power is `a`, its `k`th power is `a ^ (k / n)` times its `(k % n)`th power. For `n = 0` both
+sides are `root ^ k`. -/
+theorem root_X_pow_sub_C_pow_eq_mul_pow_mod (n k : ℕ) (a : R) :
+    root (X ^ n - C a) ^ k = of _ a ^ (k / n) * root (X ^ n - C a) ^ (k % n) := by
+  conv_lhs => rw [← Nat.div_add_mod k n]
+  rw [pow_add, pow_mul, AdjoinRoot.root_X_pow_sub_C_pow]
 
 /-- The class of `X` in `R[X]/(X ^ n - C a)` is a unit when `a` is a unit and `n ≠ 0`. -/
 theorem isUnit_root_X_pow_sub_C {n : ℕ} {a : R} (ha : IsUnit a) (hn : n ≠ 0) :

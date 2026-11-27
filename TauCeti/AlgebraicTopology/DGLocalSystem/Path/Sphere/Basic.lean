@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Cell
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
-public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Sphere.Basic
 public import TauCeti.Topology.PathSpace.Moore.Replacement.Equiv
 
 /-!

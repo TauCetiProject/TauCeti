@@ -49,6 +49,7 @@ of `L`.
   in the `ℤ`-spans of two `ℚ`-bases differ by the determinant of the change of basis.
 * `Submodule.toAddSubgroup_submoduleOf`: taking the underlying additive subgroup commutes
   with restricting a submodule to another submodule.
+* `Submodule.natCard_quotient_submoduleOf`: the order of `N / (L ∩ N)` is `[N : L]`.
 * `Submodule.isFullLattice_span`: the span of a finite set spanning the ambient module is a full
   lattice.
 * `Submodule.isFullLattice_comap_of_isLocalization`: pullback of a full lattice along an injective
@@ -176,6 +177,15 @@ submodule. -/
 theorem _root_.Submodule.toAddSubgroup_submoduleOf {R V : Type*} [Ring R] [AddCommGroup V]
     [Module R V] (p q : Submodule R V) :
     (p.submoduleOf q).toAddSubgroup = p.toAddSubgroup.addSubgroupOf q.toAddSubgroup := rfl
+
+/-- The order of the quotient `N / (L ∩ N)` is the relative index `[N : L]`. -/
+theorem _root_.Submodule.natCard_quotient_submoduleOf {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] (L N : Submodule R M) :
+    Nat.card (N ⧸ (L.submoduleOf N).toAddSubgroup) = L.toAddSubgroup.relIndex N.toAddSubgroup :=
+  -- `relIndex` is by definition the index of `L.toAddSubgroup.addSubgroupOf N.toAddSubgroup`,
+  -- whose underlying subgroup of `N` is by definition that of `L.submoduleOf N`, the preimage of
+  -- `L` under the inclusion of `N`.
+  rfl
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 

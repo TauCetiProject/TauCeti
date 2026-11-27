@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Topology.Algebra.Module.Complement
 public import TauCeti.Analysis.Fredholm.UniversalLevelSet
 public import TauCeti.Analysis.Sobolev.Cylinder.Density
-public import TauCeti.Analysis.Sobolev.Cylinder.Gluing
+public import TauCeti.Analysis.Sobolev.Cylinder.Glued.Basic
 import Mathlib.Analysis.Normed.Lp.SmoothApprox
 import TauCeti.Analysis.Fredholm.Stabilization
 import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
