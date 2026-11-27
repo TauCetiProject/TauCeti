@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Global
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Exchange
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of the input-exchange family on the whole pair of pants

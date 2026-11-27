@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Compactness.Closed
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Manifold.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Exchange
-import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Compactness of the input-exchange family in a closed manifold
