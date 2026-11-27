@@ -134,7 +134,7 @@ theorem skewArcProd_eq_of_isFraming (D : BrauerDiagram k)
     D.skewArcProd W =
       ((Equiv.Perm.sign π : ℤ) : R) * ∏ r : Fin k, W (π (Sum.inl r)) (π (Sum.inr r)) := by
   obtain ⟨σ, τ, hdecomp⟩ := exists_mul_sumCongr_mul_of_congr_permToBrauer_one_eq
-    (Eq.trans hπ D.isFraming_framing.symm)
+    (((D.isFraming_def π).mp hπ).trans ((D.isFraming_def D.framing).mp D.isFraming_framing).symm)
   rw [skewArcProd, hdecomp, rawArcProd_mul_prodCongrLeft hW, rawArcProd_mul_sumCongr]
   rfl
 
@@ -156,7 +156,7 @@ theorem skewArcProd_capCup {a b : Fin k} (hab : a ≠ b)
     (capCup a b).skewArcProd W =
       -(W (Sum.inl a) (Sum.inl b) * W (Sum.inr a) (Sum.inr b) *
         ∏ r ∈ (Finset.univ.erase a).erase b, W (Sum.inl r) (Sum.inr r)) := by
-  rw [skewArcProd_eq_of_isFraming _ hW (capCup_def a b).symm,
+  rw [skewArcProd_eq_of_isFraming _ hW (((capCup a b).isFraming_def _).mpr (capCup_def a b).symm),
     Equiv.Perm.sign_swap Sum.inr_ne_inl, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one,
     neg_one_mul]
   congr 1

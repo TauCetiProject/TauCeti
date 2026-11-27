@@ -86,7 +86,6 @@ variable {k : ℕ}
 /-- An **arc framing** of a Brauer diagram `D` on `k` strands is a permutation `π` of the boundary
 points `Fin k ⊕ Fin k` carrying the identity diagram `permToBrauer 1` to `D`, so that the `k`
 ordered pairs `(π (Sum.inl r), π (Sum.inr r))` list the `k` arcs of `D`. -/
-@[expose]
 def IsFraming (D : BrauerDiagram k) (π : Equiv.Perm (Fin k ⊕ Fin k)) : Prop :=
   PerfectMatching.congr π (permToBrauer 1) = D
 

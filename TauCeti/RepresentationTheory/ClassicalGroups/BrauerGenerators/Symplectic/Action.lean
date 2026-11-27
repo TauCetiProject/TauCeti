@@ -526,7 +526,7 @@ private theorem symplecticActionMatrix_capCup_mul_of_val_eq {a b : Fin k}
   have hterm (x y : ι ⊕ ι) :
       D.symplecticActionMatrix R ι (Function.update (Function.update w a x) b y) u =
         ((Equiv.Perm.sign φ : ℤ) : R) * (Matrix.J ι R x y * R₀) := by
-    rw [symplecticActionMatrix_apply_of_congr hφ,
+    rw [symplecticActionMatrix_apply_of_congr ((D.isFraming_def φ).mpr hφ),
       ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i₀)]
     refine congrArg (((Equiv.Perm.sign φ : ℤ) : R) * ·) (congrArg₂ (· * ·) ?_ ?_)
     · rw [hinl₀, hinr₀]
@@ -575,7 +575,7 @@ private theorem symplecticActionMatrix_update_update_of_congr_two {a b i₁ i₂
   have hpb : p ≠ Sum.inr b := hinl₁ ▸ hinr₂ ▸ φ.injective.ne Sum.inl_ne_inr
   have hqa : q ≠ Sum.inr a := hinl₂ ▸ hinr₁ ▸ φ.injective.ne Sum.inl_ne_inr
   have hqb : q ≠ Sum.inr b := hinl₂ ▸ hinr₂ ▸ φ.injective.ne Sum.inl_ne_inr
-  rw [symplecticActionMatrix_apply_of_congr hφ,
+  rw [symplecticActionMatrix_apply_of_congr ((D.isFraming_def φ).mpr hφ),
     ← Finset.mul_prod_erase Finset.univ _ (Finset.mem_univ i₁),
     ← Finset.mul_prod_erase (Finset.univ.erase i₁) _
       (Finset.mem_erase.mpr ⟨hi₁₂.symm, Finset.mem_univ i₂⟩)]
@@ -624,7 +624,7 @@ private theorem symplecticActionMatrix_reconnect_inr_of_congr_two {a b i₁ i₂
   have hqp : q ≠ p := fun h => hab (Sum.inr_injective (D.val.injective h).symm)
   let φ' : Equiv.Perm (Fin k ⊕ Fin k) := Equiv.swap p (Sum.inr b) * φ
   have hφ' : BrauerDiagram.IsFraming (D.reconnect (Sum.inr a) (Sum.inr b)) φ' :=
-    BrauerDiagram.IsFraming.reconnect hφ (Sum.inr a) (Sum.inr b)
+    BrauerDiagram.IsFraming.reconnect ((D.isFraming_def φ).mpr hφ) (Sum.inr a) (Sum.inr b)
   have hsign : ((Equiv.Perm.sign φ' : ℤ) : R) = -((Equiv.Perm.sign φ : ℤ) : R) := by
     simp [φ', Equiv.Perm.sign_swap hncup]
   have hrest : ∏ i ∈ (Finset.univ.erase i₁).erase i₂,
