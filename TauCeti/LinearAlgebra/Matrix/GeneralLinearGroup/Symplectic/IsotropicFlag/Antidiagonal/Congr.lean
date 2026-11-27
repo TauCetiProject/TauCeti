@@ -32,7 +32,9 @@ matrices: `P⁻¹ M P` is `M` permuted by `σ` with the signs `s_i s_j` on its e
   `diag(t₁, …, t_m, t_m⁻¹, …, t₁⁻¹)` (`TauCeti.antidiagCongr_inv_mul_diagonal_mul`);
 * `P⁻¹ M P` is upper triangular exactly when `M` is upper triangular after reindexing by `σ`, the
   condition defining the isotropic-flag Borel subgroup of the `JFin` model
-  (`TauCeti.blockTriangular_antidiagCongr_inv_mul_mul_iff`).
+  (`TauCeti.blockTriangular_antidiagCongr_inv_mul_mul_iff`); conversely, `P M P⁻¹` vanishes below
+  the diagonal in the flag order exactly when `M` is upper triangular
+  (`TauCeti.forall_flagOrder_lt_antidiagCongr_mul_mul_inv_eq_zero_iff`).
 
 Everything holds over an arbitrary commutative ring, including `m = 0`.
 -/
@@ -163,6 +165,23 @@ theorem coe_antidiagCongr :
     (antidiagCongr m R : Matrix (Fin (m + m)) (Fin (m + m)) R) = antidiagCongrMatrix m R :=
   (rfl)
 
+/-- The signs of the congruence are preserved by ring homomorphisms. -/
+@[simp]
+theorem map_antidiagSign {S : Type*} [CommRing S] (f : R →+* S) (i : Fin (m + m)) :
+    f (antidiagSign m R i) = antidiagSign m S i := by
+  refine Fin.addCases (fun i ↦ ?_) (fun i ↦ ?_) i
+  · simp
+  · simp
+
+/-- The signed permutation `P` is preserved by ring homomorphisms. -/
+@[simp]
+theorem map_antidiagCongr {S : Type*} [CommRing S] (f : R →+* S) :
+    GeneralLinearGroup.map f (antidiagCongr m R) = antidiagCongr m S := by
+  apply Units.ext
+  ext i j
+  simp only [GeneralLinearGroup.map_apply, coe_antidiagCongr, antidiagCongrMatrix_apply,
+    apply_ite f, map_antidiagSign, map_zero]
+
 /-- The inverse of `P` is its transpose. -/
 theorem coe_antidiagCongr_inv :
     ((antidiagCongr m R)⁻¹ : GL (Fin (m + m)) R) = (antidiagCongrMatrix m R)ᵀ :=
@@ -216,5 +235,22 @@ theorem blockTriangular_antidiagCongr_inv_mul_mul_iff (M : Matrix (Fin (m + m)) 
   rw [antidiagCongr_inv_mul_mul]
   simp only [BlockTriangular, submatrix_apply, diagonal_mul, mul_diagonal, id,
     IsUnit.mul_left_eq_zero, IsUnit.mul_right_eq_zero, isUnit_antidiagSign]
+
+/-- **The Borel subgroup, conjugated the other way.** `P M P⁻¹` vanishes below the diagonal in
+the flag order, the condition cutting out the isotropic-flag Borel subgroup in the `JFin` model,
+exactly when `M` is upper triangular. -/
+theorem forall_flagOrder_lt_antidiagCongr_mul_mul_inv_eq_zero_iff
+    (M : Matrix (Fin (m + m)) (Fin (m + m)) R) :
+    (∀ i j, flagOrder m j < flagOrder m i →
+        ((antidiagCongr m R : Matrix (Fin (m + m)) (Fin (m + m)) R) * M *
+          (((antidiagCongr m R)⁻¹ : GL (Fin (m + m)) R) :
+            Matrix (Fin (m + m)) (Fin (m + m)) R)) i j = 0) ↔
+      M.BlockTriangular id := by
+  rw [coe_antidiagCongr, coe_antidiagCongr_inv, antidiagCongrMatrix_mul_mul_transpose]
+  simp only [diagonal_mul, mul_diagonal, submatrix_apply, IsUnit.mul_left_eq_zero,
+    IsUnit.mul_right_eq_zero, isUnit_antidiagSign]
+  refine ⟨fun h i j hij ↦ ?_, fun h i j hij ↦ h hij⟩
+  simpa only [flagOrder_flagOrder] using
+    h (flagOrder m i) (flagOrder m j) (by rwa [flagOrder_flagOrder, flagOrder_flagOrder])
 
 end TauCeti

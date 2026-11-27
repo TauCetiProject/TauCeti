@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.Orientation.TopForm
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
+import TauCeti.Geometry.Manifold.DeRham.Wedge
 import TauCeti.Geometry.Symplectic.Volume
 import TauCeti.LinearAlgebra.Basis.Fin
 
@@ -32,7 +33,8 @@ orientation on which it is positive, the **symplectic orientation**
 linear symplectic orientation: its orientation of each tangent space is the symplectic orientation
 `TauCeti.SymplecticForm.orientation` of the value of `σ` there
 (`TauCeti.SmoothTwoForm.IsNondegenerate.orientationAt_volumeOrientation`), so every Darboux basis
-of a tangent space is positively oriented. Closedness of `σ` is not used.
+of a tangent space is positively oriented. Closedness of `σ` is not used, except to show that
+the volume form of a closed two-form is closed (`TauCeti.SmoothTwoForm.isClosed_volumeForm`).
 
 ## Main definitions
 
@@ -42,10 +44,12 @@ of a tangent space is positively oriented. Closedness of `σ` is not used.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.wedgePow_eq_factorial_smul_volumeForm`: `σⁿ = n!·(σⁿ / n!)`.
 * `TauCeti.SmoothTwoForm.volumeForm_one`: the volume form `σ¹ / 1!` is `σ` itself.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_reindex`: the volume form takes the
   value `1` on Darboux bases.
 * `TauCeti.SmoothTwoForm.volumeForm_smul`: the volume form of `c • σ` is `cⁿ` times that of `σ`.
+* `TauCeti.SmoothTwoForm.isClosed_volumeForm`: the volume form of a closed two-form is closed.
 * `TauCeti.SmoothTwoForm.isNondegenerate_iff_volumeForm_apply_ne_zero`: a two-form is
   nondegenerate exactly when its volume form vanishes nowhere.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.volumeForm_apply_ne_zero`: the volume form of a
@@ -92,6 +96,13 @@ theorem volumeForm_apply (σ : SmoothTwoForm I M) (n : ℕ) (x : M) :
     (σ.volumeForm n).val x = ((n.factorial : ℝ)⁻¹) • (σ.val x).wedgePow n := by
   rw [volumeForm, Submodule.coe_smul, Pi.smul_apply, SmoothForm.wedgePow_apply]
 
+/-- **The top power is `n!` times the volume form**: `σⁿ = n!·(σⁿ/n!)`. -/
+theorem wedgePow_eq_factorial_smul_volumeForm (σ : SmoothTwoForm I M) (n : ℕ) :
+    SmoothForm.wedgePow σ n = (n.factorial : ℝ) • σ.volumeForm n := by
+  refine Subtype.ext (funext fun x ↦ ?_)
+  rw [Submodule.coe_smul, Pi.smul_apply, volumeForm_apply, SmoothForm.wedgePow_apply, smul_smul,
+    mul_inv_cancel₀ (by positivity), one_smul]
+
 /-- The symplectic volume form `σ¹ / 1!` is the two-form `σ` itself. On a surface it is the
 volume form of `σ`. -/
 @[simp]
@@ -107,6 +118,12 @@ theorem volumeForm_smul (c : ℝ) (σ : SmoothTwoForm I M) (n : ℕ) :
   refine Subtype.ext (funext fun x ↦ ?_)
   rw [Submodule.coe_smul, Pi.smul_apply, volumeForm_apply, volumeForm_apply, Submodule.coe_smul,
     Pi.smul_apply, ContinuousAlternatingMap.wedgePow_smul, smul_comm]
+
+/-- The symplectic volume form `σⁿ / n!` of a closed two-form is closed. -/
+theorem isClosed_volumeForm (hσ : σ.IsClosed) (n : ℕ) : (σ.volumeForm n).IsClosed := by
+  have h := SmoothForm.wedgePow_mem_closedForms
+    ((mem_closedForms I _).2 ((SmoothForm.isClosed_def _).1 hσ)) n
+  exact SmoothForm.IsClosed.smul _ ((SmoothForm.isClosed_def _).2 ((mem_closedForms I _).1 h))
 
 /-- **The symplectic volume form takes the value `1` on Darboux bases.** For a Darboux basis
 `(q₁, p₁, …, qₙ, pₙ)` of the tangent space at `x`, listed in this interleaved order,
@@ -181,15 +198,9 @@ theorem mpullback_volumeForm {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSp
     [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
     [IsManifold J ∞ N] {τ : SmoothTwoForm J N} {f : M → N} (hf : mpullback I J f τ.val = σ.val) :
     mpullback I J f (τ.volumeForm n).val = (σ.volumeForm n).val := by
-  ext x v
-  have hx : σ.val x = (τ.val (f x)).compContinuousLinearMap (mfderiv I J f x) := by
-    ext w
-    rw [← hf, mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
-      Function.comp_def]
-  rw [mpullback_apply, volumeForm_apply, volumeForm_apply, hx,
-    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
-    ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.smul_apply,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+  funext x
+  rw [volumeForm_apply, ← hf, volumeForm, Submodule.coe_smul, mpullback_smul, Pi.smul_apply,
+    mpullback_wedgePow_apply]
 
 end SmoothTwoForm
 

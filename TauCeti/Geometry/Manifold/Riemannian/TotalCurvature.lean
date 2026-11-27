@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Conformal
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Conformal.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
-import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.WithMetric
 
 /-!

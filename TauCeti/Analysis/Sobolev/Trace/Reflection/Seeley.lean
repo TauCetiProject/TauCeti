@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Normed.Group.Tannery
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.LinearAlgebra.Lagrange
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.HalfSpace
+import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -54,8 +56,17 @@ form a convergent product. Tannery's theorem passes the identities to the limit 
   `TauCeti.HalfSpaceExtension.seeleyCutoff`, with the resulting estimates.
 * `TauCeti.HalfSpaceExtension.iteratedFDeriv_seeleyExtension_of_nonneg`: at nonnegative times the
   derivatives of the extension are those of the input within the closed upper half-space.
-* `TauCeti.HalfSpaceExtension.exists_contDiff_infty_extension_halfSpace`: every function `C^∞` on
-  the closed upper half-space is the restriction of a `C^∞` function.
+* `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_upperHalfSpace`: a function `Cⁿ` on the
+  half-space near a point agrees there, near the point, with a function `Cⁿ` on the whole space.
+* `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_Ici_prod`,
+  `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_Iic_prod`: a function `Cⁿ` on the closed
+  half-space `[a, ∞) × E` or `(-∞, b] × E` is the restriction of a function `Cⁿ` on the whole
+  space, for every `n : ℕ∞`; by translation and reflection in time.
+* `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_Icc_prod`,
+  `TauCeti.HalfSpaceExtension.exists_contDiff_eqOn_prod_Icc`: a function `Cⁿ` on a closed slab
+  `[a, b] × E`, or `E × [a, b]`, is the restriction of a function `Cⁿ` on the whole space. A cutoff
+  in the slab coordinate splits it into two parts, each extended across one of the two boundary
+  hyperplanes.
 
 ## References
 
@@ -656,12 +667,119 @@ theorem norm_iteratedFDeriv_seeleyExtension_le_of_neg [CompleteSpace F] {n : ℕ
   gcongr
   exact hC _ (timeScale_neg_two_pow_mem_upperHalfSpace k hx.le)
 
-/-- Every function which is `C^∞` on the closed upper half-space is the restriction of a `C^∞`
-function on the whole space, namely its Seeley extension. -/
-theorem exists_contDiff_infty_extension_halfSpace [CompleteSpace F] {f : ℝ × E → F}
-    (hf : ContDiffOn ℝ ∞ f (upperHalfSpace E)) :
-    ∃ g : ℝ × E → F, ContDiff ℝ ∞ g ∧ EqOn g f (upperHalfSpace E) :=
-  ⟨seeleyExtension f, contDiff_seeleyExtension hf, seeleyExtension_eqOn_upperHalfSpace f⟩
+open Metric in
+/-- **Local Seeley extension.** A function `Cⁿ` on the part of a neighbourhood `s` of `a` in the
+closed upper half-space agrees, on the half-space near `a`, with a function `Cⁿ` on the whole space:
+cut it off by a bump function supported near `a`, which makes it `Cⁿ` on the whole closed
+half-space, and apply Seeley's extension. -/
+theorem exists_contDiff_eqOn_upperHalfSpace [FiniteDimensional ℝ E] [CompleteSpace F] {n : ℕ∞}
+    {f : ℝ × E → F} {a : ℝ × E} {s : Set (ℝ × E)}
+    (hf : ContDiffOn ℝ n f (s ∩ upperHalfSpace E)) (hs : s ∈ 𝓝 a) :
+    ∃ g : ℝ × E → F, ∃ r > 0, ball a r ⊆ s ∧
+      ContDiff ℝ n g ∧ EqOn g f (ball a r ∩ upperHalfSpace E) := by
+  obtain ⟨R, hR, hRs⟩ := nhds_basis_ball.mem_iff.mp hs
+  let χ : ContDiffBump a := ⟨R / 4, R / 2, by positivity, by linarith⟩
+  have hg : ContDiffOn ℝ n (fun y ↦ χ y • f y) (upperHalfSpace E) := by
+    refine contDiffOn_of_locally_contDiffOn fun y _ ↦ ?_
+    by_cases hy : y ∈ ball a R
+    · refine ⟨ball a R, isOpen_ball, hy, ?_⟩
+      exact χ.contDiff.contDiffOn.smul (hf.mono fun z hz ↦ ⟨hRs hz.2, hz.1⟩)
+    · -- Outside the ball of radius `R` the cut-off function vanishes near `y`.
+      have hy' : y ∉ closedBall a (R / 2) := fun h ↦
+        hy (closedBall_subset_ball (by linarith) h)
+      refine ⟨(closedBall a (R / 2))ᶜ, isClosed_closedBall.isOpen_compl, hy', ?_⟩
+      refine (contDiffOn_const (c := (0 : F))).congr fun z hz ↦ ?_
+      have hz' : R / 2 < dist z a := by simpa [mem_closedBall] using hz.2
+      rw [χ.zero_of_le_dist hz'.le, zero_smul]
+  refine ⟨seeleyExtension fun y ↦ χ y • f y, R / 4, by positivity,
+    (ball_subset_ball (by linarith)).trans hRs, contDiff_seeleyExtension hg, fun y hy ↦ ?_⟩
+  rw [seeleyExtension_eqOn_upperHalfSpace _ hy.2,
+    χ.one_of_mem_closedBall (ball_subset_closedBall hy.1), one_smul]
+
+/-! ### Extension from closed half-spaces and slabs -/
+
+/-- **Seeley extension from a translated half-space.** A function `Cⁿ` on the closed half-space
+`[a, ∞) × E` is the restriction of a function `Cⁿ` on the whole space. -/
+theorem exists_contDiff_eqOn_Ici_prod [CompleteSpace F] {n : ℕ∞} {f : ℝ × E → F} {a : ℝ}
+    (hf : ContDiffOn ℝ n f (Ici a ×ˢ univ)) :
+    ∃ g : ℝ × E → F, ContDiff ℝ n g ∧ EqOn g f (Ici a ×ˢ univ) := by
+  -- Translate the upper half-space onto `[a, ∞) × E`, extend there, and translate back.
+  have hτ : ContDiff ℝ n fun w : ℝ × E ↦ (w.1 + a, w.2) :=
+    (contDiff_fst.add contDiff_const).prodMk contDiff_snd
+  have hfτ : ContDiffOn ℝ n (fun w : ℝ × E ↦ f (w.1 + a, w.2)) (upperHalfSpace E) :=
+    hf.comp hτ.contDiffOn fun w hw ↦ ⟨by simpa using mem_upperHalfSpace.mp hw, mem_univ _⟩
+  refine ⟨fun z ↦ seeleyExtension (fun w ↦ f (w.1 + a, w.2)) (z.1 - a, z.2),
+    (contDiff_seeleyExtension hfτ).comp
+      ((contDiff_fst.sub contDiff_const).prodMk contDiff_snd), fun z hz ↦
+    (seeleyExtension_eqOn_upperHalfSpace _ (mem_upperHalfSpace.mpr (sub_nonneg.mpr hz.1))).trans
+      (by simp)⟩
+
+/-- **Seeley extension from a reflected half-space.** A function `Cⁿ` on the closed half-space
+`(-∞, b] × E` is the restriction of a function `Cⁿ` on the whole space. -/
+theorem exists_contDiff_eqOn_Iic_prod [CompleteSpace F] {n : ℕ∞} {f : ℝ × E → F} {b : ℝ}
+    (hf : ContDiffOn ℝ n f (Iic b ×ˢ univ)) :
+    ∃ g : ℝ × E → F, ContDiff ℝ n g ∧ EqOn g f (Iic b ×ˢ univ) := by
+  -- The reflection `(t, x) ↦ (b - t, x)` exchanges the upper half-space and `(-∞, b] × E`.
+  have hσ : ContDiff ℝ n fun w : ℝ × E ↦ (b - w.1, w.2) :=
+    (contDiff_const.sub contDiff_fst).prodMk contDiff_snd
+  have hfσ : ContDiffOn ℝ n (fun w : ℝ × E ↦ f (b - w.1, w.2)) (upperHalfSpace E) :=
+    hf.comp hσ.contDiffOn fun w hw ↦ ⟨by simpa using mem_upperHalfSpace.mp hw, mem_univ _⟩
+  refine ⟨fun z ↦ seeleyExtension (fun w ↦ f (b - w.1, w.2)) (b - z.1, z.2),
+    (contDiff_seeleyExtension hfσ).comp hσ, fun z hz ↦
+    (seeleyExtension_eqOn_upperHalfSpace _ (mem_upperHalfSpace.mpr (sub_nonneg.mpr hz.1))).trans
+      (by simp)⟩
+
+/-- **Seeley extension from a slab.** A function `Cⁿ` on the closed slab `[a, b] × E` is the
+restriction of a function `Cⁿ` on the whole space. -/
+theorem exists_contDiff_eqOn_Icc_prod [CompleteSpace F] {n : ℕ∞} {f : ℝ × E → F} {a b : ℝ}
+    (hf : ContDiffOn ℝ n f (Icc a b ×ˢ univ)) :
+    ∃ g : ℝ × E → F, ContDiff ℝ n g ∧ EqOn g f (Icc a b ×ˢ univ) := by
+  rcases lt_trichotomy a b with hab | rfl | hab
+  · -- A cutoff `χ` in time, equal to `1` near `a` and to `0` near `b`, splits `f` into `χ f`,
+    -- which is `Cⁿ` on `[a, ∞) × E`, and `(1 - χ) f`, which is `Cⁿ` on `(-∞, b] × E`.
+    set δ := (b - a) / 3 with hδ
+    have hδpos : 0 < δ := by linarith
+    set χ : ℝ → ℝ := fun t ↦ Real.smoothTransition ((a + 2 * δ - t) / δ)
+    have hχ : ContDiff ℝ n χ :=
+      Real.smoothTransition.contDiff.comp ((contDiff_const.sub contDiff_id).div_const δ)
+    have hχ0 {t : ℝ} (ht : a + 2 * δ ≤ t) : χ t = 0 :=
+      Real.smoothTransition.zero_of_nonpos (div_nonpos_of_nonpos_of_nonneg (by linarith) hδpos.le)
+    have hχ1 {t : ℝ} (ht : t ≤ a + δ) : χ t = 1 :=
+      Real.smoothTransition.one_of_one_le (by rw [le_div_iff₀ hδpos]; linarith)
+    have hf₁ : ContDiffOn ℝ n (fun z : ℝ × E ↦ χ z.1 • f z) (Ici a ×ˢ univ) :=
+      contDiffOn_smul_of_eqOn_zero (hχ.comp contDiff_fst).contDiffOn hf
+        (isOpen_Ioi.prod isOpen_univ) (isOpen_Iio.prod isOpen_univ) (fun w hw ↦ hχ0 (le_of_lt hw.1))
+        (fun w hw ↦ ⟨⟨hw.1.1, le_of_lt hw.2.1⟩, mem_univ _⟩) fun z _ ↦ (lt_or_ge z.1 b).symm.imp
+          (fun h ↦ ⟨show a + 2 * δ < z.1 by linarith, mem_univ _⟩) fun h ↦ ⟨h, mem_univ _⟩
+    have hf₂ : ContDiffOn ℝ n (fun z : ℝ × E ↦ (1 - χ z.1) • f z) (Iic b ×ˢ univ) :=
+      contDiffOn_smul_of_eqOn_zero (contDiff_const.sub (hχ.comp contDiff_fst)).contDiffOn hf
+        (isOpen_Iio.prod isOpen_univ) (isOpen_Ioi.prod isOpen_univ)
+        (fun w hw ↦ by simp [hχ1 (le_of_lt hw.1)])
+        (fun w hw ↦ ⟨⟨le_of_lt hw.2.1, hw.1.1⟩, mem_univ _⟩) fun z _ ↦ (lt_or_ge a z.1).symm.imp
+          (fun h ↦ ⟨show z.1 < a + δ by linarith, mem_univ _⟩) fun h ↦ ⟨h, mem_univ _⟩
+    obtain ⟨g₁, hg₁, hg₁f⟩ := exists_contDiff_eqOn_Ici_prod hf₁
+    obtain ⟨g₂, hg₂, hg₂f⟩ := exists_contDiff_eqOn_Iic_prod hf₂
+    refine ⟨g₁ + g₂, hg₁.add hg₂, fun z hz ↦ ?_⟩
+    rw [Pi.add_apply, hg₁f ⟨hz.1.1, mem_univ _⟩, hg₂f ⟨hz.1.2, mem_univ _⟩, ← add_smul,
+      add_sub_cancel, one_smul]
+  · -- On a degenerate slab `{a} × E` the function is extended constantly in time.
+    refine ⟨fun z ↦ f (a, z.2), contDiffOn_univ.mp (hf.comp
+      (contDiff_const.prodMk contDiff_snd).contDiffOn fun _ _ ↦ ⟨left_mem_Icc.mpr le_rfl,
+        mem_univ _⟩), fun z hz ↦ ?_⟩
+    obtain ⟨t, x⟩ := z
+    obtain rfl : t = a := le_antisymm hz.1.2 hz.1.1
+    rfl
+  · exact ⟨0, contDiff_const, fun z hz ↦ absurd (hz.1.1.trans hz.1.2) (not_le.mpr hab)⟩
+
+/-- **Seeley extension from a slab, slab coordinate last.** A function `Cⁿ` on the closed slab
+`E × [a, b]` is the restriction of a function `Cⁿ` on the whole space. -/
+theorem exists_contDiff_eqOn_prod_Icc [CompleteSpace F] {n : ℕ∞} {f : E × ℝ → F} {a b : ℝ}
+    (hf : ContDiffOn ℝ n f (univ ×ˢ Icc a b)) :
+    ∃ g : E × ℝ → F, ContDiff ℝ n g ∧ EqOn g f (univ ×ˢ Icc a b) := by
+  obtain ⟨g, hg, hgf⟩ := exists_contDiff_eqOn_Icc_prod (f := f ∘ Prod.swap)
+    (hf.comp (contDiff_snd.prodMk contDiff_fst).contDiffOn (mapsTo_swap_prod _ _))
+  exact ⟨g ∘ Prod.swap, hg.comp (contDiff_snd.prodMk contDiff_fst), fun z hz ↦
+    hgf ⟨hz.2, mem_univ _⟩⟩
 
 end TauCeti.HalfSpaceExtension
 

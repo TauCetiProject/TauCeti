@@ -10,8 +10,9 @@ public import TauCeti.RingTheory.DedekindDomain.Ideal.Congruence
 public import Mathlib.RingTheory.DedekindDomain.SInteger
 public import TauCeti.NumberTheory.NumberField.TotallyPositive
 
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 import TauCeti.RingTheory.DedekindDomain.Ideal.UnitsAway
+import TauCeti.RingTheory.DedekindDomain.SInteger.Quotient
 
 /-!
 # Moduli of a number field and multiplicative congruence
@@ -71,6 +72,8 @@ away from a finite set of primes.
 * `TauCeti.GlobalNumberFields.congruenceSubgroup_le_primeToSubgroup`: an element congruent to one
   is a unit at every prime dividing the finite part.  This is what makes the ray a subgroup of the
   prime-to ideals.
+* `TauCeti.GlobalNumberFields.exists_primeToSubgroup_eq_mul`: every fraction prime to `𝔪` is a
+  quotient of two algebraic integers prime to `𝔪`.
 * `TauCeti.GlobalNumberFields.IsCongrOne.mono` and
   `TauCeti.GlobalNumberFields.congruenceSubgroup_antitone`: congruence to one is antitone in the
   modulus, which is what makes the transition maps between ray class groups run from a larger
@@ -130,6 +133,10 @@ theorem finitePart_ne_zero (𝔪 : Modulus K) : 𝔪.finitePart ≠ 0 := fun h �
 a nonzero ideal. -/
 instance finite_quotient_finitePart (𝔪 : Modulus K) : Finite (𝓞 K ⧸ 𝔪.finitePart) :=
   Ring.HasFiniteQuotients.finiteQuotient 𝔪.finitePart_ne_bot
+
+/-- The finite part of a modulus has nonzero absolute norm. -/
+instance neZero_absNorm_finitePart (𝔪 : Modulus K) : NeZero (Ideal.absNorm 𝔪.finitePart) :=
+  ⟨Ideal.absNorm_eq_zero_iff.not.mpr 𝔪.finitePart_ne_bot⟩
 
 /-- **Divisibility of moduli**: `𝔪 ∣ 𝔫` when the finite part of `𝔪` divides that of `𝔫` and the
 infinite part of `𝔪` is contained in that of `𝔫`, so that the congruence conditions imposed by
@@ -521,6 +528,22 @@ noncomputable def unitsToPrimeToSubgroup (𝔪 : Modulus K) :
       Units.map (algebraMap (𝓞 K) K).toMonoidHom u := by
   rw [unitsToPrimeToSubgroup, MonoidHom.codRestrict_apply]
 
+/-- Every element of `primeToSubgroup 𝔪` is a quotient of two algebraic integers in
+`primeToSubgroup 𝔪`. -/
+theorem exists_primeToSubgroup_eq_mul {𝔪 : Modulus K} (x : primeToSubgroup 𝔪) :
+    ∃ (a b : 𝓞 K) (xa xb : primeToSubgroup 𝔪),
+      algebraMap (𝓞 K) K a = ((xa : Kˣ) : K) ∧ algebraMap (𝓞 K) K b = ((xb : Kˣ) : K) ∧
+        xa = xb * x := by
+  have hx : (x : Kˣ) ∈ ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K :=
+    fun v hv ↦ mem_primeToSubgroup.mp x.property v (by simpa using hv)
+  obtain ⟨a, b, xa, xb, ha, hb, hxeq⟩ := 𝔪.finitePart.exists_unit_eq_mul (K := K) ⟨(x : Kˣ), hx⟩
+  have hmem (y : ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K) :
+      (y : Kˣ) ∈ primeToSubgroup 𝔪 :=
+    mem_primeToSubgroup.mpr fun v hv ↦ y.property v (by simpa using hv)
+  exact ⟨a, b, ⟨xa, hmem xa⟩, ⟨xb, hmem xb⟩, ha, hb,
+    Subtype.ext (congrArg (Subtype.val :
+      ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K → Kˣ) hxeq)⟩
+
 /-- **The trivial modulus imposes no condition.**  Its finite part is the unit ideal, which no
 prime divides, and its infinite part is empty. -/
 @[simp] theorem isCongrOne_one (x : Kˣ) : IsCongrOne (Modulus.one K) x :=
@@ -644,5 +667,25 @@ noncomputable def integralIdealsPrimeToInclusion {𝔪 𝔫 : Modulus K} (h : �
     (I : integralIdealsPrimeTo 𝔫) :
     ((integralIdealsPrimeToInclusion h I : integralIdealsPrimeTo 𝔪) : Ideal (𝓞 K)) =
       (I : Ideal (𝓞 K)) := (rfl)
+
+/-- If `(a)` is prime to `𝔪.support`, `b ≠ 0`, and `b - a ∈ 𝔪.finitePart`, then `(b)` is also
+prime to `𝔪.support`. -/
+theorem isPrimeTo_span_of_sub_mem {𝔪 : Modulus K} {a b : 𝓞 K} (hb0 : b ≠ 0)
+    (hsub : b - a ∈ 𝔪.finitePart) (ha : (Ideal.span {a}).IsPrimeTo 𝔪.support) :
+    (Ideal.span {b}).IsPrimeTo 𝔪.support := by
+  refine Ideal.isPrimeTo_iff.mpr ⟨mt Ideal.span_singleton_eq_bot.mp hb0, fun 𝔭 h𝔭 hdvd ↦ ?_⟩
+  have h𝔭m : 𝔪.finitePart ≤ 𝔭.asIdeal := Ideal.dvd_iff_le.mp ((𝔪.mem_support_iff 𝔭).mp h𝔭)
+  have hb_mem : b ∈ 𝔭.asIdeal := Ideal.dvd_iff_le.mp hdvd (Ideal.mem_span_singleton_self b)
+  have ha_mem : a ∈ 𝔭.asIdeal := by
+    simpa only [sub_sub_cancel] using 𝔭.asIdeal.sub_mem hb_mem (h𝔭m hsub)
+  exact (Ideal.isPrimeTo_iff.mp ha).2 𝔭 h𝔭 (Ideal.dvd_span_singleton.mpr ha_mem)
+
+/-- For nonzero `a b : 𝓞 K` congruent modulo `𝔪.finitePart`, `(b)` is prime to `𝔪.support` if and
+only if `(a)` is. -/
+theorem isPrimeTo_span_iff_of_sub_mem {𝔪 : Modulus K} {a b : 𝓞 K} (ha0 : a ≠ 0) (hb0 : b ≠ 0)
+    (hsub : b - a ∈ 𝔪.finitePart) :
+    (Ideal.span {b}).IsPrimeTo 𝔪.support ↔ (Ideal.span {a}).IsPrimeTo 𝔪.support :=
+  ⟨isPrimeTo_span_of_sub_mem ha0 (by simpa only [neg_sub] using 𝔪.finitePart.neg_mem hsub),
+    isPrimeTo_span_of_sub_mem hb0 hsub⟩
 
 end TauCeti.GlobalNumberFields

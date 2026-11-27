@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Path
-public import TauCeti.Analysis.Convex.RadialPush
+public import TauCeti.Analysis.Convex.Radial.Push
 public import TauCeti.Topology.CWComplex.Classical.CompactSupport
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.CellDeformation
 public import TauCeti.Topology.Homotopy.AvoidPoint
@@ -33,8 +33,9 @@ greater than `dim E`, by homotopies of maps into the complex:
   it homotopes every map of pairs `(Dⁱ, Sⁱ⁻¹) → (C, Xⁿ)` relative to `Sⁱ⁻¹` into `Xⁿ`; this is
   the compression property behind Hatcher's Corollary 4.12, that the pair `(C, Xⁿ)` is
   `n`-connected.
-* In dimensions zero and one, this says that every point of `C` is joined to `Xⁿ`, and that
-  paths in `C` between points of `Xⁿ` compress into `Xⁿ`, relative to their endpoints
+* In dimensions zero and one, this says that every point of `C` is joined to `Xⁿ` — so `X⁰` is
+  nonempty whenever `C` is (`TauCeti.nonempty_skeletonLT_one`, `TauCeti.zeroSkeletonNonempty`) —
+  and that paths in `C` between points of `Xⁿ` compress into `Xⁿ`, relative to their endpoints
   (`TauCeti.exists_joined_skeletonLT`, `TauCeti.exists_path_homotopic_skeletonLT`,
   `TauCeti.joined_skeletonLT_iff`).
 
@@ -219,6 +220,19 @@ theorem exists_joined_skeletonLT {n : ℕ} {A : Set X}
     (isCompact_univ (X := Fin 0 → ℝ)) (by simp) (ContinuousMap.const _ x)
   let z : (univ : Set (Fin 0 → ℝ)) := ⟨0, mem_univ _⟩
   exact ⟨⟨_, hA ▸ hg z⟩, ⟨(H.evalAt z).symm.cast (by simp) (by simp)⟩⟩
+
+/-- **The zero-skeleton of a nonempty relative CW complex is nonempty**: every point of the complex
+is joined to it by a path (`TauCeti.exists_joined_skeletonLT`). -/
+theorem nonempty_skeletonLT_one (hC : C.Nonempty) : (skeletonLT C 1 : Set X).Nonempty := by
+  obtain ⟨x, hx⟩ := hC
+  obtain ⟨a, -⟩ := exists_joined_skeletonLT (C := C) (n := 0) (by simp)
+    (skeletonLT C ((1 : ℕ) : ℕ∞)).subset_complex ⟨x, hx⟩
+  exact ⟨a.val, a.property⟩
+
+/-- The zero-skeleton of a nonempty relative CW complex is a nonempty type. -/
+instance zeroSkeletonNonempty [Nonempty C] : Nonempty (↑(skeletonLT C ((1 : ℕ) : ℕ∞))) :=
+  let ⟨x⟩ := ‹Nonempty C›
+  (nonempty_skeletonLT_one (C := C) ⟨x.val, x.property⟩).to_subtype
 
 /-- **Paths in `C` between points of the `n`-skeleton compress into it up to homotopy**, for
 `n ≥ 1`. If `A` is the `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then every

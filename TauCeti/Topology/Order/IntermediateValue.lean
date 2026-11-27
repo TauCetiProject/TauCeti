@@ -30,7 +30,14 @@ uniform order statements:
   in a set with empty interior, for instance a null set of `ℝ`, is constant on `s`.
 
 A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
-`c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`.
+`c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`;
+over a densely ordered domain it takes the value `c` there,
+`ContinuousOn.exists_mem_Ioo_eq_and_forall_gt`.
+
+If `[a, b]` is covered by `P ∪ N`, `a` is adherent to `P` and `b` is not, then some point of
+`[a, b)` adherent to both `P` and `N` is followed by a segment contained in `N`,
+`TauCeti.exists_mem_closure_inter_closure_Ioc_subset`; the mirror image is
+`TauCeti.exists_mem_closure_inter_closure_Ico_subset`.
 
 A continuous function with values in `Icc l u` near `a⁺` that tends neither to `l` nor to `u` at
 `a⁺` takes values in a fixed subinterval `Icc c d`, with `l < c` and `d < u`, arbitrarily close to
@@ -152,6 +159,20 @@ theorem ContinuousOn.exists_mem_Ioo_le_and_forall_gt
   exact ContinuousWithinAt.closure_le (csInf_mem_closure hZ hbdd)
     ((hf _ ht₁).mono inter_subset_left) continuousWithinAt_const fun _ hz ↦ hz.2
 
+/-- A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
+`c` somewhere in `Ioo a b` takes the value `c` at a first point: there is `t₁ ∈ Ioo a b` with
+`f t₁ = c` and `c < f` on `Ioo a t₁`. -/
+theorem ContinuousOn.exists_mem_Ioo_eq_and_forall_gt
+    [ConditionallyCompleteLinearOrder X] [OrderTopology X] [DenselyOrdered X] {f : X → α}
+    {a b : X} {c : α} (hf : ContinuousOn f (Ioo a b)) (hpos : ∀ᶠ r in 𝓝[>] a, c < f r)
+    (hne : ∃ t ∈ Ioo a b, f t ≤ c) : ∃ t₁ ∈ Ioo a b, f t₁ = c ∧ ∀ r ∈ Ioo a t₁, c < f r := by
+  obtain ⟨t₁, ht₁, hle, hgt⟩ := hf.exists_mem_Ioo_le_and_forall_gt hpos hne
+  -- `f t₁` is a limit of values above `c`.
+  refine ⟨t₁, ht₁, le_antisymm hle (ContinuousWithinAt.closure_le ?_ continuousWithinAt_const
+    ((hf t₁ ht₁).mono (Ioo_subset_Ioo_right ht₁.2.le)) fun r hr ↦ (hgt r hr).le), hgt⟩
+  rw [closure_Ioo ht₁.1.ne]
+  exact right_mem_Icc.2 ht₁.1.le
+
 /-- A function continuous on `Ioi a`, with values eventually in `Icc l u` to the right of `a`,
 which tends neither to `l` nor to `u` at `a⁺`, takes values in a fixed interval `Icc c d` with
 `l < c` and `d < u` at points arbitrarily close to `a` from the right. -/
@@ -207,3 +228,41 @@ theorem Function.Antiperiodic.exists_mem_uIcc_eq_zero [ConditionallyCompleteLine
     · exact .inr ⟨Left.neg_nonpos_iff.2 h', h'⟩
     · exact .inl ⟨h', Left.nonneg_neg_iff.2 h'⟩
   exact intermediate_value_uIcc hf h0
+
+namespace TauCeti
+
+/-- If `[a, b]` is covered by `P ∪ N`, `a` is adherent to `P` and `b` is not, then some point
+`c ∈ [a, b)` is adherent to both `P` and `N`, and `(c, b]` lies in `N`. -/
+theorem exists_mem_closure_inter_closure_Ioc_subset [ConditionallyCompleteLinearOrder X]
+    [OrderTopology X] [DenselyOrdered X] {P N : Set X} {a b : X} (hab : a < b)
+    (ha : a ∈ closure P) (hb : b ∉ closure P) (hcover : Icc a b ⊆ P ∪ N) :
+    ∃ c ∈ Ico a b, c ∈ closure P ∩ closure N ∧ Ioc c b ⊆ N := by
+  set K := closure P ∩ Icc a b
+  have hKbdd : BddAbove K := ⟨b, fun t ht ↦ ht.2.2⟩
+  have hcK : sSup K ∈ K :=
+    (isClosed_closure.inter isClosed_Icc).csSup_mem ⟨a, ha, left_mem_Icc.2 hab.le⟩ hKbdd
+  have hcb : sSup K < b := lt_of_le_of_ne hcK.2.2 fun h ↦ hb (h ▸ hcK.1)
+  -- after the last point of `closure P` in `[a, b]`, the cover leaves only `N`
+  have hN : Ioc (sSup K) b ⊆ N := fun t ht ↦ by
+    have htI : t ∈ Icc a b := ⟨hcK.2.1.trans ht.1.le, ht.2⟩
+    have htP : t ∉ closure P := fun h ↦ (not_le.2 ht.1) (le_csSup hKbdd ⟨h, htI⟩)
+    exact (hcover htI).resolve_left fun h ↦ htP (subset_closure h)
+  have hcl : sSup K ∈ closure (Ioo (sSup K) b) := by
+    rw [closure_Ioo hcb.ne]
+    exact left_mem_Icc.2 hcb.le
+  exact ⟨sSup K, ⟨hcK.2.1, hcb⟩, ⟨hcK.1, closure_mono (Ioo_subset_Ioc_self.trans hN) hcl⟩, hN⟩
+
+/-- If `[a, b]` is covered by `P ∪ N`, `b` is adherent to `P` and `a` is not, then some point
+`c ∈ (a, b]` is adherent to both `P` and `N`, and `[a, c)` lies in `N`. This is the mirror image
+of `exists_mem_closure_inter_closure_Ioc_subset`. -/
+theorem exists_mem_closure_inter_closure_Ico_subset [ConditionallyCompleteLinearOrder X]
+    [OrderTopology X] [DenselyOrdered X] {P N : Set X} {a b : X} (hab : a < b)
+    (hb : b ∈ closure P) (ha : a ∉ closure P) (hcover : Icc a b ⊆ P ∪ N) :
+    ∃ c ∈ Ioc a b, c ∈ closure P ∩ closure N ∧ Ico a c ⊆ N := by
+  obtain ⟨c, hc, hcPN, hN⟩ := exists_mem_closure_inter_closure_Ioc_subset (X := Xᵒᵈ)
+    (P := OrderDual.ofDual ⁻¹' P) (N := OrderDual.ofDual ⁻¹' N) (a := OrderDual.toDual b)
+    (b := OrderDual.toDual a) hab hb ha (by rw [Icc_toDual]; exact preimage_mono hcover)
+  refine ⟨OrderDual.ofDual c, ⟨hc.2, hc.1⟩, hcPN, fun t ht ↦ ?_⟩
+  exact hN (a := OrderDual.toDual t) ⟨ht.2, ht.1⟩
+
+end TauCeti

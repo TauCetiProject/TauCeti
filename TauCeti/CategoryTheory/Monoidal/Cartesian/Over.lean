@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Grp
+public import Mathlib.CategoryTheory.Monoidal.Cartesian.Mod
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.Over
+public import TauCeti.CategoryTheory.Monoidal.Mod.Basic
 
 /-!
 # Products and base-change factorizations in a slice category
@@ -24,6 +26,13 @@ This file also records `CategoryTheory.Over.exists_pullback_snd_comp_eq_of_pullb
 the base change of `f : X ⊗ Y ⟶ Z` in `Over S` along `y ≫ Y.hom` factors through the second
 projection in `Over R`, then the restriction of `f.left` to the fibre of
 `pullback.snd X.hom Y.hom` over `y : R ⟶ Y.left` factors through the projection to `R`.
+
+`CategoryTheory.Over.mapPullbackAdj_homEquiv_symm_smul` identifies the transpose of an action
+on base-changed points with the action on their transposes.
+
+Finally, `CategoryTheory.Over.mapGrpPullbackComp` lifts Mathlib's `Over.pullbackComp` to group
+objects: base change of group objects along `f ≫ g` is base change along `g` followed by base change
+along `f`. `CategoryTheory.Over.mapGrpPullbackCompOfEq` restates it for any `b` with `f ≫ g = b`.
 -/
 
 public section
@@ -64,6 +73,30 @@ end TauCeti.CategoryTheory.Over
 namespace CategoryTheory.Over
 
 variable {C : Type*} [Category* C] [HasPullbacks C] {S : C}
+
+open scoped Obj
+
+/-- The transpose along `Over.map p ⊣ Over.pullback p` of `g • y`, for points `g` and `y` of the
+base changes of `M` and `Y`, is the action of the transpose of `g` on the transpose of `y`. -/
+lemma mapPullbackAdj_homEquiv_symm_smul
+    {S' : C} (p : S' ⟶ S) {M Y : Over S} [MonObj M] [ModObj M Y]
+    {T : Over S'} (g : T ⟶ (Over.pullback p).obj M) (y : T ⟶ (Over.pullback p).obj Y) :
+    letI := (Over.pullback p).modObjObj M Y
+    ((Over.mapPullbackAdj p).homEquiv _ _).symm (g • y) =
+      ((Over.mapPullbackAdj p).homEquiv _ _).symm g •
+        ((Over.mapPullbackAdj p).homEquiv _ _).symm y := by
+  let := (Over.pullback p).modObjObj M Y
+  have h : ((Over.mapPullbackAdj p).homEquiv _ _).symm
+      (lift g y ≫ Functor.LaxMonoidal.μ (Over.pullback p) M Y) =
+        lift (((Over.mapPullbackAdj p).homEquiv _ _).symm g)
+          (((Over.mapPullbackAdj p).homEquiv _ _).symm y) := by
+    ext1
+    · rw [lift_fst, ← Adjunction.homEquiv_naturality_right_symm, Category.assoc,
+        Functor.Monoidal.μ_fst, lift_fst]
+    · rw [lift_snd, ← Adjunction.homEquiv_naturality_right_symm, Category.assoc,
+        Functor.Monoidal.μ_snd, lift_snd]
+  rw [Hom.smul_def, Hom.smul_def, Functor.modObjObj_smul, ← Category.assoc,
+    Adjunction.homEquiv_naturality_right_symm, h]
 
 /-! ### Multiplicative morphisms between slices over different bases -/
 
@@ -166,5 +199,77 @@ theorem exists_pullback_snd_comp_eq_of_pullback {R : C} {X Y Z : Over S} (f : X 
     _ = pullback.snd c y ≫ yR ≫ gR.left ≫ pullback.fst Z.hom s := by
       rw [hgR, Over.comp_left]
       simp [φ, F, s, Category.assoc]
+
+/-- Base change of group objects along a composite `f ≫ g` is base change along `g` followed by
+base change along `f`: the lift of `Over.pullbackComp` to group objects. -/
+noncomputable def mapGrpPullbackComp {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z) :
+    (Over.pullback (f ≫ g)).mapGrp ≅ (Over.pullback g).mapGrp ⋙ (Over.pullback f).mapGrp :=
+  Functor.mapGrpNatIso (Over.pullbackComp f g) ≪≫ Functor.mapGrpCompIso
+
+/-- The morphism in `Over X` underlying a component of `mapGrpPullbackComp` is the corresponding
+component of `Over.pullbackComp`. -/
+@[simp]
+theorem mapGrpPullbackComp_hom_app_hom_hom {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (G : Grp (Over Z)) :
+    ((mapGrpPullbackComp f g).hom.app G).hom.hom = (Over.pullbackComp f g).hom.app G.X := by
+  -- `Functor.mapGrpCompIso` has identity components, which remain composed on the right.
+  simp only [mapGrpPullbackComp, Iso.trans_hom, NatTrans.comp_app, Grp.comp', Mon.comp_hom',
+    Functor.mapGrpNatIso_hom_app_hom_hom, Functor.mapGrpCompIso_hom_app_hom_hom]
+  exact Category.comp_id _
+
+/-- The morphism in `Over X` underlying a component of the inverse of `mapGrpPullbackComp` is the
+corresponding component of the inverse of `Over.pullbackComp`. -/
+@[simp]
+theorem mapGrpPullbackComp_inv_app_hom_hom {X Y Z : C} (f : X ⟶ Y) (g : Y ⟶ Z)
+    (G : Grp (Over Z)) :
+    ((mapGrpPullbackComp f g).inv.app G).hom.hom = (Over.pullbackComp f g).inv.app G.X := by
+  -- `Functor.mapGrpCompIso` has identity components, which remain composed on the left.
+  simp only [mapGrpPullbackComp, Iso.trans_inv, NatTrans.comp_app, Grp.comp', Mon.comp_hom',
+    Functor.mapGrpCompIso_inv_app_hom_hom, Functor.mapGrpNatIso_inv_app_hom_hom]
+  exact Category.id_comp _
+
+/-- Base change of group objects along `a : Y ⟶ Z` followed by base change along `f : X ⟶ Y` is
+base change along any `b : X ⟶ Z` with `f ≫ a = b`. For instance, when `Z` is terminal, this
+compares base changes of group objects over `Z` along the unique maps to `Z`. -/
+noncomputable def mapGrpPullbackCompOfEq {X Y Z : C} (f : X ⟶ Y) {a : Y ⟶ Z} {b : X ⟶ Z}
+    (h : f ≫ a = b) :
+    (Over.pullback a).mapGrp ⋙ (Over.pullback f).mapGrp ≅ (Over.pullback b).mapGrp :=
+  (mapGrpPullbackComp f a).symm ≪≫ Functor.mapGrpNatIso (eqToIso (by congr 1))
+
+/-- The morphism in `Over X` underlying a component of `mapGrpPullbackCompOfEq` is the
+corresponding component of the inverse of `Over.pullbackComp`, followed by the identification of
+`Over.pullback (f ≫ a)` with `Over.pullback b`. -/
+@[simp]
+theorem mapGrpPullbackCompOfEq_hom_app_hom_hom {X Y Z : C} (f : X ⟶ Y) {a : Y ⟶ Z} {b : X ⟶ Z}
+    (h : f ≫ a = b) (G : Grp (Over Z)) :
+    ((mapGrpPullbackCompOfEq f h).hom.app G).hom.hom =
+      (Over.pullbackComp f a).inv.app G.X ≫
+        (eqToHom (by subst h; rfl) :
+          (Over.pullback (f ≫ a)).obj G.X ⟶ (Over.pullback b).obj G.X) := by
+  subst h
+  simp only [mapGrpPullbackCompOfEq, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
+    Grp.comp', Mon.comp_hom', mapGrpPullbackComp_inv_app_hom_hom,
+    Functor.mapGrpNatIso_hom_app_hom_hom, eqToIso.hom, eqToHom_refl, NatTrans.id_app]
+  -- Both sides are now `(Over.pullbackComp f a).inv.app G.X ≫ 𝟙 _`, up to the unfolding of
+  -- `((Over.pullback (f ≫ a)).mapGrp.obj G).X` to `(Over.pullback (f ≫ a)).obj G.X`.
+  rfl
+
+/-- The morphism in `Over X` underlying a component of the inverse of `mapGrpPullbackCompOfEq` is
+the identification of `Over.pullback b` with `Over.pullback (f ≫ a)`, followed by the
+corresponding component of `Over.pullbackComp`. -/
+@[simp]
+theorem mapGrpPullbackCompOfEq_inv_app_hom_hom {X Y Z : C} (f : X ⟶ Y) {a : Y ⟶ Z} {b : X ⟶ Z}
+    (h : f ≫ a = b) (G : Grp (Over Z)) :
+    ((mapGrpPullbackCompOfEq f h).inv.app G).hom.hom =
+      (eqToHom (by subst h; rfl) :
+          (Over.pullback b).obj G.X ⟶ (Over.pullback (f ≫ a)).obj G.X) ≫
+        (Over.pullbackComp f a).hom.app G.X := by
+  subst h
+  simp only [mapGrpPullbackCompOfEq, Iso.trans_inv, Iso.symm_inv, NatTrans.comp_app,
+    Grp.comp', Mon.comp_hom', mapGrpPullbackComp_hom_app_hom_hom,
+    Functor.mapGrpNatIso_inv_app_hom_hom, eqToIso.inv, eqToHom_refl, NatTrans.id_app]
+  -- Both sides are now `𝟙 _ ≫ (Over.pullbackComp f a).hom.app G.X`, up to the unfolding of
+  -- `((Over.pullback (f ≫ a)).mapGrp.obj G).X` to `(Over.pullback (f ≫ a)).obj G.X`.
+  rfl
 
 end CategoryTheory.Over

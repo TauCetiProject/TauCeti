@@ -21,7 +21,8 @@ queries the oracle at its input `n` and has use `n + 1`.
   leaves the protected computation intact: the run at input `0` has use `1`, the restraint is
   `some 1`, and `1` enters. Nothing breaches the use prefix, so the run persists in the limit.
 * One restraint covering two computations with different uses, `1` and `3`, preserves both when it
-  is never injured.
+  is never injured. When `2` enters instead, between the two uses, only the run with the smaller
+  use persists in the limit.
 * Finite injury alone does not make an arbitrary restraint stabilize: under a restraint
   alternating between `none` and `some 0` nothing is ever injured, although every number enters.
 * A stage computation against a fixed oracle persists at every later stage; one against a moving
@@ -113,6 +114,20 @@ example :
     evaln_setAnswers_stageLimit_eq_some_of_injuriesAt_eq_empty monotone_Ico_three hd
       (fun _ _ z hz => ⟨2, rfl, by omega⟩) fun t _ => injuriesAt_Ico_three_eq_empty t
   exact ⟨h (by simp) (by simp), h (by simp) (by simp)⟩
+
+-- When `2` enters instead, between the two uses, the run with use `1` persists against the limit
+-- while the run with use `3` changes its output.
+example :
+    evaln (setAnswers (stageLimit fun s => if s = 0 then ∅ else {2})) 1 oracle 0 = some ⟨0, 1⟩ ∧
+      evaln (setAnswers (stageLimit fun s => if s = 0 then ∅ else {2})) 3 oracle 2 =
+        some ⟨1, 3⟩ := by
+  have h0 : 0 ∉ stageLimit fun s => if s = 0 then (∅ : Finset ℕ) else {2} := by
+    simp only [mem_stageLimit, not_exists]
+    intro s
+    split_ifs <;> simp
+  have h2 : 2 ∈ stageLimit fun s => if s = 0 then (∅ : Finset ℕ) else {2} :=
+    mem_stageLimit.2 ⟨1, by simp⟩
+  simp [h0, h2]
 
 /-! ### Finite injury without a stable restraint -/
 
