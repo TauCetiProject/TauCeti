@@ -12,7 +12,7 @@ import Mathlib.Analysis.Real.Pi.Bounds
 import Mathlib.NumberTheory.DirichletCharacter.Bounds
 import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import TauCeti.NumberTheory.DirichletCharacter.Even
-import TauCeti.NumberTheory.DirichletCharacter.LFunction.TrivialZeros
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.TrivialZeros.Basic
 import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.ZetaValues
 

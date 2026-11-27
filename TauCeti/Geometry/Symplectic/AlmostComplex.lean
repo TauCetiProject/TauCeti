@@ -594,6 +594,15 @@ theorem IsComplexLinearMap.apply_apply_eq_zero_of_apply_eq_zero
     (hf : IsComplexLinearMap j J f) {u : V} (hu : f u = 0) : f (j u) = 0 := by
   rw [(isComplexLinearMap_iff_apply j J f).1 hf u, hu, J.apply_zero]
 
+/-- The kernel of a complex-linear map is invariant under the source structure, in both
+directions: `f (j u) = 0` exactly when `f u = 0`, since `f (j u) = J (f u)` and `J` is
+injective. -/
+theorem IsComplexLinearMap.apply_apply_eq_zero_iff
+    {j : AlmostComplexStructure V} {J : AlmostComplexStructure W} {f : V →ₗ[ℝ] W}
+    (hf : IsComplexLinearMap j J f) (u : V) : f (j u) = 0 ↔ f u = 0 := by
+  rw [(isComplexLinearMap_iff_apply j J f).1 hf u]
+  exact J.map_eq_zero_iff
+
 /-- A complex-linear map preserving a `J`-invariant submodule restricts to a complex-linear map of
 the restricted complex structure. -/
 lemma IsComplexLinearMap.restrict {J : AlmostComplexStructure V} {f : V →ₗ[ℝ] V}

@@ -35,7 +35,9 @@ inside the `b`-torsion subgroup is the ambient `a`-torsion subgroup, and for a s
 commutative semiring the `a`-torsion submodule is the kernel of left scalar multiplication
 `LinearMap.lsmul R M a`. Linear maps send torsion elements to torsion elements, so submodules and
 linear images of torsion modules are torsion, and the torsion submodule of `M × N` is the product
-of the torsion submodules. A linear map into a torsion-free module vanishes on the torsion.
+of the torsion submodules. A linear map into a torsion-free module vanishes on the torsion. A
+semilinear equivalence along a ring isomorphism maps the torsion submodule onto the torsion
+submodule.
 
 ## Main definitions
 
@@ -56,6 +58,8 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `TauCeti.Submodule.comap_torsion_of_comp_eq_smul`: a linear map with a left inverse up to a
   nonzerodivisor reflects torsion.
 * `LinearMap.le_comap_torsion`: a linear map sends torsion elements to torsion elements.
+* `LinearEquiv.map_torsion`: a semilinear equivalence along a ring isomorphism maps the torsion
+  submodule onto the torsion submodule.
 * `LinearMap.torsion_le_ker`: a linear map into a torsion-free module vanishes on the torsion
   submodule.
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
@@ -241,6 +245,32 @@ theorem _root_.LinearMap.le_comap_torsion (f : M →ₗ[R] N) :
   obtain ⟨a, ha⟩ := (_root_.Submodule.mem_torsion_iff x).mp hx
   exact (_root_.Submodule.mem_torsion_iff _).mpr
     ⟨a, by rw [← LinearMap.map_smul_of_tower, ha, map_zero]⟩
+
+omit [Module R N] in
+/-- A semilinear equivalence along a ring isomorphism maps torsion elements to torsion elements:
+`σ` maps the nonzerodivisors of `R` into those of `S`. -/
+private theorem _root_.LinearEquiv.map_torsion_le {S : Type*} [CommSemiring S] [Module S N]
+    {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : M ≃ₛₗ[σ] N) :
+    (_root_.Submodule.torsion R M).map (e : M →ₛₗ[σ] N) ≤ _root_.Submodule.torsion S N := by
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨a, ha⟩ := (_root_.Submodule.mem_torsion_iff x).mp hx
+  have hσa : σ a ∈ S⁰ := by
+    rw [← RingHomInvPair.toRingEquiv_apply σ σ',
+      ← MulEquivClass.map_nonZeroDivisors (RingHomInvPair.toRingEquiv σ σ')]
+    exact Submonoid.mem_map_of_mem _ a.property
+  have h := congrArg e ha
+  rw [Submonoid.smul_def, e.map_smulₛₗ, map_zero] at h
+  exact (_root_.Submodule.mem_torsion_iff (e x)).mpr ⟨⟨σ a, hσa⟩, h⟩
+
+omit [Module R N] in
+/-- A semilinear equivalence along a ring isomorphism `σ : R ≃+* S` maps the torsion submodule onto
+the torsion submodule: `σ` maps the nonzerodivisors of `R` onto those of `S`. -/
+theorem _root_.LinearEquiv.map_torsion {S : Type*} [CommSemiring S] [Module S N] {σ : R →+* S}
+    {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ] (e : M ≃ₛₗ[σ] N) :
+    (_root_.Submodule.torsion R M).map (e : M →ₛₗ[σ] N) = _root_.Submodule.torsion S N := by
+  refine le_antisymm e.map_torsion_le ?_
+  rw [_root_.Submodule.map_equiv_eq_comap_symm, ← _root_.Submodule.map_le_iff_le_comap]
+  exact e.symm.map_torsion_le
 
 /-- A linear map `f` for which some `g` satisfies `g ∘ f = a • id` with `a` a nonzerodivisor
 reflects torsion: an element is torsion if and only if its image is. -/
