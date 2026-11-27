@@ -37,6 +37,9 @@ subspace of `M_n(R)` (`TauCeti.GeneralLinear.isOpenEmbedding_coe_pointsMulEquiv`
   points of `GL_n` form an open subspace of the matrices.
 * `TauCeti.GeneralLinear.isOpen_ker_map_quotientMk`: the kernel of reduction modulo an open
   ideal is open in `GL_n`.
+* `TauCeti.GeneralLinear.hasBasis_nhds_one_ker_map_quotientMk`: when ideals form a basis of
+  neighbourhoods of `0`, the kernels of reduction modulo them form a basis of neighbourhoods of
+  the identity of `GL_n`.
 
 ## References
 
@@ -145,6 +148,30 @@ theorem isOpen_ker_map_quotientMk {I : Ideal R} (hI : IsOpen (I : Set R)) :
       Set (Matrix.GeneralLinearGroup (Fin n) R)) := by
   rw [← map_congruenceSubgroup (R := ℤ), ← coe_pointsContinuousMulEquiv, Subgroup.coe_map]
   exact (pointsContinuousMulEquiv (k := ℤ) n).isOpenMap _ (HopfAlgebra.isOpen_congruenceSubgroup hI)
+
+/-- **Principal congruence subgroups form a neighbourhood basis of the identity.** If ideals `J i`
+of `R` form a basis of neighbourhoods of `0`, then the kernels of reduction
+`GL_n(R) → GL_n(R ⧸ J i)` form a basis of neighbourhoods of `1` in `GL_n(R)`: they are the images
+of the congruence subgroups of the points of `GL_n` under the homeomorphism
+`pointsContinuousMulEquiv`. -/
+theorem hasBasis_nhds_one_ker_map_quotientMk {ι : Sort*} {p : ι → Prop} {J : ι → Ideal R}
+    (hJ : (𝓝 (0 : R)).HasBasis p fun i ↦ (J i : Set R)) :
+    (𝓝 (1 : Matrix.GeneralLinearGroup (Fin n) R)).HasBasis p fun i ↦
+      ((Matrix.GeneralLinearGroup.map (n := Fin n) (Ideal.Quotient.mk (J i))).ker :
+        Set (Matrix.GeneralLinearGroup (Fin n) R)) := by
+  have h := (HopfAlgebra.hasBasis_nhds_one_congruenceSubgroup (k := ℤ)
+    (H := coordinateHopfAlgebra ℤ n) hJ).map (pointsContinuousMulEquiv (k := ℤ) (R := R) n :
+      WithConv (coordinateHopfAlgebra ℤ n →ₐ[ℤ] R) ≃ₜ Matrix.GeneralLinearGroup (Fin n) R)
+  -- The underlying homeomorphism of `pointsContinuousMulEquiv` is a group isomorphism.
+  have h1 : (pointsContinuousMulEquiv (k := ℤ) (R := R) n :
+      WithConv (coordinateHopfAlgebra ℤ n →ₐ[ℤ] R) ≃ₜ Matrix.GeneralLinearGroup (Fin n) R) 1 = 1 :=
+    map_one (pointsContinuousMulEquiv n)
+  rw [Homeomorph.map_nhds_eq, h1] at h
+  convert h using 2 with i
+  rw [← map_congruenceSubgroup (R := ℤ), ← coe_pointsContinuousMulEquiv, Subgroup.coe_map]
+  -- The homeomorphism and the group isomorphism underlying `pointsContinuousMulEquiv` have the
+  -- same function `pointsMulEquiv n`; Mathlib has no `simp` lemma identifying the coercions.
+  rfl
 
 end PointTopology
 
