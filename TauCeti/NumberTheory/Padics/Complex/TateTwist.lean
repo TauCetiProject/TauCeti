@@ -46,6 +46,11 @@ The vanishing descends to `G_K` by a twisted trace. For `a ∈ K` the sum over t
 in `ℂ_p(i)` under all of `G_{ℚ_p}`, hence zero. It equals `∑_φ φ(a) χ(g_φ) ^ i g_φ(y)`, and the
 embeddings are linearly independent characters of `K` (Dedekind), so `y = 0`.
 
+Every neighbourhood of `1` in `G_{ℚ_p}` contains `G_K` for some finite `K`, so the vanishing also
+holds for a twisted relation that is only known near `1`: if `u ≠ v` and
+`χ(σ) ^ u σ(x) = χ(σ) ^ v x` for all `σ` near `1`, for instance for all `σ` in an open subgroup,
+then `x = 0`.
+
 ## Main definitions
 
 * `TauCeti.padicAlgClContinuousCyclotomicCharacter`: the continuous cyclotomic character on
@@ -62,6 +67,8 @@ embeddings are linearly independent characters of `K` (Dedekind), so `y = 0`.
   no nonzero `G_{ℚ_p}`-invariants for `i ≠ 0`.
 * `PadicComplex.eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq`: `ℂ_p(i)` has no nonzero
   `G_K`-invariants for `i ≠ 0` and `K` finite over `ℚ_p`.
+* `PadicComplex.eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq`: no nonzero `x ∈ ℂ_p`
+  has `χ(σ) ^ u σ(x) = χ(σ) ^ v x` for all `σ` near `1` when `u ≠ v`.
 * `PadicComplex.forall_cyclotomicCharacter_zpow_mul_smul_eq_iff`: the `G_K`-invariants of
   `ℂ_p(i)` are `K` for `i = 0` and `0` otherwise: Tate's computation of `H⁰(G_K, ℂ_p(i))`.
 
@@ -84,7 +91,7 @@ The proof over `G_{ℚ_p}` and the descent through linearly independent characte
 
 public section
 
-open UniformSpace.Completion IntermediateField
+open UniformSpace.Completion IntermediateField Topology
 
 namespace PadicComplex
 
@@ -334,6 +341,37 @@ theorem eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq [FiniteDimensiona
   simpa [c, twist_ne_zero, smul_eq_zero_iff_eq] using hc
 
 end Descent
+
+private theorem twist_add (i j : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p) :
+    twist (i + j) σ = twist i σ * twist j σ := by
+  simp [twist, zpow_add]
+
+/-- `χ(σ) ^ u y = χ(σ) ^ v x` exactly when `χ(σ) ^ (u - v) y = x`. -/
+private theorem twist_mul_eq_twist_mul_iff (u v : ℤ) (σ : PadicAlgCl p ≃+* PadicAlgCl p)
+    (x y : ℂ_[p]) : twist u σ * y = twist v σ * x ↔ twist (u - v) σ * y = x := by
+  have h : twist u σ = twist v σ * twist (u - v) σ := by rw [← twist_add, add_sub_cancel]
+  rw [h, mul_assoc, mul_right_inj' (twist_ne_zero v σ)]
+
+/-- **Tate's theorem near `1`.** If `u ≠ v` are integers and `x ∈ ℂ_p` satisfies
+`χ(σ) ^ u σ(x) = χ(σ) ^ v x` for every `σ` in some neighbourhood of `1` in
+`Gal(PadicAlgCl p / ℚ_p)`, for instance for every `σ` in an open subgroup, then `x = 0`. -/
+theorem eq_zero_of_eventually_cyclotomicCharacter_zpow_mul_smul_eq {u v : ℤ} (huv : u ≠ v)
+    {x : ℂ_[p]} (hx : ∀ᶠ σ in 𝓝 (1 : PadicAlgCl p ≃ₐ[ℚ_[p]] PadicAlgCl p),
+      algebraMap ℚ_[p] ℂ_[p]
+          (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ u : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) *
+        σ • x =
+      algebraMap ℚ_[p] ℂ_[p]
+          (((cyclotomicCharacter (PadicAlgCl p) p σ.toRingEquiv ^ v : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) *
+        x) : x = 0 := by
+  simp only [← twist_def] at hx
+  -- The relation holds on `Gal(PadicAlgCl p / E)` for some finite extension `E` of `ℚ_p`.
+  obtain ⟨E, _, hE⟩ := (krullTopology_mem_nhds_one_iff ℚ_[p] (PadicAlgCl p) _).mp hx
+  refine eq_zero_of_forall_cyclotomicCharacter_zpow_mul_smul_eq (K := E) (sub_ne_zero.mpr huv)
+    fun σ ↦ ?_
+  have h := hE ((E.mem_fixingSubgroup_iff (σ.restrictScalars ℚ_[p])).2
+    fun a ha ↦ σ.commutes ⟨a, ha⟩)
+  rw [← twist_def, ← twist_mul_eq_twist_mul_iff, ← algEquiv_restrictScalars_smul (R := ℚ_[p])]
+  exact h
 
 /-- **Tate's calculation of `H⁰(G_K, ℂ_p(i))`.** Let `K` be a finite extension of `ℚ_p` inside
 `PadicAlgCl p`. The elements of `ℂ_p` with `χ(σ) ^ i σ(x) = x` for every
