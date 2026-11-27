@@ -45,10 +45,13 @@ are trivial, frames `tV` and `tW`, the coefficients `v` of `u` in `tV`, a basis 
 model fibre of `W`, and a cutoff `χ` equal to `1` on a neighbourhood `U` of `c x`. Over `U`, the
 component of `T ∘ P` along `v` is the transpose `φ ↦ S (D φ)` of the component `S` of `T` along
 `b 0` by the `(b 0)*, v` entry `D` of the chart compression of `P`
-(`TauCeti.BundleTest.chartComponent_localOperatorDualCLM_apply`). Its principal symbol at `c x` is
-read off from `σ(P)(ξ) u`
-(`smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero_iff` in the namespace
+(`TauCeti.BundleTest.restrictCLM_chartComponent_localOperatorDualCLM_apply`). Its principal symbol
+at `c x` is read off from `σ(P)(ξ) u`
+(`smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero` in the namespace
 `OpenPartialHomeomorph`), so `D` is elliptic at `c x`, and the Euclidean statement applies to `S`.
+This chart argument follows the proof of microlocal elliptic regularity on bundles,
+`TauCeti.BundleTest.IsMicrolocallySmoothAt.of_localOperatorDualCLM` in
+`TauCeti/Geometry/Manifold/DifferentialOperator/WaveFrontSet.lean`, and shares its chart steps.
 For the Sobolev and Besov scales this is
 `Distribution.IsLocallyMemSobolevAt.of_mem_differentialOperators` and its analogues, which rest on
 the parametrix of the pseudodifferential calculus on `ℝⁿ`; so the three statements above are for
@@ -99,45 +102,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [FiberBundle F' W] [VectorBundle ℝ F' W] [ContMDiffVectorBundle ∞ F' W 𝓘(ℝ, E)]
   {P : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯ →ₗ[ℝ] Cₛ^∞⟮𝓘(ℝ, E); F', W⟯}
 
-omit [LindelofSpace M] [FiniteDimensional ℝ F'] in
-/-- **The entries of the chart compression of an elliptic operator into a line are elliptic.** Let
-`c` be a chart of the maximal atlas at `x` with frames `tV` and `tW` over its source, `ℓ` an
-injective functional on the model fibre of `W`, and `v` the coefficients in `tV` of a vector of
-`V_x` killed by the principal symbol `σ(P)(ξ)` at no covector `ξ ≠ 0` at `x`. Then the `(ℓ, v)`
-entry of the chart compression of `P` by a cutoff `χ` with `χ (c x) = 1` is elliptic at `c x`. -/
-private theorem forall_smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero
-    {r : ℕ} (hP : P ∈ differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
-      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ r)
-    {c : OpenPartialHomeomorph M E} (he : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M)
-    {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
-    {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
-    {x : M} (hx : x ∈ c.source) {ℓ : F' →L[ℝ] ℝ} (hℓ : Injective ℓ) {v : F}
-    (hσ : ∀ ξ : TangentSpace 𝓘(ℝ, E) x →L[ℝ] ℝ, ξ ≠ 0 →
-      sectionPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint ⟨P, hP⟩ ξ
-        (tV.symmL ℝ x v) ≠ 0)
-    {χ : 𝓓(⟨c.target, c.open_target⟩, ℝ)} (hχ : χ (c x) = 1) (η : E) (hη : η ≠ 0) :
-    smoothPrincipalSymbol 𝓘(ℝ, E) (x := c x) BoundarylessManifold.isInteriorPoint
-      (c.sectionChartCompressionDifferentialOperators he tV hV tW hW χ χ ℓ v r ⟨P, hP⟩)
-      (innerSL ℝ η : E →L[ℝ] ℝ) ≠ 0 := by
-  have hy : c x ∈ c.target := c.map_source hx
-  refine (c.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero_iff he tV hV
-    tW hW hℓ v ⟨P, hP⟩ hy (by simp [hχ]) (by simp [hχ]) _).2 ?_
-  -- The covector `⟪η, ·⟫ ∘ dc` is nonzero, since `dc ∘ dc⁻¹ = id` at `c x`.
-  have hne : (innerSL ℝ η : E →L[ℝ] ℝ).comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))) ≠ 0 := by
-    intro h0
-    have hd : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))
-        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x) η) = η :=
-      congr($((OpenPartialHomeomorph.MDifferentiable.comp_symm_deriv
-        ⟨(contMDiffOn_of_mem_maximalAtlas he).mdifferentiableOn (by simp),
-          (contMDiffOn_symm_of_mem_maximalAtlas he).mdifferentiableOn (by simp)⟩ hy)) η)
-    have h1 : inner ℝ η (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))
-        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x) η)) = 0 :=
-      congr($h0 (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x) η))
-    rw [hd] at h1
-    exact hη (inner_self_eq_zero.1 h1)
-  rw [c.left_inv hx] at hne ⊢
-  exact hσ _ hne
-
 /-- **Local elliptic regularity for differential operators into a line bundle**, for invariant
 notions of local regularity `A` and `B` on `E`. Suppose that elliptic differential operators of
 order at most `r` on `C^∞(E)` improve `A` to `B` by transposition: whenever `D` is such an operator,
@@ -164,8 +128,6 @@ theorem IsLocallyAt.of_localOperatorDualCLM {A B : (Ω : Opens E) → 𝓓'(Ω, 
     (h : IsLocallyAt A (localOperatorDualCLM P
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x) :
     IsLocallyAt B T x := by
-  have hloc : ∀ (s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯) (x : M), (∀ᶠ y in 𝓝 x, s y = 0) → P s x = 0 :=
-    fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP
   -- A chart `c` of the maximal atlas at `x` over which both bundles are trivial.
   obtain ⟨c, he, hxc, hV, hW⟩ :=
     exists_mem_maximalAtlas_source_subset_baseSet F 𝓘(ℝ, E) (n := ∞) V F' W x
@@ -177,31 +139,39 @@ theorem IsLocallyAt.of_localOperatorDualCLM {A B : (Ω : Opens E) → 𝓓'(Ω, 
   have hu : (trivializationAt F V x).symmL ℝ x v = u :=
     (trivializationAt F V x).symmL_continuousLinearMapAt (hV hxc) u
   let b := Module.finBasisOfFinrankEq ℝ F' hF'
-  have hℓ : Injective (LinearMap.toContinuousLinearMap (b.coord 0)) := fun w w' h ↦
-    b.ext_elem fun i ↦ by simpa [Subsingleton.elim i 0] using h
+  have hℓ : Injective (LinearMap.toContinuousLinearMap (b.coord 0)) :=
+    (b.equivFun.trans (LinearEquiv.funUnique (Fin 1) ℝ ℝ)).injective
   -- A cutoff `χ` equal to `1` on a neighbourhood `U` of `c x` in the chart target.
   obtain ⟨χ, U, hUt, hyU, hU1⟩ :=
     TestFunction.exists_opens_le_forall_eq_one (n := ⊤) (Ω := ⟨c.target, c.open_target⟩) hy
-  -- The `(b 0)*, v` entry `D` of the chart compression of `P` by `χ`, elliptic at `c x`.
+  -- The `(b 0)*, v` entry `D` of the chart compression of `P` by `χ` is elliptic at `c x`.
   let D := c.sectionChartCompressionDifferentialOperators he _ hV _ hW χ χ
     (LinearMap.toContinuousLinearMap (b.coord 0)) v r ⟨P, hP⟩
-  have hD := forall_smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero
-    hP he hV hW hxc hℓ (hu ▸ hσ) (hU1 _ hyU)
+  have hD : ∀ η : E, η ≠ 0 → smoothPrincipalSymbol 𝓘(ℝ, E) (x := c x)
+      BoundarylessManifold.isInteriorPoint D (innerSL ℝ η : E →L[ℝ] ℝ) ≠ 0 := fun η hη ↦ by
+    -- The covector `⟪η, ·⟫ ∘ dc` is nonzero, since `dc ∘ dc⁻¹ = id` at `c x`.
+    have hne : (innerSL ℝ η : E →L[ℝ] ℝ).comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))) ≠ 0 := by
+      intro h0
+      have hd : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))
+          (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x) η) = η :=
+        congr($((OpenPartialHomeomorph.MDifferentiable.comp_symm_deriv
+          ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hy)) η)
+      have h1 : inner ℝ η (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c (c.symm (c x))
+          (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x) η)) = 0 :=
+        congr($h0 (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) c.symm (c x) η))
+      rw [hd] at h1
+      exact hη (inner_self_eq_zero.1 h1)
+    rw [c.left_inv hxc] at hne
+    exact c.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero he _ hV _ hW
+      hℓ hxc (by simp [hU1 _ hyU]) (by simp [hU1 _ hyU]) (hu ▸ hσ _ hne)
   -- Over `U`, the component of `T ∘ P` along `v` is the transpose of the component of `T` along
   -- `b 0` by `D`, so the Euclidean statement applies to the restrictions to `U`.
   have hS : B _ ((trivializationAt F' W x).chartComponent c hc hW T (b 0)) (c x) := by
     rw [← hB.restrictCLM_iff hUt hyU]
-    refine hAB U D.val D.property _ _ (c x) (fun φ' ψ' f hf hψ' ↦ ?_) hD
-      ((hA.restrictCLM_iff hUt hyU).2 ((isLocallyAt_iff hA _ hc hcs hV hxc).1 h v))
-    let φ : 𝓓(⟨c.target, c.open_target⟩, ℝ) := TestFunction.monoCLM ℝ φ'
-    have hφχ : ∀ z ∈ tsupport φ, χ z = 1 := fun z hz ↦
-      hU1 z (φ'.tsupport_subset (by simpa [φ, hUt] using hz))
-    rw [restrictCLM_apply, restrictCLM_apply,
-      chartComponent_localOperatorDualCLM_apply hloc he hV hW hφχ (φ := φ)
-        (by simpa [φ, hUt] using hf) v b (fun _ ↦ TestFunction.monoCLM ℝ ψ') fun i ↦ by
-          rw [Subsingleton.elim i 0]
-          simpa [D, hUt] using hψ']
-    simp
+    exact hAB U D.val D.property _ _ (c x)
+      (fun _ _ _ hf hψ ↦
+        restrictCLM_chartComponent_localOperatorDualCLM_apply hP he hV hW hUt hU1 v b 0 hf hψ T)
+      hD ((hA.restrictCLM_iff hUt hyU).2 ((isLocallyAt_iff hA _ hc hcs hV hxc).1 h v))
   -- Every component of `T` is a multiple of its component along `b 0`.
   refine (isLocallyAt_iff hB T hc hcs hW hxc).2 fun w ↦ ?_
   rw [chartComponent_eq_sum _ c hc hW b T w]

@@ -52,6 +52,10 @@ operators, and computes their principal symbols. It is the bundle version of
   entries is the matrix of `σ(P)` at the covector `η ∘ de` in the two frames, multiplied by the
   cutoffs: the principal symbol transforms as a function on the cotangent bundle with values in
   `Hom(V, W)`.
+* `smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero` (in the namespace
+  `OpenPartialHomeomorph`): for an injective `ℓ` and cutoffs not vanishing at `e x`, the `(ℓ, v)`
+  entry is noncharacteristic at `e x` at `η` when `σ(P)(x)(η ∘ de)` does not kill the vector with
+  coefficients `v`.
 
 ## Main definitions
 
@@ -383,6 +387,25 @@ theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_ze
   rw [← map_zero ℓ] at h
   rw [← tW.symmL_continuousLinearMapAt (R := ℝ) (hW (e.map_target hx)) (sectionPrincipalSymbol _ _
     _ _ _), hℓ h, map_zero]
+
+/-- **Elliptic entries of a chart compression into a line.** Let `ℓ` be an injective functional on
+the model fibre of `W`, and `x` a point of the chart source with `φ (e x) ≠ 0` and `ψ (e x) ≠ 0`. If
+the principal symbol of `P` at `x` at the covector `η ∘ de` does not kill the vector of `V_x` with
+coefficients `v` in the frame `tV`, then the `(ℓ, v)` entry of the chart compression of `P` has
+nonzero principal symbol at `e x` at the covector `η`. -/
+theorem smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero
+    {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {ℓ : F' →L[ℝ] ℝ} (hℓ : Function.Injective ℓ) {v : F}
+    {m : ℕ} {P : differentialOperators ℝ C^∞⟮𝓘(ℝ, E), M; ℝ⟯ Cₛ^∞⟮𝓘(ℝ, E); F, V⟯
+      Cₛ^∞⟮𝓘(ℝ, E); F', W⟯ m}
+    {x : M} (hx : x ∈ e.source) (hφ : φ (e x) ≠ 0) (hψ : ψ (e x) ≠ 0)
+    {η : TangentSpace 𝓘(ℝ, E) (e x) →L[ℝ] ℝ}
+    (hσ : sectionPrincipalSymbol 𝓘(ℝ, E) BoundarylessManifold.isInteriorPoint P
+      (η.comp (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) e x)) (tV.symmL ℝ x v) ≠ 0) :
+    smoothPrincipalSymbol 𝓘(ℝ, E) (x := e x) BoundarylessManifold.isInteriorPoint
+      (e.sectionChartCompressionDifferentialOperators he tV hV tW hW φ ψ ℓ v m P) η ≠ 0 := by
+  refine (e.smoothPrincipalSymbol_sectionChartCompressionDifferentialOperators_ne_zero_iff he tV hV
+    tW hW hℓ v P (e.map_source hx) hφ hψ η).2 ?_
+  rwa [e.left_inv hx]
 
 end PrincipalSymbol
 
