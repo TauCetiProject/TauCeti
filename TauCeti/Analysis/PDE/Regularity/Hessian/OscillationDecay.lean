@@ -42,7 +42,7 @@ In averaged form, `⨍_{B_ρ} ‖D²u - (D²u)_ρ‖ ≤ C (Λ / λ)^((n + 1) / 
 
 No integrability of `D²u` beyond `L^p` with `p ≥ 1` is assumed, and the right-hand side involves
 only the `L¹` norm. The mean oscillation also decays in every `L^γ`, `γ ≥ 1`: if `‖D²u - c‖^γ` is
-integrable on `B_R`, then for `0 < ρ ≤ R`
+integrable on `B_R`, then for `0 ≤ ρ ≤ R`
 
 `⨍_{B_ρ} ‖D²u - (D²u)_ρ‖^γ ≤ (C (Λ / λ)^((n + 1) / 2) (ρ / R))^γ ⨍_{B_R} ‖D²u - c‖^γ`
 
@@ -251,7 +251,7 @@ private theorem exists_iteratedGradient_ae_eq_and_harmonicOnNhd_comp
 square matrix with `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` and `0 < λ`, and let `u ∈ W^{2,p}(Ω)`, `p ≥ 1`,
 solve `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` almost everywhere on a ball `B_R = ball x₀ R ⊆ Ω ⊆ ℝⁿ`. Let `γ ≥ 1` and
 let `c` be a constant for which `‖D²u - c‖^γ` is integrable on `B_R`. Then for every
-`0 < ρ ≤ R` the weak Hessian `D²u` satisfies
+`0 ≤ ρ ≤ R` the weak Hessian `D²u` satisfies
 
 `⨍_{B_ρ} ‖D²u - (D²u)_ρ‖^γ ≤ (C (Λ / λ)^((n + 1) / 2) (ρ / R))^γ ⨍_{B_R} ‖D²u - c‖^γ`
 with `C = 2^(3n + 5) (n + 1)`,
@@ -268,7 +268,7 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_rpow_le_of_sum_mul_
       ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ = 0)
     (c : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι) (hγ : 1 ≤ γ)
     (hint : IntegrableOn (fun x => ‖Wkp.iteratedGradient 1 u x - c‖ ^ γ) (ball x₀ R) mu)
-    (hρ : 0 < ρ) (hρR : ρ ≤ R) :
+    (hρ : 0 ≤ ρ) (hρR : ρ ≤ R) :
     ⨍ x in ball x₀ ρ,
         ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ^ γ ∂mu ≤
       (2 ^ (3 * Fintype.card ι + 5) * (Fintype.card ι + 1) *
@@ -306,8 +306,6 @@ theorem setAverage_ball_norm_iteratedGradient_sub_setAverage_le_of_sum_mul_inner
         ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y ∂mu‖ ∂mu ≤
       2 ^ (3 * Fintype.card ι + 5) * (Fintype.card ι + 1) * √(Lam / lam) ^ (Fintype.card ι + 1) *
         (ρ / R) * ⨍ x in ball x₀ R, ‖Wkp.iteratedGradient 1 u x - c‖ ∂mu := by
-  rcases hρ.eq_or_lt with rfl | hρ
-  · simp
   -- This is the `L^γ` decay at `γ = 1`, where `‖D²u - c‖` is integrable since `D²u ∈ L^p`.
   have : IsFiniteMeasure (mu.restrict (ball x₀ R)) :=
     isFiniteMeasure_restrict.2 measure_ball_lt_top.ne

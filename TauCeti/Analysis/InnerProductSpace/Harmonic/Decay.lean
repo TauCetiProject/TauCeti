@@ -1069,7 +1069,7 @@ private lemma setAverage_ball_norm_sub_setAverage_rpow_le_of_eight_mul_le (e : E
 `e : E' ≃L[ℝ] E` be a continuous linear equivalence with `‖e.symm x‖ ≤ a ‖x‖` and
 `‖e y‖ ≤ b ‖y‖`, and let `u ∘ e` be harmonic on `e ⁻¹' ball x₀ R`, with `u` integrable on
 `ball x₀ R`. Then for every `γ ≥ 1`, every constant `c` for which `‖u - c‖^γ` is integrable on
-`ball x₀ R`, and every `0 < ρ ≤ R`,
+`ball x₀ R`, and every `0 ≤ ρ ≤ R`,
 
 `⨍_{ball x₀ ρ} ‖u - u_ρ‖^γ ≤ (C (a b)^(n + 1) (ρ / R))^γ ⨍_{ball x₀ R} ‖u - c‖^γ`
 with `C = 2^(3n + 5) (n + 1)`,
@@ -1082,11 +1082,14 @@ theorem setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp (e : E
     (hae : ∀ x, ‖e.symm x‖ ≤ a * ‖x‖) (hbe : ∀ y, ‖e y‖ ≤ b * ‖y‖) (hab : 0 ≤ a * b)
     {x₀ : E} {ρ R γ : ℝ} (hu : HarmonicOnNhd (u ∘ e) (e ⁻¹' ball x₀ R))
     (hi : IntegrableOn u (ball x₀ R) μ) (c : F)
-    (hic : IntegrableOn (fun x ↦ ‖u x - c‖ ^ γ) (ball x₀ R) μ) (hγ : 1 ≤ γ) (hρ : 0 < ρ)
+    (hic : IntegrableOn (fun x ↦ ‖u x - c‖ ^ γ) (ball x₀ R) μ) (hγ : 1 ≤ γ) (hρ : 0 ≤ ρ)
     (hρR : ρ ≤ R) :
     ⨍ x in ball x₀ ρ, ‖u x - ⨍ y in ball x₀ ρ, u y ∂μ‖ ^ γ ∂μ ≤
       (2 ^ (3 * finrank ℝ E + 5) * (finrank ℝ E + 1) * (a * b) ^ (finrank ℝ E + 1) *
         (ρ / R)) ^ γ * ⨍ x in ball x₀ R, ‖u x - c‖ ^ γ ∂μ := by
+  rcases hρ.eq_or_lt with rfl | hρ
+  · -- The ball of radius `0` is empty, and `0 ^ γ = 0` since `γ ≥ 1`.
+    simp [Real.zero_rpow (zero_lt_one.trans_le hγ).ne']
   set n := finrank ℝ E with hn
   have hR : 0 < R := hρ.trans_le hρR
   have hγ0 : 0 ≤ γ := zero_le_one.trans hγ
@@ -1148,7 +1151,7 @@ theorem setIntegral_ball_norm_sub_setAverage_le_of_harmonicOnNhd_comp (e : E' �
   have hic : IntegrableOn (fun x ↦ u x - c) (ball x₀ R) μ :=
     hi.sub (integrableOn_const measure_ball_lt_top.ne)
   have h := setAverage_ball_norm_sub_setAverage_rpow_le_of_harmonicOnNhd_comp e hae hbe hab hu hi c
-    (by simp only [Real.rpow_one]; exact hic.norm) le_rfl hρ hρR
+    (by simp only [Real.rpow_one]; exact hic.norm) le_rfl hρ.le hρR
   simp only [Real.rpow_one] at h
   refine (setIntegral_ball_le_of_setAverage_le hρ (hρ.trans_le hρR) h).trans_eq ?_
   ring
