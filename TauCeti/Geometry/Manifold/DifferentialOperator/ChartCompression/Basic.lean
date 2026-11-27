@@ -286,6 +286,22 @@ theorem exists_tsupport_subset_eq_one [FiniteDimensional ℝ E]
   rw [cutoffPullback_one_apply_of_mem he _ (e.map_target hyt), e.right_inv hyt]
   exact hχ.self_of_nhdsSet y hy
 
+omit he [ChartedSpace E M] [T2Space M] in
+/-- The cutoffs `φ ψ` are supported in the chart target, so they can only be jointly nonzero
+there. -/
+theorem mem_target_of_mul_ne_zero {φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} {y : E}
+    (h : φ y * ψ y ≠ 0) : y ∈ e.target :=
+  φ.tsupport_subset (subset_tsupport _ (left_ne_zero_of_mul h))
+
+omit he [ChartedSpace E M] [T2Space M] in
+/-- The points where the cutoffs `φ ψ` do not vanish and which the inverse chart maps into an open
+set `s` of `M` form an open set. -/
+theorem isOpen_setOf_mul_ne_zero_and_symm_mem (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    {s : Set M} (hs : IsOpen s) : IsOpen {y | φ y * ψ y ≠ 0 ∧ e.symm y ∈ s} :=
+  isOpen_iff_mem_nhds.2 fun _ ⟨hyφψ, hys⟩ ↦
+    ((φ.contDiff.continuous.mul ψ.contDiff.continuous).continuousAt.eventually_ne hyφψ).and
+      ((e.continuousAt_symm (mem_target_of_mul_ne_zero hyφψ)).eventually (hs.mem_nhds hys))
+
 /-! ### Chart compressions -/
 
 /-- The **chart compression** of an operator `D` on the smooth functions on `M` by cutoffs `φ`

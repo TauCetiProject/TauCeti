@@ -229,6 +229,12 @@ theorem isNondegenerate_iff_isInvertible_flat [FiniteDimensional ℝ E] :
   exact (SmoothForm.isAlt_bilinFormAt σ x).isRefl.nondegenerate_iff_separatingLeft.trans
     LinearMap.separatingLeft_iff_ker_eq_bot
 
+/-- In finite dimensions, the points at which a two-form is nondegenerate form an open set. -/
+theorem isOpen_setOf_nondegenerate_bilinFormAt [FiniteDimensional ℝ E] (σ : SmoothTwoForm I M) :
+    IsOpen {x | (σ.bilinFormAt x).Nondegenerate} := by
+  simp_rw [← isInvertible_flat_iff]
+  exact Continuous.isOpen_setOf_clm_bundle_isInvertible σ.contMDiff_flat.continuous
+
 /-- The flat maps of a nondegenerate two-form on a finite-dimensional manifold are invertible. -/
 theorem IsNondegenerate.isInvertible_flat [FiniteDimensional ℝ E] (h : σ.IsNondegenerate)
     (x : M) : (σ.flat x).IsInvertible :=

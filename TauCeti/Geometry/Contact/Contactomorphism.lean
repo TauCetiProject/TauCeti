@@ -368,6 +368,14 @@ theorem mpullback_innerProductContactForm_of_coe_eq {c : ℝ}
   apply Subtype.ext
   rw [SmoothForm.coe_mpullback, he, mpullback_innerProductContactForm_smul]
 
+/-- A diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of the standard contact space pulls the standard
+contact form back to `c` times itself, pointwise. -/
+theorem mpullback_innerProductContactForm_apply_of_coe_eq {c : ℝ}
+    {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)} (he : ⇑e = fun x ↦ (x.1, c • x.2)) (x : V × V × ℝ) :
+    (SmoothForm.mpullback e e.contMDiff (innerProductContactForm V)).val x =
+      c • (innerProductContactForm V).val x := by
+  rw [mpullback_innerProductContactForm_of_coe_eq he, SmoothForm.smul_toRoughForm, Pi.smul_apply]
+
 /-- For `c ≠ 0`, a diffeomorphism `(q, p, z) ↦ (q, c p, c z)` of the standard contact space is a
 contactomorphism. -/
 theorem isContactomorphism_innerProductContactForm_of_coe_eq {c : ℝ} (hc : c ≠ 0)
@@ -381,9 +389,9 @@ coorientation exactly when `c > 0`. -/
 theorem preservesCoorientation_innerProductContactForm_iff_of_coe_eq {c : ℝ}
     {e : (V × V × ℝ) ≃ₘ[ℝ] (V × V × ℝ)} (he : ⇑e = fun x ↦ (x.1, c • x.2)) :
     e.PreservesCoorientation (innerProductContactForm V) (innerProductContactForm V) ↔ 0 < c := by
-  rw [Diffeomorph.PreservesCoorientation, mpullback_innerProductContactForm_of_coe_eq he]
-  refine ⟨fun h ↦ ?_, fun hc x ↦ ⟨c, hc, by rw [SmoothForm.smul_toRoughForm, Pi.smul_apply]⟩⟩
+  refine ⟨fun h ↦ ?_, fun hc x ↦ ⟨c, hc, mpullback_innerProductContactForm_apply_of_coe_eq he x⟩⟩
   obtain ⟨d, hd, h₀⟩ := h 0
+  rw [mpullback_innerProductContactForm_apply_of_coe_eq he] at h₀
   have hcd : c = d :=
     smul_left_injective ℝ ((isContactForm_innerProductContactForm V).apply_ne_zero 0) h₀
   exact hcd ▸ hd
