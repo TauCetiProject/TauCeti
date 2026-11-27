@@ -108,7 +108,8 @@ theorem stabilizeTwistedRingEquiv_single (P : H.periodicDomains) (a : ZMod 2) :
       single (Multiplicative.ofAdd ⟨P, (H.periodicDomains_stabilize r₀).ge P.property⟩) a := by
   simp only [stabilizeTwistedRingEquiv, mapDomainRingEquiv_single,
     AddEquiv.toMultiplicative_apply_apply, toAdd_ofAdd]
-  congr 2
+  refine congr(single (Multiplicative.ofAdd $(Subtype.ext ?_)) a)
+  exact AddEquiv.addSubgroupCongr_apply _ P
 
 /-- The inverse identification sends the monomial `t^P` to the monomial of the same periodic
 domain. -/
@@ -265,23 +266,9 @@ squares to zero exactly when that of the original diagram does. -/
 theorem twistedHatDifferential_stabilize_comp_self_eq_zero_iff :
     (H.stabilize r₀).twistedHatDifferential (r.stabilize r₀) (stabilizeEuler χ r₀) ∘ₗ
         (H.stabilize r₀).twistedHatDifferential (r.stabilize r₀) (stabilizeEuler χ r₀) = 0 ↔
-      H.twistedHatDifferential r χ ∘ₗ H.twistedHatDifferential r χ = 0 := by
-  have hf (c : H.Generator →₀ MonoidAlgebra (ZMod 2) (Multiplicative H.periodicDomains)) :
-      (H.stabilize r₀).twistedHatDifferential (r.stabilize r₀) (stabilizeEuler χ r₀)
-          (H.stabilizeTwistedChainEquiv r₀ c) =
-        H.stabilizeTwistedChainEquiv r₀ (H.twistedHatDifferential r χ c) :=
-    congr($(H.stabilizeTwistedChainEquiv_comp_twistedHatDifferential r₀) c).symm
-  constructor
-  · intro hd
-    refine LinearMap.ext fun c => (H.stabilizeTwistedChainEquiv r₀).injective ?_
-    have h := congr($hd (H.stabilizeTwistedChainEquiv r₀ c))
-    rw [LinearMap.comp_apply, hf, hf] at h
-    rw [LinearMap.comp_apply, h, LinearMap.zero_apply, LinearMap.zero_apply, map_zero]
-  · intro hd
-    refine LinearMap.ext fun c' => ?_
-    obtain ⟨c, rfl⟩ := (H.stabilizeTwistedChainEquiv r₀).surjective c'
-    rw [LinearMap.comp_apply, hf, hf, ← LinearMap.comp_apply (H.twistedHatDifferential r χ), hd,
-      LinearMap.zero_apply, map_zero, LinearMap.zero_apply]
+      H.twistedHatDifferential r χ ∘ₗ H.twistedHatDifferential r χ = 0 :=
+  (H.stabilizeTwistedChainEquiv r₀).comp_self_eq_zero_iff_of_comp_eq
+    (H.stabilizeTwistedChainEquiv_comp_twistedHatDifferential r₀)
 
 end Differential
 
