@@ -44,6 +44,9 @@ the case where its `Ext¹`-term vanishes.
   coefficient object `M`, the Kronecker map is bijective, a `k`-linear equivalence.
 * `TopCat.singularKronecker_bijective_zero`: in degree zero the Kronecker map is bijective for
   every coefficient object.
+* `TopCat.isIso_singularCohomologyMap_zero_of_isIso_singularHomologyFunctor_map`,
+  `TopCat.isIso_singularCohomologyMap_zero_of_pathConnectedSpace`: so a map inducing an
+  isomorphism on `H₀`, for instance a map between path-connected spaces, induces one on `H⁰`.
 * `TopCat.singularKronecker_constSingularCocycle`: the class of the constant `0`-cocycle with
   value `e : R ⟶ M` evaluates on zeroth homology as the augmentation followed by `e`.
 * `TopPair.singularKronecker`: the Kronecker map `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` of
@@ -203,6 +206,39 @@ lemma singularKronecker_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring 
       iCycles_constSingularCocycle, SSet.ιChainComplex_constCochain]
     exact ((Category.assoc _ _ _).trans
       (SSet.liftCycles_ιChainComplex_homologyπ_homology₀ε_assoc (X := toSSet.obj X) R x e)).symm
+
+/-- **A map inducing an isomorphism on `H₀` induces one on `H⁰`**, for every coefficient object
+`M`: in degree zero the Kronecker maps are bijective (`TopCat.singularKronecker_bijective_zero`)
+and they intertwine `f^*` with precomposition by `f_*` (`TopCat.singularKronecker_naturality`). -/
+theorem isIso_singularCohomologyMap_zero_of_isIso_singularHomologyFunctor_map {X Y : TopCat.{w}}
+    (f : X ⟶ Y) (k : Type*) [Ring k] [Linear k C]
+    [IsIso (((singularHomologyFunctor C 0).obj R).map f)] :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) f 0) := by
+  rw [ConcreteCategory.isIso_iff_bijective]
+  obtain ⟨hX, -⟩ := X.singularKronecker_bijective_zero (R := R) (M := M) k
+  obtain ⟨hY, hY'⟩ := Y.singularKronecker_bijective_zero (R := R) (M := M) k
+  refine ⟨fun α β h ↦ ?_, fun β ↦ ?_⟩
+  · -- `f_*` is an epimorphism, so precomposing with it is injective.
+    have := congrArg (X.singularKronecker k 0) h
+    simp only [singularKronecker_naturality, cancel_epi] at this
+    exact hY this
+  · -- Pull the value of `β` back along the inverse of `f_*` and lift it through the Kronecker map.
+    obtain ⟨α, hα⟩ := hY' (inv (((singularHomologyFunctor C 0).obj R).map f) ≫
+      X.singularKronecker k 0 β)
+    refine ⟨α, hX ?_⟩
+    rw [singularKronecker_naturality, hα, IsIso.hom_inv_id_assoc]
+
+/-- **`H⁰` does not see the difference between path-connected spaces**: a map between
+path-connected spaces induces an isomorphism on `H⁰` with every coefficient object, since it
+induces one on `H₀`, where both augmentations are isomorphisms. -/
+theorem isIso_singularCohomologyMap_zero_of_pathConnectedSpace {X Y : TopCat.{w}}
+    [PathConnectedSpace X] [PathConnectedSpace Y] (f : X ⟶ Y) (k : Type*) [Ring k] [Linear k C] :
+    IsIso (TopCat.singularCohomologyMap (R := R) (k := k) (M := M) f 0) :=
+  have e : ((singularHomologyFunctor C 0).obj R).map f ≫ Y.singularHomology₀ε R =
+      X.singularHomology₀ε R :=
+    SSet.homologyMap_homology₀ε R (toSSet.map f)
+  have : IsIso (((singularHomologyFunctor C 0).obj R).map f) := IsIso.of_isIso_fac_right e
+  isIso_singularCohomologyMap_zero_of_isIso_singularHomologyFunctor_map f k
 
 end TopCat
 
