@@ -292,6 +292,19 @@ theorem range_trivial : (trivial F V).range = ⊥ :=
     obtain ⟨g, hg⟩ := mem_range.mp hu
     exact Subgroup.mem_bot.mpr (Units.ext (by rw [← hg, trivial_apply, Units.val_one]))
 
+/-- The trivial Artin representation is the trivial jointly continuous representation. -/
+@[simp]
+theorem toContinuousRep_trivial :
+    (trivial F V).toContinuousRep = ContinuousRep.trivial _ ℂ V :=
+  toContinuousRep_ofContinuousRep _
+
+/-- The underlying linear representation of the trivial Artin representation is Mathlib's trivial
+representation. -/
+@[simp]
+theorem toRepresentation_trivial :
+    (trivial F V).toRepresentation = Representation.trivial ℂ (Field.absoluteGaloisGroup F) V :=
+  (toRepresentation_ofContinuousRep _).trans ContinuousRep.toRepresentation_trivial
+
 /-- The one-dimensional Artin representation of a continuous linear character
 `χ : G_F →ₜ* ℂˣ`, in which `g` acts on `ℂ` as multiplication by `χ g`. -/
 def ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ) : ArtinRep F ℂ :=
@@ -341,14 +354,22 @@ theorem character_eq_zero_of_subsingleton [Subsingleton V] (ρ : ArtinRep F V) :
   ext g
   simp [Subsingleton.elim (ρ g : V →ₗ[ℂ] V) 0]
 
+/-- The character of the trivial Artin representation is the constant function at the dimension
+of `V`. -/
+@[simp]
+theorem character_trivial :
+    (trivial F V).character = ContinuousMap.const _ (Module.finrank ℂ V : ℂ) := by
+  ext g
+  rw [character_apply, trivial_apply, ContinuousLinearMap.toLinearMap_one, LinearMap.trace_one,
+    ContinuousMap.const_apply]
+
 /-- The character of the one-dimensional Artin representation of a linear character `χ` is `χ`.
 This is not a `simp` lemma: `simp` already unfolds the character to a trace with
 `ContRepresentation.character_apply`. -/
 theorem character_ofLinearCharacter (χ : Field.absoluteGaloisGroup F →ₜ* ℂˣ)
     (g : Field.absoluteGaloisGroup F) : (ofLinearCharacter χ).character g = χ g := by
-  rw [character, ContRepresentation.coe_character, ← toRepresentation,
-    toRepresentation_ofLinearCharacter, Representation.char_ofLinearCharacter,
-    MonoidHom.coe_ofClass]
+  simp only [ContRepresentation.coe_character, toRepresentation_ofLinearCharacter,
+    Representation.char_ofLinearCharacter, MonoidHom.coe_ofClass]
 
 /-- Isomorphic Artin representations have the same character. The underlying continuous
 equivalence is `ContRepresentation.equivOfEquiv`. -/
