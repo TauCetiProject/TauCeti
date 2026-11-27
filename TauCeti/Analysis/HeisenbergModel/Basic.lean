@@ -47,6 +47,8 @@ measures the failure of the Weil operators of `Δ` to multiply
 * `TauCeti.HeisenbergDatum.IsVacuum.integral_norm_sq_eq_one`,
   `TauCeti.HeisenbergDatum.IsVacuum.norm_le_one`: a vacuum has `L²` norm one and modulus at most
   one.
+* `TauCeti.HeisenbergDatum.IsVacuum.map_apply`: the identity and complex conjugation fix the
+  values of a vacuum.
 
 ## Provenance
 
@@ -208,6 +210,14 @@ class IsVacuum [MeasurableSpace W] (μ : Measure W) (e : W → ℂ) : Prop where
 namespace IsVacuum
 
 variable {β} [MeasurableSpace W] {μ : Measure W} {e : W → ℂ}
+
+/-- An isometric ring endomorphism of `ℂ` (the identity or complex conjugation) fixes the values
+of a vacuum, since they are real. -/
+theorem map_apply (he : β.IsVacuum μ e) (σ : ℂ →+* ℂ) [RingHomIsometric σ] (x : W) :
+    σ (e x) = e x := by
+  rcases Complex.ringHom_eq_id_or_conj_of_continuous σ.isometry.continuous with rfl | rfl
+  · simp
+  · exact he.conj_apply x
 
 /-- A vacuum has `L²` norm one. -/
 theorem integral_norm_sq_eq_one (he : β.IsVacuum μ e) : ∫ x : W, ‖e x‖ ^ 2 ∂μ = 1 := by

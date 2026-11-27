@@ -50,6 +50,8 @@ not belong to any particular application.
   on singletons, the integral over `a..b` of a function vanishing on `(-∞, a)` is zero.
 * `TauCeti.intervalIntegral_sub_intervalAverage`: subtracting its average over `a..b` from a
   function leaves a function of integral zero over `a..b`.
+* `TauCeti.setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral`: for `F` interval integrable and
+  nonnegative on `(a, b)`, `∫⁻ t in Ioo a b, ofReal (F t) = ofReal (∫ t in a..b, F t)`.
 * `TauCeti.tendsto_intervalIntegral_atTop_atBot`: the accumulated integral of a locally
   integrable function bounded below almost everywhere by a positive constant tends to `+∞` at
   `+∞` and to `-∞` at `-∞`.
@@ -480,6 +482,16 @@ theorem intervalIntegral_sub_intervalAverage {E : Type*} [NormedAddCommGroup E]
   have : IsFiniteMeasure (volume.restrict (uIoc a b)) :=
     isFiniteMeasure_restrict.2 measure_Ioc_lt_top.ne
   rw [_root_.intervalIntegral.intervalIntegral_eq_integral_uIoc, integral_sub_average, smul_zero]
+
+/-- For an interval integrable `F` that is nonnegative on `(a, b)`, the lower integral of
+`ofReal ∘ F` over `(a, b)` is `ofReal` of the interval integral of `F`. -/
+theorem setLIntegral_Ioo_ofReal_eq_ofReal_intervalIntegral {a b : ℝ} (hab : a ≤ b) {F : ℝ → ℝ}
+    (hF : IntervalIntegrable F volume a b) (hF0 : ∀ t ∈ Ioo a b, 0 ≤ F t) :
+    ∫⁻ t in Ioo a b, ENNReal.ofReal (F t) = ENNReal.ofReal (∫ t in a..b, F t) := by
+  rw [_root_.intervalIntegral.integral_of_le hab, integral_Ioc_eq_integral_Ioo,
+    ofReal_integral_eq_lintegral_ofReal
+      (((intervalIntegrable_iff_integrableOn_Ioc_of_le hab).1 hF).mono_set Ioo_subset_Ioc_self)
+      (ae_restrict_of_forall_mem measurableSet_Ioo hF0)]
 
 open Filter in
 /-- The accumulated integral `t ↦ ∫ r in a..t, w r` of a locally integrable function bounded below

@@ -41,7 +41,9 @@ coefficient long exact sequence for `m ≠ 0` (together with `ρ = id` at `m = 0
   (`TopCat.ker_singularHomologyReductionMod`);
 * for `m ≠ 0`, the reduction is onto in degree `n + 1` exactly when multiplication by `m` is
   injective on `Hₙ(X; ℤ)` (`TopCat.surjective_singularHomologyReductionMod_succ_iff`), and in
-  degree one it is always onto (`TopCat.surjective_singularHomologyReductionMod_one`);
+  degree one it is always onto (`TopCat.surjective_singularHomologyReductionMod_one`), so that
+  `H₁(X; k) = 0` iff multiplication by `m` is onto `H₁(X; ℤ)`
+  (`TopCat.subsingleton_singularHomology_one_iff_surjective_zsmul`);
 * vanishing of `Hₙ(X; ℤ/m)` makes multiplication by `m` surjective on `Hₙ(X; ℤ)`
   (`TopCat.surjective_lsmul_singularHomology_of_isZero_zmod`), and for `m ≠ 0` vanishing of
   `Hₙ₊₁(X; ℤ/m)` makes multiplication by `m` injective on `Hₙ(X; ℤ)`
@@ -266,6 +268,22 @@ theorem singularHomologyOneZModAddEquiv_mk (X : TopCat.{u}) (m : ℕ)
     X.singularHomologyOneZModAddEquiv m (Submodule.Quotient.mk x) =
       X.singularHomologyReductionMod m 1 x := by
   simp [singularHomologyOneZModAddEquiv]
+
+/-- **The first mod-`m` homology vanishes exactly when `H₁(X; ℤ)` is `m`-divisible**: with
+coefficients in a ring `k` isomorphic to `ZMod m`, `H₁(X; k) = 0` exactly when multiplication by
+`m` is onto `H₁(X; ℤ)` (for all `m : ℕ`, including `m = 0`). -/
+theorem subsingleton_singularHomology_one_iff_surjective_zsmul (X : TopCat.{u}) (m : ℕ)
+    {k : Type u} [CommRing k] (e : k ≃+* ZMod m) :
+    Subsingleton (((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (ModuleCat.of k k)).obj X) ↔
+      Function.Surjective fun y : ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
+        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj X ↦ (m : ℤ) • y := by
+  rw [← ModuleCat.isZero_iff_subsingleton,
+    ← X.isZero_singularHomology_zmod_iff_of_ringEquiv m e, ModuleCat.isZero_iff_subsingleton,
+    ← (X.singularHomologyOneZModAddEquiv m).subsingleton_congr, Submodule.Quotient.subsingleton_iff,
+    LinearMap.range_eq_top]
+  -- the integer action of the integer module agrees with that of the abelian group
+  refine Iff.of_eq (congrArg Function.Surjective (funext fun y ↦ ?_))
+  simp [Nat.cast_smul_eq_nsmul, natCast_zsmul]
 
 /-! ### Vanishing criteria and divisibility transfer -/
 

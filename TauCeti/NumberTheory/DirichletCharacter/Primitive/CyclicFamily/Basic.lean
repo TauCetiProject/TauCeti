@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Bundle
 import Mathlib.NumberTheory.MulChar.Duality
+import TauCeti.NumberTheory.MulChar.Lemmas
 
 /-!
 # Cyclic families of primitive Dirichlet characters
@@ -66,6 +67,18 @@ theorem mem_cyclicFamily_iff_exists_zpow :
     exact ⟨l, by rw [zpow_natCast]⟩
   · rintro ⟨l, rfl⟩
     exact of_zpow_mem_cyclicFamily ψ l
+
+/-- For a surjection `f` from `(ZMod N)ˣ`, the bundle of the pullback of `χ` along `f` lies in the
+cyclic family of the bundle of the pullback of `ψ` exactly when `χ` is a power of `ψ`. -/
+theorem of_ofUnitHom_comp_mem_cyclicFamily_iff {N : ℕ} [NeZero N] {G : Type*} [MulOneClass G]
+    (f : (ZMod N)ˣ →* G) (hf : Function.Surjective f) (ψ χ : G →* ℂˣ) :
+    of (MulChar.ofUnitHom (χ.comp f)) ∈ (of (MulChar.ofUnitHom (ψ.comp f))).cyclicFamily ↔
+      χ ∈ Subgroup.zpowers ψ := by
+  have hpow (l : ℤ) : MulChar.ofUnitHom (ψ.comp f) ^ l = MulChar.ofUnitHom ((ψ ^ l).comp f) := by
+    have hcomp : (ψ ^ l).comp f = ψ.comp f ^ l := MonoidHom.ext fun x ↦ by simp
+    rw [hcomp, MulChar.ofUnitHom_zpow]
+  rw [mem_cyclicFamily_iff_exists_zpow, Subgroup.mem_zpowers_iff]
+  simp_rw [← of_zpow, of_injective.eq_iff, hpow, (MulChar.ofUnitHom_comp_injective hf).eq_iff]
 
 /-- The primitive source of any natural power belongs to the cyclic family. -/
 @[simp]

@@ -129,6 +129,23 @@ theorem mem_signTwisted_of_mem_signTwisted_domRestrict_ker {ι : G →+ ZMod 2} 
     simp only [AddMonoidHom.domRestrict_apply] at this
     rw [hj, ← add_assoc, this, h₀, smul_smul, ← hilbertSign_add, ← map_add, sub_add_cancel]
 
+/-- **Products of twisted maps.** The product of a map twisted by `χ` and a map twisted by `χ'` is
+twisted by `χ + χ'`: the flat sign lines multiply by adding their characters. -/
+theorem mul_mem_signTwisted {S : Type*} [Ring S] [Module R S] {χ' : G →+ ZMod 2} {f v : A → S}
+    (hf : f ∈ signTwisted R j χ) (hv : v ∈ signTwisted R j χ') :
+    f * v ∈ signTwisted R j (χ + χ') := by
+  intro g z
+  simp only [Pi.mul_apply, hf g z, hv g z, AddMonoidHom.add_apply, hilbertSign_add, Units.smul_def,
+    smul_mul_smul_comm, mul_smul]
+
+/-- **Inverses of twisted maps.** The pointwise inverse of a map twisted by `χ` is twisted by `χ`,
+since each sign is its own inverse. -/
+theorem inv_mem_signTwisted {S : Type*} [DivisionRing S] [Module R S] {f : A → S}
+    (hf : f ∈ signTwisted R j χ) : f⁻¹ ∈ signTwisted R j χ := by
+  intro g z
+  simp only [Pi.inv_apply, hf g z]
+  rcases Int.units_eq_one_or (hilbertSign (χ g)) with h | h <;> simp [h, Units.smul_def]
+
 /-- A map twisted along `ker ι` is invariant under the translation by twice any `g₀`: twice `g₀`
 lies in `ker ι`, and every sign character vanishes on it. -/
 private theorem apply_add_add_eq_of_mem_signTwisted_domRestrict_ker {ι : G →+ ZMod 2}

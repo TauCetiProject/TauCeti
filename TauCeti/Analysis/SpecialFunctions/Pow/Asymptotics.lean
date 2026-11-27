@@ -145,18 +145,12 @@ open Asymptotics Bornology
 
 namespace TauCeti
 
-/-- A positive power of `h` tends to zero as `h → 0⁺`. -/
-theorem tendsto_rpow_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) :
-    Tendsto (fun h : ℝ ↦ h ^ θ) (𝓝[>] 0) (𝓝 0) := by
-  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto
-  rw [Real.zero_rpow hθ.ne'] at ht
-  exact ht.mono_left nhdsWithin_le_nhds
-
 /-- A function bounded by a positive power of `h` is eventually below every positive bound as
 `h → 0⁺`. -/
 theorem eventually_lt_of_isBigO_rpow {f : ℝ → ℝ} {θ : ℝ} (hθ : 0 < θ)
     (hf : f =O[𝓝[>] 0] fun h ↦ h ^ θ) {c : ℝ} (hc : 0 < c) : ∀ᶠ h in 𝓝[>] 0, f h < c :=
-  (hf.trans_tendsto (tendsto_rpow_nhdsGT_zero hθ)).eventually (gt_mem_nhds hc)
+  (hf.trans_tendsto <| (tendsto_id.rpow_const_nhds_zero hθ).mono_left nhdsWithin_le_nhds).eventually
+    (gt_mem_nhds hc)
 
 /-- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant. -/
 theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :

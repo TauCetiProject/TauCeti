@@ -9,9 +9,10 @@ import Mathlib.GroupTheory.GroupAction.SubMulAction.OfFixingSubgroup
 
 public import TauCeti.Geometry.Diffeomorphism.Action
 public import TauCeti.GroupTheory.GroupAction.FixingSubgroup
+public import TauCeti.Topology.Algebra.GroupAction.GermKernel
 
 /-!
-# Diffeomorphisms fixing a subset pointwise
+# Diffeomorphisms fixing a subset pointwise or near the subset
 
 Relative diffeomorphism groups, such as `Diff(M, ∂M)`, are subgroups of the self-diffeomorphism
 group whose elements fix a specified subset pointwise. Mathlib already provides the generic
@@ -20,14 +21,20 @@ construction to the tautological action of the diffeomorphism group on its manif
 
 In particular `Diff(M, ∂M)` is the subgroup fixing the boundary pointwise. Only the group structure
 is treated here: for a compact source manifold,
-`TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Topology` shows that these subgroups are closed in
-the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
+`TauCeti.Geometry.Diffeomorphism.FixingSubgroup.Topology` shows that these pointwise fixing
+subgroups are closed in the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
+
+This file also specializes the generic `TauCeti.MulAction.nhdsFixingSubgroup` to the smaller
+subgroup `Diffeomorph.nhdsFixingSubgroup s` of diffeomorphisms that are equal to the identity on
+some neighbourhood of `s`, rather than only on `s` itself.
 
 ## Main definitions
 
 * `Diffeomorph.fixingSubgroup s`: self-diffeomorphisms fixing every point of `s`.
 * `TauCeti.RelativeDiff I M n s`: the corresponding relative diffeomorphism group,
-  as a type abbreviation for that subgroup.
+  as a type abbreviation for `Diffeomorph.fixingSubgroup s`.
+* `Diffeomorph.nhdsFixingSubgroup s`: self-diffeomorphisms equal to the identity on a neighbourhood
+  of `s`.
 
 ## Main results
 
@@ -40,11 +47,15 @@ the weak Whitney topology (`Diffeomorph.isClosed_fixingSubgroup`).
   setwise.
 * `Diffeomorph.toHomeomorph_mem_fixingSubgroup`: forgetting smoothness sends a relative
   diffeomorphism to the corresponding relative homeomorphism.
+* `Diffeomorph.nhdsFixingSubgroup_antitone`, `Diffeomorph.nhdsFixingSubgroup_union`: being the
+  identity near a larger set, or near a union, gives a smaller subgroup, or the intersection.
+* `Diffeomorph.nhdsFixingSubgroup_le_fixingSubgroup`: being the identity near `s` implies fixing
+  `s` pointwise.
 -/
 
 public section
 
-open scoped Manifold ContDiff Pointwise
+open scoped Manifold ContDiff Pointwise Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -139,6 +150,46 @@ theorem toRelativeHomeomorphHom_apply (s : Set M) (f : fixingSubgroup (I := I) (
       (f : M ≃ₘ^n⟮I, I⟯ M).toHomeomorph := by
   ext x
   simp [toRelativeHomeomorphHom, toHomeomorphHom_apply]
+
+/-- The subgroup of self-diffeomorphisms equal to the identity on a neighbourhood of `s`. For the
+boundary of a manifold these are the diffeomorphisms that are the identity near the boundary, the
+group of Smale's theorem on the diffeomorphisms of the square.
+
+This is the generic `TauCeti.MulAction.nhdsFixingSubgroup`, the intersection over `x ∈ s` of the
+germ kernels, specialized to the tautological action of `M ≃ₘ^n⟮I, I⟯ M` on `M`. -/
+abbrev nhdsFixingSubgroup (s : Set M) : Subgroup (M ≃ₘ^n⟮I, I⟯ M) :=
+  TauCeti.MulAction.nhdsFixingSubgroup (M ≃ₘ^n⟮I, I⟯ M) s
+
+/-- Membership in `nhdsFixingSubgroup s` is being the identity on a neighbourhood of `s`. -/
+theorem mem_nhdsFixingSubgroup_iff {s : Set M} {f : M ≃ₘ^n⟮I, I⟯ M} :
+    f ∈ nhdsFixingSubgroup (I := I) (n := n) s ↔ ∀ᶠ x in 𝓝ˢ s, f x = x := by
+  simp only [nhdsFixingSubgroup, TauCeti.MulAction.mem_nhdsFixingSubgroup_iff, smul_def]
+
+/-- Being the identity near a larger set gives a smaller subgroup. -/
+theorem nhdsFixingSubgroup_antitone {s t : Set M} (hst : s ⊆ t) :
+    nhdsFixingSubgroup (I := I) (n := n) t ≤ nhdsFixingSubgroup (I := I) (n := n) s :=
+  TauCeti.MulAction.nhdsFixingSubgroup_antitone (M ≃ₘ^n⟮I, I⟯ M) M hst
+
+/-- Every diffeomorphism is the identity near the empty set. -/
+theorem nhdsFixingSubgroup_empty :
+    nhdsFixingSubgroup (I := I) (M := M) (n := n) (∅ : Set M) = ⊤ :=
+  TauCeti.MulAction.nhdsFixingSubgroup_empty (M ≃ₘ^n⟮I, I⟯ M) M
+
+/-- Only the identity is the identity near every point. -/
+theorem nhdsFixingSubgroup_univ :
+    nhdsFixingSubgroup (I := I) (M := M) (n := n) (Set.univ : Set M) = ⊥ :=
+  TauCeti.MulAction.nhdsFixingSubgroup_univ (M ≃ₘ^n⟮I, I⟯ M) M
+
+/-- Being the identity near `s ∪ t` is the same as being the identity near `s` and near `t`. -/
+theorem nhdsFixingSubgroup_union (s t : Set M) :
+    nhdsFixingSubgroup (I := I) (n := n) (s ∪ t) =
+      nhdsFixingSubgroup (I := I) (n := n) s ⊓ nhdsFixingSubgroup (I := I) (n := n) t :=
+  TauCeti.MulAction.nhdsFixingSubgroup_union s t
+
+/-- A diffeomorphism equal to the identity near `s` fixes `s` pointwise. -/
+theorem nhdsFixingSubgroup_le_fixingSubgroup (s : Set M) :
+    nhdsFixingSubgroup (I := I) (n := n) s ≤ fixingSubgroup (I := I) (n := n) s :=
+  TauCeti.MulAction.nhdsFixingSubgroup_le_fixingSubgroup s
 
 end Diffeomorph
 
