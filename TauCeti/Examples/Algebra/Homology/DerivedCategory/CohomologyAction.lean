@@ -180,12 +180,9 @@ example :
       e.hom ((X.cohomologyAction ℤ (End.of ((singleFunctor (ModuleCat.{0} ℤ) 0).map f)) 0).asHom
         (e.inv (2, 3))) = f (2, 3) := by
     intro f
-    have h : (homologyFunctor (ModuleCat.{0} ℤ) 0).map ((singleFunctor (ModuleCat.{0} ℤ) 0).map f) ≫
-        e.hom = e.hom ≫ f :=
-      (singleFunctorCompHomologyFunctorIso (ModuleCat.{0} ℤ) 0).hom.naturality f
     have h' : e.inv ≫ (homologyFunctor (ModuleCat.{0} ℤ) 0).map
-        ((singleFunctor (ModuleCat.{0} ℤ) 0).map f) ≫ e.hom = f := by
-      rw [h, Iso.inv_hom_id_assoc]
+        ((singleFunctor (ModuleCat.{0} ℤ) 0).map f) ≫ e.hom = f :=
+      NatIso.naturality_1 (singleFunctorCompHomologyFunctorIso (ModuleCat.{0} ℤ) 0) f
     have hval := congrArg (fun g : V ⟶ V ↦ g (2, 3)) h'
     rw [ModuleCat.comp_apply, ModuleCat.comp_apply] at hval
     simpa [cohomologyAction_apply_asHom] using hval

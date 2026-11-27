@@ -52,7 +52,7 @@ open CategoryTheory DerivedCategory
 
 universe t' t w v u
 
-namespace TauCeti
+namespace DerivedCategory
 
 /-- Descending a chain-level endomorphism through `HomotopyCategory.quotient` and then
 `DerivedCategory.Qh` agrees with descending directly through `DerivedCategory.Q`, up to conjugation
@@ -68,7 +68,7 @@ theorem conjAlgEquiv_comp_Qh_mapEndAlgHom_comp_quotient_mapEndAlgHom (R : Type t
   ext f
   simp [Iso.conjAlgEquiv_apply, quotientCompQhIso_hom_naturality]
 
-end TauCeti
+end DerivedCategory
 
 namespace CochainComplex.IsKProjective
 

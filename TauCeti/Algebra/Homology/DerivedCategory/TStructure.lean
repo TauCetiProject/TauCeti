@@ -24,10 +24,10 @@ results for truncated objects.
 
 * The map `τ_{<n} X ⟶ X` induces an isomorphism on `Hᵠ` for `q < n`
   (`DerivedCategory.isIso_homologyFunctor_map_truncLTι_app`), the map `τ_{≤n} X ⟶ X` induces an
-  isomorphism on `Hⁱ` for `i ≤ n` (`DerivedCategory.isIso_homologyFunctor_map_truncLEι`), and the
-  map `X ⟶ τ_{≥n} X` induces an isomorphism on `Hᵠ` for `n ≤ q`
-  (`DerivedCategory.isIso_homologyFunctor_map_truncGEπ_app`). All follow from the long exact
-  cohomology sequence of the truncation triangle.
+  isomorphism on `Hᵠ` for `q ≤ n`
+  (`DerivedCategory.isIso_homologyFunctor_map_truncLEι_app`), and the map `X ⟶ τ_{≥n} X` induces
+  an isomorphism on `Hᵠ` for `n ≤ q` (`DerivedCategory.isIso_homologyFunctor_map_truncGEπ_app`).
+  All follow from the long exact cohomology sequence of the truncation triangle.
 * An object `Y` that is both `≥ q` and `≤ q` is isomorphic to its cohomology `Hᵠ(Y)` placed in
   degree `q` (`DerivedCategory.isoSingleFunctorHomology`), by an isomorphism which induces the
   canonical one on `Hᵠ` (`DerivedCategory.homologyFunctor_map_isoSingleFunctorHomology_hom`).
@@ -266,20 +266,20 @@ lemma truncGETruncLTIsoSingleFunctor_hom_naturality {X X' : DerivedCategory C} (
 
 end
 
-/-- For `i ≤ n`, the canonical truncation morphism `(τ_{≤ n} X) ⟶ X` induces an isomorphism on
-`i`-th cohomology. -/
-theorem isIso_homologyFunctor_map_truncLEι (X : DerivedCategory C) (n i : ℤ) (hi : i ≤ n) :
-    IsIso ((homologyFunctor C i).map ((TStructure.t.truncLEι n).app X)) := by
+/-- For `q ≤ n`, the canonical truncation morphism `(τ_{≤ n} X) ⟶ X` induces an isomorphism on
+`q`-th cohomology. -/
+theorem isIso_homologyFunctor_map_truncLEι_app (X : DerivedCategory C) {q n : ℤ} (hqn : q ≤ n) :
+    IsIso ((homologyFunctor C q).map ((TStructure.t.truncLEι n).app X)) := by
   let T := (TStructure.t.triangleLEGE n (n + 1) rfl).obj X
   have hT : T ∈ distTriang (DerivedCategory C) :=
     TStructure.t.triangleLEGE_distinguished n (n + 1) rfl X
-  have hEpi : Epi ((homologyFunctor C i).map T.mor₁) := by
-    rw [HomologySequence.epi_homologyMap_mor₁_iff T hT i]
-    exact (isZero_of_isGE T.obj₃ (n + 1) i (by omega)).eq_of_tgt _ _
-  have hMono : Mono ((homologyFunctor C i).map T.mor₁) := by
-    rw [HomologySequence.mono_homologyMap_mor₁_iff T hT (i - 1) i (by omega)]
-    exact (isZero_of_isGE T.obj₃ (n + 1) (i - 1) (by omega)).eq_of_src _ _
-  exact isIso_of_mono_of_epi ((homologyFunctor C i).map T.mor₁)
+  have hEpi : Epi ((homologyFunctor C q).map T.mor₁) := by
+    rw [HomologySequence.epi_homologyMap_mor₁_iff T hT q]
+    exact (isZero_of_isGE T.obj₃ (n + 1) q (by omega)).eq_of_tgt _ _
+  have hMono : Mono ((homologyFunctor C q).map T.mor₁) := by
+    rw [HomologySequence.mono_homologyMap_mor₁_iff T hT (q - 1) q (by omega)]
+    exact (isZero_of_isGE T.obj₃ (n + 1) (q - 1) (by omega)).eq_of_src _ _
+  exact isIso_of_mono_of_epi ((homologyFunctor C q).map T.mor₁)
 
 /-- If `X` is concentrated in degrees `≤ n` and `Y` in degrees `≥ n`, then `H^n` induces a
 bijection `(X ⟶ Y) → ((homologyFunctor C n).obj X ⟶ (homologyFunctor C n).obj Y)`. -/
@@ -287,10 +287,12 @@ theorem homologyFunctor_map_bijective_of_isLE_of_isGE (X Y : DerivedCategory C) 
     [X.IsLE n] [Y.IsGE n] :
     Function.Bijective ((homologyFunctor C n).map :
       (X ⟶ Y) → ((homologyFunctor C n).obj X ⟶ (homologyFunctor C n).obj Y)) := by
+  -- Reduce `X ⟶ Y` to `τ_{≥ n} X ⟶ τ_{≤ n} Y` (a map between heart objects), identify both
+  -- with `singleFunctor` images, and transport along `H^n` using `singleFunctor`'s fullness.
   have : IsIso ((homologyFunctor C n).map ((TStructure.t.truncGEπ n).app X)) :=
     isIso_homologyFunctor_map_truncGEπ_app X le_rfl
   have : IsIso ((homologyFunctor C n).map ((TStructure.t.truncLEι n).app Y)) :=
-    isIso_homologyFunctor_map_truncLEι Y n n le_rfl
+    isIso_homologyFunctor_map_truncLEι_app Y le_rfl
   obtain ⟨A, ⟨eA⟩⟩ :=
     exists_iso_singleFunctor_obj_of_isGE_of_isLE ((TStructure.t.truncGE n).obj X) n
   obtain ⟨B, ⟨eB⟩⟩ :=
@@ -309,16 +311,15 @@ theorem homologyFunctor_map_bijective_of_isLE_of_isGE (X Y : DerivedCategory C) 
     intro u
     have hnat : ((singleFunctorCompHomologyFunctorIso C n).hom.app A) ≫ u ≫
         ((singleFunctorCompHomologyFunctorIso C n).inv.app B) =
-        (homologyFunctor C n).map ((singleFunctor C n).map u) := by
-      have h := (singleFunctorCompHomologyFunctorIso C n).hom.naturality u
-      simp only [Functor.comp_map, Functor.id_map] at h
-      rw [← Category.assoc, ← h, Category.assoc, Iso.hom_inv_id_app, Category.comp_id]
+        (homologyFunctor C n).map ((singleFunctor C n).map u) :=
+      NatIso.naturality_2 (singleFunctorCompHomologyFunctorIso C n) u
     simp [eX, eY, ← hnat, Category.assoc]
   let invMap : ((homologyFunctor C n).obj X ⟶ (homologyFunctor C n).obj Y) → (X ⟶ Y) :=
     fun φ ↦ (TStructure.t.truncGEπ n).app X ≫ eA.hom ≫
       (singleFunctor C n).map (eX.inv ≫ φ ≫ eY.inv) ≫ eB.inv ≫ (TStructure.t.truncLEι n).app Y
   refine Function.bijective_iff_has_inverse.mpr ⟨invMap, fun f ↦ ?_, fun φ ↦ ?_⟩
-  · let g : (TStructure.t.truncGE n).obj X ⟶ (TStructure.t.truncLE n).obj Y :=
+  · -- Lift `f` through `τ_{≥ n} X ⟶ τ_{≤ n} Y` to `A ⟶ B` via full faithfulness of `singleFunctor`.
+    let g : (TStructure.t.truncGE n).obj X ⟶ (TStructure.t.truncLE n).obj Y :=
       TStructure.t.liftTruncLE (TStructure.t.descTruncGE f n) n
     have hfg : (TStructure.t.truncGEπ n).app X ≫ g ≫ (TStructure.t.truncLEι n).app Y = f := by
       simp [g]

@@ -62,7 +62,7 @@ theorem moduleFinite_homology_truncLE_obj (X : DerivedCategory (ModuleCat.{v} A)
       ((homologyFunctor (ModuleCat.{v} A) i).obj ((TStructure.t.truncLE n).obj X)) := by
   by_cases hi : i ≤ n
   · have : IsIso ((homologyFunctor (ModuleCat.{v} A) i).map ((TStructure.t.truncLEι n).app X)) :=
-      isIso_homologyFunctor_map_truncLEι X n i hi
+      isIso_homologyFunctor_map_truncLEι_app X hi
     let e : (homologyFunctor (ModuleCat.{v} A) i).obj ((TStructure.t.truncLE n).obj X) ≅
         (homologyFunctor (ModuleCat.{v} A) i).obj X :=
       asIso ((homologyFunctor (ModuleCat.{v} A) i).map ((TStructure.t.truncLEι n).app X))

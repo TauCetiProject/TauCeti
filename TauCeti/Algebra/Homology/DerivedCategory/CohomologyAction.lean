@@ -425,6 +425,22 @@ theorem imageGhostIdeal_pow_eq_bot {H : Type t'} [Semiring H] [Algebra R H]
 
 end ImageGhost
 
+section ImageGhostKer
+
+variable {R : Type t} [CommSemiring R] {C : Type u} [Category.{v} C] [Abelian C]
+  [HasDerivedCategory.{w} C] [Linear R C] [Linear R (DerivedCategory C)]
+  [∀ i : ℤ, (homologyFunctor C i).Linear R]
+
+/-- The image ghost ideal of `α` equals the kernel of `X.cohomologyAction R` restricted to
+`α.range`. -/
+theorem imageGhostIdeal_eq_ker_cohomologyAction_comp_val {H : Type t'} [Semiring H]
+    [Algebra R H] {X : DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) :
+    α.imageGhostIdeal = RingHom.ker ((X.cohomologyAction R).comp α.range.val) := by
+  ext x
+  simp [mem_imageGhostIdeal_iff, CategoryTheory.End.isGhost_iff_cohomologyAction_eq_zero R]
+
+end ImageGhostKer
+
 section CohomologyImageQuotient
 
 variable {R : Type t} [CommRing R] {C : Type u} [Category.{v} C] [Abelian C]
@@ -437,11 +453,7 @@ image ghost ideal is isomorphic as an `R`-algebra to the cohomology image
 noncomputable def imageGhostIdealQuotientEquivCohomologyImage {H : Type t'} [Semiring H]
     [Algebra R H] {X : DerivedCategory C} (α : H →ₐ[R] CategoryTheory.End X) :
     (α.range ⧸ α.imageGhostIdeal) ≃ₐ[R] ((X.cohomologyAction R).comp α).range :=
-  (Ideal.quotientEquivAlgOfEq R (show α.imageGhostIdeal =
-      RingHom.ker ((X.cohomologyAction R).comp α.range.val) by
-    ext x
-    simp [mem_imageGhostIdeal_iff,
-      CategoryTheory.End.isGhost_iff_cohomologyAction_eq_zero R])).trans <|
+  (Ideal.quotientEquivAlgOfEq R (α.imageGhostIdeal_eq_ker_cohomologyAction_comp_val)).trans <|
   (Ideal.quotientKerEquivRange ((X.cohomologyAction R).comp α.range.val)).trans <|
     Subalgebra.equivOfEq _ _ (by rw [Subalgebra.range_comp_val, ← AlgHom.range_comp])
 

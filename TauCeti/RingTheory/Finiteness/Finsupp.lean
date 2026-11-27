@@ -87,9 +87,10 @@ theorem of_exact {f : M →ₗ[R] N} {g : N →ₗ[R] P}
     refine top_unique fun x _ ↦ ?_
     have hx : g x ∈ P₁.map g := by rw [hP₁]; exact Submodule.mem_top
     obtain ⟨z, hz, hzx⟩ := hx
-    have hker : x - z ∈ LinearMap.ker g := by
-      rw [LinearMap.mem_ker, sub_eq_add_neg, g.map_add, ← hzx, ← g.map_add, add_neg_cancel,
-        g.map_zero]
+    have hker : x - z ∈ LinearMap.ker g := LinearMap.mem_ker.mpr <| by
+      calc g (x - z) = g x + g (-z) := by rw [sub_eq_add_neg, map_add]
+        _ = g (z + -z) := by rw [← hzx, ← map_add]
+        _ = 0 := by simp
     rw [LinearMap.exact_iff.mp h_exact] at hker
     exact Submodule.mem_sup.mpr ⟨z, hz, x - z, hker, add_sub_cancel _ _⟩
   refine ⟨?_⟩
