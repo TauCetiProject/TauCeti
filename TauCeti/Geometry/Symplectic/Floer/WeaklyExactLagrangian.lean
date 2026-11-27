@@ -1,0 +1,332 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Symplectic.Floer.ExactBubble
+public import TauCeti.Geometry.Symplectic.Manifold.TwistedProd
+
+/-!
+# Weak exactness of the diagonal and of graphs, by doubling discs
+
+A two-form `ω` on a manifold `M` is **weakly exact relative to** a subset `L ⊆ M`
+(`TauCeti.IsWeaklyExactRel`) when its integral over every disc with boundary on `L` vanishes: for
+every cap `u` (`TauCeti.IsCap`) of a loop `γ` lying in `L`, `∫ u^* ω = 0`. For a symplectic form
+and a Lagrangian `L` this is the condition `ω(π₂(M, L)) = 0` of a weakly exact Lagrangian, under
+which Lagrangian Floer theory has no disc bubbles: a pseudoholomorphic disc with boundary on `L`
+is constant (`TauCeti.SmoothTwoForm.IsNondegenerate.apply_eq_apply_zero_of_isWeaklyExactRel`),
+since its symplectic area is minus the integral over its polar cap, which is a cap of its boundary
+loop. For a continuous weakly exact form, weak exactness relative to `L` says that every loop in
+`L` has cap area `0` (`TauCeti.capArea`,
+`TauCeti.IsWeaklyExact.isWeaklyExactRel_iff_capArea_eq_zero`).
+
+The Floer theory of a symplectomorphism folds its seamed cylinders into strips in `M × M` with
+boundary on the diagonal and on a graph, for the twisted product form `pr₁^* σ - pr₂^* σ`
+(`TauCeti.Floer.fold`). These Lagrangians are weakly exact as soon as `σ` is weakly exact, that is
+as soon as `σ` vanishes on spheres; no condition on discs in `M` is needed. The argument doubles a
+disc: a disc `u = (u₁, u₂)` in `M × N` has integral
+
+`∫ u^* (pr₁^* σ - pr₂^* τ) = ∫ u₁^* σ - ∫ u₂^* τ`
+
+(`TauCeti.SmoothTwoForm.rectangleIntegral_twistedProd`). If its boundary lies on the graph
+`{(x, φ x)}` (`Function.graph φ`) of a map `φ : M → N` with `φ^* τ = σ`, then `φ ∘ u₁` and `u₂`
+are two discs in `N` with the same boundary loop, and `∫ u₁^* σ = ∫ (φ ∘ u₁)^* τ`. Glued along
+their common boundary, they form a sphere in `N`, so their integrals agree when `τ` is weakly exact
+(`TauCeti.IsWeaklyExact.rectangleIntegral_mpullback_eq_of_isCap`), and the integral over `u`
+vanishes (`TauCeti.IsWeaklyExact.isWeaklyExactRel_twistedProd_graph`). Conversely, a sphere
+`w` in `M` gives the disc `(w, φ x)` with boundary on the graph and integral `∫ w^* σ`
+(`TauCeti.SmoothTwoForm.rectangleIntegral_twistedProd_prodMk_const`), so weak
+exactness relative to the graph forces `σ` to be weakly exact
+(`TauCeti.IsWeaklyExactRel.isWeaklyExact_of_twistedProd_graph`). For the diagonal,
+the graph of the identity, the two conditions coincide
+(`TauCeti.SmoothTwoForm.isWeaklyExactRel_twistedProd_diagonal_iff`).
+
+The boundary of a folded strip lies on the diagonal and on the set of pairs `(φ y, y)`, the
+transposed graph `(Function.graph φ).inv`. The same doubling argument, with the roles of the two
+factors exchanged, shows that it is weakly exact for `pr₁^* σ - pr₂^* τ` when `φ : N → M` satisfies
+`φ^* σ = τ` and `σ` is weakly exact
+(`TauCeti.IsWeaklyExact.isWeaklyExactRel_twistedProd_inv_graph`), with no invertibility of `φ`
+needed. Weak exactness relative to a subset is natural under pullback
+(`TauCeti.IsWeaklyExactRel.mpullback`).
+
+## Main definitions
+
+* `TauCeti.IsWeaklyExactRel ω L`: the integral of `ω` over every disc with boundary on `L`
+  vanishes.
+
+## Main results
+
+* `TauCeti.IsWeaklyExactRel.mpullback`: weak exactness relative to a subset pulls back to its
+  preimage.
+* `TauCeti.SmoothTwoForm.rectangleIntegral_twistedProd`: the integral of a twisted product form
+  over a map of the plane into `M × N` is the difference of the integrals over its components.
+* `TauCeti.SmoothTwoForm.rectangleIntegral_twistedProd_prodMk_const`,
+  `TauCeti.SmoothTwoForm.rectangleIntegral_twistedProd_const_prodMk`: the integral over a disc
+  with one constant component.
+* `TauCeti.IsWeaklyExact.isWeaklyExactRel_twistedProd_graph`: the graph of a map
+  `φ` with `φ^* τ = σ` is weakly exact for `pr₁^* σ - pr₂^* τ` when `τ` is weakly exact.
+* `TauCeti.IsWeaklyExactRel.isWeaklyExact_of_twistedProd_graph`: conversely, `σ` is
+  then weakly exact.
+* `TauCeti.IsWeaklyExact.isWeaklyExactRel_twistedProd_inv_graph`,
+  `TauCeti.IsWeaklyExactRel.isWeaklyExact_of_twistedProd_inv_graph`: the transposed graph
+  `{(φ y, y)}` of a map `φ : N → M` with `φ^* σ = τ` is weakly exact for `pr₁^* σ - pr₂^* τ` when
+  `σ` is weakly exact, and conversely `τ` is then weakly exact.
+* `TauCeti.SmoothTwoForm.isWeaklyExactRel_twistedProd_diagonal_iff`: the diagonal is weakly exact
+  for `pr₁^* σ - pr₂^* σ` exactly when `σ` is weakly exact.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.apply_eq_apply_zero_of_isWeaklyExactRel`: a
+  pseudoholomorphic disc with boundary on a set relative to which the form is weakly exact is
+  constant.
+
+## References
+
+* A. Floer, *Morse theory for Lagrangian intersections*, J. Differential Geom. **28** (1988),
+  513–547 (Lagrangians with `ω(π₂(M, L)) = 0`).
+* A. Floer, *Symplectic fixed points and holomorphic spheres*, Comm. Math. Phys. **120** (1989),
+  575–611 (the Floer theory of a symplectomorphism through the diagonal and its graph).
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
+  Colloquium Publications **52**, 2012, Section 9.1 (the graph of a symplectomorphism and the
+  diagonal as Lagrangians of `M × M⁻`).
+-/
+
+public section
+
+noncomputable section
+
+open Set Real
+open scoped Manifold Interval ContDiff
+
+namespace TauCeti
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-! ### Weak exactness relative to a subset -/
+
+variable (I) in
+/-- A two-form `φ` is **weakly exact relative to** a subset `L` when its integral over every disc
+with boundary on `L` vanishes: `∫ u^* φ = 0` for every cap `u` (`TauCeti.IsCap`) of a loop `γ`
+with values in `L`. For a symplectic form and a Lagrangian `L` this is the condition
+`ω(π₂(M, L)) = 0` of a weakly exact Lagrangian. -/
+def IsWeaklyExactRel (φ : RoughForm I M F 2) (L : Set M) : Prop :=
+  ∀ ⦃u : ℝ × ℝ → M⦄ ⦃γ : ℝ → M⦄, IsCap I u γ → (∀ t, γ t ∈ L) →
+    rectangleIntegral φ u (0, 0) (1, 1) = 0
+
+/-- Unfolding `TauCeti.IsWeaklyExactRel`. -/
+theorem isWeaklyExactRel_iff {φ : RoughForm I M F 2} {L : Set M} :
+    IsWeaklyExactRel I φ L ↔ ∀ ⦃u : ℝ × ℝ → M⦄ ⦃γ : ℝ → M⦄, IsCap I u γ → (∀ t, γ t ∈ L) →
+      rectangleIntegral φ u (0, 0) (1, 1) = 0 :=
+  Iff.rfl
+
+namespace IsWeaklyExactRel
+
+variable {φ : RoughForm I M F 2} {L L' : Set M}
+
+/-- **Weak exactness relative to a subset is antitone in the subset**: a disc with boundary on
+`L'` has boundary on every `L ⊇ L'`. -/
+theorem mono (h : IsWeaklyExactRel I φ L) (hL : L' ⊆ L) : IsWeaklyExactRel I φ L' :=
+  fun _ _ hu hγ ↦ h hu fun t ↦ hL (hγ t)
+
+/-- **Weak exactness relative to a subset is natural**: the pullback of a form weakly exact
+relative to `L` along a `C²` map `f` is weakly exact relative to `f ⁻¹' L`, since the image of a
+disc with boundary on `f ⁻¹' L` is a disc with boundary on `L`. -/
+theorem mpullback {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {ψ : RoughForm I' M' F 2} {L : Set M'} (h : IsWeaklyExactRel I' ψ L)
+    {f : M → M'} (hf : ContMDiff I I' 2 f) :
+    IsWeaklyExactRel I (TauCeti.mpullback I I' f ψ) (f ⁻¹' L) := by
+  intro u γ hu hγ
+  rw [rectangleIntegral_mpullback ψ (fun z _ ↦ hf.mdifferentiable two_ne_zero (u z))
+    (fun z _ ↦ hu.contMDiff.mdifferentiable two_ne_zero z)]
+  exact h (hu.comp hf) hγ
+
+end IsWeaklyExactRel
+
+/-- **Weak exactness relative to a subset through the cap area.** A continuous weakly exact form
+is weakly exact relative to `L` exactly when every loop in `L` has cap area `0`: the integral over
+every cap of a loop is its cap area. -/
+theorem IsWeaklyExact.isWeaklyExactRel_iff_capArea_eq_zero [IsManifold I 1 M]
+    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) (hw : IsWeaklyExact φ) {L : Set M} :
+    IsWeaklyExactRel I φ L ↔ ∀ γ : ℝ → M, (∀ t, γ t ∈ L) → capArea φ γ = 0 :=
+  ⟨fun h γ hγ ↦ by
+    by_cases hc : ∃ u, IsCap I u γ
+    · exact (hw.capArea_eq hφ hc.choose_spec).trans (h hc.choose_spec hγ)
+    · exact capArea_of_not_exists_isCap hc,
+    fun h _ _ hu hγ ↦ (hw.capArea_eq hφ hu).symm.trans (h _ hγ)⟩
+
+section TwistedProd
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I ∞ M] [IsManifold J ∞ N]
+
+namespace SmoothTwoForm
+
+/-! ### The integral of a twisted product form -/
+
+/-- **The integral of a twisted product form splits.** For a `C¹` map `u` of the plane into
+`M × N`, the integral of `pr₁^* σ - pr₂^* τ` over `u` is the integral of `σ` over its first
+component minus the integral of `τ` over its second component. -/
+theorem rectangleIntegral_twistedProd (σ : SmoothTwoForm I M) (τ : SmoothTwoForm J N)
+    {u : ℝ × ℝ → M × N} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) (I.prod J) 1 u) (a b : ℝ × ℝ) :
+    rectangleIntegral (twistedProd σ τ).val u a b =
+      rectangleIntegral σ.val (Prod.fst ∘ u) a b - rectangleIntegral τ.val (Prod.snd ∘ u) a b := by
+  have hu' (z : ℝ × ℝ) : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) (I.prod J) u z :=
+    hu.mdifferentiable one_ne_zero z
+  rw [twistedProd_def, Submodule.coe_sub, rectangleIntegral_sub_of_isSmoothForm
+    ((SmoothForm.mpullback Prod.fst contMDiff_fst σ).isSmoothForm.of_le (by simp))
+    ((SmoothForm.mpullback Prod.snd contMDiff_snd τ).isSmoothForm.of_le (by simp)) hu a b,
+    SmoothForm.coe_mpullback, SmoothForm.coe_mpullback,
+    rectangleIntegral_mpullback _ (fun z _ ↦ contMDiffAt_fst.mdifferentiableAt one_ne_zero)
+      fun z _ ↦ hu' z,
+    rectangleIntegral_mpullback _ (fun z _ ↦ contMDiffAt_snd.mdifferentiableAt one_ne_zero)
+      fun z _ ↦ hu' z]
+
+/-- **A disc with constant second factor.** For a `C¹` map `w` of the plane into `M` and a point
+`y` of `N`, the integral of `pr₁^* σ - pr₂^* τ` over `z ↦ (w z, y)` is the integral of `σ` over
+`w`. -/
+theorem rectangleIntegral_twistedProd_prodMk_const (σ : SmoothTwoForm I M)
+    (τ : SmoothTwoForm J N) {w : ℝ × ℝ → M} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) (y : N)
+    (a b : ℝ × ℝ) :
+    rectangleIntegral (twistedProd σ τ).val (fun z ↦ (w z, y)) a b =
+      rectangleIntegral σ.val w a b := by
+  rw [rectangleIntegral_twistedProd σ τ (hw.prodMk contMDiff_const)]
+  simp only [Function.comp_def, rectangleIntegral_const, sub_zero]
+
+/-- **A disc with constant first factor.** For a point `x` of `M` and a `C¹` map `w` of the plane
+into `N`, the integral of `pr₁^* σ - pr₂^* τ` over `z ↦ (x, w z)` is minus the integral of `τ`
+over `w`. -/
+theorem rectangleIntegral_twistedProd_const_prodMk (σ : SmoothTwoForm I M)
+    (τ : SmoothTwoForm J N) (x : M) {w : ℝ × ℝ → N} (hw : ContMDiff 𝓘(ℝ, ℝ × ℝ) J 1 w)
+    (a b : ℝ × ℝ) :
+    rectangleIntegral (twistedProd σ τ).val (fun z ↦ (x, w z)) a b =
+      -rectangleIntegral τ.val w a b := by
+  rw [rectangleIntegral_twistedProd σ τ (contMDiff_const.prodMk hw)]
+  simp only [Function.comp_def, rectangleIntegral_const, zero_sub]
+
+end SmoothTwoForm
+
+/-! ### Graphs and the diagonal -/
+
+/-- **Graphs are weakly exact, by doubling discs.** Let `φ : M → N` be a smooth map with
+`φ^* τ = σ`, so that its graph `{(x, φ x)}` is isotropic for the twisted product form
+`pr₁^* σ - pr₂^* τ`. If `τ` is weakly exact, the twisted product form is weakly exact relative to
+the graph: a disc `(u₁, u₂)` with boundary on the graph has integral `∫ (φ ∘ u₁)^* τ - ∫ u₂^* τ`,
+and `φ ∘ u₁` and `u₂` cap the same loop of `N`. -/
+theorem IsWeaklyExact.isWeaklyExactRel_twistedProd_graph {σ : SmoothTwoForm I M}
+    {τ : SmoothTwoForm J N} (hτ : IsWeaklyExact τ.val) {φ : M → N} (hφ : ContMDiff I J ∞ φ)
+    (hφστ : SmoothForm.mpullback φ hφ τ = σ) :
+    IsWeaklyExactRel (I.prod J) (SmoothTwoForm.twistedProd σ τ).val (Function.graph φ) := by
+  intro u γ hu hγ
+  -- `u₂` caps the second component `γ₂` of the boundary loop, which is `φ ∘ γ₁`.
+  have hu₂ : IsCap J (Prod.snd ∘ u) (φ ∘ Prod.fst ∘ γ) := by
+    rw [show φ ∘ Prod.fst ∘ γ = Prod.snd ∘ γ from funext fun t ↦ Function.mem_graph.1 (hγ t)]
+    exact hu.comp contMDiff_snd
+  rw [SmoothTwoForm.rectangleIntegral_twistedProd σ τ (hu.contMDiff.of_le one_le_two), ← hφστ,
+    SmoothForm.coe_mpullback, hτ.rectangleIntegral_mpullback_eq_of_isCap
+      (τ.isSmoothForm.of_le (by simp)) (hφ.of_le (by simp)) (hu.comp contMDiff_fst) hu₂, sub_self]
+
+/-- **Weak exactness relative to a graph forces weak exactness.** If the twisted product form
+`pr₁^* σ - pr₂^* τ` is weakly exact relative to the graph of a map `φ : M → N`, then `σ` is weakly
+exact: a sphere `w` in `M` gives the disc `(w, φ x)` in `M × N`, with boundary on the graph and
+the same integral as `w`. -/
+theorem IsWeaklyExactRel.isWeaklyExact_of_twistedProd_graph {σ : SmoothTwoForm I M}
+    {τ : SmoothTwoForm J N} {φ : M → N}
+    (h : IsWeaklyExactRel (I.prod J) (SmoothTwoForm.twistedProd σ τ).val (Function.graph φ)) :
+    IsWeaklyExact σ.val := by
+  rw [isWeaklyExact_iff]
+  intro w x y hw
+  have hcyl : IsLoopCylinder (I.prod J) (fun z ↦ (w z, φ x)) (fun _ ↦ (x, φ x))
+      fun _ ↦ (y, φ x) :=
+    ⟨hw.contMDiff.prodMk contMDiff_const, fun z ↦ by rw [hw.apply_add_one],
+      fun t ↦ by rw [hw.apply_zero], fun t ↦ by rw [hw.apply_one]⟩
+  have h0 := h hcyl.isCap fun _ ↦ Function.mem_graph.2 rfl
+  rwa [SmoothTwoForm.rectangleIntegral_twistedProd_prodMk_const σ τ
+    (hw.contMDiff.of_le one_le_two)] at h0
+
+/-- **Transposed graphs are weakly exact, by doubling discs.** Let `φ : N → M` be a smooth map
+with `φ^* σ = τ`, so that its transposed graph `{(φ y, y)}` is isotropic for the twisted product
+form `pr₁^* σ - pr₂^* τ`. If `σ` is weakly exact, the twisted product form is weakly exact relative
+to the transposed graph: a disc `(u₁, u₂)` with boundary on it has integral
+`∫ u₁^* σ - ∫ (φ ∘ u₂)^* σ`, and `u₁` and `φ ∘ u₂` cap the same loop of `M`. This is the second
+boundary condition of a folded strip (`TauCeti.Floer.fold_apply_one`). -/
+theorem IsWeaklyExact.isWeaklyExactRel_twistedProd_inv_graph {σ : SmoothTwoForm I M}
+    {τ : SmoothTwoForm J N} (hσ : IsWeaklyExact σ.val) {φ : N → M} (hφ : ContMDiff J I ∞ φ)
+    (hφστ : SmoothForm.mpullback φ hφ σ = τ) :
+    IsWeaklyExactRel (I.prod J) (SmoothTwoForm.twistedProd σ τ).val (Function.graph φ).inv := by
+  intro u γ hu hγ
+  -- `u₁` caps the first component `γ₁` of the boundary loop, which is `φ ∘ γ₂`.
+  have hu₁ : IsCap I (Prod.fst ∘ u) (φ ∘ Prod.snd ∘ γ) := by
+    rw [show φ ∘ Prod.snd ∘ γ = Prod.fst ∘ γ from
+      funext fun t ↦ Function.mem_graph.1 (SetRel.mem_inv.1 (hγ t))]
+    exact hu.comp contMDiff_fst
+  rw [SmoothTwoForm.rectangleIntegral_twistedProd σ τ (hu.contMDiff.of_le one_le_two), ← hφστ,
+    SmoothForm.coe_mpullback, hσ.rectangleIntegral_mpullback_eq_of_isCap
+      (σ.isSmoothForm.of_le (by simp)) (hφ.of_le (by simp)) (hu.comp contMDiff_snd) hu₁, sub_self]
+
+/-- **Weak exactness relative to a transposed graph forces weak exactness.** If the twisted product
+form `pr₁^* σ - pr₂^* τ` is weakly exact relative to the transposed graph `{(φ y, y)}` of a map
+`φ : N → M`, then `τ` is weakly exact: a sphere `w` in `N` gives the disc `(φ y, w)` in `M × N`,
+with boundary on the transposed graph and the opposite integral to `w`. -/
+theorem IsWeaklyExactRel.isWeaklyExact_of_twistedProd_inv_graph {σ : SmoothTwoForm I M}
+    {τ : SmoothTwoForm J N} {φ : N → M}
+    (h : IsWeaklyExactRel (I.prod J) (SmoothTwoForm.twistedProd σ τ).val
+      (Function.graph φ).inv) :
+    IsWeaklyExact τ.val := by
+  rw [isWeaklyExact_iff]
+  intro w x y hw
+  have hcyl : IsLoopCylinder (I.prod J) (fun z ↦ (φ x, w z)) (fun _ ↦ (φ x, x))
+      fun _ ↦ (φ x, y) :=
+    ⟨contMDiff_const.prodMk hw.contMDiff, fun z ↦ by rw [hw.apply_add_one],
+      fun t ↦ by rw [hw.apply_zero], fun t ↦ by rw [hw.apply_one]⟩
+  have h0 := h hcyl.isCap fun _ ↦ SetRel.mem_inv.2 (Function.mem_graph.2 rfl)
+  rwa [SmoothTwoForm.rectangleIntegral_twistedProd_const_prodMk σ τ _
+    (hw.contMDiff.of_le one_le_two), neg_eq_zero] at h0
+
+namespace SmoothTwoForm
+
+/-- **The diagonal is weakly exact exactly when the form is.** The twisted product form
+`pr₁^* σ - pr₂^* σ` on `M × M` is weakly exact relative to the diagonal exactly when `σ` is weakly
+exact. This is the case of the graph of the identity. -/
+theorem isWeaklyExactRel_twistedProd_diagonal_iff {σ : SmoothTwoForm I M} :
+    IsWeaklyExactRel (I.prod I) (twistedProd σ σ).val (diagonal M) ↔ IsWeaklyExact σ.val := by
+  have hdiag : diagonal M = Function.graph id :=
+    Set.ext fun _ ↦ Set.mem_diagonal_iff.trans Function.mem_graph.symm
+  have hid : SmoothForm.mpullback (id : M → M) contMDiff_id σ = σ := by
+    rw [SmoothForm.mpullback_id, LinearMap.id_apply]
+  rw [hdiag]
+  exact ⟨IsWeaklyExactRel.isWeaklyExact_of_twistedProd_graph,
+    fun hσ ↦ hσ.isWeaklyExactRel_twistedProd_graph contMDiff_id hid⟩
+
+end SmoothTwoForm
+
+end TwistedProd
+
+/-! ### No disc bubbles -/
+
+namespace SmoothTwoForm
+
+variable [IsManifold I ∞ M] {σ : SmoothTwoForm I M} {u : ℝ × ℝ → M}
+
+/-- **No disc bubbles on a weakly exact boundary.** Let `σ` be a nondegenerate two-form, weakly
+exact relative to `L` (`TauCeti.IsWeaklyExactRel`), for instance the twisted product form on
+`M × M` relative to the diagonal or to the graph of a symplectomorphism of a weakly exact manifold.
+A `C²` map `u` of the plane solving the Cauchy–Riemann equation `∂_t u = J ∂_s u` on the open unit
+disc, for almost complex structures `J z` on `T_{u z} M` tamed by `σ`, whose boundary loop
+`t ↦ u (cos 2πt, sin 2πt)` lies in `L`, is constant on the closed unit disc. -/
+theorem IsNondegenerate.apply_eq_apply_zero_of_isWeaklyExactRel (hσ : σ.IsNondegenerate)
+    {L : Set M} (hL : IsWeaklyExactRel I σ.val L) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u)
+    (J : ∀ z, AlmostComplexStructure (TangentSpace I (u z)))
+    (hJ : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < 1 → (hσ.symplecticFormAt (u z)).Tames (J z))
+    (hhol : ∀ z : ℝ × ℝ, z.1 ^ 2 + z.2 ^ 2 < 1 → mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag =
+      J z (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal))
+    (hbd : ∀ t : ℝ, u (cos (2 * π * t), sin (2 * π * t)) ∈ L) {z : ℝ × ℝ}
+    (hz : z.1 ^ 2 + z.2 ^ 2 ≤ 1) : u z = u 0 :=
+  (hσ.rectangleIntegral_comp_polar_eq_zero_iff (hu.of_le one_le_two) J hJ hhol).1
+    (hL (isLoopCylinder_comp_polar hu).isCap hbd) z hz
+
+end SmoothTwoForm
+
+end TauCeti
