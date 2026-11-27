@@ -21,6 +21,8 @@ multiplicative weights.
 
 ## Main results
 
+* `Quiver.Path.weight_inv_mul_mul`: multiplying each arrow weight by vertex factors on
+  both ends leaves only the corresponding factors at the path endpoints.
 * `Quiver.Path.addWeight_const`: the constant weight `c` gives a path the weight `p.length • c`.
 * `Prefunctor.addWeight_mapPath`: the weight of a pushed path is the pulled-back weight of the
   original path.
@@ -28,8 +30,6 @@ multiplicative weights.
 * `Quiver.Path.weight_ofAdd`: a weight valued in `Multiplicative M` is the additive weight.
 * `Quiver.Path.map_weight`: a monoid homomorphism applied to a weight is the weight of the
   composed arrow weight.
-* `Quiver.Path.weight_inv_mul_mul`: multiplying each arrow weight by vertex factors on
-  both ends leaves only the corresponding factors at the path endpoints.
 -/
 
 public section

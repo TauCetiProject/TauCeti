@@ -140,8 +140,9 @@ theorem log_wallPathDefect_eq_addWeight {A : Type*} [AddCommMonoid A]
   apply congrArg Multiplicative.toAdd
   calc
     log (p.wallPathDefect ν labels hc f t ht) =
-        evaluate (p.weight fun e => MulOpposite.op (segmentDefect ν labels hc f t e (ht e))) :=
-      (rfl)
+        evaluate (p.weight fun e => MulOpposite.op (segmentDefect ν labels hc f t e (ht e))) := by
+      rw [wallPathDefect_eq_unop_weight]
+      simp [evaluate, MonoidHom.op_apply_apply]
     _ = p.weight (fun e => evaluate (MulOpposite.op (segmentDefect ν labels hc f t e (ht e)))) :=
       p.map_weight evaluate _
     _ = Multiplicative.ofAdd (p.addWeight fun e =>
