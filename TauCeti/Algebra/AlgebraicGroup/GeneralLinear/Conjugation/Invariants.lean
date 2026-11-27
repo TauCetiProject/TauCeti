@@ -41,6 +41,8 @@ with no further relations. That is `TauCeti.GeneralLinear.charpolyCoeffAlgEquiv`
   of the invariants.
 * `TauCeti.GeneralLinear.charpolyCoeffAlgHom`: the coordinate map of the characteristic
   polynomial on the conjugation quotient.
+* `TauCeti.GeneralLinear.coe_charpolyCoeffAlgHom_algebraMap`: on polynomials, `charpolyCoeffAlgHom`
+  is evaluation at the characteristic polynomial coefficients.
 * `TauCeti.GeneralLinear.charpolyMap`: the characteristic polynomial `GLₙ ⟶ 𝔸^{n-1} × 𝔾ₘ`, as a
   morphism of schemes.
 * `TauCeti.GeneralLinear.conjugationCoact_comp_charpolyMap`: `charpolyMap` is conjugation
@@ -137,6 +139,20 @@ theorem charpolyCoeffAlgHom_X (i : Fin n) :
       (Localization.Away (MvPolynomial.X (0 : Fin n) : MvPolynomial (Fin n) R))
         (MvPolynomial.X i)) = charpolyCoeffInvariant R n i := by
   simp [charpolyCoeffAlgHom]
+
+/-- On polynomials in `c₀, …, c_{n-1}`, `charpolyCoeffAlgHom` is evaluation at the coefficients of
+the characteristic polynomial of the generic matrix. -/
+@[simp]
+theorem coe_charpolyCoeffAlgHom_algebraMap (p : MvPolynomial (Fin n) R) :
+    (charpolyCoeffAlgHom R n (algebraMap (MvPolynomial (Fin n) R) _ p) :
+        coordinateHopfAlgebra R n) =
+      MvPolynomial.aeval (fun i : Fin n ↦ (genericMatrix R n).charpoly.coeff i) p := by
+  have h : ((HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n)).val.comp
+      ((charpolyCoeffAlgHom R n).comp (IsScalarTower.toAlgHom R (MvPolynomial (Fin n) R)
+        (Localization.Away (MvPolynomial.X (0 : Fin n) : MvPolynomial (Fin n) R))))) =
+      MvPolynomial.aeval fun i : Fin n ↦ (genericMatrix R n).charpoly.coeff i :=
+    MvPolynomial.algHom_ext fun i ↦ by simp
+  exact AlgHom.congr_fun h p
 
 /-- `charpolyCoeffAlgHom` sends `c₀⁻¹` to the inverse of the constant coefficient of the
 characteristic polynomial. -/

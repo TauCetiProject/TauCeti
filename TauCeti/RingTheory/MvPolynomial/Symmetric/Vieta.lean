@@ -37,8 +37,8 @@ namespace MvPolynomial
 
 variable (R : Type*) [CommRing R] (n : ℕ)
 
-/-- **Vieta's formulas** in `n` variables: the coefficient of `T^k` in `∏ⱼ (T - Xⱼ)` is
-`(-1)^(n - k) e_{n - k}`. -/
+/-- **Vieta's formulas** in `n` variables: for `k ≤ n`, the coefficient of `T^k` in
+`∏ⱼ (T - Xⱼ)` is `(-1)^(n - k) e_{n - k}`. -/
 theorem prod_X_sub_C_coeff {k : ℕ} (hk : k ≤ n) :
     (∏ j : Fin n, (Polynomial.X - Polynomial.C (X j : MvPolynomial (Fin n) R))).coeff k =
       (-1) ^ (n - k) * esymm (Fin n) R (n - k) := by

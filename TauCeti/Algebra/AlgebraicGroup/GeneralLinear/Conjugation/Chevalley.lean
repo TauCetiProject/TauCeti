@@ -9,10 +9,12 @@ public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.Conjugation.Invariant
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.ClosedImmersion
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.ClassFunction.Restriction
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import Mathlib.LinearAlgebra.Matrix.Charpoly.Disc
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.SmoothConnected
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Discriminant
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Separable
 import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.DiagonalTorus.ClassFunction
+import TauCeti.RingTheory.MvPolynomial.LocalizationAwayProdX
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Vieta
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
@@ -34,9 +36,9 @@ takes the same value at conjugate points, and the generic point determines the f
 
 From this the conjugation invariants of `GLₙ` are computed, for `n ≥ 1`: the coefficients
 `c₀, …, c_{n-1}` of the characteristic polynomial of the generic matrix, with `c₀ = (-1)ⁿ det`
-inverted, are algebraically independent
-(`TauCeti.GeneralLinear.charpolyCoeffAlgHom_injective`) and generate the invariants
-(`TauCeti.GeneralLinear.charpolyCoeffAlgHom_surjective`), so
+inverted, are algebraically independent over every commutative ring
+(`TauCeti.GeneralLinear.charpolyCoeffAlgHom_injective`) and, over a domain, generate the
+invariants (`TauCeti.GeneralLinear.charpolyCoeffAlgHom_surjective`), so
 
 `O(GLₙ)^{GLₙ} ≅ R[c₀^{±1}, c₁, …, c_{n-1}]`
 
@@ -53,6 +55,8 @@ polynomial in those coefficients (`MvPolynomial.range_vietaAlgHom`).
 * `TauCeti.GeneralLinear.exists_eq_mul_diagonalPoint_mul_inv_of_separable`: a point with values
   in a field, whose characteristic polynomial splits and is separable, is conjugate to a diagonal
   point.
+* `TauCeti.GeneralLinear.discr_genericMatrix_ne_zero`: over a domain, the generic matrix of `GLₙ`
+  has nonzero discriminant.
 * `TauCeti.GeneralLinear.classFunctionsRestrict_diagonalTorusCoordinateMap_injective`: the
   Chevalley restriction map of `GLₙ` over a domain is injective.
 * `TauCeti.GeneralLinear.charpolyCoeffAlgEquiv`: `R[c₀^{±1}, c₁, …, c_{n-1}] ≃ O(GLₙ)^{GLₙ}`.
@@ -107,19 +111,6 @@ theorem exists_eq_mul_diagonalPoint_mul_inv_of_separable {L : Type*} [Field L] [
   simp only [hM, Units.val_mul, diagGL_coe, IsUnit.unit_spec]
   rw [← hPd, mul_assoc, Units.mul_inv, mul_one]
 
-/-- On polynomials in `c₀, …, c_{n-1}`, `charpolyCoeffAlgHom` is evaluation at the coefficients of
-the characteristic polynomial of the generic matrix. -/
-theorem coe_charpolyCoeffAlgHom_algebraMap [NeZero n] (p : MvPolynomial (Fin n) R) :
-    (charpolyCoeffAlgHom R n (algebraMap (MvPolynomial (Fin n) R) _ p) :
-        coordinateHopfAlgebra R n) =
-      MvPolynomial.aeval (fun i : Fin n ↦ (genericMatrix R n).charpoly.coeff i) p := by
-  have h : ((HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n)).val.comp
-      ((charpolyCoeffAlgHom R n).comp (IsScalarTower.toAlgHom R (MvPolynomial (Fin n) R)
-        (Localization.Away (MvPolynomial.X (0 : Fin n) : MvPolynomial (Fin n) R))))) =
-      MvPolynomial.aeval fun i : Fin n ↦ (genericMatrix R n).charpoly.coeff i :=
-    MvPolynomial.algHom_ext fun i ↦ by simp
-  exact AlgHom.congr_fun h p
-
 end Ring
 
 section Domain
@@ -128,7 +119,7 @@ variable {R : Type u} [CommRing R] [IsDomain R] {n : ℕ}
 
 /-- **The generic matrix of `GLₙ` has nonzero discriminant**: it specializes to a diagonal matrix
 with distinct entries over an algebraic closure of the fraction field of `R`. -/
-private theorem discr_genericMatrix_ne_zero : (genericMatrix R n).discr ≠ 0 := by
+theorem discr_genericMatrix_ne_zero : (genericMatrix R n).discr ≠ 0 := by
   let L := AlgebraicClosure (FractionRing R)
   let e := Infinite.natEmbedding L
   have he (i : Fin n) : e (i + 1) - e 0 ≠ 0 := sub_ne_zero.2 (fun h ↦ by simpa using e.injective h)
@@ -177,9 +168,7 @@ theorem eq_zero_of_mem_classFunctions_of_diagonalTorusCoordinateMap_eq_zero
   let t' := (SplitTorus.pointsMulEquiv (R := R) (A := L) (σ := ULift.{u} (Fin n))).symm
     fun i ↦ t i.down
   have ht : diagonalTorusPoints t' = diagonalPoint (R := R) t := by
-    apply (pointsMulEquiv (R := R) (A := L) n).injective
-    rw [pointsMulEquiv_diagonalTorusPoints, pointsMulEquiv_diagonalPoint,
-      MulEquiv.apply_symm_apply]
+    rw [diagonalTorusPoints_eq_diagonalPoint, MulEquiv.apply_symm_apply]
     congr 1
     funext i
     exact diagonalTorusCoordinates_apply _ i
@@ -211,14 +200,11 @@ variable {R : Type u} [CommRing R] {n : ℕ}
 private abbrev DiagRing (R : Type u) [CommRing R] (n : ℕ) :=
   Localization.Away (∏ i : Fin n, MvPolynomial.X i : MvPolynomial (Fin n) R)
 
-private theorem isUnit_algebraMap_X (i : Fin n) :
-    IsUnit (algebraMap (MvPolynomial (Fin n) R) (DiagRing R n) (MvPolynomial.X i)) :=
-  isUnit_of_dvd_unit (map_dvd _ (Finset.dvd_prod_of_mem _ (Finset.mem_univ i)))
-    (IsLocalization.Away.algebraMap_isUnit _)
-
 /-- The diagonal entries `tᵢ` of the generic diagonal point. -/
 private noncomputable def genericUnit (i : Fin n) : (DiagRing R n)ˣ :=
-  (isUnit_algebraMap_X (R := R) i).unit
+  (IsLocalization.Away.isUnit_of_dvd (S := DiagRing R n)
+    (∏ i : Fin n, MvPolynomial.X i : MvPolynomial (Fin n) R)
+    (Finset.dvd_prod_of_mem MvPolynomial.X (Finset.mem_univ i))).unit
 
 /-- Specializing the generic diagonal entries to units `t` of `A`. -/
 private noncomputable def specialize {A : Type*} [CommRing A] [Algebra R A] (t : Fin n → Aˣ) :
@@ -284,28 +270,15 @@ private theorem specialize_algebraMap_rename (σ : Equiv.Perm (Fin n))
     MvPolynomial.algHom_ext fun i ↦ by simp [genericUnit]
   rw [specialize_algebraMap, h, AlgHom.comp_apply, IsScalarTower.toAlgHom_apply]
 
-end GenericDiagonal
-
-section Domain
-
-variable {R : Type u} [CommRing R] [IsDomain R] {n : ℕ}
-
-private theorem algebraMap_injective :
-    Function.Injective (algebraMap (MvPolynomial (Fin n) R) (DiagRing R n)) :=
-  IsLocalization.injective (M := Submonoid.powers (∏ i : Fin n, MvPolynomial.X i)) _
-    (powers_le_nonZeroDivisors_of_noZeroDivisors
-      (Finset.prod_ne_zero_iff.2 fun i _ ↦ MvPolynomial.X_ne_zero i))
-
-/-- **A class function of `GLₙ` over a domain is determined by its value at the generic diagonal
-point.** -/
-private theorem eq_of_genericDiagonal {f g : coordinateHopfAlgebra R n}
-    (hf : f ∈ HopfAlgebra.classFunctions R (coordinateHopfAlgebra R n))
-    (hg : g ∈ HopfAlgebra.classFunctions R (coordinateHopfAlgebra R n))
-    (h : (diagonalPoint (R := R) (genericUnit (R := R) (n := n))).ofConv f =
-      (diagonalPoint (R := R) (genericUnit (R := R) (n := n))).ofConv g) : f = g := by
-  rw [← sub_eq_zero]
-  refine eq_zero_of_forall_diagonalPoint (Subalgebra.sub_mem _ hf hg) fun t ↦ ?_
-  rw [diagonalPoint_apply_eq_specialize, map_sub, h, sub_self, map_zero]
+/-- At the generic diagonal point, `charpolyCoeffAlgHom` reads a polynomial `p` in the
+characteristic polynomial coefficients as `p` evaluated at the coefficients of `∏ⱼ (T - tⱼ)`. -/
+private theorem genericDiagonal_charpolyCoeffAlgHom_algebraMap [NeZero n]
+    (p : MvPolynomial (Fin n) R) :
+    (diagonalPoint (R := R) (genericUnit (R := R) (n := n))).ofConv
+        (charpolyCoeffAlgHom R n (algebraMap (MvPolynomial (Fin n) R) _ p) :
+          coordinateHopfAlgebra R n) =
+      algebraMap (MvPolynomial (Fin n) R) (DiagRing R n) (MvPolynomial.vietaAlgHom R n p) := by
+  rw [coe_charpolyCoeffAlgHom_algebraMap, genericDiagonal_aeval]
 
 /-- The value of a class function at the generic diagonal point, cleared of denominators, is a
 symmetric polynomial. -/
@@ -326,29 +299,47 @@ private theorem mem_symmetricSubalgebra_of_genericDiagonal {f : coordinateHopfAl
   rw [map_mul, map_pow, specialize_algebraMap_rename, specialize_algebraMap_rename, hprod,
     ← diagonalPoint_apply_eq_specialize, diagonalPoint_apply_comp_perm_of_mem_classFunctions hf,
     hp] at h
-  exact (algebraMap_injective h).symm
+  exact (MvPolynomial.algebraMap_injective_of_isLocalizationAway_prod_X (DiagRing R n)
+    Finset.univ h).symm
 
 /-! ### The conjugation invariants of `GLₙ` -/
 
-variable [NeZero n]
-
-/-- **The characteristic polynomial coefficients are algebraically independent on `GLₙ`.** -/
-theorem charpolyCoeffAlgHom_injective : Function.Injective (charpolyCoeffAlgHom R n) := by
+/-- **The characteristic polynomial coefficients are algebraically independent on `GLₙ`** over
+every commutative ring. -/
+theorem charpolyCoeffAlgHom_injective [NeZero n] :
+    Function.Injective (charpolyCoeffAlgHom R n) := by
   rw [injective_iff_map_eq_zero]
   intro q hq
   obtain ⟨m, p, hp⟩ :=
     IsLocalization.Away.surj (MvPolynomial.X (0 : Fin n) : MvPolynomial (Fin n) R) q
   have h1 : charpolyCoeffAlgHom R n (algebraMap (MvPolynomial (Fin n) R) _ p) = 0 := by
     rw [← hp, map_mul, hq, zero_mul]
-  have h2 := congrArg (fun x : HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n) ↦
-    (diagonalPoint (R := R) (genericUnit (R := R) (n := n))).ofConv
-      (x : coordinateHopfAlgebra R n)) h1
-  simp only [coe_charpolyCoeffAlgHom_algebraMap, genericDiagonal_aeval, ZeroMemClass.coe_zero,
-    map_zero] at h2
+  have h2 := genericDiagonal_charpolyCoeffAlgHom_algebraMap (R := R) p
+  rw [h1, ZeroMemClass.coe_zero, map_zero] at h2
   have hp0 : p = 0 := MvPolynomial.vietaAlgHom_injective R n
-    (algebraMap_injective (by rw [h2, map_zero, map_zero]))
+    (MvPolynomial.algebraMap_injective_of_isLocalizationAway_prod_X (DiagRing R n) Finset.univ
+      (by rw [← h2, map_zero, map_zero]))
   rw [hp0, map_zero] at hp
   exact ((IsLocalization.Away.algebraMap_isUnit _).pow m).mul_left_eq_zero.1 hp
+
+end GenericDiagonal
+
+section Domain
+
+variable {R : Type u} [CommRing R] [IsDomain R] {n : ℕ}
+
+/-- **A class function of `GLₙ` over a domain is determined by its value at the generic diagonal
+point.** -/
+private theorem eq_of_genericDiagonal {f g : coordinateHopfAlgebra R n}
+    (hf : f ∈ HopfAlgebra.classFunctions R (coordinateHopfAlgebra R n))
+    (hg : g ∈ HopfAlgebra.classFunctions R (coordinateHopfAlgebra R n))
+    (h : (diagonalPoint (R := R) (genericUnit (R := R) (n := n))).ofConv f =
+      (diagonalPoint (R := R) (genericUnit (R := R) (n := n))).ofConv g) : f = g := by
+  rw [← sub_eq_zero]
+  refine eq_zero_of_forall_diagonalPoint (Subalgebra.sub_mem _ hf hg) fun t ↦ ?_
+  rw [diagonalPoint_apply_eq_specialize, map_sub, h, sub_self, map_zero]
+
+variable [NeZero n]
 
 /-- **The characteristic polynomial coefficients generate the class functions of `GLₙ`.** -/
 theorem charpolyCoeffAlgHom_surjective : Function.Surjective (charpolyCoeffAlgHom R n) := by
@@ -356,6 +347,10 @@ theorem charpolyCoeffAlgHom_surjective : Function.Surjective (charpolyCoeffAlgHo
   have hf : f ∈ HopfAlgebra.classFunctions R (coordinateHopfAlgebra R n) :=
     HopfAlgebra.conjugationInvariants_eq_classFunctions R (coordinateHopfAlgebra R n) ▸ hf₀
   let δ := diagonalPoint (R := R) (genericUnit (R := R) (n := n))
+  have hδ (q : MvPolynomial (Fin n) R) :
+      δ.ofConv (charpolyCoeffAlgHom R n (algebraMap _ _ q) : coordinateHopfAlgebra R n) =
+        algebraMap _ (DiagRing R n) (MvPolynomial.vietaAlgHom R n q) :=
+    genericDiagonal_charpolyCoeffAlgHom_algebraMap q
   -- At the generic diagonal point, `f` is `p / (t₁ ⋯ tₙ)^m` with `p` a symmetric polynomial, so
   -- `p` is `vietaAlgHom Q` for a polynomial `Q` in the characteristic polynomial coefficients.
   obtain ⟨m, p, hp⟩ := IsLocalization.Away.surj
@@ -380,8 +375,7 @@ theorem charpolyCoeffAlgHom_surjective : Function.Surjective (charpolyCoeffAlgHo
   -- Read `hF` at `δ`: `δ(F) · ((-1)ⁿ t₁ ⋯ tₙ)^m = (-1)^(nm) p`.
   have h1 := congrArg (fun y : HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n) ↦
     δ.ofConv (y : coordinateHopfAlgebra R n)) hF
-  simp only [Subalgebra.coe_mul, Subalgebra.coe_pow, map_mul, map_pow,
-    coe_charpolyCoeffAlgHom_algebraMap, δ, genericDiagonal_aeval] at h1
+  simp only [Subalgebra.coe_mul, Subalgebra.coe_pow, map_mul, map_pow, hδ] at h1
   have hx : MvPolynomial.vietaAlgHom R n x = (-1) ^ n * ∏ j : Fin n, MvPolynomial.X j := by
     simp only [x, MvPolynomial.vietaAlgHom_X, Fin.val_zero, MvPolynomial.prod_X_sub_C_coeff_zero]
   simp only [hQ, hx, ← MvPolynomial.algebraMap_eq, AlgHom.commutes, map_mul, mul_pow, map_pow,
@@ -389,8 +383,7 @@ theorem charpolyCoeffAlgHom_surjective : Function.Surjective (charpolyCoeffAlgHo
   have hs : algebraMap R (DiagRing R n) s = (-1) ^ (n * m) := by simp [s]
   rw [hs] at h1
   -- Comparing with `hp`, `δ(F) - δ(f)` is killed by a unit.
-  have key : ((diagonalPoint (R := R) (genericUnit (R := R) (n := n))).ofConv F -
-      δ.ofConv f) * ((-1) ^ (n * m) *
+  have key : (δ.ofConv F - δ.ofConv f) * ((-1) ^ (n * m) *
         algebraMap (MvPolynomial (Fin n) R) (DiagRing R n) (∏ i : Fin n, MvPolynomial.X i) ^ m) =
       0 := by
     linear_combination h1 - (-1) ^ (n * m) * hp
@@ -399,8 +392,9 @@ theorem charpolyCoeffAlgHom_surjective : Function.Surjective (charpolyCoeffAlgHo
     (isUnit_one.neg.pow _).mul ((IsLocalization.Away.algebraMap_isUnit _).pow m)
   exact sub_eq_zero.1 (hu.mul_left_eq_zero.1 key)
 
-/-- **The conjugation invariants of `GLₙ` over a domain are the Laurent polynomial ring in the
-coefficients of the characteristic polynomial.** -/
+/-- **The conjugation invariants of `GLₙ` over a domain are `R[c₀^{±1}, c₁, …, c_{n-1}]`**: the
+polynomial ring in the coefficients `c₀, …, c_{n-1}` of the characteristic polynomial with only the
+constant coefficient `c₀ = (-1)ⁿ det` inverted. -/
 noncomputable def charpolyCoeffAlgEquiv :
     Localization.Away (MvPolynomial.X (0 : Fin n) : MvPolynomial (Fin n) R) ≃ₐ[R]
       HopfAlgebra.conjugationInvariants R (coordinateHopfAlgebra R n) :=

@@ -46,6 +46,8 @@ by the same equation required of a pinned Chevalley--Demazure group scheme.
   conjugation equation.
 * `TauCeti.GeneralLinear.diagonalPoint`: the point of `GL_N` given by a diagonal matrix of units,
   without the universe lift of the torus coordinates.
+* `TauCeti.GeneralLinear.diagonalTorusPoints_eq_diagonalPoint`: diagonal-torus points are the
+  diagonal points of their coordinates.
 * `TauCeti.GeneralLinear.schemePointsMulEquiv_diagonalTorus`: on scheme-valued points, composing
   with the diagonal torus morphism is the diagonal matrix of the coordinates.
 
@@ -165,6 +167,38 @@ theorem pointToGeneralLinear_diagonalPoint (t : Fin N → Aˣ) :
     pointToGeneralLinear N (diagonalPoint (R := R) t) = diagGL t := by
   rw [← pointsMulEquiv_apply, pointsMulEquiv_diagonalPoint]
 
+/-- The diagonal point of the constant family `1` is the identity point. -/
+@[simp]
+theorem diagonalPoint_one : diagonalPoint (R := R) (1 : Fin N → Aˣ) = 1 := by
+  rw [diagonalPoint_def, map_one, map_one]
+
+/-- Diagonal points multiply entrywise. -/
+@[simp]
+theorem diagonalPoint_mul (s t : Fin N → Aˣ) :
+    diagonalPoint (R := R) (s * t) = diagonalPoint s * diagonalPoint t := by
+  rw [diagonalPoint_def, diagonalPoint_def, diagonalPoint_def, map_mul, map_mul]
+
+/-- The inverse of a diagonal point is the diagonal point of the entrywise inverses. -/
+@[simp]
+theorem diagonalPoint_inv (t : Fin N → Aˣ) :
+    diagonalPoint (R := R) t⁻¹ = (diagonalPoint t)⁻¹ := by
+  rw [diagonalPoint_def, diagonalPoint_def, map_inv, map_inv]
+
+/-- A diagonal point determines its diagonal entries. -/
+theorem diagonalPoint_injective :
+    Function.Injective (diagonalPoint (R := R) (N := N) (A := A)) :=
+  (pointsMulEquiv N).symm.injective.comp diagGL_injective
+
+/-- The diagonal-torus point of a split-torus point `f` is the diagonal point of the coordinates
+of `f`. -/
+theorem diagonalTorusPoints_eq_diagonalPoint
+    (f : WithConv
+      (MonoidAlgebra R (Multiplicative (ULift.{u} (Fin N) →₀ ℤ)) →ₐ[R] A)) :
+    diagonalTorusPoints f =
+      diagonalPoint (diagonalTorusCoordinates (SplitTorus.pointsMulEquiv f)) := by
+  apply (pointsMulEquiv (R := R) (A := A) N).injective
+  rw [pointsMulEquiv_diagonalTorusPoints, pointsMulEquiv_diagonalPoint]
+
 /-- The generic matrix evaluated at `diagonalPoint t` is the diagonal matrix with entries `t`. -/
 @[simp]
 theorem map_genericMatrix_diagonalPoint (t : Fin N → Aˣ) :
@@ -178,9 +212,8 @@ theorem map_genericMatrix_diagonalPoint (t : Fin N → Aˣ) :
 -- rejects this higher-level equation as not being in normal form.
 theorem mapValue_diagonalPoint (phi : A →ₐ[R] B) (t : Fin N → Aˣ) :
     AlgHom.mapValue (H := coordinateHopfAlgebra R N) phi (diagonalPoint t) =
-      diagonalPoint fun i ↦ Units.map (phi : A →* B) (t i) := by
-  rw [diagonalPoint, diagonalPoint, mapValue_pointsMulEquiv_symm_apply, map_diagGL]
-  rfl
+      diagonalPoint fun i ↦ Units.map (phi : A →+* B) (t i) := by
+  rw [diagonalPoint_def, diagonalPoint_def, mapValue_pointsMulEquiv_symm_apply, map_diagGL]
 
 /-- Conjugation by a diagonal-torus point acts on the root subgroup for `εᵢ - εⱼ` by
 the corresponding character `t ↦ tᵢ tⱼ⁻¹`. -/
