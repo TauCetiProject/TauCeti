@@ -178,9 +178,7 @@ private theorem exists_pos_forall_norm_fderiv_sub_id_lt (hh : ContDiff ℝ 1 h)
   have hU : IsOpen U := isOpen_lt
     ((hh.continuous_fderiv one_ne_zero).sub continuous_const).norm continuous_const
   have hUper (x y : ℝ) (k : ℤ) (hxy : (x, y) ∈ U) : (x + k, y) ∈ U := by
-    have hk := periodic_fderiv_of_apply_add_eq_add (𝕜 := ℝ) (fun q ↦ hper q k) (x, y)
-    simp only [Prod.mk_add_mk, add_zero] at hk
-    simpa [U, hk] using hxy
+    simpa [U, fderiv_add_fst_of_apply_add_eq_add (fun q ↦ hper q k)] using hxy
   obtain ⟨η, hη, hsub⟩ := isCompact_singleton.exists_univ_prod_thickening_subset_open hU hUper
     fun p hp ↦ by
       obtain ⟨x, y⟩ := p
@@ -234,6 +232,13 @@ private theorem exists_hasFDerivAt_sub_id (hh : ContDiff ℝ 1 h) (hχ : ContDif
       gcongr
       exact mul_le_of_le_one_left (norm_nonneg _) hs
 
+/-- The weight `1 - t u` of the collar straightening has absolute value at most `1` for
+`t, u ∈ [0, 1]`. -/
+private theorem abs_one_sub_mul_le_one {u : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (hu : u ∈ Icc (0 : ℝ) 1) :
+    |1 - t * u| ≤ 1 :=
+  have hw := Icc.one_sub_mem (unitInterval.mul_mem ht hu)
+  (abs_of_nonneg hw.1).trans_le hw.2
+
 /-- On a band `|y| < η` on which the derivative of `h` is within `κ` of the identity, the
 derivative of `H_t - id` is at most `κ (1 + B)`, where `B` bounds `|u| |χ'(u)|`. The factor `1 / ε`
 of the derivative of `χ(y / ε)` is compensated by the bound `κ |y|` on the displacement
@@ -258,8 +263,7 @@ private theorem exists_hasFDerivAt_sub_id_norm_le (hh : ContDiff ℝ 1 h) (hχ :
         |t| * |deriv χ (p.2 / ε)| * |ε|⁻¹ * ‖h p - p‖
       ≤ 1 * κ + 1 * |deriv χ (p.2 / ε)| * |ε|⁻¹ * (κ * |p.2|) := by
         gcongr
-        · have hw := Icc.one_sub_mem (unitInterval.mul_mem ht (hχ01 (p.2 / ε)))
-          exact (abs_of_nonneg hw.1).trans_le hw.2
+        · exact abs_one_sub_mul_le_one ht (hχ01 _)
         · exact hκ p hp
     _ = κ + κ * (|deriv χ (p.2 / ε)| * |ε|⁻¹ * |p.2|) := by ring
     _ ≤ κ * (1 + B) := by nlinarith
@@ -325,8 +329,7 @@ private theorem abs_snd_stripCollarStraightening_le (hh : ContDiff ℝ 1 h)
     rw [Prod.smul_snd, smul_eq_mul, abs_mul]
     calc |1 - t * χ (p.2 / ε)| * |(h p - p).2| ≤ 1 * (κ * |p.2|) := by
           gcongr
-          · have hw := Icc.one_sub_mem (unitInterval.mul_mem ht (hχ01 (p.2 / ε)))
-            exact (abs_of_nonneg hw.1).trans_le hw.2
+          · exact abs_one_sub_mul_le_one ht (hχ01 _)
           · exact (norm_snd_le (h p - p)).trans hdisp
       _ ≤ 1 * (1 * |p.2|) := by gcongr
       _ = |p.2| := by ring

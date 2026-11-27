@@ -163,9 +163,7 @@ private theorem exists_band_isInvertible_fderiv (hΦ : ContDiff ℝ 1 Φ)
   obtain ⟨δ, hδ, hsub⟩ := isCompact_Icc.exists_univ_prod_thickening_subset_open
     (ContinuousLinearMap.isOpen_setOfPred_isInvertible.preimage
       (hΦ.continuous_fderiv one_ne_zero)) (fun x y k h ↦ by
-        have hk := periodic_fderiv_of_apply_add_eq_add (𝕜 := ℝ) (fun q ↦ hper q k) (x, y)
-        simp only [Prod.mk_add_mk, add_zero] at hk
-        rwa [mem_preimage, hk])
+        rwa [mem_preimage, fderiv_add_fst_of_apply_add_eq_add (fun q ↦ hper q k)])
     hinv
   exact ⟨δ, hδ, fun p hp ↦ hsub ⟨mem_univ _, mem_thickening_Icc_zero_one hδ hp⟩⟩
 
