@@ -21,12 +21,28 @@ universe v u
 
 namespace CategoryTheory.Functor
 
+variable {C : Type u} [Category.{v} C]
+
 /-- A sequence is factorizable if, from each stage, some transition factors through every
 subsequent transition out of that stage. -/
-@[expose]
-def IsFactorizable {C : Type u} [Category.{v} C] (F : ℕ ⥤ C) : Prop :=
+def IsFactorizable (F : ℕ ⥤ C) : Prop :=
   ∀ i : ℕ, ∃ (j : ℕ) (hij : i ≤ j), ∀ (k : ℕ) (hjk : j ≤ k),
     ∃ t : F.obj k ⟶ F.obj j,
       F.map (homOfLE (hij.trans hjk)) ≫ t = F.map (homOfLE hij)
+
+/-- A factorization bound at each stage makes the sequence factorizable. -/
+theorem IsFactorizable.of_exists_factorization {F : ℕ ⥤ C}
+    (h : ∀ i : ℕ, ∃ (j : ℕ) (hij : i ≤ j), ∀ (k : ℕ) (hjk : j ≤ k),
+      ∃ t : F.obj k ⟶ F.obj j,
+        F.map (homOfLE (hij.trans hjk)) ≫ t = F.map (homOfLE hij)) :
+    F.IsFactorizable :=
+  h
+
+/-- At any stage of a factorizable sequence, some transition factors through all later ones. -/
+theorem IsFactorizable.exists_factorization {F : ℕ ⥤ C} (h : F.IsFactorizable) (i : ℕ) :
+    ∃ (j : ℕ) (hij : i ≤ j), ∀ (k : ℕ) (hjk : j ≤ k),
+      ∃ t : F.obj k ⟶ F.obj j,
+        F.map (homOfLE (hij.trans hjk)) ≫ t = F.map (homOfLE hij) :=
+  h i
 
 end CategoryTheory.Functor

@@ -9,12 +9,12 @@ public import Mathlib.CategoryTheory.Functor.OfSequence
 public import TauCeti.CategoryTheory.Functor.Factorizable
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
 
-import Mathlib.Algebra.Category.Grp.FilteredColimits
 import Mathlib.Algebra.Category.Grp.ZModuleEquivalence
 import Mathlib.CategoryTheory.Abelian.ShortExact
 import Mathlib.CategoryTheory.Limits.Constructions.Filtered
 import TauCeti.Algebra.Category.ModuleCat.Colimits
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
+import TauCeti.CategoryTheory.Preadditive.ModCat.Evaluation
 
 /-!
 # Bass modules of sequences
@@ -195,38 +195,6 @@ theorem shortExact_bassTelescope : (bassTelescope c f).ShortExact := by
   have : PreservesColimitsOfShape (Discrete ℕ) ((U ⋙ E) ⋙ A) := comp_preservesColimitsOfShape _ _
   exact shortExact_map_bassTelescope c f ((U ⋙ E) ⋙ A)
 
-/-- Evaluate a module at an object and take the underlying type. -/
-private abbrev forgetEval (X : C) : ModCat.{v} C ⥤ Type v :=
-  ((additiveFunctor Cᵒᵖ AddCommGrpCat.{v}).ι ⋙ (evaluation _ _).obj (op X)) ⋙
-    forget AddCommGrpCat
-
-@[simp]
-private theorem forgetEval_map_apply (X : C) {M N : ModCat.{v} C}
-    (m : M ⟶ N) (x : (forgetEval X).obj M) :
-    (forgetEval X).map m x = m.hom.app (op X) x := rfl
-
-private instance (X : C) {J : Type} [SmallCategory J] [IsFiltered J] :
-    PreservesColimitsOfShape J (forgetEval X) := by
-  have : PreservesFilteredColimitsOfSize.{0, 0} (forget AddCommGrpCat.{v}) :=
-    preservesSmallestFilteredColimits_of_preservesFilteredColimits (forget AddCommGrpCat.{v})
-  infer_instance
-
-private theorem bassDiagram_eventually_eq {X : C} {j : ℕ}
-    (a b : (yoneda C).obj X ⟶ (bassDiagram c f).obj j)
-    (h : a ≫ colimit.ι (bassDiagram c f) j = b ≫ colimit.ι (bassDiagram c f) j) :
-    ∃ (k : ℕ) (g : j ⟶ k), a ≫ (bassDiagram c f).map g = b ≫ (bassDiagram c f).map g := by
-  let F := bassDiagram c f
-  let E := forgetEval X
-  have hh := congrArg (fun m : (yoneda C).obj X ⟶ colimit F => E.map m (𝟙 X)) h
-  simp only [Functor.map_comp] at hh
-  obtain ⟨k, g, hg⟩ := (Types.FilteredColimit.isColimit_eq_iff'
-    (isColimitOfPreserves E (colimit.isColimit F)) (E.map a (𝟙 X)) (E.map b (𝟙 X))).mp hh
-  refine ⟨k, g, ObjectProperty.hom_ext _ (preadditiveYoneda_obj_hom_ext ?_)⟩
-  have he : E.map (a ≫ F.map g) (𝟙 X) = E.map (b ≫ F.map g) (𝟙 X) := by
-    simp only [Functor.map_comp]
-    exact hg
-  exact (forgetEval_map_apply X _ _).symm.trans (he.trans (forgetEval_map_apply X _ _))
-
 /-- A colimit leg of the Bass diagram vanishes exactly when some transition out of its stage
 vanishes in the original sequence. -/
 theorem bassDiagram_ι_eq_zero_iff (i : ℕ) :
@@ -235,7 +203,8 @@ theorem bassDiagram_ι_eq_zero_iff (i : ℕ) :
   let F := bassDiagram c f
   constructor
   · intro hi
-    obtain ⟨j, g, hg⟩ := bassDiagram_eventually_eq c f (𝟙 ((yoneda C).obj (c i))) 0
+    obtain ⟨j, g, hg⟩ := exists_comp_map_eq_of_comp_colimit_ι_eq
+      (F := F) (a := 𝟙 ((yoneda C).obj (c i))) (b := 0)
       (by simpa only [id_comp, zero_comp] using hi)
     refine ⟨j, leOfHom g, (yoneda C).map_injective ?_⟩
     have hg' : F.map g = 0 := by simpa only [id_comp, zero_comp] using hg
@@ -280,7 +249,7 @@ private theorem bassDiagram_factors_at_stage {i : ℕ}
     have hn : n.val.as ≤ j := (Finset.le_sup n.property).trans (le_max_right _ _)
     rw [Sigma.ι_comp_desc_assoc, Sigma.ι_comp_desc_assoc]
     simp [q, hn]
-  refine ⟨j, le_max_left _ _, p, ObjectProperty.hom_ext _ (preadditiveYoneda_obj_hom_ext ?_)⟩
+  refine ⟨j, le_max_left _ _, p, yoneda_hom_ext_of_forgetEval ?_⟩
   have h : E.map (p ≫ colimit.ι F j) (E.map d y) = E.map q (E.map d y) := by
     have hh := congrArg (fun m => E.map m y) hp
     simp only [Functor.map_comp] at hh ⊢
@@ -288,10 +257,7 @@ private theorem bassDiagram_factors_at_stage {i : ℕ}
   rw [Functor.mapCocone_ι_app] at hy
   -- Identify the mapped cocone leg as the image of the finite coproduct inclusion `d`.
   rw [show E.map d y = E.map a x from hy] at h
-  have he : E.map (a ≫ p ≫ colimit.ι F j) x = E.map (a ≫ q) x := by
-    simp only [Functor.map_comp]
-    exact h
-  exact (forgetEval_map_apply (c i) _ _).symm.trans (he.trans (forgetEval_map_apply (c i) _ _))
+  simpa only [Functor.map_comp] using! h
 
 /-- If the Bass module is projective then the original sequence is factorizable. -/
 theorem isFactorizable_of_projective_bassModule [Projective (bassModule c f)] :
@@ -304,7 +270,7 @@ theorem isFactorizable_of_projective_bassModule [Projective (bassModule c f)] :
   have : Projective (colimit F) := ‹Projective (bassModule c f)›
   let s := Projective.factorThru (𝟙 (colimit F)) q
   have hs : s ≫ q = 𝟙 (colimit F) := Projective.factorThru_comp _ _
-  unfold Functor.IsFactorizable
+  apply Functor.IsFactorizable.of_exists_factorization
   intro i
   -- Bound the finite support of the split leg and then compare the two maps at that stage.
   obtain ⟨j, hij, p, hp⟩ := bassDiagram_factors_at_stage c f (i := i) s
@@ -317,7 +283,7 @@ theorem isFactorizable_of_projective_bassModule [Projective (bassModule c f)] :
       F.map (homOfLE hij) ≫ colimit.ι F j := by
     rw [colimit.w]
     simpa only [Category.assoc] using hp
-  obtain ⟨l, g, hg⟩ := bassDiagram_eventually_eq c f _ _ he
+  obtain ⟨l, g, hg⟩ := exists_comp_map_eq_of_comp_colimit_ι_eq he
   have hjl := leOfHom g
   refine ⟨l, hij.trans hjl, fun k hlk ↦ ?_⟩
   obtain ⟨t, ht⟩ := (yoneda C).map_surjective (colimit.ι F k ≫ s ≫ p ≫ F.map g)
