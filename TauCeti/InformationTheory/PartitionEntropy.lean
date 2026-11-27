@@ -370,13 +370,10 @@ private theorem countablePartitionEntropy_pair_of_indepFun_of_isProbabilityMeasu
       (mul_nonneg measureReal_nonneg h2), ENNReal.ofReal_mul measureReal_nonneg,
       ENNReal.ofReal_mul measureReal_nonneg, ofReal_measureReal, ofReal_measureReal]
     ring
-  have hA : ∑' i, μ (a ⁻¹' {i}) = 1 := by
-    simpa using tsum_measure_inter_preimage_singleton (μ := μ) ha Set.univ
-  have hB : ∑' j, μ (b ⁻¹' {j}) = 1 := by
-    simpa using tsum_measure_inter_preimage_singleton (μ := μ) hb Set.univ
   rw [countablePartitionEntropy_pair]
-  simp only [hcell, tsum_add, ENNReal.tsum_mul_left, ENNReal.tsum_mul_right, hA, hB, mul_one,
-    one_mul]
+  simp only [hcell, tsum_add, ENNReal.tsum_mul_left, ENNReal.tsum_mul_right,
+    tsum_measure_preimage_singleton_eq_measure_univ ha,
+    tsum_measure_preimage_singleton_eq_measure_univ hb, measure_univ, mul_one, one_mul]
   simp only [countablePartitionEntropy_def]
 
 /-- **Independence.** If the measurable countable labels `a` and `b` are independent, the
