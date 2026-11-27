@@ -10,7 +10,9 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Geometry.Symplectic.Floer.EndLinearization.Chart
 import TauCeti.MeasureTheory.Group.Measure
+import TauCeti.Topology.Instances.Real.TSupport
 import TauCeti.Topology.Algebra.Support
 
 /-!
@@ -48,6 +50,16 @@ on a truncation `S_T`, is controlled by the `L²` norms of `D_u ξ` on `S` and o
   argument of `TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm`,
   `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_ends`,
   gives the semi-Fredholm estimate.
+* **The formal adjoint.** The cokernel of `D_u` is the kernel of its formal adjoint `D_u^*`, and the
+  same estimate holds for `D_u^*` on covector fields `η`, with the weight `ρ⁻¹` on `D_u^* η`. On the
+  output end `η` is read as a `(0, 1)`-form (`TauCeti.Floer.covectorPullback`) in the recentred
+  chart itself, shifted by one unit along the end, `ψ(ζ) = c + φ'_∞(ζ + 1)`: far out the data are
+  cylindrical in this chart, so the end estimate of the adjoint in a holomorphic end chart applies
+  to it, with the Jacobian `4π² |z - c|²` of `ψ` as weight, which far out is at most `20 ρ⁻¹`. The
+  shift makes `ψ` reach at least as far out on the end as `φ'_∞`, so the patching argument takes
+  `ψ` as the chart of the output end
+  (`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends`
+  in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm`).
 
 ## Main results
 
@@ -63,10 +75,15 @@ In the namespace `TauCeti.SymplecticForm`:
   for data which far out are the pair-of-pants datum on the input ends and its translate by `c` on
   the output end;
 * `exists_forall_le_mul_integral_floerLinearization_exchangePerturbation_add`: the semi-Fredholm
-  estimate along every member of the input-exchange family.
+  estimate along every member of the input-exchange family;
+* the end estimate of the adjoint on an output end recentred at `c`:
+  `exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_recentered`
+* `exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_recentered` and
+  `exists_forall_le_mul_integral_floerLinearizationAdjoint_exchangePerturbation_add`: the
+  semi-Fredholm estimate of the adjoint for data with a recentred output end, and along every
+  member of the input-exchange family.
 
-The Sobolev realization of the operator, the finiteness of its cokernel and its index are not
-treated here.
+The finiteness of the cokernel and the index of the operator are not treated here.
 
 ## References
 
@@ -227,6 +244,208 @@ theorem setIntegral_sobolevDensity_comp_positiveEndChart_inf_le (hc₀ : 0 ≤ c
     _ = _ := by
         rw [← h320]
         ring
+
+/-! ### The shifted recentred chart of the output end -/
+
+/-- The chart `ζ ↦ φ'_∞(ζ + 1) + c` of the output end, recentred at `c` and shifted by one unit
+along the end, sends `ζ` to a point at distance `2 exp (2π (ζ.1 + 1))` from `c`. -/
+private theorem norm_sub_positiveEndChart_inf_add_add (c : ℝ) (ζ : ℝ × ℝ) :
+    ‖Complex.equivRealProdCLM.symm (positiveEndChart inf (ζ + (1, 0)) + (c, 0)) - c‖ =
+      2 * exp (2 * π * (ζ.1 + 1)) := by
+  rw [TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero, add_sub_cancel_right,
+    show ζ + (1, 0) = (ζ.1 + 1, ζ.2) by ext <;> simp,
+    norm_equivRealProdCLM_symm_positiveEndChart_inf]
+
+/-- The norm of a point of the shifted recentred chart differs from `2 exp (2π (ζ.1 + 1))` by at
+most `c ∈ [0, 1]`. -/
+private theorem abs_norm_positiveEndChart_inf_add_add_sub_le (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    (ζ : ℝ × ℝ) :
+    |‖Complex.equivRealProdCLM.symm (positiveEndChart inf (ζ + (1, 0)) + (c, 0))‖ -
+      2 * exp (2 * π * (ζ.1 + 1))| ≤ 1 := by
+  rw [← norm_sub_positiveEndChart_inf_add_add c ζ]
+  refine (abs_norm_sub_norm_le _ _).trans ?_
+  rw [sub_sub_cancel, Complex.norm_real, Real.norm_of_nonneg hc₀]
+  exact hc₁
+
+/-- `2 exp (2π s) + 1 ≤ 2 exp (2π (s + 1))` for `s ≥ -1`. -/
+private theorem two_mul_exp_add_one_le (s : ℝ) (hs : -1 ≤ s) :
+    2 * exp (2 * π * s) + 1 ≤ 2 * exp (2 * π * (s + 1)) := by
+  have h₁ := fourteen_le_two_mul_exp_two_pi
+  have h₂ : exp (-(2 * π)) ≤ exp (2 * π * s) := exp_le_exp.2 (by nlinarith [pi_pos])
+  have h₃ : 1 ≤ exp (2 * π) * exp (-(2 * π)) := by rw [← exp_add, add_neg_cancel, exp_zero]
+  rw [mul_add, mul_one, exp_add]
+  nlinarith [exp_pos (2 * π * s), exp_pos (2 * π), exp_pos (-(2 * π)),
+    mul_le_mul_of_nonneg_left h₂ (exp_pos (2 * π)).le]
+
+/-- Beyond `ζ.1 = 0`, the shifted recentred chart of the output end lands in `S`. -/
+private theorem positiveEndChart_inf_add_add_mem_thricePuncturedSphereReal (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {ζ : ℝ × ℝ} (hζ : 0 ≤ ζ.1) :
+    positiveEndChart inf (ζ + (1, 0)) + (c, 0) ∈ thricePuncturedSphereReal := by
+  refine mem_thricePuncturedSphereReal_of_two_le_norm ?_
+  have h := abs_le.1 (abs_norm_positiveEndChart_inf_add_add_sub_le hc₀ hc₁ ζ)
+  have := two_mul_exp_add_one_le ζ.1 (by linarith)
+  have := one_le_exp (by positivity : 0 ≤ 2 * π * ζ.1)
+  linarith
+
+/-- The shifted recentred chart of the output end reaches at least as far out on the end as the
+positive end chart `φ'_∞`. -/
+private theorem le_fst_positiveEndCoord_positiveEndChart_inf_add_add (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) :
+    ζ.1 ≤ (positiveEndCoord inf (positiveEndChart inf (ζ + (1, 0)) + (c, 0))).1 := by
+  have h := abs_le.1 (abs_norm_positiveEndChart_inf_add_add_sub_le hc₀ hc₁ ζ)
+  have h₁ := two_mul_exp_add_one_le ζ.1 (by linarith)
+  have h₀ : Complex.equivRealProdCLM.symm (positiveEndChart inf (ζ + (1, 0)) + (c, 0)) ≠ 0 :=
+    norm_pos_iff.1 (by linarith [exp_pos (2 * π * ζ.1)])
+  refine le_of_forall_lt fun r hr ↦ (lt_fst_positiveEndCoord_inf_iff h₀).2 ?_
+  have := exp_lt_exp.2 (by nlinarith [pi_pos] : 2 * π * r < 2 * π * ζ.1)
+  linarith
+
+/-- Up to the height `R`, the shifted recentred chart of the output end stays below the height
+`R + 2` of the positive end coordinate, for `R ≥ 0`. -/
+private theorem fst_positiveEndCoord_positiveEndChart_inf_add_add_le (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {R : ℝ} (hR : 0 ≤ R) {ζ : ℝ × ℝ} (hζ : ζ.1 ≤ R)
+    (h₀ : Complex.equivRealProdCLM.symm (positiveEndChart inf (ζ + (1, 0)) + (c, 0)) ≠ 0) :
+    (positiveEndCoord inf (positiveEndChart inf (ζ + (1, 0)) + (c, 0))).1 ≤ R + 2 := by
+  refine not_lt.1 fun hlt ↦ ?_
+  rw [lt_fst_positiveEndCoord_inf_iff h₀] at hlt
+  have h := abs_le.1 (abs_norm_positiveEndChart_inf_add_add_sub_le hc₀ hc₁ ζ)
+  have h₁ := two_mul_exp_add_one_le (R + 1) (by linarith)
+  have := exp_le_exp.2 (by nlinarith [pi_pos] : 2 * π * (ζ.1 + 1) ≤ 2 * π * (R + 1))
+  rw [show R + 1 + 1 = R + 2 by ring] at h₁
+  linarith
+
+/-- The shifted recentred chart of the output end is smooth. -/
+private theorem contDiff_positiveEndChart_inf_add_add (c : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0) :=
+  ((contDiff_positiveEndChart inf n).comp (contDiff_id.add contDiff_const)).add contDiff_const
+
+/-- The derivative of the shifted recentred chart of the output end at `ζ` is that of `φ'_∞` at
+`ζ + 1`. -/
+private theorem fderiv_positiveEndChart_inf_add_add (c : ℝ) (ζ : ℝ × ℝ) :
+    fderiv ℝ (fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) ζ =
+      fderiv ℝ (positiveEndChart inf) (ζ + (1, 0)) :=
+  ((hasFDerivAt_positiveEndChart_add inf (1, 0) ζ).add_const (c, 0)).fderiv
+
+/-- The shifted recentred chart of the output end is holomorphic, with nonzero derivative. -/
+private theorem isComplexLinearMap_fderiv_positiveEndChart_inf_add_add_and_ne_zero (c : ℝ)
+    (ζ : ℝ × ℝ) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) (AlmostComplexStructure.product ℝ)
+      (fderiv ℝ (fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) ζ : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ) ∧
+      fderiv ℝ (fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) ζ ≠ 0 := by
+  rw [fderiv_positiveEndChart_inf_add_add]
+  exact ⟨isComplexLinearMap_fderiv_positiveEndChart inf _, fderiv_positiveEndChart_ne_zero inf _⟩
+
+/-- The Jacobian of the shifted recentred chart of the output end at `ζ` is `4π² |z - c|²` at its
+image `z`. -/
+private theorem det_fderiv_positiveEndChart_inf_add_add (c : ℝ) (ζ : ℝ × ℝ) :
+    (fderiv ℝ (fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) ζ).det =
+      4 * π ^ 2 *
+        ‖Complex.equivRealProdCLM.symm (positiveEndChart inf (ζ + (1, 0)) + (c, 0)) - c‖ ^ 2 := by
+  rw [fderiv_positiveEndChart_inf_add_add, det_fderiv_positiveEndChart, endCenter_inf, sub_zero,
+    TauCeti.Complex.equivRealProdCLM_symm_add_prodMk_zero, add_sub_cancel_right]
+
+/-- The shifted recentred chart of the output end is injective on every band `(R, ∞) × (0, 1)`. -/
+private theorem injOn_positiveEndChart_inf_add_add (c R : ℝ) :
+    InjOn (fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) (Ioi R ×ˢ Ioo 0 1) := by
+  intro a ha b hb hab
+  have hmem {ζ : ℝ × ℝ} (hζ : ζ ∈ Ioi R ×ˢ Ioo (0 : ℝ) 1) : ζ + (1, 0) ∈ univ ×ˢ Ico 0 (0 + 1) :=
+    ⟨mem_univ _, by simpa using Ioo_subset_Ico_self hζ.2⟩
+  exact add_right_cancel ((injOn_positiveEndChart inf 0) (hmem ha) (hmem hb) (add_right_cancel hab))
+
+/-- Read in the shifted recentred chart of the output end, a map has the slice defect of the map
+read in the recentred chart `c + φ'_∞`, one unit further out. -/
+private theorem sliceDefect_comp_positiveEndChart_inf_add_add (X : ℝ → V → V) (u : ℝ × ℝ → V)
+    (s t : ℝ) :
+    sliceDefect X (u ∘ fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) (s, t) =
+      sliceDefect X (fun ζ ↦ u (positiveEndChart inf ζ + (c, 0))) (s + 1, t) := by
+  have hst : (s, t) + ((1 : ℝ), (0 : ℝ)) = (s + 1, t) := by simp
+  have hd : fderiv ℝ (u ∘ fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) (s, t) =
+      fderiv ℝ (fun ζ ↦ u (positiveEndChart inf ζ + (c, 0))) (s + 1, t) := by
+    rw [← hst]
+    exact fderiv_comp_add_right (𝕜 := ℝ) (f := fun ζ ↦ u (positiveEndChart inf ζ + (c, 0))) (1, 0)
+  rw [sliceDefect_def, sliceDefect_def, hd]
+  simp [hst]
+
+/-- A function with compact support in the part `-s > R + 2` of the output end, for `R ≥ 0`,
+vanishes in the shifted recentred chart outside a band `(R, b) × ℝ`: below the height `R` the chart
+stays below the height `R + 2` of `φ'_∞`, and far out it leaves the support. -/
+private theorem exists_forall_notMem_Ioo_positiveEndChart_inf_add_add_eq_zero {F : Type*} [Zero F]
+    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {f : ℝ × ℝ → F} (hfc : HasCompactSupport f) {R : ℝ} (hR : 0 ≤ R)
+    (hfR : tsupport f ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R + 2 < (positiveEndCoord inf z).1}) :
+    ∃ b, ∀ s t, s ∉ Ioo R b → f (positiveEndChart inf ((s, t) + (1, 0)) + (c, 0)) = 0 := by
+  obtain ⟨M, hM⟩ := hfc.isCompact.exists_bound_of_continuousOn
+    (f := fun z ↦ Complex.equivRealProdCLM.symm z) (by fun_prop)
+  refine ⟨|M| + R + 1, fun s t hs ↦ image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_⟩
+  have hn := (mem_thricePuncturedSphereReal_iff.1 (hfR hmem).1).1
+  rcases le_or_gt s R with hsR | hsR
+  · have := fst_positiveEndCoord_positiveEndChart_inf_add_add_le hc₀ hc₁ hR (ζ := (s, t)) hsR hn
+    linarith [(hfR hmem).2]
+  · have hsb : |M| + R + 1 ≤ s := not_lt.1 fun h ↦ hs ⟨hsR, h⟩
+    have h := abs_le.1 (abs_norm_positiveEndChart_inf_add_add_sub_le hc₀ hc₁ (s, t))
+    have := add_one_le_exp (2 * π * (s + 1))
+    have := hM _ hmem
+    nlinarith [two_le_pi, le_abs_self M]
+
+/-- On the part `-s > 0` of the output end, `|z - c|² ≤ 20 ρ⁻¹` for `c ∈ [0, 1]` and the cylindrical
+weight `ρ`: there `|z| > 2`, so `|z - c| ≤ 2 |z|`, and `|z|² ρ ≤ 5`. -/
+private theorem norm_sub_sq_le_mul_inv_cylindricalWeight (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {z : ℝ × ℝ} (hzS : z ∈ thricePuncturedSphereReal) (hz0 : 0 < (positiveEndCoord inf z).1) :
+    ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2 ≤ 20 * (cylindricalWeight z)⁻¹ := by
+  have hρ := isWeight_cylindricalWeight.pos z hzS
+  have h5 := norm_sub_endCenter_sq_mul_cylindricalWeight_le inf hzS hz0.le
+  rw [endCenter_inf, sub_zero] at h5
+  have hz2 := (lt_fst_positiveEndCoord_inf_iff (mem_thricePuncturedSphereReal_iff.1 hzS).1).1 hz0
+  rw [mul_zero, exp_zero, mul_one] at hz2
+  have hcz := norm_sub_le (Complex.equivRealProdCLM.symm z) (c : ℂ)
+  rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at hcz
+  rw [← div_eq_mul_inv, le_div_iff₀ hρ]
+  nlinarith [norm_nonneg (Complex.equivRealProdCLM.symm z - c)]
+
+/-- Far out, where the perturbation is the pair-of-pants perturbation translated by `c`, its
+pullback along the shifted recentred chart of the output end is the pullback of the pair-of-pants
+perturbation along `φ'_∞`, at the shifted point. -/
+private theorem perturbationPullback_positiveEndChart_inf_add_add {X : Type*}
+    {H : Puncture → ℝ → X → ℝ} {Ks Kt : ℝ × ℝ → X → ℝ} {R₁ : ℝ}
+    (hK : ∀ z : ℝ × ℝ, R₁ ≤ (positiveEndCoord inf z).1 →
+      Ks (z + (c, 0)) = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt (z + (c, 0)) =
+          fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (v : ℝ × ℝ) {ζ : ℝ × ℝ} (hζ : R₁ ≤ ζ.1 + 1) :
+    perturbationPullback (fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) Ks Kt v ζ =
+      perturbationPullback (positiveEndChart inf)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v
+        (ζ + (1, 0)) := by
+  obtain ⟨hs, ht⟩ := hK (positiveEndChart inf (ζ + (1, 0))) (by
+    rw [fst_positiveEndCoord_positiveEndChart]
+    simpa using hζ)
+  funext x
+  simp only [perturbationPullback_apply, fderiv_positiveEndChart_inf_add_add, hs, ht]
+
+/-- Beyond the height `max R₁ 1`, where the perturbation is the pair-of-pants perturbation of `H`
+translated by `c`, its pullback along the shifted recentred chart of the output end is `H'_∞(t) dt`
+for the positive end Hamiltonian `H'_∞`. -/
+private theorem perturbationPullback_positiveEndChart_inf_add_add_eq {X : Type*}
+    {H : Puncture → ℝ → X → ℝ} (hH : ∀ q, Periodic (H q) 1) {Ks Kt : ℝ × ℝ → X → ℝ} {R₁ : ℝ}
+    (hK : ∀ z : ℝ × ℝ, R₁ ≤ (positiveEndCoord inf z).1 →
+      Ks (z + (c, 0)) = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt (z + (c, 0)) =
+          fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    {ζ : ℝ × ℝ} (hζ : max R₁ 1 < ζ.1) :
+    perturbationPullback (fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) Ks Kt
+        stdComplexLineReal ζ = 0 ∧
+      perturbationPullback (fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) Ks Kt
+        stdComplexLineImag ζ = positiveEndHamiltonian H inf ζ.2 := by
+  have hR₁ : R₁ ≤ ζ.1 + 1 := by linarith [le_max_left R₁ 1]
+  have h2 : 2 ≤ (ζ + (1, 0)).1 := by simpa using (by linarith [le_max_right R₁ 1] : 2 ≤ ζ.1 + 1)
+  have hKH (w : ℂ) (y : X) (hw : 2 ≤ inf.endSign * (inf.endCoord w).re) :=
+    pairOfPantsPerturbation_eq_smul_endAngularForm (H := H) hw y
+  rw [perturbationPullback_positiveEndChart_inf_add_add hK _ hR₁,
+    perturbationPullback_positiveEndChart_inf_add_add hK _ hR₁]
+  refine ⟨funext (perturbationPullback_positiveEndChart_stdComplexLineReal_of_le hKH h2), ?_⟩
+  funext y
+  rw [perturbationPullback_positiveEndChart_stdComplexLineImag_of_le hKH (hH inf) h2]
+  simp
 
 end Floer
 
@@ -634,6 +853,399 @@ theorem exists_forall_le_mul_integral_floerLinearization_exchangePerturbation_ad
       (h1 hz)) hJ
     (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) 1)
     (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) Complex.I) hu hc
+    (fun q hq z hz hzR ↦ hF q hq z hz (hR₁.trans hzR)) (fun z hz ↦ hF_inf z (hR₁.trans hz)) hux
+    hux_inf hδ hδ_inf
+
+/-! ### The formal adjoint -/
+
+/-- **The end estimate of the formal adjoint on an output end recentred at `c`.** Let `H` be jointly
+`C²` period-one Hamiltonians, and let `(J, K_s, K_t)` be Floer data on `S = ℂ ∖ {0, 1}`, with `K_s`,
+`K_t` `C²` along `u`, whose perturbation, far out on the output end, is the pair-of-pants
+perturbation of `H` translated by `c ∈ [0, 1]`, and whose almost complex structure is there a `C²`
+family `J_∞(t)`, compatible along `x`, in the recentred end chart `c + φ'_∞`. Let `u` be a `C¹`
+map on `S`, along which `J` is `C¹` and compatible, which far out on the output end is `C²`, solves
+the Floer equation for these data, and, read in the recentred end chart, converges uniformly to an
+orbit `x` of the positive end Hamiltonian `H'_∞` starting at a nondegenerate fixed point of the
+time-one map, while the slice defect tends uniformly to zero. Then there are `C` and `R` such that
+every `C²` covector field `η` with compact support in the part `-s > R` of the output end satisfies
+
+`∫_{(0, ∞) × [0, 1]} (‖∂s η'‖² + ‖∂t η'‖² + ‖η'‖²) ≤ C ∫ |z - c|² ‖D_u^* η (z)‖²`
+
+for the formal adjoint `D_u^*` of the linearized Floer operator of the data `(J, K_s, K_t)`, where
+`η' = η (ψ ·) ∘ (a + b J)` (`TauCeti.Floer.covectorPullback`) is `η` read as a `(0, 1)`-form in
+the chart `ψ(ζ) = c + φ'_∞(ζ + 1)`, recentred at `c` and shifted by one unit along the end. The
+weight `|z - c|²` is, up to `4π²`, the Jacobian of `ψ`. The shift makes `ψ` reach at least as far
+out on the output end as `φ'_∞`, which is what the patching of end estimates asks of an end
+chart. -/
+theorem
+    exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_recentered
+    (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {L : ℝ≥0}
+    (hX : LipschitzWith L (ω.timeDependentHamiltonianSuspension (positiveEndHamiltonian H inf)))
+    {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (positiveEndHamiltonian H inf t) (x t)) t)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V)
+      (ω.timeDependentHamiltonianFlow (positiveEndHamiltonian H inf) hX 0 1) (x 0))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Je : ℝ → V → AlmostComplexStructure V}
+    {R₁ : ℝ} (hJe : ContDiff ℝ 2 fun p : ℝ × V ↦ (Je p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJex : ∀ t, ω.Compatible (Je t (x t)))
+    (hJeq : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart inf ζ + (c, 0)) = Je ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ z : ℝ × ℝ, R₁ ≤ (positiveEndCoord inf z).1 →
+      Ks (z + (c, 0)) = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt (z + (c, 0)) =
+          fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
+    (hu₂ : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart inf ζ + (c, 0)))
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
+    (hF : ∀ z : ℝ × ℝ, R₁ ≤ (positiveEndCoord inf z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (z + (c, 0)) (u (z + (c, 0))))
+        (ω.perturbedFDeriv Ks Kt u (z + (c, 0)) : ℝ × ℝ →ₗ[ℝ] V))
+    (hux : TendstoUniformlyOn (fun s t ↦ u (positiveEndChart inf (s, t) + (c, 0))) x atTop
+      (Icc 0 1))
+    (hδ : TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H inf t))
+        (fun ζ ↦ u (positiveEndChart inf ζ + (c, 0))) (s, t)) 0 atTop (Icc 0 1)) :
+    ∃ C R : ℝ, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord inf z).1} →
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity
+          (covectorPullback (fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0))
+            (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        C * ∫ z, ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2 *
+          ‖ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+            Ks Kt u η z‖ ^ 2 := by
+  set ψ : ℝ × ℝ → ℝ × ℝ := fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)
+  -- Beyond the height `R₂ = max R₁ 1` of `ψ`, the hypotheses hold at the shifted point.
+  set R₂ := max R₁ 1
+  have hR₂ {ζ : ℝ × ℝ} (hζ : R₂ < ζ.1) : R₁ ≤ (ζ + (1, 0)).1 ∧ 0 ≤ ζ.1 := by
+    simp only [Prod.fst_add]
+    constructor <;> linarith [le_max_left R₁ 1, le_max_right R₁ 1]
+  have hS {ζ : ℝ × ℝ} (hζ : R₂ < ζ.1) : ψ ζ ∈ thricePuncturedSphereReal :=
+    positiveEndChart_inf_add_add_mem_thricePuncturedSphereReal hc₀ hc₁ (hR₂ hζ).2
+  -- The end loops and slice defects of `u ∘ ψ` are those of `u` in the recentred chart, one unit
+  -- further out.
+  have hux' : TendstoUniformlyOn (fun s t ↦ u (ψ (s, t))) x atTop (Icc 0 1) := fun U hU ↦
+    ((tendsto_atTop_add_const_right atTop 1 tendsto_id).eventually (hux U hU)).mono
+      fun s hs t ht ↦ by simpa [ψ] using hs t ht
+  have hδ' : TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H inf t)) (u ∘ ψ) (s, t)) 0 atTop
+      (Icc 0 1) := fun U hU ↦
+    ((tendsto_atTop_add_const_right atTop 1 tendsto_id).eventually (hδ U hU)).mono
+      fun s hs t ht ↦ by
+        simpa only [ψ, sliceDefect_comp_positiveEndChart_inf_add_add, id] using hs t ht
+  -- The weight `4π² |z - c|²` is the Jacobian of `ψ`.
+  obtain ⟨C, R, hR, hest⟩ :=
+    ω.exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_of_chart
+      (R₁ := R₂) (w := fun z ↦ 4 * π ^ 2 * ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2) hX
+      (contDiff_uncurry_positiveEndHamiltonian (hHs inf)) hx hnd hJe hJex
+      (fun ζ _ ↦ (contDiff_positiveEndChart_inf_add_add c).contDiffAt)
+      (fun ζ _ ↦ (isComplexLinearMap_fderiv_positiveEndChart_inf_add_add_and_ne_zero c ζ).1)
+      (fun ζ _ ↦ (isComplexLinearMap_fderiv_positiveEndChart_inf_add_add_and_ne_zero c ζ).2)
+      (fun s t ↦ by simp only [Prod.mk_add_mk, add_zero, positiveEndChart_add_one])
+      (injOn_positiveEndChart_inf_add_add c R₂) (fun ζ hζ ↦ (hJeq _ (hR₂ hζ).1).trans (by simp))
+      (fun ζ hζ ↦ (perturbationPullback_positiveEndChart_inf_add_add_eq hH hK hζ).1)
+      (fun ζ hζ ↦ (perturbationPullback_positiveEndChart_inf_add_add_eq hH hK hζ).2)
+      (fun ζ hζ ↦ hJ _ (hS hζ)) (fun ζ hζ ↦ hu₂ _ (hR₂ hζ).1) (fun ζ hζ ↦ hc _ (hS hζ))
+      (fun ζ hζ ↦ hF _ ((hR₂ hζ).1.trans (fst_positiveEndCoord_positiveEndChart inf _).ge)) hux'
+      hδ' (fun z ↦ by positivity)
+      (fun ζ _ ↦ (det_fderiv_positiveEndChart_inf_add_add c ζ).le)
+  refine ⟨C * (4 * π ^ 2), R + 2, fun η hη hηc hηR ↦ ?_⟩
+  -- `η` vanishes in the chart `ψ` outside a band `(R, b) × ℝ`, and so does its pullback.
+  obtain ⟨b, hvan⟩ := exists_forall_notMem_Ioo_positiveEndChart_inf_add_add_eq_zero hc₀ hc₁ hηc
+    (by linarith [le_max_right R₁ 1] : 0 ≤ R) hηR
+  calc _ = ∫ ζ in Ioi R₂ ×ˢ Icc (0 : ℝ) 1, sobolevDensity
+        (covectorPullback ψ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η) ζ := by
+        refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
+          (measurableSet_Ioi.prod measurableSet_Icc)
+          (prod_mono (Ioi_subset_Ioi (by positivity)) subset_rfl) fun ζ hζ ↦ ?_
+        have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc
+          (f := covectorPullback ψ (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) u η)
+          (fun s t hs ↦ covectorPullback_eq_zero_of_apply_eq_zero _ _ u (hvan s t hs))
+          fun h ↦ hζ.2 ⟨hR.trans_le h.1, hζ.1.2⟩
+        rw [sobolevDensity_congr_of_eventuallyEq h, sobolevDensity_zero]
+    _ ≤ _ := hest hη hvan
+          (ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
+            (fun z hz ↦ by simpa only [Function.uncurry_def] using hJ z hz) hKs hKt hu
+            (by fun_prop : Continuous _).continuousOn (hη.of_le one_le_two) subset_rfl hηc
+            fun z hz ↦ (hηR hz).1)
+    _ = _ := by simp only [mul_assoc, integral_const_mul]
+
+/-- An end estimate of the formal adjoint against a weight `g ≥ 0` with `g ≤ 20 ρ⁻¹` on the part
+`±s > 0` of the end `q` gives the same estimate against the inverse `ρ⁻¹` of the cylindrical weight,
+up to a factor `20`. -/
+private theorem exists_forall_le_mul_integral_inv_cylindricalWeight_of_le (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {q : Puncture}
+    {E : (ℝ × ℝ → V →L[ℝ] ℝ) → ℝ} {g : ℝ × ℝ → ℝ} (hg₀ : ∀ z, 0 ≤ g z)
+    (hg : ∀ z ∈ thricePuncturedSphereReal, 0 < (positiveEndCoord q z).1 →
+      g z ≤ 20 * (cylindricalWeight z)⁻¹)
+    (hend : ∃ C R : ℝ, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1} →
+      E η ≤ C * ∫ z, g z * ‖ω.floerLinearizationAdjoint
+        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) :
+    ∃ C R : ℝ, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1} →
+      E η ≤ C * ∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 := by
+  obtain ⟨C, R, hest⟩ := hend
+  refine ⟨max C 0 * 20, max R 0, fun η hη hηc hηR ↦ ?_⟩
+  set D := ω.floerLinearizationAdjoint (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u
+  have hηS : tsupport η ⊆ thricePuncturedSphereReal := fun z hz ↦ (hηR hz).1
+  -- Off the support of `η` both integrands vanish; on it `g ≤ 20 ρ⁻¹`.
+  have hcmp : ∫ z, g z * ‖D η z‖ ^ 2 ≤ 20 * ∫ z, (cylindricalWeight z)⁻¹ * ‖D η z‖ ^ 2 := by
+    rw [← integral_const_mul]
+    refine integral_mono_of_nonneg (.of_forall fun z ↦ mul_nonneg (hg₀ z) (sq_nonneg _))
+      ((ω.integrable_mul_norm_floerLinearizationAdjoint_sq isOpen_thricePuncturedSphereReal
+        (fun z hz ↦ by simpa only [Function.uncurry_def] using hJ z hz) hKs hKt hu
+        continuousOn_inv_cylindricalWeight (hη.of_le one_le_two) subset_rfl hηc hηS).const_mul 20)
+      (.of_forall fun z ↦ ?_)
+    dsimp only
+    by_cases hz : z ∈ tsupport η
+    · rw [← mul_assoc]
+      exact mul_le_mul_of_nonneg_right
+        (hg z (hηR hz).1 ((le_max_right _ _).trans_lt (hηR hz).2)) (sq_nonneg _)
+    · simp [D, floerLinearizationAdjoint_of_notMem_tsupport hz]
+  calc E η ≤ C * ∫ z, g z * ‖D η z‖ ^ 2 :=
+        hest hη hηc fun z hz ↦ ⟨(hηR hz).1, (le_max_left _ _).trans_lt (hηR hz).2⟩
+    _ ≤ max C 0 * (20 * ∫ z, (cylindricalWeight z)⁻¹ * ‖D η z‖ ^ 2) :=
+        (mul_le_mul_of_nonneg_right (le_max_left _ _)
+          (integral_nonneg fun z ↦ mul_nonneg (hg₀ z) (sq_nonneg _))).trans
+          (mul_le_mul_of_nonneg_left hcmp (le_max_right _ _))
+    _ = _ := by ring
+
+/-- **The semi-Fredholm estimate of the formal adjoint for data with a recentred output end.** Let
+`H_q` be jointly `C²` period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, whose positive
+end Hamiltonians `H'_q` have globally Lipschitz suspended vector fields, and let `x_q` be orbits of
+`H'_q` starting at nondegenerate fixed points of the time-one maps. Let `(J, K_s, K_t)` be Floer
+data on `S`, with `J` `C¹` and `K_s`, `K_t` `C²` along `u`, which far out on each end, beyond a
+height `R₁`, are cylindrical: on the input ends `q = 0, 1` they are `C²` families `J_q(t)` and the
+pair-of-pants perturbation of `H` in the positive end charts `φ'_q`, and on the output end they
+are `J_∞(t)` and the pair-of-pants perturbation translated by `c ∈ [0, 1]`, in the recentred end
+chart `c + φ'_∞`, with each `J_q(t)` compatible along `x_q`. Let `u` be a `C¹` map on `S`, along
+which `J` is compatible, which beyond `R₁` on each end is `C²` and solves the Floer equation, and
+whose ends, read in these end charts, converge uniformly to the orbits `x_q` while the slice defects
+tend uniformly to zero. Then there are `C ≥ 0` and `T ≥ 0` such that every `C²` covector field `η`
+with compact support in `S` satisfies
+
+`∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s η'_q‖² + ‖∂t η'_q‖² + ‖η'_q‖²)`
+`  + ∫_{S_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{S_{T + 1}} ‖η‖²)`
+
+for the formal adjoint `D_u^*` of the linearized Floer operator of the data, where `ρ` is the
+cylindrical weight and `η'_q` is `η` read as a `(0, 1)`-form (`TauCeti.Floer.covectorPullback`) in
+the positive end chart `φ'_q` on the input ends, and on the output end in the chart
+`ζ ↦ c + φ'_∞(ζ + 1)`, recentred at `c` and shifted by one unit along the end. This is the
+counterpart for `D_u^*` of `exists_forall_le_mul_integral_floerLinearization_add_of_recentered`;
+for `c = 0` the data are those of
+`exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_add`. -/
+theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_recentered
+    (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {L : Puncture → ℝ≥0}
+    (hX : ∀ q, LipschitzWith (L q)
+      (ω.timeDependentHamiltonianSuspension (positiveEndHamiltonian H q)))
+    {x : Puncture → ℝ → V}
+    (hx : ∀ q t, HasDerivAt (x q)
+      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x q t)) t)
+    (hnd : ∀ q, IsNondegenerateFixedPt 𝓘(ℝ, V)
+      (ω.timeDependentHamiltonianFlow (positiveEndHamiltonian H q) (hX q) 0 1) (x q 0))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    {Je : Puncture → ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
+    (hJe : ∀ q, ContDiff ℝ 2 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
+    (hJeq : ∀ q, q ≠ inf → ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
+    (hJeq_inf : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart inf ζ + (c, 0)) = Je inf ζ.2)
+    {Ks Kt : ℝ × ℝ → V → ℝ}
+    (hK : ∀ q, q ≠ inf → ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks z = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt z = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (hK_inf : ∀ z : ℝ × ℝ, R₁ ≤ (positiveEndCoord inf z).1 →
+      Ks (z + (c, 0)) = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt (z + (c, 0)) =
+          fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
+    (hu₂ : ∀ q, q ≠ inf → ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart q ζ))
+    (hu₂_inf : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart inf ζ + (c, 0)))
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
+    (hF : ∀ q, q ≠ inf → ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
+        (ω.perturbedFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF_inf : ∀ z : ℝ × ℝ, R₁ ≤ (positiveEndCoord inf z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (z + (c, 0)) (u (z + (c, 0))))
+        (ω.perturbedFDeriv Ks Kt u (z + (c, 0)) : ℝ × ℝ →ₗ[ℝ] V))
+    (hux : ∀ q, q ≠ inf →
+      TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop (Icc 0 1))
+    (hux_inf : TendstoUniformlyOn (fun s t ↦ u (positiveEndChart inf (s, t) + (c, 0))) (x inf)
+      atTop (Icc 0 1))
+    (hδ : ∀ q, q ≠ inf → TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
+        (s, t)) 0 atTop (Icc 0 1))
+    (hδ_inf : TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H inf t))
+        (fun ζ ↦ u (positiveEndChart inf ζ + (c, 0))) (s, t)) 0 atTop (Icc 0 1)) :
+    ∃ C, 0 ≤ C ∧ ∃ T, 0 ≤ T ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      HasCompactSupport η → tsupport η ⊆ thricePuncturedSphereReal →
+      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+          ((update positiveEndChart inf fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) q)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity η z ≤
+        C * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖η z‖ ^ 2) := by
+  set φ := update positiveEndChart inf fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)
+  have hinf :=
+    exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint_recentered
+      ω hH hHs hc₀ hc₁ (hX inf) (hx inf) (hnd inf) (hJe inf) (hJex inf) hJeq_inf hK_inf hJ hKs hKt
+      hu hu₂_inf hc hF_inf hux_inf hδ_inf
+  -- The end estimates against the Jacobian weights `|z - c_q|²` of the end charts, with the
+  -- center `c` on the output end; on the part `±s > 0` of each end these are at most `20 ρ⁻¹`.
+  have hend (q : Puncture) : ∃ C R : ℝ, ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      HasCompactSupport η →
+      tsupport η ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < (positiveEndCoord q z).1} →
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback (φ q)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ ≤
+        C * ∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u η z‖ ^ 2 := by
+    by_cases hq : q = inf
+    · subst hq
+      simp only [φ, update_self]
+      exact ω.exists_forall_le_mul_integral_inv_cylindricalWeight_of_le hJ hKs hKt hu
+        (fun z ↦ sq_nonneg _)
+        (fun z hzS hz ↦ norm_sub_sq_le_mul_inv_cylindricalWeight hc₀ hc₁ hzS hz) hinf
+    · simp only [φ, update_of_ne hq]
+      refine ω.exists_forall_le_mul_integral_inv_cylindricalWeight_of_le hJ hKs hKt hu
+        (fun z ↦ sq_nonneg _) (fun z hzS hz ↦ ?_)
+        (ω.exists_forall_setIntegral_covectorPullback_le_mul_integral_floerLinearizationAdjoint
+          hH hHs q (hX q) (hx q) (hnd q) (hJe q) (hJex q) (hJeq q hq) (hK q hq) hJ hu (hu₂ q hq)
+          hc (hF q hq) (hux q hq) (hδ q hq))
+      -- On the part `±s > 0` of the end `q`, `|z - c_q|² ≤ 5 ρ⁻¹`.
+      have hρ := isWeight_cylindricalWeight.pos z hzS
+      have h5 := norm_sub_endCenter_sq_mul_cylindricalWeight_le q hzS hz.le
+      rw [← div_eq_mul_inv, le_div_iff₀ hρ]
+      linarith
+  choose C R hend using hend
+  refine
+    exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends
+    ω hJ hKs hKt hu hc (fun z ↦ inv_nonneg.2 (cylindricalWeight_nonneg z))
+    continuousOn_inv_cylindricalWeight (fun z hz ↦ inv_pos.2 (isWeight_cylindricalWeight.pos z hz))
+    (fun q ↦ ?_) (fun q ζ hζ ↦ ?_) hend
+  · by_cases hq : q = inf
+    · subst hq
+      simpa only [φ, update_self] using contDiff_positiveEndChart_inf_add_add c
+    · simpa only [φ, update_of_ne hq] using contDiff_positiveEndChart q 2
+  · by_cases hq : q = inf
+    · subst hq
+      simpa only [φ, update_self] using
+        le_fst_positiveEndCoord_positiveEndChart_inf_add_add hc₀ hc₁ hζ
+    · simpa only [φ, update_of_ne hq] using (fst_positiveEndCoord_positiveEndChart q ζ).ge
+
+/-- **The semi-Fredholm estimate of the formal adjoint along the input-exchange family.** Let `H_q`
+be jointly `C²` period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, whose positive end
+Hamiltonians `H'_q` have globally Lipschitz suspended vector fields, and let `x_q` be orbits of
+`H'_q` starting at nondegenerate fixed points of the time-one maps. Let `K_c` be the member
+`c ∈ [0, 1]` of the input-exchange family `TauCeti.Floer.exchangePerturbation H c`, with components
+`K_s`, `K_t`, and let `J` be almost complex structures on `S` that far out on each end, beyond a
+height `R₁`, are `C²` families `J_q(t)` compatible along `x_q`: in the positive end charts `φ'_q` on
+the input ends and in the recentred end chart `c + φ'_∞` on the output end, where `K_c` is
+`H_∞(t) dt`. Let `u` be a `C¹` map on `S`, along which `J` is `C¹` and compatible, which beyond
+`R₁` on each end is `C²` and solves the Floer equation for `(J, K_c)`, and whose ends, read in these
+end charts, converge uniformly to the orbits `x_q` while the slice defects tend uniformly to zero.
+Then there are `C ≥ 0` and `T ≥ 0` such that every `C²` covector field `η` with compact support in
+`S` satisfies
+
+`∑_q ∫_{(T, ∞) × [0, 1]} (‖∂s η'_q‖² + ‖∂t η'_q‖² + ‖η'_q‖²)`
+`  + ∫_{S_T} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C (∫ ρ⁻¹ ‖D_u^* η‖² + ∫_{S_{T + 1}} ‖η‖²)`
+
+for the formal adjoint `D_u^*` of the linearized Floer operator of `(J, K_c)`, where `ρ` is the
+cylindrical weight and `η'_q` is `η` read as a `(0, 1)`-form in the positive end chart `φ'_q` on the
+input ends and in the chart `ζ ↦ c + φ'_∞(ζ + 1)` on the output end. The kernel of `D_u^*` is the
+cokernel of `D_u`, so this is the estimate from which the finiteness of that cokernel follows. -/
+theorem exists_forall_le_mul_integral_floerLinearizationAdjoint_exchangePerturbation_add
+    (ω : SymplecticForm V) {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {L : Puncture → ℝ≥0}
+    (hX : ∀ q, LipschitzWith (L q)
+      (ω.timeDependentHamiltonianSuspension (positiveEndHamiltonian H q)))
+    {x : Puncture → ℝ → V}
+    (hx : ∀ q t, HasDerivAt (x q)
+      (ω.hamiltonianVectorField (positiveEndHamiltonian H q t) (x q t)) t)
+    (hnd : ∀ q, IsNondegenerateFixedPt 𝓘(ℝ, V)
+      (ω.timeDependentHamiltonianFlow (positiveEndHamiltonian H q) (hX q) 0 1) (x q 0))
+    {J : ℝ × ℝ → V → AlmostComplexStructure V}
+    {Je : Puncture → ℝ → V → AlmostComplexStructure V} {R₁ : ℝ}
+    (hJe : ∀ q, ContDiff ℝ 2 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hJex : ∀ q t, ω.Compatible (Je q t (x q t)))
+    (hJeq : ∀ q, q ≠ inf → ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
+    (hJeq_inf : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → J (positiveEndChart inf ζ + (c, 0)) = Je inf ζ.2)
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
+    (hu₂ : ∀ q, q ≠ inf → ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart q ζ))
+    (hu₂_inf : ∀ ζ : ℝ × ℝ, R₁ ≤ ζ.1 → ContDiffAt ℝ 2 u (positiveEndChart inf ζ + (c, 0)))
+    (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z)))
+    (hF : ∀ q, q ≠ inf → ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z)) (ω.perturbedFDeriv
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hF_inf : ∀ z : ℝ × ℝ, R₁ ≤ (positiveEndCoord inf z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (z + (c, 0)) (u (z + (c, 0))))
+        (ω.perturbedFDeriv
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u (z + (c, 0)) : ℝ × ℝ →ₗ[ℝ] V))
+    (hux : ∀ q, q ≠ inf →
+      TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop (Icc 0 1))
+    (hux_inf : TendstoUniformlyOn (fun s t ↦ u (positiveEndChart inf (s, t) + (c, 0))) (x inf)
+      atTop (Icc 0 1))
+    (hδ : ∀ q, q ≠ inf → TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
+        (s, t)) 0 atTop (Icc 0 1))
+    (hδ_inf : TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H inf t))
+        (fun ζ ↦ u (positiveEndChart inf ζ + (c, 0))) (s, t)) 0 atTop (Icc 0 1)) :
+    ∃ C, 0 ≤ C ∧ ∃ T, 0 ≤ T ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
+      HasCompactSupport η → tsupport η ⊆ thricePuncturedSphereReal →
+      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (covectorPullback
+          ((update positiveEndChart inf fun ζ ↦ positiveEndChart inf (ζ + (1, 0)) + (c, 0)) q)
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) u η) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity η z ≤
+        C * ((∫ z, (cylindricalWeight z)⁻¹ * ‖ω.floerLinearizationAdjoint
+          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u η z‖ ^ 2) +
+          ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖η z‖ ^ 2) := by
+  -- Beyond the height `max R₁ 2`, `K_c` is the pair-of-pants datum on the input ends and its
+  -- translate by `c` on the output end.
+  set R₂ := max R₁ 2
+  have hR₁ : R₁ ≤ R₂ := le_max_left _ _
+  have h1 {r : ℝ} (hr : R₂ ≤ r) : 1 < r := by linarith [le_max_right R₁ 2]
+  exact ω.exists_forall_le_mul_integral_floerLinearizationAdjoint_add_of_recentered hH hHs hc₀ hc₁
+    hX hx hnd hJe hJex (fun q hq ζ hζ ↦ hJeq q hq ζ (hR₁.trans hζ))
+    (fun ζ hζ ↦ hJeq_inf ζ (hR₁.trans hζ))
+    (fun _ hq _ _ hz ↦
+      exchangePerturbation_components_eq_of_pos_fst_positiveEndCoord hc₀ hc₁ hq
+        (zero_lt_one.trans (h1 hz)))
+    (fun _ hz ↦ exchangePerturbation_add_components_eq_of_one_lt_fst_positiveEndCoord hc₀ hc₁
+      (h1 hz)) hJ
+    (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) 1)
+    (fun z hz ↦ contDiffAt_uncurry_exchangePerturbation hH hHs c hz (u z) Complex.I) hu
+    (fun q hq ζ hζ ↦ hu₂ q hq ζ (hR₁.trans hζ)) (fun ζ hζ ↦ hu₂_inf ζ (hR₁.trans hζ)) hc
     (fun q hq z hz hzR ↦ hF q hq z hz (hR₁.trans hzR)) (fun z hz ↦ hF_inf z (hR₁.trans hz)) hux
     hux_inf hδ hδ_inf
 
