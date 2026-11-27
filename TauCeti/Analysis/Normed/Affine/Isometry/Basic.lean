@@ -37,6 +37,8 @@ isometries on both sides keeps the Hölder constant of its derivative.
 * `TauCeti.dilateConj_symm_apply`: the inverse of `dilateConj c e`, written out pointwise.
 * `AffineIsometryEquiv.linearIsometryEquiv_symm`: the linear part of the inverse of an affine
   isometry equivalence is the inverse of its linear part.
+* `AffineIsometryEquiv.symm_refl`, `AffineIsometryEquiv.linearIsometryEquiv_refl`: the inverse
+  and the linear part of the identity are the identity.
 * `AffineIsometryEquiv.norm_fderiv_le`: the derivative of an affine isometry equivalence has norm
   at most one.
 * `AffineIsometryEquiv.image_frontier`: an affine isometry equivalence maps frontiers to frontiers.
@@ -73,6 +75,19 @@ theorem linearIsometryEquiv_symm {𝕜 V V₂ P P₂ : Type*} [NormedField 𝕜]
     [NormedSpace 𝕜 V] [PseudoMetricSpace P] [NormedAddTorsor V P] [SeminormedAddCommGroup V₂]
     [NormedSpace 𝕜 V₂] [PseudoMetricSpace P₂] [NormedAddTorsor V₂ P₂] (e : P ≃ᵃⁱ[𝕜] P₂) :
     e.symm.linearIsometryEquiv = e.linearIsometryEquiv.symm :=
+  rfl
+
+/-- The inverse of the identity affine isometry equivalence is the identity. -/
+@[simp]
+theorem symm_refl {𝕜 V P : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [PseudoMetricSpace P] [NormedAddTorsor V P] : (refl 𝕜 P).symm = refl 𝕜 P :=
+  rfl
+
+/-- The linear part of the identity affine isometry equivalence is the identity. -/
+@[simp]
+theorem linearIsometryEquiv_refl {𝕜 V P : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V]
+    [NormedSpace 𝕜 V] [PseudoMetricSpace P] [NormedAddTorsor V P] :
+    (refl 𝕜 P).linearIsometryEquiv = LinearIsometryEquiv.refl 𝕜 V :=
   rfl
 
 /-- The Fréchet derivative of an affine isometry equivalence has norm at most one. -/

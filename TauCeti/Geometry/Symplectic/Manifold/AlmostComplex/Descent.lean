@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Descending almost complex structures along local diffeomorphisms
