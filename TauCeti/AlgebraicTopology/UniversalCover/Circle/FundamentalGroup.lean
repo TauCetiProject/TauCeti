@@ -341,30 +341,26 @@ instance [Fact (0 < p)] (x : AddCircle p) :
   (windingNumberIso x).injective.isMulTorsionFree (windingNumberIso x).toMonoidHom
 
 variable {p} in
+/-- Mathlib's winding-number isomorphism sends a loop class to its winding number. -/
+@[simp]
+lemma windingNumberIso_apply [Fact (0 < p)] {x : AddCircle p}
+    (γ : FundamentalGroup (AddCircle p) x) :
+    windingNumberIso x γ = Multiplicative.ofAdd (windingNumber γ) :=
+  (ofAdd_toAdd _).symm
+
+variable {p} in
 /-- **A loop class generates `π₁(AddCircle p)` iff its winding number is `±1`.** -/
 theorem zpowers_eq_top_iff_isUnit_windingNumber [Fact (0 < p)] {x : AddCircle p}
     (γ : FundamentalGroup (AddCircle p) x) :
     Subgroup.zpowers γ = ⊤ ↔ IsUnit (windingNumber γ) := by
-  have hγ : windingNumberIso x γ = Multiplicative.ofAdd (windingNumber γ) := rfl
-  refine ⟨fun h ↦ ?_, fun hu ↦ ?_⟩
-  · obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp
-      (h ▸ Subgroup.mem_top ((windingNumberIso x).symm (Multiplicative.ofAdd 1)))
-    rw [(windingNumberIso x).eq_symm_apply, map_zpow, hγ, ← ofAdd_zsmul,
-      EmbeddingLike.apply_eq_iff_eq, smul_eq_mul] at hk
-    exact .of_mul_eq_one_right _ hk
-  rcases Int.isUnit_iff.mp hu with hu | hu
-  · exact (windingNumberIso x).zpowers_eq_top_of_apply_eq_ofAdd_one (by rw [hγ, hu])
-  · rw [← Subgroup.zpowers_inv]
-    exact (windingNumberIso x).zpowers_eq_top_of_apply_eq_ofAdd_one
-      (by rw [map_inv, hγ, hu, ofAdd_neg, inv_inv])
+  rw [(windingNumberIso x).zpowers_eq_top_iff_isUnit_toAdd, windingNumberIso_apply, toAdd_ofAdd]
 
 variable {p} in
 /-- **A loop class in `π₁(AddCircle p)` has finite order iff its winding number is `0`.** -/
 @[simp]
 theorem isOfFinOrder_iff_windingNumber_eq_zero [Fact (0 < p)] {x : AddCircle p}
     (γ : FundamentalGroup (AddCircle p) x) : IsOfFinOrder γ ↔ windingNumber γ = 0 := by
-  have hγ : windingNumberIso x γ = Multiplicative.ofAdd (windingNumber γ) := rfl
-  rw [isOfFinOrder_iff_eq_one, ← (windingNumberIso x).map_eq_one_iff, hγ, ofAdd_eq_one]
+  rw [(windingNumberIso x).isOfFinOrder_iff_toAdd_eq_zero, windingNumberIso_apply, toAdd_ofAdd]
 
 end AddCircle
 
@@ -508,25 +504,15 @@ instance (x : Circle) : IsMulTorsionFree (FundamentalGroup Circle x) :=
 theorem zpowers_fromPath_eq_top_iff {x : Circle} (γ : Path x x) :
     Subgroup.zpowers (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) = ⊤ ↔
       IsUnit (degree γ) := by
-  refine ⟨fun h ↦ ?_, fun hγ ↦ ?_⟩
-  · obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp
-      (h ▸ Subgroup.mem_top ((fundamentalGroupMulEquiv x).symm (Multiplicative.ofAdd 1)))
-    rw [(fundamentalGroupMulEquiv x).eq_symm_apply, map_zpow, fundamentalGroupMulEquiv_fromPath,
-      ← ofAdd_zsmul, EmbeddingLike.apply_eq_iff_eq, smul_eq_mul] at hk
-    exact .of_mul_eq_one_right _ hk
-  rcases Int.isUnit_iff.mp hγ with hγ | hγ
-  · exact (fundamentalGroupMulEquiv x).zpowers_eq_top_of_apply_eq_ofAdd_one
-      (by rw [fundamentalGroupMulEquiv_fromPath, hγ])
-  · rw [← Subgroup.zpowers_inv]
-    exact (fundamentalGroupMulEquiv x).zpowers_eq_top_of_apply_eq_ofAdd_one
-      (by rw [map_inv, fundamentalGroupMulEquiv_fromPath, hγ, ofAdd_neg, inv_inv])
+  rw [(fundamentalGroupMulEquiv x).zpowers_eq_top_iff_isUnit_toAdd,
+    fundamentalGroupMulEquiv_fromPath, toAdd_ofAdd]
 
 /-- **A loop class in `π₁(S¹)` has finite order iff the loop has degree `0`.** -/
 @[simp]
 theorem isOfFinOrder_fromPath_iff {x : Circle} (γ : Path x x) :
     IsOfFinOrder (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) ↔ degree γ = 0 := by
-  rw [isOfFinOrder_iff_eq_one, ← (fundamentalGroupMulEquiv x).map_eq_one_iff,
-    fundamentalGroupMulEquiv_fromPath, ofAdd_eq_one]
+  rw [(fundamentalGroupMulEquiv x).isOfFinOrder_iff_toAdd_eq_zero,
+    fundamentalGroupMulEquiv_fromPath, toAdd_ofAdd]
 
 /-- **The counterclockwise loop generates `π₁(S¹)`.** Every class in `π₁(Circle, 1)` is a power
 of the class of `t ↦ exp(2πit)`. -/
