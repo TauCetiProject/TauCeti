@@ -40,11 +40,12 @@ The proof has three steps.
   Mathlib's instance for `ErgodicSMul G G μ` instead uses Fubini's theorem, so it needs
   multiplication to be measurable for the product σ-algebra on `G × G`, which Mathlib supplies for
   topological groups only under second countability.
-* **Density** (`Subgroup.ergodicSMul_of_dense`). For any ergodic action of `G` on a space `X` as in
-  the first step, the a.e. stabilizer of a `Γ`-invariant set contains `Γ`, so by the first step it
-  is all of `G`, and the set is null or conull. The second step supplies the ergodic action of `G`
-  on itself. A countable dense subgroup makes `G` separable, hence σ-compact, so every Haar measure
-  on `G` is σ-finite.
+* **Density** (`TauCeti.aeconst_of_dense_aestabilizer_smul`, `Subgroup.ergodicSMul_of_dense`).
+  For any ergodic action of `G` on a space `X` as in the first step, a set whose a.e. stabilizer
+  is dense has, by the first step, all of `G` as a.e. stabilizer, so it is null or conull. The
+  a.e. stabilizer of a `Γ`-invariant set contains `Γ`, hence is dense. The second step supplies
+  the ergodic action of `G` on itself. A countable dense subgroup makes `G` separable, hence
+  σ-compact, so every Haar measure on `G` is σ-finite.
 
 As instances, Haar measure on a compact group with a countable dense subgroup and the translation
 action of `ℚ` on `ℝ` (`TauCeti.ergodicVAdd_rat_real`) are ergodic.
@@ -53,6 +54,8 @@ action of `ℚ` on `ℝ` (`TauCeti.ergodicVAdd_rat_real`) are ergodic.
 
 * `MeasureTheory.Measure.ergodicSMul_self_of_isHaarMeasure`: left translation is ergodic for a
   σ-finite Haar measure that is inner regular on sets of finite measure.
+* `TauCeti.aeconst_of_dense_aestabilizer_smul`: for an ergodic action of `G` on `X`, a set with
+  dense a.e. stabilizer is null or conull.
 * `Subgroup.ergodicSMul_of_dense`: if `G` acts ergodically on `X`, so does every dense subgroup.
 * `Subgroup.ergodicSMul_dense_subgroup`: translation by a countable dense subgroup of a locally
   compact group is ergodic.
@@ -77,6 +80,21 @@ variable {G X : Type*} [Group G] [TopologicalSpace G]
   {μ : Measure X} [μ.InnerRegularCompactLTTop] [IsLocallyFiniteMeasure μ] [SigmaFinite μ]
   [ErgodicSMul G X μ]
 
+/-- **A set with dense a.e. stabilizer is null or conull.** If a topological group `G` acts
+continuously and ergodically on an R₁ space with a σ-finite locally finite measure that is inner
+regular on sets of finite measure, then a null measurable set whose a.e. stabilizer is dense in `G`
+is null or conull. This is the σ-finite analogue of Mathlib's finite-measure
+`aeconst_of_dense_aestabilizer_smul`. -/
+@[to_additive /-- **A set with dense additive a.e. stabilizer is null or conull.** If a
+topological additive group `G` acts continuously and ergodically on an R₁ space with a σ-finite
+locally finite measure that is inner regular on sets of finite measure, then a null measurable set
+whose additive a.e. stabilizer is dense in `G` is null or conull. -/]
+theorem TauCeti.aeconst_of_dense_aestabilizer_smul {s : Set X} (hsm : NullMeasurableSet s μ)
+    (hd : Dense (MulAction.aestabilizer G μ s : Set G)) : EventuallyEmptyOrUniv s (ae μ) := by
+  refine MulAction.aeconst_of_aestabilizer_eq_top G hsm (eq_top_iff.2 fun g _ ↦ ?_)
+  rw [← SetLike.mem_coe, ← (isClosed_aestabilizer hsm).closure_eq, hd.closure_eq]
+  exact mem_univ g
+
 /-- **A dense subgroup of an ergodic group acts ergodically.** If a topological group `G` acts
 continuously and ergodically on an R₁ space with a σ-finite locally finite measure that is inner
 regular on sets of finite measure, then every dense subgroup `Γ` of `G` acts ergodically. -/
@@ -90,11 +108,7 @@ theorem Subgroup.ergodicSMul_of_dense (Γ : Subgroup G) (hΓ : Dense (Γ : Set G
   have hle : Γ ≤ MulAction.aestabilizer G μ s := fun g hg ↦ by
     simpa only [MulAction.mem_aestabilizer, Subgroup.smul_def, InvMemClass.coe_inv,
       preimage_smul_inv] using h ⟨g, hg⟩⁻¹
-  refine MulAction.aeconst_of_aestabilizer_eq_top G hs.nullMeasurableSet (eq_top_iff.2 ?_)
-  refine fun g _ ↦
-    (TauCeti.isClosed_aestabilizer hs.nullMeasurableSet).closure_subset_iff.2 hle ?_
-  rw [hΓ.closure_eq]
-  exact mem_univ g
+  exact TauCeti.aeconst_of_dense_aestabilizer_smul hs.nullMeasurableSet (hΓ.mono hle)
 
 end Dense
 
