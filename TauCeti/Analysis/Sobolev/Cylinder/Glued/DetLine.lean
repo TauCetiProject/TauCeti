@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Gluing
-public import TauCeti.Analysis.Sobolev.Cylinder.GluedIndex
+public import TauCeti.Analysis.Sobolev.Cylinder.Glued.Index
 
 /-!
 # The determinant line of glued operators on the cylinder
@@ -216,9 +216,7 @@ theorem exists_pos_gluingDetLineEquiv_apply_eq_smul
           · exact sub_nonneg.2 hs.2
           · exact hs.1
       _ = C := by ring
-  convert hC (Q + s • (Q' - Q)) (fun y ↦ by
-    rw [add_apply, map_add, smul_apply, map_smul,
-      sub_apply, map_sub, hQ y, hQ' y, sub_self, smul_zero, add_zero]) hQsC using 1
+  convert hC (Q + s • (Q' - Q)) (fun y ↦ by simp [-coprod_apply, hQ y, hQ' y]) hQsC using 1
   funext k
   refine Subtype.ext ?_
   simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearEquiv.coe_coe,

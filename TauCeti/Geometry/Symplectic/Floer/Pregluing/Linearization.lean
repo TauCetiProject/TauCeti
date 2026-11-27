@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.Floer.Splicing
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.Analysis.Sobolev.Cylinder.GluedIndex
+import TauCeti.Analysis.Sobolev.Cylinder.Glued.Index
 import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
