@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.HeckePolynomial.Basic
 
 import Mathlib.Algebra.Star.BigOperators
 import Mathlib.Analysis.Complex.Basic
+import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -87,14 +88,6 @@ section RootChain
 
 variable {V : Type*} [AddCommGroup V] [Module ℂ V]
 
-/-- Evaluating a polynomial at `U` on an eigenvector `v` scales `v` by `Q.eval μ`. -/
-private lemma aeval_apply_of_apply_eq_smul {U : End ℂ V} {v : V} {μ : ℂ}
-    (hv : U v = μ • v) (Q : ℂ[X]) : aeval U Q v = Q.eval μ • v := by
-  induction Q using recOnHorner with
-  | M0 => simp
-  | MC Q c _ _ ih => simp [ih, add_smul]
-  | MX Q _ ih => simp [hv, ih, smul_smul, mul_comm]
-
 /-- If `P (U)` kills `y` and `(P / (X - c)) (U)` still kills `y` whenever `c ≠ 0` and `q * c` are
 both roots of `P`, then any chain `q ^ i / d` (`i < k`) ending below a root `q ^ k / d` cancels. -/
 private lemma aeval_cofactor_eq_zero {U : End ℂ V} {y : V} {P : ℂ[X]} {q : ℝ} {d : ℂ}
@@ -127,7 +120,8 @@ private lemma aeval_cofactor_eq_zero {U : End ℂ V} {y : V} {P : ℂ[X]} {q : �
         simpa [← mul_assoc, mul_inv_cancel₀ hd] using h_eq
       have h_powR : q ^ k = q ^ i := by exact_mod_cast h_pow
       exact (pow_lt_pow_right₀ hq hi).ne' h_powR
-    rwa [aeval_apply_of_apply_eq_smul eigen_R Q, smul_eq_zero_iff_right eval_ne] at killed
+    rwa [Module.End.aeval_apply_of_mem_apply_eq_smul (p := Q) eigen_R,
+      smul_eq_zero_iff_right eval_ne] at killed
 
 /-- If `R (U)` kills every `T j` (`j : Fin (n + 1)`) and the adjoint `U'` preserves their span,
 then `aeval U' (R.map (starRingEnd ℂ)) (T 0) = 0`. -/
