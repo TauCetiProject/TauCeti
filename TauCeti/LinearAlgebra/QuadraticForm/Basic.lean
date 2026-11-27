@@ -23,6 +23,8 @@ This file records elementary consequences of the quadratic-map axioms.
 * `QuadraticMap.isRefl_polarBilin`: the polar bilinear map of any quadratic map is reflexive.
 * `QuadraticMap.isSymm_polarBilin`: the polar bilinear form of a scalar-valued quadratic map is
   symmetric.
+* `QuadraticMap.polar_eq_two_nsmul_associated`: when `2` is invertible, the polar form is twice
+  the associated bilinear map.
 * `QuadraticMap.comp_mem_span_range_comp`, `QuadraticMap.comp_mem_span_range_comp_iff`:
   precomposition with a linear map carries spans of quadratic maps into spans, and with a linear
   equivalence identifies them.
@@ -86,6 +88,14 @@ theorem isRefl_polarBilin {R M P : Type*} [CommRing R] [AddCommGroup M] [Module 
 theorem isSymm_polarBilin {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     (Q : QuadraticForm R M) : LinearMap.BilinForm.IsSymm Q.polarBilin :=
   ⟨fun x y ↦ polar_comm Q x y⟩
+
+/-- When `2` is invertible, the polar form of a quadratic map is twice its associated bilinear
+map. -/
+theorem polar_eq_two_nsmul_associated {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] [Invertible (2 : Module.End R N)] (Q : QuadraticMap R M N)
+    (x y : M) : polar Q x y = 2 • associated Q x y := by
+  rw [← polarBilin_apply_apply, ← two_nsmul_associated R Q, LinearMap.smul_apply,
+    LinearMap.smul_apply]
 
 section Span
 

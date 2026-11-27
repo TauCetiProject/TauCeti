@@ -21,7 +21,7 @@ A map `(s, t) ↦ γ(s)` that does not depend on `t` solves the Floer equation
 gradient line of `-H`; a Floer cylinder whose derivative is small relative to the Hamiltonian is of
 this form (`TauCeti.Geometry.Symplectic.Floer.TimeIndependent.SmallHamiltonian`). This file
 compares the linearized Floer operator `D : W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)`
-(`TauCeti.SymplecticForm.floerSobolevOperator`) along such a cylinder with the transversality of
+(`TauCeti.SymplecticForm.floerSobolevOperator 2`) along such a cylinder with the transversality of
 the gradient line in the Morse theory of `-H`, when `‖dX_H‖ ≤ a < 2π` along `γ`.
 
 On the zero Fourier mode `D` is the Morse operator `ζ ↦ ζ' - J dX_H(γ) ζ`
@@ -91,7 +91,7 @@ theorem finrank_ker_floerSobolevOperator_negativeGradientFlow
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow (-H) hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow (-H) hf) q) {a : ℝ} (ha : a < 2 * π)
     (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (negativeGradientFlow (-H) hf s y)‖ ≤ a) :
-    Module.finrank ℝ (ω.floerSobolevOperator (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
+    Module.finrank ℝ (ω.floerSobolevOperator 2 (fun _ _ ↦ J.toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ negativeGradientFlow (-H) hf z.1 y)).ker =
       Module.finrank ℝ
         (Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow (-H) hf) p) y) ⊓
@@ -127,7 +127,7 @@ private theorem surjective_floerSobolevOperator_iff_surjective_trajectoryOperato
     {A : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ))}
     (hA : A =ᵐ[volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)]
       fun s ↦ hessianOperator (-H) (γ s)) :
-    Function.Surjective (ω.floerSobolevOperator
+    Function.Surjective (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)) ↔
       Function.Surjective (WeakDerivStep.trajectoryOperator (p := 2) A) :=
@@ -153,7 +153,7 @@ theorem surjective_floerSobolevOperator_negativeGradientFlow_iff
     (hyu : y ∈ Flow.unstableSet (negativeGradientFlow (-H) hf) p)
     (hys : y ∈ Flow.stableSet (negativeGradientFlow (-H) hf) q) {a : ℝ} (ha : a < 2 * π)
     (haγ : ∀ s, ‖fderiv ℝ (ω.hamiltonianVectorField H) (negativeGradientFlow (-H) hf s y)‖ ≤ a) :
-    Function.Surjective (ω.floerSobolevOperator
+    Function.Surjective (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ negativeGradientFlow (-H) hf z.1 y)) ↔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow (-H) hf) p) y) ⊔
@@ -183,7 +183,7 @@ theorem isMorseSmale_neg_iff_forall_surjective_floerSobolevOperator
     IsMorseSmale (-H) hf ↔ ∀ ⦃p q : F⦄ ⦃γ : ℝ → F⦄, IsNondegenerateCriticalPoint H p →
       IsNondegenerateCriticalPoint H q → IsIntegralCurve γ (fun _ ↦ ∇ H) →
       Tendsto γ atBot (𝓝 p) → Tendsto γ atTop (𝓝 q) →
-      Function.Surjective (ω.floerSobolevOperator
+      Function.Surjective (ω.floerSobolevOperator 2
         (fun _ _ ↦ (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap)
         (fun _ _ ↦ 0) (fun _ ↦ H) (fun z ↦ γ z.1)) := by
   have hH' : ContDiff ℝ 2 (-H) := hH.neg
