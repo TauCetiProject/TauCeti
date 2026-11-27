@@ -16,7 +16,7 @@ import TauCeti.NumberTheory.NumberField.Quadratic.Model
 
 Let `K` be a number field of discriminant `-d`, such as the imaginary quadratic field `ℚ(√-d)`
 (`discr_quadraticAlgebra`), and `E` its cyclotomic extension of level `q₁`. The root
-discriminant of `K` is at most `√d` (`rootDiscr_le_sqrt_of_discr_eq`), as `K ≠ ℚ`, so
+discriminant of `K` is at most `√d` (`TauCeti.NumberField.rootDiscr_le_sqrt_abs_discr`), so
 `rd_E ≤ q₁ √d` (`rootDiscr_le_mul_sqrt`) and `1 ≤ rd_E ≤ q₁ d` (`rootDiscr_mem_Icc`), the
 bounds needed when comparing the scale of an auxiliary prime level to the weights and principal
 level. Stating them for every model of `K` lets them apply to `ℚ(√-d)` realized inside `ℂ` as
@@ -48,33 +48,16 @@ theorem discr_quadraticAlgebra :
 variable (s : ℕ) {K : Type*} (E : Type*) [Field K] [NumberField K] [Field E] [NumberField E]
   [Algebra K E] [IsCyclotomicExtension {P.q₁ s} K E]
 
-/-- A number field of discriminant `-d` has root discriminant at most `√d`: it is not `ℚ`, since
-the discriminant of a field of degree one is positive, so its degree is at least two. -/
-theorem rootDiscr_le_sqrt_of_discr_eq (hK : discr K = -(P.d : ℤ)) : rootDiscr K ≤ √(P.d : ℝ) := by
-  have hd : (1 : ℝ) ≤ P.d := by exact_mod_cast P.prime_d.one_lt.le
-  have h₂ : 2 ≤ Module.finrank ℚ K := by
-    by_contra h
-    have h₁ : Module.finrank ℚ K = 1 := by
-      have := Module.finrank_pos (R := ℚ) (M := K)
-      omega
-    have hc : InfinitePlace.nrComplexPlaces K = 0 := by
-      have := InfinitePlace.card_add_two_mul_card_eq_rank K
-      omega
-    have h := sign_discr (K := K)
-    rw [hc, hK, pow_zero, Int.sign_neg, Int.sign_natCast_of_ne_zero P.prime_d.ne_zero] at h
-    exact absurd h (by decide)
-  rw [rootDiscr_def, hK, abs_neg, Nat.abs_cast, Int.cast_natCast, Real.sqrt_eq_rpow]
-  refine Real.rpow_le_rpow_of_exponent_le hd ?_
-  rw [one_div]
-  exact inv_anti₀ two_pos (by exact_mod_cast h₂)
-
 /-- Over a number field of discriminant `-d`, such as `ℚ(√-d)`, the cyclotomic extension of level
 `q₁(s)` has root discriminant at most `q₁(s) √d`. -/
 theorem rootDiscr_le_mul_sqrt (hK : discr K = -(P.d : ℤ)) :
     rootDiscr E ≤ P.q₁ s * √(P.d : ℝ) := by
+  have hrd : rootDiscr K ≤ √(P.d : ℝ) := by
+    simpa only [hK, Int.cast_neg, Int.cast_natCast, abs_neg, Nat.abs_cast] using
+      TauCeti.NumberField.rootDiscr_le_sqrt_abs_discr K
   refine (IsCyclotomicExtension.rootDiscr_mem_Icc K E (P.q₁_pos s)).2.trans ?_
   rw [mul_comm]
-  exact mul_le_mul_of_nonneg_left (P.rootDiscr_le_sqrt_of_discr_eq hK) (Nat.cast_nonneg _)
+  exact mul_le_mul_of_nonneg_left hrd (Nat.cast_nonneg _)
 
 /-- **The root discriminant of `K(ζ_{q₁(s)})`** lies between `1` and `q₁(s) · d` when `K` has
 discriminant `-d`. -/
