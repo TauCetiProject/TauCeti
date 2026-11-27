@@ -108,6 +108,7 @@ theorem quotientInclusion_mk (h : k ≤ k') (x : SobolevFieldSpace f m k') :
   (rfl)
 
 /-- The induced map of orbit spaces is continuous. -/
+@[fun_prop]
 theorem continuous_quotientInclusion (h : k ≤ k') :
     Continuous (quotientInclusion (f := f) (m := m) (hs := hs) (hs' := hs') h) :=
   (continuous_inclusion k.cast_nonneg _).quotient_map' _
@@ -173,6 +174,7 @@ theorem vortexModuliInclusion_vortexModuliInclusion (h : k ≤ k') (h' : k' ≤ 
   Subtype.ext (quotientInclusion_quotientInclusion h h' q.val)
 
 /-- The induced map of vortex moduli is continuous. -/
+@[fun_prop]
 theorem continuous_vortexModuliInclusion (h : k ≤ k') :
     Continuous (vortexModuliInclusion (f := f) (m := m) (hs := hs) (hs' := hs') h) :=
   (continuous_quotientInclusion h).subtype_map _
