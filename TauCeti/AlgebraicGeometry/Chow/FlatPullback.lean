@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicGeometry.Chow.OpenRestriction
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Pullback
 public import TauCeti.AlgebraicGeometry.Morphisms.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
-public import TauCeti.AlgebraicGeometry.Fibers.Dimension
+import TauCeti.AlgebraicGeometry.Fibers.Dimension
 
 /-!
 # Pullback of cycles along morphisms of pure relative dimension
@@ -34,8 +34,6 @@ Theory*, §1.7.
   dimension zero, the pullback is the restriction `Chow.cyclesRestrict`; in particular
   `Chow.coe_cyclesPullback_id`.
 * `Chow.coe_cyclesPullback_comp`: functoriality `(g f)^* = f^* g^*` for `f` flat.
-* `Chow.coe_cyclesPullback_comp_add`: the same with the pure relative dimension `n + n'` of
-  `f ≫ g` supplied by `TauCeti.AlgebraicGeometry.PureRelativeDimension.comp_of_flat`.
 -/
 
 public section
@@ -124,8 +122,10 @@ lemma coe_cyclesPullback_id {m : ℤ} (α : cyclesOfDimension X m) :
 
 /-- Pullback of cycles is functorial along flat morphisms: for `f : X ⟶ Y` flat of pure relative
 dimension `n`, `g : Y ⟶ Z` of pure relative dimension `n'` and `f ≫ g` of pure relative dimension
-`d` (necessarily `n + n'` when `X` is nonempty), `(g ∘ f)^* α = f^* (g^* α)` as cycles on `X`, for
-every `m`-cycle `α` on `Z`. This is the functoriality `(g f)^* = f^* g^*` of flat pullback of
+`d` (necessarily `n + n'` when `X` is nonempty; `f ≫ g` has pure relative dimension `n + n'` by
+`TauCeti.AlgebraicGeometry.PureRelativeDimension.comp_of_generalizingMap`),
+`(g ∘ f)^* α = f^* (g^* α)` as cycles on `X`, for every `m`-cycle `α` on `Z`. This is the
+functoriality `(g f)^* = f^* g^*` of flat pullback of
 [Stacks, Section 42.14](https://stacks.math.columbia.edu/tag/02RA) and Fulton, *Intersection
 Theory*, §1.7, at the level of cycles. -/
 lemma coe_cyclesPullback_comp {Z : Scheme.{u}} [Z.Over (Spec (.of k))]
@@ -139,20 +139,6 @@ lemma coe_cyclesPullback_comp {Z : Scheme.{u}} [Z.Over (Spec (.of k))]
   have := LocallyOfFiniteType.isLocallyNoetherian (Y ↘ Spec (.of k))
   rw [coe_cyclesPullback, coe_cyclesPullback, coe_cyclesPullback,
     AlgebraicCycle.pullback_comp, AddMonoidHom.comp_apply]
-
-/-- Functoriality of the pullback of cycles along flat morphisms, with the pure relative dimension
-of the composite given by `TauCeti.AlgebraicGeometry.PureRelativeDimension.comp_of_flat`: for
-`f : X ⟶ Y` flat of pure relative dimension `n` and `g : Y ⟶ Z` of pure relative dimension `n'`,
-`(g ∘ f)^* α = f^* (g^* α)`, the pullback along `f ≫ g` shifting dimensions by `n + n'`. -/
-lemma coe_cyclesPullback_comp_add {Z : Scheme.{u}} [Z.Over (Spec (.of k))]
-    [LocallyOfFiniteType (Z ↘ Spec (.of k))] (f : X ⟶ Y) [Flat f] [f.IsOver (Spec (.of k))]
-    (g : Y ⟶ Z) [g.IsOver (Spec (.of k))] (n n' : ℕ) [PureRelativeDimension n f]
-    [PureRelativeDimension n' g] {m : ℤ} (α : cyclesOfDimension Z m) :
-    haveI := PureRelativeDimension.comp_of_flat k f g n n'
-    (cyclesPullback k (f ≫ g) (n + n') α : AlgebraicCycle X ℤ) =
-      (cyclesPullback k f n (cyclesPullback k g n' α) : AlgebraicCycle X ℤ) :=
-  haveI := PureRelativeDimension.comp_of_flat k f g n n'
-  coe_cyclesPullback_comp (k := k) f g n n' (n + n') α
 
 end OverField
 
