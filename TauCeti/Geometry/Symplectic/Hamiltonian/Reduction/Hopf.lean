@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Submersion
 public import TauCeti.Analysis.InnerProductSpace.Euclidean.Space
 public import TauCeti.Geometry.Manifold.Instances.Sphere.Hopf
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
-import TauCeti.Geometry.Symplectic.Manifold.DuistermaatHeckman.Sphere
-import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.InnerProductSpace.Complex
+import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
+import TauCeti.Geometry.Manifold.Submersion.Split
+import TauCeti.Geometry.Symplectic.Manifold.Sphere.Area
 
 /-!
 # Hopf reduction: the reduced spaces of `ℂ²` by the diagonal circle
@@ -26,7 +29,9 @@ symplectic reductions. For `c > 0` the level `μ⁻¹(c)` is the sphere of radiu
 (`TauCeti.range_sqrt_two_mul_smul_coe_sphere_eq_setOf_half_norm_sq_eq`), and the quotient of the
 level by the circle is the two-sphere, through the Hopf map `h : S³ → S²` (`TauCeti.hopfMap`),
 whose fibres are the circle orbits. Here `h` is shown to be a submersion
-(`TauCeti.mfderiv_hopfMap_surjective`). The reduced symplectic form is computed by the identity
+(`TauCeti.mfderiv_hopfMap_surjective`, `TauCeti.isSubmersion_hopfMap`), whose vertical tangent
+vectors at `z` are the real multiples of `i z`, the velocity of the circle orbit through `z`
+(`TauCeti.mfderiv_hopfMap_eq_zero_iff`). The reduced symplectic form is computed by the identity
 
 `h^* ((c / 2) σ) = (z ↦ √(2c) z)^* Ω`
 
@@ -49,7 +54,12 @@ reflection of `ℝ³`, and reduces `Ω` to `-(c / 2) σ`.
 
 ## Main results
 
-* `TauCeti.mfderiv_hopfMap_surjective`: the Hopf map is a submersion.
+* `TauCeti.mfderiv_hopfMap_surjective`, `TauCeti.isSubmersion_hopfMap`: the Hopf map is a
+  submersion.
+* `TauCeti.mfderiv_hopfMap_eq_zero_iff`: its vertical tangent vectors at `z` are the real multiples
+  of `i z`.
+* `TauCeti.eval₂_sphereAreaForm_mfderiv_hopfMap`: it pulls the area form of `S²` back to
+  `4 Im ⟪·, ·⟫_ℂ`.
 * `TauCeti.range_sqrt_two_mul_smul_coe_sphere_eq_setOf_half_norm_sq_eq`: `z ↦ √(2c) z`
   parametrizes the level `‖x‖² / 2 = c`.
 * `TauCeti.hamiltonianVectorField_half_norm_sq_eq_neg_I_smul`: `‖x‖² / 2` is the moment map of the
@@ -89,7 +99,7 @@ namespace TauCeti
 
 /-- **The Hopf map pulls the area form of `S²` back to four times `Im ⟪·, ·⟫_ℂ`.** For tangent
 vectors `v, w` of `S³` at `z`, `σ(dh v, dh w) = 4 Im ⟪v, w⟫_ℂ`. -/
-private theorem eval₂_sphereAreaForm_mfderiv_hopfMap (z : S³) (v w : TangentSpace (𝓡 3) z) :
+theorem eval₂_sphereAreaForm_mfderiv_hopfMap (z : S³) (v w : TangentSpace (𝓡 3) z) :
     SmoothBundleForm.eval₂ sphereAreaForm (hopfMap z) (mfderiv (𝓡 3) (𝓡 2) hopfMap z v)
         (mfderiv (𝓡 3) (𝓡 2) hopfMap z w) =
       4 * (⟪mvfderiv (𝓡 3) ((↑) : S³ → ℂ²) z v, mvfderiv (𝓡 3) ((↑) : S³ → ℂ²) z w⟫_ℂ).im := by
@@ -132,6 +142,41 @@ theorem mfderiv_hopfMap_surjective (z : S³) :
   · exact ⟨b, rfl⟩
   · exact ⟨(1 / 4 : ℝ) • a, map_smul _ _ _⟩
 
+/-- The Hopf map is a submersion. -/
+theorem isSubmersion_hopfMap : Manifold.IsSubmersion (𝓡 3) (𝓡 2) ∞ hopfMap :=
+  (contMDiff_hopfMap.isSubmersionOfComplement_of_surjective_mfderiv (by simp)
+    mfderiv_hopfMap_surjective).isSubmersion
+
+/-- **The vertical tangent vectors of the Hopf map.** A tangent vector `v` of `S³` at `z` lies in
+the kernel of the differential of the Hopf map exactly when, read in `ℂ²`, it is a real multiple of
+`i z`, the velocity of the circle orbit `t ↦ e^(it) z` through `z`. -/
+theorem mfderiv_hopfMap_eq_zero_iff (z : S³) (v : TangentSpace (𝓡 3) z) :
+    mfderiv (𝓡 3) (𝓡 2) hopfMap z v = 0 ↔
+      ∃ t : ℝ, mvfderiv (𝓡 3) ((↑) : S³ → ℂ²) z v = t • (I • (z : ℂ²)) := by
+  constructor
+  · intro h
+    -- `i v` is orthogonal to every tangent vector at `z`, so it lies on the normal line `ℝ z`.
+    have horth : I • mvfderiv (𝓡 3) ((↑) : S³ → ℂ²) z v ∈ ((ℝ ∙ (z : ℂ²))ᗮ)ᗮ := by
+      rw [← range_mvfderiv_subtypeVal (n := 3) z]
+      rintro _ ⟨w, rfl⟩
+      have hw := eval₂_sphereAreaForm_mfderiv_hopfMap z v w
+      rw [h, SmoothBundleForm.eval₂_zero_left, im_inner_eq_real_inner_I_smul,
+        real_inner_comm] at hw
+      exact (mul_eq_zero.1 hw.symm).resolve_left four_ne_zero
+    rw [Submodule.orthogonal_orthogonal, Submodule.mem_span_singleton] at horth
+    obtain ⟨s, hs⟩ := horth
+    exact ⟨-s, by linear_combination (norm := (match_scalars <;> simp [mul_comm])) I • hs⟩
+  · -- The area form pairs `dh v` with every `dh w` to `4 Im ⟪t i z, w⟫_ℂ = -4t ⟪z, w⟫_ℝ = 0`.
+    rintro ⟨t, ht⟩
+    refine (SmoothTwoForm.isNondegenerate_iff_separatingLeft.1
+      isSymplectic_sphereAreaForm.isNondegenerate) (hopfMap z) _ fun u ↦ ?_
+    obtain ⟨w, rfl⟩ := mfderiv_hopfMap_surjective z u
+    have hn : I • t • I • (z : ℂ²) = (-t) • (z : ℂ²) := by
+      simp [smul_comm I t, smul_smul]
+    rw [eval₂_sphereAreaForm_mfderiv_hopfMap, ht, im_inner_eq_real_inner_I_smul, hn,
+      real_inner_smul_left, inner_coe_mvfderiv_subtypeVal_sphere]
+    simp
+
 /-! ### The reduced space of a level -/
 
 /-- **`‖x‖² / 2` generates the reversed diagonal rotation.** For a symplectic form `Ω` on
@@ -142,15 +187,14 @@ theorem hamiltonianVectorField_half_norm_sq_eq_neg_I_smul {ι : Type*} [Fintype 
     {Ω : SymplecticForm (EuclideanSpace ℂ ι)} (hΩ : ∀ v w, Ω v w = (⟪v, w⟫_ℂ).im)
     (x : EuclideanSpace ℂ ι) :
     Ω.hamiltonianVectorField (fun y ↦ ‖y‖ ^ 2 / 2) x = -(I • x) := by
-  refine ((Ω.eq_hamiltonianVectorField_iff _ x _).2 fun v ↦ ?_).symm
-  have hd : HasFDerivAt (fun y : EuclideanSpace ℂ ι ↦ ‖y‖ ^ 2 / 2) (innerSL ℝ x) x := by
-    convert (hasStrictFDerivAt_norm_sq x).hasFDerivAt.mul_const (1 / 2 : ℝ) using 1
-    · ext y
-      ring
-    · ext v
-      simp
-  rw [hd.fderiv, innerSL_apply_apply, EuclideanSpace.real_inner_eq_re_inner, hΩ, inner_neg_left,
-    inner_smul_left]
+  have hg : ∀ v w, Ω v (AlmostComplexStructure.ofComplexModule _ w) = ⟪v, w⟫_ℝ := fun v w ↦ by
+    rw [AlmostComplexStructure.ofComplexModule_apply, hΩ, inner_smul_right,
+      EuclideanSpace.real_inner_eq_re_inner]
+    simp
+  have hQ : (fun y : EuclideanSpace ℂ ι ↦ ‖y‖ ^ 2 / 2) = fun y ↦ 1 / 2 * ‖y‖ ^ 2 := by
+    funext y
+    ring
+  rw [hQ, Ω.hamiltonianVectorField_div_two_mul_norm_sq hg 1]
   simp
 
 /-- The parametrization `z ↦ √(2c) z` of the level `‖x‖² / 2 = c` of `ℂ²` by `S³` is smooth. -/
@@ -242,8 +286,8 @@ theorem liouvilleMeasure_univ_of_mpullback_hopfMap_eq {Ω : SymplecticForm ℂ²
       SmoothForm.mpullback (fun z : S³ ↦ √(2 * c) • (z : ℂ²))
         (contMDiff_sqrt_two_mul_smul_coe_sphere c) Ω.constSmooth) :
     η.liouvilleMeasure 1 Set.univ = ENNReal.ofReal (2 * π * c) := by
-  rw [(mpullback_hopfMap_eq_iff hΩ hc).1 hη, liouvilleMeasure_smul_sphereAreaForm_univ,
-    abs_of_nonneg (by positivity)]
+  rw [(mpullback_hopfMap_eq_iff hΩ hc).1 hη, sphereAreaForm_eq_sphereVolumeForm,
+    Orientation.liouvilleMeasure_smul_sphereVolumeForm_univ, abs_of_nonneg (by positivity)]
   congr 1
   ring
 

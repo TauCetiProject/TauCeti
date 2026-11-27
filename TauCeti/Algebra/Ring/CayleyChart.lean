@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.GroupWithZero.Units.Basic
+public import Mathlib.Algebra.Group.Units.Equiv
+public import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 public import Mathlib.Algebra.Ring.Basic
+public import Mathlib.Algebra.Ring.Equiv
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -42,6 +45,11 @@ endomorphism fields. The inverses are `Ring.inverse`.
   `j`-antilinear `η` with `1 + η` invertible onto the square roots `J` of `-1` with `j + J`
   invertible, with inverse `cayleyCoord j`.
 
+At the base point `1`, the same coordinate is the Cayley transform `(1 - x)(1 + x)⁻¹`.
+It is an involution on the elements with `1 + x` invertible when `2` is a unit
+(`TauCeti.cayleyCoord_one_cayleyCoord_one`). This ring-level API also applies to matrices and
+provides the algebra behind Cayley charts of unitary groups.
+
 ## Main results
 
 * `TauCeti.cayleyParam_mul_self`: `cayleyParam j η` is a square root of `-1`.
@@ -50,11 +58,17 @@ endomorphism fields. The inverses are `Ring.inverse`.
   conjugation identity `cayleyParam j η * (1 + η)⁻¹ = (1 + η)⁻¹ * j`.
 * `TauCeti.one_add_mul_add_cayleyParam`, `TauCeti.one_add_cayleyCoord_mul_add`: the identities
   `(1 + η) * (j + cayleyParam j η) = 2 * j` and `(1 + cayleyCoord j J) * (j + J) = 2 * j`, which
-  make the two invertibility conditions correspond.
+  make the two invertibility conditions correspond; `TauCeti.add_mul_cayleyCoord`: the identity
+  `(J + j) * cayleyCoord j J = J - j` for `J * J = j * j`.
 * `TauCeti.cayleyCoord_mul_eq_neg_mul`: the Cayley coordinate of a square root of `-1` is
   `j`-antilinear.
 * `TauCeti.cayleyCoord_cayleyParam`, `TauCeti.cayleyParam_cayleyCoord`: the two maps are mutually
   inverse.
+* `TauCeti.cayleyParam_eq_mul_mul_inverse`: on the `j`-antilinear `η` the parametrization is the
+  inverse Cayley transform `j * (1 + η) * (1 - η)⁻¹`.
+* `TauCeti.isUnit_add_iff_isUnit_one_sub_mul`: `j + J` is invertible exactly when `1 - j * J` is.
+* `TauCeti.map_cayleyParam`, `TauCeti.map_cayleyCoord`: both maps commute with ring isomorphisms,
+  such as reading fibre endomorphisms in a trivialization.
 
 ## References
 
@@ -148,7 +162,7 @@ lemma one_add_mul_add_cayleyParam (hη' : η * j = -(j * η)) (hη : IsUnit (1 +
   noncomm_ring
 
 /-- For a square root `j` of `-1` in a ring in which `2` is a unit, `2 * j` is a unit. -/
-private lemma isUnit_two_mul_of_mul_self_eq_neg_one (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
+lemma isUnit_two_mul_of_mul_self_eq_neg_one (h2 : IsUnit (2 : A)) (hj : j * j = -1) :
     IsUnit (2 * j) :=
   h2.mul (isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one))
 
@@ -168,6 +182,30 @@ lemma one_add_cayleyCoord_mul_add (hJ : IsUnit (j + J)) :
   obtain ⟨u, hu⟩ := hJ
   rw [add_mul, cayleyCoord_def, ← hu, Ring.inverse_unit, Units.inv_mul_cancel_right, hu]
   noncomm_ring
+
+/-- Multiplying the Cayley coordinate by its denominator recovers its numerator:
+`cayleyCoord j J * (j + J) = j - J` for `j + J` invertible. -/
+lemma cayleyCoord_mul_add (hJ : IsUnit (j + J)) : cayleyCoord j J * (j + J) = j - J :=
+  ((cayleyCoord_eq_iff hJ).1 rfl).symm
+
+/-- For `j + J` invertible, `1 + cayleyCoord j J = 2 * j * (j + J)⁻¹`. -/
+lemma one_add_cayleyCoord (hJ : IsUnit (j + J)) :
+    1 + cayleyCoord j J = 2 * j * Ring.inverse (j + J) := by
+  rw [← one_add_cayleyCoord_mul_add hJ, mul_assoc, Ring.mul_inverse_cancel _ hJ, mul_one]
+
+/-- The Cayley coordinate of `-x` is `(j + x)(j - x)⁻¹`. -/
+lemma cayleyCoord_neg (j x : A) : cayleyCoord j (-x) = (j + x) * Ring.inverse (j - x) := by
+  rw [cayleyCoord_def, sub_neg_eq_add, ← sub_eq_add_neg]
+
+/-- For `J` with the same square as `j` and `j + J` invertible, `J + j` carries the Cayley
+coordinate of `J` to `J - j`: `(J + j) * cayleyCoord j J = J - j`. For square roots of `-1` this
+is the left-inverse form `-cayleyCoord j J = (J + j)⁻¹ * (j - J)` of the Cayley coordinate. -/
+lemma add_mul_cayleyCoord (hJj : J * J = j * j) (hJ : IsUnit (j + J)) :
+    (J + j) * cayleyCoord j J = J - j := by
+  have h : (J + j) * (j - J) = (J - j) * (j + J) := by
+    simp only [add_mul, mul_sub, sub_mul, mul_add, hJj]
+    abel
+  rw [cayleyCoord_def, ← mul_assoc, h, mul_assoc, Ring.mul_inverse_cancel _ hJ, mul_one]
 
 /-- For a square root `j` of `-1` in a ring in which `2` is a unit, and `j + J` invertible,
 `1 + cayleyCoord j J` is invertible. -/
@@ -258,5 +296,106 @@ lemma coe_cayleyEquiv_apply (h2 : IsUnit (2 : A)) (hj : j * j = -1)
 lemma coe_cayleyEquiv_symm_apply (h2 : IsUnit (2 : A)) (hj : j * j = -1)
     (J : {J : A // J * J = -1 ∧ IsUnit (j + J)}) :
     ((cayleyEquiv j h2 hj).symm J : A) = cayleyCoord j J := (rfl)
+
+/-- For a square root `j` of `-1`, conjugation by `j` exchanges `1 + η` and `1 - η` on the
+`j`-antilinear `η`: `(1 + η) * j = j * (1 - η)`. -/
+lemma one_add_mul_eq_mul_one_sub (hη' : η * j = -(j * η)) : (1 + η) * j = j * (1 - η) := by
+  rw [add_mul, hη', mul_sub]
+  noncomm_ring
+
+/-- For a square root `j` of `-1` and `j`-antilinear `η`, `1 + η` is invertible exactly when
+`1 - η` is. -/
+lemma isUnit_one_add_iff_isUnit_one_sub (hj : j * j = -1) (hη' : η * j = -(j * η)) :
+    IsUnit (1 + η) ↔ IsUnit (1 - η) := by
+  have hju : IsUnit j := isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one)
+  -- `1 - η = -j (1 + η) j`, since `(1 + η) j = j (1 - η)` and `-j * j = 1`.
+  have h : 1 - η = -j * ((1 + η) * j) := by
+    rw [one_add_mul_eq_mul_one_sub hη', ← mul_assoc, neg_mul, hj, neg_neg, one_mul]
+  rw [h, hju.neg.mul_left_iff, hju.mul_right_iff]
+
+/-- **The Cayley parametrization is the inverse Cayley transform.** For a square root `j` of `-1`
+and `j`-antilinear `η`, `cayleyParam j η = j * (1 + η) * (1 - η)⁻¹`. Both sides vanish when
+`1 + η`, equivalently `1 - η`, is not invertible. -/
+theorem cayleyParam_eq_mul_mul_inverse (hj : j * j = -1) (hη' : η * j = -(j * η)) :
+    cayleyParam j η = j * (1 + η) * Ring.inverse (1 - η) := by
+  by_cases hη : IsUnit (1 + η)
+  · have hη₁ := (isUnit_one_add_iff_isUnit_one_sub hj hη').1 hη
+    rw [Ring.eq_mul_inverse_iff_mul_eq _ _ _ hη₁]
+    -- `j (1 + η)(1 - η) = j (1 - η)(1 + η) = (1 + η) j (1 + η)`.
+    have h : j * (1 + η) * (1 - η) = (1 + η) * (j * (1 + η)) := by
+      rw [← mul_assoc, one_add_mul_eq_mul_one_sub hη', mul_assoc, mul_assoc]
+      congr 1
+      noncomm_ring
+    rw [cayleyParam_def, mul_assoc (Ring.inverse (1 + η)) j, mul_assoc (Ring.inverse (1 + η)), h,
+      ← mul_assoc, Ring.inverse_mul_cancel _ hη, one_mul]
+  · have hη₁ : ¬IsUnit (1 - η) := fun h ↦ hη ((isUnit_one_add_iff_isUnit_one_sub hj hη').2 h)
+    simp [cayleyParam_def, Ring.inverse_non_unit _ hη, Ring.inverse_non_unit _ hη₁]
+
+/-- For a square root `j` of `-1`, `j + J` is invertible exactly when `1 - j * J` is: indeed
+`j * (j + J) = -(1 - j * J)`. -/
+theorem isUnit_add_iff_isUnit_one_sub_mul (hj : j * j = -1) :
+    IsUnit (j + J) ↔ IsUnit (1 - j * J) := by
+  have h : 1 - j * J = -(j * (j + J)) := by
+    rw [mul_add, hj]
+    noncomm_ring
+  rw [h, IsUnit.neg_iff, (isUnit_mul_self_iff.mp (hj.symm ▸ isUnit_neg_one)).mul_left_iff]
+
+/-- Ring isomorphisms commute with the Cayley parametrization. -/
+theorem map_cayleyParam {S F : Type*} [Ring S] [EquivLike F A S] [RingEquivClass F A S]
+    (f : F) (j η : A) : f (cayleyParam j η) = cayleyParam (f j) (f η) := by
+  simp only [cayleyParam_def, map_mul, map_add, map_one, map_ringInverse]
+
+/-- Ring isomorphisms commute with the Cayley coordinate. -/
+theorem map_cayleyCoord {S F : Type*} [Ring S] [EquivLike F A S] [RingEquivClass F A S]
+    (f : F) (j J : A) : f (cayleyCoord j J) = cayleyCoord (f j) (f J) := by
+  simp only [cayleyCoord_def, map_mul, map_add, map_sub, map_ringInverse]
+
+/-! ### The Cayley coordinate relative to `1` -/
+
+/-- The Cayley coordinate relative to `1` sends `0` to `1`. -/
+@[simp]
+lemma cayleyCoord_one_zero : cayleyCoord (1 : A) 0 = 1 := by
+  simp [cayleyCoord_def]
+
+/-- The Cayley coordinate vanishes when its denominator is not a unit. -/
+lemma cayleyCoord_of_not_isUnit (hJ : ¬IsUnit (j + J)) : cayleyCoord j J = 0 := by
+  simp [cayleyCoord_def, Ring.inverse_non_unit _ hJ]
+
+/-- The two factors of the Cayley coordinate relative to `1` commute. -/
+lemma cayleyCoord_one_eq_ringInverse_mul (x : A) :
+    cayleyCoord 1 x = Ring.inverse (1 + x) * (1 - x) := by
+  by_cases hx : IsUnit (1 + x)
+  · -- `1 + x` commutes with `1 - x`, hence so does its inverse.
+    have h : Commute (hx.unit : A) (1 - x) := by
+      rw [hx.unit_spec]
+      exact (Commute.one_right _).sub_right ((Commute.one_left x).add_left (Commute.refl x))
+    rw [cayleyCoord_def, ← hx.unit_spec, Ring.inverse_unit]
+    exact h.units_inv_left.eq.symm
+  · simp [cayleyCoord_def, Ring.inverse_non_unit _ hx]
+
+/-- The left multiplication form of the defining equation of the Cayley coordinate at `1`. -/
+lemma one_add_mul_cayleyCoord_one (hx : IsUnit (1 + J)) :
+    (1 + J) * cayleyCoord 1 J = 1 - J := by
+  rw [cayleyCoord_one_eq_ringInverse_mul, ← mul_assoc, Ring.mul_inverse_cancel _ hx, one_mul]
+
+/-- If `2` is a unit, the denominator of the iterated Cayley coordinate at `1` is a unit,
+even when the original denominator is not a unit. -/
+lemma isUnit_one_add_cayleyCoord_one (h2 : IsUnit (2 : A)) (x : A) :
+    IsUnit (1 + cayleyCoord 1 x) := by
+  by_cases hx : IsUnit (1 + x)
+  · rw [one_add_cayleyCoord hx, mul_one]
+    exact h2.mul hx.ringInverse
+  · simp [cayleyCoord_of_not_isUnit hx]
+
+/-- The Cayley coordinate relative to `1` is an involution where its denominator is a unit,
+provided that `2` is a unit. -/
+@[simp]
+lemma cayleyCoord_one_cayleyCoord_one (h2 : IsUnit (2 : A)) (hx : IsUnit (1 + J)) :
+    cayleyCoord 1 (cayleyCoord 1 J) = J := by
+  rw [cayleyCoord_eq_iff (isUnit_one_add_cayleyCoord_one h2 J)]
+  -- Multiply on the right by `1 + J` to clear the denominator on both sides.
+  rw [← hx.mul_left_inj, sub_mul, one_mul, cayleyCoord_mul_add hx,
+    mul_assoc, one_add_cayleyCoord_mul_add hx, mul_one]
+  noncomm_ring
 
 end TauCeti

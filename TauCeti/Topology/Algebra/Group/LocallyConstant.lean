@@ -14,8 +14,9 @@ import TauCeti.Topology.ContinuousMap.LocallyConstant
 /-!
 # Locally constant functions on topological groups
 
-An additive homomorphism from a group with separately continuous addition whose kernel is open
-is locally constant, even when its codomain is only an `AddZeroClass`. Open kernels are preserved
+A homomorphism from a group with separately continuous multiplication whose kernel is open is
+locally constant, even when its codomain is only a `MulOneClass`
+(`MonoidHom.isLocallyConstant_of_isOpen_ker`, with its additive form). Open kernels are preserved
 by taking integer multiples of additive homomorphisms into an additive commutative group.
 
 A locally constant function `f : G → A` on a topological group is constant near each point, but
@@ -25,7 +26,10 @@ dependence disappears: there is a single open subgroup `V` with `f (x * v) = f x
 `TauCeti.rightTranslationStabilizer f`, and its openness,
 `TauCeti.isOpen_rightTranslationStabilizer`. The same holds on any topological group for a
 locally constant function with compact support, which vanishes off a compact set
-(`TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport`).
+(`TauCeti.isOpen_rightTranslationStabilizer_of_hasCompactSupport`). On an additive group the
+stabilizer is the subgroup of periods of `f`, `TauCeti.addRightTranslationStabilizer f`, so a
+locally constant compactly supported function is periodic under an open subgroup
+(`TauCeti.isOpen_addRightTranslationStabilizer_of_hasCompactSupport`).
 
 Uniform local constancy is what makes the coinduced module of locally constant equivariant maps a
 *discrete* `G`-module, its right-translation stabilizers being open. Since an open subgroup of a
@@ -45,19 +49,26 @@ chosen point; no associativity, identity or inverse is needed.
 
 public section
 
+namespace MonoidHom
+
+variable {G A : Type*} [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- A homomorphism with open kernel is locally constant. -/
+@[to_additive /-- An additive homomorphism with open kernel is locally constant. -/]
+theorem isLocallyConstant_of_isOpen_ker [MulOneClass A] (χ : G →* A)
+    (hχ : IsOpen (χ.ker : Set G)) : IsLocallyConstant (χ : G → A) := by
+  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
+  -- Near `x`, the quotient `x⁻¹ * y` lies in the open kernel.
+  have hopen : IsOpen ((fun y : G ↦ x⁻¹ * y) ⁻¹' (χ.ker : Set G)) :=
+    hχ.preimage (continuous_id.const_mul x⁻¹)
+  filter_upwards [hopen.mem_nhds (by simp)] with y hy
+  exact χ.eq_iff.mpr hy
+
+end MonoidHom
+
 namespace AddMonoidHom
 
 variable {G A : Type*} [AddGroup G] [TopologicalSpace G] [SeparatelyContinuousAdd G]
-
-/-- An additive homomorphism with open kernel is locally constant. -/
-theorem isLocallyConstant_of_isOpen_ker [AddZeroClass A] (χ : G →+ A)
-    (hχ : IsOpen (χ.ker : Set G)) : IsLocallyConstant (χ : G → A) := by
-  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
-  -- Near `x`, the difference `-x + y` lies in the open kernel.
-  have hopen : IsOpen ((fun y : G ↦ -x + y) ⁻¹' (χ.ker : Set G)) :=
-    hχ.preimage (continuous_id.const_add (-x))
-  filter_upwards [hopen.mem_nhds (by simp)] with y hy
-  exact χ.eq_iff.mpr hy
 
 /-- The kernel of an integer multiple of an additive homomorphism with open kernel is open. -/
 theorem isOpen_ker_zsmul [AddCommGroup A] (χ : G →+ A)
@@ -75,6 +86,9 @@ variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {A : Type*}
 a family of right translations `σ : P → G` continuous at `p₀` leaves `x ↦ f (x * σ p)` unchanged
 on a neighbourhood of `p₀`, uniformly in `x ∈ K`. Only `K` must be compact; no group structure
 or continuity of `σ` away from `p₀` is needed. -/
+@[to_additive /-- For a locally constant `f` on a space with continuous addition and a compact set
+`K`, a family of right translations `σ : P → G` continuous at `p₀` leaves `x ↦ f (x + σ p)`
+unchanged on a neighbourhood of `p₀`, uniformly in `x ∈ K`. -/]
 theorem exists_isOpen_forall_mem_mul_right_eq
     {f : G → A} (hf : IsLocallyConstant f) {K : Set G} (hK : IsCompact K) {P : Type*}
     [TopologicalSpace P] {σ : P → G} (p₀ : P) (hσ : ContinuousAt σ p₀) :
@@ -105,13 +119,16 @@ variable {G : Type*} [Group G] {A : Type*}
 `f (x * g) = f x` for every `x : G`. For a locally constant `f` on a compact group it is open
 (`TauCeti.isOpen_rightTranslationStabilizer`), which is the sense in which `f` is *uniformly*
 locally constant. -/
+@[to_additive addRightTranslationStabilizer /-- The **additive right-translation stabilizer** of
+`f : G → A`: the additive subgroup of the periods `g` of `f`, those with `f (x + g) = f x` for every
+`x : G`. -/]
 def rightTranslationStabilizer (f : G → A) : Subgroup G where
   carrier := {g | ∀ x : G, f (x * g) = f x}
   one_mem' x := by rw [mul_one]
   mul_mem' {g g'} hg hg' x := by rw [← mul_assoc, hg' (x * g), hg x]
   inv_mem' {g} hg x := by rw [← hg (x * g⁻¹), inv_mul_cancel_right]
 
-@[simp]
+@[to_additive (attr := simp) mem_addRightTranslationStabilizer]
 theorem mem_rightTranslationStabilizer {f : G → A} {g : G} :
     g ∈ rightTranslationStabilizer f ↔ ∀ x : G, f (x * g) = f x := Iff.rfl
 
@@ -131,6 +148,9 @@ theorem isOpen_rightTranslationStabilizer [TopologicalSpace G] [ContinuousMul G]
 /-- A locally constant function with compact support on a topological group is *uniformly*
 locally constant: its right-translation stabilizer is an open subgroup. The group need not be
 compact, since the function vanishes off its compact support. -/
+@[to_additive isOpen_addRightTranslationStabilizer_of_hasCompactSupport /-- A locally constant
+function with compact support on a topological additive group is *uniformly* locally constant: its
+additive subgroup of periods is open. -/]
 theorem isOpen_rightTranslationStabilizer_of_hasCompactSupport [TopologicalSpace G]
     [IsTopologicalGroup G] [Zero A] {f : G → A} (hf : IsLocallyConstant f)
     (hfc : HasCompactSupport f) : IsOpen (rightTranslationStabilizer f : Set G) := by

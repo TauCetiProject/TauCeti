@@ -41,8 +41,12 @@ criteria connect complete splitting with the residue conditions used in prime-sp
   complete splitting makes each residue field the prime field.
 * `Ideal.absNorm_eq_of_ncard_primesOver_eq_finrank`: a prime above a completely split
   rational prime has that prime as its absolute norm.
+* `TauCeti.exists_isPrime_and_absNorm_eq_of_ncard_primesOver_eq_finrank`: existence of such
+  a prime ideal.
 * `NumberField.ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot`: the relative
   orbit–stabilizer form of the splitting criterion.
+* `NumberField.ncard_primesOver_ringOfIntegers_rat`: every rational prime splits completely in
+  `ℚ`.
 
 ## Provenance
 
@@ -100,6 +104,17 @@ theorem ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot {A : Type*} [CommRing 
   rw [← IsGaloisGroup.card_eq_finrank Gal(L/K) K L,
     ncard_primesOver_eq_natCard_iff_stabilizer_eq_bot _ _ Q]
 
+/-- Every rational prime splits completely in `ℚ`: there is exactly one prime of `𝓞 ℚ` above
+it. -/
+theorem ncard_primesOver_ringOfIntegers_rat (p : ℕ) [Fact p.Prime] :
+    ((span {(p : ℤ)}).primesOver (𝓞 ℚ)).ncard = 1 := by
+  obtain ⟨Q, hQ⟩ : ((span {(p : ℤ)}).primesOver (𝓞 ℚ)).Nonempty :=
+    Set.nonempty_coe_sort.mp inferInstance
+  have := hQ.1
+  have := hQ.2
+  rw [← finrank_self ℚ]
+  exact (ncard_primesOver_eq_finrank_iff_stabilizer_eq_bot ℚ ℚ _ Q).mpr (Subsingleton.elim _ _)
+
 end NumberField
 
 namespace Ideal
@@ -145,3 +160,18 @@ theorem absNorm_eq_of_ncard_primesOver_eq_finrank {K : Type*} [Field K] [NumberF
   rw [← Ideal.pow_inertiaDeg p 𝔭, hinertia, pow_one]
 
 end Ideal
+
+namespace TauCeti
+
+/-- If `p` splits completely in a number field `K`, some prime ideal of `𝓞 K` above `(p)`
+has absolute norm `p`. -/
+theorem exists_isPrime_and_absNorm_eq_of_ncard_primesOver_eq_finrank
+    {K : Type*} [Field K] [NumberField K] {p : ℕ}
+    (hsplit : (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = finrank ℚ K) :
+    ∃ I : Ideal (𝓞 K), I.IsPrime ∧ I.LiesOver (span {(p : ℤ)}) ∧ absNorm I = p := by
+  obtain ⟨I, hI, hover⟩ := Set.nonempty_of_ncard_ne_zero (hsplit.trans_ne finrank_pos.ne')
+  have := hI
+  have := hover
+  exact ⟨I, hI, hover, absNorm_eq_of_ncard_primesOver_eq_finrank I hsplit⟩
+
+end TauCeti

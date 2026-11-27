@@ -35,17 +35,20 @@ This file sets up this notion on a symplectic vector space, the local model of t
 * `TauCeti.SymplecticForm.IsNondegenerateQuadraticFamily ω Q`: the Hamiltonian endomorphisms of a
   family `Q` of quadratic forms generate a Cartan subalgebra of `sp(V, ω)`. This depends only on
   the linear span of the family (`isNondegenerateQuadraticFamily_iff_of_span_eq`), and is
-  invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`). In
+  invariant under linear symplectomorphisms (`isNondegenerateQuadraticFamily_comp_iff`); a family
+  of multiples `c j • Q`, not all zero, is nondegenerate exactly when `Q` is
+  (`isNondegenerateQuadraticFamily_smul_iff`). In
   particular, forms on `V` and the forms they induce on the reduced space of `⊤` are nondegenerate
-  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`). By
+  together (`isNondegenerateQuadraticFamily_reduction_iff_of_eq_top`), and reduced forms may be
+  tested on any symplectic slice of the reduced space
+  (`isNondegenerateQuadraticFamily_reduction_iff_of_slice`). By
   Mathlib's `LieSubalgebra.normalizer_eq_self_of_engel_le`, a Poisson-commuting family is
   nondegenerate as soon as it contains the Engel subalgebra of one Hamiltonian endomorphism
   (`isNondegenerateQuadraticFamily_of_engel_le`).
 * `TauCeti.SymplecticForm.IsNondegenerateRankZeroPoint ω F x`: `x` is a `C²` critical point of
   `F : E → G` at which the Hessians of the functions `ℓ ∘ F`, `ℓ` a linear functional on `G`, form
   a nondegenerate family. For `G = ℝⁿ` these may be replaced by the Hessians of the components
-  (`isNondegenerateRankZeroPoint_pi_iff`), and the notion is invariant under composition with
-  maps `g : G → G'` whose differential is injective (`isNondegenerateRankZeroPoint_comp_iff`).
+  (`isNondegenerateRankZeroPoint_pi_iff`).
 
 In dimension two the notion reduces to Morse theory: a single quadratic form is a nondegenerate
 family exactly when it is a nondegenerate quadratic form
@@ -83,6 +86,9 @@ families are treated in `TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Spli
 * `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_of_isSemisimple`: a Poisson-commuting
   family is nondegenerate if the forms Poisson-commuting with a form `P` with semisimple
   Hamiltonian endomorphism all lie in its span.
+* `TauCeti.SymplecticForm.isNondegenerateQuadraticFamily_of_forall_quadraticPoissonBracket_eq_zero`:
+  a Poisson-commuting family of forms with semisimple Hamiltonian endomorphisms is nondegenerate if
+  every form Poisson-commuting with all of them lies in its span.
 * `TauCeti.SymplecticForm.mem_span_sumElim_prod_of_quadraticPoissonBracket_eq_zero`: the forms on
   a direct sum Poisson-commuting with `P₁ ⊕ P₂` lie in the span of the two families extended by
   zero, when the minimal polynomials of `A_{P₁}` and `A_{P₂}` are coprime.
@@ -311,6 +317,39 @@ theorem isNondegenerateQuadraticFamily_reduction_iff_of_eq_top {U : Submodule �
   ext v
   simp
 
+/-- A family of multiples `c i • Q` of a single quadratic form, not all zero, is nondegenerate
+exactly when `Q` alone is: both span the line of `Q`. -/
+theorem isNondegenerateQuadraticFamily_smul_iff {c : ι → ℝ} {i : ι} (hi : c i ≠ 0)
+    (Q : QuadraticForm ℝ V) :
+    ω.IsNondegenerateQuadraticFamily (fun j ↦ c j • Q) ↔
+      ω.IsNondegenerateQuadraticFamily fun _ : Unit ↦ Q := by
+  refine isNondegenerateQuadraticFamily_iff_of_span_eq
+    (le_antisymm (Submodule.span_le.2 ?_) (Submodule.span_le.2 ?_))
+  · rintro _ ⟨j, rfl⟩
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨(), rfl⟩)
+  · rintro _ ⟨-, rfl⟩
+    have h := Submodule.smul_mem _ (c i)⁻¹ (Submodule.subset_span (R := ℝ) ⟨i, rfl⟩ :
+      c i • Q ∈ Submodule.span ℝ (Set.range fun j ↦ c j • Q))
+    rwa [smul_smul, inv_mul_cancel₀ hi, one_smul] at h
+
+/-- **Reduced families in the coordinates of a symplectic slice.** If `j : V₀ → V` has image in
+`U`, pulls `ω` back to the symplectic form `ω₀` and `V₀` has the dimension of the reduced space of
+`U`, then a family of reduced quadratic forms is nondegenerate exactly when the pullbacks `Q i ∘ j`
+of the original forms are nondegenerate for `ω₀`. -/
+theorem isNondegenerateQuadraticFamily_reduction_iff_of_slice {V₀ : Type*} [AddCommGroup V₀]
+    [Module ℝ V₀] [FiniteDimensional ℝ V₀] {ω₀ : SymplecticForm V₀} {U : Submodule ℝ V}
+    {j : V₀ →ₗ[ℝ] V} (hjU : ∀ a, j a ∈ U) (hjω : ∀ a b, ω (j a) (j b) = ω₀ a b)
+    (hd : finrank ℝ V₀ = finrank ℝ (ω.ReducedSpace U)) (Q : ι → QuadraticForm ℝ V)
+    (hQ : ∀ i, ∀ w ∈ U ⊓ ω.orthogonal U, ∀ u ∈ U, QuadraticMap.polar (Q i) w u = 0) :
+    (ω.reduction U).IsNondegenerateQuadraticFamily
+        (fun i ↦ ω.reducedQuadraticForm U (Q i) (hQ i)) ↔
+      ω₀.IsNondegenerateQuadraticFamily fun i ↦ (Q i).comp j := by
+  rw [← isNondegenerateQuadraticFamily_comp_iff
+    (isSymplectomorphism_reducedSpaceEquivOfSlice hjU hjω hd)]
+  congr! with i
+  ext a
+  simp
+
 /-- **Regular elements give Cartan subalgebras.** A family of pairwise Poisson-commuting quadratic
 forms is nondegenerate as soon as the Engel subalgebra of the Hamiltonian endomorphism of some
 quadratic form `P` is contained in the Lie subalgebra the family generates. -/
@@ -377,6 +416,22 @@ end TwoDim
 
 /-! ### Regular semisimple elements -/
 
+/-- **The Engel subalgebra of a semisimple element is its centralizer.** If `P` has semisimple
+Hamiltonian endomorphism `A_P`, every quadratic form `R` with `A_R` in the Engel subalgebra of
+`A_P` in `sp(V, ω)` Poisson-commutes with `P`: `ad A_P` is semisimple on `sp(V, ω)`, so its
+generalized kernel is its kernel. -/
+theorem quadraticPoissonBracket_eq_zero_of_mem_engel {P R : QuadraticForm ℝ V}
+    (hP : (ω.hamiltonianEnd P).IsSemisimple)
+    (hR : ω.hamiltonianEndEquiv R ∈ engel ℝ (ω.hamiltonianEndEquiv P)) :
+    ω.quadraticPoissonBracket R P = 0 := by
+  have hP' : (ω.hamiltonianEndEquiv P : Module.End ℝ V).IsSemisimple := by
+    rwa [coe_hamiltonianEndEquiv_apply]
+  have had := (skewAdjointLieSubalgebra ω.toBilinForm).isSemisimple_ad_of_isSemisimple_ad
+    (x := ω.hamiltonianEndEquiv P) (LieAlgebra.ad_isSemisimple_of_isSemisimple hP')
+  rwa [mem_engel_iff_lie_eq_zero had.isFinitelySemisimple,
+    ← hamiltonianEndEquiv_quadraticPoissonBracket, LinearEquiv.map_eq_zero_iff,
+    ← neg_quadraticPoissonBracket, neg_eq_zero] at hR
+
 /-- **Regular semisimple elements give Cartan subalgebras.** A family of pairwise Poisson-commuting
 quadratic forms is nondegenerate as soon as some quadratic form `P` has semisimple Hamiltonian
 endomorphism and every quadratic form Poisson-commuting with `P` lies in the span of the family.
@@ -387,16 +442,39 @@ theorem isNondegenerateQuadraticFamily_of_isSemisimple {Q : ι → QuadraticForm
     (hPQ : ∀ R, ω.quadraticPoissonBracket R P = 0 → R ∈ Submodule.span ℝ (Set.range Q)) :
     ω.IsNondegenerateQuadraticFamily Q := by
   refine isNondegenerateQuadraticFamily_of_engel_le hQ P fun X hX ↦ ?_
-  -- `ad A_P` is semisimple on `sp(V, ω)`, so the Engel subalgebra of `A_P` is its centralizer.
-  have hP' : (ω.hamiltonianEndEquiv P : Module.End ℝ V).IsSemisimple := by
-    rwa [coe_hamiltonianEndEquiv_apply]
-  have had := (skewAdjointLieSubalgebra ω.toBilinForm).isSemisimple_ad_of_isSemisimple_ad
-    (x := ω.hamiltonianEndEquiv P) (LieAlgebra.ad_isSemisimple_of_isSemisimple hP')
-  rw [mem_engel_iff_lie_eq_zero had.isFinitelySemisimple] at hX
   obtain ⟨R, rfl⟩ := ω.hamiltonianEndEquiv.surjective X
-  rw [← hamiltonianEndEquiv_quadraticPoissonBracket, LinearEquiv.map_eq_zero_iff,
-    ← neg_quadraticPoissonBracket, neg_eq_zero] at hX
-  exact hamiltonianEndEquiv_mem_lieSpan_of_mem_span (hPQ R hX)
+  exact hamiltonianEndEquiv_mem_lieSpan_of_mem_span
+    (hPQ R (quadraticPoissonBracket_eq_zero_of_mem_engel hP hX))
+
+/-- **Toral families spanning their centralizer are nondegenerate.** A family of pairwise
+Poisson-commuting quadratic forms whose Hamiltonian endomorphisms are semisimple is nondegenerate
+as soon as every quadratic form Poisson-commuting with all members of the family lies in its span:
+the abelian subalgebra of `sp(V, ω)` the family generates consists of semisimple elements, so its
+normalizer is its centralizer. The converse is
+`IsNondegenerateQuadraticFamily.mem_span_of_forall_quadraticPoissonBracket_eq_zero` in
+`TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Toral`. -/
+theorem isNondegenerateQuadraticFamily_of_forall_quadraticPoissonBracket_eq_zero
+    {Q : ι → QuadraticForm ℝ V} (hQ : ∀ i j, ω.quadraticPoissonBracket (Q i) (Q j) = 0)
+    (hs : ∀ i, (ω.hamiltonianEnd (Q i)).IsSemisimple)
+    (hR : ∀ R, (∀ i, ω.quadraticPoissonBracket R (Q i) = 0) →
+      R ∈ Submodule.span ℝ (Set.range Q)) :
+    ω.IsNondegenerateQuadraticFamily Q := by
+  -- If `{R, Qᵢ}` lies in the span then `ad(A_{Qᵢ})² A_R = 0`, so `A_R` lies in the Engel
+  -- subalgebra of the semisimple element `A_{Qᵢ}`, which is its centralizer.
+  refine isNondegenerateQuadraticFamily_of_forall_mem_span hQ fun R hRQ ↦ hR R fun i ↦ ?_
+  -- `{Qᵢ, {Qᵢ, R}} = 0`, since `{Qᵢ, R} = -{R, Qᵢ}` lies in the span of the Poisson-commuting
+  -- family.
+  have hQR : ω.quadraticPoissonBracket (Q i) R ∈ Submodule.span ℝ (Set.range Q) := by
+    rw [← neg_quadraticPoissonBracket]
+    exact neg_mem (hRQ i)
+  have h2 : ω.quadraticPoissonBracket (Q i) (ω.quadraticPoissonBracket (Q i) R) = 0 :=
+    ω.quadraticPoissonBracket_eq_zero_of_mem_span hQ (Submodule.subset_span ⟨i, rfl⟩) hQR
+  have hmem : ω.hamiltonianEndEquiv R ∈ engel ℝ (ω.hamiltonianEndEquiv (Q i)) := by
+    refine (mem_engel_iff _ _ _).2 ⟨2, ?_⟩
+    rw [pow_two, mul_apply_eq_comp, LieAlgebra.ad_apply, LieAlgebra.ad_apply,
+      ← hamiltonianEndEquiv_quadraticPoissonBracket, ← hamiltonianEndEquiv_quadraticPoissonBracket,
+      h2, map_zero]
+  exact quadraticPoissonBracket_eq_zero_of_mem_engel (hs i) hmem
 
 /-! ### Direct sums -/
 
@@ -501,8 +579,8 @@ end Linear
 
 section Function
 
-variable {E G G' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G']
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup G] [NormedSpace ℝ G]
   (ω : SymplecticForm E)
 
 /-- A point `x` is a **nondegenerate rank-zero point** of a `C²` map `F : E → G` on a symplectic
@@ -551,24 +629,6 @@ theorem isNondegenerateRankZeroPoint_pi_iff {ι : Type*} [Fintype ι] {F : E →
     ω.IsNondegenerateRankZeroPoint F x ↔ ContDiffAt ℝ 2 F x ∧ fderiv ℝ F x = 0 ∧
       ω.IsNondegenerateQuadraticFamily fun i ↦ hessianQuadraticForm (fun y ↦ F y i) x :=
   isNondegenerateRankZeroPoint_iff_of_span_eq fun hF _ ↦ span_range_hessianQuadraticForm_pi hF
-
-/-- **Invariance under reparametrization of the values.** Composing `F` with a `C²` map `g` whose
-differential at `F x` is injective preserves and reflects nondegenerate rank-zero points. -/
-theorem isNondegenerateRankZeroPoint_comp_iff [FiniteDimensional ℝ G'] {g : G → G'}
-    (hg : ContDiffAt ℝ 2 g (F x)) (hinj : Function.Injective (fderiv ℝ g (F x)))
-    (hF : ContDiffAt ℝ 2 F x) :
-    ω.IsNondegenerateRankZeroPoint (g ∘ F) x ↔ ω.IsNondegenerateRankZeroPoint F x := by
-  have hgF : fderiv ℝ (g ∘ F) x = (fderiv ℝ g (F x)).comp (fderiv ℝ F x) :=
-    fderiv_comp x (hg.differentiableAt (by norm_num)) (hF.differentiableAt (by norm_num))
-  have h0 : fderiv ℝ (g ∘ F) x = 0 ↔ fderiv ℝ F x = 0 := by
-    rw [hgF]
-    refine ⟨fun h ↦ ContinuousLinearMap.ext fun v ↦ hinj ?_,
-      fun h ↦ by rw [h, ContinuousLinearMap.comp_zero]⟩
-    simpa using congr($h v)
-  rw [isNondegenerateRankZeroPoint_iff_of_span_eq fun _ h ↦
-    congrArg (Submodule.span ℝ) (range_hessianQuadraticForm_comp hg hinj hF (h0.1 h))]
-  exact ⟨fun ⟨_, h, hQ⟩ ↦ ⟨hF, h0.1 h, hQ⟩,
-    fun h ↦ ⟨hg.comp x hF, h0.2 h.fderiv_eq_zero, h.isNondegenerateQuadraticFamily⟩⟩
 
 /-- **Nondegenerate rank-zero points of one Hamiltonian on a symplectic plane.** On a
 two-dimensional symplectic vector space, a point is a nondegenerate rank-zero point of a function

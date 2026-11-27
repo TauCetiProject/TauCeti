@@ -13,7 +13,8 @@ import Mathlib.Data.Finset.Prod
 
 For a finite basis `b`, let `εᵢ` be exterior multiplication by `b i` and `ιᵢ` contraction
 by its coordinate functional. On degree `p`, the number operator `∑ i, εᵢ ιᵢ` is
-`p • Id`. The increasing-pair operator `∑ i < j, εⱼ εᵢ ιᵢ ιⱼ` is
+`p • Id`; in the exterior algebra this reads `∑ i, bᵢ ∧ ιᵢ x = p • x` for `x` of degree `p`.
+The increasing-pair operator `∑ i < j, εⱼ εᵢ ιᵢ ιⱼ` is
 `p.choose 2 • Id`. These identities count occupied coordinates, with no division by
 two, and hold over any commutative ring.
 
@@ -59,6 +60,19 @@ theorem sum_wedgeLeft_comp_koszulDifferential_coord (n : ℕ) :
     LinearMap.id_apply, Submodule.coe_smul_of_tower]
   simp only [← Finset.sum_filter, Finset.sum_const,
     Finset.filter_mem_eq_inter, Finset.univ_inter, Set.powersetCard.card_eq]
+
+omit [LinearOrder ι] in
+/-- The number operator in the exterior algebra: on an element `x` of the `n`-th exterior power,
+creation after coordinate contraction, summed over the basis, is `n • x`. -/
+theorem sum_ι_mul_contractLeft_coord {n : ℕ} {x : _root_.ExteriorAlgebra R M}
+    (hx : x ∈ ⋀[R]^n M) :
+    ∑ i, _root_.ExteriorAlgebra.ι R (b i) *
+      contractLeft (Q := (0 : QuadraticForm R M)) (b.coord i) x = n • x := by
+  cases n with
+  | zero => simp [ExteriorAlgebra.contractLeft_eq_zero_of_mem_exteriorPower_zero _ hx]
+  | succ n =>
+    simpa [add_mul] using congrArg Subtype.val
+      (LinearMap.congr_fun (b.sum_wedgeLeft_comp_koszulDifferential_coord n) ⟨x, hx⟩)
 
 /-- The increasing-pair creation/contraction sum is multiplication by the binomial
 coefficient of the degree. The ordering counts each unordered pair exactly once. -/

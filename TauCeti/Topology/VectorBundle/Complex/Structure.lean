@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Analysis.Normed.Operator.ComplexLinearPart
 public import TauCeti.Geometry.Symplectic.Finrank
+public import TauCeti.Geometry.Symplectic.Transport
 public import TauCeti.LinearAlgebra.Complex.Module
 public import TauCeti.Topology.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.RestrictScalars
@@ -27,8 +28,9 @@ then a complex vector space, `(a + b i) • v = a • v + b • J v`
 form a complex vector bundle `J.Fiber`, whose fibre over `b` is `V b` with this complex structure.
 When `F` is finite-dimensional, the model fibre is any finite-dimensional complex normed space `G`
 with `finrank ℝ F = 2 * finrank ℂ G`, supplied as an instance
-`Fact (finrank ℝ F = 2 * finrank ℂ G)`. The total space of `J.Fiber` is homeomorphic to that of
-`V` by the identity of the fibres
+`Fact (finrank ℝ F = 2 * finrank ℂ G)`; for `G = ℂ²` this instance follows from
+`Fact (finrank ℝ F = 4)` (`TauCeti.instFactFinrankFinTwo`). The total space of `J.Fiber` is
+homeomorphic to that of `V` by the identity of the fibres
 (`TauCeti.Bundle.ContinuousComplexStructure.totalSpaceHomeomorph`): the complex vector bundle is
 the real bundle `V`, with `J` as multiplication by `i`.
 
@@ -138,6 +140,22 @@ theorem ext {J K : ContinuousComplexStructure F V} (h : ∀ b v, J b v = K b v) 
 theorem apply_apply (b : B) (v : V b) : J b (J b v) = -v := by
   simpa using congrArg (fun T : V b →L[ℝ] V b ↦ T v) (J.comp_self b)
 
+/-- The continuous complex structure given by fibrewise endomorphisms `J b` with `J b ∘ J b = -1`
+that are continuous on the total space of `V`. For a finite-dimensional model fibre this is
+continuity of `J` as a section of the endomorphism bundle (`TauCeti.continuous_hom_bundle_iff`). -/
+def ofContinuous [FiniteDimensional ℝ F] (J : ∀ b, V b →L[ℝ] V b)
+    (hJ : Continuous fun v : TotalSpace F V ↦ TotalSpace.mk' F v.proj (J v.proj v.snd))
+    (hJ₂ : ∀ b v, J b (J b v) = -v) : ContinuousComplexStructure F V where
+  toFun := J
+  comp_self b := ContinuousLinearMap.ext (hJ₂ b)
+  continuous := (TauCeti.continuous_hom_bundle_iff J).2 hJ
+
+@[simp]
+theorem ofContinuous_apply [FiniteDimensional ℝ F] (J : ∀ b, V b →L[ℝ] V b)
+    (hJ : Continuous fun v : TotalSpace F V ↦ TotalSpace.mk' F v.proj (J v.proj v.snd))
+    (hJ₂ : ∀ b v, J b (J b v) = -v) (b : B) (v : V b) : ofContinuous J hJ hJ₂ b v = J b v :=
+  (rfl)
+
 /-- The value of `J` at `b`, as an almost complex structure on the fibre `V b`. -/
 def almostComplexStructureAt (b : B) : TauCeti.AlmostComplexStructure (V b) where
   toLinearMap := (J b).toLinearMap
@@ -174,6 +192,14 @@ def fiberEquiv (b : B) : J.Fiber b ≃L[ℝ] V b where
   right_inv _ := rfl
   continuous_toFun := continuous_id
   continuous_invFun := continuous_id
+
+/-- The identification `J.Fiber b ≃ V b` is the identity of the underlying vectors. -/
+theorem fiberEquiv_apply (b : B) (v : J.Fiber b) : J.fiberEquiv b v = v :=
+  (rfl)
+
+/-- The inverse identification `V b ≃ J.Fiber b` is the identity of the underlying vectors. -/
+theorem fiberEquiv_symm_apply (b : B) (v : V b) : (J.fiberEquiv b).symm v = v :=
+  (rfl)
 
 theorem fiberEquiv_smul (b : B) (z : ℂ) (v : J.Fiber b) :
     J.fiberEquiv b (z • v) = z.re • J.fiberEquiv b v + z.im • J b (J.fiberEquiv b v) :=
@@ -218,6 +244,19 @@ theorem coord_coord_apply {b₀ b : B} (hb : b ∈ (trivializationAt F V b₀).b
     ⟨(trivializationAt F V b₀).symmL ℝ b w,
       Trivialization.continuousLinearMapAt_symmL _ hb w⟩
   rw [coord_apply J hb, coord_apply J hb, apply_apply, map_neg]
+
+/-- Read in the trivialization of `V` at `b₀`, the complex structure `J b` is `J.coord b₀ b`. -/
+theorem transport_almostComplexStructureAt_apply {b₀ b : B}
+    (hb : b ∈ (trivializationAt F V b₀).baseSet) (w : F) :
+    (J.almostComplexStructureAt b).transport ((trivializationAt F V b₀).linearEquivAt ℝ b hb) w =
+      J.coord b₀ b w := by
+  -- On the base set, the trivialization's linear equivalence is its continuous linear map.
+  have he (v : V b) : (trivializationAt F V b₀).linearEquivAt ℝ b hb v =
+      (trivializationAt F V b₀).continuousLinearMapAt ℝ b v :=
+    ((trivializationAt F V b₀).continuousLinearMapAt_apply_of_mem (R := ℝ) hb v).symm
+  obtain ⟨v, rfl⟩ := ((trivializationAt F V b₀).linearEquivAt ℝ b hb).surjective w
+  rw [AlmostComplexStructure.transport_apply, LinearEquiv.symm_apply_apply,
+    almostComplexStructureAt_apply, he, he, coord_apply J hb]
 
 /-- The complex linear part `(1 - J' b ∘ J' b₀) / 2` of the identity of `F`, from the complex
 structure `J' b₀ = J.coord b₀ b₀` to the complex structure `J' b = J.coord b₀ b`: as a linear
@@ -646,3 +685,14 @@ end Model
 end ContinuousComplexStructure
 
 end TauCeti.Bundle
+
+namespace TauCeti
+
+/-- A real vector space of dimension four has twice the complex dimension of `ℂ²`, so a continuous
+complex structure on a real vector bundle of rank four is a complex vector bundle with model `ℂ²`.
+-/
+instance instFactFinrankFinTwo {F : Type*} [AddCommGroup F] [Module ℝ F]
+    [Fact (finrank ℝ F = 4)] : Fact (finrank ℝ F = 2 * finrank ℂ (Fin 2 → ℂ)) :=
+  ⟨by rw [finrank_fin_fun, (Fact.out : finrank ℝ F = 4)]⟩
+
+end TauCeti

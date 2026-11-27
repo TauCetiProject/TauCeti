@@ -49,7 +49,9 @@ boundary lifts of homotopic loops are compared by one further relative lift over
 every boundary lift.
 
 The boundary map is natural for maps of Serre fibrations, that is, for commutative squares
-(`TauCeti.TopCat.fibrationBoundary_map`). For `n ≥ 1` it is a group homomorphism
+(`TauCeti.TopCat.fibrationBoundary_map`), also when the image of the base point is only
+propositionally the chosen point of the target (`TauCeti.TopCat.fibrationBoundary_map_of_eq`).
+For `n ≥ 1` it is a group homomorphism
 (`TauCeti.TopCat.fibrationBoundary_mul`, bundled as `TauCeti.TopCat.fibrationBoundaryHom`):
 concatenating two boundary lifts along a direction of `I^N` gives a boundary lift of the
 concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
@@ -74,8 +76,9 @@ concatenated loops, in the order of Mathlib's `HomotopyGroup.mul_spec`.
 
 In particular, if `π_n(F, e)` is trivial, then `p` induces a surjection
 `π_{n+1}(E, e) → π_{n+1}(B, b)` (`TauCeti.TopCat.surjective_homotopyGroupMap_of_subsingleton`),
-and for `n ≥ 1` an injection `π_n(E, e) → π_n(B, b)`
-(`TauCeti.TopCat.injective_homotopyGroupMap_of_subsingleton`).
+so `π_{n+1}(E, e)` is nontrivial whenever `π_{n+1}(B, b)` is
+(`TauCeti.TopCat.nontrivial_homotopyGroup_of_mem_serreFibrations`), and for `n ≥ 1` an injection
+`π_n(E, e) → π_n(B, b)` (`TauCeti.TopCat.injective_homotopyGroupMap_of_subsingleton`).
 
 When the total space has trivial homotopy groups, as for a path fibration, exactness makes the
 boundary map surjective with trivial kernel
@@ -324,6 +327,21 @@ theorem fibrationBoundary_map {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E
   refine GenLoop.ext _ _ fun t => Subtype.ext ?_
   rw [hfG.endLoop_apply_coe, ContinuousMap.comp_apply, GenLoop.map_apply]
   exact (CommSq.fiberMap_apply_coe sq b (hG.endLoop t)).symm
+
+/-- **Naturality of the boundary map, at a prescribed image point.** The form of
+`TauCeti.TopCat.fibrationBoundary_map` for a base point `b'` of `B'` that is only propositionally
+the image `g b`, and for any map of fibres `φ : p⁻¹(b) → p'⁻¹(b')` given on underlying points by
+the top of the square. -/
+theorem fibrationBoundary_map_of_eq {E' B' : TopCat.{u}} {p' : E' ⟶ B'} {f : E ⟶ E'}
+    {g : B ⟶ B'} (sq : CommSq f p p' g) (hp : serreFibrations p) (hp' : serreFibrations p')
+    [Finite N] {b' : B'} (hb : g b = b') {e' : p'.fiber b'} (φ : C(p.fiber b, p'.fiber b'))
+    (hφ : ∀ x, (φ x : E') = f x.val) (he : φ e = e') (a : HomotopyGroup (Option N) B b) :
+    fibrationBoundary hp' e' (HomotopyGroup.map g.hom hb a) =
+      HomotopyGroup.map φ he (fibrationBoundary hp e a) := by
+  subst hb he
+  obtain rfl : φ = (sq.fiberMap b).hom :=
+    ContinuousMap.ext fun x ↦ Subtype.ext ((hφ x).trans (CommSq.fiberMap_apply_coe sq b x).symm)
+  exact fibrationBoundary_map sq hp hp' a
 
 /-! ### The boundary map is a homomorphism -/
 
@@ -616,6 +634,20 @@ theorem surjective_homotopyGroupMap_of_subsingleton (hp : serreFibrations p) [Fi
     Function.Surjective
       (HomotopyGroup.map (N := Option N) p.hom (Set.mem_singleton_iff.1 e.property)) := fun _ ↦
   (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).2 (Subsingleton.elim _ _)
+
+/-- **A fibre with trivial `π_{n+1}` keeps `π_{n+2}` of the base.** If `π_{n+1}(F, e)` is trivial
+and `π_{n+2}(B, b)` is nontrivial, then so is `π_{n+2}(E, e)`: by exactness of
+`π_{n+2}(E) → π_{n+2}(B) → π_{n+1}(F)`, the projection maps `π_{n+2}(E, e)` onto
+`π_{n+2}(B, b)`. -/
+theorem nontrivial_homotopyGroup_of_mem_serreFibrations {n : ℕ} (hp : serreFibrations p)
+    [Subsingleton (π_ (n + 1) (p.fiber b) e)] [Nontrivial (π_ (n + 2) B b)] :
+    Nontrivial (π_ (n + 2) E e.val) := by
+  -- Read `π_{n+2}` on the cube `I^(Option (Fin (n + 1)))` of the exact sequence.
+  let c : Fin (n + 2) ≃ Option (Fin (n + 1)) := finSuccEquiv (n + 1)
+  have : Nontrivial (HomotopyGroup (Option (Fin (n + 1))) B b) :=
+    (HomotopyGroup.congrEquiv c).symm.nontrivial
+  have := (surjective_homotopyGroupMap_of_subsingleton (N := Fin (n + 1)) hp (e := e)).nontrivial
+  exact (HomotopyGroup.congrEquiv c).nontrivial
 
 /-- For `n ≥ 1`, if `π_n(F, e)` is trivial, then `p` induces an injection
 `π_n(E, e) → π_n(B, b)`. -/

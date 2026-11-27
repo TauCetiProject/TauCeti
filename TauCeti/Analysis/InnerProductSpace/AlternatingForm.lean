@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Alternating.Uncurry.Fin
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Contraction
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
+import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
 # Alternating forms on a real inner product space
@@ -36,6 +38,7 @@ product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧
 
 * `TauCeti.alternatingFormEquiv`: the linear equivalence `⋀ᵏ V ≃ₗ[ℝ] V [⋀^Fin k]→L[ℝ] ℝ`.
 * `TauCeti.alternatingFormInner`: the Gram inner product of alternating `k`-forms.
+* `TauCeti.wedgeCovector`: exterior multiplication `α ↦ ⟪u, ·⟫ ∧ α` of forms by a covector.
 
 ## Main results
 
@@ -44,7 +47,18 @@ product, a form is represented by `∑ α(b_{i₁}, …, b_{iₖ}) b*_{i₁} ∧
   the interior product by `u`.
 * `TauCeti.alternatingFormEquiv_wedgeLeft_apply`: it carries exterior multiplication by `u` to
   the wedge with the covector `⟪u, ·⟫`.
+* `TauCeti.curryLeftFlipL_wedgeCovector_add`: the anticommutation relation
+  `ι_u (⟪w, ·⟫ ∧ α) + ⟪w, ·⟫ ∧ ι_u α = ⟪u, w⟫ α` of the interior product and exterior
+  multiplication, with its degree-zero and top-degree forms
+  `TauCeti.curryLeftFlipL_wedgeCovector_zero` and
+  `TauCeti.wedgeCovector_curryLeftFlipL_of_eq_finrank`.
+* `TauCeti.alternatingFormEquiv_symm_alternatizeUncurryFin`: the alternation of a linear map to
+  `k`-forms is `∑ᵢ eⁱ ∧ f(eᵢ)` in an orthonormal frame.
+* `TauCeti.alternatingFormEquiv_ιMulti_twoVectorContraction`: on two-forms, the interior product
+  by `u` is the covector of the contraction `u ⌟ x`.
 * `LinearIsometry.alternatingFormEquiv_map`: musical identification commutes with isometries.
+* `ContinuousAlternatingMap.abs_alternatingFormInner_le_sqrt_mul_sqrt`: the Cauchy–Schwarz
+  inequality `|⟨α, β⟩| ≤ √⟨α, α⟩ √⟨β, β⟩` for the inner product of forms.
 * `TauCeti.alternatingFormInner_eq_sum`: the inner product of forms in an orthonormal basis.
 * `Module.Basis.alternatingFormEquiv_symm_eq_sum`: the element of `⋀ᵏ V` representing a form, in
   an arbitrary basis.
@@ -182,6 +196,121 @@ theorem alternatingFormEquiv_wedgeLeft_apply (u : V) {k : ℕ} (x : ⋀[ℝ]^k V
   rw [hu, ← alternatingFormEquiv_wedge, alternatingFormEquiv_apply_comp_cast]
   simp [ExteriorAlgebra.ιMulti_apply]
 
+/-- **The interior product of a two-form**: the interior product by `u` of the form of
+`x ∈ ⋀² V` is the covector of the contraction `u ⌟ x`. -/
+theorem alternatingFormEquiv_ιMulti_twoVectorContraction (x : ⋀[ℝ]^2 V) (u : V) :
+    alternatingFormEquiv V 1 (ιMulti ℝ 1 ![twoVectorContraction x u]) =
+      (alternatingFormEquiv V 2 x).curryLeft u := by
+  ext v
+  have hv : Matrix.vecCons u v = ![u, v 0] := funext (Fin.forall_fin_two.2 ⟨rfl, rfl⟩)
+  simp [inner_ιMulti_ιMulti, hv]
+
+/-- The form of `u ∧ w` is the wedge `⟪u, ·⟫ ∧ ⟪w, ·⟫` of the covectors of `u` and `w`. -/
+theorem alternatingFormEquiv_ιMulti_pair (u w : V) :
+    alternatingFormEquiv V 2 (ιMulti ℝ 2 ![u, w]) =
+      (ContinuousAlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1) (innerSL ℝ u)).wedge
+        (alternatingFormEquiv V 1 (ιMulti ℝ 1 ![w])) := by
+  ext v
+  have h := alternatingFormEquiv_wedgeLeft_apply u (ιMulti ℝ 1 ![w]) v
+  rw [ExteriorAlgebra.wedgeLeft_ιMulti] at h
+  simpa using h
+
+/-! ### Exterior multiplication and the interior product on forms -/
+
+section WedgeCovector
+
+open ContinuousAlternatingMap (curryLeftFlipL curryLeftFlipL_apply_apply)
+
+/-- **Exterior multiplication by a covector**: the map `α ↦ ⟪u, ·⟫ ∧ α` from `k`-forms to
+`(k + 1)`-forms, read through the identification of forms with the exterior powers as exterior
+multiplication by `u` (`TauCeti.alternatingFormEquiv_wedgeLeft_apply`). -/
+def wedgeCovector (u : V) (k : ℕ) :
+    (V [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] V [⋀^Fin (k + 1)]→L[ℝ] ℝ :=
+  LinearMap.toContinuousLinearMap ((alternatingFormEquiv V (k + 1)).toLinearMap ∘ₗ
+    ExteriorAlgebra.wedgeLeft u k ∘ₗ (alternatingFormEquiv V k).symm.toLinearMap)
+
+/-- Unfolding `TauCeti.wedgeCovector` through the identification of forms with the exterior
+powers. -/
+theorem wedgeCovector_apply (u : V) (k : ℕ) (α : V [⋀^Fin k]→L[ℝ] ℝ) :
+    wedgeCovector u k α = alternatingFormEquiv V (k + 1)
+      (ExteriorAlgebra.wedgeLeft u k ((alternatingFormEquiv V k).symm α)) :=
+  (rfl)
+
+/-- Exterior multiplication by `⟪u, ·⟫` on the form of `x` is the form of `u ∧ x`. -/
+@[simp]
+theorem wedgeCovector_alternatingFormEquiv (u : V) (k : ℕ) (x : ⋀[ℝ]^k V) :
+    wedgeCovector u k (alternatingFormEquiv V k x) =
+      alternatingFormEquiv V (k + 1) (ExteriorAlgebra.wedgeLeft u k x) := by
+  rw [wedgeCovector_apply, LinearEquiv.symm_apply_apply]
+
+/-- The interior product by `u` of the form of `x` is the form of the contraction of `x` by
+`⟪u, ·⟫`. -/
+theorem curryLeftFlipL_alternatingFormEquiv (u : V) (k : ℕ) (x : ⋀[ℝ]^(k + 1) V) :
+    curryLeftFlipL (n := k) u (alternatingFormEquiv V (k + 1) x) =
+      alternatingFormEquiv V k (koszulDifferential (innerₗ V u) k x) := by
+  rw [curryLeftFlipL_apply_apply, alternatingFormEquiv_koszulDifferential]
+
+/-- **The anticommutation relation** `ι_u (⟪w, ·⟫ ∧ α) + ⟪w, ·⟫ ∧ ι_u α = ⟪u, w⟫ α` of the
+interior product and exterior multiplication on forms of positive degree. -/
+theorem curryLeftFlipL_wedgeCovector_add (u w : V) (k : ℕ) (α : V [⋀^Fin (k + 1)]→L[ℝ] ℝ) :
+    curryLeftFlipL (n := k + 1) u (wedgeCovector w (k + 1) α) +
+      wedgeCovector w k (curryLeftFlipL (n := k) u α) = ⟪u, w⟫ • α := by
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V (k + 1)).surjective α
+  have h := LinearMap.congr_fun (wedgeLeft_comp_koszulDifferential_add (innerₗ V u) w k) a
+  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
+    innerₗ_apply_apply] at h
+  rw [wedgeCovector_alternatingFormEquiv, curryLeftFlipL_alternatingFormEquiv,
+    curryLeftFlipL_alternatingFormEquiv, wedgeCovector_alternatingFormEquiv, ← map_add, ← map_smul]
+  exact congrArg _ ((add_comm _ _).trans h)
+
+/-- **The anticommutation relation on functions**: `ι_u (⟪w, ·⟫ ∧ α) = ⟪u, w⟫ α` for `0`-forms. -/
+theorem curryLeftFlipL_wedgeCovector_zero (u w : V) (α : V [⋀^Fin 0]→L[ℝ] ℝ) :
+    curryLeftFlipL (n := 0) u (wedgeCovector w 0 α) = ⟪u, w⟫ • α := by
+  obtain ⟨a, rfl⟩ := (alternatingFormEquiv V 0).surjective α
+  have h := LinearMap.congr_fun (koszulDifferential_comp_wedgeLeft_zero (innerₗ V u) w) a
+  simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
+    innerₗ_apply_apply] at h
+  rw [wedgeCovector_alternatingFormEquiv, curryLeftFlipL_alternatingFormEquiv, h, map_smul]
+
+/-- **The anticommutation relation in the top degree**: `⟪w, ·⟫ ∧ ι_u α = ⟪u, w⟫ α` for forms of
+degree `k + 1 = dim V`, since there are no nonzero forms of degree above the dimension. -/
+theorem wedgeCovector_curryLeftFlipL_of_eq_finrank (u w : V) {k : ℕ}
+    (hk : k + 1 = finrank ℝ V) (α : V [⋀^Fin (k + 1)]→L[ℝ] ℝ) :
+    wedgeCovector w k (curryLeftFlipL (n := k) u α) = ⟪u, w⟫ • α := by
+  rw [← curryLeftFlipL_wedgeCovector_add,
+    (wedgeCovector w (k + 1) α).eq_zero_of_finrank_lt (by rw [Fintype.card_fin]; omega),
+    map_zero, zero_add]
+
+/-- **Alternation in an orthonormal frame**: the alternation `f ↦ ∑ⱼ (-1)ʲ f(vⱼ)(v̂ⱼ)` of a
+linear map `f` from `V` to `k`-forms is `∑ᵢ eⁱ ∧ f(eᵢ)`, read on the elements of the exterior
+powers representing the forms. -/
+theorem alternatingFormEquiv_symm_alternatizeUncurryFin {ι : Type*} [Fintype ι]
+    (b : OrthonormalBasis ι ℝ V) {k : ℕ} (f : V →L[ℝ] V [⋀^Fin k]→L[ℝ] ℝ) :
+    (alternatingFormEquiv V (k + 1)).symm (ContinuousAlternatingMap.alternatizeUncurryFin f) =
+      ∑ i, ExteriorAlgebra.wedgeLeft (b i) k ((alternatingFormEquiv V k).symm (f (b i))) := by
+  rw [LinearEquiv.symm_apply_eq]
+  ext v
+  -- Each summand pairs `eᵢ ∧ aᵢ` with `v₀ ∧ ⋯ ∧ vₖ`, which contracts `⟪eᵢ, ·⟫` into one `vⱼ`.
+  have h (i : ι) : alternatingFormEquiv V (k + 1)
+      (ExteriorAlgebra.wedgeLeft (b i) k ((alternatingFormEquiv V k).symm (f (b i)))) v =
+      ∑ j : Fin (k + 1), (-1 : ℝ) ^ (j : ℕ) * (⟪b i, v j⟫ * f (b i) (j.removeNth v)) := by
+    rw [alternatingFormEquiv_apply, inner_wedgeLeft_eq_inner_koszulDifferential,
+      koszulDifferential_ιMulti, inner_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [real_inner_smul_right, ← alternatingFormEquiv_apply, LinearEquiv.apply_symm_apply,
+      innerₗ_apply_apply]
+    ring
+  rw [ContinuousAlternatingMap.alternatizeUncurryFin_apply, map_sum,
+    ContinuousAlternatingMap.sum_apply, Finset.sum_congr rfl fun i _ ↦ h i, Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ ?_
+  -- Summing over the frame reassembles `vⱼ = ∑ᵢ ⟪eᵢ, vⱼ⟫ eᵢ`.
+  conv_lhs => rw [← b.sum_repr' (v j)]
+  simp only [map_sum, map_smul, ContinuousAlternatingMap.sum_apply,
+    ContinuousAlternatingMap.smul_apply, smul_eq_mul, zsmul_eq_mul, Int.cast_pow, Int.cast_neg,
+    Int.cast_one, Finset.mul_sum]
+
+end WedgeCovector
+
 variable (V) in
 /-- The pointwise inner product of alternating `k`-forms, transported from the inner product of
 `⋀ᵏ V` along `TauCeti.alternatingFormEquiv`. On wedges of covectors it is the Gram determinant,
@@ -228,6 +357,15 @@ theorem _root_.ContinuousAlternatingMap.sqrt_alternatingFormInner_self {k : ℕ}
     √(alternatingFormInner V k α α) = ‖(alternatingFormEquiv V k).symm α‖ := by
   rw [alternatingFormInner_apply, real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)]
 
+/-- **Cauchy–Schwarz for forms**: `|⟨α, β⟩| ≤ √⟨α, α⟩ √⟨β, β⟩`. -/
+theorem _root_.ContinuousAlternatingMap.abs_alternatingFormInner_le_sqrt_mul_sqrt {k : ℕ}
+    (α β : V [⋀^Fin k]→L[ℝ] ℝ) :
+    |alternatingFormInner V k α β| ≤
+      √(alternatingFormInner V k α α) * √(alternatingFormInner V k β β) := by
+  rw [alternatingFormInner_apply, ContinuousAlternatingMap.sqrt_alternatingFormInner_self,
+    ContinuousAlternatingMap.sqrt_alternatingFormInner_self]
+  exact abs_real_inner_le_norm _ _
+
 /-- **The inner product of forms in an orthonormal basis**: if `(eᵢ)` is an orthonormal basis of
 `V` indexed by a linear order, then `⟨α, β⟩ = ∑ α(e_{i₁}, …, e_{iₖ}) β(e_{i₁}, …, e_{iₖ})`, the sum
 running over the increasing `k`-tuples `i₁ < ⋯ < iₖ`. Equivalently, the increasing wedges of the
@@ -244,6 +382,14 @@ theorem alternatingFormInner_eq_sum {ι : Type*} [Fintype ι] [LinearOrder ι]
       ιMulti_family, OrthonormalBasis.coe_toBasis]
   rw [hs, real_inner_comm ((alternatingFormEquiv V k).symm β),
     inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti]
+
+/-- **The inner product of `0`-forms** is the product of their values: a `0`-form is a constant,
+evaluated on the empty tuple `v`. -/
+theorem alternatingFormInner_zero_apply (α β : V [⋀^Fin 0]→L[ℝ] ℝ) (v : Fin 0 → V) :
+    alternatingFormInner V 0 α β = α v * β v := by
+  rw [alternatingFormInner_eq_sum (stdOrthonormalBasis ℝ V)]
+  simp only [Subsingleton.elim _ v, Finset.sum_const, Finset.card_univ]
+  simp
 
 end TauCeti
 

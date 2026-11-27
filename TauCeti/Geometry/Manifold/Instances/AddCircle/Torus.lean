@@ -12,7 +12,8 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 public import TauCeti.Topology.Covering.Pi
 public import TauCeti.Geometry.Manifold.MFDeriv.Pi
-public import TauCeti.LinearAlgebra.Matrix.Module
+public import TauCeti.Topology.Algebra.Module.Matrix
+import TauCeti.Topology.Instances.AddCircle.Torus
 
 /-!
 # Integral linear automorphisms of a torus
@@ -24,10 +25,11 @@ manifold modelled on `ModelWithCorners.pi fun _ ↦ 𝓘(ℝ)` whose tangent spa
 `(A • x) i = ∑ j, A i j • x j`
 
 (`AddCircle.generalLinearGroup_smul_apply`), each `A i j • x j` being integer multiplication in the
-circle. This is an action of the group `GL(ι, ℤ)` by additive maps
-(`AddCircle.instDistribMulActionGeneralLinearGroup`), and each `A` acts by smooth maps
-(`AddCircle.instContMDiffConstSMulGeneralLinearGroup`). So `x ↦ A • x` is a diffeomorphism of the
-torus, with inverse `x ↦ A⁻¹ • x` (`Diffeomorph.constSmul`), and the cotangent bundle `T*Tⁿ`
+circle: it is the map `Matrix.smulVecHom A (AddCircle p)` induced by the integer matrix `A`
+(`AddCircle.generalLinearGroup_smul_eq_smulVecHom`). This is an action of the group `GL(ι, ℤ)` by
+additive maps (`AddCircle.instDistribMulActionGeneralLinearGroup`), and each `A` acts by smooth
+maps (`AddCircle.instContMDiffConstSMulGeneralLinearGroup`). So `x ↦ A • x` is a diffeomorphism of
+the torus, with inverse `x ↦ A⁻¹ • x` (`Diffeomorph.constSmul`), and the cotangent bundle `T*Tⁿ`
 inherits the cotangent-lifted action (`TauCeti.CotangentBundle.instMulAction`).
 
 The covering map `(ι → ℝ) → Tⁿ`, `t ↦ ([t i])ᵢ`, is a covering map
@@ -48,12 +50,15 @@ For a torus `∀ i, AddCircle (p i)` with arbitrary positive periods, every tran
 
 * `AddCircle.instDistribMulActionGeneralLinearGroup`: the action of `GL(ι, ℤ)` on
   `ι → AddCircle p` by additive maps.
-* `AddCircle.instContMDiffConstSMulGeneralLinearGroup`: it acts by smooth maps.
+* `AddCircle.instContinuousConstSMulGeneralLinearGroup`,
+  `AddCircle.instContMDiffConstSMulGeneralLinearGroup`: it acts by continuous and by smooth maps.
 * `AddCircle.contMDiff_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` is smooth.
 * `AddCircle.hasMFDerivAt_coe_pi`, `AddCircle.mfderiv_coe_pi`: the covering map `(ι → ℝ) → Tⁿ` has
   derivative the identity.
 * `AddCircle.isCoveringMap_coe_pi`, `AddCircle.isLocalDiffeomorph_coe_pi`: it is a covering map
   and a local diffeomorphism.
+* `AddCircle.coe_extChartAt_pi_apply`: the extended charts of `Tⁿ` are local inverses of the
+  covering map.
 * `AddCircle.hasMFDerivAt_pi_add_right`, `AddCircle.mfderiv_pi_add_right`: translations of a torus
   `∀ i, AddCircle (p i)` have derivative the identity.
 * `AddCircle.hasMFDerivAt_generalLinearGroup_smul`,
@@ -117,6 +122,17 @@ theorem isLocalDiffeomorph_coe_pi (n : ℕ∞ω) :
       (fun t : ι → ℝ ↦ fun i ↦ (t i : AddCircle p)) :=
   (TauCeti.isLocalDiffeomorph_of_mfderiv_eq (contMDiff_coe_pi p ω) le_top fun t ↦
     ⟨ContinuousLinearEquiv.refl ℝ (ι → ℝ), (mfderiv_coe_pi p t).symm⟩).of_le le_top
+
+/-- The extended charts of the torus `ι → AddCircle p` are local lifts to `ℝ^ι`: an extended chart
+sends each point of its source to angles representing it. -/
+theorem coe_extChartAt_pi_apply (x : ι → AddCircle p) {y : ι → AddCircle p}
+    (hy : y ∈ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).source) :
+    (fun j ↦ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x y j : AddCircle p)) = y := by
+  have hy' : y ∈ (PartialEquiv.pi fun j ↦ extChartAt 𝓘(ℝ) (x j)).source := by
+    rwa [← TauCeti.extChartAt_pi]
+  funext j
+  rw [TauCeti.extChartAt_pi_apply]
+  exact coe_extChartAt_apply _ (hy' j (Set.mem_univ j))
 
 end Cover
 
@@ -183,14 +199,25 @@ instance instDistribMulActionGeneralLinearGroup : DistribMulAction (GL ι ℤ) (
   smul_add A x y := funext fun i ↦ by
     simp only [generalLinearGroup_smul_apply, Pi.add_apply, smul_add, Finset.sum_add_distrib]
 
+/-- The action of an invertible integer matrix `A` on the torus is the map
+`Matrix.smulVecHom A (AddCircle p)` induced by the matrix `A`. -/
+theorem generalLinearGroup_smul_eq_smulVecHom (A : GL ι ℤ) (x : ι → AddCircle p) :
+    A • x = (A : Matrix ι ι ℤ).smulVecHom (AddCircle p) x :=
+  funext fun i ↦ by rw [generalLinearGroup_smul_apply, smulVecHom_apply]
+
+/-- Invertible integer matrices act on the torus `ι → AddCircle p` by continuous maps, the maps
+`Matrix.smulVecHom A (AddCircle p)`. -/
+instance instContinuousConstSMulGeneralLinearGroup :
+    ContinuousConstSMul (GL ι ℤ) (ι → AddCircle p) where
+  continuous_const_smul A := ((A : Matrix ι ι ℤ).smulVecHom (AddCircle p)).continuous.congr
+    fun x ↦ (generalLinearGroup_smul_eq_smulVecHom p A x).symm
+
 /-- The covering map `(ι → ℝ) → (ι → AddCircle p)` intertwines the action of an integer matrix `A`
 on the torus with the multiplication of real vectors by `A`. -/
 theorem generalLinearGroup_smul_coe_pi (A : GL ι ℤ) (t : ι → ℝ) :
     A • (fun i ↦ (t i : AddCircle p)) =
-      fun i ↦ (((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ t) i : AddCircle p) :=
-  funext fun i ↦ by
-    simp only [generalLinearGroup_smul_apply, Matrix.mulVec, dotProduct, Matrix.map_apply,
-      ← zsmul_eq_mul, QuotientAddGroup.mk_sum, coe_zsmul]
+      fun i ↦ (((A : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) *ᵥ t) i : AddCircle p) := by
+  rw [generalLinearGroup_smul_eq_smulVecHom, smulVecHom_coe_pi]
 
 /-! ### Smoothness and derivative -/
 

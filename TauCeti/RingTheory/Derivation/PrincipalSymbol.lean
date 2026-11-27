@@ -46,12 +46,20 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
 * `TauCeti.commutatorSymbol_update_mul`: the Leibniz rule in each slot.
 * `TauCeti.commutatorSymbol_add_algebraMap`: adding scalars to the entries does not change the
   commutator symbol.
+* `TauCeti.commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top`: modulo an ideal `I`, the
+  iterated commutator `[⋯[D, a₁], …, aₘ] x` with all `aᵢ ∈ I` is `D ((a₁ ⋯ aₘ) • x)`.
 * `AlgEquiv.commutatorSymbol_conjDifferentialOperators`: the commutator symbol is natural under
   conjugation by algebra isomorphisms.
+* `TauCeti.commutatorSymbol_apply_of_intertwining`: more generally, the commutator symbols of two
+  operators intertwined by maps semilinear over a ring map are intertwined.
+* `TauCeti.commutatorSymbol_apply_of_eq_comp_comp`: the commutator symbol of `σ ∘ D ∘ ρ`, for
+  linear maps `ρ` and `σ`, is that of `D` sandwiched between `ρ` and `σ`.
 * `TauCeti.commutatorSymbol_comp_const`: on the diagonal, commutator symbols multiply under
   composition, up to the binomial coefficient `(m + k).choose m`.
 * `Derivation.commutatorSymbol_derivation`: the commutator symbol of a derivation `δ` at `f` is
   multiplication by `δ f`.
+* `TauCeti.commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top`: for entries `a₁, …, aₘ` in
+  an ideal `I`, the iterated commutator `[⋯[D, a₁], …, aₘ] x` is `D ((a₁ ⋯ aₘ) • x)` modulo `I`.
 * `TauCeti.cotangentSymbol_toCotangent`: the cotangent symbol on classes of elements of `I`;
   `TauCeti.cotangentSymbol_comp_perm` and `TauCeti.cotangentSymbol_comp_const` give its symmetry
   and its composition law.
@@ -299,6 +307,67 @@ theorem _root_.Derivation.commutatorSymbol_derivation (δ : Derivation R A N) (f
 
 end CommSemiring
 
+/-! ### Naturality under intertwining semilinear maps -/
+
+section Intertwining
+
+variable {R A B M N M' N' : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [CommSemiring B] [Algebra R B]
+  [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
+  [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
+  [AddCommMonoid M'] [Module B M'] [Module R M'] [IsScalarTower R B M']
+  [AddCommGroup N'] [Module B N'] [Module R N'] [IsScalarTower R B N']
+  {φ : A →+* B} (f : M →ₛₗ[φ] M') (g : N →ₛₗ[φ] N')
+
+/-- **Naturality of the commutator symbol.** Let `f : M → M'` and `g : N → N'` be semilinear
+over a ring map `φ : A → B`, and let the operators `D` over `A` and `D'` over `B` be intertwined
+by them: `D' ∘ f = g ∘ D`. Then the commutator symbol of `D'` at the images `φ aᵢ` is intertwined
+with the commutator symbol of `D` at the `aᵢ`. For the pullback of sections of vector bundles along
+a smooth map, this is the naturality of the principal symbol. -/
+theorem commutatorSymbol_apply_of_intertwining {m : ℕ} {D : differentialOperators R A M N m}
+    {D' : differentialOperators R B M' N' m}
+    (h : ∀ x, (D' : M' →ₗ[R] N') (f x) = g ((D : M →ₗ[R] N) x)) (a : Fin m → A) (x : M) :
+    commutatorSymbol R B M' N' m D' (fun i ↦ φ (a i)) (f x) =
+      g (commutatorSymbol R A M N m D a x) := by
+  induction m generalizing x with
+  | zero => exact h x
+  | succ m ih =>
+    rw [commutatorSymbol_succ_apply, commutatorSymbol_succ_apply]
+    refine ih (D := ⟨smulCommutator R (a 0) D, _⟩) (D' := ⟨smulCommutator R (φ (a 0)) D', _⟩)
+      (fun y ↦ ?_) (Fin.tail a) x
+    simp only [smulCommutator_apply_apply, ← LinearMap.map_smulₛₗ, h, map_sub]
+
+end Intertwining
+
+/-! ### Sandwiching between linear maps -/
+
+section Sandwich
+
+variable {R A M N M' N' : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+  [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower R A M]
+  [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
+  [AddCommMonoid M'] [Module A M'] [Module R M'] [IsScalarTower R A M']
+  [AddCommGroup N'] [Module A N'] [Module R N'] [IsScalarTower R A N']
+
+/-- **Sandwiching by linear maps.** If `D' = σ ∘ D ∘ ρ` for `A`-linear maps `ρ : M' → M` and
+`σ : N → N'`, then the commutator symbol of `D'` is the commutator symbol of `D` sandwiched between
+`ρ` and `σ`: `[⋯[D', a₁], …, aₘ] = σ ∘ [⋯[D, a₁], …, aₘ] ∘ ρ`. For the smooth sections of vector
+bundles, `ρ` and `σ` are bundle maps, and this gives the transformation of the principal symbol
+under bundle maps. -/
+theorem commutatorSymbol_apply_of_eq_comp_comp {m : ℕ} {D : differentialOperators R A M N m}
+    {D' : differentialOperators R A M' N' m} (ρ : M' →ₗ[A] M) (σ : N →ₗ[A] N')
+    (h : ∀ x, (D' : M' →ₗ[R] N') x = σ ((D : M →ₗ[R] N) (ρ x))) (a : Fin m → A) (x : M') :
+    commutatorSymbol R A M' N' m D' a x = σ (commutatorSymbol R A M N m D a (ρ x)) := by
+  induction m generalizing x with
+  | zero => exact h x
+  | succ m ih =>
+    rw [commutatorSymbol_succ_apply, commutatorSymbol_succ_apply]
+    refine ih (D := ⟨smulCommutator R (a 0) D, _⟩) (D' := ⟨smulCommutator R (a 0) D', _⟩)
+      (fun y ↦ ?_) (Fin.tail a) x
+    simp only [smulCommutator_apply_apply, h, map_smul, map_sub]
+
+end Sandwich
+
 /-! ### Transport along algebra isomorphisms -/
 
 section Conj
@@ -312,9 +381,9 @@ theorem _root_.AlgEquiv.commutatorSymbol_conjDifferentialOperators {m : ℕ}
     (D : differentialOperators R A A A m) (a : Fin m → A) (y : B) :
     commutatorSymbol R B B B m (e.conjDifferentialOperators m D) (fun i ↦ e (a i)) y =
       e (commutatorSymbol R A A A m D a (e.symm y)) := by
-  rw [commutatorSymbol_apply_apply, AlgEquiv.coe_conjDifferentialOperators,
-    e.list_prod_smulCommutator_conj, commutatorSymbol_apply_apply]
-  rfl
+  simpa using commutatorSymbol_apply_of_intertwining (e : A →+* B).toSemilinearMap
+    (e : A →+* B).toSemilinearMap (D' := e.conjDifferentialOperators m D)
+    (fun x ↦ by simp) a (e.symm y)
 
 end Conj
 
@@ -359,6 +428,27 @@ theorem commutatorSymbol_apply_sub_mem_smul_top {m : ℕ} (D : differentialOpera
   · simp [hj, hj.ne]
   · simp
   · simp [hj.not_gt, hj.ne, hj.ne']
+
+/-- **Iterated commutators with entries in `I`, modulo `I`.** If `a₁, …, aₘ ∈ I`, then the iterated
+commutator `[⋯[D, a₁], …, aₘ] x` agrees with `D ((a₁ ⋯ aₘ) • x)` modulo `I • N`: each commutator
+`[D, a] y = D (a • y) - a • D y` differs from `D (a • y)` by a multiple of `a`. For the vanishing
+ideal of a point of a manifold, the value of `[⋯[D, f₁], …, fₘ] s` at the point is therefore that of
+`D (f₁ ⋯ fₘ • s)` whenever every `fᵢ` vanishes there. -/
+theorem commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top {m : ℕ}
+    (D : differentialOperators R A M N m) {a : Fin m → A} (ha : ∀ i, a i ∈ I) (x : M) :
+    commutatorSymbol R A M N m D a x - (D : M →ₗ[R] N) ((∏ i, a i) • x) ∈
+      I • (⊤ : Submodule A N) := by
+  induction m generalizing x with
+  | zero => simp
+  | succ m ih =>
+    have h := ih ⟨smulCommutator R (a 0) D, smulCommutator_mem_differentialOperators D.property _⟩
+      (a := Fin.tail a) (fun i ↦ ha i.succ) x
+    have h0 : a 0 • (D : M →ₗ[R] N) ((∏ i, Fin.tail a i) • x) ∈ I • (⊤ : Submodule A N) :=
+      Submodule.smul_mem_smul (ha 0) Submodule.mem_top
+    rw [smulCommutator_apply_apply] at h
+    rw [commutatorSymbol_succ_apply, Fin.prod_univ_succ, mul_smul]
+    convert sub_mem h h0 using 1
+    abel
 
 variable (I) in
 /-- A representative in `I` of a cotangent class. -/

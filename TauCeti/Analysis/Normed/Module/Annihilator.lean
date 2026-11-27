@@ -25,8 +25,11 @@ This file proves that these subspaces are norm closed and that passing to norm c
 not change an annihilator. Over the real or complex field, the preannihilator of the
 annihilator is precisely the norm closure of the original subspace. Consequently continuous
 annihilators distinguish norm closures, and a subspace is dense exactly when its annihilator
-is zero. No completeness or closedness hypothesis is needed. Dually, a finite-dimensional
-subspace of the strong dual is the continuous annihilator of its preannihilator. As an
+is zero. No completeness or closedness hypothesis is needed. In particular, a closed subspace whose
+annihilator is finite-dimensional has finite codimension
+(`Submodule.finiteDimensional_quotient_of_finiteDimensional_orthogonalBilin`). Dually, a
+finite-dimensional subspace of the strong dual is the continuous annihilator of its
+preannihilator. As an
 application, `ContinuousLinearMap.surjective_smul_add_apply_iff` decides when the map
 `(τ, ξ) ↦ τ • w + H ξ` onto the dual of a finite-dimensional space is onto, for a symmetric `H`.
 
@@ -185,6 +188,30 @@ theorem dense_iff_orthogonalBilin_topDualPairing_flip_eq_bot (S : Submodule 𝕜
   · intro h
     rw [← orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure S, h,
       Submodule.orthogonalBilin_bot]
+
+/-- **Finite codimension from a finite-dimensional annihilator.** A closed subspace whose
+continuous annihilator is finite-dimensional has finite codimension: by the double-annihilator
+theorem it is the common kernel of the evaluations on the annihilator, so the quotient embeds in
+the dual of the annihilator. -/
+theorem finiteDimensional_quotient_of_finiteDimensional_orthogonalBilin (S : Submodule 𝕜 E)
+    (hS : IsClosed (S : Set E))
+    [FiniteDimensional 𝕜 (S.orthogonalBilin (topDualPairing 𝕜 E).flip)] :
+    FiniteDimensional 𝕜 (E ⧸ S) := by
+  set G := S.orthogonalBilin (topDualPairing 𝕜 E).flip
+  -- Evaluation on the annihilator.
+  let L : E →ₗ[𝕜] Module.Dual 𝕜 G := (topDualPairing 𝕜 E).flip.compl₂ G.subtype
+  have hker : S = LinearMap.ker L := by
+    rw [← hS.submodule_topologicalClosure_eq,
+      ← orthogonalBilin_orthogonalBilin_topDualPairing_eq_topologicalClosure S]
+    ext x
+    simp only [mem_orthogonalBilin, LinearMap.flip_apply, topDualPairing_apply, LinearMap.mem_ker,
+      LinearMap.ext_iff, LinearMap.compl₂_apply, Submodule.subtype_apply, LinearMap.zero_apply,
+      Subtype.forall, L, G]
+  -- `Module.Dual 𝕜 G` is elaborated with the additive monoid structure of the submodule `G`, not
+  -- that of an additive group, so instance search does not find this instance.
+  have : FiniteDimensional 𝕜 (Module.Dual 𝕜 G) :=
+    Subspace.instModuleDualFiniteDimensional (K := 𝕜) (V := G)
+  exact .equiv ((Submodule.quotEquivOfEq _ _ hker).trans L.quotKerEquivRange).symm
 
 end RCLike
 

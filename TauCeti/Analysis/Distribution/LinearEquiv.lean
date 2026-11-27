@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
 
 /-!
 # Distributions under linear changes of variables
@@ -41,6 +42,8 @@ transforms under them.
 * `Distribution.compCLMOfContinuousLinearEquiv_delta`: `e^* δ_y = |det e|⁻¹ δ_{e⁻¹ y}`.
 * `Distribution.compCLMOfContinuousLinearEquiv_trans`,
   `Distribution.compCLMOfContinuousLinearEquiv_symm_apply_apply`: functoriality.
+* `Distribution.mapCLM_compCLMOfContinuousLinearEquiv`: the pullback commutes with continuous
+  linear maps of the values.
 * `Distribution.complexPairing_compCLMOfContinuousLinearEquiv`: the complex-linear extension of
   `e^* T` to complex test functions is computed by the same formula.
 * `Distribution.transportCLM e h`: for a continuous linear equivalence `e : E' ≃L[ℝ] E` between
@@ -79,14 +82,14 @@ function `f` it gives that of `f ∘ e` (`Distribution.compCLMOfContinuousLinear
 def compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) :
     𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(V, F) :=
   |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ •
-    (e.transportTestFunction hVO).precompCompactConvergenceCLM F
+    (e.transportTestFunction ℝ hVO).precompCompactConvergenceCLM F
 
 /-- The pullback `e^* T` pairs a test function `φ` with `T` through `|det e|⁻¹ T (φ ∘ e⁻¹)`. -/
 @[simp]
 theorem compCLMOfContinuousLinearEquiv_apply (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω)
     (T : 𝓓'^{n}(Ω, F)) (φ : 𝓓^{n}(V, ℝ)) :
     compCLMOfContinuousLinearEquiv e hVO T φ =
-      |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ • T (e.transportTestFunction hVO φ) :=
+      |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ • T (e.transportTestFunction ℝ hVO φ) :=
   (rfl)
 
 /-- Pulling back along a composite of linear changes of variables is the composite of the
@@ -116,6 +119,16 @@ theorem compCLMOfContinuousLinearEquiv_symm_apply_apply (e : E ≃L[ℝ] E) (hVO
     ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm, smul_smul, hdet,
     one_smul]
 
+/-- The pullback `e^* T` commutes with applying a continuous linear map to the values. -/
+@[simp]
+theorem mapCLM_compCLMOfContinuousLinearEquiv {F' : Type*} [AddCommGroup F'] [Module ℝ F']
+    [TopologicalSpace F'] [IsTopologicalAddGroup F'] [ContinuousSMul ℝ F'] (A : F →L[ℝ] F')
+    (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) (T : 𝓓'^{n}(Ω, F)) :
+    mapCLM A (compCLMOfContinuousLinearEquiv e hVO T) =
+      compCLMOfContinuousLinearEquiv e hVO (mapCLM A T) := by
+  ext φ
+  simp
+
 end General
 
 /-- The pullback of the point mass at `y` along `e` is `|det e|⁻¹` times the point mass at
@@ -136,14 +149,11 @@ theorem compCLMOfContinuousLinearEquiv_ofFun [MeasurableSpace E] [BorelSpace E]
   ext φ
   rw [compCLMOfContinuousLinearEquiv_apply, ofFun_apply hf,
     ofFun_apply (hf.comp_continuousLinearEquiv_of_mapsTo e hVO)]
-  -- Change variables `y = e x`: the image of `μ` under `e` is `|det e|⁻¹ • μ`.
-  have hmap : μ.map e = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
-    Measure.map_linearMap_addHaar_eq_smul_addHaar μ (LinearEquiv.isUnit_det' _).ne_zero
-  have hcov := integral_map_equiv (μ := μ) e.toHomeomorph.toMeasurableEquiv
-    fun y ↦ φ (e.symm y) • f y
-  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph,
+  -- Change variables `y = e x`.
+  have hcov := Measure.integral_comp_linearMap μ (fun y ↦ φ (e.symm y) • f y) (e : E →ₗ[ℝ] E)
+  simp only [LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
     ContinuousLinearEquiv.symm_apply_apply] at hcov
-  rw [← hcov, hmap, integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
+  rw [hcov]
   simp only [ContinuousLinearEquiv.transportTestFunction_apply]
 
 /-- The complex-linear extension of the pullback `e^* T` of a complex distribution pairs a
@@ -152,7 +162,7 @@ theorem complexPairing_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO :
     (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(V, ℂ)) :
     (compCLMOfContinuousLinearEquiv e hVO T).complexPairing φ =
       (|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) *
-        T.complexPairing (e.transportTestFunction hVO φ) := by
+        T.complexPairing (e.transportTestFunction ℝ hVO φ) := by
   simp only [complexPairing_apply, compCLMOfContinuousLinearEquiv_apply,
     ContinuousLinearEquiv.transportTestFunction_postcompCLM, Complex.real_smul]
   ring
@@ -175,12 +185,12 @@ Transport along `WithLp.prodContinuousLinearEquiv` moves a distribution on `E ×
 Euclidean product `WithLp 2 (E × D)`, where an inner product pairs positions with frequencies. -/
 def transportCLM (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' V) :
     𝓓'^{n}(V, F) →L[ℝ] 𝓓'^{n}(Ω', F) :=
-  (e.transportTestFunction h).precompCompactConvergenceCLM F
+  (e.transportTestFunction ℝ h).precompCompactConvergenceCLM F
 
 /-- The transport of `T` along `e` pairs a test function `φ` with `T` through `T (φ ∘ e⁻¹)`. -/
 @[simp]
 theorem transportCLM_apply (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' V) (T : 𝓓'^{n}(V, F))
-    (φ : 𝓓^{n}(Ω', ℝ)) : transportCLM e h T φ = T (e.transportTestFunction h φ) :=
+    (φ : 𝓓^{n}(Ω', ℝ)) : transportCLM e h T φ = T (e.transportTestFunction ℝ h φ) :=
   (rfl)
 
 /-- Transporting along a composite of continuous linear equivalences is transporting along each
@@ -231,7 +241,7 @@ theorem dsupport_transportCLM_subset (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' V) (
     ⟨e ⁻¹' s, fun φ hφ ↦ ?_, hs.preimage e.continuous, hxs⟩ hx
   rw [transportCLM_apply]
   refine hT _ ?_
-  have hcoe : ⇑(e.transportTestFunction h φ) = φ ∘ e.symm := by
+  have hcoe : ⇑(e.transportTestFunction ℝ h φ) = φ ∘ e.symm := by
     ext y
     simp
   rw [hcoe]
@@ -242,7 +252,7 @@ theorem dsupport_transportCLM_subset (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' V) (
 complex test function `φ` with `T` through `T (φ ∘ e⁻¹)`. -/
 theorem complexPairing_transportCLM (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' V) (T : 𝓓'(V, ℂ))
     (φ : 𝓓(Ω', ℂ)) :
-    (transportCLM e h T).complexPairing φ = T.complexPairing (e.transportTestFunction h φ) := by
+    (transportCLM e h T).complexPairing φ = T.complexPairing (e.transportTestFunction ℝ h φ) := by
   simp only [complexPairing_apply, transportCLM_apply,
     ContinuousLinearEquiv.transportTestFunction_postcompCLM]
 

@@ -356,14 +356,6 @@ private lemma lerayHirsch_eq_comp_coeffMap {E : TopCat.{w}} (π : E ⟶ X) (n : 
 variable (X) [∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
     (𝟙_ (ModuleCat.{w} k))).obj F)]
 
-/-- If the homology `Hₚ(F; k)` is projective and finitely generated, so is its dual `Hᵖ(F; k)`. -/
-private lemma finite_singularCohomology_of_projective_homology {p : ℕ}
-    [Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
-      (𝟙_ (ModuleCat.{w} k))).obj F)] :
-    Module.Finite k (F.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :=
-  Module.Finite.equiv ((F.singularKroneckerEquivOfProjectiveHomology _ _ p).trans
-    ModuleCat.homLinearEquiv).symm
-
 /-- **The Leray–Hirsch theorem for a product with fibrewise basis classes**: over a commutative ring
 `k`, if the homology `Hₚ(F; k)` is projective in every degree and finitely generated in degrees
 `p ≤ n`, and for `p ≤ n` the classes `c p : ι p → Hᵖ(X × F; k)` restrict to a basis of `Hᵖ(F; k)`
@@ -397,7 +389,8 @@ theorem lerayHirsch_fst_bijective_of_fiberwise_basis (n : ℕ)
   -- of the finitely generated modules `Hᵖ(F; k)`.
   have hfin (p : ℕ) (hp : p ≤ n) : Fintype (ι p) :=
     have := hF p hp
-    have := finite_singularCohomology_of_projective_homology (F := F) (k := k) (p := p)
+    have := F.finite_singularCohomology_of_projective_homology_lt (R := 𝟙_ (ModuleCat.{w} k))
+      (𝟙_ (ModuleCat.{w} k)) p fun _ _ ↦ inferInstance
     have := Module.Finite.finite_basis (bx x₀ p hp)
     Fintype.ofFinite _
   let s (p : ℕ) : Finset (ι p) := if hp : p ≤ n then @Finset.univ _ (hfin p hp) else ∅

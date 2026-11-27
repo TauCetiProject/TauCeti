@@ -8,6 +8,8 @@ module
 public import TauCeti.Probability.MarkovChain.Visits
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
 public import TauCeti.Probability.Process.HittingTime.Orbit
+import TauCeti.Data.Set.Card
+import TauCeti.Probability.MarkovChain.Returns
 import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
@@ -15,10 +17,13 @@ import TauCeti.Probability.Process.HittingTime.Basic
 
 A state of a Markov kernel is recurrent if the chain started there returns at a positive
 time almost surely, and transient otherwise. Recurrence is equivalent to divergence of
-the diagonal Green function, and is constant on communicating classes. The mean return
-time is the extended nonnegative expectation of the first return time; it is at least one,
-equals the sum of the pre-return tail probabilities when singletons are measurable, and is
-infinite at a transient state. A measurable state-space map intertwining two Markov kernels
+the diagonal Green function, to almost surely infinitely many positive-time visits from the
+state, and to an infinite mean number of such visits; in particular a transient state is
+revisited finitely often on average. Recurrence is constant on communicating classes. The mean
+return time is the extended nonnegative expectation of the first return time; it is at least one,
+is exactly one at a state the chain stays at for one step almost surely, equals the sum of the
+pre-return tail probabilities when singletons are measurable, and is infinite at a transient
+state. A measurable state-space map intertwining two Markov kernels
 projects recurrence and bounds the target mean return time from above whenever target singletons
 are measurable.
 
@@ -105,6 +110,25 @@ theorem one_le_meanReturnTime : 1 ≤ κ.meanReturnTime x := by
     _ ≤ κ.meanReturnTime x := lintegral_mono fun ω => by
       have h := le_hittingAfter (u := fun n (ω : ℕ → S) => ω n) (s := {x}) (n := 1) ω
       exact_mod_cast ENat.natCast_le_toENNReal.2 h
+
+/-- A state that the chain stays at for one step almost surely has mean return time one. -/
+theorem meanReturnTime_eq_one_of_apply_singleton_self [MeasurableSingletonClass S]
+    (h : κ x {x} = 1) : κ.meanReturnTime x = 1 := by
+  refine le_antisymm ?_ κ.one_le_meanReturnTime
+  have hstay : ∀ᵐ ω ∂markovChainLaw (Measure.dirac x) κ, ω 1 = x := by
+    refine ae_of_ae_map (f := fun ω : ℕ → S => ω 1) (measurable_pi_apply 1).aemeasurable
+      (p := fun y : S => y = x) ?_
+    rw [Measure.markovChainLaw_map_eval, Measure.dirac_bind (κ ^ 1).measurable, pow_one,
+      ae_iff, ← Set.compl_singleton_eq, prob_compl_eq_one_sub (measurableSet_singleton x), h,
+      tsub_self]
+  calc κ.meanReturnTime x ≤ ∫⁻ _, 1 ∂markovChainLaw (Measure.dirac x) κ := by
+        rw [meanReturnTime_def]
+        refine lintegral_mono_ae ?_
+        filter_upwards [hstay] with ω hω
+        have h1 : hittingAfter (fun n (ω : ℕ → S) => ω n) {x} 1 ω ≤ (1 : ℕ) :=
+          hittingAfter_le_of_mem le_rfl hω
+        exact (ENat.toENNReal_le.2 h1).trans_eq ENat.toENNReal_one
+    _ = 1 := by simp
 
 /-- Congruence in the kernel argument of `Kernel.meanReturnTime`. -/
 theorem meanReturnTime_congr {κ η : Kernel S S} [IsMarkovKernel κ] [IsMarkovKernel η]
@@ -208,6 +232,37 @@ theorem meanReturnTime_eq_tsum (κ : Kernel S S) [IsMarkovKernel κ] (x : S) :
 theorem isRecurrent_iff_tsum_eq_top :
     κ.IsRecurrent x ↔ ∑' n : ℕ, (κ ^ n) x {x} = ∞ :=
   (κ.tsum_pow_apply_singleton_self_eq_top_iff x).symm
+
+/-- **The recurrence/transience dichotomy for returns.** A state `x` is recurrent exactly when the
+chain started at `x` visits `x` infinitely often at positive times almost surely. -/
+theorem isRecurrent_iff_ae_encard_setOf_succ_eq_eq_top :
+    κ.IsRecurrent x ↔
+      ∀ᵐ ω ∂markovChainLaw (Measure.dirac x) κ, {n | ω (n + 1) = x}.encard = ⊤ := by
+  rw [isRecurrent_iff, ← κ.ae_infinite_setOf_eq_markovChainLaw_dirac_iff x]
+  -- Started at `x`, the visits to `x` are time zero and the positive-time visits.
+  refine Filter.eventually_congr ((markovChainLaw_dirac_ae_apply_zero κ x).mono fun ω hω0 => ?_)
+  rw [← Set.encard_eq_top_iff, ← Set.encard_preimage_succ_add_one (s := {n | ω n = x}) hω0,
+    ENat.add_eq_top, or_iff_left ENat.one_ne_top]
+  simp only [Set.preimage_ofPred_eq, Nat.succ_eq_add_one]
+
+/-- A state is recurrent exactly when the chain started there has infinite mean number of
+positive-time visits to it. -/
+theorem isRecurrent_iff_lintegral_encard_setOf_succ_eq_eq_top :
+    κ.IsRecurrent x ↔
+      ∫⁻ ω, ({n | ω (n + 1) = x}.encard : ℝ≥0∞) ∂markovChainLaw (Measure.dirac x) κ = ∞ := by
+  rw [lintegral_encard_setOf_succ_eq_markovChainLaw_dirac, ENNReal.div_eq_top, tsub_eq_zero_iff_le,
+    isRecurrent_iff]
+  refine ⟨fun h => Or.inl ⟨by simp [h], h.ge⟩, ?_⟩
+  rintro (⟨-, h⟩ | ⟨h, -⟩)
+  · exact le_antisymm prob_le_one h
+  · exact absurd h (measure_ne_top _ _)
+
+/-- **The mean number of returns to a transient state is finite.** It equals `ρ_x / (1 - ρ_x)`
+by `ProbabilityTheory.Kernel.lintegral_encard_setOf_succ_eq_markovChainLaw_dirac`. -/
+theorem IsTransient.lintegral_encard_setOf_succ_eq_lt_top (hx : κ.IsTransient x) :
+    ∫⁻ ω, ({n | ω (n + 1) = x}.encard : ℝ≥0∞) ∂markovChainLaw (Measure.dirac x) κ < ∞ :=
+  lt_top_iff_ne_top.mpr
+    (isRecurrent_iff_lintegral_encard_setOf_succ_eq_eq_top.not.mp (isTransient_iff.mp hx))
 
 /-- Recurrence is constant on communicating classes. -/
 theorem Communicates.isRecurrent_iff (hxy : κ.Communicates x y) :

@@ -15,6 +15,7 @@ import TauCeti.Algebra.Module.Equiv.Basic
 import TauCeti.LinearAlgebra.Contraction
 import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.LinearAlgebra.TensorProduct.Dual
+import TauCeti.LinearAlgebra.TensorProduct.Separation
 
 /-!
 # Determinant lines of direct sums
@@ -64,10 +65,18 @@ is the tensor product of the transports of `det f` and `det g`, with no sign
 the summands of a split operator acts on its determinant line by the product of its actions on
 the determinant lines of the summands.
 
+For bijective maps all kernels and cokernels vanish and the Koszul sign is `1`: the direct sum
+isomorphism sends the generator of `det (f ⊕ g)` given by bijectivity
+(`LinearMap.detLineEquivOfBijective`) to the tensor product of the generators of `det f` and
+`det g` (`LinearMap.detLineProdMapEquiv_detLineEquivOfBijective_symm_one`), so the trivializations
+given by bijectivity multiply
+(`LinearMap.detLineEquivOfBijective_detLineProdMapEquiv_symm_tmul`).
+
 ## Main declarations
 
 * `TauCeti.detLineProdEquiv`: `det U ⊗ det W ≃ det (U × W)`, with its value
-  `TauCeti.coe_detLineProdEquiv_tmul`.
+  `TauCeti.coe_detLineProdEquiv_tmul`, also on arbitrary lifts of the second factor
+  (`TauCeti.coe_detLineProdEquiv_tmul_snd_comp`).
 * `TauCeti.detLineCongr_prodComm_detLineProdEquiv`: exchanging the factors costs
   `(-1) ^ (dim U * dim W)`.
 * `TauCeti.coe_detLineProdEquiv_tmul_eq_mul`: `TauCeti.detLineProdEquiv` is the exterior product
@@ -92,6 +101,8 @@ the determinant lines of the summands.
   sequences is the product of the four-term isomorphisms, up to a Koszul sign.
 * `LinearMap.detLineProdMapEquiv_detLineCongr_prodCongr`: naturality under products of commuting
   squares.
+* `LinearMap.detLineEquivOfBijective_detLineProdMapEquiv_symm_tmul`: for bijective maps the
+  trivializations given by bijectivity multiply.
 
 ## References
 
@@ -136,6 +147,17 @@ theorem coe_detLineProdEquiv_tmul (u : Fin (finrank K U) → U) (w : Fin (finran
     LinearMap.snd_surjective u (LinearMap.inr K U W ∘ w)
   rwa [← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.snd_comp_inr, LinearMap.id_coe,
     Function.id_comp] at h
+
+/-- `TauCeti.detLineProdEquiv` sends `(u₁ ∧ ⋯ ∧ uₐ) ⊗ (w₁ ∧ ⋯ ∧ w_c)` to
+`(u₁, 0) ∧ ⋯ ∧ (uₐ, 0) ∧ v₁ ∧ ⋯ ∧ v_c` for any lifts `vᵢ` of the `wᵢ` to `U × W`: the components of
+the `vᵢ` in `U` do not contribute, since `(u₁, 0), …, (uₐ, 0)` already span `U × 0`. -/
+theorem coe_detLineProdEquiv_tmul_snd_comp (u : Fin (finrank K U) → U)
+    (v : Fin (finrank K W) → U × W) :
+    (detLineProdEquiv K U W (exteriorPower.ιMulti K _ u ⊗ₜ
+        exteriorPower.ιMulti K _ (LinearMap.snd K U W ∘ v)) : ExteriorAlgebra K (U × W)) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (LinearMap.inl K U W ∘ u) v) :=
+  coe_detLineShortExactEquiv_tmul LinearMap.inl_injective Function.Exact.inl_snd
+    LinearMap.snd_surjective u v
 
 /-- **Exchanging the factors of a product** multiplies `TauCeti.detLineProdEquiv` by
 `(-1) ^ (dim U * dim W)`: the isomorphism `det (U × W) ≃ det (W × U)` induced by the swap
@@ -325,6 +347,30 @@ theorem detLineTensorDualProdEquiv_tmul (a₁ : detLine K U₁) (φ₁ : Dual K 
     detLineTensorDualProdEquiv K U₁ V₁ U₂ V₂ ((a₁ ⊗ₜ φ₁) ⊗ₜ (a₂ ⊗ₜ φ₂)) =
       detLineProdEquiv K U₁ U₂ (a₁ ⊗ₜ a₂) ⊗ₜ detLineDualProdEquiv K V₁ V₂ (φ₁ ⊗ₜ φ₂) := by
   simp [detLineTensorDualProdEquiv]
+
+/-- **Naturality of `TauCeti.detLineTensorDualProdEquiv`** in the determinant-line factors. For
+isomorphisms `e₁ : U₁ ≃ U₁'` and `e₂ : U₂ ≃ U₂'`, the isomorphism induced by `e₁ × e₂` on
+`det (U₁ × U₂)` takes the image of `t` to the image of `t` under `det e₁` and `det e₂`, the dual
+factors being unchanged. -/
+theorem rTensor_detLineCongr_prodCongr_detLineTensorDualProdEquiv {U₁' U₂' : Type*}
+    [AddCommGroup U₁'] [Module K U₁'] [AddCommGroup U₂'] [Module K U₂'] [FiniteDimensional K U₁']
+    [FiniteDimensional K U₂'] (e₁ : U₁ ≃ₗ[K] U₁') (e₂ : U₂ ≃ₗ[K] U₂')
+    (t : (detLine K U₁ ⊗[K] Dual K (detLine K V₁)) ⊗[K]
+      (detLine K U₂ ⊗[K] Dual K (detLine K V₂))) :
+    LinearEquiv.rTensor _ (e₁.prodCongr e₂).detLineCongr
+        (detLineTensorDualProdEquiv K U₁ V₁ U₂ V₂ t) =
+      detLineTensorDualProdEquiv K U₁' V₁ U₂' V₂
+        (TensorProduct.congr (LinearEquiv.rTensor _ e₁.detLineCongr)
+          (LinearEquiv.rTensor _ e₂.detLineCongr) t) := by
+  induction t using TensorProduct.inductionOn with
+  | add s t hs ht => simp only [map_add, hs, ht]
+  | tmul x y =>
+    induction x using TensorProduct.inductionOn with
+    | add x x' hx hx' => simp only [add_tmul, map_add, hx, hx']
+    | tmul a φ =>
+      induction y using TensorProduct.inductionOn with
+      | add y y' hy hy' => simp only [tmul_add, map_add, hy, hy']
+      | tmul b ψ => simp [detLineCongr_prodCongr_detLineProdEquiv]
 
 end TensorDual
 
@@ -533,8 +579,7 @@ private theorem detLineKerProdMap_apply (u : Fin (finrank K (ker f)) → ker f)
     detLineKerProdMap f g β = exteriorPower.ιMulti K _ u ⊗ₜ exteriorPower.ιMulti K _ w := by
   rw [detLineKerProdMap, LinearEquiv.trans_apply, LinearEquiv.symm_apply_eq]
   refine Subtype.ext ?_
-  rw [LinearEquiv.coe_detLineCongr, hβ, ExteriorAlgebra.map_apply_ιMulti,
-    coe_detLineProdEquiv_tmul]
+  rw [LinearEquiv.coe_detLineCongr_of_coe_eq_ιMulti _ hβ, coe_detLineProdEquiv_tmul]
   congr 1
   funext i
   induction i using Fin.addCases <;> ext <;> simp
@@ -958,6 +1003,88 @@ theorem detLineProdMapEquiv_symm_tmul
   rw [LinearEquiv.symm_apply_eq, LinearEquiv.map_smul,
     detLineProdMapEquiv_congr_detLineTensorDualProdEquiv f g eA heA eD heD, smul_smul,
     ← pow_add, ← two_mul, (even_two_mul _).neg_one_pow, one_smul]
+
+/-- The direct sum of nonzero elements of determinant lines is nonzero. -/
+theorem detLineProdMapEquiv_symm_tmul_ne_zero {y₁ : f.detLine} {y₂ : g.detLine} (hy₁ : y₁ ≠ 0)
+    (hy₂ : y₂ ≠ 0) : (detLineProdMapEquiv f g).symm (y₁ ⊗ₜ y₂) ≠ 0 :=
+  (LinearEquiv.map_ne_zero_iff _).2 (TauCeti.tmul_ne_zero hy₁ hy₂)
+
+/-- The direct sum of nonzero elements of determinant lines, multiplied by a sign `(-1) ^ n`, is
+nonzero. -/
+theorem neg_one_pow_smul_detLineProdMapEquiv_symm_tmul_ne_zero (n : ℕ) {y₁ : f.detLine}
+    {y₂ : g.detLine} (hy₁ : y₁ ≠ 0) (hy₂ : y₂ ≠ 0) :
+    (-1 : K) ^ n • (detLineProdMapEquiv f g).symm (y₁ ⊗ₜ y₂) ≠ 0 :=
+  smul_ne_zero (pow_ne_zero _ (neg_ne_zero.2 one_ne_zero))
+    (detLineProdMapEquiv_symm_tmul_ne_zero f g hy₁ hy₂)
+
+/-- **The direct sum of the generators of bijective maps.** For bijective maps `f` and `g`, the
+direct sum isomorphism sends the generator of `det (f.prodMap g)` given by bijectivity
+(`LinearMap.detLineEquivOfBijective`) to the tensor product of the generators of `det f` and
+`det g`. All kernels and cokernels vanish, so the Koszul sign is `1`. -/
+theorem detLineProdMapEquiv_detLineEquivOfBijective_symm_one (hf : Function.Bijective f)
+    (hg : Function.Bijective g) :
+    detLineProdMapEquiv f g ((detLineEquivOfBijective (hf.prodMap hg)).symm 1) =
+      (detLineEquivOfBijective hf).symm 1 ⊗ₜ (detLineEquivOfBijective hg).symm 1 := by
+  have hkf := finrank_ker_eq_zero_of_injective hf.1
+  have hkg := finrank_ker_eq_zero_of_injective hg.1
+  have hcf := finrank_quotient_range_eq_zero_of_surjective hf.2
+  have hcg := finrank_quotient_range_eq_zero_of_surjective hg.2
+  have hfg : Function.Bijective (f.prodMap g) := hf.prodMap hg
+  have hk := finrank_ker_eq_zero_of_injective hfg.1
+  have hc := finrank_quotient_range_eq_zero_of_surjective hfg.2
+  rw [← LinearEquiv.eq_symm_apply, LinearEquiv.symm_apply_eq,
+    detLineEquivOfBijective_symm_one_eq_ιMulti_tmul hf,
+    detLineEquivOfBijective_symm_one_eq_ιMulti_tmul hg,
+    detLineProdMapEquiv_symm_tmul f g (kerProdMapEquiv f g).symm
+      (coe_kerProdMapEquiv_symm_apply f g) (cokerProdMapEquiv f g).symm
+      (cokerProdMapEquiv_symm_mk f g),
+    show (-1 : K) ^ (finrank K (N ⧸ range f) * finrank K (ker g)) = 1 by simp [hcf],
+    one_smul, TauCeti.detLineTensorDualProdEquiv_tmul, congr_tmul]
+  -- The kernel factor is the empty exterior product of the zero kernel of `f.prodMap g`.
+  have hA : (kerProdMapEquiv f g).symm.detLineCongr (TauCeti.detLineProdEquiv K _ _
+      (exteriorPower.ιMulti K _ 0 ⊗ₜ exteriorPower.ιMulti K _ 0)) =
+        exteriorPower.ιMulti K _ (Fin.elim0 ∘ Fin.cast hk) := by
+    refine Subtype.ext ?_
+    rw [LinearEquiv.coe_detLineCongr_of_coe_eq_ιMulti _ (TauCeti.coe_detLineProdEquiv_tmul _ _),
+      exteriorPower.ιMulti_apply_coe,
+      ← TauCeti.ExteriorAlgebra.ιMulti_comp_cast
+        (show 0 = finrank K (ker f) + finrank K (ker g) by omega),
+      ExteriorAlgebra.ιMulti_zero_apply, ← TauCeti.ExteriorAlgebra.ιMulti_comp_cast hk.symm,
+      ExteriorAlgebra.ιMulti_zero_apply]
+  -- The cokernel factor is evaluated at the empty exterior product of the zero cokernel.
+  have hγ : (cokerProdMapEquiv f g).symm.detLineCongr.symm
+      (exteriorPower.ιMulti K _ (Fin.elim0 ∘ Fin.cast hc)) =
+        TauCeti.detLineProdEquiv K _ _ ((TauCeti.detLineEquivOfFinrankEqZero hcf).symm 1 ⊗ₜ
+          (TauCeti.detLineEquivOfFinrankEqZero hcg).symm 1) := by
+    refine Subtype.ext ?_
+    rw [LinearEquiv.detLineCongr_symm, LinearEquiv.coe_detLineCongr_of_coe_eq_ιMulti _
+        (exteriorPower.ιMulti_apply_coe _ _ _), TauCeti.detLineEquivOfFinrankEqZero_symm_one,
+      TauCeti.detLineEquivOfFinrankEqZero_symm_one, TauCeti.coe_detLineProdEquiv_tmul,
+      ← TauCeti.ExteriorAlgebra.ιMulti_comp_cast hc.symm, ExteriorAlgebra.ιMulti_zero_apply,
+      ← TauCeti.ExteriorAlgebra.ιMulti_comp_cast
+        (show 0 = finrank K (N ⧸ range f) + finrank K (N' ⧸ range g) by omega),
+      ExteriorAlgebra.ιMulti_zero_apply]
+  rw [hA, detLineEquivOfBijective_tmul_ιMulti hfg _ _ (Fin.elim0 ∘ Fin.cast hc),
+    LinearEquiv.dualMap_apply, hγ, TauCeti.detLineDualProdEquiv_tmul_apply]
+  simp
+
+/-- **Bijective trivializations multiply.** For bijective maps `f` and `g`, reading the direct sum
+of `x ∈ det f` and `y ∈ det g` in the trivialization of `det (f.prodMap g)` given by bijectivity
+gives the product of the readings of `x` and `y` (`LinearMap.detLineEquivOfBijective`). So the
+direct sum isomorphism carries the orientations given by bijectivity to the orientation given by
+bijectivity. -/
+theorem detLineEquivOfBijective_detLineProdMapEquiv_symm_tmul (hf : Function.Bijective f)
+    (hg : Function.Bijective g) (x : f.detLine) (y : g.detLine) :
+    detLineEquivOfBijective (hf.prodMap hg) ((detLineProdMapEquiv f g).symm (x ⊗ₜ y)) =
+      detLineEquivOfBijective hf x * detLineEquivOfBijective hg y := by
+  -- Every element of the determinant line of a bijective map is a multiple of its generator.
+  have hx : x = detLineEquivOfBijective hf x • (detLineEquivOfBijective hf).symm 1 := by
+    rw [← map_smul, smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
+  have hy : y = detLineEquivOfBijective hg y • (detLineEquivOfBijective hg).symm 1 := by
+    rw [← map_smul, smul_eq_mul, mul_one, LinearEquiv.symm_apply_apply]
+  rw [hx, hy, smul_tmul_smul, map_smul,
+    ← detLineProdMapEquiv_detLineEquivOfBijective_symm_one f g hf hg]
+  simp
 
 /-! ### Naturality of the direct sum isomorphism -/
 

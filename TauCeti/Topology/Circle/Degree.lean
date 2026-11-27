@@ -47,6 +47,8 @@ angle** `Circle.angleChange γ = θ 1 - θ 0`, for any continuous lift `θ`. Its
 products, odd under reversal and pointwise inversion, and invariant under homotopies fixing the
 endpoints. It is the
 continuous part of the Maslov index of a path of Lagrangian frames.
+The same angle for an unbundled map `w : I → Circle` is `Circle.sweptAngle w`, set to `0` when
+`w` is not continuous, so that it can be defined before continuity is proved.
 
 ## Main declarations
 
@@ -56,6 +58,9 @@ continuous part of the Maslov index of a path of Lagrangian frames.
 * `Circle.degree_eq_of_homotopy`: the degree is invariant under free homotopies of loops.
 * `Circle.degree_eq_of_homotopy_div_norm`: the loops of directions of the two ends of a
   homotopy of closed curves in `ℂ` avoiding `0` have the same degree.
+* `Circle.eq_zero_of_homotopy_div_norm_exp`: a curve whose direction turns uniformly through a
+  multiple `a` of a full turn is homotopic away from `0` to a curve of constant direction only if
+  `a = 0`.
 * `Circle.degree_symm_trans_trans`: the degree is invariant under change of basepoint.
 * `Circle.degree_trans`, `Circle.degree_symm`: the degree of a concatenation of loops is the sum
   of the degrees, and reversing a loop negates its degree.
@@ -81,6 +86,9 @@ continuous part of the Maslov index of a path of Lagrangian frames.
   pointwise products; the corresponding laws of the degree are derived from these.
 * `Circle.angleChange_eq_add_of_halves`: it is the sum of the angles swept by the two halves of
   the path.
+* `Circle.sweptAngle`: the angle swept by a map `I → Circle`, `0` unless it is continuous, with
+  `Circle.sweptAngle_eq_sub`, `Circle.sweptAngle_const`, `Circle.sweptAngle_mul` and
+  `Circle.sweptAngle_comp_symm`.
 * `Circle.exists_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of the
   same map through `Circle.exp` differ by a constant.
 * `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of
@@ -329,6 +337,63 @@ theorem angleChange_eq_add_of_halves {x y x₁ y₁ x₂ y₂ : Circle} (γ : Pa
       (fun s => by rw [hθ, h₂ s _ (hk₂ s)]), hhalf, h0, h1]
   ring
 
+/-! ### The angle swept by a map from the interval -/
+
+open Classical in
+/-- The **angle swept by a map** `w : I → Circle`: the angle `Circle.angleChange` swept by `w`, as
+a path from `w 0` to `w 1`, when `w` is continuous, and `0` otherwise. So it is `θ 1 - θ 0` for
+every continuous lift `θ` of a continuous `w` (`Circle.sweptAngle_eq_sub`). It names the angle of a
+family of points of the circle whose continuity is only proved later. -/
+noncomputable def sweptAngle (w : I → Circle) : ℝ :=
+  if h : Continuous w then angleChange ⟨⟨w, h⟩, rfl, rfl⟩ else 0
+
+/-- A continuous map sweeps the angle `Circle.angleChange` of its path. -/
+theorem sweptAngle_of_continuous {w : I → Circle} (hw : Continuous w) :
+    sweptAngle w = angleChange ⟨⟨w, hw⟩, rfl, rfl⟩ :=
+  dite_eq_left hw
+
+/-- A discontinuous map sweeps the angle `0` by convention. -/
+theorem sweptAngle_of_not_continuous {w : I → Circle} (hw : ¬Continuous w) : sweptAngle w = 0 :=
+  dite_eq_right hw
+
+/-- A constant map sweeps no angle. -/
+@[simp]
+theorem sweptAngle_const (z : Circle) : sweptAngle (fun _ : I ↦ z) = 0 := by
+  rw [sweptAngle_of_continuous continuous_const]
+  exact angleChange_refl z
+
+/-- The angle swept by a continuous map is `θ 1 - θ 0` for every continuous lift `θ`. -/
+theorem sweptAngle_eq_sub {w : I → Circle} (hw : Continuous w) {θ : I → ℝ} (hθ : Continuous θ)
+    (hθw : ∀ t, exp (θ t) = w t) : sweptAngle w = θ 1 - θ 0 := by
+  rw [sweptAngle_of_continuous hw]
+  exact angleChange_eq_sub _ hθ hθw
+
+/-- The exponential of the angle swept by a continuous map `w` is `w 1 / w 0`. -/
+theorem exp_sweptAngle {w : I → Circle} (hw : Continuous w) : exp (sweptAngle w) = w 1 / w 0 := by
+  rw [sweptAngle_of_continuous hw, exp_angleChange]
+
+/-- The angle swept by a continuous map is the change of one of its continuous lifts. -/
+theorem exists_sweptAngle_eq_sub {w : I → Circle} (hw : Continuous w) :
+    ∃ θ : I → ℝ, Continuous θ ∧ (∀ t, exp (θ t) = w t) ∧ sweptAngle w = θ 1 - θ 0 := by
+  obtain ⟨θ, hθ⟩ := exists_lift (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
+  exact ⟨θ, θ.continuous, hθ, sweptAngle_eq_sub hw θ.continuous hθ⟩
+
+/-- The angle swept by a pointwise product of continuous maps is the sum of the angles they
+sweep. -/
+theorem sweptAngle_mul {w w' : I → Circle} (hw : Continuous w) (hw' : Continuous w') :
+    sweptAngle (w * w') = sweptAngle w + sweptAngle w' := by
+  rw [sweptAngle_of_continuous hw, sweptAngle_of_continuous hw',
+    sweptAngle_of_continuous (hw.mul hw')]
+  exact angleChange_mul (⟨⟨w, hw⟩, rfl, rfl⟩ : Path (w 0) (w 1))
+    (⟨⟨w', hw'⟩, rfl, rfl⟩ : Path (w' 0) (w' 1))
+
+/-- Running a continuous map backwards negates the angle it sweeps. -/
+theorem sweptAngle_comp_symm {w : I → Circle} (hw : Continuous w) :
+    sweptAngle (fun t ↦ w (σ t)) = -sweptAngle w := by
+  rw [sweptAngle_of_continuous (w := fun t ↦ w (σ t)) (hw.comp unitInterval.continuous_symm),
+    sweptAngle_of_continuous hw, ← angleChange_symm]
+  exact angleChange_congr _ _ fun _ ↦ rfl
+
 /-- A loop sweeping the angle `n * (2 * π)` has degree `n`. -/
 private theorem degree_eq_of_angleChange_eq {x : Circle} (γ : Path x x) {n : ℤ}
     (h : angleChange γ = n * (2 * π)) : degree γ = n := by
@@ -369,6 +434,26 @@ theorem degree_eq_of_homotopy_div_norm {x y : Circle} (γ₀ : Path x x) (γ₁ 
       Complex.ofReal_inv, inv_mul_eq_div]
   exact degree_eq_of_homotopy γ₀ γ₁ G (fun t => Circle.ext (by rw [hG, h₀]))
     (fun t => Circle.ext (by rw [hG, h₁])) (fun s => Circle.ext (by rw [hG, hG, hF]))
+
+/-- If a homotopy of closed curves in `ℂ` avoiding `0` joins a curve whose loop of directions
+turns uniformly through the angle `a` from `θ₀`, with `exp a = 1`, to a curve of constant direction
+`θ₀`, then `a = 0`. -/
+theorem eq_zero_of_homotopy_div_norm_exp {θ₀ a : ℝ} (ha : exp a = 1) (F : C(I × I, ℂ))
+    (hne : ∀ st, F st ≠ 0) (h₀ : ∀ s : I, (exp (θ₀ + a * s) : ℂ) = F (0, s) / ‖F (0, s)‖)
+    (h₁ : ∀ s : I, (exp θ₀ : ℂ) = F (1, s) / ‖F (1, s)‖) (hF : ∀ s, F (s, 0) = F (s, 1)) :
+    a = 0 := by
+  let γ₀ : Path (exp θ₀) (exp θ₀) :=
+    { toFun := fun s ↦ exp (θ₀ + a * s)
+      continuous_toFun := by fun_prop
+      source' := by simp
+      target' := by rw [Set.Icc.coe_one, mul_one, exp_add, ha, mul_one] }
+  have hdeg : degree γ₀ = 0 :=
+    (degree_eq_of_homotopy_div_norm γ₀ (Path.refl (exp θ₀)) F hne h₀ h₁ hF).trans (degree_refl _)
+  have hθ := sub_eq_degree_mul γ₀ (θ := fun s : I ↦ θ₀ + a * s) (by fun_prop) fun _ ↦ rfl
+  rw [hdeg] at hθ
+  simp only [Set.Icc.coe_one, Set.Icc.coe_zero, mul_one, mul_zero, add_zero, Int.cast_zero,
+    zero_mul] at hθ
+  linarith
 
 /-- Homotopic loops, relative to their basepoint, have the same degree. -/
 theorem degree_eq_of_homotopic {x : Circle} {γ₀ γ₁ : Path x x} (h : γ₀.Homotopic γ₁) :

@@ -31,6 +31,7 @@ of anticommutators on the self-adjoint part when the codomain has cancellative a
 ## Main results
 
 * `IsSelfAdjoint.eq_zero_of_isNilpotent`: a nilpotent self-adjoint element is zero.
+* `IsSelfAdjoint.of_add_right`: if `e + x` and `e` are self-adjoint, then so is `x`.
 * `IsSelfAdjoint.mul_star_eq_neg_star_mul`: if `γ * x = -(x * γ)` for a self-adjoint `γ`, then
   `γ * star x = -(star x * γ)`.
 * `IsSelfAdjoint.mul_eq_right_of_mul_eq_left`: for self-adjoint `x` and `q`, `x * q = x` implies
@@ -41,6 +42,11 @@ of anticommutators on the self-adjoint part when the codomain has cancellative a
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
 * `IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint`: the commutator `ξ H - H ξ` of a skew-adjoint
   `ξ` with a self-adjoint `H` is self-adjoint.
+* `IsSelfAdjoint.eq_zero_of_mem_skewAdjoint`: if `2` is invertible in the scalars, an element
+  that is both self-adjoint and skew-adjoint is zero.
+* `Units.inv_mem_skewAdjoint`: the inverse of a skew-adjoint unit is skew-adjoint.
+* `IsSelfAdjoint.eq_zero_of_add_smul_eq_zero`: if `2` is invertible in the scalars, `p` and `q`
+  are self-adjoint and `t` is a skew-adjoint unit, then `p + t • q = 0` forces `p = q = 0`.
 * `IsSelfAdjoint.eq_of_mul_eq_right`: uniqueness from mutual multiplication identities.
 * `TauCeti.isSelfAdjoint_neg_fact`: packages `Fact (IsSelfAdjoint (-x))` from
   `Fact (IsSelfAdjoint x)`.
@@ -69,6 +75,11 @@ theorem IsSelfAdjoint.eq_zero_of_isNilpotent {x : R} (hx : IsSelfAdjoint x)
   exact key m (pow_eq_zero_of_le m.lt_two_pow_self.le hm)
 
 end Nilpotent
+
+/-- If `e + x` and `e` are self-adjoint, then so is `x`. -/
+theorem IsSelfAdjoint.of_add_right {R : Type*} [AddCommGroup R] [StarAddMonoid R] {e x : R}
+    (hex : IsSelfAdjoint (e + x)) (he : IsSelfAdjoint e) : IsSelfAdjoint x := by
+  simpa using hex.sub he
 
 /-- An element anticommuting with a self-adjoint `γ` has an adjoint anticommuting with `γ`. -/
 theorem IsSelfAdjoint.mul_star_eq_neg_star_mul {R : Type*} [NonUnitalNonAssocRing R]
@@ -105,6 +116,38 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
 theorem IsSelfAdjoint.mul_sub_mul_of_mem_skewAdjoint {R : Type*} [NonUnitalRing R] [StarRing R]
     {ξ H : R} (hH : IsSelfAdjoint H) (hξ : ξ ∈ skewAdjoint R) : IsSelfAdjoint (ξ * H - H * ξ) := by
   simp [IsSelfAdjoint, hH.star_eq, skewAdjoint.mem_iff.mp hξ, neg_add_eq_sub]
+
+/-- If `2` is invertible in a ring of scalars, an element that is both self-adjoint and
+skew-adjoint is zero. -/
+theorem IsSelfAdjoint.eq_zero_of_mem_skewAdjoint (R : Type*) {A : Type*} [Semiring R]
+    [Invertible (2 : R)] [AddCommGroup A] [Module R A] [StarAddMonoid A] {x : A}
+    (hx : IsSelfAdjoint x) (h : x ∈ skewAdjoint A) : x = 0 := by
+  have hxx : x + x = 0 := by
+    rw [skewAdjoint.mem_iff, hx.star_eq, eq_neg_iff_add_eq_zero] at h
+    exact h
+  rw [← one_smul R x, ← invOf_mul_self (2 : R), mul_smul, two_smul, hxx, smul_zero]
+
+/-- The inverse of a skew-adjoint unit is skew-adjoint. -/
+theorem Units.inv_mem_skewAdjoint {R : Type*} [Ring R] [StarRing R] {u : Rˣ}
+    (hu : (u : R) ∈ skewAdjoint R) : ((u⁻¹ : Rˣ) : R) ∈ skewAdjoint R := by
+  rw [skewAdjoint.mem_iff] at hu ⊢
+  rw [← neg_eq_iff_eq_neg]
+  refine Units.eq_inv_of_mul_eq_one_left ?_
+  rw [mul_neg, ← neg_mul, ← hu, ← star_mul, Units.inv_mul, star_one]
+
+/-- **Self-adjoint coordinates along a skew-adjoint unit are unique**: if `2` is invertible in the
+scalars, `p` and `q` are self-adjoint and `t` is a skew-adjoint unit, then `p + t • q = 0` forces
+`p = 0` and `q = 0`. -/
+theorem IsSelfAdjoint.eq_zero_of_add_smul_eq_zero (R : Type*) {E A : Type*} [Semiring R]
+    [Invertible (2 : R)] [Ring E] [StarRing E] [AddCommGroup A] [Module R A] [Module E A]
+    [StarAddMonoid A] [StarModule E A] {p q : A} {t : Eˣ} (hp : IsSelfAdjoint p)
+    (hq : IsSelfAdjoint q) (ht : (t : E) ∈ skewAdjoint E) (h : p + (t : E) • q = 0) :
+    p = 0 ∧ q = 0 := by
+  have hp0 : p = 0 := hp.eq_zero_of_mem_skewAdjoint R <| by
+    rw [eq_neg_of_add_eq_zero_left h]
+    exact neg_mem (hq.smul_mem_skewAdjoint ht)
+  rw [hp0, zero_add] at h
+  exact ⟨hp0, by rw [← one_smul E q, ← t.inv_mul, mul_smul, h, smul_zero]⟩
 
 /-- Two self-adjoint elements agreeing in range with an element `e` are equal.
 For idempotents in a ring, the equations express equality of their principal right ideals. -/

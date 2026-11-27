@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.MvPolynomial.Complexification
+public import TauCeti.Analysis.MvPolynomial.Complexification.Preparation
 public import TauCeti.Analysis.Polynomial.Puiseux.Monic
 public import TauCeti.Analysis.Polynomial.Puiseux.RealRoots
 import Mathlib.Analysis.Convex.Contractible

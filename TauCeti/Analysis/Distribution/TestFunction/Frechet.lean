@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.ContDiffMapSupportedIn
+public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Topology.Baire.CompleteMetrizable
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
 import TauCeti.Analysis.LocallyConvex.Barrelled
@@ -31,7 +32,9 @@ product of the seminorms `N_{≤k}` of a single finite order `k`
 (`LinearMap.exists_bound_supportedIn_of_continuous`). Such a bilinear map arises from every
 continuous linear map from test functions to distributions, by pairing; the bound is the
 continuity hypothesis of the Schwartz kernel theorem for test functions supported in small compact
-sets, `LinearMap.exists_schwartzKernel_supportedIn`.
+sets, `LinearMap.exists_schwartzKernel_supportedIn`. Conversely, a bilinear map on test functions on
+open sets satisfying such a bound on each pair of compact sets is continuous in each variable
+(`LinearMap.continuous_apply_left_of_bound`, `LinearMap.continuous_apply_right_of_bound`).
 
 ## Main results
 
@@ -41,11 +44,17 @@ sets, `LinearMap.exists_schwartzKernel_supportedIn`.
   `𝓓^{n}_{K}(E, F)` completely metrizable, hence a Baire space and barrelled.
 * `ContDiffMapSupportedIn.supSeminorm_apply_eq_of_scalars`: the seminorms `N_{≤i}` do not depend
   on the field of scalars.
+* `ContDiffMapSupportedIn.supSeminorm_mono`: the seminorms `N_{≤i}` increase with `i`.
 * `ContDiffMapSupportedIn.supSeminorm_eq_zero_iff`: each seminorm `N_{≤i}` vanishes only at zero.
 * `ContDiffMapSupportedIn.withSeminorms_supSeminorm_self`: for finite `ℓ`, the single seminorm
   `max_{j ≤ ℓ} N_j` defines the topology of `𝓓^{ℓ}_{K}(E, F)`.
 * `LinearMap.exists_bound_supportedIn_of_continuous`: a separately continuous bilinear map on two
   such spaces is bounded by `C N_{≤k}(φ) N_{≤k}(ψ)` for some `C` and `k`.
+* `LinearMap.exists_bound_ofSupportedIn_of_continuous`: the same bound on each pair of compact
+  sets for a separately continuous bilinear map on test functions on open sets.
+* `LinearMap.continuous_apply_left_of_bound`, `LinearMap.continuous_apply_right_of_bound`:
+  conversely, a bilinear map on test functions on open sets with such a bound on each pair of
+  compact sets is continuous in each variable.
 * `ContDiffMapSupportedIn.supSeminorm_le_of_forall_norm_iteratedFDeriv_le`: a uniform bound `B`
   on the derivatives of order at most `r` bounds the seminorm `N_{≤r}` by `B`.
 
@@ -145,6 +154,13 @@ theorem supSeminorm_apply_eq_of_scalars (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
       (seminorm_apply_eq_of_scalars _ f).trans_le (Seminorm.le_finset_sup_apply hj))
     (Seminorm.finset_sup_apply_le (apply_nonneg _ _) fun _ hj ↦
       (seminorm_apply_eq_of_scalars _ f).symm.trans_le (Seminorm.le_finset_sup_apply hj))
+
+/-- The seminorms `max_{j ≤ i} N_j` increase with `i`. -/
+theorem supSeminorm_mono : Monotone (ContDiffMapSupportedIn.supSeminorm 𝕜 E F n K) := by
+  intro i j hij
+  -- By definition `max_{k ≤ i} N_k` is the supremum of the `N_k` over `Finset.Iic i`.
+  unfold ContDiffMapSupportedIn.supSeminorm
+  exact Finset.sup_mono (Finset.Iic_subset_Iic.2 hij)
 
 /-- Each seminorm `max_{j ≤ i} N_j` vanishes only at zero, since it bounds the sup norm `N_0`. -/
 theorem supSeminorm_eq_zero_iff (i : ℕ) (f : 𝓓^{n}_{K}(E, F)) :
@@ -248,5 +264,85 @@ theorem exists_bound_supportedIn_of_continuous
   gcongr
   · exact Seminorm.le_def.1 (Finset.sup_mono (hle Finset.subset_union_left)) φ
   · exact Seminorm.le_def.1 (Finset.sup_mono (hle Finset.subset_union_right)) ψ
+
+/-- A bilinear map `B` on test functions on open sets `Ω ⊆ E₁` and `O ⊆ E₂`, continuous in each
+variable, satisfies the estimate of the Schwartz kernel theorem: for all compact sets `K₁ ⊆ Ω` and
+`K₂ ⊆ O` some `C` and `k` give `‖B φ ψ‖ ≤ C N_{≤k}(φ) N_{≤k}(ψ)` for `φ` supported in `K₁` and `ψ`
+supported in `K₂`. -/
+theorem exists_bound_ofSupportedIn_of_continuous {Ω : Opens E₁} {O : Opens E₂}
+    (B : 𝓓^{n₁}(Ω, F₁) →ₗ[𝕜] 𝓓^{n₂}(O, F₂) →ₗ[𝕜] G)
+    (h₁ : ∀ ψ, Continuous fun φ ↦ B φ ψ) (h₂ : ∀ φ, Continuous (B φ))
+    (K₁ : Compacts E₁) (K₂ : Compacts E₂) (hK₁ : (K₁ : Set E₁) ⊆ Ω) (hK₂ : (K₂ : Set E₂) ⊆ O) :
+    ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
+      ‖B (TestFunction.ofSupportedIn hK₁ φ) (TestFunction.ofSupportedIn hK₂ ψ)‖ ≤
+        C * ContDiffMapSupportedIn.supSeminorm 𝕜 E₁ F₁ n₁ K₁ k φ *
+          ContDiffMapSupportedIn.supSeminorm 𝕜 E₂ F₂ n₂ K₂ k ψ :=
+  exists_bound_supportedIn_of_continuous
+    (B.compl₁₂ (TestFunction.ofSupportedInCLM 𝕜 hK₁).toLinearMap
+      (TestFunction.ofSupportedInCLM 𝕜 hK₂).toLinearMap)
+    (fun _ ↦ (h₁ _).comp (TestFunction.continuous_ofSupportedIn hK₁))
+    (fun _ ↦ (h₂ _).comp (TestFunction.continuous_ofSupportedIn hK₂))
+
+end LinearMap
+
+namespace LinearMap
+
+open TestFunction
+
+variable {𝕜 E D F₁ F₂ G : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D] [NormedSpace ℝ D]
+  [NormedAddCommGroup F₁] [NormedSpace ℝ F₁] [NormedSpace 𝕜 F₁] [IsScalarTower ℝ 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace ℝ F₂] [NormedSpace 𝕜 F₂] [IsScalarTower ℝ 𝕜 F₂]
+  [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace 𝕜 G] [IsScalarTower ℝ 𝕜 G]
+  {n₁ n₂ : ℕ∞} {Ω : Opens E} {O : Opens D}
+
+/-- Conversely to `LinearMap.exists_bound_ofSupportedIn_of_continuous`, a bilinear map `B` on test
+functions on open sets `Ω` and `O` such that for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C`
+and `k` give `‖B φ ψ‖ ≤ C N_{≤k}(φ) N_{≤k}(ψ)` for `φ` supported in `K₁` and `ψ` supported in
+`K₂` is continuous in its first variable. -/
+theorem continuous_apply_left_of_bound (B : 𝓓^{n₁}(Ω, F₁) →ₗ[𝕜] 𝓓^{n₂}(O, F₂) →ₗ[𝕜] G)
+    (hB : ∀ (K₁ : Compacts E) (K₂ : Compacts D) (hK₁ : (K₁ : Set E) ⊆ Ω)
+      (hK₂ : (K₂ : Set D) ⊆ O), ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
+        ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
+          C * ContDiffMapSupportedIn.supSeminorm 𝕜 E F₁ n₁ K₁ k φ *
+            ContDiffMapSupportedIn.supSeminorm 𝕜 D F₂ n₂ K₂ k ψ)
+    (ψ : 𝓓^{n₂}(O, F₂)) : Continuous fun φ ↦ B φ ψ := by
+  -- `ψ` is supported in the compact set `tsupport ψ`, so on the tests supported in a compact `K₁`
+  -- the map `φ ↦ B φ ψ` is bounded by a multiple of one seminorm.
+  let K₂ : Compacts D := ⟨tsupport ψ, ψ.hasCompactSupport⟩
+  let ψ₀ : 𝓓^{n₂}_{K₂}(D, F₂) := .of_support_subset ψ.contDiff (subset_tsupport _)
+  have hψ : ofSupportedIn ψ.tsupport_subset ψ₀ = ψ := TestFunction.ext fun _ ↦ rfl
+  refine (TestFunction.continuous_iff_continuous_comp (B.flip ψ)).2 fun K₁ hK₁ ↦ ?_
+  obtain ⟨C, k, hC⟩ := hB K₁ K₂ hK₁ ψ.tsupport_subset
+  have h (φ : 𝓓^{n₁}_{K₁}(E, F₁)) : ‖B (ofSupportedIn hK₁ φ) ψ‖ ≤
+      ((C * ContDiffMapSupportedIn.supSeminorm 𝕜 D F₂ n₂ K₂ k ψ₀).toNNReal : ℝ) *
+        ContDiffMapSupportedIn.supSeminorm 𝕜 E F₁ n₁ K₁ k φ := by
+    calc ‖B (ofSupportedIn hK₁ φ) ψ‖
+        = ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn ψ.tsupport_subset ψ₀)‖ := by rw [hψ]
+      _ ≤ C * ContDiffMapSupportedIn.supSeminorm 𝕜 E F₁ n₁ K₁ k φ *
+            ContDiffMapSupportedIn.supSeminorm 𝕜 D F₂ n₂ K₂ k ψ₀ := hC φ ψ₀
+      _ ≤ _ := by
+        rw [mul_right_comm, Real.coe_toNNReal']
+        exact mul_le_mul_of_nonneg_right (le_max_left _ _) (apply_nonneg _ _)
+  exact WithSeminorms.continuous_normedSpace_rng G
+    (ContDiffMapSupportedIn.withSeminorms' 𝕜 E F₁ n₁ K₁)
+    ((B.flip ψ).comp (ofSupportedInCLM 𝕜 hK₁).toLinearMap)
+    ⟨{k}, (C * ContDiffMapSupportedIn.supSeminorm 𝕜 D F₂ n₂ K₂ k ψ₀).toNNReal, fun φ ↦ by
+      simpa [NNReal.smul_def] using h φ⟩
+
+/-- Conversely to `LinearMap.exists_bound_ofSupportedIn_of_continuous`, a bilinear map `B` on test
+functions on open sets `Ω` and `O` such that for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C`
+and `k` give `‖B φ ψ‖ ≤ C N_{≤k}(φ) N_{≤k}(ψ)` for `φ` supported in `K₁` and `ψ` supported in
+`K₂` is continuous in its second variable. -/
+theorem continuous_apply_right_of_bound (B : 𝓓^{n₁}(Ω, F₁) →ₗ[𝕜] 𝓓^{n₂}(O, F₂) →ₗ[𝕜] G)
+    (hB : ∀ (K₁ : Compacts E) (K₂ : Compacts D) (hK₁ : (K₁ : Set E) ⊆ Ω)
+      (hK₂ : (K₂ : Set D) ⊆ O), ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
+        ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
+          C * ContDiffMapSupportedIn.supSeminorm 𝕜 E F₁ n₁ K₁ k φ *
+            ContDiffMapSupportedIn.supSeminorm 𝕜 D F₂ n₂ K₂ k ψ)
+    (φ : 𝓓^{n₁}(Ω, F₁)) : Continuous (B φ) := by
+  refine continuous_apply_left_of_bound B.flip (fun K₂ K₁ hK₂ hK₁ ↦ ?_) φ
+  obtain ⟨C, k, hC⟩ := hB K₁ K₂ hK₁ hK₂
+  exact ⟨C, k, fun ψ φ ↦ by simpa only [flip_apply, mul_right_comm C] using hC φ ψ⟩
 
 end LinearMap

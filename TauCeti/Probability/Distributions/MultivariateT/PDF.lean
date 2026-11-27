@@ -176,14 +176,9 @@ private theorem multivariateGaussian_smul_eq_withDensity (m : EuclideanSpace ℝ
   rw [multivariateGaussian_eq_withDensity (hS.smul hc)]
   congr 1
   funext x
-  rw [multivariateGaussianPDF_def, multivariateGaussianPDFReal_def]
+  rw [multivariateGaussianPDF_def]
   beta_reduce
-  have hinv : ((ν / v) • S)⁻¹ = (ν / v)⁻¹ • S⁻¹ := by
-    simpa [Units.smul_def] using
-      Matrix.inv_smul' S (Units.mk0 _ hc.ne') hS.det_pos.ne'.isUnit
-  rw [Matrix.det_smul, hinv, componentDensity]
-  congr 3
-  simp [inner_smul_right]
+  rw [multivariateGaussianPDFReal_smul, componentDensity]
 
 /-- On the positive half-line, the chi-squared density times the Gaussian component density is a
 constant multiple of the Gamma integrand `v ^ ((ν + d) / 2 - 1) * exp (-((1 + q / ν) / 2 * v))`,
@@ -321,9 +316,6 @@ theorem gammaPDFReal_mul_multivariateGaussianPDFReal (a : EuclideanSpace ℝ ι)
     (Matrix.isPositive_toEuclideanLin_iff.mpr hR.inv.posSemidef).inner_nonneg_right (x - a)
   set d : ℝ := (Fintype.card ι : ℝ) with hd_def
   have hD := hR.det_pos
-  have hinv : (τ⁻¹ • R)⁻¹ = τ • R⁻¹ := by
-    simpa [Units.smul_def] using
-      Matrix.inv_smul' R (Units.mk0 _ (inv_pos.mpr hτ).ne') hD.ne'.isUnit
   have hΓ' : 0 < Real.Gamma ((ν + d) / 2) := Real.Gamma_pos_of_pos (by positivity)
   -- Collect the powers of `τ` and the exponentials on the left.
   have e1 : (τ⁻¹ ^ Fintype.card ι * R.det) ^ (-(1 : ℝ) / 2) =
@@ -348,9 +340,8 @@ theorem gammaPDFReal_mul_multivariateGaussianPDFReal (a : EuclideanSpace ℝ ι)
       ← Real.rpow_add (by positivity : (0 : ℝ) < ν / 2), ← add_div]
     field_simp
   simp only [gammaPDFReal, hτ.le, ↓reduceIte]
-  rw [multivariateGaussianPDFReal_def, multivariateTPDFReal_of_posDef a hν hR, hinv,
-    Matrix.det_smul, e1, ← hq_def, ← hd_def]
-  simp only [map_smul, LinearMap.smul_apply, inner_smul_right]
+  rw [multivariateGaussianPDFReal_smul,
+    multivariateTPDFReal_of_posDef a hν hR, e1, inv_inv, ← hq_def, ← hd_def]
   calc (ν / 2) ^ (ν / 2) / Real.Gamma (ν / 2) * τ ^ (ν / 2 - 1) * exp (-(ν / 2 * τ)) *
         ((2 * π) ^ (-d / 2) * (τ ^ (d / 2) * R.det ^ (-(1 : ℝ) / 2)) * exp (-(τ * q) / 2))
       = (ν / 2) ^ (ν / 2) * (2 * π) ^ (-d / 2) * R.det ^ (-(1 : ℝ) / 2) / Real.Gamma (ν / 2) *

@@ -33,7 +33,9 @@ a linear map of the completed capped modules. This file proves:
   (`TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_mem_map_cochain_gradeBy`).
 * **Chain maps.** If the series obey the identity `∑ₖ Φᵢₖ Dₖₖ' = ∑ᵢ' Eᵢᵢ' Φᵢ'ₖ'` with series
   `D` and `E` of differentials, the map intertwines the differentials
-  (`TauCeti.Floer.novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm`).
+  (`TauCeti.Floer.novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm`); when it
+  also preserves the cochain degree, it sends cocycles to cocycles
+  (`TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_mem_cocycles`).
 * **Homotopies.** If the series of two maps `Φ`, `Φ'` and of a map `Y` obey
   `Φᵢₖ - Φ'ᵢₖ = ∑ₘ Yᵢₘ D₀ₘₖ + ∑ₘ D₁ᵢₘ Yₘₖ`, then `Φ - Φ' = D₀ Y + Y D₁` on the completed modules
   (`TauCeti.Floer.novikovMapOfMatrix_coefficientComparison_sub_eq_add`); when `Y` lowers the
@@ -45,6 +47,12 @@ a linear map of the completed capped modules. This file proves:
   once to `(Φ, Ψ)` and once to `(Ψ, Φ)`, each with its own homotopy, this supplies the two
   hypotheses `hgf` and `hfg` under which `LinearMap.cohomologyEquiv` makes a PSS map an
   isomorphism of cohomology.
+* **Ground-ring linear maps.** The map of the counts is packaged as the ground-ring linear map of
+  its kernel (`TauCeti.Floer.countMap`), which preserves the cochain degree, commutes with the
+  differentials under the chain-map identity and, for counts which are homotopy inverse to each
+  other, induces bijections on cohomology (`TauCeti.Floer.bijective_cohomologyMap_countMap`); a
+  homotopy right inverse alone gives surjectivity
+  (`TauCeti.Floer.surjective_cohomologyMap_countMap`).
 * **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` for lifts `g₁, g₀ ∈ G`
   changes the class of each counted configuration relative to them by `g₀ - g₁`. With the
   generating series multiplied by `q^(g₀ - g₁)` accordingly, the kernel, hence the map, is
@@ -180,6 +188,19 @@ theorem novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy [Finite ι�
   novikovMapOfMatrix_coefficientComparison_mem_map_cochain_gradeBy r₁ r₀ q hq hμ₁ hμ₀ hF₁ hF₀ hΦ
     (AddMonoidHom.id ℤ) ha
 
+/-- A map of rigid class-indexed counts which preserves the index preserves the cochain degree
+`n - μ`. -/
+theorem novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq [Finite ι₁] [Finite ι₀]
+    {F₁ : (Σ i, P₁ i) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+    (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (hF₀ : ∀ k γ (D : P₀ k), F₀ ⟨k, γ +ᵥ D⟩ = F₀ ⟨k, D⟩ - (-area ω c) γ)
+    (hΦ : ∀ i k, ∀ A ∈ (Φ i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩)
+    {n e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e) :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) a ∈
+      gradeBy R F₀ (fun p => n - μ₀ p) e := by
+  simpa only [add_zero] using novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy r₁ r₀ q
+    hq hμ₁ hμ₀ hF₁ hF₀ (ε := 0) (fun i k A hA => (hΦ i k A hA).trans (sub_zero _).symm) ha
+
 end MapGrading
 
 section ChainMap
@@ -218,6 +239,24 @@ theorem novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm [Fintyp
   have h := congrArg (fun A => novikovMapOfMatrix hF₁ hF₀ r₁ r₀ A a) hm
   simpa only [novikovMapOfMatrix_mul hF₁ hF₀ hF₀ r₁ r₀ r₀,
     novikovMapOfMatrix_mul hF₁ hF₀ hF₁ r₁ r₀ r₁, LinearMap.comp_apply] using h
+
+/-- The map of the comparison of the identity matrix of class-indexed series is the identity:
+the stationary cylinders act as the identity on the completed capped module. -/
+@[simp]
+theorem novikovMapOfMatrix_coefficientComparison_one_apply [Finite ι₁] [DecidableEq ι₁]
+    {F₁ : (Σ i, P₁ i) → ℝ} (hF₁ : ∀ i γ (D : P₁ i), F₁ ⟨i, γ +ᵥ D⟩ = F₁ ⟨i, D⟩ - (-area ω c) γ)
+    (x : NovikovModule R F₁) :
+    letI := module (R := R) hF₁
+    novikovMapOfMatrix hF₁ hF₁ r₁ r₁
+        (fun i i' => coefficientComparison q hq ((1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) i i'))
+        x =
+      x := by
+  let := module (R := R) hF₁
+  have h1 : (fun i i' =>
+      coefficientComparison q hq ((1 : Matrix ι₁ ι₁ (NovikovSeries R G ωG)) i i')) =
+      (1 : Matrix ι₁ ι₁ _) :=
+    Matrix.map_one (coefficientComparison q hq) (map_zero _) (map_one _)
+  rw [h1, novikovMapOfMatrix_one, LinearMap.id_apply]
 
 end ChainMap
 
@@ -270,6 +309,44 @@ theorem novikovMapOfMatrix_coefficientComparison_sub_eq_add
 variable {μ₁ : (Σ i, P₁ i) → ℤ} {μ₀ : (Σ k, P₀ k) → ℤ}
   (hμ₁ : ∀ i γ (D : P₁ i), μ₁ ⟨i, γ +ᵥ D⟩ = degree ω c γ + μ₁ ⟨i, D⟩)
   (hμ₀ : ∀ k γ (D : P₀ k), μ₀ ⟨k, γ +ᵥ D⟩ = degree ω c γ + μ₀ ⟨k, D⟩)
+
+include hμ₁ hμ₀ in
+/-- **Chain maps of rigid class-indexed counts send cocycles to cocycles.** If every class counted
+by `Φ` satisfies the index condition `μ₀(r₀) - 2 c₁(A) = μ₁(r₁)`, so that `Φ` preserves the
+cochain degree `n - μ`, and the series obey the chain-map identity of
+`TauCeti.Floer.novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm`, then `Φ` sends
+every cocycle of `D₁` of cochain degree `e` to a cocycle of `D₀` of cochain degree `e`. The
+endomorphisms are the ground-ring linear maps of their counts, for any potential bounds of their
+kernels. -/
+theorem novikovMapOfMatrix_coefficientComparison_mem_cocycles
+    {Φ : ι₁ → ι₀ → NovikovSeries R G ωG} {D₁ : ι₁ → ι₁ → NovikovSeries R G ωG}
+    {D₀ : ι₀ → ι₀ → NovikovSeries R G ωG}
+    (hΦdeg : ∀ i k, ∀ A ∈ (Φ i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩)
+    (hΦ : ∀ i k', ∑ k, Φ i k * D₀ k k' = ∑ i', D₁ i i' * Φ i' k') {C₁ C₀ : ℝ}
+    (hδ₁ : ∀ p p',
+      mapKernelOfMatrix r₁ r₁ (fun i i' => coefficientComparison q hq (D₁ i i')) p p' ≠ 0 →
+        F₁ p' ≤ F₁ p + C₁)
+    (hδ₀ : ∀ p p',
+      mapKernelOfMatrix r₀ r₀ (fun k k' => coefficientComparison q hq (D₀ k k')) p p' ≠ 0 →
+        F₀ p' ≤ F₀ p + C₀)
+    {n e : ℤ} {a : NovikovModule R F₁}
+    (ha : a ∈ (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _)).cocycles
+      (gradeBy R F₁ fun p => n - μ₁ p) e) :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (Φ i k)) a ∈
+      (kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _)).cocycles
+        (gradeBy R F₀ fun p => n - μ₀ p) e := by
+  obtain ⟨_, hm⟩ := exists_potential_le_of_mapKernelOfMatrix_ne_zero hF₁ hF₀ r₁ r₀
+    (fun i k => coefficientComparison q hq (Φ i k))
+  rw [novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm]
+  refine LinearMap.apply_mem_cocycles_of_mem_cocycles _ (fun {_ b} hb => ?_) (fun {_ b} _ => ?_) ha
+  · rw [← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm]
+    exact novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq r₁ r₀ q hq hμ₁ hμ₀
+      hF₁ hF₀ hΦdeg hb
+  · simp only [← novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ hm,
+      ← novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀,
+      ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁]
+    exact novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm r₁ r₀ q hq hF₁ hF₀ Φ D₀
+      D₁ hΦ b
 
 include hμ₁ hμ₀ in
 /-- **Homotopic maps of class-indexed counts agree on cocycles up to coboundaries.** Under the
@@ -372,13 +449,144 @@ theorem novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_cobo
   rwa [hΦΨ, h₁, novikovMapOfMatrix_mul hF₁ hF₁ hF₀ r₁ r₁ r₀, novikovMapOfMatrix_one,
     LinearMap.comp_apply, LinearMap.id_apply] at h
 
+section CountMap
+
+variable (N : ι₁ → ι₀ → NovikovSeries R G ωG)
+
+/-- **The ground-ring linear map of class-indexed counts.** The map of the comparison of the
+counts `N` (`TauCeti.NovikovModule.novikovMapOfMatrix`), as the ground-ring linear map of its
+kernel for some potential bound, so that it can be fed to the cohomology of ground-ring linear
+endomorphisms. -/
+def countMap : NovikovModule R F₁ →ₗ[R] NovikovModule R F₀ :=
+  kernelMap (exists_potential_le_of_mapKernelOfMatrix_ne_zero hF₁ hF₀ r₁ r₀
+      (fun i k => coefficientComparison q hq (N i k))).choose_spec
+    (mapKernelOfMatrix_mem hF₀ r₁ r₀ _)
+
+/-- The ground-ring linear map of class-indexed counts is the map of their matrix. -/
+theorem countMap_apply (a : NovikovModule R F₁) :
+    countMap r₁ r₀ q hq hF₁ hF₀ N a =
+      novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (fun i k => coefficientComparison q hq (N i k)) a :=
+  (novikovMapOfMatrix_eq_kernelMap hF₁ hF₀ r₁ r₀ _ _ a).symm
+
+include hμ₁ hμ₀ in
+/-- The ground-ring linear map of rigid counts which preserve the index preserves the cochain
+degree `n - μ`. -/
+theorem countMap_mem_gradeBy
+    (hN : ∀ i k, ∀ A ∈ (N i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩)
+    {n e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ (fun p => n - μ₁ p) e) :
+    countMap r₁ r₀ q hq hF₁ hF₀ N a ∈ gradeBy R F₀ (fun p => n - μ₀ p) e := by
+  rw [countMap_apply]
+  exact novikovMapOfMatrix_coefficientComparison_mem_cochain_gradeBy_of_eq r₁ r₀ q hq hμ₁ hμ₀ hF₁
+    hF₀ hN ha
+
+variable (D₁ : ι₁ → ι₁ → NovikovSeries R G ωG) (D₀ : ι₀ → ι₀ → NovikovSeries R G ωG) {C₁ C₀ : ℝ}
+  (hδ₁ : ∀ p p',
+    mapKernelOfMatrix r₁ r₁ (fun i i' => coefficientComparison q hq (D₁ i i')) p p' ≠ 0 →
+      F₁ p' ≤ F₁ p + C₁)
+  (hδ₀ : ∀ p p',
+    mapKernelOfMatrix r₀ r₀ (fun k k' => coefficientComparison q hq (D₀ k k')) p p' ≠ 0 →
+      F₀ p' ≤ F₀ p + C₀)
+
+/-- The ground-ring linear map of counts obeying the chain-map identity commutes with the
+differentials. -/
+theorem kernelMap_countMap (hND : ∀ i k', ∑ k, N i k * D₀ k k' = ∑ i', D₁ i i' * N i' k')
+    (a : NovikovModule R F₁) :
+    kernelMap hδ₀ (mapKernelOfMatrix_mem hF₀ r₀ r₀ _) (countMap r₁ r₀ q hq hF₁ hF₀ N a) =
+      countMap r₁ r₀ q hq hF₁ hF₀ N (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _) a) := by
+  rw [countMap_apply, countMap_apply, ← novikovMapOfMatrix_eq_kernelMap hF₀ hF₀ r₀ r₀ _ hδ₀,
+    ← novikovMapOfMatrix_eq_kernelMap hF₁ hF₁ r₁ r₁ _ hδ₁]
+  exact novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_comm r₁ r₀ q hq hF₁ hF₀ N D₀ D₁
+    hND a
+
+include hμ₁ in
+/-- If the counts `N` followed by counts `N'` back are homotopic to the identity through counts
+lowering the cochain degree by one, then the ground-ring linear maps of `N` and `N'` send every
+cocycle `a` back to `a` up to a coboundary. This is
+`TauCeti.Floer.novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_coboundaries`
+for the ground-ring linear maps. -/
+theorem countMap_countMap_sub_mem_coboundaries [DecidableEq ι₁]
+    (N' : ι₀ → ι₁ → NovikovSeries R G ωG)
+    (hinv : ∃ Y : ι₁ → ι₁ → NovikovSeries R G ωG,
+      (∀ i l, ∀ A ∈ (Y i l).support, μ₁ ⟨l, r₁ l⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + 1) ∧
+      ∀ i l, ∑ k, N i k * N' k l - (if i = l then 1 else 0) =
+        ∑ m, Y i m * D₁ m l + ∑ m, D₁ i m * Y m l)
+    {n e : ℤ} {a : NovikovModule R F₁}
+    (ha : a ∈ (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _)).cocycles
+      (gradeBy R F₁ fun p => n - μ₁ p) e) :
+    countMap r₀ r₁ q hq hF₀ hF₁ N' (countMap r₁ r₀ q hq hF₁ hF₀ N a) - a ∈
+      (kernelMap hδ₁ (mapKernelOfMatrix_mem hF₁ r₁ r₁ _)).coboundaries
+        (gradeBy R F₁ fun p => n - μ₁ p) e := by
+  obtain ⟨Y, hY, hYid⟩ := hinv
+  rw [countMap_apply, countMap_apply]
+  exact novikovMapOfMatrix_novikovMapOfMatrix_coefficientComparison_sub_mem_coboundaries r₁ r₀ q hq
+    hF₁ hF₀ hμ₁ N N' Y D₁ hY hYid hδ₁ ha
+
+include hμ₁ hμ₀ in
+/-- **Counts with a homotopy right inverse are onto on cohomology.** Let `N` and `N'` be counts of
+rigid maps in the two directions which preserve the index and obey the chain-map identities, and
+suppose that `N'` followed by `N` is homotopic to the identity through counts lowering the cochain
+degree by one. Then the map induced by `N` on the degree-`e` cohomology of the differentials is
+surjective. -/
+theorem surjective_cohomologyMap_countMap [DecidableEq ι₀] (n : ℤ)
+    (N' : ι₀ → ι₁ → NovikovSeries R G ωG)
+    (hN : ∀ i k, ∀ A ∈ (N i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩)
+    (hN' : ∀ k i, ∀ A ∈ (N' k i).support, μ₁ ⟨i, r₁ i⟩ - degree ω c (q A) = μ₀ ⟨k, r₀ k⟩)
+    (hND : ∀ i k', ∑ k, N i k * D₀ k k' = ∑ i', D₁ i i' * N i' k')
+    (hN'D : ∀ k i', ∑ i, N' k i * D₁ i i' = ∑ k', D₀ k k' * N' k' i')
+    (hNN' : ∃ Y : ι₀ → ι₀ → NovikovSeries R G ωG,
+      (∀ k l, ∀ A ∈ (Y k l).support, μ₀ ⟨l, r₀ l⟩ - degree ω c (q A) = μ₀ ⟨k, r₀ k⟩ + 1) ∧
+      ∀ k l, ∑ i, N' k i * N i l - (if k = l then 1 else 0) =
+        ∑ m, Y k m * D₀ m l + ∑ m, D₀ k m * Y m l)
+    (e : ℤ) :
+    Function.Surjective (LinearMap.cohomologyMap
+      (G₁ := gradeBy R F₁ fun p => n - μ₁ p) (G₀ := gradeBy R F₀ fun p => n - μ₀ p)
+      (countMap r₁ r₀ q hq hF₁ hF₀ N) (countMap_mem_gradeBy r₁ r₀ q hq hF₁ hF₀ hμ₁ hμ₀ N hN)
+      (fun {_} {a} _ => kernelMap_countMap r₁ r₀ q hq hF₁ hF₀ N D₁ D₀ hδ₁ hδ₀ hND a) e) :=
+  (LinearMap.leftInverse_cohomologyMap (countMap r₀ r₁ q hq hF₀ hF₁ N') _
+    (countMap_mem_gradeBy r₀ r₁ q hq hF₀ hF₁ hμ₀ hμ₁ N' hN')
+    (fun {_} {a} _ => kernelMap_countMap r₀ r₁ q hq hF₀ hF₁ N' D₀ D₁ hδ₀ hδ₁ hN'D a) _ _
+    (countMap_countMap_sub_mem_coboundaries r₀ r₁ q hq hF₀ hF₁ hμ₀ N' D₀ hδ₀ N hNN')).surjective
+
+include hμ₁ hμ₀ in
+/-- **Homotopy-inverse counts induce isomorphisms on cohomology.** Let `N` and `N'` be counts of
+rigid maps in the two directions which preserve the index and obey the chain-map identities, and
+suppose that the composites in both orders are homotopic to the identities through counts
+lowering the cochain degree by one. Then the map induced by `N` on the degree-`e` cohomology of
+the differentials is bijective. -/
+theorem bijective_cohomologyMap_countMap [DecidableEq ι₁] [DecidableEq ι₀] (n : ℤ)
+    (N' : ι₀ → ι₁ → NovikovSeries R G ωG)
+    (hN : ∀ i k, ∀ A ∈ (N i k).support, μ₀ ⟨k, r₀ k⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩)
+    (hN' : ∀ k i, ∀ A ∈ (N' k i).support, μ₁ ⟨i, r₁ i⟩ - degree ω c (q A) = μ₀ ⟨k, r₀ k⟩)
+    (hND : ∀ i k', ∑ k, N i k * D₀ k k' = ∑ i', D₁ i i' * N i' k')
+    (hN'D : ∀ k i', ∑ i, N' k i * D₁ i i' = ∑ k', D₀ k k' * N' k' i')
+    (hN'N : ∃ Y : ι₁ → ι₁ → NovikovSeries R G ωG,
+      (∀ i l, ∀ A ∈ (Y i l).support, μ₁ ⟨l, r₁ l⟩ - degree ω c (q A) = μ₁ ⟨i, r₁ i⟩ + 1) ∧
+      ∀ i l, ∑ k, N i k * N' k l - (if i = l then 1 else 0) =
+        ∑ m, Y i m * D₁ m l + ∑ m, D₁ i m * Y m l)
+    (hNN' : ∃ Y : ι₀ → ι₀ → NovikovSeries R G ωG,
+      (∀ k l, ∀ A ∈ (Y k l).support, μ₀ ⟨l, r₀ l⟩ - degree ω c (q A) = μ₀ ⟨k, r₀ k⟩ + 1) ∧
+      ∀ k l, ∑ i, N' k i * N i l - (if k = l then 1 else 0) =
+        ∑ m, Y k m * D₀ m l + ∑ m, D₀ k m * Y m l)
+    (e : ℤ) :
+    Function.Bijective (LinearMap.cohomologyMap
+      (G₁ := gradeBy R F₁ fun p => n - μ₁ p) (G₀ := gradeBy R F₀ fun p => n - μ₀ p)
+      (countMap r₁ r₀ q hq hF₁ hF₀ N) (countMap_mem_gradeBy r₁ r₀ q hq hF₁ hF₀ hμ₁ hμ₀ N hN)
+      (fun {_} {a} _ => kernelMap_countMap r₁ r₀ q hq hF₁ hF₀ N D₁ D₀ hδ₁ hδ₀ hND a) e) :=
+  LinearMap.bijective_cohomologyMap _ (countMap r₀ r₁ q hq hF₀ hF₁ N') _ _
+    (countMap_mem_gradeBy r₀ r₁ q hq hF₀ hF₁ hμ₀ hμ₁ N' hN')
+    (fun {_} {a} _ => kernelMap_countMap r₀ r₁ q hq hF₀ hF₁ N' D₀ D₁ hδ₀ hδ₁ hN'D a)
+    (countMap_countMap_sub_mem_coboundaries r₁ r₀ q hq hF₁ hF₀ hμ₁ N D₁ hδ₁ N' hN'N)
+    (countMap_countMap_sub_mem_coboundaries r₀ r₁ q hq hF₀ hF₁ hμ₀ N' D₀ hδ₀ N hNN')
+
+end CountMap
+
 end Homotopy
 
 end Monoid
 
 section Reference
 
-variable {G : Type*} [AddCommGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
+variable {G : Type*} [AddGroup G] {ωG : G →+ ℝ} (q : G →+ PeriodGroup ω c)
   (hq : ∀ A, area ω c (q A) = ωG A)
 
 /-- **Change of reference caps.** Moving the reference caps to `q gₗ # rₗ` changes the class of a

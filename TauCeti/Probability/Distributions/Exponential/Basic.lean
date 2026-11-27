@@ -54,10 +54,15 @@ the `a = 1` cases of the Gamma results in `TauCeti.Probability.Distributions.Gam
 * `memLp_log_expMeasure`, `integrable_log_expMeasure`, `integral_log_expMeasure` — finite moments,
   integrability, and the mean of the logarithm under a positive-rate exponential law;
 * `integrable_exp_mul_expMeasure_iff` — exact exponential integrability threshold `t < r`;
+* `integrable_exp_mul_sub_expMeasure_iff`, `mgf_sub_const_expMeasure` — the exponential
+  integrability threshold and moment-generating function for a shifted law;
 * `integrableExpSet_id_expMeasure` — exact domain `(-∞, r)`;
 * `mgf_id_expMeasure` — moment-generating function `r / (r - t)`;
 * `cgf_id_expMeasure` — cumulant-generating function `log (r / (r - t))`;
 * `charFun_expMeasure` — characteristic function `(r : ℂ) / (r - I * t)`;
+* the results in `ProbabilityTheory.HasLaw` with the same moment or transform name transfer the
+  real-power moments, natural moments, mean, variance, exact exponential-moment criterion, MGF,
+  and CGF to every random variable with the exponential law;
 * `measureReal_Ioi_expMeasure`, `measure_Ioi_expMeasure` — tail probabilities;
 * `expMeasure_map_const_mul`, `ProbabilityTheory.HasLaw.const_mul_expMeasure` — positive scaling
   divides the rate at the measure and random-variable levels;
@@ -351,6 +356,34 @@ theorem mgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
   rw [expMeasure, mgf_id_gammaMeasure one_pos hr ht, Real.rpow_neg_one,
     one_sub_div hr.ne', inv_div]
 
+/-- A shifted exponential law has an exponential moment exactly below its rate. -/
+@[simp]
+theorem integrable_exp_mul_sub_expMeasure_iff (hr : 0 < r) (t c : ℝ) :
+    Integrable (fun x : ℝ => exp (t * (x - c))) (expMeasure r) ↔ t < r := by
+  have hfun : (fun x : ℝ => exp (t * (x - c))) =
+      fun x => exp (-(t * c)) * exp (t * x) := by
+    funext x
+    rw [← exp_add]
+    congr 1
+    ring
+  rw [hfun, integrable_const_mul_iff (isUnit_iff_ne_zero.mpr (exp_ne_zero _)),
+    integrable_exp_mul_expMeasure_iff hr]
+
+/-- The MGF of a shifted positive-rate exponential law, on its integrability domain. -/
+@[simp]
+theorem mgf_sub_const_expMeasure (hr : 0 < r) (ht : t < r) (c : ℝ) :
+    mgf (fun x : ℝ => x - c) (expMeasure r) t =
+      exp (-(t * c)) * (r / (r - t)) := by
+  calc
+    mgf (fun x : ℝ => x - c) (expMeasure r) t =
+        mgf id (expMeasure r) t * exp (t * (-c)) := by
+      simpa only [sub_eq_add_neg, id_eq] using
+        (mgf_add_const (X := id) (μ := expMeasure r) (t := t) (-c))
+    _ = exp (-(t * c)) * (r / (r - t)) := by
+      rw [mgf_id_expMeasure hr ht]
+      simp only [mul_neg]
+      ring
+
 /-- The cumulant-generating function of an exponential law with positive rate. -/
 @[simp]
 theorem cgf_id_expMeasure (hr : 0 < r) (ht : t < r) :
@@ -600,3 +633,73 @@ theorem hasLaw_nnrealExpMeasure_iff {Ω : Type*} [MeasurableSpace Ω] {P : Measu
     simpa only [← nnrealExpMeasure_def, Function.comp_def, Real.toNNReal_coe] using h
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ} {r : ℝ}
+
+/-- A real power of an exponential random variable is integrable exactly when its exponent is
+greater than `-1`. -/
+theorem integrable_rpow_expMeasure_iff (hX : HasLaw X (expMeasure r) P)
+    (hr : 0 < r) (q : ℝ) : Integrable (fun ω ↦ X ω ^ q) P ↔ -1 < q := by
+  rw [← TauCeti.Probability.integrable_rpow_expMeasure_iff hr q, ← hX.map_eq,
+    integrable_map_measure (by fun_prop) hX.aemeasurable]
+  simp only [Function.comp_def]
+
+/-- The real-power moment of an exponential random variable, on its exact integrability domain. -/
+theorem integral_rpow_expMeasure (hX : HasLaw X (expMeasure r) P)
+    (hr : 0 < r) {q : ℝ} (hq : -1 < q) :
+    ∫ ω, X ω ^ q ∂P = Real.Gamma (1 + q) / r ^ q := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ q), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_rpow_expMeasure hr hq]
+
+/-- Every natural power of an exponential random variable is integrable, including for a
+nonpositive rate, when the totalized exponential measure is zero. -/
+theorem integrable_pow_expMeasure (hX : HasLaw X (expMeasure r) P) (n : ℕ) :
+    Integrable (fun ω ↦ X ω ^ n) P := by
+  apply hX.integrable_fun_comp
+  by_cases hr : 0 < r
+  · exact TauCeti.Probability.integrable_pow_expMeasure hr n
+  · simp [ProbabilityTheory.expMeasure_of_nonpos (le_of_not_gt hr)]
+
+/-- The natural raw moments of an exponential random variable. -/
+theorem integral_pow_expMeasure (hX : HasLaw X (expMeasure r) P)
+    (hr : 0 < r) (n : ℕ) :
+    ∫ ω, X ω ^ n ∂P = (Nat.factorial n : ℝ) / r ^ n := by
+  rw [← Function.comp_def (f := fun x : ℝ ↦ x ^ n), hX.integral_comp (by fun_prop),
+    TauCeti.Probability.integral_pow_expMeasure hr]
+
+/-- The expectation of an exponential random variable is the reciprocal of its rate. -/
+theorem integral_expMeasure (hX : HasLaw X (expMeasure r) P) (hr : 0 < r) :
+    ∫ ω, X ω ∂P = r⁻¹ := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_expMeasure hr]
+
+/-- An exponential random variable has an exponential moment of rate `t` exactly when `t` is
+below the distribution's rate parameter. -/
+theorem integrable_exp_mul_expMeasure_iff (hX : HasLaw X (expMeasure r) P)
+    (hr : 0 < r) (t : ℝ) : Integrable (fun ω ↦ Real.exp (t * X ω)) P ↔ t < r := by
+  rw [← TauCeti.Probability.integrable_exp_mul_expMeasure_iff (t := t) hr, ← hX.map_eq,
+    integrable_map_measure (by fun_prop) hX.aemeasurable]
+  simp only [Function.comp_def]
+
+/-- The moment-generating function of an exponential random variable on its integrability
+domain. -/
+theorem mgf_expMeasure (hX : HasLaw X (expMeasure r) P) (hr : 0 < r)
+    {t : ℝ} (ht : t < r) : mgf X P t = r / (r - t) := by
+  rw [← mgf_id_map hX.aemeasurable, hX.map_eq,
+    TauCeti.Probability.mgf_id_expMeasure hr ht]
+
+/-- The cumulant-generating function of an exponential random variable on its integrability
+domain. -/
+theorem cgf_expMeasure (hX : HasLaw X (expMeasure r) P) (hr : 0 < r)
+    {t : ℝ} (ht : t < r) : cgf X P t = Real.log (r / (r - t)) := by
+  rw [cgf, hX.mgf_expMeasure hr ht]
+
+/-- The variance of an exponential random variable is the reciprocal of the square of its rate. -/
+theorem variance_expMeasure (hX : HasLaw X (expMeasure r) P) (hr : 0 < r) :
+    variance X P = (r ^ 2)⁻¹ := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_expMeasure hr]
+
+end ProbabilityTheory.HasLaw

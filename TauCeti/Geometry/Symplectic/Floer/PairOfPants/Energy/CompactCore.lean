@@ -46,6 +46,9 @@ used for transversality with localized Hamiltonian variations, rests on.
 * `IsNondegenerate.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le`, in
   the namespace `SmoothTwoForm`: the energy bound, uniform over a compact family of core
   perturbations.
+* `IsNondegenerate.exists_integrableOn_and_setIntegral_le_pairOfPantsPerturbation_add`, in the
+  namespace `SmoothTwoForm`: solutions have integrable energy density, and their energy over any
+  part of `S` is bounded by their topological energy plus `B₀ + B₁ + B_∞ + C`, uniformly.
 * `IsNondegenerate.exists_neg_sum_add_le_integral_add_sum_of_pairOfPantsPerturbation_add`, in the
   namespace `SmoothTwoForm`: the uniform lower bound on the topological energy of solutions.
 * `SymplecticForm.exists_integrable_and_integral_floerEnergyDensity_pairOfPantsPerturbation_add_le`:
@@ -85,8 +88,7 @@ private theorem IsNondegenerate.pairOfPantsPerturbation_add_aux
     (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
     (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
     (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
@@ -157,8 +159,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_add
     (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
     (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
     (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
@@ -208,8 +209,7 @@ theorem IsNondegenerate.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_
     (hδs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δs))
     (hδt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
     (hD : IsCompact D) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
@@ -256,8 +256,7 @@ theorem IsNondegenerate.exists_abs_integral_floerEnergyDensity_pairOfPantsPertur
       (fun q : (N × (ℝ × ℝ)) × M ↦ δt q.1.1 q.1.2 q.2))
     {A : Set N} {D U : Set (ℝ × ℝ)} {Q : Set M}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ p ∈ A, ∀ u : ℝ × ℝ → M,
       ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal → (∀ z ∈ D, u z ∈ Q) →
@@ -294,6 +293,73 @@ theorem IsNondegenerate.exists_abs_integral_floerEnergyDensity_pairOfPantsPertur
   exact (eNorm_integral_le_lintegral_eNorm _).trans
     ((setLIntegral_le_lintegral _ _).trans (hbound p hp u huQ))
 
+/-- **The energy of solutions with core perturbations over parts of `S`, for a manifold target.**
+Under the hypotheses of
+`IsNondegenerate.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le` there
+is a constant `C ≥ 0` such that, for every `p ∈ A` and every solution `u` of the Floer equation
+`(du - X_{K + δ_p})^{0,1} = 0` on `S` for almost complex structures tamed by the two-form, as in
+that theorem but with no integrability assumed of its energy density, the energy density of `u` is
+integrable over `S`, and its integral over any `Ω ⊆ S` is at most the symplectic area plus the
+Hamiltonian terms at the asymptotic orbits plus `B₀ + B₁ + B_∞ + C`. -/
+theorem IsNondegenerate.exists_integrableOn_and_setIntegral_le_pairOfPantsPerturbation_add
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    (hB : ∀ q t x, |H q t x| ≤ B q) {δs δt : N → ℝ × ℝ → M → ℝ}
+    (hδs : ContMDiff ((J.prod 𝓘(ℝ, ℝ × ℝ)).prod I) 𝓘(ℝ) 1
+      (fun q : (N × (ℝ × ℝ)) × M ↦ δs q.1.1 q.1.2 q.2))
+    (hδt : ContMDiff ((J.prod 𝓘(ℝ, ℝ × ℝ)).prod I) 𝓘(ℝ) 1
+      (fun q : (N × (ℝ × ℝ)) × M ↦ δt q.1.1 q.1.2 q.2))
+    {A : Set N} {D U : Set (ℝ × ℝ)} {Q : Set M}
+    (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
+    (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ p ∈ A, ∀ u : ℝ × ℝ → M,
+      ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal → (∀ z ∈ D, u z ∈ Q) →
+      ∀ x : Puncture → ℝ → M, (∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+        (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t))) →
+      IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal →
+      ∀ Jz : ∀ z, AlmostComplexStructure (TangentSpace I (u z)),
+      (∀ z ∈ thricePuncturedSphereReal, (hω.symplecticFormAt (u z)).Tames (Jz z)) →
+      (∀ z ∈ thricePuncturedSphereReal,
+        IsComplexLinearMap (AlmostComplexStructure.product ℝ) (Jz z)
+          (ω.perturbedMFDeriv
+            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1 +
+              δs p z x)
+            (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I +
+              δt p z x) u z).toLinearMap) →
+      IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1 + δs p z x)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I +
+          δt p z x) u) thricePuncturedSphereReal ∧
+      ∀ Ω ⊆ thricePuncturedSphereReal, ∫ z in Ω, ω.floerEnergyDensity
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1 + δs p z x)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I +
+            δt p z x) u z ≤
+        ((∫ z in thricePuncturedSphereReal,
+            (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+              (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+          ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t)) + ((∑ q, B q) + C) := by
+  obtain ⟨C, hC, hbound⟩ :=
+    hω.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le hH hHs hB hδs
+      hδt hA hD hQ hU hDU hcore hs ht
+  refine ⟨C, hC, fun p hp u hu huQ x hx harea Jz hJ hfloer ↦ ?_⟩
+  have hι : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) ((J.prod 𝓘(ℝ, ℝ × ℝ)).prod I) 1
+      (fun r : (ℝ × ℝ) × M ↦ ((p, r.1), r.2)) :=
+    (contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd
+  -- The energy density of a solution is nonnegative, hence integrable.
+  have he (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :=
+    floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add (δs := δs p)
+    (δt := δt p) hH hHs hB (hδs.comp hι) (hδt.comp hι) hD hU hDU hcore (hs p hp) (ht p hp) hu hx he
+    harea
+  have h := abs_le.1 (hbound p hp u hu huQ x hx hE harea)
+  -- The energy over `Ω` is at most the energy over `S`.
+  refine ⟨hE, fun Ω hΩ ↦ (setIntegral_mono_set hE (ae_restrict_of_forall_mem
+    isOpen_thricePuncturedSphereReal.measurableSet he) (Eventually.of_forall hΩ)).trans ?_⟩
+  linarith [h.2]
+
 /-- **The topological energy of solutions with core perturbations is bounded below, for a manifold
 target.** Under the hypotheses of
 `IsNondegenerate.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le` there
@@ -313,8 +379,7 @@ theorem IsNondegenerate.exists_neg_sum_add_le_integral_add_sum_of_pairOfPantsPer
       (fun q : (N × (ℝ × ℝ)) × M ↦ δt q.1.1 q.1.2 q.2))
     {A : Set N} {D U : Set (ℝ × ℝ)} {Q : Set M}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ p ∈ A, ∀ u : ℝ × ℝ → M,
       ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal → (∀ z ∈ D, u z ∈ Q) →
@@ -338,21 +403,13 @@ theorem IsNondegenerate.exists_neg_sum_add_le_integral_add_sum_of_pairOfPantsPer
               (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
           ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t) := by
   obtain ⟨C, hC, hbound⟩ :=
-    hω.exists_abs_integral_floerEnergyDensity_pairOfPantsPerturbation_add_sub_le hH hHs hB hδs
-      hδt hA hD hQ hU hDU hcore hs ht
+    hω.exists_integrableOn_and_setIntegral_le_pairOfPantsPerturbation_add hH hHs hB hδs hδt hA hD
+      hQ hU hDU hcore hs ht
   refine ⟨C, hC, fun p hp u hu huQ x hx harea Jz hJ hfloer ↦ ?_⟩
-  have hι : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) ((J.prod 𝓘(ℝ, ℝ × ℝ)).prod I) 1
-      (fun r : (ℝ × ℝ) × M ↦ ((p, r.1), r.2)) :=
-    (contMDiff_const.prodMk contMDiff_fst).prodMk contMDiff_snd
-  -- The energy density of a solution is nonnegative, hence integrable.
-  have he (z : ℝ × ℝ) (hz : z ∈ thricePuncturedSphereReal) :=
-    floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
-  have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation_add (δs := δs p)
-    (δt := δt p) hH hHs hB (hδs.comp hι) (hδt.comp hι) hD hU hDU hcore (hs p hp) (ht p hp) hu hx he
-    harea
-  have hpos := setIntegral_nonneg (μ := volume) isOpen_thricePuncturedSphereReal.measurableSet he
-  have h := abs_le.1 (hbound p hp u hu huQ x hx hE harea)
-  linarith [h.2]
+  -- The energy over the empty set vanishes.
+  have h := (hbound p hp u hu huQ x hx harea Jz hJ hfloer).2 ∅ (empty_subset _)
+  rw [Measure.restrict_empty, integral_zero_measure] at h
+  exact neg_le_iff_add_nonneg.2 h
 
 end TauCeti.SmoothTwoForm
 
@@ -373,7 +430,7 @@ private theorem pairOfPantsPerturbation_add_aux (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {δs δt : ℝ × ℝ → V → ℝ}
     (hδs : ContDiff ℝ 1 (uncurry δs)) (hδt : ContDiff ℝ 1 (uncurry δt)) {D U : Set (ℝ × ℝ)}
     (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ z ∉ D, δs z = 0) (ht : ∀ z ∉ D, δt z = 0) {K : ℂ → V → ℂ →L[ℝ] ℝ}
     (hKdef : K = fun w y ↦ pairOfPantsPerturbation H w y +
       (δs (equivRealProdCLM w) y • reCLM + δt (equivRealProdCLM w) y • imCLM)) :
@@ -426,7 +483,7 @@ theorem exists_integrable_and_integral_floerEnergyDensity_pairOfPantsPerturbatio
     (hδt : ContDiff ℝ 1 (fun q : (P × (ℝ × ℝ)) × V ↦ δt q.1.1 q.1.2 q.2))
     {A : Set P} {D U : Set (ℝ × ℝ)} {Q : Set V}
     (hA : IsCompact A) (hD : IsCompact D) (hQ : IsCompact Q) (hU : IsOpen U) (hDU : D ⊆ U)
-    (hcore : ∀ z ∈ U, ∀ q : Puncture, q.endSign * (q.endCoord (equivRealProdCLM.symm z)).re ≤ 1)
+    (hcore : ∀ z ∈ U, ∀ q : Puncture, (positiveEndCoord q z).1 ≤ 1)
     (hs : ∀ p ∈ A, ∀ z ∉ D, δs p z = 0) (ht : ∀ p ∈ A, ∀ z ∉ D, δt p z = 0) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ p ∈ A, ∀ u : ℝ × ℝ → V, ContDiffOn ℝ 2 u thricePuncturedSphereReal →
       (∀ z ∈ D, u z ∈ Q) → ∀ J : ℝ × ℝ → AlmostComplexStructure V,

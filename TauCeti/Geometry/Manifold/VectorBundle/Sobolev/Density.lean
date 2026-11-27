@@ -9,8 +9,9 @@ import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Analysis.Sobolev.Wkp.FiniteCover
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.AEZeroOff
-public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ContMDiffSection
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Exponent
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.SMul
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Transfer
 import TauCeti.Analysis.Sobolev.Local.Coordinates
@@ -72,6 +73,7 @@ changes of chart and trivialization
   `TauCeti.SobolevSection.denseRange_ofContMDiffSection_comp_ofLE`: the `C^∞` sections are dense in
   `W^{k,p}(V)` for every `k` and `1 ≤ p < ∞`.
 * `TauCeti.SobolevSection.denseRange_ofContMDiffSection`: the `Cᵏ` sections are dense.
+* `TauCeti.SobolevSection.denseRange_ofExponentLEL`: lowering the exponent has dense range.
 * `TauCeti.SobolevSection.hasExtensionByZero`: over surfaces, extension by zero holds for `Cⁿ`
   bundles at orders `k ≤ n`; `hasExtensionByZero_of_le_one` is the case
   `k ≤ 1` for `C¹` bundles.
@@ -205,8 +207,8 @@ private theorem mem_closure_range_of_mem_aeZeroOff [T2Space M] (hp : p ≠ ⊤)
     have hT' := (T.continuous.tendsto _).comp (hlim j)
     rw [hTu j] at hT'
     exact hT'
-  have hE := ((extendByZeroL h (isClosed_tsupport ψ) hψi).continuous.tendsto _).comp hconv
-  simp only [Function.comp_def, extendByZeroL_chartRestrictL] at hE
+  have hE := tendsto_subtype_rng.1 (tendsto_of_tendsto_chartRestrictL h (isClosed_tsupport ψ) hψi
+    hconv)
   exact (Submodule.isClosed_topologicalClosure _).mem_of_tendsto hE
     (Eventually.of_forall fun m ↦ Submodule.le_topologicalClosure _ (ha m))
 
@@ -484,6 +486,19 @@ variable (A μ p k) in
 `TauCeti.SobolevSection.dense_ofContMDiffSection_contMDiff` for density of `C^∞` sections. -/
 theorem denseRange_ofContMDiffSection (hp : p ≠ ⊤) : DenseRange (ofContMDiffSection A μ p k) :=
   (dense_ofContMDiffSection_contMDiff A μ p k hp).mono (by rintro _ ⟨s, -, rfl⟩; exact ⟨s, rfl⟩)
+
+variable (A μ k) in
+/-- **Lowering the exponent has dense range.** For `1 ≤ p ≤ q`, the inclusion
+`W^{k,q}(V) → W^{k,p}(V)` (`TauCeti.SectionChartData.ofExponentLEL`) has dense range. For `p < ∞`
+its range contains the `Cᵏ` sections, which are dense; for `p = ∞` it is the identity. -/
+theorem denseRange_ofExponentLEL {q : ℝ≥0∞} [Fact (1 ≤ q)] (hpq : p ≤ q) :
+    DenseRange (A.sectionChartData.ofExponentLEL μ k hpq) := by
+  rcases eq_or_ne p ⊤ with rfl | hp
+  · obtain rfl := top_le_iff.1 hpq
+    exact Function.Surjective.denseRange fun w ↦ ⟨w, SectionChartData.ofExponentLEL_self w⟩
+  refine (denseRange_ofContMDiffSection A μ p k hp).mono ?_
+  rintro _ ⟨s, rfl⟩
+  exact ⟨ofContMDiffSection A μ q k s, ofExponentLEL_ofContMDiffSection hpq s⟩
 
 end Unconditional
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.RestrictedProduct.TopologicalSpace
+import TauCeti.Topology.Algebra.Monoid
 
 /-!
 # The topology of a restricted product
@@ -15,10 +16,17 @@ topology over the principal stages `Πʳ i, [R i, A i]_[𝓟 S]`. A set is open 
 preimage in every principal stage is open: this is the `Prop`-valued form of Mathlib's universal
 property `RestrictedProduct.continuous_dom`. Inserting a single factor is continuous, the analogue
 of `continuous_mulSingle` (and, additively, `continuous_single`) for `Pi` types, and for Hausdorff
-factors it is a closed embedding. Over the cofinite filter, evaluation at an index is an open map.
+factors it is a closed embedding. Over the cofinite filter, factors from the reference sets inserted
+at single indices tend to `1`, and evaluation at an index is an open map.
 On a subspace lying in the reference sets at every index of some `T` with `𝓕 ≤ 𝓟 T` (over the
 cofinite filter: outside finitely many indices), the restricted-product topology agrees with the
 product topology.
+A restricted product of nonempty clopen reference sets is weakly locally compact only if all but
+finitely many reference sets are compact
+(`eventually_isCompact_of_weaklyLocallyCompactSpace_restrictedProduct`), the converse of Mathlib's
+`RestrictedProduct.weaklyLocallyCompactSpace_of_cofinite`.
+The instance `TauCeti.fact_isOpen_coe_subtype_val` passes openness of the reference sets to the
+restriction of the family to a subtype of the index type.
 
 The restricted-product topology is finer than the topology induced from the full product
 `Π i, R i`, and in general strictly finer. The clearest instance is a family of discrete spaces
@@ -92,6 +100,30 @@ theorem isEmbedding_restrictedProduct_coe_comp {X : Type w} [TopologicalSpace X]
     (RestrictedProduct.isEmbedding_inclusion_principal hT).of_comp_iff.mp hf
   exact RestrictedProduct.isEmbedding_coe_of_principal.comp hg
 
+/-- **A weakly locally compact restricted product has cofinitely compact reference sets.** If
+every reference set `A i` is a nonempty clopen subset of `R i` and `Πʳ i, [R i, A i]` is weakly
+locally compact, then `A i` is compact for all but finitely many `i`. This is the converse of
+Mathlib's `RestrictedProduct.weaklyLocallyCompactSpace_of_cofinite`; it applies to open subgroups,
+which are closed. -/
+theorem eventually_isCompact_of_weaklyLocallyCompactSpace_restrictedProduct
+    [WeaklyLocallyCompactSpace (Πʳ i, [R i, A i])] (hAopen : ∀ i, IsOpen (A i))
+    (hAclosed : ∀ i, IsClosed (A i)) (hA : ∀ i, (A i).Nonempty) :
+    ∀ᶠ i in cofinite, IsCompact (A i) := by
+  classical
+  let x : ∀ i, A i := fun i ↦ ⟨(hA i).some, (hA i).some_mem⟩
+  obtain ⟨K, hK, hKx⟩ := exists_compact_mem_nhds (RestrictedProduct.structureMap R A cofinite x)
+  rw [RestrictedProduct.nhds_eq_map_structureMap hAopen, mem_map, nhds_pi, mem_pi'] at hKx
+  obtain ⟨I, t, ht, hIt⟩ := hKx
+  -- Outside `I`, every `a ∈ A i` is the `i`-th coordinate of a point of `K`, so the compact image
+  -- of `K` under evaluation at `i` contains the closed set `A i`.
+  refine Eventually.mono I.finite_toSet.compl_mem_cofinite fun i hi ↦ ?_
+  refine (hK.image (RestrictedProduct.continuous_eval i)).of_isClosed_subset (hAclosed i)
+    fun a ha ↦ ⟨RestrictedProduct.structureMap R A cofinite (Function.update x i ⟨a, ha⟩),
+      hIt fun j hj ↦ ?_, (RestrictedProduct.structureMap_apply _ _ _).trans
+      (congrArg Subtype.val (Function.update_self i (⟨a, ha⟩ : A i) x))⟩
+  rw [Function.update_of_ne (ne_of_mem_of_not_mem hj hi)]
+  exact mem_of_mem_nhds (ht j)
+
 section
 
 variable {S : ι → Type w} {G : ι → Type v} [∀ i, SetLike (S i) (G i)] (B : ∀ i, S i)
@@ -123,6 +155,27 @@ theorem isClosedEmbedding_restrictedProduct_mulSingle [∀ i, T2Space (G i)] (i 
   Function.LeftInverse.isClosedEmbedding (f := fun x : Πʳ j, [G j, B j] ↦ x i)
     (RestrictedProduct.mulSingle_eq_same B i) (RestrictedProduct.continuous_eval i)
     (continuous_restrictedProduct_mulSingle B i)
+
+/-- **Factors in the reference sets, inserted at single indices, tend to `1` along the cofinite
+filter.** For `x i ∈ B i`, the element `RestrictedProduct.mulSingle B i (x i)`, equal to `x i` at
+`i` and to `1` elsewhere, tends to `1` as `i` leaves every finite set. -/
+@[to_additive
+  /-- **Factors in the reference sets, inserted at single indices, tend to `0` along the cofinite
+  filter.** For `x i ∈ B i`, the element `RestrictedProduct.single B i (x i)`, equal to `x i` at
+  `i` and to `0` elsewhere, tends to `0` as `i` leaves every finite set. -/]
+theorem tendsto_restrictedProduct_mulSingle_cofinite {x : ∀ i, G i} (hx : ∀ i, x i ∈ B i) :
+    Tendsto (fun i ↦ RestrictedProduct.mulSingle B i (x i)) cofinite (𝓝 1) := by
+  -- the inclusion of `∏ i, B i` is continuous, and carries `Pi.mulSingle i (x i)` to the point
+  -- `RestrictedProduct.mulSingle B i (x i)`
+  have hc := (RestrictedProduct.isEmbedding_structureMap (R := G)
+    (A := fun i ↦ (B i : Set (G i))) (𝓕 := cofinite)).continuous
+  refine ((hc.tendsto 1).comp (tendsto_mulSingle_cofinite fun i ↦ (⟨x i, hx i⟩ : B i))).congr
+    fun i ↦ ?_
+  ext j
+  rcases eq_or_ne j i with rfl | hj
+  · simp [RestrictedProduct.structureMap_apply]
+  · simp [RestrictedProduct.structureMap_apply, Pi.mulSingle_eq_of_ne hj,
+      RestrictedProduct.mulSingle_eq_of_ne _ _ hj]
 
 end
 
@@ -203,5 +256,13 @@ theorem not_isInducing_coe_bot [∀ i, DiscreteTopology (G i)]
   exact hg hmem
 
 end Discrete
+
+/-- Openness of a family of reference sets passes to its restriction to a subtype of the index
+type. -/
+instance fact_isOpen_coe_subtype_val {ι : Type*} {G : ι → Type*} {K : ι → Type*}
+    [∀ i, TopologicalSpace (G i)] [∀ i, SetLike (K i) (G i)] {B : ∀ i, K i}
+    [hB : Fact (∀ i, IsOpen (B i : Set (G i)))] (p : ι → Prop) :
+    Fact (∀ i : Subtype p, IsOpen (B i.val : Set (G i.val))) :=
+  ⟨fun i ↦ hB.out i.val⟩
 
 end TauCeti

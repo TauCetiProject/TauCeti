@@ -22,8 +22,10 @@ consumers keep needing: on the diagonal, a product of triangular matrices multip
 entrywise, because `∑ k, A i k * B k i` has a single surviving term — and consequences of
 that, such as the diagonal of an inverse. It also proves uniqueness of a lower-triangular Gram
 factor with positive diagonal, defines upper-unitriangular matrices, and proves that strictly
-upper-triangular matrices are nilpotent. A nonzero submodule invariant under a family of strictly
-upper-triangular matrices contains a nonzero vector annihilated by the whole family.
+upper-triangular matrices are nilpotent, as are, more generally, matrices vanishing wherever a
+ranking of the indices (not necessarily injective) fails to increase strictly. A nonzero
+submodule invariant under a family of strictly upper-triangular matrices contains a nonzero vector
+annihilated by the whole family.
 
 The diagonal results are stated directly for `Matrix.IsUpperTriangular` and
 `Matrix.IsLowerTriangular` rather than through membership in the Borel subalgebra, since there is
@@ -62,18 +64,33 @@ Lie-algebra theory.
   entrywise: `M⁻¹ i i * M i i = 1`.
 * `Matrix.inv_apply_diag_of_isUpperTriangular` — where an upper-triangular matrix carries a `1`
   on the diagonal, so does its inverse.
+* `Matrix.inv_apply_diag_mul_of_isLowerTriangular` and
+  `Matrix.inv_apply_diag_of_isLowerTriangular` — the corresponding facts for lower-triangular
+  matrices.
 * `Matrix.IsUpperUnitriangular` — an upper-triangular matrix with diagonal one.
 * `Matrix.IsUpperUnitriangular.ext` — upper-unitriangular matrices are determined by their
   entries strictly above the diagonal.
 * `Matrix.IsUpperUnitriangular.submatrix` — selecting rows and columns by a strictly increasing
   map preserves upper unitriangularity.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
+* `Matrix.IsUpperUnitriangular.diagonal_mul_mul_diagonal` — conjugation by an invertible diagonal
+  matrix preserves upper-unitriangular matrices.
 * `Matrix.IsUpperUnitriangular.mul` and `Matrix.IsUpperUnitriangular.pow` — upper-unitriangular
   matrices are closed under products and natural powers.
+* `Matrix.IsUpperUnitriangular.mul_single_zero_last`,
+  `Matrix.IsUpperUnitriangular.single_zero_last_mul` — upper-unitriangular factors absorb the
+  corner matrix unit `E₀ₙ`, and `Matrix.IsUpperUnitriangular.eq_one_add_single_zero_last` — an
+  upper-unitriangular matrix vanishing away from the diagonal and the corner is `1 + t E₀ₙ`.
 * `Matrix.isNilpotent_of_apply_eq_zero_of_le` — a matrix that is strictly block triangular for a
   ranking of its indices, not necessarily injective, is nilpotent.
 * `Matrix.isNilpotent_of_isUpperTriangular_of_diag_eq_zero` — strict upper triangularity implies
   nilpotence.
+* `Matrix.blockDiagonalPart` — the entries of a matrix between indices of equal rank for a
+  ranking `b`, and `Matrix.BlockTriangular.isIdempotentElem_blockDiagonalPart`: it is idempotent
+  for a block triangular idempotent.
+* `Matrix.BlockTriangular.mul_apply_eq_zero_of_le` and its primed form — vanishing wherever a
+  ranking of the indices does not strictly increase survives multiplication by block triangular
+  matrices on either side.
 * `Matrix.updateCol_mul_updateCol_apply_of_lt` — replacing the same column of both factors of a
   product with an upper-triangular right factor leaves the earlier columns of the product
   unchanged.
@@ -83,6 +100,11 @@ Lie-algebra theory.
   strictly below the diagonal is upper triangular exactly when its parameter vanishes.
 * `TauCeti.vecMul_injective_of_submatrix_isUpperTriangular` — a rectangular matrix has injective
   row multiplication when a square column selection is upper triangular with nonzero diagonal.
+* `TauCeti.unitDiagonalMatrixOfEntries` — the matrix with diagonal entries `1`, prescribed
+  entries at the off-diagonal pairs satisfying a predicate and all other entries `0`, with its
+  evaluation lemmas `TauCeti.unitDiagonalMatrixOfEntries_apply_of_mem`, `_apply_self` and
+  `_apply_of_notMem`, and `TauCeti.isUpperUnitriangular_unitDiagonalMatrixOfEntries` — it is
+  upper unitriangular when the pairs satisfying the predicate lie above the diagonal.
 -/
 
 public section
@@ -109,6 +131,12 @@ def IsUpperUnitriangular [LT m] [Zero R] [One R] (M : Matrix m m R) : Prop :=
 /-- Upper unitriangularity consists of upper triangularity and diagonal entries equal to one. -/
 theorem isUpperUnitriangular_def [LT m] [Zero R] [One R] (M : Matrix m m R) :
     M.IsUpperUnitriangular ↔ M.IsUpperTriangular ∧ ∀ i, M i i = 1 :=
+  Iff.rfl
+
+/-- A matrix is upper unitriangular exactly when its entries strictly below the diagonal vanish
+and its diagonal entries are one. -/
+theorem isUpperUnitriangular_iff [LT m] [Zero R] [One R] (M : Matrix m m R) :
+    M.IsUpperUnitriangular ↔ (∀ ⦃i j⦄, j < i → M i j = 0) ∧ ∀ i, M i i = 1 :=
   Iff.rfl
 
 /-- An upper-unitriangular matrix is upper triangular. -/
@@ -186,6 +214,15 @@ theorem IsUpperUnitriangular.map {S F : Type*} [LT m] [Zero R] [One R] [Zero S] 
     (M.map f).IsUpperUnitriangular := by
   refine ⟨hM.1.map f, fun i ↦ ?_⟩
   simp [hM.2 i]
+
+/-- Conjugating an upper-unitriangular matrix by a diagonal matrix with inverse diagonal
+`diagonal d * M * diagonal e`, `d i * e i = 1`, gives an upper-unitriangular matrix. -/
+theorem IsUpperUnitriangular.diagonal_mul_mul_diagonal [Fintype m] [DecidableEq m] [LT m]
+    [NonAssocSemiring R] {M : Matrix m m R} (hM : M.IsUpperUnitriangular) {d e : m → R}
+    (hde : ∀ i, d i * e i = 1) : (diagonal d * M * diagonal e).IsUpperUnitriangular := by
+  refine ⟨fun i j hij ↦ ?_, fun i ↦ ?_⟩
+  · simp [mul_diagonal, diagonal_mul, hM.isUpperTriangular hij]
+  · simp [mul_diagonal, diagonal_mul, hM.apply_diag i, hde i]
 
 section Nilpotence
 
@@ -274,6 +311,89 @@ theorem isNilpotent_of_isUpperTriangular_of_diag_eq_zero [Fintype m] [LinearOrde
 
 end Nilpotence
 
+section BlockDiagonalPart
+
+variable {S α : Type*} {b : m → α}
+
+/-- The block-diagonal part of a matrix for a ranking `b` of its indices: the entries between
+indices of equal rank, with all other entries replaced by zero. -/
+def blockDiagonalPart [Zero S] [DecidableEq α] (M : Matrix m m S) (b : m → α) : Matrix m m S :=
+  of fun i j ↦ if b i = b j then M i j else 0
+
+@[simp]
+theorem blockDiagonalPart_apply [Zero S] [DecidableEq α] (M : Matrix m m S) (b : m → α) (i j : m) :
+    M.blockDiagonalPart b i j = if b i = b j then M i j else 0 :=
+  (rfl)
+
+@[simp]
+theorem blockDiagonalPart_map [Zero S] [DecidableEq α] {T : Type*} [Zero T] (M : Matrix m m S)
+    (b : m → α) {f : S → T} (hf : f 0 = 0) :
+    (M.map f).blockDiagonalPart b = (M.blockDiagonalPart b).map f := by
+  ext i j
+  by_cases h : b i = b j <;> simp [h, hf]
+
+variable [LinearOrder α]
+
+/-- The product of a matrix that is block triangular for a ranking `b` with one that vanishes
+wherever `b` does not strictly increase from row to column again vanishes there. -/
+theorem BlockTriangular.mul_apply_eq_zero_of_le [Semiring S] [Fintype m] {M N : Matrix m m S}
+    (hM : M.BlockTriangular b) (hN : ∀ ⦃i j⦄, b j ≤ b i → N i j = 0) ⦃i j : m⦄
+    (hij : b j ≤ b i) : (M * N) i j = 0 := by
+  rw [Matrix.mul_apply]
+  refine Finset.sum_eq_zero fun l _ ↦ ?_
+  rcases lt_or_ge (b l) (b i) with h | h
+  · rw [hM h, zero_mul]
+  · rw [hN (hij.trans h), mul_zero]
+
+/-- The product of a matrix that vanishes wherever a ranking `b` does not strictly increase from
+row to column with one that is block triangular for `b` again vanishes there. -/
+theorem BlockTriangular.mul_apply_eq_zero_of_le' [Semiring S] [Fintype m] {M N : Matrix m m S}
+    (hN : N.BlockTriangular b) (hM : ∀ ⦃i j⦄, b j ≤ b i → M i j = 0) ⦃i j : m⦄
+    (hij : b j ≤ b i) : (M * N) i j = 0 := by
+  rw [Matrix.mul_apply]
+  refine Finset.sum_eq_zero fun l _ ↦ ?_
+  rcases lt_or_ge (b j) (b l) with h | h
+  · rw [hN h, mul_zero]
+  · rw [hM (h.trans hij), zero_mul]
+
+theorem blockTriangular_blockDiagonalPart [Zero S] (M : Matrix m m S) :
+    (M.blockDiagonalPart b).BlockTriangular b :=
+  fun _ _ h ↦ by simp [h.ne']
+
+/-- For a block triangular matrix, the difference from its block-diagonal part vanishes wherever
+the ranking does not strictly increase from row to column. -/
+theorem BlockTriangular.sub_blockDiagonalPart_apply_eq_zero_of_le [AddGroup S] {M : Matrix m m S}
+    (hM : M.BlockTriangular b) ⦃i j : m⦄ (hij : b j ≤ b i) :
+    (M - M.blockDiagonalPart b) i j = 0 := by
+  rcases hij.lt_or_eq with h | h
+  · simp [hM h, h.ne']
+  · simp [h]
+
+/-- The block-diagonal part of a block triangular idempotent matrix is idempotent. -/
+theorem BlockTriangular.isIdempotentElem_blockDiagonalPart [Semiring S] [Fintype m]
+    {M : Matrix m m S}
+    (hM : M.BlockTriangular b) (hMM : IsIdempotentElem M) :
+    IsIdempotentElem (M.blockDiagonalPart b) := by
+  rw [IsIdempotentElem]
+  ext i j
+  rw [Matrix.mul_apply, blockDiagonalPart_apply]
+  split_ifs with hij
+  · -- Only the indices `l` of the rank of `i` and `j` contribute to `(M * M) i j`.
+    conv_rhs => rw [← hMM.eq, Matrix.mul_apply]
+    refine Finset.sum_congr rfl fun l _ ↦ ?_
+    rw [blockDiagonalPart_apply, blockDiagonalPart_apply]
+    by_cases hl : b i = b l
+    · rw [ite_eq_left hl, ite_eq_left (hl ▸ hij)]
+    · rw [ite_eq_right hl, zero_mul]
+      rcases lt_or_gt_of_ne hl with h | h
+      · rw [hM (show b j < b l from hij ▸ h), mul_zero]
+      · rw [hM h, zero_mul]
+  · refine Finset.sum_eq_zero fun l _ ↦ ?_
+    rw [blockDiagonalPart_apply, blockDiagonalPart_apply]
+    split_ifs with h1 h2 <;> simp_all
+
+end BlockDiagonalPart
+
 variable [NonUnitalNonAssocSemiring R] {n : Type*} [Fintype n] [LinearOrder n]
   {A B : Matrix n n R}
 
@@ -299,6 +419,16 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hB hki, mul_zero]
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
+
+/-- An upper-triangular matrix keeps a column vector zero from an index on: if `w` vanishes at
+every index `≥ j`, then so does `A *ᵥ w` at `j`. -/
+theorem IsUpperTriangular.mulVec_apply_eq_zero (hA : A.IsUpperTriangular) {w : n → R} {j : n}
+    (hw : ∀ k, j ≤ k → w k = 0) : (A *ᵥ w) j = 0 := by
+  simp only [mulVec, dotProduct]
+  refine Finset.sum_eq_zero fun k _ ↦ ?_
+  rcases lt_or_ge k j with hkj | hjk
+  · rw [hA hkj, zero_mul]
+  · rw [hw k hjk, mul_zero]
 
 /-- An entry of a product of lower- and upper-triangular matrices only involves the indices
 `k ≤ min i j`. -/
@@ -503,12 +633,93 @@ theorem inv_apply_diag_of_isUpperTriangular [Invertible M] (hM : M.IsUpperTriang
     (hdiag : M i i = 1) : M⁻¹ i i = 1 := by
   simpa [hdiag] using inv_apply_diag_mul_of_isUpperTriangular hM i
 
+/-- On the diagonal, the inverse of an invertible lower-triangular matrix inverts entrywise:
+`M⁻¹ i i * M i i = 1`. -/
+theorem inv_apply_diag_mul_of_isLowerTriangular [Invertible M] (hM : M.IsLowerTriangular)
+    (i : n) : M⁻¹ i i * M i i = 1 := by
+  have hinv : M⁻¹.IsLowerTriangular := blockTriangular_inv_of_blockTriangular hM
+  have h := congrFun (congrFun (nonsing_inv_mul M (isUnit_det_of_invertible M)) i) i
+  rwa [mul_apply_diag_of_isLowerTriangular hinv hM i, one_apply_eq] at h
+
+/-- Where an invertible lower-triangular matrix has a `1` on the diagonal, so does its inverse.
+The hypothesis is needed only at the entry asked about. -/
+theorem inv_apply_diag_of_isLowerTriangular [Invertible M] (hM : M.IsLowerTriangular) {i : n}
+    (hdiag : M i i = 1) : M⁻¹ i i = 1 := by
+  simpa [hdiag] using inv_apply_diag_mul_of_isLowerTriangular hM i
+
 /-- A product of upper-unitriangular matrices is upper unitriangular. -/
 theorem IsUpperUnitriangular.mul {T p : Type*} [NonAssocSemiring T] [Fintype p]
     [LinearOrder p] {M N : Matrix p p T} (hM : M.IsUpperUnitriangular)
     (hN : N.IsUpperUnitriangular) : (M * N).IsUpperUnitriangular := by
   refine ⟨hM.1.mul hN.1, fun i ↦ ?_⟩
   rw [mul_apply_diag_of_isUpperTriangular hM.1 hN.1, hM.2 i, hN.2 i, one_mul]
+
+/-- An entry strictly above the diagonal of a product of upper-unitriangular matrices is the sum
+of the two entries and of the products through the intermediate indices:
+`(M * N) i j = M i j + N i j + ∑_{i < k < j} M i k * N k j`. -/
+theorem IsUpperUnitriangular.mul_apply_of_lt {T p : Type*} [NonAssocSemiring T] [Fintype p]
+    [LinearOrder p] [LocallyFiniteOrder p] {M N : Matrix p p T} (hM : M.IsUpperUnitriangular)
+    (hN : N.IsUpperUnitriangular) {i j : p} (hij : i < j) :
+    (M * N) i j = M i j + N i j + ∑ k ∈ Finset.Ioo i j, M i k * N k j := by
+  rw [Matrix.mul_apply, ← Finset.sum_subset (Finset.subset_univ (Finset.Icc i j))]
+  · rw [Finset.Icc_eq_cons_Ioc hij.le, Finset.sum_cons, Finset.Ioc_eq_cons_Ioo hij,
+      Finset.sum_cons, hM.apply_diag, hN.apply_diag, one_mul, mul_one]
+    abel
+  · intro k _ hk
+    rcases lt_trichotomy k i with hki | rfl | hik
+    · rw [hM.isUpperTriangular hki, zero_mul]
+    · exact absurd (Finset.left_mem_Icc.2 hij.le) hk
+    · have hjk : j < k := lt_of_not_ge fun hkj ↦ hk (Finset.mem_Icc.2 ⟨hik.le, hkj⟩)
+      rw [hN.isUpperTriangular hjk, mul_zero]
+
+/-- The corner matrix unit `c E₀ₙ` is absorbed by multiplication on the right with an
+upper-unitriangular matrix: its first column is that of the identity. -/
+theorem IsUpperUnitriangular.mul_single_zero_last {T : Type*} [NonAssocSemiring T] {n : ℕ}
+    {G : Matrix (Fin (n + 1)) (Fin (n + 1)) T} (hG : G.IsUpperUnitriangular) (c : T) :
+    G * single 0 (Fin.last n) c = single 0 (Fin.last n) c := by
+  have hlt : ∀ {a b : Fin (n + 1)}, b < a → G a b = 0 := fun h ↦ hG.isUpperTriangular h
+  ext a b
+  by_cases hb : b = Fin.last n
+  · subst hb
+    rw [mul_single_apply_same]
+    rcases Fin.eq_zero_or_eq_succ a with rfl | ⟨k, rfl⟩
+    · rw [hG.apply_diag, one_mul, single_apply_same]
+    · rw [hlt (Fin.succ_pos k), zero_mul,
+        single_apply_of_row_ne (Fin.succ_ne_zero k).symm]
+  · rw [mul_single_apply_of_ne (hbj := hb), single_apply_of_col_ne _ _ (Ne.symm hb)]
+
+/-- The corner matrix unit `c E₀ₙ` is absorbed by multiplication on the left with an
+upper-unitriangular matrix: its last row is that of the identity. -/
+theorem IsUpperUnitriangular.single_zero_last_mul {T : Type*} [NonAssocSemiring T] {n : ℕ}
+    {G : Matrix (Fin (n + 1)) (Fin (n + 1)) T} (hG : G.IsUpperUnitriangular) (c : T) :
+    single (0 : Fin (n + 1)) (Fin.last n) c * G = single 0 (Fin.last n) c := by
+  have hlt : ∀ {a b : Fin (n + 1)}, b < a → G a b = 0 := fun h ↦ hG.isUpperTriangular h
+  ext a b
+  by_cases ha : a = 0
+  · subst ha
+    rw [single_mul_apply_same]
+    rcases eq_or_lt_of_le (Fin.le_last b) with rfl | h
+    · rw [hG.apply_diag, mul_one, single_apply_same]
+    · rw [hlt h, mul_zero, single_apply_of_col_ne _ _ h.ne']
+  · rw [single_mul_apply_of_ne (h := ha), single_apply_of_row_ne (Ne.symm ha)]
+
+/-- An upper-unitriangular matrix whose entries above the diagonal vanish away from the corner
+`(0, n)`, `n > 0`, is `1 + t E₀ₙ`, with `t` its corner entry. -/
+theorem IsUpperUnitriangular.eq_one_add_single_zero_last {T : Type*} [NonAssocSemiring T]
+    {n : ℕ} {Z : Matrix (Fin (n + 1)) (Fin (n + 1)) T} (hZ : Z.IsUpperUnitriangular) (hn : 0 < n)
+    (hz : ∀ i j : Fin (n + 1), i < j → ¬ (i = 0 ∧ j = Fin.last n) → Z i j = 0) :
+    Z = 1 + single 0 (Fin.last n) (Z 0 (Fin.last n)) := by
+  have : NeZero n := NeZero.of_pos hn
+  ext a b
+  by_cases hab : a = 0 ∧ b = Fin.last n
+  · obtain ⟨rfl, rfl⟩ := hab
+    rw [Matrix.add_apply, single_apply_same, one_apply_ne Fin.last_pos'.ne, zero_add]
+  · rw [Matrix.add_apply, single_apply_of_ne (h := fun h : 0 = a ∧ Fin.last n = b ↦
+      hab ⟨h.1.symm, h.2.symm⟩), add_zero]
+    rcases lt_trichotomy a b with h | rfl | h
+    · rw [hz a b h hab, one_apply_ne h.ne]
+    · rw [hZ.apply_diag, one_apply_eq]
+    · rw [hZ.isUpperTriangular h, one_apply_ne h.ne']
 
 /-- Every natural power of an upper-unitriangular matrix is upper unitriangular. -/
 theorem IsUpperUnitriangular.pow {T p : Type*} [Semiring T] [Fintype p] [LinearOrder p]
@@ -644,5 +855,55 @@ theorem vecMul_injective_of_submatrix_isUpperTriangular {K ι κ : Type*} [Field
     simp [Matrix.vecMul, dotProduct]
   rw [hcol x, hcol y]
   exact congrFun hxy (e j)
+
+/-! ### Unit-diagonal matrices with prescribed entries -/
+
+section UnitDiagonalMatrixOfEntries
+
+variable {ι R : Type*} [Zero R] [One R]
+
+open Classical in
+/-- The matrix with the entry `1` on the diagonal, the prescribed entry `f p` at each
+off-diagonal pair `p` with `P p`, and the entry `0` everywhere else. When `P` holds only for
+pairs `i < j` it is upper unitriangular
+(`TauCeti.isUpperUnitriangular_unitDiagonalMatrixOfEntries`). -/
+noncomputable def unitDiagonalMatrixOfEntries (P : ι × ι → Prop)
+    (f : {p : ι × ι // P p} → R) : Matrix ι ι R :=
+  Matrix.of fun i j => if i = j then 1 else if h : P (i, j) then f ⟨(i, j), h⟩ else 0
+
+/-- The entry of `unitDiagonalMatrixOfEntries P f` at a pair satisfying `P`, off the
+diagonal, is the prescribed one. -/
+@[simp]
+theorem unitDiagonalMatrixOfEntries_apply_of_mem (P : ι × ι → Prop)
+    (f : {p : ι × ι // P p} → R) {i j : ι} (hij : i ≠ j) (h : P (i, j)) :
+    unitDiagonalMatrixOfEntries P f i j = f ⟨(i, j), h⟩ := by
+  simp only [unitDiagonalMatrixOfEntries, Matrix.of_apply, ite_eq_right hij, dite_eq_left h]
+
+/-- Every diagonal entry of `unitDiagonalMatrixOfEntries P f` is one. -/
+@[simp]
+theorem unitDiagonalMatrixOfEntries_apply_self (P : ι × ι → Prop)
+    (f : {p : ι × ι // P p} → R) (i : ι) :
+    unitDiagonalMatrixOfEntries P f i i = 1 := by
+  simp only [unitDiagonalMatrixOfEntries, Matrix.of_apply, ite_true]
+
+/-- The entries of `unitDiagonalMatrixOfEntries P f` off the diagonal and off the pairs
+satisfying `P` are zero. -/
+@[simp]
+theorem unitDiagonalMatrixOfEntries_apply_of_notMem (P : ι × ι → Prop)
+    (f : {p : ι × ι // P p} → R) {i j : ι} (hij : i ≠ j) (h : ¬ P (i, j)) :
+    unitDiagonalMatrixOfEntries P f i j = 0 := by
+  simp only [unitDiagonalMatrixOfEntries, Matrix.of_apply, ite_eq_right hij, dite_eq_right h]
+
+/-- If every pair satisfying `P` lies strictly above the diagonal,
+`unitDiagonalMatrixOfEntries P f` is upper unitriangular. -/
+theorem isUpperUnitriangular_unitDiagonalMatrixOfEntries [Preorder ι] (P : ι × ι → Prop)
+    (hP : ∀ p, P p → p.1 < p.2) (f : {p : ι × ι // P p} → R) :
+    (unitDiagonalMatrixOfEntries P f).IsUpperUnitriangular := by
+  rw [Matrix.isUpperUnitriangular_def]
+  exact ⟨fun i j hji => unitDiagonalMatrixOfEntries_apply_of_notMem P f (ne_of_lt hji).symm
+      (fun h' => lt_irrefl j (hji.trans (hP (i, j) h'))),
+    unitDiagonalMatrixOfEntries_apply_self P f⟩
+
+end UnitDiagonalMatrixOfEntries
 
 end TauCeti

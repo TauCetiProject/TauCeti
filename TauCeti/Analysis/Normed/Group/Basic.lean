@@ -18,9 +18,10 @@ In a seminormed additive group, the squared distance between two points is at mo
 of their squared distances to any third point: the triangle inequality through `c`, squared with
 `(x + y) ^ 2 ≤ 2 (x ^ 2 + y ^ 2)`; likewise the squared norm of a sum of three vectors is at most
 three times the sum of their squared norms. The extended norm satisfies the triangle inequality
-`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`. Through the point `b`, a bound `c ‖a - b‖² ≤ r` with
-`c > 0` bounds `‖a‖²` by `2 / c * r + 2 ‖b‖²`. The reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a
-squared distance is at most `1`.
+`‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ`, membership in an open ball of extended radius is an
+extended-norm bound, and `‖x‖ₑ < ENNReal.ofReal r` exactly when `‖x‖ < r`. Through the point
+`b`, a bound `c ‖a - b‖² ≤ r` with `c > 0` bounds `‖a‖²` by `2 / c * r + 2 ‖b‖²`. The
+reciprocal transform `(1 + ‖x - a‖²)⁻¹` of a squared distance is at most `1`.
 
 An unbounded set stays unbounded after removing a closed ball, since a closed ball is bounded.
 
@@ -33,9 +34,14 @@ A continuous function on `ℝ` with limits at `±∞` is bounded, and a function
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
 
-Near `0`, the product `‖x‖ * R` is eventually less than any positive bound.
+Near `0`, the product `‖x‖ * R` is eventually less than any positive bound. Eventual bounds
+`‖g i‖ < r` for every `r > s` pass to `f` along a filter on which `‖f i - g i‖ → 0`.
 
 A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
+
+The sum of the squared norms of a nonzero finite family is positive.
+
+The terms of a sequence whose norms decrease strictly are nonzero.
 
 A constant bound on `‖f x‖` over a ball of positive radius is nonnegative, since the ball
 contains `0`.
@@ -57,6 +63,8 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
   point.
 * `TauCeti.norm_add_add_sq_le_three_mul` -- the squared triangle inequality for three summands.
 * `TauCeti.eNorm_sub_le_eNorm_sub_add_eNorm_sub` -- the triangle inequality for the extended norm.
+* `TauCeti.mem_eball_iff_eNorm` -- `b ∈ eball a r ↔ ‖b - a‖ₑ < r`.
+* `TauCeti.eNorm_lt_ofReal_iff` -- `‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r`.
 * `TauCeti.norm_sq_le_of_mul_norm_sub_sq_le` -- `c ‖a - b‖² ≤ r` with `c > 0` bounds `‖a‖²` by
   `2 / c * r + 2 ‖b‖²`.
 * `TauCeti.inv_one_add_norm_sub_sq_le_one` -- the reciprocal transform of a squared distance is at
@@ -66,6 +74,8 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 * `Set.Nontrivial.pos_of_forall_norm_le` -- a bound on the norms of a nontrivial set is positive.
 * `TauCeti.exists_forall_norm_le_of_tendsto` -- a continuous function `ℝ → F` with limits at `±∞`
   is bounded.
+* `TauCeti.exists_forall_norm_le_of_eventually_eq` -- a continuous function `ℝ → F` that is
+  eventually constant at `±∞` is bounded.
 * `TauCeti.exists_forall_ge_norm_le_of_tendsto` -- a function `ℝ → F` continuous on `[a, ∞)` with
   a limit at `+∞` is bounded on `[a, ∞)`.
 * `TauCeti.exists_enorm_sub_le_mul_of_reflTransGen` -- constants joined by a chain of related
@@ -73,7 +83,12 @@ A fixed point `v` of a map `T` with `‖T v‖ ≤ R + γ ‖v‖` and `γ < 1` 
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
 * `TauCeti.eventually_norm_mul_lt` -- eventually near `0`, `‖x‖ * R < ρ` for any `ρ > 0`.
+* `Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt` -- eventual bounds `‖g i‖ < r` for
+  all `r > s` pass to `f` when `‖f i - g i‖ → 0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
+* `TauCeti.sum_norm_sq_pos` -- `0 < ∑ i, ‖v i‖ ^ 2` for a nonzero finite family `v`.
+* `TauCeti.ne_zero_of_strictAnti_norm` -- the terms of a family with strictly decreasing norms,
+  indexed without a maximum, are nonzero.
 * `TauCeti.nonneg_of_forall_norm_lt` -- a constant bound on `‖f x‖` over a ball of positive radius
   is nonnegative.
 * `TauCeti.dist_add_sub_eq` -- `dist (x + (c - c₀)) c = dist x c₀`.
@@ -91,6 +106,13 @@ open Bornology Metric Filter
 open scoped ENNReal NNReal Topology
 
 namespace TauCeti
+
+/-- A real norm bound `‖f x‖ ≤ L * ‖x‖` yields a nonnegative real bound `C = max L 0`. -/
+theorem exists_nnreal_norm_le_of_norm_le {α β : Type*} [SeminormedAddGroup α] [Norm β]
+    {f : α → β} {L : ℝ} (hf : ∀ x, ‖f x‖ ≤ L * ‖x‖) :
+    ∃ C : ℝ≥0, ∀ x, ‖f x‖ ≤ C * ‖x‖ :=
+  ⟨⟨max L 0, le_max_right L 0⟩, fun x ↦
+    (hf x).trans (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg x))⟩
 
 /-- **Squared triangle inequality.** The squared distance from `a` to `b` is at most twice the sum
 of the squared distances from `a` and from `b` to an intermediate point `c`. -/
@@ -112,6 +134,18 @@ extended-norm form of `norm_sub_le_norm_sub_add_norm_sub`. -/
 theorem eNorm_sub_le_eNorm_sub_add_eNorm_sub {G : Type*} [SeminormedAddCommGroup G] (u v w : G) :
     ‖u - w‖ₑ ≤ ‖u - v‖ₑ + ‖v - w‖ₑ := by
   simpa only [eDist_eq_eNorm_sub] using edist_triangle u v w
+
+/-- A point lies in the open ball `Metric.eball a r` of extended radius exactly when its extended
+norm distance to `a` is less than `r`, the extended-radius form of `mem_ball_iff_norm`. -/
+theorem mem_eball_iff_eNorm {E : Type*} [SeminormedAddCommGroup E] {a b : E} {r : ℝ≥0∞} :
+    b ∈ eball a r ↔ ‖b - a‖ₑ < r := by
+  rw [mem_eball, eDist_eq_eNorm_sub]
+
+/-- The extended norm of `x` is below `ENNReal.ofReal r` exactly when its norm is below `r`. -/
+@[simp]
+theorem eNorm_lt_ofReal_iff {E : Type*} [SeminormedAddGroup E] {x : E} {r : ℝ} :
+    ‖x‖ₑ < ENNReal.ofReal r ↔ ‖x‖ < r := by
+  simpa using edist_lt_ofReal (x := x) (y := 0)
 
 /-- If `c ‖a - b‖² ≤ r` with `c > 0`, then `‖a‖² ≤ 2 / c * r + 2 ‖b‖²`: the squared triangle
 inequality through `b`. -/
@@ -158,10 +192,36 @@ theorem eventually_norm_mul_lt {E : Type*} [SeminormedAddGroup E] (R : ℝ) {ρ 
     ∀ᶠ x in 𝓝 (0 : E), ‖x‖ * R < ρ :=
   (tendsto_norm_zero.mul_const R).eventually (gt_mem_nhds (by rwa [zero_mul]))
 
+/-- **Eventual norm bounds survive a vanishing perturbation.** If `‖f i - g i‖ → 0` along `l` and
+every `r > s` eventually bounds `‖g i‖`, then every `r > s` eventually bounds `‖f i‖`. The
+seminormed group may vary with the index, as for matrices of growing size. -/
+theorem _root_.Filter.Tendsto.eventually_norm_lt_of_eventually_norm_lt {ι : Type*}
+    {E : ι → Type*} [∀ i, SeminormedAddGroup (E i)] {l : Filter ι} {f g : ∀ i, E i} {s : ℝ}
+    (hfg : Tendsto (fun i ↦ ‖f i - g i‖) l (𝓝 0)) (hg : ∀ r > s, ∀ᶠ i in l, ‖g i‖ < r) :
+    ∀ r > s, ∀ᶠ i in l, ‖f i‖ < r := by
+  intro r hr
+  filter_upwards [hg ((r + s) / 2) (by linarith),
+    hfg.eventually_lt_const (by linarith : (0 : ℝ) < (r - s) / 2)] with i hgi hfgi
+  exact (norm_le_norm_sub_add (f i) (g i)).trans_lt ((add_lt_add hfgi hgi).trans_eq (by ring))
+
 /-- A sum `z + a` with `‖a‖ < ‖z‖` is nonzero. -/
 theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :
     z + a ≠ 0 :=
   fun h' ↦ h.ne' (by rw [eq_neg_of_add_eq_zero_left h', norm_neg])
+
+/-- The sum `∑ i, ‖v i‖ ^ 2` of the squared norms of a nonzero finite family `v` is positive. -/
+theorem sum_norm_sq_pos {ι E : Type*} [Fintype ι] [NormedAddGroup E] {v : ι → E} (hv : v ≠ 0) :
+    0 < ∑ i, ‖v i‖ ^ 2 := by
+  obtain ⟨i, hi⟩ := Function.ne_iff.1 hv
+  exact Finset.sum_pos' (fun j _ ↦ by positivity)
+    ⟨i, Finset.mem_univ _, pow_pos (norm_pos_iff.2 hi) 2⟩
+
+/-- If the norms of a family `d` indexed by an order without maximum decrease strictly, every
+term of `d` is nonzero: its norm exceeds the nonnegative norm of a later term. -/
+theorem ne_zero_of_strictAnti_norm {ι E : Type*} [Preorder ι] [NoMaxOrder ι]
+    [SeminormedAddGroup E] {d : ι → E} (hdec : StrictAnti fun i ↦ ‖d i‖) (i : ι) : d i ≠ 0 :=
+  have ⟨_, hj⟩ := exists_gt i
+  ne_zero_of_norm_ne_zero ((norm_nonneg _).trans_lt (hdec hj)).ne'
 
 /-- A continuous function `ℝ → F` into a seminormed group with limits at `±∞` is bounded. -/
 theorem exists_forall_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] {A : ℝ → F}
@@ -171,6 +231,14 @@ theorem exists_forall_norm_le_of_tendsto {F : Type*} [SeminormedAddCommGroup F] 
     (hA.isBounded_range_iff_isBigO_atTop_atBot.mpr
       ⟨htop.isBigO_one ℝ, hbot.isBigO_one ℝ⟩)
   exact ⟨M, fun s ↦ hM _ (Set.mem_range_self s)⟩
+
+/-- A continuous function `ℝ → F` into a seminormed group that is eventually constant at `-∞` and
+at `+∞` is bounded. -/
+theorem exists_forall_norm_le_of_eventually_eq {F : Type*} [SeminormedAddCommGroup F] {A : ℝ → F}
+    {Aminus Aplus : F} (hA : Continuous A) (hbot : ∀ᶠ s in atBot, A s = Aminus)
+    (htop : ∀ᶠ s in atTop, A s = Aplus) : ∃ M, ∀ s, ‖A s‖ ≤ M :=
+  exists_forall_norm_le_of_tendsto hA (tendsto_const_nhds.congr' (hbot.mono fun _ h ↦ h.symm))
+    (tendsto_const_nhds.congr' (htop.mono fun _ h ↦ h.symm))
 
 /-- A function `ℝ → F` into a seminormed group, continuous on `[a, ∞)` and with a limit at `+∞`,
 is bounded on `[a, ∞)`. -/

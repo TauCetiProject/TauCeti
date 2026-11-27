@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Analysis.Sobolev.JetOperator
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -45,7 +46,9 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
 * The **jet** of a section is `jet ρ ξ = (√ρ ξ, ∂s ξ, ∂t ξ)`, whose squared `L²` norm on `U` is at
   most the squared `W^{1,2}` norm above (`TauCeti.ConformalSobolev.sq_norm_le_integral`). The jets
   of test sections are square integrable (`TauCeti.ConformalSobolev.memLp_jet`), and their classes
-  form the subspace `TauCeti.ConformalSobolev.jetSubmodule` of `L²(U, V × V × V)`.
+  form the subspace `TauCeti.ConformalSobolev.jetSubmodule` of `L²(U, V × V × V)`; the class of
+  the jet of a difference is the difference of the classes
+  (`TauCeti.ConformalSobolev.toLp_jet_sub_ae_eq`).
 * `TauCeti.ConformalSobolev.H1` is its closure, the completion of the test sections in a norm
   equivalent to the `W^{1,2}` norm, that is, the Sobolev space `W^{1,2}_0(U, V)`; it is a
   closed subspace of `L²` and hence complete. An element is an `L²` jet `(η, ξ_s, ξ_t)` whose
@@ -59,6 +62,15 @@ elliptic estimate on such a domain into finite-dimensional kernel and closed ran
   into sections of the plane of bounded `W^{1,2}(ℝ²)` norm supported in a fixed compact set, to
   which the Fréchet–Kolmogorov criterion `TauCeti.totallyBounded_of_contDiff_of_eLpNorm_fderiv_le`
   applies; on `K` the weight `√ρ` is a bounded multiplier.
+* **Weighted values on compact sets.** The restricted weighted value of the jet of `ξ` has squared
+  norm `∫_K ρ ‖ξ‖²` (`TauCeti.ConformalSobolev.norm_restrictWeightedValue_sq`); since `ρ` is bounded
+  below on a compact set `K ⊆ U`, it controls the `L²` norm of `ξ` over `K`
+  (`TauCeti.ConformalSobolev.exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq`).
+* **First-order operators.** A coefficient field `M : U → L(V × V × V, W)`, essentially bounded on
+  `U`, acts on `L²` jets by `f ↦ M f` (`TauCeti.jetOperator 2 (volume.restrict U) M`). On the jet
+  of a test section `ξ` this is the first-order operator `ξ ↦ M (√ρ ξ, ∂s ξ, ∂t ξ)`
+  (`TauCeti.ConformalSobolev.jetOperator_toLp_jet_ae_eq`), and its restriction to `H1` is the
+  realization of that operator from `W^{1,2}_0(U, V)` to `L²(U, W)`.
 * **Peetre's argument.** An operator `D` on `H1` satisfying an estimate
   `‖x‖ ≤ C (‖D x‖ + ‖√ρ ξ‖_{L²(K)})` on the jets `x` of test sections `ξ` has finite-dimensional
   kernel (`TauCeti.ConformalSobolev.finiteDimensional_ker_of_estimate`) and closed range
@@ -214,6 +226,20 @@ theorem mem_jetSubmodule_iff {f : Lp (V × V × V) 2 (volume.restrict U)} :
 theorem toLp_jet_mem_jetSubmodule (hρ : IsWeight U ρ) (hξ : ξ ∈ testSection V U) :
     (memLp_jet hρ hξ).toLp (jet ρ ξ) ∈ jetSubmodule V U ρ :=
   ⟨ξ, hξ, MemLp.coeFn_toLp _⟩
+
+/-- The difference of the classes of the jets of two test sections is represented by the jet of
+their difference. -/
+theorem toLp_jet_sub_ae_eq (hρ : IsWeight U ρ) (hξ : ξ ∈ testSection V U)
+    (hη : η ∈ testSection V U) :
+    ⇑((memLp_jet hρ hξ).toLp (jet ρ ξ) - (memLp_jet hρ hη).toLp (jet ρ η))
+      =ᵐ[volume.restrict U] jet ρ (ξ - η) := by
+  have hdξ := (mem_testSection_iff.1 hξ).1.differentiable (by norm_num)
+  have hdη := (mem_testSection_iff.1 hη).1.differentiable (by norm_num)
+  filter_upwards [Lp.coeFn_sub ((memLp_jet hρ hξ).toLp (jet ρ ξ))
+    ((memLp_jet hρ hη).toLp (jet ρ η)), (memLp_jet hρ hξ).coeFn_toLp,
+    (memLp_jet hρ hη).coeFn_toLp] with z hz h1 h2
+  rw [hz, Pi.sub_apply, h1, h2, jet_apply, jet_apply, jet_apply, fderiv_sub (hdξ z) (hdη z)]
+  simp [smul_sub]
 
 variable (V U ρ) in
 /-- The Sobolev space `W^{1,2}_0(U, V)` of the conformal metric `ρ (ds² + dt²)`: the closure in
@@ -438,6 +464,48 @@ theorem coeFn_restrictWeightedValue (K : Set (ℝ × ℝ))
   (LpToLpRestrictCLM_coeFn ℝ _ _).trans
     (ae_restrict_of_ae ((ContinuousLinearMap.fst ℝ V (V × V)).coeFn_compLpL f))
 
+/-- On a measurable set `K ⊆ U`, the squared norm of the restricted weighted value of the class of
+the jet of `ξ` is the weighted `L²` energy `∫_K ρ ‖ξ‖²`. -/
+theorem norm_restrictWeightedValue_sq (hρ : IsWeight U ρ) {K : Set (ℝ × ℝ)}
+    (hK : MeasurableSet K) (hKU : K ⊆ U) {f : Lp (V × V × V) 2 (volume.restrict U)}
+    (hf : f =ᵐ[volume.restrict U] jet ρ ξ) :
+    ‖restrictWeightedValue V U K f‖ ^ 2 = ∫ z in K, ρ z * ‖ξ z‖ ^ 2 := by
+  rw [← Lp.integral_norm_sq_eq_norm_sq]
+  calc ∫ z, ‖restrictWeightedValue V U K f z‖ ^ 2 ∂((volume.restrict U).restrict K) =
+        ∫ z, ρ z * ‖ξ z‖ ^ 2 ∂((volume.restrict U).restrict K) := by
+        refine integral_congr_ae ?_
+        filter_upwards [coeFn_restrictWeightedValue K f, ae_restrict_of_ae hf,
+          ae_restrict_mem hK] with z h₁ h₂ hz
+        rw [h₁, h₂]
+        simp [jet_apply, norm_smul, mul_pow, Real.sq_sqrt (hρ.pos z (hKU hz)).le]
+    _ = ∫ z in K, ρ z * ‖ξ z‖ ^ 2 := by rw [Measure.restrict_restrict hK, inter_eq_left.2 hKU]
+
+/-- On a compact set `K ⊆ U`, where the weight is bounded below, the `L²` norm over `K` of a
+section `ξ` continuous on `K` is controlled by the restricted weighted value of the class of its
+jet. -/
+theorem exists_setIntegral_norm_sq_le_mul_norm_restrictWeightedValue_sq (hρ : IsWeight U ρ)
+    {K : Set (ℝ × ℝ)} (hK : IsCompact K) (hKU : K ⊆ U) :
+    ∃ B, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContinuousOn ξ K → ∀ ⦃f : Lp (V × V × V) 2 (volume.restrict U)⦄,
+      f =ᵐ[volume.restrict U] jet ρ ξ →
+      ∫ z in K, ‖ξ z‖ ^ 2 ≤ B * ‖restrictWeightedValue V U K f‖ ^ 2 := by
+  -- The inverse of the weight is bounded on `K`.
+  obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ (ρ z)⁻¹)
+    ((hρ.continuousOn.mono hKU).inv₀ fun z hz ↦ (hρ.pos z (hKU hz)).ne')
+  refine ⟨|B|, fun ξ hξ f hf ↦ ?_⟩
+  rw [norm_restrictWeightedValue_sq hρ hK.measurableSet hKU hf, ← integral_const_mul]
+  have hcξ : ContinuousOn (fun z ↦ ‖ξ z‖ ^ 2) K := hξ.norm.pow 2
+  refine setIntegral_mono_on (hcξ.integrableOn_compact hK)
+    ((continuousOn_const.mul ((hρ.continuousOn.mono hKU).mul hcξ)).integrableOn_compact
+      hK) hK.measurableSet fun z hz ↦ ?_
+  have hρz := hρ.pos z (hKU hz)
+  have hBz : (ρ z)⁻¹ ≤ |B| := by
+    have h := hB z hz
+    rw [Real.norm_eq_abs, abs_of_pos (inv_pos.2 hρz)] at h
+    exact h.trans (le_abs_self B)
+  calc ‖ξ z‖ ^ 2 = (ρ z)⁻¹ * (ρ z * ‖ξ z‖ ^ 2) := by
+        rw [← mul_assoc, inv_mul_cancel₀ hρz.ne', one_mul]
+    _ ≤ |B| * (ρ z * ‖ξ z‖ ^ 2) := mul_le_mul_of_nonneg_right hBz (by positivity)
+
 /-- A continuous function with compact support inside `U` is bounded by a multiple of `√ρ`. -/
 private theorem exists_abs_le_mul_sqrt (hρ : IsWeight U ρ) {g : ℝ × ℝ → ℝ} (hg : Continuous g)
     (hgc : HasCompactSupport g) (hgU : tsupport g ⊆ U) :
@@ -606,6 +674,24 @@ theorem isCompactOperator_restrictWeightedValue_comp_subtypeL [FiniteDimensional
   exact closure_mono hsub (image_closure_subset_closure_image
     (restrictWeightedValue V U K).continuous
       ⟨_, mem_closure_setOf_norm_lt x ((mem_ball_zero_iff.1 hx).trans one_lt_two), rfl⟩)
+
+/-! ### First-order operators with bounded coefficients -/
+
+section Operator
+
+variable {W : Type*} [NormedAddCommGroup W] [NormedSpace ℝ W]
+
+/-- On the `L²` class of the jet of a test section `ξ`, the first-order operator of a coefficient
+field `M` is `z ↦ M z (√ρ ξ z, ∂s ξ z, ∂t ξ z)`. -/
+theorem jetOperator_toLp_jet_ae_eq (hρ : IsWeight U ρ) {M : ℝ × ℝ → V × V × V →L[ℝ] W}
+    (hM : MemLp M ∞ (volume.restrict U)) (hξ : ξ ∈ testSection V U) :
+    jetOperator 2 (volume.restrict U) M ((memLp_jet hρ hξ).toLp (jet ρ ξ)) =ᵐ[volume.restrict U]
+      fun z ↦ M z (jet ρ ξ z) := by
+  filter_upwards [coeFn_jetOperator hM ((memLp_jet hρ hξ).toLp (jet ρ ξ)),
+    (memLp_jet hρ hξ).coeFn_toLp] with z h₁ h₂
+  rw [h₁, h₂]
+
+end Operator
 
 /-! ### Peetre's argument -/
 

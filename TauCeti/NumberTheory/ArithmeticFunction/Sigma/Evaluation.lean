@@ -8,7 +8,9 @@ module
 public import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Series
 public import TauCeti.Topology.Algebra.InfiniteSum.IntegralCoefficients
 import Mathlib.Analysis.Normed.Group.Ultra
+import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.SpecificLimits.Normed
+import Mathlib.NumberTheory.TsumDivisorsAntidiagonal
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
@@ -16,7 +18,10 @@ import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 The integral divisor-sum series converges at a parameter of norm less than one in a complete
 seminormed ring, since its coefficients grow polynomially. Its value is the sum of its evaluated
-coefficients; in a non-archimedean ring its norm is at most that of the parameter.
+coefficients; in a non-archimedean ring its norm is at most that of the parameter. In any
+seminormed ring with `‖1‖ = 1`, regrouping the series by divisors as the Lambert series
+`∑ d ^ k qᵈ / (1 - qᵈ)` bounds its norm by `(∑ n ^ k ‖q‖ ^ n) / (1 - ‖q‖)`, a bound that is
+sharp to first order in `‖q‖` and so suited to explicit numerical estimates of Eisenstein series.
 When the target is normed and commutative, `evalIntSeries_divisorSumSeries`
 identifies evaluation of the formal series `divisorSumSeries k` under `evalIntSeries` with its
 analytic value `divisorSumAt k q`.
@@ -94,6 +99,37 @@ theorem norm_divisorSumAt_le [IsUltrametricDist K] (k : ℕ) {q : K} (hq : ‖q�
     _ ≤ ‖q ^ n‖ := IsUltrametricDist.norm_zsmul_le _ _
     _ ≤ ‖q‖ ^ n := norm_pow_le' q hn
     _ ≤ ‖q‖ := pow_le_of_le_one (norm_nonneg _) hq.le hn.ne'
+
+/-- **The Lambert bound for the divisor-sum series.** In a seminormed ring with `‖1‖ = 1`,
+`‖s_k(q)‖ ≤ (∑ n ^ k ‖q‖ ^ n) / (1 - ‖q‖)` for `‖q‖ < 1`. -/
+theorem norm_divisorSumAt_le_tsum_div_one_sub [NormOneClass K] (k : ℕ) {q : K} (hq : ‖q‖ < 1) :
+    ‖divisorSumAt k q‖ ≤ (∑' n : ℕ, (n : ℝ) ^ k * ‖q‖ ^ n) / (1 - ‖q‖) := by
+  set r := ‖q‖
+  have hr0 : 0 ≤ r := norm_nonneg q
+  have hr : ‖r‖ < 1 := by rwa [Real.norm_of_nonneg hr0]
+  have hsum : Summable fun n : ℕ ↦ (σ k n : ℝ) * r ^ n := by
+    simpa using summable_divisorSumSeries (K := ℝ) k hr
+  have hpow : Summable fun n : ℕ ↦ (n : ℝ) ^ k * r ^ n :=
+    summable_pow_mul_geometric_of_norm_lt_one k hr
+  rw [divisorSumAt_def]
+  refine (tsum_of_norm_bounded hsum.hasSum fun n ↦ ?_).trans ?_
+  · refine (norm_mul_le _ _).trans (mul_le_mul ?_ (norm_pow_le q n) (norm_nonneg _)
+      (Nat.cast_nonneg _))
+    simpa using Nat.norm_cast_le (α := K) (σ k n)
+  rw [← tsum_pnat_eq_tsum_of_eq_zero (f := fun n : ℕ ↦ (σ k n : ℝ) * r ^ n) (by simp),
+    ← tsum_pow_div_one_sub_eq_tsum_sigma hr k,
+    hpow.tsum_eq_zero_add, ← tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ (n : ℝ) ^ k * r ^ n)]
+  have hpnat := hpow.comp_injective PNat.coe_injective
+  calc ∑' n : ℕ+, (n : ℝ) ^ k * r ^ (n : ℕ) / (1 - r ^ (n : ℕ))
+      ≤ ∑' n : ℕ+, (n : ℝ) ^ k * r ^ (n : ℕ) / (1 - r) := by
+        refine ((summable_norm_pow_mul_geometric_div_one_sub k hr).comp_injective
+          PNat.coe_injective).tsum_le_tsum (fun n ↦ ?_) (hpnat.div_const _)
+        have : r ^ (n : ℕ) ≤ r := pow_le_of_le_one hr0 hq.le n.ne_zero
+        gcongr
+    _ = (∑' n : ℕ+, (n : ℝ) ^ k * r ^ (n : ℕ)) / (1 - r) := tsum_div_const
+    _ ≤ _ := by
+        gcongr
+        exact le_add_of_nonneg_left (by positivity)
 
 end TauCeti
 

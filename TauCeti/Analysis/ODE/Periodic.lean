@@ -9,12 +9,13 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.ODE.DysonSeries
 public import TauCeti.LinearAlgebra.Determinant.Endomorphism
+public import TauCeti.Topology.Instances.AddCircle.Cover
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Data.SignType.Basic
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.Topology.Instances.AddCircle.Coe
 import TauCeti.Topology.Instances.Real.TwistedExtension
 
@@ -88,6 +89,11 @@ differ by the sign of `det (ε - P)`
 (`TauCeti.sign_detLineEndEquiv_detLineTwistedLinearOperatorEquiv`). For the orbit-torus operators
 this is the sign of `det (1 - P)` or `det (-1 - P)`.
 
+A loop `S` on `AddCircle d` traversed `n` times is the loop `AddCircle.coverPullback n S` of period
+`n d`, and its propagator over that period is `Ψ(d) ^ n`
+(`TauCeti.dysonSeriesLeft_coverPullback`): the return map of the `n`-fold iterate of a periodic
+orbit is the `n`-th power of its return map.
+
 ## Main definitions
 
 * `TauCeti.twistedContinuous X d ε`, `TauCeti.twistedContDiff X d ε`: the continuous and the `C¹`
@@ -120,6 +126,8 @@ this is the sign of `det (1 - P)` or `det (-1 - P)`.
   `det (ε - Ψ(d))`.
 * `TauCeti.exists_forall_integral_norm_sq_le_mul_integral_norm_sq`: the `L²` estimate for twisted
   solutions when `ε - Ψ(d)` is invertible.
+* `TauCeti.dysonSeriesLeft_coverPullback`: the return map of a loop traversed `n` times is
+  `Ψ(d) ^ n`.
 
 ## References
 
@@ -183,6 +191,21 @@ theorem deriv_mem_twistedContinuous (w : twistedContDiff X d ε) :
     deriv (w : ℝ → X) ∈ twistedContinuous X d ε :=
   ⟨w.property.1.continuous_deriv le_rfl, fun t => by
     simp only [← fderiv_apply_one_eq_deriv, fderiv_add_eq_smul w.property.2 t, smul_apply]⟩
+
+/-- Pointwise application of a bounded operator `J : X →L[ℝ] Y`, `f ↦ J ∘ f`, from the continuous
+maps `ℝ → X` twisted by `ε` along `d` to the continuous maps `ℝ → Y` twisted by `ε` along `d`. -/
+def twistedContinuousCompLeft {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (J : X →L[ℝ] Y) : twistedContinuous X d ε →ₗ[ℝ] twistedContinuous Y d ε where
+  toFun f := ⟨fun t => J ((f : ℝ → X) t),
+    J.continuous.comp f.property.1, fun t => by simp [f.property.2 t]⟩
+  map_add' _ _ := by ext; simp
+  map_smul' _ _ := by ext; simp
+
+@[simp]
+theorem twistedContinuousCompLeft_apply {Y : Type*} [NormedAddCommGroup Y] [NormedSpace ℝ Y]
+    (J : X →L[ℝ] Y) (f : twistedContinuous X d ε) (t : ℝ) :
+    (twistedContinuousCompLeft J f : ℝ → Y) t = J ((f : ℝ → X) t) :=
+  (rfl)
 
 /-- A map twisted by `1` along `d` is `d`-periodic. -/
 theorem periodic_of_mem_twistedContinuous {f : ℝ → X} (hf : f ∈ twistedContinuous X d 1) :
@@ -320,51 +343,17 @@ theorem exists_forall_norm_le_mul_integral_norm (hM : Continuous M) (hd : 0 ≤ 
     (hP : IsUnit (ε • 1 - dysonSeriesLeft M d)) :
     ∃ C, 0 ≤ C ∧ ∀ {f w : ℝ → X}, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
       w d = ε • w 0 → ∀ t ∈ Icc 0 d, ‖w t‖ ≤ C * ∫ s in 0..d, ‖f s‖ := by
-  obtain ⟨A, hA⟩ := (isCompact_Icc (a := 0) (b := d)).exists_bound_of_continuousOn
-    (continuous_dysonSeriesLeft hM).continuousOn
-  obtain ⟨B, hB⟩ := (isCompact_Icc (a := 0) (b := d)).exists_bound_of_continuousOn
-    (continuous_dysonSeries hM.neg).continuousOn
   set N := ‖(↑hP.unit⁻¹ : X →L[ℝ] X)‖
-  refine ⟨|A| * (N * |A| * |B| + |B|), by positivity, fun {f w} hf hw hwd t ht => ?_⟩
-  set I := ∫ s in 0..d, ‖f s‖
-  -- The integral term of variation of constants is bounded by `|B| I` on `[0, d]`.
-  have hint (t : ℝ) (ht : t ∈ Icc 0 d) :
-      ‖∫ s in 0..t, dysonSeries (-M) s (f s)‖ ≤ |B| * I := by
-    calc ‖∫ s in 0..t, dysonSeries (-M) s (f s)‖ ≤ ∫ s in 0..t, |B| * ‖f s‖ := by
-          refine norm_integral_le_of_norm_le ht.1 (Filter.Eventually.of_forall fun s hs => ?_)
-            ((continuous_const.mul hf.norm).intervalIntegrable _ _)
-          exact (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
-            ((hB s ⟨hs.1.le, hs.2.trans ht.2⟩).trans (le_abs_self _)) (norm_nonneg _))
-      _ = |B| * ∫ s in 0..t, ‖f s‖ := integral_const_mul _ _
-      _ ≤ |B| * I := mul_le_mul_of_nonneg_left (integral_mono_interval le_rfl ht.1 ht.2
-          (Filter.Eventually.of_forall fun _ => norm_nonneg _) (hf.norm.intervalIntegrable _ _))
-          (abs_nonneg _)
-  have hΨ (t : ℝ) (ht : t ∈ Icc 0 d) (v : X) : ‖dysonSeriesLeft M t v‖ ≤ |A| * ‖v‖ :=
-    (ContinuousLinearMap.le_opNorm _ _).trans
-      (mul_le_mul_of_nonneg_right ((hA t ht).trans (le_abs_self _)) (norm_nonneg _))
-  have hd' : d ∈ Icc 0 d := ⟨hd, le_rfl⟩
-  -- Solving `(ε - Ψ(d)) (w 0) = Ψ(d) (∫₀ᵈ Ψ(s)⁻¹ (f s) ds)` for `w 0`.
-  have h0 : ‖w 0‖ ≤ N * |A| * |B| * I := by
-    have heq : (↑hP.unit : X →L[ℝ] X) (w 0) =
-        dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (f s)) := by
-      rw [hP.unit_spec, sub_apply, smul_apply, one_apply_eq_self, ← hwd,
-        apply_eq_dysonSeriesLeft_apply_add hM hf hw d, add_sub_cancel_left]
-    have hw0 : w 0 = (↑hP.unit⁻¹ : X →L[ℝ] X) (dysonSeriesLeft M d
-        (∫ s in 0..d, dysonSeries (-M) s (f s))) := by
-      rw [← heq, ← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
-    rw [hw0]
-    calc _ ≤ N * ‖dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (f s))‖ :=
-          ContinuousLinearMap.le_opNorm _ _
-      _ ≤ N * (|A| * (|B| * I)) := mul_le_mul_of_nonneg_left
-          ((hΨ d hd' _).trans (mul_le_mul_of_nonneg_left (hint d hd') (abs_nonneg _)))
-          (norm_nonneg _)
-      _ = N * |A| * |B| * I := by ring
-  rw [eq_dysonSeriesLeft_apply_add_integral hM hf hw t]
-  calc _ ≤ |A| * ‖w 0 + ∫ s in 0..t, dysonSeries (-M) s (f s)‖ := hΨ t ht _
-    _ ≤ |A| * (N * |A| * |B| * I + |B| * I) :=
-        mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans (add_le_add h0 (hint t ht)))
-          (abs_nonneg _)
-    _ = |A| * (N * |A| * |B| + |B|) * I := by ring
+  obtain ⟨C, hC, h⟩ := exists_forall_norm_le_mul_integral_norm_of_norm_le hM hd
+    (norm_nonneg (↑hP.unit⁻¹ : X →L[ℝ] X))
+  refine ⟨C, hC, fun {f w} hf hw hwd => h hf hw ?_⟩
+  -- Solving `(ε - Ψ(d)) (w 0) = w d - Ψ(d) (w 0)` for `w 0`.
+  have heq : (↑hP.unit : X →L[ℝ] X) (w 0) = w d - dysonSeriesLeft M d (w 0) := by
+    rw [hP.unit_spec, sub_apply, smul_apply, one_apply_eq_self, hwd]
+  have hw0 : w 0 = (↑hP.unit⁻¹ : X →L[ℝ] X) (w d - dysonSeriesLeft M d (w 0)) := by
+    rw [← heq, ← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
+  calc ‖w 0‖ = ‖(↑hP.unit⁻¹ : X →L[ℝ] X) (w d - dysonSeriesLeft M d (w 0))‖ := congrArg _ hw0
+    _ ≤ N * ‖w d - dysonSeriesLeft M d (w 0)‖ := ContinuousLinearMap.le_opNorm _ _
 
 /-- **The `L²` estimate for twisted solutions.** If `ε - Ψ(d)` is invertible for the propagator
 `Ψ = dysonSeriesLeft M` and `d ≥ 0`, there is a constant `C ≥ 0` such that every solution of
@@ -376,21 +365,9 @@ theorem exists_forall_integral_norm_sq_le_mul_integral_norm_sq (hM : Continuous 
     ∃ C, 0 ≤ C ∧ ∀ ⦃w f : ℝ → X⦄, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
       w d = ε • w 0 → ∫ t in 0..d, ‖w t‖ ^ 2 ≤ C * ∫ t in 0..d, ‖f t‖ ^ 2 := by
   obtain ⟨B, _, hle⟩ := exists_forall_norm_le_mul_integral_norm hM hd hP
-  refine ⟨d ^ 2 * B ^ 2, by positivity, fun w f hf hw hwd ↦ ?_⟩
-  have hwc : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
-  set F := ∫ s in 0..d, ‖f s‖
-  -- Cauchy–Schwarz on `[0, d]`: `F² ≤ d ∫₀ᵈ ‖f‖²`.
-  have hCS : F ^ 2 ≤ d * ∫ s in 0..d, ‖f s‖ ^ 2 := by
-    have h := MeasureTheory.sq_setIntegral_le_measureReal_mul_setIntegral_sq
-      (μ := MeasureTheory.volume) (fun s ↦ ‖f s‖) (Ioc 0 d) measure_Ioc_lt_top.ne
-      ((hf.norm.pow 2).integrableOn_Icc.mono_set Ioc_subset_Icc_self)
-    rwa [Real.volume_real_Ioc_of_le hd, sub_zero, ← integral_of_le hd, ← integral_of_le hd] at h
-  calc ∫ t in 0..d, ‖w t‖ ^ 2 ≤ ∫ _ in 0..d, (B * F) ^ 2 :=
-        integral_mono_on hd ((hwc.norm.pow 2).intervalIntegrable _ _) intervalIntegrable_const
-          fun t ht ↦ pow_le_pow_left₀ (norm_nonneg _) (hle hf hw hwd t ht) 2
-    _ = d * B ^ 2 * F ^ 2 := by rw [integral_const, smul_eq_mul]; ring
-    _ ≤ d * B ^ 2 * (d * ∫ s in 0..d, ‖f s‖ ^ 2) := by gcongr
-    _ = d ^ 2 * B ^ 2 * ∫ s in 0..d, ‖f s‖ ^ 2 := by ring
+  exact ⟨d ^ 2 * B ^ 2, by positivity, fun w f hf hw hwd ↦
+    integral_norm_sq_le_of_forall_norm_le_mul hd
+      (continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt) hf (hle hf hw hwd)⟩
 
 /-- **Solvability of the twisted problem.** For `M` continuous and periodic of period `d`, and `f`
 continuous and twisted by `ε` along `d`, the equation `w' = M w + f` has a solution twisted by `ε`
@@ -730,5 +707,20 @@ theorem sign_detLineEndEquiv_detLineTwistedLinearOperatorEquiv (hM : Continuous 
     TauCeti.sign_inv]
 
 end DeterminantLine
+
+section CoverPullback
+
+/-- **The return map of a loop traversed `n` times.** For a continuous loop `S` on `AddCircle d`,
+read with period `n d` through the `n`-sheeted covering (`AddCircle.coverPullback`), the propagator
+over the period `n d` is the `n`-th power of the return map `Ψ(d)` of `S`. -/
+theorem dysonSeriesLeft_coverPullback {B : Type*} [NormedRing B] [NormedAlgebra ℝ B]
+    [CompleteSpace B] (n : ℕ) (S : C(AddCircle d, B)) :
+    dysonSeriesLeft (fun t : ℝ ↦ AddCircle.coverPullback n S t) (n * d) =
+      dysonSeriesLeft (fun t : ℝ ↦ S t) d ^ n := by
+  simp only [AddCircle.coverPullback_coe]
+  exact dysonSeriesLeft_natCast_mul_of_periodic (AddCircle.continuous_comp_coe S)
+    (AddCircle.periodic_comp_coe S) n
+
+end CoverPullback
 
 end TauCeti

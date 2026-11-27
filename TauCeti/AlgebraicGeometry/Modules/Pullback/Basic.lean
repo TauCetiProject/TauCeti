@@ -15,6 +15,9 @@ public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.CategoryTheory.Adjunction.Mates
 public import Mathlib.CategoryTheory.Functor.ReflectsIso.Jointly
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Stalk
+
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Pullback.Composition
 
 /-!
 # Pullback and restriction of modules on schemes
@@ -32,7 +35,7 @@ scheme morphisms. Being an isomorphism is such a local property: a morphism of m
 isomorphism exactly when its pullbacks to the members of an open cover are.
 
 Along an isomorphism of schemes, pullback is direct image along the inverse, both being left
-adjoint to direct image.
+adjoint to direct image, and it is an equivalence of categories of modules.
 
 Identifying modules on the slice site at an open `U` with modules on the open subscheme `U`, and
 pulling back along an isomorphism of schemes, preserve free modules, so trivializations of a
@@ -54,8 +57,12 @@ local data on the preimage cover.
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_left_unitality_app` and
   `AlgebraicGeometry.Scheme.Modules.pseudofunctor_right_unitality_app`: the coherence conditions
   of the pullback pseudofunctor, on components;
+* `AlgebraicGeometry.Scheme.Modules.pullbackCompIsoOfCommSq`: the comparison `t^* r^* ≅ l^* b^*`
+  of composite pullbacks around a commutative square, and
+  `AlgebraicGeometry.Scheme.Modules.pullbackCompIsoId`: `f^* g^* ≅ 𝟭` for a section `f` of `g`;
 * `AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv`: along an isomorphism of schemes,
-  pullback is direct image along the inverse;
+  pullback is direct image along the inverse, and
+  `AlgebraicGeometry.Scheme.Modules.isEquivalence_pullback` shows it is an equivalence;
 * `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforward_map_pullbackComp_inv_app`: the unit of
   `(f ≫ g)^* ⊣ (f ≫ g)_*` through the units of `g` and `f`, and
   `AlgebraicGeometry.Scheme.Modules.unit_comp_pushforwardCongr_hom_app_pushforwardId_hom_app` the
@@ -66,22 +73,32 @@ local data on the preimage cover.
 * `AlgebraicGeometry.Scheme.Modules.pullbackObjUnitIso`: the isomorphism `f^* 𝒪_Y ≅ 𝒪_X`, with
   `pullbackObjUnitIso_id`, `pullbackObjUnitIso_comp` (with its inverse form
   `pullbackObjUnitIso_inv_comp`), and `pullbackObjUnitIso_congr` comparing it with identity,
-  composition, and equality of scheme morphisms;
+  composition, and equality of scheme morphisms, and `pullbackObjUnitIso_inv_conj_comp` pulling
+  back a function factored through a pulled-back module;
 * `AlgebraicGeometry.Scheme.Modules.pushforwardLaxMonoidal` and
   `AlgebraicGeometry.Scheme.Modules.pullbackOplaxMonoidal`: the lax monoidal structure of
   pushforward and the oplax monoidal structure of pullback, with unit maps computed by
   `AlgebraicGeometry.Scheme.Modules.pushforward_ε` and
   `AlgebraicGeometry.Scheme.Modules.pullback_η`, and the tensor map of pullback by
   `AlgebraicGeometry.Scheme.Modules.pullback_δ`;
+* `AlgebraicGeometry.Scheme.Modules.isIso_pullback_δ`: pullback preserves tensor products of
+  arbitrary module sheaves;
+* `AlgebraicGeometry.Scheme.Modules.pullbackBraided`: pullback is strong symmetric monoidal on
+  all module sheaves, with unit comparison computed by
+  `AlgebraicGeometry.Scheme.Modules.pullback_ε`;
 * `AlgebraicGeometry.Scheme.Modules.isMonoidal_pushforwardComp_hom` and
   `AlgebraicGeometry.Scheme.Modules.pullback_comp_δ`: the composition isomorphisms of pushforward
   and pullback respect the lax and oplax monoidal structures;
+* `AlgebraicGeometry.Scheme.Modules.isMonoidal_pullbackComp_hom`: the canonical composition
+  isomorphism of pullback is monoidal for its strong monoidal structure;
 * `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ`: the tensor compatibility of
   `AlgebraicGeometry.Scheme.Modules.pullbackComp` with the composition isomorphism on the left,
   without its inverse, and `AlgebraicGeometry.Scheme.Modules.inv_δ_comp_pullbackComp_hom_app`, its
   form for invertible tensor comparisons;
 * `AlgebraicGeometry.Scheme.Modules.restrictPullbackIso` identifies the restriction of `f^* M` to
   an open `W ⊆ f⁻¹ V` with the pullback of `M|_V` along `f.resLE V W e`, naturally in `M`;
+* `AlgebraicGeometry.Scheme.Modules.isZero_pullback_of_isZero_restrict`: a module vanishing on an
+  open pulls back to zero along morphisms with image in that open;
 * `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover`: a morphism of modules is an
   isomorphism exactly when its pullbacks to the members of an open cover are, and
   `AlgebraicGeometry.Scheme.Modules.isIso_iff_of_isOpenCover_opensRange` the same for open
@@ -226,6 +243,47 @@ lemma pullbackComp_inv_app_comp_pullback_map_pullbackCongr_hom_app (f : X ⟶ Y)
   subst p
   simp [pullbackCongr]
 
+/-- The comparison `t^* r^* ≅ l^* b^*` of composite pullbacks around a commutative square
+`t ≫ r = l ≫ b` of schemes, through `(t ≫ r)^* = (l ≫ b)^*`. -/
+def pullbackCompIsoOfCommSq {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) : pullback r ⋙ pullback t ≅ pullback b ⋙ pullback l :=
+  pullbackComp t r ≪≫ pullbackCongr sq.w ≪≫ (pullbackComp l b).symm
+
+@[simp]
+lemma pullbackCompIsoOfCommSq_hom_app {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) (M : Z.Modules) :
+    (pullbackCompIsoOfCommSq sq).hom.app M =
+      (pullbackComp t r).hom.app M ≫ (pullbackCongr sq.w).hom.app M ≫
+        (pullbackComp l b).inv.app M :=
+  (rfl)
+
+@[simp]
+lemma pullbackCompIsoOfCommSq_inv_app {t : X ⟶ Y} {l : X ⟶ W} {r : Y ⟶ Z} {b : W ⟶ Z}
+    (sq : CommSq t l r b) (M : Z.Modules) :
+    (pullbackCompIsoOfCommSq sq).inv.app M =
+      (pullbackComp l b).hom.app M ≫ (pullbackCongr sq.w).inv.app M ≫
+        (pullbackComp t r).inv.app M :=
+  (rfl)
+
+/-- For a section `f` of `g`, i.e. `f ≫ g = 𝟙 X`, pulling back along `g` and then along `f` is
+the identity: `f^* g^* ≅ (f ≫ g)^* = (𝟙 X)^* ≅ 𝟭`. Along an isomorphism `g`, with `f = inv g`,
+this identifies `(inv g)^* g^*` with the identity. -/
+def pullbackCompIsoId {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) :
+    pullback g ⋙ pullback f ≅ 𝟭 X.Modules :=
+  pullbackComp f g ≪≫ pullbackCongr h ≪≫ pullbackId X
+
+@[simp]
+lemma pullbackCompIsoId_hom_app {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) (M : X.Modules) :
+    (pullbackCompIsoId h).hom.app M =
+      (pullbackComp f g).hom.app M ≫ (pullbackCongr h).hom.app M ≫ (pullbackId X).hom.app M :=
+  (rfl)
+
+@[simp]
+lemma pullbackCompIsoId_inv_app {f : X ⟶ Y} {g : Y ⟶ X} (h : f ≫ g = 𝟙 X) (M : X.Modules) :
+    (pullbackCompIsoId h).inv.app M =
+      (pullbackId X).inv.app M ≫ (pullbackCongr h).inv.app M ≫ (pullbackComp f g).inv.app M :=
+  (rfl)
+
 end Coherence
 
 section IsIso
@@ -240,6 +298,14 @@ def _root_.AlgebraicGeometry.Scheme.Hom.pullbackIsoPushforwardInv (g : X ⟶ Y) 
         (pushforwardComp (inv g) g).symm)
       (pushforwardComp g (inv g) ≪≫ pushforwardCongr (IsIso.hom_inv_id g) ≪≫
         pushforwardId X)).toAdjunction
+
+/-- Along an isomorphism of schemes `g`, pullback of modules is an equivalence of categories, being
+restriction along the open immersion `g` (`restrictEquivalence`). -/
+instance isEquivalence_pullback (g : X ⟶ Y) [IsIso g] : (pullback g).IsEquivalence := by
+  have := (restrictEquivalence (asIso g)).isEquivalence_functor
+  rw [restrictEquivalence_functor] at this
+  have := Functor.isEquivalence_of_iso (restrictFunctorIsoPullback (asIso g).hom)
+  rwa [asIso_hom] at this
 
 end IsIso
 
@@ -329,6 +395,26 @@ lemma pullbackObjUnitIso_congr {f g : X ⟶ Y} (hf : f = g) :
   subst g
   simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, NatTrans.id_app,
     Category.id_comp]
+
+/-- Pulling back along `f : X ⟶ Y` a function `a ≫ b` on `Y`, factored through `g^* M`, is the
+composite of the pulled-back factors, after the identifications `f^* 𝒪_Y ≅ 𝒪_X` and
+`f^* g^* M ≅ h^* M` for `h = f ≫ g`. -/
+@[reassoc]
+lemma pullbackObjUnitIso_inv_conj_comp (f : X ⟶ Y) (g : Y ⟶ Z) {h : X ⟶ Z} (w : f ≫ g = h)
+    (M : Z.Modules) (a : 𝟙_ Y.Modules ⟶ (pullback g).obj M)
+    (b : (pullback g).obj M ⟶ 𝟙_ Y.Modules) :
+    (pullbackObjUnitIso f).inv ≫ (pullback f).map (a ≫ b ≫ (pullbackObjUnitIso g).inv) ≫
+        (pullbackComp f g).hom.app _ ≫ (pullbackCongr w).hom.app _ =
+      ((pullbackObjUnitIso f).inv ≫ (pullback f).map a ≫ (pullbackComp f g).hom.app M ≫
+          (pullbackCongr w).hom.app M) ≫
+        ((pullbackCongr w).inv.app M ≫ (pullbackComp f g).inv.app M ≫ (pullback f).map b ≫
+            (pullbackObjUnitIso f).hom) ≫
+          (pullbackObjUnitIso h).inv := by
+  subst w
+  rw [← pullbackObjUnitIso_inv_comp]
+  simp only [pullbackCongr, eqToIso_refl, Iso.refl_hom, Iso.refl_inv, NatTrans.id_app,
+    Category.id_comp, Category.comp_id, Functor.map_comp, Category.assoc,
+    Iso.hom_inv_id_app_assoc, Iso.hom_inv_id_assoc]
 
 /-- The unit of `(f ≫ g)^* ⊣ (f ≫ g)_*`, read through `(f ≫ g)^* ≅ f^* g^*`, is the unit of
 `g^* ⊣ g_*` followed by `g_*` of the unit of `f^* ⊣ f_*` and `g_* f_* = (f ≫ g)_*`. -/
@@ -434,26 +520,32 @@ lemma pushforward_ε :
       SheafOfModules.unitToPushforwardObjUnit f.toRingCatSheafHom :=
   SheafOfModules.pushforward_ε f.toRingCatSheafHom
 
+/-- Pullback of module sheaves along any scheme morphism is strong symmetric monoidal,
+with comparisons inverse to the canonical oplax comparisons. -/
+instance pullbackBraided : (pullback f).Braided :=
+  SheafOfModules.pullbackBraided f.toRingCatSheafHom
+
 /-- Pullback of modules along a morphism of schemes is oplax monoidal, as the left adjoint of the
 lax monoidal pushforward: it carries comparison maps `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N`, and its unit
 map is `pullbackObjUnitIso f` (`pullback_η`). The comparison maps are the mates of the tensor
-map of pushforward (`pullback_δ`). -/
+map of pushforward (`pullback_δ`). This projection is reducible so that the monoidal functor
+laws rewrite directly with these comparisons. -/
+@[reducible]
 instance pullbackOplaxMonoidal : (pullback f).OplaxMonoidal :=
-  (pullbackPushforwardAdjunction f).leftAdjointOplaxMonoidal
+  (pullbackBraided f).toMonoidal.toOplaxMonoidal
 
 /-- The pullback--pushforward adjunction of modules along a morphism of schemes is compatible with
 the oplax monoidal structure of pullback and the lax monoidal structure of pushforward. -/
 instance isMonoidal_pullbackPushforwardAdjunction :
     (pullbackPushforwardAdjunction f).IsMonoidal :=
-  inferInstanceAs (letI := (pullbackPushforwardAdjunction f).leftAdjointOplaxMonoidal
-    (pullbackPushforwardAdjunction f).IsMonoidal)
+  SheafOfModules.isMonoidal_pullbackPushforwardAdjunction f.toRingCatSheafHom
 
 /-- The unit map `f^* 𝒪_Y ⟶ 𝒪_X` of the pullback of modules is the isomorphism
 `pullbackObjUnitIso f`. -/
 @[simp]
 lemma pullback_η : Functor.OplaxMonoidal.η (pullback f) = (pullbackObjUnitIso f).hom := by
-  rw [pullbackOplaxMonoidal, Adjunction.leftAdjointOplaxMonoidal_η, pushforward_ε]
-  exact (Equiv.symm_apply_eq _).mpr
+  refine (SheafOfModules.pullback_η f.toRingCatSheafHom).trans ?_
+  exact ((pullbackPushforwardAdjunction f).homEquiv _ _).symm_apply_eq.mpr
     (pullbackPushforwardAdjunction_homEquiv_pullbackObjUnitIso_hom f).symm
 
 /-- The tensor map `f^* (M ⊗ N) ⟶ f^* M ⊗ f^* N` of the pullback of modules is the mate, under the
@@ -466,7 +558,12 @@ lemma pullback_δ (M N : Y.Modules) :
         (((pullbackPushforwardAdjunction f).unit.app M ⊗ₘ
             (pullbackPushforwardAdjunction f).unit.app N) ≫
           Functor.LaxMonoidal.μ (pushforward f) _ _) :=
-  Adjunction.leftAdjointOplaxMonoidal_δ _ _ _
+  SheafOfModules.pullback_δ f.toRingCatSheafHom M N
+
+/-- Pullback of arbitrary module sheaves along a scheme morphism preserves tensor products. -/
+instance isIso_pullback_δ (M N : Y.Modules) :
+    IsIso (Functor.OplaxMonoidal.δ (pullback f) M N) :=
+  SheafOfModules.isIso_pullback_δ f.toRingCatSheafHom M N
 
 /-- The canonical tensor comparison of module pullback respects symmetry, without any
 flatness, finiteness or quasi-coherence hypothesis. -/
@@ -475,11 +572,17 @@ lemma pullback_map_braiding_hom_comp_δ (M N : Y.Modules) :
     (pullback f).map (β_ M N).hom ≫ Functor.OplaxMonoidal.δ (pullback f) N M =
       Functor.OplaxMonoidal.δ (pullback f) M N ≫
         (β_ ((pullback f).obj M) ((pullback f).obj N)).hom :=
-  (pullbackPushforwardAdjunction f).map_braiding_hom_comp_δ M N
+  SheafOfModules.pullback_map_braiding_hom_comp_δ f.toRingCatSheafHom M N
 
 instance : IsIso (Functor.OplaxMonoidal.η (pullback f)) := by
   rw [pullback_η]
   infer_instance
+
+/-- The unit comparison `𝒪_X ⟶ f^* 𝒪_Y` of strong monoidal pullback is the inverse of
+`pullbackObjUnitIso f`. -/
+@[simp]
+lemma pullback_ε : Functor.LaxMonoidal.ε (pullback f) = (pullbackObjUnitIso f).inv :=
+  SheafOfModules.pullback_ε f.toRingCatSheafHom
 
 variable {Z : Scheme.{u}} (g : Y ⟶ Z)
 
@@ -512,6 +615,10 @@ lemma pullback_comp_δ (M N : Z.Modules) :
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) :=
   SheafOfModules.pullback_comp_δ g.toRingCatSheafHom f.toRingCatSheafHom M N
 
+/-- The canonical composition isomorphism of module pullback is monoidal. -/
+instance isMonoidal_pullbackComp_hom : NatTrans.IsMonoidal (pullbackComp f g).hom :=
+  TauCeti.SheafOfModules.isMonoidal_pullbackComp_hom g.toRingCatSheafHom f.toRingCatSheafHom
+
 /-- The composition isomorphism followed by the tensor comparison for a composite pullback
 agrees with the successive tensor comparisons followed by the composition isomorphisms on
 both factors. This form does not involve the inverse composition isomorphism. -/
@@ -524,15 +631,12 @@ lemma _root_.TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ (M N : Z.Mod
         ((pullbackComp f g).hom.app M ⊗ₘ (pullbackComp f g).hom.app N) := by
   rw [pullback_comp_δ, Iso.hom_inv_id_app_assoc]
 
-/-- When the tensor comparisons are invertible, the inverse tensor comparisons of `f^*` and
-`g^*` composed with the composition isomorphism give the inverse tensor comparison of
+/-- The inverse tensor comparisons of `f^*` and `g^*` composed with the composition isomorphism
+give the inverse tensor comparison of
 `(f ≫ g)^*`. This is `TauCeti.AlgebraicGeometry.pullbackComp_hom_app_comp_δ` read through
 inverses. -/
 @[reassoc]
-lemma inv_δ_comp_pullbackComp_hom_app (M N : Z.Modules)
-    [IsIso (Functor.OplaxMonoidal.δ (pullback f) ((pullback g).obj M) ((pullback g).obj N))]
-    [IsIso (Functor.OplaxMonoidal.δ (pullback g) M N)]
-    [IsIso (Functor.OplaxMonoidal.δ (pullback (f ≫ g)) M N)] :
+lemma inv_δ_comp_pullbackComp_hom_app (M N : Z.Modules) :
     inv (Functor.OplaxMonoidal.δ (pullback f) ((pullback g).obj M) ((pullback g).obj N)) ≫
         (pullback f).map (inv (Functor.OplaxMonoidal.δ (pullback g) M N)) ≫
           (pullbackComp f g).hom.app (M ⊗ N) =
@@ -577,6 +681,18 @@ lemma restrictPullbackIso_hom_app (V : Y.Opens) (W : X.Opens) (e : W ≤ f ⁻¹
         (pullbackComp (f.resLE V W e) V.ι).inv.app M ≫
         (pullback (f.resLE V W e)).map ((restrictFunctorIsoPullback V.ι).inv.app M) :=
   (rfl)
+
+/-- **Pullback of a module vanishing on an open.** If `M|_W` is zero for an open `W` of `Y`, the
+pullback of `M` along any morphism `g : X ⟶ Y` with image in `W` is zero: `g` factors through the
+inclusion of `W`, and pullback preserves zero objects. -/
+theorem isZero_pullback_of_isZero_restrict (M : Y.Modules) {W : Y.Opens}
+    (h : IsZero (M.restrict W.ι)) (g : X ⟶ Y) (hg : Set.range g ⊆ W) :
+    IsZero ((pullback g).obj M) := by
+  have e : IsOpenImmersion.lift W.ι g (by simpa using hg) ≫ W.ι = g :=
+    IsOpenImmersion.lift_fac _ _ _
+  exact ((pullback (IsOpenImmersion.lift W.ι g _)).map_isZero
+    (h.of_iso ((restrictFunctorIsoPullback W.ι).app M).symm)).of_iso
+      ((pullbackCongr e).symm.app M ≪≫ ((pullbackComp _ _).app M).symm)
 
 variable (V : Y.Opens)
 

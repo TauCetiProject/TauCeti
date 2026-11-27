@@ -13,6 +13,7 @@ import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.Instances.Matrix
 import TauCeti.MeasureTheory.Function.LpSeminorm.HolderOnWith
+import TauCeti.Analysis.Normed.Operator.Holder
 
 /-!
 # Comparison with the frozen-coefficient problem
@@ -81,8 +82,14 @@ the sum of these.
 * `TauCeti.PDE.UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le`: its squared form with the
   coefficient term weighted by the local deviation `‖a(x) - A‖²`.
 * `TauCeti.PDE.aestronglyMeasurable_of_holderOnWith_matrixBilinearForm` and
-  `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a ball on which `a` is `α`-Hölder,
+  `TauCeti.PDE.memLp_energyIntegrand_of_holderOnWith`: inside a set on which `a` is `α`-Hölder,
   `a` is measurable and its energy integrands are essentially bounded where it is elliptic.
+* `TauCeti.PDE.memLp_energyIntegrand_and_memLp_of_holderOnWith`: on an open set of finite
+  measure, Hölder elliptic coefficients give an essentially bounded energy integrand and a
+  bounded Hölder field is square integrable.
+* `TauCeti.PDE.holderOnWith_continuousLinearMapOfBilin_flip_matrixBilinearForm`: for a constant
+  vector `p`, the field `x ↦ a(x) p`, written as a Riesz representative, is Hölder with constant
+  `K_a ‖p‖`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le`: on an
   open set inside a ball `B(x₀, r)`, the replacement frozen at `x₀` exists and its error is
   `O(r^α)` for `α`-Hölder coefficients and field, plus `2 r ‖f‖_{L²(B)}`.
@@ -301,31 +308,60 @@ theorem UniformlyEllipticOn.setIntegral_norm_gradient_sub_sq_le
     _ ≤ _ := by linarith
 
 omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- On a measurable set `B` inside a ball `B(x₀, ρ)` on which the bilinear forms of `a` are
-`α`-Hölder, with `α > 0`, the coefficient matrix `a` is almost everywhere strongly measurable
-on `B`. -/
-theorem aestronglyMeasurable_of_holderOnWith_matrixBilinearForm {B : Set (EuclideanSpace ℝ ι)}
-    (hB : MeasurableSet B) {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ} (hBρ : B ⊆ ball x₀ ρ)
-    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {α Ka : ℝ≥0} (hα : 0 < α)
-    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ ρ)) :
+/-- On a measurable set `B` inside a set `S` on which the bilinear forms of `a` are `α`-Hölder,
+with `α > 0`, the coefficient matrix `a` is almost everywhere strongly measurable on `B`. -/
+theorem aestronglyMeasurable_of_holderOnWith_matrixBilinearForm {B S : Set (EuclideanSpace ℝ ι)}
+    (hB : MeasurableSet B) (hBS : B ⊆ S) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {α Ka : ℝ≥0}
+    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) S) :
     AEStronglyMeasurable a (mu.restrict B) :=
   (continuousOn_of_continuousOn_matrixBilinearForm
-    ((haK.continuousOn hα).mono hBρ)).aestronglyMeasurable hB
+    ((haK.continuousOn hα).mono hBS)).aestronglyMeasurable hB
+
+omit [DecidableEq ι] in
+/-- If the bilinear forms of `a` are `α`-Hölder with constant `K_a` on `s`, then for a constant
+vector `p` the field `x ↦ a(x) p`, the Riesz representative of `η ↦ ηᵀ a(x) p`, is `α`-Hölder on
+`s` with constant `K_a ‖p‖`. -/
+theorem holderOnWith_continuousLinearMapOfBilin_flip_matrixBilinearForm
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {s : Set (EuclideanSpace ℝ ι)} {α Ka : ℝ≥0}
+    (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) s) (p : EuclideanSpace ℝ ι) :
+    HolderOnWith (Ka * ‖p‖₊) α
+      (fun x => continuousLinearMapOfBilin (matrixBilinearForm (a x)).flip p) s :=
+  (toDual ℝ (EuclideanSpace ℝ ι)).symm.isometry.comp_holderOnWith (haK.clm_flip.clm_apply_const p)
 
 omit [mu.IsAddHaarMeasure] in
-/-- On an open set `B` inside a ball `B(x₀, ρ)` on which the bilinear forms of `a` are
-`α`-Hölder, with `α > 0`, and on which `a` is uniformly elliptic, the energy integrands of `a`
-are essentially bounded. -/
+/-- On an open set `B` inside a set `S` on which the bilinear forms of `a` are `α`-Hölder, with
+`α > 0`, and on which `a` is uniformly elliptic, the energy integrands of `a` are essentially
+bounded. -/
 theorem memLp_energyIntegrand_of_holderOnWith {B : Opens (EuclideanSpace ℝ ι)}
-    {x₀ : EuclideanSpace ℝ ι} {ρ : ℝ} (hBρ : (B : Set (EuclideanSpace ℝ ι)) ⊆ ball x₀ ρ)
+    {S : Set (EuclideanSpace ℝ ι)} (hBS : (B : Set (EuclideanSpace ℝ ι)) ⊆ S)
     {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
     (h : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ ι)) a lam Lam) {α Ka : ℝ≥0}
-    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (ball x₀ ρ)) :
+    (hα : 0 < α) (haK : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) S) :
     MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict B) :=
   memLp_energyIntegrand_of_bounds (beta := 0) (gamma := 0) h.upper_nonneg
-    (aestronglyMeasurable_of_holderOnWith_matrixBilinearForm B.isOpen.measurableSet hBρ hα haK)
+    (aestronglyMeasurable_of_holderOnWith_matrixBilinearForm B.isOpen.measurableSet hBS hα haK)
     aestronglyMeasurable_const aestronglyMeasurable_const (fun x hx => h.upper_bound hx)
     (fun _ _ => by simp) (fun _ _ => by simp)
+
+omit [mu.IsAddHaarMeasure] in
+/-- **Integrability of Hölder data on a piece of finite measure.** On an open set `D` of finite
+measure inside `t`, a uniformly elliptic coefficient `a` that is Hölder on `t` defines an
+essentially bounded energy integrand, and a field `G` that is Hölder and bounded on `t` is
+square integrable. -/
+theorem memLp_energyIntegrand_and_memLp_of_holderOnWith {α : ℝ≥0} (hα : 0 < α)
+    {D : Opens (EuclideanSpace ℝ ι)} [IsFiniteMeasure (mu.restrict (D : Set (EuclideanSpace ℝ ι)))]
+    {t : Set (EuclideanSpace ℝ ι)} (hDt : (D : Set (EuclideanSpace ℝ ι)) ⊆ t)
+    {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam : ℝ}
+    {Ka : ℝ≥0} (hell : UniformlyEllipticOn t a lam Lam)
+    (hKa : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) t)
+    {G : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {KG : ℝ≥0} {M : ℝ}
+    (hG : HolderOnWith KG α G t) (hGM : ∀ x ∈ t, ‖G x‖ ≤ M) :
+    MemLp (fun x => energyIntegrand (a x) 0 0) ⊤ (mu.restrict D) ∧
+      MemLp G 2 (mu.restrict D) :=
+  ⟨memLp_energyIntegrand_of_holderOnWith hDt (hell.mono_set hDt) hα hKa,
+    MemLp.of_bound (((hG.continuousOn hα).mono hDt).aestronglyMeasurable
+      D.isOpen.measurableSet) _
+      ((ae_restrict_mem D.isOpen.measurableSet).mono fun x hx => hGM x (hDt hx))⟩
 
 /-- **The replacement frozen at a centre.** Let `u ∈ H¹(Ω)` solve `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G`
 weakly on `Ω ⊆ ℝ^{n+1}`, tested against test functions, let `B ⊆ Ω` be open with
@@ -428,10 +464,11 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
           2 * r * ‖hf.toLp‖ := by ring
 
 /-- Squaring the energy estimate `λ E ≤ t (K_a X + K_G Y) + 2 r F` of a frozen replacement, with
-`X² = Φ`, `Y² = ω V` and `F² = I`. -/
-private theorem sq_le_of_mul_le_mul_add_mul_add {lam t E X Y Ka KG ω V Φ r F I : ℝ}
+`X² = Φ`, `Y² ≤ ω V` and `F² = I`. Here `Y²` is the volume of the domain of the replacement, at
+most the volume `ω V` of a ball containing it. -/
+theorem sq_le_of_mul_le_mul_add_mul_add {lam t E X Y Ka KG ω V Φ r F I : ℝ}
     (hlam : 0 < lam) (hE : 0 ≤ E) (hω : 0 ≤ ω) (hV : 0 ≤ V)
-    (hest : lam * E ≤ t * (Ka * X + KG * Y) + 2 * r * F) (hXΦ : X ^ 2 = Φ) (hYV : Y ^ 2 = ω * V)
+    (hest : lam * E ≤ t * (Ka * X + KG * Y) + 2 * r * F) (hXΦ : X ^ 2 = Φ) (hYV : Y ^ 2 ≤ ω * V)
     (hFI : F ^ 2 = I) :
     E ^ 2 ≤ 3 * (1 + ω) * ((t ^ 2 * (Ka ^ 2 * Φ + KG ^ 2 * V) + 4 * r ^ 2 * I) / lam ^ 2) := by
   have h1 : (lam * E) ^ 2 ≤ (t * (Ka * X + KG * Y) + 2 * r * F) ^ 2 :=
@@ -444,13 +481,68 @@ private theorem sq_le_of_mul_le_mul_add_mul_add {lam t E X Y Ka KG ω V Φ r F I
       (1 + ω) * (t ^ 2 * (Ka ^ 2 * Φ + KG ^ 2 * V) + 4 * r ^ 2 * I) := by
     have e : (t * Ka * X) ^ 2 + (t * KG * Y) ^ 2 + (2 * r * F) ^ 2 =
         t ^ 2 * Ka ^ 2 * X ^ 2 + t ^ 2 * KG ^ 2 * Y ^ 2 + 4 * r ^ 2 * F ^ 2 := by ring
-    rw [e, hYV, ← hFI, ← hXΦ]
+    have hYd : t ^ 2 * KG ^ 2 * Y ^ 2 ≤ t ^ 2 * KG ^ 2 * (ω * V) :=
+      mul_le_mul_of_nonneg_left hYV (by positivity)
+    rw [e, ← hFI, ← hXΦ]
     have : 0 ≤ t ^ 2 * Ka ^ 2 * X ^ 2 * ω := by positivity
     have : 0 ≤ t ^ 2 * KG ^ 2 * V := by positivity
     have : 0 ≤ 4 * r ^ 2 * F ^ 2 * ω := by positivity
     nlinarith
   rw [mul_div_assoc', le_div_iff₀ (by positivity), mul_comm, ← mul_pow]
   nlinarith
+
+/-- The error term `(r^{2α} (K_a² Φ + K_G² d) + 4 r² I) / λ²` of the comparison with a frozen
+problem is at most `(1 + λ⁻²) (r^{2α} (K_a / λ)² Φ + r^{2α} K_G² d + 4 r² I)`: the coefficient
+term enters the decay steps through `K = K_a / λ`, and the data term `D = r^{2α} K_G² d + 4 r² I`
+does not depend on `λ`. -/
+theorem rpow_mul_add_mul_div_sq_le {r α Ka KG Φ d I lam : ℝ} (hr : 0 ≤ r) (hΦ : 0 ≤ Φ)
+    (hd : 0 ≤ d) (hI : 0 ≤ I) :
+    (r ^ (2 * α) * (Ka ^ 2 * Φ + KG ^ 2 * d) + 4 * r ^ 2 * I) / lam ^ 2 ≤
+      (1 + (lam ^ 2)⁻¹) * (r ^ (2 * α) * (Ka / lam) ^ 2 * Φ +
+        (r ^ (2 * α) * (KG ^ 2 * d) + 4 * r ^ 2 * I)) := by
+  have h1 : 0 ≤ r ^ (2 * α) * (Ka / lam) ^ 2 * Φ := by positivity
+  have h2 : 0 ≤ r ^ (2 * α) * (KG ^ 2 * d) + 4 * r ^ 2 * I := by positivity
+  rcases eq_or_ne lam 0 with rfl | hlam
+  · simp only [ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, div_zero, _root_.inv_zero,
+      add_zero, one_mul]
+    positivity
+  have heq : (r ^ (2 * α) * (Ka ^ 2 * Φ + KG ^ 2 * d) + 4 * r ^ 2 * I) / lam ^ 2 =
+      r ^ (2 * α) * (Ka / lam) ^ 2 * Φ +
+        (lam ^ 2)⁻¹ * (r ^ (2 * α) * (KG ^ 2 * d) + 4 * r ^ 2 * I) := by
+    field_simp
+    ring
+  rw [heq]
+  nlinarith [mul_nonneg (inv_nonneg.2 (sq_nonneg lam)) h1]
+
+/-- The constants of a comparison estimate combine into one: if `Y ≤ 4 D q X + (4 D + 2) E`,
+`E ≤ 3 (1 + ω) e` and `e ≤ (1 + l) e'`, then `Y ≤ A q X + A e'` with
+`A = 3 (1 + ω) (4 (D + D') + 2) (1 + l)`, for `D, D', ω, l ≥ 0`. This is how the decay `D q` of the
+frozen problem, its transfer to a solution `Y` at the cost `E` of the comparison
+(`TauCeti.MeasureTheory.setIntegral_norm_sub_sq_le_add_of_le`), and the bound on `E` by the
+error term `e` of `rpow_mul_add_mul_div_sq_le` combine into the form taken by the decay steps;
+`D'` lets two such estimates share one constant. -/
+theorem le_mul_add_mul_of_le_of_le_mul {Y D D' q X E ω e e' l : ℝ} (hD : 0 ≤ D)
+    (hD' : 0 ≤ D') (hqX : 0 ≤ q * X) (hω : 0 ≤ ω) (hl : 0 ≤ l) (he' : 0 ≤ e')
+    (hY : Y ≤ 4 * D * q * X + (4 * D + 2) * E) (hE : E ≤ 3 * (1 + ω) * e)
+    (he : e ≤ (1 + l) * e') :
+    Y ≤ 3 * (1 + ω) * (4 * (D + D') + 2) * (1 + l) * q * X +
+      3 * (1 + ω) * (4 * (D + D') + 2) * (1 + l) * e' := by
+  have hc : 1 ≤ 3 * (1 + ω) * (1 + l) := by nlinarith
+  have h1 : 4 * D * q * X ≤ 3 * (1 + ω) * (4 * (D + D') + 2) * (1 + l) * q * X := by
+    have : 4 * D ≤ 3 * (1 + ω) * (1 + l) * (4 * (D + D') + 2) := by nlinarith
+    calc 4 * D * q * X = 4 * D * (q * X) := by ring
+      _ ≤ 3 * (1 + ω) * (1 + l) * (4 * (D + D') + 2) * (q * X) :=
+          mul_le_mul_of_nonneg_right this hqX
+      _ = _ := by ring
+  have h2 : (4 * D + 2) * E ≤ 3 * (1 + ω) * (4 * (D + D') + 2) * (1 + l) * e' := by
+    have hE' : E ≤ 3 * (1 + ω) * ((1 + l) * e') :=
+      hE.trans (mul_le_mul_of_nonneg_left he (by positivity))
+    calc (4 * D + 2) * E ≤ (4 * D + 2) * (3 * (1 + ω) * ((1 + l) * e')) :=
+          mul_le_mul_of_nonneg_left hE' (by positivity)
+      _ ≤ (4 * (D + D') + 2) * (3 * (1 + ω) * ((1 + l) * e')) :=
+          mul_le_mul_of_nonneg_right (by linarith) (by positivity)
+      _ = _ := by ring
+  linarith
 
 /-- **The frozen replacement on a ball, squared.** Let `u ∈ H¹(Ω)` solve
 `-∂ᵢ(aⁱʲ ∂ⱼu) = f - div G` weakly on `Ω ⊆ ℝ^{n+1}`, let `ball x₀ r ⊆ Ω`, let `a(x₀)` be uniformly
@@ -513,7 +605,7 @@ theorem UniformlyEllipticOn.exists_frozen_setIntegral_norm_gradient_sub_sq_le {n
     rw [← Real.rpow_natCast, ← Real.rpow_mul hr.le]
     ring_nf
   rw [← hr2]
-  exact sq_le_of_mul_le_mul_add_mul_add h.pos (norm_nonneg _) hω (by positivity) hest hX hY hF
+  exact sq_le_of_mul_le_mul_add_mul_add h.pos (norm_nonneg _) hω (by positivity) hest hX hY.le hF
 
 end PDE
 

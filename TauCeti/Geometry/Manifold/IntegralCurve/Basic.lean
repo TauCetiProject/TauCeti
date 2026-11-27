@@ -9,6 +9,7 @@ public import Mathlib.Analysis.ODE.Basic
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.Geometry.Manifold.IntegralCurve.ExistUnique
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -29,16 +30,25 @@ the field.
   derivative intertwines the vector fields there sends it to an integral curve of the second field.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
-  curve on that set.
+  curve on that set, and `IsMIntegralCurveOn.of_forall_mem_nhdsWithin`: it is a local property of
+  the set.
+* `IsMIntegralCurveOn.union_of_isClosed`: integral curves on two closed sets of times glue to an
+  integral curve on their union.
+* `IsMIntegralCurveOn.comp_neg`: running an integral curve of `v` on `s` backwards gives an
+  integral curve of `-v` on `-s`.
 * `isMIntegralCurve_const_iff`: a constant curve is an integral curve exactly at a zero of the
   field.
+* `IsMIntegralCurve.comp_neg`: running an integral curve of `v` backwards gives an integral curve
+  of `-v`.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
   of the vector field along the curve.
 * `TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn`: in a vector space, integral curves of a
   vector field are the solutions of the autonomous differential equation it defines.
-* `IsMIntegralCurveAt.of_extChartAt_symm`, `IsMIntegralCurveOn.of_extChartAt_symm`: a coordinate
-  solution, on a neighbourhood of a time or on an open set of times, gives a manifold integral
-  curve.
+* `IsIntegralCurve.eq_of_contDiff`: two solutions of the autonomous differential equation of a
+  continuously differentiable vector field on a vector space which agree at one time are equal.
+* `IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt`: a coordinate solution on an
+  arbitrary set of times, which may meet the boundary of the model, gives a manifold integral
+  curve. `IsMIntegralCurveAt.of_extChartAt_symm` is its form on a neighbourhood of a time.
   Conversely, `HasMFDerivAt.hasDerivAt_extChartAt_comp` shows that a curve read in a fixed
   extended chart has the coordinate expression of its velocity as velocity, so an integral curve
   solves the coordinate equation there.
@@ -48,7 +58,8 @@ the field.
 ## References
 
 * Mathlib's proof of `exists_isMIntegralCurveAt_of_contMDiffAt_boundaryless`, whose extended-chart
-  calculation is adapted by `IsMIntegralCurveAt.of_extChartAt_symm` in the reverse direction.
+  calculation is adapted by `IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt` in the
+  reverse direction.
 * Mathlib's `isMIntegralCurveOn_Ioo_eqOn_of_contMDiff`, whose connectedness argument is followed by
   `IsMIntegralCurveOn.eqOn_of_contDiffOn_extChartAt`.
 -/
@@ -56,7 +67,7 @@ the field.
 public section
 
 open Bundle Function Manifold Set
-open scoped ContDiff Manifold Topology
+open scoped ContDiff Manifold Pointwise Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -100,6 +111,42 @@ theorem congr {V : (x : M) → TangentSpace I x} {γ γ' : ℝ → M} {s : Set �
   rw [h ht]
   rfl
 
+/-- **Gluing along closed sets of times.** A curve which is an integral curve of `v` on two
+closed sets of times is an integral curve on their union. -/
+theorem union_of_isClosed {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s t : Set ℝ}
+    (hs : IsMIntegralCurveOn γ V s) (ht : IsMIntegralCurveOn γ V t) (hsc : IsClosed s)
+    (htc : IsClosed t) : IsMIntegralCurveOn γ V (s ∪ t) := by
+  intro r hr
+  by_cases hrs : r ∈ s <;> by_cases hrt : r ∈ t
+  · exact (hs r hrs).union (ht r hrt)
+  -- Away from the other closed set, each set is a neighbourhood of `r` within the union.
+  · exact (hs r hrs).mono_of_mem_nhdsWithin
+      (mem_nhdsWithin.2 ⟨tᶜ, htc.isOpen_compl, hrt, fun x hx ↦ hx.2.resolve_right hx.1⟩)
+  · exact (ht r hrt).mono_of_mem_nhdsWithin
+      (mem_nhdsWithin.2 ⟨sᶜ, hsc.isOpen_compl, hrs, fun x hx ↦ hx.2.resolve_left hx.1⟩)
+  · exact absurd hr (by simp [hrs, hrt])
+
+/-- **Being an integral curve is local in the set of times.** If every time `t` of `s` has a
+neighbourhood within `s` on which `γ` is an integral curve of `v`, then `γ` is an integral curve
+of `v` on `s`. -/
+theorem of_forall_mem_nhdsWithin {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ}
+    (h : ∀ t ∈ s, ∃ u ∈ 𝓝[s] t, t ∈ u ∧ IsMIntegralCurveOn γ V u) :
+    IsMIntegralCurveOn γ V s := fun t ht ↦ by
+  obtain ⟨u, hu, htu, hγ⟩ := h t ht
+  exact (hγ t htu).mono_of_mem_nhdsWithin hu
+
+/-- **Time reversal on a set of times.** Running an integral curve of `v` on `s` backwards gives
+an integral curve of `-v` on `-s`. -/
+theorem comp_neg {V : (x : M) → TangentSpace I x} {γ : ℝ → M} {s : Set ℝ}
+    (hγ : IsMIntegralCurveOn γ V s) : IsMIntegralCurveOn (fun t ↦ γ (-t)) (-V) (-s) := by
+  convert hγ.comp_mul (-1) using 1
+  · ext t
+    rw [comp_apply, mul_neg_one]
+  · ext y
+    rw [Pi.neg_apply, Pi.smul_apply, neg_smul, one_smul]
+  · ext t
+    simp only [Set.mem_neg, mem_ofPred_eq, mul_neg_one]
+
 end IsMIntegralCurveOn
 
 /-- **Constant integral curves are the zeros of the field.** The constant curve at `x` is an
@@ -114,6 +161,14 @@ theorem isMIntegralCurve_const_iff {M : Type*} [TopologicalSpace M] [ChartedSpac
   rw [mfderiv_const] at h₀
   have h₁ : v x = ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (v x) 1 := by simp
   exact h₁.trans (ContinuousLinearMap.ext_iff.1 h₀ (1 : ℝ)).symm
+
+/-- **Time reversal.** Running an integral curve of `v` backwards gives an integral curve of
+`-v`. -/
+theorem IsMIntegralCurve.comp_neg {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {v : (x : M) → TangentSpace I x} {γ : ℝ → M} (hγ : IsMIntegralCurve γ v) :
+    IsMIntegralCurve (fun t ↦ γ (-t)) (-v) := by
+  rw [isMIntegralCurve_iff_isMIntegralCurveOn] at hγ ⊢
+  simpa using hγ.comp_neg
 
 namespace IsMIntegralCurveAt
 
@@ -162,19 +217,56 @@ theorem isMIntegralCurveOn_iff_isIntegralCurveOn {γ : ℝ → E}
 
 end TauCeti
 
-/-- Convert an ordinary derivative into the model-space derivative expected inside a manifold
-derivative. This is the single boundary where the tangent spaces of the self model on `ℝ` and of
-`I` are identified with their model vector spaces `ℝ` and `E`. -/
-private theorem hasFDerivWithinAt_model_tangent_spaces
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-    {x : M} {φ : ℝ → E} {t : ℝ} {v : TangentSpace I x}
-    (hφ : HasDerivAt φ v t) :
-    HasFDerivWithinAt φ
-      (ContinuousLinearMap.toSpanSingleton ℝ v :
-        TangentSpace 𝓘(ℝ, ℝ) t →L[ℝ] TangentSpace I x)
-      Set.univ t := by
-  change HasFDerivWithinAt φ (ContinuousLinearMap.toSpanSingleton ℝ v) Set.univ t
-  exact hφ.hasFDerivAt.hasFDerivWithinAt
+/-- **Uniqueness of integral curves of a `C¹` autonomous field.** Two solutions of the autonomous
+differential equation `γ' = v ∘ γ` of a continuously differentiable vector field `v` on a vector
+space which agree at one time agree at all times. -/
+theorem IsIntegralCurve.eq_of_contDiff {v : E → E} (hv : ContDiff ℝ 1 v) {γ γ' : ℝ → E}
+    (hγ : IsIntegralCurve γ (fun _ ↦ v)) (hγ' : IsIntegralCurve γ' (fun _ ↦ v)) {t₀ : ℝ}
+    (h : γ t₀ = γ' t₀) : γ = γ' := by
+  -- Read the vector space as a manifold modelled on itself, where integral curves of a smooth
+  -- field are unique.
+  have hM : ∀ c : ℝ → E, IsIntegralCurve c (fun _ ↦ v) →
+      IsMIntegralCurve c (fun x ↦ (v x : TangentSpace 𝓘(ℝ, E) x)) := fun c hc ↦
+    isMIntegralCurve_iff_isMIntegralCurveOn.2
+      (TauCeti.isMIntegralCurveOn_iff_isIntegralCurveOn.2 (hc.isIntegralCurveOn _))
+  exact isMIntegralCurve_Ioo_eq_of_contMDiff_boundaryless (contMDiff_vectorSpace_iff_contDiff.2 hv)
+    (hM γ hγ) (hM γ' hγ') h
+
+/-- A curve in the extended chart at `x₀` that stays in the chart target on a set `s` of times and
+whose derivative within `s` is the coordinate expression of a vector field is an integral curve of
+the field on `s` once pulled back through the inverse chart. The curve may meet the boundary of the
+model and `s` is an arbitrary set of times, such as a half-open interval starting at an initial
+time. -/
+theorem IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+    {x₀ : M} {f : ℝ → E} {s : Set ℝ} {v : (x : M) → TangentSpace I x}
+    (hderiv : ∀ t ∈ s, HasDerivWithinAt f ((tangentCoordChange I ((extChartAt I x₀).symm (f t)) x₀
+      ((extChartAt I x₀).symm (f t))) (v ((extChartAt I x₀).symm (f t)))) s t)
+    (htarget : ∀ t ∈ s, f t ∈ (extChartAt I x₀).target) :
+    IsMIntegralCurveOn ((extChartAt I x₀).symm ∘ f) v s := by
+  intro t ht
+  have hft := htarget t ht
+  have hft1 : (extChartAt I x₀).symm (f t) ∈ (extChartAt I x₀).source :=
+    (extChartAt I x₀).map_target hft
+  have hft2 := mem_extChartAt_source (I := I) ((extChartAt I x₀).symm (f t))
+  refine ⟨(continuousOn_extChartAt_symm x₀ _ hft).comp (hderiv t ht).continuousWithinAt
+    fun r hr ↦ htarget r hr, ?_⟩
+  -- The chart change from `x₀` to the chart at the current point is differentiable within the
+  -- range of the model, which contains the whole curve.
+  have hchange := hasFDerivWithinAt_tangentCoordChange (I := I) ⟨hft1, hft2⟩
+  rw [(extChartAt I x₀).right_inv hft] at hchange
+  have hcomp := (hchange.comp_hasDerivWithinAt t (hderiv t ht) fun r hr ↦
+    extChartAt_target_subset_range x₀ (htarget r hr)).congr_deriv
+    ((tangentCoordChange_comp ⟨⟨hft2, hft1⟩, hft2⟩).trans (tangentCoordChange_self hft2))
+  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
+    PartialEquiv.refl_symm, modelWithCornersSelf_coe, Function.comp_def, id_eq, range_id,
+    preimage_id, inter_univ]
+  -- The manifold derivative is read between the model spaces through `tangentSpaceCastModel` on
+  -- both sides, which identifies `TangentSpace 𝓘(ℝ, ℝ) t` with `ℝ` and `TangentSpace I _` with `E`
+  -- by the identity map; Mathlib has no rewrite lemma for this cast, so it is unfolded
+  -- definitionally here, leaving the Fréchet form `smulRight 1 _` of the coordinate derivative.
+  change HasFDerivWithinAt _ ((1 : ℝ →L[ℝ] ℝ).smulRight (v ((extChartAt I x₀).symm (f t)))) s t
+  exact hcomp.hasFDerivWithinAt
 
 /-- A coordinate curve whose values stay in an extended-chart target and whose derivative is the
 coordinate expression of a vector field gives a manifold integral curve after applying the inverse
@@ -189,53 +281,9 @@ theorem IsMIntegralCurveAt.of_extChartAt_symm
           ((extChartAt I x₀).symm (f t)) (v ((extChartAt I x₀).symm (f t)))) t) :
     IsMIntegralCurveAt ((extChartAt I x₀).symm ∘ f) v t₀ := by
   obtain ⟨s, hs, haux⟩ := (hderiv.and htarget).exists_mem
-  rw [isMIntegralCurveAt_iff]
-  refine ⟨s, hs, ?_⟩
-  intro t ht
-  let xₜ : M := (extChartAt I x₀).symm (f t)
-  have h : HasDerivAt f
-      (tangentCoordChange I xₜ x₀ xₜ (v xₜ)) t := (haux t ht).1
-  have hf3 := mem_of_mem_of_subset (haux t ht).2 interior_subset
-  have hft1 := mem_preimage.mp <|
-    mem_of_mem_of_subset hf3 (extChartAt I x₀).target_subset_preimage_source
-  have hft2 := mem_extChartAt_source (I := I) xₜ
-  have hft1' : xₜ ∈ (extChartAt I x₀).source := by simpa only [xₜ] using hft1
-  have hcharts :
-      xₜ ∈ (extChartAt I xₜ).source ∩ (extChartAt I x₀).source ∩
-        (extChartAt I xₜ).source := ⟨⟨hft2, hft1'⟩, hft2⟩
-  apply HasMFDerivAt.hasMFDerivWithinAt
-  refine ⟨(continuousAt_extChartAt_symm'' hf3).comp h.continuousAt, ?_⟩
-  have hcomp : HasDerivAt ((extChartAt I xₜ ∘ (extChartAt I x₀).symm) ∘ f)
-      (tangentCoordChange I x₀ xₜ xₜ (tangentCoordChange I xₜ x₀ xₜ (v xₜ))) t := by
-    apply HasFDerivAt.comp_hasDerivAt _ _ h
-    apply HasFDerivWithinAt.hasFDerivAt (s := range I) _ <|
-      mem_nhds_iff.mpr ⟨interior (extChartAt I x₀).target,
-        subset_trans interior_subset (extChartAt_target_subset_range ..),
-        isOpen_interior, (haux t ht).2⟩
-    rw [← (extChartAt I x₀).right_inv hf3]
-    exact hasFDerivWithinAt_tangentCoordChange ⟨hft1, hft2⟩
-  have hd := hcomp.congr_deriv (tangentCoordChange_comp hcharts)
-  have hd' := hd.congr_deriv (tangentCoordChange_self hft2)
-  simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-    PartialEquiv.refl_symm, modelWithCornersSelf_coe, Function.comp_def, id_eq, range_id]
-  -- Restore the named chart preimage before comparing the ordinary and manifold derivatives.
-  rw [show (extChartAt I x₀).symm (f t) = xₜ from rfl]
-  rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton]
-  exact hasFDerivWithinAt_model_tangent_spaces hd'
-
-/-- A curve in the extended chart at `x₀` that solves the coordinate equation and stays in the
-interior of the chart target on an open set `s` is an integral curve of `v` on `s` once pulled back
-through the inverse chart. -/
-theorem IsMIntegralCurveOn.of_extChartAt_symm
-    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
-    {x₀ : M} {Φ : ℝ → E} {s : Set ℝ} {v : (x : M) → TangentSpace I x} (hs : IsOpen s)
-    (hderiv : ∀ t ∈ s, HasDerivAt Φ ((tangentCoordChange I ((extChartAt I x₀).symm (Φ t)) x₀
-      ((extChartAt I x₀).symm (Φ t))) (v ((extChartAt I x₀).symm (Φ t)))) t)
-    (htarget : ∀ t ∈ s, Φ t ∈ interior (extChartAt I x₀).target) :
-    IsMIntegralCurveOn ((extChartAt I x₀).symm ∘ Φ) v s :=
-  IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ IsMIntegralCurveAt.of_extChartAt_symm
-    (by filter_upwards [hs.mem_nhds ht] with s hs using htarget s hs)
-    (by filter_upwards [hs.mem_nhds ht] with s hs using hderiv s hs)
+  exact isMIntegralCurveAt_iff.mpr ⟨s, hs,
+    IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt
+      (fun t ht ↦ (haux t ht).1.hasDerivWithinAt) fun t ht ↦ interior_subset (haux t ht).2⟩
 
 /-- **Local step of fixed-chart uniqueness.** Near a time of `Ioo a b` where two integral curves
 agree, they agree, provided one of them stays in a fixed extended chart, over an open set on which
@@ -291,39 +339,6 @@ private theorem IsMIntegralCurveOn.eventuallyEq_of_contDiffOn_extChartAt
       (hγderiv.and hγz) (hδderiv.and hδz) (congrArg φ hteq)
   filter_upwards [hcoord, hJ, hδsrc] with r hr hrJ hrδsrc
   exact φ.injOn (hγsrc r hrJ) hrδsrc hr
-
-namespace TauCeti
-
-/-- A curve in the model space which stays in the interior of the chart target and solves the
-coordinate equation of a vector field on an open set of times gives an integral curve of the
-field on the manifold, after applying the inverse extended chart. -/
-theorem isMIntegralCurveOn_extChartAt_symm_comp {M : Type*} [TopologicalSpace M]
-    [ChartedSpace H M] [IsManifold I 1 M] (v : (x : M) → TangentSpace I x) (a : M) {f : ℝ → E}
-    {s : Set ℝ} (hs : IsOpen s)
-    (hmem : ∀ t ∈ s, f t ∈ interior (extChartAt I a).target)
-    (hderiv : ∀ t ∈ s, HasDerivAt f (trivializationAt E (TangentSpace I) a
-      (⟨(extChartAt I a).symm (f t), v ((extChartAt I a).symm (f t))⟩ :
-        TangentBundle I M)).2 t) :
-    IsMIntegralCurveOn ((extChartAt I a).symm ∘ f) v s := by
-  refine IsMIntegralCurveAt.isMIntegralCurveOn fun t ht ↦ ?_
-  apply IsMIntegralCurveAt.of_extChartAt_symm
-  · filter_upwards [hs.mem_nhds ht] with r hr
-    exact hmem r hr
-  · filter_upwards [hs.mem_nhds ht] with r hr
-    have hw_eq (z : E) : (trivializationAt E (TangentSpace I) a
-        (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ : TangentBundle I M)).2 =
-        tangentCoordChange I ((extChartAt I a).symm z) a ((extChartAt I a).symm z)
-          (v ((extChartAt I a).symm z)) := by
-      -- The fibre coordinate of the preferred trivialization is the second coordinate of the
-      -- tangent-bundle chart, whose conversion to `tangentCoordChange` is recorded explicitly.
-      change (chartAt (ModelProd H E)
-        (⟨a, 0⟩ : TangentBundle I M)
-        (⟨(extChartAt I a).symm z, v ((extChartAt I a).symm z)⟩ :
-          TangentBundle I M)).2 = _
-      exact TangentBundle.coe_chartAt_snd
-    simpa only [hw_eq] using hderiv r hr
-
-end TauCeti
 
 /-- **Fixed-chart uniqueness of integral curves.** Two integral curves on an open interval which
 take the same value at one time of that interval agree on it, as soon as one of them stays in a

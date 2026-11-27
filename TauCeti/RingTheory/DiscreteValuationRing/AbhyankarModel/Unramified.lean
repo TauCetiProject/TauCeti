@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Algebra.NatCast
+public import TauCeti.Data.Nat.Cast.IsUnit
 public import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein
 public import Mathlib.RingTheory.RingHom.Unramified
 import Mathlib.RingTheory.Unramified.LocalRing
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import TauCeti.RingTheory.RegularLocalRing.Basic
@@ -136,8 +137,6 @@ theorem isSeparable_abhyankarModelKummerHom
     (Nat.pos_of_ne_zero hd)
   have : Module.Finite B (abhyankarModel ϖ u e d) :=
     Module.finite_of_finrank_pos (hrank ▸ Nat.pos_of_ne_zero hn)
-  have : M.LiesOver (maximalIdeal B) :=
-    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under B M)).symm⟩
   have : IsLocalHom (algebraMap B S) := by
     apply ((local_hom_tfae _).out 5 1).mp
     rw [IsScalarTower.algebraMap_eq B (abhyankarModel ϖ u e d) S, ← Ideal.comap_comap,

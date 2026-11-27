@@ -18,9 +18,10 @@ import TauCeti.FieldTheory.IntermediateField.ScalarTower
 import TauCeti.FieldTheory.Separable.BaseChange
 import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Localization
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Basic
+import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.Localization.AtPrime.FractionRing
+import TauCeti.RingTheory.Localization.Defs
 import TauCeti.RingTheory.Localization.Integral
-import TauCeti.RingTheory.Localization.Tower
 import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 
 /-!
@@ -92,7 +93,7 @@ private theorem ramificationIdx_eq_one_and_isSeparable_at_maximal
     [Field L] [Algebra A L] [Algebra K L] [IsScalarTower A K L]
     [CommRing A₁] [IsDomain A₁] [IsDiscreteValuationRing A₁] [Algebra A A₁]
     [Algebra.IsIntegral A A₁]
-    [CommRing C] [IsDedekindDomain C] [Algebra A C] [Algebra.IsIntegral A C] [Algebra C L]
+    [CommRing C] [IsDedekindDomain C] [Algebra A C] [Algebra C L]
     [IsScalarTower A C L] [IsFractionRing C L]
     [CommRing C'] [IsDedekindDomain C'] [Algebra A₁ C'] [Algebra A C'] [Algebra C C']
     [IsScalarTower A A₁ C'] [IsScalarTower A C C'] [Algebra.IsIntegral C C']
@@ -113,9 +114,6 @@ private theorem ramificationIdx_eq_one_and_isSeparable_at_maximal
   let P : Ideal C := M'.under C
   have : M'.LiesOver P := ⟨rfl⟩
   have : P.IsMaximal := Ideal.IsMaximal.under C M'
-  have : P.LiesOver (maximalIdeal A) := ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A P)).symm⟩
-  have : (maximalIdeal A₁).LiesOver (maximalIdeal A) :=
-    ⟨(eq_maximalIdeal (Ideal.IsMaximal.under A _)).symm⟩
   have : M'.LiesOver (maximalIdeal A) := .trans M' (maximalIdeal A₁) (maximalIdeal A)
   have : FaithfulSMul A C := .of_field_isFractionRing A C K L
   have : FaithfulSMul C C' := .of_field_isFractionRing C C' L E

@@ -8,8 +8,10 @@ module
 public import Mathlib.Analysis.Normed.Affine.Isometry
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # Affine isometries
@@ -23,31 +25,83 @@ an affine isometry equivalence preserves the norms of its iterated derivatives: 
 every order, and on the left in every positive order, since the translation part only shifts
 the values. These are the affine forms of Mathlib's
 `LinearIsometryEquiv.norm_iteratedFDeriv_comp_right` and
-`LinearIsometryEquiv.norm_iteratedFDeriv_comp_left`.
+`LinearIsometryEquiv.norm_iteratedFDeriv_comp_left`. Likewise, composing a map with affine
+isometries on both sides keeps the Hölder constant of its derivative.
 
 ## Main declarations
 
+* `LinearIsometryEquiv.coe_toAffineIsometryEquiv_symm`: the inverse of a linear isometry
+  equivalence, seen as an affine isometry equivalence, is its inverse as a linear isometry.
 * `TauCeti.dilateConj`: the dilation conjugate of an affine isometry.
 * `TauCeti.dilateConj_smul`: `dilateConj c e (c • y) = c • e y`.
 * `TauCeti.dilateConj_symm_apply`: the inverse of `dilateConj c e`, written out pointwise.
+* `AffineIsometryEquiv.linearIsometryEquiv_symm`: the linear part of the inverse of an affine
+  isometry equivalence is the inverse of its linear part.
+* `AffineIsometryEquiv.symm_refl`, `AffineIsometryEquiv.linearIsometryEquiv_refl`: the inverse
+  and the linear part of the identity are the identity.
 * `AffineIsometryEquiv.norm_fderiv_le`: the derivative of an affine isometry equivalence has norm
   at most one.
+* `AffineIsometryEquiv.image_frontier`: an affine isometry equivalence maps frontiers to frontiers.
 * `AffineIsometryEquiv.norm_iteratedFDeriv_comp_left`,
   `AffineIsometryEquiv.norm_iteratedFDeriv_comp_right`: composition with an affine isometry
   equivalence preserves the norms of iterated derivatives.
+* `AffineIsometry.holderWith_fderiv_comp_comp`: composing a map with affine isometries on both
+  sides keeps the Hölder constant of its derivative.
 -/
 
 public section
 
 noncomputable section
 
+namespace LinearIsometryEquiv
+
+/-- The inverse of a linear isometry equivalence, seen as an affine isometry equivalence, is its
+inverse as a linear isometry equivalence. -/
+@[simp]
+theorem coe_toAffineIsometryEquiv_symm {𝕜 V V₂ : Type*} [NormedField 𝕜]
+    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] [SeminormedAddCommGroup V₂] [NormedSpace 𝕜 V₂]
+    (e : V ≃ₗᵢ[𝕜] V₂) : ⇑e.toAffineIsometryEquiv.symm = e.symm := by
+  funext x
+  rw [AffineIsometryEquiv.symm_apply_eq, coe_toAffineIsometryEquiv, apply_symm_apply]
+
+end LinearIsometryEquiv
+
 namespace AffineIsometryEquiv
+
+/-- The linear part of the inverse of an affine isometry equivalence is the inverse of its linear
+part. This holds by definition of `AffineIsometryEquiv.symm`. -/
+@[simp]
+theorem linearIsometryEquiv_symm {𝕜 V V₂ P P₂ : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V]
+    [NormedSpace 𝕜 V] [PseudoMetricSpace P] [NormedAddTorsor V P] [SeminormedAddCommGroup V₂]
+    [NormedSpace 𝕜 V₂] [PseudoMetricSpace P₂] [NormedAddTorsor V₂ P₂] (e : P ≃ᵃⁱ[𝕜] P₂) :
+    e.symm.linearIsometryEquiv = e.linearIsometryEquiv.symm :=
+  rfl
+
+/-- The inverse of the identity affine isometry equivalence is the identity. -/
+@[simp]
+theorem symm_refl {𝕜 V P : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+    [PseudoMetricSpace P] [NormedAddTorsor V P] : (refl 𝕜 P).symm = refl 𝕜 P :=
+  rfl
+
+/-- The linear part of the identity affine isometry equivalence is the identity. -/
+@[simp]
+theorem linearIsometryEquiv_refl {𝕜 V P : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V]
+    [NormedSpace 𝕜 V] [PseudoMetricSpace P] [NormedAddTorsor V P] :
+    (refl 𝕜 P).linearIsometryEquiv = LinearIsometryEquiv.refl 𝕜 V :=
+  rfl
 
 /-- The Fréchet derivative of an affine isometry equivalence has norm at most one. -/
 theorem norm_fderiv_le {𝕜 W W₂ : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedAddCommGroup W₂] [NormedSpace 𝕜 W₂]
     (e : W ≃ᵃⁱ[𝕜] W₂) (x : W) : ‖fderiv 𝕜 e x‖ ≤ 1 := by
   simpa using norm_fderiv_le_of_lipschitz 𝕜 e.lipschitzWith (x₀ := x)
+
+/-- An affine isometry equivalence maps the frontier of a set onto the frontier of its image. -/
+theorem image_frontier {𝕜 V V₂ P P₂ : Type*} [NormedField 𝕜] [SeminormedAddCommGroup V]
+    [NormedSpace 𝕜 V] [PseudoMetricSpace P] [NormedAddTorsor V P] [SeminormedAddCommGroup V₂]
+    [NormedSpace 𝕜 V₂] [PseudoMetricSpace P₂] [NormedAddTorsor V₂ P₂] (e : P ≃ᵃⁱ[𝕜] P₂)
+    (s : Set P) : e '' frontier s = frontier (e '' s) :=
+  e.toHomeomorph.image_frontier s
 
 section IteratedFDeriv
 
@@ -79,6 +133,52 @@ theorem norm_iteratedFDeriv_comp_right (g : E ≃ᵃⁱ[𝕜] F) (f : F → G) (
 end IteratedFDeriv
 
 end AffineIsometryEquiv
+
+namespace AffineIsometry
+
+section Holder
+
+open scoped NNReal
+
+variable {𝕜 E F G H : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
+  [NormedSpace 𝕜 G] [NormedAddCommGroup H] [NormedSpace 𝕜 H]
+
+/-- Composing a differentiable map with affine isometries on both sides keeps the Hölder constant
+of its derivative: if `Df` is `α`-Hölder with constant `K`, so is `D(g ∘ f ∘ e)`, since
+`D(g ∘ f ∘ e)(x)` is `Df(e x)` composed on both sides with linear maps of norm at most one. -/
+theorem holderWith_fderiv_comp_comp (e : E →ᵃⁱ[𝕜] F) (g : G →ᵃⁱ[𝕜] H) {f : F → G}
+    (hf : Differentiable 𝕜 f) {K α : ℝ≥0} (hK : HolderWith K α (fderiv 𝕜 f)) :
+    HolderWith K α (fderiv 𝕜 (g ∘ f ∘ e)) := by
+  set A := e.toContinuousAffineMap
+  set B := g.toContinuousAffineMap
+  have hd (x : E) : fderiv 𝕜 (g ∘ f ∘ e) x =
+      B.contLinear.comp ((fderiv 𝕜 f (e x)).comp A.contLinear) :=
+    ((B.hasFDerivAt (x := f (e x))).comp x
+      ((hf (e x)).hasFDerivAt.comp x (A.hasFDerivAt (x := x)))).fderiv
+  have hAn : ‖A.contLinear‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
+    rw [one_mul]
+    exact (e.linearIsometry.norm_map y).le
+  have hBn : ‖B.contLinear‖ ≤ 1 := ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun y => by
+    rw [one_mul]
+    exact (g.linearIsometry.norm_map y).le
+  refine holderOnWith_univ.1 (HolderOnWith.of_dist_le fun x _ y _ => ?_)
+  rw [hd, hd, dist_eq_norm, ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp]
+  calc ‖B.contLinear.comp ((fderiv 𝕜 f (e x) - fderiv 𝕜 f (e y)).comp A.contLinear)‖
+      ≤ ‖B.contLinear‖ * (‖fderiv 𝕜 f (e x) - fderiv 𝕜 f (e y)‖ * ‖A.contLinear‖) :=
+        (ContinuousLinearMap.opNorm_comp_le _ _).trans
+          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
+    _ ≤ 1 * (‖fderiv 𝕜 f (e x) - fderiv 𝕜 f (e y)‖ * 1) :=
+        mul_le_mul hBn (mul_le_mul_of_nonneg_left hAn (norm_nonneg _))
+          (mul_nonneg (norm_nonneg _) (norm_nonneg _)) zero_le_one
+    _ = dist (fderiv 𝕜 f (e x)) (fderiv 𝕜 f (e y)) := by
+        rw [one_mul, mul_one, dist_eq_norm]
+    _ ≤ K * dist (e x) (e y) ^ (α : ℝ) := hK.dist_le _ _
+    _ = K * dist x y ^ (α : ℝ) := by rw [e.dist_map]
+
+end Holder
+
+end AffineIsometry
 
 namespace TauCeti
 

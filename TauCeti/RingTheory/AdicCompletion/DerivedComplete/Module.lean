@@ -53,16 +53,31 @@ not a unit, the free module `⊕_ℕ R` is not derived `f`-complete, although `R
 * `TauCeti.IsDerivedComplete.pi`: products of derived complete modules are derived complete.
 * `TauCeti.IsDerivedComplete.of_isAdicComplete`: an `I`-adically complete module is derived
   `I`-complete.
+* `TauCeti.IsDerivedComplete.subset_range_of_subset_range_add_smul`: successive approximation.
+  For `u : M → N` between derived `I`-complete modules and `f ∈ I`, a set `S` with
+  `S ⊆ range u + f • S` lies in the range of `u`.
+* `TauCeti.IsDerivedComplete.eq_bot_of_le_pointwise_smul`: Nakayama's lemma, a submodule `K` of
+  a derived `I`-complete module with `K ≤ f • K` for some `f ∈ I` is zero.
+* `TauCeti.IsDerivedComplete.of_comp_eq_smul`: derived completeness passes along maps
+  `a : M → N`, `b : N → M` with `a ∘ b = c` whenever every element of `I` has a power divisible
+  by `c`; in particular to retracts.
 * `TauCeti.IsDerivedComplete.isPrecomplete`: for a finitely generated ideal, a derived complete
   module is `I`-adically precomplete.
 * `TauCeti.isAdicComplete_iff_isDerivedComplete_and_isHausdorff`: for a finitely generated ideal,
   a module is `I`-adically complete if and only if it is derived complete and `I`-adically
   Hausdorff.
+* `TauCeti.IsDerivedComplete.le_jacobson`: if `R` is derived `I`-complete, then `I` lies in
+  the Jacobson radical of `R`.
 * `TauCeti.not_isDerivedComplete_finsupp`: `⊕_ℕ R` is not derived `f`-complete when `f` is a
   non-zero-divisor and not a unit.
 
 ## References
 
+* ShortProof, `grh/src/Lib/PadicComparison/Completion.lean` in
+  <https://github.com/lsernau/grh-lean/tree/72fead102f663d5c7a407964a13dc0cf9d977207>,
+  Apache 2.0, Copyright 2026 Anthropic, PBC. The statements and proof plans of successive
+  approximation, Nakayama and scalar retracts follow `New.Variety.IsDerivedComplete`'s
+  `exists_apply_eq_of_approx`, `eq_zero_of_mem_of_isSMulDivisible` and `of_retract`.
 * B. Bhatt and P. Scholze, *The pro-étale topology for schemes*, Astérisque 369 (2015),
   Section 3.4, Definition 3.4.1, Proposition 3.4.2, Remark 3.4.3 and Lemma 3.4.14.
 * [Stacks Project, Section 15.93, Tag 091N](https://stacks.math.columbia.edu/tag/091N), in
@@ -72,6 +87,7 @@ not a unit, the free module `⊕_ℕ R` is not derived `f`-complete, although `R
 public section
 
 open Finset Function
+open scoped Pointwise
 
 namespace TauCeti
 
@@ -105,6 +121,13 @@ theorem compLeft_comp_telescope (f : R) (g : M →ₗ[R] N) :
   ext x n
   simp
 
+/-- Applying a linear map termwise commutes with each term of the telescope map. -/
+theorem telescope_apply_compLeft (f : R) (g : M →ₗ[R] N) (x : ℕ → M) (n : ℕ) :
+    telescope N f (fun k ↦ g (x k)) n = g (telescope M f x n) := by
+  simpa only [LinearMap.comp_apply, telescope_apply, LinearMap.compLeft_apply,
+    Function.comp_apply] using
+    (congrFun (DFunLike.congr_fun (compLeft_comp_telescope f g) x) n).symm
+
 /-- The telescope map of `f` is bijective on `M` if and only if it is bijective on a module
 linearly equivalent to `M`. -/
 theorem bijective_telescope_iff_of_linearEquiv (e : M ≃ₗ[R] N) (f : R) :
@@ -125,6 +148,23 @@ theorem eq_sum_range_add_pow_smul_of_telescope_eq {f : R} {z c : ℕ → M}
     have hn : z (k + n) = c (k + n) + f • z (k + n + 1) := by
       rw [← h, telescope_apply, sub_add_cancel]
     rw [ih, hn, smul_add, smul_smul, ← pow_succ, sum_range_succ, add_assoc, add_assoc]
+
+/-- The telescope map sends the partial sums `∑_{j < n} fʲ • yₖ₊ⱼ` to `yₖ - fⁿ • yₖ₊ₙ`. -/
+theorem telescope_sum_range_pow_smul (f : R) (y : ℕ → M) (n : ℕ) :
+    telescope M f (fun k ↦ ∑ j ∈ range n, f ^ j • y (k + j)) = fun k ↦ y k - f ^ n • y (k + n) := by
+  induction n with
+  | zero => ext k; simp
+  | succ n ih =>
+    ext k
+    have hk := congrFun ih k
+    simp only [telescope_apply] at hk ⊢
+    rw [sum_range_succ, sum_range_succ, smul_add, smul_smul f (f ^ n), ← pow_succ',
+      show k + 1 + n = k + (n + 1) by omega]
+    calc
+      _ = (∑ j ∈ range n, f ^ j • y (k + j) -
+          f • ∑ j ∈ range n, f ^ j • y (k + 1 + j)) +
+          f ^ n • y (k + n) - f ^ (n + 1) • y (k + (n + 1)) := by abel
+      _ = _ := by rw [hk]; abel
 
 /-- The telescope map of `f` is the shift map of the tower `M ←f M ←f ⋯`. -/
 theorem ModuleTower.shift_smulTower (f : R) :
@@ -278,6 +318,83 @@ theorem of_pow_smul_eq_bot {k : ℕ} (hk : I ^ k • (⊤ : Submodule R M) = ⊥
     IsDerivedComplete I M :=
   have := isAdicComplete_of_pow_smul_eq_bot hk
   of_isAdicComplete
+
+/-- **Derived completeness puts the ideal in the Jacobson radical.** If `R` is derived
+`I`-complete, then `I` lies in the Jacobson radical of `R`: `1 - g` is a unit for every `g ∈ I`. -/
+theorem le_jacobson (h : IsDerivedComplete I R) : I ≤ Ring.jacobson R := by
+  intro x hx
+  refine Ring.mem_jacobson_iff.2 fun y ↦ ?_
+  -- The preimage under the telescope map of the constant sequence `1` is shift-invariant by
+  -- injectivity, so it is a constant `u` with `u - g * u = 1`.
+  obtain ⟨z, hz⟩ := (h.bijective (I.neg_mem_iff.2 (I.mul_mem_right y hx))).2 fun _ ↦ (1 : R)
+  have hshift : (fun n ↦ z (n + 1)) = z :=
+    (h.bijective (I.neg_mem_iff.2 (I.mul_mem_right y hx))).1 <| funext fun n ↦ by
+      simpa using congrFun hz (n + 1) |>.trans (congrFun hz n).symm
+  have h0 := congrFun hz 0
+  rw [telescope_apply, show z (0 + 1) = z 0 from congrFun hshift 0, smul_eq_mul] at h0
+  exact .of_mul_eq_one (z 0) (by linear_combination h0)
+
+/-- **Successive approximation.** Let `u : M → N` be a linear map between derived `I`-complete
+modules and `f ∈ I`. If every point of a set `S ⊆ N` is the sum of a point of the range of `u` and
+of `f` times a point of `S`, then `S` lies in the range of `u`. -/
+theorem subset_range_of_subset_range_add_smul (hM : IsDerivedComplete I M)
+    (hN : IsDerivedComplete I N) {f : R} (hf : f ∈ I) (u : M →ₗ[R] N) {S : Set N}
+    (hS : S ⊆ (LinearMap.range u : Set N) + f • S) : S ⊆ LinearMap.range u := by
+  intro x hx
+  have key (y : S) : ∃ e : M, ∃ y' : S, (y : N) = u e + f • (y' : N) := by
+    obtain ⟨_, ⟨e, rfl⟩, _, ⟨y', hy', rfl⟩, h⟩ := hS y.property
+    exact ⟨e, ⟨y', hy'⟩, h.symm⟩
+  choose e next hnext using key
+  -- The successive remainders `xₙ ∈ S`, with `xₙ = u (e xₙ) + f • xₙ₊₁`.
+  let xs (n : ℕ) : S := next^[n] ⟨x, hx⟩
+  obtain ⟨z, hz⟩ := (hM.bijective hf).2 fun n ↦ e (xs n)
+  have h : telescope N f (fun n ↦ (xs n : N)) = telescope N f (fun n ↦ u (z n)) := by
+    ext n
+    have hn : (xs (n + 1) : N) = next (xs n) := by
+      simp only [xs, Function.iterate_succ_apply']
+    rw [telescope_apply_compLeft, hz, telescope_apply, hn, hnext (xs n), add_sub_cancel_right]
+  exact ⟨z 0, (congrFun ((hN.bijective hf).1 h) 0).symm⟩
+
+/-- **Nakayama's lemma for derived complete modules.** A submodule `K` of a derived `I`-complete
+module with `K ≤ f • K` for some `f ∈ I` is zero. No finiteness of `K` is needed. -/
+theorem eq_bot_of_le_pointwise_smul (hM : IsDerivedComplete I M) {f : R} (hf : f ∈ I)
+    {K : Submodule R M} (hK : K ≤ f • K) : K = ⊥ := by
+  have h := hM.subset_range_of_subset_range_add_smul hM hf (0 : M →ₗ[R] M) (S := K) fun x hx ↦ by
+    obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists x f K).1 (hK hx)
+    exact ⟨0, (LinearMap.range _).zero_mem, f • y, Set.smul_mem_smul_set hy, zero_add _⟩
+  rw [LinearMap.range_zero] at h
+  exact (Submodule.eq_bot_iff K).2 fun x hx ↦ h hx
+
+/-- **Retracts up to a scalar.** Let `a : M → N` and `b : N → M` be linear maps with
+`a (b x) = c • x` for all `x`, where every element of `I` has a power divisible by `c`. If `M` is
+derived `I`-complete, so is `N`. For `c = 1` this says that a retract of a derived complete module
+is derived complete; for `I = (π)` and `c = πᵐ` it says that derived `π`-completeness passes along
+maps which are inverse to each other up to `πᵐ`. -/
+theorem of_comp_eq_smul (hM : IsDerivedComplete I M) (a : M →ₗ[R] N) (b : N →ₗ[R] M) {c : R}
+    (hab : ∀ x, a (b x) = c • x) (hI : I ≤ (Ideal.span {c}).radical) : IsDerivedComplete I N := by
+  intro f hf
+  obtain ⟨n, hn⟩ := hI hf
+  obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.1 hn
+  refine ⟨(injective_iff_map_eq_zero _).2 fun z hz ↦ ?_, fun y ↦ ?_⟩
+  · -- `b ∘ z` is killed by the telescope map on `M`, so `c • z = 0`, and `z = fⁿ • z(· + n)`.
+    have hb : (fun k ↦ b (z k)) = 0 := (map_eq_zero_iff _ (hM.bijective hf).1).1 <| by
+      ext k
+      rw [telescope_apply_compLeft, hz]
+      simp
+    funext k
+    rw [eq_sum_range_add_pow_smul_of_telescope_eq hz k n, ← hr, mul_smul, ← hab,
+      congrFun hb (k + n)]
+    simp
+  · -- The cokernel is killed by `c`, and every sequence is congruent to `fⁿ` times a sequence.
+    have hc (w : ℕ → N) : c • w ∈ LinearMap.range (telescope N f) := by
+      obtain ⟨e, he⟩ := (hM.bijective hf).2 fun k ↦ b (w k)
+      refine ⟨fun k ↦ a (e k), funext fun k ↦ ?_⟩
+      rw [telescope_apply_compLeft, he, Pi.smul_apply, hab]
+    obtain ⟨w, hw⟩ := hc fun k ↦ r • y (k + n)
+    refine ⟨(fun k ↦ ∑ j ∈ range n, f ^ j • y (k + j)) + w, ?_⟩
+    rw [map_add, telescope_sum_range_pow_smul, hw]
+    ext k
+    simp [← hr, mul_comm r c, mul_smul]
 
 end IsDerivedComplete
 

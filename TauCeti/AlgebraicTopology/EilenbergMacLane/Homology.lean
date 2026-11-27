@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Homology
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.UniquelyDivisible
+public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.ULift
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Uniqueness
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
@@ -22,14 +23,21 @@ with coefficients in a commutative ring `k` is the group homology of `G` with tr
 
 `Hₙ(X; k) ≅ Hₙ(G, k)`.
 
+In degree one, the Hurewicz map identifies the first integral homology of a `K(G, 1)` space with
+the abelianization of its fundamental group, which is the abelianization of `G`
+(`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one`); this holds with `G`
+and `X` in any universes. For an abelian group `A`, the first integral homology of a `K(A, 1)`
+space is `A` itself
+(`TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one_of_comm`).
+
 The spaces of interest need not have CW type. The loop space of a `K(A, 2)` space is a `K(A, 1)`
 space, and so are the fibres of the path-loop fibration over it; it is to such spaces that the
 vanishing theorems for the classifying space have to be applied. In particular, if `A` is an
 abelian group on which multiplication by an integer `m` is bijective and `k` is a commutative
 semisimple ring in which `m = 0`, then every `K(A, 1)` space has the `k`-homology of a point
 (`TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul`). For
-`m = 2` and `k = 𝔽₂`: every `K(A, 1)` space of a uniquely two-divisible group has the mod-two
-homology of a point
+`m = 2` and `k = 𝔽₂`, or any semisimple `k` in which `2 = 0`: every `K(A, 1)` space of a uniquely
+two-divisible group has the mod-two homology of a point
 (`TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_isUniquelyTwoDivisible`).
 This is the case `n = 1` of the mod-two acyclicity of the Eilenberg--Mac Lane spaces `K(A, n)`,
 stated for every space of the homotopy type, which is the form in which the induction through
@@ -39,6 +47,10 @@ the path-loop fibrations uses it.
 
 * `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_singularHomologyIsoGroupHomology`: the singular
   homology of a `K(G, 1)` space is the group homology of `G`.
+* `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one`: the first integral
+  homology of a `K(G, 1)` space is the abelianization of `G`.
+* `TauCeti.IsEilenbergMacLaneSpaceOne.nonempty_addEquiv_singularHomology_one_of_comm`: for an
+  abelian group `A`, the first integral homology of a `K(A, 1)` space is `A`.
 * `TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul`: a
   `K(A, 1)` space of a uniquely `m`-divisible abelian group is acyclic modulo `m`.
 * `TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_isUniquelyTwoDivisible`:
@@ -46,8 +58,8 @@ the path-loop fibrations uses it.
 
 ## References
 
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 4.1,
-  Proposition 4.21, and Section 4.2, Proposition 4.30.
+* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Section 2.A,
+  Theorem 2A.1, Section 4.1, Proposition 4.21, and Section 4.2, Proposition 4.30.
 * J.-P. Serre, *Groupes d'homotopie et classes de groupes abéliens*, Ann. of Math. 58 (1953),
   Chapter I.
 -/
@@ -58,7 +70,7 @@ noncomputable section
 
 open AlgebraicTopology CategoryTheory
 
-universe u
+universe u v
 
 namespace TauCeti
 
@@ -77,26 +89,50 @@ theorem nonempty_singularHomologyIsoGroupHomology {G : Type u} [Group G] {X : Ty
   exact ⟨(asIso (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).map
     (TopCat.ofHom f))).symm ≪≫ classifyingSpaceSingularHomologyIsoGroupHomology k G n⟩
 
-variable (k : Type) [CommRing k] [IsSemisimpleRing k] {m : ℤ}
+/-- **The first integral homology of a `K(G, 1)` space is the abelianization of `G`.** For a
+group `G` and a `K(G, 1)` space `X`, the Hurewicz map identifies the abelianized fundamental group
+of `X`, which is the abelianization of `G`, with the singular homology `H₁(X; ℤ)`. -/
+theorem nonempty_addEquiv_singularHomology_one {G : Type v} [Group G] {X : Type u}
+    [TopologicalSpace X] {x : X} (hX : IsEilenbergMacLaneSpaceOne G X x) :
+    Nonempty (Additive (Group.Abelianization G) ≃+
+      ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
+        (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X)) := by
+  have := hX.isAspherical.pathConnectedSpace
+  obtain ⟨φ⟩ := hX.nonempty_fundamentalGroupMulEquiv
+  exact ⟨(MulEquiv.toAdditive φ.abelianizationCongr).symm.trans
+    (HurewiczOne.hurewiczHomologyUliftAddEquiv (X := TopCat.of X) x)⟩
+
+/-- **The first integral homology of a `K(A, 1)` space is `A`.** For an abelian group `A`, the
+abelianization of `A` is `A` itself, so a `K(A, 1)` space `X` has `H₁(X; ℤ) ≅ A`. -/
+theorem nonempty_addEquiv_singularHomology_one_of_comm {A : Type v} [AddCommGroup A]
+    {X : Type u} [TopologicalSpace X] {x : X}
+    (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) :
+    Nonempty (A ≃+ ((singularHomologyFunctor (ModuleCat.{u} ℤ) 1).obj
+      (ModuleCat.of ℤ (ULift.{u} ℤ))).obj (TopCat.of X)) := by
+  obtain ⟨φ⟩ := hX.nonempty_addEquiv_singularHomology_one
+  exact ⟨(MulEquiv.toAdditiveLeft Group.Abelianization.equivOfComm).trans φ⟩
+
+variable (k : Type u) [CommRing k] [IsSemisimpleRing k] {m : ℤ}
 
 /-- **`K(A, 1)` spaces of uniquely `m`-divisible groups are acyclic modulo `m`.** If
 multiplication by the integer `m` is a bijection of the abelian group `A`, then every `K(A, 1)`
 space has no homology in positive degrees with coefficients in a commutative semisimple ring `k`
 in which `m = 0`. -/
-theorem subsingleton_singularHomology_of_bijective_zsmul (hmk : (m : k) = 0) {A : Type}
-    [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a) {X : Type} [TopologicalSpace X]
+theorem subsingleton_singularHomology_of_bijective_zsmul (hmk : (m : k) = 0) {A : Type u}
+    [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a) {X : Type u} [TopologicalSpace X]
     {x : X} (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) (n : ℕ) :
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology (n + 1)) :=
   have := subsingleton_groupHomology_of_bijective_zsmul k hmk hA n
   (hX.nonempty_singularHomologyIsoGroupHomology k (n + 1)).some.toLinearEquiv.toEquiv.subsingleton
 
 /-- **Mod-two acyclicity of `K(A, 1)` spaces.** For a uniquely two-divisible abelian group `A`,
-every `K(A, 1)` space has the mod-two homology of a point: `Hᵢ(X; 𝔽₂) = 0` for all `i > 0`. -/
-theorem subsingleton_singularHomology_of_isUniquelyTwoDivisible {A : Type} [AddCommGroup A]
-    (hA : IsUniquelyTwoDivisible A) {X : Type} [TopologicalSpace X] {x : X}
+every `K(A, 1)` space has the mod-two homology of a point: `Hᵢ(X; k) = 0` for all `i > 0`, with
+coefficients in a commutative semisimple ring `k` in which `2 = 0`, such as `𝔽₂`. -/
+theorem subsingleton_singularHomology_of_isUniquelyTwoDivisible (hk : (2 : k) = 0) {A : Type u}
+    [AddCommGroup A] (hA : IsUniquelyTwoDivisible A) {X : Type u} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) (n : ℕ) :
-    Subsingleton (((singularChains (ZMod 2)).obj (TopCat.of X)).homology (n + 1)) :=
-  subsingleton_singularHomology_of_bijective_zsmul (ZMod 2) (m := 2) (by decide)
+    Subsingleton (((singularChains k).obj (TopCat.of X)).homology (n + 1)) :=
+  subsingleton_singularHomology_of_bijective_zsmul k (m := 2) (mod_cast hk)
     ((isUniquelyTwoDivisible_iff A).1 hA) hX n
 
 end IsEilenbergMacLaneSpaceOne

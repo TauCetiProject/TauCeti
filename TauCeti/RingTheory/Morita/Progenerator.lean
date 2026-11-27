@@ -9,7 +9,10 @@ public import TauCeti.Algebra.Category.FGModuleCat.Equivalence
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Morita
 public import TauCeti.Algebra.Module.Generator
 public import TauCeti.RingTheory.Idempotents.Corner.Retract
-public import TauCeti.RingTheory.Morita.Corner
+public import TauCeti.RingTheory.Morita.Corner.Basic
+
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
+import TauCeti.LinearAlgebra.Pi.Retract
 
 /-!
 # Morita equivalence through progenerators
@@ -27,7 +30,7 @@ equivalence over a commutative base `R`:
 The first statement does not pass through a tensor product over `End_A P`, nor through matrices.
 Both `A` and `(End_A P)ᵐᵒᵖ` are corners of the single ring `S = End_A(A × P)ᵐᵒᵖ`: the endomorphism
 ring of a retract of a module `M` is the corner of `End_A M` cut out by the idempotent of the
-retract (`TauCeti.cornerEndRetractAlgEquiv`). The corner of `A` is full because `P` is finitely
+retract (`TauCeti.cornerOpEndRetractAlgEquiv`). The corner of `A` is full because `P` is finitely
 generated and projective, a dual basis writing `id_P` as a sum of maps factoring through `A`; the
 corner of `P` is full because `P` is a generator, which writes `id_A` as a sum of maps factoring
 through `P`. Fullness makes `S` Morita equivalent to both corners
@@ -41,6 +44,9 @@ facts about `F` are in `TauCeti/Algebra/Category/FGModuleCat/Equivalence.lean`.
 
 * `TauCeti.isMoritaEquivalent_moduleEnd_mulOpposite_of_sum_comp_eq_id`: if each of two modules is a
   retract of a finite power of the other, their opposite endomorphism rings are Morita equivalent.
+* `TauCeti.exists_moritaEquivalence_moduleEnd_of_comp_eq_id`: if each of two modules is a retract of
+  a finite power of the other, a Morita equivalence between their endomorphism rings carries one to
+  the other.
 * `TauCeti.isMoritaEquivalent_moduleEnd_mulOpposite`: **a ring is Morita equivalent to the opposite
   endomorphism ring of any progenerator.**
 * `CategoryTheory.Equivalence.isMoritaEquivalent`: the algebras of two `R`-linearly equivalent
@@ -63,7 +69,7 @@ facts about `F` are in `TauCeti/Algebra/Category/FGModuleCat/Equivalence.lean`.
 public section
 
 open CategoryTheory MulOpposite
-open scoped ModuleCat.Algebra
+open scoped ModuleCat.Algebra Pointwise
 
 universe u
 
@@ -71,7 +77,7 @@ namespace TauCeti
 
 section Linking
 
-variable (R : Type*) [CommSemiring R] {A : Type*} [Ring A] [Algebra R A]
+variable (R : Type*) [CommSemiring R] {A : Type*} [Semiring A] [Algebra R A]
   {X Y : Type u} [AddCommGroup X] [Module A X] [Module R X] [IsScalarTower R A X]
   [AddCommGroup Y] [Module A Y] [Module R Y] [IsScalarTower R A Y]
 
@@ -87,8 +93,8 @@ theorem isMoritaEquivalent_moduleEnd_mulOpposite_of_sum_comp_eq_id
   have hX : LinearMap.fst A X Y ∘ₗ LinearMap.inl A X Y = .id := LinearMap.fst_comp_inl ..
   have hY : LinearMap.snd A X Y ∘ₗ LinearMap.inr A X Y = .id := LinearMap.snd_comp_inr ..
   have hsum : LinearMap.inl A X Y ∘ₗ LinearMap.fst A X Y +
-      LinearMap.inr A X Y ∘ₗ LinearMap.snd A X Y = .id := by
-    ext <;> simp
+      LinearMap.inr A X Y ∘ₗ LinearMap.snd A X Y = .id :=
+    LinearMap.coprod_inl_inr
   have hsum' : LinearMap.inr A X Y ∘ₗ LinearMap.snd A X Y +
       LinearMap.inl A X Y ∘ₗ LinearMap.fst A X Y = .id := by
     rw [add_comm, hsum]
@@ -96,8 +102,62 @@ theorem isMoritaEquivalent_moduleEnd_mulOpposite_of_sum_comp_eq_id
     (span_op_comp_eq_top hX hsum s u v huv)
   have h₂ := (isIdempotentElem_op_comp hY).isMoritaEquivalent_corner R
     (span_op_comp_eq_top hY hsum' t u' v' huv')
-  exact (IsMoritaEquivalent.of_algEquiv R (cornerEndRetractAlgEquiv R hX).symm).trans R
-    ((h₁.symm R).trans R (h₂.trans R (.of_algEquiv R (cornerEndRetractAlgEquiv R hY))))
+  exact (IsMoritaEquivalent.of_algEquiv R (cornerOpEndRetractAlgEquiv R hX).symm).trans R
+    ((h₁.symm R).trans R (h₂.trans R (.of_algEquiv R (cornerOpEndRetractAlgEquiv R hY))))
+
+/-- **Morita equivalence between the endomorphism rings of two modules in each other's additive
+closure.** If each of two `A`-modules `X` and `Y` is a retract of a finite power of the other, a
+Morita equivalence between `Module.End A X` and `Module.End A Y` carries `X` to `Y`. Both rings are
+corners of `Module.End A (X × Y)` at full idempotents. -/
+theorem exists_moritaEquivalence_moduleEnd_of_comp_eq_id {m n : ℕ}
+    {s : Y →ₗ[A] (Fin m → X)} {r : (Fin m → X) →ₗ[A] Y} (hrs : r ∘ₗ s = .id)
+    {s' : X →ₗ[A] (Fin n → Y)} {r' : (Fin n → Y) →ₗ[A] X} (hrs' : r' ∘ₗ s' = .id) :
+    ∃ F : MoritaEquivalence R (Module.End A X) (Module.End A Y),
+      Nonempty (F.eqv.functor.obj (ModuleCat.of _ X) ≅ ModuleCat.of _ Y) := by
+  have hX : LinearMap.fst A X Y ∘ₗ LinearMap.inl A X Y = .id := LinearMap.fst_comp_inl ..
+  have hY : LinearMap.snd A X Y ∘ₗ LinearMap.inr A X Y = .id := LinearMap.snd_comp_inr ..
+  have hsum : LinearMap.inl A X Y ∘ₗ LinearMap.fst A X Y +
+      LinearMap.inr A X Y ∘ₗ LinearMap.snd A X Y = .id :=
+    LinearMap.coprod_inl_inr
+  have hp := span_comp_eq_top hX hsum _ _ _ (LinearMap.sum_comp_eq_id_of_comp_eq_id hrs)
+  have hq := span_comp_eq_top hY ((add_comm _ _).trans hsum) _ _ _
+    (LinearMap.sum_comp_eq_id_of_comp_eq_id hrs')
+  -- The `C`-module `N = X × Y`, for `C = Module.End A (X × Y)`, and its two pieces.
+  let N := ModuleCat.of (Module.End A (X × Y)) (X × Y)
+  let eX := isIdempotentElem_comp hX
+  let eY := isIdempotentElem_comp hY
+  let Cp := eX.moritaEquivalenceCorner R hp
+  let Cq := eY.moritaEquivalenceCorner R hq
+  -- The rings are given explicitly: over a semiring `A`, unifying their `Ring` instances with the
+  -- semiring instances of the algebra isomorphisms fails when the rings are still metavariables.
+  let F₁ := MoritaEquivalence.ofAlgEquiv (A := Module.End A X) (B := eX.Corner)
+    (cornerEndRetractAlgEquiv R hX).symm
+  let F₂ := MoritaEquivalence.ofAlgEquiv (A := eY.Corner) (B := Module.End A Y)
+    (cornerEndRetractAlgEquiv R hY)
+  -- The isomorphisms are kept opaque: unfolding them against the goal is slow.
+  have I₁ : F₁.eqv.functor.obj (ModuleCat.of _ X) ≅ eX.cornerFunctor.obj N :=
+    RingHom.restrictScalarsIsoOfAddEquiv _ (smulTopRetractAddEquiv hX)
+      fun c x ↦ smulTopRetractAddEquiv_smul R hX c x
+  have I₂ : F₂.eqv.functor.obj (eY.cornerFunctor.obj N) ≅ ModuleCat.of _ Y :=
+    RingHom.restrictScalarsIsoOfAddEquiv _ (smulTopRetractAddEquiv hY).symm
+      -- `by exact` elaborates the term against the expected type, where `eY.cornerFunctor.obj N`
+      -- is already unfolded to the `smulTop` subtype; passed as a plain term, unifying the two
+      -- carriers times out at `whnf`.
+      fun g z ↦ by exact smulTopRetractAddEquiv_symm_smul R hY g z
+  -- The functors of the corner Morita equivalences are the corner functors `V ↦ eV`.
+  have hCp : Cp.eqv.functor = eX.cornerFunctor := by
+    simp only [Cp, IsIdempotentElem.moritaEquivalenceCorner_eqv,
+      IsIdempotentElem.cornerEquivalence_functor]
+  have hCq : Cq.eqv.functor = eY.cornerFunctor := by
+    simp only [Cq, IsIdempotentElem.moritaEquivalenceCorner_eqv,
+      IsIdempotentElem.cornerEquivalence_functor]
+  refine ⟨F₁.trans R ((Cp.symm R).trans R (Cq.trans R F₂)), ⟨?_⟩⟩
+  -- `X ↦ eX ↦ N ↦ eY ↦ Y`, through the unit of the first corner equivalence.
+  -- The steps are kept opaque: unfolding them against the goal is slow.
+  have J₁ := (Cp.symm R).eqv.functor.mapIso (I₁ ≪≫ eqToIso (congrArg (·.obj N) hCp.symm))
+  have J₂ := (Cp.eqv.unitIso.app N).symm
+  have J₃ := F₂.eqv.functor.mapIso (Cq.eqv.functor.mapIso (J₁ ≪≫ J₂))
+  exact J₃ ≪≫ F₂.eqv.functor.mapIso (eqToIso (congrArg (·.obj N) hCq)) ≪≫ I₂
 
 end Linking
 
@@ -113,17 +173,11 @@ theorem isMoritaEquivalent_moduleEnd_mulOpposite [Module.Finite A P] [Module.Pro
     [Module.IsGenerator A P] : IsMoritaEquivalent R A (Module.End A P)ᵐᵒᵖ := by
   obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective A P
   obtain ⟨m, φ, x, hφ⟩ := Module.IsGenerator.exists_sum_eq_one (R := A) (M := P)
-  have huv : ∑ j, (f ∘ₗ LinearMap.single A (fun _ : Fin n ↦ A) j) ∘ₗ
-      (LinearMap.proj j ∘ₗ g) = .id := by
-    ext y
-    simpa [LinearMap.sum_apply, ← map_sum, ← LinearMap.comp_apply] using
-      (congrArg f (LinearMap.sum_single_apply (fun _ ↦ A) (g y))).trans
-        (LinearMap.congr_fun hfg y)
   have huv' : ∑ j, φ j ∘ₗ LinearMap.toSpanSingleton A P (x j) = .id := by
     ext
     simpa [LinearMap.sum_apply] using hφ
   have h := isMoritaEquivalent_moduleEnd_mulOpposite_of_sum_comp_eq_id R
-    Finset.univ _ _ huv Finset.univ _ _ huv'
+    Finset.univ _ _ (LinearMap.sum_comp_eq_id_of_comp_eq_id hfg) Finset.univ _ _ huv'
   exact (IsMoritaEquivalent.of_algEquiv R
     ((AlgEquiv.opOp R A).trans (AlgEquiv.op (AlgEquiv.moduleEndSelf R)))).trans R h
 

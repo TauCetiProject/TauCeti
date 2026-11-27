@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Trace
-public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.StableEquivalent
+public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.CommRing
 public import TauCeti.Geometry.Sphere.Connected
 public import TauCeti.Topology.Sphere.Coord
 
@@ -68,6 +68,8 @@ the failure of direct-sum cancellation for finitely generated projective modules
   `tangentSections`.
 * `TauCeti.classOf_tangentSections`, `TauCeti.splitK0_of_tangentSections`: in `SplitK0` of finite
   projective modules over `C(Sⁿ, R)`, `[tangentSections] = n • [C(Sⁿ, R)]`.
+* `TauCeti.kZero_of_tangentSections`: the same equality in `K₀(C(Sⁿ, R))`, built from right
+  modules.
 * `TauCeti.not_free_tangentSections_of_even`: for positive even `n`,
   `tangentSections (Fin (n + 1)) ℝ` is not free over `C(Sⁿ, ℝ)`.
 * `TauCeti.not_free_tangentSections_fin_three`,
@@ -329,20 +331,25 @@ theorem classOf_tangentSections (n : ℕ) (R : Type*) [CommRing R]
 `tangentSections (Fin (n + 1)) R` is `n` times the class of `C(Sⁿ, R)`. -/
 theorem splitK0_of_tangentSections.{u} (n : ℕ) (R : Type u) [CommRing R]
     [TopologicalSpace R] [IsTopologicalRing R] [Algebra ℝ R] [ContinuousSMul ℝ R] :
-    SplitK0.of.{u}
-        (⟨ModuleCat.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
-            (tangentSections (Fin (n + 1)) R),
-          finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ :
-          (finiteProjectiveModules
-            C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)).FullSubcategory) =
-      n • SplitK0.of.{u}
-        (⟨ModuleCat.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
-            C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R),
-          finiteProjectiveModules_iff.2 ⟨inferInstance, inferInstance⟩⟩ :
-          (finiteProjectiveModules
-            C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)).FullSubcategory) := by
+    SplitK0.of.{u} (FiniteProjectiveModules.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
+        (tangentSections (Fin (n + 1)) R)) =
+      n • SplitK0.of.{u} (FiniteProjectiveModules.of
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)) := by
   rw [← sub_eq_zero, ← FiniteProjectiveModules.classOf_def]
   exact classOf_tangentSections n R
+
+/-- In `K₀(C(Sⁿ, R))`, the class of `tangentSections (Fin (n + 1)) R`, regarded as a right module,
+is `n` times the class of the free module of rank one. -/
+theorem kZero_of_tangentSections.{u} (n : ℕ) (R : Type u) [CommRing R]
+    [TopologicalSpace R] [IsTopologicalRing R] [Algebra ℝ R] [ContinuousSMul ℝ R] :
+    SplitK0.of.{u} ((KZero.finiteProjectiveRightEquivalence
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)).functor.obj
+          (FiniteProjectiveModules.of C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)
+            (tangentSections (Fin (n + 1)) R))) =
+      n • SplitK0.of.{u} (finiteProjectiveModulesRegular
+        C(sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1, R)ᵐᵒᵖ) := by
+  rw [← sub_eq_zero, ← KZero.splitK0Equiv_symm_classOf, classOf_tangentSections, map_zero]
 
 /-- Whenever `tangentSections (Fin (n + 1)) R` is free over `C(Sⁿ, R)` with `R` nontrivial, its
 `C(Sⁿ, R)`-rank is `n`. -/

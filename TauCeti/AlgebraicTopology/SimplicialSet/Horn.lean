@@ -33,8 +33,10 @@ preserves and reflects Kan fibrations, inner fibrations, Kan complexes and quasi
 The map `SSet.horn.IsCompatible.desc` induced by a compatible family `f` sends a simplex of the
 face `j` to its image under `f j` (`SSet.horn.IsCompatible.desc_app_ι_app`), and when it extends
 to a simplex `σ`, the faces of `σ` are the members of `f`
-(`SSet.horn.IsCompatible.δ_yonedaEquiv_of_desc_eq`). An edge of a face of a horn is an edge of
-the horn (`SSet.horn.ι_app_edge`).
+(`SSet.horn.IsCompatible.δ_yonedaEquiv_of_desc_eq`). A family of simplices whose faces other than
+the `0`th are constant at a vertex is compatible on the horn `Λ[n + 2, 0]`
+(`SSet.horn.IsCompatible.of_δ_succ`). An edge of a face of a horn is an edge of the horn
+(`SSet.horn.ι_app_edge`).
 -/
 
 public section
@@ -81,6 +83,23 @@ lemma δ_yonedaEquiv_of_desc_eq (hf : horn.IsCompatible f) {σ : Δ[n + 1] ⟶ X
   rw [← stdSimplex.yonedaEquiv_δ_comp, ← horn.ι_ι_assoc i j hj, ← hσ, hf.ι_desc]
 
 end horn.IsCompatible
+
+/-- A family of `(n + 1)`-simplices indexed by the nonzero `j : Fin (n + 3)` whose faces other than
+the `0`th are constant is compatible on the horn `Λ[n + 2, 0]`. -/
+lemma horn.IsCompatible.of_δ_succ {n : ℕ} {x : X _⦋0⦌}
+    {f : ∀ j : Fin (n + 3), j ≠ 0 → (Δ[n + 1] ⟶ X)}
+    (hf : ∀ j hj (l : Fin (n + 1)), stdSimplex.δ l.succ ≫ f j hj = SSet.const x) :
+    horn.IsCompatible f := by
+  have hf' (j hj) (m : Fin (n + 2)) (hm : m ≠ 0) : stdSimplex.δ m ≫ f j hj = SSet.const x := by
+    obtain ⟨l, rfl⟩ := Fin.eq_succ_of_ne_zero hm
+    exact hf j hj l
+  rw [horn.isCompatible_iff]
+  intro j k hj hk hjk
+  rw [hf' j hj _ (fun h ↦ ?_), hf' k hk _ (fun h ↦ ?_)]
+  · exact hj (by simpa using congrArg Fin.castSucc h)
+  · rw [Fin.pred_eq_iff_eq_succ] at h
+    subst h
+    exact hj (Fin.ext (by simpa [Fin.lt_def] using hjk))
 
 /-- A map `p` has the right lifting property with respect to the horn inclusion
 `Λ[n + 1, i] ⟶ Δ[n + 1]` exactly when every compatible family of faces in the source of `p`,
@@ -152,6 +171,15 @@ lemma horn.exists_extension_one (i : Fin 2) (σ₀ : (Λ[1, i] : SSet.{u}) ⟶ X
   have hji : j = i.rev := by fin_cases i <;> fin_cases j <;> simp_all
   subst hji
   simp [SSet.const, Subsingleton.elim (SimplexCategory.const ⦋0⦌ ⦋0⦌ 0) (𝟙 ⦋0⦌)]
+
+/-- The `1`-horn `Λ[1, i]` is the vertex `i` of `Δ[1]`: the inclusion `Δ[0] ⟶ Λ[1, i]` of its
+unique face is an isomorphism. -/
+lemma horn.isIso_ι_one (i j : Fin 2) (hij : j ≠ i) : IsIso (horn.ι.{u} i j hij) :=
+  ⟨stdSimplex.isTerminalObj₀.from _, stdSimplex.isTerminalObj₀.hom_ext _ _,
+    horn.hom_ext' fun k hk ↦ by
+      obtain rfl : k = j := by omega
+      rw [← Category.assoc, stdSimplex.isTerminalObj₀.hom_ext (horn.ι i k hk ≫ _) (𝟙 _),
+        Category.id_comp, Category.comp_id]⟩
 
 /-- A quasicategory in which all outer horns `Λ[n + 2, 0]` and `Λ[n + 2, Fin.last (n + 2)]` extend
 to `Δ[n + 2]` is a Kan complex. -/

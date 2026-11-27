@@ -35,6 +35,7 @@ derivative are only real-linear.
 * `quadraticEnd_apply_self`: `Q₀(ψ) ψ = (‖ψ‖² / 2) ψ`.
 * `quadraticEnd_smul`, `quadraticEnd_smul_of_norm_eq_one`: `Q₀(c ψ) = |c|² Q₀(ψ)`; in particular
   `Q₀` is invariant under unit phases.
+* `quadraticEnd_linearIsometryEquiv_apply`: `Q₀(U ψ) = U Q₀(ψ) U⁻¹` for a unitary isomorphism `U`.
 * `quadraticEnd_add`: `Q₀(ψ + φ) = Q₀(ψ) + Q₀(φ) + B(ψ, φ)`.
 * `trace_quadraticEndPolar`, `isSelfAdjoint_quadraticEndPolar`: like `Q₀(ψ)`, every `B(ψ, φ)` is
   trace free in complex dimension two and self-adjoint.
@@ -86,8 +87,9 @@ theorem quadraticEnd_apply (ψ v : E) :
 theorem quadraticEnd_zero : quadraticEnd (0 : E) = 0 := by
   ext; simp
 
-/-- `ψ` is an eigenvector of `Q₀(ψ)` with eigenvalue `‖ψ‖² / 2`. As a simp lemma it takes
-priority over `quadraticEnd_apply`, which would leave `Q₀(ψ) ψ` as an unreduced difference. -/
+/-- `Q₀(ψ)` maps `ψ` to `(‖ψ‖² / 2) ψ`; in particular a nonzero `ψ` is an eigenvector of `Q₀(ψ)`
+with eigenvalue `‖ψ‖² / 2`. As a simp lemma it takes priority over `quadraticEnd_apply`, which
+would leave `Q₀(ψ) ψ` as an unreduced difference. -/
 @[simp high]
 theorem quadraticEnd_apply_self (ψ : E) :
     quadraticEnd ψ ψ = ((‖ψ‖ : ℂ) ^ 2 / 2) • ψ := by
@@ -111,6 +113,14 @@ theorem quadraticEnd_smul_of_norm_eq_one {u : ℂ} (hu : ‖u‖ = 1) (ψ : E) :
 @[simp]
 theorem quadraticEnd_neg (ψ : E) : quadraticEnd (-ψ) = quadraticEnd ψ := by
   simpa using quadraticEnd_smul_of_norm_eq_one (u := -1) (by simp) ψ
+
+/-- **`Q₀` is natural under unitary isomorphisms**: `Q₀(U ψ) = U Q₀(ψ) U⁻¹`. This is what lets
+`Q₀` be computed in any unitary frame of a Hermitian vector bundle. -/
+theorem quadraticEnd_linearIsometryEquiv_apply {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace ℂ E'] (U : E ≃ₗᵢ[ℂ] E') (ψ : E) :
+    quadraticEnd (U ψ) = U.toContinuousLinearEquiv.conjContinuousAlgEquiv (quadraticEnd ψ) := by
+  ext φ
+  simp [LinearIsometryEquiv.inner_map_eq_flip]
 
 /-- In complex dimension two, `Q₀(ψ)` is trace free. -/
 theorem trace_quadraticEnd [FiniteDimensional ℂ E] (h₂ : Module.finrank ℂ E = 2) (ψ : E) :

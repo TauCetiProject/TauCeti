@@ -135,7 +135,7 @@ theorem prodNegativeEquiv_negativeCoord (v : E × E') :
   refine (φ.prodNegativeEquiv ψ).symm.injective ?_
   rw [LinearEquiv.symm_apply_apply]
   funext i
-  rw [prodNegativeEquiv_symm_apply, negativeCoord_apply, prod_coord_apply]
+  rw [prodNegativeEquiv_symm_apply, MorseBottChart.negativeCoord_apply, prod_coord_apply]
   have h := φ.sumMap_val_prodNegativeWeightEquiv ψ i
   rcases hi : φ.prodNegativeWeightEquiv ψ i with j | j <;> rw [hi] at h <;> simp [← h]
 
@@ -164,10 +164,10 @@ theorem prod_coord_symm_linearFlow_coord (t : ℝ) (z : E × E') :
     (φ.prod ψ).coord.symm ((φ.prod ψ).linearFlow t ((φ.prod ψ).coord z)) =
       (φ.coord.symm (φ.linearFlow t (φ.coord z.1)),
         ψ.coord.symm (ψ.linearFlow t (ψ.coord z.2))) := by
-  simp only [prod_coord_symm_apply, linearFlow_apply, prod_weight_apply, prod_coord_apply,
-    Equiv.apply_symm_apply, Sum.elim_inl, Sum.elim_inr]
+  simp only [prod_coord_symm_apply, MorseBottChart.linearFlow_apply, prod_weight_apply,
+    prod_coord_apply, Equiv.apply_symm_apply, Sum.elim_inl, Sum.elim_inr]
   refine Prod.ext (congrArg φ.coord.symm (funext fun j ↦ ?_))
-    (congrArg ψ.coord.symm (funext fun j ↦ ?_)) <;> rw [linearFlow_apply]
+    (congrArg ψ.coord.symm (funext fun j ↦ ?_)) <;> rw [MorseBottChart.linearFlow_apply]
 
 end MorseChart
 

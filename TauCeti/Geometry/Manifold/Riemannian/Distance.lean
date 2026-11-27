@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.ContDiff
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 
@@ -31,6 +32,9 @@ is the special case that matters downstream.
 
 * `TauCeti.Manifold.riemannianEDist_le_mul`: a `C¹` map with differential uniformly bounded by
   a positive constant increases Riemannian extended distances by at most that factor.
+* `TauCeti.Manifold.ofReal_mul_eNorm_sub_le_pathELength_comp`: conversely, a map from a normed
+  space whose differential stretches vectors by at least `c` along a `C¹` curve sends it to a curve
+  of length at least `c` times the displacement of the curve.
 * `TauCeti.IsRiemannianManifold.lipschitzWith_of_norm_mfderiv_le`: the corresponding global
   Lipschitz estimate when both ambient extended distances are Riemannian.
 * `TauCeti.Manifold.riemannianEDist_lt_top_iff_mem_connectedComponent`: the Riemannian distance from
@@ -54,6 +58,9 @@ is the special case that matters downstream.
 * `TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_of_contMDiffAt`: a map from a
   real normed space into a manifold with continuous Riemannian metric is Lipschitz
   on a ball around each point where it is `C¹`.
+* `TauCeti.IsRiemannianManifold.exists_lipschitzOnWith_extChartAt_symm_of_isCompact`: on a
+  boundaryless manifold, the inverse of an extended chart is Lipschitz, for the ambient distance,
+  on each compact subset of the chart target.
 * `TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength`: the extended distance is bounded
   below by any bound valid for the lengths of *all* `C¹` curves joining two points, since it is the
   infimum of those lengths.
@@ -138,21 +145,47 @@ theorem riemannianEDist_le_mul {f : M → N} (hf : ContMDiff I J 1 f) {C : ℝ�
     ← ENNReal.ofReal_mul C.coe_nonneg]
   exact ENNReal.ofReal_le_ofReal (hC _ _)
 
+/-- A map from a normed space whose differential stretches every vector by at least the factor
+`c` at the points of a `C¹` curve `y` maps it to a curve whose Riemannian length is at least `c`
+times the displacement of `y`. -/
+theorem ofReal_mul_eNorm_sub_le_pathELength_comp {φ : F → M} {y : ℝ → F} {a b c : ℝ}
+    (hab : a ≤ b) (hy : ContDiffOn ℝ 1 y (Icc a b))
+    (hφ : ∀ s ∈ Icc a b, MDifferentiableAt 𝓘(ℝ, F) I φ (y s))
+    (hc : ∀ s ∈ Icc a b, ∀ v : F, c * ‖v‖ ≤ ‖mfderiv 𝓘(ℝ, F) I φ (y s) v‖) :
+    ENNReal.ofReal c * ‖y b - y a‖ₑ ≤ pathELength I (φ ∘ y) a b := by
+  rcases hab.eq_or_lt with rfl | hab'
+  · simp
+  rw [pathELength_eq_lintegral_mfderivWithin_Icc]
+  refine (mul_le_mul_right (eNorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hy hab)
+    _).trans ?_
+  rw [← MeasureTheory.lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine MeasureTheory.setLIntegral_mono' measurableSet_Icc fun s hs ↦ ?_
+  -- The velocity of `φ ∘ y` is the image of the velocity of `y` under the differential of `φ`.
+  have hv : mfderivWithin 𝓘(ℝ, ℝ) I (φ ∘ y) (Icc a b) s 1 =
+      curveVelocityWithin I (φ ∘ y) (Icc a b) s :=
+    curveVelocityWithin_apply.symm
+  rw [hv, curveVelocityWithin_map (hφ s hs) (uniqueDiffOn_Icc hab' s hs)
+      (hy.differentiableOn one_ne_zero s hs).mdifferentiableWithinAt,
+    curveVelocityWithin_eq_derivWithin, ← ofReal_norm, ← ofReal_norm,
+    ← ENNReal.ofReal_mul' (norm_nonneg _)]
+  exact ENNReal.ofReal_le_ofReal (hc s hs _)
+
 end Comparison
 
 variable [IsManifold I 1 M] [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
 
 variable (I) in
-/-- The set of points at finite Riemannian distance from `x` is open: any point close enough to a
-point `y` of this set is at Riemannian distance `< 1` from `y`, hence at finite distance from `x` by
-the triangle inequality. -/
-theorem isOpen_setOfPred_riemannianEDist_lt_top (x : M) :
-    IsOpen {y | riemannianEDist I x y < ⊤} := by
+/-- Open Riemannian balls are open: any point close enough to a point `y` at Riemannian distance
+less than `r` from `x` is again at distance less than `r` from `x`, by the triangle inequality. In
+particular, with `r = ⊤`, the set of points at finite Riemannian distance from `x` is open. -/
+theorem isOpen_setOfPred_riemannianEDist_lt (x : M) (r : ℝ≥0∞) :
+    IsOpen {y | riemannianEDist I x y < r} := by
   rw [isOpen_iff_mem_nhds]
   intro y hy
-  filter_upwards [eventually_riemannianEDist_lt I y zero_lt_one] with z hz
+  obtain ⟨δ, hδ, hδr⟩ := ENNReal.lt_iff_exists_add_pos_lt.1 hy
+  filter_upwards [eventually_riemannianEDist_lt I y (ENNReal.coe_pos.2 hδ)] with z hz
   exact (riemannianEDist_triangle (y := y)).trans_lt
-    (ENNReal.add_lt_top.2 ⟨hy, hz.trans_le le_top⟩)
+    ((ENNReal.add_lt_add_left (ne_top_of_lt hy) hz).trans hδr)
 
 variable (I) in
 /-- The set of points at finite Riemannian distance from `x` is closed: if `y` is at infinite
@@ -171,7 +204,7 @@ variable (I) in
 /-- The set of points at finite Riemannian distance from `x` is clopen. -/
 theorem isClopen_setOfPred_riemannianEDist_lt_top (x : M) :
     IsClopen {y | riemannianEDist I x y < ⊤} :=
-  ⟨isClosed_setOfPred_riemannianEDist_lt_top I x, isOpen_setOfPred_riemannianEDist_lt_top I x⟩
+  ⟨isClosed_setOfPred_riemannianEDist_lt_top I x, isOpen_setOfPred_riemannianEDist_lt I x ⊤⟩
 
 variable (I) in
 /-- Two points of a preconnected set are at finite Riemannian distance. -/
@@ -200,6 +233,20 @@ the hypothesis needed to turn `EMetricSpace.ofRiemannianMetric` into a genuine m
 @[aesop (rule_sets := [finiteness]) safe apply, simp]
 theorem riemannianEDist_ne_top [PreconnectedSpace M] (x y : M) : riemannianEDist I x y ≠ ⊤ :=
   (riemannianEDist_lt_top I x y).ne
+
+/-- On a regular `T₀` manifold, the Riemannian distance between two points vanishes exactly when
+they are equal: it is the distance of the emetric space `EMetricSpace.ofRiemannianMetric`. -/
+@[simp]
+theorem riemannianEDist_eq_zero [T3Space M] {x y : M} :
+    riemannianEDist I x y = 0 ↔ x = y := by
+  let : EMetricSpace M := .ofRiemannianMetric I M
+  rw [← IsRiemannianManifold.out (I := I), edist_eq_zero]
+
+/-- On a regular `T₀` manifold, the Riemannian distance between two points is positive exactly
+when they are distinct. -/
+@[simp]
+theorem riemannianEDist_pos [T3Space M] {x y : M} : 0 < riemannianEDist I x y ↔ x ≠ y :=
+  pos_iff_ne_zero.trans riemannianEDist_eq_zero.not
 
 end Finiteness
 
@@ -441,6 +488,27 @@ theorem exists_pathELength_lt_of_dist_lt {x y : M} {r : ℝ} (hr : dist x y < r)
   apply exists_lt_of_riemannianEDist_lt
   rw [← IsRiemannianManifold.out (I := I) x y, edist_dist]
   exact (ENNReal.ofReal_lt_ofReal_iff (dist_nonneg.trans_lt hr)).2 hr
+
+section LocalLipschitz
+
+variable [I.Boundaryless] [IsManifold I 1 M]
+  [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
+
+/-- **The inverse chart is Lipschitz on compact sets.** On a boundaryless manifold with a
+continuous Riemannian metric, the inverse of the extended chart at `x` is Lipschitz, from the norm
+distance of the model space to the ambient distance, on every compact subset of the chart
+target. -/
+theorem exists_lipschitzOnWith_extChartAt_symm_of_isCompact (x : M) {K : Set E}
+    (hK : IsCompact K) (hKt : K ⊆ (extChartAt I x).target) :
+    ∃ C : ℝ≥0, LipschitzOnWith C (extChartAt I x).symm K := by
+  refine LocallyLipschitzOn.exists_lipschitzOnWith_of_compact hK fun z hz ↦ ?_
+  have hsmooth : ContMDiffAt 𝓘(ℝ, E) I 1 (extChartAt I x).symm z :=
+    (contMDiffOn_extChartAt_symm x).contMDiffAt
+      ((isOpen_extChartAt_target x).mem_nhds (hKt hz))
+  obtain ⟨r, hr, C, hC⟩ := exists_lipschitzOnWith_of_contMDiffAt hsmooth
+  exact ⟨C, Metric.ball z r, mem_nhdsWithin_of_mem_nhds (Metric.ball_mem_nhds z hr), hC⟩
+
+end LocalLipschitz
 
 end PseudoMetric
 

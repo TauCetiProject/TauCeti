@@ -17,6 +17,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.Riemannian.VolumeForm.Divergence.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 
 /-!
 # The codifferential and the Hodge Laplacian of an oriented Riemannian manifold
@@ -98,6 +99,11 @@ whose Laplacian is computed in powers of `t` by `TauCeti.SmoothForm.laplacian_ad
   `TauCeti.SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff`: the
   pairing is positive definite, `∫_M |α|² vol ≥ 0` with equality only for `α = 0` when `α` is
   smooth and compactly supported.
+* `TauCeti.SmoothForm.integralTopForm_wedge_hodgeStar_self_ne_zero`: `∫_M α ∧ ⋆α ≠ 0` for a
+  nonzero compactly supported smooth form `α`.
+* `TauCeti.SmoothForm.exists_integralTopForm_wedge_ne_zero`: the metric-free consequence, that a
+  nonzero compactly supported smooth form pairs nontrivially with some form of complementary
+  degree.
 * `TauCeti.SmoothForm.hodgeStar_mextDeriv`: `⋆dα = (-1) ^ (k + 1) d*⋆α`.
 * `TauCeti.SmoothForm.hodgeStar_hodgeLaplacian`: `⋆Δ = Δ⋆`.
 * `TauCeti.SmoothForm.hodgeLaplacian_eq_ofFunction_neg_laplaceBeltrami`: on functions,
@@ -625,53 +631,37 @@ section GradOperators
 variable {k : ℕ}
 
 /-- Exterior multiplication `ε_u` by the gradient `u = grad f x` of `f` at `x` on alternating
-forms of the tangent space, read through the identification of forms with the exterior algebra. -/
+forms of the tangent space, `TauCeti.wedgeCovector`. -/
 private def gradWedge (f : M → ℝ) (j : ℕ) (x : M) :
     (TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin (j + 1)]→L[ℝ] ℝ :=
-  (alternatingFormEquiv _ (j + 1)).toLinearMap ∘ₗ
-    ExteriorAlgebra.wedgeLeft (Manifold.mgradient I f x) j ∘ₗ
-      (alternatingFormEquiv _ j).symm.toLinearMap
+  wedgeCovector (Manifold.mgradient I f x) j
 
 /-- The contraction `ι_u` by the gradient `u = grad f x` of `f` at `x` on alternating forms of the
-tangent space, read through the identification of forms with the exterior algebra. -/
+tangent space, the interior product `ContinuousAlternatingMap.curryLeftFlipL`. -/
 private def gradContr (f : M → ℝ) (j : ℕ) (x : M) :
     (TangentSpace I x [⋀^Fin (j + 1)]→L[ℝ] ℝ) →ₗ[ℝ] TangentSpace I x [⋀^Fin j]→L[ℝ] ℝ :=
-  (alternatingFormEquiv _ j).toLinearMap ∘ₗ
-    koszulDifferential (innerₗ _ (Manifold.mgradient I f x)) j ∘ₗ
-      (alternatingFormEquiv _ (j + 1)).symm.toLinearMap
+  ContinuousAlternatingMap.curryLeftFlipL (𝕜 := ℝ) (F := ℝ) (n := j) (Manifold.mgradient I f x)
 
 /-- The contraction by the gradient is the interior product with it. -/
 private theorem gradContr_apply (f : M → ℝ) (j : ℕ) (β : RoughForm I M ℝ (j + 1)) (x : M) :
     gradContr f j x (β x) = RoughForm.interior (Manifold.mgradient I f) β x := by
   ext v
-  simp [gradContr, alternatingFormEquiv_koszulDifferential]
+  simp [gradContr]
 
 /-- `ι_v ε_u = ⟪v, u⟫` on functions, for the gradients `u` of `f` and `v` of `g`. -/
 private theorem gradContr_gradWedge_zero (f g : M → ℝ) (x : M)
     (w : TangentSpace I x [⋀^Fin 0]→L[ℝ] ℝ) :
     gradContr g 0 x (gradWedge f 0 x w) =
-      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w := by
-  have h := LinearMap.congr_fun (koszulDifferential_comp_wedgeLeft_zero
-    (innerₗ _ (Manifold.mgradient I g x)) (Manifold.mgradient I f x))
-    ((alternatingFormEquiv _ 0).symm w)
-  simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
-    innerₗ_apply_apply] at h
-  simp only [gradContr, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_apply, h, map_smul, LinearEquiv.apply_symm_apply]
+      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w :=
+  curryLeftFlipL_wedgeCovector_zero _ _ w
 
 /-- The Koszul homotopy identity `ε_u ι_v + ι_v ε_u = ⟪v, u⟫` in positive degrees, for the
 gradients `u` of `f` and `v` of `g`. -/
 private theorem gradWedge_gradContr_add (f g : M → ℝ) (j : ℕ) (x : M)
     (w : TangentSpace I x [⋀^Fin (j + 1)]→L[ℝ] ℝ) :
     gradWedge f j x (gradContr g j x w) + gradContr g (j + 1) x (gradWedge f (j + 1) x w) =
-      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w := by
-  have h := LinearMap.congr_fun (wedgeLeft_comp_koszulDifferential_add
-    (innerₗ _ (Manifold.mgradient I g x)) (Manifold.mgradient I f x) j)
-    ((alternatingFormEquiv _ (j + 1)).symm w)
-  simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply,
-    innerₗ_apply_apply] at h
-  simp only [gradContr, gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    LinearEquiv.symm_apply_apply, ← map_add, h, map_smul, LinearEquiv.apply_symm_apply]
+      ⟪Manifold.mgradient I g x, Manifold.mgradient I f x⟫ • w :=
+  (add_comm _ _).trans (curryLeftFlipL_wedgeCovector_add _ _ j w)
 
 /-- Exterior multiplication by `df` is exterior multiplication by the gradient of `f`, read through
 the identification of forms with the exterior algebra. -/
@@ -683,7 +673,7 @@ private theorem extDerivWedgeₗ_apply_eq_gradWedge (f : C^∞⟮I, M; ℝ⟯) (
   ext v
   rw [extDerivWedgeₗ_apply, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
     ← ContinuousAlternatingMap.wedge_def, mextDeriv_ofFunction, hdf]
-  simp only [gradWedge, LinearMap.comp_apply, LinearEquiv.coe_coe,
+  simp only [gradWedge, ContinuousLinearMap.coe_coe, wedgeCovector_apply,
     alternatingFormEquiv_wedgeLeft_apply, LinearEquiv.apply_symm_apply]
 
 /-- The Leibniz rule `d (f α) = f dα + df ∧ α` for smooth forms, with `df ∧ ·` written as exterior
@@ -713,25 +703,14 @@ theorem coe_codifferential_funSMulₗ (o : Manifold.Orientation I M (Fin m))
   have hlk : l + 1 + k = m := by omega
   funext x
   have hfin := o.fact_finrank_tangentSpace x
-  obtain ⟨b, hb⟩ := (alternatingFormEquiv (TangentSpace I x) (k + 1)).surjective (β.val x)
   rw [codifferential_apply o hkl hlk, hodgeStar_funSMulₗ, codifferential_apply o hkl hlk]
   simp only [SetLike.val_smul, coe_hodgeStar, Pi.smul_apply, RoughForm.hodgeStar_apply,
     mextDerivₗ_funSMulₗ_eq_gradWedge, map_add, map_smul, smul_add, Pi.sub_apply]
-  rw [smul_comm, sub_eq_add_neg, ← gradContr_apply, ← hb]
+  rw [smul_comm, sub_eq_add_neg, ← gradContr_apply]
   congr 1
-  simp only [gradWedge, gradContr, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    Orientation.formHodgeStar_alternatingFormEquiv, LinearEquiv.symm_apply_apply]
-  -- `ι_u = (-1) ^ (m k) ⋆ ε_u ⋆` on `(k + 1)`-forms, and `(-1) ^ (m (k + 2) + 1 + m k) = -1`.
-  have key := (o.orientationAt x).koszulDifferential_eq_smul_hodgeStar_wedgeLeft_hodgeStar
-    (Manifold.mgradient I f x) (hkl.trans hfin.out.symm) (hlk.trans hfin.out.symm) b
-  replace key := congrArg ((-1 : ℝ) ^ (Module.finrank ℝ (TangentSpace I x) * k) • ·) key
-  rw [smul_smul, ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_smul] at key
-  have hsign :
-      (-1 : ℝ) ^ (m * (k + 2) + 1) * (-1) ^ (Module.finrank ℝ (TangentSpace I x) * k) = -1 := by
-    rw [hfin.out, ← pow_add]
-    exact Odd.neg_one_pow ⟨m * (k + 1), by ring⟩
-  rw [← key, map_smul, smul_smul, hsign]
-  exact neg_one_smul ℝ (M := TangentSpace I x [⋀^Fin k]→L[ℝ] ℝ) _
+  -- `(-1) ^ (m (k + 2) + 1) ⋆ ε_u ⋆ = -ι_u` on `(k + 1)`-forms.
+  exact (o.orientationAt x).neg_one_pow_smul_formHodgeStar_wedgeCovector_formHodgeStar _
+    (hkl.trans hfin.out.symm) (hlk.trans hfin.out.symm) _
 
 /-- **The codifferential has order one**: its double commutator with multiplication by smooth
 functions `f` and `g` vanishes, `[[d*, f], g] = 0`, since `[d*, f] = -ι_(grad f)` is fibrewise
@@ -1012,6 +991,37 @@ theorem integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff [NeZero
   · subst h
     exact integralTopForm_inner_zero_left o 0
 
+/-- **A nonzero form pairs nontrivially with its Hodge star**: on an oriented Riemannian manifold
+of positive dimension `m = k + l`, a nonzero compactly supported smooth `k`-form `α` satisfies
+`∫_M α ∧ ⋆α = ∫_M |α|² vol ≠ 0`. -/
+theorem integralTopForm_wedge_hodgeStar_self_ne_zero [NeZero m]
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) {α : SmoothForm I M ℝ k}
+    (hα : α ∈ compactlySupportedForms I M k) (hα₀ : α ≠ 0) :
+    integralTopForm o (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl
+      (wedge α (hodgeStar o hkl α)) : RoughForm I M ℝ m) ≠ 0 := by
+  rw [← inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar]
+  exact mt (integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o hkl hα).mp hα₀
+
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- **The wedge pairing is nondegenerate**: on an oriented manifold of positive dimension
+`m = k + l`, a nonzero compactly supported smooth `k`-form `α` pairs nontrivially with some smooth
+form `β` of the complementary degree, `∫_M α ∧ β ≠ 0`. No metric enters the statement: `β` is the
+Hodge star `⋆α` for an auxiliary Riemannian metric on `M`
+(`TauCeti.SmoothForm.integralTopForm_wedge_hodgeStar_self_ne_zero`). -/
+theorem exists_integralTopForm_wedge_ne_zero [NeZero m] [T2Space M] [SigmaCompactSpace M]
+    (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m) {α : SmoothForm I M ℝ k}
+    (hα : α ∈ compactlySupportedForms I M k) (hα₀ : α ≠ 0) :
+    ∃ β : SmoothForm I M ℝ l, integralTopForm o
+      (LinearEquiv.cast (R := ℝ) (M := fun q : ℕ ↦ SmoothForm I M ℝ q) hkl (wedge α β) :
+        RoughForm I M ℝ m) ≠ 0 := by
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
+    (E := fun y : M ↦ TangentSpace I y)
+  let : RiemannianBundle (fun y : M ↦ TangentSpace I y) := ⟨g.toRiemannianMetric⟩
+  have : IsContMDiffRiemannianBundle I ∞ E (fun y : M ↦ TangentSpace I y) :=
+    Bundle.instIsContMDiffRiemannianBundle g
+  exact ⟨_, integralTopForm_wedge_hodgeStar_self_ne_zero o hkl hα hα₀⟩
+
 /-- The `L²` pairing of forms is additive in its first argument,
 `∫_M ⟨α + β, γ⟩ vol = ∫_M ⟨α, γ⟩ vol + ∫_M ⟨β, γ⟩ vol`, when `α` and `β` or `γ` are compactly
 supported. -/
@@ -1045,6 +1055,27 @@ theorem integralTopForm_inner_add_left (o : Manifold.Orientation I M (Fin m)) (h
   funext x
   rw [Submodule.coe_add, Pi.add_apply, LinearMap.map_add₂, add_smul, Pi.add_apply]
 
+/-- **The `L²` norm of a sum**: compactly supported smooth `k`-forms satisfy
+`∫_M |α + β|² vol = ∫_M |α|² vol + 2 ∫_M ⟨α, β⟩ vol + ∫_M |β|² vol`. -/
+theorem integralTopForm_inner_add_add_self (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + l = m) {α β : SmoothForm I M ℝ k} (hα : α ∈ compactlySupportedForms I M k)
+    (hβ : β ∈ compactlySupportedForms I M k) :
+    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k ((α + β).val x)
+        ((α + β).val x) • riemannianVolumeForm o x) =
+      integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x) (α.val x) •
+          riemannianVolumeForm o x) +
+        2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x)
+          (β.val x) • riemannianVolumeForm o x) +
+        integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (β.val x) (β.val x) •
+          riemannianVolumeForm o x) := by
+  rw [integralTopForm_inner_add_left o hkl α β (α + β) (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o α.val,
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val,
+    integralTopForm_inner_add_left o hkl α β α (.inl ⟨hα, hβ⟩),
+    integralTopForm_inner_add_left o hkl α β β (.inl ⟨hα, hβ⟩),
+    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val α.val]
+  ring
+
 /-- **Young's inequality for the `L²` pairing**: on an oriented Riemannian manifold of positive
 dimension `m = k + l`, compactly supported smooth `k`-forms satisfy
 `-(∫_M |α|² vol + ∫_M |β|² vol) ≤ 2 ∫_M ⟨α, β⟩ vol`, from `0 ≤ ∫_M |α + β|² vol`. -/
@@ -1058,12 +1089,7 @@ theorem neg_add_le_two_mul_integralTopForm_inner [NeZero m] (o : Manifold.Orient
       2 * integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) k (α.val x) (β.val x) •
         riemannianVolumeForm o x) := by
   have hsq := RoughForm.integralTopForm_inner_self_smul_riemannianVolumeForm_nonneg o (α + β).val
-  rw [integralTopForm_inner_add_left o hkl α β (α + β) (.inl ⟨hα, hβ⟩),
-    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o α.val,
-    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val,
-    integralTopForm_inner_add_left o hkl α β α (.inl ⟨hα, hβ⟩),
-    integralTopForm_inner_add_left o hkl α β β (.inl ⟨hα, hβ⟩),
-    RoughForm.integralTopForm_inner_smul_riemannianVolumeForm_comm o β.val α.val] at hsq
+  rw [integralTopForm_inner_add_add_self o hkl hα hβ] at hsq
   linarith
 
 end SmoothPairing

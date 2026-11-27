@@ -14,9 +14,9 @@ import TauCeti.Geometry.Contact.Family
 import TauCeti.Geometry.Manifold.Flow.Parametric
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+import TauCeti.Geometry.Manifold.VectorBundle.SectionAlongMap.Regularity
 
 /-!
 # The strict contact-Moser equation
@@ -103,6 +103,9 @@ equation on an open neighbourhood of `ℝ × ι(S)` in `ℝ × M`
 (`TauCeti.SmoothForm.exists_contMDiff_mvfderiv_reebVectorField_eq_of_isTransverseAlong`). It is
 the solution of a transport equation along the trajectories of the Reeb fields, with zero initial
 values on the slice (`TauCeti.exists_contMDiff_mvfderiv_eq_of_isTransverseAlong`).
+At a point of the slice where `∂_t α_t` vanishes at all times, the strict Moser vector field of
+such an `h` vanishes at all times, so the strict Moser isotopy fixes it
+(`TauCeti.SmoothForm.strictMoserVectorField_eq_zero_of_comp_eventuallyEq_zero`).
 
 ## Main declarations
 
@@ -123,6 +126,8 @@ values on the slice (`TauCeti.exists_contMDiff_mvfderiv_eq_of_isTransverseAlong`
 * `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq`: the relative strict Moser theorem.
 * `TauCeti.SmoothForm.exists_contMDiff_mvfderiv_reebVectorField_eq_of_isTransverseAlong`: a
   solution of the Reeb-direction equation near a transverse slice, vanishing on the slice.
+* `TauCeti.SmoothForm.strictMoserVectorField_eq_zero_of_comp_eventuallyEq_zero`: the strict Moser
+  vector field vanishes on the slice where `∂_t α_t` does.
 * `TauCeti.SmoothForm.strictMoserDiffeomorph`: on a compact manifold, its flow as a diffeomorphism.
 * `TauCeti.SmoothForm.isStrictContactomorphism_strictMoserDiffeomorph`: the flow pulls `α_t` back
   to `α_s`.
@@ -553,6 +558,43 @@ theorem strictMoserVectorField_eq_zero_iff :
 
 end ReebDirection
 
+section TransverseSlice
+
+variable {E' H' S : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {J : ModelWithCorners ℝ E' H'} [TopologicalSpace S] [ChartedSpace H' S]
+
+/-- **Vanishing of the strict Moser vector field on a transverse slice.** Let the slice `α_t` be a
+contact form, and let `ι : S → M` have injective differential at `s`, with `R_(α_t)(ι s)` outside
+its range, where `S` has one dimension less than `M`. If `h_t` vanishes on the slice near `s`,
+solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` at `ι s`, and `∂_t α_t`
+vanishes at `ι s`, then the strict Moser vector field vanishes at time `t` and at `ι s`. The
+function `h` of
+`TauCeti.SmoothForm.exists_contMDiff_mvfderiv_reebVectorField_eq_of_isTransverseAlong` satisfies
+the hypotheses on `h` at every point of the slice, so its strict Moser isotopy fixes the points of
+the slice where `∂_t α_t` vanishes at all times. -/
+theorem strictMoserVectorField_eq_zero_of_comp_eventuallyEq_zero {ι : S → M} {s : S}
+    (hdim : Module.finrank ℝ E' + 1 = Module.finrank ℝ E)
+    (himm : Function.Injective (mfderiv J I ι s))
+    (htr : (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField (ι s) ∉
+      (mfderiv J I ι s).range)
+    (h0 : ∀ᶠ s' in 𝓝 s, h (t, ι s') = 0)
+    (hR : mvfderiv I (fun y ↦ h (t, y)) (ι s)
+      ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField (ι s)) =
+        -(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val (ι s)
+          ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
+            (ι s)])
+    (hβ : (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).val (ι s) =
+      0) :
+    α.strictMoserVectorField h t (ι s) = 0 := by
+  -- The derivative of `h_t` along the Reeb field vanishes at `ι s`, so its differential does.
+  have hd : mvfderiv I (fun y ↦ h (t, y)) (ι s) = 0 :=
+    mvfderiv_eq_zero_of_comp_eventuallyEq_zero hdim h0 himm htr (by rw [hR, hβ]; simp)
+  refine (strictMoserVectorField_eq_zero_iff hc hR).2 ⟨h0.self_of_nhds, fun w ↦ ?_⟩
+  rw [hd, hβ]
+  simp
+
+end TransverseSlice
+
 /-- **The strict Moser equation for a family, at a point.** If the slice `α_t` is a contact form,
 `h_t` is `C²` and `h_t` solves the Reeb-direction equation `R_(α_t) h_t = -(∂_t α_t)(R_(α_t))` on a
 neighbourhood of `x`, then `L_(X_t) α_t + ∂_t α_t = 0` at `x`, evaluated on a tangent vector. -/
@@ -932,9 +974,8 @@ times. -/
 theorem isCompleteVectorField_timeDependentSuspensionField_strictMoserVectorField
     (hh : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 h) :
     IsCompleteVectorField (timeDependentSuspensionField (α.strictMoserVectorField h)) :=
-  isCompleteVectorField_timeDependentSuspensionField
-    (contMDiff_strictMoserVectorField hc (n := 1) (by simp) (by norm_num [hh])) isCompact_univ
-    (by simp)
+  isCompleteVectorField_timeDependentSuspensionField_of_compactSpace
+    (contMDiff_strictMoserVectorField hc (n := 1) (by simp) (by norm_num [hh]))
 
 variable (hh : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ h)
 include hh

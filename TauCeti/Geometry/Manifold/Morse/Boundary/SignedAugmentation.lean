@@ -54,6 +54,10 @@ the chains, as for the boundary.
 
 ## Main results
 
+* `TauCeti.MorseChart.exists_basis_fst_eq_one_orientation_eq`: at a critical point of index `0`,
+  the orientation of `ℝ × V` against which trajectory signs are measured is that of a basis whose
+  vectors all have first coordinate `1`.
+
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `trajectorySign_eq_neg_of_notMem_orbit`: two different trajectories leaving a critical point of
@@ -119,6 +123,12 @@ theorem augmentationSign_eq_one_or_eq_neg_one {q : criticalPoints 𝓘(ℝ, E) f
   rw [augmentationSign_of_morseIndex_eq_zero 𝔬 hq]
   rcases Int.units_eq_one_or ((𝔬.orientation q).signBasis
     (Module.finBasisOfFinrankEq ℝ _ (𝔬.chart q).finrank_negativeWeight_fun)) with h | h <;> simp [h]
+
+/-- At a critical point of index `0`, the augmentation sign squares to `1`, in every ring. -/
+theorem augmentationSign_mul_self {R : Type*} [NonAssocRing R] {q : criticalPoints 𝓘(ℝ, E) f}
+    (hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0) :
+    (𝔬.augmentationSign q : R) * 𝔬.augmentationSign q = 1 := by
+  rcases 𝔬.augmentationSign_eq_one_or_eq_neg_one hq with h | h <;> simp [h]
 
 /-- Modulo two, the augmentation sign is `1` at the critical points of index `0` and `0`
 elsewhere, whatever the orientations. -/
@@ -197,6 +207,32 @@ theorem signedMorseAugmentation_reverse (S : Set (criticalPoints 𝓘(ℝ, E) f)
 
 end MorseOrientation
 
+namespace MorseChart
+
+/-- **The target orientation at a critical point of index `0`.** When `q` has index `0`, the
+orientation of `ℝ × V`, for `V = 0` the space of coordinates of negative weight at `q`, made of the
+standard orientation of `ℝ` followed by the positive orientation of `V`, is that of a basis whose
+vectors all have first coordinate `1`. -/
+theorem exists_basis_fst_eq_one_orientation_eq {q : M} (φq : MorseChart E f q)
+    (hq : manifoldMorseIndex 𝓘(ℝ, E) f q = 0) {n : ℕ}
+    (hn : 1 + manifoldMorseIndex 𝓘(ℝ, E) f q = n) :
+    ∃ B₀ : Module.Basis (Fin n) ℝ (ℝ × ({i // φq.weight i < 0} → ℝ)), (∀ j, (B₀ j).1 = 1) ∧
+      ((Module.Basis.singleton (Fin 1) ℝ).orientation.prod
+          (Module.finBasisOfFinrankEq ℝ _ φq.finrank_negativeWeight_fun).orientation
+          (Module.finrank_self ℝ) φq.finrank_negativeWeight_fun).reindex ℝ _ (finCongr hn) =
+        B₀.orientation := by
+  refine ⟨(((Module.Basis.singleton (Fin 1) ℝ).prod
+    (Module.finBasisOfFinrankEq ℝ _ φq.finrank_negativeWeight_fun)).reindex finSumFinEquiv).reindex
+      (finCongr hn), fun j ↦ ?_, ?_⟩
+  · rw [Module.Basis.reindex_apply, Module.Basis.reindex_apply]
+    rcases finSumFinEquiv.symm ((finCongr hn).symm j) with k | k
+    · rw [Module.Basis.prod_apply_inl_fst, Module.Basis.singleton_apply]
+    · exact absurd k.isLt (by omega)
+  · rw [Orientation.prod_basis_orientation]
+    simp only [Module.Basis.orientation_reindex]
+
+end MorseChart
+
 variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace M] [T2Space M]
 
 namespace IsAdaptedPseudoGradient
@@ -238,18 +274,12 @@ private theorem trajectorySign_eq_signBasis {p q : M} {φp : MorseChart E f p}
   set e := LinearEquiv.ofBijective (hX.trajectoryComparison φp φq y).toLinearMap hy
   have he (v : {i // φp.weight i < 0} → ℝ) : e v = hX.trajectoryComparison φp φq y v :=
     LinearEquiv.ofBijective_apply _ v
-  -- The target orientation is that of the basis whose vectors are all `(1, 0)`.
-  have hcard : 1 + manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f p := by omega
-  set B₀ := (((Module.Basis.singleton (Fin 1) ℝ).prod b).reindex finSumFinEquiv).reindex
-    (finCongr hcard) with hB₀def
+  -- The target orientation is that of a basis whose vectors are all `(1, 0)`.
+  obtain ⟨B₀, hB₀, hT'⟩ := φq.exists_basis_fst_eq_one_orientation_eq hq
+    (by omega : 1 + manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f p)
   have hT : φq.trajectoryTargetOrientation b.orientation hpq = B₀.orientation := by
-    rw [MorseChart.trajectoryTargetOrientation_def, Orientation.prod_basis_orientation, hB₀def]
-    simp only [Module.Basis.orientation_reindex]
-  have hB₀ (j : Fin (manifoldMorseIndex 𝓘(ℝ, E) f p)) : (B₀ j).1 = 1 := by
-    rw [hB₀def, Module.Basis.reindex_apply, Module.Basis.reindex_apply]
-    rcases finSumFinEquiv.symm ((finCongr hcard).symm j) with k | k
-    · rw [Module.Basis.prod_apply_inl_fst, Module.Basis.singleton_apply]
-    · exact absurd k.isLt (by omega)
+    rw [MorseChart.trajectoryTargetOrientation_def]
+    exact hT'
   -- The comparison map carries `C` to positive multiples of the vectors of `B₀`.
   have hCe : C.map e = B₀.unitsSMul fun j ↦ Units.mk0 _ (hC j).ne' := by
     refine Module.Basis.eq_of_apply_eq fun j ↦ Prod.ext ?_ (Subsingleton.elim _ _)
