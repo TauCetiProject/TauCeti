@@ -81,6 +81,14 @@ noncomputable def rationalComponentMap (I : HopfIdeal k H) :
   (FiniteTypeCommHopfAlgCat.rationalComponentMap (quotient H I)).comp
     (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom
 
+/-- The defining factorization of `HopfIdeal.rationalComponentMap` through the quotient-points
+isomorphism. -/
+theorem rationalComponentMap_def (I : HopfIdeal k H) :
+    I.rationalComponentMap =
+      (FiniteTypeCommHopfAlgCat.rationalComponentMap (quotient H I)).comp
+        (CommHopfAlgCat.quotientPointsSubgroupIso H.obj I (CommAlgCat.of k k)).inv.hom := by
+  rw [rationalComponentMap]
+
 /-- The component map of `I` is the rational component map of the finite-type affine group
 `H ⧸ I`, applied to the point of `H ⧸ I` through which `n` factors. -/
 theorem rationalComponentMap_apply (I : HopfIdeal k H)

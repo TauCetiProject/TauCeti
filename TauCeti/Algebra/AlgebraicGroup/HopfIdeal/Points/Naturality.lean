@@ -251,6 +251,24 @@ lemma quotientPointsSubgroupIso_inv_apply (H : _root_.CommHopfAlgCat.{v} R)
       liftQuotientPoint H I A g ((mem_quotientPointsSubgroup_iff H I A g).mp g.property) := by
   exact liftQuotientPointHom_apply H I A g
 
+/-- Applying the inverse quotient-points isomorphism after the forward isomorphism is the
+identity. -/
+lemma quotientPointsSubgroupIso_inv_hom_apply (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (q : HopfAlgebra.points (R := R) (H := quotient H I) A) :
+    (quotientPointsSubgroupIso H I A).inv.hom
+      ((quotientPointsSubgroupIso H I A).hom.hom q) = q := by
+  rw [← MonoidHom.comp_apply, ← GrpCat.hom_comp, Iso.hom_inv_id, GrpCat.hom_id, MonoidHom.id_apply]
+
+/-- Applying the forward quotient-points isomorphism after the inverse isomorphism is the
+identity. -/
+lemma quotientPointsSubgroupIso_hom_inv_apply (H : _root_.CommHopfAlgCat.{v} R)
+    (I : HopfIdeal R H) (A : CommAlgCat.{w} R)
+    (g : quotientPointsSubgroup H I A) :
+    (quotientPointsSubgroupIso H I A).hom.hom
+      ((quotientPointsSubgroupIso H I A).inv.hom g) = g := by
+  rw [← MonoidHom.comp_apply, ← GrpCat.hom_comp, Iso.inv_hom_id, GrpCat.hom_id, MonoidHom.id_apply]
+
 private lemma quotientPointsSubgroupFunctor_map_quotientPointsHom_aux
     (H : _root_.CommHopfAlgCat.{v} R) (I : HopfIdeal R H) {A B : CommAlgCat.{w} R}
     (χ : A ⟶ B) (f : HopfAlgebra.points (R := R) (H := quotient H I) A) :
