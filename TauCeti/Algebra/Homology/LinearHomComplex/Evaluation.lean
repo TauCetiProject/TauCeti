@@ -49,8 +49,9 @@ which the product has degree zero.
 * `ChainComplex.singleObjXSelf_hom_linearDualEvaluation_f_apply`: the evaluation sends `f ⊗ x` to
   `f(x)`.
 * `ChainComplex.linearDualMap_whiskerRight_comp_linearDualEvaluation`: dinaturality.
-* `ChainComplex.restrictionMap_linearDualEvaluation`: the regrading of the evaluation of `K` by
-  `n` is `(-1)^n` times the evaluation of its regrading.
+* `ChainComplex.restrictionMap_linearDualEvaluation`: the regrading by `-n + n` of the evaluation
+  of `K` is `(-1)^n` times the evaluation of the regrading `C^k = K_(n-k)`, through
+  `regradeTensorIso` and `regradeLinearDualIso`.
 
 ## References
 
@@ -112,11 +113,10 @@ private theorem ιTensorObj_d_comp_evaluationX (p q : ℤ) (h : p + q = 1) :
   -- The terms of `K∨ ⊗ K` are the tensor products of the underlying modules of the terms, which
   -- `rTensor_tmul` and `lTensor_tmul` see only up to this unfolding.
   erw [LinearMap.rTensor_tmul, LinearMap.lTensor_tmul]
-  rw [map_zsmul, evaluationSummand_tmul, evaluationSummand_tmul, ModuleCat.hom_ofHom,
-    LinearMap.dualMap_apply,
-    ← LinearMap.comp_apply (K.d _ _).hom, ← ModuleCat.hom_comp, XIsoOfEq_hom_comp_d,
-    ← LinearMap.comp_apply (XIsoOfEq K _).hom.hom, ← ModuleCat.hom_comp, d_comp_XIsoOfEq_hom,
-    ← add_smul, Int.negOnePow_succ, Units.val_neg, neg_add_cancel, zero_smul]
+  rw [map_zsmul, evaluationSummand_tmul, evaluationSummand_tmul]
+  simp only [ModuleCat.hom_ofHom, LinearMap.dualMap_apply, ← ModuleCat.comp_apply,
+    XIsoOfEq_hom_comp_d, d_comp_XIsoOfEq_hom, ← add_smul, Int.negOnePow_succ, Units.val_neg,
+    neg_add_cancel, zero_smul]
 
 private theorem d_comp_evaluationX :
     (HomologicalComplex.tensorObj (linearDual K) K).d 1 0 ≫ evaluationX K = 0 :=
@@ -200,42 +200,6 @@ private theorem negOnePow_mul_negOnePow_eq (a : ℤ) :
   rw [Int.negOnePow_eq_iff, show -n * (n - -a) + a * n - n = -(n * (n + 1)) by ring]
   exact (Int.even_mul_succ_self n).neg
 
-/-- The identification of the degree-`0` term of the unit complex with `R` is the identity on
-elements. -/
-private theorem singleObjXSelf_inv_apply (z : 𝟙_ (ModuleCat.{u} R)) :
-    ConcreteCategory.hom (singleObjXSelf (up ℤ) 0 (𝟙_ (ModuleCat.{u} R))).inv z = z := by
-  simp only [singleObjXSelf, singleObjXIsoOfEq, eqToIso.inv]
-  -- Both terms are `𝟙_ (ModuleCat R)`, up to unfolding `single`.
-  erw [eqToHom_refl]
-  rfl
-
-/-- The comparison of the regrading of `K∨` with the dual of the regrading of `K`, on a form `g`
-of cochain degree `a` and an element `y` of `C^(-a) = K_(n + a)`. -/
-private theorem regradeLinearDualIso_hom_f_apply (a : ℤ)
-    (g : (CochainComplex.linearDual R (K.restriction (embeddingUpIntDownIntSub n))).X a)
-    (y : (K.restriction (embeddingUpIntDownIntSub n)).X (-a)) :
-    (show Module.Dual R (K.X (-(-n - a))) from ((K.regradeLinearDualIso n).hom.f a).hom g)
-        ((K.XIsoOfEq (show n - -a = -(-n - a) by omega)).hom.hom y) =
-      (a * n).negOnePow • CochainComplex.linearDualXEquiv _ (neg_add_cancel a) g y := by
-  have hg := restrictionXIso_hom_regradeLinearDualIso_hom_f_apply K n a g
-    ((K.XIsoOfEq (show n - -a = -(-n - a) by omega)).hom.hom y)
-  have hy : (K.restrictionXIso (embeddingUpIntDownIntSub n)
-      (show n - -a = -(-n - a) by omega)).inv.hom
-        ((K.XIsoOfEq (show n - -a = -(-n - a) by omega)).hom.hom y) = y := by
-    simp only [restrictionXIso, XIsoOfEq, eqToIso.inv, eqToIso.hom]
-    -- The two transports compose to the transport along `n - -a = n - -a`.
-    erw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, eqToHom_trans, eqToHom_refl]
-    rfl
-  have hα : ∀ z : ((linearDual K).restriction (embeddingUpIntDownIntSub (-n))).X a,
-      ((linearDual K).restrictionXIso (embeddingUpIntDownIntSub (-n)) (i := a) (i' := -n - a)
-        rfl).hom.hom z = z := by
-    intro z
-    simp only [restrictionXIso, eqToIso.hom]
-    -- The term of degree `a` of the restriction is the term of degree `-n - a` of `K∨`.
-    erw [eqToHom_refl]
-    rfl
-  rwa [hy, hα] at hg
-
 /-- On the summand `C∨^a ⊗ C^(-a)` of the tensor product of the regradings, the comparison of
 tensor products followed by the evaluation of `K` is the evaluation summand with the sign
 `(-1)^(-n (n + a))`. -/
@@ -271,20 +235,33 @@ private theorem regradeLinearDualIso_hom_whiskerRight_comp_regradeTensorHom_comp
     ι_whiskerRight_assoc, ι_regradeTensorHom_f_assoc, restrictionMap_f,
     restrictionSingleIso_hom_f, units_smul_f_apply]
   simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  rw [regradeTensorSummand_comp_linearDualEvaluation_f K n a h, Linear.units_smul_comp]
+  rw [regradeTensorSummand_comp_linearDualEvaluation_f K n a h, Linear.units_smul_comp,
+    Linear.comp_units_smul]
+  -- The evaluation summand is stated on the terms of `K∨` and `K`, which are the terms of the
+  -- regraded complexes only up to unfolding `HomologicalComplex.restriction`, so the rewrites
+  -- through it see them only with `erw`.
+  erw [Preadditive.comp_zsmul]
   refine ModuleCat.MonoidalCategory.tensor_ext fun g y ↦ ?_
-  -- The terms of the regraded complexes are those of `K` and `K∨` up to unfolding
-  -- `HomologicalComplex.restriction`, which the rewrites below see only through `erw`.
-  erw [Preadditive.comp_zsmul, ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp,
-    LinearMap.comp_apply, ModuleCat.hom_whiskerRight, LinearMap.rTensor_tmul,
-    evaluationSummand_tmul]
-  erw [Preadditive.comp_zsmul, ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp,
-    LinearMap.comp_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
-    TauCeti.linearHomComplexEvaluation_ιTensorObj_tmul]
-  rw [regradeLinearDualIso_hom_f_apply, Units.smul_def (a * n).negOnePow, smul_smul,
-    negOnePow_mul_negOnePow_eq]
-  congr 1
-  rw [singleObjXSelf_inv_apply, CochainComplex.linearDualXEquiv_apply,
+  simp only [Units.smul_def, ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp,
+    LinearMap.comp_apply]
+  erw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_whiskerRight, LinearMap.rTensor_tmul,
+    evaluationSummand_tmul, TauCeti.linearHomComplexEvaluation_ιTensorObj_tmul]
+  -- Read the comparison of duals through `restrictionXIso_hom_regradeLinearDualIso_hom_f_apply`.
+  -- The term of degree `a` of the regrading of `K∨` is that of degree `-n - a` of `K∨`, so on
+  -- elements its identification `restrictionXIso` with the latter is the identity.
+  have hα : ∀ f : ((linearDual K).restriction (embeddingUpIntDownIntSub (-n))).X a,
+      ((linearDual K).restrictionXIso (embeddingUpIntDownIntSub (-n)) (i := a) (i' := -n - a)
+        rfl).hom.hom f = f := fun _ ↦ rfl
+  -- The term of degree `-a` of `C` is that of degree `n - -a` of `K`, so on it the transport
+  -- `XIsoOfEq` is the identification `restrictionXIso`.
+  have hy : (K.restrictionXIso _ (show n - -a = -(-n - a) by omega)).inv.hom
+      ((K.XIsoOfEq (show n - -a = -(-n - a) by omega)).hom.hom y) = y :=
+    Iso.hom_inv_id_apply (K.restrictionXIso _ _) y
+  have hg := restrictionXIso_hom_regradeLinearDualIso_hom_f_apply K n a g
+    ((K.XIsoOfEq (show n - -a = -(-n - a) by omega)).hom.hom y)
+  rw [hα, hy] at hg
+  rw [hg, Units.smul_def (a * n).negOnePow, smul_smul, negOnePow_mul_negOnePow_eq,
+    TauCeti.singleObjXSelf_inv_apply, CochainComplex.linearDualXEquiv_apply,
     TauCeti.cochainToTensorUnitLinearEquiv_apply]
 
 /-- **The evaluations of the two gradings differ by `(-1)^n`.** The regrading by `-n + n` of the
