@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.TimeIndependent.Sobolev
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Fredholm.ClosedRange
 import TauCeti.Analysis.ODE.EnergyEstimate.Index
 import TauCeti.Analysis.Normed.Operator.MethodOfContinuity
@@ -604,6 +605,53 @@ theorem index_floerSobolevOperator_eq_index_trajectoryOperator
     finrank_quotient_range_floerSobolevOperator_eq_finrank_quotient_range_trajectoryOperator hω hH
       hγ ha haγ hA]
 
+/-- The coefficient `y ↦ -i dX_G(y)` of the Morse operator of a `C²` Hamiltonian `G` is
+continuous. -/
+theorem continuous_neg_comp_fderiv_hamiltonianVectorField {G : F → ℝ} (hG : ContDiff ℝ 2 G) :
+    Continuous fun y ↦
+      -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField G) y)) :=
+  (continuous_const.clm_comp
+    ((ω.contDiff_hamiltonianVectorField (n := 1) hG).continuous_fderiv one_ne_zero)).neg
+
+/-- Along a continuous curve `γ`, the coefficient `s ↦ -i dX_{H_s}(γ(s))` of the Morse operator of
+a jointly `C²` family `H_s` is continuous. -/
+theorem continuous_neg_comp_fderiv_hamiltonianVectorField_comp
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (hγ : Continuous γ) :
+    Continuous fun s ↦
+      -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s))) :=
+  (continuous_const.clm_comp (ω.continuous_fderiv_hamiltonianVectorField_comp hH hγ)).neg
+
+/-- If a jointly `C²` family `H_s` eventually equals `G` along a nontrivial filter `l` and `γ`
+tends to `p` along `l`, then the coefficient `-i dX_{H_s}(γ(s))` tends to the asymptotic operator
+`-i dX_G(p)` along `l`. -/
+theorem tendsto_neg_comp_fderiv_hamiltonianVectorField_comp
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {G : F → ℝ} {l : Filter ℝ} [l.NeBot] {p : F}
+    (hl : ∀ᶠ s in l, H s = G) (hγl : Tendsto γ l (𝓝 p)) :
+    Tendsto (fun s ↦
+      -((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField (H s)) (γ s)))) l
+      (𝓝 (-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+        (fderiv ℝ (ω.hamiltonianVectorField G) p)))) :=
+  ((continuous_neg_comp_fderiv_hamiltonianVectorField
+    (contDiff_of_contDiff_uncurry_of_eventually_eq hH hl)).tendsto p |>.comp hγl).congr'
+      (hl.mono fun s hs ↦ by simp only [Function.comp_apply, hs])
+
+/-- If `ω = Im ⟪·, ·⟫` and `G` is `C²` at `p`, then the operator `-i dX_G(p)` is symmetric for the
+real inner product `Re ⟪·, ·⟫`: it is the negative of the Hessian of `G` at `p`. -/
+theorem isSymmetric_neg_comp_fderiv_hamiltonianVectorField
+    (hω : ∀ v w, ω v w = (inner ℂ v w).im) {G : F → ℝ} {p : F} (hG : ContDiffAt ℝ 2 G p) :
+    let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
+    ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
+      (fderiv ℝ (ω.hamiltonianVectorField G) p)) : F →L[ℝ] F) : F →ₗ[ℝ] F).IsSymmetric := by
+  intro _ u v
+  have hg := ω.apply_ofComplexModule_eq_inner hω
+  have h := (ω.invariant_of_apply_apply_eq_inner
+    hg).associatedBilinForm_apply_fderiv_hamiltonianVectorField_comm hG u v
+  rw [associatedBilinForm_apply, associatedBilinForm_apply, hg, hg] at h
+  simpa [inner_neg_left, inner_neg_right] using h
+
 /-- **The index along a time-independent cylinder between nondegenerate zeros.** Let `F` be a
 finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, let `H_s`
 be jointly `C²` Hamiltonians depending on `s`, equal to `H₋` for `s` near `-∞` and to `H₊` for `s`
@@ -633,19 +681,15 @@ theorem index_floerSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank
           ((-((AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap.comp
             (fderiv ℝ (ω.hamiltonianVectorField Hp) pplus)) : F →L[ℝ] F) : F →ₗ[ℝ] F) (Iio 0)) := by
   let _ : InnerProductSpace ℝ F := InnerProductSpace.complexToReal
-  have hg := ω.apply_ofComplexModule_eq_inner hω
   set Jc := (AlmostComplexStructure.ofComplexModule F).toLinearMap.toContinuousLinearMap
   -- The coefficient `B_G(y) = -i dX_G(y)` of a `C²` Hamiltonian `G`, continuous in `y`.
   set B : (F → ℝ) → F → F →L[ℝ] F := fun G y ↦ -(Jc.comp (fderiv ℝ (ω.hamiltonianVectorField G) y))
-  have hBc {G : F → ℝ} (hG : ContDiff ℝ 2 G) : Continuous (B G) := (continuous_const.clm_comp
-    ((ω.contDiff_hamiltonianVectorField (n := 1) hG).continuous_fderiv one_ne_zero)).neg
   -- The end Hamiltonians are members of the family, hence `C²`.
-  have hend {G : F → ℝ} {l : Filter ℝ} [l.NeBot] (hl : ∀ᶠ s in l, H s = G) : ContDiff ℝ 2 G := by
-    obtain ⟨s, hs⟩ := hl.exists
-    exact hs ▸ hH.comp (contDiff_const.prodMk contDiff_id)
+  have hend {G : F → ℝ} {l : Filter ℝ} [l.NeBot] (hl : ∀ᶠ s in l, H s = G) : ContDiff ℝ 2 G :=
+    contDiff_of_contDiff_uncurry_of_eventually_eq hH hl
   -- The coefficient `s ↦ -i dX_{H_s}(γ(s))` of the Morse operator, continuous and bounded.
   have hSc : Continuous fun s ↦ B (H s) (γ s) :=
-    (continuous_const.clm_comp (ω.continuous_fderiv_hamiltonianVectorField_comp hH hγ)).neg
+    continuous_neg_comp_fderiv_hamiltonianVectorField_comp hH hγ
   have hAL : MemLp (fun s ↦ B (H s) (γ s)) ∞
       (volume.restrict ((⊤ : TopologicalSpace.Opens ℝ) : Set ℝ)) :=
     memLp_top_of_bound hSc.aestronglyMeasurable (‖Jc‖ * a) (.of_forall fun s ↦ by
@@ -654,11 +698,8 @@ theorem index_floerSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   rw [index_floerSobolevOperator_eq_index_trajectoryOperator hω hH hγ ha haγ hAL.coeFn_toLp]
   -- `B_G(p)` is the negative of the Hessian, symmetric for the real inner product.
   have hsym {G : F → ℝ} (hG : ContDiff ℝ 2 G) (p : F) :
-      ((B G p : F →L[ℝ] F) : F →ₗ[ℝ] F).IsSymmetric := fun u v ↦ by
-    have h := (ω.invariant_of_apply_apply_eq_inner
-      hg).associatedBilinForm_apply_fderiv_hamiltonianVectorField_comm (hG.contDiffAt (x := p)) u v
-    rw [associatedBilinForm_apply, associatedBilinForm_apply, hg, hg] at h
-    simpa [B, Jc, inner_neg_left, inner_neg_right] using h
+      ((B G p : F →L[ℝ] F) : F →ₗ[ℝ] F).IsSymmetric :=
+    isSymmetric_neg_comp_fderiv_hamiltonianVectorField hω hG.contDiffAt
   -- At the limits, `B_{H±}(p±)` is injective, hence bounded below.
   have hbound (G : F → ℝ) (p : F)
       (hp : Function.Injective (fderiv ℝ (ω.hamiltonianVectorField G) p)) :
@@ -671,16 +712,12 @@ theorem index_floerSobolevOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     exact antilipschitzWith_iff_exists_mul_le_norm.1 ⟨K, hK⟩
   obtain ⟨cm, hcm, hm⟩ := hbound Hm pminus hpminus
   obtain ⟨cp, hcp, hp⟩ := hbound Hp pplus hpplus
-  -- Near the ends the coefficient is that of the end Hamiltonian along `γ`.
-  have hlim {G : F → ℝ} (hG : ContDiff ℝ 2 G) {l : Filter ℝ} {p : F} (hl : ∀ᶠ s in l, H s = G)
-      (hγl : Tendsto γ l (𝓝 p)) : Tendsto (fun s ↦ B (H s) (γ s)) l (𝓝 (B G p)) :=
-    ((hBc hG).tendsto p |>.comp hγl).congr'
-      (hl.mono fun s hs ↦ by simp only [Function.comp_apply, hs])
   exact WeakDerivStep.index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     hSc (hsym (hend hHm) pminus) (hsym (hend hHp) pplus) (lt_min hcm hcp)
     (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (hm v))
     (fun v ↦ (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (hp v))
-    (hlim (hend hHm) hHm hbot) (hlim (hend hHp) hHp htop) _ hAL.coeFn_toLp
+    (tendsto_neg_comp_fderiv_hamiltonianVectorField_comp hH hHm hbot)
+    (tendsto_neg_comp_fderiv_hamiltonianVectorField_comp hH hHp htop) _ hAL.coeFn_toLp
 
 end Unitary
 
