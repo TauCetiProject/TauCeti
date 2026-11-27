@@ -28,9 +28,8 @@ the tuples of a given length over a finite list of choices, which is the search 
 bounded exhaustive searches. The product of two lists (`l₁ ×ˢ l₂`) and, when addition is
 primitive recursive, the sum of a list are primitive recursive as well.
 
-Converting finite tuples `Fin n → α` to lists (`List.ofFn`), extracting `Fin n`-indexed tuples
-from lists with a default entry (`List.getD`), and `Fin.cons` / `Fin.tail` on tuples are also
-primitive recursive.
+Extracting `Fin n`-indexed tuples from lists with a default entry (`List.getD`), and `Fin.cons` /
+`Fin.tail` on tuples are also primitive recursive.
 -/
 
 public section
@@ -82,10 +81,6 @@ theorem list_sum_of_add [Add α] [Zero α] (hadd : Primrec₂ ((· + ·) : α �
     Primrec (List.sum : List α → α) :=
   (list_foldr .id (const 0) (hadd.comp (fst.comp snd) (snd.comp snd)).to₂).of_eq fun l => by
     induction l <;> simp_all
-
-/-- Converting a finite tuple `Fin n → α` to a list via `List.ofFn` is primitive recursive. -/
-theorem list_ofFn' {n : ℕ} : Primrec (List.ofFn : (Fin n → α) → List α) :=
-  (vector_toList.comp vector_ofFn').of_eq fun x => List.Vector.toList_ofFn x
 
 /-- Extracting the first `n` entries of a list with default `d` as a finite tuple `Fin n → α` is
 primitive recursive in the list and the default value. -/

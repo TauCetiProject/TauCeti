@@ -72,8 +72,7 @@ theorem IsValid.neg {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z) : nf.
     simpa [quantifiers_neg, arity_neg] using hl
   obtain ⟨b, hb⟩ := isValid_iff.1 h l hl'
   refine ⟨!b, ?_⟩
-  rw [NormalFormCode.neg, Code.eval_boolNot Z.oracle nf.matrix (encode l) b hb]
-  exact Part.mem_some _
+  simp only [matrix_neg, Code.eval_boolNot Z.oracle nf.matrix (encode l) b hb, Part.mem_some_iff]
 
 /-- Matrix semantics for complementation on variable lists of the expected length. -/
 theorem IsValid.matrixHolds_neg {Z : Set ℕ} {nf : NormalFormCode} (h : nf.IsValid Z)
