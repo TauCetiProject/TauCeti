@@ -16,6 +16,13 @@ import TauCeti.Algebra.Group.Idempotent
 Star projections in a product are characterized coordinatewise. The square has only zero, one,
 and the two coordinate projections exactly when the scalar star projections are zero and one.
 In particular, this holds in semirings with cancellation by nonzero left factors.
+
+The absence of zero divisors alone is insufficient. On the chain `0 < m < 1`, take addition
+to be maximum, multiplication to be minimum, and star to be the identity. This gives a semiring
+with no zero divisors, since the minimum of two nonzero elements is nonzero. The element `m`
+is a self-adjoint idempotent, so `(m, 0)` is a star projection distinct from zero, one, and
+the two coordinate projections.
+
 The coordinate swap is a star algebra equivalence between the two orders of a product,
 lifting `Equiv.prodComm` with only the operations preserved by a star algebra equivalence.
 -/
