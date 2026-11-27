@@ -345,8 +345,7 @@ theorem mem_orthogonalSpanFamily_iff {x : B} {w : V x} :
     w ∈ g.orthogonalSpanFamily hI s x ↔ ∀ i, ⟪s i x, w⟫_ℂ = 0 := by
   let : RiemannianBundle V := ⟨g.toRiemannianMetric⟩
   let := g.complexInnerProductSpace hI x
-  rw [orthogonalSpanFamily_eq]
-  exact (Submodule.mem_orthogonalBilin_span (B := innerₛₗ ℂ)).trans Set.forall_mem_range
+  exact Submodule.mem_orthogonal_span_range_iff
 
 /-- The total space of `s^⊥` carries the subspace topology of the total space of `V`. -/
 instance instTopologicalSpaceTotalSpaceOrthogonalSpanFamily {F' : Type*} :
