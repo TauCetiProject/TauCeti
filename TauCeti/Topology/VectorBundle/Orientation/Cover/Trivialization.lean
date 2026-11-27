@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character
+public import TauCeti.Topology.VectorBundle.Orientation.Cover.Character.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.Cover.Transport
 import TauCeti.Data.SignType.Basic
 
