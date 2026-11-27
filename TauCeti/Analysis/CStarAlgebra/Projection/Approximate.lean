@@ -67,7 +67,7 @@ theorem exists_isStarProjection_norm_sub_le {x : A} (hx : IsSelfAdjoint x) {δ :
   set g : ℝ → ℝ := (Set.Ici (1 / 2 : ℝ)).indicator 1 with hg
   have hg0 : g 0 = 0 := Set.indicator_of_notMem (by norm_num) _
   have hinr : ((cfcₙ g x : A) : Unitization ℂ A) = roundProjection (x : Unitization ℂ A) := by
-    rw [roundProjection_def, ← hg, Unitization.real_cfcₙ_eq_cfc_inr x g hg0]
+    rw [roundProjection_eq_cfc, ← hg, Unitization.real_cfcₙ_eq_cfc_inr x g hg0]
   refine ⟨cfcₙ g x, ?_, ?_⟩
   · rw [← Unitization.isStarProjection_inr_iff (R := ℂ), hinr]
     exact isStarProjection_roundProjection _
