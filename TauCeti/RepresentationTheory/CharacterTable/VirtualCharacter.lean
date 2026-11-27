@@ -78,7 +78,9 @@ complex character that is an integer combination of characters of representation
   coefficients.
 * `TauCeti.exists_eq_irreducibleCharacter_or_neg`: **a virtual character of norm `1` is `±` an
   irreducible character**, and `TauCeti.mem_irreducibleCharacters_of_characterPairing_self_eq_one`
-  fixes the sign when its degree is a natural number.
+  fixes the sign when its degree is a natural number;
+  `TauCeti.mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast` replaces virtuality
+  by coefficients in `n⁻¹ ℤ`, one of them a nonzero integer.
 * `TauCeti.exists_simple_character_eq_of_characterPairing_self_eq_one`: **over any field of
   characteristic zero, a virtual character of norm `1` and natural degree is the character of a
   simple representation whose endomorphisms are the scalars**.
@@ -576,6 +578,66 @@ theorem mem_irreducibleCharacters_of_characterPairing_self_eq_one {f : ClassFunc
     have := characterDegree_pos k i
     rw [Nat.cast_eq_zero] at hsum
     omega
+
+open ClassFunction Finset in
+/-- **A class function of norm `1` with coefficients in `n⁻¹ ℤ` and a nonzero integer coefficient
+is `±` an irreducible character, hence an irreducible character when its degree is natural.** If
+`n ≠ 0` times each coefficient `⟨χᵢ, f⟩` is an integer `zᵢ`, then `∑ zᵢ² = n²`; a term `(n w)²`
+with `w ≠ 0` leaves no room for the others and forces `w = ±1`. So `f = w χ_{i₀}` is a virtual
+character, and `TauCeti.mem_irreducibleCharacters_of_characterPairing_self_eq_one` applies.
+
+Unlike that test, this one does not assume that `f` is a virtual character: the bounded
+denominators of the coefficients and one nonzero integer coefficient replace it. -/
+theorem mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
+    {f : ClassFunction k G} (hnorm : characterPairing f f = 1) {n : ℕ} (hn : n ≠ 0)
+    (hrat : ∀ i, ∃ z : ℤ, (n : k) *
+      characterPairing (ofCharacter (irreducibleRepresentation k i)) f = z)
+    {i₀ : Fin (Nat.card (ConjClasses G))} {w : ℤ} (hw : w ≠ 0)
+    (hi₀ : characterPairing (ofCharacter (irreducibleRepresentation k i₀)) f = w)
+    {d : ℕ} (hd : f.val 1 = d) :
+    (f : G → k) ∈ irreducibleCharacters k G := by
+  classical
+  set a := fun i => characterPairing (ofCharacter (irreducibleRepresentation k i)) f
+  have hexp : ∑ i, a i • ofCharacter (irreducibleRepresentation k i) = f :=
+    sum_characterPairing_smul_ofCharacter (irreducibleRepresentation k)
+      (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) f
+  choose z hz using hrat
+  -- in `ℤ`: `∑ zᵢ² = n²` and `z i₀ = n w`
+  have hsq : ∑ i, z i * z i = n * n := by
+    have h := congrArg (fun f' => characterPairing f' f) hexp
+    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul] at h
+    refine Int.cast_injective (α := k) ?_
+    push_cast
+    simp only [← hz]
+    rw [← mul_one ((n : k) * n), ← hnorm, ← h, mul_sum]
+    exact sum_congr rfl fun i _ => by ring
+  have hzi₀ : z i₀ = n * w := Int.cast_injective (α := k) (by push_cast; rw [← hz, hi₀])
+  -- so the other `zᵢ` vanish
+  have hnn : ∀ i ∈ univ.erase i₀, 0 ≤ z i * z i := fun i _ => mul_self_nonneg _
+  have key : (n : ℤ) * n * (w * w) + ∑ i ∈ univ.erase i₀, z i * z i = n * n * 1 := by
+    rw [← add_sum_erase univ (fun i => z i * z i) (mem_univ i₀), hzi₀] at hsq
+    linear_combination hsq
+  have hn' : (n : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hn
+  have hww : w * w = 1 := le_antisymm
+    (le_of_mul_le_mul_left (by linarith [sum_nonneg hnn]) (mul_self_pos.mpr hn'))
+    (by nlinarith [mul_self_pos.mpr hw])
+  have hS : ∑ i ∈ univ.erase i₀, z i * z i = 0 := by
+    rw [hww] at key
+    linarith
+  have hzero : ∀ j ≠ i₀, a j = 0 := fun j hj => by
+    have h := hz j
+    rw [mul_self_eq_zero.mp ((sum_eq_zero_iff_of_nonneg hnn).mp hS j
+      (mem_erase.mpr ⟨hj, mem_univ j⟩)), Int.cast_zero] at h
+    exact (mul_eq_zero.mp h).resolve_left (Nat.cast_ne_zero.mpr hn)
+  -- hence `f = w • χ_{i₀}` is a virtual character
+  have hfv : (f : G → k) ∈ virtualCharacters k G := by
+    have ha₀ : a i₀ = w := hi₀
+    rw [← hexp, sum_eq_single i₀ (fun j _ hj => by rw [hzero j hj, zero_smul]) (by simp), ha₀,
+      Submodule.coe_smul, Int.cast_smul_eq_zsmul]
+    refine zsmul_mem ?_ w
+    convert irreducibleCharacter_mem_virtualCharacters (k := k) i₀ using 1
+    exact funext fun g => by simp [character_irreducibleRepresentation]
+  exact mem_irreducibleCharacters_of_characterPairing_self_eq_one hfv hnorm hd
 
 end Norm
 

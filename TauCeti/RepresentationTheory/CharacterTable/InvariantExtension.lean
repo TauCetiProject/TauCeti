@@ -28,15 +28,17 @@ a virtual character `Θ` with the right values off `N`, whose pairings are compu
 
 The argument is a norm computation. Splitting the sums over `G` into `N` and its complement, the
 pairing of a class function `c` of `G` with `χ` is
-`⟨c, χ⟩_G = ⟨c, Θ⟩_G + n⁻¹ (⟨c|_N, Y⟩_N - ⟨c|_N, Θ|_N⟩_N)`. Taking `c = χ` and `c = Θ`, the first
-condition gives `⟨χ, χ⟩_G = 1`. Taking for `c` an irreducible character, the coefficients of `χ` in
-the basis of irreducible characters lie in `n⁻¹ ℤ`. Restricting the expansion of `χ` to `N` and
-pairing with `Y` shows that some irreducible character `ψ` lying over `Y` has a nonzero
+`⟨c, χ⟩_G = ⟨c, Θ⟩_G + n⁻¹ (⟨c|_N, Y⟩_N - ⟨c|_N, Θ|_N⟩_N)`
+(`TauCeti.ClassFunction.characterPairing_eq_add_inv_index_mul`). Taking `c = χ` and `c = Θ`, the
+first condition gives `⟨χ, χ⟩_G = 1`. Taking for `c` an irreducible character, the coefficients of
+`χ` in the basis of irreducible characters lie in `n⁻¹ ℤ`. Restricting the expansion of `χ` to `N`
+and pairing with `Y` shows that some irreducible character `ψ` lying over `Y` has a nonzero
 coefficient; by Clifford's theorem `ψ|_N = e Y`
 (`TauCeti.exists_restrict_eq_natCast_mul_of_mem_irreducibleCharactersOver`), and then the second
 condition makes this coefficient the integer `⟨ψ, Θ⟩_G - e m`. A sum of squares of numbers in
 `n⁻¹ ℤ` equal to `1` with a nonzero integer term has only that term, which is `±1`, so `χ = ±ψ`,
-and the degree `χ(1) = Y(1)`, a positive natural number, fixes the sign.
+and the degree `χ(1) = Y(1)`, a positive natural number, fixes the sign
+(`TauCeti.mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast`).
 
 The pairing is `TauCeti.ClassFunction.characterPairing`, `⟨f, f'⟩ = |G|⁻¹ ∑ g, f g f' g⁻¹`; on
 virtual characters over `ℂ` it is the hermitian inner product `|G|⁻¹ ∑ g, conj (f g) f' g`, since
@@ -71,28 +73,6 @@ variable {k : Type*} {G : Type*} [Field k] [Group G] [Fintype G] {N : Subgroup G
 section Pairing
 
 variable {Y : ClassFunction k N} {Θ F : ClassFunction k G}
-
-/-- **The pairing with a class function glued from `Y` on `N` and `Θ` off `N`**: splitting the
-sum over `G` into `N` and its complement gives
-`⟨c, F⟩_G = ⟨c, Θ⟩_G + n⁻¹ (⟨c|_N, Y⟩_N - ⟨c|_N, Θ|_N⟩_N)` for the index `n` of `N`. -/
-private theorem characterPairing_eq_add_inv_index_mul (hres : ∀ n : N, F.val n = Y.val n)
-    (hoff : Set.EqOn F.val Θ.val (N : Set G)ᶜ) (c : ClassFunction k G) :
-    characterPairing c F = characterPairing c Θ + (N.index : k)⁻¹ *
-      (characterPairing (comap N.subtype c) Y -
-        characterPairing (comap N.subtype c) (comap N.subtype Θ)) := by
-  classical
-  -- split a sum over `G` into the sum over `N` and the sum over the complement of `N`
-  have hsplit (u : G → k) : ∑ g, u g = ∑ n : N, u n + ∑ g with g ∉ N, u g := by
-    rw [← sum_filter_add_sum_filter_not univ (· ∈ N) u, sum_subtype (p := (· ∈ N)) _ (by simp) u]
-  have hon : ∑ n : N, c.val n * F.val (n : G)⁻¹ = ∑ n : N, c.val n * Y.val n⁻¹ :=
-    sum_congr rfl fun n _ => by rw [← hres n⁻¹, Subgroup.coe_inv]
-  have hoff' : ∑ g with g ∉ N, c.val g * F.val g⁻¹ = ∑ g with g ∉ N, c.val g * Θ.val g⁻¹ :=
-    sum_congr rfl fun g hg => by
-      rw [hoff (show g⁻¹ ∈ (N : Set G)ᶜ by simpa using (mem_filter.mp hg).2)]
-  simp only [characterPairing_apply, comap_apply, Subgroup.subtype_apply, Subgroup.coe_inv]
-  rw [hsplit fun g => c.val g * F.val g⁻¹, hsplit fun g => c.val g * Θ.val g⁻¹, hon, hoff',
-    ← N.index_mul_card, Nat.cast_mul, mul_inv]
-  ring
 
 /-- The glued class function has norm one under the first numerical condition. -/
 private theorem characterPairing_self_eq_one [NeZero (N.index : k)]
@@ -145,15 +125,25 @@ private theorem exists_index_mul_characterPairing_eq_intCast (hres : ∀ n : N, 
 /-- Some coefficient of the glued class function is a nonzero integer: restricting the expansion
 to `N` and pairing with `Y` finds an irreducible character `ψ` lying over `Y` with a nonzero
 coefficient, by Clifford's theorem `ψ|_N = e Y`, and then the second numerical condition makes the
-coefficient `⟨ψ, Θ⟩_G - e m`. -/
+coefficient `⟨ψ, Θ⟩_G - e m`. The invariance of `Y` that Clifford's theorem needs comes from `F`
+being a class function. -/
 private theorem exists_characterPairing_eq_intCast_ne_zero [N.Normal]
     (hres : ∀ n : N, F.val n = Y.val n) (hoff : Set.EqOn F.val Θ.val (N : Set G)ᶜ)
-    (hY : (Y : N → k) ∈ irreducibleCharacters k N) (hYY : characterPairing Y Y = 1)
-    (hinv : ∀ g : G, (Y : N → k) ∘ MulAut.conjNormal g = Y)
-    (hΘ : (Θ : G → k) ∈ virtualCharacters k G) {m : ℤ}
-    (h₂ : characterPairing Y (comap N.subtype Θ) = 1 + N.index * m) :
+    (hY : (Y : N → k) ∈ irreducibleCharacters k N) (hΘ : (Θ : G → k) ∈ virtualCharacters k G)
+    {m : ℤ} (h₂ : characterPairing Y (comap N.subtype Θ) = 1 + N.index * m) :
     ∃ (i : Fin (Nat.card (ConjClasses G))) (w : ℤ), w ≠ 0 ∧
       characterPairing (ofCharacter (irreducibleRepresentation k i)) F = w := by
+  -- `|G| = n |N|` is invertible in `k`, hence so are the index `n` and `|N|`
+  have hG : (N.index : k) * Nat.card N ≠ 0 := by
+    rw [← Nat.cast_mul, N.index_mul_card]
+    exact Invertible.ne_zero _
+  have hYY : characterPairing Y Y = 1 := by
+    rw [characterPairing_apply, sum_mul_inv_self_of_mem_irreducibleCharacters hY,
+      inv_mul_cancel₀ (right_ne_zero_of_mul hG)]
+  -- `Y` is invariant under `G`, being the restriction of the class function `F`
+  have hinv (g : G) : (Y : N → k) ∘ MulAut.conjNormal g = Y := funext fun n => by
+    rw [Function.comp_apply, ← hres, ← hres, MulAut.conjNormal_apply]
+    exact ClassFunction.mem_iff.mp F.property n g
   set c := fun i : Fin (Nat.card (ConjClasses G)) => ofCharacter (irreducibleRepresentation k i)
   have hc (i) : (c i : G → k) = irreducibleCharacter k i :=
     funext fun g => by simp [c, character_irreducibleRepresentation]
@@ -182,8 +172,7 @@ private theorem exists_characterPairing_eq_intCast_ne_zero [N.Normal]
     rw [hc]
     exact irreducibleCharacter_mem_virtualCharacters (k := k) (G := G) i
   obtain ⟨t, ht⟩ := exists_characterPairing_eq_intCast hcv hΘ
-  have hi : (N.index : k) ≠ 0 :=
-    left_ne_zero_of_mul (by rw [← Nat.cast_mul, N.index_mul_card]; exact Invertible.ne_zero _)
+  have hi : (N.index : k) ≠ 0 := left_ne_zero_of_mul hG
   have hai : characterPairing (c i) F = ((t - e * m : ℤ) : k) := by
     rw [characterPairing_eq_add_inv_index_mul hres hoff, hcN]
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hYY, h₂, ht]
@@ -193,67 +182,6 @@ private theorem exists_characterPairing_eq_intCast_ne_zero [N.Normal]
   exact ⟨i, t - e * m, fun h0 => ha (by rw [hai, h0, Int.cast_zero]), hai⟩
 
 end Pairing
-
-section Criterion
-
-variable [IsAlgClosed k] [CharZero k] [Invertible (Nat.card G : k)]
-
-/-- **A class function of norm one with coefficients in `n⁻¹ ℤ` and a nonzero integer coefficient
-is `±` an irreducible character, hence an irreducible character when its degree is natural.** If
-`n ≠ 0` times each coefficient `⟨χᵢ, F⟩` is an integer `zᵢ`, then `∑ zᵢ² = n²`; a term
-`(n w)²` with `w ≠ 0` leaves no room for the others and forces `w = ±1`. -/
-private theorem mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
-    {F : ClassFunction k G} (hnorm : characterPairing F F = 1) {n : ℕ} (hn : n ≠ 0)
-    (hrat : ∀ i, ∃ z : ℤ, (n : k) *
-      characterPairing (ofCharacter (irreducibleRepresentation k i)) F = z)
-    {i₀ : Fin (Nat.card (ConjClasses G))} {w : ℤ} (hw : w ≠ 0)
-    (hi₀ : characterPairing (ofCharacter (irreducibleRepresentation k i₀)) F = w)
-    {d : ℕ} (hd : F.val 1 = d) :
-    (F : G → k) ∈ irreducibleCharacters k G := by
-  classical
-  set a := fun i => characterPairing (ofCharacter (irreducibleRepresentation k i)) F
-  have hexp : ∑ i, a i • ofCharacter (irreducibleRepresentation k i) = F :=
-    sum_characterPairing_smul_ofCharacter (irreducibleRepresentation k)
-      (pairwise_isEmpty_equiv_irreducibleRepresentation k) (by simp) F
-  choose z hz using hrat
-  -- in `ℤ`: `∑ zᵢ² = n²` and `z i₀ = n w`
-  have hsq : ∑ i, z i * z i = n * n := by
-    have h := congrArg (fun f => characterPairing f F) hexp
-    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul] at h
-    refine Int.cast_injective (α := k) ?_
-    push_cast
-    simp only [← hz]
-    rw [← mul_one ((n : k) * n), ← hnorm, ← h, mul_sum]
-    exact sum_congr rfl fun i _ => by ring
-  have hzi₀ : z i₀ = n * w := Int.cast_injective (α := k) (by push_cast; rw [← hz, hi₀])
-  -- so the other `zᵢ` vanish
-  have hnn : ∀ i ∈ univ.erase i₀, 0 ≤ z i * z i := fun i _ => mul_self_nonneg _
-  have key : (n : ℤ) * n * (w * w) + ∑ i ∈ univ.erase i₀, z i * z i = n * n * 1 := by
-    rw [← add_sum_erase univ (fun i => z i * z i) (mem_univ i₀), hzi₀] at hsq
-    linear_combination hsq
-  have hn' : (n : ℤ) ≠ 0 := Int.natCast_ne_zero.mpr hn
-  have hww : w * w = 1 := le_antisymm
-    (le_of_mul_le_mul_left (by linarith [sum_nonneg hnn]) (mul_self_pos.mpr hn'))
-    (by nlinarith [mul_self_pos.mpr hw])
-  have hS : ∑ i ∈ univ.erase i₀, z i * z i = 0 := by
-    rw [hww] at key
-    linarith
-  have hzero : ∀ j ≠ i₀, a j = 0 := fun j hj => by
-    have h := hz j
-    rw [mul_self_eq_zero.mp ((sum_eq_zero_iff_of_nonneg hnn).mp hS j
-      (mem_erase.mpr ⟨hj, mem_univ j⟩)), Int.cast_zero] at h
-    exact (mul_eq_zero.mp h).resolve_left (Nat.cast_ne_zero.mpr hn)
-  -- hence `F = w • χ_{i₀}` is a virtual character
-  have hFv : (F : G → k) ∈ virtualCharacters k G := by
-    have ha₀ : a i₀ = w := hi₀
-    rw [← hexp, sum_eq_single i₀ (fun j _ hj => by rw [hzero j hj, zero_smul]) (by simp), ha₀,
-      Submodule.coe_smul, Int.cast_smul_eq_zsmul]
-    refine zsmul_mem ?_ w
-    convert irreducibleCharacter_mem_virtualCharacters (k := k) i₀ using 1
-    exact funext fun g => by simp [character_irreducibleRepresentation]
-  exact mem_irreducibleCharacters_of_characterPairing_self_eq_one hFv hnorm hd
-
-end Criterion
 
 variable [IsAlgClosed k] [CharZero k] [N.Normal]
 
@@ -281,8 +209,7 @@ theorem mem_irreducibleCharacters_of_restrict_eq_of_eqOn_compl {Y : ClassFunctio
   have hcl : χ ∈ ClassFunction k G := by
     refine ClassFunction.mem_iff.mpr fun g h => ?_
     by_cases hg : g ∈ N
-    · rw [show h * g * h⁻¹ = ((MulAut.conjNormal h ⟨g, hg⟩ : N) : G) by simp, hres,
-        hres ⟨g, hg⟩]
+    · rw [← MulAut.conjNormal_apply h ⟨g, hg⟩, hres, hres ⟨g, hg⟩]
       exact congrFun (hinv h) ⟨g, hg⟩
     · have hc : h * g * h⁻¹ ∉ N := fun hc => hg (by
         simpa [mul_assoc] using Subgroup.Normal.conj_mem _ hc h⁻¹)
@@ -293,7 +220,7 @@ theorem mem_irreducibleCharacters_of_restrict_eq_of_eqOn_compl {Y : ClassFunctio
     rw [characterPairing_apply, sum_mul_inv_self_of_mem_irreducibleCharacters hY,
       inv_mul_cancel₀ (Nat.cast_ne_zero.mpr Nat.card_pos.ne')]
   obtain ⟨i₀, w, hw, hi₀⟩ :=
-    exists_characterPairing_eq_intCast_ne_zero (F := F) hres hoff hY hYY hinv hΘ h₂
+    exists_characterPairing_eq_intCast_ne_zero (F := F) hres hoff hY hΘ h₂
   obtain ⟨d, ρ, -, hρ⟩ := mem_irreducibleCharacters_iff.mp hY
   exact mem_irreducibleCharacters_of_forall_exists_natCast_mul_eq_intCast
     (characterPairing_self_eq_one (F := F) hres hoff hYY h₁) Subgroup.index_ne_zero_of_finite
