@@ -66,7 +66,10 @@ theorem notMem_serreFibrations_inclusionOne :
     (e := (⟨1, rfl⟩ : ({1} : Set Circle))) (expLoop.cast (inclusionOne_apply _) rfl)
   let t : I := ⟨1 / 2, by norm_num, by norm_num⟩
   have ht : 2 * Real.pi * t = Real.pi := by simp only [t]; ring
-  have h : expLoop t = 1 := (congrFun hΓ t).symm.trans (Set.mem_singleton_iff.1 (Γ t).property)
+  have h : expLoop t = 1 := by
+    have := congrFun hΓ t
+    rw [Function.comp_apply, inclusionOne_apply, Path.cast_coe] at this
+    exact this.symm.trans (Set.mem_singleton_iff.1 (Γ t).property)
   rw [expLoop_apply, ht, exp_pi] at h
   norm_num [Circle.ext_iff] at h
 
