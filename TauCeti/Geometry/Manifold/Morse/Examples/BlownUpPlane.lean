@@ -70,10 +70,12 @@ Hessians
 and the critical points are nondegenerate when `ε ≠ 0`, respectively `ε ≠ -1`. In particular for
 `0 < ε` both poles of the exceptional sphere are nondegenerate critical points of the same index
 `2`, with values `-ε < ε`. These are the local inputs of the classical observation that this
-invariant height admits no invariant Morse–Smale metric: the gradient of an invariant function for
-an invariant metric is tangent to the fixed sphere `E`, so the gradient lines inside `E` join two
-critical points of equal index. That global argument, which needs the manifold structure of `B`,
-is not formalized here.
+invariant height admits no invariant Morse–Smale metric. The circle does not fix `E` pointwise; it
+acts on `E` with weight `∓2`. But `E` is fixed pointwise by the subgroup of order two (`t = π`),
+and is a connected component of that subgroup's fixed set. So the gradient of an invariant
+function for an invariant metric is tangent to `E`, and the gradient lines inside `E` join two
+critical points of equal index. Neither this description of the fixed set nor that global
+argument, which needs the manifold structure of `B`, is formalized here.
 -/
 
 public section
