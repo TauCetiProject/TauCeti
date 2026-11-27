@@ -39,7 +39,6 @@ countable field into `ℂ` to a field of cardinality at most the continuum.
 * `IsTranscendenceBasis.exists_algEquiv_apply_eq`: between algebraically closed fields, an
   isomorphism realising a bijection of transcendence bases.
 * `TauCeti.IsAlgClosed.exists_algHom_injective_of_lift_trdeg_le`,
-  `TauCeti.IsAlgClosed.nonempty_algHom_of_lift_trdeg_le`,
   `TauCeti.IsAlgClosed.nonempty_algEquiv_of_lift_trdeg_eq`: injective homomorphisms and
   isomorphisms from transcendence degrees over a commutative ring with faithful actions.
 * `Transcendental.exists_algHom_apply_eq`, `Transcendental.exists_algEquiv_apply_eq`: the same,
@@ -135,15 +134,6 @@ theorem exists_algHom_injective_of_lift_trdeg_le {R : Type*} {E : Type u} {Ω : 
   have hw : AlgebraicIndependent R (((↑) : t → Ω) ∘ f) := ht.1.comp f f.injective
   obtain ⟨φ, hφ, -⟩ := hs.exists_algHom_apply_eq hw
   exact ⟨φ, hφ⟩
-
-/-- A domain `E` over a commutative ring `R` acting faithfully on `E` and an algebraically closed
-field `Ω` maps over `R` to `Ω` whenever `trdeg R E ≤ trdeg R Ω`. -/
-theorem nonempty_algHom_of_lift_trdeg_le {R : Type*} {E : Type u} {Ω : Type v}
-    [CommRing R] [CommRing E] [IsDomain E] [Algebra R E] [FaithfulSMul R E]
-    [Field Ω] [Algebra R Ω] [IsAlgClosed Ω] [FaithfulSMul R Ω]
-    (h : Cardinal.lift.{v} (trdeg R E) ≤ Cardinal.lift.{u} (trdeg R Ω)) :
-    Nonempty (E →ₐ[R] Ω) :=
-  let ⟨φ, _⟩ := exists_algHom_injective_of_lift_trdeg_le h; ⟨φ⟩
 
 /-- Two algebraically closed fields over a commutative ring `R` acting faithfully on both with the
 same transcendence degree over `R` are isomorphic over `R`. -/
