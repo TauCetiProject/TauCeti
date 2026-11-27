@@ -12,9 +12,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Bipartite
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import Mathlib.RingTheory.RootsOfUnity.Complex
-import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 import TauCeti.Analysis.SpecialFunctions.Complex.TwoCos
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arccos
 import TauCeti.GroupTheory.Coxeter.CoxeterElement
 import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Bipartite
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
@@ -418,44 +416,20 @@ private lemma two_sub_eq_two_mul_cos_pi_div_orderOf_bipartiteCoxeterElement
   have hbound : ‖(1 + ω₀) ^ 2 / ω₀‖ ≤ lam ^ 2 :=
     Matrix.norm_one_add_sq_div_le_sq_of_mulVec_eq_smul A hA_nonneg hA_same hy0 hA_eig
       hM₁C_mul hM₂C_mul (Complex.exp_ne_zero _) hz.2 (Module.End.mem_eigenspace_iff.1 hz.1)
-  have hθ_pos : 0 < θ := Real.arccos_pos.2 (by linarith)
-  have hpi_le_θ : Real.pi / h ≤ θ := by
-    have hpow : Complex.exp ((θ : ℂ) * Complex.I) ^ (2 * h) = 1 := by
-      rw [pow_mul, hζ_sq]
-      exact hζ_prim.pow_eq_one
-    have h2pi := Complex.two_mul_pi_div_le_of_exp_ofReal_mul_I_pow_eq_one hθ_pos
-      (by positivity : 0 < 2 * h) hpow
-    rw [Nat.cast_mul, Nat.cast_ofNat, mul_div_mul_left _ _ two_ne_zero] at h2pi
-    exact h2pi
-  have hpi_mem : Real.pi / h ∈ Set.Icc 0 Real.pi := by
-    have hh_real : (0 : ℝ) < h := Nat.cast_pos.mpr hh_pos
-    refine ⟨div_nonneg Real.pi_pos.le hh_real.le, ?_⟩
-    exact div_le_self Real.pi_pos.le (by exact_mod_cast le_trans (by norm_num) h2le)
-  have hlam_le : lam ≤ 2 * Real.cos (Real.pi / h) := by
-    have hcos := (Real.le_arccos_iff_le_cos (by linarith) hpi_mem).1 hpi_le_θ
-    linarith
-  have hcos_le : 2 * Real.cos (Real.pi / h) ≤ lam := by
-    have hid := Complex.one_add_exp_two_mul_mul_I_sq_div ((Real.pi / h : ℝ) : ℂ)
-    have hω₀_eq : ω₀ = Complex.exp (2 * ((Real.pi / h : ℝ) : ℂ) * Complex.I) := by
-      dsimp only [ω₀]
-      congr 1
-      push_cast
-      ring
-    rw [← hω₀_eq, ← Complex.ofReal_cos] at hid
-    rw [hid] at hbound
-    have hsq : (2 * Real.cos (Real.pi / h)) ^ 2 ≤ lam ^ 2 := by
-      have hnorm : ‖(2 * (Real.cos (Real.pi / h) : ℂ)) ^ 2‖ =
-          (2 * Real.cos (Real.pi / h)) ^ 2 := by
-        norm_cast
-        rw [Real.norm_of_nonneg (sq_nonneg _)]
-      exact hnorm ▸ hbound
-    have hcos_nonneg : 0 ≤ Real.cos (Real.pi / h) :=
-      Real.cos_nonneg_of_mem_Icc ⟨by linarith [hpi_mem.1, Real.pi_pos], by
-        have hh_real : (0 : ℝ) < h := Nat.cast_pos.mpr hh_pos
-        rw [div_le_div_iff₀ hh_real (by norm_num)]
-        nlinarith [Real.pi_pos, show (2 : ℝ) ≤ h by exact_mod_cast h2le]⟩
-    nlinarith [hcos_nonneg]
-  exact le_antisymm hlam_le hcos_le
+  have hω₀_eq : ω₀ = Complex.exp (2 * ((Real.pi / h : ℝ) : ℂ) * Complex.I) := by
+    dsimp only [ω₀]; congr 1; push_cast; ring
+  have hsq : (2 * Real.cos (Real.pi / h)) ^ 2 ≤ lam ^ 2 := by
+    rwa [hω₀_eq, Complex.norm_one_add_exp_two_mul_mul_I_sq_div] at hbound
+  have hcos_nonneg : 0 ≤ Real.cos (Real.pi / h) :=
+    Real.cos_nonneg_of_mem_Icc ⟨by linarith [Real.pi_pos, show (0 : ℝ) ≤ Real.pi / h by positivity],
+      (div_le_iff₀ (Nat.cast_pos.mpr hh_pos)).2 (by
+        nlinarith [Real.pi_pos, show (2 : ℝ) ≤ h by exact_mod_cast h2le])⟩
+  have hcos_le : Real.cos (Real.pi / h) ≤ Real.cos θ := by nlinarith
+  have hθ_eq : θ = Real.pi / h :=
+    Complex.eq_pi_div_of_exp_ofReal_mul_I_pow_eq_one_of_cos_le
+      (Real.arccos_pos.2 (by linarith)) (Real.arccos_le_pi _) hh_pos
+      (by rw [pow_mul, hζ_sq]; exact hζ_prim.pow_eq_one) hcos_le
+  rw [← hθ_eq, ← hlam_cos]
 
 /-- For a rank-1 root system, every bipartite Coxeter element has order `2`. -/
 private theorem orderOf_bipartiteCoxeterElement_eq_two_of_subsingleton
@@ -563,23 +537,9 @@ theorem exists_coxeterPlane_bipartite [P.IsIrreducible] (b : P.Base) [Nontrivial
   set v₁ : M := colorPart P b col y true
   set v₂ : M := colorPart P b col y false
   have hli : LinearIndependent ℝ ![v₁, v₂] := by
-    obtain ⟨i₀⟩ := ‹Nonempty b.support›
-    obtain ⟨i₁, hi₁⟩ := exists_ne i₀
-    obtain ⟨w⟩ := preconnected_graph_coxeterMatrixOfBase P b i₀ i₁
-    have hdiff : ∃ j : b.support, col j ≠ col i₀ := by
-      cases w with
-      | nil => exact absurd rfl hi₁
-      | @cons _ u _ hadj _ => exact ⟨u, (col.valid hadj).symm⟩
-    obtain ⟨i_true, hi_true⟩ : ∃ i : b.support, col i = true := by
-      cases hci : col i₀
-      · rcases hdiff with ⟨j, hj⟩
-        exact ⟨j, by cases hcj : col j <;> simp_all⟩
-      · exact ⟨i₀, hci⟩
-    obtain ⟨i_false, hi_false⟩ : ∃ i : b.support, col i = false := by
-      cases hci : col i₀
-      · exact ⟨i₀, hci⟩
-      · rcases hdiff with ⟨j, hj⟩
-        exact ⟨j, by cases hcj : col j <;> simp_all⟩
+    have hsurj := col.surjective_of_preconnected (preconnected_graph_coxeterMatrixOfBase P b)
+    obtain ⟨i_true, hi_true⟩ := hsurj true
+    obtain ⟨i_false, hi_false⟩ := hsurj false
     refine Fintype.linearIndependent_iff.2 fun f hf ↦ ?_
     have hsum : f 0 • v₁ + f 1 • v₂ = 0 := by simpa [Fin.sum_univ_two] using hf
     have hf0 : f 0 = 0 := by

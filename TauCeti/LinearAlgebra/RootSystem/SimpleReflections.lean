@@ -28,8 +28,6 @@ while root negation does not change the reflection.
   its simple reflections.
 * `TauCeti.wordProd` multiplies out a word in the simple reflections of a base, and
   `RootPairing.Base.wordProd_def` records its defining equation.
-* `RootPairing.Base.length_eq_card_support_of_nodup`: a duplicate-free list covering `b.support`
-  has length `b.support.card`.
 * `TauCeti.wordProd_reverse` says that reversing a word inverts the element it spells.
 * `TauCeti.exists_wordProd_eq` writes every Weyl-group element as a product of simple reflections.
 * `RootPairing.weylGroup.ofIdx_ne_ofIdx_of_ne` says distinct simple roots give distinct
@@ -62,15 +60,6 @@ variable {P}
 lemma _root_.RootPairing.Base.wordProd_def (b : P.Base) (l : List b.support) :
     wordProd P b l = (l.map fun i : b.support => RootPairing.weylGroup.ofIdx P (i : ι)).prod :=
   (rfl)
-
-/-- A duplicate-free list of simple-root indices covering `b.support` has length
-`b.support.card`. -/
-lemma _root_.RootPairing.Base.length_eq_card_support_of_nodup (b : P.Base) {l : List b.support}
-    (hl : l.Nodup) (hall : ∀ i, i ∈ l) : l.length = b.support.card := by
-  classical
-  rw [← List.toFinset_card_of_nodup hl,
-    Finset.eq_univ_iff_forall.mpr fun i => List.mem_toFinset.mpr (hall i), Finset.card_univ,
-    Fintype.card_coe]
 
 @[simp]
 lemma wordProd_nil (b : P.Base) : wordProd P b [] = 1 :=

@@ -132,6 +132,8 @@ theorem norm_one_add_sq_div_le_sq_of_mulVec_eq_smul {n : Type*} [Fintype n]
   have hA2_eig := mulVec_sq_of_bipartite_mulVec_eq_smul (A.map Complex.ofRealHom)
     (fun i j h ↦ by simp [hA_same i j h]) (by simpa using hM₁_mul) (by simpa using hM₂_mul)
     hω heig
+  -- `Matrix.map_mul` requires a `RingHom` (`Complex.ofRealHom`), whose coercion is defeq to
+  -- `Complex.ofReal` expected by `Matrix.norm_le_of_mulVec_le_smul`.
   rw [← Matrix.map_mul, show (⇑Complex.ofRealHom : ℝ → ℂ) = Complex.ofReal from rfl] at hA2_eig
   have hA2_nonneg : ∀ i j, 0 ≤ (A * A) i j := fun i j ↦ by
     rw [Matrix.mul_apply]

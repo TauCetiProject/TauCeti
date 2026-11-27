@@ -14,6 +14,7 @@ import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Charpoly
 import Mathlib.LinearAlgebra.RootSystem.BaseExists
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.Data.Fintype.Card.List
 import TauCeti.LinearAlgebra.RootSystem.Basic
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.ActsBy
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.BaseChange
@@ -141,8 +142,7 @@ private theorem degree_sub_one_lt_orderOf_bipartiteCoxeterElement
     rw [← Nat.card_eq_fintype_card,
       P.natCard_eq_finrank_of_bijective_aeval_weylGroupRootRep_dual hbij]
   have hlen : (l₁ ++ l₂).length = Module.finrank K M := by
-    rw [Module.finrank_eq_card_basis b.toWeightBasis, Fintype.card_coe,
-      b.length_eq_card_support_of_nodup hnd hall]
+    rw [Module.finrank_eq_card_basis b.toWeightBasis, hnd.length_eq_card hall]
   have hle := natCard_le_orderOf_wordProd_mul_length b hnd hall
   rw [hw, hlen] at hle
   have hsum := P.sum_sub_one_eq_ncard_posRoots_of_bijective_aeval_weylGroupRootRep_dual b hf hbij

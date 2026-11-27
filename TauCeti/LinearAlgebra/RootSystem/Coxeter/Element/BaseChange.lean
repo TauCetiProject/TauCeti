@@ -85,10 +85,8 @@ theorem orderOf_wordProd_rootPairingBaseChange_rationalModel [IsDomain R] (b : P
   let bS := rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
   let e := b.supportEquivRootPairingBaseChangeRationalModel S
-  have hC : bS.cartanMatrix = b.cartanMatrix.submatrix e e := by
-    ext i j
-    exact b.cartanMatrix_rootPairingBaseChangeRationalModel S i j
-  rw [(b.actsBy_wordProd l).orderOf_eq, (bS.actsBy_wordProd _).orderOf_eq, hC,
+  rw [(b.actsBy_wordProd l).orderOf_eq, (bS.actsBy_wordProd _).orderOf_eq,
+    b.cartanMatrix_rootPairingBaseChangeBase_rationalModel_eq_submatrix S,
     Matrix.prod_map_reflMatrix_submatrix b.cartanMatrix e l]
   exact (orderOf_injective
     (Matrix.reindexAlgEquiv ℤ ℤ e.symm).toRingEquiv.toMulEquiv.toMonoidHom
@@ -111,9 +109,6 @@ theorem charpoly_weylGroupRootRep_wordProd_rootPairingBaseChange_rationalModel [
   let bS := rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
     b.rationalModelBase
   let e := b.supportEquivRootPairingBaseChangeRationalModel S
-  have hC : bS.cartanMatrix = b.cartanMatrix.submatrix e e := by
-    ext i j
-    exact b.cartanMatrix_rootPairingBaseChangeRationalModel S i j
   rw [← bS.charpoly_weylGroupRootRep_wordProd_eq_map_rat (l.map e.symm)]
   congr 1
   have hcast :
@@ -122,7 +117,8 @@ theorem charpoly_weylGroupRootRep_wordProd_rootPairingBaseChange_rationalModel [
         Matrix.reindexAlgEquiv ℚ ℚ e.symm
           ((l.map (reflMatrix b.cartanMatrix)).prod.map (Int.castRingHom ℚ)) := by
     ext i j; simp
-  rw [hC, Matrix.prod_map_reflMatrix_submatrix b.cartanMatrix e l, hcast]
+  rw [b.cartanMatrix_rootPairingBaseChangeBase_rationalModel_eq_submatrix S,
+    Matrix.prod_map_reflMatrix_submatrix b.cartanMatrix e l, hcast]
   exact (Matrix.charpoly_reindex e.symm _).symm
 
 end RootPairing.Base

@@ -333,6 +333,16 @@ theorem cartanMatrix_rootPairingBaseChangeRationalModel
   have := algebraRat.charZero S
   simp [supportEquivRootPairingBaseChangeRationalModel]
 
+/-- The Cartan matrix of the base-changed rational model over `S` is the Cartan matrix of `b`
+reindexed along `b.supportEquivRootPairingBaseChangeRationalModel S`. -/
+theorem cartanMatrix_rootPairingBaseChangeBase_rationalModel_eq_submatrix :
+    (rootPairingBaseChangeBase S b.rationalModel b.rationalModel_toLinearMap
+      b.rationalModelBase).cartanMatrix =
+      b.cartanMatrix.submatrix (b.supportEquivRootPairingBaseChangeRationalModel S)
+        (b.supportEquivRootPairingBaseChangeRationalModel S) := by
+  ext i j
+  exact b.cartanMatrix_rootPairingBaseChangeRationalModel S i j
+
 /-- For a finite reduced irreducible crystallographic root system `P` over a characteristic-zero
 domain `R`, irreducibility transfers to the base change of `b.rationalModel` to any
 characteristic-zero field `S`. -/

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
+import TauCeti.Data.Fintype.Card.List
 
 /-!
 # The deletion condition and the subword property
@@ -275,7 +276,7 @@ theorem ncard_inversions_wordProd_eq_length_of_nodup (l : List b.support) (hl : 
 `#(inversions (wordProd P b l)) = b.support.card`. -/
 theorem ncard_inversions_wordProd_eq_card_support {l : List b.support} (hl : l.Nodup)
     (hall : ∀ i, i ∈ l) : (inversions P b (wordProd P b l)).ncard = b.support.card := by
-  rw [ncard_inversions_wordProd_eq_length_of_nodup P b l hl,
-    b.length_eq_card_support_of_nodup hl hall]
+  rw [ncard_inversions_wordProd_eq_length_of_nodup P b l hl, hl.length_eq_card hall,
+    Fintype.card_coe]
 
 end TauCeti

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.EqOne
 
 /-!
 # Quadratic and rational identities relating `exp (2 z i)` and `2 cos z`
@@ -20,10 +21,15 @@ quadratic equation `w ^ 2 + (2 - (2 cos z) ^ 2) * w + 1 = 0`.
 
 * `Complex.one_add_exp_two_mul_mul_I_sq_div`:
   `(1 + exp (2 * z * I)) ^ 2 / exp (2 * z * I) = (2 * cos z) ^ 2`.
+* `Complex.norm_one_add_exp_two_mul_mul_I_sq_div`:
+  `‖(1 + exp (2 * x * I)) ^ 2 / exp (2 * x * I)‖ = (2 * Real.cos x) ^ 2` for `x : ℝ`.
 * `Complex.exp_two_mul_mul_I_sq_add_sub_mul_add_one`:
   `exp (2 * z * I) ^ 2 + (2 - (2 * cos z) ^ 2) * exp (2 * z * I) + 1 = 0`.
 * `Complex.inv_exp_two_mul_mul_I_sq_add_sub_mul_add_one`:
   `(exp (2 * z * I))⁻¹ ^ 2 + (2 - (2 * cos z) ^ 2) * (exp (2 * z * I))⁻¹ + 1 = 0`.
+* `Complex.eq_pi_div_of_exp_ofReal_mul_I_pow_eq_one_of_cos_le`:
+  if `0 < θ ≤ π`, `exp (θ * I) ^ (2 * n) = 1`, and `Real.cos (π / n) ≤ Real.cos θ`, then
+  `θ = π / n`.
 -/
 
 public section
@@ -44,6 +50,13 @@ theorem one_add_exp_two_mul_mul_I_sq_div (z : ℂ) :
   rw [hω, hdiv]
   dsimp only [ξ]
   rw [← exp_neg, ← neg_mul, ← two_cos]
+
+/-- For `x : ℝ`, `‖(1 + exp (2 * x * I)) ^ 2 / exp (2 * x * I)‖ = (2 * Real.cos x) ^ 2`. -/
+theorem norm_one_add_exp_two_mul_mul_I_sq_div (x : ℝ) :
+    ‖(1 + exp (2 * (x : ℂ) * I)) ^ 2 / exp (2 * (x : ℂ) * I)‖ = (2 * Real.cos x) ^ 2 := by
+  rw [one_add_exp_two_mul_mul_I_sq_div, ← ofReal_cos]
+  norm_cast
+  exact Real.norm_of_nonneg (sq_nonneg _)
 
 /-- For `z : ℂ`, `exp (2 * z * I)` is a root of `w ^ 2 + (2 - (2 * cos z) ^ 2) * w + 1 = 0`. -/
 theorem exp_two_mul_mul_I_sq_add_sub_mul_add_one (z : ℂ) :
@@ -76,5 +89,21 @@ theorem inv_exp_two_mul_mul_I_sq_add_sub_mul_add_one (z : ℂ) :
   have h := exp_two_mul_mul_I_sq_add_sub_mul_add_one z
   field_simp
   linear_combination h
+
+/-- An angle `θ ∈ (0, π]` with `exp (θ * I) ^ (2 * n) = 1` (`0 < n`) and
+`Real.cos (π / n) ≤ Real.cos θ` equals `π / n`. -/
+theorem eq_pi_div_of_exp_ofReal_mul_I_pow_eq_one_of_cos_le {θ : ℝ} {n : ℕ}
+    (hθ0 : 0 < θ) (hθpi : θ ≤ Real.pi) (hn : 0 < n)
+    (hpow : exp ((θ : ℂ) * I) ^ (2 * n) = 1) (hcos : Real.cos (Real.pi / n) ≤ Real.cos θ) :
+    θ = Real.pi / n := by
+  have hpi_le : Real.pi / n ≤ θ := by
+    have h2 := two_mul_pi_div_le_of_exp_ofReal_mul_I_pow_eq_one hθ0 (by positivity : 0 < 2 * n) hpow
+    rwa [Nat.cast_mul, Nat.cast_ofNat, mul_div_mul_left _ _ two_ne_zero] at h2
+  have hn_real : (1 : ℝ) ≤ n := by exact_mod_cast hn
+  have hpi_mem : Real.pi / n ∈ Set.Icc 0 Real.pi :=
+    ⟨div_nonneg Real.pi_pos.le (by linarith), div_le_self Real.pi_pos.le hn_real⟩
+  have hcos_eq : Real.cos θ = Real.cos (Real.pi / n) :=
+    le_antisymm (Real.strictAntiOn_cos.antitoneOn hpi_mem ⟨hθ0.le, hθpi⟩ hpi_le) hcos
+  exact Real.strictAntiOn_cos.injOn ⟨hθ0.le, hθpi⟩ hpi_mem hcos_eq
 
 end Complex
