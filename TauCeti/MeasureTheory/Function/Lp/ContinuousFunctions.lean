@@ -13,7 +13,8 @@ public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 
 On a compact topological space `α` equipped with a finite Borel measure `μ`, Mathlib's bounded
 linear map `ContinuousMap.toLp p μ 𝕜 : C(α, E) →L[𝕜] Lp E p μ` sends every continuous function to
-its `Lᵖ` equivalence class. This file records its compatibility with constants, `star`, `L∞`
+its `Lᵖ` equivalence class, whose norm is the `Lᵖ` seminorm of the function
+(`ContinuousMap.norm_toLp`). This file records its compatibility with constants, `star`, `L∞`
 multiplication, and Hölder scalar multiplication (`HSMul (Lp 𝕜 p μ) (Lp E q μ) (Lp E r μ)`):
 
 * `ContinuousMap.toLp_const`: `toLp p μ 𝕜 (const α c) = Lp.const p μ c`.
@@ -37,6 +38,12 @@ variable {α 𝕜 E : Type*} [TopologicalSpace α] [MeasurableSpace α] [BorelSp
   [CompactSpace α] {μ : Measure α} [IsFiniteMeasure μ]
   [NormedRing 𝕜] [NormedAddCommGroup E] [Module 𝕜 E] [IsBoundedSMul 𝕜 E]
   [SecondCountableTopologyEither α E]
+
+/-- The norm of the `Lᵖ` class of a continuous function is its `Lᵖ` seminorm. -/
+@[simp]
+theorem norm_toLp {p : ℝ≥0∞} [Fact (1 ≤ p)] (f : C(α, E)) :
+    ‖toLp p μ 𝕜 f‖ = (eLpNorm f p μ).toReal := by
+  rw [Lp.norm_def, eLpNorm_congr_ae (coeFn_toLp μ f)]
 
 /-- `ContinuousMap.toLp` sends the constant continuous map `c` to `MeasureTheory.Lp.const p μ c`. -/
 @[simp]
