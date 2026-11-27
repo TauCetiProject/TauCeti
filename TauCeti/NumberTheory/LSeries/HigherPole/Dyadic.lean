@@ -40,7 +40,8 @@ noncomputable def dyadicWeight : ℕ → ℝ :=
 open Classical in
 /-- The dyadic weight is the identity on the powers of two and vanishes elsewhere. -/
 theorem dyadicWeight_apply (n : ℕ) :
-    dyadicWeight n = if ∃ j : ℕ, 2 ^ j = n then (n : ℝ) else 0 := (rfl)
+    dyadicWeight n = if ∃ j : ℕ, 2 ^ j = n then (n : ℝ) else 0 := by
+  simp only [dyadicWeight, Set.indicator_apply, Set.mem_range]
 
 /-- At a power of two the weight is the power itself. -/
 @[simp]
@@ -64,9 +65,8 @@ theorem LSeriesHasSum_dyadicWeight {s : ℂ} (hs : 1 < s.re) :
     LSeriesHasSum (fun n ↦ (dyadicWeight n : ℂ)) s
       (1 - Complex.exp ((1 - s) * Real.log 2))⁻¹ := by
   have hratio : ‖Complex.exp ((1 - s) * Real.log 2)‖ < 1 := by
-    rw [Complex.norm_exp, Real.exp_lt_one_iff, Complex.re_mul_ofReal, Complex.sub_re,
-      Complex.one_re]
-    exact mul_neg_of_neg_of_pos (sub_neg.mpr hs) (Real.log_pos one_lt_two)
+    rw [Complex.norm_exp, Complex.re_mul_ofReal]
+    simpa using mul_neg_of_neg_of_pos (sub_neg.mpr hs) (Real.log_pos one_lt_two)
   refine ((Nat.pow_right_injective (le_refl 2)).hasSum_iff fun n hn ↦ ?_).mp ?_
   · have hzero := Set.indicator_of_notMem hn (Nat.cast : ℕ → ℝ)
     simp [LSeries.term, dyadicWeight, hzero]
@@ -123,9 +123,9 @@ theorem tendsto_summatory_dyadicWeight_div_mul_two_pow {m : ℕ} {c : ℝ}
   rw [sub_zero] at hsub
   refine hsub.congr fun j ↦ ?_
   have hmem : c * 2 ^ j ∈ Set.Ico ((2 : ℝ) ^ (m + j)) (2 ^ (m + j + 1)) := by
-    rw [Set.mem_Ico, Nat.add_right_comm m j 1, pow_add 2 m j, pow_add 2 (m + 1) j]
-    exact ⟨mul_le_mul_of_nonneg_right hc.1 (by positivity),
-      mul_lt_mul_of_pos_right hc.2 (by positivity)⟩
+    have hj : 0 < (2 : ℝ) ^ j := by positivity
+    simpa [Set.mem_Ico, pow_add, pow_succ, mul_right_comm] using
+      And.intro (mul_le_mul_of_nonneg_right hc.1 hj.le) (mul_lt_mul_of_pos_right hc.2 hj)
   rw [summatory_dyadicWeight_of_mem_Ico hmem, Nat.add_right_comm m j 1, pow_add 2 (m + 1) j]
   dsimp
   field_simp
