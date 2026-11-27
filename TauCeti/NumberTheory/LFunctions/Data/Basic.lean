@@ -228,8 +228,7 @@ structure HasFunctionalEquation : Prop where
 variable {d}
 
 /-- Construct `HasMeromorphicContinuation` from the exact pole orders on the support of
-`d.polarOrder` and analyticity away from the support. Global meromorphy is derived from
-`meromorphicAt_of_meromorphicOrderAt_ne_zero` at recorded poles and analyticity elsewhere. -/
+`d.polarOrder` and analyticity away from the support. -/
 theorem hasMeromorphicContinuation_of_meromorphicOrderAt
     (hord : ∀ p : ℂ, d.polarOrder p ≠ 0 →
       meromorphicOrderAt d.completed p = (-(d.polarOrder p : ℤ) : WithTop ℤ))

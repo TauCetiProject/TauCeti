@@ -7,8 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.Residue
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.TrivialZeros
-import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
-import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.Continuation
 
 /-!
 # The origin and trivial-zero terms of the Dedekind zeta Riesz formula
@@ -34,14 +33,11 @@ theorem residue_rieszRemainderMellin_dedekindZetaC_zero {y : ℂ} (hy : y ≠ 0)
         ((nrRealPlaces K : ℂ) + nrComplexPlaces K - 1) * (1 + log y) := by
   have horder : meromorphicOrderAt (dedekindZetaC K) 0 =
       ((nrRealPlaces K : ℤ) + nrComplexPlaces K - 1 : ℤ) := by
-    have h := meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat
-      (nrRealPlaces K) (nrComplexPlaces K) (n := 1) le_rfl
-    rw [Nat.cast_one, sub_self, ite_eq_right Nat.not_even_one] at h
-    rw [← dedekindZetaData_continuedL, (dedekindZetaData K).meromorphicOrderAt_continuedL
-      (dedekindZetaData_hasMeromorphicContinuation K).meromorphic, dedekindZetaData_completed,
-      meromorphicOrderAt_completedDedekindZeta_zero, funext (dedekindZetaData_gammaFactor K), h,
-      sub_neg_eq_add, ← WithTop.coe_add]
+    have hr := NumberField.Units.rank_add_one K
+    rw [Nat.card_eq_fintype_card, card_eq_nrRealPlaces_add_nrComplexPlaces] at hr
+    rw [meromorphicOrderAt_dedekindZetaC_zero K]
     congr 1
+    omega
   rw [(meromorphic_dedekindZetaC K).residue_rieszRemainderMellin_mul_cpow_zero horder hy]
   push_cast
   norm_num
