@@ -24,7 +24,8 @@ of a curried family `(p, x, y) ↦ H p x y` that is `Cⁿ` on `P × E × G`
 (`TauCeti.contDiff_uncurry_apply`).
 
 A slice `f p` of a family `f : P → E → X` that is jointly `C^n` at `(p, x)` is `C^n` at `x`
-(`ContDiffAt.uncurry_left`).
+(`ContDiffAt.uncurry_left`), and so is the slice `(x, y) ↦ H ((p, x), y)` of a family `H` on
+`(P × E) × G` that is `C^n` at `((p, x), y)` (`ContDiffAt.comp_prodMap_prodMk_right`).
 
 For a family `F : P × E → X` smooth at `(p, x)`, the spatial differential
 `(q, y) ↦ fderiv (F (q, ·)) y` is smooth jointly (`ContDiffAt.fderiv_slice`), smoothness persists
@@ -107,6 +108,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 theorem uncurry_left {n : WithTop ℕ∞} {f : P → E → X}
     (hf : ContDiffAt 𝕜 n (Function.uncurry f) (p, x)) : ContDiffAt 𝕜 n (f p) x :=
   hf.comp x (contDiffAt_const.prodMk contDiffAt_id)
+
+/-- A slice `(x, y) ↦ H ((p, x), y)` of a family `H` on `(P × E) × G` that is jointly `C^n` at
+`((p, x), y)` is `C^n` at `(x, y)`. -/
+theorem comp_prodMap_prodMk_right {n : WithTop ℕ∞} {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace 𝕜 G] {H : (P × E) × G → X} {y : G} (hH : ContDiffAt 𝕜 n H ((p, x), y)) :
+    ContDiffAt 𝕜 n (fun q : E × G ↦ H ((p, q.1), q.2)) (x, y) :=
+  hH.comp (x, y) ((contDiff_prodMk_right p).prodMap contDiff_id).contDiffAt
 
 /-- The spatial differential of a `C^n` family is `C^m` jointly in the parameter and the spatial
 variable, for `m + 1 ≤ n`. -/
