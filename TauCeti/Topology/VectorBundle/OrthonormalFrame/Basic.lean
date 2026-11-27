@@ -634,6 +634,13 @@ variable [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpa
   [TopologicalSpace B] [FiberBundle F E] [VectorBundle 𝕜 F E] [ContinuousFiberNorm F E]
   [CompleteSpace V]
 
+omit [ContinuousFiberNorm F E] [CompleteSpace V] in
+/-- An orthonormal frame of a fibre identifies `V` linearly with the model fibre `F`: the frame
+followed by a linear trivialization of `E` at its base point. -/
+theorem nonempty_linearEquiv (p : OrthonormalFrameBundle 𝕜 F E V) : Nonempty (V ≃ₗ[𝕜] F) :=
+  ⟨p.frame.toLinearEquiv.trans ((trivializationAt F E p.proj).continuousLinearEquivAt 𝕜 p.proj
+    (mem_baseSet_trivializationAt F E p.proj)).toLinearEquiv⟩
+
 /-- When `V` has the dimension of the model fibre, the orthonormal frame bundle is locally trivial
 with fibre the unitary group of `V`, by trivializations equivariant for the right action. -/
 theorem exists_trivialization [FiniteDimensional 𝕜 F] [FiniteDimensional 𝕜 V]

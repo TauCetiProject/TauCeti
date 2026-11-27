@@ -278,6 +278,59 @@ theorem exists_trivialization_orientedFrames [ContinuousFiberNorm F E] [Nonempty
   exact ⟨t, ht ▸ hx, fun g p hp ↦
     SMulMemIff.apply_smul_eq_of_apply_mk_eq fun hgp ↦ hteq g p hgp (ht ▸ hp)⟩
 
+/-- **Orienting a reduction of the structure group.** If `S` is a locally trivial reduction of the
+orthonormal frame bundle to `H`, and `H` contains an orientation-reversing element `r`, then the
+positively oriented frames of `S` form a locally trivial reduction to `H ⊓ SO(V)`. Near each point,
+a continuous local section of `S` is made positively oriented by acting with `r` where it is not,
+which is a locally constant correction since the positively oriented frames are clopen. -/
+theorem isLocallyTrivialReduction_inter_orientedFrames [ContinuousFiberNorm F E]
+    [FiniteDimensional ℝ F] {H : Subgroup (unitary (V →L[ℝ] V))}
+    {S : Set (OrthonormalFrameBundle ℝ F E V)} [SMulMemIff H S]
+    (hS : IsLocallyTrivialReduction (proj : OrthonormalFrameBundle ℝ F E V → B) H S)
+    {r : unitary (V →L[ℝ] V)} (hrH : r ∈ H)
+    (hr : r ∉ specialOrthogonalGroup V) :
+    IsLocallyTrivialReduction (proj : OrthonormalFrameBundle ℝ F E V → B)
+      (H ⊓ specialOrthogonalGroup V) (S ∩ orientedFrames s o) := by
+  have hι : Fintype.card ι = finrank ℝ V := Fact.out
+  refine isLocallyTrivialReduction_of_forall_exists_section fun x ↦ ?_
+  obtain ⟨t, hxt, -⟩ := isLocallyTrivialReduction_iff.1 hS x
+  obtain ⟨eV⟩ := (t.toOpenPartialHomeomorph.symm (x, 1) : S).val.nonempty_linearEquiv
+  have : FiniteDimensional ℝ V := LinearEquiv.finiteDimensional eV.symm
+  -- The local section of `S` given by `t`, and its correction by `r` where it is not oriented.
+  let q₀ : B → OrthonormalFrameBundle ℝ F E V := fun y ↦ t.toOpenPartialHomeomorph.symm (y, 1)
+  have hq₀ : ContinuousOn q₀ t.baseSet :=
+    continuous_subtypeVal.comp_continuousOn (t.toOpenPartialHomeomorph.continuousOn_symm.comp
+      (continuousOn_id.prodMk continuousOn_const) fun _ hy ↦ t.mem_target.2 hy)
+  classical
+  let q : B → OrthonormalFrameBundle ℝ F E V := fun y ↦
+    if q₀ y ∈ orientedFrames s o then q₀ y else op r • q₀ y
+  have hq_pos {y : B} (h : q₀ y ∈ orientedFrames s o) : q y = q₀ y := ite_eq_left h
+  have hq_neg {y : B} (h : q₀ y ∉ orientedFrames s o) : q y = op r • q₀ y := ite_eq_right h
+  refine ⟨t.baseSet, t.open_baseSet, hxt, q, fun y hy ↦ ⟨?_, ?_⟩, fun y hy ↦ ?_⟩
+  · have hS₀ : q₀ y ∈ S := (t.toOpenPartialHomeomorph.symm (y, 1)).property
+    by_cases h : q₀ y ∈ orientedFrames s o
+    · rw [hq_pos h]
+      exact ⟨hS₀, h⟩
+    · rw [hq_neg h]
+      refine ⟨(SMulMemIff.smul_mem_iff hS₀).2 hrH, ?_⟩
+      rw [← not_not (a := op r • q₀ y ∈ orientedFrames s o), notMem_orientedFrames_iff hι,
+        smul_mem_orientedFrames_iff hι ((notMem_orientedFrames_iff hι).1 h)]
+      exact hr
+  · have hproj : (q₀ y).proj = y := t.proj_symm_apply' hy
+    by_cases h : q₀ y ∈ orientedFrames s o
+    · rw [hq_pos h, hproj]
+    · rw [hq_neg h, proj_smul, hproj]
+  · -- The correction is locally constant, since the oriented frames are clopen.
+    have hy₀ : ContinuousAt q₀ y := hq₀.continuousAt (t.open_baseSet.mem_nhds hy)
+    by_cases h : q₀ y ∈ orientedFrames s o
+    · refine (hy₀.congr ?_).continuousWithinAt
+      filter_upwards [hy₀.preimage_mem_nhds ((isOpen_orientedFrames hι).mem_nhds h)] with z hz
+      exact (hq_pos hz).symm
+    · have h' := (notMem_orientedFrames_iff hι).1 h
+      refine (((continuous_const_smul (op r)).continuousAt.comp hy₀).congr ?_).continuousWithinAt
+      filter_upwards [hy₀.preimage_mem_nhds ((isOpen_orientedFrames hι).mem_nhds h')] with z hz
+      exact (hq_neg ((notMem_orientedFrames_iff hι).2 hz)).symm
+
 end OrientedTrivialization
 
 end TauCeti.OrthonormalFrameBundle

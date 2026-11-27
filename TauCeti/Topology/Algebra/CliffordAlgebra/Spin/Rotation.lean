@@ -23,6 +23,8 @@ rotation ends at the nontrivial point of the two-element kernel.
 
 ## Main definitions and results
 
+* `CliffordAlgebra.continuous_spinCircle`: the circle subgroup `z ↦ Re z + Im z ι u ι w` of the
+  Spin group, for orthogonal `u, w` with `Q u * Q w = 1`, is continuous.
 * `CliffordAlgebra.spinRotationPath`: the resulting path from `1` to `-1`.
 * `CliffordAlgebra.joined_one_negOne_realCliffordSpinGroupZero_two`: the two elements of the
   double-cover kernel in `Spin(2)` are joined.
@@ -50,6 +52,16 @@ universe u
 
 variable {V : Type u} [AddCommGroup V] [Module ℝ V]
   (Q : QuadraticForm ℝ V) (x y : V)
+
+omit x y in
+/-- **The circle subgroup of `Spin(Q)` is continuous**: `z ↦ Re z + Im z ι u ι w` is affine in the
+real and imaginary parts of `z`. -/
+@[fun_prop]
+theorem continuous_spinCircle {u w : V} (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) :
+    Continuous (spinCircle Q u w huw h) := by
+  refine continuous_induced_rng.2 (Continuous.congr ?_ fun z ↦ (coe_spinCircle huw h z).symm)
+  simp only [Algebra.algebraMap_eq_smul_one]
+  fun_prop
 
 /-- The Spin element associated to an angle varies continuously with that angle. -/
 @[fun_prop]
