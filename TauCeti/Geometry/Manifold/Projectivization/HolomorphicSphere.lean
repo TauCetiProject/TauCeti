@@ -60,9 +60,9 @@ The proof goes through the field of meromorphic functions on the sphere.
   of a holomorphic map to projective space are meromorphic.
 * `TauCeti.RiemannSurface.eventually_rep_ne_zero`: a homogeneous coordinate of a holomorphic map
   on a connected Riemann surface that is nonzero somewhere has isolated zeros.
-* `TauCeti.RiemannSurface.apply_infty_eq_mk_coeff`: a continuous map from the Riemann sphere to
-  projective space given at the finite points by polynomials of degree at most `d` takes at `∞`
-  the value of their coefficient vector of `X^d`.
+* `TauCeti.RiemannSurface.apply_infty_eq_mk_coeff`: a map from the Riemann sphere to projective
+  space that is continuous at `∞` and given at the finite points by polynomials of degree at most
+  `d` takes at `∞` the value of their coefficient vector of `X^d`.
 * `TauCeti.RiemannSurface.exists_polynomial_eq_mk`: a holomorphic map from the Riemann sphere to
   projective space is given by polynomials.
 * `TauCeti.RiemannSurface.exists_injective_eq_map_of_natDegree_le_one`: when these polynomials
@@ -189,11 +189,11 @@ private theorem exists_polynomial_eventually_eq_mk
   simp only [Pi.smul_apply, smul_eq_mul, key]
   field_simp
 
-/-- A continuous map from the Riemann sphere to projective space given at every finite point by
-polynomials of degree at most `d` takes at `∞` the value of their coefficient vector of `X^d`,
-when it is nonzero: near `∞`, in the coordinate `w = 1 / z`, the map is given by the reflected
-polynomials `w ^ d Pⱼ(1 / w)`, whose value at `w = 0` is that coefficient vector. -/
-theorem apply_infty_eq_mk_coeff (hu : Continuous u) {P : Fin (n + 1) → ℂ[X]} {d : ℕ}
+/-- A map from the Riemann sphere to projective space that is continuous at `∞` and given at every
+finite point by polynomials of degree at most `d` takes at `∞` the value of their coefficient
+vector of `X^d`, when it is nonzero: near `∞`, in the coordinate `w = 1 / z`, the map is given by
+the reflected polynomials `w ^ d Pⱼ(1 / w)`, whose value at `w = 0` is that coefficient vector. -/
+theorem apply_infty_eq_mk_coeff (hu : ContinuousAt u ∞) {P : Fin (n + 1) → ℂ[X]} {d : ℕ}
     (hdeg : ∀ j, (P j).natDegree ≤ d) (hc : (fun j ↦ (P j).coeff d) ≠ 0)
     (hPz : ∀ z : ℂ, (fun j ↦ (P j).eval z) ≠ 0) (hfin : ∀ z : ℂ, u z = mk ℂ _ (hPz z)) :
     u ∞ = mk ℂ _ hc := by
@@ -217,7 +217,7 @@ theorem apply_infty_eq_mk_coeff (hu : Continuous u) {P : Fin (n + 1) → ℂ[X]}
   have hinf : Tendsto (fun w : ℂ ↦ ((w⁻¹ : ℂ) : OnePoint ℂ)) (𝓝[≠] 0) (𝓝 ∞) :=
     tendsto_coe_infty_of_tendsto_cobounded tendsto_inv₀_nhdsNE_zero
   simp_rw [← hR0]
-  refine tendsto_nhds_unique ((hu.tendsto _).comp hinf)
+  refine tendsto_nhds_unique (hu.tendsto.comp hinf)
     ((hRcont.tendsto 0).mono_left nhdsWithin_le_nhds |>.congr' ?_)
   filter_upwards [self_mem_nhdsWithin] with w (hw : w ≠ 0)
   rw [comp_apply, hfin, eq_comm, mk_eq_mk_iff']
@@ -266,7 +266,8 @@ theorem exists_polynomial_eq_mk (hu : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, Fin n 
       apply leadingCoeff_ne_zero.2 hj₀'
       rw [leadingCoeff, ← hj₀]
       exact congr_fun hc j₀
-  exact ⟨d, P, hdeg, ⟨hcoeff, apply_infty_eq_mk_coeff hu.continuous hdeg hcoeff hPz hfin⟩,
+  exact ⟨d, P, hdeg,
+    ⟨hcoeff, apply_infty_eq_mk_coeff hu.continuous.continuousAt hdeg hcoeff hPz hfin⟩,
     fun z ↦ ⟨hPz z, hfin z⟩⟩
 
 /-- **Maps of degree one are lines.** If a map `u` from the Riemann sphere to projective space is
