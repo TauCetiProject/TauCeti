@@ -48,7 +48,10 @@ Cut-off frames also change frames. Where a cutoff `ρ` equals `1` inside the bas
 trivialization `t₀`, a cut-off frame coefficient is a combination of the coefficients in `t₀`
 (`Bundle.Trivialization.cutoffFrameCoeff_apply_eq_sum`). For a cutoff `θ` supported where `ρ = 1`,
 every section `s` is `∑ᵢ θ ρ bᵢ*(t₀ s) ρ t₀⁻¹ bᵢ + (1 - θ) s`
-(`Bundle.Trivialization.smul_eq_sum_smul_cutoffFrameSection_add`).
+(`Bundle.Trivialization.smul_eq_sum_smul_cutoffFrameSection_add`). Applied with `θ = 1` near a
+point `x`, this shows that an operator between sections of complex bundles which is linear over the
+complex-valued smooth functions, from a bundle of finite rank, is pointwise: `(P s)(x)` only depends
+on `s(x)` (`TauCeti.apply_eq_apply_of_map_smul`).
 
 In a chart `e` whose source lies in the base set of `t`, a Schwartz function `u` on the model space
 and a cutoff `ψ` with compact support in the chart target give the **chart cut-off section**
@@ -162,6 +165,18 @@ theorem cutoffFrameCoeff_apply (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ 
     (h : Cₛ^n⟮I; W, F⟯) (x : M) :
     t.cutoffFrameCoeff χ hχ ℓ h x = χ x • ℓ (t.continuousLinearMapAt ℂ x (h x)) :=
   (rfl)
+
+/-- Cut-off frame coefficients are linear over the complex-valued `C^n` functions: the coefficient
+of `g h` is `g` times the coefficient of `h`. -/
+@[simp]
+theorem cutoffFrameCoeff_smul_of_normedAlgebra (χ : C^n⟮I, M; ℝ⟯) (hχ : tsupport χ ⊆ t.baseSet)
+    (ℓ : W →L[ℂ] ℂ) (g : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (h : Cₛ^n⟮I; W, F⟯) :
+    t.cutoffFrameCoeff χ hχ ℓ (g • h) = g * t.cutoffFrameCoeff χ hχ ℓ h := by
+  ext x
+  simp only [cutoffFrameCoeff_apply, ContMDiffSection.smul_apply_of_normedAlgebra, map_smul,
+    smul_eq_mul, ContMDiffMap.coe_mul, Pi.mul_apply]
+  rw [Complex.real_smul, Complex.real_smul]
+  ring
 
 /-- On the base set of `t`, a real cut-off frame section `g t⁻¹ v` is the complex-linear inverse
 `t⁻¹ₓ` applied to `(g x : ℂ) • v`. -/
@@ -493,5 +508,53 @@ theorem exists_sum_cutoffPullback_eq_one_and_baseSet_cutoff :
     (hσ1 i).self_of_nhdsSet _ (mem_image_of_mem _ hy)⟩
 
 end Partition
+
+section Pointwise
+
+variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℝ EM] [FiniteDimensional ℝ EM]
+  {HM : Type*} [TopologicalSpace HM] {I : ModelWithCorners ℝ EM HM} {M : Type*}
+  [TopologicalSpace M] [ChartedSpace HM M] [T2Space M] [IsManifold I ∞ M]
+  {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [FiniteDimensional ℂ V]
+  {E : M → Type*} [TopologicalSpace (TotalSpace V E)] [∀ x, AddCommGroup (E x)]
+  [∀ x, Module ℝ (E x)] [∀ x, Module ℂ (E x)] [∀ x, TopologicalSpace (E x)] [FiberBundle V E]
+  [VectorBundle ℝ V E] [VectorBundle ℂ V E] [ContMDiffVectorBundle ∞ V E I]
+  {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+  {F : M → Type*} [TopologicalSpace (TotalSpace W F)] [∀ x, AddCommGroup (F x)]
+  [∀ x, Module ℝ (F x)] [∀ x, Module ℂ (F x)] [∀ x, TopologicalSpace (F x)] [FiberBundle W F]
+  [VectorBundle ℝ W F] [VectorBundle ℂ W F]
+
+/-- **Operators linear over functions are pointwise.** Let `P : Γ(E) → Γ(F)` be an operator between
+the smooth sections of complex vector bundles which is linear over the complex-valued smooth
+functions, with `E` of finite rank. Then `(P s)(x)` only depends on `s(x)`. -/
+theorem apply_eq_apply_of_map_smul {P : Cₛ^∞⟮I; V, E⟯ →ₗ[ℂ] Cₛ^∞⟮I; W, F⟯}
+    (hP : ∀ (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) s, P (f • s) = f • P s) {s s' : Cₛ^∞⟮I; V, E⟯} {x : M}
+    (h : s x = s' x) : P s x = P s' x := by
+  suffices hz : ∀ u : Cₛ^∞⟮I; V, E⟯, u x = 0 → P u x = 0 by
+    rw [← sub_eq_zero, ← Pi.sub_apply, ← ContMDiffSection.coe_sub, ← map_sub]
+    exact hz _ (by simp [h])
+  intro u hu
+  -- Cutoffs `ρ` and `θ` with `ρ = 1` on the support of `θ`, both supported in the base set of the
+  -- trivialization `t` at `x`, and `θ = 1` near `x`.
+  set t := trivializationAt V E x
+  have ht : t.baseSet ∈ 𝓝 x :=
+    t.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt V E x)
+  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1 ht
+  obtain ⟨θ, -, hθ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x).mem_iff.1
+    (Filter.inter_mem ρ.eventuallyEq_one ht)
+  let ρ' : C^∞⟮I, M; ℝ⟯ := ⟨ρ, ρ.contMDiff⟩
+  let θ' : C^∞⟮I, M; ℝ⟯ := ⟨θ, θ.contMDiff⟩
+  have hρ' : ⇑ρ' = ρ := ContMDiffMap.coeFn_mk _ _
+  have hθ' : ⇑θ' = θ := ContMDiffMap.coeFn_mk _ _
+  -- Near `x`, `u` is a combination of cut-off frame sections whose coefficients vanish at `x`.
+  have hexp := t.smul_eq_sum_smul_cutoffFrameSection_add ρ' (hρ' ▸ hρ) (Module.finBasis ℂ V) θ'
+    (hθ' ▸ hρ' ▸ hθ) u 1
+  rw [one_smul] at hexp
+  rw [hexp, map_add, map_sum]
+  simp only [hP, ContMDiffSection.coe_add, Pi.add_apply, ContMDiffSection.coe_sum,
+    Finset.sum_apply, ContMDiffSection.smul_apply_of_normedAlgebra, ContMDiffMap.coe_mul,
+    Pi.mul_apply, Bundle.Trivialization.cutoffFrameCoeff_apply, hu]
+  simp [hθ']
+
+end Pointwise
 
 end TauCeti

@@ -395,7 +395,7 @@ theorem notMem_waveFrontSet_compCLMOfSubmersion_inl {W : Opens (WithLp 2 (E × D
     ∀ x ∈ U, ∀ η : D, η ≠ 0 → (toLp 2 (x, (0 : D)), toLp 2 ((0 : E), η)) ∉
       (compCLMOfSubmersion volume volume K hK hKW hsurj S).waveFrontSet := by
   intro x hx η _ hmem
-  rw [waveFrontSet_compCLMOfSubmersion] at hmem
+  rw [waveFrontSet_compCLMOfSubmersion, mem_covectorPullback] at hmem
   obtain ⟨-, ζ, hζ, hadj⟩ := hmem
   refine h x hx ζ (by simpa [hgK hx] using hζ) ?_
   -- `g = K ∘ ι` near `x` for the inclusion `ι = inlL2`, whose transpose is the first projection.
@@ -569,7 +569,7 @@ theorem adjoint_fderiv_apply_ne_zero_compCLMOfSubmersion (hf : DifferentiableOn 
     ∀ x ∈ Ω, ∀ η, (f x, η) ∈ (compCLMOfSubmersion volume volume k hk hkΩ hksurj S).waveFrontSet →
       (fderiv ℝ f x).adjoint η ≠ 0 := by
   intro x hx η hη
-  rw [waveFrontSet_compCLMOfSubmersion] at hη
+  rw [waveFrontSet_compCLMOfSubmersion, mem_covectorPullback] at hη
   obtain ⟨-, ζ, hζ, hζη⟩ := hη
   dsimp only at hζ hζη
   subst hζη

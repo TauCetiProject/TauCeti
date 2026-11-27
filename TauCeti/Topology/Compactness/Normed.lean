@@ -30,6 +30,9 @@ It also gives a norm-ball version of the tube lemma for properties near a compac
   `K` compact, vanishing outside `K × L` for a compact `L ⊆ X`, is bounded on `K × X`.
 * `TauCeti.exists_nonneg_forall_notMem_norm_lt`: in a compact space covered by open sets `U` and
   `V`, the coordinates of the points of `U` outside `V` are bounded.
+* `TauCeti.eventually_principal_closedBall_prod_cocompact_iff`: a statement holds eventually
+  along `𝓟 (closedBall 0 s) ×ˢ cocompact E` exactly when it holds on a region `‖p‖ ≤ s`,
+  `‖z‖ ≥ R`.
 * `TauCeti.not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop`: a family whose values at
   one point of `S` have norms tending to infinity has images of `S` in no fixed compact set.
 * `TauCeti.tendsto_comap_fst_cocompact_of_eq_zero`: a map on `ℝ × X` vanishing for `|s| > R`
@@ -107,6 +110,24 @@ theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] {U V : Set X} (hV :
     exact hV.isClosed_compl.isCompact
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
   exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
+
+/-- A statement holds eventually along `𝓟 (closedBall 0 s) ×ˢ cocompact E` exactly when it holds
+on a region `‖p‖ ≤ s`, `‖z‖ ≥ R`. -/
+theorem eventually_principal_closedBall_prod_cocompact_iff {E : Type*} [SeminormedAddGroup E]
+    [ProperSpace E] {s : ℝ} {q : H × E → Prop} :
+    (∀ᶠ w in 𝓟 (Metric.closedBall (0 : H) s) ×ˢ cocompact E, q w) ↔
+      ∃ R, ∀ w : H × E, ‖w.1‖ ≤ s → R ≤ ‖w.2‖ → q w := by
+  constructor
+  · intro h
+    obtain ⟨pa, hpa, pb, hpb, hq⟩ := eventually_prod_iff.1 h
+    obtain ⟨R, -, hR⟩ :=
+      hasBasis_cobounded_norm.eventually_iff.mp (Metric.cobounded_eq_cocompact (α := E) ▸ hpb)
+    exact ⟨R, fun w hw₁ hw₂ ↦ hq (eventually_principal.1 hpa w.1 (mem_closedBall_zero_iff.2 hw₁))
+      (hR (Set.mem_ofPred.mpr hw₂))⟩
+  · rintro ⟨R, hR⟩
+    exact eventually_prod_iff.2 ⟨fun p ↦ ‖p‖ ≤ s,
+      eventually_principal.2 fun p hp ↦ mem_closedBall_zero_iff.1 hp, fun z ↦ R ≤ ‖z‖,
+      tendsto_norm_cocompact_atTop.eventually_ge_atTop R, fun hp _ hz ↦ hR (_, _) hp hz⟩
 
 /-- **Unbounded values violate every image bound.** If the norms of the values `u i z` at one point
 `z ∈ S` tend to infinity, then no compact set contains the images `u i '' S` for every `i`. -/

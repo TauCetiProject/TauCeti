@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
-public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Path
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Cayley.Segment
 
 /-!
 # The continuation homotopy of almost complex structures on a manifold
@@ -18,17 +18,19 @@ that family.
 
 Let `σ` be a smooth two-form on `M` and `J₀` a smooth `σ`-compatible almost complex structure.
 Given families `J₁ t` and `J₂ t` of smooth `σ`-tame structures on `M`, the continuation homotopy
-`TauCeti.SmoothTwoForm.Compatible.continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ (s, t)` is, on each
-tangent space `T_x M`, the linear continuation homotopy `TauCeti.Floer.continuationAlmostComplex`
-of `J₁ t x` and `J₂ t x` relative to `J₀ x`: its Cayley coordinate relative to `J₀ x` is
+`TauCeti.SmoothTwoForm.Compatible.continuationAlmostComplex h₀ J₁ J₂ hJ₁ hJ₂ (s, t)` is the
+Cayley segment `TauCeti.SmoothTwoForm.Compatible.cayleySegment` from `J₁ t` to `J₂ t` at time `s`.
+On each tangent space `T_x M` it is the linear continuation homotopy
+`TauCeti.Floer.continuationAlmostComplex` of `J₁ t x` and `J₂ t x` relative to `J₀ x`: its Cayley
+coordinate relative to `J₀ x` is
 
 `(1 - β(s)) • cayley (J₁ t x) + β(s) • cayley (J₂ t x)`,
 
 where `β` is the smooth transition from `0` on `(-∞, 0]` to `1` on `[1, ∞)`. It is `J₁ t` for
 `s ≤ 0` and `J₂ t` for `s ≥ 1`, it is tame, it is compatible when `J₁` and `J₂` are, it has
 period one in `t` when they do, and it is jointly smooth in `(s, t)` and the point of `M` when
-`J₁` and `J₂` are jointly smooth on `ℝ × M`. Smoothness is checked in trivializations of the
-tangent bundle through `TauCeti.SmoothTwoForm.Compatible.contMDiffAt_of_cayley_eq_sum`, so neither
+`J₁` and `J₂` are jointly smooth on `ℝ × M`. Smoothness is that of smooth families of Cayley
+segments, `TauCeti.SmoothTwoForm.Compatible.contMDiffAt_cayleySegment`, so neither
 a global trivialization nor a constant two-form is assumed, and neither closedness of `σ` nor
 compactness of `M` is used.
 
@@ -72,77 +74,20 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   (h₀ : σ.Compatible J₀) (J₁ J₂ : ℝ → SmoothAlmostComplexStructure I M)
   (hJ₁ : ∀ t, σ.Tames (J₁ t)) (hJ₂ : ∀ t, σ.Tames (J₂ t))
 
-/-- The linear continuation homotopy on the tangent space at `x`. -/
-private def continuationAt (z : ℝ × ℝ) (x : M) : AlmostComplexStructure (TangentSpace I x) :=
-  Floer.continuationAlmostComplex (V := TangentSpace I x) (M := Unit) (h₀.compatibleAt x)
-    (fun t _ => (J₁ t).almostComplexStructureAt x) (fun t _ => (J₂ t).almostComplexStructureAt x)
-    (fun t _ => h₀.isNondegenerate.tames_iff.mp (hJ₁ t) x)
-    (fun t _ => h₀.isNondegenerate.tames_iff.mp (hJ₂ t) x) z ()
-
-/-- The Cayley coordinate of the linear continuation homotopy, as a sum over the two end families
-`![J₁ t, J₂ t]` with the weights `![1 - β(s), β(s)]`. -/
-private theorem cayley_continuationAt (z : ℝ × ℝ) (x : M) :
-    (J₀.almostComplexStructureAt x).cayley (continuationAt h₀ J₁ J₂ hJ₁ hJ₂ z x) =
-      ∑ i : Fin 2, ![1 - smoothTransition z.1, smoothTransition z.1] i •
-        (J₀.almostComplexStructureAt x).cayley
-          ((![J₁ z.2, J₂ z.2] i).almostComplexStructureAt x) := by
-  rw [continuationAt, Floer.cayley_continuationAlmostComplex, Fin.sum_univ_two]
-  rfl
-
-/-- The linear continuation homotopy is smooth on `M` for a fixed `(s, t)`. -/
-private theorem contMDiffAt_continuationAt (z : ℝ × ℝ) (x : M) :
-    ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] E)) (⊤ : ℕ∞)
-      (fun y : M => TotalSpace.mk' (E →L[ℝ] E)
-        (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-        y (LinearMap.toContinuousLinearMap (continuationAt h₀ J₁ J₂ hJ₁ hJ₂ z y).toLinearMap)) x :=
-  h₀.contMDiffAt_of_cayley_eq_sum (b := id) (L := fun i _ => ![J₁ z.2, J₂ z.2] i)
-    (a := fun i _ => ![1 - smoothTransition z.1, smoothTransition z.1] i)
-    (fun y => Floer.tames_continuationAlmostComplex (h₀.compatibleAt y) z ())
-    (fun i _ => by fin_cases i <;> simp [hJ₁, hJ₂])
-    (cayley_continuationAt h₀ J₁ J₂ hJ₁ hJ₂ z) contMDiffAt_id (fun _ => contMDiffAt_const)
-    (fun i => (![J₁ z.2, J₂ z.2] i).toEndomorphism.contMDiff x)
-
 /-- The **continuation homotopy** of smooth almost complex structures on `M` from the family
 `J₁ t` to the family `J₂ t` of `σ`-tame structures, relative to a `σ`-compatible base structure
-`J₀`. At `z = (s, t)` it is, on each tangent space, the inverse Cayley transform relative to `J₀`
-of `(1 - β(s)) • cayley (J₁ t) + β(s) • cayley (J₂ t)`, where `β` is the smooth transition
-function: the linear continuation homotopy `TauCeti.Floer.continuationAlmostComplex`. It is
-`J₁ t` for `s ≤ 0` and `J₂ t` for `s ≥ 1`. -/
-def continuationAlmostComplex (z : ℝ × ℝ) : SmoothAlmostComplexStructure I M where
-  toEndomorphism :=
-    ⟨fun x => LinearMap.toContinuousLinearMap (continuationAt h₀ J₁ J₂ hJ₁ hJ₂ z x).toLinearMap,
-      contMDiffAt_continuationAt h₀ J₁ J₂ hJ₁ hJ₂ z⟩
-  square_neg x := by
-    ext v
-    -- The endomorphism is the continuous version of the linear fiberwise complex structure.
-    exact AlmostComplexStructure.apply_apply _ v
-
-/-- The endomorphism of the continuation homotopy at `x` is the linear continuation homotopy
-there, read as a continuous endomorphism. -/
-private theorem continuationAlmostComplex_toEndomorphism (z : ℝ × ℝ) (x : M) :
-    (h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z).toEndomorphism x =
-      LinearMap.toContinuousLinearMap (continuationAt h₀ J₁ J₂ hJ₁ hJ₂ z x).toLinearMap :=
-  (rfl)
-
-/-- On every tangent space, the continuation homotopy is the linear continuation homotopy of the
-end structures there, relative to `J₀`. -/
-theorem almostComplexStructureAt_continuationAlmostComplex (z : ℝ × ℝ) (x : M) :
-    (h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z).almostComplexStructureAt x =
-      Floer.continuationAlmostComplex (V := TangentSpace I x) (M := Unit) (h₀.compatibleAt x)
-        (fun t _ => (J₁ t).almostComplexStructureAt x)
-        (fun t _ => (J₂ t).almostComplexStructureAt x)
-        (fun t _ => h₀.isNondegenerate.tames_iff.mp (hJ₁ t) x)
-        (fun t _ => h₀.isNondegenerate.tames_iff.mp (hJ₂ t) x) z () := by
-  apply AlmostComplexStructure.toLinearMap_injective
-  rw [SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
-    continuationAlmostComplex_toEndomorphism, LinearMap.coe_toContinuousLinearMap, continuationAt]
+`J₀`. At `z = (s, t)` it is the Cayley segment from `J₁ t` to `J₂ t` at time `s`: on each tangent
+space, the inverse Cayley transform relative to `J₀` of
+`(1 - β(s)) • cayley (J₁ t) + β(s) • cayley (J₂ t)`, where `β` is the smooth transition function,
+which is the linear continuation homotopy `TauCeti.Floer.continuationAlmostComplex`. It is `J₁ t`
+for `s ≤ 0` and `J₂ t` for `s ≥ 1`. -/
+def continuationAlmostComplex (z : ℝ × ℝ) : SmoothAlmostComplexStructure I M :=
+  h₀.cayleySegment (hJ₁ z.2) (hJ₂ z.2) z.1
 
 /-- The continuation homotopy is tamed by `σ`. -/
 theorem tames_continuationAlmostComplex (z : ℝ × ℝ) :
-    σ.Tames (h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z) := by
-  refine h₀.isNondegenerate.tames_iff.mpr fun x => ?_
-  rw [almostComplexStructureAt_continuationAlmostComplex]
-  exact Floer.tames_continuationAlmostComplex (h₀.compatibleAt x) z ()
+    σ.Tames (h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z) :=
+  h₀.tames_cayleySegment _ _ z.1
 
 /-- On every tangent space, the Cayley coordinate of the continuation homotopy at `z = (s, t)`
 relative to `J₀` is `(1 - β(s)) • cayley (J₁ t) + β(s) • cayley (J₂ t)`. This characterizes the
@@ -154,49 +99,51 @@ theorem cayley_continuationAlmostComplex (z : ℝ × ℝ) (x : M) :
       (1 - smoothTransition z.1) •
           (J₀.almostComplexStructureAt x).cayley ((J₁ z.2).almostComplexStructureAt x) +
         smoothTransition z.1 •
-          (J₀.almostComplexStructureAt x).cayley ((J₂ z.2).almostComplexStructureAt x) := by
-  rw [almostComplexStructureAt_continuationAlmostComplex, Floer.cayley_continuationAlmostComplex]
+          (J₀.almostComplexStructureAt x).cayley ((J₂ z.2).almostComplexStructureAt x) :=
+  h₀.cayley_almostComplexStructureAt_cayleySegment _ _ z.1 x
+
+/-- On every tangent space, the continuation homotopy is the linear continuation homotopy of the
+end structures there, relative to `J₀`. -/
+theorem almostComplexStructureAt_continuationAlmostComplex (z : ℝ × ℝ) (x : M) :
+    (h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z).almostComplexStructureAt x =
+      Floer.continuationAlmostComplex (V := TangentSpace I x) (M := Unit) (h₀.compatibleAt x)
+        (fun t _ => (J₁ t).almostComplexStructureAt x)
+        (fun t _ => (J₂ t).almostComplexStructureAt x)
+        (fun t _ => h₀.isNondegenerate.tames_iff.mp (hJ₁ t) x)
+        (fun t _ => h₀.isNondegenerate.tames_iff.mp (hJ₂ t) x) z () :=
+  (h₀.compatibleAt x).eq_of_cayley_eq
+    (h₀.isNondegenerate.tames_iff.mp (h₀.tames_continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z) x)
+    (Floer.tames_continuationAlmostComplex (h₀.compatibleAt x) z ()) <| by
+      rw [cayley_continuationAlmostComplex, Floer.cayley_continuationAlmostComplex]
 
 /-- The continuation homotopy is `σ`-compatible when the two families are. -/
 theorem compatible_continuationAlmostComplex (hJ₁c : ∀ t, σ.Compatible (J₁ t))
     (hJ₂c : ∀ t, σ.Compatible (J₂ t)) (z : ℝ × ℝ) :
-    σ.Compatible (h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z) := by
-  refine h₀.isNondegenerate.compatible_iff.mpr fun x => ?_
-  rw [almostComplexStructureAt_continuationAlmostComplex]
-  exact Floer.compatible_continuationAlmostComplex (h₀.compatibleAt x) (x := ())
-    (h₀.isNondegenerate.compatible_iff.mp (hJ₁c z.2) x)
-    (h₀.isNondegenerate.compatible_iff.mp (hJ₂c z.2) x)
+    σ.Compatible (h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z) :=
+  h₀.compatible_cayleySegment (hJ₁c z.2) (hJ₂c z.2) z.1
 
 /-- The continuation homotopy is `J₁ t` for `s ≤ 0`. -/
 @[simp]
 theorem continuationAlmostComplex_of_nonpos {z : ℝ × ℝ} (hz : z.1 ≤ 0) :
     h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z = J₁ z.2 :=
-  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-    rw [almostComplexStructureAt_continuationAlmostComplex,
-      Floer.continuationAlmostComplex_of_nonpos _ hz]
+  h₀.cayleySegment_of_nonpos _ _ hz
 
 /-- The continuation homotopy is `J₂ t` for `s ≥ 1`. -/
 @[simp]
 theorem continuationAlmostComplex_of_one_le {z : ℝ × ℝ} (hz : 1 ≤ z.1) :
     h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ z = J₂ z.2 :=
-  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-    rw [almostComplexStructureAt_continuationAlmostComplex,
-      Floer.continuationAlmostComplex_of_one_le _ hz]
+  h₀.cayleySegment_of_one_le _ _ hz
 
 /-- The continuation homotopy from a family to itself is that family at every `s`. -/
 @[simp]
 theorem continuationAlmostComplex_self (z : ℝ × ℝ) :
     h₀.continuationAlmostComplex J₁ J₁ hJ₁ hJ₁ z = J₁ z.2 :=
-  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-    rw [almostComplexStructureAt_continuationAlmostComplex, Floer.continuationAlmostComplex_self]
+  h₀.cayleySegment_self _ z.1
 
 /-- The continuation homotopy of two families of period one in `t` has period one in `t`. -/
 theorem periodic_continuationAlmostComplex (hJ₁p : Periodic J₁ 1) (hJ₂p : Periodic J₂ 1)
     (s : ℝ) : Periodic (fun t => h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ (s, t)) 1 :=
-  fun t => SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
-    simp only [almostComplexStructureAt_continuationAlmostComplex]
-    exact Floer.periodic_continuationAlmostComplex (h₀.compatibleAt x)
-      (fun t => funext fun _ => by rw [hJ₁p t]) (fun t => funext fun _ => by rw [hJ₂p t]) s () t
+  fun t => h₀.cayleySegment_congr _ _ _ _ (hJ₁p t) (hJ₂p t) s
 
 /-! ### Smoothness -/
 
@@ -224,24 +171,8 @@ theorem contMDiffAt_continuationAlmostComplex {z : N → ℝ × ℝ} {b : N → 
     ContMDiffAt I' (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun y => TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M => TangentSpace I x →L[ℝ] TangentSpace I x)
-        (b y) ((h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ (z y)).toEndomorphism (b y))) y₀ := by
-  simp only [continuationAlmostComplex_toEndomorphism]
-  have hβ : ContMDiffAt I' 𝓘(ℝ) n (fun y => smoothTransition (z y).1) y₀ :=
-    ((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contMDiff.contMDiffAt.comp y₀ hs
-  refine h₀.contMDiffAt_of_cayley_eq_sum
-    (K := fun y => continuationAt h₀ J₁ J₂ hJ₁ hJ₂ (z y) (b y))
-    (L := fun i y => ![J₁ (z y).2, J₂ (z y).2] i)
-    (a := fun i y => ![1 - smoothTransition (z y).1, smoothTransition (z y).1] i)
-    (fun y => Floer.tames_continuationAlmostComplex (h₀.compatibleAt (b y)) _ ())
-    (fun i _ => by fin_cases i <;> simp [hJ₁, hJ₂])
-    (fun y => cayley_continuationAt h₀ J₁ J₂ hJ₁ hJ₂ _ _) hb (fun i => ?_) (fun i => ?_)
-  · fin_cases i
-    · exact contMDiffAt_const.sub hβ
-    · exact hβ
-  · fin_cases i
-    · exact hJ₁s
-    · exact hJ₂s
-
+        (b y) ((h₀.continuationAlmostComplex J₁ J₂ hJ₁ hJ₂ (z y)).toEndomorphism (b y))) y₀ :=
+  h₀.contMDiffAt_cayleySegment (fun y => hJ₁ (z y).2) (fun y => hJ₂ (z y).2) hs hb hJ₁s hJ₂s
 /-- **The continuation homotopy is jointly smooth.** For families `J₁ t` and `J₂ t` which are
 jointly `C^n` on `ℝ × M` as sections of the tangent endomorphism bundle, the continuation homotopy
 is jointly `C^n` in `z = (s, t)` and the point of `M`. -/

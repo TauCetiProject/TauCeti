@@ -16,12 +16,14 @@ public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Analysis.PDE.Spectrum.CompleteFamily
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Sobolev.W1p.Lipschitz
 import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.Analysis.PDE.Neumann.SecondEigenvalue
 
 /-!
 # The Dirichlet, Neumann and mixed eigenvalues of `-Δ` on an interval
@@ -42,7 +44,7 @@ classically, so it is a weak Dirichlet eigenfunction
 (`TauCeti.PDE.exists_value_ae_eq_and_energyFormH1_eq_of_laplacian_eq`). Conversely, the energy
 form is symmetric, so an eigenfunction for any other `κ` is orthogonal in `L²(a, b)` to every
 sine mode, and it vanishes by completeness of the sine system
-(`TauCeti.ae_eq_zero_of_forall_integral_mul_sin_eq_zero`).
+(`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_sin_eq_zero`).
 
 The same explicit description holds for the other boundary conditions of the mixed problem, posed
 on the space `H¹_Γ(a, b)` of Sobolev functions vanishing on a boundary part `Γ`
@@ -66,8 +68,8 @@ term `g'(b) φ(b) - g'(a) φ(a)`, which vanishes: `g'` vanishes at each Neumann 
 each Dirichlet one. By density the mode is a weak eigenfunction. The Neumann modes are generators
 themselves after multiplication by a bump equal to one near `[a, b]`; the mixed modes are
 restrictions of the Dirichlet modes of the doubled interval `(a, 2b - a)`, symmetric about `b`.
-Completeness of the cosines (`TauCeti.ae_eq_zero_of_forall_integral_mul_cos_eq_zero`) and of the
-quarter-wave sines (`TauCeti.ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero`)
+Completeness of the cosines (`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_cos_eq_zero`) and of the
+quarter-wave sines (`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero`)
 excludes every other eigenvalue.
 
 The weak Neumann eigenvalue problem can also be tested against all of `H¹(a, b)`, with no
@@ -78,6 +80,14 @@ Here a cosine mode `w` is a weak eigenfunction by integration by parts against t
 continuous representative of `v ∈ H¹(a, b)` (`TauCeti.W1p.intervalRepresentativeL`): the
 boundary terms vanish because `w'` vanishes at `a` and `b`, whatever the values of `v` there.
 This form does not need `H¹_∅(a, b) = H¹(a, b)`.
+
+For finite `p` the space `H¹_∅(a, b)` is in fact all of `H¹(a, b)`
+(`TauCeti.PDE.w1pVanishingOnSubmodule_empty_intervalDomain_eq_top`), so the two weak Neumann
+problems agree. On the connected interval the eigenvalue `0`
+is simple, and the next one, the second Neumann eigenvalue `(π / (b - a))²`, is the minimum of the
+Rayleigh quotient `‖∇u‖² / ‖u‖²` over the nonzero `u ∈ H¹(a, b)` of mean zero
+(`TauCeti.PDE.exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero`). Its eigenfunctions are
+exactly the minimizers, and the cosine `cos (π (x - a) / (b - a))` is one of them.
 
 ## Main declarations
 
@@ -126,6 +136,12 @@ This form does not need `H¹_∅(a, b) = H¹(a, b)`.
   spectrum of `-Δ` on `(a, b)`, tested on `H¹(a, b)`, is `{(k π / (b - a))² | k ≥ 0}`.
 * `TauCeti.PDE.isLeast_setOf_exists_ne_zero_forall_energyFormH1_eq_intervalDomain`: its least
   element is `0`.
+* `TauCeti.PDE.isLeast_neumannEigenvalue_pos_intervalDomain` and
+  `TauCeti.PDE.isLeast_rayleigh_meanZero_intervalDomain`: the second Neumann eigenvalue
+  `(π / (b - a))²` is the least positive one and the least Rayleigh quotient of mean zero.
+* `TauCeti.PDE.forall_inner_gradient_eq_iff_intervalDomain` and
+  `TauCeti.PDE.exists_value_ae_eq_cos_and_setIntegral_eq_zero_and_rayleigh_eq`: its
+  eigenfunctions are the Rayleigh minimizers of mean zero, among them the first cosine mode.
 
 ## References
 
@@ -133,6 +149,12 @@ This form does not need `H¹_∅(a, b) = H¹(a, b)`.
   (the Sturm--Liouville problem), §8.4, Example 5 (a boundary condition at one endpoint),
   Section 9.8 and Problem 47 (the Neumann problem).
 * L. C. Evans, *Partial Differential Equations*, 2nd ed., Section 6.5.1.
+* R. Courant and D. Hilbert, *Methods of Mathematical Physics*, Vol. I, Chapter VI, §1 (the
+  eigenvalues as minima of the Rayleigh quotient under orthogonality constraints, with natural
+  boundary conditions when no boundary condition is imposed).
+* R. Courant and D. Hilbert, *Methods of Mathematical Physics*, Vol. I, Chapter VI, §1 (the
+  eigenvalues as minima of the Rayleigh quotient under orthogonality constraints, with natural
+  boundary conditions when no boundary condition is imposed).
 -/
 
 public section
@@ -378,23 +400,19 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain (hab : a < b) {k : ℕ} (
     exact one_ne_zero
 
 /-- An element of `L²(a, b)` whose integrals against every `F i (x 0)` vanish is zero, when the
-functions `F i` form a complete system among the integrable functions on `(a, b]`. -/
-private theorem eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete {ι : Type*} (hab : a < b)
-    (F : ι → ℝ → ℝ)
-    (hF : ∀ g : ℝ → ℝ, IntegrableOn g (Ioc a b) → (∀ i, ∫ t in a..b, g t * F i t = 0) →
-      g =ᵐ[volume.restrict (Ioc a b)] 0)
+functions `F i` form a complete system among the integrable functions on `(a, b)`. -/
+private theorem eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete {ι : Type*} (F : ι → ℝ → ℝ)
+    (hF : ∀ g : ℝ → ℝ, IntegrableOn g (Ioo a b) → (∀ i, ∫ t in Ioo a b, g t * F i t = 0) →
+      g =ᵐ[volume.restrict (Ioo a b)] 0)
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ i, ∫ x in intervalDomain a b, f x * F i (x 0) = 0) :
     f = 0 := by
   -- Read `f` on the real line, where the system is complete.
-  have hg : MemLp (fun t => f (lineEquiv t)) 2 (volume.restrict (Ioc a b)) := by
-    rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc]
-    exact (Lp.memLp f).comp_measurePreserving measurePreserving_lineEquiv_restrict
+  have hg : MemLp (fun t => f (lineEquiv t)) 2 (volume.restrict (Ioo a b)) :=
+    (Lp.memLp f).comp_measurePreserving measurePreserving_lineEquiv_restrict
   have hg0 := hF _ (hg.integrable one_le_two) fun i => by
-    rw [intervalIntegral.integral_of_le hab.le, integral_Ioc_eq_integral_Ioo, ← h i,
-      ← setIntegral_intervalDomain]
+    rw [← h i, ← setIntegral_intervalDomain]
     simp only [← lineEquiv_symm_apply, LinearIsometryEquiv.apply_symm_apply]
-  rw [← Measure.restrict_congr_set Ioo_ae_eq_Ioc] at hg0
   refine Lp.ext ?_
   filter_upwards [measurePreserving_lineEquiv_symm_restrict.quasiMeasurePreserving.ae_eq_comp hg0,
     Lp.coeFn_zero ℝ 2
@@ -404,15 +422,15 @@ private theorem eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete {ι : Type
 
 /-- The sine modes are complete in `L²(a, b)`: an element of `L²(a, b)` orthogonal to every
 `x ↦ sin (k π (x - a) / (b - a))`, `k ≥ 1`, is zero. -/
-theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero (hab : a < b)
+theorem eq_zero_of_forall_setIntegral_mul_sin_eq_zero
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ k : ℕ, 0 < k → ∫ x in intervalDomain a b,
       f x * Real.sin (k * π * (x 0 - a) / (b - a)) = 0) :
     f = 0 :=
-  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete hab
+  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete
     (fun (k : {k : ℕ // 0 < k}) t => Real.sin (k * π * (t - a) / (b - a)))
-    (fun _ hg hgF => ae_eq_zero_of_forall_integral_mul_sin_eq_zero hg fun k hk => hgF ⟨k, hk⟩) f
-    fun k => h k k.property
+    (fun _ hg hgF => ae_eq_zero_of_forall_setIntegral_mul_sin_eq_zero hg fun k hk => hgF ⟨k, hk⟩)
+    f fun k => h k k.property
 
 /-- **The Dirichlet spectrum of `-Δ` on an interval.** The Dirichlet eigenvalues of `-Δ` on
 `(a, b)` are exactly the numbers `(k π / (b - a))²` with `k ≥ 1`: the homogeneous Dirichlet
@@ -431,7 +449,7 @@ theorem isDirichletEigenvalue_laplacian_intervalDomain_iff (hab : a < b) {kappa 
   refine hu0 (Subtype.ext (W1p.ext_value ?_))
   rw [ZeroMemClass.coe_zero, W1p.value_zero]
   -- `u` is orthogonal to every sine mode, since `κ` differs from each of their eigenvalues.
-  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero hab _ fun k hk => ?_
+  refine eq_zero_of_forall_setIntegral_mul_sin_eq_zero _ fun k hk => ?_
   obtain ⟨s, hs, hseq⟩ := exists_value_ae_eq_sin_and_energyFormH1_eq hab k
   have hint := inner_value_eq_zero_of_energyFormH1_eq_of_ne
     (ae_of_all _ fun _ => Matrix.isSymm_one) (hne k hk) hu hseq
@@ -508,25 +526,25 @@ attribute [local instance] W1pVanishingOn.instNormedAddCommGroup
 
 /-- The cosine modes are complete in `L²(a, b)`: an element of `L²(a, b)` orthogonal to every
 `x ↦ cos (k π (x - a) / (b - a))`, `k ≥ 0`, is zero. -/
-theorem eq_zero_of_forall_setIntegral_mul_cos_eq_zero (hab : a < b)
+theorem eq_zero_of_forall_setIntegral_mul_cos_eq_zero
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ k : ℕ, ∫ x in intervalDomain a b,
       f x * Real.cos (k * π * (x 0 - a) / (b - a)) = 0) :
     f = 0 :=
-  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete hab
+  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete
     (fun (k : ℕ) t => Real.cos (k * π * (t - a) / (b - a)))
-    (fun _ hg hgF => ae_eq_zero_of_forall_integral_mul_cos_eq_zero hg hgF) f h
+    (fun _ hg hgF => ae_eq_zero_of_forall_setIntegral_mul_cos_eq_zero hg hgF) f h
 
 /-- The quarter-wave sine modes are complete in `L²(a, b)`: an element of `L²(a, b)` orthogonal
 to every `x ↦ sin ((2k + 1) π (x - a) / (2 (b - a)))`, `k ≥ 0`, is zero. -/
-theorem eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero (hab : a < b)
+theorem eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero
     (f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))))
     (h : ∀ k : ℕ, ∫ x in intervalDomain a b,
       f x * Real.sin ((2 * k + 1) * π * (x 0 - a) / (2 * (b - a))) = 0) :
     f = 0 :=
-  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete hab
+  eq_zero_of_forall_setIntegral_mul_eq_zero_of_complete
     (fun (k : ℕ) t => Real.sin ((2 * k + 1) * π * (t - a) / (2 * (b - a))))
-    (fun _ hg hgF => ae_eq_zero_of_forall_integral_mul_sin_two_mul_add_one_eq_zero hg hgF) f h
+    (fun _ hg hgF => ae_eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero hg hgF) f h
 
 /-- The gradient of `x ↦ g (x 0)` on the Euclidean line is `g' (x 0)` along the unit vector. -/
 private theorem gradient_comp_apply_zero (g : ℝ → ℝ) (x : EuclideanSpace ℝ (Fin 1)) :
@@ -729,62 +747,15 @@ theorem exists_value_ae_eq_sin_two_mul_add_one_and_inner_gradient_eq (hab : a < 
     Real.cos_add_pi_div_two, Real.sin_nat_mul_pi]
   simp
 
-/-- The weak eigenvalues of `-Δ` on `W^{1,2}_Γ(a, b)` are the eigenvalues of a family of weak
-eigenfunctions, with values `x ↦ F k (x 0)`, that is complete in `L²(a, b)`: any other `κ` would
-have its eigenfunctions orthogonal to the whole family, since the form `∫ ∇u · ∇v` is
-symmetric. -/
-private theorem exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
-    {Γ : Set (EuclideanSpace ℝ (Fin 1))} {kappas : ℕ → ℝ} (F : ℕ → ℝ → ℝ)
-    (w : ℕ → W1pVanishingOn volume (intervalDomain a b) 2 Γ)
-    (hwv : ∀ k, W1p.value (w k : W1p volume (intervalDomain a b) 2)
-      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
-        fun x => F k (x 0))
-    (hw0 : ∀ k, W1p.value (w k : W1p volume (intervalDomain a b) 2) ≠ 0)
-    (hw : ∀ k, ∀ v : W1pVanishingOn volume (intervalDomain a b) 2 Γ,
-      ⟪W1p.gradient (w k : W1p volume (intervalDomain a b) 2),
-          W1p.gradient (v : W1p volume (intervalDomain a b) 2)⟫_ℝ =
-        kappas k * ⟪W1p.value (w k : W1p volume (intervalDomain a b) 2),
-          W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ)
-    (hc : ∀ f : Lp ℝ 2 (volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))),
-      (∀ k, ∫ x in intervalDomain a b, f x * F k (x 0) = 0) → f = 0)
-    {kappa : ℝ} :
-    (∃ u : W1pVanishingOn volume (intervalDomain a b) 2 Γ, u ≠ 0 ∧
-      ∀ v : W1pVanishingOn volume (intervalDomain a b) 2 Γ,
-        ⟪W1p.gradient (u : W1p volume (intervalDomain a b) 2),
-            W1p.gradient (v : W1p volume (intervalDomain a b) 2)⟫_ℝ =
-          kappa * ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-            W1p.value (v : W1p volume (intervalDomain a b) 2)⟫_ℝ) ↔
-      ∃ k, kappa = kappas k := by
-  constructor
-  · rintro ⟨u, hu0, hu⟩
-    by_contra hne
-    push Not at hne
-    refine hu0 (W1pVanishingOn.valueL_injective ?_)
-    rw [map_zero, W1pVanishingOn.valueL_apply]
-    refine hc _ fun k => ?_
-    -- `κ ⟪u, w k⟫ = ∫ ∇u · ∇(w k) = κₖ ⟪u, w k⟫`, and `κ ≠ κₖ`.
-    have h1 := hu (w k)
-    rw [real_inner_comm, hw k u, real_inner_comm (W1p.value _)] at h1
-    have h2 : (kappa - kappas k) * ⟪W1p.value (u : W1p volume (intervalDomain a b) 2),
-        W1p.value (w k : W1p volume (intervalDomain a b) 2)⟫_ℝ = 0 := by
-      linarith
-    rw [← (mul_eq_zero.1 h2).resolve_left (sub_ne_zero.2 (hne k)), L2.inner_def]
-    refine integral_congr_ae ?_
-    filter_upwards [hwv k] with x hx
-    simp [hx, mul_comm]
-  · rintro ⟨k, rfl⟩
-    refine ⟨w k, fun h => hw0 k ?_, hw k⟩
-    rw [← W1pVanishingOn.valueL_apply, h, map_zero]
-
 /-- **The weak Neumann eigenvalues of `-Δ` on an interval.** On `(a, b)` they are exactly the
 numbers `(k π / (b - a))²` with `k ≥ 0`: the problem
 `∫ ∇u · ∇v = κ ∫ u v` for every `v ∈ H¹_∅(a, b)` has a nonzero solution `u ∈ H¹_∅(a, b)`,
 imposing `u'(a) = u'(b) = 0` weakly, exactly for these `κ`. Here `H¹_∅(a, b)` is the space of the
 mixed problem with no Dirichlet part, as in the spectrum of the mixed Laplacian
 (`TauCeti.PDE.spectrum_mixedOperator_laplacian`): the closure in `H¹(a, b)` of the restrictions of
-test functions on the line. It agrees with `H¹(a, b)` exactly when these restrictions are dense
-(`TauCeti.w1pVanishingOnSubmodule_empty_eq_top_iff`), which is not proved here. These numbers
-are the spectrum of the Neumann Laplacian
+test functions on the line. It is all of `H¹(a, b)`
+(`TauCeti.PDE.w1pVanishingOnSubmodule_empty_intervalDomain_eq_top`), so these are also the weak
+Neumann eigenvalues tested on `H¹(a, b)`. These numbers are the spectrum of the Neumann Laplacian
 (`TauCeti.PDE.spectrum_mixedOperator_laplacian_empty_intervalDomain`). -/
 theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty (hab : a < b)
     {kappa : ℝ} :
@@ -797,8 +768,9 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty (hab : 
       ∃ k : ℕ, kappa = (k * π / (b - a)) ^ 2 := by
   choose w hwv hw using exists_value_ae_eq_cos_and_inner_gradient_eq hab
   refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
-    (fun k t => Real.cos (k * π * (t - a) / (b - a))) w hwv (fun k => ?_) hw
-    (eq_zero_of_forall_setIntegral_mul_cos_eq_zero hab)
+    (fun (k : ℕ) (x : EuclideanSpace ℝ (Fin 1)) => Real.cos (k * π * (x 0 - a) / (b - a))) w hwv
+    (fun k => ?_) hw
+    eq_zero_of_forall_setIntegral_mul_cos_eq_zero
   exact value_ne_zero_of_value_ae_eq hab (F := fun t => Real.cos (k * π * (t - a) / (b - a)))
     (by fun_prop) (left_mem_Icc.2 hab.le) (by simp) (hwv k)
 
@@ -818,8 +790,9 @@ theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_left (hab : a
       ∃ k : ℕ, kappa = ((2 * k + 1) * π / (2 * (b - a))) ^ 2 := by
   choose w hwv hw using exists_value_ae_eq_sin_two_mul_add_one_and_inner_gradient_eq hab
   refine exists_ne_zero_forall_inner_gradient_eq_iff_of_complete
-    (fun k t => Real.sin ((2 * k + 1) * π * (t - a) / (2 * (b - a)))) w hwv (fun k => ?_) hw
-    (eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero hab)
+    (fun (k : ℕ) (x : EuclideanSpace ℝ (Fin 1)) =>
+      Real.sin ((2 * k + 1) * π * (x 0 - a) / (2 * (b - a)))) w hwv (fun k => ?_) hw
+    eq_zero_of_forall_setIntegral_mul_sin_two_mul_add_one_eq_zero
   -- At `b` the mode is `sin (k π + π / 2) = ± 1`.
   refine value_ne_zero_of_value_ae_eq hab
     (F := fun t => Real.sin ((2 * k + 1) * π * (t - a) / (2 * (b - a)))) (by fun_prop)
@@ -868,6 +841,104 @@ theorem spectrum_mixedOperator_laplacian_empty_intervalDomain (hab : a < b) :
     isCompactOperator_valueL_intervalDomain]
   ext kappa
   exact exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty hab
+
+/-! ### The second Neumann eigenvalue -/
+
+/-- The weak Neumann eigenvalues of `-Δ` on `(a, b)` tested on `H¹(a, b)` are those tested on
+`H¹_∅(a, b)`, the numbers `(k π / (b - a))²`, since the two spaces agree. -/
+private theorem exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain (hab : a < b)
+    {kappa : ℝ} :
+    (∃ u : W1p volume (intervalDomain a b) 2, u ≠ 0 ∧ ∀ v : W1p volume (intervalDomain a b) 2,
+        ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ) ↔
+      ∃ k : ℕ, kappa = (k * π / (b - a)) ^ 2 := by
+  rw [← exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain_empty hab]
+  constructor
+  · rintro ⟨u, hu, h⟩
+    exact ⟨⟨u, mem_w1pVanishingOnSubmodule_empty_intervalDomain ENNReal.ofNat_ne_top u⟩,
+      fun h0 => hu (congrArg Subtype.val h0), fun v => h v⟩
+  · rintro ⟨u, hu, h⟩
+    exact ⟨u, fun h0 => hu (Subtype.ext h0),
+      fun v => h ⟨v, mem_w1pVanishingOnSubmodule_empty_intervalDomain ENNReal.ofNat_ne_top v⟩⟩
+
+/-- **The second Neumann eigenvalue of an interval.** The least positive weak Neumann eigenvalue of
+`-Δ` on `(a, b)`, tested on `H¹(a, b)`, is `(π / (b - a))²`. Counted with multiplicity it is the
+second one, after the simple eigenvalue `0` of the constants. -/
+theorem isLeast_neumannEigenvalue_pos_intervalDomain (hab : a < b) :
+    IsLeast {kappa | 0 < kappa ∧ ∃ u : W1p volume (intervalDomain a b) 2, u ≠ 0 ∧
+      ∀ v : W1p volume (intervalDomain a b) 2,
+        ⟪W1p.gradient u, W1p.gradient v⟫_ℝ = kappa * ⟪W1p.value u, W1p.value v⟫_ℝ}
+      ((π / (b - a)) ^ 2) := by
+  refine ⟨⟨pow_pos (div_pos Real.pi_pos (sub_pos.2 hab)) 2,
+    (exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain hab).2 ⟨1, by simp⟩⟩, ?_⟩
+  rintro kappa ⟨hpos, hkappa⟩
+  obtain ⟨k, rfl⟩ := (exists_ne_zero_forall_inner_gradient_eq_iff_intervalDomain hab).1 hkappa
+  have hk : k ≠ 0 := by
+    rintro rfl
+    simp at hpos
+  gcongr
+  exact le_mul_of_one_le_left Real.pi_pos.le (Nat.one_le_cast.2 (Nat.one_le_iff_ne_zero.2 hk))
+
+/-- **The second Neumann eigenvalue of an interval is the least Rayleigh quotient of mean zero.**
+The minimum of `‖∇u‖² / ‖u‖²` over the `u ∈ H¹(a, b)` with `u ≠ 0` and `∫_a^b u = 0` is
+`(π / (b - a))²`, the least positive weak Neumann eigenvalue
+(`TauCeti.PDE.isLeast_neumannEigenvalue_pos_intervalDomain`). The lower bound is the sharp
+inequality `∫_a^b u² ≤ ((b - a) / π)² ∫_a^b u'²` for `u ∈ H¹(a, b)` of mean zero, the Neumann
+case of Wirtinger's inequality for arcs (`TauCeti.exists_mem_integral_norm_sub_sq_le`), and the
+first cosine mode attains it. -/
+theorem isLeast_rayleigh_meanZero_intervalDomain (hab : a < b) :
+    IsLeast {r | ∃ u : W1p volume (intervalDomain a b) 2, W1p.value u ≠ 0 ∧
+        ∫ x in intervalDomain a b, W1p.value u x = 0 ∧
+        r = ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2}
+      ((π / (b - a)) ^ 2) := by
+  obtain ⟨kappa, h1, h2⟩ := exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero
+    isCompactOperator_valueL_intervalDomain (isPreconnected_intervalDomain a b)
+    (nonempty_intervalDomain_iff.2 hab)
+  rwa [h1.unique (isLeast_neumannEigenvalue_pos_intervalDomain hab)] at h2
+
+/-- **The eigenfunctions of the second Neumann eigenvalue of an interval are the Rayleigh
+minimizers of mean zero.** A class `u ∈ H¹(a, b)` satisfies
+`∫ ∇u · ∇v = (π / (b - a))² ∫ u v` for every `v ∈ H¹(a, b)` exactly when `∫_a^b u = 0` and
+`‖∇u‖² = (π / (b - a))² ‖u‖²`. -/
+theorem forall_inner_gradient_eq_iff_intervalDomain (u : W1p volume (intervalDomain a b) 2) :
+    (∀ v : W1p volume (intervalDomain a b) 2,
+        ⟪W1p.gradient u, W1p.gradient v⟫_ℝ =
+          (π / (b - a)) ^ 2 * ⟪W1p.value u, W1p.value v⟫_ℝ) ↔
+      ∫ x in intervalDomain a b, W1p.value u x = 0 ∧
+        ‖W1p.gradient u‖ ^ 2 = (π / (b - a)) ^ 2 * ‖W1p.value u‖ ^ 2 := by
+  rcases le_or_gt b a with hba | hab
+  · -- On an empty interval every class is zero, and both sides hold.
+    have h0 : volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1))) = 0 := by
+      rw [Measure.restrict_eq_zero, Set.not_nonempty_iff_eq_empty.1
+        (mt nonempty_intervalDomain_iff.1 (not_lt.2 hba)), measure_empty]
+    obtain rfl : u = 0 := W1p.ext_value <| Lp.ext <| by simp [h0, Filter.EventuallyEq]
+    simp [h0]
+  exact forall_inner_gradient_eq_iff_of_isLeast_neumannEigenvalue_pos
+    isCompactOperator_valueL_intervalDomain (isPreconnected_intervalDomain a b)
+    (isLeast_neumannEigenvalue_pos_intervalDomain hab) u
+
+/-- **The second Neumann eigenvalue of an interval is attained by the first cosine mode.** Some
+`u ∈ H¹(a, b)` with value `x ↦ cos (π (x - a) / (b - a))` has mean zero and Rayleigh quotient
+`‖∇u‖² / ‖u‖² = (π / (b - a))²`. -/
+theorem exists_value_ae_eq_cos_and_setIntegral_eq_zero_and_rayleigh_eq (hab : a < b) :
+    ∃ u : W1p volume (intervalDomain a b) 2,
+      W1p.value u =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        (fun x => Real.cos (π * (x 0 - a) / (b - a))) ∧
+      ∫ x in intervalDomain a b, W1p.value u x = 0 ∧
+      ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2 = (π / (b - a)) ^ 2 := by
+  obtain ⟨w, hwv, hw⟩ := exists_value_ae_eq_cos_and_inner_gradient_eq hab 1
+  have hv : W1p.value (w : W1p volume (intervalDomain a b) 2)
+      =ᵐ[volume.restrict (intervalDomain a b : Set (EuclideanSpace ℝ (Fin 1)))]
+        (fun x => Real.cos (π * (x 0 - a) / (b - a))) := by
+    simpa only [Nat.cast_one, one_mul] using hwv
+  obtain ⟨hmean, hnorm⟩ := (forall_inner_gradient_eq_iff_intervalDomain w).1 fun v => by
+    simpa only [Nat.cast_one, one_mul] using
+      hw ⟨v, mem_w1pVanishingOnSubmodule_empty_intervalDomain ENNReal.ofNat_ne_top v⟩
+  have hne : W1p.value (w : W1p volume (intervalDomain a b) 2) ≠ 0 :=
+    value_ne_zero_of_value_ae_eq hab (F := fun t => Real.cos (π * (t - a) / (b - a)))
+      (by fun_prop) (left_mem_Icc.2 hab.le) (by simp) hv
+  refine ⟨w, hv, hmean, ?_⟩
+  rw [hnorm]
+  field_simp [norm_ne_zero_iff.2 hne]
 
 end Mixed
 
@@ -968,7 +1039,7 @@ theorem exists_ne_zero_forall_energyFormH1_eq_iff_intervalDomain (hab : a < b) {
     refine hu0 (W1p.ext_value ?_)
     rw [W1p.value_zero]
     -- `u` is orthogonal to every cosine mode, since `κ` differs from each of their eigenvalues.
-    refine eq_zero_of_forall_setIntegral_mul_cos_eq_zero hab _ fun k => ?_
+    refine eq_zero_of_forall_setIntegral_mul_cos_eq_zero _ fun k => ?_
     obtain ⟨s, hs, hseq⟩ := exists_value_ae_eq_cos_and_energyFormH1_eq hab k
     have hint := W1p.inner_value_eq_zero_of_energyFormH1_eq_of_ne
       (ae_of_all _ fun _ => Matrix.isSymm_one) (hne k) (hu s) (hseq u)
