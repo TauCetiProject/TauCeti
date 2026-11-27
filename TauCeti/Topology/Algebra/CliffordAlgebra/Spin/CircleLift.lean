@@ -41,8 +41,7 @@ open TauCeti
 variable {M : Type*} [AddCommGroup M] [Module ℝ M] {Q : QuadraticForm ℝ M} (hQ : Q ≠ 0)
   {u w : M} (huw : Q.IsOrtho u w) (h : Q u * Q w = 1)
 
-/-- **The `Spinᶜ` lift of the rotations of a plane is continuous.** It descends
-`y ↦ [Re y + Im y ι u ι w, y]` along the squaring map of the circle, which is a quotient map. -/
+/-- **The `Spinᶜ` lift of the rotations of a plane is continuous.** -/
 @[fun_prop]
 theorem continuous_spinCCircle : Continuous (spinCCircle Q hQ u w huw h) := by
   have hsq : Topology.IsQuotientMap fun y : Circle ↦ y ^ 2 :=

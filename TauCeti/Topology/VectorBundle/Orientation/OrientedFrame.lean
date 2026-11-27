@@ -307,9 +307,7 @@ theorem exists_trivialization_orientedFrames [ContinuousFiberNorm F E] [Nonempty
 
 /-- **Orienting a reduction of the structure group.** If `S` is a locally trivial reduction of the
 orthonormal frame bundle to `H`, and `H` contains an orientation-reversing element `r`, then the
-positively oriented frames of `S` form a locally trivial reduction to `H ⊓ SO(V)`. Near each point,
-a continuous local section of `S` is made positively oriented by acting with `r` where it is not,
-which is a locally constant correction since the positively oriented frames are clopen. -/
+positively oriented frames of `S` form a locally trivial reduction to `H ⊓ SO(V)`. -/
 theorem isLocallyTrivialReduction_inter_orientedFrames [ContinuousFiberNorm F E]
     [FiniteDimensional ℝ F] {H : Subgroup (unitary (V →L[ℝ] V))}
     {S : Set (OrthonormalFrameBundle ℝ F E V)} [SMulMemIff H S]
@@ -322,7 +320,8 @@ theorem isLocallyTrivialReduction_inter_orientedFrames [ContinuousFiberNorm F E]
   obtain ⟨t, hxt, -⟩ := isLocallyTrivialReduction_iff.1 hS x
   obtain ⟨eV⟩ := (t.toOpenPartialHomeomorph.symm (x, 1) : S).val.nonempty_linearEquiv
   have : FiniteDimensional ℝ V := LinearEquiv.finiteDimensional eV.symm
-  -- The local section of `S` given by `t`, corrected by `r` where it is not oriented.
+  -- The local section of `S` given by `t`, corrected by `r` where it is not oriented. The
+  -- correction is locally constant since the positively oriented frames are clopen.
   let q₀ : B → OrthonormalFrameBundle ℝ F E V := fun y ↦ t.toOpenPartialHomeomorph.symm (y, 1)
   have hq₀ : ContinuousOn q₀ t.baseSet :=
     continuous_subtypeVal.comp_continuousOn (t.toOpenPartialHomeomorph.continuousOn_symm.comp

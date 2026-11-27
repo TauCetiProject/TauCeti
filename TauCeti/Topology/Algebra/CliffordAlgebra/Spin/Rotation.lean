@@ -54,8 +54,7 @@ variable {V : Type u} [AddCommGroup V] [Module ℝ V]
   (Q : QuadraticForm ℝ V) (x y : V)
 
 omit x y in
-/-- **The circle subgroup of `Spin(Q)` is continuous**: `z ↦ Re z + Im z ι u ι w` is affine in the
-real and imaginary parts of `z`. -/
+/-- **The circle subgroup `spinCircle Q u w huw h` of `Spin(Q)` is continuous.** -/
 @[fun_prop]
 theorem continuous_spinCircle {u w : V} (huw : Q.IsOrtho u w) (h : Q u * Q w = 1) :
     Continuous (spinCircle Q u w huw h) := by

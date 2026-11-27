@@ -51,12 +51,7 @@ rotation of `ξ`, that is `ξ` regarded as a complex line; that identification o
 constructed here.
 
 On a closed oriented three-manifold `Y` this is the `Spinᶜ` structure of an oriented plane field,
-or of a nowhere vanishing vector field. For the mapping torus of a surface diffeomorphism, with `R`
-the suspension flow and `ξ` the vertical tangent planes, its stabilization by the line `ds` is to be
-compared on `S¹ × Y` with the canonical `Spinᶜ` structure of the almost complex structure sending
-`∂_s` to `R`. That bundle comparison is not constructed here; at the level of structure groups it is
-`OrthonormalBasis.spinCUnitary_unitaryTorusHom_mulSingle_one` together with the naturality
-`CliffordAlgebra.spinCGroupMap_spinCCircle` of the plane lift.
+or of a nowhere vanishing vector field.
 
 ## Main definitions
 

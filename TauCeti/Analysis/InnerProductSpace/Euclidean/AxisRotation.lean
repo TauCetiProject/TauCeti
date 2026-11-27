@@ -206,8 +206,7 @@ theorem axisRotation_apply_two (g : axisRotationGroup) (v : ℝ³) :
 
 end Coordinates
 
-/-- **The angle of a rotation about the first axis is continuous**: its real and imaginary parts
-are coordinates of `g e₁`. -/
+/-- **The angle of a rotation about the first axis is continuous.** -/
 @[fun_prop]
 theorem continuous_axisRotationAngle : Continuous axisRotationAngle := by
   have hre : Continuous fun g : axisRotationGroup ↦ (axisRotationAngle g : ℂ).re := by
