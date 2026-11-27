@@ -296,46 +296,12 @@ theorem IsCentral.comapOfSurjective_of_bijective {H : Type v} {K : Type w}
     apply (hmem (E.symm g)).mp
     rw [E.apply_symm_apply]
     exact hg
-  have hcentral := (HopfAlgebra.isCentralPoint_iff_commute_includeRight _).mp
-    (CommHopfAlgCat.isCentralPoint_of_mem_quotientPointsSubgroup
-      (_root_.CommHopfAlgCat.of R K) I hI A hg')
-  rw [HopfAlgebra.isCentralPoint_def]
-  intro B _ _ φ h
-  let E' := BialgEquiv.mapDomainMulEquiv (A := B) e
-  have hcomm := (hcentral.map (AlgHom.mapValue (H := K)
-    (Algebra.TensorProduct.productMap φ (E'.symm h).ofConv))).map E'.toMonoidHom
-  have hnatural :
-      E' (AlgHom.mapValue (H := K) φ (E.symm g)) = AlgHom.mapValue (H := H) φ g := by
-    dsimp only [E', E]
-    rw [BialgEquiv.mapDomainMulEquiv_apply, BialgEquiv.mapDomainMulEquiv_symm_apply]
-    simp only [← BialgEquiv.toBialgHom_eq_coe]
-    have hmv := DFunLike.congr_fun (BialgHom.mapValue_mapDomain e.toBialgHom φ)
-      (BialgHom.mapDomain (A := A) e.symm.toBialgHom g)
-    rw [MonoidHom.comp_apply, MonoidHom.comp_apply] at hmv
-    rw [hmv]
-    congr 1
-    simp only [BialgEquiv.toBialgHom_eq_coe, ← BialgEquiv.mapDomainMulEquiv_apply (A := A) e,
-      ← BialgEquiv.mapDomainMulEquiv_symm_apply (A := A) e,
-      (BialgEquiv.mapDomainMulEquiv (A := A) e).apply_symm_apply]
-  have hleft :
-      E'.toMonoidHom ((AlgHom.mapValue (H := K)
-        (Algebra.TensorProduct.productMap φ (E'.symm h).ofConv))
-        (AlgHom.mapValue (H := K) Algebra.TensorProduct.includeLeft (E.symm g))) =
-        AlgHom.mapValue (H := H) φ g := by
-    have h1 :
-        (AlgHom.mapValue (H := K)
-          (Algebra.TensorProduct.productMap φ (E'.symm h).ofConv))
-          (AlgHom.mapValue (H := K) Algebra.TensorProduct.includeLeft (E.symm g)) =
-          AlgHom.mapValue (H := K) φ (E.symm g) := by
-      rw [← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, Algebra.TensorProduct.productMap_left]
-    rw [h1, MulEquiv.coe_toMonoidHom, hnatural]
-  have hright :
-      E'.toMonoidHom ((AlgHom.mapValue (H := K)
-        (Algebra.TensorProduct.productMap φ (E'.symm h).ofConv))
-        (toConv Algebra.TensorProduct.includeRight)) = h := by
-    simp only [AlgHom.mapValue_apply, Algebra.TensorProduct.productMap_right, toConv_ofConv,
-      MulEquiv.coe_toMonoidHom, E'.apply_symm_apply]
-  simpa only [hleft, hright] using hcomm
+  have hcentral := CommHopfAlgCat.isCentralPoint_of_mem_quotientPointsSubgroup
+    (_root_.CommHopfAlgCat.of R K) I hI A hg'
+  have htransport := hcentral.mapDomain_bialgEquiv e
+  simp only [BialgEquiv.toBialgHom_eq_coe] at htransport
+  rw [← BialgEquiv.mapDomainMulEquiv_apply e, E.apply_symm_apply] at htransport
+  exact htransport
 
 /-- **A central Hopf ideal is normal.** Its points commute with every point of the ambient group
 over the same value algebra, so they form a normal subgroup there, and normality of a Hopf ideal
