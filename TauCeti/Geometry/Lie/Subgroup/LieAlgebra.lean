@@ -469,8 +469,10 @@ theorem lieSubalgebraOfSubgroup_mono {K K' : Subgroup G} (h : K ≤ K') :
 /-- **The Lie algebra of an intersection is the intersection of the Lie algebras.** For closed
 subgroups both sides say that the one-parameter subgroup of `X` lies in each factor, so the
 statement is an interchange of the two quantifiers. Closedness is what collapses each generated
-subalgebra to that defining condition; without it only `≤` is available, from
-`lieSubalgebraOfSubgroup_mono`. This is how a subgroup cut out by two independent conditions —
+subalgebra to that defining condition. Without closedness, equality still holds for a
+second-countable `G` (`TauCeti.Lie.lieSubalgebraOfSubgroup_iInf`, proved downstream through
+integral leaf subgroups); this lemma is the version that needs no countability hypothesis. This
+is how a subgroup cut out by two independent conditions —
 such as the special unitary group, unitary and of determinant one — has its Lie algebra computed
 one condition at a time. -/
 theorem lieSubalgebraOfSubgroup_inf {K K' : Subgroup G} (hK : IsClosed (K : Set G))
