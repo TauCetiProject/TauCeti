@@ -26,13 +26,13 @@ dimension. For finite `p` the Sobolev space `W^{k,p}(Ω)` is separable
 fail, at every order `k` and on every such `Ω`:
 
 * `W^{k,∞}(Ω)` is not separable (`TauCeti.Wkp.not_separableSpace_top`);
-* the elements of `W^{k,∞}(Ω)` with a representative smooth on `Ω` are not dense in it
+* the elements of `W^{k,∞}(Ω)` with a representative of class `Cᵏ` on `Ω`, in particular those
+  with a representative smooth on `Ω`, are not dense in it
   (`TauCeti.Wkp.not_dense_contDiffOn_representatives_top`).
 
-At `k = 0` these are the statements for `L^∞(Ω)`. On a bounded interval, the cases `k = 1` of the
-first and every `k` of the second for globally smooth representatives are
-`TauCeti.W1p.not_separableSpace_Ioo_top` and
-`TauCeti.Wkp.not_dense_contDiff_representatives_Ioo_top`.
+At `k = 0` these are the statements for `L^∞(Ω)`. On a bounded interval, the case `k = 1` of the
+first is `TauCeti.W1p.not_separableSpace_Ioo_top`, and the second gives
+`TauCeti.Wkp.not_dense_contDiff_representatives_Ioo_top` for globally smooth representatives.
 
 ## The argument
 
@@ -53,7 +53,7 @@ operator `T : W^{k,∞}(Ω) → L^∞(B(x₀, r / 2))`.
 * For `s < t` near `⟪e, x₀⟫`, the functions `T v_s` and `T v_t` differ by `k!` on the slab
   `s < ⟪e, x⟫ < t`, which meets `B(x₀, r / 2)` in a set of positive measure. So the uncountable
   family `v_t` is uniformly separated, and `W^{k,∞}(Ω)` is not separable.
-* If `w` has a representative `f` smooth on `Ω`, then `T w` is represented by the continuous
+* If `w` has a representative `f` of class `Cᵏ` on `Ω`, then `T w` is represented by the continuous
   function `x ↦ D^k f(x)(e, …, e)`. A continuous function cannot be uniformly within less than
   `k! / 2` of `k!` times a jump across a hyperplane through `x₀`, so `w` stays at distance at least
   `k! / (2 ‖T‖)` from the element `v_t` with `t = ⟪e, x₀⟫`.
@@ -256,22 +256,35 @@ private theorem exists_iteratedLineDerivZeroL_restrictL_ae_eq {x₀ : E} {r : �
   rw [hres]
   exact hD'
 
-/-- The setting shared by both theorems: a ball `B(x₀, ρ) ⊆ Ω`, a unit vector `e`, and for every
-`t` an element of `W^{k,∞}(Ω)` whose `k`-th weak derivative in the direction `e` on the ball is
-`k!` times the Heaviside function of `⟪e, x⟫ - t`. -/
-private theorem exists_ball_iteratedLineDerivZeroL_restrictL_ae_eq [Nontrivial E]
-    (hΩ : (Omega : Set E).Nonempty) (k : ℕ) :
-    ∃ (x₀ : E) (ρ : ℝ) (hB : (⟨ball x₀ ρ, isOpen_ball⟩ : Opens E) ≤ Omega) (e : E),
-      0 < ρ ∧ ‖e‖ = 1 ∧ ∀ t : ℝ, ∃ v : Wkp mu Omega ∞ k,
-        (iteratedLineDerivZeroL k (fun _ => e) (restrictL hB k v) : E → ℝ)
-          =ᵐ[mu.restrict (ball x₀ ρ)] fun x => (k ! : ℝ) * truncPow 0 (⟪e, x⟫ - t) := by
+/-- The setting shared by both theorems: a ball `B(x₀, ρ) ⊆ Ω`, a unit vector `e`, and the bounded
+operator `T : W^{k,∞}(Ω) → L^∞(B(x₀, ρ))` taking the `k`-th weak derivative in the direction `e` on
+the ball. For every `t`, some `v` has `T v` equal to `k!` times the Heaviside function of
+`⟪e, x⟫ - t`; and if `w` has a representative `f` of class `Cᵏ` on `Ω`, then `T w` is represented
+by `x ↦ D^k f(x)(e, …, e)`. -/
+private theorem exists_ball_clm_ae_eq [Nontrivial E] (hΩ : (Omega : Set E).Nonempty) (k : ℕ) :
+    ∃ (x₀ : E) (ρ : ℝ) (e : E) (T : Wkp mu Omega ∞ k →L[ℝ] Lp ℝ ∞ (mu.restrict (ball x₀ ρ))),
+      0 < ρ ∧ ball x₀ ρ ⊆ Omega ∧ ‖e‖ = 1 ∧
+      (∀ t : ℝ, ∃ v, (T v : E → ℝ) =ᵐ[mu.restrict (ball x₀ ρ)]
+        fun x => (k ! : ℝ) * truncPow 0 (⟪e, x⟫ - t)) ∧
+      ∀ (w : Wkp mu Omega ∞ k) {f : E → ℝ}, ContDiffOn ℝ k f Omega →
+        (value k w : E → ℝ) =ᵐ[mu.restrict Omega] f →
+        (T w : E → ℝ) =ᵐ[mu.restrict (ball x₀ ρ)] fun x => iteratedFDeriv ℝ k f x fun _ => e := by
   obtain ⟨x₀, hx₀⟩ := hΩ
   obtain ⟨r, hr, hsub⟩ := isOpen_iff.1 Omega.isOpen x₀ hx₀
   obtain ⟨e, he⟩ := exists_norm_eq E zero_le_one
   have hB : (⟨ball x₀ (r / 2), isOpen_ball⟩ : Opens E) ≤ Omega :=
     (ball_subset_ball (half_le_self hr.le)).trans hsub
-  exact ⟨x₀, r / 2, hB, e, half_pos hr, he,
-    exists_iteratedLineDerivZeroL_restrictL_ae_eq hr hsub hB he k⟩
+  refine ⟨x₀, r / 2, e, (iteratedLineDerivZeroL k fun _ => e).comp (restrictL hB k), half_pos hr,
+    hB, he, exists_iteratedLineDerivZeroL_restrictL_ae_eq hr hsub hB he k, fun w f hf hwf => ?_⟩
+  exact iteratedLineDerivZeroL_ae_eq_of_contDiffOn k _ _ (hf.mono hB)
+    ((value_restrictL_ae hB k w).trans (ae_restrict_of_ae_restrict_of_subset hB hwf))
+
+/-- A bounded operator `T` into `L^∞(ν)` moves values, almost everywhere, by at most
+`‖T‖ dist a b`. -/
+private theorem ae_dist_le_opNorm_mul_dist {α F : Type*} [MeasurableSpace α] {ν : Measure α}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (T : F →L[ℝ] Lp ℝ ∞ ν) (a b : F) :
+    ∀ᵐ x ∂ν, dist (T a x) (T b x) ≤ ‖T‖ * dist a b :=
+  (Lp.ae_dist_le_dist_top (T a) (T b)).mono fun _ h => h.trans (T.lipschitzWith.dist_le_mul a b)
 
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
 /-- The point `x₀ + s e`, for a unit vector `e` and `|s| < ρ`, lies in `B(x₀, ρ)` and has
@@ -283,6 +296,18 @@ private theorem add_smul_mem_ball_and_inner_eq {e : E} (he : ‖e‖ = 1) (x₀ 
   · rw [inner_add_right, inner_smul_right, real_inner_self_eq_norm_sq, he, one_pow, mul_one]
 
 omit [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- If a property holds almost everywhere on `B(x₀, ρ)` and some point of the ball lies in the open
+slab `s < ⟪e, x⟫ < t`, then some point of the ball in that slab has the property. -/
+private theorem exists_mem_ball_inner_mem_Ioo_of_ae {x₀ y e : E} {ρ s t : ℝ} {P : E → Prop}
+    (h : ∀ᵐ x ∂mu.restrict (ball x₀ ρ), P x) (hy : y ∈ ball x₀ ρ) (hys : ⟪e, y⟫ ∈ Ioo s t) :
+    ∃ x ∈ ball x₀ ρ, ⟪e, x⟫ ∈ Ioo s t ∧ P x := by
+  obtain ⟨x, ⟨hx, hxs⟩, hPx⟩ := mu.exists_mem_of_measure_ne_zero_of_ae
+    ((isOpen_ball.inter (isOpen_Ioo.preimage (continuous_const.inner continuous_id))
+      ).measure_ne_zero mu ⟨y, hy, hys⟩)
+    (ae_restrict_of_ae_restrict_of_subset inter_subset_left h)
+  exact ⟨x, hx, hxs, hPx⟩
+
+omit [FiniteDimensional ℝ E] [BorelSpace E] in
 /-- A function continuous at a point `x₀` of the hyperplane `⟪e, x⟫ = ⟪e, x₀⟫` is not, almost
 everywhere near `x₀`, within `β < a / 2` of `a` times the Heaviside function of `⟪e, x⟫ - ⟪e, x₀⟫`:
 it would have to be close to `a` on one side of the hyperplane and to `0` on the other. -/
@@ -290,28 +315,22 @@ private theorem not_ae_abs_mul_truncPow_sub_le {e x₀ : E} (he : ‖e‖ = 1) {
     (hρ : 0 < ρ) {g : E → ℝ} (hg : ContinuousAt g x₀) (hβ : β < a / 2) :
     ¬ ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |a * truncPow 0 (⟪e, x⟫ - ⟪e, x₀⟫) - g x| ≤ β := by
   intro h
-  have hinner : Continuous fun x : E => ⟪e, x⟫ := continuous_const.inner continuous_id
   obtain ⟨η, hη, hgη⟩ := Metric.continuousAt_iff.1 hg ((a / 2 - β) / 2) (by linarith)
   -- Test the bound at points of `B(x₀, min η ρ)` on both sides of the hyperplane.
   have hη' : 0 < min η ρ := lt_min hη hρ
-  have hsub : ball x₀ (min η ρ) ⊆ ball x₀ ρ := ball_subset_ball (min_le_right η ρ)
+  have h' := ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (min_le_right η ρ)) h
   have hhalf : |min η ρ / 2| < min η ρ := by
     rw [abs_of_pos (half_pos hη')]
     exact half_lt_self hη'
   obtain ⟨hp, hpc⟩ := add_smul_mem_ball_and_inner_eq he x₀ hhalf
   obtain ⟨hm, hmc⟩ := add_smul_mem_ball_and_inner_eq he x₀ (s := -(min η ρ / 2))
     (by rwa [abs_neg])
-  obtain ⟨yp, ⟨hyp, hyps⟩, hypc⟩ := mu.exists_mem_of_measure_ne_zero_of_ae
-    ((isOpen_ball.inter (isOpen_lt (continuous_const (y := ⟪e, x₀⟫)) hinner)).measure_ne_zero mu
-      ⟨_, hp, by rw [mem_ofPred_eq, hpc]; linarith⟩)
-    (ae_restrict_of_ae_restrict_of_subset (inter_subset_left.trans hsub) h)
-  obtain ⟨ym, ⟨hym, hyms⟩, hymc⟩ := mu.exists_mem_of_measure_ne_zero_of_ae
-    ((isOpen_ball.inter (isOpen_lt hinner (continuous_const (y := ⟪e, x₀⟫)))).measure_ne_zero mu
-      ⟨_, hm, by rw [mem_ofPred_eq, hmc]; linarith⟩)
-    (ae_restrict_of_ae_restrict_of_subset (inter_subset_left.trans hsub) h)
-  rw [mem_ofPred_eq] at hyps hyms
-  rw [truncPow_of_pos (sub_pos.2 hyps), pow_zero, mul_one] at hypc
-  rw [truncPow_of_nonpos (sub_nonpos.2 hyms.le), mul_zero, zero_sub, abs_neg] at hymc
+  obtain ⟨yp, hyp, ⟨hyps, -⟩, hypc⟩ := exists_mem_ball_inner_mem_Ioo_of_ae h' hp
+    (s := ⟪e, x₀⟫) (t := ⟪e, x₀⟫ + min η ρ) (by rw [hpc]; constructor <;> linarith)
+  obtain ⟨ym, hym, ⟨-, hyms⟩, hymc⟩ := exists_mem_ball_inner_mem_Ioo_of_ae h' hm
+    (s := ⟪e, x₀⟫ - min η ρ) (t := ⟪e, x₀⟫) (by rw [hmc]; constructor <;> linarith)
+  simp only [truncPow_of_pos (sub_pos.2 hyps), pow_zero, mul_one] at hypc
+  simp only [truncPow_of_nonpos (sub_nonpos.2 hyms.le), mul_zero, zero_sub, abs_neg] at hymc
   have hgp := hgη (mem_ball.1 (ball_subset_ball (min_le_left η ρ) hyp))
   have hgm := hgη (mem_ball.1 (ball_subset_ball (min_le_left η ρ) hym))
   rw [Real.dist_eq] at hgp hgm
@@ -331,33 +350,20 @@ dimension and at every order `k`, the Sobolev space `W^{k,∞}(Ω)` is not separ
 theorem not_separableSpace_top (hΩ : (Omega : Set E).Nonempty) (k : ℕ) :
     ¬ SeparableSpace (Wkp mu Omega ∞ k) := by
   intro hsep
-  obtain ⟨x₀, ρ, hB, e, hρ, he, hv⟩ := exists_ball_iteratedLineDerivZeroL_restrictL_ae_eq
-    (mu := mu) hΩ k
+  obtain ⟨x₀, ρ, e, T, hρ, -, he, hv, -⟩ := exists_ball_clm_ae_eq (mu := mu) hΩ k
   choose v hv using hv
-  set T := (iteratedLineDerivZeroL (mu := mu) (p := ∞) k (fun _ => e)).comp (restrictL hB k)
-  have hTv (t : ℝ) : (T (v t) : E → ℝ) =ᵐ[mu.restrict (ball x₀ ρ)]
-      fun x => (k ! : ℝ) * truncPow 0 (⟪e, x⟫ - t) := by
-    simpa only [T, ContinuousLinearMap.comp_apply] using hv t
   set c := ⟪e, x₀⟫
-  have hinner : Continuous fun x : E => ⟪e, x⟫ := continuous_const.inner continuous_id
   set δ := (k ! : ℝ) / (‖T‖ + 1)
   have hδ : 0 < δ := div_pos (mod_cast k.factorial_pos) (by positivity)
   -- Two members with nearby parameters differ by `k!` on a slab through the ball.
   have hfar {s t : ℝ} (hs : c - ρ < s) (hst : s < t) (ht : t < c + ρ) : δ ≤ dist (v s) (v t) := by
     obtain ⟨hy, hyc⟩ := add_smul_mem_ball_and_inner_eq he x₀ (s := (s + t) / 2 - c) (ρ := ρ)
       (by rw [abs_lt]; constructor <;> linarith)
-    obtain ⟨x, ⟨-, hxs, hxt⟩, hTs, hTt, hle⟩ := mu.exists_mem_of_measure_ne_zero_of_ae
-      ((isOpen_ball.inter ((isOpen_lt (continuous_const (y := s)) hinner).inter
-        (isOpen_lt hinner (continuous_const (y := t))))).measure_ne_zero mu
-        ⟨_, hy, by rw [mem_inter_iff, mem_ofPred_eq, mem_ofPred_eq, hyc]; constructor <;> linarith⟩)
-      (ae_restrict_of_ae_restrict_of_subset inter_subset_left
-        ((hTv s).and ((hTv t).and (Lp.ae_dist_le_dist_top (T (v s)) (T (v t))))))
-    rw [mem_ofPred_eq] at hxs hxt
-    dsimp only at hTs hTt
-    rw [hTs, hTt, truncPow_of_pos (sub_pos.2 hxs), truncPow_of_nonpos (sub_nonpos.2 hxt.le),
-      pow_zero, mul_one, mul_zero, Real.dist_eq, sub_zero, abs_of_pos (mod_cast k.factorial_pos)]
-      at hle
-    have hT : dist (T (v s)) (T (v t)) ≤ ‖T‖ * dist (v s) (v t) := T.lipschitzWith.dist_le_mul _ _
+    obtain ⟨x, -, ⟨hxs, hxt⟩, hTs, hTt, hle⟩ := exists_mem_ball_inner_mem_Ioo_of_ae
+      ((hv s).and ((hv t).and (ae_dist_le_opNorm_mul_dist T (v s) (v t)))) hy (s := s) (t := t)
+      (by rw [hyc]; constructor <;> linarith)
+    simp only [hTs, hTt, truncPow_of_pos (sub_pos.2 hxs), truncPow_of_nonpos (sub_nonpos.2 hxt.le),
+      pow_zero, mul_one, mul_zero, Real.dist_eq, sub_zero, Nat.abs_cast] at hle
     rw [div_le_iff₀ (by positivity)]
     nlinarith [dist_nonneg (x := v s) (y := v t)]
   -- So the open balls of radius `δ / 2` around the members are pairwise disjoint.
@@ -377,30 +383,24 @@ theorem not_separableSpace_top (hΩ : (Omega : Set E).Nonempty) (k : ℕ) :
 
 /-- **Smooth functions are not dense in `W^{k,∞}(Ω)`.** On every nonempty open subset `Ω` of a
 space of positive dimension and at every order `k`, the elements of `W^{k,∞}(Ω)` represented by a
-function smooth on `Ω` are not dense, unlike for finite exponents
+function of class `Cᵏ` on `Ω` are not dense; in particular neither are those represented by a
+function smooth on `Ω`, unlike for finite exponents
 (`TauCeti.Wkp.dense_contDiffOn_representatives`). -/
 theorem not_dense_contDiffOn_representatives_top (hΩ : (Omega : Set E).Nonempty) (k : ℕ) :
-    ¬ Dense {u : Wkp mu Omega ∞ k | ∃ f : E → ℝ, ContDiffOn ℝ ∞ f Omega ∧
+    ¬ Dense {u : Wkp mu Omega ∞ k | ∃ f : E → ℝ, ContDiffOn ℝ k f Omega ∧
       (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f} := by
   intro hd
-  obtain ⟨x₀, ρ, hB, e, hρ, he, hv⟩ := exists_ball_iteratedLineDerivZeroL_restrictL_ae_eq
-    (mu := mu) hΩ k
+  obtain ⟨x₀, ρ, e, T, hρ, hBΩ, he, hv, hTw⟩ := exists_ball_clm_ae_eq (mu := mu) hΩ k
   obtain ⟨v, hv⟩ := hv ⟪e, x₀⟫
-  set T := (iteratedLineDerivZeroL (mu := mu) (p := ∞) k (fun _ => e)).comp (restrictL hB k)
   have hk : (0 : ℝ) < k ! := mod_cast k.factorial_pos
   set δ := (k ! : ℝ) / (2 * (‖T‖ + 1))
   obtain ⟨w, hwv, f, hf, hwf⟩ := Metric.dense_iff.1 hd v δ (div_pos hk (by positivity))
-  -- `T w` is represented on the ball by the continuous function `g x = D^k f(x)(e, …, e)`.
-  set g : E → ℝ := fun x => iteratedFDeriv ℝ k f x fun _ => e
-  have hBΩ : ball x₀ ρ ⊆ Omega := hB
-  have hTw : (T w : E → ℝ) =ᵐ[mu.restrict (ball x₀ ρ)] g :=
-    iteratedLineDerivZeroL_ae_eq_of_contDiffOn k _ _ ((hf.of_le (mod_cast le_top)).mono hBΩ)
-      ((value_restrictL_ae hB k w).trans (ae_restrict_of_ae_restrict_of_subset hBΩ hwf))
-  have hg : ContinuousAt g x₀ :=
+  -- `T w` is represented on the ball by the continuous function `x ↦ D^k f(x)(e, …, e)`.
+  have hg : ContinuousAt (fun x => iteratedFDeriv ℝ k f x fun _ => e) x₀ :=
     ((continuous_eval_const _).comp_continuousOn
-      ((hf.continuousOn_iteratedFDerivWithin (m := k) (mod_cast le_top)
-        Omega.isOpen.uniqueDiffOn).congr (iteratedFDerivWithin_of_isOpen k Omega.isOpen).symm)
-      ).continuousAt (Omega.isOpen.mem_nhds (hBΩ (mem_ball_self hρ)))
+      ((hf.continuousOn_iteratedFDerivWithin le_rfl Omega.isOpen.uniqueDiffOn).congr
+        (iteratedFDerivWithin_of_isOpen k Omega.isOpen).symm)).continuousAt
+      (Omega.isOpen.mem_nhds (hBΩ (mem_ball_self hρ)))
   -- `T v` jumps by `k!` across the hyperplane through `x₀`, and `T w` stays within `‖T‖ δ` of it.
   have hβ : ‖T‖ * dist v w < k ! / 2 := by
     have hδ : 0 < δ := div_pos hk (by positivity)
@@ -411,10 +411,7 @@ theorem not_dense_contDiffOn_representatives_top (hΩ : (Omega : Set E).Nonempty
       mul_le_mul_of_nonneg_left (by rw [dist_comm]; exact (mem_ball.1 hwv).le) (norm_nonneg T)
     linarith
   refine not_ae_abs_mul_truncPow_sub_le (mu := mu) he hρ hg hβ ?_
-  have hT : dist (T v) (T w) ≤ ‖T‖ * dist v w := T.lipschitzWith.dist_le_mul _ _
-  filter_upwards [hv, hTw, Lp.ae_dist_le_dist_top (T v) (T w)] with x h₁ h₂ h₃
-  simp only [T, ContinuousLinearMap.comp_apply] at h₂ h₃ hT
-  rw [h₁, h₂, Real.dist_eq] at h₃
-  exact h₃.trans hT
+  filter_upwards [hv, hTw w hf hwf, ae_dist_le_opNorm_mul_dist T v w] with x h₁ h₂ h₃
+  rwa [h₁, h₂, Real.dist_eq] at h₃
 
 end TauCeti.Wkp
