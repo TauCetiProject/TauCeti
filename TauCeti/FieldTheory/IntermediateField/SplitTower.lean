@@ -78,8 +78,8 @@ noncomputable def IsTowerSplitting.tensorProductAlgEquiv (h : E.IsTowerSplitting
     (halg : Algebra.IsAlgebraic K E ∨ Algebra.IsAlgebraic K M) : E ⊗[K] M ≃ₐ[M] L := by
   have hdisj := (linearDisjoint_iff'.1 h.linearDisjoint).symm
   have hsup : M.toSubalgebra ⊔ E.toSubalgebra = ⊤ := by
-    rw [sup_comm, ← sup_toSubalgebra_of_isAlgebraic E M halg, h.sup_eq_top]
-    rfl
+    rw [sup_comm, ← sup_toSubalgebra_of_isAlgebraic E M halg, h.sup_eq_top,
+      top_toSubalgebra]
   exact (commRight K M E).symm.trans (hdisj.mulMapLeftOfSupEqTop hsup)
 
 /-- The isomorphism of a split tower sends a pure tensor to the product of its factors. -/
@@ -107,12 +107,13 @@ theorem IsTowerSplitting.of_tensorProductAlgEquiv (e : E ⊗[K] M ≃ₐ[M] L)
     apply Algebra.TensorProduct.ext'
     intro x y
     have hx : e (x ⊗ₜ[K] (1 : M)) = (x : L) := AlgHom.congr_fun he x
-    have hy : e ((1 : E) ⊗ₜ[K] y) = (y : L) := e.commutes y
+    have hy : e ((1 : E) ⊗ₜ[K] y) = (y : L) := by
+      rw [← Algebra.TensorProduct.right_algebraMap_apply, e.commutes,
+        IntermediateField.algebraMap_apply]
     calc
       e (x ⊗ₜ[K] y) = e ((x ⊗ₜ[K] 1) * (1 ⊗ₜ[K] y)) := by simp
       _ = _ := by
-        rw [map_mul, hx, hy, productMap_apply_tmul]
-        rfl
+        rw [map_mul, hx, hy, productMap_apply_tmul, coe_val, coe_val]
   refine ⟨.of_isField (e.toMulEquiv.isField (Field.toIsField L)), ?_⟩
   have hrange : E.toSubalgebra ⊔ M.toSubalgebra = ⊤ := by
     rw [← E.range_val, ← M.range_val, ← productMap_range, ← hmul, AlgHom.range_eq_top]
