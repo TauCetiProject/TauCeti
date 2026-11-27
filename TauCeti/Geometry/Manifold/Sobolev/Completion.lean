@@ -14,7 +14,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
-import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
+import TauCeti.Analysis.Sobolev.BesselPotential.Rellich.Basic
 import TauCeti.Geometry.Manifold.Sobolev.ChartReading
 
 /-!

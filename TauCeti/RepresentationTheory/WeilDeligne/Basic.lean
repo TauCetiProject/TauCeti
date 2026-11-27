@@ -111,6 +111,13 @@ theorem r_apply_N_apply (D : WeilDeligneParameter E W V deg q) (w : W) (v : V) :
     D.r w (D.N v) = (q : E) ^ (deg w).toAdd • D.N (D.r w v) :=
   LinearMap.congr_fun (D.r_mul_N w) v
 
+/-- The conjugation relation in the form `N (r(w) v) = q ^ (-deg w) • r(w) (N v)`. -/
+theorem N_apply_r_apply (D : WeilDeligneParameter E W V deg q) (w : W) (v : V) :
+    D.N (D.r w v) = (q : E) ^ (-(deg w).toAdd) • D.r w (D.N v) := by
+  have h := D.r_apply_N_apply w⁻¹ (D.r w v)
+  rw [Representation.inv_self_apply, map_inv deg w, toAdd_inv] at h
+  rw [← Representation.self_inv_apply D.r w (D.N (D.r w v)), h, map_smul]
+
 /-- **Frobenius semisimplicity**: every element of the Weil group of nonzero degree acts
 semisimply (Deligne 1973, §§8.5–8.6, p. 570). -/
 def IsFrobeniusSemisimple (D : WeilDeligneParameter E W V deg q) : Prop :=
