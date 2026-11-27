@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.HahnSeries.PowerSeries
 public import Mathlib.RingTheory.PowerSeries.Log
-public import TauCeti.Algebra.Ring.QPochhammer
+public import TauCeti.Algebra.Ring.QPochhammer.Basic
 public import TauCeti.RingTheory.PowerSeries.Basic
 public import TauCeti.RingTheory.PowerSeries.QDerivative
 import Mathlib.Tactic.Ring
