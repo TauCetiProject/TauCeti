@@ -89,8 +89,10 @@ namespace TauCeti
 variable (S : Submonoid ℤ)
 
 /-- The first possible homotopy group: the homotopy group `πₙ₊₂` of an `(n + 1)`-connected space
-with the homology of a point over a localization `k` of `ℤ` at `S` is `S`-torsion. Through the
-Hurewicz isomorphism it is `Hₙ₊₂(Z; ℤ)`, which is `S`-torsion since `Hₙ₊₂(Z; k)` vanishes. -/
+whose `k`-homology vanishes in degree `n + 2` (for a localization `k` of `ℤ` at `S`; the unused
+degree-`n + 3` vanishing hypothesis matches `prop_homotopyGroup_of_subsingleton_singularHomology`)
+is `S`-torsion. Through the Hurewicz isomorphism it is `Hₙ₊₂(Z; ℤ)`, which is `S`-torsion since
+`Hₙ₊₂(Z; k)` vanishes. -/
 private theorem isTorsion'_homotopyGroup_of_connected (k : Type) [CommRing k] [Algebra ℤ k]
     [IsLocalization S k] {Z : Type} [TopologicalSpace Z] [PathConnectedSpace Z] (z : Z) (n : ℕ)
     (hZ : ∀ j, j ≠ 0 → j < n + 2 → Subsingleton (π_ j Z z))

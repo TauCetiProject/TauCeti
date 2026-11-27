@@ -69,9 +69,9 @@ homotopy group at a time, along the Whitehead tower.
   `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible` for the
   Eilenberg--Mac Lane fibres.
 
-The Eilenberg--Mac Lane fibre sits over the `(n - 1)`-connected stage `Z`, never over the original
-space: only the fibration `K(πₙ Z, n - 1) → Z⟨n⟩ → Z` between successive stages is used. Over the
-two-sphere, for instance, a Serre fibration whose fibre is simply connected, such as a
+The Eilenberg--Mac Lane fibre sits over the `(m + 1)`-connected stage `Z`, never over the original
+space: only the fibration `K(π_{m+2} Z, m + 1) → Z⟨m + 2⟩ → Z` between successive stages is used.
+Over the two-sphere, for instance, a Serre fibration whose fibre is simply connected, such as a
 `K(π₃(S²), 2)`, has a total space with nontrivial `π₂`, since `π₂(S²) ≅ ℤ`
 (`TauCeti.nontrivial_homotopyGroup_of_mem_serreFibrations_sphere` with `n = 0`). So no
 fibration `K(π₃(S²), 2) → E → S²` has a `3`-connected total space, as the tower over `S²` itself
