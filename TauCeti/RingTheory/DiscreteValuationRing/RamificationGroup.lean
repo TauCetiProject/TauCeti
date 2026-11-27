@@ -98,7 +98,7 @@ private theorem coe_uniformizerRatio (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
   rfl
 
 /-- The 1-cocycle identity `u_{στ} = u_σ * σ(u_τ)` in `Bˣ` for the uniformizer ratio. -/
-theorem coe_uniformizerRatio_mul_apply (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
+theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : B} (hϖ : Irreducible ϖ)
     (σ τ : ramificationGroup G B (i : ℤ)) :
     (uniformizerRatio i hϖ (σ * τ) : Bˣ) =
       (uniformizerRatio i hϖ σ : Bˣ) *
@@ -130,7 +130,7 @@ noncomputable def ramificationGroupToUnitFiltrationGraded (i : ℕ) {ϖ : B} (h�
           Units.map (MulSemiringAction.toRingHom G B (σ : G)).toMonoidHom
             (uniformizerRatio i hϖ τ : Bˣ) / (uniformizerRatio i hϖ τ : Bˣ) := by
       push_cast
-      rw [coe_uniformizerRatio_mul_apply]
+      rw [coe_uniformizerRatio_mul]
       simp [div_eq_mul_inv, mul_comm, mul_left_comm, mul_assoc]
     rw [hcocycle]
     exact unitsMap_div_mem_unitFiltration_succ σ.property _

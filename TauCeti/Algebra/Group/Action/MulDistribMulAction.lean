@@ -22,8 +22,7 @@ automorphism of `A`, so it preserves irreducibility.
 ## Main results
 
 * `TauCeti.smulDistribClass_self`: `SMulDistribClass G A A` for a `MulDistribMulAction G A`.
-* `TauCeti.irreducible_smul_iff` and `Irreducible.smul`: irreducibility is preserved by a
-  multiplicative distributive group action.
+* `Irreducible.smul`: irreducibility is preserved by a multiplicative distributive group action.
 -/
 
 public section
@@ -36,14 +35,9 @@ instance smulDistribClass_self (G A : Type*) [Monoid G] [Monoid A] [MulDistribMu
     SMulDistribClass G A A :=
   ⟨smul_mul'⟩
 
-/-- A group acting by multiplicative distributive automorphisms preserves irreducibility. -/
-theorem irreducible_smul_iff {G A : Type*} [Group G] [Monoid A] [MulDistribMulAction G A]
-    (g : G) (a : A) : Irreducible (g • a) ↔ Irreducible a :=
-  MulEquiv.irreducible_iff (MulDistribMulAction.toMulEquiv A g)
-
 end TauCeti
 
 /-- Irreducibility is preserved by a multiplicative distributive group action. -/
 theorem Irreducible.smul {G A : Type*} [Group G] [Monoid A] [MulDistribMulAction G A]
     {a : A} (ha : Irreducible a) (g : G) : Irreducible (g • a) :=
-  (TauCeti.irreducible_smul_iff g a).mpr ha
+  ha.map (MulDistribMulAction.toMulEquiv A g)

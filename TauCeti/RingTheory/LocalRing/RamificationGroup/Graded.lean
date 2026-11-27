@@ -89,10 +89,12 @@ group `G_1` is the unique Sylow `p`-subgroup of `G_0`.
   cyclic of order prime to the residue characteristic and dividing `#k - 1`.
 * `TauCeti.IsLocalRing.eq_ramificationGroupOneSylow`,
   `TauCeti.IsLocalRing.natCard_ramificationGroup_one`, and
-  `TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`
-  (also without finiteness of `G_0` when `k` is finite):
+  `TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero`:
   `G_1` is the only Sylow `p`-subgroup of `G_0`, of order the `p`-part of `#G_0`, and is trivial
   exactly when `p ∤ #G_0`.
+* `ramificationGroup_one_eq_bot_iff_not_dvd_card_ramificationGroup_zero_of_finite_residueField`
+  (in `TauCeti.IsLocalRing`): the same criterion `G_1 = ⊥ ↔ ¬ p ∣ #G_0` without assuming `G_0`
+  is finite, under `[Finite (ResidueField S)]`.
 
 ## References
 
