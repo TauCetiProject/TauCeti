@@ -96,14 +96,16 @@ diagonal and of the corner. -/
 private theorem hermitianCornerCoordinates_apply (x : Fin (k + 1) × Fin (k + 1) → ℝ) :
     hermitianCornerCoordinates k x = (fun ij ↦ x (ij.1.castSucc, ij.2.castSucc),
       fun a ↦ ⟨x (a.castSucc, Fin.last k), x (Fin.last k, a.castSucc)⟩,
-      x (Fin.last k, Fin.last k)) :=
-  (rfl)
+      x (Fin.last k, Fin.last k)) := by
+  ext <;> simp [hermitianCornerCoordinates, hermitianCornerIndex, MeasurableEquiv.prodCongr,
+    MeasurableEquiv.piCongrRight, MeasurableEquiv.arrowProdEquivProdArrow,
+    MeasurableEquiv.coe_sumPiEquivProdPi, MeasurableEquiv.piCongrLeft, MeasurableEquiv.symm_mk,
+    MeasurableEquiv.coe_mk, Equiv.piCongrLeft_symm_apply]
 
 /-- Regrouping the coordinates is continuous. -/
 private theorem continuous_hermitianCornerCoordinates :
     Continuous (hermitianCornerCoordinates k) := by
-  have h (x y : ℝ) : (⟨x, y⟩ : ℂ) = Complex.equivRealProdCLM.symm (x, y) := (rfl)
-  simp only [funext hermitianCornerCoordinates_apply, h]
+  simp only [funext hermitianCornerCoordinates_apply, Complex.mk_eq_add_mul_I]
   fun_prop
 
 /-- The splitting of a Hermitian matrix of size `k + 1` into its upper left block of size `k`,
