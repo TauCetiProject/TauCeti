@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Action.CentralTwist.Covariant
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Operator.Completion
 public import TauCeti.Topology.Algebra.LinearMapCompletion
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Hom
 
 /-!
 # Integrated L¹ representations of twisted covariant pairs
@@ -186,6 +187,17 @@ def equivCovariantRepresentation :
   left_inv P := P.toCentralCovariantPair_toCovariantRepresentation
     (P.toCovariantRepresentation_coefficient.symm ▸ P.nondegenerate)
   right_inv Q := Subtype.ext (Q.val.toCovariantRepresentation_toCentralCovariantPair Q.property)
+
+@[simp] theorem coe_equivCovariantRepresentation_apply (P : CentralCovariantPair H α 1) :
+    ((equivCovariantRepresentation P :
+      {Q : CovariantRepresentation α H // Q.coefficient.IsNondegenerate}) :
+      CovariantRepresentation α H) = P.toCovariantRepresentation :=
+  (rfl)
+
+@[simp] theorem equivCovariantRepresentation_symm_apply
+    (Q : {Q : CovariantRepresentation α H // Q.coefficient.IsNondegenerate}) :
+    equivCovariantRepresentation.symm Q = Q.val.toCentralCovariantPair Q.property :=
+  (rfl)
 
 end Untwisted
 

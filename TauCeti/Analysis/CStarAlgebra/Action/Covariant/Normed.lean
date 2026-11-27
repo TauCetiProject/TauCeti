@@ -11,6 +11,7 @@ public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Operator.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
 public import TauCeti.Topology.Algebra.LinearMapCompletion
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Hom
 
 /-!
 # Contractive integrated representations

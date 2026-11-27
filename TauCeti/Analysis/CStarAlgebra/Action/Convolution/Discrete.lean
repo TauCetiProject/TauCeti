@@ -169,13 +169,9 @@ unimodular. -/
 theorem star_single (g : G) (a : A) :
     star (single g a : ConvolutionAlgebra α Measure.count) = single g⁻¹ (α g⁻¹ (star a)) := by
   classical
-  ext1
-  ext s
-  change (star (single g a : ConvolutionAlgebra α Measure.count)).ofConv s =
-    (single g⁻¹ (α g⁻¹ (star a)) : ConvolutionAlgebra α Measure.count).ofConv s
-  rw [ofConv_star, twistedInvolution_apply, modularCharacter_eq_one_of_discreteTopology,
-    ofConv_single_apply, ofConv_single_apply]
-  simp only [inv_eq_iff_eq_inv]
+  refine CompactlySupportedL1.ext (CompactlySupportedContinuousMap.ext fun s => ?_)
+  simp only [ofConv_star, twistedInvolution_apply, modularCharacter_eq_one_of_discreteTopology,
+    ofConv_single_apply, inv_eq_iff_eq_inv]
   split_ifs with h
   · simp [h]
   · simp
