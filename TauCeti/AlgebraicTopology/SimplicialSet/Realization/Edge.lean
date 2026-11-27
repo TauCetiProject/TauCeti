@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.PiZero
 public import TauCeti.Geometry.Convex.ConvexSpace.ContractibleSpaceStdSimplex
 
@@ -24,7 +25,9 @@ These paths satisfy the relations of the homotopy category of `X` up to homotopy
   (`SSet.Edge.CompStruct.toTopPath_trans_homotopic`), the homotopy taking place in the realized
   `2`-simplex, which is simply connected;
 * the realization of a map of simplicial sets carries the path of an edge to the path of its image
-  (`SSet.Edge.map_toTopPath`).
+  (`SSet.Edge.map_toTopPath`);
+* the opposite-realization homeomorphism reverses edge paths
+  (`SSet.Edge.toTopOpHomeomorph_toTopPath`, `SSet.Edge.toTopOpHomeomorph_toTopPath_apply`).
 
 For the nerve of a category these are the edge paths of its classifying space.
 
@@ -90,6 +93,23 @@ lemma map_toTopPath (e : X.Edge x₀ x₁) (f : X ⟶ Y) :
       (e.map f).toTopPath.cast (toTop_map_toTopPoint f x₀) (toTop_map_toTopPoint f x₁) := by
   ext t
   simp [map_edge]
+
+/-- The opposite-realization homeomorphism `SSet.toTopOpHomeomorph` reverses the path traced by
+an edge. -/
+lemma toTopOpHomeomorph_toTopPath_apply (e : X.Edge x₀ x₁) (t : I) :
+    toTopOpHomeomorph X ((Edge.opEquiv e).toTopPath t) = e.toTopPath.symm t := by
+  rw [toTopPath_apply, toTopOpHomeomorph_toTopObjMk, Edge.opEquiv_edge,
+    X.opObjEquiv.apply_symm_apply, StdSimplex.map_rev_homeomorphI_symm,
+    _root_.Path.symm_apply, Function.comp_apply, toTopPath_apply]
+
+/-- `SSet.toTopOpHomeomorph` carries the path of `SSet.Edge.opEquiv e` to the reversed path of
+`e`. -/
+lemma toTopOpHomeomorph_toTopPath (e : X.Edge x₀ x₁) :
+    (Edge.opEquiv e).toTopPath.map (toTopOpHomeomorph X).continuous =
+      e.toTopPath.symm.cast
+        (by simp : toTopOpHomeomorph X (toTopPoint (X.opObjEquiv.symm x₁)) = toTopPoint x₁)
+        (by simp : toTopOpHomeomorph X (toTopPoint (X.opObjEquiv.symm x₀)) = toTopPoint x₀) :=
+  _root_.Path.ext (funext (toTopOpHomeomorph_toTopPath_apply e))
 
 namespace CompStruct
 

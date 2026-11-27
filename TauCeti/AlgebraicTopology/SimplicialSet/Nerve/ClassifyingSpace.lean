@@ -280,7 +280,10 @@ noncomputable def discreteHomeomorph (ι : Type u) :
 @[simp] lemma discreteHomeomorph_vertex (ι : Type u) (i : Discrete ι) :
     discreteHomeomorph ι (vertex i) = (i.as : TopCat.discrete.obj ι) := by
   let x : (nerve (Discrete ι)) _⦋0⦌ := nerveEquiv.symm i
-  rw [discreteHomeomorph, TopCat.homeoOfIso_apply, Iso.trans_hom, Functor.mapIso_hom]
+  rw [discreteHomeomorph, TopCat.homeoOfIso_apply, Iso.trans_hom, Functor.mapIso_hom,
+    ConcreteCategory.comp_apply]
+  -- `(nerve (Discrete ι)) _⦋0⦌` is definitionally `ComposableArrows (Discrete ι) 0`,
+  -- which `SSet.toTop_map_toTopPoint` expects syntactically.
   change SSet.constCompToTopIso.hom.app ι
       (SSet.toTop.map (nerve.discreteIso ι).hom (SSet.toTopPoint x)) = i.as
   rw [SSet.toTop_map_toTopPoint, nerve.discreteIso_hom_app_nerveEquiv_symm,
@@ -299,6 +302,8 @@ noncomputable def finSuccHomeomorphStdSimplex (n : ℕ) :
   simp only [finSuccHomeomorphStdSimplex, Homeomorph.trans_apply, TopCat.homeoOfIso_apply,
     Functor.mapIso_hom, SSet.toTop_map_toTopObjMk]
   let φ : ⦋d⦌ ⟶ ⦋n⦌ := SSet.stdSimplex.objEquiv ((nerve.finSuccIsoStdSimplex n).hom.app (op ⦋d⦌) σ)
+  -- `Δ[n].map φ.op` pulls back `𝟙 ⦋n⦌` to `φ`, which agrees with `(finSuccIsoStdSimplex n).hom`
+  -- on `σ` by definition of `SSet.stdSimplex.objEquiv`.
   have hσ : (nerve.finSuccIsoStdSimplex n).hom.app (op ⦋d⦌) σ =
       Δ[n].map φ.op (SSet.stdSimplex.objEquiv.symm (𝟙 ⦋n⦌)) := by ext k : 3; rfl
   rw [hσ, SSet.toTopObjMk_map, ← SSet.toTop_map_yonedaEquiv_symm_toTopHomeo_symm,
@@ -405,9 +410,9 @@ noncomputable def opHomeomorph : classifyingSpace Cᵒᵖ ≃ₜ classifyingSpac
 lemma homeoOfIso_opIso : TopCat.homeoOfIso (opIso C) = opHomeomorph C := (rfl)
 lemma opIso_hom_naturality {C D : Type u} [Category.{v} C] [Category.{v} D] (F : C ⥤ D) :
     F.op.classifyingSpaceMap ≫ (opIso D).hom = (opIso C).hom ≫ F.classifyingSpaceMap := by
-  rw [opIso, opIso, Iso.trans_hom, Iso.trans_hom,
-    Functor.mapIso_hom, Functor.mapIso_hom, ← Category.assoc, ← CategoryTheory.Functor.map_comp,
-    nerve.opIso_hom_naturality, CategoryTheory.Functor.map_comp, Category.assoc]
+  simp only [opIso, Iso.trans_hom, Functor.mapIso_hom, ← CategoryTheory.Functor.map_comp_assoc,
+    nerve.opIso_hom_naturality]
+  simp only [CategoryTheory.Functor.map_comp, Category.assoc, Iso.app_hom]
   exact congrArg (SSet.toTop.map (nerve.opIso C).hom ≫ ·)
     (SSet.opFunctorCompToTopIso.hom.naturality (nerveMap F))
 @[simp] lemma opHomeomorph_toTopObjMk {n : ℕ} (σ : (nerve Cᵒᵖ) _⦋n⦌)
@@ -431,18 +436,28 @@ lemma opIso_hom_naturality {C D : Type u} [Category.{v} C] [Category.{v} D] (F :
     exact congrArg (SSet.toTopObjMk (X := nerve C) · _) (Equiv.apply_symm_apply _ _)
 @[simp] lemma opHomeomorph_symm_vertex (x : C) : (opHomeomorph C).symm (vertex x) = vertex (op x) :=
   (opHomeomorph C).injective (by simp)
-@[simp] lemma opHomeomorph_edge_apply {x y : C} (f : x ⟶ y) (t : unitInterval) :
-    opHomeomorph C (edge f.op t) = (edge f).symm t := by
-  let e : (nerve C) _⦋1⦌ := ComposableArrows.mk₁ f
-  rw [edge_apply, opHomeomorph_toTopObjMk, nerve.edgeMk_edge, nerve.opIso_hom_app_mk₁,
-    _root_.Path.symm_apply, Function.comp_apply, edge_apply, nerve.edgeMk_edge,
-    StdSimplex.map_rev_homeomorphI_symm]
-  exact congrArg (SSet.toTopObjMk (X := nerve C) · _) ((nerve C).opObjEquiv.apply_symm_apply e)
 lemma opHomeomorph_edge {x y : C} (f : x ⟶ y) :
     (edge f.op).map (opHomeomorph C).continuous =
       (edge f).symm.cast (opHomeomorph_vertex C (op y))
-        (opHomeomorph_vertex C (op x)) :=
-  _root_.Path.ext (funext (opHomeomorph_edge_apply C f))
+        (opHomeomorph_vertex C (op x)) := by
+  ext t
+  have h₁ : SSet.toTop.map (nerve.opIso C).hom (edge f.op t) =
+      (SSet.Edge.opEquiv (nerve.edgeMk f)).toTopPath t := by
+    have hm := congrArg (fun p : _root_.Path _ _ ↦ p t)
+      (SSet.Edge.map_toTopPath (nerve.edgeMk f.op) (nerve.opIso C).hom)
+    rw [_root_.Path.map_coe, Function.comp_apply, _root_.Path.cast_coe,
+      ← edge_eq_toTopPath] at hm
+    exact hm.trans (SSet.Edge.toTopPath_apply_eq_of_edge_eq
+      ((SSet.Edge.map_edge _ _).trans
+        ((nerve.opIso_hom_app_mk₁ C f).trans (SSet.Edge.opEquiv_edge (nerve.edgeMk f)).symm)) t)
+  simp only [_root_.Path.map_coe, Function.comp_apply, _root_.Path.cast_coe]
+  rw [opHomeomorph, TopCat.homeoOfIso_apply, opIso, Iso.trans_hom, Functor.mapIso_hom,
+    Iso.app_hom, ConcreteCategory.comp_apply, ← SSet.toTopOpHomeomorph_apply, h₁]
+  exact (SSet.Edge.toTopOpHomeomorph_toTopPath_apply (nerve.edgeMk f) t).trans
+    (by rw [edge_eq_toTopPath])
+@[simp] lemma opHomeomorph_edge_apply {x y : C} (f : x ⟶ y) (t : unitInterval) :
+    opHomeomorph C (edge f.op t) = (edge f).symm t :=
+  congrArg (fun p : _root_.Path _ _ ↦ p t) (opHomeomorph_edge C f)
 lemma opHomeomorph_naturality_apply {C D : Type u} [Category.{v} C] [Category.{v} D]
     (F : C ⥤ D) (z : classifyingSpace Cᵒᵖ) :
     opHomeomorph D (F.op.classifyingSpaceMap z) = F.classifyingSpaceMap (opHomeomorph C z) :=

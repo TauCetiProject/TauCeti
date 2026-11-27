@@ -376,6 +376,7 @@ lemma discreteIso_hom_app_nerveEquiv_symm {ι : Type u} (i : Discrete ι) :
 @[reassoc] lemma discreteIso_hom_naturality {ι κ : Type u} (f : ι → κ) :
     nerveMap (Discrete.functor (Discrete.mk ∘ f)) ≫ (discreteIso κ).hom =
       (discreteIso ι).hom ≫ (Functor.const SimplexCategoryᵒᵖ).map (TypeCat.ofHom f) := by
+  -- Both sides evaluate `(σ.obj 0).as` under `f` by definition of `nerveMap` and `discreteIso`.
   ext ⟨m⟩ σ : 4; rfl
 /-- The nerve of a product category `C × D` is isomorphic to `nerve C ⊗ nerve D`. -/
 def prodIso (C D : Type u) [Category.{v} C] [Category.{v} D] :
@@ -412,6 +413,7 @@ def prodIso (C D : Type u) [Category.{v} C] [Category.{v} D] :
     nerveMap (F₁.prod F₂) ≫ (prodIso D₁ D₂).hom =
       (prodIso C₁ C₂).hom ≫ (nerveMap F₁ ⊗ₘ nerveMap F₂) := by
   refine CategoryTheory.NatTrans.ext (funext fun ⟨m⟩ ↦ ?_)
+  -- Both sides postcompose the two projections of `σ` with `F₁` and `F₂` by definition.
   ext σ; rfl
 /-- The nerve of `AsSmall.{w} C` is isomorphic to `SSet.uliftFunctor.obj (nerve C)`. -/
 def asSmallIso (C : Type u) [Category.{v} C] :
