@@ -374,6 +374,16 @@ theorem eLpNormWkp_apply_le_eLpNormWkp_succ_of_hasWeakFDerivOn [CompleteSpace F]
   (eLpNormWkp_apply_le_of_norm_le_one D hv).trans
     (eLpNormWkp_le_eLpNormWkp_succ_of_hasWeakFDerivOn hD)
 
+/-- On a set `U` almost everywhere equal to its interior, a partial derivative `z ↦ D z v`,
+`‖v‖ ≤ 1`, of a weak derivative `D` of `f` on the interior has `W^{k,p}(U)` norm at most the
+`W^{k+1,p}(U)` norm of `f`. -/
+theorem eLpNormWkp_apply_le_eLpNormWkp_succ_of_hasWeakFDerivOn_interior [CompleteSpace F]
+    (hU : U =ᵐ[volume] (Opens.interior U : Set ℂ)) {D : ℂ → ℂ →L[ℝ] F}
+    (hD : HasWeakFDerivOn volume (Opens.interior U) f D) {v : ℂ} (hv : ‖v‖ ≤ 1) :
+    eLpNormWkp p U k (fun z => D z v) ≤ eLpNormWkp p U (k + 1) f := by
+  rw [eLpNormWkp_succ_eq_of_hasWeakFDerivOn_interior hU hD]
+  exact (eLpNormWkp_apply_le_of_norm_le_one D hv).trans le_add_self
+
 /-- Negation preserves the `W^{k,p}` norm. -/
 @[simp]
 theorem eLpNormWkp_neg : eLpNormWkp p U k (-f) = eLpNormWkp p U k f := by

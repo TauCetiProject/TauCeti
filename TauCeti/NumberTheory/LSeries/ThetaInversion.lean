@@ -7,7 +7,7 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
-public import TauCeti.NumberTheory.LSeries.GaussianTheta
+public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import Mathlib.NumberTheory.MulChar.Lemmas
 
@@ -37,11 +37,12 @@ local notation "W" j:arg t:arg => ((t ^ j * Real.exp (-Real.pi * t ^ 2) : ℝ) :
 
 namespace DirichletCharacter
 
-private theorem tsum_gaussian_eq_two_mul_tsum_succ {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) (hχ₀ : χ 0 = 0) {j : ℕ} (hpar : χ (-1) = (-1) ^ j)
-    {t : ℝ} (ht : t ≠ 0) :
+/-- For a weight with the parity of the character, the bilateral Gaussian sum is twice its
+positive-index part plus the term at zero. Only degree zero can contribute at zero. -/
+theorem tsum_gaussian_eq_zero_add_two_mul_tsum_succ {N : ℕ} [NeZero N]
+    (χ : DirichletCharacter ℂ N) {j : ℕ} (hpar : χ (-1) = (-1) ^ j) {t : ℝ} (ht : t ≠ 0) :
     (∑' n : ℤ, χ n * W j ((n : ℝ) * t)) =
-      2 * ∑' n : ℕ, χ (n + 1 : ℕ) * W j ((n + 1 : ℕ) * t) := by
+      (if j = 0 then χ 0 else 0) + 2 * ∑' n : ℕ, χ (n + 1 : ℕ) * W j ((n + 1 : ℕ) * t) := by
   have heven : (fun n : ℤ ↦ χ n * W j ((n : ℝ) * t)).Even := by
     intro n
     have hw (x : ℝ) : W j (-x) = (-1 : ℂ) ^ j * W j x := by
@@ -57,9 +58,11 @@ private theorem tsum_gaussian_eq_two_mul_tsum_succ {N : ℕ} [NeZero N]
       _ = ((-1 : ℂ) ^ j * (-1 : ℂ) ^ j) * (χ n * W j ((n : ℝ) * t)) := by ring
       _ = _ := by rw [hsign, one_mul]
   rw [tsum_int_eq_zero_add_two_mul_tsum_pnat heven (ZMod.summable_periodic_gaussian χ j ht)]
-  simp only [Int.cast_zero, hχ₀, zero_mul, zero_add, two_nsmul, ← two_mul,
-    Int.cast_natCast]
   rw [← tsum_pnat_eq_tsum_succ (f := fun n : ℕ ↦ χ n * W j ((n : ℝ) * t))]
+  simp only [Int.cast_zero, Int.cast_natCast, zero_mul, two_nsmul, ← two_mul]
+  rcases eq_or_ne j 0 with rfl | hj
+  · simp
+  · simp [hj, zero_pow hj]
 
 private theorem norm_tsum_gaussian_eq_norm_tsum_inv {N : ℕ} [NeZero N]
     {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) {j : ℕ} (hj : j ≤ 1)
@@ -99,8 +102,7 @@ theorem IsPrimitive.norm_gaussianThetaSeries_inv {N : ℕ} [NeZero N]
       ∑' n : ℕ, χ (n + 1 : ℕ) * W j.val ((n + 1 : ℕ) * u) := by
     rw [gaussianTheta_def, tsum_pnat_eq_tsum_succ
       (f := fun n : ℕ ↦ χ n * gaussianMonomial j (n * u))]
-    -- The weight is opaque here; use its two public evaluation lemmas.
-    exact tsum_congr fun n ↦ by fin_cases j <;> simp
+    simp only [gaussianMonomial_def]
   simp only [gaussianThetaSeries_def, norm_mul, norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg _),
     htheta]
   rcases le_or_gt t 0 with ht | ht
@@ -110,9 +112,10 @@ theorem IsPrimitive.norm_gaussianThetaSeries_inv {N : ℕ} [NeZero N]
   have hq : N ≠ 1 := fun h ↦ hχ₀ (level_one' χ h)
   have hy : 0 < 1 / ((N : ℝ) * t) := one_div_pos.mpr (mul_pos hN ht)
   have h := norm_tsum_gaussian_eq_norm_tsum_inv hχ (Nat.le_of_lt_succ j.isLt) ht
-  rw [tsum_gaussian_eq_two_mul_tsum_succ χ (χ.map_zero' hq) hpar ht.ne',
-    tsum_gaussian_eq_two_mul_tsum_succ χ (χ.map_zero' hq) hpar hy.ne',
-    norm_mul, norm_mul, Complex.norm_two, mul_left_comm ((Real.sqrt N * t)⁻¹),
+  rw [tsum_gaussian_eq_zero_add_two_mul_tsum_succ χ hpar ht.ne',
+    tsum_gaussian_eq_zero_add_two_mul_tsum_succ χ hpar hy.ne'] at h
+  simp only [χ.map_zero' hq, ite_self, zero_add] at h
+  rw [norm_mul, norm_mul, Complex.norm_two, mul_left_comm ((Real.sqrt N * t)⁻¹),
     mul_right_inj' (by norm_num : (2 : ℝ) ≠ 0)] at h
   rw [h, ← mul_assoc, Real.sqrt_div (by norm_num : (0 : ℝ) ≤ 1), Real.sqrt_one,
     Real.sqrt_mul hN.le]
