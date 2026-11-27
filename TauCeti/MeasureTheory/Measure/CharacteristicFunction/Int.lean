@@ -7,8 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # The characteristic function of a measure on the integers
@@ -27,8 +27,6 @@ independent integer random variables are in `TauCeti.Probability.Independence.In
 
 * `MeasureTheory.periodic_charFun_map_intCast`: the characteristic function of an integer law has
   period `2π`.
-* `MeasureTheory.integral_exp_mul_intCast_mul_I`: orthogonality of the characters on `[-π, π]`,
-  `∫_{-π}^{π} exp(i t n) dt` is `2π` for `n = 0` and `0` for every other integer `n`.
 * `MeasureTheory.measureReal_singleton_eq_integral_charFun_map_intCast`: inversion on the
   integers.
 
@@ -42,24 +40,6 @@ public section
 open Complex Real
 
 namespace MeasureTheory
-
-/-- The characters `t ↦ exp(i t n)`, `n ∈ ℤ`, are orthogonal on `[-π, π]`: the integral of
-`exp(i t n)` over `[-π, π]` is `2π` for `n = 0` and `0` otherwise. -/
-theorem integral_exp_mul_intCast_mul_I (n : ℤ) :
-    ∫ t in -π..π, cexp (t * n * I) = if n = 0 then (2 * π : ℂ) else 0 := by
-  split_ifs with hn
-  · subst hn
-    simp only [Int.cast_zero, mul_zero, zero_mul, Complex.exp_zero,
-      intervalIntegral.integral_const, sub_neg_eq_add, real_smul]
-    push_cast
-    ring
-  have hc : (n : ℂ) * I ≠ 0 := mul_ne_zero (by exact_mod_cast hn) I_ne_zero
-  have h2 : cexp ((n : ℂ) * I * π) = cexp ((n : ℂ) * I * ↑(-π)) := by
-    rw [exp_eq_exp_iff_exists_int]
-    exact ⟨n, by push_cast; ring⟩
-  have hfun : (fun t : ℝ ↦ cexp (t * n * I)) = fun t : ℝ ↦ cexp (n * I * t) :=
-    funext fun t ↦ by congr 1; ring
-  rw [hfun, integral_exp_mul_complex hc, h2, sub_self, zero_div]
 
 variable (μ : Measure ℤ)
 
@@ -86,14 +66,14 @@ Fourier coefficient of the characteristic function `φ` of its image on the line
 theorem measureReal_singleton_eq_integral_charFun_map_intCast [IsFiniteMeasure μ] (k : ℤ) :
     (μ.real {k} : ℂ) = (2 * π : ℂ)⁻¹ *
       ∫ t in -π..π, cexp (-(t * k * I)) * charFun (μ.map (Int.cast : ℤ → ℝ)) t := by
-  have hint : Integrable (Function.uncurry fun (t : ℝ) (l : ℤ) ↦ cexp (t * (l - k : ℤ) * I))
+  have hint : Integrable (Function.uncurry fun (t : ℝ) (l : ℤ) ↦ cexp ((l - k : ℤ) * t * I))
       ((volume.restrict (Set.uIoc (-π) π)).prod μ) := by
     rw [Set.uIoc_of_le (by linarith [pi_pos])]
     refine (integrable_const (1 : ℝ)).mono' (Continuous.aestronglyMeasurable ?_)
       (ae_of_all _ fun ⟨t, l⟩ ↦ ?_)
     · have hl : Continuous fun p : ℝ × ℤ ↦ ((p.2 - k : ℤ) : ℂ) :=
         (continuous_of_discreteTopology (f := fun l : ℤ ↦ ((l - k : ℤ) : ℂ))).comp continuous_snd
-      exact ((continuous_ofReal.comp continuous_fst).mul hl |>.mul continuous_const).cexp
+      exact (hl.mul (continuous_ofReal.comp continuous_fst) |>.mul continuous_const).cexp
     · simp only [Function.uncurry_apply_pair]
       norm_cast
       rw [norm_exp_ofReal_mul_I]
@@ -105,8 +85,8 @@ theorem measureReal_singleton_eq_integral_charFun_map_intCast [IsFiniteMeasure �
           simp [Set.indicator_apply, sub_eq_zero]
         rw [hind, integral_indicator_const _ (measurableSet_singleton k), real_smul]
         field_simp
-    _ = (2 * π : ℂ)⁻¹ * ∫ l, (∫ t in -π..π, cexp (t * (l - k : ℤ) * I)) ∂μ := by
-        simp_rw [integral_exp_mul_intCast_mul_I]
+    _ = (2 * π : ℂ)⁻¹ * ∫ l, (∫ t in -π..π, cexp ((l - k : ℤ) * t * I)) ∂μ := by
+        simp_rw [TauCeti.integral_cexp_intCast_mul_mul_I]
     _ = (2 * π : ℂ)⁻¹ *
         ∫ t in -π..π, cexp (-(t * k * I)) * charFun (μ.map (Int.cast : ℤ → ℝ)) t := by
         rw [← intervalIntegral_integral_swap hint]
