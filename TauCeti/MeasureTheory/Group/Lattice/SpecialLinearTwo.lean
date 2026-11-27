@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Group.ModularCharacter.FiniteCovolume
 public import TauCeti.MeasureTheory.Measure.Haar.Matrix.SpecialLinearTwo
 public import TauCeti.MeasureTheory.Measure.Haar.Unimodular
 public import TauCeti.NumberTheory.Modular
+public import TauCeti.NumberTheory.Modular.Orbits
 
 /-!
 # `SL(2, ℤ)` is a nonuniform lattice in `SL(2, ℝ)`
@@ -72,9 +73,7 @@ theorem exists_isFundamentalDomain_volume_le_of_forall_exists_smul_mem {F : Set 
   have hcov : D ⊆ ⋃ γ : Γ, γ • ((· • I) ⁻¹' F : Set SL(2, ℝ)) := fun x _ ↦ by
     obtain ⟨γ, hγ, hγx⟩ := hF (x • I)
     refine mem_iUnion.mpr ⟨⟨γ, hγ⟩⁻¹, ?_⟩
-    rw [mem_smul_set_iff_inv_smul_mem, inv_inv, mem_preimage, Subgroup.mk_smul, smul_eq_mul,
-      mul_smul]
-    exact hγx
+    simpa [mem_smul_set_iff_inv_smul_mem, mul_smul] using hγx
   exact (hD.measure_le_of_subset_iUnion_smul hcov).trans
     (Matrix.SpecialLinearGroup.volume_preimage_smul_I F).le
 
@@ -128,36 +127,6 @@ theorem isLattice_range_map_intCast :
     (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range.IsLattice volume :=
   Subgroup.isLattice_of_forall_exists_smul_mem ModularGroup.volume_fd_lt_top.ne
     forall_exists_smul_mem_fd
-
-/-- The imaginary part of a translate of `z` by `SL(2, ℤ)` is either that of `z` or at most its
-inverse: `Im (g • z) = Im z / ((c Re z + d)² + c² (Im z)²)`, where `c = 0` forces `d² = 1` and
-`c ≠ 0` gives `c² ≥ 1`. -/
-theorem _root_.ModularGroup.im_smul_eq_or_le_inv (g : SL(2, ℤ)) (z : ℍ) :
-    (g • z).im = z.im ∨ (g • z).im ≤ z.im⁻¹ := by
-  have hz := z.im_pos
-  have hnormSq : Complex.normSq (denom g z) =
-      ((g 1 0 : ℝ) * z.re + g 1 1) ^ 2 + ((g 1 0 : ℝ) * z.im) ^ 2 := by
-    simp only [ModularGroup.denom_apply, Fin.isValue, Complex.normSq_apply, Complex.add_re,
-      Complex.mul_re, Complex.intCast_re, coe_re, Complex.intCast_im, coe_im, zero_mul, sub_zero,
-      Complex.add_im, Complex.mul_im, add_zero]
-    ring
-  rw [ModularGroup.im_smul_eq_div_normSq, hnormSq]
-  by_cases hc : g 1 0 = 0
-  · -- `c = 0` forces `a d = 1`, so `d² = 1`
-    left
-    have hdet := g.det_coe
-    rw [Matrix.det_fin_two, hc, mul_zero, sub_zero] at hdet
-    have hd : (g 1 1 : ℝ) ^ 2 = 1 := by
-      rcases Int.eq_one_or_neg_one_of_mul_eq_one' hdet with ⟨-, h⟩ | ⟨-, h⟩ <;> simp [h]
-    simp [hc, hd]
-  · right
-    have hc1 : (1 : ℝ) ≤ (g 1 0 : ℝ) ^ 2 := by
-      have : (1 : ℤ) ≤ g 1 0 ^ 2 := by
-        have := sq_pos_of_ne_zero hc
-        omega
-      exact_mod_cast this
-    rw [div_le_iff₀ (by positivity), inv_mul_eq_div, le_div_iff₀ hz]
-    nlinarith [sq_nonneg ((g 1 0 : ℝ) * z.re + g 1 1), mul_pos hz hz]
 
 /-- **`SL(2, ℤ)` is not a uniform lattice in `SL(2, ℝ)`.** If `K * SL(2, ℤ) = SL(2, ℝ)` for a
 compact `K`, every point of `ℍ` would be a translate of a point of `K⁻¹ • i`, whose imaginary parts

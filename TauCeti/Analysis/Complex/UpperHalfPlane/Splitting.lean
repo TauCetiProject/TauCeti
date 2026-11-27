@@ -88,9 +88,4 @@ theorem toSL2RMulHomeomorph_symm_apply_snd_coe (g : SL(2, ℝ)) :
     ((toSL2RMulHomeomorph.symm g).2 : SL(2, ℝ)) = (toSL2R (g • I))⁻¹ * g :=
   by rfl
 
-/-- The orbit map `g ↦ g • i` is the first coordinate of the splitting `ℍ × K ≃ₜ SL(2, ℝ)`. -/
-theorem toSL2RMulHomeomorph_apply_smul_I (p : ℍ × MulAction.stabilizer SL(2, ℝ) I) :
-    toSL2RMulHomeomorph p • I = p.1 :=
-  toSL2R_mul_smul_I p.1 p.2
-
 end UpperHalfPlane

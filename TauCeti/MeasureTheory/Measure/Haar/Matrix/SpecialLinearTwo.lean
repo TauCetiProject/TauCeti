@@ -92,7 +92,8 @@ theorem volume_preimage_smul_I (E : Set ℍ) :
     volume ((· • I) ⁻¹' E : Set SL(2, ℝ)) = volume E := by
   have : toSL2RMulHomeomorph ⁻¹' ((· • I) ⁻¹' E : Set SL(2, ℝ)) = E ×ˢ univ := by
     ext p
-    simp only [mem_preimage, toSL2RMulHomeomorph_apply_smul_I, mem_prod, mem_univ, and_true]
+    simp only [mem_preimage, toSL2RMulHomeomorph_apply, toSL2R_mul_smul_I, mem_prod, mem_univ,
+      and_true]
   rw [volume_sl2r_apply, this, prod_prod, measure_univ, mul_one]
 
 /-- The orbit map `g ↦ g • i` is measure preserving from the Haar measure of `SL(2, ℝ)` to the
