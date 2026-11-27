@@ -12,7 +12,7 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Distribution.TestFunction.ZeroAtInfty
 import TauCeti.Analysis.FunctionalSpaces.SobolevInequality
 import TauCeti.Analysis.Sobolev.WeakDeriv.Classical
-import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 
 /-!
 # The critical Sobolev embeddings `W^{n,1}(ℝⁿ) ⊆ C₀(ℝⁿ)` and `W^{n+j,1}(ℝⁿ) ⊆ Cʲ(ℝⁿ)`

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.CharacteristicSet
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Diffeomorph
-public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 
@@ -46,16 +46,22 @@ chart symbols of `P`.
 * `TauCeti.isClassicalEllipticAt_iff_forall_notMem_classicalCharacteristicSet`,
   `TauCeti.classicalCharacteristicSet_eq_empty_iff`: `P` is elliptic at `x` exactly when no
   covector at `x` is characteristic, and elliptic exactly when its characteristic set is empty.
-* `TauCeti.classicalCharacteristicSet_add_of_mem_sub_one`: adding an operator of order `m - 1`
-  does not change the characteristic set.
-* `TauCeti.mk_mem_classicalCharacteristicSet_iff_mem_characteristicSet`: the characteristic set
+* `TauCeti.classicalCharacteristicSet_add_of_mem_sub_one`,
+  `TauCeti.classicalCharacteristicSet_smul`: adding an operator of order `m - 1` or multiplying by
+  a nonzero constant does not change the characteristic set, and
+  `TauCeti.classicalCharacteristicSet_of_mem_sub_one`: an operator of order `m - 1` is
+  characteristic in order `m` at every nonzero covector.
+* `TauCeti.mk_mem_classicalCharacteristicSet_iff_mem_characteristicSet`,
+  `TauCeti.mem_classicalCharacteristicSet_iff_mem_characteristicSet`: the characteristic set
   read in a chart is the characteristic set of the chart symbol.
 * `TauCeti.mk_mem_classicalCharacteristicSet_pushforwardOperator_iff`: under a diffeomorphism `Φ`
   the characteristic set is carried by the cotangent map, `ξ ∈ Char(Φ_* P)` over `Φ x` exactly
   when `ξ ∘ dΦ_x ∈ Char(P)`.
 * `TauCeti.mk_mem_classicalCharacteristicSet_complexifyLinearMap_iff`: for the complexification
   of a differential operator `D` of order at most `m`, the characteristic set is the set of nonzero
-  covectors at which the geometric principal symbol of `D` vanishes.
+  covectors at which the geometric principal symbol of `D` vanishes;
+  `TauCeti.IsLaplaceType.classicalCharacteristicSet_complexifyLinearMap_eq_empty`: for an operator
+  of Laplace type it is empty.
 
 ## References
 
@@ -125,7 +131,23 @@ theorem classicalCharacteristicSet_add_of_mem_sub_one
   ext p
   simp [classicalPrincipalSymbol_add_of_mem_sub_one hQ]
 
+/-- Multiplying by a nonzero complex number does not change the characteristic set. -/
+@[simp]
+theorem classicalCharacteristicSet_smul {c : ℂ} (hc : c ≠ 0) :
+    classicalCharacteristicSet m (c • P) = classicalCharacteristicSet m P := by
+  ext p
+  simp [classicalPrincipalSymbol_smul_of_ne_zero hc, hc]
+
+/-- An operator of order `m - 1` is characteristic in order `m` at every nonzero covector. -/
+theorem classicalCharacteristicSet_of_mem_sub_one
+    (hP : P ∈ classicalPseudodifferentialOperators (m - 1)) :
+    classicalCharacteristicSet m P = {p | p.snd ≠ 0} := by
+  ext p
+  simp [classicalPrincipalSymbol_eq_zero_of_mem_sub_one hP]
+
 /-! ### The characteristic set in a chart -/
+
+section Chart
 
 variable {e : OpenPartialHomeomorph M (CoordinateSpace n)}
   {he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
@@ -152,6 +174,27 @@ theorem mk_mem_classicalCharacteristicSet_iff_mem_characteristicSet
     coefficient_principal_eq_classicalPrincipalSymbol hP he φ ψ ha hx,
     ContinuousLinearMap.isInvertible_smul_id_iff, mul_ne_zero_iff, and_iff_right hc, not_not]
   exact and_congr_left' (innerSL_comp_mvfderiv_eq_zero_iff he₁ hx).not
+
+/-- **The characteristic set in a chart, at a given covector.** Let `a` be the symbol of the chart
+compression of `P` by `φ`, `ψ` in a chart `e`. At a point `x` of the chart source where `φ ψ` does
+not vanish, a covector `ξ ∈ T*ₓM` is characteristic for `P` exactly when `(e x, η)` lies in the
+characteristic set of `a`, for the chart frequency `η` dual to `ξ ∘ (de_x)⁻¹`. -/
+theorem mem_classicalCharacteristicSet_iff_mem_characteristicSet
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (ha : ∀ (u : 𝓢(CoordinateSpace n, ℂ)) (y : CoordinateSpace n),
+      quantizeSchwartzValue a.toSymbol.coefficient u y =
+        e.complexChartCompression he φ ψ P (ContMDiffMap.ofContDiff u (u.smooth ⊤)) y)
+    {x : M} (hx : x ∈ e.source) (hφψ : φ (e x) * ψ (e x) ≠ 0)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    TotalSpace.mk x ξ ∈ classicalCharacteristicSet m P ↔
+      (e x, (InnerProductSpace.toDual ℝ (CoordinateSpace n)).symm
+        (ξ.comp (mvfderiv 𝓘(ℝ, CoordinateSpace n) e x).inverse)) ∈
+        a.toSymbol.characteristicSet := by
+  conv_lhs => rw [← innerSL_toDual_symm_comp_inverse_mvfderiv
+    (IsManifold.maximalAtlas_subset_of_le (by simp) he) hx ξ]
+  exact mk_mem_classicalCharacteristicSet_iff_mem_characteristicSet hP ha hx hφψ _
+
+end Chart
 
 /-! ### Diffeomorphisms -/
 
@@ -191,5 +234,16 @@ theorem mk_mem_classicalCharacteristicSet_complexifyLinearMap_iff {m : ℕ}
   refine and_congr_right fun hξ ↦ ?_
   rw [classicalPrincipalSymbol_complexifyLinearMap hD x hξ, mul_eq_zero,
     or_iff_right (pow_ne_zero _ Complex.I_ne_zero), Complex.ofReal_eq_zero]
+
+/-- **Operators of Laplace type have no characteristic covectors.** The complexification of an
+operator of Laplace type, such as `-Δ`, has empty characteristic set in order `2`. -/
+theorem IsLaplaceType.classicalCharacteristicSet_complexifyLinearMap_eq_empty
+    [RiemannianBundle (fun x : M ↦ TangentSpace 𝓘(ℝ, CoordinateSpace n) x)]
+    {D : differentialOperators ℝ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ 2} {c : ℝ}
+    (hD : IsLaplaceType D c) :
+    classicalCharacteristicSet 2 (ContMDiffMap.complexifyLinearMap
+      (D : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯ →ₗ[ℝ] C^∞⟮𝓘(ℝ, CoordinateSpace n), M; ℝ⟯)) = ∅ :=
+  classicalCharacteristicSet_eq_empty_iff.2 hD.isClassicalElliptic_complexifyLinearMap
 
 end TauCeti

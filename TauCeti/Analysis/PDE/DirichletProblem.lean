@@ -347,6 +347,44 @@ theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction
   rw [← energyFormH1L_apply hcoeff, ← hforce v]
   exact hmem
 
+/-- **Testing against test functions suffices, for `Lʳ` data.** Let `n ≥ 1` be the dimension, let
+`Ω` have finite measure, and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)`. When
+the energy density is essentially bounded, a function `u ∈ H¹(Ω)` satisfies the weak equation
+`a(u, v) = ∫_Ω f v` for every `v ∈ H¹₀(Ω)`, with a datum `f ∈ Lʳ(Ω)` that need not be square
+integrable, as soon as it does for every test function `v ∈ C_c^∞(Ω)`: both sides are continuous
+in `v ∈ H¹₀(Ω)` (`TauCeti.W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp`), and `H¹₀(Ω)` is
+the closure of `C_c^∞(Ω)`. No boundary condition is imposed on `u`. For `f ∈ L²(Ω)` and every
+domain see `TauCeti.PDE.forall_energyFormH1_eq_setIntegral_iff_forall_testFunction`. -/
+theorem forall_energyFormH1_eq_setIntegral_iff_forall_testFunction_of_memLp [Nonempty ι]
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hOmega : mu Omega ≠ ∞) {r : ℝ≥0} (hr : 1 < r)
+    (hrn : (Fintype.card ι : ℝ) * (2 - r) < 2 * r) {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : MemLp f r (mu.restrict Omega)) (u : W1p mu Omega 2) :
+    (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2)
+        = ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) ↔
+      ∀ φ : 𝓓(Omega, ℝ),
+        energyFormH1 a b c u (W1p.ofTestFunctionₗ mu Omega 2 φ)
+          = ∫ x in Omega, f x * φ x ∂mu := by
+  obtain ⟨ℓ, hℓ⟩ := W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp hOmega hr
+    (by rwa [finrank_euclideanSpace]) hf
+  -- The test functions, as elements of `H¹₀(Ω)`.
+  set T : 𝓓(Omega, ℝ) → W1p0 mu Omega 2 :=
+    fun φ => ⟨W1p.ofTestFunctionₗ mu Omega 2 φ, W1p.ofTestFunctionₗ_mem_w1p0Submodule φ⟩
+  have htest : ∀ φ : 𝓓(Omega, ℝ), ℓ (T φ) = ∫ x in Omega, f x * φ x ∂mu := fun φ =>
+    (hℓ (T φ)).trans (integral_congr_ae ((W1p.value_ofTestFunctionₗ_ae (p := 2) φ).mono
+      fun x hx => congrArg (f x * ·) hx))
+  simp only [← hℓ, ← htest]
+  refine ⟨fun h φ => h (T φ), fun h v => ?_⟩
+  -- The set where the two functionals agree is closed in `H¹₀(Ω)`, hence in `H¹(Ω)`, and
+  -- contains the test functions.
+  have hclosed : IsClosed {w : W1p0 mu Omega 2 | energyFormH1L hcoeff u w = ℓ w} :=
+    isClosed_eq ((energyFormH1L hcoeff u).continuous.comp continuous_subtypeVal) ℓ.continuous
+  obtain ⟨w, hw, hwv⟩ := w1p0Submodule_subset_of_isClosed
+    (hclosed.trans (w1p0Submodule mu Omega 2).isClosed)
+    (fun φ => ⟨T φ, (energyFormH1L_apply hcoeff u _).trans (h φ), rfl⟩) v.property
+  rw [← energyFormH1L_apply hcoeff, ← Subtype.ext hwv]
+  exact hw
+
 /-- A homogeneous weak equation holding for smooth compactly supported tests holds for every
 `H¹₀` test when the energy density is essentially bounded. No boundary condition is imposed on
 the solution. -/

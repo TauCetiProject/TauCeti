@@ -13,7 +13,10 @@ public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RingTheory.Idempotents.Product
 public import TauCeti.RingTheory.Idempotents.Projective
 public import TauCeti.Topology.LocallyConstant.ClopenRingHom
+import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
+import TauCeti.RingTheory.Spectrum.Prime.Idempotent
+import TauCeti.Topology.LocallyConstant.CharFn
 
 /-!
 # The locally constant rank on projective `K₀` and its section
@@ -42,6 +45,15 @@ homomorphism
 and `rank ∘ rankSection = id`. Thus the rank is a split surjection of rings, whose kernel is the
 reduced `K₀` of `R`.
 
+The rank is natural under extension of scalars along any ring homomorphism `f : R →+* S`: the
+extended module `S ⊗_R P` has rank at a prime `q` of `S` the rank of `P` at `f⁻¹ q`, so the rank
+of the image of a class under `K₀(f)` is the pullback of its rank along `Spec S → Spec R`.
+
+The rank section is natural under extension of scalars along any ring homomorphism
+`f : R →+* S`. The idempotent of the preimage of `U` under `Spec f : Spec S → Spec R` is `f e_U`,
+so `S ⊗_R P_U ≅ S ⧸ (1 - f e_U)` is the module of that preimage, and hence the extension of
+`rankSection g` along `f` is the rank section of the pullback `g ∘ Spec f`.
+
 ## Main definitions
 
 * `TauCeti.FiniteProjectiveModules.rank`: the rank homomorphism
@@ -63,6 +75,11 @@ reduced `K₀` of `R`.
   `∑ n [P_{f⁻¹{n}}]`.
 * `TauCeti.FiniteProjectiveModules.rank_rankSection`: the rank is a retraction of the section, so
   `rank` is surjective and `rankSection` is injective.
+* `TauCeti.FiniteProjectiveModules.rank_map`: the rank commutes with extension of scalars.
+* `TauCeti.FiniteProjectiveModules.map_of_clopenProjective`: extension of scalars along `f` sends
+  `[P_U]` to the class of the module of the preimage of `U` under `Spec f`.
+* `TauCeti.FiniteProjectiveModules.map_rankSection`: the rank section commutes with extension of
+  scalars.
 
 ## References
 
@@ -257,6 +274,84 @@ theorem rank_surjective : Function.Surjective (rank R) :=
 /-- The rank section is injective. -/
 theorem rankSection_injective : Function.Injective (rankSection R) :=
   Function.LeftInverse.injective (rank_rankSection R)
+
+/-! ### Naturality under extension of scalars -/
+
+variable {R} {S : Type u} [CommRing S]
+
+/-- **The rank is natural under extension of scalars.** Along a ring homomorphism `f : R →+* S`,
+the rank of the extended class `[S ⊗_R P]` at a prime `q` of `S` is the rank of `[P]` at the
+contracted prime `f⁻¹ q`; that is, `rank ∘ K₀(f)` is the pullback of the rank along
+`Spec f : Spec S → Spec R`. -/
+@[simp]
+theorem rank_map (f : R →+* S) (x : SplitK0.{u} (finiteProjectiveModules R).FullSubcategory) :
+    rank S (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars x) =
+      (rank R x).comap ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩ := by
+  suffices h : (rank S).toAddMonoidHom.comp
+      (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars) =
+      (LocallyConstant.comapRingHom
+        ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩).toAddMonoidHom.comp
+        (rank R).toAddMonoidHom from DFunLike.congr_fun h x
+  refine SplitK0.hom_ext fun P ↦ ?_
+  let := f.toAlgebra
+  -- The balanced extension of `P` along `f` is Mathlib's base change `S ⊗[R] P`.
+  let e : (f.finiteProjectiveModulesExtendScalars.obj P).obj ≃ₗ[S] TensorProduct R S P.obj :=
+    (f.finiteProjectiveModulesExtendScalarsCompιIso.app P ≪≫
+      (BalancedExtension.extendScalarsIso f).app P.obj ≪≫
+      ModuleCat.extendScalarsAlgebraMapIso P.obj).toLinearEquiv
+  ext q
+  simp only [RingHom.toAddMonoidHom_eq_coe, AddMonoidHom.coe_comp, AddMonoidHom.coe_ofClass,
+    Function.comp_apply, SplitK0.map_of, rank_of, LocallyConstant.comapRingHom_apply_apply,
+    ContinuousMap.coe_mk, Nat.cast_inj]
+  rw [Module.rankAtStalk_eq_of_equiv e, Module.rankAtStalk_baseChange,
+    RingHom.algebraMap_toAlgebra]
+
+/-- **Extension of scalars pulls back the clopen projective modules.** Along a ring homomorphism
+`f : R →+* S`, the extension `S ⊗_R P_U` of the module of a clopen subset `U` of `Spec R` is the
+module of its preimage under `Spec f : Spec S → Spec R`: both are `S ⧸ (1 - f e_U)`, since the
+idempotent of the preimage is `f e_U` (`PrimeSpectrum.isIdempotentElemEquivClopens_symm_preimage`).
+-/
+theorem map_of_clopenProjective (f : R →+* S) (U : Clopens (PrimeSpectrum R)) :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars
+        (SplitK0.of.{u} (clopenProjective R U)) =
+      SplitK0.of.{u} (clopenProjective S
+        ⟨PrimeSpectrum.comap f ⁻¹' U, U.isClopen.preimage (PrimeSpectrum.continuous_comap f)⟩) := by
+  let := f.toAlgebra
+  set e := isIdempotentElemEquivClopens.symm U
+  -- The extended ideal of `(1 - e_U)` is `(1 - f e_U)`, the ideal of the preimage.
+  have hspan : (Ideal.span {1 - e.val}).map (algebraMap R S) =
+      Ideal.span {1 - (isIdempotentElemEquivClopens.symm
+        ⟨PrimeSpectrum.comap f ⁻¹' U, U.isClopen.preimage (PrimeSpectrum.continuous_comap f)⟩).val}
+      := by
+    rw [isIdempotentElemEquivClopens_symm_preimage, Ideal.map_span, Set.image_singleton, map_sub,
+      map_one, RingHom.algebraMap_toAlgebra]
+  -- The balanced extension of `P_U` is Mathlib's base change `S ⊗[R] (R ⧸ (1 - e_U))`, which is
+  -- `S ⧸ (1 - f e_U)` by `Ideal.quotMapEquivTensorQuot`.
+  exact (SplitK0.map_of _ _).trans (SplitK0.of_extendScalars_obj
+    (((BalancedExtension.extendScalarsIso f).app _ ≪≫
+        ModuleCat.extendScalarsAlgebraMapIso _).toLinearEquiv ≪≫ₗ
+      TensorProduct.AlgebraTensorModule.congr (LinearEquiv.refl S S)
+        (eqToIso (clopenProjective_obj R U)).toLinearEquiv ≪≫ₗ
+      (Ideal.quotMapEquivTensorQuot S).symm ≪≫ₗ Submodule.quotEquivOfEq _ _ hspan ≪≫ₗ
+      (eqToIso (clopenProjective_obj S _)).toLinearEquiv.symm))
+
+/-- **The rank section is natural under extension of scalars.** Along a ring homomorphism
+`f : R →+* S`, extending the class `rankSection g` of a locally constant function `g` on `Spec R`
+gives the rank section of its pullback `g ∘ Spec f` along `Spec f : Spec S → Spec R`. -/
+@[simp]
+theorem map_rankSection (f : R →+* S) (g : LocallyConstant (PrimeSpectrum R) ℤ) :
+    SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars (rankSection R g) =
+      rankSection S (g.comap ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩) := by
+  suffices h : (SplitK0.map.{u, u} f.finiteProjectiveModulesExtendScalars).comp
+      (rankSection R).toAddMonoidHom = (rankSection S).toAddMonoidHom.comp
+        (LocallyConstant.comapAddMonoidHom
+          ⟨PrimeSpectrum.comap f, PrimeSpectrum.continuous_comap f⟩) from
+    DFunLike.congr_fun h g
+  refine LocallyConstant.addMonoidHom_ext_charFn fun U ↦ ?_
+  simp only [AddMonoidHom.coe_comp, Function.comp_apply, RingHom.toAddMonoidHom_eq_coe,
+    AddMonoidHom.coe_ofClass, LocallyConstant.comapAddMonoidHom_apply,
+    LocallyConstant.comap_charFn, rankSection_charFn]
+  exact (map_of_clopenProjective f U).trans (rankSection_charFn S _).symm
 
 end FiniteProjectiveModules
 

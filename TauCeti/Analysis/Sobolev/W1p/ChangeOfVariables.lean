@@ -12,6 +12,7 @@ public import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
+import TauCeti.Analysis.Calculus.FDeriv.Smul
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.Analysis.Sobolev.WeakDeriv.Coordinates
@@ -66,6 +67,9 @@ half-space, where `TauCeti.W1p.halfSpaceTrace` and `TauCeti.W1p.extendByReflecti
 * `TauCeti.W1p.value_compL_ae`, `TauCeti.W1p.gradient_compL_ae`: its value is `u ∘ Φ` and its
   weak gradient is `DΦ* (∇u ∘ Φ)`, almost everywhere on `U`.
 * `TauCeti.W1p.norm_compL_le`, `TauCeti.W1p.opNorm_compL_le`: the norm bound.
+* `TauCeti.W1p.norm_value_compL_inv_smul`, `TauCeti.W1p.norm_gradient_compL_inv_smul`: for the
+  dilation `x ↦ r⁻¹ • x` from `U = r • V` onto `V`, the norms of the value and of the gradient
+  are multiplied exactly by `|r| ^ (n / p)` and `|r| ^ (n / p - 1)`, where `n` is the dimension.
 * `TauCeti.W1p.compL_mem_w1p0Submodule`: precomposition maps `W^{1,p}_0(V)` into `W^{1,p}_0(U)`.
 * `TauCeti.W1p.compContinuousLinearEquivL`: precomposition with a linear automorphism `e`.
 * `TauCeti.W1p.norm_value_compContinuousLinearEquivL`,
@@ -88,7 +92,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter TopologicalSpace
-open scoped ContDiff InnerProductSpace Topology
+open scoped ContDiff InnerProductSpace Pointwise Topology
 
 namespace TauCeti
 
@@ -518,6 +522,55 @@ theorem W1p.norm_gradient_compContinuousLinearEquivL_le (u : W1p mu V p) :
     ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]
 
 end LinearChangeOfVariables
+
+/-! ### Dilations -/
+
+section Dilation
+
+variable [mu.IsAddHaarMeasure] (hp : p ≠ ⊤) {r : ℝ}
+  (hΦ : DifferentiableOn ℝ (fun x : E => r⁻¹ • x) U) (hinj : InjOn (fun x : E => r⁻¹ • x) U)
+  (hmaps : MapsTo (fun x : E => r⁻¹ • x) U V)
+  (hL : ∀ x ∈ (U : Set E), ‖fderiv ℝ (fun x : E => r⁻¹ • x) x‖ ≤ L) (hc : 0 < c)
+  (hdet : ∀ x ∈ (U : Set E), c ≤ |(fderiv ℝ (fun x : E => r⁻¹ • x) x).det|)
+
+/-- **Dilation scaling of the value.** If `U = r • V` with `r ≠ 0`, the dilate `u (r⁻¹ • ·)` of
+`u ∈ W^{1,p}(V)` has `‖u (r⁻¹ • ·)‖_{Lᵖ(U)} = |r| ^ (n / p) * ‖u‖_{Lᵖ(V)}`, where `n` is the
+dimension of `E`. The regularity hypotheses of `TauCeti.W1p.compL` are arguments, since they
+appear in the statement; each holds for every such dilation. -/
+theorem W1p.norm_value_compL_inv_smul (hr : r ≠ 0) (hUV : (U : Set E) = r • (V : Set E))
+    (u : W1p mu V p) :
+    ‖W1p.value (W1p.compL (fun x : E => r⁻¹ • x) hp hΦ hinj hmaps hL hc hdet u)‖ =
+      |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal) * ‖W1p.value u‖ := by
+  have he : eLpNorm (W1p.value (W1p.compL _ hp hΦ hinj hmaps hL hc hdet u)) p (mu.restrict U) =
+      ENNReal.ofReal (|r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal)) *
+        eLpNorm (W1p.value u) p (mu.restrict V) := by
+    rw [eLpNorm_congr_ae (W1p.value_compL_ae _ hp hΦ hinj hmaps hL hc hdet u), hUV,
+      Measure.eLpNorm_comp_inv_smul_restrict_smul mu _ hr]
+  rw [Lp.norm_def, Lp.norm_def, he]
+  simp [ENNReal.toReal_mul, Real.rpow_nonneg (abs_nonneg r)]
+
+/-- **Dilation scaling of the gradient.** If `U = r • V` with `r ≠ 0`, the dilate `u (r⁻¹ • ·)` of
+`u ∈ W^{1,p}(V)` has `‖∇(u (r⁻¹ • ·))‖_{Lᵖ(U)} = |r| ^ (n / p - 1) * ‖∇u‖_{Lᵖ(V)}`, where `n` is
+the dimension of `E`: the chain rule contributes the factor `r⁻¹`. -/
+theorem W1p.norm_gradient_compL_inv_smul (hr : r ≠ 0) (hUV : (U : Set E) = r • (V : Set E))
+    (u : W1p mu V p) :
+    ‖W1p.gradient (W1p.compL (fun x : E => r⁻¹ • x) hp hΦ hinj hmaps hL hc hdet u)‖ =
+      |r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal - 1) * ‖W1p.gradient u‖ := by
+  -- The chain rule contributes the factor `r⁻¹`, and the dilation law the factor `|r| ^ (n / p)`.
+  have h := W1p.gradient_compL_ae _ hp hΦ hinj hmaps hL hc hdet u
+  simp only [fderiv_const_smul_id, map_smulₛₗ, ContinuousLinearMap.adjoint_id, conj_trivial,
+    smul_apply, ContinuousLinearMap.id_apply] at h
+  have he : eLpNorm (W1p.gradient (W1p.compL _ hp hΦ hinj hmaps hL hc hdet u)) p (mu.restrict U) =
+      ‖r⁻¹‖ₑ * (ENNReal.ofReal (|r| ^ ((Module.finrank ℝ E : ℝ) / p.toReal)) *
+        eLpNorm (W1p.gradient u) p (mu.restrict V)) := by
+    rw [eLpNorm_congr_ae h, hUV, ← Measure.eLpNorm_comp_inv_smul_restrict_smul mu _ hr]
+    exact eLpNorm_const_smul _ _ _ _
+  -- It remains to compute the real factor `|r|⁻¹ * |r| ^ (n / p) = |r| ^ (n / p - 1)`.
+  rw [Lp.norm_def, Lp.norm_def, he]
+  simp [ENNReal.toReal_mul, Real.rpow_nonneg (abs_nonneg r), Real.rpow_sub_one (abs_ne_zero.2 hr)]
+  ring
+
+end Dilation
 
 /-! ### The chain rule for weak derivatives under a `C¹` change of variables -/
 

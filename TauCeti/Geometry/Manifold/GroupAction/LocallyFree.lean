@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Lie.Exponential.CommutativeGroup.Torsion.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Stabilizer
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
+import TauCeti.Geometry.Lie.Subgroup.Torus.Torsion
 
 /-!
 # Effective actions of compact commutative Lie groups are generically locally free
@@ -43,6 +44,9 @@ stabilizer is a circle.
 * `TauCeti.Lie.exists_sq_eq_one_ne_one_smul_eq_of_isotropy_ne_bot`: for a smooth action of a
   compact Lie group, a point with nontrivial isotropy algebra is fixed by an element `g ≠ 1` with
   `g ^ 2 = 1`.
+* `TauCeti.Lie.exists_isOfFinOrder_smul_eq_exists_smul_ne_of_mem_isotropy`: for a smooth action
+  of a compact Lie group, a point whose isotropy algebra contains an element `ξ` with `ξ_M ≠ 0` is
+  fixed by an element of finite order that moves some point of `M`.
 * `TauCeti.Lie.exists_isOpen_dense_forall_isotropy_eq_bot`: an effective smooth action of a
   compact commutative Lie group on a connected manifold is locally free on a dense open set.
 * `TauCeti.Lie.dense_setOf_isotropy_eq_bot`, `TauCeti.Lie.exists_isotropy_eq_bot`: the locally
@@ -104,6 +108,35 @@ theorem exists_sq_eq_one_ne_one_smul_eq_of_isotropy_ne_bot [CompactSpace G] {x :
   obtain ⟨g, hg, hg2, hg1⟩ := (isTorus_closedOneParameterSubgroup ξ).exists_sq_eq_one_ne_one I hne
   exact ⟨g, hg2, hg1, hle hg⟩
 
+/-- **A point with isotropy beyond the kernel is fixed by a nontrivially acting element of finite
+order.** For a smooth action of a compact Lie group, if `ξ_M(x) = 0` for some `ξ` whose vector
+field `ξ_M` does not vanish identically, then some element `g` of finite order fixes `x` and moves
+some point of `M`. -/
+theorem exists_isOfFinOrder_smul_eq_exists_smul_ne_of_mem_isotropy [CompactSpace G]
+    {x : M} {ξ : GroupLieAlgebra I G}
+    (hξ : ξ ∈ (InfinitesimalAction.fundamental I G I' M).isotropy x)
+    (hξ0 : InfinitesimalAction.fundamental I G I' M ξ ≠ 0) :
+    ∃ g : G, IsOfFinOrder g ∧ g • x = x ∧ ∃ y : M, g • y ≠ y := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have : ContinuousSMul G M := ContMDiffSMul.continuousSMul (I := I) (I' := I') ∞
+  have hle : closedOneParameterSubgroup ξ ≤ stabilizer G x :=
+    (mem_isotropy_fundamental_iff_closedOneParameterSubgroup_le (I' := I')).1 hξ
+  by_contra! h
+  -- The elements acting trivially form a closed set containing the points of finite order of the
+  -- torus `T_ξ`, hence all of `T_ξ`.
+  have hclosed : IsClosed {g : G | ∀ y : M, g • y = y} := by
+    simp only [ofPred_forall]
+    exact isClosed_iInter fun y ↦ isClosed_eq (continuous_id.smul continuous_const) continuous_const
+  have hsub : (closedOneParameterSubgroup ξ : Set G) ⊆ {g : G | ∀ y : M, g • y = y} :=
+    ((isTorus_closedOneParameterSubgroup ξ).subset_closure_setOf_isOfFinOrder I).trans
+      (closure_minimal (fun g hg ↦ h g hg.2 (hle hg.1)) hclosed)
+  refine hξ0 ?_
+  exact (InfinitesimalAction.mem_ker_toLinearMap_iff _).1
+    (InfinitesimalAction.mem_ker_toLinearMap_fundamental_iff.2 fun t ↦
+      hsub (mulInvariantExp_smul_mem_closedOneParameterSubgroup ξ t))
+
 /-- **Effective actions of compact commutative Lie groups are generically locally free.** For an
 effective smooth action of a compact commutative Lie group, such as a torus, on a connected
 Hausdorff manifold without boundary, the isotropy algebra `𝔤_x` is trivial on a dense open set of
@@ -123,8 +156,9 @@ theorem exists_isOpen_dense_forall_isotropy_eq_bot [CompactSpace G] [IsMulCommut
   -- The fixed set of an involution `g ≠ 1` has empty interior, by the identity principle.
   have hnd (g : S) : IsNowhereDense (fixedBy M (g : G)) := by
     rw [(hclosed g).isNowhereDense_iff]
-    exact interior_fixedBy_eq_empty (isOfFinOrder_iff_pow_eq_one.2 ⟨2, two_pos, g.property.1⟩)
-      g.property.2 (hsmooth g)
+    refine interior_fixedBy_eq_empty (isOfFinOrder_iff_pow_eq_one.2 ⟨2, two_pos, g.property.1⟩)
+      ?_ (hsmooth g)
+    simpa [Set.eq_univ_iff_forall] using mt fixedBy_eq_univ_iff_eq_one.1 g.property.2
   refine ⟨(⋃ g : S, fixedBy M (g : G))ᶜ, (isClosed_iUnion_of_finite hclosed).isOpen_compl, ?_,
     fun x hx ↦ ?_⟩
   · rw [← interior_eq_empty_iff_dense_compl]

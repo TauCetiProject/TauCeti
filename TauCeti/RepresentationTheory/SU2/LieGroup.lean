@@ -43,6 +43,8 @@ for the entrywise topology first and then used under the operator-norm instances
 ## Main results
 
 * `TauCeti.SU2.instSimplyConnectedSpace`: `SU(2)` is simply connected.
+* `TauCeti.SU2.not_isLieAbelian_leftInvariantDerivation`: the native Lie algebra of `SU(2)` is not
+  abelian.
 -/
 
 public section
@@ -153,6 +155,13 @@ theorem coe_nativeLieEquiv_apply
         (Matrix (Fin 2) (Fin 2) ℂ)ˣ) =
       embeddedLieSubgroupData.lieMapSubtypeVal X :=
   embeddedLieSubgroupData.lieEquivLieSubalgebraOfSubgroup_apply X
+
+/-- **The native Lie algebra of `SU(2)` is not abelian**, since it is `𝔰𝔲(2)`
+(`TauCeti.SU2.nativeLieEquiv`, `TauCeti.SU2.not_isLieAbelian_lieAlgebra`). -/
+theorem not_isLieAbelian_leftInvariantDerivation :
+    ¬IsLieAbelian
+      (LeftInvariantDerivation 𝓘(ℝ, lieAlgebra.toSubmodule) (GLSpecialUnitary (Fin 2) ℂ)) :=
+  fun h ↦ not_isLieAbelian_lieAlgebra (nativeLieEquiv.symm.injective.isLieAbelian h)
 
 end SU2
 

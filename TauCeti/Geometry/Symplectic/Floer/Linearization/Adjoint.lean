@@ -44,10 +44,16 @@ Integrating by parts against this pairing gives the **formal adjoint**
   equation on which unique continuation for cokernel elements acts. Written through `ω` as the
   vector field `ζ = ω♭⁻¹ ∘ η` (`fderiv_flatEquiv_symm_apply`), at a point where `J` preserves `ω`
   the adjoint is `-ω♭` of `∂s ζ - J ∂t ζ + Aᵀ ζ`, a Cauchy–Riemann operator for `-J`, with
-  `A = ∂t J - C` and `ᵀ` the `ω`-transpose (`floerLinearizationAdjoint_eq_neg_flatEquiv`). From
+  `A = ∂t J - C` and `ᵀ` the `ω`-transpose (`floerLinearizationAdjoint_eq_neg_flatEquiv`); for a
+  constant structure `J₀` and the zero perturbation, `A = 0`
+  (`floerLinearizationAdjoint_const_eq_neg_flatEquiv`), and `D^* η = 0` reads
+  `∂s η = -(∂t η) ∘ J₀`
+  (`fderiv_apply_eq_neg_fderiv_apply_apply_of_floerLinearizationAdjoint_eq_zero`). From
   the first form, two adjoints differ on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`
   (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
-  the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`).
+  the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`). The adjoint
+  on `η` only sees the data over the support of `η`: the structures near it and the perturbation
+  on it (`floerLinearizationAdjoint_congr_data_of_tsupport`).
 * **Weights.** Multiplying `η` by a function `β(s)` gives `β D^* η - β' η`
   (`floerLinearizationAdjoint_smul_fst`); for a function `f` of both variables the derivative of
   `f` in `t` also enters, through `η ∘ J` (`floerLinearizationAdjoint_fun_smul`), so
@@ -235,6 +241,21 @@ theorem floerLinearizationAdjoint_of_notMem_tsupport (hz : z ∉ tsupport η) :
   rw [floerLinearizationAdjoint_congr_of_eventuallyEq ω J Ks Kt u
     (notMem_tsupport_iff_eventuallyEq.1 hz), floerLinearizationAdjoint_zero]
 
+/-- The formal adjoint on a covector field `η` depends on the data only over the topological
+support of `η`: near each of its points for the structures `J`, and at the point for the
+perturbation `Ks`, `Kt`. This is the counterpart of `floerLinearization_congr_data_of_tsupport`. -/
+theorem floerLinearizationAdjoint_congr_data_of_tsupport (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → V →L[ℝ] V} {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u : ℝ × ℝ → V)
+    (η : ℝ × ℝ → V →L[ℝ] ℝ)
+    (h : ∀ z ∈ tsupport η, J =ᶠ[𝓝 z] J' ∧ Ks z = Ks' z ∧ Kt z = Kt' z) :
+    ω.floerLinearizationAdjoint J Ks Kt u η = ω.floerLinearizationAdjoint J' Ks' Kt' u η := by
+  funext z
+  by_cases hz : z ∈ tsupport η
+  · obtain ⟨hJ, hKs, hKt⟩ := h z hz
+    exact ω.floerLinearizationAdjoint_congr_data u η hJ hKs hKt
+  · rw [floerLinearizationAdjoint_of_notMem_tsupport hz,
+      floerLinearizationAdjoint_of_notMem_tsupport hz]
+
 /-! ### The Cauchy–Riemann form and weights -/
 
 /-- **The formal adjoint as a Cauchy–Riemann operator.** For a covector field `η` and
@@ -280,6 +301,39 @@ theorem floerLinearizationAdjoint_eq_neg_flatEquiv (ω : SymplecticForm V)
     add_apply, AlmostComplexStructure.neg_apply, hc.apply_apply_eq_neg,
     LinearMap.coe_toContinuousLinearMap']
   ring
+
+/-- **The formal adjoint of constant data.** For a constant `ω`-invariant structure `J₀` and the
+zero perturbation, the formal adjoint along any map is `-ω♭ (∂s ζ - J₀ ∂t ζ)` for `ζ = ω♭⁻¹ ∘ η`:
+a Cauchy–Riemann operator for `-J₀`. -/
+theorem floerLinearizationAdjoint_const_eq_neg_flatEquiv (ω : SymplecticForm V)
+    {J₀ : AlmostComplexStructure V} (u : ℝ × ℝ → V) {η : ℝ × ℝ → V →L[ℝ] ℝ} {z : ℝ × ℝ}
+    (hη : DifferentiableAt ℝ η z) (h : ω.Invariant J₀) :
+    ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun _ _ ↦ 0) u η z =
+      -ω.flatEquiv (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineReal +
+        (-J₀) (fderiv ℝ (fun w ↦ ω.flatEquiv.symm (η w)) z stdComplexLineImag)) := by
+  rw [ω.floerLinearizationAdjoint_eq_neg_flatEquiv (J := fun _ _ ↦ J₀) hη
+    (differentiableAt_const _) h,
+    ω.floerLinearizationCoeff_eq_zero_of_eq_base u (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)]
+  simp
+
+/-- **The formal adjoint of constant data as a Cauchy–Riemann equation.** For a constant
+`ω`-invariant structure `J₀` and the zero perturbation, a covector field annihilated by the formal
+adjoint at `z` satisfies `∂s η = -(∂t η) ∘ J₀` there. -/
+theorem fderiv_apply_eq_neg_fderiv_apply_apply_of_floerLinearizationAdjoint_eq_zero
+    {J₀ : AlmostComplexStructure V} (hJ₀ : ω.Invariant J₀) (u : ℝ × ℝ → V)
+    (hD : ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun _ _ ↦ 0) u η z = 0) (y : V) :
+    fderiv ℝ η z (1, 0) y = -fderiv ℝ η z (0, 1) (J₀ y) := by
+  by_cases hη : DifferentiableAt ℝ η z
+  swap
+  · simp [fderiv_zero_of_not_differentiableAt hη]
+  rw [floerLinearizationAdjoint_const_eq_neg_flatEquiv ω u hη hJ₀, neg_eq_zero,
+    ω.flatEquiv.map_eq_zero_iff] at hD
+  simp only [fderiv_flatEquiv_symm_apply, stdComplexLineReal_eq, stdComplexLineImag_eq,
+    AlmostComplexStructure.neg_apply, ← sub_eq_add_neg, sub_eq_zero] at hD
+  -- `hD` says `ω♭⁻¹ (∂s η) = J₀ (ω♭⁻¹ (∂t η))`; pair both sides with `y` through `ω`.
+  simpa [hJ₀.apply_apply_eq_neg] using congr(ω $hD y)
 
 /-- **Comparing two formal adjoints.** At a point where `w ↦ J(w, u w)` and
 `w ↦ J₁(w, u₁ w)` are differentiable, the formal adjoints along two data sets differ on `η` by at

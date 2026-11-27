@@ -55,6 +55,15 @@ gives `∫ Δφ • f = ∫ φ • A f`. Thus `A` is a restriction of the distri
 operators agree because `1 - A` is onto, `A` being the generator of a contraction semigroup, while
 `1 - Δ` is injective on `{f ∈ Lᵖ : Δf ∈ Lᵖ}` (`TauCeti.smul_sub_weakLaplacianLp_injective`).
 
+## The heat kernel
+
+The heat kernel itself lies in the domain: for `s > 0` the class of `K_s` in `Lᵖ` is a smooth
+function whose Laplacian `Δ K_s` again lies in `Lᵖ`, so the generator sends it to `Δ K_s`. Since
+the semigroup moves the kernel along its time parameter, `e^{tΔ} K_s = K_{t+s}`
+(`TauCeti.heatSemigroup_realOperator_heatKernel`), the orbit of `K_s` is `τ ↦ K_{τ+s}`, and its
+derivative in `Lᵖ` is `Δ K_{τ+s}`: the heat equation `∂ₜ K = Δ K` of the kernel
+(`TauCeti.hasDerivAt_heatKernel`) holds in `Lᵖ`, not only pointwise.
+
 ## Main declarations
 
 * `TauCeti.heatSemigroup_sub_eq_integral`: the identity
@@ -74,6 +83,12 @@ operators agree because `1 - A` is onto, `A` being the generator of a contractio
   sense of distributions on its natural domain.
 * `TauCeti.mem_domain_heatSemigroup_iff`: the domain of the generator consists of the `f ∈ Lᵖ`
   whose distributional Laplacian lies in `Lᵖ`.
+* `TauCeti.mem_graph_generator_heatSemigroup_heatKernel`,
+  `TauCeti.mem_domain_heatSemigroup_heatKernel` and `TauCeti.generator_heatSemigroup_heatKernel`:
+  for `s > 0`, the class of `K_s` lies in the domain of the generator, which sends it to the
+  class of `Δ K_s`.
+* `TauCeti.hasDerivAt_heatSemigroup_realOperator_heatKernel`: the orbit `τ ↦ K_{τ+s}` of `K_s`
+  has derivative `Δ K_{t+s}` in `Lᵖ` at every `t > 0`.
 
 ## References
 
@@ -336,5 +351,57 @@ theorem mem_domain_heatSemigroup_iff (hp : p ≠ ∞) {f : Lp F p (volume : Meas
         ∀ φ : 𝓓((⊤ : Opens E), ℝ), ∫ x, Δ (φ : E → ℝ) x • f x = ∫ x, φ x • g x := by
   rw [← StronglyContinuousSemigroup.generator_domain, generator_heatSemigroup_eq_weakLaplacianLp,
     mem_domain_weakLaplacianLp_iff]
+
+/-! ### The generator on the heat kernel -/
+
+/-- **The heat generator acts as the Laplacian on the heat kernel.** If `f, g ∈ Lᵖ` are the
+classes of `K_s` and `Δ K_s`, then `(f, g)` lies in the graph of the generator of the heat
+semigroup. -/
+theorem mem_graph_generator_heatSemigroup_heatKernel (hp : p ≠ ∞) {s : ℝ}
+    {f g : Lp ℝ p (volume : Measure E)} (hf : f =ᵐ[volume] heatKernel s)
+    (hg : g =ᵐ[volume] Δ (heatKernel s : E → ℝ)) :
+    (f, g) ∈ (heatSemigroup hp).generator.graph := by
+  rw [generator_heatSemigroup_eq_weakLaplacianLp]
+  exact mem_graph_weakLaplacianLp_of_contDiff (contDiff_heatKernel s) hf hg
+
+/-- **The heat kernel lies in the domain of the heat generator**: for `s > 0`, so does the class
+of `K_s` in `Lᵖ`. -/
+theorem mem_domain_heatSemigroup_heatKernel (hp : p ≠ ∞) {s : ℝ} (hs : 0 < s)
+    {f : Lp ℝ p (volume : Measure E)} (hf : f =ᵐ[volume] heatKernel s) :
+    f ∈ (heatSemigroup hp).domain := by
+  rw [← StronglyContinuousSemigroup.generator_domain]
+  exact LinearPMap.mem_domain_of_mem_graph (mem_graph_generator_heatSemigroup_heatKernel hp hf
+    (memLp_laplacian_heatKernel hs).coeFn_toLp)
+
+/-- **The heat generator sends the heat kernel to its Laplacian.** For `s > 0`, if `f, g ∈ Lᵖ`
+are the classes of `K_s` and `Δ K_s`, then the generator of the heat semigroup sends `f` to `g`.
+Since `∂ₛ K_s = Δ K_s` (`TauCeti.hasDerivAt_heatKernel`), the generator acts on the heat kernel
+as the time derivative. -/
+theorem generator_heatSemigroup_heatKernel (hp : p ≠ ∞) {s : ℝ} (hs : 0 < s)
+    {f g : Lp ℝ p (volume : Measure E)} (hf : f =ᵐ[volume] heatKernel s)
+    (hg : g =ᵐ[volume] Δ (heatKernel s : E → ℝ)) :
+    (heatSemigroup hp).generator ⟨f, by
+      rw [StronglyContinuousSemigroup.generator_domain]
+      exact mem_domain_heatSemigroup_heatKernel hp hs hf⟩ = g :=
+  ((LinearPMap.image_iff _).2 (mem_graph_generator_heatSemigroup_heatKernel hp hf hg)).symm
+
+/-- **The heat equation for the heat kernel in `Lᵖ`.** For `s > 0` let `f ∈ Lᵖ` be the class of
+`K_s`, so that the orbit `τ ↦ e^{τΔ} f` is the class of `K_{τ+s}` at every `τ ≥ 0`
+(`TauCeti.heatSemigroup_realOperator_heatKernel`). At every time `t > 0` this orbit is
+differentiable in `Lᵖ`, with derivative the class of `Δ K_{t+s}`. -/
+theorem hasDerivAt_heatSemigroup_realOperator_heatKernel (hp : p ≠ ∞) {s t : ℝ} (hs : 0 < s)
+    (ht : 0 < t) {f g : Lp ℝ p (volume : Measure E)} (hf : f =ᵐ[volume] heatKernel s)
+    (hg : g =ᵐ[volume] Δ (heatKernel (t + s) : E → ℝ)) :
+    HasDerivAt (fun τ => (heatSemigroup hp).realOperator τ f) g t := by
+  have hts : 0 < t + s := by positivity
+  have hK := memLp_heatKernel (E := E) hts (q := p)
+  -- At time `t` the orbit is the class of `K_{t+s}`, on which the generator is `Δ K_{t+s}`.
+  have hft : (heatSemigroup hp).realOperator t f =ᵐ[volume] heatKernel (t + s) := by
+    rw [heatSemigroup_realOperator_heatKernel hp hs ht.le hf hK.coeFn_toLp]
+    exact hK.coeFn_toLp
+  refine (((heatSemigroup hp).realOperator_hasDerivWithinAt_Ici
+    ⟨f, mem_domain_heatSemigroup_heatKernel hp hs hf⟩ ht.le).hasDerivAt
+      (Ici_mem_nhds ht)).congr_deriv ?_
+  exact generator_heatSemigroup_heatKernel hp hts hft hg
 
 end TauCeti
