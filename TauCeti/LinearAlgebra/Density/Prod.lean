@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Density.Basic
-public import TauCeti.LinearAlgebra.Basis.Prod
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 import TauCeti.LinearAlgebra.Determinant.Basic
 
@@ -90,26 +89,23 @@ theorem prod_apply_sumElim (μ : Density V (finrank ℝ V)) (ν : Density W (fin
     (e : Fin (finrank ℝ V) ⊕ Fin (finrank ℝ W) ≃ Fin (finrank ℝ (V × W)))
     (v : Fin (finrank ℝ V) → V) (w : Fin (finrank ℝ W) → W) :
     μ.prod ν (Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) ∘ e.symm) = μ v * ν w := by
+  set β := ((finBasis ℝ V).prod (finBasis ℝ W)).reindex e
   -- The product basis listed in the order `e` is a reordering of `prodFinBasis`.
-  have hperm : (((finBasis ℝ V).prod (finBasis ℝ W)).reindex e : Fin (finrank ℝ (V × W)) → V × W) =
+  have hperm : (β : Fin (finrank ℝ (V × W)) → V × W) =
       (prodFinBasis : Fin (finrank ℝ (V × W)) → V × W) ∘
         (e.symm.trans (finSumFinEquiv.trans (finCongr finrank_prod.symm))) := by
     funext k
-    simp [prodFinBasis, Basis.reindex_apply]
-  -- The tuple is the image of that basis under the product of the maps `constr v`, `constr w`.
-  have himage : Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) ∘ e.symm =
-      (((finBasis ℝ V).constr ℝ v).prodMap ((finBasis ℝ W).constr ℝ w) : V × W → V × W) ∘
-        (((finBasis ℝ V).prod (finBasis ℝ W)).reindex e) := by
-    rw [Basis.coe_reindex, ← Function.comp_assoc, Basis.prodMap_constr_comp_prod]
-  -- So the product takes the value `|det v| * |det w| * μ b * ν c` on it.
-  have hvalue : μ.prod ν (Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) ∘ e.symm) =
-      |(finBasis ℝ V).det v| * |(finBasis ℝ W).det w| *
-        (μ (finBasis ℝ V) * ν (finBasis ℝ W)) := by
-    -- Reorder to `prodFinBasis`, then evaluate the determinant of the product map.
-    rw [himage, comp_apply, hperm, apply_comp_perm _ prodFinBasis]
-    simp [prod, Basis.det_self, LinearMap.det_prodMap, Basis.det_constr, abs_mul]
-  -- These factors are the values of `μ` on `v` and of `ν` on `w`.
-  rw [hvalue, apply_eq_abs_det_mul μ (finBasis ℝ V) v, apply_eq_abs_det_mul ν (finBasis ℝ W) w]
+    simp [β, prodFinBasis, Basis.reindex_apply]
+  -- In that basis the tuple has determinant `det v * det w`.
+  have hdet : β.det (Sum.elim (fun i ↦ (v i, 0)) (fun j ↦ (0, w j)) ∘ e.symm) =
+      (finBasis ℝ V).det v * (finBasis ℝ W).det w := by
+    rw [Basis.det_reindex, Function.comp_assoc, Equiv.symm_comp_self, Function.comp_id,
+      ← Basis.prod_det_sumElim]
+    -- `LinearMap.inl ℝ V W x` is `(x, 0)` and `LinearMap.inr ℝ V W y` is `(0, y)` by definition.
+    rfl
+  rw [apply_eq_abs_det_mul _ β, hdet, hperm, apply_comp_perm _ prodFinBasis,
+    apply_eq_abs_det_mul μ (finBasis ℝ V) v, apply_eq_abs_det_mul ν (finBasis ℝ W) w]
+  simp [prod, Basis.det_self, abs_mul]
   ring
 
 /-- On the product `b.prod c` of bases of `V` and `W`, listed in any order, the product `μ.prod ν`

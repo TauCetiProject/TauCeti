@@ -266,6 +266,7 @@ theorem det_equivFun_symm_trans_equivFun (b b' : Basis ι R M) :
 
 /-- The determinant of the endomorphism sending the basis `b` to `v` is the determinant of `v`
 in the basis `b`. -/
+@[simp]
 theorem det_constr (b : Basis ι R M) (v : ι → M) : LinearMap.det (b.constr R v) = b.det v := by
   rw [det_apply, toMatrix_eq_toMatrix_constr, LinearMap.det_toMatrix]
   -- `toMatrix_eq_toMatrix_constr` uses `constr ℕ`; both are the linear map sending `b` to `v`.
