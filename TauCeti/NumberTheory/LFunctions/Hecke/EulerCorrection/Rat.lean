@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.DirichletCharacter.Primitive.RayClass
 public import TauCeti.NumberTheory.LFunctions.Hecke.EulerCorrection.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive.Rat
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Rat
@@ -24,8 +25,9 @@ Mapping height-one primes of `𝓞 ℚ` to their absolute norms identifies `𝔪
   factors of modulus norms.
 * `TauCeti.GlobalNumberFields.RayClassCharacter.eulerCorrection_ratDirichletEquiv_symm`,
   `TauCeti.LFunctions.PrimitiveRayClassCharacter.eulerCorrection_character_of`, and
-  `TauCeti.LFunctions.PrimitiveRayClassCharacter.eulerCorrection_ofDirichletCharacter`: Euler
-  corrections for `(ratDirichletEquiv m hm).symm χ` and primitive ray class characters over `ℚ`.
+  `TauCeti.LFunctions.PrimitiveRayClassCharacter.eulerCorrection_toPrimitiveRayClassCharacter`:
+  Euler corrections for `(ratDirichletEquiv m hm).symm χ` and primitive ray class characters over
+  `ℚ`.
 
 ## References
 
@@ -99,18 +101,20 @@ theorem eulerCorrection_character_of {𝔪 : Modulus ℚ} (η : RayClassCharacte
   refine Finset.prod_congr ?_ fun p _ ↦ by simp only [toDirichletCharacter_of_natCast]
   rw [conductor_of, ← RayClassCharacter.conductor_toDirichletCharacter]
 
-/-- For `χ : DirichletCharacter ℂ N`, the deleted Euler correction from `ofDirichletCharacter χ`
-to `(N)·∞` is the product of `1 - χ.primitiveCharacter p * p ^ (-s)` over
-`p ∈ N.primeFactors \ χ.conductor.primeFactors`. -/
-theorem eulerCorrection_ofDirichletCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-    (s : ℂ) :
-    (ofDirichletCharacter χ).character.eulerCorrection (ratModulus N (NeZero.ne N)) s =
-      ∏ p ∈ N.primeFactors \ χ.conductor.primeFactors,
-        (1 - χ.primitiveCharacter p * (p : ℂ) ^ (-s)) := by
+/-- For a primitive Dirichlet bundle `ψ`, the deleted Euler correction from
+`toPrimitiveRayClassCharacter ψ` to any modulus `𝔫` of `ℚ` is the product of
+`1 - ψ.character p * p ^ (-s)` over
+`p ∈ (Ideal.absNorm 𝔫.finitePart).primeFactors \ ψ.level.primeFactors`. -/
+theorem eulerCorrection_toPrimitiveRayClassCharacter (ψ : PrimitiveDirichletCharacter)
+    (𝔫 : Modulus ℚ) (s : ℂ) :
+    (PrimitiveDirichletCharacter.toPrimitiveRayClassCharacter ψ).character.eulerCorrection 𝔫 s =
+      ∏ p ∈ (Ideal.absNorm 𝔫.finitePart).primeFactors \ (ψ.level : ℕ).primeFactors,
+        (1 - ψ.character p * (p : ℂ) ^ (-s)) := by
   rw [RayClassCharacter.eulerCorrection_eq_prod_sdiff_primeFactors]
   refine Finset.prod_congr ?_ fun p _ ↦ by
-    simp only [toDirichletCharacter_ofDirichletCharacter_natCast]
-  rw [absNorm_ratModulus_finitePart, absNorm_conductor_ofDirichletCharacter]
+    simp only [
+      PrimitiveDirichletCharacter.toDirichletCharacter_toPrimitiveRayClassCharacter_natCast]
+  rw [PrimitiveDirichletCharacter.absNorm_conductor_toPrimitiveRayClassCharacter]
 
 end LFunctions.PrimitiveRayClassCharacter
 

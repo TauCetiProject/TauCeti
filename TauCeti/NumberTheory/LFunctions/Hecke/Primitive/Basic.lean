@@ -188,6 +188,12 @@ theorem character_one : (1 : PrimitiveRayClassCharacter K).character = 1 :=
 theorem of_one : of (1 : RayClassCharacter 𝔪) = 1 :=
   of_eq_iff.mpr ⟨Modulus.one_dvd 𝔪, map_one _⟩
 
+/-- A primitive ray class character is trivial iff its underlying character is trivial. -/
+@[simp]
+theorem character_eq_one_iff (ψ : PrimitiveRayClassCharacter K) :
+    ψ.character = 1 ↔ ψ = 1 :=
+  ⟨fun h ↦ by rw [← of_character ψ, h, of_one], fun h ↦ h ▸ character_one⟩
+
 /-- The inverse of a primitive character is primitive at the same conductor. -/
 instance : InvolutiveInv (PrimitiveRayClassCharacter K) where
   inv ψ := ⟨ψ.conductor, ψ.character⁻¹, by

@@ -220,7 +220,7 @@ theorem zeroCount_zetaEntireCompletion_eq_riemannZeta {R : Set ℂ}
     · rw [(differentiable_zetaEntireCompletion.analyticAt 1).divisor_apply_eq_zero (by simp),
         (meromorphicOn_univ.2 meromorphic_riemannZeta).divisor_apply (Set.mem_univ 1),
         meromorphicOrderAt_riemannZeta_one]
-      rfl
+      simp
     · rw [divisor_zetaEntireCompletion_eq_riemannZeta (hR s hs) hs1]
 
 end TauCeti.LFunctions

@@ -7,18 +7,20 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Dirichlet.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Basic
-
-import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
+public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.RiemannZeta.Basic
 
 /-!
 # Entire completions of primitive Dirichlet records
 
 For a nonprincipal primitive character, the analytic record has no poles, so its
-entire completion equals its canonical completion at every point. The conductor
-factor is everywhere analytic and nonzero and changes no zero multiplicities.
-On the positive half-plane the archimedean factor is also analytic and nonzero,
-so the entire completion and the ordinary continued L-function have the same
-zeros with the same analytic orders.
+entire completion equals its canonical completion at every point, and the conductor
+factor changes no zero multiplicities relative to `χ.completedLFunction`.
+On the positive half-plane `0 < Re s`, the entire completion and the ordinary
+continued L-function `χ.LFunction` have the same zeros and the same analytic
+orders for every primitive character `χ` (for `χ ≠ 1`, because the archimedean
+factor is analytic and nonzero there; for `χ = 1` at `N = 1`, by reducing to
+`zetaEntireCompletion` and `riemannZeta`, where at the pole `s = 1` both
+analytic orders vanish and neither function vanishes).
 
 At conductor `N = 1`, `dirichletData χ hχ` recovers `riemannZetaData`, whose
 entire completion is `zetaEntireCompletion`. Every primitive Dirichlet entire
@@ -30,9 +32,10 @@ A real character has the same analytic record as its inverse.
 
 All functions are the native continued Dirichlet functions. In particular these
 comparisons do not evaluate a Dirichlet series outside its convergence domain.
-The nonprincipality and half-plane hypotheses on the direct `completedLFunction`
-and `LFunction` comparisons exclude the pole-clearing and trivial-zero
-corrections needed in other cases.
+The nonprincipality hypothesis on the direct `completedLFunction` comparisons
+excludes the pole-clearing factor at `χ = 1`, and the positive half-plane
+hypothesis on the `LFunction` comparisons excludes the trivial-zero corrections
+from the archimedean factor.
 
 ## References
 
@@ -60,6 +63,17 @@ theorem dirichletData_entireCompletion_of_ne_one (hne : χ ≠ 1) :
   rw [(dirichletData_hasMeromorphicContinuation χ hχ).entireCompletion_eq
     (by simp only [dirichletData_polarOrder_eq_zero χ hχ hne, Finsupp.zero_apply]),
     dirichletData_polarPolynomial_of_ne_one χ hχ hne, Polynomial.eval_one, one_mul]
+
+/-- For the principal primitive character (necessarily of conductor `1`), the entire completion
+is `zetaEntireCompletion` and the ordinary L-function is `riemannZeta`. -/
+theorem dirichletData_entireCompletion_of_eq_one (h1 : χ = 1) :
+    (dirichletData χ hχ).entireCompletion = zetaEntireCompletion ∧
+      χ.LFunction = riemannZeta := by
+  subst h1
+  have hN : N = 1 := hχ.eq_one_iff.mp rfl
+  subst hN
+  exact ⟨by rw [dirichletData_modOne, riemannZetaData_entireCompletion],
+    DirichletCharacter.LFunction_modOne_eq⟩
 
 /-- The functional equation of a primitive Dirichlet entire completion, against the inverse
 character. -/
@@ -123,11 +137,9 @@ and `riemannZeta` is not analytic, so both analytic orders vanish). -/
 theorem analyticOrderAt_dirichletData_entireCompletion_eq_LFunction
     {s : ℂ} (hs : 0 < s.re) :
     analyticOrderAt (dirichletData χ hχ).entireCompletion s = analyticOrderAt χ.LFunction s := by
-  rcases eq_or_ne χ 1 with rfl | hne
-  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
-    subst hN
-    rw [dirichletData_modOne, riemannZetaData_entireCompletion,
-      DirichletCharacter.LFunction_modOne_eq]
+  rcases eq_or_ne χ 1 with h1 | hne
+  · obtain ⟨he, hL⟩ := dirichletData_entireCompletion_of_eq_one χ hχ h1
+    rw [he, hL]
     exact analyticOrderAt_zetaEntireCompletion_eq_riemannZeta hs
   · rw [analyticOrderAt_dirichletData_entireCompletion χ hχ hne,
       χ.analyticOrderAt_completedLFunction hs (.inr hne)]
@@ -157,10 +169,9 @@ theorem dirichletData_entireCompletion_eq_zero_iff {s : ℂ} (hs : 0 < s.re) :
       analyticOrderAt_dirichletData_entireCompletion_eq_LFunction χ hχ hs,
       (χ.analyticAt_LFunction h1).analyticOrderAt_ne_zero]
   · push Not at h1
-    rcases h1 with ⟨rfl, rfl⟩
-    have hN : N = 1 := hχ.eq_one_iff.mp rfl
-    subst hN
-    simp [dirichletData_modOne, DirichletCharacter.LFunction_modOne_eq, riemannZeta_one_ne_zero]
+    rcases h1 with ⟨rfl, h1⟩
+    obtain ⟨he, hL⟩ := dirichletData_entireCompletion_of_eq_one χ hχ h1
+    simp [he, hL, riemannZeta_one_ne_zero]
 
 /-- Every primitive Dirichlet entire completion is nonzero at the origin,
 as required by Hadamard factorization. -/

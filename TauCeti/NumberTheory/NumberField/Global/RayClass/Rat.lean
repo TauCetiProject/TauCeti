@@ -489,8 +489,8 @@ theorem image_absNorm_support (𝔪 : Modulus ℚ) :
   rw [Finset.mem_image, Nat.mem_primeFactors]
   refine ⟨?_, fun ⟨hp, hdvd, _⟩ ↦ ?_⟩
   · rintro ⟨v, hv, rfl⟩
-    exact ⟨(Rat.HeightOneSpectrum.absNorm_asIdeal v).symm ▸
-      Rat.HeightOneSpectrum.prime_natGenerator v, mem_support_rat_iff.mp hv, NeZero.ne _⟩
+    exact ⟨Rat.HeightOneSpectrum.prime_absNorm_asIdeal v,
+      mem_support_rat_iff.mp hv, NeZero.ne _⟩
   · obtain ⟨v, rfl⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
     exact ⟨v, mem_support_rat_iff.mpr hdvd, rfl⟩
 
@@ -509,8 +509,7 @@ theorem isPrimeTo_span_natCast_support_iff {𝔪 : Modulus ℚ} {m : ℕ} (hm : 
   · obtain ⟨p, hp, hpm, hpN⟩ := (Nat.Prime.not_coprime_iff_dvd).mp hncop
     obtain ⟨v, rfl⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
     exact h v hpN hpm
-  · have hp : (Ideal.absNorm v.asIdeal).Prime :=
-      (Rat.HeightOneSpectrum.absNorm_asIdeal v).symm ▸ Rat.HeightOneSpectrum.prime_natGenerator v
+  · have hp : (Ideal.absNorm v.asIdeal).Prime := Rat.HeightOneSpectrum.prime_absNorm_asIdeal v
     exact hp.not_dvd_one (hcop.gcd_eq_one ▸ Nat.dvd_gcd hm' hv)
 
 /-- **The moduli `(d)` and `(n)` without the real place divide each other as `d` and `n` do.** -/

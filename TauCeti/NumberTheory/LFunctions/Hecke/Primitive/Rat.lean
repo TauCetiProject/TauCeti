@@ -12,22 +12,29 @@ import TauCeti.NumberTheory.DirichletCharacter.Basic
 import TauCeti.NumberTheory.DirichletCharacter.Primitive
 
 /-!
-# Primitive ray class characters of `ℚ` and primitive Dirichlet characters
+# Primitive ray class characters of `ℚ` and their Dirichlet characters
 
-Bundled primitive ray class characters `TauCeti.LFunctions.PrimitiveRayClassCharacter ℚ` are in
-canonical bijection (`TauCeti.LFunctions.PrimitiveRayClassCharacter.ratEquiv`) with primitive
-complex Dirichlet characters `(N : ℕ+) × {χ : DirichletCharacter ℂ N // χ.IsPrimitive}`. Even
-primitive characters correspond to finite moduli `(N)` without the real place, and odd primitive
-characters correspond to `(N)·∞`.
+Every bundled primitive ray class character `ψ : TauCeti.LFunctions.PrimitiveRayClassCharacter ℚ`
+determines a primitive complex Dirichlet character `ψ.toDirichletCharacter` of level
+`Ideal.absNorm ψ.conductor.finitePart`. For the canonical equivalence
+`PrimitiveDirichletCharacter ≃ PrimitiveRayClassCharacter ℚ`, see
+`TauCeti.PrimitiveDirichletCharacter.toPrimitiveRayClassCharacter` in
+`TauCeti.NumberTheory.DirichletCharacter.Primitive.RayClass`.
 
 ## Main definitions
 
 * `TauCeti.LFunctions.PrimitiveRayClassCharacter.toDirichletCharacter`: the primitive Dirichlet
   character attached to a bundled primitive ray class character of `ℚ`.
-* `TauCeti.LFunctions.PrimitiveRayClassCharacter.ofDirichletCharacter`: the bundled primitive ray
-  class character of `ℚ` underlying any complex Dirichlet character.
-* `TauCeti.LFunctions.PrimitiveRayClassCharacter.ratEquiv`: equivalence between
-  `PrimitiveRayClassCharacter ℚ` and `(N : ℕ+) × {χ : DirichletCharacter ℂ N // χ.IsPrimitive}`.
+
+## Main results
+
+* `TauCeti.LFunctions.PrimitiveRayClassCharacter.isPrimitive_toDirichletCharacter`:
+  `ψ.toDirichletCharacter` is primitive.
+* `TauCeti.LFunctions.PrimitiveRayClassCharacter.changeLevel_toDirichletCharacter_of`:
+  lifting `(of η).toDirichletCharacter` recovers `η.toDirichletCharacter`.
+* `TauCeti.LFunctions.PrimitiveRayClassCharacter.conductor_eq_ratFiniteModulus_of_even` and
+  `TauCeti.LFunctions.PrimitiveRayClassCharacter.conductor_eq_ratModulus_of_not_even`: the
+  conductor of `ψ` in terms of the parity of `ψ.toDirichletCharacter`.
 
 ## References
 
@@ -60,218 +67,46 @@ theorem isPrimitive_toDirichletCharacter (ψ : PrimitiveRayClassCharacter ℚ) :
     RayClassCharacter.conductor_toDirichletCharacter, ψ.conductor_character]
 
 theorem toDirichletCharacter_eq_one_iff (ψ : PrimitiveRayClassCharacter ℚ) :
-    ψ.toDirichletCharacter = 1 ↔ ψ = 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ map_one _⟩
-  have hchar : ψ.character = 1 :=
-    (RayClassCharacter.toDirichletCharacter_eq_one_iff ψ.character).mp h
-  rw [← of_character ψ, hchar, of_one]
+    ψ.toDirichletCharacter = 1 ↔ ψ = 1 :=
+  (RayClassCharacter.toDirichletCharacter_eq_one_iff ψ.character).trans (character_eq_one_iff ψ)
+
+/-- Lifting `(of η).toDirichletCharacter` to the norm of `𝔪.finitePart` recovers
+`η.toDirichletCharacter`. -/
+theorem changeLevel_toDirichletCharacter_of {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) :
+    changeLevel (map_dvd Ideal.absNorm (Modulus.dvd_iff.mp (conductor_of_dvd η)).1)
+      (of η).toDirichletCharacter = η.toDirichletCharacter :=
+  (RayClassCharacter.toDirichletCharacter_induced (conductor_of_dvd η)
+    (of η).character).symm.trans (congrArg _ (induced_character_of η))
 
 @[simp]
 theorem toDirichletCharacter_of_intCast {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) (m : ℤ) :
     (of η).toDirichletCharacter m = η.toDirichletCharacter.primitiveCharacter m :=
   (of η).isPrimitive_toDirichletCharacter.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq
     (map_dvd Ideal.absNorm (Modulus.dvd_iff.mp (conductor_of_dvd η)).1)
-    ((RayClassCharacter.toDirichletCharacter_induced (conductor_of_dvd η)
-      (of η).character).symm.trans (congrArg _ (induced_character_of η))) m
+    (changeLevel_toDirichletCharacter_of η) m
 
 @[simp]
 theorem toDirichletCharacter_of_natCast {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) (m : ℕ) :
     (of η).toDirichletCharacter m = η.toDirichletCharacter.primitiveCharacter m := by
   simpa only [Int.cast_natCast] using toDirichletCharacter_of_intCast η (m : ℤ)
 
-/-- **The bundled primitive ray class character of `ℚ` underlying a complex Dirichlet character.**
-This applies to imprimitive characters as well as primitive ones: it extracts the ray class
-conductor (`(f)` if `χ` is even, `(f)·∞` if `χ` is odd, where `f = χ.conductor`) together with its
-primitive ray class character. -/
-def ofDirichletCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
-    PrimitiveRayClassCharacter ℚ :=
-  of ((ratDirichletEquiv N (NeZero.ne N)).symm χ)
-
-theorem ofDirichletCharacter_def {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
-    ofDirichletCharacter χ = of ((ratDirichletEquiv N (NeZero.ne N)).symm χ) := (rfl)
-
-@[simp]
-theorem absNorm_conductor_ofDirichletCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
-    Ideal.absNorm (ofDirichletCharacter χ).conductor.finitePart = χ.conductor := by
-  rw [ofDirichletCharacter_def, conductor_of, RayClassCharacter.absNorm_conductor_finitePart,
-    MulEquiv.apply_symm_apply]
-
-/-- For an even Dirichlet character `χ`, the conductor of `ofDirichletCharacter χ` is the finite
-modulus `(χ.conductor)` without the real place. -/
-theorem conductor_ofDirichletCharacter_of_even {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
-    (hχ : χ.Even) :
-    (ofDirichletCharacter χ).conductor = ratFiniteModulus χ.conductor (conductor_ne_zero χ) := by
-  rw [ofDirichletCharacter_def, conductor_of]
-  have hinf : ((ratDirichletEquiv N (NeZero.ne N)).symm χ).conductor.infinitePart = ∅ := by
-    rwa [RayClassCharacter.conductor_infinitePart_eq_empty_iff_even, MulEquiv.apply_symm_apply]
-  simpa only [RayClassCharacter.absNorm_conductor_finitePart, MulEquiv.apply_symm_apply] using
-    eq_ratFiniteModulus_of_infinitePart_eq_empty hinf
-
-/-- For an odd Dirichlet character `χ`, the conductor of `ofDirichletCharacter χ` is the modulus
-`(χ.conductor)·∞` including the real place. -/
-theorem conductor_ofDirichletCharacter_of_not_even {N : ℕ} [NeZero N] {χ : DirichletCharacter ℂ N}
-    (hχ : ¬ χ.Even) :
-    (ofDirichletCharacter χ).conductor = ratModulus χ.conductor (conductor_ne_zero χ) := by
-  rw [ofDirichletCharacter_def, conductor_of]
-  have hinf : ((ratDirichletEquiv N (NeZero.ne N)).symm χ).conductor.infinitePart ≠ ∅ := by
-    rwa [ne_eq, RayClassCharacter.conductor_infinitePart_eq_empty_iff_even,
-      MulEquiv.apply_symm_apply]
-  simpa only [RayClassCharacter.absNorm_conductor_finitePart, MulEquiv.apply_symm_apply] using
-    eq_ratModulus_of_infinitePart_ne_empty hinf
-
-@[simp]
-theorem ofDirichletCharacter_toDirichletCharacter {𝔪 : Modulus ℚ} (η : RayClassCharacter 𝔪) :
-    ofDirichletCharacter η.toDirichletCharacter = of η := by
-  rw [ofDirichletCharacter_def, RayClassCharacter.toDirichletCharacter_def,
-    MulEquiv.symm_apply_apply, of_induced]
-
-theorem ofDirichletCharacter_primitive_toDirichletCharacter (ψ : PrimitiveRayClassCharacter ℚ) :
-    ofDirichletCharacter ψ.toDirichletCharacter = ψ := by
-  rw [toDirichletCharacter_def, ofDirichletCharacter_toDirichletCharacter, of_character]
-
-@[simp]
-theorem ofDirichletCharacter_changeLevel {M N : ℕ} [NeZero M] [NeZero N] (hMN : M ∣ N)
-    (χ : DirichletCharacter ℂ M) :
-    ofDirichletCharacter (changeLevel hMN χ) = ofDirichletCharacter χ := by
-  have hmod : ratModulus M (NeZero.ne M) ∣ ratModulus N (NeZero.ne N) :=
-    ratModulus_dvd_ratModulus_iff.mpr hMN
-  have hsymm : (ratDirichletEquiv N (NeZero.ne N)).symm (changeLevel hMN χ) =
-      ((ratDirichletEquiv M (NeZero.ne M)).symm χ).induced hmod := by
-    apply (ratDirichletEquiv N (NeZero.ne N)).injective
-    rw [MulEquiv.apply_symm_apply, ratDirichletEquiv_induced, MulEquiv.apply_symm_apply]
-  rw [ofDirichletCharacter_def, hsymm, of_induced, ← ofDirichletCharacter_def]
-
 @[simp]
 theorem toDirichletCharacter_inv (ψ : PrimitiveRayClassCharacter ℚ) :
     ψ⁻¹.toDirichletCharacter = ψ.toDirichletCharacter⁻¹ :=
   map_inv RayClassCharacter.toDirichletCharacter ψ.character
 
-@[simp]
-theorem ofDirichletCharacter_primitiveCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
-    ofDirichletCharacter χ.primitiveCharacter = ofDirichletCharacter χ := by
-  rw [← ofDirichletCharacter_changeLevel χ.conductor_dvd_level χ.primitiveCharacter,
-    changeLevel_primitiveCharacter]
+/-- When `ψ.toDirichletCharacter` is even, the conductor of `ψ` is the finite modulus `(f)`
+without the real place. -/
+theorem conductor_eq_ratFiniteModulus_of_even (ψ : PrimitiveRayClassCharacter ℚ)
+    (h : ψ.toDirichletCharacter.Even) :
+    ψ.conductor = ratFiniteModulus ψ.toDirichletCharacter.conductor (conductor_ne_zero _) :=
+  ψ.conductor_character.symm.trans (ψ.character.conductor_eq_ratFiniteModulus_of_even h)
 
-@[simp]
-theorem ofDirichletCharacter_one (N : ℕ) [NeZero N] :
-    ofDirichletCharacter (1 : DirichletCharacter ℂ N) = 1 := by
-  rw [ofDirichletCharacter_def, map_one, of_one]
-
-@[simp]
-theorem ofDirichletCharacter_eq_one_iff {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
-    ofDirichletCharacter χ = 1 ↔ χ = 1 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ ofDirichletCharacter_one N⟩
-  have hc : χ.conductor = 1 := by
-    have := congrArg (fun ψ : PrimitiveRayClassCharacter ℚ ↦ Ideal.absNorm ψ.conductor.finitePart) h
-    simpa [absNorm_conductor_ofDirichletCharacter] using this
-  exact eq_one_iff_conductor_eq_one.mpr hc
-
-@[simp]
-theorem ofDirichletCharacter_inv {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N) :
-    ofDirichletCharacter χ⁻¹ = (ofDirichletCharacter χ)⁻¹ := by
-  rw [ofDirichletCharacter_def, map_inv, of_inv, ← ofDirichletCharacter_def]
-
-/-- Along `Ideal.absNorm (ofDirichletCharacter χ).conductor.finitePart ∣ N`,
-`(ofDirichletCharacter χ).toDirichletCharacter` lifts to `χ`. -/
-theorem changeLevel_toDirichletCharacter_ofDirichletCharacter {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) :
-    changeLevel (dvd_trans (dvd_of_eq (absNorm_conductor_ofDirichletCharacter χ))
-        χ.conductor_dvd_level)
-      (ofDirichletCharacter χ).toDirichletCharacter = χ := by
-  let η₀ := (ratDirichletEquiv N (NeZero.ne N)).symm χ
-  have hdvd : Ideal.absNorm (ofDirichletCharacter χ).conductor.finitePart ∣
-      Ideal.absNorm (ratModulus N (NeZero.ne N)).finitePart :=
-    map_dvd Ideal.absNorm (Modulus.dvd_iff.mp (conductor_of_dvd η₀)).1
-  have h1 : changeLevel hdvd (ofDirichletCharacter χ).toDirichletCharacter =
-      η₀.toDirichletCharacter :=
-    (RayClassCharacter.toDirichletCharacter_induced (conductor_of_dvd η₀)
-      (of η₀).character).symm.trans
-      (congrArg RayClassCharacter.toDirichletCharacter (induced_character_of η₀))
-  rw [changeLevel_trans _ hdvd (dvd_of_eq (absNorm_ratModulus_finitePart N (NeZero.ne N))), h1,
-    RayClassCharacter.changeLevel_toDirichletCharacter_ratModulus, MulEquiv.apply_symm_apply]
-
-@[simp]
-theorem toDirichletCharacter_ofDirichletCharacter_intCast {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) (m : ℤ) :
-    (ofDirichletCharacter χ).toDirichletCharacter m = χ.primitiveCharacter m :=
-  (ofDirichletCharacter χ).isPrimitive_toDirichletCharacter
-    |>.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq _
-      (changeLevel_toDirichletCharacter_ofDirichletCharacter χ) m
-
-@[simp]
-theorem toDirichletCharacter_ofDirichletCharacter_natCast {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) (m : ℕ) :
-    (ofDirichletCharacter χ).toDirichletCharacter m = χ.primitiveCharacter m := by
-  simpa only [Int.cast_natCast] using toDirichletCharacter_ofDirichletCharacter_intCast χ (m : ℤ)
-
-theorem toDirichletCharacter_ofDirichletCharacter_intCast_of_isPrimitive {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (m : ℤ) :
-    (ofDirichletCharacter χ).toDirichletCharacter m = χ m := by
-  rw [toDirichletCharacter_ofDirichletCharacter_intCast]
-  exact (hχ.apply_intCast_eq_primitiveCharacter_of_changeLevel_eq dvd_rfl
-    (changeLevel_self χ) m).symm
-
-theorem toDirichletCharacter_ofDirichletCharacter_natCast_of_isPrimitive {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (m : ℕ) :
-    (ofDirichletCharacter χ).toDirichletCharacter m = χ m := by
-  simpa only [Int.cast_natCast] using
-    toDirichletCharacter_ofDirichletCharacter_intCast_of_isPrimitive hχ (m : ℤ)
-
-/-- **Equivalence between bundled primitive ray class characters of `ℚ` and primitive complex
-Dirichlet characters bundled with their positive integer conductor.** Even primitive Dirichlet
-characters correspond to finite moduli `(N)` without the real place; odd primitive Dirichlet
-characters correspond to moduli `(N)·∞` including the real place. -/
-def ratEquiv :
-    PrimitiveRayClassCharacter ℚ ≃ (N : ℕ+) × {χ : DirichletCharacter ℂ N // χ.IsPrimitive} where
-  toFun ψ :=
-    ⟨⟨Ideal.absNorm ψ.conductor.finitePart, Nat.pos_of_ne_zero (NeZero.ne _)⟩,
-      ⟨ψ.toDirichletCharacter, ψ.isPrimitive_toDirichletCharacter⟩⟩
-  invFun p := ofDirichletCharacter p.snd.val
-  left_inv ψ := ofDirichletCharacter_primitive_toDirichletCharacter ψ
-  right_inv := by
-    rintro ⟨N, ⟨χ, hχ⟩⟩
-    have hlevel : Ideal.absNorm (ofDirichletCharacter χ).conductor.finitePart = N :=
-      (absNorm_conductor_ofDirichletCharacter χ).trans ((isPrimitive_def χ).mp hχ)
-    suffices ∀ (M : ℕ+) (ψ : DirichletCharacter ℂ M) (hψ : ψ.IsPrimitive) (hM : M = N),
-        changeLevel (dvd_of_eq (congrArg PNat.val hM)) ψ = χ →
-        (⟨M, ⟨ψ, hψ⟩⟩ : (K : ℕ+) × {η : DirichletCharacter ℂ K // η.IsPrimitive}) =
-          ⟨N, ⟨χ, hχ⟩⟩ from
-      this _ _ _ (PNat.eq hlevel)
-        (changeLevel_toDirichletCharacter_ofDirichletCharacter χ)
-    rintro M ψ hψ rfl h
-    simpa only [Subtype.mk.injEq, Sigma.mk.inj_iff, heq_eq_eq, true_and, changeLevel_self] using h
-
-theorem ratEquiv_apply (ψ : PrimitiveRayClassCharacter ℚ) :
-    ratEquiv ψ =
-      ⟨⟨Ideal.absNorm ψ.conductor.finitePart, Nat.pos_of_ne_zero (NeZero.ne _)⟩,
-        ⟨ψ.toDirichletCharacter, ψ.isPrimitive_toDirichletCharacter⟩⟩ := (rfl)
-
-@[simp]
-theorem ratEquiv_fst_coe (ψ : PrimitiveRayClassCharacter ℚ) :
-    ((ratEquiv ψ).fst : ℕ) = Ideal.absNorm ψ.conductor.finitePart := (rfl)
-
-@[simp]
-theorem ratEquiv_snd_intCast (ψ : PrimitiveRayClassCharacter ℚ) (m : ℤ) :
-    (ratEquiv ψ).snd.val m = ψ.toDirichletCharacter m := (rfl)
-
-@[simp]
-theorem ratEquiv_snd_natCast (ψ : PrimitiveRayClassCharacter ℚ) (m : ℕ) :
-    (ratEquiv ψ).snd.val m = ψ.toDirichletCharacter m := (rfl)
-
-@[simp]
-theorem ratEquiv_symm_apply (p : (N : ℕ+) × {χ : DirichletCharacter ℂ N // χ.IsPrimitive}) :
-    ratEquiv.symm p = ofDirichletCharacter p.snd.val := (rfl)
-
-@[simp]
-theorem ratEquiv_one : ratEquiv 1 = ⟨1, ⟨1, isPrimitive_one_level_one⟩⟩ := by
-  apply ratEquiv.symm.injective
-  rw [Equiv.symm_apply_apply, ratEquiv_symm_apply, ofDirichletCharacter_one]
-
-@[simp]
-theorem ratEquiv_inv (ψ : PrimitiveRayClassCharacter ℚ) :
-    ratEquiv ψ⁻¹ = ⟨(ratEquiv ψ).fst, ⟨(ratEquiv ψ).snd.val⁻¹, (ratEquiv ψ).snd.property.inv⟩⟩ := by
-  apply ratEquiv.symm.injective
-  rw [Equiv.symm_apply_apply, ratEquiv_symm_apply, ofDirichletCharacter_inv,
-    ← ratEquiv_symm_apply, Equiv.symm_apply_apply]
+/-- When `ψ.toDirichletCharacter` is odd, the conductor of `ψ` is the modulus `(f)·∞` including
+the real place. -/
+theorem conductor_eq_ratModulus_of_not_even (ψ : PrimitiveRayClassCharacter ℚ)
+    (h : ¬ ψ.toDirichletCharacter.Even) :
+    ψ.conductor = ratModulus ψ.toDirichletCharacter.conductor (conductor_ne_zero _) :=
+  ψ.conductor_character.symm.trans (ψ.character.conductor_eq_ratModulus_of_not_even h)
 
 end TauCeti.LFunctions.PrimitiveRayClassCharacter

@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Meromorphic.Counting.Basic
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
 public import TauCeti.NumberTheory.LFunctions.Hecke.Basic
-public import TauCeti.NumberTheory.LFunctions.Hecke.Primitive.Rat
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Rat
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Primitive
 
@@ -24,29 +24,18 @@ their continued `L`-functions, meromorphic orders, divisors, and zero counts:
   pole `s = 1`, `heckeLFunctionC` takes its normal-form value `0` whereas `LFunction` is an
   unnormalized Hurwitz combination). Punctured-germ agreement transports `meromorphicOrderAt`,
   `MeromorphicOn.divisor`, `divisorCount`, and `zeroCount` on arbitrary sets without excluding `1`.
-* At `(N)·∞` and for `PrimitiveRayClassCharacter.ofDirichletCharacter χ`, the `@[simp]` rewrites
-  `LFunction_toDirichletCharacter_ratDirichletEquiv_symm` and
-  `LFunction_toDirichletCharacter_ofDirichletCharacter` identify
-  `((ratDirichletEquiv N _).symm χ).toDirichletCharacter.LFunction` with `χ.LFunction` and
-  `(ofDirichletCharacter χ).toDirichletCharacter.LFunction` with
-  `χ.primitiveCharacter.LFunction`.
+* At `(N)·∞`, the `@[simp]` rewrite `LFunction_toDirichletCharacter_ratDirichletEquiv_symm`
+  identifies `((ratDirichletEquiv N _).symm χ).toDirichletCharacter.LFunction` with `χ.LFunction`.
 
 ## Main results
 
 * `TauCeti.LFunctions.heckeLFunctionC_eventuallyEq_LFunction` and
   `TauCeti.LFunctions.heckeLFunctionC_eq_LFunction`: comparison of `heckeLFunctionC` over
   `ℚ` with `DirichletCharacter.LFunction`.
-* `TauCeti.LFunctions.LFunction_toDirichletCharacter_ratDirichletEquiv_symm` and
-  `TauCeti.LFunctions.LFunction_toDirichletCharacter_ofDirichletCharacter`: `@[simp]` rewrites at
-  `(N)·∞` and for `PrimitiveRayClassCharacter.ofDirichletCharacter`.
-* `TauCeti.LFunctions.heckeLFunctionC_ratDirichletEquiv_symm_eventuallyEq`,
-  `TauCeti.LFunctions.heckeLFunctionC_ratDirichletEquiv_symm`,
-  `TauCeti.LFunctions.heckeLFunctionC_ofDirichletCharacter_eventuallyEq`,
-  `TauCeti.LFunctions.heckeLFunctionC_ofDirichletCharacter`,
-  `TauCeti.LFunctions.heckeLFunctionC_ofDirichletCharacter_eventuallyEq_of_isPrimitive`, and
-  `TauCeti.LFunctions.heckeLFunctionC_ofDirichletCharacter_of_isPrimitive`: `heckeLFunctionC`
-  identifications with `DirichletCharacter.LFunction` at `(N)·∞` and for
-  `ofDirichletCharacter`.
+* `TauCeti.LFunctions.LFunction_toDirichletCharacter_ratDirichletEquiv_symm`,
+  `TauCeti.LFunctions.heckeLFunctionC_ratDirichletEquiv_symm_eventuallyEq`, and
+  `TauCeti.LFunctions.heckeLFunctionC_ratDirichletEquiv_symm`: identifications with
+  `DirichletCharacter.LFunction` at `(N)·∞`.
 * `TauCeti.LFunctions.meromorphicOrderAt_heckeLFunctionC_eq_LFunction`,
   `TauCeti.LFunctions.divisor_heckeLFunctionC_eq_LFunction`,
   `TauCeti.LFunctions.divisorCount_heckeLFunctionC_eq_LFunction`, and
@@ -105,8 +94,7 @@ theorem heckeLFunctionC_eq_LFunction (η : RayClassCharacter 𝔪) {s : ℂ} (hs
     toMeromorphicNFOn_apply_of_analyticAt η.toDirichletCharacter.meromorphic_LFunction
       (η.toDirichletCharacter.analyticAt_LFunction hs')]
 
-/-- On `Re s > 1`, a rational presented Hecke L-function agrees with its defining `LSeries`,
-proving unconditionally over `ℚ` that the canonical continuation exists. -/
+/-- On `Re s > 1`, a rational presented Hecke L-function agrees with its defining `LSeries`. -/
 theorem heckeLFunctionC_rat_eq_LSeries (η : RayClassCharacter 𝔪) {s : ℂ} (hs : 1 < s.re) :
     heckeLFunctionC η s =
       LSeries (normCoeff ℚ η.toUnitaryIdealWeight.toIdealArithmeticFunction) s := by
@@ -132,18 +120,6 @@ theorem LFunction_toDirichletCharacter_ratDirichletEquiv_symm {N : ℕ} [NeZero 
     (by rw [RayClassCharacter.changeLevel_toDirichletCharacter_ratModulus,
       MulEquiv.apply_symm_apply])
 
-/-- For any complex Dirichlet character `χ` (primitive or imprimitive), the Dirichlet `L`-function
-of `PrimitiveRayClassCharacter.ofDirichletCharacter χ` is
-`χ.primitiveCharacter.LFunction`. -/
-@[simp]
-theorem LFunction_toDirichletCharacter_ofDirichletCharacter {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) :
-    (PrimitiveRayClassCharacter.ofDirichletCharacter χ).toDirichletCharacter.LFunction =
-      χ.primitiveCharacter.LFunction :=
-  (PrimitiveRayClassCharacter.ofDirichletCharacter χ).isPrimitive_toDirichletCharacter
-    |>.LFunction_eq_primitiveCharacter_of_changeLevel_eq _
-      (PrimitiveRayClassCharacter.changeLevel_toDirichletCharacter_ofDirichletCharacter χ)
-
 /-- **At every complex point `s`, `heckeLFunctionC ((ratDirichletEquiv N _).symm χ)` has the same
 punctured germ as `χ.LFunction`.** -/
 theorem heckeLFunctionC_ratDirichletEquiv_symm_eventuallyEq {N : ℕ} [NeZero N]
@@ -160,47 +136,6 @@ theorem heckeLFunctionC_ratDirichletEquiv_symm {N : ℕ} [NeZero N]
   have hs' : s ≠ 1 ∨ (ratDirichletEquiv N (NeZero.ne N)).symm χ ≠ 1 :=
     hs.imp_right fun hχ h ↦ hχ (by simpa using congrArg (ratDirichletEquiv N (NeZero.ne N)) h)
   rw [heckeLFunctionC_eq_LFunction _ hs', LFunction_toDirichletCharacter_ratDirichletEquiv_symm]
-
-/-- **At every complex point `s`, `heckeLFunctionC (ofDirichletCharacter χ).character` has the same
-punctured germ as `χ.primitiveCharacter.LFunction`.** -/
-theorem heckeLFunctionC_ofDirichletCharacter_eventuallyEq {N : ℕ} [NeZero N]
-    (χ : DirichletCharacter ℂ N) (s : ℂ) :
-    heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character =ᶠ[𝓝[≠] s]
-      χ.primitiveCharacter.LFunction := by
-  simpa only [LFunction_toDirichletCharacter_ofDirichletCharacter] using
-    heckeLFunctionC_eventuallyEq_LFunction
-      (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character s
-
-/-- **Away from the pole at `1` of the principal character, `heckeLFunctionC` of
-`(ofDirichletCharacter χ).character` agrees pointwise with `χ.primitiveCharacter.LFunction`.** -/
-theorem heckeLFunctionC_ofDirichletCharacter {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
-    {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
-    heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character s =
-      χ.primitiveCharacter.LFunction s := by
-  have hs' : s ≠ 1 ∨ (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character ≠ 1 :=
-    hs.imp_right fun hχ h ↦ hχ ((PrimitiveRayClassCharacter.ofDirichletCharacter_eq_one_iff χ).mp
-      (by rw [← PrimitiveRayClassCharacter.of_character
-        (PrimitiveRayClassCharacter.ofDirichletCharacter χ), h,
-        PrimitiveRayClassCharacter.of_one]))
-  rw [heckeLFunctionC_eq_LFunction _ hs', LFunction_toDirichletCharacter_ofDirichletCharacter]
-
-/-- **For a primitive Dirichlet character `χ`, `heckeLFunctionC (ofDirichletCharacter χ).character`
-has the same punctured germ as `χ.LFunction` at every complex point `s`.** -/
-theorem heckeLFunctionC_ofDirichletCharacter_eventuallyEq_of_isPrimitive {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) (s : ℂ) :
-    heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character =ᶠ[𝓝[≠] s]
-      χ.LFunction := by
-  rw [← hχ.LFunction_primitiveCharacter]
-  exact heckeLFunctionC_ofDirichletCharacter_eventuallyEq χ s
-
-/-- **For a primitive Dirichlet character `χ`, away from `s = 1` when `χ = 1`, `heckeLFunctionC`
-of `(ofDirichletCharacter χ).character` agrees pointwise with `χ.LFunction`.** -/
-theorem heckeLFunctionC_ofDirichletCharacter_of_isPrimitive {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter ℂ N} (hχ : χ.IsPrimitive) {s : ℂ} (hs : s ≠ 1 ∨ χ ≠ 1) :
-    heckeLFunctionC (PrimitiveRayClassCharacter.ofDirichletCharacter χ).character s =
-      χ.LFunction s := by
-  rw [← hχ.LFunction_primitiveCharacter]
-  exact heckeLFunctionC_ofDirichletCharacter χ hs
 
 end HeckeLFunction
 

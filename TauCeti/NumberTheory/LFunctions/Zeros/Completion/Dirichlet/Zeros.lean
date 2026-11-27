@@ -27,6 +27,13 @@ symmetries of their multiplicities.
   separately.
 * For a zero `ρ` and `1 ≤ Re s`, the summand `Re (1 / (s - ρ))` of the partial-fraction
   expansion of `Λ₀'/Λ₀` is positive.
+* On the positive half-plane, `Λ₀(χ)` and `χ.LFunction` have the same divisor (away from the
+  pole of `riemannZeta` at `s = 1` when `χ = 1`) and the same zero count on any region
+  `R ⊆ {0 < Re s}` (including `χ = 1` at `N = 1`, where both positive divisor multiplicities
+  vanish at `1`); on any region `R`, `zeroCount` of `Λ₀(χ)` equals `zeroCount` of
+  `χ.LFunction` on `R ∩ {0 < Re s < 1}` (`divisor_dirichletData_entireCompletion_eq_LFunction`,
+  `zeroCount_dirichletData_entireCompletion_eq_LFunction`,
+  `zeroCount_dirichletData_entireCompletion_eq_LFunction_inter`).
 
 These are the edge statements of the zero-free region at `K = ℚ` and the zero-location input to
 the positivity of the sum over zeros in the Hadamard corollaries.
@@ -196,11 +203,9 @@ theorem zeroCount_dirichletData_entireCompletion_eq_LFunction {R : Set ℂ}
     (hR : ∀ s ∈ R, 0 < s.re) :
     zeroCount (dirichletData χ hχ).entireCompletion Set.univ R =
       zeroCount χ.LFunction Set.univ R := by
-  rcases eq_or_ne χ 1 with rfl | hne
-  · have hN : N = 1 := hχ.eq_one_iff.mp rfl
-    subst hN
-    rw [dirichletData_modOne, riemannZetaData_entireCompletion,
-      DirichletCharacter.LFunction_modOne_eq]
+  rcases eq_or_ne χ 1 with h1 | hne
+  · obtain ⟨he, hL⟩ := dirichletData_entireCompletion_of_eq_one χ hχ h1
+    rw [he, hL]
     exact zeroCount_zetaEntireCompletion_eq_riemannZeta hR
   · exact zeroCount_congr_divisor fun s hs ↦
       congrArg Int.toNat

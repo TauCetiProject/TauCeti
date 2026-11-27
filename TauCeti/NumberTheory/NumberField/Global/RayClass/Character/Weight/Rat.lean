@@ -8,7 +8,6 @@ module
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Dirichlet
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Character.Weight.Basic
-import TauCeti.NumberTheory.ArithmeticDirichletSeries.Trivial
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
@@ -80,20 +79,12 @@ the arithmetic function of its Dirichlet character.** -/
 theorem normCoeff_toUnitaryIdealWeight (η : RayClassCharacter 𝔪) :
     normCoeff ℚ η.toUnitaryIdealWeight.toIdealArithmeticFunction =
       toArithmeticFunction (η.toDirichletCharacter ·) := by
-  have hfun : η.toUnitaryIdealWeight.toIdealArithmeticFunction =
-      fun I : (Ideal (𝓞 ℚ))⁰ ↦
-        (1 : IdealArithmeticFunction ℚ) I *
-          (fun k : ℕ ↦ η.toDirichletCharacter k) (Ideal.absNorm (I : Ideal (𝓞 ℚ))) := by
-    ext I
-    rw [UnitaryIdealWeight.toIdealArithmeticFunction_eq_val, val_toUnitaryIdealWeight,
-      MultiplicativeIdealWeight.toIdealArithmeticFunction_apply, Pi.one_apply, one_mul]
-    exact toMultiplicativeIdealWeight_eq_toDirichletCharacter_absNorm η
-      (nonZeroDivisors.coe_ne_zero I)
   ext m
   rcases eq_or_ne m 0 with rfl | hm
   · simp
-  · rw [hfun, normCoeff_fun_mul_comp_absNorm ℚ 1 (fun k : ℕ ↦ η.toDirichletCharacter k) m,
-      normCoeff_one_rat_apply (Nat.pos_of_ne_zero hm), one_mul,
+  · rw [UnitaryIdealWeight.normCoeff_toIdealArithmeticFunction_of_finrank_eq_one
+        (Module.finrank_self ℚ),
+      val_toUnitaryIdealWeight, toMultiplicativeIdealWeight_span_natCast η hm,
       ← η.toDirichletCharacter.apply_eq_toArithmeticFunction_apply hm]
 
 /-- **The `L`-series of a rational ray class character equals the `L`-series of its Dirichlet
