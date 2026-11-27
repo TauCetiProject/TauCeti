@@ -16,7 +16,6 @@ import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Topology.MetricSpace.SeparatedBalls
-import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # Canonical separating-contour continuation and joint four-variable holomorphy
@@ -263,32 +262,6 @@ private theorem tendstoUniformlyOn_truncated_vertical_mellinBarnes {p₀ : ℂ �
   obtain ⟨hp1R, hp2R, hp3R, hσR⟩ := hR_box p hp
   have hzb := hz_sub p.2.2.2 hp.2.2.2
   exact htail p.1 p.2.1 p.2.2.1 p.2.2.2 σ y hp1R hp2R hp3R hzb.2.1 hzb.2.2.1 hzb.2.2.2 hσR hyY
-
-private theorem exists_ball_re_notMem_and_lt_iff (w₀ : ℂ) {s : Set ℝ} (hs : IsClosed s)
-    (hw₀ : w₀.re ∉ s) :
-    ∃ δ : ℝ, 0 < δ ∧ ∀ w ∈ Metric.ball w₀ δ,
-      w.re ∉ s ∧ ∀ y ∈ s, y < w₀.re ↔ y < w.re := by
-  obtain ⟨a, b, ⟨ha, hb⟩, h⟩ := hs.exists_Ioo_disjoint_and_lt_iff hw₀
-  refine ⟨min (w₀.re - a) (b - w₀.re), lt_min (sub_pos.2 ha) (sub_pos.2 hb), fun w hw => ?_⟩
-  have hre : |w.re - w₀.re| < min (w₀.re - a) (b - w₀.re) :=
-    (abs_re_le_norm (w - w₀)).trans_lt (mem_ball_iff_norm.1 hw)
-  exact h w.re ⟨by linarith [(abs_lt.1 hre).1, min_le_left (w₀.re - a) (b - w₀.re)],
-    by linarith [(abs_lt.1 hre).2, min_le_right (w₀.re - a) (b - w₀.re)]⟩
-
-private theorem exists_ball_re_add_ne_neg_natCast_and_lt_iff (w₀ : ℂ) {σ : ℝ}
-    (hw₀ : ∀ k : ℕ, w₀.re + σ ≠ -k) :
-    ∃ δ : ℝ, 0 < δ ∧ ∀ w ∈ Metric.ball w₀ δ,
-      (∀ k : ℕ, w.re + σ ≠ -k) ∧
-        ∀ k : ℕ, (-w₀ - k).re < σ ↔ (-w - k).re < σ := by
-  have hcl : IsClosed ((fun x : ℝ => -(x + σ)) ⁻¹' Set.range ((↑) : ℕ → ℝ)) :=
-    Nat.isClosedEmbedding_coe_real.isClosed_range.preimage
-      (continuous_neg.comp (continuous_id.add continuous_const))
-  obtain ⟨δ, hδ, hav⟩ := exists_ball_re_notMem_and_lt_iff w₀ hcl
-    (by rintro ⟨k, hk⟩; exact hw₀ k (by linarith))
-  refine ⟨δ, hδ, fun w hw => ⟨fun k hk => (hav w hw).1 ⟨k, by linarith⟩, fun k => ?_⟩⟩
-  have h := (hav w hw).2 (-(k : ℝ) - σ) ⟨k, by ring⟩
-  simp only [sub_re, neg_re, natCast_re]
-  exact ⟨fun _ => by linarith [h.1 (by linarith)], fun _ => by linarith [h.2 (by linarith)]⟩
 
 private theorem analyticAt_vertical_mellinBarnes {p₀ : ℂ × ℂ × ℂ × ℂ} {σ : ℝ}
     (hσ : ∀ m : ℕ, σ ≠ m) (ha₀ : ∀ k : ℕ, p₀.1.re + σ ≠ -k)

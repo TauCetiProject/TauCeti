@@ -9,8 +9,6 @@ public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral.Basic
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Barnes.Analyticity
 import Mathlib.Analysis.Analytic.Uniqueness
-import Mathlib.Analysis.Normed.Module.Connected
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
@@ -93,26 +91,6 @@ open scoped Real Topology
 
 namespace Complex
 
-private theorem eqOn_forall_ne_neg_natCast_of_re_pos {f g : ℂ → ℂ}
-    (hf : AnalyticOnNhd ℂ f {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)})
-    (hg : AnalyticOnNhd ℂ g {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)})
-    (h : ∀ {w : ℂ}, 0 < w.re → f w = g w) :
-    Set.EqOn f g {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} := by
-  have hconn : IsConnected {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} := by
-    have heq : {w : ℂ | ∀ n : ℕ, w ≠ -(n : ℂ)} = (Set.range fun n : ℕ => -(n : ℂ))ᶜ := by
-      ext w; simp [eq_comm]
-    rw [heq]
-    exact (Set.countable_range _).isConnected_compl_of_one_lt_rank
-      (Complex.rank_real_complex ▸ Nat.one_lt_ofNat)
-  have hev : f =ᶠ[𝓝 (1 : ℂ)] g := by
-    filter_upwards [(isOpen_lt continuous_const Complex.continuous_re).mem_nhds
-      (by simp : (0 : ℝ) < (1 : ℂ).re)] with u hu
-    exact h hu
-  refine hf.eqOn_of_preconnected_of_eventuallyEq hg hconn.isPreconnected (fun n hn => ?_) hev
-  have hre := congrArg Complex.re hn
-  simp only [Complex.one_re, Complex.neg_re, Complex.natCast_re] at hre
-  linarith [n.cast_nonneg (α := ℝ)]
-
 private theorem eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral {a b c z : ℂ}
     (ha : ∀ k : ℕ, a ≠ -k) (hb : 0 < b.re) (hbc : b.re < c.re) (hz : -z ∈ slitPlane) :
     Gamma a * Gamma b * eulerIntegral a b c z = mellinBarnesIntegral a b c z := by
@@ -123,7 +101,7 @@ private theorem eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral {a b c z : ℂ}
       exists_mellinBarnesIntegral_eq_hypergeometricMellinBarnes a' b c z
     rw [hm, eulerIntegral_eq_hypergeometricMellinBarnes ha' hb hbc hz hσ haσ hbσ,
       mul_inv_cancel_left₀ (mul_ne_zero (Gamma_ne_zero_of_re_pos ha') (Gamma_ne_zero_of_re_pos hb))]
-  refine eqOn_forall_ne_neg_natCast_of_re_pos ?_ ?_ (fun hw => hstep1 hw) ha
+  refine AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos ?_ ?_ (fun hw => hstep1 hw) ha
   · exact fun w hw => ((analyticAt_Gamma hw).mul analyticAt_const).mul
       ((analyticOnNhd_eulerIntegral hb hbc (w, z)
         (by simpa [sub_eq_add_neg] using
@@ -387,7 +365,7 @@ private theorem regularizedGaussHGFun_mul_Gamma_eq_mellinBarnesIntegral {a b : �
       rw [regularizedGaussHGFun_eq_eulerIntegral a hb' hw hz_norm]
       exact eulerIntegral_mul_Gamma_eq_mellinBarnesIntegral ha hb' hw hz_slit
     exact congrFun (hfc.eq_of_eventuallyEq hgc hevc) c
-  refine eqOn_forall_ne_neg_natCast_of_re_pos ?_ ?_ hstep_c hb
+  refine AnalyticOnNhd.eqOn_forall_ne_neg_natCast_of_re_pos ?_ ?_ hstep_c hb
   · exact fun w hw => (analyticAt_const.mul (analyticAt_Gamma hw)).mul
       (analyticAt_const.regularizedGaussHGFun analyticAt_id analyticAt_const analyticAt_const
         hz_norm)
