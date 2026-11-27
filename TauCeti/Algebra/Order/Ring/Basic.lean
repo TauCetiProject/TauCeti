@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.Ring.Defs
+public import Mathlib.Algebra.Order.Ring.Unbundled.Basic
+import Mathlib.Tactic.ByContra
 import Mathlib.Algebra.Order.GroupWithZero.Basic
 import Mathlib.Tactic.Linarith
 
@@ -22,6 +24,9 @@ at most `(1 + s + t) ^ M`. This combines polynomial weights in two variables int
 decay estimates in `1 + ‖ξ‖ + ‖m‖`.
 
 ## Main results
+
+* `TauCeti.mul_add_mul_eq_mul_add_mul_iff`: equality in the binary rearrangement identity
+  is equivalent to equality of one pair of factors.
 
 * `TauCeti.neg_lt_of_neg_lt_mul`: `-c < a` from `-c < a * p` for `0 ≤ c` and `1 ≤ p`.
 * `TauCeti.one_add_pow_mul_one_add_pow_le`: `(1 + s) ^ i (1 + t) ^ j ≤ (1 + s + t) ^ M` for
@@ -52,5 +57,19 @@ theorem one_add_pow_mul_one_add_pow_le {α : Type*} [Semiring α] [PartialOrder 
     _ = (1 + s + t) ^ (i + j) := (pow_add _ _ _).symm
     _ ≤ (1 + s + t) ^ M :=
         pow_le_pow_right₀ ((le_add_of_nonneg_right ht).trans' (le_add_of_nonneg_right hs)) h
+
+/-- Equality in the binary rearrangement identity forces one pair of factors to agree. -/
+theorem mul_add_mul_eq_mul_add_mul_iff {R : Type*} [Semiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [ExistsAddOfLE R] {a b c d : R} :
+    a * d + b * c = a * c + b * d ↔ a = b ∨ c = d := by
+  constructor
+  · intro heq
+    by_contra! h
+    rcases lt_or_gt_of_ne h.1 with hab | hab <;> rcases lt_or_gt_of_ne h.2 with hcd | hcd
+    · exact (mul_add_mul_lt_mul_add_mul hab hcd).ne heq
+    · exact (mul_add_mul_lt_mul_add_mul hab hcd).ne heq.symm
+    · exact (mul_add_mul_lt_mul_add_mul hab hcd).ne (by simpa only [add_comm] using heq.symm)
+    · exact (mul_add_mul_lt_mul_add_mul hab hcd).ne (by simpa only [add_comm] using heq)
+  · rintro (rfl | rfl) <;> simp [add_comm]
 
 end TauCeti
