@@ -310,28 +310,10 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWi
     Ω.isOpen.measurableSet subset_closure hα hKa
   have hG2 : MemLp G 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     (hG.memLp_top hα hΩ.closure Ω.isOpen.measurableSet subset_closure).mono_exponent le_top
-  have hf2 : MemLp f 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
-    hf.mono_exponent hq
-  -- The right-hand side as a functional on `H¹₀(Ω)`.
-  set ℓ := dirichletForcing (hf2.toLp f) - divergenceForcing (hG2.toLp G)
-  have hℓ : ∀ v : W1p0 volume Ω 2, ℓ v =
-      (∫ x in Ω, ⟪G x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ) +
-        ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x := fun v => by
-    rw [sub_apply, divergenceForcing_toLp_apply hG2,
-      dirichletForcing_apply_eq_setIntegral, sub_neg_eq_add, add_comm]
-    congr 1
-    refine integral_congr_ae ?_
-    filter_upwards [hf2.coeFn_toLp] with x hx
-    rw [hx]
-  obtain ⟨R, hR⟩ := hΩ.subset_ball 0
-  obtain ⟨u, ⟨hu0, hu⟩, huniq⟩ :=
-    hellΩ.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
-      (b := 0) (c := 0) (beta := 0) (gamma := 0) ha aestronglyMeasurable_const
-      aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => by simp) (fun _ _ => le_rfl) hR
-      (by simpa using hellΩ.pos) ℓ g
-  have hu' : ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 0 u (v : W1p volume Ω 2) =
-      (∫ x in Ω, ⟪G x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ) +
-        ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x := fun v => (hu v).trans (hℓ v)
+  obtain ⟨u, ⟨hu0, hu'⟩, huniq⟩ :=
+    hellΩ.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_isBounded (c := 0)
+      (gamma := 0) hΩ ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl)
+      (hf.mono_exponent hq) hG2 g
   -- The weak equation against `H¹₀(Ω)` gives it against the test functions.
   have htest : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
       (∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
@@ -339,8 +321,8 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWi
     simpa only [neg_neg] using energyFormH1_ofTestFunctionₗ_eq_of_forall_w1p0 (F := -G)
       fun v => by rw [hu' v, Pi.neg_def]; simp only [inner_neg_left, integral_neg, sub_neg_eq_add,
         add_comm]
-  refine ⟨u, ⟨⟨hu0, hu'⟩, hreg hell hKa hKaM hG hf hu0 hgD hDg hMg htest⟩, fun u' hu'' => ?_⟩
-  exact huniq u' ⟨hu''.1.1, fun v => (hu''.1.2 v).trans (hℓ v).symm⟩
+  exact ⟨u, ⟨⟨hu0, hu'⟩, hreg hell hKa hKaM hG hf hu0 hgD hDg hMg htest⟩,
+    fun u' hu'' => huniq u' hu''.1⟩
 
 end PDE
 
