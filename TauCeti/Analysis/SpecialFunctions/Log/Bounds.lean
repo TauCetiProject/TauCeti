@@ -48,6 +48,7 @@ in explicit prime-counting estimates.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
+* `TauCeti.pow_le_of_mul_log_le_log`: a natural power bound from a logarithmic comparison.
 -/
 
 public section
@@ -147,3 +148,18 @@ theorem mul_log_natCast_div_le_log_of_pow_le_mul_pow {p q m N : ℕ} {a : ℝ}
       (log_natCast_nonneg N)
 
 end Real
+
+namespace TauCeti
+
+open Real
+
+/-- If `1 < b` and `0 < m`, a lower bound `m * log b ≤ log N` implies `b ^ m ≤ N` over the
+naturals. The logarithmic bound itself forces `N` to be positive. -/
+theorem pow_le_of_mul_log_le_log {b N m : ℕ} (hb : 1 < b) (hm : 0 < m)
+    (hN : m * log b ≤ log N) : b ^ m ≤ N := by
+  have hb' : (1 : ℝ) < b := by exact_mod_cast hb
+  have hpos : 0 < (m : ℝ) * log b := mul_pos (Nat.cast_pos.mpr hm) (log_pos hb')
+  have hN' := (log_pos_iff (Nat.cast_nonneg N)).mp (hpos.trans_le hN)
+  exact_mod_cast (pow_le_iff_le_log (zero_lt_one.trans hb') (zero_lt_one.trans hN')).mpr hN
+
+end TauCeti

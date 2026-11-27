@@ -30,7 +30,7 @@ namespace TauCeti.OneSidedBound
 
 /-- A logarithmic window of width `√L` above a point in `[mL, 24mL]` lies in `[mL, 25mL]`
 when `m ≥ 1` and `L ≥ 1`. -/
-theorem log_levelPrime_mem_Icc {m : ℕ} {L A N : ℝ} (hm : 0 < m) (hL : 1 ≤ L)
+theorem log_mem_Icc_mul_of_mem_Icc_add_sqrt {m : ℕ} {L A N : ℝ} (hm : 0 < m) (hL : 1 ≤ L)
     (hA : A ∈ Icc (m * L) (24 * m * L)) (hN : log N ∈ Icc A (A + √L)) :
     log N ∈ Icc (m * L) (25 * m * L) := by
   have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
@@ -38,30 +38,17 @@ theorem log_levelPrime_mem_Icc {m : ℕ} {L A N : ℝ} (hm : 0 < m) (hL : 1 ≤ 
   have hmul : L ≤ m * L := le_mul_of_one_le_left (by positivity) hm'
   exact ⟨hA.1.trans hN.1, by linarith [hN.2, hA.2]⟩
 
-/-- The lower logarithmic bound for the level implies the corresponding power bound.
-In particular, the logarithmic hypothesis forces the level to be positive. -/
-theorem pow_le_levelPrime {b N m : ℕ} (hb : 1 < b) (hm : 0 < m)
-    (hN : m * log b ≤ log N) : b ^ m ≤ N := by
-  have hb' : (1 : ℝ) < b := by exact_mod_cast hb
-  have hpos : 0 < (m : ℝ) * log b :=
-    mul_pos (Nat.cast_pos.mpr hm) (log_pos hb')
-  have hN' : (0 : ℝ) < N := by
-    have hn := (log_pos_iff (Nat.cast_nonneg N)).mp (hpos.trans_le hN)
-    positivity
-  exact_mod_cast (log_le_log_iff (pow_pos (zero_lt_one.trans hb') _) hN').mp
-    ((log_pow (b : ℝ) m).trans_le hN)
-
-/-- An auxiliary prime in `[b^10, b^11]` is above `b²` and below a level whose logarithm
+/-- A natural number in `[b^10, b^11]` is above `b²` and below a level whose logarithm
 is at least `m log b`, for a chain of length `m > 11`. -/
-theorem auxiliaryPrime_mem_Ioo {b p N m : ℕ} (hb : 1 < b) (hm : 11 < m)
+theorem mem_Ioo_sq_of_mem_Icc_pow {b p N m : ℕ} (hb : 1 < b) (hm : 11 < m)
     (hp : p ∈ Icc (b ^ 10) (b ^ 11)) (hN : m * log b ≤ log N) : p ∈ Ioo (b ^ 2) N :=
-  have hpow := pow_le_levelPrime hb (by omega : 0 < m) hN
+  have hpow := pow_le_of_mul_log_le_log hb (by omega : 0 < m) hN
   ⟨(pow_lt_pow_right₀ hb (by decide : 2 < 10)).trans_le hp.1,
     hp.2.trans_lt ((pow_lt_pow_right₀ hb hm).trans_le hpow)⟩
 
 /-- At the separated cutoffs, the log-prime mass of the small primes plus the logarithm
 of the level fits in the rounding budget `b`. Here `X` is the second cutoff. -/
-theorem theta_add_log_levelPrime_le {X b N : ℝ} {m : ℕ} (hX : 2 ≤ X)
+theorem theta_add_log_le_of_pow_le {X b N : ℝ} {m : ℕ} (hX : 2 ≤ X)
     (hb : X ^ 18 ≤ b) (hm : (m : ℝ) ^ 2 ≤ 4 * X)
     (hN : log N ≤ 30 * m * log b) : Chebyshev.theta X + log N ≤ b := by
   have hX0 : 0 ≤ X := by linarith
