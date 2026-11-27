@@ -57,7 +57,7 @@ variable {k : Type*} {E : Type u} [Field k] [Countable k] [Algebra k ℂ]
 structure on `ℂ`. -/
 @[simp]
 theorem trdeg_eq_continuum : trdeg k ℂ = 𝔠 := by
-  rw [IsAlgClosed.trdeg_eq_cardinalMk (by rw [mk_complex]; exact aleph0_lt_continuum),
+  rw [trdeg_eq_cardinalMk (by rw [mk_complex]; exact aleph0_lt_continuum),
     mk_complex]
 
 /-- A domain of cardinality at most `𝔠` has transcendence degree at most that of `ℂ` over a
@@ -68,12 +68,10 @@ private theorem lift_trdeg_le [CommRing E] [IsDomain E] [Algebra k E] (hE : #E �
   rw [trdeg_eq_continuum, lift_continuum, lift_le_continuum, ← hs.cardinalMk_eq_trdeg]
   exact (mk_set_le s).trans hE
 
-/-- An algebraically closed field of cardinality `𝔠` has the same transcendence degree as `ℂ`
-over a countable field. -/
-private theorem lift_trdeg_eq [Field E] [IsAlgClosed E] [Algebra k E] (hE : #E = 𝔠) :
+/-- A domain of cardinality `𝔠` has the same transcendence degree as `ℂ` over a countable field. -/
+private theorem lift_trdeg_eq [CommRing E] [IsDomain E] [Algebra k E] (hE : #E = 𝔠) :
     Cardinal.lift.{0} (trdeg k E) = Cardinal.lift.{u} (trdeg k ℂ) := by
-  rw [trdeg_eq_continuum, lift_continuum,
-    IsAlgClosed.trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE, lift_continuum]
+  simp [trdeg_eq_continuum, trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE]
 
 /-- Every complex embedding of a countable field `k`, given as a `k`-algebra structure on `ℂ`,
 extends to every field extension `E` of `k`, or domain containing `k`, with `#E ≤ 𝔠`. -/
