@@ -149,6 +149,11 @@ and the product of the odd primes at most `B`. -/
 noncomputable def admissiblePairModulus (B : ℝ) (q : ℕ) : ℕ :=
   16 * q.lcm (∏ p ∈ (Nat.primesLE ⌊B⌋₊).erase 2, p)
 
+/-- The defining equation of `admissiblePairModulus`. -/
+theorem admissiblePairModulus_def (B : ℝ) (q : ℕ) :
+    admissiblePairModulus B q = 16 * q.lcm (∏ p ∈ (Nat.primesLE ⌊B⌋₊).erase 2, p) :=
+  (rfl)
+
 /-- An odd prime `p` lies in the product defining `admissiblePairModulus` iff `p ≤ B`. -/
 private theorem mem_primesLE_erase_two_iff {B : ℝ} {p : ℕ} :
     p ∈ (Nat.primesLE ⌊B⌋₊).erase 2 ↔ p.Prime ∧ p ≠ 2 ∧ (p : ℝ) ≤ B := by
@@ -177,6 +182,25 @@ theorem prime_dvd_admissiblePairModulus {B : ℝ} (q : ℕ) {p : ℕ} (hp : p.Pr
     exact (by decide : 2 ∣ 16).trans (sixteen_dvd_admissiblePairModulus B q)
   · exact (Finset.dvd_prod_of_mem id (mem_primesLE_erase_two_iff.mpr ⟨hp, hp2, hpB⟩)).trans
       ((Nat.dvd_lcm_right _ _).trans (dvd_mul_left _ _))
+
+/-- For a prime `q`, the prime divisors of the progression modulus are exactly `2`, `q` and the
+primes at most `B`. -/
+theorem prime_dvd_admissiblePairModulus_iff {B : ℝ} {q p : ℕ} (hq : q.Prime) (hp : p.Prime) :
+    p ∣ admissiblePairModulus B q ↔ p = 2 ∨ p = q ∨ (p : ℝ) ≤ B := by
+  constructor
+  · intro h
+    rcases hp.dvd_mul.mp h with h16 | hl
+    · exact .inl ((Nat.prime_dvd_prime_iff_eq hp Nat.prime_two).mp
+        (hp.dvd_of_dvd_pow (n := 4) h16))
+    rcases hp.dvd_mul.mp (hl.trans (Nat.lcm_dvd_mul _ _)) with hpq | hP
+    · exact .inr (.inl ((Nat.prime_dvd_prime_iff_eq hp hq).mp hpq))
+    obtain ⟨r, hr, hpr⟩ := (Prime.dvd_finsetProd_iff hp.prime _).mp hP
+    obtain ⟨hr', -, hrB⟩ := mem_primesLE_erase_two_iff.mp hr
+    exact .inr (.inr (((Nat.prime_dvd_prime_iff_eq hp hr').mp hpr) ▸ hrB))
+  · rintro (rfl | rfl | hpB)
+    · exact (by decide : 2 ∣ 16).trans (sixteen_dvd_admissiblePairModulus B q)
+    · exact dvd_admissiblePairModulus B p
+    · exact prime_dvd_admissiblePairModulus q hp hpB
 
 /-- At fixed `q ≡ 3 (mod 8)`, admissibility at dyadic bound `3` cuts out one reduced
 residue class modulo `admissiblePairModulus B q`, which is `16` times the lcm of `q` and the
