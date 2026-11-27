@@ -227,24 +227,6 @@ private theorem exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one (hL : 0 ≤
   have : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   exact ⟨by positivity, by linarith⟩
 
-/-- **The configurations of the family are admissible.** For `L ≥ 0` and every `τ`, the
-configuration of plumbing factor `e^{-2πL} / 4` at `τ` along the associativity path has nonzero
-scales, pairwise separated input discs, and input discs inside the disc of radius `2 e^{2π}`:
-these are the hypotheses on the configuration of the sphere with moving input ends. -/
-theorem associativityScale_ne_zero_and_pairwise_and_norm_associativityCenter_add_le (hL : 0 ≤ L)
-    (τ : ℝ) :
-    (∀ i, associativityScale (Real.exp (-(2 * π * L)) / 4) τ i ≠ 0) ∧
-      (Pairwise fun i j ↦ ‖associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ / 2 +
-        ‖associativityScale (Real.exp (-(2 * π * L)) / 4) τ j‖ / 2 ≤
-          ‖associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i -
-            associativityCenter (Real.exp (-(2 * π * L)) / 4) τ j‖) ∧
-      ∀ i, ‖associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i‖ +
-        ‖associativityScale (Real.exp (-(2 * π * L)) / 4) τ i‖ / 2 ≤ 2 * Real.exp (2 * π) := by
-  obtain ⟨hf₀, hf₃⟩ := exp_neg_two_pi_mul_div_four_pos_and_three_mul_le_one hL
-  exact ⟨associativityScale_ne_zero hf₀ τ,
-    pairwise_add_le_norm_associativityCenter_sub hf₀.le hf₃ τ,
-    norm_associativityCenter_add_le hf₀.le (by linarith) τ⟩
-
 /-! ### The ends of the family -/
 
 /-- **The family on the input ends.** For `L > 2` and every `τ`, on the part `s > 0` of the

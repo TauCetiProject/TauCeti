@@ -224,12 +224,14 @@ theorem exists_forall_le_mul_integral_floerLinearization_associativityPerturbati
               (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
               (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) (T + 1),
             ‖ξ z‖ ^ 2) :=
-  have hconf := associativityScale_ne_zero_and_pairwise_and_norm_associativityCenter_add_le
-    (show 0 ≤ L by linarith) τ
+  have hexp : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
   -- Far out on the ends the family is the datum of the moving input ends; on the core only its
   -- smoothness off the centers is used.
   exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds
-    ω hH hHs hHout hHouts hconf.1 hconf.2.1 hconf.2.2 hX hx hnd hJe hJex hXout hxout hndout
+    ω hH hHs hHout hHouts (associativityScale_ne_zero (by positivity) τ)
+    (pairwise_add_le_norm_associativityCenter_sub (by positivity) (by linarith) τ)
+    (norm_associativityCenter_add_le (by positivity) (by linarith) τ) hX hx hnd hJe hJex hXout
+    hxout hndout
     hJout hJoutx hJeq hJoutq
     (fun i ζ hζ ↦ by
       rw [associativityPerturbation_realChart_eq (G := G) (G' := G') (L := L) (by linarith) hH i
