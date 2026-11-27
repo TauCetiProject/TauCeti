@@ -486,8 +486,8 @@ theorem sectionClassicalPrincipalSymbol_smul_of_ne_zero {c : ℂ} (hc : c ≠ 0)
   by_cases hP : P ∈ sectionClassicalPseudodifferentialOperators m
   · exact sectionClassicalPrincipalSymbol_smul hP c x ξ
   · -- Neither `P` nor `c • P` is of order `m`, so both principal symbols vanish.
-    have hcP : c • P ∉ sectionClassicalPseudodifferentialOperators m := fun h ↦ hP <| by
-      simpa [smul_smul, inv_mul_cancel₀ hc] using Submodule.smul_mem _ c⁻¹ h
+    have hcP : c • P ∉ sectionClassicalPseudodifferentialOperators m :=
+      (Submodule.smul_mem_iff _ hc).not.2 hP
     rw [sectionClassicalPrincipalSymbol_of_notMem hP, sectionClassicalPrincipalSymbol_of_notMem hcP,
       smul_zero]
 
