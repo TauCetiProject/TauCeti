@@ -14,10 +14,9 @@ public import TauCeti.Topology.VectorBundle.Trivialization
 Let `L` be a line bundle, with model fibre of dimension one, and let `s` be a section of `L` that
 vanishes nowhere. Then `v ↦ v ⊗ s b` is a fibrewise linear isomorphism `E b ≃ E b ⊗ L b`
 (`TauCeti.bundleTensorEquivOfNeZero`): its inverse divides by `s b`, through the coordinate
-`TauCeti.VectorBundle.lineCoord` of the line `L b` along `s b`. When `s` is
-continuous, so is this isomorphism on total spaces
-(`TauCeti.continuous_bundleTensorEquivOfNeZero`).
-So tensoring with a trivializable line changes nothing.
+`TauCeti.VectorBundle.lineCoord` of the line `L b` along `s b`. When `s` is continuous, so is this
+isomorphism on total spaces (`TauCeti.continuous_bundleTensorEquivOfNeZero`). So tensoring with a
+trivializable line changes nothing.
 
 ## Main declarations
 

@@ -21,7 +21,7 @@ on total spaces (`TauCeti.continuous_tensorProduct_pullback`).
 More generally, let `φ₁ y : E₁' y →L E₁ (g y)` and `φ₂ y : E₂' y →L E₂ (g y)` be fibrewise linear
 maps of finite-rank bundles over `B'` into `E₁` and `E₂`, covering `g` and continuous on total
 spaces. Then their fibrewise tensor product `φ₁ y ⊗ φ₂ y` is continuous on the total spaces of the
-tensor products (`TauCeti.continuous_tensorProduct_map_covering`): it is the tensor product of the
+tensor products (`TauCeti.continuous_tensorProduct_map`): it is the tensor product of the
 maps `E₁' → g^*E₁` and `E₂' → g^*E₂` over `B'` followed by the identity above.
 
 These are the bundle maps along which the first Chern class of a tensor product of line bundles
@@ -33,7 +33,7 @@ is compared with its universal value on a product of classifying spaces.
   `E₁ ⊗ E₂` at the image points.
 * `TauCeti.continuous_tensorProduct_pullback`: `g^*E₁ ⊗ g^*E₂ → E₁ ⊗ E₂`, covering `g`, is
   continuous.
-* `TauCeti.continuous_tensorProduct_map_covering`: the tensor product of two bundle maps covering
+* `TauCeti.continuous_tensorProduct_map`: the tensor product of two bundle maps covering
   `g` is continuous.
 
 ## References
@@ -139,7 +139,7 @@ variable {𝕜 B B' : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 maps `φ₁ y : E₁' y →L E₁ (g y)` and `φ₂ y : E₂' y →L E₂ (g y)` covering a continuous map `g`,
 continuous on total spaces, the fibrewise tensor product `φ₁ y ⊗ φ₂ y` is continuous on the total
 spaces of `E₁' ⊗ E₂'` and `E₁ ⊗ E₂`. -/
-theorem continuous_tensorProduct_map_covering {g : C(B', B)}
+theorem continuous_tensorProduct_map {g : C(B', B)}
     {φ₁ : ∀ y, E₁' y →L[𝕜] E₁ (g y)} {φ₂ : ∀ y, E₂' y →L[𝕜] E₂ (g y)}
     (hφ₁ : Continuous fun p : TotalSpace F₁' E₁' ↦ TotalSpace.mk' F₁ (g p.proj) (φ₁ p.proj p.snd))
     (hφ₂ : Continuous fun p : TotalSpace F₂' E₂' ↦ TotalSpace.mk' F₂ (g p.proj) (φ₂ p.proj p.snd)) :

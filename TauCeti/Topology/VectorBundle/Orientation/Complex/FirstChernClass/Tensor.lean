@@ -85,7 +85,7 @@ theorem firstChernClass_tensorProduct_eq_singularCohomologyMap_of_fiberwise {g :
   firstChernClass_eq_singularCohomologyMap_of_fiberwise
     (φ := fun y ↦ (_root_.TensorProduct.congr (φ₁ y).toLinearEquiv
       (φ₂ y).toLinearEquiv).toContinuousLinearEquivOfIsModuleTopology)
-    ((continuous_tensorProduct_map_covering (φ₁ := fun y ↦ (φ₁ y : E₁' y →L[ℂ] E₁ (g y)))
+    ((continuous_tensorProduct_map (φ₁ := fun y ↦ (φ₁ y : E₁' y →L[ℂ] E₁ (g y)))
       (φ₂ := fun y ↦ (φ₂ y : E₂' y →L[ℂ] E₂ (g y))) hφ₁ hφ₂).congr fun p ↦ by
       rw [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology,
         ← LinearEquiv.coe_toLinearMap, _root_.TensorProduct.toLinearMap_congr]

@@ -113,8 +113,9 @@ section `s` that vanishes nowhere these coordinates form a continuous function o
 (`TauCeti.VectorBundle.continuous_lineCoord`). For the model fibre `𝕜` they give a linear
 trivialization over the whole base (`TauCeti.VectorBundle.sectionTrivialization`), with inverse
 `(b, c) ↦ c • s b`. Conversely, a linear trivialization `e` over the whole base gives the
-nowhere-vanishing continuous section `b ↦ e.symm b 1`. So a line bundle has a linear trivialization
-over the whole base exactly when it has a continuous section that vanishes nowhere
+nowhere-vanishing continuous section `b ↦ e.symm b 1`. So a vector bundle with model fibre `𝕜`
+has a linear trivialization over the whole base exactly when it has a continuous section that
+vanishes nowhere
 (`TauCeti.VectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_continuous_forall_ne_zero`).
 -/
 
@@ -708,8 +709,7 @@ variable {b : B} {v : E b} (hv : v ≠ 0)
 /-- **The coordinate along a nonzero vector of a line.** A fibre `E b` of a vector bundle whose
 model fibre `F` has dimension one is a line, so a nonzero vector `v ∈ E b` is a basis: every
 `w ∈ E b` is `c • v` for a unique scalar `c`. This is the continuous linear equivalence `w ↦ c`,
-with inverse `c ↦ c • v` (`TauCeti.VectorBundle.lineCoord_symm_apply`). The coordinate is
-continuous because its kernel, `{0}`, is closed. -/
+with inverse `c ↦ c • v` (`TauCeti.VectorBundle.lineCoord_symm_apply`). -/
 def lineCoord : E b ≃L[𝕜] 𝕜 :=
   letI := FiberBundle.t2Space F E b
   letI := VectorBundle.isTopologicalAddGroup 𝕜 F E b
@@ -718,6 +718,7 @@ def lineCoord : E b ≃L[𝕜] 𝕜 :=
     hv).equivFun.trans (LinearEquiv.funUnique Unit 𝕜 𝕜)
   have hφ (c : 𝕜) : φ.symm c = c • v := by simp [φ, Module.Basis.equivFun_symm_apply]
   { φ with
+    -- A linear form is continuous when its kernel, here `{0}`, is closed.
     continuous_toFun := (LinearMap.continuous_iff_isClosed_ker φ.toLinearMap).2 <| by
       rw [LinearEquiv.ker, Submodule.bot_coe]
       exact isClosed_singleton
