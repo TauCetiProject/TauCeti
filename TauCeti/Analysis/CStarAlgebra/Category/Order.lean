@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import TauCeti.Analysis.CStarAlgebra.Category.Basic
-public import TauCeti.CategoryTheory.Linear.Endomorphism
+import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Order, spectral positivity, congruence, and operator-order Cauchy–Schwarz
@@ -40,15 +40,7 @@ universe v u
 namespace CategoryTheory.End
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Linear ℂ C]
-
-/-- Real scalar multiplication on `End X` acts on underlying arrows via coercion to `ℂ`. -/
-@[simp] theorem real_smul_asHom {X : C} (r : ℝ) (a : End X) :
-    (r • a).asHom = (r : ℂ) • a.asHom := by
-  rw [← Complex.coe_smul, smul_asHom]
-
-section Order
-
-variable [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
+  [DaggerCategory C] [DaggerPreadditive C] [DaggerLinear ℂ C]
   [∀ X Y : C, Norm (X ⟶ Y)] [CStarCategory C]
 variable {X Y Z : C}
 
@@ -114,8 +106,6 @@ theorem dagger_comp_dagger_comp_le_norm_smul (f : Y ⟶ X) (g : Y ⟶ Z) :
       ‖dagger f ≫ f‖ • End.of (dagger g ≫ g) := by
   simpa only [CStarCategory.norm_dagger, CStarCategory.norm_dagger_comp_self] using
     dagger_comp_self_comp_le (dagger f) g
-
-end Order
 
 end CategoryTheory.End
 
