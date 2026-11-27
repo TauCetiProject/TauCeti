@@ -139,11 +139,6 @@ theorem isSymplecticFrame_apply_zero (hu : IsSmoothCylinder I γ γ₀ u)
       TotalSpace.ext (hu.apply_zero q.1) HEq.rfl, fun t v w ↦ ?_⟩
   rw [← hχ.isSymplecticFrame.apply_apply (0, t) v w, Icc.coe_zero, hu.apply_zero t]
 
-/-- The restriction of a frame of a cylinder to the edge `s = 0` takes the same values at the two
-ends of the loop. -/
-theorem apply_zero_zero (hχ : IsCylinderFrame σ ω₀ u φ₀ χ) (v : W) : χ (0, 0) v = χ (0, 1) v :=
-  (hχ.periodic 0 v).symm
-
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ W]
 
 /-- **The index along the loop does not depend on the frame of the cylinder.** Two frames `χ` and
@@ -158,52 +153,19 @@ theorem frameConleyZehnderIndex_eq (hu : IsSmoothCylinder I γ γ₀ u)
     (hΦσ : ∀ (t : unitInterval) u v, σ.eval₂ (γ t) (Φ t u) (Φ t v) = σ.eval₂ (γ 0) u v) :
     frameConleyZehnderIndex ω₀ (hχ'.isSymplecticFrame_apply_zero hu) hΦ hΦσ =
       frameConleyZehnderIndex ω₀ (hχ.isSymplecticFrame_apply_zero hu) hΦ hΦσ := by
-  have hper := trans_symm_zero_eq_trans_symm_one (I := I) (γ := fun t : unitInterval ↦ γ t)
-    (χ := fun t ↦ χ (0, t)) (χ' := fun t ↦ χ' (0, t)) hχ.apply_zero_zero hχ'.apply_zero_zero
-  rw [frameConleyZehnderIndex_eq_add_maslovIndex (hχ.isSymplecticFrame_apply_zero hu)
-    (hχ'.isSymplecticFrame_apply_zero hu) hper]
-  suffices hm : ω₀.maslovIndex (transitionLoop (hχ.isSymplecticFrame_apply_zero hu).continuous
-      (hχ'.isSymplecticFrame_apply_zero hu).continuous hper)
-      (apply_transitionLoop_apply (hχ.isSymplecticFrame_apply_zero hu)
-        (hχ'.isSymplecticFrame_apply_zero hu) hper) = 0 by
-    rw [hm, Int.cast_zero, mul_zero, add_zero]
-  -- The change of frame over the square is a homotopy through loops from the change of frame
-  -- along `γ` to the constant loop at the identity.
-  let F : C(unitInterval × unitInterval, W →L[ℝ] W) :=
-    ⟨fun p ↦ ((χ' p).trans (χ p).symm : W ≃L[ℝ] W),
-      continuous_trans_symm_of_continuous_frame hχ'.isSymplecticFrame.continuous
-        hχ.isSymplecticFrame.continuous⟩
-  have hF (p : unitInterval × unitInterval) (v w : W) : ω₀ (F p v) (F p w) = ω₀ v w :=
-    hχ'.isSymplecticFrame.apply_trans_symm_apply hχ.isSymplecticFrame p v w
-  -- Along the edge `s = 0` it is the change of frame along `γ`.
-  have hF₀ (t : unitInterval) :
-      F (0, t) = transitionLoop (I := I) (γ := fun t : unitInterval ↦ γ t)
-        (χ := fun t ↦ χ (0, t)) (χ' := fun t ↦ χ' (0, t))
-        (hχ.isSymplecticFrame_apply_zero hu).continuous
-        (hχ'.isSymplecticFrame_apply_zero hu).continuous hper t := by
-    ext v
-    exact (transitionLoop_apply (I := I) (γ := fun t : unitInterval ↦ γ t)
-      (χ := fun t ↦ χ (0, t)) (χ' := fun t ↦ χ' (0, t)) _ _ hper t v).symm
-  -- Along the edge `s = 1` both frames are the reference frame.
-  have hF₁ (t : unitInterval) : F (1, t) = Path.refl (1 : W →L[ℝ] W) t := by
-    ext v
-    -- Both sides are applied pointwise: `F` is the bundled change of frame and `Path.refl 1` is
-    -- the identity.
-    change (χ (1, t)).symm (χ' (1, t) v) = v
-    exact (χ (1, t)).symm_apply_eq.2 ((hχ'.apply_one t v).trans (hχ.apply_one t v).symm)
-  -- Each segment `s = const` is a loop.
-  have hFper (s : unitInterval) : F (s, 0) = F (s, 1) := by
-    ext v
-    -- `F` is the bundled change of frame, applied pointwise.
-    change (χ (s, 0)).symm (χ' (s, 0) v) = (χ (s, 1)).symm (χ' (s, 1) v)
-    rw [hχ'.periodic s v]
-    apply (χ (s, 1)).injective
-    -- `χ (s, 0)` and `χ (s, 1)` take values in the tangent spaces at `u (s, 0)` and `u (s, 1)`,
-    -- equal only definitionally, so the inverses are cancelled by explicit terms rather than `rw`.
-    exact ((hχ.periodic s _).trans ((χ (s, 0)).apply_symm_apply _)).trans
-      ((χ (s, 1)).apply_symm_apply _).symm
-  exact (ω₀.maslovIndex_eq_of_homotopy _ (Path.refl 1) F hF hF₀ hF₁ hFper).trans
-    (ω₀.maslovIndex_refl _ _)
+  -- The change of frame over the square is a loop on every segment `s = const`, and the identity
+  -- along the edge `s = 1` where both frames are the reference frame.
+  have hone (t : unitInterval) :
+      (χ' (1, t)).trans (χ (1, t)).symm = ContinuousLinearEquiv.refl ℝ W :=
+    ContinuousLinearEquiv.ext <| funext fun v ↦
+      (χ (1, t)).symm_apply_eq.2 ((hχ'.apply_one t v).trans (hχ.apply_one t v).symm)
+  exact frameConleyZehnderIndex_eq_of_square (hχ.isSymplecticFrame_apply_zero hu)
+    (hχ'.isSymplecticFrame_apply_zero hu) hχ.isSymplecticFrame hχ'.isSymplecticFrame
+    (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+    (fun s ↦ trans_symm_zero_eq_trans_symm_one (I := I) (γ := fun t : unitInterval ↦ u (s, t))
+      (χ := fun t ↦ χ (s, t)) (χ' := fun t ↦ χ' (s, t)) (fun v ↦ (hχ.periodic s v).symm)
+      fun v ↦ (hχ'.periodic s v).symm)
+    (fun t ↦ (hone t).trans (hone 0).symm) hΦ hΦσ
 
 end IsCylinderFrame
 
@@ -262,8 +224,8 @@ private theorem continuous_cylinderFrameCorrection {d b : unitInterval → W ≃
   refine ⟨(((hdc.comp continuous_cylinderFrameParam).clm_comp
     (continuous_const (y := ((d 1).symm : W →L[ℝ] W)))).clm_comp
       (hbc.comp continuous_snd)).congr fun p ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun p v w ↦ ?_⟩
-  · -- Both sides apply `b`, `d(1)⁻¹` and `d(r)` in turn.
-    rfl
+  · simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.trans_apply, Function.comp_apply]
   · simp only [ContinuousLinearEquiv.trans_apply, hdω, hd₁, hbω]
 
 /-- **Frames of a cylinder exist.** For a fiberwise nondegenerate two-form `σ` on a Hausdorff
@@ -304,19 +266,13 @@ theorem IsSmoothCylinder.exists_isCylinderFrame [T2Space M] [SigmaCompactSpace M
   refine ⟨fun p ↦ ((b p.2).trans ((d 1).symm.trans (d (cylinderFrameParam p)))).trans
     (Ψ (p.1, p.2)), hΨsq.trans_of_continuous hAc hAω, fun s v ↦ ?_, fun t v ↦ ?_⟩
   · -- The frame applies `b`, `d(1)⁻¹`, `d(r)` and `Ψ` in turn, with `r = s` at `t = 1` and `r = 1`
-    -- at `t = 0`. The two ends of the loop live over the same point only up to definitional
-    -- equality, so the two computations are composed as terms.
-    have h₁ : Ψ ((s : ℝ), 1) (d (cylinderFrameParam (s, 1)) ((d 1).symm (b 1 v))) =
-        Ψ ((s : ℝ), 0) (b 0 v) := by
-      rw [cylinderFrameParam_one, hd₁, hdΨ]
-    have h₀ : Ψ ((s : ℝ), 0) (d (cylinderFrameParam (s, 0)) ((d 1).symm (b 0 v))) =
-        Ψ ((s : ℝ), 0) (b 0 v) := by
-      rw [cylinderFrameParam_zero, ContinuousLinearEquiv.apply_symm_apply]
-    exact h₁.trans h₀.symm
+    -- at `t = 0`.
+    simp only [ContinuousLinearEquiv.trans_apply, Icc.coe_one, Icc.coe_zero]
+    rw [cylinderFrameParam_one, hd₁, hdΨ, cylinderFrameParam_zero,
+      ContinuousLinearEquiv.apply_symm_apply]
   · -- At `s = 1` the parameter is `r = 1`, so the frame is `Ψ(1, t) b(t) = φ₀(t)`.
-    have h₁ : Ψ (1, (t : ℝ)) (d (cylinderFrameParam (1, t)) ((d 1).symm (b t v))) = φ₀ t v := by
-      rw [cylinderFrameParam_one_left, ContinuousLinearEquiv.apply_symm_apply, hbΨ]
-    exact h₁
+    simp only [ContinuousLinearEquiv.trans_apply, Icc.coe_one]
+    rw [cylinderFrameParam_one_left, ContinuousLinearEquiv.apply_symm_apply, hbΨ]
 
 end Existence
 
@@ -373,7 +329,7 @@ theorem IsSmoothCylinder.exists_int_conleyZehnderIndex_eq (h : σ.IsNondegenerat
     ∃ k : ℤ, hu.conleyZehnderIndex h hφ₀ hφ₀₁ hΦ hΦσ = k := by
   obtain ⟨χ, hχ⟩ := hu.exists_isCylinderFrame h hφ₀ hφ₀₁
   rw [hu.conleyZehnderIndex_eq h hφ₀ hφ₀₁ hχ]
-  exact exists_int_frameConleyZehnderIndex_eq _ hχ.apply_zero_zero hΦ hΦσ hΦ₀ hΦ₁
+  exact exists_int_frameConleyZehnderIndex_eq _ (fun v ↦ (hχ.periodic 0 v).symm) hΦ hΦσ hΦ₀ hΦ₁
 
 /-- **The parity of the index through a cylinder.** Let `Φ` be a continuous family of linear maps
 along `γ` preserving `σ`, in a manifold of dimension `2 n`, starting at the identity, whose end
@@ -394,8 +350,8 @@ theorem IsSmoothCylinder.exists_int_conleyZehnderIndex_eq_and_negOnePow_eq
         SignType.sign (LinearMap.det (1 - P)) := by
   obtain ⟨χ, hχ⟩ := hu.exists_isCylinderFrame h hφ₀ hφ₀₁
   rw [hu.conleyZehnderIndex_eq h hφ₀ hφ₀₁ hχ]
-  exact exists_int_frameConleyZehnderIndex_eq_and_negOnePow_eq _ hχ.apply_zero_zero hΦ hΦσ hΦ₀ hP
-    hPdet
+  exact exists_int_frameConleyZehnderIndex_eq_and_negOnePow_eq _
+    (fun v ↦ (hχ.periodic 0 v).symm) hΦ hΦσ hΦ₀ hP hPdet
 
 /-- **Change of reference frame.** Replacing the periodic reference frame `φ₀` along `γ₀` by
 another periodic reference frame `φ₀'` shifts the Conley–Zehnder index through every cylinder to
@@ -428,7 +384,7 @@ theorem IsSmoothCylinder.conleyZehnderIndex_eq_add_maslovIndex (h : σ.IsNondege
   have hper₀ := trans_symm_zero_eq_trans_symm_one hφ₀₁ hφ₀₁'
   have hper := trans_symm_zero_eq_trans_symm_one (I := I) (γ := fun t : unitInterval ↦ γ t)
     (χ := fun t ↦ χ (0, t)) (χ' := fun t ↦ ((φ₀' t).trans (φ₀ t).symm).trans (χ (0, t)))
-    hχ.apply_zero_zero hχ'.apply_zero_zero
+    (fun v ↦ (hχ.periodic 0 v).symm) fun v ↦ (hχ'.periodic 0 v).symm
   -- Along `γ` the change of frame from `χ` to `χ T` is `T`.
   have hm := ω₀.maslovIndex_congr
     (transitionLoop (hχ.isSymplecticFrame_apply_zero hu).continuous
