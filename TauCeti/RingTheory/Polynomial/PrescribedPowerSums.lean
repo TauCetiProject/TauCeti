@@ -162,9 +162,9 @@ theorem two_mul_newtonCoeff_two (M : ℕ → K) :
     2 * newtonCoeff M 2 = newtonCoeff M 1 * M 1 - M 2 := by
   have h := mul_newtonCoeff_eq_sum M 2
   rw [show ({a ∈ antidiagonal 2 | a.1 < 2} : Finset (ℕ × ℕ)) = {(0, 2), (1, 1)} by decide] at h
-  norm_num at h
-  rw [h, newtonCoeff_one]
-  ring
+  rw [newtonCoeff_one]
+  simp at h
+  linear_combination h
 
 /-- The Newton coefficients of the power sums of a multiset are its elementary symmetric
 functions. -/

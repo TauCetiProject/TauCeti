@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
+import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 
 /-!
@@ -78,10 +79,8 @@ theorem wedgePairing_ιMulti_add_self (vol : ⋀[ℝ]^(finrank ℝ V) V ≃ₗ[�
   have hwedge : wedge ℝ V 2 2 (ιMulti ℝ 2 ![s, a] + b) (ιMulti ℝ 2 ![s, a] + b) =
       2 • wedge ℝ V 2 2 (ιMulti ℝ 2 ![s, a]) b := by
     apply Subtype.ext
-    simp only [exteriorPower.coe_wedge, Submodule.coe_add, exteriorPower.ιMulti_apply_coe,
-      _root_.ExteriorAlgebra.ιMulti_apply,
-      List.ofFn_succ, List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one,
-      Matrix.cons_val_zero, Matrix.cons_val_succ, Submodule.coe_smul_of_tower]
+    rw [Submodule.coe_smul_of_tower, exteriorPower.coe_wedge, exteriorPower.coe_wedge,
+      Submodule.coe_add, exteriorPower.coe_ιMulti_two]
     exact TauCeti.ExteriorAlgebra.ι_mul_ι_add_mul_self hss (by omega) a b.property hdb
   simp only [LinearMap.compr₂_apply, hwedge, map_nsmul, nsmul_eq_mul, Nat.cast_ofNat]
 

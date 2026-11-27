@@ -62,10 +62,10 @@ Koszul complex.
 In degree at least the rank, contraction loses no information: if `d m = 1` and
 `finrank R M ≤ n`, every `x ∈ ⋀ⁿ M` is `m ∧ (d ⌋ x)`. Hence two forms killed by `d` multiply to
 zero once their degrees add up to the rank, and in rank at most four a two-form `x` satisfies
-`x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. The decomposable two-forms `m ∧ a` square to zero and commute
-with every two-form (`TauCeti.ExteriorAlgebra.ι_mul_ι_mul_self_eq_zero`,
-`TauCeti.ExteriorAlgebra.commute_ι_mul_ι_of_mem_exteriorPower_two`), so for a two-form `b`
-with `d ⌋ b = 0`, `(m ∧ a + b) ∧ (m ∧ a + b) = 2 (m ∧ a) ∧ b`
+`x ∧ x = 2 x ∧ m ∧ (d ⌋ x)`. The decomposable two-forms `m ∧ a` square to zero
+(`TauCeti.ExteriorAlgebra.ι_mul_ι_mul_self_eq_zero`), and two-forms are central
+(`TauCeti.ExteriorAlgebra.mem_center_of_mem_of_even`), so for a two-form `b` with
+`d ⌋ b = 0`, `(m ∧ a + b) ∧ (m ∧ a + b) = 2 (m ∧ a) ∧ b`
 (`TauCeti.ExteriorAlgebra.ι_mul_ι_add_mul_self`). This is the algebra behind the splitting of a
 two-form on a product `ℝ × Y` along the unit normal of the factor `Y`.
 
@@ -564,16 +564,6 @@ theorem ι_mul_ι_mul_self_eq_zero (m a : M) : ι R m * ι R a * (ι R m * ι R 
         simp only [mul_assoc]
     _ = 0 := by rw [h, mul_neg, ← mul_assoc, ι_sq_zero, zero_mul, neg_zero, zero_mul]
 
-/-- **Two-forms commute with decomposable two-forms**: a two-form `b` is fixed by the grade
-involution, so it commutes with `m ∧ a`. -/
-theorem commute_ι_mul_ι_of_mem_exteriorPower_two {b : _root_.ExteriorAlgebra R M}
-    (hb : b ∈ ⋀[R]^2 M) (m a : M) : Commute (ι R m * ι R a) b := by
-  have hinv : involute (Q := (0 : QuadraticForm R M)) b = b := by
-    rw [involute_of_mem_exteriorPower hb]
-    simp
-  rw [Commute, SemiconjBy, mul_assoc, ι_mul_eq_involute_mul a b, hinv, ← mul_assoc,
-    ι_mul_eq_involute_mul m b, hinv, mul_assoc]
-
 /-! ### Contraction in degree at least the rank -/
 
 variable [Module.Free R M] [Module.Finite R M]
@@ -608,10 +598,11 @@ theorem ι_mul_ι_add_mul_self {d : Module.Dual R M} {m : M} (hdm : d m = 1)
     (h4 : Module.finrank R M ≤ 4) (a : M) {b : _root_.ExteriorAlgebra R M} (hb : b ∈ ⋀[R]^2 M)
     (hdb : contractLeft (Q := (0 : QuadraticForm R M)) d b = 0) :
     (ι R m * ι R a + b) * (ι R m * ι R a + b) = 2 • (ι R m * ι R a * b) := by
-  -- The squares of `m ∧ a` and of `b` vanish, and the two-forms `m ∧ a` and `b` commute.
+  -- The squares of `m ∧ a` and of `b` vanish, and the two-form `b` is central.
   rw [add_mul, mul_add, mul_add, ι_mul_ι_mul_self_eq_zero,
     mul_eq_zero_of_contractLeft_eq_zero hdm (by omega) hb hb hdb hdb,
-    ← (commute_ι_mul_ι_of_mem_exteriorPower_two hb m a).eq, two_smul]
+    Subalgebra.mem_center_iff.1 (mem_center_of_mem_of_even hb even_two) (ι R m * ι R a),
+    two_smul]
   abel
 
 /-- **The square of a two-form in rank at most four.** If `d m = 1` and `finrank R M ≤ 4`, a
@@ -635,8 +626,8 @@ theorem mul_self_eq_two_smul_mul_ι_mul_contractLeft {d : Module.Dual R M} {m : 
     rw [map_sub, contractLeft_ι_mul, hdm, one_smul, hda, mul_zero, sub_zero, ha, sub_self]
   have h := ι_mul_ι_add_mul_self hdm h4 a hbmem hdb
   rw [add_sub_cancel] at h
-  rw [h, (commute_ι_mul_ι_of_mem_exteriorPower_two hbmem m a).eq, sub_mul,
-    ι_mul_ι_mul_self_eq_zero, sub_zero]
+  rw [h, Subalgebra.mem_center_iff.1 (mem_center_of_mem_of_even hbmem even_two) (ι R m * ι R a),
+    sub_mul, ι_mul_ι_mul_self_eq_zero, sub_zero]
 
 end TauCeti.ExteriorAlgebra
 
