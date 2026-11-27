@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Probability.Moments.Variance
 import Mathlib.Algebra.QuadraticDiscriminant
-import Mathlib.Tactic
+import Mathlib.Tactic.Linarith
+import Mathlib.Tactic.Positivity
 
 /-!
 # Grüss's inequality
