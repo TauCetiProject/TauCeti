@@ -24,9 +24,9 @@ star version of Mathlib's `Algebra.TensorProduct.map`.
 ## Main declarations
 
 * `Algebra.TensorProduct.liftNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ φ a * ψ b`.
-* `Algebra.TensorProduct.liftNonUnitalStarAlgHom_comp_includeLeft_includeRight`: every star
-  homomorphism out of the tensor product of unital star algebras is the integrated form of its
-  restrictions along
+* `liftNonUnitalStarAlgHom_comp_includeLeftNonUnitalStarAlgHom_includeRightNonUnitalStarAlgHom`
+  (in `Algebra.TensorProduct`): every star homomorphism out of the tensor product of unital star
+  algebras is the integrated form of its restrictions along
   `Algebra.TensorProduct.includeLeftNonUnitalStarAlgHom` and
   `Algebra.TensorProduct.includeRightNonUnitalStarAlgHom`.
 * `Algebra.TensorProduct.mapNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ f a ⊗ g b`,
@@ -158,7 +158,8 @@ variable [Semiring A] [Algebra R A] [StarRing A] [StarModule R A] [Semiring B] [
 
 /-- The restrictions `a ↦ Φ (a ⊗ 1)` and `b ↦ Φ (1 ⊗ b)` of a star homomorphism `Φ` out of the
 tensor product of unital star algebras have commuting values. -/
-theorem commute_comp_includeLeft_includeRight (Φ : A ⊗[R] B →⋆ₙₐ[R] C) (a : A) (b : B) :
+theorem commute_comp_includeLeftNonUnitalStarAlgHom_includeRightNonUnitalStarAlgHom
+    (Φ : A ⊗[R] B →⋆ₙₐ[R] C) (a : A) (b : B) :
     Commute ((Φ.comp includeLeftNonUnitalStarAlgHom) a)
       ((Φ.comp includeRightNonUnitalStarAlgHom) b) :=
   ((Commute.one_right a).tmul (Commute.one_left b)).map Φ
@@ -166,10 +167,11 @@ theorem commute_comp_includeLeft_includeRight (Φ : A ⊗[R] B →⋆ₙₐ[R] C
 /-- **Uniqueness in the universal property of `liftNonUnitalStarAlgHom`.** A star homomorphism
 `Φ` out of the tensor product of unital star algebras is the integrated form of its restrictions
 `a ↦ Φ (a ⊗ 1)` and `b ↦ Φ (1 ⊗ b)`. -/
-theorem liftNonUnitalStarAlgHom_comp_includeLeft_includeRight [SMulCommClass R C C]
-    [IsScalarTower R C C] (Φ : A ⊗[R] B →⋆ₙₐ[R] C) :
+theorem liftNonUnitalStarAlgHom_comp_includeLeftNonUnitalStarAlgHom_includeRightNonUnitalStarAlgHom
+    [SMulCommClass R C C] [IsScalarTower R C C] (Φ : A ⊗[R] B →⋆ₙₐ[R] C) :
     liftNonUnitalStarAlgHom (Φ.comp includeLeftNonUnitalStarAlgHom)
-      (Φ.comp includeRightNonUnitalStarAlgHom) (commute_comp_includeLeft_includeRight Φ) = Φ :=
+      (Φ.comp includeRightNonUnitalStarAlgHom)
+      (commute_comp_includeLeftNonUnitalStarAlgHom_includeRightNonUnitalStarAlgHom Φ) = Φ :=
   nonUnitalStarAlgHom_ext fun a b ↦ by
     simp only [liftNonUnitalStarAlgHom_tmul, NonUnitalStarAlgHom.comp_apply,
       includeLeftNonUnitalStarAlgHom_apply, includeRightNonUnitalStarAlgHom_apply, ← map_mul,
