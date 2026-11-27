@@ -24,10 +24,10 @@ quotient derivative satisfy no loop theorem for `dq`. On a connected open set su
 affine by quotient rigidity, and its loop integrals are given by commutators of consecutive
 vertices (`TauCeti.LeftQuotientDifferentiableOn.sum_curveIntegral_segment_mul_flip`,
 `TauCeti.RightQuotientDifferentiableOn.sum_curveIntegral_segment_mul`). Around the positively
-oriented square `0 → i → i + j → j → 0` (`TauCeti.Quaternion.ijSquare 0 1`) the identity, which
+oriented square `0 → i → i + j → j → 0` (`Quaternion.ijSquare 0 1`) the identity, which
 has both slopes `1`, gives
-`∮ q dq = 2k` and `∮ dq q = -2k` (`TauCeti.sum_curveIntegral_segment_square_mul`,
-`TauCeti.sum_curveIntegral_segment_square_mul_flip`). Consequently every closed polygon in the
+`∮ q dq = 2k` and `∮ dq q = -2k` (`TauCeti.sum_curveIntegral_segment_ijSquare_mul`,
+`TauCeti.sum_curveIntegral_segment_ijSquare_mul_flip`). Consequently every closed polygon in the
 set has vanishing integral of `dq f` for a left quotient differentiable `f`, or of `f dq` for a
 right quotient differentiable `f`, only when `f` is constant on the set
 (`TauCeti.LeftQuotientDifferentiableOn.forall_sum_curveIntegral_segment_mul_flip_eq_zero_iff`,
@@ -44,10 +44,6 @@ right quotient differentiable `f`, only when `f` is constant on the set
 public section
 
 open Set Quaternion
-
-namespace TauCeti
-
-variable {f : ℍ → ℍ} {s : Set ℍ} {n : ℕ}
 
 namespace Quaternion
 
@@ -78,9 +74,13 @@ theorem ijSquare_three (q₀ : ℍ) (δ : ℝ) : ijSquare q₀ δ 3 = q₀ + ⟨
 
 end Quaternion
 
+namespace TauCeti
+
+variable {f : ℍ → ℍ} {s : Set ℍ} {n : ℕ}
+
 /-- The commutators of consecutive vertices of the square with corner `q₀` and side `δ` in the
 `(x, y)`-directions, oriented from `i` to `j`, sum to `4 δ² k`. -/
-private theorem sum_mul_sub_mul_square (q₀ : ℍ) (δ : ℝ) :
+private theorem sum_mul_sub_mul_ijSquare (q₀ : ℍ) (δ : ℝ) :
     let p := Quaternion.ijSquare q₀ δ
     ∑ k, (p k * p (finRotate 4 k) - p (finRotate 4 k) * p k) = ⟨0, 0, 0, 4 * δ ^ 2⟩ := by
   intro p
@@ -91,39 +91,39 @@ private theorem sum_mul_sub_mul_square (q₀ : ℍ) (δ : ℝ) :
 
 /-- The commutators of consecutive vertices of the square with corner `q₀` and side `δ`, taken in
 the reverse order, sum to `-4 δ² k`. -/
-private theorem sum_mul_sub_mul_square_rev (q₀ : ℍ) (δ : ℝ) :
+private theorem sum_mul_sub_mul_ijSquare_rev (q₀ : ℍ) (δ : ℝ) :
     let p := Quaternion.ijSquare q₀ δ
     ∑ k, (p (finRotate 4 k) * p k - p k * p (finRotate 4 k)) = ⟨0, 0, 0, -4 * δ ^ 2⟩ := by
   intro p
   rw [← neg_inj, ← Finset.sum_neg_distrib]
   simp only [neg_sub]
-  rw [sum_mul_sub_mul_square]
+  rw [sum_mul_sub_mul_ijSquare]
   ext <;> simp
 
 /-- The integral of `q dq` around the positively oriented square with corner `q₀` and side `δ`
 in the `(x, y)`-directions is `2 δ² k`. For `q₀ = 0` and `δ = 1` this is `∮ q dq = 2k` around
 `0 → i → i + j → j → 0`. -/
-theorem sum_curveIntegral_segment_square_mul (q₀ : ℍ) (δ : ℝ) :
+theorem sum_curveIntegral_segment_ijSquare_mul (q₀ : ℍ) (δ : ℝ) :
     let p := Quaternion.ijSquare q₀ δ
     ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate 4 k)), ContinuousLinearMap.mul ℝ ℍ q =
       ⟨0, 0, 0, 2 * δ ^ 2⟩ := by
   intro p
   have h := sum_curveIntegral_segment_mul_const_add_mul p 0 1
   simp only [zero_add, one_mul] at h
-  rw [h, sum_mul_sub_mul_square]
+  rw [h, sum_mul_sub_mul_ijSquare]
   ext <;> norm_num [← mul_assoc]
 
 /-- The integral of `dq q` around the positively oriented square with corner `q₀` and side `δ`
 in the `(x, y)`-directions is `-2 δ² k`. For `q₀ = 0` and `δ = 1` this is `∮ dq q = -2k` around
 `0 → i → i + j → j → 0`. -/
-theorem sum_curveIntegral_segment_square_mul_flip (q₀ : ℍ) (δ : ℝ) :
+theorem sum_curveIntegral_segment_ijSquare_mul_flip (q₀ : ℍ) (δ : ℝ) :
     let p := Quaternion.ijSquare q₀ δ
     ∑ k, ∫ᶜ q in .segment (p k) (p (finRotate 4 k)), (ContinuousLinearMap.mul ℝ ℍ).flip q =
       ⟨0, 0, 0, -2 * δ ^ 2⟩ := by
   intro p
   have h := sum_curveIntegral_segment_mul_flip_add_mul_const p 0 1
   simp only [zero_add, mul_one] at h
-  rw [h, sum_mul_sub_mul_square_rev]
+  rw [h, sum_mul_sub_mul_ijSquare_rev]
   ext <;> norm_num [← mul_assoc]
 
 /-- **Loop integrals of left quotient differentiable functions.** Let `f` have a left quotient
@@ -156,7 +156,7 @@ theorem RightQuotientDifferentiableOn.sum_curveIntegral_segment_mul
 
 /-- Every neighbourhood of `q₀` contains a square with corner `q₀` and positive side in the
 `(x, y)`-directions, edges included. -/
-private theorem exists_square_segment_subset {q₀ : ℍ} (hs : s ∈ nhds q₀) :
+private theorem exists_ijSquare_segment_subset {q₀ : ℍ} (hs : s ∈ nhds q₀) :
     ∃ δ : ℝ, δ ≠ 0 ∧
       let p := Quaternion.ijSquare q₀ δ
       ∀ k, segment ℝ (p k) (p (finRotate 4 k)) ⊆ s := by
@@ -195,9 +195,9 @@ theorem LeftQuotientDifferentiableOn.forall_sum_curveIntegral_segment_mul_flip_e
     obtain ⟨a, b, hab⟩ := (leftQuotient_rigidity hs hc).mp hf
     rcases s.eq_empty_or_nonempty with rfl | ⟨q₀, hq₀⟩
     · exact ⟨0, by simp⟩
-    obtain ⟨δ, hδ, hp⟩ := exists_square_segment_subset (hs.mem_nhds hq₀)
+    obtain ⟨δ, hδ, hp⟩ := exists_ijSquare_segment_subset (hs.mem_nhds hq₀)
     have hsq := sum_curveIntegral_segment_mul_flip_of_eqOn hab _ hp
-    rw [h 4 _ hp, sum_mul_sub_mul_square_rev] at hsq
+    rw [h 4 _ hp, sum_mul_sub_mul_ijSquare_rev] at hsq
     have hb : b = 0 := eq_zero_of_smul_mk_mul_eq_zero
       (mul_ne_zero (neg_ne_zero.mpr four_ne_zero) (pow_ne_zero 2 hδ)) hsq.symm
     exact ⟨a, fun q hq ↦ by rw [hab q hq, hb, mul_zero, add_zero]⟩
@@ -219,9 +219,9 @@ theorem RightQuotientDifferentiableOn.forall_sum_curveIntegral_segment_mul_eq_ze
     obtain ⟨a, b, hab⟩ := (rightQuotient_rigidity hs hc).mp hf
     rcases s.eq_empty_or_nonempty with rfl | ⟨q₀, hq₀⟩
     · exact ⟨0, by simp⟩
-    obtain ⟨δ, hδ, hp⟩ := exists_square_segment_subset (hs.mem_nhds hq₀)
+    obtain ⟨δ, hδ, hp⟩ := exists_ijSquare_segment_subset (hs.mem_nhds hq₀)
     have hsq := sum_curveIntegral_segment_mul_of_eqOn hab _ hp
-    rw [h 4 _ hp, sum_mul_sub_mul_square] at hsq
+    rw [h 4 _ hp, sum_mul_sub_mul_ijSquare] at hsq
     have hb : b = 0 := eq_zero_of_smul_mul_mk_eq_zero
       (mul_ne_zero four_ne_zero (pow_ne_zero 2 hδ)) hsq.symm
     exact ⟨a, fun q hq ↦ by rw [hab q hq, hb, zero_mul, add_zero]⟩
