@@ -142,17 +142,12 @@ def negativeNormalSpaceEquivOfComp :
         (i.normalMap i' (u := fun s ↦ s) hn hn' (.of_eq hσi)).toLinearMap ∘ₗ
           (h.negativeNormalSpace hn g s).subtype).codRestrict _
       fun v ↦ h'.negativeNormalProjection_apply_mem hn' g' _)
-    (by
-      rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-      rintro ⟨v, hv⟩ hv0
-      by_contra hne
-      have hpos : i.normalMap i' (u := fun s ↦ s) hn hn' (.of_eq hσi) v ∈
-          h'.positiveNormalSpace hn' g' s :=
-        (h'.negativeNormalProjection_apply_eq_zero_iff hn' g').1 (congrArg Subtype.val hv0)
-      have hneg := h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g hv
-        fun hv ↦ hne (Subtype.ext hv)
-      rw [← h.normalHessian_normalMap hn hn' hσi h'.toIsCriticalSubmanifold hσ] at hneg
-      exact hneg.not_ge (h'.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace hn' g' hpos))
+    (.of_comp (f := Subtype.val) <| h'.injective_negativeNormalProjection_comp hn' g' _
+      fun v hv0 ↦ by
+        rw [LinearMap.comp_apply, Submodule.subtype_apply, ContinuousLinearMap.coe_coe,
+          h.normalHessian_normalMap hn hn' hσi h'.toIsCriticalSubmanifold hσ]
+        exact h.normalHessian_apply_self_neg_of_mem_negativeNormalSpace hn g v.property
+          fun hv ↦ hv0 (Subtype.ext hv))
     (by
       have hσis : σ (i s) = i' s := congrFun hσi s
       rw [h.finrank_negativeNormalSpace hn g, h'.finrank_negativeNormalSpace hn' g',

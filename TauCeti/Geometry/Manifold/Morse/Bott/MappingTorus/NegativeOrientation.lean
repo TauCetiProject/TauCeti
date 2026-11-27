@@ -206,15 +206,10 @@ theorem isEmpty_vectorBundleOrientation_negativeNormalSpace_of_det_neg {h : M �
       fun v ↦ hs.negativeNormalProjection_apply_mem hn _ _
   -- This is injective: the normal Hessian is negative definite on the normal classes and
   -- nonnegative on the positive normal space, the kernel of the projection.
-  have hL (t : ℝ) : Injective (L t) := by
-    rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
-    intro v hv
-    by_contra hv0
-    have hpos := hs.normalHessian_apply_self_nonneg_of_mem_positiveNormalSpace hn
-      g.toRiemannianMetric ((hs.negativeNormalProjection_apply_eq_zero_iff hn _).1
-        (congrArg Subtype.val hv))
-    exact (hneg v hv0).not_ge
-      (le_of_le_of_eq hpos (normalHessian_normalClass_mfderiv_mk hn hc hs t (j v)))
+  have hL (t : ℝ) : Injective (L t) :=
+    .of_comp (f := Subtype.val) <| hs.injective_negativeNormalProjection_comp hn
+      g.toRiemannianMetric _ fun v hv0 ↦
+        (normalHessian_normalClass_mfderiv_mk hn hc hs t (j v)).trans_lt (hneg v hv0)
   -- So a basis of `V` gives a frame of `ν⁻` at every point `[t, x]` of the circle.
   let b := Module.finBasisOfFinrankEq ℝ V hV
   let e (t : ℝ) : V ≃ₗ[ℝ] ν t := (L t).linearEquivOfInjective (hL t)
