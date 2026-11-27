@@ -21,8 +21,8 @@ These automorphisms record the freedom to normalize raising and lowering operato
 without changing the weight operator. On an ordered monomial `F^a K^b E^c`, the
 rescaling factor is `t⁻ᵃ tᶜ`; the integer power of `K` is unchanged.
 
-For nonzero `q`, conjugation by `K` is the rescaling automorphism with parameter `q²`, so
-conjugation by `K ^ b` multiplies `E` by `q ^ (2b)`.
+For nonzero `q`, conjugation by `K` is the rescaling automorphism with parameter `q²`; for every
+`q`, conjugation by `K ^ b` multiplies `E` by `q ^ (2b)` and `F` by `q ^ (-(2b))`.
 -/
 
 public section
@@ -130,6 +130,8 @@ theorem rescale_orderedMonomial (t : ℂˣ) (a c : ℕ) (b : ℤ) :
         (f q ^ a * ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q ^ c) := by
   simp [smul_pow, smul_smul, mul_comm]
 
+section
+
 variable [Fact (q ≠ 0)]
 
 /-- Conjugation by `K` is the rescaling automorphism with parameter `q²`. -/
@@ -142,20 +144,40 @@ theorem toAlgEquiv_conjAct_kUnit :
   · simp [ConjAct.units_smul_def, k_mul_f, mul_assoc, smul_smul, sq]
   · simp [ConjAct.units_smul_def, mul_assoc]
 
-/-- Conjugation by an integer power of `K` rescales `E`. -/
+private theorem toAlgAut_conjAct_kUnit_zpow (b : ℤ) :
+    MulSemiringAction.toAlgAut (ConjAct (UqSl2 q)ˣ) ℂ (UqSl2 q)
+      (ConjAct.toConjAct (kUnit q ^ b)) = rescale q ((Units.mk0 q Fact.out ^ 2) ^ b) := by
+  rw [map_zpow, map_zpow, MulSemiringAction.toAlgAut_apply, toAlgEquiv_conjAct_kUnit, map_zpow]
+
+end
+
+/-- Conjugation by an integer power of `K` rescales `E` by `q ^ (2 * b)`. -/
 theorem kUnit_zpow_mul_e_mul_inv (b : ℤ) :
     ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * e q * ((kUnit q ^ b)⁻¹ : (UqSl2 q)ˣ) =
       q ^ (2 * b) • e q := by
-  have h : MulSemiringAction.toAlgAut (ConjAct (UqSl2 q)ˣ) ℂ (UqSl2 q)
-      (ConjAct.toConjAct (kUnit q ^ b)) = rescale q ((Units.mk0 q Fact.out ^ 2) ^ b) := by
-    rw [map_zpow, map_zpow, MulSemiringAction.toAlgAut_apply, toAlgEquiv_conjAct_kUnit,
-      map_zpow]
-  have he := congrArg (fun φ : UqSl2 q ≃ₐ[ℂ] UqSl2 q => φ (e q)) h
-  simp only [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
-    ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, rescale_e] at he
-  rw [he, Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val, Units.val_mk0, ← zpow_natCast,
-    ← zpow_mul]
-  norm_num
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp only [e_zero, mul_zero, zero_mul, smul_zero]
+  · have : Fact (q ≠ 0) := ⟨hq⟩
+    have he := AlgEquiv.congr_fun (toAlgAut_conjAct_kUnit_zpow b) (e q)
+    simp only [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
+      ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, rescale_e] at he
+    rw [he, Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val, Units.val_mk0, ← zpow_natCast,
+      ← zpow_mul]
+    norm_num
+
+/-- Conjugation by an integer power of `K` rescales `F` by `q ^ (-(2 * b))`. -/
+theorem kUnit_zpow_mul_f_mul_inv (b : ℤ) :
+    ((kUnit q ^ b : (UqSl2 q)ˣ) : UqSl2 q) * f q * ((kUnit q ^ b)⁻¹ : (UqSl2 q)ˣ) =
+      q ^ (-(2 * b)) • f q := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp only [f_zero, mul_zero, zero_mul, smul_zero]
+  · have : Fact (q ≠ 0) := ⟨hq⟩
+    have hf := AlgEquiv.congr_fun (toAlgAut_conjAct_kUnit_zpow b) (f q)
+    simp only [MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
+      ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, rescale_f] at hf
+    rw [hf, ← zpow_neg, Units.val_zpow_eq_zpow_val, Units.val_pow_eq_pow_val, Units.val_mk0,
+      ← zpow_natCast, ← zpow_mul, mul_neg]
+    norm_num
 
 /-- Commuting `E` past an integer power of `K` multiplies by `q ^ (-2b)`. -/
 theorem e_mul_kUnit_zpow (b : ℤ) :

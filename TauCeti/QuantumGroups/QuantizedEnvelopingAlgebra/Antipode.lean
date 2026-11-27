@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.QuantumGroups.QuantizedEnvelopingAlgebra.Basic
+import Mathlib.Algebra.Ring.Action.ConjAct
 import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Algebra.Basic
 
@@ -27,6 +28,9 @@ on quantum divided powers and its naturality under `CartanDatum.Hom`.
 * `TauCeti.QuantizedEnvelopingAlgebra.antipodeLinearEquiv_quantumDividedPower_e`,
   `antipodeLinearEquiv_quantumDividedPower_f`, `map_antipodeLinearEquiv`: divided-power formulas
   and naturality under `CartanDatum.Hom`.
+* `TauCeti.QuantizedEnvelopingAlgebra.antipodeSqEquiv_apply_of_forall_pairing_root_eq`,
+  `antipodeLinearEquiv_antipodeLinearEquiv_of_forall_pairing_root_eq`: `S²(x) = K_(-c) x K_c` when
+  `⟨αᵢ, c⟩ = 2 dᵢ` for all `i`.
 
 ## References
 
@@ -343,6 +347,49 @@ theorem antipodeLinearEquiv_antipodeLinearEquiv_f (i : ι) :
 theorem antipodeLinearEquiv_antipodeLinearEquiv_k (y : Y) :
     antipodeLinearEquiv D q (antipodeLinearEquiv D q (k D q y)) = k D q y := by
   rw [antipodeLinearEquiv_antipodeLinearEquiv, antipodeSqEquiv_k]
+
+private theorem zpow_neg_two_mul_symmetrizer (i : ι) :
+    q ^ (-(2 * (D.symmetrizer i : ℤ))) = (q ^ D.symmetrizer i)⁻¹ ^ 2 := by
+  rw [mul_comm (2 : ℤ), ← mul_neg, zpow_mul, zpow_natCast, zpow_neg, zpow_ofNat, inv_pow]
+
+private theorem zpow_two_mul_symmetrizer (i : ι) :
+    q ^ (2 * (D.symmetrizer i : ℤ)) = (q ^ D.symmetrizer i) ^ 2 := by
+  rw [mul_comm (2 : ℤ), zpow_mul, zpow_natCast, zpow_ofNat]
+
+/-- When `c ∈ Y` pairs with every simple root as `⟨αᵢ, c⟩ = 2 dᵢ` (a coweight playing the role of
+`2ρ∨`), `antipodeSqEquiv` acts as inner conjugation `x ↦ K_(-c) * x * K_c`. -/
+theorem antipodeSqEquiv_apply_of_forall_pairing_root_eq {D : CartanDatum ι X Y} {q : K} {c : Y}
+    (hc : ∀ i, D.pairing (D.root i) c = 2 * (D.symmetrizer i : ℤ))
+    (x : QuantizedEnvelopingAlgebra D q) :
+    antipodeSqEquiv D q x = k D q (-c) * x * k D q c := by
+  have h : antipodeSqEquiv D q =
+      MulSemiringAction.toAlgAut (ConjAct (QuantizedEnvelopingAlgebra D q)ˣ) K
+        (QuantizedEnvelopingAlgebra D q)
+        (ConjAct.toConjAct (kUnitsHom D q (.ofAdd (-c)))) := by
+    apply AlgEquiv.coe_toAlgHom_injective
+    apply hom_ext <;> intro a <;>
+      simp only [AlgEquiv.coe_toAlgHom, antipodeSqEquiv_e, antipodeSqEquiv_f, antipodeSqEquiv_k,
+        MulSemiringAction.toAlgAut_apply, MulSemiringAction.toAlgEquiv_apply,
+        ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, val_kUnitsHom, val_inv_kUnitsHom,
+        neg_neg]
+    · have he := k_mul_e_mul_k_neg D q (-c) a
+      rw [neg_neg, map_neg, hc a, zpow_neg_two_mul_symmetrizer] at he
+      exact he.symm
+    · have hf := k_mul_f_mul_k_neg D q (-c) a
+      rw [neg_neg, map_neg, neg_neg, hc a, zpow_two_mul_symmetrizer] at hf
+      exact hf.symm
+    · rw [← k_add, ← k_add, neg_add_cancel_comm]
+  simpa [ConjAct.units_smul_def] using AlgEquiv.congr_fun h x
+
+/-- When `c ∈ Y` satisfies `⟨αᵢ, c⟩ = 2 dᵢ` for every simple root `i`, the squared antipode
+`S(S(x))` equals `K_(-c) * x * K_c`. -/
+theorem antipodeLinearEquiv_antipodeLinearEquiv_of_forall_pairing_root_eq
+    {D : CartanDatum ι X Y} {q : K} {c : Y}
+    (hc : ∀ i, D.pairing (D.root i) c = 2 * (D.symmetrizer i : ℤ))
+    (x : QuantizedEnvelopingAlgebra D q) :
+    antipodeLinearEquiv D q (antipodeLinearEquiv D q x) = k D q (-c) * x * k D q c :=
+  (antipodeLinearEquiv_antipodeLinearEquiv D q x).trans
+    (antipodeSqEquiv_apply_of_forall_pairing_root_eq hc x)
 
 @[simp] theorem antipodeLinearEquiv_symm_e (i : ι) :
     (antipodeLinearEquiv D q).symm (e D q i) = -(e D q i * simpleKInv D q i) := by

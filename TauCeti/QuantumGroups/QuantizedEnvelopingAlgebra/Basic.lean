@@ -401,6 +401,11 @@ noncomputable def kUnitsHom : Multiplicative Y →* (QuantizedEnvelopingAlgebra 
 @[simp] theorem val_inv_kUnitsHom (y : Y) :
     (((kUnitsHom D q (.ofAdd y))⁻¹ : (QuantizedEnvelopingAlgebra D q)ˣ) :
       QuantizedEnvelopingAlgebra D q) = k D q (-y) := (rfl)
+/-- An integer power of `kUnitsHom D q (.ofAdd y)` has underlying element `K_(m • y)`. -/
+@[simp] theorem val_zpow_kUnitsHom (y : Y) (m : ℤ) :
+    ((kUnitsHom D q (.ofAdd y) ^ m : (QuantizedEnvelopingAlgebra D q)ˣ) :
+      QuantizedEnvelopingAlgebra D q) = k D q (m • y) := by
+  rw [← map_zpow, ← ofAdd_zsmul, val_kUnitsHom]
 theorem isUnit_k (y : Y) : IsUnit (k D q y) := ⟨kUnitsHom D q (.ofAdd y), rfl⟩
 @[simp] theorem k_pow (y : Y) (n : ℕ) : k D q y ^ n = k D q (n • y) := by
   have h := congrArg Units.val ((kUnitsHom D q).map_pow (.ofAdd y) n)

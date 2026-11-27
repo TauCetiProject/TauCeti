@@ -38,6 +38,7 @@ uses it, and the lattices of root data are the case of free `ℤ`-modules of fin
   `TauCeti.CartanDatum.reflection`: the simple reflection `λ ↦ λ − ⟨λ, hᵢ⟩ αᵢ` of `X`, both
   Mathlib's `Module.reflection`.
 * `TauCeti.CartanDatum.simpleTorus`: the toral direction `dᵢ hᵢ ∈ Y`.
+* `TauCeti.CartanDatum.rootLattice`: the root lattice `Q = ∑ᵢ ℤ αᵢ ⊆ X`.
 * `TauCeti.CartanDatum.Hom`: a morphism of Cartan data, a linear map of coweight lattices carrying
   coroots to coroots and compatible with the roots, such as the one induced by a central isogeny.
 
@@ -47,6 +48,8 @@ uses it, and the lattices of root data are the case of free `ℤ`-modules of fin
 * `TauCeti.CartanDatum.pairing_reflection_coreflection`: the two reflections preserve the pairing.
 * `TauCeti.CartanDatum.coreflection_simpleTorus`:
   `sᵢ(dⱼ hⱼ) = dⱼ hⱼ − aᵢⱼ dᵢ hᵢ`, by symmetrizability.
+* `TauCeti.CartanDatum.zsmul_simpleTorus_injective`: `ℤ`-multiples of `dᵢ hᵢ` are injective in `Y`.
+* `TauCeti.CartanDatum.reflection_mem_rootLattice_iff`: simple reflections preserve `rootLattice`.
 * `TauCeti.CartanDatum.coxeterMatrixOfGeneralizedCartanMatrix_cartan_apply_eq_zero_iff`: the
   length of the braid relation between two distinct nodes, an entry of
   `TauCeti.coxeterMatrixOfGeneralizedCartanMatrix`, is one of `2, 3, 4, 6` exactly when their
@@ -247,6 +250,34 @@ lemma coreflection_simpleTorus (i j : ι) :
 lemma coreflection_simpleTorus_self (i : ι) :
     D.coreflection i (D.simpleTorus i) = -D.simpleTorus i := by
   rw [simpleTorus_def, map_nsmul, coreflection_coroot_self, smul_neg]
+
+/-- The `ℤ`-multiples of any simple toral direction `dᵢ hᵢ` are injective in `Y`. -/
+lemma zsmul_simpleTorus_injective (i : ι) :
+    Function.Injective (fun n : ℤ ↦ n • D.simpleTorus i) := fun _ _ hmn ↦ by
+  have h := congrArg (D.pairing (D.root i)) hmn
+  simp only [map_zsmul, D.pairing_root_simpleTorus_self, zsmul_eq_mul] at h
+  have hd : (0 : ℤ) < D.symmetrizer i := Nat.cast_pos.mpr (D.symmetrizer_pos i)
+  exact mul_right_cancel₀ (by positivity) h
+
+/-! ### Root lattice -/
+
+/-- The root lattice `Q = ∑ᵢ ℤ αᵢ ⊆ X` of a Cartan datum, as a `ℤ`-submodule of `X`. -/
+def rootLattice : Submodule ℤ X := Submodule.span ℤ (Set.range D.root)
+
+lemma rootLattice_def : D.rootLattice = Submodule.span ℤ (Set.range D.root) := (rfl)
+
+/-- Every simple root `αᵢ` belongs to `D.rootLattice`. -/
+lemma root_mem_rootLattice (i : ι) : D.root i ∈ D.rootLattice :=
+  Submodule.subset_span ⟨i, rfl⟩
+
+/-- Each simple reflection `sᵢ` preserves membership in `D.rootLattice`. -/
+@[simp]
+lemma reflection_mem_rootLattice_iff (i : ι) {x : X} :
+    D.reflection i x ∈ D.rootLattice ↔ x ∈ D.rootLattice := by
+  have hstep {y : X} (hy : y ∈ D.rootLattice) : D.reflection i y ∈ D.rootLattice := by
+    rw [reflection_apply]
+    exact D.rootLattice.sub_mem hy (D.rootLattice.smul_mem _ (D.root_mem_rootLattice i))
+  exact ⟨fun hx ↦ D.reflection_reflection i x ▸ hstep hx, hstep⟩
 
 /-! ### Serre lengths -/
 

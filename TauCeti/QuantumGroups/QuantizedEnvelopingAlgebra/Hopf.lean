@@ -26,9 +26,12 @@ With `qᵢ = q ^ D.symmetrizer i`, `Kᵢ = simpleK D q i`, and `Kᵢ⁻¹ = simp
 ## Main definitions and results
 
 * `TauCeti.QuantizedEnvelopingAlgebra.counitAlgHom`, `comulAlgHom`: counit and coproduct, with
-  `comulAlgHom_quantumDividedPower_e` and `comulAlgHom_quantumDividedPower_f`.
-* `TauCeti.QuantizedEnvelopingAlgebra.bialgebra`, `hopfAlgebra`: Mathlib `Bialgebra` and
-  `HopfAlgebra` structures, `comulAlgHom_antipodeLinearEquiv`, and `exists_antipode`.
+  `comulAlgHom_e_pow`, `comulAlgHom_f_pow`, `comulAlgHom_quantumDividedPower_e`, and
+  `comulAlgHom_quantumDividedPower_f`.
+* `TauCeti.QuantizedEnvelopingAlgebra.bialgebra`, `hopfAlgebra`, `instBialgebraOfSubsingleton`,
+  `instHopfAlgebraOfSubsingleton`: Mathlib `Bialgebra` and `HopfAlgebra` structures,
+  `comulAlgHom_antipodeLinearEquiv`, `antipode_antipode_of_forall_pairing_root_eq`, and
+  `exists_antipode`.
 * `TauCeti.QuantizedEnvelopingAlgebra.mapBialgHom`: functoriality under `CartanDatum.Hom`.
 
 ## References
@@ -280,6 +283,65 @@ variable (hserre : ∀ i j, i ≠ j → quantumFactorial (q ^ D.symmetrizer i) (
     Algebra.TensorProduct.tmul_mul_tmul, Algebra.TensorProduct.tmul_mul_tmul, one_mul,
     simpleKInv_mul_simpleK, ← normalizedF_def]
 
+private theorem comulAlgHom_zero_pow (i : ι) (n : ℕ)
+    (t : ℕ → QuantizedEnvelopingAlgebra D (0 : K) ⊗[K] QuantizedEnvelopingAlgebra D (0 : K))
+    (h00 : n = 0 → t 0 = 1) (h0n : n ≠ 0 → t 0 = 0) (ha : ∀ a ≠ 0, t a = 0)
+    (hserre₀ : ∀ i j, i ≠ j →
+      quantumFactorial ((0 : K) ^ D.symmetrizer i) (D.serreLength i j) ≠ 0) :
+    comulAlgHom D (0 : K) hserre₀ (0 ^ n) =
+      ∑ a ∈ range (n + 1),
+        (((0 : K) ^ D.symmetrizer i) ^ (a * (n - a)) *
+          quantumBinomial ((0 : K) ^ D.symmetrizer i) n a) • t a := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp [h00 rfl]
+  · rw [zero_pow hn, map_zero]
+    refine (sum_eq_zero fun a _ => ?_).symm
+    rcases eq_or_ne a 0 with rfl | ha0
+    · simp [h0n hn]
+    · simp [ha _ ha0]
+
+/-- **Coproduct of raising powers**: for every `n : ℕ` (including when `[n]_(qᵢ)! = 0`),
+`Δ(Eᵢ^n) = ∑_{a=0}^n (qᵢ^(a(n - a)) * [n choose a]_(qᵢ)) • ((Eᵢ^a Kᵢ^(n - a)) ⊗ Eᵢ^(n - a))`. -/
+theorem comulAlgHom_e_pow (i : ι) (n : ℕ) :
+    comulAlgHom D q hserre (e D q i ^ n) =
+      ∑ a ∈ range (n + 1),
+        ((q ^ D.symmetrizer i) ^ (a * (n - a)) * quantumBinomial (q ^ D.symmetrizer i) n a) •
+          ((e D q i ^ a * simpleK D q i ^ (n - a)) ⊗ₜ[K] (e D q i ^ (n - a))) := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · rw [e_zero]
+    refine comulAlgHom_zero_pow D i n _ ?_ ?_ ?_ hserre
+    · rintro rfl; simp [Algebra.TensorProduct.one_def]
+    · intro hn; simp [zero_pow hn]
+    · intro _ ha; simp [zero_pow ha]
+  · rw [map_pow, comulAlgHom_e,
+      add_pow_of_mul_eq_smul_mul (pow_ne_zero _ hq) (comulElemE_summand_comm D q i)]
+    refine sum_congr rfl fun a _ => ?_
+    rw [Algebra.TensorProduct.tmul_pow, one_pow, Algebra.TensorProduct.tmul_pow,
+      Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+
+/-- **Coproduct of lowering powers**: for every `n : ℕ` (including when `[n]_(qᵢ)! = 0`),
+`Δ(Fᵢ^n) = ∑_{a=0}^n (qᵢ^(a(n - a)) * [n choose a]_(qᵢ)) • (Fᵢ^a ⊗ (Fᵢ^(n - a) Kᵢ^(-a)))`. -/
+theorem comulAlgHom_f_pow (i : ι) (n : ℕ) :
+    comulAlgHom D q hserre (f D q i ^ n) =
+      ∑ a ∈ range (n + 1),
+        ((q ^ D.symmetrizer i) ^ (a * (n - a)) * quantumBinomial (q ^ D.symmetrizer i) n a) •
+          ((f D q i ^ a) ⊗ₜ[K] (f D q i ^ (n - a) * simpleKInv D q i ^ a)) := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · rw [f_zero]
+    refine comulAlgHom_zero_pow D i n _ ?_ ?_ ?_ hserre
+    · rintro rfl; simp [Algebra.TensorProduct.one_def]
+    · intro hn; simp [zero_pow hn]
+    · intro _ ha; simp [zero_pow ha]
+  · rw [map_pow, comulAlgHom_f, add_comm,
+      add_pow_of_mul_eq_smul_mul (pow_ne_zero _ hq) (comulElemF_summand_comm D q i),
+      ← sum_range_reflect]
+    refine sum_congr rfl fun a ha => ?_
+    have han : a ≤ n := Nat.lt_succ_iff.mp (mem_range.mp ha)
+    simp only [Nat.add_succ_sub_one, add_zero, Nat.sub_sub_self han]
+    rw [quantumBinomial_symm _ han, Nat.mul_comm (n - a) a,
+      Algebra.TensorProduct.tmul_pow, one_pow, Algebra.TensorProduct.tmul_pow,
+      Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+
 /-- **Coproduct of raising divided powers**: when `[n]_(qᵢ)! ≠ 0`,
 `Δ(Eᵢ^(n)) = ∑_{a=0}^n qᵢ^(a(n - a)) • ((Eᵢ^(a) Kᵢ^(n - a)) ⊗ Eᵢ^(n - a))`. -/
 theorem comulAlgHom_quantumDividedPower_e {i : ι} {n : ℕ}
@@ -413,7 +475,32 @@ theorem exists_antipode :
   rw [hopfAlgebra_antipode D q hserre]
   exact ⟨antipodeLinearEquiv_e D q, antipodeLinearEquiv_f D q, antipodeLinearEquiv_k D q⟩
 
+/-- When `c ∈ Y` satisfies `⟨αᵢ, c⟩ = 2 dᵢ` for all `i`, the squared antipode of
+`hopfAlgebra D q hserre` acts by `S(S(x)) = K_(-c) * x * K_c`. -/
+theorem antipode_antipode_of_forall_pairing_root_eq {c : Y}
+    (hc : ∀ i, D.pairing (D.root i) c = 2 * (D.symmetrizer i : ℤ))
+    (x : QuantizedEnvelopingAlgebra D q) :
+    letI := hopfAlgebra D q hserre
+    HopfAlgebraStruct.antipode K (HopfAlgebraStruct.antipode K x) =
+      k D q (-c) * x * k D q c := by
+  let := hopfAlgebra D q hserre
+  rw [hopfAlgebra_antipode D q hserre, LinearEquiv.coe_coe]
+  exact antipodeLinearEquiv_antipodeLinearEquiv_of_forall_pairing_root_eq hc x
+
 end WithSerre
+
+/-- When `ι` has at most one simple root (rank zero (no simple roots) or rank one), there are no
+off-diagonal Serre relations `i ≠ j`, so `QuantizedEnvelopingAlgebra D q` is unconditionally a
+`K`-bialgebra for every `q : K`. -/
+noncomputable instance instBialgebraOfSubsingleton [Subsingleton ι] :
+    Bialgebra K (QuantizedEnvelopingAlgebra D q) :=
+  bialgebra D q fun i j hij => (hij (Subsingleton.elim i j)).elim
+
+/-- When `ι` has at most one simple root, `QuantizedEnvelopingAlgebra D q` is unconditionally a
+`K`-Hopf algebra for every `q : K`. -/
+noncomputable instance instHopfAlgebraOfSubsingleton [Subsingleton ι] :
+    HopfAlgebra K (QuantizedEnvelopingAlgebra D q) :=
+  hopfAlgebra D q fun i j hij => (hij (Subsingleton.elim i j)).elim
 
 end CounitAndCoproduct
 

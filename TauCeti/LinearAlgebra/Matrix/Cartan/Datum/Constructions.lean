@@ -22,6 +22,8 @@ lattice, paired with `Y` by evaluation:
 * `TauCeti.CartanDatum.rankOne α h`: the rank-one datum with a single root `α ∈ Hom(Y, ℤ)` and
   coroot `h ∈ Y` with `α h = 2`, on an arbitrary reflexive lattice `Y`. It records the simply
   connected and adjoint forms of `A₁`, and `GL₂` with its central direction.
+* `TauCeti.CartanDatum.sl2`: the canonical simply connected rank-one datum of `𝔰𝔩₂` on `Y = ℤ`,
+  with index `Unit`, simple coroot `1`, and simple root `2 • id`.
 
 The last section checks the conventions on small examples: the full lattice keeps central and
 isogeny directions, the coreflection is `y ↦ y − ⟨α, y⟩ h` and not `y ↦ y + ⟨α, y⟩ h`, the
@@ -146,6 +148,16 @@ lemma rankOne_symmetrizer (i : Unit) : (rankOne α h hα).symmetrizer i = 1 := (
 lemma coreflection_rankOne_apply (i : Unit) (y : Y) :
     (rankOne α h hα).coreflection i y = y - α y • h := by
   simp [coreflection_apply]
+
+/-- The simply connected rank-one Cartan datum of `sl₂` (`A₁`), on `Y = ℤ` with coroot `1`,
+root `2 • id : Hom(ℤ, ℤ)`, and symmetrizer `1`. -/
+def sl2 : CartanDatum Unit (Dual ℤ ℤ) ℤ := rankOne (2 • LinearMap.id) 1 rfl
+
+@[simp] lemma sl2_pairing_apply (x : Dual ℤ ℤ) (y : ℤ) : sl2.pairing x y = x y := (rfl)
+@[simp] lemma sl2_root (i : Unit) : sl2.root i = 2 • LinearMap.id := (rfl)
+@[simp] lemma sl2_coroot (i : Unit) : sl2.coroot i = 1 := (rfl)
+@[simp] lemma sl2_symmetrizer (i : Unit) : sl2.symmetrizer i = 1 := (rfl)
+@[simp] lemma sl2_simpleTorus (i : Unit) : sl2.simpleTorus i = 1 := by simp [simpleTorus_def]
 
 end RankOne
 
