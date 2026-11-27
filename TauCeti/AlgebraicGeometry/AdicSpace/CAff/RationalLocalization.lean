@@ -706,6 +706,68 @@ theorem comp_of_spaComap_image {X Y Z : CAff.{u}} {φ : X ⟶ Y} {ψ : Y ⟶ Z}
       rw [← Category.assoc, hf, hψ.fac, hφ.fac]
 
 open scoped Classical in
+/-- Pulling back an open numerator ideal along a `CAff` isomorphism preserves openness of the
+spanning ideal. -/
+private theorem isOpen_span_image_inv {A B : CAff.{u}} (e : A ≅ B) {T : Finset B.ring}
+    (hT : IsOpen (Ideal.span (T : Set B.ring) : Set B.ring)) :
+    IsOpen (Ideal.span ((T.image e.inv.toRingHom : Finset A.ring) : Set A.ring) : Set A.ring) := by
+  have heq : (Ideal.span ((T.image e.inv.toRingHom : Finset A.ring) : Set A.ring) : Set A.ring) =
+      e.hom.toRingHom ⁻¹' (Ideal.span (T : Set B.ring) : Set B.ring) := by
+    ext x
+    simp only [SetLike.mem_coe, Set.mem_preimage, Finset.coe_image, ← Ideal.map_span]
+    refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
+    · refine Ideal.mem_comap.mp ((Ideal.map_le_iff_le_comap.mpr fun y hy ↦ ?_) hx)
+      have h := RingHom.congr_fun (comp_toRingHom e.inv e.hom) y
+      rw [e.inv_hom_id, id_toRingHom, RingHom.id_apply, RingHom.comp_apply] at h
+      simpa [Ideal.mem_comap, ← h] using hy
+    · have hx' := Ideal.mem_map_of_mem e.inv.toRingHom hx
+      rwa [← RingHom.comp_apply, ← comp_toRingHom, e.hom_inv_id, id_toRingHom,
+        RingHom.id_apply] at hx'
+  rw [heq]
+  exact hT.preimage e.hom.continuous_toRingHom
+
+open scoped Classical in
+/-- Transport membership in a rational subset of `Y` across `hφ.isoCanonical` to the corresponding
+rational subset of `completedPlusSubring`. -/
+private theorem mem_rationalSubset_isoCanonical_iff {X Y : CAff.{u}} {φ : X ⟶ Y}
+    {T₁ : Finset X.ring} {s₁ : X.ring} (hφ : IsRationalLocalization φ T₁ s₁)
+    (T₂ : Finset Y.ring) (s₂ : Y.ring) (y : ValuationSpectrum.spa Y.pair.plus) :
+    let P := X.pairOfDefinition
+    let hden := hasDenominatorPower_of_isOpen_span P T₁ s₁ (Localization.Away s₁) hφ.isOpen_span
+    letI := locUniformSpace P T₁ s₁ (Localization.Away s₁) hden
+    letI := isUniformAddGroup_locUniformSpace P T₁ s₁ (Localization.Away s₁) hden
+    letI := isTopologicalRing_locUniformSpace P T₁ s₁ (Localization.Away s₁) hden
+    y.val ∈ rationalSubset Y.pair.plus T₂ s₂ ↔
+      (hφ.isoCanonical.hom.spaComap y).val ∈
+        rationalSubset (completedPlusSubring P X.pair.plus T₁ s₁ (Localization.Away s₁) hden)
+          (T₂.image hφ.isoCanonical.inv.toRingHom) (hφ.isoCanonical.inv.toRingHom s₂) := by
+  let P := X.pairOfDefinition
+  let hden := hasDenominatorPower_of_isOpen_span P T₁ s₁ (Localization.Away s₁) hφ.isOpen_span
+  let _ := locUniformSpace P T₁ s₁ (Localization.Away s₁) hden
+  have _ := isUniformAddGroup_locUniformSpace P T₁ s₁ (Localization.Away s₁) hden
+  have _ := isTopologicalRing_locUniformSpace P T₁ s₁ (Localization.Away s₁) hden
+  let eIso := hφ.isoCanonical
+  have hid : eIso.inv.spaComap (eIso.hom.spaComap y) = y := by
+    have h := congrFun (comp_spaComap eIso.inv eIso.hom) y
+    rw [eIso.inv_hom_id, id_spaComap, id_eq] at h
+    exact h.symm
+  have h1 : y.val ∈ rationalSubset Y.pair.plus T₂ s₂ ↔
+      eIso.hom.spaComap y ∈
+        (Subtype.val ⁻¹' rationalSubset
+          (X.rationalLocalization T₁ s₁ hφ.isOpen_span).pair.plus
+          (T₂.image eIso.inv.toRingHom) (eIso.inv.toRingHom s₂) :
+          Set ↥(ValuationSpectrum.spa
+            (X.rationalLocalization T₁ s₁ hφ.isOpen_span).pair.plus)) := by
+    rw [← Pair.Hom.spaComap_preimage_rationalSubset eIso.inv T₂ s₂, Set.mem_preimage, hid]
+    rfl
+  refine h1.trans ⟨fun hy ↦ ?_, fun hy ↦ ?_⟩
+  · have hy' := (mem_rationalSubset_iff _ _ _ _).mp hy
+    exact (mem_rationalSubset_iff _ _ _ _).mpr
+      ⟨rationalLocalization_plus X T₁ s₁ hφ.isOpen_span ▸ hy'.1, hy'.2.1, hy'.2.2⟩
+  · have hy' := (mem_rationalSubset_iff _ _ _ _).mp hy
+    exact (mem_rationalSubset_iff _ _ _ _).mpr ⟨(eIso.hom.spaComap y).property, hy'.2.1, hy'.2.2⟩
+
+open scoped Classical in
 /-- **Composition of rational localizations**: the composite `φ ≫ ψ` of two rational localizations
 `φ : X ⟶ Y` and `ψ : Y ⟶ Z` is a rational localization for a pair `(T', s')` in `X.ring` whose
 rational subset is `φ.spaComap '' R_Y(T₂/s₂)`. -/
@@ -724,44 +786,37 @@ theorem exists_comp {X Y Z : CAff.{u}} {φ : X ⟶ Y} {ψ : Y ⟶ Z}
   have _ := isTopologicalRing_locUniformSpace P T₁ s₁ (Localization.Away s₁) hden
   have _ := isHuberRing_completion_locTopology P T₁ s₁ (Localization.Away s₁) hden
   let eIso := hφ.isoCanonical
-  let T₂' : Finset (X.rationalLocalization T₁ s₁ hφ.isOpen_span).ring :=
-    T₂.image eIso.inv.toRingHom
-  let s₂' : (X.rationalLocalization T₁ s₁ hφ.isOpen_span).ring := eIso.inv.toRingHom s₂
-  have hT₂' : IsOpen (Ideal.span (T₂' : Set (X.rationalLocalization T₁ s₁ hφ.isOpen_span).ring) :
-      Set (X.rationalLocalization T₁ s₁ hφ.isOpen_span).ring) := by
-    have heq : (Ideal.span (T₂' : Set (X.rationalLocalization T₁ s₁ hφ.isOpen_span).ring) :
-        Set (X.rationalLocalization T₁ s₁ hφ.isOpen_span).ring) =
-        eIso.hom.toRingHom ⁻¹' (Ideal.span (T₂ : Set Y.ring) : Set Y.ring) := by
-      ext x
-      simp only [SetLike.mem_coe, Set.mem_preimage, T₂', Finset.coe_image, ← Ideal.map_span]
-      refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
-      · have hle : Ideal.map eIso.inv.toRingHom (Ideal.span (T₂ : Set Y.ring)) ≤
-            Ideal.comap eIso.hom.toRingHom (Ideal.span (T₂ : Set Y.ring)) :=
-          Ideal.map_le_iff_le_comap.mpr fun y hy ↦ by
-            have h := RingHom.congr_fun (comp_toRingHom eIso.inv eIso.hom) y
-            rw [eIso.inv_hom_id, id_toRingHom, RingHom.id_apply, RingHom.comp_apply] at h
-            rw [Ideal.mem_comap]
-            simpa [← h] using hy
-        exact hle hx
-      · have hx' := Ideal.mem_map_of_mem eIso.inv.toRingHom hx
-        rwa [← RingHom.comp_apply, ← comp_toRingHom, eIso.hom_inv_id, id_toRingHom,
-          RingHom.id_apply] at hx'
-    rw [heq]
-    exact hψ.isOpen_span.preimage eIso.hom.continuous_toRingHom
+  let T₂' := T₂.image eIso.inv.toRingHom
+  let s₂' := eIso.inv.toRingHom s₂
+  have hT₂' := isOpen_span_image_inv eIso hψ.isOpen_span
   let W : Opens ↥(ValuationSpectrum.spa
       (completedPlusSubring P X.pair.plus T₁ s₁ (Localization.Away s₁) hden)) :=
     spaBasicOpen (completedPlusSubring P X.pair.plus T₁ s₁ (Localization.Away s₁) hden) T₂' s₂'
   obtain ⟨V, hV, hVT, hloc⟩ := exists_mem_spaRationalOpens_locOpensComap_eq P X.pair.plus T₁ s₁
     (Localization.Away s₁) hden hφ.isOpen_span W (spaBasicOpen_mem_spaRationalOpens hT₂')
   obtain ⟨T', s', hT', rfl⟩ := mem_spaRationalOpens_iff_exists_spaBasicOpen.mp hV
+  have hloc_iff (y : ValuationSpectrum.spa Y.pair.plus) :
+      (φ.spaComap y).val ∈ rationalSubset X.pair.plus T' s' ↔
+        y.val ∈ rationalSubset Y.pair.plus T₂ s₂ := by
+    let w' : ValuationSpectrum.spa
+        (completedPlusSubring P X.pair.plus T₁ s₁ (Localization.Away s₁) hden) :=
+      ⟨(eIso.hom.spaComap y).val,
+        rationalLocalization_plus X T₁ s₁ hφ.isOpen_span ▸ (eIso.hom.spaComap y).property⟩
+    calc (φ.spaComap y).val ∈ rationalSubset X.pair.plus T' s'
+        ↔ spaComapLoc P X.pair.plus T₁ s₁ (Localization.Away s₁) hden w' ∈
+            spaBasicOpen X.pair.plus T' s' := by
+          rw [← hφ.spaComap_eq_spaComapLoc y]; exact mem_spaBasicOpen.symm
+      _ ↔ w' ∈ locOpensComap P X.pair.plus T₁ s₁ (Localization.Away s₁) hden
+            (spaBasicOpen X.pair.plus T' s') :=
+          (mem_locOpensComap P X.pair.plus T₁ s₁ (Localization.Away s₁) hden _ _).symm
+      _ ↔ w'.val ∈ rationalSubset
+            (completedPlusSubring P X.pair.plus T₁ s₁ (Localization.Away s₁) hden) T₂' s₂' := by
+          rw [hloc]; exact mem_spaBasicOpen
+      _ ↔ y.val ∈ rationalSubset Y.pair.plus T₂ s₂ :=
+          (hφ.mem_rationalSubset_isoCanonical_iff T₂ s₂ y).symm
   have him : (Subtype.val ⁻¹' rationalSubset X.pair.plus T' s' :
         Set ↥(ValuationSpectrum.spa X.pair.plus)) =
       φ.spaComap '' (Subtype.val ⁻¹' rationalSubset Y.pair.plus T₂ s₂) := by
-    have hid (y : ValuationSpectrum.spa Y.pair.plus) :
-        eIso.inv.spaComap (eIso.hom.spaComap y) = y := by
-      have h := congrFun (comp_spaComap eIso.inv eIso.hom) y
-      rw [eIso.inv_hom_id, id_spaComap, id_eq] at h
-      exact h.symm
     ext v
     refine ⟨fun hv ↦ ?_, ?_⟩
     · have hv₁ : v ∈ (Subtype.val ⁻¹' rationalSubset X.pair.plus T₁ s₁ :
@@ -769,48 +824,9 @@ theorem exists_comp {X Y Z : CAff.{u}} {φ : X ⟶ Y} {ψ : Y ⟶ Z}
         mem_spaBasicOpen.mp (hVT (mem_spaBasicOpen.mpr hv))
       rw [← hφ.range_spaComap] at hv₁
       obtain ⟨y, rfl⟩ := hv₁
-      refine ⟨y, ?_, rfl⟩
-      let w' : ValuationSpectrum.spa
-          (completedPlusSubring P X.pair.plus T₁ s₁ (Localization.Away s₁) hden) :=
-        ⟨(eIso.hom.spaComap y).val,
-          rationalLocalization_plus X T₁ s₁ hφ.isOpen_span ▸ (eIso.hom.spaComap y).property⟩
-      have hcomp := hφ.spaComap_eq_spaComapLoc y
-      have hy' : w' ∈ locOpensComap P X.pair.plus T₁ s₁ (Localization.Away s₁) hden
-          (spaBasicOpen X.pair.plus T' s') := by
-        refine (mem_locOpensComap P X.pair.plus T₁ s₁ (Localization.Away s₁) hden _ _).mpr ?_
-        rw [← hcomp]
-        exact mem_spaBasicOpen.mpr hv
-      rw [hloc] at hy'
-      have hmem := (mem_rationalSubset_iff _ _ _ _).mp (mem_spaBasicOpen.mp hy')
-      have hy'' : eIso.hom.spaComap y ∈
-          (Subtype.val ⁻¹' rationalSubset
-            (X.rationalLocalization T₁ s₁ hφ.isOpen_span).pair.plus T₂' s₂' :
-            Set ↥(ValuationSpectrum.spa (X.rationalLocalization T₁ s₁ hφ.isOpen_span).pair.plus)) :=
-        (mem_rationalSubset_iff _ _ _ _).mpr
-          ⟨(eIso.hom.spaComap y).property, hmem.2.1, hmem.2.2⟩
-      rw [← Pair.Hom.spaComap_preimage_rationalSubset eIso.inv T₂ s₂, Set.mem_preimage,
-        hid y] at hy''
-      exact hy''
+      exact ⟨y, (hloc_iff y).mp hv, rfl⟩
     · rintro ⟨y, hy, rfl⟩
-      have hy'' : eIso.hom.spaComap y ∈ eIso.inv.spaComap ⁻¹'
-          (Subtype.val ⁻¹' rationalSubset Y.pair.plus T₂ s₂) := by
-        simpa only [Set.mem_preimage, hid y] using hy
-      rw [Pair.Hom.spaComap_preimage_rationalSubset eIso.inv T₂ s₂] at hy''
-      have hy''m := (mem_rationalSubset_iff _ _ _ _).mp hy''
-      let w' : ValuationSpectrum.spa
-          (completedPlusSubring P X.pair.plus T₁ s₁ (Localization.Away s₁) hden) :=
-        ⟨(eIso.hom.spaComap y).val,
-          rationalLocalization_plus X T₁ s₁ hφ.isOpen_span ▸ (eIso.hom.spaComap y).property⟩
-      have hmem : w'.val ∈ rationalSubset
-          (completedPlusSubring P X.pair.plus T₁ s₁ (Localization.Away s₁) hden) T₂' s₂' :=
-        (mem_rationalSubset_iff _ _ _ _).mpr ⟨w'.property, hy''m.2.1, hy''m.2.2⟩
-      have hy' : w' ∈ locOpensComap P X.pair.plus T₁ s₁ (Localization.Away s₁) hden
-          (spaBasicOpen X.pair.plus T' s') := by
-        rw [hloc]
-        exact mem_spaBasicOpen.mpr hmem
-      have hres := (mem_locOpensComap P X.pair.plus T₁ s₁ (Localization.Away s₁) hden _ _).mp hy'
-      rw [← hφ.spaComap_eq_spaComapLoc y] at hres
-      exact mem_spaBasicOpen.mp hres
+      exact (hloc_iff y).mpr hy
   exact ⟨T', s', him, hφ.comp_of_spaComap_image hψ hT' him⟩
 
 open scoped Classical in
