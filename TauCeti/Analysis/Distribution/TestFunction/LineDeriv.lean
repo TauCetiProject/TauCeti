@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
+import TauCeti.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Complex.RealDeriv
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.Calculus.Gradient.Basic
@@ -38,6 +39,8 @@ test function on `Ω` whose gradient obeys the product rule.
 * `TestFunction.lineDerivOp_apply_eq_fderiv`, `TestFunction.coe_lineDerivOp_eq_fderiv`:
   `∂_{v} φ x = Dφ(x) v`.
 * `TestFunction.tsupport_lineDerivOp_subset`: `∂_{v} φ` is supported in the support of `φ`.
+* `TestFunction.exists_lineDerivOp_apply_ne_zero`: a nonzero test function has a nonzero
+  derivative in every nonzero direction.
 * `TestFunction.norm_iteratedFDeriv_lineDerivOp_le`: the derivatives of order at most `r` of
   `∂_{v} φ` are bounded by `‖v‖` times a bound on those of order at most `r + 1` of `φ`.
 * `TestFunction.smul_fderiv_apply_eq_of_eqOn_one`: a first derivative of `φ` is unchanged by a
@@ -54,6 +57,8 @@ test function on `Ω` whose gradient obeys the product rule.
   by a continuous linear map.
 * `TestFunction.iteratedLineDerivOp_postcompCLM`: so do iterated directional derivatives.
 * `TestFunction.lineDerivCLM_lineDerivCLM_apply`: `∂_{v} (∂_{w} φ) x = D²φ(x) v w`.
+* `TestFunction.iteratedLineDerivOp_apply_eq_iteratedFDeriv`: an iterated directional derivative
+  is the iterated Fréchet derivative evaluated on the directions.
 * `TestFunction.lineDerivOp_comm` and `TestFunction.lineDeriv_lineDerivOp_comm`: directional
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
@@ -111,6 +116,15 @@ theorem tsupport_lineDerivOp_subset (φ : 𝓓(Ω, F)) (v : E) :
     tsupport (∂_{v} φ : 𝓓(Ω, F)) ⊆ tsupport φ := by
   rw [coe_lineDerivOp_eq_fderiv]
   exact tsupport_fderiv_apply_subset ℝ v
+
+/-- A nonzero test function has a nonzero derivative in every nonzero direction `v`: a compactly
+supported function whose derivative along `v` vanishes identically is zero. -/
+theorem exists_lineDerivOp_apply_ne_zero {φ : 𝓓(Ω, F)} (hφ : φ ≠ 0) {v : E} (hv : v ≠ 0) :
+    ∃ x, ∂_{v} φ x ≠ 0 := by
+  by_contra! h0
+  exact hφ (ext fun x ↦ φ.hasCompactSupport.eq_zero_of_fderiv_apply_eq_zero (𝕂 := ℝ)
+    (φ.contDiff.differentiable (by simp)) hv
+    (fun w ↦ by rw [← lineDerivOp_apply_eq_fderiv, h0]) x)
 
 /-- The derivatives of order at most `r` of `∂_v φ` are bounded by `‖v‖` times a bound on the
 derivatives of order at most `r + 1` of `φ`. -/
@@ -208,6 +222,19 @@ theorem iteratedLineDerivOp_postcompCLM {𝕜 : Type*} [NontriviallyNormedField 
   | succ k ih =>
     rw [iteratedLineDerivOp_succ_left, iteratedLineDerivOp_succ_left, ih,
       lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivOp_eq_lineDerivCLM 𝕜, lineDerivCLM_postcompCLM]
+
+/-- An iterated directional derivative of a test function is its iterated Fréchet derivative
+evaluated on the directions. This is the test-function counterpart of Mathlib's
+`SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv`, with the same proof. -/
+theorem iteratedLineDerivOp_apply_eq_iteratedFDeriv (φ : 𝓓(Ω, F)) {k : ℕ} (m : Fin k → E)
+    (x : E) : ∂^{m} φ x = iteratedFDeriv ℝ k φ x m := by
+  induction k generalizing x with
+  | zero => simp
+  | succ k ih =>
+    rw [iteratedLineDerivOp_succ_left, lineDerivOp_apply_eq_fderiv, iteratedFDeriv_succ_apply_left,
+      ← fderiv_continuousMultilinear_apply_const_apply
+        ((φ.contDiff.differentiable_iteratedFDeriv (mod_cast ENat.natCast_lt_top k)) x)]
+    simp only [funext (ih (Fin.tail m))]
 
 /-- Iterated directional derivatives of a test function agree with its iterated Fréchet
 derivatives evaluated in those directions. -/

@@ -740,11 +740,11 @@ private theorem pushforward_apply_eq_zero (hT : IsProperOnSupport ⇑T f)
     fun h ↦ disjoint_left.1 hs h ⟨x, hx, rfl⟩] with z hz
   simp [hz]
 
-omit [LocallyConvexSpace ℝ W] in
+omit [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W] in
 /-- **The support of a pushforward with a cutoff** lies in the image of the part of the support of
 `T` in the support of the cutoff: `supp f_* (χ T) ⊆ f (supp χ ∩ supp T)`. -/
-theorem dsupport_cutoffPushforwardCLM_subset [T2Space Y] {χ : C^∞⟮I, X; ℝ⟯}
-    (hχ : HasCompactSupport χ) :
+theorem dsupport_cutoffPushforwardCLM_subset [T2Space Y] [ContinuousConstSMul ℝ W]
+    {χ : C^∞⟮I, X; ℝ⟯} (hχ : HasCompactSupport χ) :
     dsupport ⇑(cutoffPushforwardCLM χ hχ f T) ⊆ f '' (_root_.tsupport χ ∩ dsupport ⇑T) := by
   intro y hy
   by_contra hyT
