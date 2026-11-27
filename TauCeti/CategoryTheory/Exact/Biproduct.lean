@@ -7,9 +7,10 @@ module
 
 public import TauCeti.CategoryTheory.Exact.ExactStructure
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
+public import TauCeti.CategoryTheory.ObjectProperty.FiniteProducts
 
 /-!
-# Binary biproducts of conflations
+# Biproducts of conflations
 
 Distinguished conflations in an exact category are closed under binary direct sums.  The proof
 uses only Quillen's axioms.  First, E2 shows that adjoining an identity summand to an inflation
@@ -24,11 +25,18 @@ The dual argument applies to deflations.  Finally, the direct sum of the two und
 kernel--cokernel pairs identifies the cokernel supplied by E1 with the componentwise direct sum,
 so the componentwise short complex `CategoryTheory.ShortComplex.biprod` itself is a conflation.
 
+Bühler's Proposition 2.9 gives the binary step. Mathlib's
+`CategoryTheory.ObjectProperty.IsClosedUnderFiniteProducts.mk'` combines it with the zero
+conflation to give closure under finite products. The indexed direct sum and its two maps then
+inherit the corresponding closure for any conflation class with this finite-product property.
+
 ## Main declarations
 
 * `TauCeti.ExactStructure.isInflation_biprod`: binary direct sums preserve inflations.
 * `TauCeti.ExactStructure.isDeflation_biprod`: binary direct sums preserve deflations.
 * `TauCeti.ExactStructure.conflation_biprod`: binary direct sums preserve conflations.
+* `TauCeti.ConflationClass.conflation_biproduct`: finite direct sums preserve conflations in a class
+  closed under finite products.
 
 ## References
 
@@ -125,6 +133,43 @@ theorem conflation_biprod (E : ExactStructure C) {S₁ S₂ : ShortComplex C}
       rw [ShortComplex.biprod_f]
       exact E.isInflation_biprod (E.isInflation_f hS₁) (E.isInflation_f hS₂))
 
+/-- Conflations are closed under finite products in the category of short complexes. -/
+instance conflation_isClosedUnderFiniteProducts (E : ExactStructure C) :
+    E.Conflation.IsClosedUnderFiniteProducts := by
+  let _ : E.Conflation.IsClosedUnderBinaryProducts :=
+    E.Conflation.isClosedUnderBinaryProducts_of_exists_isLimit fun S T hS hT ↦
+      ⟨_, ⟨S.isLimitBiprodFan T⟩, E.conflation_biprod hS hT⟩
+  let _ : HasFiniteProducts C := hasFiniteProducts_of_has_binary_and_terminal
+  let _ : HasFiniteProducts (ShortComplex C) := ⟨fun _ ↦ inferInstance⟩
+  exact ObjectProperty.IsClosedUnderFiniteProducts.mk'
+
 end ExactStructure
+
+namespace ConflationClass
+
+variable (E : ConflationClass C) [E.Conflation.IsClosedUnderFiniteProducts] {J : Type*} [Finite J]
+
+/-- The componentwise direct sum of finitely many conflations is a conflation. -/
+theorem conflation_biproduct {S : J → ShortComplex C}
+    [HasBiproduct (fun j ↦ (S j).X₁)] [HasBiproduct (fun j ↦ (S j).X₂)]
+    [HasBiproduct (fun j ↦ (S j).X₃)] (hS : ∀ j, E.Conflation (S j)) :
+    E.Conflation (shortComplexBiproduct S) :=
+  E.Conflation.prop_of_isLimit_fan (isBilimitShortComplexBiproductBicone S).isLimit hS
+
+variable [HasBiproductsOfShape J C]
+
+/-- The direct sum of a finite family of inflations is an inflation. -/
+theorem isInflation_biproduct {X Y : J → C} {i : ∀ j, X j ⟶ Y j}
+    (hi : ∀ j, E.IsInflation (i j)) : E.IsInflation (biproduct.map i) := by
+  choose Z p w hS using fun j ↦ (E.isInflation_iff (i j)).mp (hi j)
+  exact E.isInflation_f (E.conflation_biproduct hS)
+
+/-- The direct sum of a finite family of deflations is a deflation. -/
+theorem isDeflation_biproduct {Y Z : J → C} {p : ∀ j, Y j ⟶ Z j}
+    (hp : ∀ j, E.IsDeflation (p j)) : E.IsDeflation (biproduct.map p) := by
+  choose X i w hS using fun j ↦ (E.isDeflation_iff (p j)).mp (hp j)
+  exact E.isDeflation_g (E.conflation_biproduct hS)
+
+end ConflationClass
 
 end TauCeti

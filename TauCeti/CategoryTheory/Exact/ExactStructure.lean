@@ -9,6 +9,7 @@ public import TauCeti.CategoryTheory.Exact.KernelCokernelPair
 public import Mathlib.CategoryTheory.MorphismProperty.Limits
 public import Mathlib.CategoryTheory.Limits.Shapes.RegularMono
 public import Mathlib.CategoryTheory.ObjectProperty.ClosedUnderIsomorphisms
+public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 
 /-!
 # Exact structures
@@ -307,6 +308,17 @@ abbrev IsDeflation (E : ExactStructure C) {Y Z : C} (p : Y ⟶ Z) : Prop :=
 /-- E0, as the statement that the inflations contain the identities. -/
 instance (E : ExactStructure C) : E.inflations.ContainsIdentities where
   id_mem := E.isInflation_id
+
+open scoped ZeroObject in
+/-- Every exact structure contains a zero conflation, by its identity inflation axiom. -/
+instance conflation_containsZero (E : ExactStructure C) : E.Conflation.ContainsZero where
+  exists_zero := by
+    obtain ⟨Z, p, w, hS⟩ := E.isInflation_id (0 : C)
+    let _ : Epi p := (E.isKernelCokernelPair _ hS).epi_g
+    have hZ := (isZero_zero C).of_epi p
+    refine ⟨_, (IsZero.iff_id_eq_zero _).mpr ?_, hS⟩
+    exact ShortComplex.hom_ext _ _
+      ((isZero_zero C).eq_of_src _ _) ((isZero_zero C).eq_of_src _ _) (hZ.eq_of_src _ _)
 
 /-- E0op, as the statement that the deflations contain the identities. -/
 instance (E : ExactStructure C) : E.deflations.ContainsIdentities where

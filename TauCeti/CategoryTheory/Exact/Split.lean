@@ -7,7 +7,6 @@ module
 
 public import TauCeti.CategoryTheory.Exact.ExactStructure
 public import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
-public import Mathlib.CategoryTheory.ObjectProperty.ContainsZero
 public import Mathlib.CategoryTheory.Preadditive.Biproducts
 
 /-!
@@ -476,10 +475,6 @@ theorem conflation_zero_id (E : ExactStructure C) (X : C) :
 theorem conflation_id_zero (E : ExactStructure C) (X : C) :
     E.Conflation (ShortComplex.mk (𝟙 X) (0 : X ⟶ (0 : C)) (by simp)) :=
   E.conflation_of_splitting { r := 𝟙 X, s := 0 }
-
-/-- The zero short complex is a conflation. -/
-instance conflation_containsZero (E : ExactStructure C) : E.Conflation.ContainsZero where
-  exists_zero := ⟨_, (IsZero.iff_id_eq_zero _).mpr (by ext), E.conflation_id_zero 0⟩
 
 /-- A morphism to the zero object is a deflation, with kernel the identity. -/
 theorem isDeflation_zero (E : ExactStructure C) (X : C) : E.IsDeflation (0 : X ⟶ (0 : C)) :=

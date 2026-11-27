@@ -23,8 +23,8 @@ Its projections and inclusions exhibit it as a limit and a colimit by
 
 * `CategoryTheory.ShortComplex.biprod`: the componentwise binary direct sum of two short
   complexes.
-* `CategoryTheory.ShortComplex.biproduct`: the componentwise direct sum of an indexed family.
-* `CategoryTheory.ShortComplex.isBilimitBiproductBicone`: the universal properties of this sum.
+* `TauCeti.shortComplexBiproduct`: the componentwise direct sum of an indexed family.
+* `TauCeti.isBilimitShortComplexBiproductBicone`: the universal properties of this sum.
 
 ## Implementation notes
 
@@ -85,30 +85,37 @@ theorem biprodSnd_τ₂ : (S.biprodSnd T).τ₂ = biprod.snd := (rfl)
 theorem biprodSnd_τ₃ : (S.biprodSnd T).τ₃ = biprod.snd := (rfl)
 
 /-- The componentwise binary sum is a product of short complexes. -/
-noncomputable def isLimitBiprodFan : IsLimit (BinaryFan.mk (S.biprodFst T) (S.biprodSnd T)) :=
-  isLimitOfIsLimitπ _
-    ((isLimitMapConeBinaryFanEquiv π₁ _ _).symm (BinaryBiproduct.isLimit S.X₁ T.X₁))
-    ((isLimitMapConeBinaryFanEquiv π₂ _ _).symm (BinaryBiproduct.isLimit S.X₂ T.X₂))
-    ((isLimitMapConeBinaryFanEquiv π₃ _ _).symm (BinaryBiproduct.isLimit S.X₃ T.X₃))
+noncomputable def isLimitBiprodFan : IsLimit (BinaryFan.mk (S.biprodFst T) (S.biprodSnd T)) := by
+  refine isLimitOfIsLimitπ _
+    ((isLimitMapConeBinaryFanEquiv π₁ _ _).symm ((BinaryBiproduct.isLimit S.X₁ T.X₁).ofIsoLimit ?_))
+    ((isLimitMapConeBinaryFanEquiv π₂ _ _).symm ((BinaryBiproduct.isLimit S.X₂ T.X₂).ofIsoLimit ?_))
+    ((isLimitMapConeBinaryFanEquiv π₃ _ _).symm ((BinaryBiproduct.isLimit S.X₃ T.X₃).ofIsoLimit ?_))
+  all_goals
+    refine Cone.ext (Iso.refl _) ?_
+    rintro ⟨⟨⟩⟩ <;> refine Eq.trans ?_ (Category.id_comp _).symm <;> simp
 
 end Binary
 
-section Family
+end CategoryTheory.ShortComplex
 
-variable {J : Type*} (S : J → ShortComplex C)
+namespace TauCeti
+
+open CategoryTheory CategoryTheory.Limits CategoryTheory.ShortComplex
+
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {J : Type*} (S : J → ShortComplex C)
   [HasBiproduct (fun j ↦ (S j).X₁)] [HasBiproduct (fun j ↦ (S j).X₂)]
   [HasBiproduct (fun j ↦ (S j).X₃)]
 
 /-- The componentwise direct sum of a family of short complexes. -/
-@[expose, simps] noncomputable def biproduct : ShortComplex C where
+@[expose, simps] noncomputable def shortComplexBiproduct : ShortComplex C where
   f := Limits.biproduct.map fun j ↦ (S j).f
   g := Limits.biproduct.map fun j ↦ (S j).g
   zero := by ext j; simp
 
 /-- The inclusions and projections of the componentwise direct sum. -/
 @[expose, simps! pt π_τ₁ π_τ₂ π_τ₃ ι_τ₁ ι_τ₂ ι_τ₃]
-noncomputable def biproductBicone : Bicone S where
-  pt := biproduct S
+noncomputable def shortComplexBiproductBicone : Bicone S where
+  pt := shortComplexBiproduct S
   π j := homMk (Limits.biproduct.π _ j) (Limits.biproduct.π _ j) (Limits.biproduct.π _ j)
     (Limits.biproduct.map_π (fun i ↦ (S i).f) j).symm
     (Limits.biproduct.map_π (fun i ↦ (S i).g) j).symm
@@ -123,16 +130,35 @@ noncomputable def biproductBicone : Bicone S where
     · ext <;> exact Limits.biproduct.ι_π_ne _ h
 
 /-- The componentwise direct sum is a biproduct in the category of short complexes. -/
-noncomputable def isBilimitBiproductBicone : (biproductBicone S).IsBilimit where
-  isLimit := isLimitOfIsLimitπ _
-    ((isLimitMapConeFanMkEquiv π₁ S _).symm (Limits.biproduct.isLimit fun i ↦ (S i).X₁))
-    ((isLimitMapConeFanMkEquiv π₂ S _).symm (Limits.biproduct.isLimit fun i ↦ (S i).X₂))
-    ((isLimitMapConeFanMkEquiv π₃ S _).symm (Limits.biproduct.isLimit fun i ↦ (S i).X₃))
-  isColimit := isColimitOfIsColimitπ _
-    ((isColimitMapCoconeCofanMkEquiv π₁ S _).symm (Limits.biproduct.isColimit fun i ↦ (S i).X₁))
-    ((isColimitMapCoconeCofanMkEquiv π₂ S _).symm (Limits.biproduct.isColimit fun i ↦ (S i).X₂))
-    ((isColimitMapCoconeCofanMkEquiv π₃ S _).symm (Limits.biproduct.isColimit fun i ↦ (S i).X₃))
+noncomputable def isBilimitShortComplexBiproductBicone :
+    (shortComplexBiproductBicone S).IsBilimit where
+  -- `Bicone.toCone` and `Bicone.toCocone` give the fan and cofan on the bicone's legs.
+  isLimit := by
+    refine isLimitOfIsLimitπ _
+      ((isLimitMapConeFanMkEquiv π₁ S _).symm ((biproduct.isLimit fun i ↦ (S i).X₁).ofIsoLimit ?_))
+      ((isLimitMapConeFanMkEquiv π₂ S _).symm ((biproduct.isLimit fun i ↦ (S i).X₂).ofIsoLimit ?_))
+      ((isLimitMapConeFanMkEquiv π₃ S _).symm ((biproduct.isLimit fun i ↦ (S i).X₃).ofIsoLimit ?_))
+    all_goals
+      refine Cone.ext (Iso.refl _) ?_
+      rintro ⟨j⟩
+      refine Eq.trans ?_ (Category.id_comp _).symm
+      simp
+  isColimit := by
+    refine isColimitOfIsColimitπ _
+      ((isColimitMapCoconeCofanMkEquiv π₁ S _).symm
+        ((biproduct.isColimit fun i ↦ (S i).X₁).ofIsoColimit ?_))
+      ((isColimitMapCoconeCofanMkEquiv π₂ S _).symm
+        ((biproduct.isColimit fun i ↦ (S i).X₂).ofIsoColimit ?_))
+      ((isColimitMapCoconeCofanMkEquiv π₃ S _).symm
+        ((biproduct.isColimit fun i ↦ (S i).X₃).ofIsoColimit ?_))
+    all_goals
+      refine Cocone.ext (Iso.refl _) ?_
+      rintro ⟨j⟩
+      refine (Category.comp_id _).trans ?_
+      simp
 
-end Family
+/-- A family of short complexes has a biproduct whenever its three component families do. -/
+instance hasBiproductShortComplex : HasBiproduct S :=
+  HasBiproduct.mk ⟨_, isBilimitShortComplexBiproductBicone S⟩
 
-end CategoryTheory.ShortComplex
+end TauCeti
