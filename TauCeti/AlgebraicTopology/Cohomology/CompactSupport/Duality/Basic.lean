@@ -15,6 +15,8 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
 public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
+import TauCeti.Order.SupClosed
+
 /-!
 # The duality map of an oriented manifold
 
@@ -105,6 +107,8 @@ property of an open subset that its duality map is bijective.
   if capping is bijective along cofinally many compact sets.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_iff_of_range_eq`: bijectivity of the
   duality map of an open subset depends only on the subset.
+* `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_comap_iff`: in particular, on an open
+  subset `U ⊆ W` it is the same whether the orientation is restricted from `M` or from `W`.
 * `TauCeti.HomologicalOrientation.bijective_dualityMap_of_disjoint`,
   `TauCeti.HomologicalOrientation.bijective_dualityMap_comap_sup_of_disjoint`: duality for the
   union of two disjoint open sets.
@@ -168,13 +172,7 @@ def capFundamentalClassOn {K : Set M} (hK : IsCompact K) (p q : ℕ) (h : p + q 
         (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
         (TopCat.of M) :=
-  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structures of the underlying additive
-  -- groups rather than those of the objects of `ModuleCat ℤ`.
-  let f := (LinearMap.applyₗ (R := ℤ) (o.fundamentalClassOn hn hK)).toAddMonoidHom.comp <|
-    ModuleCat.homAddEquiv.toAddMonoidHom.comp
-      ((TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCap ℤ (ρ_ _).inv
-        (ρ_ L).hom p q n h).toAddMonoidHom
-  ModuleCat.ofHom { f with map_smul' := map_intCast_smul f ℤ ℤ }
+  (TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCapWith L (o.fundamentalClassOn hn hK) p q h
 
 /-- Capping with the fundamental class along `K` evaluates the relative cap product at `μ_K`. -/
 lemma capFundamentalClassOn_apply {K : Set M} (hK : IsCompact K) (p q : ℕ) (h : p + q = n)
@@ -183,7 +181,7 @@ lemma capFundamentalClassOn_apply {K : Set M} (hK : IsCompact K) (p q : ℕ) (h 
     o.capFundamentalClassOn hn L hK p q h α =
       ((TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCap ℤ (ρ_ _).inv
         (ρ_ L).hom p q n h α).hom (o.fundamentalClassOn hn hK) :=
-  (rfl)
+  TopPair.singularCapWith_apply _ L _ p q h α
 
 /-- The maps capping with the fundamental classes are compatible with enlarging the compact set:
 for compact `K ⊆ K'`, capping the restriction to `Hᵖ(M, M ∖ K'; L)` of a class with `μ_K'` is
@@ -323,8 +321,7 @@ theorem bijective_dualityMap_of_cofinal
 theorem bijective_dualityMap_of_isEmpty [IsEmpty M] :
     Function.Bijective (o.dualityMap hn L p q h) := by
   have hc : IsZero ((TopCat.of M).compactSupportCohomology (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p) :=
-    (isZero_singularCohomology_of_isEmpty _ ℤ L (TopCat.of M) p).of_iso
-      (TopCat.compactSupportCohomologyIsoOfCompactSpace p)
+    TopCat.isZero_compactSupportCohomology_of_isEmpty _ ℤ L p
   have hh : IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
       (TopCat.of M)) :=
     isZero_singularHomology_of_isEmpty L _ q
@@ -490,19 +487,18 @@ theorem bijective_dualityMap_comap_iff_of_range_eq {U U' : Type} [TopologicalSpa
   have key := (o.comap hj').compactSupportCohomologyExtend_dualityMap hn L (j := f)
     e.isOpenEmbedding p q h
   rw [o.comap_comap_of_comp_eq hj' e.isOpenEmbedding hj he] at key
-  have : IsIso (TopCat.ofHom f) := (TopCat.isIso_iff_isHomeomorph _).2 e.isHomeomorph
-  have := TopCat.isIso_compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ))
-    (k := ℤ) (M := L) (f := TopCat.ofHom f) e.isOpenEmbedding p
   have hext := ConcreteCategory.bijective_of_isIso
-    (TopCat.compactSupportCohomologyExtend (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ) (M := L)
-      (f := TopCat.ofHom f) e.isOpenEmbedding p)
+    (TopCat.compactSupportCohomologyIsoOfHomeomorph (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L
+      (U := TopCat.of U) (X := TopCat.of U') e p).hom
   have hmap := ConcreteCategory.bijective_of_isIso
-    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map (TopCat.ofHom f))
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).mapIso
+      (TopCat.isoOfHomeo (X := TopCat.of U) (Y := TopCat.of U') e)).hom
   refine (Function.Bijective.of_comp_iff' hmap _).symm.trans ?_
   rw [← Function.Bijective.of_comp_iff _ hext]
   refine iff_of_eq (congrArg _ (funext fun x ↦ ?_))
-  simpa only [ConcreteCategory.comp_apply, Function.comp_apply] using
-    (ConcreteCategory.congr_hom key x).symm
+  simpa only [ConcreteCategory.comp_apply, Function.comp_apply,
+    TopCat.compactSupportCohomologyIsoOfHomeomorph_hom, Functor.mapIso_hom,
+    TopCat.isoOfHomeo_hom] using (ConcreteCategory.congr_hom key x).symm
 
 /-- The duality maps of open subsets `U ≤ V` of `M` commute with the extension
 `Hᵖ_c(U; L) ⟶ Hᵖ_c(V; L)` and the pushforward `H_q(U; L) ⟶ H_q(V; L)`. -/
@@ -544,10 +540,7 @@ theorem bijective_dualityMap_of_disjoint {U V : Opens M} (hUV : U ⊔ V = ⊤) (
   have hFh : IsIso Fh := TopCat.isIso_biprodDesc_singularHomologyFunctor_map_of_disjoint
     (X := TopCat.of M) L U.isOpen V.isOpen (by rw [← Opens.coe_sup, hUV, Opens.coe_top])
     (Opens.coe_disjoint.2 hd) q
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hU
-  have := (ConcreteCategory.isIso_iff_bijective _).2 hV
-  have := isIso_of_mono_of_epi (biprod.map ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)
-    ((o.comap V.isOpenEmbedding').dualityMap hn L p q h))
+  have := (ConcreteCategory.isIso_iff_bijective _).2 (ModuleCat.bijective_biprod_map _ _ hU hV)
   -- The duality maps commute with them, by naturality along the inclusions.
   have hsq : Fc ≫ o.dualityMap hn L p q h =
       biprod.map ((o.comap U.isOpenEmbedding').dualityMap hn L p q h)
@@ -620,7 +613,7 @@ theorem bijective_dualityMap_of_iSup_eq_top {ι : Type} [Preorder ι] [IsDirecte
 /-- The duality map of an open subset `U ≤ W` of `M`, with the orientation pulled back from `M`,
 is bijective exactly when that of `U`, read as an open subset of `W`, with the orientation pulled
 back from `W`, is. -/
-private theorem bijective_dualityMap_comap_comap_iff {U W : Opens M} (hUW : U ≤ W) :
+theorem bijective_dualityMap_comap_comap_iff {U W : Opens M} (hUW : U ≤ W) :
     Function.Bijective (((o.comap W.isOpenEmbedding').comap
         (Opens.comap ⟨Subtype.val, continuous_subtypeVal⟩ U :
           Opens W).isOpenEmbedding').dualityMap hn L p q h) ↔
@@ -674,29 +667,12 @@ theorem bijective_dualityMap_comap_iSup_of_pairwise_disjoint {ι : Type} {s : ι
     (hs : Pairwise fun i j ↦ Disjoint (s i) (s j))
     (hD : ∀ i, Function.Bijective ((o.comap (s i).isOpenEmbedding').dualityMap hn L p q h)) :
     Function.Bijective ((o.comap (⨆ i, s i).isOpenEmbedding').dualityMap hn L p q h) := by
-  classical
-  -- The finite partial unions form a directed family with the same union.
-  let T : Finset ι → Opens M := fun F ↦ ⨆ i ∈ F, s i
-  have hT : Monotone T := fun _ _ hFG ↦ biSup_mono fun _ hi ↦ hFG hi
-  have hTD (F : Finset ι) :
-      Function.Bijective ((o.comap (T F).isOpenEmbedding').dualityMap hn L p q h) := by
-    induction F using Finset.induction_on with
-    | empty =>
-      have : IsEmpty ↥(T ∅) := ⟨fun x ↦ by simpa [T] using x.property⟩
-      exact (o.comap _).bijective_dualityMap_of_isEmpty hn L h
-    | insert a F ha ih =>
-      have hTa : T (insert a F) = s a ⊔ T F := by
-        simp only [T, Finset.iSup_insert]
-      have hd : Disjoint (s a) (T F) := by
-        simp only [T, disjoint_iSup_iff]
-        exact fun i hi ↦ hs fun hai ↦ ha (hai ▸ hi)
-      rw [hTa]
-      exact o.bijective_dualityMap_comap_sup_of_disjoint hn L h hd (hD a) ih
-  have hsup : ⨆ F, T F = ⨆ i, s i :=
-    le_antisymm (iSup_le fun _ ↦ iSup₂_le fun i _ ↦ le_iSup s i)
-      (iSup_le fun i ↦ le_iSup_of_le {i} (by simp [T]))
-  rw [← hsup]
-  exact o.bijective_dualityMap_comap_iSup_of_monotone hn L h hT hTD
+  refine TauCeti.iSup_of_pairwise_disjoint
+    (fun W ↦ Function.Bijective ((o.comap W.isOpenEmbedding').dualityMap hn L p q h)) ?_
+    (fun _ _ hd ↦ o.bijective_dualityMap_comap_sup_of_disjoint hn L h hd)
+    (fun _ ht ↦ o.bijective_dualityMap_comap_iSup_of_monotone hn L h ht) hs hD
+  have : IsEmpty ↥(⊥ : Opens M) := ⟨fun x ↦ x.property⟩
+  exact (o.comap _).bijective_dualityMap_of_isEmpty hn L h
 
 end Union
 

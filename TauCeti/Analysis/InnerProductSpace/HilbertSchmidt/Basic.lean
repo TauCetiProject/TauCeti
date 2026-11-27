@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Completion
 public import Mathlib.Analysis.InnerProductSpace.l2Space
-public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius
+public import TauCeti.Analysis.InnerProductSpace.UnitarilyInvariantSeminorm.Frobenius.Basic
 
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.MeanInequalities
@@ -66,6 +66,9 @@ These are the norm estimates behind the Hilbert–Schmidt class of operators: it
 * `ContinuousLinearMap.hilbertSchmidtNorm_comp_le_left` and
   `ContinuousLinearMap.hilbertSchmidtNorm_comp_le_right`: the one-sided ideal inequalities
   `‖A T‖_HS ≤ ‖A‖ ‖T‖_HS` and `‖T B‖_HS ≤ ‖T‖_HS ‖B‖` for a finite-energy operator `T`.
+* `ContinuousLinearMap.sum_norm_apply_le_sqrt_card_mul_hilbertSchmidtNorm`: for a finite
+  orthonormal family `v` indexed by `κ`, `∑ i, ‖T (v i)‖ ≤ √(card κ) ‖T‖_HS` when `T` has finite
+  energy.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_eq_ofReal_sq_frobenius`: on a finite-dimensional
   source, `E_b(T) = ‖T‖_F²`.
 * `ContinuousLinearMap.hilbertSchmidtEnergy_ne_top`: an operator with a finite-dimensional source
@@ -340,6 +343,33 @@ theorem norm_le_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι �
   rw [← pow_le_pow_iff_left₀ (norm_nonneg T) T.hilbertSchmidtNorm_nonneg two_ne_zero,
     T.sq_hilbertSchmidtNorm b, ← toReal_eNorm, ← ENNReal.toReal_pow]
   exact ENNReal.toReal_mono h (T.enorm_sq_le_hilbertSchmidtEnergy b)
+
+/-- **Cauchy–Schwarz for the columns of a Hilbert–Schmidt operator.** For a finite orthonormal
+family `v` indexed by `κ` and an operator `T` of finite energy,
+`∑ i, ‖T (v i)‖ ≤ √(card κ) ‖T‖_HS`. -/
+theorem sum_norm_apply_le_sqrt_card_mul_hilbertSchmidtNorm [Fintype κ] (T : E →L[𝕜] F)
+    (b : HilbertBasis ι 𝕜 E) (h : T.hilbertSchmidtEnergy b ≠ ∞) {v : κ → E}
+    (hv : Orthonormal 𝕜 v) :
+    ∑ i, ‖T (v i)‖ ≤ √(Fintype.card κ) * T.hilbertSchmidtNorm := by
+  -- Extend the range of `v` to a Hilbert basis `c`; the columns `T (v i)` are among its columns.
+  obtain ⟨w, c, hw, hc⟩ := hv.toSubtypeRange.exists_hilbertBasis_extension
+  let f : κ → w := fun i ↦ ⟨v i, hw ⟨i, rfl⟩⟩
+  have hf : Function.Injective f := fun i j hij ↦
+    hv.linearIndependent.injective (congrArg Subtype.val hij)
+  have hle : ∑ i, ‖T (v i)‖ₑ ^ 2 ≤ T.hilbertSchmidtEnergy c := by
+    rw [hilbertSchmidtEnergy_def, hc]
+    exact (tsum_fintype _).symm.trans_le
+      (tsum_comp_le_tsum_of_injective hf (fun x : w ↦ ‖T x‖ₑ ^ 2))
+  have hsq : ∑ i, ‖T (v i)‖ ^ 2 ≤ T.hilbertSchmidtNorm ^ 2 := by
+    rw [T.sq_hilbertSchmidtNorm c]
+    have := ENNReal.toReal_mono (hilbertSchmidtEnergy_indep T b c ▸ h) hle
+    simpa [ENNReal.toReal_sum, ENNReal.toReal_pow] using this
+  have hsum : (∑ i, ‖T (v i)‖) ^ 2 ≤ Fintype.card κ * T.hilbertSchmidtNorm ^ 2 := by
+    refine (sq_sum_le_card_mul_sum_sq ..).trans ?_
+    rw [Finset.card_univ]
+    gcongr
+  rw [← Real.sqrt_sq T.hilbertSchmidtNorm_nonneg, ← Real.sqrt_mul (Nat.cast_nonneg _)]
+  exact Real.le_sqrt_of_sq_le hsum
 
 /-- An energy bound `E_b(S) ≤ r² E_c(T)`, with `T` of finite energy, gives the Hilbert–Schmidt
 norm bound `‖S‖_HS ≤ r ‖T‖_HS`. -/

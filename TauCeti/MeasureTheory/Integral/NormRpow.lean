@@ -46,7 +46,8 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `TauCeti.integrableOn_norm_rpow_compl_closedBall_iff`,
   `TauCeti.memLp_norm_rpow_compl_closedBall_iff`: integrability and `Lᵖ` membership outside a
-  ball, and `TauCeti.integral_norm_rpow_compl_closedBall`: the exact integral there for
+  ball, `TauCeti.integrableAtFilter_norm_rpow_cobounded`: integrability at infinity for
+  `s < -d`, and `TauCeti.integral_norm_rpow_compl_closedBall`: the exact integral there for
   `s < -d`.
 * `MeasureTheory.Measure.not_integrable_norm_sub_rpow`: a power of the distance to a point is
   never integrable over the whole space, for an additive Haar measure on a nontrivial space.
@@ -57,6 +58,9 @@ at most `|x - Re e| ^ s`.
 * `TauCeti.locallyIntegrable_norm_sub_rpow`: local integrability after translation.
 * `TauCeti.setLIntegral_closedBall_enorm_sub_rpow`: the lower integral with any centre, over a
   closed ball.
+* `TauCeti.lintegral_setLIntegral_enorm_sub_rpow_le`: an upper bound
+  `n μ(B(0, 1)) D ^ (n + s) / (n + s) · ν A` for the integral over a set of centres `p` of the
+  potential `∫ x in A, ‖x - p‖ ^ s dν` of an s-finite measure `ν`.
 * `TauCeti.ae_enorm_le_ofReal_mul_enorm_sub_rpow_of_norm_le`: off-diagonal real-norm domination
   `‖f y‖ ≤ C * ‖x - y‖ ^ s` on a measurable set implies `∀ᵐ y, ‖f y‖ₑ ≤ ofReal C * ‖x - y‖ₑ ^ s`
   under any null-singleton measure.
@@ -78,6 +82,8 @@ at most `|x - Re e| ^ s`.
 * `Bornology.IsBounded.memLp_norm_rpow_restrict`,
   `Bornology.IsBounded.memLp_norm_rpow_restrict_iff`: `‖x‖ ^ s` is `Lᵖ` on a bounded
   neighbourhood of the origin exactly when `-d < s p`.
+* `TauCeti.not_memLp_id`: on a nontrivial finite-dimensional space with an additive Haar measure,
+  the identity map does not belong to global `Lᵖ` for any nonzero exponent `p`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -193,6 +199,15 @@ theorem integrableOn_norm_rpow_compl_closedBall_iff [Nontrivial E] {s R : ℝ} (
     integrableOn_iff_integrable_of_support_subset hsupp,
     integrable_indicator_iff measurableSet_Ioi, integrableOn_Ioi_rpow_iff hR] at hrad
   exact hrad.trans (by dsimp [d]; constructor <;> intro h <;> linarith)
+
+/-- A norm power is integrable at infinity when its exponent is below the negative dimension. -/
+theorem integrableAtFilter_norm_rpow_cobounded {s : ℝ} (hs : s < -(Module.finrank ℝ E : ℝ)) :
+    IntegrableAtFilter (fun x : E => ‖x‖ ^ s) (Bornology.cobounded E) mu := by
+  refine ⟨(closedBall 0 1)ᶜ, (hasBasis_cobounded_compl_closedBall 0).mem_of_mem trivial, ?_⟩
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- On the trivial space, the exterior of the unit ball is empty.
+    exact integrableOn_empty.mono_set fun x hx => hx (by simp [Subsingleton.elim x 0])
+  · exact (integrableOn_norm_rpow_compl_closedBall_iff one_pos).2 hs
 
 /-- For a finite nonzero exponent `p`, a norm power lies in `Lᵖ` outside a positive-radius closed
 ball exactly when `s p < -dim E`. -/
@@ -480,6 +495,25 @@ theorem lintegral_enorm_sub_rpow_le_of_mem {Ω : Set E} {x : E}
     setLIntegral_enorm_sub_rpow_le_of_mem_closure
       (s := 1 - (Module.finrank ℝ E : ℝ)) (by linarith) hb (subset_closure hx)
 
+/-- **Averaging the potential of a measure.** Let `ν` be an s-finite measure and suppose that
+every point of `A` lies within distance `D` of every point of `P`. For `s > -dim E`, the potential
+`p ↦ ∫ x in A, ‖x - p‖ ^ s dν` of `ν` restricted to `A` has integral over `P` at most
+`n μ(B(0, 1)) D ^ (n + s) / (n + s)` times `ν A`. For `s = -k` with `k < n`, the kernel
+`‖x - p‖ ^ (-k)` is, up to a constant, the `k`-th power of the local Lipschitz constant at `x` of a
+radial projection from `p` (`TauCeti.lipschitzOnWith_frontierRadialProjection_ball`), so this
+averages that power over the centre. -/
+theorem lintegral_setLIntegral_enorm_sub_rpow_le {s : ℝ}
+    (hs : -(Module.finrank ℝ E : ℝ) < s) (ν : Measure E) [SFinite ν] {A P : Set E} {D : ℝ}
+    (hAP : ∀ x ∈ A, P ⊆ closedBall x D) :
+    ∫⁻ p in P, ∫⁻ x in A, ‖x - p‖ₑ ^ s ∂ν ∂mu ≤
+      ENNReal.ofReal ((Module.finrank ℝ E : ℝ) * mu.real (ball 0 1) *
+        (D ^ ((Module.finrank ℝ E : ℝ) + s) / ((Module.finrank ℝ E : ℝ) + s))) * ν A := by
+  rw [lintegral_lintegral_swap (by fun_prop), ← setLIntegral_const]
+  refine setLIntegral_mono measurable_const fun x hx ↦ ?_
+  rcases lt_or_ge D 0 with hD | hD
+  · simp [subset_empty_iff.1 ((hAP x hx).trans (closedBall_eq_empty.2 hD).subset)]
+  · exact (lintegral_mono_set (hAP x hx)).trans_eq (setLIntegral_closedBall_enorm_sub_rpow hs hD x)
+
 section Inverse
 
 open scoped ENNReal Topology
@@ -683,3 +717,32 @@ theorem not_integrable_norm_sub_rpow [Nontrivial E] (μ : Measure E) [μ.IsAddHa
   linarith
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+open MeasureTheory
+open scoped ENNReal
+
+/-- On a nontrivial finite-dimensional real normed space with an additive Haar measure, the
+identity map does not belong to global `Lᵖ` for any nonzero exponent `p`. -/
+theorem not_memLp_id {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [Nontrivial E] [MeasurableSpace E] [BorelSpace E]
+    {mu : Measure E} [mu.IsAddHaarMeasure] {p : ℝ≥0∞} (hp : p ≠ 0) :
+    ¬ MemLp (id : E → E) p mu := by
+  intro h
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · have htop : eLpNormEssSup (id : E → E) mu < ⊤ := by
+      simpa [eLpNorm_exponent_top h.aestronglyMeasurable] using h.eLpNorm_lt_top
+    obtain ⟨C, hC⟩ := eLpNormEssSup_lt_top_iff_isBoundedUnder.1 htop
+    obtain ⟨x, hx⟩ := exists_norm_eq E (by positivity : (0 : ℝ) ≤ (C : ℝ) + 1)
+    have hU : IsOpen {y : E | (C : ℝ) < ‖y‖} := isOpen_lt continuous_const continuous_norm
+    have hUne : {y : E | (C : ℝ) < ‖y‖}.Nonempty := ⟨x, by simp [hx]⟩
+    have hnull : mu {y : E | (C : ℝ) < ‖y‖} = 0 := by
+      rw [measure_eq_zero_iff_ae_notMem]
+      filter_upwards [hC] with y hy
+      exact not_lt.2 (NNReal.coe_le_coe.2 hy)
+    exact (hU.measure_pos mu hUne).ne' hnull
+  · exact mu.not_integrable_norm_sub_rpow p.toReal 0 <| by
+      simpa using (integrable_norm_rpow_iff h.aestronglyMeasurable hp hptop).2 h
+
+end TauCeti

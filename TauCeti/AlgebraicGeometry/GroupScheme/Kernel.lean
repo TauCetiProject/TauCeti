@@ -176,6 +176,14 @@ theorem kernel_hom_ext {y y' : Z ⟶ (kernel f).X}
     (h : y ≫ (kernel.ι f).hom.hom = y' ≫ (kernel.ι f).hom.hom) : y = y' :=
   (cancel_mono _).1 h
 
+/-- A point `x` of `G` with values in `Z` factors through the kernel of `f` if and only if `f`
+kills it. -/
+theorem exists_comp_kernel_ι_hom_iff (x : Z ⟶ G.X) :
+    (∃ y, y ≫ (kernel.ι f).hom.hom = x) ↔ x ≫ f.hom.hom = 1 := by
+  refine ⟨?_, fun hx ↦ ⟨kernelLift x hx, kernelLift_ι x hx⟩⟩
+  rintro ⟨y, rfl⟩
+  rw [Category.assoc, kernel_ι_comp_hom, comp_one]
+
 variable (f Z)
 
 /-- **The points of a kernel.** The points of the kernel of a homomorphism `f : G ⟶ H` of group

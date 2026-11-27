@@ -13,14 +13,16 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 In an order with a least element whose closed intervals are compact, such as `ℝ≥0` or `ℕ`, a
 locally finite measure gives finite mass to each interval `Iic a = Icc ⊥ a`. Dually, with a
 greatest element, it gives finite mass to each `Ici a`. These complement Mathlib's
-`MeasureTheory.measure_Icc_lt_top`.
+`MeasureTheory.measure_Icc_lt_top`. Measures finite on compact sets have finite restrictions to
+bounded left-open, right-closed intervals.
 
 A compact exhaustion also gives a countable criterion for local finiteness and for finiteness
 on compact sets. This criterion is useful when checking these properties simultaneously
 almost surely for a random measure.
 
-Finiteness on compact sets is closed under addition, and multiplication by a nonzero
-nonnegative real both preserves and reflects it.
+Finiteness on compact sets passes to smaller measures, a sum of two measures is finite on
+compact sets exactly when both summands are, and multiplication by a nonzero nonnegative real
+both preserves and reflects it.
 
 ## Main results
 
@@ -28,6 +30,10 @@ nonnegative real both preserves and reflects it.
 * `MeasureTheory.measure_Ici_lt_top`
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Iic_lt_top`
 * `MeasureTheory.Measure.isLocallyFiniteMeasure_of_measure_Ici_lt_top`
+* `MeasureTheory.isFiniteMeasureOnCompacts_of_le`: finiteness on compact sets passes to smaller
+  measures.
+* `MeasureTheory.isFiniteMeasureOnCompacts_add_iff`: a sum is finite on compact sets if and only
+  if both summands are.
 * `MeasureTheory.isFiniteMeasureOnCompacts_smul_nnreal_iff`: scaling by a nonzero scalar
   preserves and reflects finiteness on compact sets.
 -/
@@ -38,6 +44,19 @@ open Set
 open scoped ENNReal NNReal
 
 namespace MeasureTheory
+
+section CompactIntervals
+
+variable {α : Type*} [Preorder α] [TopologicalSpace α] [CompactIccSpace α]
+  [MeasurableSpace α]
+
+/-- A measure finite on compact sets is finite on each bounded left-open, right-closed interval. -/
+instance Measure.isFiniteMeasure_restrict_Ioc (μ : Measure α) [IsFiniteMeasureOnCompacts μ]
+    (a b : α) : IsFiniteMeasure (μ.restrict (Ioc a b)) :=
+  ⟨by simpa using
+    (measure_mono Ioc_subset_Icc_self).trans_lt (isCompact_Icc.measure_lt_top (μ := μ))⟩
+
+end CompactIntervals
 
 /-- A measure on a linearly ordered space is locally finite if every closed initial interval
 has finite mass and strict lower rays are open. -/
@@ -70,6 +89,20 @@ instance IsFiniteMeasureOnCompacts.add {α : Type*} [TopologicalSpace α] [Measu
     (μ ν : Measure α) [IsFiniteMeasureOnCompacts μ] [IsFiniteMeasureOnCompacts ν] :
     IsFiniteMeasureOnCompacts (μ + ν) :=
   ⟨fun _ hK ↦ by simp [hK.measure_lt_top]⟩
+
+/-- A measure below a measure that is finite on compact sets is finite on compact sets. -/
+theorem isFiniteMeasureOnCompacts_of_le {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    {μ : Measure α} (ν : Measure α) [IsFiniteMeasureOnCompacts ν] (h : μ ≤ ν) :
+    IsFiniteMeasureOnCompacts μ :=
+  ⟨fun _ hK ↦ (h _).trans_lt hK.measure_lt_top⟩
+
+/-- A sum of two measures is finite on compact sets if and only if both summands are. -/
+theorem isFiniteMeasureOnCompacts_add_iff {α : Type*} [TopologicalSpace α] [MeasurableSpace α]
+    {μ ν : Measure α} :
+    IsFiniteMeasureOnCompacts (μ + ν) ↔ IsFiniteMeasureOnCompacts μ ∧ IsFiniteMeasureOnCompacts ν :=
+  ⟨fun _ ↦ ⟨isFiniteMeasureOnCompacts_of_le (μ + ν) (Measure.le_add_right le_rfl),
+    isFiniteMeasureOnCompacts_of_le (μ + ν) (Measure.le_add_left le_rfl)⟩,
+    fun ⟨_, _⟩ ↦ inferInstance⟩
 
 /-- Scaling by a nonzero nonnegative real preserves and reflects finiteness on compact sets. -/
 theorem isFiniteMeasureOnCompacts_smul_nnreal_iff {α : Type*} [TopologicalSpace α]

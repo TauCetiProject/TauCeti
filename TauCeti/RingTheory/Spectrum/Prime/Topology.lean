@@ -30,6 +30,11 @@ turned into dense subsets of the spectrum. In particular the basic open set `D(a
 nonzerodivisor `a` is dense, since minimal primes consist of zero divisors. A basic open set
 `D(f)` is the whole spectrum exactly when `f` is a unit.
 
+An idempotent has empty basic open set exactly when it is zero
+(`PrimeSpectrum.basicOpen_eq_bot_iff_of_isIdempotentElem`), since an idempotent lying in every
+prime ideal is nilpotent. This is the prime-spectrum counterpart of
+`MaximalSpectrum.basicOpen_eq_bot_iff_of_isIdempotentElem`.
+
 When there are finitely many minimal primes, every dense open contains them all and remains
 nonempty after any nontrivial localization.
 
@@ -190,6 +195,12 @@ theorem dense_basicOpen_of_mem_nonZeroDivisors {a : R} (ha : a ∈ nonZeroDiviso
     Dense (basicOpen a : Set (PrimeSpectrum R)) :=
   dense_of_forall_mem_minimalPrimes fun _ hp ↦
     Set.disjoint_right.mp (Ideal.disjoint_nonZeroDivisors_of_mem_minimalPrimes hp) ha
+
+/-- An idempotent has empty basic open set exactly when it is zero: an idempotent lying in every
+prime ideal is nilpotent, hence zero. -/
+theorem basicOpen_eq_bot_iff_of_isIdempotentElem {e : R} (he : IsIdempotentElem e) :
+    basicOpen e = ⊥ ↔ e = 0 :=
+  (basicOpen_eq_bot_iff e).trans ⟨he.eq_zero_of_isNilpotent, fun h ↦ h ▸ .zero⟩
 
 /-- A basic open set `D(f)` is the whole spectrum if and only if `f` is a unit. -/
 @[simp]

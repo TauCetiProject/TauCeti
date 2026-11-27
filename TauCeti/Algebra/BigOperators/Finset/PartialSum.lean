@@ -34,16 +34,19 @@ This file contains basic facts about finite partial sums.
   prefix sums, which are monotone in the length for nonnegative tuples.
 * `TauCeti.prefixSum_eq_sum_castLE`, `TauCeti.prefixSum_comp_rev`: up to `n`, prefix sums are sums
   over the first indices, and prefix sums of a reversed tuple are suffix sums.
-* `TauCeti.prefixSum_eq_sum_range`: prefix sums of a sequence restricted to `Fin n` are its
-  partial sums over `range`, capped at `n`.
+* `TauCeti.prefixSum_eq_sum_range`, `TauCeti.prefixSum_eq_sum_range_dite`: prefix sums of a
+  sequence restricted to `Fin n` are its partial sums over `range`, capped at `n`, and prefix sums
+  of a tuple equal the `range` sum padded with `0` beyond `n`.
+* `TauCeti.prefixSum_comp_castLE`: prefix sums of the restriction of a tuple to its first `m`
+  coordinates are its prefix sums, capped at `m`.
 * `TauCeti.prefixSum_sum`, `TauCeti.prefixSum_sub`, `TauCeti.prefixSum_single`: prefix sums of
   finite sums and differences of tuples, and of a tuple supported at one coordinate.
 * `TauCeti.prefixSum_sum_single_castSucc_sub_single_succ`: prefix sums of a combination
   `∑ᵢ cᵢ (eᵢ - eᵢ₊₁)` of consecutive coordinate differences.
 * `TauCeti.map_prefixSum`, `TauCeti.prefixSum_smul`: additive monoid homomorphisms and
   distributive scalar actions commute with prefix sums.
-* `TauCeti.sum_smul_by_parts_prefixSum`: summation by parts, writing `∑ᵢ yᵢ • xᵢ` through the
-  prefix sums of `x`.
+* `TauCeti.sum_smul_by_parts_prefixSum`, `TauCeti.sum_smul_by_parts_prefixSum_extend`: summation
+  by parts, writing `∑ᵢ yᵢ • xᵢ` through the prefix sums of `x`.
 * `TauCeti.prefixSum_le_of_sum_le`: a tuple with smaller total sum and larger tail has smaller
   prefix sums.
 * `TauCeti.eq_zero_of_forall_sum_Iic_eq_zero`: a function on a locally finite order whose sums
@@ -87,6 +90,11 @@ theorem prefixSum_succ {k : ℕ} (hk : k < n) (x : Fin n → M) :
     simp only [mem_filter, mem_univ, true_and, mem_insert, Fin.ext_iff]
     omega
   rw [prefixSum, prefixSum, hfilter, sum_insert (by simp), add_comm]
+
+/-- The prefix sum of length one is the first coordinate. -/
+@[simp]
+theorem prefixSum_one (x : Fin (n + 1) → M) : prefixSum 1 x = x 0 := by
+  rw [prefixSum_succ n.succ_pos, prefixSum_zero, zero_add, Fin.mk_zero]
 
 /-- A prefix sum of length at least `n` is the total sum. -/
 theorem prefixSum_of_le {k : ℕ} (hk : n ≤ k) (x : Fin n → M) : prefixSum k x = ∑ i, x i := by
@@ -155,6 +163,31 @@ theorem prefixSum_eq_sum_range (k : ℕ) (f : ℕ → M) :
   ext i
   simp [lt_min_iff, and_comm]
 
+/-- The prefix sum of length `k` of a tuple `x : Fin n → M` equals the `range k` sum padded with
+`0` beyond `n`. -/
+theorem prefixSum_eq_sum_range_dite (k : ℕ) (x : Fin n → M) :
+    prefixSum k x = ∑ i ∈ range k, if h : i < n then x ⟨i, h⟩ else 0 := by
+  let f : ℕ → M := fun i ↦ if h : i < n then x ⟨i, h⟩ else 0
+  have hx : x = fun i : Fin n ↦ f i := funext fun i ↦ by
+    dsimp only [f]; rw [dite_eq_left i.isLt]
+  calc
+    prefixSum k x = prefixSum k (fun i : Fin n ↦ f i) := congrArg (prefixSum k) hx
+    _ = ∑ i ∈ range (min k n), f i := prefixSum_eq_sum_range k f
+    _ = ∑ i ∈ range k, f i :=
+      sum_subset (range_mono (min_le_left k n)) fun i hi hni ↦ by
+        rw [mem_range] at hi hni
+        exact dite_eq_right (by omega)
+
+/-- The prefix sums of the restriction of `x` to its first `m` coordinates are the prefix sums of
+`x`, capped at `m`. -/
+theorem prefixSum_comp_castLE {m : ℕ} (h : m ≤ n) (k : ℕ) (x : Fin n → M) :
+    prefixSum k (x ∘ Fin.castLE h) = prefixSum (min k m) x := by
+  rw [← prefixSum_min k (x ∘ Fin.castLE h), prefixSum_eq_sum_range_dite,
+    prefixSum_eq_sum_range_dite]
+  refine sum_congr rfl fun i hi ↦ ?_
+  have him : i < m := (mem_range.1 hi).trans_le (min_le_right k m)
+  simp [him, him.trans_le h, Fin.castLE]
+
 /-- Prefix sums are additive in the tuple. -/
 @[simp]
 theorem prefixSum_add (k : ℕ) (x y : Fin n → M) :
@@ -215,6 +248,21 @@ theorem monotone_prefixSum [Preorder M] [IsOrderedAddMonoid M] {x : Fin n → M}
     (fun i hi ↦ by simp only [mem_filter, mem_univ, true_and] at hi ⊢; omega)
     (fun i _ _ ↦ hx i)
 
+/-- The prefix sums of an antitone tuple are concave in the length: the increment from `k + 1`
+to `k + 2` is at most the increment from `k` to `k + 1`. -/
+theorem prefixSum_add_prefixSum_add_two_le [Preorder M] [IsOrderedAddMonoid M] {x : Fin n → M}
+    (hx : Antitone x) {k : ℕ} (hk : k + 2 ≤ n) :
+    prefixSum k x + prefixSum (k + 2) x ≤ prefixSum (k + 1) x + prefixSum (k + 1) x := by
+  have h₁ := prefixSum_succ (k := k) (by omega) x
+  have h₂ : prefixSum (k + 2) x = prefixSum (k + 1) x + x ⟨k + 1, by omega⟩ :=
+    prefixSum_succ (by omega) x
+  calc prefixSum k x + prefixSum (k + 2) x
+      = prefixSum (k + 1) x + (prefixSum k x + x ⟨k + 1, by omega⟩) := by
+        rw [h₂, add_left_comm]
+    _ ≤ prefixSum (k + 1) x + (prefixSum k x + x ⟨k, by omega⟩) := by
+        gcongr; exact hx (Fin.mk_le_mk.mpr (by omega))
+    _ = prefixSum (k + 1) x + prefixSum (k + 1) x := by rw [← h₁]
+
 /-- If `y` has at least the total sum of `x` and lies below `x` from coordinate `k` on, then the
 prefix sum of length `k` of `x` is at most that of `y`. -/
 theorem prefixSum_le_of_sum_le [Preorder M] [IsOrderedCancelAddMonoid M] {k : ℕ}
@@ -262,6 +310,19 @@ theorem sum_smul_by_parts_prefixSum {R : Type*} [Ring R] {G : Type*} [AddCommGro
     rw [prefixSum_succ hk', prefixSum_succ hk', ih hk'.le, prefixSum_succ hk' x]
     simp only [sub_smul, smul_add]
     abel
+
+/-- **Summation by parts** for prefix sums with weights `y : Fin n → R`: extending `y` by zero
+to `ℕ`, `∑ᵢ yᵢ xᵢ = ∑ₖ (yₖ - yₖ₊₁) (x₀ + ⋯ + xₖ)`. -/
+theorem sum_smul_by_parts_prefixSum_extend {R : Type*} [Ring R] {G : Type*} [AddCommGroup G]
+    [Module R G] (y : Fin n → R) (x : Fin n → G) :
+    ∑ i, y i • x i = ∑ k : Fin n,
+      (Function.extend Fin.val y 0 k - Function.extend Fin.val y 0 (k + 1)) •
+        prefixSum (k + 1) x := by
+  have hY (j : Fin n) : Function.extend Fin.val y 0 j = y j :=
+    Fin.val_injective.extend_apply y 0 j
+  have hYN : Function.extend Fin.val y (0 : ℕ → R) n = 0 :=
+    Function.extend_apply' _ _ _ fun ⟨j, hj⟩ ↦ j.isLt.ne hj
+  simpa [hY, hYN] using sum_smul_by_parts_prefixSum (Function.extend Fin.val y 0) x
 
 end PrefixSum
 

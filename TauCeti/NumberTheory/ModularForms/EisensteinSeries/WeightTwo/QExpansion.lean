@@ -39,12 +39,19 @@ unity. This includes the constant term, evaluated by the finite Fourier transfor
 Bernoulli polynomial `B₂` using `ZMod.hasSum_mul_zpow_neg_bernoulli`. In particular it applies to
 the single-residue division values used to construct Fricke functions.
 
+The normalized coefficients also transform algebraically under a cyclotomic coefficient map `σ`
+with `σ (stdAddChar j) = stdAddChar (d * j)`: they become those of the new weights `W'` with
+`W' (x, d y) = σ (W (x, y))`. The constant coefficient is included through its finite Bernoulli
+formula, so no continuity of `σ` is used.
+
 ## Main results
 
 * `TauCeti.EisensteinSeries.qExpansion_weightedG2MF_coeff`: all coefficients of the weighted
   weight-two series.
 * `TauCeti.EisensteinSeries.qExpansion_weightedG2MF_coeff_div_mem`: their coefficient field
   after normalization by `(2πi)²`.
+* `TauCeti.EisensteinSeries.map_qExpansion_weightedG2MF_coeff_div`: cyclotomic conjugation of
+  the normalized coefficients, for new weights satisfying `W' (x, d y) = σ (W (x, y))`.
 
 * `TauCeti.EisensteinSeries.hasSum_charRow_charG2MF`: `G₂^{ψ,φ}` summed along rows.
 * `TauCeti.EisensteinSeries.qExpansion_charG2MF_coeff`: the coefficients of `G₂^{ψ,φ}`.
@@ -178,6 +185,28 @@ theorem qExpansion_weightedG2MF_coeff (W : (Fin 2 → ZMod N) → ℂ) (n : ℕ)
   rw [← hform]
   exact qExpansion_weightedG2MF_coeff_of_sum_eq_zero hV n
 
+/-- A finite formula for every normalized weight-two coefficient, including the constant
+coefficient. The average weight is subtracted before taking the Fourier transform. -/
+theorem qExpansion_weightedG2MF_coeff_div (W : (Fin 2 → ZMod N) → ℂ) (n : ℕ) :
+    (qExpansion N (weightedG2MF W)).coeff n / (2 * π * I) ^ 2 =
+      let V := fun a ↦ W a - ((N : ℂ) ^ 2)⁻¹ * ∑ b, W b
+      if n = 0 then -(∑ j : ZMod N, 𝓕 (fun d ↦ V ![0, d]) j *
+          (((Polynomial.bernoulli 2).eval ((j.val : ℚ) / N) : ℚ) : ℂ)) / (2 * N)
+      else (∑ x ∈ n.divisorsAntidiagonal,
+        𝓕 (fun d ↦ V ![(x.1 : ZMod N), d] + V ![-(x.1 : ZMod N), -d])
+          (-(x.2 : ZMod N)) * (x.2 : ℂ)) / N ^ 2 := by
+  have hπ : (2 * π * I : ℂ) ^ 2 ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
+  rw [qExpansion_weightedG2MF_coeff]
+  dsimp only
+  split_ifs
+  · have hsum := (hasSum_mul_zpow_neg_bernoulli
+      (fun d : ZMod N ↦ W ![0, d] - ((N : ℂ) ^ 2)⁻¹ * ∑ b, W b)
+      (k := 2) le_rfl).tsum_eq
+    norm_num only [Nat.cast_ofNat] at hsum
+    rw [hsum]
+    field_simp [hπ]
+  · field_simp [hπ]
+
 /-- After division by `(2πi)²`, every Fourier coefficient of a weighted division-value
 series belongs to any subfield containing its weights and the `N`-th roots of unity. -/
 theorem qExpansion_weightedG2MF_coeff_div_mem {K : Subfield ℂ}
@@ -188,24 +217,68 @@ theorem qExpansion_weightedG2MF_coeff_div_mem {K : Subfield ℂ}
   have hV (a) : V a ∈ K :=
     K.sub_mem (hW a) (K.mul_mem (K.inv_mem (K.pow_mem (natCast_mem K N) 2))
       (K.sum_mem fun b _ ↦ hW b))
-  have hπ : (2 * π * I : ℂ) ^ 2 ≠ 0 := by simp [Real.pi_ne_zero, I_ne_zero]
-  rw [qExpansion_weightedG2MF_coeff]
+  rw [qExpansion_weightedG2MF_coeff_div]
   dsimp only
-  split_ifs with hn
-  · have hsum := (hasSum_mul_zpow_neg_bernoulli (fun d ↦ V ![0, d]) (k := 2) le_rfl).tsum_eq
-    norm_num only [Nat.cast_ofNat] at hsum
-    rw [hsum]
-    have heq (S : ℂ) : (-(2 * π * I) ^ 2 / (2 * N) * S) / (2 * π * I) ^ 2 =
-        -S / (2 * N) := by field_simp [hπ]
-    rw [heq]
-    exact K.div_mem (K.neg_mem (K.sum_mem fun j _ ↦ K.mul_mem
+  split_ifs
+  · exact K.div_mem (K.neg_mem (K.sum_mem fun j _ ↦ K.mul_mem
       (dft_apply_mem (R := K.toSubring) hK (fun d ↦ hV _) j) (SubfieldClass.ratCast_mem K _)))
       (K.mul_mem (natCast_mem K 2) (natCast_mem K N))
-  · have heq (S : ℂ) : ((2 * π * I) ^ 2 / N ^ 2 * S) / (2 * π * I) ^ 2 =
-        S / N ^ 2 := by field_simp [hπ]
-    rw [heq]
-    exact K.div_mem (K.sum_mem fun x _ ↦ K.mul_mem
+  · exact K.div_mem (K.sum_mem fun x _ ↦ K.mul_mem
       (dft_apply_mem (R := K.toSubring) hK (fun d ↦ K.add_mem (hV _) (hV _)) _)
       (natCast_mem K _)) (K.pow_mem (natCast_mem K N) 2)
+
+
+/-- Cyclotomic conjugation of normalized weight-two Fourier coefficients. Let `σ` send
+`stdAddChar j` to `stdAddChar (d * j)` for a unit `d`, and let the new weights satisfy
+`W' (x, d y) = σ (W (x, y))`, conjugating the old weights and multiplying their second residue
+coordinate by `d`. Then `σ` sends every normalized coefficient of `weightedG2MF W`, including the
+constant coefficient, to that of `weightedG2MF W'`. -/
+theorem map_qExpansion_weightedG2MF_coeff_div {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
+    (hσ : ∀ j : ZMod N, σ (stdAddChar j) = stdAddChar ((d : ZMod N) * j))
+    {W W' : (Fin 2 → ZMod N) → ℂ}
+    (hW : ∀ x y, W' ![x, (d : ZMod N) * y] = σ (W ![x, y])) (n : ℕ) :
+    σ ((qExpansion N (weightedG2MF W)).coeff n / (2 * π * I) ^ 2) =
+      (qExpansion N (weightedG2MF W')).coeff n / (2 * π * I) ^ 2 := by
+  have hsum : ∑ b, W' b = σ (∑ b, W b) := by
+    rw [map_sum, ← (finTwoArrowEquiv (ZMod N)).symm.sum_comp,
+      ← (finTwoArrowEquiv (ZMod N)).symm.sum_comp,
+      ← (Equiv.prodCongr (Equiv.refl _) d.mulLeft).sum_comp]
+    refine Finset.sum_congr rfl fun p _ ↦ ?_
+    simpa only [Equiv.prodCongr_apply, Prod.map_fst, Prod.map_snd, Equiv.refl_apply,
+      Units.mulLeft_apply, finTwoArrowEquiv_symm_apply] using hW p.1 p.2
+  let V := fun a ↦ W a - ((N : ℂ) ^ 2)⁻¹ * ∑ b, W b
+  let V' := fun a ↦ W' a - ((N : ℂ) ^ 2)⁻¹ * ∑ b, W' b
+  have hV (x y) : V' ![x, (d : ZMod N) * y] = σ (V ![x, y]) := by
+    simp only [V, V', hW, hsum, map_sub, map_mul, map_inv₀, map_pow, map_natCast]
+  have hzero (j) : σ (𝓕 (fun y ↦ V ![0, y]) j) = 𝓕 (fun y ↦ V' ![0, y]) j :=
+    map_dft_of_comp_unitMul hσ (hV 0) j
+  have hrow (x : ZMod N) (j) :
+      σ (𝓕 (fun y ↦ V ![x, y] + V ![-x, -y]) j) =
+        𝓕 (fun y ↦ V' ![x, y] + V' ![-x, -y]) j := by
+    apply map_dft_of_comp_unitMul hσ
+    intro y
+    rw [← mul_neg, hV, hV, map_add]
+  rw [qExpansion_weightedG2MF_coeff_div, qExpansion_weightedG2MF_coeff_div]
+  dsimp only
+  split_ifs <;>
+    simp only [map_div₀, map_neg, map_sum, map_mul, map_pow, map_natCast, map_ofNat,
+      map_ratCast, hzero, hrow, V, V']
+
+/-- Cyclotomic conjugation of the normalized coefficients of a single-residue division value.
+Applying `σ` to each Fourier coefficient of `weightedG2MF (Pi.single a 1)` after division by
+`(2πi)²` gives the corresponding normalized coefficient of
+`weightedG2MF (Pi.single ![a 0, d * a 1] 1)`.
+The quantity conjugated is the normalized coefficient, not the division value itself. -/
+theorem map_qExpansion_weightedG2MF_single_coeff_div {σ : ℂ →+* ℂ} {d : (ZMod N)ˣ}
+    (hσ : ∀ j : ZMod N, σ (stdAddChar j) = stdAddChar ((d : ZMod N) * j))
+    (a : Fin 2 → ZMod N) (n : ℕ) :
+    σ ((qExpansion N (weightedG2MF (Pi.single a (1 : ℂ)))).coeff n /
+      (2 * π * I) ^ 2) =
+    (qExpansion N (weightedG2MF (Pi.single ![a 0, (d : ZMod N) * a 1] (1 : ℂ)))).coeff n /
+      (2 * π * I) ^ 2 := by
+  classical
+  apply map_qExpansion_weightedG2MF_coeff_div hσ
+  intro x y
+  simp [Pi.single_apply, funext_iff, Fin.forall_fin_two, apply_ite σ]
 
 end TauCeti.EisensteinSeries

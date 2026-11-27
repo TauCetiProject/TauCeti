@@ -15,8 +15,9 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 # Differentials of diffeomorphisms
 
 The differentials of a diffeomorphism and its inverse undo each other, so the differential is
-nonzero wherever the tangent space is nontrivial, and the differential of a diffeomorphism undoes
-the pullback of vector fields along it.
+nonzero wherever the tangent space is nontrivial, pulls back only the zero covector to zero
+(`Diffeomorph.comp_mfderiv_eq_zero_iff`), and undoes the pullback of vector fields along the
+diffeomorphism.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
 diffeomorphism, so the chain rule for such compositions holds without differentiability
 assumptions, including for maps conjugated by a diffeomorphism near a point, injectivity of the
@@ -48,6 +49,11 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {n : ℕ∞ω}
 
 namespace Diffeomorph
+
+/-- The inverse of the inverse of a diffeomorphism is the diffeomorphism itself. -/
+@[simp]
+theorem symm_symm (h : M ≃ₘ^n⟮I, J⟯ N) : h.symm.symm = h :=
+  Diffeomorph.ext fun _ ↦ rfl
 
 /-- The partial equivalence underlying a diffeomorphism viewed as a partial diffeomorphism
 is its everywhere-defined equivalence. -/
@@ -102,9 +108,8 @@ theorem mfderiv_apply_mfderiv_symm_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n �
 theorem mfderiv_symm_apply_mfderiv_apply (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (x : M) (v : TangentSpace I x) :
     mfderiv J I h.symm (h x) (mfderiv I J h x v) = v := by
-  have hss : h.symm.symm = h := Diffeomorph.ext (fun _ => rfl)
   have hh := mfderiv_apply_mfderiv_symm_apply h.symm hn (h x) v
-  rw [hss, h.symm_apply_apply] at hh
+  rw [h.symm_symm, h.symm_apply_apply] at hh
   exact hh
 
 /-- The differential of a diffeomorphism at a point with a nontrivial tangent space is nonzero. -/
@@ -115,6 +120,20 @@ theorem mfderiv_ne_zero (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {x : M}
   have hv' := h.mfderiv_apply_mfderiv_symm_apply hn x v
   rw [h0] at hv'
   exact hv (hv'.symm.trans (zero_apply _))
+
+/-- Pulling a covector back along the differential of a diffeomorphism gives zero only for the
+zero covector. -/
+@[simp]
+theorem comp_mfderiv_eq_zero_iff {G : Type*} [TopologicalSpace G] [AddCommMonoid G]
+    [Module 𝕜 G] (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (x : M)
+    {ξ : TangentSpace J (h x) →L[𝕜] G} : ξ.comp (mfderiv I J h x) = 0 ↔ ξ = 0 := by
+  refine ⟨fun hξ ↦ ContinuousLinearMap.ext fun v ↦ ?_, fun hξ ↦ by
+    rw [hξ, ContinuousLinearMap.zero_comp]⟩
+  -- Evaluate `ξ ∘ dh_x = 0` at `dh⁻¹ v`, and use `dh_x (dh⁻¹ v) = v`. The vector `dh⁻¹ v` lies in
+  -- the tangent space at `h⁻¹ (h x)`, equal to the one at `x` only definitionally, so `h'` is
+  -- read through `ContinuousLinearMap.comp_apply` by unfolding rather than by rewriting.
+  have h' := DFunLike.congr_fun hξ (mfderiv J I h.symm (h x) v)
+  exact (congrArg ξ (h.mfderiv_apply_mfderiv_symm_apply hn x v)).symm.trans h'
 
 /-- The differential of a diffeomorphism maps the pullback of a vector field at `x` to the value
 of the field at `h x`. -/
@@ -141,9 +160,8 @@ diffeomorphism returns the original tangent vector. -/
 theorem tangentMap_apply_symm (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
     (z : TangentBundle J N) :
     tangentMap I J h (tangentMap J I h.symm z) = z := by
-  have hss : h.symm.symm = h := Diffeomorph.ext fun _ ↦ rfl
   have hh := tangentMap_symm_apply h.symm hn z
-  rw [hss] at hh
+  rw [h.symm_symm] at hh
   exact hh
 
 /-- The tangent map of the inverse acts on a fibre by the inverse differential. This holds

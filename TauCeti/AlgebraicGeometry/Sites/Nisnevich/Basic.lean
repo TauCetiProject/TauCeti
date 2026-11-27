@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Sites.Proetale
 public import TauCeti.AlgebraicGeometry.ResidueField
+public import TauCeti.AlgebraicGeometry.Sites.Etale.Subcanonical
 
 /-!
 # Nisnevich coverings and the Nisnevich topology
@@ -31,6 +32,8 @@ it is subcanonical.
 
 * `TauCeti.AlgebraicGeometry.Scheme.isNisnevichCovering_of_zariski`: Zariski coverings are
   Nisnevich coverings.
+* `TauCeti.AlgebraicGeometry.Scheme.not_isNisnevichCovering_specMap_algebraMap_of_finrank_ne_one`:
+  a field extension of degree other than `1` does not give a Nisnevich covering.
 * `TauCeti.AlgebraicGeometry.Scheme.IsNisnevichCovering.of_isPullback`,
   `TauCeti.AlgebraicGeometry.Scheme.IsNisnevichCovering.pullback` and
   `TauCeti.AlgebraicGeometry.Scheme.IsNisnevichCovering.comp`: stability under base change and
@@ -48,6 +51,8 @@ it is subcanonical.
   form a Nisnevich covering, and a sieve covers if and only if it contains such a family.
 * `AlgebraicGeometry.Scheme.smallNisnevichTopology_le_smallEtaleTopology`: the small Nisnevich
   topology is coarser than the small étale topology.
+* `AlgebraicGeometry.Scheme.smallNisnevichTopology_subcanonical`: the small Nisnevich topology is
+  subcanonical.
 
 ## References
 
@@ -145,6 +150,17 @@ theorem isNisnevichCovering_of_zariski {ι : Type*} {X : ι → Scheme.{u}} {f :
   obtain ⟨i, x, hx⟩ := hf.1 s
   have := hf.2 i
   exact ⟨i, x, hx, inferInstance⟩
+
+/-- The spectrum of a field extension `k → K` of degree other than `1` is not a Nisnevich covering
+of `Spec k`, even by several copies: the residue field extension at the closed point is
+`k → K`, which is not an isomorphism. -/
+theorem not_isNisnevichCovering_specMap_algebraMap_of_finrank_ne_one (k K : Type u) [Field k]
+    [Field K] [Algebra k K] (h : Module.finrank k K ≠ 1) {ι : Type*} :
+    ¬ IsNisnevichCovering (fun _ : ι ↦ Spec.map (CommRingCat.ofHom (algebraMap k K))) := by
+  intro hc
+  obtain ⟨-, x, -, hx⟩ := hc.exists_isIso (IsLocalRing.closedPoint k)
+  rw [RingHom.isIso_SpecMap_residueFieldMap_iff_surjective] at hx
+  exact h (Module.finrank_of_bijective_algebraMap ⟨(algebraMap k K).injective, hx⟩)
 
 /-- The Nisnevich precoverage on the category of schemes: a presieve on `S` is covering if its
 morphisms are étale and every point of `S` has a preimage under one of them with the same
@@ -304,5 +320,11 @@ theorem smallNisnevichTopology_le_smallEtaleTopology (X : Scheme.{u}) :
   exact Precoverage.toGrothendieck_mono <| Precoverage.comap_monotone <|
     GrothendieckTopology.toPrecoverage_monotone fun _ _ hR ↦
       nisnevichTopology_le_etaleTopology _ hR
+
+/-- Representable presheaves on the small étale site of a scheme are sheaves for the small
+Nisnevich topology, because it is coarser than the subcanonical small étale topology. -/
+instance smallNisnevichTopology_subcanonical (X : Scheme.{u}) :
+    X.smallNisnevichTopology.Subcanonical :=
+  .of_le (smallNisnevichTopology_le_smallEtaleTopology X)
 
 end AlgebraicGeometry.Scheme
