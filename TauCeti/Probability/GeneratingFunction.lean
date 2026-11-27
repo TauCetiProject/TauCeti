@@ -71,12 +71,15 @@ consequently a law on `ℕ` is determined by its generating function near `0`.
   `TauCeti.Probability.convexOn_pgf` and `TauCeti.Probability.strictConvexOn_pgf` — the shape of
   the generating function of a finite measure on `ℕ`: continuous on `[-1, 1]`, nondecreasing and
   convex on `[0, 1]`, and strictly convex there when the measure charges some `k ≥ 2`, with
-  `TauCeti.Probability.strictConvexOn_pgf_of_add_lt_one` for the hypothesis `ν {0} + ν {1} < 1`.
+  `TauCeti.Probability.strictConvexOn_pgf_of_add_lt_one` for the hypothesis `ν {0} + ν {1} < 1`;
+  `TauCeti.Probability.pgf_eq_of_add_eq_one` gives the affine generating function in the remaining
+  case `ν {0} + ν {1} = 1`, and `TauCeti.Probability.mapsTo_pgf_Icc` says that for a probability
+  measure it maps `[0, 1]` into itself.
 * `TauCeti.Probability.hasSum_deriv_pgf`, `TauCeti.Probability.monotoneOn_deriv_pgf` and
   `TauCeti.Probability.tendsto_ofReal_deriv_pgf_nhdsLT_one` — the derivative on `(-1, 1)` is the
   termwise derivative of the power series; it is nondecreasing on `[0, 1)` and increases to the
   mean `∫⁻ k, k`, taken in `[0, ∞]`, as the argument increases to `1`, also when the mean is
-  infinite.
+  infinite; `TauCeti.Probability.ofReal_deriv_pgf_le` bounds it by the mean on `[0, 1)`.
 -/
 
 public section
@@ -611,6 +614,18 @@ theorem monotoneOn_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
     (hasSum_pgf ν (abs_le_one_of_mem_Icc ht))
   exact mul_le_mul_of_nonneg_left (pow_le_pow_left₀ hs.1 hst k) measureReal_nonneg
 
+/-- The probability-generating function of a probability measure on `ℕ` maps `[0, 1]` into
+itself. -/
+theorem mapsTo_pgf_Icc (ν : Measure ℕ) [IsProbabilityMeasure ν] :
+    Set.MapsTo (pgf id ν) (Set.Icc 0 1) (Set.Icc 0 1) := fun s hs => by
+  have h0 : (0 : ℝ) ∈ Set.Icc 0 1 := ⟨le_rfl, zero_le_one⟩
+  have h1 : (1 : ℝ) ∈ Set.Icc 0 1 := ⟨zero_le_one, le_rfl⟩
+  refine ⟨?_, ?_⟩
+  · calc (0 : ℝ) ≤ pgf id ν 0 := by rw [pgf_zero]; exact measureReal_nonneg
+      _ ≤ pgf id ν s := monotoneOn_pgf ν h0 hs hs.1
+  · calc pgf id ν s ≤ pgf id ν 1 := monotoneOn_pgf ν hs h1 hs.2
+      _ = 1 := by simp
+
 /-- The probability-generating function of a finite measure on `ℕ` is convex on `[0, 1]`. -/
 theorem convexOn_pgf (ν : Measure ℕ) [IsFiniteMeasure ν] :
     ConvexOn ℝ (Set.Icc 0 1) (pgf id ν) := by
@@ -657,6 +672,30 @@ theorem strictConvexOn_pgf_of_add_lt_one (ν : Measure ℕ) [IsProbabilityMeasur
     simp only [zero_add, htail, add_zero] at huniv
     exact h.ne huniv.symm
   exact strictConvexOn_pgf ν hk hνk
+
+/-- The probability-generating function of a probability measure on `ℕ` carried by `{0, 1}`,
+that is with `ν {0} + ν {1} = 1`, is the affine function `t ↦ ν.real {0} + ν.real {1} * t`. This
+is the case left out by `strictConvexOn_pgf_of_add_lt_one`. -/
+theorem pgf_eq_of_add_eq_one (ν : Measure ℕ) [IsProbabilityMeasure ν] (h : ν {0} + ν {1} = 1)
+    (t : ℝ) : pgf id ν t = ν.real {0} + ν.real {1} * t := by
+  have hpair : ν {0, 1} = 1 := by
+    rw [Set.insert_eq, measure_union (by simp) (measurableSet_singleton 1), h]
+  have hcompl : ν {0, 1}ᶜ = 0 := (prob_compl_eq_zero_iff (by measurability)).2 hpair
+  have hae : ∀ᵐ k ∂ν, k = 0 ∨ k = 1 := measure_eq_zero_iff_ae_notMem.1 hcompl |>.mono
+    fun k hk => by simpa [or_iff_not_imp_left] using hk
+  have hint : Integrable (fun n : ℕ => t ^ n) ν := by
+    refine Integrable.mono' (integrable_const (max 1 |t|)) (by fun_prop) ?_
+    filter_upwards [hae] with k hk
+    rcases hk with rfl | rfl <;> simp
+  have hzero : ∀ n ∉ Finset.range 2, ν.real {n} * t ^ n = 0 := fun n hn => by
+    have hn : ({n} : Set ℕ) ⊆ {0, 1}ᶜ := by
+      simp only [Finset.mem_range, not_lt] at hn
+      simp only [Set.singleton_subset_iff, Set.mem_compl_iff, Set.mem_insert_iff,
+        Set.mem_singleton_iff]
+      omega
+    rw [measureReal_def, measure_mono_null hn hcompl, ENNReal.toReal_zero, zero_mul]
+  rw [(hasSum_pgf_of_integrable ν hint).unique (hasSum_sum_of_ne_finset_zero hzero)]
+  simp [Finset.sum_range_succ]
 
 /-- On the open unit interval, the derivative of the probability-generating function of a finite
 measure on `ℕ` is the sum of the termwise derivatives `(n + 1) ν {n + 1} t ^ n`. -/
@@ -721,6 +760,15 @@ theorem tendsto_ofReal_deriv_pgf_nhdsLT_one (ν : Measure ℕ) [IsFiniteMeasure 
           gcongr
           exact ENNReal.ofReal_le_one.mpr (pow_le_one₀ ht.1 ht.2.le)
       _ = c n := mul_one _
+
+/-- On `[0, 1)` the derivative of the probability-generating function of a finite measure on `ℕ`
+is at most the mean `∫⁻ k, k ∂ν`, taken in `[0, ∞]`. -/
+theorem ofReal_deriv_pgf_le (ν : Measure ℕ) [IsFiniteMeasure ν] {t : ℝ}
+    (ht : t ∈ Set.Ico 0 1) : ENNReal.ofReal (deriv (pgf id ν) t) ≤ ∫⁻ k, (k : ℝ≥0∞) ∂ν := by
+  refine ge_of_tendsto (tendsto_ofReal_deriv_pgf_nhdsLT_one ν) ?_
+  filter_upwards [Ioo_mem_nhdsLT ht.2] with u hu
+  exact ENNReal.ofReal_le_ofReal
+    (monotoneOn_deriv_pgf ν ht ⟨ht.1.trans hu.1.le, hu.2⟩ hu.1.le)
 
 end Shape
 
