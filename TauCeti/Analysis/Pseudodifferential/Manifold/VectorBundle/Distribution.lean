@@ -176,7 +176,7 @@ private theorem exists_seminorm_chartLocalization_apply_chartTestSection_le
   refine ⟨∑ l, ‖Module.finBasis ℂ W l‖ * (Cemb * |C l|), by positivity, fun φ ↦ ?_⟩
   refine (ContDiffMapSupportedIn.seminorm_top_le_iff ℝ (by positivity) i _).2 fun x _ ↦
     ((Module.finBasis ℂ W).norm_iteratedFDeriv_le_sum
-      ((ContDiffMapSupportedIn.contDiff _).of_le (mod_cast le_top)) x).trans ?_
+      ((ContDiffMapSupportedIn.contDiff _).of_le (mod_cast le_top)).contDiffAt).trans ?_
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun l _ ↦ ?_
   rw [mul_assoc]
