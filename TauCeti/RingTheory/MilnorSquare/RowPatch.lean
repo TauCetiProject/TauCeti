@@ -19,8 +19,13 @@ For a fibre product `D = A₁ ×_Q A₂`, glue free left modules by a transition
 
 Taking opposite coefficients converts this equation to the column equation with transition
 `aᵀ`. The library construction `RingHom.patchedSubgroup` takes a first-to-second parameter,
-so it is evaluated at the inverse of that transpose. This identifies the left row patch with
-the existing right projective over the opposite ring when either leg is surjective.
+so it is evaluated at the inverse of that transpose. The semilinear equivalence
+`RingHom.patchedSubgroupOpEquivRowPatch` identifies the two patches for arbitrary legs.
+Surjectivity of either leg gives finiteness and projectivity of the row patch.
+
+The equivalences `RingHom.rowPatchOneEquiv`, `RingHom.rowPatchProdEquiv`,
+`RingHom.rowPatchProdOneEquiv`, and `RingHom.rowPatchEquivOfMul` describe the identity
+transition, block sums, identity padding, and changes of endpoint trivializations.
 
 ## References
 
@@ -93,7 +98,8 @@ private def patchedSubgroupOpAddEquiv (a : GL n Q) :
 private theorem smul_mem_rowPatch {a : GL n Q} {x : (n → A₁) × (n → A₂)}
     (hx : x ∈ π₁.rowPatch π₂ a) (d : π₁.pullback π₂) :
     ((π₁.pullbackFst π₂ d) • x.1, (π₁.pullbackSnd π₂ d) • x.2) ∈ π₁.rowPatch π₂ a := by
-  have hd : π₁ (π₁.pullbackFst π₂ d) = π₂ (π₁.pullbackSnd π₂ d) := d.property
+  have hd : π₁ (π₁.pullbackFst π₂ d) = π₂ (π₁.pullbackSnd π₂ d) :=
+    DFunLike.congr_fun (π₁.pullback_comm_sq π₂) d
   have h₁ : π₁ ∘ ((π₁.pullbackFst π₂ d) • x.1) =
       π₁ (π₁.pullbackFst π₂ d) • (π₁ ∘ x.1) := funext fun _ ↦ by simp
   have h₂ : π₂ ∘ ((π₁.pullbackSnd π₂ d) • x.2) =

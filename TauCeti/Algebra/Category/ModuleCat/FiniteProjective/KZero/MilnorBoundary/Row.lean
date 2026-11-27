@@ -60,8 +60,8 @@ def milnorBoundaryLeft (h : Function.Surjective π₁ ∨ Function.Surjective π
     ((milnorBoundary π₁.op π₂.op (by simpa using h)).comp
       AlgebraicK1.transposeOp.toAdditive))
 
-/-- Under the opposite-ring comparison, the left boundary of a class is the right boundary
-of its transposed class with the transition read from the second endpoint to the first. -/
+/-- The left boundary of `x` is the right boundary over the opposite rings evaluated at the
+inverse transpose of `x` and transported back along `RingHom.pullbackOpOpEquiv`. -/
 theorem milnorBoundaryLeft_apply (h : Function.Surjective π₁ ∨ Function.Surjective π₂)
     (x : AlgebraicK1 Q) :
     milnorBoundaryLeft π₁ π₂ h (Additive.ofMul x) =
@@ -86,21 +86,14 @@ theorem milnorBoundaryLeft_mk (h : Function.Surjective π₁ ∨ Function.Surjec
   let f := (π₁.pullbackOpOpEquiv π₂).toRingHom
   let P := π₁.op.patchedSubgroup π₂.op (transposeOpEquiv a).unop⁻¹
   let e : P ≃ₛₗ[f] π₁.rowPatch π₂ a := patchedSubgroupOpEquivRowPatch π₁ π₂ a
-  let ι := BalancedExtension.includeRight f P
-  have extended : BalancedExtension f P ≃ₗ[π₁.pullback π₂] π₁.rowPatch π₂ a :=
-    LinearEquiv.ofLinearMap (BalancedExtension.lift e.toLinearMap) (ι.comp e.symm.toLinearMap)
-      (LinearMap.ext fun x ↦ by
-        -- Evaluate the semilinear composites at a point to apply the lift formula.
-        change BalancedExtension.lift e.toLinearMap (ι (e.symm x)) = x
-        simpa only [ι, BalancedExtension.includeRight_apply, BalancedExtension.lift_tmul, one_smul,
-          LinearEquiv.coe_coe] using e.apply_symm_apply x)
-      (BalancedExtension.hom_ext fun x ↦ by
-        -- Hom extensionality tests the composite on the pure tensor `1 ⊗ x`.
-        change ι (e.symm (BalancedExtension.lift e.toLinearMap (BalancedExtension.tmul f 1 x))) =
-          BalancedExtension.tmul f 1 x
-        rw [BalancedExtension.lift_tmul, one_smul, LinearEquiv.coe_coe, e.symm_apply_apply]
-        exact BalancedExtension.includeRight_apply x)
-  exact extended
+  refine LinearEquiv.ofLinearMap (BalancedExtension.lift e.toLinearMap)
+    ((BalancedExtension.includeRight f P).comp e.symm.toLinearMap) ?_ ?_
+  · rw [← LinearMap.comp_assoc, BalancedExtension.lift_comp_includeRight]
+    exact e.comp_symm
+  · exact BalancedExtension.hom_ext fun x ↦ by
+      simpa only [LinearMap.comp_apply, LinearMap.id_apply, BalancedExtension.lift_tmul,
+        one_smul, LinearEquiv.coe_coe, LinearEquiv.symm_apply_apply] using
+        BalancedExtension.includeRight_apply (f := f) x
 
 /-- The left boundary vanishes on classes extended from the first endpoint. -/
 @[simp]
