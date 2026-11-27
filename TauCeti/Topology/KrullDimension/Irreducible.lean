@@ -77,8 +77,10 @@ theorem topologicalKrullDim_add_one_le_of_forall_not_subset {f : X → Y} (hf : 
     (IrreducibleCloseds.map_strictMono_of_isInducing hf) fun T hT ↦ ?_
   obtain ⟨C, hC, hTC⟩ := exists_mem_irreducibleComponents_subset_of_isIrreducible _
     (T.map f hf.continuous).isIrreducible
-  have hle : T.map f hf.continuous ≤ ⟨C, hC.1, isClosed_of_mem_irreducibleComponents C hC⟩ := hTC
-  have hCT : C ⊆ closure (f '' T) := hT hle
+  have hle : T.map f hf.continuous ≤ ⟨C, hC.1, isClosed_of_mem_irreducibleComponents C hC⟩ :=
+    SetLike.coe_subset_coe.mp (by rwa [IrreducibleCloseds.coe_mk])
+  have hCT := SetLike.coe_subset_coe.mpr (hT hle)
+  rw [IrreducibleCloseds.coe_mk, IrreducibleCloseds.coe_map] at hCT
   exact hf' C hC (hCT.trans (closure_mono (image_subset_range f T)))
 
 /-- If `f : X → Y` is inducing with non-dense range and `Y` is irreducible, then

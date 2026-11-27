@@ -238,8 +238,9 @@ theorem not_subset_support_conductor_of_irreducibleSpace [IrreducibleSpace Y] {C
     (hC : C ∈ irreducibleComponents Y) : ¬C ⊆ f.conductor.support := fun hCsub ↦ by
   rw [irreducibleComponents_eq_singleton, Set.mem_singleton_iff] at hC
   subst hC
-  exact f.support_conductor_ne_top_of_isModification
-    (SetLike.coe_injective (Set.univ_subset_iff.mp hCsub))
+  refine f.support_conductor_ne_top_of_isModification (SetLike.coe_injective ?_)
+  rw [TopologicalSpace.Closeds.coe_top, ← Set.univ_subset_iff]
+  exact hCsub
 
 /-- For a finite modification of a locally Noetherian scheme of Krull dimension at most one, the
 conductor closed subscheme is locally Artinian. -/
