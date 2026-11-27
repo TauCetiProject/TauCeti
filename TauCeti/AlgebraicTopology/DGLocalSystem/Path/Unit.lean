@@ -125,12 +125,6 @@ section Iso
 
 open BalancedTensorProduct DGRightModuleCat
 
-/-- The right action of the loop chains on `M ⊗ C_*(P_{a→a} B)`, which instance search does not
-see through the carrier of the tensor product. -/
-local instance (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R)) :
-    Module (loopChainAlgebra B a R)ᵐᵒᵖ (tensorBimoduleObj M (pathChainBimodule B a a R)) :=
-  (tensorBimoduleObj M (pathChainBimodule B a a R)).moduleOp
-
 variable (M : DGRightModuleCat.{w, max u w, v} (loopChain_isDGAlgebra B a R))
 
 /-- Tensoring with the `0`-chain of the constant path of length zero is a right inverse of

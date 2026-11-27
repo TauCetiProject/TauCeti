@@ -116,12 +116,21 @@ def loopCellCocycle (γ : MooreLoopSpace B b) :
       (cubicalChainGrading (MooreLoopSpace B b) R) (cubicalChainDifferential (MooreLoopSpace B b) R)
       (Unit ⊕ Unit) (Sum.elim (fun _ ↦ 0) (fun _ ↦ 1)) :=
   cycleCellCocycle R 0 (cubicalChainPoint (MooreLoopSpace B b) R γ - 1)
-    (by
-      simpa using sub_mem (cubicalChainPoint_mem γ)
-        (SetLike.one_mem_graded (cubicalChainGrading (MooreLoopSpace B b) R)))
-    (by simp [(loopChain_isDGAlgebra B b R).map_one_eq_zero])
+    (by simpa using cubicalChainPoint_sub_one_mem (R := R) γ)
+    (cubicalChainDifferential_cubicalChainPoint_sub_one (R := R) γ)
 
 variable {R}
+
+/-- `TauCeti.loopCellCocycle R γ` is the cocycle `TauCeti.cycleCellCocycle R 0 ([γ] - [1])` of a
+cell attached along a `0`-cycle. -/
+theorem loopCellCocycle_eq_cycleCellCocycle (γ : MooreLoopSpace B b)
+    {hx : cubicalChainPoint (MooreLoopSpace B b) R γ - 1 ∈
+      cubicalChainGrading (MooreLoopSpace B b) R (-((0 : ℕ) : ℤ))}
+    {hdx : cubicalChainDifferential (MooreLoopSpace B b) R
+      (cubicalChainPoint (MooreLoopSpace B b) R γ - 1) = 0} :
+    loopCellCocycle R γ =
+      cycleCellCocycle R 0 (cubicalChainPoint (MooreLoopSpace B b) R γ - 1) hx hdx :=
+  (rfl)
 
 @[simp]
 theorem loopCellCocycle_m_inl (γ : MooreLoopSpace B b) :
@@ -146,8 +155,7 @@ theorem loopCellCocycle_m_eq_zero_of_le (γ : MooreLoopSpace B b) {x y : Unit �
 `TauCeti.loopCellCocycle R γ` is well-founded, since the cocycle is one-sided. -/
 theorem wellFounded_mem_support_loopCellCocycle (γ : MooreLoopSpace B b) :
     WellFounded fun y x ↦ y ∈ ((loopCellCocycle R γ).m x).support :=
-  (loopCellCocycle R γ).wellFounded_mem_support (fun _ _ ↦ loopCellCocycle_m_eq_zero_of_le γ)
-    (p₀ := 0) (by rintro (_ | _) <;> simp)
+  wellFounded_mem_support_cycleCellCocycle _ _
 
 /-- The differential of the free module of `TauCeti.loopCellCocycle R γ` on `α e₀ + β e₁`: the
 coefficient of `e₀` is `dα + κ(β) ([γ] - [1])`, with `κ` the Koszul sign twist, and the coefficient
@@ -217,15 +225,6 @@ theorem loopCellCocycle_differential_single_inr (γ : MooreLoopSpace B b)
             (cubicalChainPoint (MooreLoopSpace B b) R γ - 1)) +
         Finsupp.single (Sum.inr ()) (cubicalChainDifferential (MooreLoopSpace B b) R β) :=
   cycleCellCocycle_differential_single_inr _ _ β
-
-/-- The generator `e₀` is a cycle. -/
-theorem loopCellCocycle_differential_single_inl_one (γ : MooreLoopSpace B b) :
-    rowFiniteTwistedDifferential (R := R) (A := loopChainAlgebra B b R)
-      (𝒜 := cubicalChainGrading (MooreLoopSpace B b) R)
-        (d := cubicalChainDifferential (MooreLoopSpace B b) R) (loopCellCocycle R γ).m
-        (Finsupp.single (Sum.inl ()) 1) = 0 := by
-  rw [RowFiniteTwistingCocycle.differential_single_one _ (loopChain_isDGAlgebra B b R),
-    loopCellCocycle_m_inl]
 
 /-- The augmentation vanishes on boundaries. -/
 @[simp]
@@ -339,14 +338,11 @@ theorem exists_loopCellCocycle_expLoop_differential_eq_of_loopCellAugmentation_e
       (𝒜 := cubicalChainGrading (MooreLoopSpace Circle 1) R)
       (d := cubicalChainDifferential (MooreLoopSpace Circle 1) R)
       (loopCellCocycle R Circle.expLoop.toMooreLoop).m v = u := by
-  -- `MooreLoopSpace.fundamentalGroupHom` takes the inverse of the path class of the loop.
-  have hg : MooreLoopSpace.fundamentalGroupHom (1 : Circle) Circle.expLoop.toMooreLoop =
-      (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))⁻¹ := by
-    rw [MooreLoopSpace.fundamentalGroupHom_apply, Path.toPath_toMooreLoop]
   refine exists_loopCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero
     (fun n ↦ inferInstance) ?_ ?_ hu hε
-  · rw [hg, Subgroup.zpowers_inv, Circle.zpowers_fromPath_expLoop]
-  · rw [hg, isOfFinOrder_inv_iff]
+  · rw [MooreLoopSpace.fundamentalGroupHom_toMooreLoop, Subgroup.zpowers_inv,
+      Circle.zpowers_fromPath_expLoop]
+  · rw [MooreLoopSpace.fundamentalGroupHom_toMooreLoop, isOfFinOrder_inv_iff]
     exact Circle.not_isOfFinOrder_fromPath_expLoop
 
 end Circle

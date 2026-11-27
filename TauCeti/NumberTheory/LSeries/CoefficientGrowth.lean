@@ -15,7 +15,8 @@ Absolute convergence at `s` bounds the sum of the absolute values of the first `
 coefficients by `O(n ^ s.re)`, provided `s.re ≥ 0`. Together with Mathlib's
 `LSeriesSummable_of_sum_norm_bigO` (Xavier Roblot), this characterizes an upper bound
 on the abscissa of absolute convergence by average coefficient bounds with every
-slightly larger exponent. The sums start at one, so the unused coefficient at zero
+slightly larger exponent, and yields absolute convergence on `Re s > 1` from a real-cutoff
+Chebyshev bound `O(x)`. The sums start at one, so the unused coefficient at zero
 is unrestricted.
 -/
 
@@ -74,5 +75,16 @@ theorem abscissaOfAbsConv_le_iff_sum_norm_isBigO {f : ℕ → ℂ} {r : ℝ} (hr
     intro t ht
     obtain ⟨u, hru, hut⟩ := exists_between ht
     exact LSeriesSummable_of_sum_norm_bigO (h u hru) (hr.trans hru.le) (by simpa using hut)
+
+/-- Under the Chebyshev bound `∑_{1 ≤ n ≤ x} ‖f n‖ = O(x)`, the Dirichlet series of `f`
+converges at every `s` with `Re s > 1`. -/
+theorem LSeriesSummable_of_isBigO_sum_Icc_norm_id {f : ℕ → ℂ}
+    (hcheby : (fun x : ℝ ↦ ∑ n ∈ Icc 1 ⌊x⌋₊, ‖f n‖) =O[atTop] fun x ↦ x)
+    {s : ℂ} (hs : 1 < s.re) : LSeriesSummable f s := by
+  have hnat : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, ‖f k‖) =O[atTop]
+      fun n : ℕ ↦ (n : ℝ) ^ (1 : ℝ) := by
+    simpa only [Function.comp_def, Nat.floor_natCast, Real.rpow_one] using
+      hcheby.comp_tendsto tendsto_natCast_atTop_atTop
+  exact LSeriesSummable_of_sum_norm_bigO hnat zero_le_one hs
 
 end TauCeti.LSeries

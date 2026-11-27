@@ -54,7 +54,8 @@ the analytic counterpart of `TauCeti.orbitTorusTwistSign_sq_zero`.
 The covers along the circle factor need nothing new: the results for the operators periodic of
 period `ℓ` in `s` hold for every `ℓ ≠ 0`, in particular for `k ℓ`, so the statements here cover
 every cover whose deck group is spanned by `(k ℓ, 0)` and `(0, n T)`. The covers whose deck group is
-not spanned by translations along the two factors are not treated here.
+not spanned by translations along the two factors are treated in
+`TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.SkewCover` (`TauCeti.skewTorusOperator`).
 
 ## Main results
 
@@ -113,8 +114,9 @@ theorem im_inner_coverPullback_add_eq_zero {S : C(AddCircle T, F →L[ℝ] F)}
 
 /-- The pullback of a loop of complex-linear maps to the `n`-fold cover is a loop of
 complex-linear maps. -/
-theorem coverPullback_apply_I_smul {S : C(AddCircle T, F →L[ℝ] F)}
-    (hS : ∀ t v, S t (I • v) = I • S t v) (t : AddCircle ((n : ℝ) * T)) (v : F) :
+theorem coverPullback_apply_I_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {S : C(AddCircle T, E →L[ℝ] E)} (hS : ∀ t v, S t (I • v) = I • S t v)
+    (t : AddCircle ((n : ℝ) * T)) (v : E) :
     AddCircle.coverPullback n S t (I • v) = I • AddCircle.coverPullback n S t v := by
   rw [AddCircle.coverPullback_apply]
   exact hS _ v
@@ -174,7 +176,7 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_eq_sign
     (hℓ : ℓ ≠ 0) (hM : ContinuousOn M (uIcc a b))
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
     (hMa : ∀ t v, M a t (I • v) = I • M a t v)
-    {f : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℂ]
+    {f : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℂ]
       CircleSobolev 0 F × 𝕐[F]}
     (hf : f.restrictScalars ℝ =
       periodicTorusOperator ((n : ℝ) * T) ℓ (AddCircle.coverPullback n (M a)))
@@ -182,7 +184,7 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_eq_sign
     (hb : Function.Bijective
       (periodicTorusOperator ((n : ℝ) * T) ℓ (AddCircle.coverPullback n (M b))))
     {x : (periodicTorusOperator ((n : ℝ) * T) ℓ (AddCircle.coverPullback n (M b)) :
-      CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+      CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
         CircleSobolev 0 F × 𝕐[F]).detLine} (hx : x ≠ 0)
     (hxz : rayOfNeZero ℝ x hx =
       detLineOrientationTransport
@@ -196,7 +198,7 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_eq_sign
             (isFredholm_periodicTorusOperator _ hℓ _
               (im_inner_coverPullback_add_eq_zero n (hMs a left_mem_uIcc)))))) :
     SignType.sign ((periodicTorusOperator ((n : ℝ) * T) ℓ (AddCircle.coverPullback n (M b)) :
-        CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+        CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
           CircleSobolev 0 F × 𝕐[F]).detLineEquivOfBijective hb x) =
       SignType.sign
         (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F) ^ n)) := by
@@ -220,7 +222,7 @@ sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_coverPu
     (hℓ : ℓ ≠ 0) (hM : ContinuousOn M (uIcc a b))
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
     (hMa : ∀ t v, M a t (I • v) = I • M a t v)
-    {f : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℂ]
+    {f : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℂ]
       CircleSobolev 0 F × 𝕐[F]}
     (hf : f.restrictScalars ℝ = periodicTorusOperator ((n : ℝ) * T) ℓ
       (antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n (M a))))
@@ -229,7 +231,7 @@ sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_coverPu
       (antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n (M b)))))
     {x : (periodicTorusOperator ((n : ℝ) * T) ℓ
       (antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n (M b))) :
-      CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+      CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
         CircleSobolev 0 F × 𝕐[F]).detLine} (hx : x ≠ 0)
     (hxz : rayOfNeZero ℝ x hx =
       detLineOrientationTransport
@@ -248,7 +250,7 @@ sign_detLineEquivOfBijective_periodicTorusOperator_antiperiodicGaugeLoop_coverPu
                 (im_inner_coverPullback_add_eq_zero n (hMs a left_mem_uIcc))))))) :
     SignType.sign ((periodicTorusOperator ((n : ℝ) * T) ℓ
         (antiperiodicGaugeLoop ((n : ℝ) * T) (AddCircle.coverPullback n (M b))) :
-        CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+        CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
           CircleSobolev 0 F × 𝕐[F]).detLineEquivOfBijective hb x) =
       SignType.sign
         (LinearMap.det (1 + (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F) ^ n)) := by
@@ -273,7 +275,7 @@ sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_antiperiodicGau
     (hℓ : ℓ ≠ 0) (hM : ContinuousOn M (uIcc a b))
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
     (hMa : ∀ t v, M a t (I • v) = I • M a t v)
-    {f : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℂ]
+    {f : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℂ]
       CircleSobolev 0 F × 𝕐[F]}
     (hf : f.restrictScalars ℝ = periodicTorusOperator ((n : ℝ) * T) ℓ
       (AddCircle.coverPullback n (antiperiodicGaugeLoop T (M a))))
@@ -282,7 +284,7 @@ sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_antiperiodicGau
       (AddCircle.coverPullback n (antiperiodicGaugeLoop T (M b)))))
     {x : (periodicTorusOperator ((n : ℝ) * T) ℓ
       (AddCircle.coverPullback n (antiperiodicGaugeLoop T (M b))) :
-      CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+      CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
         CircleSobolev 0 F × 𝕐[F]).detLine} (hx : x ≠ 0)
     (hxz : rayOfNeZero ℝ x hx =
       detLineOrientationTransport
@@ -301,7 +303,7 @@ sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_antiperiodicGau
                 (im_inner_antiperiodicGaugeLoop_add_eq_zero T (hMs a left_mem_uIcc))))))) :
     SignType.sign ((periodicTorusOperator ((n : ℝ) * T) ℓ
         (AddCircle.coverPullback n (antiperiodicGaugeLoop T (M b))) :
-        CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+        CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
           CircleSobolev 0 F × 𝕐[F]).detLineEquivOfBijective hb x) =
       SignType.sign
         (LinearMap.det (1 - (-(↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F)) ^ n)) := by
@@ -323,7 +325,7 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_two_eq_
     (hℓ : ℓ ≠ 0) (hM : ContinuousOn M (uIcc a b))
     (hMs : ∀ τ ∈ uIcc a b, ∀ t v w, (inner ℂ (M τ t v) w).im + (inner ℂ v (M τ t w)).im = 0)
     (hMa : ∀ t v, M a t (I • v) = I • M a t v)
-    {f : CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℂ]
+    {f : CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℂ]
       CircleSobolev 0 F × 𝕐[F]}
     (hf : f.restrictScalars ℝ =
       periodicTorusOperator (((2 : ℕ) : ℝ) * T) ℓ (AddCircle.coverPullback 2 (M a)))
@@ -331,7 +333,7 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_two_eq_
     (hb : Function.Bijective
       (periodicTorusOperator (((2 : ℕ) : ℝ) * T) ℓ (AddCircle.coverPullback 2 (M b))))
     {x : (periodicTorusOperator (((2 : ℕ) : ℝ) * T) ℓ (AddCircle.coverPullback 2 (M b)) :
-      CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+      CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
         CircleSobolev 0 F × 𝕐[F]).detLine} (hx : x ≠ 0)
     (hxz : rayOfNeZero ℝ x hx =
       detLineOrientationTransport
@@ -346,7 +348,7 @@ theorem sign_detLineEquivOfBijective_periodicTorusOperator_coverPullback_two_eq_
             (isFredholm_periodicTorusOperator _ hℓ _
               (im_inner_coverPullback_add_eq_zero 2 (hMs a left_mem_uIcc)))))) :
     SignType.sign ((periodicTorusOperator (((2 : ℕ) : ℝ) * T) ℓ (AddCircle.coverPullback 2 (M b)) :
-        CircleSobolev 1 F × torusModeSobolev F (fun k : ℕ ↦ 2 * (k + 1) * π / ℓ) →ₗ[ℝ]
+        CircleSobolev 1 F × torusModeSobolev F (periodicModeFrequency ℓ) →ₗ[ℝ]
           CircleSobolev 0 F × 𝕐[F]).detLineEquivOfBijective hb x) =
       SignType.sign (LinearMap.det (1 - (↑(dysonSeriesLeft (fun t : ℝ ↦ M b t) T) : F →ₗ[ℝ] F))) *
         SignType.sign

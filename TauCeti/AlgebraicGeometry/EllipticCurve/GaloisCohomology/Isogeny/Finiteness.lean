@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.GaloisCohomology.Isogeny.D
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.TopologicallyFinitelyGenerated
 public import TauCeti.NumberTheory.LocalField.Generation.AbsoluteGaloisGroup
+public import TauCeti.NumberTheory.NumberField.LocalGlobal.FinitePadicExtension
 
 /-!
 # Finiteness of local isogeny cokernels
@@ -32,6 +33,9 @@ Galois group is topologically finitely generated.
   finitely generated.
 * `TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_module_finite_padic`: the local
   cokernel of any nonzero morphism over a finite extension of `ℚ_p` is finite.
+* `TauCeti.Isogeny.Hom.finite_H1_kerCoeff_adicCompletion`: over the completion of a number field
+  at a finite place, the first cohomology of the kernel of a nonzero morphism is finite.
+* `TauCeti.Isogeny.finite_H1_kerCoeff_adicCompletion`: the same for an isogeny, as an instance.
 
 ## References
 
@@ -103,6 +107,8 @@ end TauCeti.Isogeny
 
 namespace TauCeti.Isogeny.Hom
 
+section padic
+
 variable (p : ℕ) [Fact p.Prime] {K : Type} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Algebra ℚ_[p] K] [Module.Finite ℚ_[p] K]
   [ValuativeExtension ℚ_[p] K]
@@ -121,4 +127,42 @@ theorem finiteIndex_range_pointMapHom_of_module_finite_padic (hf : f ≠ 0) :
   exact f.finiteIndex_range_pointMapHom_of_isTopologicallyFinitelyGenerated hf
     (isTopologicallyFinitelyGenerated_absoluteGaloisGroup p K)
 
+end padic
+
+section adicCompletion
+
+open IsDedekindDomain NumberField
+
+variable {K : Type} [Field K] [NumberField K] (v : HeightOneSpectrum (𝓞 K))
+  {W₁ W₂ : WeierstrassCurve (v.adicCompletion K)} [W₁.IsElliptic] [W₂.IsElliptic]
+
+/-- Over the completion `K_v` of a number field at a finite place, the first cohomology of the
+geometric kernel of a nonzero morphism is finite: `K_v` is a finite extension of `ℚ_p`
+(`IsDedekindDomain.HeightOneSpectrum.finitePadicExtension`), so its absolute Galois group is
+topologically finitely generated. -/
+theorem finite_H1_kerCoeff_adicCompletion (f : Hom W₁.toAffine W₂.toAffine) (hf : f ≠ 0) :
+    Finite (H1 (AbsoluteGaloisGroup (v.adicCompletion K)) f.KerCoeff) := by
+  let := v.finitePadicExtension
+  exact f.finite_H1_kerCoeff_of_isTopologicallyFinitelyGenerated hf
+    (isTopologicallyFinitelyGenerated_absoluteGaloisGroup
+      (Rat.HeightOneSpectrum.primesEquiv (v.under (𝓞 ℚ))) (v.adicCompletion K))
+
+end adicCompletion
+
 end TauCeti.Isogeny.Hom
+
+namespace TauCeti.Isogeny
+
+open Hom (ofIsogeny)
+open scoped NumberField
+
+/-- **Finiteness of local cohomology over the completions of a number field**: over the
+completion of a number field at a finite place, `H¹` of the kernel of an isogeny is finite. -/
+instance finite_H1_kerCoeff_adicCompletion {K : Type} [Field K] [NumberField K]
+    (v : IsDedekindDomain.HeightOneSpectrum (𝓞 K))
+    {E₁ E₂ : WeierstrassCurve (v.adicCompletion K)} [E₁.IsElliptic] [E₂.IsElliptic]
+    (ψ : Isogeny E₁.toAffine E₂.toAffine) :
+    Finite (H1 (AbsoluteGaloisGroup (v.adicCompletion K)) (ofIsogeny ψ).KerCoeff) :=
+  (ofIsogeny ψ).finite_H1_kerCoeff_adicCompletion v (Hom.ofIsogeny_ne_zero ψ)
+
+end TauCeti.Isogeny

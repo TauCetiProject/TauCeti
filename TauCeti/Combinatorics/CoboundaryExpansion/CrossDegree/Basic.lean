@@ -30,9 +30,13 @@ combinatorial bounds and exact evaluations for these sums and their infima acros
 * **Degree-`3` mismatch baselines** (`Equiv.Perm.one_div_three_le_distErr_three_two`,
   `Equiv.Perm.one_div_four_le_distErr_three_of_four_le`,
   `Equiv.Perm.two_div_five_le_distErr_three_of_five_le`,
-  `Equiv.Perm.one_div_four_le_distErr_three_of_ne`, and
-  `Finset.card_div_four_le_sum_distErr_three_of_ne`): explicit lower bounds comparing permutations
-  in `Equiv.Perm (Fin 3)` against permutations of degree `2`, `m ≥ 4`, `m ≥ 5`, or any `m ≠ 3`.
+  `Equiv.Perm.one_div_four_le_distErr_three_of_ne`,
+  `Finset.card_div_four_le_sum_distErr_three_of_ne`,
+  `TauCeti.choose_two_div_three_le_sum_filter_lt_distErr_three_two`,
+  `TauCeti.choose_two_div_four_le_sum_filter_lt_distErr_three_of_ne`, and
+  `TauCeti.two_mul_div_three_lt_sum_filter_lt_distErr_three_of_ne`): explicit lower bounds comparing
+  permutations and complete-graph edge assignments in `Equiv.Perm (Fin 3)` against gauges of degree
+  `2`, `m ≥ 4`, `m ≥ 5`, or any `m ≠ 3`.
 * **Cross-degree gauge invariance for `n ≤ m`** (`Finset.ciInf_sum_distErr_inv_mul_mul_of_le`):
   transforming `α` by two-sided vertex-gauge multiplication `(γ u)⁻¹ * α u v * γ v` in degree `n`
   leaves the degree-`m` gauge-cost infimum unchanged whenever `n ≤ m`.
@@ -272,6 +276,46 @@ end Finset
 namespace TauCeti
 
 open Equiv Equiv.Perm
+
+/-! ### Complete-graph degree-`3` mismatch bounds -/
+
+/-- Comparing any degree-`3` edge assignment on `V` against a degree-`2` gauge incurs total
+distance with errors at least `(Fintype.card V).choose 2 / 3`. -/
+theorem choose_two_div_three_le_sum_filter_lt_distErr_three_two {V : Type*} [Fintype V]
+    [LinearOrder V] (α : V → V → Perm (Fin 3)) (β : V → Perm (Fin 2)) :
+    ((Fintype.card V).choose 2 : ℝ) / 3 ≤
+      ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
+        distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
+  set E : Finset (V × V) := {p : V × V | p.1 < p.2}
+  have hcard : #E = (Fintype.card V).choose 2 := Fintype.card_product_filter_lt
+  have h := E.card_nsmul_le_sum _ _ fun e _ =>
+    one_div_three_le_distErr_three_two (α e.1 e.2) (β e.1 * (β e.2)⁻¹)
+  simpa [hcard, nsmul_eq_mul, div_eq_mul_inv] using h
+
+/-- Comparing any degree-`3` edge assignment on `V` against a gauge of any unequal degree `m ≠ 3`
+incurs total distance with errors at least `(Fintype.card V).choose 2 / 4`. -/
+theorem choose_two_div_four_le_sum_filter_lt_distErr_three_of_ne {V : Type*} [Fintype V]
+    [LinearOrder V] {m : ℕ} (α : V → V → Perm (Fin 3)) (β : V → Perm (Fin m)) (hne : m ≠ 3) :
+    ((Fintype.card V).choose 2 : ℝ) / 4 ≤
+      ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
+        distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
+  set E : Finset (V × V) := {p : V × V | p.1 < p.2}
+  have hcard : #E = (Fintype.card V).choose 2 := Fintype.card_product_filter_lt
+  simpa [hcard] using E.card_div_four_le_sum_distErr_three_of_ne
+    (fun e => α e.1 e.2) (fun e => β e.1 * (β e.2)⁻¹) hne
+
+/-- Whenever `8 * r < 3 * (Fintype.card V).choose 2`, every unequal-degree gauge
+`β : V → Perm (Fin m)` (`m ≠ 3`) has cross-degree cost strictly exceeding `2 * r / 3` against any
+degree-`3` edge assignment `α`. -/
+theorem two_mul_div_three_lt_sum_filter_lt_distErr_three_of_ne {V : Type*} [Fintype V]
+    [LinearOrder V] {r m : ℕ} (α : V → V → Perm (Fin 3))
+    (hr : 8 * r < 3 * (Fintype.card V).choose 2) (β : V → Perm (Fin m)) (hm : m ≠ 3) :
+    2 * (r : ℝ) / 3 <
+      ∑ e ∈ ({p : V × V | p.1 < p.2} : Finset (V × V)),
+        distErr (α e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
+  refine lt_of_lt_of_le ?_ (choose_two_div_four_le_sum_filter_lt_distErr_three_of_ne α β hm)
+  have hr' : 8 * (r : ℝ) < 3 * ((Fintype.card V).choose 2 : ℝ) := by exact_mod_cast hr
+  linarith
 
 /-! ### Exact cross-degree optimization for the three-transposition configuration on `Fin 4` -/
 

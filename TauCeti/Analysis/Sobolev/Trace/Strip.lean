@@ -221,12 +221,8 @@ private theorem strip_energy_ofTestFunction
     have hφ := testFunctionLp_apply_ae (mu := volume) 2 φ
     simp only [Opens.coe_top, Measure.restrict_univ] at hφ
     exact ae_restrict_of_ae hφ
-  have hg : W1p.gradient v =ᵐ[volume.restrict (normalStrip (E := E) a b)] ∇ φ := by
-    apply (W1p.gradient_restrictL_ae le_top _).trans
-    rw [W1p.gradient_ofTestFunctionₗ]
-    have hφ := gradientTestFunctionLp_apply_ae (mu := volume) 2 φ
-    simp only [Opens.coe_top, Measure.restrict_univ] at hφ
-    exact ae_restrict_of_ae hφ
+  have hg : W1p.gradient v =ᵐ[volume.restrict (normalStrip (E := E) a b)] ∇ φ :=
+    W1p.gradient_restrictL_ofTestFunctionₗ_ae le_top φ
   have hi : IntegrableOn (fun x ↦ ‖φ x‖ ^ 2) (normalStrip (E := E) a b) volume := by
     refine ((Lp.memLp (W1p.value v)).integrable_norm_pow (by norm_num)).congr ?_
     filter_upwards [hv] with x hx

@@ -84,9 +84,6 @@ noncomputable abbrev regular [DirectSum.Decomposition 𝒜] [SetLike.GradedMul �
     GradedModuleCat.{uA} 𝒜 where
   carrier := A
   grading := InternalGrading.ofDecomposition 𝒜
-  gradedSMul := ⟨fun {_ _} _ _ ha hx ↦ by
-    rw [InternalGrading.ofDecomposition_piece] at hx ⊢
-    exact SetLike.GradedMul.mul_mem ha hx⟩
 
 /-- A morphism of graded `𝒜`-modules: an `A`-linear map of degree zero. -/
 structure Hom (M N : GradedModuleCat.{v} 𝒜) where
@@ -137,6 +134,16 @@ theorem hom_injective : Function.Injective (fun f : M ⟶ N ↦ f.hom) :=
 theorem map_mem (f : M ⟶ N) {p : ℤ} {x : M} (hx : x ∈ M.grading.piece p) :
     f.hom x ∈ N.grading.piece p := by
   simpa using f.isHomogeneous.map_mem hx
+
+/-- Along a surjective morphism of graded modules, every element of degree `p` has a preimage of
+degree `p`. -/
+theorem exists_mem_piece_of_surjective (f : M ⟶ N) (hf : Function.Surjective f.hom) (p : ℤ)
+    {y : N} (hy : y ∈ N.grading.piece p) :
+    ∃ x ∈ M.grading.piece p, f.hom x = y := by
+  obtain ⟨x, rfl⟩ := hf y
+  have h := f.isHomogeneous.map_decompose p x
+  rw [add_zero, _root_.DirectSum.decompose_of_mem_same N.grading.piece hy] at h
+  exact ⟨_, (_root_.DirectSum.decompose M.grading.piece x p).property, h⟩
 
 /-- A graded surjection preserves vanishing of a homogeneous piece. In particular, a quotient
 of a module concentrated in one degree is concentrated in that degree. -/

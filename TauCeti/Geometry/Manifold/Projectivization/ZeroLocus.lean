@@ -561,7 +561,7 @@ kernel of the differential of the chart equations
 theorem tangentRange_complexProjectiveZeroLocusEmbedding (hr : r ≠ 0)
     (z : s) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
     letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
-    (complexProjectiveZeroLocusEmbedding hp hV hs hrank r).tangentRange z hr =
+    (complexProjectiveZeroLocusEmbedding hp hV hs hrank r).isImmersion.tangentRange z hr =
       (mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
         (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z).ker :=
   letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
@@ -594,7 +594,8 @@ values (`TauCeti.complexProjectiveZeroLocusNormalSpaceEquiv_normalClass`). -/
 noncomputable def complexProjectiveZeroLocusNormalSpaceEquiv (hr : r ≠ 0)
     (z : s) (hi : (z : ℙ ℂ (Fin (n + 1) → ℂ)) ∈ affineOpen i) :
     letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
-    (complexProjectiveZeroLocusEmbedding hp hV hs hrank r).NormalSpace z hr ≃L[ℂ] (ι → ℂ) :=
+    (complexProjectiveZeroLocusEmbedding hp hV hs hrank r).isImmersion.NormalSpace z hr ≃L[ℂ]
+        (ι → ℂ) :=
   letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
   SmoothEmbedding.normalSpaceEquivOfLevel _ z hr
     (eventually_eval_dehomogenize_affineChart_eq_zero hp hs z hi)
@@ -610,7 +611,7 @@ theorem complexProjectiveZeroLocusNormalSpaceEquiv_normalClass (hr : r ≠ 0)
     (v : TangentSpace 𝓘(ℂ, Fin n → ℂ) (z : ℙ ℂ (Fin (n + 1) → ℂ))) :
     letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank
     complexProjectiveZeroLocusNormalSpaceEquiv hp hV hs hrank hr z hi
-        ((complexProjectiveZeroLocusEmbedding hp hV hs hrank r).normalClass z hr v) =
+        ((complexProjectiveZeroLocusEmbedding hp hV hs hrank r).isImmersion.normalClass z hr v) =
       mfderiv 𝓘(ℂ, Fin n → ℂ) 𝓘(ℂ, ι → ℂ)
         (fun w ↦ fun k ↦ eval (affineChart i w) (dehomogenize i (p k))) z v :=
   letI := complexProjectiveZeroLocusChartedSpace hp hV hs hrank

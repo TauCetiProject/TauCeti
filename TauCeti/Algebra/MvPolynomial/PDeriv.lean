@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
+public import Mathlib.Algebra.Polynomial.Derivative
 public import Mathlib.RingTheory.Ideal.Operations
 
+import Mathlib.Algebra.MvPolynomial.Funext
 import Mathlib.RingTheory.MvPowerSeries.Derivative
 import TauCeti.Algebra.MvPolynomial.Eval
 
@@ -19,13 +21,20 @@ with respect to `Y_j` obeys the chain rule
 
 `∂/∂Y_j (p(f)) = ∑ᵢ (∂p/∂Xᵢ)(f) · ∂fᵢ/∂Y_j`,
 
-where the sum runs over any finite set of indices containing the variables of `p`.
+where the sum runs over any finite set of indices containing the variables of `p`. The same rule
+holds for a substitution of univariate polynomials, with the derivative `d/dY` in place of
+`∂/∂Y_j`. Likewise a derivation `D` dual to a family `x` along the index `i`, that is, with
+`D xⱼ = 1` for `j = i` and `D xⱼ = 0` otherwise, acts on `p(x)` as the partial derivative `∂/∂Xᵢ`.
 
 Partial differentiation lowers the total degree, and the degree in the differentiated variable,
 by at least one, so the `k`-th iterated partial derivative along `Xᵢ` of a polynomial of degree
 less than `k` in `Xᵢ` vanishes; it also keeps the coefficients in any additive submonoid of the
 coefficient ring, such as a subring. These are the facts needed to clear the denominators of
 derivatives of polynomials evaluated at algebraic points.
+
+Over a `ℚ≥0`-algebra every partial derivative is surjective (`MvPolynomial.pderiv_surjective`):
+every polynomial has an antiderivative in each variable, as in the univariate case
+`Polynomial.derivative_surjective`.
 
 Over a commutative ring the gradient at a point `t` linearises a polynomial up to a divisibility
 or ideal-product error: if `xᵢ - tᵢ ∈ I`, `x'ᵢ - tᵢ ∈ I` and `x'ᵢ - xᵢ ∈ J`, then
@@ -41,14 +50,26 @@ partial derivatives and its constant coefficient (`MvPolynomial.pderiv.ext`, inh
 polynomial is constant, and two polynomials with equal partial derivatives differ by the constant
 difference of their constant coefficients.
 
+Over an infinite domain, a polynomial vanishing on the line through `a` in the direction of a
+coordinate axis has vanishing partial derivative along that axis at `a`: its restriction to the
+line is the zero polynomial, and the chain rule identifies the derivative of the restriction.
+Hence a polynomial vanishing on a submodule containing the `i`-th standard basis vector has all
+its iterated partial derivatives in `Xᵢ` vanishing there too.
+
 ## Main results
 
+* `MvPolynomial.pderiv_X_mul_of_ne`: multiplication by `Xᵢ` commutes with `∂/∂Xⱼ` for `j ≠ i`.
 * `MvPolynomial.pderiv_aeval`: the chain rule, summed over all variables of a finite type.
+* `MvPolynomial.derivative_aeval`: the chain rule for a substitution of univariate polynomials.
 * `MvPolynomial.pderiv_aeval_of_vars_subset`: the chain rule, summed over a finite set containing
   the variables of `p`.
+* `Derivation.map_aeval_eq_aeval_pderiv`: a derivation dual to `x` along the index `i` acts on
+  `p(x)` as the partial derivative `∂/∂Xᵢ`.
 * `MvPolynomial.vars_pderiv_subset`: partial differentiation introduces no new variables.
 * `MvPolynomial.hasFiniteSupport_pderiv`: only finitely many partial derivatives of a polynomial
   are nonzero.
+* `MvPolynomial.derivation_apply_eq_sum_vars`: every derivation `D` on `MvPolynomial σ R` satisfies
+  `D p = ∑ i ∈ p.vars, pderiv i p • D (X i)`.
 * `MvPolynomial.totalDegree_iterate_pderiv_le`: the `k`-th iterated partial derivative has total
   degree at most `totalDegree p - k`.
 * `MvPolynomial.degreeOf_iterate_pderiv_le`: the `k`-th iterated partial derivative along `Xᵢ` has
@@ -62,6 +83,8 @@ difference of their constant coefficients.
   monomial `a X^m` is `a mᵢ (mᵢ - 1) ⋯ (mᵢ - k + 1) X^(m - k eᵢ)`.
 * `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
+* `MvPolynomial.pderiv_surjective`: over a `ℚ≥0`-algebra every polynomial has an antiderivative
+  in each variable.
 * `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_mul`,
   `MvPolynomial.eval_sub_eval_sub_sum_pderiv_mem_sq`: Taylor's ideal-product estimate
   `p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ) ∈ I * J`, and its first-order specialisation modulo `I ^ 2`
@@ -77,6 +100,11 @@ difference of their constant coefficients.
   if it is constant.
 * `MvPolynomial.sub_eq_C_of_forall_pderiv_eq`: two polynomials with equal formal partial
   derivatives differ by the difference of their constant coefficients.
+* `MvPolynomial.eval_pderiv_eq_zero_of_forall_eval_add_smul_single`: over an infinite domain, a
+  polynomial vanishing on the line through `a` along `Xᵢ` has `∂p/∂Xᵢ` vanishing at `a`.
+* `MvPolynomial.eval_iterate_pderiv_eq_zero_of_forall_mem`: a polynomial vanishing on a submodule
+  containing the `i`-th standard basis vector has its iterated partial derivatives along `Xᵢ`
+  vanishing there.
 -/
 
 public section
@@ -86,6 +114,12 @@ namespace MvPolynomial
 section CommSemiring
 
 variable {R σ τ : Type*} [CommSemiring R]
+
+/-- Multiplication by a variable `Xᵢ` commutes with the partial derivative along another
+variable `Xⱼ`. -/
+theorem pderiv_X_mul_of_ne {i j : σ} (hij : i ≠ j) (p : MvPolynomial σ R) :
+    pderiv j (X i * p) = X i * pderiv j p := by
+  rw [Derivation.leibniz, pderiv_X_of_ne hij, smul_zero, add_zero, smul_eq_mul]
 
 /-- **The chain rule**: `∂/∂Y_j (p(f)) = ∑ᵢ (∂p/∂Xᵢ)(f) · ∂fᵢ/∂Y_j` for a substitution
 `Xᵢ ↦ fᵢ` of polynomials in the variables `Y`. -/
@@ -98,6 +132,20 @@ theorem pderiv_aeval [Fintype σ] (f : σ → MvPolynomial τ R) (j : τ) (p : M
   | mul_X p i hp =>
     simp [Derivation.leibniz, hp, add_mul, Finset.sum_add_distrib, Finset.mul_sum, Pi.single_apply,
       apply_ite, mul_assoc]
+
+/-- **The chain rule** for a substitution `Xᵢ ↦ fᵢ` of univariate polynomials:
+`(p(f))' = ∑ᵢ (∂p/∂Xᵢ)(f) · fᵢ'`. -/
+theorem derivative_aeval [Fintype σ] (f : σ → Polynomial R) (p : MvPolynomial σ R) :
+    Polynomial.derivative (aeval f p) =
+      ∑ i, aeval f (pderiv i p) * Polynomial.derivative (f i) := by
+  classical
+  induction p using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq => simp [hp, hq, add_mul, Finset.sum_add_distrib]
+  | mul_X p i hp =>
+    simp only [map_mul, aeval_X, Polynomial.derivative_mul, hp, Derivation.leibniz, pderiv_X,
+      smul_eq_mul, map_add, Pi.single_apply, add_mul, Finset.sum_add_distrib, Finset.sum_mul]
+    simp [mul_comm, mul_left_comm, add_comm]
 
 /-- **The chain rule** over an arbitrary type of variables:
 `∂/∂Y_j (p(f)) = ∑ᵢ (∂p/∂Xᵢ)(f) · ∂fᵢ/∂Y_j`, the sum running over any finite set `s` containing the
@@ -132,6 +180,20 @@ theorem hasFiniteSupport_pderiv {κ M : Type*} [Zero M] {e : κ → σ} (he : Fu
   refine (p.vars.finite_toSet.preimage he.injOn).subset fun k hk ↦ ?_
   by_contra h
   exact hk (by simp only [pderiv_eq_zero_of_notMem_vars h, hφ])
+
+/-- Every `R`-linear derivation `D` on `MvPolynomial σ R` (with `σ` possibly infinite) expands in
+the variables of `p`: `D p = ∑ i ∈ p.vars, pderiv i p • D (X i)`. -/
+theorem derivation_apply_eq_sum_vars {M : Type*} [AddCommMonoid M] [Module R M]
+    [Module (MvPolynomial σ R) M] [IsScalarTower R (MvPolynomial σ R) M]
+    (D : Derivation R (MvPolynomial σ R) M) (p : MvPolynomial σ R) :
+    D p = ∑ i ∈ p.vars, pderiv i p • D (X i) := by
+  classical
+  -- `q ↦ ∑ i ∈ p.vars, pderiv i q • D (X i)` is a derivation agreeing with `D` on `p.vars`
+  let D' : Derivation R (MvPolynomial σ R) M :=
+    ∑ i ∈ p.vars, (LinearMap.toSpanSingleton _ _ (D (X i))).compDer (pderiv i)
+  have hD' : ∀ q, D' q = ∑ i ∈ p.vars, pderiv i q • D (X i) := fun q ↦ by simp [D']
+  rw [← hD']
+  exact derivation_eq_of_forall_mem_vars fun j hj ↦ by simp [hD', pderiv_X, Pi.single_apply, hj]
 
 /-- Partial differentiation lowers the total degree by at least one. -/
 theorem totalDegree_pderiv_le (i : σ) (p : MvPolynomial σ R) :
@@ -257,6 +319,23 @@ theorem iterate_pderiv_prod_aeval_X [DecidableEq σ] {s : Finset σ} {i : σ} (h
   | zero => rfl
   | succ k ih =>
     simp [Function.iterate_succ_apply', ih, Derivation.leibniz, Derivation.map_aeval, hg, mul_comm]
+
+/-- Over a `ℚ≥0`-algebra every partial derivative `∂/∂Xᵢ` is surjective: the monomial `a X^s` is
+the partial derivative of `(s i + 1)⁻¹ a X^(s + eᵢ)`. -/
+theorem pderiv_surjective [Algebra ℚ≥0 R] (i : σ) : Function.Surjective (pderiv (R := R) i) := by
+  classical
+  intro p
+  induction p using MvPolynomial.induction_on' with
+  | add p q hp hq =>
+    obtain ⟨p', rfl⟩ := hp
+    obtain ⟨q', rfl⟩ := hq
+    exact ⟨p' + q', map_add _ _ _⟩
+  | monomial s a =>
+    refine ⟨monomial (s + Finsupp.single i 1) ((s i + 1 : ℚ≥0)⁻¹ • a), ?_⟩
+    -- Turn the factor `(s + eᵢ) i` from `pderiv_monomial` into a `ℚ≥0` scalar, which `simp`
+    -- then cancels against `(s i + 1)⁻¹`.
+    simp only [pderiv_monomial, ← nsmul_eq_mul', ← Nat.cast_smul_eq_nsmul ℚ≥0]
+    simp
 
 end CommSemiring
 
@@ -416,4 +495,66 @@ theorem sub_eq_C_of_forall_pderiv_eq {φ ψ : MvPolynomial σ R}
 
 end UniqueDiv
 
+section InfiniteDomain
+
+variable {R σ : Type*} [CommRing R] [IsDomain R] [Infinite R]
+
+/-- If a polynomial vanishes on the affine line through `a` in the direction of the `i`-th
+coordinate, then so does its partial derivative `∂p/∂Xᵢ` at `a`. -/
+theorem eval_pderiv_eq_zero_of_forall_eval_add_smul_single [DecidableEq σ]
+    {p : MvPolynomial σ R} {a : σ → R} {i : σ}
+    (h : ∀ t : R, eval (a + t • Pi.single i 1) p = 0) : eval a (pderiv i p) = 0 := by
+  -- Restrict `p` to the line `u ↦ a + u eᵢ`, as a polynomial in one variable `u`.
+  let f : σ → MvPolynomial Unit R := fun j ↦ C (a j) + C ((Pi.single i 1 : σ → R) j) * X ()
+  have heval (q : MvPolynomial σ R) (u : Unit → R) :
+      eval u (aeval f q) = eval (a + u () • Pi.single i 1) q := by
+    have hpt : (fun j ↦ eval u (f j)) = a + u () • Pi.single i 1 := by
+      funext j
+      simp [f, mul_comm]
+    rw [← hpt]
+    simpa only [aeval_eq_eval] using comp_aeval_apply (f := f) (aeval u) q
+  have hline : aeval f p = 0 := MvPolynomial.funext fun u ↦ by simp [heval, h]
+  have hderiv : pderiv () (aeval f p) = aeval f (pderiv i p) := by
+    rw [pderiv_aeval_of_vars_subset f () (Finset.subset_insert i p.vars),
+      Finset.sum_eq_single i (fun j _ hj ↦ by simp [f, hj]) (by simp)]
+    simp [f]
+  rw [hline, map_zero] at hderiv
+  have h0 := congrArg (eval fun _ ↦ 0) hderiv
+  rwa [heval, map_zero, zero_smul, add_zero, eq_comm] at h0
+
+/-- If a polynomial vanishes on a submodule `W` containing the `i`-th standard basis vector, then
+so do all its iterated partial derivatives `∂ᵏp/∂Xᵢᵏ`. -/
+theorem eval_iterate_pderiv_eq_zero_of_forall_mem [DecidableEq σ]
+    {W : Submodule R (σ → R)} {i : σ} (hi : Pi.single i 1 ∈ W) {p : MvPolynomial σ R}
+    (hp : ∀ w ∈ W, eval w p = 0) (k : ℕ) : ∀ w ∈ W, eval w ((pderiv i)^[k] p) = 0 := by
+  induction k with
+  | zero => exact hp
+  | succ k ih =>
+    intro w hw
+    rw [Function.iterate_succ_apply']
+    exact eval_pderiv_eq_zero_of_forall_eval_add_smul_single fun t ↦
+      ih _ (W.add_mem hw (W.smul_mem t hi))
+
+end InfiniteDomain
+
 end MvPolynomial
+
+namespace Derivation
+
+open MvPolynomial
+
+variable {k R σ : Type*} [CommSemiring k] [CommSemiring R] [Algebra k R] [DecidableEq σ]
+
+/-- **A derivation dual to a family of elements acts as a partial derivative.** If
+`D (x j) = 1` for `j = i` and `D (x j) = 0` otherwise, then `D (p(x)) = (∂p/∂Xᵢ)(x)` for every
+polynomial `p`. -/
+theorem map_aeval_eq_aeval_pderiv (D : Derivation k R R) {x : σ → R} {i : σ}
+    (hx : ∀ j, D (x j) = if i = j then 1 else 0) (p : MvPolynomial σ k) :
+    D (aeval x p) = aeval x (pderiv i p) := by
+  induction p using MvPolynomial.induction_on with
+  | C c => simp
+  | add p q hp hq => simp [hp, hq]
+  | mul_X p j hp =>
+    by_cases h : i = j <;> simp [leibniz, hp, hx, h, mul_comm, add_comm]
+
+end Derivation
