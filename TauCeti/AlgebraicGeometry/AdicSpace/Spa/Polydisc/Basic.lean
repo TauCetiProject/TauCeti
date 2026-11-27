@@ -668,7 +668,7 @@ theorem eq_classicalPoint_zero (x : spa (powerBoundedSubring K)) (v : closedPoly
 
 /-- In dimension `0`, `closedPolydisc 0 K` has at most one point (indeed exactly one whenever
 `Spa (K, K°)` is nonempty). -/
-theorem subsingleton_closedPolydisc_zero : Subsingleton (closedPolydisc 0 K) where
+instance subsingleton_closedPolydisc_zero : Subsingleton (closedPolydisc 0 K) where
   allEq v w := by
     let x : spa (powerBoundedSubring K) := ⟨_, comap_weightedC_mem_spa v⟩
     rw [eq_classicalPoint_zero x v, eq_classicalPoint_zero x w]
