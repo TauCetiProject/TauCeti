@@ -16,6 +16,7 @@ import TauCeti.Analysis.Sobolev.Trace.Epigraph.AdmissibleBoundaryPart
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.W1p.BoundaryPart.Localization
 import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.Function.Lp.Basic
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
@@ -440,13 +441,6 @@ theorem W1p.mem_w1pVanishingOnSubmodule_iff_frontierTrace_ae_eq_zero_of_isAdmiss
     ((isOpen_normalCylinder a b).preimage e.continuous).mem_nhds hxC,
     fun ψ hψ M hM hψM hgM hs => W1p.contDiffSMul_mem_w1pVanishingOnSubmodule_of_isBoundaryPartChart
       hp hΩ hb hc hφ hB hψ hM hψM hgM hs hu⟩
-
-/-- Two `Lᵖ` functions agree almost everywhere on `s` exactly when their difference vanishes
-almost everywhere on `s`. -/
-private theorem Lp.coeFn_sub_ae_eq_zero_iff {α G : Type*} [MeasurableSpace α]
-    [NormedAddCommGroup G] {μ : Measure α} {q : ℝ≥0∞} {s : Set α} (a b : Lp G q μ) :
-    ⇑(a - b) =ᵐ[μ.restrict s] 0 ↔ ⇑a =ᵐ[μ.restrict s] ⇑b :=
-  (EventuallyEq.congr_left (ae_restrict_of_ae (Lp.coeFn_sub a b))).trans eventuallyEq_iff_sub.symm
 
 /-- **The Dirichlet condition on an admissible boundary part.** On a bounded Lipschitz domain, for
 an admissible boundary part `Γ` and `1 ≤ p < ∞`, `u - g ∈ W^{1,p}_Γ(Ω)` holds exactly when the
