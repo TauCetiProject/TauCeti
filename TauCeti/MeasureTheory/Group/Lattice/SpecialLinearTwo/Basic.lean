@@ -39,6 +39,8 @@ imaginary part `y` or at most `1 / y`, because `Im (γ • z) = Im z / |c z + d|
 
 ## Main results
 
+* `Matrix.SpecialLinearGroup.instCountableRangeMapIntCast`: the image of `SL(2, ℤ)` in
+  `SL(2, ℝ)` is countable.
 * `Matrix.SpecialLinearGroup.instIsMulRightInvariantSL2R`: `SL(2, ℝ)` is unimodular.
 * `Subgroup.isLattice_of_forall_exists_smul_mem`: a discrete subgroup of `SL(2, ℝ)` whose orbits
   on `ℍ` all meet a set of finite area is a lattice.
@@ -88,12 +90,16 @@ private theorem forall_exists_smul_mem_fd :
   obtain ⟨g, hg⟩ := ModularGroup.exists_smul_mem_fd z
   exact ⟨map (Int.castRingHom ℝ) g, ⟨g, rfl⟩, by simpa using hg⟩
 
+/-- The image of `SL(2, ℤ)` in `SL(2, ℝ)` is countable, as a discrete subgroup of a second
+countable group. -/
+instance instCountableRangeMapIntCast :
+    Countable (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range :=
+  countable_of_Lindelof_of_discrete
+
 /-- **`SL(2, ℝ)` is unimodular.** Its Haar measure is right invariant: `SL(2, ℤ)` acting by left
 multiplication has a fundamental domain of finite measure, which forces the modular character to
 be trivial. -/
 instance instIsMulRightInvariantSL2R : (volume : Measure SL(2, ℝ)).IsMulRightInvariant := by
-  have : Countable (map (Int.castRingHom ℝ) : SL(2, ℤ) →* SL(2, ℝ)).range :=
-    countable_of_Lindelof_of_discrete
   obtain ⟨D, -, hD, hDF⟩ :=
     Subgroup.exists_isFundamentalDomain_volume_le_of_forall_exists_smul_mem
       forall_exists_smul_mem_fd
