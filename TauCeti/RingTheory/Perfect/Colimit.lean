@@ -85,6 +85,15 @@ def of : A →+* ColimitPerfection A p hA :=
 theorem mk_zero_eq_of : mk A p hA 0 = of A p hA :=
   (rfl)
 
+/-- `mk A p hA n` is the map from the `n`-th stage of the iterate colimit of `powRingHom A p hA`. -/
+theorem mk_eq_iterateColimit_mk (n : ℕ) :
+    mk A p hA n = RingHom.IterateColimit.mk (powRingHom A p hA) n :=
+  (rfl)
+
+/-- `of A p hA` is the canonical map to the iterate colimit of `powRingHom A p hA`. -/
+theorem of_eq_iterateColimit_of : of A p hA = RingHom.IterateColimit.of (powRingHom A p hA) :=
+  RingHom.IterateColimit.mk_zero _
+
 variable {A p hA}
 
 /-- Every element of the colimit perfection is the image of some `x` in some copy of `A`. -/
@@ -225,6 +234,13 @@ variable (hA) in
 in the `n`-th copy of `A` to the class of `g x` in the `n`-th copy of `B`. -/
 def map (hB : (p : B) = 0) (g : A →+* B) : ColimitPerfection A p hA →+* ColimitPerfection B p hB :=
   RingHom.IterateColimit.map _ _ g fun x ↦ by rw [powRingHom_apply, powRingHom_apply, map_pow]
+
+/-- The map induced by `g` is the map of iterate colimits induced by `g`, which commutes with the
+`p`-th power maps. -/
+theorem map_eq_iterateColimit_map (hB : (p : B) = 0) (g : A →+* B) :
+    map hA hB g = RingHom.IterateColimit.map (powRingHom A p hA) (powRingHom B p hB) g
+      fun x ↦ by rw [powRingHom_apply, powRingHom_apply, map_pow] :=
+  (rfl)
 
 @[simp]
 theorem map_mk (hB : (p : B) = 0) (g : A →+* B) (n : ℕ) (x : A) :

@@ -20,8 +20,8 @@ Two elements of one stage agree in the colimit exactly when they agree after app
 `φ` (`RingHom.IterateColimit.mk_eq_mk_iff`). A map `g : R →+* S` intertwining `φ` with an
 endomorphism `ψ` of `S` induces a ring map of colimits (`RingHom.IterateColimit.map`). It is
 injective exactly when every pair of elements of `R` identified by `g` after some power of `ψ`
-is identified by some power of `φ`, and surjective exactly when some power of `ψ` carries every
-element of `S` into the image of `g`.
+is identified by some power of `φ`, and surjective exactly when every element of `S` is carried
+into the image of `g` by some power of `ψ`, which may depend on the element.
 
 For the `p`-th power map of a ring in which `p` vanishes this colimit is the perfection
 (`TauCeti.ColimitPerfection`, compare `PerfectClosure`); for the Witt vector Frobenius `F` of
@@ -278,7 +278,7 @@ theorem map_injective_iff (g : R →+* S) (hg : Function.Semiconj g φ ψ) :
     exact mk_eq_mk_iff.2 (h x y hzw)
 
 /-- **Surjectivity of the induced map of colimits.** The map induced by `g` is surjective exactly
-when some power of `ψ` carries each element of `S` into the image of `g`. -/
+when each element of `S` is carried into the image of `g` by some power of `ψ` depending on it. -/
 theorem map_surjective_iff (g : R →+* S) (hg : Function.Semiconj g φ ψ) :
     Function.Surjective (map φ ψ g hg) ↔ ∀ y, ∃ k x, ψ^[k] y = g x := by
   refine ⟨fun h y ↦ ?_, fun h z ↦ ?_⟩

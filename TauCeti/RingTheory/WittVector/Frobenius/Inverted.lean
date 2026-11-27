@@ -15,11 +15,12 @@ public import TauCeti.RingTheory.WittVector.Ideal
 
 For a commutative ring `A`, the ring `W(A)[1/F]` of *Frobenius-inverted Witt vectors* is the
 colimit of `W(A) → W(A) → ⋯` along the Witt vector Frobenius `F`
-(`WittVector.FrobeniusInverted p A`, an instance of `RingHom.IterateColimit`). It is the ring of
-sections over an affine open of the sheaf `W(𝒪_X)[1/F]` of a scheme `X` of characteristic `p`,
-whose cohomology is the Frobenius-inverted Witt vector cohomology of Bhatt and Scholze. A ring map
-`f : A →+* B` induces `W(f)[1/F]` (`WittVector.FrobeniusInverted.map`), and `F` acts on
-`W(A)[1/F]` as the automorphism `RingHom.IterateColimit.ringEquiv`.
+(`TauCeti.WittVector.FrobeniusInverted p A`, an instance of `RingHom.IterateColimit`). It is the
+ring of sections over an affine open of the sheaf `W(𝒪_X)[1/F]` of a scheme `X` of
+characteristic `p`, whose cohomology is the Frobenius-inverted Witt vector cohomology of Bhatt and
+Scholze. A ring map `f : A →+* B` induces `W(f)[1/F]`
+(`TauCeti.WittVector.FrobeniusInverted.map`), and `F` acts on `W(A)[1/F]` as the automorphism
+`RingHom.IterateColimit.ringEquiv`.
 
 In characteristic `p` the Frobenius raises every Witt coordinate to its `p`-th power. Inverting it
 therefore forgets exactly the nil phenomena of bounded exponent:
@@ -43,24 +44,25 @@ a nil ideal of unbounded exponent is one, yet its `W(f)[1/F]` is not injective. 
 
 ## Main definitions
 
-* `WittVector.FrobeniusInverted p A`: the ring `W(A)[1/F]`.
-* `WittVector.FrobeniusInverted.map f`: the ring map `W(A)[1/F] → W(B)[1/F]` induced by `f`.
+* `TauCeti.WittVector.FrobeniusInverted p A`: the ring `W(A)[1/F]`.
+* `TauCeti.WittVector.FrobeniusInverted.map f`: the ring map `W(A)[1/F] → W(B)[1/F]` induced
+  by `f`.
 
 ## Main results
 
-* `WittVector.FrobeniusInverted.of_eq_zero_iff_coeff_pow`: a Witt vector vanishes in
+* `TauCeti.WittVector.FrobeniusInverted.of_eq_zero_iff_coeff_pow`: a Witt vector vanishes in
   `W(A)[1/F]` iff one power `p ^ k` kills all of its coordinates.
-* `WittVector.FrobeniusInverted.of_bijective_iff_perfectRing`: `W(A) → W(A)[1/F]` is bijective
-  iff `A` is perfect.
-* `WittVector.FrobeniusInverted.map_injective_iff`,
-  `WittVector.FrobeniusInverted.map_surjective_iff`,
-  `WittVector.FrobeniusInverted.map_bijective_iff`: the criteria above.
-* `WittVector.FrobeniusInverted.map_bijective_of_isNilpotent`: inverting `F` does not see a
-  nilpotent ideal.
-* `WittVector.FrobeniusInverted.map_bijective_of_comp_eq_pow`: `W(f)[1/F]` is bijective if `f`
-  has an inverse up to the `p ^ N`-th power map.
-* `WittVector.FrobeniusInverted.isLocalization_away_natCast`: inverting `p` in `W(A)[1/F]`
-  inverts `p` in `W(A)`.
+* `TauCeti.WittVector.FrobeniusInverted.of_bijective_iff_perfectRing`: `W(A) → W(A)[1/F]` is
+  bijective iff `A` is perfect.
+* `TauCeti.WittVector.FrobeniusInverted.map_injective_iff`,
+  `TauCeti.WittVector.FrobeniusInverted.map_surjective_iff`,
+  `TauCeti.WittVector.FrobeniusInverted.map_bijective_iff`: the criteria above.
+* `TauCeti.WittVector.FrobeniusInverted.map_bijective_of_isNilpotent`: inverting `F` does not see
+  a nilpotent ideal.
+* `TauCeti.WittVector.FrobeniusInverted.map_bijective_of_comp_eq_pow`: `W(f)[1/F]` is bijective
+  if `f` has an inverse up to the `p ^ N`-th power map.
+* `TauCeti.WittVector.FrobeniusInverted.isLocalization_away_natCast`: inverting `p` in
+  `W(A)[1/F]` inverts `p` in `W(A)`.
 
 ## References
 
@@ -72,11 +74,13 @@ a nil ideal of unbounded exponent is one, yet its `W(f)[1/F]` is not injective. 
 
 public noncomputable section
 
-namespace WittVector
+namespace TauCeti.WittVector
+
+open _root_.WittVector
 
 variable (p : ℕ) [hp : Fact p.Prime] (A : Type*) [CommRing A]
 
-local notation "𝕎" => WittVector p
+local notation "𝕎" => _root_.WittVector p
 
 /-- The ring `W(A)[1/F]` of *Frobenius-inverted Witt vectors*: the colimit of
 `W(A) → W(A) → ⋯` along the Witt vector Frobenius `F`. -/
@@ -95,6 +99,12 @@ variable {p A} {B C : Type*} [CommRing B] [CommRing C]
 def map (f : A →+* B) : FrobeniusInverted p A →+* FrobeniusInverted p B :=
   RingHom.IterateColimit.map frobenius frobenius (WittVector.map (p := p) f)
     fun x ↦ map_frobenius f x
+
+/-- `W(f)[1/F]` is the map of iterate colimits induced by `W(f)`, which commutes with `F`. -/
+theorem map_eq_iterateColimit_map (f : A →+* B) :
+    map (p := p) f = RingHom.IterateColimit.map frobenius frobenius (WittVector.map f)
+      fun x ↦ map_frobenius f x :=
+  (rfl)
 
 @[simp]
 theorem map_mk (f : A →+* B) (n : ℕ) (x : 𝕎 A) :
@@ -284,4 +294,4 @@ theorem isLocalization_away_natCast [CharP A p] (L : Type*) [CommRing L]
 
 end FrobeniusInverted
 
-end WittVector
+end TauCeti.WittVector
