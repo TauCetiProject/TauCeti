@@ -118,14 +118,16 @@ example : distInt (-0.2) = 0.2 := by
 example : nearIntegerCount (fun x ↦ x / 3) 0 6 0.1 = 3 := by
   have h₁ : ⌈(0 : ℝ)⌉ = 0 := by norm_num
   have h₂ : ⌊(0 : ℝ) + 6⌋ = 6 := by norm_num
-  rw [nearIntegerCount_def, h₁, h₂, show Icc (0 : ℤ) 6 = {0, 1, 2, 3, 4, 5, 6} by decide]
+  have h₃ : Icc (0 : ℤ) 6 = {0, 1, 2, 3, 4, 5, 6} := by decide
+  rw [nearIntegerCount_def, h₁, h₂, h₃]
   norm_num [filter_insert, filter_singleton, distInt_def]
 
 /-- The count is strict: `‖1/3‖ = ‖2/3‖ = 1/3` is not counted for `δ = 1/3`. -/
 example : nearIntegerCount (fun x ↦ x / 3) 1 1 (1 / 3) = 0 := by
   have h₁ : ⌈(1 : ℝ)⌉ = 1 := by norm_num
   have h₂ : ⌊(1 : ℝ) + 1⌋ = 2 := by norm_num
-  rw [nearIntegerCount_def, h₁, h₂, show Icc (1 : ℤ) 2 = {1, 2} by decide]
+  have h₃ : Icc (1 : ℤ) 2 = {1, 2} := by decide
+  rw [nearIntegerCount_def, h₁, h₂, h₃]
   norm_num [filter_insert, distInt_def]
 
 /-- Length zero: `[3, 3]` contains the integer `3`, and `‖1‖ = 0 < 0.1`. -/
