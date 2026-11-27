@@ -31,33 +31,56 @@ namespace TauCeti.ElectricalNetwork
 variable {V : Type*} [Fintype V] (N : ElectricalNetwork V) {f : V → ℝ} {x y : V}
 
 /-- A potential is harmonic at a vertex when its net current there is zero. -/
-def IsHarmonicAt (f : V → ℝ) (x : V) : Prop :=
+def HarmonicAt (f : V → ℝ) (x : V) : Prop :=
   ∑ y, N.cond x y * (f y - f x) = 0
 
 /-- The zero-current equation at a harmonic vertex. -/
-theorem isHarmonicAt_def : N.IsHarmonicAt f x ↔ ∑ y, N.cond x y * (f y - f x) = 0 := Iff.rfl
+theorem harmonicAt_def : N.HarmonicAt f x ↔ ∑ y, N.cond x y * (f y - f x) = 0 := Iff.rfl
 
 /-- Harmonicity in terms of the conductance-weighted sum of the potential. -/
-theorem isHarmonicAt_iff : N.IsHarmonicAt f x ↔ ∑ y, N.cond x y * f y = N.weight x * f x := by
-  simp [IsHarmonicAt, mul_sub, Finset.sum_sub_distrib, N.weight_def, Finset.sum_mul, sub_eq_zero]
+theorem harmonicAt_iff : N.HarmonicAt f x ↔ ∑ y, N.cond x y * f y = N.weight x * f x := by
+  simp [HarmonicAt, mul_sub, Finset.sum_sub_distrib, N.weight_def, Finset.sum_mul, sub_eq_zero]
 
 /-- Every constant potential is harmonic. -/
-@[simp] theorem isHarmonicAt_const (c : ℝ) (x : V) : N.IsHarmonicAt (fun _ => c) x := by
-  simp [IsHarmonicAt]
+@[simp] theorem harmonicAt_const (c : ℝ) (x : V) : N.HarmonicAt (fun _ => c) x := by
+  simp [HarmonicAt]
 
 /-- Every potential is harmonic at a vertex of weight zero. -/
-theorem isHarmonicAt_of_weight_eq_zero (hx : N.weight x = 0) : N.IsHarmonicAt f x := by
-  simp [IsHarmonicAt, N.weight_eq_zero_iff.mp hx]
+theorem harmonicAt_of_weight_eq_zero (hx : N.weight x = 0) : N.HarmonicAt f x := by
+  simp [HarmonicAt, N.weight_eq_zero_iff.mp hx]
 
 variable {N}
 
 /-- Negating a potential preserves harmonicity. -/
-theorem IsHarmonicAt.neg (hf : N.IsHarmonicAt f x) : N.IsHarmonicAt (-f) x := by
-  simpa [isHarmonicAt_iff, Finset.sum_neg_distrib] using hf
+theorem HarmonicAt.neg (hf : N.HarmonicAt f x) : N.HarmonicAt (-f) x := by
+  simpa [harmonicAt_iff, Finset.sum_neg_distrib] using hf
+
+/-- The sum of two potentials harmonic at a vertex is harmonic there. -/
+theorem HarmonicAt.add {g : V → ℝ} (hf : N.HarmonicAt f x) (hg : N.HarmonicAt g x) :
+    N.HarmonicAt (f + g) x := by
+  rw [harmonicAt_iff] at hf hg ⊢
+  simp only [Pi.add_apply, mul_add, Finset.sum_add_distrib, hf, hg]
+
+/-- The difference of two potentials harmonic at a vertex is harmonic there. -/
+theorem HarmonicAt.sub {g : V → ℝ} (hf : N.HarmonicAt f x) (hg : N.HarmonicAt g x) :
+    N.HarmonicAt (f - g) x := by
+  simpa only [sub_eq_add_neg] using hf.add hg.neg
+
+/-- A scalar multiple of a harmonic potential is harmonic. -/
+theorem HarmonicAt.const_smul (hf : N.HarmonicAt f x) (c : ℝ) : N.HarmonicAt (c • f) x := by
+  rw [harmonicAt_iff] at hf ⊢
+  simp only [Pi.smul_apply, smul_eq_mul]
+  simp_rw [mul_left_comm _ c]
+  rw [← Finset.mul_sum, hf]
+
+/-- Adding a constant to a harmonic potential preserves harmonicity. -/
+theorem HarmonicAt.add_const (hf : N.HarmonicAt f x) (c : ℝ) :
+    N.HarmonicAt (fun y => f y + c) x :=
+  hf.add (N.harmonicAt_const c x)
 
 /-- At a harmonic vertex where no neighbour has a larger value, all neighbours have the same
 value as the vertex. -/
-theorem IsHarmonicAt.eq_of_adj_of_forall_le (hf : N.IsHarmonicAt f x)
+theorem HarmonicAt.eq_of_adj_of_forall_le (hf : N.HarmonicAt f x)
     (hmax : ∀ z, N.graph.Adj x z → f z ≤ f x) (hxy : N.graph.Adj x y) : f y = f x := by
   have hterm (z : V) : N.cond x z * (f z - f x) ≤ 0 := by
     rcases eq_or_ne x z with rfl | hxz
@@ -73,8 +96,8 @@ variable (N)
 
 /-- **Maximum principle.** If each component meets the boundary and a potential is harmonic
 off the boundary, every vertex value is bounded above by a boundary value. -/
-theorem exists_mem_le_of_isHarmonicAt {B : Set V} (hB : ∀ v, ∃ b ∈ B, N.graph.Reachable v b)
-    (hf : ∀ v ∉ B, N.IsHarmonicAt f v) (x : V) : ∃ b ∈ B, f x ≤ f b := by
+theorem exists_mem_le_of_harmonicAt {B : Set V} (hB : ∀ v, ∃ b ∈ B, N.graph.Reachable v b)
+    (hf : ∀ v ∉ B, N.HarmonicAt f v) (x : V) : ∃ b ∈ B, f x ≤ f b := by
   let : Nonempty V := ⟨x⟩
   obtain ⟨m, hm⟩ := Finite.exists_max f
   obtain ⟨b, hb, ⟨p⟩⟩ := hB m

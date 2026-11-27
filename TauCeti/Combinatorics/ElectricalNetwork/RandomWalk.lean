@@ -114,11 +114,11 @@ theorem walk_apply_of_weight_eq_zero {x : V} (hx : N.weight x = 0) :
 
 /-- A potential is harmonic at a vertex exactly when it equals its mean after one step of the
 walk. At a vertex of weight zero the walk stays put, so this also holds there. -/
-theorem isHarmonicAt_iff_integral_walk {f : V → ℝ} {x : V} :
-    N.IsHarmonicAt f x ↔ ∫ y, f y ∂N.walk x = f x := by
+theorem harmonicAt_iff_integral_walk {f : V → ℝ} {x : V} :
+    N.HarmonicAt f x ↔ ∫ y, f y ∂N.walk x = f x := by
   rcases (N.weight_nonneg x).eq_or_lt with hx | hx
-  · simp [N.walk_apply_of_weight_eq_zero hx.symm, N.isHarmonicAt_of_weight_eq_zero hx.symm]
-  rw [N.isHarmonicAt_iff, integral_fintype (Integrable.of_finite (f := f))]
+  · simp [N.walk_apply_of_weight_eq_zero hx.symm, N.harmonicAt_of_weight_eq_zero hx.symm]
+  rw [N.harmonicAt_iff, integral_fintype (Integrable.of_finite (f := f))]
   simp_rw [smul_eq_mul, measureReal_def, N.toReal_walk_apply_singleton hx, div_mul_eq_mul_div]
   rw [← Finset.sum_div, div_eq_iff hx.ne', mul_comm (f x)]
 

@@ -39,25 +39,25 @@ private noncomputable def dirichletSystem (N : ElectricalNetwork V) (B : Set V) 
 variable (N : ElectricalNetwork V)
 
 private theorem dirichletSystem_eq_indicator_iff (B : Set V) (f φ : V → ℝ) :
-    dirichletSystem N B f = B.indicator φ ↔ Set.EqOn f φ B ∧ ∀ x ∉ B, N.IsHarmonicAt f x := by
+    dirichletSystem N B f = B.indicator φ ↔ Set.EqOn f φ B ∧ ∀ x ∉ B, N.HarmonicAt f x := by
   classical
   have row (x : V) : dirichletSystem N B f x = B.indicator φ x ↔
-      (x ∈ B → f x = φ x) ∧ (x ∉ B → N.IsHarmonicAt f x) := by
-    by_cases hx : x ∈ B <;> simp [dirichletSystem, hx, LinearMap.sum_apply, isHarmonicAt_def]
+      (x ∈ B → f x = φ x) ∧ (x ∉ B → N.HarmonicAt f x) := by
+    by_cases hx : x ∈ B <;> simp [dirichletSystem, hx, LinearMap.sum_apply, harmonicAt_def]
   simp [funext_iff, row, forall_and, Set.EqOn]
 
 /-- **The Dirichlet problem.** If every vertex can reach the boundary, any prescribed boundary
 values extend uniquely to a potential harmonic off the boundary. In particular this applies to
 every nonempty boundary in a connected network. -/
-theorem existsUnique_isHarmonicAt {B : Set V} (hB : ∀ v, ∃ b ∈ B, N.graph.Reachable v b)
-    (φ : V → ℝ) : ∃! f : V → ℝ, Set.EqOn f φ B ∧ ∀ x ∉ B, N.IsHarmonicAt f x := by
+theorem existsUnique_harmonicAt {B : Set V} (hB : ∀ v, ∃ b ∈ B, N.graph.Reachable v b)
+    (φ : V → ℝ) : ∃! f : V → ℝ, Set.EqOn f φ B ∧ ∀ x ∉ B, N.HarmonicAt f x := by
   have hinj : Function.Injective (dirichletSystem N B) := by
     apply LinearMap.ker_eq_bot.mp
     refine LinearMap.ker_eq_bot'.mpr fun f hf => ?_
     obtain ⟨hb, hi⟩ := (dirichletSystem_eq_indicator_iff N B f 0).mp (by simpa using hf)
     funext x
-    obtain ⟨b, hbB, hupper⟩ := N.exists_mem_le_of_isHarmonicAt hB hi x
-    obtain ⟨c, hcB, hlower⟩ := N.exists_mem_le_of_isHarmonicAt hB (fun v hv => (hi v hv).neg) x
+    obtain ⟨b, hbB, hupper⟩ := N.exists_mem_le_of_harmonicAt hB hi x
+    obtain ⟨c, hcB, hlower⟩ := N.exists_mem_le_of_harmonicAt hB (fun v hv => (hi v hv).neg) x
     exact le_antisymm (hupper.trans_eq (hb hbB)) (by simpa [hb hcB] using hlower)
   have hbij : Function.Bijective (dirichletSystem N B) :=
     ⟨hinj, LinearMap.surjective_of_injective hinj⟩
