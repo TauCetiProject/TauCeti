@@ -8,7 +8,10 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousMultilinearMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
+import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
 # The induced connection on a bundle of continuous multilinear maps
@@ -26,6 +29,8 @@ which determines the induced connection on differentiable sections
 `CovariantDerivative.continuousMultilinearMap_eq_of_apply`). Changing the connections on `V` and
 `W` changes it by their difference tensors
 (`CovariantDerivative.continuousMultilinearMap_apply_sub_continuousMultilinearMap_apply`).
+Smooth connections induce a smooth connection
+(`CovariantDerivative.contMDiff_continuousMultilinearMap`).
 
 For `ι = Fin j` and `V = TM` this is the connection on `j`-fold covariant tensors with values in
 `W`, so that iterated covariant derivatives `∇ʲσ` of a section `σ` of `W` live in one bundle
@@ -57,6 +62,8 @@ private theorem apply_update_apply {M ι : Type*} [DecidableEq ι] {V : M → Ty
     (σ : ι → Π x : M, V x) (i : ι) (τ : Π x : M, V x) (y : M) :
     (fun j ↦ Function.update σ i τ j y) = Function.update (fun j ↦ σ j y) i (τ y) :=
   funext fun j ↦ Function.apply_update (fun _ s ↦ s y) σ i τ j
+
+section General
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
@@ -320,5 +327,70 @@ theorem continuousMultilinearMap_apply_sub_continuousMultilinearMap_apply
   abel
 
 end Difference
+
+end General
+
+section Smooth
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
+  [ContMDiffVectorBundle ∞ F V I]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)]
+  [∀ x, TopologicalSpace (W x)] [∀ x, IsTopologicalAddGroup (W x)]
+  [∀ x, ContinuousSMul ℝ (W x)] [FiberBundle G W] [VectorBundle ℝ G W]
+  [ContMDiffVectorBundle ∞ G W I]
+  {ι : Type*} [Fintype ι] [DecidableEq ι]
+  (covV : CovariantDerivative I F V) (covW : CovariantDerivative I G W)
+  [ContMDiffCovariantDerivative covV ∞] [ContMDiffCovariantDerivative covW ∞]
+
+/-- The covariant derivative of a smooth section of the bundle of continuous multilinear maps is
+a smooth section of `Hom(TM, ContinuousMultilinearMap (V^ι) W)`. Smoothness of the original
+connections suffices. -/
+theorem contMDiff_continuousMultilinearMap
+    {A : Π x : M, ContinuousMultilinearMap ℝ (fun _ : ι ↦ V x) (W x)}
+    (hA : ContMDiff I (I.prod 𝓘(ℝ, ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) G)) ∞
+      (fun x ↦ TotalSpace.mk' (ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) G)
+        (E := fun y ↦ ContinuousMultilinearMap ℝ (fun _ : ι ↦ V y) (W y)) x (A x))) :
+    ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) G)) ∞
+      (fun x ↦ TotalSpace.mk' (E →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) G)
+        (E := fun y ↦ TangentSpace I y →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : ι ↦ V y) (W y))
+        x (covV.continuousMultilinearMap covW A x)) := by
+  apply (TauCeti.Manifold.contMDiff_hom_iff _).2
+  intro X hX
+  apply (TauCeti.Manifold.contMDiff_continuousMultilinearMap_iff _).2
+  intro s hs
+  have hW := covW.contMDiff_apply hX (by simpa using hA.continuousMultilinearMap_bundle_apply hs)
+  have hV (i : ι) := covV.contMDiff_apply hX (by simpa using hs i)
+  -- Each term `A(s₁, …, ∇_X sᵢ, …, sₖ)` of the evaluation rule is smooth.
+  have hterm (i : ι) : ContMDiff I (I.prod 𝓘(ℝ, G)) ∞ (fun x ↦ TotalSpace.mk' G x
+      (A x (Function.update (fun j ↦ s j x) i (covV (s i) x (X x))))) := by
+    have hupd (j : ι) : CMDiff ∞ (T% (Function.update s i (fun x ↦ covV (s i) x (X x)) j)) := by
+      rcases eq_or_ne j i with rfl | hji
+      · simpa using hV j
+      · simpa [hji] using hs j
+    simpa only [apply_update_apply] using hA.continuousMultilinearMap_bundle_apply hupd
+  have hsum := ContMDiff.sum_section (s := Finset.univ)
+    (t := fun i x ↦ A x (Function.update (fun j ↦ s j x) i (covV (s i) x (X x))))
+    fun i _ ↦ hterm i
+  refine (hW.sub_section hsum).congr fun x ↦ ?_
+  exact congrArg (TotalSpace.mk' G x) (continuousMultilinearMap_apply covV covW
+    (hA.mdifferentiableAt (by simp)) (fun i ↦ (hs i).mdifferentiableAt (by simp)) (X x))
+
+/-- Smooth connections induce a smooth connection on the bundle of continuous multilinear
+maps. -/
+instance : ContMDiffCovariantDerivative (covV.continuousMultilinearMap covW (ι := ι)) ∞ where
+  contMDiff.contMDiff {A} hA := by
+    rw [contMDiffOn_univ] at hA ⊢
+    exact contMDiff_continuousMultilinearMap covV covW (by simpa using hA)
+
+end Smooth
 
 end CovariantDerivative

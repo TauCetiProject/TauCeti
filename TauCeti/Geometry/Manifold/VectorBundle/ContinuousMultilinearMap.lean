@@ -10,6 +10,10 @@ public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import TauCeti.Topology.VectorBundle.ContinuousMultilinearMap
 public import TauCeti.Geometry.Manifold.ContMDiff.ContinuousMultilinearMap
 public import TauCeti.Geometry.Manifold.MFDeriv.ContinuousMultilinearMap
+import Mathlib.Analysis.Normed.Module.Multilinear.Basic
+import Mathlib.Geometry.Manifold.Algebra.Monoid
+import Mathlib.LinearAlgebra.Multilinear.Basis
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # The smooth vector bundle of continuous multilinear maps
@@ -32,7 +36,11 @@ Applying a `C^n` section of this bundle to `C^n` sections of `E₁` gives a `C^n
 (`MDifferentiableAt.continuousMultilinearMap_bundle_apply`). Versions over two different base
 maps, with the regularity of the family of multilinear maps read in coordinates, are
 `ContMDiffAt.continuousMultilinearMap_apply_of_inCoordinates` and
-`MDifferentiableAt.continuousMultilinearMap_apply_of_inCoordinates`.
+`MDifferentiableAt.continuousMultilinearMap_apply_of_inCoordinates`. Conversely, over a
+finite-dimensional real manifold and for `E₁` of finite rank, a section of this bundle is smooth
+as soon as it is smooth when applied to smooth sections
+(`TauCeti.Manifold.contMDiff_continuousMultilinearMap_iff`), as for the bundle of continuous
+linear maps (`TauCeti.Manifold.contMDiff_hom_iff`).
 
 ## Implementation notes
 
@@ -443,3 +451,86 @@ theorem MDifferentiable.continuousMultilinearMap_bundle_apply
   fun x ↦ (hϕ x).continuousMultilinearMap_bundle_apply fun i ↦ hv i x
 
 end BundleApply
+
+/-! ### Testing smoothness on smooth sections -/
+
+open scoped ContDiff
+
+namespace TauCeti.Manifold
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V I]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module ℝ (W x)] [∀ x, TopologicalSpace (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)]
+  [FiberBundle G W] [VectorBundle ℝ G W]
+  {ι : Type*} [Fintype ι]
+
+/-- A section of the bundle of continuous multilinear maps, with finite-rank source bundle, is
+smooth exactly when its values on every family of globally smooth sections form a smooth
+section. The target fibres need not be finite-dimensional. This is the multilinear analogue of
+`TauCeti.Manifold.contMDiff_hom_iff`. -/
+theorem contMDiff_continuousMultilinearMap_iff
+    (A : Π x : M, ContinuousMultilinearMap ℝ (fun _ : ι ↦ V x) (W x)) :
+    ContMDiff I (I.prod 𝓘(ℝ, ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) G)) ∞
+        (fun x ↦ TotalSpace.mk' (ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) G)
+          (E := fun y ↦ ContinuousMultilinearMap ℝ (fun _ : ι ↦ V y) (W y)) x (A x)) ↔
+      ∀ s : ι → Π x : M, V x, (∀ i, CMDiff ∞ (T% (s i))) →
+        ContMDiff I (I.prod 𝓘(ℝ, G)) ∞ (fun x ↦ TotalSpace.mk' G x (A x (fun i ↦ s i x))) := by
+  refine ⟨fun hA s hs ↦ hA.continuousMultilinearMap_bundle_apply hs, fun hA x₀ ↦ ?_⟩
+  classical
+  let b := Module.Basis.ofVectorSpace ℝ F
+  have := FiniteDimensional.fintypeBasisIndex b
+  -- Globally smooth sections agreeing with the local frame of `e` near `x₀`.
+  obtain ⟨s, hs, hse⟩ := (trivializationAt F V x₀).exists_contMDiff_eventuallyEq_localFrame
+    (I := I) (n := ∞) b le_rfl (mem_baseSet_trivializationAt F V x₀)
+  -- A multilinear map on the model fibre is determined by its values on tuples of basis
+  -- vectors, through the products `P J` of the coordinate functionals.
+  let P (J : ι → _) : ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) ℝ :=
+    (ContinuousMultilinearMap.mkPiAlgebra ℝ ι ℝ).compContinuousLinearMap
+      fun i ↦ LinearMap.toContinuousLinearMap (b.coord (J i))
+  have hrec (φ : ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) G) :
+      ∑ J, (P J).smulRight (φ fun i ↦ b (J i)) = φ := by
+    refine ContinuousMultilinearMap.toMultilinearMap_injective <|
+      Module.Basis.ext_multilinear (fun _ ↦ b) fun K ↦ ?_
+    simp only [ContinuousMultilinearMap.coe_coe, sum_apply,
+      ContinuousMultilinearMap.smulRight_apply, P,
+      ContinuousMultilinearMap.compContinuousLinearMap_apply,
+      ContinuousMultilinearMap.mkPiAlgebra_apply, LinearMap.coe_toContinuousLinearMap',
+      Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_apply]
+    rw [Finset.sum_eq_single K]
+    · simp
+    · intro J _ hJK
+      obtain ⟨i, hi⟩ := Function.ne_iff.1 hJK
+      rw [Finset.prod_eq_zero (Finset.mem_univ i) (by simp [Ne.symm hi]), zero_smul]
+    · simp
+  rw [contMDiffAt_continuousMultilinearMap_bundle]
+  refine ⟨contMDiffAt_id, ?_⟩
+  -- The coordinates of the evaluations on the frame are smooth near `x₀`.
+  have hJ (J : ι → _) :
+      ContMDiffAt I 𝓘(ℝ, G) ∞
+        (fun y ↦ (trivializationAt G W x₀ ⟨y, A y (fun i ↦ s (J i) y)⟩).2) x₀ :=
+    (contMDiffAt_section_iff x₀).1 (hA (fun i ↦ s (J i)) (fun i ↦ hs (J i)) x₀)
+  have hsum : ContMDiffAt I 𝓘(ℝ, ContinuousMultilinearMap ℝ (fun _ : ι ↦ F) G) ∞
+      (fun y ↦ ∑ J, (P J).smulRight
+        ((trivializationAt G W x₀ ⟨y, A y (fun i ↦ s (J i) y)⟩).2)) x₀ :=
+    contMDiffAt_finsetSum fun J _ ↦
+      (ContinuousMultilinearMap.smulRightL ℝ (fun _ : ι ↦ F) G (P J)).contDiff.comp_contMDiffAt
+        (hJ J)
+  refine hsum.congr_of_eventuallyEq ?_
+  filter_upwards [Filter.eventually_all.2 hse,
+    (trivializationAt F V x₀).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F V x₀),
+    (trivializationAt G W x₀).open_baseSet.mem_nhds (mem_baseSet_trivializationAt G W x₀)]
+    with y hy hye hye'
+  rw [← hrec (inCoordinates F G x₀ y x₀ y (A y))]
+  refine Finset.sum_congr rfl fun J _ ↦ ?_
+  simp only [ContinuousMultilinearMap.inCoordinates_apply, symmL_basis_eq_localFrame b hye, ← hy,
+    Trivialization.continuousLinearMapAt_apply_of_mem ℝ _ hye']
+
+end TauCeti.Manifold
