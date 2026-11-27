@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.LocalCoefficient.Covering
 public import TauCeti.AlgebraicTopology.Singular.Transfer.Basic
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Basic
+public import TauCeti.AlgebraicTopology.Singular.Twisted.Relative
 
 /-!
 # Singular chains of a covering space as twisted chains of its base
@@ -44,6 +45,15 @@ coefficient systems between the permutation local system and the constant system
 
 These descriptions do not need the covering to be regular, so they describe the transfer of an
 arbitrary finite covering through its permutation local system.
+
+The comparison passes to pairs. For `A ⊆ B`, a simplex of `E` lies in `p⁻¹ A` exactly when its
+image in `B` lies in `A`, so the comparison and its inverse carry the chains of `p⁻¹ A` and the
+twisted chains of `A` into each other. Hence the relative singular chain complex of
+`(E, p⁻¹ A)` is isomorphic to the relative chain complex of `(B, A)` twisted by the permutation
+local system (`IsCoveringMap.singularPairChainComplexPermutationIso`), compatibly with the quotient
+maps from absolute chains, and the same holds for relative homology
+(`IsCoveringMap.singularPairHomologyPermutationIso`,
+`IsCoveringMap.singularHomologyπ_comp_singularPairHomologyPermutationIso_hom`).
 
 ## References
 
@@ -462,5 +472,193 @@ theorem permutationLocalSystemSection_comp_singularHomologyPermutationIso_inv (k
     (hp.homologyMap_comp_singularHomologyPermutationIso_hom_of_section R s hs k).symm)
 
 end Section
+
+section Pair
+
+variable (A : Set B)
+
+/-- The comparison of singular chains of `E` with twisted chains of `B` carries the chains of
+`p⁻¹ A` into the twisted chains of `A`: followed by the quotient onto the relative twisted chains
+of `(B, A)`, it vanishes on the chains of `p⁻¹ A`. -/
+private theorem chainComplexMap_comp_singularChainComplexPermutationIso_hom_comp_eq_zero :
+    SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (p ⁻¹' A)).map)
+        (ModuleCat.of R R) ≫ (hp.singularChainComplexPermutationIso R).hom ≫
+          (TopPair.ofSubset A).twistedChainComplexπ (hp.permutationLocalSystem R) = 0 := by
+  refine HomologicalComplex.hom_ext _ _ fun k ↦ SSet.chainComplex_hom_ext fun τ ↦ ?_
+  -- The simplex `p ∘ τ` of `B` takes its values in `A`, since `τ` takes its values in `p⁻¹ A`.
+  have hτ : Set.range (simplexMap ((TopCat.toSSet.map p).app _
+      ((TopCat.toSSet.map (TopPair.ofSubset (p ⁻¹' A)).map).app _ τ))) ⊆
+        Set.range (TopPair.ofSubset A).map := by
+    rintro _ ⟨z, rfl⟩
+    exact ⟨⟨_, (simplexMap τ z).property⟩, rfl⟩
+  have h0 := (TopPair.ofSubset A).ιTwistedChainComplex_twistedChainComplexπ_f_of_range_subset
+    (hp.permutationLocalSystem R) _ hτ
+  -- The ambient space of the pair `(B, A)` is `B` only after unfolding, so the components of the
+  -- composite are assembled by terms rather than by rewriting.
+  exact (SSet.ι_chainComplexMap_f_assoc _ _ _ _ _ _).trans <|
+    (ιChainComplex_singularChainComplexPermutationIso_hom_f_assoc hp R _ _).trans <|
+      ((congrArg (_ ≫ ·) h0).trans comp_zero).trans comp_zero.symm
+
+/-- The inverse comparison of twisted chains of `B` with singular chains of `E` sends the summand
+of a simplex of `B` with values in `A` to chains of `p⁻¹ A`: followed by the quotient onto the
+relative chains of `(E, p⁻¹ A)`, it vanishes on that summand. -/
+private theorem ιTwistedChainComplex_singularChainComplexPermutationIso_inv_f_comp_eq_zero {k : ℕ}
+    (σ : (TopCat.toSSet.obj B) _⦋k⦌) (hσ : Set.range (simplexMap σ) ⊆ A) :
+    ιTwistedChainComplex (hp.permutationLocalSystem R) k σ ≫
+        (hp.singularChainComplexPermutationIso R).inv.f k ≫
+          ((TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ (ModuleCat.of R R)).f k = 0 := by
+  refine hp.permutationLocalSystem_hom_ext R fun e ↦ ?_
+  -- The sheet `e` lifts `σ` to a simplex `τ` of `E`, which takes its values in `p⁻¹ A`.
+  let τ := (liftSimplex hp σ e).val
+  have hτ : (TopCat.toSSet.map p).app _ τ = σ := (liftSimplex hp σ e).property
+  have hsub : Set.range (TopCat.toSSetObjEquiv E _ τ) ⊆
+      Set.range (TopPair.ofSubset (p ⁻¹' A)).map := by
+    rintro _ ⟨z, rfl⟩
+    have h := congrArg (fun s ↦ simplexMap s ⟨z⟩) hτ
+    simp only [simplexMap_app] at h
+    exact ⟨⟨_, Set.mem_preimage.2 (h ▸ hσ ⟨_, rfl⟩)⟩, rfl⟩
+  have h0 : (TopCat.toSSet.obj E).ιChainComplex τ ≫
+      ((TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ (ModuleCat.of R R)).f k = 0 :=
+    (TopPair.ofSubset (p ⁻¹' A)).ιChainComplex_comp_singularChainComplexπ_eq_zero
+      (ModuleCat.of R R) τ hsub
+  have h1 : hp.permutationLocalSystemSingle R _ (initialSheet τ) ≫
+      ιTwistedChainComplex (hp.permutationLocalSystem R) k ((TopCat.toSSet.map p).app _ τ) =
+        hp.permutationLocalSystemSingle R _ e ≫
+          ιTwistedChainComplex (hp.permutationLocalSystem R) k σ :=
+    single_initialSheet_ιTwistedChainComplex hp R hτ (simplexMap_liftSimplex hp σ e)
+  have h2 := single_ιTwistedChainComplex_singularChainComplexPermutationIso_inv_f_assoc hp R τ
+    (((TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ (ModuleCat.of R R)).f k)
+  rw [h0, ← Category.assoc, h1, Category.assoc] at h2
+  exact h2.trans comp_zero.symm
+
+/-- The inverse comparison of twisted chains of `B` with singular chains of `E` carries the twisted
+chains of `A` into the chains of `p⁻¹ A`: followed by the quotient onto the relative chains of
+`(E, p⁻¹ A)`, it vanishes on the twisted chains of `A`. -/
+private theorem twistedChainComplexMap_comp_singularChainComplexPermutationIso_inv_comp_eq_zero :
+    twistedChainComplexMap (TopPair.ofSubset A).map (hp.permutationLocalSystem R) ≫
+        (hp.singularChainComplexPermutationIso R).inv ≫
+          (TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ (ModuleCat.of R R) = 0 := by
+  refine HomologicalComplex.hom_ext _ _ fun k ↦ twistedChainComplex_hom_ext _ fun σ ↦ ?_
+  have hσ : Set.range (simplexMap ((TopCat.toSSet.map (TopPair.ofSubset A).map).app _ σ)) ⊆ A :=
+    by rintro _ ⟨z, rfl⟩; exact (simplexMap σ z).property
+  exact (ιTwistedChainComplex_twistedChainComplexMap_f_assoc (TopPair.ofSubset A).map
+    (hp.permutationLocalSystem R) k σ ((hp.singularChainComplexPermutationIso R).inv.f k ≫
+      ((TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ (ModuleCat.of R R)).f k)).trans <|
+    (ιTwistedChainComplex_singularChainComplexPermutationIso_inv_f_comp_eq_zero hp R A _ hσ).trans
+      -- The two zero maps start at the fibre of the pullback system at `σ` and at the fibre of the
+      -- permutation system at the image vertex, which agree only definitionally.
+      (by simp; rfl)
+
+/-- The relative comparison of chains, as a map out of the cokernel presenting the relative singular
+chains of `(E, p⁻¹ A)`. -/
+private def singularPairChainComplexPermutationHom :
+    (TopPair.ofSubset (p ⁻¹' A)).singularChainComplex (ModuleCat.of R R) ⟶
+      (TopPair.ofSubset A).twistedChainComplex (hp.permutationLocalSystem R) :=
+  Cofork.IsColimit.desc (TopPair.isColimitCokernelCoforkSingularChainComplex _ _)
+    ((hp.singularChainComplexPermutationIso R).hom ≫
+      (TopPair.ofSubset A).twistedChainComplexπ (hp.permutationLocalSystem R))
+    ((chainComplexMap_comp_singularChainComplexPermutationIso_hom_comp_eq_zero hp R A).trans
+      zero_comp.symm)
+
+/-- The relative comparison of chains is induced by the absolute comparison. -/
+private theorem singularChainComplexπ_comp_singularPairChainComplexPermutationHom :
+    (TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ (ModuleCat.of R R) ≫
+        singularPairChainComplexPermutationHom hp R A =
+      (hp.singularChainComplexPermutationIso R).hom ≫
+        (TopPair.ofSubset A).twistedChainComplexπ (hp.permutationLocalSystem R) :=
+  Cofork.IsColimit.π_desc' (TopPair.isColimitCokernelCoforkSingularChainComplex _
+    (ModuleCat.of R R)) _ _
+
+/-- **Relative singular chains of a covering space as relative twisted chains of its base**: for
+a covering map `p : E ⟶ B` and a subset `A ⊆ B`, the relative singular chain complex of
+`(E, p⁻¹ A)` with coefficients in `R` is isomorphic to the relative chain complex of `(B, A)`
+twisted by the permutation local system of `p`. It is induced by the absolute comparison
+`IsCoveringMap.singularChainComplexPermutationIso`. -/
+def singularPairChainComplexPermutationIso :
+    (TopPair.ofSubset (p ⁻¹' A)).singularChainComplex (ModuleCat.of R R) ≅
+      (TopPair.ofSubset A).twistedChainComplex (hp.permutationLocalSystem R) where
+  hom := singularPairChainComplexPermutationHom hp R A
+  inv := (TopPair.ofSubset A).twistedChainComplexDesc _
+    ((hp.singularChainComplexPermutationIso R).inv ≫
+      (TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ (ModuleCat.of R R))
+    (twistedChainComplexMap_comp_singularChainComplexPermutationIso_inv_comp_eq_zero hp R A)
+  -- The ambient space of the pair `(B, A)` is `B` only after unfolding, so the quotient maps and
+  -- the absolute comparison are composed by terms rather than by rewriting.
+  hom_inv_id := (cancel_epi ((TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ _)).1 <|
+    (Category.assoc _ _ _).symm.trans <|
+      (congrArg (· ≫ _)
+        (singularChainComplexπ_comp_singularPairChainComplexPermutationHom hp R A)).trans <|
+        (Category.assoc _ _ _).trans <|
+          (congrArg (_ ≫ ·) ((TopPair.ofSubset A).twistedChainComplexπ_comp_twistedChainComplexDesc
+            (hp.permutationLocalSystem R) _ _)).trans <|
+            (Iso.hom_inv_id_assoc _ _).trans (Category.comp_id _).symm
+  inv_hom_id := (cancel_epi ((TopPair.ofSubset A).twistedChainComplexπ _)).1 <|
+    (Category.assoc _ _ _).symm.trans <|
+      (congrArg (· ≫ _) ((TopPair.ofSubset A).twistedChainComplexπ_comp_twistedChainComplexDesc
+        (hp.permutationLocalSystem R) _ _)).trans <|
+        (Category.assoc _ _ _).trans <|
+          (congrArg (_ ≫ ·)
+            (singularChainComplexπ_comp_singularPairChainComplexPermutationHom hp R A)).trans <|
+            (Iso.inv_hom_id_assoc _ _).trans (Category.comp_id _).symm
+
+/-- The relative comparison is induced by the absolute one: it commutes with the quotient maps
+from absolute to relative chains. -/
+@[reassoc (attr := simp)]
+theorem singularChainComplexπ_comp_singularPairChainComplexPermutationIso_hom :
+    (TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ (ModuleCat.of R R) ≫
+        (hp.singularPairChainComplexPermutationIso R A).hom =
+      (hp.singularChainComplexPermutationIso R).hom ≫
+        (TopPair.ofSubset A).twistedChainComplexπ (hp.permutationLocalSystem R) :=
+  singularChainComplexπ_comp_singularPairChainComplexPermutationHom hp R A
+
+/-- The inverse relative comparison is induced by the absolute one: it commutes with the quotient
+maps from absolute to relative chains. -/
+@[reassoc (attr := simp)]
+theorem twistedChainComplexπ_comp_singularPairChainComplexPermutationIso_inv :
+    (TopPair.ofSubset A).twistedChainComplexπ (hp.permutationLocalSystem R) ≫
+        (hp.singularPairChainComplexPermutationIso R A).inv =
+      (hp.singularChainComplexPermutationIso R).inv ≫
+        (TopPair.ofSubset (p ⁻¹' A)).singularChainComplexπ (ModuleCat.of R R) :=
+  (TopPair.ofSubset A).twistedChainComplexπ_comp_twistedChainComplexDesc _ _ _
+
+/-- **Relative singular homology of a covering space as relative twisted homology of its base**:
+for a covering map `p : E ⟶ B` and a subset `A ⊆ B`, the relative singular homology of
+`(E, p⁻¹ A)` with coefficients in `R` is isomorphic to the homology of `(B, A)` with coefficients
+in the permutation local system of `p`. -/
+def singularPairHomologyPermutationIso (k : ℕ) :
+    (TopPair.ofSubset (p ⁻¹' A)).singularHomology (ModuleCat.of R R) k ≅
+      (TopPair.ofSubset A).twistedHomology (hp.permutationLocalSystem R) k :=
+  (HomologicalComplex.homologyFunctor _ _ k).mapIso (hp.singularPairChainComplexPermutationIso R A)
+
+/-- The relative comparison of homology is induced by the relative comparison of chain complexes. -/
+lemma singularPairHomologyPermutationIso_hom (k : ℕ) :
+    (hp.singularPairHomologyPermutationIso R A k).hom =
+      HomologicalComplex.homologyMap (hp.singularPairChainComplexPermutationIso R A).hom k :=
+  (rfl)
+
+/-- The inverse relative comparison of homology is induced by the inverse relative comparison of
+chain complexes. -/
+lemma singularPairHomologyPermutationIso_inv (k : ℕ) :
+    (hp.singularPairHomologyPermutationIso R A k).inv =
+      HomologicalComplex.homologyMap (hp.singularPairChainComplexPermutationIso R A).inv k :=
+  (rfl)
+
+/-- The relative comparison on homology commutes with the maps from absolute to relative
+homology: under the absolute and relative comparisons, the quotient map
+`H(E; R) ⟶ H(E, p⁻¹ A; R)` is the quotient map `H(B; ℤ[p⁻¹]) ⟶ H(B, A; ℤ[p⁻¹])`. -/
+@[reassoc]
+theorem singularHomologyπ_comp_singularPairHomologyPermutationIso_hom (k : ℕ) :
+    (TopPair.ofSubset (p ⁻¹' A)).singularHomologyπ (ModuleCat.of R R) k ≫
+        (hp.singularPairHomologyPermutationIso R A k).hom =
+      (hp.singularHomologyPermutationIso R k).hom ≫
+        (TopPair.ofSubset A).twistedHomologyπ (hp.permutationLocalSystem R) k := by
+  rw [singularPairHomologyPermutationIso_hom, singularHomologyPermutationIso_hom]
+  -- Both sides are maps induced on homology by composites of chain maps.
+  exact (HomologicalComplex.homologyMap_comp _ _ k).symm.trans
+    ((congrArg (HomologicalComplex.homologyMap · k)
+      (hp.singularChainComplexπ_comp_singularPairChainComplexPermutationIso_hom R A)).trans
+        (HomologicalComplex.homologyMap_comp _ _ k))
+
+end Pair
 
 end IsCoveringMap
