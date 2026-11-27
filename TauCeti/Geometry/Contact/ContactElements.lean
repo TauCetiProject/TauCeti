@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Coorientation
 public import TauCeti.Geometry.Contact.Transition
 public import TauCeti.Geometry.Manifold.Instances.AddCircle.Cover
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Analysis.Normed.Operator.Prod
 import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
@@ -21,7 +22,9 @@ A *contact element* of the plane at a point `q ∈ ℝ²` is a line through the 
 plane `T_q ℝ² = ℝ²`. These lines are parametrized by `ℝ / πℤ`, a model of the real projective line:
 the class `θ` of `τ ∈ ℝ` gives the line `ℓ_θ` perpendicular to `(cos τ, sin τ)`
 (`TauCeti.contactElementLine`), which does not change when `τ` is replaced by `τ + π`, and distinct
-classes give distinct lines (`TauCeti.contactElementLine_injective`). The space of contact elements
+classes give distinct lines (`TauCeti.contactElementLine_injective`). A nonzero covector of `ℝ²`
+vanishing on a contact element has that line as its kernel
+(`TauCeti.contactElementLine_eq_ker_of_le`). The space of contact elements
 is the three-manifold `ℝ² × ℝP¹ = ℝ² × AddCircle π`, and it carries the hyperplane field `ξ` of
 tangent vectors whose `ℝ²`-component lies in the contact element at their base point
 (`TauCeti.contactElementDistribution`):
@@ -259,6 +262,31 @@ theorem contactElementLine_injective : Injective contactElementLine := by
   refine (QuotientAddGroup.eq (s := AddSubgroup.zmultiples π)).2 ⟨k, ?_⟩
   simp only [zsmul_eq_mul, hk]
   ring
+
+/-- A nonzero covector of `ℝ²` vanishing on the contact element of angle class `θ` has kernel
+exactly that contact element. -/
+theorem contactElementLine_eq_ker_of_le {θ : AddCircle π} {P : (ℝ × ℝ) →L[ℝ] ℝ}
+    (hP : P ≠ 0) (h : contactElementLine θ ≤ LinearMap.ker (P : (ℝ × ℝ) →ₗ[ℝ] ℝ)) :
+    contactElementLine θ = LinearMap.ker (P : (ℝ × ℝ) →ₗ[ℝ] ℝ) := by
+  induction θ using QuotientAddGroup.induction_on with | H τ => ?_
+  refine le_antisymm h fun ⟨a, b⟩ hu ↦ ?_
+  rw [ContinuousLinearMap.mk_mem_ker_iff] at hu
+  rw [mem_contactElementLine_coe]
+  -- `P` vanishes on the direction `(-sin τ, cos τ)` of the line, so it is `k (cos τ, sin τ)`.
+  have h₀ : -sin τ * P (1, 0) + cos τ * P (0, 1) = 0 := by
+    have hmem : ((-sin τ, cos τ) : ℝ × ℝ) ∈ contactElementLine (τ : AddCircle π) := by
+      rw [mem_contactElementLine_coe]
+      ring
+    exact ContinuousLinearMap.mk_mem_ker_iff.1 (h hmem)
+  have hs := sin_sq_add_cos_sq τ
+  set k := P (1, 0) * cos τ + P (0, 1) * sin τ
+  have ha : P (1, 0) = k * cos τ := by linear_combination (-sin τ) * h₀ - P (1, 0) * hs
+  have hb : P (0, 1) = k * sin τ := by linear_combination cos τ * h₀ - P (0, 1) * hs
+  have hk₀ : k ≠ 0 := fun hk₀ ↦ hP <| P.eq_zero_of_apply_one_zero_of_apply_zero_one
+    (by rw [ha, hk₀, zero_mul]) (by rw [hb, hk₀, zero_mul])
+  have hku : k * (cos τ * a + sin τ * b) = 0 := by
+    linear_combination hu - a * ha - b * hb
+  exact (mul_eq_zero.1 hku).resolve_left hk₀
 
 variable (z : (ℝ × ℝ) × AddCircle π)
 

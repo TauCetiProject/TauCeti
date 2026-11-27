@@ -11,6 +11,7 @@ public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.WeightSpace
 import TauCeti.GroupTheory.Coset.Basic
 import TauCeti.GroupTheory.DoubleCoset.Basic
+import TauCeti.NumberTheory.HeckeRing.CosetSystem.Basic
 import TauCeti.Topology.Algebra.Group.DoubleCoset
 
 /-!
@@ -33,7 +34,9 @@ convolution of the functions (`Representation.heckeOperator_heckeOperator`), and
 For `K` compact and open, the indicator of a double coset `K g K` lives on finitely many cosets
 (`QuotientGroup.finite_support_indicator_doubleCoset`), and its operator, the double coset
 operator `[K g K]`, preserves `W^K`
-(`Representation.doubleCosetOperator_apply_mem_weightSpace`).
+(`Representation.doubleCosetOperator_apply_mem_weightSpace`). On `W^K`, `[K g K]` is the sum of
+the translates `ρ(q g)` over representatives `q` of `K ⧸ (K ∩ g K g⁻¹)`
+(`Representation.doubleCosetOperator_apply_eq_finsum`).
 
 ## Main definitions
 
@@ -190,17 +193,58 @@ theorem doubleCosetOperator_def (g : G) :
     ρ.doubleCosetOperator K g = ρ.heckeOperator K ((DoubleCoset.doubleCoset g K K).indicator 1) :=
   (rfl)
 
+/-- The indicator of `K g K` is right `K`-invariant. -/
+private theorem indicator_doubleCoset_mul_right (g x : G) {k : G} (hk : k ∈ K) :
+    (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) (x * k) =
+      (DoubleCoset.doubleCoset g K K).indicator 1 x := by
+  classical
+  simp only [Set.indicator_apply, Pi.one_apply, DoubleCoset.mul_mem_doubleCoset_iff_right hk]
+
+open Pointwise in
+/-- On `W^K`, the double coset operator `[K g K]` is the sum of the translates `ρ(q g) v` over
+representatives `q` of `K ⧸ (K ∩ g K g⁻¹)`: the cosets `q g K` are the distinct cosets making up
+`K g K`. When `K ∩ g K g⁻¹` has infinite index in `K` both sides are `0`. -/
+theorem doubleCosetOperator_apply_eq_finsum (g : G) (hv : v ∈ weightSpace (ρ.comp K.subtype) 1) :
+    ρ.doubleCosetOperator K g v =
+      ∑ᶠ q : K ⧸ (ConjAct.toConjAct g • K).subgroupOf K, ρ ((q.out : G) * g) v := by
+  classical
+  -- the elements `q g` form the canonical coset system of `K g K`
+  have h := Subgroup.isCosetSystem_out_mul K K g
+  have hright (x k : G) (hk : k ∈ K) := indicator_doubleCoset_mul_right (A := A) g x hk
+  -- every `q g` lies in `K g K`, where the indicator is `1`
+  have hterm (q : K ⧸ (ConjAct.toConjAct g • K).subgroupOf K) :
+      (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) ((q.out : G) * g) = 1 := by
+    rw [Set.indicator_of_mem (h.mem_doubleCoset q), Pi.one_apply]
+  cases finite_or_infinite (K ⧸ (ConjAct.toConjAct g • K).subgroupOf K) with
+  | inl hfin =>
+    have := Fintype.ofFinite (K ⧸ (ConjAct.toConjAct g • K).subgroupOf K)
+    rw [doubleCosetOperator_def, heckeOperator_apply_eq_sum hright hv (s := Finset.univ)
+      h.injective.injOn fun x hx ↦ ?_, finsum_eq_sum_of_fintype]
+    · simp only [hterm, one_smul]
+    -- every coset in `K g K` is some `q g K`
+    obtain ⟨q, hq⟩ := (Subgroup.isCosetSystem_iff_injective_and_range_eq.1 h).2.ge
+      ⟨x, Set.mem_of_indicator_ne_zero hx, rfl⟩
+    exact ⟨q, Finset.mem_univ q, hq⟩
+  | inr hinf =>
+    -- for `v ≠ 0` both sums have infinitely many nonzero terms, as each `ρ(x)` is injective
+    rcases eq_or_ne v 0 with rfl | hv0
+    · simp
+    have hne (x : G) : ρ x v ≠ 0 := fun h0 ↦ hv0 (by simpa [h0] using (ρ.inv_self_apply x v).symm)
+    rw [finsum_of_infinite_support (Set.infinite_univ.mono fun q _ ↦ hne _),
+      doubleCosetOperator_def, heckeOperator_def,
+      finsum_of_infinite_support ((Set.infinite_range_of_injective h.injective).mono ?_),
+      LinearMap.zero_apply]
+    rintro _ ⟨q, rfl⟩
+    rw [Function.mem_support, QuotientGroup.apply_out_mk hright, hterm, one_smul]
+    exact fun h0 ↦ hne _ (LinearMap.congr_fun h0 v)
+
 /-- For a compact open subgroup `K`, the double coset operator `[K g K]` preserves `W^K`. -/
 theorem doubleCosetOperator_apply_mem_weightSpace [TopologicalSpace G] [IsTopologicalGroup G]
     (hK_open : IsOpen (K : Set G)) (hK : IsCompact (K : Set G)) (g : G)
     (hv : v ∈ weightSpace (ρ.comp K.subtype) 1) :
     ρ.doubleCosetOperator K g v ∈ weightSpace (ρ.comp K.subtype) 1 := by
   -- the indicator of `K g K` is invariant on both sides under `K`
-  have h_right (x : G) (k : G) (hk : k ∈ K) :
-      (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) (x * k) =
-        (DoubleCoset.doubleCoset g K K).indicator 1 x := by
-    classical
-    simp only [Set.indicator_apply, Pi.one_apply, DoubleCoset.mul_mem_doubleCoset_iff_right hk]
+  have h_right (x k : G) (hk : k ∈ K) := indicator_doubleCoset_mul_right (A := A) g x hk
   have h_left (k : K) (x : G) :
       (1 : K →* A) k * (DoubleCoset.doubleCoset g K K).indicator (1 : G → A) (k * x) =
         (DoubleCoset.doubleCoset g K K).indicator 1 x := by

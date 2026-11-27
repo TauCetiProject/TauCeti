@@ -26,8 +26,10 @@ section has duration zero. The explicit `constantBetweenHomotopy` compares these
 shrinking the duration while keeping the path constant. This supplies compatibility with
 constant sections when transporting constructions between the two path models.
 
-Two points are joined by a Moore path exactly when they are joined by a path on the unit interval
-(`TauCeti.nonempty_moorePathBetween_iff`).
+A Moore path from `a` to `b` reparametrizes to a path on the unit interval from `a` to `b`
+(`TauCeti.MoorePathBetween.toPath`), compatibly with reversal
+(`TauCeti.MoorePathBetween.toPath_symm`). So two points are joined by a Moore path exactly when
+they are joined by a path on the unit interval (`TauCeti.nonempty_moorePathBetween_iff`).
 
 ## References
 
@@ -220,10 +222,46 @@ end MoorePath
 
 /-! ### Moore paths between two points -/
 
+namespace MoorePathBetween
+
+variable {a b : X}
+
+/-- A Moore path from `a` to `b`, reparametrized to a path on the unit interval from `a` to `b`. -/
+def toPath (γ : MoorePathBetween X a b) : Path a b :=
+  γ.toMoorePath.toPath.cast γ.source.symm γ.target.symm
+
+/-- The value of `toPath γ` at `s` is `γ (γ.length * s)`. -/
+@[simp]
+theorem toPath_apply (γ : MoorePathBetween X a b) (s : I) :
+    γ.toPath s = γ.toMoorePath (γ.toMoorePath.length * toNNReal s) := by
+  simp [toPath]
+
+/-- `MoorePathBetween.toPath` is continuous. -/
+@[fun_prop]
+theorem continuous_toPath : Continuous (toPath : MoorePathBetween X a b → Path a b) :=
+  continuous_induced_rng.2 <| (MoorePath.continuous_toUnitPath.comp continuous_toMoorePath).congr
+    fun γ ↦ ContinuousMap.ext fun s ↦ by simp [MoorePath.toUnitPath_apply]
+
+/-- A Moore loop read as a Moore path from its basepoint to itself has the same reparametrization
+as the loop. -/
+@[simp]
+theorem toPath_loopHomeomorph (ω : MooreLoopSpace X a) :
+    (loopHomeomorph a ω).toPath = ω.toPath := by
+  ext s
+  simp
+
+/-- Reparametrization commutes with reversal. -/
+@[simp]
+theorem toPath_symm (γ : MoorePathBetween X a b) : γ.symm.toPath = γ.toPath.symm := by
+  ext s
+  simp [unitInterval.toNNReal_symm, mul_tsub]
+
+end MoorePathBetween
+
 /-- Two points are joined by a Moore path exactly when they are joined by a path on the unit
 interval. -/
 theorem nonempty_moorePathBetween_iff {a b : X} : Nonempty (MoorePathBetween X a b) ↔ Joined a b :=
-  ⟨fun ⟨γ⟩ ↦ ⟨γ.toMoorePath.toPath.cast γ.source.symm γ.target.symm⟩,
+  ⟨fun ⟨γ⟩ ↦ ⟨γ.toPath⟩,
     fun h ↦ ⟨⟨h.somePath.toMoorePath, h.somePath.source_toMoorePath,
       h.somePath.target_toMoorePath⟩⟩⟩
 
