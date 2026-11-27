@@ -575,30 +575,6 @@ theorem Convex.contDiffOn_forwardSemiflow_const {C U : Set E} (hC : Convex ℝ C
   (hC.contDiffOn_forwardSemiflow hU hm hX hX_in).comp (contDiffOn_const.prodMk contDiffOn_id)
     fun x hx ↦ TauCeti.mem_forwardSemiflowDomain_iff.mpr ⟨hx, hT x hx⟩
 
-omit [CompleteSpace E] in
-/-- **Interior entry of the time-`T` inward semiflow map.** When `X` is strictly inward to the
-convex set `C` on `U ∩ C`, `0 < T`, and `T` lies in `forwardSemiflowInterval X (U ∩ C) x` for
-every `x ∈ U ∩ C`, the time-`T` map `forwardSemiflow X (U ∩ C) T` sends `U ∩ C` into
-`U ∩ interior C`. -/
-theorem Convex.mapsTo_forwardSemiflow_inter_interior {C U : Set E} (hC : Convex ℝ C)
-    {X : E → E} (hX_in : ∀ x ∈ U ∩ C, X x ∈ TauCeti.strictInwardCone C x) {T : ℝ}
-    (hT_pos : 0 < T) (hT : ∀ x ∈ U ∩ C, T ∈ TauCeti.forwardSemiflowInterval X (U ∩ C) x) :
-    MapsTo (TauCeti.forwardSemiflow X (U ∩ C) T) (U ∩ C) (U ∩ interior C) :=
-  fun x hx ↦ ⟨(TauCeti.forwardSemiflow_mem (hT x hx)).1,
-    hC.forwardSemiflow_mem_interior inter_subset_right hX_in (hT x hx) hT_pos⟩
-
-omit [CompleteSpace E] in
-/-- **Interior preservation of the time-`T` inward semiflow map.** When `X` is strictly inward
-to the convex set `C` on `U ∩ C` and `T` lies in `forwardSemiflowInterval X (U ∩ C) x` for
-every `x ∈ U ∩ interior C`, `forwardSemiflow X (U ∩ C) T` maps `U ∩ interior C` into itself. -/
-theorem Convex.mapsTo_forwardSemiflow_inter_interior_of_mem_interior {C U : Set E}
-    (hC : Convex ℝ C) {X : E → E}
-    (hX_in : ∀ x ∈ U ∩ C, X x ∈ TauCeti.strictInwardCone C x) {T : ℝ}
-    (hT : ∀ x ∈ U ∩ interior C, T ∈ TauCeti.forwardSemiflowInterval X (U ∩ C) x) :
-    MapsTo (TauCeti.forwardSemiflow X (U ∩ C) T) (U ∩ interior C) (U ∩ interior C) :=
-  fun x hx ↦ ⟨(TauCeti.forwardSemiflow_mem (hT x hx)).1,
-    hC.forwardSemiflow_mem_interior_of_mem_interior inter_subset_right hX_in hx.2 (hT x hx)⟩
-
 /-- **Global real-time `C^m` smoothness of the inward deformation.** Given a `C^m` (`1 ≤ m`,
 including `m = ∞`) vector field `X` on `U ∩ C` (`U` open, `C` convex) that is strictly inward
 to `C` on `U ∩ C` and globally forward complete on `U ∩ C`
@@ -636,68 +612,5 @@ theorem Convex.contDiffOn_inward_deformation_Icc_prod {C U : Set E} (hC : Convex
     fun _ ht _ hx ↦ TauCeti.Icc_subset_forwardSemiflowInterval_of_mem (hT _ hx)
       ⟨mul_nonneg hT_nonneg (sq_nonneg _),
         mul_le_of_le_one_right hT_nonneg (by dsimp only [id_eq]; nlinarith [ht.1, ht.2])⟩
-
-omit [CompleteSpace E] in
-/-- **Interior entry of the global inward deformation.** Under global forward completeness on
-`U ∩ C`, for `T > 0` and any `t ≠ 1`, the inward deformation sends `U ∩ C` into
-`U ∩ interior C`. -/
-theorem Convex.mapsTo_inward_deformation_inter_interior {C U : Set E} (hC : Convex ℝ C)
-    {X : E → E} (hX_in : ∀ x ∈ U ∩ C, X x ∈ TauCeti.strictInwardCone C x)
-    (hglob : ∀ x ∈ U ∩ C, TauCeti.forwardSemiflowInterval X (U ∩ C) x = Ici 0)
-    {T t : ℝ} (hT_pos : 0 < T) (ht : t ≠ 1) :
-    MapsTo (fun x ↦ TauCeti.forwardSemiflow X (U ∩ C) (T * (1 - t) ^ 2) x)
-      (U ∩ C) (U ∩ interior C) :=
-  hC.mapsTo_forwardSemiflow_inter_interior hX_in
-    (mul_pos hT_pos (sq_pos_iff.mpr (sub_ne_zero.mpr ht.symm)))
-    fun x hx ↦ hglob x hx ▸ mul_nonneg hT_pos.le (sq_nonneg _)
-
-omit [CompleteSpace E] in
-/-- **Interior entry of the finite-time inward deformation.** If `forwardSemiflow X (U ∩ C)`
-is defined through time `T > 0` on `U ∩ C`, then for every `t ∈ Ico 0 1`, the inward
-deformation sends `U ∩ C` into `U ∩ interior C`. -/
-theorem Convex.mapsTo_inward_deformation_inter_interior_of_mem_Ico {C U : Set E}
-    (hC : Convex ℝ C) {X : E → E}
-    (hX_in : ∀ x ∈ U ∩ C, X x ∈ TauCeti.strictInwardCone C x)
-    {T t : ℝ} (hT_pos : 0 < T)
-    (hT : ∀ x ∈ U ∩ C, T ∈ TauCeti.forwardSemiflowInterval X (U ∩ C) x)
-    (ht : t ∈ Ico (0 : ℝ) 1) :
-    MapsTo (fun x ↦ TauCeti.forwardSemiflow X (U ∩ C) (T * (1 - t) ^ 2) x)
-      (U ∩ C) (U ∩ interior C) :=
-  hC.mapsTo_forwardSemiflow_inter_interior hX_in
-    (mul_pos hT_pos (sq_pos_iff.mpr (sub_ne_zero.mpr ht.2.ne.symm)))
-    fun x hx ↦ TauCeti.Icc_subset_forwardSemiflowInterval_of_mem (hT x hx)
-      ⟨mul_nonneg hT_pos.le (sq_nonneg _),
-        mul_le_of_le_one_right hT_pos.le (by nlinarith [ht.1, ht.2])⟩
-
-omit [CompleteSpace E] in
-/-- **Interior preservation of the global inward deformation.** Under global forward
-completeness on `U ∩ C`, for any `T ≥ 0` and `t : ℝ`, the inward deformation maps
-`U ∩ interior C` into itself. -/
-theorem Convex.mapsTo_inward_deformation_inter_interior_of_mem_interior {C U : Set E}
-    (hC : Convex ℝ C) {X : E → E}
-    (hX_in : ∀ x ∈ U ∩ C, X x ∈ TauCeti.strictInwardCone C x)
-    (hglob : ∀ x ∈ U ∩ C, TauCeti.forwardSemiflowInterval X (U ∩ C) x = Ici 0)
-    {T : ℝ} (hT_nonneg : 0 ≤ T) (t : ℝ) :
-    MapsTo (fun x ↦ TauCeti.forwardSemiflow X (U ∩ C) (T * (1 - t) ^ 2) x)
-      (U ∩ interior C) (U ∩ interior C) :=
-  hC.mapsTo_forwardSemiflow_inter_interior_of_mem_interior hX_in
-    fun x hx ↦ hglob x ⟨hx.1, interior_subset hx.2⟩ ▸ mul_nonneg hT_nonneg (sq_nonneg _)
-
-omit [CompleteSpace E] in
-/-- **Interior preservation of the finite-time inward deformation.** If
-`forwardSemiflow X (U ∩ C)` is defined through time `T ≥ 0` on `U ∩ interior C`, then for
-every `t ∈ Icc 0 1`, the inward deformation maps `U ∩ interior C` into itself. -/
-theorem Convex.mapsTo_inward_deformation_inter_interior_of_mem_Icc_of_mem_interior
-    {C U : Set E} (hC : Convex ℝ C) {X : E → E}
-    (hX_in : ∀ x ∈ U ∩ C, X x ∈ TauCeti.strictInwardCone C x)
-    {T t : ℝ} (hT_nonneg : 0 ≤ T)
-    (hT : ∀ x ∈ U ∩ interior C, T ∈ TauCeti.forwardSemiflowInterval X (U ∩ C) x)
-    (ht : t ∈ Icc (0 : ℝ) 1) :
-    MapsTo (fun x ↦ TauCeti.forwardSemiflow X (U ∩ C) (T * (1 - t) ^ 2) x)
-      (U ∩ interior C) (U ∩ interior C) :=
-  hC.mapsTo_forwardSemiflow_inter_interior_of_mem_interior hX_in
-    fun x hx ↦ TauCeti.Icc_subset_forwardSemiflowInterval_of_mem (hT x hx)
-      ⟨mul_nonneg hT_nonneg (sq_nonneg _),
-        mul_le_of_le_one_right hT_nonneg (by nlinarith [ht.1, ht.2])⟩
 
 end ConvexDeformation
