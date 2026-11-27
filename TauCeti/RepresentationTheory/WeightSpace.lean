@@ -52,6 +52,10 @@ provided each element of its image lifts through `red`. The resulting representa
 * `Representation.weightSpace_le_comap`: `ρ.weightSpace c` is `G`-stable.
 * `Representation.map_mem_weightSpace_of_commute`: a linear map commuting with every `ρ g`
   preserves `ρ.weightSpace c`.
+* `Representation.weightSpace_comp_map_subtype`: the weight space of `ρ` restricted to `K.map f`
+  equals the weight space of `ρ.comp f` restricted to `K`.
+* `Representation.weightSpace_comp_toSubmonoid_subtype`: restricting to `K.toSubmonoid` gives
+  the same weight space as restricting to `K`.
 * `Representation.trace_eq_finrank_weightSpace_mul_add`: the splitting of the trace.
 * `Representation.mem_weightSpace_comp_subgroupComap_iff`: membership in the
   pulled-back weight space in terms of arbitrary lifts.
@@ -130,7 +134,48 @@ theorem trace_eq_finrank_weightSpace_mul_add {F V : Type*} [Field F] [AddCommGro
     (fQ := ρ.quotient _ (weightSpace_le_comap ρ c) g) (by ext; simp) (by ext; simp), hres,
     map_smul, LinearMap.trace_id, smul_eq_mul, mul_comm]
 
+/-- For a monoid homomorphism `f : H →* G` and a submonoid `K` of `H`, the weight space of `ρ`
+restricted to `K.map f` equals the weight space of `ρ.comp f` restricted to `K`. -/
+theorem weightSpace_comp_map_subtype {H : Type*} [Monoid H] (ρ : Representation k G V)
+    (c : G →* k) (f : H →* G) (K : Submonoid H) :
+    weightSpace (ρ.comp (K.map f).subtype) (c.comp (K.map f).subtype) =
+      weightSpace ((ρ.comp f).comp K.subtype) ((c.comp f).comp K.subtype) := by
+  ext v
+  simp only [mem_weightSpace, MonoidHom.comp_apply, Submonoid.coe_subtype, Subtype.forall,
+    Submonoid.mem_map]
+  exact ⟨fun h x hx ↦ h (f x) ⟨x, hx, rfl⟩, fun h _ ⟨x, hx, hfx⟩ ↦ hfx ▸ h x hx⟩
+
+/-- For a monoid homomorphism `f : H →* G` and a submonoid `K` of `H`, the `K.map f`-fixed vectors
+of `ρ` coincide with the `K`-fixed vectors of `ρ.comp f`. -/
+@[simp]
+theorem weightSpace_comp_map_subtype_one {H : Type*} [Monoid H] (ρ : Representation k G V)
+    (f : H →* G) (K : Submonoid H) :
+    weightSpace (ρ.comp (K.map f).subtype) 1 = weightSpace ((ρ.comp f).comp K.subtype) 1 := by
+  simpa only [MonoidHom.one_comp] using weightSpace_comp_map_subtype ρ 1 f K
+
 end Basic
+
+section Subgroup
+
+variable {k G V : Type*} [CommSemiring k] [Group G] [AddCommMonoid V] [Module k V]
+
+/-- For a subgroup `K`, restricting a representation and a character to `K.toSubmonoid` gives
+the same weight space as restricting them to `K`. -/
+theorem weightSpace_comp_toSubmonoid_subtype (ρ : Representation k G V) (c : G →* k)
+    (K : Subgroup G) :
+    weightSpace (ρ.comp K.toSubmonoid.subtype) (c.comp K.toSubmonoid.subtype) =
+      weightSpace (ρ.comp K.subtype) (c.comp K.subtype) := by
+  ext v
+  simp only [mem_weightSpace, MonoidHom.comp_apply, Submonoid.coe_subtype, Subgroup.coe_subtype,
+    Subtype.forall, Subgroup.mem_toSubmonoid]
+
+/-- For a subgroup `K`, the `K.toSubmonoid`-fixed vectors coincide with the `K`-fixed vectors. -/
+@[simp]
+theorem weightSpace_comp_toSubmonoid_subtype_one (ρ : Representation k G V) (K : Subgroup G) :
+    weightSpace (ρ.comp K.toSubmonoid.subtype) 1 = weightSpace (ρ.comp K.subtype) 1 := by
+  simpa only [MonoidHom.one_comp] using weightSpace_comp_toSubmonoid_subtype ρ 1 K
+
+end Subgroup
 
 section Reduction
 

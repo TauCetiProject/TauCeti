@@ -54,9 +54,10 @@ the group algebra to the vanishing of the norm map.
   is equivalent to commuting with every element of the monoid action.
 * `Representation.commute_asAlgebraHom_of_forall_commute`: commuting with the monoid action
   propagates to the action of the monoid algebra.
-* `Representation.asAlgebraHom_domCongr` and `Representation.asAlgebraHom_eq_sum`: the action of
-  a transported element is the action through the pulled-back representation, and over a finite
-  monoid the action of `x` is `∑ g, x g • ρ g`.
+* `Representation.asAlgebraHom_domCongr`, `Representation.asAlgebraHom_mapDomain`, and
+  `Representation.asAlgebraHom_eq_sum`: the action of a pushed-forward or transported element is
+  the action through the pulled-back representation, and over a finite monoid the action of `x` is
+  `∑ g, x g • ρ g`.
 * `Representation.asAlgebraHom_apply` and `Representation.apply_asAlgebraHom_apply`: over any
   monoid, `a` sends `x` to the finite sum `Σ_g a_g ρ(g) x`, and the translate by `g` of this
   vector is `Σ_{g'} a_{g'} ρ(g g') x`.
@@ -157,6 +158,16 @@ theorem asAlgebraHom_domCongr {H : Type*} [Monoid H] (ρ : Representation k H V)
     ρ.asAlgebraHom (MonoidAlgebra.domCongr k k e x) =
       Representation.asAlgebraHom (ρ.comp e.toMonoidHom) x :=
   MonoidAlgebra.lift_mapDomain ρ e.toMonoidHom x
+
+/-- **The monoid-algebra action is natural along a monoid homomorphism.** Pushing `x` forward along
+`f : G →* H` and acting by `ρ` is acting by `x` through the pulled-back representation
+`ρ.comp f`. -/
+@[simp]
+theorem asAlgebraHom_mapDomain {H : Type*} [Monoid H] (ρ : Representation k H V) (f : G →* H)
+    (x : MonoidAlgebra k G) :
+    ρ.asAlgebraHom (MonoidAlgebra.mapDomain f x) =
+      Representation.asAlgebraHom (ρ.comp f) x :=
+  MonoidAlgebra.lift_mapDomain ρ f x
 
 /-- **The action of an element of the monoid algebra of a finite monoid** is the combination
 `∑ g, x g • ρ g` of the operators of the representation, weighted by the coefficients of `x`. -/
