@@ -151,32 +151,6 @@ variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F] [
 variable {ι : Type*} [Fintype ι] (hι : Fintype.card ι = finrank ℝ F)
   {o : Orientation ℝ (E b) ι}
 
-omit [FiniteDimensional ℝ F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
-include hι in
-/-- Two linear trivializations reading an orientation of the fibre over `b` as the same
-orientation of the model fibre differ over `b` by a coordinate change of positive determinant. -/
-theorem sign_det_coordChangeL_eq_one_of_mapOrientation_eq
-    (h : e'.mapOrientation ι hb' o = e.mapOrientation ι hb o) :
-    SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = 1 := by
-  by_cases hF : FiniteDimensional ℝ F
-  · rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_iff_det_pos _ _ hι] at h
-    exact sign_pos h
-  · change SignType.sign (LinearMap.det _) = 1
-    rw [LinearMap.det_eq_one_of_finrank_eq_zero (Module.finrank_of_not_finite hF)]
-    simp
-
-omit [FiniteDimensional ℝ F] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
-include hι in
-/-- Two linear trivializations reading an orientation of the fibre over `b` as opposite
-orientations of the model fibre differ over `b` by a coordinate change of negative determinant. -/
-theorem sign_det_coordChangeL_eq_neg_one_of_mapOrientation_eq_neg
-    (h : e'.mapOrientation ι hb' o = -e.mapOrientation ι hb o) :
-    SignType.sign (e.coordChangeL ℝ e' b : F →L[ℝ] F).det = -1 := by
-  rw [mapOrientation_eq_map_coordChangeL e e' hb hb', Orientation.map_eq_neg_iff_det_neg _ _ hι]
-    at h
-  -- `ContinuousLinearMap.det` is by definition the determinant of the underlying linear map.
-  exact sign_neg h
-
 include hι in
 /-- Two linear trivializations reading an orientation of the fibre over `b` as the same
 orientation of the model fibre pull back every class of `Hⁿ(F, F ∖ {0})` to the same class of the
