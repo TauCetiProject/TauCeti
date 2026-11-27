@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Fredholm.ContinuousFamily
 import TauCeti.Analysis.Fredholm.SemiFredholm
-import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 import TauCeti.MeasureTheory.Function.LpSeminorm.Tendsto
 
 /-!
@@ -48,8 +49,12 @@ fields of the members agree on the ends, and on the compact core they are unifor
 operators with finite-dimensional kernel and closed range, along which the Fredholm property and the
 index are constant (`ContinuousOn.isFredholm_of_isPreconnected`,
 `ContinuousOn.index_eq_of_isPreconnected`). The continuity holds along every family of data with
-fixed end data, parametrized by a subset of a normed space
-(`TauCeti.SymplecticForm.continuousOn_floerConformalSobolevOperator_pairOfPants_family`).
+fixed end data, parametrized by a subset of a normed space, that is jointly `C¹` (with `C²`
+Hamiltonians) along the graph of `u`, where `u` solves the Floer equation of every member on the
+ends and its loops converge uniformly along them, with slice defects tending to zero
+(`TauCeti.SymplecticForm.continuousOn_floerConformalSobolevOperator_pairOfPants_family`). Far out
+on the ends every member of the path of data is the end data
+(`TauCeti.SymplecticForm.pathAlmostComplex_pathHamiltonian_eq_pairOfPants_endData`).
 
 ## References
 
@@ -77,7 +82,7 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 omit [FiniteDimensional ℝ V] in
 /-- Two sets of data equal to the same end data `J_q(t)` beyond the heights `R₁` and `R₁'` of the
 ends agree at every point of `S` beyond the height `max R₁ R₁'` of some end. -/
-theorem eq_of_max_le_fst_positiveEndCoord {J J' : ℝ × ℝ → V → AlmostComplexStructure V}
+private theorem eq_of_max_le_fst_positiveEndCoord {J J' : ℝ × ℝ → V → AlmostComplexStructure V}
     {Je : Puncture → ℝ → V → AlmostComplexStructure V} {R₁ R₁' : ℝ}
     (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (positiveEndChart q ζ) = Je q ζ.2)
     (hJeq' : ∀ q (ζ : ℝ × ℝ), R₁' ≤ ζ.1 → J' (positiveEndChart q ζ) = Je q ζ.2)
@@ -86,6 +91,66 @@ theorem eq_of_max_le_fst_positiveEndCoord {J J' : ℝ × ℝ → V → AlmostCom
   rw [← positiveEndChart_positiveEndCoord q
       (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     hJeq q _ ((le_max_left _ _).trans hR), hJeq' q _ ((le_max_right _ _).trans hR)]
+
+/-- **Far out on the ends, the path of data between two sets of pair-of-pants data with the same
+end data is that end data.** Let `(J, K_s, K_t)` and `(J', K'_s, K'_t)` be data on a space `Z`, read
+on `S` along a map `ι : ℝ × ℝ → Z`, for instance the identity or the slice `w ↦ (μ, w)` of a family
+of data. If beyond the heights `R₁` and `R₁'` of every end the data read along `ι` are the end data,
+a `C¹` family `J_q(t)` in the positive end chart `φ'_q` and the pair-of-pants perturbation of `H`,
+then beyond every positive height `R ≥ R₁, R₁'` so is every member `σ` of the path of data between
+them (`TauCeti.Floer.pathAlmostComplex`, `TauCeti.Floer.pathHamiltonian`), read along `ι`, and `u`
+solves its Floer equation there when it solves that of `(J, K_s, K_t)`. -/
+theorem pathAlmostComplex_pathHamiltonian_eq_pairOfPants_endData {J₀ : AlmostComplexStructure V}
+    (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) {H : Puncture → ℝ → V → ℝ}
+    {Je : Puncture → ℝ → V → AlmostComplexStructure V} {Z : Type*} {ι : ℝ × ℝ → Z}
+    {J J' : Z → V → AlmostComplexStructure V} (hJt : ∀ z y, ω.Tames (J z y))
+    (hJt' : ∀ z y, ω.Tames (J' z y)) {Ks Kt Ks' Kt' : Z → V → ℝ} {R₁ R₁' R : ℝ}
+    (hR₁ : R₁ ≤ R) (hR₁' : R₁' ≤ R) (hR : 0 < R) {u : ℝ × ℝ → V}
+    (hJeq : ∀ q (ζ : ℝ × ℝ), R₁ ≤ ζ.1 → J (ι (positiveEndChart q ζ)) = Je q ζ.2)
+    (hJeq' : ∀ q (ζ : ℝ × ℝ), R₁' ≤ ζ.1 → J' (ι (positiveEndChart q ζ)) = Je q ζ.2)
+    (hK : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      Ks (ι z) = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt (ι z) = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (hK' : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁' ≤ (positiveEndCoord q z).1 →
+      Ks' (ι z) = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt' (ι z) = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (hF : ∀ q, ∀ z ∈ thricePuncturedSphereReal, R₁ ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (ι z) (u z))
+        (ω.perturbedFDeriv (fun w ↦ Ks (ι w)) (fun w ↦ Kt (ι w)) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (σ : ℝ) :
+    (∀ q (ζ : ℝ × ℝ), R ≤ ζ.1 →
+      pathAlmostComplex h₀ hJt hJt' (σ, ι (positiveEndChart q ζ)) = Je q ζ.2) ∧
+    (∀ q, ∀ z ∈ thricePuncturedSphereReal, R ≤ (positiveEndCoord q z).1 →
+      pathHamiltonian Ks Ks' (σ, ι z) =
+          (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        pathHamiltonian Kt Kt' (σ, ι z) =
+          fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) ∧
+    (∀ q, ∀ z ∈ thricePuncturedSphereReal, R ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+        (pathAlmostComplex h₀ hJt hJt' (σ, ι z) (u z))
+        (ω.perturbedFDeriv (fun w ↦ pathHamiltonian Ks Ks' (σ, ι w))
+          (fun w ↦ pathHamiltonian Kt Kt' (σ, ι w)) u z : ℝ × ℝ →ₗ[ℝ] V)) := by
+  -- Beyond the height `R` both sets of data are the end data, hence so is the path between them.
+  have hend {q : Puncture} {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
+      (hzR : R ≤ (positiveEndCoord q z).1) :
+      pathAlmostComplex h₀ hJt hJt' (σ, ι z) = J (ι z) ∧
+        pathHamiltonian Ks Ks' (σ, ι z) = Ks (ι z) ∧
+          pathHamiltonian Kt Kt' (σ, ι z) = Kt (ι z) := by
+    have hJz := eq_of_max_le_fst_positiveEndCoord (J := fun w ↦ J (ι w)) (J' := fun w ↦ J' (ι w))
+      hJeq hJeq' hz ((max_le hR₁ hR₁').trans hzR)
+    obtain ⟨hs, ht⟩ := hK q z hz (hR₁.trans hzR)
+    obtain ⟨hs', ht'⟩ := hK' q z hz (hR₁'.trans hzR)
+    exact ⟨funext fun y ↦ pathAlmostComplex_of_eq h₀ σ (congrFun hJz y),
+      pathHamiltonian_of_eq σ (hs.trans hs'.symm), pathHamiltonian_of_eq σ (ht.trans ht'.symm)⟩
+  refine ⟨fun q ζ hζ ↦ ?_, fun q z hz hzR ↦ ?_, fun q z hz hzR ↦ ?_⟩
+  · have hz := positiveEndChart_mem_thricePuncturedSphereReal (q := q) (hR.trans_le hζ)
+    rw [(hend hz (by rw [fst_positiveEndCoord_positiveEndChart]; exact hζ)).1,
+      hJeq q ζ (hR₁.trans hζ)]
+  · rw [(hend hz hzR).2.1, (hend hz hzR).2.2]
+    exact hK q z hz (hR₁.trans hzR)
+  · obtain ⟨hJz, hs, ht⟩ := hend hz hzR
+    rw [hJz, ω.perturbedFDeriv_congr u (Ks' := fun w ↦ Ks (ι w)) (Kt' := fun w ↦ Kt (ι w)) hs ht]
+    exact hF q z hz (hR₁.trans hzR)
 
 /-- The realizations `D_u : W^{1,2}_0(S, V) → L²(S, V)` of the linearized Floer operators of a
 family of data `(J_p, K_{s,p}, K_{t,p})`, `p ∈ s`, depend continuously on `p` in the operator norm
@@ -171,10 +236,6 @@ theorem continuousOn_floerConformalSobolevOperator_pairOfPants_family (ω : Symp
     ContinuousOn (fun p ↦ ω.floerConformalSobolevOperator thricePuncturedSphereReal
       cylindricalWeight (fun z y ↦ (J (p, z) y).toLinearMap.toContinuousLinearMap)
       (fun z ↦ Ks (p, z)) (fun z ↦ Kt (p, z)) u) s := by
-  -- The data at a fixed `p` are the family composed with the slice `(z, y) ↦ ((p, z), y)`.
-  have hslice (p : P) (z : ℝ × ℝ) : ContDiffAt ℝ ⊤
-      (fun q : (ℝ × ℝ) × V ↦ (((p, q.1), q.2) : (P × (ℝ × ℝ)) × V)) (z, u z) :=
-    ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd).contDiffAt
   refine continuousOn_floerConformalSobolevOperator_family ω
     (J := fun p y ↦ (J p y).toLinearMap.toContinuousLinearMap) (R := R) hJ hKs hKt hu
     (fun p hp p' hp' z hz hzK ↦ ?_) fun p hp ↦ ?_
@@ -182,17 +243,15 @@ theorem continuousOn_floerConformalSobolevOperator_pairOfPants_family (ω : Symp
   · obtain ⟨q, hq⟩ := exists_lt_fst_positiveEndCoord_of_notMem_truncation hz hzK
     obtain ⟨hs, ht⟩ := hK p hp q z hz hq.le
     obtain ⟨hs', ht'⟩ := hK p' hp' q z hz hq.le
-    have hJz : J (p, z) = J (p', z) := by
-      rw [← positiveEndChart_positiveEndCoord q
-          (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
-        hJeq p hp q _ hq.le, hJeq p' hp' q _ hq.le]
+    have hJz : J (p, z) = J (p', z) :=
+      eq_of_max_le_fst_positiveEndCoord (J := fun w ↦ J (p, w)) (J' := fun w ↦ J (p', w))
+        (hJeq p hp) (hJeq p' hp') hz (by simpa using hq.le)
     exact ⟨by rw [hJz], hs.trans hs'.symm, ht.trans ht'.symm⟩
   · exact ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs hx hJe
       (J := fun z ↦ J (p, z)) (hJeq p hp) (hK p hp)
-      (fun z hz ↦ ((hJ p hp z hz).comp (z, u z) ((hslice p z).of_le le_top) :))
-      (fun z hz ↦ ((hKs p hp z hz).comp (z, u z) ((hslice p z).of_le le_top) :))
-      (fun z hz ↦ ((hKt p hp z hz).comp (z, u z) ((hslice p z).of_le le_top) :)) hu (hF p hp)
-      hux hδ
+      (fun z hz ↦ (hJ p hp z hz).comp_prodMap_prodMk_right)
+      (fun z hz ↦ (hKs p hp z hz).comp_prodMap_prodMk_right)
+      (fun z hz ↦ (hKt p hp z hz).comp_prodMap_prodMk_right) hu (hF p hp) hux hδ
 
 /-- **The Fredholm property and the index along a family of data on the pair of pants.** Let
 `(J_μ, K_{s,μ}, K_{t,μ})` be a family of Floer data on `S`, `C¹` (with `C²` Hamiltonians) jointly in
@@ -246,20 +305,16 @@ private theorem isFredholm_and_index_eq_of_family (ω : SymplecticForm V)
       (fun z y ↦ (J (0, z) y).toLinearMap.toContinuousLinearMap) (fun z ↦ Ks (0, z))
         (fun z ↦ Kt (0, z)) u).index := by
   set S := thricePuncturedSphereReal
-  -- The data at a fixed `μ` are regular along `u`: each is the family composed with the slice
-  -- `(z, y) ↦ ((μ, z), y)`, and the ascriptions elaborate that composite before matching it.
-  have hslice (μ : ℝ) (z : ℝ × ℝ) : ContDiffAt ℝ ⊤
-      (fun q : (ℝ × ℝ) × V ↦ (((μ, q.1), q.2) : (ℝ × (ℝ × ℝ)) × V)) (z, u z) :=
-    ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd).contDiffAt
+  -- The data at a fixed `μ` are regular along `u`: each is a slice of the family.
   have hJμ (μ : ℝ) (z : ℝ × ℝ) (hz : z ∈ S) : ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J (μ, p.1) p.2).toLinearMap.toContinuousLinearMap) (z, u z) :=
-    ((hJ μ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)
+    (hJ μ z hz).comp_prodMap_prodMk_right
   have hKsμ (μ : ℝ) (z : ℝ × ℝ) (hz : z ∈ S) :
       ContDiffAt ℝ 2 (uncurry fun w ↦ Ks (μ, w)) (z, u z) :=
-    ((hKs μ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)
+    (hKs μ z hz).comp_prodMap_prodMk_right
   have hKtμ (μ : ℝ) (z : ℝ × ℝ) (hz : z ∈ S) :
       ContDiffAt ℝ 2 (uncurry fun w ↦ Kt (μ, w)) (z, u z) :=
-    ((hKt μ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)
+    (hKt μ z hz).comp_prodMap_prodMk_right
   -- The operators of the family.
   set T : ℝ → H1 V S cylindricalWeight →L[ℝ] Lp V 2 (volume.restrict S) := fun μ ↦
     ω.floerConformalSobolevOperator S cylindricalWeight
@@ -344,35 +399,17 @@ private theorem isFredholm_and_index_eq_of_pairOfPants_data (ω : SymplecticForm
   -- The path of data from `(J, K_s, K_t)` at `μ = 0` to `(J', K'_s, K'_t)` at `μ = 1`, in
   -- Cayley coordinates relative to a structure compatible with `ω`.
   have h₀ := hc (2, 0) (by norm_num [S, mem_thricePuncturedSphereReal_iff, Complex.ext_iff])
-  -- Beyond the height `R` of an end, the two sets of data agree, hence so does every member of
-  -- the path.
-  have hend {q : Puncture} {z : ℝ × ℝ} (hz : z ∈ S) (hzR : R ≤ (positiveEndCoord q z).1)
-      (μ : ℝ) : pathAlmostComplex h₀ hJt hJ't (μ, z) = J z ∧
-        pathHamiltonian Ks Ks' (μ, z) = Ks z ∧ pathHamiltonian Kt Kt' (μ, z) = Kt z := by
-    have hJz := eq_of_max_le_fst_positiveEndCoord hJeq hJeq' hz ((le_max_left _ _).trans hzR)
-    obtain ⟨hs, ht⟩ := hK q z hz (hR₁.trans hzR)
-    obtain ⟨hs', ht'⟩ := hK' q z hz (hR₁'.trans hzR)
-    exact ⟨funext fun y ↦ pathAlmostComplex_of_eq h₀ μ (congrFun hJz y),
-      pathHamiltonian_of_eq μ (hs.trans hs'.symm), pathHamiltonian_of_eq μ (ht.trans ht'.symm)⟩
+  -- Beyond the height `R` of an end, every member of the path is the end data.
+  have hend := pathAlmostComplex_pathHamiltonian_eq_pairOfPants_endData ω h₀ (ι := fun z ↦ z)
+    hJt hJ't hR₁ hR₁'
+    (zero_lt_one.trans_le (le_max_right _ _)) hJeq hJeq' hK hK' hF
   have key := isFredholm_and_index_eq_of_family ω hH hHs hX hx hnd hJe hJex
     (J := pathAlmostComplex h₀ hJt hJ't) (Ks := pathHamiltonian Ks Ks')
-    (Kt := pathHamiltonian Kt Kt') (R := R)
-    (fun μ q ζ hζ ↦ by
-      have hz := positiveEndChart_mem_thricePuncturedSphereReal (q := q)
-        (zero_lt_one.trans_le ((le_max_right _ _).trans hζ))
-      rw [(hend hz (by rw [fst_positiveEndCoord_positiveEndChart]; exact hζ) μ).1,
-        hJeq q ζ (hR₁.trans hζ)])
-    (fun μ q z hz hzR ↦ by
-      rw [(hend hz hzR μ).2.1, (hend hz hzR μ).2.2]
-      exact hK q z hz (hR₁.trans hzR))
+    (Kt := pathHamiltonian Kt Kt') (R := R) (fun μ ↦ (hend μ).1) (fun μ ↦ (hend μ).2.1)
     (fun μ z hz ↦ contDiffAt_pathAlmostComplex h₀ hJt hJ't (p := (μ, z)) (hJ z hz) (hJ' z hz))
     (fun μ z hz ↦ contDiffAt_pathHamiltonian (p := (μ, z)) (hKs z hz) (hKs' z hz))
     (fun μ z hz ↦ contDiffAt_pathHamiltonian (p := (μ, z)) (hKt z hz) (hKt' z hz)) hu
-    (fun μ z hz ↦ compatible_pathAlmostComplex h₀ (hc z hz) (hc' z hz))
-    (fun μ q z hz hzR ↦ by
-      obtain ⟨hJz, hs, ht⟩ := hend hz hzR μ
-      rw [hJz, ω.perturbedFDeriv_congr u (Ks' := Ks) (Kt' := Kt) hs ht]
-      exact hF q z hz (hR₁.trans hzR))
+    (fun μ z hz ↦ compatible_pathAlmostComplex h₀ (hc z hz) (hc' z hz)) (fun μ ↦ (hend μ).2.2)
     hux hδ
     (by simpa only [pathAlmostComplex_zero, pathHamiltonian_zero] using h)
   simpa only [pathAlmostComplex_zero, pathAlmostComplex_one, pathHamiltonian_zero,
