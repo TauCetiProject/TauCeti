@@ -17,7 +17,9 @@ boundary for its atlas `TauCeti.scalarRegularSublevelChartedSpace`, with boundar
 `f⁻¹(a)`. This file shows that `f` itself detects the outward direction: at a point of the level, a
 tangent vector `v` of the sublevel points outward (`TauCeti.IsOutwardPointing`) exactly when `f`
 increases along it, that is, when the derivative of the restriction of `f` to the sublevel is
-positive on `v` (`TauCeti.isOutwardPointing_scalarRegularSublevel_iff`).
+positive on `v` (`TauCeti.isOutwardPointing_scalarRegularSublevel_iff`). Read in `M` through the
+differential of the inclusion `j`, this says that `v` points outward exactly when `df(dj v) > 0`
+(`TauCeti.isOutwardPointing_scalarRegularSublevel_iff_mfderiv`).
 
 For a band `f⁻¹([a, b])` between regular values `a < b`, with atlas
 `TauCeti.scalarRegularBandChartedSpace`, the derivative of `f` is negative on outward vectors at the
@@ -37,6 +39,8 @@ band, and a vector is outward exactly when the derivative of that coordinate is 
 
 * `TauCeti.isOutwardPointing_scalarRegularSublevel_iff`: on the boundary of `{f ≤ a}`, outward
   vectors are those on which `df > 0`.
+* `TauCeti.isOutwardPointing_scalarRegularSublevel_iff_mfderiv`: the same criterion, with the
+  derivative of `f` read in `M` through the differential of the inclusion.
 * `TauCeti.isOutwardPointing_scalarRegularBand_iff_of_eq_left`: on the lower face of
   `f⁻¹([a, b])`, outward vectors are those on which `df < 0`.
 * `TauCeti.isOutwardPointing_scalarRegularBand_iff_of_eq_right`: on the upper face of
@@ -82,6 +86,23 @@ theorem isOutwardPointing_scalarRegularSublevel_iff (hreg : IsRegularValue I �
     ring
   rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb (by norm_num)
     (Filter.eventually_of_mem (chart_source_mem_nhds _ x) hchart), neg_one_mul, neg_lt_zero]
+
+/-- **The outward co-orientation of a regular sublevel, read in `M`.** At a point `x` of the level
+`f⁻¹(a)`, a tangent vector `v` of the sublevel `{f ≤ a}` points outward exactly when
+`df(dj v) > 0`, where `j` is the inclusion. -/
+theorem isOutwardPointing_scalarRegularSublevel_iff_mfderiv (hreg : IsRegularValue I 𝓘(ℝ) f a)
+    {x : {x | f x ≤ a}} (hx : f x = a)
+    (v : letI := scalarRegularSublevelChartedSpace hf hreg hn; TangentSpace (𝓡∂ (n + 1)) x) :
+    letI := scalarRegularSublevelChartedSpace hf hreg hn
+    IsOutwardPointing x v ↔
+      0 < mvfderiv I f x (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : {x | f x ≤ a} → M) x v) := by
+  let := scalarRegularSublevelChartedSpace hf hreg hn
+  have := isManifold_scalarRegularSublevel hreg hn le_rfl hf
+  rw [isOutwardPointing_scalarRegularSublevel_iff hf hn hreg hx v]
+  exact iff_of_eq (congrArg _ (mvfderiv_comp_apply (g := f) (f := Subtype.val) x
+    (hf.mdifferentiableAt one_ne_zero)
+    ((contMDiff_subtypeVal_scalarRegularSublevel hreg hn le_rfl hf).mdifferentiableAt
+      one_ne_zero) v))
 
 section Band
 

@@ -132,6 +132,21 @@ theorem detLineEndEquiv_tmul (u : Fin (finrank K (ker T)) → ker T)
     (ker T).injective_subtype T.exact_subtype_ker_map T.exact_map_mkQ_range
     (range T).mkQ_surjective u v z hβ hγ φ hξ, detLineEndEquiv_detLineFourTermEquiv]
 
+/-- `LinearMap.detLineEndEquiv_tmul` as an identity in the determinant line: `β` is
+`detLineEndEquiv T (α ⊗ ξ)` times `γ`. -/
+theorem eq_detLineEndEquiv_smul (u : Fin (finrank K (ker T)) → ker T)
+    (v : Fin (finrank K (range T)) → V) (z : Fin (finrank K (V ⧸ range T)) → V)
+    {β : TauCeti.detLine K V} (hβ : (β : ExteriorAlgebra K V) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append ((ker T).subtype ∘ u) v))
+    {γ : TauCeti.detLine K V} (hγ : (γ : ExteriorAlgebra K V) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (T ∘ v) z))
+    {ξ : Dual K (TauCeti.detLine K (V ⧸ range T))}
+    (hξ : ξ (exteriorPower.ιMulti K _ ((range T).mkQ ∘ z)) = 1) :
+    β = T.detLineEndEquiv (exteriorPower.ιMulti K _ u ⊗ₜ ξ) • γ := by
+  refine sub_eq_zero.1 ((forall_dual_apply_eq_zero_iff K _).1 fun φ ↦ ?_)
+  rw [map_sub, map_smul, smul_eq_mul, ← T.detLineEndEquiv_tmul u v z hβ hγ φ hξ, mul_comm,
+    sub_self]
+
 /-- The canonical trivializations of the determinant lines of equal endomorphisms agree through
 the identification `LinearMap.detLineCongrOfEq` of these lines. -/
 @[simp]

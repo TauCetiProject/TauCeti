@@ -46,6 +46,8 @@ canonically isomorphic to the chosen base change.
   isomorphism of pointed source curves commuting with the maps.
 * `TauCeti.AlgebraicGeometry.PrestableMap.autToCurve`: the injective homomorphism from the
   automorphism group of a prestable map to that of its pointed source curve.
+* `TauCeti.AlgebraicGeometry.PrestableMap.autConstMulEquiv`: the automorphisms of a constant
+  prestable map are those of its source curve.
 * `TauCeti.AlgebraicGeometry.PrestableMap.postcompFunctor`: postcomposition as a functor.
 * `TauCeti.AlgebraicGeometry.PrestableMap.postcompAut`: for a monomorphism of targets `h`, the
   identification `Aut F ≃* Aut (F ≫ h)`.
@@ -60,7 +62,8 @@ canonically isomorphic to the chosen base change.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackPostcompIso`: base change commutes with
   postcomposition.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorId`,
-  `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorComp`: the corresponding natural
+  `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorComp`,
+  `TauCeti.AlgebraicGeometry.PrestableMap.pullbackFunctorPostcomp`: the corresponding natural
   isomorphisms of functors.
 
 ## Main results
@@ -73,6 +76,10 @@ canonically isomorphic to the chosen base change.
   an isomorphism exactly when its map of total spaces is one.
 * `TauCeti.AlgebraicGeometry.PrestableMap.mem_range_autToCurve_iff`: an automorphism of the
   pointed source curve comes from the prestable map exactly when it commutes with the map.
+* `TauCeti.AlgebraicGeometry.PrestableMap.subsingleton_hom_of_mono`: there is at most one morphism
+  into a prestable map whose map is a monomorphism.
+* `TauCeti.AlgebraicGeometry.PrestableMap.subsingleton_aut_of_mono`: a prestable map whose map is
+  a monomorphism has no nontrivial automorphisms.
 * The instances `(postcompFunctor h hh).Full` for a monomorphism `h` and
   `(postcompFunctor h hh).IsEquivalence` for an isomorphism `h`.
 * `TauCeti.AlgebraicGeometry.PrestableMap.pullbackMap_injective_of_epi`: base change is injective
@@ -229,6 +236,46 @@ theorem mem_range_autToCurve_iff (e : Aut F.curve) :
   · rintro ⟨e, rfl⟩
     simp
   · simp
+
+/-- Morphisms into a prestable map whose map is a monomorphism are unique: two morphisms of
+source curves commuting with a monomorphism to the target agree. -/
+instance subsingleton_hom_of_mono (F G : PrestableMap q n) [Mono G.map] : Subsingleton (F ⟶ G) :=
+  ⟨fun f g ↦ hom_ext <| PointedPrestableFamily.hom_ext <|
+    (cancel_mono G.map).1 <| f.hom_comp_map.trans g.hom_comp_map.symm⟩
+
+/-- **A prestable map whose map is a monomorphism has no nontrivial automorphisms**: an
+automorphism of the source curve commuting with a monomorphism to the target is the identity. -/
+theorem subsingleton_aut_of_mono (F : PrestableMap q n) [Mono F.map] : Subsingleton (Aut F) :=
+  ⟨fun _ _ ↦ Aut.ext <| Iso.ext <| Subsingleton.elim _ _⟩
+
+/-- Every automorphism of the source curve of a constant prestable map commutes with the map, so
+comes from an automorphism of the constant map. -/
+theorem autToCurve_const_surjective (P : PointedPrestableFamily S n) (σ : S ⟶ V)
+    (hσ : σ ≫ q = 𝟙 S) : Function.Surjective (autToCurve (const P σ hσ)) :=
+  fun e ↦ (mem_range_autToCurve_iff e).2 <| by
+    rw [const_map]
+    exact e.asIso.hom.hom_comp_toBase_assoc σ
+
+/-- **The automorphisms of a constant prestable map are those of its source curve**: forgetting
+the map is an isomorphism `Aut (const P σ) ≃* Aut P`. -/
+def autConstMulEquiv (P : PointedPrestableFamily S n) (σ : S ⟶ V) (hσ : σ ≫ q = 𝟙 S) :
+    Aut (const P σ hσ) ≃* Aut P :=
+  MulEquiv.ofBijective (autToCurve (const P σ hσ))
+    ⟨autToCurve_injective _, autToCurve_const_surjective P σ hσ⟩
+
+/-- `autConstMulEquiv` keeps the automorphism of the source curve. -/
+@[simp]
+theorem autConstMulEquiv_apply_asIso_hom (P : PointedPrestableFamily S n) (σ : S ⟶ V)
+    (hσ : σ ≫ q = 𝟙 S) (e : Aut (const P σ hσ)) :
+    (autConstMulEquiv P σ hσ e).asIso.hom = e.asIso.hom.curve :=
+  autToCurve_apply_asIso_hom e
+
+/-- The inverse of `autConstMulEquiv` keeps the automorphism of the source curve. -/
+@[simp]
+theorem autConstMulEquiv_symm_apply_asIso_hom_curve (P : PointedPrestableFamily S n)
+    (σ : S ⟶ V) (hσ : σ ≫ q = 𝟙 S) (e : Aut P) :
+    ((autConstMulEquiv P σ hσ).symm e).asIso.hom.curve = e.asIso.hom := by
+  rw [← autConstMulEquiv_apply_asIso_hom, MulEquiv.apply_symm_apply]
 
 /-! ### Postcomposition -/
 
@@ -518,6 +565,41 @@ theorem pullbackPostcompIso_inv_curve (F : PrestableMap q n) {r : W ⟶ S} (h : 
     (F.pullbackPostcompIso h hh x).inv.curve = 𝟙 _ :=
   -- As for `pullbackPostcompIso_hom_curve`, with the inverse equality of prestable maps.
   (eqToHom_map toCurve _).trans (eqToHom_refl _ _)
+
+/-- The canonical isomorphism `pullbackPostcompIso` is natural in the prestable map. -/
+@[reassoc]
+theorem pullbackPostcompIso_hom_naturality {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q)
+    (x : T ⟶ S) (f : F ⟶ G) :
+    pullbackMap x ((postcompFunctor h hh).map f) ≫ (G.pullbackPostcompIso h hh x).hom =
+      (F.pullbackPostcompIso h hh x).hom ≫
+        (postcompFunctor (Limits.pullback.map q x r x h (𝟙 T) (𝟙 S) (by simp [hh]) (by simp))
+          (by simp)).map (pullbackMap x f) := by
+  refine hom_ext (((comp_curve _ _).trans ?_).trans (comp_curve _ _).symm)
+  rw [pullbackPostcompIso_hom_curve, pullbackPostcompIso_hom_curve]
+  -- By `pullbackMap_curve` and `postcompFunctor_map_curve`, both remaining curves are
+  -- definitionally `PointedPrestableFamily.pullbackMap x f.curve`. These lemmas cannot be used
+  -- with `rw` or `simp` here: the goal is type-correct only after unfolding
+  -- `(postcompFunctor h hh).obj F` to `F.postcomp h hh`, so the curves are matched up to defeq.
+  exact (Category.comp_id _).trans (Category.id_comp _).symm
+
+/-- **Base change commutes with postcomposition, as functors.** Postcomposition with a morphism of
+targets `h : V ⟶ W` over `S` followed by base change along `x : T ⟶ S` is canonically isomorphic
+to base change along `x` followed by postcomposition with the base change `V ×_S T ⟶ W ×_S T` of
+`h`. In particular, base change is compatible with the transport of prestable maps along an
+isomorphism of targets. -/
+def pullbackFunctorPostcomp {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (x : T ⟶ S) :
+    postcompFunctor (n := n) h hh ⋙ pullbackFunctor x ≅
+      pullbackFunctor x ⋙
+        postcompFunctor (Limits.pullback.map q x r x h (𝟙 T) (𝟙 S) (by simp [hh]) (by simp))
+          (by simp) :=
+  NatIso.ofComponents (fun F ↦ F.pullbackPostcompIso h hh x)
+    (pullbackPostcompIso_hom_naturality h hh x)
+
+@[simp]
+theorem pullbackFunctorPostcomp_app {r : W ⟶ S} (h : V ⟶ W) (hh : h ≫ r = q) (x : T ⟶ S)
+    (F : PrestableMap q n) :
+    (pullbackFunctorPostcomp h hh x).app F = F.pullbackPostcompIso h hh x :=
+  (rfl)
 
 end PrestableMap
 

@@ -58,6 +58,8 @@ inequality, bounds `u` itself by its `W^{1,p}` norm.
   point about which its open domain is star-convex is bounded by its `W^{1,p}` norm. For a fixed
   space, Haar measure, exponent and radius `r`, the constant is uniform over all domains whose
   intersection with the ball of radius `r` about that point has measure at least a given `m`.
+* `TauCeti.exists_eLpNorm_top_le_mul_eLpNorm_add_eLpNorm_fderiv`: on the whole space,
+  `‖u‖_∞ ≤ C (‖u‖_{Lᵖ} + ‖Du‖_{Lᵖ})` for every `C¹` function `u`.
 * `TauCeti.enorm_sub_le_of_mem_ball_of_finrank_lt`: Morrey's inequality on a ball.
 * `TauCeti.enorm_sub_le_of_contDiffOn_ball_midpoint_of_finrank_lt`: Morrey's inequality between
   two points, for `u` that is `C¹` on the ball of radius `‖x - y‖` about their midpoint.
@@ -235,6 +237,22 @@ theorem exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv [CompleteSpace F] (hp1 : 
       · exact le_self_add
       · exact le_add_self
     _ = C₀ * (eLpNorm u p (μ.restrict Ω) + eLpNorm (fderiv ℝ u) p (μ.restrict Ω)) := by ring
+
+/-- **The supremum of a `C¹` function is bounded by its `W^{1,p}` norm for `p > n`.** There is a
+constant `C`, depending only on `n`, `p` and `μ`, such that every `C¹` function `u` on the whole
+space satisfies `‖u‖_∞ ≤ C (‖u‖_{Lᵖ} + ‖Du‖_{Lᵖ})`. -/
+theorem exists_eLpNorm_top_le_mul_eLpNorm_add_eLpNorm_fderiv [CompleteSpace F] (hp1 : 1 ≤ p)
+    (hp : (finrank ℝ E : ℝ≥0) < p) :
+    ∃ C : ℝ≥0, ∀ u : E → F, ContDiff ℝ 1 u →
+      eLpNorm u ∞ μ ≤ C * (eLpNorm u p μ + eLpNorm (fderiv ℝ u) p μ) := by
+  -- Every ball of radius one has the measure of the unit ball about the origin.
+  obtain ⟨C, hC⟩ := exists_enorm_le_mul_eLpNorm_add_eLpNorm_fderiv (μ := μ) (F := F) hp1 hp 1
+    (measure_ball_pos μ (0 : E) one_pos).ne'
+  refine ⟨C, fun u hu ↦ ?_⟩
+  rw [eLpNorm_exponent_top hu.continuous.aestronglyMeasurable]
+  refine eLpNormEssSup_le_of_ae_eNorm_bound (ae_of_all _ fun x ↦ ?_)
+  simpa only [Measure.restrict_univ] using hC univ u x isOpen_univ (starConvex_univ x)
+    hu.contDiffOn (by rw [univ_inter, Measure.addHaar_ball_center μ x 1])
 
 /-- **Morrey's inequality on a ball.** If `u` is `C¹` on `ball z r` and `p` exceeds the dimension
 `n` of the space, then for all `x, y` in the ball, `‖u x - u y‖` is at most

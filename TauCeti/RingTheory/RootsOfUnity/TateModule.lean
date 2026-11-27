@@ -700,28 +700,18 @@ point of `lim_n μ_n(R)` whose level-`n` component is a primitive `n`-th root of
 `n`, then `zHat.lift ζ` is an isomorphism of topological groups `ℤ̂ ≃ₜ* lim_n μ_n(R)`; this is its
 inverse, sending `ζ` to the canonical generator `zHat.gen`. -/
 noncomputable def continuousMulEquivZHat : PrimeToPTateModule 1 R ≃ₜ* zHat.{u} :=
-  -- The construction follows `TauCeti.maximalUnramifiedGaloisGroupEquivZHat`: a bijective
-  -- `zHat.lift`, whose inverse is continuous because `ℤ̂` is compact and the target is Hausdorff.
-  let e : zHat.{u} ≃* PrimeToPTateModule 1 R :=
-    MulEquiv.ofBijective (zHat.lift ζ).toMonoidHom
-      ⟨zHatLift_injective hζ, zHatLift_surjective hζ⟩
-  ContinuousMulEquiv.symm
-    { e with
-      continuous_toFun := (zHat.lift ζ).continuous
-      continuous_invFun := (zHat.lift ζ).continuous.continuous_symm_of_equiv_compact_to_t2
-        (f := e.toEquiv) }
+  zHat.liftContinuousMulEquiv ζ ⟨zHatLift_injective hζ, zHatLift_surjective hζ⟩
 
 /-- The inverse of `continuousMulEquivZHat ζ hζ` is `zHat.lift ζ`. -/
 @[simp]
 theorem continuousMulEquivZHat_symm_apply (a : zHat.{u}) :
     (continuousMulEquivZHat ζ hζ).symm a = zHat.lift ζ a :=
-  (rfl)
+  zHat.liftContinuousMulEquiv_symm_apply _ _ a
 
 /-- The isomorphism `continuousMulEquivZHat ζ hζ` sends `ζ` to the canonical generator of `ℤ̂`. -/
 @[simp]
 theorem continuousMulEquivZHat_self : continuousMulEquivZHat.{u} ζ hζ ζ = zHat.gen :=
-  (continuousMulEquivZHat ζ hζ).symm.injective <| by
-    rw [ContinuousMulEquiv.symm_apply_apply, continuousMulEquivZHat_symm_apply, zHat.lift_gen]
+  zHat.liftContinuousMulEquiv_apply_self _ _
 
 /-- **The coordinates of the isomorphism with `ℤ̂`.** The residue modulo `n` of the image of `x`
 under `continuousMulEquivZHat ζ hζ` is the exponent by which `ζ_n` gives the level-`n` component

@@ -12,6 +12,7 @@ public import TauCeti.Combinatorics.Quiver.PathWeight
 public import Mathlib.GroupTheory.FreeGroup.Basic
 public import Mathlib.GroupTheory.Finiteness
 public import Mathlib.Algebra.Group.End
+public import Mathlib.CategoryTheory.Category.Basic
 
 /-!
 # Subgroups read by labelled graphs
@@ -23,6 +24,7 @@ that of the target. Moving the base vertex along a path conjugates the accepted 
 accepted word also has a reduced-path witness, so a labelled graph without nonempty reduced
 closed paths accepts only the identity. A path whose label is a freely reduced word is reduced.
 A graph with finitely many darts accepts a finitely generated subgroup at every vertex.
+Based labelled graphs and their morphisms form a category (`TauCeti.StallingsGraph.instCategory`).
 
 The accepted subgroup is bounded by a subgroup `H` as soon as some assignment `r` of group
 elements to the vertices puts `r` of the base vertex in `H`, together with
@@ -440,6 +442,38 @@ theorem subgroup_le (f : S.Hom T) : S.subgroup S.base ≤ T.subgroup T.base := b
   exact f.subgroup_le_subgroup_mapV S.base
 
 end Hom
+
+open CategoryTheory in
+/-- Based labelled graphs over `α` form a category, with the based label-preserving morphisms. -/
+instance instCategory {α : Type u} : Category (StallingsGraph.{u, v, w} α) where
+  Hom := Hom
+  id := Hom.id
+  comp f g := g.comp f
+  id_comp := Hom.comp_id
+  comp_id := Hom.id_comp
+  assoc := Hom.comp_assoc
+
+open CategoryTheory in
+/-- The categorical identity of a based labelled graph is `StallingsGraph.Hom.id`. -/
+@[simp]
+theorem id_eq_id (S : StallingsGraph α) : 𝟙 S = Hom.id S :=
+  (rfl)
+
+open CategoryTheory in
+/-- Categorical composition of based labelled-graph morphisms is `StallingsGraph.Hom.comp`, in
+the opposite order. -/
+@[simp]
+theorem comp_eq_comp {R S T : StallingsGraph α} (f : R ⟶ S) (g : S ⟶ T) :
+    f ≫ g = g.comp f :=
+  (rfl)
+
+open CategoryTheory in
+/-- Morphisms of based labelled graphs in the category are equal when their underlying Serre-graph
+morphisms are; the form of `StallingsGraph.Hom.ext` for `⟶`. -/
+@[ext]
+theorem hom_ext {S T : StallingsGraph α} {f g : S ⟶ T} (h : f.graphHom = g.graphHom) :
+    f = g :=
+  Hom.ext h
 
 /-- The rose with one petal for each generator, labelled by those generators. -/
 @[expose] def rose (α : Type*) : StallingsGraph α where

@@ -22,9 +22,15 @@ odd-time returns have zero mass. Its divergence criterion therefore gives recurr
 without assuming a return or hitting estimate. The symmetric case returns to its starting
 state infinitely often almost surely; no finite-mean assertion about those returns is made.
 
+Summing the central-binomial series in closed form gives the Green function `1 / |p - q|`,
+with `q = 1 - p`. Since the diagonal Green function is `1 / (1 - ρ)` for the return
+probability `ρ`, the walk returns to its starting state with probability `1 - |p - q|`.
+
 ## References
 
 * J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §§1.5–1.6.
+* W. Feller, *An Introduction to Probability Theory and Its Applications*, vol. I, third
+  edition (1968), Chapter XI, for the return probability `1 - |p - q|`.
 -/
 
 public section
@@ -50,6 +56,29 @@ theorem integerWalk_tsum_pow_apply_self (p : unitInterval) (x : ℤ) :
   simp [NNReal.coe_sub hp, ← Nat.centralBinom_eq_two_mul_choose,
     ENNReal.ofReal_mul, ENNReal.ofReal_pow (mul_nonneg p.property.1 (sub_nonneg.mpr p.property.2)),
     ← mul_pow, mul_assoc]
+
+/-- The diagonal Green function of integer walk in closed form: with `q = 1 - p`, it is
+`1 / |p - q| = 1 / |2p - 1|`, which is infinite exactly for the symmetric walk.
+For instance `p = 2 / 3` gives `3`. -/
+theorem integerWalk_tsum_pow_apply_self_eq_inv (p : unitInterval) (x : ℤ) :
+    ∑' n : ℕ, (integerWalk p ^ n) x {x} = (ENNReal.ofReal |2 * (p : ℝ) - 1|)⁻¹ := by
+  have hp : unitInterval.toNNReal p ≤ 1 := by exact_mod_cast p.property.2
+  rw [integerWalk_tsum_pow_apply_self, NNReal.tsum_centralBinom_mul_pow, NNReal.coe_mul,
+    NNReal.coe_sub hp, unitInterval.coe_toNNReal, NNReal.coe_one,
+    show 1 - 4 * ((p : ℝ) * (1 - p)) = (2 * p - 1) ^ 2 by ring, Real.sqrt_sq_eq_abs]
+
+/-- **The return probability of integer walk.** With `q = 1 - p`, the walk started at `x`
+returns to `x` at a positive time with probability `1 - |p - q| = 1 - |2p - 1|`. This is one
+exactly for the symmetric walk, zero for the deterministic walks, and `2 / 3` for `p = 2 / 3`. -/
+theorem integerWalk_markovChainLaw_dirac_setOf_hittingAfter_one_ne_top (p : unitInterval)
+    (x : ℤ) :
+    markovChainLaw (Measure.dirac x) (integerWalk p)
+        {ω | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} =
+      ENNReal.ofReal (1 - |2 * (p : ℝ) - 1|) := by
+  have h := (integerWalk p).tsum_pow_apply_singleton_self x
+  rw [integerWalk_tsum_pow_apply_self_eq_inv, inv_inj] at h
+  rw [ENNReal.ofReal_sub _ (abs_nonneg _), ENNReal.ofReal_one, h,
+    ENNReal.sub_sub_cancel ENNReal.one_ne_top prob_le_one]
 
 /-- An integer walk returns almost surely exactly for the symmetric step law.
 This includes the deterministic parameters zero and one. -/

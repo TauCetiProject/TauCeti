@@ -173,7 +173,7 @@ scalar by which a central element of `U(L)` acts on the canonical generator. By
 which the centre acts on *any* highest weight vector of weight `lam`. -/
 noncomputable def vermaCentralCharacter : Subalgebra.center K U →ₐ[K] K :=
   centralCharacterAux (isHighestWeightVector_vermaGenerator b lam)
-    (lieSpan_vermaGenerator_eq_top b lam)
+    (UniversalEnvelopingAlgebra.lieSpan_cyclicGenerator_eq_top _)
 
 variable (b lam) in
 private theorem representation_vermaGenerator_eq_vermaCentralCharacter_smul
@@ -182,7 +182,7 @@ private theorem representation_vermaGenerator_eq_vermaCentralCharacter_smul
         (vermaGenerator b lam) =
       vermaCentralCharacter b lam u • vermaGenerator b lam :=
   representation_eq_centralScalarAux_smul (isHighestWeightVector_vermaGenerator b lam)
-    (lieSpan_vermaGenerator_eq_top b lam) u
+    (UniversalEnvelopingAlgebra.lieSpan_cyclicGenerator_eq_top _) u
 
 /-- **The defining property of the central character**: a central element of `U(L)` acts on any
 highest weight vector of weight `lam`, in any module, by `chi_lam`. The vector is not assumed to

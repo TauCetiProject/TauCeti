@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+import Mathlib.Analysis.Complex.Angle
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
@@ -23,9 +25,11 @@ of a product exactly when the sum of the arguments lies in `(-π, π]`
 (`Complex.arg_mul_eq_add_arg_iff`). This file records the analogue for quotients, and its most
 common instances: two points of the open upper half-plane, of the open lower half-plane or of the
 open right half-plane have arguments in a common open interval of length `π`, so the argument of
-their quotient is the difference of their arguments. It also records that every
-complex number is rotated onto the nonpositive real axis by the square of a unit complex number,
-and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`, and that of
+their quotient is the difference of their arguments. Dually, the arguments of two points of the
+slit plane whose imaginary parts have opposite signs add up to a value in `(-π, π)`, and in the
+right half-plane those of `z - 1` and `z + 1` add up to a value in `(-π, π]`. It also records that
+every complex number is rotated onto the nonpositive real axis by the square of a unit complex
+number, and computes the argument of `-e^{2iφ}` when `φ` is not a multiple of `π`, and that of
 `1 - e^{iθ}` for `0 < θ < 2π`.
 A sector `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by a punctured ball about its
 vertex, is the image of an open rectangle in polar coordinates. On the slit plane `|arg z| < π`,
@@ -48,8 +52,14 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_im_neg`: if `x.im < 0` and `y.im < 0`, then `arg (x / y) = arg x - arg y`.
 * `Complex.arg_div_of_re_pos`: if `0 < x.re` and `0 < y.re`, then `arg (x / y) = arg x - arg y`.
+* `Complex.arg_add_arg_mem_Ioo_of_im_mul_nonpos`: two points of the slit plane whose imaginary
+  parts do not have the same strict sign have arguments adding up to a value in `(-π, π)`.
+* `Complex.arg_sub_one_add_arg_add_one_mem_Ioc`: for `0 < re z`,
+  `arg (z - 1) + arg (z + 1) ∈ (-π, π]`.
 * `Complex.arg_eq_pi_div_two_sub_arctan_of_im_pos`: in the open upper half-plane,
   `arg w = π / 2 - arctan (re w / im w)`.
+* `Complex.pi_div_two_sub_arg_le_div`: for `0 ≤ z.re` and `0 < z.im`,
+  `π / 2 - arg z ≤ re z / im z`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
@@ -78,6 +88,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
 * `Complex.abs_arg_le_pi_div_two_mul_norm_sub_one`: on the unit circle, `|arg z| ≤ (π / 2) ‖z - 1‖`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
+* `TauCeti.continuousAt_abs_arg`: `|arg z|`, the unoriented angle with `1`, is continuous away
+  from the origin, across the negative real axis too.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
@@ -167,6 +179,13 @@ theorem arg_eq_pi_div_two_sub_arctan_of_im_pos {w : ℂ} (hw : 0 < w.im) :
   · ring
   · rw [Real.tan_pi_div_two_sub, tan_arg, inv_div]
 
+/-- If `0 ≤ z.re` and `0 < z.im`, then `arg z` falls short of `π / 2` by at most
+`re z / im z`. -/
+theorem pi_div_two_sub_arg_le_div {z : ℂ} (hre : 0 ≤ z.re) (him : 0 < z.im) :
+    π / 2 - z.arg ≤ z.re / z.im := by
+  rw [arg_eq_pi_div_two_sub_arctan_of_im_pos him, sub_sub_cancel]
+  exact Real.arctan_le_self (div_nonneg hre him.le)
+
 /-- Every complex number `c` is rotated onto the nonpositive real axis by the square of a unit:
 `c ω² = -‖c‖`. -/
 theorem exists_norm_eq_one_mul_sq_eq_neg_norm (c : ℂ) :
@@ -246,6 +265,49 @@ theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
 /-- On the slit plane the argument lies strictly between `-π` and `π`. -/
 theorem abs_arg_lt_pi_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) : |arg z| < π :=
   abs_lt.2 ⟨neg_pi_lt_arg z, lt_of_le_of_ne (arg_le_pi z) (slitPlane_arg_ne_pi hz)⟩
+
+/-- The arguments of two points of the slit plane whose imaginary parts do not have the same strict
+sign add up to a value in `(-π, π)`. -/
+theorem arg_add_arg_mem_Ioo_of_im_mul_nonpos {x y : ℂ} (hx : x ∈ slitPlane) (hy : y ∈ slitPlane)
+    (h : x.im * y.im ≤ 0) : arg x + arg y ∈ Set.Ioo (-π) π := by
+  have hx' := abs_lt.1 (abs_arg_lt_pi_of_mem_slitPlane hx)
+  have hy' := abs_lt.1 (abs_arg_lt_pi_of_mem_slitPlane hy)
+  -- on the slit plane, `arg w ≤ 0` when `im w ≤ 0`, by conjugation
+  have hle : ∀ {w : ℂ}, w ∈ slitPlane → w.im ≤ 0 → arg w ≤ 0 := fun {w} hw hw' => by
+    have := arg_nonneg_iff.2 (by simpa using hw' : 0 ≤ ((starRingEnd ℂ) w).im)
+    simp only [arg_conj, slitPlane_arg_ne_pi hw, ite_false] at this
+    linarith
+  rcases mul_nonpos_iff.1 h with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩
+  · have := arg_nonneg_iff.2 h₁
+    have := hle hy h₂
+    constructor <;> linarith
+  · have := hle hx h₁
+    have := arg_nonneg_iff.2 h₂
+    constructor <;> linarith
+
+/-- In the right half-plane the arguments of `z - 1` and `z + 1` add up to a value in the principal
+range `(-π, π]`. -/
+theorem arg_sub_one_add_arg_add_one_mem_Ioc {z : ℂ} (hre : 0 < z.re) :
+    arg (z - 1) + arg (z + 1) ∈ Set.Ioc (-π) π := by
+  have hy : z + 1 ∈ slitPlane := mem_slitPlane_iff.2 (Or.inl (by simp; linarith))
+  by_cases hz : z - 1 ∈ slitPlane
+  · -- `(z² - 1) * conj (z + 1)` is a positive multiple of `z - 1`, and its two factors have
+    -- imaginary parts of opposite signs
+    have hp := sq_sub_one_mem_slitPlane hz hre
+    have hc : (starRingEnd ℂ) (z + 1) ∈ slitPlane := conj_mem_slitPlane.2 hy
+    have h := (arg_mul_eq_add_arg_iff (slitPlane_ne_zero hp) (slitPlane_ne_zero hc)).2
+      (Set.Ioo_subset_Ioc_self (arg_add_arg_mem_Ioo_of_im_mul_nonpos hp hc (by
+        simp only [sub_im, one_im, sub_zero, sq, mul_im, conj_im, add_im]
+        nlinarith [mul_nonneg hre.le (mul_self_nonneg z.im)])))
+    rw [show (z ^ 2 - 1) * (starRingEnd ℂ) (z + 1) = (z - 1) * ((normSq (z + 1) : ℝ) : ℂ) by
+        rw [← mul_conj]; ring,
+      arg_mul_ofReal _ (normSq_pos.2 (slitPlane_ne_zero hy))] at h
+    simp only [arg_conj, slitPlane_arg_ne_pi hy, ite_false] at h
+    rw [show arg (z - 1) + arg (z + 1) = arg (z ^ 2 - 1) by linarith]
+    exact arg_mem_Ioc _
+  · have him : z.im = 0 := by simpa using im_eq_zero_of_notMem_slitPlane hz
+    rw [(arg_eq_zero_iff (z := z + 1)).2 ⟨by simp; linarith, by simp [him]⟩, add_zero]
+    exact arg_mem_Ioc _
 
 /-- The exponential of a point of the horizontal strip `|im x| < π` lies in the slit plane. -/
 theorem exp_mem_slitPlane_of_abs_im_lt {x : ℂ} (hx : |x.im| < π) : exp x ∈ slitPlane := by
@@ -452,6 +514,16 @@ theorem ContDiff.contDiffAt_comp_arg {E : Type*} [NormedAddCommGroup E] [NormedS
 namespace TauCeti
 
 open Complex Metric Set
+
+/-- The absolute value of the argument, the unoriented angle with `1`, is continuous away from
+`0`, across the negative real axis too, where the argument itself jumps. -/
+theorem continuousAt_abs_arg {w : ℂ} (hw : w ≠ 0) : ContinuousAt (fun z : ℂ => |z.arg|) w := by
+  have hangle : ContinuousAt (fun z : ℂ => InnerProductGeometry.angle z 1) w :=
+    (InnerProductGeometry.continuousAt_angle (x := (w, (1 : ℂ))) hw one_ne_zero).comp
+      (f := fun z : ℂ => (z, (1 : ℂ))) (by fun_prop)
+  refine hangle.congr ?_
+  filter_upwards [isOpen_ne.mem_nhds hw] with z hz
+  exact angle_one_right hz
 
 /-- In polar coordinates about `v`, rotated and scaled by `b`, the open sector
 `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by the punctured ball of radius `δ`, is

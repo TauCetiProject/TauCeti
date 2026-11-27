@@ -225,7 +225,7 @@ theorem exists_contractibleCyclicDistanceCutBrokenGeodesic_comp_homotopic
   obtain ⟨N, hN⟩ :=
     exists_cyclicDistanceCutBrokenGeodesic_comp_homotopic hr (hK.image continuous_subtypeVal) hε
   refine ⟨N, fun n hn δ hεδ hδ ↦ ?_⟩
-  obtain ⟨e, he, ⟨F⟩⟩ := hN n hn δ hεδ hδ
+  obtain ⟨e, F, he, -⟩ := hN n hn δ hεδ hδ
   -- Read `K` as a family of free loops.
   let φ : C(K, Subtype.val '' K) :=
     ⟨fun γ ↦ ⟨γ.val, γ.val, γ.property, rfl⟩,
