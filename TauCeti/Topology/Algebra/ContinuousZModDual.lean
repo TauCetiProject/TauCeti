@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.Dual.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Algebra.OpenSubgroup
 public import Mathlib.Topology.Instances.ZMod
 
 /-!
@@ -33,6 +34,8 @@ the algebraic dual, injectively.
 
 * `TauCeti.continuousZModDual`: the group of continuous `ZMod n`-valued characters of a topological
   group, written additively; for a prime `p` it is the continuous `𝔽_p`-dual.
+* `TauCeti.continuousZModDualKer`: the common kernel of the continuous `ZMod n`-characters, when
+  there are finitely many of them, as an open normal subgroup.
 * `TauCeti.continuousZModDual.evalₗ`: evaluation at a point, as a linear functional on the dual.
 * `TauCeti.continuousZModHom.evalₗ`: evaluation at a point, as a linear map on continuous
   homomorphisms into a `ZMod n`-module.
@@ -146,6 +149,31 @@ theorem _root_.ContinuousMulEquiv.continuousZModDualMap_bijective (e : G ≃ₜ*
     fun _ ↦ Additive.toMul.injective <| ContinuousMonoidHom.ext fun _ ↦ by simp⟩
 
 end ZModDual
+
+section Kernel
+
+variable (n : ℕ) (G : Type u) [Group G] [TopologicalSpace G] [Finite (continuousZModDual n G)]
+
+/-- The **common kernel** of the continuous characters `G → ZMod n`, when there are only finitely
+many of them: an open normal subgroup of `G`, open as a finite intersection of open kernels. -/
+def continuousZModDualKer : OpenNormalSubgroup G where
+  toSubgroup := ⨅ χ : continuousZModDual n G, (χ.toMul : G →* Multiplicative (ZMod n)).ker
+  isOpen' := by
+    convert isOpen_iInter_of_finite fun χ : continuousZModDual n G ↦
+      (isOpen_discrete {1}).preimage χ.toMul.continuous
+    exact Subgroup.coe_iInf
+  isNormal' := Subgroup.normal_iInf_normal fun χ ↦ MonoidHom.normal_ker _
+
+variable {n G}
+
+/-- An element lies in the common kernel of the continuous `ZMod n`-characters exactly when every
+such character is trivial on it. -/
+@[simp]
+theorem mem_continuousZModDualKer_iff {g : G} :
+    g ∈ continuousZModDualKer n G ↔ ∀ χ : continuousZModDual n G, χ.toMul g = 1 :=
+  Subgroup.mem_iInf
+
+end Kernel
 
 section Tensor
 
