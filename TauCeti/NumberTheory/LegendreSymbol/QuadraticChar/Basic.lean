@@ -27,6 +27,8 @@ Jacobi sum `∑ᵤ χ(u (c - u))` is `χ(-1) (q - 1)` at `c = 0` (through
 * `TauCeti.sum_quadraticChar_sq`: `∑ᵤ χ(u)² = q - 1`.
 * `TauCeti.sum_quadraticChar_mul_sub`: the quadratic Jacobi sum `∑ᵤ χ(u (c - u))` is
   `χ(-1) (q - 1)` at `c = 0` and `-χ(-1)` otherwise.
+* `TauCeti.sum_quadraticChar_add_mul_add`: the autocorrelation `∑ᵤ χ(u + b) χ(u + c)` is `q - 1`
+  for `b = c` and `-1` otherwise.
 -/
 
 public section
@@ -64,8 +66,9 @@ theorem sum_quadraticChar_add (hF : ringChar F ≠ 2) (a : F) :
     ∑ u : F, quadraticChar F (u + a) = 0 :=
   (Equiv.sum_comp (Equiv.addRight a) (quadraticChar F)).trans (quadraticChar_sum_zero hF)
 
-/-- The square of the quadratic character sums to `q - 1`, since it is `1` away from `0`. -/
+/-- The square of the quadratic character sums to `q - 1`. -/
 theorem sum_quadraticChar_sq : ∑ x : F, quadraticChar F x ^ 2 = Fintype.card F - 1 := by
+  -- `χ(x) ^ 2` is the trivial character, `1` away from `0`.
   have h := MulChar.sum_one_eq_card_units (R := F) (R' := ℤ)
   rw [Fintype.card_units, Nat.cast_sub Fintype.card_pos, Nat.cast_one] at h
   rw [← h]
@@ -94,5 +97,24 @@ theorem sum_quadraticChar_mul_sub (hF : ringChar F ≠ 2) (c : F) :
       (Units.mk0 c hc)
     rw [Units.val_mk0] at this
     rw [this, ← sq, hη.sq_eq_one, MulChar.one_apply (IsUnit.mk0 c hc), one_mul, hJ, mul_neg_one]
+
+/-- **The autocorrelation of the quadratic character**: in a finite field of odd characteristic,
+`∑ᵤ χ(u + b) χ(u + c)` is `q - 1` for `b = c` and `-1` otherwise. -/
+theorem sum_quadraticChar_add_mul_add (hF : ringChar F ≠ 2) (b c : F) :
+    ∑ u : F, quadraticChar F (u + b) * quadraticChar F (u + c) =
+      if b = c then (Fintype.card F : ℤ) - 1 else -1 := by
+  -- Shift `t = u + b`: then `(u + b) (u + c) = -(t ((b - c) - t))`.
+  have h := sum_quadraticChar_mul_sub hF (b - c)
+  have hη : quadraticChar F (-1) * quadraticChar F (-1) = 1 := by
+    rw [← sq, quadraticChar_sq_one (neg_ne_zero.mpr one_ne_zero)]
+  calc ∑ u : F, quadraticChar F (u + b) * quadraticChar F (u + c)
+      = ∑ t : F, quadraticChar F (-1) * quadraticChar F (t * (b - c - t)) := by
+        refine Fintype.sum_equiv (Equiv.addRight b) _ _ fun u ↦ ?_
+        simp only [Equiv.coe_addRight, ← map_mul]
+        congr 1
+        ring
+    _ = _ := by
+        rw [← mul_sum, h, ← mul_assoc, hη, one_mul]
+        simp only [sub_eq_zero]
 
 end TauCeti
