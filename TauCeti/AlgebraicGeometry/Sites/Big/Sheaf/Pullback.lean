@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Sheaf.PushforwardContinuous
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Sheaf
-public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
+public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf.Basic
 
 /-!
 # Restricting a big-site module along a morphism of schemes
@@ -18,10 +18,10 @@ Let `g : S' ⟶ S` be a morphism of schemes and `F` an `𝒪_S`-module. Regardin
 big structure sheaf of `S` restricts along it to the big structure sheaf of `S'`
 (`AlgebraicGeometry.Scheme.bigRingCatSheafPullback`). This file shows that the restriction of the
 big-site module `F^a : (T, h) ↦ Γ(T, h^* F)` of `S` along `Over.map g` is the big-site module
-`(g^* F)^a` of `S'` (SchemeAndStackFoundations §2.9, *bigSheaf_pullback*): over `(T, h)` the two
-are `Γ(T, (h ≫ g)^* F)` and `Γ(T, h^* g^* F)`, identified by the composition isomorphism of
-pullbacks of modules (`AlgebraicGeometry.Scheme.Modules.bigSectionsPullbackEquiv`), and these
-identifications commute with the restriction maps of the two big sites
+`(g^* F)^a` of `S'`: over `(T, h)` the two are `Γ(T, (h ≫ g)^* F)` and `Γ(T, h^* g^* F)`,
+identified by the composition isomorphism of pullbacks of modules
+(`AlgebraicGeometry.Scheme.Modules.bigSectionsPullbackEquiv`), and these identifications commute
+with the restriction maps of the two big sites
 (`AlgebraicGeometry.Scheme.Modules.bigSectionsRestrict_bigSectionsPullbackEquiv`), by the
 associativity of the pullback pseudofunctor.
 
@@ -66,32 +66,20 @@ variable (F : S.Modules)
 the `S`-scheme `(T, h ≫ g)`, are the sections of the big-site module of `g^* F`: the composition
 isomorphism `(h ≫ g)^* F ≅ h^* g^* F` of pullbacks gives a `Γ(T, 𝒪_T)`-linear equivalence. -/
 noncomputable def bigSectionsPullbackEquiv (T : Over S') :
-    Γ((pullback ((Over.map g).obj T).hom).obj F, ⊤) ≃ₗ[Γ(T.left, ⊤)]
+    Γ((pullback (T.hom ≫ g)).obj F, ⊤) ≃ₗ[Γ(T.left, ⊤)]
       Γ((pullback T.hom).obj ((pullback g).obj F), ⊤) :=
   sectionsLinearEquiv ((pullbackComp T.hom g).app F).symm ⊤
 
-lemma bigSectionsPullbackEquiv_apply (T : Over S')
-    (s : Γ((pullback ((Over.map g).obj T).hom).obj F, ⊤)) :
+@[simp]
+lemma bigSectionsPullbackEquiv_apply (T : Over S') (s : Γ((pullback (T.hom ≫ g)).obj F, ⊤)) :
     bigSectionsPullbackEquiv g F T s = ((pullbackComp T.hom g).inv.app F).app ⊤ s :=
   sectionsLinearEquiv_apply _ _ _
 
-/-- The two composites `f^* (h' ≫ g)^* F ⟶ h^* g^* F` around the restriction along `f` and the
-composition isomorphisms of pullbacks agree, for `f ≫ h' = h`. This is the associativity of the
-pullback pseudofunctor, with `h` a free variable so that the equation `f ≫ h' = h` can be
-substituted. -/
-private lemma pullbackComp_coherence {T T' : Scheme.{u}} (f : T ⟶ T') (h' : T' ⟶ S')
-    {h : T ⟶ S'} (w : f ≫ h' = h) :
-    (pullbackComp f (h' ≫ g)).hom.app F ≫
-        (pullbackCongr (by rw [← w, Category.assoc] : f ≫ h' ≫ g = h ≫ g)).hom.app F ≫
-          (pullbackComp h g).inv.app F =
-      (pullback f).map ((pullbackComp h' g).inv.app F) ≫
-        (pullbackComp f h').hom.app ((pullback g).obj F) ≫
-          (pullbackCongr w).hom.app ((pullback g).obj F) := by
-  subst w
-  rw [← cancel_epi ((pullback f).map ((pullbackComp h' g).hom.app F)),
-    ← Functor.map_comp_assoc, Iso.hom_inv_id_app, CategoryTheory.Functor.map_id,
-    Category.id_comp, pullback_map_pullbackComp_hom_app_comp_pullbackComp_hom_app_assoc]
-  simp [pullbackCongr]
+@[simp]
+lemma bigSectionsPullbackEquiv_symm_apply (T : Over S')
+    (s : Γ((pullback T.hom).obj ((pullback g).obj F), ⊤)) :
+    (bigSectionsPullbackEquiv g F T).symm s = ((pullbackComp T.hom g).hom.app F).app ⊤ s :=
+  sectionsLinearEquiv_symm_apply _ _ _
 
 /-- The identifications `bigSectionsPullbackEquiv` commute with the restriction maps of the big
 sites of `S` and `S'`: restricting along `f : T ⟶ T'` over `S'`, regarded as a morphism over `S`
@@ -102,8 +90,8 @@ lemma bigSectionsRestrict_bigSectionsPullbackEquiv {T T' : Over S'} (f : T ⟶ T
       bigSectionsRestrict ((pullback g).obj F) f (bigSectionsPullbackEquiv g F T' s) := by
   rw [bigSectionsPullbackEquiv_apply, bigSectionsPullbackEquiv_apply, bigSectionsRestrict_apply,
     bigSectionsRestrict_apply, ← Hom.pullbackSections_naturality]
-  exact congr($(pullbackComp_coherence g F f.left T'.hom (Over.w f)).app ⊤
-    (f.left.pullbackSections _ ⊤ s))
+  exact congr($(pullbackComp_hom_app_comp_pullbackCongr_hom_app_comp_pullbackComp_inv_app
+    f.left T'.hom g (Over.w f) F).app ⊤ (f.left.pullbackSections _ ⊤ s))
 
 /-- **Restriction of the big-site presheaf along a morphism of schemes.** The restriction of the
 presheaf of modules `F^a : (T, h) ↦ Γ(T, h^* F)` on the big site of `S` along
@@ -124,11 +112,17 @@ lemma bigPresheafPullbackIso_hom_app_apply (T : Over S')
     (bigPresheafPullbackIso g F).hom.app (op T) s = ((pullbackComp T.hom g).inv.app F).app ⊤ s :=
   bigSectionsPullbackEquiv_apply g F T s
 
+@[simp]
+lemma bigPresheafPullbackIso_inv_app_apply (T : Over S')
+    (s : Γ((pullback T.hom).obj ((pullback g).obj F), ⊤)) :
+    (bigPresheafPullbackIso g F).inv.app (op T) s = ((pullbackComp T.hom g).hom.app F).app ⊤ s :=
+  bigSectionsPullbackEquiv_symm_apply g F T s
+
 variable [F.IsQuasicoherent]
 
-/-- **`bigSheaf_pullback`.** For a quasi-coherent `𝒪_S`-module `F`, the restriction of the
-big-site module `F^a` of `S` along `Over.map g : Over S' ⥤ Over S` is the big-site module
-`(g^* F)^a` of `S'` (SchemeAndStackFoundations §2.9). -/
+/-- **Restriction of the big-site module along a morphism of schemes.** For a quasi-coherent
+`𝒪_S`-module `F`, the restriction of the big-site module `F^a` of `S` along
+`Over.map g : Over S' ⥤ Over S` is the big-site module `(g^* F)^a` of `S'`. -/
 noncomputable def bigSheafPullbackIso :
     (SheafOfModules.pushforward (bigRingCatSheafPullback g)).obj (bigSheaf F) ≅
       bigSheaf ((pullback g).obj F) :=
@@ -137,6 +131,11 @@ noncomputable def bigSheafPullbackIso :
 @[simp]
 lemma bigSheafPullbackIso_hom_val :
     (bigSheafPullbackIso g F).hom.val = (bigPresheafPullbackIso g F).hom :=
+  (rfl)
+
+@[simp]
+lemma bigSheafPullbackIso_inv_val :
+    (bigSheafPullbackIso g F).inv.val = (bigPresheafPullbackIso g F).inv :=
   (rfl)
 
 end Modules
