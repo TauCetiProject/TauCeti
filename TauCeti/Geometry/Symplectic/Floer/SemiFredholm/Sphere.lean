@@ -381,7 +381,7 @@ adjoint is `-ω♭` of the Cauchy–Riemann operator of `-J₀` on `ξ = ω♭�
 (`TauCeti.SymplecticForm.floerLinearizationAdjoint_const_eq_neg_flatEquiv`), and `-J₀` is
 compatible with `-ω`, so the energy estimate of the Cauchy–Riemann operator of `-J₀` for `-ω`
 bounds the Dirichlet energy of `ξ`. -/
-private theorem exists_forall_integral_norm_fderiv_sq_le_of_const (h₀ : ω.Compatible J₀) :
+theorem exists_forall_integral_norm_fderiv_sq_le_of_const (h₀ : ω.Compatible J₀) :
     ∃ C, 0 ≤ C ∧ ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → HasCompactSupport η →
       ∫ z, (‖fderiv ℝ η z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ η z stdComplexLineImag‖ ^ 2) ≤
         C * ∫ z, ‖ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
@@ -447,7 +447,7 @@ zero perturbation, read a covector field `η` in the chart `ζ = w⁻¹` of the 
 `(0, 1)`-form `η' = η (ζ⁻¹) ∘ (a + b J₀)` (`TauCeti.Floer.covectorPullback`). Away from `ζ = 0`, the
 formal adjoint of `η'` at `ζ` is the Jacobian `|ζ⁻¹|⁴` of the inversion times the formal adjoint of
 `η` at `ζ⁻¹`. -/
-private theorem floerLinearizationAdjoint_const_covectorPullback_realChart_inv
+theorem floerLinearizationAdjoint_const_covectorPullback_realChart_inv
     {η : ℝ × ℝ → V →L[ℝ] ℝ} {ζ : ℝ × ℝ} (hζ : Complex.equivRealProdCLM.symm ζ ≠ 0)
     (hη : DifferentiableAt ℝ η (TauCeti.Complex.realChart (·⁻¹) ζ)) :
     ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)

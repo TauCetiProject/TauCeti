@@ -185,4 +185,27 @@ theorem setLIntegral_le_ofReal_mul_setIntegral_sobolevDensity {K : Set (ℝ × �
   nlinarith [mul_le_mul_of_nonneg_right (hB z hz) (sq_nonneg ‖ξ z‖),
     sq_nonneg ‖fderiv ℝ ξ z (1, 0)‖, sq_nonneg ‖fderiv ℝ ξ z (0, 1)‖, sq_nonneg ‖ξ z‖]
 
+/-- **The weighted energy of a compactly supported section.** For a continuous weight `ρ ≤ 1` and a
+`C¹` map `g` vanishing near every point outside a compact set `K`, the weighted energy
+`∫ (ρ ‖g‖² + ‖∂s g‖² + ‖∂t g‖²)` over the plane is at most the `W^{1,2}` energy of `g` on `K`. -/
+theorem integral_weighted_le_setIntegral_sobolevDensity {ρ : ℝ × ℝ → ℝ} (hρ : Continuous ρ)
+    (hρ1 : ∀ z, ρ z ≤ 1) {g : ℝ × ℝ → V} (hg : ContDiff ℝ 1 g) {K : Set (ℝ × ℝ)}
+    (hK : IsCompact K) (hg0 : ∀ z ∉ K, g =ᶠ[𝓝 z] 0) :
+    ∫ z, (ρ z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 + ‖fderiv ℝ g z (0, 1)‖ ^ 2) ≤
+      ∫ z in K, sobolevDensity g z := by
+  -- Both densities vanish off `K`.
+  have hsupp {F : ℝ × ℝ → ℝ} (hF : ∀ z, g =ᶠ[𝓝 z] 0 → F z = 0) : HasCompactSupport F :=
+    HasCompactSupport.intro hK fun z hz ↦ hF z (hg0 z hz)
+  rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
+    rw [sobolevDensity_congr_of_eventuallyEq (hg0 z hz), sobolevDensity_zero]]
+  refine integral_mono ?_ ((continuous_sobolevDensity hg).integrable_of_hasCompactSupport
+    (hsupp fun z h ↦ by rw [sobolevDensity_congr_of_eventuallyEq h, sobolevDensity_zero]))
+    fun z ↦ ?_
+  · have := hg.continuous_fderiv one_ne_zero
+    have := hg.continuous
+    exact Continuous.integrable_of_hasCompactSupport (by fun_prop)
+      (hsupp fun z h ↦ by simp [h.eq_of_nhds, h.fderiv_eq])
+  · rw [sobolevDensity_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
+    nlinarith [mul_le_mul_of_nonneg_right (hρ1 z) (sq_nonneg ‖g z‖)]
+
 end TauCeti.Floer

@@ -45,8 +45,9 @@ sections are dense in `W^{1,2}` of the sphere.
   (`isClosed_range_floerConformalSobolevOperator_sphereWeight_of_eq_base`), both in the namespace
   `TauCeti.SymplecticForm`.
 
-The target is a symplectic vector space. The finiteness of the cokernel and the index are not
-treated here.
+The target is a symplectic vector space. The finiteness of the cokernel, which makes `D_u` Fredholm,
+is proved in `TauCeti.Geometry.Symplectic.Floer.Sobolev.Sphere.Fredholm`; the index is not treated
+here.
 
 ## References
 
@@ -78,15 +79,22 @@ def sphereWeight (z : ℝ × ℝ) : ℝ :=
 theorem sphereWeight_apply (z : ℝ × ℝ) : sphereWeight z = ((1 + z.1 ^ 2 + z.2 ^ 2) ^ 2)⁻¹ :=
   (rfl)
 
+/-- The conformal weight of the Riemann sphere is continuous. -/
+theorem continuous_sphereWeight : Continuous sphereWeight := by
+  unfold sphereWeight
+  exact (by fun_prop : Continuous fun z : ℝ × ℝ ↦ (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2).inv₀
+    fun z ↦ by positivity
+
+/-- The conformal weight of the Riemann sphere is at most one. -/
+theorem sphereWeight_le_one (z : ℝ × ℝ) : sphereWeight z ≤ 1 := by
+  rw [sphereWeight_apply]
+  exact inv_le_one_of_one_le₀ (one_le_pow₀ (by nlinarith [sq_nonneg z.1, sq_nonneg z.2]))
+
 /-- The conformal weight of the Riemann sphere is a conformal weight on the whole plane: it is
 continuous and positive. -/
 theorem isWeight_sphereWeight : IsWeight univ sphereWeight where
   isOpen := isOpen_univ
-  continuousOn := by
-    refine Continuous.continuousOn ?_
-    unfold sphereWeight
-    exact (by fun_prop : Continuous fun z : ℝ × ℝ ↦ (1 + z.1 ^ 2 + z.2 ^ 2) ^ 2).inv₀
-      fun z ↦ by positivity
+  continuousOn := continuous_sphereWeight.continuousOn
   pos z _ := by
     rw [sphereWeight_apply]
     positivity

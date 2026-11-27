@@ -142,6 +142,19 @@ theorem Lp.integrable_sq_norm {F : Type*} [NormedAddCommGroup F] (u : Lp F 2 μ)
     Integrable (fun x ↦ ‖u x‖ ^ 2) μ :=
   (Lp.memLp u).norm.integrable_sq
 
+/-- A field of covectors almost everywhere equal to `x ↦ ⟪h x, ·⟫` for `h` in `L²` of a real inner
+product space has square-integrable norm, and the integral of its squared norm is `‖h‖²`. -/
+theorem Lp.integral_norm_sq_eq_and_integrable_of_ae_eq_innerSL {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] {h : Lp F 2 μ} {η : α → F →L[ℝ] ℝ}
+    (hae : (fun x ↦ innerSL ℝ (h x)) =ᵐ[μ] η) :
+    ∫ x, ‖η x‖ ^ 2 ∂μ = ‖h‖ ^ 2 ∧ Integrable (fun x ↦ ‖η x‖ ^ 2) μ := by
+  have hn : (fun x ↦ ‖η x‖ ^ 2) =ᵐ[μ] fun x ↦ ‖h x‖ ^ 2 :=
+    hae.mono fun x hx ↦ by
+      dsimp only at hx ⊢
+      rw [← hx, innerSL_apply_norm]
+  exact ⟨by rw [integral_congr_ae hn, Lp.integral_norm_sq_eq_norm_sq],
+    (Lp.integrable_sq_norm h).congr hn.symm⟩
+
 /-- The `L²` seminorm of `V • g` for a real weight `V` is the square root of
 `∫⁻ V² ‖g‖²`. -/
 theorem _root_.TauCeti.eLpNorm_two_smul_eq_lintegral_ofReal_rpow {F : Type*}

@@ -16,6 +16,7 @@ import TauCeti.Geometry.Symplectic.Floer.Plane.SemiFredholm
 import TauCeti.Topology.Constructions.SumProd
 import TauCeti.Geometry.Symplectic.Floer.Transversality.Conformal
 import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
+import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 
 /-!
@@ -449,36 +450,6 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero
       (isCompact_setOf_norm_equivRealProdCLM_symm_le _).measurableSet fun z _ ↦ by positivity)
     hest hT
 
-omit [FiniteDimensional ℝ V] in
-/-- The weighted energy `∫ (ρ ‖g‖² + ‖∂s g‖² + ‖∂t g‖²)` of a `C¹` field `g` vanishing near every
-point with `‖w‖ > a`, for the cylindrical weight `ρ ≤ 1` of the plane, is at most its `W^{1,2}`
-energy on the disc `‖w‖ ≤ a`. -/
-private theorem integral_weighted_le_setIntegral_sobolevDensity {g : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hg : ContDiff ℝ 1 g) {a : ℝ}
-    (hg0 : ∀ z, a < ‖Complex.equivRealProdCLM.symm z‖ → g =ᶠ[𝓝 z] 0) :
-    ∫ z, (PSSPlane.cylindricalWeight z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 +
-        ‖fderiv ℝ g z (0, 1)‖ ^ 2) ≤
-      ∫ z in {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}, sobolevDensity g z := by
-  have hD : IsCompact {z : ℝ × ℝ | ‖Complex.equivRealProdCLM.symm z‖ ≤ a} :=
-    isCompact_setOf_norm_equivRealProdCLM_symm_le _
-  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero
-    (s := {z | ‖Complex.equivRealProdCLM.symm z‖ ≤ a}) fun z hz ↦ by
-      have h := hg0 z (not_le.1 hz)
-      simp [h.eq_of_nhds, h.fderiv_eq]]
-  refine setIntegral_mono_on ?_ ((continuous_sobolevDensity hg).continuousOn.integrableOn_compact
-    hD) hD.measurableSet fun z _ ↦ ?_
-  · have := hg.continuous_fderiv one_ne_zero
-    have := hg.continuous
-    have := PSSPlane.continuous_cylindricalWeight
-    exact (Continuous.continuousOn (by fun_prop)).integrableOn_compact hD
-  · have hρ1 : PSSPlane.cylindricalWeight z ≤ 1 := by
-      rw [PSSPlane.cylindricalWeight_apply]
-      exact inv_le_one_of_one_le₀ (le_add_of_nonneg_right (sq_nonneg _))
-    rw [sobolevDensity_apply]
-    have := mul_le_mul_of_nonneg_right hρ1 (sq_nonneg ‖g z‖)
-    simp only [stdComplexLineReal, stdComplexLineImag] at *
-    linarith
-
 /-- **The weighted energy of a cut-off cokernel element.** Under the hypotheses of the estimate of
 `D_u^*` on discs, with `J` compatible along `u` and `‖J(z, u z)‖ ≤ B`, let `χ` be a cutoff vanishing
 off the disc `‖w‖ < 2n`, `n ≥ 1`, whose derivative vanishes off the annulus `n ≤ ‖w‖ ≤ 2n` and has
@@ -524,7 +495,12 @@ private theorem exists_integral_weighted_smul_le (ω : SymplecticForm V)
   have hgc : HasCompactSupport g :=
     HasCompactSupport.intro (isCompact_setOf_norm_equivRealProdCLM_symm_le (2 * n)) fun z hz ↦
       (hg0 z (not_le.1 hz)).self_of_nhds
-  have hW := integral_weighted_le_setIntegral_sobolevDensity (a := 2 * n) (hg.of_le one_le_two) hg0
+  have hW := integral_weighted_le_setIntegral_sobolevDensity PSSPlane.continuous_cylindricalWeight
+    (fun z ↦ by
+      rw [PSSPlane.cylindricalWeight_apply]
+      exact inv_le_one_of_one_le₀ (le_add_of_nonneg_right (sq_nonneg _)))
+    (hg.of_le one_le_two) (isCompact_setOf_norm_equivRealProdCLM_symm_le (2 * n))
+    fun z hz ↦ hg0 z (not_le.1 hz)
   -- The adjoint term and the `L²` term are controlled by `∫ ‖η‖²`.
   have hT : ∫ z, (PSSPlane.cylindricalWeight z)⁻¹ *
       ‖ω.floerLinearizationAdjoint J' Ks Kt u g z‖ ^ 2 ≤ c * ∫ z, ‖η z‖ ^ 2 :=
@@ -554,47 +530,6 @@ end Estimate
 section Fredholm
 
 variable {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-
-omit [FiniteDimensional ℝ V] in
-/-- A covector field almost everywhere equal to `⟪h, ·⟫` for `h ∈ L²(ℂ, V)` is square integrable
-with the norm of `h`. -/
-private theorem integral_norm_sq_eq_and_integrable_of_ae_eq
-    {h : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))} {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hae : (fun z ↦ innerSL ℝ (h z)) =ᵐ[volume] η) :
-    ∫ z, ‖η z‖ ^ 2 = ‖h‖ ^ 2 ∧ Integrable fun z ↦ ‖η z‖ ^ 2 := by
-  have hn : (fun z ↦ ‖η z‖ ^ 2) =ᵐ[volume] fun z ↦ ‖h z‖ ^ 2 :=
-    hae.mono fun z hz ↦ by
-      simp only at hz ⊢
-      rw [← hz, innerSL_apply_norm]
-  have hm : MemLp (⇑h) 2 volume := by simpa only [Measure.restrict_univ] using Lp.memLp h
-  have hm' : MemLp (⇑h) ((2 : ℕ) : ℝ≥0∞) volume := by simpa using hm
-  refine ⟨?_, (hm'.integrable_norm_pow two_ne_zero).congr hn.symm⟩
-  rw [integral_congr_ae hn, ← Lp.integral_norm_sq_eq_norm_sq]
-  exact setIntegral_univ.symm
-
-omit [FiniteDimensional ℝ V] in
-/-- The jets in `W^{1,2}` of the cut-offs `χ η` of cokernel elements are bounded: if the weighted
-energy of `χ η` is at most `K ∫ ‖η‖²`, `η` represents `h ∈ L²(ℂ, V)` and `‖h‖ ≤ r`, then the class
-of the jet of `χ η` has norm at most `√(max K 0 r²)`. -/
-private theorem norm_toLp_jet_le {h : Lp V 2 (volume.restrict (univ : Set (ℝ × ℝ)))}
-    {η g : ℝ × ℝ → V →L[ℝ] ℝ} (hηae : (fun z ↦ innerSL ℝ (h z)) =ᵐ[volume] η)
-    (hg : g ∈ testSection (V →L[ℝ] ℝ) univ) {K r : ℝ} (hr : ‖h‖ ≤ r)
-    (hK : Integrable (fun z ↦ ‖η z‖ ^ 2) →
-      ∫ z, (PSSPlane.cylindricalWeight z * ‖g z‖ ^ 2 + ‖fderiv ℝ g z (1, 0)‖ ^ 2 +
-        ‖fderiv ℝ g z (0, 1)‖ ^ 2) ≤ K * ∫ z, ‖η z‖ ^ 2) :
-    ‖(memLp_jet PSSPlane.isWeight_cylindricalWeight hg).toLp
-      (jet PSSPlane.cylindricalWeight g)‖ ≤ √(max K 0 * r ^ 2) := by
-  obtain ⟨hηn, hηi⟩ := integral_norm_sq_eq_and_integrable_of_ae_eq hηae
-  have h1 := sq_norm_le_integral PSSPlane.isWeight_cylindricalWeight hg
-    (memLp_jet PSSPlane.isWeight_cylindricalWeight hg).coeFn_toLp
-  rw [setIntegral_univ] at h1
-  have h4 : ∫ z, ‖η z‖ ^ 2 ≤ r ^ 2 := by
-    rw [hηn]
-    exact pow_le_pow_left₀ (norm_nonneg _) hr 2
-  refine Real.le_sqrt_of_sq_le ((h1.trans (hK hηi)).trans ?_)
-  calc K * ∫ z, ‖η z‖ ^ 2 ≤ max K 0 * ∫ z, ‖η z‖ ^ 2 :=
-        mul_le_mul_of_nonneg_right (le_max_left _ _) (integral_nonneg fun z ↦ by positivity)
-    _ ≤ max K 0 * r ^ 2 := mul_le_mul_of_nonneg_left h4 (le_max_right _ _)
 
 omit [FiniteDimensional ℝ V] in
 /-- For `A ≥ 0`, `ε = (A |B| + 1)⁻¹` satisfies `A |B| ε² < 1`. -/
@@ -641,7 +576,10 @@ private theorem norm_sub_sq_le_of_setIntegral_le (ω : SymplecticForm V)
     have hsub := (ae_restrict_iff' MeasurableSet.univ).1 (Lp.coeFn_sub h₁ h₂)
     filter_upwards [hsub, hae₁, hae₂] with z h1 h2 h3
     rw [h1 (mem_univ z), Pi.sub_apply, map_sub, h2, h3, Pi.sub_apply]
-  obtain ⟨hdn, hdi⟩ := integral_norm_sq_eq_and_integrable_of_ae_eq hae
+  obtain ⟨hdn, hdi⟩ : ∫ z, ‖(η₁ - η₂) z‖ ^ 2 = ‖h₁ - h₂‖ ^ 2 ∧
+      Integrable fun z ↦ ‖(η₁ - η₂) z‖ ^ 2 := by
+    simpa only [Measure.restrict_univ] using
+      Lp.integral_norm_sq_eq_and_integrable_of_ae_eq_innerSL (ae_restrict_of_ae hae)
   have hdD (z : ℝ × ℝ) : ω.floerLinearizationAdjoint
       (fun z y ↦ (J z y).toLinearMap.toContinuousLinearMap) Ks Kt u (η₁ - η₂) z = 0 := by
     rw [floerLinearizationAdjoint_sub ((hη₁.differentiable (by norm_num)) z)
@@ -738,7 +676,7 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_positiv
     jetSubmodule_le_H1 (toLp_jet_mem_jetSubmodule hρ (hgT k))⟩
   have hxb (k : ℕ) : ‖x k‖ ≤ √(max K 0 * Rr ^ 2) := by
     rw [← Submodule.norm_coe]
-    exact norm_toLp_jet_le (hηae k) (hgT k) (by rw [Submodule.norm_coe]; exact hfR k)
+    exact norm_toLp_jet_le_of_ae_eq hρ (hηae k) (hgT k) (by rw [Submodule.norm_coe]; exact hfR k)
       (hK (hηs k) (hηD k))
   -- By Rellich's theorem two of them are close on the disc, hence close everywhere.
   obtain ⟨k, l, hkl, hdist⟩ := hcpt.exists_dist_lt_of_norm_le hxb
