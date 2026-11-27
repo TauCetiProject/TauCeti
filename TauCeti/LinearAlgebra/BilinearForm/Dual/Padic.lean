@@ -7,7 +7,9 @@ module
 
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import TauCeti.LinearAlgebra.BilinearForm.Dual.PerfectPairing
+import Mathlib.LinearAlgebra.FreeModule.PID
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
+import TauCeti.LinearAlgebra.SesquilinearForm.TorsionFree
 import TauCeti.NumberTheory.Padics.PadicIntegers
 
 /-!
@@ -23,9 +25,10 @@ open scoped TensorProduct Padic
 
 namespace LinearMap.BilinForm
 
-variable {M : Type*} [AddCommGroup M] [Module ℤ M] [Module.Free ℤ M] [Module.Finite ℤ M]
+variable {M : Type*} [AddCommGroup M] [Module ℤ M] [Module.Finite ℤ M]
 
-/-- The completed unit-tensor lattice is self-dual exactly when its pairing is perfect. -/
+/-- For a nondegenerate integral form on a finite module, the completed unit-tensor lattice
+is self-dual exactly when its pairing is perfect. -/
 theorem baseChange_padic_dualSubmodule_eq_self_iff_isPerfPair (B : LinearMap.BilinForm ℤ M)
     (hB : B.Nondegenerate) (p : ℕ) [Fact p.Prime] :
     let Mₚ := ℤ_[p] ⊗[ℤ] M
@@ -33,14 +36,15 @@ theorem baseChange_padic_dualSubmodule_eq_self_iff_isPerfPair (B : LinearMap.Bil
     ((B.baseChange ℤ_[p]).baseChange ℚ_[p]).dualSubmodule N = N ↔
       (B.baseChange ℤ_[p]).IsPerfPair := by
   classical
+  have := hB.1.isTorsionFree
   let b := Module.Free.chooseBasis ℤ M
   have hC : (B.baseChange ℤ_[p]).Nondegenerate :=
     (B.nondegenerate_baseChange_iff b).2 hB
   exact (B.baseChange ℤ_[p]).dualSubmodule_range_mk_eq_self_iff_isPerfPair
     (hC.baseChange_of_isLocalization ℚ_[p] (nonZeroDivisors ℤ_[p]))
 
-/-- The completion at `p` is self-dual exactly when `p` does not divide the index of the
-original lattice in its rational dual. -/
+/-- For a nondegenerate integral form on a finite module, the completion at `p` is self-dual
+exactly when `p` does not divide the index of the original lattice in its rational dual. -/
 theorem baseChange_padic_dualSubmodule_eq_self_iff_not_dvd_relIndex (B : LinearMap.BilinForm ℤ M)
     (hB : B.Nondegenerate) (p : ℕ) [Fact p.Prime] :
     let Mₚ := ℤ_[p] ⊗[ℤ] M
@@ -49,6 +53,7 @@ theorem baseChange_padic_dualSubmodule_eq_self_iff_not_dvd_relIndex (B : LinearM
     ((B.baseChange ℤ_[p]).baseChange ℚ_[p]).dualSubmodule Nₚ = Nₚ ↔
       ¬p ∣ N.toAddSubgroup.relIndex ((B.baseChange ℚ).dualSubmodule N).toAddSubgroup := by
   classical
+  have := hB.1.isTorsionFree
   let b := Module.Free.chooseBasis ℤ M
   let bP := b.baseChange ℤ_[p]
   let C := B.baseChange ℤ_[p]

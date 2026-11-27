@@ -80,9 +80,9 @@ theorem baseChange_adjoint (b : O) (x y : A ⊗[ℤ] L) :
     S.form.baseChange A (b • x) y = S.form.baseChange A x (star b • y) :=
   S.form.baseChange_rightModule_adjoint b (S.adjoint b) x y
 
-/-- With the trivial involution on the base ring, the entire scalar-extended order acts
+/-- With trivial star on the base ring, the entire scalar-extended order acts
 by star-adjoints for the extended pairing. This holds over nonflat base rings as well. -/
-theorem baseChange_tensor_adjoint [StarRing A] [TrivialStar A]
+theorem baseChange_tensor_adjoint [StarAddMonoid A] [TrivialStar A]
     (c : A ⊗[ℤ] O) (x y : A ⊗[ℤ] L) :
     let ρ := BialgebraModule.tensorPairAction ℤ A L
     S.form.baseChange A (ρ c x) y = S.form.baseChange A x (ρ (star c) y) :=

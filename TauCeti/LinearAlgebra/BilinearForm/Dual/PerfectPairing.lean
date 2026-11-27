@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
+public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
 import Mathlib.LinearAlgebra.FreeModule.Finite.CardQuotient
+import Mathlib.LinearAlgebra.FreeModule.PID
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
+import TauCeti.LinearAlgebra.SesquilinearForm.TorsionFree
 
 /-!
 # Integral pairings and their dual lattices
@@ -45,12 +48,14 @@ section FractionField
 variable {R K M : Type*} [CommRing R] [IsDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
   [AddCommGroup M] [Module R M] [Module.Finite R M]
 
-/-- Under `dualSubmoduleEquivDual` and `TensorProduct.unitTmulEquiv`, the inclusion into the
-fraction-field dual lattice is the integral pairing map. -/
-theorem dualSubmoduleEquivDual_comp_inclusion_range_mk_one [Module.Flat R M]
+/-- Under `dualSubmoduleEquivDual` and the equivalence onto the unit-tensor image of a
+torsion-free module, the inclusion into the fraction-field dual lattice is the integral
+pairing map. -/
+theorem dualSubmoduleEquivDual_comp_inclusion_range_mk_one [IsTorsionFree R M]
     (B : LinearMap.BilinForm R M) (hB : (B.baseChange K).Nondegenerate) :
     let N := LinearMap.range (TensorProduct.mk R K M 1)
-    let u := TensorProduct.unitTmulEquiv R K M
+    let u := LinearEquiv.ofInjective (TensorProduct.mk R K M 1)
+      (IsTorsionFree.mk_one_injective_of_isFractionRing K)
     let e := ((B.baseChange K).dualSubmoduleEquivDual hB N).trans u.dualMap
     e.toLinearMap.comp ((Submodule.inclusion (B.range_mk_one_le_dualSubmodule (K := K))).comp
       u.toLinearMap) = B := by
@@ -58,14 +63,13 @@ theorem dualSubmoduleEquivDual_comp_inclusion_range_mk_one [Module.Flat R M]
   apply FaithfulSMul.algebraMap_injective R K
   simp only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearEquiv.trans_apply,
     LinearEquiv.dualMap_apply, dualSubmoduleEquivDual_apply, dualSubmoduleToDual_apply_apply,
-    dualSubmodulePairing_spec, Submodule.coe_inclusion, TensorProduct.coe_unitTmulEquiv_apply]
+    dualSubmodulePairing_spec, Submodule.coe_inclusion, LinearEquiv.ofInjective_apply,
+    TensorProduct.mk_apply]
   simp [Algebra.algebraMap_eq_smul_one]
 
-/-- An integral form with nondegenerate scalar extension identifies the original module with its
-linear dual exactly when the integral lattice in the fraction-field extension is self-dual.
-The inclusion is identified with the pairing map by `dualSubmoduleEquivDual` and
-`TensorProduct.unitTmulEquiv`. -/
-theorem dualSubmodule_range_mk_eq_self_iff_isPerfPair [Module.Flat R M] [Module.IsReflexive R M]
+/-- An integral form on a finite reflexive module with nondegenerate scalar extension is
+perfect exactly when the integral lattice in the fraction-field extension is self-dual. -/
+theorem dualSubmodule_range_mk_eq_self_iff_isPerfPair [Module.IsReflexive R M]
     (B : LinearMap.BilinForm R M) (hB : (B.baseChange K).Nondegenerate) :
     let N := LinearMap.range (TensorProduct.mk R K M 1)
     (B.baseChange K).dualSubmodule N = N ↔ B.IsPerfPair := by
@@ -73,7 +77,8 @@ theorem dualSubmodule_range_mk_eq_self_iff_isPerfPair [Module.Flat R M] [Module.
   let D := (B.baseChange K).dualSubmodule N
   have hND : N ≤ D := B.range_mk_one_le_dualSubmodule
   let i := Submodule.inclusion hND
-  let u := TensorProduct.unitTmulEquiv R K M
+  let u := LinearEquiv.ofInjective (TensorProduct.mk R K M 1)
+    (IsTorsionFree.mk_one_injective_of_isFractionRing K)
   let e := ((B.baseChange K).dualSubmoduleEquivDual hB N).trans u.dualMap
   have hcomp : e.toLinearMap.comp (i.comp u.toLinearMap) = B :=
     B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB
@@ -112,7 +117,8 @@ theorem relIndex_dualSubmodule_range_mk_one_eq_natAbs_det (B : LinearMap.BilinFo
   let N := LinearMap.range (TensorProduct.mk ℤ ℚ M 1)
   let D := (B.baseChange ℚ).dualSubmodule N
   have hND : N ≤ D := B.range_mk_one_le_dualSubmodule
-  let u := TensorProduct.unitTmulEquiv ℤ ℚ M
+  let u := LinearEquiv.ofInjective (TensorProduct.mk ℤ ℚ M 1)
+    (IsTorsionFree.mk_one_injective_of_isFractionRing ℚ)
   let e := ((B.baseChange ℚ).dualSubmoduleEquivDual hB N).trans u.dualMap
   have hcomp : e.toLinearMap.comp ((Submodule.inclusion hND).comp u.toLinearMap) = B :=
     B.dualSubmoduleEquivDual_comp_inclusion_range_mk_one hB
@@ -130,12 +136,13 @@ theorem relIndex_dualSubmodule_range_mk_one_eq_natAbs_det (B : LinearMap.BilinFo
     Matrix.det_transpose]
   rfl
 
-/-- A nondegenerate integral form on a finite free module has positive dual-lattice index. -/
-theorem relIndex_dualSubmodule_range_mk_one_pos [Module.Free ℤ M] [Module.Finite ℤ M]
+/-- A nondegenerate integral form on a finite module has positive dual-lattice index. -/
+theorem relIndex_dualSubmodule_range_mk_one_pos [Module.Finite ℤ M]
     (B : LinearMap.BilinForm ℤ M) (hB : B.Nondegenerate) :
     let N := LinearMap.range (TensorProduct.mk ℤ ℚ M 1)
     0 < N.toAddSubgroup.relIndex ((B.baseChange ℚ).dualSubmodule N).toAddSubgroup := by
   classical
+  have := hB.1.isTorsionFree
   let b := Module.Free.chooseBasis ℤ M
   dsimp only
   rw [B.relIndex_dualSubmodule_range_mk_one_eq_natAbs_det
