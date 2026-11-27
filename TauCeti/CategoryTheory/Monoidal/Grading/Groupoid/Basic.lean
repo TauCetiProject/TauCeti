@@ -343,6 +343,11 @@ private theorem fromQuotient_comp_lift (γ : GroupoidGrading C G) :
       eqToHom (lift_mkObj γ _) ≫ γ.degOf X ≫ eqToHom (lift_mkObj γ _).symm := by
   simp [degreeOf_def, GroupoidGrading.degOf, eqToHom_map, Category.assoc]
 
+private theorem heq_eqRecOn {G : Type u₂} [Quiver.{v₂} G] {a b c d : G}
+    (p : b = a) (q : c = d) (m : b ⟶ c) :
+    m ≍ (Eq.recOn q (Eq.recOn p m : a ⟶ c) : a ⟶ d) := by
+  subst p q; rfl
+
 private theorem functor_ext_of_groupoid {F₁ F₂ : universalGradingGroupoid C ⥤ G}
     (hobj : ∀ I : UnitSimpleClasses C, F₁.obj (mkObj I) = F₂.obj (mkObj I))
     (hdeg : ∀ S : SimpleClasses C,
@@ -355,10 +360,8 @@ private theorem functor_ext_of_groupoid {F₁ F₂ : universalGradingGroupoid C 
     have hφ : Quiver.FreeGroupoid.of (GeneratingQuiver C) ⋙q
         (CategoryTheory.Quotient.functor (Rel C) ⋙ fromQuotientFunctor ⋙ F₁).toPrefunctor = φ := by
       refine Prefunctor.ext (fun x ↦ hobj x.unit) ?_; rintro _ _ ⟨S⟩
-      have hrec : ∀ {a b c d : G} (p : b = a) (q : c = d) (m : b ⟶ c),
-          m ≍ (Eq.recOn q (Eq.recOn p m : a ⟶ c) : a ⟶ d) := by rintro _ _ _ _ rfl rfl _; rfl
       exact eq_of_heq <| ((conj_eqToHom_iff_heq (F₁.map (degree S)) (F₂.map (degree S))
-        (hobj _) (hobj _)).1 (hdeg S)).trans (hrec _ _ _)
+        (hobj _) (hobj _)).1 (hdeg S)).trans (heq_eqRecOn _ _ _)
     rw [Quiver.FreeGroupoid.lift_unique φ _ hφ, Quiver.FreeGroupoid.lift_unique φ _ rfl]
   simpa [← Functor.assoc, toQuotient_comp_fromQuotient, Functor.id_comp] using
     congrArg (toQuotientFunctor (C := C) ⋙ ·) hcomp
@@ -376,7 +379,7 @@ theorem functor_ext {G : Type u₂} [Category.{v₂} G] {F₁ F₂ : universalGr
   have hcore : Core.functorToCore F₁ = Core.functorToCore F₂ := by
     refine functor_ext_of_groupoid (fun I ↦ congrArg Core.mk (hobj I)) fun S ↦ Core.hom_ext ?_
     simpa using hdeg S
-  exact congrArg (· ⋙ Core.inclusion G) hcore
+  rw [← Core.functorToCore_comp_inclusion F₁, ← Core.functorToCore_comp_inclusion F₂, hcore]
 
 section UniversalProperty
 
@@ -523,15 +526,22 @@ private theorem quotFunctor_map_of (S : SimpleClasses C) :
     fromQuotientFunctor.map ((CategoryTheory.Quotient.functor (Rel C)).map
       ((Quiver.FreeGroupoid.of (GeneratingQuiver C)).map (GeneratingEdge.mk S))) ≍ degree S :=
   HEq.rfl
+private theorem inv_heq_inv {G : Type u₂} [Category.{v₂} G] {X₁ Y₁ X₂ Y₂ : G}
+    (hX : X₁ = X₂) (hY : Y₁ = Y₂) {f : X₁ ⟶ Y₁} {g : X₂ ⟶ Y₂} [IsIso f] [IsIso g]
+    (h : f ≍ g) : inv f ≍ inv g := by
+  subst hX hY; cases h; rfl
+
+private theorem prop_conj_eqToHom {G : Type u₂} [Category.{v₂} G]
+    {P : ∀ {x y : G}, (x ⟶ y) → Prop} {x₁ y₁ x₂ y₂ : G} (hx : x₂ = x₁) (hy : y₁ = y₂)
+    {m : x₁ ⟶ y₁} (hm : P m) : P (eqToHom hx ≫ m ≫ eqToHom hy) := by
+  subst hx hy; simpa using hm
+
 private theorem quotFunctor_map_inv_of (S : SimpleClasses C) :
     fromQuotientFunctor.map ((CategoryTheory.Quotient.functor (Rel C)).map
       (inv ((Quiver.FreeGroupoid.of (GeneratingQuiver C)).map (GeneratingEdge.mk S)))) ≍
         inv (degree S) := by
   rw [CategoryTheory.Functor.map_inv, CategoryTheory.Functor.map_inv]
-  have h : ∀ {X₁ Y₁ X₂ Y₂ : universalGradingGroupoid C}, X₁ = X₂ → Y₁ = Y₂ →
-      ∀ {f : X₁ ⟶ Y₁} {g : X₂ ⟶ Y₂}, f ≍ g → inv f ≍ inv g := by
-    rintro _ _ _ _ rfl rfl _ _ h; cases h; rfl
-  exact h (quotFunctor_obj_of _) (quotFunctor_obj_of _) (quotFunctor_map_of S)
+  exact inv_heq_inv (quotFunctor_obj_of _) (quotFunctor_obj_of _) (quotFunctor_map_of S)
 
 /-- Presentation-independent induction principle for morphisms of `universalGradingGroupoid C`:
 a property that holds on all generating degrees `degree S`, their inverses `inv (degree S)`, and
@@ -541,9 +551,6 @@ identities, and is closed under composition, holds on every morphism. -/
     (hid : ∀ x : universalGradingGroupoid C, P (𝟙 x))
     (hcomp : ∀ {x y z : universalGradingGroupoid C} (f : x ⟶ y) (g : y ⟶ z),
       P f → P g → P (f ≫ g)) {x y : universalGradingGroupoid C} (g : x ⟶ y) : P g := by
-  have heq : ∀ {x₁ y₁ x₂ y₂ : universalGradingGroupoid C} (hx : x₂ = x₁) (hy : y₁ = y₂)
-      {m : x₁ ⟶ y₁}, P m → P (eqToHom hx ≫ m ≫ eqToHom hy) := by
-    rintro _ _ _ _ rfl rfl m hm; simpa using hm
   have hx := CategoryTheory.Functor.congr_obj (toQuotient_comp_fromQuotient (C := C)) x
   have hy := CategoryTheory.Functor.congr_obj (toQuotient_comp_fromQuotient (C := C)) y
   have hstep : ∀ {q₁ q₂ : CategoryTheory.Quotient (Rel C)} (g₀ : q₁ ⟶ q₂),
@@ -555,19 +562,19 @@ identities, and is closed under composition, holds on every morphism. -/
       rcases e with ⟨S⟩
       rw [(conj_eqToHom_iff_heq' _ _ (quotFunctor_obj_of (leftUnitClass S.repr)).symm
         (quotFunctor_obj_of (rightUnitClass S.repr)).symm).2 (quotFunctor_map_of S)]
-      exact heq _ (quotFunctor_obj_of (rightUnitClass S.repr)) (hdeg S)
+      exact prop_conj_eqToHom _ (quotFunctor_obj_of (rightUnitClass S.repr)) (hdeg S)
     | inv_of_map e =>
       rcases e with ⟨S⟩
       rw [(conj_eqToHom_iff_heq' _ _ (quotFunctor_obj_of (rightUnitClass S.repr)).symm
         (quotFunctor_obj_of (leftUnitClass S.repr)).symm).2 (quotFunctor_map_inv_of S)]
-      exact heq _ (quotFunctor_obj_of (leftUnitClass S.repr)) (hinv S)
+      exact prop_conj_eqToHom _ (quotFunctor_obj_of (leftUnitClass S.repr)) (hinv S)
     | id _ => rw [CategoryTheory.Functor.map_id, CategoryTheory.Functor.map_id]; exact hid _
     | comp _ _ ih₁ ih₂ =>
       rw [CategoryTheory.Functor.map_comp, CategoryTheory.Functor.map_comp]; exact hcomp _ _ ih₁ ih₂
   have hg' : g = eqToHom hx.symm ≫ fromQuotientFunctor.map (toQuotientFunctor.map g) ≫
       eqToHom hy := (conj_eqToHom_iff_heq' _ _ hx.symm hy.symm).2
     (CategoryTheory.Functor.hcongr_hom (toQuotient_comp_fromQuotient (C := C)) g).symm
-  rw [hg']; exact heq hx.symm hy (hstep (toQuotientFunctor.map g))
+  rw [hg']; exact prop_conj_eqToHom hx.symm hy (hstep (toQuotientFunctor.map g))
 
 end Basic
 

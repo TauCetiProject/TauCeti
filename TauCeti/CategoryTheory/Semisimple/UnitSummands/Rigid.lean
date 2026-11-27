@@ -63,12 +63,10 @@ theorem not_isZero_tensorObj_iff_rightUnitClass_eq_leftUnitClass (X Y : C) {Y' :
   have hI : I = rightUnitClass X :=
     (by simpa using leftUnitClass_eq_of_hom_ne_zero hf : I = leftUnitClass Y).trans h.symm
   have := isSplitMono_of_nonzero_from_simple hf
-  have h0 : X ◁ (UnitSimpleClasses.ι I ≫ η_ Y Y') = 0 :=
-    (((tensorRight Y').map_isZero hz).of_iso (α_ X Y Y').symm).eq_of_tgt _ _
   subst hI
-  exact not_isZero_tensorObj_rightUnitClass X <| (IsZero.iff_id_eq_zero _).2 <| by
-    rw [← whiskerLeft_id, ← IsSplitMono.id (UnitSimpleClasses.ι (rightUnitClass X) ≫ η_ Y Y'),
-      whiskerLeft_comp, h0, zero_comp]
+  exact not_isZero_tensorObj_rightUnitClass X <|
+    isZero_whiskerLeft_of_isSplitMono (UnitSimpleClasses.ι (rightUnitClass X) ≫ η_ Y Y') <|
+      (((tensorRight Y').map_isZero hz).of_iso (α_ X Y Y').symm).eq_of_tgt _ _
 
 /-- In an exact pairing of simple objects, the left unit class of the right member equals the right
 unit class of the left member. -/

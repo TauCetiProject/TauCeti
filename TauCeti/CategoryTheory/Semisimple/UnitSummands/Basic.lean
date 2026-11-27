@@ -61,6 +61,24 @@ universe v₁ v₂ u₁ u₂
 
 namespace TauCeti
 
+section SplitMono
+
+variable {C : Type u₁} [Category.{v₁} C] [MonoidalCategory C] [HasZeroMorphisms C]
+
+/-- If `Z ◁ f = 0` for a split monomorphism `f : U ⟶ V`, then `Z ⊗ U` is zero. -/
+theorem isZero_whiskerLeft_of_isSplitMono {Z U V : C} (f : U ⟶ V) [IsSplitMono f]
+    (h : Z ◁ f = 0) : IsZero (Z ⊗ U) :=
+  (IsZero.iff_id_eq_zero _).2 <| by
+    rw [← whiskerLeft_id, ← IsSplitMono.id f, whiskerLeft_comp, h, zero_comp]
+
+/-- If `f ▷ Z = 0` for a split monomorphism `f : U ⟶ V`, then `U ⊗ Z` is zero. -/
+theorem isZero_whiskerRight_of_isSplitMono {U V Z : C} (f : U ⟶ V) [IsSplitMono f]
+    (h : f ▷ Z = 0) : IsZero (U ⊗ Z) :=
+  (IsZero.iff_id_eq_zero _).2 <| by
+    rw [← id_whiskerRight, ← IsSplitMono.id f, comp_whiskerRight, h, zero_comp]
+
+end SplitMono
+
 section Semisimple
 
 variable {C : Type u₁} [Category.{v₁} C] [Abelian C] [MonoidalCategory C]
@@ -104,10 +122,14 @@ private structure TensorUnitDecomp (C : Type u₁) [Category.{v₁} C] [Abelian 
   equiv : ι ≃ UnitSimpleClasses C
   summandIso : ∀ i, summands i ≅ (equiv i).repr
 
+private def unitSummandClass {ι : Type} (a : ι → C) [∀ i, Simple (a i)]
+    [HasBiproduct a] (e : 𝟙_ C ≅ ⨁ a) (i : ι) : UnitSimpleClasses C :=
+  UnitSimpleClasses.mkOfHomNeZero
+    (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h))
+
 private theorem tensorUnit_summand_injective {ι : Type} [Finite ι] (a : ι → C)
     [∀ i, Simple (a i)] [HasBiproduct a] (e : 𝟙_ C ≅ ⨁ a) :
-    Function.Injective (fun i ↦ UnitSimpleClasses.mkOfHomNeZero
-      (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h))) := by
+    Function.Injective (unitSummandClass a e) := by
   classical
   let _ := Fintype.ofFinite ι
   intro i j hij
@@ -117,12 +139,12 @@ private theorem tensorUnit_summand_injective {ι : Type} [Finite ι] (a : ι →
   have hsub : Subsingleton α :=
     Fintype.card_le_one_iff_subsingleton.1 (by rwa [← Nat.card_eq_fintype_card])
   exact congrArg Subtype.val
-    (@Subsingleton.elim α hsub ⟨i, rfl⟩ ⟨j, by simpa using (congrArg Subtype.val hij).symm⟩)
+    (@Subsingleton.elim α hsub ⟨i, rfl⟩
+      ⟨j, by simpa [unitSummandClass] using (congrArg Subtype.val hij).symm⟩)
 
 private theorem tensorUnit_summand_surjective {ι : Type} [Finite ι] (a : ι → C)
     [∀ i, Simple (a i)] [HasBiproduct a] (e : 𝟙_ C ≅ ⨁ a) :
-    Function.Surjective (fun i ↦ UnitSimpleClasses.mkOfHomNeZero
-      (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h))) := by
+    Function.Surjective (unitSummandClass a e) := by
   classical
   let _ := Fintype.ofFinite ι
   intro I
@@ -131,16 +153,14 @@ private theorem tensorUnit_summand_surjective {ι : Type} [Finite ι] (a : ι �
       UnitSimpleClasses.simpleMultiplicities_tensorUnit]
   have hne : Nonempty {k // SimpleClasses.classOf (a k) = I.val} := by
     rw [← Fintype.card_pos_iff, ← Nat.card_eq_fintype_card, hcard]; omega
-  exact ⟨hne.some.val, Subtype.ext (by simpa using hne.some.property)⟩
+  exact ⟨hne.some.val, Subtype.ext (by simpa [unitSummandClass] using hne.some.property)⟩
 
 private theorem nonempty_tensorUnitDecomp (C : Type u₁) [Category.{v₁} C] [Abelian C]
     [MonoidalCategory C] [IsFiniteSemisimpleCategory C] : Nonempty (TensorUnitDecomp C) := by
   obtain ⟨ι, hι, a, ha, hba, ⟨e⟩⟩ := IsFiniteSemisimpleCategory.exists_biproduct_simples (𝟙_ C)
   let _ := hι; let _ := ha; let _ := hba
-  let f : ι → UnitSimpleClasses C := fun i ↦ UnitSimpleClasses.mkOfHomNeZero
-    (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h))
   exact ⟨{ ι := ι, summands := a, iso := e
-           equiv := Equiv.ofBijective f
+           equiv := Equiv.ofBijective (unitSummandClass a e)
              ⟨tensorUnit_summand_injective a e, tensorUnit_summand_surjective a e⟩
            summandIso := fun i ↦ (SimpleClasses.classOfReprIso (a i)).symm ≪≫
              eqToIso (congrArg SimpleClasses.repr (UnitSimpleClasses.val_mkOfHomNeZero _).symm) }⟩
@@ -323,8 +343,7 @@ private theorem exists_unitSimpleClasses_iso_of_functor (F : C ⥤ C)
   have hm : m ≠ 0 := fun hm0 ↦ hi <| (IsZero.iff_id_eq_zero _).2 <| by
     simpa [m, Category.assoc] using hm0 =≫ (d.hom ≫ biproduct.π B i)
   have : IsIso m := isIso_of_mono_of_ne_zero hm
-  exact ⟨UnitSimpleClasses.mkOfHomNeZero
-      (fun h ↦ Simple.not_isZero (a i) (.of_mono_eq_zero (biproduct.ι a i ≫ e.inv) h)),
+  exact ⟨unitSummandClass a e i,
     ⟨F.mapIso (eqToIso (congrArg SimpleClasses.repr (UnitSimpleClasses.val_mkOfHomNeZero _)) ≪≫
       SimpleClasses.classOfReprIso (a i)) ≪≫ asIso m⟩⟩
 
@@ -362,6 +381,18 @@ theorem isZero_tensorObj_unitRepr_of_ne {X : C} [Simple X] {I : UnitSimpleClasse
     ((α_ X (rightUnitClass X).repr I.repr).symm ≪≫
       whiskerRightIso (exists_unitSimpleClasses_iso_right X).choose_spec.some I.repr).symm
 
+/-- Whiskering the idempotent `π (leftUnitClass X) ≫ ι (leftUnitClass X)` on the right by `X` is
+the identity on `𝟙_ C ⊗ X`. -/
+theorem π_comp_ι_whiskerRight_leftUnitClass (X : C) [Simple X] :
+    (UnitSimpleClasses.π (leftUnitClass X) ≫ UnitSimpleClasses.ι (leftUnitClass X)) ▷ X =
+      𝟙 (𝟙_ C ⊗ X) := by
+  classical
+  let := Fintype.ofFinite (UnitSimpleClasses C)
+  rw [← id_whiskerRight, ← UnitSimpleClasses.sum_π_comp_ι, sum_whiskerRight]; symm
+  refine Finset.sum_eq_single (leftUnitClass X) (fun I _ hne ↦ by
+    rw [comp_whiskerRight, (isZero_unitRepr_tensorObj_of_ne hne).eq_of_tgt (_ ▷ X) 0,
+      zero_comp]) (fun h ↦ absurd (Finset.mem_univ _) h)
+
 /-- For any simple object `X`, tensoring on the left with `(leftUnitClass X).repr` leaves `X`
 isomorphic to itself, via the summand inclusion and the left unitor. -/
 def leftUnitClassReprIso (X : C) [Simple X] : (leftUnitClass X).repr ⊗ X ≅ X where
@@ -371,20 +402,24 @@ def leftUnitClassReprIso (X : C) [Simple X] : (leftUnitClass X).repr ⊗ X ≅ X
     rw [Category.assoc, Iso.hom_inv_id_assoc, ← comp_whiskerRight,
       UnitSimpleClasses.ι_comp_π_self, id_whiskerRight]
   inv_hom_id := by
-    classical
-    let := Fintype.ofFinite (UnitSimpleClasses C)
-    have hsum : (UnitSimpleClasses.π (leftUnitClass X) ≫ UnitSimpleClasses.ι (leftUnitClass X)) ▷
-        X = 𝟙 (𝟙_ C ⊗ X) := by
-      rw [← id_whiskerRight, ← UnitSimpleClasses.sum_π_comp_ι, sum_whiskerRight]; symm
-      refine Finset.sum_eq_single (leftUnitClass X) (fun I _ hne ↦ by
-        rw [comp_whiskerRight, (isZero_unitRepr_tensorObj_of_ne hne).eq_of_tgt (_ ▷ X) 0,
-          zero_comp]) (fun h ↦ absurd (Finset.mem_univ _) h)
-    rw [Category.assoc, ← Category.assoc (UnitSimpleClasses.π _ ▷ X), ← comp_whiskerRight, hsum,
-      Category.id_comp, Iso.inv_hom_id]
+    rw [Category.assoc, ← Category.assoc (UnitSimpleClasses.π _ ▷ X), ← comp_whiskerRight,
+      π_comp_ι_whiskerRight_leftUnitClass X, Category.id_comp, Iso.inv_hom_id]
 @[reassoc] theorem leftUnitClassReprIso_hom (X : C) [Simple X] :
     (leftUnitClassReprIso X).hom = UnitSimpleClasses.ι (leftUnitClass X) ▷ X ≫ (λ_ X).hom := (rfl)
 @[reassoc] theorem leftUnitClassReprIso_inv (X : C) [Simple X] :
     (leftUnitClassReprIso X).inv = (λ_ X).inv ≫ UnitSimpleClasses.π (leftUnitClass X) ▷ X := (rfl)
+
+/-- Whiskering the idempotent `π (rightUnitClass X) ≫ ι (rightUnitClass X)` on the left by `X` is
+the identity on `X ⊗ 𝟙_ C`. -/
+theorem whiskerLeft_π_comp_ι_rightUnitClass (X : C) [Simple X] :
+    X ◁ (UnitSimpleClasses.π (rightUnitClass X) ≫ UnitSimpleClasses.ι (rightUnitClass X)) =
+      𝟙 (X ⊗ 𝟙_ C) := by
+  classical
+  let := Fintype.ofFinite (UnitSimpleClasses C)
+  rw [← whiskerLeft_id, ← UnitSimpleClasses.sum_π_comp_ι, whiskerLeft_sum]; symm
+  refine Finset.sum_eq_single (rightUnitClass X) (fun I _ hne ↦ by
+    rw [whiskerLeft_comp, (isZero_tensorObj_unitRepr_of_ne hne).eq_of_tgt (X ◁ _) 0, zero_comp])
+    (fun h ↦ absurd (Finset.mem_univ _) h)
 
 /-- For any simple object `X`, tensoring on the right with `(rightUnitClass X).repr` leaves `X`
 isomorphic to itself, via the summand inclusion and the right unitor. -/
@@ -395,16 +430,8 @@ def rightUnitClassReprIso (X : C) [Simple X] : X ⊗ (rightUnitClass X).repr ≅
     rw [Category.assoc, Iso.hom_inv_id_assoc, ← whiskerLeft_comp,
       UnitSimpleClasses.ι_comp_π_self, whiskerLeft_id]
   inv_hom_id := by
-    classical
-    let := Fintype.ofFinite (UnitSimpleClasses C)
-    have hsum : X ◁ (UnitSimpleClasses.π (rightUnitClass X) ≫
-        UnitSimpleClasses.ι (rightUnitClass X)) = 𝟙 (X ⊗ 𝟙_ C) := by
-      rw [← whiskerLeft_id, ← UnitSimpleClasses.sum_π_comp_ι, whiskerLeft_sum]; symm
-      refine Finset.sum_eq_single (rightUnitClass X) (fun I _ hne ↦ by
-        rw [whiskerLeft_comp, (isZero_tensorObj_unitRepr_of_ne hne).eq_of_tgt (X ◁ _) 0, zero_comp])
-        (fun h ↦ absurd (Finset.mem_univ _) h)
-    rw [Category.assoc, ← Category.assoc (X ◁ UnitSimpleClasses.π _), ← whiskerLeft_comp, hsum,
-      Category.id_comp, Iso.inv_hom_id]
+    rw [Category.assoc, ← Category.assoc (X ◁ UnitSimpleClasses.π _), ← whiskerLeft_comp,
+      whiskerLeft_π_comp_ι_rightUnitClass X, Category.id_comp, Iso.inv_hom_id]
 @[reassoc] theorem rightUnitClassReprIso_hom (X : C) [Simple X] :
     (rightUnitClassReprIso X).hom = X ◁ UnitSimpleClasses.ι (rightUnitClass X) ≫ (ρ_ X).hom := (rfl)
 @[reassoc] theorem rightUnitClassReprIso_inv (X : C) [Simple X] :
@@ -483,20 +510,16 @@ unit class. -/
 theorem leftUnitClass_eq_of_hom_ne_zero {X Y U : C} [Simple X] [Simple U]
     {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) : leftUnitClass U = leftUnitClass X := by
   symm; rw [leftUnitClass_eq_iff]; intro hz; have := isSplitMono_of_nonzero_from_simple hf
-  have h0 : (leftUnitClass U).repr ◁ f = 0 :=
+  exact not_isZero_leftUnitClass_tensorObj U <| isZero_whiskerLeft_of_isSplitMono f <|
     (((tensorRight Y).map_isZero hz).of_iso (α_ _ X Y).symm).eq_of_tgt _ _
-  exact not_isZero_leftUnitClass_tensorObj U <| (IsZero.iff_id_eq_zero _).2 <| by
-    rw [← whiskerLeft_id, ← IsSplitMono.id f, whiskerLeft_comp, h0, zero_comp]
 
 /-- Along a nonzero morphism `U ⟶ X ⊗ Y` with `U` and `Y` simple, `U` and `Y` have the same right
 unit class. -/
 theorem rightUnitClass_eq_of_hom_ne_zero {X Y U : C} [Simple Y] [Simple U]
     {f : U ⟶ X ⊗ Y} (hf : f ≠ 0) : rightUnitClass U = rightUnitClass Y := by
   symm; rw [rightUnitClass_eq_iff]; intro hz; have := isSplitMono_of_nonzero_from_simple hf
-  have h0 : f ▷ (rightUnitClass U).repr = 0 :=
+  exact not_isZero_tensorObj_rightUnitClass U <| isZero_whiskerRight_of_isSplitMono f <|
     (((tensorLeft X).map_isZero hz).of_iso (α_ X Y _)).eq_of_tgt _ _
-  exact not_isZero_tensorObj_rightUnitClass U <| (IsZero.iff_id_eq_zero _).2 <| by
-    rw [← id_whiskerRight, ← IsSplitMono.id f, comp_whiskerRight, h0, zero_comp]
 
 section Equivalence
 

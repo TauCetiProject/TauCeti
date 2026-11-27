@@ -100,11 +100,14 @@ variable [Simple (𝟙_ C)]
 /-- Every element of the universal grading group is the degree of a simple object. -/
 theorem degree_surjective :
     Function.Surjective (degree : SimpleClasses C → universalGradingGroup C) := fun x ↦ by
-  obtain ⟨S, _, _, hg⟩ := universalGradingGroupoid.exists_degree_eq
+  obtain ⟨S, hL, hR, hg⟩ := universalGradingGroupoid.exists_degree_eq
     (universalGradingGroupoid.vertexGroupMulEquiv.symm x)
   have h := congrArg universalGradingGroupoid.vertexGroupMulEquiv hg
-  simp only [MulEquiv.apply_symm_apply] at h
-  exact ⟨S, by simpa [Subsingleton.elim _ _] using h.symm⟩
+  rw [MulEquiv.apply_symm_apply,
+    Subsingleton.elim hL.symm (Subsingleton.elim _ _),
+    Subsingleton.elim hR (Subsingleton.elim _ _),
+    universalGradingGroupoid.vertexGroupMulEquiv_degree] at h
+  exact ⟨S, h.symm⟩
 
 /-- Finitely many simple classes give a finite universal grading group. -/
 instance [Finite (SimpleClasses C)] : Finite (universalGradingGroup C) :=

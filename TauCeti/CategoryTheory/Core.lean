@@ -72,6 +72,12 @@ theorem eqToHom_iso_hom {X Y : Core C} (p : X = Y) :
     (eqToHom p).iso.hom = eqToHom (congrArg Core.of p) := by
   simpa using eqToHom_map (inclusion C) p
 
+/-- Composing `Core.functorToCore F` with `Core.inclusion C` recovers `F`. -/
+@[simp]
+theorem functorToCore_comp_inclusion {G : Type u₂} [Groupoid.{v₂} G] (F : G ⥤ C) :
+    functorToCore F ⋙ inclusion C = F :=
+  rfl
+
 /-- The inclusion of the core is essentially surjective. -/
 instance : (inclusion C).EssSurj where
   mem_essImage X := ⟨⟨X⟩, ⟨Iso.refl _⟩⟩
