@@ -145,8 +145,9 @@ every nonconstant morphism of curves onto such a curve.
   codimension-one local rings are discrete valuation rings, the second for a finite dominant
   morphism from an integral scheme;
 * `FixedRank.vectorBundleDegree_pullback`: `deg f^* E = [K(X) : f^* K(Y)] · deg E` for a
-  nonconstant morphism `f : X ⟶ Y` of curves over `k`, such a morphism being finite
-  (`AlgebraicGeometry.Scheme.Hom.isFinite_of_isDominant_of_isCurveOver`).
+  nonconstant morphism `f : X ⟶ Y` of curves over `k`, where the codimension-one local rings of
+  `Y` are discrete valuation rings, and a vector bundle `E` of constant rank on `Y`; such a
+  morphism is finite (`AlgebraicGeometry.Scheme.Hom.isFinite_of_isDominant_of_isCurveOver`).
 
 ## References
 
