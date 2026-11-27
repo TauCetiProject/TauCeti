@@ -133,8 +133,7 @@ theorem IsCentralPoint.commute_mapValue {g : WithConv (H →ₐ[R] A)} (hg : IsC
   have hc : Commute (AlgHom.mapValue φ₀ g) h₀ := hg φ₀ h₀
   let m : A ⊗[R] H →ₐ[R] B := Algebra.TensorProduct.productMap φ h.ofConv
   have hm : c ≤ RingCon.ker m.toRingHom := RingCon.ringConGen_le.2 fun x y ⟨a, b, hx, hy⟩ ↦ by
-    change m x = m y
-    rw [hx, hy, map_mul, map_mul, mul_comm]
+    rw [RingCon.ker_apply, hx, hy, map_mul, map_mul, mul_comm]
   let ψ : c.Quotient →ₐ[R] B := c.liftₐ m hm
   have hφ : ψ.comp φ₀ = φ := by
     ext a
