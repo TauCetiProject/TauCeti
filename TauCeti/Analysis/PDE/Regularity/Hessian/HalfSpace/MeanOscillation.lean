@@ -65,7 +65,8 @@ Extended by zero, `d` vanishes off `H`, so Krylov's mean oscillation estimate fo
 flat boundary
 (`TauCeti.PDE.exists_setIntegral_ball_inter_norm_gradient_sub_inner_setAverage_div_smul_sq_le_add`)
 applies to it with the constant coefficient `A` and the datum `g τ`. Finally
-`g = f + ∑ᵢⱼ (A - a)ᵢⱼ ∂ᵢ∂ⱼu` on `B_r⁺`, and `|∑ᵢⱼ (A - a)ᵢⱼ ∂ᵢ∂ⱼu| ≤ (n + 1) θ ‖D²u‖`
+`g = f + ∑ᵢⱼ (A - a)ᵢⱼ ∂ᵢ∂ⱼu` on `B_r⁺`, which gives
+`∫_{B_r⁺} g² ≤ 2 (∫_{B_r⁺} f² + (n + 1)² ∫_{B_r⁺} θ² ‖D²u‖²)`
 (`TauCeti.PDE.setIntegral_contraction_sq_le`).
 
 ## References
