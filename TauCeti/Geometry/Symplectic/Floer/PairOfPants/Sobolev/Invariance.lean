@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev.SemiFredholm
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Fredholm.ContinuousFamily
 import TauCeti.Analysis.Fredholm.SemiFredholm
 import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
@@ -45,9 +46,10 @@ finite-dimensional kernel and closed range
 `TauCeti.SymplecticForm.isClosed_range_floerConformalSobolevOperator_pairOfPants`). The coefficient
 fields of the members agree on the ends, and on the compact core they are uniformly continuous in
 `(μ, z)`, so they depend continuously on `μ` in `L^∞`. The operators then form a continuous path of
-operators with finite-dimensional kernel and closed range, along which the Fredholm property and the
-index are constant (`ContinuousOn.isFredholm_of_isPreconnected`,
-`ContinuousOn.index_eq_of_isPreconnected`).
+operators with finite-dimensional kernel and closed range
+(`continuousOn_floerConformalSobolevOperator_pairOfPants_family`, for a family of data over any set
+of parameters in a normed space), along which the Fredholm property and the index are constant
+(`ContinuousOn.isFredholm_of_isPreconnected`, `ContinuousOn.index_eq_of_isPreconnected`).
 
 ## References
 
@@ -85,49 +87,92 @@ private theorem eq_of_max_le_fst_positiveEndCoord {J J' : ℝ × ℝ → V → A
       (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     hJeq q _ ((le_max_left _ _).trans hR), hJeq' q _ ((le_max_right _ _).trans hR)]
 
-/-- **Continuity of the coefficient fields along a family of data in `L^∞`.** Let
-`(J_μ, K_{s,μ}, K_{t,μ})` be a family of Floer data on `S`, `C¹` (with `C²` Hamiltonians) jointly in
-the parameter `μ`, the domain point and the target point along the graph of a map `u` which is `C¹`
-on `S`, and equal outside the truncation `S_R` to the data at `lam`. If the coefficient fields on
-conformal jets of the data at every `μ` are almost everywhere strongly measurable on `S`, then they
-converge in `L^∞(S)` to the coefficient field at `lam` as `μ → lam`. -/
-private theorem tendsto_eLpNorm_floerConformalJetCoeff_family (ω : SymplecticForm V)
-    {J : ℝ × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : ℝ × (ℝ × ℝ) → V → ℝ} {R : ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ μ, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (uncurry J) ((μ, z), u z))
-    (hKs : ∀ μ, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) ((μ, z), u z))
-    (hKt : ∀ μ, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) ((μ, z), u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {lam : ℝ}
-    (heq : ∀ μ, ∀ z ∈ thricePuncturedSphereReal,
-      z ∉ Complex.equivRealProdCLM.symm ⁻¹' truncation R →
-        J (μ, z) = J (lam, z) ∧ Ks (μ, z) = Ks (lam, z) ∧ Kt (μ, z) = Kt (lam, z))
-    (hmeas : ∀ μ, AEStronglyMeasurable (ω.floerConformalJetCoeff cylindricalWeight
-      (fun z ↦ J (μ, z)) (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u)
-        (volume.restrict thricePuncturedSphereReal)) :
-    Tendsto (fun μ ↦ eLpNorm (ω.floerConformalJetCoeff cylindricalWeight (fun z ↦ J (μ, z))
-      (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u - ω.floerConformalJetCoeff cylindricalWeight
-        (fun z ↦ J (lam, z)) (fun z ↦ Ks (lam, z)) (fun z ↦ Kt (lam, z)) u) ∞
-          (volume.restrict thricePuncturedSphereReal)) (𝓝 lam) (𝓝 0) := by
-  refine tendsto_eLpNorm_top_sub_of_continuousAt_of_eq
-    (M := fun μ ↦ ω.floerConformalJetCoeff cylindricalWeight (fun z ↦ J (μ, z))
-      (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u)
+/-- **Continuity of the pair-of-pants operator along a family of data.** Let `H_q` be jointly `C²`
+period-one Hamiltonians on the three ends of `S = ℂ ∖ {0, 1}`, on a finite-dimensional symplectic
+inner product space `(V, ω)`, and `J_q(t)` a `C¹` family of almost complex structures for each end
+`q`. Let `(J_μ, K_{s,μ}, K_{t,μ})` be a family of Floer data on `S`, depending on a parameter `μ` of
+a normed space `E`, and `C¹` (with `C²` Hamiltonians) jointly in `μ`, the domain point and the
+target point along the graph of a map `u` which is `C¹` on `S`, at every `μ ∈ P`. Suppose that for
+`μ ∈ P`, beyond the height `R` of every end, the data are the end data (in the positive end chart
+`φ'_q` the structures are `J_q(t)` and the perturbation is the pair-of-pants perturbation of `H`),
+and that there `u` solves the Floer equation, with loops in each end chart converging uniformly to
+continuous loops `x_q` and slice defects tending uniformly to zero. Then the realization
+`D_u : W^{1,2}_0(S, V) → L²(S, V)` of the linearized Floer operator of the data at `μ` depends
+continuously on `μ ∈ P` in the operator norm. -/
+theorem continuousOn_floerConformalSobolevOperator_pairOfPants_family {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (ω : SymplecticForm V)
+    {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {x : Puncture → ℝ → V}
+    (hx : ∀ q, ContinuousOn (x q) (Icc 0 1))
+    {Je : Puncture → ℝ → V → AlmostComplexStructure V}
+    (hJe : ∀ q, ContDiff ℝ 1 fun p : ℝ × V ↦ (Je q p.1 p.2).toLinearMap.toContinuousLinearMap)
+    {J : E × (ℝ × ℝ) → V → AlmostComplexStructure V} {Ks Kt : E × (ℝ × ℝ) → V → ℝ} {R : ℝ}
+    {P : Set E}
+    (hJeq : ∀ μ ∈ P, ∀ q (ζ : ℝ × ℝ), R ≤ ζ.1 → J (μ, positiveEndChart q ζ) = Je q ζ.2)
+    (hK : ∀ μ ∈ P, ∀ q, ∀ z ∈ thricePuncturedSphereReal, R ≤ (positiveEndCoord q z).1 →
+      Ks (μ, z) = (fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1) ∧
+        Kt (μ, z) = fun x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    {u : ℝ × ℝ → V}
+    (hJ : ∀ μ ∈ P, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1
+      (fun p : (E × (ℝ × ℝ)) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) ((μ, z), u z))
+    (hKs : ∀ μ ∈ P, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Ks) ((μ, z), u z))
+    (hKt : ∀ μ ∈ P, ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (uncurry Kt) ((μ, z), u z))
+    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z)
+    (hF : ∀ μ ∈ P, ∀ q, ∀ z ∈ thricePuncturedSphereReal, R ≤ (positiveEndCoord q z).1 →
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J (μ, z) (u z))
+        (ω.perturbedFDeriv (fun w ↦ Ks (μ, w)) (fun w ↦ Kt (μ, w)) u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hux : ∀ q, TendstoUniformlyOn (fun s t ↦ u (positiveEndChart q (s, t))) (x q) atTop
+      (Icc 0 1))
+    (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
+      (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
+        (s, t)) 0 atTop (Icc 0 1)) :
+    ContinuousOn (fun μ ↦ ω.floerConformalSobolevOperator thricePuncturedSphereReal
+      cylindricalWeight (fun z y ↦ (J (μ, z) y).toLinearMap.toContinuousLinearMap)
+        (fun z ↦ Ks (μ, z)) (fun z ↦ Kt (μ, z)) u) P := by
+  set S := thricePuncturedSphereReal
+  set M : E → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦ ω.floerConformalJetCoeff cylindricalWeight
+    (fun z y ↦ (J (μ, z) y).toLinearMap.toContinuousLinearMap) (fun z ↦ Ks (μ, z))
+    (fun z ↦ Kt (μ, z)) u
+  have hM (μ : E) (hμ : μ ∈ P) : MemLp (M μ) ∞ (volume.restrict S) :=
+    ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs hx hJe (hJeq μ hμ)
+      (hK μ hμ) (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (hJ μ hμ z hz))
+      (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (hKs μ hμ z hz))
+      (fun z hz ↦ contDiffAt_comp_prodMap_prodMk_right (hKt μ hμ z hz)) hu (hF μ hμ) hux hδ
+  -- Beyond the height `R` of an end the data are the end data, whatever `μ ∈ P`.
+  have heq {μ lam : E} (hμ : μ ∈ P) (hlam : lam ∈ P) {z : ℝ × ℝ} (hz : z ∈ S)
+      (hzK : z ∉ Complex.equivRealProdCLM.symm ⁻¹' truncation R) : M μ z = M lam z := by
+    obtain ⟨q, hq⟩ := exists_lt_fst_positiveEndCoord_of_notMem_truncation hz hzK
+    have hzq := positiveEndChart_positiveEndCoord q
+      (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
+    obtain ⟨hsμ, htμ⟩ := hK μ hμ q z hz hq.le
+    obtain ⟨hsl, htl⟩ := hK lam hlam q z hz hq.le
+    refine ω.floerConformalJetCoeff_congr_data _ u ?_ (hsμ.trans hsl.symm) (htμ.trans htl.symm)
+    rw [← hzq, hJeq μ hμ q _ hq.le, hJeq lam hlam q _ hq.le]
+  simp only [floerConformalSobolevOperator_def]
+  refine (continuousOn_jetOperator hM fun lam hlam ↦ ?_).clm_comp continuousOn_const
+  -- On the compact truncation `S_R` the coefficient field is jointly continuous in `(μ, z)`, and
+  -- off it the coefficient fields do not depend on `μ ∈ P`; read the limit along `P` in `P`.
+  rw [tendsto_nhdsWithin_iff_subtype hlam]
+  refine tendsto_eLpNorm_top_sub_of_continuousAt_of_eq (M := fun μ : P ↦ M μ)
     isOpen_thricePuncturedSphereReal.measurableSet (isCompact_preimage_truncation R)
-    (.of_forall hmeas) (fun z hzK ↦ ?_) (.of_forall fun μ z hz hzK ↦ ?_)
-  -- On the compact truncation `S_R` the coefficient field is jointly continuous in `(μ, z)`.
-  · have hz := preimage_truncation_subset_thricePuncturedSphereReal R hzK
-    exact continuousAt_floerConformalJetCoeff_family ω (hJ lam z hz) (hKs lam z hz)
-      (hKt lam z hz) (hu z hz) (isWeight_cylindricalWeight.continuousOn.continuousAt
-        (isOpen_thricePuncturedSphereReal.mem_nhds hz)) (isWeight_cylindricalWeight.pos _ hz)
-  -- Off the truncation the data, hence the coefficient fields, do not depend on `μ`.
-  · obtain ⟨hJz, hsz, htz⟩ := heq μ z hz hzK
-    exact ω.floerConformalJetCoeff_congr_data _ u hJz hsz htz
+    (.of_forall fun μ ↦ (hM μ μ.property).aestronglyMeasurable) (fun z hzK ↦ ?_)
+    (.of_forall fun μ z hz hzK ↦ heq μ.property hlam hz hzK)
+  have hz := preimage_truncation_subset_thricePuncturedSphereReal R hzK
+  have hc := continuousAt_floerConformalJetCoeff_family ω
+    (J := fun p y ↦ (J p y).toLinearMap.toContinuousLinearMap) (p := (lam, z)) (hJ lam hlam z hz)
+    (hKs lam hlam z hz) (hKt lam hlam z hz) (hu z hz)
+    (isWeight_cylindricalWeight.continuousOn.continuousAt
+      (isOpen_thricePuncturedSphereReal.mem_nhds hz))
+    (isWeight_cylindricalWeight.pos _ hz)
+  exact hc.comp (f := Prod.map Subtype.val id) (x := ((⟨lam, hlam⟩ : P), z))
+    (continuous_subtypeVal.prodMap continuous_id).continuousAt
 
 /-- **The Fredholm property and the index along a family of data on the pair of pants.** Let
 `(J_μ, K_{s,μ}, K_{t,μ})` be a family of Floer data on `S`, `C¹` (with `C²` Hamiltonians) jointly in
 the parameter `μ`, the domain point and the target point along the graph of `u`, compatible with
 `ω` along `u`, all equal to the same end data beyond the height `R` of every end, along which `u`
-solves the Floer equation and converges to nondegenerate orbits, and independent of `μ` outside the
-truncation `S_R`. If the operator of the data at `μ = 0` is Fredholm, then so is the operator of the
-data at `μ = 1`, with the same index. -/
+solves the Floer equation and converges to nondegenerate orbits. If the operator of the data at
+`μ = 0` is Fredholm, then so is the operator of the data at `μ = 1`, with the same index. -/
 private theorem isFredholm_and_index_eq_of_family (ω : SymplecticForm V)
     {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContDiff ℝ 2 (uncurry (H q))) {L : Puncture → ℝ≥0}
@@ -161,9 +206,6 @@ private theorem isFredholm_and_index_eq_of_family (ω : SymplecticForm V)
     (hδ : ∀ q, TendstoUniformlyOn (fun s t ↦ sliceDefect
       (fun t ↦ ω.hamiltonianVectorField (positiveEndHamiltonian H q t)) (u ∘ positiveEndChart q)
         (s, t)) 0 atTop (Icc 0 1))
-    (heq : ∀ μ lam, ∀ z ∈ thricePuncturedSphereReal,
-      z ∉ Complex.equivRealProdCLM.symm ⁻¹' truncation R →
-        J (μ, z) = J (lam, z) ∧ Ks (μ, z) = Ks (lam, z) ∧ Kt (μ, z) = Kt (lam, z))
     (h : (ω.floerConformalSobolevOperator thricePuncturedSphereReal cylindricalWeight
       (fun z y ↦ (J (0, z) y).toLinearMap.toContinuousLinearMap) (fun z ↦ Ks (0, z))
         (fun z ↦ Kt (0, z)) u).IsFredholm) :
@@ -177,32 +219,21 @@ private theorem isFredholm_and_index_eq_of_family (ω : SymplecticForm V)
       (fun z y ↦ (J (0, z) y).toLinearMap.toContinuousLinearMap) (fun z ↦ Ks (0, z))
         (fun z ↦ Kt (0, z)) u).index := by
   set S := thricePuncturedSphereReal
-  -- The data at a fixed `μ` are regular along `u`: each is the family composed with the slice
-  -- `(z, y) ↦ ((μ, z), y)`, and the ascriptions elaborate that composite before matching it.
-  have hslice (μ : ℝ) (z : ℝ × ℝ) : ContDiffAt ℝ ⊤
-      (fun q : (ℝ × ℝ) × V ↦ (((μ, q.1), q.2) : (ℝ × (ℝ × ℝ)) × V)) (z, u z) :=
-    ((contDiff_const.prodMk contDiff_fst).prodMk contDiff_snd).contDiffAt
+  -- The data at a fixed `μ` are regular along `u`, as slices of the family.
   have hJμ (μ : ℝ) (z : ℝ × ℝ) (hz : z ∈ S) : ContDiffAt ℝ 1
       (fun p : (ℝ × ℝ) × V ↦ (J (μ, p.1) p.2).toLinearMap.toContinuousLinearMap) (z, u z) :=
-    ((hJ μ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)
+    contDiffAt_comp_prodMap_prodMk_right (hJ μ z hz)
   have hKsμ (μ : ℝ) (z : ℝ × ℝ) (hz : z ∈ S) :
       ContDiffAt ℝ 2 (uncurry fun w ↦ Ks (μ, w)) (z, u z) :=
-    ((hKs μ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)
+    contDiffAt_comp_prodMap_prodMk_right (hKs μ z hz)
   have hKtμ (μ : ℝ) (z : ℝ × ℝ) (hz : z ∈ S) :
       ContDiffAt ℝ 2 (uncurry fun w ↦ Kt (μ, w)) (z, u z) :=
-    ((hKt μ z hz).comp (z, u z) ((hslice μ z).of_le le_top) :)
-  -- The coefficient fields and the operators of the family.
-  set M : ℝ → ℝ × ℝ → V × V × V →L[ℝ] V := fun μ ↦ ω.floerConformalJetCoeff cylindricalWeight
-    (fun z y ↦ (J (μ, z) y).toLinearMap.toContinuousLinearMap) (fun z ↦ Ks (μ, z))
-    (fun z ↦ Kt (μ, z)) u
+    contDiffAt_comp_prodMap_prodMk_right (hKt μ z hz)
+  -- The operators of the family.
   set T : ℝ → H1 V S cylindricalWeight →L[ℝ] Lp V 2 (volume.restrict S) := fun μ ↦
     ω.floerConformalSobolevOperator S cylindricalWeight
       (fun z y ↦ (J (μ, z) y).toLinearMap.toContinuousLinearMap) (fun z ↦ Ks (μ, z))
       (fun z ↦ Kt (μ, z)) u
-  have hM (μ : ℝ) : MemLp (M μ) ∞ (volume.restrict S) :=
-    ω.memLp_floerConformalJetCoeff_pairOfPants_of_tendstoUniformlyOn hH hHs
-      (fun q ↦ continuous_iff_continuousAt.2 (fun t ↦ (hx q t).continuousAt) |>.continuousOn) hJe
-      (hJeq μ) (hK μ) (hJμ μ) (hKsμ μ) (hKtμ μ) hu (hF μ) hux hδ
   have hker (μ : ℝ) (_ : μ ∈ Icc (0 : ℝ) 1) : FiniteDimensional ℝ (T μ).ker :=
     ω.finiteDimensional_ker_floerConformalSobolevOperator_pairOfPants hH hHs hX hx hnd hJe hJex
       (hJeq μ) (hK μ) (hJμ μ) (hKsμ μ) (hKtμ μ) hu (hc μ) (hF μ) hux hδ
@@ -210,15 +241,11 @@ private theorem isFredholm_and_index_eq_of_family (ω : SymplecticForm V)
       IsClosed ((T μ).range : Set (Lp V 2 (volume.restrict S))) :=
     ω.isClosed_range_floerConformalSobolevOperator_pairOfPants hH hHs hX hx hnd hJe hJex
       (hJeq μ) (hK μ) (hJμ μ) (hKsμ μ) (hKtμ μ) hu (hc μ) (hF μ) hux hδ
-  have hT : ContinuousOn T (Icc 0 1) := by
-    simp only [T, floerConformalSobolevOperator_def]
-    exact (continuousOn_jetOperator (fun μ _ ↦ hM μ) fun lam _ ↦ tendsto_nhdsWithin_of_tendsto_nhds
-      (tendsto_eLpNorm_floerConformalJetCoeff_family ω
-        (J := fun p y ↦ (J p y).toLinearMap.toContinuousLinearMap) hJ hKs hKt hu
-        (fun μ z hz hzK ↦ by
-          obtain ⟨hJz, hsz, htz⟩ := heq μ lam z hz hzK
-          exact ⟨by rw [hJz], hsz, htz⟩)
-        (fun μ ↦ (hM μ).aestronglyMeasurable))).clm_comp continuousOn_const
+  have hT : ContinuousOn T (Icc 0 1) :=
+    ω.continuousOn_floerConformalSobolevOperator_pairOfPants_family hH hHs
+      (fun q ↦ continuous_iff_continuousAt.2 (fun t ↦ (hx q t).continuousAt) |>.continuousOn) hJe
+      (fun μ _ ↦ hJeq μ) (fun μ _ ↦ hK μ) (fun μ _ ↦ hJ μ) (fun μ _ ↦ hKs μ) (fun μ _ ↦ hKt μ)
+      hu (fun μ _ ↦ hF μ) hux hδ
   have h0 : (0 : ℝ) ∈ Icc (0 : ℝ) 1 := left_mem_Icc.2 zero_le_one
   have h1 : (1 : ℝ) ∈ Icc (0 : ℝ) 1 := right_mem_Icc.2 zero_le_one
   have hFred (μ : ℝ) (hμ : μ ∈ Icc (0 : ℝ) 1) : (T μ).IsFredholm :=
@@ -316,11 +343,6 @@ private theorem isFredholm_and_index_eq_of_pairOfPants_data (ω : SymplecticForm
       rw [hJz, ω.perturbedFDeriv_congr u (Ks' := Ks) (Kt' := Kt) hs ht]
       exact hF q z hz (hR₁.trans hzR))
     hux hδ
-    (fun μ lam z hz hzK ↦ by
-      obtain ⟨q, hq⟩ := exists_lt_fst_positiveEndCoord_of_notMem_truncation hz hzK
-      obtain ⟨hJμ, hsμ, htμ⟩ := hend hz hq.le μ
-      obtain ⟨hJl, hsl, htl⟩ := hend hz hq.le lam
-      exact ⟨hJμ.trans hJl.symm, hsμ.trans hsl.symm, htμ.trans htl.symm⟩)
     (by simpa only [pathAlmostComplex_zero, pathHamiltonian_zero] using h)
   simpa only [pathAlmostComplex_zero, pathAlmostComplex_one, pathHamiltonian_zero,
     pathHamiltonian_one] using key
