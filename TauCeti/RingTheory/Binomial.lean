@@ -83,6 +83,8 @@ span. This gives independence of integral toral constructions from a choice of l
   attained by an integral combination of binomial coefficients.
 * `TauCeti.Ring.multichoose_inv_two`: the multiset coefficients of one half are the normalized
   central binomial coefficients `(2n choose n) / 4 ^ n`, the coefficients of `(1 - y) ^ (-1/2)`.
+* `TauCeti.Ring.add_multichoose_eq`: the Chu--Vandermonde identity for multiset coefficients,
+  obtained from Mathlib's `Ring.add_choose_eq` through `Ring.choose_neg'`.
 
 ## References
 
@@ -861,5 +863,26 @@ theorem choose_mem_of_mem_span (S : G) {s : Set R}
   | add x y hx hy ihx ihy =>
     exact choose_add_mem S (hspan x hx y hy) (fun k _ ↦ ihx k) (fun k _ ↦ ihy k)
   | smul z x _ ih => exact choose_zsmul_mem S (fun k _ ↦ ih k) z
+
+/-- **The Chu--Vandermonde identity for multiset coefficients.** For commuting `r` and `s` in a
+binomial ring, `(r + s multichoose k) = ∑_{i + j = k} (r multichoose i) (s multichoose j)`.
+This is the coefficient form of `(1 - X) ^ (-(r + s)) = (1 - X) ^ (-r) (1 - X) ^ (-s)`. -/
+theorem add_multichoose_eq {r s : R} (k : ℕ) (h : Commute r s) :
+    _root_.Ring.multichoose (r + s) k =
+      ∑ ij ∈ Finset.antidiagonal k,
+        _root_.Ring.multichoose r ij.1 * _root_.Ring.multichoose s ij.2 := by
+  -- Inverting `Ring.choose_neg'` gives `(x multichoose n) = (-1) ^ n (-x choose n)`, which
+  -- reduces the identity to Mathlib's `Ring.add_choose_eq` at `-r` and `-s`.
+  have key (x : R) (n : ℕ) :
+      _root_.Ring.multichoose x n = (-1) ^ n * _root_.Ring.choose (-x) n := by
+    rw [_root_.Ring.choose_neg', Units.smul_def, zsmul_eq_mul, Int.cast_negOnePow_natCast,
+      ← mul_assoc, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
+  rw [key, neg_add, _root_.Ring.add_choose_eq k h.neg_left.neg_right, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun ij hij ↦ ?_
+  rw [key, key, ← Finset.mem_antidiagonal.mp hij, pow_add]
+  have hc : Commute ((-1 : R) ^ ij.2) (_root_.Ring.choose (-r) ij.1) :=
+    ((Commute.neg_one_left _).pow_left _)
+  simp only [mul_assoc]
+  rw [hc.left_comm]
 
 end TauCeti.Ring

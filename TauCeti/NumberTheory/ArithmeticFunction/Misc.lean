@@ -18,13 +18,15 @@ multiplicative (for instance `w(n) = e(nα)`). The proof follows the plan of Mat
 `ArithmeticFunction.sum_Ioc_mul_eq_sum_sum`, through
 `Nat.divisorsAntidiagonal_eq_prod_filter_of_le`.
 
-The file also records the elementary bound `2 ^ Ω n ≤ n`, for `n ≠ 0`, on the number `Ω n` of
-prime factors of `n` counted with multiplicity.
+The file also evaluates a Dirichlet convolution at a prime power as a sum over the antidiagonal
+of the exponent, and records the elementary bound `2 ^ Ω n ≤ n`, for `n ≠ 0`, on the number
+`Ω n` of prime factors of `n` counted with multiplicity.
 
 ## Main results
 
 * `ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`:
   `∑_{0<n≤N} (f * g)(n) • w(n) = ∑_{0<m≤N} f(m) • ∑_{0<ℓ≤N/m} g(ℓ) • w(mℓ)`.
+* `ArithmeticFunction.mul_apply_prime_pow`: `(f * g)(p ^ k) = ∑_{i + j = k} f(p ^ i) g(p ^ j)`.
 * `ArithmeticFunction.two_pow_cardFactors_le`: `2 ^ Ω n ≤ n` for `n ≠ 0`, since each of the
   `Ω n` prime factors of `n`, counted with multiplicity, is at least `2`.
 -/
@@ -73,6 +75,16 @@ theorem sum_Ioc_mul_smul_eq_sum_sum (f g : ArithmeticFunction R) (w : ℕ → A)
           · exact fun h ↦ ⟨⟨h.1, h.2.trans' (Nat.le_mul_of_pos_left ℓ hm)⟩, h.2⟩
         rw [this]
         exact sum_congr rfl fun ℓ _ ↦ (smul_smul _ _ _).symm
+
+/-- The Dirichlet convolution of two arithmetic functions at a prime power `p ^ k` is the sum of
+`f (p ^ i) g (p ^ j)` over `i + j = k`: the divisor pairs of `p ^ k` are the `(p ^ i, p ^ j)`. -/
+theorem mul_apply_prime_pow (f g : ArithmeticFunction R) {p : ℕ} (hp : p.Prime) (k : ℕ) :
+    (f * g) (p ^ k) = ∑ ij ∈ antidiagonal k, f (p ^ ij.1) * g (p ^ ij.2) := by
+  rw [ArithmeticFunction.mul_apply, Nat.sum_divisorsAntidiagonal fun x y ↦ f x * g y,
+    Nat.sum_divisors_prime_pow hp,
+    Nat.sum_antidiagonal_eq_sum_range_succ fun i j ↦ f (p ^ i) * g (p ^ j)]
+  exact sum_congr rfl fun i hi ↦ by
+    rw [Nat.pow_div (Nat.lt_succ_iff.mp (mem_range.mp hi)) hp.pos]
 
 open scoped ArithmeticFunction.Omega in
 /-- A nonzero natural number `n` is at least `2 ^ Ω n`, since each of its `Ω n` prime factors
