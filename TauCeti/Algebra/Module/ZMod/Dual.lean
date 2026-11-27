@@ -46,9 +46,28 @@ The case `n = p` prime is the linear algebra of the `𝔽_p`-vector space `M`.
   equivalences.
 * `AddMonoidHom.flip_bijective_zmod`: if `N` is finite and killed by `n` and `e : M →+ N →+ ZMod n`
   is bijective, then `e.flip` is bijective.
+* `AddMonoidHom.coe_toZModLinearMapEquiv_symm` and
+  `AddMonoidHom.toZModLinearMapEquiv_symm_toAddMonoidHom`: the inverse of
+  `AddMonoidHom.toZModLinearMapEquiv` forgets linearity.
 -/
 
 public section
+
+/-- The inverse of `AddMonoidHom.toZModLinearMapEquiv` is the identity on underlying functions. -/
+@[simp]
+theorem AddMonoidHom.coe_toZModLinearMapEquiv_symm {n : ℕ} {M M₁ : Type*}
+    [AddCommGroup M] [AddCommGroup M₁] [Module (ZMod n) M] [Module (ZMod n) M₁]
+    (g : M →ₗ[ZMod n] M₁) :
+    ⇑((toZModLinearMapEquiv n).symm g) = ⇑g :=
+  rfl
+
+/-- The inverse of `AddMonoidHom.toZModLinearMapEquiv`, as an additive homomorphism, is
+`LinearMap.toAddMonoidHom'`. -/
+theorem AddMonoidHom.toZModLinearMapEquiv_symm_toAddMonoidHom {n : ℕ} {M M₁ : Type*}
+    [AddCommGroup M] [AddCommGroup M₁] [Module (ZMod n) M] [Module (ZMod n) M₁] :
+    (toZModLinearMapEquiv n (M := M) (M₁ := M₁)).symm.toAddMonoidHom =
+      LinearMap.toAddMonoidHom' :=
+  rfl
 
 variable {n : ℕ} [NeZero n] {M : Type*} [AddCommGroup M]
 

@@ -9,7 +9,6 @@ public import TauCeti.NumberTheory.ClassFieldTheory.Local.Duality.Cardinality
 public import TauCeti.NumberTheory.LocalField.AbsoluteRamificationIndex
 public import TauCeti.NumberTheory.LocalField.Unramified.Cohomology
 
-import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.Algebra.Module.ZMod.Annihilator
 import TauCeti.Data.Nat.Cast.IsUnit
@@ -124,9 +123,7 @@ theorem natCard_unramifiedH1_mul_natCard_unramifiedH1_internalHom_eq_natCard_H1 
         Nat.card (unramifiedH1 K
           (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) =
       Nat.card (H1 (AbsoluteGaloisGroup K) M) := by
-  have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_ne_zero K (A := K) (m := n)
-    (by rintro rfl; exact hpn (dvd_zero p))
+  have hn : IsUnit (n : K) := FinitePadicExtension.isUnit_natCast_of_not_dvd p hpn
   have : NeZero n := hn.neZero_natCast
   rw [natCard_unramifiedH1_eq_natCard_H0, natCard_unramifiedH1_eq_natCard_H0,
     ← natCard_H2_eq_natCard_H0_internalHom hn M hM,
@@ -143,9 +140,7 @@ theorem unramifiedH1_eq_ker_compl₂_dualityMap1 (hpn : ¬ p ∣ n)
       ((dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)).compl₂
         (unramifiedH1 K
           (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))).subtype).ker := by
-  have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_ne_zero K (A := K) (m := n)
-    (by rintro rfl; exact hpn (dvd_zero p))
+  have hn : IsUnit (n : K) := FinitePadicExtension.isUnit_natCast_of_not_dvd p hpn
   have : NeZero n := hn.neZero_natCast
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
@@ -168,9 +163,7 @@ theorem unramifiedH1_internalHom_eq_ker_flip_compl₂_dualityMap1 (hpn : ¬ p �
     unramifiedH1 K (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n)) =
       ((dualityMap1 (AbsoluteGaloisGroup K) M (KummerCoeff K n)).flip.compl₂
         (unramifiedH1 K M).subtype).ker := by
-  have := FinitePadicExtension.charZero K p
-  have hn := TauCeti.isUnit_natCast_of_ne_zero K (A := K) (m := n)
-    (by rintro rfl; exact hpn (dvd_zero p))
+  have hn : IsUnit (n : K) := FinitePadicExtension.isUnit_natCast_of_not_dvd p hpn
   have : NeZero n := hn.neZero_natCast
   have : Finite (H1 (AbsoluteGaloisGroup K)
       (InternalHom (AbsoluteGaloisGroup K) M (KummerCoeff K n))) :=
