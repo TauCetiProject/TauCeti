@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Geometry.Symplectic.Floer.Manifold.Germ
 import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 
 /-!
@@ -45,6 +46,20 @@ the disc `‖y‖ < T⁻¹` including possibly its centre `0`, which is the poin
   finite set `Z` of bubbling points, with `#Z * δ ≤ E`, and at least `δ` of area concentrating at
   each point of `Z`.
 
+The `C³` regularity of `wₖ` at `0` is the removal of the singularity of `uₖ` at `∞`. When the inner
+product of `V` is the metric `⟪v, w⟫ = ω(v, J₀ w)` of `J₀`, it follows from the hypotheses on
+`uₖ` alone, once `uₖ` takes values in `K` outside the disc of radius `T`: by the removal of the
+singularity at infinity in real coordinates
+(`TauCeti.SymplecticForm.exists_tendsto_cocompact_and_contDiffOn_update_comp_inv`, in
+`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`), each `uₖ` has a limit
+`qₖ ∈ K` at infinity, and `y ↦ uₖ(y⁻¹)`, filled with `qₖ` at `0`, is smooth on the disc of radius
+`T⁻¹`.
+
+* **Compactness at infinity with the singularity removed**
+  (`exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_update_inv`, in the namespace
+  `TauCeti.SymplecticForm`): the compactness theorem at infinity for these filled maps, with no
+  hypothesis on the `wₖ`.
+
 The same holds for maps into a closed manifold `M` with a nondegenerate two-form `ω` and a smooth
 almost complex structure `J₀` tamed by `ω`, in the namespace `TauCeti.SmoothTwoForm`. Holomorphy is
 the Floer equation with zero perturbation, and sizes in `M` are measured through an injective
@@ -65,11 +80,8 @@ differentiable map `e : M → F`, such as the Whitney embedding.
   (`TauCeti.Geometry.Symplectic.Floer.Compactness.Closed`) for the unperturbed equation of `J₀` on
   the closed disc of radius `T⁻¹`.
 
-The `C³` regularity of `wₖ` at `0` is a hypothesis: it is the removal of the singularity of `uₖ`
-at `∞`. For maps into a vector space this removal is proved, under its hypotheses, in
-`TauCeti.Geometry.Symplectic.JHolomorphic.RemovableSingularity.Smooth`
-(`TauCeti.SymplecticForm.exists_contDiffOn_update_comp_inv_of_finite_energy`); for maps into a
-closed manifold `M` it is not yet proved.
+For maps into a closed manifold `M` the `C³` regularity of `wₖ` at `0` remains a hypothesis: the
+removal of the singularity at `∞` is not proved here for manifold targets.
 
 ## References
 
@@ -209,6 +221,59 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_inv (ω : 
     (fun k ↦ by simpa only [← floerEnergyDensity_zero] using (hwE k).2.trans (hE k))
   refine ⟨φ, Z, v, hφ, hZΩ, hcard, fun z hz ε hε ↦ ?_, hbd, hvc, hvK, hlim⟩
   simpa only [floerEnergyDensity_zero] using hconc z hz ε hε
+
+/-- **Compactness at infinity with the singularity removed.** Let the inner product of `V` be the
+metric `⟪v, w⟫ = ω(v, J₀ w)` of `J₀`, and let `K ⊆ V` be compact. There is a threshold `δ > 0`
+with the following property. Let `uₖ` be `C¹` and `J₀`-holomorphic on the exterior `‖z‖ > T` of
+a disc, in complex coordinates, with values in `K` there, integrable area density `ω(∂ₛuₖ, ∂ₜuₖ)`
+on that exterior and area there at most `E`. Then each `uₖ` has a limit `qₖ ∈ K` at infinity, and
+its expression `wₖ(y) = uₖ(y⁻¹)` in the chart at infinity, filled with `qₖ` at `0`, is smooth on
+the disc `‖y‖ < T⁻¹`. For every open set `Ω` of that disc there are a subsequence `φ`, a finite set
+`Z ⊆ Ω` with `#Z * δ ≤ E`, and a continuous `v : Ω \ Z → K` such that along `φ` every disc about a
+point of `Z` eventually carries area of `wₖ` at least `δ`, the differentials of the `wₖ` are
+uniformly bounded on every compact subset of `Ω \ Z`, and `w_{φ n} → v` locally uniformly on
+`Ω \ Z`. -/
+theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_update_inv
+    (ω : SymplecticForm V) (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) (T : ℝ) {K : Set V}
+    (hK : IsCompact K) :
+    ∃ δ > 0, ∀ ⦃Ω : Set (ℝ × ℝ)⦄ ⦃u : ℕ → ℝ × ℝ → V⦄ ⦃E : ℝ⦄, IsOpen Ω →
+      Ω ⊆ equivRealProdCLM.symm ⁻¹' ball 0 T⁻¹ →
+      (∀ k, ContDiffOn ℝ 1 (u k) (equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ)) →
+      (∀ k, ∀ z ∈ equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ, IsComplexLinearMap
+        (AlmostComplexStructure.product ℝ) J₀ (fderiv ℝ (u k) z : ℝ × ℝ →ₗ[ℝ] V)) →
+      (∀ k, IntegrableOn (fun z ↦ ω (fderiv ℝ (u k) z stdComplexLineReal)
+        (fderiv ℝ (u k) z stdComplexLineImag)) (equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ)) →
+      (∀ k, ∫ z in equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ,
+        ω (fderiv ℝ (u k) z stdComplexLineReal) (fderiv ℝ (u k) z stdComplexLineImag) ≤ E) →
+      (∀ k, MapsTo (u k) (equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ) K) →
+      ∃ (q : ℕ → V) (w : ℕ → ℝ × ℝ → V),
+        (∀ k, q k ∈ K ∧ Tendsto (u k) (cocompact (ℝ × ℝ)) (𝓝 (q k))) ∧
+        (∀ k, w k = update (fun y ↦ u k (realChart (fun ζ ↦ ζ⁻¹) y)) 0 (q k)) ∧
+        (∀ k, ContDiffOn ℝ (⊤ : ℕ∞) (w k) (equivRealProdCLM.symm ⁻¹' ball 0 T⁻¹)) ∧
+        ∃ (φ : ℕ → ℕ) (Z : Finset (ℝ × ℝ)) (v : ℝ × ℝ → V), StrictMono φ ∧
+          ↑Z ⊆ Ω ∧ Z.card * δ ≤ E ∧
+          (∀ z ∈ Z, ∀ ε > 0, ∀ᶠ n in atTop, δ ≤ ∫ y in ball z ε ∩ Ω,
+            ω (fderiv ℝ (w (φ n)) y stdComplexLineReal)
+              (fderiv ℝ (w (φ n)) y stdComplexLineImag)) ∧
+          (∀ C, IsCompact C → C ⊆ Ω \ ↑Z →
+            ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (w (φ n)) y‖ ≤ M) ∧
+          ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
+          TendstoLocallyUniformlyOn (fun n ↦ w (φ n)) v atTop (Ω \ ↑Z) := by
+  have hJ₀ : ω.Tames J₀ := fun v hv ↦ by
+    rw [hg]
+    exact real_inner_self_pos.2 hv
+  obtain ⟨δ, hδ, hconv⟩ := ω.exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_inv
+    hJ₀ T hK
+  refine ⟨δ, hδ, fun Ω u E hΩ hΩT hu hhol hint hE huK ↦ ?_⟩
+  choose q hq hlim hmaps hw using fun k ↦
+    ω.exists_tendsto_cocompact_and_contDiffOn_update_comp_inv hg hK (hu k) (hhol k) (hint k)
+      (huK k)
+  have hSo : IsOpen (equivRealProdCLM.symm ⁻¹' (closedBall (0 : ℂ) T)ᶜ) :=
+    isClosed_closedBall.isOpen_compl.preimage equivRealProdCLM.symm.continuous
+  refine ⟨q, _, fun k ↦ ⟨hq k, hlim k⟩, fun k ↦ rfl, hw, hconv hΩ hΩT
+    (fun k z hz ↦ ((hu k).differentiableOn one_ne_zero z hz).differentiableAt (hSo.mem_nhds hz))
+    hhol hint hE (fun k ↦ ((hw k).mono hΩT).of_le (WithTop.coe_le_coe.2 le_top))
+    (fun k y _ hy ↦ update_of_ne hy _ _) fun k ↦ (hmaps k).mono_left hΩT⟩
 
 end TauCeti.SymplecticForm
 
