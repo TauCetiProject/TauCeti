@@ -81,23 +81,13 @@ abbrev universalRankClass : (rankClassFunctor 𝕜 k).obj (op (infiniteGrassmann
   infiniteGrassmannian.classificationEquiv 𝕜 (ULift.{u} (infiniteGrassmannian 𝕜 k)) k
     (Quotient.mk _ (infiniteGrassmannianULiftProj.{u} 𝕜 k))
 
-/-- Pulling the universal class back along `f` gives the class classified by `f` followed by the
-projection from the lift. -/
-theorem rankClassFunctor_map_homMk_universalRankClass {X : ParacompactHomotopyCat.{u}}
-    (f : C(X.as.obj, ULift.{u} (infiniteGrassmannian 𝕜 k))) :
-    (rankClassFunctor 𝕜 k).map (ParacompactHomotopyCat.homMk
-        (Y := infiniteGrassmannianObj.{u} 𝕜 k) f).op (universalRankClass 𝕜 k) =
-      infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k
-        (Quotient.mk _ ((infiniteGrassmannianULiftProj.{u} 𝕜 k).comp f)) := by
-  rw [rankClassFunctor_map_homMk]
-  exact (infiniteGrassmannian.classificationEquiv_comp f k _).symm
-
 /-- Homotopy classes `X ⟶ Gr_k(𝕜^∞)` in `HoPara` are rank-`k` classes over `X`: the composite of
-`ParacompactHomotopyCat.homEquivQuotient`, post-composition with the projection from the lift
-(`Homeomorph.homotopicQuotientCongr`) and `TauCeti.infiniteGrassmannian.classificationEquiv`. -/
+`ParacompactHomotopyCat.homotopicQuotientEquivHom`, post-composition with the projection from the
+lift (`Homeomorph.homotopicQuotientCongr`) and `TauCeti.infiniteGrassmannian.classificationEquiv`.
+-/
 private def rankClassHomEquiv (X : ParacompactHomotopyCat.{u}) :
     (X ⟶ infiniteGrassmannianObj.{u} 𝕜 k) ≃ RankClass 𝕜 X.as.obj k :=
-  (ParacompactHomotopyCat.homEquivQuotient _ _).symm.trans <|
+  (ParacompactHomotopyCat.homotopicQuotientEquivHom _ _).symm.trans <|
     (Homeomorph.ulift.homotopicQuotientCongr X.as.obj).trans
       (infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k)
 
@@ -108,7 +98,8 @@ private theorem rankClassHomEquiv_homMk {X : ParacompactHomotopyCat.{u}}
       infiniteGrassmannian.classificationEquiv 𝕜 X.as.obj k
         (Quotient.mk _ ((infiniteGrassmannianULiftProj.{u} 𝕜 k).comp f)) := by
   rw [rankClassHomEquiv, Equiv.trans_apply, Equiv.trans_apply,
-    ParacompactHomotopyCat.homEquivQuotient_symm_homMk (Y := infiniteGrassmannianObj.{u} 𝕜 k) f,
+    ParacompactHomotopyCat.homotopicQuotientEquivHom_symm_homMk
+      (Y := infiniteGrassmannianObj.{u} 𝕜 k) f,
     Homeomorph.homotopicQuotientCongr_mk]
 
 /-- **The infinite Grassmannian represents rank-`k` vector bundles** on the homotopy category of
