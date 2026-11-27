@@ -88,9 +88,9 @@ theorem exists_mem_nhds_injOn_liftRightTranslation {z₀ : Z} (hz₀ : ∀ k : K
   beta_reduce at hok
   have h₁ : mk K (K.toRightTranslation (g'⁻¹ * g)) z ∈ U := by
     rw [← hok, ← Subgroup.coe_mk K k hk, mk_toRightTranslation_mul]
-    exact hOV (show (o, (⟨k, hk⟩ : K) • z) ∈ O ×ˢ V₀ from ⟨ho, hz ⟨k, hk⟩ (mem_univ _)⟩)
+    exact hOV (Set.mk_mem_prod ho (hz ⟨k, hk⟩ (mem_univ _)))
   have h₂ : mk K (K.toRightTranslation 1) z' ∈ U :=
-    hOV (show ((1 : G), z') ∈ O ×ˢ V₀ from ⟨mem_of_mem_nhds hO, by simpa using hz' 1 (mem_univ _)⟩)
+    hOV (Set.mk_mem_prod (mem_of_mem_nhds hO) (by simpa using hz' 1 (mem_univ _)))
   have h := hinj h₁ h₂ (by rw [liftRightTranslation_mk, liftRightTranslation_mk, one_smul, hh])
   have h' := congrArg (g' • ·) h
   simpa only [smul_mk_toRightTranslation, mul_inv_cancel_left, mul_one] using h'
