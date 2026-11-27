@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Ring.Basic
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-public import Mathlib.MeasureTheory.Group.Measure
+public import TauCeti.MeasureTheory.Group.Opposite
+import Mathlib.Algebra.Group.Units.Opposite
+import Mathlib.Algebra.Module.Equiv.Opposite
 import TauCeti.Analysis.Normed.Module.CoveringNumber
 
 /-!
@@ -19,6 +21,8 @@ where `‖y * j s‖ ≤ R` and `‖(y * j s)⁻¹‖ ≤ R'` is covered by at m
 `(1 + 2 R R' / ε) ^ dim E` left translates of `{s | ‖j s - 1‖ ≤ ε}`.
 The theorem `MeasureTheory.measure_setOf_norm_le_and_norm_inv_le_le` gives the resulting
 bound for any left-invariant measure, without a measurability assumption on `j`.
+For a right-invariant measure, the same estimate holds for `j s * y` by passing to
+the opposite group and the opposite ring.
 
 ## Provenance
 
@@ -26,7 +30,7 @@ bound for any left-invariant measure, without a measurability assumption on `j`.
 `New.DiscreteSeries.measure_ball_le_covering` (file `src/Lib/DiscreteSeries/Haar/TotalMass.lean`)
 in grh-lean (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 The source treats unitary groups and right-invariant measures; here the algebra is arbitrary,
-the measure is left-invariant, and the net is supplied by
+the bound is available on both sides, and the net is supplied by
 `TauCeti.exists_finset_isCover_of_subset_closedBall`.
 
 ## References
@@ -96,5 +100,48 @@ theorem measure_setOf_norm_le_and_norm_inv_le_le (ν : Measure S) [ν.IsMulLeftI
         refine ENNReal.ofReal_le_ofReal (hcard.trans_eq ?_)
         rw [hδ, Real.coe_toNNReal _ hR]
         field_simp
+
+open MulOpposite in
+/-- Let `ν` be a right-invariant measure, `j : S →* Eˣ` and `y : Eˣ`. For `ε > 0`,
+
+`ν {s | ‖j s * y‖ ≤ R ∧ ‖(j s * y)⁻¹‖ ≤ R'} ≤ (1 + 2 R R' / ε) ^ d * ν {s | ‖j s - 1‖ ≤ ε}`,
+
+where `d` is the real dimension of the normed algebra `E`. -/
+theorem measure_setOf_norm_le_and_norm_inv_le_le_of_isMulRightInvariant
+    (ν : Measure S) [ν.IsMulRightInvariant] (j : S →* Eˣ) (y : Eˣ)
+    {ε R R' : ℝ} (hε : 0 < ε) :
+    ν {s | ‖((j s * y : Eˣ) : E)‖ ≤ R ∧ ‖(((j s * y)⁻¹ : Eˣ) : E)‖ ≤ R'} ≤
+      ENNReal.ofReal ((1 + 2 * R * R' / ε) ^ finrank ℝ E) * ν {s | ‖(j s : E) - 1‖ ≤ ε} := by
+  let : FiniteDimensional ℝ Eᵐᵒᵖ := (opLinearEquiv ℝ (M := E)).finiteDimensional
+  have hdim : finrank ℝ Eᵐᵒᵖ = finrank ℝ E := (opLinearEquiv ℝ (M := E)).finrank_eq.symm
+  let e : S ≃ᵐ Sᵐᵒᵖ := ⟨opEquiv, measurable_mul_op, measurable_mul_unop⟩
+  let νOp : Measure Sᵐᵒᵖ := Measure.map op ν
+  have hmap (A : Set Sᵐᵒᵖ) : νOp A = ν (op ⁻¹' A) :=
+    e.measurableEmbedding.map_apply ν A
+  let unitsOp : Eˣᵐᵒᵖ ≃* (Eᵐᵒᵖ)ˣ := Units.opEquiv.symm
+  let jOp : Sᵐᵒᵖ →* (Eᵐᵒᵖ)ˣ := unitsOp.toMonoidHom.comp j.op
+  let yOp : (Eᵐᵒᵖ)ˣ := unitsOp (op y)
+  have hjOp (s : S) : jOp (op s) = unitsOp (op (j s)) := by
+    simp only [jOp, MulEquiv.toMonoidHom_eq_coe, MonoidHom.comp_apply, MonoidHom.op_apply_apply,
+      Function.comp_apply, unop_op, MonoidHom.coe_ofClass]
+  have hprod (s : S) : yOp * jOp (op s) = unitsOp (op (j s * y)) := by
+    rw [hjOp, op_mul, map_mul]
+  have hnormInv (u : Eˣ) :
+      ‖(((unitsOp (op u))⁻¹ : (Eᵐᵒᵖ)ˣ) : Eᵐᵒᵖ)‖ = ‖((u⁻¹ : Eˣ) : E)‖ := by
+    calc
+      _ = ‖(unitsOp (op (u⁻¹)) : Eᵐᵒᵖ)‖ := by rw [op_inv, map_inv]
+      _ = _ := by simp only [unitsOp, Units.coe_opEquiv_symm, unop_op, MulOpposite.norm_op]
+  have hpreTarget : op ⁻¹' {s | ‖((yOp * jOp s : (Eᵐᵒᵖ)ˣ) : Eᵐᵒᵖ)‖ ≤ R ∧
+      ‖(((yOp * jOp s)⁻¹ : (Eᵐᵒᵖ)ˣ) : Eᵐᵒᵖ)‖ ≤ R'} =
+      {s | ‖((j s * y : Eˣ) : E)‖ ≤ R ∧ ‖(((j s * y)⁻¹ : Eˣ) : E)‖ ≤ R'} := by
+    ext s
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, hprod, hnormInv, unitsOp,
+      Units.coe_opEquiv_symm, unop_op, MulOpposite.norm_op]
+  have hpreBall : op ⁻¹' {s | ‖(jOp s : Eᵐᵒᵖ) - 1‖ ≤ ε} = {s | ‖(j s : E) - 1‖ ≤ ε} := by
+    ext s
+    simp only [Set.mem_preimage, Set.mem_ofPred_eq, hjOp, unitsOp, Units.coe_opEquiv_symm, unop_op]
+    rw [← MulOpposite.norm_unop (op (j s : E) - 1), unop_sub, unop_op, unop_one]
+  simpa only [hmap, hpreTarget, hpreBall, hdim] using
+    measure_setOf_norm_le_and_norm_inv_le_le νOp jOp yOp (R := R) (R' := R') hε
 
 end MeasureTheory
