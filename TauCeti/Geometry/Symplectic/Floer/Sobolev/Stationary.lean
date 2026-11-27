@@ -113,6 +113,14 @@ theorem stationaryJetCoeff_apply (J : ℝ → AlmostComplexStructure V) (S : ℝ
     stationaryJetCoeff J S z v = v.2.1 + J z.2 (v.2.2 - S z.2 v.1) := by
   simp [stationaryJetCoeff]
 
+/-- The stationary cylinder operator `∂s + J_t (∂t - S_t)` is the first-order operator
+`∂s + J_t ∂t - J_t S_t` (`TauCeti.firstOrderJetCoeff`). -/
+theorem stationaryJetCoeff_eq_firstOrderJetCoeff (J : ℝ → AlmostComplexStructure V)
+    (S : ℝ → V →L[ℝ] V) (z : ℝ × ℝ) :
+    stationaryJetCoeff J S z = firstOrderJetCoeff (J z.2).toLinearMap.toContinuousLinearMap
+      (-(J z.2).toLinearMap.toContinuousLinearMap.comp (S z.2)) := by
+  ext v <;> simp [stationaryJetCoeff_apply, sub_eq_add_neg]
+
 /-- On the jet `(ξ, ∂s ξ, ∂t ξ)` of a section, the coefficient field gives the stationary cylinder
 operator `D ξ`. -/
 @[simp]

@@ -32,20 +32,20 @@ import TauCeti.Topology.Instances.Matrix
 
 Let `B = ball y R` be a ball in an open set `Ω ⊆ ℝ^{n+1}` and let `x₀` lie on its bounding sphere.
 Let `a` be uniformly elliptic on `B` with constants `0 < λ ≤ Λ`, not necessarily symmetric, and
-`α`-Hölder on `closedBall y R` for some `α > 0`. Let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`, that is `a(u, v) ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and suppose
-that `u` agrees almost everywhere on `B` with a function `g` continuous on `closedBall y R` that
-attains a strict minimum over `B` at `x₀`. **Hopf's lemma**
-(`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg`) says that `g` leaves `x₀` at a
-positive linear rate along the inward normal `-ν`, `ν = (x₀ - y) / R`:
+`α`-Hölder on `closedBall y R` for some `α > 0`, and let `b` be a measurable drift, bounded on `B`.
+Let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu ≥ 0` in `Ω`, that is
+`a(u, v) + ∫ (b · ∇u) v ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, and suppose that `u` agrees
+almost everywhere on `B` with a function `g` continuous on `closedBall y R`, `g x₀ < g x` on `B`.
+**Hopf's lemma** (`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg`) says that
+`g` leaves `x₀` at a positive linear rate along the inward normal `-ν`, `ν = (x₀ - y) / R`:
 `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`.
 
 The same holds with lower-order terms. For a drift `β ∈ L^q(B)`, `q > max 2 (n + 1)`, and a
 measurable zeroth-order coefficient `0 ≤ c ≤ M` on `B`, a weak supersolution of
 `-∂ᵢ(aⁱʲ ∂ⱼu) + βⁱ ∂ᵢu + c u ≥ 0` satisfies the same conclusion as soon as `c g(x₀) ≤ 0`
 (`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_memLp`); in Rosales's sign
-convention these are the terms `cⁱ Dᵢu` with `cⁱ ∈ L^q` and `d u` with `d ≤ 0` bounded. Without
-drift, a bounded `c` of either sign is allowed when `g x₀ = 0`
+convention these are the terms `cⁱ Dᵢu` with `cⁱ ∈ L^q` and `d u` with `d ≤ 0` bounded. With a
+bounded drift, a bounded `c` of either sign is allowed when `g x₀ = 0`
 (`TauCeti.PDE.exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos`). The sign condition
 is needed: on `(0, 2)`, `cosh` solves `-u'' + u = 0` and has its minimum `1` over `[0, 2)` only at
 `0`, where its derivative vanishes. The Hölder continuity of `a` cannot be dropped, by Meyers'
@@ -1396,95 +1396,101 @@ theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_memLp {Ω : Opens
   have h := hlin t ht
   rwa [Function.comp_apply, hpt] at h
 
-/-- The exponent `n + 3`, used for a vanishing drift, exceeds `max 2 (n + 1)`. -/
-private theorem exponent_add_three :
-    2 < ((n + 3 : ℕ) : ℝ≥0∞) ∧ (n : ℝ) + 1 < ((n + 3 : ℕ) : ℝ≥0∞).toReal :=
-  ⟨by exact_mod_cast (by omega : 2 < n + 3), by rw [ENNReal.toReal_natCast]; push_cast; linarith⟩
+/-- A drift bounded on `ball y R` lies in `L^{n+3}` there, and `n + 3 > max 2 (n + 1)`. -/
+private theorem memLp_exponent_add_three {b : E → E} {y : E} {R Bb : ℝ}
+    (hbm : AEStronglyMeasurable b (volume.restrict (ball y R))) (hbB : ∀ x ∈ ball y R, ‖b x‖ ≤ Bb) :
+    MemLp b ((n + 3 : ℕ) : ℝ≥0∞) (volume.restrict (ball y R)) ∧ 2 < ((n + 3 : ℕ) : ℝ≥0∞) ∧
+      (n : ℝ) + 1 < ((n + 3 : ℕ) : ℝ≥0∞).toReal := by
+  have : IsFiniteMeasure (volume.restrict (ball y R)) :=
+    isFiniteMeasure_restrict.2 measure_ball_lt_top.ne
+  exact ⟨(memLp_top_of_bound hbm Bb ((ae_restrict_iff' measurableSet_ball).2
+    (ae_of_all _ hbB))).mono_exponent le_top, by exact_mod_cast (by omega : 2 < n + 3),
+    by rw [ENNReal.toReal_natCast]; push_cast; linarith⟩
 
 /-- **Hopf's boundary-point lemma for divergence-form equations with Hölder coefficients.** Let
 `B = ball y R ⊆ Ω` and let `x₀` lie on its bounding sphere. Let `a` be uniformly elliptic on `B`
-with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`. Let
-`u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0` in `Ω`, that is `a(u, v) ≥ 0` for every
-nonnegative `v ∈ H¹₀(Ω)`, equal almost everywhere on `B` to a function `g` continuous on
-`closedBall y R` with `g x₀ < g x` for every `x ∈ B`. Then `g` leaves its minimum `x₀` at a positive
-linear rate along the inward normal: with `ν = (x₀ - y) / R` the outer unit normal of `B` at `x₀`,
+with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`, and
+let `b` be a measurable drift with `‖b‖ ≤ B_b` on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
+`-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu ≥ 0` in `Ω`, that is `a(u, v) + ∫ (b · ∇u) v ≥ 0` for every nonnegative
+`v ∈ H¹₀(Ω)`, equal almost everywhere on `B` to a function `g` continuous on `closedBall y R` with
+`g x₀ < g x` for every `x ∈ B`. Then `g` leaves its minimum `x₀` at a positive linear rate along
+the inward normal: with `ν = (x₀ - y) / R` the outer unit normal of `B` at `x₀`,
 `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`. -/
 theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg {Ω : Opens E}
-    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {g : E → ℝ} {y x₀ : E}
-    {R lam Lam : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
+    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E} {g : E → ℝ}
+    {y x₀ : E} {R lam Lam Bb : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
     (hB : ball y R ⊆ Ω) (hell : UniformlyEllipticOn (ball y R) a lam Lam)
     (hhol : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (closedBall y R))
+    (hbm : AEStronglyMeasurable b (volume.restrict (ball y R)))
+    (hbB : ∀ x ∈ ball y R, ‖b x‖ ≤ Bb)
     (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
-      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a 0 0 u (v : W1p volume Ω 2))
+      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a b 0 u (v : W1p volume Ω 2))
     (hg : ContinuousOn g (closedBall y R))
     (hug : W1p.value u =ᵐ[volume.restrict (ball y R)] g)
     (hmin : ∀ x ∈ ball y R, g x₀ < g x) :
     ∃ ε > 0, ∃ δ > 0, ∀ t ∈ Ioo 0 δ, ε * t ≤ g (x₀ - t • (R⁻¹ • (x₀ - y))) - g x₀ :=
-  exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_memLp (M := 0)
-    (q := ((n + 3 : ℕ) : ℝ≥0∞)) hα hR hx₀ hB hell hhol MemLp.zero exponent_add_three.1
-    exponent_add_three.2 aestronglyMeasurable_const (fun _ _ => le_rfl) (fun _ _ => le_rfl) hu hg
+  have hb := memLp_exponent_add_three hbm hbB
+  exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_memLp (M := 0) hα hR hx₀ hB hell hhol
+    hb.1 hb.2.1 hb.2.2 aestronglyMeasurable_const (fun _ _ => le_rfl) (fun _ _ => le_rfl) hu hg
     hug hmin (fun _ _ => by simp)
 
-/-- **Hopf's boundary-point lemma for divergence-form equations with a mass term.** Let
-`B = ball y R ⊆ Ω` and let `x₀` lie on its bounding sphere. Let `a` be uniformly elliptic on `B`
-with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`, and
-let `c` be measurable with `|c| ≤ M` on `B`. Let `u ∈ H¹(Ω)` be a weak supersolution of
-`-∂ᵢ(aⁱʲ ∂ⱼu) + c u ≥ 0` in `Ω`, that is `a(u, v) + ∫ c u v ≥ 0` for every nonnegative
-`v ∈ H¹₀(Ω)`, equal almost everywhere on `B` to a function `g` continuous on `closedBall y R` with
-`g x₀ < g x` for every `x ∈ B` and `g x₀ ≤ 0`. Suppose moreover that `c ≥ 0` on `B` or
-`g x₀ = 0`. Then, with `ν = (x₀ - y) / R` the outer unit normal of `B` at `x₀`,
-`ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small `t > 0`.
+/-- **Hopf's boundary-point lemma for divergence-form equations with a drift and a mass term.**
+Let `B = ball y R ⊆ Ω` and let `x₀` lie on its bounding sphere. Let `a` be uniformly elliptic on
+`B` with constants `λ, Λ`, not necessarily symmetric, and `α`-Hölder on `closedBall y R`, `α > 0`,
+let `b` be a measurable drift with `‖b‖ ≤ B_b` on `B`, and let `c` be measurable with `|c| ≤ M` on
+`B`. Let `u ∈ H¹(Ω)` be a weak supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u ≥ 0` in `Ω`, that is
+`a(u, v) + ∫ (b · ∇u) v + ∫ c u v ≥ 0` for every nonnegative `v ∈ H¹₀(Ω)`, equal almost everywhere
+on `B` to a function `g` continuous on `closedBall y R` with `g x₀ < g x` for every `x ∈ B` and
+`g x₀ ≤ 0`. Suppose moreover that `c ≥ 0` on `B` or `g x₀ = 0`. Then, with `ν = (x₀ - y) / R` the
+outer unit normal of `B` at `x₀`, `ε t ≤ g (x₀ - t ν) - g x₀` for some `ε > 0` and all small
+`t > 0`.
 
 When `g x₀ = 0`, `u ≥ 0` on `B`, so the negative part of `c` may be dropped and `c` may have
 either sign. The sign condition `g x₀ ≤ 0` cannot be dropped: on the interval `(0, 2)`, `cosh`
 solves `-u'' + u = 0`, and its minimum `cosh 0 = 1` over `[0, 2)` is attained only at the boundary
 point `0`, where its derivative vanishes. -/
 theorem exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_nonpos {Ω : Opens E}
-    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {c g : E → ℝ} {y x₀ : E}
-    {R lam Lam M : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R) (hx₀ : x₀ ∈ sphere y R)
-    (hB : ball y R ⊆ Ω) (hell : UniformlyEllipticOn (ball y R) a lam Lam)
+    {u : W1p volume Ω 2} {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {b : E → E}
+    {c g : E → ℝ} {y x₀ : E} {R lam Lam Bb M : ℝ} {α Ka : ℝ≥0} (hα : 0 < α) (hR : 0 < R)
+    (hx₀ : x₀ ∈ sphere y R) (hB : ball y R ⊆ Ω) (hell : UniformlyEllipticOn (ball y R) a lam Lam)
     (hhol : HolderOnWith Ka α (fun x => matrixBilinearForm (a x)) (closedBall y R))
+    (hbm : AEStronglyMeasurable b (volume.restrict (ball y R)))
+    (hbB : ∀ x ∈ ball y R, ‖b x‖ ≤ Bb)
     (hcm : AEStronglyMeasurable c (volume.restrict (ball y R)))
     (hcM : ∀ x ∈ ball y R, |c x| ≤ M)
     (hu : ∀ v : W1p0 volume Ω 2, (∀ᵐ x ∂volume.restrict (Ω : Set E),
-      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a 0 c u (v : W1p volume Ω 2))
+      0 ≤ W1p.value (v : W1p volume Ω 2) x) → 0 ≤ energyFormH1 a b c u (v : W1p volume Ω 2))
     (hg : ContinuousOn g (closedBall y R))
     (hug : W1p.value u =ᵐ[volume.restrict (ball y R)] g)
     (hmin : ∀ x ∈ ball y R, g x₀ < g x) (hg₀ : g x₀ ≤ 0)
     (hsign : (∀ x ∈ ball y R, 0 ≤ c x) ∨ g x₀ = 0) :
     ∃ ε > 0, ∃ δ > 0, ∀ t ∈ Ioo 0 δ, ε * t ≤ g (x₀ - t • (R⁻¹ • (x₀ - y))) - g x₀ := by
+  obtain ⟨hb, hq2, hqn⟩ := memLp_exponent_add_three hbm hbB
   rcases hsign with hc0 | hg0
-  · exact exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_memLp
-      (q := ((n + 3 : ℕ) : ℝ≥0∞)) hα hR hx₀ hB hell hhol MemLp.zero exponent_add_three.1
-      exponent_add_three.2 hcm hc0 (fun x hx => (le_abs_self _).trans (hcM x hx)) hu hg hug hmin
+  · exact exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_memLp hα hR hx₀ hB hell hhol hb
+      hq2 hqn hcm hc0 (fun x hx => (le_abs_self _).trans (hcM x hx)) hu hg hug hmin
       fun x hx => mul_nonpos_of_nonneg_of_nonpos (hc0 x hx) hg₀
   -- When `g x₀ = 0`, `u ≥ 0` on `B`, so on `B` the mass coefficient may be replaced by `c⁺`.
   set U : Opens E := ⟨ball y R, isOpen_ball⟩
   have hU : U ≤ Ω := hB
   have hcm' : AEStronglyMeasurable (fun x => max (c x) 0) (volume.restrict (ball y R)) :=
     hcm.sup aestronglyMeasurable_const
-  have hcM' : ∀ x ∈ ball y R, ‖max (c x) 0‖ ≤ M := fun x hx => by
-    rw [Real.norm_eq_abs, abs_of_nonneg (le_max_right _ _)]
-    exact max_le ((le_abs_self _).trans (hcM x hx)) ((abs_nonneg _).trans (hcM x hx))
-  have hbd {f : E → ℝ} (hf : AEStronglyMeasurable f (volume.restrict (ball y R)))
-      (hfM : ∀ x ∈ ball y R, ‖f x‖ ≤ M) : MemLp f ⊤ (volume.restrict (ball y R)) :=
-    memLp_top_of_bound hf M ((ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ hfM))
   have ham : AEStronglyMeasurable a (volume.restrict (ball y R)) :=
     ((continuousOn_of_continuousOn_matrixBilinearForm (hhol.continuousOn hα)).mono
       ball_subset_closedBall).aestronglyMeasurable measurableSet_ball
-  have ha := memLp_energyIntegrand_of_bounds (b := 0) (c := 0) (beta := 0) (gamma := 0)
-    (Omega := U) hell.upper_nonneg ham aestronglyMeasurable_const aestronglyMeasurable_const
-    (fun _x hx eta xi => hell.upper_bound hx eta xi) (fun _ _ => by simp) (fun _ _ => by simp)
+  have ha := memLp_energyIntegrand_of_bounds (b := b) (c := 0) (beta := Bb) (gamma := 0)
+    (Omega := U) hell.upper_nonneg ham hbm aestronglyMeasurable_const
+    (fun _x hx eta xi => hell.upper_bound hx eta xi) hbB (fun _ _ => by simp)
   have hu0 : ∀ᵐ x ∂volume.restrict (ball y R), 0 ≤ W1p.value u x := by
     filter_upwards [hug, ae_restrict_mem measurableSet_ball] with x h hx
     rw [h, ← hg0]
     exact (hmin x hx).le
-  exact exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_memLp (Ω := U)
-    (q := ((n + 3 : ℕ) : ℝ≥0∞)) hα hR hx₀ le_rfl hell hhol MemLp.zero exponent_add_three.1
-    exponent_add_three.2 hcm' (fun _ _ => le_max_right _ _)
-    (fun x hx => (le_abs_self _).trans ((Real.norm_eq_abs _).symm.trans_le (hcM' x hx)))
-    (energyFormH1_restrictL_max_nonneg hU ha
-      (hbd hcm fun x hx => (Real.norm_eq_abs _).trans_le (hcM x hx)) hu hu0) hg
+  exact exists_pos_mul_le_sub_of_forall_energyFormH1_nonneg_of_memLp (Ω := U) hα hR hx₀ le_rfl
+    hell hhol hb hq2 hqn hcm' (fun _ _ => le_max_right _ _)
+    (fun x hx => max_le ((le_abs_self _).trans (hcM x hx)) ((abs_nonneg _).trans (hcM x hx)))
+    (energyFormH1_restrictL_max_nonneg hU ha (memLp_top_of_bound hcm M
+      ((ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ fun x hx =>
+        (Real.norm_eq_abs _).trans_le (hcM x hx)))) hu hu0) hg
     ((W1p.value_restrictL_ae hU u).trans hug) hmin fun x _ => by rw [hg0, mul_zero]
 
 end PDE

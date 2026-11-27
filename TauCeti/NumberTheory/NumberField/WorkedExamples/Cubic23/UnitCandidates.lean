@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Units
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.RingTheory.Polynomial.Selmer
 import TauCeti.Algebra.Polynomial.Cubic.Basic
 import TauCeti.NumberTheory.NumberField.WorkedExamples.Cubic23.Invariants

@@ -17,10 +17,17 @@ identity, `(1 + x) * (1 + y) = 1 + (x ∘ y)`, so `x ↦ 1 + x` is an isomorphis
 `PreQuasiregular B` onto the multiplicative monoid of `B`. On units it identifies the quasi-units
 with `Bˣ`, which bundles Mathlib's `isQuasiregular_iff_isUnit`.
 
+The unbundled form of the inverse map `b ↦ b - 1` turning products into quasi-products is the ring
+identity `a * b - 1 = (a - 1) + (b - 1) + (a - 1) * (b - 1)`.
+
 ## Main definitions
 
 * `PreQuasiregular.oneAddMulEquiv`: the monoid isomorphism `PreQuasiregular B ≃* B`,
   `x ↦ 1 + x`, for a ring `B`.
+
+## Main results
+
+* `TauCeti.mul_sub_one_eq_add_add_mul`: `a * b - 1 = (a - 1) + (b - 1) + (a - 1) * (b - 1)`.
 -/
 
 public section
@@ -56,3 +63,13 @@ theorem val_oneAddMulEquiv_symm_apply (b : B) : ((oneAddMulEquiv B).symm b).val 
   (rfl)
 
 end PreQuasiregular
+
+namespace TauCeti
+
+/-- Shifting by `-1` turns a product into a quasi-product:
+`a * b - 1 = (a - 1) + (b - 1) + (a - 1) * (b - 1)` in any ring. -/
+theorem mul_sub_one_eq_add_add_mul {B : Type*} [Ring B] (a b : B) :
+    a * b - 1 = a - 1 + (b - 1) + (a - 1) * (b - 1) := by
+  noncomm_ring
+
+end TauCeti
