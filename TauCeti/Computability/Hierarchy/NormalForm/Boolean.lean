@@ -158,43 +158,54 @@ private noncomputable def binop (op : Code → Code → Code)
   else
     none
 
-private theorem binop_eq_none_iff (op : Code → Code → Code) (nf₁ nf₂ : NormalFormCode) :
-    binop op nf₁ nf₂ = none ↔ nf₁.quantifiers ≠ nf₂.quantifiers ∨ nf₁.arity ≠ nf₂.arity := by
-  by_cases hq : nf₁.quantifiers = nf₂.quantifiers <;> by_cases ha : nf₁.arity = nf₂.arity <;>
-    simp [binop, hq, ha]
-
-private theorem isSome_binop_iff (op : Code → Code → Code) (nf₁ nf₂ : NormalFormCode) :
-    (binop op nf₁ nf₂).isSome ↔ nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity := by
-  by_cases h : nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity <;> simp [binop, h]
+private theorem binop_eq_some_iff {op : Code → Code → Code}
+    {nf₁ nf₂ nf : NormalFormCode} :
+    binop op nf₁ nf₂ = some nf ↔
+      nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity ∧
+      nf = ⟨nf₁.quantifiers, nf₁.arity,
+        op
+          (Code.comp nf₁.matrix (unpairFstCode nf₁.quantifiers.depth))
+          (Code.comp nf₂.matrix (unpairSndCode nf₁.quantifiers.depth))⟩ := by
+  by_cases hq : nf₁.quantifiers = nf₂.quantifiers <;>
+    by_cases ha : nf₁.arity = nf₂.arity <;>
+    simp [binop, hq, ha, eq_comm]
 
 private theorem exists_binop_iff (op : Code → Code → Code) (nf₁ nf₂ : NormalFormCode) :
     (∃ nf, binop op nf₁ nf₂ = some nf) ↔
       nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity := by
-  simpa [Option.isSome_iff_exists] using isSome_binop_iff op nf₁ nf₂
+  simp [binop_eq_some_iff]
+
+private theorem isSome_binop_iff (op : Code → Code → Code) (nf₁ nf₂ : NormalFormCode) :
+    (binop op nf₁ nf₂).isSome ↔ nf₁.quantifiers = nf₂.quantifiers ∧ nf₁.arity = nf₂.arity :=
+  Option.isSome_iff_exists.trans (exists_binop_iff op nf₁ nf₂)
+
+private theorem binop_eq_none_iff (op : Code → Code → Code) (nf₁ nf₂ : NormalFormCode) :
+    binop op nf₁ nf₂ = none ↔ nf₁.quantifiers ≠ nf₂.quantifiers ∨ nf₁.arity ≠ nf₂.arity := by
+  rw [← Option.not_isSome_iff_eq_none, isSome_binop_iff, not_and_or]
 
 private theorem quantifiers_eq_of_binop_eq_some {op : Code → Code → Code}
     {nf₁ nf₂ nf : NormalFormCode} (h : binop op nf₁ nf₂ = some nf) :
     nf₁.quantifiers = nf₂.quantifiers :=
-  ((exists_binop_iff op nf₁ nf₂).1 ⟨nf, h⟩).1
+  (binop_eq_some_iff.1 h).1
 
 private theorem arity_eq_of_binop_eq_some {op : Code → Code → Code}
     {nf₁ nf₂ nf : NormalFormCode} (h : binop op nf₁ nf₂ = some nf) :
     nf₁.arity = nf₂.arity :=
-  ((exists_binop_iff op nf₁ nf₂).1 ⟨nf, h⟩).2
+  (binop_eq_some_iff.1 h).2.1
 
 private theorem quantifiers_binop {op : Code → Code → Code} {nf₁ nf₂ nf : NormalFormCode}
     (h : binop op nf₁ nf₂ = some nf) : nf.quantifiers = nf₁.quantifiers := by
-  unfold binop at h
-  split_ifs at h
-  cases h
-  rfl
+  rw [(binop_eq_some_iff.1 h).2.2]
 
 private theorem arity_binop {op : Code → Code → Code} {nf₁ nf₂ nf : NormalFormCode}
     (h : binop op nf₁ nf₂ = some nf) : nf.arity = nf₁.arity := by
-  unfold binop at h
-  split_ifs at h
-  cases h
-  rfl
+  rw [(binop_eq_some_iff.1 h).2.2]
+
+private theorem eval_unpairCodes (O : ℕ →. ℕ) (d : ℕ) (l : List ℕ) :
+    Code.eval O (unpairFstCode d) (encode l) = Part.some (encode (unpairFst d l)) ∧
+    Code.eval O (unpairSndCode d) (encode l) = Part.some (encode (unpairSnd d l)) := by
+  simp only [unpairFstCode, unpairSndCode, Code.eval_curry]
+  exact ⟨eval_unpairFstBase O d l, eval_unpairSndBase O d l⟩
 
 private theorem exists_matrix_binop {op : Code → Code → Code} {nf₁ nf₂ nf : NormalFormCode}
     (h : binop op nf₁ nf₂ = some nf) :
@@ -202,14 +213,9 @@ private theorem exists_matrix_binop {op : Code → Code → Code} {nf₁ nf₂ n
       nf.matrix = op (Code.comp nf₁.matrix c₁) (Code.comp nf₂.matrix c₂) ∧
       (∀ (O : ℕ →. ℕ) (l : List ℕ),
         Code.eval O c₁ (encode l) = Part.some (encode (unpairFst nf₁.quantifiers.depth l)) ∧
-        Code.eval O c₂ (encode l) = Part.some (encode (unpairSnd nf₁.quantifiers.depth l))) := by
-  unfold binop at h
-  split_ifs at h
-  cases h
-  refine ⟨unpairFstCode nf₁.quantifiers.depth, unpairSndCode nf₁.quantifiers.depth, rfl,
-    fun O l => ?_⟩
-  simp only [unpairFstCode, unpairSndCode, Code.eval_curry]
-  exact ⟨eval_unpairFstBase O _ l, eval_unpairSndBase O _ l⟩
+        Code.eval O c₂ (encode l) = Part.some (encode (unpairSnd nf₁.quantifiers.depth l))) :=
+  ⟨unpairFstCode nf₁.quantifiers.depth, unpairSndCode nf₁.quantifiers.depth,
+    by rw [(binop_eq_some_iff.1 h).2.2], fun O l => eval_unpairCodes O _ l⟩
 
 private theorem exists_binop_eq_some {op : Code → Code → Code} {nf₁ nf₂ : NormalFormCode}
     (hq : nf₁.quantifiers = nf₂.quantifiers) (ha : nf₁.arity = nf₂.arity) :
@@ -218,12 +224,9 @@ private theorem exists_binop_eq_some {op : Code → Code → Code} {nf₁ nf₂ 
         op (Code.comp nf₁.matrix c₁) (Code.comp nf₂.matrix c₂)⟩ ∧
       (∀ (O : ℕ →. ℕ) (l : List ℕ),
         Code.eval O c₁ (encode l) = Part.some (encode (unpairFst nf₁.quantifiers.depth l)) ∧
-        Code.eval O c₂ (encode l) = Part.some (encode (unpairSnd nf₁.quantifiers.depth l))) := by
-  refine ⟨unpairFstCode nf₁.quantifiers.depth, unpairSndCode nf₁.quantifiers.depth, ?_,
-    fun O l => ?_⟩
-  · simp [binop, hq, ha]
-  · simp only [unpairFstCode, unpairSndCode, Code.eval_curry]
-    exact ⟨eval_unpairFstBase O _ l, eval_unpairSndBase O _ l⟩
+        Code.eval O c₂ (encode l) = Part.some (encode (unpairSnd nf₁.quantifiers.depth l))) :=
+  ⟨unpairFstCode nf₁.quantifiers.depth, unpairSndCode nf₁.quantifiers.depth,
+    binop_eq_some_iff.2 ⟨hq, ha, rfl⟩, fun O l => eval_unpairCodes O _ l⟩
 
 private theorem primrec₂_binop {op : Code → Code → Code} (hop : Primrec₂ op) :
     Primrec₂ (binop op) := by
@@ -272,9 +275,9 @@ private theorem eval_unpair_components {Z : Set ℕ} {nf₁ nf₂ : NormalFormCo
   obtain ⟨b₁, hb₁⟩ := isValid_iff.1 h₁ _ hl₁
   obtain ⟨b₂, hb₂⟩ := isValid_iff.1 h₂ _ hl₂
   refine ⟨b₁, b₂, hb₁, hb₂, ?_, ?_⟩
-  · rw [Code.eval_comp, unpairFstCode, Code.eval_curry, eval_unpairFstBase, PFun.some_bind]
+  · rw [Code.eval_comp, (eval_unpairCodes Z.oracle _ l).1, PFun.some_bind]
     exact hb₁
-  · rw [Code.eval_comp, unpairSndCode, Code.eval_curry, eval_unpairSndBase, PFun.some_bind]
+  · rw [Code.eval_comp, (eval_unpairCodes Z.oracle _ l).2, PFun.some_bind]
     exact hb₂
 
 private theorem isValid_binop {op : Code → Code → Code} {fb : Bool → Bool → Bool}
@@ -284,11 +287,9 @@ private theorem isValid_binop {op : Code → Code → Code} {fb : Bool → Bool 
     {Z : Set ℕ} {nf₁ nf₂ nf : NormalFormCode}
     (h₁ : nf₁.IsValid Z) (h₂ : nf₂.IsValid Z) (h : binop op nf₁ nf₂ = some nf) :
     nf.IsValid Z := by
-  unfold binop at h
-  split_ifs at h with hshape
-  cases h
+  obtain ⟨hq, ha, rfl⟩ := binop_eq_some_iff.1 h
   refine isValid_iff.2 fun l hl => ?_
-  obtain ⟨b₁, b₂, _, _, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hshape.1 hshape.2 hl
+  obtain ⟨b₁, b₂, _, _, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hq ha hl
   refine ⟨fb b₁ b₂, ?_⟩
   rw [hop Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂]
   exact Part.mem_some _
@@ -305,10 +306,8 @@ private theorem matrixHolds_binop {op : Code → Code → Code} {fb : Bool → B
     nf.MatrixHolds Z l ↔
       P (nf₁.MatrixHolds Z (unpairFst nf₁.quantifiers.depth l))
         (nf₂.MatrixHolds Z (unpairSnd nf₁.quantifiers.depth l)) := by
-  unfold binop at h
-  split_ifs at h with hshape
-  cases h
-  obtain ⟨b₁, b₂, hb₁, hb₂, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hshape.1 hshape.2 hl
+  obtain ⟨hq, ha, rfl⟩ := binop_eq_some_iff.1 h
+  obtain ⟨b₁, b₂, hb₁, hb₂, hm₁, hm₂⟩ := eval_unpair_components h₁ h₂ hq ha hl
   have heval := hop Z.oracle _ _ (encode l) b₁ b₂ hm₁ hm₂
   simp only [matrixHolds_iff, heval, Part.eq_some_iff.2 hb₁, Part.eq_some_iff.2 hb₂,
     Part.mem_some_iff]

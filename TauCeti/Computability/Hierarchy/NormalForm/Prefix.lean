@@ -909,7 +909,8 @@ theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primco
     {P : α → Prop} (h : p.IsClass Z P) (hpq : p ≤ q) : q.IsClass Z P := by
   rcases hpq with rfl | hlt
   · exact h
-  · cases p with
+  · have hdep : p.depth + 1 ≤ q.depth := lt_iff.1 hlt
+    cases p with
     | zero =>
       cases q with
       | zero => exact h
@@ -917,23 +918,17 @@ theorem IsClass.mono {Z : Set ℕ} {p q : QuantifierPrefix} {α : Type*} [Primco
       | pi m => exact (isPi_zero_iff.2 h).of_le (Nat.zero_le _)
     | sigma n =>
       cases q with
-      | zero => simp at hlt
+      | zero => exact (Nat.not_lt_zero _ hlt).elim
       | sigma m => exact h.of_le hlt.le
       | pi m =>
-        have hnm : n + 2 ≤ m + 1 := by
-          have := lt_iff.1 hlt
-          simp at this
-          omega
-        exact h.pi_succ.of_le hnm
+        simp only [depth_sigma, depth_pi] at hdep
+        exact h.pi_succ.of_le hdep
     | pi n =>
       cases q with
-      | zero => simp at hlt
+      | zero => exact (Nat.not_lt_zero _ hlt).elim
       | sigma m =>
-        have hnm : n + 2 ≤ m + 1 := by
-          have := lt_iff.1 hlt
-          simp at this
-          omega
-        exact h.sigma_succ.of_le hnm
+        simp only [depth_sigma, depth_pi] at hdep
+        exact h.sigma_succ.of_le hdep
       | pi m => exact h.of_le hlt.le
 
 /-- Adding an existential number quantifier lands in `p.addExists.IsClass Z`, contracting with a
