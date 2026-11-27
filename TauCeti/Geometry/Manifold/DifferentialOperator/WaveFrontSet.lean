@@ -373,7 +373,7 @@ theorem restrictCLM_chartComponent_localOperatorDualCLM_apply {r : ℕ}
     {tV : Trivialization F (π F V)} [MemTrivializationAtlas tV] (hV : c.source ⊆ tV.baseSet)
     {tW : Trivialization F' (π F' W)} [MemTrivializationAtlas tW] (hW : c.source ⊆ tW.baseSet)
     {χ : 𝓓(⟨c.target, c.open_target⟩, ℝ)} {U : Opens E} (hU : U ≤ ⟨c.target, c.open_target⟩)
-    (hχ : ∀ y ∈ U, χ y = 1) (v : F) {ι : Type*} [Finite ι] [Subsingleton ι]
+    (hχ : ∀ y ∈ U, χ y = 1) (v : F) {ι : Type*} [Subsingleton ι]
     (b : Module.Basis ι ℝ F') (i : ι) {φ ψ : 𝓓(U, ℝ)} {f : C^∞⟮𝓘(ℝ, E), E; ℝ⟯} (hf : ⇑f = φ)
     (hψ : ⇑ψ = (c.sectionChartCompressionDifferentialOperators he tV hV tW hW χ χ
       (LinearMap.toContinuousLinearMap (b.coord i)) v r ⟨P, hP⟩).val f)
