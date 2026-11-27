@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Free
 public import TauCeti.FieldTheory.FunctionField.Place.Approximation
 public import TauCeti.FieldTheory.FunctionField.Place.Degree
-public import TauCeti.RingTheory.Valuation.Polynomial
+public import TauCeti.RingTheory.Valuation.Polynomial.Basic
 
 /-!
 # The zeros of a function of an algebraic function field are few

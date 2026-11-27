@@ -17,7 +17,7 @@ import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 -- along the field pullback.
 import TauCeti.RingTheory.Valuation.IsTrivialOn
 import TauCeti.RingTheory.Valuation.Integral.OfValuationLeOne
-import TauCeti.RingTheory.Valuation.Polynomial
+import TauCeti.RingTheory.Valuation.Polynomial.Basic
 import Mathlib.RingTheory.Valuation.Integral
 
 /-!

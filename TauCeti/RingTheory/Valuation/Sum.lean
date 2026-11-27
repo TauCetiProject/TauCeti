@@ -15,7 +15,7 @@ of its terms. This file records the weighted form: if every term satisfies `v (f
 so does the sum, and `Valuation.map_sub_mul_le` is the corresponding weighted form of
 `Valuation.map_sub_le` for a difference. Weighted bounds of this shape arise when estimating the
 terms of polynomial expressions against a varying scale, as in
-`TauCeti/RingTheory/Valuation/Polynomial.lean`.
+`TauCeti/RingTheory/Valuation/Polynomial/Weighted.lean`.
 
 ## Main results
 

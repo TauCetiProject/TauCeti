@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.Height.NumberField
 import Mathlib.Algebra.FiniteSupport.Basic
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
 import TauCeti.NumberTheory.NumberField.InfinitePlace.Roots
-import TauCeti.RingTheory.Polynomial.GaussNorm
+import TauCeti.RingTheory.Polynomial.Gauss.Norm
 
 /-!
 # The absolute height and the Mahler measure

@@ -12,7 +12,7 @@ public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.FieldTheory.FunctionField.Place.Basic
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Inv
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Transcendental
-import TauCeti.RingTheory.Valuation.Polynomial
+import TauCeti.RingTheory.Valuation.Polynomial.LocalSubring
 
 /-!
 # The degree of a place of an algebraic function field is finite

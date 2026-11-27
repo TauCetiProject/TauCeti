@@ -11,7 +11,7 @@ public import Mathlib.RingTheory.Valuation.IsTrivialOn
 -- integral over `F[x]`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Finrank
 -- Proof-only: `Valuation.aeval_le_one`, bounding a valuation on every polynomial in `x`.
-import TauCeti.RingTheory.Valuation.Polynomial
+import TauCeti.RingTheory.Valuation.Polynomial.Basic
 -- Proof-only: `Valuation.Integers.isIntegral_iff_v_le_one`, the integrality criterion.
 import Mathlib.RingTheory.Valuation.Integral
 
