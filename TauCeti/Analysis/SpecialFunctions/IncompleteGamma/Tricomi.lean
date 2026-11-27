@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
+import Mathlib.Analysis.Complex.TaylorSeries
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Contiguous
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.EulerIntegral
 import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Kummer.Parameters
@@ -50,6 +51,11 @@ the error function (`erf z = z γ*(1/2, z²)`) are built.
   `γ*(a, ·)` is entire (`differentiable_tricomiIncompleteGamma`);
 * `Complex.iteratedDeriv_tricomiIncompleteGamma` — the `n`th derivative
   `∂ⁿγ*(a, z)/∂zⁿ = (−1)ⁿ (a)ₙ γ*(a + n, z)`;
+* `Complex.hasSum_tricomiIncompleteGamma_add` — the addition theorem, the Taylor expansion
+  `γ*(a, z + h) = ∑ₖ (−1)ᵏ (a)ₖ γ*(a + k, z) hᵏ / k!`, for every `a`, `z` and `h`;
+* `Complex.hasSum_tricomiIncompleteGamma_mul` — the multiplication theorem for `γ*`,
+  `γ*(a, tz) = ∑ₖ (a)ₖ γ*(a + k, z) zᵏ (1 − t)ᵏ / k!`, for every `a`, `z` and `t` (DLMF 8.15.1 in
+  terms of `γ*`, with DLMF's `λ` written `t`);
 * `Complex.differentiable_tricomiIncompleteGamma_left` — `γ*(·, z)` is entire;
 * `Complex.tricomiIncompleteGamma_ode` — the differential equation
   `z w'' + (a + 1 + z) w' + a w = 0` (DLMF 8.2.14).
@@ -63,7 +69,8 @@ for every `a` with no case split.
 
 * *NIST Digital Library of Mathematical Functions*, [§8.2](https://dlmf.nist.gov/8.2),
   [§8.4](https://dlmf.nist.gov/8.4), [§8.5](https://dlmf.nist.gov/8.5),
-  [§8.7](https://dlmf.nist.gov/8.7) and [§8.8](https://dlmf.nist.gov/8.8).
+  [§8.7](https://dlmf.nist.gov/8.7), [§8.8](https://dlmf.nist.gov/8.8) and
+  [§8.15](https://dlmf.nist.gov/8.15).
 * F. G. Tricomi, *Sulla funzione gamma incompleta*, Ann. Mat. Pura Appl. (4) 31 (1950).
 -/
 
@@ -200,6 +207,36 @@ theorem iteratedDeriv_tricomiIncompleteGamma (n : ℕ) (a : ℂ) :
       ((-1) ^ n * (ascPochhammer ℂ n).eval a)).deriv
     rw [h, ascPochhammer_succ_eval, Nat.cast_succ, ← add_assoc]
     ring
+
+/-- **The addition theorem** for Tricomi's function, its Taylor expansion about `z`:
+`γ*(a, z + h) = ∑ₖ (−1)ᵏ (a)ₖ γ*(a + k, z) hᵏ / k!` for every `a`, `z` and `h`. -/
+theorem hasSum_tricomiIncompleteGamma_add (a z h : ℂ) :
+    HasSum (fun k : ℕ => (-1) ^ k * (ascPochhammer ℂ k).eval a *
+        tricomiIncompleteGamma (a + k) z * h ^ k / k !)
+      (tricomiIncompleteGamma a (z + h)) := by
+  have ht := hasSum_taylorSeries_of_entire (differentiable_tricomiIncompleteGamma a) z (z + h)
+  refine ht.congr_fun fun k => ?_
+  rw [iteratedDeriv_tricomiIncompleteGamma, add_sub_cancel_left, smul_eq_mul, smul_eq_mul]
+  ring
+
+/-- **The multiplication theorem** for Tricomi's function (DLMF 8.15.1 in terms of `γ*`):
+`γ*(a, tz) = ∑ₖ (a)ₖ γ*(a + k, z) zᵏ (1 − t)ᵏ / k!` for every `a`, `z` and `t`. -/
+theorem hasSum_tricomiIncompleteGamma_mul (a z t : ℂ) :
+    HasSum (fun k : ℕ => (ascPochhammer ℂ k).eval a * tricomiIncompleteGamma (a + k) z *
+        z ^ k * (1 - t) ^ k / k !)
+      (tricomiIncompleteGamma a (t * z)) := by
+  -- The Taylor expansion about `z` with increment `(t - 1) z` evaluates `γ*(a, ·)` at `t z`.
+  have hzt : z + (t - 1) * z = t * z := by ring
+  have h := hasSum_tricomiIncompleteGamma_add a z ((t - 1) * z)
+  rw [hzt] at h
+  refine h.congr_fun fun k => ?_
+  -- Writing `(t - 1) z = (−1) ((1 − t) z)` turns `((t - 1) z)ᵏ` into `(−1)ᵏ (1 − t)ᵏ zᵏ`, whose
+  -- sign cancels the `(−1)ᵏ` of the addition theorem.
+  have hneg : (t - 1) * z = -1 * ((1 - t) * z) := by ring
+  have h1 : (-1 : ℂ) ^ k * (-1) ^ k = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
+  rw [hneg, mul_pow, mul_pow]
+  linear_combination (-((ascPochhammer ℂ k).eval a * tricomiIncompleteGamma (a + k) z *
+    z ^ k * (1 - t) ^ k / k !)) * h1
 
 /-- The differential equation of Tricomi's function (DLMF 8.2.14):
 `z w'' + (a + 1 + z) w' + a w = 0` for `w = γ*(a, ·)`. -/

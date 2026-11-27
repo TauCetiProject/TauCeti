@@ -6,23 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Lower
-import Mathlib.Analysis.Complex.TaylorSeries
 
 /-!
 # The multiplication theorem of the lower incomplete Gamma function
 
 The multiplication theorem DLMF 8.15.1,
-`γ(a, λx) = λ^a ∑ₖ γ(a + k, x) (1 − λ)ᵏ / k!`, and its entire counterpart for Tricomi's
-function `γ*`. Both come from the Taylor expansion of the entire function `γ*(a, ·)`, whose
-derivatives are `∂ⁿγ*(a, z)/∂zⁿ = (−1)ⁿ (a)ₙ γ*(a + n, z)`
-(`Complex.iteratedDeriv_tricomiIncompleteGamma`).
+`γ(a, λx) = λ^a ∑ₖ γ(a + k, x) (1 − λ)ᵏ / k!`. It follows from its entire counterpart for
+Tricomi's function `γ*` (`Complex.hasSum_tricomiIncompleteGamma_mul`), the Taylor expansion of
+the entire function `γ*(a, ·)`, through `γ(a, z) = Γ(a) z^a γ*(a, z)`.
 
 ## Main results
 
-* `Complex.hasSum_tricomiIncompleteGamma_add`: the addition theorem
-  `γ*(a, z + h) = ∑ₖ (−1)ᵏ (a)ₖ γ*(a + k, z) hᵏ / k!`, for every `a`, `z` and `h`;
-* `Complex.hasSum_tricomiIncompleteGamma_mul`: the multiplication theorem for `γ*`,
-  `γ*(a, λz) = ∑ₖ (a)ₖ γ*(a + k, z) zᵏ (1 − λ)ᵏ / k!`, for every `a`, `z` and `λ`;
 * `Complex.hasSum_lowerIncompleteGamma_mul`: **DLMF 8.15.1**,
   `γ(a, λx) = λ^a ∑ₖ γ(a + k, x) (1 − λ)ᵏ / k!` with the principal power, for `a ∉ −ℕ`,
   real `x ≥ 0` and every complex `λ`.
@@ -53,31 +47,6 @@ noncomputable section
 open scoped Nat
 
 namespace Complex
-
-/-- **The addition theorem** for Tricomi's function, its Taylor expansion about `z`:
-`γ*(a, z + h) = ∑ₖ (−1)ᵏ (a)ₖ γ*(a + k, z) hᵏ / k!` for every `a`, `z` and `h`. -/
-theorem hasSum_tricomiIncompleteGamma_add (a z h : ℂ) :
-    HasSum (fun k : ℕ => (-1) ^ k * (ascPochhammer ℂ k).eval a *
-        tricomiIncompleteGamma (a + k) z * h ^ k / k !)
-      (tricomiIncompleteGamma a (z + h)) := by
-  have ht := hasSum_taylorSeries_of_entire (differentiable_tricomiIncompleteGamma a) z (z + h)
-  refine ht.congr_fun fun k => ?_
-  rw [iteratedDeriv_tricomiIncompleteGamma, add_sub_cancel_left, smul_eq_mul, smul_eq_mul]
-  ring
-
-/-- **The multiplication theorem** for Tricomi's function (DLMF 8.15.1 in terms of `γ*`):
-`γ*(a, tz) = ∑ₖ (a)ₖ γ*(a + k, z) zᵏ (1 − t)ᵏ / k!` for every `a`, `z` and `t`. -/
-theorem hasSum_tricomiIncompleteGamma_mul (a z t : ℂ) :
-    HasSum (fun k : ℕ => (ascPochhammer ℂ k).eval a * tricomiIncompleteGamma (a + k) z *
-        z ^ k * (1 - t) ^ k / k !)
-      (tricomiIncompleteGamma a (t * z)) := by
-  have h := hasSum_tricomiIncompleteGamma_add a z ((t - 1) * z)
-  rw [show z + (t - 1) * z = t * z by ring] at h
-  refine h.congr_fun fun k => ?_
-  have h1 : (-1 : ℂ) ^ k * (-1) ^ k = 1 := by rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
-  rw [show (t - 1) * z = -((1 - t) * z) by ring, neg_pow ((1 - t) * z), mul_pow]
-  linear_combination (-((ascPochhammer ℂ k).eval a * tricomiIncompleteGamma (a + k) z *
-    z ^ k * (1 - t) ^ k / k !)) * h1
 
 /-- **DLMF 8.15.1**, the multiplication theorem for the lower incomplete Gamma function:
 `γ(a, tx) = t^a ∑ₖ γ(a + k, x) (1 − t)ᵏ / k!` with the principal power `t^a`, for `a ∉ −ℕ`,
