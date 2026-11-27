@@ -95,10 +95,10 @@ the chart. The balls of `X` and of the chart are compared through Lipschitz boun
   (`TauCeti.SeibergWitten.exists_forall_measure_closedBall_le_of_frame_of_dist_apply_le`);
 * Taubes's packing bound: a set `Z` of zeros of `α` with a Darboux chart about each of its points,
   with uniform constants, is covered by at most `4 μX(Z_{σ/2}) / (c σ²)` balls of `X` of radius
-  `σ` centred in `Z`, for `r ≥ max 1 (8 K)` and `r ≥ (2 c₀ / σ)²`
-  (`TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_frame`). With the lower bound,
-  `TauCeti.exists_finset_isCover_pairwiseDisjoint_closedBall` also gives such a cover whose
-  half-balls are pairwise disjoint.
+  `σ` centred in `Z`, for `σ ≤ 2 ρ₀`, `r ≥ max 1 (8 K)` and `r ≥ (2 c₀ / σ)²`
+  (`TauCeti.SeibergWitten.exists_forall_coveringNumber_le_of_frame`). When `μX(Z_{σ/2})` is
+  finite, the lower bound and `TauCeti.exists_finset_isCover_pairwiseDisjoint_closedBall` also
+  give such a cover whose half-balls are pairwise disjoint.
 
 ## Main results
 
