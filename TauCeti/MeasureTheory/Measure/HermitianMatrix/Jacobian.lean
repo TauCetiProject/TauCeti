@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Hermitian.Congruence
-public import TauCeti.MeasureTheory.Measure.Haar.Matrix.Complex
 public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Lebesgue
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Matrix
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
