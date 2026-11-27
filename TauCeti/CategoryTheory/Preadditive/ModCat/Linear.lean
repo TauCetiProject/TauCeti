@@ -306,20 +306,28 @@ section SourceLinear
 
 attribute [local instance] AdditiveFunctor.sourceLinear
 
-/-- The equivalence respects the source-induced linear structure on additive functors and the
+/-- The module-valued lift respects the source-induced linear structure on additive functors and the
 pointwise linear structure on functors to modules. -/
-instance linearModuleFunctorEquiv_functor_linear :
-    ((linearModuleFunctorEquiv.{w} R D).functor).Linear R where
+instance _root_.CategoryTheory.AdditiveFunctor.liftToModuleCatFunctor_linear :
+    (AdditiveFunctor.liftToModuleCatFunctor.{w} D R).Linear R where
   map_smul {F G} α r := by
-    rw [linearModuleFunctorEquiv_functor]
-    apply ObjectProperty.hom_ext
     ext X x
-    simp only [ObjectProperty.lift_map, ObjectProperty.smul_hom, NatTrans.app_smul,
-      ModuleCat.hom_smul, LinearMap.smul_apply]
+    simp only [NatTrans.app_smul, ModuleCat.hom_smul, LinearMap.smul_apply]
     refine (AdditiveFunctor.liftToModuleCatFunctor_map_app_apply R (r • α) X x).trans ?_
     have h := AdditiveFunctor.sourceLinear_smul_hom_app R r α X
     refine (ConcreteCategory.congr_hom h x).trans ?_
     exact (AdditiveFunctor.liftToModuleCat_smul R G X r (α.hom.app X x)).symm
+
+/-- The scalar lift into the full subcategory of linear functors preserves scalar multiplication. -/
+instance linearModuleFunctorLift_linear : (linearModuleFunctorLift.{w} R D).Linear R where
+  -- The full-subcategory lift and scalar action use the ambient maps on underlying morphisms.
+  map_smul α r := ObjectProperty.hom_ext (linearModuleFunctor R D) <|
+    (AdditiveFunctor.liftToModuleCatFunctor D R).map_smul r α
+
+/-- The forward functor of the scalar lift equivalence is linear for the source-induced action. -/
+instance linearModuleFunctorEquiv_functor_linear :
+    ((linearModuleFunctorEquiv.{w} R D).functor).Linear R :=
+  inferInstanceAs ((linearModuleFunctorLift R D).Linear R)
 
 end SourceLinear
 
