@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.Valuation.ValuationRing
-import Mathlib.RingTheory.Polynomial.Tower
 
 /-!
 # Kaplansky's criterion for valuation rings
