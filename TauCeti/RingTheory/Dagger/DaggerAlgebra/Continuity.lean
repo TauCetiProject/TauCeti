@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Dagger.DaggerAlgebra.IntSubring
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Map
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.ResidueNorm
 
@@ -50,7 +51,8 @@ dagger algebras:
   canonical topology on `A`, the power-bounded elements are `{a | |a|sup ≤ 1}` (preserved by
   arbitrary `K`-algebra homomorphisms via `AlgHom.isPowerBounded_map_of_isDaggerAlgebra`) and
   the topologically nilpotent elements are `{a | |a|sup < 1}` (preserved via automatic continuity
-  and `IsTopologicallyNilpotent.map`).
+  and `IsTopologicallyNilpotent.map`). So the power-bounded subring is the integral subring
+  `A^int` (`TauCeti.Dagger.mem_intSubring_iff_isPowerBounded`).
 
 ## Main definitions
 
@@ -670,6 +672,15 @@ theorem isTopologicallyNilpotent_iff_supSeminorm_lt_one {a : A} :
       (by rw [supSeminorm_toCompletion])
 
 end IsDaggerAlgebra
+
+/-- **The integral subring is the ring of power-bounded elements**: in the canonical residue-norm
+topology on a dagger algebra `A`, the power-bounded elements are exactly those of `A^int`. -/
+theorem mem_intSubring_iff_isPowerBounded {a : A} :
+    letI := residueNormedCommRing K A
+    a ∈ intSubring K A ↔ Huber.IsPowerBounded a := by
+  let := residueNormedCommRing K A
+  exact mem_intSubring_iff_supSeminorm_le_one.trans
+    (IsDaggerAlgebra.isPowerBounded_iff_supSeminorm_le_one (K := K) (a := a)).symm
 
 end PowerBounded
 

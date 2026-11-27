@@ -62,6 +62,9 @@ identifies the completion of `W_σ` with `T_σ`
   `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_eq_zero_iff`,
   `TauCeti.Dagger.IsDaggerAlgebra.isReduced_iff_supSeminorm_eq_zero`: the completion map preserves
   `supSeminorm`, morphisms of dagger algebras contract it, and its kernel is the nilradical.
+* `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_mul_le`,
+  `TauCeti.Dagger.IsDaggerAlgebra.supSeminorm_add_le`: on a dagger algebra `supSeminorm` is a
+  submultiplicative nonarchimedean seminorm, as it is on the affinoid completion.
 
 ## References
 
@@ -513,6 +516,22 @@ characteristic. -/
 theorem isReduced_iff_supSeminorm_eq_zero :
     IsReduced A ↔ ∀ a : A, supSeminorm K a = 0 → a = 0 := by
   simp_rw [supSeminorm_eq_zero_iff, isReduced_iff]
+
+/-- **The supremum seminorm of a dagger algebra is submultiplicative**:
+`|a * b|sup ≤ |a|sup * |b|sup`. -/
+theorem supSeminorm_mul_le (a b : A) :
+    supSeminorm K (a * b) ≤ supSeminorm K a * supSeminorm K b := by
+  simpa only [← map_mul, supSeminorm_toCompletion] using
+    (isAffinoidAlgebra_completion (K := K) (A := A)).supSeminorm_mul_le
+      (toCompletion K A a) (toCompletion K A b)
+
+/-- **The supremum seminorm of a dagger algebra is nonarchimedean**:
+`|a + b|sup ≤ max |a|sup |b|sup`. -/
+theorem supSeminorm_add_le (a b : A) :
+    supSeminorm K (a + b) ≤ max (supSeminorm K a) (supSeminorm K b) := by
+  simpa only [← map_add, supSeminorm_toCompletion] using
+    (isAffinoidAlgebra_completion (K := K) (A := A)).supSeminorm_add_le
+      (toCompletion K A a) (toCompletion K A b)
 
 end IsDaggerAlgebra
 
