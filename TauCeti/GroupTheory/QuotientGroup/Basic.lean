@@ -66,6 +66,8 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   contains a nontrivial subgroup meeting `Z` trivially.
 * `QuotientGroup.out_mul_out_mul_inv_mem`: the defect of the representatives chosen by
   `Quotient.out` from preserving multiplication lies in the subgroup.
+* `QuotientGroup.injective_op_out_inv_smul`: distinct left cosets `t` of `H` give distinct right
+  cosets `H t.out⁻¹`.
 * `QuotientGroup.mk_list_prod`: the class of a list product is the product of the classes.
 * `QuotientGroup.inv_mul_mul_list_prod_map_mul_mem`: central corrections can be absorbed into the
   two tail products of a word, modulo a normal subgroup.
@@ -262,6 +264,15 @@ theorem _root_.QuotientGroup.out_mul_out_mul_inv_mem (N : Subgroup G) [N.Normal]
     (q r : G ⧸ N) : q.out * r.out * (q * r).out⁻¹ ∈ N := by
   rw [← div_eq_mul_inv, ← QuotientGroup.eq_iff_div_mem, QuotientGroup.mk_mul,
     QuotientGroup.out_eq', QuotientGroup.out_eq', QuotientGroup.out_eq']
+
+/-- Distinct left cosets `t` of `H` give distinct right cosets `H t.out⁻¹`. -/
+theorem _root_.QuotientGroup.injective_op_out_inv_smul (H : Subgroup G) :
+    Function.Injective fun t : G ⧸ H ↦ MulOpposite.op ((t.out)⁻¹ : G) • (H : Set G) := by
+  intro t s hts
+  have h := (rightCoset_eq_iff H).1 hts
+  rw [inv_inv] at h
+  rw [← QuotientGroup.out_eq' t, ← QuotientGroup.out_eq' s]
+  exact (QuotientGroup.eq.2 h).symm
 
 /-- The class modulo a normal subgroup of a list product is the product of the classes. -/
 @[simp]

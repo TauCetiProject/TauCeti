@@ -72,9 +72,9 @@ numbers, which is the group-theoretic half of the statement that the permutation
   the same cardinality.
 * `TauCeti.mem_orbit_iff_inv_mem_doubleCoset`: `(yH, K)` lies in the orbit of `(H, gK)` exactly
   when `y⁻¹ ∈ H g K`.
-* `TauCeti.doubleCoset_eq_iUnion_op_out_inv_smul`, `TauCeti.injective_op_out_inv_smul`: the
-  inverses `t.out⁻¹` of representatives of the left cosets `t` with `t.out⁻¹ ∈ H g K` represent,
-  without repetition, the right cosets of `H` in `H g K`.
+* `TauCeti.doubleCoset_eq_iUnion_op_out_inv_smul`: the inverses `t.out⁻¹` of representatives of
+  the left cosets `t` with `t.out⁻¹ ∈ H g K` represent the right cosets of `H` in `H g K`, without
+  repetition by `QuotientGroup.injective_op_out_inv_smul`.
 * `TauCeti.sum_card_fixedBy_mul_card_fixedBy_eq_card_doubleCosetQuotient_mul_card_group`:
   Burnside's lemma read through that bijection,
   `∑ g, |(G ⧸ H)^g| * |(G ⧸ K)^g| = #(H \ G / K) * |G|`.
@@ -292,16 +292,6 @@ theorem doubleCoset_eq_iUnion_op_out_inv_smul (g : G) {S : Set (G ⧸ H)}
     have hx : x = x * t.out * (t.out)⁻¹ := by group
     rw [hab] at hx
     simpa [mul_assoc] using hx
-
-variable (H) in
-/-- Distinct left cosets `t` of `H` give distinct right cosets `H t.out⁻¹`. -/
-theorem injective_op_out_inv_smul :
-    Function.Injective fun t : G ⧸ H ↦ MulOpposite.op ((t.out)⁻¹ : G) • (H : Set G) := by
-  intro t s hts
-  have h := (rightCoset_eq_iff H).1 hts
-  rw [inv_inv] at h
-  rw [← QuotientGroup.out_eq' t, ← QuotientGroup.out_eq' s]
-  exact (QuotientGroup.eq.2 h).symm
 
 end RightCosets
 
