@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Exact.Basic
-public import Mathlib.FieldTheory.IsAlgClosed.Basic
+public import TauCeti.RingTheory.IntegralClosure.AbsolutelyIntegrallyClosed
 public import TauCeti.RingTheory.WittVector.PadicConstants
 
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
@@ -15,10 +15,15 @@ import Mathlib.RingTheory.AdicCompletion.Functoriality
 /-!
 # Scalar Artin–Schreier–Witt equations
 
-Over an algebraically closed field of characteristic `p`, every equation `φ(y) - s * y = a`
-has a solution in the full Witt ring and modulo every power of `p`. At finite level the kernel
-of `φ - 1` is the canonical copy of `ℤ/p^n`. These are the scalar equations used in integral
-Frobenius descent.
+Let `k` be a perfect ring of characteristic `p` that is absolutely integrally closed: every monic
+polynomial of positive degree over `k` has a root in `k` (`TauCeti.IsAbsolutelyIntegrallyClosed`).
+Examples are algebraically closed fields of characteristic `p` and the tilt `O_C♭` of the valuation
+ring of a complete algebraically closed nonarchimedean field `C`
+(`PreTilt.instIsAbsolutelyIntegrallyClosed`). Then every equation `φ(y) - s * y = a` has a
+solution in `W(k)` and modulo every power of `p`; for `k = O_C♭` and `s = ξ ^ n` this solves
+`φ(c) - ξ ^ n * c = x` in `A_inf = W(O_C♭)`. Over a perfect domain the kernel of `φ - 1` at finite
+level is the canonical copy of `ℤ/p^n`. These are the scalar equations used in integral Frobenius
+descent.
 
 ## Provenance
 
@@ -73,29 +78,29 @@ theorem surjective_map_sub_mul_map (s : WittVector p k) (F G : k →+* k)
   rw [← ker_constantCoeff, RingHom.mem_ker]
   simpa [f, map_sub, map_mul, sub_eq_zero] using ht
 
-section Field
-
-variable {K : Type*} [Field K] [CharP K p] [IsAlgClosed K]
-
-/-- Every scalar Artin–Schreier–Witt equation over an algebraically closed field is solvable. -/
-theorem surjective_frobenius_sub_mul (s : WittVector p K) :
-    Function.Surjective fun y : WittVector p K ↦ frobenius y - s * y := by
+/-- Every scalar Artin–Schreier–Witt equation `φ(y) - s * y = a` is solvable over a perfect
+ring of characteristic `p` in which every monic polynomial of positive degree has a root, for
+instance an algebraically closed field or the tilt `O_C♭`. -/
+theorem surjective_frobenius_sub_mul [TauCeti.IsAbsolutelyIntegrallyClosed k]
+    (s : WittVector p k) :
+    Function.Surjective fun y : WittVector p k ↦ frobenius y - s * y := by
   classical
+  -- over the zero ring every Witt vector is zero
+  cases subsingleton_or_nontrivial k
+  · exact fun a ↦ ⟨a, WittVector.ext fun _ ↦ Subsingleton.elim _ _⟩
   rw [frobenius_eq_map_frobenius]
-  apply surjective_map_sub_mul_map s (_root_.frobenius K p) (RingHom.id K)
+  apply surjective_map_sub_mul_map s (_root_.frobenius k p) (RingHom.id k)
   intro a
-  let P : K[X] := Polynomial.X ^ p - (Polynomial.C (constantCoeff s) * Polynomial.X +
+  -- a root of the monic polynomial `X ^ p - s₀ X - a` of degree `p` solves the equation mod `p`
+  let P : k[X] := Polynomial.X ^ p - (Polynomial.C (constantCoeff s) * Polynomial.X +
     Polynomial.C a)
   have hP : P.IsMonicOfDegree p :=
-    (Polynomial.isMonicOfDegree_X_pow K p).sub
+    (Polynomial.isMonicOfDegree_X_pow k p).sub
       (Polynomial.natDegree_linear_le.trans_lt (Fact.out : p.Prime).one_lt)
-  obtain ⟨x, hx⟩ := IsAlgClosed.exists_root P
-    (Polynomial.natDegree_pos_iff_degree_pos.mp
-      ((Fact.out : p.Prime).pos.trans_eq hP.natDegree_eq.symm)).ne'
+  obtain ⟨x, hx⟩ := TauCeti.IsAbsolutelyIntegrallyClosed.exists_root P hP.monic
+    (hP.natDegree_eq ▸ (Fact.out : p.Prime).pos)
   exact ⟨x, by
     simpa [P, Polynomial.IsRoot, frobenius_def, sub_eq_zero, sub_add_eq_sub_sub] using hx⟩
-
-end Field
 
 end WittVector
 
@@ -157,10 +162,12 @@ open TauCeti.WittVector
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- Every scalar equation remains solvable after reduction modulo any power of `p`. -/
-theorem surjective_frobeniusMod_sub_mul {K : Type*} [Field K] [CharP K p] [IsAlgClosed K]
-    (n : ℕ) (s : _root_.WittVector p K ⧸ Ideal.span {(p : _root_.WittVector p K) ^ n}) :
-    Function.Surjective fun y ↦ frobeniusMod p K n y - s * y := by
+/-- Over a perfect ring of characteristic `p` in which every monic polynomial of positive degree
+has a root, every scalar equation remains solvable after reduction modulo any power of `p`. -/
+theorem surjective_frobeniusMod_sub_mul {k : Type*} [CommRing k] [CharP k p] [PerfectRing k p]
+    [TauCeti.IsAbsolutelyIntegrallyClosed k]
+    (n : ℕ) (s : _root_.WittVector p k ⧸ Ideal.span {(p : _root_.WittVector p k) ^ n}) :
+    Function.Surjective fun y ↦ frobeniusMod p k n y - s * y := by
   obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
   intro a
   obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective a
@@ -173,12 +180,14 @@ namespace TauCeti.WittVector
 
 variable {p : ℕ} [Fact p.Prime]
 
-/-- Over an algebraically closed field the finite Artin–Schreier–Witt operator is surjective,
-completing `0 → ℤ/p^n → W(k)/p^n → W(k)/p^n → 0`. -/
-theorem artinSchreierMod_surjective {K : Type*} [Field K] [CharP K p] [IsAlgClosed K] (n : ℕ) :
-    Function.Surjective (artinSchreierMod (p := p) (k := K) n) := by
+/-- Over a perfect ring of characteristic `p` in which every monic polynomial of positive degree
+has a root, the finite Artin–Schreier–Witt operator is surjective. Over an algebraically closed
+field this completes `0 → ℤ/p^n → W(k)/p^n → W(k)/p^n → 0`. -/
+theorem artinSchreierMod_surjective {k : Type*} [CommRing k] [CharP k p] [PerfectRing k p]
+    [IsAbsolutelyIntegrallyClosed k] (n : ℕ) :
+    Function.Surjective (artinSchreierMod (p := p) (k := k) n) := by
   intro a
-  obtain ⟨y, hy⟩ := _root_.WittVector.surjective_frobeniusMod_sub_mul (p := p) (K := K) n 1 a
+  obtain ⟨y, hy⟩ := _root_.WittVector.surjective_frobeniusMod_sub_mul (p := p) (k := k) n 1 a
   exact ⟨y, by simpa only [artinSchreierMod_apply, one_mul] using hy⟩
 
 end TauCeti.WittVector

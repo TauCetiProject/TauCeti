@@ -41,6 +41,9 @@ As a consequence the ideal `(μ)` does not depend on the choice of `ε`.
 * `PreTilt.mu_dvd_of_forall_fontaineTheta_iterate_eq_zero`: if `θ(φ^j(a)) = 0` for all `j`,
   then `μ ∣ a`.
 * `PreTilt.mem_span_mu_iff`: `a ∈ (μ)` if and only if `θ(φ^j(a)) = 0` for all `j`.
+* `PreTilt.frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero`,
+  `PreTilt.mem_span_frobeniusEquiv_symm_mu_iff`: the same for `τ = φ^(-1)(μ)` and `j ≥ 1`: `a ∈ (τ)`
+  if and only if `θ(φ^(j+1)(a)) = 0` for all `j`.
 * `PreTilt.span_mu_eq_span_mu`: the ideal `(μ)` is independent of `ε`.
 * `PreTilt.iInf_span_xiLevel_eq_span_mu`: `⋂_{r ≥ 1} (ξ_r) = (μ)`.
 
@@ -157,6 +160,35 @@ theorem mem_span_mu_iff (ε : PreTilt (𝒪[C]) p)
     Ideal.mem_span_singleton.mpr (mu_dvd_of_forall_fontaineTheta_iterate_eq_zero ε hε h)⟩
   obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton.mp h
   rw [iterate_map_mul, map_mul,
+    fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero ε (ε.untilt_eq_one_of_isPrimitiveRoot hε),
+    zero_mul]
+
+/-- **Divisibility by `τ = φ^(-1)(μ)`.** If the sharp of `ε ^ (1 / p)` is a primitive `p`-th root
+of unity and `θ(φ^j(a)) = 0` for every `j ≥ 1`, then `φ^(-1)(μ)` divides `a`. -/
+theorem frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero
+    (ε : PreTilt (𝒪[C]) p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
+    {a : WittVector p (PreTilt (𝒪[C]) p)}
+    (ha : ∀ j, fontaineTheta (𝒪[C]) p (((frobeniusEquiv p (PreTilt (𝒪[C]) p))^[j + 1]) a) = 0) :
+    (frobeniusEquiv p (PreTilt (𝒪[C]) p)).symm (mu p ε) ∣ a := by
+  -- `φ(a)` is killed by every `θ ∘ φ^j`, so `μ ∣ φ(a)`; apply `φ^(-1)`
+  have h := mu_dvd_of_forall_fontaineTheta_iterate_eq_zero ε hε
+    (a := frobeniusEquiv p _ a) fun j ↦ by rw [← Function.iterate_succ_apply]; exact ha j
+  simpa only [RingEquiv.symm_apply_apply] using map_dvd (frobeniusEquiv p _).symm h
+
+/-- An element of `A_inf` lies in `(τ)`, where `τ = φ^(-1)(μ)`, exactly when it is killed by
+`θ ∘ φ^j` for every `j ≥ 1`. -/
+theorem mem_span_frobeniusEquiv_symm_mu_iff (ε : PreTilt (𝒪[C]) p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt (𝒪[C]) p) p).symm ε)) p)
+    {a : WittVector p (PreTilt (𝒪[C]) p)} :
+    a ∈ Ideal.span {(frobeniusEquiv p (PreTilt (𝒪[C]) p)).symm (mu p ε)} ↔
+      ∀ j, fontaineTheta (𝒪[C]) p (((frobeniusEquiv p (PreTilt (𝒪[C]) p))^[j + 1]) a) = 0 := by
+  refine ⟨fun h j ↦ ?_, fun h ↦ Ideal.mem_span_singleton.mpr
+    (frobeniusEquiv_symm_mu_dvd_of_forall_fontaineTheta_iterate_succ_eq_zero ε hε h)⟩
+  obtain ⟨b, rfl⟩ := Ideal.mem_span_singleton.mp h
+  rw [iterate_map_mul, Function.iterate_succ_apply, RingEquiv.apply_symm_apply, map_mul,
     fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero ε (ε.untilt_eq_one_of_isPrimitiveRoot hε),
     zero_mul]
 

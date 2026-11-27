@@ -24,7 +24,9 @@ are defined in Witt vectors without division. When the sharp of `ε^(1/p)` is a 
 `p`-th root of unity, `ξ` generates Fontaine's kernel on perfectoid integer rings.
 
 Frobenius acts on `μ` and `xiTilde` by replacing `ε` with `ε ^ p`, and the zeroth Witt coordinate
-of `μ` is `ε - 1`, so `μ ≠ 0` for `ε ≠ 1`.
+of `μ` is `ε - 1`, so for `ε ≠ 1` neither `μ` nor `τ = φ^(-1)(μ)` is divisible by `p`. When the
+sharp of `ε^(1/p)` is a primitive `p`-th root of unity `ζ`, Fontaine's map sends `τ` to
+`ζ - 1 ≠ 0`, while it kills `μ`.
 
 ## Main results
 
@@ -33,9 +35,14 @@ of `μ` is `ε - 1`, so `μ ≠ 0` for `ε ≠ 1`.
 * `TauCeti.Perfectoid.iterate_frobeniusEquiv_xiTilde`: `φ^j(xiTilde(ε)) = xiTilde(ε ^ p ^ j)`.
 * `TauCeti.Perfectoid.coeff_zero_mu`: the zeroth Witt coordinate of `μ` is `ε - 1`.
 * `TauCeti.Perfectoid.mu_ne_zero`: for `ε ≠ 1`, `μ ≠ 0`.
+* `TauCeti.Perfectoid.not_natCast_dvd_mu`,
+  `TauCeti.Perfectoid.not_natCast_dvd_frobeniusEquiv_symm_mu`: for `ε ≠ 1`, `p` divides neither
+  `μ` nor `φ^(-1)(μ)`.
 * `TauCeti.Perfectoid.map_xi`: base change of `ξ` between perfect rings.
 * `PreTilt.fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero`,
   `PreTilt.fontaineTheta_iterate_frobeniusEquiv_succ_xi`: values of `θ ∘ φ^j` on `μ` and `ξ`.
+* `PreTilt.fontaineTheta_frobeniusEquiv_symm_mu_ne_zero`: `θ(φ^(-1)(μ)) ≠ 0` when the sharp of
+  `ε^(1/p)` is a primitive `p`-th root of unity.
 * `PreTilt.ker_fontaineTheta_eq_span_xi`: `ξ` generates Fontaine's kernel on the valuation ring
   of a complete perfectoid field.
 
@@ -140,6 +147,20 @@ omit [CharP S p] [PerfectRing S p] in
 theorem mu_ne_zero {ε : S} (hε : ε ≠ 1) : mu p ε ≠ 0 :=
   fun h ↦ coeff_zero_mu_ne_zero p hε (by rw [h, zero_coeff])
 
+omit [PerfectRing S p] in
+/-- For `ε ≠ 1`, `p` does not divide `μ`: its zeroth Witt coordinate `ε - 1` is nonzero, while
+every multiple of `p` has zeroth coordinate `0` in characteristic `p`. -/
+theorem not_natCast_dvd_mu {ε : S} (hε : ε ≠ 1) : ¬(p : WittVector p S) ∣ mu p ε := by
+  rintro ⟨b, hb⟩
+  apply coeff_zero_mu_ne_zero p hε
+  rw [hb, mul_comm, mul_charP_coeff_zero]
+
+/-- For `ε ≠ 1`, `p` does not divide `τ = φ^(-1)(μ)`. -/
+theorem not_natCast_dvd_frobeniusEquiv_symm_mu {ε : S} (hε : ε ≠ 1) :
+    ¬(p : WittVector p S) ∣ (frobeniusEquiv p S).symm (mu p ε) := fun h ↦
+  not_natCast_dvd_mu p hε (by
+    simpa only [map_natCast, RingEquiv.apply_symm_apply] using map_dvd (frobeniusEquiv p S) h)
+
 end Periods
 
 section Naturality
@@ -235,6 +256,15 @@ theorem fontaineThetaShifted_xiTilde_eq_zero [IsDomain A] (ε : PreTilt A p)
       (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
     fontaineThetaShifted A p (xiTilde p ε) = 0 := by
   rw [fontaineThetaShifted_xiTilde, fontaineTheta_xi_eq_zero ε hε]
+
+/-- If the sharp `ζ` of `ε ^ (1 / p)` is a primitive `p`-th root of unity, then Fontaine's map
+does not kill `τ = φ^(-1)(μ)`: it sends it to `ζ - 1 ≠ 0`. -/
+theorem fontaineTheta_frobeniusEquiv_symm_mu_ne_zero (ε : PreTilt A p)
+    (hε : IsPrimitiveRoot
+      (PreTilt.untilt ((_root_.frobeniusEquiv (PreTilt A p) p).symm ε)) p) :
+    fontaineTheta A p ((frobeniusEquiv p (PreTilt A p)).symm (mu p ε)) ≠ 0 := by
+  rw [← fontaineThetaShifted_apply, fontaineThetaShifted_mu, sub_ne_zero]
+  exact hε.ne_one (Fact.out : p.Prime).one_lt
 
 /-- If `ε♯ = 1`, then Fontaine's map kills every Frobenius iterate of `μ`. -/
 theorem fontaineTheta_iterate_frobeniusEquiv_mu_eq_zero (ε : PreTilt A p) (hε : ε.untilt = 1)
