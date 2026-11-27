@@ -20,8 +20,9 @@ finite family when the residue field is infinite.
 
 ## Main results
 
-* `Polynomial.exists_forall_isUnit_eval_of_sum_natDegree_lt`: simultaneous unit evaluation when
-  the sum of the degrees of the reductions is strictly less than `ENat.card (ResidueField R)`.
+* `Polynomial.exists_forall_isUnit_eval_of_sum_map_residue_natDegree_lt`: simultaneous unit
+  evaluation when the sum of the degrees of the reductions is strictly less than
+  `ENat.card (ResidueField R)`.
 * `Polynomial.exists_forall_isUnit_eval`: the infinite-residue-field corollary.
 -/
 
@@ -32,7 +33,8 @@ namespace Polynomial
 /-- Over a local ring `R`, finitely many polynomials with nonzero reductions modulo the maximal
 ideal whose total degree is strictly less than `ENat.card (ResidueField R)` simultaneously
 evaluate to units at some ring element. -/
-theorem exists_forall_isUnit_eval_of_sum_natDegree_lt {R ι : Type*} [CommRing R] [IsLocalRing R]
+theorem exists_forall_isUnit_eval_of_sum_map_residue_natDegree_lt {R ι : Type*}
+    [CommRing R] [IsLocalRing R]
     (s : Finset ι) (f : ι → R[X])
     (hf : ∀ j ∈ s, (f j).map (IsLocalRing.residue R) ≠ 0)
     (hcard : ((∑ j ∈ s, ((f j).map (IsLocalRing.residue R)).natDegree : ℕ) : ENat) <
@@ -55,7 +57,7 @@ theorem exists_forall_isUnit_eval {R ι : Type*} [CommRing R] [IsLocalRing R]
     [Infinite (IsLocalRing.ResidueField R)] (s : Finset ι) (f : ι → R[X])
     (hf : ∀ j ∈ s, (f j).map (IsLocalRing.residue R) ≠ 0) :
     ∃ u : R, ∀ j ∈ s, IsUnit ((f j).eval u) :=
-  exists_forall_isUnit_eval_of_sum_natDegree_lt s f hf
+  exists_forall_isUnit_eval_of_sum_map_residue_natDegree_lt s f hf
     (by rw [ENat.card_eq_top_of_infinite]; exact ENat.natCast_lt_top _)
 
 end Polynomial

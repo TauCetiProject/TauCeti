@@ -43,7 +43,7 @@ a valuation `Valuation.gauss v r` on `R[X]`.
 ## References
 
 * S. Bosch, U. Güntzer, and R. Remmert, *Non-Archimedean Analysis*, §5.1.
-* L. Alpöge, `New.Selmer.gaussVal` and `New.Selmer.gaussVal_eq_mul_prod_roots` in
+* L. Alpöge, `New.Selmer.gaussVal` in
   `src/Lib/General/NumberTheory/GaussValuation.lean`,
   <https://github.com/leanprover-community/riemann-hypothesis/tree/dba5aded4bf7>.
 -/

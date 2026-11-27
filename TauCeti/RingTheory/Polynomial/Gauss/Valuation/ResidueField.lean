@@ -66,10 +66,9 @@ theorem gaussValuation_map_valuationSubring_eq_one_iff (q : v.valuationSubring[X
   · intro h1 hzero
     obtain ⟨n, hn, -⟩ := exists_min_eq_gaussValuation v 1 (q.map (algebraMap v.valuationSubring K))
     rw [h1, coeff_map, one_pow, mul_one, ValuationSubring.algebraMap_apply] at hn
-    have hu : IsUnit (q.coeff n) := by
-      have hne : (q.coeff n : K) ≠ 0 := fun h0 ↦ by simp [h0] at hn
-      refine isUnit_iff_exists_inv.mpr ⟨⟨(q.coeff n : K)⁻¹, ?_⟩, Subtype.ext (mul_inv_cancel₀ hne)⟩
-      rw [Valuation.mem_valuationSubring_iff, map_inv₀, hn, inv_one]
+    have hu : IsUnit (q.coeff n) :=
+      (Valuation.valuationSubring.integers v).isUnit_of_one'
+        (by simpa only [ValuationSubring.algebraMap_apply] using hn)
     have hcoeff : (q.map (IsLocalRing.residue v.valuationSubring)).coeff n = 0 := by simp [hzero]
     rw [coeff_map] at hcoeff
     exact (hu.map (IsLocalRing.residue v.valuationSubring)).ne_zero hcoeff
@@ -78,9 +77,7 @@ theorem gaussValuation_map_valuationSubring_eq_one_iff (q : v.valuationSubring[X
       by_contra! h
       exact hne (by ext n; simpa using h n)
     rw [coeff_map] at hn
-    have hu : IsUnit (q.coeff n) := by
-      by_contra hnu
-      exact hn ((IsLocalRing.residue_eq_zero_iff _).mpr ((IsLocalRing.mem_maximalIdeal _).mpr hnu))
+    have hu := (IsLocalRing.residue_ne_zero_iff_isUnit _).mp hn
     refine le_antisymm hle ?_
     have h1 : v ((q.map (algebraMap v.valuationSubring K)).coeff n) = 1 := by
       rw [coeff_map]
@@ -111,20 +108,14 @@ theorem exists_eq_C_mul_map_residue_ne_zero (p : K[X]) :
       ⟨⟨(C d * p).coeff n, (Valuation.mem_valuationSubring_iff v _).mpr (hle n)⟩,
         ValuationSubring.algebraMap_apply v.valuationSubring _⟩
   obtain ⟨q, hq⟩ := (mem_lifts _).mp hlifts
-  refine ⟨d⁻¹, q, ?_, ?_, ?_, fun hzero ↦ ?_⟩
+  refine ⟨d⁻¹, q, ?_, ?_, ?_, ?_⟩
   · simp only [gaussValuation_mul, gaussValuation_C] at hnorm
     rw [map_inv₀, inv_eq_of_mul_eq_one_right hnorm]
   · rw [hq, ← mul_assoc, ← C_mul]
     simp [hd_ne]
   · rw [← natDegree_map_eq_of_injective (Valuation.valuationSubring.integers v).hom_inj, hq,
       natDegree_C_mul hd_ne]
-  · have hcoeff : (q.map (IsLocalRing.residue v.valuationSubring)).coeff D = 0 := by simp [hzero]
-    rw [coeff_map] at hcoeff
-    have hqD : q.coeff D = 1 := (Valuation.valuationSubring.integers v).hom_inj <| by
-      have hmap := congrArg (fun f ↦ f.coeff D) hq
-      rw [coeff_map] at hmap
-      simpa [map_one] using hmap.trans hD
-    exact one_ne_zero (by rwa [hqD, map_one] at hcoeff)
+  · exact (gaussValuation_map_valuationSubring_eq_one_iff v q).mp (by rwa [hq])
 
 /-- Given primitive factorizations `(p j).comp (C c * X) = C (a j) * (q j).map _` with nonzero
 reductions modulo the maximal ideal, if `1 + ∑ j ∈ s, ((q j).map (residue _)).natDegree` is
@@ -147,8 +138,8 @@ theorem exists_forall_valuation_eval_eq_gaussValuation_of_sum_map_residue_natDeg
       1 + ∑ j ∈ s, ((q j).map (IsLocalRing.residue v.valuationSubring)).natDegree := by
     rw [Finset.sum_insertNone]
     simp
-  obtain ⟨u, hu⟩ := exists_forall_isUnit_eval_of_sum_natDegree_lt s.insertNone (Option.elim' X q) hF
-    (by rwa [hdeg_sum])
+  obtain ⟨u, hu⟩ := exists_forall_isUnit_eval_of_sum_map_residue_natDegree_lt
+    s.insertNone (Option.elim' X q) hF (by rwa [hdeg_sum])
   have hu_unit : IsUnit u := by simpa using hu none Finset.none_mem_insertNone
   have hu_val : v (algebraMap v.valuationSubring K u) = 1 :=
     (Valuation.valuationSubring.integers v).one_of_isUnit hu_unit

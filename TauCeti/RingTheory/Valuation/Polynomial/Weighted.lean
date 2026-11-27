@@ -14,9 +14,15 @@ import Mathlib.Algebra.Polynomial.Eval.Coeff
 
 Fix `x`, a scale `A` and a ratio `S`. Say that a polynomial `P` has *weight `a`* if
 `v (P.coeff k * x ^ k) * S ^ a ≤ A ^ a * S ^ k` for every `k`. This file records the generic
-weighted coefficient convolution bound `Valuation.map_coeff_mul_mul_pow_le_of_le` (shared with
-`TauCeti.RingTheory.Polynomial.Gauss.Valuation.Basic`) together with the weight-stability bounds
-for products, powers, evaluation, and composition of polynomials.
+weighted coefficient convolution bound `Valuation.map_coeff_mul_mul_pow_le_of_le` together with
+the weight-stability bounds for products, powers, evaluation, and composition of polynomials.
+
+These bounds evaluate truncated composites of power series at a point of a nonarchimedean field,
+for example the logarithm series after the exponential series in
+`TauCeti.NumberTheory.LocalField.ExpLog`.
+When `S ≤ 1`, a polynomial of weight `1` whose coefficients vanish below degree `M` satisfies
+`v (G.eval x) * S ≤ A * S ^ M`. Composition with `F` preserves weight `1` provided
+`v (F.coeff n) * A ^ n * S ≤ A * S ^ n` for every `n`.
 
 ## Main results
 
