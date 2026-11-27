@@ -492,8 +492,11 @@ theorem sphereTreeDimension_comparisonCoveredCoreDimension_add_le (n : ℤ) (c :
         (fun w => c (B' w)) parent node root ≤
       h₁ 0 + h₂ 0 - h₀ (Fin.last k₀) - 2 * n + 2 * c (m • B₀ + ∑ v, B v) - (k₁ + k₂ + k₀) + p -
         2 * Fintype.card κ - 2 * ((m - 1) * c B₀) - 2 * (3 - j) := by
-  rw [comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub n c h₁ h₂ h₀ B₀ m j,
-    show ∀ x y z : ℤ, x - y - z + p = x + (p - y - z) by intros; ring]
+  have hcore : comparisonCoveredCoreDimension n c h₁ h₂ h₀ B₀ j + p =
+      comparisonCoreDimension n c h₁ h₂ h₀ (m • B₀) + (p - 2 * ((m - 1) * c B₀) - 2 * (3 - j)) := by
+    rw [comparisonCoveredCoreDimension_eq_comparisonCoreDimension_sub n c h₁ h₂ h₀ B₀ m j]
+    ring
+  rw [hcore]
   exact (sphereTreeDimension_comparisonCoreDimension_add_le n c h₁ h₂ h₀ (m • B₀) _ hB hm hρ hc
     parent node root).trans_eq (by ring)
 
