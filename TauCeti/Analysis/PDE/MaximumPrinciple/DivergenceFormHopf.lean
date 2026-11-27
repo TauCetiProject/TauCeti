@@ -63,8 +63,9 @@ unit ball into `closedBall y R` and `ν` to `x₀`, and `u ∘ T` is a weak supe
 `ε β ∘ T`, small in `L^q(D)` since `q > n + 1`, and the mass `ε² c ∘ T`. The Gaussian
 `Φ(z) = e^{-κ‖z‖²} - e^{-κ}` vanishes on the unit sphere and satisfies `div (A ∇Φ) ≥ λ κ e^{-κ}`
 on `D` for `κ` large; unlike Rosales we use this explicit barrier, so `A` need not be symmetric.
-Lax–Milgram gives corrections `ψ, χ ∈ H¹₀(D)` with `-div (b ∇ψ) = div ((b - A) ∇Φ)` and
-`-div (b ∇χ) = -(B + 2) |ε β ∘ T|`, `B` a bound for `|∇Φ|`. The global `C^{1,β}` estimate on the
+Lax–Milgram gives corrections `ψ, χ ∈ H¹₀(D)` with
+`-div ((a ∘ T) ∇ψ) = div ((a ∘ T - A) ∇Φ)` and `-div ((a ∘ T) ∇χ) = -(B + 2) |ε β ∘ T|`, `B` a
+bound for `|∇Φ|`. The global `C^{1,β}` estimate on the
 annulus (`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_isBounded`, with the charts
 `TauCeti.exists_affineIsometryEquiv_graph_of_mem_frontier_annulus`) makes `∇ψ` and `∇χ` small,
 so `χ` absorbs the drift term `β · ∇(Φ + ψ + χ)`, the margin of `Φ` absorbs the mass term, and

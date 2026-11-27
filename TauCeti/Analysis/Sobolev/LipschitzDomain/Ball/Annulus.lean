@@ -50,19 +50,6 @@ variable {n : ℕ}
 
 local notation "F" => EuclideanSpace ℝ (Fin (n + 1))
 
-/-- In rigid coordinates centred at `x`, a point of the normal cylinder of half-height and radius
-`h` lies within `2 h` of `x`. -/
-private theorem dist_symm_lt_of_mem_normalCylinder
-    {e : F ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))} {x : F} (he : e x = 0) {h : ℝ}
-    {z : WithLp 2 (ℝ × EuclideanSpace ℝ (Fin n))} (hz : z ∈ normalCylinder h h) :
-    dist (e.symm z) x < 2 * h := by
-  obtain ⟨h1, h2, h3⟩ := mem_normalCylinder.1 hz
-  have hh : 0 < h := (norm_nonneg _).trans_lt h3
-  rw [← e.dist_map, e.apply_symm_apply, he, dist_zero_right,
-    ← pow_lt_pow_iff_left₀ (norm_nonneg z) (by positivity) two_ne_zero,
-    WithLp.prod_norm_sq_eq_of_L2, Real.norm_eq_abs, sq_abs]
-  nlinarith [norm_nonneg z.snd]
-
 /-- The conclusion of `exists_affineIsometryEquiv_graph_of_mem_frontier_annulus` at a point `x`
 for a set `A`. -/
 private def HasGraphChart (A : Set F) (x : F) (α : ℝ≥0) : Prop :=
@@ -80,15 +67,15 @@ private theorem hasGraphChart_of_mem_sphere_outer {y x : F} {r R : ℝ} (hr : 0 
   set h := min (R / 4) ((R - r) / 2)
   have hh : 0 < h := lt_min (by positivity) (by linarith)
   refine ⟨e, γ, h, h, K, he, hh, hh, h0, hγ, hK, fun z hz => ?_⟩
-  have hd := dist_symm_lt_of_mem_normalCylinder he hz
+  have hd : dist (e.symm z) x < h + h := by
+    rw [← e.dist_map, e.apply_symm_apply, he, dist_zero_right]
+    exact mem_ball_zero_iff.1 (normalCylinder_subset_ball h h hz)
   have hout : e.symm z ∈ (closedBall y r)ᶜ := by
     rw [mem_compl_iff, mem_closedBall, not_le]
     linarith [dist_triangle_left x y (e.symm z), mem_sphere.1 hx,
       min_le_right (R / 4) ((R - r) / 2)]
-  obtain ⟨h1, h2, h3⟩ := mem_normalCylinder.1 hz
   rw [mem_inter_iff, and_iff_left hout]
-  exact H z (mem_normalCylinder.2 ⟨by linarith [min_le_left (R / 4) ((R - r) / 2)],
-    by linarith [min_le_left (R / 4) ((R - r) / 2)], h3.trans_le (min_le_left _ _)⟩)
+  exact H z (normalCylinder_mono (min_le_left _ _) (min_le_left _ _) hz)
 
 /-- On the inner sphere the annulus is, near `x`, the exterior of the closed ball of radius `r`. -/
 private theorem hasGraphChart_of_mem_sphere_inner {y x : F} {r R : ℝ} (hr : 0 < r) (hrR : r < R)
@@ -100,14 +87,14 @@ private theorem hasGraphChart_of_mem_sphere_inner {y x : F} {r R : ℝ} (hr : 0 
   set h := min (r / 4) ((R - r) / 2)
   have hh : 0 < h := lt_min (by positivity) (by linarith)
   refine ⟨e, γ, h, h, K, he, hh, hh, h0, hγ, hK, fun z hz => ?_⟩
-  have hd := dist_symm_lt_of_mem_normalCylinder he hz
+  have hd : dist (e.symm z) x < h + h := by
+    rw [← e.dist_map, e.apply_symm_apply, he, dist_zero_right]
+    exact mem_ball_zero_iff.1 (normalCylinder_subset_ball h h hz)
   have hin : e.symm z ∈ ball y R := by
     rw [mem_ball]
     linarith [dist_triangle (e.symm z) x y, mem_sphere.1 hx, min_le_right (r / 4) ((R - r) / 2)]
-  obtain ⟨h1, h2, h3⟩ := mem_normalCylinder.1 hz
   rw [mem_inter_iff, and_iff_right hin]
-  exact H z (mem_normalCylinder.2 ⟨by linarith [min_le_left (r / 4) ((R - r) / 2)],
-    by linarith [min_le_left (r / 4) ((R - r) / 2)], h3.trans_le (min_le_left _ _)⟩)
+  exact H z (normalCylinder_mono (min_le_left _ _) (min_le_left _ _) hz)
 
 /-- **`C^{1,α}` boundary charts of an annulus.** Let `0 < r < R` and let `x` be a frontier point
 of the annulus `A = ball y R ∩ (closedBall y r)ᶜ` of `ℝⁿ⁺¹`. There are rigid coordinates
