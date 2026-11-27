@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.RationalPoint.BaseChange
 public import TauCeti.AlgebraicGeometry.Scheme.ClosedPoint
 public import TauCeti.RingTheory.RamificationInertia.BaseChange
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
+import TauCeti.AlgebraicGeometry.Pullback.Carrier
 
 /-!
 # Pointwise ramification indices under base change and closed-fibre comparison
@@ -110,7 +111,7 @@ theorem ramificationIdxAt_eq_of_isPullback_of_isSeparable_residueField {x' : X'}
     f'.ramificationIdxAt x' = f.ramificationIdxAt (gX x') := by
   have HX := TauCeti.AlgebraicGeometry.isPullback_over_of_isPullback Hf HY
   have : Flat gX := MorphismProperty.of_isPullback (P := @Flat) HX.flip inferInstance
-  have hw : gY (f' x') = f (gX x') := by rw [← Scheme.Hom.comp_apply, ← Hf.w, Scheme.Hom.comp_apply]
+  have hw : gY (f' x') = f (gX x') := (Hf.w_apply x').symm
   exact ramificationIdxAt_eq_of_commSq_of_eq_one Hf.w x' (Flat.stalkMap gX x')
     (ramificationIdxAt_eq_one_of_isPullback_of_isSeparable_residueField HX hsepX)
     (ramificationIdxAt_eq_one_of_isPullback_of_isSeparable_residueField HY (by rwa [hw]))
@@ -132,8 +133,7 @@ theorem ramificationIdxAt_fiberEquivOfIsAlgClosed [IsAlgClosed k]
     (hfib : ∀ x : X, f x = gY y' → IsClosed {x}) (x' : {x' : X' // f' x' = y'}) :
     f'.ramificationIdxAt x'.val =
       f.ramificationIdxAt (fiberEquivOfIsAlgClosed Hf HY y' hy hfib x').val :=
-  have hfgx : f (gX x'.val) = gY y' := by
-    rw [← Scheme.Hom.comp_apply, Hf.w, Scheme.Hom.comp_apply, x'.property]
+  have hfgx : f (gX x'.val) = gY y' := (Hf.w_apply x'.val).trans (congrArg gY x'.property)
   (fiberEquivOfIsAlgClosed_coe Hf HY y' hy hfib x').symm ▸
     ramificationIdxAt_eq_of_isPullback_of_isClosed Hf HY (hfib (gX x'.val) hfgx) (hfgx ▸ hy)
 

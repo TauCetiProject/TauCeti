@@ -56,10 +56,7 @@ theorem ramificationIdx_eq_one_of_isPushout_of_isSeparable (q : Ideal B) [q.IsPr
     have : P'.IsPrime := hP.comap _
     have : P'.IsMaximal := Ideal.isMaximal_of_isIntegral_of_isMaximal_under (R := L) P'
       (by rw [Ideal.eq_bot_of_prime (P'.under L)]; exact Ideal.bot_isMaximal)
-    have hcomp : eFiber.toRingHom.comp eFiber.symm.toRingHom = RingHom.id _ :=
-      RingHom.ext eFiber.apply_symm_apply
-    rw [← Ideal.comap_id P, ← hcomp, ← Ideal.comap_comap]
-    exact Ideal.comap_isMaximal_of_surjective eFiber.symm.toRingHom eFiber.symm.surjective (K := P')
+    exact (Ideal.isMaximal_comap_iff_of_bijective _ eFiber.bijective).mp this
   let Q : PrimeSpectrum (p.Fiber B) :=
     PrimeSpectrum.primesOverOrderIsoFiber A B p ⟨q, ⟨inferInstance, ⟨rfl⟩⟩⟩
   have hQunder : Q.asIdeal.comap Algebra.TensorProduct.includeRight = q :=

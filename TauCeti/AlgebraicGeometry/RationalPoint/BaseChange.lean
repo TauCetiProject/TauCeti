@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import TauCeti.AlgebraicGeometry.BaseChangeSection
 public import TauCeti.AlgebraicGeometry.Morphisms.LocallyQuasiFinite
+import TauCeti.AlgebraicGeometry.Pullback.Carrier
 
 /-!
 # Base change of closed rational points and closed fibres
@@ -77,18 +78,16 @@ noncomputable def fiberEquivOfIsAlgClosed (y' : Y') (hy : IsClosed {gY y'})
     (hfib : ∀ x : X, f x = gY y' → IsClosed {x}) :
     {x' : X' // f' x' = y'} ≃ {x : X // f x = gY y'} := by
   have HX := TauCeti.AlgebraicGeometry.isPullback_over_of_isPullback Hf HY
-  refine Equiv.ofBijective (fun x' ↦ ⟨gX x'.val, by
-      rw [← Scheme.Hom.comp_apply, Hf.w, Scheme.Hom.comp_apply, x'.property]⟩) ⟨?_, ?_⟩
+  refine Equiv.ofBijective
+      (fun x' ↦ ⟨gX x'.val, (Hf.w_apply x'.val).trans (congrArg gY x'.property)⟩) ⟨?_, ?_⟩
   · rintro ⟨x'₁, hx'₁⟩ ⟨x'₂, hx'₂⟩ h
-    have hxcl : IsClosed {gX x'₁} :=
-      hfib (gX x'₁) (by rw [← Scheme.Hom.comp_apply, Hf.w, Scheme.Hom.comp_apply, hx'₁])
+    have hxcl : IsClosed {gX x'₁} := hfib (gX x'₁) ((Hf.w_apply x'₁).trans (congrArg gY hx'₁))
     obtain ⟨_, -, hunique⟩ := existsUnique_preimage_of_isPullback_of_isAlgClosed HX hxcl
     exact Subtype.ext ((hunique x'₁ rfl).trans (hunique x'₂ (congrArg Subtype.val h).symm).symm)
   · rintro ⟨x, hx⟩
     obtain ⟨x', hx', -⟩ := existsUnique_preimage_of_isPullback_of_isAlgClosed HX (hfib x hx)
     obtain ⟨_, -, hyunique⟩ := existsUnique_preimage_of_isPullback_of_isAlgClosed HY hy
-    have hgy : gY (f' x') = gY y' := by
-      rw [← Scheme.Hom.comp_apply, ← Hf.w, Scheme.Hom.comp_apply, hx', hx]
+    have hgy : gY (f' x') = gY y' := (Hf.w_apply x').symm.trans ((congrArg f hx').trans hx)
     exact ⟨⟨x', (hyunique (f' x') hgy).trans (hyunique y' rfl).symm⟩, Subtype.ext hx'⟩
 
 /-- `fiberEquivOfIsAlgClosed` acts on underlying points via the projection `gX`. -/

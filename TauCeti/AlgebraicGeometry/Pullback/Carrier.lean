@@ -37,6 +37,7 @@ Lemma 58.31.1 (0EYD).
 
 ## Main results
 
+* `CategoryTheory.IsPullback.w_apply`: pointwise commutativity of a pullback square of schemes.
 * `AlgebraicGeometry.Scheme.Pullback.range_fst_of_isPullback` and
   `AlgebraicGeometry.Scheme.Pullback.range_snd_of_isPullback`: the topological range of a
   projection in a cartesian square of schemes is the preimage of the opposite morphism's range.
@@ -59,6 +60,12 @@ open CategoryTheory Limits
 namespace AlgebraicGeometry.Scheme.Pullback
 
 universe u
+
+/-- Pointwise commutativity of a pullback square of schemes. -/
+theorem _root_.CategoryTheory.IsPullback.w_apply {P X Y S : Scheme.{u}} {fst : P ⟶ X}
+    {snd : P ⟶ Y} {f : X ⟶ S} {g : Y ⟶ S} (h : IsPullback fst snd f g) (p : P) :
+    f (fst p) = g (snd p) := by
+  rw [← Scheme.Hom.comp_apply, h.w, Scheme.Hom.comp_apply]
 
 /-- In a cartesian square of schemes, the range of the first projection is the preimage of the
 range of the opposite morphism. -/

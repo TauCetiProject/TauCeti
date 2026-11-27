@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.BaseChangeSection
 public import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus.Basic
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 
 /-!
 # Base change and descent of the ramification, non-étale and branch loci
@@ -108,8 +109,8 @@ theorem etale_morphismRestrict_iff_of_isPullback (H : IsPullback gX f' f gY) [Fl
     [Surjective gY] [LocallyOfFinitePresentation f] (U : Y.Opens) :
     Etale (f' ∣_ (gY ⁻¹ᵁ U)) ↔ Etale (f ∣_ U) := by
   have : Surjective gX := MorphismProperty.of_isPullback (P := @Surjective) H.flip inferInstance
-  have hpre : (f' ⁻¹ᵁ gY ⁻¹ᵁ U : Set X') = gX ⁻¹' (f ⁻¹ᵁ U : Set X) := by
-    rw [← Scheme.Hom.comp_preimage, ← H.w, Scheme.Hom.comp_preimage]; rfl
+  have hpre : (f' ⁻¹ᵁ gY ⁻¹ᵁ U : Set X') = gX ⁻¹' (f ⁻¹ᵁ U : Set X) :=
+    congrArg SetLike.coe (H.toCommSq.preimage_preimage_eq U).symm
   rw [etale_morphismRestrict_iff, etale_morphismRestrict_iff, hpre,
     nonEtaleLocus_eq_preimage_of_isPullback H]
   exact Set.disjoint_preimage_iff gX.surjective

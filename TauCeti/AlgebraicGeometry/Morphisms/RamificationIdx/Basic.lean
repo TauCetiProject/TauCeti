@@ -252,10 +252,8 @@ theorem ramificationIdxAt_specMap {R S : Type u} [CommRing R] [CommRing S] [Alge
       Iso.commRingCatIsoToRingEquiv_toRingHom ep
     have heS : (eq.commRingCatIsoToRingEquiv : Sq →+* SS) = eq.hom.hom :=
       Iso.commRingCatIsoToRingEquiv_toRingHom eq
-    rw [RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra,
-      ← RingEquiv.coe_toRingHom, ← RingEquiv.coe_toRingHom, heR, heS,
-      ← CommRingCat.hom_ofHom fLoc, ← RingHom.comp_apply, ← CommRingCat.hom_comp,
-      ← hsq, CommRingCat.hom_comp, RingHom.comp_apply]
+    simpa [RingHom.algebraMap_toAlgebra, ← RingEquiv.coe_toRingHom, heR, heS] using
+      congr($(hsq).hom r).symm
   rw [ramificationIdxAt_def, Ideal.ramificationIdx_maximalIdeal_eq_of_ringEquiv_square _ _ he,
     Ideal.ramificationIdx_maximalIdeal_localization_of_liesOver p.asIdeal q.asIdeal]
 
@@ -269,7 +267,8 @@ theorem ramificationIdxAt_eq_of_commSq_of_eq_one {X' Y' : Scheme.{u}} {gX : X' �
   let R := Y.presheaf.stalk (f (gX x')); let R' := Y.presheaf.stalk (gY (f' x'))
   let S := Y'.presheaf.stalk (f' x'); let A := X.presheaf.stalk (gX x')
   let B := X'.presheaf.stalk x'
-  have hw : f (gX x') = gY (f' x') := by rw [← Scheme.Hom.comp_apply, w, Scheme.Hom.comp_apply]
+  have hw : f (gX x') = gY (f' x') := by
+    simpa only [Scheme.Hom.comp_apply] using congr($w x')
   let eR : R ⟶ R' := (Y.presheaf.stalkCongr (.of_eq hw)).hom
   let : Algebra R R' := eR.hom.toAlgebra; let : Algebra R' S := (gY.stalkMap (f' x')).hom.toAlgebra
   let : Algebra R S := (eR ≫ gY.stalkMap (f' x')).hom.toAlgebra

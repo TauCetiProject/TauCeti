@@ -19,6 +19,7 @@ public import TauCeti.RingTheory.QuasiFinite.Localization
 public import TauCeti.RingTheory.Unramified.LocalRing
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.TorsionFree
+import TauCeti.AlgebraicGeometry.Pullback.Carrier
 import TauCeti.RingTheory.Flat.Noetherian
 import TauCeti.RingTheory.Unramified.BaseChange
 import TauCeti.RingTheory.Unramified.Normal
@@ -595,8 +596,7 @@ private theorem exists_isPushout_stalkMap_iff_of_isPullback
       ((f.stalkMap (gX x')).hom.FormallyUnramified ↔
         Algebra.IsUnramifiedAt R (q.asIdeal.under A)) ∧
       ((gX.stalkMap x').hom.Flat ↔ Module.Flat A (Localization.AtPrime q.asIdeal)) := by
-  have hcomm : gY (f' x') = f (gX x') := by
-    rw [← Scheme.Hom.comp_apply, ← H.w, Scheme.Hom.comp_apply]
+  have hcomm : gY (f' x') = f (gX x') := (H.w_apply x').symm
   obtain ⟨_, ⟨U, hU : IsAffineOpen U, rfl⟩, hxU, -⟩ :=
     Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ (f (gX x'))) isOpen_univ
   have hx'U : gY (f' x') ∈ U := hcomm ▸ hxU
