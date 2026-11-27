@@ -23,27 +23,27 @@ coefficient.
 
 ## Main definitions
 
-* `Nat.mediumPrimes x`: the finite set of primes `p` with `x / 2 ≤ p ≤ x`.
-* `Nat.mediumPrimeProducts x m`: the finite set of products of `m` distinct elements of
-  `Nat.mediumPrimes x`.
+* `TauCeti.mediumPrimes x`: the finite set of primes `p` with `x / 2 ≤ p ≤ x`.
+* `TauCeti.mediumPrimeProducts x m`: the finite set of products of `m` distinct elements of
+  `TauCeti.mediumPrimes x`.
 
 ## Main results
 
-* `Nat.mediumPrimes_nonempty_iff`: there is a prime in `[x / 2, x]` exactly when `2 ≤ x`.
-* `Nat.mem_mediumPrimeProducts_iff_primeFactors`: `n ∈ N_m(x)` exactly when `n` is squarefree
+* `TauCeti.mediumPrimes_nonempty_iff`: there is a prime in `[x / 2, x]` exactly when `2 ≤ x`.
+* `TauCeti.mem_mediumPrimeProducts_iff_primeFactors`: `n ∈ N_m(x)` exactly when `n` is squarefree
   with `m` prime factors, all of them in `[x / 2, x]`.
-* `Nat.card_mediumPrimeProducts`: `#N_m(x)` is the binomial coefficient of the number of primes in
-  `[x / 2, x]` and `m`.
-* `Nat.pow_le_of_mem_mediumPrimeProducts`, `Nat.le_pow_of_mem_mediumPrimeProducts`: every
+* `TauCeti.card_mediumPrimeProducts`: `#N_m(x)` is the binomial coefficient of the number of
+  primes in `[x / 2, x]` and `m`.
+* `TauCeti.pow_le_of_mem_mediumPrimeProducts`, `TauCeti.le_pow_of_mem_mediumPrimeProducts`: every
   `n ∈ N_m(x)` satisfies `(x / 2) ^ m ≤ n ≤ x ^ m`.
 -/
 
 public section
 
-open Finset
+open Finset Nat
 open scoped ArithmeticFunction.omega ArithmeticFunction.Omega
 
-namespace Nat
+namespace TauCeti
 
 variable {x : ℝ} {m n p : ℕ}
 
@@ -56,14 +56,14 @@ noncomputable def mediumPrimes (x : ℝ) : Finset ℕ :=
 /-- The primes in `[x / 2, x]` are the primes between `⌈x / 2⌉₊` and `⌊x⌋₊`. -/
 theorem mediumPrimes_def (x : ℝ) : mediumPrimes x = {p ∈ Icc ⌈x / 2⌉₊ ⌊x⌋₊ | p.Prime} := (rfl)
 
-/-- Membership in `Nat.mediumPrimes x` is primality together with `x / 2 ≤ p ≤ x`, for every
+/-- Membership in `TauCeti.mediumPrimes x` is primality together with `x / 2 ≤ p ≤ x`, for every
 real `x`. -/
 @[simp]
 theorem mem_mediumPrimes : p ∈ mediumPrimes x ↔ p.Prime ∧ x / 2 ≤ p ∧ (p : ℝ) ≤ x := by
   rw [mediumPrimes_def, mem_filter, mem_Icc, ceil_le, and_comm]
   exact and_congr_right fun hp ↦ and_congr_right fun _ ↦ le_floor_iff' hp.ne_zero
 
-/-- The elements of `Nat.mediumPrimes x` are prime. -/
+/-- The elements of `TauCeti.mediumPrimes x` are prime. -/
 theorem prime_of_mem_mediumPrimes (hp : p ∈ mediumPrimes x) : p.Prime :=
   (mem_mediumPrimes.mp hp).1
 
@@ -100,7 +100,8 @@ theorem mediumPrimes_nonempty_iff : (mediumPrimes x).Nonempty ↔ 2 ≤ x := by
 noncomputable def mediumPrimeProducts (x : ℝ) (m : ℕ) : Finset ℕ :=
   ((mediumPrimes x).powersetCard m).image fun t ↦ ∏ p ∈ t, p
 
-/-- `N_m(x)` is the image of the `m`-element subsets of `Nat.mediumPrimes x` under the product. -/
+/-- `N_m(x)` is the image of the `m`-element subsets of `TauCeti.mediumPrimes x` under the
+product. -/
 theorem mediumPrimeProducts_def (x : ℝ) (m : ℕ) :
     mediumPrimeProducts x m = ((mediumPrimes x).powersetCard m).image fun t ↦ ∏ p ∈ t, p := (rfl)
 
@@ -221,4 +222,4 @@ example : mediumPrimeProducts (4 : ℕ) 1 = {2, 3} := by
   rw [mediumPrimeProducts_def, mediumPrimes_natCast]
   decide +kernel
 
-end Nat
+end TauCeti
