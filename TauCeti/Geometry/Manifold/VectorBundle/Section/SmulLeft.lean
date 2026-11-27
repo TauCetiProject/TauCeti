@@ -35,7 +35,9 @@ how regularity properties of `f T` are read off from those of `T` chart by chart
 
 ## Main declarations
 
-* `TauCeti.BundleTest.smulLeftCLM`: multiplication of bundle tests by a smooth function.
+* `TauCeti.BundleTest.smulLeftCLM`: multiplication of bundle tests by a smooth function, and
+  `TauCeti.BundleTest.sum_smulLeftCLM_eq_self`: a test is the sum of its products with finitely
+  many functions whose sum is one on its support.
 * `TauCeti.BundleTest.smulLeftDualCLM`: the product `f T` of a functional on bundle tests with a
   smooth function, and `TauCeti.BundleTest.smulLeftDualCLM_delta`: `f δ_x ℓ = f(x) δ_x ℓ`.
 * `Bundle.Trivialization.restrictCLM_chartDistributionCLM_smulLeftDualCLM`,
@@ -116,6 +118,17 @@ theorem smulLeftCLM_add (f g : C^∞⟮I, M; ℝ⟯) :
   ext s x
   simp [add_smul]
 
+/-- A bundle test is the sum of its products with finitely many functions whose sum is one on its
+support. -/
+theorem sum_smulLeftCLM_eq_self {κ : Type*} (t : Finset κ) {χ : κ → C^∞⟮I, M; ℝ⟯}
+    {s : BundleTest I F V} (hs : ∀ x ∈ closure {x | s x ≠ 0}, ∑ k ∈ t, χ k x = 1) :
+    ∑ k ∈ t, smulLeftCLM (χ k) s = s := by
+  ext x
+  rw [sum_apply]
+  by_cases hx : x ∈ closure {x | s x ≠ 0}
+  · simp_rw [smulLeftCLM_apply, ← Finset.sum_smul, hs x hx, one_smul]
+  · simp [Bundle.apply_eq_zero_of_notMem_closure hx]
+
 /-! ### Multiplication of functionals -/
 
 section Dual
@@ -157,6 +170,13 @@ theorem smulLeftDualCLM_add (f g : C^∞⟮I, M; ℝ⟯) :
       (smulLeftDualCLM f + smulLeftDualCLM g : (BundleTest I F V →L_c[ℝ] W) →L[ℝ] _) := by
   ext T s
   simp [smulLeftCLM_add]
+
+/-- Multiplication of functionals by a finite sum of functions is the sum of the multiplications. -/
+theorem smulLeftDualCLM_sum {ι : Type*} (s : Finset ι) (f : ι → C^∞⟮I, M; ℝ⟯) :
+    smulLeftDualCLM (∑ i ∈ s, f i) =
+      (∑ i ∈ s, smulLeftDualCLM (f i) : (BundleTest I F V →L_c[ℝ] W) →L[ℝ] _) :=
+  map_sum (AddMonoidHom.mk' (fun g : C^∞⟮I, M; ℝ⟯ ↦
+    (smulLeftDualCLM g : (BundleTest I F V →L_c[ℝ] W) →L[ℝ] _)) smulLeftDualCLM_add) f s
 
 /-- A smooth multiple of a point mass is a point mass: `f δ_x ℓ = f(x) δ_x ℓ`. -/
 @[simp]

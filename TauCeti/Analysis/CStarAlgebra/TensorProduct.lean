@@ -232,23 +232,8 @@ instance : NonUnitalCStarAlgebra (CStarTensorProduct N) :=
   inferInstanceAs (NonUnitalCStarAlgebra (Completion (CStarTensorAlgebra N)))
 
 /-- The canonical star homomorphism `A ⊗[ℂ] B → CStarTensorProduct N`. -/
-def of : A ⊗[ℂ] B →⋆ₙₐ[ℂ] CStarTensorProduct N where
-  toFun x := (equiv N x : Completion (CStarTensorAlgebra N))
-  map_smul' c x := by
-    rw [map_smul]
-    exact Completion.coe_smul c _
-  map_zero' := by
-    rw [map_zero]
-    exact Completion.coe_zero
-  map_add' x y := by
-    rw [map_add]
-    exact Completion.coe_add _ _
-  map_mul' x y := by
-    rw [map_mul]
-    exact Completion.coe_mul' _ _
-  map_star' x := by
-    rw [map_star]
-    exact Completion.coe_star _
+def of : A ⊗[ℂ] B →⋆ₙₐ[ℂ] CStarTensorProduct N :=
+  (Completion.coeNonUnitalStarAlgHom ℂ).comp (equiv N).toNonUnitalStarAlgHom
 
 variable {N}
 
@@ -256,12 +241,13 @@ variable {N}
 @[simp]
 theorem coe_equiv_eq_of (x : A ⊗[ℂ] B) :
     ((equiv N x : Completion (CStarTensorAlgebra N)) : CStarTensorProduct N) = of N x :=
-  (rfl)
+  (congrFun (Completion.coe_coeNonUnitalStarAlgHom ℂ) (equiv N x)).symm
 
 /-- The norm of the image of `x` in `CStarTensorProduct N` is `N x`. -/
 @[simp]
-theorem norm_of (x : A ⊗[ℂ] B) : ‖of N x‖ = N x :=
-  Completion.norm_coe (equiv N x)
+theorem norm_of (x : A ⊗[ℂ] B) : ‖of N x‖ = N x := by
+  rw [← coe_equiv_eq_of]
+  exact Completion.norm_coe (equiv N x)
 
 /-- The canonical map `A ⊗[ℂ] B → CStarTensorProduct N` is injective. -/
 theorem of_injective : Function.Injective (of N) :=
@@ -269,8 +255,11 @@ theorem of_injective : Function.Injective (of N) :=
     eq_zero_of_map_eq_zero N ((norm_of x).symm.trans (by rw [hx, norm_zero]))
 
 /-- `A ⊗[ℂ] B` is dense in `CStarTensorProduct N`. -/
-theorem denseRange_of : DenseRange (of N) :=
-  Completion.denseRange_coe.comp (equiv N).surjective.denseRange (Completion.continuous_coe _)
+theorem denseRange_of : DenseRange (of N) := by
+  rw [show ⇑(of N) =
+      fun x ↦ ((equiv N x : Completion (CStarTensorAlgebra N)) : CStarTensorProduct N) from
+    funext fun x ↦ (coe_equiv_eq_of x).symm]
+  exact Completion.denseRange_coe.comp (equiv N).surjective.denseRange (Completion.continuous_coe _)
 
 /-- To prove a closed property of every element of `CStarTensorProduct N`, it suffices to prove
 it on `A ⊗[ℂ] B`. -/

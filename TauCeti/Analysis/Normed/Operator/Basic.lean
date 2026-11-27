@@ -95,7 +95,8 @@ both operators and both vectors (`ContinuousLinearMap.norm_smul_apply_add_smul_a
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
-(`ContinuousLinearMap.norm_apply_bounds_of_net`). Over a normed `ℝ`-algebra, an operator sending
+(`ContinuousLinearMap.norm_apply_bounds_of_net`). Over a normed `ℝ`-algebra the operator norm is
+homogeneous for integer multiples (`ContinuousLinearMap.normSMulClass_int`), and an operator sending
 the ball `ball 0 r`, `r > 0`, into `ball 0 s` has operator norm at most `s / r`
 (`ContinuousLinearMap.opNorm_le_of_mapsTo_ball`), so at most one when it maps `ball 0 r` into
 itself (`ContinuousLinearMap.opNorm_le_one_of_mapsTo_ball`).
@@ -613,6 +614,19 @@ theorem norm_apply_bounds_of_net (T : V →L[𝕜] F) {t : Set V} {δ : ℝ}
   exact mul_le_mul_of_nonneg_left (hsphere _ (norm_smul_inv_norm hv)) (norm_nonneg v)
 
 end Net
+
+section IntSMul
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The operator norm is homogeneous for integer multiples, `‖n • L‖ = ‖n‖ * ‖L‖`, when the scalar
+field is a normed `ℝ`-algebra: the operators then form a real normed space. -/
+instance normSMulClass_int : NormSMulClass ℤ (E →L[𝕜] F) :=
+  let _ : NormedSpace ℝ (E →L[𝕜] F) := NormedSpace.restrictScalars ℝ 𝕜 (E →L[𝕜] F)
+  ⟨fun n L ↦ by simpa only [Int.norm_cast_real] using norm_zsmul ℝ n L⟩
+
+end IntSMul
 
 section MapsToBall
 

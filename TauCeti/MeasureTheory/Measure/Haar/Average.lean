@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Averages over balls for an additive Haar measure
@@ -22,6 +23,10 @@ volumes is explicit. This comparison is the basic step of stopping-time argument
 
 * `TauCeti.setLAverage_ball_le`: the average over `B(x, ρ) ⊆ B(x₀, R)` is at most
   `(R / ρ) ^ dim E` times the average over `B(x₀, R)`.
+* `TauCeti.setAverage_ball_le`: the same for the Bochner average of a nonnegative real function.
+* `TauCeti.setIntegral_ball_le_of_setAverage_ball_le`: an averaged decay bound
+  `⨍_{B(x₀, ρ)} f ≤ K (ρ / R) ⨍_{B(x₀, R)} g` on concentric balls gives the integrated one
+  `∫_{B(x₀, ρ)} f ≤ K (ρ / R) ^ (dim E + 1) ∫_{B(x₀, R)} g`.
 * `TauCeti.mul_ofReal_div_pow_le_setLAverage_ball`: if `g ≥ δ` on `B(z, ρ) ⊆ B(c, r)`, the
   average of `g` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`.
 -/
@@ -51,6 +56,42 @@ theorem setLAverage_ball_le (g : E → ℝ≥0∞) {x x₀ : E} {ρ R : ℝ} (h�
     conv_lhs => rw [← div_mul_cancel₀ R hρ.ne']
     rw [Measure.addHaar_ball_mul_of_pos μ x₀ (div_pos hR hρ), Measure.addHaar_ball_center μ x]
   rw [hball, ENNReal.mul_div_cancel_right (measure_ball_pos μ x hρ).ne' measure_ball_lt_top.ne]
+
+/-- The real form of `TauCeti.setLAverage_ball_le`: the average of a nonnegative function `g`,
+integrable on `B(x₀, R)`, over a ball `B(x, ρ) ⊆ B(x₀, R)` is at most `(R / ρ) ^ dim E` times its
+average over `B(x₀, R)`. -/
+theorem setAverage_ball_le {g : E → ℝ} {x x₀ : E} {ρ R : ℝ} (hρ : 0 < ρ)
+    (hsub : ball x ρ ⊆ ball x₀ R) (hg : IntegrableOn g (ball x₀ R) μ)
+    (hg0 : ∀ y ∈ ball x₀ R, 0 ≤ g y) :
+    ⨍ y in ball x ρ, g y ∂μ ≤ (R / ρ) ^ finrank ℝ E * ⨍ y in ball x₀ R, g y ∂μ := by
+  have hR : 0 < R := pos_of_mem_ball (hsub (mem_ball_self hρ))
+  have h0 : 0 ≤ᵐ[μ.restrict (ball x₀ R)] g := (ae_restrict_mem measurableSet_ball).mono hg0
+  have h := setLAverage_ball_le (μ := μ) (fun y ↦ ENNReal.ofReal (g y)) hρ hsub
+  rw [setLAverage_eq, setLAverage_eq, ← ofReal_setAverage (hg.mono_set hsub)
+    (ae_restrict_of_ae_restrict_of_subset hsub h0), ← ofReal_setAverage hg h0,
+    ← ENNReal.ofReal_mul (by positivity)] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (mul_nonneg (by positivity) (average_nonneg_of_ae h0))).1 h
+
+/-- **Integrated decay from averaged decay.** An averaged decay bound on concentric balls gives the
+integrated one, one order faster: if `⨍_{B(x₀, ρ)} f ≤ K (ρ / R) ⨍_{B(x₀, R)} g` with `0 ≤ ρ`,
+then `∫_{B(x₀, ρ)} f ≤ K (ρ / R) ^ (dim E + 1) ∫_{B(x₀, R)} g`, since
+`μ(B(x₀, ρ)) = (ρ / R) ^ dim E μ(B(x₀, R))`. -/
+theorem setIntegral_ball_le_of_setAverage_ball_le {f g : E → ℝ} {x₀ : E} {ρ R K : ℝ}
+    (hρ : 0 ≤ ρ) (h : ⨍ x in ball x₀ ρ, f x ∂μ ≤ K * (ρ / R) * ⨍ x in ball x₀ R, g x ∂μ) :
+    ∫ x in ball x₀ ρ, f x ∂μ ≤ K * (ρ / R) ^ (finrank ℝ E + 1) * ∫ x in ball x₀ R, g x ∂μ := by
+  rcases hρ.eq_or_lt with rfl | hρ
+  · simp
+  have hω : 0 < μ.real (ball (0 : E) 1) :=
+    ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne
+  rw [setAverage_eq, smul_eq_mul, μ.addHaar_real_ball_of_pos x₀ hρ,
+    inv_mul_le_iff₀ (by positivity)] at h
+  rcases le_or_gt R 0 with hR | hR
+  · simpa [ball_eq_empty.2 hR] using h
+  rw [setAverage_eq, smul_eq_mul, μ.addHaar_real_ball_of_pos x₀ hR] at h
+  refine h.trans_eq ?_
+  simp only [div_pow]
+  field_simp
+  ring
 
 /-- **A lower bound from a sub-ball.** If `g ≥ δ` on a ball `B(z, ρ) ⊆ B(c, r)`, then the average
 of `g` over `B(c, r)` is at least `δ (ρ / r) ^ dim E`. With `g = ‖f - a‖ₑ` and `a` the average of
