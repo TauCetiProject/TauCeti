@@ -21,7 +21,7 @@ closed unit ball.
 
 * `TauCeti.unitBallOpens`: the open unit ball, as an open subset.
 * `TauCeti.convex_unitBallOpens`, `TauCeti.closure_unitBallOpens`: in a real normed space it is
-  convex, with closure the closed unit ball.
+  convex, with closure the closed unit ball (`TauCeti.mem_closure_unitBallOpens`).
 -/
 
 public section
@@ -66,5 +66,11 @@ theorem convex_unitBallOpens : Convex ℝ (unitBallOpens F : Set F) := by
 /-- The closure of the open unit ball of a real normed space is the closed unit ball. -/
 theorem closure_unitBallOpens : closure (unitBallOpens F : Set F) = closedBall 0 1 := by
   rw [coe_unitBallOpens, closure_ball 0 one_ne_zero]
+
+variable {F} in
+/-- A point of a real normed space lies in the closure of the open unit ball exactly when its norm
+is at most `1`. -/
+theorem mem_closure_unitBallOpens {v : F} : v ∈ closure (unitBallOpens F : Set F) ↔ ‖v‖ ≤ 1 := by
+  rw [closure_unitBallOpens, mem_closedBall_zero_iff]
 
 end TauCeti
