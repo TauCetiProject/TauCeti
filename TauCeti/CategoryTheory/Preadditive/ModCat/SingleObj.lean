@@ -15,6 +15,8 @@ public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
 public import TauCeti.CategoryTheory.Preadditive.SingleObj
 public import TauCeti.Logic.Small.Opposite
 
+import TauCeti.Algebra.Category.ModuleCat.Biproducts
+
 /-!
 # Rings as preadditive categories with one object
 
@@ -226,13 +228,6 @@ def moduleCatEquivModCatSelfIso :
   ObjectProperty.isoMk _ (NatIso.ofComponents
     (fun _ ↦ (MulOpposite.opAddEquiv : A ≃+ Aᵐᵒᵖ).toAddCommGrpIso) fun _ ↦ rfl)
 
-/-- The isomorphism `moduleCatEquivModCatSelfIso A` sends `a` to `op a`. This form is not in
-simp-normal form, since `dsimp` rewrites the implicit source and target; see
-`moduleCatEquivModCatSelfIso_hom_hom_app_hom_apply` for the simp lemma. -/
-theorem moduleCatEquivModCatSelfIso_hom_hom_app_apply (X : (SingleObj Aᵐᵒᵖ)ᵒᵖ) (a : A) :
-    (moduleCatEquivModCatSelfIso A).hom.hom.app X a = MulOpposite.op a :=
-  (rfl)
-
 /-- The isomorphism `moduleCatEquivModCatSelfIso A` sends `a` to `op a`, stated with the
 simp-normal source `AddCommGrpCat.of A` and target `(preadditiveYoneda.obj ∗).obj X`. -/
 @[simp]
@@ -288,20 +283,6 @@ noncomputable def moduleCatEquivModCatFreeIso (n : ℕ) :
       (fun _ ↦ (additiveFunctor _ _).ι.mapIso (moduleCatEquivModCatSelfIso A)) ≪≫
     biproduct.isoCoproduct _
 
-/-- The `i`-th coproduct injection into `Aⁿ` is the inclusion of the `i`-th coordinate. -/
-private theorem ι_biproductIsoPi_hom {n : ℕ} (i : Fin n) :
-    biproduct.ι (fun _ : Fin n ↦ ModuleCat.of A A) i ≫
-        (ModuleCat.biproductIsoPi fun _ : Fin n ↦ ModuleCat.of A A).hom =
-      ModuleCat.ofHom (LinearMap.single A (fun _ : Fin n ↦ A) i) := by
-  rw [← Iso.eq_comp_inv]
-  refine biproduct.hom_ext _ _ fun j ↦ ?_
-  rw [Category.assoc, ModuleCat.biproductIsoPi_inv_comp_π, biproduct.ι_π]
-  ext
-  by_cases h : i = j
-  · subst h
-    simp
-  · simp [h, Ne.symm h]
-
 /-- **The inverse of `moduleCatEquivModCatFreeIso A n` on the `i`-th summand** is the image of
 the inclusion `A ⟶ Aⁿ` of the `i`-th coordinate, after `Hom(-, ∗) ≅ A`. -/
 theorem ι_moduleCatEquivModCatFreeIso_inv {n : ℕ} (i : Fin n) :
@@ -314,7 +295,7 @@ theorem ι_moduleCatEquivModCatFreeIso_inv {n : ℕ} (i : Fin n) :
   simp only [moduleCatEquivModCatFreeIso, Iso.trans_inv, Functor.mapIso_inv, Iso.symm_inv,
     biproduct.mapIso_inv, biproduct.isoCoproduct_inv, Functor.mapBiproduct_inv, Category.assoc,
     Sigma.ι_comp_desc_assoc, biproduct.ι_map_assoc, biproduct.ι_desc_assoc, ← Functor.map_comp,
-    ι_biproductIsoPi_hom]
+    ModuleCat.ι_biproductIsoPi_hom]
   rfl
 
 /-- **The `i`-th coordinate of `moduleCatEquivModCatFreeIso A n`** is the image of the projection
