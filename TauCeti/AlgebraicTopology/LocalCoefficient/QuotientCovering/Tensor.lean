@@ -123,8 +123,8 @@ lemma associatedLocalSystemTensorIso_comp_inv_app {x : FundamentalGroupoid B}
         (hG.associatedLocalSystemFiberIso k A' e).inv) ≫
         (hG.associatedLocalSystemTensorIso k A A').inv.app x =
       (hG.associatedLocalSystemFiberIso k (A ⊗ A') e).inv :=
-  congrArg Iso.inv (Iso.ext (α := (hG.associatedLocalSystemTensorIso k A A').app x ≪≫
-    tensorCoordinates hG k A A' e) (hG.associatedLocalSystemTensorIso_hom_app_comp k A A' e))
+  hG.associatedLocalSystemIsoOfSheetCoordinates_comp_inv_app k (tensorCoordinates hG k A A')
+    (tensorCoordinates_smul hG k A A') (tensorCoordinates_map hG k A A') e
 
 /-- The isomorphism `L_{A ⊗ A'} ≅ L_A ⊗ L_{A'}` reads the fibre in the coordinates of a sheet `e`
 and returns to the tensor product through the coordinates of `e` on both factors. -/
@@ -148,14 +148,10 @@ lemma associatedLocalSystemTensorIso_hom_app_coinvariantsTensorMk_tmul
           (Finsupp.single e 1) ⊗ₜ[k]
         Rep.coinvariantsTensorMk A' (Rep.of (hG.fiberRepresentation k x.as)) a'
           (Finsupp.single e 1) := by
-  rw [associatedLocalSystemTensorIso_hom_app hG k A A' e]
-  -- In the coordinates of `e` itself, the class of `(a ⊗ a') ⊗ [e]` is `a ⊗ a'`.
-  have h : (1 : k) • (A ⊗ A').ρ (hG.fiberEquivGroup e e)⁻¹ (a ⊗ₜ[k] a') = a ⊗ₜ[k] a' := by
-    rw [fiberEquivGroup_self, inv_one, map_one, one_smul, one_apply_eq_self]
-  refine (congrArg (ModuleCat.Hom.hom ((hG.associatedLocalSystemFiberIso k A e).inv ⊗ₘ
-    (hG.associatedLocalSystemFiberIso k A' e).inv))
-    ((hG.associatedLocalSystemFiberIso_hom_coinvariantsTensorMk k (A ⊗ A') e e (a ⊗ₜ a') 1).trans
-      h)).trans ?_
+  refine (hG.associatedLocalSystemIsoOfSheetCoordinates_hom_app_coinvariantsTensorMk k
+    (tensorCoordinates hG k A A') (tensorCoordinates_smul hG k A A')
+    (tensorCoordinates_map hG k A A') e (a ⊗ₜ a') 1).trans ?_
+  rw [one_smul, tensorIso_inv]
   exact (ModuleCat.MonoidalCategory.tensorHom_tmul _ _ _ _).trans
     (congrArg₂ (· ⊗ₜ[k] ·) (hG.associatedLocalSystemFiberIso_inv_apply k A e a)
       (hG.associatedLocalSystemFiberIso_inv_apply k A' e a'))
