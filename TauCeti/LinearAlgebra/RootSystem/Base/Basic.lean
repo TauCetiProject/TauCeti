@@ -5,17 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.Base
+public import TauCeti.LinearAlgebra.RootSystem.Base
 import TauCeti.GroupTheory.Perm.Basic
 
 /-!
 # Bases and simple-root support transport of a root pairing
 
-This file records extensionality for bases of a root pairing (`RootPairing.Base.ext`), the action
-of automorphisms on bases (`RootPairing.Base.map_one`, `RootPairing.Base.map_mul`,
-`RootPairing.Base.map_eq_of_forall_mem_support`, `RootPairing.Base.mem_support_indexEquiv_iff`),
-and the bijection on simple-root supports induced by a base-preserving equivalence of root pairings
-(`RootPairing.Equiv.supportEquiv`).
+This file records the action of automorphisms on bases (`RootPairing.Base.map_one`,
+`RootPairing.Base.map_mul`, `RootPairing.Base.map_eq_of_forall_mem_support`,
+`RootPairing.Base.mem_support_indexEquiv_iff`), and the bijection on simple-root supports induced
+by a base-preserving equivalence of root pairings (`RootPairing.Equiv.supportEquiv`).
 -/
 
 public section
@@ -26,15 +25,6 @@ namespace Base
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N}
-
-/-- **A base is determined by its simple roots.** The other fields of a base are propositions about
-its support. -/
-@[ext]
-theorem ext {b b' : P.Base} (h : b.support = b'.support) : b = b' := by
-  cases b
-  cases b'
-  subst h
-  rfl
 
 section Map
 

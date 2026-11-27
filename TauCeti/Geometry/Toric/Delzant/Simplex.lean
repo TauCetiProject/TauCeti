@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Toric.Delzant.Basic
+public import TauCeti.Geometry.Toric.Delzant.TangentCone
 
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.StdBasis
@@ -34,10 +35,13 @@ this is a Delzant polytope (`TauCeti.Toric.isDelzant_simplex`), and its vertices
 points `a e k*` (`TauCeti.Toric.mem_extremePoints_facetPolyhedron_simplex_iff`). Each of its
 `#κ + 1` facets is cut out by one of the normals. At a vertex all constraints but one are active:
 if two constraints `o₁ ≠ o₂` were inactive, a nonzero functional on `ℝ^κ` (a coordinate, or a
-difference of two coordinates) would vanish on all the active normals. Any `#κ` of the `#κ + 1`
-normals generate `ℤ^κ`: when the missing normal is `-1`, the remaining normals are the coordinate
-vectors `e k`, which generate `ℤ^κ`; when it is `e k`, it is recovered as
-`e k = -(-1) - ∑_{m ≠ k} e m`. Having `#κ = rank ℤ^κ` elements, they then form a basis of `ℤ^κ`.
+difference of two coordinates) would vanish on all the active normals. At the vertex `0` the
+edge vectors are the coordinate functionals `e k*`; at the vertex `a e p*` they are `-e p*`, the
+edge leaving the slanted facet towards `0`, and, for `k ≠ p`, `e k* - e p*`, the edge in the
+slanted facet towards `a e k*`. The edge vector indexed by a facet is the edge leaving it. Any
+`#κ` of the `#κ + 1` normals generate `ℤ^κ`: when the missing normal is `-1`, the remaining
+normals are the coordinate vectors `e k`, which generate `ℤ^κ`; when it is `e k`, it is recovered
+as `e k = -(-1) - ∑_{m ≠ k} e m`. Having `#κ = rank ℤ^κ` elements, they then form a basis of `ℤ^κ`.
 
 ## Main definitions
 
@@ -55,6 +59,11 @@ vectors `e k`, which generate `ℤ^κ`; when it is `e k`, it is recovered as
 * `TauCeti.Toric.ncard_extremePoints_facetPolyhedron_simplex`: for `a > 0` it has `#κ + 1`
   vertices.
 * `TauCeti.Toric.isDelzant_simplex`: for `a > 0` and `κ` nonempty it is a Delzant polytope.
+* `TauCeti.Toric.none_notMem_activeSet_simplex_zero`,
+  `TauCeti.Toric.mem_activeSet_simplex_smul_proj_iff`: the facets active at the vertices.
+* `TauCeti.Toric.edgeBasis_simplex_zero`, `TauCeti.Toric.edgeBasis_simplex_smul_proj_none`,
+  `TauCeti.Toric.edgeBasis_simplex_smul_proj_some`: the edge vectors at the vertices: `e k*` at
+  `0`, and `-e p*` and `e k* - e p*` at `a e p*`.
 * `TauCeti.Toric.linearCombination_simplexNormal`: the combinations of the real normals.
 * `TauCeti.Toric.surjective_linearCombination_simplexNormal`: the real normals span `ℝ^κ`.
 
@@ -364,6 +373,73 @@ theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
       · cases o with
         | none => simpa [apply_compLeft_one] using hsum.ne
         | some m => simp [hpt, hb.ne']
+
+/-! ### The edge vectors -/
+
+/-- At the vertex `0` of the simplex, the slanted facet `∑ k, x (e k) = a` is not active. -/
+theorem none_notMem_activeSet_simplex_zero {a : ℝ} (ha : a ≠ 0) :
+    none ∉ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
+      (simplexSupport a) 0 := by
+  simpa using ha.symm
+
+/-- The facets of the simplex active at the vertex `a e p*`: all of them except the coordinate
+facet `x (e p) = 0`. -/
+theorem mem_activeSet_simplex_smul_proj_iff {a : ℝ} (ha : a ≠ 0) {p : κ} {o : Option κ} :
+    o ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
+      (simplexSupport a) (a • ContinuousLinearMap.proj p) ↔ o ≠ some p := by
+  cases o with
+  | none => simp [Pi.single_apply]
+  | some l => simp [Pi.single_apply, ha, eq_comm]
+
+/-- At the vertex `0` of the standard simplex, the edge vector indexed by (leaving) the facet
+`x (e k) ≥ 0` is the coordinate functional `e k*`, the edge towards `a e k*`. -/
+theorem edgeBasis_simplex_zero {a : ℝ} (ha : a ≠ 0)
+    (hi : IsIntegralLattice ((Int.castAddHom ℝ).compLeft κ))
+    (hv : IsSmoothVertex ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a) 0)
+    (e : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
+      (simplexSupport a) 0) {k : κ} (he : e.val = some k) :
+    hv.edgeBasis hi e = ContinuousLinearMap.proj k := by
+  classical
+  refine ((hv.eq_edgeBasis_iff _ e _).2 fun ⟨j, hj⟩ ↦ ?_).symm
+  cases j with
+  | none => exact absurd hj (none_notMem_activeSet_simplex_zero ha)
+  | some l => simp [Subtype.ext_iff, he, simplexNormal_some, Pi.single_apply]
+
+/-- At the vertex `a e p*` of the standard simplex, the edge vector indexed by (leaving) the
+slanted facet is `-e p*`, the edge towards `0`. -/
+theorem edgeBasis_simplex_smul_proj_none {a : ℝ} (ha : a ≠ 0) {p : κ}
+    (hi : IsIntegralLattice ((Int.castAddHom ℝ).compLeft κ))
+    (hv : IsSmoothVertex ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)
+      (a • ContinuousLinearMap.proj p))
+    (e : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
+      (simplexSupport a) (a • ContinuousLinearMap.proj p)) (he : e.val = none) :
+    hv.edgeBasis hi e = -ContinuousLinearMap.proj p := by
+  classical
+  refine ((hv.eq_edgeBasis_iff _ e _).2 fun ⟨j, hj⟩ ↦ ?_).symm
+  cases j with
+  | none => simp [Subtype.ext_iff, he, simplexNormal_none]
+  | some l =>
+    have hlp : l ≠ p := fun h ↦ (mem_activeSet_simplex_smul_proj_iff ha).1 hj (h ▸ rfl)
+    simp [Subtype.ext_iff, he, simplexNormal_some, hlp.symm]
+
+/-- At the vertex `a e p*` of the standard simplex, the edge vector indexed by (leaving) the facet
+`x (e k) ≥ 0`, `k ≠ p`, is `e k* - e p*`, the edge in the slanted facet towards `a e k*`. -/
+theorem edgeBasis_simplex_smul_proj_some {a : ℝ} (ha : a ≠ 0) {p : κ}
+    (hi : IsIntegralLattice ((Int.castAddHom ℝ).compLeft κ))
+    (hv : IsSmoothVertex ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)
+      (a • ContinuousLinearMap.proj p))
+    (e : activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
+      (simplexSupport a) (a • ContinuousLinearMap.proj p)) {k : κ} (he : e.val = some k) :
+    hv.edgeBasis hi e =
+      ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : κ ↦ ℝ) k -
+        ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : κ ↦ ℝ) p := by
+  classical
+  refine ((hv.eq_edgeBasis_iff _ e _).2 fun ⟨j, hj⟩ ↦ ?_).symm
+  cases j with
+  | none => simp [Subtype.ext_iff, he, simplexNormal_none]
+  | some l =>
+    have hlp : l ≠ p := fun h ↦ (mem_activeSet_simplex_smul_proj_iff ha).1 hj (h ▸ rfl)
+    simp [Subtype.ext_iff, he, simplexNormal_some, hlp.symm, Pi.single_apply]
 
 /-! ### The real normals -/
 

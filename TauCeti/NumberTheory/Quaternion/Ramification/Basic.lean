@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Quaternion.BaseChange
 public import TauCeti.NumberTheory.HilbertSymbol.Archimedean
+public import TauCeti.NumberTheory.Padics.HeightOneSpectrum
 public import TauCeti.NumberTheory.QuadraticForm.Global.ProductFormula
 
 /-!
@@ -55,12 +56,16 @@ number of ramified places is even.
   `isRamifiedAtReal_iff_isEmpty_algEquiv_matrix` and `isRamifiedAtReal_iff_forall_isUnit`.
 * `TauCeti.QuaternionAlgebra.isRamifiedAtReal_iff`: `B` is ramified at a real place exactly when
   `a` and `b` are both negative there.
-* `TauCeti.QuaternionAlgebra.isRamifiedAt_iff_of_nonempty_algEquiv`: isomorphic symbol algebras
-  have the same ramified places.
+* `TauCeti.QuaternionAlgebra.isRamifiedAt_iff_of_nonempty_algEquiv`,
+  `TauCeti.QuaternionAlgebra.ramifiedFinitePlaces_eq_of_nonempty_algEquiv`: isomorphic symbol
+  algebras have the same ramified places.
 * `TauCeti.QuaternionAlgebra.not_isRamifiedAt_of_valuation_eq_one`: `B` is unramified at a finite
   place at which `2`, `a` and `b` are units.
 * `TauCeti.QuaternionAlgebra.even_card_ramifiedFinitePlaces_add_card_ramifiedRealPlaces`: the
   number of ramified places is even.
+* `TauCeti.QuaternionAlgebra.isRamifiedAtPrime_iff_isRamifiedAt`,
+  `TauCeti.QuaternionAlgebra.isRamifiedAtPrime_natGenerator_iff`: over `ℚ`, ramification at a
+  prime `p` is ramification at the finite place above `p`.
 
 ## References
 
@@ -267,6 +272,13 @@ theorem mem_ramifiedFinitePlaces {v : HeightOneSpectrum (𝓞 F)} :
     v ∈ ramifiedFinitePlaces a b ↔ IsRamifiedAt a b v := by
   rw [ramifiedFinitePlaces, Set.Finite.mem_toFinset, Set.mem_ofPred_eq]
 
+/-- Isomorphic symbol algebras over `F` have the same finite ramification places. -/
+theorem ramifiedFinitePlaces_eq_of_nonempty_algEquiv {c d : Fˣ}
+    (h : Nonempty (ℍ[F,(a : F),(b : F)] ≃ₐ[F] ℍ[F,(c : F),(d : F)])) :
+    ramifiedFinitePlaces a b = ramifiedFinitePlaces c d := by
+  ext v
+  rw [mem_ramifiedFinitePlaces, mem_ramifiedFinitePlaces, isRamifiedAt_iff_of_nonempty_algEquiv h]
+
 end Finite
 
 /-! ### The parity of the number of ramified places -/
@@ -343,6 +355,14 @@ theorem isRamifiedAtPrime_iff_isRamifiedAt (p : ℕ) [hp : Fact p.Prime] :
     IsRamifiedAtPrime a b p ↔
       IsRamifiedAt a b ((Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm ⟨p, hp.out⟩) := by
   rw [isRamifiedAtPrime_def, isRamifiedAt_def, hilbertSymbol_unitAtFinitePlace_rat ⟨p, hp.out⟩]
+
+/-- Ramification of `ℍ[ℚ,a,b]` at the rational prime below a finite place `v` of `ℚ` is
+ramification at `v`. -/
+theorem isRamifiedAtPrime_natGenerator_iff (v : HeightOneSpectrum (𝓞 ℚ)) :
+    IsRamifiedAtPrime a b (Rat.HeightOneSpectrum.natGenerator v) ↔ IsRamifiedAt a b v := by
+  rw [isRamifiedAtPrime_iff_isRamifiedAt,
+    (Rat.HeightOneSpectrum.primesEquiv (R := 𝓞 ℚ)).symm_apply_eq.2
+      (Subtype.ext (Rat.HeightOneSpectrum.coe_primesEquiv v).symm)]
 
 end Rat
 

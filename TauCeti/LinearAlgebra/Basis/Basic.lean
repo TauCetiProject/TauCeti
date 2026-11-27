@@ -51,6 +51,8 @@ vectors indexed by `ι`.
   zero coordinate at every basis vector outside the submodule.
 * `Module.Basis.restrict`: restricting a basis to a subset of indices whose vectors lie in a
   submodule `U`, when vectors of `U` have zero coordinates outside that subset.
+* `Module.Basis.repr_inr_eq_zero_of_mem`: if the basis vectors at the indices `Sum.inl i` form a
+  basis of a submodule `U`, the vectors of `U` have zero coordinates at the indices `Sum.inr j`.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
   indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
   independent.
@@ -292,6 +294,14 @@ theorem restrict_repr (b : Basis n R M) (s : Set n) (U : Submodule R M)
     exact b.repr_linearCombination _
   exact ((DFunLike.congr_fun hrepr (i : n)).trans
     (Finsupp.mapDomain_apply_of_injective Subtype.val_injective (c.repr x) i)).symm
+
+/-- If the basis vectors `b (Sum.inl i)` form a basis `e` of a submodule `U`, then the vectors of
+`U` have zero coordinate at every index `Sum.inr j`. -/
+theorem repr_inr_eq_zero_of_mem {κ : Type*} (b : Basis (ι ⊕ κ) R M) {e : Basis ι R U}
+    (hbe : ∀ i, b (Sum.inl i) = e i) {x : M} (hx : x ∈ U) (j : κ) :
+    b.repr x (Sum.inr j) = 0 := by
+  have h : b.coord (Sum.inr j) ∘ₗ U.subtype = 0 := e.ext fun i ↦ by simp [← hbe]
+  simpa using LinearMap.congr_fun h ⟨x, hx⟩
 
 end Submodule
 

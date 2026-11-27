@@ -8,8 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
 public import TauCeti.Geometry.Symplectic.Coadjoint.Height.RootPlane
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Perfect
-import TauCeti.Algebra.Lie.InvariantForm.RootPlane.Decomposition
-import TauCeti.Geometry.Lie.Adjoint.InvariantForm
+import TauCeti.Geometry.Lie.Adjoint.Compact
 import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
 import TauCeti.Geometry.Manifold.Morse.FundamentalGroup
 
@@ -29,7 +28,8 @@ component of `μ`. Following Bott, this file computes the Betti numbers of `O` f
   (`TauCeti.IsRootPlaneDecomposition.isMorse_orbitMap_coadjointRepresentation_apply`), with
   critical points the points of the orbit lying over `t`. So every coadjoint orbit of a compact
   Lie group carries a Morse height
-  (`Module.Dual.exists_isMorse_orbitMap_coadjointRepresentation_apply`).
+  (`TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra`,
+  `Module.Dual.exists_isMorse_orbitMap_coadjointRepresentation_apply`).
 * As a component of a moment map for a compact group acting by symplectomorphisms, a height has
   even Morse index at every critical point
   (`TauCeti.SmoothTwoForm.IsMomentMap.even_manifoldMorseIndex`).
@@ -130,19 +130,8 @@ theorem exists_isMorse_orbitMap_coadjointRepresentation_apply [CompactSpace G] :
     ∃ X : GroupLieAlgebra I G,
       IsMorse 𝓘(ℝ, Subgroup.QuotientModelSpace I ((coadjointRepresentation ℝ I G).stabilizer ν))
         fun y ↦ (coadjointRepresentation ℝ I G).orbitMap ν y X := by
-  have : FiniteDimensional ℝ (GroupLieAlgebra I G) := inferInstanceAs (FiniteDimensional ℝ E)
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  obtain ⟨b, hsymm, hpos, hinv⟩ :=
-    exists_isSymm_posDef_continuousBilinearMap_adjoint_invariant (I := I) (G := G)
-  -- An `Ad`-invariant inner product, and a regular element of a maximal abelian subspace for it.
-  have hB : b.toBilinForm.lieInvariant (GroupLieAlgebra I G) :=
-    lieInvariant_of_adjoint_invariant hinv
-  have hsep : b.toBilinForm.SeparatingLeft := fun x hx ↦ by
-    by_contra h
-    exact (hpos x h).ne' (hx x)
-  obtain ⟨t, r, α, F, J, hD, -, X, hX⟩ :=
-    TauCeti.exists_isRootPlaneDecomposition (B := b.toBilinForm)
-      (LinearMap.BilinForm.isSymm_def.2 hsymm) hpos hB
+  obtain ⟨B, t, r, α, F, J, hD, -, hB, hsep, X, hX⟩ :=
+    TauCeti.exists_isRootPlaneDecomposition_groupLieAlgebra (I := I) (G := G)
   exact ⟨X, hD.isMorse_orbitMap_coadjointRepresentation_apply hB hsep hX⟩
 
 /-! ### Perfection and Betti numbers -/
