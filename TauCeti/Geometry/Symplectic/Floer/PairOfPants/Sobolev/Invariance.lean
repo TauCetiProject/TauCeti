@@ -101,8 +101,8 @@ continuous loops `x_q` and slice defects tending uniformly to zero. Then the rea
 continuously on `μ ∈ P` in the operator norm.
 
 Off the compact truncation `S_R` the data do not depend on `μ ∈ P`, and on `S_R` their
-coefficient fields are uniformly continuous in `(μ, z)`, so the coefficient fields depend
-continuously on `μ ∈ P` in `L^∞(S)`. -/
+coefficient fields are jointly continuous in `(μ, z)` at each `(μ, z)` with `μ ∈ P`, so the
+coefficient fields depend continuously on `μ ∈ P` in `L^∞(S)`. -/
 theorem continuousOn_floerConformalSobolevOperator_pairOfPants_family {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] (ω : SymplecticForm V)
     {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
