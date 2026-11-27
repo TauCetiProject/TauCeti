@@ -27,6 +27,18 @@ open Filter Real
 
 namespace TauCeti.ThetaLift
 
+private theorem rpow_natCast_mul_eq_pow {x : ℝ} (hx : 0 ≤ x) (n : ℕ) (y : ℝ) :
+    x ^ ((n : ℝ) * y) = (x ^ y) ^ n := by
+  rw [mul_comm]
+  exact rpow_mul_natCast hx y n
+
+private theorem eventually_const_mul_rpow_le_rpow {a b : ℝ} (hab : a < b) (K : ℝ) :
+    ∀ᶠ x : ℝ in atTop, K * x ^ a ≤ x ^ b := by
+  filter_upwards [eventually_ge_atTop 0,
+    ((isLittleO_rpow_rpow_atTop hab).const_mul_left K).bound one_pos] with x hx h
+  simpa only [Real.norm_eq_abs, abs_of_nonneg (rpow_nonneg hx b), one_mul] using
+    (le_abs_self _).trans h
+
 private theorem degreeBudget_le {x F K M ε C f r k m δ : ℝ}
     (hx : 0 < x) (hf₀ : 0 ≤ f) (hr₁ : 1 ≤ r) (hk₀ : 0 ≤ k)
     (hf : f ≤ 4 * x ^ F) (hr : r ≤ 4 * x ^ K) (hk : k ≤ 2 * x ^ K)
@@ -38,9 +50,8 @@ private theorem degreeBudget_le {x F K M ε C f r k m δ : ℝ}
     _ ≤ (4 * x ^ F) * (4 * x ^ K) * (4 * x ^ K) / 2 := by
       gcongr; linarith
     _ = _ := by
-      have hpow : x ^ (2 * K) = (x ^ K) ^ (2 : ℕ) := by
-        rw [mul_comm]
-        exact rpow_mul_natCast hx.le K 2
+      have hpow : x ^ (2 * K) = (x ^ K) ^ 2 := by
+        simpa only [Nat.cast_ofNat] using rpow_natCast_mul_eq_pow hx.le 2 K
       rw [rpow_add hx, hpow]
       ring
   have hP : f * r * x ^ ε ≤ 16 * x ^ (F + K + ε) := calc
@@ -53,12 +64,12 @@ private theorem degreeBudget_le {x F K M ε C f r k m δ : ℝ}
         (32 * x ^ (F + 2 * K)) ^ 3 * (2 * x ^ K) * (4 * x ^ F) * x /
           (x ^ M * x ^ (-ε)) := by gcongr
     _ = _ := by
-      rw [← pow_mul]
-      norm_num only [Nat.reduceMul]
-      simp only [mul_pow, ← rpow_mul_natCast hx.le, Nat.cast_ofNat]
-      rw [rpow_sub hx, rpow_sub hx]
-      simp only [rpow_add hx, rpow_one, rpow_neg hx.le, div_eq_mul_inv, mul_inv_rev, inv_inv]
-      ring_nf
+      have h48 : x ^ (48 * (F + K + ε)) = (x ^ (F + K + ε)) ^ 48 := by
+        simpa only [Nat.cast_ofNat] using rpow_natCast_mul_eq_pow hx.le 48 (F + K + ε)
+      have h3 : x ^ (3 * (F + 2 * K)) = (x ^ (F + 2 * K)) ^ 3 := by
+        simpa only [Nat.cast_ofNat] using rpow_natCast_mul_eq_pow hx.le 3 (F + 2 * K)
+      simp only [rpow_add hx, rpow_sub hx, rpow_neg hx.le, rpow_one, h48, h3]
+      ring
 
 private theorem rowSize_le {x F K M ε : ℝ} {f r k m : ℕ}
     (hx : 1 ≤ x) (hf : (f : ℝ) ≤ 4 * x ^ F) (hr : (r : ℝ) ≤ 4 * x ^ K)
@@ -79,12 +90,10 @@ private theorem rowSize_le {x F K M ε : ℝ} {f r k m : ℕ}
     _ ≤ 10 * (4 * x ^ K) * ((4 * x ^ F) ^ 2 * (2 * x ^ K) ^ 3 * x ^ (2 * ε) / x ^ M) := by
       gcongr
     _ = _ := by
-      have h₂ : x ^ (2 * F) = (x ^ F) ^ (2 : ℕ) := by
-        rw [mul_comm]
-        exact rpow_mul_natCast hx₀.le F 2
-      have h₃ : x ^ (3 * K) = (x ^ K) ^ (3 : ℕ) := by
-        rw [mul_comm]
-        exact rpow_mul_natCast hx₀.le K 3
+      have h₂ : x ^ (2 * F) = (x ^ F) ^ 2 := by
+        simpa only [Nat.cast_ofNat] using rpow_natCast_mul_eq_pow hx₀.le 2 F
+      have h₃ : x ^ (3 * K) = (x ^ K) ^ 3 := by
+        simpa only [Nat.cast_ofNat] using rpow_natCast_mul_eq_pow hx₀.le 3 K
       simp only [rpow_sub hx₀, rpow_add hx₀, h₂, h₃]
       ring
   have hp := rpow_le_rpow_of_exponent_le hx hdom
@@ -117,11 +126,18 @@ private theorem ambientRank_le {x F K E c : ℝ} {f r nW t : ℕ}
     exact_mod_cast hh
   linarith only [ht', hfr, hprod, one_le_rpow hx (add_nonneg hc hE₀)]
 
-/-- For every sufficiently large scale and every choice of ranks in the prescribed windows,
-`T = ⌈x ^ c⌉` meets the integral-generation degree bound with a factor `x` to spare. The
-corresponding ambient rank `r + t` has `t ≤ x ^ C` and odd `t` when `k + m` is even. Here `f`
-is the number of places and `δ` is the positive density entering the generation bound. -/
-theorem eventually_exists_thetaChainRank_with_degree_bound {ε c C : ℝ} (hε : 0 ≤ ε)
+/-- For every sufficiently large scale `x` and every choice of ranks in the prescribed windows,
+the degree `T = ⌈x ^ c⌉` meets the integral-generation degree bound with a factor `x` to spare,
+and the ambient rank `r + t` built from `T` has odd `t ≤ x ^ C`.
+
+Here `f` is the host degree (`f = 2|A|` for the hosts of the theta chain), `k` and `m` are the
+two chosen ranks with `k + m` even, `r = k + m - 1`, and `δ` is the density of the distinguished
+places. The first conclusion is `P⁴ · D_Y³ · k · f · x / (m · δ) ≤ T`, where
+`P = Cp · (f r x ^ ε) ^ 12`, `D_Y = f r (r - 1) / 2`, and `Cp` is the constant of the generation
+bound. The second gives `t` with `r + t = 8 f r + 4 + T · nW`, where
+`nW = 8 ⌈10 r (f + f² (k - 1)³ x ^ (2ε) / m) / 8⌉` is the row size of the theta lattice. The
+exponents `c` and `C` are any values above the thresholds computed from `ε`. -/
+theorem eventually_le_ceil_rpow_and_exists_odd_le_rpow {ε c C : ℝ} (hε : 0 ≤ ε)
     (hc : 352 + (16241 / 16) * ε < c) (hC : c + 43 / 2 + (929 / 16) * ε < C) (Cp : ℝ) :
     ∀ᶠ x : ℝ in atTop, ∀ (f k m : ℕ) (δ : ℝ),
       0 < f → (f : ℝ) ≤ 4 * x ^ (2 + 8 * ε) →
@@ -148,8 +164,8 @@ theorem eventually_exists_thetaChainRank_with_degree_bound {ε c C : ℝ} (hε :
   have hE₀ : 0 ≤ E := by dsimp [E, F, K, M]; linarith
   have hMK : M ≤ K := by dsimp [M, K]; linarith
   filter_upwards [eventually_ge_atTop (1 : ℝ),
-    ((isLittleO_rpow_rpow_atTop hB).const_mul_left (Cp ^ 4 * 16 ^ 48 * 32 ^ 3 * 8)).bound one_pos,
-    ((isLittleO_rpow_rpow_atTop hE).const_mul_left 11000).bound one_pos] with x hx hb he
+    eventually_const_mul_rpow_le_rpow hB (Cp ^ 4 * 16 ^ 48 * 32 ^ 3 * 8),
+    eventually_const_mul_rpow_le_rpow hE 11000] with x hx hb he
   intro f k m δ hf₀ hf hk hm₁ hm hδ hpar r nW T
   have hx₀ := zero_lt_one.trans_le hx
   have hm' : 1 ≤ m := Nat.cast_pos.mp ((rpow_pos_of_pos hx₀ M).trans_le hm₁)
@@ -163,8 +179,7 @@ theorem eventually_exists_thetaChainRank_with_degree_bound {ε c C : ℝ} (hε :
       (rpow_le_rpow_of_exponent_le hx hMK) (by norm_num)
     linarith only [hrs, hmK, hk]
   refine ⟨(degreeBudget_le hx₀ (by positivity) (by exact_mod_cast hr₁) (by positivity)
-    hf hr hk hm₁ hδ).trans ((le_abs_self _).trans ?_) |>.trans (Nat.le_ceil _), ?_⟩
-  · simpa only [Real.norm_eq_abs, abs_of_nonneg (rpow_nonneg hx₀.le c), one_mul] using hb
+    hf hr hk hm₁ hδ).trans hb |>.trans (Nat.le_ceil _), ?_⟩
   · have hle : r ≤ 8 * f * r + 4 + T * nW := by
       have : r ≤ 8 * f * r := by simpa using Nat.mul_le_mul_right r (show 1 ≤ 8 * f by omega)
       omega
@@ -175,7 +190,6 @@ theorem eventually_exists_thetaChainRank_with_degree_bound {ε c C : ℝ} (hε :
     have htot := (h8.add (by decide : Even (4 : ℕ))).add (hn.mul_left T)
     refine ⟨_, (Nat.odd_sub' hle).mpr (iff_of_true hodd htot), heq, ?_⟩
     refine (ambientRank_le hx hc₀ hdom hf hr
-      (rowSize_le hx hf hr hk hm₁ hdom hE₀) heq hE₀).trans ((le_abs_self _).trans ?_)
-    simpa only [Real.norm_eq_abs, abs_of_nonneg (rpow_nonneg hx₀.le C), one_mul] using he
+      (rowSize_le hx hf hr hk hm₁ hdom hE₀) heq hE₀).trans he
 
 end TauCeti.ThetaLift
