@@ -171,35 +171,6 @@ theorem baseSet_ofLinearEquiv_dual (i : B) :
     (ofLinearEquiv e V).dual.core.baseSet i = (trivializationAt F V i).baseSet :=
   (localTriv_baseSet_dual (ofLinearEquiv e V) i).trans (baseSet_ofLinearEquiv e V i)
 
-/-- On the overlap of two chart domains, the identity intertwines the transitions of
-`(ofLinearEquiv e V).dual` and `ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)`. -/
-theorem coordChange_comp_ofLinearEquiv_dual {i j x : B}
-    (hi : x ∈ (ofLinearEquiv e V).dual.core.baseSet i)
-    (hj : x ∈ (ofLinearEquiv e V).dual.core.baseSet j) :
-    (ContinuousLinearMap.id 𝕜 (Fin (ofLinearEquiv e V).dual.rank → 𝕜)).comp
-        ((ofLinearEquiv e V).dual.core.coordChange i j x) =
-      ((ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).core.coordChange i j x).comp
-        (ContinuousLinearMap.id 𝕜 (Fin (ofLinearEquiv e V).dual.rank → 𝕜)) := by
-  rw [baseSet_ofLinearEquiv_dual] at hi hj
-  exact ContinuousLinearMap.ext fun (w : Fin r → 𝕜) ↦
-    congrFun (congrArg DFunLike.coe (coordChange_ofLinearEquiv_dualCoords e V hi hj).symm) w
-
-/-- On the overlap of two chart domains, the identity intertwines the transitions of
-`ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)` and `(ofLinearEquiv e V).dual`. -/
-theorem coordChange_comp_ofLinearEquiv_dual_symm {i j x : B}
-    (hi : x ∈ (ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).core.baseSet i)
-    (hj : x ∈ (ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).core.baseSet j) :
-    (ContinuousLinearMap.id 𝕜
-        (Fin (ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜)).comp
-        ((ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).core.coordChange i j x) =
-      ((ofLinearEquiv e V).dual.core.coordChange i j x).comp
-        (ContinuousLinearMap.id 𝕜
-          (Fin (ofLinearEquiv e.dualCoords (fun y ↦ V y →L[𝕜] 𝕜)).rank → 𝕜)) := by
-  rw [baseSet_ofLinearEquiv] at hi hj
-  exact ContinuousLinearMap.ext fun (w : Fin r → 𝕜) ↦
-    congrFun (congrArg DFunLike.coe
-      (coordChange_ofLinearEquiv_dualCoords e V (by simpa using hi) (by simpa using hj))) w
-
 /-- The dual of `ofLinearEquiv e V` is canonically isomorphic to the core of Mathlib's dual bundle
 `fun x ↦ V x →L[𝕜] 𝕜` in `e.dualCoords`, by the identity on every coordinate fibre. -/
 noncomputable def ofLinearEquivDualIso :
@@ -207,7 +178,10 @@ noncomputable def ofLinearEquivDualIso :
   constIso (fun i ↦ ((baseSet_ofLinearEquiv_dual e V i).trans
       (by rw [baseSet_ofLinearEquiv]; simp)).le)
     (ContinuousLinearEquiv.refl 𝕜 (Fin r → 𝕜))
-    fun _ _ _ hi hj ↦ coordChange_comp_ofLinearEquiv_dual e V hi hj
+    fun _ _ _ hi hj ↦ by
+      rw [baseSet_ofLinearEquiv_dual] at hi hj
+      exact ContinuousLinearMap.ext fun (w : Fin r → 𝕜) ↦
+        congrFun (congrArg DFunLike.coe (coordChange_ofLinearEquiv_dualCoords e V hi hj).symm) w
 
 @[simp] theorem fiberMap_ofLinearEquivDualIso_hom (x : B) :
     (ofLinearEquivDualIso e V).hom.fiberMap x = ContinuousLinearMap.id 𝕜 (Fin r → 𝕜) :=

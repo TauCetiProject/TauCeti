@@ -232,7 +232,10 @@ theorem contMDiff_totalSpaceMap_ofLinearEquivDualIso_hom :
   contMDiff_totalSpaceMap_of_fiberMap_eq (ofLinearEquivDualIso e V).hom
     (ContinuousLinearMap.id 𝕜 (Fin r → 𝕜))
     (fiberMap_ofLinearEquivDualIso_hom e V)
-    fun _ _ _ hi hj ↦ coordChange_comp_ofLinearEquiv_dual e V hi hj
+    fun _ _ _ hi hj ↦ by
+      rw [baseSet_ofLinearEquiv_dual] at hi hj
+      exact ContinuousLinearMap.ext fun (w : Fin r → 𝕜) ↦
+        congrFun (congrArg DFunLike.coe (coordChange_ofLinearEquiv_dualCoords e V hi hj).symm) w
 
 /-- Over a complete scalar field, the inverse total-space map of `ofLinearEquivDualIso e V` is
 `C^n` at every regularity. -/
@@ -244,7 +247,11 @@ theorem contMDiff_totalSpaceMap_ofLinearEquivDualIso_inv :
   contMDiff_totalSpaceMap_of_fiberMap_eq (ofLinearEquivDualIso e V).inv
     (ContinuousLinearMap.id 𝕜 (Fin r → 𝕜))
     (fiberMap_ofLinearEquivDualIso_inv e V)
-    fun _ _ _ hi hj ↦ coordChange_comp_ofLinearEquiv_dual_symm e V hi hj
+    fun _ _ _ hi hj ↦ by
+      rw [baseSet_ofLinearEquiv] at hi hj
+      exact ContinuousLinearMap.ext fun (w : Fin r → 𝕜) ↦
+        congrFun (congrArg DFunLike.coe
+          (coordChange_ofLinearEquiv_dualCoords e V (by simpa using hi) (by simpa using hj))) w
 
 /-- Over a complete scalar field, `(ofLinearEquiv e V).dual` is `C^n` diffeomorphic on total spaces
 to `ofLinearEquiv e.dualCoords (fun x ↦ V x →L[𝕜] 𝕜)` by the identity on every coordinate fibre,

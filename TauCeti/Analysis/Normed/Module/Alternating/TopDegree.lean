@@ -83,6 +83,26 @@ theorem topFormEquiv_symm_apply (b : Module.Basis ι 𝕜 E)
     (c : 𝕜) (v : ι → E) : b.topFormEquiv.symm c v = c * b.det v := by
   simp [Module.Basis.topFormEquiv_symm_eq_smul]
 
+/-- Coordinate equivalence identifying top-degree continuous alternating forms `E [⋀^ι]→L[𝕜] 𝕜`
+with `Fin 1 → 𝕜` via evaluation on `b`. -/
+noncomputable def canonicalModelCoords (b : Module.Basis ι 𝕜 E) :
+    (E [⋀^ι]→L[𝕜] 𝕜) ≃L[𝕜] (Fin 1 → 𝕜) :=
+  b.topFormEquiv.trans (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm
+
+/-- `b.canonicalModelCoords` evaluates a top-degree alternating form on the basis `b`. -/
+@[simp]
+theorem canonicalModelCoords_apply (b : Module.Basis ι 𝕜 E)
+    (η : E [⋀^ι]→L[𝕜] 𝕜) (i : Fin 1) :
+    b.canonicalModelCoords η i = η b :=
+  b.topFormEquiv_apply η
+
+/-- The inverse of `b.canonicalModelCoords` scales `b.continuousDet` by the unique coordinate. -/
+@[simp]
+theorem canonicalModelCoords_symm_apply (b : Module.Basis ι 𝕜 E)
+    (u : Fin 1 → 𝕜) :
+    b.canonicalModelCoords.symm u = u 0 • b.continuousDet :=
+  b.topFormEquiv_symm_eq_smul (u 0)
+
 omit [Fintype ι] [DecidableEq ι] in
 /-- The top-degree scalar-valued continuous alternating forms on a space with a finite basis form
 a line. -/

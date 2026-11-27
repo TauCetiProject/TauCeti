@@ -23,7 +23,7 @@ identifies it smoothly (and biholomorphically on complex manifolds) with `Canoni
 2. **Comparison with `CanonicalBundle I M`:** for `b : Basis (Fin (finrank 𝕜 E)) 𝕜 E`,
    `canonicalCore`, `canonicalCoreTotalSpaceDiffeomorph`, `cotangentDetCanonicalCoreIso`,
    `cotangentDetCanonicalCoreDiffeomorph`, `cotangentDetCanonicalFiberEquiv`,
-   `cotangentDetCanonicalDiffeomorph`, `cotangentDetCanonicalHomeomorph`,
+   `cotangentDetCanonicalDiffeomorph`,
    `cotangentDetCanonicalFiberEquiv_localTriv_symm_one`, and
    `cotangentDetCanonicalFiberEquiv_changeBasis`.
 
@@ -194,36 +194,7 @@ theorem detScalarEquiv_fiberMap_cotangentDetChangeBasisIso_inv
 
 end CotangentDeterminant
 
-end TauCeti
-
 /-! ### Comparison of `(cotangentCore I b M).det` with `CanonicalBundle I M` -/
-
-namespace Module.Basis
-
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-
-/-- Scalar coordinate equivalence on the model fibre `E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜` of
-`CanonicalBundle I M`, evaluating a model top-degree form on `b` in `Fin 1 → 𝕜`. -/
-noncomputable def canonicalModelCoords (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) :
-    (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) ≃L[𝕜] (Fin 1 → 𝕜) :=
-  b.topFormEquiv.trans (ContinuousLinearEquiv.funUnique (Fin 1) 𝕜 𝕜).symm
-
-/-- `b.canonicalModelCoords` evaluates a model top-degree alternating form on the basis `b`. -/
-@[simp] theorem canonicalModelCoords_apply (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
-    (η : E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (i : Fin 1) :
-    b.canonicalModelCoords η i = η b :=
-  b.topFormEquiv_apply η
-
-/-- The inverse of `b.canonicalModelCoords` scales `b.continuousDet` by the unique coordinate. -/
-@[simp] theorem canonicalModelCoords_symm_apply (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
-    (u : Fin 1 → 𝕜) :
-    b.canonicalModelCoords.symm u = u 0 • b.continuousDet :=
-  b.topFormEquiv_symm_eq_smul (u 0)
-
-end Module.Basis
-
-namespace TauCeti
 
 section CanonicalComparison
 
@@ -400,26 +371,22 @@ noncomputable def cotangentDetCanonicalCoreDiffeomorph
     (cotangentCore I b M).det.core.TotalSpace ≃ₘ^k⟮
       I.prod 𝓘(𝕜, Fin (cotangentCore I b M).det.rank → 𝕜),
       I.prod 𝓘(𝕜, Fin (canonicalCore I b M).rank → 𝕜)⟯ (canonicalCore I b M).core.TotalSpace :=
-  FiniteRankBundleCore.isoToDiffeomorph (cotangentDetCanonicalCoreIso I b M)
-    (by
-      rw [cotangentDetCanonicalCoreIso]
-      exact FiniteRankBundleCore.contMDiff_totalSpaceMap_constIso_hom _ _ _)
-    (by
-      rw [cotangentDetCanonicalCoreIso]
-      exact FiniteRankBundleCore.contMDiff_totalSpaceMap_constIso_inv
-        (baseSet_cotangentCore_det_eq_canonicalCore b) _ _)
+  FiniteRankBundleCore.constIsoDiffeomorph
+    (baseSet_cotangentCore_det_eq_canonicalCore b)
+    (cotangentDetCanonicalCoords (I := I) (M := M) b)
+    fun _ _ _ hx₀ hx₁ ↦ coordChange_comp_cotangentDetCanonicalCore b hx₀ hx₁
 
 @[simp] theorem coe_cotangentDetCanonicalCoreDiffeomorph
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω) :
     ⇑(cotangentDetCanonicalCoreDiffeomorph I b M k) =
       (cotangentDetCanonicalCoreIso I b M).hom.totalSpaceMap :=
-  FiniteRankBundleCore.coe_isoToDiffeomorph _ _ _
+  FiniteRankBundleCore.coe_constIsoDiffeomorph _ _ _
 
 @[simp] theorem coe_cotangentDetCanonicalCoreDiffeomorph_symm
     (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω) :
     ⇑(cotangentDetCanonicalCoreDiffeomorph I b M k).symm =
       (cotangentDetCanonicalCoreIso I b M).inv.totalSpaceMap :=
-  FiniteRankBundleCore.coe_isoToDiffeomorph_symm _ _ _
+  FiniteRankBundleCore.coe_constIsoDiffeomorph_symm _ _ _
 
 /-- Every coordinate entry of `(cotangentDetCanonicalCoreIso I b M).hom.fiberMap x u` is
 `detScalarEquiv (cotangentCore I b M) u`. -/
@@ -497,14 +464,6 @@ noncomputable def cotangentDetCanonicalDiffeomorph
   (cotangentDetCanonicalCoreDiffeomorph I b M k).trans
     (canonicalCoreTotalSpaceDiffeomorph I b M k)
 
-/-- Topological bundle equivalence underlying `cotangentDetCanonicalDiffeomorph`. -/
-noncomputable def cotangentDetCanonicalHomeomorph
-    (I : ModelWithCorners 𝕜 E H) (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
-    (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] :
-    (cotangentCore I b M).det.core.TotalSpace ≃ₜ
-      TotalSpace (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M) :=
-  (cotangentDetCanonicalDiffeomorph I b M 0).toHomeomorph
-
 /-- On total spaces, `cotangentDetCanonicalDiffeomorph` acts fibrewise by
 `cotangentDetCanonicalFiberEquiv`. -/
 @[simp] theorem cotangentDetCanonicalDiffeomorph_apply
@@ -536,33 +495,6 @@ noncomputable def cotangentDetCanonicalHomeomorph
   refine congrArg (TotalSpace.mk' _ p.proj) (funext fun i ↦ ?_)
   exact (fiberMap_cotangentDetCanonicalCoreIso_inv_apply b p.proj _ i).trans
     (FiniteRankBundleCore.detScalarEquiv_symm_apply (cotangentCore I b M) _ i).symm
-
-/-- On total spaces, `cotangentDetCanonicalHomeomorph` acts fibrewise by
-`cotangentDetCanonicalFiberEquiv`. -/
-@[simp] theorem cotangentDetCanonicalHomeomorph_apply
-    (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
-    (p : (cotangentCore I b M).det.core.TotalSpace) :
-    cotangentDetCanonicalHomeomorph I b M p =
-      ⟨p.proj, cotangentDetCanonicalFiberEquiv I b M p.proj p.snd⟩ :=
-  cotangentDetCanonicalDiffeomorph_apply b 0 p
-
-/-- On total spaces, the inverse of `cotangentDetCanonicalHomeomorph` acts fibrewise by
-`(cotangentDetCanonicalFiberEquiv I b M p.proj).symm`. -/
-@[simp] theorem cotangentDetCanonicalHomeomorph_symm_apply
-    (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E)
-    (p : TotalSpace (E [⋀^Fin (finrank 𝕜 E)]→L[𝕜] 𝕜) (CanonicalBundle I M)) :
-    (cotangentDetCanonicalHomeomorph I b M).symm p =
-      ⟨p.proj, (cotangentDetCanonicalFiberEquiv I b M p.proj).symm p.snd⟩ :=
-  cotangentDetCanonicalDiffeomorph_symm_apply b 0 p
-
-/-- The underlying homeomorphism of `cotangentDetCanonicalDiffeomorph` at any regularity `k` agrees
-with `cotangentDetCanonicalHomeomorph`. -/
-@[simp] theorem cotangentDetCanonicalDiffeomorph_toHomeomorph
-    (b : Basis (Fin (finrank 𝕜 E)) 𝕜 E) (k : ℕ∞ω) :
-    (cotangentDetCanonicalDiffeomorph I b M k).toHomeomorph =
-      cotangentDetCanonicalHomeomorph I b M :=
-  Homeomorph.ext fun p ↦ (cotangentDetCanonicalDiffeomorph_apply b k p).trans
-    (cotangentDetCanonicalHomeomorph_apply b p).symm
 
 /-- Over the chart at `x₀`, the unit scalar coordinate `1` in the `x₀`-trivialization of
 `(cotangentCore I b M).det` maps to `dz₁ ∧ ⋯ ∧ dzₙ = CanonicalBundle.coordForm I x₀ b x`. -/
