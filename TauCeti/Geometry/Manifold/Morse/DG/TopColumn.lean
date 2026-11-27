@@ -19,9 +19,8 @@ so the coefficient `α_{x_max}` of a cycle `Σ_x α_x ⊗ x` at a critical point
 is a cycle of `𝓕`. The **component at the maximum**
 (`TauCeti.IsAdaptedPseudoGradient.dgMorseMaxComponent`) sends the class of the cycle to the class
 of `α_{x_max}` in the cohomology of `𝓕`, in degree `k + n` for a class of degree `k`
-(`TauCeti.IsAdaptedPseudoGradient.coe_dgMorseMaxComponent` and
-`TauCeti.TwistingCocycle.topComponentCohomology_homologyπ`); it vanishes on the class of the cycle
-exactly when `α_{x_max}` is a boundary of `𝓕`
+(`TauCeti.IsAdaptedPseudoGradient.coe_dgMorseMaxComponent_homologyπ`); it vanishes on the class
+of the cycle exactly when `α_{x_max}` is a boundary of `𝓕`
 (`TauCeti.IsAdaptedPseudoGradient.dgMorseMaxComponent_homologyπ_eq_zero_iff`). In the homological
 grading `C_k = C^{-k}` of DG Morse homology it is a map `H_k(M; 𝓕) → H_{k - n}(𝓕)`.
 
@@ -50,6 +49,8 @@ not made here.
 
 ## Main results
 
+* `TauCeti.IsAdaptedPseudoGradient.coe_dgMorseMaxComponent_homologyπ`: it sends the class of a
+  cycle to the class of its coefficient at the maximum.
 * `TauCeti.IsAdaptedPseudoGradient.dgMorseMaxComponent_homologyπ_eq_zero_iff`: it vanishes on the
   class of a cycle exactly when the coefficient at the maximum is a boundary.
 * `TauCeti.IsAdaptedPseudoGradient.dgMorseMaxComponent_eq_zero_iff`: at the only critical point of
@@ -103,8 +104,7 @@ variable (hX : IsAdaptedPseudoGradient f X) {c : ι → ℝ} (hf : IsMorse 𝓘(
 /-- **The component of the DG Morse complex at a critical point of maximal index** `n`, the
 dimension of `M`: the map `Hᵏ(𝓕 ⊗ ⟨Crit f⟩) → H^{k + n}(𝓕)` sending the class of a cycle
 `Σ_x α_x ⊗ x` to the class of `α_{x_max}`
-(`TauCeti.IsAdaptedPseudoGradient.coe_dgMorseMaxComponent`,
-`TauCeti.TwistingCocycle.topComponentCohomology_homologyπ`). -/
+(`TauCeti.IsAdaptedPseudoGradient.coe_dgMorseMaxComponent_homologyπ`). -/
 def dgMorseMaxComponent (k : ℤ) :
     (hX.dgMorseComplex hf hdense hθ hc S 𝓕).homology k →ₗ[R]
       𝓕.isDGRightModule.cohomologyGrading (k + finrank ℝ E) :=
@@ -120,8 +120,32 @@ theorem coe_dgMorseMaxComponent {k : ℤ} (α : (hX.dgMorseComplex hf hdense hθ
     (hX.dgMorseMaxComponent hf hdense hθ hc S 𝓕 hmax k α : 𝓕.isDGRightModule.Cohomology) =
       (hX.barraudCorneaCocycle hf hdense hθ hc S).topComponentCohomology 𝓕.differential
         𝓕.isDGRightModule (fun x ↦ natCast_manifoldMorseIndex_le_finrank_sub_one_add_one (f := f) x)
-        ⟨xmax, by rw [sub_add_cancel, hmax]⟩ k α :=
-  (rfl)
+        ⟨xmax, by rw [sub_add_cancel, hmax]⟩ k α := by
+  rw [dgMorseMaxComponent]
+  -- The composite applies `LinearEquiv.ofEq`, which does not change the underlying class.
+  exact LinearEquiv.coe_ofEq_apply (by rw [sub_add_cancel]) _
+
+/-- The component at the maximum sends the class of a cycle `g = Σ_x α_x ⊗ x` of the DG Morse
+complex to the class of its coefficient `α_{x_max}` in the cohomology of `𝓕`. -/
+@[simp]
+theorem coe_dgMorseMaxComponent_homologyπ {k : ℤ}
+    (g : (hX.dgMorseComplex hf hdense hθ hc S 𝓕).X k)
+    (hg : ((hX.dgMorseComplex hf hdense hθ hc S 𝓕).d k (k + 1)).hom g = 0) :
+    (hX.dgMorseMaxComponent hf hdense hθ hc S 𝓕 hmax k
+        (((hX.dgMorseComplex hf hdense hθ hc S 𝓕).homologyπ k).hom
+          ((hX.dgMorseComplex hf hdense hθ hc S 𝓕).moduleCatCyclesMk g (k + 1) (by simp) hg)) :
+        𝓕.isDGRightModule.Cohomology) =
+      (Submodule.Quotient.mk (⟨(twistedCochainComplexXEquiv
+          (hX.barraudCorneaCocycle hf hdense hθ hc S).mem_graded
+          (hX.barraudCorneaCocycle hf hdense hθ hc S).twisting 𝓕.isDGRightModule k g :
+            criticalPoints 𝓘(ℝ, E) f → 𝓕) xmax,
+        𝓕.isDGRightModule.mem_cycles.mpr
+          ((hX.barraudCorneaCocycle hf hdense hθ hc S).dM_twistedCochainComplexXEquiv_apply_eq_zero
+            _ _ (fun x ↦ natCast_manifoldMorseIndex_le_finrank_sub_one_add_one (f := f) x)
+            ⟨xmax, by rw [sub_add_cancel, hmax]⟩ g hg)⟩ : 𝓕.isDGRightModule.cycles) :
+        𝓕.isDGRightModule.Cohomology) := by
+  rw [coe_dgMorseMaxComponent]
+  exact (hX.barraudCorneaCocycle hf hdense hθ hc S).topComponentCohomology_homologyπ _ _ _ _ g hg
 
 /-- The component at the maximum vanishes exactly when
 `TauCeti.TwistingCocycle.topComponentCohomology` does. -/

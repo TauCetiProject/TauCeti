@@ -254,20 +254,6 @@ theorem dM_twistedCochainComplexXEquiv_apply_eq_zero (x : {x // ind x = q + 1}) 
   rw [← m.shiftedModuleComplexXEquiv_topComponent_f dM hM hq x k f,
     ← shiftedModuleComplexXEquiv_d_eq_zero_iff, HomologicalComplex.Hom.comm_apply, hf, map_zero]
 
-/-- When `x` is the only generator of index `q + 1`, the evaluation at `x` is injective on the
-cohomology of the generators of index `q + 1`: inserting at `x` is a left inverse. -/
-private theorem injective_homologyMap_indexGradedPieceEval (x : {x // ind x = q + 1})
-    (hx : ∀ y : {x // ind x = q + 1}, y = x) (k : ℤ) :
-    Function.Injective (homologyMap (indexGradedPieceEval hM ind x) k).hom := by
-  classical
-  have : Subsingleton {x // ind x = q + 1} := ⟨fun a b ↦ (hx a).trans (hx b).symm⟩
-  have h := sum_indexGradedPieceEval_comp_single hM ind (p := q + 1)
-  rw [Fintype.sum_subsingleton _ x] at h
-  refine Function.LeftInverse.injective
-    (g := (homologyMap (indexGradedPieceSingle hM ind x) k).hom) fun α ↦ ?_
-  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← homologyMap_comp, h, homologyMap_id,
-    ModuleCat.id_apply]
-
 /-- **The kernel of the component at the only generator of top index.** If `x` is the only
 generator of index `q + 1`, a cohomology class of the twisted complex has zero component at `x` in
 cohomology exactly when it comes from the subcomplex `F_q` spanned by the generators of index at
@@ -279,7 +265,7 @@ theorem homologyMap_topComponent_eq_zero_iff (x : {x // ind x = q + 1})
       α ∈ LinearMap.range (homologyMap (m.twistedIndexCochainComplexι hM q) k).hom := by
   rw [← m.homologyMap_topIndexRestriction_eq_zero_iff dM hM hq, topComponent, homologyMap_comp,
     ModuleCat.hom_comp, LinearMap.comp_apply,
-    map_eq_zero_iff _ (injective_homologyMap_indexGradedPieceEval dM hM x hx k)]
+    map_eq_zero_iff _ (injective_homologyMap_indexGradedPieceEval hM ind x hx k)]
 
 /-- **The component at a generator of top index in cohomology**, `Hᵏ(ℳ ⊗ ⟨P⟩) → H^{k + q + 1}(ℳ)`:
 the class of a cycle `f` goes to the class in `H(ℳ)` of its component `f x`
