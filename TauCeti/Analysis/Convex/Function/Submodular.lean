@@ -14,7 +14,8 @@ import TauCeti.Analysis.Convex.Function.Basic
 # Supermodularity of convex functions of total weight
 
 Applying a convex function to the sum of nonnegative weights over a finite set gives a
-supermodular set function. In cooperative game theory these set functions are called measure games.
+supermodular set function. In cooperative game theory this is a measure game when `f 0 = 0`,
+since the empty coalition has total weight zero.
 -/
 
 public section
