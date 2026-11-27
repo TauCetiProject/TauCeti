@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Coalgebra.Comodule.Finite.Basic
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Adjoin
 public import TauCeti.Algebra.Coalgebra.Comodule.Regular
 public import TauCeti.Algebra.Coalgebra.Subcoalgebra.RegularSubcomodule
-public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+public import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 
 /-!
 # Matrix coefficients of the regular comodule
@@ -17,6 +18,8 @@ This file records that the regular right comodule has enough matrix coefficients
 the whole coalgebra, and likewise that the coefficients of its restriction to a subcoalgebra
 recover that subcoalgebra. The key coefficient is the counit: for the regular comodule, the
 matrix coefficient attached to `Coalgebra.counit` and a vector `c` is exactly `c`.
+Over a field, tensors of finite-comodule matrix coefficients determine linear maps on the
+tensor product of two coalgebras.
 
 This is a small prerequisite for the faithful-representation criterion, where faithfulness is
 detected by whether the matrix coefficients, together with their antipode images, generate the
@@ -46,11 +49,14 @@ coalgebra; see Sweedler, *Hopf Algebras*, Chapter 2.
 
 public section
 
+open scoped TensorProduct
+open TensorProduct
+
 namespace TauCeti
 
 namespace Comodule
 
-universe u v
+universe u v w
 
 variable {R : Type u} {C : Type v}
 variable [CommSemiring R]
@@ -123,6 +129,45 @@ theorem regularObj_matrixCoefficientSubmodule_eq_top :
   regular_matrixCoefficientSubmodule_eq_top (R := R) (C := C)
 
 end Coalgebra
+
+section Field
+
+variable {k : Type u} [Field k]
+
+-- Bundling the induced subcomodule preserves its coaction, so the regular counit formula applies.
+private theorem matrixCoefficient_fgRegular_counit {A : Type*}
+    [AddCommGroup A] [Module k A] [Coalgebra k A]
+    (S : Subcomodule k A A) [Module.Finite k S] (s : S) :
+    matrixCoefficient (C := A) (M := FGComoduleCat.of (R := k) (C := A) S)
+      ((Coalgebra.counit (R := k) (A := A)).comp (SMulMemClass.subtype S)) s = s := by
+  simpa only [matrixCoefficient_def, FGComoduleCat.of_coact] using
+    (matrixCoefficient_counit_comp_subtype S s)
+
+/-- Linear maps on a tensor product of coalgebras are determined by their values on tensors
+of matrix coefficients of finite comodules. -/
+theorem tensorProduct_linearMap_ext_matrixCoefficient
+    {B : Type v} {C : Type w}
+    [AddCommGroup B] [Module k B] [Coalgebra k B]
+    [AddCommGroup C] [Module k C] [Coalgebra k C]
+    {P : Type*} [AddCommMonoid P] [Module k P]
+    {F G : B ⊗[k] C →ₗ[k] P}
+    (hFG : ∀ (M : FGComoduleCat.{u, v, v} k B) (N : FGComoduleCat.{u, w, w} k C)
+      (φ : Module.Dual k M) (ψ : Module.Dual k N) (m : M) (n : N),
+      F (matrixCoefficient (C := B) φ m ⊗ₜ[k] matrixCoefficient (C := C) ψ n) =
+      G (matrixCoefficient (C := B) φ m ⊗ₜ[k] matrixCoefficient (C := C) ψ n)) : F = G := by
+  ext b c
+  obtain ⟨S, hS, hb⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := B) b
+  obtain ⟨T, hT, hc⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := C) c
+  let : Module.Finite k S := hS
+  let : Module.Finite k T := hT
+  have h := hFG (FGComoduleCat.of (R := k) (C := B) S)
+    (FGComoduleCat.of (R := k) (C := C) T)
+    ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S))
+    ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T)) ⟨b, hb⟩ ⟨c, hc⟩
+  simpa only [matrixCoefficient_fgRegular_counit, AlgebraTensorModule.curry_apply,
+    TensorProduct.curry_apply, LinearMap.restrictScalars_apply] using h
+
+end Field
 
 section Algebra
 

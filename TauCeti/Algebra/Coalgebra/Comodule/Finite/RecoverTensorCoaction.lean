@@ -93,7 +93,8 @@ theorem coefficient_def (M : FGComoduleCat.{u, v, v} k B)
   let := ρ.comodule M N
   rw [coefficient, Comodule.matrixCoefficient_def]
 
-private theorem coefficient_naturality {M M' : FGComoduleCat.{u, v, v} k B}
+/-- Tensor coefficients are natural under a pair of comodule morphisms. -/
+theorem coefficient_naturality {M M' : FGComoduleCat.{u, v, v} k B}
     {N N' : FGComoduleCat.{u, w, w} k C}
     (f : Comodule.Hom k B M M') (g : Comodule.Hom k C N N')
     (φ : Module.Dual k M') (ψ : Module.Dual k N') (m : M) (n : N) :
@@ -130,43 +131,75 @@ private noncomputable abbrev regularMap (S : FiniteRegular (k := k) B)
       (((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S.val)) ⊗ₜ[k]
         ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T.val))))
 
+-- This identifies the contraction on a regular tensor space with the family coefficient.
+private theorem regularMap_tmul (S : FiniteRegular (k := k) B)
+    (T : FiniteRegular (k := k) C) (s : S.val) (t : T.val) :
+    ρ.regularMap S T (s ⊗ₜ[k] t) =
+      ρ.coefficient (regularObj S) (regularObj T)
+        ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S.val))
+        ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T.val)) s t := rfl
+
+private noncomputable def regularInclusion {A : Type*}
+    [AddCommGroup A] [Module k A] [Coalgebra k A]
+    (S S' : FiniteRegular (k := k) A) (h : S.val ≤ S'.val) :
+    Comodule.Hom k A (regularObj S) (regularObj S') :=
+  (Subcomodule.subtype S.val).codRestrict S'.val (fun s => by simpa using h s.property)
+
+private theorem regularInclusion_toLinearMap {A : Type*}
+    [AddCommGroup A] [Module k A] [Coalgebra k A]
+    (S S' : FiniteRegular (k := k) A) (h : S.val ≤ S'.val) :
+    (regularInclusion S S' h).toLinearMap = Submodule.inclusion h := by
+  apply LinearMap.ext
+  intro s
+  apply Subtype.ext
+  have hval := Comodule.Hom.codRestrict_apply (Subcomodule.subtype S.val) S'.val
+    (fun s => by simpa using h s.property) s
+  rw [Subcomodule.subtype_apply] at hval
+  exact hval.trans (Submodule.coe_inclusion h s).symm
+
+private theorem regularInclusion_apply {A : Type*}
+    [AddCommGroup A] [Module k A] [Coalgebra k A]
+    (S S' : FiniteRegular (k := k) A) (h : S.val ≤ S'.val) (s : S.val) :
+    regularInclusion S S' h s = Submodule.inclusion h s :=
+  DFunLike.congr_fun (regularInclusion_toLinearMap S S' h) s
+
+private theorem subtype_comp_regularInclusion {A : Type*}
+    [AddCommGroup A] [Module k A] [Coalgebra k A]
+    (S S' : FiniteRegular (k := k) A) (h : S.val ≤ S'.val) :
+    (SMulMemClass.subtype S'.val).comp (regularInclusion S S' h).toLinearMap =
+      SMulMemClass.subtype S.val := by
+  rw [regularInclusion_toLinearMap]
+  exact Submodule.subtype_comp_inclusion S.val.toSubmodule S'.val.toSubmodule h
+
 private theorem regularMap_left (S S' : FiniteRegular (k := k) B)
     (h : S.val ≤ S'.val) (T : FiniteRegular (k := k) C) (s : S.val) (t : T.val) :
     ρ.regularMap S' T (Submodule.inclusion h s ⊗ₜ[k] t) =
       ρ.regularMap S T (s ⊗ₜ[k] t) := by
-  let f := (Subcomodule.subtype S.val).codRestrict S'.val (fun s => by simpa using h s.property)
+  rw [regularMap_tmul, regularMap_tmul]
   have hc := ρ.coefficient_naturality (M := regularObj S) (M' := regularObj S')
-    (N := regularObj T) (N' := regularObj T) f (Comodule.Hom.id k C T.val)
+    (N := regularObj T) (N' := regularObj T) (regularInclusion S S' h)
+    (Comodule.Hom.id k C T.val)
     ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S'.val))
     ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T.val)) s t
-  have hf : (SMulMemClass.subtype S'.val).comp f.toLinearMap =
-      SMulMemClass.subtype S.val := by
-    ext s
-    simpa only [f, LinearMap.comp_apply, Comodule.Hom.coe_toLinearMap,
-      Subcomodule.subtype_apply, SMulMemClass.subtype_apply] using
-      (Comodule.Hom.codRestrict_apply (Subcomodule.subtype S.val) S'.val _ s)
-  have hv : f s = Submodule.inclusion h s := by ext; simp [f]
-  simpa only [coefficient, Comodule.matrixCoefficient, Comodule.Hom.id_apply,
-    hv, Comodule.Hom.id_toLinearMap, LinearMap.comp_id, LinearMap.comp_assoc, hf] using hc
+  simp only [Comodule.Hom.id_toLinearMap, LinearMap.comp_id] at hc
+  rw [LinearMap.comp_assoc, subtype_comp_regularInclusion] at hc
+  simpa only [regularInclusion_apply, Comodule.Hom.id_apply,
+    Comodule.Hom.id_toLinearMap, LinearMap.comp_id] using hc
 
 private theorem regularMap_right (S : FiniteRegular (k := k) B)
     (T T' : FiniteRegular (k := k) C) (h : T.val ≤ T'.val) (s : S.val) (t : T.val) :
     ρ.regularMap S T' (s ⊗ₜ[k] Submodule.inclusion h t) =
       ρ.regularMap S T (s ⊗ₜ[k] t) := by
-  let g := (Subcomodule.subtype T.val).codRestrict T'.val (fun t => by simpa using h t.property)
+  rw [regularMap_tmul, regularMap_tmul]
   have hc := ρ.coefficient_naturality (M := regularObj S) (M' := regularObj S)
-    (N := regularObj T) (N' := regularObj T') (Comodule.Hom.id k B S.val) g
+    (N := regularObj T) (N' := regularObj T') (Comodule.Hom.id k B S.val)
+    (regularInclusion T T' h)
     ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S.val))
     ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T'.val)) s t
-  have hg : (SMulMemClass.subtype T'.val).comp g.toLinearMap =
-      SMulMemClass.subtype T.val := by
-    ext t
-    simpa only [g, LinearMap.comp_apply, Comodule.Hom.coe_toLinearMap,
-      Subcomodule.subtype_apply, SMulMemClass.subtype_apply] using
-      (Comodule.Hom.codRestrict_apply (Subcomodule.subtype T.val) T'.val _ t)
-  have hv : g t = Submodule.inclusion h t := by ext; simp [g]
-  simpa only [coefficient, Comodule.matrixCoefficient, Comodule.Hom.id_apply,
-    hv, Comodule.Hom.id_toLinearMap, LinearMap.comp_id, LinearMap.comp_assoc, hg] using hc
+  simp only [Comodule.Hom.id_toLinearMap, LinearMap.comp_id] at hc
+  rw [LinearMap.comp_assoc, subtype_comp_regularInclusion] at hc
+  simpa only [regularInclusion_apply, Comodule.Hom.id_apply,
+    Comodule.Hom.id_toLinearMap, LinearMap.comp_id] using hc
 
 private noncomputable def regularLeft (S : FiniteRegular (k := k) B) :
     S.val →ₗ[k] C →ₗ[k] D :=
@@ -236,34 +269,8 @@ theorem linearMap_matrixCoefficient (M : FGComoduleCat.{u, v, v} k B)
   have hs : (f m : B) = Comodule.matrixCoefficient (C := B) φ m := by simp [f]
   have ht : (g n : C) = Comodule.matrixCoefficient (C := C) ψ n := by simp [g]
   rw [← hs, ← ht, linearMap_regular ρ S T]
+  rw [regularMap_tmul]
   exact h
-
-private theorem ext_coefficients {P : Type*} [AddCommMonoid P] [Module k P]
-    {F G : B ⊗[k] C →ₗ[k] P}
-    (hFG : ∀ (M : FGComoduleCat.{u, v, v} k B) (N : FGComoduleCat.{u, w, w} k C)
-      (φ : Module.Dual k M) (ψ : Module.Dual k N) (m : M) (n : N),
-      F (Comodule.matrixCoefficient (C := B) φ m ⊗ₜ[k]
-        Comodule.matrixCoefficient (C := C) ψ n) =
-      G (Comodule.matrixCoefficient (C := B) φ m ⊗ₜ[k]
-        Comodule.matrixCoefficient (C := C) ψ n)) : F = G := by
-  ext b c
-  obtain ⟨S, hS, hb⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := B) b
-  obtain ⟨T, hT, hc⟩ := Subcomodule.exists_finite_subcomodule_mem (R := k) (C := C) c
-  let S' : FiniteRegular (k := k) B := ⟨S, Subcomodule.mem_finiteSubcomodules.mpr hS⟩
-  let T' : FiniteRegular (k := k) C := ⟨T, Subcomodule.mem_finiteSubcomodules.mpr hT⟩
-  have h := hFG (regularObj S') (regularObj T')
-    ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S))
-    ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T)) ⟨b, hb⟩ ⟨c, hc⟩
-  have hs : Comodule.matrixCoefficient (C := B) (M := regularObj S')
-      ((Coalgebra.counit (R := k) (A := B)).comp (SMulMemClass.subtype S)) ⟨b, hb⟩ = b := by
-    simpa only [Comodule.matrixCoefficient_def, FGComoduleCat.of_coact] using
-      (Comodule.matrixCoefficient_counit_comp_subtype S ⟨b, hb⟩)
-  have ht : Comodule.matrixCoefficient (C := C) (M := regularObj T')
-      ((Coalgebra.counit (R := k) (A := C)).comp (SMulMemClass.subtype T)) ⟨c, hc⟩ = c := by
-    simpa only [Comodule.matrixCoefficient_def, FGComoduleCat.of_coact] using
-      (Comodule.matrixCoefficient_counit_comp_subtype T ⟨c, hc⟩)
-  simpa only [hs, ht, AlgebraTensorModule.curry_apply, TensorProduct.curry_apply,
-    LinearMap.restrictScalars_apply] using h
 
 /-- The coefficient formula uniquely characterizes the reconstructed linear map. -/
 theorem linearMap_unique (F : B ⊗[k] C →ₗ[k] D)
@@ -272,13 +279,13 @@ theorem linearMap_unique (F : B ⊗[k] C →ₗ[k] D)
       F (Comodule.matrixCoefficient (C := B) φ m ⊗ₜ[k]
         Comodule.matrixCoefficient (C := C) ψ n) = ρ.coefficient M N φ ψ m n) :
     F = ρ.linearMap := by
-  apply ext_coefficients
+  apply Comodule.tensorProduct_linearMap_ext_matrixCoefficient
   intro M N φ ψ m n
   rw [hF, linearMap_matrixCoefficient]
 
 /-- Expanding the supplied tensor coaction in bases of its two factors recovers its
 coefficients through the reconstructed map. -/
-theorem coact_eq_sum (M : FGComoduleCat.{u, v, v} k B)
+theorem coact_tmul_eq_sum_basis (M : FGComoduleCat.{u, v, v} k B)
     (N : FGComoduleCat.{u, w, w} k C) {ι κ : Type*} [Fintype ι] [Fintype κ]
     (b : Module.Basis ι k M) (c : Module.Basis κ k N) (m : M) (n : N) :
     (ρ.comodule M N).coact (m ⊗ₜ[k] n) =
@@ -297,7 +304,7 @@ theorem coact_eq_sum (M : FGComoduleCat.{u, v, v} k B)
 
 /-- The supplied coaction is the tensor shuffle of the two original coactions,
 followed by the reconstructed map on the coefficient factors. -/
-theorem coact_eq (M : FGComoduleCat.{u, v, v} k B)
+theorem coact_tmul (M : FGComoduleCat.{u, v, v} k B)
     (N : FGComoduleCat.{u, w, w} k C) (m : M) (n : N) :
     (ρ.comodule M N).coact (m ⊗ₜ[k] n) =
       map LinearMap.id ρ.linearMap
@@ -306,7 +313,7 @@ theorem coact_eq (M : FGComoduleCat.{u, v, v} k B)
   classical
   let b := Module.finBasis k M
   let c := Module.finBasis k N
-  rw [ρ.coact_eq_sum M N b c,
+  rw [ρ.coact_tmul_eq_sum_basis M N b c,
     Comodule.coact_eq_sum_basis_matrixCoefficient (C := B) b,
     Comodule.coact_eq_sum_basis_matrixCoefficient (C := C) c]
   simp only [sum_tmul, tmul_sum, map_sum, AlgebraTensorModule.tensorTensorTensorComm_tmul,
@@ -321,13 +328,13 @@ private theorem comul_coefficient (M : FGComoduleCat.{u, v, v} k B)
       ∑ i, ∑ j, ρ.coefficient M N φ ψ (b i) (c j) ⊗ₜ[k]
         ρ.coefficient M N (b.coord i) (c.coord j) m n := by
   let := ρ.comodule M N
-  rw [coefficient, Comodule.comul_matrixCoefficient, ρ.coact_eq_sum M N b c]
+  rw [coefficient, Comodule.comul_matrixCoefficient, ρ.coact_tmul_eq_sum_basis M N b c]
   simp only [map_sum, map_tmul, LinearMap.id_apply, Comodule.matrixCoefficientLinear_apply,
     linearMap_matrixCoefficient, coefficient]
 
 private theorem map_comul :
     map ρ.linearMap ρ.linearMap ∘ₗ Coalgebra.comul = Coalgebra.comul ∘ₗ ρ.linearMap := by
-  apply ext_coefficients
+  apply Comodule.tensorProduct_linearMap_ext_matrixCoefficient
   intro M N φ ψ m n
   classical
   let b := Module.finBasis k M
@@ -340,7 +347,7 @@ private theorem map_comul :
 
 private theorem counit_comp :
     Coalgebra.counit ∘ₗ ρ.linearMap = Coalgebra.counit := by
-  apply ext_coefficients
+  apply Comodule.tensorProduct_linearMap_ext_matrixCoefficient
   intro M N φ ψ m n
   let := ρ.comodule M N
   simp only [LinearMap.comp_apply, linearMap_matrixCoefficient, coefficient,
@@ -386,6 +393,12 @@ def _root_.GroupLike.tensorCoaction (g : GroupLike k D) :
     ext m n
     simp
 
+/-- The constant tensor family assigns the group-like comodule to each tensor space. -/
+@[simp]
+theorem _root_.GroupLike.tensorCoaction_comodule (g : GroupLike k D)
+    (M : FGComoduleCat.{u, v, v} k B) (N : FGComoduleCat.{u, w, w} k C) :
+    (g.tensorCoaction (B := B) (C := C)).comodule M N = Comodule.groupLike g := (rfl)
+
 /-- Coefficients of the constant tensor coaction are evaluation times its group-like element. -/
 @[simp]
 theorem _root_.GroupLike.tensorCoaction_coefficient (g : GroupLike k D)
@@ -393,9 +406,7 @@ theorem _root_.GroupLike.tensorCoaction_coefficient (g : GroupLike k D)
     (φ : Module.Dual k M) (ψ : Module.Dual k N) (m : M) (n : N) :
     (g.tensorCoaction (B := B) (C := C)).coefficient M N φ ψ m n =
       (φ m * ψ n) • (g : D) := by
-  have h : (g.tensorCoaction (B := B) (C := C)).comodule M N =
-      Comodule.groupLike g := rfl
-  rw [TensorCoaction.coefficient, h]
+  rw [TensorCoaction.coefficient, GroupLike.tensorCoaction_comodule]
   simp
 
 /-- Over the scalar coalgebras, the constant coaction reconstructs the map taking
