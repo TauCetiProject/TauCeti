@@ -10,7 +10,6 @@ public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.LSeries.DirichletContinuation
 public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 public import TauCeti.NumberTheory.LFunctions.Zeros.OneSidedBound.Parameters
-import Mathlib.Analysis.Real.Pi.Bounds
 
 /-!
 # The archimedean scale in the size of theta derivatives
