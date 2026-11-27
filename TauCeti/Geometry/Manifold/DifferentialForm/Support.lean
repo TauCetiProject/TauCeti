@@ -219,6 +219,7 @@ theorem indicator_smul [ContinuousConstSMul ℝ F] (s : Set X) (c : ℝ) (ω : R
   Set.indicator_comp_of_zero (M := E [⋀^Fin k]→L[ℝ] F) (g := (c • ·)) (by ext; simp)
 
 /-- The support of the restriction of `ω` to `s` is the part of the support of `ω` in `s`. -/
+@[simp]
 theorem support_indicator (s : Set X) (ω : RoughForm I X F k) :
     Function.support (M := E [⋀^Fin k]→L[ℝ] F) (ω.indicator s) =
       s ∩ Function.support (M := E [⋀^Fin k]→L[ℝ] F) ω :=
