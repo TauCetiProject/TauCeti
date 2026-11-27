@@ -14,15 +14,16 @@ public import TauCeti.Algebra.Homology.DG.Algebra.Augmentation.Cohomology
 
 For the sphere `Sⁿ`, `n = m + 2`, with one `0`-cell at the pole and one `n`-cell attached along the
 attaching cycle `x` of its top cell, the free module `K` of `TauCeti.sphereCellCocycle` is Brown's
-semi-free resolution of the ground ring `k` over the chains `C_*(Ω_b Sⁿ; k)` on the Moore loops
-(`TauCeti.exists_sphereCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`). So the
-twisted complex with coefficients in the chains on the loops, acted on by multiplication, is
-identified with `K` and has the homology of the based path space of `Sⁿ`, that of a point: this is
-the fibration theorem for the path-loop fibration.
+semi-free resolution of the ground ring `k` over the chains `C_*(Ω_b Sⁿ; k)` on the Moore loops:
+every cycle of `K` of augmentation zero is a boundary
+(`TauCeti.exists_sphereCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`). Informally,
+and not formalised here, the twisted complex with coefficients in the chains on the loops, acted
+on by multiplication, is `K` itself, so it has the homology of the based path space of `Sⁿ`, that
+of a point: this is the fibration theorem for the path-loop fibration.
 
 The action matters. With the trivial action of the loops on their chains, through the
-augmentation (`TauCeti.trivialLoopChainAction`), the attaching cycle, of positive dimension `n - 1`,
-acts by zero, and the twisted complex splits: its cohomology in degree `q` is
+augmentation (`TauCeti.DGAlgAugmentation.trivialAction`), the attaching cycle, of positive
+dimension `n - 1`, acts by zero, and the twisted complex splits: its cohomology in degree `q` is
 `H^q(Ω_b Sⁿ) × H^{q + n}(Ω_b Sⁿ)` (`TauCeti.sphereCellCocycleTrivialActionHomologyEquiv`), in
 homological terms `H_*(Sⁿ) ⊗ H_*(Ω_b Sⁿ)`. It does not vanish in degree `-n`, where it contains
 `H_0(Ω_b Sⁿ)` (`TauCeti.nontrivial_sphereCellCocycle_trivialAction_homology`), so it is not the
@@ -61,11 +62,11 @@ local notation "Sph" => sphere (0 : EuclideanSpace ℝ ι) 1
 `n = m + 2`, the twisted complex of `TauCeti.sphereCellCocycle` with coefficients in the chains
 `C_*(Ω_b Sⁿ; k)` on the loops, acted on trivially through the augmentation, has cohomology
 `H^q(Ω_b Sⁿ) × H^{q + n}(Ω_b Sⁿ)` in degree `q`: the attaching cycle of the top cell acts by zero.
-With the action by multiplication the same twisted complex is Brown's resolution of `k`. -/
+By contrast, the free module of `TauCeti.sphereCellCocycle` is Brown's resolution of `k`. -/
 def sphereCellCocycleTrivialActionHomologyEquiv (q : ℤ) :
     ((sphereCellCocycle h k).coefficientCochainComplex
         ((loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule.restrictScalars
-          (trivialLoopChainAction Sph (spherePolePoint h) k))).homology q ≃ₗ[k]
+          (loopChainAugmentation Sph (spherePolePoint h) k).trivialAction)).homology q ≃ₗ[k]
       (loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule.cohomologyGrading q ×
         (loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule.cohomologyGrading
           (q + ((m : ℤ) + 2)) :=
@@ -76,14 +77,15 @@ def sphereCellCocycleTrivialActionHomologyEquiv (q : ℤ) :
 /-- **With the trivial action the twisted homology of the sphere is not that of a point.** Over a
 nontrivial ring `k`, the twisted homology of `Sⁿ`, `n = m + 2`, with coefficients in the chains on
 its loops acted on trivially is nonzero in degree `-n`, where it contains `H_0(Ω_b Sⁿ)`, the
-class of the constant loop. With the action by multiplication the twisted complex is identified
-with Brown's resolution of `k`
-(`TauCeti.exists_sphereCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`), whose
-homology vanishes outside degree `0`. -/
+class of the constant loop. By contrast, the free module of `TauCeti.sphereCellCocycle` resolves
+`k` (`TauCeti.exists_sphereCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`);
+informally, it is the twisted complex for the action by multiplication, whose homology is that of
+a point. -/
 theorem nontrivial_sphereCellCocycle_trivialAction_homology [Nontrivial k] :
     Nontrivial (((sphereCellCocycle h k).coefficientCochainComplex
         ((loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule.restrictScalars
-          (trivialLoopChainAction Sph (spherePolePoint h) k))).homology (-((m : ℤ) + 2))) := by
+          (loopChainAugmentation Sph (spherePolePoint h) k).trivialAction)).homology
+            (-((m : ℤ) + 2))) := by
   have : Nontrivial ((loopChain_isDGAlgebra Sph (spherePolePoint h) k).isDGRightModule
       |>.cohomologyGrading (-((m : ℤ) + 2) + ((m : ℤ) + 2))) := by
     rw [neg_add_cancel]

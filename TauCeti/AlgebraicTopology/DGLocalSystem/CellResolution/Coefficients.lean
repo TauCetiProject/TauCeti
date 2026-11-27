@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.DGLocalSystem.CellResolution
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.ZeroAction
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Cohomology
+public import TauCeti.AlgebraicTopology.DGLocalSystem.Basic
 
 /-!
 # A cell attached along a cycle that acts by zero on the coefficients
@@ -26,22 +27,21 @@ cell complex with one cell in each of the degrees `0` and `n + 1`, tensored with
 
 This happens for the coefficients on which the loops act **trivially**, through the augmentation:
 `M` restricted along the composite `C_*(Ω_b B; R) → R → C_*(Ω_b B; R)` of the augmentation `ε`
-and the unit (`TauCeti.trivialLoopChainAction`). A chain `x` with `ε(x) = 0`, such as a cycle of
-positive dimension, acts by zero on any such module
-(`TauCeti.op_smul_eq_zero_of_loopChainAugmentation_eq_zero`). For the chains on the loops
+and the unit (`TauCeti.DGAlgAugmentation.trivialAction` of `TauCeti.loopChainAugmentation`). A
+chain `x` with `ε(x) = 0`, such as a cycle of positive dimension, acts by zero on any such module
+(`TauCeti.DGAlgAugmentation.op_smul_eq_zero_of_eq_zero`). For the chains on the loops
 themselves with the trivial action, the twisted homology is `Hᵏ(Ω_b B) × H^{k + n + 1}(Ω_b B)`
-(`TauCeti.cycleCellCocycleTrivialActionHomologyEquiv`). With their action by multiplication
-instead, the twisted complex is identified with the free module `K`, which is a resolution of `R`
-when `K` is Brown's model of `B`, as it is for the spheres
-(`TauCeti.exists_sphereCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`): the
-difference between the two is the content of the fibration theorem for the path-loop fibration.
+(`TauCeti.cycleCellCocycleTrivialActionHomologyEquiv`). By contrast, the free module `K` is a
+resolution of `R` when `K` is Brown's model of `B`, as it is for the spheres
+(`TauCeti.exists_sphereCellCocycle_differential_eq_of_loopCellAugmentation_eq_zero`). Informally,
+and not formalised here, `K` is the twisted complex for the action of the loops on their chains by
+multiplication: the difference between the two actions is the content of the fibration theorem
+for the path-loop fibration.
 
 ## Main definitions
 
 * `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero`: the cohomology of the twisted complex
   when the attaching cycle acts by zero.
-* `TauCeti.trivialLoopChainAction`: the composite of the augmentation and the unit of the chains on
-  the loops.
 * `TauCeti.cycleCellCocycleTrivialActionHomologyEquiv`: the cohomology of the twisted complex with
   coefficients in the chains on the loops, acted on trivially.
 
@@ -49,8 +49,9 @@ difference between the two is the content of the fibration theorem for the path-
 
 * `TauCeti.cycleCellCocycle_m_op_smul_eq_zero`: the entries of the cocycle act by zero when the
   attaching cycle does.
-* `TauCeti.op_smul_eq_zero_of_loopChainAugmentation_eq_zero`: a chain of augmentation zero acts by
-  zero through the trivial action.
+* `TauCeti.coe_cycleCellCocycleHomologyEquivOfOpSmulEqZero_apply_fst`,
+  `TauCeti.coe_cycleCellCocycleHomologyEquivOfOpSmulEqZero_apply_snd`: the components of a class
+  are the classes of its evaluations at `e₀` and `e₁`.
 
 ## References
 
@@ -108,47 +109,35 @@ def cycleCellCocycleHomologyEquivOfOpSmulEqZero (h : ∀ α : M, op x • α = 0
         (LinearEquiv.ofEq _ _ (by rw [Sum.elim_inl, add_zero]))).prodCongr
       (LinearEquiv.piUnique R _)
 
+/-- The `e₀`-component of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero` of a class is the
+class in `H(M)` of its image under the evaluation at `e₀`. -/
+@[simp]
+theorem coe_cycleCellCocycleHomologyEquivOfOpSmulEqZero_apply_fst (h : ∀ α : M, op x • α = 0)
+    (k : ℤ) (c : ((cycleCellCocycle R n x hx hdx).coefficientCochainComplex hM).homology k) :
+    ((cycleCellCocycleHomologyEquivOfOpSmulEqZero hx hdx hM h k c).1 : hM.Cohomology) =
+      shiftedModuleComplexHomologyEquiv hM _ k ((HomologicalComplex.homologyMap
+        (RowFiniteTwistingCocycle.coefficientEval hM (cycleCellCocycle_m_op_smul_eq_zero hx hdx h)
+          (Sum.inl ())) k).hom c) :=
+  congrArg Subtype.val <|
+    RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero_apply hM _ k c (.inl ())
+
+/-- The `e₁`-component of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero` of a class is the
+class in `H(M)` of its image under the evaluation at `e₁`. -/
+@[simp]
+theorem coe_cycleCellCocycleHomologyEquivOfOpSmulEqZero_apply_snd (h : ∀ α : M, op x • α = 0)
+    (k : ℤ) (c : ((cycleCellCocycle R n x hx hdx).coefficientCochainComplex hM).homology k) :
+    ((cycleCellCocycleHomologyEquivOfOpSmulEqZero hx hdx hM h k c).2 : hM.Cohomology) =
+      shiftedModuleComplexHomologyEquiv hM _ k ((HomologicalComplex.homologyMap
+        (RowFiniteTwistingCocycle.coefficientEval hM (cycleCellCocycle_m_op_smul_eq_zero hx hdx h)
+          (Sum.inr ())) k).hom c) :=
+  congrArg Subtype.val <|
+    RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero_apply hM _ k c (.inr ())
+
 end ZeroAction
 
 /-! ### The trivial action of the chains on the loops -/
 
 section TrivialAction
-
-variable (B b R) in
-/-- The **trivial action** of the chains on the loops: the composite of the augmentation
-`C_*(Ω_b B; R) → R` with the unit `R → C_*(Ω_b B; R)`. A DG right module restricted along it is
-acted on by a chain `a` through the scalar `ε(a)`. -/
-def trivialLoopChainAction :
-    DGAlgHom (loopChain_isDGAlgebra B b R) (loopChain_isDGAlgebra B b R) :=
-  (loopChain_isDGAlgebra B b R).unitHom.comp (loopChainAugmentation B b R)
-
-/-- The trivial action sends a chain to the unit times its augmentation. -/
-@[simp]
-theorem trivialLoopChainAction_apply (a : loopChainAlgebra B b R) :
-    trivialLoopChainAction B b R a = algebraMap R _ (loopChainAugmentation B b R a) := by
-  rw [trivialLoopChainAction, DGAlgHom.comp_apply, IsDGAlgebra.unitHom_apply]
-
-variable {M : Type*} [AddCommGroup M] [Module (loopChainAlgebra B b R)ᵐᵒᵖ M]
-
-/-- **A chain of augmentation zero acts by zero through the trivial action.** -/
-theorem op_smul_eq_zero_of_loopChainAugmentation_eq_zero {a : loopChainAlgebra B b R}
-    (ha : loopChainAugmentation B b R a = 0)
-    (α : DGRightModule.RestrictScalars (trivialLoopChainAction B b R) M) : op a • α = 0 := by
-  apply DGRightModule.RestrictScalars.ext
-  rw [DGRightModule.RestrictScalars.val_op_smul, trivialLoopChainAction_apply, ha, map_zero,
-    op_zero, zero_smul, DGRightModule.RestrictScalars.val_zero]
-
-/- Instance search does not find the graded action of the chains on the loops on their restriction
-along the trivial action through the general instance on restrictions, because it finds
-different, though definitionally equal, instances on the chain algebra of the loop space; it is
-restated here, as in `TauCeti.AlgebraicTopology.DGLocalSystem.Basic`. -/
-/-- The action of `C_*(Ω_b B; R)` on its restriction along the trivial action respects degrees. -/
-instance : SetLike.GradedSMul
-    (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece
-    (IsDGRightModule.restrictScalarsGrading (ℳ := cubicalChainGrading (MooreLoopSpace B b) R)
-      (trivialLoopChainAction B b R)) :=
-  gradedSMul_restrictScalarsGrading (ℳ := cubicalChainGrading (MooreLoopSpace B b) R)
-    (trivialLoopChainAction B b R)
 
 variable {n : ℕ} {x : loopChainAlgebra B b R}
   (hx : x ∈ cubicalChainGrading (MooreLoopSpace B b) R (-(n : ℤ)))
@@ -162,15 +151,49 @@ in the cohomological grading `C^{-q} = C_q`. -/
 def cycleCellCocycleTrivialActionHomologyEquiv (hε : loopChainAugmentation B b R x = 0) (k : ℤ) :
     ((cycleCellCocycle R n x hx hdx).coefficientCochainComplex
         ((loopChain_isDGAlgebra B b R).isDGRightModule.restrictScalars
-          (trivialLoopChainAction B b R))).homology k ≃ₗ[R]
+          (loopChainAugmentation B b R).trivialAction)).homology k ≃ₗ[R]
       (loopChain_isDGAlgebra B b R).isDGRightModule.cohomologyGrading k ×
         (loopChain_isDGAlgebra B b R).isDGRightModule.cohomologyGrading (k + ((n : ℤ) + 1)) :=
   cycleCellCocycleHomologyEquivOfOpSmulEqZero hx hdx _
-      (op_smul_eq_zero_of_loopChainAugmentation_eq_zero hε) k ≪≫ₗ
+      ((loopChainAugmentation B b R).op_smul_eq_zero_of_eq_zero hε) k ≪≫ₗ
     ((loopChain_isDGAlgebra B b R).isDGRightModule.restrictScalarsCohomologyGradingEquiv
-        (trivialLoopChainAction B b R) k).prodCongr
+        (loopChainAugmentation B b R).trivialAction k).prodCongr
       ((loopChain_isDGAlgebra B b R).isDGRightModule.restrictScalarsCohomologyGradingEquiv
-        (trivialLoopChainAction B b R) _)
+        (loopChainAugmentation B b R).trivialAction _)
+
+/-- The `e₀`-component of `TauCeti.cycleCellCocycleTrivialActionHomologyEquiv` of a class is that
+of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero`, read in `H(Ω_b B)`. -/
+@[simp]
+theorem coe_cycleCellCocycleTrivialActionHomologyEquiv_apply_fst
+    (hε : loopChainAugmentation B b R x = 0) (k : ℤ)
+    (c : ((cycleCellCocycle R n x hx hdx).coefficientCochainComplex
+        ((loopChain_isDGAlgebra B b R).isDGRightModule.restrictScalars
+          (loopChainAugmentation B b R).trivialAction)).homology k) :
+    ((cycleCellCocycleTrivialActionHomologyEquiv hx hdx hε k c).1 :
+        (loopChain_isDGAlgebra B b R).isDGRightModule.Cohomology) =
+      (loopChain_isDGAlgebra B b R).isDGRightModule.restrictScalarsCohomologyEquiv
+        (loopChainAugmentation B b R).trivialAction
+        (cycleCellCocycleHomologyEquivOfOpSmulEqZero hx hdx _
+          ((loopChainAugmentation B b R).op_smul_eq_zero_of_eq_zero hε) k c).1 := by
+  rw [cycleCellCocycleTrivialActionHomologyEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.prodCongr_apply, IsDGRightModule.coe_restrictScalarsCohomologyGradingEquiv_apply]
+
+/-- The `e₁`-component of `TauCeti.cycleCellCocycleTrivialActionHomologyEquiv` of a class is that
+of `TauCeti.cycleCellCocycleHomologyEquivOfOpSmulEqZero`, read in `H(Ω_b B)`. -/
+@[simp]
+theorem coe_cycleCellCocycleTrivialActionHomologyEquiv_apply_snd
+    (hε : loopChainAugmentation B b R x = 0) (k : ℤ)
+    (c : ((cycleCellCocycle R n x hx hdx).coefficientCochainComplex
+        ((loopChain_isDGAlgebra B b R).isDGRightModule.restrictScalars
+          (loopChainAugmentation B b R).trivialAction)).homology k) :
+    ((cycleCellCocycleTrivialActionHomologyEquiv hx hdx hε k c).2 :
+        (loopChain_isDGAlgebra B b R).isDGRightModule.Cohomology) =
+      (loopChain_isDGAlgebra B b R).isDGRightModule.restrictScalarsCohomologyEquiv
+        (loopChainAugmentation B b R).trivialAction
+        (cycleCellCocycleHomologyEquivOfOpSmulEqZero hx hdx _
+          ((loopChainAugmentation B b R).op_smul_eq_zero_of_eq_zero hε) k c).2 := by
+  rw [cycleCellCocycleTrivialActionHomologyEquiv, LinearEquiv.trans_apply,
+    LinearEquiv.prodCongr_apply, IsDGRightModule.coe_restrictScalarsCohomologyGradingEquiv_apply]
 
 end TrivialAction
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.LoopAlgebra
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Functor
+public import TauCeti.Algebra.Homology.DG.Algebra.Augmentation.TrivialAction
 public import Mathlib.CategoryTheory.Pi.Basic
 public import TauCeti.Topology.PathComponent
 
@@ -85,6 +86,18 @@ instance (𝓕 : DGLocalSystem.{uM} B b R) :
       (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece
       𝓕.grading :=
   𝓕.gradedSMul
+
+/- For the same reason, instance search does not find the graded action of the chains on the loops
+on their restriction along the trivial action through the general instance on restrictions; it is
+restated here in the form instance search produces. -/
+/-- The action of `C_*(Ω_b B; R)` on its restriction along the trivial action
+`TauCeti.DGAlgAugmentation.trivialAction` respects degrees. -/
+instance : SetLike.GradedSMul
+    (InternalGrading.ofDecomposition (cubicalChainGrading (MooreLoopSpace B b) R)).opposite.piece
+    (IsDGRightModule.restrictScalarsGrading (ℳ := cubicalChainGrading (MooreLoopSpace B b) R)
+      (loopChainAugmentation B b R).trivialAction) :=
+  gradedSMul_restrictScalarsGrading (ℳ := cubicalChainGrading (MooreLoopSpace B b) R)
+    (loopChainAugmentation B b R).trivialAction
 
 end Pointed
 

@@ -34,11 +34,12 @@ homology of the coefficients: the twisting cocycle is invisible. For a cell stru
 cell in each of the degrees `0` and `n` and the chains on the loop space as coefficients, this
 gives `H_*(Sⁿ) ⊗ H_*(ΩSⁿ)` in place of the homology of the path space, which is that of a point.
 
-The splitting is assembled from the chain maps evaluating a coefficient vector at a generator
+The chain maps evaluating a coefficient vector at a generator
 (`TauCeti.RowFiniteTwistingCocycle.coefficientEval`) and inserting a coefficient at a generator
-(`TauCeti.RowFiniteTwistingCocycle.coefficientSingle`), which are inverse to each other up to the
-sum over the generators. The graded pieces of the index filtration are split in the same way,
-over the generators of a single index (`TauCeti.indexGradedPieceHomologyIso`,
+(`TauCeti.RowFiniteTwistingCocycle.coefficientSingle`) exhibit the twisted complex as a biproduct
+(`TauCeti.RowFiniteTwistingCocycle.coefficientBicone`), which the additive cohomology functor
+preserves. The graded pieces of the index filtration split likewise, over the generators of a
+single index (`TauCeti.indexGradedPieceHomologyIso`,
 `TauCeti.rowFiniteIndexGradedPieceHomologyIso`); here the generators have arbitrary indices and
 the whole twisted complex splits, because the cocycle acts by zero.
 
@@ -47,6 +48,8 @@ the whole twisted complex splits, because the cocycle acts by zero.
 * `TauCeti.RowFiniteTwistingCocycle.coefficientEval`: the evaluation at a generator, a morphism of
   complexes to `TauCeti.shiftedModuleComplex hM (ind x)`.
 * `TauCeti.RowFiniteTwistingCocycle.coefficientSingle`: the insertion at a generator.
+* `TauCeti.RowFiniteTwistingCocycle.coefficientBicone`: the twisted complex as the biproduct of
+  the shifted coefficients.
 * `TauCeti.RowFiniteTwistingCocycle.coefficientHomologyIsoOfForallOpSmulEqZero`: the cohomology of
   the twisted complex is the product of the shifted cohomologies of the coefficients.
 * `TauCeti.RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero`: the same, with
@@ -56,6 +59,8 @@ the whole twisted complex splits, because the cocycle acts by zero.
 
 * `TauCeti.RowFiniteTwistingCocycle.coefficientDifferential_eq_mapRange_of_forall_op_smul_eq_zero`:
   the twisted differential is `dM` on every coefficient.
+* `TauCeti.RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero_apply`: the
+  component at `x` of a class is the class of its evaluation at `x`.
 
 ## References
 
@@ -139,8 +144,7 @@ theorem shiftedModuleComplexXEquiv_coefficientEvalX (x : P) (n : ℤ)
       (m.coefficientCochainComplexXEquiv hM n f : P →₀ M) x := by
   simp only [coefficientEvalX, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
     LinearEquiv.apply_symm_apply]
-  -- The remaining equation holds by unfolding the corestriction of the codomain.
-  rfl
+  exact LinearMap.codRestrict_apply _ _ _
 
 /-- The insertion at a generator `x`, from `ℳ (n + ind x)` to the degree-`n` term of the twisted
 complex. -/
@@ -165,8 +169,7 @@ theorem coefficientCochainComplexXEquiv_coefficientSingleX (x : P) (n : ℤ)
       Finsupp.single x (shiftedModuleComplexXEquiv hM (ind x) n α : M) := by
   simp only [coefficientSingleX, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
     LinearEquiv.apply_symm_apply]
-  -- The remaining equation holds by unfolding the corestriction of the codomain.
-  rfl
+  exact LinearMap.codRestrict_apply _ _ _
 
 variable {m} (hm : ∀ x y (α : M), op (m.m x y) • α = 0)
 
@@ -223,8 +226,8 @@ theorem coefficientSingle_comp_eval_self (x : P) :
     (shiftedModuleComplexXEquiv hM (ind x) n).injective (Subtype.ext ?_))
   rw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
     shiftedModuleComplexXEquiv_coefficientEval_f,
-    coefficientCochainComplexXEquiv_coefficientSingle_f, Finsupp.single_eq_same]
-  rfl
+    coefficientCochainComplexXEquiv_coefficientSingle_f, Finsupp.single_eq_same,
+    HomologicalComplex.id_f, ModuleCat.id_apply]
 
 /-- Inserting at `x` and evaluating at another generator `y` is zero. -/
 theorem coefficientSingle_comp_eval_of_ne {x y : P} (hxy : x ≠ y) :
@@ -262,6 +265,34 @@ section Homology
 
 variable [Fintype P] {m}
   (hm : ∀ x y (α : M), op (m.m x y) • α = 0)
+include hm
+
+omit [Fintype P] in
+/-- The twisted complex of a cocycle acting by zero as a biproduct of the complexes
+`TauCeti.shiftedModuleComplex hM (ind x)`, with the evaluations as projections and the insertions
+as inclusions. -/
+def coefficientBicone :
+    Bicone fun x : P ↦ shiftedModuleComplex.{uR, uA, uM, uP} hM (ind x) where
+  pt := m.coefficientCochainComplex hM
+  π := coefficientEval hM hm
+  ι := coefficientSingle hM hm
+  ι_π x y := by
+    split_ifs with hxy
+    · subst hxy
+      exact coefficientSingle_comp_eval_self hM hm x
+    · exact coefficientSingle_comp_eval_of_ne hM hm hxy
+
+/-- The image of `TauCeti.RowFiniteTwistingCocycle.coefficientBicone` in cohomology of degree `n`
+is a biproduct: the cohomology functor is additive, and evaluating and inserting at all generators
+sums to the identity. -/
+def isBilimitHomologyMapCoefficientBicone (n : ℤ) :
+    ((HomologicalComplex.homologyFunctor (ModuleCat.{max uP uM} R) (ComplexShape.up ℤ) n).mapBicone
+      (coefficientBicone hM hm)).IsBilimit :=
+  isBilimitOfTotal _ <| by
+    have key := (HomologicalComplex.homologyFunctor (ModuleCat.{max uP uM} R) (ComplexShape.up ℤ)
+      n).map_sum (fun x : P ↦ coefficientEval hM hm x ≫ coefficientSingle hM hm x) Finset.univ
+    rw [sum_coefficientEval_comp_single, CategoryTheory.Functor.map_id] at key
+    exact (Finset.sum_congr rfl fun x _ ↦ (Functor.map_comp _ _ _).symm).trans key.symm
 
 /-- **The cohomology of a twisted complex whose cocycle acts by zero**: in total degree `n` it is
 the product over the generators `x` of the cohomology of `shiftedModuleComplex hM (ind x)` in
@@ -269,24 +300,9 @@ degree `n`, that is of the coefficients in degree `n + ind x`, through the evalu
 insertions at the generators. -/
 def coefficientHomologyIsoOfForallOpSmulEqZero (n : ℤ) :
     (m.coefficientCochainComplex hM).homology n ≅
-      ∏ᶜ fun x : P ↦ (shiftedModuleComplex.{uR, uA, uM, uP} hM (ind x)).homology n where
-  hom := Pi.lift fun x ↦ HomologicalComplex.homologyMap (coefficientEval hM hm x) n
-  inv := ∑ x : P, Pi.π _ x ≫ HomologicalComplex.homologyMap (coefficientSingle hM hm x) n
-  hom_inv_id := by
-    rw [Preadditive.comp_sum]
-    simp only [limit.lift_π_assoc, Fan.mk_π_app, ← HomologicalComplex.homologyMap_comp]
-    have key := (HomologicalComplex.homologyFunctor (ModuleCat.{max uP uM} R) (ComplexShape.up ℤ)
-      n).map_sum (fun x : P ↦ coefficientEval hM hm x ≫ coefficientSingle hM hm x) Finset.univ
-    rw [sum_coefficientEval_comp_single, CategoryTheory.Functor.map_id] at key
-    exact key.symm
-  inv_hom_id := by
-    refine Pi.hom_ext _ _ fun y ↦ ?_
-    rw [Category.assoc, limit.lift_π, Fan.mk_π_app, Preadditive.sum_comp, Category.id_comp]
-    simp only [Category.assoc, ← HomologicalComplex.homologyMap_comp]
-    rw [Finset.sum_eq_single y (fun x _ hx ↦ ?_) (fun h ↦ absurd (Finset.mem_univ _) h),
-      coefficientSingle_comp_eval_self, HomologicalComplex.homologyMap_id, Category.comp_id]
-    rw [coefficientSingle_comp_eval_of_ne hM hm hx, HomologicalComplex.homologyMap_zero,
-      comp_zero]
+      ∏ᶜ fun x : P ↦ (shiftedModuleComplex.{uR, uA, uM, uP} hM (ind x)).homology n :=
+  (isBilimitHomologyMapCoefficientBicone hM hm n).isLimit.conePointUniqueUpToIso
+    (limit.isLimit _)
 
 /-- The component at a generator `x` of `coefficientHomologyIsoOfForallOpSmulEqZero` is the map in
 cohomology of the evaluation at `x`. -/
@@ -294,7 +310,18 @@ cohomology of the evaluation at `x`. -/
 theorem coefficientHomologyIsoOfForallOpSmulEqZero_hom_π (n : ℤ) (x : P) :
     (coefficientHomologyIsoOfForallOpSmulEqZero hM hm n).hom ≫ Pi.π _ x =
       HomologicalComplex.homologyMap (coefficientEval hM hm x) n :=
-  limit.lift_π _ _
+  IsLimit.conePointUniqueUpToIso_hom_comp _ _ (Discrete.mk x)
+
+/-- The inverse of `coefficientHomologyIsoOfForallOpSmulEqZero` is the sum of the maps in
+cohomology of the insertions at the generators. -/
+theorem coefficientHomologyIsoOfForallOpSmulEqZero_inv (n : ℤ) :
+    (coefficientHomologyIsoOfForallOpSmulEqZero hM hm n).inv = ∑ x : P,
+      Pi.π _ x ≫ HomologicalComplex.homologyMap (coefficientSingle hM hm x) n :=
+  (Category.comp_id _).symm.trans <| (congrArg _
+    (IsBilimit.total (isBilimitHomologyMapCoefficientBicone hM hm n)).symm).trans <|
+      (Preadditive.comp_sum _ _ _).trans <| Finset.sum_congr rfl fun x _ ↦
+        (Category.assoc _ _ _).symm.trans <| congrArg (· ≫ _)
+          (IsLimit.conePointUniqueUpToIso_inv_comp _ (limit.isLimit _) (Discrete.mk x))
 
 /-- **The cohomology of a twisted complex whose cocycle acts by zero**, read in the cohomology of
 the coefficients: `Hⁿ(M ⊗ ⟨P⟩) ≅ ∏_x H^{n + ind x}(M)`. -/
@@ -303,6 +330,21 @@ def coefficientHomologyEquivOfForallOpSmulEqZero (n : ℤ) :
       ((x : P) → hM.cohomologyGrading (n + ind x)) :=
   (coefficientHomologyIsoOfForallOpSmulEqZero hM hm n ≪≫ ModuleCat.piIsoPi _).toLinearEquiv ≪≫ₗ
     LinearEquiv.piCongrRight fun x ↦ shiftedModuleComplexHomologyEquiv hM (ind x) n
+
+/-- The component at a generator `x` of `coefficientHomologyEquivOfForallOpSmulEqZero` of a class
+is the class in `H^{n + ind x}(M)` of its image under the evaluation at `x`. -/
+@[simp]
+theorem coefficientHomologyEquivOfForallOpSmulEqZero_apply (n : ℤ)
+    (c : (m.coefficientCochainComplex hM).homology n) (x : P) :
+    coefficientHomologyEquivOfForallOpSmulEqZero hM hm n c x =
+      shiftedModuleComplexHomologyEquiv hM (ind x) n
+        ((HomologicalComplex.homologyMap (coefficientEval hM hm x) n).hom c) := by
+  rw [coefficientHomologyEquivOfForallOpSmulEqZero, LinearEquiv.trans_apply,
+    LinearEquiv.piCongrRight_apply, Iso.toLinearEquiv_apply, Iso.trans_hom,
+    ConcreteCategory.comp_apply]
+  congr 1
+  exact (ModuleCat.piIsoPi_hom_ker_subtype_apply _ x _).trans <| by
+    rw [← ConcreteCategory.comp_apply, coefficientHomologyIsoOfForallOpSmulEqZero_hom_π]
 
 end Homology
 
