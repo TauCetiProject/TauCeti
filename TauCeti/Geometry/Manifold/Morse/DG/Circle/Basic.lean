@@ -501,6 +501,30 @@ theorem loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos
     (congrArg (MoorePath.map θ) (hX.morseLevelPath_circleCosTrajectory
       (hdense circleCosMaxCrit circleCosMinCrit) ε)).trans (toMoorePath_circleCosHalfLoop ..).symm
 
+/-- **The degree-zero entry of the Barraud–Cornea cocycle of the cosine is
+`r₊ [θ ∘ γ₊] + r₋ [θ ∘ γ₋]`**: the sum of the classes in `π₁(Y, y₀)` of the loops traced by `θ`
+along the upper and the lower half-circle, weighted by the coefficients `r₊` and `r₋` of the two
+trajectories from the maximum to the minimum in the `0`-chain of `S`. -/
+theorem loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_single_add_single
+    (hdense : ∀ x y : criticalPoints 𝓘(ℝ) circleCos,
+      Ioo (circleCos y) (circleCos x) ⊆ closure (range c))
+    (hθ : ∀ x : criticalPoints 𝓘(ℝ) circleCos, θ x = y₀)
+    (hc : ∀ i (x : criticalPoints 𝓘(ℝ) circleCos), c i ≠ circleCos x)
+    (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
+    loopChainToGroupAlgebra Y y₀ R ((hX.barraudCorneaCocycle isMorse_circleCos hdense hθ hc S).m
+        circleCosMaxCrit circleCosMinCrit) =
+      MonoidAlgebra.single (MooreLoopSpace.fundamentalGroupHom y₀
+          (circleCosHalfLoop θ (hθ circleCosMaxCrit) (hθ circleCosMinCrit) 1))
+          (NormalizedCubicalChain.zeroEquiv _ R (S.chain circleCosMaxCrit circleCosMinCrit 0)
+            (hX.circleCosTrajectory c 1)) +
+        MonoidAlgebra.single (MooreLoopSpace.fundamentalGroupHom y₀
+          (circleCosHalfLoop θ (hθ circleCosMaxCrit) (hθ circleCosMinCrit) (-1)))
+          (NormalizedCubicalChain.zeroEquiv _ R (S.chain circleCosMaxCrit circleCosMinCrit 0)
+            (hX.circleCosTrajectory c (-1))) := by
+  rw [hX.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos hdense hθ hc S,
+    Fintype.sum_eq_add 1 (-1) (by decide) fun ε hε ↦
+      ((Int.units_eq_one_or ε).elim hε.1 hε.2).elim]
+
 /-- **The degree-zero entry of the Barraud–Cornea cocycle of the cosine is `[θ ∘ γ₊] + [θ ∘ γ₋]`**
 when `S` gives both trajectories from the maximum to the minimum the coefficient `1`, as the
 mod-two fundamental chain of the two-point trajectory space does: the sum of the classes in
@@ -519,9 +543,8 @@ theorem loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_of_forall_eq_on
           (circleCosHalfLoop θ (hθ circleCosMaxCrit) (hθ circleCosMinCrit) 1)) 1 +
         MonoidAlgebra.single (MooreLoopSpace.fundamentalGroupHom y₀
           (circleCosHalfLoop θ (hθ circleCosMaxCrit) (hθ circleCosMinCrit) (-1))) 1 := by
-  rw [hX.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos hdense hθ hc S,
-    Fintype.sum_eq_add 1 (-1) (by decide) fun ε hε ↦
-      ((Int.units_eq_one_or ε).elim hε.1 hε.2).elim]
+  rw [hX.loopChainToGroupAlgebra_barraudCorneaCocycle_m_circleCos_eq_single_add_single hdense hθ hc
+    S]
   exact congrArg₂ (· + ·) (congrArg _ (hS _)) (congrArg _ (hS _))
 
 /-- **The degree-zero entry of the Barraud–Cornea cocycle of the cosine is `(1 + t) g`.** When `S`
