@@ -328,36 +328,6 @@ theorem exists_volterra_solution_on [CompleteSpace E] (hI : I.OrdConnected)
     fun _ hx ↦ tsum_picardTermOn_eq hI hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ hx,
     fun _ hx ↦ norm_tsum_picardTermOn_le hI hK hJ hψ hP hQ hP0 hQ0 hKle hΦ hΨ hx⟩
 
-/-- **Volterra integral equations, existence.** Let `K` be continuous on
-`{(x, v) | a < x ≤ v}` with `‖K x v‖ ≤ P x * Q v` there, where `P, Q ≥ 0` are continuous on
-`(a, ∞)`, and let `J`, `ψ` be continuous on `(a, ∞)` such that
-`Φ x = ∫ v in Ioi x, Q v * ‖J v‖` and `Ψ x = ∫ v in Ioi x, P v * Q v * ‖ψ v‖` converge for
-every `x > a`. Then the Volterra integral equation
-`h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)` has a solution, continuous on `(a, ∞)`, such
-that `‖h x‖ ≤ P x * Φ x * exp (Ψ x)` for every `x > a` (the existence part of Olver, Chapter 6,
-Theorem 10.1). -/
-theorem exists_volterra_solution [CompleteSpace E] {a : ℝ}
-    (hK : ContinuousOn (uncurry K) {p | a < p.1 ∧ p.1 ≤ p.2})
-    (hJ : ContinuousOn J (Ioi a)) (hψ : ContinuousOn ψ (Ioi a))
-    (hP : ContinuousOn P (Ioi a)) (hQ : ContinuousOn Q (Ioi a))
-    (hP0 : ∀ x ∈ Ioi a, 0 ≤ P x) (hQ0 : ∀ x ∈ Ioi a, 0 ≤ Q x)
-    (hKle : ∀ x v, a < x → x ≤ v → ‖K x v‖ ≤ P x * Q v)
-    (hΦ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ Q v * ‖J v‖) (Ioi x))
-    (hΨ : ∀ x ∈ Ioi a, IntegrableOn (fun v ↦ P v * Q v * ‖ψ v‖) (Ioi x)) :
-    ∃ h : ℝ → E, ContinuousOn h (Ioi a) ∧
-      (∀ x ∈ Ioi a, h x = ∫ v in Ioi x, K x v • (J v + ψ v • h v)) ∧
-      ∀ x ∈ Ioi a, ‖h x‖ ≤ P x * (∫ v in Ioi x, Q v * ‖J v‖) *
-        Real.exp (∫ v in Ioi x, P v * Q v * ‖ψ v‖) := by
-  have hIoi (x : ℝ) (hx : a < x) : Ioi a ∩ Ioi x = Ioi x :=
-    inter_eq_right.2 (Ioi_subset_Ioi hx.le)
-  obtain ⟨h, hcont, heq, hle⟩ := exists_volterra_solution_on ordConnected_Ioi
-    (hK.mono fun _ hp ↦ ⟨hp.1, hp.2.2⟩) hJ hψ hP hQ hP0 hQ0 (fun x hx v _ hxv ↦ hKle x v hx hxv)
-    (fun x hx ↦ by simpa only [hIoi x hx] using hΦ x hx)
-    (fun x hx ↦ by simpa only [hIoi x hx] using hΨ x hx)
-  exact ⟨h, hcont, fun x hx ↦ by simpa only [hIoi x hx] using heq x hx,
-    fun x hx ↦ by simpa only [hIoi x hx] using hle x hx⟩
-
-
 /-! ### Growth, uniqueness, and sharper exponential bounds -/
 
 omit [NormedSpace 𝕜 E] [NormedSpace ℝ E] in
