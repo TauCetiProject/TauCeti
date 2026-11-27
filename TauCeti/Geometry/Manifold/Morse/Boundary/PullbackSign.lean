@@ -18,7 +18,9 @@ intertwines. Orientation data `𝔬'` for `(f', X')` pull back to orientation da
 (`TauCeti.MorseOrientation.pullback`). This file compares the signs of the integral Morse complex
 for the two:
 
-* the augmentation signs agree (`TauCeti.MorseOrientation.augmentationSign_pullback`);
+* the augmentation signs agree (`TauCeti.MorseOrientation.augmentationSign_pullback`), so the
+  bijection of critical points induced by `σ` intertwines the augmentations
+  (`TauCeti.MorseOrientation.signedMorseAugmentation_comp_domLCongr`);
 * the fundamental signs agree when `σ` preserves the orientations of the manifolds
   (`TauCeti.IsAdaptedPseudoGradient.fundamentalSign_pullback`): the derivative of `σ` carries the
   unstable frames of the pullback to those of `X'`.
@@ -26,6 +28,8 @@ for the two:
 ## Main results
 
 * `TauCeti.MorseOrientation.augmentationSign_pullback`: augmentation signs pull back.
+* `TauCeti.MorseOrientation.signedMorseAugmentation_comp_domLCongr`: the augmentations are natural
+  under diffeomorphisms.
 * `TauCeti.IsAdaptedPseudoGradient.fundamentalSign_pullback`: fundamental signs pull back along
   orientation-preserving diffeomorphisms.
 
@@ -78,6 +82,17 @@ theorem MorseOrientation.augmentationSign_pullback (p : criticalPoints 𝓘(ℝ,
     exact congrArg _ (Orientation.signBasis_reindex _ _ _)
   · rw [augmentationSign_of_morseIndex_ne_zero _ hp,
       augmentationSign_of_morseIndex_ne_zero _ (hind ▸ hp)]
+
+omit [FiniteDimensional ℝ E] [CompactSpace M] [T2Space M] [CompactSpace M'] [T2Space M'] in
+/-- **The augmentations are natural**: the bijection between the critical points of `f` and of
+`f'` induced by `σ` intertwines the augmentation of the pulled-back orientation data with that of
+`𝔬'`, over every ring of coefficients. -/
+theorem MorseOrientation.signedMorseAugmentation_comp_domLCongr (R : Type*) [Ring R] :
+    𝔬'.signedMorseAugmentation R ∘ₗ
+        (Finsupp.domLCongr (criticalPointsEquivOfComp hf)).toLinearMap =
+      (𝔬'.pullback hf hσX).signedMorseAugmentation R :=
+  Finsupp.lhom_ext fun p a ↦ by
+    simp [MorseOrientation.augmentationSign_pullback]
 
 variable {hX : IsAdaptedPseudoGradient f X} {hX' : IsAdaptedPseudoGradient f' X'}
 

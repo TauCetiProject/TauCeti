@@ -97,6 +97,8 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
 * `LinearMap.IsHomogeneous.isHomogeneous_ker` and
   `LinearMap.IsHomogeneous.isHomogeneous_range`: the kernel and the image of a homogeneous
   map are homogeneous submodules.
+* `LinearMap.IsHomogeneous.map_piece_eq_inf_range`: a homogeneous map of degree `r` carries the
+  degree-`p` piece onto the degree-`(p + r)` part of its image.
 * `TauCeti.exists_relative_boundary_of_forall_homogeneous`: for maps of graded modules with
   homogeneous differentials, relative cycles modulo homogeneous submodules are relative boundaries
   once the homogeneous ones are.
@@ -552,6 +554,16 @@ theorem _root_.LinearMap.IsHomogeneous.mem_of_injective
   exact hxp ▸ SetLike.coe_mem _
 
 variable {G : InternalGrading R M ι} {H : InternalGrading R N ι}
+
+/-- A homogeneous linear map of degree `r` carries the degree-`p` piece onto the elements of its
+image of degree `p + r`. -/
+theorem _root_.LinearMap.IsHomogeneous.map_piece_eq_inf_range {g : M →ₗ[R] N}
+    (hg : LinearMap.IsHomogeneous g G.piece H.piece r) (p : ι) :
+    (G.piece p).map g = H.piece (p + r) ⊓ _root_.LinearMap.range g := by
+  refine le_antisymm (fun _ ⟨x, hx, hgx⟩ ↦ ⟨hgx ▸ hg.map_mem hx, x, hgx⟩) ?_
+  rintro y ⟨hy, x, rfl⟩
+  exact ⟨DirectSum.decompose G.piece x p, SetLike.coe_mem _, by
+    rw [hg.map_decompose, DirectSum.decompose_of_mem_same H.piece hy]⟩
 
 /-- The kernel of a homogeneous linear map is a homogeneous submodule. -/
 theorem _root_.LinearMap.IsHomogeneous.isHomogeneous_ker

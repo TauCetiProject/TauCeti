@@ -129,9 +129,8 @@ points, by `HomotopyGroup.map` of the identity. -/
 theorem ofHomotopyGroup_map_id {x y : X} (h : ContinuousMap.id X x = y)
     (a : HomotopyGroup (Fin 2) X x) :
     ofHomotopyGroup ω c y (Additive.ofMul (HomotopyGroup.map (ContinuousMap.id X) h a)) =
-      ofHomotopyGroup ω c x (Additive.ofMul a) := by
-  obtain rfl : x = y := h
-  exact congrArg _ (congrArg _ (HomotopyGroup.map_id_apply a))
+      ofHomotopyGroup ω c x (Additive.ofMul a) :=
+  HomotopyGroup.apply_map_id (fun y b => ofHomotopyGroup ω c y (Additive.ofMul b)) h a
 
 /-- **On a path-connected space every class of the period group is the class of a sphere** at any
 given base point. -/

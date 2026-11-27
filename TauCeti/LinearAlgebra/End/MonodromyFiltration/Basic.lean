@@ -37,6 +37,8 @@ quotients: for each `r ≥ 0`, `N ^ r (F (c + r)) ⊔ F (c - r - 1) = F (c - r)`
   two steps by `N`, for which the powers of `N` induce isomorphisms between the graded pieces
   placed symmetrically about the centre `c`.
 * `Module.End.IsMonodromyFiltration.unique`: over any semiring, such a filtration is unique.
+* `Module.End.IsMonodromyFiltration.isNilpotent`: an endomorphism with a monodromy filtration is
+  nilpotent.
 * `Module.End.map_pow_monodromyFiltration_sup`: the powers of `N` are surjective on the graded
   pieces of the kernel-image filtration, for any endomorphism of any module.
 * `Module.End.JordanChainBasis.monodromyFiltration_eq_span`: in a Jordan-chain basis, the
@@ -142,6 +144,16 @@ theorem map_pow_ker_pow_inf_range_pow (i k j : ℕ) :
       rwa [show i + k + 1 + j = i + 1 + (j + k) by ring]
     · rw [← _root_.mul_apply_eq_comp, ← pow_add, add_comm]
 
+/-- If `N` lowers a `ℤ`-indexed family of submodules by two steps, the power `N ^ k` lowers it by
+`2 k` steps. -/
+theorem map_pow_le_of_map_le {N : Module.End R V} {F : ℤ → Submodule R V}
+    (h : ∀ a, (F a).map N ≤ F (a - 2)) (k : ℕ) (a : ℤ) : (F a).map (N ^ k) ≤ F (a - 2 * k) := by
+  induction k with
+  | zero => simp [Module.End.one_eq_id]
+  | succ k ih =>
+    rw [pow_succ', Module.End.mul_eq_comp, map_comp]
+    exact (map_mono ih).trans ((h _).trans_eq (by congr 1; push_cast; ring))
+
 /-- The endomorphism `N` lowers the monodromy filtration by two steps. -/
 theorem map_monodromyFiltration_le (a : ℤ) :
     (N.monodromyFiltration a).map N ≤ N.monodromyFiltration (a - 2) := by
@@ -158,15 +170,8 @@ theorem map_monodromyFiltration_le (a : ℤ) :
 
 /-- The power `N ^ k` lowers the monodromy filtration by `2 k` steps. -/
 theorem map_pow_monodromyFiltration_le (k : ℕ) (a : ℤ) :
-    (N.monodromyFiltration a).map (N ^ k) ≤ N.monodromyFiltration (a - 2 * k) := by
-  induction k with
-  | zero => simp [Module.End.one_eq_id]
-  | succ k ih =>
-    rw [pow_succ', Module.End.mul_eq_comp, map_comp]
-    refine (map_mono ih).trans ((N.map_monodromyFiltration_le _).trans_eq ?_)
-    congr 1
-    push_cast
-    ring
+    (N.monodromyFiltration a).map (N ^ k) ≤ N.monodromyFiltration (a - 2 * k) :=
+  map_pow_le_of_map_le N.map_monodromyFiltration_le k a
 
 /-- If `N ^ (d + 1) = 0`, the monodromy filtration vanishes at and below `-d - 1`. -/
 theorem monodromyFiltration_eq_bot_of_le {d : ℕ} (hd : N ^ (d + 1) = 0) {a : ℤ}
@@ -240,6 +245,26 @@ theorem exists_eq_top_and_eq_bot (hF : N.IsMonodromyFiltration c F) :
   refine ⟨(b₀ - c).toNat + (c - a₀).toNat, fun a => ⟨fun ha => ?_, fun ha => ?_⟩⟩
   · exact eq_top_iff.2 (hb₀ ▸ hF.monotone (by omega))
   · exact eq_bot_iff.2 (ha₀ ▸ hF.monotone (by omega))
+
+/-- The power `N ^ k` lowers a monodromy filtration by `2 k` steps. -/
+theorem map_pow_le (hF : N.IsMonodromyFiltration c F) (k : ℕ) (a : ℤ) :
+    (F a).map (N ^ k) ≤ F (a - 2 * k) :=
+  map_pow_le_of_map_le hF.map_le k a
+
+/-- The power `N ^ k` sends the step `a` of a monodromy filtration into every step `b` with
+`a - 2 k ≤ b`. -/
+theorem le_comap_pow (hF : N.IsMonodromyFiltration c F) {k : ℕ} {a b : ℤ} (h : a - 2 * k ≤ b) :
+    F a ≤ (F b).comap (N ^ k) :=
+  map_le_iff_le_comap.1 ((hF.map_pow_le k a).trans (hF.monotone h))
+
+/-- An endomorphism with a monodromy filtration is nilpotent: a power of `N` lowers the step
+where the filtration is everything to a step where it vanishes. -/
+theorem isNilpotent (hF : N.IsMonodromyFiltration c F) : IsNilpotent N := by
+  obtain ⟨a, ha⟩ := hF.exists_eq_bot
+  obtain ⟨b, hb⟩ := hF.exists_eq_top
+  refine ⟨(b - a).toNat, LinearMap.range_eq_bot.1 (eq_bot_iff.2 ?_)⟩
+  rw [← Submodule.map_top, ← hb, ← ha]
+  exact (hF.map_pow_le _ b).trans (hF.monotone (by omega))
 
 /-- A monodromy filtration of `N` centred at `c` is unique. -/
 theorem unique (hF : N.IsMonodromyFiltration c F) (hG : N.IsMonodromyFiltration c G) :
