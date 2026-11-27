@@ -90,6 +90,11 @@ theorem typeTrace_apply (Φ : CMType E) (a : E) :
     Φ.typeTrace a = ∑ᶠ φ ∈ (Φ : Set (E →+* ℂ)), φ a :=
   (rfl)
 
+/-- For a CM type consisting of the single embedding `φ`, the type trace is `φ`. -/
+theorem typeTrace_eq_of_coe_eq_singleton {Φ : CMType E} {φ : E →+* ℂ}
+    (hΦ : (Φ : Set (E →+* ℂ)) = {φ}) (a : E) : Φ.typeTrace a = φ a := by
+  rw [typeTrace_apply, hΦ, finsum_mem_singleton]
+
 /-- The type trace as a finite sum over the embeddings in the type. -/
 theorem typeTrace_eq_sum [Fintype (E →+* ℂ)] (Φ : CMType E) [DecidablePred (· ∈ Φ)] (a : E) :
     Φ.typeTrace a = ∑ φ with φ ∈ Φ, φ a := by
@@ -307,8 +312,8 @@ theorem finrank_reflexField_of_finrank_eq_two (Φ : CMType K) (h : Module.finran
   obtain ⟨⟨φ, hmem⟩, huniq⟩ := Nat.card_eq_one_iff_exists.1 hcard
   have hΦ : (Φ : Set (K →+* ℂ)) = {φ} := Set.eq_singleton_iff_unique_mem.2
     ⟨hmem, fun ψ hψ ↦ congrArg Subtype.val (huniq ⟨ψ, hψ⟩)⟩
-  have htrace (x : K) : Φ.typeTrace x = φ.toRatAlgHom x := by
-    rw [typeTrace_apply, hΦ, finsum_mem_singleton, RingHom.toRatAlgHom_apply]
+  have htrace (x : K) : Φ.typeTrace x = φ.toRatAlgHom x :=
+    typeTrace_eq_of_coe_eq_singleton hΦ x
   have hrange : Φ.reflexField = φ.toRatAlgHom.fieldRange := by
     refine le_antisymm (reflexField_le_iff.2 fun x ↦ ⟨x, (htrace x).symm⟩) ?_
     rintro _ ⟨x, rfl⟩

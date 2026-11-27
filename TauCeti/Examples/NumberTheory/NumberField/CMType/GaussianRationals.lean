@@ -7,13 +7,14 @@ module
 
 public import Mathlib.NumberTheory.Cyclotomic.PrimitiveRoots
 public import Mathlib.RingTheory.RootsOfUnity.Complex
-public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
+public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Norm
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 
 /-!
-# CM types and the reflex field of `ℚ(i)`
+# CM types, the reflex field and the reflex norm of `ℚ(i)`
 
-This file checks the CM-type and reflex-field API of `TauCeti.CMType` on `ℚ(i)`, modelled as the
+This file checks the CM-type, reflex-field and reflex-norm API of `TauCeti.CMType` on `ℚ(i)`,
+modelled as the
 fourth cyclotomic field `CyclotomicField 4 ℚ` with its primitive fourth root of unity `ζ = i`.
 
 The embeddings of `ℚ(i)` are `i ↦ I` and `i ↦ -I`
@@ -25,6 +26,11 @@ at least one embedding from each conjugate pair would accept the full set. For `
 type trace of `i` is `I` (`typeTrace_Φ_ζ`), so the reflex field is `ℚ(I) ⊆ ℂ` (`reflexField_Φ`)
 and is not `ℚ` (`reflexField_Φ_ne_bot`), while the full trace of `i` vanishes (`trace_ζ`), unlike
 its type trace.
+
+The reflex norm `N_Φ : E* → E` inverts the selected embedding: `N_Φ(φ c) = c` (`reflexNorm_Φ`), so
+`N_Φ(2 + I) = 2 + i` (`reflexNorm_Φ_two_add_I`). For the complementary type `ιΦ = {i ↦ -I}`,
+`N_{ιΦ}(2 + I) = 2 - i` (`reflexNorm_star_Φ_two_add_I`), the conjugate of `N_Φ(2 + I)`; in
+particular the two norms differ (`reflexNorm_star_Φ_two_add_I_ne`).
 -/
 
 public section
@@ -93,11 +99,14 @@ noncomputable def Φ : CMType K := CMType.ofPair φ star_φ_ne_self eq_or_eq_sta
 theorem coe_Φ : (Φ : Set (K →+* ℂ)) = {φ} :=
   CMType.coe_ofPair _ _ _
 
+theorem coe_star_Φ : ((star Φ : CMType K) : Set (K →+* ℂ)) = {star φ} := by
+  rw [CMType.coe_star_eq_image, coe_Φ, Set.image_singleton]
+
 /-- **Each singleton of an embedding of `ℚ(i)` is a CM type.** -/
 theorem exists_coe_eq_singleton (ψ : K →+* ℂ) : ∃ Ψ : CMType K, (Ψ : Set (K →+* ℂ)) = {ψ} := by
   rcases eq_or_eq_star ψ with rfl | rfl
   · exact ⟨Φ, coe_Φ⟩
-  · exact ⟨star Φ, by simp [Φ]⟩
+  · exact ⟨star Φ, coe_star_Φ⟩
 
 /-- **Every CM type of `ℚ(i)` has one embedding.** -/
 theorem natCard_eq_one (Ψ : CMType K) : Nat.card Ψ = 1 := by
@@ -115,7 +124,7 @@ example (Ψ : CMType K) : (Ψ : Set (K →+* ℂ)) ≠ ∅ := Ψ.coe_ne_empty
 /-- **The type trace of `{i ↦ I}` at `i` is `I`.** -/
 @[simp]
 theorem typeTrace_Φ_ζ : Φ.typeTrace ζ = Complex.I := by
-  rw [CMType.typeTrace_apply, coe_Φ, finsum_mem_singleton, φ_ζ]
+  rw [CMType.typeTrace_eq_of_coe_eq_singleton coe_Φ, φ_ζ]
 
 /-- The full trace of `i` vanishes, whereas its type trace for `{i ↦ I}` is `I`
 (`typeTrace_Φ_ζ`). -/
@@ -128,7 +137,7 @@ theorem trace_ζ : Algebra.trace ℚ K ζ = 0 := by
 theorem reflexField_Φ : Φ.reflexField = ℚ⟮Complex.I⟯ := by
   refine le_antisymm (CMType.reflexField_le_iff.2 fun a ↦ ?_)
     (adjoin_simple_le_iff.2 (typeTrace_Φ_ζ ▸ Φ.typeTrace_mem_reflexField ζ))
-  rw [CMType.typeTrace_apply, coe_Φ, finsum_mem_singleton]
+  rw [CMType.typeTrace_eq_of_coe_eq_singleton coe_Φ]
   have ha : a ∈ Algebra.adjoin ℚ {ζ} := by
     rw [IsCyclotomicExtension.adjoin_primitive_root_eq_top isPrimitiveRoot_ζ]
     trivial
@@ -143,6 +152,38 @@ theorem reflexField_Φ_ne_bot : Φ.reflexField ≠ ⊥ := by
   rw [h, mem_bot] at hI
   obtain ⟨q, hq⟩ := hI
   have := congrArg Complex.im hq
+  simp at this
+
+theorem φ_two_add_ζ : φ (2 + ζ) = 2 + Complex.I := by
+  simp [map_ofNat]
+
+theorem star_φ_two_sub_ζ : star φ (2 - ζ) = 2 + Complex.I := by
+  simp [RingHom.star_apply, map_sub, φ_ζ, map_ofNat]
+
+/-- **`N_Φ` inverts the selected embedding** `φ : i ↦ I`. -/
+theorem reflexNorm_Φ {a : Φ.reflexField} {c : K} (ha : (a : ℂ) = φ c) :
+    Φ.reflexNorm le_rfl a = c :=
+  CMType.reflexNorm_apply_of_coe_eq_singleton coe_Φ ha
+
+/-- **The Check `N_Φ(2 + I) = 2 + i`.** -/
+theorem reflexNorm_Φ_two_add_I (h : 2 + Complex.I ∈ Φ.reflexField) :
+    Φ.reflexNorm le_rfl ⟨2 + Complex.I, h⟩ = 2 + ζ :=
+  reflexNorm_Φ φ_two_add_ζ.symm
+
+/-- **The Check `N_{ιΦ}(2 + I) = 2 - i`.** -/
+theorem reflexNorm_star_Φ_two_add_I (h : 2 + Complex.I ∈ (star Φ).reflexField) :
+    (star Φ).reflexNorm le_rfl ⟨2 + Complex.I, h⟩ = 2 - ζ :=
+  CMType.reflexNorm_apply_of_coe_eq_singleton coe_star_Φ star_φ_two_sub_ζ.symm
+
+/-- The norms of `Φ` and `ιΦ` differ: `N_{ιΦ}(2 + I) ≠ 2 + i`. -/
+theorem reflexNorm_star_Φ_two_add_I_ne (h : 2 + Complex.I ∈ (star Φ).reflexField) :
+    (star Φ).reflexNorm le_rfl ⟨2 + Complex.I, h⟩ ≠ 2 + ζ := by
+  rw [reflexNorm_star_Φ_two_add_I]
+  intro hne
+  have : φ ζ = 0 := by
+    have := congrArg φ hne
+    simp only [map_sub, map_add] at this
+    linear_combination -this / 2
   simp at this
 
 end TauCeti.GaussianRationalsCMType
