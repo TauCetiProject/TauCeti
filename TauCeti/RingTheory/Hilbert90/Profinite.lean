@@ -161,8 +161,7 @@ theorem IsTameAtLevel.exists_mul_map_eq_of_prod_eq_one_of_isProfiniteRing
   · exact dvd_ultralimUnitsHom_sub_one hg_one
   · calc ((x * Units.map (σ : R →* R) G : Rˣ) : R)
         = Λ (fun N ↦ facMk N (x : R)) * Λ (fun N ↦ quotSigma σ N (g N)) := by
-          rw [Units.val_mul, Units.coe_map, MonoidHom.coe_ofClass, ultralimRingHom_mk,
-            ← RingHom.map_ultralimRingHom, ← hG]
+          simp [hG, Λ, RingHom.map_ultralimRingHom]
       _ = G := by rw [← map_mul, hG]; exact congrArg Λ (funext hg)
 
 /-- **Surjectivity of the orbit product on `σ`-fixed units at congruence level `m` over a profinite
