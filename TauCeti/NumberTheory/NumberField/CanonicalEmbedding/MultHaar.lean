@@ -95,7 +95,8 @@ theorem map_mixedMultHaar_mul_left {c : mixedSpace K} (hc : mixedEmbedding.norm 
     rw [map_complexMultHaar_mul_left (h2 w)]
     infer_instance
   have hmul : (c * · : mixedSpace K → mixedSpace K) =
-      Prod.map (fun x w ↦ c.1 w * x w) (fun x w ↦ c.2 w * x w) := rfl
+      Prod.map (fun x w ↦ c.1 w * x w) (fun x w ↦ c.2 w * x w) := by
+    ext x w <;> simp
   rw [hmul, mixedMultHaar_def, ← map_prod_map _ _ (by fun_prop) (by fun_prop),
     pi_map_pi fun w ↦ (measurable_const_mul (c.1 w)).aemeasurable,
     pi_map_pi fun w ↦ (measurable_const_mul (c.2 w)).aemeasurable]
