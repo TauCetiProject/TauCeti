@@ -106,17 +106,20 @@ theorem momentNormSq_apply (μ : M → Module.Dual ℝ 𝔤) (K : Module.Dual �
     momentNormSq μ K x = μ x (K (μ x)) :=
   (rfl)
 
+/-- Expanding `ν` in the dual basis of a finite basis `b` of `𝔤`:
+`Σ i, ⟨ν, b i⟩ ⟨D, K (b.coord i)⟩ = ⟨D, K ν⟩`. -/
+private theorem sum_apply_mul_apply_coord {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ 𝔤)
+    (K : Module.Dual ℝ 𝔤 →ₗ[ℝ] 𝔤) (ν D : Module.Dual ℝ 𝔤) :
+    ∑ i, ν (b i) * D (K (b.coord i)) = D (K ν) := by
+  conv_rhs => rw [← b.sum_dual_apply_smul_coord ν]
+  simp only [map_sum, map_smul, smul_eq_mul]
+
 /-- Expanding `μ x` in the dual basis of a finite basis `b` of `𝔤` writes the norm square as
 `Σ i, ⟨μ x, b i⟩ ⟨μ x, K (b.coord i)⟩`, a sum of products of components of `μ`. -/
 private theorem momentNormSq_eq_sum {ι : Type*} [Fintype ι] (b : Module.Basis ι ℝ 𝔤)
     (μ : M → Module.Dual ℝ 𝔤) (K : Module.Dual ℝ 𝔤 →ₗ[ℝ] 𝔤) :
-    momentNormSq μ K = fun x ↦ ∑ i, μ x (b i) * μ x (K (b.coord i)) := by
-  ext x
-  have hK : K (μ x) = ∑ i, μ x (b i) • K (b.coord i) := by
-    conv_lhs => rw [← b.sum_dual_apply_smul_coord (μ x)]
-    simp only [map_sum, map_smul]
-  rw [momentNormSq_apply, hK, map_sum]
-  simp only [map_smul, smul_eq_mul]
+    momentNormSq μ K = fun x ↦ ∑ i, μ x (b i) * μ x (K (b.coord i)) :=
+  funext fun x ↦ (sum_apply_mul_apply_coord b K (μ x) (μ x)).symm
 
 end Defs
 
@@ -163,14 +166,10 @@ theorem mvfderiv_momentNormSq (h : σ.IsMomentMap a μ)
     ← h.differential_apply, Finset.sum_add_distrib]
   -- Both sums are the component of `dμ_x v` along `K (μ x)`.
   set D := h.differential x v
-  have h₁ : ∑ i, μ x (b i) * D (K (b.coord i)) = D (K (μ x)) := by
-    conv_rhs => rw [← b.sum_dual_apply_smul_coord (μ x)]
-    simp only [map_sum, map_smul, smul_eq_mul]
   have h₂ : ∑ i, μ x (K (b.coord i)) * D (b i) = D (K (μ x)) := by
-    conv_rhs => rw [hK, ← b.sum_dual_apply_smul_coord D]
-    simp only [map_sum, map_smul, smul_eq_mul]
+    rw [hK D, ← sum_apply_mul_apply_coord b K D (μ x)]
     exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
-  rw [h₁, h₂, h.differential_apply]
+  rw [sum_apply_mul_apply_coord, h₂, h.differential_apply]
   ring
 
 /-- **The differential of the norm square of a moment map, through `σ`.** For a symmetric `K`,
