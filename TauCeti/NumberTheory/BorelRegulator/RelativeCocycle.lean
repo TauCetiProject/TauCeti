@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Cohomology.Relative
+public import TauCeti.Algebra.Lie.Cohomology.Relative.Basic
 public import TauCeti.Algebra.Lie.Unitary
 public import TauCeti.Analysis.Complex.TateLine
 import Mathlib.Algebra.Star.UnitaryStarAlgAut
