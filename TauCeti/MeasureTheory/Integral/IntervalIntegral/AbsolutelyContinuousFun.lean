@@ -37,7 +37,9 @@ fundamental-theorem results to curves.
   derivative of an absolutely continuous curve in a finite-dimensional space is interval
   integrable.
 * `AbsolutelyContinuousOnInterval.integral_eq_sub_of_ae_hasDerivAt`: the fundamental theorem for
-  the almost-everywhere derivative of an absolutely continuous curve in finite dimension.
+  the almost-everywhere derivative of an absolutely continuous curve in finite dimension;
+  `AbsolutelyContinuousOnInterval.integral_eq_sub_of_ae_hasDerivAt_of_intervalIntegrable` is the
+  same in any real Banach space for an interval integrable derivative.
 * `AbsolutelyContinuousOnInterval.intervalIntegrable_deriv_of_finiteDimensional` and
   `AbsolutelyContinuousOnInterval.integral_deriv_eq_sub_of_finiteDimensional`: integrability and
   the fundamental theorem for the canonical derivative of such a curve.
@@ -51,7 +53,8 @@ fundamental-theorem results to curves.
   with an integrable derivative off a countable set is absolutely continuous.
 * `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral'`: indefinite integrals
   with base point in the integrability interval are absolutely continuous in any real normed space;
-  `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_left` and
+  `IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_left`,
+  `MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left` and
   `IntervalIntegrable.ae_hasDerivAt_intervalIntegral_left` treat a variable lower limit, and
   `IntervalIntegrable.comp_intervalIntegral_left_eq_add_integral` is the resulting chain rule for
   `φ (∫ r in s..c, k r)`.
@@ -124,15 +127,24 @@ theorem intervalIntegrable_deriv_of_finiteDimensional [FiniteDimensional ℝ F]
   filter_upwards [hγ.boundedVariationOn.ae_differentiableAt_of_mem_uIcc] with t ht hmem
   exact (ht (uIoc_subset_uIcc hmem)).hasDerivAt
 
+/-- The fundamental theorem of calculus for an interval integrable almost-everywhere derivative of
+an absolutely continuous curve in a real Banach space. -/
+theorem integral_eq_sub_of_ae_hasDerivAt_of_intervalIntegrable [CompleteSpace F]
+    (hγ : AbsolutelyContinuousOnInterval γ a b)
+    (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (V t) t) (hVi : IntervalIntegrable V volume a b) :
+    ∫ t in a..b, V t = γ b - γ a := by
+  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun g ↦ ?_
+  rw [← g.intervalIntegral_comp_comm hVi, map_sub]
+  simpa [g.fderiv] using hγ.integral_fderiv_apply_eq_sub hV g.contDiff
+
 /-- The fundamental theorem of calculus for the almost-everywhere derivative of an absolutely
 continuous curve in a finite-dimensional real normed space. -/
 theorem integral_eq_sub_of_ae_hasDerivAt [FiniteDimensional ℝ F]
     (hγ : AbsolutelyContinuousOnInterval γ a b)
     (hV : ∀ᵐ t, t ∈ uIoc a b → HasDerivAt γ (V t) t) :
-    ∫ t in a..b, V t = γ b - γ a := by
-  refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun g ↦ ?_
-  rw [← g.intervalIntegral_comp_comm (hγ.intervalIntegrable_of_ae_hasDerivAt hV), map_sub]
-  simpa [g.fderiv] using hγ.integral_fderiv_apply_eq_sub hV g.contDiff
+    ∫ t in a..b, V t = γ b - γ a :=
+  hγ.integral_eq_sub_of_ae_hasDerivAt_of_intervalIntegrable hV
+    (hγ.intervalIntegrable_of_ae_hasDerivAt hV)
 
 /-- The fundamental theorem of calculus for an absolutely continuous curve in a
 finite-dimensional real normed space. -/
@@ -302,6 +314,18 @@ theorem IntervalIntegrable.absolutelyContinuousOnInterval_intervalIntegral_left
     AbsolutelyContinuousOnInterval (fun t ↦ ∫ v in t..c, f v) a b := by
   simpa only [intervalIntegral.integral_symm c, Pi.neg_def] using
     (hf.absolutelyContinuousOnInterval_intervalIntegral' hc).neg
+
+/-- An interval integral `s ↦ ∫ r in s..b, f r` with variable lower limit is continuous on
+`[a, b]` when `f` is integrable on `[a, b]`. This is the `Icc` form of Mathlib's
+`intervalIntegral.continuousOn_primitive_interval_left`. -/
+theorem MeasureTheory.IntegrableOn.continuousOn_intervalIntegral_left
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : ℝ → F} {a b : ℝ} (hf : IntegrableOn f (Icc a b)) :
+    ContinuousOn (fun s ↦ ∫ r in s..b, f r) (Icc a b) := by
+  rcases le_or_gt a b with hab | hab
+  · rw [← uIcc_of_le hab] at hf ⊢
+    exact intervalIntegral.continuousOn_primitive_interval_left hf
+  · simp [Icc_eq_empty_of_lt hab]
 
 /-- An interval integral with variable lower limit has derivative `-f t` at almost every `t` of
 the integrability interval, provided its fixed upper limit belongs to that interval. -/

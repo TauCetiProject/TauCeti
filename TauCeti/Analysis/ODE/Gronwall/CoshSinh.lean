@@ -96,11 +96,8 @@ theorem le_cosh_and_le_sinh_of_le_integral (hk : IntegrableOn k (Icc a b))
     (hAB : ∀ s ∈ Icc a b, A s ≤ 1 + ∫ r in s..b, k r * B r)
     (hBA : ∀ s ∈ Icc a b, B s ≤ ∫ r in s..b, k r * A r) {s : ℝ} (hs : s ∈ Icc a b) :
     A s ≤ Real.cosh (∫ r in s..b, k r) ∧ B s ≤ Real.sinh (∫ r in s..b, k r) := by
-  have hab : a ≤ b := hs.1.trans hs.2
   set L : ℝ → ℝ := fun s ↦ ∫ r in s..b, k r
-  have hLc : ContinuousOn L (Icc a b) := by
-    simpa [uIcc_of_le hab] using (((intervalIntegrable_iff_integrableOn_Icc_of_le hab).2 hk
-      ).absolutelyContinuousOnInterval_intervalIntegral_left right_mem_uIcc).continuousOn
+  have hLc : ContinuousOn L (Icc a b) := hk.continuousOn_intervalIntegral_left
   have hcosh : ContinuousOn (fun r ↦ Real.cosh (L r)) (Icc a b) :=
     Real.continuous_cosh.comp_continuousOn hLc
   have hsinh : ContinuousOn (fun r ↦ Real.sinh (L r)) (Icc a b) :=
