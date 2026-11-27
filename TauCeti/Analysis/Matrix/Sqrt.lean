@@ -44,9 +44,9 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   rank;
 * `Matrix.PosSemidef.sqrt_mul_transpose_sqrt` — over the reals, the square root times its
   transpose recovers the matrix;
+* `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
 * `Matrix.sqrt_diagonal_ofReal` — the square root of a diagonal matrix with nonnegative real
   entries is computed entry by entry, with the real form `Matrix.sqrt_diagonal`;
-* `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
 * `Matrix.PosSemidef.inv_sqrt_mul_inv_sqrt` — the inverse square root squares to the inverse;
