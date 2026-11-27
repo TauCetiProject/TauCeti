@@ -64,13 +64,6 @@ namespace CochainComplex
 
 variable {X : TopCat.{u}} {R : Type u} [Ring R]
 
-private lemma isZero_sheafPresheaf_obj_X
-    (K : CochainComplex (X.Sheaf (ModuleCat.{u} R)) ℤ) (q : ℤ)
-    (h : IsZero (K.X q)) (U : (Opens X)ᵒᵖ) :
-    IsZero ((K.sheafPresheaf.obj U).X q) := by
-  rw [HomologicalComplex.sheafPresheaf_obj]
-  exact ((sheafSections (Opens.grothendieckTopology X) (ModuleCat.{u} R)).obj U).map_isZero h
-
 /-- The finite-cover total Čech comparison for a native bounded-below complex
 of flasque sheaves of modules. -/
 theorem quasiIso_cechTotalComplexAugmentation_of_isFlasque_moduleCat
@@ -81,7 +74,7 @@ theorem quasiIso_cechTotalComplexAugmentation_of_isFlasque_moduleCat
     QuasiIso (cechTotalComplexAugmentation U isTerminalTop K.sheafPresheaf) :=
   TauCeti.Topology.quasiIso_cechTotalComplexAugmentation_of_isFlasque
     K.sheafPresheaf b
-    (fun V q h ↦ isZero_sheafPresheaf_obj_X K q (K.isZero_of_isStrictlyGE b q h) V)
+    (fun V q h ↦ K.isZero_sheafPresheaf_obj_X q (K.isZero_of_isStrictlyGE b q h) V)
     (fun q ↦ by rw [HomologicalComplex.sheafPresheaf_comp_eval]; exact (K.X q).property)
     (fun q ↦ by rw [HomologicalComplex.sheafPresheaf_comp_eval]; exact hflasque q) U hU
 

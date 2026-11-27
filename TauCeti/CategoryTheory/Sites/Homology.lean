@@ -45,7 +45,8 @@ variable {C : Type*} [Category* C] (J : GrothendieckTopology C)
   (A : Type*) [Category* A] [HasZeroMorphisms A] {ι : Type*} (c : ComplexShape ι)
 
 /-- Complexes of sheaves give presheaves of section complexes, functorially in the complex.
-This composes the existing forgetful and complex-of-functors functors. -/
+This composes the existing forgetful and complex-of-functors functors. Its components use the
+underlying section objects definitionally. -/
 @[expose]
 def complexToPresheaf : HomologicalComplex (Sheaf J A) c ⥤
     Cᵒᵖ ⥤ HomologicalComplex A c :=
@@ -55,7 +56,7 @@ def complexToPresheaf : HomologicalComplex (Sheaf J A) c ⥤
 /-- The induced map on section complexes evaluates the original sheaf map in each degree. -/
 lemma complexToPresheaf_map_app_f {K L : HomologicalComplex (Sheaf J A) c}
     (f : K ⟶ L) (U : Cᵒᵖ) (q : ι) :
-    (((J.complexToPresheaf A c).map f).app U).f q = (f.f q).hom.app U := rfl
+    (((J.complexToPresheaf A c).map f).app U).f q = (f.f q).hom.app U := (rfl)
 
 end SectionComplexes
 
@@ -101,6 +102,12 @@ lemma sheafPresheaf_comp_eval (K : HomologicalComplex (Sheaf J A) c) (q : ι) :
     sheafPresheaf K ⋙ HomologicalComplex.eval A c q = (K.X q).obj := by
   rw [sheafPresheaf, GrothendieckTopology.complexToPresheaf]
   rfl
+
+/-- A zero term of a complex of sheaves has zero sections over every object of the site. -/
+lemma isZero_sheafPresheaf_obj_X (K : HomologicalComplex (Sheaf J A) c) (q : ι)
+    (h : IsZero (K.X q)) (U : Cᵒᵖ) : IsZero ((K.sheafPresheaf.obj U).X q) := by
+  rw [sheafPresheaf_obj]
+  exact ((sheafSections J A).obj U).map_isZero h
 
 end HomologicalComplex
 

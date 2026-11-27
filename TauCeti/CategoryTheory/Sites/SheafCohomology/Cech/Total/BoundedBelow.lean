@@ -94,7 +94,37 @@ private def extendedCechRowIso (q : ℤ) :
       (ComplexShape.embeddingUpNat.extendFunctor A).mapIso
         ((cechComplexFunctorMapIso U (HomologicalComplex.eval A (ComplexShape.up ℤ) q)).app P)
 
+private lemma extendedCechRowIso_hom_f_zero (q : ℤ) :
+    (extendedCechRowIso U P q).hom.f 0 =
+      (HomologicalComplex.eval A (ComplexShape.up ℤ) q).map
+          ((((cechComplexFunctor U).obj P).extendXIso ComplexShape.embeddingUpNat
+            (i := 0) rfl).hom) ≫
+        ((cechComplexFunctorMapIso U
+          (HomologicalComplex.eval A (ComplexShape.up ℤ) q)).hom.app P).f 0 ≫
+          (((cechComplexFunctor U).obj
+            (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q)).extendXIso
+              ComplexShape.embeddingUpNat (i := 0) rfl).inv := by
+  simp only [extendedCechRowIso, Iso.trans_hom, HomologicalComplex.comp_f,
+    Functor.mapIso_hom]
+  dsimp only [ComplexShape.Embedding.extendFunctor]
+  rw [HomologicalComplex.mapExtendIso_hom_f _ _ _ (j := 0) (j' := (0 : ℤ)) rfl,
+    HomologicalComplex.extendMap_f _ _ (i := 0) (i' := (0 : ℤ)) rfl]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc]
+  rfl
+
 variable {T : C} (hT : IsTerminal T)
+
+private lemma cechTotalComplexAugmentationColumn_f (q : ℤ) :
+    (cechTotalComplexAugmentationColumn U hT P).f q =
+      ((cechAugmentation U hT P).f 0).f q ≫
+        (HomologicalComplex.eval A (ComplexShape.up ℤ) q).map
+          ((((cechComplexFunctor U).obj P).extendXIso ComplexShape.embeddingUpNat
+            (i := 0) rfl).inv) := by
+  rw [cechTotalComplexAugmentationColumn_def]
+  simp only [HomologicalComplex.comp_f, CochainComplex.single₀ObjXSelf, Iso.refl_inv]
+  dsimp only [Functor.comp_obj, HomologicalComplex.eval_obj, CochainComplex.single₀]
+  simp only [HomologicalComplex.id_f, HomologicalComplex.eval_map]
+  exact Category.id_comp _
 
 private lemma cechAugmentation_eval_f_zero (q : ℤ) :
     ((cechAugmentation U hT P).f 0).f q ≫
@@ -111,6 +141,28 @@ private lemma cechAugmentation_eval_f_zero (q : ℤ) :
     ((HomologicalComplex.eval A (ComplexShape.up ℤ) q).map_comp _ _).symm.trans <|
       h₂.trans h₃.symm
 
+private lemma extendedCechAugmentation_f_zero (q : ℤ) :
+    (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
+      ((P.obj (op T)).X q)).inv ≫
+      ((HomologicalComplex.extendSingleIso ComplexShape.embeddingUpNat
+        ((P.obj (op T)).X q) 0 0 rfl).inv ≫
+          HomologicalComplex.extendMap
+            (cechAugmentation U hT (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q))
+              ComplexShape.embeddingUpNat).f 0 =
+    (cechAugmentation U hT (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q)).f 0 ≫
+      (((cechComplexFunctor U).obj
+        (P ⋙ HomologicalComplex.eval A (ComplexShape.up ℤ) q)).extendXIso
+          ComplexShape.embeddingUpNat (i := 0) rfl).inv := by
+  simp only [HomologicalComplex.comp_f]
+  rw [HomologicalComplex.extendMap_f _ _ (i := 0) (i' := (0 : ℤ)) rfl,
+    HomologicalComplex.extendSingleIso_inv_f ComplexShape.embeddingUpNat
+      ((P.obj (op T)).X q) (0 : ℕ) (0 : ℤ) rfl]
+  simp only [Category.assoc, Iso.inv_hom_id_assoc, CochainComplex.single₀ObjXSelf,
+    Iso.refl_inv]
+  dsimp only [Functor.comp_obj, HomologicalComplex.eval_obj, CochainComplex.single₀]
+  simp only [Iso.inv_hom_id_assoc]
+  exact Category.id_comp _
+
 private lemma rowCoaugmentationUpInt_comp_extendedCechRowIso (q : ℤ) :
     rowCoaugmentationUpInt _ (cechTotalComplexAugmentationColumn U hT P)
         (cechTotalComplexAugmentationColumn_comp_d U hT P) q ≫
@@ -123,27 +175,13 @@ private lemma rowCoaugmentationUpInt_comp_extendedCechRowIso (q : ℤ) :
   apply HomologicalComplex.from_single_hom_ext
   apply (cancel_epi (HomologicalComplex.singleObjXSelf (ComplexShape.up ℤ) 0
     ((P.obj (op T)).X q)).inv).mp
-  simp only [HomologicalComplex.comp_f]
-  rw [rowCoaugmentationUpInt_f_zero_assoc]
-  rw [cechTotalComplexAugmentationColumn_def]
-  simp only [extendedCechRowIso, Iso.trans_hom, HomologicalComplex.comp_f,
-    Functor.mapIso_hom]
-  dsimp only [ComplexShape.Embedding.extendFunctor]
-  rw [HomologicalComplex.mapExtendIso_hom_f _ _ _ (j := 0) (j' := (0 : ℤ)) rfl,
-    HomologicalComplex.extendMap_f _ _ (i := 0) (i' := (0 : ℤ)) rfl,
-    HomologicalComplex.extendMap_f _ _ (i := 0) (i' := (0 : ℤ)) rfl,
-    HomologicalComplex.extendSingleIso_inv_f ComplexShape.embeddingUpNat
-      ((P.obj (op T)).X q) (0 : ℕ) (0 : ℤ) rfl]
-  simp only [HomologicalComplex.eval_map, Category.assoc,
-    Iso.inv_hom_id_assoc]
+  rw [HomologicalComplex.comp_f, rowCoaugmentationUpInt_f_zero_assoc,
+    extendedCechAugmentation_f_zero, cechTotalComplexAugmentationColumn_f,
+    extendedCechRowIso_hom_f_zero]
+  simp only [HomologicalComplex.eval_map, Category.assoc]
   simp only [← HomologicalComplex.comp_f_assoc, Iso.inv_hom_id,
     HomologicalComplex.id_f, Category.id_comp]
-  simp only [CochainComplex.single₀ObjXSelf, Iso.refl_inv]
-  dsimp only [Functor.comp_obj, HomologicalComplex.eval_obj, CochainComplex.single₀]
-  simp only [Iso.inv_hom_id_assoc]
-  exact (congrArg (fun f ↦ f.f q) (Category.id_comp ((cechAugmentation U hT P).f 0)) =≫ _).trans
-    ((Category.assoc _ _ _).symm.trans <|
-      (cechAugmentation_eval_f_zero U P hT q =≫ _).trans (Category.id_comp _).symm)
+  rw [← Category.assoc, cechAugmentation_eval_f_zero]
 
 end
 
