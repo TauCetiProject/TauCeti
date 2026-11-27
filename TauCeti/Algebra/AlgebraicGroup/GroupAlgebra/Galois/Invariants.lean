@@ -25,8 +25,12 @@ flat scalar-extension theorem needed in the next descent step.
 
 ## Main declarations
 
+* `TauCeti.GaloisDescent.groupAlgebraSMul` and
+  `TauCeti.GaloisDescent.groupAlgebraMulSemiringAction`: the simultaneous action as a scalar
+  action and as a multiplicative semiring action, for use as local instances.
 * `TauCeti.GaloisDescent.groupAlgebraInvariants`: the fixed `k`-subalgebra of the split group
-  algebra.
+  algebra, which is `FixedPoints.subalgebra` for that action
+  (`TauCeti.GaloisDescent.groupAlgebraInvariants_eq_fixedPoints`).
 * `TauCeti.GaloisDescent.groupAlgebraInvariantsCounit`: its counit with values in `k`.
 * `TauCeti.GaloisDescent.groupAlgebraInvariantsAntipode`: the antipode restricted to invariants.
 * `TauCeti.GaloisDescent.groupAlgebraTensorInvariants`: fixed tensors for the diagonal action.
@@ -54,19 +58,52 @@ variable {k : Type u_k} {L : Type u_L} {M : Type u_M}
 variable [Field k] [Field L] [Algebra k L]
 variable [AddCommGroup M]
 
+/-- The simultaneous action of `L ≃ₐ[k] L` on coefficients and exponents of
+`L[Multiplicative M]`, `sigma • x = groupAlgebraAction rho sigma x`. It depends on `rho` and
+differs from the coefficientwise action found by instance search, so it is not an instance; it is
+meant to be used as a local instance together with `groupAlgebraMulSemiringAction`. -/
+noncomputable abbrev groupAlgebraSMul (rho : Representation ℤ (L ≃ₐ[k] L) M) :
+    SMul (L ≃ₐ[k] L) (MonoidAlgebra L (Multiplicative M)) :=
+  ⟨fun sigma x ↦ groupAlgebraAction rho sigma x⟩
+
+/-- The simultaneous action as a multiplicative semiring action, whose scalar action is
+`groupAlgebraSMul`. -/
+noncomputable abbrev groupAlgebraMulSemiringAction (rho : Representation ℤ (L ≃ₐ[k] L) M) :
+    MulSemiringAction (L ≃ₐ[k] L) (MonoidAlgebra L (Multiplicative M)) :=
+  MulSemiringAction.compHom _ (groupAlgebraAction rho)
+
+/-- Under `groupAlgebraSMul`, the automorphism `sigma` acts by `groupAlgebraAction rho sigma`. -/
+theorem groupAlgebraSMul_smul (rho : Representation ℤ (L ≃ₐ[k] L) M)
+    (sigma : L ≃ₐ[k] L) (x : MonoidAlgebra L (Multiplicative M)) :
+    letI := groupAlgebraSMul rho
+    sigma • x = groupAlgebraAction rho sigma x :=
+  (rfl)
+
+/-- The action `groupAlgebraSMul` is `k`-linear. -/
+theorem smulCommClass_groupAlgebraSMul (rho : Representation ℤ (L ≃ₐ[k] L) M) :
+    letI := groupAlgebraSMul rho
+    SMulCommClass (L ≃ₐ[k] L) k (MonoidAlgebra L (Multiplicative M)) :=
+  letI := groupAlgebraSMul rho
+  ⟨fun sigma r x ↦ map_smul (groupAlgebraAction rho sigma) r x⟩
+
 /-- The fixed `k`-subalgebra of `L[Multiplicative M]` for the simultaneous action on
 coefficients and exponents. -/
 noncomputable def groupAlgebraInvariants
     (rho : Representation ℤ (L ≃ₐ[k] L) M) :
-    Subalgebra k (MonoidAlgebra L (Multiplicative M)) := by
-  letI : SMul (L ≃ₐ[k] L) (MonoidAlgebra L (Multiplicative M)) :=
-    ⟨fun sigma x ↦ groupAlgebraAction rho sigma x⟩
-  letI : MulSemiringAction (L ≃ₐ[k] L) (MonoidAlgebra L (Multiplicative M)) :=
-    MulSemiringAction.compHom _ (groupAlgebraAction rho)
-  letI : SMulCommClass (L ≃ₐ[k] L) k (MonoidAlgebra L (Multiplicative M)) :=
-    ⟨fun sigma r x ↦ by
-      exact map_smul (groupAlgebraAction rho sigma) r x⟩
-  exact FixedPoints.subalgebra k (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L)
+    Subalgebra k (MonoidAlgebra L (Multiplicative M)) :=
+  letI := groupAlgebraSMul rho
+  letI := groupAlgebraMulSemiringAction rho
+  haveI := smulCommClass_groupAlgebraSMul rho
+  FixedPoints.subalgebra k (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L)
+
+/-- The invariant algebra is the fixed-point subalgebra of `groupAlgebraMulSemiringAction`. -/
+theorem groupAlgebraInvariants_eq_fixedPoints (rho : Representation ℤ (L ≃ₐ[k] L) M) :
+    letI := groupAlgebraSMul rho
+    letI := groupAlgebraMulSemiringAction rho
+    haveI := smulCommClass_groupAlgebraSMul rho
+    groupAlgebraInvariants rho =
+      FixedPoints.subalgebra k (MonoidAlgebra L (Multiplicative M)) (L ≃ₐ[k] L) :=
+  (rfl)
 
 /-- Membership in the invariant subalgebra means being fixed by every automorphism of `L/k`. -/
 @[simp]

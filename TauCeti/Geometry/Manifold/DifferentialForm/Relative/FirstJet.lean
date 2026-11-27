@@ -261,6 +261,20 @@ theorem _root_.Diffeomorph.exists_isSmoothForm_mextDeriv_eq_sub_mpullback
       exact hasFDerivWithinAt_inChartAt_vectorBundlePoincareHomotopy_zeroSection
         (hη₀.of_le (by simp)) hη0
 
+omit [IsManifold I 2 M] [IsManifold IB n B] [ContMDiffVectorBundle n FV V IB] [CompleteSpace F] in
+/-- A form that restricts to zero along the zero-section inclusion `i = Φ ∘ 0` of a tube also
+pulls back to zero along the retraction `ρ = Φ ∘ 0 ∘ π ∘ Φ⁻¹` onto its image, since `ρ` factors
+through `i` as `ρ = i ∘ (π ∘ Φ⁻¹)`. -/
+theorem _root_.Diffeomorph.mpullback_retraction_eq_zero
+    (Φ : TotalSpace FV V ≃ₘ^n⟮IB.prod 𝓘(ℝ, FV), I⟯ M) (hn : n ≠ 0) {η : RoughForm I M F k}
+    (hi : mpullback IB I (Φ ∘ zeroSection FV V) η = 0) :
+    mpullback I I (Φ ∘ zeroSection FV V ∘ π FV V ∘ Φ.symm) η = 0 := by
+  have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
+  have hiΦ := (Φ.contMDiff.comp (contMDiff_zeroSection ℝ V (IB := IB) (F := FV))).mdifferentiable
+    hn
+  rw [← Function.comp_assoc (Φ : TotalSpace FV V → M) (zeroSection FV V),
+    mpullback_comp (hp.comp (Φ.symm.mdifferentiable hn)) hiΦ, hi, mpullback_zero]
+
 /-- **The relative Poincaré lemma on a tube**, for forms restricting to zero on the core. Let `Φ`
 be a `C^n` diffeomorphism from the total space of a `C^n` vector bundle onto `M`, such as a
 tubular neighbourhood, with zero-section inclusion `i = Φ ∘ 0`. Every closed `C^r` form `η` of
@@ -280,12 +294,7 @@ theorem _root_.Diffeomorph.exists_isSmoothForm_relative_primitive
   obtain ⟨β, hβ, hdβ, hβ₀, hβ₁⟩ :=
     Φ.exists_isSmoothForm_mextDeriv_eq_sub_mpullback hr hn hη hclosed
   refine ⟨β, hβ, ?_, hβ₀, hβ₁⟩
-  have hn0 : n ≠ 0 := (lt_of_lt_of_le (by simp) hn).ne'
-  have hp := (Bundle.contMDiff_proj (IB := IB) (n := 1) (F := FV) V).mdifferentiable one_ne_zero
-  have hiΦ := (Φ.contMDiff.comp (contMDiff_zeroSection ℝ V (IB := IB) (F := FV))).mdifferentiable
-    hn0
-  rw [hdβ, ← Function.comp_assoc (Φ : TotalSpace FV V → M) (zeroSection FV V),
-    mpullback_comp (hp.comp (Φ.symm.mdifferentiable hn0)) hiΦ, hi, mpullback_zero, sub_zero]
+  rw [hdβ, Φ.mpullback_retraction_eq_zero (lt_of_lt_of_le (by simp) hn).ne' hi, sub_zero]
 
 end Tube
 

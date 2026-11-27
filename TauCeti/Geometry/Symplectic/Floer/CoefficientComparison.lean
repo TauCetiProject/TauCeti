@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 public import TauCeti.RingTheory.NovikovSeries.Functoriality
+public import TauCeti.RingTheory.NovikovSeries.Grading
 
 /-!
 # Comparing quantum and Floer coefficients
@@ -26,6 +27,14 @@ two monomials with the same nonzero coefficient become equal exactly when their 
 Chern numbers agree. No individual quantum invariant is assumed to descend without summation.
 If the target class group is trivial, the comparison sends a series to the sum of all of its
 coefficients (`coeff_zero_coefficientComparison_of_subsingleton`).
+
+The same pushforward compares Novikov series with coefficients in a graded module `V`, such as
+the state module `V ⊗̂ Λ_ω` of quantum cohomology with `V` the cohomology of the target, with
+their Floer counterparts. In quantum cohomology `q^A v` has degree `deg v + 2 c₁(A)`. In the
+cochain grading `C^k = CF_(n-k)` the monomial `e^γ v` has degree `deg v - 2 c₁(γ)`, since the raw
+degree `2 c₁(γ)` of `e^γ` enters `n - μ` with the opposite sign. So `q^A v ↦ e^(-q A) v`
+preserves the total degree (`TauCeti.Floer.map_neg_mem_gradeByCoeff`), whereas `q^A v ↦ e^(q A) v`
+would change it by `-4 c₁(A)` (`TauCeti.Floer.single_mem_gradeByCoeff_add_iff`).
 
 The construction reuses `NovikovSeries.mapRingHom`; no augmentation at `q = 1` is involved.
 
@@ -130,6 +139,38 @@ theorem chern_support_coefficientComparison (c : S →+ ℤ) (c' : Γ →+ ℤ)
   intro γ hγ
   obtain ⟨A, hA, rfl⟩ := support_coefficientComparison_subset q hω a hγ
   simp [hc A, ha A hA]
+
+section GradedCoefficients
+
+variable {V : Type*} [AddCommMonoid V] [Module R V] {d : S → ℤ} {d' : Γ →+ ℤ}
+
+/-- **The comparison preserves the total degree.** Let `V` be graded by `𝒱`, for instance the
+cohomology of the target, and let `d'` be a degree on `Γ` with `d' (q A) = d A`, for instance
+twice the first Chern number. A Novikov series with coefficients in `V` of quantum degree `D`,
+whose coefficient at `q^A` has degree `D - d A`, goes under `q^A v ↦ e^(-q A) v` to a series of
+cochain degree `D`, whose coefficient at `e^γ` has degree `D + d' γ`: the raw degree `d' γ` of
+`e^γ` enters the cochain degree `n - μ` with the opposite sign. For `V = R` the map is
+`TauCeti.Floer.coefficientComparison` (`TauCeti.Floer.coefficientComparison_apply`). -/
+theorem map_neg_mem_gradeByCoeff (hd : ∀ A, d' (q A) = d A) {𝒱 : ℤ → Submodule R V} {D : ℤ}
+    {v : NovikovSeries V S ω} (hv : v ∈ NovikovSeries.gradeByCoeff ω 𝒱 d D) :
+    map (AddMonoidHom.id V) (-q) ⟨1, one_pos, period_rescale_neg hω⟩ v ∈
+      NovikovSeries.gradeByCoeff (-Ω) 𝒱 (fun γ => -d' γ) D :=
+  map_mem_gradeByCoeff (fun _ _ hv => hv) _ (fun A => by simp [hd]) hv
+
+open Function in
+/-- **The opposite comparison reverses the degree.** In the cochain grading, where `e^γ` has
+degree `-δ γ`, a monomial `e^γ v` with `v ≠ 0` of degree `j` has degree `j - δ γ`. For pairwise
+disjoint pieces `𝒱` this is `j + δ γ` only when `δ γ = 0`. So under `q^A v ↦ e^(q A) v`, with
+`δ (q A) = d A`, the image of `q^A v`, of quantum degree `j + d A`, would have that degree only
+when `d A = 0`. -/
+theorem single_mem_gradeByCoeff_add_iff {δ : Γ → ℤ} {N : Γ →+ ℝ} {𝒱 : ℤ → Submodule R V}
+    (h𝒱 : Pairwise (Disjoint on 𝒱)) {j : ℤ} {v : V} (hv : v ∈ 𝒱 j) (hv₀ : v ≠ 0) (γ : Γ) :
+    (single γ v : NovikovSeries V Γ N) ∈
+        NovikovSeries.gradeByCoeff N 𝒱 (fun γ => -δ γ) (j + δ γ) ↔ δ γ = 0 := by
+  rw [single_mem_gradeByCoeff_iff_of_mem h𝒱 hv hv₀]
+  omega
+
+end GradedCoefficients
 
 end Semiring
 

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MonoidAlgebra.Center
 public import TauCeti.RepresentationTheory.CharacterTable.ClassFunction
 public import TauCeti.RepresentationTheory.CharacterTable.ClassSum.Basic
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
@@ -60,6 +61,16 @@ theorem center_coeff_eq_of_isConj (z : Subalgebra.center k (MonoidAlgebra k G))
   ClassFunction.eq_of_isConj (centerToClassFunction z) hgh
 
 omit [Fintype G] [DecidableEq G] in
+/-- If `cls : G → ι` only identifies conjugate elements, the coefficients of a central element of
+`k[G]` factor through `cls`. -/
+theorem exists_center_coeff_eq_comp {ι : Type*} (cls : G → ι)
+    (hcls : ∀ g h, cls g = cls h → IsConj g h) (z : Subalgebra.center k (MonoidAlgebra k G)) :
+    ∃ ψ : ι → k, ⇑(z : MonoidAlgebra k G).coeff = ψ ∘ cls := by
+  classical
+  refine ⟨fun i ↦ (z : MonoidAlgebra k G).coeff (Function.invFun cls i), funext fun g ↦ ?_⟩
+  exact center_coeff_eq_of_isConj z (hcls _ _ (Function.invFun_eq ⟨g, rfl⟩)).symm
+
+omit [Fintype G] [DecidableEq G] in
 /-- Read the coefficients of a central group-algebra element as a function on conjugacy classes. -/
 noncomputable def centerToConjClasses
     (z : Subalgebra.center k (MonoidAlgebra k G)) : ConjClasses G → k :=
@@ -85,9 +96,8 @@ theorem classSumCenter_coe (C : ConjClasses G) :
 
 /-- The class sum of the conjugacy class of `1`, as an element of the center, is `1`. -/
 @[simp]
-theorem classSumCenter_mk_one : classSumCenter (k := k) (ConjClasses.mk (1 : G)) = 1 := by
-  apply Subtype.ext
-  simp
+theorem classSumCenter_mk_one : classSumCenter (k := k) (ConjClasses.mk (1 : G)) = 1 :=
+  Subtype.ext <| (classSum_mk_of_mem_center k (one_mem _)).trans (map_one _)
 
 /-- Convert a function on conjugacy classes to the corresponding linear combination of class
 sums. -/
@@ -176,5 +186,23 @@ theorem finrank_center_monoidAlgebra :
   let := Classical.decEq G
   rw [Module.finrank_eq_card_basis (classSumBasis (G := G) (k := k))]
   exact Fintype.card_eq_nat_card
+
+end TauCeti
+
+namespace TauCeti
+
+variable {k G : Type*} [CommSemiring k] [CommGroup G] [Fintype G] [DecidableEq G]
+
+/-- In a commutative group every element is central (`classSum_mk_of_mem_center`), so the
+class sum of `g`, as an element of the center, is `g`.
+
+Its simp priority is low so that `classSumCenter_mk_one` still rewrites the class of `1`
+to `1`, rather than to `toCenter (of k G 1)`, which simp leaves as `single 1 1`. -/
+@[simp low]
+theorem classSumCenter_mk_of_commGroup (g : G) :
+    classSumCenter (k := k) (ConjClasses.mk g) =
+      MonoidAlgebra.toCenter (MonoidAlgebra.of k G g) :=
+  Subtype.ext <| (classSum_mk_of_mem_center k
+    (Subgroup.mem_center_iff.mpr fun h => mul_comm h g)).trans (MonoidAlgebra.coe_toCenter _).symm
 
 end TauCeti

@@ -16,7 +16,9 @@ one. Its `m`-th iterate `divX^[m] p` drops the `m` lowest coefficients and lower
 degrees by `m`, so that `(divX^[m] p).coeff n = p.coeff (n + m)`. This file records how the
 iterate interacts with sums, scalars, multiplication by powers of `X` and reflection, and the
 Horner recursion `divX^[m] p = divX^[m + 1] p * X + C (p.coeff m)`, whose values at a point are
-the partial Horner sums of `p`.
+the partial Horner sums of `p`. It also records that the iterates commute with coefficient maps,
+and that `y * (divX p)(y) = p(y) - p(0)`, in particular for powers `p ^ a`, for which also
+`X * divX (p ^ a) = p ^ a - p(0) ^ a`.
 
 In terms of Laurent polynomials, `divX^[m] (Xᵐ * p)` is `p`, while the reflection
 `reflect m q = Xᵐ q(X⁻¹)` of a polynomial `q` of degree at most `m` keeps only its constant
@@ -67,22 +69,26 @@ theorem iterate_divX_X_pow_mul (m n : ℕ) (p : R[X]) :
   · rw [coeff_iterate_divX, coeff_iterate_divX, coeff_X_pow_mul']
     split_ifs <;> grind
 
-/-- The `m`-th iterate of `divX` kills a polynomial of degree less than `m`. -/
-theorem iterate_divX_eq_zero_of_natDegree_lt {m : ℕ} {p : R[X]} (h : p.natDegree < m) :
-    divX^[m] p = 0 := by
-  ext n
-  rw [coeff_iterate_divX, coeff_zero]
-  exact coeff_eq_zero_of_natDegree_lt (by omega)
+/-- The `m`-th iterate of `divX` kills exactly the polynomials of degree less than `m`. -/
+theorem iterate_divX_eq_zero_iff {m : ℕ} {p : R[X]} : divX^[m] p = 0 ↔ p.degree < m := by
+  rw [degree_lt_iff_coeff_zero]
+  refine ⟨fun h N hN ↦ ?_, fun h ↦ ?_⟩
+  · rw [← Nat.sub_add_cancel hN, ← coeff_iterate_divX, h, coeff_zero]
+  · ext n
+    rw [coeff_iterate_divX, coeff_zero, h _ (by omega)]
 
-/-- The `m`-th iterate of `divX` of a polynomial of degree at most `m` is its constant polynomial
-with value the coefficient of `Xᵐ`. -/
-theorem iterate_divX_eq_C_of_natDegree_le {m : ℕ} {p : R[X]} (h : p.natDegree ≤ m) :
-    divX^[m] p = C (p.coeff m) := by
-  ext n
-  rw [coeff_iterate_divX, coeff_C]
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · simp
-  · simp [hn.ne', coeff_eq_zero_of_natDegree_lt (show p.natDegree < n + m by omega)]
+/-- The `m`-th iterate of `divX` of `p` is the constant polynomial with value the coefficient
+of `Xᵐ` exactly when `p` has degree at most `m`. -/
+theorem iterate_divX_eq_C_iff {m : ℕ} {p : R[X]} :
+    divX^[m] p = C (p.coeff m) ↔ p.natDegree ≤ m := by
+  rw [natDegree_le_iff_coeff_eq_zero]
+  refine ⟨fun h N hN ↦ ?_, fun h ↦ ?_⟩
+  · rw [← Nat.sub_add_cancel hN.le, ← coeff_iterate_divX, h, coeff_C_of_ne_zero (by omega)]
+  · ext n
+    rw [coeff_iterate_divX, coeff_C]
+    split_ifs with hn
+    · rw [hn, zero_add]
+    · exact h _ (by omega)
 
 /-- One Horner step for the iterates of `divX`: the `m`-th iterate is recovered from the next
 one and the coefficient of `Xᵐ`. -/
@@ -95,12 +101,21 @@ theorem iterate_divX_succ_mul_X_add_C (m : ℕ) (p : R[X]) :
 most `m` from its reflection `Xᵐ q(X⁻¹)`. -/
 theorem iterate_divX_reflect {m : ℕ} {q : R[X]} (hq : q.natDegree ≤ m) :
     divX^[m] (reflect m q) = C (q.coeff 0) := by
+  rw [iterate_divX_eq_C_iff.2 (natDegree_reflect_le.trans (max_le le_rfl hq)), coeff_reflect,
+    revAt_le le_rfl, tsub_self]
+
+/-- The iterates of `divX` commute with coefficient maps. -/
+@[simp]
+theorem iterate_divX_map {S : Type*} [Semiring S] (m : ℕ) (p : R[X]) (f : R →+* S) :
+    divX^[m] (p.map f) = (divX^[m] p).map f := by
   ext n
-  rw [coeff_iterate_divX, coeff_reflect, coeff_C]
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · simp [revAt_le]
-  · rw [revAt_eq_self_of_lt (by omega), coeff_eq_zero_of_natDegree_lt (by omega)]
-    split_ifs <;> first | omega | rfl
+  simp
+
+/-- `divX` commutes with coefficient maps. -/
+@[simp]
+theorem divX_map {S : Type*} [Semiring S] (p : R[X]) (f : R →+* S) :
+    divX (p.map f) = (divX p).map f :=
+  iterate_divX_map 1 p f
 
 end Semiring
 
@@ -110,5 +125,27 @@ theorem iterate_divX_sub [Ring R] (m : ℕ) (p q : R[X]) :
     divX^[m] (p - q) = divX^[m] p - divX^[m] q := by
   ext n
   simp
+
+/-- Multiplying `divX (p ^ a)` by `X` gives `p ^ a - p(0) ^ a`. -/
+theorem X_mul_divX_pow [Ring R] (p : R[X]) (a : ℕ) :
+    X * divX (p ^ a) = p ^ a - C (p.coeff 0 ^ a) := by
+  rw [eq_sub_iff_add_eq, ← constantCoeff_apply, ← map_pow, constantCoeff_apply, X_mul_divX_add]
+
+section Eval₂
+
+variable [Semiring R] {S : Type*} [CommRing S]
+
+/-- Multiplying the value of `divX p` at `y` by `y` recovers the value of `p` at `y` without its
+constant term. -/
+theorem mul_eval₂_divX (f : R →+* S) (p : R[X]) (y : S) :
+    y * (divX p).eval₂ f y = p.eval₂ f y - f (p.coeff 0) := by
+  rw [eq_sub_iff_add_eq, mul_comm, ← eval₂_mul_X, ← eval₂_C f y, ← eval₂_add, divX_mul_X_add]
+
+/-- Multiplying the value of `divX (p ^ a)` at `y` by `y` gives `p(y) ^ a - p(0) ^ a`. -/
+theorem mul_eval₂_divX_pow (f : R →+* S) (p : R[X]) (a : ℕ) (y : S) :
+    y * (divX (p ^ a)).eval₂ f y = p.eval₂ f y ^ a - f (p.coeff 0) ^ a := by
+  rw [mul_eval₂_divX, eval₂_pow, ← map_pow, ← constantCoeff_apply, map_pow, constantCoeff_apply]
+
+end Eval₂
 
 end Polynomial

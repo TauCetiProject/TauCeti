@@ -16,7 +16,7 @@ import Mathlib.CategoryTheory.ObjectProperty.Equivalence
 import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Algebra.Category.ModuleCat.Equivalence
 import TauCeti.Algebra.Category.ModuleCat.Indecomposable
-import TauCeti.CategoryTheory.ObjectProperty
+import TauCeti.CategoryTheory.ObjectProperty.FullSubcategory
 import TauCeti.CategoryTheory.Skeletal
 import TauCeti.RingTheory.Semisimple.RegularIsotypicComponent
 
@@ -105,26 +105,13 @@ theorem isRepresentationFinite_iff :
   Iff.rfl
 
 variable {A} in
-/-- A ring is representation-finite as soon as every finitely generated indecomposable module is
+/-- A ring is representation-finite exactly when every finitely generated indecomposable module is
 isomorphic to a member of a fixed finite set of modules. -/
-theorem isRepresentationFinite_of_forall_exists_iso {S : Set (ModuleCat.{w} A)} (hS : S.Finite)
-    (h : ∀ M : ModuleCat.{w} A, Module.Finite A M → Indecomposable M →
-      ∃ Q ∈ S, Nonempty (M ≅ Q)) :
-    IsRepresentationFinite.{w} A := by
-  rw [isRepresentationFinite_iff]
-  let P : ObjectProperty (ModuleCat.{w} A) := fun M ↦ Module.Finite A M ∧ Indecomposable M
-  have := hS.to_subtype
-  have hrep (x : Skeleton P.FullSubcategory) :=
-    h ((fromSkeleton P.FullSubcategory).obj x).obj ((fromSkeleton _).obj x).property.1
-      ((fromSkeleton _).obj x).property.2
-  choose q hq he using hrep
-  refine Finite.of_injective (fun x ↦ (⟨q x, hq x⟩ : S)) fun x y hxy ↦ ?_
-  have hxy' : q x = q y := congrArg Subtype.val hxy
-  obtain ⟨ex⟩ := he x
-  obtain ⟨ey⟩ := he y
-  let e : ((fromSkeleton P.FullSubcategory).obj x).obj ≅ ((fromSkeleton _).obj y).obj :=
-    ex ≪≫ eqToIso hxy' ≪≫ ey.symm
-  exact skeleton_skeletal _ ⟨(fromSkeleton _).preimageIso (P.fullyFaithfulι.preimageIso e)⟩
+theorem isRepresentationFinite_iff_exists_finite_forall_exists_iso :
+    IsRepresentationFinite.{w} A ↔ ∃ S : Set (ModuleCat.{w} A), S.Finite ∧
+      ∀ M : ModuleCat.{w} A, Module.Finite A M → Indecomposable M → ∃ Q ∈ S, Nonempty (M ≅ Q) := by
+  simp only [isRepresentationFinite_iff,
+    ObjectProperty.finite_skeleton_iff_exists_finite_forall_exists_iso, and_imp]
 
 end Definition
 
@@ -307,9 +294,13 @@ theorem skeletonFiniteIndecomposableModulesEquiv_toSkeleton_eq_toSkeleton_iff
       fun N : ModuleCat.{v'} B ↦ Module.Finite B N ∧ Indecomposable N} :
     e.skeletonFiniteIndecomposableModulesEquiv (toSkeleton M) = toSkeleton N ↔
       Nonempty (e.functor.obj M.obj ≅ N.obj) := by
-  rw [skeletonFiniteIndecomposableModulesEquiv, Functor.objEquiv, Equiv.ofBijective_apply,
-    Functor.mapSkeleton_obj_toSkeleton, ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso,
-    congrFiniteIndecomposable, congrFullSubcategory_functor_obj_obj]
+  -- The correspondence sends the class of `M` to the class of its image under `e.functor`.
+  have hM : e.skeletonFiniteIndecomposableModulesEquiv (toSkeleton M) =
+      toSkeleton ((congrFiniteIndecomposable e).functor.obj M) := by
+    rw [skeletonFiniteIndecomposableModulesEquiv, Functor.objEquiv, Equiv.ofBijective_apply,
+      Functor.mapSkeleton_obj_toSkeleton]
+  rw [hM, ObjectProperty.toSkeleton_eq_toSkeleton_iff_nonempty_iso]
+  simp [congrFiniteIndecomposable]
 
 /-- The inverse of the correspondence induced by an equivalence of module categories is the
 correspondence induced by the inverse equivalence. -/

@@ -5,10 +5,20 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Artanh
+public import TauCeti.Geometry.Manifold.Flow.Basic
+public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
 public import TauCeti.Geometry.Manifold.Morse.ExponentialConvergence
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Complex
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
+import TauCeti.Analysis.SpecialFunctions.Hyperbolic
+import TauCeti.Geometry.Manifold.Flow.Complete
+import TauCeti.Geometry.Manifold.Flow.RestPoint
+import TauCeti.Geometry.Manifold.Morse.Sphere.Degenerate
+import TauCeti.Geometry.Manifold.Riemannian.Sphere.Distance
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 
 /-!
@@ -17,7 +27,10 @@ import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
 Let `h` be the height function on the unit sphere `Sⁿ` in the direction of a unit vector `v`
 (`TauCeti.sphereHeight`), with the north pole `v` as its maximum and the south pole `-v` as its
 minimum. This file follows the negative gradient trajectories `γ` of `h` and tests on them the
-convergence theorems for negative gradient flows of Morse functions.
+convergence theorems for negative gradient flows of Morse functions. It also tests the estimates
+by which a negative gradient trajectory crosses a band without critical points in bounded time,
+both for `h` and for the function `h - h³ / 3`, whose critical points are degenerate in positive
+dimension.
 
 * **Convergence to the south pole, for every metric.** For any `C¹` Riemannian metric on `Sⁿ`, the
   trajectory of `-grad h` through a point `x ≠ v` converges to the south pole
@@ -26,13 +39,47 @@ convergence theorems for negative gradient flows of Morse functions.
   the two poles, and it cannot converge to the north pole because `h` decreases along it from the
   value `h x < 1`. So the north pole, although critical, is the limit of no trajectory starting
   elsewhere (`TauCeti.not_tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight_self`).
+* **Crossing a band without a normal form, for every metric.** The function `f = h - h³ / 3` has
+  exactly two critical points, the poles, and in positive dimension both are degenerate. Still,
+  for every `C¹` Riemannian metric and all levels `-2 / 3 < a` and `b < 2 / 3` strictly between
+  its two critical values, after some time `T` the trajectory of `-grad f` through any point of
+  `{f ≤ b}` lies in `{f < a}`
+  (`TauCeti.exists_forall_cubic_comp_sphereHeight_maximalIntegralCurve_neg_mgradient_lt`).
+  This is the general estimate
+  `TauCeti.exists_forall_comp_maximalIntegralCurve_neg_mgradient_lt` for the compact band
+  `f⁻¹[a, b]`, which contains no critical point: only a positive lower bound for `‖grad f‖` on
+  the band enters, and nothing is needed at the degenerate poles.
 * **The exact energy law for the round metric.** For the round metric the gradient of `h`
   has squared length `1 - h²` (`TauCeti.norm_mgradient_sphereHeight_sq`), so along `γ` the height
   satisfies `h' = -(1 - h²)`. Hence `(1 + h) / (1 - h)` decays exactly like `exp (-2 t)`
   (`TauCeti.one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient`). If `u` is the
-  angle of `γ t` from the south pole, then `h = -cos u` and `(1 + h) / (1 - h) = tan² (u / 2)`:
-  this is the solution `tan (u / 2) = tan (u₀ / 2) exp (-t)` of the meridian equation
-  `u' = -sin u`.
+  angle of `γ t` from the south pole, then `h = -cos u` and `(1 + h) / (1 - h) = tan² (u / 2)`,
+  so `u = 2 arctan (tan (u₀ / 2) exp (-t))`
+  (`TauCeti.angle_maximalIntegralCurve_neg_mgradient_sphereHeight`), the solution of the meridian
+  equation `u' = -sin u`. The round distance is the angle
+  (`TauCeti.riemannianEDist_sphere_of_ne_neg`), so this is also the Riemannian distance from `γ t`
+  to the south pole (`TauCeti.riemannianEDist_maximalIntegralCurve_neg_mgradient_sphereHeight`).
+* **Crossing a band of latitudes in bounded time, for the round metric.** On the band
+  `-r ≤ h ≤ r` the gradient of `h` has squared length at least `1 - r²`, so the trajectory
+  through a point with `h ≤ b` lies below the latitude `a` at every time `t ≥ 0` with
+  `(1 - r²) t > b - a`, for `-r ≤ a` and `b ≤ r`
+  (`TauCeti.sphereHeight_maximalIntegralCurve_neg_mgradient_lt`). For instance the time-`t` map of
+  the flow carries the closed cap `{h ≤ 1 / 2}` into the open cap `{h < -1 / 2}` for every
+  `t > 4 / 3` (`TauCeti.sphereHeight_maximalIntegralCurve_neg_mgradient_lt_neg_half`).
+* **Polar caps, for the round metric.** Along `γ` the quantity `artanh h` decreases at unit speed,
+  so `h (γ t) = tanh (artanh (h x) - t)` when `x` is neither pole
+  (`TauCeti.sphereHeight_maximalIntegralCurve_neg_mgradient_eq_tanh`). Hence the time-`t` map `Φ_t`
+  of the flow carries the open cap `{h < tanh σ}` around the south pole onto the open cap
+  `{h < tanh (σ - t)}` for every real `t`
+  (`TauCeti.image_flowOf_neg_mgradient_sphereHeight_preimage_Iio_tanh`). This is the picture behind
+  the cover of a manifold with exactly two critical points by two Euclidean open sets
+  (`TauCeti.exists_twoEuclideanOpenCover_of_two_criticalPoints`): with `B` a cap around the minimum
+  and `K` a closed cap avoiding a neighbourhood of the maximum, the backward image `Φ_{-T}(B)` is a
+  cap containing `K` once `T` is large, while the forward image `Φ_T(B)` shrinks into `B` and covers
+  no point of `K` outside `B`. In positive dimension, `Φ_t` carries `{h ≤ r}` into `{h < s}`
+  exactly when `artanh r - artanh s < t`
+  (`TauCeti.mapsTo_flowOf_neg_mgradient_sphereHeight_iff`); for the band `|h| ≤ 1 / 2` the exact
+  crossing time is `log 3` (`TauCeti.mapsTo_flowOf_neg_mgradient_sphereHeight_half_iff`).
 * **The rate `exp (-t)` is exact.** The Riemannian distance from `γ t` to the south pole is at most
   a constant times `exp (-t)` for large `t`
   (`TauCeti.exists_riemannianEDist_le_mul_exp_neg_maximalIntegralCurve_neg_mgradient_sphereHeight`),
@@ -59,7 +106,7 @@ and that the squared chord from `γ t` to the south pole is `2 (1 + h (γ t))`.
 
 public section
 
-open Bundle Filter Metric Module Set Topology TauCeti.Manifold
+open Bundle Filter InnerProductGeometry Metric Module Set Topology TauCeti.Manifold
 open scoped Manifold
 
 namespace TauCeti
@@ -67,7 +114,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)] {v x : sphere (0 : E) 1}
 
-/-! ### Convergence for an arbitrary metric -/
+/-! ### An arbitrary metric -/
 
 section AnyMetric
 
@@ -127,6 +174,34 @@ theorem not_tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight_self (hx : x
   fun h ↦ ne_neg_of_mem_unit_sphere ℝ v
     (tendsto_nhds_unique h (tendsto_maximalIntegralCurve_neg_mgradient_sphereHeight hx))
 
+/-- **Crossing a band for the degenerate function `h - h³ / 3`.** The critical points of
+`f = h - h³ / 3` are the two poles, with critical values `2 / 3` and `-2 / 3`; in positive
+dimension both are degenerate. For any `C¹` Riemannian metric on the sphere and levels
+`-2 / 3 < a` and `b < 2 / 3`, there is a time `T` such that the trajectory of `-grad f` through any
+point `x` with `f x ≤ b` lies strictly below the level `a` at every time `t ≥ T`. -/
+theorem exists_forall_cubic_comp_sphereHeight_maximalIntegralCurve_neg_mgradient_lt {a b : ℝ}
+    (ha : -(2 / 3) < a) (hb : b < 2 / 3) :
+    ∃ T, ∀ x, ((fun t : ℝ ↦ t - t ^ 3 / 3) ∘ sphereHeight v) x ≤ b → ∀ t, T ≤ t →
+      ((fun t : ℝ ↦ t - t ^ 3 / 3) ∘ sphereHeight v) (maximalIntegralCurve
+        (-mgradient (𝓡 n) ((fun t : ℝ ↦ t - t ^ 3 / 3) ∘ sphereHeight v)) x t) < a := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hf : ContMDiff (𝓡 n) 𝓘(ℝ) 2 ((fun t : ℝ ↦ t - t ^ 3 / 3) ∘ sphereHeight v) :=
+    (by fun_prop : ContDiff ℝ 2 fun t : ℝ ↦ t - t ^ 3 / 3).comp_contMDiff
+      (contMDiff_sphereHeight v)
+  -- The band `f⁻¹[a, b]` is compact and misses the poles, the only critical points.
+  obtain ⟨T, hT⟩ := exists_forall_comp_maximalIntegralCurve_neg_mgradient_lt (a := a) (b := b) hf
+    (isClosed_Icc.preimage hf.continuous).isCompact fun y hay hyb ↦ by
+      rw [Ne, ← mem_criticalPoints_iff_mfderiv_eq_zero, criticalPoints_cubic_comp_sphereHeight]
+      rintro (rfl | rfl)
+      · rw [Function.comp_apply, sphereHeight_self] at hyb
+        linarith
+      · rw [Function.comp_apply, sphereHeight_neg_self] at hay
+        linarith
+  -- On the compact sphere, the forward trajectories exist for all positive time.
+  refine ⟨max T 0, fun x hx t ht ↦ hT x hx t ?_ ((le_max_left _ _).trans ht)⟩
+  exact Ici_subset_maximalIntegralCurveInterval_neg_mgradient isCompact_univ (mapsTo_univ _ _) hf
+    ((le_max_right _ _).trans ht)
+
 end AnyMetric
 
 /-! ### The round metric -/
@@ -147,6 +222,26 @@ theorem norm_mgradient_sphereHeight_sq (v y : sphere (0 : E) 1) :
   have h : sphereHeight v = fun q : sphere (0 : E) 1 ↦ inner ℝ (v : E) (q : E) :=
     funext fun q ↦ by rw [sphereHeight_apply, real_inner_comm]
   rw [h, norm_mgradient_inner_coe_sphere_sq, norm_eq_of_mem_sphere v, one_pow]
+
+/-- **Crossing a band of latitudes in bounded time.** For the round metric, let `-r ≤ a` and
+`b ≤ r`, so that the gradient of `h` has squared length `1 - h² ≥ 1 - r²` on the band
+`a ≤ h ≤ b`. Then the trajectory of `-grad h` through a point `x` with `h x ≤ b` lies strictly
+below the latitude `a` at every time `t ≥ 0` with `(1 - r²) t > b - a`. -/
+theorem sphereHeight_maximalIntegralCurve_neg_mgradient_lt {a b r t : ℝ} (ha : -r ≤ a)
+    (hb : b ≤ r) (hx : sphereHeight v x ≤ b) (ht : 0 ≤ t) (hbat : b - a < (1 - r ^ 2) * t) :
+    sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t) < a :=
+  comp_maximalIntegralCurve_neg_mgradient_lt (contMDiff_sphereHeight (n := n) v)
+    (fun y hay hyb ↦ by rw [norm_mgradient_sphereHeight_sq]; nlinarith) hx
+    (Ici_subset_maximalIntegralCurveInterval_neg_mgradient_sphereHeight ht) ht hbat
+
+/-- For the round metric, the trajectory of `-grad h` through a point of the closed cap
+`{h ≤ 1 / 2}` lies in the open cap `{h < -1 / 2}` at every time `t > 4 / 3`: on the band
+`-1 / 2 ≤ h ≤ 1 / 2` the gradient of `h` has squared length at least `3 / 4`. -/
+theorem sphereHeight_maximalIntegralCurve_neg_mgradient_lt_neg_half
+    (hx : sphereHeight v x ≤ 1 / 2) {t : ℝ} (ht : 4 / 3 < t) :
+    sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t) < -(1 / 2) :=
+  sphereHeight_maximalIntegralCurve_neg_mgradient_lt le_rfl le_rfl hx (by linarith)
+    (by linarith)
 
 /-- Along a negative gradient trajectory for the round metric, the height satisfies
 `h' = -(1 - h²)`. -/
@@ -190,6 +285,72 @@ theorem one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient (hx 
     (fun s hs ↦ (hg s hs.1).hasDerivWithinAt) t ⟨ht, le_rfl⟩
   simp only [g_def, h0, mul_zero, Real.exp_zero, mul_one] at hconst
   rw [← hconst, mul_assoc, ← Real.exp_add, add_neg_cancel, Real.exp_zero, mul_one]
+
+/-- Away from the north pole `v`, half the angle `u` of a point `z` from the south pole lies in
+`[0, π / 2)`, and `tan² (u / 2) = (1 + h z) / (1 - h z)`: the height is `h z = -cos u`. -/
+private theorem tan_angle_neg_div_two_sq {z : sphere (0 : E) 1} (hz : sphereHeight v z < 1) :
+    0 ≤ angle (z : E) (-(v : E)) / 2 ∧ angle (z : E) (-(v : E)) / 2 < Real.pi / 2 ∧
+      Real.tan (angle (z : E) (-(v : E)) / 2) ^ 2 =
+        (1 + sphereHeight v z) / (1 - sphereHeight v z) := by
+  set u := angle (z : E) (-(v : E))
+  have hcos : Real.cos u = -sphereHeight v z := by
+    rw [← inner_eq_cos_angle_of_norm_eq_one (norm_eq_of_mem_sphere z) (by simp),
+      inner_neg_right, sphereHeight_apply]
+  have hne : Real.cos u ≠ -1 := by
+    rw [hcos, ne_eq, neg_inj]
+    exact hz.ne
+  refine ⟨by linarith [angle_nonneg (z : E) (-(v : E))], ?_, ?_⟩
+  · refine (div_lt_div_iff_of_pos_right two_pos).2 ((angle_le_pi _ _).lt_of_ne fun hu ↦ hne ?_)
+    rw [show u = Real.pi from hu, Real.cos_pi]
+  · have h := Real.cos_eq_two_mul_tan_half_div_one_sub_tan_half_sq u hne
+    rw [hcos] at h
+    have hpos : 0 < 1 + Real.tan (u / 2) ^ 2 := by positivity
+    rw [eq_div_iff hpos.ne'] at h
+    rw [eq_div_iff (sub_pos.2 hz).ne']
+    linarith
+
+/-- **The meridian law for the round metric.** Let `u₀` be the angle of a point `x` other than the
+north pole from the south pole. Along the trajectory `γ` of `-grad h` through `x`, the angle of
+`γ t` from the south pole is `2 arctan (tan (u₀ / 2) exp (-t))` for every `t ≥ 0`. This is the
+solution of the meridian equation `u' = -sin u`. -/
+theorem angle_maximalIntegralCurve_neg_mgradient_sphereHeight (hx : x ≠ v) {t : ℝ} (ht : 0 ≤ t) :
+    angle ((maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t : sphere (0 : E) 1) : E)
+        (-(v : E)) =
+      2 * Real.arctan (Real.tan (angle (x : E) (-(v : E)) / 2) * Real.exp (-t)) := by
+  set γ := maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x
+  obtain ⟨h0, hπ, hsq⟩ :=
+    tan_angle_neg_div_two_sq
+      (sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one (n := n) hx ht)
+  obtain ⟨h0x, hπx, hsqx⟩ := tan_angle_neg_div_two_sq (v := v) (z := x)
+    ((sphereHeight_lt_self hx).trans_eq (sphereHeight_self v))
+  -- Both half-angle tangents are nonnegative, and the energy law makes their squares agree.
+  have htan : Real.tan (angle ((γ t : sphere (0 : E) 1) : E) (-(v : E)) / 2) =
+      Real.tan (angle (x : E) (-(v : E)) / 2) * Real.exp (-t) := by
+    refine (pow_left_inj₀ (Real.tan_nonneg_of_nonneg_of_le_pi_div_two h0 hπ.le)
+      (mul_nonneg (Real.tan_nonneg_of_nonneg_of_le_pi_div_two h0x hπx.le) (Real.exp_pos _).le)
+      two_ne_zero).1 ?_
+    rw [hsq, mul_pow, hsqx, ← Real.exp_natCast_mul, Nat.cast_ofNat,
+      one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient hx ht]
+    ring_nf
+  rw [← htan, Real.arctan_tan (by linarith [Real.pi_pos]) hπ]
+  ring
+
+/-- **The distance to the south pole along a meridian.** For the round metric, let `u₀` be the
+angle of a point `x` other than the north pole from the south pole. The Riemannian distance from
+the trajectory of `-grad h` through `x` to the south pole is `2 arctan (tan (u₀ / 2) exp (-t))` at
+every time `t ≥ 0`: the round distance is the angle
+(`TauCeti.riemannianEDist_sphere_of_ne_neg`). -/
+theorem riemannianEDist_maximalIntegralCurve_neg_mgradient_sphereHeight (hx : x ≠ v) {t : ℝ}
+    (ht : 0 ≤ t) :
+    Manifold.riemannianEDist (𝓡 n) (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t)
+        (-v) =
+      ENNReal.ofReal
+        (2 * Real.arctan (Real.tan (angle (x : E) (-(v : E)) / 2) * Real.exp (-t))) := by
+  have hne : -v ≠ -maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t := fun h ↦
+    (sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one (n := n) hx ht).ne
+      (sphereHeight_eq_one_iff.2 (neg_inj.1 h).symm)
+  rw [riemannianEDist_sphere_of_ne_neg hne, coe_neg_sphere,
+    angle_maximalIntegralCurve_neg_mgradient_sphereHeight hx ht]
 
 /-- The energy law in product form: `1 + h (γ t) = R exp (-t)² (1 - h (γ t))` with
 `R = (1 + h x) / (1 - h x)`, for every `t ≥ 0`. -/
@@ -287,6 +448,145 @@ theorem not_exists_riemannianEDist_le_mul_exp_maximalIntegralCurve_neg_mgradient
   rw [one_mul]
   exact (hlow t ht0).trans (hCt.trans (ENNReal.ofReal_le_ofReal
     (mul_le_mul_of_nonneg_right (le_max_left C 1) (Real.exp_pos _).le)))
+
+/-! ### Polar caps under the flow of the round metric -/
+
+/-- Forward in time, along the trajectory of `-grad h` through a point other than the poles,
+`artanh h` decreases at unit speed. -/
+private theorem sphereHeight_maximalIntegralCurve_neg_mgradient_eq_tanh_of_nonneg (hx : x ≠ v)
+    (hx' : x ≠ -v) {t : ℝ} (ht : 0 ≤ t) :
+    sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t) =
+      Real.tanh (Real.artanh (sphereHeight v x) - t) := by
+  set y := maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t
+  obtain ⟨h₀gt, h₀lt⟩ := sphereHeight_mem_Ioo_iff.2 ⟨hx, hx'⟩
+  have hR : 0 < (1 + sphereHeight v x) / (1 - sphereHeight v x) :=
+    div_pos (by linarith) (by linarith)
+  have hlt : sphereHeight v y < 1 := sphereHeight_maximalIntegralCurve_neg_mgradient_lt_one hx ht
+  have heq : (1 + sphereHeight v y) / (1 - sphereHeight v y) =
+      (1 + sphereHeight v x) / (1 - sphereHeight v x) * Real.exp (-(2 * t)) :=
+    one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient hx ht
+  -- The energy law keeps `(1 + h) / (1 - h)` positive, so the height stays above `-1`.
+  have hgt : -1 < sphereHeight v y := by
+    have := (div_pos_iff_of_pos_right (sub_pos.2 hlt)).1 (heq ▸ mul_pos hR (Real.exp_pos _))
+    linarith
+  rw [← Real.tanh_artanh ⟨hgt, hlt⟩, Real.artanh_eq_half_log ⟨hgt.le, hlt.le⟩,
+    Real.artanh_eq_half_log ⟨h₀gt.le, h₀lt.le⟩, heq, Real.log_mul hR.ne' (Real.exp_pos _).ne',
+    Real.log_exp]
+  congr 1
+  ring
+
+/-- The time-`(-t)` map of the negative gradient flow of the height function inverts the time-`t`
+map. -/
+private theorem flowOf_neg_mgradient_sphereHeight_flowOf_neg (t : ℝ) (y : sphere (0 : E) 1) :
+    flowOf (-mgradient (𝓡 n) (sphereHeight v)) t
+      (flowOf (-mgradient (𝓡 n) (sphereHeight v)) (-t) y) = y := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  have hv := contMDiff_neg_mgradient_one (contMDiff_sphereHeight (n := n) v)
+  exact flowOf_flowOf_neg hv (isCompleteVectorField_of_compactSpace hv) t y
+
+/-- The poles are rest points of the negative gradient flow of the height function. -/
+private theorem flowOf_neg_mgradient_sphereHeight_eq_self (hx : x = v ∨ x = -v) (t : ℝ) :
+    flowOf (-mgradient (𝓡 n) (sphereHeight v)) t x = x := by
+  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
+  refine flowOf_eq_self_of_eq_zero
+    (contMDiff_neg_mgradient_one (contMDiff_sphereHeight (n := n) v)) ?_ t
+  rwa [Pi.neg_apply, neg_eq_zero, mgradient_eq_zero_iff, ← mem_criticalPoints,
+    criticalPoints_sphereHeight]
+
+/-- **The height along a trajectory, for the round metric.** If `x` is neither pole, then at every
+time `t` the trajectory of `-grad h` through `x` has height `tanh (artanh (h x) - t)`: along it,
+`artanh h` decreases at unit speed. With `artanh h = log ((1 + h) / (1 - h)) / 2`, this is the
+energy law `TauCeti.one_add_sphereHeight_div_one_sub_maximalIntegralCurve_neg_mgradient`, extended
+to negative times. -/
+theorem sphereHeight_maximalIntegralCurve_neg_mgradient_eq_tanh (hx : x ≠ v) (hx' : x ≠ -v)
+    (t : ℝ) :
+    sphereHeight v (maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t) =
+      Real.tanh (Real.artanh (sphereHeight v x) - t) := by
+  rcases le_total 0 t with ht | ht
+  · exact sphereHeight_maximalIntegralCurve_neg_mgradient_eq_tanh_of_nonneg hx hx' ht
+  -- Backward in time, the flow runs forward from `y = γ t` for the time `-t` back to `x`.
+  set y := maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) x t
+  have hyx : maximalIntegralCurve (-mgradient (𝓡 n) (sphereHeight v)) y (-t) = x := by
+    simpa only [neg_neg, flowOf_apply] using
+      flowOf_neg_mgradient_sphereHeight_flowOf_neg (n := n) (v := v) (-t) x
+  -- The flow fixes the poles, so `y` is not a pole either.
+  have hy : y ≠ v ∧ y ≠ -v := by
+    refine ⟨fun h ↦ hx ?_, fun h ↦ hx' ?_⟩ <;>
+      rw [← hyx, ← flowOf_apply, flowOf_neg_mgradient_sphereHeight_eq_self (by tauto), h]
+  have h := sphereHeight_maximalIntegralCurve_neg_mgradient_eq_tanh_of_nonneg (n := n) hy.1 hy.2
+    (neg_nonneg.2 ht)
+  rw [hyx, sub_neg_eq_add] at h
+  rw [h, Real.artanh_tanh, add_sub_cancel_right, Real.tanh_artanh (sphereHeight_mem_Ioo_iff.2 hy)]
+
+/-- For the round metric, the preimage of the open cap `{h < tanh σ}` around the south pole under
+the time-`t` map of the negative gradient flow of `h` is the open cap `{h < tanh (σ + t)}`, for
+every real `t`. -/
+theorem preimage_flowOf_neg_mgradient_sphereHeight_preimage_Iio_tanh (σ t : ℝ) :
+    flowOf (-mgradient (𝓡 n) (sphereHeight v)) t ⁻¹' (sphereHeight v ⁻¹' Iio (Real.tanh σ)) =
+      sphereHeight v ⁻¹' Iio (Real.tanh (σ + t)) := by
+  ext x
+  simp only [mem_preimage, mem_Iio]
+  by_cases hxv : x = v
+  · rw [flowOf_neg_mgradient_sphereHeight_eq_self (.inl hxv), hxv, sphereHeight_self]
+    exact iff_of_false (Real.tanh_lt_one _).not_gt (Real.tanh_lt_one _).not_gt
+  by_cases hxv' : x = -v
+  · rw [flowOf_neg_mgradient_sphereHeight_eq_self (.inr hxv'), hxv', sphereHeight_neg_self]
+    exact iff_of_true (Real.neg_one_lt_tanh _) (Real.neg_one_lt_tanh _)
+  rw [flowOf_apply, sphereHeight_maximalIntegralCurve_neg_mgradient_eq_tanh hxv hxv',
+    Real.tanh_lt_tanh_iff, ← Real.tanh_artanh (sphereHeight_mem_Ioo_iff.2 ⟨hxv, hxv'⟩),
+    Real.tanh_lt_tanh_iff, Real.artanh_tanh, sub_lt_iff_lt_add]
+
+/-- **The flow carries polar caps onto polar caps.** For the round metric, the time-`t` map of the
+negative gradient flow of `h` carries the open cap `{h < tanh σ}` around the south pole onto the
+open cap `{h < tanh (σ - t)}`, for every real `t`. Forward in time the cap shrinks into itself;
+backward in time, with `t = -T`, it grows to the cap `{h < tanh (σ + T)}`, which contains any given
+closed cap `{h ≤ r}` with `r < 1` once `T` is large
+(`TauCeti.mapsTo_flowOf_neg_mgradient_sphereHeight_iff`). -/
+theorem image_flowOf_neg_mgradient_sphereHeight_preimage_Iio_tanh (σ t : ℝ) :
+    flowOf (-mgradient (𝓡 n) (sphereHeight v)) t '' (sphereHeight v ⁻¹' Iio (Real.tanh σ)) =
+      sphereHeight v ⁻¹' Iio (Real.tanh (σ - t)) := by
+  rw [image_eq_preimage_of_inverse (g := flowOf (-mgradient (𝓡 n) (sphereHeight v)) (-t))
+      (fun y ↦ by simpa only [neg_neg] using flowOf_neg_mgradient_sphereHeight_flowOf_neg (-t) y)
+      (flowOf_neg_mgradient_sphereHeight_flowOf_neg t),
+    preimage_flowOf_neg_mgradient_sphereHeight_preimage_Iio_tanh, sub_eq_add_neg]
+
+/-- **Which caps the flow carries into which.** For the round metric on a sphere of positive
+dimension and heights `r, s ∈ (-1, 1)`, the time-`t` map of the negative gradient flow of `h`
+carries the closed cap `{h ≤ r}` into the open cap `{h < s}` exactly when
+`artanh r - artanh s < t`. Equivalently, the image `{h < tanh (artanh s + t)}` of `{h < s}` under
+the time-`(-t)` map contains `{h ≤ r}`
+(`TauCeti.image_flowOf_neg_mgradient_sphereHeight_preimage_Iio_tanh`). For `r < s` this holds at
+every time `t ≥ 0`; for `s ≤ r` it needs a positive time, which this computes exactly. -/
+theorem mapsTo_flowOf_neg_mgradient_sphereHeight_iff (hn : 0 < n) {r s : ℝ}
+    (hr : r ∈ Ioo (-1) 1) (hs : s ∈ Ioo (-1) 1) (t : ℝ) :
+    MapsTo (flowOf (-mgradient (𝓡 n) (sphereHeight v)) t) (sphereHeight v ⁻¹' Iic r)
+        (sphereHeight v ⁻¹' Iio s) ↔
+      Real.artanh r - Real.artanh s < t := by
+  have hcap : sphereHeight v ⁻¹' Iio s = sphereHeight v ⁻¹' Iio (Real.tanh (Real.artanh s)) := by
+    rw [Real.tanh_artanh hs]
+  rw [mapsTo_iff_subset_preimage, hcap,
+    preimage_flowOf_neg_mgradient_sphereHeight_preimage_Iio_tanh, sub_lt_iff_lt_add',
+    ← Real.tanh_lt_tanh_iff, Real.tanh_artanh hr]
+  refine ⟨fun h ↦ ?_, fun h y hy ↦ (mem_Iic.1 hy).trans_lt h⟩
+  -- In positive dimension some point has height exactly `r`.
+  obtain ⟨y, hy⟩ := (range_sphereHeight hn v).symm ▸ Ioo_subset_Icc_self hr
+  exact hy ▸ h (show sphereHeight v y ∈ Iic r from hy.le)
+
+/-- **The exact crossing time of the band `|h| ≤ 1 / 2`.** For the round metric on a sphere of
+positive dimension, such as the circle, the time-`t` map of the negative gradient flow of `h`
+carries the closed cap `{h ≤ 1 / 2}` into the open cap `{h < -1 / 2}` exactly when `t > log 3`.
+The lower bound `3 / 4` for `‖grad h‖²` on the band only gives the sufficient condition `t > 4 / 3`
+(`TauCeti.sphereHeight_maximalIntegralCurve_neg_mgradient_lt_neg_half`). -/
+theorem mapsTo_flowOf_neg_mgradient_sphereHeight_half_iff (hn : 0 < n) (t : ℝ) :
+    MapsTo (flowOf (-mgradient (𝓡 n) (sphereHeight v)) t) (sphereHeight v ⁻¹' Iic (1 / 2))
+        (sphereHeight v ⁻¹' Iio (-(1 / 2))) ↔
+      Real.log 3 < t := by
+  rw [mapsTo_flowOf_neg_mgradient_sphereHeight_iff hn ⟨by norm_num, by norm_num⟩
+    ⟨by norm_num, by norm_num⟩, Real.artanh_eq_half_log ⟨by norm_num, by norm_num⟩,
+    Real.artanh_eq_half_log ⟨by norm_num, by norm_num⟩,
+    show (1 + 1 / 2) / (1 - 1 / 2) = (3 : ℝ) by norm_num,
+    show (1 + -(1 / 2)) / (1 - -(1 / 2)) = (3 : ℝ)⁻¹ by norm_num, Real.log_inv,
+    show 1 / 2 * Real.log 3 - 1 / 2 * -Real.log 3 = Real.log 3 by ring]
 
 end Round
 

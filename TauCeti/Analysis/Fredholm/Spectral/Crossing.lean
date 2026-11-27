@@ -12,6 +12,8 @@ import TauCeti.LinearAlgebra.QuadraticForm.Isometry
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 public import Mathlib.Analysis.Calculus.Deriv.Slope
 import TauCeti.Topology.Algebra.Indicator
+import TauCeti.Topology.Order.Interval.Basic
+import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Eigenvector
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Analysis.Normed.Operator.Restrict
 import TauCeti.LinearAlgebra.End.Idempotent
@@ -60,6 +62,16 @@ subspaces split the range of `P t`, so Sylvester's law of inertia
 `dim K - spectralCount c (A t)`, and the spectral flow over an interval with the single cut `c` is
 a difference of these counts.
 
+**Regular crossings are isolated.** The compressed path also detects injectivity: a vector of the
+kernel of `A t` is an eigenvector for the eigenvalue `0 ∈ [-c, c]`, so it is fixed by `P t` and is
+`P t v` for some `v ∈ K`, along which `V t` vanishes. So `A t` is injective wherever `V t` is
+nondegenerate, and by the finite-dimensional isolation of regular crossings
+(`ContinuousLinearMap.eventually_nondegenerate_of_crossingForm_nondegenerate`) `A t` is injective
+at every `t ≠ t₀` close to a regular crossing `t₀`
+(`TauCeti.eventually_ker_eq_bot_of_crossingForm_nondegenerate`). These local results are summed
+over the crossings of a path on a compact interval in
+`TauCeti.Analysis.Fredholm.Spectral.RegularCrossings`.
+
 ## Main results
 
 * `IsSelfAdjoint.sigNeg_add_spectralCount_eq_finrank`: the negative index of the form of a
@@ -71,6 +83,7 @@ a difference of these counts.
   regular crossing.
 * `TauCeti.eventually_spectralFlow_eq_sigPos_sub_sigNeg_crossingForm`: **the regular-crossing
   formula**, the spectral flow across a regular crossing.
+* `TauCeti.eventually_ker_eq_bot_of_crossingForm_nondegenerate`: regular crossings are isolated.
 
 ## References
 
@@ -271,26 +284,63 @@ private theorem hasDerivAt_compressedForm (hK : ∀ v, A t₀ (ι v) = 0)
   rw [hasDerivAt_iff_tendsto_slope (f := compressedForm A c ι) (f' := restrictForm ι A')]
   exact tendsto_slope_compressedForm hK hPK (hP.tendsto.mono_left nhdsWithin_le_nhds) hA
 
+/-- The compressed path is symmetric at every time at which `A` is self-adjoint. -/
+private theorem isSymm_compressedForm {t : ℝ} (hst : IsSelfAdjoint (A t)) :
+    (compressedForm A c ι t).toBilinForm.IsSymm :=
+  isSymm_toBilinForm_iff.2 fun v w ↦ by
+    simp only [compressedForm, bilinearComp_apply, ContinuousLinearMap.comp_apply,
+      innerSL_apply_apply]
+    exact (hst.isSymmetric _ _).trans (real_inner_comm _ _)
+
+/-- **The compressed path detects the kernel.** Let `c ≥ 0` be such that neither `-c` nor `c` is in
+the spectrum of the self-adjoint operator `A t`, and let `P t ∘ ι` map onto the range of the
+spectral projection `P t` of `A t` for `[-c, c]`. If `V t` is nondegenerate, then `A t` is
+injective: a vector of its kernel is an eigenvector for `0 ∈ [-c, c]`, so it is fixed by `P t`,
+hence of the form `P t (ι v)`, and then `V t (v, ·) = 0`. -/
+private theorem ker_eq_bot_of_nondegenerate_compressedForm {t : ℝ} (hst : IsSelfAdjoint (A t))
+    (hc : 0 ≤ c) (h₁ : -c ∉ spectrum ℝ (A t)) (h₂ : c ∉ spectrum ℝ (A t))
+    (hrange : ((cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A t) ∘L ι : E →L[ℝ] H) :
+      E →ₗ[ℝ] H).range = (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A t)).range)
+    (hnd : (compressedForm A c ι t).toBilinForm.Nondegenerate) : (A t).ker = ⊥ := by
+  set P := cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A t) with hP
+  refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hx
+  -- `x` is an eigenvector for the eigenvalue `0 ∈ [-c, c]`, so it is fixed by `P t`.
+  have hPx : P x = x := (ContinuousLinearMap.smul_def P x).symm.trans <|
+    cfc_indicator_smul_of_smul_eq_algebraMap_smul
+      (by rw [map_zero, zero_smul, ContinuousLinearMap.smul_def, hx]) ⟨by linarith, hc⟩
+      (disjoint_frontier_Icc h₁ h₂) hst
+  have hxP : x ∈ ((P ∘L ι : E →L[ℝ] H) : E →ₗ[ℝ] H).range := by
+    rw [hrange, LinearMap.mem_range]
+    exact ⟨x, by simpa using hPx⟩
+  obtain ⟨v, hv⟩ := LinearMap.mem_range.1 hxP
+  rw [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply] at hv
+  have hv0 : v = 0 := hnd.1 v fun w ↦ by simp [compressedForm, ← hP, hv, hx]
+  rw [← hv, hv0, map_zero, map_zero]
+
 /-! ### The spectral flow across a regular crossing -/
 
 /-- **The spectral flow near a crossing as a drop of negative index.** Let `s` contain `t₀`, and
 let `A` be continuous within `s` and self-adjoint at the times of `s` near `t₀`, with `A t₀`
 Fredholm and kernel `K`. There is a cut `c > 0` such that the spectral projection `P t₀` of `A t₀`
-for `[-c, c]` fixes `K`, `P` is continuous within `s` at `t₀`, and for `a ≤ b` near `t₀` with
-`[a, b] ⊆ s` the spectral flow from `a` to `b` is the drop of the negative index of the compressed
-path `V t (v, w) = ⟪A t (P t v), P t w⟫` on `K`. -/
+for `[-c, c]` fixes `K`, `P` is continuous within `s` at `t₀`, at the times of `s` near `t₀` the
+operator `A t` is injective as soon as the compressed path `V t (v, w) = ⟪A t (P t v), P t w⟫` on
+`K` is nondegenerate, and for `a ≤ b` near `t₀` with `[a, b] ⊆ s` the spectral flow from `a` to `b`
+is the drop of the negative index of `V`. -/
 private theorem exists_spectralFlow_eq_sigNeg_sub_sigNeg {s : Set ℝ} (ht₀ : t₀ ∈ s)
     {K : Submodule ℝ H} (hK : K = (A t₀).ker) (hA : ∀ᶠ t in 𝓝[s] t₀, ContinuousWithinAt A s t)
     (hsa : ∀ᶠ t in 𝓝[s] t₀, IsSelfAdjoint (A t)) (hF : (A t₀).IsFredholm) :
     ∃ c > 0, (∀ v : K, cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A t₀) v = v) ∧
       ContinuousWithinAt (fun t ↦ cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A t)) s t₀ ∧
+      (∀ᶠ t in 𝓝[s] t₀,
+        (compressedForm A c K.subtypeL t).toBilinForm.Nondegenerate → (A t).ker = ⊥) ∧
       ∃ ε > 0, ∀ a b, t₀ - ε < a → a ≤ b → b < t₀ + ε → Icc a b ⊆ s →
         spectralFlow A a b =
           (sigNeg (compressedForm A c K.subtypeL a).toBilinForm.toQuadraticMap : ℤ) -
             sigNeg (compressedForm A c K.subtypeL b).toBilinForm.toQuadraticMap := by
   have hsa₀ := hsa.self_of_nhdsWithin ht₀
-  obtain ⟨c, hc, hfr, hP₀, hev⟩ :=
-    hsa₀.exists_pos_cfc_indicator_Icc_eq_starProjection_ker_of_isFredholm hF
+  obtain ⟨c, hc, -, hfr, hP₀, hev⟩ :=
+    hsa₀.exists_pos_cfc_indicator_Icc_eq_starProjection_ker_of_isFredholm hF one_pos
   set P := fun t ↦ cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) (A t)
   have hPK (v : K) : P t₀ v = v := by
     simp only [P, hP₀]
@@ -299,17 +349,17 @@ private theorem exists_spectralFlow_eq_sigNeg_sub_sigNeg {s : Set ℝ} (ht₀ : 
     tendsto_nhdsWithin_iff.2 ⟨hA.self_of_nhdsWithin ht₀, hsa⟩
   have hPc : ContinuousWithinAt P s t₀ :=
     (hsa₀.continuousWithinAt_cfc_indicator hfr).tendsto.comp hT
-  refine ⟨c, hc, hPK, hPc, ?_⟩
   have : FiniteDimensional ℝ (A t₀).ker := hF.finite_ker
   -- Near `t₀`, `c` is a cut and `P t` maps `K` isomorphically onto its range, so the negative
-  -- index of the compressed path counts the eigenvalues of `A t` in `[-c, 0)`.
+  -- index of the compressed path counts the eigenvalues of `A t` in `[-c, 0)`, and its
+  -- nondegeneracy detects the injectivity of `A t`.
   have hloc : ∀ᶠ t in 𝓝[s] t₀, ContinuousWithinAt A s t ∧ IsSelfAdjoint (A t) ∧
       -c ∉ spectrum ℝ (A t) ∧ c ∉ spectrum ℝ (A t) ∧ FiniteDimensional ℝ (P t).range ∧
       sigNeg (compressedForm A c K.subtypeL t).toBilinForm.toQuadraticMap +
-        spectralCount c (A t) = Module.finrank ℝ K := by
+        spectralCount c (A t) = Module.finrank ℝ K ∧
+      ((compressedForm A c K.subtypeL t).toBilinForm.Nondegenerate → (A t).ker = ⊥) := by
     filter_upwards [hA, hsa, hT.eventually hev, hPc.eventually_mem (Metric.ball_mem_nhds _ one_pos)]
       with t hAt hst ⟨h₁, h₂, hfd, hrk⟩ hdist
-    refine ⟨hAt, hst, h₁, h₂, hfd, ?_⟩
     have hinj : Injective (P t ∘L K.subtypeL) :=
       injective_comp_subtypeL_of_norm_sub_lt_one hPK (by rwa [← dist_eq_norm, dist_comm])
     have hrange : ((P t ∘L K.subtypeL : K →L[ℝ] H) : K →ₗ[ℝ] H).range = (P t).range := by
@@ -317,23 +367,24 @@ private theorem exists_spectralFlow_eq_sigNeg_sub_sigNeg {s : Set ℝ} (ht₀ : 
       · rintro _ ⟨v, rfl⟩
         exact ⟨v, by simp⟩
       · rw [LinearMap.finrank_range_of_inj hinj, hrk, hK]
-    exact hst.sigNeg_add_spectralCount_eq_finrank hc.le h₁ h₂ hfd hinj hrange
+    exact ⟨hAt, hst, h₁, h₂, hfd,
+      hst.sigNeg_add_spectralCount_eq_finrank hc.le h₁ h₂ hfd hinj hrange,
+      ker_eq_bot_of_nondegenerate_compressedForm hst hc.le h₁ h₂ hrange⟩
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhdsWithin_iff.1 hloc
-  refine ⟨ε, hε, fun a b ha hab hb hs ↦ ?_⟩
+  refine ⟨c, hc, hPK, hPc, hloc.mono fun _ ⟨_, _, _, _, _, _, h⟩ ↦ h, ε, hε,
+    fun a b ha hab hb hs ↦ ?_⟩
   have hsub : Icc a b ⊆ Metric.ball t₀ ε ∩ s := fun u hu ↦ by
     rw [Real.ball_eq_Ioo]
     exact ⟨⟨by linarith [hu.1], by linarith [hu.2]⟩, hs hu⟩
-  have hcont : ContinuousOn A (Icc a b) := fun u hu ↦ by
-    obtain ⟨hAu, -⟩ := hball (hsub hu)
-    exact hAu.mono hs
+  have hcont : ContinuousOn A (Icc a b) := fun u hu ↦ (hball (hsub hu)).1.mono hs
   have hsab : ∀ u ∈ Icc a b, IsSelfAdjoint (A u) := fun u hu ↦ by
     obtain ⟨-, hsu, -⟩ := hball (hsub hu)
     exact hsu
   have hcut : IsSpectralCutOn A c (Icc a b) := isSpectralCutOn_iff.2 ⟨hc, fun u hu ↦ by
     obtain ⟨-, -, h₁, h₂, hfd, -⟩ := hball (hsub hu)
     exact ⟨h₁, h₂, hfd⟩⟩
-  obtain ⟨-, -, -, -, -, ha'⟩ := hball (hsub ⟨le_rfl, hab⟩)
-  obtain ⟨-, -, -, -, -, hb'⟩ := hball (hsub ⟨hab, le_rfl⟩)
+  obtain ⟨-, -, -, -, -, ha', -⟩ := hball (hsub ⟨le_rfl, hab⟩)
+  obtain ⟨-, -, -, -, -, hb', -⟩ := hball (hsub ⟨hab, le_rfl⟩)
   rw [spectralFlow_eq_of_isSpectralCutOn hab hcont hsab hcut]
   omega
 
@@ -343,8 +394,9 @@ form `⟪A t₀ ·, ·⟫` is finite-dimensional, and there are a cut `c` and `�
 compressed path `V` on `K` is symmetric with negative index `0` at `t₀`, has derivative
 `⟪A' ·, ·⟫` within `s` at `t₀` whenever `A` has derivative `A'` within `s` there (and at `t₀` when
 `s` is a neighbourhood of `t₀` and `A` has derivative `A'` at `t₀`), has crossing form
-at `t₀` equivalent to the crossing form `Γ` of `A`, and computes the spectral flow of `A` between
-any two times `a ≤ b` within `ε` of `t₀` with `[a, b] ⊆ s`. -/
+at `t₀` equivalent to the crossing form `Γ` of `A`, computes the spectral flow of `A` between
+any two times `a ≤ b` within `ε` of `t₀` with `[a, b] ⊆ s`, and is nondegenerate at the times of
+`s` near `t₀` only where `A` is injective. -/
 private theorem exists_compressedForm_of_crossing {s : Set ℝ} (ht₀ : t₀ ∈ s)
     {K : Submodule ℝ H} (hK : K = ((innerSL ℝ).comp (A t₀)).ker)
     (hA : ∀ᶠ t in 𝓝[s] t₀, ContinuousWithinAt A s t)
@@ -358,23 +410,25 @@ private theorem exists_compressedForm_of_crossing {s : Set ℝ} (ht₀ : t₀ �
       sigNeg (compressedForm A c K.subtypeL t₀).toBilinForm.toQuadraticMap = 0 ∧
       (crossingForm (compressedForm A c K.subtypeL t₀) (restrictForm K.subtypeL A')).Equivalent
         (crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A')) ∧
-      ∀ a b, t₀ - ε < a → a ≤ b → b < t₀ + ε → Icc a b ⊆ s →
+      (∀ a b, t₀ - ε < a → a ≤ b → b < t₀ + ε → Icc a b ⊆ s →
         spectralFlow A a b =
           (sigNeg (compressedForm A c K.subtypeL a).toBilinForm.toQuadraticMap : ℤ) -
-            sigNeg (compressedForm A c K.subtypeL b).toBilinForm.toQuadraticMap := by
+            sigNeg (compressedForm A c K.subtypeL b).toBilinForm.toQuadraticMap) ∧
+      ∀ᶠ t in 𝓝[s] t₀,
+        (compressedForm A c K.subtypeL t).toBilinForm.Nondegenerate → (A t).ker = ⊥ := by
   have hKer : K = (A t₀).ker := hK.trans (ker_innerSL_comp (A t₀))
   have : FiniteDimensional ℝ K := hKer ▸ hF.finite_ker
   have hK₀ (v : K) : A t₀ v = 0 := by
     have hv : (v : H) ∈ (A t₀).ker := hKer ▸ v.property
     rwa [LinearMap.mem_ker, ContinuousLinearMap.coe_coe] at hv
-  obtain ⟨c, -, hPK, hPc, ε, hε, hSF⟩ :=
+  obtain ⟨c, -, hPK, hPc, hker, ε, hε, hSF⟩ :=
     exists_spectralFlow_eq_sigNeg_sub_sigNeg ht₀ hKer hA hsa hF
   have hV₀ := compressedForm_self (c := c) (ι := K.subtypeL) hK₀
   have hB₀ : (compressedForm A c K.subtypeL t₀).toBilinForm = 0 := by ext; simp [hV₀]
   refine ⟨this, c, ε, hε, fun hd ↦ hasDerivWithinAt_compressedForm hK₀ hPK hPc hd,
     fun hs hd ↦ hasDerivAt_compressedForm hK₀ hPK (hPc.continuousAt hs) hd,
     hB₀ ▸ LinearMap.BilinForm.isSymm_zero, by simp [hB₀],
-    (crossingForm_equivalent_of_eq_zero hV₀).trans ?_, hSF⟩
+    (crossingForm_equivalent_of_eq_zero hV₀).trans ?_, hSF, hker⟩
   refine ⟨{ toLinearEquiv := LinearEquiv.ofEq _ _ hK, map_app' := fun v ↦ ?_ }⟩
   calc crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A') (LinearEquiv.ofEq _ _ hK v)
       = ((innerSL ℝ).comp A') v v := crossingForm_apply _ _ _
@@ -393,7 +447,7 @@ theorem eventually_spectralFlow_right_eq_neg_sigNeg_crossingForm
     (hreg : (crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A')).Nondegenerate) :
     ∀ᶠ b in 𝓝[>] t₀, spectralFlow A t₀ b =
       -(sigNeg (crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A')) : ℤ) := by
-  obtain ⟨_, c, ε, hε, hder, -, hsymm, hV₀, ⟨e⟩, hSF⟩ :=
+  obtain ⟨_, c, ε, hε, hder, -, hsymm, hV₀, ⟨e⟩, hSF, -⟩ :=
     exists_compressedForm_of_crossing (A' := A') self_mem_Ici rfl hA hsa hF
   filter_upwards [eventually_sigNeg_eq_add_sigNeg_crossingForm hsymm (hder hd)
       (e.nondegenerate_iff.2 hreg), Ioo_mem_nhdsGT (show t₀ < t₀ + ε by linarith)] with b hb hbε
@@ -415,7 +469,7 @@ theorem eventually_spectralFlow_left_eq_sigPos_crossingForm
     (hreg : (crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A')).Nondegenerate) :
     ∀ᶠ a in 𝓝[<] t₀, spectralFlow A a t₀ =
       sigPos (crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A')) := by
-  obtain ⟨_, c, ε, hε, hder, -, hsymm, hV₀, ⟨e⟩, hSF⟩ :=
+  obtain ⟨_, c, ε, hε, hder, -, hsymm, hV₀, ⟨e⟩, hSF, -⟩ :=
     exists_compressedForm_of_crossing (A' := A') self_mem_Iic rfl hA hsa hF
   filter_upwards [eventually_sigNeg_eq_add_sigPos_crossingForm hsymm (hder hd)
       (e.nondegenerate_iff.2 hreg), Ioo_mem_nhdsLT (show t₀ - ε < t₀ by linarith)] with a ha haε
@@ -437,7 +491,7 @@ theorem eventually_spectralFlow_eq_sigPos_sub_sigNeg_crossingForm
     ∀ᶠ a in 𝓝[<] t₀, ∀ᶠ b in 𝓝[>] t₀, spectralFlow A a b =
       (sigPos (crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A')) : ℤ) -
         sigNeg (crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A')) := by
-  obtain ⟨_, c, ε, hε, -, hder, hsymm, -, ⟨e⟩, hSF⟩ :=
+  obtain ⟨_, c, ε, hε, -, hder, hsymm, -, ⟨e⟩, hSF, -⟩ :=
     exists_compressedForm_of_crossing (A' := A') (mem_univ t₀) rfl
       (by rw [nhdsWithin_univ]; exact hA.mono fun _ h ↦ h.continuousWithinAt)
       (by rwa [nhdsWithin_univ]) hF
@@ -447,5 +501,25 @@ theorem eventually_spectralFlow_eq_sigPos_sub_sigNeg_crossingForm
   filter_upwards [ha, Ioo_mem_nhdsGT (show t₀ < t₀ + ε by linarith)] with b hab hbε
   rw [hSF a b haε.1 (haε.2.trans hbε.1).le hbε.2 (subset_univ _), hab,
     QuadraticMap.Equivalent.sigPos_eq ⟨e⟩, QuadraticMap.Equivalent.sigNeg_eq ⟨e⟩]
+
+/-- **Regular crossings are isolated.** Let `A` be a path of self-adjoint operators on a real
+Hilbert space, continuous near `t₀`, with `A t₀` Fredholm and derivative `A'` at `t₀`. If the
+crossing form `Γ v = ⟪A' v, v⟫` on the kernel of `A t₀` is nondegenerate, then `A t` is injective
+at every `t ≠ t₀` close to `t₀`. -/
+theorem eventually_ker_eq_bot_of_crossingForm_nondegenerate
+    (hA : ∀ᶠ t in 𝓝 t₀, ContinuousAt A t) (hsa : ∀ᶠ t in 𝓝 t₀, IsSelfAdjoint (A t))
+    (hF : (A t₀).IsFredholm) (hd : HasDerivAt A A' t₀)
+    (hreg : (crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A')).Nondegenerate) :
+    ∀ᶠ t in 𝓝[≠] t₀, (A t).ker = ⊥ := by
+  obtain ⟨_, c, -, -, -, hder, -, -, ⟨e⟩, -, hker⟩ :=
+    exists_compressedForm_of_crossing (A' := A') (mem_univ t₀) rfl
+      (by rw [nhdsWithin_univ]; exact hA.mono fun _ h ↦ h.continuousWithinAt)
+      (by rwa [nhdsWithin_univ]) hF
+  rw [nhdsWithin_univ] at hker
+  -- The compressed path is nondegenerate near `t₀`, except at `t₀`, and detects injectivity.
+  filter_upwards [eventually_nondegenerate_of_crossingForm_nondegenerate
+      (hsa.mono fun _ ↦ isSymm_compressedForm) (hder univ_mem hd) (e.nondegenerate_iff.2 hreg),
+    nhdsWithin_le_nhds hker] with t hnd ht
+  exact ht hnd
 
 end TauCeti

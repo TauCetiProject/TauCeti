@@ -8,6 +8,9 @@ module
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Collar
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 
+import TauCeti.Topology.Homotopy.HomotopyGroup.PathComponent
+import TauCeti.Topology.PathComponent
+
 /-!
 # Base-point change for higher homotopy groups
 
@@ -56,7 +59,9 @@ product as the class of a concatenation `GenLoop.transAt i` in any cube directio
   `HomotopyGroup N X x ≃* HomotopyGroup N X y`.**
 * `TauCeti.nonempty_homotopyGroupMulEquiv`: on a path-connected space, all the homotopy groups
   in a fixed dimension are isomorphic; in particular one of them is trivial exactly when all are
-  (`TauCeti.subsingleton_homotopyGroup_of_pathConnectedSpace`).
+  (`TauCeti.subsingleton_homotopyGroup_of_pathConnectedSpace`), and in positive dimension triviality
+  at `x` implies triviality on `pathComponent x` at every point
+  (`TauCeti.subsingleton_homotopyGroup_pathComponent`).
 
 ## References
 
@@ -560,5 +565,15 @@ theorem subsingleton_homotopyGroup_of_pathConnectedSpace [Finite N] [PathConnect
     (_ : Subsingleton (HomotopyGroup N X x)) : Subsingleton (HomotopyGroup N X y) :=
   have : Fintype N := Fintype.ofFinite N
   (homotopyGroupEquivOfPath (PathConnectedSpace.somePath y x)).subsingleton
+
+omit [Fintype N] in
+/-- In positive dimension, if `π_N(X, x)` is trivial, then `π_N(pathComponent x, z)` is trivial at
+every point `z` of the path component of `x`. -/
+theorem subsingleton_homotopyGroup_pathComponent [Finite N] [Nonempty N]
+    (h : Subsingleton (HomotopyGroup N X x)) (z : pathComponent x) :
+    Subsingleton (HomotopyGroup N (pathComponent x) z) :=
+  subsingleton_homotopyGroup_of_pathConnectedSpace
+    ((HomotopyGroup.subsingleton_iff_of_pathComponent_subset
+      (x := pathComponentSelf x) subset_rfl rfl).2 h)
 
 end TauCeti

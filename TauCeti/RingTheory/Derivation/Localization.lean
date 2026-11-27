@@ -67,8 +67,7 @@ of `A` at `S`, for `N` a `T`-module. By `IsLocalization.eq_of_leibniz` it is the
 of `T` agreeing with `D` on `A`. -/
 noncomputable def extendOfIsLocalization (S : Submonoid A) [IsLocalization S T]
     (D : Derivation R A N) : Derivation R T N :=
-  haveI : IsScalarTower R T N := .of_algebraMap_smul fun r n ↦ by
-    rw [IsScalarTower.algebraMap_apply R A T, algebraMap_smul, algebraMap_smul]
+  haveI := IsScalarTower.to₁₃₄ R A T N
   letI := isLocalizedModule_id S N T
   let f := IsLocalizedModule.lift S (KaehlerDifferential.map R R A T) D.liftKaehlerDifferential
     (IsLocalizedModule.map_units (LinearMap.id : N →ₗ[A] N))

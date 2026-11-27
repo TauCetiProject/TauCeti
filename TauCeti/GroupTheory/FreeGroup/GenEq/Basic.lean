@@ -546,6 +546,14 @@ theorem substituteVars_eq_of_mem_V {w : Fin Ω.numItems → List (A × Bool)}
   refine h₁.eq_of_mk_eq h₂ ?_
   simpa [mk_substituteVars] using Ω.mem_V_toSystem_iff.1 hV e he
 
+/-- After substituting reduced words, both sides of a coefficient equation are reduced as written:
+one is the word of an item, the other a single letter. -/
+theorem isReduced_substituteVars_coeffEquation {w : Fin Ω.numItems → List (A × Bool)}
+    (hw : ∀ k, FreeGroup.IsReduced (w k)) (b : Fin Ω.numItems × (A × Bool)) :
+    FreeGroup.IsReduced (substituteVars w (Ω.coeffEquation b).1) ∧
+      FreeGroup.IsReduced (substituteVars w (Ω.coeffEquation b).2) := by
+  simp [hw b.1, FreeGroup.IsReduced.singleton]
+
 /-- For a tuple of reduced words, both sides of every equation of `Ω` are reduced as written after
 substitution if and only if the word `h[α(μ), β(μ)]` of every variable base is reduced as written:
 coefficient equations substitute to an item word or a single letter, and the two sides of a
@@ -561,8 +569,7 @@ theorem forall_mem_equations_isReduced_iff {w : Fin Ω.numItems → List (A × B
   · intro μ
     exact ⟨(Ω.isReduced_substituteVars_segment_iff w _ _ _).2 (h μ),
       (Ω.isReduced_substituteVars_segment_iff w _ _ _).2 (h (Ω.dual μ))⟩
-  · intro b _
-    simp [hw b.1, FreeGroup.IsReduced.singleton]
+  · exact fun b _ => Ω.isReduced_substituteVars_coeffEquation hw b
   · intro c hc
     obtain ⟨h₁, h₂, h₃, h₄⟩ := Ω.bounds_of_mem_connections c hc
     rw [boundaryEquation_fst]
@@ -858,6 +865,14 @@ theorem length_substituteVars_segment_add_prefixLength (s : Bool) {i j : ℕ} (h
   conv_rhs => rw [← List.take_append_drop i (List.take j (List.finRange Ω.numItems))]
   rw [List.map_append, List.sum_append, List.take_take, min_eq_left hij, add_comm]
 
+/-- The word of an item `hₖ` spans the words of a solution from boundary `k` to boundary `k + 1`:
+the prefix length grows across `hₖ` by the length of its word. -/
+theorem prefixLength_succ (k : Fin Ω.numItems) :
+    U.prefixLength (k + 1) = U.prefixLength k + (U.word k).length := by
+  have := U.length_substituteVars_segment_add_prefixLength true (Nat.le_add_right k 1)
+  rw [segment_succ, substituteVars_singleton_inl] at this
+  omega
+
 /-- Each item carries a nonempty word, so the prefix length grows at least by the number of items
 between two boundaries. -/
 theorem prefixLength_add_le {i j : ℕ} (hij : i ≤ j) (hj : j ≤ Ω.numItems) :
@@ -1049,14 +1064,39 @@ private theorem label_eq (b : Fin Ω.numItems × (A × Bool)) (hb : b ∈ Ω.con
   List.singleton_inj.1 ((U.word_of_mem_constBases hb).symm.trans
     (hk ▸ U.word_of_mem_constBases hb'))
 
-/-- The item of a constant base carries a one-letter word, so the prefix length grows by one
-across it. -/
-theorem prefixLength_succ_of_mem_constBases {b : Fin Ω.numItems × (A × Bool)}
-    (hb : b ∈ Ω.constBases) : U.prefixLength (b.1 + 1) = U.prefixLength b.1 + 1 := by
-  have := U.length_substituteVars_segment_add_prefixLength true (Nat.le_add_right b.1 1)
-  rw [segment_succ, substituteVars_singleton_inl, U.word_of_mem_constBases hb,
-    List.length_singleton] at this
+/-- Two boundaries whose positions in the words of a solution differ by one are adjacent: every
+item carries a nonempty word. -/
+private theorem eq_add_one_of_prefixLength_eq {i j : ℕ} (hj : j ≤ Ω.numItems)
+    (h : U.prefixLength j = U.prefixLength i + 1) : j = i + 1 := by
+  have hlt : i < j := not_le.1 fun hc => by have := U.prefixLength_mono hc; omega
+  have := U.prefixLength_add_le hlt.le hj
   omega
+
+/-- Let the boundaries `q` and `q'` lie, in the words of a solution, at the positions of the two
+end-points of an item `hₖ` carrying a one-letter word, in the sense of the boundary equations of
+`(k, μ, q)` and `(k + 1, μ, q')` (`TauCeti.GenEq.Solution.prefixLength_boundary`). Then `q` and
+`q'` are adjacent. -/
+theorem adjacent_of_length_word_eq_one_of_prefixLength_eq {k : Fin Ω.numItems}
+    (hk : (U.word k).length = 1) {μ : Fin Ω.numBases} {q q' : Fin (Ω.numItems + 1)}
+    (e : if Ω.sign μ = Ω.sign (Ω.dual μ) then
+        U.prefixLength k.castSucc + U.prefixLength (Ω.left (Ω.dual μ)) =
+          U.prefixLength q + U.prefixLength (Ω.left μ)
+      else
+        U.prefixLength k.castSucc + U.prefixLength q =
+          U.prefixLength (Ω.right (Ω.dual μ)) + U.prefixLength (Ω.left μ))
+    (e' : if Ω.sign μ = Ω.sign (Ω.dual μ) then
+        U.prefixLength k.succ + U.prefixLength (Ω.left (Ω.dual μ)) =
+          U.prefixLength q' + U.prefixLength (Ω.left μ)
+      else
+        U.prefixLength k.succ + U.prefixLength q' =
+          U.prefixLength (Ω.right (Ω.dual μ)) + U.prefixLength (Ω.left μ)) :
+    (q : ℕ) + 1 = q' ∨ (q' : ℕ) + 1 = q := by
+  have hsucc := U.prefixLength_succ k
+  simp only [Fin.val_castSucc, Fin.val_succ] at e e'
+  -- The prefix lengths at `q` and `q'` differ by one, which forces adjacent boundaries.
+  split_ifs at e e'
+  · exact Or.inl (U.eq_add_one_of_prefixLength_eq q'.is_le (by omega)).symm
+  · exact Or.inr (U.eq_add_one_of_prefixLength_eq q.is_le (by omega)).symm
 
 include U in
 private theorem connections_adjacent (b : Fin Ω.numItems × (A × Bool)) (hb : b ∈ Ω.constBases)
@@ -1069,24 +1109,9 @@ private theorem connections_adjacent (b : Fin Ω.numItems × (A × Bool)) (hb : 
   obtain rfl : μ = μ' := hμ
   simp only at hp hp' ⊢
   subst hp hp'
-  have hsucc := U.prefixLength_succ_of_mem_constBases hb
-  have e := U.prefixLength_boundary hc
-  have e' := U.prefixLength_boundary hc'
-  simp only [Fin.val_castSucc, Fin.val_succ] at e e'
-  -- The prefix lengths at `q` and `q'` differ by one, which forces adjacent boundaries.
-  split_ifs at e e'
-  · have hlt : (q : ℕ) < q' := by
-      by_contra h
-      have := U.prefixLength_mono (not_lt.1 h)
-      omega
-    have := U.prefixLength_add_le hlt.le q'.is_le
-    omega
-  · have hlt : (q' : ℕ) < q := by
-      by_contra h
-      have := U.prefixLength_mono (not_lt.1 h)
-      omega
-    have := U.prefixLength_add_le hlt.le q.is_le
-    omega
+  exact U.adjacent_of_length_word_eq_one_of_prefixLength_eq
+    (by rw [U.word_of_mem_constBases hb, List.length_singleton]) (U.prefixLength_boundary hc)
+    (U.prefixLength_boundary hc')
 
 include U in
 /-- **Kharlampovich–Myasnikov, Lemma 12(1).** A generalised equation with a solution is formally

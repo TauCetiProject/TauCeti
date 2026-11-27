@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
 
@@ -13,10 +14,7 @@ import Mathlib.Algebra.GroupWithZero.Action.Regular
 /-!
 # Isometries of quadratic maps
 
-This file records general properties of quadratic-map isometries.  It also reindexes a weighted
-sum of squares along an equivalence of its index type, which complements Mathlib's
-`QuadraticForm.weightedSumSquaresCongr` for equal weights and
-`QuadraticForm.isometryEquivWeightedSumSquaresWeightedSumSquares` for weights rescaled by squares.
+This file records general properties of quadratic-map isometries.
 
 ## Main results
 
@@ -27,6 +25,10 @@ sum of squares along an equivalence of its index type, which complements Mathlib
 * `QuadraticMap.apply_eq_zero_of_apply_eq_smul`: an eigenvector of a form-preserving endomorphism
   whose eigenvalue does not square to `1` (in the sense of regularity of `μ² - 1`) is isotropic.
 * `QuadraticMap.IsometryEquiv.polar_apply`: an isometric equivalence preserves polarization.
+* `QuadraticMap.IsometryEquiv.polarBilin_compl₁₂`: an isometric equivalence pulls the polar
+  bilinear form of the target back to that of the source.
+* `QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin`: an isometric equivalence maps polar
+  orthogonal complements to polar orthogonal complements.
 * `QuadraticMap.IsometryEquiv.polarKernelEquiv`: an isometric equivalence restricts to an
   equivalence of the kernels of polarization against corresponding vectors.
 * `QuadraticMap.IsometryEquiv.refl_apply`, `QuadraticMap.IsometryEquiv.symm_symm`, and
@@ -37,10 +39,6 @@ sum of squares along an equivalence of its index type, which complements Mathlib
   its polar bilinear form are invariant under isometry.
 * `QuadraticMap.isometryEquivNeg`: if `u * u = -1`, multiplication by `u` is an isometry from
   `Q` to `-Q`.
-* `QuadraticForm.isometryEquivWeightedSumSquaresReindex`: reindexing the weights of a weighted sum
-  of squares along an equivalence of index types gives an isometric quadratic form.
-* `QuadraticForm.equivalent_weightedSumSquares_of_comp_eq`: weighted sums of squares whose weights
-  agree after reindexing are equivalent.
 * `QuadraticForm.equivalent_zero_iff_finrank_eq_zero`: a form is isometric to the canonical
   zero-dimensional form exactly when its space has dimension zero.
 -/
@@ -109,6 +107,16 @@ theorem _root_.QuadraticMap.IsometryEquiv.polar_apply {R : Type u} {M₁ : Type 
     (e : Q₁.IsometryEquiv Q₂) (x y : M₁) : polar Q₂ (e x) (e y) = polar Q₁ x y := by
   simpa using e.toIsometry.polar_apply x y
 
+/-- An isometric equivalence pulls the polar bilinear form of the target back to the polar
+bilinear form of the source. -/
+theorem _root_.QuadraticMap.IsometryEquiv.polarBilin_compl₁₂ {R : Type u} {M₁ : Type v}
+    {M₂ : Type*} {N : Type w} [CommRing R] [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂]
+    [Module R M₂] [AddCommGroup N] [Module R N] {Q₁ : QuadraticMap R M₁ N}
+    {Q₂ : QuadraticMap R M₂ N} (e : Q₁.IsometryEquiv Q₂) :
+    (polarBilin Q₂).compl₁₂ (e.toLinearEquiv : M₁ →ₗ[R] M₂) e.toLinearEquiv = polarBilin Q₁ := by
+  ext x y
+  exact e.polar_apply x y
+
 /-- An isometric equivalence maps the kernel of polarization against `x` onto the kernel of
 polarization against its image. -/
 @[simp]
@@ -123,6 +131,25 @@ theorem _root_.QuadraticMap.IsometryEquiv.map_polarKernel
   simp only [Submodule.mem_map_equiv, LinearMap.mem_ker, polarBilin_apply_apply,
     IsometryEquiv.coe_symm_toLinearEquiv, IsometryEquiv.coe_toLinearEquiv]
   rw [← e.polar_apply x (e.symm y), e.apply_symm_apply]
+
+/-- An isometric equivalence maps the polar orthogonal complement of a submodule onto the polar
+orthogonal complement of its image. -/
+theorem _root_.QuadraticMap.IsometryEquiv.map_orthogonal_polarBilin
+    {R : Type u} {M₁ : Type v} {M₂ : Type*} [CommRing R]
+    [AddCommGroup M₁] [Module R M₁] [AddCommGroup M₂] [Module R M₂]
+    {Q₁ : QuadraticForm R M₁} {Q₂ : QuadraticForm R M₂} (e : Q₁.IsometryEquiv Q₂)
+    (W : Submodule R M₁) :
+    (LinearMap.BilinForm.orthogonal Q₁.polarBilin W).map e.toLinearMap =
+      LinearMap.BilinForm.orthogonal Q₂.polarBilin (W.map e.toLinearMap) := by
+  ext y
+  simp only [Submodule.mem_map_equiv, LinearMap.BilinForm.mem_orthogonal_iff,
+    polarBilin_apply_apply, IsometryEquiv.coe_symm_toLinearEquiv,
+    IsometryEquiv.coe_toLinearEquiv]
+  refine ⟨fun h x hx ↦ ?_, fun h x hx ↦ ?_⟩
+  · rw [← e.apply_symm_apply x, ← e.apply_symm_apply y, e.polar_apply]
+    exact h _ hx
+  · rw [← e.polar_apply, e.apply_symm_apply]
+    exact h (e x) (by simpa using hx)
 
 /-- The restriction of an isometric equivalence to the kernels of polarization against
 corresponding vectors. -/
@@ -262,37 +289,6 @@ theorem _root_.QuadraticMap.isometryEquivNeg_symm_apply (h : Q' = -Q) (hu : u * 
   rw [QuadraticMap.isometryEquivNeg_symm, QuadraticMap.isometryEquivNeg_apply, neg_smul]
 
 end Neg
-
-section Reindex
-
-variable {ι ι' R S : Type*} [Fintype ι] [Fintype ι'] [CommSemiring R] [Monoid S]
-  [DistribMulAction S R] [SMulCommClass S R R]
-
-/-- Reindexing the weights of a weighted sum of squares along an equivalence of the index types
-gives an isometric quadratic form.  The isometry is precomposition with the equivalence. -/
-def _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex (w : ι → S) (e : ι' ≃ ι) :
-    IsometryEquiv (weightedSumSquares R w) (weightedSumSquares R (w ∘ e)) where
-  __ := LinearEquiv.funCongrLeft R R e
-  map_app' x := by
-    simpa [weightedSumSquares_apply, LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply]
-      using e.sum_comp fun i ↦ w i • (x i * x i)
-
-/-- The reindexing isometry acts on a vector by precomposition with the equivalence. -/
-@[simp]
-theorem _root_.QuadraticForm.isometryEquivWeightedSumSquaresReindex_apply (w : ι → S) (e : ι' ≃ ι)
-    (x : ι → R) (i : ι') :
-    QuadraticForm.isometryEquivWeightedSumSquaresReindex w e x i = x (e i) :=
-  -- The parentheses keep the proof opaque, so the definition need not be exposed.
-  (rfl)
-
-/-- Weighted sums of squares whose weights agree after reindexing are equivalent. -/
-theorem _root_.QuadraticForm.equivalent_weightedSumSquares_of_comp_eq
-    {w : ι → S} {w' : ι' → S} (e : ι' ≃ ι) (h : w ∘ e = w') :
-    (weightedSumSquares R w').Equivalent (weightedSumSquares R w) :=
-  ⟨((QuadraticForm.isometryEquivWeightedSumSquaresReindex w e).trans
-    (QuadraticForm.weightedSumSquaresCongr h)).symm⟩
-
-end Reindex
 
 /-- A quadratic form is isometric to the canonical zero-dimensional form exactly when
 its underlying space has dimension zero. -/

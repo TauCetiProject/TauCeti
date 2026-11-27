@@ -6,12 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Basic.Sign.Defs
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.Topology.Algebra.Module.Determinant
 public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Topology.Algebra.Polynomial
+import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.Matrix.Charpoly.DetSign
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -37,8 +41,20 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 ## Main declarations
 
 * `ContinuousLinearMap.det_id`, `ContinuousLinearMap.det_comp`, `ContinuousLinearMap.det_smul`,
-  `ContinuousLinearMap.det_piMap`: the determinant of the identity, of a composition, of a scalar
-  multiple and of a coordinatewise endomorphism of a finite dependent product.
+  `ContinuousLinearMap.det_piMap`, `ContinuousLinearMap.det_prodMap`: the determinant of the
+  identity, of a composition, of a scalar multiple, of a coordinatewise endomorphism of a finite
+  dependent product and of a product of two endomorphisms.
+* `ContinuousLinearMap.det_conj`: conjugating by a continuous linear equivalence preserves the
+  determinant.
+* `ContinuousLinearMap.det_one_sub_comp_comm`: Sylvester's identity
+  `det (1 - X ∘L Y) = det (1 - Y ∘L X)` for continuous linear maps between free modules of finite
+  rank, read from `LinearMap.det_one_sub_comp_comm`.
+* `ContinuousLinearEquiv.det_coe_ne_zero`: a continuous linear automorphism has nonzero
+  determinant.
+* `ContinuousLinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue`,
+  `ContinuousLinearMap.det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue`: for `S` with no real
+  eigenvalue in `[0, 1]` and `N` with no real eigenvalue `μ ≥ 1`,
+  `sgn det (1 - S × N) = (-1) ^ (dim V) * sgn det S`, and this determinant is nonzero.
 * `ContinuousLinearEquiv.det_piCongrRight`, `ContinuousLinearEquiv.det_negCoord`: the determinants
   of a coordinatewise continuous linear equivalence and of a single-coordinate negation.
 * `ContinuousLinearMap.exists_le_norm_det_id_sub_smul`: over `ℝ` or `ℂ`, the second-order lower
@@ -79,6 +95,64 @@ theorem det_piMap {ι : Type*} [Fintype ι] {N : ι → Type*}
     [∀ i, Module.Free R (N i)] [∀ i, Module.Finite R (N i)] (f : ∀ i, N i →L[R] N i) :
     (piMap f).det = ∏ i, (f i).det := by
   rw [det, coe_piMap, LinearMap.det_piMap]
+
+/-- The determinant of a product of continuous linear endomorphisms of finite free modules is the
+product of the determinants. -/
+@[simp]
+theorem det_prodMap {M' : Type*} [TopologicalSpace M'] [AddCommGroup M'] [Module R M']
+    [Module.Free R M] [Module.Finite R M] [Module.Free R M'] [Module.Finite R M']
+    (f : M →L[R] M) (f' : M' →L[R] M') : (f.prodMap f').det = f.det * f'.det := by
+  rw [det, coe_prodMap, LinearMap.det_prodMap]
+
+/-- Conjugating a continuous linear endomorphism by a continuous linear equivalence does not change
+its determinant. -/
+@[simp]
+theorem det_conj {N : Type*} [TopologicalSpace N] [AddCommGroup N] [Module R N] (f : M →L[R] M)
+    (e : M ≃L[R] N) : ((e : M →L[R] N) ∘L f ∘L (e.symm : N →L[R] M)).det = f.det :=
+  LinearMap.det_conj (f : M →ₗ[R] M) e.toLinearEquiv
+
+/-- **Sylvester's determinant identity** for continuous linear maps: for `X : N →L[R] M` and
+`Y : M →L[R] N` between free modules of finite rank, `det (1 - X ∘L Y) = det (1 - Y ∘L X)`. This is
+`LinearMap.det_one_sub_comp_comm` for the underlying linear maps. -/
+theorem det_one_sub_comp_comm [IsTopologicalAddGroup M] [Module.Free R M] [Module.Finite R M]
+    {N : Type*} [TopologicalSpace N] [AddCommGroup N] [IsTopologicalAddGroup N] [Module R N]
+    [Module.Free R N] [Module.Finite R N] (X : N →L[R] M) (Y : M →L[R] N) :
+    (1 - X ∘L Y).det = (1 - Y ∘L X).det := by
+  rw [det, det, toLinearMap_sub, toLinearMap_sub, toLinearMap_comp, toLinearMap_comp,
+    toLinearMap_one, toLinearMap_one]
+  exact LinearMap.det_one_sub_comp_comm (X : N →ₗ[R] M) Y
+
+section RealEigenvalue
+
+open Set
+
+variable {V W : Type*} [TopologicalSpace V] [AddCommGroup V] [IsTopologicalAddGroup V]
+  [Module ℝ V] [FiniteDimensional ℝ V] [TopologicalSpace W] [AddCommGroup W]
+  [IsTopologicalAddGroup W] [Module ℝ W] [FiniteDimensional ℝ W]
+  {S : V →L[ℝ] V} {N : W →L[ℝ] W}
+
+/-- **The sign of `det (1 - A)` at an expanding-contracting splitting**, for continuous linear
+maps: if `S` has no real eigenvalue in `[0, 1]` and `N` no real eigenvalue `μ ≥ 1`, then
+`sign det (1 - S × N) = (-1)^(dim V) sign det S`. This is
+`LinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue` for the underlying linear maps. -/
+theorem sign_det_one_sub_prodMap_of_not_hasEigenvalue
+    (hS : ∀ μ ∈ Icc (0 : ℝ) 1, ¬ Module.End.HasEigenvalue (S : Module.End ℝ V) μ)
+    (hN : ∀ μ : ℝ, 1 ≤ μ → ¬ Module.End.HasEigenvalue (N : Module.End ℝ W) μ) :
+    SignType.sign (1 - S.prodMap N).det = (-1) ^ Module.finrank ℝ V * SignType.sign S.det := by
+  rw [det, det, toLinearMap_sub, toLinearMap_one, coe_prodMap]
+  exact LinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue hS hN
+
+/-- Under the hypotheses of `ContinuousLinearMap.sign_det_one_sub_prodMap_of_not_hasEigenvalue`,
+`1 - S × N` is invertible. This is `LinearMap.det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue`
+for the underlying linear maps. -/
+theorem det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue
+    (hS : ∀ μ ∈ Icc (0 : ℝ) 1, ¬ Module.End.HasEigenvalue (S : Module.End ℝ V) μ)
+    (hN : ∀ μ : ℝ, 1 ≤ μ → ¬ Module.End.HasEigenvalue (N : Module.End ℝ W) μ) :
+    (1 - S.prodMap N).det ≠ 0 := by
+  rw [det, toLinearMap_sub, toLinearMap_one, coe_prodMap]
+  exact LinearMap.det_one_sub_prodMap_ne_zero_of_not_hasEigenvalue hS hN
+
+end RealEigenvalue
 
 section RCLike
 
@@ -130,6 +204,12 @@ end ContinuousLinearMap
 
 namespace ContinuousLinearEquiv
 
+/-- A continuous linear automorphism has nonzero determinant. -/
+theorem det_coe_ne_zero {R M : Type*} [CommRing R] [Nontrivial R] [TopologicalSpace M]
+    [AddCommGroup M] [Module R M] (A : M ≃L[R] M) : (A : M →L[R] M).det ≠ 0 := by
+  rw [ContinuousLinearMap.det, ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  exact A.toLinearEquiv.isUnit_det'.ne_zero
+
 section Relative
 
 variable {R M N : Type*} [CommRing R] [TopologicalSpace M] [AddCommGroup M] [Module R M]
@@ -156,7 +236,7 @@ theorem det_symm_comp_comp_comp (T : M ≃L[R] N) (B : N →L[R] N) (S : M →L[
       B.det * ((T.symm : N →L[R] M).comp S).det * A.det := by
   -- Reading `B` in `M` through `T` does not change its determinant.
   have hB : ((T.symm : N →L[R] M).comp (B.comp (T : M →L[R] N))).det = B.det :=
-    LinearMap.det_conj (B : N →ₗ[R] N) T.symm.toLinearEquiv
+    ContinuousLinearMap.det_conj B T.symm
   have h : (T.symm : N →L[R] M).comp (B.comp (S.comp A)) =
       ((T.symm : N →L[R] M).comp (B.comp (T : M →L[R] N))).comp
         (((T.symm : N →L[R] M).comp S).comp A) := by

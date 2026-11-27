@@ -9,19 +9,21 @@ public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Logic.Equiv.Fin.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
-# Block-diagonal embeddings of unitary and special orthogonal groups
+# Block-diagonal embeddings of unitary, special unitary and special orthogonal groups
 
 For natural numbers `r` and `m`, a matrix `B` of size `m` gives the block-diagonal matrix
 `diag(1_r, B)` of size `r + m`, the identity block occupying the first `r` coordinates of
 `Fin (r + m)` (through `finSumFinEquiv`). This is a block matrix `Matrix.fromBlocks 1 0 0 B`,
-and it is unitary, respectively special orthogonal, exactly when `B` is. So it embeds `U(m)` in
-`U(r + m)` and `SO(m)` in `SO(r + m)`. It preserves determinants, so it also embeds `SU(m)` in
-`SU(r + m)`.
+and it is unitary, respectively special unitary or special orthogonal, exactly when `B` is, since
+its determinant is that of `B`. So it embeds `U(m)` in `U(r + m)`, `SU(m)` in `SU(r + m)` and
+`SO(m)` in `SO(r + m)`.
 
 Its image is the subgroup fixing the first `r` standard basis vectors
 (`Matrix.UnitaryGroup.mem_range_fromBlocksOne_iff`,
+`Matrix.specialUnitaryGroup.mem_range_fromBlocksOne_iff`,
 `Matrix.SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff`): a unitary matrix whose first `r`
 columns are standard basis vectors also has those standard basis vectors as its first `r` rows,
 since its inverse is its conjugate transpose. This identifies the stabilizer of an orthonormal
@@ -38,7 +40,8 @@ spanned by `e₀`.
 
 * `Matrix.UnitaryGroup.fromBlocksOne`: the embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)`.
 * `Matrix.specialUnitaryGroup.fromBlocksOne`: the embedding of `SU(m)` in `SU(r + m)`.
-* `Matrix.SpecialOrthogonalGroup.fromBlocksOne`: the embedding of `SO(m)` in `SO(r + m)`.
+* `Matrix.SpecialOrthogonalGroup.fromBlocksOne`: the embedding of `SO(m)` in `SO(r + m)`, which is
+  `Matrix.specialUnitaryGroup.fromBlocksOne` for the trivial star.
 * `Matrix.UnitaryGroup.sum`: the block-diagonal sum `diag(U, V)` of two unitary matrices, as a
   group morphism `U(n) × U(m) →* U(n + m)`.
 * `Matrix.UnitaryGroup.prodBlockSucc`: the embedding `(c, B) ↦ diag(c, B)` of `U(1) × U(m)` in
@@ -46,10 +49,11 @@ spanned by `e₀`.
 
 ## Main results
 
-* `Matrix.fromBlocks_zero_zero_mem_unitaryGroup_iff`,
-  `Matrix.reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff`: `diag(A, B)`, possibly reindexed,
+* `Matrix.fromBlocks_zero_zero_mem_unitary_iff`,
+  `Matrix.reindex_fromBlocks_zero_zero_mem_unitary_iff`: `diag(A, B)`, possibly reindexed,
   is unitary exactly when both `A` and `B` are.
 * `Matrix.UnitaryGroup.mem_range_fromBlocksOne_iff`,
+  `Matrix.specialUnitaryGroup.mem_range_fromBlocksOne_iff`,
   `Matrix.SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff`: the image of the embedding is the
   subgroup fixing the first `r` standard basis vectors.
 * `Matrix.UnitaryGroup.mem_range_prodBlockSucc_iff`: the image of `U(1) × U(m)` is the subgroup of
@@ -64,25 +68,32 @@ namespace Matrix
 
 section Unitary
 
-variable {α : Type*} [CommRing α] [StarRing α]
+section Ring
+
+variable {α : Type*} [Ring α] [StarRing α]
 
 /-- The block-diagonal matrix `diag(A, B)` is unitary exactly when both blocks are unitary. -/
-theorem fromBlocks_zero_zero_mem_unitaryGroup_iff {l n : Type*} [Fintype l] [DecidableEq l]
+theorem fromBlocks_zero_zero_mem_unitary_iff {l n : Type*} [Fintype l] [DecidableEq l]
     [Fintype n] [DecidableEq n] {A : Matrix l l α} {B : Matrix n n α} :
-    fromBlocks A 0 0 B ∈ unitaryGroup (l ⊕ n) α ↔
-      A ∈ unitaryGroup l α ∧ B ∈ unitaryGroup n α := by
-  simp only [mem_unitaryGroup_iff', star_eq_conjTranspose, fromBlocks_conjTranspose,
+    fromBlocks A 0 0 B ∈ unitary (Matrix (l ⊕ n) (l ⊕ n) α) ↔
+      A ∈ unitary (Matrix l l α) ∧ B ∈ unitary (Matrix n n α) := by
+  simp only [Unitary.mem_iff, star_eq_conjTranspose, fromBlocks_conjTranspose,
     conjTranspose_zero, fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add,
     ← fromBlocks_one, fromBlocks_inj, true_and]
+  exact and_and_and_comm
 
 /-- A reindexed block-diagonal matrix `diag(A, B)` is unitary exactly when both blocks are
 unitary. -/
-theorem reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff {l n p : Type*} [Fintype l]
+theorem reindex_fromBlocks_zero_zero_mem_unitary_iff {l n p : Type*} [Fintype l]
     [DecidableEq l] [Fintype n] [DecidableEq n] [Fintype p] [DecidableEq p] (e : l ⊕ n ≃ p)
     {A : Matrix l l α} {B : Matrix n n α} :
-    reindex e e (fromBlocks A 0 0 B) ∈ unitaryGroup p α ↔
-      A ∈ unitaryGroup l α ∧ B ∈ unitaryGroup n α := by
-  rw [reindex_apply, submatrix_equiv_mem_unitary, fromBlocks_zero_zero_mem_unitaryGroup_iff]
+    reindex e e (fromBlocks A 0 0 B) ∈ unitary (Matrix p p α) ↔
+      A ∈ unitary (Matrix l l α) ∧ B ∈ unitary (Matrix n n α) := by
+  rw [reindex_apply, submatrix_equiv_mem_unitary, fromBlocks_zero_zero_mem_unitary_iff]
+
+end Ring
+
+variable {α : Type*} [CommRing α] [StarRing α]
 
 namespace UnitaryGroup
 
@@ -93,7 +104,7 @@ variable (m) in
 `U(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. -/
 def fromBlocksOne : unitaryGroup (Fin m) α →* unitaryGroup (Fin (r + m)) α where
   toFun B := ⟨reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ α)),
-    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitaryGroup_iff.2 ⟨one_mem _,
+    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitary_iff.2 ⟨one_mem _,
         B.property⟩)⟩
   map_one' := Subtype.ext <| by simp [fromBlocks_one]
   map_mul' A B := Subtype.ext <| by
@@ -154,11 +165,7 @@ theorem mem_range_fromBlocksOne_iff {A : unitaryGroup (Fin (r + m)) α} :
     ext p
     refine Fin.addCases (fun j ↦ ?_) (fun k ↦ ?_) p
     · simp [Pi.single_apply, eq_comm]
-    · have hk : natAdd r k ≠ castAdd m i := fun h ↦ by
-        have := congrArg Fin.val h
-        simp only [val_natAdd, val_castAdd] at this
-        omega
-      simp [hk]
+    · simp
   -- The first `r` columns are standard basis vectors.
   have hcol : ∀ (p : Fin (r + m)) (i : Fin r),
       A.val p (castAdd m i) = (Pi.single (castAdd m i) 1 : Fin (r + m) → α) p :=
@@ -176,20 +183,12 @@ theorem mem_range_fromBlocksOne_iff {A : unitaryGroup (Fin (r + m)) α} :
     refine Fin.addCases (fun i ↦ ?_) (fun k ↦ ?_) p <;>
       refine Fin.addCases (fun j ↦ ?_) (fun l ↦ ?_) q
     · simpa [Pi.single_apply, Matrix.one_apply, eq_comm] using hcol (castAdd m i) j
-    · have hl : castAdd m i ≠ natAdd r l := fun h ↦ by
-        have := congrArg Fin.val h
-        simp only [val_natAdd, val_castAdd] at this
-        omega
-      simpa [Matrix.one_apply, hl] using hrow i (natAdd r l)
-    · have hk : natAdd r k ≠ castAdd m j := fun h ↦ by
-        have := congrArg Fin.val h
-        simp only [val_natAdd, val_castAdd] at this
-        omega
-      simpa [Pi.single_apply, hk] using hcol (natAdd r k) j
+    · simpa [Matrix.one_apply] using hrow i (natAdd r l)
+    · simpa [Pi.single_apply] using hcol (natAdd r k) j
     · simp only [reindex_apply, submatrix_apply, finSumFinEquiv_symm_apply_natAdd]
       rfl
   have hB : B ∈ unitaryGroup (Fin m) α :=
-    ((reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff _).1 (hAB ▸ A.property)).2
+    ((reindex_fromBlocks_zero_zero_mem_unitary_iff _).1 (hAB ▸ A.property)).2
   exact ⟨⟨B, hB⟩, Subtype.ext hAB.symm⟩
 
 section Succ
@@ -216,7 +215,7 @@ def prodBlockSucc : unitary α × unitaryGroup (Fin m) α →* unitaryGroup (Fin
   toFun cB := ⟨reindex (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
       (finSumFinEquiv.trans (finCongr (add_comm 1 m)))
       (fromBlocks (diagonal fun _ ↦ (cB.1 : α)) 0 0 (cB.2 : Matrix _ _ α)),
-    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitaryGroup_iff.2
+    submatrix_equiv_mem_unitary.2 (fromBlocks_zero_zero_mem_unitary_iff.2
       ⟨diagonal_mem_unitary.2 (Pi.const_mem_unitary_iff.2 cB.1.property), cB.2.property⟩)⟩
   map_one' := Subtype.ext <| by
     simp only [Prod.fst_one, Prod.snd_one, OneMemClass.coe_one, diagonal_one, fromBlocks_one,
@@ -302,43 +301,12 @@ theorem mem_range_prodBlockSucc_iff {A : unitaryGroup (Fin (m + 1)) α} :
         fromBlocks_apply₂₁, fromBlocks_apply₂₂, diagonal_apply_eq] <;>
       first | rfl | exact hrow j | exact hA i
   have hB : B ∈ unitaryGroup (Fin m) α :=
-    ((reindex_fromBlocks_zero_zero_mem_unitaryGroup_iff _).1 (hAB ▸ A.property)).2
+    ((reindex_fromBlocks_zero_zero_mem_unitary_iff _).1 (hAB ▸ A.property)).2
   exact ⟨(⟨A.val 0 0, Unitary.mem_iff_star_mul_self.2 hc⟩, ⟨B, hB⟩), Subtype.ext hAB.symm⟩
 
 end Succ
 
 end UnitaryGroup
-
-namespace specialUnitaryGroup
-
-variable (α) (r : ℕ) {m : ℕ}
-
-variable (m) in
-/-- The **block-diagonal embedding** `B ↦ diag(1_r, B)` of the special unitary group `SU(m)` in
-`SU(r + m)`: the restriction of `Matrix.UnitaryGroup.fromBlocksOne`, which preserves
-determinants. -/
-def fromBlocksOne : specialUnitaryGroup (Fin m) α →* specialUnitaryGroup (Fin (r + m)) α where
-  toFun B := ⟨UnitaryGroup.fromBlocksOne α r m
-      (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup B),
-    mem_specialUnitaryGroup_iff.2 ⟨Subtype.prop _, by
-      rw [UnitaryGroup.det_fromBlocksOne]
-      exact (mem_specialUnitaryGroup_iff.1 B.property).2⟩⟩
-  map_one' := Subtype.ext <| by simp
-  map_mul' A B := Subtype.ext <| by simp
-
-@[simp]
-theorem coe_fromBlocksOne (B : specialUnitaryGroup (Fin m) α) :
-    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α) =
-      UnitaryGroup.fromBlocksOne α r m
-        (Submonoid.inclusion specialUnitaryGroup_le_unitaryGroup B) :=
-  (rfl)
-
-/-- The block-diagonal embedding of special unitary groups is injective. -/
-theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne α r m) := fun _ _ h ↦
-  Submonoid.inclusion_injective specialUnitaryGroup_le_unitaryGroup <|
-    UnitaryGroup.fromBlocksOne_injective α r <| Subtype.ext (Subtype.ext_iff.1 h :)
-
-end specialUnitaryGroup
 
 namespace UnitaryGroup
 
@@ -368,6 +336,84 @@ theorem sum_injective : Function.Injective (sum : unitaryGroup n α × unitaryGr
 
 end UnitaryGroup
 
+namespace specialUnitaryGroup
+
+variable (α) (r : ℕ) {m : ℕ}
+
+variable (m) in
+/-- The **block-diagonal embedding** `B ↦ diag(1_r, B)` of the special unitary group `SU(m)` in
+`SU(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. -/
+def fromBlocksOne : specialUnitaryGroup (Fin m) α →* specialUnitaryGroup (Fin (r + m)) α where
+  toFun B := ⟨reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ α)),
+    submatrix_equiv_mem_unitary.2
+      (fromBlocks_zero_zero_mem_unitary_iff.2 ⟨one_mem _, B.property.1⟩),
+    by simpa [det_fromBlocks_zero₂₁] using B.property.2⟩
+  map_one' := Subtype.ext <| by simp [fromBlocks_one]
+  map_mul' A B := Subtype.ext <| by
+    simp only [reindex_apply, Submonoid.coe_mul, submatrix_mul_equiv, fromBlocks_multiply,
+      Matrix.mul_one, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
+
+theorem coe_fromBlocksOne (B : specialUnitaryGroup (Fin m) α) :
+    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α) =
+      reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ α)) :=
+  (rfl)
+
+@[simp]
+theorem fromBlocksOne_apply_castAdd_castAdd (B : specialUnitaryGroup (Fin m) α) (i j : Fin r) :
+    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α) (castAdd m i) (castAdd m j) =
+      if i = j then 1 else 0 := by
+  simp [coe_fromBlocksOne, Matrix.one_apply]
+
+@[simp]
+theorem fromBlocksOne_apply_castAdd_natAdd (B : specialUnitaryGroup (Fin m) α) (i : Fin r)
+    (k : Fin m) :
+    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α) (castAdd m i) (natAdd r k) =
+      0 := by
+  simp [coe_fromBlocksOne]
+
+@[simp]
+theorem fromBlocksOne_apply_natAdd_castAdd (B : specialUnitaryGroup (Fin m) α) (k : Fin m)
+    (i : Fin r) :
+    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α) (natAdd r k) (castAdd m i) =
+      0 := by
+  simp [coe_fromBlocksOne]
+
+@[simp]
+theorem fromBlocksOne_apply_natAdd_natAdd (B : specialUnitaryGroup (Fin m) α) (k l : Fin m) :
+    (fromBlocksOne α r m B : Matrix (Fin (r + m)) (Fin (r + m)) α) (natAdd r k) (natAdd r l) =
+      (B : Matrix (Fin m) (Fin m) α) k l := by
+  simp [coe_fromBlocksOne]
+
+/-- The block-diagonal embedding of special unitary groups is injective. -/
+theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne α r m) := fun A B h ↦
+  Subtype.ext <| funext fun k ↦ funext fun l ↦ by
+    simpa [coe_fromBlocksOne] using
+      congrFun (congrFun (congrArg Subtype.val h) (natAdd r k)) (natAdd r l)
+
+variable {α r}
+
+/-- **The block-diagonal special unitary matrices are the stabilizer of the first `r` basis
+vectors**: a special unitary matrix of size `r + m` lies in the image of `SU(m)` exactly when it
+fixes the standard basis vectors `e₀, …, e_{r-1}`. -/
+theorem mem_range_fromBlocksOne_iff {A : specialUnitaryGroup (Fin (r + m)) α} :
+    A ∈ (fromBlocksOne α r m).range ↔
+      ∀ i : Fin r, A.val *ᵥ Pi.single (castAdd m i) 1 = Pi.single (castAdd m i) 1 := by
+  rw [← UnitaryGroup.mem_range_fromBlocksOne_iff (A := ⟨A.val, A.property.1⟩)]
+  constructor
+  · rintro ⟨B, rfl⟩
+    exact ⟨⟨B.val, B.property.1⟩, Subtype.ext <|
+      (UnitaryGroup.coe_fromBlocksOne α r _).trans (coe_fromBlocksOne α r B).symm⟩
+  · rintro ⟨B, hB⟩
+    -- The determinant of `diag(1_r, B)` is that of `B`.
+    have hdet : (B : Matrix (Fin m) (Fin m) α).det = 1 := by
+      have h := A.property.2
+      rw [← congrArg Subtype.val hB] at h
+      simpa [UnitaryGroup.coe_fromBlocksOne, det_fromBlocks_zero₂₁] using h
+    exact ⟨⟨B, B.property, hdet⟩, Subtype.ext <| (coe_fromBlocksOne α r _).trans <|
+      (UnitaryGroup.coe_fromBlocksOne α r B).symm.trans (congrArg Subtype.val hB)⟩
+
+end specialUnitaryGroup
+
 end Unitary
 
 namespace SpecialOrthogonalGroup
@@ -378,53 +424,52 @@ variable (R : Type*) [CommRing R] (r : ℕ) {m : ℕ}
 
 variable (m) in
 /-- The **block-diagonal embedding** `B ↦ diag(1_r, B)` of the special orthogonal group `SO(m)`
-in `SO(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. -/
-def fromBlocksOne : specialOrthogonalGroup (Fin m) R →* specialOrthogonalGroup (Fin (r + m)) R where
-  toFun B := ⟨reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ R)),
-    submatrix_equiv_mem_unitary.2
-      (fromBlocks_zero_zero_mem_unitaryGroup_iff.2 ⟨one_mem _, B.property.1⟩),
-    by simpa [det_fromBlocks_zero₂₁] using B.property.2⟩
-  map_one' := Subtype.ext <| by simp [fromBlocks_one]
-  map_mul' A B := Subtype.ext <| by
-    simp only [reindex_apply, Submonoid.coe_mul, submatrix_mul_equiv, fromBlocks_multiply,
-      Matrix.mul_one, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add]
+in `SO(r + m)`: the identity block occupies the first `r` coordinates of `Fin (r + m)`. It is the
+special unitary embedding `Matrix.specialUnitaryGroup.fromBlocksOne` for the trivial star. -/
+def fromBlocksOne :
+    specialOrthogonalGroup (Fin m) R →* specialOrthogonalGroup (Fin (r + m)) R :=
+  specialUnitaryGroup.fromBlocksOne R r m
+
+variable (m) in
+/-- The special orthogonal block embedding is the special unitary one for the trivial star. -/
+theorem fromBlocksOne_eq_specialUnitaryGroup_fromBlocksOne :
+    fromBlocksOne R r m = specialUnitaryGroup.fromBlocksOne R r m :=
+  (rfl)
 
 theorem coe_fromBlocksOne (B : specialOrthogonalGroup (Fin m) R) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) =
       reindex finSumFinEquiv finSumFinEquiv (fromBlocks 1 0 0 (B : Matrix _ _ R)) :=
-  (rfl)
+  specialUnitaryGroup.coe_fromBlocksOne R r B
 
 @[simp]
 theorem fromBlocksOne_apply_castAdd_castAdd (B : specialOrthogonalGroup (Fin m) R) (i j : Fin r) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (castAdd m i) (castAdd m j) =
-      if i = j then 1 else 0 := by
-  simp [coe_fromBlocksOne, Matrix.one_apply]
+      if i = j then 1 else 0 :=
+  specialUnitaryGroup.fromBlocksOne_apply_castAdd_castAdd R r B i j
 
 @[simp]
 theorem fromBlocksOne_apply_castAdd_natAdd (B : specialOrthogonalGroup (Fin m) R) (i : Fin r)
     (k : Fin m) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (castAdd m i) (natAdd r k) =
-      0 := by
-  simp [coe_fromBlocksOne]
+      0 :=
+  specialUnitaryGroup.fromBlocksOne_apply_castAdd_natAdd R r B i k
 
 @[simp]
 theorem fromBlocksOne_apply_natAdd_castAdd (B : specialOrthogonalGroup (Fin m) R) (k : Fin m)
     (i : Fin r) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (natAdd r k) (castAdd m i) =
-      0 := by
-  simp [coe_fromBlocksOne]
+      0 :=
+  specialUnitaryGroup.fromBlocksOne_apply_natAdd_castAdd R r B k i
 
 @[simp]
 theorem fromBlocksOne_apply_natAdd_natAdd (B : specialOrthogonalGroup (Fin m) R) (k l : Fin m) :
     (fromBlocksOne R r m B : Matrix (Fin (r + m)) (Fin (r + m)) R) (natAdd r k) (natAdd r l) =
-      (B : Matrix (Fin m) (Fin m) R) k l := by
-  simp [coe_fromBlocksOne]
+      (B : Matrix (Fin m) (Fin m) R) k l :=
+  specialUnitaryGroup.fromBlocksOne_apply_natAdd_natAdd R r B k l
 
 /-- The block-diagonal embedding of special orthogonal groups is injective. -/
-theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne R r m) := fun A B h ↦
-  Subtype.ext <| funext fun k ↦ funext fun l ↦ by
-    simpa [coe_fromBlocksOne] using
-      congrFun (congrFun (congrArg Subtype.val h) (natAdd r k)) (natAdd r l)
+theorem fromBlocksOne_injective : Function.Injective (fromBlocksOne R r m) :=
+  specialUnitaryGroup.fromBlocksOne_injective R r
 
 variable {R r}
 
@@ -433,26 +478,8 @@ vectors**: a special orthogonal matrix of size `r + m` lies in the image of `SO(
 it fixes the standard basis vectors `e₀, …, e_{r-1}`. -/
 theorem mem_range_fromBlocksOne_iff {A : specialOrthogonalGroup (Fin (r + m)) R} :
     A ∈ (fromBlocksOne R r m).range ↔
-      ∀ i : Fin r, A.val *ᵥ Pi.single (castAdd m i) 1 = Pi.single (castAdd m i) 1 := by
-  refine ⟨?_, fun hA ↦ ?_⟩
-  · rintro ⟨B, rfl⟩
-    intro i
-    ext p
-    refine Fin.addCases (fun j ↦ ?_) (fun k ↦ ?_) p
-    · simp [coe_fromBlocksOne, Pi.single_apply, Matrix.one_apply, eq_comm]
-    · have hk : natAdd r k ≠ castAdd m i := fun h ↦ by
-        have := congrArg Fin.val h
-        simp only [val_natAdd, val_castAdd] at this
-        omega
-      simp [coe_fromBlocksOne, hk]
-  obtain ⟨B, hB⟩ := (UnitaryGroup.mem_range_fromBlocksOne_iff
-    (A := (⟨A.val, A.property.1⟩ : unitaryGroup (Fin (r + m)) R))).2 hA
-  have hdet : (B : Matrix (Fin m) (Fin m) R).det = 1 := by
-    have h := A.property.2
-    rw [← congrArg Subtype.val hB] at h
-    simpa [UnitaryGroup.coe_fromBlocksOne, det_fromBlocks_zero₂₁] using h
-  exact ⟨⟨B, B.property, hdet⟩, Subtype.ext <| (coe_fromBlocksOne R r _).trans <|
-    (UnitaryGroup.coe_fromBlocksOne R r B).symm.trans (congrArg Subtype.val hB)⟩
+      ∀ i : Fin r, A.val *ᵥ Pi.single (castAdd m i) 1 = Pi.single (castAdd m i) 1 :=
+  specialUnitaryGroup.mem_range_fromBlocksOne_iff
 
 end SpecialOrthogonalGroup
 

@@ -12,14 +12,17 @@ public import Mathlib.RingTheory.RootsOfUnity.EnoughRootsOfUnity
 public import Mathlib.RingTheory.RootsOfUnity.CyclotomicUnits
 public import Mathlib.RingTheory.RootsOfUnity.Minpoly
 import TauCeti.Algebra.Group.Hom.Instances
+import Mathlib.RingTheory.Localization.FractionRing
+import TauCeti.GroupTheory.OrderOfElement.Cauchy
 
 /-!
 # Basic results on roots of unity
 
 This file records a criterion for a root of unity congruent to `1` modulo an ideal to equal `1`,
 and counts the square roots of unity in a domain in which `2 ≠ 0`; in any domain the number of
-`n`-th roots of unity divides `n`. It transfers `HasEnoughRootsOfUnity` along an injective
-homomorphism into a domain, and with it the nonemptiness of `primitiveRoots n R`. For a prime
+`n`-th roots of unity divides `n`, and a finite group of `N` units is the group of `N`-th roots
+of unity. It transfers `HasEnoughRootsOfUnity` along an injective homomorphism into a domain,
+and with it the nonemptiness of `primitiveRoots n R`. For a prime
 `p` it relates the triviality of the `p`th roots of unity to the absence of a primitive one. It
 also records that roots of unity, and hence the values of a character of a finite group, are
 integral over `ℤ`. It identifies the `n`-torsion of a unit group, written additively, and the
@@ -58,6 +61,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
 * `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
+* `Subgroup.eq_rootsOfUnity_natCard`: in a domain, a finite group of `N` units is the group of
+  `N`-th roots of unity.
 * `TauCeti.exponent_pi_rootsOfUnity_cast_ne_zero`: in a domain, the exponent of a finite product
   of groups `μ_{n i}` is nonzero as soon as each `n i` is.
 * `IsPrimitiveRoot.neg_one_of_two_ne_zero`: when `2 ≠ 0`, `-1` is a primitive square root of
@@ -65,6 +70,7 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `IsPrimitiveRoot.neg_of_odd`: when `2 ≠ 0`, the negative of a primitive root of unity of odd
   order `n` is a primitive `2n`-th root of unity.
 * `IsPrimitiveRoot.sq_eq_neg_one`: a primitive fourth root of unity squares to `-1`.
+* `IsPrimitiveRoot.one_add_add_sq`: a primitive cube root of unity is a root of `1 + X + X²`.
 * `IsPrimitiveRoot.sum_pow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_pow_eq`: orthogonality of
   the characters `a ↦ (ζ ^ e) ^ a` of `ℤ ⧸ m`, in one and in several variables, together with
   `IsPrimitiveRoot.sum_zpow_pow_eq` and `IsPrimitiveRoot.sum_prod_pow_mul_inv_pow_eq` in a field.
@@ -73,6 +79,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 * `HasEnoughRootsOfUnity.primitiveRoots_nonempty` and
   `HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective`: with enough `n`-th roots of unity,
   `primitiveRoots n R` is nonempty, also after an injective homomorphism into a domain.
+* `TauCeti.natCast_card_ne_zero_of_hasEnoughRootsOfUnity`: a domain with enough roots of unity
+  for the exponent of a finite group `G` has `#G ≠ 0`.
 * `TauCeti.rootsOfUnity_eq_bot_iff`: for a prime `p`, the `p`th roots of unity are trivial
   exactly when there is no primitive `p`th root of unity.
 * `TauCeti.finite_torsionBy_additive_units`: the `n`-torsion of `Mˣ`, written additively, is
@@ -185,6 +193,15 @@ theorem card_rootsOfUnity_dvd [IsDomain R] (n : ℕ) : Nat.card (rootsOfUnity n 
   rw [← IsCyclic.exponent_eq_card]
   exact Monoid.exponent_dvd_of_forall_pow_eq_one fun ζ ↦ OneMemClass.coe_eq_one.mp ζ.prop
 
+/-- **A finite group of units of a domain consists of roots of unity.** A finite subgroup `H` of
+`Rˣ` with `N` elements is the group of `N`-th roots of unity: it lies in it by Lagrange, and there
+are at most `N` of those. -/
+theorem _root_.Subgroup.eq_rootsOfUnity_natCard [IsDomain R] (H : Subgroup Rˣ) [Finite H] :
+    H = rootsOfUnity (Nat.card H) R :=
+  Subgroup.eq_of_le_of_card_ge (fun x hx ↦ (mem_rootsOfUnity _ _).2 <| by
+    have h := congrArg ((↑) : H → Rˣ) (pow_card_eq_one' (G := H) (x := ⟨x, hx⟩))
+    rwa [SubgroupClass.coe_pow, OneMemClass.coe_one] at h) (card_rootsOfUnity R _)
+
 /-- The exponent of the product of the groups of `n i`-th roots of unity divides `∏ i, n i`. -/
 theorem exponent_pi_rootsOfUnity_dvd_prod {K ι : Type*} [CommMonoid K] [Fintype ι]
     (n : ι → ℕ) : Monoid.exponent (∀ i, rootsOfUnity (n i) K) ∣ ∏ i, n i := by
@@ -219,6 +236,13 @@ of `-1`: its square is a primitive square root of unity. -/
 theorem _root_.IsPrimitiveRoot.sq_eq_neg_one [NoZeroDivisors R] {ζ : R}
     (hζ : IsPrimitiveRoot ζ 4) : ζ ^ 2 = -1 :=
   (hζ.pow (by norm_num) (by norm_num : 4 = 2 * 2)).eq_neg_one_of_two_right
+
+/-- In a commutative ring without zero divisors, a primitive cube root of unity is a root of
+`1 + X + X²`. -/
+theorem _root_.IsPrimitiveRoot.one_add_add_sq [NoZeroDivisors R] {ζ : R}
+    (hζ : IsPrimitiveRoot ζ 3) : 1 + ζ + ζ ^ 2 = 0 := by
+  have h : (ζ - 1) * (1 + ζ + ζ ^ 2) = 0 := by linear_combination hζ.pow_eq_one
+  exact (mul_eq_zero.mp h).resolve_left (sub_ne_zero.mpr (hζ.ne_one (by norm_num)))
 
 /-- **Orthogonality of characters.** In a domain, the sum of the powers `(ζ ^ e) ^ a` over `a < m`
 of a primitive `m`-th root of unity `ζ` is `m` if `m` divides `e`, and zero otherwise. -/
@@ -315,6 +339,21 @@ theorem _root_.HasEnoughRootsOfUnity.primitiveRoots_nonempty_of_injective {M : T
     (hf : Function.Injective f) : (primitiveRoots n R).Nonempty :=
   have := HasEnoughRootsOfUnity.of_injective (n := n) hf
   HasEnoughRootsOfUnity.primitiveRoots_nonempty R n
+
+/-- A domain with enough roots of unity for the exponent of a finite group `G` has `#G ≠ 0`: in its
+fraction field, a primitive root of unity of that order makes the exponent a unit, so `#G` is a unit
+(`TauCeti.isUnit_natCard_of_isUnit_exponent`). -/
+theorem natCast_card_ne_zero_of_hasEnoughRootsOfUnity (R : Type*) [CommRing R] [IsDomain R]
+    {G : Type*} [Group G] [Finite G] [HasEnoughRootsOfUnity R (Monoid.exponent G)] :
+    (Nat.card G : R) ≠ 0 := by
+  have : NeZero (Monoid.exponent G) := ⟨Monoid.exponent_ne_zero_of_finite⟩
+  let K := FractionRing R
+  have : HasEnoughRootsOfUnity K (Monoid.exponent G) :=
+    HasEnoughRootsOfUnity.of_injective (f := (algebraMap R K).toMonoidHom)
+      (IsFractionRing.injective R K)
+  obtain ⟨ζ, hζ⟩ := HasEnoughRootsOfUnity.exists_isPrimitiveRoot K (Monoid.exponent G)
+  have h := (isUnit_natCard_of_isUnit_exponent (G := G) hζ.neZero'.out.isUnit).ne_zero
+  exact fun h0 ↦ h (by rw [← map_natCast (algebraMap R K), h0, map_zero])
 
 /-- For a prime `p`, the `p`th roots of unity of a commutative monoid are trivial exactly when it
 has no primitive `p`th root of unity: a `p`th root of unity other than `1` has order `p`. -/

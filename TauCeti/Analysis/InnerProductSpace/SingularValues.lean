@@ -14,6 +14,9 @@ public import TauCeti.Analysis.InnerProductSpace.RangeProjection
 public import TauCeti.Data.Finsupp.Antitone
 public import TauCeti.Data.Finsupp.Card
 public import TauCeti.LinearAlgebra.Eigenspace.Comp
+import TauCeti.Analysis.InnerProductSpace.Spectrum
+
+import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
 # Singular values, the two Gram spectra, and the singular system
@@ -58,6 +61,7 @@ of `A` run over the whole basis without splitting off the kernel.
 * `LinearMap.norm_apply_le_of_mem_spanIndices_of_adjoint_comp_self_eigenbasis`: an upper bound
   for `‖A x‖` on a span of Gram eigenvectors with bounded eigenvalues.
 * `LinearMap.adjoint_comp_self_rightSingularBasis`: `A† A vᵢ = σᵢ² vᵢ`.
+* `LinearMap.operatorAbs_rightSingularBasis`: `|A| vᵢ = σᵢ vᵢ`.
 * `LinearMap.singularValues_eq_single_of_finrank_eq_one`: on a one-dimensional source the only
   singular value is `‖A x‖` for a unit vector `x`.
 * `LinearMap.singularValues_mul_norm_le_norm_apply`,
@@ -74,6 +78,8 @@ of `A` run over the whole basis without splitting off the kernel.
   decomposition in rank-one form.
 * `LinearMap.exists_orthonormalBasis_apply_eq_leftSingularVector`: the nonzero left singular
   vectors extend, index by index, to an orthonormal basis of the codomain.
+* `LinearMap.trace_adjoint_comp_eq_sum_singularValues_mul_inner`:
+  `tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`.
 
 ## Comparison of singular values
 
@@ -324,6 +330,15 @@ theorem apply_rightSingularBasis_eq_zero_iff {i : Fin (finrank 𝕜 E)} :
     A (A.rightSingularBasis i) = 0 ↔ A.singularValues i = 0 := by
   rw [← norm_eq_zero, norm_apply_rightSingularBasis]
 
+/-- Applying the operator modulus `|A| = √(A† A)` to a right singular vector `vᵢ` scales it by
+the singular value `σᵢ`. -/
+theorem operatorAbs_rightSingularBasis (i : Fin (finrank 𝕜 E)) :
+    A.operatorAbs (A.rightSingularBasis i) =
+      ((A.singularValues i : ℝ) : 𝕜) • A.rightSingularBasis i := by
+  rw [(isPositive_adjoint_comp_self A).sqrt_unique A.isPositive_operatorAbs A.operatorAbs_sq,
+    (isPositive_adjoint_comp_self A).sqrt_apply_of_apply_eq_smul
+      (A.adjoint_comp_self_rightSingularBasis i), Real.sqrt_sq (A.singularValues_nonneg i)]
+
 /-- On the span of the right singular vectors `vᵢ` with `i ≤ n`, `A` stretches every vector by at
 least the `n`-th singular value: `σₙ ‖x‖ ≤ ‖A x‖`. -/
 theorem singularValues_mul_norm_le_norm_apply {n : ℕ} {x : E}
@@ -355,7 +370,8 @@ theorem sq_singularValues_eq_of_adjoint_comp_self_eigenbasis (A : E →ₗ[𝕜]
   have hm : finrank 𝕜 E = m := by
     rw [finrank_eq_card_basis e.toBasis, Fintype.card_fin]
   rw [A.sq_singularValues_fin hm k,
-    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e hμ he]
+    A.isSymmetric_adjoint_comp_self.eigenvalues_eq_of_eigenbasis hm e.toBasis hμ
+      (by simpa using he)]
 
 /-- On the span of the right singular vectors `vᵢ` with `n ≤ i`, `A` stretches every vector by at
 most the `n`-th singular value: `‖A x‖ ≤ σₙ ‖x‖`. -/
@@ -506,6 +522,16 @@ theorem exists_orthonormalBasis_apply_eq_leftSingularVector :
   have hj : j ∈ s := by simpa [s, ← hij] using hi
   rw [hw j hj]
   simp [u, ← hij]
+
+/-- The Hilbert–Schmidt trace pairing `tr (A† B)` expanded in the singular system of `B`:
+`tr (A† B) = ∑ᵢ σᵢ(B) ⟪A vᵢ, uᵢ⟫`. -/
+theorem trace_adjoint_comp_eq_sum_singularValues_mul_inner (B : E →ₗ[𝕜] F) :
+    trace 𝕜 E (adjoint A ∘ₗ B) =
+      ∑ i : Fin (finrank 𝕜 E), ((B.singularValues i : ℝ) : 𝕜) *
+        ⟪A (B.rightSingularBasis i), B.leftSingularVector i⟫ := by
+  rw [trace_eq_sum_inner _ B.rightSingularBasis]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [comp_apply, adjoint_inner_right, B.apply_rightSingularBasis i, inner_smul_right]
 
 end SingularSystem
 

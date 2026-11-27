@@ -9,12 +9,15 @@ public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.LocallyConvex.WithSeminorms
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.UniformFilterBasis
+public import Mathlib.Topology.Metrizable.Uniformity
 public import Mathlib.Topology.Sets.Compacts
 public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Analysis.Holder.Normed
+public import TauCeti.Analysis.Holder.OpenSet.Basic
 import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
+import TauCeti.Analysis.LocallyConvex.WithSeminorms
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
-import TauCeti.Analysis.Holder.JetBounds
+import TauCeti.Analysis.Holder.Jet.Bounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -61,9 +64,12 @@ the values of `f` near the point.
   topology is that of the seminorms `p_K`, and convergence means convergence in every `p_K`.
 * `TauCeti.CkHolderLocSpace.withSeminorms_compactExhaustion` and
   `TauCeti.CkHolderLocSpace.instFirstCountableTopology`: the seminorms of the compact sets of a
-  compact exhaustion of `Ω` suffice, so for finite-dimensional `E` the space is first countable.
+  compact exhaustion of `Ω` suffice, so for finite-dimensional `E` the space is first countable;
+  `TauCeti.CkHolderLocSpace.instMetrizableSpace`: it is then metrizable.
 * `TauCeti.CkHolderLocSpace.instCompleteSpace`: completeness when `E` is finite-dimensional and
   `F` is complete.
+* `TauCeti.CkHolderSpaceOn.toCkHolderLocSpaceCLM`: the injective continuous linear inclusion of
+  the Banach space `C^{k,α}(Ω)` of `TauCeti.CkHolderSpaceOn` into `C^{k,α}_loc(Ω)`.
 
 ## References
 
@@ -544,12 +550,8 @@ theorem tendsto_nhds {ι : Type*} {l : Filter ι} {u : ι → CkHolderLocSpace k
     {f : CkHolderLocSpace k α Ω F} :
     Tendsto u l (𝓝 f) ↔ ∀ (K : Compacts E) (hK : (K : Set E) ⊆ Ω),
       Tendsto (fun i ↦ CkHolderLocSpace.seminorm K hK (u i - f)) l (𝓝 0) := by
-  rw [(withSeminorms (k := k) (α := α) (Ω := Ω) (F := F)).tendsto_nhds]
-  refine ⟨fun h K hK ↦ ?_, fun h K ε hε ↦ ?_⟩
-  · refine Metric.tendsto_nhds.2 fun ε hε ↦ (h ⟨K, hK⟩ ε hε).mono fun i hi ↦ ?_
-    rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)]
-  · refine (Metric.tendsto_nhds.1 (h K.val K.property) ε hε).mono fun i hi ↦ ?_
-    rwa [Real.dist_0_eq_abs, abs_of_nonneg (apply_nonneg _ _)] at hi
+  rw [(withSeminorms (k := k) (α := α) (Ω := Ω) (F := F)).tendsto_nhds_iff_tendsto_zero]
+  exact ⟨fun h K hK ↦ h ⟨K, hK⟩, fun h K ↦ h K.val K.property⟩
 
 section Restrict
 
@@ -622,6 +624,14 @@ instance instFirstCountableTopology [FiniteDimensional ℝ E] :
     FirstCountableTopology (CkHolderLocSpace k α Ω F) :=
   have := Ω.isOpen.locallyCompactSpace
   (withSeminorms_compactExhaustion (CompactExhaustion.choice Ω)).firstCountableTopology
+
+/-- For finite-dimensional `E`, `C^{k,α}_loc(Ω)` is metrizable; with completeness for complete `F`
+(`TauCeti.CkHolderLocSpace.instCompleteSpace`), it is a Fréchet space. -/
+instance instMetrizableSpace [FiniteDimensional ℝ E] :
+    MetrizableSpace (CkHolderLocSpace k α Ω F) :=
+  have : (𝓤 (CkHolderLocSpace k α Ω F)).IsCountablyGenerated :=
+    IsUniformAddGroup.uniformity_countably_generated
+  UniformSpace.metrizableSpace
 
 end Topology
 
@@ -757,5 +767,94 @@ instance instCompleteSpace : CompleteSpace (CkHolderLocSpace k α Ω F) := by
 end Complete
 
 end CkHolderLocSpace
+
+/-! ### The inclusion of `C^{k,α}(Ω)` -/
+
+namespace CkHolderSpaceOn
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {k : ℕ} {α : ℝ≥0} {Ω : Opens E}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- An element of `C^{k,α}(Ω)` as an element of `C^{k,α}_loc(Ω)`: its extension by zero. -/
+private def toCkHolderLocSpace (f : CkHolderSpaceOn k α Ω F) : CkHolderLocSpace k α Ω F :=
+  CkHolderLocSpace.ofContDiffOn f.extend f.contDiffOn_extend
+    fun _ hKΩ _ ↦ ⟨_, f.holderOnWith_iteratedFDeriv_extend.mono hKΩ⟩
+
+private theorem toCkHolderLocSpace_apply_of_mem (f : CkHolderSpaceOn k α Ω F) {x : E}
+    (hx : x ∈ Ω) : toCkHolderLocSpace f x = f ⟨x, hx⟩ :=
+  (CkHolderLocSpace.ofContDiffOn_apply_of_mem hx).trans (f.extend_apply ⟨x, hx⟩)
+
+private theorem iteratedFDeriv_toCkHolderLocSpace (f : CkHolderSpaceOn k α Ω F) (i : ℕ) {x : E}
+    (hx : x ∈ Ω) :
+    _root_.iteratedFDeriv ℝ i (toCkHolderLocSpace f) x = _root_.iteratedFDeriv ℝ i f.extend x :=
+  CkHolderLocSpace.iteratedFDeriv_ofContDiffOn i hx
+
+/-- The seminorm `p_K` of a compact set `K ⊆ Ω` of the inclusion of `f ∈ C^{k,α}(Ω)` is at most
+`(k + 2) ‖f‖`. -/
+private theorem seminorm_toCkHolderLocSpace_le (K : Compacts E) (hK : (K : Set E) ⊆ Ω)
+    (f : CkHolderSpaceOn k α Ω F) :
+    CkHolderLocSpace.seminorm K hK (toCkHolderLocSpace f) ≤ (k + 2) * ‖f‖ := by
+  have hBCF {i : ℕ} (hi : i ≤ k) :
+      ‖CkHolderLocSpace.restrictBCF K hK hi (toCkHolderLocSpace f)‖ ≤ ‖f‖ :=
+    (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun x ↦ by
+      rw [CkHolderLocSpace.restrictBCF_apply, iteratedFDeriv_toCkHolderLocSpace f i (hK x.property)]
+      exact f.norm_iteratedFDeriv_extend_le hi ⟨x, hK x.property⟩
+  have hH : HolderOnWith (nnHolderNorm α (f.iteratedFDeriv (Fin.last k) : Ω → E [×k]→L[ℝ] F)) α
+      (_root_.iteratedFDeriv ℝ k (toCkHolderLocSpace f)) K := fun x hx y hy ↦ by
+    rw [iteratedFDeriv_toCkHolderLocSpace f k (hK hx),
+      iteratedFDeriv_toCkHolderLocSpace f k (hK hy)]
+    exact f.holderOnWith_iteratedFDeriv_extend x (hK hx) y (hK hy)
+  have hHK : (nnHolderNorm α ((K : Set E).domRestrict
+      (_root_.iteratedFDeriv ℝ k (toCkHolderLocSpace f))) : ℝ) ≤ ‖f‖ :=
+    (NNReal.coe_le_coe.2 (HolderWith.restrict_iff.2 hH).nnholderNorm_le).trans
+      f.nnHolderNorm_iteratedFDeriv_le
+  rw [CkHolderLocSpace.seminorm_eq]
+  calc _ ≤ ∑ _ : Fin k, ‖f‖ + ‖f‖ + ‖f‖ := by
+        gcongr with i
+        · exact hBCF i.is_lt.le
+        · exact hBCF le_rfl
+    _ = (k + 2) * ‖f‖ := by
+        rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
+        ring
+
+/-- `toCkHolderLocSpace` as a linear map. -/
+private def toCkHolderLocSpaceₗ : CkHolderSpaceOn k α Ω F →ₗ[ℝ] CkHolderLocSpace k α Ω F where
+  toFun := toCkHolderLocSpace
+  map_add' f g := CkHolderLocSpace.ext fun x hx ↦ by
+    simp only [toCkHolderLocSpace_apply_of_mem _ hx, FunLike.coe_add, Pi.add_apply, coe_add]
+  map_smul' c f := CkHolderLocSpace.ext fun x hx ↦ by
+    simp only [toCkHolderLocSpace_apply_of_mem _ hx, FunLike.coe_smul, Pi.smul_apply, coe_smul,
+      RingHom.id_apply]
+
+/-- The inclusion `C^{k,α}(Ω) → C^{k,α}_loc(Ω)`, sending an element to its extension by zero, as a
+continuous linear map. -/
+def toCkHolderLocSpaceCLM : CkHolderSpaceOn k α Ω F →L[ℝ] CkHolderLocSpace k α Ω F where
+  toLinearMap := toCkHolderLocSpaceₗ
+  cont := WithSeminorms.continuous_normedSpace_dom (CkHolderSpaceOn k α Ω F)
+    CkHolderLocSpace.withSeminorms toCkHolderLocSpaceₗ fun K ↦ ⟨(k + 2 : ℝ≥0), fun f ↦ by
+      rw [Seminorm.comp_apply, smul_apply, coe_normSeminorm, NNReal.smul_def,
+        smul_eq_mul, CkHolderLocSpace.seminormFamily_apply]
+      exact_mod_cast seminorm_toCkHolderLocSpace_le K.val K.property f⟩
+
+/-- The inclusion `C^{k,α}(Ω) → C^{k,α}_loc(Ω)` does not change the values on `Ω`. -/
+@[simp]
+theorem toCkHolderLocSpaceCLM_apply_of_mem (f : CkHolderSpaceOn k α Ω F) {x : E} (hx : x ∈ Ω) :
+    toCkHolderLocSpaceCLM f x = f ⟨x, hx⟩ :=
+  toCkHolderLocSpace_apply_of_mem f hx
+
+/-- The inclusion `C^{k,α}(Ω) → C^{k,α}_loc(Ω)` does not change the derivatives on `Ω`. -/
+theorem iteratedFDeriv_toCkHolderLocSpaceCLM (f : CkHolderSpaceOn k α Ω F) (i : Fin (k + 1))
+    {x : E} (hx : x ∈ Ω) :
+    _root_.iteratedFDeriv ℝ i (toCkHolderLocSpaceCLM f) x = f.iteratedFDeriv i ⟨x, hx⟩ :=
+  (iteratedFDeriv_toCkHolderLocSpace f i hx).trans (f.iteratedFDeriv_extend i ⟨x, hx⟩)
+
+/-- The inclusion `C^{k,α}(Ω) → C^{k,α}_loc(Ω)` is injective. -/
+theorem toCkHolderLocSpaceCLM_injective :
+    Function.Injective (toCkHolderLocSpaceCLM (k := k) (α := α) (Ω := Ω) (F := F)) :=
+  fun f g h ↦ ext fun x ↦ by
+    rw [← toCkHolderLocSpaceCLM_apply_of_mem f x.property,
+      ← toCkHolderLocSpaceCLM_apply_of_mem g x.property, h]
+
+end CkHolderSpaceOn
 
 end TauCeti

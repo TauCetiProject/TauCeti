@@ -5,7 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
+public import Mathlib.LinearAlgebra.QuadraticForm.Dual
 public import TauCeti.LinearAlgebra.QuadraticForm.Representation
+import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import Mathlib.LinearAlgebra.Matrix.ToLinearEquiv
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.QuadraticForm.Basic
 import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.SquareClass
@@ -48,9 +52,22 @@ The binary quadratic form `TauCeti.binaryQuadraticForm R a b` given by
 carries a unimodular polar pairing whenever `2 * a = 0` and `2 * b = 0` (in particular whenever
 `a = b = 0`, giving the characteristic-free hyperbolic plane `x 0 * x 1`, or in characteristic
 two). Over any commutative ring, `binaryQuadraticForm R a 0` and `binaryQuadraticForm R 0 b` are
-explicitly isometric to the hyperbolic plane `binaryQuadraticForm R 0 0` via shear isometries, and
-over any field `binaryQuadraticForm K 1 c` is anisotropic if and only if the Artin--Schreier
+explicitly isometric to the hyperbolic plane `binaryQuadraticForm R 0 0` via shear isometries.
+Over any commutative semiring, the hyperbolic plane is isometric to Mathlib's
+`QuadraticForm.dualProd R R`, and `[a, b]` is isometric to `a • [1, a b]` whenever `a` is a unit.
+Over any field `binaryQuadraticForm K 1 c` is anisotropic if and only if the Artin--Schreier
 polynomial `t ^ 2 + t + c` has no root in `K`.
+
+The polar form of `[a, b]` has Gram matrix `!![2 * a, 1; 1, 2 * b]` in the standard basis, of
+determinant `4 * a * b - 1`, so over an integral domain `[a, b]` is *nonsingular* (its polar form is
+nondegenerate) exactly when `1 - 4 * a * b ≠ 0`. Conversely, these forms exhaust the binary forms
+with nonzero polar form: a quadratic form on a free module with basis `e₀, e₁` satisfying
+`polar Q e₀ e₁ = 1` is `[Q e₀, Q e₁]` in these coordinates, and over a field every quadratic form on
+a plane with nonzero polar form is isometric to some `[a, b]`. If the polar form is nondegenerate,
+any nonzero vector `v` can be taken as the first basis vector, so `Q` is isometric to `[Q v, b]`
+for some `b`; in particular a nonsingular plane representing `a ≠ 0` is isometric to some `[a, b]`.
+Applied to an isotropic vector, this shows that a nonsingular plane is isotropic exactly when it is
+isometric to the hyperbolic plane `[0, 0]`, in every characteristic.
 
 ## Main definitions
 
@@ -75,17 +92,39 @@ polynomial `t ^ 2 + t + c` has no root in `K`.
 * `TauCeti.anisotropic_binary_iff`: `⟨a, b⟩` is anisotropic exactly when `-ab` is not a square;
   `TauCeti.anisotropic_binary_one_neg_iff` is its square-radicand form for `⟨1, -d⟩`.
 * `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_zero`,
-  `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero`: nondegeneracy of the
-  polar bilinear form of `[a, b]` when `2 * a = 0` and `2 * b = 0`.
+  `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero`,
+  `TauCeti.orthogonal_polarBilin_binaryQuadraticForm_span_one_zero_of_two_mul_eq_zero`:
+  nondegeneracy of the polar bilinear form of `[a, b]` when `2 * a = 0` and `2 * b = 0`, and polar
+  self-orthogonality of the first coordinate axis `R ∙ ![1, 0]` when `2 * a = 0`.
 * `TauCeti.isTotallyIsotropic_ker_proj_one_binaryQuadraticForm`,
   `TauCeti.not_anisotropic_binaryQuadraticForm_zero`,
   `TauCeti.anisotropic_binaryQuadraticForm_one_iff`: isotropy and Artin--Schreier anisotropy
   criteria for `[a, b]`.
+* `TauCeti.toMatrix₂'_polarBilin_binaryQuadraticForm`,
+  `TauCeti.det_toMatrix₂'_polarBilin_binaryQuadraticForm`: the Gram matrix `!![2a, 1; 1, 2b]` of
+  the polar form of `[a, b]` and its determinant `4ab - 1`.
+* `TauCeti.nondegenerate_polarBilin_binaryQuadraticForm_iff`: over an integral domain, `[a, b]` is
+  nonsingular if and only if `1 - 4ab ≠ 0`.
+* `TauCeti.equivalent_binaryQuadraticForm_zero_dualProd`: the hyperbolic plane `[0, 0]` is
+  isometric to `QuadraticForm.dualProd R R` over every commutative semiring.
+* `TauCeti.equivalent_binaryQuadraticForm_smul_one`: `[a, b] ≅ a • [1, a b]` for a unit `a`.
+* `QuadraticMap.basisRepr_eq_binaryQuadraticForm`,
+  `QuadraticMap.equivalent_binaryQuadraticForm_of_linearIndependent`: a basis `e₀, e₁` with
+  `polar Q e₀ e₁ = 1` presents `Q` as `[Q e₀, Q e₁]`.
+* `QuadraticMap.exists_equivalent_binaryQuadraticForm`: over a field, a quadratic form on a plane
+  with nonzero polar form is isometric to some `[a, b]`.
+* `QuadraticMap.exists_equivalent_binaryQuadraticForm_of_ne_zero`,
+  `QuadraticMap.exists_equivalent_binaryQuadraticForm_of_represents`: on a nonsingular plane, every
+  nonzero vector `v` gives `Q ≅ [Q v, b]` for some `b`, so a represented value `a ≠ 0` gives
+  `Q ≅ [a, b]` for some `b`.
+* `QuadraticMap.equivalent_binaryQuadraticForm_zero_iff_not_anisotropic`: a nonsingular plane is
+  isotropic if and only if it is isometric to the hyperbolic plane `[0, 0]`.
 
 ## References
 
 * R. Elman, N. Karpenko, and A. Merkurjev, *The Algebraic and Geometric Theory of Quadratic Forms*,
-  American Mathematical Society Colloquium Publications 56 (2008), Chapter II, §7.B.
+  American Mathematical Society Colloquium Publications 56 (2008), Chapter II, §7.B
+  (Notation 7.3, Remark 7.4, Examples 7.5--7.6 and Proposition 7.19).
 * T. Y. Lam, *Introduction to Quadratic Forms over Fields*, Graduate Studies in Mathematics 67,
   American Mathematical Society (2005), Chapter I, Proposition 2.3 and Proposition 5.1.
 -/
@@ -381,6 +420,29 @@ theorem not_anisotropic_binaryQuadraticForm_zero [Nontrivial R] :
   have h10 := h ![1, 0] (by simp)
   exact one_ne_zero (α := R) (by simpa using congrFun h10 0)
 
+/-- Over every commutative semiring, the hyperbolic plane `binaryQuadraticForm R 0 0`, with value
+`x 0 * x 1`, is isometric to Mathlib's `QuadraticForm.dualProd R R`, with value `f z` at `(f, z)`:
+the coordinate `x 0` becomes the dual vector `(· * x 0)`. -/
+theorem equivalent_binaryQuadraticForm_zero_dualProd :
+    (binaryQuadraticForm R 0 0).Equivalent (QuadraticForm.dualProd R R) :=
+  ⟨{ toLinearEquiv := (LinearEquiv.piFinTwo R fun _ ↦ R).trans
+        ((LinearMap.ringLmapEquivSelf R R R).symm.prodCongr (LinearEquiv.refl R R))
+     map_app' x := by simp [mul_comm] }⟩
+
+/-- For a unit `a`, the form `binaryQuadraticForm R a b` is isometric to the scalar multiple
+`a • binaryQuadraticForm R 1 (a * b)`, through the substitution `x 1 ↦ a⁻¹ * x 1`. -/
+theorem equivalent_binaryQuadraticForm_smul_one (a : Rˣ) (b : R) :
+    (binaryQuadraticForm R a b).Equivalent ((a : R) • binaryQuadraticForm R 1 (a * b)) :=
+  ⟨{ toLinearEquiv := LinearEquiv.piCongrRight ![LinearEquiv.refl R R,
+        LinearEquiv.smulOfUnit a⁻¹]
+     map_app' x := by
+      suffices (a : R) * (x 0 ^ 2 + x 0 * (↑a⁻¹ * x 1) + a * b * (↑a⁻¹ * x 1) ^ 2) =
+          a * x 0 ^ 2 + x 0 * x 1 + b * x 1 ^ 2 by
+        simpa [LinearEquiv.smulOfUnit, Units.smul_def] using this
+      calc _ = (a : R) * x 0 ^ 2 + (a * ↑a⁻¹) * x 0 * x 1 + (a * ↑a⁻¹) ^ 2 * b * x 1 ^ 2 := by
+            ring
+        _ = _ := by rw [a.mul_inv]; ring }⟩
+
 end CommSemiring
 
 section CommRing
@@ -430,6 +492,26 @@ theorem nondegenerate_polarBilin_binaryQuadraticForm_of_two_mul_eq_zero {a b : R
     (binaryQuadraticForm R a b).polarBilin.Nondegenerate := by
   rw [polarBilin_binaryQuadraticForm_of_two_mul_eq_zero ha hb]
   exact nondegenerate_polarBilin_binaryQuadraticForm_zero
+
+/-- Whenever `2 * a = 0`, the first coordinate axis `R ∙ ![1, 0]` equals its own
+`(binaryQuadraticForm R a b).polarBilin`-orthogonal complement. -/
+theorem orthogonal_polarBilin_binaryQuadraticForm_span_one_zero_of_two_mul_eq_zero {a : R} (b : R)
+    (ha : 2 * a = 0) :
+    LinearMap.BilinForm.orthogonal (binaryQuadraticForm R a b).polarBilin (R ∙ ![(1 : R), 0]) =
+      R ∙ ![(1 : R), 0] := by
+  have hpol (x : Fin 2 → R) : polar (binaryQuadraticForm R a b) ![(1 : R), 0] x = x 1 := by
+    simp only [polar_binaryQuadraticForm, Matrix.cons_val_zero, Matrix.cons_val_one]
+    linear_combination x 0 * ha
+  ext x
+  simp only [LinearMap.BilinForm.mem_orthogonal_iff, Submodule.mem_span_singleton,
+    forall_exists_index, forall_apply_eq_imp_iff, polarBilin_apply_apply, polar_smul_left,
+    smul_eq_mul, hpol]
+  refine ⟨fun hx ↦ ⟨x 0, ?_⟩, ?_⟩
+  · have h1 : x 1 = 0 := by simpa using hx 1
+    ext i
+    fin_cases i <;> simp [h1]
+  · rintro ⟨c, rfl⟩ d
+    simp
 
 /-- Explicit shear isometry `(x 0, x 1) ↦ (x 0, a * x 0 + x 1)` from `binaryQuadraticForm R a 0`
 to the hyperbolic plane `binaryQuadraticForm R 0 0`, valid over every commutative ring. -/
@@ -499,7 +581,34 @@ theorem isometryEquivBinaryQuadraticFormRight_symm_apply (b : R) (u : Fin 2 → 
     (isometryEquivBinaryQuadraticFormRight b).symm u = ![u 0 - b * u 1, u 1] :=
   (rfl)
 
+/-- The Gram matrix of the polar form of `binaryQuadraticForm R a b` in the standard basis of
+`Fin 2 → R` is `!![2 * a, 1; 1, 2 * b]`. -/
+@[simp]
+theorem toMatrix₂'_polarBilin_binaryQuadraticForm (a b : R) :
+    LinearMap.toMatrix₂' R (binaryQuadraticForm R a b).polarBilin = !![2 * a, 1; 1, 2 * b] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [LinearMap.toMatrix₂'_apply, polar_binaryQuadraticForm]
+
+/-- The Gram determinant of the polar form of `binaryQuadraticForm R a b` is `4 * a * b - 1`. -/
+theorem det_toMatrix₂'_polarBilin_binaryQuadraticForm (a b : R) :
+    (LinearMap.toMatrix₂' R (binaryQuadraticForm R a b).polarBilin).det = 4 * a * b - 1 := by
+  rw [toMatrix₂'_polarBilin_binaryQuadraticForm, Matrix.det_fin_two_of]
+  ring
+
 end CommRing
+
+section IsDomain
+
+variable {R : Type u} [CommRing R] [IsDomain R]
+
+/-- Over an integral domain, `binaryQuadraticForm R a b` is nonsingular, that is its polar bilinear
+form is nondegenerate, if and only if `1 - 4 * a * b ≠ 0`. -/
+theorem nondegenerate_polarBilin_binaryQuadraticForm_iff (a b : R) :
+    (binaryQuadraticForm R a b).polarBilin.Nondegenerate ↔ 1 - 4 * a * b ≠ 0 := by
+  rw [← LinearMap.nondegenerate_toMatrix₂'_iff, Matrix.nondegenerate_iff_det_ne_zero,
+    det_toMatrix₂'_polarBilin_binaryQuadraticForm, ← neg_sub, neg_ne_zero]
+
+end IsDomain
 
 section Field
 
@@ -528,3 +637,122 @@ end Field
 end BinaryQuadraticForm
 
 end TauCeti
+
+/-! ### Binary forms `[a, b]` as normal forms -/
+
+namespace QuadraticMap
+
+open Module TauCeti
+
+section CommRing
+
+variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+
+/-- In coordinates along a basis `e` of a rank-two free module with `polar Q (e 0) (e 1) = 1`, a
+quadratic form `Q` is the binary form `[Q (e 0), Q (e 1)]`. -/
+theorem basisRepr_eq_binaryQuadraticForm (Q : QuadraticForm R M) (e : Basis (Fin 2) R M)
+    (he : polar Q (e 0) (e 1) = 1) :
+    Q.basisRepr e = binaryQuadraticForm R (Q (e 0)) (Q (e 1)) := by
+  ext x
+  rw [basisRepr_apply, Fin.sum_univ_two, QuadraticMap.map_add Q, QuadraticMap.map_smul,
+    QuadraticMap.map_smul, polar_smul_left, polar_smul_right, he, binaryQuadraticForm_apply]
+  simp only [smul_eq_mul]
+  ring
+
+end CommRing
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] {Q : QuadraticForm K V}
+
+/-- On a plane, a quadratic form `Q` is isometric to `[Q v, Q w]` for every linearly independent
+pair `v, w` with `polar Q v w = 1`. -/
+theorem equivalent_binaryQuadraticForm_of_linearIndependent (h2 : finrank K V = 2) {v w : V}
+    (hvw : LinearIndependent K ![v, w]) (h : polar Q v w = 1) :
+    Q.Equivalent (binaryQuadraticForm K (Q v) (Q w)) := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_eq_succ h2
+  let e := basisOfLinearIndependentOfCardEqFinrank hvw (by simp [h2])
+  have he0 : e 0 = v := by simp [e]
+  have he1 : e 1 = w := by simp [e]
+  rw [← he0, ← he1] at h ⊢
+  exact basisRepr_eq_binaryQuadraticForm Q e h ▸ ⟨Q.isometryEquivBasisRepr e⟩
+
+/-- On a plane, a quadratic form `Q` is isometric to `[Q v, b]` for some `b` whenever `v` belongs to
+a linearly independent pair `v, w` with `polar Q v w ≠ 0`. -/
+theorem exists_equivalent_binaryQuadraticForm_of_linearIndependent (h2 : finrank K V = 2)
+    {v w : V} (hvw : LinearIndependent K ![v, w]) (h : polar Q v w ≠ 0) :
+    ∃ b, Q.Equivalent (binaryQuadraticForm K (Q v) b) := by
+  refine ⟨Q ((polar Q v w)⁻¹ • w), equivalent_binaryQuadraticForm_of_linearIndependent h2 ?_ ?_⟩
+  · simpa using (LinearIndependent.pair_smul_smul_iff (x := v) (y := w) isUnit_one
+      (inv_ne_zero h).isUnit).mpr hvw
+  · rw [polar_smul_right, smul_eq_mul, inv_mul_cancel₀ h]
+
+/-- Over a field, every quadratic form on a plane whose polar form is nonzero is isometric to a
+binary form `[a, b]`. -/
+theorem exists_equivalent_binaryQuadraticForm (h2 : finrank K V = 2) (hQ : Q.polarBilin ≠ 0) :
+    ∃ a b, Q.Equivalent (binaryQuadraticForm K a b) := by
+  -- One of the independent pairs `(e 0, e 1)`, `(e 0, e 0 + e 1)`, `(e 0 + e 1, e 1)` built from
+  -- a basis `e` has nonzero polar value, as otherwise the polar form vanishes on the basis.
+  obtain ⟨v, w, hvw, hpol⟩ : ∃ v w : V, LinearIndependent K ![v, w] ∧ polar Q v w ≠ 0 := by
+    by_contra! h
+    have : FiniteDimensional K V := Module.finite_of_finrank_eq_succ h2
+    let e := finBasisOfFinrankEq K V h2
+    have hli : LinearIndependent K ![e 0, e 1] :=
+      (FinVec.etaExpand_eq ⇑e).symm ▸ e.linearIndependent
+    have h01 := h (e 0) (e 1) hli
+    have h00 := h (e 0) (e 0 + e 1) (LinearIndependent.pair_add_right_iff.mpr hli)
+    have h11 := h (e 0 + e 1) (e 1) (LinearIndependent.pair_add_left_iff.mpr hli)
+    rw [polar_add_right, h01, add_zero] at h00
+    rw [polar_add_left, h01, zero_add] at h11
+    refine hQ (LinearMap.BilinForm.ext_basis e fun i j ↦ ?_)
+    fin_cases i <;> fin_cases j <;> simp [polarBilin_apply_apply, polar_comm Q (e 1) (e 0), *]
+  obtain ⟨b, hb⟩ := exists_equivalent_binaryQuadraticForm_of_linearIndependent h2 hvw hpol
+  exact ⟨Q v, b, hb⟩
+
+/-- In every characteristic, on a plane with nondegenerate polar form, every nonzero vector `v` can
+be taken as the first vector of a binary normal form: `Q` is isometric to `[Q v, b]` for some
+`b`. -/
+theorem exists_equivalent_binaryQuadraticForm_of_ne_zero (h2 : finrank K V = 2)
+    (hQ : Q.polarBilin.Nondegenerate) {v : V} (hv : v ≠ 0) :
+    ∃ b, Q.Equivalent (binaryQuadraticForm K (Q v) b) := by
+  obtain ⟨w, hw⟩ : ∃ w, polar Q v w ≠ 0 := by
+    by_contra! h
+    exact hv (hQ.1 v fun w ↦ by simpa [polarBilin_apply_apply] using h w)
+  by_cases hvw : LinearIndependent K ![v, w]
+  · exact exists_equivalent_binaryQuadraticForm_of_linearIndependent h2 hvw hw
+  -- Otherwise `w` is a multiple of `v`, so `polar Q v v ≠ 0`, and for any `u` independent of `v`
+  -- one of `u` and `v + u` pairs nontrivially with `v`.
+  obtain ⟨c, rfl⟩ : ∃ c : K, c • v = w := by simpa [LinearIndependent.pair_iff' hv] using hvw
+  rw [polar_smul_right, smul_eq_mul] at hw
+  have : FiniteDimensional K V := Module.finite_of_finrank_eq_succ h2
+  obtain ⟨u, hu⟩ := exists_linearIndependent_pair_of_one_lt_finrank (by omega : 1 < finrank K V) hv
+  by_cases hvu : polar Q v u = 0
+  · refine exists_equivalent_binaryQuadraticForm_of_linearIndependent h2
+      (LinearIndependent.pair_add_right_iff.mpr hu) ?_
+    rw [polar_add_right, hvu, add_zero]
+    exact right_ne_zero_of_mul hw
+  · exact exists_equivalent_binaryQuadraticForm_of_linearIndependent h2 hu hvu
+
+/-- **Binary normal form from a represented value.** In every characteristic, a quadratic form on a
+plane with nondegenerate polar form that represents `a ≠ 0` is isometric to
+`binaryQuadraticForm K a b` for some `b`. -/
+theorem exists_equivalent_binaryQuadraticForm_of_represents (h2 : finrank K V = 2)
+    (hQ : Q.polarBilin.Nondegenerate) {a : K} (ha : a ≠ 0) (hQa : Q.Represents a) :
+    ∃ b, Q.Equivalent (binaryQuadraticForm K a b) := by
+  obtain ⟨v, rfl⟩ := (represents_iff Q a).mp hQa
+  exact exists_equivalent_binaryQuadraticForm_of_ne_zero h2 hQ fun hv ↦ ha (hv ▸ Q.map_zero)
+
+/-- In every characteristic, a plane with nondegenerate polar form is isotropic if and only if it
+is isometric to the hyperbolic plane `[0, 0]`. -/
+theorem equivalent_binaryQuadraticForm_zero_iff_not_anisotropic (h2 : finrank K V = 2)
+    (hQ : Q.polarBilin.Nondegenerate) :
+    Q.Equivalent (binaryQuadraticForm K 0 0) ↔ ¬Q.Anisotropic := by
+  refine ⟨fun h ↦ h.anisotropic_iff.not.mpr not_anisotropic_binaryQuadraticForm_zero, fun h ↦ ?_⟩
+  obtain ⟨v, hv, hv0⟩ := (not_anisotropic_iff_exists Q).mp h
+  obtain ⟨b, hb⟩ := exists_equivalent_binaryQuadraticForm_of_ne_zero h2 hQ hv
+  rw [hv0] at hb
+  exact hb.trans ⟨isometryEquivBinaryQuadraticFormRight b⟩
+
+end Field
+
+end QuadraticMap

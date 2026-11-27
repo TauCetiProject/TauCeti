@@ -39,11 +39,13 @@ where `μ` is a smooth nonincreasing cutoff with `μ = 2ε` on `[0, ε]` and `μ
 (`TauCeti.exists_contDiff_antitone_cutoff`). It has the same sublevel `{F ≤ c + ε} = M_{c+ε}`.
 When the band `f⁻¹[c - ε, c + ε]` is compact and its critical points lie in the charts, `F` has no
 critical points in the band `F⁻¹[c - ε, c + ε]`: outside the ellipsoids it agrees with `f`, whose
-critical points in the band are the chart centres; along the positive directions `F` strictly
-increases away from `v = 0`, and on `v = 0` it lies below `c - ε`. So `M_{c+ε}` deformation
-retracts onto `{F ≤ c - ε}` (`TauCeti.exists_sublevelDeformation`), which in turn retracts onto
-`M_{c-ε}` with the cells attached (`TauCeti.exists_inter_sublevel_union_cells_deformation`), since
-lowering the positive coordinates lowers `F`. The two retractions compose.
+critical points in the band are the chart centres
+(`TauCeti.apply_eq_zero_of_mem_criticalPoints_of_mem_source`); along the positive directions `F`
+strictly increases away from `v = 0`, and on `v = 0` it lies below `c - ε`. So `M_{c+ε}`
+deformation retracts onto `{F ≤ c - ε}` (`TauCeti.exists_sublevelDeformation`), which in turn
+retracts onto `M_{c-ε}` with the cells attached
+(`TauCeti.exists_inter_sublevel_union_cells_deformation`), since lowering the positive coordinates
+lowers `F`. The two retractions compose.
 
 Milnor's Remark 3.3 refines this to a handle attachment, up to a diffeomorphism rather than a
 homotopy. Since `F` has no critical points in the compact band, the descending flow of
@@ -90,6 +92,54 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {ι : Type*} {n : ℕ} {f : M → ℝ} {c ε : ℝ}
+
+/-- **A critical point in a normal-form chart is its centre.** If `f` has the normal form
+`f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²` in a smooth chart `φ`, then a critical point `x` of `f` in
+the source of `φ` is the centre of the chart: `φ x = 0`. -/
+theorem apply_eq_zero_of_mem_criticalPoints_of_mem_source
+    {φ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞}
+    {k : ℕ} (hf : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
+    {x : M} (hx : x ∈ φ.source) (hcrit : x ∈ criticalPoints I f) : φ x = 0 := by
+  have hy : φ x ∈ φ.target := φ.map_source hx
+  -- `φ x` is a critical point of `f ∘ φ⁻¹`, which near `φ x` is `z ↦ c + Σ ±zⱼ²`.
+  have h₁ : φ x ∈ criticalPoints 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (f ∘ φ.symm) :=
+    ((PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ φ.symm hy).mem_criticalPoints_comp_iff
+      (by simp)).2 (by rwa [show φ.symm (φ x) = x from φ.left_inv hx])
+  have heq : f ∘ φ.symm =ᶠ[𝓝 (φ x)]
+      fun z ↦ c + ∑ j, (if j.val < k then -1 else 1 : ℝ) * z j ^ 2 := by
+    filter_upwards [φ.open_target.mem_nhds hy] with z hz
+    have h := hf _ (φ.map_target hz)
+    rw [φ.right_inv hz] at h
+    exact h
+  have hd : HasFDerivAt
+      (fun z : EuclideanSpace ℝ (Fin n) ↦ c + ∑ j, (if j.val < k then -1 else 1 : ℝ) * z j ^ 2)
+      (∑ j, ((if j.val < k then -1 else 1 : ℝ) * (2 * φ x j)) • EuclideanSpace.proj (𝕜 := ℝ) j)
+      (φ x) := by
+    refine HasFDerivAt.const_add c (HasFDerivAt.fun_sum fun j _ ↦ ?_)
+    have h : HasFDerivAt (fun z : EuclideanSpace ℝ (Fin n) ↦ z j)
+        (EuclideanSpace.proj (𝕜 := ℝ) j) (φ x) :=
+      (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin n) j).hasFDerivAt
+    convert (h.pow 2).const_mul (if j.val < k then -1 else 1 : ℝ) using 1
+    ext v
+    simp
+  rw [mem_criticalPoints_iff_fderiv_eq_zero, heq.fderiv_eq, hd.fderiv] at h₁
+  -- The `j`-th partial derivative `±2 (φ x)ⱼ` vanishes, so `φ x = 0`.
+  have h0 (j : Fin n) : φ x j = 0 := by
+    have := congr($h₁ (EuclideanSpace.single j 1))
+    simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
+      PiLp.proj_apply, EuclideanSpace.single, PiLp.ofLp_single, Pi.single_apply, mul_ite, mul_one,
+      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, zero_apply] at this
+    have hs : (if j.val < k then -1 else 1 : ℝ) ≠ 0 := by split_ifs <;> norm_num
+    simpa using (mul_eq_zero.1 this).resolve_left hs
+  exact PiLp.ext h0
+
+/-- If `f` has the normal form `f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²` in a smooth chart `φ`, then
+`f` takes the value `c` at each of its critical points in the source of `φ`. -/
+theorem eq_of_mem_criticalPoints_of_mem_source
+    {φ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞}
+    {k : ℕ} (hf : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
+    {x : M} (hx : x ∈ φ.source) (hcrit : x ∈ criticalPoints I f) : f x = c := by
+  simp [hf x hx, apply_eq_zero_of_mem_criticalPoints_of_mem_source hf hx hcrit]
 
 section MilnorFunction
 
@@ -692,8 +742,7 @@ theorem IsMorse.exists_sublevel_union_cells_deformation (hf : IsMorse I f) {δ :
   obtain ⟨ε₀, hε₀, hε₀δ, hband, ψ, hψ, hψp⟩ :=
     hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    ((hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
   refine ⟨ε₀, hε₀, hε₀δ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
     fun ε hε hεε₀ ↦ TauCeti.exists_sublevel_union_cells_deformation hf.contMDiff ψ hψ _
       (fun p ↦ (closedBall_subset_closedBall (Real.sqrt_le_sqrt (by linarith))).trans
@@ -743,8 +792,7 @@ theorem IsMorse.exists_diffeomorph_sublevel_eq_union_handles (hf : IsMorse I f) 
   obtain ⟨ε, hε, hεδ, hband, ψ, hψ, hψp⟩ :=
     hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    ((hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
   exact ⟨ε, hε, hεδ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
     TauCeti.exists_diffeomorph_sublevel_eq_union_handles hf.contMDiff ψ hψ _ hε
       (fun p ↦ (hψp p).2.2.2.1) (fun p ↦ (hψp p).2.2.2.2)

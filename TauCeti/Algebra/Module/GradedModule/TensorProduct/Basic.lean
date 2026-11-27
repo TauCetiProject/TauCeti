@@ -36,7 +36,8 @@ degrees. This grading is used by tensor products of differential graded objects 
 
 ## Main results
 
-* `TauCeti.InternalGrading.tmul_mem_tensorProduct`: degrees add on pure tensors.
+* `TauCeti.InternalGrading.tmul_mem_tensorProduct` and
+  `TauCeti.InternalGrading.tmul_mem_tensorProduct_ofDecomposition`: degrees add on pure tensors.
 * `TauCeti.InternalGrading.tensorProduct_piece_le_of_add_eq`: a submodule containing every
   homogeneous pure tensor `x ⊗ₜ y` with `p + q = n` contains the degree-`n` piece.
 * `TauCeti.InternalGrading.tensorProduct_piece_eq_iSup` and
@@ -48,7 +49,7 @@ degrees. This grading is used by tensor products of differential graded objects 
   span the tensor product.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
-* `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
+* `LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
 * `TauCeti.InternalGrading.isHomogeneous_assoc`,
   `TauCeti.InternalGrading.isHomogeneous_assoc_symm`, and
   `TauCeti.InternalGrading.isHomogeneous_tensorTensorTensorComm`: reassociating and interchanging
@@ -67,9 +68,9 @@ public section
 
 open scoped DirectSum TensorProduct
 
-namespace TauCeti
-
 universe u v w v' w'
+
+namespace TauCeti
 
 namespace InternalGrading
 
@@ -157,6 +158,14 @@ theorem tmul_mem_tensorProduct {ι : Type*} [DecidableEq ι] [Add ι]
   Submodule.mem_iSup_of_mem (p, q) <| Submodule.mem_iSup_of_mem rfl <| by
     simpa only [tensorProductBidegreePiece, TensorProduct.mk_apply] using
       Submodule.apply_mem_map₂ (TensorProduct.mk R M N) hx hy
+
+/-- For gradings given by decompositions `ℳ` and `𝒩`, a pure tensor of elements of `ℳ p` and
+`𝒩 q` is homogeneous of degree `p + q` in the tensor-product grading. -/
+theorem tmul_mem_tensorProduct_ofDecomposition {ι : Type*} [DecidableEq ι] [Add ι]
+    (ℳ : ι → Submodule R M) (𝒩 : ι → Submodule R N) [DirectSum.Decomposition ℳ]
+    [DirectSum.Decomposition 𝒩] {p q : ι} {x : M} {y : N} (hx : x ∈ ℳ p) (hy : y ∈ 𝒩 q) :
+    x ⊗ₜ[R] y ∈ ((ofDecomposition ℳ).tensorProduct (ofDecomposition 𝒩)).piece (p + q) :=
+  tmul_mem_tensorProduct _ _ (by rwa [ofDecomposition_piece]) (by rwa [ofDecomposition_piece])
 
 /-- A submodule containing every pure tensor of homogeneous elements whose degrees sum to `n`
 contains the whole degree-`n` piece of the tensor-product grading. -/
@@ -289,7 +298,11 @@ end KoszulTwist
 
 end InternalGrading
 
+end TauCeti
+
 namespace LinearMap.IsHomogeneous
+
+open TauCeti (InternalGrading)
 
 variable {R : Type u} [CommSemiring R]
 variable {M : Type v} {N : Type w} {M' : Type v'} {N' : Type w'}
@@ -325,6 +338,8 @@ theorem rTensor {ι : Type*} [DecidableEq ι] [AddCommMonoid ι]
     hf.tensorProduct (LinearMap.isHomogeneous_id (R := R) H.piece)
 
 end LinearMap.IsHomogeneous
+
+namespace TauCeti
 
 /-- The tensor product of two even-supported internally `ℤ`-graded modules is even-supported. -/
 theorem parityGrading_tensorProduct_one_eq_bot {R : Type u} {M : Type v} {N : Type w}

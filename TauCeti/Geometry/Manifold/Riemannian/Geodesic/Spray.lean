@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
+public import TauCeti.Geometry.Manifold.VectorBundle.TotalSpace.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Coordinate.Change
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 
@@ -191,7 +191,7 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
   have hγd : MDifferentiableOn 𝓘(ℝ, ℝ) I γ s := hγ.mdifferentiableOn (by norm_num)
   rw [geodesicSpray_apply, curveVelocityLiftWithin_snd, curveVelocityLiftWithin_proj,
     accelerationWithin_eq_zero_iff (leviCivitaConnection I M) γ hγd ht,
-    derivWithin_extChartAt_comp_curve (hγd t ht) (hs t ht)]
+    derivWithin_extChartAt_comp_curve (hγd t ht).continuousWithinAt]
   -- the fibre reading of the velocity lift is the derivative of the chart reading of the curve
   have hsec : (fun r ↦ (trivializationAt E (TangentSpace I) (γ t)
       (curveVelocityLiftWithin I γ s r)).2) =ᶠ[𝓝[s] t]
@@ -203,8 +203,8 @@ theorem hasMFDerivWithinAt_curveVelocityLiftWithin_iff
     exact (Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hr _).symm
   have hcont := ContMDiffOn.continuousOn_curveVelocityLiftWithin (hγ.of_le one_le_two)
     hs.uniqueMDiffOn t ht
-  refine (hasMFDerivWithinAt_totalSpace_curve_iff_of_continuousWithinAt
-    (F := E) (V := fun x : M ↦ TangentSpace I x) hcont).trans ?_
+  refine ((hasMFDerivWithinAt_totalSpace_curve_iff (F := E)
+    (V := fun x : M ↦ TangentSpace I x)).trans (and_iff_right hcont)).trans ?_
   simp only [curveVelocityLiftWithin_proj]
   refine (and_iff_right (hasDerivWithinAt_extChartAt_comp_curve
     (hasMFDerivWithinAt_curveVelocityWithin (hγd t ht)))).trans <|

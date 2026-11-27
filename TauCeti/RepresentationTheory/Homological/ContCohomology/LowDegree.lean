@@ -185,6 +185,9 @@ def d0 : M →+ (G → M) where
 action, `TauCeti.ContCohomology.B1_le_C1` shows that these cochains are continuous. -/
 def B1 : AddSubgroup (G → M) := (d0 G M).range
 
+/-- The image of `d⁰` is `B¹`. -/
+theorem range_d0 : (d0 G M).range = B1 G M := (rfl)
+
 variable {G M}
 
 /-- The defining formula for `d⁰`. -/
@@ -344,6 +347,12 @@ maps and the `(0, q)` and `(q, 0)` cup shapes all need a degree-`0` carrier to b
 against. Membership is exposed by Mathlib's `FixedPoints.mem_addSubgroup`, which applies directly
 to this abbreviation. -/
 abbrev H0 : AddSubgroup M := FixedPoints.addSubgroup G M
+
+/-- The kernel of `d⁰` is the group of invariants `H⁰(G, M)`. -/
+theorem ker_d0 : (d0 G M).ker = H0 G M := by
+  ext m
+  simp only [AddMonoidHom.mem_ker, FixedPoints.mem_addSubgroup, funext_iff, d0_apply,
+    Pi.zero_apply, sub_eq_zero]
 
 variable {G M}
 
@@ -1048,16 +1057,33 @@ distributive scalar action; associativity of the action is needed only to form `
 
 variable {G : Type u} [TopologicalSpace G]
   {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
-  [DistribSMul G M] (htriv : ∀ (g : G) (m : M), g • m = m)
+  [DistribSMul G M]
 
-include htriv
-
-/-- For a trivial action a continuous `1`-cocycle is additive. -/
-theorem map_mul_of_smul_eq_self_of_mem_Z1 [Mul G] {f : G → M} (hf : f ∈ Z1 G M) (a b : G) :
+/-- A continuous `1`-cocycle is additive on `a * b` whenever `a` acts trivially on `M`. -/
+theorem map_mul_of_smul_eq_self_of_mem_Z1 [Mul G] {f : G → M} (hf : f ∈ Z1 G M) {a : G}
+    (ha : ∀ m : M, a • m = m) (b : G) :
     f (a * b) = f a + f b := by
   have h := (mem_Z1_iff.1 hf).2 a b
-  rw [htriv a (f b)] at h
+  rw [ha (f b)] at h
   exact h.trans (add_comm _ _)
+
+/-- A continuous `1`-cocycle satisfies `f (a ^ k) = k • f a` whenever `a` acts trivially on `M`. -/
+theorem map_pow_of_smul_eq_self_of_mem_Z1 {G : Type u} [Monoid G] [TopologicalSpace G]
+    {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
+    [DistribMulAction G M] {f : G → M} (hf : f ∈ Z1 G M) {a : G} (ha : ∀ m : M, a • m = m)
+    (k : ℕ) :
+    f (a ^ k) = k • f a := by
+  have hpow (j : ℕ) (m : M) : a ^ j • m = m := by
+    induction j with
+    | zero => simp
+    | succ j ihj => rw [pow_succ', mul_smul, ihj, ha]
+  induction k with
+  | zero => simp [map_one_of_mem_Z1 hf]
+  | succ k ih => rw [pow_succ, map_mul_of_smul_eq_self_of_mem_Z1 hf (hpow k) a, ih, succ_nsmul]
+
+variable (htriv : ∀ (g : G) (m : M), g • m = m)
+
+include htriv
 
 variable [Monoid G]
 
@@ -1077,7 +1103,7 @@ def Z1EquivOfSmulEqSelf : Z1 G M ≃+ Additive (ContinuousMonoidHom G (Multiplic
   toFun f := Additive.ofMul
     { toMonoidHom :=
         MonoidHom.mk' (fun g => Multiplicative.ofAdd ((f : G → M) g)) fun a b => by
-          rw [map_mul_of_smul_eq_self_of_mem_Z1 htriv f.property a b, ofAdd_add]
+          rw [map_mul_of_smul_eq_self_of_mem_Z1 f.property (htriv a) b, ofAdd_add]
       continuous_toFun := (mem_Z1_iff.1 f.property).1 }
   invFun φ :=
     ⟨fun g => Multiplicative.toAdd ((Additive.toMul φ) g),

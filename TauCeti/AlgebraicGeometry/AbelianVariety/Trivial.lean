@@ -7,9 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.AbelianVariety.Hom.Iso
 public import TauCeti.AlgebraicGeometry.AbelianVariety.MorphismGroup
-public import TauCeti.AlgebraicGeometry.Geometrically.Integral
-public import Mathlib.RingTheory.KrullDimension.Field
-public import Mathlib.RingTheory.Spectrum.Prime.Topology
+public import TauCeti.AlgebraicGeometry.Morphisms.OverTensorUnit
+import Mathlib.RingTheory.KrullDimension.Field
+import TauCeti.AlgebraicGeometry.Scheme.KrullDimension
 
 /-!
 # The trivial abelian variety
@@ -36,9 +36,10 @@ Mathematically this is the degenerate case of the Jacobian (not formalized here)
 mathematics is vendored; the proofs reuse Mathlib's group-object structure on the monoidal unit
 together with its uniqueness API for the trivial group object (`CommGrp.uniqueHomFromTrivial`,
 `Grp.uniqueHomToTrivial`), the terminal object of `Over S`, preservation of terminal objects by
-the right adjoint `Over.pullback`, and `PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim`
+the right adjoint `Over.pullback`, and `TauCeti.AlgebraicGeometry.topologicalKrullDim_Spec`
 together with `ringKrullDim_eq_zero_of_field`.
-The geometric-integrality input is `TauCeti.AlgebraicGeometry.geometricallyIntegral_of_isIso`.
+The properness and geometric-integrality inputs are the instances of
+`TauCeti.AlgebraicGeometry.Morphisms.OverTensorUnit`.
 The abelian variety itself is assembled by the existing constructor
 `AbelianVariety.ofGeometricallyIntegral`; its characteristic lemmas identify the underlying group
 scheme and operations without exposing the constructor's implementation.
@@ -63,16 +64,6 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- The spectrum of a field has topological Krull dimension `0`. -/
-private lemma topologicalKrullDim_spec_eq_zero (K : Type u) [Field K] :
-    topologicalKrullDim (Spec (.of K)) = 0 := by
-  -- The underlying topological space of `Spec R` *is* `PrimeSpectrum R`, definitionally
-  -- (`AlgebraicGeometry.Scheme.Spec_carrier`); no lemma states `topologicalKrullDim` of a scheme
-  -- in terms of its coordinate ring, and Mathlib crosses the same gap by `change`, in
-  -- `AlgebraicGeometry.IsLocallyArtinian.of_topologicalKrullDim_le_zero`.
-  change topologicalKrullDim (PrimeSpectrum K) = 0
-  rw [PrimeSpectrum.topologicalKrullDim_eq_ringKrullDim, ringKrullDim_eq_zero_of_field]
-
 namespace AbelianVariety
 
 open scoped Hom
@@ -81,42 +72,21 @@ noncomputable section
 
 variable (K : Type u) [Field K]
 
-/-- The structure morphism of the monoidal unit of `Over (Spec K)` is proper: it is the identity
-of `Spec K` (`Over.tensorUnit_hom`). -/
-private lemma isProperTensorUnit :
-    IsProper (𝟙_ (Over (Spec (.of K)))).hom := by
-  rw [Over.tensorUnit_hom]
-  -- `infer_instance` fails on the rewritten goal because the failed attempt on the original goal
-  -- is cached; `inferInstanceAs` re-elaborates the type and succeeds.
-  exact inferInstanceAs (IsProper (𝟙 _))
-
-/-- The structure morphism of the monoidal unit of `Over (Spec K)` is geometrically integral: it
-is the identity of `Spec K` (`Over.tensorUnit_hom`), and an isomorphism is geometrically integral
-by `geometricallyIntegral_of_isIso`. -/
-private lemma geometricallyIntegralTensorUnit :
-    GeometricallyIntegral (𝟙_ (Over (Spec (.of K)))).hom := by
-  have hid : GeometricallyIntegral (𝟙 (Spec (.of K))) := geometricallyIntegral_of_isIso _
-  rw [Over.tensorUnit_hom]
-  exact hid
-
 /-- The **trivial abelian variety** over `K`: the base `Spec K` regarded as a group scheme over
 itself.
 
 It is carried by the monoidal unit `𝟙_ (Over (Spec K))`, which is a group object because it is
-terminal, and whose structure morphism is proper and geometrically integral by
-`isProperTensorUnit` and `geometricallyIntegralTensorUnit`. Those are exactly the hypotheses of
-`AbelianVariety.ofGeometricallyIntegral`, which assembles them. -/
+terminal, and whose structure morphism is proper and geometrically integral by the instances
+`TauCeti.AlgebraicGeometry.isProper_tensorUnit_hom` and
+`TauCeti.AlgebraicGeometry.geometricallyIntegral_tensorUnit_hom`. Those are exactly the
+hypotheses of `AbelianVariety.ofGeometricallyIntegral`, which assembles them. -/
 def trivial : AbelianVariety K :=
-  letI := isProperTensorUnit K
-  letI := geometricallyIntegralTensorUnit K
   ofGeometricallyIntegral (𝟙_ (Over (Spec (.of K))))
 
 /-- The group scheme underlying the trivial abelian variety is the monoidal unit of
 `Over (Spec K)`. -/
 @[simp]
 lemma trivial_toOver : (trivial K).toOver = 𝟙_ (Over (Spec (.of K))) := by
-  let := isProperTensorUnit K
-  let := geometricallyIntegralTensorUnit K
   unfold trivial
   exact ofGeometricallyIntegral_toOver _
 
@@ -136,8 +106,6 @@ terminal object. -/
 lemma trivial_one :
     η[(trivial K).toOver] ≫ eqToHom (trivial_toOver K) =
       η[𝟙_ (Over (Spec (.of K)))] := by
-  let := isProperTensorUnit K
-  let := geometricallyIntegralTensorUnit K
   unfold trivial
   exact ofGeometricallyIntegral_one _
 
@@ -147,8 +115,6 @@ lemma trivial_mul :
     μ[(trivial K).toOver] ≫ eqToHom (trivial_toOver K) =
       (eqToHom (trivial_toOver K) ⊗ₘ eqToHom (trivial_toOver K)) ≫
         μ[𝟙_ (Over (Spec (.of K)))] := by
-  let := isProperTensorUnit K
-  let := geometricallyIntegralTensorUnit K
   unfold trivial
   exact ofGeometricallyIntegral_mul _
 
@@ -157,15 +123,13 @@ lemma trivial_mul :
 lemma trivial_inv :
     ι[(trivial K).toOver] ≫ eqToHom (trivial_toOver K) =
       eqToHom (trivial_toOver K) ≫ ι[𝟙_ (Over (Spec (.of K)))] := by
-  let := isProperTensorUnit K
-  let := geometricallyIntegralTensorUnit K
   unfold trivial
   exact ofGeometricallyIntegral_inv _
 
 /-- The trivial abelian variety has dimension `0`. -/
 @[simp]
 lemma dim_trivial : (trivial K).dim = 0 := by
-  rw [dim_def, trivial_toScheme, topologicalKrullDim_spec_eq_zero]
+  rw [dim_def, trivial_toScheme, topologicalKrullDim_Spec, ringKrullDim_eq_zero_of_field]
 
 variable {K}
 

@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Continuation
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Compactness of the pair-of-pants continuation family
@@ -149,18 +150,12 @@ private theorem integrableOn_and_setIntegral_floerEnergyDensity_continuation_le
     simp only [Puncture.sum_univ, Puncture.endSign_zero, Puncture.endSign_one,
       Puncture.endSign_inf]
     ring
-  have hint : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (equivRealProdCLM.symm z) x I) u) Ω :=
-    ⟨((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal (hu.of_le (by norm_num))
+  exact integrableOn_and_setIntegral_le_of_setLIntegral_ofReal_le
+    (((ω.continuousOn_floerEnergyDensity isOpen_thricePuncturedSphereReal (hu.of_le (by norm_num))
       (fun z hz ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz.1 z.2
         1).contDiffWithinAt)
       (fun z hz ↦ (contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz.1 z.2
-        I).contDiffWithinAt)).mono hΩS).aestronglyMeasurable hΩ,
-      (hasFiniteIntegral_iff_ofReal hf0).2 (hlin.trans_lt ENNReal.ofReal_lt_top)⟩
-  refine ⟨hint, ?_⟩
-  rw [integral_eq_lintegral_of_nonneg_ae hf0 hint.aestronglyMeasurable]
-  exact ENNReal.toReal_le_of_le_ofReal hE0 hlin
+        I).contDiffWithinAt)).mono hΩS).aestronglyMeasurable hΩ) hf0 subset_rfl hE0 hlin
 
 /-- **Solutions of the pair-of-pants continuation family converge off finitely many bubbling
 points.** Let `K_L` be the pair-of-pants perturbation with continuation necks at the positions
@@ -449,19 +444,11 @@ theorem
   have hΩS : Ω ⊆ S := hΩD.trans hDS
   -- The Floer energy over `Ω` is at most the energy over `S`, which exceeds the topological energy
   -- by at most `∑ q, (B_q + Δ_q)`, whatever the neck positions.
-  have hE (k : ℕ) : ∫ z in Ω, ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H (L (p k)) (equivRealProdCLM.symm z) x 1)
-      (fun z x ↦
-        pairOfPantsContinuationPerturbation G H (L (p k)) (equivRealProdCLM.symm z) x Complex.I)
-      (u k) z ≤ A + ∑ q, (B q + Δ q) := by
-    have habs := hω.abs_integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_sub_le hG hH
-      (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB hΔ
-      ((hu k).of_le (by norm_num)) (hx k) (hint k) (harea k)
-    refine (hω.setIntegral_floerEnergyDensity_mono_set hΩS
-      isOpen_thricePuncturedSphereReal.measurableSet (hint k) (fun z hz ↦ hJt _ (hpC k) z hz _)
-      (hfl k)).trans ?_
-    linarith [(abs_sub_le_iff.1 habs).1, htop k]
   exact hconv hΩ hΩD hpC (fun k ↦ (hu k).mono hΩS) (fun k z hz ↦ hfl k z (hΩS hz)) huK
-    (fun k ↦ (hint k).mono_set hΩS) hE
+    (fun k ↦ (hint k).mono_set hΩS) fun k ↦
+      hω.setIntegral_floerEnergyDensity_pairOfPantsContinuationPerturbation_le hG hH
+        (fun q ↦ (hGs q).of_le (by norm_num)) (fun q ↦ (hHs q).of_le (by norm_num)) hGB hHB hΔ
+        ((hu k).of_le (by norm_num)) (hx k) (hint k) (harea k)
+        (fun z hz ↦ hJt _ (hpC k) z hz _) (hfl k) (htop k) hΩS
 
 end TauCeti.SmoothTwoForm.IsNondegenerate

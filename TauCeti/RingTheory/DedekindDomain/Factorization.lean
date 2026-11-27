@@ -62,6 +62,8 @@ the divisors of a nonzero element. All of them hold in an arbitrary Dedekind dom
 * `IsDedekindDomain.HeightOneSpectrum.hasFiniteMulSupport_zpow_neg_log_valuation`: a family of
   powers indexed by the height-one primes with `-WithZero.log (v.valuation K a)` as exponents has
   finite multiplicative support.
+* `FractionalIdeal.valuation_le_exp_neg_count_of_mem`: every element of a fractional ideal `I`
+  has valuation at most `exp (-count K v I)` at `v`.
 * `FractionalIdeal.valuation_le_one_of_mem_of_count_nonneg`: nonnegative multiplicity makes
   every element of a fractional ideal integral at that prime.
 
@@ -305,18 +307,26 @@ theorem count_spanSingleton_eq_neg_log_valuation (v : HeightOneSpectrum A) (a : 
 
 end PrincipalIdeal
 
-/-- Nonnegative multiplicity at a prime makes every element of a fractional ideal integral
-at that prime. -/
-theorem valuation_le_one_of_mem_of_count_nonneg {R K : Type*} [CommRing R]
+/-- **Every element of a fractional ideal `I` has valuation at most `exp (-count K v I)` at `v`.**
+For `I = 0` the only element is `0`. -/
+theorem valuation_le_exp_neg_count_of_mem {R K : Type*} [CommRing R]
     [IsDedekindDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
-    (I : FractionalIdeal R⁰ K) (v : HeightOneSpectrum R) (hI : 0 ≤ count K v I)
-    {x : K} (hx : x ∈ I) : v.valuation K x ≤ 1 := by
+    (v : HeightOneSpectrum R) {I : FractionalIdeal R⁰ K} {x : K} (hx : x ∈ I) :
+    v.valuation K x ≤ WithZero.exp (-count K v I) := by
   rcases eq_or_ne x 0 with rfl | hx0
   · simp
   have hcount := count_mono K v (spanSingleton_ne_zero_iff.mpr hx0)
     (spanSingleton_le_iff_mem.mpr hx)
   rw [count_spanSingleton_eq_neg_log_valuation] at hcount
-  exact WithZero.le_exp_of_log_le (neg_nonneg.mp (hI.trans hcount))
+  exact WithZero.le_exp_of_log_le (by lia)
+
+/-- Nonnegative multiplicity at a prime makes every element of a fractional ideal integral
+at that prime. -/
+theorem valuation_le_one_of_mem_of_count_nonneg {R K : Type*} [CommRing R]
+    [IsDedekindDomain R] [Field K] [Algebra R K] [IsFractionRing R K]
+    (I : FractionalIdeal R⁰ K) (v : HeightOneSpectrum R) (hI : 0 ≤ count K v I)
+    {x : K} (hx : x ∈ I) : v.valuation K x ≤ 1 :=
+  (valuation_le_exp_neg_count_of_mem v hx).trans (WithZero.exp_le_one_iff.mpr (by lia))
 
 end FractionalIdeal
 

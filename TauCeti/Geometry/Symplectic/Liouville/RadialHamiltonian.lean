@@ -7,10 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Liouville.CylindricalEnd
-import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
+import TauCeti.Geometry.Manifold.IntegralCurve.Interval
 import TauCeti.Geometry.Manifold.IntegralCurve.Monotone
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
@@ -53,7 +53,9 @@ The integral curves of the Hamiltonian vector field of a function `H` with `H = 
 level `c` they are the integral curves of `X_r` run at the constant speed `φ'(c)`. Although
 `X_r` is smooth only on the cylindrical end, its orbits on a level `c > 1` are determined by
 their initial point
-(`IsLiouvilleCompletion.eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleRadialCoordinate`).
+(`IsLiouvilleCompletion.eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleRadialCoordinate`),
+as are the orbits outside `W` of every function smooth there
+(`IsLiouvilleCompletion.eq_of_isMIntegralCurve_hamiltonianVectorField_of_notMem`).
 Since the Liouville flow conjugates `X_r` on different levels, the periods of the closed orbits of
 `X_r` do not depend on the level
 (`IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_liouvilleRadialCoordinate_iff`).
@@ -75,6 +77,8 @@ Floer complexes additionally needs a nondegeneracy assumption on the orbits, not
   the Liouville flow preserves `X_r` on the cylindrical end.
 * `TauCeti.IsLiouvilleCompletion.liouvilleRadialCoordinate_eq_of_isMIntegralCurve`: the orbits
   of a radial Hamiltonian stay on the levels of `r`.
+* `IsLiouvilleCompletion.eq_of_isMIntegralCurve_hamiltonianVectorField_of_notMem`: the orbits
+  outside `W` of a function smooth outside `W` are determined by their initial point.
 * `IsLiouvilleCompletion.eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleRadialCoordinate`:
   the orbits of `X_r` on a level `c > 1` are determined by their initial point.
 * `TauCeti.IsLiouvilleCompletion.exists_periodic_hamiltonianVectorField_iff`: if `φ'(c) ≠ 0`, the
@@ -241,6 +245,16 @@ theorem exists_periodic_hamiltonianVectorField_liouvilleRadialCoordinate_iff
 
 variable {R c : ℝ}
 
+/-- A function that agrees with `φ ∘ r` on the region `{r > R}` agrees with it near each point of
+that region. -/
+theorem eventuallyEq_comp_liouvilleRadialCoordinate_of_lt (h : IsLiouvilleCompletion ω α W)
+    (hZ : RoughForm.interior Z ω.val = α.val)
+    (hF : ∀ y, R < liouvilleRadialCoordinate Z W y → F y = φ (liouvilleRadialCoordinate Z W y))
+    (hx : R < liouvilleRadialCoordinate Z W x) :
+    F =ᶠ[𝓝 x] φ ∘ liouvilleRadialCoordinate Z W := by
+  filter_upwards [(isOpen_lt continuous_const (h.continuous_liouvilleRadialCoordinate hZ)).mem_nhds
+    hx] with y hy using hF y hy
+
 /-- On the region `{r > R}`, `R ≥ 1`, where a Hamiltonian agrees with `φ ∘ r`, its Hamiltonian
 vector field is `φ'(r) X_r`. -/
 private theorem hamiltonianVectorField_eq_smul_of_lt (h : IsLiouvilleCompletion ω α W)
@@ -250,11 +264,10 @@ private theorem hamiltonianVectorField_eq_smul_of_lt (h : IsLiouvilleCompletion 
     (hφ : DifferentiableAt ℝ φ (liouvilleRadialCoordinate Z W x)) :
     ω.hamiltonianVectorField F x =
       deriv φ (liouvilleRadialCoordinate Z W x) •
-        ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x := by
-  refine h.hamiltonianVectorField_eq_smul_of_eventuallyEq hZ
-    ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hx)) ?_ hφ
-  filter_upwards [(isOpen_lt continuous_const (h.continuous_liouvilleRadialCoordinate hZ)).mem_nhds
-    hx] with y hy using hF y hy
+        ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) x :=
+  h.hamiltonianVectorField_eq_smul_of_eventuallyEq hZ
+    ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hx))
+    (h.eventuallyEq_comp_liouvilleRadialCoordinate_of_lt hZ hF hx) hφ
 
 /-- **Orbits of radial Hamiltonians stay on the levels of the radial coordinate.** On a
 completion, let `F` agree with `φ ∘ r` on the region `{r > R}`, `R ≥ 1`, with `φ` differentiable
@@ -301,54 +314,40 @@ theorem liouvilleRadialCoordinate_eq_of_isMIntegralCurve (h : IsLiouvilleComplet
     (Nonempty.ne_empty ⟨t₀, by rw [mem_ofPred_eq]⟩)
   simpa using eq_univ_iff_forall.1 hS t
 
+omit [I.Boundaryless] in
+/-- **Uniqueness of Hamiltonian orbits on the cylindrical end.** Let `K` be `C²` at every point
+outside the Liouville domain, such as the radial coordinate or a function of it. Two integral curves
+of the Hamiltonian vector field `X_K` which agree at time `0` agree everywhere, as soon as the first
+stays outside the Liouville domain: `X_K` need not be smooth on `W`, but it is `C¹` along that
+curve, which is all that uniqueness of integral curves uses. -/
+theorem eq_of_isMIntegralCurve_hamiltonianVectorField_of_notMem
+    (h : IsLiouvilleCompletion ω α W) {K : M → ℝ} (hK : ∀ y ∉ W, ContMDiffAt I 𝓘(ℝ) 2 K y)
+    {δ δ' : ℝ → M} (hδ : IsMIntegralCurve δ (ω.hamiltonianVectorField K))
+    (hδ' : IsMIntegralCurve δ' (ω.hamiltonianVectorField K)) (hδW : ∀ τ, δ τ ∉ W)
+    (h0 : δ 0 = δ' 0) : δ = δ' := by
+  refine funext fun τ ↦ ((isMIntegralCurve_iff_isMIntegralCurveOn.1 hδ).eqOn_of_isPreconnected
+    (isMIntegralCurve_iff_isMIntegralCurveOn.1 hδ') isPreconnected_univ (mem_univ 0)
+    (fun t _ ↦ ?_) h0) (mem_univ τ)
+  -- `X_K` is `C¹` at `δ t`, read as the field of the constant family `fun _ : ℝ ↦ K`.
+  have hH : ContMDiffAt (𝓘(ℝ).prod I) 𝓘(ℝ) (1 + 1) (Function.uncurry fun _ : ℝ ↦ K)
+      ((0 : ℝ), δ t) :=
+    (hK _ (hδW t)).comp ((0 : ℝ), δ t) contMDiffAt_snd
+  exact (h.isNondegenerate.contMDiffAt_hamiltonianVectorField_uncurry (by simp) hH).comp (δ t)
+    (contMDiffAt_const.prodMk contMDiffAt_id)
+
 /-- **Uniqueness of the orbits of the radial field.** Two integral curves of the radial field
-`X_r` on a level `c > 1` of the radial coordinate which agree at time `0` agree everywhere. The
-field `X_r` is smooth only on the cylindrical end, so both curves are compared as integral curves
-of the Hamiltonian field of a smooth function equal to `r` near the level. -/
+`X_r` which agree at time `0` agree everywhere, as soon as the first stays on a level `c > 1` of
+the radial coordinate. The field `X_r` is smooth only on the cylindrical end, which that level
+lies in (`eq_of_isMIntegralCurve_hamiltonianVectorField_of_notMem`). -/
 theorem eq_of_isMIntegralCurve_hamiltonianVectorField_liouvilleRadialCoordinate
     (h : IsLiouvilleCompletion ω α W) (hZ : RoughForm.interior Z ω.val = α.val) (hc : 1 < c)
     {δ δ' : ℝ → M}
     (hδ : IsMIntegralCurve δ (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)))
     (hδ' : IsMIntegralCurve δ' (ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W)))
-    (hδc : ∀ τ, liouvilleRadialCoordinate Z W (δ τ) = c)
-    (hδ'c : ∀ τ, liouvilleRadialCoordinate Z W (δ' τ) = c) (h0 : δ 0 = δ' 0) : δ = δ' := by
-  have hr : Continuous (liouvilleRadialCoordinate Z W) := h.continuous_liouvilleRadialCoordinate hZ
-  obtain ⟨ε, hε, hεc⟩ : ∃ ε : ℝ, 0 < ε ∧ 1 + 2 * ε < c :=
-    ⟨(c - 1) / 4, div_pos (sub_pos.2 hc) four_pos, by linarith⟩
-  -- A smooth `φ` with `φ(u) = 0` for `u ≤ 1 + ε` and `φ(u) = u` for `u ≥ 1 + 2ε`.
-  obtain ⟨φ, hφ, hφ0, hφ1⟩ : ∃ φ : ℝ → ℝ, ContDiff ℝ (⊤ : ℕ∞) φ ∧ (∀ u ≤ 1 + ε, φ u = 0) ∧
-      ∀ u, 1 + 2 * ε ≤ u → φ u = u := by
-    refine ⟨fun u ↦ Real.smoothTransition ((u - (1 + ε)) / ε) * u,
-      (Real.smoothTransition.contDiff.comp ((contDiff_id.sub contDiff_const).div_const ε)).mul
-        contDiff_id, fun u hu ↦ ?_, fun u hu ↦ ?_⟩
-    · dsimp only
-      rw [Real.smoothTransition.zero_of_nonpos
-        (div_nonpos_of_nonpos_of_nonneg (by linarith) hε.le), zero_mul]
-    · dsimp only
-      rw [Real.smoothTransition.one_of_one_le (by rw [le_div_iff₀ hε]; linarith), one_mul]
-  -- `G = φ ∘ r` is smooth: it vanishes near the Liouville domain, where `r = 1`.
-  have hG : ContMDiff I 𝓘(ℝ) (⊤ : ℕ∞) (φ ∘ liouvilleRadialCoordinate Z W) := fun x ↦ by
-    by_cases hx : x ∈ W
-    · have hrx : liouvilleRadialCoordinate Z W x < 1 + ε := by
-        rw [(h.liouvilleRadialCoordinate_eq_one_iff hZ).2 hx]
-        linarith
-      refine contMDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-      filter_upwards [(isOpen_lt hr continuous_const).mem_nhds hrx] with y hy
-      exact hφ0 _ hy.le
-    · exact hφ.contDiffAt.comp_contMDiffAt (h.contMDiffAt_liouvilleRadialCoordinate hZ hx)
-  -- Near the level `c`, `G = r`, so the two Hamiltonian fields agree there.
-  have hXG : ∀ y, liouvilleRadialCoordinate Z W y = c →
-      ω.hamiltonianVectorField (liouvilleRadialCoordinate Z W) y =
-        ω.hamiltonianVectorField (φ ∘ liouvilleRadialCoordinate Z W) y :=
-    fun y hy ↦ Filter.EventuallyEq.hamiltonianVectorField_eq ω <| by
-      filter_upwards [(isOpen_lt continuous_const hr).mem_nhds (hy ▸ hεc)] with z hz
-      exact (hφ1 _ hz.le).symm
-  have hv : ContMDiff I I.tangent 1
-      (T% (ω.hamiltonianVectorField (φ ∘ liouvilleRadialCoordinate Z W))) :=
-    h.isNondegenerate.contMDiff_hamiltonianVectorField (by simp) (hG.of_le (by simp))
-  exact isMIntegralCurve_eq_of_contMDiff (fun _ ↦ BoundarylessManifold.isInteriorPoint) hv
-    ((isMIntegralCurve_congr_vectorField fun τ ↦ hXG _ (hδc τ)).1 hδ)
-    ((isMIntegralCurve_congr_vectorField fun τ ↦ hXG _ (hδ'c τ)).1 hδ') h0
+    (hδc : ∀ τ, liouvilleRadialCoordinate Z W (δ τ) = c) (h0 : δ 0 = δ' 0) : δ = δ' :=
+  h.eq_of_isMIntegralCurve_hamiltonianVectorField_of_notMem
+    (fun _ hy ↦ (h.contMDiffAt_liouvilleRadialCoordinate hZ hy).of_le (by simp)) hδ hδ'
+    (fun τ ↦ (h.one_lt_liouvilleRadialCoordinate_iff hZ).1 ((hδc τ).symm ▸ hc)) h0
 
 /-- **Periodic orbits of radial Hamiltonians.** On a completion, let `F` agree with `φ ∘ r` on
 the region `{r > R}`, `R ≥ 1`, and let `c > R` be a level at which `φ` is differentiable with

@@ -11,7 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.Fourier.Uniqueness
 import TauCeti.Analysis.Fourier.AddCircle
-import TauCeti.Analysis.Fourier.SineSeries
+import TauCeti.Analysis.Fourier.SineCosineSeries
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import TauCeti.MeasureTheory.Integral.Circle.Haar
 
@@ -41,12 +41,12 @@ interval (`TauCeti.fourierCoeff_eq_fourierCoeffOn`). On such an interval, each d
 integration by parts. The same holds for a function on the circle with values in any complete
 normed complex space and a continuous derivative (`TauCeti.fourierCoeff_of_hasDerivAt`).
 
-On the unit circle of `ℂ`, a function `φ : ℂ → ℂ` restricted to the circle and read on
-`AddCircle (2 * π)` has the Fourier coefficients of `θ ↦ φ(e^{iθ})` on `[0, 2π]`
-(`TauCeti.fourierCoeff_comp_toCircle`), and is continuous when `θ ↦ φ(e^{iθ})` is
-(`TauCeti.continuous_comp_toCircle`). If these coefficients `c n` are summable, the Fourier series
-`∑ c n w ^ n` sums to `φ w` at every point `w` of the unit circle
-(`TauCeti.hasSum_fourierCoeffOn_circleMap_mul_zpow`).
+On the unit circle of `ℂ`, a function `φ : ℂ → E` with values in a complex normed space,
+restricted to the circle and read on `AddCircle (2 * π)`, has the Fourier coefficients of
+`θ ↦ φ(e^{iθ})` on `[0, 2π]` (`TauCeti.fourierCoeff_comp_toCircle`), and is continuous when
+`θ ↦ φ(e^{iθ})` is (`TauCeti.continuous_comp_toCircle`). For a complex function `φ : ℂ → ℂ` whose
+coefficients `c n` are summable, the Fourier series `∑ c n w ^ n` sums to `φ w` at every point `w`
+of the unit circle (`TauCeti.hasSum_fourierCoeffOn_circleMap_mul_zpow`).
 -/
 
 public section
@@ -184,12 +184,9 @@ variable {T : ℝ} [hT : Fact (0 < T)]
 
 /-- The Fourier coefficients of a function on `AddCircle T` are those of its lift to `ℝ` on any
 period interval `(a, a + T]`. -/
-theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → ℂ) (n : ℤ) :
+theorem fourierCoeff_eq_fourierCoeffOn (a : ℝ) (f : AddCircle T → E) (n : ℤ) :
     fourierCoeff f n = fourierCoeffOn (lt_add_of_pos_right a hT.out) (fun x : ℝ ↦ f x) n := by
-  rw [← fourierCoeff_liftIoc_eq]
-  congr 1
-  funext x
-  simp [AddCircle.liftIoc, AddCircle.coe_equivIoc]
+  rw [fourierCoeffOn_eq_integral, fourierCoeff_eq_intervalIntegral _ _ a, add_sub_cancel_left a T]
 
 /-- A square-integrable function on `(a, b]` is the restriction of an `L²` class on the circle of
 length `b - a` with the same Fourier coefficients. -/
@@ -266,7 +263,7 @@ local instance fourierCoeffOnTwoPiPos : Fact (0 < 2 * π) := ⟨Real.two_pi_pos�
 
 /-- The Fourier coefficients of `φ` restricted to the unit circle, as a function on
 `AddCircle (2 * π)`, are those of `θ ↦ φ(e^{iθ})` on `[0, 2π]`. -/
-theorem fourierCoeff_comp_toCircle (φ : ℂ → ℂ) (n : ℤ) :
+theorem fourierCoeff_comp_toCircle (φ : ℂ → E) (n : ℤ) :
     fourierCoeff (fun x : AddCircle (2 * π) ↦ φ (toCircle x)) n =
       fourierCoeffOn Real.two_pi_pos (fun θ ↦ φ (circleMap 0 1 θ)) n := by
   rw [fourierCoeff_eq_fourierCoeffOn 0]

@@ -63,6 +63,8 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
   coefficient as a `ℂ`-linear functional on cusp forms.
 * `CuspForm.qExpansion_injective`: a cusp form is determined by its `q`-expansion.
+* `ModularFormClass.coe_eq_of_qExpansion_eq`: modular forms for possibly different groups with the
+  same `q`-expansion are the same function.
 * `TauCeti.smul_qParam_pow_shift_eq`: a shift by `1 / d` fixes every `q`-power that a
   `d`-supported coefficient function leaves alive.
 * `TauCeti.UpperHalfPlane.cuspFunction_map₂_eventuallyEq`,
@@ -144,13 +146,18 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
 
 /-- The `q`-parameter of width `h` is `h`-periodic, read on `ℂ` through `ofComplex`. -/
 theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
-    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h := by
-  rcases eq_or_ne h 0 with rfl | hh
-  · exact fun x ↦ by simp
-  exact _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
-    simp only [coe_vadd, Function.Periodic.qParam, mul_add, add_div,
-      mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
-      Complex.exp_two_pi_mul_I, one_mul]
+    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h :=
+  _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
+    rw [coe_vadd, add_comm]
+    exact TauCeti.Periodic.periodic_qParam h τ
+
+/-- Twisting an `h`-periodic function by a power of the `q`-parameter of width `h` keeps it
+`h`-periodic, read on `ℂ` through `ofComplex`. -/
+theorem UpperHalfPlane.periodic_qParam_pow_mul_comp_ofComplex {f : ℍ → ℂ}
+    (hfper : Function.Periodic (f ∘ ofComplex) h) (k : ℕ) :
+    Function.Periodic
+      ((fun τ : ℍ ↦ Function.Periodic.qParam h τ ^ k * f τ) ∘ ofComplex) h := fun z ↦ by
+  simpa using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
 
 section CuspFunction
 
@@ -310,6 +317,19 @@ theorem UpperHalfPlane.meromorphicAt_cuspFunction_const (c : ℂ) :
     MeromorphicAt (cuspFunction h fun _ : ℍ ↦ c) 0 :=
   cuspFunction_const h c ▸ analyticAt_const.meromorphicAt
 
+/-- The cusp function of a finite product is meromorphic at `0` when all the cusp functions of
+the factors are. -/
+theorem UpperHalfPlane.meromorphicAt_cuspFunction_prod {ι : Type*} {s : Finset ι}
+    {F : ι → ℍ → ℂ} (hF : ∀ i ∈ s, MeromorphicAt (cuspFunction h (F i)) 0) :
+    MeromorphicAt (cuspFunction h (∏ i ∈ s, F i)) 0 := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [Pi.one_def]
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi]
+    exact meromorphicAt_cuspFunction_mul (hF i (Finset.mem_insert_self i s))
+      (ih fun k hk ↦ hF k (Finset.mem_insert_of_mem hk))
+
 /-- The order at `0` of `q ^ k` times the cusp function of `f`. -/
 theorem UpperHalfPlane.meromorphicOrderAt_pow_mul_cuspFunction {k : ℕ}
     (hf : MeromorphicAt (cuspFunction h f) 0) :
@@ -401,6 +421,21 @@ lemma _root_.CuspForm.qExpansion_injective {Γ : Subgroup (GL (Fin 2) ℝ)}
     (_root_.ModularForm.qExpansion_injective hh hΓ
       (a₁ := ModularFormClass.modularForm f) (a₂ := ModularFormClass.modularForm g) hfg)
   simpa using this
+
+/-- **Modular forms with the same `q`-expansion are the same function**, even for different groups
+and weights: each is the sum of its `q`-expansion at every point of `ℍ`. This compares forms of
+different levels, where `ModularForm.qExpansion_injective` does not apply. -/
+theorem _root_.ModularFormClass.coe_eq_of_qExpansion_eq {F G : Type*} [FunLike F ℍ ℂ]
+    [FunLike G ℍ ℂ] {Γ Γ' : Subgroup (GL (Fin 2) ℝ)} {k k' : ℤ} [ModularFormClass F Γ k]
+    [ModularFormClass G Γ' k'] (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods)
+    (hΓ' : h ∈ Γ'.strictPeriods) {f : F} {g : G} (hfg : qExpansion h f = qExpansion h g) :
+    ⇑f = ⇑g := by
+  have : Fact (IsCusp OnePoint.infty Γ) := ⟨Γ.isCusp_of_mem_strictPeriods hh hΓ⟩
+  have : Fact (IsCusp OnePoint.infty Γ') := ⟨Γ'.isCusp_of_mem_strictPeriods hh hΓ'⟩
+  funext τ
+  refine (_root_.ModularForm.hasSum_qExpansion f hh hΓ τ).unique ?_
+  rw [hfg]
+  exact _root_.ModularForm.hasSum_qExpansion g hh hΓ' τ
 
 /-- The translate `1 / d +ᵥ σ`, read in `ℂ`, is the subtraction `TauCeti.Periodic.qParam_sub`
 expects: that lemma is stated at `z - j`, and the shift here enters as a `+ᵥ` on `ℍ`. Naming the

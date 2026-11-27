@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Ring.Lemmas
-public import TauCeti.Analysis.Convex.StdSimplex
+public import TauCeti.Analysis.Convex.StdSimplex.Boundary
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Order.Field.Basic
@@ -141,11 +141,22 @@ theorem stdSimplexFacetProjection_mem_range_weights {i : ι} {x : ι → ℝ}
 /-- The facet projections of a point of the open simplex lie on the relative boundary. -/
 theorem stdSimplexFacetProjection_mem_stdSimplexBoundary [Nontrivial ι] {x : ι → ℝ}
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (h : ∀ j, 0 < x j) (i : ι) :
-    stdSimplexFacetProjection i x ∈ stdSimplexBoundary ι := by
+    stdSimplexFacetProjection i x ∈ stdSimplexBoundary ℝ ι := by
   obtain ⟨j, hj⟩ := exists_ne i
   exact mem_stdSimplexBoundary.2 ⟨stdSimplexFacetProjection_mem_range_weights hx
     (StdSimplex.apply_lt_one_of_mem_range_weights hx hj (h j)), i,
     stdSimplexFacetProjection_apply_self i x⟩
+
+/-- The facet projection from `i` maps every point of the standard simplex whose coordinates away
+from `i` are strictly positive into the open facet `openStdSimplexFacet ℝ i`. -/
+theorem stdSimplexFacetProjection_mem_openStdSimplexFacet [Nontrivial ι] {i : ι} {x : ι → ℝ}
+    (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (hpos : ∀ j ≠ i, 0 < x j) :
+    stdSimplexFacetProjection i x ∈ openStdSimplexFacet ℝ i := by
+  obtain ⟨k, hk⟩ := exists_ne i
+  have hlt : x i < 1 := StdSimplex.apply_lt_one_of_mem_range_weights hx hk (hpos k hk)
+  exact mem_openStdSimplexFacet_iff.2 ⟨stdSimplexFacetProjection_mem_range_weights hx hlt,
+    stdSimplexFacetProjection_apply_self i x,
+    fun j hj => stdSimplexFacetProjection_apply_pos hj (hpos j hj) hlt⟩
 
 end FacetProjection
 
@@ -205,7 +216,7 @@ theorem stdSimplexExtension_const (c : ℝ) (x : ι → ℝ) :
 
 /-- The extension is monotone in the constant and in the boundary data. -/
 theorem stdSimplexExtension_le_stdSimplexExtension [Nontrivial ι] {α₁ α₂ : ℝ}
-    {g₁ g₂ : (ι → ℝ) → ℝ} (hα : α₁ ≤ α₂) (hg : ∀ y ∈ stdSimplexBoundary ι, g₁ y ≤ g₂ y)
+    {g₁ g₂ : (ι → ℝ) → ℝ} (hα : α₁ ≤ α₂) (hg : ∀ y ∈ stdSimplexBoundary ℝ ι, g₁ y ≤ g₂ y)
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) :
     stdSimplexExtension α₁ g₁ x ≤ stdSimplexExtension α₂ g₂ x := by
   rcases mem_stdSimplexBoundary_or_forall_pos hx with hxB | h
@@ -219,7 +230,7 @@ theorem stdSimplexExtension_le_stdSimplexExtension [Nontrivial ι] {α₁ α₂ 
 
 /-- On the open simplex the extension is strictly monotone in the constant. -/
 theorem stdSimplexExtension_lt_stdSimplexExtension [Nontrivial ι] {α₁ α₂ : ℝ}
-    {g₁ g₂ : (ι → ℝ) → ℝ} (hα : α₁ < α₂) (hg : ∀ y ∈ stdSimplexBoundary ι, g₁ y ≤ g₂ y)
+    {g₁ g₂ : (ι → ℝ) → ℝ} (hα : α₁ < α₂) (hg : ∀ y ∈ stdSimplexBoundary ℝ ι, g₁ y ≤ g₂ y)
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (h : ∀ i, 0 < x i) :
     stdSimplexExtension α₁ g₁ x < stdSimplexExtension α₂ g₂ x := by
   rw [stdSimplexExtension_of_forall_pos h, stdSimplexExtension_of_forall_pos h]
@@ -229,7 +240,7 @@ theorem stdSimplexExtension_lt_stdSimplexExtension [Nontrivial ι] {α₁ α₂ 
 
 /-- If the constant and the boundary data lie in `[m, M]`, so does the extension. -/
 theorem stdSimplexExtension_mem_Icc [Nontrivial ι] {m M : ℝ} (hα : α ∈ Set.Icc m M)
-    (hg : ∀ y ∈ stdSimplexBoundary ι, g y ∈ Set.Icc m M)
+    (hg : ∀ y ∈ stdSimplexBoundary ℝ ι, g y ∈ Set.Icc m M)
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) :
     stdSimplexExtension α g x ∈ Set.Icc m M := by
   refine ⟨?_, ?_⟩
@@ -241,7 +252,7 @@ theorem stdSimplexExtension_mem_Icc [Nontrivial ι] {m M : ℝ} (hα : α ∈ Se
 /-- If the constant lies in `(m, M)` and the boundary data in `[m, M]`, the extension lies in
 `(m, M)` on the open simplex. -/
 theorem stdSimplexExtension_mem_Ioo [Nontrivial ι] {m M : ℝ} (hα : α ∈ Set.Ioo m M)
-    (hg : ∀ y ∈ stdSimplexBoundary ι, g y ∈ Set.Icc m M)
+    (hg : ∀ y ∈ stdSimplexBoundary ℝ ι, g y ∈ Set.Icc m M)
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (h : ∀ i, 0 < x i) :
     stdSimplexExtension α g x ∈ Set.Ioo m M := by
   refine ⟨?_, ?_⟩
@@ -273,8 +284,8 @@ private theorem stdSimplexExtension_eq_add_sum (h : ∀ i, 0 < x i) (L : ℝ) :
 /-- Approaching a boundary point `x` through the open simplex, the extension tends to `g x` if
 `g` is bounded on the boundary and continuous at `x` within it. -/
 private theorem tendsto_stdSimplexExtension_of_apply_eq_zero [Nontrivial ι] {i₀ : ι}
-    (hi₀ : x i₀ = 0) {C : ℝ} (hC : ∀ y ∈ stdSimplexBoundary ι, |g y| ≤ C)
-    (hg : ContinuousWithinAt g (stdSimplexBoundary ι) x) :
+    (hi₀ : x i₀ = 0) {C : ℝ} (hC : ∀ y ∈ stdSimplexBoundary ℝ ι, |g y| ≤ C)
+    (hg : ContinuousWithinAt g (stdSimplexBoundary ℝ ι) x) :
     Tendsto (stdSimplexExtension α g)
       (𝓝[{y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∀ j, 0 < y j}] x) (𝓝 (g x)) := by
   set U := {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∀ j, 0 < y j}
@@ -301,7 +312,7 @@ private theorem tendsto_stdSimplexExtension_of_apply_eq_zero [Nontrivial ι] {i�
         exact div_le_one_of_le₀
           (inv_le_one_add_sum_inv (fun i _ => (hy.2 i).le) (mem_univ j)) hS.le
       · have hp : Tendsto (stdSimplexFacetProjection j) (𝓝[U] x)
-            (𝓝[stdSimplexBoundary ι] x) := by
+            (𝓝[stdSimplexBoundary ℝ ι] x) := by
           refine tendsto_nhdsWithin_iff.2 ⟨?_, hU.mono fun y hy =>
             stdSimplexFacetProjection_mem_stdSimplexBoundary hy.1 hy.2 j⟩
           have := (continuousAt_stdSimplexFacetProjection (i := j) (x := x)
@@ -324,12 +335,12 @@ private theorem tendsto_stdSimplexExtension_of_apply_eq_zero [Nontrivial ι] {i�
 within the boundary, the extension is continuous within the simplex: the facets through the
 point carry the dominant weights. -/
 theorem continuousWithinAt_stdSimplexExtension_of_apply_eq_zero [Nontrivial ι] {i₀ : ι}
-    (hi₀ : x i₀ = 0) {C : ℝ} (hC : ∀ y ∈ stdSimplexBoundary ι, |g y| ≤ C)
-    (hg : ContinuousWithinAt g (stdSimplexBoundary ι) x) :
+    (hi₀ : x i₀ = 0) {C : ℝ} (hC : ∀ y ∈ stdSimplexBoundary ℝ ι, |g y| ≤ C)
+    (hg : ContinuousWithinAt g (stdSimplexBoundary ℝ ι) x) :
     ContinuousWithinAt (stdSimplexExtension α g) (range fun s : StdSimplex ℝ ι => ⇑s.weights)
       x := by
   have hsplit : (range fun s : StdSimplex ℝ ι => ⇑s.weights) =
-      stdSimplexBoundary ι ∪ {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∀ j, 0 < y j} := by
+      stdSimplexBoundary ℝ ι ∪ {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∀ j, 0 < y j} := by
     ext y
     exact ⟨fun hy => (mem_stdSimplexBoundary_or_forall_pos hy).imp id (⟨hy, ·⟩),
       fun hy => hy.elim (stdSimplexBoundary_subset ·) (·.1)⟩
@@ -346,7 +357,7 @@ the simplex if the boundary data are continuous, within the boundary, at its fac
 projections. -/
 theorem continuousWithinAt_stdSimplexExtension_of_forall_pos [Nontrivial ι]
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (h : ∀ i, 0 < x i)
-    (hg : ∀ i, ContinuousWithinAt g (stdSimplexBoundary ι) (stdSimplexFacetProjection i x)) :
+    (hg : ∀ i, ContinuousWithinAt g (stdSimplexBoundary ℝ ι) (stdSimplexFacetProjection i x)) :
     ContinuousWithinAt (stdSimplexExtension α g) (range fun s : StdSimplex ℝ ι => ⇑s.weights)
       x := by
   have hU : IsOpen {y : ι → ℝ | ∀ i, 0 < y i} := by
@@ -371,7 +382,7 @@ theorem continuousWithinAt_stdSimplexExtension_of_forall_pos [Nontrivial ι]
 /-- **Continuous extension.** Boundary data continuous on the relative boundary extend
 continuously to the standard simplex. -/
 theorem continuousOn_stdSimplexExtension [Nontrivial ι]
-    (hg : ContinuousOn g (stdSimplexBoundary ι)) :
+    (hg : ContinuousOn g (stdSimplexBoundary ℝ ι)) :
     ContinuousOn (stdSimplexExtension α g) (range fun s : StdSimplex ℝ ι => ⇑s.weights) := by
   obtain ⟨C, hC⟩ := isCompact_stdSimplexBoundary.exists_bound_of_continuousOn hg
   intro x hx
@@ -410,7 +421,7 @@ theorem stdSimplexGapExtension_of_apply_eq_zero {i : ι} (h : x i = 0)
 
 /-- For a constant in `[0, 1]`, the gap height lies in the gap. -/
 theorem stdSimplexGapExtension_mem_Icc [Nontrivial ι] (hα : α ∈ Set.Icc 0 1)
-    (hc : ∀ y ∈ stdSimplexBoundary ι, c y ∈ Set.Icc (a y) (b y))
+    (hc : ∀ y ∈ stdSimplexBoundary ℝ ι, c y ∈ Set.Icc (a y) (b y))
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (hab : a x ≤ b x) :
     stdSimplexGapExtension a b c α x ∈ Set.Icc (a x) (b x) := by
   have hE := stdSimplexExtension_mem_Icc hα (fun y hy => sub_div_sub_mem_Icc (hc y hy)) hx
@@ -420,7 +431,7 @@ theorem stdSimplexGapExtension_mem_Icc [Nontrivial ι] (hα : α ∈ Set.Icc 0 1
 /-- For a constant in `(0, 1)`, the gap height lies strictly inside an open gap at each point of
 the open simplex. -/
 theorem stdSimplexGapExtension_mem_Ioo [Nontrivial ι] (hα : α ∈ Set.Ioo 0 1)
-    (hc : ∀ y ∈ stdSimplexBoundary ι, c y ∈ Set.Icc (a y) (b y))
+    (hc : ∀ y ∈ stdSimplexBoundary ℝ ι, c y ∈ Set.Icc (a y) (b y))
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (h : ∀ i, 0 < x i)
     (hab : a x < b x) : stdSimplexGapExtension a b c α x ∈ Set.Ioo (a x) (b x) := by
   have hE := stdSimplexExtension_mem_Ioo hα (fun y hy => sub_div_sub_mem_Icc (hc y hy)) hx h
@@ -429,7 +440,7 @@ theorem stdSimplexGapExtension_mem_Ioo [Nontrivial ι] (hα : α ∈ Set.Ioo 0 1
 
 /-- Gap heights are monotone in the constant and in the boundary heights. -/
 theorem stdSimplexGapExtension_le_stdSimplexGapExtension [Nontrivial ι] {c₁ c₂ : (ι → ℝ) → ℝ}
-    {α₁ α₂ : ℝ} (hα : α₁ ≤ α₂) (hc : ∀ y ∈ stdSimplexBoundary ι, a y ≤ b y ∧ c₁ y ≤ c₂ y)
+    {α₁ α₂ : ℝ} (hα : α₁ ≤ α₂) (hc : ∀ y ∈ stdSimplexBoundary ℝ ι, a y ≤ b y ∧ c₁ y ≤ c₂ y)
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (hab : a x ≤ b x) :
     stdSimplexGapExtension a b c₁ α₁ x ≤ stdSimplexGapExtension a b c₂ α₂ x := by
   rw [stdSimplexGapExtension_def, stdSimplexGapExtension_def]
@@ -440,7 +451,7 @@ theorem stdSimplexGapExtension_le_stdSimplexGapExtension [Nontrivial ι] {c₁ c
 /-- Over an open gap, gap heights with strictly ordered constants are strictly ordered on the
 open simplex. -/
 theorem stdSimplexGapExtension_lt_stdSimplexGapExtension [Nontrivial ι] {c₁ c₂ : (ι → ℝ) → ℝ}
-    {α₁ α₂ : ℝ} (hα : α₁ < α₂) (hc : ∀ y ∈ stdSimplexBoundary ι, a y ≤ b y ∧ c₁ y ≤ c₂ y)
+    {α₁ α₂ : ℝ} (hα : α₁ < α₂) (hc : ∀ y ∈ stdSimplexBoundary ℝ ι, a y ≤ b y ∧ c₁ y ≤ c₂ y)
     (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) (h : ∀ i, 0 < x i)
     (hab : a x < b x) :
     stdSimplexGapExtension a b c₁ α₁ x < stdSimplexGapExtension a b c₂ α₂ x := by
@@ -456,20 +467,20 @@ continuous on the simplex; the gap may collapse anywhere in the open simplex. -/
 theorem continuousOn_stdSimplexGapExtension [Nontrivial ι]
     (ha : ContinuousOn a (range fun s : StdSimplex ℝ ι => ⇑s.weights))
     (hb : ContinuousOn b (range fun s : StdSimplex ℝ ι => ⇑s.weights))
-    (hc : ContinuousOn c (stdSimplexBoundary ι))
-    (hcab : ∀ y ∈ stdSimplexBoundary ι, c y ∈ Set.Icc (a y) (b y))
-    (hcollapse : ∀ y ∈ stdSimplexBoundary ι, a y = b y → ∃ i j, i ≠ j ∧ y i = 0 ∧ y j = 0) :
+    (hc : ContinuousOn c (stdSimplexBoundary ℝ ι))
+    (hcab : ∀ y ∈ stdSimplexBoundary ℝ ι, c y ∈ Set.Icc (a y) (b y))
+    (hcollapse : ∀ y ∈ stdSimplexBoundary ℝ ι, a y = b y → ∃ i j, i ≠ j ∧ y i = 0 ∧ y j = 0) :
     ContinuousOn (stdSimplexGapExtension a b c α) (range fun s : StdSimplex ℝ ι => ⇑s.weights) := by
   set r : (ι → ℝ) → ℝ := fun y => (c y - a y) / (b y - a y)
-  have hr (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ι) (hne : a y ≠ b y) :
-      ContinuousWithinAt r (stdSimplexBoundary ι) y :=
+  have hr (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ℝ ι) (hne : a y ≠ b y) :
+      ContinuousWithinAt r (stdSimplexBoundary ℝ ι) y :=
     ((hc y hy).sub ((ha y (stdSimplexBoundary_subset hy)).mono stdSimplexBoundary_subset)).div
       (((hb y (stdSimplexBoundary_subset hy)).mono stdSimplexBoundary_subset).sub
         ((ha y (stdSimplexBoundary_subset hy)).mono stdSimplexBoundary_subset))
       (sub_ne_zero.2 hne.symm)
-  have hr01 (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ι) : r y ∈ Set.Icc 0 1 :=
+  have hr01 (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ℝ ι) : r y ∈ Set.Icc 0 1 :=
     sub_div_sub_mem_Icc (hcab y hy)
-  have hrC (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ι) : |r y| ≤ 1 :=
+  have hrC (y : ι → ℝ) (hy : y ∈ stdSimplexBoundary ℝ ι) : |r y| ≤ 1 :=
     abs_le.2 ⟨by linarith [(hr01 y hy).1], (hr01 y hy).2⟩
   have hfun : stdSimplexGapExtension a b c α =
       fun y => a y + (b y - a y) * stdSimplexExtension α r y :=
