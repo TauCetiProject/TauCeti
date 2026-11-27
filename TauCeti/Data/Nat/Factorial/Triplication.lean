@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import TauCeti.Data.Nat.Factorial.NatCast
 import Mathlib.Tactic.FieldSimp
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # Triplication of factorials
@@ -93,15 +94,14 @@ theorem factorial_three_mul_add_two (k : ℕ) :
     | succ k =>
       simp [cast_factorial_eq_zero_of_le (m := 3) (by norm_num) (by exact_mod_cast h3)
         (by omega : 3 ≤ 3 * (k + 1) + 2), h3]
-  · induction k with
-    | zero => simp
-    | succ k ih =>
-      have h : 3 * (k + 1) + 2 = 3 * k + 2 + 2 + 1 := by ring
-      rw [h, Nat.factorial_succ, Nat.factorial_succ, Nat.factorial_succ]
-      push_cast
-      rw [ih, ascPochhammer_succ_eval, ascPochhammer_succ_eval, Nat.factorial_succ]
-      push_cast
-      field_simp
-      ring
+  · -- From `(3k + 2)! = (3k + 2) (3k + 1)!` and `(⅔) (5/3)_k = (⅔)_k (⅔ + k)`.
+    have h53 : (2 / 3 + 1 : K) = 5 / 3 := by rw [div_add_one h3]; norm_num
+    have hP := ascPochhammer_eval_succ k (2 / 3 : K)
+    have h2 : (2 / 3 : K) * 3 = 2 := div_mul_cancel₀ _ h3
+    rw [h53] at hP
+    rw [Nat.factorial_succ, Nat.cast_mul, factorial_three_mul_add_one]
+    push_cast
+    linear_combination (-(27 ^ k * k ! * (ascPochhammer K k).eval (4 / 3))) *
+      (3 * hP - ((ascPochhammer K k).eval (5 / 3) - (ascPochhammer K k).eval (2 / 3)) * h2)
 
 end Nat
