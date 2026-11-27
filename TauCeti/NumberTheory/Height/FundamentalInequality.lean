@@ -53,9 +53,8 @@ can only increase it. At a single place the two bounds read
   infinite place, keeping the weight `mult v`.
 * `NumberField.InfinitePlace.exp_neg_le_apply_sub_one`: Liouville's inequality
   `|x - 1|_v ≥ exp (-([K : ℚ] log 2 + h(x)))` for `x ≠ 1` at an infinite place.
-* `NumberField.InfinitePlace.exp_neg_le_apply_prod_zpow_sub_one` and
-  `NumberField.exp_neg_le_norm_prod_zpow_sub_one`: Liouville's inequality for `∏ j, α j ^ s j - 1`
-  at an infinite place and under a complex embedding.
+* `NumberField.InfinitePlace.exp_neg_le_apply_prod_zpow_sub_one`: Liouville's inequality for
+  `∏ j, α j ^ s j - 1` at an infinite place.
 * `NumberField.exp_neg_le_norm_prod_zpow_sub_one_of_le`: the same under a complex embedding, with
   bounds on the heights of the `α j` and on the exponents `|s j|`.
 
@@ -231,15 +230,6 @@ theorem InfinitePlace.exp_neg_le_apply_prod_zpow_sub_one (v : InfinitePlace K) {
   refine (logHeight₁_prod_le _ _).trans_eq (Finset.sum_congr rfl fun j _ ↦ ?_)
   rw [logHeight₁_zpow, Nat.cast_natAbs, Int.cast_abs]
 
-/-- **Liouville's inequality** for a product of powers under a complex embedding `φ` of `K`: if
-`∏ j, α j ^ s j ≠ 1`, then
-`‖∏ j, φ (α j) ^ s j - 1‖ ≥ exp (-([K : ℚ] log 2 + ∑ j, |s j| h(α j)))`. -/
-theorem exp_neg_le_norm_prod_zpow_sub_one (φ : K →+* ℂ) {ι : Type*} [Fintype ι] (α : ι → K)
-    (s : ι → ℤ) (h : ∏ j, α j ^ s j ≠ 1) :
-    Real.exp (-(Module.finrank ℚ K * Real.log 2 + ∑ j, |(s j : ℝ)| * logHeight₁ (α j))) ≤
-      ‖∏ j, φ (α j) ^ s j - 1‖ := by
-  simpa [InfinitePlace.apply] using (InfinitePlace.mk φ).exp_neg_le_apply_prod_zpow_sub_one α s h
-
 /-- Liouville's inequality under a complex embedding, with bounds `h(α j) ≤ a j` on the heights
 and `|s j| ≤ R` on the exponents: if `∏ j, α j ^ s j ≠ 1`, then
 `‖∏ j, φ (α j) ^ s j - 1‖ ≥ exp (-([K : ℚ] log 2 + R ∑ j, a j))`. -/
@@ -248,7 +238,9 @@ theorem exp_neg_le_norm_prod_zpow_sub_one_of_le (φ : K →+* ℂ) {ι : Type*} 
     (ha : ∀ j, logHeight₁ (α j) ≤ a j) (hs : ∀ j, |(s j : ℝ)| ≤ R) :
     Real.exp (-(Module.finrank ℚ K * Real.log 2 + R * ∑ j, a j)) ≤
       ‖∏ j, φ (α j) ^ s j - 1‖ := by
-  refine le_trans ?_ (exp_neg_le_norm_prod_zpow_sub_one φ α s h)
+  refine le_trans ?_ (by
+    simpa only [InfinitePlace.apply, map_sub, map_prod, map_zpow₀, map_one] using
+      (InfinitePlace.mk φ).exp_neg_le_apply_prod_zpow_sub_one α s h)
   rw [Real.exp_le_exp, neg_le_neg_iff, add_le_add_iff_left, Finset.mul_sum]
   exact Finset.sum_le_sum fun j _ ↦
     mul_le_mul (hs j) (ha j) (zero_le_logHeight₁ _) ((abs_nonneg _).trans (hs j))
