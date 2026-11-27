@@ -78,7 +78,7 @@ theorem map_mkStarAlgHom_map_starAlgHom_eq_zero (u : MinTensorProduct A J) :
   have h : (mkStarAlgHom J).comp J.starAlgHom = 0 :=
     NonUnitalStarAlgHom.ext fun x ↦ by
       simp [TwoSidedIdeal.Quotient.eq_zero_iff_mem]
-  rw [MinTensorProduct.map_map, h, map_zero_right, NonUnitalStarAlgHom.zero_apply]
+  simp [map_map, h]
 
 end Ideal
 
@@ -123,10 +123,9 @@ theorem IsExact.of_starAlgEquiv {A' : Type*} [NonUnitalCStarAlgebra A'] (e : A �
       congrArg (map e.symm.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ (B ⧸ J))) hu
   obtain ⟨v, hv⟩ := (IsExact.exact_map (A := A) B J _).1 hu'
   refine ⟨map e.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ J) v, ?_⟩
-  calc _ = map e.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ B)
-          (map (NonUnitalStarAlgHom.id ℂ A) J.starAlgHom v) := by
-        simp [MinTensorProduct.map_map]
-    _ = u := by rw [hv]; simpa using map_map_symm e (StarAlgEquiv.refl ℂ B) u
+  rw [← (congr e (.refl ℂ B)).apply_symm_apply u]
+  simpa [MinTensorProduct.map_map] using
+    congrArg (map e.toNonUnitalStarAlgHom (NonUnitalStarAlgHom.id ℂ B)) hv
 
 end CStarAlgebra
 

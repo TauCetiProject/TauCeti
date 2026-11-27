@@ -34,8 +34,8 @@ tensor product `NonUnitalStarSubalgebra.minTensor A B`, the closure of the image
 `φ` and `ψ` are injective (`TauCeti.MinTensorProduct.norm_map`,
 `TauCeti.MinTensorProduct.map_injective`), and surjective when `φ` and `ψ` are surjective
 (`TauCeti.MinTensorProduct.map_surjective`). Its range is the closure of the image of the
-algebraic tensor product (`TauCeti.MinTensorProduct.range_map`), and star isomorphisms give
-mutually inverse maps (`TauCeti.MinTensorProduct.map_map_symm`).
+algebraic tensor product (`TauCeti.MinTensorProduct.range_map`), and star isomorphisms induce
+star isomorphisms (`TauCeti.MinTensorProduct.congr`).
 
 **Comparison with the maximal tensor product.** Since `‖·‖_min ≤ ‖·‖_max`, the identity of
 `A ⊗[ℂ] B` extends to the canonical star homomorphism
@@ -52,6 +52,7 @@ every star homomorphism of C*-algebras, and dense.
 * `NonUnitalStarSubalgebra.minTensorProductEquiv`: `A ⊗min B ≃ A ⊗_min B` for closed concrete
   operator algebras.
 * `TauCeti.MinTensorProduct.map`: functoriality.
+* `TauCeti.MinTensorProduct.congr`: the star isomorphism induced by star isomorphisms.
 * `TauCeti.MaxTensorProduct.toMin`: the canonical surjection `A ⊗max B → A ⊗min B`.
 
 ## Main statements
@@ -209,25 +210,25 @@ theorem map_map (φ' : A' →⋆ₙₐ[ℂ] A'') (ψ' : B' →⋆ₙₐ[ℂ] B''
     map φ' ψ' (map φ ψ u) = map (φ'.comp φ) (ψ'.comp ψ) u := by
   rw [map_comp, NonUnitalStarAlgHom.comp_apply]
 
-/-- Star isomorphisms `e : A ≃ A'` and `e' : B ≃ B'` give mutually inverse maps of minimal tensor
-products: `map e e'` undoes `map e.symm e'.symm`. -/
-@[simp]
-theorem map_map_symm (e : A ≃⋆ₐ[ℂ] A') (e' : B ≃⋆ₐ[ℂ] B') (u : MinTensorProduct A' B') :
-    map e.toNonUnitalStarAlgHom e'.toNonUnitalStarAlgHom
-      (map e.symm.toNonUnitalStarAlgHom e'.symm.toNonUnitalStarAlgHom u) = u := by
-  have he : e.toNonUnitalStarAlgHom.comp e.symm.toNonUnitalStarAlgHom = .id ℂ A' := by
-    ext; simp
-  have he' : e'.toNonUnitalStarAlgHom.comp e'.symm.toNonUnitalStarAlgHom = .id ℂ B' := by
-    ext; simp
-  rw [map_map, he, he', map_id, NonUnitalStarAlgHom.coe_id, id_eq]
+/-- Star isomorphisms `e : A ≃ A'` and `f : B ≃ B'` induce a star isomorphism
+`A ⊗min B ≃ A' ⊗min B'`, sending `a ⊗ b` to `e a ⊗ f b`. -/
+def congr (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') :
+    MinTensorProduct A B ≃⋆ₐ[ℂ] MinTensorProduct A' B' :=
+  .ofNonUnitalStarAlgHom (map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom)
+    (map e.symm.toNonUnitalStarAlgHom f.symm.toNonUnitalStarAlgHom)
+    (starAlgHom_ext fun a b ↦ by simp) (starAlgHom_ext fun a b ↦ by simp)
 
-/-- Star isomorphisms `e : A ≃ A'` and `e' : B ≃ B'` give mutually inverse maps of minimal tensor
-products: `map e.symm e'.symm` undoes `map e e'`. -/
+/-- The induced isomorphism is the map induced by the underlying star homomorphisms. -/
 @[simp]
-theorem map_symm_map (e : A ≃⋆ₐ[ℂ] A') (e' : B ≃⋆ₐ[ℂ] B') (u : MinTensorProduct A B) :
-    map e.symm.toNonUnitalStarAlgHom e'.symm.toNonUnitalStarAlgHom
-      (map e.toNonUnitalStarAlgHom e'.toNonUnitalStarAlgHom u) = u :=
-  map_map_symm e.symm e'.symm u
+theorem congr_apply (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') (x : MinTensorProduct A B) :
+    congr e f x = map e.toNonUnitalStarAlgHom f.toNonUnitalStarAlgHom x :=
+  (rfl)
+
+/-- The inverse of the induced isomorphism is induced by the inverses. -/
+@[simp]
+theorem congr_symm (e : A ≃⋆ₐ[ℂ] A') (f : B ≃⋆ₐ[ℂ] B') :
+    (congr e f).symm = congr e.symm f.symm :=
+  StarAlgEquiv.symm_ofNonUnitalStarAlgHom _ _ _ _
 
 /-- `map φ 0 = 0`. -/
 @[simp]
