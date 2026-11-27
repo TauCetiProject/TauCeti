@@ -12,7 +12,8 @@ public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 
 This file records closure of `MeasureTheory.NullSingletonClass` under the zero measure, finite
 addition, and scalar multiplication, characterizes when sums and scaled measures have null
-singletons, shows that Dirac measures never have null singletons, and proves that removing
+singletons, shows that Dirac measures never have null singletons and that an almost everywhere
+measurable map with countable fibres preserves null singletons, and proves that removing
 countably many inputs changes the image of an arbitrary map only on a null set. Dually, a map
 injective on a set meets a countable set at a null set of points of that set.
 
@@ -76,6 +77,17 @@ theorem not_nullSingletonClass_dirac (a : α) :
 theorem nullSingletonClass_smul_dirac_iff {c : ℝ≥0∞} {a : α} :
     NullSingletonClass (c • Measure.dirac a) ↔ c = 0 := by
   simp [nullSingletonClass_smul_iff]
+
+/-- An almost everywhere measurable map with countable fibres into a space whose singletons are
+measurable sends a measure with null singletons to a measure with null singletons: each singleton
+has a countable preimage, which is null. -/
+theorem Measure.nullSingletonClass_map_of_countable_preimage {β : Type*} [MeasurableSpace β]
+    {μ : Measure α} [NullSingletonClass μ] {f : α → β}
+    [MeasurableSingletonClass β] (hf : AEMeasurable f μ) (hfib : ∀ y, (f ⁻¹' {y}).Countable) :
+    NullSingletonClass (Measure.map f μ) :=
+  ⟨fun y ↦ by
+    rw [Measure.map_apply_of_aemeasurable hf (measurableSet_singleton y)]
+    exact (hfib y).measure_zero μ⟩
 
 end MeasureTheory
 

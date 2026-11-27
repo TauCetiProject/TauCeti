@@ -11,8 +11,8 @@ public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.UniformOn
 import TauCeti.Data.Fin.Tuple.Sort
 import TauCeti.MeasureTheory.MeasurableSpace.Sort
-import TauCeti.MeasureTheory.Measure.Atom
 import TauCeti.MeasureTheory.Measure.Prod
+import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import TauCeti.Probability.Independence.InfinitePi
 import TauCeti.Probability.Distributions.OrderStatistic.Joint
 
@@ -130,8 +130,10 @@ theorem measure_absRank_eq_perm (P : Measure ℝ) [IsProbabilityMeasure P] [Null
   -- The law of `|X|` is atomless: the fibre of `t` under `|·|` is contained in `{t, -t}`.
   have : NullSingletonClass (P.map fun t ↦ |t|) :=
     Measure.nullSingletonClass_map_of_countable_preimage habs.aemeasurable fun t ↦
-      ((toFinite {t, -t}).subset fun s hs ↦
-        (abs_eq ((mem_preimage.1 hs).symm ▸ abs_nonneg s)).1 hs).countable
+      ((toFinite {t, -t}).subset fun s hs ↦ by
+        rw [mem_preimage, mem_singleton_iff] at hs
+        rw [mem_insert_iff, mem_singleton_iff, ← hs]
+        rcases abs_choice s with h | h <;> simp [h]).countable
   have : IsProbabilityMeasure (P.map fun t ↦ |t|) :=
     (Measure.isProbabilityMeasure_map_iff habs.aemeasurable).2 inferInstance
   have hmp := measurePreserving_pi (fun _ : Fin n ↦ P) (fun _ ↦ P.map fun t ↦ |t|)
@@ -208,12 +210,14 @@ theorem measure_signs_absRank_eq (P : Measure ℝ) [IsProbabilityMeasure P]
     hbb' (funext fun i ↦ (hb.1 i).symm.trans (hb'.1 i))
   have h := measure_iUnion hdisj (fun b ↦ measurableSet_signs_absRank b σ)
     (μ := Measure.pi fun _ : Fin n ↦ P)
+  -- Each of the `2 ^ n` sign events has the same probability, and they add up to `(n!)⁻¹`.
   rw [← hunion, measure_absRank_eq_perm, tsum_fintype,
-    Finset.sum_congr rfl fun b' _ ↦ measure_signs_absRank_eq_measure_signs_absRank P hsymm σ b b',
-    Finset.sum_const, Finset.card_univ, Fintype.card_fun, Fintype.card_bool, Fintype.card_fin,
-    nsmul_eq_mul] at h
-  rw [Nat.cast_mul, ENNReal.mul_inv (by simp) (by simp), h, ← mul_assoc,
-    ENNReal.inv_mul_cancel (by simp) (by simp), one_mul]
+    Finset.sum_congr rfl fun b' _ ↦ measure_signs_absRank_eq_measure_signs_absRank P hsymm σ b b'
+    ] at h
+  simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fun, Fintype.card_bool,
+    Fintype.card_fin, nsmul_eq_mul, Nat.cast_pow, Nat.cast_ofNat] at h
+  rw [Nat.cast_mul, ENNReal.mul_inv (by simp) (by simp), h, Nat.cast_pow, Nat.cast_ofNat,
+    ENNReal.inv_mul_cancel_left (by simp) (by simp)]
 
 variable [MeasurableSpace (Equiv.Perm (Fin n))] [MeasurableSingletonClass (Equiv.Perm (Fin n))]
 

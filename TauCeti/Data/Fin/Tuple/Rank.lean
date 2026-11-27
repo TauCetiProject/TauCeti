@@ -78,10 +78,12 @@ theorem rank_lt_rank_of_lt {x : ι → α} {i j : ι} (h : x i < x j) : rank x i
     ⟨j, by simp, by simpa using h⟩
 
 /-- Ranks order the entries as the entries themselves are ordered. -/
+@[simp]
 theorem rank_le_rank_iff {x : ι → α} {i j : ι} : rank x i ≤ rank x j ↔ x i ≤ x j :=
   ⟨fun h ↦ not_lt.1 fun hji ↦ h.not_gt (rank_lt_rank_of_lt hji), rank_le_rank_of_le⟩
 
 /-- Ranks strictly order the entries as the entries themselves are ordered. -/
+@[simp]
 theorem rank_lt_rank_iff {x : ι → α} {i j : ι} : rank x i < rank x j ↔ x i < x j := by
   simpa only [not_le] using rank_le_rank_iff.not
 
