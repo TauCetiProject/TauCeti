@@ -258,6 +258,18 @@ def lTensor [Module k A] [IsScalarTower k A N] [IsScalarTower k A N'] (g : N →
 theorem lTensor_tmul [Module k A] [IsScalarTower k A N] [IsScalarTower k A N']
     (g : N →ₗ[A] N') (m : M) (n : N) : lTensor k M g (tmul k A m n) = tmul k A m (g n) := (rfl)
 
+variable (k N) in
+/-- Tensoring an `Aᵐᵒᵖ`-linear map `f` on the right with `N`: the map `f ⊗ 1`. -/
+def rTensor [Module k Aᵐᵒᵖ] [IsScalarTower k Aᵐᵒᵖ M] [IsScalarTower k Aᵐᵒᵖ M']
+    (f : M →ₗ[Aᵐᵒᵖ] M') : BalancedTensorProduct k A M N →ₗ[k] BalancedTensorProduct k A M' N :=
+  map (f.restrictScalars k) LinearMap.id (fun a m ↦ f.map_smul (op a) m) (fun _ _ ↦ rfl)
+
+/-- On pure tensors, `rTensor` applies the given map to the right-module entry. -/
+@[simp]
+theorem rTensor_tmul [Module k Aᵐᵒᵖ] [IsScalarTower k Aᵐᵒᵖ M] [IsScalarTower k Aᵐᵒᵖ M']
+    (f : M →ₗ[Aᵐᵒᵖ] M') (m : M) (n : N) : rTensor k N f (tmul k A m n) = tmul k A (f m) n :=
+  (rfl)
+
 /-- Equivariant linear equivalences of the factors identify their balanced tensor products. -/
 def congr (f : M ≃ₗ[k] M') (g : N ≃ₗ[k] N')
     (hf : ∀ (a : A) m, f (op a • m) = op a • f m)

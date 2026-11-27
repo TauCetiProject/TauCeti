@@ -39,31 +39,12 @@ open scoped ModuleCat.Algebra
 
 namespace TauCeti.BalancedTensorProduct
 
-section RightTensor
-
-variable (R : Type*) {A : Type*} (N : Type*) {M M' : Type*}
-  [CommRing R] [Semiring A] [AddCommGroup M] [AddCommGroup M'] [AddCommGroup N]
-  [Module Aᵐᵒᵖ M] [Module Aᵐᵒᵖ M'] [Module A N] [Module R N] [Module R M] [Module R M']
-  [Module R Aᵐᵒᵖ] [IsScalarTower R Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M']
-
-/-- Tensoring a right `A`-module map with `N` on the right. -/
-def rTensor (f : M →ₗ[Aᵐᵒᵖ] M') :
-    BalancedTensorProduct R A M N →ₗ[R] BalancedTensorProduct R A M' N :=
-  map (f.restrictScalars R) LinearMap.id (fun b m ↦ f.map_smul (op b) m) (fun _ _ ↦ rfl)
-
-/-- On pure tensors, `rTensor` applies the given map to the right-module entry. -/
-@[simp]
-theorem rTensor_tmul (f : M →ₗ[Aᵐᵒᵖ] M') (m : M) (n : N) :
-    rTensor R N f (tmul R A m n) = tmul R A (f m) n :=
-  map_tmul _ _ _ _ _ _
-
-end RightTensor
-
 variable (R : Type r) (A : Type a) [CommRing R] [Ring A] [Algebra R A]
 
 /-- The balanced tensor bifunctor, with the right module in the first variable. -/
 -- Expose the object carriers so that morphisms can be evaluated directly on pure tensors.
-abbrev functor : ModuleCat.{u} Aᵐᵒᵖ ⥤ ModuleCat.{v} A ⥤ ModuleCat.{max u v} R where
+@[expose, implicit_reducible]
+def functor : ModuleCat.{u} Aᵐᵒᵖ ⥤ ModuleCat.{v} A ⥤ ModuleCat.{max u v} R where
   obj M :=
     { obj N := ModuleCat.of R (BalancedTensorProduct R A M N)
       map g := ModuleCat.ofHom (lTensor R M g.hom)
@@ -75,20 +56,43 @@ abbrev functor : ModuleCat.{u} Aᵐᵒᵖ ⥤ ModuleCat.{v} A ⥤ ModuleCat.{max
   map_id _ := NatTrans.ext (funext fun _ ↦ ModuleCat.hom_ext (hom_ext fun _ _ ↦ by simp))
   map_comp _ _ := NatTrans.ext (funext fun _ ↦ ModuleCat.hom_ext (hom_ext fun _ _ ↦ by simp))
 
+/-- The tensor functor acts on the left-module entry of a pure tensor by the given morphism. -/
+@[simp]
+theorem functor_obj_map_tmul (M : ModuleCat.{u} Aᵐᵒᵖ) {N N' : ModuleCat.{v} A} (g : N ⟶ N')
+    (m : M) (n : N) :
+    ((functor R A).obj M).map g (tmul R A m n) = tmul R A m (g n) :=
+  lTensor_tmul g.hom m n
+
+/-- The tensor natural transformation acts on the right-module entry by the given morphism. -/
+@[simp]
+theorem functor_map_app_tmul {M M' : ModuleCat.{u} Aᵐᵒᵖ} (f : M ⟶ M') (N : ModuleCat.{v} A)
+    (m : M) (n : N) :
+    ((functor R A).map f).app N (tmul R A m n) = tmul R A (f m) n :=
+  rTensor_tmul f.hom m n
+
 instance (M : ModuleCat.{u} Aᵐᵒᵖ) : ((functor.{r, a, u, v} R A).obj M).Additive where
   map_add {N _} g g' := ModuleCat.hom_ext (hom_ext (M := M) (N := N) fun m n ↦ by
-    simp only [ModuleCat.hom_add, LinearMap.add_apply]
-    simpa only [ModuleCat.hom_ofHom, lTensor_tmul, LinearMap.add_apply] using
-      tmul_add R A m (g n) (g' n))
+    -- Use the concrete tensor carrier so the pure-tensor simp lemmas match.
+    change lTensor R M (g + g').hom (tmul R A m n) =
+      lTensor R M g.hom (tmul R A m n) + lTensor R M g'.hom (tmul R A m n)
+    simp only [lTensor_tmul, ModuleCat.hom_add, LinearMap.add_apply, tmul_add])
 
 instance : (functor.{r, a, u, v} R A).Additive where
   map_add {M _} f f' :=
     NatTrans.ext (funext fun N ↦ ModuleCat.hom_ext (hom_ext (M := M) (N := N) fun m n ↦ by
-      simp only [NatTrans.app_add, ModuleCat.hom_add, LinearMap.add_apply]
-      simpa only [ModuleCat.hom_ofHom, rTensor_tmul, LinearMap.add_apply] using
-        add_tmul R A (f m) (f' m) n))
+      -- Use the concrete tensor carrier so the pure-tensor simp lemmas match.
+      change rTensor R N (f + f').hom (tmul R A m n) =
+        rTensor R N f.hom (tmul R A m n) + rTensor R N f'.hom (tmul R A m n)
+      simp only [rTensor_tmul, ModuleCat.hom_add, LinearMap.add_apply, add_tmul]))
+
+/-- Tensoring with a fixed left module is additive in the right-module variable. -/
+instance (N : ModuleCat.{v} A) : ((functor.{r, a, u, v} R A).flip.obj N).Additive where
+  map_add {_ _} f g := by
+    simpa only [Functor.flip_obj_map, NatTrans.app_add] using
+      congrArg (fun α ↦ α.app N) ((functor.{r, a, u, v} R A).map_add (f := f) (g := g))
 
 /-- The right action on Hom is Mathlib’s domain action on linear maps. -/
+-- DomMulAct is defined as MulOpposite, so the two scalar types are definitionally equal.
 local instance homRightModule (N : ModuleCat.{u} A) (E : ModuleCat.{v} R) :
     Module Aᵐᵒᵖ (N →ₗ[R] E) :=
   (inferInstance : Module Aᵈᵐᵃ (N →ₗ[R] E))
@@ -101,7 +105,9 @@ def homRight (N : ModuleCat.{u} A) : ModuleCat.{v} R ⥤ ModuleCat.{max u v} A�
   map h := ConcreteCategory.ofHom (C := ModuleCat Aᵐᵒᵖ)
     { toFun := fun φ ↦ h.hom.comp φ
       map_add' := fun φ ψ ↦ LinearMap.ext fun n ↦ h.hom.map_add (φ n) (ψ n)
-      map_smul' := fun _ _ ↦ LinearMap.ext fun _ ↦ rfl }
+      map_smul' := fun b φ ↦ LinearMap.ext fun n ↦
+        (congrArg h.hom (DomMulAct.smul_linearMap_apply (b : Aᵈᵐᵃ) φ n)).trans
+          (DomMulAct.smul_linearMap_apply (b : Aᵈᵐᵃ) (h.hom.comp φ) n).symm }
   map_id _ := ModuleCat.hom_ext (LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ rfl)
   map_comp _ _ := ModuleCat.hom_ext (LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ rfl)
 
@@ -114,7 +120,8 @@ def homRightAddEquiv (N : ModuleCat.{u} A) (E : ModuleCat.{v} R) :
 @[simp]
 theorem homRightAddEquiv_smul_apply (N : ModuleCat.{u} A) (E : ModuleCat.{v} R) (b : Aᵐᵒᵖ)
     (φ : (homRight R A N).obj E) (n : N) :
-    homRightAddEquiv R A N E (b • φ) n = homRightAddEquiv R A N E φ (b.unop • n) := (rfl)
+    homRightAddEquiv R A N E (b • φ) n = homRightAddEquiv R A N E φ (b.unop • n) :=
+  DomMulAct.smul_linearMap_apply (b : Aᵈᵐᵃ) (homRightAddEquiv R A N E φ) n
 
 /-- The Hom functor acts by postcomposition. -/
 @[simp]
@@ -130,57 +137,47 @@ section Adjunction
 
 variable (N : ModuleCat.{v} A) (M : ModuleCat.{v} Aᵐᵒᵖ) (E : ModuleCat.{v} R)
 
-private def curry (f : ((functor R A).obj M).obj N ⟶ E) :
-    M ⟶ (homRight R A N).obj E :=
-  let bilinear : M →ₗ[R] N →ₗ[R] E := (mk R A).compr₂ f.hom
-  let e := homRightAddEquiv R A N E
-  have eval (m : M) (n : N) : bilinear m n = f (tmul R A m n) :=
-    (LinearMap.compr₂_apply _ _ _ _).trans (congrArg f.hom (mk_apply R A m n))
-  ConcreteCategory.ofHom (C := ModuleCat Aᵐᵒᵖ)
-    { toFun := fun m ↦ e.symm (bilinear m)
+private def balancedHomEquiv :
+    {f : M →ₗ[R] N →ₗ[R] E // ∀ (b : A) m n, f (op b • m) n = f m (b • n)} ≃
+      (M →ₗ[Aᵐᵒᵖ] (homRight R A N).obj E) where
+  toFun f :=
+    { toFun := fun m ↦ (homRightAddEquiv R A N E).symm (f.val m)
       map_add' := fun m m' ↦ by rw [map_add, map_add]
-      map_smul' := fun b m ↦ e.injective (LinearMap.ext fun n ↦ calc
-        e (e.symm (bilinear (b • m))) n = f (tmul R A (b • m) n) :=
-          (congrArg (fun φ : N →ₗ[R] E ↦ φ n) (e.apply_symm_apply _)).trans (eval _ _)
-        _ = f (tmul R A m (b.unop • n)) :=
-          congrArg f (by simpa only [op_unop] using balance R A b.unop m n)
-        _ = e (e.symm (bilinear m)) (b.unop • n) :=
-          (eval _ _).symm.trans (congrArg (fun φ : N →ₗ[R] E ↦ φ _) (e.apply_symm_apply _).symm)
-        _ = e (b • e.symm (bilinear m)) n :=
-          (homRightAddEquiv_smul_apply R A N E b _ n).symm) }
-
-private theorem curry_apply (f : ((functor R A).obj M).obj N ⟶ E) (m : M) (n : N) :
-    homRightAddEquiv R A N E (curry R A N M E f m) n = f (tmul R A m n) :=
-  (LinearMap.compr₂_apply _ _ _ _).trans (congrArg f.hom (mk_apply R A m n))
-
-private def uncurry (g : M ⟶ (homRight R A N).obj E) :
-    ((functor R A).obj M).obj N ⟶ E :=
-  let e := homRightAddEquiv R A N E
-  let bilinear : M →ₗ[R] N →ₗ[R] E :=
-    { toFun := fun m ↦ e (g m)
-      map_add' := fun m m' ↦ (congrArg e (g.hom.map_add m m')).trans (e.map_add _ _)
-      map_smul' := fun c m ↦ LinearMap.ext fun n ↦ by
-        -- The ground scalar on `M` is induced by the algebra map into the opposite ring.
-        change e (g (algebraMap R Aᵐᵒᵖ c • m)) n = c • e (g m) n
-        rw [map_smul, homRightAddEquiv_smul_apply, MulOpposite.algebraMap_apply, unop_op,
-          algebraMap_smul, map_smul] }
-  ModuleCat.ofHom <| lift bilinear fun b m n ↦
-    (congrArg (fun φ ↦ e φ n) (g.hom.map_smul (op b) m)).trans
-      (homRightAddEquiv_smul_apply R A N E (op b) (g m) n)
-
-private theorem uncurry_tmul (g : M ⟶ (homRight R A N).obj E) (m : M) (n : N) :
-    uncurry R A N M E g (tmul R A m n) = homRightAddEquiv R A N E (g m) n :=
-  lift_tmul _ _ m n
+      map_smul' := fun b m ↦ (homRightAddEquiv R A N E).injective (LinearMap.ext fun n ↦ by
+        simpa only [AddEquiv.apply_symm_apply, RingHom.id_apply, homRightAddEquiv_smul_apply,
+          op_unop] using f.property b.unop m n) }
+  invFun g :=
+    ⟨{ toFun := fun m ↦ homRightAddEquiv R A N E (g m)
+       map_add' := fun m m' ↦ by rw [map_add, map_add]
+       map_smul' := fun c m ↦ LinearMap.ext fun n ↦ by
+         -- The ground scalar on the bundled module is induced by the opposite algebra map.
+         change homRightAddEquiv R A N E (g (algebraMap R Aᵐᵒᵖ c • m)) n =
+           c • homRightAddEquiv R A N E (g m) n
+         rw [map_smul, homRightAddEquiv_smul_apply, MulOpposite.algebraMap_apply, unop_op,
+           algebraMap_smul, map_smul] },
+      fun b m n ↦
+        (congrArg (fun φ ↦ homRightAddEquiv R A N E φ n) (g.map_smul (op b) m)).trans
+          (homRightAddEquiv_smul_apply R A N E (op b) (g m) n)⟩
+  left_inv f := Subtype.ext (LinearMap.ext fun m ↦ (homRightAddEquiv R A N E).apply_symm_apply _)
+  right_inv g := LinearMap.ext fun m ↦ (homRightAddEquiv R A N E).symm_apply_apply _
 
 private def adjunctionHomEquiv :
-    (((functor R A).obj M).obj N ⟶ E) ≃ (M ⟶ (homRight R A N).obj E) where
-  toFun := curry R A N M E
-  invFun := uncurry R A N M E
-  left_inv f := ModuleCat.hom_ext (hom_ext fun m n ↦
-    (uncurry_tmul R A N M E _ m n).trans (curry_apply R A N M E f m n))
-  right_inv g := ModuleCat.hom_ext (LinearMap.ext fun m ↦
-    (homRightAddEquiv R A N E).injective (LinearMap.ext fun n ↦
-      (curry_apply R A N M E _ m n).trans (uncurry_tmul R A N M E g m n)))
+    (((functor R A).obj M).obj N ⟶ E) ≃ (M ⟶ (homRight R A N).obj E) :=
+  ModuleCat.homEquiv.trans
+    (liftEquiv.symm.trans ((balancedHomEquiv R A N M E).trans ModuleCat.homEquiv.symm))
+
+private theorem adjunctionHomEquiv_apply (f : ((functor R A).obj M).obj N ⟶ E) (m : M) (n : N) :
+    homRightAddEquiv R A N E (adjunctionHomEquiv R A N M E f m) n = f (tmul R A m n) :=
+  liftEquiv_symm_apply f.hom m n
+
+private theorem adjunctionHomEquiv_symm_apply_tmul
+    (g : M ⟶ (homRight R A N).obj E) (m : M) (n : N) :
+    ((adjunctionHomEquiv R A N M E).symm g).hom (tmul R A m n) =
+      homRightAddEquiv R A N E (g m) n := by
+  let f := (balancedHomEquiv R A N M E).symm g.hom
+  -- Expose the bare linear map so the universal property's evaluation lemma matches.
+  change liftEquiv f (tmul R A m n) = f.val m n
+  rw [liftEquiv_apply, lift_tmul]
 
 /-- Tensoring with a fixed left module is left adjoint to taking the right module of linear maps
 out of it. -/
@@ -188,13 +185,14 @@ def tensorHomAdjunction : (functor.{r, a, v, v} R A).flip.obj N ⊣ homRight R A
   Adjunction.mkOfHomEquiv
     { homEquiv := fun M E ↦ adjunctionHomEquiv R A N M E
       homEquiv_naturality_left_symm := fun f g ↦ ModuleCat.hom_ext (hom_ext fun m n ↦
-        (uncurry_tmul R A N _ _ (f ≫ g) m n).trans <|
-          (uncurry_tmul R A N _ _ g (f m) n).symm.trans <|
-            congrArg (uncurry R A N _ _ g) (rTensor_tmul R N f.hom m n).symm)
+        (adjunctionHomEquiv_symm_apply_tmul R A N _ _ (f ≫ g) m n).trans <|
+          (adjunctionHomEquiv_symm_apply_tmul R A N _ _ g (f m) n).symm.trans <|
+            congrArg (fun x ↦ ((adjunctionHomEquiv R A N _ _).symm g).hom x)
+              (rTensor_tmul f.hom m n).symm)
       homEquiv_naturality_right := fun f h ↦ ModuleCat.hom_ext (LinearMap.ext fun m ↦
         (homRightAddEquiv R A N _).injective (LinearMap.ext fun n ↦
-          (curry_apply R A N _ _ (f ≫ h) m n).trans <|
-            (congrArg h (curry_apply R A N _ _ f m n).symm).trans <|
+          (adjunctionHomEquiv_apply R A N _ _ (f ≫ h) m n).trans <|
+            (congrArg h (adjunctionHomEquiv_apply R A N _ _ f m n).symm).trans <|
               (homRightAddEquiv_map_apply R A N h _ n).symm)) }
 
 -- Simplification rewrites the flipped functor in the implicit object arguments of these maps.
@@ -205,7 +203,7 @@ theorem tensorHomAdjunction_homEquiv_apply
     homRightAddEquiv R A N E ((tensorHomAdjunction R A N).homEquiv M E f m) n =
       f (tmul R A m n) := by
   rw [tensorHomAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
-  exact curry_apply R A N M E f m n
+  exact adjunctionHomEquiv_apply R A N M E f m n
 
 /-- The inverse bijection evaluates the corresponding linear map on each pure tensor. -/
 theorem tensorHomAdjunction_homEquiv_symm_apply_tmul
@@ -214,103 +212,130 @@ theorem tensorHomAdjunction_homEquiv_symm_apply_tmul
     (((tensorHomAdjunction R A N).homEquiv M E).symm g).hom (tmul R A m n) =
       homRightAddEquiv R A N E (g m) n := by
   rw [tensorHomAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
-  exact uncurry_tmul R A N M E g m n
+  exact adjunctionHomEquiv_symm_apply_tmul R A N M E g m n
+
+/-- The unit sends an element to the map that tensors it with the input. -/
+theorem tensorHomAdjunction_unit_app_apply (m : M) (n : N) :
+    homRightAddEquiv R A N _ ((tensorHomAdjunction R A N).unit.app M m) n = tmul R A m n := by
+  rw [← Adjunction.homEquiv_id]
+  exact tensorHomAdjunction_homEquiv_apply R A N M _ (𝟙 _) m n
+
+/-- The counit evaluates a linear map on the second entry of a pure tensor. -/
+theorem tensorHomAdjunction_counit_app_tmul (φ : (homRight R A N).obj E) (n : N) :
+    ((tensorHomAdjunction R A N).counit.app E).hom (tmul R A φ n) =
+      homRightAddEquiv R A N E φ n := by
+  rw [← Adjunction.homEquiv_symm_id]
+  exact tensorHomAdjunction_homEquiv_symm_apply_tmul R A N _ E (𝟙 _) φ n
 
 instance : ((functor.{r, a, v, v} R A).flip.obj N).IsLeftAdjoint :=
   (tensorHomAdjunction R A N).isLeftAdjoint
 
 end Adjunction
 
-section Swap
+section Comm
 
 variable (M : ModuleCat.{u} Aᵐᵒᵖ) (N : ModuleCat.{v} A)
 
+private noncomputable def commLinearMap :
+    BalancedTensorProduct R A M N →ₗ[R] BalancedTensorProduct R Aᵐᵒᵖ
+      ((ModuleCat.restrictScalars.{v} (↑(RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)).obj N) M :=
+  let Nop := (ModuleCat.restrictScalars.{v} (↑(RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)).obj N
+  let pair := mk R Aᵐᵒᵖ (M := Nop) (N := M)
+  have eval (m : M) (n : Nop) : pair.flip m n = tmul R Aᵐᵒᵖ n m := by
+    simp only [LinearMap.flip_apply, pair, mk_apply]
+  lift (A := A) pair.flip fun b m n ↦
+    (eval _ _).trans ((balance R Aᵐᵒᵖ (M := Nop) (op b) n m).symm.trans (eval _ _).symm)
+
+@[simp]
+private theorem commLinearMap_tmul (m : M) (n : N) :
+    commLinearMap R A M N (tmul R A m n) =
+      tmul R Aᵐᵒᵖ
+        (M := (ModuleCat.restrictScalars.{v} (↑(RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)).obj N)
+        n m := by
+  let Nop := (ModuleCat.restrictScalars.{v} (↑(RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)).obj N
+  have h (x : Nop) : (mk R Aᵐᵒᵖ (M := Nop) (N := M)).flip m x = tmul R Aᵐᵒᵖ x m := by
+    simp
+  exact (lift_tmul (A := A) (M := M) (N := N) _ _ m n).trans (h n)
+
+private noncomputable def commInverseLinearMap :
+    BalancedTensorProduct R Aᵐᵒᵖ
+      ((ModuleCat.restrictScalars.{v} (↑(RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)).obj N) M →ₗ[R]
+        BalancedTensorProduct R A M N :=
+  let Nop := (ModuleCat.restrictScalars.{v} (↑(RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)).obj N
+  let pair := mk R A (M := M) (N := N)
+  have eval (n : N) (m : M) : pair.flip n m = tmul R A m n := by
+    simp only [LinearMap.flip_apply, pair, mk_apply]
+  lift (A := Aᵐᵒᵖ) (M := Nop) pair.flip fun b n m ↦
+    have h : tmul R A m (b.unop • (n : N)) = tmul R A (b • m) (n : N) := by
+      simpa only [op_unop] using (balance R A b.unop m (n : N)).symm
+    (eval _ _).trans (h.trans (eval _ _).symm)
+
+@[simp]
+private theorem commInverseLinearMap_tmul
+    (n : (ModuleCat.restrictScalars.{v} (↑(RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)).obj N) (m : M) :
+    commInverseLinearMap R A M N (tmul R Aᵐᵒᵖ n m) = tmul R A m (n : N) := by
+  have h (x : N) : (mk R A (M := M) (N := N)).flip x m = tmul R A m x := by simp
+  exact (lift_tmul (A := Aᵐᵒᵖ) _ _ n m).trans (h n)
+
 /-- Flipping the factors takes the balanced tensor over `A` to the balanced tensor over
 `Aᵐᵒᵖ`. The left action on `N` is viewed as a right action of `Aᵐᵒᵖ`. -/
-noncomputable def swap : BalancedTensorProduct R A M N ≃ₗ[R]
+noncomputable def comm : BalancedTensorProduct R A M N ≃ₗ[R]
     BalancedTensorProduct R Aᵐᵒᵖ
-      ((ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N) M :=
-  let Nop := (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N
-  let forward : M →ₗ[R] N →ₗ[R] BalancedTensorProduct R Aᵐᵒᵖ Nop M :=
-    (mk R Aᵐᵒᵖ (M := Nop) (N := M)).flip
-  let backward : Nop →ₗ[R] M →ₗ[R] BalancedTensorProduct R A M N :=
-    (mk R A (M := M) (N := N)).flip
-  have forward_eval (m : M) (n : N) :
-      forward m n = tmul R Aᵐᵒᵖ (M := Nop) (N := M) n m :=
-    (LinearMap.flip_apply (mk R Aᵐᵒᵖ (M := Nop) (N := M)) n m).trans
-      (mk_apply R Aᵐᵒᵖ (M := Nop) (N := M) n m)
-  have backward_eval (n : Nop) (m : M) :
-      backward n m = tmul R A (M := M) (N := N) m n :=
-    (LinearMap.flip_apply (mk R A (M := M) (N := N)) m n).trans
-      (mk_apply R A (M := M) (N := N) m n)
-  let f := lift (A := A) forward fun b m n ↦
-    (forward_eval _ _).trans <|
-      ((balance R Aᵐᵒᵖ (M := Nop) (N := M) (op b) n m).symm).trans (forward_eval _ _).symm
-  let g := lift (A := Aᵐᵒᵖ) backward fun b n m ↦ calc
-    backward (op b • n) m = tmul R A (M := M) (N := N) m (b.unop • (n : N)) := backward_eval _ _
-    _ = tmul R A (M := M) (N := N) (b • m) n :=
-      (balance R A (M := M) (N := N) b.unop m (n : N)).symm.trans
-        (congrArg (fun b' : Aᵐᵒᵖ ↦ tmul R A (M := M) (N := N) (b' • m) (n : N)) (op_unop b))
-    _ = backward n (b • m) := (backward_eval _ _).symm
-  have hf (m : M) (n : N) :
-      f (tmul R A (M := M) (N := N) m n) = tmul R Aᵐᵒᵖ (M := Nop) (N := M) n m :=
-    (lift_tmul forward _ m n).trans (forward_eval _ _)
-  have hg (n : Nop) (m : M) :
-      g (tmul R Aᵐᵒᵖ (M := Nop) (N := M) n m) = tmul R A (M := M) (N := N) m n :=
-    (lift_tmul backward _ n m).trans (backward_eval _ _)
-  LinearEquiv.ofLinearMap f g
-    (hom_ext fun n m ↦ (congrArg f (hg n m)).trans (hf m n))
-    (hom_ext fun m n ↦ (congrArg g (hf m n)).trans (hg n m))
+      ((ModuleCat.restrictScalars.{v} (↑(RingEquiv.opOp A).symm : Aᵐᵒᵖᵐᵒᵖ →+* A)).obj N) M :=
+  LinearEquiv.ofLinearMap (commLinearMap R A M N) (commInverseLinearMap R A M N)
+    (hom_ext fun n m ↦ by
+      simp only [LinearMap.comp_apply, commInverseLinearMap_tmul, LinearMap.id_apply]
+      exact commLinearMap_tmul R A M N m n)
+    (hom_ext fun m n ↦ by
+      simp only [LinearMap.comp_apply, commLinearMap_tmul, LinearMap.id_apply]
+      exact commInverseLinearMap_tmul R A M N n m)
 
--- Simplification rewrites the restriction homomorphism in the implicit object arguments.
-/-- The swap sends a pure tensor to the pure tensor with the two entries reversed. -/
-theorem swap_tmul (m : M) (n : N) :
-    swap R A M N (tmul R A m n) =
-      tmul R Aᵐᵒᵖ (M := (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N)
-        n m := by
-  let Nop := (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N
-  let pair := mk R Aᵐᵒᵖ (M := Nop) (N := M)
-  exact (lift_tmul (A := A) (M := M) (N := N) pair.flip _ m n).trans
-    ((LinearMap.flip_apply pair n m).trans (mk_apply R Aᵐᵒᵖ (M := Nop) (N := M) n m))
+/-- The equivalence sends a pure tensor to the pure tensor with the two entries reversed. -/
+theorem comm_tmul (m : M) (n : N) :
+    comm R A M N (tmul R A m n) =
+      tmul R Aᵐᵒᵖ
+        (M := (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N) n m :=
+  commLinearMap_tmul R A M N m n
 
 /-- Swapping a pure tensor over the opposite ring recovers the original order. -/
-theorem swap_symm_tmul (n : (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N)
-    (m : M) :
-    (swap R A M N).symm (tmul R Aᵐᵒᵖ n m) = tmul R A m (n : N) :=
-  (LinearEquiv.symm_apply_eq _).2 (swap_tmul R A M N m n).symm
+theorem comm_symm_tmul
+    (n : (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N) (m : M) :
+    (comm R A M N).symm (tmul R Aᵐᵒᵖ n m) = tmul R A m (n : N) :=
+  commInverseLinearMap_tmul R A M N n m
 
 /-- For a fixed right module, swapping tensors gives a natural isomorphism with the
 opposite-ring partial tensor functor. -/
-noncomputable def functorSwapIso : (functor.{r, a, u, v} R A).obj M ≅
+noncomputable def functorCommIso : (functor.{r, a, u, v} R A).obj M ≅
     ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom ⋙
       (functor.{r, a, v, u} R Aᵐᵒᵖ).flip.obj M :=
-  NatIso.ofComponents (fun N ↦ (swap R A M N).toModuleIso) fun f ↦
+  NatIso.ofComponents (fun N ↦ (comm R A M N).toModuleIso) fun f ↦
     ModuleCat.hom_ext (hom_ext fun m n ↦
       let fop := (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).map f
-      (congrArg (swap R A M _) (lTensor_tmul f.hom m n)).trans <|
-        (swap_tmul R A M _ m (f n)).trans <|
-          (rTensor_tmul R M fop.hom n m).symm.trans <|
-            congrArg _ (swap_tmul R A M _ m n).symm)
+      (congrArg (comm R A M _) (lTensor_tmul f.hom m n)).trans <|
+        (comm_tmul R A M _ m (f n)).trans <|
+          (rTensor_tmul fop.hom n m).symm.trans <|
+            congrArg _ (comm_tmul R A M _ m n).symm)
 
 /-- The natural swap acts on pure tensors by exchanging their entries. -/
-theorem functorSwapIso_hom_app_tmul (m : M) (n : N) :
-    ((functorSwapIso.{r, a, u, v} R A M).hom.app N).hom (tmul R A m n) =
-      tmul R Aᵐᵒᵖ (M := (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N) n m :=
-  swap_tmul R A M N m n
+theorem functorCommIso_hom_app_tmul (m : M) (n : N) :
+    ((functorCommIso.{r, a, u, v} R A M).hom.app N).hom (tmul R A m n) =
+      tmul R Aᵐᵒᵖ
+        (M := (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N) n m :=
+  comm_tmul R A M N m n
 
 /-- The inverse natural swap returns the pure tensor over the original ring. -/
-theorem functorSwapIso_inv_app_tmul (m : M)
+theorem functorCommIso_inv_app_tmul (m : M)
     (n : (ModuleCat.restrictScalars (RingEquiv.opOp A).symm.toRingHom).obj N) :
-    ((functorSwapIso.{r, a, u, v} R A M).inv.app N).hom (tmul R Aᵐᵒᵖ n m) = tmul R A m (n : N) :=
-  swap_symm_tmul R A M N n m
+    ((functorCommIso.{r, a, u, v} R A M).inv.app N).hom (tmul R Aᵐᵒᵖ n m) = tmul R A m (n : N) :=
+  comm_symm_tmul R A M N n m
 
 instance (M : ModuleCat.{v} Aᵐᵒᵖ) : ((functor.{r, a, v, v} R A).obj M).IsLeftAdjoint := by
   let e : ModuleCat.{v} A ≌ ModuleCat.{v} Aᵐᵒᵖᵐᵒᵖ :=
     ModuleCat.restrictScalarsEquivalenceOfRingEquiv (RingEquiv.opOp A).symm
   have : (ModuleCat.restrictScalars.{v} (RingEquiv.opOp A).symm.toRingHom).IsLeftAdjoint :=
     e.isLeftAdjoint_functor
-  exact Functor.isLeftAdjoint_of_iso (functorSwapIso R A M).symm
+  exact Functor.isLeftAdjoint_of_iso (functorCommIso.{r, a, v, v} R A M).symm
 
-end Swap
+end Comm
 
 end TauCeti.BalancedTensorProduct
