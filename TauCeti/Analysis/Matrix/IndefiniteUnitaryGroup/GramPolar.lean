@@ -97,15 +97,25 @@ section Coordinates
 
 variable {n : Type*}
 
-/-- Square matrices in Hermitian and skew-Hermitian coordinates, `Z ↦ (Z + Zᴴ, (Z - Zᴴ) / 2)`:
-Mathlib's decomposition `StarModule.decomposeProdAdjoint` into self-adjoint and skew-adjoint parts,
-with the self-adjoint part doubled. -/
+/-- Square matrices in Hermitian and skew-Hermitian coordinates, `Z ↦ (Z + Zᴴ, (Z - Zᴴ) / 2)`, with
+inverse `(T, S) ↦ S + T / 2`: Mathlib's decomposition `StarModule.decomposeProdAdjoint` into
+self-adjoint and skew-adjoint parts, with the self-adjoint part doubled. It is written out here
+because `StarModule.decomposeProdAdjoint` takes values in `selfAdjoint A × skewAdjoint A`, not in
+the submodules, so its coordinates would only be reached by unfolding it. -/
 private def polarCoordEquiv :
     Matrix n n ℂ ≃ₗ[ℝ] selfAdjoint.submodule ℝ (Matrix n n ℂ) ×
-      skewAdjoint.submodule ℝ (Matrix n n ℂ) :=
-  (StarModule.decomposeProdAdjoint ℝ (Matrix n n ℂ)).trans
-    ((LinearEquiv.smulOfNeZero ℝ (selfAdjoint.submodule ℝ (Matrix n n ℂ)) 2 two_ne_zero).prodCongr
-      (LinearEquiv.refl ℝ (skewAdjoint.submodule ℝ (Matrix n n ℂ))))
+      skewAdjoint.submodule ℝ (Matrix n n ℂ) where
+  toFun Z := (⟨Z + star Z, IsSelfAdjoint.add_star_self Z⟩,
+    ⟨(2⁻¹ : ℝ) • (Z - star Z), skewAdjoint.smul_mem _ (skewAdjoint.mem_iff.2 (by simp))⟩)
+  invFun x := (x.2 : Matrix n n ℂ) + (2⁻¹ : ℝ) • (x.1 : Matrix n n ℂ)
+  map_add' Z W := by ext1 <;> ext1 <;> simp [star_add] <;> module
+  map_smul' c Z :=
+    Prod.ext (Subtype.ext (by simp [star_smul])) (Subtype.ext (by simp [star_smul]; module))
+  left_inv Z := by simp; module
+  right_inv x := by
+    have h1 : star (x.1 : Matrix n n ℂ) = x.1 := x.1.property
+    have h2 : star (x.2 : Matrix n n ℂ) = -x.2 := skewAdjoint.mem_iff.1 x.2.property
+    ext1 <;> ext1 <;> simp [star_add, star_smul, h1, h2] <;> module
 
 /-- The Hermitian coordinate `Z + Zᴴ`, twice the self-adjoint part, of a square matrix
 `Z = S + T / 2`. -/
@@ -119,19 +129,18 @@ private def skewCoord : Matrix n n ℂ →ₗ[ℝ] skewAdjoint.submodule ℝ (Ma
 
 private theorem polarCoordEquiv_symm_apply
     (x : selfAdjoint.submodule ℝ (Matrix n n ℂ) × skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
-    polarCoordEquiv.symm x = (x.2 : Matrix n n ℂ) + (2⁻¹ : ℝ) • (x.1 : Matrix n n ℂ) := by
-  -- Mathlib has no `_apply` lemmas for `StarModule.decomposeProdAdjoint`: its inverse adds the two
-  -- parts, and the inverse of `LinearEquiv.smulOfNeZero` scales by `2⁻¹`, so the left side unfolds
-  -- to this sum.
-  change (2⁻¹ : ℝ) • (x.1 : Matrix n n ℂ) + (x.2 : Matrix n n ℂ) = _
-  exact add_comm _ _
+    polarCoordEquiv.symm x = (x.2 : Matrix n n ℂ) + (2⁻¹ : ℝ) • (x.1 : Matrix n n ℂ) :=
+  (rfl)
+
+private theorem fst_polarCoordEquiv (Z : Matrix n n ℂ) : (polarCoordEquiv Z).1 = hermCoord Z := by
+  simp [hermCoord]
+
+private theorem snd_polarCoordEquiv (Z : Matrix n n ℂ) : (polarCoordEquiv Z).2 = skewCoord Z := by
+  simp [skewCoord]
 
 private theorem coe_hermCoord (Z : Matrix n n ℂ) :
     (hermCoord Z : Matrix n n ℂ) = Z + star Z := by
-  -- Unfold `StarModule.decomposeProdAdjoint`, which has no `_apply` lemmas in Mathlib, to the
-  -- self-adjoint part `⅟2 • (Z + star Z)` (`selfAdjointPart`), doubled by `polarCoordEquiv`.
-  change (2 : ℝ) • ((⅟2 : ℝ) • (Z + star Z)) = Z + star Z
-  rw [smul_smul, mul_invOf_self, one_smul]
+  simp [hermCoord, polarCoordEquiv]
 
 private theorem skewCoord_add_smul (S : skewAdjoint.submodule ℝ (Matrix n n ℂ))
     (T : selfAdjoint.submodule ℝ (Matrix n n ℂ)) :
@@ -260,14 +269,15 @@ private theorem det_mulLeft_comp_fderiv_polarMap (hA : A.IsHermitian) (hA' : IsU
     (LinearMap.mulLeft ℝ (star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A) ∘ₗ
       (D : Matrix n n ℂ →ₗ[ℝ] Matrix n n ℂ)) ∘ₗ polarCoordEquiv.symm.toLinearMap
   -- Its Hermitian coordinate is the identity.
+  have hg (x : selfAdjoint.submodule ℝ (Matrix n n ℂ) × skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
+      g x = polarCoordEquiv (star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A *
+        D (polarCoordEquiv.symm x)) := by
+    simp [g, Matrix.mul_assoc]
   have hg1 (x : selfAdjoint.submodule ℝ (Matrix n n ℂ) × skewAdjoint.submodule ℝ (Matrix n n ℂ)) :
       (g x).1 = x.1 := by
     apply Subtype.ext
-    -- `g x` unfolds through `LinearMap.comp` to `polarCoordEquiv` of the product, whose first
-    -- component is `hermCoord` by definition.
-    change hermCoord (star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A *
-      D (polarCoordEquiv.symm x)) = (x.1 : Matrix n n ℂ)
-    rw [coe_hermCoord, mul_fderiv_polarMap hA hZ hD, ← hω, star_add, hωskew]
+    rw [hg, fst_polarCoordEquiv, coe_hermCoord, mul_fderiv_polarMap hA hZ hD, ← hω, star_add,
+      hωskew]
     have h := hσ.conjTranspose_mul_mul_fderiv_add hZ.2 x.1
     rw [← star_eq_conjTranspose, ← star_eq_conjTranspose] at h
     rw [← h, star_mul, star_mul, star_eq_conjTranspose A, hA.eq, star_star, ← Matrix.mul_assoc]
@@ -276,13 +286,11 @@ private theorem det_mulLeft_comp_fderiv_polarMap (hA : A.IsHermitian) (hA' : IsU
   have hg2 : LinearMap.snd ℝ _ _ ∘ₗ g ∘ₗ LinearMap.inr ℝ _ _ =
       skewAdjointConjugate ℝ (star (σ (hermCoord Z))) ∘ₗ ω := by
     refine LinearMap.ext fun X ↦ Subtype.ext ?_
-    -- As for `hg1`, the left side unfolds to the skew-Hermitian coordinate of the product.
-    change (skewCoord (star (cayleyChart A (skewCoord Z) * σ (hermCoord Z)) * A *
-      D (polarCoordEquiv.symm (0, X))) : Matrix n n ℂ) =
-        skewAdjointConjugate ℝ (star (σ (hermCoord Z))) (ω X)
-    rw [mul_fderiv_polarMap hA hZ hD, ← hω, coe_skewAdjointConjugate_apply, map_zero,
-      Matrix.mul_zero, zero_add, coe_skewCoord_of_star_eq_neg (hωskew X),
-      star_eq_conjTranspose (σ (hermCoord Z)), conjTranspose_conjTranspose]
+    rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.inr_apply, LinearMap.snd_apply, hg,
+      snd_polarCoordEquiv, LinearMap.comp_apply, mul_fderiv_polarMap hA hZ hD, ← hω,
+      coe_skewAdjointConjugate_apply, map_zero, Matrix.mul_zero, zero_add,
+      coe_skewCoord_of_star_eq_neg (hωskew X), star_eq_conjTranspose (σ (hermCoord Z)),
+      conjTranspose_conjTranspose]
   rw [← hg2, ← LinearMap.det_eq_det_snd_comp_comp_inr hg1, LinearMap.det_conj]
 
 /-- **The Jacobian of the polar map.** At a point `Z = S + T / 2` of its domain, the derivative of
