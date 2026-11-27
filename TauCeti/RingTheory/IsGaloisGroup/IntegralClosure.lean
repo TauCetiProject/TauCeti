@@ -8,7 +8,6 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.RingTheory.Invariant.Galois
-public import TauCeti.FieldTheory.Galois.Restriction
 import Mathlib.RingTheory.DedekindDomain.IntegralClosure
 import TauCeti.FieldTheory.Galois.IsGaloisGroup
 import TauCeti.RingTheory.IntegralClosure.Transfer
@@ -47,21 +46,9 @@ analogous result for the image of `Gal(M/L)` inside `Gal(M/K)` under restriction
 * `TauCeti.IsGaloisGroup.moduleFinite_of_isIntegrallyClosed`: conversely, starting from the
   rings, a domain `B` with a finite Galois group over a Noetherian integrally closed domain `A`
   embedding in `B` is a finite `A`-module.
-* `TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure`: acting on `integralClosure A L` by
-  `σ : L ≃ₐ[E] L` agrees with acting via `TauCeti.algEquivEquivEmbeddingSubgroup K E L σ`.
 -/
 
 public section
-
-/-- Acting on `integralClosure A L` by `σ : L ≃ₐ[E] L` agrees with acting via
-`TauCeti.algEquivEquivEmbeddingSubgroup K E L σ : TauCeti.embeddingSubgroup K E L`. -/
-@[simp] theorem TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure {A K E L : Type*}
-    [CommRing A] [Field K] [Field E] [Field L] [Algebra A L] [Algebra K E] [Algebra E L]
-    [Algebra K L] [IsScalarTower K E L] [SMulCommClass (L ≃ₐ[K] L) A L]
-    [SMulCommClass (L ≃ₐ[E] L) A L] (σ : L ≃ₐ[E] L) (x : integralClosure A L) :
-    (TauCeti.algEquivEquivEmbeddingSubgroup K E L σ :
-      TauCeti.embeddingSubgroup K E L) • x = σ • x :=
-  Subtype.ext (by simp [Subgroup.smul_def, AlgEquiv.smul_def])
 
 /-- The action of `Gal(L/K)` on an integral closure `B` of `A` in `L` commutes with the action of
 `A`, since it is the restriction of the action by `K`-algebra automorphisms of `L`. -/

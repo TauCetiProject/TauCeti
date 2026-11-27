@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Herbrand.Basic
+public import TauCeti.RingTheory.LocalRing.Herbrand.Jump
 import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
 
 /-!

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 public import Mathlib.RingTheory.Localization.Integral
+public import TauCeti.FieldTheory.Galois.Restriction
 import Mathlib.RingTheory.Localization.FractionRing
 
 /-!
@@ -22,6 +23,8 @@ action on `integralClosure A L`.
 
 * `AlgEquiv.restrictScalars_smul_integralClosure`: restricting scalars of `σ : L ≃ₐ[E] L` does
   not change its action on `integralClosure A L`.
+* `TauCeti.algEquivEquivEmbeddingSubgroup_smul_integralClosure`: acting on `integralClosure A L` by
+  `σ : L ≃ₐ[E] L` agrees with acting via `TauCeti.algEquivEquivEmbeddingSubgroup K E L σ`.
 * `TauCeti.instFaithfulSMulIntegralClosureOfIsFractionRing`: faithful actions on `L` restrict
   faithfully to `integralClosure A L` when `L` is its fraction field.
 * `TauCeti.instFaithfulSMulIntegralClosureOfIsAlgebraic`: faithful actions on an algebraic
@@ -42,6 +45,16 @@ public section
   Subtype.ext (by simp [AlgEquiv.smul_def])
 
 namespace TauCeti
+
+/-- Acting on `integralClosure A L` by `σ : L ≃ₐ[E] L` agrees with acting via
+`TauCeti.algEquivEquivEmbeddingSubgroup K E L σ : TauCeti.embeddingSubgroup K E L`. -/
+@[simp] theorem algEquivEquivEmbeddingSubgroup_smul_integralClosure {A K E L : Type*}
+    [CommRing A] [Field K] [Field E] [Field L] [Algebra A L] [Algebra K E] [Algebra E L]
+    [Algebra K L] [IsScalarTower K E L] [SMulCommClass (L ≃ₐ[K] L) A L]
+    [SMulCommClass (L ≃ₐ[E] L) A L] (σ : L ≃ₐ[E] L) (x : integralClosure A L) :
+    (TauCeti.algEquivEquivEmbeddingSubgroup K E L σ :
+      TauCeti.embeddingSubgroup K E L) • x = σ • x :=
+  Subtype.ext (by simp [Subgroup.smul_def, AlgEquiv.smul_def])
 
 section FaithfulSMul
 

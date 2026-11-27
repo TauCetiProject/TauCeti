@@ -5,18 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.DiscreteValuationRing.Herbrand
+public import TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Basic
 public import TauCeti.RingTheory.IntegralClosure.Action
 public import TauCeti.RingTheory.LocalRing.Herbrand.IntegralClosure
 import TauCeti.FieldTheory.Galois.Basic
-import TauCeti.RingTheory.IsGaloisGroup.IntegralClosure
 
 /-!
 # Herbrand functions and upper numbering in Galois field towers of DVRs
 
 For a finite Galois extension `L / K` whose integral closure of a local base ring `A` is a DVR
 with separable residue extension, and a normal intermediate field `E / K`, we transport the
-quotient Herbrand identities from `TauCeti.RingTheory.DiscreteValuationRing.Herbrand` along
+quotient Herbrand identities from `TauCeti.RingTheory.DiscreteValuationRing.Herbrand.Basic` along
 Galois fixed fields (`IsGalois.normalAutEquivQuotient`) and `K`-tower restriction
 (`AlgEquiv.restrictNormalHom E`, `AlgEquiv.restrictScalarsHom K`), adapting
 `NumberTheory/LocalField/Herbrand/{Tower,UpperQuotient}.lean`.
