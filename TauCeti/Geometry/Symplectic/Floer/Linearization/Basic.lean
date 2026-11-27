@@ -64,10 +64,10 @@ It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearization
 `J` and `u` are `Cⁿ⁺¹` and the Hamiltonians `Cⁿ⁺²` (`contDiffAt_floerLinearizationCoeff`); so two
 linearized operators differ pointwise by the differences of their coefficients
 (`norm_floerLinearization_sub_floerLinearization_le`). For a family of data that is `Cⁿ⁺¹` (with
-`Cⁿ⁺²` Hamiltonians) jointly in a parameter, the coefficient is `Cⁿ` jointly in the parameter and
-`z` (`contDiffAt_floerLinearizationCoeff_family`), in particular continuous for `C¹` data
-(`continuousAt_floerLinearizationCoeff_family`). Translating the data and the direction
-translates the operator (`floerLinearization_comp_add_right`).
+`Cⁿ⁺²` Hamiltonians) and a family of maps that is `Cⁿ⁺¹`, jointly in a parameter, the coefficient is
+`Cⁿ` jointly in the parameter and `z` (`contDiffAt_floerLinearizationCoeff_family`), in particular
+continuous for `C¹` data and maps (`continuousAt_floerLinearizationCoeff_family`). Translating the
+data and the direction translates the operator (`floerLinearization_comp_add_right`).
 For jointly continuous `J` and jointly `C¹` Hamiltonians, the Floer operator of an almost
 everywhere strongly measurable map is almost everywhere strongly measurable
 (`aestronglyMeasurable_floerOperator`), so its `Lᵖ` norms are defined.
@@ -448,6 +448,14 @@ theorem floerLinearizationCoeff_congr_data (ω : SymplecticForm V)
     ω.floerLinearizationCoeff J Ks Kt u z = ω.floerLinearizationCoeff J' Ks' Kt' u z := by
   rw [floerLinearizationCoeff, floerLinearizationCoeff, hJ, hKs, hKt]
 
+/-- The zeroth-order part of the linearized operator at `z` only depends on the germ of the map at
+`z`. -/
+theorem floerLinearizationCoeff_congr_of_eventuallyEq (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u u' : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (h : u =ᶠ[nhds z] u') :
+    ω.floerLinearizationCoeff J Ks Kt u z = ω.floerLinearizationCoeff J Ks Kt u' z := by
+  rw [floerLinearizationCoeff, floerLinearizationCoeff, h.eq_of_nhds, h.fderiv_eq]
+
 /-- The zeroth-order part of the linearized Floer operator, evaluated on a vector. -/
 theorem floerLinearizationCoeff_apply (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) (v : V) :
@@ -565,39 +573,42 @@ theorem floerLinearization_exp_smul (ω : SymplecticForm V)
   simpa only [mul_one] using
     ω.floerLinearization_exp_neg_smul J Ks Kt u ξ ((hasDerivAt_id' z.1).const_mul δ) hξ
 
-/-- **Smoothness of the zeroth-order part along a family of data.** For a family of data
-`(J_μ, K_{s,μ}, K_{t,μ})` with parameter `μ ∈ P`, the zeroth-order part of the linearized Floer
-operator of the data at `μ` along `u`, at `z`, is `Cⁿ` jointly in `(μ, z)` at `p` when `J` is
-`Cⁿ⁺¹` and the Hamiltonians `Cⁿ⁺²` jointly in `μ`, `z` and the target point at `(p, u p.2)`, and
-`u` is `Cⁿ⁺¹` at `p.2`. -/
+/-- **Smoothness of the zeroth-order part along a family of data and maps.** For a family of data
+`(J_μ, K_{s,μ}, K_{t,μ})` and a family of maps `u_μ` with parameter `μ ∈ P`, the zeroth-order part
+of the linearized Floer operator of the data at `μ` along `u_μ`, at `z`, is `Cⁿ` jointly in
+`(μ, z)` at `p` when `J` is `Cⁿ⁺¹` and the Hamiltonians `Cⁿ⁺²` jointly in `μ`, `z` and the target
+point at `(p, u_{p.1} p.2)`, and the maps are `Cⁿ⁺¹` jointly in `μ` and `z` at `p`. -/
 theorem contDiffAt_floerLinearizationCoeff_family (ω : SymplecticForm V)
-    {J : P × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : ℝ × ℝ → V}
-    {p : P × (ℝ × ℝ)} {n : WithTop ℕ∞} (hJ : ContDiffAt ℝ (n + 1) (Function.uncurry J) (p, u p.2))
-    (hKs : ContDiffAt ℝ (n + 2) (Function.uncurry Ks) (p, u p.2))
-    (hKt : ContDiffAt ℝ (n + 2) (Function.uncurry Kt) (p, u p.2))
-    (hu : ContDiffAt ℝ (n + 1) u p.2) :
+    {J : P × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : P → ℝ × ℝ → V}
+    {p : P × (ℝ × ℝ)} {n : WithTop ℕ∞}
+    (hJ : ContDiffAt ℝ (n + 1) (Function.uncurry J) (p, u p.1 p.2))
+    (hKs : ContDiffAt ℝ (n + 2) (Function.uncurry Ks) (p, u p.1 p.2))
+    (hKt : ContDiffAt ℝ (n + 2) (Function.uncurry Kt) (p, u p.1 p.2))
+    (hu : ContDiffAt ℝ (n + 1) (Function.uncurry u) p) :
     ContDiffAt ℝ n (fun q : P × (ℝ × ℝ) ↦ ω.floerLinearizationCoeff (fun z ↦ J (q.1, z))
-      (fun z ↦ Ks (q.1, z)) (fun z ↦ Kt (q.1, z)) u q.2) p := by
-  have hu' : ContDiffAt ℝ (n + 1) (fun q : P × (ℝ × ℝ) ↦ u q.2) p := hu.comp p contDiffAt_snd
-  have hun : ContDiffAt ℝ n (fun q : P × (ℝ × ℝ) ↦ u q.2) p := hu'.of_le le_self_add
-  have hgraph : ContDiffAt ℝ (n + 1) (fun q : P × (ℝ × ℝ) ↦ (q, u q.2)) p :=
-    contDiffAt_id.prodMk hu'
+      (fun z ↦ Ks (q.1, z)) (fun z ↦ Kt (q.1, z)) (u q.1) q.2) p := by
+  have hun : ContDiffAt ℝ n (Function.uncurry u) p := hu.of_le le_self_add
+  have hgraph : ContDiffAt ℝ (n + 1) (fun q ↦ (q, Function.uncurry u q)) p :=
+    contDiffAt_id.prodMk hu
   have h2 : n + 2 = n + 1 + 1 := by rw [add_assoc, one_add_one_eq_two]
   have hXs := ω.contDiffAt_hamiltonianVectorField_uncurry (n := n + 1) (h2 ▸ hKs)
   have hXt := ω.contDiffAt_hamiltonianVectorField_uncurry (n := n + 1) (h2 ▸ hKt)
-  have hdJ : ContDiffAt ℝ n (fun q ↦ fderiv ℝ (J q) (u q.2)) p :=
+  have hdJ : ContDiffAt ℝ n (fun q ↦ fderiv ℝ (J q) (Function.uncurry u q)) p :=
     hJ.fderiv (f := fun q y ↦ J q y) hun le_rfl
-  have hdXs : ContDiffAt ℝ n (fun q ↦ fderiv ℝ (ω.hamiltonianVectorField (Ks q)) (u q.2)) p :=
+  have hdXs : ContDiffAt ℝ n
+      (fun q ↦ fderiv ℝ (ω.hamiltonianVectorField (Ks q)) (Function.uncurry u q)) p :=
     hXs.fderiv (f := fun q y ↦ ω.hamiltonianVectorField (Ks q) y) hun le_rfl
-  have hdXt : ContDiffAt ℝ n (fun q ↦ fderiv ℝ (ω.hamiltonianVectorField (Kt q)) (u q.2)) p :=
+  have hdXt : ContDiffAt ℝ n
+      (fun q ↦ fderiv ℝ (ω.hamiltonianVectorField (Kt q)) (Function.uncurry u q)) p :=
     hXt.fderiv (f := fun q y ↦ ω.hamiltonianVectorField (Kt q) y) hun le_rfl
-  have hut : ContDiffAt ℝ n (fun q : P × (ℝ × ℝ) ↦ fderiv ℝ u q.2 stdComplexLineImag) p :=
-    ((hu.fderiv_right le_rfl).clm_apply contDiffAt_const).comp p contDiffAt_snd
-  have hXtu : ContDiffAt ℝ n (fun q ↦ ω.hamiltonianVectorField (Kt q) (u q.2)) p :=
-    (hXt.comp (f := fun q : P × (ℝ × ℝ) ↦ (q, u q.2)) p hgraph).of_le le_self_add
-  have hJu : ContDiffAt ℝ n (fun q ↦ J q (u q.2)) p :=
-    (hJ.comp (f := fun q : P × (ℝ × ℝ) ↦ (q, u q.2)) p hgraph).of_le le_self_add
-  have hflip : ContDiffAt ℝ n (fun q ↦ (fderiv ℝ (J q) (u q.2)).flip) p :=
+  have hut : ContDiffAt ℝ n (fun q : P × (ℝ × ℝ) ↦ fderiv ℝ (u q.1) q.2 stdComplexLineImag) p :=
+    ((hu.comp (p, p.2) (contDiffAt_fst.fst.prodMk contDiffAt_snd)).fderiv
+      (f := fun q w ↦ u q.1 w) contDiffAt_snd le_rfl).clm_apply contDiffAt_const
+  have hXtu : ContDiffAt ℝ n (fun q ↦ ω.hamiltonianVectorField (Kt q) (Function.uncurry u q)) p :=
+    (hXt.comp (f := fun q ↦ (q, Function.uncurry u q)) p hgraph).of_le le_self_add
+  have hJu : ContDiffAt ℝ n (fun q ↦ J q (Function.uncurry u q)) p :=
+    (hJ.comp (f := fun q ↦ (q, Function.uncurry u q)) p hgraph).of_le le_self_add
+  have hflip : ContDiffAt ℝ n (fun q ↦ (fderiv ℝ (J q) (Function.uncurry u q)).flip) p :=
     (flipₗᵢ ℝ V V V).contDiff.contDiffAt.comp p hdJ
   exact ((hflip.clm_apply (hut.sub hXtu)).sub hdXs).sub (hJu.clm_comp hdXt)
 
@@ -615,9 +626,9 @@ theorem contDiffAt_floerLinearizationCoeff (ω : SymplecticForm V)
       ContDiffAt ℝ m (fun x : (ℝ × (ℝ × ℝ)) × V ↦ (x.1.2, x.2)) (((0 : ℝ), z), u z) :=
     (contDiff_fst.snd.prodMk contDiff_snd).contDiffAt
   have h := ω.contDiffAt_floerLinearizationCoeff_family (P := ℝ) (J := fun q ↦ J q.2)
-    (Ks := fun q ↦ Ks q.2) (Kt := fun q ↦ Kt q.2) (p := (0, z))
+    (Ks := fun q ↦ Ks q.2) (Kt := fun q ↦ Kt q.2) (u := fun _ ↦ u) (p := (0, z))
     (hJ.comp (((0 : ℝ), z), u z) hπ) (hKs.comp (((0 : ℝ), z), u z) hπ)
-    (hKt.comp (((0 : ℝ), z), u z) hπ) hu
+    (hKt.comp (((0 : ℝ), z), u z) hπ) (hu.comp _ contDiffAt_snd)
   exact h.comp (f := fun w : ℝ × ℝ ↦ ((0 : ℝ), w)) z (contDiffAt_const.prodMk contDiffAt_id)
 
 /-- The zeroth-order part of the linearized Floer operator is continuous at `z` when the data are
@@ -631,18 +642,19 @@ theorem continuousAt_floerLinearizationCoeff (ω : SymplecticForm V)
   (ω.contDiffAt_floerLinearizationCoeff (n := 0) (by simpa using hJ) (by simpa using hKs)
     (by simpa using hKt) (by simpa using hu)).continuousAt
 
-/-- **Continuity of the zeroth-order part along a family of data.** For a family of data
-`(J_μ, K_{s,μ}, K_{t,μ})` with parameter `μ ∈ P`, the zeroth-order part of the linearized Floer
-operator of the data at `μ` along `u`, at `z`, is continuous jointly in `(μ, z)` at `p` when the
-family is `C¹` (with `C²` Hamiltonians) jointly in `μ`, `z` and the target point at
-`(p, u p.2)`, and `u` is `C¹` at `p.2`. -/
+/-- **Continuity of the zeroth-order part along families of data and maps.** For a family of data
+`(J_μ, K_{s,μ}, K_{t,μ})` and a family of maps `u_μ` with parameter `μ ∈ P`, the zeroth-order part
+of the linearized Floer operator of the data at `μ` along `u_μ`, at `z`, is continuous jointly in
+`(μ, z)` at `p` when the data are `C¹` (with `C²` Hamiltonians) jointly in `μ`, `z` and the target
+point at `(p, u_{p.1} p.2)`, and the maps are `C¹` jointly in `μ` and `z` at `p`. -/
 theorem continuousAt_floerLinearizationCoeff_family (ω : SymplecticForm V)
-    {J : P × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : ℝ × ℝ → V}
-    {p : P × (ℝ × ℝ)} (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (p, u p.2))
-    (hKs : ContDiffAt ℝ 2 (Function.uncurry Ks) (p, u p.2))
-    (hKt : ContDiffAt ℝ 2 (Function.uncurry Kt) (p, u p.2)) (hu : ContDiffAt ℝ 1 u p.2) :
+    {J : P × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : P → ℝ × ℝ → V}
+    {p : P × (ℝ × ℝ)} (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (p, u p.1 p.2))
+    (hKs : ContDiffAt ℝ 2 (Function.uncurry Ks) (p, u p.1 p.2))
+    (hKt : ContDiffAt ℝ 2 (Function.uncurry Kt) (p, u p.1 p.2))
+    (hu : ContDiffAt ℝ 1 (Function.uncurry u) p) :
     ContinuousAt (fun q : P × (ℝ × ℝ) ↦ ω.floerLinearizationCoeff (fun z ↦ J (q.1, z))
-      (fun z ↦ Ks (q.1, z)) (fun z ↦ Kt (q.1, z)) u q.2) p :=
+      (fun z ↦ Ks (q.1, z)) (fun z ↦ Kt (q.1, z)) (u q.1) q.2) p :=
   (ω.contDiffAt_floerLinearizationCoeff_family (n := 0) (by simpa using hJ) (by simpa using hKs)
     (by simpa using hKt) (by simpa using hu)).continuousAt
 
