@@ -65,11 +65,11 @@ symbol with compact spatial support
 
 * `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mulLeft_le`: the
   estimate between two charts, in `H^{s - m,p}` and `H^{s,p}` for `1 < p < ∞`.
-* `TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: the
-  reading of `P u` in one chart is bounded in `H^{s - m,p}` by the `H^{s,p}` norm of `u` for a
-  partition, `1 < p < ∞`.
 * `TauCeti.exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum`: the
   Sobolev estimate `‖P u‖_{H^{s - m,p}} ≤ C ‖u‖_{H^{s,p}}` in these norms, for `1 < p < ∞`.
+* `TauCeti.IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum`: on
+  any manifold, the reading of `P u` in one chart is bounded by the readings of `u` through
+  cutoffs adding up to `1` on a compact set depending only on `P` and the chart cutoff.
 * `TauCeti.chartSobolevExtension_toChartSobolevSpace_of_mem`: `P` extends to a bounded operator
   `H^s(M) → H^t(M)` for `t ≤ s - m`.
 * `TauCeti.isCompactOperator_chartSobolevExtension_of_mem`: the extension is compact for
@@ -134,36 +134,6 @@ theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_mu
       ⟨C, hC⟩)
     he he' φ ψ
 
-/-- **The Sobolev estimate in one chart.** Let `P` be a classical pseudodifferential operator of
-order `m` and `ψᵢ` finitely many cutoffs in charts `e'ᵢ` whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`,
-extended by `0`, add up to `1`; such cutoffs exist on every compact manifold
-(`IsCompact.exists_sum_cutoffPullback_eq_one`). For a cutoff `φ` in a chart `e`, every real `s`
-and `1 < p < ∞` there is a constant `C` such that every smooth `u` on `M` satisfies
-
-`‖φ · ((P u) ∘ e⁻¹)‖_{H^{s - m,p}} ≤ C ∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^{s,p}}`. -/
-theorem exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_apply_le_sum
-    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] (hP : P ∈ classicalPseudodifferentialOperators m)
-    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) {ι : Type*} [Fintype ι]
-    {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
-    (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
-    (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ))
-    (hψ : ∀ x, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) (hp : 1 < p) (hp_top : p ≠ ⊤)
-    (s : ℝ) :
-    ∃ C, ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
-      ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) p (e.cutoffPushforwardSchwartz he φ (P u))‖ ≤
-        C * ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s p
-          ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ :=
-  exists_norm_cutoffPushforwardSchwartz_apply_le_sum hP
-    (SchwartzMap.toBesselPotentialSpaceCLM_injective s p)
-    (fun hκ hκ' _ hθ hθc hθs ↦
-      BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
-        hθc hθs hp hp_top s)
-    _ (fun _ ha ↦ let ⟨C, hC⟩ :=
-      ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
-      ⟨C, hC⟩)
-    he φ he' ψ hψ
-
 /-- **Sobolev estimate for classical pseudodifferential operators on a manifold.** Let `P` be a
 classical pseudodifferential operator of order `m` and `ψᵢ` finitely many cutoffs in charts `e'ᵢ`
 whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`, extended by `0`, add up to `1`, which forces `M` to be
@@ -197,6 +167,48 @@ theorem exists_sum_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_appl
       ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
       ⟨C, hC⟩)
     he φ he' ψ hψ
+
+/-- **The Sobolev estimate in one chart, on any manifold.** Let `P` be a properly supported
+operator and `φ` a cutoff in a chart `e`. There is a compact set `K ⊆ M` with the following
+property. Let `ψᵢ` be finitely many cutoffs in charts `e'ᵢ` whose readings `Ψᵢ = ψᵢ ∘ e'ᵢ` on `M`,
+extended by `0`, add up to `1` on `K`. If `P` is a classical pseudodifferential operator of order
+`m`, then for every real `s` and `1 < p < ∞` there is a constant `C` such that every smooth `u` on
+`M` satisfies
+
+`‖φ · ((P u) ∘ e⁻¹)‖_{H^{s - m,p}} ≤ C ∑ᵢ ‖ψᵢ · (u ∘ e'ᵢ⁻¹)‖_{H^{s,p}}`.
+
+The cutoffs `ψᵢ` need only add up to `1` on the compact set `K`, so `M` need not be compact. On a
+compact manifold every operator is properly supported
+(`TauCeti.isProperlySupported_of_compactSpace`) and cutoffs adding up to `1` everywhere qualify.
+The set `K` depends only on `P` and `φ`, not on the order `m`, on `s` or on `p`. -/
+theorem IsProperlySupported.exists_isCompact_forall_norm_toBesselPotentialSpaceCLM_le_sum
+    [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] (hP : IsProperlySupported P)
+    (he : e ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+    (φ : 𝓓(⟨e.target, e.open_target⟩, ℝ)) :
+    ∃ K : Set M, IsCompact K ∧ ∀ {ι : Type*} [Fintype ι]
+      {e' : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+      (he' : ∀ i, e' i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+      (ψ : ∀ i, 𝓓(⟨(e' i).target, (e' i).open_target⟩, ℝ)),
+      (∀ x ∈ K, ∑ i, (e' i).cutoffPullback (he' i) (ψ i) 1 x = 1) →
+      ∀ m : ℝ, P ∈ classicalPseudodifferentialOperators m →
+      ∀ (p : ℝ≥0∞) [Fact (1 ≤ p)], 1 < p → p ≠ ⊤ → ∀ s : ℝ, ∃ C,
+        ∀ u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+          ‖SchwartzMap.toBesselPotentialSpaceCLM (s - m) p
+              (e.cutoffPushforwardSchwartz he φ (P u))‖ ≤
+            C * ∑ i, ‖SchwartzMap.toBesselPotentialSpaceCLM s p
+              ((e' i).cutoffPushforwardSchwartz (he' i) (ψ i) u)‖ := by
+  -- On `e⁻¹(supp φ)`, `P u` only depends on `u` on a compact set `K`.
+  obtain ⟨K, hK, hPK⟩ := hP.exists_isCompact_forall_eqOn (e.isCompact_symm_image_tsupport φ)
+  exact ⟨K, hK, fun he' ψ hψ m hPm p _ hp hp_top s ↦
+    exists_norm_cutoffPushforwardSchwartz_apply_le_sum hPm
+      (SchwartzMap.toBesselPotentialSpaceCLM_injective s p)
+      (fun hκ hκ' _ hθ hθc hθs ↦
+        BesselPotentialSpace.exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp hκ hκ' hθ
+          hθc hθs hp hp_top s)
+      _ (fun _ ha ↦ let ⟨C, hC⟩ :=
+        ha.isUniform.exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_le s hp hp_top
+        ⟨C, hC⟩)
+      he φ hPK he' ψ hψ⟩
 
 /-! ### Extension to the Sobolev spaces of a compact manifold -/
 
