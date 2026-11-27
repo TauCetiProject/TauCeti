@@ -13,10 +13,10 @@ import TauCeti.Analysis.BoundedVariation.Poincare
 
 For a `C¹` weight `W` on a finite-dimensional real inner product space `E`, a set of zero
 weighted perimeter `P_μ(s) = 0` is null or conull
-(`TauCeti.volume_eq_zero_or_volume_compl_eq_zero_of_weightedPerimeter_eq_zero`). On every ball `B(0, r)` the weight `e^{−W}` is bounded below by a
-positive constant, so the Euclidean variation of `χ_s` on `B(0, r)` vanishes; by the Poincaré
-inequality on the convex set `B(0, r)`, `χ_s` is almost everywhere equal on `B(0, r)` to its mean
-over `B(0, 1)`, a constant independent of `r`.
+(`TauCeti.volume_eq_zero_or_volume_compl_eq_zero_of_weightedPerimeter_eq_zero`). On every ball
+`B(0, r)` the weight `e^{−W}` is bounded below by a positive constant, so the Euclidean variation
+of `χ_s` on `B(0, r)` vanishes; by the Poincaré inequality on the convex set `B(0, r)`, `χ_s` is
+almost everywhere equal on `B(0, r)` to its mean over `B(0, 1)`, a constant independent of `r`.
 -/
 
 public section
