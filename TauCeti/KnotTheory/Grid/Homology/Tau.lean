@@ -116,10 +116,7 @@ theorem tau_eq_zero_of_isTorsion :
     Module.IsTorsion K[X] (G.unblockedHomology K) → hG.tau K = 0 := by
   let _ := hG.unblockedHomologyModule K
   intro hT
-  rw [tau_def, InternalGrading.supNonTorsionDegree_def,
-    Set.not_nonempty_iff_eq_empty.mp fun h ↦
-      (InternalGrading.nonTorsionDegrees_nonempty_iff _).mp h hT,
-    Int.csSup_empty, neg_zero]
+  rw [tau_def, InternalGrading.supNonTorsionDegree_eq_zero_of_isTorsion _ hT, neg_zero]
 
 /-- Equal knot grids have the same `τ`, independently of their knot witnesses. -/
 theorem tau_eq_of_eq {G₁ : GridDiagram n} {hG₁ : G₁.IsKnot} (h : G₁ = G) :

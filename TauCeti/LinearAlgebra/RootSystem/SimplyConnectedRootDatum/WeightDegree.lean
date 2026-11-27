@@ -33,6 +33,9 @@ unitriangular matrices, the triangular input to the Borel component of a pinning
   height.
 * `TauCeti.DynkinType.weightDegree_geckWeight_inr_pos`: positive-root coordinates have positive
   degree.
+* `TauCeti.DynkinType.weightDegree_root_pos_iff`, `TauCeti.DynkinType.weightDegree_root_neg_iff`:
+  a root has positive, respectively negative, degree exactly when it is positive, respectively
+  negative.
 * `TauCeti.DynkinType.weightDegree_cartanMatrix_row`: every simple-root Cartan row has degree one.
 
 ## References
@@ -84,6 +87,20 @@ theorem weightDegree_root_neg {γ : Fin t.numRoots}
     t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) < 0 := by
   rw [weightDegree_root]
   exact_mod_cast height_neg_of_mem_negRoots (t.rationalRootSystem ht) (t.rationalBase ht) hγ
+
+/-- A root has positive weight degree exactly when it is positive. -/
+theorem weightDegree_root_pos_iff {γ : Fin t.numRoots} :
+    0 < t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) ↔
+      γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
+  ⟨fun h => (mem_posRoots_or_mem_negRoots _ _ γ).resolve_right fun hγ =>
+    (t.weightDegree_root_neg ht hγ).not_gt h, t.weightDegree_root_pos ht⟩
+
+/-- A root has negative weight degree exactly when it is negative. -/
+theorem weightDegree_root_neg_iff {γ : Fin t.numRoots} :
+    t.weightDegree ht ((t.simplyConnectedRootDatum ht).root γ) < 0 ↔
+      γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht) :=
+  ⟨fun h => (mem_posRoots_or_mem_negRoots _ _ γ).resolve_left fun hγ =>
+    (t.weightDegree_root_pos ht hγ).not_gt h, t.weightDegree_root_neg ht⟩
 
 /-- The integral weight of a root coordinate in Geck's representation, cast to `ℚ`, is the
 corresponding root of the pinned rational root system. -/

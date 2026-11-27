@@ -116,6 +116,19 @@ theorem IsTwoSidedHypersurface.of_le {k l : ℕ∞ω} {f : M → N}
   let ⟨ν, hν, hν'⟩ := h
   ⟨ν, hν.of_le hlk, hν'⟩
 
+/-- Every map from a zero-dimensional manifold into a positive-dimensional Riemannian manifold
+has a unit normal field of any regularity. In particular, hypersurfaces in one-dimensional
+manifolds are two-sided. -/
+theorem isTwoSidedHypersurface_of_subsingleton [Subsingleton E] [Nontrivial V]
+    {k : ℕ∞ω} (f : M → N) : IsTwoSidedHypersurface I J k f := by
+  have : Subsingleton H := I.injective.subsingleton
+  have : DiscreteTopology M := ChartedSpace.discreteTopology H M
+  have : ∀ y : N, Nontrivial (TangentSpace J y) := fun _ ↦ inferInstanceAs (Nontrivial V)
+  choose ν hν using fun x : M ↦ exists_norm_eq (TangentSpace J (f x)) zero_le_one
+  refine ⟨ν, contMDiff_of_discreteTopology, fun x ↦ ⟨hν x, ?_⟩⟩
+  exact mem_orthogonalNormalSpace_iff.2 fun u ↦ by
+    rw [show u = 0 from Subsingleton.elim (α := E) u 0, map_zero, inner_zero_left]
+
 end Definition
 
 variable [FiniteDimensional ℝ V] {n m : ℕ∞ω} [IsManifold I 1 M] [IsManifold J 1 N]

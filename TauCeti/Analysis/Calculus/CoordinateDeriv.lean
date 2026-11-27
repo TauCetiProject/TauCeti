@@ -12,6 +12,7 @@ public import TauCeti.Data.List.Sublists
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
+import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
@@ -63,7 +64,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
-  derivatives.
+  derivatives; `TauCeti.norm_iteratedFDeriv_coordinateDeriv_le`: conversely, a Fréchet
+  derivative of a first partial derivative is bounded by the next Fréchet derivative.
 * `ContDiff.coordinateDeriv_snd`: joint smoothness of partial derivatives in the second variable.
 * `TauCeti.coordinateDeriv_coordinateDeriv_comm`: partial derivatives in different variables
   commute; `TauCeti.coordinateDeriv_pair_comm`: so do two partial derivatives in one variable.
@@ -291,6 +293,15 @@ theorem norm_iteratedFDeriv_succ_le_sum_coordinateDeriv {k : ℕ} {f : Coordinat
   refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
   refine ((T j).norm_iteratedFDeriv_comp_left (hdf j).contDiffAt le_rfl).trans ?_
   exact mul_le_of_le_one_left (norm_nonneg _) (hT j)
+
+/-- The `k`-th Fréchet derivative of a first partial derivative of a `C^(k+1)` function is bounded
+by the `(k + 1)`-st Fréchet derivative of the function: `‖D^k (∂ⱼ f) x‖ ≤ ‖D^(k+1) f x‖`. -/
+theorem norm_iteratedFDeriv_coordinateDeriv_le {k : ℕ} {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ (k + 1) f) (j : Fin n) (x : CoordinateSpace n) :
+    ‖iteratedFDeriv ℝ k (coordinateDeriv [j] f) x‖ ≤ ‖iteratedFDeriv ℝ (k + 1) f x‖ := by
+  rw [funext (coordinateDeriv_singleton j f)]
+  simpa using hf.norm_iteratedFDeriv_fderiv_apply_le (i := k)
+    (by simp [minSmoothness_of_isRCLikeNormedField]) (EuclideanSpace.single j 1) x
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
@@ -1224,6 +1235,16 @@ theorem coordinateDeriv_singleton_clm_comp {𝕜 : Type*} [NontriviallyNormedFie
   have h := ((ContinuousLinearMap.compL 𝕜 E₁ E₂ E₃).bilinearRestrictScalars ℝ)
     |>.coordinateDeriv_of_bilinear (α := [j]) hf hg x
   simpa [List.revzip, add_comm] using h
+
+/-- The first-order Leibniz rule for a coordinate derivative of a field of continuous linear maps
+applied to a function: `∂ⱼ (y ↦ c y (w y)) = (∂ⱼ c) w + c (∂ⱼ w)`. -/
+theorem coordinateDeriv_singleton_clm_apply {c : CoordinateSpace n → F →L[ℝ] G}
+    {w : CoordinateSpace n → F} {x : CoordinateSpace n} (hc : DifferentiableAt ℝ c x)
+    (hw : DifferentiableAt ℝ w x) (j : Fin n) :
+    coordinateDeriv [j] (fun y ↦ c y (w y)) x =
+      coordinateDeriv [j] c x (w x) + c x (coordinateDeriv [j] w x) := by
+  simp only [coordinateDeriv_singleton, fderiv_clm_apply hc hw, add_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.flip_apply, add_comm]
 
 end Leibniz
 

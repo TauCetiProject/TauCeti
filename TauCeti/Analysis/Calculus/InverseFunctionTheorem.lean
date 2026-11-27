@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ContDiff
 public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 
 /-!
 # The inverse function theorem with a `C^n` inverse on a whole open set
@@ -61,6 +62,10 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
   inverse is `C^n` on the whole target.
 * `ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`: the same local inverse
   carries differential identities `dg_z (u i) = v i (g z)` over to `d(g⁻¹)_y (v i y) = u i`.
+* `ContDiffOn.exists_openPartialHomeomorph_comp_fderiv_eq`: the local normal form of an
+  immersion. A `C^n` map `f` whose derivative `A` at a point has a continuous left inverse is
+  `Θ ∘ A` for a `C^n` change of variables `Θ` with `C^n` inverse and derivative the identity at
+  the image point of `A`.
 * `Set.MapsTo.interior_of_contDiffOn`: a `C¹` map with invertible derivative on the interior of
   `s` and mapping `s` into `t` maps `interior s` into `interior t`.
 * `TauCeti.exists_contDiffAt_graph_of_isInvertible`: a disc `z ↦ (a z, b z)` whose second
@@ -295,6 +300,42 @@ theorem _root_.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq
     ((hd.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id _))
   simpa only [ContinuousLinearMap.comp_apply, hgu _ (hΘs hz) i, hgy,
     ContinuousLinearMap.id_apply] using h
+
+/-- **Local normal form of an immersion.** Let `f : G → E` be `C^n`, `1 ≤ n`, on an open set `s`,
+and let its derivative `A` at `a ∈ s` have a continuous left inverse, as for an injective derivative
+into a finite-dimensional space. Then `f = Θ ∘ A` for a `C^n` change of variables `Θ` of `E` near
+`A a`, with `C^n` inverse and with derivative the identity at `A a`. -/
+theorem _root_.ContDiffOn.exists_openPartialHomeomorph_comp_fderiv_eq {G : Type*}
+    [NormedAddCommGroup G] [NormedSpace 𝕂 G] {f : G → E} {s : Set G} {a : G}
+    (hf : ContDiffOn 𝕂 n f s) (hs : IsOpen s) (ha : a ∈ s) (hn : 1 ≤ n)
+    (hA : (fderiv 𝕂 f a).HasLeftInverse) :
+    ∃ Θ : OpenPartialHomeomorph E E, fderiv 𝕂 f a a ∈ Θ.source ∧
+      (∀ x, Θ (fderiv 𝕂 f a x) = f x) ∧
+      HasFDerivAt Θ (ContinuousLinearMap.id 𝕂 E) (fderiv 𝕂 f a a) ∧
+      ContDiffOn 𝕂 n Θ Θ.source ∧ ContDiffOn 𝕂 n Θ.symm Θ.target := by
+  have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
+  set A := fderiv 𝕂 f a
+  obtain ⟨L, hL⟩ := hA
+  -- The map `Θ z = f (L z) + (z - A (L z))` satisfies `Θ (A x) = f x`.
+  set Θ : E → E := fun z ↦ f (L z) + (z - A (L z))
+  have hΘA (x : G) : Θ (A x) = f x := by simp [Θ, hL x]
+  have ht : IsOpen (L ⁻¹' s) := hs.preimage L.continuous
+  have hat : A a ∈ L ⁻¹' s := by simpa [Set.mem_preimage, hL a] using ha
+  have hΘt : ContDiffOn 𝕂 n Θ (L ⁻¹' s) :=
+    (hf.comp L.contDiff.contDiffOn fun _ hz ↦ hz).add
+      (contDiffOn_id.sub (A.contDiff.comp L.contDiff).contDiffOn)
+  -- Its derivative at `A a` is `A L + (1 - A L) = 1`.
+  have hfd : HasFDerivAt f A (L (A a)) := by
+    rw [hL a]
+    exact ((hf.differentiableOn hn0).differentiableAt (hs.mem_nhds ha)).hasFDerivAt
+  have hΘd : HasFDerivAt Θ (ContinuousLinearMap.id 𝕂 E) (A a) := by
+    have h := (hfd.comp (A a) L.hasFDerivAt).add
+      ((hasFDerivAt_id (A a)).sub ((A.comp L).hasFDerivAt))
+    rwa [show A.comp L + (ContinuousLinearMap.id 𝕂 E - A.comp L) =
+      ContinuousLinearMap.id 𝕂 E by abel] at h
+  obtain ⟨Θ', hΘ', haΘ', hΘ't, hΘ'c⟩ := TauCeti.ContDiffOn.exists_openPartialHomeomorph hΘt ht hat
+    hn (e := ContinuousLinearEquiv.refl 𝕂 E) (by rw [hΘd.fderiv, ContinuousLinearEquiv.coe_refl])
+  exact ⟨Θ', haΘ', fun x ↦ by rw [hΘ', hΘA], hΘ' ▸ hΘd, hΘ' ▸ hΘt.mono hΘ't, hΘ'c⟩
 
 /-- **Invariance of the interior.** A map which is `C^n` on `s`, with `1 ≤ n`, has invertible
 derivative at every interior point of `s` and maps `s` into `t` also maps `interior s` into

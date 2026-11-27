@@ -28,7 +28,8 @@ A sum `∑ k ∈ Ico m (n + 1), f k` whose summands split as `f m = β m`, `f n 
 associative ring, a constant summed over the `n - 2` indices `1 ≤ k < n - 1` is `(n - 2)` times it.
 For an integer interval `[-a, b]` with `a, b : ℕ`, adding the term `F 0` to
 `∑ i ∈ Icc (-(a : ℤ)) b, F i` splits the sum into the nonnegative part `∑ j ∈ range (b + 1), F j`
-and the nonpositive part `∑ j ∈ range (a + 1), F (-(j : ℤ))`. In a ring, the partial sums
+and the nonpositive part `∑ j ∈ range (a + 1), F (-(j : ℤ))`. The centred interval `[-n, n]`
+reindexes as `range (2 n + 1)` shifted by `-n`. In a ring, the partial sums
 `∑_{1 ≤ k ≤ n} (-1) ^ (k + 1)` of the alternating sequence `1, -1, 1, …` are `0` or `1`.
 The sum of squares `∑_{r < n} r ^ 2 = n (n - 1) (2 n - 1) / 6` holds in `ℕ`, and with the
 denominator cleared it holds in any ring, as does Gauss's sum `2 ∑_{r < n} r = n (n - 1)`.
@@ -58,6 +59,8 @@ by at most two `n'`, so `∑_{0 < n' ≤ H} w(|n - n'|) ≤ 2 w(0) + 2 ∑_{1 �
   over `j ∈ range (b + 1)` plus the sum of `F (-(j : ℤ))` over `j ∈ range (a + 1)`.
 * `Finset.sum_Ioc_neg_zero_eq_sum_range`: the sum of `F j` over `-a < j ≤ 0` is the sum of
   `F (-(k : ℤ))` over `k < a`.
+* `Finset.sum_Icc_neg_natCast_eq_sum_range`: the sum of `F j` over `-n ≤ j ≤ n` is the sum of
+  `F (k - n)` over `k < 2 n + 1`.
 * `Finset.sum_range_natCast_mul_two`, `Finset.sum_range_id_sq_mul_six`, `Finset.sum_range_id_sq`,
   `Finset.sum_range_natCast_sq_mul_six`: Gauss's sum in a ring and the sum of squares below `n`.
 * `Finset.sum_range_div`: `∑ i < n, i / H = H (q choose 2) + ρ q` with `q = n / H`, `ρ = n % H`.
@@ -190,6 +193,21 @@ theorem sum_Ioc_neg_zero_eq_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ →
     omega
   · simp only [mem_Ioc] at hj
     rw [Int.toNat_of_nonneg (by omega), neg_neg]
+
+/-- Reindexing a centred integer interval: the sum of `F j` over `-n ≤ j ≤ n` is the sum of
+`F (k - n)` over `k < 2 n + 1`. -/
+theorem sum_Icc_neg_natCast_eq_sum_range {M : Type*} [AddCommMonoid M] (F : ℤ → M) (n : ℕ) :
+    ∑ j ∈ Icc (-(n : ℤ)) n, F j = ∑ k ∈ range (2 * n + 1), F (k - n) := by
+  refine sum_nbij' (fun j ↦ (j + n).toNat) (fun k ↦ (k : ℤ) - n) (fun j hj ↦ ?_) (fun k hk ↦ ?_)
+    (fun j hj ↦ ?_) (fun k _ ↦ by simp) (fun j hj ↦ ?_)
+  · simp only [mem_Icc, mem_range] at hj ⊢
+    omega
+  · simp only [mem_Icc, mem_range] at hk ⊢
+    omega
+  · simp only [mem_Icc] at hj
+    omega
+  · simp only [mem_Icc] at hj
+    rw [Int.toNat_of_nonneg (by omega), add_sub_cancel_right]
 
 /-- Gauss's sum cast into a not necessarily associative ring: twice the sum of the natural numbers
 below `n` is `n (n - 1)`. -/

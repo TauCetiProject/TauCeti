@@ -18,6 +18,7 @@ import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.MeasureTheory.Group.Measure
+import Mathlib.MeasureTheory.SpecificCodomains.Pi
 import Mathlib.Tactic.Module
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Analysis.Normed.Operator.Prod
@@ -60,7 +61,9 @@ fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
   (`TauCeti.StripSobolev.integrable_inner_apply_jet`). The jet also
   bounds the whole derivative (`TauCeti.StripSobolev.norm_fderiv_le_two_mul_norm_jet`), so a `C¹`
   cutoff supported in a set `P` multiplies a section into a map whose derivative is bounded in
-  `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.StripSobolev.eLpNorm_fderiv_smul_le`).
+  `Lᵖ(ℝ²)` by the jet on `P` (`TauCeti.eLpNorm_fderiv_smul_le_of_tsupport_subset`). A map
+  whose jet is in `Lᵖ` has its directional derivatives in `Lᵖ`
+  (`MeasureTheory.MemLp.fderiv_apply_of_jet`).
 * The **restricted value** `TauCeti.StripSobolev.restrictValue T` takes an `L²` jet on the strip
   to its value on the compact piece `[-T, T] × [0, 1]`, the operator whose compactness is
   Rellich's theorem on the cylinder and on the strip.
@@ -91,7 +94,7 @@ public section
 noncomputable section
 
 open MeasureTheory Set Filter Topology
-open scoped ENNReal
+open scoped ENNReal BoundedContinuousFunction
 
 namespace TauCeti.StripSobolev
 
@@ -303,41 +306,6 @@ theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [NormedAddCommG
     (hF : ∀ z, jet ξ z = 0 → F z = 0) :
     ∫ z, F z ∂stripMeasure = ∫ z in Icc (-R) R ×ˢ Icc (0 : ℝ) 1, F z :=
   integral_strip_eq_setIntegral_Icc_of_jet_eq_zero (eq_zero_of_notMem_Ioo_neg hR) hF
-
-/-- Multiplying a `C¹` map by a `C¹` cutoff `χ` with `|χ| ≤ 1` and `‖Dχ‖ ≤ C`, whose topological
-support lies in a measurable set `P`, gives a map whose derivative is bounded in `Lᵖ(ℝ × ℝ)` by
-`C + 2` times the jet in `Lᵖ(P)`. -/
-theorem eLpNorm_fderiv_smul_le {χ : ℝ × ℝ → ℝ} {C : ℝ} (hχ : ContDiff ℝ 1 χ)
-    (hχ1 : ∀ z, |χ z| ≤ 1) (hC : ∀ z, ‖fderiv ℝ χ z‖ ≤ C) {P : Set (ℝ × ℝ)}
-    (hP : MeasurableSet P) (hχP : tsupport χ ⊆ P) (hξ : ContDiff ℝ 1 ξ) {p : ℝ≥0∞} :
-    eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) p volume ≤
-      ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) p (volume.restrict P) := by
-  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
-  have hpt : ∀ z, ‖fderiv ℝ (fun z ↦ χ z • ξ z) z‖ ≤ (C + 2) * ‖P.indicator (jet ξ) z‖ := by
-    intro z
-    by_cases hz : z ∈ P
-    · rw [indicator_of_mem hz,
-        fderiv_fun_smul (hχ.differentiable one_ne_zero z) (hξ.differentiable one_ne_zero z)]
-      calc _ ≤ ‖χ z‖ * ‖fderiv ℝ ξ z‖ + ‖fderiv ℝ χ z‖ * ‖ξ z‖ := by
-            refine (norm_add_le _ _).trans ?_
-            rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply]
-        _ ≤ 1 * (2 * ‖jet ξ z‖) + C * ‖jet ξ z‖ := by
-            gcongr
-            exacts [(Real.norm_eq_abs _).trans_le (hχ1 z), norm_fderiv_le_two_mul_norm_jet ξ z,
-              hC z, norm_le_norm_jet ξ z]
-        _ = (C + 2) * ‖jet ξ z‖ := by ring
-    · have h0 : (fun z ↦ χ z • ξ z) =ᶠ[𝓝 z] 0 := by
-        filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h ↦ hz (hχP h)] with w hw
-        simp [hw]
-      rw [h0.fderiv_eq, indicator_of_notMem hz]
-      simp
-  calc eLpNorm (fderiv ℝ (fun z ↦ χ z • ξ z)) p volume
-      ≤ ENNReal.ofReal (C + 2) * eLpNorm (P.indicator (jet ξ)) p volume :=
-        eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-          ((hχ.smul hξ).continuous_fderiv one_ne_zero).aestronglyMeasurable
-          (Eventually.of_forall hpt) p
-    _ = ENNReal.ofReal (C + 2) * eLpNorm (jet ξ) p (volume.restrict P) := by
-        rw [eLpNorm_indicator_eq_eLpNorm_restrict hP.nullMeasurableSet]
 
 /-! ### The restricted value -/
 
@@ -601,6 +569,14 @@ theorem eLpNorm_fderiv_le_two_mul_eLpNorm_jet {μ : Measure (ℝ × ℝ)}
   (eLpNorm_le_mul_eLpNorm_of_ae_le_mul hξ
     (.of_forall (norm_fderiv_le_two_mul_norm_jet ξ)) p).trans_eq (by simp)
 
+/-- The directional derivatives of a map whose jet is in `Lᵖ` are in `Lᵖ`, in every direction. -/
+theorem _root_.MeasureTheory.MemLp.fderiv_apply_of_jet {μ : Measure (ℝ × ℝ)} {p : ℝ≥0∞}
+    (h : MemLp (jet ξ) p μ) (e : ℝ × ℝ) : MemLp (fun z ↦ fderiv ℝ ξ z e) p μ := by
+  have he : e = e.1 • ((1 : ℝ), (0 : ℝ)) + e.2 • ((0 : ℝ), (1 : ℝ)) := by ext <;> simp
+  rw [he]
+  simpa only [map_add, map_smul, jet_apply, Pi.add_def, Pi.smul_def] using
+    (h.snd.fst.const_smul e.1).add (h.snd.snd.const_smul e.2)
+
 /-! ### The `Lᵖ` jets of a space of sections and their closure -/
 
 /-- A space `S` of maps `ξ : ℝ × ℝ → V` whose elements are differentiable with jet in `Lᵖ` of the
@@ -775,6 +751,48 @@ theorem jetClosure_induction₂ {P : jetClosure p S → jetClosure p S → Prop}
     (h : ∀ ξ η : S, P (toJetClosure p S ξ) (toJetClosure p S η)) (x y : jetClosure p S) :
     P x y :=
   (denseRange_toJetClosure p S).induction_on₂ hP h x y
+
+/-- Every element of `jetClosure p S` is the limit of the jets of a sequence of elements of
+`S`. -/
+theorem exists_seq_tendsto_toJetClosure (x : jetClosure p S) :
+    ∃ ξ : ℕ → S, Tendsto (fun n ↦ toJetClosure p S (ξ n)) atTop (𝓝 x) := by
+  obtain ⟨y, hy, hlim⟩ := mem_closure_iff_seq_limit.1 (denseRange_toJetClosure p S x)
+  choose ξ hξ using hy
+  exact ⟨ξ, by simpa only [hξ] using hlim⟩
+
+/-- Limits of bounded continuous functions depending continuously on `x : jetClosure p S` pass
+from the jets of the elements of `S` to all of `jetClosure p S`: if `T x` tends to `w` along `l`
+whenever `x` is the jet of an element of `S`, then it does so for every `x`, since `T x` is a
+uniform limit of such functions. -/
+theorem tendsto_of_forall_tendsto_toJetClosure {X W : Type*} [TopologicalSpace X]
+    [PseudoMetricSpace W] {T : jetClosure p S → X →ᵇ W} (hT : Continuous T) {l : Filter X}
+    {w : W} (h : ∀ ξ : S, Tendsto (T (toJetClosure p S ξ)) l (𝓝 w)) (x : jetClosure p S) :
+    Tendsto (T x) l (𝓝 w) := by
+  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
+  exact (BoundedContinuousFunction.tendsto_iff_tendstoUniformly.1
+    ((hT.tendsto x).comp hξ)).tendsto_of_eventually_tendsto (L := fun _ ↦ w)
+    (Eventually.of_forall fun n ↦ h (ξ n)) tendsto_const_nhds
+
+/-- Continuous representatives pass from the jets of the elements of `S` to all of
+`jetClosure p S`: if `T x`, read through `φ`, agrees almost everywhere on the strip with the value
+of `x`, the first component of its `Lᵖ` jet, whenever `x` is the jet of an element of `S`, then it
+does so for every `x`. -/
+theorem fst_ae_eq_of_forall_toJetClosure {X : Type*} [TopologicalSpace X]
+    {T : jetClosure p S → X →ᵇ V} (hT : Continuous T) {φ : ℝ × ℝ → X}
+    (h : ∀ ξ : S, (fun z ↦ ((toJetClosure p S ξ : Lp (V × V × V) p stripMeasure) z).1)
+      =ᵐ[stripMeasure] fun z ↦ T (toJetClosure p S ξ) (φ z))
+    (x : jetClosure p S) :
+    (fun z ↦ ((x : Lp (V × V × V) p stripMeasure) z).1) =ᵐ[stripMeasure] fun z ↦ T x (φ z) := by
+  obtain ⟨ξ, hξ⟩ := exists_seq_tendsto_toJetClosure x
+  -- The jets converge in `Lᵖ`, so a subsequence converges almost everywhere.
+  obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp
+    ((continuous_subtypeVal.tendsto x).comp hξ)).exists_seq_tendsto_ae
+  -- The functions `T` of the jets converge uniformly, so pointwise.
+  have hT' := ((hT.tendsto x).comp hξ).comp hmono.tendsto_atTop
+  filter_upwards [hns, ae_all_iff.2 fun n ↦ h (ξ (ns n))] with z hz hzn
+  refine tendsto_nhds_unique ((continuous_fst.tendsto _).comp hz) ?_
+  exact (((continuous_eval_const (φ z)).tendsto _).comp hT').congr
+    fun n ↦ (hzn n).symm
 
 end JetLp
 

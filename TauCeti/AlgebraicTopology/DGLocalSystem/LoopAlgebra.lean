@@ -49,6 +49,8 @@ A based map `f : (B, b) → (B', b')` induces the continuous monoid homomorphism
 * `TauCeti.loopChainMap_cubicalChainPoint`, `TauCeti.loopChainAugmentation_cubicalChainPoint`:
   `C_*(Ωf)` sends the point chain of `γ` to that of `Ωf γ`, and the augmentation sends it to `1`.
 * `TauCeti.loopChainMap_apply`: `C_*(Ωf)` is the push-forward of chains along `Ωf`.
+* `TauCeti.loopChainMap_cubicalChainSumMap`: `C_*(Ωf)` of a push-forward along `φ` is the
+  push-forward along `Ωf ∘ φ`.
 * `TauCeti.loopChainMap_id`, `TauCeti.loopChainMap_comp`: functoriality.
 * `TauCeti.loopChainAugmentation_comp_loopChainMap`: compatibility with the augmentations.
 * `TauCeti.loopChainToGroupAlgebra_differential`,
@@ -176,6 +178,15 @@ theorem loopChainMap_cubicalChainPoint (f : C(B, B')) (hf : f b = b') (γ : Moor
 theorem loopChainMap_apply (f : C(B, B')) (hf : f b = b') (a : loopChainAlgebra B b R) :
     loopChainMap R f hf a = cubicalChainSumMap R (MooreLoopSpace.map f hf).toContinuousMap a :=
   cubicalChainDGAlgHom_apply _ a
+
+/-- `C_*(Ωf)` of the push-forward of a chain along `φ` into the Moore loops is the push-forward
+along `Ωf ∘ φ`. -/
+@[simp]
+theorem loopChainMap_cubicalChainSumMap {X : Type*} [TopologicalSpace X] (f : C(B, B'))
+    (hf : f b = b') (φ : C(X, MooreLoopSpace B b)) (a : normalizedCubicalChainAlgebra X R) :
+    loopChainMap R f hf (cubicalChainSumMap R φ a) =
+      cubicalChainSumMap R ((MooreLoopSpace.map f hf).toContinuousMap.comp φ) a := by
+  rw [loopChainMap_apply, ← LinearMap.comp_apply, ← cubicalChainSumMap_comp]
 
 /-- The identity map induces the identity. -/
 @[simp]
@@ -567,6 +578,32 @@ theorem groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom (γ : MooreLoop
     (NormalizedCubicalChain.ofCube (MooreLoopSpace B b) R (SingularCube.point γ))
   simpa only [loopZeroChainToGroupAlgebra_ofCube, SingularCube.point_apply,
     ← MonoidAlgebra.of_apply, ← cubicalChainPoint_def] using h
+
+variable {B b R} in
+/-- **The group ring in the cohomology of the loop chains is natural.** For a based map
+`f : (B, b) → (B', b')`, the map that `C_*(Ωf)` induces on cohomology restricts on the group ring
+`R[π₁(B, b)]` to the map of group rings induced by `f` on fundamental groups. -/
+@[simp]
+theorem cohomologyMap_loopChainMap_groupAlgebraToLoopChainCohomology {B' : Type u}
+    [TopologicalSpace B'] {b' : B'} (f : C(B, B')) (hf : f b = b')
+    (a : MonoidAlgebra R (FundamentalGroup B b)) :
+    (loopChainMap R f hf).cohomologyMap (groupAlgebraToLoopChainCohomology B b R a) =
+      groupAlgebraToLoopChainCohomology B' b' R
+        (MonoidAlgebra.mapDomainAlgHom R R (FundamentalGroup.mapOfEq f hf) a) := by
+  -- Both sides are algebra maps in `a`, so it suffices to compare them on the classes of loops.
+  suffices h : (loopChainMap R f hf).cohomologyMap.toAlgHom.comp
+      (groupAlgebraToLoopChainCohomology B b R) = (groupAlgebraToLoopChainCohomology B' b' R).comp
+        (MonoidAlgebra.mapDomainAlgHom R R (FundamentalGroup.mapOfEq f hf)) from
+    AlgHom.congr_fun h a
+  ext g
+  obtain ⟨γ, rfl⟩ := MooreLoopSpace.fundamentalGroupHom_surjective b g
+  simp only [AlgHom.comp_apply, MonoidAlgebra.mapDomainAlgHom_apply,
+    MonoidAlgebra.mapDomain_single, ← MooreLoopSpace.fundamentalGroupHom_map]
+  -- Fold both basis elements back into `of` to evaluate on the classes of loops.
+  simp only [← MonoidAlgebra.of_apply, groupAlgebraToLoopChainCohomology_of_fundamentalGroupHom]
+  -- On the class of the point chain of `γ`, `C_*(Ωf)` gives the point chain of `Ωf γ`.
+  refine (DGAlgHom.cohomologyMap_mk _ _).trans (congrArg _ (Subtype.ext ?_))
+  exact (DGAlgHom.cyclesMap_apply_coe _ _).trans (loopChainMap_cubicalChainPoint R f hf γ)
 
 /-- `groupAlgebraToLoopChainCohomology` lands in degree zero: the group ring is `H₀(Ω_b B; R)`. -/
 theorem groupAlgebraToLoopChainCohomology_mem_cohomologyGrading_zero

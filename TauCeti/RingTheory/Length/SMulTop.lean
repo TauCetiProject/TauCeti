@@ -33,6 +33,8 @@ the length of `M` itself, which over a field `A ⧸ I` is its rank.
   `N ⧸ I • N` and `M ⧸ N`.
 * `TauCeti.length_quotient_smul_top_congr`: the length of `M ⧸ I • M` is a linear-equivalence
   invariant.
+* `TauCeti.length_quotient_pi`: the length of `(∀ i, M i) ⧸ ∏ i, p i` is the sum of the lengths
+  of the `M i ⧸ p i`.
 * `TauCeti.length_pi_quotient_smul_top`: the length of `(∀ i, M i) ⧸ I • ⊤` is the sum of the
   lengths of the `M i ⧸ I • ⊤`.
 * `TauCeti.length_quotient_tensor`: the length of `(A ⧸ I) ⊗[A] M` over `A ⧸ I` is the length of
@@ -67,6 +69,14 @@ theorem length_quotient_smul_top_congr {N : Type*} [AddCommGroup N] [Module A N]
 
 end Ring
 
+/-- Over a finite product, the length of the quotient by a product of submodules is the sum of the
+lengths of the quotients of the factors. -/
+theorem length_quotient_pi {A : Type*} [CommRing A] {ι : Type*} [Fintype ι] {M : ι → Type*}
+    [∀ i, AddCommGroup (M i)] [∀ i, Module A (M i)] (p : ∀ i, Submodule A (M i)) :
+    Module.length A ((∀ i, M i) ⧸ Submodule.pi Set.univ p) = ∑ i, Module.length A (M i ⧸ p i) := by
+  classical
+  rw [(Submodule.quotientPi p).length_eq, Module.length_pi_of_fintype]
+
 /-- Over a finite product, the length of the quotient by `I • ⊤` is the sum of the lengths of the
 quotients of the factors by `I • ⊤`. -/
 theorem length_pi_quotient_smul_top {A : Type*} [CommRing A] {ι : Type*} [Fintype ι] {M : ι → Type*}
@@ -74,9 +84,7 @@ theorem length_pi_quotient_smul_top {A : Type*} [CommRing A] {ι : Type*} [Finty
     Module.length A ((∀ i, M i) ⧸ I • (⊤ : Submodule A (∀ i, M i))) =
       ∑ i, Module.length A (M i ⧸ I • (⊤ : Submodule A (M i))) := by
   classical
-  rw [Submodule.smul_top_eq_pi,
-    (Submodule.quotientPi fun i ↦ I • (⊤ : Submodule A (M i))).length_eq,
-    Module.length_pi_of_fintype]
+  rw [Submodule.smul_top_eq_pi, length_quotient_pi]
 
 section Tensor
 

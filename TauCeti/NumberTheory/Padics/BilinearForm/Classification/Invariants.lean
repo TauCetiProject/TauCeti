@@ -22,7 +22,7 @@ import TauCeti.NumberTheory.Padics.DyadicUnits
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
 import TauCeti.NumberTheory.Padics.SerreSigns
-import TauCeti.RingTheory.Valuation.ValuationRing
+import TauCeti.RingTheory.Valuation.ValuationRing.Basic
 
 /-!
 # Constituent signs and oddities of a dyadic Jordan splitting

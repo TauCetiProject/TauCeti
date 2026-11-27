@@ -52,12 +52,16 @@ chain rule for the gradient of a real profile composed with a real function.
   the gradient.
 * `TauCeti.hasGradientAt_inner_const_left` and `TauCeti.gradient_inner_const_left`: the functional
   `y ↦ ⟪v, y⟫_𝕜` has gradient `v`.
+* `TauCeti.hasGradientAt_euclideanSpace_apply` and `TauCeti.gradient_euclideanSpace_apply`: on
+  `EuclideanSpace 𝕜 ι`, the coordinate `y ↦ y i` has gradient `eᵢ`.
 * `TauCeti.gradient_const_smul`: `∇ (c • f) x = conj c • ∇ f x`.
 * `TauCeti.gradient_neg` and `TauCeti.gradient_sub`: the gradient of a negative and of a
   difference.
 * `TauCeti.gradient_fun_mul`: the Leibniz rule `∇ (f g) = conj f ∇ g + conj g ∇ f`.
 * `TauCeti.gradient_comp_linearIsometryEquiv_right`: `∇ (f ∘ l) x = l⁻¹ (∇ f (l x))` for a
   linear isometry equivalence `l`.
+* `TauCeti.gradient_comp_neg`: `∇ (fun y ↦ f (-y)) x = -∇ f (-x)`, and
+  `TauCeti.gradient_neg_of_even`: the gradient of an even function is odd.
 * `TauCeti.gradient_of_notMem_tsupport`: the gradient vanishes off the topological support.
 * `TauCeti.gradient_eq_zero_iff`: `∇ f x = 0 ↔ fderiv 𝕜 f x = 0`.
 * `HasCompactSupport.gradient`: the gradient of a compactly supported function is compactly
@@ -84,6 +88,8 @@ chain rule for the gradient of a real profile composed with a real function.
   `f' • g'` when `f` has derivative `f'` at `g x` and `g` has gradient `g'` at `x`.
 * `TauCeti.inner_fderiv_gradient`: over `ℝ`,
   `⟪fderiv ℝ (∇ f) x v, w⟫ = iteratedFDeriv ℝ 2 f x ![v, w]`.
+* `HasDerivAt.hasGradientAt_comp_apply`: on `EuclideanSpace ℝ ι`, if `f` has derivative `f'` at
+  `x i`, then `y ↦ f (y i)` has gradient `f' • eᵢ` at `x`.
 * `TauCeti.norm_smul_gradient_add_smul_gradient_le`: over `ℝ`, the product-rule gradient
   `ζ ∇φ + φ ∇ζ` is bounded by `2 N P` when `ζ`, `∇ζ` are bounded by `N` and `φ`, `∇φ` by `P`.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
@@ -161,6 +167,26 @@ theorem gradient_inner_const_left (v x : F) :
     ∇ (fun y : F => inner 𝕜 v y) x = v :=
   (hasGradientAt_inner_const_left v x).gradient
 
+/-- On `EuclideanSpace 𝕜 ι`, the coordinate function `y ↦ y i` has gradient `eᵢ` at every point
+`x`. -/
+theorem hasGradientAt_euclideanSpace_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (i : ι)
+    (x : EuclideanSpace 𝕜 ι) :
+    HasGradientAt (fun y : EuclideanSpace 𝕜 ι => y i) (EuclideanSpace.single i 1) x := by
+  have hcoord : (fun y : EuclideanSpace 𝕜 ι => y i) =
+      fun y => inner 𝕜 (EuclideanSpace.single i (1 : 𝕜)) y := by
+    funext y
+    simp [EuclideanSpace.inner_single_left]
+  rw [hcoord]
+  exact hasGradientAt_inner_const_left _ x
+
+/-- On `EuclideanSpace 𝕜 ι`, the coordinate function `y ↦ y i` has gradient `eᵢ` at every point
+`x`. -/
+@[simp]
+theorem gradient_euclideanSpace_apply {ι : Type*} [Fintype ι] [DecidableEq ι] (i : ι)
+    (x : EuclideanSpace 𝕜 ι) :
+    ∇ (fun y : EuclideanSpace 𝕜 ι => y i) x = EuclideanSpace.single i 1 :=
+  (hasGradientAt_euclideanSpace_apply i x).gradient
+
 /-- The gradient is conjugate-homogeneous: `toDual` is conjugate-linear, so scaling the function
 by `c` scales the gradient by `conj c`. Over `ℝ` the conjugation is the identity. -/
 theorem gradient_const_smul (c : 𝕜) :
@@ -197,6 +223,16 @@ theorem gradient_comp_linearIsometryEquiv_right {E : Type*} [NormedAddCommGroup 
   rw [gradient, gradient, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv l,
     ContinuousLinearEquiv.comp_right_fderiv]
   simp [LinearIsometryEquiv.inner_map_eq_flip]
+
+/-- The gradient of `y ↦ f (-y)` at `x` is `-∇ f (-x)`. No differentiability hypothesis is
+needed. -/
+theorem gradient_comp_neg (f : F → 𝕜) (x : F) : ∇ (fun y ↦ f (-y)) x = -∇ f (-x) := by
+  simpa [Function.comp_def] using
+    gradient_comp_linearIsometryEquiv_right (LinearIsometryEquiv.neg 𝕜 (E := F)) f x
+
+/-- The gradient of an even function, `f (-y) = f y`, is odd: `∇ f (-x) = -∇ f x`. -/
+theorem gradient_neg_of_even (hf : ∀ y, f (-y) = f y) (x : F) : ∇ f (-x) = -∇ f x := by
+  simpa [hf, neg_eq_iff_eq_neg] using (gradient_comp_neg f x).symm
 
 /-- The gradient vanishes off the topological support of the function, as the Fréchet derivative
 does. -/
@@ -457,6 +493,17 @@ theorem gradient_apply_eq_fderiv_apply_single {ι : Type*} [Fintype ι] [Decidab
     ∇ f x i = fderiv ℝ f x (EuclideanSpace.single i 1) := by
   rw [← inner_gradient_left, EuclideanSpace.inner_single_right]
   simp
+
+/-- **The gradient of a function of one Euclidean coordinate.** If `f` has derivative `f'` at
+`x i`, then `y ↦ f (y i)` has gradient `f' • eᵢ` at `x`. -/
+theorem _root_.HasDerivAt.hasGradientAt_comp_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {f : ℝ → ℝ} {f' : ℝ} {x : EuclideanSpace ℝ ι} {i : ι} (hf : HasDerivAt f f' (x i)) :
+    HasGradientAt (fun y : EuclideanSpace ℝ ι => f (y i)) (f' • EuclideanSpace.single i 1) x := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine (hf.comp_hasFDerivAt x
+    (EuclideanSpace.proj i : EuclideanSpace ℝ ι →L[ℝ] ℝ).hasFDerivAt).congr_fderiv
+    (ContinuousLinearMap.ext fun y => ?_)
+  simp [EuclideanSpace.inner_single_left]
 
 /-- The gradient `ζ ∇φ + φ ∇ζ` of a product is bounded by `2 N P` when `|ζ|, ‖∇ζ‖ ≤ N` and
 `|φ|, ‖∇φ‖ ≤ P`. -/

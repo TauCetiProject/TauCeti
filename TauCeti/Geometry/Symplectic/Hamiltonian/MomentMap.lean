@@ -61,7 +61,8 @@ finite-dimensional manifold, its image is the annihilator `𝔤_x^0` of the isot
 (`TauCeti.SmoothTwoForm.IsMomentMap.range_differential`). So `dμ_x` is surjective exactly when
 `𝔤_x = 0`, that is, when the action is locally free at `x`, and the rank of `dμ_x` is the
 dimension of the orbit tangent space. These identities describe the tangent spaces of the
-levels of a moment map, the starting point of symplectic reduction. Along a Hamiltonian vector
+levels of a moment map, the starting point of symplectic reduction; the levels themselves are
+closed (`TauCeti.SmoothTwoForm.IsMomentMap.isClosed_preimage_singleton`). Along a Hamiltonian vector
 field `X` of a function `f` the differential is `⟨dμ_x(X x), Z⟩ = -df_x(Z_M x)`
 (`TauCeti.SmoothTwoForm.IsMomentMap.differential_apply_of_isHamiltonianVectorField`), so `X` is
 tangent to the level at `x` exactly when `df_x` vanishes on every `Z_M x`
@@ -173,6 +174,16 @@ theorem eval₂_apply (h : σ.IsMomentMap a μ) (Z : 𝔤) (x : M) (v : TangentS
 theorem mdifferentiableAt (h : σ.IsMomentMap a μ) (Z : 𝔤) (x : M) :
     MDifferentiableAt I 𝓘(ℝ) (fun y ↦ μ y Z) x :=
   (h.contMDiff Z).mdifferentiableAt (by simp)
+
+/-- **The levels of a moment map are closed.** The level `μ⁻¹(c)` is the intersection of the levels
+`μ_Z⁻¹(c Z)` of the continuous components. -/
+theorem isClosed_preimage_singleton (h : σ.IsMomentMap a μ) (c : Module.Dual ℝ 𝔤) :
+    IsClosed (μ ⁻¹' {c}) := by
+  have : μ ⁻¹' {c} = ⋂ Z, {x | μ x Z = c Z} := by
+    ext x
+    simp [LinearMap.ext_iff]
+  rw [this]
+  exact isClosed_iInter fun Z ↦ isClosed_eq (h.contMDiff Z).continuous continuous_const
 
 /-- Adding a constant `ν ∈ 𝔤*` to a moment map gives a moment map of the same action. -/
 theorem add_const (h : σ.IsMomentMap a μ) (ν : Module.Dual ℝ 𝔤) :
