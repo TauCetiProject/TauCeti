@@ -40,6 +40,8 @@ and moving the remaining factors by vectors of that subspace does not change the
   equivalence.
 ## Main results
 
+* `exteriorPower.mem_span_ιMulti`: every element of `⋀[R]^n M` is in the span of the
+  decomposable vectors.
 * `exteriorPower.eq_zero_of_finrank_lt` states that every element of `⋀[R]^d M` is zero when
   `Module.finrank R M < d`.
 * `exteriorPower.instProjective`: exterior powers of projective modules are projective.
@@ -127,6 +129,12 @@ universe u w
 variable {R : Type u} {M : Type w}
 
 namespace exteriorPower
+
+/-- Every element of `⋀[R]^n M` lies in the span of the decomposable vectors; this is the
+membership form of `exteriorPower.ιMulti_span`, ready for `Submodule.span_induction`. -/
+theorem mem_span_ιMulti [CommRing R] [AddCommGroup M] [Module R M] {n : ℕ} (x : ⋀[R]^n M) :
+    x ∈ Submodule.span R (Set.range (ιMulti R n)) :=
+  ιMulti_span R n M ▸ Submodule.mem_top
 
 section Vanishing
 
@@ -373,8 +381,7 @@ theorem map_bijective {n : ℕ} {f : M →ₗ[R] N} (hf : Function.Bijective f) 
 submodule `W ≤ M`. -/
 theorem exists_finite_mem_range_map {n : ℕ} (X : ⋀[R]^n M) :
     ∃ W : Submodule R M, Module.Finite R W ∧ X ∈ LinearMap.range (map n W.subtype) := by
-  have hX : X ∈ Submodule.span R (Set.range (ιMulti R n)) := by rw [ιMulti_span]; trivial
-  induction hX using Submodule.span_induction with
+  induction mem_span_ιMulti X using Submodule.span_induction with
   | mem x hx =>
     obtain ⟨v, rfl⟩ := hx
     refine ⟨Submodule.span R (Set.range v), Module.Finite.span_of_finite R (Set.finite_range v),

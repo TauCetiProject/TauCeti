@@ -31,6 +31,12 @@ converse, the affine function `t ↦ t - a` is the restriction to `(a, b)` of th
 `(b - a) - |t - b|`, which lies in `W^{1,p}_0(a, 2b - a)`, and restriction maps `W^{1,p}_0` of a
 larger open set missing `Γ` into `W^{1,p}_Γ` (`TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule`).
 
+The two one-endpoint spaces together give the remaining boundary part, `Γ = ∅`: for finite `p`,
+`W^{1,p}_∅(a, b)` is all of `W^{1,p}(a, b)`
+(`TauCeti.W1p.w1pVanishingOnSubmodule_empty_Ioo_eq_top`), since every class is a class vanishing at
+`a` plus an affine class vanishing at `b`. So the mixed problem with no Dirichlet part on an
+interval is the Neumann problem, tested on all of `W^{1,p}(a, b)`.
+
 The continuous representative of `u ∈ W^{1,p}(a, b)` is Hölder continuous of exponent `1 - 1/p`,
 
 `|u(t) - u(s)| ≤ |t - s|^{1 - 1/p} ‖u'‖_{Lᵖ(a,b)}`, `s, t ∈ [a, b]`
@@ -52,6 +58,8 @@ at `p = ∞`, and so on all of `W^{1,p}_{{a}}(a, b)`, since every class there va
 * `TauCeti.W1p.mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero` and
   `TauCeti.W1p.mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero`: the trace
   characterization of `W^{1,p}_{{a}}(a, b)` and `W^{1,p}_{{b}}(a, b)` for finite `p`.
+* `TauCeti.W1p.w1pVanishingOnSubmodule_empty_Ioo_eq_top`: `W^{1,p}_∅(a, b) = W^{1,p}(a, b)` for
+  finite `p`.
 * `TauCeti.W1p.abs_intervalRepresentativeL_le_of_intervalTraceL_fst_eq_zero`,
   `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero` and their versions
   at `b`: the pointwise bound and the Poincaré–Friedrichs inequality.
@@ -206,6 +214,31 @@ theorem mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero (hp
     (disjoint_singleton_left.2 (by simp)) h0)
     (intervalLiftL_snd_zero_mem_w1pVanishingOnSubmodule hp hab
       (intervalTraceL hab u).1)
+  rwa [sub_add_cancel] at hmem
+
+/-- **No boundary part, no condition, on an interval.** For `1 ≤ p < ∞`, the space
+`W^{1,p}_∅(a, b)` of Sobolev functions vanishing on the empty boundary part is all of
+`W^{1,p}(a, b)`: every class is the sum of a class vanishing at `a` and the affine class with the
+same value at `a` that vanishes at `b`, and both lie in `W^{1,p}_∅(a, b)`. -/
+theorem w1pVanishingOnSubmodule_empty_Ioo_eq_top (hp : p ≠ ⊤) :
+    w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p ∅ = ⊤ := by
+  refine eq_top_iff.2 fun u _ ↦ ?_
+  rcases le_or_gt b a with hba | hab
+  · -- On an empty interval every class is zero.
+    have h0 : volume.restrict (Ioo a b) = 0 := by simp [Ioo_eq_empty_of_le hba]
+    have hu : u = 0 := ext_value <| Lp.ext <| by simp [h0, Filter.EventuallyEq]
+    exact hu ▸ zero_mem _
+  set c := (intervalTraceL hab u).1
+  have ha : u - intervalLiftL a b (c, 0) ∈
+      w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {a} := by
+    rw [mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero hp hab, map_sub,
+      intervalTraceL_intervalLiftL, Prod.fst_sub, sub_self]
+  have hb : intervalLiftL a b (c, 0) ∈
+      w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {b} := by
+    rw [mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero hp hab,
+      intervalTraceL_intervalLiftL]
+  have hmem := add_mem (w1pVanishingOnSubmodule_antitone (empty_subset _) ha)
+    (w1pVanishingOnSubmodule_antitone (empty_subset _) hb)
   rwa [sub_add_cancel] at hmem
 
 /-! ### Pointwise bounds and the Poincaré–Friedrichs inequality -/

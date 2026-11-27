@@ -17,10 +17,15 @@ From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x 
 one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
 `x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
 with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums. From `e² < (3 / 2) ^ 5`
+real cutoff `x` when passing between inclusive and strict prime sums. Conversely, `e < 3` yields
+`1 < log x` for every `x ≥ 3` (`Real.one_lt_log_of_three_le`). From `e² < (3 / 2) ^ 5`
 (Mathlib's `Real.exp_one_lt_d9`) one obtains `log (3 / 2) > 2 / 5`
 (`Real.two_fifths_lt_log_three_halves`), which locates the zero of the unoffset logarithmic
 integral below `3 / 2`.
+
+This file also records the explicit decimal lower bound `0.4054 < log (3 / 2)` and the numerical
+enclosure `-0.366513 ≤ log (log 2) ≤ -0.366512` for the iterated logarithm at `2`, used in
+logarithmic-integral estimates.
 
 Near `1` from below, `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`
 (`Real.abs_log_le_two_mul_one_sub`), which turns exponential decay of `1 - x` into exponential
@@ -38,17 +43,30 @@ at `y = log x / 4`: since `L² e^{−L/2}` peaks at `L = 4` with value `16 / e²
 logarithm is at most `16 √x / e²` for `x ≥ 1`. This bounds the prime powers that are not primes
 in explicit prime-counting estimates.
 
+In the other direction, a small logarithm bounds a power from above: if `log z ≤ L` and
+`n L ≤ ε` with `0 ≤ ε ≤ 1 / 2`, then `z^n ≤ 1 + 2 ε` for every real `z`
+(`TauCeti.pow_le_one_add_two_mul_of_log_le`), since `z^n ≤ |z^n| ≤ exp (n log z)`
+(`Real.abs_rpow_le_exp_log_mul`) and `exp ε ≤ 1 / (1 - ε) ≤ 1 + 2 ε`. This bounds the powers
+`ζ(s)^n` of a zeta function whose logarithm is bounded by an exponentially decaying function of
+`s`.
+
 ## Main results
 
+* `Real.one_lt_log_of_three_le`: `1 < log x` for `3 ≤ x`.
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.two_fifths_lt_log_three_halves`: `2 / 5 < log (3 / 2)`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
+* `TauCeti.lt_log_three_halves`: `0.4054 < log (3 / 2)`.
+* `TauCeti.le_log_log_two` and `TauCeti.log_log_two_le`: `-0.366513 ≤ log (log 2) ≤ -0.366512`.
 * `Real.abs_log_le_two_mul_one_sub`: `|log x| ≤ 2 (1 - x)` for `1 / 2 ≤ x ≤ 1`.
 * `Real.neg_log_le_sqrt_two_div`: `-log x ≤ sqrt (2 / x)` for every nonnegative real `x`.
 * `Real.posLog_le_sqrt_two_mul_abs`: `posLog x ≤ sqrt (2 * |x|)` for every real `x`.
 * `Real.sq_log_mul_exp_one_le_sixteen_mul_sqrt`: `(log x · e)² ≤ 16 √x` for `x ≥ 1`.
 * `Real.mul_log_natCast_div_le_log_of_pow_le_mul_pow`: a logarithmic bound from a
   cross-multiplied comparison of natural powers.
+* `TauCeti.pow_le_one_add_two_mul_of_log_le`: `z^n ≤ 1 + 2 ε` when `log z ≤ L`, `n L ≤ ε` and
+  `0 ≤ ε ≤ 1 / 2`.
+* `Real.log_sub_one_div_le_log`: `log a - 1 / m ≤ log m` for `0 ≤ m` and `0 ≤ a ≤ m + 1`.
 * `Real.sub_sq_div_two_le_log_one_add`: `u - u ^ 2 / 2 ≤ log (1 + u)` for `0 ≤ u`.
 * `TauCeti.Real.artanhPartial`, `TauCeti.Real.two_mul_artanhPartial_le_log`,
   `TauCeti.Real.log_le_two_mul_artanhPartial_add`,
@@ -60,6 +78,10 @@ in explicit prime-counting estimates.
 public section
 
 namespace Real
+
+/-- For `x ≥ 3`, `1 < log x`. -/
+theorem one_lt_log_of_three_le {x : ℝ} (hx : 3 ≤ x) : 1 < log x :=
+  (lt_log_iff_exp_lt (by linarith)).mpr (exp_one_lt_three.trans_le hx)
 
 /-- The natural logarithm of `4` is at most `2`. -/
 theorem log_four_le_two : log 4 ≤ 2 := by
@@ -178,7 +200,69 @@ theorem sub_sq_div_two_le_log_one_add {u : ℝ} (hu : 0 ≤ u) :
     zero_div, sub_self, sub_nonneg] at hψ0
   exact hψ0
 
+/-- The logarithm grows by at most `1 / m` over a step of length one: for `0 ≤ m` and
+`0 ≤ a ≤ m + 1`, `log a - 1 / m ≤ log m`. At `m = 0` this reads `log a ≤ 0`. -/
+theorem log_sub_one_div_le_log {a m : ℝ} (ha : 0 ≤ a) (hm : 0 ≤ m) (h : a ≤ m + 1) :
+    log a - 1 / m ≤ log m := by
+  rcases hm.eq_or_lt with rfl | hm
+  · simpa using log_nonpos ha (by linarith)
+  rcases ha.eq_or_lt with rfl | ha
+  · have h1 := one_sub_inv_le_log_of_pos hm
+    rw [log_zero, one_div]
+    linarith [inv_pos.2 hm]
+  have h1 := log_le_sub_one_of_pos (div_pos ha hm)
+  rw [log_div ha.ne' hm.ne'] at h1
+  have h2 : a / m - 1 ≤ 1 / m := by
+    rw [div_sub_one hm.ne', div_le_div_iff_of_pos_right hm]
+    linarith
+  linarith
+
 end Real
+
+namespace TauCeti
+
+open _root_.Real
+
+/-- **A power with a small logarithm is at most `1 + 2 ε`.** For every real `z`, if `log z ≤ L`
+and `n L ≤ ε` with `0 ≤ ε ≤ 1 / 2`, then `z^n ≤ 1 + 2 ε`. -/
+theorem pow_le_one_add_two_mul_of_log_le {z L ε : ℝ} {n : ℕ} (hzL : log z ≤ L) (hL : n * L ≤ ε)
+    (hε0 : 0 ≤ ε) (hε : ε ≤ 1 / 2) : z ^ n ≤ 1 + 2 * ε := by
+  have h := abs_rpow_le_exp_log_mul z n
+  rw [rpow_natCast, mul_comm] at h
+  -- `z ^ n ≤ |z ^ n| ≤ exp (n log z) ≤ exp ε ≤ 1 / (1 - ε) ≤ 1 + 2 ε`.
+  calc z ^ n ≤ exp (n * log z) := (le_abs_self _).trans h
+    _ ≤ exp ε := exp_le_exp.2 ((mul_le_mul_of_nonneg_left hzL (Nat.cast_nonneg n)).trans hL)
+    _ ≤ 1 / (1 - ε) := exp_bound_div_one_sub_of_interval hε0 (by linarith)
+    _ ≤ 1 + 2 * ε := by
+      rw [div_le_iff₀ (by linarith)]
+      nlinarith [mul_nonneg hε0 (by linarith : (0 : ℝ) ≤ 1 - 2 * ε)]
+
+/-- Explicit decimal lower bound `0.4054 < log (3 / 2)`. -/
+theorem lt_log_three_halves : (0.4054 : ℝ) < log (3 / 2) := by
+  rw [lt_log_iff_exp_lt (by norm_num)]
+  have hb := exp_bound' (x := (0.4054 : ℝ)) (by norm_num) (by norm_num) (n := 6) (by decide)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+  norm_num at hb ⊢
+  linarith
+
+/-- Lower bound `-0.366513 ≤ log (log 2)`. -/
+theorem le_log_log_two : (-0.366513 : ℝ) ≤ log (log 2) := by
+  rw [le_log_iff_exp_le (log_pos one_lt_two), exp_neg]
+  refine (inv_le_of_inv_le₀ (by norm_num : (0 : ℝ) < 0.6931471803) ?_).trans log_two_gt_d9.le
+  refine le_trans ?_ (sum_le_exp_of_nonneg (x := (0.366513 : ℝ)) (by norm_num) 8)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial]
+  norm_num
+
+/-- Upper bound `log (log 2) ≤ -0.366512`. -/
+theorem log_log_two_le : log (log 2) ≤ -0.366512 := by
+  rw [log_le_iff_le_exp (log_pos one_lt_two), exp_neg]
+  refine log_two_lt_d9.le.trans (le_inv_of_le_inv₀ (exp_pos _) ?_)
+  have hb := exp_bound' (x := (0.366512 : ℝ)) (by norm_num) (by norm_num) (n := 8) (by decide)
+  simp only [Finset.sum_range_succ, Finset.range_zero, Finset.sum_empty, Nat.factorial] at hb
+  norm_num at hb
+  linarith
+
+end TauCeti
 
 namespace TauCeti.Real
 
@@ -192,6 +276,16 @@ theorem artanhPartial_def (n : ℕ) (x : ℝ) :
     artanhPartial n x = ∑ i ∈ Finset.range n, x ^ (2 * i + 1) / (2 * (i : ℝ) + 1) :=
   (rfl)
 
+/-- The empty `artanh` partial sum vanishes. -/
+@[simp]
+theorem artanhPartial_zero (x : ℝ) : artanhPartial 0 x = 0 := by
+  simp [artanhPartial_def]
+
+/-- Successor recurrence for `TauCeti.Real.artanhPartial`. -/
+theorem artanhPartial_succ (n : ℕ) (x : ℝ) :
+    artanhPartial (n + 1) x = artanhPartial n x + x ^ (2 * n + 1) / (2 * (n : ℝ) + 1) := by
+  simp [artanhPartial_def, Finset.sum_range_succ]
+
 private theorem artanh_arg_spec {a : ℝ} (ha : 1 ≤ a) :
     0 ≤ (a - 1) / (a + 1) ∧ (a - 1) / (a + 1) < 1 ∧
       (1 + (a - 1) / (a + 1)) / (1 - (a - 1) / (a + 1)) = a := by
@@ -202,19 +296,19 @@ private theorem artanh_arg_spec {a : ℝ} (ha : 1 ≤ a) :
 
 /-- Lower rational enclosure `2 * artanhPartial n ((a - 1) / (a + 1)) ≤ log a` for `1 ≤ a`. -/
 theorem two_mul_artanhPartial_le_log {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
-    2 * artanhPartial n ((a - 1) / (a + 1)) ≤ Real.log a := by
+    2 * artanhPartial n ((a - 1) / (a + 1)) ≤ _root_.Real.log a := by
   obtain ⟨hx0, hx1, hdiv⟩ := artanh_arg_spec ha
-  have hle := Real.sum_range_le_log_div hx0 hx1 n
+  have hle := _root_.Real.sum_range_le_log_div hx0 hx1 n
   rw [hdiv] at hle
   rw [artanhPartial_def]
   linarith
 
 /-- Upper rational enclosure of `log a` for `1 ≤ a` via `artanhPartial` and a geometric tail. -/
 theorem log_le_two_mul_artanhPartial_add {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
-    Real.log a ≤ 2 * (artanhPartial n ((a - 1) / (a + 1)) +
+    _root_.Real.log a ≤ 2 * (artanhPartial n ((a - 1) / (a + 1)) +
       ((a - 1) / (a + 1)) ^ (2 * n + 1) / (1 - ((a - 1) / (a + 1)) ^ 2)) := by
   obtain ⟨hx0, hx1, hdiv⟩ := artanh_arg_spec ha
-  have hle := Real.log_div_le_sum_range_add hx0 hx1 n
+  have hle := _root_.Real.log_div_le_sum_range_add hx0 hx1 n
   rw [hdiv] at hle
   rw [artanhPartial_def]
   linarith
@@ -223,23 +317,23 @@ theorem log_le_two_mul_artanhPartial_add {a : ℝ} (ha : 1 ≤ a) (n : ℕ) :
 tail. -/
 theorem neg_two_mul_artanhPartial_add_le_log {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
     -2 * (artanhPartial n ((1 - a) / (1 + a)) +
-      ((1 - a) / (1 + a)) ^ (2 * n + 1) / (1 - ((1 - a) / (1 + a)) ^ 2)) ≤ Real.log a := by
+      ((1 - a) / (1 + a)) ^ (2 * n + 1) / (1 - ((1 - a) / (1 + a)) ^ 2)) ≤ _root_.Real.log a := by
   have hinv : 1 ≤ a⁻¹ := one_le_inv₀ ha0 |>.mpr ha1
   have harg : (a⁻¹ - 1) / (a⁻¹ + 1) = (1 - a) / (1 + a) := by
     field_simp [ha0.ne']
   have hle := log_le_two_mul_artanhPartial_add hinv n
-  rw [Real.log_inv, harg] at hle
+  rw [_root_.Real.log_inv, harg] at hle
   linarith
 
 /-- Upper rational enclosure `log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a))` for `0 < a ≤ 1`.
 -/
 theorem log_le_neg_two_mul_artanhPartial {a : ℝ} (ha0 : 0 < a) (ha1 : a ≤ 1) (n : ℕ) :
-    Real.log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a)) := by
+    _root_.Real.log a ≤ -2 * artanhPartial n ((1 - a) / (1 + a)) := by
   have hinv : 1 ≤ a⁻¹ := one_le_inv₀ ha0 |>.mpr ha1
   have harg : (a⁻¹ - 1) / (a⁻¹ + 1) = (1 - a) / (1 + a) := by
     field_simp [ha0.ne']
   have hle := two_mul_artanhPartial_le_log hinv n
-  rw [Real.log_inv, harg] at hle
+  rw [_root_.Real.log_inv, harg] at hle
   linarith
 
 end TauCeti.Real

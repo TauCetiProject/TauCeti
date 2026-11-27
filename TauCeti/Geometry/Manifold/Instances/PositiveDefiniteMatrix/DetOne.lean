@@ -10,12 +10,14 @@ public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.LinearAlgebra.Matrix.Hermitian.TraceZero
 import TauCeti.Analysis.Calculus.ContDiff.Matrix
 import TauCeti.Analysis.Normed.Algebra.MatrixExponential
+import TauCeti.Geometry.Manifold.ContMDiff.Submodule
 import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Geometry.Manifold.RegularValue.Level
 import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
+import TauCeti.LinearAlgebra.FiniteDimensional.SelfAdjoint
 
 /-!
 # The positive-definite matrices of determinant one
@@ -62,6 +64,8 @@ To state or use these results, `open scoped Matrix.Norms.L2Operator` and enable
   `C^k` into the cone.
 * `Matrix.traceZeroExpDiffeomorph`: the exponential coordinates `X ↦ exp X` on `P₁`, with inverse
   the matrix logarithm.
+* `Matrix.PosDefDetOne.unitaryConj`: conjugation `P ↦ V P Vᴴ` by a unitary matrix, a
+  diffeomorphism of `P₁` since `det (V P Vᴴ) = det P`.
 
 ## References
 
@@ -194,9 +198,6 @@ private theorem exists_charts_of_isEmpty [IsEmpty n] :
 real part of the determinant, for which its inclusion into the cone is an analytic embedding. -/
 private theorem exists_charts_of_nonempty [Nonempty n] :
     ∃ c : ChartedSpace (Model n 𝕜) (PosDefDetOne n 𝕜), IsEmbeddedAtlas c := by
-  -- Mathlib gives the finite dimension through the submodule of self-adjoint elements.
-  have : FiniteDimensional ℝ (selfAdjoint (Matrix n n 𝕜)) :=
-    FiniteDimensional.finiteDimensional_submodule (selfAdjoint.submodule ℝ (Matrix n n 𝕜))
   have hfm (P : posDefOpens n 𝕜) (_ : reDet P = 1) :
       ContMDiffAt 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) 𝓘(ℝ, ℝ) ω reDet P :=
     contMDiff_reDet.contMDiffAt
@@ -310,16 +311,12 @@ def traceZeroExpDiffeomorph (k : ℕ∞ω) :
         (F := selfAdjoint (Matrix n n 𝕜)) _
     exact PosDefDetOne.contMDiff_subtypeVal_comp_iff.1
       ((hermitianExpDiffeomorph n 𝕜 k).contMDiff.comp hι.contMDiff)
-  contMDiff_invFun := by
-    -- Mathlib gives the finite dimension through the submodule of self-adjoint elements.
-    have : FiniteDimensional ℝ (selfAdjoint (Matrix n n 𝕜)) :=
-      FiniteDimensional.finiteDimensional_submodule (selfAdjoint.submodule ℝ (Matrix n n 𝕜))
-    -- A continuous linear projection onto the trace-free subspace reads the inverse, a map into
-    -- the Hermitian matrices, as a map into that subspace.
-    obtain ⟨π, hπ⟩ := Submodule.ClosedComplemented.of_finiteDimensional (traceZeroSelfAdjoint n 𝕜)
-    refine (π.contDiff.contMDiff.comp ((hermitianExpDiffeomorph n 𝕜 k).symm.contMDiff.comp
-      PosDefDetOne.contMDiff_subtypeVal)).congr fun P ↦ ?_
-    exact (hπ ⟨_, _⟩).symm
+  contMDiff_invFun :=
+    -- The inverse is a map into the Hermitian matrices with values in the finite-dimensional,
+    -- hence complemented, trace-free subspace.
+    ((hermitianExpDiffeomorph n 𝕜 k).symm.contMDiff.comp
+      PosDefDetOne.contMDiff_subtypeVal).codRestrict_submodule
+        (.of_finiteDimensional (traceZeroSelfAdjoint n 𝕜)) _
 
 /-- The underlying matrix of the exponential coordinates is the matrix exponential. -/
 @[simp]
@@ -335,5 +332,50 @@ theorem coe_traceZeroExpDiffeomorph_symm_apply (k : ℕ∞ω) (P : PosDefDetOne 
     (((traceZeroExpDiffeomorph n 𝕜 k).symm P : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) =
       cfc Real.log ((P.val : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) :=
   coe_hermitianExpDiffeomorph_symm_apply k _
+
+/-! ### Unitary conjugation -/
+
+namespace PosDefDetOne
+
+variable (n 𝕜) in
+/-- **Unitary conjugation of the positive-definite matrices of determinant one**: for a unitary
+matrix `V` (an orthogonal matrix when `𝕜 = ℝ`), `P ↦ V P Vᴴ` is a diffeomorphism of the
+positive-definite matrices of determinant one onto themselves, whose inverse is conjugation by `Vᴴ`.
+It is the restriction of the conjugation `Matrix.posDefUnitaryConj` of the positive-definite cone,
+since `det (V P Vᴴ) = det P`. The regularity order `k` can be arbitrary, including analytic. -/
+def unitaryConj (k : ℕ∞ω) (V : unitaryGroup n 𝕜) :
+    PosDefDetOne n 𝕜 ≃ₘ^k⟮𝓘(ℝ, Model n 𝕜), 𝓘(ℝ, Model n 𝕜)⟯ PosDefDetOne n 𝕜 where
+  toEquiv := (posDefUnitaryConj n 𝕜 k V).toEquiv.subtypeEquiv fun P ↦ by
+    rw [Diffeomorph.coe_toEquiv, coe_posDefUnitaryConj_apply,
+      ← inv_eq_left_inv (Unitary.coe_star_mul_self V), det_conj Unitary.isUnit_coe]
+  contMDiff_toFun := contMDiff_subtypeVal_comp_iff.1
+    ((posDefUnitaryConj n 𝕜 k V).contMDiff.comp contMDiff_subtypeVal)
+  contMDiff_invFun := contMDiff_subtypeVal_comp_iff.1
+    ((posDefUnitaryConj n 𝕜 k V).symm.contMDiff.comp contMDiff_subtypeVal)
+
+/-- Conjugation of a positive-definite matrix of determinant one is its conjugation in the
+positive-definite cone. -/
+@[simp]
+theorem coe_unitaryConj_apply (k : ℕ∞ω) (V : unitaryGroup n 𝕜) (P : PosDefDetOne n 𝕜) :
+    (unitaryConj n 𝕜 k V P : posDefOpens n 𝕜) = posDefUnitaryConj n 𝕜 k V P := (rfl)
+
+/-- The inverse of conjugation by `V` is conjugation by `Vᴴ`. -/
+@[simp]
+theorem unitaryConj_symm_apply (k : ℕ∞ω) (V : unitaryGroup n 𝕜) (P : PosDefDetOne n 𝕜) :
+    (unitaryConj n 𝕜 k V).symm P = unitaryConj n 𝕜 k (star V) P :=
+  Subtype.ext (posDefUnitaryConj_symm_apply k V P.val)
+
+/-- Conjugation by the identity matrix is the identity. -/
+@[simp]
+theorem unitaryConj_one_apply (k : ℕ∞ω) (P : PosDefDetOne n 𝕜) : unitaryConj n 𝕜 k 1 P = P :=
+  Subtype.ext (posDefUnitaryConj_one_apply k P.val)
+
+/-- Conjugation is an action of the unitary group: conjugating by `V V'` is conjugating by `V'` and
+then by `V`. -/
+theorem unitaryConj_mul_apply (k : ℕ∞ω) (V V' : unitaryGroup n 𝕜) (P : PosDefDetOne n 𝕜) :
+    unitaryConj n 𝕜 k (V * V') P = unitaryConj n 𝕜 k V (unitaryConj n 𝕜 k V' P) :=
+  Subtype.ext (posDefUnitaryConj_mul_apply k V V' P.val)
+
+end PosDefDetOne
 
 end Matrix
