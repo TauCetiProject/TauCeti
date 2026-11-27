@@ -27,8 +27,8 @@ set-theoretic API for these arguments.
   some `n`.
 * `Function.forwardOrbit_eq_insert`: the forward orbit of `x` is `x` together with the forward
   orbit of `f x`.
-* `Function.forwardOrbit_subset_iff_mapsTo`: the forward orbit of `x` is the smallest set
-  containing `x` and mapped into itself by `f`.
+* `Set.MapsTo.forwardOrbit_subset_iff`: the forward orbit of `x` is the smallest set containing
+  `x` and mapped into itself by `f`.
 * `Function.Semiconj.image_forwardOrbit`: a semiconjugacy `g` from `fa` to `fb` maps the forward
   orbit of `x` under `fa` onto the forward orbit of `g x` under `fb`.
 
@@ -77,7 +77,7 @@ theorem apply_mem_forwardOrbit (f : α → α) (x : α) : f x ∈ forwardOrbit f
   iterate_mem_forwardOrbit f x 1
 
 /-- The forward orbit of `x` is the smallest set containing `x` and mapped into itself by `f`. -/
-theorem forwardOrbit_subset_iff_mapsTo {s : Set α} (hs : MapsTo f s s) :
+theorem _root_.Set.MapsTo.forwardOrbit_subset_iff {s : Set α} (hs : MapsTo f s s) :
     forwardOrbit f x ⊆ s ↔ x ∈ s :=
   ⟨fun h ↦ h (self_mem_forwardOrbit f x), fun hx _ ⟨n, hn⟩ ↦ hn ▸ hs.iterate n hx⟩
 
@@ -87,7 +87,7 @@ theorem mapsTo_forwardOrbit (f : α → α) (x : α) : MapsTo f (forwardOrbit f 
 
 theorem forwardOrbit_subset_of_mem (hy : y ∈ forwardOrbit f x) :
     forwardOrbit f y ⊆ forwardOrbit f x :=
-  (forwardOrbit_subset_iff_mapsTo (mapsTo_forwardOrbit f x)).2 hy
+  (mapsTo_forwardOrbit f x).forwardOrbit_subset_iff.2 hy
 
 theorem forwardOrbit_apply_iterate_subset (f : α → α) (x : α) (n : ℕ) :
     forwardOrbit f (f^[n] x) ⊆ forwardOrbit f x :=
@@ -103,10 +103,6 @@ theorem forwardOrbit_eq_insert (f : α → α) (x : α) :
   rintro _ ⟨_ | n, rfl⟩
   · exact mem_insert _ _
   · exact mem_insert_of_mem _ ⟨n, (iterate_succ_apply f n x).symm⟩
-
-/-- The forward orbit of `f x` is the image of the forward orbit of `x` under `f`. -/
-theorem forwardOrbit_apply (f : α → α) (x : α) : forwardOrbit f (f x) = f '' forwardOrbit f x := by
-  simp only [forwardOrbit, ← range_comp, comp_def, ← iterate_succ_apply' f, iterate_succ_apply]
 
 /-- The forward orbit of `x` under an iterate `f^[k]` is contained in its forward orbit under
 `f`. -/
@@ -128,5 +124,9 @@ orbit of `g x` under `fb`. -/
 theorem Semiconj.image_forwardOrbit {fa : α → α} {fb : β → β} {g : α → β}
     (h : Semiconj g fa fb) (x : α) : g '' forwardOrbit fa x = forwardOrbit fb (g x) := by
   simp only [forwardOrbit, ← range_comp, comp_def, (h.iterate_right _).eq]
+
+/-- The forward orbit of `f x` is the image of the forward orbit of `x` under `f`. -/
+theorem forwardOrbit_apply (f : α → α) (x : α) : forwardOrbit f (f x) = f '' forwardOrbit f x :=
+  (Semiconj.image_forwardOrbit (Commute.refl f) x).symm
 
 end Function

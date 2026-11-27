@@ -14,8 +14,9 @@ public import TauCeti.Dynamics.ForwardOrbit
 A point `x` is *preperiodic* for a self-map `f : α → α` when some iterate `f^[m] x` is a periodic
 point of `f`, that is, `f^[m + n] x = f^[m] x` for some `m` and some `n ≥ 1`. Equivalently, its
 forward orbit is finite. Points that are not preperiodic are called *wandering*. In arithmetic
-dynamics the preperiodic points of a rational map over a number field are exactly the points of
-canonical height zero, and Northcott's theorem shows that they are finite in number.
+dynamics, for a rational map of degree `d ≥ 2` defined over a number field `K`, the preperiodic
+points are the points of canonical height zero, and Northcott's theorem shows that only finitely
+many of them are `K`-rational.
 
 ## Main definitions
 
@@ -35,7 +36,7 @@ canonical height zero, and Northcott's theorem shows that they are finite in num
 * `Function.Semiconj.isPreperiodicPt`: a semiconjugacy maps preperiodic points to preperiodic
   points; `Function.Semiconj.isPreperiodicPt_iff`: an injective one also reflects them.
 * `Function.isPreperiodicPt_pow_iff_isOfFinOrder`: for `d ≥ 2`, the preperiodic points of
-  `g ↦ g ^ d` on a cancellative monoid are its elements of finite order.
+  `g ↦ g ^ d` on a left-cancellative monoid are its elements of finite order.
 
 ## References
 
@@ -98,6 +99,7 @@ theorem periodicPts_subset_preperiodicPts (f : α → α) : periodicPts f ⊆ pr
   fun _ ↦ isPreperiodicPt_of_mem_periodicPts
 
 /-- `f^[k] x` is preperiodic for `f` iff `x` is. -/
+@[simp]
 theorem isPreperiodicPt_apply_iterate_iff (k : ℕ) :
     IsPreperiodicPt f (f^[k] x) ↔ IsPreperiodicPt f x := by
   refine ⟨fun ⟨m, hm⟩ ↦ ⟨m + k, by rwa [iterate_add_apply]⟩, fun ⟨m, hm⟩ ↦ ⟨m, ?_⟩⟩
@@ -143,9 +145,8 @@ theorem isPreperiodicPt_iff_finite_forwardOrbit :
     IsPreperiodicPt f x ↔ (forwardOrbit f x).Finite := by
   refine ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · -- Past the preperiod `m`, the iterates repeat with period `n`.
-    obtain ⟨m, n, hn, h⟩ := hx.exists_iterate_add_eq
-    have hp : IsPeriodicPt f n (f^[m] x) := by
-      rw [IsPeriodicPt, IsFixedPt, ← iterate_add_apply, add_comm, h]
+    obtain ⟨m, hm⟩ := hx
+    obtain ⟨n, hn, hp⟩ := mem_periodicPts.1 hm
     refine ((finite_Iio (m + n)).image fun k ↦ f^[k] x).subset fun y hy ↦ ?_
     obtain ⟨k, rfl⟩ := mem_forwardOrbit.1 hy
     rcases lt_or_ge k m with hk | hk
@@ -238,10 +239,10 @@ theorem isPreperiodicPt_pow_iff_isOfFinOrder {G : Type*} [LeftCancelMonoid G] {d
     (hd : 1 < d) {g : G} : IsPreperiodicPt (· ^ d) g ↔ IsOfFinOrder g := by
   refine ⟨fun hg ↦ ?_, fun hg ↦ hg.isPreperiodicPt_pow d⟩
   obtain ⟨m, n, hn, h⟩ := hg.exists_iterate_add_eq
-  -- `g ^ d ^ (m + n) = g ^ d ^ m` with `d ^ m < d ^ (m + n)`, so `g ^ (d ^ (m + n) - d ^ m) = 1`.
+  -- `g ^ d ^ (m + n) = g ^ d ^ m` forces `d ^ (m + n) = d ^ m` unless `g` has finite order.
   simp only [pow_iterate] at h
-  have hlt : d ^ m < d ^ (m + n) := Nat.pow_lt_pow_right hd (by omega)
-  refine isOfFinOrder_iff_pow_eq_one.2 ⟨d ^ (m + n) - d ^ m, Nat.sub_pos_of_lt hlt, ?_⟩
-  rw [← mul_left_cancel_iff (a := g ^ d ^ m), ← pow_add, Nat.add_sub_cancel' hlt.le, h, mul_one]
+  by_contra hfin
+  have := Nat.pow_right_injective hd ((injective_pow_iff_not_isOfFinOrder.2 hfin) h)
+  omega
 
 end Function

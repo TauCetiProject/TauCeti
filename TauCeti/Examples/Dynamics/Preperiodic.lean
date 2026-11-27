@@ -52,7 +52,7 @@ theorem mapsTo_sqSubOne : MapsTo sqSubOne {0, -1} {0, -1} := by
 
 /-- Under `z ↦ z² - 1` on `ℤ`, the forward orbit of `1` is `{1, 0, -1}`. -/
 theorem forwardOrbit_one : forwardOrbit sqSubOne 1 = {1, 0, -1} := by
-  refine (forwardOrbit_subset_iff_mapsTo ?_).2 (mem_insert _ _) |>.antisymm ?_
+  refine (MapsTo.forwardOrbit_subset_iff ?_).2 (mem_insert _ _) |>.antisymm ?_
   · rintro z (rfl | rfl | rfl) <;> simp [sqSubOne_apply]
   · refine insert_subset (self_mem_forwardOrbit _ _) (insert_subset ?_ ?_)
     · exact mem_forwardOrbit.2 ⟨1, by simp [sqSubOne_apply]⟩
@@ -67,10 +67,10 @@ theorem isPreperiodicPt_one : IsPreperiodicPt sqSubOne 1 :=
 theorem one_notMem_periodicPts : (1 : ℤ) ∉ periodicPts sqSubOne := by
   intro h
   obtain ⟨n, hn, hper⟩ := mem_periodicPts.1 h
-  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hn
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn.ne'
   have hmem := mapsTo_sqSubOne.iterate k (show sqSubOne 1 ∈ ({0, -1} : Set ℤ) by
     simp [sqSubOne_apply])
-  rw [← iterate_succ_apply, show k.succ = 0 + k + 1 by omega, hper.eq] at hmem
+  rw [← iterate_succ_apply, hper.eq] at hmem
   simp at hmem
 
 theorem two_le_iterate_sqSubOne_two (n : ℕ) : 2 ≤ sqSubOne^[n] 2 := by
