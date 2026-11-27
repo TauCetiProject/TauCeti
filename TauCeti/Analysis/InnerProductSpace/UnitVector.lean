@@ -16,11 +16,15 @@ representation is close to `1` wherever `ρ g` moves `ξ` little. For real unit 
 `⟪ξ, x⟫ ≥ 0`, the distance `‖x - ξ‖` is at most `√2` times the sine `‖x - ⟪ξ, x⟫ ξ‖` of the
 angle between them.
 
+Over `ℝ`, splitting `d` into its component `⟪d, e⟫ e` along a vector `e` of norm at most `1` and
+the remainder `d - ⟪d, e⟫ e` does not increase length: `⟪d, e⟫² + ‖d - ⟪d, e⟫ e‖² ≤ ‖d‖²`.
+
 ## Main results
 
 * `TauCeti.norm_inner_sub_one_le`: `‖⟪ξ, x⟫ - 1‖ ≤ ‖x - ξ‖` for a unit vector `ξ`.
 * `TauCeti.norm_sub_le_sqrt_two_mul_norm_sub_inner_smul`: for real unit vectors with
   `⟪ξ, x⟫ ≥ 0`, the chord `‖x - ξ‖` is at most `√2` times the sine `‖x - ⟪ξ, x⟫ ξ‖`.
+* `TauCeti.inner_sq_add_norm_sub_sq_le`: `⟪d, e⟫² + ‖d - ⟪d, e⟫ e‖² ≤ ‖d‖²` for `‖e‖ ≤ 1`.
 -/
 
 public section
@@ -53,5 +57,13 @@ theorem norm_sub_le_sqrt_two_mul_norm_sub_inner_smul {F : Type*} [NormedAddCommG
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).mp ?_
   rw [mul_pow, Real.sq_sqrt zero_le_two, h₁, h₂]
   nlinarith
+
+/-- For `‖e‖ ≤ 1`, the component `⟪d, e⟫` of `d` along `e` and the remainder `d - ⟪d, e⟫ e`
+together have length at most `‖d‖`. -/
+theorem inner_sq_add_norm_sub_sq_le {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+    (d : F) {e : F} (he : ‖e‖ ≤ 1) : ⟪d, e⟫_ℝ ^ 2 + ‖d - ⟪d, e⟫_ℝ • e‖ ^ 2 ≤ ‖d‖ ^ 2 := by
+  rw [norm_sub_sq_real, inner_smul_right, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
+  have : ‖e‖ ^ 2 ≤ 1 := pow_le_one₀ (norm_nonneg e) he
+  nlinarith [mul_le_mul_of_nonneg_left this (sq_nonneg ⟪d, e⟫_ℝ)]
 
 end TauCeti
