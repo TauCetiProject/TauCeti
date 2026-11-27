@@ -25,16 +25,18 @@ Write `e₀, e₁, e₂` for the standard basis of `ℝ³`. Here `SO(2)` is the 
 `TauCeti.Analysis.InnerProductSpace.Euclidean.AxisRotation`.
 
 The **lift** `TauCeti.axisSpinCLift : SO(2) → Spinᶜ(3)` is the lift
-`CliffordAlgebra.spinCCircle` of the rotations of the plane `⟨e₁, e₂⟩`, applied to the angle. On
-`θ ↦ exp(iθ)` it is `[exp(θ e₁e₂ / 2), exp(iθ / 2)]` (`CliffordAlgebra.spinCCircle_exp`), which
-closes up at `θ = 2π` only because both entries change sign. In the coordinate group
-`Spinᶜ(3)` of the positive-definite form, `spinCCircle` is taken on the pair `(e₂, e₁)`, for
-which the plane turns from `e₁` towards `e₂`. Its rotation is `g`
-(`TauCeti.toSpecialOrthogonal_axisSpinCLift_apply`), so it lifts the inclusion along the rotation
-homomorphism `Spinᶜ(3) → SO(3)` (`TauCeti.toSpecialOrthogonal_comp_axisSpinCLift`), and its
-determinant character is the angle (`TauCeti.det_axisSpinCLift`). So the determinant line of the
-associated `Spinᶜ` structure is expected to be the plane field, as a complex line; that
-identification of line bundles is not constructed here. Continuity is in
+`CliffordAlgebra.spinCCircle` of the rotations of the plane `⟨e₁, e₂⟩`, applied to the angle. In
+the coordinate group `Spinᶜ(3)` of the positive-definite form, `spinCCircle` is taken on the pair
+`(e₂, e₁)`, for which the plane turns from `e₁` towards `e₂`. So on `θ ↦ exp(iθ)` the lift is
+`[exp(θ e₂e₁ / 2), exp(iθ / 2)]`, with `exp(θ e₂e₁ / 2) = cos(θ / 2) + sin(θ / 2) e₂e₁`
+(`CliffordAlgebra.spinCCircle_exp`); this is the formula `[exp(θ e₁e₂ / 2), exp(iθ / 2)]` of the
+convention `v² = -‖v‖²`. It closes up at `θ = 2π` only because both entries change sign. Its
+rotation is `g` (`TauCeti.toSpecialOrthogonal_axisSpinCLift_apply`), so it lifts the inclusion
+along the rotation homomorphism `Spinᶜ(3) → SO(3)`
+(`TauCeti.toSpecialOrthogonal_comp_axisSpinCLift`), and its determinant character is the angle
+(`TauCeti.det_axisSpinCLift`). So the determinant line of the associated `Spinᶜ` structure is
+expected to be the plane field, as a complex line; that identification of line bundles is not
+constructed here. Continuity is in
 `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.AxisRotation`.
 
 ## Main definitions

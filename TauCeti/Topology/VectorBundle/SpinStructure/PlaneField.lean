@@ -38,7 +38,7 @@ the structure group of the oriented frame bundle from `SO(3)` to `SO(2)`
 (`TauCeti.OrthonormalFrameBundle.planeFieldFrameLift`).
 
 **The `Spinᶜ` structure.** The lift `TauCeti.axisSpinCLift : SO(2) → Spinᶜ(3)` of the rotations
-of the plane `⟨e₁, e₂⟩`, `exp(iθ) ↦ [exp(θ e₁e₂ / 2), exp(iθ / 2)]`, is a continuous homomorphism
+of the plane `⟨e₁, e₂⟩`, `exp(iθ) ↦ [exp(θ e₂e₁ / 2), exp(iθ / 2)]`, is a continuous homomorphism
 lifting the inclusion `SO(2) ⊆ SO(3)`. The **`Spinᶜ` structure of the plane field**,
 `TauCeti.OrthonormalFrameBundle.planeFieldSpinCStructure`, is the extension of the reduction
 along this lift: its principal bundle is `P ×_{SO(2)} Spinᶜ(3)` for the adapted frames `P`, and
