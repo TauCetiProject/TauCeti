@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import TauCeti.NumberTheory.Height.FamilyOverPairs
 import TauCeti.Analysis.InnerProductSpace.Gram.ChangeOfFamily
 import TauCeti.Analysis.Matrix.Ultra
+import TauCeti.Data.Matrix.Block
 
 /-!
 # Prime-adic bounds for scaled Gram determinants
@@ -67,14 +68,6 @@ theorem norm_map_det_gram_le_of_norm_inner_sum_smul_le_one
       (le_div_iff₀ (Real.rpow_pos_of_pos hp _)).2 (by simpa [mul_comm] using h)
     _ = (ι.prime : ℝ) ^ (a + b) := by rw [one_div, Real.rpow_neg hp.le, inv_inv]
 
-/-- A block change acts only on the original vectors of the scaled completion. -/
-private theorem sum_smul_fromBlocks_scaled {m n E : Type*} [Fintype m] [Fintype n]
-    [DecidableEq n] [AddCommMonoid E] [Module ℂ E] (U : Matrix m m ℂ) (γ : ℂ)
-    (x : m → E) (y : n → E) (i : m ⊕ n) :
-    (∑ j, fromBlocks U 0 0 (1 : Matrix n n ℂ) i j • Sum.elim x (fun j ↦ γ • y j) j) =
-      Sum.elim (fun i ↦ ∑ j, U i j • x j) (fun j ↦ γ • y j) i := by
-  cases i <;> simp [Fintype.sum_sum_type, Matrix.one_apply, ite_smul]
-
 /-- If changing the original vectors on the two sides and rescaling each auxiliary vector
 by `γ` makes all pairings integral, the norm of the scaled Gram determinant at `ι` is bounded
 by `ℓ ^ (a + b)`, where `a` and `b` control the conjugate and ordinary change determinants. -/
@@ -92,7 +85,7 @@ theorem norm_map_scaled_det_gram_le (ι : PrimePadicIso) {m n E : Type*}
   have h := ι.norm_map_det_gram_le_of_norm_inner_sum_smul_le_one
     (Sum.elim x (fun j ↦ γ • y j)) (fromBlocks U 0 0 1) (fromBlocks V 0 0 1)
     (by simpa [det_fromBlocks_zero₂₁] using hU) (by simpa [det_fromBlocks_zero₂₁] using hV)
-    (by simpa only [sum_smul_fromBlocks_scaled] using hpair)
+    (by simpa [sum_smul_fromBlocks_zero₁₂_zero₂₁, Matrix.one_apply, ite_smul] using hpair)
   have hscale := det_gram_smul (Sum.elim (fun _ : m ↦ 1) (fun _ : n ↦ γ)) (Sum.elim x y)
   have hv : (fun i ↦ Sum.elim (fun _ : m ↦ (1 : ℂ)) (fun _ : n ↦ γ) i • Sum.elim x y i) =
       Sum.elim x (fun j ↦ γ • y j) := by
