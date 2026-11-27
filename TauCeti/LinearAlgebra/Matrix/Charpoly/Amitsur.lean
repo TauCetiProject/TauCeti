@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.Matrix.Composition
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Algebra.Polynomial.Inductions
 import Mathlib.Algebra.Polynomial.Lifts
+import Mathlib.Data.Matrix.Basis
 import Mathlib.LinearAlgebra.TensorProduct.Tower
 import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.TensorProduct.Basic
@@ -30,10 +32,20 @@ lifting `det (ρ w) • 1` into `ρ(Λ)`:
 * `AlgHom.charpoly_coeff_mem_range_of_span` (**Amitsur's theorem**): if `Λ` is spanned over `B`
   by a set `S` on which every `ρ s` has characteristic polynomial with coefficients in
   `(algebraMap B A).range`, then the same holds for every `w : Λ`.
+* `AlgHom.charpoly_comp_map_coeff_mem_range` (**Amitsur's formula for block matrices**): if every
+  `ρ w` has characteristic polynomial with coefficients in `(algebraMap B A).range`, then so has
+  the block matrix `Matrix.comp N N n n A (P.map ρ)`, with blocks `ρ (P i j)`, of every square
+  matrix `P` over `Λ`.
 
 The proof of Amitsur's theorem works modulo `X ^ e` in `AdjoinRoot (X ^ e : A[X])` over the image
 `R` of `B[X]` in `AdjoinRoot (X ^ e : A[X])` and shows by descending induction on `j ≤ e` that
 adding `t ^ j • γ` to `β` preserves membership of `det (1 - t • f β)` in `R`.
+
+The block form applies Amitsur's theorem to the algebra `Matrix N N Λ`, which is spanned by the
+matrices `Matrix.single i j w` with a single nonzero entry. The block matrix of such a matrix is a
+product `c * r` of a column of blocks `c` and a row of blocks `r` with `r * c = ρ w` if `i = j` and
+`r * c = 0` otherwise, and `Matrix.charpoly_mul_comm'` relates the characteristic polynomials of
+`c * r` and `r * c` up to powers of `X`.
 
 ## References
 
@@ -41,6 +53,14 @@ adding `t ^ j • γ` to `β` preserves membership of `det (1 - t • f β)` in 
   Algebra **8** (1980), no. 3, 177–182.
 * G. Chenevier, *The p-adic analytic space of pseudocharacters of a profinite group and
   pseudorepresentations over arbitrary rings*, LMS Lecture Note Series **414** (2014), (1.5).
+
+## Provenance
+
+The reduction of the block form to matrices with a single nonzero entry (`Matrix.single i j w`),
+factored as a column of blocks times a row of blocks, follows
+`New.amitsur_charpoly_comp_coeff_mem_range` (file
+`src/New/Congruences/FirstOrder/RibetMethod.lean`) in grh-lean
+(https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
 public section
@@ -169,5 +189,47 @@ theorem charpoly_coeff_mem_range_of_span (ρ : Λ →ₐ[B] Matrix n n A) {S : S
     AdjoinRoot.mk_X_pow_eq_mk_iff.1 hq
   refine ⟨q.coeff (e - 1), ?_⟩
   simpa [e, coeff_map, coeff_reverse] using hagree (e - 1) (Nat.lt_succ_self _)
+
+/-- **Amitsur's formula for block matrices**: let `ρ : Λ →ₐ[B] Matrix n n A` be a `B`-algebra
+homomorphism such that the characteristic polynomial of every `ρ w` has all coefficients in the
+image of `B` in `A`. Then for every square matrix `P` over `Λ`, the block matrix
+`Matrix.comp N N n n A (P.map ρ)`, whose block at `(i, j)` is `ρ (P i j)`, has characteristic
+polynomial with all coefficients in the image of `B`. -/
+theorem charpoly_comp_map_coeff_mem_range {N : Type*} [Fintype N] [DecidableEq N]
+    (ρ : Λ →ₐ[B] Matrix n n A)
+    (hρ : ∀ (w : Λ) (k : ℕ), (ρ w).charpoly.coeff k ∈ (algebraMap B A).range)
+    (P : Matrix N N Λ) (k : ℕ) :
+    (Matrix.comp N N n n A (P.map ρ)).charpoly.coeff k ∈ (algebraMap B A).range := by
+  let φ : Matrix N N Λ →ₐ[B] Matrix (N × n) (N × n) A :=
+    (Matrix.compAlgEquiv N n A B).toAlgHom.comp ρ.mapMatrix
+  let S : Set (Matrix N N Λ) := Set.range fun x : N × N × Λ ↦ single x.1 x.2.1 x.2.2
+  have hS : Submodule.span B S = ⊤ := by
+    refine eq_top_iff.2 fun Q _ ↦ ?_
+    rw [matrix_eq_sum_single Q]
+    exact Submodule.sum_mem _ fun i _ ↦ Submodule.sum_mem _ fun j _ ↦
+      Submodule.subset_span ⟨(i, j, Q i j), rfl⟩
+  refine charpoly_coeff_mem_range_of_span φ hS ?_ P k
+  rintro _ ⟨⟨a, b, w⟩, rfl⟩ k
+  -- The block matrix of `single a b w` is a column of blocks times a row of blocks.
+  let c : Matrix (N × n) n A := of fun p u ↦ if p.1 = a ∧ p.2 = u then 1 else 0
+  let r : Matrix n (N × n) A := of fun u p ↦ if p.1 = b then ρ w u p.2 else 0
+  have hφ : φ (single a b w) = c * r := by
+    ext ⟨i, s⟩ ⟨j, t⟩
+    by_cases hi : a = i <;> by_cases hj : b = j <;>
+      simp [φ, c, r, Matrix.mul_apply, single, hi, hj, eq_comm]
+  have hrc : r * c = ρ (if a = b then w else 0) := by
+    ext u v
+    by_cases hab : a = b
+    · subst hab
+      simp [c, r, Matrix.mul_apply, Fintype.sum_prod_type, ite_and]
+    · simp [c, r, Matrix.mul_apply, Fintype.sum_prod_type, ite_and, hab]
+  have hmul := congrArg (fun p : A[X] ↦ p.coeff (k + Fintype.card n)) (charpoly_mul_comm' c r)
+  simp only [coeff_X_pow_mul', le_add_iff_nonneg_left, zero_le, ite_true,
+    Nat.add_sub_cancel] at hmul
+  rw [hφ, hmul]
+  split_ifs
+  · rw [hrc]
+    exact hρ _ _
+  · exact zero_mem _
 
 end AlgHom
