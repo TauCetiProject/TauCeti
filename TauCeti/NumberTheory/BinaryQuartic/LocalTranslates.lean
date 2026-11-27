@@ -87,6 +87,10 @@ section FractionField
 
 variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
 
+private theorem exists_uniformizer_unit {ϖ : R} (hϖ : Irreducible ϖ) :
+    ∃ π : Kˣ, algebraMap R K ϖ = π :=
+  ⟨Units.mk0 _ (IsFractionRing.to_map_eq_zero_iff.not.mpr hϖ.ne_zero), (Units.val_mk0 _).symm⟩
+
 variable [IsDomain R] [IsDiscreteValuationRing R]
 
 /-- Away from square divisibility of the discriminant, the only projective elements
@@ -95,9 +99,7 @@ theorem smul_mem_coefficientRange_iff_of_not_sq_dvd_disc {ϖ : R} (hϖ : Irreduc
     (f : BinaryQuartic R) (hf : ¬ϖ ^ 2 ∣ f.disc) (g : PGL(2, K)) :
     g • (algebraMap R K ∘ f) ∈ coefficientRange (algebraMap R K) ↔
       g ∈ (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage := by
-  let π := Units.mk0 (algebraMap R K ϖ)
-    (map_ne_zero_iff _ (IsFractionRing.injective R K) |>.2 hϖ.ne_zero)
-  have hπ : algebraMap R K ϖ = π := rfl
+  obtain ⟨π, hπ⟩ := exists_uniformizer_unit (K := K) hϖ
   refine ⟨fun hg ↦ ?_, fun hg ↦ (smul_mem_coefficientRange_iff hg _).mpr
     (comp_mem_coefficientRange _ _)⟩
   obtain ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ g
@@ -112,28 +114,9 @@ theorem finite_orbitWeightCosets_of_disc_ne_zero [Finite (IsLocalRing.ResidueFie
     {ϖ : R} (hϖ : Irreducible ϖ) (f : BinaryQuartic R) (hf : f.disc ≠ 0) :
     ((GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage.orbitWeightCosets
       (coefficientRange (algebraMap R K)) (algebraMap R K ∘ f)).Finite := by
-  let π := Units.mk0 (algebraMap R K ϖ)
-    (map_ne_zero_iff _ (IsFractionRing.injective R K) |>.2 hϖ.ne_zero)
-  have hπ : algebraMap R K ϖ = π := rfl
-  let Γ := (GeneralLinearGroup.map (n := Fin 2) (algebraMap R K)).projectiveImage
-  let mk := Quotient.mk (QuotientGroup.rightRel Γ)
-  let cosets (k : ℕ) := mk '' doubleCoset (ProjGenLinGroup.mk (diagGL ![1, π ^ k])) Γ Γ
-  have hfinite (k : ℕ) : (cosets k).Finite := by
-    rcases eq_or_ne k 0 with rfl | hk
-    · have hzero : cosets 0 = mk '' (Γ : Set PGL(2, K)) := by
-        exact congrArg (Set.image mk) (doubleCoset_mk_diagGL_pow_zero (R := R) (π := π))
-      rw [hzero]
-      apply (Set.finite_singleton (mk 1)).subset
-      rintro _ ⟨g, hg, rfl⟩
-      exact Set.mem_singleton_iff.mpr (Quotient.sound
-        (QuotientGroup.rightRel_apply.mpr (by simpa using Γ.inv_mem hg)))
-    · have hcard := natCard_image_mk_rightRel_doubleCoset_mk_diagGL_pow hϖ hπ hk
-      have hq : Nat.card (IsLocalRing.ResidueField R) ≠ 0 := Nat.card_pos.ne'
-      have : Finite (cosets k) := Nat.finite_of_card_ne_zero <|
-        hcard.trans_ne (mul_ne_zero (pow_ne_zero _ hq) (by omega))
-      exact Set.toFinite _
+  obtain ⟨π, hπ⟩ := exists_uniformizer_unit (K := K) hϖ
   refine ((Set.finite_le_nat (multiplicity ϖ f.disc)).biUnion
-    (fun k _ ↦ hfinite k)).subset ?_
+    (fun k _ ↦ finite_image_mk_rightRel_doubleCoset_mk_diagGL_pow hϖ hπ k)).subset ?_
   intro c hc
   obtain ⟨g, hg, rfl⟩ := Subgroup.mem_orbitWeightCosets.mp hc
   obtain ⟨k, hk⟩ := exists_mem_doubleCoset_mk_diagGL_pow hϖ hπ g
