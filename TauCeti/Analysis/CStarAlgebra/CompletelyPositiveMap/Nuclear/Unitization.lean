@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Nuclear
 public import TauCeti.Analysis.CStarAlgebra.CompletelyPositiveMap.Unitization
 import Mathlib.Tactic.FinCases
-import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Algebra.Algebra.Unitization
 
 /-!
@@ -25,9 +24,6 @@ direct sum of matrix algebras. In particular the unitization of a nuclear C⋆-a
 
 ## Main declarations
 
-* `CompletelyPositiveMap.norm_unitization_apply_le`: the unital extension of a completely positive
-  contraction is a contraction.
-* `CompletelyPositiveMap.unitization_comp`: unital extension commutes with composition.
 * `CompletelyPositiveMap.IsNuclearContraction.unitization`: the unital extension of a nuclear
   contraction is a nuclear contraction.
 * `TauCeti.CStarAlgebra.isNuclear_unitization`: `A⁺¹` is nuclear when `A` is.
@@ -66,7 +62,10 @@ private noncomputable def prodComplexStarAlgEquiv (n : ℕ) :
   map_star' p := funext fun i ↦ by
     fin_cases i
     · rfl
-    · change CStarMatrix.toOneByOne (Fin 1) ℂ ℂ (star p.2) =
+    · -- the goal's `star` lives on `M_{![n, 1] 1}`, which is `M_1` only after unfolding, so
+      -- restate it at `M_1`; `map_star` still finds no `StarHomClass` instance for `toOneByOne`
+      -- there, so use the structure field directly
+      change CStarMatrix.toOneByOne (Fin 1) ℂ ℂ (star p.2) =
         star (CStarMatrix.toOneByOne (Fin 1) ℂ ℂ p.2)
       exact (CStarMatrix.toOneByOne (Fin 1) ℂ ℂ).map_star' p.2
   map_smul' c p := funext fun i ↦ by
@@ -83,22 +82,9 @@ end TauCeti.CStarAlgebra
 
 namespace CompletelyPositiveMap
 
-variable {A B C : Type*}
+variable {A B : Type*}
   [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-  [NonUnitalCStarAlgebra C] [PartialOrder C] [StarOrderedRing C]
-
-/-- The unital extension of a completely positive contraction is a contraction. -/
-theorem norm_unitization_apply_le (φ : A →CP B) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖) (x : A⁺¹) :
-    ‖φ.unitization hφ x‖ ≤ ‖x‖ :=
-  (CompletelyPositiveMapClass.norm_map_one_le_one_iff _).1
-    (by rw [unitization_apply_one]; exact CStarRing.norm_one_le) x
-
-/-- The unital extension of a composite is the composite of the unital extensions. -/
-theorem unitization_comp (φ : A →CP B) (ψ : B →CP C) (hφ : ∀ a, ‖φ a‖ ≤ ‖a‖)
-    (hψ : ∀ b, ‖ψ b‖ ≤ ‖b‖) (h : ∀ a, ‖ψ.comp φ a‖ ≤ ‖a‖) :
-    (ψ.comp φ).unitization h = (ψ.unitization hψ).comp (φ.unitization hφ) := by
-  ext x <;> simp
 
 /-- **Unitization of nuclear contractions.** The unital extension `λ + a ↦ λ + φ a` of a nuclear
 contraction `φ` is a nuclear contraction. -/
@@ -126,9 +112,7 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing
 
 /-- **The unitization of a nuclear C⋆-algebra is nuclear.** The unital extension of the identity
 of `A` is the identity of `A⁺¹`. -/
-instance isNuclear_unitization [IsNuclear A] : IsNuclear A⁺¹ := by
-  refine ⟨?_⟩
-  convert (IsNuclear.isNuclearContraction_id (A := A)).unitization using 1
-  ext x <;> simp
+instance isNuclear_unitization [IsNuclear A] : IsNuclear A⁺¹ :=
+  ⟨by simpa using (IsNuclear.isNuclearContraction_id (A := A)).unitization⟩
 
 end TauCeti.CStarAlgebra
