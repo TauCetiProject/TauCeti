@@ -318,9 +318,6 @@ variable {X : TopCat.{w}} [T2Space X] {C : Type u} [Category.{v} C] [Abelian C]
 
 variable (X C) in
 /-- The homotopy K-sheaves, as a property of K-presheaves of cochain complexes. -/
--- The body is exposed so that the property is definitionally `IsHomotopyKSheaf`
--- (`isHomotopyKSheafProperty_iff`).
-@[expose]
 def isHomotopyKSheafProperty : ObjectProperty (KPresheaf (CochainComplex C ℤ) X) :=
   fun F ↦ F.IsHomotopyKSheaf
 
