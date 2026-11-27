@@ -69,6 +69,8 @@ normality of it is equivalent to freeness of the action of the image.
 
 ## Main results
 
+* `MulAction.finiteIndex_stabilizer`: the stabilizer of a point of a finite type has finite
+  index.
 * `MonoidHom.stabilizerMap`: restriction of a compatible homomorphism to point stabilizers,
   with `MonoidHom.stabilizerMap_surjective` and `MonoidHom.ker_stabilizerMap` describing its
   surjectivity and kernel.
@@ -88,8 +90,9 @@ normality of it is equivalent to freeness of the action of the image.
 * `TauCeti.smul_left_inj_of_smul_eq_self_imp`,
   `TauCeti.op_smul_left_inj_of_op_smul_eq_self_imp`: pointwise orbit cancellation from
   trivial stabilizer at a point, for left and right (`Gᵐᵒᵖ`) actions.
-* `TauCeti.stabilizer_finset_eq_bot_of_prime_card`: a group of prime order acts freely by
-  translation on its nonempty proper finite subsets.
+* `TauCeti.stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive`: a transitive group of
+  prime order acts freely on the nonempty proper finite subsets, with
+  `TauCeti.stabilizer_finset_eq_bot_of_prime_card` the case of translation on the group itself.
 * `TauCeti.card_stabilizer_of_orbitRel`: the stabiliser order is an invariant of the orbit,
   with `TauCeti.card_stabilizer_smul` the translate-presented corollary.
 * `TauCeti.cardStabilizerOnOrbit`: that order as a function on the orbit space, with
@@ -600,20 +603,30 @@ section PrimeCard
 
 open scoped Pointwise
 
-/-- **Translation by a group of prime order is free on the nonempty proper subsets.** If `G` has
-prime order, the stabiliser of a nonempty finset `S ≠ univ` of `G` under translation is
-trivial. -/
-theorem stabilizer_finset_eq_bot_of_prime_card {G : Type*} [Group G] [Fintype G] [DecidableEq G]
-    (hG : (Nat.card G).Prime) {S : Finset G} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
+/-- **A transitive group of prime order acts freely on the nonempty proper subsets.** If `G` has
+prime order and acts transitively on a finite type `α`, the setwise stabiliser of a nonempty
+finset `S ≠ univ` of `α` is trivial. -/
+theorem stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive {G α : Type*} [Group G]
+    [MulAction G α] [MulAction.IsPretransitive G α] [Fintype α] [DecidableEq α]
+    (hG : (Nat.card G).Prime) {S : Finset α} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
     MulAction.stabilizer G S = ⊥ := by
   have := Fact.mk hG
   refine (Subgroup.eq_bot_or_eq_top_of_prime_card _).resolve_right fun htop ↦ hS ?_
   obtain ⟨a, ha⟩ := hne
   refine Finset.eq_univ_of_forall fun b ↦ ?_
-  have hb : b * a⁻¹ ∈ MulAction.stabilizer G S := htop ▸ Subgroup.mem_top _
-  rw [MulAction.mem_stabilizer_iff] at hb
-  have hmem := Finset.smul_mem_smul_finset (a := b * a⁻¹) ha
-  rwa [hb, smul_eq_mul, inv_mul_cancel_right] at hmem
+  obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq G a b
+  have hg : g ∈ MulAction.stabilizer G S := htop ▸ Subgroup.mem_top _
+  rw [MulAction.mem_stabilizer_iff] at hg
+  rw [← hg]
+  exact Finset.smul_mem_smul_finset ha
+
+/-- **Translation by a group of prime order is free on the nonempty proper subsets.** If `G` has
+prime order, the stabiliser of a nonempty finset `S ≠ univ` of `G` under translation is
+trivial. -/
+theorem stabilizer_finset_eq_bot_of_prime_card {G : Type*} [Group G] [Fintype G] [DecidableEq G]
+    (hG : (Nat.card G).Prime) {S : Finset G} (hne : S.Nonempty) (hS : S ≠ Finset.univ) :
+    MulAction.stabilizer G S = ⊥ :=
+  stabilizer_finset_eq_bot_of_prime_card_of_isPretransitive hG hne hS
 
 end PrimeCard
 
@@ -671,5 +684,18 @@ theorem normal_comap_stabilizer_iff_isCancelSMul (ρ : G →* Perm α)
     infer_instance
 
 end MonoidHom
+
+namespace MulAction
+
+open scoped Pointwise
+
+/-- The stabilizer of any point under a group action on a finite type has finite index. -/
+theorem finiteIndex_stabilizer {G X : Type*} [Group G] [MulAction G X] [Finite X] (x : X) :
+    (stabilizer G x).FiniteIndex := by
+  have : Finite (G ⧸ stabilizer G x) :=
+    Finite.of_equiv (orbit G x) (orbitEquivQuotientStabilizer G x)
+  exact Subgroup.finiteIndex_of_finite_quotient
+
+end MulAction
 
 end

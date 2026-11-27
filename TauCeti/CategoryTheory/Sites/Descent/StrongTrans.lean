@@ -20,7 +20,12 @@ identities and Mathlib's pullback `LocallyDiscreteOpToCat.pullHom` of such morph
 (`Pseudofunctor.StrongTrans.mapPullHom_pullHom`). So `η` sends descent data for `F` along a family
 of morphisms `f i : X i ⟶ S` to descent data for `G` (`Pseudofunctor.StrongTrans.mapDescentData`),
 compatibly with the functors from the fibres over `S` up to the naturality isomorphisms of `η`
-(`Pseudofunctor.StrongTrans.toDescentDataCompMapDescentDataIso`).
+(`Pseudofunctor.StrongTrans.toDescentDataCompMapDescentDataIso`). This is compatible with
+identities and composites of strong transformations (`StrongTrans.mapDescentDataId`,
+`StrongTrans.mapDescentDataComp`), and a modification `Γ : φ ⟶ φ'` induces a natural
+transformation `φ.mapDescentData f ⟶ φ'.mapDescentData f` (`StrongTrans.mapDescentData₂`). These
+are the fibrewise part of the functoriality of the stackification of prestacks in strong
+transformations.
 
 When the components of `η` are fully faithful, so is `η.mapDescentData f`, and a descent datum for
 `G` whose objects are isomorphic to images under `η` lifts to a descent datum for `F`
@@ -128,6 +133,88 @@ lemma mapPullHom_pullHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ 
   erw [CategoryTheory.Functor.map_id, Category.id_comp]
   rw [η.naturality_naturality_1_assoc]
 
+/-- The image of a composition comparison `(f ≫ g)^* M ⟶ g^* (f^* M)` of `F` is the composition
+comparison of `G` followed by the inverse naturality isomorphism of `η` at `f`. -/
+lemma mapPullHom_mapComp'_hom ⦃X Y Z : C⦄ (f : Y ⟶ X) (g : Z ⟶ Y) (fg : Z ⟶ X)
+    (h : g ≫ f = fg) (M : F.obj (.mk (op X))) :
+    η.mapPullHom (f₂ := g) (M₂ := (F.map f.op.toLoc).toFunctor.obj M)
+        ((F.mapComp' f.op.toLoc g.op.toLoc fg.op.toLoc (by rw [← h]; rfl)).hom.toNatTrans.app M) =
+      (G.mapComp' f.op.toLoc g.op.toLoc fg.op.toLoc (by rw [← h]; rfl)).hom.toNatTrans.app
+          ((η.app _).toFunctor.obj M) ≫
+        (G.map g.op.toLoc).toFunctor.map ((η.naturality f.op.toLoc).inv.toNatTrans.app M) := by
+  rw [mapPullHom_def, naturality_comp'_inv_app η f.op.toLoc g.op.toLoc fg.op.toLoc
+    (by rw [← h]; rfl)]
+  simp only [Category.assoc, ← CategoryTheory.Functor.map_comp_assoc,
+    Cat.Hom.inv_hom_id_toNatTrans_app]
+  -- The identity left by cancelling the comparisons of `F` lives over
+  -- `(F.map f ≫ F.map g).toFunctor.obj M`, which is only definitionally the source of the
+  -- naturality isomorphism of `η` at `g`.
+  erw [CategoryTheory.Functor.map_id]
+  simp
+
+/-- The image of an inverse composition comparison `g^* (f^* M) ⟶ (f ≫ g)^* M` of `F` is the
+naturality isomorphism of `η` at `f` followed by the inverse composition comparison of `G`. -/
+lemma mapPullHom_mapComp'_inv ⦃X Y Z : C⦄ (f : Y ⟶ X) (g : Z ⟶ Y) (fg : Z ⟶ X)
+    (h : g ≫ f = fg) (M : F.obj (.mk (op X))) :
+    η.mapPullHom (f₁ := g) (M₁ := (F.map f.op.toLoc).toFunctor.obj M)
+        ((F.mapComp' f.op.toLoc g.op.toLoc fg.op.toLoc (by rw [← h]; rfl)).inv.toNatTrans.app M) =
+      (G.map g.op.toLoc).toFunctor.map ((η.naturality f.op.toLoc).hom.toNatTrans.app M) ≫
+        (G.mapComp' f.op.toLoc g.op.toLoc fg.op.toLoc (by rw [← h]; rfl)).inv.toNatTrans.app
+          ((η.app _).toFunctor.obj M) := by
+  rw [mapPullHom_def, naturality_comp'_hom_app η f.op.toLoc g.op.toLoc fg.op.toLoc
+    (by rw [← h]; rfl)]
+  simp only [← CategoryTheory.Functor.map_comp_assoc, Cat.Hom.inv_hom_id_toNatTrans_app]
+  -- As in `mapPullHom_mapComp'_hom`, the identity is over a composite in `Cat`.
+  erw [CategoryTheory.Functor.map_id]
+  simp
+
+/-- `StrongTrans.mapPullHom` for the identity strong transformation is the identity. -/
+@[simp]
+lemma id_mapPullHom ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄
+    ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄ ⦃f₂ : Y ⟶ X₂⦄
+    (a : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) :
+    (𝟙 F : F ⟶ F).mapPullHom a = a := by
+  simp only [mapPullHom_def, categoryStruct_id_naturality_inv, categoryStruct_id_naturality_hom]
+  -- The unitors of `Cat` have identity components, and `(𝟙 F).app` is the identity functor.
+  erw [Cat.Hom₂.comp_app, Cat.Hom₂.comp_app]
+  simp only [Cat.leftUnitor_hom_app, Cat.rightUnitor_inv_app, Cat.rightUnitor_hom_app,
+    Cat.leftUnitor_inv_app, eqToHom_refl]
+  -- The identities are over objects that agree with those of `a` only up to unfolding the
+  -- composites with identities in `Cat`, so they are cancelled by unification.
+  have cancel {D : Type u'} [Category.{v'} D] {X Y : D} (x : X ⟶ Y) :
+      (𝟙 X ≫ 𝟙 X) ≫ x ≫ 𝟙 Y ≫ 𝟙 Y = x := by
+    simp
+  exact cancel a
+
+/-- `StrongTrans.mapPullHom` for a composite of strong transformations is the composite of the
+`StrongTrans.mapPullHom`. -/
+@[simp]
+lemma comp_mapPullHom {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} (φ : F ⟶ G) (ψ : G ⟶ H)
+    ⦃X₁ X₂ : C⦄ ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄ ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄
+    ⦃f₂ : Y ⟶ X₂⦄
+    (a : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) :
+    (φ ≫ ψ).mapPullHom a = ψ.mapPullHom (φ.mapPullHom a) := by
+  simp only [mapPullHom_def, comp_naturality_inv_app, comp_naturality_hom_app,
+    CategoryTheory.Functor.map_comp, Category.assoc]
+  -- The component of `φ ≫ ψ` over `Y` is the composite of those of `φ` and `ψ`, by definition.
+  exact Category.assoc _ _ _
+
+/-- `StrongTrans.mapPullHom` is natural with respect to modifications. -/
+@[reassoc]
+lemma map_app_comp_mapPullHom {φ φ' : F ⟶ G} (Γ : φ ⟶ φ') ⦃X₁ X₂ : C⦄
+    ⦃M₁ : F.obj (.mk (op X₁))⦄ ⦃M₂ : F.obj (.mk (op X₂))⦄ ⦃Y : C⦄ ⦃f₁ : Y ⟶ X₁⦄
+    ⦃f₂ : Y ⟶ X₂⦄
+    (a : (F.map f₁.op.toLoc).toFunctor.obj M₁ ⟶ (F.map f₂.op.toLoc).toFunctor.obj M₂) :
+    (G.map f₁.op.toLoc).toFunctor.map ((Γ.as.app _).toNatTrans.app M₁) ≫ φ'.mapPullHom a =
+      φ.mapPullHom a ≫ (G.map f₂.op.toLoc).toFunctor.map ((Γ.as.app _).toNatTrans.app M₂) := by
+  have h₁ := congrArg (fun m ↦ m.toNatTrans.app M₁) (Γ.as.naturality f₁.op.toLoc)
+  have h₂ := congrArg (fun m ↦ m.toNatTrans.app M₂) (Γ.as.naturality f₂.op.toLoc)
+  simp only [Cat.Hom₂.comp_app, Cat.whiskerLeft_app, Cat.whiskerRight_app] at h₁ h₂
+  rw [mapPullHom_def, mapPullHom_def,
+    ← cancel_epi ((φ.naturality f₁.op.toLoc).hom.toNatTrans.app M₁), ← reassoc_of% h₁]
+  simp only [Cat.Hom.hom_inv_id_toNatTrans_app_assoc, Category.assoc, ← h₂]
+  exact ((Γ.as.app _).toNatTrans.naturality_assoc a _).symm
+
 /-- For a fully faithful component `η.app Y`, `StrongTrans.mapPullHom` is a bijection between the
 morphisms `f₁^* M₁ ⟶ f₂^* M₂` and `f₁^* (η M₁) ⟶ f₂^* (η M₂)`. -/
 noncomputable def mapPullHomEquiv ⦃X₁ X₂ : C⦄ (M₁ : F.obj (.mk (op X₁))) (M₂ : F.obj (.mk (op X₂)))
@@ -161,8 +248,10 @@ variable {ι : Type t} {S : C} {X : ι → C} (f : ∀ i, X i ⟶ S)
 /-- The functor from descent data for `F` to descent data for `G` induced by a strong
 transformation `η : F ⟶ G`. The image of a descent datum has the images under `η` of its objects,
 and the images of its compatibility morphisms given by `StrongTrans.mapPullHom`. -/
-@[expose, simps]
-def mapDescentData : F.DescentData f ⥤ G.DescentData f where
+-- This is an abbreviation so that the objects of a mapped descent datum are reducibly the images of
+-- the objects under `η`: rewriting in local morphisms between them fails otherwise.
+@[simps]
+abbrev mapDescentData : F.DescentData f ⥤ G.DescentData f where
   obj D :=
     { obj i := (η.app (.mk (op (X i)))).toFunctor.obj (D.obj i)
       hom _ q _ _ f₁ f₂ hf₁ hf₂ := η.mapPullHom (D.hom q f₁ f₂ hf₁ hf₂)
@@ -231,6 +320,85 @@ def toDescentDataCompMapDescentDataIso :
     (fun φ ↦ by
       ext i
       exact (η.naturality (f i).op.toLoc).hom.toNatTrans.naturality φ)
+
+/-- Composing an equation of morphisms `K₁.obj P ⟶ K₂.obj Q` with images of identities on both
+sides. It is applied by unification to cancel identities over objects that agree with `P` and `Q`
+only up to unfolding. -/
+private lemma map_id_comp_eq_comp_map_id {D₁ D₂ D' : Type*} [Category D₁] [Category D₂]
+    [Category D'] (K₁ : D₁ ⥤ D') (K₂ : D₂ ⥤ D') {P : D₁} {Q : D₂} {x y : K₁.obj P ⟶ K₂.obj Q}
+    (h : x = y) : K₁.map (𝟙 P) ≫ x = y ≫ K₂.map (𝟙 Q) := by
+  simp [h]
+
+variable (F) in
+/-- Descent data mapped along the identity strong transformation are isomorphic to the original
+ones, through identities. -/
+def mapDescentDataId : (𝟙 F : F ⟶ F).mapDescentData f ≅ 𝟭 _ :=
+  NatIso.ofComponents
+    (fun D ↦ DescentData.isoMk (fun i ↦ Iso.refl _) (fun Y q i₁ i₂ f₁ f₂ hf₁ hf₂ ↦ by
+      -- The objects of the mapped descent datum are those of `D` only up to unfolding the
+      -- identity strong transformation, so the identities are cancelled by unification.
+      exact map_id_comp_eq_comp_map_id (F.map f₁.op.toLoc).toFunctor
+        (F.map f₂.op.toLoc).toFunctor (id_mapPullHom (D.hom q f₁ f₂ hf₁ hf₂)).symm))
+    (fun ψ ↦ by
+      ext i
+      -- As above, the components of the identity strong transformation are identities.
+      exact (Category.comp_id _).trans (Category.id_comp _).symm)
+
+variable (F) in
+@[simp]
+lemma mapDescentDataId_hom_app_hom (D : F.DescentData f) (i : ι) :
+    ((mapDescentDataId F f).hom.app D).hom i = 𝟙 (D.obj i) :=
+  (rfl)
+
+variable (F) in
+@[simp]
+lemma mapDescentDataId_inv_app_hom (D : F.DescentData f) (i : ι) :
+    ((mapDescentDataId F f).inv.app D).hom i = 𝟙 (D.obj i) :=
+  (rfl)
+
+/-- Descent data mapped along a composite of strong transformations are isomorphic to the
+descent data mapped along the two strong transformations, through identities. -/
+def mapDescentDataComp {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} (ψ : G ⟶ H) :
+    (η ≫ ψ).mapDescentData f ≅ η.mapDescentData f ⋙ ψ.mapDescentData f :=
+  NatIso.ofComponents
+    (fun D ↦ DescentData.isoMk
+      (fun i ↦ Iso.refl _) (fun Y q i₁ i₂ f₁ f₂ hf₁ hf₂ ↦ by
+        -- As in `mapDescentDataId`, the identities are cancelled by unification.
+        exact map_id_comp_eq_comp_map_id (H.map f₁.op.toLoc).toFunctor
+          (H.map f₂.op.toLoc).toFunctor (comp_mapPullHom η ψ (D.hom q f₁ f₂ hf₁ hf₂)).symm))
+    (fun χ ↦ by
+      ext i
+      -- The components of `η ≫ ψ` are the composites of those of `η` and `ψ`, by definition.
+      exact (Category.comp_id _).trans (Category.id_comp _).symm)
+
+@[simp]
+lemma mapDescentDataComp_hom_app_hom {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} (ψ : G ⟶ H)
+    (D : F.DescentData f) (i : ι) :
+    ((η.mapDescentDataComp f ψ).hom.app D).hom i =
+      𝟙 ((ψ.app _).toFunctor.obj ((η.app _).toFunctor.obj (D.obj i))) :=
+  (rfl)
+
+@[simp]
+lemma mapDescentDataComp_inv_app_hom {H : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} (ψ : G ⟶ H)
+    (D : F.DescentData f) (i : ι) :
+    ((η.mapDescentDataComp f ψ).inv.app D).hom i =
+      𝟙 ((ψ.app _).toFunctor.obj ((η.app _).toFunctor.obj (D.obj i))) :=
+  (rfl)
+
+/-- The natural transformation between mapped descent data given by a modification `Γ : φ ⟶ φ'`:
+its components are those of `Γ`. -/
+def mapDescentData₂ {φ φ' : F ⟶ G} (Γ : φ ⟶ φ') : φ.mapDescentData f ⟶ φ'.mapDescentData f where
+  app D :=
+    { hom i := (Γ.as.app _).toNatTrans.app (D.obj i)
+      comm Y q i₁ i₂ f₁ f₂ hf₁ hf₂ := map_app_comp_mapPullHom Γ _ }
+  naturality D₁ D₂ ψ := by
+    ext i
+    exact (Γ.as.app _).toNatTrans.naturality (ψ.hom i)
+
+@[simp]
+lemma mapDescentData₂_app_hom {φ φ' : F ⟶ G} (Γ : φ ⟶ φ') (D : F.DescentData f) (i : ι) :
+    ((mapDescentData₂ f Γ).app D).hom i = (Γ.as.app _).toNatTrans.app (D.obj i) :=
+  (rfl)
 
 /-- If the components of `η` are fully faithful, then so is the functor `η.mapDescentData f`. -/
 noncomputable def fullyFaithfulMapDescentData

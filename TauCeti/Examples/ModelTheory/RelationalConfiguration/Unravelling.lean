@@ -29,21 +29,13 @@ open _root_.FirstOrder (Language)
 
 namespace UnravellingChecks
 
-private theorem ratColor_half : ratColor 2⁻¹ = 1 := by
-  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  have h : (2⁻¹ : ℚ).den = 2 ^ 1 := by simp
-  rw [ratColor_def, h, Nat.multiplicity_prime_pow]
-
-private theorem ratColor_one : ratColor 1 = 0 := by
-  simp [ratColor_def]
-
 /-! ### Vertices of a node -/
 
 example : unravelVertex [1 / 2, 1] 0 = 1 := by
-  simp [unravelVertex_def, ratColor_half]
+  simp [unravelVertex_def]
 
 example : unravelVertex [1 / 2, 1] 1 = 0 := by
-  simp [unravelVertex_def, ratColor_one]
+  simp [unravelVertex_def]
 
 /-! ### The root and the nodes of length one -/
 
@@ -65,8 +57,14 @@ example {c d : RelationalConfiguration Language.graph ℕ} (hc : IsSimpleGraph c
 /-- The constant-true code: every pair of vertices is related, including each vertex to itself. -/
 noncomputable def full : RelationalConfiguration Language.graph ℕ := mk fun _ ↦ true
 
+/-- The defining equation of `full`. -/
+theorem full_def : full = mk fun _ ↦ true := (rfl)
+
 /-- The empty graph. -/
 noncomputable def empty : RelationalConfiguration Language.graph ℕ := mk fun _ ↦ false
+
+/-- The defining equation of `empty`. -/
+theorem empty_def : empty = mk fun _ ↦ false := (rfl)
 
 -- The colour of `[1]` for the constant-true code occurs at no node for the empty graph.
 private theorem unravelColor_empty_ne (y : List ℚ) :
@@ -92,6 +90,6 @@ noncomputable def edge01 : RelationalConfiguration Language.graph ℕ :=
 example : unravelColor edge01 [1 / 2, 1] ≠ unravelColor edge01 [1, 1 / 2] := by
   intro h
   have := congrArg Prod.snd ((unravelColor_eq_iff.1 h).2 1 (by simp) 0 (by simp))
-  simp [unravelVertex_def, edge01, ratColor_half, ratColor_one] at this
+  simp [unravelVertex_def, edge01] at this
 
 end UnravellingChecks

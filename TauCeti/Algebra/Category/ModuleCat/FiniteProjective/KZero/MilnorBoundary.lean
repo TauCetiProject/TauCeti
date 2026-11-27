@@ -23,6 +23,12 @@ invariant under stabilization, and trivial on the images of invertible matrices 
 Mayer–Vietoris sequence of the Milnor square, `δ([u]) = [M(u)] - n[D]`, which vanishes on the
 images of `K₁(A₁)` and `K₁(A₂)`.
 
+The sequence `K₁(A₁) × K₁(A₂) → K₁(Q) → K₀(D)` is exact at `K₁(Q)`, the first map being
+`(y₁, y₂) ↦ K₁(π₁) y₁ / K₁(π₂) y₂`. If `δ([u]) = 0` then, after stabilizing `u`, the patched module
+`M(u)` is free, `M(u) ≅ M(1)`. An isomorphism of patched modules is given by invertible matrices
+`g₁` over `A₁` and `g₂` over `A₂` with `π₁(g₁) = π₂(g₂) u`
+(`RingHom.nonempty_patchedSubgroup_equiv_iff`), so `[u] = K₁(π₁)[g₁] / K₁(π₂)[g₂]`.
+
 Here `K₁` is Tau Ceti's multiplicative `TauCeti.AlgebraicK1`; the boundary is stated on its
 additive form `Additive (AlgebraicK1 Q)`, so that `δ([uv]) = δ([u]) + δ([v])`.
 
@@ -39,6 +45,8 @@ additive form `Additive (AlgebraicK1 Q)`, so that `δ([uv]) = δ([u]) + δ([v])`
   rank `n`.
 * `RingHom.milnorBoundary_map_fst`, `RingHom.milnorBoundary_map_snd`: `δ` vanishes on the images
   of `K₁(A₁)` and `K₁(A₂)`.
+* `RingHom.ker_milnorBoundary`, `RingHom.milnorBoundary_ofMul_eq_zero_iff`: exactness of the
+  Mayer–Vietoris sequence at `K₁(Q)`, the kernel of `δ` being the image of `K₁(A₁) × K₁(A₂)`.
 
 ## References
 
@@ -230,6 +238,54 @@ theorem milnorBoundary_map_snd (x : AlgebraicK1 A₂) :
   obtain ⟨e⟩ := nonempty_patchedSubgroup_map_snd_equiv (π₁ := π₁) g
   rw [AlgebraicK1.map_mk, milnorBoundary_mk_eq_patchedClass, patchedClass_congr e,
     patchedClass_one]
+
+/-! ## Exactness at `K₁(Q)` -/
+
+/-- If `M(u) × Dʲ ≅ Dᵏ⁺ʲ` for `u ∈ GLₖ(Q)`, then the patched module of the stabilization `u ⊕ 1` of
+`u` to size `k + j` is isomorphic to `M(1) ≅ Dᵏ⁺ʲ`. -/
+private theorem nonempty_patchedSubgroup_stabilizeGL_equiv {k j : ℕ} {u : GL (Fin k) Q}
+    (e : (π₁.patchedSubgroup π₂ u × (Fin j → (π₁.pullback π₂)ᵐᵒᵖ)) ≃ₗ[(π₁.pullback π₂)ᵐᵒᵖ]
+      (Fin (k + j) → (π₁.pullback π₂)ᵐᵒᵖ)) :
+    Nonempty (π₁.patchedSubgroup π₂ (stabilizeGL Q (Nat.le_add_right k j) u) ≃ₗ[
+      (π₁.pullback π₂)ᵐᵒᵖ] π₁.patchedSubgroup π₂ (1 : GL (Fin (k + j)) Q)) := by
+  rw [stabilizeGL_eq_reindexGL_fromBlocksGL]
+  exact ⟨(patchedSubgroupReindexEquiv π₁ π₂ finSumFinEquiv _).symm ≪≫ₗ
+    (patchedSubgroupProdEquiv π₁ π₂ u 1).symm ≪≫ₗ
+    (LinearEquiv.refl _ _).prodCongr (patchedSubgroupOneEquiv π₁ π₂ (Fin j)) ≪≫ₗ e ≪≫ₗ
+    (patchedSubgroupOneEquiv π₁ π₂ (Fin (k + j))).symm⟩
+
+/-- **Exactness of the Mayer–Vietoris sequence at `K₁(Q)`, elementwise.** With one surjective leg,
+the boundary `δ` vanishes on a class `x` of `K₁(Q)` if and only if `x = K₁(π₁) y₁ / K₁(π₂) y₂` for
+classes `y₁` of `K₁(A₁)` and `y₂` of `K₁(A₂)`. -/
+theorem milnorBoundary_ofMul_eq_zero_iff (x : AlgebraicK1 Q) :
+    milnorBoundary π₁ π₂ h (Additive.ofMul x) = 0 ↔
+      x ∈ ((AlgebraicK1.map π₁).comp (MonoidHom.fst _ _) /
+        (AlgebraicK1.map π₂).comp (MonoidHom.snd _ _)).range := by
+  refine ⟨fun hx ↦ ?_, ?_⟩
+  · -- If `δ([u]) = 0` then `M(u ⊕ 1) ≅ M(1)` for a stabilization `u ⊕ 1` of `u`, so `u ⊕ 1` lies in
+    -- the double coset of `1`, that is, `u ⊕ 1 = π₂(g₂)⁻¹ π₁(g₁)`.
+    obtain ⟨k, u, rfl⟩ := AlgebraicK1.exists_mk x
+    obtain ⟨j, ⟨e⟩⟩ := (milnorBoundary_mk_eq_zero_iff h k u).1 hx
+    obtain ⟨g₁, g₂, hg⟩ :=
+      (nonempty_patchedSubgroup_equiv_iff h).1 (nonempty_patchedSubgroup_stabilizeGL_equiv e)
+    refine ⟨(AlgebraicK1.mk A₁ (k + j) g₁, AlgebraicK1.mk A₂ (k + j) g₂), ?_⟩
+    rw [← AlgebraicK1.mk_stabilizeGL (Nat.le_add_right k j), eq_inv_mul_of_mul_eq hg.symm]
+    simp [AlgebraicK1.map_mk, inv_mul_eq_div]
+  · rintro ⟨⟨y₁, y₂⟩, rfl⟩
+    simp [ofMul_div]
+
+/-- **Exactness of the Mayer–Vietoris sequence at `K₁(Q)`.** For ring homomorphisms
+`π₁ : A₁ →+* Q` and `π₂ : A₂ →+* Q`, at least one of which is surjective, the kernel of the
+boundary `δ : K₁(Q) → K₀(A₁ ×_Q A₂)` is the image of `K₁(A₁) × K₁(A₂) → K₁(Q)`,
+`(y₁, y₂) ↦ K₁(π₁) y₁ / K₁(π₂) y₂`. Algebraic `K₁` is multiplicative, so this image is a
+subgroup of `K₁(Q)`, viewed as an additive subgroup of `Additive (AlgebraicK1 Q)`. -/
+theorem ker_milnorBoundary :
+    (milnorBoundary π₁ π₂ h).ker = Subgroup.toAddSubgroup
+      ((AlgebraicK1.map π₁).comp (MonoidHom.fst _ _) /
+        (AlgebraicK1.map π₂).comp (MonoidHom.snd _ _)).range := by
+  ext x
+  rw [AddMonoidHom.mem_ker, Additive.mem_toAddSubgroup, ← milnorBoundary_ofMul_eq_zero_iff,
+    ofMul_toMul]
 
 end KZero
 

@@ -70,6 +70,9 @@ Both bounds hold with derivatives measured in units of a length scale `h ≥ 0`:
 `ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le_sum`), because the parts of an ordered partition
 of `m` have sizes adding up to `m`. This is the form needed for changes of charts in semiclassical
 Sobolev norms, where a chart at scale `h` has `h ^ (k - 1) * ‖Dᵏ f‖` bounded rather than `‖Dᵏ f‖`.
+In particular, if `h ^ k * ‖Dᵏ g‖ ≤ A` for `k ≤ m`, then
+`h ^ m * ‖Dᵐ (g ∘ f)‖ ≤ max 1 B ^ m * #{ordered partitions of m} * A`
+(`ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le`).
 -/
 
 public section
@@ -866,6 +869,24 @@ theorem ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le_sum {g : F → G} {f : E 
         ∑ c : OrderedFinpartition m, h ^ c.length * ‖iteratedFDeriv 𝕜 c.length g (f x)‖ := by
   rw [iteratedFDeriv_comp hg hf le_rfl]
   exact FormalMultilinearSeries.pow_mul_norm_taylorComp_le _ _ hh hB
+
+/-- **A uniform weighted norm bound for the derivatives of a composite.** Let `h ≥ 0`. If `g` is
+`Cᵐ` at `f x`, `f` is `Cᵐ` at `x`, the derivatives of `f` at `x` of orders `1` through `m` satisfy
+`h ^ (k - 1) * ‖Dᵏ f x‖ ≤ B`, and the derivatives of `g` at `f x` of orders at most `m` satisfy
+`h ^ k * ‖Dᵏ g (f x)‖ ≤ A`, then
+`h ^ m * ‖Dᵐ (g ∘ f) x‖ ≤ max 1 B ^ m * #{ordered partitions of m} * A`. So scaled derivative
+bounds on `g` are carried through a map with derivatives bounded at the same scale, with a factor
+depending only on `m` and `B`. -/
+theorem ContDiffAt.pow_mul_norm_iteratedFDeriv_comp_le {g : F → G} {f : E → F} {x : E}
+    {m : ℕ} (hg : ContDiffAt 𝕜 m g (f x)) (hf : ContDiffAt 𝕜 m f x) {h A B : ℝ} (hh : 0 ≤ h)
+    (hB : ∀ k, 1 ≤ k → k ≤ m → h ^ (k - 1) * ‖iteratedFDeriv 𝕜 k f x‖ ≤ B)
+    (hA : ∀ k ≤ m, h ^ k * ‖iteratedFDeriv 𝕜 k g (f x)‖ ≤ A) :
+    h ^ m * ‖iteratedFDeriv 𝕜 m (g ∘ f) x‖ ≤
+      max 1 B ^ m * Fintype.card (OrderedFinpartition m) * A := by
+  refine (hg.pow_mul_norm_iteratedFDeriv_comp_le_sum hf hh hB).trans ?_
+  rw [mul_assoc, ← nsmul_eq_mul, ← Finset.card_univ, ← Finset.sum_const]
+  exact mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun c _ ↦ hA _ c.length_le)
+    (pow_nonneg (zero_le_one.trans (le_max_left _ _)) _)
 
 /-- **A norm bound for the derivatives of a composite.** If `g` is `Cᵐ` at `f x`, `f` is `Cᵐ` at
 `x`, and the derivatives of `f` at `x` of orders `1` through `m` have norm at most `B`, then the

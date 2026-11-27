@@ -49,10 +49,12 @@ variables (`CategoryTheory.Functor.hasLeftDerivedFunctor₂_tensor_of_inverts`).
   K-flat `P` the functor `LF.obj (DerivedCategory.Q.obj P)` is naturally isomorphic to
   `P.kFlatTensor` compatibly with morphisms of K-flat models
   (`TauCeti.leftDerivedTensorObjIsoKFlatTensor`,
-  `TauCeti.leftDerivedTensorObjIsoKFlatTensor_naturality`), on the homotopy category the functor
-  `LF.flip.obj (DerivedCategory.Q.obj P)` is the totalized tensor product with `P`
-  (`TauCeti.qhCompFlipObjIsoOfIsKFlat`), and derived tensoring with the unit
-  complex `𝟙_ (CochainComplex C ℤ)` on either side is naturally isomorphic to the identity
+  `TauCeti.leftDerivedTensorObjIsoKFlatTensor_naturality`), on the homotopy category the functors
+  `LF.obj (DerivedCategory.Q.obj P)` and `LF.flip.obj (DerivedCategory.Q.obj P)` are the
+  totalized tensor products with `P` on the left and on the right
+  (`TauCeti.qhCompObjIsoOfIsKFlat`, `TauCeti.qhCompFlipObjIsoOfIsKFlat`), and derived tensoring
+  with the unit complex `𝟙_ (CochainComplex C ℤ)` on either side is naturally isomorphic to the
+  identity
   (`TauCeti.leftDerivedTensorLeftUnitor`, `TauCeti.leftDerivedTensorRightUnitor`).
 
 Bounded-above complexes of flat objects are K-flat, so on either side they compute the derived
@@ -551,6 +553,45 @@ lemma qhCompFlipObjIsoOfIsKFlat_hom_app (P : CochainComplex C ℤ) [P.IsKFlat]
     Functor.flip_obj_map, Category.id_comp]
   -- The two sides are the same composite; they differ only in writing its target as
   -- `Qh.obj (quotient.obj (K ⊗ P))` or as its image under the homotopy-category tensor bifunctor
+  -- (`Functor.map₂HomotopyCategory_obj_obj`).
+  rfl
+
+/-- For a K-flat complex `P`, the derived tensor product `LF(P, -)` on the homotopy category is
+the totalized tensor product with `P` on the left: this is the partial counit
+`Functor.bifunctorCounit₁ α P`, an isomorphism since `P` is K-flat, descended to the homotopy
+category. -/
+def qhCompObjIsoOfIsKFlat (P : CochainComplex C ℤ) [P.IsKFlat] :
+    DerivedCategory.Qh ⋙ LF.obj (DerivedCategory.Q.obj P) ≅
+      ((MonoidalCategory.curriedTensor C).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).obj
+        ((HomotopyCategory.quotient _ _).obj P) ⋙ DerivedCategory.Qh :=
+  -- The class of `P ⊗ L` is the totalized tensor product of the classes of `P` and `L`
+  -- (`Functor.map₂HomotopyCategory_obj_obj`, `Functor.map₂HomotopyCategory_obj_map`), so the
+  -- functor `(P ⊗ -) ⋙ quotient` is the composite `quotient ⋙ (P ⊗ -)` on homotopy categories.
+  CategoryTheory.Quotient.natIsoLift _
+    ((Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight (DerivedCategory.quotientCompQhIso _) _ ≪≫
+      asIso (Functor.bifunctorCounit₁ α P) ≪≫
+      Functor.isoWhiskerLeft ((MonoidalCategory.curriedTensor _).obj P)
+        (DerivedCategory.quotientCompQhIso _).symm :
+      HomotopyCategory.quotient _ _ ⋙ DerivedCategory.Qh ⋙ LF.obj (DerivedCategory.Q.obj P) ≅
+        (MonoidalCategory.curriedTensor _).obj P ⋙ HomotopyCategory.quotient _ _ ⋙
+          DerivedCategory.Qh)
+
+/-- The component of `qhCompObjIsoOfIsKFlat` at the class of a complex `L` is the derived
+tensor comparison `(α.app P).app L`, conjugated by `DerivedCategory.quotientCompQhIso`. -/
+@[simp]
+lemma qhCompObjIsoOfIsKFlat_hom_app (P : CochainComplex C ℤ) [P.IsKFlat]
+    (L : CochainComplex C ℤ) :
+    (qhCompObjIsoOfIsKFlat LF α P).hom.app ((HomotopyCategory.quotient _ _).obj L) =
+      (LF.obj (DerivedCategory.Q.obj P)).map ((DerivedCategory.quotientCompQhIso _).hom.app L) ≫
+        (α.app P).app L ≫ (DerivedCategory.quotientCompQhIso _).inv.app (P ⊗ L) := by
+  refine (CategoryTheory.Quotient.natTransLift_app _ _ _ _ L).trans ?_
+  simp only [Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom, asIso_hom,
+    Functor.isoWhiskerLeft_hom, NatTrans.comp_app, Functor.whiskerRight_app,
+    Functor.whiskerLeft_app, Functor.associator_inv_app, Functor.bifunctorCounit₁_app,
+    Category.id_comp]
+  -- The two sides are the same composite; they differ only in writing its target as
+  -- `Qh.obj (quotient.obj (P ⊗ L))` or as its image under the homotopy-category tensor bifunctor
   -- (`Functor.map₂HomotopyCategory_obj_obj`).
   rfl
 
