@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 
 /-!
-# Products and norms of orthogonal projections
+# Orthogonal projections
 
 For submodules `U` and `V` of an inner product space admitting orthogonal projections `P_U` and
 `P_V`, the two products `P_U P_V` and `P_V P_U` have the same operator norm. Since
@@ -54,6 +55,8 @@ complement of its kernel whenever the kernel admits an orthogonal projection.
 Conjugating the orthogonal projection onto `V` by a linear isometry equivalence `e` of Hilbert
 spaces gives the orthogonal projection onto `e(V)`.
 
+
+
 ## Provenance
 
 The submodule inclusion-adjoint identity is adapted from
@@ -61,6 +64,14 @@ The submodule inclusion-adjoint identity is adapted from
 AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 
 ## Main results
+
+* `ContinuousLinearMap.isStarProjection_finrank_range_eq_one_iff`: a star projection onto a line
+  is the rank-one operator of a unit vector, and conversely.
+* `TauCeti.exists_orthonormalBasis_of_sum_rankOne_eq_one`: unit vectors whose rank-one projections
+  sum to the identity form an orthonormal basis.
+* `TauCeti.exists_orthonormalBasis_eq_rankOne_iff`,
+  `TauCeti.exists_orthonormalBasis_eq_rankOne_iff_isStarProjection`: characterize finite families
+  of line projections that come from orthonormal bases, using unit vectors or intrinsic rank.
 
 * `Submodule.orthogonalProjectionOnto_comp_subtypeL`: restricting the orthogonal projection
   onto `U` to `U` itself gives the identity map.
@@ -659,6 +670,41 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+open InnerProductSpace in
+/-- An operator is a star projection with one-dimensional range exactly when it is the
+rank-one operator of a unit vector. -/
+theorem isStarProjection_finrank_range_eq_one_iff [CompleteSpace E]
+    {p : E →L[𝕜] E} :
+    IsStarProjection p ∧ Module.finrank 𝕜 p.range = 1 ↔
+      ∃ v : E, ‖v‖ = 1 ∧ p = rankOne 𝕜 v v := by
+  constructor
+  · rintro ⟨hp, hrank⟩
+    have hpos : 0 < Module.finrank 𝕜 p.range := by simp [hrank]
+    let : FiniteDimensional 𝕜 p.range := Module.finite_of_finrank_pos hpos
+    let : Nontrivial p.range := Module.finrank_pos_iff.mp hpos
+    let : NormedSpace ℝ p.range := NormedSpace.restrictScalars ℝ 𝕜 p.range
+    obtain ⟨v, hv⟩ := exists_norm_eq p.range zero_le_one
+    have hv0 : (v : E) ≠ 0 := by
+      intro h
+      have h' : v = 0 := Subtype.ext h
+      simp [h'] at hv
+    have hspan := eq_span_singleton_of_mem_of_finrank_eq_one hrank v.property hv0
+    have hproj := isStarProjection_iff_eq_starProjection_range.mp hp
+    rw [hspan] at hproj
+    obtain ⟨_, hproj⟩ := hproj
+    refine ⟨v, hv, hproj.trans ?_⟩
+    ext x
+    exact (Submodule.starProjection_unit_singleton 𝕜 (v := (v : E)) hv x).trans
+      (rankOne_apply (𝕜 := 𝕜) (v : E) (v : E) x).symm
+  · rintro ⟨v, hv, rfl⟩
+    have hv0 : v ≠ 0 := by
+      intro h
+      simp [h] at hv
+    exact ⟨isStarProjection_rankOne_self hv,
+      Module.rank_eq_one_iff_finrank_eq_one.mp (rank_rankOne hv0 hv0)⟩
+
 variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [AddCommMonoid F] [Module 𝕜 F] [TopologicalSpace F]
 
@@ -672,6 +718,65 @@ theorem comp_starProjection_orthogonal_ker (u : E →L[𝕜] F) [u.ker.HasOrthog
     u.toLinearMap.apply_sub_starProjection_ker x
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+open InnerProductSpace
+open scoped InnerProductSpace
+
+variable {𝕜 E ι : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A finite family of unit vectors whose rank-one projections sum to the identity forms an
+orthonormal basis with those vectors. -/
+theorem exists_orthonormalBasis_of_sum_rankOne_eq_one [Fintype ι] {v : ι → E}
+    (hv : ∀ i, ‖v i‖ = 1) (hsum : ∑ i, rankOne 𝕜 (v i) (v i) = 1) :
+    ∃ b : OrthonormalBasis ι 𝕜 E, ⇑b = v := by
+  classical
+  have hsum_apply (x : E) : ∑ i, ⟪v i, x⟫_𝕜 • v i = x := by
+    simpa only [sum_apply, rankOne_apply, one_apply_eq_self] using
+      DFunLike.congr_fun hsum x
+  have hon : Orthonormal 𝕜 v := by
+    refine ⟨hv, fun i j hij ↦ ?_⟩
+    -- The inner product with `v j` leaves no contribution outside the diagonal term.
+    have hsq := congrArg (fun x ↦ RCLike.re ⟪x, v j⟫_𝕜) (hsum_apply (v j))
+    simp only [sum_inner, inner_smul_left, RCLike.conj_mul, map_sum, ← RCLike.ofReal_pow,
+      RCLike.ofReal_re, inner_self_eq_norm_sq, hv j, one_pow] at hsq
+    have hdiag : ‖⟪v j, v j⟫_𝕜‖ ^ 2 = 1 := by
+      rw [inner_self_eq_one_of_norm_eq_one (hv j), norm_one, one_pow]
+    rw [← Finset.sum_erase_add _ _ (Finset.mem_univ j), hdiag, add_eq_right] at hsq
+    have hi := (Finset.sum_sq_eq_zero_iff _ _).mp hsq i
+      (Finset.mem_erase.mpr ⟨hij, Finset.mem_univ i⟩)
+    exact norm_eq_zero.mp hi
+  have hspan : ⊤ ≤ Submodule.span 𝕜 (Set.range v) := by
+    intro x _
+    exact (Submodule.mem_span_range_iff_exists_fun 𝕜).mpr ⟨_, hsum_apply x⟩
+  exact ⟨OrthonormalBasis.mk hon hspan, OrthonormalBasis.coe_mk _ _⟩
+
+/-- A finite family consists of the projections onto the lines of an orthonormal basis exactly
+when each term is the rank-one projection of a unit vector and the terms sum to the identity. -/
+theorem exists_orthonormalBasis_eq_rankOne_iff [Fintype ι] {p : ι → E →L[𝕜] E} :
+    (∃ b : OrthonormalBasis ι 𝕜 E, ∀ i, p i = rankOne 𝕜 (b i) (b i)) ↔
+      (∀ i, ∃ v : E, ‖v‖ = 1 ∧ p i = rankOne 𝕜 v v) ∧ (∑ i, p i = 1) := by
+  constructor
+  · rintro ⟨b, hb⟩
+    exact ⟨fun i ↦ ⟨b i, b.norm_eq_one i, hb i⟩,
+      (Finset.sum_congr rfl fun i _ ↦ hb i).trans b.sum_rankOne_eq_id⟩
+  · rintro ⟨hunit, hsum⟩
+    choose v hv hp using hunit
+    simp_rw [hp] at hsum
+    obtain ⟨b, hb⟩ := exists_orthonormalBasis_of_sum_rankOne_eq_one hv hsum
+    exact ⟨b, fun i ↦ by simpa only [congrFun hb i] using hp i⟩
+
+/-- A finite family of operators consists of the line projections of an orthonormal basis
+exactly when the operators are star projections of rank one and sum to the identity. -/
+theorem exists_orthonormalBasis_eq_rankOne_iff_isStarProjection [Fintype ι] [CompleteSpace E]
+    {p : ι → E →L[𝕜] E} :
+    (∃ b : OrthonormalBasis ι 𝕜 E, ∀ i, p i = rankOne 𝕜 (b i) (b i)) ↔
+      (∀ i, IsStarProjection (p i) ∧ Module.finrank 𝕜 (p i).range = 1) ∧ ∑ i, p i = 1 := by
+  simpa only [ContinuousLinearMap.isStarProjection_finrank_range_eq_one_iff] using
+    (exists_orthonormalBasis_eq_rankOne_iff (p := p))
+
+end TauCeti
 
 namespace LinearIsometryEquiv
 
