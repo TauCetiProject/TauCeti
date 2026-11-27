@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.Polynomial.Splits
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
+public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 
 import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.NumberTheory.Real.Irrational
+import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.Polynomial.ScaleRoots
 
@@ -47,6 +49,8 @@ be stable under the quotients and localizations used to cut a valuation ring int
 * `TauCeti.isAbsolutelyIntegrallyClosed_iff_isIntegrallyClosed_and_isAlgClosed`: a domain is
   absolutely integrally closed if and only if it is integrally closed and its fraction field is
   algebraically closed.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.isAlgClosed_residueField`: the residue field of an
+  absolutely integrally closed local ring is algebraically closed.
 * `Subfield.isAbsolutelyIntegrallyClosed_comap`: the trace of an integrally closed domain on an
   algebraically closed subfield of its fraction field is absolutely integrally closed.
 * `TauCeti.not_isAbsolutelyIntegrallyClosed_rat`: `ℚ` is not absolutely integrally closed, as
@@ -242,6 +246,20 @@ instance IsAbsolutelyIntegrallyClosed.integralClosure {R K : Type*} [CommRing R]
     rw [IsRoot, eval_map] at hx
     refine ⟨⟨x, isIntegral_trans x ⟨p, hp, hx⟩⟩, FaithfulSMul.algebraMap_injective O K ?_⟩
     rwa [← eval₂_at_apply, map_zero, Subalgebra.algebraMap_apply]
+
+/-- The fraction field of an absolutely integrally closed domain is algebraically closed. -/
+instance IsAbsolutelyIntegrallyClosed.isAlgClosed_fractionRing [IsDomain A]
+    [IsAbsolutelyIntegrallyClosed A] : IsAlgClosed (FractionRing A) :=
+  IsAbsolutelyIntegrallyClosed.isAlgClosed (A := A) _
+
+/-- The residue field of an absolutely integrally closed local ring is algebraically closed, being
+a quotient of the ring. With `IsAbsolutelyIntegrallyClosed.localization` this shows that the
+residue field `p.ResidueField` at a prime `p` of an absolutely integrally closed ring is
+algebraically closed. -/
+instance IsAbsolutelyIntegrallyClosed.isAlgClosed_residueField [IsLocalRing A]
+    [IsAbsolutelyIntegrallyClosed A] : IsAlgClosed (IsLocalRing.ResidueField A) :=
+  isAbsolutelyIntegrallyClosed_iff_isAlgClosed.mp
+    (.of_surjective _ IsLocalRing.residue_surjective)
 
 /-- `ℚ` is not absolutely integrally closed: the monic polynomial `X ^ 2 - 2` has no rational
 root. -/
