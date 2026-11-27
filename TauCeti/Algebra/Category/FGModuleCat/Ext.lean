@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Algebra
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
+public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Map
 public import Mathlib.RingTheory.FiniteLength
 public import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.CategoryTheory.Exact.YonedaExt.Abelian
@@ -64,19 +65,20 @@ noncomputable def ext1LinearEquiv (M N : FGModuleCat.{w} A) :
   letI : F.Linear R := inferInstanceAs ((ModuleCat.isFG.{w} A).ι.Linear R)
   letI : F.PreservesProjectiveObjects :=
     ⟨fun {X} hX ↦ (projective_obj_iff X).2 hX⟩
-  let e := LinearEquiv.ofBijective (F.mapExtLinearMap R M N 1)
-    (F.mapExt_bijective_of_preservesProjectiveObjects M N 1)
+  let e := LinearEquiv.ofBijective (F.mapExtLinearMap R M N 1) (by
+    simpa only [Functor.mapExtLinearMap_coe, Functor.mapExtAddHom_coe] using
+      F.mapExt_bijective_of_preservesProjectiveObjects M N 1)
   exact (Ext1.abelianLinearEquiv R M N).trans
     (e.trans (Ext1.abelianLinearEquiv R M.obj N.obj).symm)
 
 /-- On derived extension classes the comparison is the map induced by the inclusion. -/
-private theorem toExt_ext1LinearEquiv {M N : FGModuleCat.{w} A}
+@[simp low] -- Give the short exact sequence formula priority on representatives.
+theorem toExt_ext1LinearEquiv {M N : FGModuleCat.{w} A}
     (ξ : (ExactStructure.abelian _).Ext1 M N) :
     (ext1LinearEquiv R M N ξ).toExt =
       ξ.toExt.mapExactFunctor (forget₂ (FGModuleCat.{w} A) (ModuleCat.{w} A)) := by
   simp only [ext1LinearEquiv, LinearEquiv.trans_apply, Ext1.toExt_abelianLinearEquiv_symm,
-    Ext1.abelianLinearEquiv_apply]
-  rfl
+    Ext1.abelianLinearEquiv_apply, LinearEquiv.ofBijective_apply, Functor.mapExtLinearMap_apply]
 
 /-- On a representative the comparison takes the extension class of the same short exact
 sequence in the ambient module category. -/
