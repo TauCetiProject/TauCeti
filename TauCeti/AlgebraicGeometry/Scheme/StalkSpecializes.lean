@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.AffineScheme
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.RingTheory.DedekindDomain.Basic
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
+public import TauCeti.RingTheory.LocalRing.ResidueField.Ideal
 
 import Mathlib.AlgebraicGeometry.Properties
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
@@ -45,7 +46,8 @@ off.
 * `TauCeti.AlgebraicGeometry.Scheme.exists_specializes_and_comap_stalkSpecializes_maximalIdeal_eq`:
   every prime ideal `P` of `𝒪_{X,x}` arises from a generization `η ⤳ x` of codimension `P.height`.
 * `TauCeti.AlgebraicGeometry.Scheme.residueFieldAlgEquivOfSpecializes`: over a base ring `k`,
-  the residue field of that prime is `κ(x)` as a `k`-algebra.
+  the residue field of that prime is `κ(x)` as a `k`-algebra, restricting the general
+  `Ideal.residueFieldAlgEquivOfIsLocalization` along `isLocalization_stalkSpecializes`.
 * `TauCeti.AlgebraicGeometry.Scheme.exists_comap_stalkSpecializes_maximalIdeal_eq_span_singleton`:
   on a locally Noetherian integral scheme, every prime element of `𝒪_{X,y}` generates the prime of
   a codimension-one generization of `y`, by Krull's principal ideal theorem.
@@ -234,20 +236,28 @@ noncomputable def residueFieldAlgEquivOfSpecializes (h : x ⤳ y) :
   letI := (X.presheaf.stalkSpecializes h).hom.toAlgebra
   haveI := isLocalization_stalkSpecializes h
   let P := (maximalIdeal (X.presheaf.stalk x)).comap (X.presheaf.stalkSpecializes h).hom
-  AlgEquiv.ofRingEquiv (f := ResidueField.mapEquiv (IsLocalization.algEquiv P.primeCompl
-    (Localization.AtPrime P) (X.presheaf.stalk x)).toRingEquiv) fun c ↦ by
-    rw [IsScalarTower.algebraMap_apply k (X.presheaf.stalk y),
-      IsScalarTower.algebraMap_apply (X.presheaf.stalk y) (Localization.AtPrime P),
-      IsLocalRing.ResidueField.algebraMap_eq]
+  AlgEquiv.ofRingEquiv (f := (P.residueFieldAlgEquivOfIsLocalization
+    (X.presheaf.stalk x)).toRingEquiv) fun c ↦ by
+    rw [IsScalarTower.algebraMap_apply k (X.presheaf.stalk y)]
     -- Both sides are residues in `𝒪_{X,x}` of the germ of the global function `c`.
-    change residue (X.presheaf.stalk x) (IsLocalization.algEquiv P.primeCompl _ _
-      (algebraMap _ _ _)) = _
-    rw [AlgEquiv.commutes, RingHom.algebraMap_toAlgebra,
+    change P.residueFieldAlgEquivOfIsLocalization _ (algebraMap _ _ _) = _
+    rw [Ideal.residueFieldAlgEquivOfIsLocalization_algebraMap, RingHom.algebraMap_toAlgebra,
       _root_.AlgebraicGeometry.Scheme.algebraMap_residueField_eq_residue_comp_baseRingToStalk,
       _root_.AlgebraicGeometry.Scheme.algebraMap_stalk_eq_baseRingToStalk, RingHom.comp_apply,
       _root_.AlgebraicGeometry.Scheme.baseRingToStalk_apply,
       _root_.AlgebraicGeometry.Scheme.baseRingToStalk_apply]
     exact congr_arg (residue _) congr($(X.presheaf.germ_stalkSpecializes trivial h) _)
+
+variable (k : Type u) [CommRing k] [X.Over (Spec (.of k))] in
+/-- `residueFieldAlgEquivOfSpecializes` sends the image of a germ `a ∈ 𝒪_{X,y}` to the residue in
+`κ(x)` of its specialization in `𝒪_{X,x}`. -/
+@[simp]
+theorem residueFieldAlgEquivOfSpecializes_algebraMap (h : x ⤳ y) (a : X.presheaf.stalk y) :
+    residueFieldAlgEquivOfSpecializes k h (algebraMap (X.presheaf.stalk y) _ a) =
+      X.residue x (X.presheaf.stalkSpecializes h a) :=
+  letI := (X.presheaf.stalkSpecializes h).hom.toAlgebra
+  haveI := isLocalization_stalkSpecializes h
+  Ideal.residueFieldAlgEquivOfIsLocalization_algebraMap (X.presheaf.stalk x) _ a
 
 /-- **Prime elements of a local ring and codimension-one generizations.** On a locally Noetherian
 integral scheme, every prime element `p` of the local ring `𝒪_{X,y}` generates the prime of
