@@ -512,6 +512,12 @@ theorem linearize_map_mk {n m : ℕ} (x : PlanarMatching (n + m)) (c : ℕ) :
     (linearize R δ).map (TLDiagCat.Hom.mk ⟨x, c⟩ : .of n ⟶ .of m) =
       δ ^ c • diagBasis (of n) (of m) x := (rfl)
 
+/-- Every basis morphism is the image of a circle-free diagram under linearization. -/
+theorem diagBasis_eq_linearize_map (x : PlanarMatching (X.as + Y.as)) :
+    diagBasis X Y x =
+      (linearize R δ).map (TLDiagCat.Hom.mk ⟨x, 0⟩ : TLDiagCat.of X.as ⟶ TLDiagCat.of Y.as) := by
+  simp only [linearize_map_mk, pow_zero, one_smul]
+
 instance : (linearize R δ).EssSurj where
   mem_essImage Y := ⟨.of Y.as, ⟨Iso.refl Y⟩⟩
 
