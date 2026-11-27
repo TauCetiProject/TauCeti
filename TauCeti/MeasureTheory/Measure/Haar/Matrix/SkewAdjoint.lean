@@ -64,6 +64,18 @@ instance isNegInvariant_skewAdjoint [Finite n] : μ.IsNegInvariant := by
 
 omit [Fintype n] in
 open scoped Matrix.Norms.Frobenius in
+/-- An additive Haar measure on the skew-Hermitian matrices is sigma-finite. -/
+instance sigmaFinite_skewAdjoint [Finite n] : SigmaFinite μ := by
+  have := Fintype.ofFinite n
+  have := Matrix.borelSpace_skewAdjoint_frobenius (n := n)
+  have := μ.isAddHaarMeasure_skewAdjoint_frobenius
+  have := FiniteDimensional.proper_real (skewAdjoint.submodule ℝ (Matrix n n ℂ))
+  exact @SigmaFinite.of_isFiniteMeasureOnCompacts _ _
+    NormedAddCommGroup.toMetricSpace.toUniformSpace.toTopologicalSpace inferInstance μ
+    inferInstance
+
+omit [Fintype n] in
+open scoped Matrix.Norms.Frobenius in
 /-- The change of variables formula on the skew-Hermitian matrices, for a Haar measure of the
 topology of entries and derivatives for the Frobenius norm. -/
 theorem lintegral_image_eq_lintegral_abs_det_fderiv_mul_skewAdjoint [Finite n]
