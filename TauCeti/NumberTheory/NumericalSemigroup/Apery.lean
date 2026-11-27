@@ -8,6 +8,9 @@ module
 public import TauCeti.NumberTheory.NumericalSemigroup.Basic
 public import Mathlib.Data.Nat.ModEq
 public import Mathlib.Order.Interval.Set.Nat
+public import Mathlib.Algebra.BigOperators.Finprod
+import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Data.Int.CardIntervalMod
 
 /-!
 # Apéry sets of numerical semigroups
@@ -20,7 +23,8 @@ moreover `S` is a numerical semigroup there is exactly one such element in each 
 Apéry sets are the basic tool for computing the invariants of a numerical semigroup: for
 `0 < n ∈ S`, every element of `S` is uniquely a multiple of `n` plus an element of the Apéry set,
 and for every `0 < n` Selmer's formula reads off the Frobenius number as the largest element of
-the Apéry set minus `n`.
+the Apéry set minus `n`. For `0 < n ∈ S`, the gaps congruent to an element `w` of the Apéry set
+are the `w / n` numbers `w - n, w - 2 n, …`, which gives Selmer's formula for the genus.
 
 ## Main definitions
 
@@ -39,13 +43,19 @@ the Apéry set minus `n`.
 * `AddSubmonoid.closure_insert_aperySet`: for `0 < n ∈ S`, `n` and the Apéry set generate `S`.
 * `AddSubmonoid.IsNumericalSemigroup.numericalFrobenius_eq_sSup_aperySet_sub`: Selmer's formula
   `F(S) = max Ap(S, n) - n`. It holds for every positive `n`, not only for `n ∈ S`.
+* `AddSubmonoid.IsNumericalSemigroup.notMem_iff_exists_mem_aperySet_lt_modEq`: for `0 < n ∈ S`,
+  the gaps of a numerical semigroup are the natural numbers below the element of the Apéry set in
+  their residue class modulo `n`.
+* `AddSubmonoid.IsNumericalSemigroup.numericalGenus_eq_finsum_aperySet_div` and
+  `AddSubmonoid.IsNumericalSemigroup.two_mul_finsum_aperySet`: Selmer's formula
+  `g(S) = (1 / n) Σ_{w ∈ Ap(S, n)} w - (n - 1) / 2` for the genus, for `0 < n ∈ S`.
 * `AddSubmonoid.mem_aperySet_of_add_mem_aperySet_left`: the Apéry set is closed under summands
   taken in `S`.
 
 ## References
 
 * A. Assi and P. A. García-Sánchez, *Numerical semigroups and applications* (2014),
-  §1, Lemma 4, Proposition 6, Corollary 7 and Proposition 12(i); §2, Lemma 46.
+  §1, Lemma 4, Proposition 6, Corollary 7 and Proposition 12; §2, Lemma 46.
 -/
 
 public section
@@ -287,6 +297,59 @@ theorem IsNumericalSemigroup.numericalFrobenius_eq_sSup_aperySet_sub
   rw [(h.isGreatest_aperySet hpos).csSup_eq]
   have := S.numericalFrobenius_add_one
   omega
+
+/-- For a numerical semigroup `S` and `0 < n ∈ S`, a natural number is a gap exactly when it lies
+below the element of the Apéry set in its residue class modulo `n`. -/
+theorem IsNumericalSemigroup.notMem_iff_exists_mem_aperySet_lt_modEq
+    (h : S.IsNumericalSemigroup) (hn : n ∈ S) (hpos : n ≠ 0) :
+    s ∉ S ↔ ∃ w ∈ S.aperySet n, s < w ∧ s ≡ w [MOD n] := by
+  refine ⟨fun hs ↦ ?_, fun ⟨w, hw, hlt, hmod⟩ hs ↦ ?_⟩
+  · obtain ⟨w, hw, hmod⟩ := h.exists_mem_aperySet_modEq hpos s
+    exact ⟨w, hw, lt_of_not_ge fun hle ↦ hs (mem_of_le_of_modEq hn hw.1 hle hmod), hmod.symm⟩
+  · exact (le_of_mem_aperySet_of_modEq hn hw hs hmod.symm).not_gt hlt
+
+/-- For a numerical semigroup `S` and `0 < n ∈ S`, the genus is the sum of the quotients `w / n`
+over the Apéry set `Ap(S, n)`: the gaps congruent to `w ∈ Ap(S, n)` modulo `n` are the `w / n`
+numbers `w - n, w - 2 n, …` below `w`. -/
+theorem IsNumericalSemigroup.numericalGenus_eq_finsum_aperySet_div (h : S.IsNumericalSemigroup)
+    (hn : n ∈ S) (hpos : n ≠ 0) :
+    S.numericalGenus = ∑ᶠ w ∈ S.aperySet n, w / n := by
+  classical
+  have hA := h.finite_aperySet (n := n)
+  have hgaps : S.numericalGaps =
+      ↑(hA.toFinset.biUnion fun w ↦ (Finset.range w).filter (· ≡ w [MOD n])) := by
+    ext x
+    rw [mem_numericalGaps, h.notMem_iff_exists_mem_aperySet_lt_modEq hn hpos]
+    simp [and_left_comm]
+  rw [numericalGenus_def, hgaps, Set.ncard_coe_finset, Finset.card_biUnion,
+    finsum_mem_eq_finite_toFinset_sum _ hA]
+  · refine Finset.sum_congr rfl fun w _ ↦ ?_
+    rw [← Nat.count_eq_card_filter_range, Nat.count_modEq_card (hr := Nat.pos_of_ne_zero hpos)]
+    simp
+  · intro v hv w hw hvw
+    refine Finset.disjoint_left.mpr fun x hxv hxw ↦ hvw ?_
+    rw [Finset.mem_filter] at hxv hxw
+    exact eq_of_mem_aperySet_of_modEq hn (hA.mem_toFinset.mp hv) (hA.mem_toFinset.mp hw)
+      (hxv.2.symm.trans hxw.2)
+
+/-- **Selmer's formula** for the genus: for a numerical semigroup `S` and `n ∈ S`,
+`2 Σ_{w ∈ Ap(S, n)} w = 2 n g(S) + n (n - 1)`, that is
+`g(S) = (1 / n) Σ_{w ∈ Ap(S, n)} w - (n - 1) / 2` when `n ≠ 0`. At `n = 0` both sides vanish. -/
+theorem IsNumericalSemigroup.two_mul_finsum_aperySet (h : S.IsNumericalSemigroup) (hn : n ∈ S) :
+    2 * ∑ᶠ w ∈ S.aperySet n, w = 2 * n * S.numericalGenus + n * (n - 1) := by
+  rcases eq_or_ne n 0 with rfl | hpos
+  · simp [aperySet_zero]
+  have hA := h.finite_aperySet (n := n)
+  -- Split each `w` as `n * (w / n) + w % n`; the residues `w % n` run once over `{0, …, n - 1}`.
+  have hmod : ∑ᶠ w ∈ S.aperySet n, w % n = ∑ i ∈ Finset.range n, i := by
+    rw [← finsum_mem_coe_finset, Finset.coe_range]
+    exact finsum_mem_eq_of_bijOn _ (h.bijOn_mod_aperySet hn) fun _ _ ↦ rfl
+  have hsum : ∑ᶠ w ∈ S.aperySet n, w = n * S.numericalGenus + ∑ i ∈ Finset.range n, i := by
+    rw [h.numericalGenus_eq_finsum_aperySet_div hn hpos, mul_finsum_mem' _ _ hA, ← hmod,
+      ← finsum_mem_add_distrib hA]
+    exact finsum_mem_congr rfl fun w _ ↦ (Nat.div_add_mod w n).symm
+  rw [hsum, ← Finset.sum_range_id_mul_two]
+  ring
 
 /-- If a sum of two elements of `S` lies in the Apéry set, so does the first summand. -/
 @[grind →]

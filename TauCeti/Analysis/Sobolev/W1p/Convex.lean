@@ -10,6 +10,8 @@ import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Convex.Topology
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
@@ -278,7 +280,7 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le {p 
     have hle := norm_le_add_toReal_eLpNorm_div_of_ae_dist_le
       (zero_lt_one.trans_le Fact.out).ne'
       (Measure.restrict_eq_zero.not.2 (measure_ball_pos μ x (by positivity)).ne')
-      (W1p.eLpNorm_value_restrict_ne_top u hxΩ) hosc
+      (Lp.eLpNorm_restrict_ne_top (W1p.value u) hxΩ) hosc
     rw [Measure.restrict_apply_univ, Measure.addHaar_ball_center] at hle
     exact hle.trans (by gcongr; exact W1p.toReal_eLpNorm_value_le_norm u hxΩ)
   have hρ2 : ((ρ / 2).toNNReal : ℝ) = ρ / 2 := Real.coe_toNNReal _ (by positivity)
@@ -486,6 +488,20 @@ theorem W1p.exists_holderOnWith_closure_ae_eq_of_convex
     filter_upwards [self_mem_ae_restrict Ω.isOpen.measurableSet] with x hx
     rw [dite_eq_left (subset_closure hx)]
     exact hfg (x := ⟨x, subset_closure hx⟩) hx
+
+/-- On a bounded convex open set, a Sobolev function with exponent above the dimension has
+an essentially bounded value. This follows from its continuous Morrey representative on the
+compact closure. -/
+theorem W1p.memLp_value_top_of_convex {q : ℝ≥0∞} [Fact (1 ≤ q)]
+    (w : W1p μ Ω q) (hc : Convex ℝ (Ω : Set E))
+    (hb : Bornology.IsBounded (Ω : Set E))
+    (hq : (Module.finrank ℝ E : ℝ≥0∞) < q) :
+    MemLp (W1p.value w) ⊤ (μ.restrict (Ω : Set E)) := by
+  obtain ⟨C, -, hC⟩ := W1p.exists_holderOnWith_closure_ae_eq_of_convex (μ := μ) hq hc hb
+  obtain ⟨g, hg, hgv⟩ := hC w
+  have hα := ENNReal.toNNReal_one_sub_div_pos hq
+  exact ((hg.continuousOn hα).memLp_top_restrict_of_subset_isCompact
+    hb.isCompact_closure Ω.isOpen.measurableSet subset_closure).ae_eq hgv.symm
 
 end Morrey
 

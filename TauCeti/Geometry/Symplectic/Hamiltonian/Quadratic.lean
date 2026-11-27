@@ -67,6 +67,10 @@ quadratic form whose Hamiltonian endomorphism preserves both summands is a direc
 * `TauCeti.SymplecticForm.hamiltonianEnd_quadraticPoissonBracket`: `A_{Q, R} = ⁅A_Q, A_R⁆`.
 * `TauCeti.SymplecticForm.quadraticPoissonBracket_eq_zero_iff`: `{Q, R} = 0` exactly when `A_Q`
   and `A_R` commute.
+* `TauCeti.SymplecticForm.commute_hamiltonianEnd_of_mem_span`,
+  `TauCeti.SymplecticForm.hamiltonianEnd_apply_mem_of_mem_span`: an endomorphism commuting with,
+  or a subspace preserved by, the Hamiltonian endomorphisms of a family does so for every form in
+  its span.
 * `TauCeti.SymplecticForm.polar_hamiltonianEnd_apply_of_quadraticPoissonBracket_eq_zero`: if
   `{R, P} = 0` then `A_P` is skew for the polar form of `R`.
 * `TauCeti.SymplecticForm.hamiltonianEnd_prod`,
@@ -114,22 +118,15 @@ section Algebraic
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
   (ω : SymplecticForm V)
 
-omit [FiniteDimensional ℝ V] in
-/-- Two endomorphisms agree once `ω` pairs their values identically with every vector. -/
-private theorem ext_of_apply_left {A B : Module.End ℝ V} (h : ∀ v w, ω (A v) w = ω (B v) w) :
-    A = B :=
-  LinearMap.ext fun v ↦ LinearMap.ker_eq_bot.1
-    (LinearMap.separatingLeft_iff_ker_eq_bot.1 ω.separatingLeft) (LinearMap.ext (h v))
-
 /-- The **Hamiltonian endomorphism** `A_Q` of a quadratic form `Q`, the unique endomorphism with
 `ω (A_Q v) w = polar Q v w`. Viewing `Q` as a Hamiltonian, `A_Q` is its Hamiltonian vector
 field, under the convention `ι_{X_H} ω = dH`. -/
 def hamiltonianEnd : QuadraticForm ℝ V →ₗ[ℝ] Module.End ℝ V where
   toFun Q := LinearMap.BilinForm.symmCompOfNondegenerate (QuadraticMap.polarBilin Q) ω.toBilinForm
     ω.nondegenerate
-  map_add' Q R := ω.ext_of_apply_left fun v w ↦ by
+  map_add' Q R := LinearMap.ext fun v ↦ ω.eq_of_forall_apply_eq fun w ↦ by
     simp [QuadraticMap.polar_add]
-  map_smul' c Q := ω.ext_of_apply_left fun v w ↦ by
+  map_smul' c Q := LinearMap.ext fun v ↦ ω.eq_of_forall_apply_eq fun w ↦ by
     simp [QuadraticMap.polar_smul]
 
 /-- The characterizing identity `ω (A_Q v) w = polar Q v w` of the Hamiltonian endomorphism. -/
@@ -143,7 +140,8 @@ theorem apply_hamiltonianEnd (Q : QuadraticForm ℝ V) (v w : V) :
 `ω (A v) w = polar Q v w`. -/
 theorem eq_hamiltonianEnd_iff {Q : QuadraticForm ℝ V} {A : Module.End ℝ V} :
     A = ω.hamiltonianEnd Q ↔ ∀ v w, ω (A v) w = QuadraticMap.polar Q v w := by
-  refine ⟨fun h v w ↦ h ▸ ω.apply_hamiltonianEnd Q v w, fun h ↦ ω.ext_of_apply_left fun v w ↦ ?_⟩
+  refine ⟨fun h v w ↦ h ▸ ω.apply_hamiltonianEnd Q v w,
+    fun h ↦ LinearMap.ext fun v ↦ ω.eq_of_forall_apply_eq fun w ↦ ?_⟩
   rw [h, apply_hamiltonianEnd]
 
 /-- The Hamiltonian endomorphism of `Q` sends `u` to `z` as soon as `ω z` and `polar Q u` agree
@@ -372,6 +370,24 @@ theorem quadraticPoissonBracket_eq_zero_of_mem_span {ι : Type*} {Q : ι → Qua
   | zero => exact ω.quadraticPoissonBracket_zero_left _
   | add _ _ _ _ h h' => rw [quadraticPoissonBracket_add_left, h, h', add_zero]
   | smul c _ _ h => rw [quadraticPoissonBracket_smul_left, h, smul_zero]
+
+/-- An endomorphism commuting with the Hamiltonian endomorphisms of a family commutes with those
+of every form in its span. -/
+theorem commute_hamiltonianEnd_of_mem_span {ι : Type*} {Q : ι → QuadraticForm ℝ V}
+    {E : Module.End ℝ V} (hE : ∀ i, Commute E (ω.hamiltonianEnd (Q i))) {R : QuadraticForm ℝ V}
+    (hR : R ∈ Submodule.span ℝ (Set.range Q)) : Commute E (ω.hamiltonianEnd R) :=
+  ((Submodule.span_le (p := (Subalgebra.centralizer ℝ {E}).toSubmodule.comap
+    ω.hamiltonianEnd)).2 (Set.range_subset_iff.2 fun i ↦ (Subalgebra.mem_centralizer_iff ℝ).2
+      fun _ hg ↦ (Set.mem_singleton_iff.1 hg) ▸ hE i) hR) E rfl
+
+/-- A subspace preserved by the Hamiltonian endomorphisms of a family is preserved by those of
+every form in its span. -/
+theorem hamiltonianEnd_apply_mem_of_mem_span {ι : Type*} {Q : ι → QuadraticForm ℝ V}
+    {L : Submodule ℝ V} (hQL : ∀ i, ∀ v ∈ L, ω.hamiltonianEnd (Q i) v ∈ L)
+    {R : QuadraticForm ℝ V} (hR : R ∈ Submodule.span ℝ (Set.range Q)) :
+    ∀ v ∈ L, ω.hamiltonianEnd R v ∈ L :=
+  (Submodule.span_le (p := (L.compatibleMaps L).comap ω.hamiltonianEnd)).2
+    (Set.range_subset_iff.2 fun i ↦ (L.mem_compatibleMaps L).2 (hQL i)) hR
 
 /-! ### Direct sums -/
 

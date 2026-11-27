@@ -21,6 +21,7 @@ import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Topology.Order.Compact
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Topology.LocallyConstant.Preconnected
 
 /-!
 # Mean value estimates
@@ -76,6 +77,13 @@ On a set that is not convex, the mean value inequality still bounds the incremen
 along any polygonal path inside the set by the derivative bound times the length of the path
 (`TauCeti.norm_image_sub_le_of_norm_fderiv_le_of_segment_subset`, for three segments).
 
+## Constancy on a relatively open part of a convex set
+
+A function whose derivative within `Ω ∩ s` vanishes, for `Ω` open and `s` convex, is constant on
+`Ω ∩ s` when that set is preconnected (`Convex.is_const_of_fderivWithin_inter_eq_zero`), since
+near each of its points `Ω ∩ s` is the convex set `ball ∩ s`. For `s` a closed half-space this is
+constancy up to the boundary of a half-disc.
+
 ## Space-time functions vanishing outside a time interval
 
 A function of time and space with derivative bounded by `C` that vanishes outside the time
@@ -121,6 +129,9 @@ projection and the derivative of a map kills `ker π` on a ball about `0`, then 
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
+Over `ℝ`, if the derivative of a function in a direction `e` is a constant `c` along the
+segment from `x + a • e` to `x + b • e`, the function grows by `(b - a) • c` along it
+(`TauCeti.sub_eq_smul_of_fderiv_apply_eq`).
 
 ## Constancy from a vanishing derivative
 
@@ -177,6 +188,17 @@ assumed, and `L` is an arbitrary real number. Applied to `f` and to `-f`, the le
 first-order Taylor remainder of a function with `L`-Lipschitz derivative by `L / 2 * ‖h‖ ^ 2`,
 the inequality behind the convergence analysis of gradient methods (Y. Nesterov, *Lectures on
 convex optimization*, 2nd ed., Springer, 2018, Lemma 1.2.3).
+
+## A polynomial majorant for the derivative
+
+If `f : ℝ → E` has derivative `f' r` within `[t, u]` and `‖f' r‖ ≤ C (r - t) ^ n` on `[t, u)`, then
+`‖f u - f t‖ ≤ C (u - t) ^ (n + 1) / (n + 1)`
+(`TauCeti.norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_left`); the same holds with the bound
+`C (u - r) ^ n` (`TauCeti.norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_right`). Together they
+give the two-sided form: if `‖f' r‖ ≤ C |r - s| ^ n` on `[a, b]`, then
+`‖f u - f s‖ ≤ C |u - s| ^ (n + 1) / (n + 1)` for `s`, `u` in `[a, b]`
+(`TauCeti.norm_image_sub_le_of_norm_deriv_le_mul_abs_sub_pow`). These integrate the bounds on the
+derivatives of Taylor residuals.
 -/
 
 public section
@@ -485,6 +507,25 @@ theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
 
 end Direction
 
+/-- If `f` is differentiable at every point `x + s • e` with `s ∈ [a, b]` and its derivative in
+the direction `e` is the constant `c` there, then `f` grows by `(b - a) • c` from `x + a • e` to
+`x + b • e`. Unlike `TauCeti.apply_add_smul_eq_of_fderiv_apply_eq`, differentiability and the
+directional derivative are only assumed on the segment. -/
+theorem sub_eq_smul_of_fderiv_apply_eq {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : E → G} (x e : E) {a b : ℝ} {c : G} (hab : a ≤ b)
+    (hf : ∀ s ∈ Set.Icc a b, DifferentiableAt ℝ f (x + s • e) ∧ fderiv ℝ f (x + s • e) e = c) :
+    f (x + b • e) - f (x + a • e) = (b - a) • c := by
+  have hd : ∀ s ∈ Set.Icc a b, HasDerivAt (fun s ↦ f (x + s • e) - s • c) 0 s := fun s hs ↦ by
+    refine (((hf s hs).1.hasFDerivAt.comp_hasDerivAt s
+      (((hasDerivAt_id s).smul_const e).const_add x)).sub
+      ((hasDerivAt_id s).smul_const c)).congr_deriv ?_
+    simp [(hf s hs).2]
+  have h := constant_of_has_deriv_right_zero
+    (fun s hs ↦ (hd s hs).continuousAt.continuousWithinAt)
+    (fun s hs ↦ (hd s (Set.Ico_subset_Icc_self hs)).hasDerivWithinAt) b ⟨hab, le_rfl⟩
+  rw [sub_smul]
+  exact sub_eq_sub_iff_sub_eq_sub.1 h
+
 /-- **The mean value inequality along three segments.** If the segments `[x, p]`, `[p, q]` and
 `[q, y]` lie in a set `s` on which `g` is differentiable with derivative bounded by `L`, then
 `‖g y - g x‖ ≤ L (‖x - p‖ + ‖p - q‖ + ‖q - y‖)`. Compare
@@ -700,6 +741,41 @@ theorem eq_of_hasDerivWithinAt_zero (hs : IsPreconnected s)
   simpa [sub_eq_zero, eq_comm] using h
 
 end IsPreconnected
+
+namespace Convex
+
+variable {𝕜 E G : Type*} [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E] [NormedAddCommGroup G]
+  [NormedSpace 𝕜 G] {f : E → G} {Ω s : Set E} {x y : E}
+
+open Metric Set in
+open scoped Topology in
+/-- **Constancy on a preconnected relatively open part of a convex set.** Let `Ω` be open and `s`
+convex, such as a closed half-space. A function on `Ω ∩ s` whose derivative within `Ω ∩ s`
+vanishes at every point is constant on `Ω ∩ s` when that set is preconnected. The convex case
+`Ω = univ` is Mathlib's `Convex.is_const_of_fderivWithin_eq_zero`. -/
+theorem is_const_of_fderivWithin_inter_eq_zero (hs : Convex ℝ s) (hΩ : IsOpen Ω)
+    (hc : IsPreconnected (Ω ∩ s)) (hf : DifferentiableOn 𝕜 f (Ω ∩ s))
+    (hf' : ∀ z ∈ Ω ∩ s, fderivWithin 𝕜 f (Ω ∩ s) z = 0) (hx : x ∈ Ω ∩ s) (hy : y ∈ Ω ∩ s) :
+    f x = f y := by
+  -- `f` is locally constant on `Ω ∩ s`, which agrees near each of its points with a convex set
+  have hloc : ∀ z ∈ Ω ∩ s, ∀ᶠ w in 𝓝[Ω ∩ s] z, f w = f z := by
+    intro z hz
+    obtain ⟨r, hr, hrΩ⟩ := isOpen_iff.1 hΩ z hz.1
+    have hset : ball z r ∩ s = (Ω ∩ s) ∩ ball z r :=
+      Set.ext fun w ↦ ⟨fun h ↦ ⟨⟨hrΩ h.1, h.2⟩, h.1⟩, fun h ↦ ⟨h.2, h.1.2⟩⟩
+    have hd : ∀ w ∈ ball z r ∩ s, fderivWithin 𝕜 f (ball z r ∩ s) w = 0 := fun w hw ↦ by
+      rw [hset, fderivWithin_inter (isOpen_ball.mem_nhds hw.1)]
+      exact hf' w ⟨hrΩ hw.1, hw.2⟩
+    have hconst : ∀ w ∈ ball z r ∩ s, f z = f w := fun w hw ↦
+      ((convex_ball z r).inter hs).is_const_of_fderivWithin_eq_zero
+        (hf.mono fun w hw ↦ ⟨hrΩ hw.1, hw.2⟩) hd ⟨mem_ball_self hr, hz.2⟩ hw
+    exact Filter.mem_of_superset (inter_mem_nhdsWithin _ (ball_mem_nhds z hr))
+      fun w hw ↦ (hconst w ⟨hw.2, hw.1.2⟩).symm
+  -- a locally constant map on a preconnected set is constant
+  exact hc.apply_eq_of_eventually_eq hloc hx hy
+
+end Convex
 
 /-- A function `f : 𝕜 → G`, `𝕜 = ℝ` or `𝕜 = ℂ`, with zero derivative at every point is constant.
 This is the `HasDerivAt` form of Mathlib's `is_const_of_deriv_eq_zero`. -/
@@ -928,5 +1004,69 @@ theorem le_add_fderiv_add_of_lipschitz
   le_add_apply_add_of_norm_sub_le (fun y hy ↦ (hf y hy).hasFDerivAt.hasFDerivWithinAt) hL
 
 end Descent
+
+section PolynomialMajorant
+
+open Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The mean value inequality with a derivative bound growing like a power of the distance to the
+left endpoint: if `‖f' r‖ ≤ C (r - t) ^ n` on `[t, u)`, then
+`‖f u - f t‖ ≤ C (u - t) ^ (n + 1) / (n + 1)`. -/
+theorem norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_left {f f' : ℝ → E} {t u C : ℝ} {n : ℕ}
+    (htu : t ≤ u) (hf : ∀ r ∈ Icc t u, HasDerivWithinAt f (f' r) (Icc t u) r)
+    (hbound : ∀ r ∈ Ico t u, ‖f' r‖ ≤ C * (r - t) ^ n) :
+    ‖f u - f t‖ ≤ C * (u - t) ^ (n + 1) / (n + 1) := by
+  refine image_norm_le_of_norm_deriv_right_le_deriv_boundary (f := fun r ↦ f r - f t)
+    (B := fun r ↦ C * (r - t) ^ (n + 1) / (n + 1))
+    (fun r hr ↦ ((hf r hr).sub_const (f t)).continuousWithinAt)
+    (fun r hr ↦ ((hf r (Ico_subset_Icc_self hr)).sub_const (f t)).mono_of_mem_nhdsWithin
+      (Icc_mem_nhdsGE_of_mem hr)) (by simp) (fun r ↦ ?_) hbound (right_mem_Icc.2 htu)
+  convert ((((hasDerivAt_id' r).sub_const t).fun_pow (n + 1)).const_mul C).div_const
+    ((n : ℝ) + 1) using 1
+  push_cast
+  field_simp
+
+/-- The mean value inequality with a derivative bound growing like a power of the distance to the
+right endpoint: if `‖f' r‖ ≤ C (u - r) ^ n` on `[t, u)`, then
+`‖f u - f t‖ ≤ C (u - t) ^ (n + 1) / (n + 1)`. -/
+theorem norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_right {f f' : ℝ → E} {t u C : ℝ} {n : ℕ}
+    (htu : t ≤ u) (hf : ∀ r ∈ Icc t u, HasDerivWithinAt f (f' r) (Icc t u) r)
+    (hbound : ∀ r ∈ Ico t u, ‖f' r‖ ≤ C * (u - r) ^ n) :
+    ‖f u - f t‖ ≤ C * (u - t) ^ (n + 1) / (n + 1) := by
+  have key := image_norm_le_of_norm_deriv_right_le_deriv_boundary (f := fun r ↦ f r - f t)
+    (fun r hr ↦ ((hf r hr).sub_const (f t)).continuousWithinAt)
+    (fun r hr ↦ ((hf r (Ico_subset_Icc_self hr)).sub_const (f t)).mono_of_mem_nhdsWithin
+      (Icc_mem_nhdsGE_of_mem hr))
+    (B := fun r ↦ C * ((u - t) ^ (n + 1) - (u - r) ^ (n + 1)) / (n + 1)) (by simp)
+    (fun r ↦ ?_) hbound (right_mem_Icc.2 htu)
+  · simpa using key
+  · convert (((((hasDerivAt_id' r).const_sub u).fun_pow (n + 1)).const_sub
+      ((u - t) ^ (n + 1))).const_mul C).div_const ((n : ℝ) + 1) using 1
+    push_cast
+    field_simp
+
+/-- The mean value inequality with a derivative bound growing like a power of the distance to a
+base point `s`: if `‖f' r‖ ≤ C |r - s| ^ n` on `[a, b]`, then for `s`, `u` in `[a, b]`, in either
+order, `‖f u - f s‖ ≤ C |u - s| ^ (n + 1) / (n + 1)`. -/
+theorem norm_image_sub_le_of_norm_deriv_le_mul_abs_sub_pow {f f' : ℝ → E} {a b s u C : ℝ}
+    {n : ℕ}
+    (hf : ∀ r ∈ Icc a b, HasDerivWithinAt f (f' r) (Icc a b) r)
+    (hbound : ∀ r ∈ Icc a b, ‖f' r‖ ≤ C * |r - s| ^ n) (hs : s ∈ Icc a b) (hu : u ∈ Icc a b) :
+    ‖f u - f s‖ ≤ C * |u - s| ^ (n + 1) / (n + 1) := by
+  rcases le_total s u with hsu | hus
+  · have hsub : Icc s u ⊆ Icc a b := Icc_subset_Icc hs.1 hu.2
+    rw [abs_of_nonneg (sub_nonneg.2 hsu)]
+    refine norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_left hsu
+      (fun r hr ↦ (hf r (hsub hr)).mono hsub) fun r hr ↦ ?_
+    simpa [abs_of_nonneg (sub_nonneg.2 hr.1)] using hbound r (hsub (Ico_subset_Icc_self hr))
+  · have hsub : Icc u s ⊆ Icc a b := Icc_subset_Icc hu.1 hs.2
+    rw [norm_sub_rev, abs_of_nonpos (sub_nonpos.2 hus), neg_sub]
+    refine norm_image_sub_le_of_norm_deriv_le_mul_pow_sub_right hus
+      (fun r hr ↦ (hf r (hsub hr)).mono hsub) fun r hr ↦ ?_
+    simpa [abs_of_nonpos (sub_nonpos.2 hr.2.le)] using hbound r (hsub (Ico_subset_Icc_self hr))
+
+end PolynomialMajorant
 
 end TauCeti

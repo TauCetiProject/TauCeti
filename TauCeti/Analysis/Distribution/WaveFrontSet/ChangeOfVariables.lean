@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.ChangeOfVariables
+public import TauCeti.Analysis.Distribution.MicrolocalRegularity
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
+public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Cone
 import TauCeti.Algebra.Module.ZLattice.Dual
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
@@ -29,10 +31,10 @@ the derivative,
 
 `(x, ξ) ∈ WF(e^* T) ↔ (e x, (De⁻¹(e x))ᵀ ξ) ∈ WF(T)` for `x ∈ U`
 
-(`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`).
-Equivalently `WF(e^* T) = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ WF(T)}`. This is the invariance of
-the wave front set under diffeomorphisms (Hörmander I, Theorem 8.2.4), which makes it a
-well-defined closed conic subset of the cotangent bundle of a manifold. For linear `e` it is
+(`Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`), that is,
+`WF(e^* T) = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ WF(T)}` (`TauCeti.covectorPullback`). This is the
+invariance of the wave front set under diffeomorphisms (Hörmander I, Theorem 8.2.4), which makes
+it a well-defined closed conic subset of the cotangent bundle of a manifold. For linear `e` it is
 `Distribution.waveFrontSet_compCLMOfContinuousLinearEquiv`.
 
 ## The argument
@@ -60,9 +62,21 @@ rapidly, and `|a_m(ξ)|` is bounded. For the others, the phase of `𝓕 G_ξ (m)
   Fourier coefficients of `e_* (φ e_ξ)` as coefficients.
 * `Distribution.IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph`: if `T` is microlocally
   smooth at `(e x, (De⁻¹(e x))ᵀ ξ)`, then `e^* T` is microlocally smooth at `(x, ξ)`.
+* `Distribution.isInvariantMicrolocalRegularity_isMicrolocallySmoothAt`: microlocal smoothness is
+  an invariant notion of microlocal regularity (`Distribution.IsInvariantMicrolocalRegularity`).
 * `Distribution.isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff`: the converse, for
   `x ∈ U`, by pulling back along `e⁻¹` from `e '' U`.
-* `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`: the wave front set of `e^* T`.
+* `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph`: the wave front set of `e^* T` is
+  the pullback `e^* WF(T)`.
+* `OpenPartialHomeomorph.mem_covectorPullback_iff`: for `U` in the source of `e`,
+  `(x, ξ) ∈ e^* Γ ↔ x ∈ U ∧ (e x, (De⁻¹(e x))ᵀ ξ) ∈ Γ`.
+* `Distribution.waveFrontSet_compCLMOfOpenPartialHomeomorph_subset`: the pullback
+  `e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` (`TauCeti.covectorPullback`) of a set `Γ` of
+  covectors contains the wave front set of `e^* T` whenever `Γ` contains that of `T`.
+* `OpenPartialHomeomorph.ne_zero_of_mem_covectorPullback`,
+  `OpenPartialHomeomorph.isOpen_prod_compl_sdiff_covectorPullback`: like `Γ`, the cone `e^* Γ`
+  contains no zero covectors, and it is closed in `U × (E \ {0})` when `Γ` is closed in
+  `Ω × (E \ {0})`.
 
 ## References
 
@@ -301,55 +315,128 @@ theorem IsMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph {T : 𝓓'(Ω, ℂ
           ‖T.localFourier (ofSupportedIn hKΩ (G ζ)) ((B†) ζ)‖) := by rw [mul_pow]; ring
     _ ≤ a ^ N * C := mul_le_mul_of_nonneg_left (hC ζ hζ) (by positivity)
 
+/-- Microlocal smoothness is an invariant notion of microlocal regularity: it is open, linear,
+conic, preserved by smooth multiples and pullback along smooth changes of variables, and unchanged
+by restriction to smaller open sets. -/
+theorem isInvariantMicrolocalRegularity_isMicrolocallySmoothAt :
+    IsInvariantMicrolocalRegularity
+      fun (Ω : Opens E) (T : 𝓓'(Ω, ℂ)) x ξ ↦ T.IsMicrolocallySmoothAt x ξ where
+  isOpen_setOf _ T := isOpen_setOf_isMicrolocallySmoothAt T
+  zero hx ξ := isMicrolocallySmoothAt_zero hx ξ
+  add hS hT := hS.add hT
+  smul c hT := hT.smul c
+  smul_covector hr hT := (isMicrolocallySmoothAt_smul_iff hr).2 hT
+  smulLeftCLM hg hT := hT.smulLeftCLM hg
+  smulLeftCLM_iff hg hx := isMicrolocallySmoothAt_smulLeftCLM_iff hg hx
+  restrictCLM_iff h _ _ hx _ := isMicrolocallySmoothAt_restrictCLM_iff h hx
+  compCLMOfOpenPartialHomeomorph he he' hU hUΩ _ _ _ hx hT :=
+    hT.compCLMOfOpenPartialHomeomorph _ he he' hU hUΩ hx
+
 /-- **The wave front set under a change of variables, pointwise.** For `x ∈ U`, the pullback
 `e^* T` is microlocally smooth at `(x, ξ)` exactly when `T` is microlocally smooth at
 `(e x, (De⁻¹(e x))ᵀ ξ)`. -/
 theorem isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E}
     (hx : x ∈ U) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).IsMicrolocallySmoothAt x ξ ↔
-      T.IsMicrolocallySmoothAt (e x) (((fderiv ℝ e.symm (e x))†) ξ) := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.compCLMOfOpenPartialHomeomorph e he he' hU hUΩ hx⟩
-  -- Pull `e^* T` back along `e⁻¹` from the image `V = e '' U`, which gives back `T` on `V`.
-  have hxs : x ∈ e.source := hU hx
-  let V : Opens E := ⟨e '' U, e.isOpen_image_of_subset_source U.isOpen hU⟩
-  have hVΩ : V ≤ Ω := image_subset_iff.2 hUΩ
-  have hVt : (V : Set E) ⊆ e.symm.source := by
-    rintro _ ⟨z, hz, rfl⟩
-    exact e.map_source (hU hz)
-  have hVU : MapsTo e.symm V U := by
-    rintro _ ⟨z, hz, rfl⟩
-    rwa [e.left_inv (hU hz)]
-  have hUV : MapsTo e U V := fun z hz ↦ ⟨z, hz, rfl⟩
-  have hres : compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T =
-      compCLMOfOpenPartialHomeomorph e he he' hU hUV (restrictCLM T) := by
-    rw [← restrictCLM_compCLMOfOpenPartialHomeomorph le_rfl hVΩ, restrictCLM_self]
-  rw [hres] at h
-  have h' : (compCLMOfOpenPartialHomeomorph e he he' hU hUV (restrictCLM T)).IsMicrolocallySmoothAt
-      (e.symm (e x)) (((fderiv ℝ e.symm.symm (e.symm (e x)))†)
-        (((fderiv ℝ e.symm (e x))†) ξ)) := by
-    simpa only [OpenPartialHomeomorph.symm_symm, e.left_inv hxs,
-      e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) hxs] using h
-  have h₂ := h'.compCLMOfOpenPartialHomeomorph e.symm he' he hVt hVU ⟨x, hx, rfl⟩
-  refine (isMicrolocallySmoothAt_restrictCLM_iff hVΩ ⟨x, hx, rfl⟩).1 ?_
-  convert h₂ using 1
-  exact (compCLMOfOpenPartialHomeomorph_symm_apply_apply _).symm
+      T.IsMicrolocallySmoothAt (e x) (((fderiv ℝ e.symm (e x))†) ξ) :=
+  isInvariantMicrolocalRegularity_isMicrolocallySmoothAt.compCLMOfOpenPartialHomeomorph_iff hx
+
+end Distribution
+
+/-! ### The pullback of a cone -/
+
+namespace OpenPartialHomeomorph
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- Over a subset of the source of a change of variables `e`, the pullback `e^* Γ` consists of
+the `(x, ξ)` with `x ∈ U` and `(e x, (De⁻¹(e x))ᵀ ξ) ∈ Γ`: the covector `η` with `De(x)ᵀ η = ξ` is
+`(De⁻¹(e x))ᵀ ξ`. -/
+theorem mem_covectorPullback_iff (e : OpenPartialHomeomorph E E)
+    (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
+    {U : Set E} (hU : U ⊆ e.source) {Γ : Set (E × E)} {p : E × E} :
+    p ∈ TauCeti.covectorPullback e U Γ ↔
+      p.1 ∈ U ∧ (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2) ∈ Γ := by
+  rw [TauCeti.mem_covectorPullback]
+  refine ⟨fun ⟨hx, η, hη, hηp⟩ ↦ ⟨hx, ?_⟩, fun ⟨hx, hp⟩ ↦ ⟨hx, _, hp,
+    e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) (hU hx) p.2⟩⟩
+  rwa [← hηp,
+    e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he he' (by simp) (hU hx) η]
+
+/-- The pullback `e^* Γ` along a change of variables of a set `Γ` of nonzero covectors contains no
+zero covectors, since the transposed derivative of `e` is injective. -/
+theorem ne_zero_of_mem_covectorPullback (e : OpenPartialHomeomorph E E)
+    (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
+    {U : Set E} (hU : U ⊆ e.source) {Γ : Set (E × E)} (hΓ0 : ∀ p ∈ Γ, p.2 ≠ 0) {p : E × E}
+    (hp : p ∈ TauCeti.covectorPullback e U Γ) : p.2 ≠ 0 := by
+  obtain ⟨hx, η, hη, hηp⟩ := TauCeti.mem_covectorPullback.1 hp
+  intro h0
+  refine hΓ0 _ hη ?_
+  rw [← e.adjoint_fderiv_symm_apply_adjoint_fderiv_apply_of_contDiffOn he he' (by simp) (hU hx) η,
+    hηp, h0, map_zero]
+
+/-- **The pullback of a closed cone is closed.** If `Γ` is closed in `Ω × (E \ {0})`, then the
+pullback `e^* Γ` along a change of variables is closed in `U × (E \ {0})`: over `U` it is the
+preimage of `Γ` under the continuous map `(x, ξ) ↦ (e x, De⁻¹(e x)ᵀ ξ)`. -/
+theorem isOpen_prod_compl_sdiff_covectorPullback (e : OpenPartialHomeomorph E E)
+    (he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source) (he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target)
+    {U Ω : Set E} (hUo : IsOpen U) (hU : U ⊆ e.source) (hUΩ : MapsTo e U Ω) {Γ : Set (E × E)}
+    (hΓ : IsOpen ((Ω ×ˢ {0}ᶜ) \ Γ)) :
+    IsOpen ((U ×ˢ {0}ᶜ) \ TauCeti.covectorPullback e U Γ) := by
+  set Φ : E × E → E × E := fun p ↦ (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2)
+  have hset : (U ×ˢ {0}ᶜ) \ TauCeti.covectorPullback e U Γ =
+      (U ×ˢ {0}ᶜ) ∩ Φ ⁻¹' ((Ω ×ˢ {0}ᶜ) \ Γ) := by
+    ext ⟨x, ξ⟩
+    simp only [Set.mem_sdiff, mem_prod, mem_compl_iff, mem_singleton_iff, mem_inter_iff,
+      mem_preimage, e.mem_covectorPullback_iff he he' hU, Φ]
+    constructor
+    · rintro ⟨⟨hx, hξ⟩, hn⟩
+      refine ⟨⟨hx, hξ⟩, ⟨hUΩ hx, fun h0 ↦ hξ ?_⟩, fun hΓξ ↦ hn ⟨hx, hΓξ⟩⟩
+      rw [← e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp)
+        (hU hx) ξ, h0, map_zero]
+    · rintro ⟨⟨hx, hξ⟩, -, hn⟩
+      exact ⟨⟨hx, hξ⟩, fun h ↦ hn h.2⟩
+  rw [hset]
+  have hcont : ContinuousOn Φ (U ×ˢ univ) := by
+    have he1 : ContinuousOn (fun p : E × E ↦ e p.1) (U ×ˢ univ) :=
+      (e.continuousOn.mono hU).comp continuousOn_fst fun p hp ↦ hp.1
+    have hD : ContinuousOn (fun p : E × E ↦ (fderiv ℝ e.symm (e p.1))†) (U ×ˢ univ) :=
+      (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := E) (F := E)).continuous.comp_continuousOn
+        ((he'.continuousOn_fderiv_of_isOpen e.open_target (by simp)).comp he1
+          fun p hp ↦ e.map_source (hU hp.1))
+    exact he1.prodMk (hD.clm_apply continuousOn_snd)
+  exact (hcont.mono (prod_mono subset_rfl (subset_univ _))).isOpen_inter_preimage
+    (hUo.prod isOpen_compl_singleton) hΓ
+
+end OpenPartialHomeomorph
+
+namespace Distribution
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {e : OpenPartialHomeomorph E E} {U Ω : Opens E}
+  {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target}
+  {hU : (U : Set E) ⊆ e.source} {hUΩ : MapsTo e U Ω}
 
 /-- **The wave front set under a change of variables** (Hörmander I, Theorem 8.2.4). The wave
-front set of the pullback `e^* T` consists of the `(x, ξ)` with `x ∈ U` and
-`(e x, (De⁻¹(e x))ᵀ ξ) ∈ WF(T)`: covectors pull back by the transpose of the derivative. -/
+front set of the pullback `e^* T` is the pullback `e^* WF(T)` (`TauCeti.covectorPullback`): it
+consists of the `(x, ξ)` with `x ∈ U` and `(e x, (De⁻¹(e x))ᵀ ξ) ∈ WF(T)`
+(`OpenPartialHomeomorph.mem_covectorPullback_iff`), so covectors pull back by the transpose of
+the derivative. -/
 theorem waveFrontSet_compCLMOfOpenPartialHomeomorph (T : 𝓓'(Ω, ℂ)) :
     (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).waveFrontSet =
-      {p : E × E | p.1 ∈ U ∧ (e p.1, ((fderiv ℝ e.symm (e p.1))†) p.2) ∈ T.waveFrontSet} := by
+      TauCeti.covectorPullback e U T.waveFrontSet := by
   ext ⟨x, ξ⟩
-  simp only [mem_ofPred_eq, mem_waveFrontSet_iff]
-  constructor
-  · rintro ⟨hx, hξ, h⟩
-    refine ⟨hx, hUΩ hx, fun h0 ↦ hξ ?_, fun h' ↦ h ?_⟩
-    · rw [← e.adjoint_fderiv_apply_adjoint_fderiv_symm_apply_of_contDiffOn he he' (by simp) (hU hx)
-        ξ, h0, map_zero]
-    · exact (isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx).2 h'
-  · rintro ⟨hx, -, hξ, h⟩
-    exact ⟨hx, fun h0 ↦ hξ (by rw [h0, map_zero]), fun h' ↦
-      h ((isMicrolocallySmoothAt_compCLMOfOpenPartialHomeomorph_iff hx).1 h')⟩
+  rw [e.mem_covectorPullback_iff he he' hU]
+  simpa only [mem_waveFrontSet_iff, mem_ofPred_eq, SetLike.mem_coe] using Set.ext_iff.1
+    (isInvariantMicrolocalRegularity_isMicrolocallySmoothAt.setOf_compCLMOfOpenPartialHomeomorph
+      (hUΩ := hUΩ) T) (x, ξ)
+
+/-- If the wave front set of `T` lies in `Γ`, that of its pullback `e^* T` along a change of
+variables lies in `e^* Γ = {(x, De(x)ᵀ η) | x ∈ U, (e x, η) ∈ Γ}` (`TauCeti.covectorPullback`). -/
+theorem waveFrontSet_compCLMOfOpenPartialHomeomorph_subset {T : 𝓓'(Ω, ℂ)} {Γ : Set (E × E)}
+    (hT : T.waveFrontSet ⊆ Γ) :
+    (compCLMOfOpenPartialHomeomorph e he he' hU hUΩ T).waveFrontSet ⊆
+      TauCeti.covectorPullback e U Γ :=
+  (waveFrontSet_compCLMOfOpenPartialHomeomorph T).trans_subset (TauCeti.covectorPullback_mono hT)
 
 end Distribution
