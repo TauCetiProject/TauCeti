@@ -112,9 +112,7 @@ throughout the full complex half-plane `Re s > 1`. -/
 theorem riemannZeta_eq_mul_LSeries_moebius_sq {s : ℂ} (hs : 1 < s.re) :
     riemannZeta s = riemannZeta (2 * s) *
       _root_.LSeries (fun n ↦ (ArithmeticFunction.moebius n : ℂ) ^ 2) s := by
-  have hs2 : 1 < (2 * s).re := by
-    simp only [Complex.mul_re, Complex.re_ofNat, Complex.im_ofNat, zero_mul, sub_zero]
-    linarith
+  have hs2 := one_lt_re_two_mul hs
   have hfactor (p : Nat.Primes) :
       (1 - (p : ℂ) ^ (-(2 * s)))⁻¹ * (1 + (p : ℂ) ^ (-s)) =
         (1 - (p : ℂ) ^ (-s))⁻¹ := by

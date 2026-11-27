@@ -8,11 +8,17 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Relative
+public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Basic
 import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
+import Mathlib.Analysis.Convex.Contractible
+import TauCeti.AlgebraicTopology.Cohomology.Cap.Pushforward
 import TauCeti.AlgebraicTopology.Cohomology.CrossProduct
+import TauCeti.AlgebraicTopology.Cohomology.Local.Basic
+import TauCeti.AlgebraicTopology.Cohomology.Point
+import TauCeti.AlgebraicTopology.Singular.LocalHomology.Cross
 
 /-!
-# Capping a relative cross product with a class of the first factor
+# Capping a relative cross product with a class of either factor
 
 Let `(X, B)` be a pair and `Y` a space, and consider the product pair
 `(X, B) × Y = (X × Y, B × Y)`. For a relative class `o ∈ Hₘ(X, B; R)` and a class
@@ -48,6 +54,20 @@ The connecting morphisms are compatible with the Kronecker pairing,
 `⟨δσ, o⟩ = ⟨σ, ∂o⟩` (`TopPair.singularKronecker_singularCohomologyδ`), so the scalar `⟨σ, ∂o⟩`
 produced by the proof is `⟨u, o⟩`.
 
+For a finite-dimensional real normed space `V` and the Thom pair `(V × Y, (V ∖ 0) × Y)` of the
+product bundle, the homology Thom map `a ↦ pr₂_*(a ⌢ pr₁^* u)` is then a left inverse of the
+bijection `x ↦ o × x` (`TauCeti.bijective_singularHomologyCrossRel_tmul_complSingleton`), for a
+generator `o` of `H_r(V, V ∖ 0; k)` and its dual class `u`
+(`TauCeti.exists_singularKronecker_complSingleton_eq_one`). It is linear over the cohomology of `Y`
+up to the sign `(-1)^(r j)` by the projection formula
+(`TopPair.map_singularCap_absoluteSingularCap`), so capping with the pull-back of `ψ ∈ Hʲ(Y; k)`
+along the second projection is
+
+`(o × x) ⌢ pr₂^* ψ = (-1)^(r j) o × (x ⌢ ψ)`
+
+(`TauCeti.absoluteSingularCap_singularHomologyCrossRel_tmul`), for every `o` since both sides are
+linear in `o`. The positive degree `r ≠ 0` is needed for the homology Thom map.
+
 The pair is in the first factor, as for the relative cross product
 `TopCat.singularHomologyCrossRel`, and the coefficients are modules over a commutative ring `k`.
 
@@ -59,6 +79,8 @@ The pair is in the first factor, as for the relative cross product
   in the image of `δ`.
 * `TopCat.singularCap_singularHomologyCrossRel_of_isZero`: the same for every `u` when
   `Hᵐ(X) = 0`.
+* `TauCeti.absoluteSingularCap_singularHomologyCrossRel_tmul`:
+  `(o × x) ⌢ pr₂^* ψ = (-1)^(r j) o × (x ⌢ ψ)` on the Thom pair of a product bundle.
 
 ## References
 
@@ -228,5 +250,112 @@ theorem singularCap_singularHomologyCrossRel_of_isZero
   exact LinearMap.mem_range.1 hu
 
 end TopCat
+
+namespace TauCeti
+
+open Set Module
+
+variable {V : Type w} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  {k : Type w} [CommRing k] (L : ModuleCat.{w} k)
+
+/-- The case of `TauCeti.absoluteSingularCap_singularHomologyCrossRel_tmul` where `o` generates the
+local homology of `V` at `0` and `V` has dimension `p + 1`. -/
+private theorem absoluteSingularCap_singularHomologyCrossRel_tmul_of_span_eq_top (Y : TopCat.{w})
+    {p j q n m : ℕ} (hr : finrank ℝ V = p + 1)
+    {o : (TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularHomology
+      (C := ModuleCat.{w} k) (𝟙_ _) (p + 1)} (ho : Submodule.span k {o} = ⊤)
+    (hn : p + 1 + (j + q) = n) (hm : p + 1 + q = m) (h : j + m = n)
+    (ψ : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j)
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) (j + q)).obj L).obj Y) :
+    (TopPair.ofSubset (fst (TopCat.of V) Y ⁻¹' {(0 : V)}ᶜ)).absoluteSingularCap k
+        (λ_ (𝟙_ (ModuleCat.{w} k) ⊗ L)).inv (λ_ (𝟙_ (ModuleCat.{w} k) ⊗ L)).hom j m n h
+        (TopCat.singularCohomologyMap (snd (TopCat.of V) Y :
+          (TopPair.ofSubset (fst (TopCat.of V) Y ⁻¹' {(0 : V)}ᶜ)).fst ⟶ Y) j ψ)
+        (TopCat.singularHomologyCrossRel (TopCat.of V) Y {(0 : V)}ᶜ (𝟙_ (ModuleCat.{w} k)) L
+          (p + 1) (j + q) n hn (o ⊗ₜ x)) =
+      ((-1 : ℤ) ^ ((p + 1) * j)) •
+        TopCat.singularHomologyCrossRel (TopCat.of V) Y {(0 : V)}ᶜ (𝟙_ (ModuleCat.{w} k)) L
+          (p + 1) q m hm (o ⊗ₜ Y.singularCap k (λ_ L).inv (λ_ L).hom j q (j + q) rfl ψ x) := by
+  obtain rfl : m = p + q + 1 := by omega
+  obtain rfl : n = p + (j + q) + 1 := by omega
+  -- The class `u ∈ Hᵖ⁺¹(V, V ∖ 0; k)` with `⟨u, o⟩ = 1`.
+  have hx : (0 : V) ∈ (OpenPartialHomeomorph.refl V).source := mem_univ _
+  obtain ⟨u, huo⟩ := exists_singularKronecker_complSingleton_eq_one
+    (OpenPartialHomeomorph.refl V) hx hr ho
+  -- The homology Thom map `a ↦ pr₂_*(a ⌢ pr₁^* u)` is a left inverse of `y ↦ o × y`.
+  have : ContractibleSpace (TopCat.of V) := inferInstanceAs (ContractibleSpace V)
+  have hX := isZero_singularCohomology_of_contractibleSpace (𝟙_ (ModuleCat.{w} k)) k
+    (𝟙_ (ModuleCat.{w} k)) (TopCat.of V) (n := p + 1) (by omega)
+  have hΦ (q' : ℕ) (y : ((singularHomologyFunctor (ModuleCat.{w} k) q').obj L).obj Y) :=
+    (TopCat.singularCap_singularHomologyCrossRel_of_isZero hX u o y).trans
+      (by rw [huo, one_smul])
+  -- Write the left side as `o × b`, and compute `b` with the Thom map.
+  obtain ⟨b, hb⟩ := (bijective_singularHomologyCrossRel_tmul_complSingleton
+    (OpenPartialHomeomorph.refl V) hx Y L hr ho q (p + q + 1) hm).2
+    ((TopPair.ofSubset (fst (TopCat.of V) Y ⁻¹' {(0 : V)}ᶜ)).absoluteSingularCap k
+        (λ_ (𝟙_ (ModuleCat.{w} k) ⊗ L)).inv (λ_ (𝟙_ (ModuleCat.{w} k) ⊗ L)).hom j (p + q + 1)
+        (p + (j + q) + 1) h (TopCat.singularCohomologyMap (snd (TopCat.of V) Y :
+          (TopPair.ofSubset (fst (TopCat.of V) Y ⁻¹' {(0 : V)}ᶜ)).fst ⟶ Y) j ψ)
+        (TopCat.singularHomologyCrossRel (TopCat.of V) Y {(0 : V)}ᶜ (𝟙_ (ModuleCat.{w} k)) L
+          (p + 1) (j + q) (p + (j + q) + 1) hn (o ⊗ₜ x)))
+  beta_reduce at hb
+  have hb' : b = ((-1 : ℤ) ^ ((p + 1) * j)) • Y.singularCap k (λ_ L).inv (λ_ L).hom j q (j + q)
+      rfl ψ x := by
+    refine (hΦ q b).symm.trans ?_
+    rw [hb]
+    have hpf := TopPair.map_singularCap_absoluteSingularCap
+      (TopPair.ofSubset (fst (TopCat.of V) Y ⁻¹' {(0 : V)}ᶜ)) (𝟙 (𝟙_ (ModuleCat.{w} k) ⊗ L))
+      (snd (TopCat.of V) Y) h hm hn rfl
+      (TopPair.singularCohomologyMap (TopPair.ofSubsetMap (fst (TopCat.of V) Y)
+        (mapsTo_preimage _ _) : TopPair.ofSubset (fst (TopCat.of V) Y ⁻¹' {(0 : V)}ᶜ) ⟶
+          TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ) (p + 1) u) ψ
+      (TopCat.singularHomologyCrossRel (TopCat.of V) Y {(0 : V)}ᶜ (𝟙_ (ModuleCat.{w} k)) L (p + 1)
+        (j + q) (p + (j + q) + 1) hn (o ⊗ₜ x))
+    -- The Thom map takes `o × x` back to `x`. The homology of the product pair is typed as
+    -- `TopPair.singularHomology` in `hpf` and as the object of a homology functor in `hΦ`; the two
+    -- agree only up to unfolding, so `hΦ` is applied under the sign by unification, not `rw`.
+    exact hpf.trans (congrArg (fun y ↦ ((-1 : ℤ) ^ ((p + 1) * j)) •
+      Y.singularCap k (λ_ L).inv (λ_ L).hom j q (j + q) rfl ψ y) (hΦ (j + q) x))
+  rw [← hb, hb', TensorProduct.tmul_smul, map_zsmul]
+
+/-- **Capping the Thom isomorphism of a product bundle with a class of the base.** Let `V` be a
+finite-dimensional real normed space, `o ∈ H_r(V, V ∖ 0; k)` with `r ≠ 0`, `Y` a space,
+`x ∈ H_{j+q}(Y; L)` and `ψ ∈ Hʲ(Y; k)`. In the Thom pair `(V × Y, (V ∖ 0) × Y)` of the product
+bundle, capping the relative cross product `o × x` with the pull-back `pr₂^* ψ` of `ψ` along the
+projection to `Y` is `(-1)^(r j)` times the cross product of `o` with `x ⌢ ψ`. The proof inverts
+`x ↦ o × x` by the homology Thom map of `TopCat.singularCap_singularHomologyCrossRel_of_isZero`,
+which is only available in positive degree, hence the hypothesis `r ≠ 0`. -/
+theorem absoluteSingularCap_singularHomologyCrossRel_tmul (Y : TopCat.{w}) {r j q n m : ℕ}
+    (hr₀ : r ≠ 0) (hn : r + (j + q) = n) (hm : r + q = m) (h : j + m = n)
+    (o : (TopPair.ofSubset (X := TopCat.of V) {(0 : V)}ᶜ).singularHomology
+      (C := ModuleCat.{w} k) (𝟙_ _) r)
+    (ψ : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) j)
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) (j + q)).obj L).obj Y) :
+    (TopPair.ofSubset (fst (TopCat.of V) Y ⁻¹' {(0 : V)}ᶜ)).absoluteSingularCap k
+        (λ_ (𝟙_ (ModuleCat.{w} k) ⊗ L)).inv (λ_ (𝟙_ (ModuleCat.{w} k) ⊗ L)).hom j m n h
+        (TopCat.singularCohomologyMap (snd (TopCat.of V) Y :
+          (TopPair.ofSubset (fst (TopCat.of V) Y ⁻¹' {(0 : V)}ᶜ)).fst ⟶ Y) j ψ)
+        (TopCat.singularHomologyCrossRel (TopCat.of V) Y {(0 : V)}ᶜ (𝟙_ (ModuleCat.{w} k)) L
+          r (j + q) n hn (o ⊗ₜ x)) =
+      ((-1 : ℤ) ^ (r * j)) •
+        TopCat.singularHomologyCrossRel (TopCat.of V) Y {(0 : V)}ᶜ (𝟙_ (ModuleCat.{w} k)) L
+          r q m hm (o ⊗ₜ Y.singularCap k (λ_ L).inv (λ_ L).hom j q (j + q) rfl ψ x) := by
+  obtain ⟨p, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hr₀
+  have hx : (0 : V) ∈ (OpenPartialHomeomorph.refl V).source := mem_univ _
+  by_cases hr : finrank ℝ V = p + 1
+  · -- Both sides are linear in `o`, a multiple of a generator of the local homology.
+    obtain ⟨g, hg⟩ := exists_span_singularHomology_complSingleton_eq_top
+      (OpenPartialHomeomorph.refl V) hx (k := k) hr
+    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 (hg ▸ Submodule.mem_top (x := o))
+    rw [← TensorProduct.smul_tmul', map_smul, map_smul,
+      absoluteSingularCap_singularHomologyCrossRel_tmul_of_span_eq_top L Y hr hg hn hm h ψ x,
+      ← TensorProduct.smul_tmul', map_smul, smul_comm]
+  · -- Otherwise the local homology vanishes in degree `p + 1`, so `o = 0`.
+    have := ModuleCat.subsingleton_of_isZero (isZero_singularHomology_complSingleton_of_ne
+      (𝟙_ (ModuleCat.{w} k)) (OpenPartialHomeomorph.refl V) hx rfl (Ne.symm hr))
+    rw [Subsingleton.elim o 0, TensorProduct.zero_tmul, TensorProduct.zero_tmul, map_zero,
+      map_zero, map_zero, smul_zero]
+
+end TauCeti
 
 end
