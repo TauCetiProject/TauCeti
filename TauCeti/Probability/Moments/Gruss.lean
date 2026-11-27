@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Probability.Moments.Variance
-import Mathlib.Algebra.QuadraticDiscriminant
+public import TauCeti.Probability.Moments.Covariance
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
@@ -19,8 +18,6 @@ We combine the covariance Cauchy–Schwarz inequality with Popoviciu's variance 
 
 ## Main results
 
-* `ProbabilityTheory.covariance_sq_le_variance_mul`: the square of the covariance is at most
-  the product of the variances, for square-integrable functions on a finite measure space.
 * `TauCeti.abs_integral_mul_sub_le`: Grüss's inequality on a probability space.
 
 ## References
@@ -33,25 +30,6 @@ public section
 open MeasureTheory ProbabilityTheory
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
-
-namespace ProbabilityTheory
-
-/-- The covariance Cauchy–Schwarz inequality for square-integrable real functions
-on a finite measure space. -/
-theorem covariance_sq_le_variance_mul [IsFiniteMeasure μ]
-    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
-    covariance f g μ ^ 2 ≤ variance f μ * variance g μ := by
-  have hquad : ∀ t : ℝ,
-      0 ≤ variance g μ * (t * t) + (2 * covariance f g μ) * t + variance f μ := by
-    intro t
-    have h := variance_nonneg (fun a ↦ f a + t * g a) μ
-    rw [variance_fun_add hf (hg.const_mul t), variance_const_mul, covariance_const_mul_right] at h
-    nlinarith only [h]
-  have hdisc := discrim_le_zero hquad
-  unfold discrim at hdisc
-  nlinarith only [hdisc]
-
-end ProbabilityTheory
 
 namespace TauCeti
 
@@ -69,12 +47,13 @@ theorem abs_integral_mul_sub_le [IsProbabilityMeasure μ]
   have hrR : r ≤ R := by
     obtain ⟨a, ha⟩ := hgb.exists
     exact ha.1.trans ha.2
-  have hcov := covariance_sq_le_variance_mul hf2 hg2
+  have hcov := covariance_sq_le_variance_mul_variance hf2 hg2
   have hfvar := variance_le_sq_of_bounded hfb hf.aemeasurable
   have hgvar := variance_le_sq_of_bounded hgb hg.aemeasurable
   have hprod := mul_le_mul hfvar hgvar (variance_nonneg g μ) (sq_nonneg ((M - m) / 2))
-  change |(∫ a, (f * g) a ∂μ) - (∫ a, f a ∂μ) * ∫ a, g a ∂μ| ≤ _
-  rw [← covariance_eq_sub hf2 hg2]
+  have hcov_eq := covariance_eq_sub hf2 hg2
+  simp only [Pi.mul_apply] at hcov_eq
+  rw [← hcov_eq]
   apply (sq_le_sq₀ (abs_nonneg _) (by positivity)).mp
   rw [sq_abs]
   nlinarith only [hcov, hprod]

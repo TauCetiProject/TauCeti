@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Moments.CovarianceBilin
+public import Mathlib.Probability.Moments.Variance
+import Mathlib.Algebra.QuadraticDiscriminant
+import Mathlib.Tactic.Linarith
 import Mathlib.Analysis.Matrix.Hermitian
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
@@ -26,6 +29,9 @@ The `MemLp id 2 μ` hypothesis in the comparison theorem is essential. Mathlib d
 totalized coordinate by coordinate.
 
 ## Main results
+
+* `ProbabilityTheory.covariance_sq_le_variance_mul_variance` bounds the squared covariance
+  by the product of the variances for square-integrable functions under a finite measure.
 
 * `TauCeti.covMatrix` is the matrix of coordinate covariances of a measure.
 * `TauCeti.covarianceBilin_eq_covMatrix` identifies the matrix and bilinear-form views of
@@ -57,6 +63,27 @@ noncomputable section
 open MeasureTheory ProbabilityTheory
 
 open scoped RealInnerProductSpace
+
+namespace ProbabilityTheory
+
+variable {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
+
+/-- The covariance Cauchy–Schwarz inequality for square-integrable real functions
+on a finite measure space. -/
+theorem covariance_sq_le_variance_mul_variance [IsFiniteMeasure μ]
+    (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    covariance f g μ ^ 2 ≤ variance f μ * variance g μ := by
+  have hquad : ∀ t : ℝ,
+      0 ≤ variance g μ * (t * t) + (2 * covariance f g μ) * t + variance f μ := by
+    intro t
+    have h := variance_nonneg (fun a ↦ f a + t * g a) μ
+    rw [variance_fun_add hf (hg.const_mul t), variance_const_mul, covariance_const_mul_right] at h
+    nlinarith only [h]
+  have hdisc := discrim_le_zero hquad
+  unfold discrim at hdisc
+  nlinarith only [hdisc]
+
+end ProbabilityTheory
 
 namespace TauCeti
 
