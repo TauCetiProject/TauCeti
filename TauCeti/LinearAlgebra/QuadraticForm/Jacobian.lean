@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.Spectrum.Prime.RingHom
+public import TauCeti.LinearAlgebra.QuadraticForm.ExtendScalars
 public import TauCeti.LinearAlgebra.QuadraticForm.GeometricRadical
-public import TauCeti.RingTheory.MvPolynomial.Jacobian.Projective
+public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 public import TauCeti.RingTheory.Smooth.Hypersurface
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
-import TauCeti.RingTheory.MvPolynomial.DualNumber
+import Mathlib.RingTheory.MvPolynomial.Tower
 import TauCeti.RingTheory.MvPolynomial.Quotient.Fiber
 
 /-!
@@ -21,8 +23,8 @@ the quadratic radical. Testing this on nonzero vectors over an algebraic closure
 nondegeneracy over the original field, including in characteristic two.
 
 Over an arbitrary base ring, fibrewise nondegeneracy is equivalent to the Jacobian
-ideals being unit ideals on all the standard affine charts. This condition persists
-under arbitrary base change and makes each chart locally standard smooth.
+ideals being unit ideals on all the standard affine charts. This condition makes
+each chart locally standard smooth.
 
 ## References
 
@@ -32,22 +34,6 @@ under arbitrary base change and makes each chart locally standard smooth.
 public section
 
 open MvPolynomial
-
-namespace QuadraticMap
-
-variable {R ι : Type*} [CommRing R] [Fintype ι] [DecidableEq ι]
-
-/-- The partial derivative in coordinate `i` at `x` is the polar pairing of `x`
-with the `i`-th basis vector. -/
-@[simp]
-theorem eval_pderiv_toMvPolynomial (Q : QuadraticForm R (ι → R)) (x : ι → R) (i : ι) :
-    eval x (pderiv i Q.toMvPolynomial) = Q.polarBilin x (Pi.single i 1) := by
-  let e : ι → R := Pi.single i 1
-  have h := aeval_inl_add_inr Q.toMvPolynomial x e
-  rw [← Q.extendScalars_apply_eq_aeval (DualNumber R), Q.extendScalars_apply_inl_add_inr] at h
-  simpa [e, Pi.single_apply] using (congrArg TrivSqZeroExt.snd h).symm
-
-end QuadraticMap
 
 namespace QuadraticForm
 
@@ -66,16 +52,18 @@ theorem nondegenerate_iff_forall_exists_aeval_pderiv_ne_zero [PerfectField L]
   have hd (x : ι → L) (i : ι) :
       aeval x (pderiv i Q.toMvPolynomial) = (Q.extendScalars L).polarBilin x (Pi.single i 1) := by
     rw [← QuadraticMap.eval_pderiv_toMvPolynomial, toMvPolynomial_extendScalars,
-      pderiv_map, eval_map, aeval_def]
+      pderiv_map, ← aeval_eq_eval, aeval_map_algebraMap L]
   simp_rw [hd, ← extendScalars_apply_eq_aeval]
   constructor
   · intro h x hx hq
     by_contra! hall
-    exact hx (h x ⟨hq, (Pi.basisFun L ι).ext fun i ↦ by simpa using hall i⟩)
+    exact hx (h x (QuadraticMap.mem_radical_iff.mpr
+      ⟨hq, (Pi.basisFun L ι).ext fun i ↦ by simpa using hall i⟩))
   · intro h x hx
     by_contra hne
-    obtain ⟨i, hi⟩ := h x hne hx.1
-    exact hi (DFunLike.congr_fun hx.2 _)
+    obtain ⟨hq, hp⟩ := QuadraticMap.mem_radical_iff.mp hx
+    obtain ⟨i, hi⟩ := h x hne hq
+    exact hi (DFunLike.congr_fun hp _)
 
 open TauCeti (dehomogenize)
 

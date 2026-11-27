@@ -101,20 +101,8 @@ theorem toMvPolynomial_isHomogeneous (Q : QuadraticForm R (ι → R)) :
 
 /-- Every coordinate quadratic form is represented by a polynomial of total degree at most two. -/
 theorem totalDegree_toMvPolynomial_le (Q : QuadraticForm R (ι → R)) :
-    Q.toMvPolynomial.totalDegree ≤ 2 := by
-  rcases subsingleton_or_nontrivial R with hR | hR
-  · simp [Subsingleton.elim Q.toMvPolynomial 0]
-  refine (totalDegree_add _ _).trans (max_le ?_ ?_)
-  · refine totalDegree_finsetSum_le fun i _ ↦ ?_
-    exact (totalDegree_mul _ _).trans (by simp)
-  · refine totalDegree_finsetSum_le fun ij _ ↦ ?_
-    induction ij using Sym2.ind with
-    | _ i j =>
-      dsimp only [offDiagMonomial, Sym2.lift_mk]
-      refine (totalDegree_mul _ _).trans ?_
-      have h1 : (C (polar Q (Pi.single i 1) (Pi.single j 1)) * X i).totalDegree ≤ 1 :=
-        (totalDegree_mul _ _).trans (by simp)
-      simpa using Nat.add_le_add_right h1 1
+    Q.toMvPolynomial.totalDegree ≤ 2 :=
+  Q.toMvPolynomial_isHomogeneous.totalDegree_le
 
 /-- The polynomial of a coordinate quadratic form has zero constant coefficient. -/
 @[simp]
