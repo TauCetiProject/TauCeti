@@ -227,7 +227,7 @@ theorem algebraicConnectivity_le_card (D : Finset V)
   have hxD (v : V) (hv : v ∈ D) : x v = 0 := by simp [x, hv]
   -- `x` is constant along the edges outside `D`.
   have hedge (i j : V) (hij : G.Adj i j) (hi : i ∉ D) (hj : j ∉ D) : x i = x j := by
-    have hadj : (G.induce (D : Set V)ᶜ).Adj ⟨i, hi⟩ ⟨j, hj⟩ := hij
+    have hadj : (G.induce (D : Set V)ᶜ).Adj ⟨i, hi⟩ ⟨j, hj⟩ := induce_adj.mpr hij
     have hp : p i ↔ p j := ⟨fun ⟨_, hr⟩ ↦ ⟨hj, hr.trans hadj.reachable⟩,
       fun ⟨_, hr⟩ ↦ ⟨hi, hr.trans hadj.symm.reachable⟩⟩
     simp only [x, hi, hj, hp, ↓reduceIte]
