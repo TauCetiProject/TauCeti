@@ -13,36 +13,37 @@ public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Skeleton
 /-!
 # The skeletal filtrations of the fibration comparison of a Brown model
 
-Let `B` be a CW complex with a point `b`, `p : E → B` a continuous map, and `M` a Brown model at
-`b` (`TauCeti.BrownModel`): a semi-free twisting cocycle `m` over the chains `C_*(Ω_b B)` on the
-Moore loops at `b`, on generators `P` graded by `ind`, with a quasi-isomorphism
-`g : K_m → C_*(P_b B)` onto the chains on the Moore paths from `b`. Its fibration comparison
-(`TauCeti.BrownModel.fibrationComparison`)
+Let `B` be a space with a point `b`, `C ⊆ B` a CW complex, `p : E → B` a continuous map, and
+`M` a Brown model at `b` (`TauCeti.BrownModel`): a semi-free twisting cocycle `m` over the chains
+`C_*(Ω_b B)` on the Moore loops at `b`, on generators `P` graded by `ind`, with a
+quasi-isomorphism `g : K_m → C_*(P_b B)` onto the chains on the Moore paths from `b`. Its fibration
+comparison (`TauCeti.BrownModel.fibrationComparison`)
 
 `Ψ : C_*(F'_b) ⊗_{C_*(Ω_b B)} K_m → C_*(E')`,  `σ ⊗ x ↦ append_*(σ × g(x))`,
 
 goes from the twisted complex of `m` with coefficients in the DG local system of `p` to the chains
 on the total space `E'` of the Moore-path replacement of `p`. Both sides are filtered by the
-skeleta of `B`:
+skeleta of `C`:
 
 * the twisted complex by the indices of the generators, the cell filtration
   `TauCeti.rowFiniteIndexFiltration`, which is exhaustive and, for generators of nonnegative index,
   zero in degree `-1`;
 * the chains on `E'` by the chains supported over the preimages of the skeleta under the end point
   map `E' → B`, the filtration whose spectral sequence is the Serre spectral sequence of the
-  fibration `E' → B`. It is exhaustive when the end points lie in the complex, since a cube of
-  `E'` has compact image, and zero in degree `-1` for an absolute CW complex.
+  fibration `E' → B`. It is exhaustive when the end points lie in `C`, since a cube of `E'` has
+  compact image, and zero in degree `-1` for an absolute CW complex.
 
-When the image `g(x)` of every generator lies over the `(ind x)`-skeleton, as for Brown's model of
-a CW complex (`TauCeti.brownModel_comparison_mem_pathFromChainSkeleton`), the comparison preserves
-these filtrations (`TauCeti.BrownModel.fibrationComparison_mem_cubicalChainModuleSupportedIn`):
-appending a path does not move its end point.
+When the image `g(x)` of every generator lies over the `(ind x)`-skeleton of `C`, as for Brown's
+model of a CW complex (`TauCeti.brownModel_comparison_mem_pathFromChainSkeleton`), the comparison
+preserves these filtrations
+(`TauCeti.BrownModel.fibrationComparison_mem_cubicalChainModuleSupportedIn`): appending a path does
+not move its end point.
 
 The comparison theorem for filtered complexes
 (`TauCeti.exists_differential_eq_and_add_eq_of_iSup_eq_top`) then reduces Brown's theorem, that
 the fibration comparison is a quasi-isomorphism, to its graded pieces: if for every `q ≥ 0` the
 comparison is a quasi-isomorphism from the generators of index `q` to the chains over the
-`q`-skeleton modulo the `(q - 1)`-skeleton, it is a quasi-isomorphism
+`q`-skeleton of `C` modulo the `(q - 1)`-skeleton, it is a quasi-isomorphism
 (`BrownModel.exists_coefficientDifferential_eq_and_fibrationComparison_add_eq_of_forall_exists`
 in the namespace `TauCeti`). All quasi-isomorphisms are written on elements: every relative cycle
 is a relative boundary, the form of the case of the inclusion of a point,
@@ -50,7 +51,7 @@ is a relative boundary, the form of the case of the inclusion of a point,
 The graded pieces form the zeroth page of the index spectral sequence of the twisted complex and
 of the Serre spectral sequence of `E' → B`, so a quasi-isomorphism on them is an isomorphism on the
 first pages. The comparison on them is the cell-by-cell computation of the relative homology of
-`E'` over the cells of `B`.
+`E'` over the cells of `C`.
 
 ## Main results
 
@@ -85,9 +86,10 @@ variable {E B : Type u} [TopologicalSpace E] [TopologicalSpace B] [T2Space B] {b
   {H : Type*} {R : Type*} [CommRing R] {P : Type*} {ind : P → ℤ}
 
 /-- **The fibration comparison preserves the skeletal filtrations.** If the image of every
-generator `x` of a Brown model `M` lies over the `(ind x)`-skeleton of `B`, then the fibration
-comparison of `M` sends the coefficient vectors carried by generators of index at most `q` to
-chains of the total space of the Moore-path replacement of `p` supported over the `q`-skeleton. -/
+generator `x` of a Brown model `M` lies over the `(ind x)`-skeleton of the relative CW complex
+`C ⊆ B`, then the fibration comparison of `M` sends the coefficient vectors carried by generators
+of index at most `q` to chains of the total space of the Moore-path replacement of `p` supported
+over the preimage of the `q`-skeleton of `C` under its end point map. -/
 theorem fibrationComparison_mem_cubicalChainModuleSupportedIn {C D : Set B} [RelCWComplex C D]
     (M : BrownModel B b H R P ind) (p : C(E, B))
     (hM : ∀ x, M.comparison x ∈ pathFromChainSkeleton b C H R (ind x)) {q : ℤ}
@@ -104,14 +106,15 @@ theorem fibrationComparison_mem_cubicalChainModuleSupportedIn {C D : Set B} [Rel
       Finsupp.mem_support_iff.1 hx ((mem_rowFiniteIndexFiltration_iff ind).1 hf x h)
     exact mem_pathFromChainSkeleton.1 (monotone_pathFromChainSkeleton b C H R hx' (hM x))
 
-/-- **Brown's theorem reduces to the graded pieces of the skeletal filtrations.** Let `B` be a CW
-complex containing the end points of the Moore-path replacement of `p`, and `M` a Brown model at `b`
-with generators of nonnegative index. Suppose that for every `q ≥ 0` the fibration comparison is a
-quasi-isomorphism from the coefficient vectors carried by generators of index at most `q` to the
-chains over the `q`-skeleton, modulo those carried by generators of index at most `q - 1` and the
-chains over the `(q - 1)`-skeleton: every relative cycle of this graded piece is a relative
-boundary there. Then the fibration comparison is a quasi-isomorphism: every relative cycle
-`(u, w)`, with `D u = 0` and `Ψ u = ∂ w`, is a relative boundary `(D u', Ψ u' + ∂ w')`. -/
+/-- **Brown's theorem reduces to the graded pieces of the skeletal filtrations.** Let `C ⊆ B`
+be a CW complex containing the end points of the Moore-path replacement of `p`, and `M` a Brown
+model at `b` with generators of nonnegative index. Suppose that for every `q ≥ 0` the fibration
+comparison is a quasi-isomorphism from the coefficient vectors carried by generators of index at
+most `q` to the chains over the `q`-skeleton of `C`, modulo those carried by generators of index at
+most `q - 1` and the chains over the `(q - 1)`-skeleton of `C`: every relative cycle of this
+graded piece is a relative boundary there. Then the fibration comparison is a quasi-isomorphism:
+every relative cycle `(u, w)`, with `D u = 0` and `Ψ u = ∂ w`, is a relative boundary
+`(D u', Ψ u' + ∂ w')`. -/
 theorem exists_coefficientDifferential_eq_and_fibrationComparison_add_eq_of_forall_exists
     {C : Set B} [CWComplex C] (M : BrownModel B b H R P ind) (p : C(E, B))
     (hind : ∀ x, 0 ≤ ind x) (hC : range (MooreReplacement.endpoint p) ⊆ C)
