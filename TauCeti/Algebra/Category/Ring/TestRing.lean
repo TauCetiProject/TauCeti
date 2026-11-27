@@ -8,11 +8,8 @@ module
 public import Mathlib.Algebra.Category.Ring.FilteredColimits
 public import Mathlib.CategoryTheory.Limits.Filtered
 public import Mathlib.CategoryTheory.Limits.FullSubcategory
-public import Mathlib.CategoryTheory.ObjectProperty.ColimitsOfShape
 public import TauCeti.RingTheory.TestRing
 
-import Mathlib.Algebra.Category.Ring.Colimits
-import Mathlib.Algebra.Polynomial.Lifts
 import TauCeti.CategoryTheory.Limits.ConcreteCategory.Basic
 
 /-!
@@ -23,11 +20,13 @@ import TauCeti.CategoryTheory.Limits.ConcreteCategory.Basic
 comparable for divisibility after splitting along an idempotent. With rings in a universe `u`, it
 has objects in `Type (u + 1)` and morphisms in `Type u`: a large category with small hom-sets.
 
-A filtered colimit of test rings, taken in `CommRingCat`, is a test ring
-(`TauCeti.IsTestRing.of_isColimit`), because finitely many elements of a filtered colimit of rings
-come from one member of the diagram, and an element vanishing in the colimit already vanishes in
-some member. So the test rings are closed in `CommRingCat` under filtered colimits, and
-`TestRingCat` has filtered colimits, computed in `CommRingCat`.
+A filtered colimit of test rings, taken in `CommRingCat`, is a test ring as soon as the forgetful
+functor to types preserves it (`TauCeti.IsTestRing.of_isColimit`), because finitely many elements
+of such a colimit come from one member of the diagram, and an element vanishing in the colimit
+already vanishes in some member. The forgetful functor preserves all small filtered colimits
+(indexed by a category `J : Type u` with morphisms in `Type u`, for rings in `Type u`). So the test
+rings are closed in `CommRingCat` under small filtered colimits, and `TestRingCat` has small
+filtered colimits, computed in `CommRingCat`.
 
 ## Main definitions
 
@@ -37,10 +36,12 @@ some member. So the test rings are closed in `CommRingCat` under filtered colimi
 
 ## Main results
 
-* `TauCeti.IsTestRing.of_isColimit`: a filtered colimit of test rings in `CommRingCat` is a test
-  ring.
-* `CommRingCat.isTestRing` is closed under isomorphisms and under filtered colimits, so
-  `TauCeti.TestRingCat` has filtered colimits, computed in `CommRingCat`.
+* `TauCeti.IsTestRing.of_isColimit`: a filtered colimit of test rings in `CommRingCat` that the
+  forgetful functor to types preserves, for instance a small one, is a test ring.
+* `CommRingCat.isTestRing` is closed under isomorphisms (`RingEquiv.isTestRing_iff`) and under
+  colimits of every filtered shape `J` whose colimits the forgetful functor preserves, in
+  particular every small filtered `J`; so `TauCeti.TestRingCat` has small filtered colimits,
+  computed in `CommRingCat`.
 
 ## References
 
@@ -62,8 +63,9 @@ namespace TauCeti.IsTestRing
 variable {J : Type*} [Category J] [IsFiltered J] {F : J ⥤ CommRingCat.{u}}
   [PreservesColimit F (forget CommRingCat.{u})] [∀ j, IsTestRing (F.obj j)] {c : Cocone F}
 
-/-- A filtered colimit of test rings, taken in commutative rings, is a test ring. The hypothesis
-that the forgetful functor preserves the colimit holds for every small filtered diagram. -/
+/-- A filtered colimit of test rings, taken in commutative rings, is a test ring provided the
+forgetful functor to types preserves it. This holds for every small filtered diagram, indexed by a
+category `J : Type u` with morphisms in `Type u`. -/
 theorem of_isColimit (hc : IsColimit c) : IsTestRing c.pt where
   exists_root p hp hdeg := by
     -- The coefficients of `p` come from one member `F.obj k` of the diagram, so `p` is the image
@@ -112,16 +114,12 @@ def isTestRing : ObjectProperty CommRingCat.{u} :=
 theorem isTestRing_iff (R : CommRingCat.{u}) : isTestRing R ↔ TauCeti.IsTestRing R :=
   Iff.rfl
 
-/-- Being a test ring is invariant under isomorphisms of rings. -/
+/-- Being a test ring is invariant under isomorphisms of rings (`RingEquiv.isTestRing_iff`). -/
 instance : isTestRing.{u}.IsClosedUnderIsomorphisms where
-  of_iso e h :=
-    have : TauCeti.IsTestRing _ := h
-    have := isReduced_of_injective e.commRingCatIsoToRingEquiv.symm
-      e.commRingCatIsoToRingEquiv.symm.injective
-    .of_surjective e.hom.hom e.commRingCatIsoToRingEquiv.surjective
+  of_iso e h := e.commRingCatIsoToRingEquiv.isTestRing_iff.mp h
 
-/-- Test rings are closed under filtered colimits in `CommRingCat`, for instance under all small
-filtered colimits. -/
+/-- Test rings are closed in `CommRingCat` under colimits of every filtered shape `J` whose colimits
+the forgetful functor to types preserves, for instance every small filtered `J`. -/
 instance {J : Type*} [Category J] [IsFiltered J]
     [PreservesColimitsOfShape J (forget CommRingCat.{u})] :
     isTestRing.{u}.IsClosedUnderColimitsOfShape J where
@@ -142,7 +140,7 @@ abbrev TestRingCat : Type (u + 1) :=
 instance (A : TestRingCat.{u}) : IsTestRing A.obj :=
   A.property
 
-/-- The category of test rings has filtered colimits, computed in `CommRingCat`. -/
+/-- The category of test rings has small filtered colimits, computed in `CommRingCat`. -/
 instance : HasFilteredColimits TestRingCat.{u} where
   HasColimitsOfShape _ _ _ := inferInstance
 

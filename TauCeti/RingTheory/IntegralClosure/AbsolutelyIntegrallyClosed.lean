@@ -44,8 +44,9 @@ be stable under the quotients and localizations used to cut a valuation ring int
 * `TauCeti.IsAbsolutelyIntegrallyClosed.of_surjective` and
   `TauCeti.IsAbsolutelyIntegrallyClosed.of_isLocalization`: quotients and localizations of an
   absolutely integrally closed ring are absolutely integrally closed.
-* `TauCeti.IsAbsolutelyIntegrallyClosed.pi`: an arbitrary product of absolutely integrally closed
-  rings is absolutely integrally closed.
+* `TauCeti.IsAbsolutelyIntegrallyClosed.pi`, `TauCeti.IsAbsolutelyIntegrallyClosed.prod`: an
+  arbitrary product, and a product of two, absolutely integrally closed rings are absolutely
+  integrally closed.
 * `TauCeti.isAbsolutelyIntegrallyClosed_iff_isIntegrallyClosed_and_isAlgClosed`: a domain is
   absolutely integrally closed if and only if it is integrally closed and its fraction field is
   algebraically closed.
@@ -150,21 +151,36 @@ instance localization [IsAbsolutelyIntegrallyClosed A] (M : Submonoid A) :
     IsAbsolutelyIntegrallyClosed (Localization M) :=
   of_isLocalization M
 
+/-- A monic polynomial of positive degree acquires a root once mapped to an absolutely integrally
+closed ring (vacuously if that ring is zero). -/
+theorem exists_isRoot_map [IsAbsolutelyIntegrallyClosed B] (f : A →+* B) {q : A[X]}
+    (hq : q.Monic) (hdeg : 0 < q.natDegree) : ∃ x, (q.map f).IsRoot x := by
+  obtain _ | _ := subsingleton_or_nontrivial B
+  · exact ⟨0, Subsingleton.elim _ _⟩
+  · exact exists_root _ (hq.map f) ((hq.natDegree_map f).symm ▸ hdeg)
+
 /-- An arbitrary product of absolutely integrally closed rings is absolutely integrally closed.
 In particular a finite product of algebraically closed fields is absolutely integrally closed,
 although it is not a domain. -/
 instance pi {ι : Type*} {R : ι → Type*} [∀ i, CommRing (R i)]
     [∀ i, IsAbsolutelyIntegrallyClosed (R i)] : IsAbsolutelyIntegrallyClosed (∀ i, R i) where
   exists_root q hq hdeg := by
-    have key (i : ι) : ∃ x, (q.map (Pi.evalRingHom R i)).IsRoot x := by
-      obtain _ | _ := subsingleton_or_nontrivial (R i)
-      · exact ⟨0, Subsingleton.elim _ _⟩
-      · exact exists_root _ (hq.map _) ((hq.natDegree_map (Pi.evalRingHom R i)).symm ▸ hdeg)
-    choose x hx using key
+    choose x hx using fun i ↦ exists_isRoot_map (Pi.evalRingHom R i) hq hdeg
     refine ⟨x, funext fun i ↦ ?_⟩
     have h := (hx i).eq_zero
     rw [← Pi.evalRingHom_apply R i x, eval_map_apply, Pi.evalRingHom_apply] at h
     rw [Pi.zero_apply, h]
+
+/-- A product of two absolutely integrally closed rings is absolutely integrally closed: a root is
+found factor by factor. -/
+instance prod [IsAbsolutelyIntegrallyClosed A] [IsAbsolutelyIntegrallyClosed B] :
+    IsAbsolutelyIntegrallyClosed (A × B) where
+  exists_root q hq hdeg := by
+    obtain ⟨x, hx⟩ := exists_isRoot_map (RingHom.fst A B) hq hdeg
+    obtain ⟨y, hy⟩ := exists_isRoot_map (RingHom.snd A B) hq hdeg
+    refine ⟨(x, y), Prod.ext ?_ ?_⟩
+    · simpa using (eval_map_apply (RingHom.fst A B) (x, y)).symm.trans hx.eq_zero
+    · simpa using (eval_map_apply (RingHom.snd A B) (x, y)).symm.trans hy.eq_zero
 
 end IsAbsolutelyIntegrallyClosed
 

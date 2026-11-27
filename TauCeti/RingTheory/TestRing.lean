@@ -9,9 +9,8 @@ public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import TauCeti.RingTheory.IntegralClosure.AbsolutelyIntegrallyClosed
 
-import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
-import Mathlib.RingTheory.LocalProperties.Reduced
 import TauCeti.RingTheory.LocalRing.Basic
+import TauCeti.RingTheory.Localization.Reduced
 import TauCeti.RingTheory.Valuation.AbsolutelyIntegrallyClosed
 import TauCeti.RingTheory.Valuation.ValuationRing
 
@@ -27,7 +26,9 @@ second.
 Valuation rings of algebraically closed fields are test rings, and so are their products.
 Conversely, the local rings of a test ring are valuation rings with algebraically closed fraction
 field and residue field. The class is stable under products, localizations, quotients by radical
-ideals and filtered colimits (the last in `TauCeti.Algebra.Category.Ring.TestRing`). Test rings
+ideals and ring isomorphisms, and under small filtered colimits computed in `CommRingCat` (the last
+in `TauCeti.Algebra.Category.Ring.TestRing`, which states the condition on the forgetful functor
+for a general filtered diagram). Test rings
 serve as the test objects of a cohomology of functors from rings to sets with locally constant
 coefficients, much as absolutely integrally closed valuation rings serve as test objects for the
 arc-topology; these stability properties are what such a theory uses.
@@ -42,7 +43,10 @@ arc-topology; these stability properties are what such a theory uses.
 * `TauCeti.IsTestRing.of_preValuationRing`: a reduced absolutely integrally closed ring in which
   of any two elements one divides the other is a test ring. In particular a valuation subring of
   an algebraically closed field is a test ring (`ValuationSubring.isTestRing`).
-* `TauCeti.IsTestRing.pi`: a product of test rings is a test ring.
+* `PreValuationRing.iff_exists_isIdempotentElem_dvd_mul`: in a local ring, the last condition of a
+  test ring is total divisibility.
+* `TauCeti.IsTestRing.pi`, `TauCeti.IsTestRing.prod`: a product of test rings is a test ring.
+* `RingEquiv.isTestRing_iff`: being a test ring is invariant under ring isomorphisms.
 * `TauCeti.IsTestRing.of_isLocalization`: a localization of a test ring is a test ring.
 * `TauCeti.IsTestRing.of_surjective`, `Ideal.isTestRing_quotient_iff`: a reduced quotient of a
   test ring is a test ring; the quotient by an ideal is a test ring exactly when the ideal is
@@ -50,7 +54,7 @@ arc-topology; these stability properties are what such a theory uses.
   reduced (`IsIdempotentElem.isRadical_span_singleton`).
 * `TauCeti.IsTestRing.isDomain_of_isLocalRing` and
   `TauCeti.IsTestRing.preValuationRing_of_isLocalRing`: a local test ring is a domain in which of
-  any two elements one divides the other. Hence for a
+  any two elements one divides the other, by `PreValuationRing.isDomain_of_isReduced`. Hence for a
   prime `p` of a test ring, `Localization.AtPrime p` is a valuation ring (an instance); its fraction
   field and its residue field `p.ResidueField` are algebraically closed by the instances
   `TauCeti.IsAbsolutelyIntegrallyClosed.isAlgClosed_fractionRing` and
@@ -86,17 +90,35 @@ class IsTestRing (A : Type*) [CommRing A] : Prop
 
 variable {A B : Type*} [CommRing A] [CommRing B]
 
+/-- In a ring in which of any two elements one divides the other, any two elements are comparable
+for divisibility after splitting along an idempotent: take `e = 1` when `a ∣ b` and `e = 0` when
+`b ∣ a`. -/
+theorem _root_.PreValuationRing.exists_isIdempotentElem_dvd_mul [PreValuationRing A] (a b : A) :
+    ∃ e : A, IsIdempotentElem e ∧ a ∣ e * b ∧ b ∣ (1 - e) * a := by
+  obtain h | h := ValuationRing.dvd_total a b
+  · exact ⟨1, .one, by simpa using h, by simp⟩
+  · exact ⟨0, .zero, by simp, by simpa using h⟩
+
+/-- In a local ring, whose only idempotents are `0` and `1`, of any two elements one divides the
+other exactly when any two elements are comparable for divisibility after splitting along an
+idempotent, the last condition of a test ring. -/
+theorem _root_.PreValuationRing.iff_exists_isIdempotentElem_dvd_mul [IsLocalRing A] :
+    PreValuationRing A ↔ ∀ a b : A, ∃ e : A, IsIdempotentElem e ∧ a ∣ e * b ∧ b ∣ (1 - e) * a :=
+  ⟨fun _ ↦ PreValuationRing.exists_isIdempotentElem_dvd_mul, fun h ↦
+    PreValuationRing.iff_dvd_total.mpr ⟨fun a b ↦ by
+      obtain ⟨e, he, hab, hba⟩ := h a b
+      obtain rfl | rfl := he.eq_zero_or_eq_one_of_isLocalRing
+      · exact .inr (by simpa using hba)
+      · exact .inl (by simpa using hab)⟩⟩
+
 namespace IsTestRing
 
 /-- A reduced absolutely integrally closed ring in which of any two elements one divides the other
-is a test ring: take `e = 1` when `a ∣ b` and `e = 0` when `b ∣ a`. This covers absolutely
+is a test ring (`PreValuationRing.exists_isIdempotentElem_dvd_mul`). This covers absolutely
 integrally closed valuation domains. -/
 theorem of_preValuationRing [IsAbsolutelyIntegrallyClosed A] [IsReduced A] [PreValuationRing A] :
     IsTestRing A where
-  exists_isIdempotentElem_dvd_mul a b := by
-    obtain h | h := ValuationRing.dvd_total a b
-    · exact ⟨1, .one, by simpa using h, by simp⟩
-    · exact ⟨0, .zero, by simp, by simpa using h⟩
+  exists_isIdempotentElem_dvd_mul := PreValuationRing.exists_isIdempotentElem_dvd_mul
 
 /-- An algebraically closed field is a test ring. -/
 instance (priority := 100) of_isAlgClosed {K : Type*} [Field K] [IsAlgClosed K] : IsTestRing K :=
@@ -111,6 +133,13 @@ instance pi {ι : Type*} {R : ι → Type*} [∀ i, CommRing (R i)] [∀ i, IsTe
     choose d hd using hba
     exact ⟨e, funext he, ⟨c, funext hc⟩, ⟨d, funext hd⟩⟩
 
+/-- A product of two test rings is a test ring: the idempotent is chosen factor by factor. -/
+instance prod [IsTestRing A] [IsTestRing B] : IsTestRing (A × B) where
+  exists_isIdempotentElem_dvd_mul a b := by
+    obtain ⟨e, he, ⟨c, hc⟩, ⟨d, hd⟩⟩ := exists_isIdempotentElem_dvd_mul a.1 b.1
+    obtain ⟨e', he', ⟨c', hc'⟩, ⟨d', hd'⟩⟩ := exists_isIdempotentElem_dvd_mul a.2 b.2
+    exact ⟨(e, e'), Prod.ext he he', ⟨(c, c'), Prod.ext hc hc'⟩, ⟨(d, d'), Prod.ext hd hd'⟩⟩
+
 /-- The image of a test ring under a surjective ring homomorphism is a test ring as soon as it is
 reduced. -/
 theorem of_surjective [IsTestRing A] (f : A →+* B) (hf : Function.Surjective f) [IsReduced B] :
@@ -124,6 +153,13 @@ theorem of_surjective [IsTestRing A] (f : A →+* B) (hf : Function.Surjective f
     · simpa using map_dvd f hab
     · simpa using map_dvd f hba
 
+/-- Being a test ring is invariant under ring isomorphisms. -/
+theorem _root_.RingEquiv.isTestRing_iff (e : A ≃+* B) : IsTestRing A ↔ IsTestRing B :=
+  ⟨fun _ ↦ have := isReduced_of_injective e.symm e.symm.injective
+    of_surjective e.toRingHom e.surjective,
+  fun _ ↦ have := isReduced_of_injective e e.injective
+    of_surjective e.symm.toRingHom e.symm.surjective⟩
+
 /-- The quotient of a test ring by a radical ideal is a test ring. -/
 theorem quotient [IsTestRing A] {I : Ideal A} (hI : I.IsRadical) : IsTestRing (A ⧸ I) :=
   have := (Ideal.isRadical_iff_quotient_reduced I).mp hI
@@ -135,8 +171,7 @@ images. -/
 theorem of_isLocalization [IsTestRing A] [Algebra A B] (M : Submonoid A) [IsLocalization M B] :
     IsTestRing B where
   toIsAbsolutelyIntegrallyClosed := .of_isLocalization M
-  toIsReduced := isReduced_of_injective (IsLocalization.algEquiv M B (Localization M))
-    (IsLocalization.algEquiv M B (Localization M)).injective
+  toIsReduced := IsLocalization.isReduced M B
   exists_isIdempotentElem_dvd_mul x y := by
     obtain ⟨⟨a, s⟩, hx⟩ := IsLocalization.surj M x
     obtain ⟨⟨b, t⟩, hy⟩ := IsLocalization.surj M y
@@ -144,30 +179,25 @@ theorem of_isLocalization [IsTestRing A] [Algebra A B] (M : Submonoid A) [IsLoca
     have hy : Associated y (algebraMap A B b) := ⟨(IsLocalization.map_units B t).unit, hy⟩
     obtain ⟨e, he, hab, hba⟩ := exists_isIdempotentElem_dvd_mul a b
     refine ⟨algebraMap A B e, he.map _, ?_, ?_⟩
-    · rw [hx.dvd_iff_dvd_left, (hy.mul_left _).dvd_iff_dvd_right, ← map_mul]
-      exact map_dvd _ hab
-    · rw [hy.dvd_iff_dvd_left, (hx.mul_left _).dvd_iff_dvd_right, ← map_one (algebraMap A B),
-        ← map_sub, ← map_mul]
-      exact map_dvd _ hba
+    · rw [hx.dvd_iff_dvd_left, (hy.mul_left _).dvd_iff_dvd_right]
+      simpa using map_dvd (algebraMap A B) hab
+    · rw [hy.dvd_iff_dvd_left, (hx.mul_left _).dvd_iff_dvd_right]
+      simpa using map_dvd (algebraMap A B) hba
 
 /-- A localization `Localization M` of a test ring is a test ring. -/
 instance localization [IsTestRing A] (M : Submonoid A) : IsTestRing (Localization M) :=
   of_isLocalization M
 
-/-- A local test ring has total divisibility: its only idempotents are `0` and `1`. -/
+/-- A local test ring has total divisibility: its only idempotents are `0` and `1`
+(`PreValuationRing.iff_exists_isIdempotentElem_dvd_mul`). -/
 theorem preValuationRing_of_isLocalRing [IsTestRing A] [IsLocalRing A] : PreValuationRing A :=
-  PreValuationRing.iff_dvd_total.mpr ⟨fun a b ↦ by
-    obtain ⟨e, he, hab, hba⟩ := exists_isIdempotentElem_dvd_mul a b
-    obtain rfl | rfl := he.eq_zero_or_eq_one_of_isLocalRing
-    · exact .inr (by simpa using hba)
-    · exact .inl (by simpa using hab)⟩
+  PreValuationRing.iff_exists_isIdempotentElem_dvd_mul.mpr exists_isIdempotentElem_dvd_mul
 
-/-- A local test ring is a domain: its zero ideal is radical and proper, hence prime since its
-ideals are totally ordered. -/
+/-- A local test ring is a domain, being reduced and nontrivial with total divisibility
+(`PreValuationRing.isDomain_of_isReduced`). -/
 theorem isDomain_of_isLocalRing [IsTestRing A] [IsLocalRing A] : IsDomain A :=
   have := preValuationRing_of_isLocalRing (A := A)
-  have : (⊥ : Ideal A).IsPrime := Ideal.isRadical_bot.isPrime_of_ne_top bot_ne_top
-  IsDomain.of_bot_isPrime A
+  PreValuationRing.isDomain_of_isReduced
 
 end IsTestRing
 
@@ -188,6 +218,7 @@ end TauCeti
 
 open TauCeti in
 /-- The quotient of a test ring by an ideal is a test ring if and only if the ideal is radical. -/
+@[simp]
 theorem Ideal.isTestRing_quotient_iff {A : Type*} [CommRing A] [IsTestRing A] (I : Ideal A) :
     IsTestRing (A ⧸ I) ↔ I.IsRadical :=
   ⟨fun _ ↦ (Ideal.isRadical_iff_quotient_reduced I).mpr inferInstance, IsTestRing.quotient⟩
