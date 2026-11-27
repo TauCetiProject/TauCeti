@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Algebra.Algebra.Subalgebra.Matrix
 import Mathlib.Tactic.NoncommRing
 
 /-!
-# Matrices raising a degree, and uniqueness of ordered unipotent products
+# Matrices raising a degree and recovery of ordered unipotent coordinates
 
 Give the index set `η` of a square matrix an integer degree `deg : η → ℤ`. A matrix `X`
 *raises the degree by at least `d`*, `Matrix.RaisesDegree deg d X`, when every nonzero entry
@@ -34,6 +35,8 @@ because they shift weights differently. No commutator formula is used.
 * `Matrix.RaisesDegree.mul`: degrees add under multiplication.
 * `Matrix.RaisesDegree.of_shift`: a matrix shifting weights by `a` raises their degree by
   `degree a`.
+* `Matrix.raisesDegree_list_prod_sub`: the leading-degree congruence for an ordered product.
+* `Matrix.parameters_mem_of_list_prod_mem`: integral recovery inside a subalgebra.
 * `TauCeti.Matrix.list_prod_map_inj_of_raisesDegree`: an ordered product of graded unipotent
   families determines its parameters.
 
@@ -210,7 +213,7 @@ private theorem raisesDegree_sum_linear (n : ℤ) (u : ι → A) :
 /-- **The key congruence.** Modulo matrices raising the degree by more than `n`, an ordered product
 is the ordered product of its factors of degree less than `n`, plus the linear terms of its factors
 of degree exactly `n`. -/
-private theorem raisesDegree_list_prod_sub (n : ℤ) (u : ι → A) :
+theorem raisesDegree_list_prod_sub (n : ℤ) (u : ι → A) :
     RaisesDegree (degree ∘ wt) (n + 1)
       ((l.map fun i ↦ x i (u i)).prod -
         ((l.filter fun i ↦ degree (α i) < n).map fun i ↦ x i (u i)).prod -
@@ -257,7 +260,89 @@ private theorem raisesDegree_list_prod_sub (n : ℤ) (u : ι → A) :
         rw [h]
         exact (ih.add hjP).add (hj.mono (by omega))
 
+omit hX in
+/-- On the exact weight shift of a root, subtracting the factors of smaller degree from
+an ordered product leaves just that root's linear term. -/
+theorem list_prod_sub_apply_eq {i : ι} (hi : i ∈ l) (hl : (l.map α).Nodup)
+    (hshift : ∀ j ∈ l, ∀ r s, X j r s ≠ 0 → wt r = wt s + α j)
+    (u : ι → A) {r s : η} (hrs : wt r = wt s + α i) :
+    ((l.map fun j ↦ x j (u j)).prod -
+      ((l.filter fun j ↦ degree (α j) < degree (α i)).map fun j ↦ x j (u j)).prod) r s =
+        u i * X i r s := by
+  classical
+  have hdeg : ∀ j ∈ l, RaisesDegree (degree ∘ wt) (degree (α j)) (X j) :=
+    fun j hj ↦ .of_shift degree (hshift j hj)
+  have hz := (raisesDegree_list_prod_sub hpos hdeg hx (degree (α i)) u).apply_eq_zero
+    (r := r) (s := s) (by simp [hrs])
+  have hnd := (hl.of_map α).filter (fun j ↦ decide (degree (α j) = degree (α i)))
+  rw [← List.sum_toFinset _ hnd, Matrix.sub_apply, Matrix.sum_apply, Finset.sum_eq_single i] at hz
+  · exact sub_eq_zero.mp hz
+  · intro j hj hji
+    simp only [List.mem_toFinset, List.mem_filter, decide_eq_true_iff] at hj
+    have hzero : X j r s = 0 := by
+      by_contra hne
+      have heq : α j = α i := add_left_cancel ((hshift j hj.1 r s hne).symm.trans hrs)
+      exact hji (List.inj_on_of_nodup_map hl hj.1 hi heq)
+    simp [hzero]
+  · simp [hi]
+
 end OrderedProduct
+
+section CoordinateRecovery
+
+variable [Fintype η] [DecidableEq η] [Ring A]
+variable {ι G : Type*} [AddCommGroup G]
+
+/-- Integral linear detection of each root operator recovers the parameters of an ordered
+graded unipotent product inside any subalgebra containing its matrix entries. Each factor
+must have its entries in that subalgebra whenever its parameter does. -/
+theorem parameters_mem_of_list_prod_mem (wt : η → G) (degree : G →+ ℤ) (α : ι → G)
+    (x : ι → A → Matrix η η A) (X : ι → Matrix η η A) {l : List ι}
+    (hl : (l.map α).Nodup) (hpos : ∀ i ∈ l, 0 < degree (α i))
+    (hshift : ∀ i ∈ l, ∀ r s, X i r s ≠ 0 → wt r = wt s + α i)
+    (hx : ∀ i ∈ l, ∀ a, RaisesDegree (degree ∘ wt) (degree (α i) + 1)
+      (x i a - 1 - a • X i))
+    (hdetect : ∀ i ∈ l, ∃ c : η → η → ℤ, ∑ s, ∑ r, c r s • X i r s = 1)
+    (S : Subalgebra ℤ A)
+    (hfactor : ∀ i ∈ l, ∀ a ∈ S, ∀ r s, x i a r s ∈ S)
+    (u : ι → A) (hprod : ∀ r s, (l.map fun i ↦ x i (u i)).prod r s ∈ S) :
+    ∀ i ∈ l, u i ∈ S := by
+  classical
+  suffices ∀ n : ℕ, ∀ i ∈ l, (degree (α i)).toNat = n → u i ∈ S by
+    exact fun i hi ↦ this _ i hi rfl
+  intro n
+  induction n using Nat.strong_induction_on with
+  | ind n ih =>
+    intro i hi hni
+    let q := ((l.filter fun j ↦ degree (α j) < degree (α i)).map fun j ↦ x j (u j)).prod
+    have hq : q ∈ S.matrix := by
+      apply S.matrix.list_prod_mem
+      intro y hy
+      obtain ⟨j, hj, rfl⟩ := List.mem_map.mp hy
+      simp only [List.mem_filter, decide_eq_true_iff] at hj
+      have hjpos := hpos j hj.1
+      have hipos := hpos i hi
+      exact hfactor j hj.1 _ (ih _ (by omega) j hj.1 rfl)
+    have hentry (r s : η) :
+        u i * X i r s = if wt r = wt s + α i then
+          ((l.map fun j ↦ x j (u j)).prod - q) r s else 0 := by
+      split_ifs with hrs
+      · exact (list_prod_sub_apply_eq hpos hx hi hl hshift u hrs).symm
+      · have hz : X i r s = 0 := not_not.mp fun h ↦ hrs (hshift i hi r s h)
+        simp [hz]
+    have hmem (r s : η) : u i * X i r s ∈ S := by
+      rw [hentry]
+      split_ifs
+      · exact S.sub_mem (hprod r s) (hq r s)
+      · exact S.zero_mem
+    obtain ⟨c, hc⟩ := hdetect i hi
+    have heq : (∑ s, ∑ r, c r s • (u i * X i r s)) = u i := by
+      simp_rw [← mul_smul_comm, ← Finset.mul_sum]
+      rw [hc, mul_one]
+    rw [← heq]
+    exact S.sum_mem fun s _ ↦ S.sum_mem fun r _ ↦ S.zsmul_mem (hmem r s) _
+
+end CoordinateRecovery
 
 end Matrix
 
