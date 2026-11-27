@@ -21,6 +21,7 @@ import TauCeti.Analysis.Sobolev.D1p0.Restriction
 import TauCeti.Analysis.Sobolev.W1p.Convex
 import TauCeti.MeasureTheory.Function.BoundedMeanOscillation.Sarason
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -812,25 +813,21 @@ private theorem eLpNorm_le_of_forall_eLpNorm_restrict_ball_le
     have hmul := ENNReal.Tendsto.mul_const hpow (Or.inr hg2.eLpNorm_ne_top)
     rw [zero_mul] at hmul
     simpa using ENNReal.Tendsto.const_mul (tendsto_const_nhds.add hmul) (Or.inr ENNReal.coe_ne_top)
-  -- Fatou's lemma along the balls `B(0, (k + 1) / 2)`.
-  refine (Lp.eLpNorm_lim_le_liminf_eLpNorm (μ := volume) (p := p)
-    (f := fun k : ℕ => (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) ((k + 1) / 2)).indicator g)
-    (fun k => hg2.aestronglyMeasurable.indicator
-      (measurableSet_ball (x := (0 : EuclideanSpace ℝ (Fin (n + 1)))))) g
-    hg2.aestronglyMeasurable (ae_of_all _ fun x => ?_)).trans ?_
-  · refine tendsto_const_nhds.congr' ?_
-    obtain ⟨k, hk⟩ := exists_nat_gt (2 * ‖x‖)
-    filter_upwards [eventually_ge_atTop k] with j hj
-    have hx : x ∈ ball (0 : EuclideanSpace ℝ (Fin (n + 1))) ((j + 1) / 2) := by
-      rw [mem_ball_zero_iff]
-      have : (k : ℝ) ≤ j := by exact_mod_cast hj
-      linarith
-    rw [indicator_of_mem hx]
-  · rw [← hbound.liminf_eq]
-    refine liminf_le_liminf (Eventually.of_forall fun k => ?_)
-    rw [eLpNorm_indicator_eq_eLpNorm_restrict
-      (measurableSet_ball (x := (0 : EuclideanSpace ℝ (Fin (n + 1))))).nullMeasurableSet]
-    exact hloc (k + 1) (by positivity)
+  -- Fatou's lemma along the balls `B(0, (k + 1) / 2)`, which exhaust the whole space.
+  have hfatou := eLpNorm_sub_const_restrict_le_liminf (μ := volume) (p := p) (Ω := univ)
+    (V := fun k : ℕ => ball (0 : EuclideanSpace ℝ (Fin (n + 1))) ((k + 1) / 2))
+    hg2.aestronglyMeasurable.restrict (fun _ => measurableSet_ball)
+    (fun i j hij => ball_subset_ball (by
+      have : (i : ℝ) ≤ j := by exact_mod_cast hij
+      linarith))
+    (eq_univ_of_forall fun x => mem_iUnion.2 <| by
+      obtain ⟨k, hk⟩ := exists_nat_gt (2 * ‖x‖)
+      exact ⟨k, by rw [mem_ball_zero_iff]; linarith⟩)
+    (tendsto_const_nhds (x := (0 : EuclideanSpace ℝ (Fin (n + 1)))))
+  simp only [sub_zero, Measure.restrict_univ] at hfatou
+  refine hfatou.trans ?_
+  rw [← hbound.liminf_eq]
+  exact liminf_le_liminf (Eventually.of_forall fun k => hloc (k + 1) (by positivity))
 
 /-- **Whole-space `W^{1,p}` regularity for coefficients of small BMO norm, `2 < p < ∞`.** Let
 `2 < p < ∞` and `0 < λ ≤ Λ`. There are constants `C` and `δ > 0`, depending only on `n`, `p`, `λ`
