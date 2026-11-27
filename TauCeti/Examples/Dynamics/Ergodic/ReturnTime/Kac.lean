@@ -52,20 +52,30 @@ theorem fairBit_singleton (b : Bool) : fairBit {b} = 2⁻¹ := by
   simp
 
 /-- The flip `not` of `Bool` as a measurable equivalence. -/
-@[expose]
 def boolFlip : Bool ≃ᵐ Bool :=
   MeasurableEquiv.ofInvolutive not Bool.involutive_not measurable_from_top
 
+/-- The flip `boolFlip` is the map `not`. -/
+@[simp]
+theorem coe_boolFlip : ⇑boolFlip = not :=
+  funext (MeasurableEquiv.ofInvolutive_apply _ _ _)
+
+/-- The flip `boolFlip` is its own inverse. -/
+@[simp]
+theorem boolFlip_symm : boolFlip.symm = boolFlip :=
+  MeasurableEquiv.ofInvolutive_symm _ _ _
+
 /-- The flip is ergodic for the fair bit. -/
-theorem ergodic_boolFlip : Ergodic boolFlip fairBit :=
-  ergodic_not_count.smul_measure _
+theorem ergodic_boolFlip : Ergodic boolFlip fairBit := by
+  rw [coe_boolFlip]
+  exact ergodic_not_count.smul_measure _
 
 /-- **Check.** For the fair flip and `A = {false}`, the return time on `A` is `2`, and by Kac's
 lemma its unnormalized integral is `1`. -/
 theorem integral_positiveReturnTime_boolFlip :
     positiveReturnTime boolFlip {false} false = 2 ∧
       ∫ x in {false}, ((positiveReturnTime boolFlip {false} x).toNat : ℝ) ∂fairBit = 1 :=
-  ⟨ReturnTime.positiveReturnTime_not_false,
+  ⟨by rw [coe_boolFlip]; exact ReturnTime.positiveReturnTime_not_false,
     (kac_return_time_integral ergodic_boolFlip (measurableSet_singleton false)
       (by simp)).2.2⟩
 
