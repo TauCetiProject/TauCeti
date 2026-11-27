@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Dolbeault
+public import TauCeti.Geometry.Manifold.CoordinateBall
 public import TauCeti.Topology.Sheaves.Cech.DegreeOne
 public import TauCeti.Topology.Sheaves.Cech.Functoriality
 public import TauCeti.Topology.Sheaves.Leray.Colimit
@@ -17,7 +18,9 @@ On a Riemann surface `X`, the sheaf cohomology `H¹(W, 𝒪)` of the holomorphic
 vanishes on every coordinate disc `W`, the inverse image `e.source ∩ e ⁻¹' D` of a disc
 `D ⊆ e.target` under a holomorphic chart `e`. Such discs form a neighbourhood basis of every point,
 so on a compact Riemann surface every open cover is refined by a finite cover by opens `U i` with
-`H¹(U i, 𝒪) = 0`. These are the covers to which the degree one Leray comparison applies
+`H¹(U i, 𝒪) = 0` and each `U i` contractible. Contractibility also supports comparison of
+closed one-forms with holomorphic Čech cocycles. These are the covers to which the degree one
+Leray comparison applies
 (`TauCeti.Topology.homologyCechComplexIsoHOne`): the first Čech cohomology of such a cover is
 `H¹(X, 𝒪)`, and the refinement maps between two such covers are isomorphisms in degree one
 (`TauCeti.Topology.isIso_homologyMap_cechComplexMap_one`).
@@ -201,45 +204,48 @@ theorem subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
   · rw [← ContMDiff.subtypeVal_comp_iff]
     exact he₂.comp_contMDiff contMDiff_subtypeVal fun y ↦ hR y.property
 
-/-- **Acyclic neighbourhoods.** Every neighbourhood of a point `x` of a Riemann surface contains an
-open neighbourhood `W` of `x` with `H¹(W, 𝒪) = 0`, namely a coordinate disc centred at `x`. -/
+/-- **Acyclic neighbourhoods.** Every neighbourhood of a point `x` of a Riemann surface contains a
+contractible open neighbourhood `W` of `x` with `H¹(W, 𝒪) = 0`, namely a coordinate disc
+centred at `x`. -/
 theorem exists_mem_subset_subsingleton_H'_one_holomorphicStructureSheafModules (x : X)
     {N : Set X} (hN : N ∈ 𝓝 x) :
-    ∃ W : Opens (TopCat.of X), x ∈ W ∧ (W : Set X) ⊆ N ∧
+    ∃ W : Opens (TopCat.of X), x ∈ W ∧ (W : Set X) ⊆ N ∧ ContractibleSpace W ∧
       Subsingleton (Sheaf.H' ((sheafCompose _ (forget₂ (ModuleCat.{0} ℂ) AddCommGrpCat.{0})).obj
         (holomorphicStructureSheafModules 𝓘(ℂ) X)) 1 W) := by
-  let e := chartAt ℂ x
-  have hx : x ∈ e.source := mem_chart_source ℂ x
-  have hT : e '' (e.source ∩ N) ∈ 𝓝 (e x) :=
-    e.image_mem_nhds hx (Filter.inter_mem (e.open_source.mem_nhds hx) hN)
-  obtain ⟨R, hR, hRT⟩ := EMetric.mem_nhds_iff.1 hT
-  have hRe : Metric.eball (e x) R ⊆ e.target :=
-    hRT.trans ((Set.image_mono Set.inter_subset_left).trans e.image_source_eq_target.subset)
-  refine ⟨⟨e.source ∩ e ⁻¹' Metric.eball (e x) R, e.isOpen_inter_preimage Metric.isOpen_eball⟩,
-    ⟨hx, Metric.mem_eball_self hR⟩, ?_,
+  obtain ⟨r, hr, htarget, hN, hcontract⟩ := exists_pos_preimageBall_subset (H := ℂ) x hN
+  refine ⟨(chartAt ℂ x).preimageBall (chartAt ℂ x x) r,
+    OpenPartialHomeomorph.mem_preimageBall.2 ⟨mem_chart_source ℂ x, Metric.mem_ball_self hr⟩,
+    hN, hcontract, ?_⟩
+  have hR : Metric.eball (chartAt ℂ x x) (.ofReal r) ⊆ (chartAt ℂ x).target := by
+    rwa [Metric.eball_ofReal]
+  have hW : (chartAt ℂ x).preimageBall (chartAt ℂ x x) r =
+      ⟨(chartAt ℂ x).source ∩ (chartAt ℂ x) ⁻¹' Metric.ball (chartAt ℂ x x) r,
+        (chartAt ℂ x).isOpen_inter_preimage Metric.isOpen_ball⟩ := by
+    ext y
+    exact OpenPartialHomeomorph.mem_preimageBall
+  rw [hW]
+  simpa only [Metric.eball_ofReal] using
     subsingleton_H'_one_holomorphicStructureSheafModules_chart_eball
-      (IsManifold.chart_mem_maximalAtlas x) hRe⟩
-  rintro y ⟨hy, hyR⟩
-  obtain ⟨z, ⟨hz, hzN⟩, hzy⟩ := hRT hyR
-  rwa [← e.injOn hz hy hzy]
+      (IsManifold.chart_mem_maximalAtlas x) hR
 
 /-- **Finite acyclic covers.** On a compact Riemann surface, every open cover `V` is refined by a
-finite open cover `U` whose members have `H¹(U i, 𝒪) = 0`. Such a cover computes `H¹(X, 𝒪)` by the
-degree one Leray comparison `TauCeti.Topology.homologyCechComplexIsoHOne`. -/
+finite open cover `U` whose members are contractible and have `H¹(U i, 𝒪) = 0`. Such a cover
+computes `H¹(X, 𝒪)` by the degree one Leray comparison
+`TauCeti.Topology.homologyCechComplexIsoHOne`. -/
 theorem exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules
     [CompactSpace X] {κ : Type*} (V : κ → Opens (TopCat.of X)) (hV : IsOpenCover V) :
     ∃ (ι : Type) (_ : Finite ι) (U : ι → Opens (TopCat.of X)), ⨆ i, U i = ⊤ ∧
-      (∀ i, ∃ k, U i ≤ V k) ∧ ∀ i,
+      (∀ i, ∃ k, U i ≤ V k) ∧ (∀ i, ContractibleSpace (U i)) ∧ ∀ i,
         Subsingleton (Sheaf.H' ((sheafCompose _ (forget₂ (ModuleCat.{0} ℂ) AddCommGrpCat.{0})).obj
           (holomorphicStructureSheafModules 𝓘(ℂ) X)) 1 (U i)) := by
   choose k hk using hV.exists_mem
-  choose W hxW hWV hW using fun x ↦
+  choose W hxW hWV hcontract hW using fun x ↦
     exists_mem_subset_subsingleton_H'_one_holomorphicStructureSheafModules x
       ((V (k x)).isOpen.mem_nhds (hk x))
   have hWc : IsOpenCover W := .mk <| eq_top_iff.2 fun x _ ↦ Opens.mem_iSup.2 ⟨x, hxW x⟩
   obtain ⟨s, hs⟩ := hWc.exists_finite_of_compactSpace
   exact ⟨s, inferInstance, fun i ↦ W i.val, hs.iSup_eq_top, fun i ↦ ⟨k i.val, hWV i.val⟩,
-    fun i ↦ hW i.val⟩
+    fun i ↦ hcontract i.val, fun i ↦ hW i.val⟩
 
 end Chart
 
@@ -259,7 +265,10 @@ theorem isIso_toCechCohomology_one_holomorphicStructureSheafModules
     IsIso ((Topology.toCechCohomology (ModuleCat.{0} ℂ) 1 U (IsOpenCover.mk hU)).app
       (holomorphicStructureSheafModules 𝓘(ℂ) X).obj) :=
   Sheaf.isIso_toCechCohomology_one_of_subsingleton_H' _
-    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV)
+    (fun V hV ↦
+      let ⟨ι, _, U, hU, hUV, _, hFU⟩ :=
+        exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV
+      ⟨ι, inferInstance, U, hU, hUV, hFU⟩)
     U hU hFU
 
 include hU in
@@ -274,7 +283,10 @@ theorem finite_cechCohomology_one_holomorphicStructureSheafModules_iff_finite_ho
       Module.Finite ℂ (((CategoryTheory.cechComplexFunctor U).obj
         (holomorphicStructureSheafModules 𝓘(ℂ) X).obj).homology 1) :=
   Sheaf.finite_cechCohomology_one_iff_finite_homology_cechComplex _
-    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV)
+    (fun V hV ↦
+      let ⟨ι, _, U, hU, hUV, _, hFU⟩ :=
+        exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV
+      ⟨ι, inferInstance, U, hU, hUV, hFU⟩)
     U hU hFU
 
 include hU in
@@ -289,7 +301,10 @@ theorem finrank_cechCohomology_one_holomorphicStructureSheafModules_eq_finrank_h
       Module.finrank ℂ (((CategoryTheory.cechComplexFunctor U).obj
         (holomorphicStructureSheafModules 𝓘(ℂ) X).obj).homology 1) :=
   Sheaf.finrank_cechCohomology_one_eq_finrank_homology_cechComplex _
-    (fun V hV ↦ exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV)
+    (fun V hV ↦
+      let ⟨ι, _, U, hU, hUV, _, hFU⟩ :=
+        exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV
+      ⟨ι, inferInstance, U, hU, hUV, hFU⟩)
     U hU hFU
 
 end Compact

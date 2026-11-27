@@ -251,9 +251,9 @@ theorem isZero_cechCohomology_one_holomorphicStructureSheafModules_sphere :
       (holomorphicStructureSheafModules 𝓘(ℂ) (OnePoint ℂ)).obj) :=
   Sheaf.isZero_cechCohomology_one_of_subsingleton_H _
     (fun V hV ↦
-      let ⟨ι, _, U, hU⟩ :=
+      let ⟨ι, _, U, hU, hUV, _, hFU⟩ :=
         exists_finite_cover_subsingleton_H'_one_holomorphicStructureSheafModules V hV
-      ⟨ι, U, hU⟩)
+      ⟨ι, U, hU, hUV, hFU⟩)
     subsingleton_H_one_holomorphicStructureSheafModules_sphere
 
 end TauCeti.RiemannSurface
