@@ -309,6 +309,32 @@ lemma Exact.isIso_cokernelDesc {S : ShortComplex C} (hS : S.Exact) [Epi S.g] :
   have : Epi (cokernel.desc S.f S.g S.zero) := epi_of_epi_fac (cokernel.π_desc S.f S.g S.zero)
   exact isIso_of_mono_of_epi _
 
+/-- An exact five-term sequence induces a short exact sequence from the cokernel of its
+first map to the kernel of its last map, through its middle object. -/
+lemma Exact.shortExact_cokernelDesc_kernelLift {S : ShortComplex C} (hS : S.Exact) {A E : C}
+    {a : A ⟶ S.X₁} {e : S.X₃ ⟶ E} (wa : a ≫ S.f = 0) (we : S.g ≫ e = 0)
+    (ha : (ShortComplex.mk a S.f wa).Exact) (he : (ShortComplex.mk S.g e we).Exact) :
+    (ShortComplex.mk (cokernel.desc a S.f wa) (kernel.lift e S.g we)
+      (by ext; simp)).ShortExact := by
+  let T := ShortComplex.mk (cokernel.desc a S.f wa) (kernel.lift e S.g we) (by ext; simp)
+  have : Mono T.f := ha.mono_cokernelDesc
+  have : Epi T.g := he.epi_kernelLift
+  let T' := ShortComplex.mk (cokernel.desc a S.f wa) S.g (by ext; simp)
+  let φ : S ⟶ T' :=
+    { τ₁ := cokernel.π a
+      τ₂ := 𝟙 _
+      τ₃ := 𝟙 _
+      comm₁₂ := by simp [T']
+      comm₂₃ := by simp [T'] }
+  let ψ : T ⟶ T' :=
+    { τ₁ := 𝟙 _
+      τ₂ := 𝟙 _
+      τ₃ := kernel.ι e
+      comm₁₂ := by simp [T, T']
+      comm₂₃ := by simp [T, T'] }
+  exact ⟨(ShortComplex.exact_iff_of_epi_of_isIso_of_mono ψ).2
+    ((ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1 hS)⟩
+
 /-- A componentwise direct sum of short exact sequences is short exact. -/
 lemma ShortExact.biprod {S T : ShortComplex C} (hS : S.ShortExact) (hT : T.ShortExact) :
     (S.biprod T).ShortExact :=

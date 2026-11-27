@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.ShortComplex.Abelian
+public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import Mathlib.CategoryTheory.ObjectProperty.Extensions
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 
@@ -43,23 +43,9 @@ theorem prop_X₂_of_exact_of_exact_of_exact {S : ShortComplex C} (hS : S.Exact)
     {a : A ⟶ S.X₁} {e : S.X₃ ⟶ E} (wa : a ≫ S.f = 0) (we : S.g ≫ e = 0)
     (ha : (ShortComplex.mk a S.f wa).Exact) (he : (ShortComplex.mk S.g e we).Exact)
     (hA : P A) (h₁ : P S.X₁) (h₃ : P S.X₃) (hE : P E) : P S.X₂ := by
-  -- `S.X₂` is an extension of the kernel of `e` by the cokernel of `a`
-  let T := ShortComplex.mk (cokernel.desc a S.f wa) (kernel.lift e S.g we) (by ext; simp)
-  have : Mono T.f := ha.mono_cokernelDesc
-  have : Epi T.g := he.epi_kernelLift
-  -- exactness of `T` follows from that of `S`, via the short complex `cokernel a ⟶ S.X₂ ⟶ S.X₃`
-  let T' := ShortComplex.mk (cokernel.desc a S.f wa) S.g (by ext; simp)
-  let φ : S ⟶ T' := ShortComplex.homMk (cokernel.π a) (𝟙 _) (𝟙 _) (by simp [T']) (by simp [T'])
-  have : Epi φ.τ₁ := inferInstanceAs (Epi (cokernel.π a))
-  have : IsIso φ.τ₂ := inferInstanceAs (IsIso (𝟙 S.X₂))
-  have : Mono φ.τ₃ := inferInstanceAs (Mono (𝟙 S.X₃))
-  let ψ : T ⟶ T' := ShortComplex.homMk (𝟙 _) (𝟙 _) (kernel.ι e) (by simp [T, T'])
-    (by simp [T, T'])
-  have : Epi ψ.τ₁ := inferInstanceAs (Epi (𝟙 (cokernel a)))
-  have : IsIso ψ.τ₂ := inferInstanceAs (IsIso (𝟙 S.X₂))
-  have : Mono ψ.τ₃ := inferInstanceAs (Mono (kernel.ι e))
-  have hT : T.Exact := (ShortComplex.exact_iff_of_epi_of_isIso_of_mono ψ).2
-    ((ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).1 hS)
-  exact P.prop_X₂_of_shortExact (S := T) ⟨hT⟩ (P.prop_cokernel a hA h₁) (P.prop_kernel e h₃ hE)
+  exact P.prop_X₂_of_shortExact (S := ShortComplex.mk
+    (cokernel.desc a S.f wa) (kernel.lift e S.g we) (by ext; simp))
+    (hS.shortExact_cokernelDesc_kernelLift wa we ha he)
+    (P.prop_cokernel a hA h₁) (P.prop_kernel e h₃ hE)
 
 end CategoryTheory.ObjectProperty
