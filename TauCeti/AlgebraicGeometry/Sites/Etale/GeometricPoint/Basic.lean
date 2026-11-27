@@ -269,27 +269,6 @@ theorem Hom.isIso_iff_ringHom_surjective {s₁ s₂ : GeometricPoint S} (f : s�
     rw [hf]
     infer_instance
 
-/-- The canonical isomorphism between `ofOver (𝟙 (Spec (.of R))) Ω` and
-`of (Spec.map (CommRingCat.ofHom (algebraMap R Ω)))`, witnessing the right identity law. -/
-noncomputable def ofOverIdIso (R : Type u) [CommRing R] (Ω : Type u) [Field Ω] [IsSepClosed Ω]
-    [Algebra R Ω] :
-    ofOver (𝟙 (Spec (.of R))) Ω ≅ of (Spec.map (CommRingCat.ofHom (algebraMap R Ω))) :=
-  isoMk (Iso.refl _) (by simp)
-
-/-- The forward scheme morphism of `ofOverIdIso R Ω` is the identity. -/
-@[simp]
-theorem ofOverIdIso_hom_hom (R : Type u) [CommRing R] (Ω : Type u) [Field Ω] [IsSepClosed Ω]
-    [Algebra R Ω] :
-    (ofOverIdIso R Ω).hom.hom = 𝟙 (Spec (.of Ω)) :=
-  (rfl)
-
-/-- The inverse scheme morphism of `ofOverIdIso R Ω` is the identity. -/
-@[simp]
-theorem ofOverIdIso_inv_hom (R : Type u) [CommRing R] (Ω : Type u) [Field Ω] [IsSepClosed Ω]
-    [Algebra R Ω] :
-    (ofOverIdIso R Ω).inv.hom = 𝟙 (Spec (.of Ω)) :=
-  (rfl)
-
 variable (S) in
 /-- The functor sending a geometric point `(Ω, s)` of `S` to the scheme `Spec Ω`. -/
 @[expose, simps]
@@ -377,8 +356,8 @@ variable {A : Type u'} [Category.{w} A] [HasColimitsOfSize.{u, u} A]
 /-- The natural isomorphism of stalk functors induced by a morphism `φ : s₁ ⟶ s₂` of geometric
 points: stalks do not change under extension of the separably closed field. -/
 noncomputable def stalkIso {s₁ s₂ : GeometricPoint S} (φ : s₁ ⟶ s₂) :
-    (Scheme.pointSmallEtale s₂.hom).sheafFiber (A := A) ≅
-      (Scheme.pointSmallEtale s₁.hom).sheafFiber :=
+    ((toPointFunctor S).obj s₂).sheafFiber (A := A) ≅
+      ((toPointFunctor S).obj s₁).sheafFiber :=
   GrothendieckTopology.Point.sheafFiberIso (asIso ((toPointFunctor S).map φ)).symm A
 
 /-- The forward direction of `stalkIso φ` is `((toPointFunctor S).map φ).sheafFiber`. -/
@@ -400,8 +379,6 @@ theorem stalkIso_id (s : GeometricPoint S) :
   ext1
   simp only [stalkIso_hom, CategoryTheory.Functor.map_id,
     GrothendieckTopology.Point.Hom.sheafFiber_id, Iso.refl_hom]
-  -- `(toPointFunctor S).obj s` is defeq to `pointSmallEtale s.hom` in the implicit arg of `𝟙`.
-  rfl
 
 /-- Stalk isomorphisms are contravariantly functorial in morphisms of geometric points. -/
 @[simp]
@@ -410,8 +387,16 @@ theorem stalkIso_comp {s₁ s₂ s₃ : GeometricPoint S} (φ : s₁ ⟶ s₂) (
   ext1
   simp only [stalkIso_hom, CategoryTheory.Functor.map_comp,
     GrothendieckTopology.Point.Hom.sheafFiber_comp, Iso.trans_hom]
-  -- `(toPointFunctor S).obj s₂` is defeq to `pointSmallEtale s₂.hom` in the implicit arg of `≫`.
-  rfl
+
+/-- The stalk isomorphism induced by the inverse of an isomorphism of geometric points is the
+symmetric isomorphism. -/
+@[simp]
+theorem stalkIso_inv_eq {s₁ s₂ : GeometricPoint S} (e : s₁ ≅ s₂) :
+    stalkIso e.inv (A := A) = (stalkIso e.hom).symm := by
+  ext1
+  rw [Iso.symm_hom, ← Category.id_comp (stalkIso e.hom).inv, Iso.eq_comp_inv]
+  have h := congrArg Iso.hom (stalkIso_comp (A := A) e.hom e.inv)
+  simpa using h.symm
 
 end StalkIso
 
