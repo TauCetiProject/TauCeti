@@ -12,6 +12,7 @@ public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.LinearAlgebra.Span.Defs
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import Mathlib.Topology.VectorBundle.FiniteDimensional
 
 import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Smul
@@ -107,12 +108,14 @@ trivializations (`Bundle.Trivialization.sum_sum_coord_smul_symm`).
 
 A vector bundle with model fibre `𝕜` is a line bundle. In a fibre `E b` a nonzero vector `v` is a
 basis, and `TauCeti.VectorBundle.lineCoord 𝕜 hv : E b ≃L[𝕜] 𝕜` is the coordinate along it, so that
-`w = lineCoord 𝕜 hv w • v`. Along a continuous section `s` that vanishes nowhere these coordinates
-form a continuous function on the total space (`TauCeti.VectorBundle.continuous_lineCoord`), and
-hence a linear trivialization over the whole base (`TauCeti.VectorBundle.sectionTrivialization`),
-with inverse `(b, c) ↦ c • s b`. Conversely, a linear trivialization `e` over the whole base gives
-the nowhere-vanishing continuous section `b ↦ e.symm b 1`. So a line bundle has a linear
-trivialization over the whole base exactly when it has a continuous section that vanishes nowhere
+`w = lineCoord 𝕜 hv w • v`; for any model fibre of dimension one the same coordinate is
+`TauCeti.VectorBundle.lineCoordOfFinrankEqOne`. Along a continuous section `s` that vanishes nowhere
+these coordinates form a continuous function on the total space
+(`TauCeti.VectorBundle.continuous_lineCoord`), and hence a linear trivialization over the whole base
+(`TauCeti.VectorBundle.sectionTrivialization`), with inverse `(b, c) ↦ c • s b`. Conversely, a
+linear trivialization `e` over the whole base gives the nowhere-vanishing continuous section `b ↦
+e.symm b 1`. So a line bundle has a linear trivialization over the whole base exactly when it has a
+continuous section that vanishes nowhere
 (`TauCeti.VectorBundle.exists_trivialization_baseSet_eq_univ_iff_exists_continuous_forall_ne_zero`).
 -/
 
@@ -802,5 +805,49 @@ theorem exists_trivialization_baseSet_eq_univ_iff_exists_continuous_forall_ne_ze
   refine ⟨fun b ↦ e.symm b 1, e.continuousOn_symm.comp_continuous (continuous_id.prodMk
     continuous_const) fun b ↦ ⟨hb b, mem_univ _⟩, fun b ↦ ?_⟩
   exact (e.symm_apply_ne_zero_iff 𝕜 (hb b)).2 one_ne_zero
+
+end TauCeti.VectorBundle
+
+namespace TauCeti.VectorBundle
+
+section LineCoordOfFinrank
+
+variable {𝕜 B F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [TopologicalSpace B]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F] {E : B → Type*}
+  [∀ b, AddCommGroup (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  (hF : Module.finrank 𝕜 F = 1) {b : B} {v : E b} (hv : v ≠ 0)
+
+omit [CompleteSpace 𝕜] in
+include hF hv in
+/-- A nonzero vector `v` of a line `E b` spans it: `c ↦ c • v` is bijective. -/
+private theorem bijective_toSpanSingleton :
+    Function.Bijective (LinearMap.toSpanSingleton 𝕜 (E b) v) := by
+  have := VectorBundle.finiteDimensional 𝕜 F E b
+  have hinj : Function.Injective (LinearMap.toSpanSingleton 𝕜 (E b) v) := smul_left_injective 𝕜 hv
+  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
+  rw [Module.finrank_self, ← hF]
+  exact ((trivializationAt F E b).continuousLinearEquivAt 𝕜 b
+    (FiberBundle.mem_baseSet_trivializationAt' b)).toLinearEquiv.finrank_eq.symm
+
+variable (𝕜 F) in
+/-- **The coordinate along a nonzero vector of a line, for any model line.** A fibre `E b` of a
+vector bundle whose model fibre `F` has dimension one is a line, so a nonzero `v ∈ E b` is a basis.
+This is the continuous linear equivalence `w ↦ c` with `w = c • v`, with inverse `c ↦ c • v`
+(`TauCeti.VectorBundle.lineCoordOfFinrankEqOne_symm_apply`). For the model fibre `𝕜` it is
+`TauCeti.VectorBundle.lineCoord`. -/
+def lineCoordOfFinrankEqOne : E b ≃L[𝕜] 𝕜 :=
+  letI := VectorBundle.isTopologicalAddGroup 𝕜 F E b
+  letI := VectorBundle.continuousSMul 𝕜 F E b
+  letI := FiberBundle.t2Space F E b
+  letI := VectorBundle.finiteDimensional 𝕜 F E b
+  (LinearEquiv.ofBijective _ (bijective_toSpanSingleton hF hv)).symm.toContinuousLinearEquiv
+
+@[simp]
+theorem lineCoordOfFinrankEqOne_symm_apply (c : 𝕜) :
+    (lineCoordOfFinrankEqOne 𝕜 F hF hv).symm c = c • v := by
+  simp [lineCoordOfFinrankEqOne]
+
+end LineCoordOfFinrank
 
 end TauCeti.VectorBundle

@@ -11,8 +11,8 @@ public import TauCeti.Topology.VectorBundle.Orientation.Complex.FirstChernClass.
 # Clients of the naturality of `c₁` of a tensor product
 
 The trivial line `B × ℂ` has the nowhere-zero constant section `1`, so tensoring with it on either
-side leaves `c₁` unchanged. A tensor product of two pullbacks along a constant map has the first
-Chern class of the pullback of `c₁` from a point.
+side leaves `c₁` unchanged. The tensor square of the pullback of `E` along a continuous map `g` has
+the pullback along `g` of `c₁(E ⊗ E)` as its first Chern class.
 -/
 
 public noncomputable section

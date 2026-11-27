@@ -24,11 +24,6 @@ spaces. Then their fibrewise tensor product `φ₁ y ⊗ φ₂ y` is continuous 
 tensor products (`TauCeti.continuous_tensorProduct_map_covering`): it is the tensor product of the
 maps `E₁' → g^*E₁` and `E₂' → g^*E₂` over `B'` followed by the identity above.
 
-Finally, tensoring with a line bundle that has a nowhere-zero continuous section `s` changes
-nothing: `v ↦ v ⊗ s b` is a fibrewise linear isomorphism `E b ≃ E b ⊗ L b`
-(`TauCeti.tensorEquivOfNeZero`), continuous on total spaces
-(`TauCeti.continuous_tensorEquivOfNeZero`).
-
 These are the bundle maps along which the first Chern class of a tensor product of line bundles
 is compared with its universal value on a product of classifying spaces.
 
@@ -40,8 +35,6 @@ is compared with its universal value on a product of classifying spaces.
   continuous.
 * `TauCeti.continuous_tensorProduct_map_covering`: the tensor product of two bundle maps covering
   `g` is continuous.
-* `TauCeti.tensorEquivOfNeZero`, `TauCeti.continuous_tensorEquivOfNeZero`: `E ≃ E ⊗ L` for a line
-  bundle `L` with a nowhere-zero section.
 
 ## References
 
@@ -187,71 +180,3 @@ theorem continuous_tensorProduct_map_covering {g : C(B', B)}
 end TauCeti
 
 end Covering
-
-section NeZero
-
-namespace TauCeti
-
-variable {𝕜 B : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [TopologicalSpace B]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
-  {E : B → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]
-  [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)] [FiberBundle F E]
-  [VectorBundle 𝕜 F E]
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
-  {L : B → Type*} [∀ x, AddCommGroup (L x)] [∀ x, Module 𝕜 (L x)]
-  [∀ x, TopologicalSpace (L x)] [TopologicalSpace (TotalSpace G L)] [FiberBundle G L]
-  [VectorBundle 𝕜 G L]
-  [∀ x, TopologicalSpace (E x ⊗[𝕜] L x)] [∀ x, IsModuleTopology 𝕜 (E x ⊗[𝕜] L x)]
-  (hG : Module.finrank 𝕜 G = 1) {s : ∀ x, L x} (hs : ∀ x, s x ≠ 0)
-
-omit [CompleteSpace 𝕜] in
-include hG hs in
-/-- On a line `L b`, a nonzero vector `s b` spans: `a ↦ a • s b` is a linear isomorphism
-`𝕜 ≃ L b`. -/
-private theorem bijective_toSpanSingleton (x : B) :
-    Function.Bijective (LinearMap.toSpanSingleton 𝕜 (L x) (s x)) := by
-  have := VectorBundle.finiteDimensional 𝕜 G L x
-  have hinj : Function.Injective (LinearMap.toSpanSingleton 𝕜 (L x) (s x)) :=
-    smul_left_injective 𝕜 (hs x)
-  refine ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank ?_).1 hinj⟩
-  rw [Module.finrank_self, ← hG]
-  exact ((trivializationAt G L x).continuousLinearEquivAt 𝕜 x
-    (mem_baseSet_trivializationAt G L x)).toLinearEquiv.finrank_eq.symm
-
-variable (F) in
-/-- **Tensoring with a line with a nowhere-zero section.** For a line bundle `L` with a
-nowhere-zero section `s`, the fibrewise isomorphism `E b ≃ E b ⊗ L b`, `v ↦ v ⊗ s b`
-(`TauCeti.tensorEquivOfNeZero_apply`). -/
-def tensorEquivOfNeZero (x : B) : E x ≃L[𝕜] E x ⊗[𝕜] L x :=
-  letI := VectorBundle.isTopologicalAddGroup 𝕜 F E x
-  letI := VectorBundle.continuousSMul 𝕜 F E x
-  letI := FiberBundle.t2Space F E x
-  letI := VectorBundle.finiteDimensional 𝕜 F E x
-  haveI : IsModuleTopology 𝕜 (E x) := isModuleTopologyOfFiniteDimensional
-  LinearEquiv.toContinuousLinearEquivOfIsModuleTopology
-    ((_root_.TensorProduct.rid 𝕜 (E x)).symm.trans (_root_.TensorProduct.congr
-      (LinearEquiv.refl 𝕜 _) (LinearEquiv.ofBijective _ (bijective_toSpanSingleton hG hs x))))
-
-/-- The isomorphism `E b ≃ E b ⊗ L b` of a nowhere-zero section `s` of a line bundle `L` is
-`v ↦ v ⊗ s b`. -/
-@[simp]
-theorem tensorEquivOfNeZero_apply (x : B) (v : E x) :
-    tensorEquivOfNeZero F hG hs x v = v ⊗ₜ[𝕜] s x := by
-  simp [tensorEquivOfNeZero]
-
-/-- For a continuous nowhere-zero section `s` of a line bundle `L`, the isomorphism
-`E ≃ E ⊗ L`, `v ↦ v ⊗ s b`, is continuous on total spaces. -/
-theorem continuous_tensorEquivOfNeZero (hsc : Continuous fun x ↦ TotalSpace.mk' G x (s x)) :
-    Continuous fun p : TotalSpace F E ↦ TotalSpace.mk' (ProjectiveTensor 𝕜 F G)
-      (E := fun x ↦ E x ⊗[𝕜] L x) p.proj (tensorEquivOfNeZero F hG hs p.proj p.snd) := by
-  have := VectorBundle.isTopologicalAddGroup 𝕜 F E
-  have := VectorBundle.continuousSMul 𝕜 F E
-  have := VectorBundle.isTopologicalAddGroup 𝕜 G L
-  have := VectorBundle.continuousSMul 𝕜 G L
-  simp only [tensorEquivOfNeZero_apply]
-  exact Continuous.tmul_section (b := TotalSpace.proj) (v := TotalSpace.snd) continuous_id
-    (hsc.comp (continuous_proj F E))
-
-end TauCeti
-
-end NeZero

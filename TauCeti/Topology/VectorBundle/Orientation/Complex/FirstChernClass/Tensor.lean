@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Orientation.Complex.FirstChernClass
+public import TauCeti.Topology.VectorBundle.TensorProduct.Line
 public import TauCeti.Topology.VectorBundle.TensorProduct.Pullback
 
 /-!
@@ -86,9 +87,13 @@ theorem firstChernClass_tensorProduct_eq_singularCohomologyMap_of_fiberwise {g :
       (φ₂ y).toLinearEquiv).toContinuousLinearEquivOfIsModuleTopology)
     ((continuous_tensorProduct_map_covering (φ₁ := fun y ↦ (φ₁ y : E₁' y →L[ℂ] E₁ (g y)))
       (φ₂ := fun y ↦ (φ₂ y : E₂' y →L[ℂ] E₂ (g y))) hφ₁ hφ₂).congr fun p ↦ by
-      rw [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology]
-      -- `TensorProduct.congr` of two equivalences is `TensorProduct.map` of their linear maps.
-      rfl)
+      rw [LinearEquiv.coe_toContinuousLinearEquivOfIsModuleTopology,
+        ← LinearEquiv.coe_toLinearMap, _root_.TensorProduct.toLinearMap_congr]
+      -- The linear maps underlying `φᵢ` as continuous linear maps and as linear equivalences
+      -- agree as functions.
+      refine congrArg (TotalSpace.mk' _ (g p.proj))
+        (LinearMap.congr_fun (congrArg₂ _root_.TensorProduct.map ?_ ?_) p.snd) <;>
+      exact LinearMap.coe_injective (by simp))
 
 /-- **Naturality of `c₁` of a tensor product under pullback**: for a continuous map
 `g : B' → B`, `c₁(g^*E₁ ⊗ g^*E₂) = g^* c₁(E₁ ⊗ E₂)`. -/
