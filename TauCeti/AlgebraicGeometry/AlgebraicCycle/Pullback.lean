@@ -9,9 +9,9 @@ public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.RingTheory.Length
-import Mathlib.RingTheory.HopkinsLevitzki
 public import TauCeti.AlgebraicGeometry.Fibers.GenericPoint
 public import TauCeti.Topology.LocallyFinsupp.Comap
+import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.LocalRing.Length
 
 /-!
@@ -39,7 +39,8 @@ fixed dimension is `TauCeti.AlgebraicGeometry.Chow.cyclesPullback`.
   pullback is the restriction `α ↦ α ∘ f`
 * `AlgebraicGeometry.AlgebraicCycle.pullbackMultiplicity_pos_iff`: for `X` locally Noetherian,
   `m_f(x)` is positive exactly at the generic points of the fibres, where the local ring of the
-  fibre is Artinian (`AlgebraicGeometry.AlgebraicCycle.length_ne_top_of_isFiberGenericPoint`).
+  fibre has finite length
+  (`AlgebraicGeometry.AlgebraicCycle.length_ne_top_of_isFiberGenericPoint`).
 * `AlgebraicGeometry.AlgebraicCycle.pullbackMultiplicity_comp` and
   `AlgebraicGeometry.AlgebraicCycle.pullback_comp`: for `f` flat, `m_{g ∘ f}(x) = m_g(f x) · m_f(x)`
   and `(g ∘ f)^* = f^* ∘ g^*`.
@@ -126,28 +127,21 @@ private lemma eq_maximalIdeal_of_map_le (f : X ⟶ Y) {x : X} (hx : f.IsFiberGen
     (h.trans Scheme.fromSpecStalk_closedPoint.symm))
 
 /-- For `X` locally Noetherian, at a generic point `x` of its fibre the local ring of the fibre
-`O_{X,x} ⧸ m_{f x} O_{X,x}` has finite, nonzero length: it is a Noetherian local ring whose only
-prime is the maximal ideal, hence Artinian. -/
+`O_{X,x} ⧸ m_{f x} O_{X,x}` has finite length: the maximal ideal is the only prime containing
+`m_{f x} O_{X,x}`, so that ideal has maximal radical. -/
 lemma length_ne_top_of_isFiberGenericPoint [IsLocallyNoetherian X] (f : X ⟶ Y) {x : X}
     (hx : f.IsFiberGenericPoint x) :
     Module.length (X.presheaf.stalk x) (X.presheaf.stalk x ⧸
       (IsLocalRing.maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom) ≠ ⊤ := by
   set I := (IsLocalRing.maximalIdeal (Y.presheaf.stalk (f x))).map (f.stalkMap x).hom
-  have : Ring.KrullDimLE 0 (X.presheaf.stalk x ⧸ I) := by
-    refine Ring.KrullDimLE.mk₀ fun q hq ↦ ?_
-    have hcomap : q.comap (Ideal.Quotient.mk I) = IsLocalRing.maximalIdeal _ :=
-      eq_maximalIdeal_of_map_le f hx _ fun a ha ↦ by
-        rw [Ideal.mem_comap, Ideal.Quotient.eq_zero_iff_mem.mpr ha]
-        exact q.zero_mem
-    have hmap := Ideal.map_comap_of_surjective (Ideal.Quotient.mk I) Ideal.Quotient.mk_surjective q
-    rw [hcomap] at hmap
-    exact hmap ▸ ((Ideal.map_eq_top_or_isMaximal_of_surjective (Ideal.Quotient.mk I)
-      Ideal.Quotient.mk_surjective (IsLocalRing.maximalIdeal.isMaximal _)).resolve_left
-        (hmap ▸ hq.ne_top))
-  have : IsArtinianRing (X.presheaf.stalk x ⧸ I) :=
-    isArtinianRing_iff_isNoetherianRing_krullDimLE_zero.mpr ⟨inferInstance, this⟩
-  rw [Module.length_eq_of_surjective (R := X.presheaf.stalk x ⧸ I) Ideal.Quotient.mk_surjective]
-  exact Module.length_ne_top
+  have hI : I.radical = IsLocalRing.maximalIdeal _ := by
+    refine le_antisymm (IsLocalRing.le_maximalIdeal ?_) ?_
+    · rw [Ne, Ideal.radical_eq_top]
+      exact (IsLocalRing.map_maximalIdeal_lt_top _).ne
+    · rw [Ideal.radical_eq_sInf]
+      exact le_sInf fun J ⟨hJ, _⟩ ↦ (eq_maximalIdeal_of_map_le f hx J hJ).ge
+  exact Module.length_ne_top_iff.mpr (Ideal.isFiniteLength_quotient_of_isMaximal_radical I
+    (hI ▸ IsLocalRing.maximalIdeal.isMaximal _))
 
 /-- For `X` locally Noetherian, the multiplicity `m_f(x)` is positive exactly at the generic points
 of the fibres: there it is the length of a nonzero Artinian local ring
@@ -259,8 +253,7 @@ lemma pullback_comp [IsLocallyNoetherian X] [IsLocallyNoetherian Y] (f : X ⟶ Y
     pullback (R := R) (f ≫ g) = (pullback f).comp (pullback g) := by
   ext α x
   simp only [pullback_apply, AddMonoidHom.comp_apply, pullbackMultiplicity_comp, Nat.cast_mul,
-    mul_assoc]
-  rfl
+    mul_assoc, Scheme.Hom.comp_apply]
 
 end comp
 
