@@ -29,7 +29,9 @@ variable (σ R S : Type*) [Semiring R] [Semiring S] [Module R S] [TopologicalSpa
 def continuousLinearEquivPi : MvPowerSeries σ S ≃L[R] ((σ →₀ ℕ) → S) where
   toFun f d := MvPowerSeries.coeff d f
   map_add' f g := by ext d; simp
-  -- `MvPowerSeries σ S` is definitionally `(σ →₀ ℕ) → S` with pointwise scalar multiplication.
+  -- `MvPowerSeries σ S` is definitionally `(σ →₀ ℕ) → S` with pointwise scalar multiplication,
+  -- so `map_smul'` holds by `rfl`, `invFun` is the identity map, and `(c : MvPowerSeries σ S)`
+  -- converts a coefficient function to a power series in `right_inv` and `continuous_invFun`.
   map_smul' r f := by ext d; rfl
   invFun c := c
   left_inv f := MvPowerSeries.ext fun d ↦ MvPowerSeries.coeff_apply f d

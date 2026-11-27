@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.RingTheory.Finiteness.Defs
 public import Mathlib.RingTheory.Ideal.Operations
 public import Mathlib.RingTheory.Ideal.Quotient.Basic
+import Mathlib.LinearAlgebra.Quotient.Basic
 
 /-!
 # Ideal multiples on products of modules
@@ -98,23 +99,24 @@ noncomputable def FG.quotientSmulTopEquivPi {R : Type*} [CommRing R] (ι : Type*
       (Ideal.pi fun _ : ι ↦ J).restrictScalars R := by
     rw [hJ.smul_top_pi_self_eq_pi]
     ext; simp [Ideal.mem_pi]
-  let e := (Submodule.quotEquivOfEq _ _ hpi).toEquiv.trans
-    (Ideal.piQuotEquiv ι (I := J)).toEquiv
-  { toEquiv := e
-    map_add' := fun x y ↦ by
+  haveI : IsScalarTower R (R ⧸ J) ((ι → R) ⧸ Ideal.pi fun _ : ι ↦ J) :=
+    ⟨fun r s x ↦ by
+      obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective s
       obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-      obtain ⟨y, rfl⟩ := Submodule.Quotient.mk_surjective _ y
-      rfl
-    map_smul' := fun r x ↦ by
-      obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ x
-      rfl }
+      change Submodule.Quotient.mk ((r • s) • x) = r • Submodule.Quotient.mk (s • x)
+      rw [smul_assoc, Submodule.Quotient.mk_smul]⟩
+  Submodule.quotEquivOfEq _ _ hpi ≪≫ₗ
+    Submodule.Quotient.restrictScalarsEquiv R (Ideal.pi fun _ : ι ↦ J) ≪≫ₗ
+    (Ideal.piQuotEquiv ι J).restrictScalars R
 
 /-- Evaluating `Ideal.FG.quotientSmulTopEquivPi` on a residue class gives the coordinatewise residue
 classes. -/
 @[simp]
 theorem FG.quotientSmulTopEquivPi_mk {R : Type*} [CommRing R] (ι : Type*)
     {J : Ideal R} (hJ : J.FG) (x : ι → R) (i : ι) :
-    hJ.quotientSmulTopEquivPi ι (Submodule.Quotient.mk x) i = Ideal.Quotient.mk J (x i) :=
-  (rfl)
+    hJ.quotientSmulTopEquivPi ι (Submodule.Quotient.mk x) i = Ideal.Quotient.mk J (x i) := by
+  simp only [FG.quotientSmulTopEquivPi, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk,
+    Submodule.Quotient.restrictScalarsEquiv_mk, LinearEquiv.restrictScalars_apply]
+  rfl
 
 end Ideal
