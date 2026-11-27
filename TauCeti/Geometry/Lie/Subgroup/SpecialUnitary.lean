@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 public import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
-# The Lie algebra of the special unitary group
+# The special unitary group as a Lie group and its Lie algebra
 
 The special unitary group sits inside the general linear group as `TauCeti.GLSpecialUnitary`, a
 subgroup of `GL n 𝕜 = (Matrix n n 𝕜)ˣ`, which over `ℝ` or `ℂ` (any `RCLike` field) is a real Lie
@@ -43,6 +43,13 @@ trace, and for a nonempty index type `i • 1` is skew-Hermitian without being t
 there the special unitary group is Mathlib's special orthogonal group; that degeneration is
 recorded below.
 
+Being closed in `GL n 𝕜`, the special unitary group is an embedded Lie subgroup, and so a Lie
+group modelled on its Lie algebra; the last section records this structure. As throughout this
+file, the Lie group `GL n 𝕜` and the special unitary group carry the topology of the operator norm
+on matrices, `Matrix.linftyOpTopologicalSpace`, which is not a global instance: the `ChartedSpace`,
+`LieGroup`, `CompactSpace` and `SecondCountableTopology` instances below are only found where that
+topology is enabled as a local instance, as in `TauCeti.RepresentationTheory.SU2.LieGroup`.
+
 ## Main results
 
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_GLSpecialUnitary`: the Lie algebra of the special unitary
@@ -58,7 +65,8 @@ recorded below.
 
 * `TauCeti.GLSpecialUnitary.lieAlgebra`: the Lie algebra `𝔰𝔲(n)` of the special unitary group.
 * `TauCeti.GLSpecialUnitary.embeddedLieSubgroupData`: the Lie group structure of the special
-  unitary group, modelled on `𝔰𝔲(n)`, with its `ChartedSpace` and `LieGroup` instances.
+  unitary group, modelled on `𝔰𝔲(n)`, with its `ChartedSpace` and `LieGroup` instances, for the
+  operator-norm topology `Matrix.linftyOpTopologicalSpace`, enabled as a local instance.
 -/
 
 public section
@@ -169,7 +177,10 @@ abbrev lieAlgebra :
 
 /-- **The special unitary group is a Lie group.** The structure of embedded Lie subgroup of
 `GL n 𝕜` that the closed-subgroup theorem gives the closed subgroup `TauCeti.GLSpecialUnitary n 𝕜`,
-with model space its Lie algebra. -/
+with model space its Lie algebra. Here `GL n 𝕜` and its subgroup carry the operator-norm topology
+`Matrix.linftyOpTopologicalSpace`, which is not a global instance: the `ChartedSpace` and
+`LieGroup` instances built from this structure are only found where that topology is enabled as a
+local instance. -/
 def embeddedLieSubgroupData :
     EmbeddedLieSubgroupData 𝓘(ℝ, Matrix n n 𝕜) (GLSpecialUnitary n 𝕜)
       (lieAlgebra n 𝕜).toSubmodule :=
