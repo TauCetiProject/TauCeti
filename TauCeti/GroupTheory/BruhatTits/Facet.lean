@@ -211,6 +211,7 @@ theorem sign_facet (x : Apartment φ) (α : AffineRoot φ) :
   (rfl)
 
 /-- A facet is determined by the signs of the affine roots on it. -/
+@[ext]
 theorem ext_sign {F F' : Facet φ} (h : ∀ α, F.sign α = F'.sign α) : F = F' := by
   induction F using Facet.ind with | h x => ?_
   induction F' using Facet.ind with | h y => ?_
