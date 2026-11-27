@@ -69,8 +69,10 @@ open Asymptotics Filter MeasureTheory Real Set
 open scoped Topology
 
 private theorem one_add_abs_rpow_mul_exp_neg_le {p a c x vx : ℝ}
-    (hp : 0 ≤ p) (ha : 0 < a) (hx : 1 ≤ |x|) (hVx : c * log |x| ≤ vx) :
-    (1 + |x|) ^ p * exp (-a * vx) ≤ 2 ^ p * |x| ^ (p - a * c) := by
+    (hp : 0 ≤ p) (ha : 0 < a) (hq : p - a * c ≤ 0)
+    (hx : 1 ≤ |x|) (hVx : c * log |x| ≤ vx) :
+    (1 + |x|) ^ p * exp (-a * vx) ≤
+      (2 ^ p * 2 ^ (-(p - a * c))) * (1 + |x|) ^ (p - a * c) := by
   have hxabs : 0 < |x| := lt_of_lt_of_le zero_lt_one hx
   have hpoly : (1 + |x|) ^ p ≤ (2 * |x|) ^ p :=
     Real.rpow_le_rpow (by positivity) (by nlinarith) hp
@@ -87,6 +89,17 @@ private theorem one_add_abs_rpow_mul_exp_neg_le {p a c x vx : ℝ}
       rw [mul_assoc, ← Real.rpow_add hxabs]
       congr 2
       ring
+    _ ≤ (2 ^ p * 2 ^ (-(p - a * c))) * (1 + |x|) ^ (p - a * c) := by
+      have hpow : |x| ^ (p - a * c) ≤
+          2 ^ (-(p - a * c)) * (1 + |x|) ^ (p - a * c) := by
+        calc
+          _ ≤ ((1 + |x|) / 2) ^ (p - a * c) :=
+            Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hq
+          _ = _ := by
+            rw [Real.div_rpow (by positivity) (by positivity),
+              Real.rpow_neg (by positivity)]
+            ring
+      nlinarith [mul_le_mul_of_nonneg_left hpow (show 0 ≤ (2 : ℝ) ^ p by positivity)]
 
 /-- A continuous potential with sufficient logarithmic growth dominates a
 polynomial factor and makes the resulting exponential weight integrable. -/
@@ -96,12 +109,6 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
     (hGrowth : ∀ᶠ x in Filter.comap abs Filter.atTop, c * log |x| ≤ V x) :
     Integrable (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) volume := by
   let q : ℝ := p - a * c
-  rw [Filter.eventually_comap] at hGrowth
-  obtain ⟨R, hR⟩ := Filter.eventually_atTop.1 hGrowth
-  let R' : ℝ := max R 1
-  have hR' : 1 ≤ R' := le_max_right _ _
-  have hRbound (x : ℝ) (hx : R' ≤ |x|) : c * log |x| ≤ V x := by
-    exact hR _ (le_trans (le_max_left _ _) hx) x rfl
   have hqneg : q ≤ 0 := by dsimp [q]; linarith
   have hmajor : Integrable (fun x : ℝ => (1 + |x|) ^ q) volume := by
     have hdim : (Module.finrank ℝ ℝ : ℝ) < -q := by
@@ -114,29 +121,14 @@ theorem integrable_one_add_abs_rpow_mul_exp_neg_of_log_growth {p a c : ℝ} {V :
     have hbase : Continuous (fun x : ℝ => 1 + |x|) := by fun_prop
     have hexp : Continuous (fun x : ℝ => exp (-a * V x)) := by fun_prop
     exact (hbase.rpow_const (fun x => Or.inl (by positivity))).mul hexp
-  have hdom (x : ℝ) (hx : R' ≤ |x|) :
-      ‖(1 + |x|) ^ p * exp (-a * V x)‖ ≤ 2 ^ p * ‖|x| ^ q‖ := by
-    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), Real.norm_eq_abs,
-      abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) q)]
-    exact one_add_abs_rpow_mul_exp_neg_le hp ha (hR'.trans hx) (hRbound x hx)
   have hbig : (fun x : ℝ => (1 + |x|) ^ p * exp (-a * V x)) =O[Filter.comap abs atTop]
       (fun x : ℝ => (1 + |x|) ^ q) := by
     apply Asymptotics.IsBigO.of_bound (2 ^ p * 2 ^ (-q))
-    filter_upwards [Filter.tendsto_comap.eventually (Filter.eventually_ge_atTop R')] with x hx
-    have hxone : 1 ≤ |x| := hR'.trans hx
-    have hpow : |x| ^ q ≤ 2 ^ (-q) * (1 + |x|) ^ q := by
-      calc
-        |x| ^ q ≤ ((1 + |x|) / 2) ^ q :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) hqneg
-        _ = 2 ^ (-q) * (1 + |x|) ^ q := by
-          rw [Real.div_rpow (by positivity) (by positivity), Real.rpow_neg (by positivity)]
-          ring
-    calc
-      ‖(1 + |x|) ^ p * exp (-a * V x)‖ ≤ 2 ^ p * ‖|x| ^ q‖ := hdom x hx
-      _ ≤ (2 ^ p * 2 ^ (-q)) * ‖(1 + |x|) ^ q‖ := by
-        rw [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (abs_nonneg x) q),
-          Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (by positivity) q)]
-        nlinarith [mul_le_mul_of_nonneg_left hpow (show 0 ≤ (2 : ℝ) ^ p by positivity)]
+    filter_upwards [hGrowth, Filter.tendsto_comap.eventually (Filter.eventually_ge_atTop 1)]
+      with x hxGrowth hx
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), Real.norm_eq_abs,
+      abs_of_nonneg (Real.rpow_nonneg (by positivity) q)]
+    exact one_add_abs_rpow_mul_exp_neg_le hp ha hqneg hx hxGrowth
   rw [comap_abs_atTop, ← cocompact_eq_atBot_atTop] at hbig
   exact hg.locallyIntegrable.integrable_of_isBigO_cocompact hbig
     (hmajor.integrableAtFilter _)

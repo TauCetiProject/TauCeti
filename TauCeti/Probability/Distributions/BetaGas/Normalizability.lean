@@ -112,12 +112,12 @@ theorem betaGasWeight_le_coord_prod (n : ℕ) {β : ℝ} (hβ : 0 ≤ β)
       ring
 
 /-- For a continuous potential and `0 < β ≤ β'` with `1 < β'`, the beta-gas weight is
-integrable if eventually as `|x| → ∞`, `2 * β' / β < V x / log |x|`. -/
-theorem integrable_betaGasWeight_of_eventually_lt_div_log (n : ℕ) {β β' : ℝ}
+integrable if eventually as `|x| → ∞`, `2 * β' / β ≤ V x / log |x|`. -/
+theorem integrable_betaGasWeight_of_eventually_le_div_log (n : ℕ) {β β' : ℝ}
     (hβ : 0 < β)
     (hβ' : 1 < β') (hββ' : β ≤ β') {V : ℝ → ℝ} (hV : Continuous V)
     (hRatio : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
-      2 * β' / β < V x / log |x|) :
+      2 * β' / β ≤ V x / log |x|) :
     Integrable (betaGasWeight n β V)
       (volume : Measure (Fin n → ℝ)) := by
   classical
@@ -151,7 +151,7 @@ theorem integrable_betaGasWeight_of_eventually_lt_div_log (n : ℕ) {β β' : �
         ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop, c * log |x| ≤ V x := by
       filter_upwards [hRatio, hlarge] with x hratio hx
       have hlog : 0 < log |x| := Real.log_pos hx
-      exact le_of_lt ((lt_div_iff₀ hlog).mp hratio)
+      exact (le_div_iff₀ hlog).mp hratio
     have hmajor : Integrable
         (fun x : Fin n → ℝ =>
           ∏ i, ((1 + |x i|) ^ p * exp (-a * V (x i))))
@@ -182,10 +182,10 @@ theorem integrable_betaGasWeight_of_lt_liminf_div_log (n : ℕ) {β β' : ℝ} (
       ((2 * β' / β : ℝ) : EReal) < ((V x / log |x| : ℝ) : EReal) :=
     Filter.eventually_lt_of_lt_liminf hliminf
   have hRatio : ∀ᶠ x in Filter.comap (fun x : ℝ => |x|) Filter.atTop,
-      2 * β' / β < V x / log |x| := by
+      2 * β' / β ≤ V x / log |x| := by
     filter_upwards [hratioE] with x hx
-    exact EReal.coe_lt_coe_iff.mp hx
-  exact integrable_betaGasWeight_of_eventually_lt_div_log n hβ hβ' hββ' hV hRatio
+    exact (EReal.coe_lt_coe_iff.mp hx).le
+  exact integrable_betaGasWeight_of_eventually_le_div_log n hβ hβ' hββ' hV hRatio
 
 /-- For `0 < β ≤ β'`, `1 < β'`, and continuous `V` with
 `2 * β' / β < liminf_{|x| → ∞} V x / log |x|`, the partition function is positive. -/
@@ -222,8 +222,9 @@ theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
   have hββ' : β ≤ β' := le_max_left _ _
   have hRatio := eventually_quadratic_div_log_abs_gt (2 * β' / β)
   rw [gaussianBetaGasWeight_eq_betaGasWeight]
-  exact integrable_betaGasWeight_of_eventually_lt_div_log n hβ hβ' hββ' (by fun_prop) (by
-    simpa [β'] using hRatio)
+  apply integrable_betaGasWeight_of_eventually_le_div_log n hβ hβ' hββ' (by fun_prop)
+  filter_upwards [hRatio] with x hx
+  exact hx.le
 
 /-- The Gaussian beta-gas partition function is strictly positive for positive
 inverse temperature. -/

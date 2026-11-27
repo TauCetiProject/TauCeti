@@ -136,12 +136,9 @@ theorem betaGasPartitionFunction_pos_of_integrable (n : ℕ) (β : ℝ) (V : ℝ
     (hint : Integrable (betaGasWeight n β V)
       (volume : Measure (Fin n → ℝ))) :
     0 < betaGasPartitionFunction n β V := by
-  let x₀ : Fin n → ℝ := fun i => (i : ℝ)
-  have hx₀ : Function.Injective x₀ := by
-    intro i j h
-    apply Fin.ext
-    change (i.val : ℝ) = (j.val : ℝ) at h
-    exact_mod_cast h
+  let x₀ : Fin n → ℝ := fun i => (i.val : ℝ)
+  have hx₀ : Function.Injective x₀ :=
+    Nat.cast_injective.comp Fin.val_injective
   have hsupport : {x : Fin n → ℝ | Function.Injective x} ⊆
       Function.support (betaGasWeight n β V) := by
     intro x hx
