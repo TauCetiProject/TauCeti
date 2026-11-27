@@ -8,8 +8,7 @@ module
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.SimpleModule.IsAlgClosed
 public import TauCeti.Algebra.Algebra.PPowerCommutator.Split
-public import TauCeti.GroupTheory.OrderOfElement.PPart
-import TauCeti.GroupTheory.OrderOfElement.Basic
+public import TauCeti.GroupTheory.OrderOfElement.PPart.Section
 import Mathlib.Algebra.CharP.Algebra
 import Mathlib.Algebra.MonoidAlgebra.Module
 import Mathlib.FieldTheory.Finite.Basic
@@ -22,9 +21,9 @@ import Mathlib.RingTheory.Artinian.Ring
 
 Let `k` be a field of characteristic `p` and `G` a finite group. An element of `G` is
 `p`-regular if its order is prime to `p`, and a conjugacy class is `p`-regular if its elements
-are. The quotient of the group algebra `k[G]` by its `p`-power commutator subspace
-`T(k[G]) = TauCeti.pPowerCommutatorSubmodule p k k[G]` has a basis given by representatives of the
-`p`-regular conjugacy classes (Webb, proof of Theorem 9.3.6):
+are (`TauCeti.pRegularConjClasses p G`). The quotient of the group algebra `k[G]` by its
+`p`-power commutator subspace `T(k[G]) = TauCeti.pPowerCommutatorSubmodule p k k[G]` has a basis
+given by representatives of the `p`-regular conjugacy classes (Webb, proof of Theorem 9.3.6):
 
 * the commutators of `k[G]` are spanned by the differences `x g x⁻¹ - g` of conjugate elements
   (Webb, Lemma 9.3.5), so conjugate elements are congruent modulo `T(k[G])`;
@@ -40,10 +39,6 @@ So `dim_k k[G] / T(k[G])` is the number of `p`-regular conjugacy classes, over e
 characteristic `p`. With `TauCeti.finrank_quotient_pPowerCommutatorSubmodule_of_algEquiv_pi_matrix`
 this counts the matrix factors of `k[G] / rad k[G]` when `k` is a splitting field, in particular
 when `k` is algebraically closed.
-
-## Main definitions
-
-* `TauCeti.pRegularConjClasses p G`: the conjugacy classes of elements of order prime to `p`.
 
 ## Main results
 
@@ -68,36 +63,9 @@ namespace TauCeti
 
 open MonoidAlgebra Module Finset
 
-section Classes
+section CommRing
 
-variable (p : ℕ) (G : Type*) [Group G]
-
-/-- The **`p`-regular conjugacy classes** of a group: the classes of elements whose order is
-coprime to `p`. -/
-def pRegularConjClasses : Set (ConjClasses G) :=
-  {c | ∃ g : G, ConjClasses.mk g = c ∧ (orderOf g).Coprime p}
-
-variable {G}
-
-/-- Membership in the `p`-regular conjugacy classes. -/
-theorem mem_pRegularConjClasses_iff {c : ConjClasses G} :
-    c ∈ pRegularConjClasses p G ↔ ∃ g : G, ConjClasses.mk g = c ∧ (orderOf g).Coprime p :=
-  Iff.rfl
-
-/-- The class of `g` is `p`-regular exactly when the order of `g` is coprime to `p`. -/
-@[simp]
-theorem mk_mem_pRegularConjClasses_iff {g : G} :
-    ConjClasses.mk g ∈ pRegularConjClasses p G ↔ (orderOf g).Coprime p := by
-  refine ⟨?_, fun h ↦ ⟨g, rfl, h⟩⟩
-  rintro ⟨h, hh, hp⟩
-  rwa [← (ConjClasses.mk_eq_mk_iff_isConj.1 hh).orderOf_eq]
-
-end Classes
-
-variable (p : ℕ) [hp : Fact p.Prime] (k : Type*) [Field k] [CharP k p]
-variable {G : Type*} [Group G]
-
-section Lemmas
+variable (p : ℕ) (k : Type*) [CommRing k] {G : Type*} [Group G]
 
 variable (G) in
 open Classical in
@@ -108,14 +76,17 @@ private noncomputable def classCoeff [Fintype G] (c : ConjClasses G) :
   map_add' x y := by simp [coeff_add, sum_add_distrib]
   map_smul' r x := by simp [coeff_smul, mul_sum]
 
-omit hp [CharP k p] in
+open Classical in
+private theorem classCoeff_apply [Fintype G] (c : ConjClasses G) (x : MonoidAlgebra k G) :
+    classCoeff k G c x = ∑ g ∈ univ.filter (fun g ↦ ConjClasses.mk g = c), x.coeff g :=
+  rfl
+
 open Classical in
 private theorem classCoeff_single [Fintype G] (c : ConjClasses G) (h : G) (r : k) :
     classCoeff k G c (single h r) = if ConjClasses.mk h = c then r else 0 := by
-  change ∑ g ∈ _, (single h r).coeff g = _
+  rw [classCoeff_apply]
   simp [coeff_single, Finsupp.single_apply]
 
-omit hp [CharP k p] in
 /-- The coefficient sum over a conjugacy class kills the commutators of `k[G]`. -/
 private theorem commutatorSubmodule_le_ker_classCoeff [Fintype G] (c : ConjClasses G) :
     commutatorSubmodule k (MonoidAlgebra k G) ≤ LinearMap.ker (classCoeff k G c) := by
@@ -133,12 +104,19 @@ private theorem commutatorSubmodule_le_ker_classCoeff [Fintype G] (c : ConjClass
       rw [single_mul_single, single_mul_single, classCoeff_single, classCoeff_single, hc,
         mul_comm a b]
 
-omit [CharP k p] in
 /-- Conjugate elements are congruent modulo commutators (Webb, Lemma 9.3.5). -/
 theorem single_conj_sub_single_mem_commutatorSubmodule (g x : G) (r : k) :
     single (x * g * x⁻¹) r - single g r ∈ commutatorSubmodule k (MonoidAlgebra k G) := by
   simpa [single_mul_single, mul_assoc] using
     mul_sub_mul_mem_commutatorSubmodule k _ (single (x * g) r) (single x⁻¹ (1 : k))
+
+/-- Conjugate elements of `G` are congruent modulo the commutators of `k[G]`. -/
+theorem single_sub_single_mem_commutatorSubmodule_of_isConj {g h : G} (hgh : IsConj g h)
+    (r : k) : single h r - single g r ∈ commutatorSubmodule k (MonoidAlgebra k G) := by
+  obtain ⟨x, rfl⟩ := isConj_iff.1 hgh
+  exact single_conj_sub_single_mem_commutatorSubmodule k g x r
+
+variable [hp : Fact p.Prime] [CharP k p]
 
 include hp in
 /-- Every element of `G` is congruent to its `p`-regular part modulo the `p`-power commutator
@@ -148,8 +126,8 @@ theorem single_sub_single_pFreePart_mem_pPowerCommutatorSubmodule (g : G) (r : k
       pPowerCommutatorSubmodule p k (MonoidAlgebra k G) := by
   have : CharP (MonoidAlgebra k G) p :=
     charP_of_injective_algebraMap (R := k) (A := MonoidAlgebra k G) (by
-      rw [coe_algebraMap]
-      exact single_right_injective.comp (algebraMap k k).injective) p
+      rw [coe_algebraMap, Algebra.algebraMap_self, RingHom.coe_id, Function.comp_id]
+      exact single_right_injective) p
   set s := pFreePart p g
   set q := pPart p g
   have hsq : Commute q s := (commute_pFreePart_pPart p g).symm
@@ -164,15 +142,6 @@ theorem single_sub_single_pFreePart_mem_pPowerCommutatorSubmodule (g : G) (r : k
   rw [hdiff]
   exact mem_pPowerCommutatorSubmodule_of_isNilpotent p k (hcomm.isNilpotent_mul_right hnil)
 
-end Lemmas
-
-omit [CharP k p] in
-/-- Conjugate elements of `G` are congruent modulo the commutators of `k[G]`. -/
-theorem single_sub_single_mem_commutatorSubmodule_of_isConj {g h : G} (hgh : IsConj g h)
-    (r : k) : single h r - single g r ∈ commutatorSubmodule k (MonoidAlgebra k G) := by
-  obtain ⟨x, rfl⟩ := isConj_iff.1 hgh
-  exact single_conj_sub_single_mem_commutatorSubmodule k g x r
-
 include hp in
 /-- Every element of `G` is congruent modulo `T(k[G])` to the chosen representative of the class of
 its `p`-regular part. -/
@@ -185,25 +154,9 @@ theorem single_sub_single_out_mem_pPowerCommutatorSubmodule (g : G) (r : k) :
   exact add_mem (single_sub_single_pFreePart_mem_pPowerCommutatorSubmodule p k g r)
     (commutatorSubmodule_le_pPowerCommutatorSubmodule p k h)
 
-include hp in
-/-- In a finite group, for every `n` there is `N ≥ n` such that `g ^ (p ^ N) = g` for every
-`p`-regular `g`. -/
-theorem exists_le_forall_pow_char_pow_eq_self [Finite G] (n : ℕ) :
-    ∃ N, n ≤ N ∧ ∀ g : G, (orderOf g).Coprime p → g ^ p ^ N = g := by
-  set m := ordCompl[p] (Nat.card G)
-  have hm0 : 0 < m := Nat.ordCompl_pos p Nat.card_pos.ne'
-  refine ⟨Nat.totient m * n, Nat.le_mul_of_pos_left n (Nat.totient_pos.2 hm0), fun g hg ↦ ?_⟩
-  have hdvd : orderOf g ∣ m :=
-    (Nat.Coprime.dvd_of_dvd_mul_left
-      (hg.pow_right _)
-      (by rw [Nat.ordProj_mul_ordCompl_eq_self]; exact orderOf_dvd_natCard _))
-  have hpm : p ^ Nat.totient m ≡ 1 [MOD m] :=
-    Nat.ModEq.pow_totient (Nat.coprime_ordCompl hp.out Nat.card_pos.ne')
-  have h1 : p ^ (Nat.totient m * n) ≡ 1 [MOD orderOf g] := by
-    rw [pow_mul]
-    simpa using (hpm.pow n).of_dvd hdvd
-  conv_rhs => rw [← pow_one g]
-  exact pow_eq_pow_iff_modEq.2 h1
+end CommRing
+
+variable (p : ℕ) [hp : Fact p.Prime] (k : Type*) [Field k] [CharP k p] {G : Type*} [Group G]
 
 include hp in
 /-- The representatives of the `p`-regular classes span `k[G] / T(k[G])`. -/

@@ -8,13 +8,13 @@ module
 public import Mathlib.Algebra.Algebra.Pi
 public import Mathlib.Algebra.CharP.Defs
 public import Mathlib.Data.Nat.Prime.Defs
-public import Mathlib.GroupTheory.PGroup
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.Algebra.Algebra.CyclicQuotient
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.Data.List.OfFn
 import Mathlib.GroupTheory.Perm.Fin
+import TauCeti.GroupTheory.PGroup.FixedPointSum
 
 /-!
 # The `p`-power commutator subspace
@@ -70,90 +70,6 @@ namespace TauCeti
 
 open Finset
 
-section Orbit
-
-variable {p : ℕ} [hp : Fact p.Prime] {H X M : Type*} [Group H] [MulAction H X] [Fintype X]
-  [AddCommGroup M]
-
-/-- One fibre of an invariant function under a `p`-group action has as many points, modulo `p`,
-as fixed points. -/
-private theorem card_filter_nsmul_eq_of_isPGroup [DecidablePred (· ∈ MulAction.fixedPoints H X)]
-    (hH : IsPGroup p H) (hM : ∀ m : M, p • m = 0) (f : X → M) (hf : ∀ (g : H) x, f (g • x) = f x)
-    (m : M) [DecidablePred (f · = m)] :
-    (univ.filter (f · = m)).card • m =
-      ((univ.filter (· ∈ MulAction.fixedPoints H X)).filter (f · = m)).card • m := by
-  let S : SubMulAction H X :=
-    { carrier := {x | f x = m}
-      smul_mem' := fun g x hx ↦ by
-        change f (g • x) = m
-        rw [hf g x]
-        exact hx }
-  have hcong := hH.card_modEq_card_fixedPoints S
-  have h1 : Nat.card S = (univ.filter (f · = m)).card := by
-    rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
-    rfl
-  have h2 : Nat.card (MulAction.fixedPoints H S) =
-      ((univ.filter (· ∈ MulAction.fixedPoints H X)).filter (f · = m)).card := by
-    rw [filter_filter, ← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
-    exact Nat.card_congr
-      { toFun := fun y ↦ ⟨y.val.val, fun g ↦ congrArg Subtype.val (y.prop g), y.val.prop⟩
-        invFun := fun y ↦ ⟨⟨y.val, y.prop.2⟩, fun g ↦ Subtype.ext (y.prop.1 g)⟩
-        left_inv := fun y ↦ rfl
-        right_inv := fun y ↦ rfl }
-  rw [h1, h2] at hcong
-  rw [← Nat.mod_add_div (univ.filter (f · = m)).card p,
-    ← Nat.mod_add_div ((univ.filter (· ∈ MulAction.fixedPoints H X)).filter (f · = m)).card p,
-    add_nsmul, add_nsmul, mul_nsmul', mul_nsmul', hM, hM, hcong]
-
-/-- Let a `p`-group act on a finite type and let `f` be an invariant function into an additive
-group killed by `p`. Then the sum of `f` equals its sum over the fixed points: the other points
-fall into orbits whose size is a positive power of `p`. -/
-theorem sum_eq_sum_fixedPoints_of_isPGroup [DecidablePred (· ∈ MulAction.fixedPoints H X)]
-    (hH : IsPGroup p H) (hM : ∀ m : M, p • m = 0) (f : X → M)
-    (hf : ∀ (g : H) x, f (g • x) = f x) :
-    ∑ x, f x = ∑ x ∈ univ.filter (· ∈ MulAction.fixedPoints H X), f x := by
-  classical
-  rw [← sum_fiberwise_of_maps_to (g := f) (t := univ.image f) (fun x _ ↦ mem_image_of_mem f
-      (mem_univ x)),
-    ← sum_fiberwise_of_maps_to (g := f) (t := univ.image f) (fun x _ ↦ mem_image_of_mem f
-      (mem_univ x))]
-  refine sum_congr rfl fun m _ ↦ ?_
-  rw [sum_congr rfl fun x hx ↦ (mem_filter.1 hx).2, sum_const,
-    sum_congr rfl fun x hx ↦ (mem_filter.1 hx).2, sum_const,
-    card_filter_nsmul_eq_of_isPGroup hH hM f hf m]
-
-omit [MulAction H X] in
-/-- Let `σ` be a permutation of a finite type with `σ ^ p = 1`, for a prime `p`, and let `f` be a
-`σ`-invariant function into an additive group killed by `p`. Then the sum of `f` equals its sum
-over the fixed points of `σ`: the other points fall into `σ`-orbits of size `p`. -/
-theorem sum_eq_sum_filter_apply_eq_self_of_pow_eq_one [DecidableEq X] (σ : Equiv.Perm X)
-    (hσ : σ ^ p = 1) (hM : ∀ m : M, p • m = 0) (f : X → M) (hf : ∀ x, f (σ x) = f x) :
-    ∑ x, f x = ∑ x ∈ univ.filter (fun x ↦ σ x = x), f x := by
-  classical
-  -- The cyclic group `⟨σ⟩` is a `p`-group whose fixed points are those of `σ`.
-  have hH : IsPGroup p (Subgroup.zpowers σ) := fun g ↦ by
-    obtain ⟨g, z, rfl⟩ := g
-    refine ⟨1, Subtype.ext ?_⟩
-    simp only [pow_one, Subgroup.coe_pow, Subgroup.coe_one]
-    rw [← zpow_natCast, ← zpow_mul, mul_comm, zpow_mul, zpow_natCast, hσ, one_zpow]
-  have hfz : ∀ (z : ℤ) x, f ((σ ^ z) x) = f x := by
-    intro z
-    induction z using Int.induction_on with
-    | zero => simp
-    | succ n ih => intro x; rw [zpow_add_one, Equiv.Perm.mul_apply, ih, hf]
-    | pred n ih =>
-      intro x
-      rw [zpow_sub_one, Equiv.Perm.mul_apply, ih, ← hf (σ⁻¹ x)]
-      simp
-  have hfix : ∀ x, x ∈ MulAction.fixedPoints (Subgroup.zpowers σ) X ↔ σ x = x := by
-    refine fun x ↦ ⟨fun h ↦ h ⟨σ, Subgroup.mem_zpowers σ⟩, fun h ↦ ?_⟩
-    rintro ⟨g, z, rfl⟩
-    exact Equiv.Perm.zpow_apply_eq_self_of_apply_eq_self h z
-  rw [sum_eq_sum_fixedPoints_of_isPGroup hH hM f (by rintro ⟨g, z, rfl⟩ x; exact hfz z x)]
-  exact sum_congr (filter_congr fun x _ ↦ hfix x) fun _ _ ↦ rfl
-
-end Orbit
-
 section Words
 
 variable {A : Type*} [Ring A]
@@ -177,6 +93,11 @@ private theorem add_pow_eq_sum_wordProd (a b : A) (n : ℕ) :
 private def rotateWords (n : ℕ) : Equiv.Perm (Fin n → Bool) :=
   (finRotate n).symm.arrowCongr (.refl _)
 
+private theorem rotateWords_apply (n : ℕ) (w : Fin n → Bool) :
+    rotateWords n w = w ∘ finRotate n := by
+  ext i
+  rw [rotateWords, Equiv.arrowCongr_apply, Equiv.symm_symm, Equiv.coe_refl, Function.id_comp]
+
 private theorem finRotate_castSucc {n : ℕ} (i : Fin (n + 1)) :
     finRotate (n + 2) i.castSucc = i.succ :=
   Fin.ext <| by
@@ -187,25 +108,25 @@ private theorem rotateWords_pow_self (n : ℕ) : rotateWords (n + 2) ^ (n + 2) =
   have hpow : ∀ (m : ℕ) w, (rotateWords (n + 2) ^ m) w = w ∘ ⇑(finRotate (n + 2) ^ m) := by
     intro m
     induction m with
-    | zero => intro w; rfl
+    | zero => intro w; rw [pow_zero, pow_zero, Equiv.Perm.one_apply, Equiv.Perm.coe_one,
+        Function.comp_id]
     | succ m ih =>
       intro w
-      rw [pow_succ, Equiv.Perm.mul_apply, ih, pow_succ']
-      rfl
+      rw [pow_succ, Equiv.Perm.mul_apply, ih, pow_succ', rotateWords_apply, Equiv.Perm.coe_mul,
+        Function.comp_assoc]
   have hrot : finRotate (n + 2) ^ (n + 2) = 1 := by
     have h := (isCycle_finRotate (n := n)).orderOf
     rw [support_finRotate, card_univ, Fintype.card_fin] at h
     have h1 := pow_orderOf_eq_one (finRotate (n + 2))
     rwa [h] at h1
-  ext w i
-  rw [hpow, hrot]
-  rfl
+  ext w : 1
+  rw [hpow, hrot, Equiv.Perm.coe_one, Function.comp_id, Equiv.Perm.one_apply]
 
 /-- The words fixed by rotation are the two constant words. -/
 private theorem filter_rotateWords_eq (n : ℕ) :
     univ.filter (fun w ↦ rotateWords (n + 2) w = w) = {fun _ ↦ true, fun _ ↦ false} := by
   ext w
-  simp only [mem_filter, mem_univ, true_and, mem_insert, mem_singleton]
+  simp only [mem_filter, mem_univ, true_and, mem_insert, mem_singleton, rotateWords_apply]
   constructor
   · intro h
     have hw : ∀ i, w i = w 0 := by
@@ -224,8 +145,7 @@ private theorem filter_rotateWords_eq (n : ℕ) :
 private theorem exists_wordProd_rotateWords (a b : A) {n : ℕ} (w : Fin (n + 2) → Bool) :
     ∃ x y : A, wordProd a b (rotateWords (n + 2) w) = y * x ∧ wordProd a b w = x * y := by
   refine ⟨cond (w 0) a b, (List.ofFn fun i : Fin (n + 1) ↦ cond (w i.succ) a b).prod, ?_, ?_⟩
-  · have hσw : rotateWords (n + 2) w = w ∘ ⇑(finRotate (n + 2)) := rfl
-    rw [hσw, wordProd, List.ofFn_succ', List.prod_concat]
+  · rw [rotateWords_apply, wordProd, List.ofFn_succ', List.prod_concat]
     simp only [Function.comp_apply, finRotate_castSucc, finRotate_last]
   · rw [wordProd, List.ofFn_succ, List.prod_cons]
 
@@ -253,13 +173,13 @@ theorem add_pow_char_sub_mem_commutatorSubmodule (a b : A) :
     rw [h1, h2, Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq]
     exact mul_sub_mul_mem_commutatorSubmodule k A y x
   have hM : ∀ m : A ⧸ C, (n + 2) • m = 0 := by
-    rintro ⟨x⟩
-    change (n + 2) • C.mkQ x = 0
+    intro m
+    obtain ⟨x, rfl⟩ := C.mkQ_surjective m
     rw [← map_nsmul, nsmul_char_eq_zero (n + 2) k x, map_zero]
   -- Only the two constant words survive modulo `n + 2`.
   rw [← Submodule.Quotient.eq, ← Submodule.mkQ_apply, ← Submodule.mkQ_apply,
     add_pow_eq_sum_wordProd, map_sum,
-    sum_eq_sum_filter_apply_eq_self_of_pow_eq_one _ (rotateWords_pow_self n) hM _ hf,
+    Equiv.Perm.sum_eq_sum_filter_apply_eq_self_of_pow_eq_one _ (rotateWords_pow_self n) hM _ hf,
     filter_rotateWords_eq, sum_pair (fun h ↦ Bool.noConfusion (congrFun h 0)), map_add]
   simp only [wordProd, Bool.cond_true, Bool.cond_false, List.ofFn_const, List.prod_replicate]
 
@@ -396,11 +316,6 @@ section Map
 
 variable {B : Type*} [Ring B] [Algebra k B]
 
-/-- An algebra isomorphism preserves the commutator submodule. -/
-theorem algEquiv_apply_mem_commutatorSubmodule_iff (e : A ≃ₐ[k] B) {a : A} :
-    e a ∈ commutatorSubmodule k B ↔ a ∈ commutatorSubmodule k A :=
-  ⟨fun h ↦ by simpa using map_mem_commutatorSubmodule e.symm h, map_mem_commutatorSubmodule e⟩
-
 /-- An algebra isomorphism preserves the `p`-power commutator subspace. -/
 theorem algEquiv_apply_mem_pPowerCommutatorSubmodule_iff (e : A ≃ₐ[k] B) {a : A} :
     e a ∈ pPowerCommutatorSubmodule p k B ↔ a ∈ pPowerCommutatorSubmodule p k A := by
@@ -420,20 +335,17 @@ noncomputable def quotientPPowerCommutatorEquiv (e : A ≃ₐ[k] B) :
     (A ⧸ pPowerCommutatorSubmodule p k A) ≃ₗ[k] B ⧸ pPowerCommutatorSubmodule p k B :=
   Submodule.Quotient.equiv _ _ e.toLinearEquiv (map_pPowerCommutatorSubmodule p k e)
 
+@[simp]
+theorem quotientPPowerCommutatorEquiv_mk (e : A ≃ₐ[k] B) (a : A) :
+    quotientPPowerCommutatorEquiv p k e (Submodule.Quotient.mk a) =
+      Submodule.Quotient.mk (e a) := by
+  simp [quotientPPowerCommutatorEquiv]
+
 end Map
 
 section NilIdeal
 
 variable (I : Ideal A) [I.IsTwoSided]
-
-/-- The commutators of a quotient algebra are the images of the commutators. -/
-theorem commutatorSubmodule_quotient_le_map :
-    commutatorSubmodule k (A ⧸ I) ≤
-      (commutatorSubmodule k A).map (Ideal.Quotient.mkₐ k I).toLinearMap := by
-  refine commutatorSubmodule_le_iff.2 fun x y ↦ ?_
-  obtain ⟨x, rfl⟩ := Ideal.Quotient.mkₐ_surjective k I x
-  obtain ⟨y, rfl⟩ := Ideal.Quotient.mkₐ_surjective k I y
-  exact ⟨x * y - y * x, mul_sub_mul_mem_commutatorSubmodule k A x y, by simp⟩
 
 include hp in
 /-- For a two-sided ideal `I` of nilpotent elements, `T(A)` is the preimage of `T(A / I)`
@@ -471,28 +383,18 @@ noncomputable def quotientPPowerCommutatorEquivOfIsNilpotent (hI : ∀ x ∈ I, 
       ((pPowerCommutatorSubmodule p k (A ⧸ I)).mkQ ∘ₗ (Ideal.Quotient.mkₐ k I).toLinearMap)
       ((Submodule.mkQ_surjective _).comp (Ideal.Quotient.mkₐ_surjective k I)))
 
+@[simp]
+theorem quotientPPowerCommutatorEquivOfIsNilpotent_mk (hI : ∀ x ∈ I, IsNilpotent x) (a : A) :
+    quotientPPowerCommutatorEquivOfIsNilpotent p k I hI (Submodule.Quotient.mk a) =
+      Submodule.Quotient.mk (Ideal.Quotient.mk I a) := by
+  simp [quotientPPowerCommutatorEquivOfIsNilpotent]
+
 end NilIdeal
 
 section Pi
 
 variable {ι : Type*} [Finite ι] (B : ι → Type*) [∀ i, Ring (B i)]
   [∀ i, Algebra k (B i)]
-
-/-- The commutators of a finite product of algebras are the families of commutators. -/
-theorem commutatorSubmodule_pi :
-    commutatorSubmodule k (Π i, B i) =
-      Submodule.pi Set.univ fun i ↦ commutatorSubmodule k (B i) := by
-  classical
-  have := Fintype.ofFinite ι
-  refine le_antisymm (commutatorSubmodule_le_iff.2 fun x y i _ ↦ ?_) fun v hv ↦ ?_
-  · exact mul_sub_mul_mem_commutatorSubmodule k (B i) (x i) (y i)
-  · rw [← Finset.univ_sum_single v]
-    refine sum_mem fun i _ ↦ ?_
-    have hle : commutatorSubmodule k (B i) ≤
-        (commutatorSubmodule k (Π i, B i)).comap (LinearMap.single k B i) :=
-      commutatorSubmodule_le_iff.2 fun x y ↦ by
-        simp [Pi.single_sub, Pi.single_mul]
-    exact hle (hv i (Set.mem_univ i))
 
 include hp in
 /-- The `p`-power commutator subspace of a finite product of algebras is the product of the

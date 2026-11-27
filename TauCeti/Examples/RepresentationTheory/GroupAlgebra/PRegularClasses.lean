@@ -14,9 +14,8 @@ import Mathlib.LinearAlgebra.Dimension.Free
 /-!
 # Examples of the `p`-power commutator subspace of a group algebra
 
-The Check "`C_p` in characteristic `p`: one simple module and one `p`-regular class" of the count
-`TauCeti.finrank_quotient_pPowerCommutatorSubmodule_monoidAlgebra`, for `C_p = Multiplicative
-(ZMod p)` over any field `k` of characteristic `p`:
+Examples of the count `TauCeti.finrank_quotient_pPowerCommutatorSubmodule_monoidAlgebra` for
+`C_p = Multiplicative (ZMod p)` over any field `k` of characteristic `p`:
 
 * the only `p`-regular class of `C_p` is the class of `1`, so `k[C_p] / T(k[C_p])` is
   one-dimensional;
