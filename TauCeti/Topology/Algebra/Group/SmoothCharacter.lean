@@ -33,8 +33,9 @@ by smooth characters, is in `TauCeti.RepresentationTheory.Smooth.Character`.
 ## Main results
 
 The results below other than `TauCeti.IsSmoothCharacter.comp`, `TauCeti.IsSmoothCharacter.inv`,
-`TauCeti.isSmoothCharacter_inv_iff`, `TauCeti.isSmoothCharacter_one` and
-`TauCeti.isSmoothCharacter_of_discreteTopology` assume `SeparatelyContinuousMul G`.
+`TauCeti.isSmoothCharacter_inv_iff`, `TauCeti.isSmoothCharacter_one`,
+`TauCeti.isSmoothCharacter_of_discreteTopology` and
+`TauCeti.IsSmoothCharacter.isOpen_singleton_one_of_injective` assume `SeparatelyContinuousMul G`.
 
 * `TauCeti.isSmoothCharacter_iff_continuous_of_discreteTopology` and
   `TauCeti.isSmoothCharacter_iff_continuous`: `χ` is smooth exactly when it is continuous for a
@@ -49,6 +50,8 @@ The results below other than `TauCeti.IsSmoothCharacter.comp`, `TauCeti.IsSmooth
   (`TauCeti.isSmoothCharacter_of_discreteTopology`).
 * `TauCeti.IsSmoothCharacter.comp`, `TauCeti.IsSmoothCharacter.unitsMap`: smooth characters pull
   back along continuous homomorphisms and push forward along maps of coefficients.
+* `TauCeti.IsSmoothCharacter.isOpen_singleton_one_of_injective`: an injective smooth character
+  forces `{1}` to be open.
 
 ## References
 
@@ -91,6 +94,11 @@ theorem IsSmoothCharacter.comp {H : Type*} [Group H] [TopologicalSpace H] {χ : 
     IsSmoothCharacter (χ.comp f) := by
   rw [isSmoothCharacter_iff, ← MonoidHom.comap_ker, Subgroup.coe_comap]
   exact (isSmoothCharacter_iff.1 hχ).preimage hf
+
+/-- An injective smooth character has kernel `{1}`, so `{1}` is open. -/
+theorem IsSmoothCharacter.isOpen_singleton_one_of_injective {χ : G →* Aˣ}
+    (hχ : IsSmoothCharacter χ) (hinj : Function.Injective χ) : IsOpen ({1} : Set G) := by
+  rwa [isSmoothCharacter_iff, (MonoidHom.ker_eq_bot_iff χ).mpr hinj, Subgroup.coe_bot] at hχ
 
 section SeparatelyContinuousMul
 

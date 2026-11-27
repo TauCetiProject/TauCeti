@@ -29,7 +29,9 @@ Mathlib's `Submodule.reflection_sub`. Two vectors of
 the same norm with a real inner product are exchanged by the reflection in the hyperplane
 orthogonal to their difference (`Submodule.reflection_sub_of_inner_comm`). In Euclidean
 space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`-th coordinate and
-negates the others (`EuclideanSpace.reflection_singleton_single_apply`).
+negates the others (`EuclideanSpace.reflection_singleton_single_apply`), and the reflection in the
+hyperplane orthogonal to `eᵢ` negates the `i`-th coordinate and keeps the others
+(`EuclideanSpace.reflection_orthogonal_singleton_single_apply`).
 
 Over `ℝ`, reflecting `x` across `K` changes its squared distance to `y` by `4 ⟪P x, y⟫`, where `P`
 is the orthogonal projection onto `Kᗮ` (`Submodule.norm_reflection_sub_sq`). In finite dimension,
@@ -230,6 +232,15 @@ theorem reflection_singleton_single_apply {ι : Type*} [Fintype ι] [DecidableEq
     simp [EuclideanSpace.inner_single_left]
     ring
   · simp [EuclideanSpace.inner_single_left, h]
+
+/-- The reflection of Euclidean space in the coordinate hyperplane orthogonal to the basis vector
+`eᵢ` negates the `i`-th coordinate and keeps all the others. -/
+@[simp]
+theorem reflection_orthogonal_singleton_single_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (i : ι) (w : EuclideanSpace ℝ ι) (j : ι) :
+    (ℝ ∙ EuclideanSpace.single i (1 : ℝ))ᗮ.reflection w j = if j = i then -w j else w j := by
+  rw [Submodule.reflection_orthogonal_apply, PiLp.neg_apply, reflection_singleton_single_apply]
+  split_ifs <;> simp
 
 end EuclideanSpace
 

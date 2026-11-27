@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.PDE.SeibergWitten.ZeroSet.Limit
 public import TauCeti.Topology.VectorBundle.Trivialization
 
+import TauCeti.Topology.MetricSpace.Closeds
+
 /-!
 # An empty limit zero set forces the twisting line bundle to be trivial
 
@@ -19,7 +21,8 @@ sets converge in the Hausdorff distance to a closed set `Z`, the support of the 
 empty.
 
 When `X` is compact and `Z = ∅`, the compact-set vacuum
-`TauCeti.SeibergWitten.eventually_forall_lt_of_tendsto` applies with `K = X`, so for every `σ < 1`
+`TauCeti.SeibergWitten.eventually_forall_lt_of_isKuratowskiLimit` applies with `K = X`, since
+Hausdorff limits are Kuratowski limits (`Filter.Tendsto.isKuratowskiLimit`), so for every `σ < 1`
 eventually `σ < sᵢ` on all of `X`. With `σ = 0`, eventually `αᵢ` vanishes nowhere
 (`TauCeti.SeibergWitten.eventually_forall_ne_zero_of_tendsto_bot`), so it trivializes the line
 bundle `E` (`TauCeti.SeibergWitten.exists_trivialization_baseSet_eq_univ_of_tendsto_bot`): `E` has
@@ -68,8 +71,8 @@ theorem eventually_forall_ne_zero_of_tendsto_bot [∀ x, Zero (E x)] (C c c₀ :
     ∀ᶠ i in l, ∀ x, α i x ≠ 0 := by
   -- The limit is empty, so the compact-set vacuum applies on all of `X`, with `σ = 0`.
   have hK : Disjoint (univ : Set X) ((⊥ : Closeds X) : Set X) := by simp
-  filter_upwards [eventually_forall_lt_of_tendsto C c c₀ hc zero_lt_one hr hh hZ isCompact_univ
-    hK hh₀ (hbound.mono fun i hi x _ ↦ hi x)] with i hi x hx
+  filter_upwards [eventually_forall_lt_of_isKuratowskiLimit C c c₀ hc zero_lt_one hr hh
+    hZ.isKuratowskiLimit isCompact_univ hK hh₀ (hbound.mono fun i hi x _ ↦ hi x)] with i hi x hx
   exact (hi x (mem_univ x)).not_ge (hα i x hx)
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)]

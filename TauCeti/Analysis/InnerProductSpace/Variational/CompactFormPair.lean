@@ -18,6 +18,7 @@ import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import TauCeti.Analysis.Normed.Module.WeakSpace.Sphere
 import TauCeti.Analysis.Normed.Operator.Compact.WeakSpace
 import TauCeti.Analysis.Variational.MinimizingSequence
+import TauCeti.Analysis.Variational.QuadraticEnergy
 
 /-!
 # Compact form pairs and their constrained minima
@@ -55,7 +56,12 @@ sequential direct method in the reflexive space `V`:
   `q + ω ‖j ·‖²`, which is weakly lower semicontinuous.
 
 Minimizers also minimize the Rayleigh quotient `q(u) / ‖j u‖²` over the `u ≠ 0` with `j u ∈ W`
-(`TauCeti.CompactFormPair.mul_norm_sq_le_energy_of_isMinOn`).
+(`TauCeti.CompactFormPair.mul_norm_sq_le_energy_of_isMinOn`,
+`TauCeti.CompactFormPair.isLeast_rayleigh_of_isMinOn`), and they satisfy the Euler–Lagrange
+equation `a(u₀, v) = q(u₀) ⟪j u₀, j v⟫` for every `v` with `j v ∈ W`
+(`TauCeti.CompactFormPair.form_apply_eq_mul_inner_of_isMinOn`): `u₀` minimizes the nonnegative
+energy of the shifted form `a - q(u₀) ⟪j ·, j ·⟫` on `u₀ + j⁻¹ W`, so it solves the weak equation
+of that form (`ContinuousLinearMap.apply_eq_of_forall_le_quadraticEnergy_add`).
 
 ## References
 
@@ -348,6 +354,42 @@ theorem isMinOn_energy_unitConstraint_iff {u₀ : V} :
       ∀ u, P.inclusion u ∈ W → P.energy u₀ * ‖P.inclusion u‖ ^ 2 ≤ P.energy u := by
   refine ⟨fun hmin _ hu ↦ mul_norm_sq_le_energy_of_isMinOn hmin hu, fun h u hu ↦ ?_⟩
   simpa [hu.2] using h u hu.1
+
+/-- **The Rayleigh principle on a constrained sphere.** For a minimizer `u₀` of the energy on the
+constrained sphere `S_W`, `q(u₀)` is the least value of the Rayleigh quotient `q(u) / ‖j u‖²` over
+the `u` with `j u ∈ W` and `j u ≠ 0`. -/
+theorem isLeast_rayleigh_of_isMinOn {u₀ : V} (hu₀ : u₀ ∈ P.unitConstraint W)
+    (hmin : IsMinOn P.energy (P.unitConstraint W) u₀) :
+    IsLeast {r | ∃ u, P.inclusion u ∈ W ∧ P.inclusion u ≠ 0 ∧
+      r = P.energy u / ‖P.inclusion u‖ ^ 2} (P.energy u₀) := by
+  obtain ⟨hW₀, h₁⟩ := mem_unitConstraint.1 hu₀
+  refine ⟨⟨u₀, hW₀, norm_ne_zero_iff.1 (by simp [h₁]), by simp [h₁]⟩, ?_⟩
+  rintro _ ⟨u, hu, hu0, rfl⟩
+  exact (le_div_iff₀ (by positivity)).2 (mul_norm_sq_le_energy_of_isMinOn hmin hu)
+
+/-- **The Euler–Lagrange equation of a constrained minimum.** A minimizer `u₀` of the energy on the
+constrained sphere `S_W` satisfies `a(u₀, v) = q(u₀) ⟪j u₀, j v⟫` for every `v` with `j v ∈ W`. -/
+theorem form_apply_eq_mul_inner_of_isMinOn {u₀ v : V} (hu₀ : u₀ ∈ P.unitConstraint W)
+    (hmin : IsMinOn P.energy (P.unitConstraint W) u₀) (hv : P.inclusion v ∈ W) :
+    P.form u₀ v = (P.energy u₀ : 𝕜) * inner 𝕜 (P.inclusion u₀) (P.inclusion v) := by
+  obtain ⟨hW₀, h₁⟩ := mem_unitConstraint.1 hu₀
+  -- `u₀` minimizes the energy of the Hermitian form `a - q(u₀) ⟪j ·, j ·⟫` on `u₀ + j⁻¹ W`,
+  -- since that energy is nonnegative there and vanishes at `u₀`.
+  set a := ContinuousLinearMap.shiftedForm P.inclusion P.form (-P.energy u₀)
+  have hmin' : ∀ w ∈ W.comap (P.inclusion : V →ₗ[𝕜] H),
+      a.quadraticEnergy 0 u₀ ≤ a.quadraticEnergy 0 (u₀ + w) := by
+    intro w hw
+    have h := mul_norm_sq_le_energy_of_isMinOn hmin (u := u₀ + w)
+      (by simpa using W.add_mem hW₀ (Submodule.mem_comap.1 hw))
+    simp only [a, ContinuousLinearMap.quadraticEnergy_apply,
+      ContinuousLinearMap.re_shiftedForm_self, h₁, ← energy_def,
+      zero_apply, map_zero]
+    linarith
+  have h := ContinuousLinearMap.apply_eq_of_forall_le_quadraticEnergy_add 0
+    (ContinuousLinearMap.shiftedForm_eq_star P.inclusion P.hermitian _) hmin'
+    (Submodule.mem_comap.2 hv)
+  rw [ContinuousLinearMap.shiftedForm_apply, zero_apply, RCLike.ofReal_neg] at h
+  linear_combination h
 
 end CompactFormPair
 

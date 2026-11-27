@@ -37,6 +37,8 @@ matrices can be decided on the linear maps, for instance through Jordan-chain ba
   `g⁻¹ *ᵥ (A *ᵥ v) = B *ᵥ (g⁻¹ *ᵥ v)`.
 * `Matrix.GeneralLinearGroup.vecMul_eq_iff_eq_vecMul_inv`: `a ᵥ* g = y` exactly when
   `a = y ᵥ* g⁻¹`.
+* `Matrix.GeneralLinearGroup.dotProduct_conj_sub_one_mulVec`: conjugation by `g` carries
+  `u (h - 1) v` to `(u g) (h - 1) (g⁻¹ v)`.
 * `Matrix.GeneralLinearGroup.scalar_injective`: for nonempty `n`, the scalar embedding
   `Rˣ → GL n R` is injective.
 * `Matrix.mem_orbit_conjAct_iff_exists_linearEquiv_conj`: matrices are conjugate under `GL n R`
@@ -73,6 +75,17 @@ theorem vecMul_eq_iff_eq_vecMul_inv [Semiring R] (g : GL n R) (a y : n → R) :
     rw [vecMul_vecMul, ← Units.val_mul, mul_inv_cancel, Units.val_one, vecMul_one]
   · rintro rfl
     rw [vecMul_vecMul, ← Units.val_mul, inv_mul_cancel, Units.val_one, vecMul_one]
+
+/-- Conjugation by `g ∈ GL n R` carries `u (h - 1) v` to `(u g) (h - 1) (g⁻¹ v)`. -/
+theorem dotProduct_conj_sub_one_mulVec [Ring R] (g h : GL n R) (u v : n → R) :
+    u ⬝ᵥ ((((g * h * g⁻¹ : GL n R) : Matrix n n R) - 1) *ᵥ v) =
+      (u ᵥ* (g : Matrix n n R)) ⬝ᵥ
+        (((h : Matrix n n R) - 1) *ᵥ (((g⁻¹ : GL n R) : Matrix n n R) *ᵥ v)) := by
+  have hconj : ((g * h * g⁻¹ : GL n R) : Matrix n n R) - 1 =
+      (g : Matrix n n R) * (((h : Matrix n n R) - 1) * ((g⁻¹ : GL n R) : Matrix n n R)) := by
+    rw [Units.val_mul, Units.val_mul, sub_mul, one_mul, mul_sub, ← Units.mul_inv g,
+      ← Matrix.mul_assoc]
+  rw [hconj, ← mulVec_mulVec, ← mulVec_mulVec, dotProduct_mulVec]
 
 variable [CommRing R]
 

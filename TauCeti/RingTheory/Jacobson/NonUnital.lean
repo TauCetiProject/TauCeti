@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Spectrum.Quasispectrum
 public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import Mathlib.RingTheory.Jacobson.Radical
 
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.RingTheory.Jacobson.Basic
 
 /-!
@@ -115,7 +116,7 @@ theorem jacobson_unitization_eq_bot_iff (hR : Ring.jacobson R = ⊥) :
     ⟨fun r ↦ ⟨Unitization.inl r, Unitization.fst_inl A r⟩⟩
   have hfst : x.fst = 0 := by
     simpa [hR] using Ring.le_comap_jacobson (Unitization.fstHom R A).toRingHom hx
-  have hx' : x = x.snd := Unitization.ext (by simp [hfst]) rfl
+  have hx' : x = x.snd := (Unitization.inr_snd_of_fst_eq_zero hfst).symm
   have hsnd : x.snd ∈ nonUnitalJacobson R A := (mem_nonUnitalJacobson R A).2 (hx' ▸ hx)
   rw [h, TwoSidedIdeal.mem_bot] at hsnd
   rw [Submodule.mem_bot, hx', hsnd, Unitization.inr_zero]

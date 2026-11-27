@@ -7,7 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import TauCeti.Algebra.AlgebraicGroup.Solvable.UnipotentRadical.Basic
-public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.TorusQuotient
+public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Torus.Quotient
 
 /-!
 # The unipotent radical of a solvable group over a perfect field
@@ -24,7 +24,7 @@ It combines two results from other files. The quotient `G ⧸ R_u(G)` is a torus
 `TauCeti.Algebra.AlgebraicGroup.Solvable.UnipotentRadical.Basic`. Over any field, once
 `G ⧸ R_u(G)` is a torus, the formation of `R_u(G)` commutes with field extension by
 `TauCeti.FiniteTypeCommHopfAlgCat.baseChangeHopfIdeal_unipotentRadicalDefiningIdeal_of_torus` in
-`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.TorusQuotient`, which rests on the uniqueness
+`TauCeti.Algebra.AlgebraicGroup.Unipotent.Radical.Torus.Quotient`, which rests on the uniqueness
 lemma `TauCeti.FiniteTypeCommHopfAlgCat.
 unipotentRadicalDefiningIdeal_eq_of_multiplicativeType_coinvariants` there.
 

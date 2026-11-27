@@ -19,7 +19,9 @@ or unital coefficient ring.
 
 The block-diagonal matrix `Matrix.fromBlocks e 0 0 f` is the direct sum of the square matrices `e`
 and `f`. It is idempotent when `e` and `f` are, which is how direct sums of idempotent matrices,
-and hence the addition of algebraic `K₀`, are formed.
+and hence the addition of algebraic `K₀`, are formed. The direct sum of two matrix representations
+`ρ₁ : R →ₐ[A] Matrix n₁ n₁ A` and `ρ₂ : R →ₐ[A] Matrix n₂ n₂ A` is the block-diagonal
+representation `AlgHom.fromBlocks ρ₁ ρ₂`.
 
 Idempotent matrices `e` and `f`, possibly of different sizes, are Murray–von Neumann equivalent when
 `e = a * b` and `f = b * a` for rectangular matrices `a` and `b`. After normalizing `a` and `b`, the
@@ -57,6 +59,8 @@ and empty blocks.
 * `Matrix.fromBlocks_zero₂₁_pow`: the power formula for an upper two-block matrix.
 * `Matrix.fromBlocks₁₁NonUnitalStarAlgHom`: the corner embedding `y ↦ fromBlocks y 0 0 0` as a
   non-unital `⋆`-algebra homomorphism.
+* `AlgHom.fromBlocks ρ₁ ρ₂`: the block-diagonal representation `x ↦ diag(ρ₁ x, ρ₂ x)` of two
+  matrix representations, as an algebra homomorphism.
 * `Matrix.fromBlocks_mul_sub_mul`: the four blocks of a difference of products.
 * `IsIdempotentElem.fromBlocks_zero₁₂_zero₂₁` and `IsStarProjection.fromBlocks_zero₁₂_zero₂₁`:
   the direct sum of idempotent matrices is idempotent, and that of star projections is a star
@@ -306,6 +310,30 @@ public theorem fromBlocks₁₁NonUnitalStarAlgHom_apply {R α l m : Type*} [Fin
   (rfl)
 
 end Matrix
+
+namespace AlgHom
+
+variable {A : Type*} [CommSemiring A] {R : Type*} [Semiring R] [Algebra A R]
+  {n₁ n₂ : Type*} [Fintype n₁] [Fintype n₂] [DecidableEq n₁] [DecidableEq n₂]
+
+/-- The **block-diagonal representation** `x ↦ diag(ρ₁ x, ρ₂ x)` of two matrix representations,
+the direct sum of `ρ₁` and `ρ₂`. -/
+public def fromBlocks (ρ₁ : R →ₐ[A] Matrix n₁ n₁ A) (ρ₂ : R →ₐ[A] Matrix n₂ n₂ A) :
+    R →ₐ[A] Matrix (n₁ ⊕ n₂) (n₁ ⊕ n₂) A where
+  toFun x := Matrix.fromBlocks (ρ₁ x) 0 0 (ρ₂ x)
+  map_one' := by simp
+  map_mul' x y := by simp [Matrix.fromBlocks_multiply]
+  map_zero' := by simp
+  map_add' x y := by simp [Matrix.fromBlocks_add]
+  commutes' a := by
+    simp [Algebra.algebraMap_eq_smul_one, ← Matrix.fromBlocks_one, Matrix.fromBlocks_smul]
+
+@[simp]
+public theorem fromBlocks_apply (ρ₁ : R →ₐ[A] Matrix n₁ n₁ A) (ρ₂ : R →ₐ[A] Matrix n₂ n₂ A)
+    (x : R) : ρ₁.fromBlocks ρ₂ x = Matrix.fromBlocks (ρ₁ x) 0 0 (ρ₂ x) :=
+  (rfl)
+
+end AlgHom
 
 /-- The difference of the two products of block matrices, computed in each block. -/
 public theorem Matrix.fromBlocks_mul_sub_mul {m n R : Type*} [Fintype m] [Fintype n]

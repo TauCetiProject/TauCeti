@@ -46,7 +46,9 @@ The datum `H'_q(t) dt` does not depend on `s`, so the same holds for the transla
 `v(z) = u(φ'_q(z + (R, 0)))` at every height `R`: they solve one cylindrical Floer equation,
 whatever `R`
 (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_add`), and
-their energy over a window of angular width one is at most the energy of `u` over `S`
+their energy over a part of a window of angular width one is the energy of `u` over its image
+(`TauCeti.SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq`), hence at
+most the energy of `u` over `S`
 (`TauCeti.SmoothTwoForm.setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le`). These are
 the two inputs of compactness along the ends, where the heights `R` tend to infinity.
 
@@ -353,6 +355,34 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart_add {q : Punct
   simp only [Prod.snd_add, add_zero, comp_apply] at heq
   rwa [heq]
 
+/-- **The energy of a translated end of a Floer pair of pants is the energy of its image.** Let `K`
+be equal to `H_q(t) dt` beyond `T₀` on the end `q`, for differentiable `H_q`, and let `u` be
+differentiable on `S`. Let `R` be a height and `s` a measurable set whose translate `s + (R, 0)`
+lies in a band `(max T₀ 0, ∞) × (t₀, t₀ + 1)` of angular width one. Then the energy of the
+translated end `z ↦ u(φ'_q(z + (R, 0)))` for the end Hamiltonian `H'_q` over `s` is the energy of
+`u` over the image of `s` under `z ↦ φ'_q(z + (R, 0))`. -/
+theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq (q : Puncture)
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
+    {u : ℝ × ℝ → M} (hu : MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I u thricePuncturedSphereReal)
+    (R : ℝ) {s : Set (ℝ × ℝ)} (hs : MeasurableSet s) {t₀ : ℝ}
+    (hst : ∀ z ∈ s, z + (R, 0) ∈ Ioi (max T₀ 0) ×ˢ Ioo t₀ (t₀ + 1)) :
+    ∫⁻ z in s, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
+        (fun w ↦ positiveEndHamiltonian H q w.2) (fun z ↦ u (positiveEndChart q (z + (R, 0)))) z) =
+      ∫⁻ z in (fun z ↦ positiveEndChart q (z + (R, 0))) '' s, ENNReal.ofReal
+        (ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
+  -- The energy of the translated end over `s` is that of `u ∘ φ'_q` over `s + (R, 0)`.
+  have h := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
+    (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) (R, 0)
+    ((· + ((R, 0) : ℝ × ℝ)) '' s)
+  rw [preimage_image_eq _ (add_left_injective _)] at h
+  simp only [Prod.snd_add, add_zero, comp_apply] at h
+  rw [h, setLIntegral_floerEnergyDensity_comp_positiveEndChart_eq_of_subset q hKH hH hHd hu
+    ((measurableEmbedding_addRight _).measurableSet_image' hs)
+    (by rintro _ ⟨z, hz, rfl⟩; exact hst z hz), image_image]
+
 /-- **The energy of a translated end of a Floer pair of pants.** Let `K` be equal to `H_q(t) dt`
 beyond `T₀` on the end `q`, for differentiable `H_q`, and let `u` be differentiable on `S`. Let `R`
 be a height and `s` a measurable set whose translate `s + (R, 0)` lies in a band
@@ -371,16 +401,10 @@ theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_le (q : Punctu
       ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) := by
-  -- The energy of the translated end over `s` is that of `u ∘ φ'_q` over `s + (R, 0)`.
-  have h := ω.lintegral_floerEnergyDensity_comp_add_right (fun _ _ ↦ 0)
-    (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) (R, 0)
-    ((· + ((R, 0) : ℝ × ℝ)) '' s)
-  rw [preimage_image_eq _ (add_left_injective _)] at h
-  simp only [Prod.snd_add, add_zero, comp_apply] at h
-  rw [h]
-  exact setLIntegral_floerEnergyDensity_comp_positiveEndChart_le_of_subset q hKH hH hHd hu
-    ((measurableEmbedding_addRight _).measurableSet_image' hs)
-    (by rintro _ ⟨z, hz, rfl⟩; exact hst z hz)
+  rw [setLIntegral_floerEnergyDensity_comp_positiveEndChart_add_eq q hKH hH hHd hu R hs hst]
+  refine lintegral_mono_set ?_
+  rintro _ ⟨z, hz, rfl⟩
+  exact positiveEndChart_mem_thricePuncturedSphereReal ((le_max_right _ _).trans_lt (hst z hz).1)
 
 end SmoothTwoForm
 

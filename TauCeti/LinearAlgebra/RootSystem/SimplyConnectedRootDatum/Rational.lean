@@ -326,6 +326,14 @@ through the Bourbaki numbering. This is what lets a construction stated against
     coe_simpleSupportEquiv, coe_simpleSupportEquiv, pairingIn_rationalRootSystem,
     pairingIn_simpleIndex]
 
+/-- The Cartan matrix of the pinned base at two of its simple roots, read through the inverse of
+the Bourbaki numbering. This is the form `TauCeti.coxeterMatrixOfBase_eq_coxeterMatrix_reindex`
+asks for. -/
+theorem cartanMatrix_rationalBase_symm (i j : (t.rationalBase ht).support) :
+    (t.rationalBase ht).cartanMatrix i j =
+      t.cartanMatrix ((t.simpleSupportEquiv ht).symm i) ((t.simpleSupportEquiv ht).symm j) := by
+  rw [← cartanMatrix_rationalBase, Equiv.apply_symm_apply, Equiv.apply_symm_apply]
+
 end
 
 end TauCeti.DynkinType

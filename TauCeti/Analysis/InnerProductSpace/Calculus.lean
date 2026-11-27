@@ -55,6 +55,8 @@ are bounded by `‖ζ‖` times those of `f`, plus `‖ξ‖`.
 
 * `TauCeti.fderiv_fderiv_norm_sq`, `TauCeti.fderiv_fderiv_norm_sq_apply`: the second derivative
   of the squared norm is `2 • innerSL ℝ`, so it sends `(u, v)` to `2 ⟪u, v⟫`.
+* `TauCeti.fderiv_fderiv_one_sub_norm_sq_apply`: the second derivative of `1 - ‖·‖²` sends
+  `(u, v)` to `-2 ⟪u, v⟫`.
 * `TauCeti.fderiv_inner_sub_inner_apply`: the derivative of `y ↦ ⟪f y, ζ⟫ - ⟪y, ξ⟫` in the
   direction `v` is `⟪v, (Df(x))† ζ - ξ⟫`.
 * `TauCeti.norm_iteratedFDeriv_succ_inner_sub_inner_le`: the bound on the derivatives of order at
@@ -105,6 +107,14 @@ theorem TauCeti.fderiv_fderiv_norm_sq_apply (y u v : E) :
   simp only [two_smul, add_apply]
   rw [innerSL_apply_apply]
   ring
+
+/-- The second derivative of `1 - ‖·‖²` is minus twice the inner product, evaluated:
+`D²(1 - ‖·‖²)(y)(u, v) = -2 ⟪u, v⟫`. -/
+theorem TauCeti.fderiv_fderiv_one_sub_norm_sq_apply (y u v : E) :
+    fderiv ℝ (fderiv ℝ fun z : E ↦ 1 - ‖z‖ ^ 2) y u v = -(2 * ⟪u, v⟫) := by
+  have hf : fderiv ℝ (fun z : E ↦ 1 - ‖z‖ ^ 2) = -fderiv ℝ (fun z : E ↦ ‖z‖ ^ 2) :=
+    funext fun _ ↦ fderiv_const_sub 1
+  rw [hf, fderiv_neg, neg_apply, neg_apply, TauCeti.fderiv_fderiv_norm_sq_apply]
 
 section UnitBall
 
