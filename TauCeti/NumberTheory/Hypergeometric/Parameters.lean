@@ -40,7 +40,7 @@ that the later theory transports invariants along:
 
 * `TauCeti.Hypergeometric.rep`, `TauCeti.Hypergeometric.rep0`: the representatives, with
   `coe_rep`, `rep_injective`, `rep_zero`, `rep_eq_iff` and their `rep0` counterparts, and
-  `rep_neg`, `rep0_neg` relating them under negation.
+  `rep_neg`, `rep0_neg` relating them under negation, and `rep_add`.
 * `TauCeti.Hypergeometric.Parameters`: a hypergeometric parameter pair, with its `degree`.
 * `TauCeti.Hypergeometric.Parameters.swap`, the `Neg` and `InvolutiveNeg` instances, and the
   `AddAction (AddCircle (1 : ℚ))` instance of shifts.
@@ -171,6 +171,18 @@ theorem rep_neg (x : AddCircle (1 : ℚ)) : rep (-x) = 1 - rep0 x := by
 theorem rep0_neg (x : AddCircle (1 : ℚ)) : rep0 (-x) = 1 - rep x := by
   refine rep0_eq_iff.2 ⟨⟨by linarith [rep_le_one x], by linarith [rep_pos x]⟩, ?_⟩
   rw [AddCircle.coe_sub, AddCircle.coe_period, coe_rep, zero_sub]
+
+/-- The representative of a sum is the sum of the representatives, reduced by `1` when it
+exceeds `1`. -/
+theorem rep_add (x y : AddCircle (1 : ℚ)) :
+    rep (x + y) = if rep x + rep y ≤ 1 then rep x + rep y else rep x + rep y - 1 := by
+  have hx := rep_mem_Ioc x
+  have hy := rep_mem_Ioc y
+  rw [rep_eq_iff]
+  split_ifs with h
+  · exact ⟨⟨by linarith [hx.1, hy.1], h⟩, by rw [AddCircle.coe_add, coe_rep, coe_rep]⟩
+  · refine ⟨⟨by linarith, by linarith [hx.2, hy.2]⟩, ?_⟩
+    rw [AddCircle.coe_sub, AddCircle.coe_period, sub_zero, AddCircle.coe_add, coe_rep, coe_rep]
 
 /-! ### Parameter pairs -/
 

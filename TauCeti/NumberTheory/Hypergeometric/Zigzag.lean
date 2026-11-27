@@ -43,8 +43,9 @@ The swap reflects the walk and negates `Z`.
 * `TauCeti.Hypergeometric.Parameters.countingFunction`: the counting function `Z`, with
   `height_card_filter_rep_le` and `height_succ_eq_countingFunction`.
 * `TauCeti.Hypergeometric.Parameters.blockStart`: the position of the block of a class, with
-  `take_count_drop_blockStart`, `height_blockStart` and the block form
-  `height_blockStart_add_of_mem_α`.
+  `take_count_drop_blockStart`, `height_blockStart`, the block form
+  `height_blockStart_add_of_mem_α`, and `blockStart_le`, `lt_blockStart_add_count` (every entry
+  lies in the block of its class).
 
 ## References
 
@@ -308,6 +309,41 @@ theorem height_blockStart_add_of_mem_β (ha : a ∈ P.β) (hj : j ≤ P.β.count
   rw [P.height_blockStart_add a (by simpa [hα] using hj), P.height_blockStart_of_mem_β ha,
     P.step_rep_of_mem_β ha]
   ring
+
+/-- Every entry of the sorted list is the representative of its class. -/
+theorem rep_coe_of_mem_sortedReps (hx : x ∈ P.sortedReps) : rep (x : AddCircle (1 : ℚ)) = x := by
+  obtain ⟨a, -, rfl⟩ := P.mem_sortedReps.1 hx
+  rw [coe_rep]
+
+/-- The `i`-th entry of the sorted list lies in the block of its class: that block starts at or
+before position `i`. -/
+theorem blockStart_le (hi : i < P.sortedReps.length) :
+    P.blockStart (P.sortedReps[i] : AddCircle (1 : ℚ)) ≤ i := by
+  -- No entry from position `i` on is below the `i`-th one.
+  obtain ⟨x, hx⟩ : ∃ x, P.sortedReps[i] = x := ⟨_, rfl⟩
+  rw [hx, blockStart, P.rep_coe_of_mem_sortedReps (hx ▸ List.getElem_mem hi),
+    P.card_filter_eq_countP (· < x), ← List.take_append_drop i P.sortedReps, List.countP_append,
+    (List.countP_eq_zero (l := P.sortedReps.drop i)).2, add_zero]
+  · exact List.countP_le_length.trans (List.length_take_le _ _)
+  · intro y hy
+    obtain ⟨m, hm, rfl⟩ := List.mem_drop_iff_getElem.1 hy
+    simpa [← hx] using P.sortedLE_sortedReps.getElem_le_getElem_of_le (Nat.le_add_right i m)
+      (hi := hi) (hj := by omega)
+
+/-- The `i`-th entry of the sorted list lies in the block of its class: that block ends after
+position `i`. -/
+theorem lt_blockStart_add_count (hi : i < P.sortedReps.length) :
+    i < P.blockStart (P.sortedReps[i] : AddCircle (1 : ℚ)) +
+      (P.α + P.β).count (P.sortedReps[i] : AddCircle (1 : ℚ)) := by
+  -- Every entry up to position `i` is at most the `i`-th one.
+  obtain ⟨x, hx⟩ : ∃ x, P.sortedReps[i] = x := ⟨_, rfl⟩
+  rw [hx, blockStart, ← card_filter_rep_le, P.rep_coe_of_mem_sortedReps (hx ▸ List.getElem_mem hi),
+    P.card_filter_eq_countP (· ≤ x), ← List.take_append_drop (i + 1) P.sortedReps,
+    List.countP_append, List.countP_eq_length.2, List.length_take_of_le hi]
+  · omega
+  · intro y hy
+    obtain ⟨m, hm, rfl⟩ := List.mem_take_iff_getElem.1 hy
+    simpa [← hx] using P.sortedLE_sortedReps.getElem_le_getElem_of_le (by omega : m ≤ i)
 
 /-! ### The swap -/
 

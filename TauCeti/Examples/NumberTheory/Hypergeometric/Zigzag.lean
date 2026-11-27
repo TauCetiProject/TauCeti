@@ -41,6 +41,10 @@ noncomputable def zigzagLegendre : Parameters where
     rintro _ rfl _ rfl
     exact coe_ne_coe (by norm_num) (by norm_num) (by norm_num)
 
+theorem zigzagLegendre_α :
+    zigzagLegendre.α = {((1 / 2 : ℚ) : AddCircle (1 : ℚ)), ((1 / 2 : ℚ) : AddCircle (1 : ℚ))} :=
+  (rfl)
+
 private theorem rep_half : rep ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) = 1 / 2 :=
   rep_coe_of_mem (by norm_num)
 
@@ -100,6 +104,14 @@ noncomputable def zigzagHalfQuarter : Parameters where
     simp only [Multiset.disjoint_iff_ne, Multiset.insert_eq_cons, Multiset.mem_cons,
       Multiset.mem_singleton, or_self]
     rintro _ rfl _ (rfl | rfl) <;> exact coe_ne_coe (by norm_num) (by norm_num) (by norm_num)
+
+theorem zigzagHalfQuarter_α :
+    zigzagHalfQuarter.α = {((1 / 2 : ℚ) : AddCircle (1 : ℚ)), ((1 / 2 : ℚ) : AddCircle (1 : ℚ))} :=
+  (rfl)
+
+theorem zigzagHalfQuarter_β :
+    zigzagHalfQuarter.β = {((1 / 4 : ℚ) : AddCircle (1 : ℚ)), ((3 / 4 : ℚ) : AddCircle (1 : ℚ))} :=
+  (rfl)
 
 theorem sortedReps_zigzagHalfQuarter :
     zigzagHalfQuarter.sortedReps = [1 / 4, 1 / 2, 1 / 2, 3 / 4] := by
