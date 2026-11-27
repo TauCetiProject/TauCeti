@@ -10,7 +10,6 @@ public import TauCeti.Probability.MarkovChain.Examples.IntegerWalk.Recurrence
 public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Analysis.SpecificLimits.CentralBinomial
 public import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
-import TauCeti.Probability.MarkovChain.Invariant
 
 /-!
 # Infinite mean return time of nearest-neighbor integer walks
@@ -66,6 +65,14 @@ theorem tendsto_integerWalk_pow_real_self (p : unitInterval) (hp : (p : ℝ) = 1
   exact squeeze_zero (fun _ => measureReal_nonneg) hbound
     (TauCeti.tendsto_centralBinom_div_four_pow.comp (Nat.tendsto_div_const_atTop (by omega)))
 
+private theorem tendsto_integerWalk_integral_visitCount_div (p : unitInterval)
+    (hp : (p : ℝ) = 1 / 2) (x : ℤ) :
+    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) x n : ℝ) / n
+      ∂markovChainLaw (Measure.dirac x) (integerWalk p)) atTop (𝓝 0) := by
+  simp_rw [integral_div, (integerWalk p).integral_visitCount_succ_markovChainLaw_dirac]
+  simpa only [div_eq_inv_mul, Function.comp_apply] using
+    ((tendsto_integerWalk_pow_real_self p hp x).comp (tendsto_add_atTop_nat 1)).cesaro
+
 /-- The extended mean first positive return time of every nearest-neighbor integer walk is
 infinite, for both symmetric and biased parameters (including the deterministic endpoints). -/
 -- Simplify before the endpoint rules replace `integerWalk` by a deterministic kernel.
@@ -75,15 +82,12 @@ theorem integerWalk_meanReturnTime_eq_top (p : unitInterval) (x : ℤ) :
   by_cases hp : (p : ℝ) = 1 / 2
   · by_contra hfinite
     have hpos : 0 < ((integerWalk p).meanReturnTime x)⁻¹.toReal :=
-      Kernel.inv_meanReturnTime_toReal_pos_iff.mpr
-        ((Kernel.isPositiveRecurrent_iff _ _).mpr (lt_top_iff_ne_top.mpr hfinite))
-    have hcesaro :
-        Tendsto (fun n : ℕ =>
-          (∑ i ∈ Finset.range n, (((integerWalk p) ^ (i + 1)) x).real {x}) / n) atTop (𝓝 0) := by
-      simpa only [div_eq_inv_mul, Function.comp_apply] using
-        ((tendsto_integerWalk_pow_real_self p hp x).comp (tendsto_add_atTop_nat 1)).cesaro
-    exact hpos.ne' (tendsto_nhds_unique
-      ((integerWalk p).tendsto_cesaro_pow_real_singleton_self x) hcesaro)
+      ENNReal.toReal_pos (ENNReal.inv_ne_zero.mpr hfinite)
+        (ENNReal.inv_ne_top.mpr (ne_zero_of_lt (lt_of_lt_of_le zero_lt_one
+          (Kernel.one_le_meanReturnTime (κ := integerWalk p) (x := x)))))
+    have hLLN := (HasLaw.id (μ := markovChainLaw (Measure.dirac x) (integerWalk p)))
+      |>.tendsto_integral_visitCount_div_markovChainLaw_dirac
+    exact hpos.ne' (tendsto_nhds_unique hLLN (tendsto_integerWalk_integral_visitCount_div p hp x))
   · exact ((integerWalk_isTransient_iff p x).mpr hp).meanReturnTime_eq_top
 
 end TauCeti.Probability

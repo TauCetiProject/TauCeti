@@ -94,16 +94,14 @@ theorem tendsto_countdownKernel_map_pred_pow_apply_zero (ν : Measure ℕ) [IsPr
     have hm := μ.countdownKernel.lintegral_hittingAfter_markovChainLaw_subtype
       μ.measurableSet_countdownStates (dirac z) (measurableSet_singleton 0) 1
     rw [hpre, map_dirac' measurable_subtypeVal] at hm
-    have hret : κ.meanReturnTime z = ∞ := by
-      rw [Kernel.meanReturnTime_def]
-      simp_rw [← WithTop.recTopCoe_top_natCast_eq_toENNReal]
+    have hret : (∫⁻ ω, (hittingAfter (fun n ω => ω n) {z} 1 ω).recTopCoe ⊤
+        (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (dirac z) κ) = ∞ := by
       rw [hm]
       simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
       exact (ν.lintegral_hittingAfter_countdownKernel_map_pred hν).trans hmean
-    have hlim := κ.tendsto_pow_comp_real_singleton_of_not_isPositiveRecurrent
-      (by rwa [Kernel.isPositiveRecurrent_iff, not_lt_top_iff]) (dirac z)
-    simp_rw [hmass] at hlim
-    simpa only [hmean, ENNReal.inv_top, ENNReal.toReal_zero] using hlim
+    simpa only [hmass, hmean, ENNReal.inv_top, ENNReal.toReal_zero] using
+      κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top
+        haper hret (dirac z)
   · obtain ⟨ρ, hρ, hstat, hz⟩ := exists_invariant_countdownKernel_subtype ν hν hmean
     let := hρ
     -- Identify the helper's local gap law and zero state with μ and z above.

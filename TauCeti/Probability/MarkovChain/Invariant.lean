@@ -52,11 +52,9 @@ point-mass kernel `const α (dirac a)` positive recurrence holds precisely at `x
 
 ## Main statements
 
-* `ProbabilityTheory.Kernel.comp_cycleOccupation_eq`,
-  `ProbabilityTheory.Kernel.IsRecurrent.invariant_cycleOccupation`,
-  `ProbabilityTheory.Kernel.IsRecurrent.cycleOccupation_singleton_lt_top`, and
-  `ProbabilityTheory.Kernel.IsRecurrent.sigmaFinite_cycleOccupation`: one-step balance, invariance,
-  singleton finiteness, and `σ`-finiteness of the cycle occupation measure at a recurrent state.
+* `ProbabilityTheory.Kernel.comp_cycleOccupation_eq` and
+  `ProbabilityTheory.Kernel.IsRecurrent.invariant_cycleOccupation`: one-step balance and invariance
+  of the cycle occupation measure at a recurrent state.
 * `ProbabilityTheory.Kernel.smul_cycleOccupation_le_of_comp_le` and
   `ProbabilityTheory.Kernel.Invariant.smul_cycleOccupation_le`: minimality of `cycleOccupation`
   among subinvariant and invariant measures.
@@ -138,21 +136,6 @@ theorem IsPositiveRecurrent.not_isTransient {κ : Kernel α α} [IsMarkovKernel 
 theorem IsTransient.not_isPositiveRecurrent {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
     (hx : κ.IsTransient x) : ¬ κ.IsPositiveRecurrent x :=
   fun h => h.not_isTransient hx
-
-/-- The real reciprocal mean return time `(κ.meanReturnTime x)⁻¹.toReal` is strictly positive if
-and only if `x` is positive recurrent. -/
-theorem inv_meanReturnTime_toReal_pos_iff {κ : Kernel α α} [IsMarkovKernel κ] {x : α} :
-    0 < (κ.meanReturnTime x)⁻¹.toReal ↔ κ.IsPositiveRecurrent x := by
-  rw [ENNReal.toReal_pos_iff, ENNReal.inv_pos, lt_top_iff_ne_top, ENNReal.inv_ne_top,
-    isPositiveRecurrent_iff]
-  exact ⟨fun h => lt_top_iff_ne_top.mpr h.1, fun hx => ⟨hx.ne, κ.meanReturnTime_ne_zero x⟩⟩
-
-/-- The real reciprocal mean return time `(κ.meanReturnTime x)⁻¹.toReal` vanishes if and only if
-`x` is not positive recurrent. -/
-theorem inv_meanReturnTime_toReal_eq_zero_iff {κ : Kernel α α} [IsMarkovKernel κ] {x : α} :
-    (κ.meanReturnTime x)⁻¹.toReal = 0 ↔ ¬ κ.IsPositiveRecurrent x := by
-  rw [← inv_meanReturnTime_toReal_pos_iff]
-  exact ⟨fun h hpos => hpos.ne' h, fun h => le_antisymm (not_lt.mp h) ENNReal.toReal_nonneg⟩
 
 /-- A positive recurrent state has divergent Green function `∑' n, (κ ^ n) x {x} = ∞`. -/
 theorem IsPositiveRecurrent.tsum_pow_apply_singleton_self_eq_top [MeasurableSingletonClass α]
@@ -490,14 +473,6 @@ theorem IsPositiveRecurrent.isFiniteMeasure_cycleOccupation [MeasurableSingleton
     IsFiniteMeasure (κ.cycleOccupation x) :=
   ⟨by rw [cycleOccupation_univ]; exact hx.meanReturnTime_lt_top⟩
 
-/-- When singletons are measurable, `κ.cycleOccupation x` is a finite measure if and only if `x` is
-positive recurrent. -/
-theorem isFiniteMeasure_cycleOccupation_iff [MeasurableSingletonClass α] {κ : Kernel α α}
-    [IsMarkovKernel κ] {x : α} :
-    IsFiniteMeasure (κ.cycleOccupation x) ↔ κ.IsPositiveRecurrent x :=
-  ⟨fun h => by_contra fun hx => not_isFiniteMeasure_cycleOccupation_of_not_isPositiveRecurrent hx h,
-    IsPositiveRecurrent.isFiniteMeasure_cycleOccupation⟩
-
 /-- If `x` is positive recurrent, `κ.cycleOccupation x` is `κ`-invariant. -/
 theorem IsPositiveRecurrent.invariant_cycleOccupation [MeasurableSingletonClass α]
     {κ : Kernel α α} [IsMarkovKernel κ] {x : α} (hx : κ.IsPositiveRecurrent x) :
@@ -542,36 +517,6 @@ theorem IsRecurrent.cycleOccupation_singleton_lt_top_of_reaches [MeasurableSingl
   refine lt_top_iff_ne_top.mpr fun htop => ?_
   rw [htop, ENNReal.top_mul hn.ne'] at hle
   exact not_top_lt (hle.trans_lt ENNReal.one_lt_top)
-
-/-- Around any recurrent state `x`, the cycle occupation measure assigns finite mass to every
-singleton `{y}`. -/
-theorem IsRecurrent.cycleOccupation_singleton_lt_top [MeasurableSingletonClass α] {κ : Kernel α α}
-    [IsMarkovKernel κ] {x : α} (hx : κ.IsRecurrent x) (y : α) :
-    κ.cycleOccupation x {y} < ∞ := by
-  -- States reachable from `x` reach `x` back; unreachable states receive mass zero.
-  by_cases hxy : κ.Reaches x y
-  · exact hx.cycleOccupation_singleton_lt_top_of_reaches (hx.reaches_of_reaches hxy)
-  · simp [cycleOccupation_singleton_eq_zero_of_not_reaches hxy]
-
-/-- Around a recurrent state `x`, `κ.cycleOccupation x {y}` is positive if and only if `x` and `y`
-communicate. -/
-theorem IsRecurrent.cycleOccupation_singleton_pos_iff [MeasurableSingletonClass α]
-    {κ : Kernel α α} [IsMarkovKernel κ] {x y : α} (hx : κ.IsRecurrent x) :
-    0 < κ.cycleOccupation x {y} ↔ κ.Communicates x y := by
-  constructor
-  · intro hpos
-    have hxy : κ.Reaches x y :=
-      by_contra fun hnot => hpos.ne' (cycleOccupation_singleton_eq_zero_of_not_reaches hnot)
-    exact (communicates_def x y).mpr ⟨hxy, hx.reaches_of_reaches hxy⟩
-  · intro hcomm
-    exact hx.cycleOccupation_singleton_pos_of_reaches ((communicates_def x y).mp hcomm).1
-
-/-- On a countable state space with measurable singletons, the cycle occupation measure around any
-recurrent state is `σ`-finite. -/
-theorem IsRecurrent.sigmaFinite_cycleOccupation [Countable α] [MeasurableSingletonClass α]
-    {κ : Kernel α α} [IsMarkovKernel κ] {x : α} (hx : κ.IsRecurrent x) :
-    SigmaFinite (κ.cycleOccupation x) :=
-  Measure.sigmaFinite_iff_measure_singleton_lt_top.mpr hx.cycleOccupation_singleton_lt_top
 
 /-! ### Minimality of `cycleOccupation` and propagation of positive recurrence -/
 

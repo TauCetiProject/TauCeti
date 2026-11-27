@@ -8,7 +8,6 @@ module
 public import TauCeti.Probability.Kernel.ClosedClass.Invariance
 public import TauCeti.Probability.MarkovChain.ClosedClass
 public import TauCeti.Probability.MarkovChain.Invariant
-public import TauCeti.Probability.MarkovChain.Occupation
 import TauCeti.MeasureTheory.Integral.Lebesgue.Dirac
 import TauCeti.MeasureTheory.Measure.Dirac
 
@@ -37,12 +36,6 @@ mass (`Kernel.cycleOccupation_univ_eq_top_of_not_isPositiveRecurrent`) and fails
 vanishing theorems for non-positive-recurrent states in `TauCeti.Probability.MarkovChain.Invariant`
 apply via `IsNullRecurrent.not_isPositiveRecurrent`.
 
-On countable state spaces with measurable singletons, the occupation strong law in
-`TauCeti.Probability.MarkovChain.Occupation` characterizes positive recurrence and yields
-vanishing long-run visit fractions at non-positive-recurrent states; combining this with
-recurrence characterizes null recurrence via vanishing expected (or almost-sure) limiting visit
-fraction starting from the state.
-
 Finally, restricting to a finite closed communicating class transfers finite irreducible positive
 recurrence to arbitrary ambient state spaces with measurable singletons: every state in a finite
 closed communicating class is positive recurrent, and `κ` admits a unique invariant probability
@@ -67,10 +60,6 @@ remains in the closed communicating class of a positive recurrent state.
   `ProbabilityTheory.Kernel.Communicates.isNullRecurrent_iff`: class property of null recurrence.
 * `Kernel.forall_isTransient_or_forall_isPositiveRecurrent_or_forall_isNullRecurrent`:
   global recurrence trichotomy for counting-measure-irreducible chains.
-* `Kernel.IsNullRecurrent.pow_period`: preservation of null recurrence under period sampling.
-* `Kernel.isNullRecurrent_iff_isRecurrent_and_tendsto_integral_visitCount_div_zero` and
-  `Kernel.isNullRecurrent_iff_isRecurrent_and_ae_tendsto_visitCount_div_zero`:
-  expected and almost-sure occupation-frequency characterizations of null recurrence.
 * `Kernel.IsClosedSet.isPositiveRecurrent_of_finite_communicatingClass`,
   `Kernel.IsClosedSet.existsUnique_invariant_probability_communicatingClass_of_isPositiveRecurrent`,
   `Kernel.IsClosedSet.existsUnique_invariant_probability_of_finite_communicatingClass`,
@@ -81,14 +70,14 @@ remains in the closed communicating class of a positive recurrent state.
 
 ## References
 
-* J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §§1.5, 1.7, and 1.10.
+* J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §§1.5 and 1.7.
 * Olav Kallenberg, *Foundations of Modern Probability*, 2nd edition, Springer (2002), Theorem 8.6.
 -/
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory Set TauCeti TauCeti.Probability
-open scoped ENNReal Topology
+open MeasureTheory ProbabilityTheory Set TauCeti TauCeti.Probability
+open scoped ENNReal
 
 namespace ProbabilityTheory.Kernel
 
@@ -293,103 +282,6 @@ theorem forall_isTransient_or_forall_isPositiveRecurrent_or_forall_isNullRecurre
     · exact Or.inr (Or.inr fun x => (isNullRecurrent_iff_isNullRecurrent x₀ x).mp hn)
 
 end MeasurableSingleton
-
-/-! ### Countable state spaces: period sampling and occupation characterizations -/
-
-section Countable
-
-variable [Countable S] [MeasurableSingletonClass S]
-
-omit [Countable S] [MeasurableSingletonClass S] in
-private theorem cesaro_pow_mul_le (κ : Kernel S S) {d : ℕ} (hd : 0 < d) (y : S) (k : ℕ) :
-    (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y}) / k ≤
-      (d : ℝ) * ((∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y}) / (d * k : ℕ)) := by
-  let φ : ℕ → ℕ := fun j => d * (j + 1) - 1
-  have hφ (j : ℕ) : φ j + 1 = d * (j + 1) :=
-    Nat.sub_add_cancel (Nat.succ_le_of_lt (Nat.mul_pos hd (Nat.succ_pos j)))
-  have hφ_inj : Function.Injective φ := fun i j hij => by
-    have hmul : d * (i + 1) = d * (j + 1) := by rw [← hφ i, ← hφ j, hij]
-    exact Nat.succ.inj (mul_right_injective₀ hd.ne' hmul)
-  have hsub : (Finset.range k).image φ ⊆ Finset.range (d * k) := by
-    intro m hm
-    obtain ⟨j, hj, rfl⟩ := Finset.mem_image.mp hm
-    rw [Finset.mem_range] at hj ⊢
-    exact Nat.lt_of_lt_of_le (by rw [← hφ j]; exact Nat.lt_succ_self _)
-      (Nat.mul_le_mul_left d hj)
-  have hsum_le :
-      (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y}) ≤
-        ∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y} :=
-    Finset.sum_le_sum_of_injOn φ hφ_inj.injOn hsub
-      (fun j _ => le_of_eq (by rw [← pow_mul, hφ j]))
-      (fun _ _ _ => measureReal_nonneg)
-  have hd0 : (d : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd.ne'
-  rw [Nat.cast_mul, ← mul_div_assoc, mul_div_mul_left _ _ hd0]
-  exact div_le_div_of_nonneg_right hsum_le (Nat.cast_nonneg k)
-
-/-- Sampling a chain on a countable state space at multiples of `κ.period y` preserves null
-recurrence of `y`. -/
-theorem IsNullRecurrent.pow_period (hy : κ.IsNullRecurrent y) :
-    (κ ^ κ.period y).IsNullRecurrent y := by
-  -- Positive return probabilities occur only at multiples of `κ.period y`, while Cesàro return
-  -- averages of `κ ^ κ.period y` are bounded by `κ.period y` times those of `κ`.
-  set d := κ.period y
-  have hd : 0 < d := hy.isRecurrent.period_pos
-  have hrec : (κ ^ d).IsRecurrent y := by
-    rw [isRecurrent_iff_tsum_eq_top]
-    simp_rw [← pow_mul]
-    have htsum : (∑' k : ℕ, (κ ^ (d * k)) y {y}) = ∑' n : ℕ, (κ ^ n) y {y} := by
-      refine Function.Injective.tsum_eq (f := fun n => (κ ^ n) y {y})
-        (mul_right_injective₀ hd.ne') fun n hn => ?_
-      rw [Function.mem_support] at hn
-      obtain ⟨k, rfl⟩ := Classical.not_not.mp
-        (mt pow_apply_singleton_self_eq_zero_of_not_period_dvd hn)
-      exact ⟨k, rfl⟩
-    exact htsum.trans (isRecurrent_iff_tsum_eq_top.mp hy.isRecurrent)
-  refine isNullRecurrent_iff.mpr ⟨hrec, ?_⟩
-  rw [← not_lt_top_iff, ← isPositiveRecurrent_iff, ← inv_meanReturnTime_toReal_eq_zero_iff]
-  refine tendsto_nhds_unique ((κ ^ d).tendsto_cesaro_pow_real_singleton_self y) ?_
-  have hlim0 : Tendsto (fun n : ℕ => (∑ i ∈ Finset.range n, ((κ ^ (i + 1)) y).real {y}) / n)
-      atTop (𝓝 0) := by
-    simpa only [inv_meanReturnTime_toReal_eq_zero_iff.mpr hy.not_isPositiveRecurrent] using
-      κ.tendsto_cesaro_pow_real_singleton_self y
-  have hlim_dk : Tendsto (fun k : ℕ =>
-      (d : ℝ) * ((∑ i ∈ Finset.range (d * k), ((κ ^ (i + 1)) y).real {y}) / (d * k : ℕ)))
-      atTop (𝓝 0) := by
-    simpa only [mul_zero, Function.comp_def] using (tendsto_const_nhds (x := (d : ℝ))).mul
-      (hlim0.comp (tendsto_atTop_mono (fun k => Nat.le_mul_of_pos_left k hd) tendsto_id))
-  exact squeeze_zero (fun k => div_nonneg (Finset.sum_nonneg fun _ _ => measureReal_nonneg)
-    (Nat.cast_nonneg k)) (cesaro_pow_mul_le κ hd y) hlim_dk
-
-/-- **Expected occupation characterization of null recurrence.** A state `y` is null recurrent if
-and only if it is recurrent and its expected positive-time visit fraction starting from `y` tends
-to zero. -/
-theorem isNullRecurrent_iff_isRecurrent_and_tendsto_integral_visitCount_div_zero :
-    κ.IsNullRecurrent y ↔
-      κ.IsRecurrent y ∧
-        Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ) / n
-          ∂markovChainLaw (Measure.dirac y) κ) atTop (𝓝 0) := by
-  rw [isNullRecurrent_iff_isRecurrent_and_not_isPositiveRecurrent,
-    ← inv_meanReturnTime_toReal_eq_zero_iff]
-  refine and_congr_right fun _ => ⟨fun h0 => ?_, fun hlim =>
-    tendsto_nhds_unique (κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y) hlim⟩
-  simpa only [h0] using κ.tendsto_integral_visitCount_div_markovChainLaw_dirac y
-
-/-- **Almost-sure occupation characterization of null recurrence.** A state `y` is null recurrent if
-and only if it is recurrent and its positive-time visit fraction starting from `y` tends to zero
-almost surely. -/
-theorem isNullRecurrent_iff_isRecurrent_and_ae_tendsto_visitCount_div_zero :
-    κ.IsNullRecurrent y ↔
-      κ.IsRecurrent y ∧
-        ∀ᵐ ω ∂markovChainLaw (Measure.dirac y) κ,
-          Tendsto (fun n : ℕ => (visitCount (fun k => ω (k + 1)) y n : ℝ) / n) atTop (𝓝 0) := by
-  rw [isNullRecurrent_iff_isRecurrent_and_not_isPositiveRecurrent,
-    ← inv_meanReturnTime_toReal_eq_zero_iff]
-  refine and_congr_right fun _ => ⟨fun h0 => ?_, fun hae => ?_⟩
-  · simpa only [h0] using κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y
-  · obtain ⟨ω, hω₁, hω₂⟩ := ((κ.ae_tendsto_visitCount_div_markovChainLaw_dirac y).and hae).exists
-    exact tendsto_nhds_unique hω₁ hω₂
-
-end Countable
 
 /-! ### Finite closed communicating classes and finite state spaces -/
 

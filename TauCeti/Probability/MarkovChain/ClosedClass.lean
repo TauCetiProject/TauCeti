@@ -33,7 +33,7 @@ entrance and positive-return times have the same laws and the same extended nonn
 restriction, without requiring measurable singletons.
 
 These identities allow results for chains on a finite closed communicating class to be used
-in an ambient, possibly infinite state space. The initial law may be any finite measure on the
+in an ambient, possibly infinite state space. The initial law may be any measure on the
 subtype. No countability, measurable singletons, or topology on the state space are needed for
 subtype restriction. The Markov instance for the restricted kernel is equivalent to closedness by
 `Kernel.isMarkovKernel_subtype_iff_isClosedSet`.

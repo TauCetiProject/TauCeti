@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Group.Fin.Basic
 public import Mathlib.Probability.UniformOn
 public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
-public import TauCeti.Probability.Kernel.Reachability
 public import TauCeti.Probability.MarkovChain.Invariant
 public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Probability.MarkovChain.Period
@@ -18,9 +17,7 @@ public import TauCeti.Probability.MarkovChain.Period
 
 `cycleKernel n` moves from `x : Fin n` to `x + 1`, with addition modulo the positive
 integer `n`. Its transition powers are point masses at `x + k`, every state reaches every
-other state, its period is `n`, its mean return time at every state is `n`, every state is
-positive recurrent (hence recurrent and neither transient nor null recurrent), and the
-uniform probability is invariant.
+other state, its period is exactly `n`, and the uniform probability is invariant.
 
 Started at `x`, the path law is the point mass on the periodic trajectory `k ↦ x + k`.
 Consequently the first entrance time to `y` is almost surely `(y - x).val` (in particular `0`
