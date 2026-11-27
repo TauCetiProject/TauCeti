@@ -42,18 +42,19 @@ bicomplexes indexed by `ℕ × ℕ` with homological differentials, read in coch
 through the embedding `n ↦ N - n` (`ComplexShape.embeddingUpIntLE N`). For a K-presheaf `G` of
 such bicomplexes with finitely many nonzero rows, the total complex read in cochain degrees
 `N - •` is a homotopy K-sheaf as soon as each row `q`, read in cochain degrees `N - q - •`, is one
-(`TopCat.KPresheaf.isHomotopyKSheaf_totalFunctor_comp_extendFunctor`). The proof is the same
-induction, splitting off the row `0` by the degreewise split short exact sequence
-`row 0 ⟶ Tot ⟶ Tot (rows ≥ 1)[1]` (`HomologicalComplex₂.rowZeroShortComplex`); the rows `≥ 1`
-placed one degree higher and read in cochain degrees `N - •` are read in cochain degrees
+(`TopCat.KPresheaf.isHomotopyKSheaf_comp_homologicalComplex₂TotalFunctor_comp_extendFunctor`).
+The proof is the same induction, splitting off the row `0` by the degreewise split short exact
+sequence `row 0 ⟶ Tot ⟶ Tot (rows ≥ 1)[1]` (`HomologicalComplex₂.rowZeroShortComplex`); the rows
+`≥ 1` placed one degree higher and read in cochain degrees `N - •` are read in cochain degrees
 `N - 1 - •` (`ComplexShape.Embedding.extendFunctorCompExtendFunctorIso`).
 
 ## Main results
 
 * `TopCat.KPresheaf.isHomotopyKSheaf_totalComplex`: the total complex of a K-presheaf of double
   complexes with finitely many nonzero columns, all homotopy K-sheaves, is a homotopy K-sheaf.
-* `TopCat.KPresheaf.isHomotopyKSheaf_totalFunctor_comp_extendFunctor`: the same for first-quadrant
-  bicomplexes with finitely many nonzero rows, read in cochain degrees.
+* `TopCat.KPresheaf.isHomotopyKSheaf_comp_homologicalComplex₂TotalFunctor_comp_extendFunctor`:
+  the same for first-quadrant bicomplexes with finitely many nonzero rows, read in cochain
+  degrees.
 
 ## References
 
@@ -193,8 +194,8 @@ bicomplexes indexed by `ℕ × ℕ`, with homological differentials, whose rows 
 let `N` be an integer. If every row `q < n`, the complex `p ↦ ((G K).X p).X q` read in cochain
 degrees `N - q - •`, is a homotopy K-sheaf, then the total complex `K ↦ Tot (G K)` read in cochain
 degrees `N - •` is a homotopy K-sheaf. -/
-theorem isHomotopyKSheaf_totalFunctor_comp_extendFunctor (n : ℕ) (N : ℤ)
-    (hG : ∀ K p q, n ≤ q → IsZero (((G.obj K).X p).X q))
+theorem isHomotopyKSheaf_comp_homologicalComplex₂TotalFunctor_comp_extendFunctor
+    (n : ℕ) (N : ℤ) (hG : ∀ K p q, n ≤ q → IsZero (((G.obj K).X p).X q))
     (hrow : ∀ q < n, IsHomotopyKSheaf (G ⋙
       (HomologicalComplex.eval C (down ℕ) q).mapHomologicalComplex (down ℕ) ⋙
         (embeddingUpIntLE (N - q)).extendFunctor C)) :

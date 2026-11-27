@@ -58,8 +58,8 @@ proves the first checks of the construction.
 
 * **Homotopy K-sheaf.** On a locally compact Hausdorff space, `C_vir(−; B)` is a homotopy
   K-sheaf (`TauCeti.ImplicitAtlas.isHomotopyKSheaf_virtualComplex`), by Pardon's Lemma A.8.1
-  (`TopCat.KPresheaf.isHomotopyKSheaf_comp_totalFunctor_comp_extendFunctor`): the partial complexes
-  are homotopy K-sheaves in every cochain grading
+  (`TopCat.KPresheaf.isHomotopyKSheaf_comp_intervalDiagramTotalFunctor_comp_extendFunctor`):
+  the partial complexes are homotopy K-sheaves in every cochain grading
   (`TauCeti.ImplicitAtlas.isHomotopyKSheaf_deformationPairPresheaf_comp_invariantChainsFunctor`).
   Together with the purity of the partial complexes, which is not treated here, this is the input
   of the comparison of the virtual cohomology with Čech cohomology.
@@ -290,7 +290,7 @@ theorem isHomotopyKSheaf_virtualComplex [T2Space X] [LocallyCompactSpace X] (B :
   -- the subsets of `B` are finitely many
   have : Finite (Set.Iic B) := (B.powerset.finite_toSet.subset fun I hI ↦
     Finset.mem_coe.2 (Finset.mem_powerset.2 hI)).to_subtype
-  exact TopCat.KPresheaf.isHomotopyKSheaf_comp_totalFunctor_comp_extendFunctor
+  exact TopCat.KPresheaf.isHomotopyKSheaf_comp_intervalDiagramTotalFunctor_comp_extendFunctor
     (𝒜.partialVirtualChainDiagram k hΓ B) hF (d + ∑ α ∈ B, (finrank ℝ (E α) : ℤ))
 
 end TauCeti.ImplicitAtlas

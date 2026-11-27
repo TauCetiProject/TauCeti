@@ -20,16 +20,17 @@ the local virtual complexes of an implicit atlas into its virtual cochain comple
 degrees `N - •` through the embedding `n ↦ N - n` (`ComplexShape.embeddingUpIntLE N`), as the
 relative chains of an atlas are, it is a K-presheaf of cochain complexes.
 
-**Pardon's Lemma A.8.1** (`TopCat.KPresheaf.isHomotopyKSheaf_comp_totalFunctor_comp_extendFunctor`):
-if every value `K ↦ F(K)[s, t]`, read in cochain degrees `M - •`, is a homotopy K-sheaf for every
-`M`, then so is the total, read in cochain degrees `N - •`. The flag total of `F(K)` is the total
-complex of its flag complex, a first-quadrant bicomplex whose column `p` is the coproduct of the
+**Pardon's Lemma A.8.1**
+(`TopCat.KPresheaf.isHomotopyKSheaf_comp_intervalDiagramTotalFunctor_comp_extendFunctor`): if every
+value `K ↦ F(K)[s, t]`, read in cochain degrees `M - •`, is a homotopy K-sheaf for every `M`, then
+so is the total, read in cochain degrees `N - •`. The flag total of `F(K)` is the total complex of
+its flag complex, a first-quadrant bicomplex whose column `p` is the coproduct of the
 `F(K)[s₀, sₚ]` over the flags `s₀ < ⋯ < sₚ` (`TauCeti.IntervalDiagram.isColimitFlagComplexCofan`).
-Flipping it, the columns become the rows, there are finitely many of them since `S` is finite, and
-each is a finite coproduct of homotopy K-sheaves
-(`TopCat.KPresheaf.isHomotopyKSheaf_of_isColimit_cofan`). The total of a first-quadrant
+Flipping it (`TauCeti.IntervalDiagram.totalFunctorIsoFlip`), the columns become the rows, there
+are finitely many of them since `S` is finite, and each is a finite coproduct of homotopy
+K-sheaves (`TopCat.KPresheaf.isHomotopyKSheaf_of_isColimit_cofan`). The total of a first-quadrant
 bicomplex with finitely many rows of homotopy K-sheaves is a homotopy K-sheaf
-(`TopCat.KPresheaf.isHomotopyKSheaf_totalFunctor_comp_extendFunctor`).
+(`TopCat.KPresheaf.isHomotopyKSheaf_comp_homologicalComplex₂TotalFunctor_comp_extendFunctor`).
 
 The flag length `p` lowers the cochain degree by `p`, so the row `p` is read in cochain degrees
 `N - p - •`; this is why the hypothesis is asked for every reading `M - •` of the values.
@@ -53,30 +54,6 @@ namespace TopCat.KPresheaf
 variable {X : TopCat.{w}} [T2Space X] {C : Type u} [Category.{v} C] [Abelian C]
   [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] [WeaklyLocallyCompactSpace X]
   {S : Type w'} [PartialOrder S] [HasCoproducts.{w'} C]
-
-omit [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] in
-/-- The signed isomorphism `HomologicalComplex₂.totalFlipIso` between the flag total and the total
-complex of the flipped flag complex is natural in the interval diagram. -/
-private lemma totalMap_comp_totalFlipIso_inv {A B : IntervalDiagram S (ChainComplex C ℕ)}
-    (α : A ⟶ B) :
-    totalMap α ≫ (HomologicalComplex₂.totalFlipIso B.flagComplex (down ℕ)).inv =
-      (HomologicalComplex₂.totalFlipIso A.flagComplex (down ℕ)).inv ≫
-        HomologicalComplex₂.total.map
-          ((HomologicalComplex₂.flipFunctor C (down ℕ) (down ℕ)).map (flagComplexMap α)) _ := by
-  ext n : 1
-  refine HomologicalComplex₂.total.hom_ext _ fun p q h ↦ ?_
-  simp [HomologicalComplex₂.ιTotal_totalFlipIso_f_inv_assoc,
-    HomologicalComplex₂.ιTotal_totalFlipIso_f_inv]
-
-omit [HasFilteredColimitsOfSize.{w, w} C] [AB5OfSize.{w, w} C] in
-/-- The flag total of an interval diagram is the total complex of the flip of its flag complex,
-through the signed isomorphism `HomologicalComplex₂.totalFlipIso`. -/
-private noncomputable def totalFunctorIsoFlip :
-    IntervalDiagram.totalFunctor S C ≅ flagComplexFunctor S (ChainComplex C ℕ) ⋙
-      HomologicalComplex₂.flipFunctor C (down ℕ) (down ℕ) ⋙
-        HomologicalComplex₂.totalFunctor C (down ℕ) (down ℕ) (down ℕ) :=
-  NatIso.ofComponents (fun A ↦ (HomologicalComplex₂.totalFlipIso A.flagComplex (down ℕ)).symm)
-    fun α ↦ totalMap_comp_totalFlipIso_inv α
 
 variable (F : KPresheaf (IntervalDiagram S (ChainComplex C ℕ)) X)
 
@@ -119,7 +96,7 @@ Lemma A.8.1). Let `S` be a finite partially ordered set and `F` a K-presheaf of 
 on `S` of chain complexes. If for every interval `I` of `S` and every integer `M` the values
 `K ↦ F(K)[I]`, read in cochain degrees `M - •`, form a homotopy K-sheaf, then the flag totals
 `K ↦ Tot F(K)`, read in cochain degrees `N - •`, form a homotopy K-sheaf. -/
-theorem isHomotopyKSheaf_comp_totalFunctor_comp_extendFunctor [Finite S]
+theorem isHomotopyKSheaf_comp_intervalDiagramTotalFunctor_comp_extendFunctor [Finite S]
     (hF : ∀ (I : NonemptyInterval S) (M : ℤ), IsHomotopyKSheaf
       (F ⋙ (evaluation _ _).obj (op I) ⋙ (embeddingUpIntLE M).extendFunctor C))
     (N : ℤ) :
@@ -128,11 +105,11 @@ theorem isHomotopyKSheaf_comp_totalFunctor_comp_extendFunctor [Finite S]
   have := Fintype.ofFinite (LinearExtension S)
   -- The rows of the flipped flag bicomplexes are its columns, which vanish from the cardinality
   -- of `S` on and are finite coproducts of the values of `F`.
-  refine (isHomotopyKSheaf_totalFunctor_comp_extendFunctor
+  refine (isHomotopyKSheaf_comp_homologicalComplex₂TotalFunctor_comp_extendFunctor
     (F ⋙ flagComplexFunctor S (ChainComplex C ℕ) ⋙
       HomologicalComplex₂.flipFunctor C (down ℕ) (down ℕ))
     (Fintype.card (LinearExtension S)) N (fun K p q hq ↦ ?_) fun q _ ↦ ?_).of_iso
-      (Functor.isoWhiskerLeft F (Functor.isoWhiskerRight totalFunctorIsoFlip _)).symm
+      (Functor.isoWhiskerLeft F (Functor.isoWhiskerRight (totalFunctorIsoFlip S C) _)).symm
   · exact (HomologicalComplex.eval _ _ p).map_isZero
       ((F.obj K).flagFunctor.isZero_orderedCechComplex_X hq)
   · exact isHomotopyKSheaf_of_isColimit_cofan (isColimitFlagRowCofan F q (N - q)) fun s ↦

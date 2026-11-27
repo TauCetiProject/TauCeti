@@ -78,7 +78,8 @@ The two results are Pardon's Lemmas A.7.4 and A.7.3.
   (`TauCeti.IntervalDiagram.flagComplexFunctor`).
 * `TauCeti.IntervalDiagram.total`, `TauCeti.IntervalDiagram.totalMap`: the total and the maps
   induced on it by maps of interval diagrams, together the functor
-  `TauCeti.IntervalDiagram.totalFunctor`.
+  `TauCeti.IntervalDiagram.totalFunctor`, isomorphic to the total complex of the flipped flag
+  complex (`TauCeti.IntervalDiagram.totalFunctorIsoFlip`).
 * `TauCeti.IntervalDiagram.topι`: the inclusion of `A[⊤, ⊤]` in the total.
 
 ## Main results
@@ -506,6 +507,34 @@ instance : (totalFunctor S D).PreservesZeroMorphisms where
 /-- The total of an interval diagram whose values are all zero is zero. -/
 lemma isZero_total (h : ∀ I, IsZero (A.obj I)) : IsZero A.total :=
   (totalFunctor S D).map_isZero (Functor.isZero A h)
+
+variable (S D) in
+/-- **The flag total is the total complex of the flipped flag complex.** The flag total of an
+interval diagram is naturally isomorphic, through the signed isomorphism
+`HomologicalComplex₂.totalFlipIso`, to the total complex of the flip of its flag complex, whose
+rows are the columns of the flag complex. -/
+def totalFunctorIsoFlip :
+    totalFunctor S D ≅ flagComplexFunctor S (ChainComplex D ℕ) ⋙
+      HomologicalComplex₂.flipFunctor D (ComplexShape.down ℕ) (ComplexShape.down ℕ) ⋙
+        HomologicalComplex₂.totalFunctor D (ComplexShape.down ℕ) (ComplexShape.down ℕ)
+          (ComplexShape.down ℕ) :=
+  (NatIso.ofComponents
+    (fun A ↦ HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ))
+    fun α ↦ HomologicalComplex₂.total_map_flip_totalFlipIso_hom (flagComplexMap α) _).symm
+
+@[simp]
+lemma totalFunctorIsoFlip_hom_app (A : IntervalDiagram S (ChainComplex D ℕ)) :
+    (totalFunctorIsoFlip S D).hom.app A =
+      (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).inv := by
+  rw [totalFunctorIsoFlip]
+  rfl
+
+@[simp]
+lemma totalFunctorIsoFlip_inv_app (A : IntervalDiagram S (ChainComplex D ℕ)) :
+    (totalFunctorIsoFlip S D).inv.app A =
+      (HomologicalComplex₂.totalFlipIso A.flagComplex (ComplexShape.down ℕ)).hom := by
+  rw [totalFunctorIsoFlip]
+  rfl
 
 end Total
 
