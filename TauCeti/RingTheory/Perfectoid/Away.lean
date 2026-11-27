@@ -153,13 +153,9 @@ theorem isPerfectoidTateRing_of_bijective_frobeniusModPow
       simpa only [Subring.coe_natCast, Subring.coe_pow, Subring.coe_mul, ϖ, ← map_pow, ← map_mul,
         map_natCast] using congrArg (algebraMap A₀ A) hc)⟩
   have hbij' : Function.Bijective (frobeniusModPow p hϖp) := by
-    refine ⟨(frobeniusModPow_injective_iff hϖp).mpr ?_,
+    refine ⟨(frobeniusModPow_injective_iff hϖp).mpr
+        (dvd_of_pow_dvd_pow_range_algebraMap hπ ((frobeniusModPow_injective_iff hdvd).mp hbij.1)),
       (frobeniusModPow_surjective_iff hϖp).mpr ?_⟩
-    · rintro ⟨_, a, rfl⟩ ⟨⟨_, c, rfl⟩, hc⟩
-      have hca : a ^ p = π ^ p * c := IsLocalization.injective A (Submonoid.powers_le.mpr hπ) <| by
-        simpa [ϖ, map_pow, map_mul] using congrArg Subtype.val hc
-      obtain ⟨d, hd⟩ := (frobeniusModPow_injective_iff hdvd).mp hbij.1 a ⟨c, hca⟩
-      exact ⟨⟨algebraMap A₀ A d, d, rfl⟩, Subtype.ext (by simp [ϖ, hd])⟩
     · rintro ⟨_, a, rfl⟩
       obtain ⟨b, c, hbc⟩ := (frobeniusModPow_surjective_iff hdvd).mp hbij.2 a
       refine ⟨⟨algebraMap A₀ A b, b, rfl⟩, ⟨algebraMap A₀ A c, c, rfl⟩, Subtype.ext ?_⟩

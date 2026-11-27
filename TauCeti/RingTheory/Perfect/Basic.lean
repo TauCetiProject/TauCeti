@@ -33,6 +33,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
   `((frobeniusEquiv R p).symm^[n]) x`.
 * `RingHom.map_iterateFrobeniusEquiv_symm`: ring homomorphisms between perfect rings commute with
   inverse iterated Frobenius.
+* `Subring.coe_iterateFrobeniusEquiv_symm`: coercion from a perfect subring commutes with
+  inverse iterated Frobenius.
 * `TauCeti.iterateFrobeniusEquiv_symm_dvd_of_le`: deeper roots of `x` divide shallower ones.
 * `TauCeti.isReduced_of_perfectRing`: a perfect ring of prime characteristic is reduced.
 * `TauCeti.mul_eq_zero_of_mul_pow_eq_zero_of_perfectRing`: `a * b ^ p = 0` implies `a * b = 0`.
@@ -106,9 +108,16 @@ taking `p ^ n`-th roots. -/
 theorem _root_.RingHom.map_iterateFrobeniusEquiv_symm {S : Type*} [CommSemiring S]
     [ExpChar S p] [PerfectRing S p] (f : R →+* S) (n : ℕ) (x : R) :
     f ((iterateFrobeniusEquiv R p n).symm x) = (iterateFrobeniusEquiv S p n).symm (f x) := by
-  apply (iterateFrobeniusEquiv S p n).injective
-  rw [iterateFrobeniusEquiv_def, iterateFrobeniusEquiv_def, ← map_pow,
-    iterateFrobeniusEquiv_symm_pow, iterateFrobeniusEquiv_symm_pow]
+  rw [iterateFrobeniusEquiv_symm_apply_eq_iterate, iterateFrobeniusEquiv_symm_apply_eq_iterate,
+    RingHom.map_iterate_frobeniusEquiv_symm]
+
+/-- Coercion from a perfect subring commutes with taking `p ^ n`-th roots. -/
+@[simp, norm_cast]
+theorem _root_.Subring.coe_iterateFrobeniusEquiv_symm {R : Type*} [CommRing R] {p : ℕ}
+    [ExpChar R p] [PerfectRing R p] (S : Subring R) [ExpChar S p] [PerfectRing S p]
+    (a : S) (n : ℕ) :
+    ((iterateFrobeniusEquiv S p n).symm a : R) = (iterateFrobeniusEquiv R p n).symm a :=
+  S.subtype.map_iterateFrobeniusEquiv_symm n a
 
 /-- Deeper roots of `x` divide shallower ones: the `p ^ n`-th root of `x` divides its
 `p ^ m`-th root when `m ≤ n`. -/

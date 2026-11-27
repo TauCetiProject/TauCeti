@@ -36,7 +36,7 @@ tilt `A♭` is topologically isomorphic to `R`:
   `untilt.isPerfectoidTateRing` in `TauCeti.RingTheory.Perfectoid.PrimitiveUntilt.Basic`.
 * An elementary induction using `quotientTeichmullerEquiv` proves that `sharp x ∈ A⁺ ↔ x ∈ R⁺`
   (`untilt.sharp_mem_untiltPlus_iff`).
-* The tilt `A♭` is a Tate ring (`untilt.isTateRing_uniformTilt`), and the map
+* The tilt `A♭` is a Tate ring (`untilt.instIsTateRingUniformTilt`), and the map
   `x ↦ (sharp (x ^ (1 / p ^ n)))_n` is a topological ring isomorphism `R ≃+* A♭`, whose inverse
   is `untilt.tiltEquiv` (`untilt.isHomeomorph_tiltEquiv`).
 
@@ -58,7 +58,7 @@ almost vanishing of `A° ⧸ A⁺`, apply
   perfectoid rings.
 * `TauCeti.Perfectoid.untilt.isUniform`: the untilt `A` is a uniform Tate ring.
 * `TauCeti.Perfectoid.untilt.sharp_mem_untiltPlus_iff`: `sharp x ∈ A⁺ ↔ x ∈ R⁺`.
-* `TauCeti.Perfectoid.untilt.isTateRing_uniformTilt`,
+* `TauCeti.Perfectoid.untilt.instIsTateRingUniformTilt`,
   `TauCeti.Perfectoid.untilt.isHomeomorph_tiltEquiv`: `A♭` is Tate and `tiltEquiv : A♭ ≃+* R` is a
   homeomorphism.
 
@@ -226,12 +226,6 @@ instance instIsTateRingUniformTilt [Fact ξ.IsPrimitive] :
   rw [coeff_toTiltFun, iterateFrobeniusEquiv_symm_zero_apply]
   exact isPseudoUniformizer_sharp hϖ
 
-/-- **The tilt of the untilt is Tate**: the tilt `A♭` of the untilt along a primitive `ξ` is a
-Tate ring. -/
-theorem isTateRing_uniformTilt [Fact ξ.IsPrimitive] :
-    IsTateRing (uniformTilt p (untilt p P (Ideal.span {ξ}))) :=
-  inferInstance
-
 private theorem toTiltFun_add_plus_diff [Fact ξ.IsPrimitive] (a b : P.plus) (i m : ℕ) :
     (uniformTilt.coeff p (untilt p P (Ideal.span {ξ})) (i + m) (toTiltFun ξ a) +
         uniformTilt.coeff p (untilt p P (Ideal.span {ξ})) (i + m) (toTiltFun ξ b)) ^ p ^ m -
@@ -251,18 +245,18 @@ private theorem toTiltFun_add_plus_diff [Fact ξ.IsPrimitive] (a b : P.plus) (i 
   have hsum_pow : (ai + bi) ^ p ^ m = (iterateFrobeniusEquiv P.plus p i).symm (a + b) := by
     rw [add_pow_char_pow, map_add, iterateFrobeniusEquiv_symm_add_pow,
       iterateFrobeniusEquiv_symm_add_pow]
+  have hcoeff (x : P.plus) (k : ℕ) :
+      uniformTilt.coeff p A k (toTiltFun ξ x) =
+        algebraMap (WittVector p P.plus ⧸ J) A
+          (Ideal.Quotient.mk J (teichmuller p ((iterateFrobeniusEquiv P.plus p k).symm x))) := by
+    rw [coeff_toTiltFun, ← Subring.coe_iterateFrobeniusEquiv_symm, sharp_apply]
   refine ⟨algebraMap (WittVector p P.plus ⧸ J) A (Ideal.Quotient.mk J d),
     mem_untiltPlus.mpr ⟨_, rfl⟩, ?_⟩
   dsimp only
-  rw [smul_eq_mul, coeff_toTiltFun, coeff_toTiltFun, coeff_toTiltFun,
-    ← P.plus.subtype_apply a, ← P.plus.subtype_apply b, ← map_add P.plus.subtype a b,
-    ← P.plus.subtype.map_iterateFrobeniusEquiv_symm (i + m) a,
-    ← P.plus.subtype.map_iterateFrobeniusEquiv_symm (i + m) b,
-    ← P.plus.subtype.map_iterateFrobeniusEquiv_symm i (a + b),
-    P.plus.subtype_apply ai, P.plus.subtype_apply bi, P.plus.subtype_apply,
-    sharp_apply ai, sharp_apply bi, sharp_apply, ← map_add, ← map_add, ← map_pow, ← map_pow,
-    ← hsum_pow, map_pow (teichmuller p) (ai + bi), ← map_sub, ← map_sub, hd, map_mul,
-    map_pow, map_natCast, map_mul, map_pow, map_natCast]
+  rw [smul_eq_mul, hcoeff a (i + m), hcoeff b (i + m), ← P.plus.coe_add a b, hcoeff (a + b) i,
+    ← hsum_pow, map_pow (teichmuller p) (ai + bi)]
+  simpa only [Function.comp_apply, map_sub, map_pow, map_add, map_mul, map_natCast] using
+    congrArg (algebraMap (WittVector p P.plus ⧸ J) A ∘ Ideal.Quotient.mk J) hd.symm
 
 private theorem toTiltFun_add_plus [hξ : Fact ξ.IsPrimitive] (a b : P.plus) :
     toTiltFun ξ (a + b) = toTiltFun ξ a + toTiltFun ξ b := by
@@ -538,9 +532,7 @@ private theorem mem_range_toTiltHom_of_forall_mem_untiltPlus [hξ : Fact ξ.IsPr
       u n := by
     rw [← untilt_toPreTiltQuotient ξ, RingHom.map_iterateFrobeniusEquiv_symm,
       iterateFrobeniusEquiv_symm_apply_eq_iterate, ha, hzn_untilt]
-  rw [coeff_toTiltHom, ← P.plus.subtype_apply a,
-    ← P.plus.subtype.map_iterateFrobeniusEquiv_symm, P.plus.subtype_apply, sharp_apply, hu_eq,
-    hu_map]
+  rw [coeff_toTiltHom, ← Subring.coe_iterateFrobeniusEquiv_symm, sharp_apply, hu_eq, hu_map]
 
 /-- `toTiltHom` is surjective. -/
 private theorem toTiltHom_surjective [hξ : Fact ξ.IsPrimitive] :
@@ -591,8 +583,8 @@ private theorem toTiltHom_surjective [hξ : Fact ξ.IsPrimitive] :
           (toPreTiltQuotient ξ ϖ)).untilt) := by
       rw [← iterateFrobeniusEquiv_symm_apply_eq_iterate,
         ← RingHom.map_iterateFrobeniusEquiv_symm (toPreTiltQuotient ξ) n ϖ,
-        untilt_toPreTiltQuotient, coeff_toTiltHom, ← P.plus.subtype_apply ϖ,
-        ← P.plus.subtype.map_iterateFrobeniusEquiv_symm, P.plus.subtype_apply, sharp_apply]
+        untilt_toPreTiltQuotient, coeff_toTiltHom, ← Subring.coe_iterateFrobeniusEquiv_symm,
+        sharp_apply]
     rw [hcoeff_ϖ]
     have hmem := (isPowerBounded_iff_forall_untilt_mul_mem_range
       (hasBasis_nhds_zero w.isPseudoUniformizer) w.nonZeroDivisor

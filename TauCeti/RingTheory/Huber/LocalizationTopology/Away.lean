@@ -264,7 +264,9 @@ theorem hasBasis_awayNhd_of_pow_associated {w : A₀} {n : ℕ} (hn : n ≠ 0)
           rw [← hu, mul_pow, mul_assoc (π ^ k), ← mul_pow, Units.mul_inv, one_pow, mul_one]
 
 omit [TopologicalSpace A] h in
-private theorem range_pow_dvd_pow {p : ℕ} (hπ : π ∈ A₀⁰)
+/-- In the image `(algebraMap A₀ A).range` of `A₀` in `A = A₀[1/π]`, if `π` is a nonzerodivisor
+satisfying `π ^ p ∣ a ^ p → π ∣ a`, then the same root divisibility holds for the image of `π`. -/
+theorem dvd_of_pow_dvd_pow_range_algebraMap {p : ℕ} (hπ : π ∈ A₀⁰)
     (hroot : ∀ a : A₀, π ^ p ∣ a ^ p → π ∣ a) (y : (algebraMap A₀ A).range)
     (hy : (⟨algebraMap A₀ A π, π, rfl⟩ : (algebraMap A₀ A).range) ^ p ∣ y ^ p) :
     (⟨algebraMap A₀ A π, π, rfl⟩ : (algebraMap A₀ A).range) ∣ y := by
@@ -284,7 +286,8 @@ theorem algebraMap_mul_mem_range_of_isPowerBounded [IsTopologicalRing A] {p : �
     algebraMap A₀ A π * x ∈ (algebraMap A₀ A).range :=
   mul_mem_of_isPowerBounded_of_pow_dvd_pow (B := (algebraMap A₀ A).range)
     (ϖ := ⟨algebraMap A₀ A π, π, rfl⟩) (isOpen_range_algebraMap_of_hasBasis h)
-    (isPseudoUniformizer_algebraMap_of_hasBasis h) hp (range_pow_dvd_pow hπ hroot) hx
+    (isPseudoUniformizer_algebraMap_of_hasBasis h) hp
+    (dvd_of_pow_dvd_pow_range_algebraMap hπ hroot) hx
 
 /-- **Uniformity of `A₀[1/π]`**: under the hypotheses of
 `algebraMap_mul_mem_range_of_isPowerBounded`, the power-bounded elements lie in `π⁻¹ A₀` and are
@@ -293,7 +296,8 @@ theorem isUniform_of_dvd_of_pow_dvd_pow [IsTopologicalRing A] {p : ℕ} (hp : 1 
     (hπ : π ∈ A₀⁰) (hroot : ∀ a : A₀, π ^ p ∣ a ^ p → π ∣ a) : IsUniform A :=
   isUniform_of_pow_dvd_pow (B := (algebraMap A₀ A).range) (ϖ := ⟨algebraMap A₀ A π, π, rfl⟩)
     (isOpen_range_algebraMap_of_hasBasis h) (isBounded_range_algebraMap_of_hasBasis h)
-    (isPseudoUniformizer_algebraMap_of_hasBasis h) hp (range_pow_dvd_pow hπ hroot)
+    (isPseudoUniformizer_algebraMap_of_hasBasis h) hp
+    (dvd_of_pow_dvd_pow_range_algebraMap hπ hroot)
 
 end HasBasis
 

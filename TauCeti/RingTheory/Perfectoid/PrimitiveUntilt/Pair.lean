@@ -332,8 +332,7 @@ theorem isRingOfIntegralElements_untiltPlus (hξ : ξ.IsPrimitive) :
     IsRingOfIntegralElements (untiltPlus p P (Ideal.span {ξ})) where
   isOpen := isOpen_untiltPlus
   isIntegrallyClosedIn := isIntegrallyClosedIn_untiltPlus hξ
-  le_powerBoundedSubring := fun _ hx ↦
-    mem_powerBoundedSubring.mpr (isBounded_untiltPlus.isPowerBounded_of_mem hx)
+  le_powerBoundedSubring := untiltPlus_le_powerBoundedSubring
 
 /-- **The untilt Huber pair `(A, A⁺)`** along a primitive element `ξ`. -/
 noncomputable def pair (hξ : ξ.IsPrimitive) : Pair (untilt p P (Ideal.span {ξ})) where
@@ -424,8 +423,7 @@ theorem coeff_preTiltEquiv_symm [hξ : Fact ξ.IsPrimitive]
   congr 1
   refine Subtype.ext ?_
   dsimp only
-  rw [coe_tiltPlusEquiv_symm, coeff_tiltEquiv_symm, ← P.plus.subtype_apply a,
-    ← P.plus.subtype.map_iterateFrobeniusEquiv_symm, P.plus.subtype_apply]
+  rw [coe_tiltPlusEquiv_symm, coeff_tiltEquiv_symm, ← Subring.coe_iterateFrobeniusEquiv_symm]
 
 /-! ### Fontaine's `θ` and `ker θ = (ξ)` -/
 
