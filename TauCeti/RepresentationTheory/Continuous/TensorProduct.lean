@@ -144,8 +144,7 @@ theorem toRepresentation_externalTensor :
       σ.toRepresentation.externalTensor τ.toRepresentation := by
   ext g : 1
   refine TensorProduct.ext' fun v w ↦ ?_
-  rw [Representation.externalTensor_apply_tmul]
-  exact TensorProduct.mapL_tmul _ _ v w
+  simp [toMonoidHom_apply]
 
 /-- The external tensor product of two continuous representations has a continuous operator-valued
 action. -/
