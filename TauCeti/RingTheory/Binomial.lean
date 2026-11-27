@@ -524,6 +524,9 @@ The identity combines them without division, which is the integral step needed i
   Chu--Vandermonde sum of the coefficients `(r choose k)`.
 * `TauCeti.Ring.choose_neg_mem`: an additive subgroup containing the coefficients of `r` up to
   degree `n` contains the degree-`n` coefficient of `-r`.
+* `TauCeti.Ring.add_multichoose_eq`: the Chu--Vandermonde identity for multiset coefficients,
+  `(r + s multichoose k) = ∑_{i + j = k} (r multichoose i) (s multichoose j)` for commuting `r`
+  and `s`, obtained from `Ring.add_choose_eq` at `-r` and `-s` by upper negation.
 * `TauCeti.ringChooseSpan_neg`: negation leaves the integral span unchanged.
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
 * `TauCeti.Ring.choose_mul_add_one_eq`: the analogue `(r choose k) (r + 1) =
@@ -739,6 +742,21 @@ theorem choose_neg_succ_eq_sum (r : R) (n : ℕ) :
   have hshift : r + ((n + 1 : ℕ) : R) - 1 = r + (n : R) := by push_cast; abel
   rw [hshift, _root_.Ring.add_choose_eq _ (Nat.cast_commute n r).symm]
   exact sum_congr rfl fun ij _ => by rw [_root_.Ring.choose_natCast]
+
+/-- **The Chu--Vandermonde identity for multiset coefficients.** For commuting `r` and `s`,
+`(r + s multichoose k) = ∑_{i + j = k} (r multichoose i) (s multichoose j)`. Upper negation
+(`Ring.choose_neg'`) turns it into `Ring.add_choose_eq` at `-r` and `-s`, the signs
+`(-1) ^ i (-1) ^ j = (-1) ^ k` cancelling. -/
+theorem add_multichoose_eq {r s : R} (k : ℕ) (h : Commute r s) :
+    _root_.Ring.multichoose (r + s) k = ∑ ij ∈ antidiagonal k,
+      _root_.Ring.multichoose r ij.1 * _root_.Ring.multichoose s ij.2 := by
+  have key (x : R) (n : ℕ) :
+      _root_.Ring.multichoose x n = Int.negOnePow n • _root_.Ring.choose (-x) n := by
+    rw [_root_.Ring.choose_neg', smul_smul, Int.units_mul_self, one_smul]
+  simp only [key, neg_add, _root_.Ring.add_choose_eq k h.neg_left.neg_right, smul_sum]
+  refine sum_congr rfl fun ij hij ↦ ?_
+  rw [Units.smul_def, Units.smul_def, Units.smul_def, smul_mul_smul_comm, ← Units.val_mul,
+    ← Int.negOnePow_add, ← Nat.cast_add, mem_antidiagonal.1 hij]
 
 /-- An additive subgroup-like set containing the generalized binomial coefficients of `r` up to
 degree `n` contains the degree-`n` coefficient of `-r`. -/

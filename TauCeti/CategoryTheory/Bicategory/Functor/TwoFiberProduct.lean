@@ -57,6 +57,10 @@ values in `Cat.{v', max u' v'}`. For pseudofunctors with values in `Cat.{u, u + 
   and `whiskerLeft_lift_iso_hom`.
 * `TauCeti.Stack.twoFiberProduct.homMk`, `TauCeti.Stack.twoFiberProduct.isoMk`,
   `TauCeti.Stack.twoFiberProduct.hom_ext`: modifications into the 2-fiber product.
+* `TauCeti.Stack.twoFiberProduct.mapObjIsoMk`: an isomorphism between the pullbacks of two objects
+  with the same second component, given on the first components, with
+  `TauCeti.Stack.twoFiberProduct.mapIso_hom_comp_mapIso_inv` for the comparison of their structure
+  isomorphisms.
 * `TauCeti.Stack.twoFiberProduct.isGroupoid_obj`: the fibers are groupoids when those of `F` and
   `G` are.
 * `TauCeti.Stack.twoFiberProduct.isEquivalence_snd_app`,
@@ -104,6 +108,19 @@ lemma mapIso_hom {X Y : Cᵒᵖ} (f : X ⟶ Y) (x : Fiber α β X) :
     (mapIso α β f x).hom = (α.naturality f.toLoc).hom.toNatTrans.app x.fst ≫
       (H.map f.toLoc).toFunctor.map x.iso.hom ≫ (β.naturality f.toLoc).inv.toNatTrans.app x.snd :=
   (rfl)
+
+/-- For two objects `(x, s, e)` and `(x', s, e')` of the fiber with the same second component, the
+composite of the structure isomorphism of the pullback of the first with the inverse of that of the
+second is the pullback of `e ≫ e'⁻¹` along `f`, conjugated by the naturality isomorphisms of
+`α`. -/
+lemma mapIso_hom_comp_mapIso_inv {X Y : Cᵒᵖ} (f : X ⟶ Y) {x x' : F.obj (.mk X)}
+    {s : G.obj (.mk X)} (e : (α.app (.mk X)).toFunctor.obj x ≅ (β.app (.mk X)).toFunctor.obj s)
+    (e' : (α.app (.mk X)).toFunctor.obj x' ≅ (β.app (.mk X)).toFunctor.obj s) :
+    (mapIso α β f ⟨x, s, e⟩).hom ≫ (mapIso α β f ⟨x', s, e'⟩).inv =
+      (α.naturality f.toLoc).hom.toNatTrans.app x ≫
+        (H.map f.toLoc).toFunctor.map (e.hom ≫ e'.inv) ≫
+          (α.naturality f.toLoc).inv.toNatTrans.app x' := by
+  simp [mapIso]
 
 /-- The pullback functor of the 2-fiber product along `f : X ⟶ Y` in `Cᵒᵖ`. -/
 @[simps]
@@ -480,6 +497,48 @@ lemma map_iso_hom {X Y : LocallyDiscrete Cᵒᵖ} (u : X ⟶ Y) (x : (twoFiberPr
   change _ = _ ≫ ((α.naturality u).hom.toNatTrans.app x.fst ≫
     (H.map u).toFunctor.map x.iso.hom ≫ (β.naturality u).inv.toNatTrans.app x.snd) ≫ _
   simp
+
+/-- An isomorphism between the pullbacks along `f` of two objects `(x, s, e)` and `(x', s, e')`
+with the same second component, given by an isomorphism `a` of the pullbacks of their first
+components whose image under `α` is the pullback of `e ≫ e'⁻¹`, conjugated by the naturality
+isomorphisms of `α`. Its second component is the identity. -/
+@[no_expose]
+def mapObjIsoMk {X Y : Cᵒᵖ} (f : X ⟶ Y) {x x' : F.obj (.mk X)} {s : G.obj (.mk X)}
+    (e : (α.app (.mk X)).toFunctor.obj x ≅ (β.app (.mk X)).toFunctor.obj s)
+    (e' : (α.app (.mk X)).toFunctor.obj x' ≅ (β.app (.mk X)).toFunctor.obj s)
+    (a : (F.map f.toLoc).toFunctor.obj x ≅ (F.map f.toLoc).toFunctor.obj x')
+    (ha : (α.app (.mk Y)).toFunctor.map a.hom = (α.naturality f.toLoc).hom.toNatTrans.app x ≫
+      (H.map f.toLoc).toFunctor.map (e.hom ≫ e'.inv) ≫
+        (α.naturality f.toLoc).inv.toNatTrans.app x') :
+    ((twoFiberProduct α β).map f.toLoc).toFunctor.obj ⟨x, s, e⟩ ≅
+      ((twoFiberProduct α β).map f.toLoc).toFunctor.obj ⟨x', s, e'⟩ :=
+  CategoricalPullback.mkIso a (Iso.refl _) (by
+    -- The structure isomorphisms of the two pullbacks are `mapIso`, only definitionally.
+    change (α.app (.mk Y)).toFunctor.map a.hom ≫ (mapIso α β f ⟨x', s, e'⟩).hom =
+      (mapIso α β f ⟨x, s, e⟩).hom ≫ (β.app (.mk Y)).toFunctor.map (𝟙 _)
+    simp [ha])
+
+@[simp]
+lemma mapObjIsoMk_hom_fst {X Y : Cᵒᵖ} (f : X ⟶ Y) {x x' : F.obj (.mk X)} {s : G.obj (.mk X)}
+    (e : (α.app (.mk X)).toFunctor.obj x ≅ (β.app (.mk X)).toFunctor.obj s)
+    (e' : (α.app (.mk X)).toFunctor.obj x' ≅ (β.app (.mk X)).toFunctor.obj s)
+    (a : (F.map f.toLoc).toFunctor.obj x ≅ (F.map f.toLoc).toFunctor.obj x')
+    (ha : (α.app (.mk Y)).toFunctor.map a.hom = (α.naturality f.toLoc).hom.toNatTrans.app x ≫
+      (H.map f.toLoc).toFunctor.map (e.hom ≫ e'.inv) ≫
+        (α.naturality f.toLoc).inv.toNatTrans.app x') :
+    (mapObjIsoMk α β f e e' a ha).hom.fst = a.hom :=
+  (rfl)
+
+@[simp]
+lemma mapObjIsoMk_hom_snd {X Y : Cᵒᵖ} (f : X ⟶ Y) {x x' : F.obj (.mk X)} {s : G.obj (.mk X)}
+    (e : (α.app (.mk X)).toFunctor.obj x ≅ (β.app (.mk X)).toFunctor.obj s)
+    (e' : (α.app (.mk X)).toFunctor.obj x' ≅ (β.app (.mk X)).toFunctor.obj s)
+    (a : (F.map f.toLoc).toFunctor.obj x ≅ (F.map f.toLoc).toFunctor.obj x')
+    (ha : (α.app (.mk Y)).toFunctor.map a.hom = (α.naturality f.toLoc).hom.toNatTrans.app x ≫
+      (H.map f.toLoc).toFunctor.map (e.hom ≫ e'.inv) ≫
+        (α.naturality f.toLoc).inv.toNatTrans.app x') :
+    (mapObjIsoMk α β f e e' a ha).hom.snd = 𝟙 ((G.map f.toLoc).toFunctor.obj s) :=
+  (rfl)
 
 /-! ### The 2-universal property
 

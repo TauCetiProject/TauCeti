@@ -12,15 +12,16 @@ import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OrderedProdu
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
 
 /-!
-# Uniqueness of ordered positive-root products for a Chevalley datum
+# Uniqueness of ordered root products for a Chevalley datum
 
-Over every commutative ring and for **any** Chevalley datum `D`, a product of distinct positive
-root elements in any fixed order determines all its parameters. The result applies to any
-duplicate-free list of positive roots, and in particular to any enumeration of all positive roots,
-regardless of the isogeny type of `D`.
+Over every commutative ring and for **any** Chevalley datum `D`, a product of distinct root
+elements in any fixed order determines all its parameters, provided all its roots have positive
+degree for one rational degree map on integral weights. This covers lists of positive roots, with
+the height degree, and lists of negative roots, with its negative, so also any enumeration of all
+of them, regardless of the isogeny type of `D`.
 
-This is the uniqueness half of positive-root factorization on `D.positivePoints A`, pairing with
-positive-root collection in
+This supplies the uniqueness half of positive-root factorization on `D.positivePoints A`, pairing
+with positive-root collection in
 `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Collection.Basic` to
 build the coordinate bijection `ChevalleyDatum.positiveRootEquiv` in
 `TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Coordinates`, and supplying the point-level
@@ -29,6 +30,8 @@ faithfulness needed for scheme-theoretic monomorphicity of `D.rootProduct` in
 
 ## Main results
 
+* `TauCeti.DynkinType.ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj_of_degree`: ordered
+  products of roots of positive degree determine their parameters.
 * `TauCeti.DynkinType.ChevalleyDatum.list_prod_map_rootSubgroupPoints_inj`: an ordered product of
   distinct positive root elements of `D` determines its parameters over every commutative ring.
 
@@ -50,22 +53,24 @@ universe v
 
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 
-/-- In the point group of any Chevalley datum, an ordered product of distinct positive root
-elements determines the parameters of all roots occurring in the list. The order is arbitrary and
-the value ring may have nilpotents or arbitrary characteristic. -/
-theorem list_prod_map_rootSubgroupPoints_inj (A : Type v) [CommRing A]
-    {l : List (Fin t.numRoots)} (hl : l.Nodup)
-    (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+/-- **Uniqueness of ordered root products for a degree.** In the point group of any Chevalley
+datum, an ordered product of distinct root elements whose roots all have positive degree for one
+rational degree map on integral weights determines exactly the parameters of the roots occurring
+in the list. The order is arbitrary and the value ring may have nilpotents or arbitrary
+characteristic. -/
+theorem list_prod_map_rootSubgroupPoints_inj_of_degree (A : Type v) [CommRing A]
+    {l : List (Fin t.numRoots)} (hl : l.Nodup) (degree : (Fin t.rank → ℤ) →+ ℚ)
+    (hdegree : ∀ γ ∈ l, 0 < degree ((t.simplyConnectedRootDatum ht).root γ))
     {u v : Fin t.numRoots → A} :
     (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u γ))).prod =
       (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (v γ))).prod ↔
       ∀ γ ∈ l, u γ = v γ := by
-  obtain ⟨n, degree, hn, hdegree⟩ := (t.weightDegree ht).exists_pos_nat_mul_eq_intCast
-  have hposdegree (γ : Fin t.numRoots) (hγ : γ ∈ l) :
-      0 < degree ((t.simplyConnectedRootDatum ht).root γ) := by
-    have h := mul_pos (Nat.cast_pos.mpr hn : (0 : ℚ) < n)
-      (t.weightDegree_root_pos ht (hpos γ hγ))
-    rw [hdegree] at h
+  -- A positive multiple of the degree is integral, and positive on the same roots.
+  obtain ⟨n, degreeℤ, hn, hdegreeℤ'⟩ := degree.exists_pos_nat_mul_eq_intCast
+  have hdegreeℤ (γ : Fin t.numRoots) (hγ : γ ∈ l) :
+      0 < degreeℤ ((t.simplyConnectedRootDatum ht).root γ) := by
+    have h := mul_pos (Nat.cast_pos.mpr hn : (0 : ℚ) < n) (hdegree γ hγ)
+    rw [hdegreeℤ'] at h
     exact_mod_cast h
   let hAll := kostantForm_chevalleySystem_smul_mem D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
@@ -74,10 +79,10 @@ theorem list_prod_map_rootSubgroupPoints_inj (A : Type v) [CommRing A]
     (isNilpotent_apply_ι_chevalleySystem D.representation
       D.isNilpotent_representation_rootGenerator)
     (b := D.basis) (wt := D.weight) (α := (t.simplyConnectedRootDatum ht).root)
-    (degree := degree) A D.isCartanWeightVector_basis
+    (degree := degreeℤ) A D.isCartanWeightVector_basis
     (hl.map (t.simplyConnectedRootDatum ht).root.injective)
     (fun γ _ => t.lie_lieBasis_h_chevalleySystem ht γ)
-    hposdegree
+    hdegreeℤ
     (fun γ _ c hc =>
       (D.smul_baseChange_kostantRootOperator_chevalleySystem_eq_zero_iff γ A c).mp hc)
     (u := u) (v := v)
@@ -94,5 +99,18 @@ theorem list_prod_map_rootSubgroupPoints_inj (A : Type v) [CommRing A]
       coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe] using hmat
   · intro huv
     exact congrArg List.prod (List.map_congr_left fun γ hγ => by rw [huv γ hγ])
+
+/-- In the point group of any Chevalley datum, an ordered product of distinct positive root
+elements determines the parameters of all roots occurring in the list. The order is arbitrary and
+the value ring may have nilpotents or arbitrary characteristic. -/
+theorem list_prod_map_rootSubgroupPoints_inj (A : Type v) [CommRing A]
+    {l : List (Fin t.numRoots)} (hl : l.Nodup)
+    (hpos : ∀ γ ∈ l, γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
+    {u v : Fin t.numRoots → A} :
+    (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (u γ))).prod =
+      (l.map fun γ => D.rootSubgroupPoints γ A (Multiplicative.ofAdd (v γ))).prod ↔
+      ∀ γ ∈ l, u γ = v γ :=
+  D.list_prod_map_rootSubgroupPoints_inj_of_degree A hl (t.weightDegree ht)
+    fun _ hγ => t.weightDegree_root_pos ht (hpos _ hγ)
 
 end TauCeti.DynkinType.ChevalleyDatum

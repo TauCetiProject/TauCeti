@@ -48,12 +48,9 @@ theorem pathELength_riemannianExp_smul {p : M} {U : Set (TangentSpace I p)}
     (h : IsNormalDomain I M p U) {v : TangentSpace I p} (hv : v ∈ U) {s t : ℝ}
     (hs : s ∈ Icc 0 1) (ht : t ∈ Icc 0 1) :
     pathELength I (fun u : ℝ ↦ riemannianExp I M p (u • v)) s t =
-      ‖v‖ₑ * ENNReal.ofReal (t - s) := by
-  have hcurve : (fun u : ℝ ↦ riemannianExp I M p (u • v)) = maximalGeodesic I M p v := by
-    funext u
-    exact riemannianExp_smul p v u
-  rw [hcurve, pathELength_maximalGeodesic (h.mem_geodesicInterval hv hs.1 hs.2)
-    (h.mem_geodesicInterval hv ht.1 ht.2)]
+      ‖v‖ₑ * ENNReal.ofReal (t - s) :=
+  pathELength_riemannianExp_smul_of_mem_geodesicInterval
+    (h.mem_geodesicInterval hv hs.1 hs.2) (h.mem_geodesicInterval hv ht.1 ht.2)
 
 /-- In a normal domain, the radial exponential curve from `0` to `1` has length `‖v‖`. -/
 theorem pathELength_riemannianExp_smul_zero_one {p : M} {U : Set (TangentSpace I p)}

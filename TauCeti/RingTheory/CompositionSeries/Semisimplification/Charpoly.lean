@@ -83,18 +83,15 @@ theorem charpoly_lsmul_semisimplification (a : A) :
 @[simp]
 theorem trace_lsmul_semisimplification (a : A) :
     LinearMap.trace k (semisimplification A M) (Algebra.lsmul k k (semisimplification A M) a) =
-      LinearMap.trace k M (Algebra.lsmul k k M a) := by
-  rw [LinearMap.trace_eq_neg_charpoly_nextCoeff, LinearMap.trace_eq_neg_charpoly_nextCoeff,
-    charpoly_lsmul_semisimplification]
+      LinearMap.trace k M (Algebra.lsmul k k M a) :=
+  LinearMap.trace_eq_of_charpoly_eq (charpoly_lsmul_semisimplification a)
 
 /-- Every `a : A` has the same determinant over `k` on the semisimplification `M^ss` as on `M`. -/
 @[simp]
 theorem det_lsmul_semisimplification (a : A) :
     LinearMap.det (Algebra.lsmul k k (semisimplification A M) a) =
-      LinearMap.det (Algebra.lsmul k k M a) := by
-  rw [LinearMap.det_eq_sign_charpoly_coeff, LinearMap.det_eq_sign_charpoly_coeff,
-    ← LinearMap.charpoly_natDegree (Algebra.lsmul k k (semisimplification A M) a),
-    ← LinearMap.charpoly_natDegree (Algebra.lsmul k k M a), charpoly_lsmul_semisimplification]
+      LinearMap.det (Algebra.lsmul k k M a) :=
+  LinearMap.det_eq_of_charpoly_eq (charpoly_lsmul_semisimplification a)
 
 end Charpoly
 

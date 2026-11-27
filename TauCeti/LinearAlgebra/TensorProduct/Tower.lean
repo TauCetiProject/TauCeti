@@ -44,10 +44,14 @@ an `A`-linear map `A ⊗[R] M → M`. Mathlib's `LinearMap.liftBaseChange` and
 * `TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor`: cancelling the base
   change `B ⊗[A] (A ⊗[R] M) ≃ B ⊗[R] M` sends `b ⊗ x` to `b` times the image of `x` in
   `B ⊗[R] M`.
+* `LinearMap.injective_lTensor_baseChange_iff`: tensoring with a module over an `R`-algebra gives
+  the same injectivity test before and after extending scalars to that algebra.
 * `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange`: the
   comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` is natural in `M` and `N`, with
   its pure-tensor form
   `TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul_baseChange`.
+* `TensorProduct.AlgebraTensorModule.distribBaseChange_baseChange_mk_flip`: the same
+  comparison carries the scalar extension of `m ↦ m ⊗ n` to `v ↦ v ⊗ (1 ⊗ n)`.
 * `AlgHom.distribBaseChange_symm_rTensor_tmul`: the same comparison is natural in the scalar
   algebra, along an algebra map `f : A →ₐ[R] B`.
 * `TensorProduct.tmul_eq_one_tmul_smul_of_mem`: in `R ⊗[B] M`, for a subring `B` of `R` and
@@ -112,6 +116,23 @@ theorem TensorProduct.AlgebraTensorModule.cancelBaseChange_tmul_eq_smul_rTensor 
   | tmul a m => simp [smul_tmul', Algebra.smul_def, mul_comm]
   | add x y hx hy => simp only [tmul_add, map_add, hx, hy, smul_add]
 
+/-- For an `A`-module `B` with compatible `R`-action, tensoring an `R`-linear map with `B` over
+`R` gives an injective map if and only if extending scalars to `A` and then tensoring with `B`
+over `A` does. -/
+theorem LinearMap.injective_lTensor_baseChange_iff {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
+    (A B : Type*) [CommSemiring A] [Algebra R A] [AddCommMonoid B] [Module A B] [Module R B]
+    [IsScalarTower R A B] :
+    Function.Injective ((f.baseChange A).lTensor B) ↔ Function.Injective (f.lTensor B) := by
+  let eM := AlgebraTensorModule.cancelBaseChange R A A B M
+  let eN := AlgebraTensorModule.cancelBaseChange R A A B N
+  have hcomm : eN ∘ (f.baseChange A).lTensor B = f.lTensor B ∘ eM := by
+    -- The scalar-linear tensor maps in the naturality lemma have the same underlying functions.
+    funext z
+    exact LinearMap.congr_fun
+      (AlgebraTensorModule.lTensor_comp_cancelBaseChange R A A f).symm z
+  rw [← EquivLike.comp_injective _ eN, hcomm, EquivLike.injective_comp]
+
 /-- The comparison `(A ⊗[R] M) ⊗[A] (A ⊗[R] N) ≃ A ⊗[R] (M ⊗[R] N)` distributing scalar
 extension over a tensor product is natural in both tensor factors. -/
 theorem TensorProduct.AlgebraTensorModule.distribBaseChange_symm_comp_map_baseChange
@@ -140,6 +161,18 @@ theorem TensorProduct.AlgebraTensorModule.distribBaseChange_symm_baseChange_tmul
     (distribBaseChange R A P Q).symm (f.baseChange A x ⊗ₜ[A] g.baseChange A y) =
       (TensorProduct.map f g).baseChange A ((distribBaseChange R A M N).symm (x ⊗ₜ[A] y)) :=
   LinearMap.congr_fun (distribBaseChange_symm_comp_map_baseChange f g) (x ⊗ₜ[A] y)
+
+/-- Scalar extension of `m ↦ m ⊗ n`, followed by the distributivity equivalence, is
+`v ↦ v ⊗ (1 ⊗ n)`. For `n = 1` in a bialgebra this says that base change carries the trivial
+coaction to the trivial coaction. -/
+theorem TensorProduct.AlgebraTensorModule.distribBaseChange_baseChange_mk_flip
+    {R A M N : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (n : N) (v : A ⊗[R] M) :
+    distribBaseChange R A M N (((TensorProduct.mk R M N).flip n).baseChange A v) =
+      v ⊗ₜ[A] ((1 : A) ⊗ₜ[R] n) := by
+  induction v using TensorProduct.inductionOn with
+  | tmul a m => simp
+  | add v w hv hw => rw [map_add, map_add, hv, hw, TensorProduct.add_tmul]
 
 /-- On pure tensors, the comparison maps of scalar extensions along `f : A →ₐ[R] B` intertwine
 the comparisons `(A ⊗ M) ⊗[A] (A ⊗ N) ≃ A ⊗ (M ⊗ N)` for the two scalar algebras. -/

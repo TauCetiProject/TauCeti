@@ -9,7 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.ExtendFrom
 public import TauCeti.Analysis.Holder.C2HolderBoundary.Basic
-public import TauCeti.Analysis.Holder.OpenSet.Basic
+public import TauCeti.Analysis.Holder.OpenSet.Frontier
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Analysis.Calculus.GraphFlattening.Extension
@@ -18,6 +18,7 @@ import TauCeti.Analysis.Holder.LipschitzDomain
 import TauCeti.Analysis.Sobolev.LipschitzDomain.GraphPatch
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Topology.ClusterSet
+import TauCeti.Topology.MetricSpace.Holder
 import TauCeti.Topology.UniformSpace.Complete
 
 /-!
@@ -47,6 +48,9 @@ known on `Ω`, such as the elements of `C^{2,α}(Ω)`.
   that is `C²` on `E`.
 * `TauCeti.CkHolderSpaceOn.exists_contDiff_eq`: on a bounded `Ω` and for `α > 0`, every element of
   `C^{2,α}(Ω)` is the restriction of a function that is `C²` on `E`.
+* `TauCeti.CkHolderSpaceOn.exists_contDiff_eq_of_mem_vanishingOnFrontierSubmodule`: if the element
+  vanishes on the frontier of `Ω`, so does the extension, and its second derivative is `α`-Hölder on
+  `closure Ω`.
 
 ## The argument
 
@@ -253,5 +257,29 @@ theorem exists_contDiff_eq [FiniteDimensional ℝ E] [CompleteSpace F] {α β : 
     (fun x hx => huc₁.exists_tendsto_nhdsWithin (frontier_subset_closure hx))
     (fun x hx => huc₂.exists_tendsto_nhdsWithin (frontier_subset_closure hx))
   exact ⟨w, hw, fun x => (hwf x.property).trans (f.extend_apply x)⟩
+
+/-- **Elements of `C^{2,α}(Ω)` vanishing on `∂Ω` extend to the whole space.** Let `Ω` be a bounded
+open set with `C^{2,β}` boundary in a finite-dimensional real inner product space and let `0 < α`.
+Every element `f` of `C^{2,α}(Ω)` vanishing on the frontier of `Ω` is the restriction to `Ω` of a
+function `w` that is `C²` on the whole space, vanishes on the frontier of `Ω`, and whose second
+derivative is `α`-Hölder on `closure Ω` with constant the Hölder seminorm of the second derivative
+field of `f`. These are the hypotheses of global estimates for the Dirichlet problem stated for
+functions `C²` near `closure Ω`. -/
+theorem exists_contDiff_eq_of_mem_vanishingOnFrontierSubmodule [FiniteDimensional ℝ E]
+    [CompleteSpace F] {α β : ℝ≥0} {Ω : TopologicalSpace.Opens E}
+    (hΩ : (Ω : Set E).HasC2HolderBoundary β) (hb : Bornology.IsBounded (Ω : Set E)) (hα : 0 < α)
+    {f : CkHolderSpaceOn 2 α Ω F} (hf : f ∈ vanishingOnFrontierSubmodule 2 α Ω F) :
+    ∃ w : E → F, ContDiff ℝ 2 w ∧ (∀ x : Ω, w x = f x) ∧ (∀ z ∈ frontier (Ω : Set E), w z = 0) ∧
+      HolderOnWith (nnHolderNorm α (f.iteratedFDeriv (Fin.last 2) : Ω → E [×2]→L[ℝ] F)) α
+        (_root_.iteratedFDeriv ℝ 2 w) (closure Ω) := by
+  obtain ⟨w, hw, hwf⟩ := exists_contDiff_eq hΩ hb hα f
+  refine ⟨w, hw, hwf, fun z hz => ?_, ?_⟩
+  · -- `w` and the extension by zero of `f` agree on `Ω` and are continuous on `closure Ω`.
+    have hEq : Set.EqOn w f.extend (closure Ω) :=
+      Set.EqOn.of_subset_closure (fun y hy => by rw [hwf ⟨y, hy⟩, f.extend_apply_of_mem hy])
+        hw.continuous.continuousOn (continuousOn_extend_closure hf) subset_closure le_rfl
+    exact (hEq (frontier_subset_closure hz)).trans (f.extend_apply_of_mem_frontier hz)
+  · exact (f.holderOnWith_iteratedFDeriv hwf).of_subset_closure le_rfl fun z _ =>
+      (hw.continuous_iteratedFDeriv le_rfl).continuousWithinAt
 
 end TauCeti.CkHolderSpaceOn

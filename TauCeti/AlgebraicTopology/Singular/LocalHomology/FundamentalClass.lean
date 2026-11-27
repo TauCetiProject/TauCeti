@@ -10,6 +10,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
+public import TauCeti.AlgebraicTopology.Singular.Coefficients.RestrictScalars
 public import TauCeti.Topology.Sets.Opens
 import TauCeti.Algebra.Category.ModuleCat.SpanSingleton
 
@@ -31,9 +32,11 @@ class along a compact `K ⊆ U` of the pulled-back orientation to the fundamenta
 For `M` compact, there is a unique class `o.fundamentalClass hn` of `Hₙ(M; ℤ)`, the *fundamental
 class* of `M` for the orientation `o`, whose image in `Hₙ(M, M ∖ {x}; ℤ)` is `o x` for every
 `x`. Reversing the orientation negates it. Its image under the change of coefficients `ℤ → ℝ` is
-the real fundamental class `o.realFundamentalClass hn ∈ Hₙ(M; ℝ)`. If `M` is moreover connected,
-the fundamental class generates `Hₙ(M; ℤ)` freely: `c ↦ c • o.fundamentalClass hn` is an
-isomorphism from `ℤ`, so every class of `Hₙ(M; ℤ)` is an integer multiple of it.
+the real fundamental class `o.realFundamentalClass hn ∈ Hₙ(M; ℝ)`. For a commutative ring `k`,
+its image `o.fundamentalClassOver hn k ∈ Hₙ(M; k)` in the homology of singular chains over `k`
+is the fundamental class over `k`. If `M` is moreover connected, the fundamental class generates
+`Hₙ(M; ℤ)` freely: `c ↦ c • o.fundamentalClass hn` is an isomorphism from `ℤ`, so every class of
+`Hₙ(M; ℤ)` is an integer multiple of it.
 
 A continuous map `f : M → X` carries the fundamental class to a class `f_*[M] ∈ Hₙ(X; ℤ)`, which
 is functorial in `f` and depends only on the homotopy class of `f`. A homeomorphism `e : N ≃ₜ M`
@@ -53,6 +56,8 @@ The fundamental class is what cohomology classes are evaluated on, through the K
   manifold.
 * `TauCeti.HomologicalOrientation.realFundamentalClass`: the image of the fundamental class in
   `Hₙ(M; ℝ)`.
+* `TauCeti.HomologicalOrientation.fundamentalClassOver`: the image `[M]_k` of the fundamental
+  class in `Hₙ(M; k)`, formed from singular chains over a commutative ring `k`.
 * `TauCeti.HomologicalOrientation.fundamentalClassEquiv`: for a compact connected oriented
   manifold, the isomorphism `ℤ ≃ₗ[ℤ] Hₙ(M; ℤ)` sending `1` to the fundamental class.
 * `TauCeti.HomologicalOrientation.mapFundamentalClass`: the image `f_*[M] ∈ Hₙ(X; ℤ)` of the
@@ -105,6 +110,8 @@ homology isomorphism directly, without requiring Poincaré duality.
 * `TauCeti.uliftIntHomologyIso`, `TopPair.uliftIntSingularHomologyIso`: the coefficients `ULift ℤ`
   of fundamental classes and the coefficient ring `ℤ` give naturally isomorphic absolute and
   relative singular homology.
+* `TauCeti.localHomologyMap_uliftInt_eq_smul_iff`: a self-map acts on integral local homology by
+  an integer scalar exactly when it does so with coefficients `ULift ℤ`.
 * `TauCeti.isLocalOrientation_iff_span_uliftIntSingularHomologyIso_hom_eq_top`: read with
   coefficients `ℤ`, the local orientations are the generators of the local homology.
 * `TauCeti.IsLocalOrientation.span_localHomologyRestriction_uliftIntSingularHomologyIso_hom_eq_top`:
@@ -473,6 +480,36 @@ theorem realFundamentalClass_neg : (-o).realFundamentalClass hn = -o.realFundame
   rw [realFundamentalClass, realFundamentalClass, fundamentalClass_neg]
   exact map_neg _ _
 
+section CommRing
+
+open AlgebraicTopology MonoidalCategory
+
+variable (k : Type) [CommRing k]
+
+/-- The **fundamental class over a commutative ring `k`** of a compact oriented manifold: the image
+`[M]_k ∈ Hₙ(M; k)` of the integral fundamental class under the change of coefficients `ℤ → k`,
+in the homology of singular chains over `k`. -/
+def fundamentalClassOver :
+    ((singularHomologyFunctor (ModuleCat k) n).obj (𝟙_ (ModuleCat k))).obj (TopCat.of M) :=
+  (TopCat.of M).restrictScalarsHomologyMap (Int.castRingHom k)
+    (ModuleCat.uliftUnitToRestrictScalars _) n (o.fundamentalClass hn)
+
+/-- The fundamental class over `k` is the image of the integral fundamental class. -/
+theorem fundamentalClassOver_def :
+    o.fundamentalClassOver hn k =
+      (TopCat.of M).restrictScalarsHomologyMap (Int.castRingHom k)
+        (ModuleCat.uliftUnitToRestrictScalars _) n (o.fundamentalClass hn) :=
+  (rfl)
+
+/-- Reversing the orientation negates the fundamental class over `k`. -/
+@[simp]
+theorem fundamentalClassOver_neg :
+    (-o).fundamentalClassOver hn k = -o.fundamentalClassOver hn k := by
+  rw [fundamentalClassOver_def, fundamentalClassOver_def, fundamentalClass_neg]
+  exact map_neg _ _
+
+end CommRing
+
 section Map
 
 open AlgebraicTopology
@@ -826,6 +863,24 @@ theorem singularHomologyMap_comp_uliftIntSingularHomologyIso_hom {P P' : TopPair
 end TopPair
 
 namespace TauCeti
+
+/-- **Integral local homology and `ULift ℤ` coefficients.** A continuous self-map acts on the
+local homology `Hₙ(M, M ∖ S; ULift ℤ)` as multiplication by an integer `c` exactly when it acts on
+`Hₙ(M, M ∖ S; ℤ)` as multiplication by `c`: the change of coefficients
+`TopPair.uliftIntSingularHomologyIso` is natural. -/
+theorem localHomologyMap_uliftInt_eq_smul_iff {M : Type} [TopologicalSpace M] (j : C(M, M))
+    {S : Set M} (h : j ⁻¹' S ⊆ S) (n : ℕ) (c : ℤ) :
+    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j h n = c • 𝟙 _ ↔
+      localHomologyMap (ModuleCat.of ℤ ℤ) j h n = c • 𝟙 _ := by
+  rw [localHomologyMap_def, localHomologyMap_def]
+  have hnat := TopPair.singularHomologyMap_comp_uliftIntSingularHomologyIso_hom
+    (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of M) (B := Sᶜ) (B' := Sᶜ)
+      (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) n
+  refine ⟨fun hU ↦ ?_, fun hZ ↦ ?_⟩
+  · rw [← cancel_epi (TopPair.uliftIntSingularHomologyIso _ n).hom, ← hnat, hU]
+    simp
+  · rw [← cancel_mono (TopPair.uliftIntSingularHomologyIso _ n).hom, hnat, hZ]
+    simp
 
 /-- A class of the integral local homology `Hₙ(M, M ∖ {x}; ULift ℤ)` is a local orientation exactly
 when, read with coefficients `ℤ`, it generates `Hₙ(M, M ∖ {x}; ℤ)`. -/
