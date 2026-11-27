@@ -104,7 +104,7 @@ theorem heckeSum_heckeTestMap_single_one (D : HeckeCoset (⊤ : Submonoid G) U U
     (fun γ hγ ↦ heckeTestMap_comp_leftRegular_of_mem ρ v.property hγ)
     (fun t : S ↦ ((t : G ⧸ U).out)⁻¹) (fun _ ↦ Submonoid.mem_top _)
     (doubleCoset_eq_iUnion_op_out_inv_smul g (S := (S : Set (G ⧸ U))) hS)
-    ((QuotientGroup.injective_op_out_inv_smul U).comp Subtype.val_injective)]
+    ((QuotientGroup.op_out_inv_smul_injective U).comp Subtype.val_injective)]
   -- The column of `[UgU]` at `U` is supported on `S`, where it is `1`.
   have hsub : (PermutationHecke.column (⟨_, PermutationHecke.indicator_orbit_mem
       (((1 : G) : G ⧸ U), (g : G ⧸ U))⟩ : HeckeAlgebraLevel G U A)

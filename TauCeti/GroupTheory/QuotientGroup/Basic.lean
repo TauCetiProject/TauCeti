@@ -66,7 +66,7 @@ For a finite group, a sum can also be split over the left or right cosets of a s
   contains a nontrivial subgroup meeting `Z` trivially.
 * `QuotientGroup.out_mul_out_mul_inv_mem`: the defect of the representatives chosen by
   `Quotient.out` from preserving multiplication lies in the subgroup.
-* `QuotientGroup.injective_op_out_inv_smul`: distinct left cosets `t` of `H` give distinct right
+* `QuotientGroup.op_out_inv_smul_injective`: distinct left cosets `t` of `H` give distinct right
   cosets `H t.out⁻¹`.
 * `QuotientGroup.mk_list_prod`: the class of a list product is the product of the classes.
 * `QuotientGroup.inv_mul_mul_list_prod_map_mul_mem`: central corrections can be absorbed into the
@@ -266,7 +266,7 @@ theorem _root_.QuotientGroup.out_mul_out_mul_inv_mem (N : Subgroup G) [N.Normal]
     QuotientGroup.out_eq', QuotientGroup.out_eq', QuotientGroup.out_eq']
 
 /-- Distinct left cosets `t` of `H` give distinct right cosets `H t.out⁻¹`. -/
-theorem _root_.QuotientGroup.injective_op_out_inv_smul (H : Subgroup G) :
+theorem _root_.QuotientGroup.op_out_inv_smul_injective (H : Subgroup G) :
     Function.Injective fun t : G ⧸ H ↦ MulOpposite.op ((t.out)⁻¹ : G) • (H : Set G) := by
   intro t s hts
   have h := (rightCoset_eq_iff H).1 hts

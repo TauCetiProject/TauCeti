@@ -74,7 +74,7 @@ numbers, which is the group-theoretic half of the statement that the permutation
   when `y⁻¹ ∈ H g K`.
 * `TauCeti.doubleCoset_eq_iUnion_op_out_inv_smul`: the inverses `t.out⁻¹` of representatives of
   the left cosets `t` with `t.out⁻¹ ∈ H g K` represent the right cosets of `H` in `H g K`, without
-  repetition by `QuotientGroup.injective_op_out_inv_smul`.
+  repetition by `QuotientGroup.op_out_inv_smul_injective`.
 * `TauCeti.sum_card_fixedBy_mul_card_fixedBy_eq_card_doubleCosetQuotient_mul_card_group`:
   Burnside's lemma read through that bijection,
   `∑ g, |(G ⧸ H)^g| * |(G ⧸ K)^g| = #(H \ G / K) * |G|`.
