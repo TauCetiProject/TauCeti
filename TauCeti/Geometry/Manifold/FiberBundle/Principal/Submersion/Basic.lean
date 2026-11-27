@@ -43,7 +43,8 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
    charts yield `C^n` principal bundle structures on `MapFiber p`, a `G`-equivariant `C^n`
    diffeomorphism `ManifoldTotalSpace G (MapFiber p) ≃ₘ^n P` over `B`, and (when
    `[LieGroup IG n G]`) `C^n` regularity of `actionDivisionOrOne` along locally fibre-matched
-   families (`contMDiffWithinAt_actionDivisionOrOne`).
+   families (`contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord`, specialized to the Banach
+   criterion in `contMDiffWithinAt_actionDivisionOrOne`).
 2. **Finite-dimensional `C^n` criterion (`1 ≤ n`, over `[RCLike 𝕜]`):** injectivity of
    `d(g ↦ op g • x)_1` and `finrank 𝕜 EP = finrank 𝕜 EB + finrank 𝕜 EG` imply the
    vertical-range condition by rank-nullity (`range_mfderiv_op_smul_one_eq_ker_of_finrank_eq`),
@@ -68,6 +69,10 @@ Kolář–Michor–Slovák Lemma 10.3, follows in
   `diffeomorphManifoldTotalSpaceOfSubmersion`: Banach `C^n` principal bundle structures, atlas
   characterization, and total-space diffeomorphism.
 * `Continuous.contMDiffWithinAt_actionDivisionOrOne_of_section`,
+  `TauCeti.PrincipalBundle.contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord`,
+  `contMDiffAt_actionDivisionOrOne_of_sectionCoord`,
+  `contMDiffOn_actionDivisionOrOne_of_sectionCoord`,
+  `contMDiff_actionDivisionOrOne_of_sectionCoord`,
   `TauCeti.PrincipalBundle.contMDiffWithinAt_actionDivisionOrOne`,
   `contMDiffAt_actionDivisionOrOne`, `contMDiffOn_actionDivisionOrOne`,
   `contMDiff_actionDivisionOrOne`: `C^n` regularity of `actionDivisionOrOne` along locally
@@ -186,6 +191,65 @@ theorem _root_.Continuous.contMDiffWithinAt_actionDivisionOrOne_of_section {n : 
   filter_upwards [hf₁.continuousWithinAt.preimage_mem_nhdsWithin (hopen.mem_nhds hx₀U), hf]
     with x hx hfx
   exact actionDivisionOrOne_eq_inv_sectionCoord_mul_sectionCoord horbit hfree hσ hx hfx
+
+section ActionDivisionSectionCoord
+
+variable {n : ℕ∞ω} {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  [IP.Boundaryless] [Group G] [LieGroup IG n G] [MulAction Gᵐᵒᵖ P]
+  {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  {HM : Type*} [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
+  {p : P → B} (hp : Continuous p)
+  (hfree : ∀ (x : P) (g : G), op g • x = x → g = 1)
+  (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
+  (hcoord : ∀ (U : Set B), IsOpen U → ∀ (σ : B → P), ContMDiffOn IB IP n σ U →
+    (hσ : ∀ b ∈ U, p (σ b) = b) → ContMDiffOn IP IG n (sectionCoord horbit hσ) (p ⁻¹' U))
+  {f₁ f₂ : M → P}
+
+include hp hfree hcoord
+
+/-- **Smoothness of `actionDivisionOrOne` along families in a common fibre** (`ContMDiffWithinAt`
+form), given `C^n` regularity of `sectionCoord` along `C^n` local sections of `p`. -/
+theorem contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord {s : Set M} {x₀ : M}
+    (hf₀ : p (f₁ x₀) = p (f₂ x₀)) (hf : ∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x))
+    (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
+    (hf₁ : ContMDiffWithinAt IM IP n f₁ s x₀) (hf₂ : ContMDiffWithinAt IM IP n f₂ s x₀) :
+    ContMDiffWithinAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s x₀ := by
+  obtain ⟨U, hU, hx₀U, σ, -, hσ_smooth, hσ⟩ := hsub.exists_contMDiffOn_section
+  exact hp.contMDiffWithinAt_actionDivisionOrOne_of_section horbit hU
+    (fun b _ ↦ hfree (σ b)) hσ (hcoord U hU σ hσ_smooth hσ) hf₀ hf hx₀U hf₁ hf₂
+
+/-- `ContMDiffAt` form of `contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord`. -/
+theorem contMDiffAt_actionDivisionOrOne_of_sectionCoord {x₀ : M}
+    (hf : ∀ᶠ x in 𝓝 x₀, p (f₁ x) = p (f₂ x))
+    (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
+    (hf₁ : ContMDiffAt IM IP n f₁ x₀) (hf₂ : ContMDiffAt IM IP n f₂ x₀) :
+    ContMDiffAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) x₀ :=
+  contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord hp hfree horbit hcoord hf.self_of_nhds
+    (nhdsWithin_univ x₀ ▸ hf) hsub hf₁ hf₂
+
+/-- `ContMDiffOn` form of `contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord`. -/
+theorem contMDiffOn_actionDivisionOrOne_of_sectionCoord {s : Set M}
+    (hf : EqOn (p ∘ f₁) (p ∘ f₂) s)
+    (hsub : ∀ x ∈ s, IsSubmersionAt IP IB n p (f₁ x))
+    (hf₁ : ContMDiffOn IM IP n f₁ s) (hf₂ : ContMDiffOn IM IP n f₂ s) :
+    ContMDiffOn IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s :=
+  fun x hx ↦ contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord hp hfree horbit hcoord
+    (hf hx) (eventually_mem_nhdsWithin.mono fun _ hy ↦ hf hy)
+    (hsub x hx) (hf₁ x hx) (hf₂ x hx)
+
+/-- `ContMDiff` form of `contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord`. -/
+theorem contMDiff_actionDivisionOrOne_of_sectionCoord
+    (hf : ∀ x : M, p (f₁ x) = p (f₂ x))
+    (hsub : ∀ x : M, IsSubmersionAt IP IB n p (f₁ x))
+    (hf₁ : ContMDiff IM IP n f₁) (hf₂ : ContMDiff IM IP n f₂) :
+    ContMDiff IM IG n fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x) :=
+  fun x ↦ contMDiffAt_actionDivisionOrOne_of_sectionCoord hp hfree horbit hcoord
+    (Eventually.of_forall hf) (hsub x) (hf₁ x) (hf₂ x)
+
+end ActionDivisionSectionCoord
 
 end ManifoldBase
 
@@ -627,8 +691,11 @@ variable [IP.Boundaryless] [LieGroup IG n G]
   (hn : 1 ≤ n) (hsmul : ContMDiff (IP.prod IG) IP n fun q : P × G ↦ op q.2 • q.1)
   {p : P → B} (hfree : ∀ (x : P) (g : G), op g • x = x → g = 1)
   (horbit : ∀ x y : P, p x = p y ↔ ∃ g : G, op g • x = y)
-  (hinj : ∀ x : P, Injective (mfderiv IG IP (fun g : G ↦ op g • x) 1))
-  (hker : ∀ x : P, (mfderiv IP IB p x).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • x) 1).range)
+  (hinj : ∀ (U : Set B), IsOpen U → ∀ (σ : B → P), ContMDiffOn IB IP n σ U →
+    (∀ b ∈ U, p (σ b) = b) → ∀ b ∈ U, Injective (mfderiv IG IP (fun g : G ↦ op g • σ b) 1))
+  (hker : ∀ (U : Set B), IsOpen U → ∀ (σ : B → P), ContMDiffOn IB IP n σ U →
+    (∀ b ∈ U, p (σ b) = b) → ∀ b ∈ U,
+      (mfderiv IP IB p (σ b)).ker ≤ (mfderiv IG IP (fun g : G ↦ op g • σ b) 1).range)
   {f₁ f₂ : M → P}
 
 include hn hsmul hfree hinj hker
@@ -637,20 +704,19 @@ include hn hsmul hfree hinj hker
 form). For a `C^n` map `p : P → B` (`1 ≤ n`) with `P` modelled on a boundaryless model with
 corners (`[IP.Boundaryless]`) that is a submersion at `f₁ x₀`, equipped with a jointly `C^n` free
 right action of a `C^n` Lie group `G` whose orbits are the fibres of `p` and whose orbit
-differentials at `1` are injective and span `ker (dp_x)`, if `f₁, f₂ : M → P` are `C^n` within `s`
-at `x₀` with `p (f₁ x₀) = p (f₂ x₀)` and `∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x)`, then
-`x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)` is `C^n` within `s` at `x₀`. -/
+differentials at `1` along `C^n` local sections `σ` of `p` are injective and span `ker (dp_{σ b})`,
+if `f₁, f₂ : M → P` are `C^n` within `s` at `x₀` with `p (f₁ x₀) = p (f₂ x₀)` and
+`∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x)`, then `x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)` is `C^n`
+within `s` at `x₀`. -/
 theorem contMDiffWithinAt_actionDivisionOrOne (hp : ContMDiff IP IB n p) {s : Set M} {x₀ : M}
     (hf₀ : p (f₁ x₀) = p (f₂ x₀)) (hf : ∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x))
     (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
     (hf₁ : ContMDiffWithinAt IM IP n f₁ s x₀) (hf₂ : ContMDiffWithinAt IM IP n f₂ s x₀) :
-    ContMDiffWithinAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s x₀ := by
-  obtain ⟨U, hU, hx₀U, σ, -, hσ_smooth, hσ⟩ := hsub.exists_contMDiffOn_section
-  exact hp.continuous.contMDiffWithinAt_actionDivisionOrOne_of_section horbit hU
-    (fun b _ ↦ hfree (σ b)) hσ
-    (contMDiffOn_sectionCoord hn hsmul hp horbit hU hσ_smooth hσ (fun b _ ↦ hfree (σ b))
-      (fun b _ ↦ hinj (σ b)) (fun b _ ↦ hker (σ b)))
-    hf₀ hf hx₀U hf₁ hf₂
+    ContMDiffWithinAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s x₀ :=
+  contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord hp.continuous hfree horbit
+    (fun U hU σ hσ_smooth hσ ↦ contMDiffOn_sectionCoord hn hsmul hp horbit hU hσ_smooth hσ
+      (fun b _ ↦ hfree (σ b)) (hinj U hU σ hσ_smooth hσ) (hker U hU σ hσ_smooth hσ))
+    hf₀ hf hsub hf₁ hf₂
 
 /-- `ContMDiffAt` form of `contMDiffWithinAt_actionDivisionOrOne`. -/
 theorem contMDiffAt_actionDivisionOrOne (hp : ContMDiff IP IB n p) {x₀ : M}
@@ -658,8 +724,10 @@ theorem contMDiffAt_actionDivisionOrOne (hp : ContMDiff IP IB n p) {x₀ : M}
     (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
     (hf₁ : ContMDiffAt IM IP n f₁ x₀) (hf₂ : ContMDiffAt IM IP n f₂ x₀) :
     ContMDiffAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) x₀ :=
-  contMDiffWithinAt_actionDivisionOrOne hn hsmul hfree horbit hinj hker hp hf.self_of_nhds
-    (nhdsWithin_univ x₀ ▸ hf) hsub hf₁ hf₂
+  contMDiffAt_actionDivisionOrOne_of_sectionCoord hp.continuous hfree horbit
+    (fun U hU σ hσ_smooth hσ ↦ contMDiffOn_sectionCoord hn hsmul hp horbit hU hσ_smooth hσ
+      (fun b _ ↦ hfree (σ b)) (hinj U hU σ hσ_smooth hσ) (hker U hU σ hσ_smooth hσ))
+    hf hsub hf₁ hf₂
 
 /-- `ContMDiffOn` form of `contMDiffWithinAt_actionDivisionOrOne`. -/
 theorem contMDiffOn_actionDivisionOrOne (hp : ContMDiff IP IB n p) {s : Set M}
@@ -667,9 +735,10 @@ theorem contMDiffOn_actionDivisionOrOne (hp : ContMDiff IP IB n p) {s : Set M}
     (hsub : ∀ x ∈ s, IsSubmersionAt IP IB n p (f₁ x))
     (hf₁ : ContMDiffOn IM IP n f₁ s) (hf₂ : ContMDiffOn IM IP n f₂ s) :
     ContMDiffOn IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s :=
-  fun x hx ↦ contMDiffWithinAt_actionDivisionOrOne hn hsmul hfree horbit hinj hker hp
-    (hf hx) (eventually_mem_nhdsWithin.mono fun _ hy ↦ hf hy)
-    (hsub x hx) (hf₁ x hx) (hf₂ x hx)
+  contMDiffOn_actionDivisionOrOne_of_sectionCoord hp.continuous hfree horbit
+    (fun U hU σ hσ_smooth hσ ↦ contMDiffOn_sectionCoord hn hsmul hp horbit hU hσ_smooth hσ
+      (fun b _ ↦ hfree (σ b)) (hinj U hU σ hσ_smooth hσ) (hker U hU σ hσ_smooth hσ))
+    hf hsub hf₁ hf₂
 
 /-- `ContMDiff` form of `contMDiffWithinAt_actionDivisionOrOne`. -/
 theorem contMDiff_actionDivisionOrOne (hp : ContMDiff IP IB n p)
@@ -677,8 +746,10 @@ theorem contMDiff_actionDivisionOrOne (hp : ContMDiff IP IB n p)
     (hsub : ∀ x : M, IsSubmersionAt IP IB n p (f₁ x))
     (hf₁ : ContMDiff IM IP n f₁) (hf₂ : ContMDiff IM IP n f₂) :
     ContMDiff IM IG n fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x) :=
-  fun x ↦ contMDiffAt_actionDivisionOrOne hn hsmul hfree horbit hinj hker hp
-    (Eventually.of_forall hf) (hsub x) (hf₁ x) (hf₂ x)
+  contMDiff_actionDivisionOrOne_of_sectionCoord hp.continuous hfree horbit
+    (fun U hU σ hσ_smooth hσ ↦ contMDiffOn_sectionCoord hn hsmul hp horbit hU hσ_smooth hσ
+      (fun b _ ↦ hfree (σ b)) (hinj U hU σ hσ_smooth hσ) (hker U hU σ hσ_smooth hσ))
+    hf hsub hf₁ hf₂
 
 end ActionDivisionSmooth
 

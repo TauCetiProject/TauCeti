@@ -351,13 +351,11 @@ theorem contMDiffWithinAt_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB 
     {x₀ : M} (hf₀ : p (f₁ x₀) = p (f₂ x₀)) (hf : ∀ᶠ x in 𝓝[s] x₀, p (f₁ x) = p (f₂ x))
     (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
     (hf₁ : ContMDiffWithinAt IM IP n f₁ s x₀) (hf₂ : ContMDiffWithinAt IM IP n f₂ s x₀) :
-    ContMDiffWithinAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s x₀ := by
-  obtain ⟨U, hU, hx₀U, σ, -, hσ_smooth, hσ⟩ := hsub.exists_contMDiffOn_section
-  exact hp.continuous.contMDiffWithinAt_actionDivisionOrOne_of_section horbit hU
-    (fun b _ ↦ hfree (σ b)) hσ
-    (contMDiffOn_sectionCoord_of_lieGroup hn hsmul hp horbit hU hσ_smooth hσ
-      (fun b _ ↦ hfree (σ b)))
-    hf₀ hf hx₀U hf₁ hf₂
+    ContMDiffWithinAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s x₀ :=
+  contMDiffWithinAt_actionDivisionOrOne_of_sectionCoord hp.continuous hfree horbit
+    (fun _ hU σ hσ_smooth hσ ↦ contMDiffOn_sectionCoord_of_lieGroup hn hsmul hp horbit hU
+      hσ_smooth hσ fun b _ ↦ hfree (σ b))
+    hf₀ hf hsub hf₁ hf₂
 
 /-- `ContMDiffAt` form of `contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`. -/
 theorem contMDiffAt_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p) {x₀ : M}
@@ -365,8 +363,10 @@ theorem contMDiffAt_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p) {
     (hsub : IsSubmersionAt IP IB n p (f₁ x₀))
     (hf₁ : ContMDiffAt IM IP n f₁ x₀) (hf₂ : ContMDiffAt IM IP n f₂ x₀) :
     ContMDiffAt IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) x₀ :=
-  contMDiffWithinAt_actionDivisionOrOne_of_lieGroup hn hsmul hfree horbit hp hf.self_of_nhds
-    (nhdsWithin_univ x₀ ▸ hf) hsub hf₁ hf₂
+  contMDiffAt_actionDivisionOrOne_of_sectionCoord hp.continuous hfree horbit
+    (fun _ hU σ hσ_smooth hσ ↦ contMDiffOn_sectionCoord_of_lieGroup hn hsmul hp horbit hU
+      hσ_smooth hσ fun b _ ↦ hfree (σ b))
+    hf hsub hf₁ hf₂
 
 /-- `ContMDiffOn` form of `contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`. -/
 theorem contMDiffOn_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p) {s : Set M}
@@ -374,8 +374,10 @@ theorem contMDiffOn_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p) {
     (hsub : ∀ x ∈ s, IsSubmersionAt IP IB n p (f₁ x))
     (hf₁ : ContMDiffOn IM IP n f₁ s) (hf₂ : ContMDiffOn IM IP n f₂ s) :
     ContMDiffOn IM IG n (fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x)) s :=
-  fun x hx ↦ contMDiffWithinAt_actionDivisionOrOne_of_lieGroup hn hsmul hfree horbit hp (hf hx)
-    (eventually_mem_nhdsWithin.mono fun _ hy ↦ hf hy) (hsub x hx) (hf₁ x hx) (hf₂ x hx)
+  contMDiffOn_actionDivisionOrOne_of_sectionCoord hp.continuous hfree horbit
+    (fun _ hU σ hσ_smooth hσ ↦ contMDiffOn_sectionCoord_of_lieGroup hn hsmul hp horbit hU
+      hσ_smooth hσ fun b _ ↦ hfree (σ b))
+    hf hsub hf₁ hf₂
 
 /-- `ContMDiff` form of `contMDiffWithinAt_actionDivisionOrOne_of_lieGroup`. -/
 theorem contMDiff_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p)
@@ -383,8 +385,10 @@ theorem contMDiff_actionDivisionOrOne_of_lieGroup (hp : ContMDiff IP IB n p)
     (hsub : ∀ x : M, IsSubmersionAt IP IB n p (f₁ x))
     (hf₁ : ContMDiff IM IP n f₁) (hf₂ : ContMDiff IM IP n f₂) :
     ContMDiff IM IG n fun x ↦ actionDivisionOrOne horbit (f₁ x) (f₂ x) :=
-  fun x ↦ contMDiffAt_actionDivisionOrOne_of_lieGroup hn hsmul hfree horbit hp
-    (Eventually.of_forall hf) (hsub x) (hf₁ x) (hf₂ x)
+  contMDiff_actionDivisionOrOne_of_sectionCoord hp.continuous hfree horbit
+    (fun _ hU σ hσ_smooth hσ ↦ contMDiffOn_sectionCoord_of_lieGroup hn hsmul hp horbit hU
+      hσ_smooth hσ fun b _ ↦ hfree (σ b))
+    hf hsub hf₁ hf₂
 
 end ActionDivisionLieGroup
 
