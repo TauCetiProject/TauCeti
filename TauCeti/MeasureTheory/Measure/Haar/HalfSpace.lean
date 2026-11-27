@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.MeasureTheory.Measure.Haar.Basic
+public import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 public import TauCeti.MeasureTheory.Covering.EssentialBoundary.Basic
 import Mathlib.MeasureTheory.Covering.BesicovitchVectorSpace
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
@@ -53,6 +55,10 @@ almost-everywhere representative of a half-space.
   half-balls have positive measure and scale like the balls.
 * `MeasureTheory.Measure.inv_two_mul_addHaar_closedBall_le_addHaar_closedBall_inter_setOf_lt_inner`:
   density at least one half in the closed balls centred in the closed half-space.
+* `TauCeti.setAverage_ball_comp_hyperplaneReflection`: the reflection in the hyperplane carries
+  averages over balls to averages over the mirror balls.
+* `TauCeti.setAverage_ball_eq_setAverage_setOf_lt_inner_inter_ball`: a reflection-invariant
+  function has the same average over a ball centred on the hyperplane as over its upper half.
 * `TauCeti.hasDensityAt_setOf_inner_lt`: density one half on the boundary hyperplane.
 * `TauCeti.essentialBoundary_setOf_inner_lt`: the essential boundary is the hyperplane.
 
@@ -65,7 +71,7 @@ almost-everywhere representative of a half-space.
 public section
 
 open MeasureTheory Set
-open scoped RealInnerProductSpace
+open scoped ENNReal RealInnerProductSpace
 
 namespace TauCeti
 
@@ -261,6 +267,65 @@ theorem _root_.MeasureTheory.Measure.addHaar_real_setOf_lt_inner_inter_ball_eq_d
     ← μ.addHaar_real_closedBall_eq_addHaar_real_ball, μ.addHaar_real_closedBall x hρ,
     μ.addHaar_real_closedBall x hr.le, div_pow]
   field_simp
+
+/-- Averages over balls are carried by the reflection `ρ` in the hyperplane `{y | ⟪y, ν⟫ = c}`:
+for any additive Haar measure, the average of `f ∘ ρ` over `B(ρ x, r)` is the average of `f` over
+`B(x, r)`. -/
+theorem setAverage_ball_comp_hyperplaneReflection {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (ν : E) (c : ℝ) (f : E → G) (x : E) (r : ℝ) :
+    ⨍ y in Metric.ball (hyperplaneReflection ν c x) r, f (hyperplaneReflection ν c y) ∂μ =
+      ⨍ y in Metric.ball x r, f y ∂μ := by
+  have he : μ.map (hyperplaneReflection ν c).toHomeomorph.toMeasurableEquiv = (1 : ℝ≥0∞) • μ := by
+    rw [one_smul, Homeomorph.toMeasurableEquiv_coe, AffineIsometryEquiv.coe_toHomeomorph]
+    exact (measurePreserving_hyperplaneReflection μ ν c).map_eq
+  have hpre : hyperplaneReflection ν c ⁻¹' Metric.ball x r =
+      Metric.ball (hyperplaneReflection ν c x) r := by
+    simpa using (hyperplaneReflection ν c).toIsometryEquiv.preimage_ball x r
+  have h := setAverage_comp_preimage_of_map_eq_smul he one_ne_zero ENNReal.one_ne_top f
+    (Metric.ball x r)
+  rwa [Homeomorph.toMeasurableEquiv_coe, AffineIsometryEquiv.coe_toHomeomorph, hpre] at h
+
+/-- A function invariant under the reflection `ρ` in the hyperplane `{y | ⟪y, ν⟫ = c}` has the
+same average over a ball centred on the hyperplane as over its upper half
+`{y | c < ⟪y, ν⟫} ∩ B(x, r)`, for any additive Haar measure: `ρ` carries the upper half-ball onto
+the lower one, and the two halves have equal measure. -/
+theorem setAverage_ball_eq_setAverage_setOf_lt_inner_inter_ball (hν : ν ≠ 0) {c : ℝ} {x : E}
+    (hx : ⟪x, ν⟫ = c) {f : E → ℝ} (hf : ∀ y, f (hyperplaneReflection ν c y) = f y) {r : ℝ}
+    (hfi : IntegrableOn f (Metric.ball x r) μ) :
+    ⨍ y in Metric.ball x r, f y ∂μ = ⨍ y in {y | c < ⟪y, ν⟫} ∩ Metric.ball x r, f y ∂μ := by
+  set Hs : Set E := {y | c < ⟪y, ν⟫}
+  have hHm : MeasurableSet Hs :=
+    measurableSet_lt measurable_const (continuous_id.inner continuous_const).measurable
+  -- The reflection carries the lower half-ball onto the upper one.
+  have hpre : hyperplaneReflection ν c ⁻¹' (Hs ∩ Metric.ball x r) =
+      {y | ⟪y, ν⟫ < c} ∩ Metric.ball x r := by
+    ext y
+    simp only [mem_preimage, mem_inter_iff, hyperplaneReflection_mem_ball_iff hx, mem_ofPred_eq,
+      Hs, inner_hyperplaneReflection hν]
+    constructor <;> rintro ⟨h1, h2⟩ <;> exact ⟨by linarith, h2⟩
+  have hlow : ∫ y in Metric.ball x r \ Hs, f y ∂μ = ∫ y in Hs ∩ Metric.ball x r, f y ∂μ := by
+    have hae : (Metric.ball x r \ Hs : Set E) =ᵐ[μ] {y | ⟪y, ν⟫ < c} ∩ Metric.ball x r := by
+      rw [Set.sdiff_eq, inter_comm]
+      refine Filter.EventuallyEqSet.inter ?_ Filter.EventuallyEqSet.rfl
+      have : (Hsᶜ : Set E) = {y | ⟪y, ν⟫ ≤ c} := by ext y; simp [Hs]
+      rw [this]
+      exact setOf_inner_le_ae_eq_setOf_inner_lt hν c
+    rw [setIntegral_congr_set hae, ← hpre]
+    have h := (measurePreserving_hyperplaneReflection μ ν c).setIntegral_preimage_emb
+      (hyperplaneReflection ν c).toHomeomorph.measurableEmbedding f (Hs ∩ Metric.ball x r)
+    simp only [hf] at h
+    exact h
+  have hsplit := integral_inter_add_sdiff hHm hfi
+  have hmeas : μ.real (Metric.ball x r) = 2 * μ.real (Hs ∩ Metric.ball x r) := by
+    rw [measureReal_def, measureReal_def, μ.addHaar_setOf_lt_inner_inter_ball hν hx,
+      ENNReal.toReal_div, ENNReal.toReal_ofNat]
+    ring
+  rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, ← hsplit, hlow,
+    inter_comm (Metric.ball x r) Hs, hmeas]
+  rcases eq_or_ne (μ.real (Hs ∩ Metric.ball x r)) 0 with h0 | h0
+  · simp [h0]
+  · field_simp
+    ring
 
 /-- At every point of the boundary hyperplane of a half-space with nonzero normal, its
 density with respect to any additive Haar measure is one half. -/
