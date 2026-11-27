@@ -85,22 +85,11 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalf
 /-! ### Negative times as depths in the half-line -/
 
 /-- At a negative time `t`, the depth map `u ↦ normalRay (-u)` from `ℝ` to the half-line is a
-local diffeomorphism: near `t` it is the linear map `u ↦ -u` read in the half-line. -/
+local diffeomorphism: the normal ray at `-t > 0` composed with negation. -/
 private theorem isLocalDiffeomorphAt_normalRay_neg {t : ℝ} (ht : t < 0) :
-    IsLocalDiffeomorphAt 𝓘(ℝ) (𝓡∂ 1) ∞ (fun u ↦ EuclideanHalfSpace.normalRay (-u)) t := by
-  let L : ℝ ≃L[ℝ] EuclideanSpace ℝ (Fin 1) :=
-    (ContinuousLinearEquiv.neg ℝ).trans (PiLp.equivOfUnique 2 ℝ fun _ : Fin 1 ↦ ℝ).symm
-  have hL {u : ℝ} (hu : u < 0) : (EuclideanHalfSpace.normalRay (-u)).val = L u := by
-    ext i
-    rw [Subsingleton.elim i 0]
-    simp [L, max_eq_left (neg_nonneg.2 hu.le)]
-  refine isLocalDiffeomorphAt_of_writtenInExtChartAt BoundarylessManifold.isInteriorPoint ?_
-    (EuclideanHalfSpace.continuous_normalRay.comp continuous_neg).continuousAt ?_
-  · rw [ModelWithCorners.IsInteriorPoint, interior_range_modelWithCornersEuclideanHalfSpace]
-    simpa using ht
-  · refine (L.toDiffeomorph.isLocalDiffeomorph _).congr_of_eventuallyEq ?_
-    filter_upwards [Iio_mem_nhds ht] with u hu
-    simpa [writtenInExtChartAt] using hL hu
+    IsLocalDiffeomorphAt 𝓘(ℝ) (𝓡∂ 1) ∞ (fun u ↦ EuclideanHalfSpace.normalRay (-u)) t :=
+  IsLocalDiffeomorphAt.comp (hf := (ContinuousLinearEquiv.neg ℝ).toDiffeomorph.isLocalDiffeomorph t)
+    (hg := EuclideanHalfSpace.isLocalDiffeomorphAt_normalRay (neg_pos.2 ht))
 
 variable [T2Space M] [CompactSpace M]
 
