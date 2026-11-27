@@ -37,9 +37,10 @@ gives `H_*(Sⁿ) ⊗ H_*(ΩSⁿ)` in place of the homology of the path space, wh
 The chain maps evaluating a coefficient vector at a generator
 (`TauCeti.RowFiniteTwistingCocycle.coefficientEval`) and inserting a coefficient at a generator
 (`TauCeti.RowFiniteTwistingCocycle.coefficientSingle`) exhibit the twisted complex as a biproduct
-(`TauCeti.RowFiniteTwistingCocycle.coefficientBicone`), which the additive cohomology functor
-preserves. The graded pieces of the index filtration split likewise, over the generators of a
-single index (`TauCeti.indexGradedPieceHomologyIso`,
+(`TauCeti.RowFiniteTwistingCocycle.coefficientBicone`, a bilimit by
+`TauCeti.RowFiniteTwistingCocycle.isBilimitCoefficientBicone`), which the additive cohomology
+functor preserves. The graded pieces of the index filtration split likewise, over the generators
+of a single index (`TauCeti.indexGradedPieceHomologyIso`,
 `TauCeti.rowFiniteIndexGradedPieceHomologyIso`); here the generators have arbitrary indices and
 the whole twisted complex splits, because the cocycle acts by zero.
 
@@ -50,6 +51,7 @@ the whole twisted complex splits, because the cocycle acts by zero.
 * `TauCeti.RowFiniteTwistingCocycle.coefficientSingle`: the insertion at a generator.
 * `TauCeti.RowFiniteTwistingCocycle.coefficientBicone`: the twisted complex as the biproduct of
   the shifted coefficients.
+* `TauCeti.RowFiniteTwistingCocycle.isBilimitCoefficientBicone`: this bicone is a bilimit.
 * `TauCeti.RowFiniteTwistingCocycle.coefficientHomologyIsoOfForallOpSmulEqZero`: the cohomology of
   the twisted complex is the product of the shifted cohomologies of the coefficients.
 * `TauCeti.RowFiniteTwistingCocycle.coefficientHomologyEquivOfForallOpSmulEqZero`: the same, with
@@ -226,20 +228,14 @@ theorem coefficientSingle_comp_eval_self (x : P) :
     coefficientSingle hM hm x ≫ coefficientEval hM hm x = 𝟙 _ := by
   refine HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext (LinearMap.ext fun α ↦
     (shiftedModuleComplexXEquiv hM (ind x) n).injective (Subtype.ext ?_))
-  rw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-    shiftedModuleComplexXEquiv_coefficientEval_f,
-    coefficientCochainComplexXEquiv_coefficientSingle_f, Finsupp.single_eq_same,
-    HomologicalComplex.id_f, ModuleCat.id_apply]
+  simp
 
 /-- Inserting at `x` and evaluating at another generator `y` is zero. -/
 theorem coefficientSingle_comp_eval_of_ne {x y : P} (hxy : x ≠ y) :
     coefficientSingle hM hm x ≫ coefficientEval hM hm y = 0 := by
   refine HomologicalComplex.hom_ext _ _ fun n ↦ ModuleCat.hom_ext (LinearMap.ext fun α ↦
     (shiftedModuleComplexXEquiv hM (ind y) n).injective (Subtype.ext ?_))
-  rw [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-    shiftedModuleComplexXEquiv_coefficientEval_f,
-    coefficientCochainComplexXEquiv_coefficientSingle_f, Finsupp.single_eq_of_ne' hxy]
-  simp
+  simp [Finsupp.single_eq_of_ne' hxy]
 
 /-- The sum over the generators of evaluating and inserting is the identity of the twisted
 complex. -/
@@ -277,6 +273,11 @@ def coefficientBicone :
     · subst hxy
       exact coefficientSingle_comp_eval_self hM hm x
     · exact coefficientSingle_comp_eval_of_ne hM hm hxy
+
+/-- `TauCeti.RowFiniteTwistingCocycle.coefficientBicone` is a biproduct of complexes: evaluating
+and inserting at all generators sums to the identity. -/
+def isBilimitCoefficientBicone : (coefficientBicone hM hm).IsBilimit :=
+  isBilimitOfTotal _ (sum_coefficientEval_comp_single hM hm)
 
 /-- The image of `TauCeti.RowFiniteTwistingCocycle.coefficientBicone` in cohomology of degree `n`
 is a biproduct: the cohomology functor is additive, and evaluating and inserting at all generators
@@ -337,8 +338,8 @@ theorem coefficientHomologyEquivOfForallOpSmulEqZero_apply (n : ℤ)
   simp only [coefficientHomologyEquivOfForallOpSmulEqZero, LinearEquiv.trans_apply,
     LinearEquiv.piCongrRight_apply]
   rw [Iso.toLinearEquiv_apply, Iso.trans_hom, ConcreteCategory.comp_apply,
-    ModuleCat.piIsoPi_hom_ker_subtype_apply, ← ConcreteCategory.comp_apply,
-    coefficientHomologyIsoOfForallOpSmulEqZero_hom_π]
+    ModuleCat.piIsoPi_hom_ker_subtype_apply, ← ConcreteCategory.comp_apply]
+  simp
 
 /-- The inverse of `coefficientHomologyEquivOfForallOpSmulEqZero` sends a family of classes in
 `H^{n + ind x}(M)` to the sum of their images under the insertions at the generators `x`. -/
@@ -348,14 +349,8 @@ theorem coefficientHomologyEquivOfForallOpSmulEqZero_symm_apply (n : ℤ)
       ∑ x : P, (HomologicalComplex.homologyMap (coefficientSingle hM hm x) n).hom
         ((shiftedModuleComplexHomologyEquiv hM (ind x) n).symm (v x)) := by
   rw [coefficientHomologyEquivOfForallOpSmulEqZero, LinearEquiv.trans_symm, LinearEquiv.trans_apply,
-    Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply, Iso.trans_symm, Iso.trans_hom,
-    ConcreteCategory.comp_apply, Iso.symm_hom, Iso.symm_hom,
-    coefficientHomologyIsoOfForallOpSmulEqZero_inv]
-  simp only [ModuleCat.hom_sum, LinearMap.sum_apply, ModuleCat.hom_comp, LinearMap.comp_apply]
-  refine Finset.sum_congr rfl fun x _ ↦ congrArg _ ?_
-  rw [← ConcreteCategory.comp_apply, ModuleCat.piIsoPi_inv_kernel_ι]
-  simp only [ConcreteCategory.hom_ofHom, LinearEquiv.piCongrRight_symm, LinearMap.coe_proj,
-    Function.eval, LinearEquiv.piCongrRight_apply]
+    Iso.toLinearEquiv_symm, Iso.toLinearEquiv_apply]
+  simp [coefficientHomologyIsoOfForallOpSmulEqZero_inv, ← ConcreteCategory.comp_apply]
 
 end Homology
 
