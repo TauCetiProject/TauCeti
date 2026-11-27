@@ -40,6 +40,10 @@ noncomputable def polynomialExtension (ρ : Λ →ₐ[R] Matrix σ σ L) :
     split_ifs <;>
       simp [RingHom.polyToMatrix, matPolyEquiv_symm_apply_coeff, algebraMap_matrix_apply, *]
 
+/-- The underlying ring homomorphism of the extension is Mathlib's `RingHom.polyToMatrix`. -/
+theorem toRingHom_polynomialExtension (ρ : Λ →ₐ[R] Matrix σ σ L) :
+    (polynomialExtension ρ).toRingHom = ρ.toRingHom.polyToMatrix := (rfl)
+
 /-- Coefficients of the extension are obtained by applying the original matrix homomorphism. -/
 @[simp] theorem coeff_polynomialExtension_apply (ρ : Λ →ₐ[R] Matrix σ σ L) (p : Λ[X]) (s t : σ)
     (k : ℕ) : (polynomialExtension ρ p s t).coeff k = ρ (p.coeff k) s t := by
