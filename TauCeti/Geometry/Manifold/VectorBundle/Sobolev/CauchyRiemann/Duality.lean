@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Green
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Annihilator
 import TauCeti.Geometry.Manifold.Riemannian.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.ChartSection
 import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.PartitionOfUnity
 import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.ZeroOneGram
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChartHaar
@@ -108,6 +107,42 @@ local instance instIsContinuousRiemannianBundleTangentDuality :
 
 /-! ### Representing an annihilator in one chart -/
 
+omit [T2Space M] [MeasurableSpace M] [BorelSpace M] [LindelofSpace M] [FiniteDimensional ℝ F]
+  [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ F V]
+  [IsContMDiffRiemannianBundle 𝓘(ℝ, ℂ) ∞ ℂ fun x : M ↦ TangentSpace 𝓘(ℝ, ℂ) x] in
+/-- **The chart piece, pointwise.** If `R` represents `ρ⁻¹ g` through the Hilbert–Schmidt inner
+product in chart `i` on `Q`, `ρ` the chart density of the Riemannian volume against Lebesgue
+measure, then the one-form `η` reading as the antilinear maps with values `R z` at `1` satisfies
+`ρ z ⟪η, t⟫ = g z (tᵢ(z)(1))` at the point read at `z ∈ Q`, for every one-form `t` read as a
+complex antilinear map there. -/
+private theorem chartHaarDensity_mul_hilbertSchmidtInner_chartSection {i : Fin A.n} {Q : Set ℂ}
+    (hQ : Q ⊆ A.image i) {g : ℂ → F →L[ℝ] ℝ} {R : ℂ → F}
+    (hRg : ∀ z ∈ Q, ∀ a : ℂ →L[ℝ] F, (∀ w, a (Complex.I • w) = -(Complex.I • a w)) →
+      ((A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z)
+        (antilinearOfOneL F (R z))).hilbertSchmidtInner
+          ((A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z) a) =
+            ((chartHaarDensity volume (A.center i) z)⁻¹ • g z) (a 1))
+    {z : ℂ} (hz : z ∈ Q) (t : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x)
+    (ht : ∀ w, A.tangentHom.coord i t z (Complex.I • w) =
+      -(Complex.I • A.tangentHom.coord i t z w)) :
+    chartHaarDensity volume (A.center i) z *
+        (A.tangentHom.chartSection i (fun z ↦ antilinearOfOneL F (R z))
+          ((A.chart i).symm z)).hilbertSchmidtInner (t ((A.chart i).symm z)) =
+      g z (A.tangentHom.coord i t z 1) := by
+  have himage := A.tangentHom.image_subset_target_inter_preimage_baseSet i
+  simp only [image_tangentHom, chart_tangentHom] at himage
+  have hb := (himage (hQ hz)).2
+  have hco (u : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) :
+      (A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z) (A.tangentHom.coord i u z) =
+        u ((A.chart i).symm z) := by
+    have h := A.tangentHom.symmL_coord (i := i) (y := z) (by rw [chart_tangentHom]; exact hb) u
+    rwa [chart_tangentHom] at h
+  have hη : A.tangentHom.coord i (A.tangentHom.chartSection i
+      (fun z ↦ antilinearOfOneL F (R z))) z = antilinearOfOneL F (R z) :=
+    coord_chartSection _ (by rw [image_tangentHom]; exact hQ hz)
+  rw [← hco (A.tangentHom.chartSection i _), ← hco t, hη, hRg z hz _ ht, smul_apply, smul_eq_mul,
+    mul_inv_cancel_left₀ (chartHaarDensity_pos volume (himage (hQ hz)).1).ne']
+
 omit [T2Space M] in
 /-- **One chart of the representing form.** Let `Q₀ ⊆ Q₁` be open subsets of the image of chart
 `i`, `χ` a smooth function with support read in chart `i` inside `Q₀`, and `Λ` a functional on the
@@ -139,7 +174,7 @@ private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
             (SobolevSection.contMDiffSMulL A.tangentHom volume p 0 hχs w)) =
           ∫ x, (ζ x).hilbertSchmidtInner (s x) ∂riemannianVolume 𝓘(ℝ, ℂ) M := by
   have himage := A.tangentHom.image_subset_target_inter_preimage_baseSet i
-  rw [image_tangentHom] at himage
+  simp only [image_tangentHom, chart_tangentHom] at himage
   -- The values at `1` of the representing form, in chart `i`: `g / ρ` through the Gram form.
   have hρ (z : ℂ) (hz : z ∈ Q₁) : chartHaarDensity volume (A.center i) z ≠ 0 :=
     (chartHaarDensity_pos volume (himage (hQ₁ hz)).1).ne'
@@ -148,19 +183,12 @@ private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
     ((((contDiffOn_chartHaarDensity volume (A.center i)).mono
       fun z hz ↦ (himage (hQ₁ hz)).1).inv hρ).smul hg)
   set η := A.tangentHom.chartSection i (fun z ↦ antilinearOfOneL F (R z))
-  have hchart : A.tangentHom.chart i = A.chart i :=
-    (chart_hom (A := A.tangent) i).trans (chart_ofBaseSet i)
-  have hη (z : ℂ) (hz : z ∈ A.image i) : A.tangentHom.coord i η z = antilinearOfOneL F (R z) :=
-    coord_chartSection _ (by rwa [image_tangentHom])
   refine ⟨fun x ↦ χ x • η x, ?_, fun x ↦ ?_, fun w s hs ↦ ?_⟩
-  · refine contMDiff_smul_chartSection hχs Q₁.isOpen
-      (fun x hx ↦ ?_) ((antilinearOfOneL F).contDiff.comp_contDiffOn hR)
-    obtain ⟨z, hz, rfl⟩ := hχ hx
-    have hzi := hQ₁ (hQ₀₁ hz)
-    refine ⟨A.symm_mem_dom hzi, ?_⟩
-    rw [mem_preimage, hchart,
-      (A.chart i).right_inv (A.image_subset_target_inter_preimage_baseSet i hzi).1]
-    exact hQ₀₁ hz
+  · refine contMDiff_smul_chartSection hχs Q₁.isOpen (hχ.trans ?_)
+      ((antilinearOfOneL F).contDiff.comp_contDiffOn hR)
+    rintro _ ⟨z, hz, rfl⟩
+    exact ⟨A.symm_mem_dom (hQ₁ (hQ₀₁ hz)), by
+      simpa [(A.chart i).right_inv (himage (hQ₁ (hQ₀₁ hz))).1] using hQ₀₁ hz⟩
   · exact A.isZeroOneForm_smul_chartSection
       (fun _ _ ↦ ContinuousLinearMap.antilinearOfOneL_apply_I_smul _) (χ x) x
   · -- `w` vanishes off the points read in chart `i` inside `Q₁`, where `Λ` is represented by `θ`.
@@ -170,8 +198,7 @@ private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
     have hQ₁s : (Q₁ : Set ℂ) ⊆ A.tangentHom.sectionChartData.image i := by
       rwa [sectionChartData_image_tangentHom]
     rw [hrep _ hmem, integral_riemannianVolume_eq_setIntegral_chartHaarDensity volume
-      (α := A.center i) Q₁.isOpen
-      (fun z hz ↦ (A.image_subset_target_inter_preimage_baseSet i (hQ₁ hz)).1) fun x hx ↦ by
+      (α := A.center i) Q₁.isOpen (fun z hz ↦ (himage (hQ₁ hz)).1) fun x hx ↦ by
       beta_reduce
       rw [image_eq_zero_of_notMem_tsupport fun h ↦ hx (image_mono hQ₀₁ (hχ h)), zero_smul,
         ContinuousLinearMap.hilbertSchmidtInner_zero_left]]
@@ -186,20 +213,12 @@ private theorem exists_zeroOneForm_chart {i : Fin A.n} {Q₀ Q₁ : Opens ℂ}
       ae_restrict_of_ae_restrict_of_subset hQ₁ (hs i),
       ae_restrict_of_ae_restrict_of_subset hQ₁s (mem_zeroOneSobolevSections_iff.1 w.prop i),
       ae_restrict_mem Q₁.isOpen.measurableSet] with z hθz h₁ h₂ h₃ hw hz
-    have hzi := hQ₁ hz
-    rw [hchart] at h₂
-    have hco (t : Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x) :
-        (A.tangentHom.triv i).symmL ℝ ((A.chart i).symm z) (A.tangentHom.coord i t z) =
-          t ((A.chart i).symm z) := by
-      have h := A.tangentHom.symmL_coord (i := i) (y := z) (hchart ▸ (himage hzi).2) t
-      rwa [hchart] at h
-    rw [h₃] at hw
-    rw [hθz, h₁, h₂, h₃, map_smul, ContinuousLinearMap.complexAntilinearPartL_eq_self_iff.2 hw,
-      ContinuousLinearMap.hilbertSchmidtInner_smul_left,
-      ← hco η, ← hco s,
-      hη z hzi, hRg z hz _ hw]
-    simp only [smul_apply, map_smul, smul_eq_mul]
-    field_simp [hρ z hz]
+    simp only [chart_tangentHom, h₃] at h₂ hw
+    rw [hθz, h₁, h₂, map_smul, ContinuousLinearMap.complexAntilinearPartL_eq_self_iff.2 hw,
+      smul_apply, map_smul,
+      ← chartHaarDensity_mul_hilbertSchmidtInner_chartSection A hQ₁ hRg hz s hw]
+    simp only [smul_eq_mul, ContinuousLinearMap.hilbertSchmidtInner_smul_left]
+    ring
 
 /-! ### Annihilators of the range -/
 

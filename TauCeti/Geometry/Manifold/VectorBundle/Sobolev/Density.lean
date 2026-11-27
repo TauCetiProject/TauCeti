@@ -146,7 +146,7 @@ private theorem exists_mem_range_value_ae {i : Fin A.n} {ψ : M → ℝ}
     exact ContDiffOn.sum fun j _ ↦ (hf j).smul contDiffOn_const
   obtain ⟨s, hs⟩ : ∃ s : Cₛ^∞⟮𝓘(ℝ, E); F, V⟯, ⇑s = fun x ↦ ψ x • A.chartSection i G x :=
     ⟨⟨_, contMDiff_smul_chartSection hψ (A.image i).isOpen
-      (fun x hx ↦ ⟨hψi hx, A.mem_image.2 ⟨x, hψi hx, rfl⟩⟩) hGs⟩, rfl⟩
+      (hψi.trans (A.dom_subset_dom_inter_preimage_image i)) hGs⟩, rfl⟩
   have has (i' : Fin A.n) := chartValueL_ofContMDiffSection_ae A μ p k
     (ContMDiffSection.ofLE ENat.LEInfty.out s) i'
   simp only [ContMDiffSection.coe_ofLE, hs] at has
@@ -413,7 +413,7 @@ private theorem mem_closure_smoothSubmodule_of_contMDiffSMulL_eq (hp : p ≠ ⊤
       fun y ↦ (finBasis ℝ F).repr (f y) l :=
     (hgu l).trans (Eventually.of_forall fun y ↦ by simp only [f]; rw [Basis.repr_sum_self])
   have ht := contMDiff_smul_chartSection hψ (A.image i).isOpen
-    (fun x hx ↦ ⟨hψi hx, A.mem_image.2 ⟨x, hψi hx, rfl⟩⟩) hf
+    (hψi.trans (A.dom_subset_dom_inter_preimage_image i)) hf
   set s : Cₛ^k⟮𝓘(ℝ, E); F, V⟯ := ⟨_, ht.of_le (by exact_mod_cast le_top)⟩
   refine ⟨ofContMDiffSection A μ p k s, ⟨s, ht, rfl⟩, ?_⟩
   -- `χ` fixes the difference between the approximation and `z`, so the difference is controlled

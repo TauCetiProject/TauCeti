@@ -388,6 +388,11 @@ theorem image_subset_target_inter_preimage_baseSet (i : Fin A.n) :
     (A.image i : Set E) ⊆ (A.chart i).target ∩ (A.chart i).symm ⁻¹' (A.triv i).baseSet :=
   (A.image_subset_chart_image_closure_dom i).trans (A.chart_image_closure_dom_subset i)
 
+/-- Every point of the domain of chart `i` is read in chart `i` inside the chart image. -/
+theorem dom_subset_dom_inter_preimage_image (i : Fin A.n) :
+    A.dom i ⊆ A.dom i ∩ A.chart i ⁻¹' A.image i :=
+  fun x hx ↦ ⟨hx, A.mem_image.2 ⟨x, hx, rfl⟩⟩
+
 /-- The points of the domain of chart `i` read in chart `i` inside an open set form an open set. -/
 theorem isOpen_dom_inter_preimage (i : Fin A.n) {W : Set E} (hW : IsOpen W) :
     IsOpen (A.dom i ∩ A.chart i ⁻¹' W) :=

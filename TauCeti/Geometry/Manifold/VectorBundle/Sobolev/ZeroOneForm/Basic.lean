@@ -158,7 +158,8 @@ theorem isZeroOneForm_smul_chartSection {i : Fin A.n} {G : E → E →L[ℝ] F}
         coord_chartSection _ (by rwa [image_tangentHom])
       have h := (A.isZeroOneForm_iff_coord_tangentHom i η hy).2 fun v ↦ by rw [hη]; exact hG _ hy v
       rwa [(A.chart i).left_inv (A.dom_subset_chart_source i hx)] at h
-    · rw [show η x = 0 from chartSection_eq_zero fun h ↦ (hx h).elim]
+    · have h0 : η x = 0 := chartSection_eq_zero fun h ↦ (hx h).elim
+      rw [h0]
       exact isZeroOneForm_iff.2 fun v ↦ by simp
   refine isZeroOneForm_iff.2 fun v ↦ ?_
   simp only [smul_apply, isZeroOneForm_iff.1 hηx v, smul_neg, smul_comm c Complex.I]

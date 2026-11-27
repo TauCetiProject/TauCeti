@@ -59,12 +59,21 @@ def chartHaarDensity (y : E) : ℝ :=
   (Measure.addHaarScalarFactor (Module.finBasis ℝ E).addHaar μ : ℝ) *
     chartVolumeDensity (I := 𝓘(ℝ, E)) α ((chartAt E α).symm y)
 
+/-- The chart density is the chart volume density at the point read at `y`, times the constant
+comparing the Haar measure of `Module.finBasis ℝ E` with `μ`. -/
+theorem chartHaarDensity_def (y : E) :
+    chartHaarDensity μ α y =
+      (Measure.addHaarScalarFactor (Module.finBasis ℝ E).addHaar μ : ℝ) *
+        chartVolumeDensity (I := 𝓘(ℝ, E)) α ((chartAt E α).symm y) :=
+  (rfl)
+
 variable {α}
 
 /-- The chart density is positive on the chart target. -/
 theorem chartHaarDensity_pos {y : E} (hy : y ∈ (chartAt E α).target) :
-    0 < chartHaarDensity μ α y :=
-  mul_pos (NNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _))
+    0 < chartHaarDensity μ α y := by
+  rw [chartHaarDensity_def]
+  exact mul_pos (NNReal.coe_pos.2 (Measure.addHaarScalarFactor_pos_of_isAddHaarMeasure _ _))
     (chartVolumeDensity_pos _ (by
       simpa only [TangentBundle.trivializationAt_baseSet] using (chartAt E α).map_target hy))
 
@@ -79,7 +88,8 @@ theorem contDiffOn_chartHaarDensity {n : ℕ∞ω} [IsManifold 𝓘(ℝ, E) (n +
     (contMDiffOn_chartVolumeDensity α).comp contMDiffOn_chart_symm fun y hy ↦ by
       rw [mem_preimage, TangentBundle.trivializationAt_baseSet]
       exact (chartAt E α).map_target hy
-  exact contDiffOn_const.mul (contMDiffOn_iff_contDiffOn.1 h)
+  exact (contDiffOn_const.mul (contMDiffOn_iff_contDiffOn.1 h)).congr fun y _ ↦
+    chartHaarDensity_def μ α y
 
 variable [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace 𝓘(ℝ, E) x)]
@@ -103,12 +113,13 @@ theorem integral_riemannianVolume_eq_setIntegral_chartHaarDensity {G : Type*}
     extChartAt_modelWithCornersSelf_eq]
   simp only [OpenPartialHomeomorph.coe_toPartialEquiv,
     OpenPartialHomeomorph.coe_toPartialEquiv_symm]
+  -- The chart and its underlying partial equivalence are the same function.
   rw [show chartAt E α '' ((chartAt E α).symm '' Q) = Q from
       (chartAt E α).toPartialEquiv.image_symm_image_of_subset_target hQt,
     Module.Basis.setIntegral_addHaar_congr_measurableSpace _ _ _ _ _ _ ‹BorelSpace E›,
     Measure.isAddLeftInvariant_eq_smul (Module.finBasis ℝ E).addHaar μ,
     Measure.restrict_smul, integral_smul_nnreal_measure, NNReal.smul_def, ← integral_smul]
   refine setIntegral_congr_fun hQ.measurableSet fun y _ ↦ ?_
-  simp only [chartHaarDensity, smul_smul]
+  simp only [chartHaarDensity_def, smul_smul]
 
 end TauCeti

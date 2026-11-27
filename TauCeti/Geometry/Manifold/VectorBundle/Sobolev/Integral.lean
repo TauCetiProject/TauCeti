@@ -108,9 +108,7 @@ private theorem apply_eq_comp_symmL_apply_coord {i : Fin A.n} {y : E} (hy : y �
     (s : ∀ x, V x) :
     L ((A.chart i).symm y) (s ((A.chart i).symm y)) =
       (L ((A.chart i).symm y) ∘L (A.triv i).symmL ℝ ((A.chart i).symm y)) (A.coord i s y) := by
-  have hb := A.dom_subset_baseSet i (A.symm_mem_dom hy)
-  rw [ContinuousLinearMap.comp_apply, A.coord_def, Trivialization.symmL_apply _ hb,
-    Trivialization.symm_apply_apply_mk _ hb]
+  rw [ContinuousLinearMap.comp_apply, A.symmL_coord (A.dom_subset_baseSet i (A.symm_mem_dom hy))]
 
 end Chart
 
