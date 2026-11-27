@@ -21,9 +21,9 @@ whose estimates are in terms of `re z`, is controlled in a sector.
 
 ## Main results
 
-* `Complex.isTheta_re_norm_principal_abs_arg_le`: for `θ < π / 2`, `re z = Θ(‖z‖)` on the sector
+* `TauCeti.isTheta_re_norm_principal_abs_arg_le`: for `θ < π / 2`, `re z = Θ(‖z‖)` on the sector
   `|arg z| ≤ θ`.
-* `Complex.tendsto_re_cobounded_inf_principal_abs_arg_le`: for `θ < π / 2`, `re z → +∞` as
+* `TauCeti.tendsto_re_cobounded_inf_principal_abs_arg_le`: for `θ < π / 2`, `re z → +∞` as
   `z → ∞` in the sector `|arg z| ≤ θ`.
 
 The comparison is adapted from the lean-DLMF project (<https://github.com/bjbraams/lean-DLMF>),
@@ -33,9 +33,9 @@ file `DLMFMathlib/Analysis/Asymptotics/WatsonSector.lean`, where the sector is w
 
 public section
 
-open Filter Asymptotics Bornology Real
+open Filter Asymptotics Bornology Real Complex
 
-namespace Complex
+namespace TauCeti
 
 /-- On the closed sector `|arg z| ≤ θ` with `θ < π / 2`, the real part is comparable to the
 norm: `re z = Θ(‖z‖)`. -/
@@ -46,7 +46,7 @@ theorem isTheta_re_norm_principal_abs_arg_le {θ : ℝ} (hθ : θ < π / 2) :
   have hcos : 0 < Real.cos (max θ 0) :=
     cos_pos_of_mem_Ioo ⟨by linarith [le_max_right θ 0, pi_pos], hθ'⟩
   have hre (z : ℂ) (hz : |arg z| ≤ θ) : ‖z‖ * Real.cos (max θ 0) ≤ z.re :=
-    (TauCeti.arg_mem_Icc_iff_norm_mul_cos_le_re ⟨le_max_right θ 0, by linarith [pi_pos]⟩).mp
+    (arg_mem_Icc_iff_norm_mul_cos_le_re ⟨le_max_right θ 0, by linarith [pi_pos]⟩).mp
       (abs_le.mp (hz.trans (le_max_left θ 0)))
   refine ⟨IsBigO.of_bound 1 (Eventually.of_forall fun z => ?_),
     IsBigO.of_bound (Real.cos (max θ 0))⁻¹ (eventually_principal.mpr fun z hz => ?_)⟩
@@ -65,4 +65,4 @@ theorem tendsto_re_cobounded_inf_principal_abs_arg_le {θ : ℝ} (hθ : θ < π 
   -- on the sector the real part is nonnegative, so it is its own norm
   exact Real.norm_of_nonneg (abs_arg_le_pi_div_two_iff.mp (hz.trans hθ.le))
 
-end Complex
+end TauCeti
