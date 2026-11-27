@@ -22,10 +22,10 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Function.Holder
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
+import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.ENorm
 
 /-!
@@ -376,17 +376,15 @@ theorem tendsto_integral_bilin_of_tendsto_lintegral_enorm_sub
     Tendsto (fun i => ∫ x, P ((φ : E → W₀) x) (g i x) ∂μ) l
       (𝓝 (∫ x, P ((φ : E → W₀) x) (g₀ x) ∂μ)) := by
   obtain ⟨M, hM⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
-  have hlimM : Tendsto (fun i => ENNReal.ofReal (‖P‖ * M) *
-      ∫⁻ x in s, ‖g i x - g₀ x‖ₑ ∂μ) l (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul hlim (Or.inr ENNReal.ofReal_ne_top)
-  refine tendsto_integral_of_L1 _ hg₀ hg (tendsto_of_tendsto_of_tendsto_of_le_of_le
-    tendsto_const_nhds hlimM (fun _ => zero_le) fun i => ?_)
-  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine (lintegral_mono fun x => ?_).trans (lintegral_indicator_le _ _)
+  have hind : Tendsto (fun i => ∫⁻ x, ‖s.indicator (g i) x - s.indicator g₀ x‖ₑ ∂μ) l (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hlim (fun _ => zero_le)
+      fun i => (lintegral_mono fun x => by
+        by_cases hx : x ∈ s <;> simp [hx]).trans (lintegral_indicator_le _ s)
+  have hlimP := P.tendsto_lintegral_enorm_bilin_sub_of_norm_le (ae_of_all _ hM) hind
+  refine tendsto_integral_of_L1 _ hg₀ hg (hlimP.congr fun i => lintegral_congr fun x => ?_)
   by_cases hxs : x ∈ s
-  · rw [Set.indicator_of_mem hxs, ← map_sub]
-    exact P.enorm_apply_apply_le_of_norm_le (hM x)
-  · simp [Set.indicator_of_notMem hxs, image_eq_zero_of_notMem_tsupport fun h => hxs (hφs h)]
+  · simp [hxs]
+  · simp [hxs, image_eq_zero_of_notMem_tsupport fun h => hxs (hφs h)]
 
 /-- Pairing a `C^n` test function `φ` through `P` against `x ↦ A i x (u x)` converges to
 `∫ x, P (φ x) (B x (u x)) ∂μ` when `A i → B` uniformly on `tsupport φ`, `A i` is eventually

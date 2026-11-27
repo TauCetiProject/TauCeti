@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
+import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Consequences of dominated convergence for Lebesgue integrals
@@ -27,7 +29,12 @@ is pointwise and the vector-valued factor converges only in `L¹`.
 
 * `TauCeti.tendsto_lintegral_zero_of_le_add`: the integral of a function bounded by the sum of
   two functions with integrals tending to `0` tends to `0`.
+* `TauCeti.tendsto_lintegral_zero_of_le_const_mul`: the integral of a function bounded by a finite
+  constant multiple of a function whose integrals tend to `0` tends to `0`.
 * `TauCeti.tendsto_setLIntegral_enorm_add_sub`: `L¹` convergence on a set is preserved by sums.
+* `ContinuousLinearMap.tendsto_lintegral_enorm_bilin_sub_of_norm_le` and
+  `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_sub_of_norm_le`: pairing an almost
+  everywhere bounded left factor with an `L¹`-convergent right factor preserves `L¹` convergence.
 * `TauCeti.tendsto_lintegral_enorm_smul_sub`: bounded, almost everywhere convergent scalar
   coefficients preserve `L¹` convergence in any seminormed module.
 * `TauCeti.limsup_setLIntegral_le`: `limsup ∫⁻_{s n} f ≤ ∫⁻_{limsup s n} f` when the `s n` lie
@@ -59,6 +66,19 @@ theorem tendsto_lintegral_zero_of_le_add {ι : Type*} {l : Filter ι} {f g h : �
   rw [← lintegral_add_left' hgi]
   exact lintegral_mono_ae hi
 
+/-- If eventually `f i ≤ᵐ[μ] (c * g i ·)` for a finite constant `c ≠ ∞`, and the Lebesgue
+integrals of `g i` tend to `0`, then so do those of `f i`. -/
+theorem tendsto_lintegral_zero_of_le_const_mul {ι : Type*} {l : Filter ι}
+    {f g : ι → α → ℝ≥0∞} {c : ℝ≥0∞} (hc : c ≠ ∞)
+    (hfg : ∀ᶠ i in l, f i ≤ᵐ[μ] fun x ↦ c * g i x)
+    (hg : Tendsto (fun i ↦ ∫⁻ x, g i x ∂μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫⁻ x, f i x ∂μ) l (𝓝 0) := by
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds
+    (by simpa using ENNReal.Tendsto.const_mul hg (Or.inr hc)) (.of_forall fun _ ↦ zero_le) ?_
+  filter_upwards [hfg] with i hi
+  rw [← lintegral_const_mul' _ _ hc]
+  exact lintegral_mono_ae hi
+
 /-- If two families converge in `L¹` on `W`, so does their sum. Only the errors of the first
 family need to be almost everywhere strongly measurable. -/
 theorem tendsto_setLIntegral_enorm_add_sub {H ι : Type*} [NormedAddCommGroup H] {W : Set α}
@@ -71,6 +91,42 @@ theorem tendsto_setLIntegral_enorm_add_sub {H ι : Type*} [NormedAddCommGroup H]
     (.of_forall fun n ↦ .of_forall fun x ↦ by
       simpa only [Pi.add_apply, add_sub_add_comm] using eNorm_add_le _ _)
     (.of_forall fun n ↦ (ha n).eNorm) h₁ h₂
+
+/-- If `f₀` is almost everywhere bounded in norm and `g i → g₀` in `L¹`, then
+`B (f₀ ·) (g i ·) → B (f₀ ·) (g₀ ·)` in `L¹`. -/
+theorem _root_.ContinuousLinearMap.tendsto_lintegral_enorm_bilin_sub_of_norm_le
+    {𝕜₁ 𝕜₂ 𝕜₃ E F H ι : Type*}
+    [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+    [SeminormedAddCommGroup H] [NormedSpace 𝕜₃ H]
+    {σ₁₃ : 𝕜₁ →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+    (B : E →SL[σ₁₃] F →SL[σ₂₃] H) {f₀ : α → E} {C : ℝ} (hC : ∀ᵐ x ∂μ, ‖f₀ x‖ ≤ C)
+    {l : Filter ι} {g : ι → α → F} {g₀ : α → F}
+    (hg : Tendsto (fun i ↦ ∫⁻ x, ‖g i x - g₀ x‖ₑ ∂μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫⁻ x, ‖B (f₀ x) (g i x) - B (f₀ x) (g₀ x)‖ₑ ∂μ) l (𝓝 0) :=
+  tendsto_lintegral_zero_of_le_const_mul (c := ENNReal.ofReal (‖B‖ * C)) ENNReal.ofReal_ne_top
+    (.of_forall fun _ ↦ hC.mono fun _ hx ↦ by
+      dsimp only
+      rw [← ContinuousLinearMap.map_sub]
+      exact B.enorm_apply_apply_le_of_norm_le hx)
+    hg
+
+/-- If `f₀` is bounded in norm on a measurable set `s` and `g i → g₀` in `L¹(s)`, then
+`B (f₀ ·) (g i ·) → B (f₀ ·) (g₀ ·)` in `L¹(s)`. -/
+theorem _root_.ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_sub_of_norm_le
+    {𝕜₁ 𝕜₂ 𝕜₃ E F H ι : Type*}
+    [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+    [SeminormedAddCommGroup H] [NormedSpace 𝕜₃ H]
+    {σ₁₃ : 𝕜₁ →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
+    (B : E →SL[σ₁₃] F →SL[σ₂₃] H) {s : Set α} (hs : MeasurableSet s)
+    {f₀ : α → E} {C : ℝ} (hC : ∀ x ∈ s, ‖f₀ x‖ ≤ C)
+    {l : Filter ι} {g : ι → α → F} {g₀ : α → F}
+    (hg : Tendsto (fun i ↦ ∫⁻ x in s, ‖g i x - g₀ x‖ₑ ∂μ) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫⁻ x in s, ‖B (f₀ x) (g i x) - B (f₀ x) (g₀ x)‖ₑ ∂μ) l (𝓝 0) :=
+  B.tendsto_lintegral_enorm_bilin_sub_of_norm_le (ae_restrict_of_forall_mem hs hC) hg
 
 /-- If bounded coefficients `c i` converge almost everywhere to `c₀` and `g i → g₀` in `L¹`,
 then `c i • g i → c₀ • g₀` in `L¹`. The coefficients lie in any seminormed ring `𝕜` and the

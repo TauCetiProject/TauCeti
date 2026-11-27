@@ -13,11 +13,11 @@ import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.LineDeriv.Bilinear
 import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Sobolev.Mollification.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
 # Mixed-exponent products of local Sobolev maps on planar domains
@@ -87,25 +87,6 @@ section Endpoint
 
 open Filter Set
 open scoped Convolution Distributions LineDeriv Topology
-
-omit [FiniteDimensional ℝ G] in
-/-- If `f₀` is bounded on a measurable set `s` and `g_m → g` in `L¹(s)`, then `B(f₀, g_m) →
-B(f₀, g)` in `L¹(s)`. -/
-private theorem tendsto_setLIntegral_enorm_bilin_sub_of_bound
-    {α : Type*} [MeasurableSpace α] {μ : Measure α} {s : Set α} (hs : MeasurableSet s)
-    (B : F →L[ℝ] G →L[ℝ] H) {f₀ : α → F} {C : ℝ} (hC : ∀ x ∈ s, ‖f₀ x‖ ≤ C)
-    {ι : Type*} {l : Filter ι} {g_m : ι → α → G} {g : α → G}
-    (hg : Tendsto (fun m => ∫⁻ x in s, ‖g_m m x - g x‖ₑ ∂μ) l (𝓝 0)) :
-    Tendsto (fun m => ∫⁻ x in s, ‖B (f₀ x) (g_m m x) - B (f₀ x) (g x)‖ₑ ∂μ) l (𝓝 0) := by
-  have hmul : Tendsto (fun m => ENNReal.ofReal (‖B‖ * C) * ∫⁻ x in s, ‖g_m m x - g x‖ₑ ∂μ)
-      l (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul hg (Or.inr ENNReal.ofReal_ne_top)
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hmul (fun _ => zero_le)
-    fun m => ?_
-  rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-  refine setLIntegral_mono_ae' hs (.of_forall fun x hx => ?_)
-  rw [← ContinuousLinearMap.map_sub]
-  exact B.enorm_apply_apply_le_of_norm_le (hC x hx)
 
 omit [FiniteDimensional ℝ G] in
 /-- Extending a locally integrable field on `Ω` by zero outside a relatively compact open subset
@@ -196,36 +177,16 @@ private theorem hasWeakLineDerivOn_bilin_of_hasLineDerivAt_left
   have hC₂' : ∀ z ∈ (W₀ : Set ℂ), ‖f'₀ z‖ ≤ C₂ := fun z hz => hC₂ z (subset_closure hz)
   have hgm_lim := tendsto_lintegral_enorm_normed_convolution_sub_of_subset hW₀W' hρ0 hg_int
   have hg'm_lim := tendsto_lintegral_enorm_normed_convolution_sub_of_subset hW₀W' hρ0 hg'_int
-  have hL₁ := tendsto_setLIntegral_enorm_bilin_sub_of_bound W₀.isOpen.measurableSet B hC₁' hgm_lim
+  have hL₁ := B.tendsto_setLIntegral_enorm_bilin_sub_of_norm_le W₀.isOpen.measurableSet hC₁' hgm_lim
   have hL₂ : Tendsto (fun m => ∫⁻ z in (W₀ : Set ℂ),
       ‖(B (f'₀ z) (g_m m z) + B (f₀ z) (g'_m m z)) -
-        (B (f'₀ z) (g z) + B (f₀ z) (g' z))‖ₑ) atTop (𝓝 0) := by
-    have hm1 :=
-      tendsto_setLIntegral_enorm_bilin_sub_of_bound W₀.isOpen.measurableSet B hC₂' hgm_lim
-    have hm2 :=
-      tendsto_setLIntegral_enorm_bilin_sub_of_bound W₀.isOpen.measurableSet B hC₁' hg'm_lim
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-      (by simpa using hm1.add hm2) (fun _ => zero_le) fun m => ?_
-    have hint : AEMeasurable (fun z => ‖B (f'₀ z) (g_m m z) - B (f'₀ z) (g z)‖ₑ)
-        (volume.restrict (W₀ : Set ℂ)) :=
-      ((B.continuous₂.comp (hf'₀c.prodMk (hgm_cont m))).aestronglyMeasurable.sub
-        hBf'_g.aestronglyMeasurable).eNorm
-    calc ∫⁻ z in (W₀ : Set ℂ),
-          ‖(B (f'₀ z) (g_m m z) + B (f₀ z) (g'_m m z)) -
-            (B (f'₀ z) (g z) + B (f₀ z) (g' z))‖ₑ
-        ≤ ∫⁻ z in (W₀ : Set ℂ),
-            (‖B (f'₀ z) (g_m m z) - B (f'₀ z) (g z)‖ₑ +
-              ‖B (f₀ z) (g'_m m z) - B (f₀ z) (g' z)‖ₑ) := by
-          refine setLIntegral_mono_ae' W₀.isOpen.measurableSet (.of_forall fun z _ => ?_)
-          have hsub : (B (f'₀ z) (g_m m z) + B (f₀ z) (g'_m m z)) -
-              (B (f'₀ z) (g z) + B (f₀ z) (g' z)) =
-              (B (f'₀ z) (g_m m z) - B (f'₀ z) (g z)) +
-                (B (f₀ z) (g'_m m z) - B (f₀ z) (g' z)) := by abel
-          rw [hsub]
-          exact eNorm_add_le _ _
-      _ = (∫⁻ z in (W₀ : Set ℂ), ‖B (f'₀ z) (g_m m z) - B (f'₀ z) (g z)‖ₑ) +
-            ∫⁻ z in (W₀ : Set ℂ), ‖B (f₀ z) (g'_m m z) - B (f₀ z) (g' z)‖ₑ :=
-          lintegral_add_left' hint _
+        (B (f'₀ z) (g z) + B (f₀ z) (g' z))‖ₑ) atTop (𝓝 0) :=
+    tendsto_setLIntegral_enorm_add_sub
+      (a := fun m z => B (f'₀ z) (g_m m z)) (b := fun m z => B (f₀ z) (g'_m m z))
+      (fun m => (B.continuous₂.comp (hf'₀c.prodMk (hgm_cont m))).aestronglyMeasurable.sub
+        hBf'_g.aestronglyMeasurable)
+      (B.tendsto_setLIntegral_enorm_bilin_sub_of_norm_le W₀.isOpen.measurableSet hC₂' hgm_lim)
+      (B.tendsto_setLIntegral_enorm_bilin_sub_of_norm_le W₀.isOpen.measurableSet hC₁' hg'm_lim)
   exact hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub
     hBf_g (hBf'_g.add hBf_g') hweak_m hL₁ hL₂
 
