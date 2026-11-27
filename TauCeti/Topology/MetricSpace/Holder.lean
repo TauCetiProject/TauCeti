@@ -472,6 +472,17 @@ theorem HolderOnWith.smul {X Y 𝕜 : Type*} [PseudoMetricSpace X] [SeminormedAd
     {s : Set X} (a : 𝕜) (hf : HolderOnWith C r f s) : HolderOnWith (C * ‖a‖₊) r (a • f) s :=
   HolderWith.restrict_iff.1 (hf.holderWith.smul a)
 
+/-- The product `fun x ↦ f x • v` of a scalar function that is Hölder on `s` with a fixed vector `v`
+is Hölder on `s`, with the constant multiplied by `‖v‖₊`. -/
+theorem HolderOnWith.smul_const {X 𝕜 Y : Type*} [PseudoMetricSpace X] [SeminormedRing 𝕜]
+    [SeminormedAddCommGroup Y] [Module 𝕜 Y] [IsBoundedSMul 𝕜 Y] {C r : ℝ≥0} {f : X → 𝕜}
+    {s : Set X} (hf : HolderOnWith C r f s) (v : Y) :
+    HolderOnWith (C * ‖v‖₊) r (fun x ↦ f x • v) s :=
+  HolderOnWith.of_dist_le fun x hx y hy ↦ by
+    rw [dist_eq_norm, ← sub_smul, NNReal.coe_mul, coe_nnNorm, mul_right_comm]
+    exact (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_right
+      (by rw [← dist_eq_norm]; exact hf.dist_le hx hy) (norm_nonneg v))
+
 /-- The second differences of an `r`-Hölder function with constant `C` on a normed group are at
 most `2 C ‖h‖ ^ r`. -/
 theorem HolderWith.norm_add_add_sub_two_nsmul_le {X Y : Type*} [SeminormedAddCommGroup X]

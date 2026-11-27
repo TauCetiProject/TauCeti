@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic
+public import TauCeti.Analysis.Pseudodifferential.Manifold.Elliptic.Basic
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Smoothing
 import TauCeti.Analysis.Pseudodifferential.Manifold.AsymptoticSum
 import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
