@@ -9,7 +9,7 @@ public import Mathlib.Data.ZMod.Units
 public import TauCeti.Algebra.Ring.Idempotent.Units
 public import TauCeti.Data.ZMod.Divisibility
 public import TauCeti.Data.Nat.ExactDivisor
-public import Mathlib.Algebra.Group.Prod
+public import TauCeti.Data.ZMod.ChineseRemainder
 
 /-!
 # The Chinese remainder splitting of `ZMod N` at an exact divisor
@@ -110,7 +110,8 @@ theorem ringEquivProd_apply (h : Q ∥ N) (x : ZMod N) :
 modulo `N` is identified with its reductions modulo `Q` and modulo `N / Q`. -/
 noncomputable def unitsEquivProd (h : Q ∥ N) :
     (ZMod N)ˣ ≃* (ZMod Q)ˣ × (ZMod (N / Q))ˣ :=
-  (Units.mapEquiv h.ringEquivProd.toMulEquiv).trans MulEquiv.prodUnits
+  (Units.mapEquiv (ZMod.ringEquivCongr (Nat.mul_div_cancel' h.dvd).symm).toMulEquiv).trans
+    (ZMod.unitsChineseRemainder h.coprime)
 
 /-- The first component of the unit-group Chinese remainder equivalence is reduction modulo the
 exact divisor. -/
@@ -135,17 +136,18 @@ theorem eq_mul_comp_unitsMap {G : Type*} [CommMonoid G] (h : Q ∥ N)
       ((χ.comp h.unitsEquivProd.symm.toMonoidHom).comp
         (MonoidHom.inr (ZMod Q)ˣ (ZMod (N / Q))ˣ)).comp
           (ZMod.unitsMap (Nat.div_dvd_of_dvd h.dvd)) := by
-  let χ' := χ.comp h.unitsEquivProd.symm.toMonoidHom
-  apply MonoidHom.ext
-  intro u
-  have hu := DFunLike.congr_fun (MonoidHom.coprod_unique χ') (h.unitsEquivProd u)
-  calc
-    χ u = χ' (h.unitsEquivProd u) := by simp [χ']
-    _ = (χ'.comp (MonoidHom.inl _ _)) (h.unitsEquivProd u).1 *
-        (χ'.comp (MonoidHom.inr _ _)) (h.unitsEquivProd u).2 := hu.symm
-    _ = _ := by
-      simp only [unitsEquivProd_apply_fst, unitsEquivProd_apply_snd,
-        MonoidHom.mul_apply, MonoidHom.comp_apply, χ']
+  -- Transport `χ` to level `Q * (N / Q)` and split it there.
+  let c := Units.mapEquiv (ZMod.ringEquivCongr (Nat.mul_div_cancel' h.dvd).symm).toMulEquiv
+  refine MonoidHom.ext fun u ↦ ?_
+  have hu := DFunLike.congr_fun
+    (ZMod.eq_mul_comp_unitsMap_of_coprime h.coprime (χ.comp c.symm.toMonoidHom)) (c u)
+  simp only [MonoidHom.mul_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.symm_apply_apply] at hu ⊢
+  rw [← ZMod.unitsChineseRemainder_apply_fst h.coprime,
+    ← ZMod.unitsChineseRemainder_apply_snd h.coprime] at hu
+  rw [← h.unitsEquivProd_apply_fst, ← h.unitsEquivProd_apply_snd]
+  -- `h.unitsEquivProd` is `c` followed by `ZMod.unitsChineseRemainder`, by definition.
+  exact hu
 
 /-- **An element of `ZMod N` is determined by its residues modulo `Q` and modulo `N / Q`**, for an
 exact divisor `Q` of `N`: the injectivity half of the Chinese remainder theorem. -/

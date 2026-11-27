@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+import TauCeti.Data.ZMod.ChineseRemainder
 import TauCeti.Data.ZMod.Units
 import TauCeti.NumberTheory.MulChar.Basic
 
@@ -82,6 +83,10 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
 * `DirichletCharacter.changeLevel_mul`: raising the levels of the factors raises their common-level
   product; `DirichletCharacter.changeLevel_trans_mul_toUnitHom` reads raising a product through an
   intermediate level on unit homomorphisms.
+* `DirichletCharacter.exists_eq_changeLevel_mul_of_coprime`: at a product of coprime levels, a
+  character is the product of lifts from the two levels;
+  `DirichletCharacter.exists_eq_changeLevel_mul_of_coprime_of_sq_eq_one` keeps order two in the
+  factors.
 * `DirichletCharacter.mul_apply_neg_one`: the common-level product multiplies the values at `-1`.
 * `DirichletCharacter.changeLevel_apply_neg_one`,
   `DirichletCharacter.primitiveCharacter_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`,
@@ -599,6 +604,45 @@ theorem changeLevel_trans_mul_toUnitHom {R : Type*} [CommMonoidWithZero R] {a b 
     (changeLevel (h₁.trans h) χ₁ * changeLevel (h₂.trans h) χ₂).toUnitHom =
       (changeLevel h₁ χ₁ * changeLevel h₂ χ₂).toUnitHom.comp (ZMod.unitsMap h) := by
   rw [changeLevel_trans χ₁ h₁ h, changeLevel_trans χ₂ h₂ h, ← map_mul, changeLevel_toUnitHom]
+
+/-- At a product of coprime levels, every Dirichlet character is the product of lifts of
+characters from the two levels. -/
+theorem exists_eq_changeLevel_mul_of_coprime {R : Type*} [CommMonoidWithZero R] {M N : ℕ}
+    (χ : DirichletCharacter R (M * N)) (hMN : M.Coprime N) :
+    ∃ ψ : DirichletCharacter R M, ∃ φ : DirichletCharacter R N,
+      χ = ψ.changeLevel (dvd_mul_right M N) * φ.changeLevel (dvd_mul_left N M) := by
+  let f := χ.toUnitHom.comp (ZMod.unitsChineseRemainder hMN).symm.toMonoidHom
+  refine ⟨MulChar.ofUnitHom (f.comp (MonoidHom.inl _ _)),
+    MulChar.ofUnitHom (f.comp (MonoidHom.inr _ _)), MulChar.ext fun u ↦ ?_⟩
+  rw [MulChar.mul_apply, changeLevel_apply_unitsMap, changeLevel_apply_unitsMap,
+    MulChar.ofUnitHom_coe, MulChar.ofUnitHom_coe, ← Units.val_mul,
+    ← MonoidHom.comp_apply _ (ZMod.unitsMap (dvd_mul_right M N)),
+    ← MonoidHom.comp_apply _ (ZMod.unitsMap (dvd_mul_left N M)), ← MonoidHom.mul_apply,
+    ← ZMod.eq_mul_comp_unitsMap_of_coprime hMN, MulChar.coe_toUnitHom]
+
+/-- At a product of coprime levels, a character of order dividing two splits as the product
+of lifts of characters of order dividing two from the two levels. -/
+theorem exists_eq_changeLevel_mul_of_coprime_of_sq_eq_one {R : Type*} [CommMonoidWithZero R]
+    {M N : ℕ} (χ : DirichletCharacter R (M * N)) (hMN : M.Coprime N) (hχ : χ ^ 2 = 1) :
+    ∃ ψ : DirichletCharacter R M, ∃ φ : DirichletCharacter R N,
+      ψ ^ 2 = 1 ∧ φ ^ 2 = 1 ∧
+        χ = ψ.changeLevel (dvd_mul_right M N) * φ.changeLevel (dvd_mul_left N M) := by
+  obtain ⟨ψ, φ, rfl⟩ := χ.exists_eq_changeLevel_mul_of_coprime hMN
+  have hsq (v : (ZMod M)ˣ) (w : (ZMod N)ˣ) : (ψ v * φ w) ^ 2 = 1 := by
+    -- evaluate `χ ^ 2 = 1` at the Chinese remainder lift of `(v, w)`
+    let e := ZMod.unitsChineseRemainder hMN
+    have hv : ZMod.unitsMap (dvd_mul_right M N) (e.symm (v, w)) = v := by
+      rw [← ZMod.unitsChineseRemainder_apply_fst hMN, e.apply_symm_apply]
+    have hw : ZMod.unitsMap (dvd_mul_left N M) (e.symm (v, w)) = w := by
+      rw [← ZMod.unitsChineseRemainder_apply_snd hMN, e.apply_symm_apply]
+    have := congr($(hχ) (e.symm (v, w) : ZMod (M * N)))
+    rwa [MulChar.pow_apply_coe, MulChar.one_apply_coe, MulChar.mul_apply,
+      changeLevel_apply_unitsMap, changeLevel_apply_unitsMap, hv, hw] at this
+  refine ⟨ψ, φ, MulChar.ext fun v ↦ ?_, MulChar.ext fun w ↦ ?_, rfl⟩
+  · simpa only [MulChar.pow_apply_coe, MulChar.one_apply_coe, Units.val_one, MulChar.map_one,
+      mul_one] using hsq v 1
+  · simpa only [MulChar.pow_apply_coe, MulChar.one_apply_coe, Units.val_one, MulChar.map_one,
+      one_mul] using hsq 1 w
 
 /-- Raising the level of a Dirichlet character does not change its value at `-1`. -/
 @[simp]
