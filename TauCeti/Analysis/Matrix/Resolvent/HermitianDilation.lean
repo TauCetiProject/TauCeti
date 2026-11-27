@@ -30,6 +30,12 @@ noncomputable section
 
 namespace Matrix
 
+/-- The block dilation with off-diagonal blocks `Aᴴ` and `A` is Hermitian. -/
+@[simp]
+theorem isHermitian_fromBlocks_zero_conjTranspose {m n α : Type*} [AddMonoid α] [StarAddMonoid α]
+    (A : Matrix m n α) : (fromBlocks 0 Aᴴ A 0).IsHermitian :=
+  isHermitian_zero.fromBlocks (conjTranspose_conjTranspose A) isHermitian_zero
+
 variable {m n 𝕜 : Type*} [Fintype m] [Fintype n] [DecidableEq m] [DecidableEq n] [RCLike 𝕜]
 
 /-- The resolvent of the Hermitian dilation of a rectangular matrix, expressed in terms of the
@@ -43,8 +49,7 @@ theorem inv_fromBlocks_zero_conjTranspose_sub_smul_one (A : Matrix m n 𝕜) {z 
   let D := fromBlocks 0 Aᴴ A 0
   let P := Aᴴ * A - z ^ 2 • 1
   let Q := A * Aᴴ - z ^ 2 • 1
-  have hd : D.IsHermitian := IsHermitian.fromBlocks isHermitian_zero
-    (conjTranspose_conjTranspose A) isHermitian_zero
+  have hd : D.IsHermitian := isHermitian_fromBlocks_zero_conjTranspose A
   have hblock (w : 𝕜) : D + w • 1 = fromBlocks (w • 1) Aᴴ A (w • 1) := by
     simp [D, ← fromBlocks_one, fromBlocks_smul, fromBlocks_add]
   have hminus : D - z • 1 = fromBlocks (-z • 1) Aᴴ A (-z • 1) := by

@@ -103,6 +103,21 @@ theorem inv_sub_smul_one_sub_inv_sub_smul_one_eq
   simpa [Matrix.mul_smul, Matrix.smul_mul] using
     (inv_sub_smul_one_sub_inv_sub_smul_one (A := A) (B := A) (z := z) (w := w) h)
 
+/-- Matrices with equal characteristic polynomials have equal shifted inverse traces.
+At a singular shift, both nonsingular inverses are zero. -/
+theorem trace_inv_sub_smul_one_eq_of_charpoly_eq (h : A.charpoly = B.charpoly) (z : α) :
+    (A - z • 1)⁻¹.trace = (B - z • 1)⁻¹.trace := by
+  have hshift : (A - z • 1).charpoly = (B - z • 1).charpoly := by
+    rw [smul_one_eq_diagonal, ← scalar_apply, charpoly_sub_scalar, charpoly_sub_scalar, h]
+  have hdet : (A - z • 1).det = (B - z • 1).det := by
+    simp only [det_eq_sign_charpoly_coeff, hshift]
+  by_cases hA : IsUnit (A - z • 1).det
+  · have hB : IsUnit (B - z • 1).det := hdet ▸ hA
+    simp only [trace_eq_neg_charpoly_nextCoeff, charpoly_inv _ ((isUnit_iff_isUnit_det _).mpr hA),
+      charpoly_inv _ ((isUnit_iff_isUnit_det _).mpr hB), ← reverse_charpoly, hdet, hshift]
+  · have hB : ¬IsUnit (B - z • 1).det := hdet ▸ hA
+    rw [nonsing_inv_apply_not_isUnit _ hA, nonsing_inv_apply_not_isUnit _ hB]
+
 /-- The error of the quadratic resolvent expansion factors through the resolvent difference.
 The two shifted matrices must be simultaneously invertible or simultaneously singular. -/
 theorem inv_add_sub_smul_one_sub_quadratic {K : Type*} [CommRing K] (A B : Matrix n n K)
