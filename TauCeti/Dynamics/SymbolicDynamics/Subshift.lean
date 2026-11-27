@@ -36,9 +36,7 @@ outside `Λ` (Mathlib's `MeasureTheory.cylinderEvents Λᶜ`). These are the σ-
 kernels of a specification are measurable. For a finite `F ⊆ I`, gluing a fixed configuration on
 `F` to `ω` off `F` is measurable for the exterior σ-algebra of `F`
 (`TauCeti.Subshift.measurable_updateFinset_exterior`). A measure on the configurations carried by
-`X` is the push-forward of its pull-back to `X` (`TauCeti.Subshift.map_comap_val_of_ae_mem`), and
-an action on all configurations by `(g • ω) i = ω (g⁻¹ • i)` is by measurable maps
-(`TauCeti.measurableConstSMul_of_smul_apply`).
+`X` is the push-forward of its pull-back to `X` (`TauCeti.Subshift.map_comap_val_of_ae_mem`).
 -/
 
 public section
@@ -59,16 +57,6 @@ structure Subshift (Γ I S : Type*) [Group Γ] [MulAction Γ I] [TopologicalSpac
   isClosed : IsClosed carrier
   /-- The set of configurations is invariant under the action. -/
   smul_mem' : ∀ (g : Γ) {ω : I → S}, ω ∈ carrier → (fun i => ω (g⁻¹ • i)) ∈ carrier
-
-/-- An action on configurations given by `(g • ω) i = ω (g⁻¹ • i)`, such as Mathlib's
-`arrowAction`, is by measurable maps. -/
-theorem measurableConstSMul_of_smul_apply {Γ I S : Type*} [Group Γ] [MulAction Γ I]
-    [MeasurableSpace S] [SMul Γ (I → S)] (hσ : ∀ (g : Γ) (ω : I → S) i, (g • ω) i = ω (g⁻¹ • i)) :
-    MeasurableConstSMul Γ (I → S) where
-  measurable_const_smul g := by
-    rw [show (fun ω : I → S => g • ω) = fun ω i => ω (g⁻¹ • i) from
-      funext fun ω => funext (hσ g ω)]
-    exact Measurable.of_eval fun i => measurable_pi_apply _
 
 namespace Subshift
 

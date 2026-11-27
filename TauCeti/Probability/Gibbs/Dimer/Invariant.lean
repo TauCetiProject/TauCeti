@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
 public import TauCeti.Probability.Gibbs.Dimer.Specification
+import TauCeti.MeasureTheory.Group.Arithmetic
 import TauCeti.Probability.Gibbs.Extreme
 
 /-!
