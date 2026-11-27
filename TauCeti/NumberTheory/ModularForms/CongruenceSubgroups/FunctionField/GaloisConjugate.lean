@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Laurent
 public import TauCeti.NumberTheory.ModularForms.WeakForm
 import TauCeti.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.LinearAlgebra.Matrix.Diagonal
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Holomorphic
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.FunctionField.Invariant
 import TauCeti.NumberTheory.ModularForms.DedekindEta.Basic
@@ -51,6 +53,10 @@ expansion of `f` at another cusp, so it is bounded, or vanishes, at every cusp w
   `Γ(N)`.
 * `ModularForm.exists_qExpansion_eq_map`: the conjugate of a modular form on `Γ(N)`.
 * `CuspForm.exists_qExpansion_eq_map`: the conjugate of a cusp form on `Γ(N)`.
+* `TauCeti.IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom`,
+  `ModularForm.exists_qExpansion_slash_eq_map`, `CuspForm.exists_qExpansion_slash_eq_map`: the
+  translates of these conjugates, with the explicit relation between `γ` and `γ'` and the
+  exponent `d` with `σ (ζ_{12N}) = ζ_{12N} ^ d`.
 
 ## References
 
@@ -383,9 +389,9 @@ private theorem exists_map_mul_diagonal_eq (d : (ZMod (12 * N))ˣ) (γ : SL(2, �
   set D := Matrix.diagonal ![1, (d : ZMod (12 * N))]
   set D' := Matrix.diagonal ![1, ((d⁻¹ : (ZMod (12 * N))ˣ) : ZMod (12 * N))]
   obtain ⟨γ', hγ'⟩ := Matrix.SpecialLinearGroup.map_intCast_zmod_surjective (d := 12 * N)
-    ⟨D * red γ * D', by simp [D, D', Matrix.det_mul, Matrix.det_diagonal, Fin.prod_univ_two]⟩
-  have hγ'm : (red γ' : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) = D * red γ * D' :=
-    congrArg Subtype.val hγ'
+    (Matrix.SpecialLinearGroup.conjDiagonal d⁻¹ (red γ))
+  have hγ'm : (red γ' : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) = D * red γ * D' := by
+    rw [hγ', Matrix.SpecialLinearGroup.coe_conjDiagonal, inv_inv]
   refine ⟨γ', fun hγ ↦ ?_, ?_⟩
   · -- reducing modulo `N`, the conjugate of `γ ≡ 1` by `D` is `1`
     let ρ := ZMod.castHom (dvd_mul_left N 12) (ZMod N)
@@ -401,12 +407,23 @@ private theorem exists_map_mul_diagonal_eq (d : (ZMod (12 * N))ˣ) (γ : SL(2, �
   · rw [hγ'm, Matrix.mul_assoc, TauCeti.diagonal_vec2_one_mul_eq_one d.inv_mul, Matrix.mul_one]
 
 omit [NeZero N] in
+/-- A weak form on `Γ(N)` has period `N`. -/
+private theorem IsWeakForm.periodic_level (hf : IsWeakForm (Gamma N) k f) :
+    Function.Periodic (f ∘ ofComplex) N := by
+  simpa only [SlashAction.slash_one, strictLevel_Gamma] using
+    periodic_slash_comp_ofComplex hf.slash_eq 1
+
+/-- The cusp function of a weak form on `Γ(N)` at period `N` is meromorphic at `0`. -/
+private theorem IsWeakForm.meromorphicAt_level (hf : IsWeakForm (Gamma N) k f) :
+    _root_.MeromorphicAt (cuspFunction N f) 0 := by
+  simpa only [SlashAction.slash_one, strictLevel_Gamma] using
+    hf.meromorphicAt_cuspFunction_slash 1
+
+omit [NeZero N] in
 /-- A weak form on `Γ(N)` has period `12 N`. -/
 private theorem IsWeakForm.periodic_twelve_mul (hf : IsWeakForm (Gamma N) k f) :
     Function.Periodic (f ∘ ofComplex) ((12 * N : ℕ) : ℝ) := by
-  have h := periodic_slash_comp_ofComplex hf.slash_eq 1
-  rw [SlashAction.slash_one, strictLevel_Gamma] at h
-  simpa [mul_comm] using h.nat_mul 12
+  simpa [mul_comm] using hf.periodic_level.nat_mul 12
 
 /-- The cusp function of a weak form on `Γ(N)` at period `12 N` is meromorphic at `0`. -/
 private theorem IsWeakForm.meromorphicAt_twelve_mul (hf : IsWeakForm (Gamma N) k f) :
@@ -420,23 +437,25 @@ private theorem IsWeakForm.meromorphicAt_twelve_mul (hf : IsWeakForm (Gamma N) k
 private theorem IsWeakForm.laurentQExpansion_twelve_mul (hf : IsWeakForm (Gamma N) k f) :
     TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) f =
       LaurentSeries.expand ℂ 12 (TauCeti.UpperHalfPlane.laurentQExpansion N f) := by
-  have h := periodic_slash_comp_ofComplex hf.slash_eq 1
-  rw [SlashAction.slash_one, strictLevel_Gamma] at h
-  have hm := hf.meromorphicAt_cuspFunction_slash 1
-  rw [SlashAction.slash_one, strictLevel_Gamma] at hm
-  simpa using TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul h hm 12
+  simpa using
+    TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul hf.periodic_level hf.meromorphicAt_level 12
 
-/-- **Conjugates of weak forms, with their translates.** For a weak form `f` of weight `k` on
-`Γ(N)` and an automorphism `σ` of `ℂ`, some weak form `g` of weight `k` on `Γ(N)` has, at every
-cusp `γ • ∞`, the `σ`-conjugate of the expansion of `f` at a cusp `γ' • ∞`, with `γ' ∈ Γ(N)` when
-`γ ∈ Γ(N)`. -/
-private theorem IsWeakForm.exists_conj (σ : ℂ ≃+* ℂ) (hf : IsWeakForm (Gamma N) k f) :
-    ∃ g : ℍ → ℂ, IsWeakForm (Gamma N) k g ∧ ∀ γ : SL(2, ℤ), ∃ γ' : SL(2, ℤ),
-      (γ ∈ Gamma N → γ' ∈ Gamma N) ∧
+/-- **Conjugates of weak forms, with their translates.** Let `σ (ζ_{12N}) = ζ_{12N} ^ d`. For a
+weak form `f` of weight `k` on `Γ(N)`, some weak form `g` of weight `k` on `Γ(N)` has, whenever
+`γ' diag(1, d) = diag(1, d) γ` modulo `12 N`, the `σ`-conjugate of the expansion of `f ∣[k] γ'` at
+period `12 N` as the expansion of `g ∣[k] γ`. -/
+private theorem IsWeakForm.exists_conj {σ : ℂ ≃+* ℂ} {d : (ZMod (12 * N))ˣ}
+    (hd : σ (ZMod.stdAddChar (1 : ZMod (12 * N))) = ZMod.stdAddChar (d : ZMod (12 * N)))
+    (hf : IsWeakForm (Gamma N) k f) :
+    ∃ g : ℍ → ℂ, IsWeakForm (Gamma N) k g ∧ ∀ γ γ' : SL(2, ℤ),
+      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ' :
+        SL(2, ZMod (12 * N))) : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) *
+          Matrix.diagonal ![1, (d : ZMod (12 * N))] =
+        Matrix.diagonal ![1, (d : ZMod (12 * N))] *
+          (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ) →
         TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) (g ∣[k] γ) =
           HahnSeries.mapRingHom (σ : ℂ →+* ℂ)
             (TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) (f ∣[k] γ')) := by
-  obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := 12 * N) σ
   obtain ⟨c, hc⟩ :=
     exists_mapRingHom_laurentQExpansion_eta_zpow (N := N) (k := k) (σ : ℂ →+* ℂ)
   -- the conjugate of a weak form, normalized by `c`
@@ -447,23 +466,24 @@ private theorem IsWeakForm.exists_conj (σ : ℂ ≃+* ℂ) (hf : IsWeakForm (Ga
     rw [TauCeti.UpperHalfPlane.laurentQExpansion_smul (meromorphicAt_cuspFunction_conjAux σ hF),
       laurentQExpansion_conjAux, laurentQExpansion_eq_mul hF, map_mul, hc,
       ← HahnSeries.C_mul_eq_smul, mul_assoc]
-  have hslash {F : ℍ → ℂ} (hF : IsWeakForm (Gamma N) k F) (γ : SL(2, ℤ)) :
-      ∃ γ' : SL(2, ℤ), (γ ∈ Gamma N → γ' ∈ Gamma N) ∧
-        (c • conjAux k σ hF) ∣[k] γ = c • conjAux k σ (hF.slash_of_normal γ') := by
-    obtain ⟨γ', hmem, hγ'⟩ := exists_map_mul_diagonal_eq d γ
-    exact ⟨γ', hmem, by rw [_root_.ModularForm.SL_smul_slash, conjAux_slash hd hF hγ']⟩
+  have hslash {γ γ' : SL(2, ℤ)}
+      (h : ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ' :
+          SL(2, ZMod (12 * N))) : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) *
+            Matrix.diagonal ![1, (d : ZMod (12 * N))] =
+          Matrix.diagonal ![1, (d : ZMod (12 * N))] *
+            (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ)) :
+      (c • conjAux k σ hf) ∣[k] γ = c • conjAux k σ (hf.slash_of_normal γ') := by
+    rw [_root_.ModularForm.SL_smul_slash, conjAux_slash hd hf h]
   refine ⟨c • conjAux k σ hf, ⟨(mdifferentiable_conjAux σ hf).const_smul c, fun γ hγ ↦ ?_,
-    fun γ ↦ ?_⟩, fun γ ↦ ?_⟩
-  · obtain ⟨γ', hmem, h⟩ := hslash hf γ
-    rw [h, conjAux_congr σ _ hf (hf.slash_eq γ' (hmem hγ))]
-  · obtain ⟨γ', -, h⟩ := hslash hf γ
-    rw [h]
+    fun γ ↦ ?_⟩, fun γ γ' h ↦ by rw [hslash h, hL]⟩
+  · obtain ⟨γ', hmem, h⟩ := exists_map_mul_diagonal_eq d γ
+    rw [hslash h, conjAux_congr σ _ hf (hf.slash_eq γ' (hmem hγ))]
+  · obtain ⟨γ', -, h⟩ := exists_map_mul_diagonal_eq d γ
+    rw [hslash h]
     exact UpperHalfPlane.exists_isBigO_exp_of_meromorphicAt_cuspFunction twelve_mul_pos
       ((periodic_conjAux σ _).smul c)
       (((meromorphicAt_cuspFunction_conjAux σ _).const_smul c).congr
         (UpperHalfPlane.cuspFunction_map_eventuallyEq (c • ·) _).symm)
-  · obtain ⟨γ', hmem, h⟩ := hslash hf γ
-    exact ⟨γ', hmem, by rw [h, hL]⟩
 
 /-! ### Conjugates of weak forms, modular forms and cusp forms -/
 
@@ -479,46 +499,80 @@ private theorem orderTop_laurentQExpansion_slash_nonneg [ModularFormClass F (Gam
   exact (UpperHalfPlane.analyticAt_cuspFunction_zero twelve_mul_pos hf.periodic_twelve_mul
     hf.mdifferentiable (ModularFormClass.bdd_at_infty_slash f γ)).meromorphicOrderAt_nonneg
 
-/-- The expansion at period `12 N` of a modular form on `Γ(N)` is its `q`-expansion at period `N`
-in the variable `q ^ 12`. -/
-private theorem laurentQExpansion_twelve_mul_eq_expand [ModularFormClass F (Gamma N) k] (f : F) :
+/-- The expansion at period `12 N` of a weak form on `Γ(N)` bounded at `i∞` is its `q`-expansion
+at period `N` in the variable `q ^ 12`. -/
+private theorem IsWeakForm.laurentQExpansion_twelve_mul_eq_expand (hf : IsWeakForm (Gamma N) k f)
+    (hb : IsBoundedAtImInfty f) :
     TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) f =
       LaurentSeries.expand ℂ 12 (qExpansion N f : LaurentSeries ℂ) := by
-  have hf := ModularFormClass.isWeakForm f
-  have h := periodic_slash_comp_ofComplex hf.slash_eq 1
-  rw [SlashAction.slash_one, strictLevel_Gamma] at h
   rw [hf.laurentQExpansion_twelve_mul, TauCeti.UpperHalfPlane.laurentQExpansion_of_analyticAt
-    (UpperHalfPlane.analyticAt_cuspFunction_zero (Nat.cast_pos.2 (NeZero.pos N)) h
-      hf.mdifferentiable (ModularFormClass.bdd_at_infty f))]
+    (UpperHalfPlane.analyticAt_cuspFunction_zero (Nat.cast_pos.2 (NeZero.pos N))
+      hf.periodic_level hf.mdifferentiable hb)]
 
-/-- **Conjugates of modular forms, with their translates.** The conjugate of a modular form of
-level `N` is a modular form, with the conjugate `q`-expansion at `∞`; at every other cusp its
-expansion is the conjugate of an expansion of the original form. -/
-private theorem exists_conj_modularForm [ModularFormClass F (Gamma N) k] (f : F) (σ : ℂ ≃+* ℂ) :
-    ∃ g : ModularForm (Gamma N) k,
-      qExpansion N g = PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N f) ∧
-        ∀ γ : SL(2, ℤ), ∃ γ' : SL(2, ℤ),
-          TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) (⇑g ∣[k] γ) =
-            HahnSeries.mapRingHom (σ : ℂ →+* ℂ)
-              (TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) (⇑f ∣[k] γ')) := by
-  have hf := ModularFormClass.isWeakForm f
-  obtain ⟨g, hg, hγ⟩ := hf.exists_conj σ
-  have hbdd (γ : SL(2, ℤ)) : IsBoundedAtImInfty (g ∣[k] γ) := by
-    obtain ⟨γ', -, h⟩ := hγ γ
-    have hg' := hg.slash_of_normal γ
-    refine (TauCeti.UpperHalfPlane.tendsto_laurentQExpansion_coeff_zero twelve_mul_pos
-      hg'.periodic_twelve_mul hg'.meromorphicAt_twelve_mul ?_).isBigO_one ℝ
-    rw [h, HahnSeries.orderTop_mapRingHom_of_injective _ σ.injective]
-    exact orderTop_laurentQExpansion_slash_nonneg f γ'
-  obtain ⟨G, rfl⟩ := (exists_modularForm_coe_eq_iff).2 ⟨hg, hbdd⟩
-  refine ⟨G, ?_, fun γ ↦ (hγ γ).imp fun _ ↦ And.right⟩
-  obtain ⟨γ', hmem, h⟩ := hγ 1
-  rw [SlashAction.slash_one, hf.slash_eq γ' (hmem (one_mem _)),
-    laurentQExpansion_twelve_mul_eq_expand, laurentQExpansion_twelve_mul_eq_expand,
-    LaurentSeries.mapRingHom_expand] at h
+/-- For weak forms on `Γ(N)` bounded at `i∞`, conjugate expansions at period `12 N` are
+conjugate `q`-expansions at period `N`. -/
+private theorem qExpansion_eq_map_of_laurentQExpansion_eq (σ : ℂ →+* ℂ) {f₁ f₂ : ℍ → ℂ}
+    (hf₁ : IsWeakForm (Gamma N) k f₁) (hb₁ : IsBoundedAtImInfty f₁)
+    (hf₂ : IsWeakForm (Gamma N) k f₂) (hb₂ : IsBoundedAtImInfty f₂)
+    (h : TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) f₂ =
+      HahnSeries.mapRingHom σ (TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) f₁)) :
+    qExpansion N f₂ = PowerSeries.map σ (qExpansion N f₁) := by
+  rw [hf₁.laurentQExpansion_twelve_mul_eq_expand hb₁,
+    hf₂.laurentQExpansion_twelve_mul_eq_expand hb₂, LaurentSeries.mapRingHom_expand] at h
   have hc := HahnSeries.mapRingHom_ofPowerSeries_eq_ofPowerSeries_iff.1
     (LaurentSeries.expand_injective 12 h).symm
   exact PowerSeries.ext fun n ↦ by rw [PowerSeries.coeff_map, hc n]
+
+/-- **Conjugates of modular forms, with their translates.** The conjugate of a modular form of
+level `N` is a modular form, and the expansion of its translate by `γ` at period `12 N` is the
+conjugate of that of the translate of the original form by `γ'`, when
+`γ' diag(1, d) = diag(1, d) γ` modulo `12 N`. -/
+private theorem exists_conj_modularForm [ModularFormClass F (Gamma N) k] (f : F)
+    {σ : ℂ ≃+* ℂ} {d : (ZMod (12 * N))ˣ}
+    (hd : σ (ZMod.stdAddChar (1 : ZMod (12 * N))) = ZMod.stdAddChar (d : ZMod (12 * N))) :
+    ∃ g : ModularForm (Gamma N) k, ∀ γ γ' : SL(2, ℤ),
+      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ' :
+        SL(2, ZMod (12 * N))) : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) *
+          Matrix.diagonal ![1, (d : ZMod (12 * N))] =
+        Matrix.diagonal ![1, (d : ZMod (12 * N))] *
+          (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ) →
+        TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) (⇑g ∣[k] γ) =
+          HahnSeries.mapRingHom (σ : ℂ →+* ℂ)
+            (TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) (⇑f ∣[k] γ')) := by
+  obtain ⟨g, hg, hγ⟩ := (ModularFormClass.isWeakForm f).exists_conj hd
+  have hbdd (γ : SL(2, ℤ)) : IsBoundedAtImInfty (g ∣[k] γ) := by
+    obtain ⟨γ', -, h⟩ := exists_map_mul_diagonal_eq d γ
+    have hg' := hg.slash_of_normal γ
+    refine (TauCeti.UpperHalfPlane.tendsto_laurentQExpansion_coeff_zero twelve_mul_pos
+      hg'.periodic_twelve_mul hg'.meromorphicAt_twelve_mul ?_).isBigO_one ℝ
+    rw [hγ γ γ' h, HahnSeries.orderTop_mapRingHom_of_injective _ σ.injective]
+    exact orderTop_laurentQExpansion_slash_nonneg f γ'
+  obtain ⟨G, rfl⟩ := (exists_modularForm_coe_eq_iff).2 ⟨hg, hbdd⟩
+  exact ⟨G, hγ⟩
+
+/-- **Galois conjugates of weak forms, with their translates.** Let `σ` be an automorphism of `ℂ`,
+which need not be continuous, with `σ (ζ_{12N}) = ζ_{12N} ^ d` for `ζ_{12N} = exp (2 π i / 12 N)`.
+For a weak form `f` of weight `k` on `Γ(N)` there is a weak form `g` of weight `k` on `Γ(N)` such
+that, whenever `γ' diag(1, d) = diag(1, d) γ` modulo `12 N`, the Laurent expansion of `g ∣[k] γ`
+at `∞`, in `q = exp (2 π i τ / N)`, is obtained by applying `σ` to every coefficient of that of
+`f ∣[k] γ'`. -/
+theorem IsWeakForm.exists_laurentQExpansion_slash_eq_mapRingHom {σ : ℂ ≃+* ℂ}
+    {d : (ZMod (12 * N))ˣ}
+    (hd : σ (ZMod.stdAddChar (1 : ZMod (12 * N))) = ZMod.stdAddChar (d : ZMod (12 * N)))
+    (hf : IsWeakForm (Gamma N) k f) :
+    ∃ g : ℍ → ℂ, IsWeakForm (Gamma N) k g ∧ ∀ γ γ' : SL(2, ℤ),
+      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ' :
+        SL(2, ZMod (12 * N))) : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) *
+          Matrix.diagonal ![1, (d : ZMod (12 * N))] =
+        Matrix.diagonal ![1, (d : ZMod (12 * N))] *
+          (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ) →
+        TauCeti.UpperHalfPlane.laurentQExpansion N (g ∣[k] γ) =
+          HahnSeries.mapRingHom (σ : ℂ →+* ℂ)
+            (TauCeti.UpperHalfPlane.laurentQExpansion N (f ∣[k] γ')) := by
+  obtain ⟨g, hg, hγ⟩ := hf.exists_conj hd
+  refine ⟨g, hg, fun γ γ' h ↦ LaurentSeries.expand_injective (R := ℂ) 12 ?_⟩
+  rw [← (hg.slash_of_normal γ).laurentQExpansion_twelve_mul, hγ γ γ' h,
+    (hf.slash_of_normal γ').laurentQExpansion_twelve_mul, LaurentSeries.mapRingHom_expand]
 
 /-- **Galois conjugates of weak forms.** For a weak form `f` of weight `k` on `Γ(N)` and an
 automorphism `σ` of `ℂ`, which need not be continuous, there is a weak form of weight `k` on
@@ -529,12 +583,9 @@ theorem IsWeakForm.exists_laurentQExpansion_eq_mapRingHom (hf : IsWeakForm (Gamm
     ∃ g : ℍ → ℂ, IsWeakForm (Gamma N) k g ∧
       TauCeti.UpperHalfPlane.laurentQExpansion N g =
         HahnSeries.mapRingHom (σ : ℂ →+* ℂ) (TauCeti.UpperHalfPlane.laurentQExpansion N f) := by
-  obtain ⟨g, hg, hγ⟩ := hf.exists_conj σ
-  obtain ⟨γ', hmem, h⟩ := hγ 1
-  rw [SlashAction.slash_one, hf.slash_eq γ' (hmem (one_mem _))] at h
-  refine ⟨g, hg, LaurentSeries.expand_injective (R := ℂ) 12 ?_⟩
-  rw [← hg.laurentQExpansion_twelve_mul, h, hf.laurentQExpansion_twelve_mul,
-    LaurentSeries.mapRingHom_expand]
+  obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := 12 * N) σ
+  obtain ⟨g, hg, h⟩ := hf.exists_laurentQExpansion_slash_eq_mapRingHom hd
+  exact ⟨g, hg, by simpa only [SlashAction.slash_one] using h 1 1 (by simp)⟩
 
 end TauCeti
 
@@ -544,14 +595,38 @@ open TauCeti
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
+/-- **Galois conjugates of modular forms of level `N`, with their translates.** Let `σ` be an
+automorphism of `ℂ`, which need not be continuous, with `σ (ζ_{12N}) = ζ_{12N} ^ d` for
+`ζ_{12N} = exp (2 π i / 12 N)`. For a modular form `f` of weight `k` on `Γ(N)` there is a modular
+form `g` of weight `k` on `Γ(N)` such that, whenever `γ' diag(1, d) = diag(1, d) γ` modulo
+`12 N`, the `q`-expansion of `g ∣[k] γ` at `∞`, in `q = exp (2 π i τ / N)`, is obtained by
+applying `σ` to every coefficient of that of `f ∣[k] γ'`. -/
+theorem exists_qExpansion_slash_eq_map (f : ModularForm (Gamma N) k) {σ : ℂ ≃+* ℂ}
+    {d : (ZMod (12 * N))ˣ}
+    (hd : σ (ZMod.stdAddChar (1 : ZMod (12 * N))) = ZMod.stdAddChar (d : ZMod (12 * N))) :
+    ∃ g : ModularForm (Gamma N) k, ∀ γ γ' : SL(2, ℤ),
+      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ' :
+        SL(2, ZMod (12 * N))) : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) *
+          Matrix.diagonal ![1, (d : ZMod (12 * N))] =
+        Matrix.diagonal ![1, (d : ZMod (12 * N))] *
+          (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ) →
+        qExpansion N (⇑g ∣[k] γ) = PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N (⇑f ∣[k] γ')) := by
+  obtain ⟨g, hγ⟩ := exists_conj_modularForm f hd
+  exact ⟨g, fun γ γ' h ↦ qExpansion_eq_map_of_laurentQExpansion_eq _
+    ((ModularFormClass.isWeakForm f).slash_of_normal γ') (ModularFormClass.bdd_at_infty_slash f γ')
+    ((ModularFormClass.isWeakForm g).slash_of_normal γ) (ModularFormClass.bdd_at_infty_slash g γ)
+    (hγ γ γ' h)⟩
+
 /-- **Galois conjugates of modular forms of level `N`.** For a modular form `f` of weight `k` on
 `Γ(N)` and an automorphism `σ` of `ℂ`, which need not be continuous, there is a modular form of
 weight `k` on `Γ(N)` whose `q`-expansion at `∞`, in `q = exp (2 π i τ / N)`, is obtained by
 applying `σ` to every coefficient of that of `f`. -/
 theorem exists_qExpansion_eq_map (f : ModularForm (Gamma N) k) (σ : ℂ ≃+* ℂ) :
     ∃ g : ModularForm (Gamma N) k,
-      qExpansion N g = PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N f) :=
-  (exists_conj_modularForm f σ).imp fun _ ↦ And.left
+      qExpansion N g = PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N f) := by
+  obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := 12 * N) σ
+  obtain ⟨g, h⟩ := f.exists_qExpansion_slash_eq_map hd
+  exact ⟨g, by simpa only [SlashAction.slash_one] using h 1 1 (by simp)⟩
 
 end ModularForm
 
@@ -561,17 +636,26 @@ open TauCeti
 
 variable {N : ℕ} [NeZero N] {k : ℤ}
 
-/-- **Galois conjugates of cusp forms of level `N`.** For a cusp form `f` of weight `k` on `Γ(N)`
-and an automorphism `σ` of `ℂ`, which need not be continuous, there is a cusp form of weight `k`
-on `Γ(N)` whose `q`-expansion at `∞`, in `q = exp (2 π i τ / N)`, is obtained by applying `σ` to
-every coefficient of that of `f`. -/
-theorem exists_qExpansion_eq_map (f : CuspForm (Gamma N) k) (σ : ℂ ≃+* ℂ) :
-    ∃ g : CuspForm (Gamma N) k,
-      qExpansion N g = PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N f) := by
-  obtain ⟨G, hG, hγ⟩ := exists_conj_modularForm f σ
+/-- **Galois conjugates of cusp forms of level `N`, with their translates.** Let `σ` be an
+automorphism of `ℂ`, which need not be continuous, with `σ (ζ_{12N}) = ζ_{12N} ^ d` for
+`ζ_{12N} = exp (2 π i / 12 N)`. For a cusp form `f` of weight `k` on `Γ(N)` there is a cusp form
+`g` of weight `k` on `Γ(N)` such that, whenever `γ' diag(1, d) = diag(1, d) γ` modulo `12 N`, the
+`q`-expansion of `g ∣[k] γ` at `∞`, in `q = exp (2 π i τ / N)`, is obtained by applying `σ` to
+every coefficient of that of `f ∣[k] γ'`. -/
+theorem exists_qExpansion_slash_eq_map (f : CuspForm (Gamma N) k) {σ : ℂ ≃+* ℂ}
+    {d : (ZMod (12 * N))ˣ}
+    (hd : σ (ZMod.stdAddChar (1 : ZMod (12 * N))) = ZMod.stdAddChar (d : ZMod (12 * N))) :
+    ∃ g : CuspForm (Gamma N) k, ∀ γ γ' : SL(2, ℤ),
+      ((Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ' :
+        SL(2, ZMod (12 * N))) : Matrix (Fin 2) (Fin 2) (ZMod (12 * N))) *
+          Matrix.diagonal ![1, (d : ZMod (12 * N))] =
+        Matrix.diagonal ![1, (d : ZMod (12 * N))] *
+          (Matrix.SpecialLinearGroup.map (Int.castRingHom (ZMod (12 * N))) γ) →
+        qExpansion N (⇑g ∣[k] γ) = PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N (⇑f ∣[k] γ')) := by
+  obtain ⟨G, hγ⟩ := exists_conj_modularForm f hd
   -- the constant term of the conjugate at every cusp is the conjugate of a constant term of `f`
   have hzero (γ : SL(2, ℤ)) : IsZeroAtImInfty (⇑G ∣[k] γ) := by
-    obtain ⟨γ', h⟩ := hγ γ
+    obtain ⟨γ', -, h⟩ := exists_map_mul_diagonal_eq d γ
     have hG' := (ModularFormClass.isWeakForm G).slash_of_normal γ
     have hf' := (ModularFormClass.isWeakForm f).slash_of_normal γ'
     have h₀ : (TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) (⇑f ∣[k] γ')).coeff 0 =
@@ -582,11 +666,27 @@ theorem exists_qExpansion_eq_map (f : CuspForm (Gamma N) k) (σ : ℂ ≃+* ℂ)
     have ht := TauCeti.UpperHalfPlane.tendsto_laurentQExpansion_coeff_zero twelve_mul_pos
       hG'.periodic_twelve_mul hG'.meromorphicAt_twelve_mul
       (orderTop_laurentQExpansion_slash_nonneg G γ)
-    rwa [h, HahnSeries.coeff_mapRingHom, h₀, map_zero] at ht
+    rwa [hγ γ γ' h, HahnSeries.coeff_mapRingHom, h₀, map_zero] at ht
   refine ⟨{ toSlashInvariantForm := G.toSlashInvariantForm
             holo' := G.holo'
-            zero_at_cusps' := fun {c} hc ↦ ?_ }, hG⟩
-  rw [Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z] at hc
-  exact (OnePoint.isZeroAt_iff_forall_SL2Z hc).mpr fun γ _ ↦ hzero γ
+            zero_at_cusps' := fun {c} hc ↦ ?_ }, fun γ γ' h ↦ ?_⟩
+  · rw [Subgroup.IsArithmetic.isCusp_iff_isCusp_SL2Z] at hc
+    exact (OnePoint.isZeroAt_iff_forall_SL2Z hc).mpr fun γ _ ↦ hzero γ
+  · exact qExpansion_eq_map_of_laurentQExpansion_eq _
+      ((ModularFormClass.isWeakForm f).slash_of_normal γ')
+      (ModularFormClass.bdd_at_infty_slash f γ')
+      ((ModularFormClass.isWeakForm G).slash_of_normal γ) (ModularFormClass.bdd_at_infty_slash G γ)
+      (hγ γ γ' h)
+
+/-- **Galois conjugates of cusp forms of level `N`.** For a cusp form `f` of weight `k` on `Γ(N)`
+and an automorphism `σ` of `ℂ`, which need not be continuous, there is a cusp form of weight `k`
+on `Γ(N)` whose `q`-expansion at `∞`, in `q = exp (2 π i τ / N)`, is obtained by applying `σ` to
+every coefficient of that of `f`. -/
+theorem exists_qExpansion_eq_map (f : CuspForm (Gamma N) k) (σ : ℂ ≃+* ℂ) :
+    ∃ g : CuspForm (Gamma N) k,
+      qExpansion N g = PowerSeries.map (σ : ℂ →+* ℂ) (qExpansion N f) := by
+  obtain ⟨d, hd⟩ := ZMod.exists_map_stdAddChar_one_eq (N := 12 * N) σ
+  obtain ⟨g, h⟩ := f.exists_qExpansion_slash_eq_map hd
+  exact ⟨g, by simpa only [SlashAction.slash_one] using h 1 1 (by simp)⟩
 
 end CuspForm
