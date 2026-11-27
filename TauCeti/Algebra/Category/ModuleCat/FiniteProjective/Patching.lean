@@ -8,7 +8,8 @@ module
 public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.Categorical.Basic
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.KZero.Defs
 public import TauCeti.Algebra.Category.ModuleCat.FiniteProjective.ScalarChange
-public import TauCeti.RingTheory.Patching.PatchedModule
+public import TauCeti.Algebra.Ring.Opposite
+public import TauCeti.RingTheory.Patching.Projective
 
 /-!
 # Patching triples and the patching functor of a fibre product of rings
@@ -31,20 +32,34 @@ functor**. Milnor's patching theorem says that it is an equivalence of categorie
 as `π₁` or `π₂` is surjective; the inverse sends `(P₁, P₂, α)` to the fibre product module
 `{(x, y) ∈ P₁ × P₂ | α (x ⊗ 1) = y ⊗ 1}`.
 
-This file proves the first half of the theorem: the patching functor is fully faithful, for all
-`π₁` and `π₂`. On underlying modules this is
+The patching functor is fully faithful for all `π₁` and `π₂`. On underlying modules this is
 `TauCeti.BalancedExtension.existsUnique_map_eq_and_map_eq` over the square of opposite rings: a
 compatible pair of maps `P ⊗_D Aⱼ → P' ⊗_D Aⱼ` comes from exactly one map `P → P'`, because a
-finitely generated projective module over `D` is the patched module of its triple. Essential
-surjectivity, which needs a surjective leg, is not proved here: for the inclusions `ℤ → ℚ ← ℤ`
-the fibre product is `ℤ`, and the triple `(ℤ, ℤ, 2)` is not isomorphic to the image `(ℤ, ℤ, 1)` of
-any module.
+finitely generated projective module over `D` is the patched module of its triple.
+
+When `π₁` or `π₂` is surjective, the patched module `M(P₁, P₂, α)` of every patching triple is
+finitely generated projective and its triple is isomorphic to `(P₁, P₂, α)` through the comparison
+maps `M ⊗_D Aⱼ → Pⱼ` (`TauCeti.finite_patchedModule`, `TauCeti.projective_patchedModule`,
+`TauCeti.PatchedModule.bijective_compareFst`, `TauCeti.PatchedModule.bijective_compareSnd`). This
+file packages these module-level statements as the patched module functor and the counit of an
+equivalence of categories whose functor is the patching functor: this is **Milnor's patching
+theorem** (`RingHom.milnor_patching`). The unit is the isomorphism `p ↦ (p ⊗ 1, p ⊗ 1)` of a
+module with the patched module of its triple. Essential surjectivity needs the surjective leg: for
+the inclusions `ℤ → ℚ ← ℤ` the fibre product is `ℤ`, and the triple `(ℤ, ℤ, 2)` is not isomorphic
+to the image `(ℤ, ℤ, 1)` of any module.
 
 ## Main definitions
 
-* `RingHom.PatchingTriples π₁ π₂`: the category of patching triples.
+* `RingHom.PatchingTriples π₁ π₂`: the category of patching triples, with the gluing isomorphism
+  `RingHom.PatchingTriples.gluing` of a triple.
 * `RingHom.patchingFunctor π₁ π₂`: the functor `P ↦ (P ⊗_D A₁, P ⊗_D A₂, α_P)` from finitely
   generated projective right `D`-modules to patching triples.
+* `RingHom.patchedModuleFunctor π₁ π₂ hπ`: with a surjective leg, the functor
+  `(P₁, P₂, α) ↦ M(P₁, P₂, α)` from patching triples to finitely generated projective right
+  `D`-modules.
+* `RingHom.patchingCounitIso hπ T`: the isomorphism of the patching triple of `M(T)` with `T`.
+* `RingHom.patchingEquivalence π₁ π₂ hπ`: the equivalence of categories formed by these two
+  functors.
 
 ## Main results
 
@@ -53,6 +68,9 @@ any module.
   gluing isomorphism `TauCeti.BalancedExtension.commSqEquiv` on underlying modules.
 * `RingHom.faithful_patchingFunctor`, `RingHom.full_patchingFunctor`: the patching functor is
   faithful and full.
+* `RingHom.milnor_patching`: with a surjective leg, the patching functor is an equivalence.
+* `RingHom.fst_patchingEquivalence_unitIso_hom_app`,
+  `RingHom.snd_patchingEquivalence_unitIso_hom_app`: the unit sends `p` to `(p ⊗ 1, p ⊗ 1)`.
 
 ## References
 
@@ -186,5 +204,188 @@ instance full_patchingFunctor : (patchingFunctor π₁ π₂).Full where
         ((patchingFunctor_map_fst_hom_hom π₁ π₂ _).trans hg.1)))
       (ObjectProperty.hom_ext _ (ModuleCat.hom_ext
         ((patchingFunctor_map_snd_hom_hom π₁ π₂ _).trans hg.2)))⟩
+
+section Equivalence
+
+variable {π₁ π₂}
+
+/-- The gluing isomorphism `α : P₁ ⊗ Q ≃ P₂ ⊗ Q` of a patching triple `(P₁, P₂, α)`, as a linear
+equivalence of balanced extensions. -/
+def PatchingTriples.gluing (T : π₁.PatchingTriples π₂) :
+    BalancedExtension (RingHom.op π₁) T.fst.obj ≃ₗ[Qᵐᵒᵖ]
+      BalancedExtension (RingHom.op π₂) T.snd.obj :=
+  ((finiteProjectiveModules Qᵐᵒᵖ).ι.mapIso T.iso).toLinearEquiv
+
+@[simp]
+theorem PatchingTriples.gluing_apply (T : π₁.PatchingTriples π₂)
+    (x : BalancedExtension (RingHom.op π₁) T.fst.obj) :
+    T.gluing x = T.iso.hom.hom x :=
+  (rfl)
+
+/-- The two components of a morphism of patching triples are intertwined by the gluing
+isomorphisms. -/
+theorem PatchingTriples.gluing_map {T T' : π₁.PatchingTriples π₂} (φ : T ⟶ T')
+    (x : BalancedExtension (RingHom.op π₁) T.fst.obj) :
+    T'.gluing (map (RingHom.op π₁) φ.fst.hom.hom x) =
+      map (RingHom.op π₂) φ.snd.hom.hom (T.gluing x) :=
+  congr($(φ.w).hom x)
+
+/-- **Milnor patching**: with a surjective leg, the patched module of a patching triple
+`(P₁, P₂, α)` is a finitely generated projective right module over `A₁ ×_Q A₂`. -/
+theorem finiteProjectiveModules_patchedModule
+    (hπ : Function.Surjective π₁ ∨ Function.Surjective π₂) (T : π₁.PatchingTriples π₂) :
+    finiteProjectiveModules (π₁.pullback π₂)ᵐᵒᵖ
+      (ModuleCat.of _ (PatchedModule (op_pullback_comm_sq π₁ π₂) T.gluing.toLinearMap)) :=
+  finiteProjectiveModules_iff.2
+    ⟨finite_patchedModule _ T.gluing
+        (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
+        (hπ.imp surjective_op_iff.2 surjective_op_iff.2),
+      projective_patchedModule _ T.gluing
+        (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
+        (hπ.imp surjective_op_iff.2 surjective_op_iff.2)⟩
+
+variable (π₁ π₂) in
+/-- The **patched module functor** of a fibre product `D = A₁ ×_Q A₂` with a surjective leg: it
+sends a patching triple `(P₁, P₂, α)` to the patched module
+`M(P₁, P₂, α) = {(x, y) ∈ P₁ × P₂ | α (x ⊗ 1) = y ⊗ 1}`, a finitely generated projective right
+`D`-module by Milnor's theorem (`TauCeti.finite_patchedModule`,
+`TauCeti.projective_patchedModule`), and a morphism `(g₁, g₂)` to `(x, y) ↦ (g₁ x, g₂ y)`. It is
+the inverse of the patching functor (`RingHom.patchingEquivalence`). -/
+-- Exposed so that the underlying module of the image of a triple is definitionally its patched
+-- module, as recorded by `RingHom.patchedModuleFunctor_obj_obj`.
+@[expose, simps! obj_obj]
+def patchedModuleFunctor (hπ : Function.Surjective π₁ ∨ Function.Surjective π₂) :
+    π₁.PatchingTriples π₂ ⥤ FiniteProjectiveRight (π₁.pullback π₂) where
+  obj T := ⟨ModuleCat.of _ (PatchedModule (op_pullback_comm_sq π₁ π₂) T.gluing.toLinearMap),
+    finiteProjectiveModules_patchedModule hπ T⟩
+  map φ := ObjectProperty.homMk (ModuleCat.ofHom
+    (PatchedModule.map φ.fst.hom.hom φ.snd.hom.hom (PatchingTriples.gluing_map φ)))
+
+@[simp]
+theorem patchedModuleFunctor_map_hom_hom (hπ : Function.Surjective π₁ ∨ Function.Surjective π₂)
+    {T T' : π₁.PatchingTriples π₂} (φ : T ⟶ T') :
+    ((patchedModuleFunctor π₁ π₂ hπ).map φ).hom.hom =
+      PatchedModule.map φ.fst.hom.hom φ.snd.hom.hom (PatchingTriples.gluing_map φ) :=
+  (rfl)
+
+variable (hπ : Function.Surjective π₁ ∨ Function.Surjective π₂)
+
+/-- The morphism from the patching triple of `M(P₁, P₂, α)` to `T = (P₁, P₂, α)` given by the
+comparison maps `M ⊗ A₁ → P₁` and `M ⊗ A₂ → P₂`. -/
+private def patchingCounit (T : π₁.PatchingTriples π₂) :
+    (patchingFunctor π₁ π₂).obj ((patchedModuleFunctor π₁ π₂ hπ).obj T) ⟶ T where
+  fst := ObjectProperty.homMk (ModuleCat.ofHom (PatchedModule.compareFst _ T.gluing.toLinearMap))
+  snd := ObjectProperty.homMk (ModuleCat.ofHom (PatchedModule.compareSnd _ T.gluing.toLinearMap))
+  w := ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦
+    -- The structure isomorphism of the patching triple of `M` is `commSqEquiv`, and the
+    -- comparison maps intertwine it with the gluing isomorphism of `T`; the two sides of `w` are
+    -- these maps up to the definitional identification of the extended modules with balanced
+    -- extensions, as in `commSqEquiv_map_hom_fst`.
+    (PatchedModule.map_compareSnd_commSqEquiv _ T.gluing.toLinearMap x).symm.trans
+      (congrArg _ (LinearMap.congr_fun
+        (finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_eq_commSqEquiv _ _ _ _ _ _)
+        x).symm)))
+
+/-- **Milnor patching: every patching triple is patched from a module.** With a surjective leg,
+the patching triple of the patched module `M(P₁, P₂, α)` is isomorphic to `T = (P₁, P₂, α)`,
+through the comparison maps `M ⊗_D A₁ → P₁` and `M ⊗_D A₂ → P₂`, which are bijective by Milnor's
+theorem. This is the counit of the patching equivalence (`RingHom.patchingEquivalence`). -/
+def patchingCounitIso (T : π₁.PatchingTriples π₂) :
+    (patchingFunctor π₁ π₂).obj ((patchedModuleFunctor π₁ π₂ hπ).obj T) ≅ T :=
+  CategoricalPullback.mkIso
+    (ObjectProperty.isoMk _ (LinearEquiv.ofBijective _ (PatchedModule.bijective_compareFst _
+      T.gluing (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
+      (hπ.imp surjective_op_iff.2 surjective_op_iff.2))).toModuleIso)
+    (ObjectProperty.isoMk _ (LinearEquiv.ofBijective _ (PatchedModule.bijective_compareSnd _
+      T.gluing (fun _ _ ↦ existsUnique_op_pullbackFst_eq_and_op_pullbackSnd_eq π₁ π₂)
+      (hπ.imp surjective_op_iff.2 surjective_op_iff.2))).toModuleIso)
+    (patchingCounit hπ T).w
+
+/-- The first component of `RingHom.patchingCounitIso` is the comparison map `M ⊗_D A₁ → P₁`,
+`(x, y) ⊗ a ↦ x a`. -/
+@[simp]
+theorem patchingCounitIso_hom_fst_hom_hom (T : π₁.PatchingTriples π₂) :
+    (patchingCounitIso hπ T).hom.fst.hom.hom = PatchedModule.compareFst _ T.gluing.toLinearMap :=
+  (rfl)
+
+/-- The second component of `RingHom.patchingCounitIso` is the comparison map `M ⊗_D A₂ → P₂`,
+`(x, y) ⊗ a ↦ y a`. -/
+@[simp]
+theorem patchingCounitIso_hom_snd_hom_hom (T : π₁.PatchingTriples π₂) :
+    (patchingCounitIso hπ T).hom.snd.hom.hom = PatchedModule.compareSnd _ T.gluing.toLinearMap :=
+  (rfl)
+
+/-- `RingHom.patchingCounitIso` is natural in morphisms of patching triples. -/
+@[reassoc]
+theorem patchingCounitIso_hom_naturality {T T' : π₁.PatchingTriples π₂} (φ : T ⟶ T') :
+    (patchingFunctor π₁ π₂).map ((patchedModuleFunctor π₁ π₂ hπ).map φ) ≫
+        (patchingCounitIso hπ T').hom = (patchingCounitIso hπ T).hom ≫ φ :=
+  CategoricalPullback.hom_ext
+    (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦
+      PatchedModule.compareFst_map_map _ _ _ _ _ x)))
+    (ObjectProperty.hom_ext _ (ModuleCat.hom_ext (LinearMap.ext fun x ↦
+      PatchedModule.compareSnd_map_map _ _ _ _ _ x)))
+
+variable (π₁ π₂) in
+/-- **Milnor's patching theorem**, as an equivalence of categories. Let `D = A₁ ×_Q A₂` be the
+fibre product of ring homomorphisms `π₁ : A₁ →+* Q` and `π₂ : A₂ →+* Q`, one of which is
+surjective. The patching functor `P ↦ (P ⊗_D A₁, P ⊗_D A₂, α_P)` from finitely generated projective
+right `D`-modules to patching triples is an equivalence, with inverse the patched module functor
+`(P₁, P₂, α) ↦ M(P₁, P₂, α) = {(x, y) ∈ P₁ × P₂ | α (x ⊗ 1) = y ⊗ 1}`. Its counit is
+`RingHom.patchingCounitIso`, and its unit sends `p` to `(p ⊗ 1, p ⊗ 1)`
+(`RingHom.fst_patchingEquivalence_unitIso_hom_app`). -/
+-- Exposed so that its functor and inverse are definitionally the patching and patched module
+-- functors, which the statements about its unit and counit need to typecheck.
+@[expose, simps! functor inverse counitIso_hom_app counitIso_inv_app]
+def patchingEquivalence :
+    FiniteProjectiveRight (π₁.pullback π₂) ≌ π₁.PatchingTriples π₂ :=
+  letI hF := Functor.FullyFaithful.ofFullyFaithful (patchingFunctor π₁ π₂)
+  { functor := patchingFunctor π₁ π₂
+    inverse := patchedModuleFunctor π₁ π₂ hπ
+    unitIso := NatIso.ofComponents
+      (fun P ↦ hF.preimageIso (patchingCounitIso hπ ((patchingFunctor π₁ π₂).obj P)).symm)
+      fun f ↦ hF.map_injective (by simp [← cancel_mono (patchingCounitIso hπ _).hom,
+        patchingCounitIso_hom_naturality])
+    counitIso := NatIso.ofComponents (patchingCounitIso hπ) (patchingCounitIso_hom_naturality hπ)
+    functor_unitIso_comp P := by simp }
+
+/-- The unit of the patching equivalence sends `p` to `(p ⊗ 1, p ⊗ 1)`: its first component. -/
+theorem fst_patchingEquivalence_unitIso_hom_app (P : FiniteProjectiveRight (π₁.pullback π₂))
+    (x : P.obj) :
+    (((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom x).fst =
+      tmul (RingHom.op (π₁.pullbackFst π₂)) 1 x := by
+  -- The first component of the image of the unit, followed by the counit, is the identity.
+  set u := ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom
+  calc _ = (1 : A₁ᵐᵒᵖ) • (u x).fst := (one_smul _ _).symm
+    _ = PatchedModule.compareFst _ _ (tmul _ 1 (u x)) :=
+      (PatchedModule.compareFst_tmul _ _ 1 _).symm
+    _ = PatchedModule.compareFst _ _ (map _ u (tmul _ 1 x)) := congrArg _ (map_tmul _ _ _).symm
+    _ = _ := congr($(((patchingEquivalence π₁ π₂ hπ).functor_unitIso_comp P)).fst.hom.hom
+      (tmul (RingHom.op (π₁.pullbackFst π₂)) 1 x))
+
+/-- The unit of the patching equivalence sends `p` to `(p ⊗ 1, p ⊗ 1)`: its second component. -/
+theorem snd_patchingEquivalence_unitIso_hom_app (P : FiniteProjectiveRight (π₁.pullback π₂))
+    (x : P.obj) :
+    (((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom x).snd =
+      tmul (RingHom.op (π₁.pullbackSnd π₂)) 1 x := by
+  -- The second component of the image of the unit, followed by the counit, is the identity.
+  set u := ((patchingEquivalence π₁ π₂ hπ).unitIso.hom.app P).hom.hom
+  calc _ = (1 : A₂ᵐᵒᵖ) • (u x).snd := (one_smul _ _).symm
+    _ = PatchedModule.compareSnd _ _ (tmul _ 1 (u x)) :=
+      (PatchedModule.compareSnd_tmul _ _ 1 _).symm
+    _ = PatchedModule.compareSnd _ _ (map _ u (tmul _ 1 x)) := congrArg _ (map_tmul _ _ _).symm
+    _ = _ := congr($(((patchingEquivalence π₁ π₂ hπ).functor_unitIso_comp P)).snd.hom.hom
+      (tmul (RingHom.op (π₁.pullbackSnd π₂)) 1 x))
+
+variable (π₁ π₂) in
+include hπ in
+/-- **Milnor's patching theorem.** For ring homomorphisms `π₁ : A₁ →+* Q` and `π₂ : A₂ →+* Q`, one
+of which is surjective, the patching functor `P ↦ (P ⊗_D A₁, P ⊗_D A₂, α_P)` from finitely
+generated projective right modules over `D = A₁ ×_Q A₂` to patching triples is an equivalence of
+categories; its inverse is the patched module functor (`RingHom.patchingEquivalence`). -/
+theorem milnor_patching : (patchingFunctor π₁ π₂).IsEquivalence :=
+  (patchingEquivalence π₁ π₂ hπ).isEquivalence_functor
+
+end Equivalence
 
 end RingHom
