@@ -28,6 +28,9 @@ finite-label entropies `TauCeti.labelEntropy` and `TauCeti.condLabelEntropy`, ma
 * `TauCeti.toReal_countablePartitionEntropy` (under a probability or zero measure) and
   `TauCeti.toReal_conditionalPartitionEntropy` (for every measure): their real parts are the
   finite-label entropies.
+* `TauCeti.countablePartitionEntropy_le_ofReal_log_card`: under a probability (or zero) measure, a
+  measurable label `a` with `a x ∈ s` for every `x`, for a finite set `s`, has
+  `H(a) ≤ log (card s)`.
 -/
 
 public section
@@ -77,5 +80,21 @@ theorem toReal_conditionalPartitionEntropy (μ : Measure X) (a : X → ι) (b : 
     (conditionalPartitionEntropy μ a b).toReal = condLabelEntropy μ a b := by
   rw [conditionalPartitionEntropy_eq_ofReal_condLabelEntropy,
     ENNReal.toReal_ofReal (condLabelEntropy_nonneg μ a b)]
+
+/-- **Support bound.** Under a probability measure (or the zero measure), a measurable label whose
+values lie in a finite set `s` has entropy at most `log (card s)`. -/
+theorem countablePartitionEntropy_le_ofReal_log_card {ι : Type*} [IsZeroOrProbabilityMeasure μ]
+    [MeasurableSpace ι] [MeasurableSingletonClass ι] {a : X → ι} (ha : Measurable a)
+    (s : Finset ι) (hs : ∀ x, a x ∈ s) :
+    countablePartitionEntropy μ a ≤ ENNReal.ofReal (Real.log s.card) := by
+  set b : X → s := fun x ↦ ⟨a x, hs x⟩
+  have hb : Measurable b := ha.subtype_mk
+  rw [show a = Subtype.val ∘ b from rfl,
+    countablePartitionEntropy_comp_of_injective b Subtype.val_injective]
+  rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
+  · simp
+  rw [countablePartitionEntropy_eq_ofReal_labelEntropy]
+  refine ENNReal.ofReal_le_ofReal ?_
+  simpa using (labelEntropy_nonneg_le_log_card hb).2
 
 end TauCeti

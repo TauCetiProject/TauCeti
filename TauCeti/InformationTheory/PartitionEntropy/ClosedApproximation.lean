@@ -6,26 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.PartitionEntropy.Conditional
+public import TauCeti.MeasureTheory.MeasurableSpace.Sum
 public import Mathlib.MeasureTheory.Measure.Regular
-import TauCeti.InformationTheory.LabelEntropy
 import TauCeti.InformationTheory.PartitionEntropy.Finite
 
 /-!
 # Approximating finite partitions by closed partitions
 
-These are the partition estimates behind Goodwyn's inequality `h_μ(T) ≤ h_top(T)`. A label whose
-values lie in a finite set `s` has entropy at most `log (card s)`. Restricting a finite label `a`
-to a set `F`, that is, keeping `a x` on `F` and lumping `Fᶜ` into one extra atom, costs a
-conditional entropy of at most `μ Fᶜ * log (card ι)`. For a weakly regular measure on a
+These are the partition estimates behind Goodwyn's inequality `h_μ(T) ≤ h_top(T)`. Restricting a
+finite label `a` to a set `F`, that is, keeping `a x` on `F` and lumping `Fᶜ` into one extra atom,
+costs a conditional entropy of at most `μ Fᶜ * log (card ι)`. For a weakly regular measure on a
 topological space, every atom of a finite measurable label contains a closed set of nearly full
 measure, so the restriction to the union of these closed sets has arbitrarily small conditional
 entropy, while its atoms other than the lumped one are closed.
 
 ## Main results
 
-* `TauCeti.countablePartitionEntropy_le_ofReal_log_card`: if `a x ∈ s` for every `x`, then
-  `H(a) ≤ log (card s)`.
-* `TauCeti.restrictLabel a F`: the label equal to `a` on `F` and to `Sum.inr ()` off `F`.
+* `TauCeti.restrictLabel a F`: the label equal to `a` on `F` and to `Sum.inr ()` off `F`, with
+  atoms `TauCeti.preimage_restrictLabel_inl` and `TauCeti.preimage_restrictLabel_inr`.
 * `TauCeti.conditionalPartitionEntropy_restrictLabel_le`:
   `H(a | restrictLabel a F) ≤ μ Fᶜ * log (card ι)`.
 * `TauCeti.exists_isClosed_measure_compl_iUnion_le`: for a weakly regular finite measure, closed
@@ -45,22 +43,6 @@ namespace TauCeti
 
 variable {X ι : Type*} {mX : MeasurableSpace X} {μ : Measure X}
 
-/-- **Support bound.** Under a probability measure (or the zero measure), a measurable label whose
-values lie in a finite set `s` has entropy at most `log (card s)`. -/
-theorem countablePartitionEntropy_le_ofReal_log_card [IsZeroOrProbabilityMeasure μ]
-    [MeasurableSpace ι] [MeasurableSingletonClass ι] {a : X → ι} (ha : Measurable a)
-    (s : Finset ι) (hs : ∀ x, a x ∈ s) :
-    countablePartitionEntropy μ a ≤ ENNReal.ofReal (Real.log s.card) := by
-  set b : X → s := fun x ↦ ⟨a x, hs x⟩
-  have hb : Measurable b := ha.subtype_mk
-  rw [show a = Subtype.val ∘ b from rfl,
-    countablePartitionEntropy_comp_of_injective b Subtype.val_injective]
-  rcases eq_zero_or_isProbabilityMeasure μ with rfl | _
-  · simp
-  rw [countablePartitionEntropy_eq_ofReal_labelEntropy]
-  refine ENNReal.ofReal_le_ofReal ?_
-  simpa using (labelEntropy_nonneg_le_log_card hb).2
-
 /-- The restriction of the label `a` to the set `F`: equal to `Sum.inl (a x)` on `F` and to
 `Sum.inr ()` off `F`, so that `Fᶜ` becomes a single atom. -/
 noncomputable def restrictLabel (a : X → ι) (F : Set X) : X → ι ⊕ Unit :=
@@ -73,6 +55,20 @@ theorem restrictLabel_of_mem {a : X → ι} {F : Set X} {x : X} (hx : x ∈ F) :
 theorem restrictLabel_of_notMem {a : X → ι} {F : Set X} {x : X} (hx : x ∉ F) :
     restrictLabel a F x = Sum.inr () := by
   simp [restrictLabel, hx]
+
+/-- The atom of `restrictLabel a F` with value `Sum.inl i` is `F ∩ a ⁻¹' {i}`. -/
+@[simp]
+theorem preimage_restrictLabel_inl (a : X → ι) (F : Set X) (i : ι) :
+    restrictLabel a F ⁻¹' {Sum.inl i} = F ∩ a ⁻¹' {i} := by
+  ext x
+  by_cases hx : x ∈ F <;> simp [restrictLabel_of_mem, restrictLabel_of_notMem, hx]
+
+/-- The lumped atom of `restrictLabel a F` is `Fᶜ`. -/
+@[simp]
+theorem preimage_restrictLabel_inr (a : X → ι) (F : Set X) :
+    restrictLabel a F ⁻¹' {Sum.inr ()} = Fᶜ := by
+  ext x
+  by_cases hx : x ∈ F <;> simp [restrictLabel_of_mem, restrictLabel_of_notMem, hx]
 
 /-- The restriction of a measurable label to a measurable set is measurable. -/
 theorem measurable_restrictLabel [MeasurableSpace ι] {a : X → ι} (ha : Measurable a) {F : Set X}
@@ -88,10 +84,6 @@ theorem conditionalPartitionEntropy_restrictLabel_le [Fintype ι] [MeasurableSpa
     (hF : MeasurableSet F) :
     conditionalPartitionEntropy μ a (restrictLabel a F) ≤
       μ Fᶜ * ENNReal.ofReal (Real.log (Fintype.card ι)) := by
-  have : MeasurableSingletonClass (ι ⊕ Unit) := ⟨fun o ↦ by
-    rcases o with i | u
-    · simpa using (measurableSet_singleton i).inl_image (β := Unit)
-    · simpa using (measurableSet_singleton u).inr_image (α := ι)⟩
   have hb := measurable_restrictLabel ha hF
   rw [conditionalPartitionEntropy_eq_tsum_cond _ hb, tsum_fintype, Fintype.sum_sum_type]
   -- On an atom inside `F` the label `a` is constant.
@@ -99,14 +91,9 @@ theorem conditionalPartitionEntropy_restrictLabel_le [Fintype ι] [MeasurableSpa
     have hS := hb (measurableSet_singleton (Sum.inl i))
     rw [countablePartitionEntropy_congr_ae (a' := fun _ ↦ i), countablePartitionEntropy_const]
     filter_upwards [ae_cond_mem hS] with x hx
-    by_cases hxF : x ∈ F
-    · simpa [restrictLabel_of_mem hxF] using hx
-    · simp [restrictLabel_of_notMem hxF] at hx
-  have hout : restrictLabel a F ⁻¹' {Sum.inr ()} = Fᶜ := by
-    ext x
-    by_cases hxF : x ∈ F <;> simp [restrictLabel_of_mem, restrictLabel_of_notMem, hxF]
+    exact ((preimage_restrictLabel_inl a F i).subset hx).2
   simp only [hin, mul_zero, Finset.sum_const_zero, zero_add, Finset.univ_unique,
-    Finset.sum_singleton, PUnit.default_eq_unit, hout]
+    Finset.sum_singleton, PUnit.default_eq_unit, preimage_restrictLabel_inr]
   gcongr
   simpa using countablePartitionEntropy_le_ofReal_log_card (μ := μ[|Fᶜ]) ha Finset.univ
     fun x ↦ Finset.mem_univ (a x)
