@@ -79,12 +79,17 @@ not microlocally smooth.
   along an injective linear map `L` has wave front set the conormal set of `range L`. By uniqueness
   of Haar measure it is a positive multiple of the surface measure of `range L`; this is how a
   measure on a submanifold reads in charts in which the submanifold is a linear subspace.
-* `Distribution.waveFrontSet_compCLMOfContinuousLinearEquiv`: the wave front set is invariant
-  under linear changes of coordinates, with covectors transforming by the transpose. If a linear
-  automorphism `e` identifies `V` with `Ω`, then `(x, ξ)` lies in the wave front set of the
-  pullback `e^* T` exactly when `(e x, (e⁻¹)ᵀ ξ)` lies in that of `T`. The underlying identity
-  `Distribution.localFourier_compCLMOfContinuousLinearEquiv` rescales localized Fourier
-  transforms.
+* `Distribution.waveFrontSet_transportCLM`: the wave front set is invariant under linear changes
+  of coordinates, with covectors transforming by the transpose. If a linear isomorphism
+  `e : E' ≃L[ℝ] E` between possibly different spaces identifies `Ω'` with `Ω`, then `(x, ξ)` lies
+  in the wave front set of the transport `e^* T = φ ↦ T (φ ∘ e⁻¹)` exactly when
+  `(e x, (e⁻¹)ᵀ ξ)` lies in that of `T`. The underlying identity
+  `Distribution.localFourier_transportCLM` moves localized Fourier transforms. For a linear
+  isometry `L`, `(L⁻¹)ᵀ = L`; a typical use is the swap of the factors of a Euclidean product.
+* `Distribution.waveFrontSet_compCLMOfContinuousLinearEquiv`: the same for the pullback along a
+  linear automorphism of `E`, a nonzero multiple of the transport; its localized Fourier
+  transforms are rescaled by `|det e|⁻¹`
+  (`Distribution.localFourier_compCLMOfContinuousLinearEquiv`).
 
 ## Implementation notes
 
@@ -842,6 +847,92 @@ section LinearEquiv
 
 open scoped InnerProduct
 
+section Transport
+
+variable {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [CompleteSpace E]
+  [CompleteSpace E'] {Ω' : Opens E'}
+
+/-- **Localized Fourier transforms under transport.** The localized Fourier transform of the
+transport `e^* T = φ ↦ T (φ ∘ e⁻¹)` along `e : E' ≃L[ℝ] E` with cutoff `φ`, at the frequency `η`,
+is that of `T` with the transported cutoff `φ ∘ e⁻¹`, at the frequency `(e⁻¹)ᵀ η`. -/
+theorem localFourier_transportCLM (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' Ω) (T : 𝓓'(Ω, ℂ))
+    (φ : 𝓓(Ω', ℂ)) (η : E') :
+    (transportCLM e h T).localFourier φ η =
+      T.localFourier (e.transportTestFunction ℝ h φ) (((e.symm : E →L[ℝ] E')†) η) := by
+  rw [localFourier_def, complexPairing_transportCLM]
+  refine (localFourier_eq _ _ fun y ↦ ?_).symm
+  simp [bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply,
+    ContinuousLinearMap.adjoint_inner_right]
+
+/-- If `T` is microlocally smooth at `(e x, (e⁻¹)ᵀ ξ)`, then its transport along `e` is
+microlocally smooth at `(x, ξ)`. Here `e` identifies `Ω'` with `Ω`. -/
+theorem IsMicrolocallySmoothAt.transportCLM {T : 𝓓'(Ω, ℂ)} {x ξ : E'} (e : E' ≃L[ℝ] E)
+    (h : MapsTo e Ω' Ω) (h' : MapsTo e.symm Ω Ω')
+    (hT : T.IsMicrolocallySmoothAt (e x) (((e.symm : E →L[ℝ] E')†) ξ)) :
+    (transportCLM e h T).IsMicrolocallySmoothAt x ξ := by
+  obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hdecay⟩ := hT
+  set A : E' →L[ℝ] E := (e.symm : E →L[ℝ] E')†
+  -- The cutoff `φ ∘ e` and the cone `A⁻¹ Γ` carry the decay of `T` over to its transport.
+  refine ⟨e.symm.transportTestFunction ℝ h' φ, by simpa using hφ, A ⁻¹' Γ,
+    hΓ.preimage A.continuous, hξ, fun t ht η hη => ?_, fun N => ?_⟩
+  · simpa only [mem_preimage, map_smul] using hcone t ht (A η) hη
+  obtain ⟨C, hC⟩ := hdecay N
+  refine ⟨(1 + ‖(e : E' →L[ℝ] E)‖) ^ N * C, fun η hη => ?_⟩
+  -- Since `eᵀ` inverts `A`, `‖η‖ ≤ ‖eᵀ‖ ‖A η‖ = ‖e‖ ‖A η‖`.
+  have hηe : ‖η‖ ≤ ‖(e : E' →L[ℝ] E)‖ * ‖A η‖ := by
+    have h := e.symm.adjoint_symm_adjoint_apply η
+    rw [ContinuousLinearEquiv.symm_symm] at h
+    calc ‖η‖ = ‖((e : E' →L[ℝ] E)†) (A η)‖ := by rw [h]
+      _ ≤ ‖(e : E' →L[ℝ] E)†‖ * ‖A η‖ := ContinuousLinearMap.le_opNorm _ _
+      _ = ‖(e : E' →L[ℝ] E)‖ * ‖A η‖ := by rw [LinearIsometryEquiv.norm_map]
+  have hηA : 1 + ‖η‖ ≤ (1 + ‖(e : E' →L[ℝ] E)‖) * (1 + ‖A η‖) := by
+    nlinarith [norm_nonneg (A η), norm_nonneg (e : E' →L[ℝ] E)]
+  rw [localFourier_transportCLM,
+    ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm]
+  calc (1 + ‖η‖) ^ N * ‖T.localFourier φ (A η)‖
+      ≤ ((1 + ‖(e : E' →L[ℝ] E)‖) * (1 + ‖A η‖)) ^ N * ‖T.localFourier φ (A η)‖ := by
+        gcongr
+    _ = (1 + ‖(e : E' →L[ℝ] E)‖) ^ N * ((1 + ‖A η‖) ^ N * ‖T.localFourier φ (A η)‖) := by
+        rw [mul_pow, mul_assoc]
+    _ ≤ (1 + ‖(e : E' →L[ℝ] E)‖) ^ N * C := by
+        gcongr
+        exact hC (A η) hη
+
+/-- **Microlocal smoothness under transport.** When `e : E' ≃L[ℝ] E` identifies `Ω'` with `Ω`,
+the transport `e^* T` is microlocally smooth at `(x, ξ)` exactly when `T` is microlocally smooth
+at `(e x, (e⁻¹)ᵀ ξ)`. -/
+theorem isMicrolocallySmoothAt_transportCLM_iff {T : 𝓓'(Ω, ℂ)} {x ξ : E'} (e : E' ≃L[ℝ] E)
+    (h : MapsTo e Ω' Ω) (h' : MapsTo e.symm Ω Ω') :
+    (transportCLM e h T).IsMicrolocallySmoothAt x ξ ↔
+      T.IsMicrolocallySmoothAt (e x) (((e.symm : E →L[ℝ] E')†) ξ) := by
+  refine ⟨fun hT ↦ ?_, fun hT ↦ hT.transportCLM e h h'⟩
+  -- Transport `e^* T` back along `e⁻¹`, which gives back `T`.
+  have hT' : (transportCLM e h T).IsMicrolocallySmoothAt (e.symm (e x))
+      (((e.symm.symm : E' →L[ℝ] E)†) (((e.symm : E →L[ℝ] E')†) ξ)) := by
+    simpa only [ContinuousLinearEquiv.adjoint_symm_adjoint_apply,
+      ContinuousLinearEquiv.symm_apply_apply] using hT
+  have hT'' := hT'.transportCLM e.symm h' (by simpa using h)
+  rwa [transportCLM_symm_transportCLM] at hT''
+
+/-- **The wave front set under transport.** When `e : E' ≃L[ℝ] E` identifies `Ω'` with `Ω`, the
+wave front set of the transport `e^* T` consists of the `(x, ξ)` with `(e x, (e⁻¹)ᵀ ξ)` in the
+wave front set of `T`: positions move by `e⁻¹` and covectors by the transpose `eᵀ`. For a linear
+isometry `L`, the transpose inverse `(L⁻¹)ᵀ` is `L` itself
+(`LinearIsometryEquiv.adjoint_eq_symm`), so positions and covectors both move by `L⁻¹`. -/
+theorem waveFrontSet_transportCLM (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' Ω)
+    (h' : MapsTo e.symm Ω Ω') (T : 𝓓'(Ω, ℂ)) :
+    (transportCLM e h T).waveFrontSet =
+      Prod.map e ((e.symm : E →L[ℝ] E')†) ⁻¹' T.waveFrontSet := by
+  ext ⟨x, ξ⟩
+  have hx : x ∈ Ω' ↔ e x ∈ Ω := ⟨fun hx => h hx, fun hx => by simpa using h' hx⟩
+  have hξ : ξ ≠ 0 ↔ ((e.symm : E →L[ℝ] E')†) ξ ≠ 0 := by
+    refine ⟨fun hne h0 => hne ?_, fun hne h0 => hne (by simp [h0])⟩
+    rw [← e.symm.adjoint_symm_adjoint_apply ξ, h0, map_zero]
+  simp only [mem_waveFrontSet_iff, mem_preimage, Prod.map_apply, hx, hξ,
+    isMicrolocallySmoothAt_transportCLM_iff e h h']
+
+end Transport
+
 variable [FiniteDimensional ℝ E] {V : Opens E}
 
 /-- **Localized Fourier transforms under a linear change of coordinates.** The localized Fourier
@@ -852,11 +943,8 @@ theorem localFourier_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : M
     (compCLMOfContinuousLinearEquiv e hVO T).localFourier φ η =
       (|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) *
         T.localFourier (e.transportTestFunction ℝ hVO φ) (((e.symm : E →L[ℝ] E)†) η) := by
-  rw [localFourier, complexPairing_compCLMOfContinuousLinearEquiv]
-  congr 1
-  refine (localFourier_eq _ _ fun y => ?_).symm
-  simp [bilinLeftCLM_apply, TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply,
-    ContinuousLinearMap.adjoint_inner_right]
+  rw [compCLMOfContinuousLinearEquiv_eq_smul_transportCLM, _root_.smul_apply,
+    ← Complex.coe_smul, localFourier_smul, localFourier_transportCLM]
 
 /-- If `T` is microlocally smooth at `(e x, (e⁻¹)ᵀ ξ)`, then its pullback along `e` is
 microlocally smooth at `(x, ξ)`. Here `e` identifies `V` with `Ω`. -/
@@ -864,35 +952,10 @@ theorem IsMicrolocallySmoothAt.compCLMOfContinuousLinearEquiv {T : 𝓓'(Ω, ℂ
     (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V)
     (h : T.IsMicrolocallySmoothAt (e x) (((e.symm : E →L[ℝ] E)†) ξ)) :
     (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySmoothAt x ξ := by
-  obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hdecay⟩ := h
-  set A : E →L[ℝ] E := (e.symm : E →L[ℝ] E)†
-  -- The cutoff `φ ∘ e` and the cone `A⁻¹ Γ` carry the decay of `T` over to its pullback.
-  refine ⟨e.symm.transportTestFunction ℝ hOV φ, by simpa using hφ, A ⁻¹' Γ,
-    hΓ.preimage A.continuous, hξ, fun t ht η hη => ?_, fun N => ?_⟩
-  · simpa only [mem_preimage, map_smul] using hcone t ht (A η) hη
-  obtain ⟨C, hC⟩ := hdecay N
-  refine ⟨|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ * ((1 + ‖(e : E →L[ℝ] E)‖) ^ N * C),
-    fun η hη => ?_⟩
-  -- Since `eᵀ` inverts `A`, `‖η‖ ≤ ‖eᵀ‖ ‖A η‖ = ‖e‖ ‖A η‖`.
-  have hηe : ‖η‖ ≤ ‖(e : E →L[ℝ] E)‖ * ‖A η‖ := by
-    have h := e.symm.adjoint_symm_adjoint_apply η
-    rw [ContinuousLinearEquiv.symm_symm] at h
-    calc ‖η‖ = ‖((e : E →L[ℝ] E)†) (A η)‖ := by rw [h]
-      _ ≤ ‖(e : E →L[ℝ] E)†‖ * ‖A η‖ := ContinuousLinearMap.le_opNorm _ _
-      _ = ‖(e : E →L[ℝ] E)‖ * ‖A η‖ := by rw [LinearIsometryEquiv.norm_map]
-  have hηA : 1 + ‖η‖ ≤ (1 + ‖(e : E →L[ℝ] E)‖) * (1 + ‖A η‖) := by
-    nlinarith [norm_nonneg (A η), norm_nonneg (e : E →L[ℝ] E)]
-  have hC' := hC (A η) hη
-  rw [localFourier_compCLMOfContinuousLinearEquiv,
-    ContinuousLinearEquiv.transportTestFunction_transportTestFunction_symm, norm_mul,
-    Complex.norm_real, Real.norm_of_nonneg (by positivity), mul_left_comm]
-  refine mul_le_mul_of_nonneg_left ?_ (by positivity)
-  calc (1 + ‖η‖) ^ N * ‖T.localFourier φ (A η)‖
-      ≤ ((1 + ‖(e : E →L[ℝ] E)‖) * (1 + ‖A η‖)) ^ N * ‖T.localFourier φ (A η)‖ := by
-        gcongr
-    _ = (1 + ‖(e : E →L[ℝ] E)‖) ^ N * ((1 + ‖A η‖) ^ N * ‖T.localFourier φ (A η)‖) := by
-        rw [mul_pow, mul_assoc]
-    _ ≤ (1 + ‖(e : E →L[ℝ] E)‖) ^ N * C := by gcongr
+  -- The pullback is a scalar multiple of the transport.
+  rw [compCLMOfContinuousLinearEquiv_eq_smul_transportCLM, _root_.smul_apply,
+    ← Complex.coe_smul]
+  exact (h.transportCLM e hVO hOV).smul _
 
 /-- **Microlocal smoothness under a linear change of coordinates.** When `e` identifies `V` with
 `Ω`, the pullback `e^* T` is microlocally smooth at `(x, ξ)` exactly when `T` is microlocally
@@ -917,13 +980,11 @@ theorem waveFrontSet_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : M
     (hOV : MapsTo e.symm Ω V) (T : 𝓓'(Ω, ℂ)) :
     (compCLMOfContinuousLinearEquiv e hVO T).waveFrontSet =
       Prod.map e ((e.symm : E →L[ℝ] E)†) ⁻¹' T.waveFrontSet := by
-  ext ⟨x, ξ⟩
-  have hx : x ∈ V ↔ e x ∈ Ω := ⟨fun h => hVO h, fun h => by simpa using hOV h⟩
-  have hξ : ξ ≠ 0 ↔ ((e.symm : E →L[ℝ] E)†) ξ ≠ 0 := by
-    refine ⟨fun h h0 => h ?_, fun h h0 => h (by simp [h0])⟩
-    rw [← e.symm.adjoint_symm_adjoint_apply ξ, h0, map_zero]
-  simp only [mem_waveFrontSet_iff, mem_preimage, Prod.map_apply, hx, hξ,
-    isMicrolocallySmoothAt_compCLMOfContinuousLinearEquiv_iff e hVO hOV]
+  -- The pullback is a nonzero scalar multiple of the transport.
+  have hdet : ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) ≠ 0 := by
+    simpa using LinearEquiv.isUnit_det' e.toLinearEquiv |>.ne_zero
+  rw [compCLMOfContinuousLinearEquiv_eq_smul_transportCLM, _root_.smul_apply, ← Complex.coe_smul,
+    waveFrontSet_smul hdet, waveFrontSet_transportCLM e hVO hOV]
 
 end LinearEquiv
 

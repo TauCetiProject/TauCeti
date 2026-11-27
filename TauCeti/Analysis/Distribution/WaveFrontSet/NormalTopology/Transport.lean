@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.WaveFrontSet.NormalTopology
-public import TauCeti.Analysis.Distribution.WaveFrontSet.Transport
 
 /-!
 # Transport along linear isometries in the normal topology
@@ -15,10 +14,10 @@ Let `L : E' ≃ₗᵢ[ℝ] E` be a linear isometry of finite-dimensional real in
 identifying an open set `Ω'` of `E'` with an open set `Ω` of `E`, and let `Γ` be a subset of
 `E × E`. The transport `L^* T = φ ↦ T (φ ∘ L⁻¹)` of distributions (`Distribution.transportCLM`)
 moves wave front sets by `L⁻¹` in positions and covectors
-(`Distribution.waveFrontSet_transportCLM`), so it maps `𝓓'_Γ(Ω)` to `𝓓'_{L^* Γ}(Ω')`, where
-`L^* Γ = {(x, ξ) | (L x, L ξ) ∈ Γ}`. This file proves that it is continuous for the normal
-topologies (`TauCeti.WaveFrontSpace.transportCLM`): each seminorm of `L^* T` is a seminorm of
-`T` with transported data, `‖L^* T‖_{φ,V,N} = ‖T‖_{φ ∘ L⁻¹, L V, N}`
+(`Distribution.waveFrontSet_transportCLM`, as the transpose inverse of `L` is `L`), so it maps
+`𝓓'_Γ(Ω)` to `𝓓'_{L^* Γ}(Ω')`, where `L^* Γ = {(x, ξ) | (L x, L ξ) ∈ Γ}`. This file proves that
+it is continuous for the normal topologies (`TauCeti.WaveFrontSpace.transportCLM`): each seminorm
+of `L^* T` is a seminorm of `T` with transported data, `‖L^* T‖_{φ,V,N} = ‖T‖_{φ ∘ L⁻¹, L V, N}`
 (`TauCeti.WaveFrontSpace.seminorm_transportCLM`), since the localized Fourier transform of `L^* T`
 at `η` is that of `T` at `L η` and `‖L η‖ = ‖η‖` (`Distribution.localFourier_transportCLM`).
 
@@ -102,13 +101,20 @@ namespace WaveFrontSpace
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
 
+/-- The transpose inverse `(L⁻¹)ᵀ` of a linear isometry `L` is `L` itself. -/
+private theorem coe_adjoint_toContinuousLinearEquiv_symm (L : E' ≃ₗᵢ[ℝ] E) :
+    ⇑(ContinuousLinearMap.adjoint (L.toContinuousLinearEquiv.symm : E →L[ℝ] E')) = L := by
+  rw [← LinearIsometryEquiv.toContinuousLinearEquiv_symm]
+  exact congrArg DFunLike.coe (LinearIsometryEquiv.adjoint_eq_symm L.symm)
+
 /-- The transport `L^* : 𝓓'_Γ(Ω) → 𝓓'_{L^* Γ}(Ω')` as a linear map, before its continuity is
 proved. -/
 private def transportₗ (L : E' ≃ₗᵢ[ℝ] E) (h : MapsTo L.toContinuousLinearEquiv Ω' Ω)
     (h' : MapsTo L.toContinuousLinearEquiv.symm Ω Ω') :
     WaveFrontSpace Ω Γ →ₗ[ℂ] WaveFrontSpace Ω' (Prod.map L L ⁻¹' Γ) where
   toFun u := mk (Distribution.transportCLM L.toContinuousLinearEquiv h u.toDistribution) <| by
-    rw [waveFrontSet_transportCLM L h h']
+    rw [waveFrontSet_transportCLM _ h h', coe_adjoint_toContinuousLinearEquiv_symm,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv]
     exact preimage_mono u.waveFrontSet_toDistribution_subset
   map_add' u v := ext (by simp)
   map_smul' c u := ext (by ext φ; simp)
@@ -130,12 +136,14 @@ private theorem seminorm_transportₗ (L : E' ≃ₗᵢ[ℝ] E) (h : MapsTo L.to
   refine le_antisymm (seminorm_le_bound i _ (apply_nonneg _ _) fun η hη ↦ ?_)
     (seminorm_le_bound _ u (apply_nonneg _ _) fun ζ hζ ↦ ?_)
   · have hle := le_seminorm (i.transport L h) u (η := L η) (by simpa using hη)
+    rw [toDistribution_transportₗ, Distribution.localFourier_transportCLM,
+      coe_adjoint_toContinuousLinearEquiv_symm]
     rwa [WaveFrontSeminormIndex.transport_order, WaveFrontSeminormIndex.transport_cutoff,
-      LinearIsometryEquiv.norm_map, ← Distribution.localFourier_transportCLM,
-      ← toDistribution_transportₗ L h h'] at hle
+      LinearIsometryEquiv.norm_map] at hle
   · have hle := le_seminorm i (transportₗ L h h' u) (η := L.symm ζ) hζ
     rwa [toDistribution_transportₗ, Distribution.localFourier_transportCLM,
-      LinearIsometryEquiv.apply_symm_apply, LinearIsometryEquiv.norm_map] at hle
+      coe_adjoint_toContinuousLinearEquiv_symm, LinearIsometryEquiv.apply_symm_apply,
+      LinearIsometryEquiv.norm_map] at hle
 
 /-- **Transport along a linear isometry in the normal topology.** Let `L : E' ≃ₗᵢ[ℝ] E` identify
 `Ω'` with `Ω`. The transport `L^* T = φ ↦ T (φ ∘ L⁻¹)` (`Distribution.transportCLM`) is a

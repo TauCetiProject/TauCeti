@@ -192,7 +192,7 @@ variable {S T}
 at `((x, y), (ξ, η))` for every `y` and `η`. -/
 theorem IsMicrolocallySmoothAt.transportCLM_tensorProduct_left {p ζ : WithLp 2 (E × D)}
     (hS : S.IsMicrolocallySmoothAt p.fst ζ.fst) (hξ : ζ.fst ≠ 0) (hp : p ∈ W) :
-    (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+    (Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (S.tensorProduct T hV.subset)).IsMicrolocallySmoothAt p ζ := by
   obtain ⟨U, hU, Γ, hΓ, hξΓ, hcone, hdecay⟩ := hS.exists_nhds_cone
   obtain ⟨φ, ψ, χ, hφ, -, hχ, hprod⟩ := exists_prod_cutoff S T hV hW hp hU univ_mem
@@ -206,7 +206,7 @@ theorem IsMicrolocallySmoothAt.transportCLM_tensorProduct_left {p ζ : WithLp 2 
 at `((x, y), (ξ, η))` for every `x` and `ξ`. -/
 theorem IsMicrolocallySmoothAt.transportCLM_tensorProduct_right {p ζ : WithLp 2 (E × D)}
     (hT : T.IsMicrolocallySmoothAt p.snd ζ.snd) (hη : ζ.snd ≠ 0) (hp : p ∈ W) :
-    (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+    (Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (S.tensorProduct T hV.subset)).IsMicrolocallySmoothAt p ζ := by
   obtain ⟨U, hU, Γ, hΓ, hηΓ, hcone, hdecay⟩ := hT.exists_nhds_cone
   obtain ⟨φ, ψ, χ, -, hψ, hχ, hprod⟩ := exists_prod_cutoff S T hV hW hp univ_mem hU
@@ -254,7 +254,7 @@ variable {S T}
 `((x, y), (ξ, 0))` and `y` lies in the support of `T`, then `S` is microlocally smooth at
 `(x, ξ)`. -/
 theorem IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_left {p ζ : WithLp 2 (E × D)}
-    (h : (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+    (h : (Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (S.tensorProduct T hV.subset)).IsMicrolocallySmoothAt p ζ)
     (hη : ζ.snd = 0) (hy : p.snd ∈ dsupport T) : S.IsMicrolocallySmoothAt p.fst ζ.fst := by
   obtain ⟨U, hU, Γ, hΓ, hζΓ, hcone, hdecay⟩ := h.exists_nhds_cone
@@ -287,7 +287,7 @@ theorem IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_left {p ζ : WithLp
 `((x, y), (0, η))` and `x` lies in the support of `S`, then `T` is microlocally smooth at
 `(y, η)`. -/
 theorem IsMicrolocallySmoothAt.of_transportCLM_tensorProduct_right {p ζ : WithLp 2 (E × D)}
-    (h : (transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
+    (h : (Distribution.transportCLM (prodContinuousLinearEquiv 2 ℝ E D) hW
       (S.tensorProduct T hV.subset)).IsMicrolocallySmoothAt p ζ)
     (hξ : ζ.fst = 0) (hx : p.fst ∈ dsupport S) : T.IsMicrolocallySmoothAt p.snd ζ.snd := by
   obtain ⟨U, hU, Γ, hΓ, hζΓ, hcone, hdecay⟩ := h.exists_nhds_cone

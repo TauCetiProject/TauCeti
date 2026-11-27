@@ -928,40 +928,43 @@ section Swap
 variable {E D : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup D]
   [NormedSpace ℝ D]
 
-/-- The open set `{(y, x) | (x, y) ∈ V}` of `D × E`. -/
-private def swapOpens (V : Opens (E × D)) : Opens (D × E) :=
-  ⟨Prod.swap ⁻¹' V, V.isOpen.preimage continuous_swap⟩
-
-/-- The open set `{(y, x) | (x, y) ∈ W}` of the Euclidean product `WithLp 2 (D × E)`. -/
-private def swapEuclideanOpens (W : Opens (WithLp 2 (E × D))) : Opens (WithLp 2 (D × E)) :=
-  ⟨LinearIsometryEquiv.withLpProdComm 2 ℝ D E ⁻¹' W,
-    W.isOpen.preimage (LinearIsometryEquiv.withLpProdComm 2 ℝ D E).continuous⟩
-
 omit [NormedSpace ℝ E] [NormedSpace ℝ D] in
-private theorem coe_swapOpens {Ω : Opens E} {O : Opens D} {V : Opens (E × D)}
+private theorem coe_comap_prodSwap {Ω : Opens E} {O : Opens D} {V : Opens (E × D)}
     (hV : (V : Set (E × D)) = (Ω : Set E) ×ˢ (O : Set D)) :
-    (swapOpens V : Set (D × E)) = (O : Set D) ×ˢ (Ω : Set E) := by
-  rw [swapOpens, Opens.coe_mk, hV, preimage_swap_prod]
+    (Opens.comap ContinuousMap.prodSwap V : Set (D × E)) = (O : Set D) ×ˢ (Ω : Set E) := by
+  ext ⟨y, x⟩
+  simp [hV, and_comm]
 
-private theorem mapsTo_swapEuclideanOpens {V : Opens (E × D)} {W : Opens (WithLp 2 (E × D))}
+private theorem mapsTo_comap_withLpProdComm {V : Opens (E × D)} {W : Opens (WithLp 2 (E × D))}
     (hW : MapsTo (prodContinuousLinearEquiv 2 ℝ E D) W V) :
-    MapsTo (prodContinuousLinearEquiv 2 ℝ D E) (swapEuclideanOpens W) (swapOpens V) :=
-  -- Both memberships unfold to that of the swapped point, in `W` and in `V`.
-  fun _ hp ↦ hW hp
+    MapsTo (prodContinuousLinearEquiv 2 ℝ D E)
+      (Opens.comap (LinearIsometryEquiv.withLpProdComm 2 ℝ D E :
+        C(WithLp 2 (D × E), WithLp 2 (E × D))) W : Set (WithLp 2 (D × E)))
+      (Opens.comap ContinuousMap.prodSwap V : Set (D × E)) := by
+  intro p hp
+  -- Both memberships are that of the swapped point.
+  simpa using hW hp
 
-private theorem mapsTo_withLpProdComm_swapEuclideanOpens (W : Opens (WithLp 2 (E × D))) :
+private theorem mapsTo_withLpProdComm_comap (W : Opens (WithLp 2 (E × D))) :
     MapsTo (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).toContinuousLinearEquiv W
-      (swapEuclideanOpens W) :=
-  fun p hp ↦ by
-    -- The swap of `D × E` inverts the swap of `E × D`.
-    rw [← (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).symm_apply_apply p] at hp
-    exact hp
+      (Opens.comap (LinearIsometryEquiv.withLpProdComm 2 ℝ D E :
+        C(WithLp 2 (D × E), WithLp 2 (E × D))) W : Set (WithLp 2 (D × E))) := by
+  intro p hp
+  -- The swap of `D × E` inverts the swap of `E × D`.
+  rw [SetLike.mem_coe, Opens.mem_comap, ContinuousMap.coe_ofClass,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, ← LinearIsometryEquiv.withLpProdComm_symm,
+    LinearIsometryEquiv.symm_apply_apply]
+  exact hp
 
-private theorem mapsTo_withLpProdComm_symm_swapEuclideanOpens (W : Opens (WithLp 2 (E × D))) :
+private theorem mapsTo_withLpProdComm_symm_comap (W : Opens (WithLp 2 (E × D))) :
     MapsTo (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).toContinuousLinearEquiv.symm
-      (swapEuclideanOpens W) W :=
-  -- The inverse of the swap of `E × D` is the swap of `D × E`, which defines `swapEuclideanOpens`.
-  fun _ hp ↦ hp
+      (Opens.comap (LinearIsometryEquiv.withLpProdComm 2 ℝ D E :
+        C(WithLp 2 (D × E), WithLp 2 (E × D))) W : Set (WithLp 2 (D × E))) W := by
+  intro p hp
+  -- The inverse of the swap of `E × D` is the swap of `D × E`.
+  rw [SetLike.mem_coe, Opens.mem_comap, ContinuousMap.coe_ofClass] at hp
+  rwa [LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv,
+    LinearIsometryEquiv.withLpProdComm_symm]
 
 end Swap
 
@@ -1054,11 +1057,10 @@ def tensorProductLeftCLM (hΓ₁ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ₁))
     WaveFrontSpace O Γ₂ →L[ℂ] WaveFrontSpace W (tensorCone Γ₁ Γ₂) :=
   -- `u ⊗ v` is the transport of `v ⊗ u` along the swap of the factors.
   (inclusionCLM (preimage_withLpProdComm_tensorCone Γ₁ Γ₂).subset).comp <|
-    (transportCLM (LinearIsometryEquiv.withLpProdComm 2 ℝ E D)
-      (mapsTo_withLpProdComm_swapEuclideanOpens W)
-      (mapsTo_withLpProdComm_symm_swapEuclideanOpens W)).comp <|
-    tensorProductRightCLM (coe_swapOpens hV) (mapsTo_swapEuclideanOpens hW) hΓ₂ hcone₂ hΓ₂0 hΓ₁
-      hcone₁ hΓ₁0 u
+    (transportCLM (LinearIsometryEquiv.withLpProdComm 2 ℝ E D) (mapsTo_withLpProdComm_comap W)
+      (mapsTo_withLpProdComm_symm_comap W)).comp <|
+    tensorProductRightCLM (coe_comap_prodSwap hV) (mapsTo_comap_withLpProdComm hW) hΓ₂ hcone₂
+      hΓ₂0 hΓ₁ hcone₁ hΓ₁0 u
 
 @[simp]
 theorem toDistribution_tensorProductLeftCLM (hΓ₁ : IsOpen (((Ω : Set E) ×ˢ {0}ᶜ) \ Γ₁))
@@ -1072,7 +1074,7 @@ theorem toDistribution_tensorProductLeftCLM (hΓ₁ : IsOpen (((Ω : Set E) ×ˢ
   simp only [tensorProductLeftCLM, ContinuousLinearMap.comp_apply, toDistribution_inclusionCLM,
     toDistribution_transportCLM, toDistribution_tensorProductRightCLM]
   exact Distribution.transportCLM_withLpProdComm_transportCLM_tensorProduct _ _ hV hW
-    (coe_swapOpens hV) (mapsTo_swapEuclideanOpens hW) (mapsTo_withLpProdComm_swapEuclideanOpens W)
+    (coe_comap_prodSwap hV) (mapsTo_comap_withLpProdComm hW) (mapsTo_withLpProdComm_comap W)
 
 /-- The tensor product `u ⊗ v` is the same whether it is regarded as continuous in `u`
 (`TauCeti.WaveFrontSpace.tensorProductRightCLM`) or in `v`
