@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.DifferentialOperator
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Affine
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 

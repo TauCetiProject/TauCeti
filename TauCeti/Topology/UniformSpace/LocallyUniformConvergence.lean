@@ -37,8 +37,10 @@ Uniform and locally uniform convergence along a filter `l` pass to any family of
 to `l`, for instance to a subsequence (`TendstoUniformlyOn.comp_tendsto`,
 `TendstoLocallyUniformlyOn.comp_tendsto`, `TendstoLocallyUniformly.comp_tendsto`); along an image
 filter `map g q` locally uniform convergence is convergence of the reindexed family along `q`
-(`TauCeti.tendstoLocallyUniformlyOn_map_iff`). A family that does not depend on its index
-converges locally uniformly to its constant value
+(`TauCeti.tendstoLocallyUniformlyOn_map_iff`). On an open subset of a locally compact space, a
+sequence converges locally uniformly when every subsequence has a further subsequence converging
+to the same limit (`TauCeti.tendstoLocallyUniformlyOn_of_forall_exists_subseq`). A family that
+does not depend on its index converges locally uniformly to its constant value
 (`TauCeti.tendstoLocallyUniformly_const`).
 Locally uniform convergence on the whole space gives pointwise convergence
 (`TendstoLocallyUniformly.tendsto_at`).
@@ -214,6 +216,21 @@ theorem tendstoLocallyUniformlyOn_map_iff {ι' γ : Type*} [UniformSpace γ] {F 
     TendstoLocallyUniformlyOn F f (map g q) s ↔ TendstoLocallyUniformlyOn (F ∘ g) f q s :=
   ⟨fun h ↦ h.comp_tendsto tendsto_map, fun h u hu x hx ↦
     (h u hu x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, eventually_map.2 hev⟩⟩
+
+/-- **Subsequence principle for locally uniform convergence.** On an open subset of a locally
+compact space, a sequence converges locally uniformly to `f` when every subsequence has a further
+subsequence that does. -/
+theorem tendstoLocallyUniformlyOn_of_forall_exists_subseq [LocallyCompactSpace α]
+    {γ : Type*} [UniformSpace γ] {F : ℕ → α → γ} {f : α → γ} (hs : IsOpen s)
+    (h : ∀ ψ : ℕ → ℕ, StrictMono ψ → ∃ ψ' : ℕ → ℕ, StrictMono ψ' ∧
+      TendstoLocallyUniformlyOn (fun n ↦ F (ψ (ψ' n))) f atTop s) :
+    TendstoLocallyUniformlyOn F f atTop s := by
+  refine (tendstoLocallyUniformlyOn_iff_forall_isCompact hs).2 fun K hKs hK u hu ↦ ?_
+  by_contra hne
+  obtain ⟨ψ, hψ, hψu⟩ := extraction_of_frequently_atTop (not_eventually.1 hne)
+  obtain ⟨ψ', -, hψ'⟩ := h ψ hψ
+  obtain ⟨n, hn⟩ := ((tendstoLocallyUniformlyOn_iff_forall_isCompact hs).1 hψ' K hKs hK u hu).exists
+  exact hψu (ψ' n) hn
 
 /-- A family that does not depend on its index converges locally uniformly to its constant
 value. -/

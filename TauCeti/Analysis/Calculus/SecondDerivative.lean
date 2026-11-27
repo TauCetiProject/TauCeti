@@ -833,6 +833,31 @@ theorem fderiv_fderiv_apply_eq_smul_iteratedDeriv (φ : 𝕜 → F) (t a b : �
   rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod] at h
   simpa [Fin.prod_univ_two] using h.symm
 
+/-- **The second derivative of a function of separated variables.** For continuous linear maps
+`P : E → F` and `ℓ : E → 𝕜` and `C²` functions `φ` on `F` and `η` on `𝕜`, the second derivative
+of `y ↦ φ(P y) η(ℓ y)` is
+`D²φ(P v, P w) η + φ η'' ℓ v ℓ w + Dφ(P v) η' ℓ w + η' ℓ v Dφ(P w)`, all evaluated at `P y`
+and `ℓ y`. -/
+theorem fderiv_fderiv_mul_comp_apply {φ : F → 𝕜} {η : 𝕜 → 𝕜} (P : E →L[𝕜] F) (ℓ : E →L[𝕜] 𝕜)
+    {y : E} (hφ : ContDiffAt 𝕜 2 φ (P y)) (hη : ContDiffAt 𝕜 2 η (ℓ y)) (v w : E) :
+    fderiv 𝕜 (fderiv 𝕜 fun y => φ (P y) * η (ℓ y)) y v w =
+      φ (P y) * (ℓ v * ℓ w * iteratedDeriv 2 η (ℓ y)) +
+        η (ℓ y) * fderiv 𝕜 (fderiv 𝕜 φ) (P y) (P v) (P w) +
+        fderiv 𝕜 φ (P y) (P v) * (deriv η (ℓ y) * ℓ w) +
+        deriv η (ℓ y) * ℓ v * fderiv 𝕜 φ (P y) (P w) := by
+  have hφP : ContDiffAt 𝕜 2 (φ ∘ P) y := hφ.comp y P.contDiff.contDiffAt
+  have hηℓ : ContDiffAt 𝕜 2 (η ∘ ℓ) y := hη.comp y ℓ.contDiff.contDiffAt
+  have h := fderiv_fderiv_fun_mul_apply hφP hηℓ v w
+  simp only [Function.comp_apply] at h
+  rw [h, fderiv_fderiv_comp_apply hφ P.contDiff.contDiffAt,
+    fderiv_fderiv_comp_apply hη ℓ.contDiff.contDiffAt,
+    fderiv_comp y (hφ.differentiableAt two_ne_zero) P.differentiableAt,
+    fderiv_comp y (hη.differentiableAt two_ne_zero) ℓ.differentiableAt,
+    fderiv_fderiv_apply_eq_smul_iteratedDeriv]
+  simp only [ContinuousLinearMap.fderiv, ContinuousLinearMap.fderiv_fderiv, Pi.zero_apply,
+    zero_apply, map_zero, ContinuousLinearMap.comp_apply, fderiv_eq_smul_deriv, smul_eq_mul]
+  ring
+
 /-- The second derivative of a scalar function of one variable, a map from `𝕜` to the linear forms
 on `𝕜`, is invertible exactly when the second iterated derivative is nonzero. -/
 theorem isInvertible_fderiv_fderiv_iff_iteratedDeriv_two_ne_zero {φ : 𝕜 → 𝕜} {t : 𝕜} :

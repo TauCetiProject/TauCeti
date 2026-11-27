@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.Analysis.InnerProductSpace.Transvection
 import Mathlib.Analysis.InnerProductSpace.NormDet
+import Mathlib.MeasureTheory.Integral.Marginal
 import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.MeasureTheory.Constructions.Pi
@@ -41,6 +42,8 @@ conditions on single coordinates, such as polydiscs, are measured.
   volume one.
 * `TauCeti.volume_setOf_apply_mem_eq_zero`: in `EuclideanSpace ℝ ι`, the points whose `i`-th
   coordinate lies in a null set of `ℝ` form a null set.
+* `TauCeti.lintegral_le_lintegral_of_forall_lintegral_update_le`: in `EuclideanSpace ℝ ι`, with any
+  additive Haar measure, integrals compare as their integrals along the lines of one coordinate do.
 * `TauCeti.volume_ball_eq_of_finrank_eq`, `TauCeti.volume_closedBall_eq_of_finrank_eq`: in
   finite-dimensional real inner product spaces of the same dimension, open (respectively closed)
   balls of the same radius have equal volume.
@@ -144,6 +147,30 @@ theorem volume_setOf_apply_mem_eq_zero {s : Set ℝ} (hs : volume s = 0) (i : ι
   have hpi := Measure.pi_eval_preimage_null (μ := fun _ : ι ↦ (volume : Measure ℝ)) (i := i) hs
   rw [← volume_pi] at hpi
   exact (PiLp.volume_preserving_ofLp ι).quasiMeasurePreserving.preimage_null hpi
+
+omit [Fintype ι] in
+/-- **Comparison of integrals along the lines of one coordinate.** On `EuclideanSpace ℝ ι` with an
+additive Haar measure `μ`, if the integral of `f` along every line parallel to the `i`-th
+coordinate axis is at most that of `g`, then `∫⁻ f ∂μ ≤ ∫⁻ g ∂μ`. This is Tonelli's theorem,
+integrating first in the `i`-th coordinate. -/
+theorem lintegral_le_lintegral_of_forall_lintegral_update_le [Finite ι]
+    (μ : Measure (EuclideanSpace ℝ ι)) [μ.IsAddHaarMeasure] {f g : EuclideanSpace ℝ ι → ENNReal}
+    (hf : Measurable f) (hg : Measurable g) (i : ι)
+    (h : ∀ x : ι → ℝ, ∫⁻ t, f (WithLp.toLp 2 (Function.update x i t)) ≤
+      ∫⁻ t, g (WithLp.toLp 2 (Function.update x i t))) :
+    ∫⁻ x, f x ∂μ ≤ ∫⁻ x, g x ∂μ := by
+  have := Fintype.ofFinite ι
+  -- `μ` is a multiple of the volume, which is the product measure on the coordinates.
+  rw [Measure.isAddLeftInvariant_eq_smul μ volume, lintegral_smul_measure,
+    lintegral_smul_measure]
+  refine mul_le_mul_right ?_ _
+  have he := PiLp.volume_preserving_toLp ι
+  rw [← he.lintegral_comp_emb (MeasurableEquiv.toLp 2 (ι → ℝ)).measurableEmbedding,
+    ← he.lintegral_comp_emb (MeasurableEquiv.toLp 2 (ι → ℝ)).measurableEmbedding, volume_pi]
+  refine lintegral_le_of_lmarginal_le {i} (hf.comp (MeasurableEquiv.toLp 2 (ι → ℝ)).measurable)
+    (hg.comp (MeasurableEquiv.toLp 2 (ι → ℝ)).measurable) fun x => ?_
+  simp only [lmarginal_singleton]
+  exact h x
 
 end TauCeti
 

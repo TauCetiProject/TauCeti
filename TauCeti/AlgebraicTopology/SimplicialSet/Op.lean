@@ -56,6 +56,17 @@ faithful. -/
 instance : opFunctor.{u}.IsEquivalence :=
   opEquivalence.isEquivalence_functor
 
+/-- The hom-equivalence of the self-adjunction `SSet.opEquivalence.toAdjunction` of
+`SSet.opFunctor` sends a map `f : Xᵒᵖ ⟶ Y` to the map `X ⟶ Yᵒᵖ` acting on simplices as `f`,
+through the identifications `SSet.opObjEquiv` of the simplices of an opposite. This holds by
+definition: the unit of `SSet.opEquivalence` is the identity on simplices. -/
+lemma opEquivalence_toAdjunction_homEquiv_app {X Y : SSet.{u}} (f : X.op ⟶ Y)
+    {n : SimplexCategoryᵒᵖ} (x : X.obj n) :
+    (Adjunction.homEquiv (F := opFunctor) (G := opFunctor) opEquivalence.toAdjunction X Y
+      f).app n x =
+      opObjEquiv.symm (f.app n (opObjEquiv.symm x)) :=
+  rfl
+
 namespace stdSimplex
 
 /-- The isomorphism `Δ[n]ᵒᵖ ≅ Δ[n]` reversing the order of the vertices is natural in `n`, where a
