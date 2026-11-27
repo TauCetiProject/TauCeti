@@ -422,16 +422,18 @@ theorem IsAdmissible.rank_toFiniteQuadraticModule {g : NikulinGenerator} (hg : g
       exact AddGroup.rank_zmod_prime_pow Nat.prime_two hk
   | dyadicU k =>
       have hk : 0 < k := (isAdmissible_dyadicU_iff k).mp hg
-      rw [toFiniteQuadraticModule_dyadicU, rank_dyadicU,
-        AddGroup.rank_congr
-          (AddEquiv.refl _ : FiniteQuadraticModule.dyadicU k ≃+ ZMod (2 ^ k) × ZMod (2 ^ k))]
-      exact AddGroup.rank_prod_zmod_prime_pow Nat.prime_two hk hk
+      have hZ : IsAddPGroup 2 (ZMod (2 ^ k)) := IsAddPGroup.of_card (Nat.card_zmod (2 ^ k))
+      rw [toFiniteQuadraticModule_dyadicU, rank_dyadicU]
+      trans AddGroup.rank (ZMod (2 ^ k) × ZMod (2 ^ k))
+      · exact AddGroup.rank_congr (AddEquiv.refl _)
+      · rw [hZ.rank_prod Nat.prime_two hZ, AddGroup.rank_zmod_prime_pow Nat.prime_two hk]
   | dyadicV k =>
       have hk : 0 < k := (isAdmissible_dyadicV_iff k).mp hg
-      rw [toFiniteQuadraticModule_dyadicV, rank_dyadicV,
-        AddGroup.rank_congr
-          (AddEquiv.refl _ : FiniteQuadraticModule.dyadicV k ≃+ ZMod (2 ^ k) × ZMod (2 ^ k))]
-      exact AddGroup.rank_prod_zmod_prime_pow Nat.prime_two hk hk
+      have hZ : IsAddPGroup 2 (ZMod (2 ^ k)) := IsAddPGroup.of_card (Nat.card_zmod (2 ^ k))
+      rw [toFiniteQuadraticModule_dyadicV, rank_dyadicV]
+      trans AddGroup.rank (ZMod (2 ^ k) × ZMod (2 ^ k))
+      · exact AddGroup.rank_congr (AddEquiv.refl _)
+      · rw [hZ.rank_prod Nat.prime_two hZ, AddGroup.rank_zmod_prime_pow Nat.prime_two hk]
 
 end NikulinGenerator
 

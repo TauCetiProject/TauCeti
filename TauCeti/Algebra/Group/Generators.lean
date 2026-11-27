@@ -1,13 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Wentao Li
+Authors: Wentao Li
 -/
 module
 
 public import TauCeti.Algebra.Module.SpanRank
-public import TauCeti.GroupTheory.Rank
-import Mathlib.Algebra.Group.ULift
+public import Mathlib.LinearAlgebra.Pi
 import Mathlib.Data.Nat.ChineseRemainder
 import Mathlib.GroupTheory.OrderOfElement
 import TauCeti.SetTheory.Cardinal.Finite
@@ -22,13 +21,9 @@ the least number of generators of the product is the maximum of the least number
 If one factor is infinite, coprimality forces all the others to be trivial, and the statements
 reduce to that factor.
 
-Results are given for both Mathlib's `Submodule.spanFinrank` over `ℤ` and `AddGroup.rank`. By
-Mathlib's convention `Submodule.spanFinrank` is `0` for a group that is not finitely generated, so
-for such factors the `spanFinrank` statement holds by that convention only; the `AddGroup.rank`
-statements assume finitely generated factors (`AddGroup.FG`). Combining this with
-`AddGroup.rank_pi_zmod` yields the closed formula `AddGroup.rank_prod_zmod` for the
-generator rank of `ZMod m × ZMod n` (and its prime-power specialization
-`AddGroup.rank_prod_zmod_prime_pow`).
+The generator number is Mathlib's `Submodule.spanFinrank` over `ℤ`, the least number of generators
+of a finitely generated group. By Mathlib's convention it is `0` for a group that is not finitely
+generated, so for such factors the generator-number statement holds by that convention only.
 -/
 
 public section
@@ -156,72 +151,3 @@ theorem spanFinrank_pi_eq_sup_of_coprime_card
       using h
 
 end TauCeti.AddCommGroup
-
-namespace AddGroup
-
-/-- For a finite family of finitely generated abelian groups of pairwise coprime orders,
-`AddGroup.rank` of their product is the supremum of the generator ranks of the factors. -/
-theorem rank_pi_eq_sup_of_coprime_card {ι : Type*} [Fintype ι] (M : ι → Type*)
-    [∀ i, AddCommGroup (M i)] [∀ i, AddGroup.FG (M i)]
-    (hcop : Pairwise fun i j ↦ (Nat.card (M i)).Coprime (Nat.card (M j))) :
-    AddGroup.rank (∀ i, M i) = Finset.univ.sup (fun i ↦ AddGroup.rank (M i)) := by
-  simp_rw [AddGroup.rank_eq_spanFinrank]
-  exact TauCeti.AddCommGroup.spanFinrank_pi_eq_sup_of_coprime_card M hcop
-
-private theorem rank_prod_eq_max_of_coprime_card_aux.{u} {M N : Type u}
-    [instM : AddCommGroup M] [instN : AddCommGroup N] [hM : AddGroup.FG M] [hN : AddGroup.FG N]
-    (hcop : (Nat.card M).Coprime (Nat.card N)) :
-    AddGroup.rank (M × N) = max (AddGroup.rank M) (AddGroup.rank N) := by
-  let F : Fin 2 → Type u := ![M, N]
-  let _ : ∀ i, AddCommGroup (F i) := fun | 0 => instM | 1 => instN
-  have : ∀ i, AddGroup.FG (F i) := fun | 0 => hM | 1 => hN
-  have hF : Pairwise fun i j ↦ (Nat.card (F i)).Coprime (Nat.card (F j)) := by
-    simpa [Pairwise, Fin.forall_fin_two, F] using ⟨hcop, hcop.symm⟩
-  change AddGroup.rank (F 0 × F 1) = max (AddGroup.rank (F 0)) (AddGroup.rank (F 1))
-  rw [rank_prod_eq_rank_piFinTwo F, rank_pi_eq_sup_of_coprime_card F hF,
-    Finset.univ_fin2, Finset.sup_insert, Finset.sup_singleton]
-
-/-- For two finitely generated abelian groups of coprime orders, `AddGroup.rank (M × N)` is the
-maximum of `AddGroup.rank M` and `AddGroup.rank N`. -/
-theorem rank_prod_eq_max_of_coprime_card.{u, v} (M : Type u) (N : Type v)
-    [AddCommGroup M] [AddCommGroup N] [AddGroup.FG M] [AddGroup.FG N]
-    (hcop : (Nat.card M).Coprime (Nat.card N)) :
-    AddGroup.rank (M × N) = max (AddGroup.rank M) (AddGroup.rank N) := by
-  have hcop' : (Nat.card (ULift.{v} M)).Coprime (Nat.card (ULift.{u} N)) := by
-    simpa using hcop
-  have eM : ULift.{v} M ≃+ M := AddEquiv.ulift
-  have eN : ULift.{u} N ≃+ N := AddEquiv.ulift
-  have : AddGroup.FG (ULift.{v} M) := .of_surjective eM.symm eM.symm.surjective
-  have : AddGroup.FG (ULift.{u} N) := .of_surjective eN.symm eN.symm.surjective
-  rw [← AddGroup.rank_congr (eM.prodCongr eN), rank_prod_eq_max_of_coprime_card_aux hcop',
-    AddGroup.rank_congr eM, AddGroup.rank_congr eN]
-
-/-- The generator rank of `ZMod m × ZMod n` is `0` if `m = 1` and `n = 1`, `1` if `m` and `n`
-are coprime and not both `1`, and `2` otherwise. -/
-theorem rank_prod_zmod (m n : ℕ) :
-    AddGroup.rank (ZMod m × ZMod n) =
-      if m = 1 ∧ n = 1 then 0 else if m.Coprime n then 1 else 2 := by
-  split_ifs with h1 hcop
-  · rcases h1 with ⟨rfl, rfl⟩
-    exact AddGroup.rank_eq_zero _
-  · have hcard : (Nat.card (ZMod m)).Coprime (Nat.card (ZMod n)) := by
-      simpa [Nat.card_zmod] using hcop
-    rw [rank_prod_eq_max_of_coprime_card (ZMod m) (ZMod n) hcard,
-      AddGroup.rank_zmod, AddGroup.rank_zmod]
-    split_ifs <;> simp_all
-  · obtain ⟨p, hp, hp_dvd⟩ := Nat.exists_prime_and_dvd hcop
-    let F : Fin 2 → ℕ := ![m, n]
-    have hdvd : ∀ i : Fin 2, p ∣ F i := Fin.forall_fin_two.2
-      ⟨hp_dvd.trans (Nat.gcd_dvd_left m n), hp_dvd.trans (Nat.gcd_dvd_right m n)⟩
-    change AddGroup.rank (ZMod (F 0) × ZMod (F 1)) = 2
-    rw [rank_prod_eq_rank_piFinTwo (fun i ↦ ZMod (F i)),
-      AddGroup.rank_pi_zmod _ hp hdvd, Fintype.card_fin]
-
-/-- For prime `p` and `k₁, k₂ > 0`, `ZMod (p ^ k₁) × ZMod (p ^ k₂)` has generator rank `2`. -/
-theorem rank_prod_zmod_prime_pow {p k₁ k₂ : ℕ} (hp : p.Prime) (hk₁ : 0 < k₁) (hk₂ : 0 < k₂) :
-    AddGroup.rank (ZMod (p ^ k₁) × ZMod (p ^ k₂)) = 2 := by
-  have hcop : ¬ (p ^ k₁).Coprime (p ^ k₂) :=
-    Nat.not_coprime_of_dvd_of_dvd hp.one_lt (dvd_pow_self p hk₁.ne') (dvd_pow_self p hk₂.ne')
-  simp [rank_prod_zmod, hp.ne_one, hk₁.ne', hcop]
-
-end AddGroup

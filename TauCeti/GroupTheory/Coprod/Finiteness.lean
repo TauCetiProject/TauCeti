@@ -34,8 +34,6 @@ public section
 namespace Monoid
 
 /-- The free product of two finitely generated monoids is finitely generated. -/
-@[to_additive /-- The free product of two finitely generated additive monoids is finitely
-generated. -/]
 instance Coprod.instFG {M N : Type*} [Monoid M] [Monoid N] [Monoid.FG M] [Monoid.FG N] :
     Monoid.FG (Coprod M N) := by
   rw [Monoid.fg_def, ← Coprod.mrange_inl_sup_mrange_inr]

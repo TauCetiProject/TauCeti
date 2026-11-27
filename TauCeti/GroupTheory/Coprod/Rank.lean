@@ -30,8 +30,6 @@ namespace Monoid.Coprod
 
 /-- The rank of a free product of two finitely generated groups is at most the sum of their
 ranks. Grushko's theorem says that equality holds. -/
-@[to_additive /-- The rank of a free product of two finitely generated additive groups is at most
-the sum of their ranks. -/]
 theorem rank_le_add (A B : Type*) [Group A] [Group B] [Group.FG A] [Group.FG B] :
     Group.rank (A ∗ B) ≤ Group.rank A + Group.rank B := by
   classical

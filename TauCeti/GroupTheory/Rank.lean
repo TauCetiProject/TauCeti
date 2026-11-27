@@ -14,9 +14,7 @@ public import Mathlib.LinearAlgebra.Dimension.Free
 public import TauCeti.Algebra.Module.SpanRank
 public import TauCeti.GroupTheory.Finiteness
 import Mathlib.Algebra.EuclideanDomain.Int
-import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dimension.Constructions
-import TauCeti.GroupTheory.Coprod.Rank
 
 /-!
 # Generator rank of groups and abelian groups
@@ -24,10 +22,7 @@ import TauCeti.GroupTheory.Coprod.Rank
 This file develops basic properties of `Group.rank` and `AddGroup.rank`, the minimal number of
 generators of a finitely generated group (Nikulin's length `l(M)` when `M` is finite):
 
-* Cyclic groups have generator rank at most `1` (`1` when nontrivial); conversely, a finitely
-  generated group is cyclic if and only if its generator rank is at most `1`.
-* Generator rank is subadditive on binary and finite indexed products (`Group.rank_prod_le`,
-  `Group.rank_pi_le`) and on joins of finitely generated subgroups (`Subgroup.rank_sup_le`).
+* Cyclic groups have generator rank at most `1` (`1` when nontrivial).
 * On a finitely generated abelian group `M`, `AddGroup.rank M` agrees with the `ℤ`-submodule
   generator number `(⊤ : Submodule ℤ M).spanFinrank` (`AddGroup.rank_eq_spanFinrank`), and over
   a quotient ring `R` of `ℤ` with `(⊤ : Submodule R M).spanFinrank`
@@ -37,19 +32,16 @@ generators of a finitely generated group (Nikulin's length `l(M)` when `M` is fi
   (`AddGroup.rank_eq_finrank_of_intCast_surjective`), in particular for `R = ℤ`
   (`AddGroup.rank_eq_finrank`) and nontrivial `R = ZMod n` (`AddGroup.rank_eq_finrank_zmod`).
 * Generator ranks of cyclic groups `ZMod n` (`AddGroup.rank_zmod`, `AddGroup.rank_zmod_prime_pow`)
-  and finite products `∀ i, ZMod (m i)` with a common prime divisor
-  (`AddGroup.rank_pi_zmod`, `AddGroup.rank_pi_zmod_prime_pow`).
+  and finite products `∀ i, ZMod (n i)` with a common prime divisor (`AddGroup.rank_pi_zmod`).
+* Generator rank of a join of two finitely generated subgroups (`Subgroup.rank_sup_le`).
 
 ## Main statements
 
-* `Group.rank_le_one_iff_isCyclic`, `AddGroup.rank_le_one_iff_isAddCyclic`
-* `Group.rank_prod_le`, `Group.rank_pi_le`, `Group.rank_prod_eq_rank_piFinTwo`,
-  `AddGroup.rank_prod_eq_rank_piFinTwo`
+* `Group.rank_le_one_of_isCyclic`, `Group.rank_eq_one_of_isCyclic` (and additive counterparts)
 * `AddGroup.rank_eq_spanFinrank`, `AddGroup.rank_eq_spanFinrank_of_intCast_surjective`
 * `AddGroup.rank_eq_finrank_of_intCast_surjective`, `AddGroup.rank_eq_finrank`,
   `AddGroup.rank_eq_finrank_zmod`
-* `AddGroup.rank_zmod`, `AddGroup.rank_zmod_prime_pow`, `AddGroup.rank_pi_zmod`,
-  `AddGroup.rank_pi_zmod_prime_pow`
+* `AddGroup.rank_zmod`, `AddGroup.rank_zmod_prime_pow`, `AddGroup.rank_pi_zmod`
 * `Subgroup.rank_sup_le`, `AddSubgroup.rank_sup_le`
 
 ## References
@@ -76,70 +68,6 @@ theorem rank_le_one_of_isCyclic (G : Type*) [Group G] [IsCyclic G] : Group.rank 
 theorem rank_eq_one_of_isCyclic (G : Type*) [Group G] [IsCyclic G] [Nontrivial G] :
     Group.rank G = 1 :=
   le_antisymm (rank_le_one_of_isCyclic G) (Group.rank_pos G)
-
-/-- A finitely generated group has generator rank at most `1` if and only if it is cyclic. -/
-@[to_additive rank_le_one_iff_isAddCyclic
-  /-- A finitely generated additive group has generator rank at most `1` if and only if it is
-  cyclic. -/]
-theorem rank_le_one_iff_isCyclic (G : Type*) [Group G] [Group.FG G] :
-    Group.rank G ≤ 1 ↔ IsCyclic G := by
-  refine ⟨fun h ↦ ?_, fun _ ↦ rank_le_one_of_isCyclic G⟩
-  obtain ⟨S, hScard, hS⟩ := Group.rank_spec G
-  have hle : S.card ≤ 1 := hScard.trans_le h
-  rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hle with h0 | h1
-  · rw [Finset.card_eq_zero] at h0
-    subst h0
-    simp only [Finset.coe_empty, Subgroup.closure_empty] at hS
-    exact isCyclic_iff_exists_zpowers_eq_top.mpr ⟨1, top_unique (hS ▸ bot_le)⟩
-  · obtain ⟨g, rfl⟩ := Finset.card_eq_one.mp h1
-    refine isCyclic_iff_exists_zpowers_eq_top.mpr ⟨g, ?_⟩
-    rw [Subgroup.zpowers_eq_closure, ← Finset.coe_singleton]
-    exact hS
-
-/-- The generator rank of a product of two finitely generated groups is at most the sum of their
-generator ranks. -/
-@[to_additive rank_prod_le
-  /-- The generator rank of a product of two finitely generated additive groups is at most the sum
-  of their generator ranks. -/]
-theorem rank_prod_le (G H : Type*) [Group G] [Group H] [Group.FG G] [Group.FG H] :
-    Group.rank (G × H) ≤ Group.rank G + Group.rank H :=
-  (Group.rank_le_of_surjective _ Monoid.Coprod.toProd_surjective).trans
-    (Monoid.Coprod.rank_le_add G H)
-
-/-- The generator rank of a finite indexed product of finitely generated groups is at most the sum
-of the generator ranks of the factors. -/
-@[to_additive /-- The generator rank of a finite indexed product of finitely generated additive
-groups is at most the sum of the generator ranks of the factors. -/]
-theorem rank_pi_le {ι : Type*} [Fintype ι] (G : ι → Type*) [∀ i, Group (G i)]
-    [∀ i, Group.FG (G i)] :
-    Group.rank (∀ i, G i) ≤ ∑ i, Group.rank (G i) := by
-  classical
-  choose S hScard hS using fun i ↦ Group.rank_spec (G i)
-  let U : Finset (∀ i, G i) := Finset.univ.biUnion fun i ↦ (S i).image (MonoidHom.mulSingle G i)
-  refine (Group.rank_le (S := U) ?_).trans ?_
-  · rw [Finset.coe_biUnion, Finset.coe_univ, Set.biUnion_univ, Subgroup.closure_iUnion]
-    simp_rw [Finset.coe_image, ← MonoidHom.map_closure, hS]
-    refine eq_top_iff.mpr fun x _ ↦ ?_
-    rw [← Finset.noncommProd_mulSingle x]
-    exact Subgroup.noncommProd_mem _ _ fun i _ ↦
-      Subgroup.mem_iSup_of_mem i ⟨x i, trivial, rfl⟩
-  · calc U.card
-      _ ≤ ∑ i, ((S i).image (MonoidHom.mulSingle G i)).card := Finset.card_biUnion_le
-      _ ≤ ∑ i, (S i).card := Finset.sum_le_sum fun i _ ↦ Finset.card_image_le
-      _ = ∑ i, Group.rank (G i) := by simp_rw [hScard]
-
-/-- The generator rank of `F 0 × F 1` equals the generator rank of the indexed product
-`∀ i : Fin 2, F i`. -/
-@[to_additive rank_prod_eq_rank_piFinTwo
-  /-- The generator rank of `F 0 × F 1` equals the generator rank of the indexed product
-  `∀ i : Fin 2, F i`. -/]
-theorem rank_prod_eq_rank_piFinTwo (F : Fin 2 → Type*) [∀ i, Group (F i)]
-    [∀ i, Group.FG (F i)] :
-    Group.rank (F 0 × F 1) = Group.rank (∀ i, F i) := by
-  let e : (∀ i, F i) ≃* F 0 × F 1 :=
-    { piFinTwoEquiv F with
-      map_mul' _ _ := rfl }
-  exact Group.rank_congr e.symm
 
 end Group
 
@@ -251,13 +179,6 @@ theorem rank_pi_zmod {ι : Type*} [Fintype ι] (n : ι → ℕ) {p : ℕ}
           rw [rank_eq_finrank_of_intCast_surjective (ZMod p) ZMod.intCast_surjective,
             Module.finrank_fintype_fun_eq_card]
       _ ≤ AddGroup.rank (∀ i, ZMod (n i)) := AddGroup.rank_le_of_surjective f hf
-
-/-- A finite indexed product `∀ i, ZMod (p ^ k i)` of nontrivial `p`-power cyclic groups has
-generator rank `Fintype.card ι`. -/
-theorem rank_pi_zmod_prime_pow {p : ℕ} (hp : p.Prime) {ι : Type*} [Fintype ι] (k : ι → ℕ)
-    (hk : ∀ i, 0 < k i) :
-    AddGroup.rank (∀ i, ZMod (p ^ k i)) = Fintype.card ι :=
-  rank_pi_zmod _ hp fun i ↦ dvd_pow_self p (hk i).ne'
 
 end AddGroup
 

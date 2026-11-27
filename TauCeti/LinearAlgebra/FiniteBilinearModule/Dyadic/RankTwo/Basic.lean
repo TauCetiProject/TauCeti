@@ -95,10 +95,6 @@ theorem natCard_dyadicU : Nat.card (dyadicU k) = 2 ^ k * 2 ^ k := by
   rw [show Nat.card (dyadicU k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl, Nat.card_prod,
     Nat.card_zmod]
 
-/-- `u^{(2)}(1)` is trivial. -/
-theorem subsingleton_dyadicU_zero : Subsingleton (dyadicU 0) :=
-  Finite.card_le_one_iff_subsingleton.mp (by rw [natCard_dyadicU, pow_zero, one_mul])
-
 /-- The quadratic form of `u^{(2)}(2)` takes values in `½ℤ/ℤ`. -/
 theorem dyadicU_one_quadratic_add_self_eq_zero (x : ZMod (2 ^ 1) × ZMod (2 ^ 1)) :
     (dyadicU 1).quadratic x + (dyadicU 1).quadratic x = 0 := by
@@ -194,10 +190,6 @@ theorem dyadicV_pairing (x y : ZMod (2 ^ k) × ZMod (2 ^ k)) :
 theorem natCard_dyadicV : Nat.card (dyadicV k) = 2 ^ k * 2 ^ k := by
   rw [show Nat.card (dyadicV k) = Nat.card (ZMod (2 ^ k) × ZMod (2 ^ k)) from rfl, Nat.card_prod,
     Nat.card_zmod]
-
-/-- `v^{(2)}(1)` is trivial. -/
-theorem subsingleton_dyadicV_zero : Subsingleton (dyadicV 0) :=
-  Finite.card_le_one_iff_subsingleton.mp (by rw [natCard_dyadicV, pow_zero, one_mul])
 
 /-- The quadratic form of `v^{(2)}(2)` takes values in `½ℤ/ℤ`. -/
 theorem dyadicV_one_quadratic_add_self_eq_zero (x : ZMod (2 ^ 1) × ZMod (2 ^ 1)) :

@@ -18,15 +18,14 @@ of the least numbers for its prime-primary components. We use the canonical prim
 and state the result both for Mathlib's `Submodule.spanFinrank` over `ℤ` and for Mathlib's
 `AddGroup.rank`, which agree by `AddGroup.rank_eq_spanFinrank`. A primary component therefore
 never needs more generators than the group.
-The maximum is taken over the prime divisors of the group order (or equivalently as the supremum
-over all primes); for the trivial group the prime-divisor set is empty and the maximum is zero.
+The maximum is taken over the prime divisors of the group order; for the trivial group the
+prime-divisor set is empty and the maximum is zero.
 
 ## Main statements
 
 * `TauCeti.AddCommGroup.spanFinrank_eq_sup_primaryComponents`
 * `AddGroup.rank_eq_sup_primaryComponents`
 * `AddGroup.rank_primaryComponent_le`
-* `AddGroup.rank_eq_ciSup_primaryComponent`
 
 ## References
 
@@ -89,21 +88,5 @@ theorem rank_primaryComponent_le (A : Type*) [AddCommGroup A] [Finite A] {p : �
         rw [TauCeti.AddCommGroup.natCard_primaryComponent A hp,
           Nat.factorization_eq_zero_of_not_dvd h, pow_zero])).1
     simp [AddGroup.rank_eq_zero]
-
-/-- Nikulin's formula `l(A) = max_p l(A_p)` over all primes `p`. -/
-theorem rank_eq_ciSup_primaryComponent (A : Type*) [AddCommGroup A] [Finite A] :
-    AddGroup.rank A =
-      ⨆ p : {p : ℕ // p.Prime}, AddGroup.rank (AddCommGroup.primaryComponent A p.val) := by
-  have : Nonempty {p : ℕ // p.Prime} := ⟨⟨2, Nat.prime_two⟩⟩
-  have hbdd : BddAbove (Set.range fun p : {p : ℕ // p.Prime} ↦
-      AddGroup.rank (AddCommGroup.primaryComponent A p.val)) :=
-    ⟨AddGroup.rank A, by
-      rintro _ ⟨p, rfl⟩
-      exact rank_primaryComponent_le A p.property⟩
-  refine le_antisymm ?_
-    (ciSup_le fun p ↦ rank_primaryComponent_le A p.property)
-  rw [rank_eq_sup_primaryComponents A]
-  refine Finset.sup_le fun p hp ↦ ?_
-  exact le_ciSup hbdd ⟨p, Nat.prime_of_mem_primeFactors hp⟩
 
 end AddGroup
