@@ -36,6 +36,8 @@ length is the valuation of `det M`, both infinite when `det M = 0`.
 
 ## Main results
 
+* `IsDiscreteValuationRing.divQuotient_injective`, `IsDiscreteValuationRing.range_divQuotient`:
+  for `a ≠ 0`, division by `a` is injective with image the `a`-torsion of `K/O`.
 * `IsDiscreteValuationRing.length_linearMap_quotient_span_singleton`: for `a ≠ 0`,
   `Hom_O(O/a, K/O)` has length `v(a)`.
 * `IsDiscreteValuationRing.length_linearMap_fractionRing_quotient`: `Hom_O(M, K/O)` has the
@@ -166,6 +168,33 @@ theorem linearMapQuotientSpanEquivFractionRingQuotient_apply
       divQuotient (K := K) a (φ x) := by
   simp [linearMapQuotientSpanEquivFractionRingQuotient]
   rfl
+
+omit [IsDomain O] [IsDiscreteValuationRing O] in
+/-- `quotientEquivTorsionBySet` is division by `a`. -/
+theorem coe_quotientEquivTorsionBySet_apply {a : O} (ha : a ≠ 0) (x : O ⧸ Ideal.span {a}) :
+    (quotientEquivTorsionBySet (K := K) ha x : K ⧸ range (Algebra.linearMap O K)) =
+      divQuotient a x :=
+  (rfl)
+
+omit [IsDomain O] [IsDiscreteValuationRing O] in
+/-- For `a ≠ 0`, division by `a`, `O/a → K/O`, is injective. -/
+theorem divQuotient_injective {a : O} (ha : a ≠ 0) :
+    Function.Injective (divQuotient (K := K) a) := fun x y h ↦
+  (quotientEquivTorsionBySet (K := K) ha).injective <| Subtype.ext <| by
+    rwa [coe_quotientEquivTorsionBySet_apply, coe_quotientEquivTorsionBySet_apply]
+
+omit [IsDomain O] [IsDiscreteValuationRing O] in
+/-- For `a ≠ 0`, the image of division by `a`, `O/a → K/O`, is the `a`-torsion of `K/O`. -/
+theorem range_divQuotient {a : O} (ha : a ≠ 0) :
+    range (divQuotient (K := K) a) =
+      Submodule.torsionBy O (K ⧸ range (Algebra.linearMap O K)) a := by
+  rw [← Submodule.torsionBySet_span_singleton_eq]
+  ext y
+  refine ⟨?_, fun hy ↦ ⟨(quotientEquivTorsionBySet ha).symm ⟨y, hy⟩, ?_⟩⟩
+  · rintro ⟨x, rfl⟩
+    rw [← coe_quotientEquivTorsionBySet_apply ha]
+    exact (quotientEquivTorsionBySet ha x).property
+  · rw [← coe_quotientEquivTorsionBySet_apply ha, LinearEquiv.apply_symm_apply]
 
 /-- For `a ≠ 0`, `Hom_O(O/a, K/O)` has length `v(a)`. -/
 theorem length_linearMap_quotient_span_singleton {a : O} (ha : a ≠ 0) :
