@@ -165,8 +165,8 @@ theorem coeFn_integralOperatorL2 (K : Lp 𝕜 2 (μ.prod ν)) (f : Lp 𝕜 2 ν)
 /-- The integral operator applied to `f` is the unique `L²` class that agrees almost everywhere
 with `x ↦ ∫ y, K (x, y) * f y ∂ν`. -/
 theorem integralOperatorL2_eq_iff {K : Lp 𝕜 2 (μ.prod ν)} {f : Lp 𝕜 2 ν} {g : Lp 𝕜 2 μ} :
-    integralOperatorL2 μ ν K f = g ↔ g =ᵐ[μ] fun x ↦ ∫ y, K (x, y) * f y ∂ν :=
-  ⟨fun h ↦ h ▸ coeFn_integralOperatorL2 K f, kernelOperator_eq⟩
+    integralOperatorL2 μ ν K f = g ↔ (fun x ↦ ∫ y, K (x, y) * f y ∂ν) =ᵐ[μ] g :=
+  ⟨fun h ↦ h ▸ (coeFn_integralOperatorL2 K f).symm, fun h ↦ kernelOperator_eq h.symm⟩
 
 /-- The operator norm of the integral operator is at most the `L²` norm of its kernel. -/
 theorem norm_integralOperatorL2_apply_le (K : Lp 𝕜 2 (μ.prod ν)) :
@@ -210,7 +210,7 @@ theorem integralOperatorL2_prodMul_star (w : Lp 𝕜 2 μ) (u : Lp 𝕜 2 ν) :
   rw [InnerProductSpace.rankOne_apply]
   filter_upwards [Lp.coeFn_smul ⟪u, f⟫_𝕜 w,
     Measure.ae_ae_of_ae_prod (coeFn_prodMul w (star u))] with x hx hK
-  rw [hx, Pi.smul_apply, smul_eq_mul, L2.inner_def, mul_comm, ← integral_const_mul]
+  rw [hx, Pi.smul_apply, smul_eq_mul, L2.inner_def, ← integral_mul_const]
   refine integral_congr_ae ?_
   filter_upwards [hK, coeFn_star u] with y hy hs
   simp only [hy, hs, Pi.star_apply, RCLike.star_def, RCLike.inner_apply]
