@@ -50,6 +50,12 @@ GTM 176 (2018), Proposition 2.44 and the discussion of the Riemannian density fo
   least `m > 0`, coordinate integrals are at most `m⁻¹` times Riemannian integrals, and
   `TauCeti.setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`: where it is at
   most `m`, Riemannian integrals over a chart preimage are at most `m` times coordinate integrals.
+* `TauCeti.exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm`: over the
+  chart preimage of an open set of coordinates, read through a linear identification `L` of the
+  model space and contained in a compact set that `L⁻¹` maps into the chart target, Riemannian
+  integrals are at most a constant multiple of coordinate integrals, and
+  `TauCeti.exists_eLpNorm_le_mul_eLpNorm_comp_extChartAt_symm`, the resulting comparison of `Lᵠ`
+  norms for `0 < q < ∞`.
 * `TauCeti.lintegral_riemannianVolume_eq_of_support_subset`: integration in coordinates of a
   function supported in the chart preimage of an open coordinate set, and
   `TauCeti.integral_riemannianVolume_le_mul_integral_of_support_subset`, the resulting upper bound
@@ -289,6 +295,93 @@ theorem mul_integral_le_integral_riemannianVolume_of_support_subset (α : M) {Ω
     _ ≤ ∫⁻ x, ENNReal.ofReal (f x) ∂riemannianVolume I M := setLIntegral_le_lintegral _ _
 
 end Coordinates
+
+/-- **Integrals over a chart neighbourhood in coordinates.** Let `L` identify the model space
+with `F`, and let `V` be an open subset of a compact set `K` of `F` that `L⁻¹` maps into the chart
+target at `α`. The integral of a function `g ≥ 0` over the corresponding open set of `M` is at
+most a constant multiple, independent of `g`, of the integral over `V` of `g` read in the chart. -/
+theorem exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasureSpace F] [BorelSpace F]
+    [(volume : Measure F).IsAddHaarMeasure] (L : E ≃L[ℝ] F) (α : M) {V K : Set F}
+    (hV : IsOpen V) (hK : IsCompact K) (hVK : V ⊆ K)
+    (hKt : MapsTo L.symm K (extChartAt I α).target) :
+    ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ g : M → ℝ≥0∞,
+      ∫⁻ x in (extChartAt I α).source ∩ extChartAt I α ⁻¹' (L.symm '' V), g x
+          ∂riemannianVolume I M ≤
+        C * ∫⁻ y in V, g ((extChartAt I α).symm (L.symm y)) ∂volume := by
+  let _ : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
+  set W := L.symm '' V
+  have hWo : IsOpen W := L.symm.toHomeomorph.isOpenMap _ hV
+  have hWt : W ⊆ (extChartAt I α).target := (image_mono hVK).trans (mapsTo_iff_image_subset.1 hKt)
+  -- The chart density is bounded by `D` over `W`.
+  obtain ⟨D, hD⟩ := (hK.image L.symm.continuous).exists_bound_of_continuousOn
+    ((continuousOn_chartVolumeDensity_extChartAt_symm (I := I) α).mono
+      (mapsTo_iff_image_subset.1 hKt))
+  -- The image of the Haar measure of `F` is a positive multiple `c` of the Haar measure of `E`.
+  obtain ⟨c, hc0, hc⟩ := L.symm.exists_map_restrict_preimage_eq_smul_addHaar (volume : Measure F)
+  replace hc0 : (c : ℝ≥0∞) ≠ 0 := ENNReal.coe_ne_zero.2 hc0
+  refine ⟨ENNReal.ofReal D * (c : ℝ≥0∞)⁻¹,
+    ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.inv_ne_top.2 hc0), fun g ↦ ?_⟩
+  -- Changing variables along `L⁻¹`, the integral over `W` is `c⁻¹` times that over `V`.
+  have hcoord : (c : ℝ≥0∞) * ∫⁻ z in W, g ((extChartAt I α).symm z)
+      ∂(Module.finBasis ℝ E).addHaar = ∫⁻ y in V, g ((extChartAt I α).symm (L.symm y)) := by
+    have hL : MeasurableEmbedding L.symm := L.symm.toHomeomorph.measurableEmbedding
+    rw [← smul_eq_mul, ← ENNReal.smul_def, ← lintegral_smul_measure, ← hc, hL.lintegral_map,
+      L.symm.injective.preimage_image]
+  calc ∫⁻ x in (extChartAt I α).source ∩ extChartAt I α ⁻¹' W, g x ∂riemannianVolume I M
+      ≤ ENNReal.ofReal D * ∫⁻ z in W, g ((extChartAt I α).symm z)
+          ∂(Module.finBasis ℝ E).addHaar :=
+        setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm α hWo hWt
+          (fun z hz ↦ (Real.le_norm_self _).trans (hD z (image_mono hVK hz))) g
+    _ = ENNReal.ofReal D * (c : ℝ≥0∞)⁻¹ *
+          ∫⁻ y in V, g ((extChartAt I α).symm (L.symm y)) := by
+        rw [← hcoord, mul_assoc, ENNReal.inv_mul_cancel_left hc0 ENNReal.coe_ne_top]
+
+/-- **`Lᵠ` norms over a chart neighbourhood in coordinates.** Let `L` identify the model space
+with `F`, and let `V` be an open subset of a compact set `K` of `F` that `L⁻¹` maps into the chart
+target at `α`. For `0 < q < ∞`, the `Lᵠ` norm of a function vanishing almost everywhere outside
+the corresponding open set of `M` is at most a constant multiple, independent of the function, of
+the `Lᵠ(V)` norm of its reading in the chart. -/
+theorem exists_eLpNorm_le_mul_eLpNorm_comp_extChartAt_symm
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [MeasureSpace F] [BorelSpace F]
+    [(volume : Measure F).IsAddHaarMeasure] {G : Type*} [NormedAddCommGroup G] (L : E ≃L[ℝ] F)
+    (α : M) {V K : Set F} (hV : IsOpen V) (hK : IsCompact K) (hVK : V ⊆ K)
+    (hKt : MapsTo L.symm K (extChartAt I α).target) {q : ℝ≥0∞} (hq0 : q ≠ 0) (hq : q ≠ ⊤) :
+    ∃ C : ℝ≥0∞, C ≠ ⊤ ∧ ∀ g : M → G, AEStronglyMeasurable g (riemannianVolume I M) →
+      (∀ᵐ x ∂riemannianVolume I M,
+        x ∉ (extChartAt I α).source ∩ extChartAt I α ⁻¹' (L.symm '' V) → g x = 0) →
+      eLpNorm g q (riemannianVolume I M) ≤
+        C * eLpNorm (fun y ↦ g ((extChartAt I α).symm (L.symm y))) q (volume.restrict V) := by
+  obtain ⟨C, hC, hle⟩ :=
+    exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm (I := I) (M := M)
+      L α hV hK hVK hKt
+  have hq' : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
+  have hC1 : C + 1 ≠ ⊤ := ENNReal.add_ne_top.2 ⟨hC, ENNReal.one_ne_top⟩
+  refine ⟨(C + 1) ^ (1 / q.toReal), ENNReal.rpow_ne_top_of_nonneg (by positivity) hC1,
+    fun g hgm hg ↦ ?_⟩
+  by_cases hgψ : AEStronglyMeasurable (fun y ↦ g ((extChartAt I α).symm (L.symm y)))
+    (volume.restrict V)
+  swap
+  · rw [eLpNorm_of_not_aestronglyMeasurable hgψ, ENNReal.mul_top]
+    · exact le_top
+    · exact (ENNReal.rpow_pos (by positivity) hC1).ne'
+  set S := (extChartAt I α).source ∩ extChartAt I α ⁻¹' (L.symm '' V)
+  have hS : MeasurableSet S :=
+    (isOpen_extChartAt_preimage' α (L.symm.toHomeomorph.isOpenMap _ hV)).measurableSet
+  -- `g` vanishes almost everywhere off `S`, so its integral is the integral over `S`.
+  have hgS : ∫⁻ x, ‖g x‖ₑ ^ q.toReal ∂riemannianVolume I M =
+      ∫⁻ x in S, ‖g x‖ₑ ^ q.toReal ∂riemannianVolume I M := by
+    rw [← lintegral_indicator hS]
+    refine lintegral_congr_ae ?_
+    filter_upwards [hg] with x hx
+    by_cases hxS : x ∈ S
+    · rw [indicator_of_mem hxS]
+    · rw [indicator_of_notMem hxS, hx hxS, eNorm_zero, ENNReal.zero_rpow_of_pos hq']
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq hgm,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hq0 hq hgψ, hgS,
+    ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
+  exact ENNReal.rpow_le_rpow ((hle _).trans (by gcongr; exact le_self_add)) (by positivity)
 
 /-- **Integration in coordinates** against the Riemannian volume using Lebesgue measure on
 `EuclideanSpace ℝ (Fin m)` and `TauCeti.stdChartVolumeDensity`. -/
