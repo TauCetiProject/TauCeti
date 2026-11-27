@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Heegaard.Knot.Homology
+public import TauCeti.LowDimTopology.Heegaard.Knot.Tau
 
 /-!
 # The genus-zero Heegaard diagram and the unknot
@@ -28,7 +29,11 @@ of the sphere, of Maslov index `μ = 2c` and multiplicity `c` at every basepoint
   (`TauCeti.HeegaardRegionSystem.finrank_hatHomology_genusZero`), in bigrading `(0, 0)`, and its
   graded Euler characteristic is `1`
   (`TauCeti.HeegaardRegionSystem.finsum_finrank_hatHomologyGrading_piece_smul_genusZero`), the
-  Alexander polynomial of the unknot.
+  Alexander polynomial of the unknot;
+* the minus knot differential vanishes as well
+  (`TauCeti.HeegaardRegionSystem.knotMinusDifferential_genusZero`), so `HFK⁻` of the unknot is the
+  tower `𝔽₂[U]` on the single generator, in Alexander grading `0`, and `τ = 0`
+  (`TauCeti.HeegaardRegionSystem.tau_genusZero`).
 
 The identification of the knot, like that of the incidence data with the sphere, is geometric and
 is not formalized here.
@@ -46,12 +51,17 @@ is not formalized here.
 * `TauCeti.HeegaardRegionSystem.finrank_hatHomology_genusZero` and
   `TauCeti.HeegaardRegionSystem.finsum_finrank_hatHomologyGrading_piece_smul_genusZero`: `HFK̂` of
   the unknot has rank one and graded Euler characteristic `1`.
+* `TauCeti.HeegaardRegionSystem.knotMinusDifferential_genusZero`: the minus knot differential
+  vanishes.
+* `TauCeti.HeegaardRegionSystem.tau_genusZero`: the unknot has `τ = 0`.
 
 ## References
 
 * P. Ozsváth and Z. Szabó, *Holomorphic disks and knot invariants*, Adv. Math. **186** (2004),
   [arXiv:math/0209056](https://arxiv.org/abs/math/0209056), for doubly pointed diagrams and knot
   Floer homology.
+* P. Ozsváth and Z. Szabó, *Knot Floer homology and the four-ball genus*, Geom. Topol. **7**
+  (2003), [arXiv:math/0301149](https://arxiv.org/abs/math/0301149), for the invariant `τ`.
 -/
 
 public section
@@ -158,6 +168,35 @@ theorem finsum_finrank_hatHomologyGrading_piece_smul_genusZero (w z : B) :
         (p.1.negOnePow • T p.2 : ℤ[T;T⁻¹]) =
       1 := by
   rw [IsKnotGrading.finsum_finrank_hatHomologyGrading_piece_smul, gradedEulerChar_def]
+  simp
+
+/-- **The minus knot differential of the genus-zero diagram vanishes**: every domain has even
+Maslov index `2 D`, never one, so no domain is counted. -/
+@[simp]
+theorem knotMinusDifferential_genusZero (w z : B) :
+    (genusZero B).knotMinusDifferential (fun _ => 2) w z = 0 := by
+  refine knotMinusDifferential_eq_zero_iff.mpr fun x y => ?_
+  rw [knotMinusCoefficient_def, knotCoefficient_eq_zero_of_minusDomains_eq_empty, map_zero]
+  refine Set.eq_empty_of_forall_notMem fun D hD => ?_
+  have hμ := (mem_minusDomains_iff.mp hD).2.2
+  rw [maslovIndex_genusZero] at hμ
+  have : 2 * D () = 1 := by exact_mod_cast hμ
+  omega
+
+/-- The minus knot differential of the genus-zero diagram squares to zero, since it vanishes. -/
+theorem knotMinusDifferential_genusZero_comp_self_eq_zero (w z : B) :
+    (genusZero B).knotMinusDifferential (fun _ => 2) w z ∘ₗ
+        (genusZero B).knotMinusDifferential (fun _ => 2) w z = 0 := by
+  rw [knotMinusDifferential_genusZero, LinearMap.zero_comp]
+
+/-- **The unknot has `τ = 0`.** In the genus-zero diagram the minus knot differential vanishes, so
+the single generator, of Alexander grading `0`, is a cycle none of whose multiples `U ^ k x` is a
+boundary. -/
+theorem tau_genusZero (w z : B) :
+    (isKnotGrading_genusZero w z).tau (knotMinusDifferential_genusZero_comp_self_eq_zero w z) =
+      0 := by
+  rw [IsKnotGrading.tau_eq_neg_of_forall_le _ default (by simp)
+    (fun k => by simp [Finsupp.single_eq_zero]) fun _ => le_rfl]
   simp
 
 end HeegaardRegionSystem
