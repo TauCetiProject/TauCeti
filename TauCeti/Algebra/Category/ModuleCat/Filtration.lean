@@ -29,9 +29,10 @@ lattice of submodules.
   when every element lies in some `F i`.
 * `isSeparated_ofSubmodules_iff_iInf`, `isSeparated_ofSubmodules_iff_forall_mem`: the filtration
   is separated exactly when `⨅ i, F i = ⊥`, that is, when only `0` lies in every `F i`.
-* `comp_cokernel_π_stepι_ofSubmodules_eq_iff`: through `ModuleCat.cokernelIsoRangeQuotient`,
-  two maps `f g : A ⟶ M` agree in the quotient `M / F_i` exactly when `f a - g a ∈ F i` for all
-  `a`.
+* `cokernel_π_stepι_ofSubmodules_apply_eq_iff`: through `ModuleCat.cokernelIsoRangeQuotient`,
+  two elements of `M` agree in the quotient `M / F_i` exactly when their difference lies in `F i`.
+* `comp_cokernel_π_stepι_ofSubmodules_eq_iff`: two maps `f g : A ⟶ M` agree in the quotient
+  `M / F_i` exactly when `f a - g a ∈ F i` for all `a`.
 -/
 
 public section
@@ -125,6 +126,21 @@ theorem isSeparated_ofSubmodules_iff_forall_mem :
     (ofSubmodules F hF).IsSeparated ↔ ∀ x, (∀ i, x ∈ F i) → x = 0 := by
   simp_rw [isSeparated_ofSubmodules_iff_iInf, Submodule.eq_bot_iff, Submodule.mem_iInf]
 
+/-- Two elements of `M` have the same image in the quotient `M / F_i`, the cokernel of the
+inclusion of the step `F_i`, exactly when their difference lies in `F i`. -/
+theorem cokernel_π_stepι_ofSubmodules_apply_eq_iff (i : I) (x y : M) :
+    (Limits.cokernel.π ((ofSubmodules F hF).stepι i)).hom x =
+      (Limits.cokernel.π ((ofSubmodules F hF).stepι i)).hom y ↔ x - y ∈ F i := by
+  -- Mathlib identifies the cokernel projection with `M ⟶ M ⧸ F i`.
+  let e := ModuleCat.cokernelIsoRangeQuotient ((ofSubmodules F hF).stepι i)
+  have h (z : M) : e.hom.hom ((Limits.cokernel.π ((ofSubmodules F hF).stepι i)).hom z) =
+      (LinearMap.range ((ofSubmodules F hF).stepι i).hom).mkQ z := by
+    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp,
+      ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom, ModuleCat.hom_ofHom]
+  rw [← (ModuleCat.mono_iff_injective e.hom).1 inferInstance |>.eq_iff, h, h,
+    Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, hom_stepι_ofSubmodules]
+  exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ z.property, fun h ↦ ⟨⟨x - y, h⟩, rfl⟩⟩
+
 /-- Two maps into the underlying module of `ofSubmodules F hF` agree in its quotient `M / F_i`,
 the cokernel of the inclusion of the step `F_i` (the leg `quotientCone_π_app` of its cone of
 quotients), exactly when their difference lands in `F i`. -/
@@ -132,14 +148,7 @@ theorem comp_cokernel_π_stepι_ofSubmodules_eq_iff (i : I) {A : ModuleCat.{v} R
     (f g : A ⟶ (ofSubmodules F hF).X) :
     f ≫ Limits.cokernel.π ((ofSubmodules F hF).stepι i) =
       g ≫ Limits.cokernel.π ((ofSubmodules F hF).stepι i) ↔ ∀ a, f.hom a - g.hom a ∈ F i := by
-  -- Mathlib identifies the cokernel projection with `M ⟶ M ⧸ F i`.
-  let e := ModuleCat.cokernelIsoRangeQuotient ((ofSubmodules F hF).stepι i)
-  have key (x y : M) : (LinearMap.range ((ofSubmodules F hF).stepι i).hom).mkQ x =
-      (LinearMap.range ((ofSubmodules F hF).stepι i).hom).mkQ y ↔ x - y ∈ F i := by
-    rw [Submodule.mkQ_apply, Submodule.mkQ_apply, Submodule.Quotient.eq, hom_stepι_ofSubmodules]
-    exact ⟨fun ⟨z, hz⟩ ↦ hz ▸ z.property, fun h ↦ ⟨⟨x - y, h⟩, rfl⟩⟩
-  rw [← cancel_mono e.hom, Category.assoc, Category.assoc,
-    ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom, ModuleCat.hom_ext_iff, LinearMap.ext_iff]
-  exact forall_congr' fun a ↦ key (f.hom a) (g.hom a)
+  simp only [ModuleCat.hom_ext_iff, LinearMap.ext_iff, ModuleCat.hom_comp, LinearMap.comp_apply]
+  exact forall_congr' fun a ↦ cokernel_π_stepι_ofSubmodules_apply_eq_iff F hF i (f.hom a) (g.hom a)
 
 end CategoryTheory.FilteredObject
