@@ -89,9 +89,8 @@ instance : Category DividedPowerScheme.{u} where
         have hVU : V ≤ U := Scheme.Hom.id_preimage U ▸ h
         have he : Scheme.Hom.appLE (𝟙 X.scheme) U V h =
             X.scheme.presheaf.map (homOfLE hVU).op := by
-          unfold Scheme.Hom.appLE
-          exact (congrArg (· ≫ X.scheme.presheaf.map (homOfLE hVU).op)
-            (Scheme.Hom.id_app U)).trans (Category.id_comp _)
+          simp only [Scheme.Hom.appLE, Scheme.Hom.id_app]
+          exact Category.id_comp _
         rw [he]
         exact X.isDPMorphism_res (homOfLE hVU) }
   comp f g :=
@@ -222,43 +221,19 @@ theorem isPDThickening_iff (X : DividedPowerScheme.{u}) :
   unfold IsPDThickening
   rw [AlgebraicGeometry.isThickening_iff_ker_le_nilradical, ker_subschemeι]
 
-/-- The divided power scheme with zero ideal on a given scheme. -/
-abbrev ofScheme (T : Scheme.{u}) : DividedPowerScheme.{u} where
-  scheme := T
-  ideal := ⊥
-  dividedPowers U := DividedPowers.ofRingEquiv (e := RingEquiv.refl _)
-    (by rw [Ideal.map_bot, sections_bot]) (dividedPowersBot Γ(T, U))
-  isDPMorphism_res i := by
-    apply DividedPowers.IsDPMorphism.on_span (S := ∅)
-    · rw [sections_bot, Ideal.span_empty]
-    · simp
-    · simp
-
-/-- A scheme map from a scheme with zero ideal is a divided power morphism when it kills the
-target ideal on sections. -/
-def Hom.fromTrivial {T : Scheme.{u}} (f : T ⟶ X.scheme)
-    (hf : ∀ (U : X.scheme.Opens) (x : Γ(X.scheme, U)), x ∈ X.ideal.sections U →
-      f.app U x = 0) : ofScheme T ⟶ X :=
-  Hom.mkOfApp f fun U ↦ by
-    refine (DividedPowers.isDPMorphism_iff _ _ _).mpr ⟨?_, fun n hn x hx ↦ ?_⟩
-    · refine Ideal.map_le_iff_le_comap.mpr fun x hx ↦ ?_
-      exact (sections_bot (f ⁻¹ᵁ U)).symm ▸ (Ideal.mem_bot.mpr (hf U x hx))
-    · rw [hf U x hx, DividedPowers.dpow_eval_zero _ hn]
-      exact (hf U _ ((X.dividedPowers U).dpow_mem hn hx)).symm
-
-/-- The morphism from a zero-ideal scheme has the specified ambient map. -/
-@[simp]
-theorem Hom.fromTrivial_hom {T : Scheme.{u}} (f : T ⟶ X.scheme) (h) :
-    (Hom.fromTrivial f h).hom = f := (rfl)
-
 /-- Equip ordinary schemes with the zero divided power ideal. -/
 @[expose, implicit_reducible] def trivial : Scheme.{u} ⥤ DividedPowerScheme.{u} where
-  obj := ofScheme
-  map {_ T'} f := Hom.fromTrivial (X := ofScheme T') f fun U x hx ↦ by
-    have hx0 : x = 0 := Ideal.mem_bot.mp (sections_bot U ▸ hx)
-    rw [hx0, map_zero]
-  map_id _ := Hom.ext (by simp only [Hom.fromTrivial_hom, Hom.id_hom])
-  map_comp _ _ := Hom.ext (by simp only [Hom.fromTrivial_hom, Hom.comp_hom])
+  obj T :=
+    { scheme := T
+      ideal := ⊥
+      dividedPowers U := DividedPowers.ofRingEquiv (e := RingEquiv.refl _)
+        (by rw [Ideal.map_bot, sections_bot]) (dividedPowersBot Γ(T, U))
+      isDPMorphism_res _ := by
+        apply DividedPowers.IsDPMorphism.on_span (S := ∅) <;> simp [sections_bot] }
+  map f := Hom.mkOfApp f fun _ ↦ by
+    apply DividedPowers.IsDPMorphism.on_span (S := ∅) <;> simp [sections_bot]
+  map_id _ := Hom.ext (by simp only [Hom.mkOfApp_hom, Hom.id_hom])
+  map_comp _ _ := Hom.ext (by simp only [Hom.mkOfApp_hom, Hom.comp_hom])
 
 /-- The ambient scheme of a trivial divided power scheme is the original scheme. -/
 @[simp]
@@ -273,6 +248,23 @@ theorem trivial_obj_ideal (T : Scheme.{u}) :
 @[simp]
 theorem trivial_map_hom {T T' : Scheme.{u}} (f : T ⟶ T') : (trivial.map f).hom = f := (rfl)
 
+/-- A scheme map from a scheme with zero ideal is a divided power morphism when it kills the
+target ideal on sections. -/
+def Hom.fromTrivial {T : Scheme.{u}} (f : T ⟶ X.scheme)
+    (hf : ∀ (U : X.scheme.Opens) (x : Γ(X.scheme, U)), x ∈ X.ideal.sections U →
+      f.app U x = 0) : trivial.obj T ⟶ X :=
+  Hom.mkOfApp f fun U ↦ by
+    refine (DividedPowers.isDPMorphism_iff _ _ _).mpr ⟨?_, fun n hn x hx ↦ ?_⟩
+    · refine Ideal.map_le_iff_le_comap.mpr fun x hx ↦ ?_
+      exact (sections_bot (f ⁻¹ᵁ U)).symm ▸ (Ideal.mem_bot.mpr (hf U x hx))
+    · rw [hf U x hx, DividedPowers.dpow_eval_zero _ hn]
+      exact (hf U _ ((X.dividedPowers U).dpow_mem hn hx)).symm
+
+/-- The morphism from a zero-ideal scheme has the specified ambient map. -/
+@[simp]
+theorem Hom.fromTrivial_hom {T : Scheme.{u}} (f : T ⟶ X.scheme) (h) :
+    (Hom.fromTrivial f h).hom = f := (rfl)
+
 /-- The trivial divided power scheme is a divided power thickening. -/
 @[simp]
 theorem isPDThickening_trivial_obj (T : Scheme.{u}) : (trivial.obj T).IsPDThickening := by
@@ -283,14 +275,12 @@ theorem isPDThickening_trivial_obj (T : Scheme.{u}) : (trivial.obj T).IsPDThicke
 private def trivialHomEquiv (T : Scheme.{u}) (X : DividedPowerScheme.{u}) :
     (trivial.obj T ⟶ X) ≃ (T ⟶ closedFiberFunctor.obj X) where
   toFun f := by
-    rw [closedFiberFunctor_obj]
     refine IsClosedImmersion.lift X.closedFiberι f.hom ?_
     have h : X.ideal.comap f.hom ≤ ⊥ := by
       simpa only [trivial_obj_ideal] using f.ideal_comap_le
     exact X.ideal.ker_subschemeι.trans_le
       ((le_map_iff_comap_le.mpr h).trans_eq (map_bot f.hom))
   invFun g := by
-    rw [closedFiberFunctor_obj] at g
     refine Hom.fromTrivial (X := X) (g ≫ X.closedFiberι) fun U x hx ↦ ?_
     -- The composite on sections first restricts to the closed fibre, where the ideal vanishes.
     have h := congrArg (g.app (X.closedFiberι ⁻¹ᵁ U)).hom (X.ideal.mem_sections_iff.mp hx)
@@ -310,7 +300,8 @@ private theorem trivialHomEquiv_comp_ι (T : Scheme.{u}) (X : DividedPowerScheme
 private theorem trivialHomEquiv_symm_hom (T : Scheme.{u}) (X : DividedPowerScheme.{u})
     (g : T ⟶ X.closedFiber) :
     ((trivialHomEquiv T X).symm g).hom = g ≫ X.closedFiberι := by
-  rfl
+  simp only [trivialHomEquiv, Equiv.coe_fn_symm_mk]
+  apply Hom.fromTrivial_hom
 
 /-- The trivial divided power functor is left adjoint to taking the closed fibre. -/
 def trivialAdjunction : trivial.{u} ⊣ closedFiberFunctor.{u} :=
