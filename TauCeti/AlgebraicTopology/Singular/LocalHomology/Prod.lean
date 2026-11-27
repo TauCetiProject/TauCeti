@@ -71,8 +71,8 @@ of themselves. If `f` acts on `Hₘ(X, X ∖ {x}; k)` as multiplication by `a` a
 (`TauCeti.singularHomologyKunnethPair_naturality`), `f × g` sends the Künneth class of generators
 `z ⊗ z'` to the Künneth class of `a z ⊗ b z'`, and that class generates. For homeomorphisms fixing
 `x` and `y` the scalars are signs, and this is the multiplicativity of local orientation signs
-under products. With integral coefficients it may be read with coefficients `ULift ℤ`
-(`TauCeti.localHomologyMap_uliftInt_eq_smul_iff`), the coefficients of local orientations.
+under products. With integral coefficients it may be read with coefficients `ULift ℤ`, the
+coefficients of local orientations (`TauCeti.localHomologyMap_uliftInt_prodMap_eq_smul`).
 
 ## Manifolds with boundary
 
@@ -132,8 +132,6 @@ The generator is not compared here with the local orientation of the product ori
   generates the local homology of a product.
 * `TauCeti.localHomologyMap_prodMap_eq_smul`: a product of maps acting on the local homology of
   the factors by scalars acts on the local homology of the product by their product.
-* `TauCeti.localHomologyMap_uliftInt_eq_smul_iff`: a self-map acts on integral local homology by
-  an integer scalar exactly when it does so with coefficients `ULift ℤ`.
 * `TauCeti.localHomologyMap_uliftInt_prodMap_eq_smul`: the product rule with coefficients
   `ULift ℤ`.
 * `TauCeti.span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top`: the cubical cross product of
@@ -343,6 +341,14 @@ theorem span_homologyMap_cubicalHomologyKunnethPair_tmul_eq_top (hx : x ∈ S) (
   rw [localHomologyRestriction_def] at hγ hγ'
   exact span_singularHomologyKunnethPair_tmul_eq_top hX hγ hγ'
 
+/-- The complement of `{z₁}ᶜ × Z₂ ∪ Z₁ × {z₂}ᶜ` in `Z₁ × Z₂` is the point `(z₁, z₂)`. -/
+private theorem preimage_fst_compl_union_preimage_snd_compl {Z₁ Z₂ : TopCat.{w}} (z₁ : Z₁)
+    (z₂ : Z₂) :
+    CartesianMonoidalCategory.fst Z₁ Z₂ ⁻¹' ({z₁}ᶜ : Set Z₁) ∪
+      CartesianMonoidalCategory.snd Z₁ Z₂ ⁻¹' ({z₂}ᶜ : Set Z₂) = {(z₁, z₂)}ᶜ := by
+  change Prod.fst ⁻¹' {z₁}ᶜ ∪ Prod.snd ⁻¹' {z₂}ᶜ = ({(z₁, z₂)}ᶜ : Set (Z₁ × Z₂))
+  rw [← singleton_prod_singleton, compl_prod_eq_union, prod_univ, univ_prod]
+
 section ProdMap
 
 variable {E F : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -407,15 +413,6 @@ theorem localHomologyMap_prodMap_eq_smul (φ : OpenPartialHomeomorph X E) (hx : 
     localHomologyMap (ModuleCat.of k k) (f.prodMap g) hfg (m + n) = (a * b) • 𝟙 _ := by
   rw [localHomologyMap_def] at ha hb ⊢
   have key := singularHomologyMap_tensorHom_eq_smul φ hx ψ hy hm hn _ _ ha hb
-  -- The complement of `{x}ᶜ × Y ∪ X × {y}ᶜ` is the point `(x, y)`.
-  have hU : (CartesianMonoidalCategory.fst (TopCat.of X) (TopCat.of Y) ⁻¹' ({x}ᶜ : Set X) ∪
-      CartesianMonoidalCategory.snd (TopCat.of X) (TopCat.of Y) ⁻¹' ({y}ᶜ : Set Y)) =
-      {(x, y)}ᶜ := by
-    ext z
-    exact ⟨fun hz hzr ↦ hz.elim (fun h ↦ h (congrArg Prod.fst hzr : z.1 = x))
-        (fun h ↦ h (congrArg Prod.snd hzr : z.2 = y)),
-      fun hz ↦ by_contra fun hc ↦ hz (Prod.ext (not_not.1 fun h₁ ↦ hc (Or.inl h₁))
-        (not_not.1 fun h₂ ↦ hc (Or.inr h₂)))⟩
   -- With the subspace written as the complement of the point, the map of pairs `f ⊗ g` of
   -- `TopCat.of X ⊗ TopCat.of Y` is the map `f × g` inducing the local homology map of `X × Y`.
   have aux : ∀ (S : Set (TopCat.of X ⊗ TopCat.of Y))
@@ -425,27 +422,10 @@ theorem localHomologyMap_prodMap_eq_smul (φ : OpenPartialHomeomorph X E) (hx : 
       TopPair.singularHomologyMap (ofSubsetMap _ h) (ModuleCat.of k k) (m + n) = (a * b) • 𝟙 _ := by
     rintro S rfl _
     exact key
-  exact aux _ hU _
+  exact aux _ (preimage_fst_compl_union_preimage_snd_compl (Z₁ := TopCat.of X)
+    (Z₂ := TopCat.of Y) x y) _
 
 end ProdMap
-
-/-- **Integral local homology and `ULift ℤ` coefficients.** A continuous self-map acts on the
-local homology `Hₙ(M, M ∖ S; ULift ℤ)` as multiplication by an integer `c` exactly when it acts on
-`Hₙ(M, M ∖ S; ℤ)` as multiplication by `c`: the change of coefficients
-`TopPair.uliftIntSingularHomologyIso` is natural. -/
-theorem localHomologyMap_uliftInt_eq_smul_iff {M : Type} [TopologicalSpace M] (j : C(M, M))
-    {S : Set M} (h : j ⁻¹' S ⊆ S) (n : ℕ) (c : ℤ) :
-    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j h n = c • 𝟙 _ ↔
-      localHomologyMap (ModuleCat.of ℤ ℤ) j h n = c • 𝟙 _ := by
-  rw [localHomologyMap_def, localHomologyMap_def]
-  have hnat := TopPair.singularHomologyMap_comp_uliftIntSingularHomologyIso_hom
-    (TopPair.ofSubsetMap (X := TopCat.of M) (Y := TopCat.of M) (B := Sᶜ) (B' := Sᶜ)
-      (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) n
-  refine ⟨fun hU ↦ ?_, fun hZ ↦ ?_⟩
-  · rw [← cancel_epi (TopPair.uliftIntSingularHomologyIso _ n).hom, ← hnat, hU]
-    simp
-  · rw [← cancel_mono (TopPair.uliftIntSingularHomologyIso _ n).hom, hnat, hZ]
-    simp
 
 /-- **Product maps on integral local homology.** The product rule
 `TauCeti.localHomologyMap_prodMap_eq_smul` for local homology with coefficients `ULift ℤ`, the
@@ -465,27 +445,10 @@ theorem localHomologyMap_uliftInt_prodMap_eq_smul {X Y E F : Type} [TopologicalS
   rw [localHomologyMap_uliftInt_eq_smul_iff] at ha hb ⊢
   -- The product rule over the ring `ℤ` lets integers act on local homology through its module
   -- structure as an object of `ModuleCat ℤ`, the statement through the canonical `ℤ`-module
-  -- structure of an abelian group. The two actions agree, since `ℤ`-module structures are unique.
-  have hsmul {M : Type} [AddCommGroup M] (h₁ h₂ : Module ℤ M) (c : ℤ) (v : M) :
-      (@Module.toDistribMulAction ℤ M _ _ h₁).toDistribSMul.toSMulZeroClass.toSMul.smul c v =
-        (@Module.toDistribMulAction ℤ M _ _ h₂).toDistribSMul.toSMulZeroClass.toSMul.smul c v := by
-    rw [Subsingleton.elim h₁ h₂]
-  have hprod := localHomologyMap_prodMap_eq_smul φ hx ψ hy hm hn hf hg hfg
-    (ModuleCat.hom_ext (LinearMap.ext fun v ↦ by
-      have := congrArg (fun φ ↦ φ.hom v) ha
-      simp only [ModuleCat.hom_smul, ModuleCat.hom_id, LinearMap.smul_apply,
-        LinearMap.id_apply] at this ⊢
-      exact this.trans (hsmul (AddCommGroup.toIntModule _) (ModuleCat.isModule _) _ v)))
-    (ModuleCat.hom_ext (LinearMap.ext fun v ↦ by
-      have := congrArg (fun φ ↦ φ.hom v) hb
-      simp only [ModuleCat.hom_smul, ModuleCat.hom_id, LinearMap.smul_apply,
-        LinearMap.id_apply] at this ⊢
-      exact this.trans (hsmul (AddCommGroup.toIntModule _) (ModuleCat.isModule _) _ v)))
-  refine ModuleCat.hom_ext (LinearMap.ext fun v ↦ ?_)
-  have := congrArg (fun φ ↦ φ.hom v) hprod
-  simp only [ModuleCat.hom_smul, ModuleCat.hom_id, LinearMap.smul_apply,
-    LinearMap.id_apply] at this ⊢
-  exact this.trans (hsmul (ModuleCat.isModule _) (AddCommGroup.toIntModule _) _ v)
+  -- structure of an abelian group. The two actions agree (`int_smul_eq_zsmul`).
+  convert localHomologyMap_prodMap_eq_smul (k := ℤ) φ hx ψ hy hm hn hf hg hfg (ha.trans ?_)
+    (hb.trans ?_) using 1
+  all_goals exact ModuleCat.hom_ext (LinearMap.ext fun v ↦ (int_smul_eq_zsmul _ _ v).symm)
 
 end ProdPair
 
@@ -529,14 +492,7 @@ private theorem isIso_singularHomologyMap_ofSubsetMap_preimage_union [T1Space X�
       CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' ({j₂ r.2}ᶜ : Set X₂)) {f (j₁ r.1, j₂ r.2)}ᶜ)
     (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (ofSubsetMap f h) (ModuleCat.of k k) n) := by
-  -- The complement of `{j₁ r.1}ᶜ × X₂ ∪ X₁ × {j₂ r.2}ᶜ` is the point `(j₁ r.1, j₂ r.2)`.
-  have hS : (CartesianMonoidalCategory.fst X₁ X₂ ⁻¹' ({j₁ r.1}ᶜ : Set X₁) ∪
-      CartesianMonoidalCategory.snd X₁ X₂ ⁻¹' ({j₂ r.2}ᶜ : Set X₂)) = {(j₁ r.1, j₂ r.2)}ᶜ := by
-    ext z
-    exact ⟨fun hz hzr ↦ hz.elim (fun h ↦ h (congrArg Prod.fst hzr : z.1 = j₁ r.1))
-        (fun h ↦ h (congrArg Prod.snd hzr : z.2 = j₂ r.2)),
-      fun hz ↦ by_contra fun hc ↦ hz (Prod.ext (not_not.1 fun h₁ ↦ hc (Or.inl h₁))
-        (not_not.1 fun h₂ ↦ hc (Or.inr h₂)))⟩
+  have hS := preimage_fst_compl_union_preimage_snd_compl (j₁ r.1) (j₂ r.2)
   have hf' : f.hom ⁻¹' {f.hom (j₁ r.1, j₂ r.2)} ⊆ {(j₁ r.1, j₂ r.2)} := fun z hz ↦
     not_not.1 fun hzr ↦ h (hS.symm ▸ hzr) hz
   have hloc : IsIso (localHomologyMap (ModuleCat.of k k) f.hom hf' n) :=

@@ -25,7 +25,8 @@ which are regular zeros of the factors, so by local orientability of the factors
 local orientation line `oᵢ` of `Xᵢ_(Iᵢ)` at `xᵢ` by the sign `εᵢ` of the determinant of its action
 on `Eᵢ_(Iᵢ)`. The two signs multiply on both sides.
 
-* **On the local orientation line.** The regular loci of the factors are topological manifolds
+* **On the local orientation line.** Every regular point `xᵢ` of a factor has a chart of the
+  thickening `Xᵢ_(Iᵢ)` to `ℝ^(dᵢ + m_Iᵢ)`
   (`TauCeti.ImplicitAtlas.exists_openPartialHomeomorph_of_mem_regLocus`), so the product map
   `g₁ × g₂` acts on the local orientation line of `X₁_(I₁) × X₂_(I₂)` at `(x₁, x₂)` by `ε₁ ε₂`
   (`TauCeti.localHomologyMap_uliftInt_prodMap_eq_smul`, through the Künneth map of local
@@ -94,12 +95,9 @@ variable {T₁ : Finset A₁ → Type} [∀ I, TopologicalSpace (T₁ I)] [∀ I
   {act₂ : ∀ I : Finset A₂, ((b : I) → Γ₂ b) →* (T₂ I ≃ₜ T₂ I)}
   {X₂ : Type*} [TopologicalSpace X₂] {d₂ : ℤ}
 
-/-- **The product of locally orientable atlases is locally orientable.** At a regular zero
-`(x₁, x₂)` of a thickening of `𝒜₁.prod 𝒜₂`, an element `(g₁, g₂)` of the stabilizer acts on the
-local orientation line by the product of the signs by which `g₁` and `g₂` act on those of the
-factors, which by local orientability of the factors are the signs of the determinants of their
-actions on the obstruction spaces; and the determinant of `(g₁, g₂)` on the obstruction space of the
-product is the product of these determinants. -/
+/-- **The product of locally orientable atlases is locally orientable.** If the implicit atlases
+`𝒜₁` and `𝒜₂`, whose thickenings are in `Type`, are locally orientable, then so is their product
+`𝒜₁.prod 𝒜₂` on `X₁ × X₂`. -/
 theorem IsLocallyOrientable.prod {𝒜₁ : ImplicitAtlas Γ₁ E₁ ρ₁ T₁ act₁ X₁ d₁}
     {𝒜₂ : ImplicitAtlas Γ₂ E₂ ρ₂ T₂ act₂ X₂ d₂} (h₁ : 𝒜₁.IsLocallyOrientable)
     (h₂ : 𝒜₂.IsLocallyOrientable) : (𝒜₁.prod 𝒜₂).IsLocallyOrientable := by

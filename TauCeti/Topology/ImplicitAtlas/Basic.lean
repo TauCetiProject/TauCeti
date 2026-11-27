@@ -523,10 +523,9 @@ end Core
 
 variable (𝒜 : ImplicitAtlas Γ E ρ T act X d)
 
-/-- **The regular locus is a topological manifold of dimension `d + m_I`.** Every point of
-`X_I^reg` lies in the source of an open partial homeomorphism from `X_I` to `ℝⁿ`, where the natural
-number `n` is the expected dimension `d + m_I`. This is the local product model of the atlas at
-`I ⊆ I`, whose obstruction factor `E_(I \ I)` is a point. -/
+/-- **Charts at regular points.** Every point of `X_I^reg` lies in the source of an open partial
+homeomorphism from `X_I` to `ℝⁿ`, where the natural number `n` is the expected dimension
+`d + m_I`. -/
 theorem exists_openPartialHomeomorph_of_mem_regLocus {I : Finset A} {x : T I}
     (hx : x ∈ 𝒜.regLocus I) :
     ∃ n : ℕ, (n : ℤ) = d + ∑ α ∈ I, (Module.finrank ℝ (E α) : ℤ) ∧
