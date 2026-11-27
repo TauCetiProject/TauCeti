@@ -402,61 +402,64 @@ theorem ising_sub_trace_eq_of_offDiag_add_transpose_eq {J₁ J₂ : Matrix ι ι
     simp
   · simp [hij, hJ i j hij]
 
+omit [Fintype ι] in
+private theorem spin_decide_eq [DecidableEq ι] (i k : ι) :
+    spin (fun m ↦ decide (m = i)) k = 1 - 2 * if k = i then (1 : ℝ) else 0 := by
+  by_cases hk : k = i <;> norm_num [spin_def, hk]
+
+omit [Fintype ι] in
+private theorem spin_decide_or [DecidableEq ι] {i j : ι} (hij : i ≠ j) (k : ι) :
+    spin (fun m ↦ decide (m = i ∨ m = j)) k =
+      1 - 2 * (if k = i then (1 : ℝ) else 0) - 2 * (if k = j then (1 : ℝ) else 0) := by
+  by_cases hki : k = i
+  · subst hki
+    norm_num [spin_def, hij]
+  · by_cases hkj : k = j
+    · subst hkj
+      norm_num [spin_def, hij.symm]
+    · simp [hki, hkj]
+
+private theorem sum_mul_ite_ite [DecidableEq ι] (J : Matrix ι ι ℝ) (u v : ι) :
+    (∑ a, ∑ b, 4 * J a b * (if a = u then (1 : ℝ) else 0) * if b = v then 1 else 0) =
+      4 * J u v := by
+  simp only [mul_ite, mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte]
+
 private theorem ising_alternating_pair [DecidableEq ι] (J : Matrix ι ι ℝ) (h : ι → ℝ)
     {i j : ι} (hij : i ≠ j) :
     ising J h (fun _ ↦ false) - ising J h (fun k ↦ decide (k = i)) -
         ising J h (fun k ↦ decide (k = j)) + ising J h (fun k ↦ decide (k = i ∨ k = j)) =
       4 * (J i j + J j i) := by
-  let δi : ι → ℝ := fun k ↦ if k = i then 1 else 0
-  let δj : ι → ℝ := fun k ↦ if k = j then 1 else 0
-  have hspin0 (k : ι) : spin (fun _ ↦ false) k = 1 := rfl
-  have hspini (k : ι) : spin (fun m ↦ decide (m = i)) k = 1 - 2 * δi k := by
-    by_cases hk : k = i <;> simp [δi, hk]; norm_num
-  have hspinj (k : ι) : spin (fun m ↦ decide (m = j)) k = 1 - 2 * δj k := by
-    by_cases hk : k = j <;> simp [δj, hk]; norm_num
-  have hspinij (k : ι) : spin (fun m ↦ decide (m = i ∨ m = j)) k = 1 - 2 * δi k - 2 * δj k := by
-    by_cases hki : k = i
-    · simp [δi, δj, hki, hij]
-      norm_num
-    · by_cases hkj : k = j <;> simp [δi, δj, hki, hkj, hij.symm]; norm_num
+  -- Linear field terms cancel pointwise in the alternating sum.
   have hlin :
       (∑ k, h k * spin (fun _ ↦ false) k) - (∑ k, h k * spin (fun m ↦ decide (m = i)) k) -
           (∑ k, h k * spin (fun m ↦ decide (m = j)) k) +
           (∑ k, h k * spin (fun m ↦ decide (m = i ∨ m = j)) k) =
         0 := by
-    simp only [hspin0, hspini, hspinj, hspinij, ← Finset.sum_sub_distrib,
-      ← Finset.sum_add_distrib]
+    simp only [spin_of_false, spin_decide_eq, spin_decide_or hij,
+      ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
     exact Finset.sum_eq_zero fun k _ ↦ by ring
-  have hterm (a b : ι) :
-      J a b * 1 * 1 - J a b * (1 - 2 * δi a) * (1 - 2 * δi b) -
-          J a b * (1 - 2 * δj a) * (1 - 2 * δj b) +
-          J a b * (1 - 2 * δi a - 2 * δj a) * (1 - 2 * δi b - 2 * δj b) =
-        4 * J a b * δi a * δj b + 4 * J a b * δj a * δi b := by
-    ring
-  have hsum (u v : ι) (δu δv : ι → ℝ) (hu : ∀ k, δu k = if k = u then 1 else 0)
-      (hv : ∀ k, δv k = if k = v then 1 else 0) :
-      (∑ a, ∑ b, 4 * J a b * δu a * δv b) = 4 * J u v := by
-    rw [Fintype.sum_eq_single u _]
-    · rw [Fintype.sum_eq_single v _]
-      · simp [hu u, hv v]
-      · intro b hb
-        rw [hv b, ite_eq_right_iff.mpr fun hbu ↦ (hb hbu).elim]
-        ring
-    · intro a ha
-      exact Finset.sum_eq_zero fun b _ ↦ by
-        rw [hu a, ite_eq_right_iff.mpr fun hau ↦ (ha hau).elim]
-        ring
-  have hq :
+  -- Quadratic coupling terms reduce to the `(i, j)` and `(j, i)` cross terms.
+  have hquad :
       (∑ a, ∑ b, J a b * spin (fun _ ↦ false) a * spin (fun _ ↦ false) b) -
           (∑ a, ∑ b, J a b * spin (fun m ↦ decide (m = i)) a * spin (fun m ↦ decide (m = i)) b) -
           (∑ a, ∑ b, J a b * spin (fun m ↦ decide (m = j)) a * spin (fun m ↦ decide (m = j)) b) +
           (∑ a, ∑ b, J a b * spin (fun m ↦ decide (m = i ∨ m = j)) a *
             spin (fun m ↦ decide (m = i ∨ m = j)) b) =
         4 * (J i j + J j i) := by
-    simp only [hspin0, hspini, hspinj, hspinij, ← Finset.sum_sub_distrib,
-      ← Finset.sum_add_distrib]
-    simp_rw [hterm, Finset.sum_add_distrib]
-    rw [hsum i j δi δj (fun _ ↦ rfl) (fun _ ↦ rfl), hsum j i δj δi (fun _ ↦ rfl) (fun _ ↦ rfl)]
+    simp only [spin_of_false, spin_decide_eq, spin_decide_or hij,
+      ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
+    have hterm (a b : ι) :
+        J a b * 1 * 1 -
+            J a b * (1 - 2 * if a = i then (1 : ℝ) else 0) *
+              (1 - 2 * if b = i then (1 : ℝ) else 0) -
+            J a b * (1 - 2 * if a = j then (1 : ℝ) else 0) *
+              (1 - 2 * if b = j then (1 : ℝ) else 0) +
+            J a b * (1 - 2 * (if a = i then (1 : ℝ) else 0) - 2 * if a = j then 1 else 0) *
+              (1 - 2 * (if b = i then (1 : ℝ) else 0) - 2 * if b = j then 1 else 0) =
+          4 * J a b * (if a = i then (1 : ℝ) else 0) * (if b = j then 1 else 0) +
+            4 * J a b * (if a = j then (1 : ℝ) else 0) * (if b = i then 1 else 0) := by
+      ring
+    simp_rw [hterm, Finset.sum_add_distrib, sum_mul_ite_ite]
     ring
   simp only [ising_def]
   linarith

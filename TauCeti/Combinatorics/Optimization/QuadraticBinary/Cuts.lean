@@ -449,15 +449,34 @@ theorem quboCutMatrix_eq_symmetrize_isingAncillaMatrix (Q : Matrix ι ι ℝ) :
 `-cutWeight (quboCutMatrix Q) y` with no additive constant. -/
 theorem qubo_eq_neg_cutWeight (Q : Matrix ι ι ℝ) (y : Option ι → Bool) :
     qubo Q (fun i ↦ xor (y (some i)) (y none)) = -cutWeight (quboCutMatrix Q) y := by
-  have hfield :
-      ((1 / 4 : ℝ) • fun i ↦ -(∑ j, (Q i j + Q j i))) = fun i ↦ -(∑ j, (Q i j + Q j i)) / 4 := by
+  let h : ι → ℝ := fun i ↦ -(∑ j, (Q i j + Q j i))
+  have hfield : (fun i ↦ -(∑ j, (Q i j + Q j i)) / 4) = (1 / 4 : ℝ) • h := by
     ext i
-    simp only [Pi.smul_apply, smul_eq_mul]
+    simp only [h, Pi.smul_apply, smul_eq_mul]
     ring
-  rw [cutWeight_eq_ising (isSymm_quboCutMatrix Q) y, sum_quboCutMatrix, ← smul_zero (1 / 4 : ℝ),
-    ising_smul, quboCutMatrix_eq_symmetrize_isingAncillaMatrix, ising_symmetrize, ising_ancilla,
-    qubo_eq_ising, ← ising_smul, hfield]
-  ring
+  have hcut :
+      ising ((1 / 4 : ℝ) • quboCutMatrix Q) 0 y =
+        (1 / 4 : ℝ) * ising (isingAncillaMatrix Q h) 0 y := by
+    calc
+      ising ((1 / 4 : ℝ) • quboCutMatrix Q) 0 y
+        = ising ((1 / 4 : ℝ) • quboCutMatrix Q) ((1 / 4 : ℝ) • 0) y := by rw [smul_zero]
+      _ = (1 / 4 : ℝ) * ising (quboCutMatrix Q) 0 y := ising_smul _ _ _ _
+      _ = (1 / 4 : ℝ) * ising (isingAncillaMatrix Q h) 0 y := by
+          rw [quboCutMatrix_eq_symmetrize_isingAncillaMatrix, ising_symmetrize]
+  calc
+    qubo Q (fun i ↦ xor (y (some i)) (y none))
+      = ising ((1 / 4 : ℝ) • Q) (fun i ↦ -(∑ j, (Q i j + Q j i)) / 4)
+          (fun i ↦ xor (y (some i)) (y none)) + (∑ i, ∑ j, Q i j) / 4 := qubo_eq_ising Q _
+    _ = (1 / 4 : ℝ) * ising Q h (fun i ↦ xor (y (some i)) (y none)) +
+          (∑ i, ∑ j, Q i j) / 4 := by
+        rw [hfield, ising_smul]
+    _ = (1 / 4 : ℝ) * ising (isingAncillaMatrix Q h) 0 y + (∑ i, ∑ j, Q i j) / 4 := by
+        rw [ising_ancilla]
+    _ = ising ((1 / 4 : ℝ) • quboCutMatrix Q) 0 y + (∑ i, ∑ j, Q i j) / 4 := by
+        rw [hcut]
+    _ = -cutWeight (quboCutMatrix Q) y := by
+        rw [cutWeight_eq_ising (isSymm_quboCutMatrix Q) y, sum_quboCutMatrix]
+        ring
 
 /-- The global infimum of `qubo Q` equals minus the max-cut supremum of `quboCutMatrix Q`. -/
 theorem iInf_qubo_eq_neg_iSup_cutWeight (Q : Matrix ι ι ℝ) :
