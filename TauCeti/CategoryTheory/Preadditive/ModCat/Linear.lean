@@ -184,9 +184,9 @@ instance (F : D ⥤+ AddCommGrpCat.{w}) :
     (F.liftToModuleCat R).Linear R :=
   (Functor.linear_iff R _).2 fun X r ↦ by
     ext x
-    -- The lifted value and the original group have the same underlying type.
-    simp
-    rfl
+    simp only [ModuleCat.hom_smul, LinearMap.smul_apply, ModuleCat.hom_id, LinearMap.id_apply]
+    exact (AdditiveFunctor.liftToModuleCat_map_apply R F (r • 𝟙 X) x).trans
+      (AdditiveFunctor.liftToModuleCat_smul R F X r x).symm
 
 variable (R D) in
 /-- The object property of being an additive and `R`-linear functor to `R`-modules. -/
@@ -316,9 +316,9 @@ instance _root_.CategoryTheory.AdditiveFunctor.liftToModuleCatFunctor_linear :
     simp only [NatTrans.app_smul, ModuleCat.hom_smul, LinearMap.smul_apply]
     rw [AdditiveFunctor.liftToModuleCatFunctor_map_app_apply R (r • α) X x,
       AdditiveFunctor.liftToModuleCatFunctor_map_app_apply R α X x]
-    -- Match the bundled functor's values with their definitionally equal lifted modules.
-    simpa only [AdditiveFunctor.sourceLinear_smul_hom_app] using!
-      (AdditiveFunctor.liftToModuleCat_smul R G X r (α.hom.app X x)).symm
+    rw [AdditiveFunctor.sourceLinear_smul_hom_app]
+    -- The target value is the lifted module of G by liftToModuleCatFunctor_obj.
+    exact (AdditiveFunctor.liftToModuleCat_smul R G X r (α.hom.app X x)).symm
 
 /-- The scalar lift into the full subcategory of linear functors preserves scalar multiplication. -/
 instance linearModuleFunctorLift_linear : (linearModuleFunctorLift.{w} R D).Linear R where
