@@ -61,6 +61,15 @@ private theorem inner_toEuclideanLin_toLp_eq_dotProduct_mulVec (A : Matrix V V �
     ⟪toEuclideanLin A (WithLp.toLp 2 x), WithLp.toLp 2 x⟫_ℝ = x ⬝ᵥ (A *ᵥ x) := by
   simp [EuclideanSpace.inner_toLp_toLp]
 
+/-- The Laplacian eigenvalues are the sorted eigenvalues of the Laplacian acting on
+`EuclideanSpace ℝ V`. Mathlib defines `Matrix.IsHermitian.eigenvalues₀` this way but has no named
+lemma connecting it to `LinearMap.IsSymmetric.eigenvalues`, so this bridge unfolds its equation
+lemma, in this one place; the Courant–Fischer statements used below are phrased for the operator. -/
+private theorem lapEigenvalues_eq_eigenvalues :
+    G.lapEigenvalues = (isSymmetric_toEuclideanLin_iff.mpr (G.isHermitian_lapMatrix ℝ)).eigenvalues
+      finrank_euclideanSpace := by
+  rw [lapEigenvalues_def, IsHermitian.eigenvalues₀.eq_1]
+
 /-- On the vectors orthogonal to the eigenvector of the smallest eigenvalue in the sorted
 eigenbasis of the Laplacian, the quadratic form is at least `a(G)` times the squared norm. -/
 private theorem algebraicConnectivity_mul_dotProduct_self_le_of_inner_eq_zero
@@ -81,7 +90,7 @@ private theorem algebraicConnectivity_mul_dotProduct_self_le_of_inner_eq_zero
   · rwa [norm_toLp_sq_eq_dotProduct_self, RCLike.re_to_real,
       inner_toEuclideanLin_toLp_eq_dotProduct_mulVec] at h
   · -- Every index but the last is at most `n - 2`, where the eigenvalue is `a(G)`.
-    rw [G.algebraicConnectivity_of_two_le hn, lapEigenvalues_def, IsHermitian.eigenvalues₀.eq_1]
+    rw [G.algebraicConnectivity_of_two_le hn, lapEigenvalues_eq_eigenvalues]
     refine hT.eigenvalues_antitone finrank_euclideanSpace ?_
     simp only [Set.mem_compl_iff, Set.mem_singleton_iff, Fin.ext_iff, l] at hi
     simp only [Fin.le_def]
@@ -159,8 +168,7 @@ theorem exists_dotProduct_mulVec_le_algebraicConnectivity_mul (h : 2 ≤ Fintype
     simp at hxx
   · rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hy
     simpa [one, EuclideanSpace.inner_toLp_toLp, dotProduct] using hy
-  · rw [hxx, mul_one, G.algebraicConnectivity_of_two_le h, lapEigenvalues_def]
-    rw [IsHermitian.eigenvalues₀.eq_1]
+  · rw [hxx, mul_one, G.algebraicConnectivity_of_two_le h, lapEigenvalues_eq_eigenvalues]
     rwa [RCLike.re_to_real, inner_toEuclideanLin_toLp_eq_dotProduct_mulVec] at hle
 
 /-- **Fiedler's superadditivity of the algebraic connectivity.** For edge-disjoint graphs `G` and
