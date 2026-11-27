@@ -71,6 +71,15 @@ theorem HasMatrixUnitLieRelations.map {B F : Type*} [Ring B] [FunLike F A B]
     (E.map f).HasMatrixUnitLieRelations :=
   hE.map_of_commutator f fun x y ↦ by simp only [map_sub, map_mul]
 
+/-- Negative transpose preserves the matrix-unit commutator relations. -/
+theorem HasMatrixUnitLieRelations.neg_transpose {E : Matrix ι ι A}
+    (hE : E.HasMatrixUnitLieRelations) : (-Eᵀ).HasMatrixUnitLieRelations := by
+  intro a b c d
+  simp only [Matrix.neg_apply, transpose_apply, neg_mul_neg]
+  rw [hE b a d c]
+  simp only [eq_comm (a := a) (b := d), eq_comm (a := c) (b := b)]
+  split_ifs <;> simp [sub_eq_add_neg, add_comm]
+
 section Alternation
 
 attribute [local instance 100] LieRing.ofAssociativeRing
