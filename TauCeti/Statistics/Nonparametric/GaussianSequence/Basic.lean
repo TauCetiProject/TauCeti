@@ -8,6 +8,7 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import Mathlib.Probability.Kernel.Composition.CompNotation
 public import Mathlib.Probability.ProductMeasure
+import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Moments
 
 /-!
@@ -42,11 +43,14 @@ parameter sets are the ellipsoids `∑' j, a j² θ j² ≤ C²`.
 * `TauCeti.gaussSeqLaw_map_restrict`: the coordinates in any set of indices have the product law.
 * `TauCeti.gaussSeqMinimax_le_gaussSeqLinearMinimax`: the minimax risk is at most the linear
   minimax risk.
+* `TauCeti.le_gaussSeqMinimax`, `TauCeti.le_gaussSeqLinearMinimax`: lower bounds on the two
+  minimax risks from lower bounds on the largest risk of every estimator.
 
 The definitions follow `CKSD.gaussianSequenceLaw`, `CKSD.sequenceEllipsoid`,
 `CKSD.gaussianSequenceMinimaxRisk` and `CKSD.gaussianSequenceLinearMinimaxRisk` of lean-CKSD
-(`CKSD/Nonparametric/Models.lean`), adapted to the roadmap conventions: Markov-kernel
-estimators, the ellipsoid radius `C²`, and the linear minimax risk written with the risk formula.
+(`CKSD/Nonparametric/Models.lean`), with three changes: estimators are Markov kernels, the
+ellipsoid is bounded by `C²`, and the linear minimax risk is written with the closed-form risk
+`∑' j, (c j² ε² + (1 - c j)² θ j²)` of the diagonal estimators.
 
 ## References
 
@@ -185,10 +189,9 @@ theorem gaussSeqRisk_diagonal (c θ : ℕ → ℝ) (ε : ℝ) :
   -- `c j² ε²`; its second moment is the claimed term.
   have hmap : (gaussianReal (θ j) (ε ^ 2).toNNReal).map (fun x ↦ c j * x - θ j) =
       gaussianReal (c j * θ j - θ j) (.mk (c j ^ 2) (sq_nonneg _) * (ε ^ 2).toNNReal) := by
-    rw [← gaussianReal_map_sub_const, ← gaussianReal_map_const_mul,
-      Measure.map_map (by fun_prop) (by fun_prop)]
-    -- `(· - θ j) ∘ (c j * ·)` is `fun x ↦ c j * x - θ j` by definition of composition.
-    rfl
+    have h := Probability.gaussianReal_map_const_add_const_mul (θ j) (ε ^ 2).toNNReal (-θ j) (c j)
+    simp only [neg_add_eq_sub] at h
+    exact h
   rw [← lintegral_map (f := fun x ↦ ENNReal.ofReal (x ^ 2)) (by fun_prop) (by fun_prop), hmap,
     Probability.lintegral_ofReal_sq_gaussianReal]
   congr 1
@@ -212,6 +215,13 @@ theorem gaussSeqMinimax_le (κ : Kernel (ℕ → ℝ) (ℕ → ℝ)) [IsMarkovKe
     (ε : ℝ) : gaussSeqMinimax Θ ε ≤ ⨆ θ ∈ Θ, gaussSeqRisk κ θ ε :=
   iInf_le (fun κ : {κ : Kernel (ℕ → ℝ) (ℕ → ℝ) // IsMarkovKernel κ} ↦
     ⨆ θ ∈ Θ, gaussSeqRisk κ.val θ ε) ⟨κ, inferInstance⟩
+
+/-- A lower bound on the largest risk over `Θ` of every randomized estimator is a lower bound on
+the minimax risk. -/
+theorem le_gaussSeqMinimax {Θ : Set (ℕ → ℝ)} {ε : ℝ} {b : ℝ≥0∞}
+    (h : ∀ κ : Kernel (ℕ → ℝ) (ℕ → ℝ), IsMarkovKernel κ → b ≤ ⨆ θ ∈ Θ, gaussSeqRisk κ θ ε) :
+    b ≤ gaussSeqMinimax Θ ε :=
+  le_iInf fun κ ↦ h κ.val κ.property
 
 /-- The minimax risk is monotone in the parameter set. -/
 theorem gaussSeqMinimax_mono {Θ Θ' : Set (ℕ → ℝ)} (h : Θ ⊆ Θ') (ε : ℝ) :
@@ -248,6 +258,14 @@ theorem gaussSeqLinearMinimax_le (c : ℕ → ℝ) (Θ : Set (ℕ → ℝ)) (ε 
   iInf_le (fun c : ℕ → ℝ ↦
     ⨆ θ ∈ Θ, ∑' j, ENNReal.ofReal (c j ^ 2 * ε ^ 2 + (1 - c j) ^ 2 * θ j ^ 2)) c
 
+/-- A lower bound on the largest risk over `Θ` of every diagonal estimator is a lower bound on
+the linear minimax risk. -/
+theorem le_gaussSeqLinearMinimax {Θ : Set (ℕ → ℝ)} {ε : ℝ} {b : ℝ≥0∞}
+    (h : ∀ c : ℕ → ℝ,
+      b ≤ ⨆ θ ∈ Θ, ∑' j, ENNReal.ofReal (c j ^ 2 * ε ^ 2 + (1 - c j) ^ 2 * θ j ^ 2)) :
+    b ≤ gaussSeqLinearMinimax Θ ε :=
+  le_iInf h
+
 /-- The linear minimax risk is monotone in the parameter set. -/
 theorem gaussSeqLinearMinimax_mono {Θ Θ' : Set (ℕ → ℝ)} (h : Θ ⊆ Θ') (ε : ℝ) :
     gaussSeqLinearMinimax Θ ε ≤ gaussSeqLinearMinimax Θ' ε :=
@@ -268,7 +286,7 @@ theorem gaussSeqLinearMinimax_empty (ε : ℝ) : gaussSeqLinearMinimax ∅ ε = 
 deterministic estimator. -/
 theorem gaussSeqMinimax_le_gaussSeqLinearMinimax (Θ : Set (ℕ → ℝ)) (ε : ℝ) :
     gaussSeqMinimax Θ ε ≤ gaussSeqLinearMinimax Θ ε := by
-  refine le_iInf fun c ↦ ?_
+  refine le_gaussSeqLinearMinimax fun c ↦ ?_
   obtain ⟨hc, -⟩ := gaussSeqRisk_diagonal c 0 ε
   refine (gaussSeqMinimax_le (Kernel.deterministic _ hc) Θ ε).trans_eq ?_
   exact biSup_congr fun θ _ ↦ (gaussSeqRisk_diagonal c θ ε).choose_spec
