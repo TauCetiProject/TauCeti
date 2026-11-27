@@ -163,10 +163,10 @@ section Seq
 variable {ξ : ℕ → StrictUpper → Ω → ℂ} {η : ℕ → ℕ → Ω → ℝ} {k : ℕ} {B : ℝ}
 
 /-- **Almost-sure vanishing of empirical spectral moment fluctuations for a sequence of arrays.**
-With no independence assumed across `n`, under independent corner entries in `L^(2k)` with
-centered off-diagonal coordinates whose `2k`-th absolute moments are uniformly bounded by `B`, the
-`k`-th empirical spectral moment minus its expectation converges almost surely to zero as
-`n → ∞`. -/
+With no independence assumed across `n`, under independent corner entries with both diagonal and
+strictly upper-triangular entry families lying in `L^(2k)` with `2k`-th absolute moments uniformly
+bounded by `B`, and centered off-diagonal coordinates, the `k`-th empirical spectral moment minus
+its expectation converges almost surely to zero as `n → ∞`. -/
 theorem ae_tendsto_integral_pow_spectralMeasure_wignerMatrix_sub_mean_of_seq
     (hindep : ∀ n, iIndepFun
       (fun r : {ij : StrictUpper // ij.val.2 < n + 1} ⊕ {i : ℕ // i < n + 1} ↦
