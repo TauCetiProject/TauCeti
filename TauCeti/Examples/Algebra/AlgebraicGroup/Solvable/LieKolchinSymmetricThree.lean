@@ -24,9 +24,10 @@ with `S₃` permuting the coordinates, is irreducible
 (`TauCeti.isIrreducible_standardRepresentation_fin_three`) and has no nonzero weight vector
 (`TauCeti.Examples.LieKolchinSymmetricThree.not_hasNonzeroWeightVector`): a nonzero weight vector
 would be a common eigenvector of all of `S₃`, so it would span an invariant line in the plane,
-contradicting irreducibility. So the conclusion of the Lie–Kolchin
-theorem (`TauCeti.Comodule.hasNonzeroWeightVector_of_nonzeroJointWeight_commutator` and its
-corollaries need a connected group) fails for this disconnected solvable group.
+contradicting irreducibility. So the conclusion of the weight-vector Lie–Kolchin theorem
+`TauCeti.Comodule.hasNonzeroWeightVector_of_isSolvable`, which assumes a connected group
+(`ConnectedSpace (PrimeSpectrum H)`) with solvable group of points, fails for this solvable but
+disconnected group.
 -/
 
 public section
@@ -60,13 +61,13 @@ theorem not_hasNonzeroWeightVector :
       (augmentationSubrepresentation ℂ (Perm (Fin 3)) (Fin 3)).toSubmodule := by
   let := ConstantGroup.representationComodule ℂ (standardRepresentation ℂ (Fin 3))
   rw [Comodule.hasNonzeroWeightVector_iff]
-  rintro ⟨v, c, hv, -, hcoact⟩
+  rintro ⟨v, c, hv, hc, hcoact⟩
   -- the point `σ` acts on the weight vector `v` through the scalar `σ(c)`
-  have hline (σ : Perm (Fin 3)) : ∃ a : ℂ, standardRepresentation ℂ (Fin 3) σ v = a • v := by
-    refine ⟨(ConstantGroup.toPoints ℂ _ σ).ofConv c, ?_⟩
-    rw [← ConstantGroup.basePointsRepresentation_toPoints, Comodule.basePointsRepresentation_apply,
-      Comodule.endOfPoint_tmul, hcoact]
-    simp
+  have hline (σ : Perm (Fin 3)) : ∃ a : ℂ, standardRepresentation ℂ (Fin 3) σ v = a • v :=
+    ⟨_, by
+      rw [← ConstantGroup.basePointsRepresentation_toPoints]
+      exact Comodule.basePointsRepresentation_apply_of_mem_weightSpace _ (c := ⟨c, hc⟩)
+        (GroupLike.mem_weightSpace.mpr hcoact)⟩
   -- so `v` spans an invariant line, which irreducibility makes `⊥` or the whole plane
   rcases (isIrreducible_standardRepresentation_fin_three (k := ℂ) (by norm_num)).eq_bot_or_eq_top
     (Subrepresentation.spanSingleton v hline) with h | h
