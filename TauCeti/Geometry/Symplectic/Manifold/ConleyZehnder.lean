@@ -125,6 +125,14 @@ theorem trans (hφ : IsSymplecticFrame σ ω₀ f φ) (e : W' ≃L[ℝ] W)
   ⟨hφ.continuous.comp (continuous_fst.prodMk (e.continuous.comp continuous_snd)), fun y v w ↦ by
     simp only [ContinuousLinearEquiv.trans_apply, hφ.apply_apply, he]⟩
 
+/-- A symplectic frame precomposed with a continuous family `A` of linear symplectic automorphisms
+of the model, `y ↦ φ(y) ∘ A(y)`, is a symplectic frame. -/
+theorem trans_of_continuous (hφ : IsSymplecticFrame σ ω₀ f φ) {A : Y → W ≃L[ℝ] W}
+    (hA : Continuous fun y ↦ (A y : W →L[ℝ] W)) (hAω : ∀ y v w, ω₀ (A y v) (A y w) = ω₀ v w) :
+    IsSymplecticFrame σ ω₀ f fun y ↦ (A y).trans (φ y) :=
+  ⟨hφ.continuous.comp (continuous_fst.prodMk ((hA.comp continuous_fst).clm_apply continuous_snd)),
+    fun y v w ↦ by simp only [ContinuousLinearEquiv.trans_apply, hφ.apply_apply, hAω]⟩
+
 /-- Two symplectic frames along the same map differ by linear symplectic maps of the model:
 `ψ(y)⁻¹ ∘ φ(y)` preserves `ω₀`. -/
 theorem apply_trans_symm_apply (hφ : IsSymplecticFrame σ ω₀ f φ)
