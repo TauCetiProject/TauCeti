@@ -140,10 +140,11 @@ theorem exists_trace_eq_typeTrace [Algebra.FormallyUnramified ℚ E] (Φ : CMTyp
     { finitePresentation := Algebra.FinitePresentation.of_finiteType.mp inferInstance }
   -- The selected idempotent gives a module with the descended partial trace.
   obtain ⟨n, ρ, hρ⟩ := TauCeti.Algebra.Etale.exists_trace_eq_finsum (K := k)
-    (A := k ⊗[ℚ] E) (Ω := ℂ) _ (Φ.finsum_tensorEmbeddingEquiv_image_mem_range hk)
+    (A := k ⊗[ℚ] E) (Ω := ℂ) _
+    (Φ.finsum_ratTensorProductAlgHomEquiv_image_mem_range hk)
   refine ⟨n, ρ.toRingHom.comp Algebra.TensorProduct.includeRight.toRingHom, fun a ↦ ?_⟩
   have h := hρ (1 ⊗ₜ a)
-  rw [finsum_mem_image k.tensorEmbeddingEquiv.injective.injOn] at h
+  rw [finsum_mem_image (ratTensorProductAlgHomEquiv k E ℂ).injective.injOn] at h
   simpa [typeTrace_apply] using h
 
 /-- **Representations with the type trace (Milne, *Complex Multiplication*, Proposition 1.21).**

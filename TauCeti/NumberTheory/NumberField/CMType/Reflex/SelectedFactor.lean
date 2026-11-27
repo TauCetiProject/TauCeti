@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Etale.Field
-public import Mathlib.RingTheory.TensorProduct.Maps
 public import TauCeti.NumberTheory.NumberField.CMType.Reflex.Basic
 import TauCeti.RingTheory.Etale.Reduced
 import TauCeti.RingTheory.Etale.Trace
@@ -20,7 +19,7 @@ the subfield `k ⊆ ℂ` contains its reflex field. The factor is the image of s
 evaluation at the embeddings in `Φ` (`TauCeti.CMType.typeFactor`). The two evaluation
 projections give the product decomposition `TauCeti.CMType.typeFactorProdEquiv`.
 
-The construction uses `Algebra.TensorProduct.liftEquivRight` to extend the embeddings,
+The construction uses `TauCeti.ratTensorProductAlgHomEquiv` to extend the embeddings,
 `TauCeti.CMType.typeTrace_mem_reflexField` to descend the partial trace,
 and `TauCeti.Algebra.Etale.exists_isIdempotentElem_algHom_apply_eq_indicator` to separate the two
 sets of embeddings. Over the reflex field, the selected factor is the rational algebra in
@@ -32,33 +31,20 @@ public section
 
 open scoped TensorProduct
 
-variable {E : Type*} [CommRing E] [Algebra ℚ E]
-
-/-- Extend a complex embedding of a rational algebra to a `k`-algebra map on its base change
-along the complex subfield `k`. -/
-noncomputable def IntermediateField.tensorEmbeddingEquiv (k : IntermediateField ℚ ℂ) :
-    (E →+* ℂ) ≃ (k ⊗[ℚ] E →ₐ[k] ℂ) :=
-  (RingHom.equivRatAlgHom E ℂ).trans (Algebra.TensorProduct.liftEquivRight ℚ k E ℂ)
-
-/-- The simp rule for the extended embedding on pure tensors. -/
-@[simp]
-theorem IntermediateField.tensorEmbeddingEquiv_tmul (k : IntermediateField ℚ ℂ)
-    (φ : E →+* ℂ) (r : k) (a : E) :
-    k.tensorEmbeddingEquiv φ (r ⊗ₜ a) = (r : ℂ) * φ a :=
-  (rfl)
-
 namespace TauCeti.CMType
+
+variable {E : Type*} [CommRing E] [Algebra ℚ E]
 
 /-- Simultaneous evaluation of `k ⊗[ℚ] E` at the complex embeddings selected by `Φ`. -/
 noncomputable def typeEvaluation (Φ : CMType E) (k : IntermediateField ℚ ℂ) :
     k ⊗[ℚ] E →ₐ[k] (Φ → ℂ) :=
-  AlgHom.pi fun φ ↦ k.tensorEmbeddingEquiv φ.val
+  AlgHom.pi fun φ ↦ ratTensorProductAlgHomEquiv k E ℂ φ.val
 
 /-- Compute a coordinate using the extended embedding. Keep arbitrary tensors in evaluation
 form in simp, with `typeEvaluation_tmul` handling pure tensors. -/
 theorem typeEvaluation_apply (Φ : CMType E) (k : IntermediateField ℚ ℂ)
     (x : k ⊗[ℚ] E) (φ : Φ) :
-    Φ.typeEvaluation k x φ = k.tensorEmbeddingEquiv φ.val x :=
+    Φ.typeEvaluation k x φ = ratTensorProductAlgHomEquiv k E ℂ φ.val x :=
   (rfl)
 
 /-- The simp rule for evaluating a pure tensor at a selected embedding. -/
@@ -66,7 +52,8 @@ theorem typeEvaluation_apply (Φ : CMType E) (k : IntermediateField ℚ ℂ)
 theorem typeEvaluation_tmul (Φ : CMType E) (k : IntermediateField ℚ ℂ)
     (r : k) (a : E) (φ : Φ) :
     Φ.typeEvaluation k (r ⊗ₜ a) φ = (r : ℂ) * (φ : E →+* ℂ) a := by
-  rw [typeEvaluation_apply, IntermediateField.tensorEmbeddingEquiv_tmul]
+  simp only [typeEvaluation_apply, ratTensorProductAlgHomEquiv_tmul,
+    IntermediateField.algebraMap_apply]
 
 /-- The algebra selected by `Φ`, realized as the image of simultaneous evaluation. The map
 onto it is `(Φ.typeEvaluation k).rangeRestrict`. -/
@@ -81,15 +68,15 @@ variable [Finite (E →+* ℂ)]
 /-- The partial trace on the base-changed algebra takes values in every field containing the
 reflex field. Here the embeddings of the tensor product are indexed by the embeddings of
 `E` via the tensor product universal property. -/
-theorem finsum_tensorEmbeddingEquiv_image_mem_range (Φ : CMType E)
+theorem finsum_ratTensorProductAlgHomEquiv_image_mem_range (Φ : CMType E)
     {k : IntermediateField ℚ ℂ} (hk : Φ.reflexField ≤ k) (x : k ⊗[ℚ] E) :
-    ∑ᶠ ψ ∈ k.tensorEmbeddingEquiv '' (Φ : Set (E →+* ℂ)), ψ x
+    ∑ᶠ ψ ∈ ratTensorProductAlgHomEquiv k E ℂ '' (Φ : Set (E →+* ℂ)), ψ x
       ∈ Set.range (algebraMap k ℂ) := by
-  rw [finsum_mem_image k.tensorEmbeddingEquiv.injective.injOn]
+  rw [finsum_mem_image (ratTensorProductAlgHomEquiv k E ℂ).injective.injOn]
   induction x using TensorProduct.inductionOn with
   | tmul r a =>
     refine ⟨r * ⟨Φ.typeTrace a, hk (Φ.typeTrace_mem_reflexField a)⟩, ?_⟩
-    simp only [IntermediateField.tensorEmbeddingEquiv_tmul, map_mul, typeTrace_apply,
+    simp only [ratTensorProductAlgHomEquiv_tmul, map_mul, typeTrace_apply,
       IntermediateField.algebraMap_apply]
     exact mul_finsum_mem' _ _ (Set.toFinite _)
   | add x y hx hy =>
@@ -120,7 +107,7 @@ theorem typeFactorProd_injective (Φ : CMType E) (k : IntermediateField ℚ ℂ)
   classical
   intro x y h
   refine eq_of_forall_algHom_apply_eq (k := k) (K := ℂ) fun ψ ↦ ?_
-  obtain ⟨φ, rfl⟩ := k.tensorEmbeddingEquiv.surjective ψ
+  obtain ⟨φ, rfl⟩ := (ratTensorProductAlgHomEquiv k E ℂ).surjective ψ
   by_cases hφ : φ ∈ Φ
   · have hxy : Φ.typeEvaluation k x ⟨φ, hφ⟩ = Φ.typeEvaluation k y ⟨φ, hφ⟩ :=
       congrArg (fun p : Φ.typeFactor k × (star Φ).typeFactor k ↦ p.1.val ⟨φ, hφ⟩) h
@@ -160,16 +147,17 @@ theorem typeFactorProd_bijective (Φ : CMType E)
   -- The descended idempotent is one on the selected embeddings and zero on the others.
   obtain ⟨c, -, hc⟩ := TauCeti.Algebra.Etale.exists_isIdempotentElem_algHom_apply_eq_indicator
     (K := k) (A := k ⊗[ℚ] E) (Ω := ℂ)
-    (k.tensorEmbeddingEquiv '' (Φ : Set (E →+* ℂ)))
-    (Φ.finsum_tensorEmbeddingEquiv_image_mem_range hk)
+    (ratTensorProductAlgHomEquiv k E ℂ '' (Φ : Set (E →+* ℂ)))
+    (Φ.finsum_ratTensorProductAlgHomEquiv_image_mem_range hk)
   have hmem (φ : E →+* ℂ) :
-      k.tensorEmbeddingEquiv φ ∈ k.tensorEmbeddingEquiv '' (Φ : Set _) ↔ φ ∈ Φ :=
-    Set.ext_iff.mp (Set.preimage_image_eq _ k.tensorEmbeddingEquiv.injective) φ
+      ratTensorProductAlgHomEquiv k E ℂ φ ∈ ratTensorProductAlgHomEquiv k E ℂ '' (Φ : Set _) ↔
+        φ ∈ Φ :=
+    Set.ext_iff.mp (Set.preimage_image_eq _ (ratTensorProductAlgHomEquiv k E ℂ).injective) φ
   have h₁ : Φ.typeEvaluation k c = 1 := funext fun φ ↦ by
-    rw [typeEvaluation_apply, hc (k.tensorEmbeddingEquiv φ.val)]
+    rw [typeEvaluation_apply, hc (ratTensorProductAlgHomEquiv k E ℂ φ.val)]
     exact Set.indicator_of_mem ((hmem _).mpr φ.property) _
   have h₀ : (star Φ).typeEvaluation k c = 0 := funext fun φ ↦ by
-    rw [typeEvaluation_apply, hc (k.tensorEmbeddingEquiv φ.val)]
+    rw [typeEvaluation_apply, hc (ratTensorProductAlgHomEquiv k E ℂ φ.val)]
     exact Set.indicator_of_notMem (fun h ↦ mem_star.mp φ.property ((hmem _).mp h)) _
   refine ⟨c * x + (1 - c) * y, Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)⟩
   · simp [h₁]
