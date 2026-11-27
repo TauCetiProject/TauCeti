@@ -44,7 +44,7 @@ theorem sqrtNorm_apply (x : ℝ²) : sqrtNorm x = ‖x‖ ^ (1 / 2 : ℝ) := (rf
 theorem isACLOn_sqrtNorm : IsACLOn sqrtNorm univ := by
   have hfun : sqrtNorm = fun x : ℝ² ↦ ‖x‖ ^ (1 / 2 : ℝ) := funext sqrtNorm_apply
   rw [hfun]
-  refine isACLOn_of_contDiffOn_diff_singleton le_rfl isOpen_univ ?_ fun x hx ↦ ?_
+  refine isACLOn_of_contDiffOn_diff_singleton (c := 0) le_rfl isOpen_univ ?_ fun x hx ↦ ?_
   · exact (continuous_norm.rpow_const fun _ ↦ Or.inr (by norm_num)).continuousOn
   · exact (contDiffAt_norm_rpow_of_ne _ hx.2).contDiffWithinAt
 
