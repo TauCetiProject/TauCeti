@@ -51,7 +51,7 @@ For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`
   `Sym3.replicatedSeed q = (Cochain.ofLt (complete (Fin 4)) seed).replicate (Fin q)` has defect
   `8 q ^ 3` and gauge distance `6 q ^ 2` (`defect_replicatedSeed`, `gaugeDist_replicatedSeed`,
   from `defect_ofLt_seed` and `gaugeDist_ofLt_seed`), the identity gauge costs `6 q ^ 2`
-  (`cost_one_replicatedSeed`), and `Sym3.replicatedSeedOfCardEq` carries it to any `V` with
+  (`cost_replicatedSeed_one`), and `Sym3.replicatedSeedOfCardEq` carries it to any `V` with
   `card V = 4 q`, where its ratio is `card V / 3`
   (`Sym3.defect_div_gaugeDist_replicatedSeedOfCardEq`).
 
@@ -113,7 +113,7 @@ theorem defect_ofLt_seed :
 
 /-- The identity gauge costs `6` against the seed: its three non-identity edges are
 transpositions. -/
-theorem cost_one_ofLt_seed :
+theorem cost_ofLt_seed_one :
     (Cochain.ofLt (complete (Fin 4)) seed).cost (movedNorm (Fin 3)) (fun _ => 1) = 6 := by
   rw [Cochain.cost_ofLt_complete_movedNorm]
   simp only [inv_one, one_mul, mul_one]
@@ -125,7 +125,7 @@ theorem cost_one_ofLt_seed :
 theorem gaugeDist_ofLt_seed :
     (Cochain.ofLt (complete (Fin 4)) seed).gaugeDist (movedNorm (Fin 3)) = 6 := by
   refine le_antisymm (((Cochain.ofLt (complete (Fin 4)) seed).gaugeDist_le_cost _
-    (fun _ => 1)).trans cost_one_ofLt_seed.le) ?_
+    (fun _ => 1)).trans cost_ofLt_seed_one.le) ?_
   refine (Cochain.le_gaugeDist_iff _ _).mpr fun β => ?_
   rw [← Cochain.mul_costErr_eq_cost, Cochain.costErr_ofLt_complete]
   have hle := two_le_sum_distErr_fin_four_of_eq_setOf_isSwap seed seed_zero_of_pos
@@ -156,14 +156,14 @@ theorem gaugeDist_replicatedSeed (q : ℕ) :
   ring
 
 /-- The identity gauge costs `6 q ^ 2` against the replicated seed. -/
-theorem cost_one_replicatedSeed (q : ℕ) :
+theorem cost_replicatedSeed_one (q : ℕ) :
     (replicatedSeed q).cost (movedNorm (Fin 3)) (fun _ => 1) = 6 * (q : ℝ) ^ 2 := by
   rw [replicatedSeed]
   have hγ : (fun _ : Fin 4 => (1 : Perm (Fin 3))) ∘
       (fun x : Fin 4 ×ₗ Fin q => (ofLex x).1) = fun _ => 1 := by
     funext _
     simp [Function.comp_apply]
-  rw [← hγ, Cochain.cost_replicate_comp, cost_one_ofLt_seed, Fintype.card_fin]
+  rw [← hγ, Cochain.cost_replicate_comp, cost_ofLt_seed_one, Fintype.card_fin]
   ring
 
 /-- The upper bound when `card V = 4 q`. -/
