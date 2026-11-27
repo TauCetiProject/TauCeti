@@ -35,25 +35,22 @@ instance instIsTorsionFree {G : Type*} [AddCommGroup G] [Module.IsTorsionFree �
 The equivalence respects any supplied `ZMod n`-module structures, including when `n = 0`. -/
 noncomputable def torsionByEquivOfLE {A : Type*} [AddCommGroup A] (D : AddSubgroup A)
     (n : ℕ) [Module (ZMod n) A[n]] [Module (ZMod n) D[n]]
-    (hD : A[n] ≤ D) : A[n] ≃ₗ[ZMod n] D[n] := by
-  let f : A[n] →+ D[n] :=
+    (hD : A[n] ≤ D) : A[n] ≃ₗ[ZMod n] D[n] :=
+  let e : A[n] ≃+ D[n] :=
     { toFun := fun x ↦ ⟨⟨x, hD x.property⟩, torsionBy.nsmul_iff.mpr <|
         Subtype.ext (torsionBy.nsmul_iff.mp x.property)⟩
-      map_zero' := Subtype.ext (Subtype.ext rfl)
+      invFun := fun y ↦ ⟨y.val.val, torsionBy.nsmul_iff.mpr <|
+        congrArg Subtype.val (torsionBy.nsmul_iff.mp y.property)⟩
+      left_inv := fun _ ↦ Subtype.ext rfl
+      right_inv := fun _ ↦ Subtype.ext (Subtype.ext rfl)
       map_add' := fun _ _ ↦ Subtype.ext (Subtype.ext rfl) }
-  exact LinearEquiv.ofBijective (f.toZModLinearMap n)
-    ⟨fun _ _ h ↦ Subtype.ext (congrArg (fun x ↦ x.val.val) h),
-      fun y ↦ ⟨⟨y.val.val, torsionBy.nsmul_iff.mpr <|
-        congrArg Subtype.val (torsionBy.nsmul_iff.mp y.property)⟩, rfl⟩⟩
+  { e with map_smul' := (e.toAddMonoidHom.toZModLinearMap n).map_smul }
 
 /-- The equivalence with torsion inside a subgroup preserves the underlying ambient element. -/
 @[simp↓]
 theorem torsionByEquivOfLE_apply_coe {A : Type*} [AddCommGroup A] (D : AddSubgroup A)
     (n : ℕ) [Module (ZMod n) A[n]] [Module (ZMod n) D[n]]
     (hD : A[n] ≤ D) (x : A[n]) : ((D.torsionByEquivOfLE n hD x : D) : A) = x := by
-  unfold torsionByEquivOfLE
-  erw [LinearEquiv.ofBijective_apply, AddMonoidHom.coe_toZModLinearMap]
-  -- The remaining coercions project the subtype constructors in the additive homomorphism.
   rfl
 
 /-- The inverse equivalence with torsion inside a subgroup preserves the ambient element. -/
