@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import TauCeti.Algebra.Group.Subgroup.Normalizer
-public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.DomCongr
+public import TauCeti.RepresentationTheory.GroupAlgebra.DefectGroup.Basic
 
 /-!
 # The Brauer correspondent of a block idempotent
