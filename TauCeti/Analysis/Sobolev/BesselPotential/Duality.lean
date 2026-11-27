@@ -78,6 +78,8 @@ values in a complex Hilbert space, the inner product of the `L²` parts of `a �
   the `H^r` norm for the `L²` pairing.
 * `SchwartzMap.inner_toLp_besselPotentialCLM_left`: the Bessel potentials `J^a` of real order are
   symmetric for the `L²` inner product of Schwartz functions.
+* `BesselPotentialSpace.eq_zero_of_forall_inner_toLp_eq_zero`: an element of `H^r` whose `L²` part
+  is orthogonal to the `L²` parts of all Schwartz functions in `H^{-r}` is zero.
 * `BesselPotentialSpace.inner_inclusion_toBesselPotentialSpaceCLM`,
   `BesselPotentialSpace.norm_inner_inclusion_le`: for `m ≤ r`, the `H^m` inner product of
   `Y ∈ H^r` with a Schwartz function `φ` is `⟪Y, J^{2 (m - r)} φ⟫_{H^r}`, hence bounded by
@@ -443,6 +445,21 @@ theorem inner_inclusion_toBesselPotentialSpaceCLM {m r : ℝ} (h : m ≤ r) (Y :
   rw [hψ, inner_toLp_besselPotentialCLM_left, besselPotentialCLM_besselPotentialCLM_apply,
     besselPotentialCLM_besselPotentialCLM_apply,
     show (m : ℂ) + ((m - r : ℝ) : ℂ) = ((2 * (m - r) : ℝ) : ℂ) + r by push_cast; ring]
+
+/-- **`H^{-r}` separates the points of `H^r` under the `L²` pairing.** An element `x` of `H^r`
+whose `L²` part is orthogonal to the `L²` parts of all Schwartz functions read in `H^{-r}` is zero.
+Indeed these are dense in `L²`, and `x` is determined by its `L²` part. -/
+theorem eq_zero_of_forall_inner_toLp_eq_zero {r : ℝ} (x : H^{r}(E, F))
+    (hx : ∀ b : 𝓢(E, F), ⟪(toBesselPotentialSpaceCLM (-r) 2 b).toLp, x.toLp⟫_ℂ = 0) : x = 0 := by
+  have hdense : DenseRange (toLpₗᵢ E F (-r) 2 ∘ toBesselPotentialSpaceCLM (-r) 2) :=
+    (toLpₗᵢ E F (-r) 2).surjective.denseRange.comp
+      (denseRange_toBesselPotentialSpaceCLM (-r) ENNReal.ofNat_ne_top)
+      (toLpₗᵢ E F (-r) 2).continuous
+  have h0 (c : Lp F 2 (volume : Measure E)) : ⟪c, x.toLp⟫_ℂ = 0 :=
+    hdense.induction_on c (isClosed_eq (continuous_id.inner continuous_const) continuous_const)
+      fun b ↦ by simpa using hx b
+  rw [← norm_eq_zero, ← norm_toLp_eq]
+  exact norm_eq_zero.2 (inner_self_eq_zero.1 (h0 _))
 
 /-- For `x ∈ H^s` and `m ≤ s`, the `H^m` inner product of a Schwartz function `φ` with `x` is
 bounded by `‖φ‖_{H^{2m - s}} ‖x‖_{H^s}`. -/
