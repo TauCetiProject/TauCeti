@@ -65,12 +65,9 @@ theorem tendsto_I_mul_one_add_div_one_sub_nontangentialFilter (x : ℝ) {α : �
     exact hc.tendsto.mono_left nhdsWithin_le_nhds
   · -- and lies in the cone for `r` close to `1`
     have hsmall : ∀ᶠ r : ℝ in 𝓝[<] 1, |x| * ((1 - r) / (1 + r)) < α := by
-      have : Tendsto (fun r : ℝ ↦ |x| * ((1 - r) / (1 + r))) (𝓝 1)
-          (𝓝 (|x| * ((1 - 1) / (1 + 1)))) :=
-        tendsto_const_nhds.mul ((tendsto_const_nhds.sub tendsto_id).div
-          (tendsto_const_nhds.add tendsto_id) (by norm_num))
-      rw [sub_self, zero_div, mul_zero] at this
-      exact nhdsWithin_le_nhds (this.eventually (gt_mem_nhds hα))
+      have hc : ContinuousAt (fun r : ℝ ↦ |x| * ((1 - r) / (1 + r))) 1 := by
+        fun_prop (disch := norm_num)
+      exact nhdsWithin_le_nhds (hc.eventually_lt continuousAt_const (by simpa using hα))
     filter_upwards [hsmall, Ioo_mem_nhdsLT (show (0 : ℝ) < 1 by norm_num)] with r hr hr01
     have hrζ : (r : ℂ) * ζ ∈ ball (0 : ℂ) 1 := by
       rw [mem_ball_zero_iff, norm_mul, hζ, norm_div, norm_sub_I_div_norm_add_I_ofReal, mul_one,
@@ -83,8 +80,8 @@ theorem tendsto_I_mul_one_add_div_one_sub_nontangentialFilter (x : ℝ) {α : �
     refine mem_nontangentialCone.2 ⟨hpos, ?_, ENNReal.ofReal_lt_top⟩
     have hq : (0 : ℝ) < (1 - r) / (1 + r) := div_pos (by linarith [hr01.2]) (by linarith [hr01.1])
     rw [← hζ] at heq
-    rw [heq, sub_sub_cancel_left, abs_neg, abs_mul, abs_mul, abs_of_pos hpos, abs_of_pos hq]
-    exact mul_lt_mul_of_pos_right hr hpos
+    rw [heq]
+    simpa [abs_mul, abs_of_pos hpos, abs_of_pos hq] using mul_lt_mul_of_pos_right hr hpos
 
 /-- **Uniqueness for boundary functions.** If `F` is holomorphic and bounded on `ℂ₊` and its
 boundary function `F*` equals `c` almost everywhere on a set `A` of positive measure, then `F` is
@@ -100,11 +97,7 @@ theorem eqOn_const_of_upperHalfPlaneBoundaryFun_eq {F : ℂ → ℂ} {S : ℝ} {
       filter_upwards [hFA, ae_tendsto_nontangentialFilter_upperHalfPlaneBoundaryFun hF hS]
         with x hx hlim hxA
       exact ⟨hxA, fun α ↦ hx hxA ▸ hlim α⟩
-    intro h0
-    refine hA (measure_mono_null (fun x hx ↦ ?_) (measure_union_null h0 (ae_iff.1 hgood)))
-    by_cases hxA' : x ∈ A'
-    · exact Or.inl hxA'
-    · exact Or.inr fun h ↦ hxA' (h hx)
+    exact fun h0 ↦ hA (measure_mono_null_ae hgood h0)
   -- the corresponding angles
   set θ : ℝ → ℝ := fun x ↦ π + 2 * Real.arctan x
   have hE : volume (θ '' A') ≠ 0 := by
