@@ -19,7 +19,7 @@ Since `0 < θ 2 ≤ ψ 2`, any such bound forces `0 < c`, and since both `θ` an
 
 * `Chebyshev.pos_of_theta_le`, `Chebyshev.pos_of_psi_le`: positivity of `c` from a linear upper
   bound on `θ` or `ψ` on `[2, ∞)`.
-* `Chebyshev.theta_le_mul_of_two_le`, `Chebyshev.psi_le_mul_of_two_le`: extension of a linear upper
+* `Chebyshev.theta_le_mul_of_nonneg`, `Chebyshev.psi_le_mul_of_nonneg`: extension of a linear upper
   bound on `θ` or `ψ` from `[2, ∞)` to `[0, ∞)`.
 -/
 
@@ -38,7 +38,7 @@ theorem pos_of_psi_le {c : ℝ} (hψ : ∀ y, 2 ≤ y → ψ y ≤ c * y) : 0 < 
   pos_of_theta_le fun y hy ↦ (theta_le_psi y).trans (hψ y hy)
 
 /-- Extending a linear upper bound `θ t ≤ c * t` from `[2, ∞)` to `[0, ∞)`. -/
-theorem theta_le_mul_of_two_le {c y : ℝ} (hy : 0 ≤ y)
+theorem theta_le_mul_of_nonneg {c y : ℝ} (hy : 0 ≤ y)
     (hθ : ∀ t, 2 ≤ t → θ t ≤ c * t) : θ y ≤ c * y := by
   rcases lt_or_ge y 2 with hy2 | hy2
   · rw [theta_eq_zero_of_lt_two hy2]
@@ -46,7 +46,7 @@ theorem theta_le_mul_of_two_le {c y : ℝ} (hy : 0 ≤ y)
   · exact hθ y hy2
 
 /-- Extending a linear upper bound `ψ t ≤ c * t` from `[2, ∞)` to `[0, ∞)`. -/
-theorem psi_le_mul_of_two_le {c y : ℝ} (hy : 0 ≤ y) (hψ : ∀ t, 2 ≤ t → ψ t ≤ c * t) :
+theorem psi_le_mul_of_nonneg {c y : ℝ} (hy : 0 ≤ y) (hψ : ∀ t, 2 ≤ t → ψ t ≤ c * t) :
     ψ y ≤ c * y := by
   rcases lt_or_ge y 2 with hy2 | hy2
   · rw [psi_eq_zero_of_lt_two hy2]
