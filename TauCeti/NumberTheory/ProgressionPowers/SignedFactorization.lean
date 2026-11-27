@@ -34,7 +34,7 @@ structure IsSignedFactorization (n d : ℤ) (k ℓ : ℕ) (A : Fin k → ℕ) (z
   smooth : ∀ i, A i ∈ k.smoothNumbers
   root_ne_zero : ∀ i, z i ≠ 0
   term_eq : ∀ i : Fin k, n.progressionTerm d i = (A i : ℤ) * z i ^ ℓ
-  le_of_mem_primeFactors : ∀ i p, p ∈ (z i).natAbs.primeFactors → k ≤ p
+  le_of_mem_primeFactors_root : ∀ i p, p ∈ (z i).natAbs.primeFactors → k ≤ p
 
 variable {n d y : ℤ} {k ℓ : ℕ} {A B : Fin k → ℕ} {z w : Fin k → ℤ}
 
@@ -64,7 +64,7 @@ theorem IsSignedFactorization.lt_of_prime_dvd_coeff (h : IsSignedFactorization n
 theorem IsSignedFactorization.le_of_prime_dvd_natAbs_root
     (h : IsSignedFactorization n d k ℓ A z) {i : Fin k} {p : ℕ}
     (hp : p.Prime) (hd : p ∣ (z i).natAbs) : k ≤ p :=
-  h.le_of_mem_primeFactors i p (Nat.mem_primeFactors.mpr ⟨hp, hd, Int.natAbs_ne_zero.mpr
+  h.le_of_mem_primeFactors_root i p (Nat.mem_primeFactors.mpr ⟨hp, hd, Int.natAbs_ne_zero.mpr
     (h.root_ne_zero i)⟩)
 
 /-- The coefficient in any signed factorization is the full smooth part of the absolute term. -/
@@ -79,7 +79,7 @@ theorem IsSignedFactorization.coeff_eq_smoothPart (h : IsSignedFactorization n d
   apply Nat.smoothPart_eq_one_iff.mpr
   rcases eq_or_ne ℓ 0 with rfl | hℓ
   · simp
-  · simpa only [Nat.primeFactors_pow _ hℓ] using h.le_of_mem_primeFactors i
+  · simpa only [Nat.primeFactors_pow _ hℓ] using h.le_of_mem_primeFactors_root i
 
 /-- For odd exponent, the signed root and the progression term have the same sign. -/
 theorem IsSignedFactorization.sign_root (h : IsSignedFactorization n d k ℓ A z)
