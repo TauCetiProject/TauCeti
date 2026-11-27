@@ -95,6 +95,14 @@ theorem prodDiffeomorph_symm_mk (z w : ℂ) :
     (prodDiffeomorph (n := n) (L := L)).symm (Quotient.mk _ z, w) = Quotient.mk _ (z, w) :=
   ofProd_mk z w
 
+/-- The identification of the flat line of the trivial character with the product line is a map
+over the torus. -/
+@[simp]
+theorem fst_prodDiffeomorph (x : FlatLine (1 : AddChar L Circle)) :
+    (prodDiffeomorph (n := n) x).1 = proj x := by
+  obtain ⟨p, rfl⟩ := Quotient.mk_surjective x
+  simp
+
 end FlatLine
 
 end TauCeti

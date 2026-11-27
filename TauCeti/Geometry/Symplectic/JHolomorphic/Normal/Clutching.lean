@@ -181,6 +181,12 @@ theorem gauge_symm (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ))
   ext x
   exact (gauge ℓ h).symm_apply_eq.2 (gaugeFun_gaugeFun_neg h x).symm
 
+/-- The inverse of the gauge transformation of `ℓ` sends `[(z, v)]` to `[(z, exp (-i ℓ(z)) v)]`. -/
+@[simp]
+theorem gauge_symm_mk (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ)) (p : ℂ × ℂ) :
+    (gauge (n := n) ℓ h).symm (Quotient.mk _ p) = Quotient.mk _ (normalModelGauge (-ℓ) p) :=
+  (rfl)
+
 /-- Gauge transformations compose by adding their linear forms. -/
 theorem gauge_trans_gauge (h : ∀ γ, ψ' γ = ψ γ * Circle.exp (ℓ γ))
     (h' : ∀ γ, ψ'' γ = ψ' γ * Circle.exp (ℓ' γ))
@@ -213,7 +219,7 @@ theorem trivialization_mk (h : ∀ γ, ψ γ = Circle.exp (ℓ γ)) (p : ℂ × 
 theorem trivialization_symm_mk (h : ∀ γ, ψ γ = Circle.exp (ℓ γ)) (z w : ℂ) :
     (trivialization (n := n) ℓ h).symm (Quotient.mk _ z, w) =
       Quotient.mk _ (z, exp (ℓ z * I) * w) := by
-  simp [trivialization, gauge_symm _ (neg_holonomy (one_holonomy h)), normalModelGauge_def]
+  simp [trivialization, normalModelGauge_def]
 
 /-- The trivialization is a map over the torus. -/
 @[simp]
