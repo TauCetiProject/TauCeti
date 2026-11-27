@@ -18,7 +18,7 @@ Let `(V, r, N)` be a raw Weil–Deligne parameter over a field `E`, with `V` fin
 degree map that is not trivial, and finite inertia image: the image under `r` of the kernel of the
 degree is finite. Then `(r, N) ≅ (r, a N)` for every `a ≠ 0`
 (`TauCeti.WeilDeligneParameter.nonempty_iso_rescale`, and
-`TauCeti.WeilDeligneParameter.nonempty_iso_rescale_of_two_le` in characteristic zero; Deligne
+`TauCeti.WeilDeligneParameter.nonempty_iso_rescale_of_ne_one` in characteristic zero; Deligne
 1973, proof of §8.4.3). No Frobenius-semisimplicity hypothesis is needed.
 
 The proof has two steps.
@@ -39,8 +39,8 @@ The proof has two steps.
 * `TauCeti.WeilDeligneParameter.exists_zpow_commute_of_finite`: some nonzero power of `r(Φ)`
   commutes with the inertia image.
 * `TauCeti.WeilDeligneParameter.nonempty_iso_rescale`: `(r, N) ≅ (r, a N)` for `a ≠ 0`.
-* `TauCeti.WeilDeligneParameter.nonempty_iso_rescale_of_two_le`: the same in characteristic zero
-  for `q ≥ 2`.
+* `TauCeti.WeilDeligneParameter.nonempty_iso_rescale_of_ne_one`: the same in characteristic zero
+  for `q ≠ 1`, in particular for `q ≥ 2`.
 
 ## References
 
@@ -75,8 +75,7 @@ private theorem exists_deg_generator (hdeg : ∃ w, deg w ≠ 1) :
 
 /-- **A power of `r(Φ)` commuting with the inertia image.** If the image under `r` of the kernel
 of the degree is finite, then for every `Φ` some nonzero power `r(Φ ^ d)` commutes with every
-`r(i)`, `i ∈ ker deg`: conjugation by the powers of `r(Φ)` permutes the finite inertia image, so
-two different powers induce the same permutation. -/
+`r(i)`, `i ∈ ker deg`. -/
 theorem exists_zpow_commute_of_finite (D : WeilDeligneParameter E W V deg q)
     (hI : (D.r '' (deg.ker : Set W)).Finite) (Φ : W) :
     ∃ d : ℤ, d ≠ 0 ∧ ∀ i ∈ deg.ker, Commute (D.r (Φ ^ d)) (D.r i) := by
@@ -90,7 +89,7 @@ theorem exists_zpow_commute_of_finite (D : WeilDeligneParameter E W V deg q)
   refine ⟨n₂ - n₁, sub_ne_zero.mpr hne.symm, fun i hi ↦ ?_⟩
   have h := congrArg Subtype.val (congrFun heq ⟨D.r i, i, hi, rfl⟩)
   simp only [f, ← map_mul] at h
-  change D.r (Φ ^ (n₂ - n₁)) * D.r i = D.r i * D.r (Φ ^ (n₂ - n₁))
+  refine (commute_iff_eq _ _).mpr ?_
   calc D.r (Φ ^ (n₂ - n₁)) * D.r i
       = D.r (Φ ^ (-n₁)) * D.r (Φ ^ n₂ * i * (Φ ^ n₂)⁻¹) * D.r (Φ ^ n₂) := by
         simp only [← map_mul]
@@ -137,21 +136,23 @@ theorem nonempty_iso_rescale [FiniteDimensional E V] (D : WeilDeligneParameter E
   · rw [rescale_r]
     exact (hgT _ (hFr w)).eq
   · rw [rescale_N]
-    change (g : Module.End E V) * D.N = (a • D.N) * g
-    rw [hgN, smul_mul_assoc]
+    ext v
+    simpa using LinearMap.congr_fun hgN v
 
 /-- **`(r, N) ≅ (r, a N)` in characteristic zero.** Over a field of characteristic zero, a raw
-Weil–Deligne parameter on a finite-dimensional space with `q ≥ 2`, a nontrivial degree map and
+Weil–Deligne parameter on a finite-dimensional space with `q ≠ 1`, a nontrivial degree map and
 finite inertia image is isomorphic to its rescaling by every `a ≠ 0` (Deligne 1973, proof of
 §8.4.3, p. 569). -/
-theorem nonempty_iso_rescale_of_two_le [CharZero E] [FiniteDimensional E V]
-    (D : WeilDeligneParameter E W V deg q) (hq : 2 ≤ q) (hdeg : ∃ w, deg w ≠ 1)
+theorem nonempty_iso_rescale_of_ne_one [CharZero E] [FiniteDimensional E V]
+    (D : WeilDeligneParameter E W V deg q) (hq : q ≠ 1) (hdeg : ∃ w, deg w ≠ 1)
     (hI : (D.r '' (deg.ker : Set W)).Finite) {a : E} (ha : a ≠ 0) :
     Nonempty (Iso D (D.rescale a)) := by
   refine D.nonempty_iso_rescale (fun h ↦ ?_) hdeg hI ha
   obtain ⟨n, hn, hpow⟩ := isOfFinOrder_iff_pow_eq_one.mp h
   have hpow' : q ^ n = 1 := by exact_mod_cast hpow
-  rcases Nat.pow_eq_one.mp hpow' with h | h <;> omega
+  rcases Nat.pow_eq_one.mp hpow' with h | h
+  · exact hq h
+  · exact hn.ne' h
 
 end WeilDeligneParameter
 

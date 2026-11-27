@@ -22,7 +22,8 @@ Let `F` and `N` be endomorphisms of a module `M` over a commutative ring with
 If `V` is a finite-dimensional vector space over a field `K`, `F` is injective and `c` has
 infinite multiplicative order, then for every `a ≠ 0` there is an automorphism `g` of `V` which
 commutes with every endomorphism commuting with `F` and satisfies `g * N = a • (N * g)`, so that
-`g` conjugates `N` to `a⁻¹ • N` while fixing everything that commutes with `F`
+`g` conjugates `N` to `a • N`, that is `g * N * g⁻¹ = a • N`, while fixing everything that
+commutes with `F`
 (`Module.End.exists_mul_eq_smul_mul_of_mul_eq_smul_mul`).
 
 For `c = 0` the endomorphism `N` vanishes, and over a finite field every `c ≠ 0` has finite order,
@@ -45,6 +46,9 @@ image of a suitable power of a Frobenius element, which commutes with the whole 
   `μ`-eigenspace of `F` into the generalized `c μ`-eigenspace.
 * `Module.End.maxGenEigenspace_zero_eq_bot_of_injective`: an injective endomorphism has no
   generalized eigenvectors with eigenvalue `0`.
+* `Module.End.isInternal_maxGenEigenspace`, `Module.End.ext_of_maxGenEigenspace`: over an
+  algebraically closed field the generalized eigenspaces form an internal direct sum, so an
+  endomorphism is determined by its restrictions to them.
 * `Module.End.exists_mul_eq_smul_mul_of_mul_eq_smul_mul`: the automorphism `g`.
 
 ## References
@@ -135,23 +139,22 @@ private theorem exists_exponent_mul_eq_add_one {c : K} (hc0 : c ≠ 0) (hc : ¬I
   have h1 := he ν
   have h2 := he μ'
   rw [hmk] at h1
-  apply hinj
-  change u ^ e ν = u ^ (e μ' + 1)
-  apply mul_left_cancel (a := (QuotientGroup.mk μ' : Kˣ ⧸ Subgroup.zpowers u).out)
-  calc _ = ν := h1.symm
-    _ = μ' * u := hν
-    _ = (QuotientGroup.mk μ' : Kˣ ⧸ Subgroup.zpowers u).out * u ^ e μ' * u := by rw [← h2]
-    _ = _ := by rw [zpow_add_one, mul_assoc]
+  have hpow : u ^ e ν = u ^ (e μ' + 1) := by
+    apply mul_left_cancel (a := (QuotientGroup.mk μ' : Kˣ ⧸ Subgroup.zpowers u).out)
+    calc _ = ν := h1.symm
+      _ = μ' * u := hν
+      _ = (QuotientGroup.mk μ' : Kˣ ⧸ Subgroup.zpowers u).out * u ^ e μ' * u := by rw [← h2]
+      _ = _ := by rw [zpow_add_one, mul_assoc]
+  exact hinj hpow
 
 section IsAlgClosed
 
 variable [IsAlgClosed K] [FiniteDimensional K V]
 
-open scoped Classical in
-/-- The generalized eigenspaces of an endomorphism over an algebraically closed field form an
-internal direct sum. -/
-private theorem isInternal_maxGenEigenspace (F : End K V) :
-    Bijective (DirectSum.coeLinearMap fun μ ↦ F.maxGenEigenspace μ) :=
+/-- The generalized eigenspaces of an endomorphism of a finite-dimensional vector space over an
+algebraically closed field form an internal direct sum. -/
+theorem isInternal_maxGenEigenspace [DecidableEq K] (F : End K V) :
+    DirectSum.IsInternal fun μ ↦ F.maxGenEigenspace μ :=
   DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top F.independent_maxGenEigenspace
     (iSup_maxGenEigenspace_eq_top F)
 
@@ -168,14 +171,14 @@ private theorem scalarOn_apply (F : End K V) (s : K → K) {μ : K} {v : V}
   have h : (LinearEquiv.ofBijective (DirectSum.coeLinearMap fun μ ↦ F.maxGenEigenspace μ)
       (isInternal_maxGenEigenspace F)).symm v =
       DirectSum.lof K K (fun μ ↦ F.maxGenEigenspace μ) μ ⟨v, hv⟩ := by
-    rw [LinearEquiv.symm_apply_eq, LinearEquiv.ofBijective_apply, DirectSum.lof_eq_of,
-      DirectSum.coeLinearMap_of]
+    rw [LinearEquiv.symm_apply_eq]
+    exact (DirectSum.coeLinearMap_lof _ μ ⟨v, hv⟩).symm
   simp only [scalarOn, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply]
-  rw [h, DirectSum.toModule_lof]
-  rfl
+  rw [h, DirectSum.toModule_lof, LinearMap.smul_apply, Submodule.subtype_apply]
 
-/-- Two endomorphisms agreeing on every generalized eigenspace of `F` are equal. -/
-private theorem ext_of_maxGenEigenspace {F f g : End K V}
+/-- Two endomorphisms of a finite-dimensional vector space over an algebraically closed field which
+agree on every generalized eigenspace of an endomorphism `F` are equal. -/
+theorem ext_of_maxGenEigenspace {F f g : End K V}
     (h : ∀ μ, ∀ v ∈ F.maxGenEigenspace μ, f v = g v) : f = g := by
   ext v
   have hv : v ∈ ⨆ μ, F.maxGenEigenspace μ := by
@@ -232,7 +235,7 @@ private theorem exists_unit_of_matrix {ι : Type*} [Fintype ι] [DecidableEq ι]
   have hYu : IsUnit Y := (Matrix.isUnit_iff_isUnit_det Y).mpr (isUnit_iff_ne_zero.mpr hY)
   have hgu : IsUnit (M.symm Y) := hYu.map M.symm
   refine ⟨hgu.unit, fun T hT' ↦ ?_, ?_⟩
-  · change _ * _ = _ * _
+  · refine (commute_iff_eq _ _).mpr ?_
     rw [IsUnit.unit_spec]
     apply M.injective
     rw [map_mul, map_mul, AlgEquiv.apply_symm_apply]
@@ -264,11 +267,8 @@ private theorem exists_mul_eq_smul_mul_of_infinite [Infinite K] [FiniteDimension
   have hFu : IsUnit F :=
     (Module.End.isUnit_iff F).mpr ⟨hF, LinearMap.injective_iff_surjective.mp hF⟩
   have hFL : Injective (ψ F) := ((Module.End.isUnit_iff _).mp (hFu.map ψ)).injective
-  have hcL : ¬IsOfFinOrder (algebraMap K L c) := by
-    intro h
-    obtain ⟨m, hm, hpow⟩ := isOfFinOrder_iff_pow_eq_one.mp h
-    exact hc (isOfFinOrder_iff_pow_eq_one.mpr
-      ⟨m, hm, (algebraMap K L).injective (by rw [map_pow, hpow, map_one])⟩)
+  have hcL : ¬IsOfFinOrder (algebraMap K L c) :=
+    ((algebraMap K L).injective.isOfFinOrder_iff (f := (algebraMap K L : K →* L))).not.mpr hc
   have hFNL : ψ F * ψ N = algebraMap K L c • (ψ N * ψ F) := by
     rw [← map_mul, ← map_mul, ← hψsmul, hFN]
   obtain ⟨gL, hgT, hgN⟩ := exists_mul_eq_smul_mul_of_isAlgClosed hFL
@@ -291,12 +291,8 @@ private theorem exists_mul_eq_smul_mul_of_infinite [Infinite K] [FiniteDimension
       · have h := congrArg LinearMap.toMatrix' hgN
         rw [LinearMap.toMatrix'_mul, map_smul, LinearMap.toMatrix'_mul, hψ,
           LinearMap.toMatrix'_toLin'] at h
-        have hsmul : (a • M N).map (algebraMap K L) =
-            algebraMap K L a • (M N).map (algebraMap K L) := by
-          ext i j
-          simp only [Matrix.map_apply, Matrix.smul_apply, smul_eq_mul, map_mul]
         simp only [B, A, Option.elim_none]
-        rw [hsmul, Matrix.smul_mul]
+        rw [Matrix.map_smul' _ a _ (map_mul _), Matrix.smul_mul]
         exact h.symm
       · exact hmat T (hT.map ψ))
   exact exists_unit_of_matrix b hY (fun T hT ↦ hYAB (some ⟨T, hT⟩)) (hYAB none)
