@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Constructions
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Atlas
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.CauchyRiemann.Fredholm
 public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.ZeroOneForm.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.Prod
@@ -46,6 +47,8 @@ of Fredholm operators is the sum of the indices (`ContinuousLinearMap.IsFredholm
 * `TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_prod`: the realization of `D₁ ⊕ D₂`, which
   is Fredholm by `TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevL`, has the sum of the
   indices of the realizations of `D₁` and `D₂`.
+* `TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_prod_of_atlas`: the same for realizations
+  built on arbitrary finite bundle atlases of `V`, `V'` and `V ×ᵇ V'`.
 
 ## References
 
@@ -257,6 +260,25 @@ theorem index_sobolevL_prod (hp : 1 < p) (hp_top : p ≠ ⊤) :
   rw [heq, ContinuousLinearMap.index_equiv_comp, ContinuousLinearMap.index_comp_equiv,
     (isFredholm_sobolevL A hD₁ hD₁s hp hp_top).index_prodMap
       (isFredholm_sobolevL (A.ofBaseSet h) hD₂ hD₂s hp hp_top)]
+
+include hD₁ hD₂ in
+/-- **The index is additive under direct sums, for any atlases.** For smooth real Cauchy–Riemann
+operators `D₁` on `V` and `D₂` on `V'` and `1 < p < ∞`, the realization of `D₁ ⊕ D₂` built on any
+finite bundle atlas `B` of `V ×ᵇ V'` has the sum of the indices of the realizations of `D₁` and
+`D₂` built on any finite bundle atlases `A₁` of `V` and `A₂` of `V'`, since the index does not
+depend on the atlas (`TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_eq_of_atlas`). -/
+theorem index_sobolevL_prod_of_atlas (A₁ : FiniteBundleAtlas ℂ M F V)
+    (A₂ : FiniteBundleAtlas ℂ M F' V') (B : FiniteBundleAtlas ℂ M (F × F') (V ×ᵇ V'))
+    (hp : 1 < p) (hp_top : p ≠ ⊤) :
+    ((hD₁.prod hD₂).sobolevL B (hD₁s.sectionProdMap hD₂s) volume p).index =
+      (hD₁.sobolevL A₁ hD₁s volume p).index + (hD₂.sobolevL A₂ hD₂s volume p).index := by
+  have := A₁.compactSpace
+  obtain ⟨A₀, h₀⟩ := FiniteBundleAtlas.exists_closure_dom_subset_baseSet F' V' (E := ℂ) (F := F)
+    (V := V)
+  rw [(hD₁.prod hD₂).index_sobolevL_eq_of_atlas (A₀.prod h₀) B _ volume hp_top,
+    index_sobolevL_prod hD₁ hD₂ hD₁s hD₂s p hp hp_top,
+    hD₁.index_sobolevL_eq_of_atlas A₁ A₀ hD₁s volume hp_top,
+    hD₂.index_sobolevL_eq_of_atlas A₂ (A₀.ofBaseSet h₀) hD₂s volume hp_top]
 
 end IsRealCauchyRiemannOperator
 
