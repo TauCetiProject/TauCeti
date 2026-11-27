@@ -13,16 +13,15 @@ public import TauCeti.Topology.LocallyConstant.CompactSupport
 Let `X` be a topological space, `σ : A →+* B` a homomorphism of semirings and `φ : M → N` a
 `σ`-semilinear map. Composing with `φ` sends a locally constant function `f : X → M` with compact
 support to `φ ∘ f`, which again has compact support since `φ 0 = 0`. This is a `σ`-semilinear map
-`C_c^∞(X, M) → C_c^∞(X, N)` (`LocallyConstant.compactlySupported.map`). Taking `φ = σ` gives the
-change of coefficients `C_c^∞(X, A) → C_c^∞(X, B)` (`LocallyConstant.compactlySupported.mapCoeff`),
-functorial in `σ` and sending the indicator `1_K • m` of a compact open set to `1_K • σ m`.
+`C_c^∞(X, M) → C_c^∞(X, N)` (`LocallyConstant.compactlySupported.map`), functorial in `φ` and
+sending the indicator `1_K • m` of a compact open set to `1_K • φ m`. Taking `φ = σ`, viewed as a
+`σ`-semilinear map `A → B` (`RingHom.toSemilinearMap`), gives the change of coefficients
+`C_c^∞(X, A) → C_c^∞(X, B)`.
 
 ## Main definitions
 
 * `LocallyConstant.compactlySupported.map φ`: the pushforward `C_c^∞(X, M) → C_c^∞(X, N)`,
   `f ↦ φ ∘ f`, along a semilinear map `φ`.
-* `LocallyConstant.compactlySupported.mapCoeff φ`: the change of coefficients
-  `C_c^∞(X, A) → C_c^∞(X, B)`, `f ↦ φ ∘ f`.
 
 ## Main results
 
@@ -30,12 +29,6 @@ functorial in `σ` and sending the indicator `1_K • m` of a compact open set t
   `φ` gives `1_K • φ m`.
 * `LocallyConstant.compactlySupported.map_id`, `LocallyConstant.compactlySupported.map_comp`:
   functoriality of the pushforward.
-* `LocallyConstant.compactlySupported.mapCoeff_eq_map`: the change of coefficients along `φ` is the
-  pushforward along `φ` viewed as a semilinear map.
-* `LocallyConstant.compactlySupported.mapCoeff_compactOpenIndicator`: changing coefficients of
-  `1_K • m` gives `1_K • φ m`.
-* `LocallyConstant.compactlySupported.mapCoeff_id`,
-  `LocallyConstant.compactlySupported.mapCoeff_comp`: functoriality of the change of coefficients.
 -/
 
 public section
@@ -88,41 +81,5 @@ theorem map_comp {P : Type*} [AddCommMonoid P] [Module C P] {τ : B →+* C} {ρ
   (rfl)
 
 end Map
-
-/-- Change of coefficients of test functions: `f ↦ φ ∘ f`, a `φ`-semilinear map
-`C_c^∞(X, A) → C_c^∞(X, B)`. -/
-noncomputable def mapCoeff (φ : A →+* B) :
-    compactlySupported A X A →ₛₗ[φ] compactlySupported B X B :=
-  map φ.toSemilinearMap
-
-/-- The change of coefficients along `φ` is the pushforward along `φ` viewed as a `φ`-semilinear
-map. -/
-theorem mapCoeff_eq_map (φ : A →+* B) :
-    mapCoeff (X := X) φ = map φ.toSemilinearMap :=
-  (rfl)
-
-/-- The value of `φ ∘ f` at `x` is `φ (f x)`. -/
-@[simp]
-theorem mapCoeff_apply (φ : A →+* B) (f : compactlySupported A X A) (x : X) :
-    (mapCoeff φ f : LocallyConstant X B) x = φ ((f : LocallyConstant X A) x) :=
-  map_apply φ.toSemilinearMap f x
-
-/-- Changing coefficients of the indicator `1_K • m` gives the indicator `1_K • φ m`. -/
-@[simp]
-theorem mapCoeff_compactOpenIndicator [T2Space X] (φ : A →+* B) (K : CompactOpens X) (m : A) :
-    mapCoeff φ ⟨compactOpenIndicator K m, compactOpenIndicator_mem_compactlySupported K m⟩ =
-      ⟨compactOpenIndicator K (φ m), compactOpenIndicator_mem_compactlySupported K (φ m)⟩ :=
-  map_compactOpenIndicator φ.toSemilinearMap K m
-
-/-- Changing coefficients along the identity does nothing. -/
-@[simp]
-theorem mapCoeff_id (f : compactlySupported A X A) : mapCoeff (RingHom.id A) f = f :=
-  map_id f
-
-/-- Changing coefficients along `ψ ∘ φ` is changing them along `φ` and then along `ψ`. -/
-theorem mapCoeff_comp (ψ : B →+* C) (φ : A →+* B) (f : compactlySupported A X A) :
-    mapCoeff (ψ.comp φ) f = mapCoeff ψ (mapCoeff φ f) :=
-  haveI : RingHomCompTriple φ ψ (ψ.comp φ) := ⟨rfl⟩
-  map_comp ψ.toSemilinearMap φ.toSemilinearMap f
 
 end LocallyConstant.compactlySupported

@@ -13,11 +13,10 @@ public import TauCeti.Topology.LocallyConstant.CompactSupport.MapCoeff
 
 Let `φ : A →+* B` be a homomorphism of commutative semirings and `μ` an `A`-valued Haar measure on
 a Hausdorff topological group `G`. Composing with `φ` sends a test function `f ∈ C_c^∞(G, A)` to
-`φ ∘ f ∈ C_c^∞(G, B)` (`LocallyConstant.compactlySupported.mapCoeff`), and the `B`-valued Haar
-measure `φ μ = μ.map φ` integrates it to the image of the integral
-(`TauCeti.HaarMeasureWithValues.integral_map_mapCoeff`), by naturality of the integral under the
-`φ`-semilinear map `φ : A → B` (`TauCeti.HaarMeasureWithValues.integral_comp_commSL`). Hence
-composing with `φ` turns
+`φ ∘ f ∈ C_c^∞(G, B)` (`LocallyConstant.compactlySupported.map` along `φ`, viewed as a
+`φ`-semilinear map `A → B`), and the `B`-valued Haar measure `φ μ = μ.map φ` integrates it to the
+image of the integral, by naturality of the integral under semilinear maps
+(`TauCeti.HaarMeasureWithValues.integral_comp_commSL`). Hence composing with `φ` turns
 convolution against `μ` into convolution against `φ μ`
 (`TauCeti.HaarMeasureWithValues.convolution_map_mapCoeff`), and is a homomorphism of non-unital
 semirings `H(G, A) → H(G, B)` (of non-unital rings when `A` and `B` are rings)
@@ -40,27 +39,19 @@ variable {A B G : Type*} [CommSemiring A] [CommSemiring B] [TopologicalSpace G]
 
 namespace HaarMeasureWithValues
 
-variable (φ : A →+* B) [Group G] [ContinuousConstSMul G G] (μ : HaarMeasureWithValues A G)
-
-/-- **Integration commutes with change of coefficients**: `∫ φ ∘ f d(φ μ) = φ (∫ f dμ)`. -/
-@[simp]
-theorem integral_map_mapCoeff (f : compactlySupported A G A) :
-    (μ.map (φ : A →+ B)).integral (compactlySupported.mapCoeff φ f) = φ (μ.integral f) := by
-  rw [compactlySupported.mapCoeff_eq_map]
-  exact integral_comp_commSL μ φ φ.toSemilinearMap f
-
-variable [T2Space G] [IsTopologicalGroup G]
+variable (φ : A →+* B) [Group G] [IsTopologicalGroup G] [T2Space G]
+  (μ : HaarMeasureWithValues A G)
 
 /-- **Convolution commutes with change of coefficients**:
 `(φ ∘ f₁) ⋆_{φ μ} (φ ∘ f₂) = φ ∘ (f₁ ⋆_μ f₂)`. -/
 @[simp]
 theorem convolution_map_mapCoeff (f₁ f₂ : compactlySupported A G A) :
-    (μ.map (φ : A →+ B)).convolution (compactlySupported.mapCoeff φ f₁)
-        (compactlySupported.mapCoeff φ f₂) =
-      compactlySupported.mapCoeff φ (μ.convolution f₁ f₂) := by
+    (μ.map (φ : A →+ B)).convolution (compactlySupported.map φ.toSemilinearMap f₁)
+        (compactlySupported.map φ.toSemilinearMap f₂) =
+      compactlySupported.map φ.toSemilinearMap (μ.convolution f₁ f₂) := by
   ext x
-  rw [convolution_apply, compactlySupported.mapCoeff_apply, convolution_apply,
-    ← integral_map_mapCoeff]
+  rw [convolution_apply, compactlySupported.map_apply, convolution_apply,
+    ← integral_comp_commSL μ φ φ.toSemilinearMap]
   congr 1
   ext y
   simp
@@ -78,7 +69,7 @@ when `A` and `B` are rings), the Hecke algebra of `G` with respect to `μ` mappi
 respect to `φ μ`. -/
 noncomputable def mapCoeff :
     HeckeAlgebra μ →ₙ+* HeckeAlgebra (μ.map (φ : A →+ B)) where
-  toFun f := ⟨compactlySupported.mapCoeff φ f.toCompactlySupported⟩
+  toFun f := ⟨compactlySupported.map φ.toSemilinearMap f.toCompactlySupported⟩
   map_mul' f₁ f₂ := by
     ext1
     exact (HaarMeasureWithValues.convolution_map_mapCoeff φ μ _ _).symm
@@ -93,7 +84,7 @@ noncomputable def mapCoeff :
 @[simp]
 theorem toCompactlySupported_mapCoeff (f : HeckeAlgebra μ) :
     (mapCoeff φ μ f).toCompactlySupported =
-      compactlySupported.mapCoeff φ f.toCompactlySupported :=
+      compactlySupported.map φ.toSemilinearMap f.toCompactlySupported :=
   (rfl)
 
 /-- `mapCoeff φ μ` is `φ`-semilinear. -/
@@ -101,7 +92,7 @@ theorem toCompactlySupported_mapCoeff (f : HeckeAlgebra μ) :
 theorem mapCoeff_smul (c : A) (f : HeckeAlgebra μ) :
     mapCoeff φ μ (c • f) = φ c • mapCoeff φ μ f := by
   ext1
-  exact (compactlySupported.mapCoeff φ).map_smulₛₗ c f.toCompactlySupported
+  exact (compactlySupported.map φ.toSemilinearMap).map_smulₛₗ c f.toCompactlySupported
 
 end HeckeAlgebra
 
