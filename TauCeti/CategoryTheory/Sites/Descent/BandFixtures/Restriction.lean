@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.Grp.EquivalenceGroupAddGroup
-public import Mathlib.CategoryTheory.SingleObj
 public import TauCeti.CategoryTheory.Sites.Descent.BandCenter.Glue
+public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Component.Center
 public import TauCeti.CategoryTheory.Sites.Descent.IsGerbe
 public import TauCeti.CategoryTheory.Sites.Descent.IsStack
 
@@ -20,7 +20,7 @@ necessarily constant. Composing with `MonCat.toCat` gives the pseudofunctor
 `SingleObj P(U)` and whose pullback along `f : V ⟶ U` is `SingleObj.mapHom (P.map f.op)`.
 
 A coefficient `g` of a commutative group `G` is a unit of the categorical centre of `SingleObj G`
-(`RestrictionBandFixtures.singleCenterUnit`), and a coefficient `g ∈ P(U)` is the compatible
+(`BandFixtures.singleCenterUnit`), and a coefficient `g ∈ P(U)` is the compatible
 central section with value `P(f)(g)` at `f : V ⟶ U` (`RestrictionBandFixtures.groupSection`). This
 identifies `P(U)` with the intrinsic central sections over `U`
 (`RestrictionBandFixtures.groupSectionsEquiv`), compatibly with restriction, with no topology and no
@@ -39,8 +39,6 @@ In the namespace `CategoryTheory.Pseudofunctor.RestrictionBandFixtures`:
 
 * `groupDiagram P`: the one-object diagram of a presheaf of commutative groups.
 * `groupIso P U x y g : x ≅ y`, with inverse coefficient `g⁻¹`.
-* `singleCenter g`, `singleCenterUnit g`: a coefficient as a central endomorphism and a central
-  unit of `SingleObj G`.
 * `groupSection P U : P(U) →* ZF(U)` and `groupSectionsEquiv P U : P(U) ≃* ZF(U)`.
 * `groupSectionsPresheafIso P`, `groupBandSheaf P`, `groupBandSheafIso P`, for a small base.
 
@@ -64,7 +62,7 @@ open CategoryTheory Opposite Bicategory
 
 namespace CategoryTheory.Pseudofunctor.RestrictionBandFixtures
 
-open IntrinsicBandSections
+open IntrinsicBandSections BandFixtures
 
 variable {C : Type u} [Category.{v} C]
 
@@ -98,58 +96,6 @@ theorem groupIso_hom (P : Cᵒᵖ ⥤ CommGrpCat.{w}) (U : C) (x y : (groupDiagr
 theorem groupIso_inv (P : Cᵒᵖ ⥤ CommGrpCat.{w}) (U : C) (x y : (groupDiagram P).obj (.mk (op U)))
     (g : P.obj (op U)) : (groupIso P U x y g).inv = (g⁻¹ : P.obj (op U)) :=
   (rfl)
-
-/-! ### Central units of `SingleObj G` -/
-
-section SingleObj
-
-variable {G : Type w} [CommGroup G]
-
-/-- A coefficient `g` of a commutative group `G` as a natural endomorphism of the identity functor
-of `SingleObj G`. It is natural because `G` is commutative. -/
-def singleCenter (g : G) : CatCenter (SingleObj G) :=
-  .of
-    { app _ := (g : SingleObj.star G ⟶ SingleObj.star G)
-      naturality _ _ f := mul_comm g f }
-
-@[simp]
-theorem singleCenter_app (g : G) (x : SingleObj G) :
-    (singleCenter g).app x = (g : SingleObj.star G ⟶ SingleObj.star G) :=
-  (rfl)
-
-@[simp]
-theorem singleCenter_mul (g h : G) : singleCenter (g * h) = singleCenter g * singleCenter h :=
-  CatCenter.ext _ _ fun _ ↦ rfl
-
-@[simp]
-theorem singleCenter_one : singleCenter (1 : G) = 1 :=
-  CatCenter.ext _ _ fun _ ↦ rfl
-
-/-- A coefficient `g` of a commutative group `G` as a unit of the categorical centre of
-`SingleObj G`, with inverse coefficient `g⁻¹`. -/
-def singleCenterUnit (g : G) : (CatCenter (SingleObj G))ˣ :=
-  MonoidHom.toHomUnits
-    { toFun := singleCenter, map_one' := singleCenter_one, map_mul' := singleCenter_mul } g
-
-@[simp]
-theorem val_singleCenterUnit (g : G) : (singleCenterUnit g).val = singleCenter g :=
-  (rfl)
-
-/-- The inverse of the central unit of `g` is the central endomorphism of `g⁻¹`. -/
-@[simp]
-theorem val_inv_singleCenterUnit (g : G) : (singleCenterUnit g)⁻¹.val = singleCenter g⁻¹ :=
-  (rfl)
-
-@[simp]
-theorem singleCenterUnit_mul (g h : G) :
-    singleCenterUnit (g * h) = singleCenterUnit g * singleCenterUnit h :=
-  Units.ext (singleCenter_mul g h)
-
-@[simp]
-theorem singleCenterUnit_one : singleCenterUnit (1 : G) = 1 :=
-  Units.ext singleCenter_one
-
-end SingleObj
 
 /-! ### The central sections of `groupDiagram P` -/
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Restriction
+public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.Component.Center
 public import TauCeti.Examples.CategoryTheory.Sites.Descent.BandFixtures.Constant
 
 /-!
@@ -22,7 +22,7 @@ automorphisms fails without abelian inertia.
 
 For a commutative group `G` every element `g` gives a central section acting by `g`
 (`centralSection`, the constant section of the centre unit
-`RestrictionBandFixtures.singleCenterUnit g`), and these are all the sections: for
+`BandFixtures.singleCenterUnit g`), and these are all the sections: for
 `G = C₃` there are exactly three, and the section of the generator evaluates to the nonidentity
 automorphism `Multiplicative.ofAdd 1`.
 -/
@@ -90,24 +90,24 @@ theorem evaluation_ne_swap {V : Discrete PUnit.{1}} (a : V ⟶ pt)
 
 /-! ### `B(G)` for a commutative group -/
 
-/-- The component of the central endomorphism `RestrictionBandFixtures.singleCenter g` at an
+/-- The component of the central endomorphism `BandFixtures.singleCenter g` at an
 object of `B(G)` is `g`. -/
 @[simp]
 theorem toElem_singleCenter_app {G : Type} [CommGroup G] (g : G) {V : Discrete PUnit.{1}}
     (x : (pointBG G).obj (.mk (op V))) :
-    toElem ((RestrictionBandFixtures.singleCenter g).app x) = g :=
+    toElem ((BandFixtures.singleCenter g).app x) = g :=
   -- The fibre of `pointBG G` is `SingleObj G` by definition, so this is `singleCenter_app`.
-  RestrictionBandFixtures.singleCenter_app g x
+  BandFixtures.singleCenter_app g x
 
 /-- For a commutative group `G`, the central section of `B(G)` over the point acting by `g`
 on every fibre. -/
 def centralSection {G : Type} [CommGroup G] (g : G) : IntrinsicBandSections (pointBG G) pt :=
-  constantSection pt (RestrictionBandFixtures.singleCenterUnit g)
+  constantSection pt (BandFixtures.singleCenterUnit g)
 
-/-- The components of `centralSection g` are `RestrictionBandFixtures.singleCenterUnit g`. -/
+/-- The components of `centralSection g` are `BandFixtures.singleCenterUnit g`. -/
 @[simp]
 theorem val_centralSection {G : Type} [CommGroup G] (g : G) (V : Discrete PUnit.{1})
-    (a : V ⟶ pt) : (centralSection g).val V a = RestrictionBandFixtures.singleCenterUnit g :=
+    (a : V ⟶ pt) : (centralSection g).val V a = BandFixtures.singleCenterUnit g :=
   val_constantSection pt _ V a
 
 /-- Evaluating `centralSection g` gives `g`. -/
