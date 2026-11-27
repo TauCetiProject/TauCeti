@@ -148,6 +148,53 @@ theorem mem_toLieSubmodule {N : GKSubmodule M} {v : V} : v ∈ N.toLieSubmodule 
 theorem ext {N N' : GKSubmodule M} (h : ∀ v, v ∈ N ↔ v ∈ N') : N = N' :=
   SetLike.ext h
 
+/-- `(𝔤, K)`-submodules are ordered by inclusion. -/
+instance instPartialOrder : PartialOrder (GKSubmodule M) :=
+  PartialOrder.ofSetLike (GKSubmodule M)
+
+/-- The inclusion order on `(𝔤, K)`-submodules is that of their Lie submodules. -/
+@[simp]
+theorem toLieSubmodule_le_toLieSubmodule {N N' : GKSubmodule M} :
+    N.toLieSubmodule ≤ N'.toLieSubmodule ↔ N ≤ N' :=
+  Iff.rfl
+
+/-- The zero `(𝔤, K)`-submodule. -/
+instance instBot : Bot (GKSubmodule M) :=
+  ⟨⟨⊥, fun g v hv ↦ by rw [(LieSubmodule.mem_bot v).1 hv, map_zero]; exact zero_mem _⟩⟩
+
+/-- The whole module as a `(𝔤, K)`-submodule. -/
+instance instTop : Top (GKSubmodule M) :=
+  ⟨⟨⊤, fun _ _ _ ↦ LieSubmodule.mem_top _⟩⟩
+
+@[simp]
+theorem toLieSubmodule_bot : (⊥ : GKSubmodule M).toLieSubmodule = ⊥ :=
+  (rfl)
+
+@[simp]
+theorem toLieSubmodule_top : (⊤ : GKSubmodule M).toLieSubmodule = ⊤ :=
+  (rfl)
+
+@[simp]
+theorem mem_bot {v : V} : v ∈ (⊥ : GKSubmodule M) ↔ v = 0 :=
+  LieSubmodule.mem_bot v
+
+@[simp]
+theorem mem_top (v : V) : v ∈ (⊤ : GKSubmodule M) :=
+  LieSubmodule.mem_top v
+
+/-- `⊥` and `⊤` are the least and greatest `(𝔤, K)`-submodules. -/
+instance instBoundedOrder : BoundedOrder (GKSubmodule M) where
+  bot_le N v hv := by
+    rw [mem_bot.1 hv]
+    exact mem_toLieSubmodule.1 (zero_mem _)
+  le_top _ v _ := mem_top v
+
+/-- A nonzero `(𝔤, K)`-module has `⊥ ≠ ⊤`. -/
+instance instNontrivial [Nontrivial V] : Nontrivial (GKSubmodule M) :=
+  ⟨⟨⊥, ⊤, fun h ↦ by
+    obtain ⟨v, hv⟩ := exists_ne (0 : V)
+    exact hv (mem_bot.1 (h ▸ mem_top v))⟩⟩
+
 /-- The subrepresentation of `K` underlying a `(𝔤, K)`-submodule. -/
 def toSubrepresentation (N : GKSubmodule M) : Subrepresentation M.ρ where
   toSubmodule := N.toLieSubmodule.toSubmodule
