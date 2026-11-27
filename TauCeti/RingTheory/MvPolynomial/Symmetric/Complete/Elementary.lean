@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Complete.Basic
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
-public import TauCeti.RingTheory.PowerSeries.Geometric
+public import TauCeti.RingTheory.PowerSeries.Geometric.Basic
 
 /-!
 # The `h`--`e` convolution and the Toeplitz inverse

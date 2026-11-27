@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
+import TauCeti.Topology.UniformSpace.HeineCantor
 
 /-!
 # Convergence to zero of `Lᵖ` seminorms from pointwise smallness
@@ -23,6 +24,15 @@ turned into convergence in `Lᵖ`. No lower bound on `p` is needed.
 If `eLpNorm (f i) p μ` (or `eLpNorm (f i - g) p μ` with `MemLp g p μ`) tends to a finite limit,
 then `MemLp (f i) p μ` holds eventually
 (`TauCeti.eventually_memLp_of_tendsto_eLpNorm`, `TauCeti.eventually_memLp_of_tendsto_eLpNorm_sub`).
+
+The case `p = ∞` needs no finiteness of the measure. A family of fields `M ν`, depending on a
+parameter `ν` in a topological space `X`, which is jointly continuous at every point of `{ν₀} × K`
+for a compact set `K` and, for `ν` near `ν₀`, agrees with `M ν₀` off `K`, converges uniformly on
+`K` as `ν → ν₀`
+(`IsCompact.tendstoUniformlyOn_of_continuousAt`), so `M ν → M ν₀` in `L^∞`
+(`TauCeti.tendsto_eLpNorm_top_sub_of_continuousAt_of_eq`). This is how a family of coefficient
+fields that is only modified on a compact part of a noncompact domain is seen to depend continuously
+on its parameter in `L^∞`.
 -/
 
 public section
@@ -74,5 +84,30 @@ theorem eventually_memLp_of_tendsto_eLpNorm_sub {E : Type*} [SeminormedAddGroup 
     ∀ᶠ i in l, MemLp (f i) p μ :=
   (eventually_memLp_of_tendsto_eLpNorm hc hlim).mono fun _ hi => by
     simpa only [sub_add_cancel] using hi.add hg
+
+/-- **`L^∞` continuity of a family modified on a compact set.** Let `M ν` be fields on a
+measurable set `S`, depending on a parameter `ν` in a topological space `X`, which are jointly
+continuous in `(ν, z)` at every point of `{ν₀} × K` for a compact set `K`. Suppose that for `ν`
+near `ν₀` the field `M ν` is almost everywhere strongly measurable on `S` and agrees with `M ν₀` at
+the points of `S` outside `K`. Then `M ν → M ν₀` in `L^∞(S)` as `ν → ν₀`. -/
+theorem tendsto_eLpNorm_top_sub_of_continuousAt_of_eq {X α E : Type*} [TopologicalSpace X]
+    [TopologicalSpace α] [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup E]
+    {M : X → α → E} {S K : Set α} (hS : MeasurableSet S) (hK : IsCompact K)
+    {ν₀ : X} (hmeas : ∀ᶠ ν in 𝓝 ν₀, AEStronglyMeasurable (M ν) (μ.restrict S))
+    (hM : ∀ z ∈ K, ContinuousAt (Function.uncurry M) (ν₀, z))
+    (heq : ∀ᶠ ν in 𝓝 ν₀, ∀ z ∈ S, z ∉ K → M ν z = M ν₀ z) :
+    Tendsto (fun ν => eLpNorm (M ν - M ν₀) ∞ (μ.restrict S)) (𝓝 ν₀) (𝓝 0) := by
+  refine tendsto_eLpNorm_zero_of_eventually_le_mul (b := fun _ => (1 : ℝ))
+    (memLp_top_const 1).eLpNorm_ne_top (hmeas.mono fun ν hν => hν.sub hmeas.self_of_nhds)
+    fun δ hδ => ?_
+  -- On the compact set `K` the family converges uniformly.
+  filter_upwards [hK.tendstoUniformlyOn_of_continuousAt hM _
+    (Metric.dist_mem_uniformity (NNReal.coe_pos.2 hδ)), heq] with ν hν hνK
+  filter_upwards [ae_restrict_mem hS] with z hz
+  rw [eNorm_one, mul_one, Pi.sub_apply, ← eDist_eq_eNorm_sub]
+  by_cases hzK : z ∈ K
+  · exact (edist_lt_coe.2 (by simpa [nndist_comm] using hν z hzK)).le
+  · rw [hνK z hz hzK, edist_self]
+    exact zero_le
 
 end TauCeti

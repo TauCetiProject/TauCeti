@@ -18,8 +18,8 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
-import TauCeti.Topology.Algebra.Module.Cone
 
 /-!
 # The wave front set of a distribution
@@ -738,27 +738,15 @@ private theorem not_isMicrolocallySmoothAt_ofFun_one_map_subtype (V : Submodule 
     ¬ (ofFun Ω 1 (MeasureTheory.volume.map ((↑) : V → E)) ⊤).IsMicrolocallySmoothAt x ξ := by
   rintro ⟨φ, hφ, Γ, hΓ, hξΓ, hcone, hdecay⟩
   obtain ⟨C, hC⟩ := hdecay 1
-  have hξpos : 0 < ‖ξ‖ := norm_pos_iff.2 hξ0
-  -- The Fourier transform of the restriction of the cutoff to `V` vanishes at each `w ∈ V`: at
-  -- `η = t • ξ + w` it is bounded by `C / (1 + ‖η‖)`, which tends to `0` as `t → ∞`.
+  -- The Fourier transform of the restriction of the cutoff to `V` vanishes at each `w ∈ V`: it is
+  -- the value of the localized Fourier transform all along the line `t ↦ t • ξ + w`.
   have hF : 𝓕 (fun v : V => φ v) = 0 := by
     ext w
-    have hgrow : Tendsto (fun t : ℝ => 1 + ‖t • ξ + (w : E)‖) atTop atTop := by
-      refine tendsto_atTop_mono (fun t => ?_)
-        (tendsto_atTop_add_const_right _ (-‖(w : E)‖) (tendsto_id.atTop_mul_const hξpos))
-      have h := norm_sub_le (t • ξ + (w : E)) (w : E)
-      rw [add_sub_cancel_right, norm_smul, Real.norm_eq_abs] at h
-      have := mul_le_mul_of_nonneg_right (le_abs_self t) (norm_nonneg ξ)
-      simp only [id]
-      linarith
-    refine norm_le_zero_iff.1 (ge_of_tendsto ((tendsto_const_nhds (x := C)).div_atTop hgrow) ?_)
-    filter_upwards [hΓ.eventually_smul_add_mem hξΓ hcone (w : E)] with t ht
-    have hP : V.orthogonalProjectionOnto (t • ξ + (w : E)) = w := by
-      rw [map_add, map_smul, (Submodule.orthogonalProjectionOnto_eq_zero_iff).2 hξ, smul_zero,
-        zero_add, Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
-    have hbound := hC _ ht
-    rw [localFourier_ofFun_one_map_subtype, hP, pow_one] at hbound
-    exact (le_div_iff₀' (by positivity)).2 hbound
+    refine hΓ.eq_zero_of_forall_smul_add_eq (g := localFourier _ φ) (w := (w : E)) hξΓ hξ0 hcone
+      (fun η hη => by simpa only [pow_one] using hC η hη) fun t => ?_
+    rw [localFourier_ofFun_one_map_subtype, map_add, map_smul,
+      (Submodule.orthogonalProjectionOnto_eq_zero_iff).2 hξ, smul_zero, zero_add,
+      Submodule.orthogonalProjectionOnto_mem_subspace_eq_self]
   -- By Fourier inversion the restriction vanishes, contradicting `φ x ≠ 0`.
   have hg := contDiff_and_hasCompactSupport_restrict V φ
   exact hφ (congrFun (hg.1.continuous.eq_zero_of_fourier_eq_zero
@@ -799,7 +787,7 @@ theorem localFourier_compCLMOfContinuousLinearEquiv (e : E ≃L[ℝ] E) (hVO : M
     (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(V, ℂ)) (η : E) :
     (compCLMOfContinuousLinearEquiv e hVO T).localFourier φ η =
       (|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) *
-        T.localFourier (e.transportTestFunction hVO φ) (((e.symm : E →L[ℝ] E)†) η) := by
+        T.localFourier (e.transportTestFunction ℝ hVO φ) (((e.symm : E →L[ℝ] E)†) η) := by
   rw [localFourier, complexPairing_compCLMOfContinuousLinearEquiv]
   congr 1
   refine (localFourier_eq _ _ fun y => ?_).symm
@@ -815,7 +803,7 @@ theorem IsMicrolocallySmoothAt.compCLMOfContinuousLinearEquiv {T : 𝓓'(Ω, ℂ
   obtain ⟨φ, hφ, Γ, hΓ, hξ, hcone, hdecay⟩ := h
   set A : E →L[ℝ] E := (e.symm : E →L[ℝ] E)†
   -- The cutoff `φ ∘ e` and the cone `A⁻¹ Γ` carry the decay of `T` over to its pullback.
-  refine ⟨e.symm.transportTestFunction hOV φ, by simpa using hφ, A ⁻¹' Γ,
+  refine ⟨e.symm.transportTestFunction ℝ hOV φ, by simpa using hφ, A ⁻¹' Γ,
     hΓ.preimage A.continuous, hξ, fun t ht η hη => ?_, fun N => ?_⟩
   · simpa only [mem_preimage, map_smul] using hcone t ht (A η) hη
   obtain ⟨C, hC⟩ := hdecay N

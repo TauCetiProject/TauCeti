@@ -48,8 +48,10 @@ is the single-neck model of the same deformation.
   coordinates of `ℂ` (`TauCeti.Floer.contMDiff_cappedPerturbation_apply`,
   `TauCeti.Floer.contDiff_cappedPerturbation_apply`), hence differentiable in the target point
   (`TauCeti.Floer.differentiableAt_cappedPerturbation_apply`); the family `K_R` is smooth in `R`
-  (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`), and on a vector space so are its
-  components (`TauCeti.Floer.contDiff_cappedComparisonPerturbation_apply`).
+  (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation`), and so are its components
+  (`TauCeti.Floer.contMDiff_cappedComparisonPerturbation_apply`, and on a vector space
+  `TauCeti.Floer.contDiff_cappedComparisonPerturbation_apply`), hence differentiable in the target
+  point (`TauCeti.Floer.mdifferentiable_cappedComparisonPerturbation_target`).
 * On the part `±s > 0` of the end `q` it pulls back to `a β(σ - 1) β(L + 3 - σ) H_q(t) dt`
   (`TauCeti.Floer.cappedPerturbation_cylindricalEndLift_of_pos`). For `L ≥ 0` it is
   `a H_q(t) dt` on the neck `2 ≤ σ ≤ L + 2`, and `a` times the pair-of-pants datum
@@ -71,7 +73,9 @@ is the single-neck model of the same deformation.
   `a = 1` and `L = 0`, for `2/3 ≤ R ≤ 3/2`
   (`TauCeti.Floer.cappedComparisonPerturbation_of_mem_Icc`), and for `R ≥ 2` it has necks of
   length `R - 1` (`TauCeti.Floer.cappedComparisonPerturbation_of_two_le`), so it is the
-  pair-of-pants perturbation on the truncation `S_T` once `T ≤ R + 1`
+  pair-of-pants perturbation up to the necks, where every signed longitudinal coordinate is at most
+  `R + 1` (`TauCeti.Floer.cappedComparisonPerturbation_eq_pairOfPantsPerturbation`), in
+  particular on the truncation `S_T` once `T ≤ R + 1`
   (`TauCeti.Floer.cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation`).
 * For a manifold target with a smooth two-form, and `|H_q| ≤ B_q`, the integrated curvature of
   the datum along any map is at most `2 |a| (B₀ + B₁ + B_∞)`, independently of `L`
@@ -616,16 +620,24 @@ theorem cappedComparisonPerturbation_of_two_le (H : Puncture → ℝ → M → �
   rw [cappedComparisonPerturbation_def, comparisonCutoff_of_ge (by linarith),
     comparisonNeckLength_of_ge hR]
 
+/-- **The comparison datum is the pair-of-pants datum up to the necks.** For `R ≥ 2`, at points
+where the signed longitudinal coordinate of every end is at most `R + 1`, such as the points of the
+truncation `S_T` for `T ≤ R + 1`, the comparison datum is the pair-of-pants perturbation. -/
+theorem cappedComparisonPerturbation_eq_pairOfPantsPerturbation (H : Puncture → ℝ → M → ℝ) {R : ℝ}
+    (hR : 2 ≤ R) {w : ℂ} (h : ∀ q : Puncture, q.endSign * (q.endCoord w).re ≤ R + 1) (x : M) :
+    cappedComparisonPerturbation H R w x = pairOfPantsPerturbation H w x := by
+  rw [cappedComparisonPerturbation_of_two_le H hR,
+    cappedPerturbation_eq_smul_pairOfPantsPerturbation (fun q ↦ (h q).trans (by linarith)) x,
+    one_smul]
+
 /-- On the truncation `S_T`, for `R ≥ 2` with `T ≤ R + 1`, the datum is the pair-of-pants
 perturbation. -/
 theorem cappedComparisonPerturbation_eq_pairOfPantsPerturbation_of_mem_truncation
     (H : Puncture → ℝ → M → ℝ) {R T : ℝ} (hR : 2 ≤ R) (hRT : T ≤ R + 1) {w : ℂ}
     (hw : w ∈ truncation T) :
     cappedComparisonPerturbation H R w = pairOfPantsPerturbation H w :=
-  funext fun x ↦ by
-    rw [cappedComparisonPerturbation_of_two_le H hR,
-      cappedPerturbation_eq_smul_pairOfPantsPerturbation
-        (fun q ↦ ((mem_truncation.1 hw).2.2 q).trans (by linarith)), one_smul]
+  funext <| cappedComparisonPerturbation_eq_pairOfPantsPerturbation H hR
+    fun q ↦ ((mem_truncation.1 hw).2.2 q).trans hRT
 
 section Smooth
 
@@ -644,6 +656,26 @@ theorem contMDiff_cappedComparisonPerturbation {n : ℕ∞} (hH : ∀ q, Functio
   exact (contMDiff_cappedPerturbation hH hHs).comp
     (contMDiff_fst.prodMk ((hρL.comp (contMDiff_fst.comp contMDiff_snd)).prodMk
       (contMDiff_snd.comp contMDiff_snd)))
+
+/-- The components of the comparison family are `C^n` jointly in the family parameter `R`, the
+point of the plane chart `ℝ × ℝ` and the target point. -/
+theorem contMDiff_cappedComparisonPerturbation_apply {n : ℕ∞}
+    (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry (H q))) (v : ℂ) :
+    ContMDiff (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ) n (fun p : ℝ × ((ℝ × ℝ) × M) ↦
+      cappedComparisonPerturbation H p.1 (Complex.equivRealProdCLM.symm p.2.1) p.2.2 v) := by
+  have hι : ContMDiff (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℝ × ℝ).prod I)) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ).prod I)) n
+      fun p : ℝ × ((ℝ × ℝ) × M) ↦ (Complex.equivRealProdCLM.symm p.2.1, (p.1, p.2.2)) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.comp
+      (contMDiff_fst.comp contMDiff_snd)).prodMk
+        (contMDiff_fst.prodMk (contMDiff_snd.comp contMDiff_snd))
+  exact ((contMDiff_cappedComparisonPerturbation hH hHs).comp hι).clm_apply contMDiff_const
+
+/-- The comparison datum `K_R` is differentiable in the target point, for every `R`. -/
+theorem mdifferentiable_cappedComparisonPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (R : ℝ) (w v : ℂ) :
+    MDifferentiable I 𝓘(ℝ) fun y ↦ cappedComparisonPerturbation H R w y v :=
+  mdifferentiable_cappedPerturbation_target hH hHs _ _ w v
 
 end Smooth
 
@@ -669,6 +701,15 @@ theorem contDiff_cappedComparisonPerturbation_apply {n : ℕ∞} (hH : ∀ q, Pe
   exact (h.comp ((Complex.equivRealProdCLM.symm.contDiff.comp
     (contDiff_fst.comp contDiff_snd)).prodMk
       (contDiff_fst.prodMk (contDiff_snd.comp contDiff_snd)))).clm_apply contDiff_const
+
+/-- The components of a member `R` of the comparison family, read in the plane chart, are `C^n`
+jointly in the real coordinates of `ℂ` and the target point, for `C^n` Hamiltonians on a vector
+space. -/
+theorem contDiff_cappedComparisonPerturbation_equivRealProdCLM {n : ℕ∞}
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (R : ℝ) (v : ℂ) :
+    ContDiff ℝ n fun p : (ℝ × ℝ) × M ↦
+      cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm p.1) p.2 v :=
+  (contDiff_cappedComparisonPerturbation_apply hH hHs v).comp (contDiff_const.prodMk contDiff_id)
 
 end SmoothNormed
 

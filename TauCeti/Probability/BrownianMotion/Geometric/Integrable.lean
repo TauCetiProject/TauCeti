@@ -51,11 +51,13 @@ variable {Ω : Type*} {mΩ : MeasurableSpace Ω}
 the law of the driving process. -/
 theorem geometricBrownianMotion (hp : IsStronglyPredictable ℱ W) (s μ σ : ℝ) :
     IsStronglyPredictable ℱ (TauCeti.Probability.geometricBrownianMotion s μ σ W) := by
-  have ht := ℱ.measurable_fst_predictable.coe_nnreal_real
-  have hw := hp.measurable
-  simpa only [IsStronglyPredictable, Function.uncurry_def, geometricBrownianMotion_def,
-    Pi.add_apply] using
-    (((ht.const_mul (μ - σ ^ 2 / 2)).add (hw.const_mul σ)).exp.const_mul s).stronglyMeasurable
+  have ht : IsStronglyPredictable ℱ (fun t _ ↦ s * exp (μ * t)) :=
+    ((ℱ.measurable_fst_predictable.coe_nnreal_real.const_mul μ).exp.const_mul s).stronglyMeasurable
+  have heq : TauCeti.Probability.geometricBrownianMotion s μ σ W =
+      fun (t : ℝ≥0) ω ↦ s * exp (μ * t) * TauCeti.Probability.exponentialMartingale σ W t ω :=
+    funext fun t ↦ funext (geometricBrownianMotion_eq_mul_exponentialMartingale s μ σ W t)
+  rw [heq]
+  exact ht.mul (hp.exponentialMartingale σ)
 
 end MeasureTheory.IsStronglyPredictable
 

@@ -38,6 +38,14 @@ of `G ⧸ N` is smooth, and describes its Lie algebra and its actions.
   `Subgroup.toLieSubalgebra_ker_lieMap_quotientMkSmoothHom`). Together these identify the Lie
   algebra of `G ⧸ N` with the quotient `𝔤 ⧸ 𝔫` through the Lie map of `π`
   (`Subgroup.quotientLieAlgebraEquiv`).
+* **The tangent Lie algebras.** On the tangent spaces at the identity, the differentials
+  `dι : Lie(N) → 𝔤` of the inclusion, for any embedded-Lie-subgroup structure on `N`, and
+  `dπ : 𝔤 → Lie(G ⧸ N)` of the projection form a short exact sequence: `dι` is injective
+  (`TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_subtypeVal`), `ker dπ = range dι`
+  (`Subgroup.ker_groupLieAlgebraMap_mk'`) and `dπ` is surjective
+  (`Subgroup.surjective_groupLieAlgebraMap_mk'`). Consequently `N` acts trivially on `𝔤 ⧸ 𝔫`:
+  `Ad_n ξ - ξ ∈ 𝔫` for `n ∈ N`
+  (`Subgroup.adjointContinuousLinearMap_sub_self_mem_range_groupLieAlgebraMap_subtype`).
 * **The residual action.** Let `G` act smoothly on a boundaryless manifold `M`, with `N` acting
   freely and properly. By the quotient manifold theorem the orbit space `M ⧸ N` is a smooth
   manifold (`Subgroup.orbitRelQuotientChartedSpaceOfIsClosed`,
@@ -102,6 +110,13 @@ def quotientMkSmoothHom [N.Normal] (hN : IsClosed (N : Set G)) :
 theorem coe_quotientMkSmoothHom [N.Normal] (hN : IsClosed (N : Set G)) :
     letI := quotientChartedSpaceOfIsClosed I hN
     ⇑(quotientMkSmoothHom I hN) = (QuotientGroup.mk : G → G ⧸ N) :=
+  (rfl)
+
+/-- The smooth projection onto `G ⧸ N` is the quotient homomorphism. -/
+@[simp]
+theorem toMonoidHom_quotientMkSmoothHom [N.Normal] (hN : IsClosed (N : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    (quotientMkSmoothHom I hN).toMonoidHom = QuotientGroup.mk' N :=
   (rfl)
 
 section Lift
@@ -269,6 +284,88 @@ theorem quotientLieAlgebraEquiv_apply_mk [N.Normal] (hN : IsClosed (N : Set G))
     quotientLieAlgebraEquiv I hN (LieSubmodule.Quotient.mk D) =
       lieMap (quotientMkSmoothHom I hN) D :=
   LieHom.quotKerEquivOfSurjective_apply_mk _ _ D
+
+/-! ### The exact sequence of tangent Lie algebras -/
+
+section TangentLieAlgebra
+
+variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+
+/-- **The differential at the identity of the projection onto `G ⧸ N` is surjective**, as a map
+`dπ : 𝔤 → Lie(G ⧸ N)` of tangent Lie algebras. -/
+theorem surjective_groupLieAlgebraMap_mk' [N.Normal] (hN : IsClosed (N : Set G)) :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    Surjective ((QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, QuotientModelSpace I N)) := by
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  intro v
+  obtain ⟨w, hw⟩ := (isSubmersion_quotientMk (I := I) hN).surjective_mfderiv (by simp) 1 v
+  exact ⟨w, by rw [MonoidHom.groupLieAlgebraMap_apply, QuotientGroup.coe_mk', hw]⟩
+
+/-- **The kernel of `dπ : 𝔤 → Lie(G ⧸ N)` is the image of `dι : Lie(N) → 𝔤`**, for the projection
+`π` onto `G ⧸ N` and the inclusion `ι` of `N` with any embedded-Lie-subgroup structure `d`, such as
+the closed-subgroup structure `TauCeti.Lie.EmbeddedLieSubgroupData.ofIsClosed`. With the
+injectivity of `dι` (`TauCeti.Lie.EmbeddedLieSubgroupData.injective_mfderiv_subtypeVal`) and the
+surjectivity of `dπ` (`Subgroup.surjective_groupLieAlgebraMap_mk'`), this is the short exact
+sequence `0 → 𝔫 → 𝔤 → Lie(G ⧸ N) → 0` of tangent Lie algebras. -/
+theorem ker_groupLieAlgebraMap_mk' [N.Normal] (hN : IsClosed (N : Set G))
+    (d : Lie.EmbeddedLieSubgroupData I N E') :
+    letI := quotientChartedSpaceOfIsClosed I hN
+    letI := d.chartedSpace
+    LinearMap.ker ((QuotientGroup.mk' N).groupLieAlgebraMap I
+        𝓘(ℝ, QuotientModelSpace I N)).toLinearMap =
+      LinearMap.range (N.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I).toLinearMap := by
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  have := lieGroup_quotientOfIsClosed (I := I) hN
+  let _ : T2Space G := I.t2Space_of_lieGroup ∞
+  let _ := d.chartedSpace
+  let _ := d.lieGroup
+  have := d.finiteDimensional
+  let e := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  let e' := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, QuotientModelSpace I N)) (n := ∞) (by simp)
+      (1 : G ⧸ N))
+  let eN := leftInvariantDerivationLieEquivGroupLieAlgebra
+    (ContMDiffMul.isInteriorPoint (I := 𝓘(ℝ, E')) (n := ∞) (by simp) (1 : N))
+  -- Read at the identity, the Lie maps of `π` and of `ι` are the differentials `dπ` and `dι`.
+  have hπ (D : LeftInvariantDerivation I G) :
+      e'.symm ((QuotientGroup.mk' N).groupLieAlgebraMap I 𝓘(ℝ, QuotientModelSpace I N) (e D)) =
+        lieMap (quotientMkSmoothHom I hN) D := by
+    rw [← toMonoidHom_quotientMkSmoothHom (I := I) hN]
+    exact leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap _ D
+  have hι (Y : LeftInvariantDerivation 𝓘(ℝ, E') N) :
+      e.symm (N.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I (eN Y)) = d.lieMapSubtypeVal Y := by
+    rw [← d.toMonoidHom_subtypeVal, d.lieMapSubtypeVal_apply]
+    exact leftInvariantDerivationLieEquivGroupLieAlgebra_symm_groupLieAlgebraMap _ Y
+  ext ξ
+  obtain ⟨D, rfl⟩ : ∃ D, e D = ξ := e.surjective ξ
+  -- Both sides say that `D` lies in the Lie algebra of `N`, the range of the Lie map of `ι`.
+  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe,
+    ← map_eq_zero_iff e'.symm e'.symm.injective, hπ, lieMap_quotientMkSmoothHom_eq_zero_iff hN,
+    ← d.range_lieMapSubtypeVal_eq, LieHom.mem_range, LinearMap.mem_range,
+    ContinuousLinearMap.coe_coe]
+  exact ⟨fun ⟨Y, hY⟩ ↦ ⟨eN Y, e.symm_apply_eq.1 ((hι Y).trans hY)⟩,
+    fun ⟨w, hw⟩ ↦ ⟨eN.symm w, by rw [← hι, eN.apply_symm_apply]; exact e.symm_apply_eq.2 hw⟩⟩
+
+/-- **A normal subgroup acts trivially on `𝔤 ⧸ 𝔫`.** For `n ∈ N` and `ξ ∈ 𝔤`, the difference
+`Ad_n ξ - ξ` lies in the image `𝔫` of the differential `dι` of the inclusion of `N`, for any
+embedded-Lie-subgroup structure on `N`. Indeed `dπ (Ad_n ξ) = Ad_{π n} (dπ ξ) = dπ ξ` for the
+projection `π` onto `G ⧸ N`, as `π n = 1`, and the kernel of `dπ` is the image of `dι`
+(`Subgroup.ker_groupLieAlgebraMap_mk'`). -/
+theorem adjointContinuousLinearMap_sub_self_mem_range_groupLieAlgebraMap_subtype [N.Normal]
+    (d : Lie.EmbeddedLieSubgroupData I N E') {n : G} (hn : n ∈ N) (ξ : GroupLieAlgebra I G) :
+    letI := d.chartedSpace
+    Lie.adjointContinuousLinearMap (I := I) n ξ - ξ ∈
+      LinearMap.range (N.subtype.groupLieAlgebraMap 𝓘(ℝ, E') I).toLinearMap := by
+  have : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  have hN := d.isClosed
+  let _ := quotientChartedSpaceOfIsClosed I hN
+  have := lieGroup_quotientOfIsClosed (I := I) hN
+  rw [← ker_groupLieAlgebraMap_mk' hN d, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, map_sub,
+    MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap]
+  simp [(QuotientGroup.eq_one_iff n).2 hn]
+
+end TangentLieAlgebra
 
 /-! ### The residual action on an orbit space -/
 

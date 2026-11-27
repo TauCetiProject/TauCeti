@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Data.Matrix.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
+public import Mathlib.LinearAlgebra.Span.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import TauCeti.Algebra.Algebra.Basic
 import TauCeti.Algebra.Group.Hom.Defs
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Matrix-vector multiplication
@@ -71,6 +73,8 @@ reproduce every product `A *ᵥ x`.
 * `Matrix.submatrix_id_castSucc_mulVec_eq_of_mulVec_eq_zero`: a right null vector with unit last
   coordinate lets the submatrix omitting the last column reproduce `A *ᵥ x`.
 * `Matrix.comp_smul_dotProduct_mulVec_smul`: `h(c v, c v) = σ c * c * h(v, v)`.
+* `Matrix.forall_mem_sup_span_singleton_mulVec_eq_self`: if `A` fixes `S` and `x`, then `A` fixes
+  `S ⊔ (R ∙ x)`.
 * `Matrix.map_intCast_mulVec` and `Matrix.map_intCast_vecMul`: casting integer entries commutes
   with matrix-vector and vector-matrix multiplication.
 -/
@@ -161,6 +165,13 @@ theorem comp_smul_dotProduct_mulVec_smul {R F : Type*} [NonUnitalSemiring R]
     (v : n → R) : (σ ∘ (c • v)) ⬝ᵥ (Q *ᵥ (c • v)) = σ c * c * ((σ ∘ v) ⬝ᵥ (Q *ᵥ v)) := by
   rw [TauCeti.map_comp_smul, mulVec_smul, smul_dotProduct, dotProduct_smul, smul_eq_mul,
     smul_eq_mul, mul_assoc]
+
+/-- If `A` fixes every vector of `S` and fixes `x`, then `A` fixes every vector of
+`S ⊔ (R ∙ x)`. -/
+theorem forall_mem_sup_span_singleton_mulVec_eq_self {R : Type*} [CommSemiring R]
+    {S : Submodule R (n → R)} {A : Matrix n n R} {x : n → R} (hS : ∀ s ∈ S, A *ᵥ s = s)
+    (hx : A *ᵥ x = x) : ∀ s ∈ S ⊔ (R ∙ x), A *ᵥ s = s :=
+  S.forall_mem_sup_span_singleton hS hx fun _ _ _ h₁ h₂ ↦ by simp [mulVec_add, mulVec_smul, h₁, h₂]
 
 section IntCast
 

@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
 public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 
+import TauCeti.Algebra.Module.LinearMap.CompHom
 import TauCeti.Algebra.Module.Projective.Semilinear
 import TauCeti.LinearAlgebra.Matrix.Idempotent.RightRange
 
@@ -58,11 +59,17 @@ The extension of the zero module is zero by the `Subsingleton` instances of
 ## Main results
 
 * `TauCeti.BalancedExtension.map_surjective`: extension of scalars preserves surjections.
+* `TauCeti.BalancedExtension.map_comp_map_of_comp_eq_id`,
+  `TauCeti.BalancedExtension.map_map_of_comp_eq_zero`: extension of scalars preserves retractions
+  and zero composites, in particular the identities of the inclusions and projections of a product.
 * `TauCeti.BalancedExtension.cancelBaseChange_comp_map`,
   `TauCeti.BalancedExtension.congrRingHom_comp_map`: `cancelBaseChange` and `congrRingHom` are
   natural in the module.
 * `TauCeti.BalancedExtension.includeRight_surjective`: along a surjective ring homomorphism,
   every element of `S ⊗_R P` is a tensor `1 ⊗ p`.
+* `TauCeti.BalancedExtension.exists_map_eq_of_surjective`: along a surjective ring homomorphism,
+  every `S`-linear map `S ⊗_R P → S ⊗_R P'` between extensions, with `P` projective, is
+  `map f g` for an `R`-linear `g`.
 * Extension of scalars along any `f` sends finitely generated `R`-modules to finitely generated
   `S`-modules and projective `R`-modules to projective `S`-modules (instances), hence finitely
   generated projective modules to finitely generated projective modules. No flatness or
@@ -160,7 +167,7 @@ variable {f}
 
 @[simp]
 theorem zero_tmul (p : P) : tmul f 0 p = 0 := by
-  rw [tmul_def, map_zero, BalancedTensorProduct.zero_tmul]
+  rw [tmul_def, _root_.map_zero, BalancedTensorProduct.zero_tmul]
 
 @[simp]
 theorem tmul_zero (s : S) : tmul f s (0 : P) = 0 :=
@@ -318,6 +325,49 @@ theorem map_comp (g : P →ₗ[R] P') (g' : P' →ₗ[R] P'') :
 
 theorem map_add (g g' : P →ₗ[R] P') : map f (g + g') = map f g + map f g' :=
   hom_ext fun p ↦ by simp [tmul_add]
+
+@[simp]
+theorem map_zero : map f (0 : P →ₗ[R] P') = 0 :=
+  hom_ext fun p ↦ by simp
+
+/-- A retraction `r ∘ i = id` stays a retraction after extension of scalars. -/
+theorem map_comp_map_of_comp_eq_id {i : P →ₗ[R] P'} {r : P' →ₗ[R] P}
+    (hri : r ∘ₗ i = LinearMap.id) : map f r ∘ₗ map f i = LinearMap.id := by
+  rw [← map_comp, hri, map_id]
+
+/-- A retraction `r ∘ i = id` stays a retraction after extension of scalars, applied to an
+element. -/
+theorem map_map_of_comp_eq_id {i : P →ₗ[R] P'} {r : P' →ₗ[R] P}
+    (hri : r ∘ₗ i = LinearMap.id) (x : BalancedExtension f P) : map f r (map f i x) = x :=
+  LinearMap.congr_fun (map_comp_map_of_comp_eq_id hri) x
+
+/-- A zero composite `g' ∘ g = 0` stays zero after extension of scalars. -/
+theorem map_map_of_comp_eq_zero {g : P →ₗ[R] P'} {g' : P' →ₗ[R] P''} (hg : g' ∘ₗ g = 0)
+    (x : BalancedExtension f P) : map f g' (map f g x) = 0 := by
+  rw [← LinearMap.comp_apply, ← map_comp, hg, map_zero, LinearMap.zero_apply]
+
+/-! Extension of scalars preserves the identities `fst ∘ inl = id`, `snd ∘ inl = 0`,
+`fst ∘ inr = 0` and `snd ∘ inr = id` of a product. -/
+
+@[simp]
+theorem map_fst_map_inl (x : BalancedExtension f P) :
+    map f (LinearMap.fst R P P') (map f (LinearMap.inl R P P') x) = x :=
+  map_map_of_comp_eq_id (LinearMap.fst_comp_inl R P P') x
+
+@[simp]
+theorem map_snd_map_inl (x : BalancedExtension f P) :
+    map f (LinearMap.snd R P P') (map f (LinearMap.inl R P P') x) = 0 :=
+  map_map_of_comp_eq_zero (LinearMap.snd_comp_inl R P P') x
+
+@[simp]
+theorem map_fst_map_inr (x : BalancedExtension f P') :
+    map f (LinearMap.fst R P P') (map f (LinearMap.inr R P P') x) = 0 :=
+  map_map_of_comp_eq_zero (LinearMap.fst_comp_inr R P P') x
+
+@[simp]
+theorem map_snd_map_inr (x : BalancedExtension f P') :
+    map f (LinearMap.snd R P P') (map f (LinearMap.inr R P P') x) = x :=
+  map_map_of_comp_eq_id (LinearMap.snd_comp_inr R P P') x
 
 variable (f) in
 /-- The `S`-linear equivalence `S ⊗_R P ≃ S ⊗_R P'`, `s ⊗ p ↦ s ⊗ θ p`, induced by an `R`-linear
@@ -602,6 +652,22 @@ instance [Module.Projective R P] : Module.Projective S (BalancedExtension f P) :
   refine .of_lifting_property'' fun F hF ↦ ?_
   obtain ⟨h, hh⟩ := Module.projective_lifting_property_semilinear F hF (includeRight f P)
   exact ⟨lift h, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
+
+/-- **Maps out of the extension of a projective module lift along a surjection.** If `f` is
+surjective and `P` is projective, every `S`-linear map `S ⊗_R P → S ⊗_R P'` is the extension
+`S ⊗_R g` of an `R`-linear map `g : P → P'`. -/
+theorem exists_map_eq_of_surjective (hf : Function.Surjective f) [Module.Projective R P]
+    (φ : BalancedExtension f P →ₗ[S] BalancedExtension f P') : ∃ g : P →ₗ[R] P', map f g = φ := by
+  -- The map `p' ↦ 1 ⊗ p'` is onto (`includeRight_surjective`), so `p ↦ φ (1 ⊗ p)` lifts through
+  -- it by projectivity of `P`.
+  -- Let `R` act on `S ⊗_R P'` through `f`, so that both `p' ↦ 1 ⊗ p'` and `p ↦ φ (1 ⊗ p)` are
+  -- `R`-linear.
+  let : Module R (BalancedExtension f P') := Module.compHom _ f
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property
+    ((includeRight f P').toLinearMapOfCompHom fun _ _ ↦ rfl)
+    ((φ.comp (includeRight f P)).toLinearMapOfCompHom fun _ _ ↦ rfl)
+    (by simpa using includeRight_surjective (P := P') hf)
+  exact ⟨g, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hg p⟩
 
 end FiniteProjective
 

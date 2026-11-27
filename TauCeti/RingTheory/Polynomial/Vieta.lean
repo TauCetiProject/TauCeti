@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Polynomial.Vieta
 import Mathlib.Algebra.Polynomial.Derivative
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.Ring.Parity
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # Vieta's formulas for indexed families of roots
@@ -56,6 +57,10 @@ first-order equations for the coefficients of `P` become equations for its simpl
   `∑ (-1)^(j-1) v^(m-j) j e_j(s) = v ∏_{w ∈ s ∖ v} (v - w)` at a root.
 * `Multiset.sum_mul_sum_map_mul_esymm_erase`: for any weights `f`,
   `∑ (-1)^(j-1) v^(m-j) ∑_{w ∈ s} f(w) e_{j-1}(s ∖ w) = f(v) ∏_{w ∈ s ∖ v} (v - w)` at a root.
+
+The weighted sums `∑_{w ∈ s} f(w) e_k(s ∖ w)` change in a simple way when an element `a` is
+adjoined to `s`: the new term `f(a) e_k(s)` appears, and every old term gains
+`a f(w) e_{k-1}(s ∖ w)` (`Multiset.sum_map_mul_esymm_erase_cons`).
 -/
 
 public section
@@ -261,5 +266,25 @@ theorem sum_mul_sum_map_mul_esymm_erase (hs : card s = m) (hv : v ∈ s) (f : R 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [Nat.add_sub_cancel, Nat.sub_sub, add_comm 1 i]
   ring
+
+end Multiset
+
+namespace Multiset
+
+variable {R : Type*} [CommSemiring R] [DecidableEq R]
+
+/-- **Adjoining an element to the weighted sums of the erased elementary symmetric functions.**
+For any weights `f`,
+`∑_{w ∈ a :: s} f(w) e_{k+1}((a :: s) ∖ w) = f(a) e_{k+1}(s) + ∑_{w ∈ s} f(w) e_{k+1}(s ∖ w) +
+a ∑_{w ∈ s} f(w) e_k(s ∖ w)`. -/
+theorem sum_map_mul_esymm_erase_cons (f : R → R) (a : R) (s : Multiset R) (k : ℕ) :
+    ((a ::ₘ s).map fun w ↦ f w * ((a ::ₘ s).erase w).esymm (k + 1)).sum =
+      f a * s.esymm (k + 1) + (s.map fun w ↦ f w * (s.erase w).esymm (k + 1)).sum +
+        a * (s.map fun w ↦ f w * (s.erase w).esymm k).sum := by
+  -- for `w ∈ s`, erasing `w` from `a :: s` keeps `a`, so `esymm_cons` splits off `a`
+  have h : (s.map fun w ↦ f w * ((a ::ₘ s).erase w).esymm (k + 1)) =
+      s.map fun w ↦ f w * (s.erase w).esymm (k + 1) + a * (f w * (s.erase w).esymm k) :=
+    map_congr rfl fun w hw ↦ by rw [erase_cons_tail_of_mem hw, Multiset.esymm_cons]; ring
+  rw [map_cons, sum_cons, erase_cons_head, h, sum_map_add, sum_map_mul_left, add_assoc]
 
 end Multiset
