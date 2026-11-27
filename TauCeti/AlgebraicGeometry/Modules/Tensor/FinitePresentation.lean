@@ -11,17 +11,14 @@ public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 /-!
 # Tensor products of finitely presented `𝒪ₓ`-modules
 
-Specializing the site-level closure results for tensor products of sheaves of modules
-(`TauCeti.SheafOfModules.isFinitePresentation_tensorObj` and
-`TauCeti.SheafOfModules.isMonoidal_isFinitePresentation`) to the structure sheaf of a scheme `X`,
+Specializing the site-level closure result for tensor products of sheaves of modules
+(`TauCeti.SheafOfModules.isFinitePresentation_tensorObj`) to the structure sheaf of a scheme `X`,
 tensor products of `𝒪ₓ`-modules preserve finite presentation.
 
-## Main declarations
+## Main declaration
 
 * `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_tensorObj`: the tensor product of two
-  finitely presented `𝒪ₓ`-modules is finitely presented;
-* `AlgebraicGeometry.Scheme.Modules.isMonoidal_isFinitePresentation`: finite presentation is a
-  monoidal property of `𝒪ₓ`-modules.
+  finitely presented `𝒪ₓ`-modules is finitely presented.
 -/
 
 public section
@@ -40,12 +37,6 @@ variable (X : Scheme.{v})
 instance _root_.AlgebraicGeometry.Scheme.Modules.isFinitePresentation_tensorObj (M N : X.Modules)
     [M.IsFinitePresentation] [N.IsFinitePresentation] : (M ⊗ N).IsFinitePresentation :=
   SheafOfModules.isFinitePresentation_tensorObj (R := X.sheaf)
-
-/-- Finite presentation is a monoidal property of `𝒪ₓ`-modules. -/
-instance _root_.AlgebraicGeometry.Scheme.Modules.isMonoidal_isFinitePresentation :
-    ObjectProperty.IsMonoidal (C := X.Modules)
-      (_root_.SheafOfModules.isFinitePresentation X.ringCatSheaf) :=
-  SheafOfModules.isMonoidal_isFinitePresentation (R := X.sheaf)
 
 end
 

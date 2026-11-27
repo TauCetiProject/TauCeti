@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Basic
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.LineBundle.TwistedSections
-import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 import TauCeti.AlgebraicGeometry.LineBundle.NonvanishingLocus
 import TauCeti.AlgebraicGeometry.Modules.FiniteType
@@ -39,8 +38,7 @@ generated for all sufficiently large `n`. Tensoring a surjection `𝒪_X^J ⟶ F
 
 * `AlgebraicGeometry.Scheme.Modules.exists_epi_free_tensorPow_of_isAmple`: Serre's global
   generation theorem for an ample line bundle.
-* `AlgebraicGeometry.Scheme.Modules.biproductConstIsoTensorFree` and
-  `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_epi_free_tensor`: dualizing an
+* `AlgebraicGeometry.Scheme.Modules.exists_epi_biproduct_of_epi_free_tensor`: dualizing an
   epimorphism `𝒪_X^J ⟶ F ⊗ M` into an epimorphism `⨁_J M' ⟶ F`.
 * `TauCeti.AlgebraicGeometry.InvertibleSheaf.exists_isGloballyGenerated_tensorProduct_tensorPow`
   and `exists_isGloballyGenerated_tensorPow`: high ample twists of any line bundle (and high
@@ -153,19 +151,6 @@ theorem exists_epi_free_tensorPow_of_isAmple
 
 /-! ### Corollaries: surjections from biproducts and global generation of line bundles -/
 
-/-- A finite biproduct of copies of `M` is isomorphic to `M ⊗ 𝒪_X^J`. -/
-def biproductConstIsoTensorFree (M : X.Modules) (J : Type u) [Finite J]
-    [HasBiproduct fun _ : J ↦ M] :
-    (⨁ fun _ : J ↦ M) ≅ M ⊗ SheafOfModules.free J := by
-  letI : Fintype J := Fintype.ofFinite J
-  have : HasBiproduct (C := X.Modules) fun _ : J ↦ 𝟙_ X.Modules :=
-    HasBiproduct.of_hasCoproduct _
-  exact biproduct.isoCoproduct (fun _ : J ↦ M) ≪≫
-    Sigma.mapIso (fun _ ↦ (ρ_ M).symm) ≪≫
-    (PreservesCoproduct.iso (tensorLeft M) (fun _ : J ↦ 𝟙_ X.Modules)).symm ≪≫
-    whiskerLeftIso M ((biproduct.isoCoproduct (fun _ : J ↦ 𝟙_ X.Modules)).symm ≪≫
-      TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) J)
-
 /-- Dualizing a surjection onto a twisted sheaf: if `π : 𝒪_X^J ⟶ F ⊗ M` is an epimorphism for a
 finite index type `J` and `e : M ⊗ M' ≅ 𝒪_X` exhibits `M'` as an inverse of `M`, then `F` admits
 an epimorphism from the finite biproduct `⨁_{j ∈ J} M'`. -/
@@ -178,7 +163,7 @@ theorem exists_epi_biproduct_of_epi_free_tensor {F M M' : X.Modules}
   -- epimorphisms.
   have : Epi (M' ◁ π) := (tensorLeft M').map_epi π
   let efree : (⨁ fun _ : J ↦ M') ≅ M' ⊗ SheafOfModules.free J :=
-    biproductConstIsoTensorFree M' J
+    TauCeti.SheafOfModules.biproductConstIsoTensorFree (R := X.sheaf) M' J
   let etgt : M' ⊗ (F ⊗ M) ≅ F :=
     β_ M' (F ⊗ M) ≪≫ α_ F M M' ≪≫ whiskerLeftIso F e ≪≫ ρ_ F
   have : Epi ((M' ◁ π) ≫ etgt.hom) := epi_comp (M' ◁ π) etgt.hom
@@ -198,12 +183,6 @@ sufficiently large `n`. -/
 theorem exists_isGloballyGenerated_tensorProduct_tensorPow
     (L : InvertibleSheaf X) (hL : (LineBundleClass.mk L).IsAmple) (K : InvertibleSheaf X) :
     ∃ n₀ : ℕ, ∀ n ≥ n₀, (K.tensorProduct (TauCeti.tensorPow L n)).IsGloballyGenerated := by
-  have : K.obj.IsFinitePresentation :=
-    TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (M := K.obj)
-  have : K.obj.IsQuasicoherent :=
-    Scheme.Modules.isQuasicoherent_of_isFinitePresentation K.obj
-  have : K.obj.IsFiniteType :=
-    Scheme.Modules.isFiniteType_of_isFinitePresentation K.obj
   obtain ⟨n₀, hn₀⟩ := Scheme.Modules.exists_epi_free_tensorPow_of_isAmple L hL K.obj
   refine ⟨n₀, fun n hn ↦ ?_⟩
   obtain ⟨J, _, π, hπ⟩ := hn₀ n hn

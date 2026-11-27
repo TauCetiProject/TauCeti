@@ -64,16 +64,9 @@ instance finite_cohomology_free_tensor (I : Type u) [Finite I] (L : X.Modules) (
   have : Fintype I := .ofFinite I
   -- Tensoring is additive in each variable, so it commutes with the finite direct sum
   -- `𝒪^{⊕I} ≅ ⨁_I 𝒪`.
-  -- The instances are stated on `X.Modules`: the tensor product and `biproductIsoFree` are
-  -- elaborated in the defeq category `SheafOfModules (ringCatSheaf X.sheaf)`, where instance
-  -- search does not find them for `X.Modules`.
-  have : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
   have : HasBiproduct (C := X.Modules) fun _ : I ↦ L := HasBiproduct.of_hasCoproduct _
-  have : HasBiproduct (C := X.Modules) fun _ : I ↦ 𝟙_ X.Modules := HasBiproduct.of_hasCoproduct _
-  let e₀ : Iso (C := X.Modules) (SheafOfModules.free I) (⨁ fun _ : I ↦ 𝟙_ X.Modules) :=
-    (TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I).symm
   let e : Iso (C := X.Modules) ((SheafOfModules.free I : X.Modules) ⊗ L) (⨁ fun _ : I ↦ L) :=
-    whiskerRightIso e₀ L ≪≫ (tensorRight L).mapBiproduct _ ≪≫ biproduct.mapIso fun _ ↦ λ_ L
+    β_ _ _ ≪≫ (TauCeti.SheafOfModules.biproductConstIsoTensorFree (R := X.sheaf) L I).symm
   exact .equiv ((cohomologyBiproductLinearEquiv R (fun _ : I ↦ L) q).symm ≪≫ₗ
     (cohomologyBaseLinearEquivOfIso R e q).symm)
 

@@ -674,13 +674,14 @@ from `V ⊗ 𝒪_X^r ≅ V^{⊕r}` and `χ(X, V^{⊕r}) = r · χ(X, V)`. -/
 theorem vectorBundleDegree_tensor_free {s : ℕ} (V : FixedRank X s) :
     vectorBundleDegree k (V.tensor (free X r)) = r * vectorBundleDegree k V := by
   have : HasFiniteBiproducts X.Modules := Abelian.hasFiniteBiproducts
-  have : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
+  have : HasBiproduct (C := X.Modules) fun _ : ULift.{u} (Fin r) ↦ V.obj.obj :=
+    HasBiproduct.of_hasCoproduct _
   let e : (V.tensor (free X r)).obj.obj ≅ ⨁ fun _ : Fin r ↦ V.obj.obj :=
-    eqToIso (by rw [tensor_obj_obj, free_obj, FiniteLocallyFreeSheaf.free_obj]) ≪≫
-      whiskerLeftIso V.obj.obj ((TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) _).symm ≪≫
-        biproduct.whiskerEquiv (f := fun _ : ULift.{u} (Fin r) ↦ 𝟙_ X.Modules)
-          (g := fun _ : Fin r ↦ 𝟙_ X.Modules) Equiv.ulift fun _ ↦ Iso.refl _) ≪≫
-      leftDistributor V.obj.obj _ ≪≫ biproduct.mapIso fun _ ↦ ρ_ V.obj.obj
+    eqToIso (by rw [tensor_obj_obj, free_obj, FiniteLocallyFreeSheaf.free_obj]; rfl) ≪≫
+      (TauCeti.SheafOfModules.biproductConstIsoTensorFree (R := X.sheaf)
+        V.obj.obj (ULift.{u} (Fin r))).symm ≪≫
+      biproduct.whiskerEquiv (f := fun _ : ULift.{u} (Fin r) ↦ V.obj.obj)
+        (g := fun _ : Fin r ↦ V.obj.obj) Equiv.ulift fun _ ↦ Iso.refl _
   rw [vectorBundleDegree_def, vectorBundleDegree_def, eulerCharBelow_congr k e,
     eulerCharBelow_biproduct_const, Fintype.card_fin]
   push_cast

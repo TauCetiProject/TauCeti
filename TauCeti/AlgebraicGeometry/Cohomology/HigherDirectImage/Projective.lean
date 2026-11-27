@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Finite
 import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
 import TauCeti.AlgebraicGeometry.Modules.Pullback.Basic
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 
 /-!
 # Coherent higher direct images and asymptotic vanishing for projective schemes
@@ -100,11 +100,6 @@ theorem exists_isZero_higherDirectImage_tensor_pullback_twistingSheaf {R M : Typ
   obtain ⟨m₀, hm₀⟩ := i.exists_subsingleton_cohomology_tensor_pullback_twistingSheaf F
   refine ⟨m₀, fun m hm q hq ↦ ?_⟩
   let Om := Proj.twistingSheaf (TauCeti.SymmetricAlgebra.homogeneousSubmodule R M) m
-  have : Om.IsFinitePresentation :=
-    TauCeti.SheafOfModules.IsInvertible.isFinitePresentation (M := Om)
-  have : Om.IsQuasicoherent := isQuasicoherent_of_isFinitePresentation Om
-  have : ((Scheme.Modules.pullback i).obj Om).IsQuasicoherent :=
-    Scheme.Modules.isQuasicoherent_pullback i Om
   have : Subsingleton (Cohomology (F ⊗ (Scheme.Modules.pullback i).obj Om) q) := hm₀ m hm q hq
   exact isZero_higherDirectImage_of_subsingleton_cohomology
     (i ≫ TauCeti.SymmetricAlgebra.projToSpec R M) (F ⊗ (Scheme.Modules.pullback i).obj Om) q

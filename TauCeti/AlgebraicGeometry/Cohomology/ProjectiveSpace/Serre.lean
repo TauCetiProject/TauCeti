@@ -10,10 +10,9 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
-import Mathlib.Algebra.Homology.ShortComplex.Exact
-import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
 import Mathlib.LinearAlgebra.StdBasis
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
+import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
 import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
@@ -26,6 +25,7 @@ import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.LinearAction
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.GlobalGeneration
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
 import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
@@ -88,12 +88,6 @@ namespace TauCeti.AlgebraicGeometry
 
 variable {X : Scheme.{u}}
 
-/-- The kernel of an epimorphism yields a short exact sequence in `X.Modules`. -/
-private theorem shortExact_kernel_of_epi {E F : X.Modules} (π : E ⟶ F) [Epi π] :
-    (ShortComplex.kernelSequence π).ShortExact :=
-  ShortComplex.ShortExact.mk' (ShortComplex.kernelSequence_exact π)
-    inferInstance inferInstance
-
 /-- Transfer `Subsingleton` of cohomology along an isomorphism of `𝒪_X`-modules. -/
 private theorem subsingleton_cohomology_of_iso {M N : X.Modules} (e : M ≅ N) (q : ℕ)
     (h : Subsingleton (Cohomology M q)) : Subsingleton (Cohomology N q) := by
@@ -129,12 +123,6 @@ variable {R M : Type u} [CommRing R] [AddCommMonoid M] [Module R M]
 
 local notation "𝒜" => homogeneousSubmodule R M
 
-/-- Helper: every twisting sheaf on `Proj (Sym_R M)` is locally free and finitely presented. -/
-private theorem twistingSheaf_properties (m : ℤ) :
-    (Proj.twistingSheaf 𝒜 m).IsLocallyFree ∧ (Proj.twistingSheaf 𝒜 m).IsFinitePresentation :=
-  ((InvertibleSheaf.toFiniteLocallyFree (Proj 𝒜)).obj
-    ⟨Proj.twistingSheaf 𝒜 m, inferInstance⟩).property
-
 /-- Helper: on `Proj (Sym_R M)` over a Noetherian ring `R`, any finite-type quasi-coherent sheaf
 `F` admits a surjection `𝒪^{⊕J} ⊗ 𝒪(-r) ⟶ F` whose kernel is again quasi-coherent of finite
 type. -/
@@ -148,7 +136,6 @@ private theorem exists_epi_free_tensor_twistingSheaf_kernel [IsNoetherianRing R]
     (_root_.SymmetricAlgebra.ι R M) (ι_mem_homogeneousSubmodule R M)
     (iSup_basicOpen_ι_eq_top R M id (by simp)) F).exists
   have : Epi π := hπ
-  have : (Proj.twistingSheaf 𝒜 (-(r : ℤ))).IsFinitePresentation := (twistingSheaf_properties (-r)).2
   have : ((SheafOfModules.free J : (Proj 𝒜).Modules) ⊗
       Proj.twistingSheaf 𝒜 (-(r : ℤ))).IsFinitePresentation :=
     isFinitePresentation_tensorObj (Proj 𝒜) _ _
@@ -172,17 +159,14 @@ private theorem serre_vanishing_step (b : Module.Basis κ R M) (q : ℕ) (hq : 0
   have : Module.Finite R M := Module.Finite.of_basis b
   obtain ⟨r, J, hJ, π, hπ, hKq, hKf⟩ := exists_epi_free_tensor_twistingSheaf_kernel F
   let : Fintype J := @Fintype.ofFinite J hJ
-  have hS := @shortExact_kernel_of_epi _ _ _ π hπ
+  have : Epi π := hπ
+  have hS := TauCeti.kernelSequence_shortExact π
   obtain ⟨m₁, hm₁⟩ := @ih (kernel π) hKq hKf
   refine ⟨max m₁ ((r : ℤ) + 1 - Fintype.card κ), fun m hm ↦ ?_⟩
   have hm1 : m₁ ≤ m := le_trans (le_max_left _ _) hm
   have hmr : -(Fintype.card κ : ℤ) < m + -(r : ℤ) := by
     have := le_trans (le_max_right _ _) hm
     omega
-  have hOm := twistingSheaf_properties (R := R) (M := M) m
-  have : (Proj.twistingSheaf 𝒜 m).IsLocallyFree := hOm.1
-  have : (Proj.twistingSheaf 𝒜 m).IsFinitePresentation := hOm.2
-  have : (Proj.twistingSheaf 𝒜 m).IsFiniteType := isFiniteType_of_isFinitePresentation _
   have hSm := shortExact_map_tensorLeft (Proj.twistingSheaf 𝒜 m) hS
   let eK : Iso (C := (Proj 𝒜).Modules) (kernel π ⊗ Proj.twistingSheaf 𝒜 m)
       (Proj.twistingSheaf 𝒜 m ⊗ kernel π) := β_ _ _
@@ -193,27 +177,18 @@ private theorem serre_vanishing_step (b : Module.Basis κ R M) (q : ℕ) (hq : 0
         ((SheafOfModules.free J : (Proj 𝒜).Modules) ⊗ Proj.twistingSheaf 𝒜 (-(r : ℤ)))) q) := by
     have : HasBiproduct (C := (Proj 𝒜).Modules) fun _ : J ↦ Proj.twistingSheaf 𝒜 (m + -(r : ℤ)) :=
       HasBiproduct.of_hasCoproduct _
-    have : HasBiproduct (C := (Proj 𝒜).Modules) fun _ : J ↦ 𝟙_ (Proj 𝒜).Modules :=
-      HasBiproduct.of_hasCoproduct _
     let eTwist : Proj.twistingSheaf 𝒜 m ⊗ Proj.twistingSheaf 𝒜 (-(r : ℤ)) ≅
         Proj.twistingSheaf 𝒜 (m + -(r : ℤ)) :=
       Proj.twistingSheaf.tensorObjIso (_root_.SymmetricAlgebra.ι R M)
         (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) m (-r)
-    let e0 : Iso (C := (Proj 𝒜).Modules) (SheafOfModules.free J)
-        (⨁ fun _ : J ↦ 𝟙_ (Proj 𝒜).Modules) :=
-      (TauCeti.SheafOfModules.biproductIsoFree (R := (Proj 𝒜).sheaf) J).symm
-    let eBip : Iso (C := (Proj 𝒜).Modules)
-        ((SheafOfModules.free J : (Proj 𝒜).Modules) ⊗ Proj.twistingSheaf 𝒜 (m + -(r : ℤ)))
-        (⨁ fun _ : J ↦ Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) :=
-      whiskerRightIso e0 _ ≪≫
-        (tensorRight (Proj.twistingSheaf 𝒜 (m + -(r : ℤ)))).mapBiproduct _ ≪≫
-        biproduct.mapIso fun _ ↦ λ_ _
     let eE : Iso (C := (Proj 𝒜).Modules)
         (Proj.twistingSheaf 𝒜 m ⊗
           ((SheafOfModules.free J : (Proj 𝒜).Modules) ⊗ Proj.twistingSheaf 𝒜 (-(r : ℤ))))
         (⨁ fun _ : J ↦ Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) :=
       whiskerLeftIso _ (β_ _ _) ≪≫ (α_ _ _ _).symm ≪≫
-        whiskerRightIso eTwist _ ≪≫ β_ _ _ ≪≫ eBip
+        whiskerRightIso eTwist _ ≪≫
+        (TauCeti.SheafOfModules.biproductConstIsoTensorFree (R := (Proj 𝒜).sheaf)
+          (Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) J).symm
     have hsub : Subsingleton (Cohomology (Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) q) :=
       b.subsingleton_cohomology_twistingSheaf_of_neg_card_lt hmr hq
     have hsum : Subsingleton (Cohomology (⨁ fun _ : J ↦ Proj.twistingSheaf 𝒜 (m + -(r : ℤ))) q) :=
@@ -233,8 +208,6 @@ private theorem exists_subsingleton_cohomology_tensor_of_basis_deg [Nonempty κ]
   have : Module.Finite R M := Module.Finite.of_basis b
   by_cases hq' : Fintype.card κ ≤ q
   · refine ⟨0, fun m _ ↦ ?_⟩
-    have : (Proj.twistingSheaf 𝒜 m).IsFinitePresentation := (twistingSheaf_properties m).2
-    have : (Proj.twistingSheaf 𝒜 m).IsQuasicoherent := isQuasicoherent_of_isFinitePresentation _
     exact b.subsingleton_cohomology_proj_of_card_le (F ⊗ Proj.twistingSheaf 𝒜 m) q hq'
   · refine Nat.decreasingInduction'
       (motive := fun k ↦ ∀ (G : (Proj 𝒜).Modules) [G.IsQuasicoherent] [G.IsFiniteType],
@@ -244,8 +217,6 @@ private theorem exists_subsingleton_cohomology_tensor_of_basis_deg [Nonempty κ]
       (le_of_not_ge hq') ?_ F
     intro G _ _
     refine ⟨0, fun m _ ↦ ?_⟩
-    have : (Proj.twistingSheaf 𝒜 m).IsFinitePresentation := (twistingSheaf_properties m).2
-    have : (Proj.twistingSheaf 𝒜 m).IsQuasicoherent := isQuasicoherent_of_isFinitePresentation _
     exact b.subsingleton_cohomology_proj_of_card_le (G ⊗ Proj.twistingSheaf 𝒜 m)
       (Fintype.card κ) le_rfl
 
@@ -262,9 +233,7 @@ private theorem exists_subsingleton_cohomology_tensor_of_basis [Nonempty κ]
   choose m₀ hm₀ using hdeg
   refine ⟨Finset.univ.sup' Finset.univ_nonempty m₀, fun m hm q hq ↦ ?_⟩
   by_cases hq' : Fintype.card κ ≤ q
-  · have : (Proj.twistingSheaf 𝒜 m).IsFinitePresentation := (twistingSheaf_properties m).2
-    have : (Proj.twistingSheaf 𝒜 m).IsQuasicoherent := isQuasicoherent_of_isFinitePresentation _
-    exact b.subsingleton_cohomology_proj_of_card_le (F ⊗ Proj.twistingSheaf 𝒜 m) q hq'
+  · exact b.subsingleton_cohomology_proj_of_card_le (F ⊗ Proj.twistingSheaf 𝒜 m) q hq'
   · let i : Fin (Fintype.card κ) := ⟨q - 1, by omega⟩
     have hmi : m₀ i ≤ m := (Finset.le_sup' m₀ (Finset.mem_univ i)).trans hm
     have hiq : i.val + 1 = q := by dsimp [i]; omega

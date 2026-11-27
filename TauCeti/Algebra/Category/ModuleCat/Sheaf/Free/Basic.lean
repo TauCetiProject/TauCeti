@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Biproducts
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Defs
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Monoidal
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
 
 /-!
 # Free sheaves on finitely many generators
@@ -35,6 +36,8 @@ which generators and relations of a finitely presented sheaf are handled locally
 * `TauCeti.SheafOfModules.isZero_free`: the free sheaf on an empty type is a zero object;
 * `TauCeti.SheafOfModules.biproductIsoFree`: a finite free sheaf is the biproduct of copies of
   the unit;
+* `TauCeti.SheafOfModules.biproductConstIsoTensorFree`: a finite biproduct of copies of `M` is
+  isomorphic to `M ⊗ free I`;
 * `TauCeti.SheafOfModules.evaluationFreeIso`: the sections of a finite free sheaf are tuples of
   sections of the coefficient sheaf;
 * `TauCeti.SheafOfModules.freeBasis`: the corresponding basis of sections, consisting of the
@@ -211,6 +214,22 @@ theorem ιFree_biproductIsoFree_inv (i : I) :
     ιFree i ≫ (biproductIsoFree (R := R) I).inv =
       biproduct.ι (fun _ : I ↦ 𝟙_ (SheafOfModules.{u} (ringCatSheaf R))) i :=
   (biproduct.isColimit _).comp_coconePointUniqueUpToIso_inv (isColimitFreeCofan I) ⟨i⟩
+
+/-- A finite biproduct of copies of `M` is isomorphic to `M ⊗ free I`. -/
+def biproductConstIsoTensorFree (M : _root_.SheafOfModules.{u} (ringCatSheaf R)) (I : Type u)
+    [Finite I] :
+    (⨁ fun _ : I ↦ M) ≅ M ⊗ free (R := ringCatSheaf R) I := by
+  letI : Fintype I := Fintype.ofFinite I
+  have : HasBiproduct (C := _root_.SheafOfModules.{u} (ringCatSheaf R))
+      fun _ : I ↦ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R)) :=
+    HasBiproduct.of_hasCoproduct _
+  exact biproduct.isoCoproduct (fun _ : I ↦ M) ≪≫
+    Sigma.mapIso (fun _ ↦ (ρ_ M).symm) ≪≫
+    (PreservesCoproduct.iso (tensorLeft M)
+      (fun _ : I ↦ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R)))).symm ≪≫
+    whiskerLeftIso M ((biproduct.isoCoproduct
+      (fun _ : I ↦ 𝟙_ (_root_.SheafOfModules.{u} (ringCatSheaf R)))).symm ≪≫
+      biproductIsoFree (R := R) I)
 
 variable (I)
 
