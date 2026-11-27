@@ -119,13 +119,12 @@ instance isNuclear_continuousMap : IsNuclear C(X, ℂ) := by
     simpa [hg] using congrArg ((↑) : ℝ → ℂ) h
   -- The evaluation `α` at the points of `t` and the partition-of-unity map `β`.
   let e : C(X, ℂ) →⋆ₐ[ℂ] CStarMatrix t t ℂ := (CStarMatrix.diagonalStarAlgHom ℂ t ℂ).comp
-    { AlgHom.pi fun k : t ↦ ContinuousMap.evalAlgHom ℂ ℂ (k : X) with map_star' _ := rfl }
+    ⟨AlgHom.pi fun k : t ↦ ContinuousMap.evalAlgHom ℂ ℂ (k : X), fun _ ↦ by ext; simp⟩
   let α : C(X, ℂ) →CP CStarMatrix t t ℂ :=
     CompletelyPositiveMapClass.toCompletelyPositiveLinearMap e
   have hα (f : C(X, ℂ)) : ‖α f‖ ≤ ‖f‖ := NonUnitalStarAlgHom.norm_apply_le e f
   have he (f : C(X, ℂ)) (k : t) : α f k k = f k := by
-    change CStarMatrix.diagonalStarAlgHom ℂ t ℂ (fun k ↦ f k) k k = f k
-    simp
+    simp [α, e]
   let β := diagSumSMul g hg0
   refine ⟨β.comp α, ?_, fun f hf ↦ ?_⟩
   · simpa using ((isNuclear_cstarMatrix t).isNuclearContraction_id.comp_right α hα).comp_left β
@@ -143,7 +142,7 @@ instance isNuclear_continuousMap : IsNuclear C(X, ℂ) := by
 
 /-- **Commutative unital C⋆-algebras are nuclear**, through the Gelfand transform
 `A ≃⋆ₐ C(X, ℂ)` onto the continuous functions on the character space. -/
-theorem isNuclear_of_commCStarAlgebra (A : Type*) [CommCStarAlgebra A] [PartialOrder A]
+instance isNuclear_of_commCStarAlgebra (A : Type*) [CommCStarAlgebra A] [PartialOrder A]
     [StarOrderedRing A] : IsNuclear A :=
   .of_starAlgEquiv (gelfandStarTransform A)
 
