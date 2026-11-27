@@ -255,18 +255,10 @@ private theorem exists_tendsto_of_eLpNorm_eLpNorm_waveDuhamelSolution_le {q r p�
           rw [ENNReal.tsum_mul_left, tsum_add, tsum_add]
           simp_rw [HomogeneousBesovSpace.ofReal_mul_eNorm_block,
             HomogeneousBesovSpace.tsum_eNorm_weightedBlocks]
-  -- Each term is almost everywhere strongly measurable on `[0, T]`, being there the free solution
-  -- plus the retarded integral of the forcing restricted to `[0, T]`.
   have hmeas (j : ℤ) : AEStronglyMeasurable
       (fun t ↦ waveDuhamelSolution ℂ (f.block j) (g.block j) (G j) t)
-        (volume.restrict (Set.Icc 0 T)) := by
-    have hGi : AEStronglyMeasurable ((Set.Icc 0 T).indicator (G j)) volume :=
-      (aestronglyMeasurable_indicator_iff measurableSet_Icc).2 (hint j).aestronglyMeasurable
-    refine (((continuous_waveCosPropagator_apply (f.block j)).add
-      (continuous_waveSinPropagator_apply (g.block j))).aestronglyMeasurable.add
-        (aestronglyMeasurable_setIntegral_Iio_waveSinPropagator_sub hGi)).restrict.congr ?_
-    exact ae_restrict_of_forall_mem measurableSet_Icc fun t ht ↦
-      (waveDuhamelSolution_eq_setIntegral_Iio _ _ _ ht.1 ht.2).symm
+        (volume.restrict (Set.Icc 0 T)) :=
+    aestronglyMeasurable_waveDuhamelSolution_restrict _ _ (hint j).aestronglyMeasurable
   have hfin : C' * (‖f‖ₑ + ‖g‖ₑ + ∑' j : ℤ, ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) * N j) ≠ ∞ :=
     ENNReal.mul_ne_top ENNReal.coe_ne_top
       (ENNReal.add_ne_top.2 ⟨ENNReal.add_ne_top.2 ⟨eNorm_ne_top, eNorm_ne_top⟩, hS⟩)
