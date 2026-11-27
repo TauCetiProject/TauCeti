@@ -153,7 +153,7 @@ theorem isCoinitial_isCompact_openSubgroup :
 variable [T1Space G]
 
 /-- In a T1, weakly locally compact nonarchimedean group, an element lying in every compact open
-subgroup is the identity: some compact open subgroup lies in the neighbourhood `{g}ᶜ` of `1`. -/
+subgroup is the identity. -/
 @[to_additive /-- In a T1, weakly locally compact nonarchimedean additive group, an element lying
 in every compact open additive subgroup is zero. -/]
 theorem eq_one_of_forall_mem_isCompact_openSubgroup {g : G}
@@ -164,7 +164,7 @@ theorem eq_one_of_forall_mem_isCompact_openSubgroup {g : G}
   exact hVg (h V hVc) rfl
 
 /-- A T1, weakly locally compact nonarchimedean group is discrete as soon as some open subgroup `U`
-lies in every compact open subgroup: then `U = {1}`. -/
+lies in every compact open subgroup. -/
 @[to_additive /-- A T1, weakly locally compact nonarchimedean additive group is discrete as soon
 as some open additive subgroup `U` lies in every compact open additive subgroup. -/]
 theorem discreteTopology_of_forall_isCompact_openSubgroup_le {U : OpenSubgroup G}

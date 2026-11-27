@@ -126,16 +126,14 @@ instance Subring.instNonarchimedeanRing {R : Type*} [Ring R] [TopologicalSpace R
   is_nonarchimedean :=
     (inferInstance : NonarchimedeanAddGroup ↥S.toAddSubgroup).is_nonarchimedean
 
-/-- **`Multiplicative G` of a nonarchimedean additive group is nonarchimedean**: an open additive
-subgroup of `G` is an open subgroup of `Multiplicative G`, with the same carrier. -/
+/-- `Multiplicative G` of a nonarchimedean additive group `G` is a nonarchimedean group. -/
 instance Multiplicative.instNonarchimedeanGroup {G : Type*} [AddGroup G] [TopologicalSpace G]
     [NonarchimedeanAddGroup G] : NonarchimedeanGroup (Multiplicative G) where
   is_nonarchimedean U hU := by
     obtain ⟨V, hV⟩ := NonarchimedeanAddGroup.is_nonarchimedean (G := G) U hU
     exact ⟨⟨V.toAddSubgroup.toSubgroup, V.isOpen⟩, hV⟩
 
-/-- **`Additive G` of a nonarchimedean group is nonarchimedean**: an open subgroup of `G` is an
-open additive subgroup of `Additive G`, with the same carrier. -/
+/-- `Additive G` of a nonarchimedean group `G` is a nonarchimedean additive group. -/
 instance Additive.instNonarchimedeanAddGroup {G : Type*} [Group G] [TopologicalSpace G]
     [NonarchimedeanGroup G] : NonarchimedeanAddGroup (Additive G) where
   is_nonarchimedean U hU := by

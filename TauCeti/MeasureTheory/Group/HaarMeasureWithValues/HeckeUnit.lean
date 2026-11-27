@@ -10,14 +10,14 @@ public import TauCeti.Topology.Algebra.Group.LocallyConstant.CompactSupport
 public import TauCeti.Topology.Algebra.Group.OpenSubgroup.Compact
 
 /-!
-# The Hecke algebra has a unit exactly when the group is discrete
+# The Hecke algebra has an identity element exactly when the group is discrete
 
 Let `G` be a locally profinite group (a Hausdorff, weakly locally compact, nonarchimedean
 topological group), `A` a nonzero commutative semiring and `μ` an `A`-valued Haar measure on `G`.
 
-* If some `e ∈ C_c^∞(G, A)` is a left unit for convolution, `e ⋆ f = f` for every `f`, then `G`
-  is discrete (`TauCeti.HaarMeasureWithValues.discreteTopology_of_forall_convolution_eq_left`),
-  and likewise for a right unit
+* If some `e ∈ C_c^∞(G, A)` is a left identity for convolution, `e ⋆ f = f` for every `f`, then
+  `G` is discrete (`TauCeti.HaarMeasureWithValues.discreteTopology_of_forall_convolution_eq_left`),
+  and likewise for a right identity
   (`TauCeti.HaarMeasureWithValues.discreteTopology_of_forall_convolution_eq_right`). Indeed `e` is
   left invariant under some compact open subgroup `U`, so `e ⋆ f` and hence every `f` is; testing
   on the indicators of compact open subgroups puts `U` inside all of them, so `U = {1}`.
@@ -25,7 +25,7 @@ topological group), `A` a nonzero commutative semiring and `μ` an `A`-valued Ha
   `(c μ({1})) •` on both sides
   (`TauCeti.HaarMeasureWithValues.convolution_compactOpenIndicator_singleton_one_left`,
   `TauCeti.HaarMeasureWithValues.convolution_compactOpenIndicator_singleton_one_right`), so
-  `μ({1})⁻¹ • 1_{{1}}` is a unit when `μ({1})` is invertible. This holds when `μ` gives some
+  `μ({1})⁻¹ • 1_{{1}}` is the identity when `μ({1})` is invertible. This holds when `μ` gives some
   compact open subgroup `U₀` an invertible volume `μ(U₀)`, since `U₀` is then finite with
   `μ(U₀) = |U₀| μ({1})`.
 
@@ -58,8 +58,8 @@ section Discrete
 variable [NonarchimedeanGroup G] [WeaklyLocallyCompactSpace G] [T2Space G] [Nontrivial A]
   (μ : HaarMeasureWithValues A G)
 
-/-- **A left unit forces discreteness.** If `e ⋆ f = f` for every test function `f` on a locally
-profinite group and `A` is nonzero, the group is discrete. -/
+/-- **A left identity forces discreteness.** If `e ⋆ f = f` for every test function `f` on a
+locally profinite group and `A` is nonzero, the group is discrete. -/
 theorem discreteTopology_of_forall_convolution_eq_left {e : compactlySupported A G A}
     (he : ∀ f, μ.convolution e f = f) : DiscreteTopology G := by
   classical
@@ -81,8 +81,8 @@ theorem discreteTopology_of_forall_convolution_eq_left {e : compactlySupported A
       compactOpenIndicator_mem_compactlySupported _ 1⟩)
   simp [Set.mem_smul_set_iff_inv_smul_mem, OpenSubgroup.mem_toCompactOpens, huV] at this
 
-/-- **A right unit forces discreteness.** If `f ⋆ e = f` for every test function `f` on a locally
-profinite group and `A` is nonzero, the group is discrete. -/
+/-- **A right identity forces discreteness.** If `f ⋆ e = f` for every test function `f` on a
+locally profinite group and `A` is nonzero, the group is discrete. -/
 theorem discreteTopology_of_forall_convolution_eq_right {e : compactlySupported A G A}
     (he : ∀ f, μ.convolution f e = f) : DiscreteTopology G := by
   classical
@@ -109,7 +109,7 @@ end Discrete
 
 section PointMass
 
-variable [IsTopologicalGroup G] [T2Space G] [DiscreteTopology G] (μ : HaarMeasureWithValues A G)
+variable [DiscreteTopology G] (μ : HaarMeasureWithValues A G)
 
 /-- On a discrete group, convolving on the left with the multiple `c • 1_{{1}}` of the point mass
 at `1` multiplies by `c μ({1})`. -/
@@ -171,10 +171,11 @@ namespace HeckeAlgebra
 variable [NonarchimedeanGroup G] [WeaklyLocallyCompactSpace G] [T2Space G] [Nontrivial A]
   (μ : HaarMeasureWithValues A G)
 
-/-- **The Hecke algebra is unital exactly when the group is discrete.** For a locally profinite
-group `G`, a nonzero coefficient semiring `A` and an `A`-valued Haar measure `μ` giving some
-compact open subgroup `U₀` an invertible volume `μ(U₀)`, `H(G, A)` has a two-sided identity
-element if and only if `G` is discrete. On a discrete group the identity is `μ({1})⁻¹ • 1_{{1}}`. -/
+/-- **The Hecke algebra has an identity element exactly when the group is discrete.** For a
+locally profinite group `G`, a nonzero coefficient semiring `A` and an `A`-valued Haar measure `μ`
+giving some compact open subgroup `U₀` an invertible volume `μ(U₀)`, `H(G, A)` has a two-sided
+identity element if and only if `G` is discrete. On a discrete group the identity is
+`μ({1})⁻¹ • 1_{{1}}`. -/
 theorem exists_forall_mul_eq_iff_discreteTopology {U₀ : OpenSubgroup G}
     (hU₀ : IsCompact (U₀ : Set G)) (hμ : IsUnit (μ (U₀.toCompactOpens hU₀))) :
     (∃ e : HeckeAlgebra μ, ∀ f, e * f = f ∧ f * e = f) ↔ DiscreteTopology G := by

@@ -12,12 +12,12 @@ public import TauCeti.MeasureTheory.Group.HaarMeasureWithValues.HeckeUnit
 public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 
 /-!
-# Examples: units of the Hecke algebra
+# Examples: identity elements for convolution
 
 * On the discrete group `ZMod 3` with counting volume (`μ({1}) = 1`), the point mass at `1` is a
-  two-sided identity of the Hecke algebra over `ℤ`.
-* On `ℤ_p`, which is not discrete, no element of `H(ℤ_p, ℚ)` is a left unit, for any `ℚ`-valued
-  Haar measure.
+  two-sided identity for convolution on `C_c^∞(ZMod 3, ℤ)`.
+* On `ℤ_p`, which is not discrete, no element of `C_c^∞(ℤ_p, ℚ)` is a left identity for
+  convolution, for any `ℚ`-valued Haar measure.
 -/
 
 public section
@@ -42,8 +42,8 @@ section Padic
 
 variable (p : ℕ) [Fact p.Prime]
 
-/-- `H(ℤ_p, ℚ)` has no left unit, whatever the `ℚ`-valued Haar measure: `ℤ_p` is compact and
-infinite, so not discrete. -/
+/-- Convolution on `C_c^∞(ℤ_p, ℚ)` has no left identity, whatever the `ℚ`-valued Haar measure:
+`ℤ_p` is compact and infinite, so not discrete. -/
 example (μ : HaarMeasureWithValues ℚ (Multiplicative ℤ_[p])) :
     ¬∃ e : compactlySupported ℚ (Multiplicative ℤ_[p]) ℚ, ∀ f, μ.convolution e f = f := by
   rintro ⟨e, he⟩
