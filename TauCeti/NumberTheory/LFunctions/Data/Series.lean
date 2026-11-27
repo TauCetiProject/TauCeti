@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.GammaFactor.Order
+public import TauCeti.NumberTheory.LFunctions.Data.Comparison
 public import TauCeti.Analysis.Meromorphic.Continuation
 public import TauCeti.NumberTheory.LSeries.Meromorphic
+import TauCeti.Analysis.Meromorphic.Continuation.Conjugate
 
 /-!
 # Canonical analytic cards from Dirichlet series
@@ -25,6 +27,10 @@ divisor, or a functional equation. The comparison theorem `ofSeries_eq_normalize
 with any card having those properties, up to replacing the completed function by its meromorphic
 normal form. That replacement matters at poles: arbitrary meromorphic representatives need not
 have the canonical value zero there. `ofSeries_eq` gives exact recovery for a normal-form card.
+
+Two comparisons need no continuation at all. The dual of a series card is the series card of the
+conjugate data (`ofSeries_dual`), since conjugation commutes with canonical continuation, and
+series cards whose coefficients agree away from zero agree off zero (`eqOffZero_ofSeries`).
 
 The root-number extraction uses the functional equation at a regular point where the completed
 function is nonzero. No Euler-product or gamma-factor nonvanishing assumption is hidden in the
@@ -105,6 +111,56 @@ theorem hasDirichletAgreement_ofSeries (ha : a 1 = 1) (hdeg : 0 < μ.card + 2 * 
   completed_eq s hs := by
     rw [ofSeries_completed]
     exact meromorphicContinuation_eqOn h hs
+
+/-- **The dual of a series card is the series card of the conjugate data.** Conjugation commutes
+with canonical continuation from `Re s > 1` (`TauCeti.meromorphicContinuation_conj_conj`), and
+the extracted root number `Λ(2) / conj Λ(-1)` is conjugated with it. No continuation is
+assumed. -/
+theorem ofSeries_dual :
+    (ofSeries a N μ ν p).dual =
+      ofSeries (fun n ↦ conj (a n)) N (μ.map conj) (ν.map conj) (p.mapDomain conj) := by
+  -- The conjugate data complete the reflected series.
+  have hcomp : (ofSeries a N μ ν p).dual.completed =
+      (ofSeries (fun n ↦ conj (a n)) N (μ.map conj) (ν.map conj) (p.mapDomain conj)).completed := by
+    rw [dual_completed, ofSeries_completed, ofSeries_completed,
+      ← meromorphicContinuation_conj_conj]
+    congr 1
+    funext s
+    have hL : LSeries (fun n ↦ conj (a n)) s = conj (LSeries a (conj s)) := by
+      have h := TauCeti.LSeries.LSeries_star a (conj s)
+      rw [Complex.conj_conj] at h
+      exact h
+    have hN := TauCeti.ofReal_cpow_conj (N : ℕ).cast_nonneg (s / 2)
+    rw [Complex.ofReal_natCast, map_div₀, map_ofNat] at hN
+    have hγ : (ofSeries (fun n ↦ conj (a n)) N (μ.map conj) (ν.map conj)
+        (p.mapDomain conj)).gammaFactor s = conj ((ofSeries a N μ ν p).gammaFactor (conj s)) := by
+      rw [← gammaFactor_dual]
+      simp only [gammaFactor_def, ofSeries_gammaR, ofSeries_gammaC, dual_gammaR, dual_gammaC]
+    simp only [Function.comp_apply, map_mul, hN, Complex.conj_conj, hL, hγ]
+  refine AnalyticLFunctionData.ext (funext fun n ↦ by simp) (by simp) (by simp) (by simp) ?_
+    hcomp ?_
+  · simp only [dual_rootNumber, ofSeries_rootNumber, ← hcomp, dual_completed_apply, map_div₀,
+      Complex.conj_conj, map_ofNat, map_neg, map_one]
+  · ext z
+    rw [dual_polarOrder_apply, ofSeries_polarOrder, ofSeries_polarOrder]
+    conv_rhs => rw [← Complex.conj_conj z]
+    exact (Finsupp.mapDomain_apply_of_injective (starRingEnd ℂ).injective _ _).symm
+
+/-- Series cards whose coefficients agree away from zero agree off zero: `LSeries` does not read
+the coefficient at zero, so their completions and root numbers coincide. -/
+theorem eqOffZero_ofSeries {b : ℕ → ℂ} (h : ∀ n : ℕ, n ≠ 0 → a n = b n) :
+    (ofSeries a N μ ν p).EqOffZero (ofSeries b N μ ν p) := by
+  have hL : ∀ s, LSeries a s = LSeries b s := LSeries_congr fun {n} hn ↦ h n hn
+  have hcomp : (ofSeries a N μ ν p).completed = (ofSeries b N μ ν p).completed := by
+    simp only [ofSeries_completed, gammaFactor_def, ofSeries_gammaR, ofSeries_gammaC, hL]
+  exact
+    { coeff_eq := h
+      conductor_eq := rfl
+      gammaR_eq := rfl
+      gammaC_eq := rfl
+      rootNumber_eq := by rw [ofSeries_rootNumber, ofSeries_rootNumber, hcomp]
+      completed_eq := hcomp
+      polarOrder_eq := rfl }
 
 variable {d : AnalyticLFunctionData}
 
