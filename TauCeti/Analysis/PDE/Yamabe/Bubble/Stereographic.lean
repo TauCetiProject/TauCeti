@@ -46,11 +46,11 @@ on `Sⁿ`, become integrals over `ℝⁿ` weighted by bubbles.
 * `TauCeti.Yamabe.bubbleMetric`, `TauCeti.Yamabe.bubbleMetric_def`,
   `TauCeti.Yamabe.bubbleMetric_inner`, and `TauCeti.Yamabe.conformalLaplacian_bubbleMetric`:
   the bubble conformal metric on `ℝⁿ` and its conformal Laplacian rescaling formula.
-* `TauCeti.Yamabe.inner_mfderiv_stereographic'_symm_smul_sub` and
-  `TauCeti.Yamabe.isLocalRiemannianIsometry_stereographic'_symm_smul_sub`: the pullback of the
-  round metric along `x ↦ σ⁻¹((2 / t) (x - b))` is `U_{t,b} ^ (4 / (n - 2))` times the Euclidean
-  metric, and `x ↦ σ⁻¹((2 / t) (x - b))` is a local Riemannian isometry from `WithMetric
-  (bubbleMetric ht b)` to `Sⁿ`.
+* `TauCeti.Yamabe.contMDiff_stereographic'_symm_smul_sub`,
+  `TauCeti.Yamabe.inner_mfderiv_stereographic'_symm_smul_sub`, and
+  `TauCeti.Yamabe.isLocalRiemannianIsometry_stereographic'_symm_smul_sub`: smoothness of
+  `x ↦ σ⁻¹((2 / t) (x - b))`, the pullback of the round metric as `U_{t,b} ^ (4 / (n - 2)) δ`, and
+  the local Riemannian isometry from `WithMetric (bubbleMetric ht b)` to `Sⁿ`.
 * `TauCeti.Yamabe.riemannianJacobian_stereographic'_symm_smul_sub`: the Riemannian Jacobian of
   `x ↦ σ⁻¹((2 / t) (x - b))` is `U_{t,b} ^ pₙ`.
 * `TauCeti.Yamabe.lintegral_riemannianVolume_sphere_eq_lintegral_bubble_rpow_mul` and
@@ -60,9 +60,9 @@ on `Sⁿ`, become integrals over `ℝⁿ` weighted by bubbles.
 * `TauCeti.Yamabe.map_stereographic'_symm_smul_sub_withDensity_eq_restrict_riemannianVolume` and
   `TauCeti.Yamabe.map_stereographic'_symm_smul_sub_withDensity_eq_riemannianVolume`: rescaled
   stereographic pushforward of `U_{t,b} ^ pₙ dx` onto `Sⁿ \ {v}`, and onto `Sⁿ` for `n > 0`.
-* `TauCeti.Yamabe.integrable_riemannianVolume_sphere_iff_bubble_rpow_criticalExponent` and
-  `TauCeti.Yamabe.integral_abs_rpow_criticalExponent_sphere_eq_bubble_mul`: integrability and
-  critical `L^{pₙ}` isometry on `Sⁿ` against `U_{t,b} ^ pₙ dx` on `ℝⁿ`.
+* `TauCeti.Yamabe.integrable_riemannianVolume_sphere_iff_integrable_bubble_rpow_smul` and
+  `TauCeti.Yamabe.integral_abs_rpow_criticalExponent_sphere_eq_integral_abs_bubble_mul_rpow`:
+  integrability and critical `L^{pₙ}` isometry on `Sⁿ` against `U_{t,b} ^ pₙ dx` on `ℝⁿ`.
 
 ## References
 
@@ -138,6 +138,14 @@ section Metric
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
 
+/-- **Smoothness of rescaled inverse stereographic projection.** For any scale `t : ℝ` and centre
+`b : ℝⁿ`, the map `x ↦ σ⁻¹((2 / t) (x - b))` into the unit sphere is `C^k` for every `k : ℕ∞ω`. -/
+theorem contMDiff_stereographic'_symm_smul_sub {k : ℕ∞ω} (v : sphere (0 : E) 1) (t : ℝ)
+    (b : EuclideanSpace ℝ (Fin n)) :
+    ContMDiff (𝓡 n) (𝓡 n) k ((stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)) :=
+  (isSmoothEmbedding_stereographic'_symm v).contMDiff.comp
+    ((contDiff_id.sub contDiff_const).const_smul (2 / t)).contMDiff
+
 /-- The derivative of the rescaled inverse stereographic chart `x ↦ σ⁻¹((2 / t) (x - b))`. -/
 private theorem hasMFDerivAt_stereographic'_symm_smul_sub (v : sphere (0 : E) 1) (t : ℝ)
     (b x : EuclideanSpace ℝ (Fin n)) :
@@ -193,8 +201,7 @@ theorem isLocalRiemannianIsometry_stereographic'_symm_smul_sub (hn : n ≠ 2) (v
       ContinuousLinearMap.comp_apply, WithMetric.inner_def, bubbleMetric_inner]
     exact inner_mfderiv_stereographic'_symm_smul_sub hn v ht b y.ofWithMetric _ _
   refine
-    { contMDiff := ((isSmoothEmbedding_stereographic'_symm (k := ∞) v).contMDiff.comp
-        (((contDiff_id.sub contDiff_const).const_smul (2 / t)).contMDiff)).comp
+    { contMDiff := (contMDiff_stereographic'_symm_smul_sub v t b).comp
         WithMetric.contMDiff_ofWithMetric
       isInvertible_mfderiv := fun y ↦ ?_
       inner_mfderiv := hinner }
@@ -389,7 +396,7 @@ theorem map_stereographic'_symm_smul_sub_withDensity_eq_riemannianVolume (hn₀ 
 /-- **Integrability on `Sⁿ` via a Yamabe bubble.** In dimension `n ≠ 2` (including `n = 0`), for
 `t > 0`, a function `f` on `Sⁿ` is integrable for the Riemannian volume if and only if
 `x ↦ (U_{t,b}(x) ^ pₙ) • f (σ⁻¹((2 / t) (x - b)))` is Lebesgue integrable on `ℝⁿ`. -/
-theorem integrable_riemannianVolume_sphere_iff_bubble_rpow_criticalExponent (hn : n ≠ 2)
+theorem integrable_riemannianVolume_sphere_iff_integrable_bubble_rpow_smul (hn : n ≠ 2)
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (v : sphere (0 : E) 1) {t : ℝ}
     (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n)) (f : sphere (0 : E) 1 → F) :
     Integrable f (riemannianVolume (𝓡 n) (sphere (0 : E) 1)) ↔
@@ -409,8 +416,8 @@ theorem integrable_riemannianVolume_sphere_iff_bubble_rpow_criticalExponent (hn 
 /-- **Critical `L^{pₙ}` isometry of the bubble pullback.** In positive dimension `n ≠ 2`, for
 `t > 0` and every `u : Sⁿ → ℝ`, the integral of `|u| ^ pₙ` on the unit round sphere equals the
 Euclidean integral of `|U_{t,b} · (u ∘ Φ)| ^ pₙ`. -/
-theorem integral_abs_rpow_criticalExponent_sphere_eq_bubble_mul (hn₀ : 0 < n) (hn : n ≠ 2)
-    (v : sphere (0 : E) 1) {t : ℝ} (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n))
+theorem integral_abs_rpow_criticalExponent_sphere_eq_integral_abs_bubble_mul_rpow (hn₀ : 0 < n)
+    (hn : n ≠ 2) (v : sphere (0 : E) 1) {t : ℝ} (ht : 0 < t) (b : EuclideanSpace ℝ (Fin n))
     (u : sphere (0 : E) 1 → ℝ) :
     ∫ p, |u p| ^ criticalExponent n ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
       ∫ x : EuclideanSpace ℝ (Fin n),

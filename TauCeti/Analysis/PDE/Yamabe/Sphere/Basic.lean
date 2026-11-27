@@ -152,10 +152,8 @@ theorem conformalCoefficient_mul_neg_laplacian_bubble_mul_comp_stereographic'_sy
     simp [Real.zero_rpow (div_ne_zero (by positivity : (n : ℝ) + 2 ≠ 0) hn')]
   let Φ : EuclideanSpace ℝ (Fin n) → sphere (0 : E) 1 :=
     (stereographic' n v).symm ∘ fun y ↦ (2 / t) • (y - b)
-  have hΦ : ContMDiff (𝓡 n) (𝓡 n) ∞ Φ :=
-    (isSmoothEmbedding_stereographic'_symm (k := ∞) v).contMDiff.comp
-      (((contDiff_id.sub contDiff_const).const_smul (2 / t)).contMDiff)
-  have huΦ : ContMDiffAt (𝓡 n) 𝓘(ℝ) 2 (u ∘ Φ) x := hu.comp x (hΦ.of_le (by simp)).contMDiffAt
+  have huΦ : ContMDiffAt (𝓡 n) 𝓘(ℝ) 2 (u ∘ Φ) x :=
+    hu.comp x (contMDiff_stereographic'_symm_smul_sub v t b).contMDiffAt
   obtain ⟨w, hw, -, hw_eq⟩ := huΦ.contDiffAt.exists_contDiff_eventuallyEq_of_finiteDimensional 2
   have hiso := isLocalRiemannianIsometry_stereographic'_symm_smul_sub hn v ht b
   have hiso_L :
@@ -174,21 +172,35 @@ theorem conformalCoefficient_mul_neg_laplacian_bubble_mul_comp_stereographic'_sy
       hiso.conformalLaplacian_comp (x := WithMetric.toWithMetric (bubbleMetric ht b) x)
         (by simpa only [Function.comp_apply, WithMetric.ofWithMetric_toWithMetric] using hu),
       Function.comp_apply, WithMetric.ofWithMetric_toWithMetric]
+  have hflat :
+      (letI : RiemannianBundle (fun y : EuclideanSpace ℝ (Fin n) ↦ TangentSpace (𝓡 n) y) :=
+         ⟨((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE
+           (m := ∞) le_top).toRiemannianMetric⟩;
+       conformalLaplacian (𝓡 n) (bubble t b * w) x) =
+        conformalCoefficient n * -Δ (fun y ↦ bubble t b y * u (Φ y)) x := by
+    have heq_prod : (bubble t b * w : EuclideanSpace ℝ (Fin n) → ℝ) =ᶠ[𝓝 x]
+        fun y ↦ bubble t b y * u (Φ y) :=
+      Filter.EventuallyEq.rfl.mul hw_eq
+    have hgrad : DifferentiableAt ℝ (∇ (bubble t b * w)) x :=
+      ((((contDiff_bubble t b (m := 2)).mul hw).gradient_right (m := 1)
+        (by norm_num)).differentiable one_ne_zero) x
+    rw [((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := ∞)
+        le_top).conformalLaplacian_eq_of_riemannianBundle_eq
+        (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm,
+      conformalLaplacian_eq_conformalCoefficient_mul_neg_laplacian hgrad,
+      (laplacian_congr_nhds heq_prod).eq_of_nhds, finrank_euclideanSpace_fin]
   have hresc := conformalLaplacian_bubbleMetric hn ht b hw.contMDiff x
-  have heq_prod : (bubble t b * w : EuclideanSpace ℝ (Fin n) → ℝ) =ᶠ[𝓝 x]
-      fun y ↦ bubble t b y * u (Φ y) :=
-    Filter.EventuallyEq.rfl.mul hw_eq
-  have hgrad : DifferentiableAt ℝ (∇ (bubble t b * w)) x :=
-    ((((contDiff_bubble t b (m := 2)).mul hw).gradient_right (m := 1)
-      (by norm_num)).differentiable one_ne_zero) x
-  rw [hiso_L,
-    ((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE (m := ∞)
-      le_top).conformalLaplacian_eq_of_riemannianBundle_eq
-      (ContMDiffRiemannianMetric.toRiemannianMetric_ofLE _ _).symm,
-    conformalLaplacian_eq_conformalCoefficient_mul_neg_laplacian hgrad,
-    (laplacian_congr_nhds heq_prod).eq_of_nhds, neg_div,
-    Real.rpow_neg (bubble_pos ht b x).le, finrank_euclideanSpace_fin] at hresc
-  exact (inv_mul_eq_iff_eq_mul₀ (Real.rpow_pos_of_pos (bubble_pos ht b x) _).ne').mp hresc.symm
+  rw [hiso_L, hflat] at hresc
+  have hU : 0 < bubble t b x := bubble_pos ht b x
+  calc
+    conformalCoefficient n * -Δ (fun y ↦ bubble t b y * u (Φ y)) x
+      = bubble t b x ^ (((n : ℝ) + 2) / ((n : ℝ) - 2)) *
+          (bubble t b x ^ (-((n : ℝ) + 2) / ((n : ℝ) - 2)) *
+            (conformalCoefficient n * -Δ (fun y ↦ bubble t b y * u (Φ y)) x)) := by
+          rw [← mul_assoc, ← Real.rpow_add hU, ← add_div, add_neg_cancel, zero_div,
+            Real.rpow_zero, one_mul]
+    _ = bubble t b x ^ (((n : ℝ) + 2) / (n - 2)) * conformalLaplacian (𝓡 n) u (Φ x) := by
+          rw [← hresc]
 
 end StereographicCovariance
 

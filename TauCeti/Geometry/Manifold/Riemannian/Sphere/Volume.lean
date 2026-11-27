@@ -51,7 +51,7 @@ particular the round sphere has total volume `|Sⁿ| = TauCeti.roundSphereVolume
 ## Main results
 
 * `TauCeti.riemannianJacobian_stereographic'_symm` and
-  `TauCeti.normDet_fderiv_coe_comp_stereographic'_symm`: the Riemannian and ambient Jacobians
+  `TauCeti.normDet_fderiv_subtypeVal_comp_stereographic'_symm`: the Riemannian and ambient Jacobians
   `(4 / (‖y‖² + 4)) ^ n` of `(stereographic' n v).symm`.
 * `TauCeti.map_stereographic'_symm_withDensity_eq_restrict_riemannianVolume` and
   `TauCeti.map_stereographic'_symm_withDensity_eq_riemannianVolume`: stereographic pushforward of
@@ -108,7 +108,7 @@ theorem riemannianJacobian_stereographic'_symm (v : sphere (0 : E) 1)
 /-- **Ambient Jacobian of inverse stereographic projection.** Composed with the inclusion of the
 unit sphere into `E`, `(stereographic' n v).symm` has norm determinant `(4 / (‖y‖² + 4)) ^ n` at
 `y`. -/
-theorem normDet_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
+theorem normDet_fderiv_subtypeVal_comp_stereographic'_symm (v : sphere (0 : E) 1)
     (y : EuclideanSpace ℝ (Fin n)) :
     LinearMap.normDet
         (fderiv ℝ (((↑) : sphere (0 : E) 1 → E) ∘ (stereographic' n v).symm) y).toLinearMap =
@@ -116,11 +116,7 @@ theorem normDet_fderiv_coe_comp_stereographic'_symm (v : sphere (0 : E) 1)
   have hσ : MDifferentiableAt (𝓡 n) (𝓡 n) (stereographic' n v).symm y :=
     mdifferentiableAt_atlas_symm (e := stereographic' n v) (Exists.intro v rfl) (by simp)
   rw [← riemannianJacobian_eq_normDet_fderiv_comp (EuclideanSpace.basisFun (Fin n) ℝ) hσ
-    fun u w ↦ by
-      rw [inner_tangentSpace_sphere, mvfderiv_apply_eq_mfderiv_apply,
-        mvfderiv_apply_eq_mfderiv_apply]
-      -- The two sides use the inner products of `TangentSpace 𝓘(ℝ, E) _` and of `E`, which agree.
-      rfl]
+    fun u w ↦ by rw [Manifold.inner_mfderiv_eq_inner_mvfderiv, inner_tangentSpace_sphere]]
   exact riemannianJacobian_stereographic'_symm v y
 
 end Jacobian
@@ -210,6 +206,11 @@ private theorem stereographic_density_nonneg (y : EuclideanSpace ℝ (Fin n)) :
     0 ≤ (4 / (‖y‖ ^ 2 + 4)) ^ n := by
   positivity
 
+omit [LindelofSpace (sphere (0 : E) 1)] in
+private theorem measurableEmbedding_stereographic'_symm (v : sphere (0 : E) 1) :
+    MeasurableEmbedding (stereographic' n v).symm :=
+  ((stereographic' n v).symm.isOpenEmbedding (by simp)).measurableEmbedding
+
 /-- **Lebesgue integration on the round sphere in stereographic coordinates.** For `n > 0`, the
 lower Lebesgue integral of any nonnegative function `f` against the Riemannian volume of `Sⁿ` is
 its stereographic integral weighted by `(4 / (‖y‖² + 4)) ^ n`. No measurability of `f` is
@@ -219,9 +220,8 @@ theorem lintegral_riemannianVolume_sphere_eq_stereographic' (hn : 0 < n)
     ∫⁻ p, f p ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
       ∫⁻ y : EuclideanSpace ℝ (Fin n),
         ENNReal.ofReal ((4 / (‖y‖ ^ 2 + 4)) ^ n) * f ((stereographic' n v).symm y) := by
-  have he : MeasurableEmbedding (stereographic' n v).symm :=
-    ((stereographic' n v).symm.isOpenEmbedding (by simp)).measurableEmbedding
-  rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v, he.lintegral_map,
+  rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v,
+    (measurableEmbedding_stereographic'_symm v).lintegral_map,
     lintegral_withDensity_eq_lintegral_mul_non_measurable _
       measurable_ofReal_stereographic_density
       (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
@@ -240,9 +240,8 @@ theorem integrable_riemannianVolume_sphere_iff_stereographic'
   rcases n.eq_zero_or_pos with rfl | hn
   · have : Finite (sphere (0 : E) 1) := finite_sphere_of_finrank_eq_one Fact.out (0 : E) 1
     exact ⟨fun _ ↦ Integrable.of_finite, fun _ ↦ Integrable.of_finite⟩
-  · have he : MeasurableEmbedding (stereographic' n v).symm :=
-      ((stereographic' n v).symm.isOpenEmbedding (by simp)).measurableEmbedding
-    rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v, he.integrable_map_iff,
+  · rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v,
+      (measurableEmbedding_stereographic'_symm v).integrable_map_iff,
       integrable_withDensity_iff_integrable_smul' measurable_ofReal_stereographic_density
         (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
     simp only [Function.comp_def, ENNReal.toReal_ofReal (stereographic_density_nonneg _)]
@@ -257,9 +256,8 @@ theorem integral_riemannianVolume_sphere_eq_stereographic' (hn : 0 < n)
     ∫ p, f p ∂riemannianVolume (𝓡 n) (sphere (0 : E) 1) =
       ∫ y : EuclideanSpace ℝ (Fin n),
         ((4 / (‖y‖ ^ 2 + 4)) ^ n) • f ((stereographic' n v).symm y) := by
-  have he : MeasurableEmbedding (stereographic' n v).symm :=
-    ((stereographic' n v).symm.isOpenEmbedding (by simp)).measurableEmbedding
-  rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v, he.integral_map,
+  rw [← map_stereographic'_symm_withDensity_eq_riemannianVolume hn v,
+    (measurableEmbedding_stereographic'_symm v).integral_map,
     integral_withDensity_eq_integral_toReal_smul measurable_ofReal_stereographic_density
       (Filter.Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top)]
   simp only [ENNReal.toReal_ofReal (stereographic_density_nonneg _)]
