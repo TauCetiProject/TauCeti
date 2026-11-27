@@ -127,6 +127,14 @@ theorem face_apply {n : ℕ} (i : Fin (n + 1)) (t : I) (c : SingularCube X (n + 
   rw [face]
   rfl
 
+/-- A face of a `1`-cube at the parameter `t` is the `0`-cube at the value of the cube at `t`. -/
+theorem face_eq_point (i : Fin 1) (t : I) (c : SingularCube X 1) :
+    face i t c = point (c fun _ ↦ t) :=
+  ContinuousMap.ext fun x ↦ by
+    rw [face_apply, point_apply]
+    exact congrArg c (funext fun j ↦ by
+      rw [show j = i from Subsingleton.elim (α := Fin 1) j i, Fin.insertNth_apply_same])
+
 /-- A face of a cube takes its values among those of the cube. -/
 theorem range_face_subset {n : ℕ} (i : Fin (n + 1)) (t : I) (c : SingularCube X (n + 1)) :
     Set.range (face i t c) ⊆ Set.range c := by

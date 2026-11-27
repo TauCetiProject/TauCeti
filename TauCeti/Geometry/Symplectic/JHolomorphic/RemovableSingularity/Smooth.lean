@@ -7,8 +7,10 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.WeakDerivative
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
+public import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Analysis.Complex.CauchyRiemann.Weak.Bootstrap
 import TauCeti.Geometry.Symplectic.Floer.RemovableSingularity.Smooth
+import TauCeti.Geometry.Symplectic.JHolomorphic.Regularity
 
 /-!
 # Removal of singularities for finite-energy pseudoholomorphic curves
@@ -50,6 +52,11 @@ In the namespace `TauCeti.SymplecticForm`:
   filling is a `C^ℓ` solution of the Cauchy–Riemann equation on the whole disc.
 * `exists_contDiffOn_update_comp_inv_of_finite_energy`: the same at the end of a plane, in the
   inverted coordinate.
+* `exists_tendsto_cocompact_and_contDiffOn_update_comp_inv`: the same for a `C¹` map on the
+  exterior of a disc in the real coordinates `ℝ × ℝ`, holomorphic for a constant structure `J₀`
+  whose metric `ω(·, J₀ ·)` is the inner product, with integrable area density; the map is
+  smooth there by elliptic regularity (`TauCeti.contDiffOn_of_isComplexLinearMap_fderiv`), and the
+  filling in the chart at infinity is smooth.
 * `exists_contMDiff_onePoint_elim_of_finite_energy`: a finite-energy plane extends to a `C^ℓ` map
   of the Riemann sphere.
 
@@ -142,6 +149,77 @@ theorem exists_contDiffOn_update_comp_inv_of_finite_energy (hℓ : 2 ≤ ℓ)
   refine ⟨q, hq, ?_, hmaps, hf, hCRf⟩
   rw [← Metric.cobounded_eq_cocompact]
   simpa [Function.comp_def] using hlim.comp tendsto_inv₀_cobounded'
+
+open Function in
+open TauCeti.Complex (realChart) in
+/-- **Removal of the singularity at infinity in the chart at infinity.** Let the inner product of
+`V` be the metric `⟪v, w⟫ = ω(v, J₀ w)` of `J₀`, and let `u` be `C¹` and `J₀`-holomorphic on the
+exterior `‖z‖ > T` of a disc, in complex coordinates, with integrable area density
+`ω(∂ₛu, ∂ₜu)` and values in a compact set `K` there. Then `u` has a limit `q ∈ K` at infinity,
+and its expression `y ↦ u(y⁻¹)` in the chart at infinity, filled with `q` at `0`, is smooth on the
+disc `‖y‖ < T⁻¹` with values in `K`. By
+`TauCeti.isComplexLinearMap_fderiv_of_eq_comp_inv` the filled map is `J₀`-holomorphic on that
+disc, its centre included. -/
+theorem exists_tendsto_cocompact_and_contDiffOn_update_comp_inv {u : ℝ × ℝ → V} {T : ℝ}
+    (ω : SymplecticForm V)
+    (hg : ∀ v w, ω v (J₀ w) = inner ℝ v w) {K : Set V} (hK : IsCompact K)
+    (hu : ContDiffOn ℝ 1 u (equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ))
+    (hhol : ∀ z ∈ equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ, IsComplexLinearMap
+      (AlmostComplexStructure.product ℝ) J₀ (fderiv ℝ u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hint : IntegrableOn (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal)
+      (fderiv ℝ u z stdComplexLineImag)) (equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ))
+    (huK : MapsTo u (equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ) K) :
+    ∃ q ∈ K, Tendsto u (cocompact (ℝ × ℝ)) (𝓝 q) ∧
+      MapsTo (update (fun y ↦ u (realChart (fun ζ ↦ ζ⁻¹) y)) 0 q)
+        (equivRealProdCLM.symm ⁻¹' ball 0 T⁻¹) K ∧
+      ContDiffOn ℝ (⊤ : ℕ∞) (update (fun y ↦ u (realChart (fun ζ ↦ ζ⁻¹) y)) 0 q)
+        (equivRealProdCLM.symm ⁻¹' ball 0 T⁻¹) := by
+  set S : Set (ℝ × ℝ) := equivRealProdCLM.symm ⁻¹' (closedBall 0 T)ᶜ
+  have hmem (z : ℂ) (hz : z ∈ (closedBall (0 : ℂ) T)ᶜ) : equivRealProdCLM z ∈ S := by
+    rwa [mem_preimage, ContinuousLinearEquiv.symm_apply_apply]
+  -- On the exterior `u` is holomorphic for the constant structure `J₀`, hence smooth.
+  have hus : ContDiffOn ℝ (⊤ : ℕ∞) u S :=
+    contDiffOn_of_isComplexLinearMap_fderiv (J := fun _ ↦ J₀)
+      (isClosed_closedBall.isOpen_compl.preimage equivRealProdCLM.symm.continuous) isOpen_univ
+      contDiffOn_const hu (mapsTo_univ _ _) hhol
+  -- In the complex coordinate, the area density is `‖∂ₛu‖²`.
+  have hsq (z : ℂ) (hz : z ∈ (closedBall (0 : ℂ) T)ᶜ) :
+      ‖fderiv ℝ (u ∘ equivRealProdCLM) z 1‖ ^ 2 =
+        ω (fderiv ℝ u (equivRealProdCLM z) stdComplexLineReal)
+          (fderiv ℝ u (equivRealProdCLM z) stdComplexLineImag) := by
+    have h := (hhol _ (hmem z hz)).apply_stdComplexLineImag
+    simp only [ContinuousLinearMap.coe_coe] at h
+    rw [fderiv_comp_equivRealProdCLM_one, h, hg, real_inner_self_eq_norm_sq]
+  have hpre : measurableEquivRealProd ⁻¹' S = (closedBall (0 : ℂ) T)ᶜ := by
+    ext z
+    simp [S, Complex.equivRealProdCLM_symm_apply]
+  have henergy : IntegrableOn (fun z ↦ ‖fderiv ℝ (u ∘ equivRealProdCLM) z 1‖ ^ 2)
+      (closedBall (0 : ℂ) T)ᶜ := by
+    have h := (Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
+      measurableEquivRealProd.measurableEmbedding).2 hint
+    rw [hpre] at h
+    refine h.congr_fun (fun z hz ↦ ?_) isClosed_closedBall.isOpen_compl.measurableSet
+    rw [hsq z hz, comp_apply, Complex.measurableEquivRealProd_apply,
+      Complex.equivRealProdCLM_apply]
+  obtain ⟨q, hq, hlim, hmaps, hf, -⟩ := ω.exists_contDiffOn_update_comp_inv_of_finite_energy
+    (J := fun _ ↦ J₀.toLinearMap.toContinuousLinearMap) (c := 1) (W := univ) le_top hg one_pos
+    isOpen_univ contDiffOn_const hK (subset_univ _) (fun x _ v ↦ by simp)
+    ((hus.comp equivRealProdCLM.contDiff.contDiffOn hmem).of_le (WithTop.coe_le_coe.2 le_top))
+    (fun z hz ↦ by
+      simpa [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I] using
+        (hhol _ (hmem z hz)).apply_stdComplexLineImag)
+    (huK.comp hmem) (fun z _ v ↦ by simp [hg]) henergy
+  -- The filled map in the chart at infinity is the complex filled map read in real coordinates.
+  have hw (y : ℝ × ℝ) : update (fun y ↦ u (realChart (fun ζ ↦ ζ⁻¹) y)) 0 q y =
+      update (fun ζ ↦ (u ∘ equivRealProdCLM) ζ⁻¹) 0 q (equivRealProdCLM.symm y) := by
+    rcases eq_or_ne y 0 with rfl | hy
+    · simp
+    · rw [update_of_ne hy, update_of_ne (by simpa using hy), TauCeti.Complex.realChart_apply,
+        comp_apply]
+  refine ⟨q, hq, ?_, fun y hy ↦ hw y ▸ hmaps hy, (hf.comp
+    equivRealProdCLM.symm.contDiff.contDiffOn (mapsTo_preimage _ _)).congr fun y _ ↦ hw y⟩
+  simpa [comp_def] using
+    hlim.comp equivRealProdCLM.symm.toHomeomorph.isClosedEmbedding.tendsto_cocompact
 
 /-- **A finite-energy plane extends to a sphere.** Let `J` be `C^ℓ`, `2 ≤ ℓ ≤ ∞`, near a compact set
 `K` on which `J² = -1`, and let `u` be a `C³` solution of `∂ₜu = J(u) ∂ₛu` on the whole plane, with
