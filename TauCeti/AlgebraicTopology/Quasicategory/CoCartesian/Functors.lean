@@ -17,8 +17,7 @@ an inner fibration it is a quasicategory. Its higher simplices are relative fami
 functors at parameter vertices preserve coCartesian edges; no preservation condition is
 imposed on transformation edges.
 
-Composition and units restrict from relative internal homs. Evaluation over a base vertex
-gives a map to the functor quasicategory between the fibres. The case with source `𝟙 B`
+Composition and units restrict from relative internal homs. The case with source `𝟙 B`
 recovers `SSet.coCartesianSections q`.
 
 ## References
