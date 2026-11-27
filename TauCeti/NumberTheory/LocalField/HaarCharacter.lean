@@ -227,6 +227,7 @@ theorem distribHaarChar_eq_normalizedAbsoluteValue (x : Kˣ) :
 
 /-- **The Haar character of `GL_n` over a local field.** An invertible matrix `g` scales additive
 Haar measure on `ι → K` by the normalized absolute value `|det g|_K` of its determinant. -/
+@[simp]
 theorem distribHaarChar_eq_normalizedAbsoluteValue_det {ι : Type*} [Fintype ι] [DecidableEq ι]
     (g : GL ι K) :
     distribHaarChar (ι → K) g = normalizedAbsoluteValue K (g : Matrix ι ι K).det := by
