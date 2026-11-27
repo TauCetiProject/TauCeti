@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.VectorMeasure.WithDensityVec
 public import TauCeti.MeasureTheory.VectorMeasure.ScalarIntegral
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
+import TauCeti.MeasureTheory.Integral.Bochner.RelativelyCompact
 
 /-!
 # Integration against a vector measure with density
@@ -52,6 +54,11 @@ that of `⟪ξ, ψ⟫`.
 * `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ`: the scalar form
   `∫ᵛ x, f x ∂[mul ℝ 𝕜; ν.withDensityᵥ g] = ∫ x, f x * g x ∂ν` for every `f`.
 * `MeasureTheory.withDensityᵥ_of_not_integrable`: the junk value of `ν.withDensityᵥ g`.
+* `MeasureTheory.Integrable.range_withDensityᵥ`: for integrable `g`, the values of
+  `ν.withDensityᵥ g` are exactly the set integrals of `g` over all sets.
+* `MeasureTheory.Measure.totallyBounded_range_withDensityᵥ` and
+  `MeasureTheory.Measure.isCompact_closure_range_withDensityᵥ`: a vector measure with a density
+  has relatively norm compact range.
 * `MeasureTheory.withDensityᵥ_one_apply`, `MeasureTheory.Measure.variation_withDensityᵥ_one` and
   `MeasureTheory.VectorMeasure.integral_mul_withDensityᵥ_one`: a finite positive measure as a
   scalar measure, its values, its variation, and integration against it.
@@ -73,6 +80,7 @@ that of `⟪ξ, ψ⟫`.
 ## References
 
 * W. Rudin, *Real and Complex Analysis*, 3rd ed., McGraw–Hill, 1987, Chapter 6.
+* J. Diestel and J. J. Uhl, *Vector Measures*, Chapter II, §2, for the compactness of the range.
 -/
 
 public section
@@ -87,6 +95,7 @@ variable {X E F G : Type*} [MeasurableSpace X] {ν : Measure X}
   [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- A density that is not integrable against `ν` gives the zero vector measure. -/
+@[simp]
 theorem withDensityᵥ_of_not_integrable {g : X → F} (hg : ¬Integrable g ν) :
     ν.withDensityᵥ g = 0 := by
   rw [Measure.withDensityᵥ, dite_eq_right hg]
@@ -227,6 +236,57 @@ theorem integral_mul_withDensityᵥ {g : X → 𝕜} (hg : Integrable g ν) {f :
   · simp [norm_smul, norm_mul, mul_comm]
 
 end VectorMeasure
+
+section Range
+
+/-! ### The range of a vector measure with density -/
+
+/-- Every value of the vector measure `ν.withDensityᵥ g` is a set integral of `g`. -/
+theorem Measure.range_withDensityᵥ_subset (ν : Measure X) (g : X → F) :
+    Set.range (ν.withDensityᵥ g) ⊆ Set.range fun A : Set X ↦ ∫ x in A, g x ∂ν := by
+  rintro - ⟨A, rfl⟩
+  by_cases hA : MeasurableSet A
+  · by_cases hg : Integrable g ν
+    · exact ⟨A, (withDensityᵥ_apply hg hA).symm⟩
+    · exact ⟨∅, by simp [withDensityᵥ_of_not_integrable hg]⟩
+  · exact ⟨∅, by simp [VectorMeasure.not_measurable _ hA]⟩
+
+/-- For an integrable density `g`, the values of the vector measure `ν.withDensityᵥ g` are exactly
+the set integrals of `g` over all sets, measurable or not. -/
+theorem Integrable.range_withDensityᵥ {g : X → F} (hg : Integrable g ν) :
+    Set.range (ν.withDensityᵥ g) = Set.range fun A : Set X ↦ ∫ x in A, g x ∂ν := by
+  refine (ν.range_withDensityᵥ_subset g).antisymm ?_
+  rintro - ⟨A, rfl⟩
+  -- `g` vanishes off a measurable set `t` on which `ν` is σ-finite, and there `A` may be
+  -- replaced by a measurable hull.
+  set t := hg.aefinStronglyMeasurable.sigmaFiniteSet
+  have ht : MeasurableSet t := hg.aefinStronglyMeasurable.measurableSet
+  have hB : MeasurableSet (toMeasurable (ν.restrict t) A ∩ t) :=
+    (measurableSet_toMeasurable _ _).inter ht
+  refine ⟨toMeasurable (ν.restrict t) A ∩ t, ?_⟩
+  change _ = ∫ x in A, g x ∂ν
+  have hdiff : ∫ x in A \ t, g x ∂ν = 0 := integral_eq_zero_of_ae
+    (ae_mono (Measure.restrict_mono (Set.sdiff_subset_compl A t) le_rfl)
+      hg.aefinStronglyMeasurable.ae_eq_zero_compl)
+  rw [withDensityᵥ_apply hg hB, ← integral_inter_add_sdiff (s := A) ht hg.integrableOn, hdiff,
+    add_zero, ← Measure.restrict_restrict' ht, ← Measure.restrict_restrict' ht,
+    Measure.restrict_toMeasurable_of_sfinite]
+
+/-- The range of the vector measure `ν.withDensityᵥ g` is totally bounded. -/
+theorem Measure.totallyBounded_range_withDensityᵥ (ν : Measure X) (g : X → F) :
+    TotallyBounded (Set.range (ν.withDensityᵥ g)) := by
+  by_cases hg : Integrable g ν
+  · exact hg.range_withDensityᵥ ▸ hg.totallyBounded_range_setIntegral
+  · simp [withDensityᵥ_of_not_integrable hg]
+
+/-- The range of the vector measure `ν.withDensityᵥ g` is relatively compact. -/
+theorem Measure.isCompact_closure_range_withDensityᵥ (ν : Measure X) (g : X → F) :
+    IsCompact (closure (Set.range (ν.withDensityᵥ g))) := by
+  by_cases hg : Integrable g ν
+  · exact hg.range_withDensityᵥ ▸ hg.isCompact_closure_range_setIntegral
+  · simp [withDensityᵥ_of_not_integrable hg]
+
+end Range
 
 variable {𝕜 : Type*} [RCLike 𝕜] [IsFiniteMeasure ν]
 

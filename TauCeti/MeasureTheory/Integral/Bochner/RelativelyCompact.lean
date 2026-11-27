@@ -5,34 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.VectorMeasure.WithDensity
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Function.SimpleFuncDenseLp
-import TauCeti.MeasureTheory.VectorMeasure.WithDensity
 
 /-!
 # Relative compactness of the set integrals of an integrable function
 
 For an integrable function `h : S → E` into a real normed space, the set of its set integrals
-`{∫ s in A, h s ∂μ | A : Set S}` is totally bounded, and hence relatively compact. The same
-therefore holds for the range of the vector measure `μ.withDensityᵥ h`: a vector measure with a
-Bochner-integrable density has relatively norm compact range.
+`{∫ s in A, h s ∂μ | A : Set S}` is totally bounded, and hence relatively compact. The
+consequences for the range of the vector measure `μ.withDensityᵥ h` are in
+`TauCeti.MeasureTheory.VectorMeasure.WithDensity`.
 
-The set integrals of an integrable simple function `∑ⱼ 𝟙_{Bⱼ} xⱼ` lie in the compact image of
-the box `∏ⱼ [0, μ(Bⱼ)]` under `t ↦ ∑ⱼ tⱼ xⱼ`. A general integrable function is approximated in
-`L¹` by such simple functions, and the set integrals move by at most the `L¹` distance.
+Let `g` be an integrable simple function, and let `F` be the finite set of nonzero values in its
+range. Each fiber `g ⁻¹' {y}` with `y ∈ F` has finite measure. The set integrals of `g` lie in the
+compact image of the box `∏_{y ∈ F} [0, μ.real (g ⁻¹' {y})]` under `t ↦ ∑_{y ∈ F} t_y • y`.
+A general integrable function is approximated in `L¹` by such simple functions, and the set
+integrals move by at most the `L¹` distance.
 
 Completeness of `E` is not assumed: without it every Bochner integral vanishes, and all
 statements hold trivially.
 
 ## Main declarations
 
+* `MeasureTheory.SimpleFunc.exists_isCompact_forall_setIntegral_mem`: the set integrals of an
+  integrable simple function lie in a common compact set.
+* `MeasureTheory.edist_setIntegral_le_eLpNorm_sub`: on every set, the set integrals of two
+  integrable functions differ by at most their `L¹` distance.
 * `MeasureTheory.Integrable.totallyBounded_range_setIntegral`: the set integrals of an integrable
   function form a totally bounded set.
 * `MeasureTheory.Integrable.isCompact_closure_range_setIntegral`: they form a relatively compact
   set.
-* `MeasureTheory.Measure.totallyBounded_range_withDensityᵥ`,
-  `MeasureTheory.Measure.isCompact_closure_range_withDensityᵥ`: the same for the range of the
-  vector measure `μ.withDensityᵥ h`.
 
 ## References
 
@@ -49,23 +51,37 @@ namespace MeasureTheory
 variable {S E : Type*} [MeasurableSpace S] [NormedAddCommGroup E] [NormedSpace ℝ E]
   {μ : Measure S} {h : S → E}
 
-/-- The set integrals of an integrable simple function lie in a common compact set: the image of
-the box `∏_{y ≠ 0} [0, μ (g ⁻¹' {y})]` under `t ↦ ∑_y t_y • y`. -/
-private theorem SimpleFunc.exists_isCompact_forall_setIntegral_mem (g : SimpleFunc S E)
+/-- The set integrals of an integrable simple function lie in a common compact set. Writing `F`
+for the finite set of nonzero values in the range of `g`, this is the image of the box
+`∏_{y ∈ F} [0, μ.real (g ⁻¹' {y})]` under `t ↦ ∑_{y ∈ F} t_y • y`. -/
+theorem SimpleFunc.exists_isCompact_forall_setIntegral_mem (g : SimpleFunc S E)
     (hg : Integrable g μ) : ∃ K : Set E, IsCompact K ∧ ∀ A : Set S, ∫ s in A, g s ∂μ ∈ K := by
   classical
   by_cases hE : CompleteSpace E
   swap
-  · exact ⟨{0}, isCompact_singleton, fun A ↦ integral_of_not_completeSpace hE⟩
+  · exact ⟨{0}, isCompact_singleton,
+      fun A ↦ mem_singleton_iff.mpr (integral_of_not_completeSpace hE)⟩
   let F : Finset E := {y ∈ g.range | y ≠ 0}
   refine ⟨(fun t : F → ℝ ↦ ∑ y : F, t y • (y : E)) '' Icc 0 fun y ↦ μ.real (g ⁻¹' {(y : E)}),
     isCompact_Icc.image (by fun_prop), fun A ↦ ⟨fun y ↦ (μ.restrict A).real (g ⁻¹' {(y : E)}),
-    ⟨fun _ ↦ measureReal_nonneg, fun y ↦ ?_⟩, ?_⟩⟩
+    mem_Icc.mpr ⟨fun _ ↦ measureReal_nonneg, fun y ↦ ?_⟩, ?_⟩⟩
   · exact ENNReal.toReal_mono
       (g.measure_preimage_lt_top_of_integrable hg (Finset.mem_filter.1 y.property).2).ne
       (Measure.restrict_apply_le A _)
   · rw [← SimpleFunc.integral_eq_integral g hg.restrict, SimpleFunc.integral_eq_sum_filter]
     exact Finset.sum_coe_sort F fun y ↦ (μ.restrict A).real (g ⁻¹' {y}) • y
+
+/-- On every set `A`, the set integrals of two integrable functions differ by at most the `L¹`
+distance of the functions. -/
+theorem edist_setIntegral_le_eLpNorm_sub {f g : S → E} (hf : Integrable f μ)
+    (hg : Integrable g μ) (A : Set S) :
+    edist (∫ s in A, f s ∂μ) (∫ s in A, g s ∂μ) ≤ eLpNorm (f - g) 1 μ := by
+  calc edist (∫ s in A, f s ∂μ) (∫ s in A, g s ∂μ) ≤ ∫⁻ s in A, edist (f s) (g s) ∂μ :=
+        edist_integral_le_lintegral_edist hf.restrict hg.restrict
+    _ = ∫⁻ s in A, ‖f s - g s‖ₑ ∂μ := by simp_rw [eDist_eq_eNorm_sub]
+    _ ≤ ∫⁻ s, ‖f s - g s‖ₑ ∂μ := setLIntegral_le_lintegral _ _
+    _ = eLpNorm (f - g) 1 μ :=
+        (eLpNorm_one_eq_lintegral_eNorm (hf.sub hg).aestronglyMeasurable).symm
 
 /-- The set integrals `∫ s in A, h s ∂μ` of an integrable function `h`, over all sets `A`, form a
 totally bounded set. -/
@@ -81,18 +97,11 @@ theorem Integrable.totallyBounded_range_setIntegral (hh : Integrable h μ) :
   refine ⟨t, ht, ?_⟩
   rintro - ⟨A, rfl⟩
   obtain ⟨y, hyt, hy⟩ := mem_iUnion₂.1 (hKt (hgK A))
-  refine mem_iUnion₂.2 ⟨y, hyt, ?_⟩
-  have hAg : edist (∫ s in A, h s ∂μ) (∫ s in A, g s ∂μ) < ε / 2 := by
-    rw [eDist_eq_eNorm_sub, ← integral_sub hh.integrableOn hg.integrableOn]
-    calc ‖∫ s in A, h s - g s ∂μ‖ₑ ≤ ∫⁻ s in A, ‖h s - g s‖ₑ ∂μ :=
-          eNorm_integral_le_lintegral_eNorm _
-      _ ≤ ∫⁻ s, ‖h s - g s‖ₑ ∂μ := setLIntegral_le_lintegral _ _
-      _ = eLpNorm (h - ⇑g) 1 μ :=
-          (eLpNorm_one_eq_lintegral_eNorm (hh.sub hg).aestronglyMeasurable).symm
-      _ < ε / 2 := hhg
+  refine mem_iUnion₂.2 ⟨y, hyt, Metric.mem_eball.mpr ?_⟩
   calc edist (∫ s in A, h s ∂μ) y ≤ edist (∫ s in A, h s ∂μ) (∫ s in A, g s ∂μ) + edist _ y :=
         edist_triangle _ _ _
-    _ < ε / 2 + ε / 2 := ENNReal.add_lt_add hAg hy
+    _ < ε / 2 + ε / 2 := ENNReal.add_lt_add
+        ((edist_setIntegral_le_eLpNorm_sub hh hg A).trans_lt hhg) (Metric.mem_eball.mp hy)
     _ = ε := ENNReal.add_halves ε
 
 /-- The set integrals `∫ s in A, h s ∂μ` of an integrable function `h`, over all sets `A`, form a
@@ -102,30 +111,5 @@ theorem Integrable.isCompact_closure_range_setIntegral (hh : Integrable h μ) :
   by_cases hE : CompleteSpace E
   · exact hh.totallyBounded_range_setIntegral.closure.isCompact_of_isClosed isClosed_closure
   · simp [integral_of_not_completeSpace hE]
-
-/-- Every value of the vector measure `μ.withDensityᵥ h` is a set integral of `h`. -/
-theorem Measure.range_withDensityᵥ_subset (μ : Measure S) (h : S → E) :
-    range (μ.withDensityᵥ h) ⊆ range fun A : Set S ↦ ∫ s in A, h s ∂μ := by
-  rintro - ⟨A, rfl⟩
-  by_cases hA : MeasurableSet A
-  · by_cases hh : Integrable h μ
-    · exact ⟨A, (withDensityᵥ_apply hh hA).symm⟩
-    · exact ⟨∅, by simp [withDensityᵥ_of_not_integrable hh]⟩
-  · exact ⟨∅, by simp [VectorMeasure.not_measurable _ hA]⟩
-
-/-- The range of the vector measure `μ.withDensityᵥ h` is totally bounded. -/
-theorem Measure.totallyBounded_range_withDensityᵥ (μ : Measure S) (h : S → E) :
-    TotallyBounded (range (μ.withDensityᵥ h)) := by
-  by_cases hh : Integrable h μ
-  · exact hh.totallyBounded_range_setIntegral.subset (μ.range_withDensityᵥ_subset h)
-  · simp [withDensityᵥ_of_not_integrable hh]
-
-/-- The range of the vector measure `μ.withDensityᵥ h` is relatively compact. -/
-theorem Measure.isCompact_closure_range_withDensityᵥ (μ : Measure S) (h : S → E) :
-    IsCompact (closure (range (μ.withDensityᵥ h))) := by
-  by_cases hh : Integrable h μ
-  · exact hh.isCompact_closure_range_setIntegral.of_isClosed_subset isClosed_closure
-      (closure_mono (μ.range_withDensityᵥ_subset h))
-  · simp [withDensityᵥ_of_not_integrable hh]
 
 end MeasureTheory
