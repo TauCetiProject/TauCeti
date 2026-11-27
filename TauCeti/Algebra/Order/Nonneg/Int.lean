@@ -25,11 +25,11 @@ namespace Nonneg
 def intOrderAddMonoidIsoNat : Nonneg ℤ ≃+o ℕ :=
   let e : ℕ ≃+o Nonneg ℤ :=
     {
-      toFun := fun n ↦ ⟨(n : ℤ), Int.natCast_nonneg n⟩
+      toFun := fun n ↦ (n : Nonneg ℤ)
       invFun := fun n ↦ n.val.toNat
       left_inv := fun n ↦ by simp
       right_inv := fun n ↦ Subtype.ext (Int.toNat_of_nonneg n.property)
-      map_add' := fun _ _ ↦ rfl
+      map_add' := fun a b ↦ Subtype.ext (Nat.cast_add a b)
       map_le_map_iff' := Int.ofNat_le
     }
   e.symm
