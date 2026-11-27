@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita
 import TauCeti.Geometry.Manifold.Riemannian.Immersion.Weingarten
-import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongMap.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.VectorSpace
 import TauCeti.Geometry.Manifold.VectorField.ModelChart
 
@@ -20,7 +19,7 @@ import TauCeti.Geometry.Manifold.VectorField.ModelChart
 Let `F` be a finite-dimensional real inner product space with its flat Levi-Civita connection.
 For a map `f : M → F`, a field `V` along `f` is an `F`-valued map, and its covariant derivative
 along `f` is its ordinary derivative
-(`CovariantDerivative.alongMap_leviCivitaConnection_model_space`), since the Christoffel map of the
+(`TauCeti.Manifold.alongMap_leviCivitaConnection_model_space`), since the Christoffel map of the
 flat metric vanishes. So the second fundamental form of `f` is the
 normal part of the derivative of `y ↦ df_y (Y y)`
 (`TauCeti.immersionSecondFundamentalForm_model_space`).
@@ -40,8 +39,6 @@ vector of two basic examples:
 
 ## Main results
 
-* `CovariantDerivative.alongMap_leviCivitaConnection_model_space`: the covariant derivative along a
-  map into `F` is the derivative.
 * `TauCeti.immersionSecondFundamentalForm_model_space`: `B(X, Y) = (D_X (df Y))^⊥`.
 * `TauCeti.immersionSecondFundamentalFormAt_affine`, `TauCeti.immersionShapeOperatorAt_affine`,
   `TauCeti.immersionPrincipalCurvatures_affine`, `TauCeti.immersionMeanCurvatureVector_affine`:
@@ -68,54 +65,6 @@ noncomputable section
 
 open Bundle Manifold Module Metric
 open scoped InnerProductSpace Manifold ContDiff
-
-namespace TauCeti.Manifold
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-omit [TopologicalSpace M] in
-/-- For a map into the model space `F`, the coordinate reading of a field along the map in any
-tangent trivialization of `F` is the field itself, as an `F`-valued map. -/
-theorem sectionCoord_model_space (f : M → F) (V : Π y, TangentSpace 𝓘(ℝ, F) (f y)) (a : F) :
-    sectionCoord ℝ (F := F) f V a = fun y ↦ (V y : F) := by
-  funext t
-  rw [sectionCoord_apply, TangentBundle.continuousLinearMapAt_model_space]
-  rfl
-
-end TauCeti.Manifold
-
-namespace CovariantDerivative
-
-open TauCeti.Manifold
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-
-/-- **Covariant differentiation along a map into a Euclidean space is differentiation.** For the
-flat Levi-Civita connection of a finite-dimensional inner product space `F`, the covariant
-derivative of a field `V` along a map `f : M → F` is the derivative of `V`, read as an `F`-valued
-map. -/
-theorem alongMap_leviCivitaConnection_model_space {f : M → F}
-    {V : Π y, TangentSpace 𝓘(ℝ, F) (f y)} {x : M}
-    (hf : MDifferentiableAt I 𝓘(ℝ, F) f x)
-    (hV : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ (V y : F)) x) (v : TangentSpace I x) :
-    (leviCivitaConnection 𝓘(ℝ, F) F).alongMap I f V x v =
-      mfderiv I 𝓘(ℝ, F) (fun y ↦ (V y : F)) x v := by
-  have hT : MDifferentiableAt I 𝓘(ℝ, F).tangent
-      (fun y ↦ TotalSpace.mk' F (E := TangentSpace 𝓘(ℝ, F)) (f y) (V y)) x := by
-    rw [mdifferentiableAt_totalSpace]
-    exact ⟨hf, by simpa [trivializationAt_model_space_apply] using hV⟩
-  rw [alongMap_apply_of_mem_baseSet _ hT (FiberBundle.mem_baseSet_trivializationAt' (f x))]
-  simp only [christoffelMap_leviCivita_model_space, TangentBundle.symmL_model_space,
-    sectionCoord_model_space]
-  refine Eq.trans ?_ (mvfderiv_apply_eq_mfderiv_apply (I := I) (fun y ↦ (V y : F)) x v)
-  erw [zero_apply, add_zero]
-  rfl
-
-end CovariantDerivative
 
 namespace TauCeti
 
@@ -148,15 +97,14 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- **An affine map into a Euclidean space has vanishing second fundamental form.** This includes
 affine hyperplanes and affine planes. -/
+@[simp]
 theorem immersionSecondFundamentalFormAt_affine (p : F) (L : E →L[ℝ] F) (x : E) :
     immersionSecondFundamentalFormAt (I := 𝓘(ℝ, E)) (leviCivitaConnection 𝓘(ℝ, F) F)
       (fun y ↦ p + L y) x = 0 := by
   have hf : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, F) 2 (fun y ↦ p + L y) x := by
     rw [contMDiffAt_iff_contDiffAt]; fun_prop
-  have hd (y w : E) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) (fun y ↦ p + L y) y w = L w := by
-    rw [mfderiv_eq_fderiv]
-    simp
-    rfl
+  have hd (y w : E) : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, F) (fun y ↦ p + L y) y w = L w :=
+    DFunLike.congr_fun ((L.hasFDerivAt.const_add p).hasMFDerivAt).mfderiv w
   ext v w
   have hc (u : E) : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ, E).tangent
       (fun z ↦ (⟨z, u⟩ : TangentBundle 𝓘(ℝ, E) E)) x :=
@@ -197,6 +145,7 @@ theorem immersionPrincipalCurvatures_affine (p : F) (L : E →L[ℝ] F) (x : E)
 
 /-- **Affine maps are minimal**: the mean curvature vector of an affine map into a Euclidean space
 vanishes. In particular an affine plane has `H = 0`. -/
+@[simp]
 theorem immersionMeanCurvatureVector_affine (p : F) (L : E →L[ℝ] F) (x : E) :
     immersionMeanCurvatureVector (I := 𝓘(ℝ, E)) (leviCivitaConnection 𝓘(ℝ, F) F)
       (fun y ↦ p + L y) x = 0 :=
@@ -214,10 +163,13 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 omit [FiniteDimensional ℝ E] in
 /-- The normal space of the unit sphere at `x` is the line through `x`. -/
+@[simp]
 theorem orthogonalNormalSpace_subtypeVal_sphere (x : sphere (0 : E) 1) :
     orthogonalNormalSpace (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) x = ℝ ∙ (x : E) := by
   rw [orthogonalNormalSpace_def]
   have h := range_mvfderiv_subtypeVal (n := n) x
+  -- For a map into the vector space `E`, `mfderiv` and `mvfderiv` are the same linear map up to
+  -- the identification `TangentSpace 𝓘(ℝ, E) x = E`; restate the range with `mvfderiv`.
   change (LinearMap.range (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x).toLinearMap)ᗮ = _
   rw [h, Submodule.orthogonal_orthogonal]
 
@@ -247,11 +199,12 @@ private theorem inner_immersionSecondFundamentalForm_subtypeVal_sphere (x : sphe
   have hW := inner_immersionShapeOperator_mfderiv (isMetricCompatible_leviCivitaConnection _)
     (hι x) hν hνn X hdY
   rw [← hW, immersionShapeOperator_def,
-    CovariantDerivative.alongMap_leviCivitaConnection_model_space (hι x) (hι x)]
+    alongMap_leviCivitaConnection_model_space (hι x) (hι x)]
   have hmem : mfderiv (𝓡 n) 𝓘(ℝ, E) ι x (X x) ∈
       LinearMap.range (mfderiv (𝓡 n) 𝓘(ℝ, E) ι x).toLinearMap := LinearMap.mem_range_self _ _
   rw [Submodule.starProjection_eq_self_iff.mpr hmem, inner_neg_left, inner_tangentSpace_sphere,
     mvfderiv_apply_eq_mfderiv_apply, mvfderiv_apply_eq_mfderiv_apply]
+  -- The two sides differ only by unfolding the local name `ι` for the inclusion.
   rfl
 
 /-- The second fundamental form of the unit sphere paired with the outward normal `x`:
@@ -282,9 +235,11 @@ theorem immersionSecondFundamentalFormAt_subtypeVal_sphere (x : sphere (0 : E) 1
   obtain ⟨c, hc⟩ := (Submodule.mem_span_singleton (R := ℝ) (M := E)).mp hmem
   have h := inner_immersionSecondFundamentalFormAt_subtypeVal_sphere x v w
   rw [← hc] at h
+  -- `h` pairs vectors of `TangentSpace 𝓘(ℝ, E) x`; restate it in `E`, which is that space by
+  -- definition, so that the inner product lemmas of `E` apply.
   change ⟪c • (x : E), (x : E)⟫_ℝ = _ at h
-  rw [real_inner_smul_left, real_inner_self_eq_norm_sq] at h
-  rw [norm_eq_of_mem_sphere x, one_pow, mul_one] at h
+  rw [real_inner_smul_left, inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere x),
+    mul_one] at h
   rw [← hc, h]
 
 /-- **The shape operator of the unit sphere** in the direction of a vector `ν` at `x` is
@@ -306,10 +261,8 @@ theorem immersionShapeOperatorAt_subtypeVal_sphere (x : sphere (0 : E) 1)
 theorem immersionShapeOperatorAt_subtypeVal_sphere_self (x : sphere (0 : E) 1) :
     immersionShapeOperatorAt (I := 𝓡 n) (leviCivitaConnection 𝓘(ℝ, E) E)
       ((↑) : sphere (0 : E) 1 → E) x (x : E) = -1 := by
-  refine (immersionShapeOperatorAt_subtypeVal_sphere x (x : E)).trans ?_
-  have h : ⟪(x : E), (x : E)⟫_ℝ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere x, one_pow]
-  rw [h, neg_smul, one_smul]
+  rw [immersionShapeOperatorAt_subtypeVal_sphere x (x : E),
+    inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere x), neg_smul, one_smul]
 
 /-- **The principal curvatures of the unit sphere** in the direction `ν` all equal `-⟪x, ν⟫`. -/
 theorem immersionPrincipalCurvatures_subtypeVal_sphere (x : sphere (0 : E) 1)
@@ -327,22 +280,17 @@ theorem immersionPrincipalCurvatures_subtypeVal_sphere_self (x : sphere (0 : E) 
     (ht : (leviCivitaConnection 𝓘(ℝ, E) E).IsTorsionFree) {m : ℕ}
     (hm : finrank ℝ (EuclideanSpace ℝ (Fin n)) = m) (i : Fin m) :
     immersionPrincipalCurvatures (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x ht hm (x : E) i = -1 := by
-  refine (immersionPrincipalCurvatures_subtypeVal_sphere x ht hm (x : E) i).trans ?_
-  rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere x, one_pow]
+  rw [immersionPrincipalCurvatures_subtypeVal_sphere x ht hm (x : E) i,
+    inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere x)]
 
-/-- **The inward principal curvatures of the unit sphere are all `1`**: in the direction `-ν`
-opposite to the outward normal `ν = x`. -/
+/-- **The inward principal curvatures of the unit sphere are all `1`**: in the direction `-x`
+opposite to the outward normal `x`. -/
 theorem immersionPrincipalCurvatures_subtypeVal_sphere_neg (x : sphere (0 : E) 1)
     (ht : (leviCivitaConnection 𝓘(ℝ, E) E).IsTorsionFree) {m : ℕ}
-    (hm : finrank ℝ (EuclideanSpace ℝ (Fin n)) = m) (ν : TangentSpace 𝓘(ℝ, E) (x : E))
-    (hν : ν = (x : E)) (i : Fin m) :
-    immersionPrincipalCurvatures (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x ht hm (-ν) i = 1 := by
-  subst hν
+    (hm : finrank ℝ (EuclideanSpace ℝ (Fin n)) = m) (i : Fin m) :
+    immersionPrincipalCurvatures (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x ht hm (-(x : E)) i = 1 := by
   refine (immersionPrincipalCurvatures_subtypeVal_sphere x ht hm _ i).trans ?_
-  have h : ⟪(x : E), (x : E)⟫_ℝ = 1 := by
-    rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere x, one_pow]
-  have h' : ⟪(x : E), -(x : E)⟫_ℝ = -1 := by rw [inner_neg_right, h]
-  exact (congrArg Neg.neg h').trans (neg_neg 1)
+  rw [inner_neg_right, inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere x), neg_neg]
 
 /-- In the standard orthonormal basis of `T_xSⁿ`, `∑ᵢ B_x(eᵢ, eᵢ) = -n x`. -/
 private theorem sum_immersionSecondFundamentalFormAt_subtypeVal_sphere (x : sphere (0 : E) 1) :
