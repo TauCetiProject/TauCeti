@@ -8,7 +8,6 @@ module
 import Mathlib.RingTheory.AdjoinRoot
 import Mathlib.RingTheory.PrincipalIdealDomain
 import TauCeti.Algebra.Polynomial.XPow.SubC
-import TauCeti.RingTheory.Length
 import TauCeti.RingTheory.LocalRing.HilbertSamuel
 
 /-!

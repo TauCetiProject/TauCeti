@@ -26,9 +26,11 @@ records that every coordinate variable `X s` is nonzero over a nontrivial semiri
 `MvPowerSeries.mem_support` together with `support_zero`, `support_add`, `support_smul_subset`,
 `support_neg`, and `support_sub` bridges `Function.support` with `MvPowerSeries.coeff` and the
 algebraic operations on `MvPowerSeries`, `MvPowerSeries.coeff_map_mul_mem` shows that left
-multiplication by a scalar power series preserves membership of coefficients in a submodule, and
-`MvPowerSeries.isLocalHom_C` and `MvPowerSeries.isLocalHom_algebraMap` show that the constant-series
-embedding and canonical algebra map from a local base are local homomorphisms.
+multiplication by a scalar power series preserves membership of coefficients in a submodule.
+`MvPowerSeries.isLocalHom_C` shows that the constant-series embedding
+`C : R →+* MvPowerSeries σ R` is a local homomorphism unconditionally, while
+`MvPowerSeries.isLocalHom_algebraMap` shows that the induced algebra map `R →+* MvPowerSeries σ A`
+is local whenever `algebraMap R A` is local.
 -/
 
 public section

@@ -9,22 +9,19 @@ public import Mathlib.RingTheory.AdicCompletion.AsTensorProduct
 public import Mathlib.RingTheory.AdicCompletion.LocalRing
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import TauCeti.RingTheory.AdicCompletion.Noetherian
-public import TauCeti.RingTheory.LocalRing.HilbertSamuel
 public import TauCeti.RingTheory.RegularLocalRing.Flat
 
 import TauCeti.RingTheory.AdicCompletion.Localization
 
 /-!
-# Dimension, regularity, and Hilbert–Samuel functions of the completion of a local ring
+# Dimension and regularity of the completion of a local ring
 
 Let `R` be a Noetherian local ring with maximal ideal `𝔪`, let `I ⊆ 𝔪` be an ideal and let `R̂` be
 the `I`-adic completion of `R`. Then `R̂` is a Noetherian local ring, flat over `R`, with maximal
 ideal `𝔪 R̂` and the same residue field. This file shows that `R̂` has the same Krull dimension as
-`R`, that `R̂` is regular if and only if `R` is, and that for `I = 𝔪`, the `𝔪`-adic completion `R̂`
-has the same intrinsic local quotient Hilbert–Samuel function `Ideal.localQuotientHilbertSamuel`
-at `⊥` as `R`.
-For `I = 𝔪` these, together with Mathlib's `AdicCompletion.spanFinrank_maximalIdeal_eq`, are among
-the invariants of a local ring that are unchanged by completion.
+`R`, and that `R̂` is regular if and only if `R` is. For `I = 𝔪` these, together with Mathlib's
+`AdicCompletion.spanFinrank_maximalIdeal_eq`, are among the invariants of a local ring that are
+unchanged by completion.
 
 Descent of regularity from `R̂` to `R` lets regularity be tested on complete local rings, where the
 Cohen structure theorem presents them as quotients of power series rings over a field or, in mixed
@@ -41,8 +38,6 @@ an open prime `𝔭`, which have the dimension and regularity of `A_𝔭`.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff`: `R̂` is regular if and only if `R` is.
 * `TauCeti.AdicCompletion.isRegularLocalRing_iff_of_isMaximal`: completing a Noetherian ring `R` at
   a maximal ideal `p` is regular if and only if any localization `Rₚ` of `R` at `p` is regular.
-* `TauCeti.localQuotientHilbertSamuel_adicCompletion_bot`: the `𝔪`-adic completion of `R` has the
-  same `Ideal.localQuotientHilbertSamuel` at `⊥` as `R`.
 
 ## References
 
@@ -124,16 +119,3 @@ theorem isRegularLocalRing_iff_of_isMaximal {R : Type*} [CommRing R] [IsNoetheri
     fun _ ↦ .of_ringEquiv (R := AdicCompletion (maximalIdeal Rₚ) Rₚ) e.symm⟩
 
 end TauCeti.AdicCompletion
-
-namespace TauCeti
-
-/-- The `𝔪`-adic completion of a Noetherian local ring `A` has the same Hilbert–Samuel function as
-`A` at `⊥`. -/
-@[simp]
-theorem localQuotientHilbertSamuel_adicCompletion_bot
-    {A : Type*} [CommRing A] [IsLocalRing A] [IsNoetherianRing A] (n : ℕ) :
-    (⊥ : Ideal (AdicCompletion (IsLocalRing.maximalIdeal A) A)).localQuotientHilbertSamuel n =
-      (⊥ : Ideal A).localQuotientHilbertSamuel n := by
-  simpa using Ideal.localQuotientHilbertSamuel_map_algebraMap_adicCompletion (⊥ : Ideal A) n
-
-end TauCeti

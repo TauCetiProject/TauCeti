@@ -5,13 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.AdicCompletion.LocalRing
-public import Mathlib.RingTheory.Flat.Basic
-public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.RingTheory.Length
 
 import Mathlib.RingTheory.TensorProduct.Quotient
-import TauCeti.RingTheory.AdicCompletion.Algebra
 
 /-!
 # The Hilbert–Samuel function of a quotient of a local ring
@@ -46,10 +42,10 @@ hypothesis (`Ideal.localQuotientHilbertSamuel_map_of_flat_of_map_maximalIdeal_eq
 
 The function only sees the jets `A ⧸ 𝔪 ^ (n + 1)` of `A`. A ring homomorphism `A → B` into a local
 ring that induces isomorphisms `A ⧸ 𝔪 ^ (n + 1) ≃ B ⧸ 𝔪_B ^ (n + 1)` therefore carries the function
-of `I` to that of the extended ideal `I B`. In particular a noetherian local ring and its
-`𝔪`-adic completion `Â` have the same Hilbert–Samuel functions: the value at `n` of `I` equals that
-of `I Â`. This links the Hilbert–Samuel function of a local ring to computations in complete local
-rings, such as formal power series rings over a field.
+of `I` to that of the extended ideal `I B` (`Ideal.localQuotientHilbertSamuel_map_of_surjective`),
+which applies in particular to the `𝔪`-adic completion `Â` of a noetherian local ring. This links
+the Hilbert–Samuel function of a local ring to computations in complete local rings, such as formal
+power series rings over a field.
 
 ## Main definitions
 
@@ -71,9 +67,9 @@ rings, such as formal power series rings over a field.
   `Ideal.localQuotientHilbertSamuel_maximalIdeal_pow_succ`, `Ideal.localQuotientHilbertSamuel_succ`:
   monotonicity in `n`, antitonicity in `I`, truncation by powers of `𝔪`, and the one-step
   filtration identity.
-* `Ideal.localQuotientHilbertSamuel_bot_quotient`,
-  `Ideal.localQuotientHilbertSamuel_map_eq_ker_sup_of_surjective`,
+* `Ideal.localQuotientHilbertSamuel_map_eq_ker_sup_of_surjective`,
   `Ideal.localQuotientHilbertSamuel_quotient_map`,
+  `Ideal.localQuotientHilbertSamuel_bot_quotient`,
   `Ideal.localQuotientHilbertSamuel_map_equiv`, `Ideal.localQuotientHilbertSamuel_comap_equiv`,
   `Ideal.localQuotientHilbertSamuel_bot_of_equiv`: compatibility with surjective local ring
   homomorphisms, local quotients `A ⧸ I`, and ring/algebra equivalences.
@@ -83,8 +79,6 @@ rings, such as formal power series rings over a field.
   local extensions with `𝔪_A B = 𝔪_B`.
 * `Ideal.localQuotientHilbertSamuel_map_of_surjective`: a ring homomorphism `A → B` of local rings
   inducing an isomorphism `A ⧸ 𝔪 ^ (n + 1) ≃ B ⧸ 𝔪_B ^ (n + 1)` preserves the value at `n`.
-* `Ideal.localQuotientHilbertSamuel_map_algebraMap_adicCompletion`: completion preserves the
-  Hilbert–Samuel function of every ideal of a noetherian local ring.
 
 ## References
 
@@ -213,16 +207,6 @@ theorem localQuotientHilbertSamuel_succ (I : Ideal A) (n : ℕ) :
       (I ⊔ maximalIdeal A ^ (n + 2)),
     hsup, add_comm]
 
-/-- For a proper ideal `I`, the Hilbert–Samuel function of `I` is that of the local ring
-`A ⧸ I`, measured by lengths over `A ⧸ I`. -/
-@[simp]
-theorem localQuotientHilbertSamuel_bot_quotient (I : Ideal A) [IsLocalRing (A ⧸ I)] (n : ℕ) :
-    (⊥ : Ideal (A ⧸ I)).localQuotientHilbertSamuel n = I.localQuotientHilbertSamuel n := by
-  rw [localQuotientHilbertSamuel_bot,
-    ← map_maximalIdeal_of_surjective (Quotient.mk I) Quotient.mk_surjective, ← Ideal.map_pow,
-    length_quotient_map_of_surjective _ Quotient.mk_surjective, mk_ker, sup_comm,
-    localQuotientHilbertSamuel_def]
-
 /-- Along any surjective homomorphism `f : A → B` between local rings, computing
 `localQuotientHilbertSamuel` on `B` at `I.map f` agrees with computing it on `A` at
 `RingHom.ker f ⊔ I`. -/
@@ -245,6 +229,14 @@ theorem localQuotientHilbertSamuel_quotient_map (I J : Ideal A) [IsLocalRing (A 
     (J.map (Quotient.mk I)).localQuotientHilbertSamuel n =
       (I ⊔ J).localQuotientHilbertSamuel n := by
   rw [localQuotientHilbertSamuel_map_eq_ker_sup_of_surjective Quotient.mk_surjective, mk_ker]
+
+/-- For a proper ideal `I`, the Hilbert–Samuel function of `I` is that of the local ring
+`A ⧸ I`, measured by lengths over `A ⧸ I`. -/
+@[simp]
+theorem localQuotientHilbertSamuel_bot_quotient (I : Ideal A) [IsLocalRing (A ⧸ I)] (n : ℕ) :
+    (⊥ : Ideal (A ⧸ I)).localQuotientHilbertSamuel n = I.localQuotientHilbertSamuel n := by
+  simpa only [Ideal.map_bot, sup_bot_eq] using
+    localQuotientHilbertSamuel_quotient_map I (⊥ : Ideal A) n
 
 /-- Any ring or algebra equivalence `e : A ≃ B` between local rings preserves
 `localQuotientHilbertSamuel` under `Ideal.map e`. -/
@@ -291,24 +283,6 @@ theorem localQuotientHilbertSamuel_map_of_surjective {B : Type*} [CommRing B] [I
     ← mk_ker (I := maximalIdeal B ^ (n + 1)),
     ← length_quotient_map_of_surjective _ Quotient.mk_surjective, map_map,
     length_quotient_map_of_surjective _ hf, hker']
-
-/-- **Completion preserves the Hilbert–Samuel function.** For an ideal `I` of a noetherian local
-ring `A` with `𝔪`-adic completion `Â`, the Hilbert–Samuel function of the extended ideal `I Â`
-agrees with that of `I`: both measure `A ⧸ (I + 𝔪 ^ (n + 1)) ≃ Â ⧸ (I Â + 𝔪_Â ^ (n + 1))`. -/
-@[simp]
-theorem localQuotientHilbertSamuel_map_algebraMap_adicCompletion [IsNoetherianRing A]
-    (I : Ideal A) (n : ℕ) :
-    (I.map (algebraMap A (AdicCompletion (maximalIdeal A) A))).localQuotientHilbertSamuel n =
-      I.localQuotientHilbertSamuel n := by
-  have fg := (maximalIdeal A).fg_of_isNoetherianRing
-  refine localQuotientHilbertSamuel_map_of_surjective _ (fun x ↦ ?_) ?_ I
-  · obtain ⟨x, rfl⟩ := Quotient.mk_surjective x
-    obtain ⟨y, hy⟩ := AdicCompletion.exists_sub_algebraMap_mem_map_pow fg (n + 1) x
-    rw [Ideal.map_pow, ← AdicCompletion.maximalIdeal_eq_map] at hy
-    exact ⟨y, (Quotient.eq.mpr hy).symm⟩
-  · ext a
-    rw [mem_comap, AdicCompletion.maximalIdeal_eq_map, ← Ideal.map_pow,
-      AdicCompletion.algebraMap_mem_map_pow_iff]
 
 end Basic
 

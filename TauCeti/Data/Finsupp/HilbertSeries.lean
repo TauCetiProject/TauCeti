@@ -63,7 +63,7 @@ variable {ι : Type*} [Fintype ι] (R : Type*) [CommRing R]
 theorem mk_ncard_setOf_degree_eq_invOneSubPow :
     PowerSeries.mk (fun n ↦ ({c : ι →₀ ℕ | c.degree = n}.ncard : R)) =
       invOneSubPow R (Fintype.card ι) := by
-  simp_rw [ncard_setOf_degree_eq]
+  simp_rw [← Nat.card_coe_set_eq, Set.coe_ofPred, natCard_degree_eq, Nat.card_eq_fintype_card]
   exact mk_multichoose_eq_invOneSubPow R _
 
 /-- The series counting the exponents `c ≥ m` by total degree is `T^(deg m) (1 - T)⁻ᵈ`, where
