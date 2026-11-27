@@ -140,6 +140,7 @@ theorem Bundle.Pullback.totalSpaceMulAction_proj_smul (hf : ∀ (g : G) (x : B')
 
 /-- The action `Bundle.Pullback.totalSpaceMulAction` on the total space of a pullback bundle fixes
 the lift of each point to the total space of the original bundle. -/
+@[simp]
 theorem Bundle.Pullback.totalSpaceMulAction_lift_smul (hf : ∀ (g : G) (x : B'), f (g • x) = f x)
     (g : G) (z : TotalSpace F (f *ᵖ E)) :
     letI := totalSpaceMulAction (F := F) (E := E) hf
@@ -250,7 +251,8 @@ theorem Bundle.Pullback.totalSpaceMulAction_continuousConstSMul [ContinuousConst
     ContinuousConstSMul G (TotalSpace F (f *ᵖ E)) :=
   letI := totalSpaceMulAction (F := F) (E := E) hf
   ⟨fun g ↦ continuous_iff.2
-    ⟨((continuous_const_smul g).comp (Pullback.continuous_proj F E f) :),
+    ⟨((continuous_const_smul g).comp (Pullback.continuous_proj F E f)).congr fun z ↦
+        (totalSpaceMulAction_proj_smul hf g z).symm,
       (Pullback.continuous_lift F E f).congr fun z ↦
         (totalSpaceMulAction_lift_smul hf g z).symm⟩⟩
 

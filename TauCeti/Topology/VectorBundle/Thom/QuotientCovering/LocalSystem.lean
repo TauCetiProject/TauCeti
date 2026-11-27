@@ -111,11 +111,16 @@ theorem pullbackThomPairAssociatedLocalSystemIso_hom_app_comp_fiberIso_hom (D : 
   let := pullbackThomPairFstMulAction F E f G
   rw [pullbackThomPairAssociatedLocalSystemIso,
     IsQuotientCoveringMap.associatedLocalSystemBaseChangeIso_hom]
-  exact ((isQuotientCoveringMap_pullbackThomPairMap_fst (f := f) hf hproj
+  refine ((isQuotientCoveringMap_pullbackThomPairMap_fst (f := f) hf hproj
     hlift).associatedLocalSystemMapOver_app_comp_fiberIso_hom k hf (φ := MonoidHom.id G)
     (thomPairProj F ((⇑f) *ᵖ E)) (pullbackThomPairFstMulAction_thomPairProj_smul hproj)
     (thomPairProj F E) (pullbackThomPairMap_fst_comp_thomPairProj F E f)
-    (𝟙 (Rep.res (MonoidHom.id G) D)) e e' he).trans (Category.comp_id _)
+    (𝟙 (Rep.res (MonoidHom.id G) D)) e e' he).trans ?_
+  rw [Rep.hom_id, Representation.IntertwiningMap.toLinearMap_id, ModuleCat.ofHom_id,
+    Category.comp_id]
+  -- `Rep.res (MonoidHom.id G) D` is `D` by definition (`Rep.res_id`); rewriting with it is not
+  -- type correct, since the fibre isomorphism's type depends on the representation.
+  rfl
 
 end QuotientCovering
 
