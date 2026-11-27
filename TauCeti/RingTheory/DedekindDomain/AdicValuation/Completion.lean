@@ -69,7 +69,14 @@ Everything here concerns one completion. The comparison of two completions along
   representative, and `residue_algebraMap_adicCompletionIntegers_surjective` (in the same
   namespace) states that `R` maps onto the residue field of `𝒪_v`;
   `residue_algebraMap_adicCompletionIntegers_eq_iff` (in the same namespace) states that two
-  elements of `R` have the same reduction exactly when their difference lies in `v`.
+  elements of `R` have the same reduction exactly when their difference lies in `v`, and
+  `residue_eq_residue_iff_valued_sub_lt_one` that two elements of `𝒪_v` have the same reduction
+  exactly when their difference has valuation `< 1`.
+* `IsDedekindDomain.HeightOneSpectrum.natCard_residueField_adicCompletionIntegers_eq_absNorm`: the
+  residue field of `𝒪_v` has as many elements as the absolute norm of `v`.
+* `IsDedekindDomain.HeightOneSpectrum.mem_adicCompletionIntegers_of_add_mul_mem`: for an
+  endomorphism `τ` of `K_v` preserving `𝒪_v` and `y ∈ 𝒪_v` with `y − τ y` a unit, if `a + τ a`,
+  `b + τ b` and `a + y b` are integral, then so is `b`.
 * `IsDedekindDomain.HeightOneSpectrum.charP_residueField_adicCompletionIntegers`: when `v`
   contains the prime `p`, the residue field of `𝒪_v` has characteristic `p`.
 * `IsDedekindDomain.HeightOneSpectrum.exists_isUnit_adicCompletionIntegers_of_valuation_eq_one`:
@@ -602,6 +609,13 @@ instance finite_residueField_adicCompletionIntegers [Finite (R ⧸ v.asIdeal)] :
     Finite (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) :=
   Finite.of_equiv _ (v.residueFieldEquivAdicCompletionIntegers (K := K)).toEquiv
 
+/-- The residue field of `𝒪_v` has `Nat.card` the absolute norm of `v`, the order of `R ⧸ v`; both
+sides are `0` when the residue field is infinite. -/
+theorem natCard_residueField_adicCompletionIntegers_eq_absNorm :
+    Nat.card (IsLocalRing.ResidueField (v.adicCompletionIntegers K)) = Ideal.absNorm v.asIdeal := by
+  rw [Ideal.absNorm_of_ne_bot v.ne_bot, Submodule.cardQuot_apply]
+  exact Nat.card_congr (v.residueFieldEquivAdicCompletionIntegers (K := K)).symm.toEquiv
+
 /-- **The residue-field equivalence on a quotient representative.** This is the characterization
 consumers should use; the equivalence's construction as an `Ideal.quotientMap` is an implementation
 detail and should not be unfolded. -/
@@ -643,6 +657,42 @@ theorem residue_algebraMap_adicCompletionIntegers_eq_iff {x y : R} :
       x - y ∈ v.asIdeal := by
   rw [← v.under_maximalIdeal_adicCompletionIntegers (K := K), Ideal.under_def, Ideal.mem_comap,
     map_sub, ← IsLocalRing.residue_eq_zero_iff, map_sub, sub_eq_zero]
+
+variable {v} in
+/-- Two elements of `𝒪_v` have the same reduction in its residue field exactly when their
+difference has valuation `< 1`. -/
+theorem residue_eq_residue_iff_valued_sub_lt_one {x y : v.adicCompletionIntegers K} :
+    IsLocalRing.residue _ x = IsLocalRing.residue _ y ↔
+      Valued.v ((x : v.adicCompletion K) - y) < 1 := by
+  rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff]
+  -- `𝒪_v` is by definition `Valued.v.valuationSubring`, which is what lets
+  -- `Valuation.mem_maximalIdeal_iff` apply here.
+  exact Valuation.mem_maximalIdeal_iff _ _
+
+variable {v} in
+/-- **Integrality from a twisted sum.** Let `τ` be a ring endomorphism of `K_v` mapping `𝒪_v` into
+itself, and `y ∈ 𝒪_v` with `y − τ y` a unit of `𝒪_v`. If `a + τ a`, `b + τ b` and `a + y b` lie in
+`𝒪_v`, then so does `b`: applying `τ` to `a + y b` shows that `a + (τ y) b ∈ 𝒪_v`, so
+`(y − τ y) b ∈ 𝒪_v`. -/
+theorem mem_adicCompletionIntegers_of_add_mul_mem
+    {τ : v.adicCompletion K →+* v.adicCompletion K}
+    (hτ : ∀ x ∈ v.adicCompletionIntegers K, τ x ∈ v.adicCompletionIntegers K)
+    {y a b : v.adicCompletion K} (hy : y ∈ v.adicCompletionIntegers K)
+    (hyτ : Valued.v (y - τ y) = 1) (ha : a + τ a ∈ v.adicCompletionIntegers K)
+    (hb : b + τ b ∈ v.adicCompletionIntegers K) (hab : a + y * b ∈ v.adicCompletionIntegers K) :
+    b ∈ v.adicCompletionIntegers K := by
+  have h₁ : a + τ y * b ∈ v.adicCompletionIntegers K := by
+    have e : a + τ y * b = (a + τ a) + τ y * (b + τ b) - τ (a + y * b) := by
+      rw [map_add, map_mul]
+      ring
+    rw [e]
+    exact sub_mem (add_mem ha (mul_mem (hτ y hy) hb)) (hτ _ hab)
+  have h₂ : (y - τ y) * b ∈ v.adicCompletionIntegers K := by
+    have e : (y - τ y) * b = (a + y * b) - (a + τ y * b) := by ring
+    rw [e]
+    exact sub_mem hab h₁
+  rw [mem_adicCompletionIntegers, map_mul, hyτ, one_mul] at h₂
+  exact (mem_adicCompletionIntegers _ _ _).2 h₂
 
 end SingleCompletion
 

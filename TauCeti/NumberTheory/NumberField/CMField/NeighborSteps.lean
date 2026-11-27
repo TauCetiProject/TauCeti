@@ -10,13 +10,13 @@ public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import Mathlib.SetTheory.Cardinal.Order
 public import TauCeti.NumberTheory.NumberField.CMField.AdelicLattice
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Place
-import Mathlib.LinearAlgebra.Projectivization.Cardinality
+import TauCeti.Algebra.Order.GroupWithZero.WithZeroInt
+import TauCeti.LinearAlgebra.Projectivization.Cardinality
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.ResidueDegree
 import TauCeti.NumberTheory.NumberField.CMField.Basic
 import TauCeti.NumberTheory.NumberField.RingOfIntegers.Transport
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Transport
-import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Neighbour residues, step weights and place signs of a CM field
@@ -40,15 +40,18 @@ choice of `ϖ` is an explicit argument. The *step weight* `s_{n,M}(w) = #{steps 
 neighbours whose coefficients have size `[L : L ∩ γ⁻¹L]^{−M/2}`.
 
 The residues are few. At a split place `w`, a finite adele `s` supported at `w` and its conjugate
-live at different places, so `s` is integral and `R_w = {0}`. At a place `w = conj w`, an integer
-`y` of `E` with `y − conj y ∉ w` makes
+live at different places, so `s` is integral and, for `ϖ` in the maximal ideal, `R_w = {0}`. At a
+place `w = conj w`, for a uniformiser `ϖ`, an integer `y` of `E` with `y − conj y ∉ w` makes
 `(r, r′) ↦ r + y r′` injective on `R_w × R_w`, so `(#R_w)² ≤ q_w`. With at most `q_w^n/(q_w − 1)`
-lines in `k_w^n`, this gives, for `2n < M`, `s_{n,M}(w) ≤ 1/(q_w − 1)`, and
+lines in `k_w^n`, this gives, for `2n < M` and such `ϖ` and `y`, `s_{n,M}(w) ≤ 1/(q_w − 1)`, and
 `s_{n,M}(w) ≤ 1/((q_w − 1)√q_w)` at a split place. If `E` contains roots of `X² + X + 1` and
-`X² + 1`, then `q_w ≥ 4` (`IsDedekindDomain.HeightOneSpectrum.four_le_absNorm`), and the weights
-of a place and of its conjugate add up to at most `1/3`. A place `w = conj w` has residue degree
-at least two over `ℚ`, because conjugation acts nontrivially on its residue field; so the step
-weights are summable over all finite places.
+`X² + 1`, then `q_w ≥ 4` (`IsDedekindDomain.HeightOneSpectrum.four_le_absNorm`), such a `y` exists
+at every place, and for uniformisers the weights of a place and of its conjugate add up to at most
+`1/3`. A place `w = conj w` with `y − conj y ∉ w` for some integer `y` has residue degree at least
+two over `ℚ`, because conjugation then acts nontrivially on its residue field (at a place ramified
+in `E / E⁺` there is no such `y`, and the residue degree can be one). As an integer `y ≠ conj y`
+exists and the nonzero `y − conj y` lies in only finitely many places, for `2n < M` and
+uniformisers `ϖ_w` the step weights are summable over all finite places.
 
 A fixed well-ordering of the finite places (`WellOrderingRel`) defines the *place sign*
 `ε_w = −1` if `w` precedes `conj w` and `ε_w = 1` otherwise
@@ -72,15 +75,17 @@ declaration names refer to it as `conjPlace`.
 ## Main results
 
 * `IsDedekindDomain.HeightOneSpectrum.neighborResidues_eq_singleton_zero`: `R_w = {0}` at a
-  split place.
-* `IsDedekindDomain.HeightOneSpectrum.ncard_neighborResidues_sq_le`: `(#R_w)² ≤ q_w`.
+  split place, for `ϖ` in the maximal ideal.
+* `IsDedekindDomain.HeightOneSpectrum.ncard_neighborResidues_sq_le`: `(#R_w)² ≤ q_w`, for a
+  uniformiser `ϖ` and an integer `y` with `y − conj y ∉ w`.
 * `IsDedekindDomain.HeightOneSpectrum.stepWeight_le`,
-  `IsDedekindDomain.HeightOneSpectrum.stepWeight_le_of_conjPlace_ne`: the bounds `1/(q_w − 1)`
-  and, at a split place, `1/((q_w − 1)√q_w)`, for `2n < M`.
+  `IsDedekindDomain.HeightOneSpectrum.stepWeight_le_of_conjPlace_ne`: the bounds `1/(q_w − 1)`,
+  for a uniformiser `ϖ` and an integer `y` with `y − conj y ∉ w`, and, at a split place for `ϖ` in
+  the maximal ideal, `1/((q_w − 1)√q_w)`; both for `2n < M`.
 * `IsDedekindDomain.HeightOneSpectrum.sum_stepWeight_pair_le`: `s(w) + s(conj w) ≤ 1/3` (one term if
-  `w = conj w`).
+  `w = conj w`), for `2n < M`, uniformisers, and `E` containing roots of `X² + X + 1` and `X² + 1`.
 * `IsDedekindDomain.HeightOneSpectrum.summable_stepWeight`: the step weights are summable over
-  the finite places.
+  the finite places, for `2n < M` and uniformisers `ϖ_w`.
 * `IsDedekindDomain.HeightOneSpectrum.placeSign_of_conjPlace_eq`,
   `IsDedekindDomain.HeightOneSpectrum.placeSign_conjPlace_of_ne`: the two laws of the place signs,
   and `IsDedekindDomain.HeightOneSpectrum.prod_one_sub_placeSign_mul_rpow`: the Euler factor of a
@@ -145,11 +150,6 @@ private theorem conjPlace_conjPlace (w : HeightOneSpectrum (𝓞 E)) :
   convert Iff.rfl using 2
   ext
   simp [AlgEquiv.eq_symm_apply]
-
-/-- The conjugate place has the same absolute norm. -/
-private theorem absNorm_conjPlace (w : HeightOneSpectrum (𝓞 E)) :
-    Ideal.absNorm (conjPlace w).asIdeal = Ideal.absNorm w.asIdeal := by
-  rw [asIdeal_equivOfRingEquiv, Ideal.absNorm_map_of_ringEquiv]
 
 /-- The component of `conj a` at a place `w'` with `|conj x|_{w'} = |x|_w` is the image of `a_w`
 under the isomorphism `E_w ≃ E_{w'}` extending complex conjugation. -/
@@ -286,32 +286,6 @@ section Residues
 
 variable {w}
 
-omit [IsCMField E] in
-/-- Two elements of `O_w` have the same residue exactly when their difference has valuation
-`< 1`. -/
-private theorem residue_eq_residue_iff_valued_sub_lt_one {x x' : w.adicCompletionIntegers E} :
-    IsLocalRing.residue _ x = IsLocalRing.residue _ x' ↔
-      Valued.v ((x : w.adicCompletion E) - x') < 1 :=
-  TauCeti.residue_eq_residue_iff.trans (Valuation.mem_maximalIdeal_iff _ _)
-
-omit [IsCMField E] in
-/-- If `|ϖ| = exp (-1)` and `|ϖ z| < 1`, then `|z| ≤ 1`. -/
-private theorem valued_le_one_of_valued_mul_lt_one {ϖ z : w.adicCompletion E}
-    (hϖ : Valued.v ϖ = exp (-1)) (h : Valued.v (ϖ * z) < 1) : Valued.v z ≤ 1 := by
-  rw [map_mul, hϖ] at h
-  rcases eq_or_ne (Valued.v z) 0 with h0 | h0
-  · simp [h0]
-  · rw [← exp_log h0, ← exp_add, ← exp_zero, exp_lt_exp] at h
-    rw [← exp_log h0, ← exp_zero, exp_le_exp]
-    omega
-
-omit [IsCMField E] in
-/-- If `|ϖ| < 1` and `|z| ≤ 1`, then `|ϖ z| < 1`. -/
-private theorem valued_mul_lt_one {ϖ z : w.adicCompletion E} (hϖ : Valued.v ϖ < 1)
-    (hz : Valued.v z ≤ 1) : Valued.v (ϖ * z) < 1 := by
-  rw [map_mul]
-  exact mul_lt_one_of_lt_of_le hϖ hz
-
 /-- **At a split place, the only residue is `0`.** If `conj w ≠ w` and `ϖ` lies in the maximal
 ideal, then `R_w = {0}`: a finite adele `s` supported at `w` with `s + conj s ∈ Ô` is integral,
 because `conj s` is supported at `conj w`. -/
@@ -320,35 +294,9 @@ theorem neighborResidues_eq_singleton_zero (h : conjPlace w ≠ w) {ϖ : w.adicC
   refine Set.eq_singleton_iff_unique_mem.2 ⟨zero_mem_neighborResidues w ϖ, ?_⟩
   rintro r ⟨t, ht, hs, rfl⟩
   rw [IsLocalRing.residue_eq_zero_iff]
-  exact (Valuation.mem_maximalIdeal_iff _ _).2 <| valued_mul_lt_one hϖ <|
-    (mem_adicCompletionIntegers _ _ _).1 (mem_adicCompletionIntegers_of_conjPlace_ne h hs)
-
-omit [IsCMField E] in
-/-- The algebraic core of the residue count. Let `τ` be an automorphism of `E_w` preserving the
-valuation and `y ∈ O_w` with `y − τ y` a unit of `O_w`. If `a + τ a`, `a′ + τ a′` and `a + y a′`
-lie in `O_w`, then so does `a′`: applying `τ` to `a + y a′` shows that `a + (τ y) a′ ∈ O_w`. -/
-private theorem mem_adicCompletionIntegers_of_add_mul_mem
-    {τ : w.adicCompletion E ≃+* w.adicCompletion E} (hτ : ∀ x, Valued.v (τ x) = Valued.v x)
-    {y a a' : w.adicCompletion E} (hy : y ∈ w.adicCompletionIntegers E)
-    (hyτ : Valued.v (y - τ y) = 1) (ha : a + τ a ∈ w.adicCompletionIntegers E)
-    (ha' : a' + τ a' ∈ w.adicCompletionIntegers E)
-    (hsum : a + y * a' ∈ w.adicCompletionIntegers E) : a' ∈ w.adicCompletionIntegers E := by
-  have hτO {x : w.adicCompletion E} (hx : x ∈ w.adicCompletionIntegers E) :
-      τ x ∈ w.adicCompletionIntegers E := by
-    rw [mem_adicCompletionIntegers, hτ]
-    exact (mem_adicCompletionIntegers _ _ _).1 hx
-  have h₁ : a + τ y * a' ∈ w.adicCompletionIntegers E := by
-    have e : a + τ y * a' = (a + τ a) + τ y * (a' + τ a') - τ (a + y * a') := by
-      rw [map_add, map_mul]
-      ring
-    rw [e]
-    exact sub_mem (add_mem ha (mul_mem (hτO hy) ha')) (hτO hsum)
-  have h₂ : (y - τ y) * a' ∈ w.adicCompletionIntegers E := by
-    have e : (y - τ y) * a' = (a + y * a') - (a + τ y * a') := by ring
-    rw [e]
-    exact sub_mem hsum h₁
-  rw [mem_adicCompletionIntegers, map_mul, hyτ, one_mul] at h₂
-  exact (mem_adicCompletionIntegers _ _ _).2 h₂
+  exact (Valuation.mem_maximalIdeal_iff _ _).2 <| (map_mul _ _ _).trans_lt <|
+    mul_lt_one_of_lt_of_le hϖ <|
+      (mem_adicCompletionIntegers _ _ _).1 (mem_adicCompletionIntegers_of_conjPlace_ne h hs)
 
 /-- At a place with `conj w = w`, `y − conj y` has valuation `1` in `E_w` when it lies outside
 `w`. -/
@@ -376,17 +324,23 @@ private theorem injOn_neighborResidues_prod (h : conjPlace w = w) {ϖ : w.adicCo
     Set.InjOn (fun r ↦ r.1 + IsLocalRing.residue _ Y * r.2)
       (w.neighborResidues ϖ ×ˢ w.neighborResidues ϖ) := by
   set τ := adicCompletionCongr w w _ (valuation_complexConj_of_conjPlace_eq h)
-  have hτ : ∀ x, Valued.v (τ x) = Valued.v x := valued_adicCompletionCongr _
+  have hτ (x : w.adicCompletion E) (hx : x ∈ w.adicCompletionIntegers E) :
+      τ x ∈ w.adicCompletionIntegers E :=
+    (mem_adicCompletionIntegers _ _ _).2
+      ((valued_adicCompletionCongr _ x).trans_le ((mem_adicCompletionIntegers _ _ _).1 hx))
   rintro ⟨-, -⟩ ⟨⟨t₁, h₁, hs₁, rfl⟩, ⟨t₁', h₁', hs₁', rfl⟩⟩ ⟨-, -⟩
     ⟨⟨t₂, h₂, hs₂, rfl⟩, ⟨t₂', h₂', hs₂', rfl⟩⟩ heq
   simp only [← map_mul, ← map_add] at heq
   rw [residue_eq_residue_iff_valued_sub_lt_one] at heq
   -- `ϖ ((t₁ - t₂) + y (t₁' - t₂'))` lies in the maximal ideal, so its cofactor is integral.
   have hsum : (t₁ - t₂) + (Y : w.adicCompletion E) * (t₁' - t₂') ∈ w.adicCompletionIntegers E := by
-    refine (mem_adicCompletionIntegers _ _ _).2 (valued_le_one_of_valued_mul_lt_one hϖ ?_)
-    convert heq using 2
-    push_cast
-    ring
+    have hle : Valued.v (ϖ * ((t₁ - t₂) + Y * (t₁' - t₂'))) ≤ Valued.v ϖ := by
+      rw [hϖ, ← TauCeti.lt_one_iff_le_exp_neg_one]
+      convert heq using 2
+      push_cast
+      ring
+    rw [map_mul] at hle
+    exact (mem_adicCompletionIntegers _ _ _).2 ((mul_le_iff_le_one_right (hϖ ▸ exp_pos)).1 hle)
   have hconj {t₁ t₂ : w.adicCompletion E}
       (hs₁ : single E w t₁ + finiteAdeleConj E (single E w t₁) ∈ integralAdeles (𝓞 E) E)
       (hs₂ : single E w t₂ + finiteAdeleConj E (single E w t₂) ∈ integralAdeles (𝓞 E) E) :
@@ -399,8 +353,8 @@ private theorem injOn_neighborResidues_prod (h : conjPlace w = w) {ϖ : w.adicCo
   have hYτ : Valued.v ((Y : w.adicCompletion E) - τ Y) = 1 := by
     rw [hY]
     exact valued_sub_adicCompletionCongr_eq_one h hy
-  have ha' := mem_adicCompletionIntegers_of_add_mul_mem hτ Y.property hYτ (hconj hs₁ hs₂)
-    (hconj hs₁' hs₂') hsum
+  have ha' := mem_adicCompletionIntegers_of_add_mul_mem (τ := (τ : _ →+* _)) hτ Y.property hYτ
+    (hconj hs₁ hs₂) (hconj hs₁' hs₂') hsum
   have ha : t₁ - t₂ ∈ w.adicCompletionIntegers E := by
     simpa using sub_mem hsum (mul_mem Y.property ha')
   have hϖ' : Valued.v ϖ < 1 := by
@@ -408,18 +362,10 @@ private theorem injOn_neighborResidues_prod (h : conjPlace w = w) {ϖ : w.adicCo
     decide
   refine Prod.ext (residue_eq_residue_iff_valued_sub_lt_one.2 ?_)
     (residue_eq_residue_iff_valued_sub_lt_one.2 ?_)
-  · rw [← mul_sub]
-    exact valued_mul_lt_one hϖ' ((mem_adicCompletionIntegers _ _ _).1 ha)
-  · rw [← mul_sub]
-    exact valued_mul_lt_one hϖ' ((mem_adicCompletionIntegers _ _ _).1 ha')
-
-omit [IsCMField E] in
-/-- The residue field `k_w` has `q_w` elements. -/
-private theorem natCard_residueField (w : HeightOneSpectrum (𝓞 E)) :
-    Nat.card (IsLocalRing.ResidueField (w.adicCompletionIntegers E)) =
-      Ideal.absNorm w.asIdeal := by
-  rw [Ideal.absNorm_apply, Submodule.cardQuot_apply]
-  exact (Nat.card_congr (w.residueFieldEquivAdicCompletionIntegers (K := E)).toEquiv).symm
+  · rw [← mul_sub, map_mul]
+    exact mul_lt_one_of_lt_of_le hϖ' ((mem_adicCompletionIntegers _ _ _).1 ha)
+  · rw [← mul_sub, map_mul]
+    exact mul_lt_one_of_lt_of_le hϖ' ((mem_adicCompletionIntegers _ _ _).1 ha')
 
 /-- **The number of residues.** For a uniformiser `ϖ` of `E_w` and an integer `y` of `E` with
 `y − conj y ∉ w` (for instance `y − conj y` a unit), `(#R_w)² ≤ q_w`. At a split place
@@ -428,7 +374,8 @@ theorem ncard_neighborResidues_sq_le {ϖ : w.adicCompletion E} (hϖ : Valued.v �
     {y : 𝓞 E} (hy : y - ringOfIntegersComplexConj E y ∉ w.asIdeal) :
     (w.neighborResidues ϖ).ncard ^ 2 ≤ Ideal.absNorm w.asIdeal := by
   by_cases h : conjPlace w = w
-  · rw [sq, ← Set.ncard_prod, ← natCard_residueField, ← Set.ncard_univ]
+  · rw [sq, ← Set.ncard_prod,
+      ← w.natCard_residueField_adicCompletionIntegers_eq_absNorm (K := E), ← Set.ncard_univ]
     exact Set.ncard_le_ncard_of_injOn _ (fun _ _ ↦ Set.mem_univ _)
       (injOn_neighborResidues_prod h hϖ hy
         (Y := ⟨_, coe_mem_adicCompletionIntegers (K := E) w y⟩) rfl)
@@ -469,27 +416,21 @@ end Residues
 section Weights
 
 omit [IsCMField E] in
-/-- There are `P` lines in `k_w^ι` with `P (q_w − 1) ≤ q_w^{#ι}`; both sides are read with
-`Nat.card`, so for an infinite `ι` there are `0` lines. -/
+/-- There are `P` lines in `k_w^ι` with `P (q_w − 1) ≤ q_w^{#ι}`, read in `ℝ`: the bound
+`Projectivization.card_pi_mul_le_pow` for the residue field `k_w`, which has `q_w` elements. -/
 private theorem natCard_projectivization_mul_le (w : HeightOneSpectrum (𝓞 E)) (ι : Type*) :
     (Nat.card (ℙ (IsLocalRing.ResidueField (w.adicCompletionIntegers E))
       (ι → IsLocalRing.ResidueField (w.adicCompletionIntegers E))) : ℝ) *
         ((Ideal.absNorm w.asIdeal : ℝ) - 1) ≤ (Ideal.absNorm w.asIdeal : ℝ) ^ Nat.card ι := by
   set k := IsLocalRing.ResidueField (w.adicCompletionIntegers E)
-  rw [← natCard_residueField w]
+  rw [← w.natCard_residueField_adicCompletionIntegers_eq_absNorm (K := E)]
   have h1 : 1 ≤ Nat.card k := Nat.one_le_iff_ne_zero.2 Nat.card_pos.ne'
-  have hV : Nat.card (ι → k) ≤ Nat.card k ^ Nat.card ι := by
-    rcases finite_or_infinite ι with hι | hι
-    · rw [Nat.card_fun]
-    · rw [Nat.card_eq_zero_of_infinite]
-      exact Nat.zero_le _
-  have h2 : Nat.card (ℙ k (ι → k)) * (Nat.card k - 1) ≤ Nat.card k ^ Nat.card ι :=
-    Projectivization.card k (ι → k) ▸ (Nat.sub_le _ _).trans hV
   calc (Nat.card (ℙ k (ι → k)) : ℝ) * ((Nat.card k : ℝ) - 1)
       = ((Nat.card (ℙ k (ι → k)) * (Nat.card k - 1) : ℕ) : ℝ) := by
         push_cast [Nat.cast_sub h1]
         ring
-    _ ≤ (Nat.card k : ℝ) ^ Nat.card ι := by exact_mod_cast h2
+    _ ≤ (Nat.card k : ℝ) ^ Nat.card ι := by
+        exact_mod_cast Projectivization.card_pi_mul_le_pow k ι
 
 /-- The arithmetic of the step-weight bound: `P (q − 1) ≤ q^n`, `R ≤ √q` and `2n < M` give
 `P R q^{−M/2} ≤ 1/(q − 1)`. -/
@@ -616,27 +557,16 @@ theorem sum_stepWeight_pair_le [DecidableEq (HeightOneSpectrum (𝓞 E))] {M : �
     rw [Finset.sum_pair (Ne.symm h)]
     linarith [hsplit w h (hϖ w (by simp)), hsplit _ hw (hϖ _ (by simp))]
 
-/-- **The step weights are summable.** If `2n < M` (`n = #ι`), the `ϖ u` are uniformisers and
-`E` has an integer `y` with `y − conj y` a unit, then `∑_w s(w) < ∞` over the finite places of `E`:
-`s(w) ≤ 2 q_w^{−3/2}` at a split place, and a place with `conj w = w` has residue degree at least
-two, where `s(w) ≤ 2 q_w^{−1}`. -/
-theorem summable_stepWeight {M : ℕ} (hM : 2 * Nat.card ι < M)
-    {ϖ : (u : HeightOneSpectrum (𝓞 E)) → u.adicCompletion E}
-    (hϖ : ∀ u, Valued.v (ϖ u) = exp (-1)) {y : 𝓞 E}
-    (hy : IsUnit (y - ringOfIntegersComplexConj E y)) :
-    Summable fun u : HeightOneSpectrum (𝓞 E) ↦ u.stepWeight ι M (ϖ u) := by
-  have hy' (u : HeightOneSpectrum (𝓞 E)) : y - ringOfIntegersComplexConj E y ∉ u.asIdeal :=
-    fun hmem ↦ u.isPrime.ne_top (Ideal.eq_top_of_isUnit_mem _ hmem hy)
-  have h₁ : Summable fun u : HeightOneSpectrum (𝓞 E) ↦
-      (Ideal.absNorm u.asIdeal : ℝ) ^ (-(3 / 2 : ℝ)) :=
-    summable_of_sum_le (fun _ ↦ by positivity)
-      (TauCeti.sum_absNorm_rpow_le_finrank_mul_tsum (by norm_num))
-  have h₂ : Summable ((TauCeti.higherDegreePrimes E).indicator
-      fun u : HeightOneSpectrum (𝓞 E) ↦ (Ideal.absNorm u.asIdeal : ℝ) ^ (-(1 : ℝ))) :=
-    summable_subtype_iff_indicator.1
-      (TauCeti.summable_absNorm_rpow_higherDegreePrimes (by norm_num))
-  refine Summable.of_nonneg_of_le (fun u ↦ stepWeight_nonneg u ι M (ϖ u)) (fun u ↦ ?_)
-    ((h₁.add h₂).mul_left 2)
+/-- The step weight at a place `u` with `y − conj y ∉ u`, for `2n < M` (`n = #ι`) and a uniformiser
+`ϖ`, is at most `2 q_u^{−3/2}`, plus `2 q_u^{−1}` if `u` has residue degree at least two:
+`s(u) ≤ 2 q_u^{−3/2}` at a split place, and a place with `conj u = u` has residue degree at least
+two, where `s(u) ≤ 2 q_u^{−1}`. -/
+private theorem stepWeight_le_two_mul {M : ℕ} (hM : 2 * Nat.card ι < M)
+    {u : HeightOneSpectrum (𝓞 E)} {ϖ : u.adicCompletion E} (hϖ : Valued.v ϖ = exp (-1))
+    {y : 𝓞 E} (hy : y - ringOfIntegersComplexConj E y ∉ u.asIdeal) :
+    u.stepWeight ι M ϖ ≤ 2 * ((Ideal.absNorm u.asIdeal : ℝ) ^ (-(3 / 2 : ℝ)) +
+      (TauCeti.higherDegreePrimes E).indicator
+        (fun u : HeightOneSpectrum (𝓞 E) ↦ (Ideal.absNorm u.asIdeal : ℝ) ^ (-(1 : ℝ))) u) := by
   set q : ℝ := (Ideal.absNorm u.asIdeal : ℝ) with hq_def
   have hq : 2 ≤ q := by
     rw [hq_def]
@@ -650,20 +580,47 @@ theorem summable_stepWeight {M : ℕ} (hM : 2 * Nat.card ι < M)
       (by norm_num), one_div]
     norm_num
   by_cases hu : conjPlace u = u
-  · rw [Set.indicator_of_mem (mem_higherDegreePrimes_of_conjPlace_eq hu (hy' u)),
-      Real.rpow_neg_one]
-    refine (stepWeight_le ι hM (hϖ u) (hy' u)).trans ?_
+  · rw [Set.indicator_of_mem (mem_higherDegreePrimes_of_conjPlace_eq hu hy), Real.rpow_neg_one]
+    refine (stepWeight_le ι hM hϖ hy).trans ?_
     have : 1 / (q - 1) ≤ 2 * q⁻¹ := by
       rw [div_le_iff₀ (by linarith)]
       field_simp
       linarith
     have : 0 ≤ q ^ (-(3 / 2 : ℝ)) := by positivity
     linarith
-  · refine (stepWeight_le_of_conjPlace_ne ι hu hM (by rw [hϖ u]; decide)).trans ?_
+  · refine (stepWeight_le_of_conjPlace_ne ι hu hM (by rw [hϖ]; decide)).trans ?_
     have : 1 / ((q - 1) * √q) ≤ 2 * q ^ (-(3 / 2 : ℝ)) := by
       rw [hq32, mul_one_div, div_le_div_iff₀ (mul_pos (by linarith) hsqrt) (by positivity)]
       nlinarith
     linarith
+
+/-- **The step weights are summable.** If `2n < M` (`n = #ι`) and the `ϖ u` are uniformisers, then
+`∑_w s(w) < ∞` over the finite places of `E`. Fix an integer `y` with `y ≠ conj y`; outside the
+finitely many places containing `y − conj y`, `s(w) ≤ 2 q_w^{−3/2}` at a split place, and a place
+with `conj w = w` has residue degree at least two, where `s(w) ≤ 2 q_w^{−1}`. -/
+theorem summable_stepWeight {M : ℕ} (hM : 2 * Nat.card ι < M)
+    {ϖ : (u : HeightOneSpectrum (𝓞 E)) → u.adicCompletion E}
+    (hϖ : ∀ u, Valued.v (ϖ u) = exp (-1)) :
+    Summable fun u : HeightOneSpectrum (𝓞 E) ↦ u.stepWeight ι M (ϖ u) := by
+  obtain ⟨y, hy⟩ := exists_ringOfIntegersComplexConj_ne (K := E)
+  -- The nonzero integer `y − conj y` lies in only finitely many places.
+  have hfin : {u : HeightOneSpectrum (𝓞 E) |
+      y - ringOfIntegersComplexConj E y ∈ u.asIdeal}.Finite := by
+    have : Ideal.span {y - ringOfIntegersComplexConj E y} ≠ 0 := by
+      simpa [sub_eq_zero] using hy.symm
+    simpa only [← Ideal.dvd_span_singleton] using Ideal.finite_factors this
+  have h₁ : Summable fun u : HeightOneSpectrum (𝓞 E) ↦
+      (Ideal.absNorm u.asIdeal : ℝ) ^ (-(3 / 2 : ℝ)) :=
+    summable_of_sum_le (fun _ ↦ by positivity)
+      (TauCeti.sum_absNorm_rpow_le_finrank_mul_tsum (by norm_num))
+  have h₂ : Summable ((TauCeti.higherDegreePrimes E).indicator
+      fun u : HeightOneSpectrum (𝓞 E) ↦ (Ideal.absNorm u.asIdeal : ℝ) ^ (-(1 : ℝ))) :=
+    summable_subtype_iff_indicator.1
+      (TauCeti.summable_absNorm_rpow_higherDegreePrimes (by norm_num))
+  refine Summable.of_norm_bounded_eventually ((h₁.add h₂).mul_left 2)
+    (Filter.eventually_cofinite.2 (hfin.subset fun u ↦ not_imp_comm.1 fun hyu ↦ ?_))
+  rw [Real.norm_of_nonneg (stepWeight_nonneg u ι M (ϖ u))]
+  exact stepWeight_le_two_mul ι hM (hϖ u) hyu
 
 end Weights
 
@@ -709,7 +666,8 @@ theorem prod_one_sub_placeSign_mul_rpow [DecidableEq (HeightOneSpectrum (𝓞 E)
     ∏ u ∈ {w, conjPlace w}, (1 - u.placeSign * (Ideal.absNorm u.asIdeal : ℝ) ^ (-s)) =
       1 - (Ideal.absNorm w.asIdeal : ℝ) ^ (-(2 * s)) := by
   have e : -(2 * s) = -s * 2 := by ring
-  rw [Finset.prod_pair (Ne.symm h), placeSign_conjPlace_of_ne h, absNorm_conjPlace, e,
+  rw [Finset.prod_pair (Ne.symm h), placeSign_conjPlace_of_ne h, asIdeal_equivOfRingEquiv,
+    Ideal.absNorm_map_of_ringEquiv, e,
     Real.rpow_mul (Nat.cast_nonneg _), Real.rpow_two]
   have := congrArg (Int.cast : ℤ → ℝ) (placeSign_mul_self (w := w))
   push_cast at this ⊢
