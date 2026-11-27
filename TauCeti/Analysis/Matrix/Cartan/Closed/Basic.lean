@@ -71,8 +71,6 @@ subgroup of `GL(2, ℝ)` stable under transpose, which contains no other point o
 * `Subgroup.hermitianLieSubmodule`: the Hermitian part `𝔭_H` of the Lie algebra of `H`, a real
   subspace of the Hermitian matrices, with `Subgroup.mem_hermitianLieSubmodule_iff` describing it
   for closed `H` as the Hermitian `X` with `exp (t X) ∈ H` for every real `t`.
-* `Subgroup.isCompact_unitaryPart`: the unitary part `K_H = Subgroup.unitaryPart H` of a closed `H`
-  is compact.
 * `Subgroup.cartanHomeomorphOfIsClosed`: the homeomorphism `K_H × 𝔭_H ≃ₜ H`,
   `(k, X) ↦ k * exp X`, with `val_cartanHomeomorphOfIsClosed_apply`.
 * `Subgroup.existsUnique_unitary_mul_exp_of_isClosed`: every `g ∈ H` is uniquely `k * exp X` with
@@ -425,11 +423,6 @@ theorem hermitianLieSubmodule_top : (⊤ : Subgroup (GL n 𝕜)).hermitianLieSub
   eq_top_iff.2 fun X _ ↦ (mem_hermitianLieSubmodule_iff isClosed_univ).2 fun t ↦
     ⟨TauCeti.expUnit (t • (X : Matrix n n 𝕜)), mem_top _, TauCeti.expUnit_coe _⟩
 
-/-- The unitary part `K_H` of a closed subgroup `H` of `GL n 𝕜` is compact. -/
-theorem isCompact_unitaryPart (hH : IsClosed (H : Set (GL n 𝕜))) :
-    IsCompact (H.unitaryPart : Set (unitaryGroup n 𝕜)) :=
-  (isClosed_unitaryPart hH).isCompact
-
 /-- For a closed subgroup `H` of `GL n 𝕜` stable under the conjugate transpose and with finitely
 many connected components, the line through a Hermitian `x` with `exp x ∈ H` lies in `H`: the line
 hypothesis of `Subgroup.cartanHomeomorph`. -/
@@ -449,9 +442,39 @@ private def cartanDomainHomeomorph (hH : IsClosed (H : Set (GL n 𝕜))) :
     H.unitaryPart × H.hermitianLieSubmodule ≃ₜ
       {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
         {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H} :=
-  ((Homeomorph.refl _).subtype fun _ ↦ mem_unitaryPart).prodCongr
+  ((Homeomorph.refl _).subtype fun _ ↦ by simp).prodCongr
     ((Homeomorph.refl _).subtype fun _ ↦ mem_hermitianLieSubmodule.trans
       ((H.mem_linearLieSubalgebra_iff hH).trans mem_linearLieAlgebra_iff))
+
+/-- `cartanDomainHomeomorph` keeps the value of the unitary factor. -/
+@[simp]
+private theorem coe_cartanDomainHomeomorph_apply_fst (hH : IsClosed (H : Set (GL n 𝕜)))
+    (p : H.unitaryPart × H.hermitianLieSubmodule) :
+    ((cartanDomainHomeomorph hH p).1 : unitaryGroup n 𝕜) = p.1 := by
+  simp [cartanDomainHomeomorph]
+
+/-- `cartanDomainHomeomorph` keeps the value of the Hermitian factor. -/
+@[simp]
+private theorem coe_cartanDomainHomeomorph_apply_snd (hH : IsClosed (H : Set (GL n 𝕜)))
+    (p : H.unitaryPart × H.hermitianLieSubmodule) :
+    ((cartanDomainHomeomorph hH p).2 : selfAdjoint (Matrix n n 𝕜)) = p.2 := by
+  simp [cartanDomainHomeomorph]
+
+/-- The inverse of `cartanDomainHomeomorph` keeps the value of the unitary factor. -/
+@[simp]
+private theorem coe_cartanDomainHomeomorph_symm_apply_fst (hH : IsClosed (H : Set (GL n 𝕜)))
+    (q : {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
+      {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H}) :
+    (((cartanDomainHomeomorph hH).symm q).1 : unitaryGroup n 𝕜) = q.1 := by
+  simp [cartanDomainHomeomorph]
+
+/-- The inverse of `cartanDomainHomeomorph` keeps the value of the Hermitian factor. -/
+@[simp]
+private theorem coe_cartanDomainHomeomorph_symm_apply_snd (hH : IsClosed (H : Set (GL n 𝕜)))
+    (q : {k : unitaryGroup n 𝕜 // Unitary.toUnits k ∈ H} ×
+      {x : selfAdjoint (Matrix n n 𝕜) // ∀ t : ℝ, TauCeti.expUnit (t • (x : Matrix n n 𝕜)) ∈ H}) :
+    (((cartanDomainHomeomorph hH).symm q).2 : selfAdjoint (Matrix n n 𝕜)) = q.2 := by
+  simp [cartanDomainHomeomorph]
 
 variable (H) in
 /-- **The Cartan decomposition of a closed matrix group stable under the conjugate transpose.**
@@ -479,10 +502,7 @@ theorem val_cartanHomeomorphOfIsClosed_apply (hH : IsClosed (H : Set (GL n 𝕜)
     ((H.cartanHomeomorphOfIsClosed hH hstar hfin p : GL n 𝕜) : Matrix n n 𝕜) =
       ((p.1 : unitaryGroup n 𝕜) : Matrix n n 𝕜) *
         NormedSpace.exp ((p.2 : selfAdjoint (Matrix n n 𝕜)) : Matrix n n 𝕜) := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.trans_apply, Subgroup.val_cartanHomeomorph_apply,
-    cartanDomainHomeomorph, Homeomorph.coe_prodCongr, Prod.map_fst, Prod.map_snd]
-  -- Both subtype homeomorphisms only change membership proofs, not values.
-  rfl
+  simp [cartanHomeomorphOfIsClosed]
 
 /-- The unitary factor of the Cartan decomposition of `g ∈ H` is the polar unitary factor of
 `g`. -/
@@ -491,12 +511,7 @@ theorem coe_cartanHomeomorphOfIsClosed_symm_apply_fst (hH : IsClosed (H : Set (G
     (hstar : ∀ g ∈ H, star g ∈ H) (hfin : Finite (ConnectedComponents H)) (g : H) :
     (((H.cartanHomeomorphOfIsClosed hH hstar hfin).symm g).1 : unitaryGroup n 𝕜) =
       (g : GL n 𝕜).polarUnitary := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply, cartanDomainHomeomorph,
-    Homeomorph.prodCongr_symm, Homeomorph.coe_prodCongr, Prod.map_fst]
-  -- The inverse of the unitary subtype homeomorphism keeps the value.
-  refine (Homeomorph.subtype_symm_apply_coe _ _ _).trans ?_
-  rw [Homeomorph.refl_symm, Homeomorph.refl_apply]
-  exact Subgroup.coe_cartanHomeomorph_symm_apply_fst _ _ g
+  simp [cartanHomeomorphOfIsClosed]
 
 /-- The Hermitian factor of the Cartan decomposition of `g ∈ H` is the logarithm of `√(gᴴ g)`. -/
 @[simp]
@@ -505,12 +520,7 @@ theorem coe_cartanHomeomorphOfIsClosed_symm_apply_snd (hH : IsClosed (H : Set (G
     ((((H.cartanHomeomorphOfIsClosed hH hstar hfin).symm g).2 : selfAdjoint (Matrix n n 𝕜)) :
         Matrix n n 𝕜) =
       cfc Real.log (CFC.sqrt (star ((g : GL n 𝕜) : Matrix n n 𝕜) * (g : GL n 𝕜))) := by
-  rw [cartanHomeomorphOfIsClosed, Homeomorph.symm_trans_apply, cartanDomainHomeomorph,
-    Homeomorph.prodCongr_symm, Homeomorph.coe_prodCongr, Prod.map_snd]
-  -- The inverse of the Hermitian subtype homeomorphism keeps the value.
-  refine (congrArg Subtype.val (Homeomorph.subtype_symm_apply_coe _ _ _)).trans ?_
-  rw [Homeomorph.refl_symm, Homeomorph.refl_apply, ← CFC.log]
-  exact Subgroup.coe_cartanHomeomorph_symm_apply_snd _ _ g
+  simp [cartanHomeomorphOfIsClosed, CFC.log]
 
 /-- **The global Cartan decomposition** `H = K_H exp 𝔭_H` of a closed subgroup `H` of `GL n 𝕜`
 stable under the conjugate transpose, with finitely many connected components: every `g ∈ H`

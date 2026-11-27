@@ -6,24 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Module
-public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.RingTheory.Noetherian.Basic
 
 /-!
-# Finite dimension of the self-adjoint part
+# Finiteness of the self-adjoint part
 
-The self-adjoint elements of a finite-dimensional star module over a division ring with trivial
-star form a finite-dimensional module, for instance the Hermitian matrices over `ℝ`.
+The self-adjoint elements of a finite star module over a Noetherian ring with trivial star form a
+finite module. Over a field this says they are finite-dimensional, for instance the Hermitian
+matrices over `ℝ`.
 
 ## Main declarations
 
-* `selfAdjoint.instFiniteDimensional`: `selfAdjoint A` is finite-dimensional when `A` is.
+* `selfAdjoint.instModuleFinite`: `selfAdjoint A` is a finite module when `A` is.
 -/
 
 public section
 
-/-- The self-adjoint elements of a finite-dimensional star module form a finite-dimensional
-module: they are the submodule `selfAdjoint.submodule R A`. -/
-instance selfAdjoint.instFiniteDimensional {R A : Type*} [DivisionRing R] [StarMul R]
+/-- The self-adjoint elements of a finite star module over a Noetherian ring form a finite module:
+they are the submodule `selfAdjoint.submodule R A` of the Noetherian module `A`. -/
+instance selfAdjoint.instModuleFinite {R A : Type*} [Ring R] [IsNoetherianRing R] [StarMul R]
     [TrivialStar R] [AddCommGroup A] [StarAddMonoid A] [Module R A] [StarModule R A]
-    [FiniteDimensional R A] : FiniteDimensional R (selfAdjoint A) :=
-  inferInstanceAs (FiniteDimensional R (selfAdjoint.submodule R A))
+    [Module.Finite R A] : Module.Finite R (selfAdjoint A) :=
+  inferInstanceAs (Module.Finite R (selfAdjoint.submodule R A))
