@@ -50,6 +50,12 @@ theorem coe_restrictScalars'_symm (e : M ≃L[S] N) :
     ⇑(e.restrictScalars' R).symm = e.symm :=
   (rfl)
 
+/-- As a continuous linear map, `e.restrictScalars' R` is `e` with scalars restricted. -/
+@[simp]
+theorem toContinuousLinearMap_restrictScalars' (e : M ≃L[S] N) :
+    (e.restrictScalars' R : M →L[R] N) = (e : M →L[S] N).restrictScalars R :=
+  (rfl)
+
 @[simp]
 theorem restrictScalars'_symm [LinearMap.CompatibleSMul N M R S] (e : M ≃L[S] N) :
     (e.restrictScalars' R).symm = e.symm.restrictScalars' R :=

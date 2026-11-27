@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
-public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient.Operations
 
 /-!
 # Orbit-quotient descent for pure tensors

@@ -7,20 +7,18 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.LinearAlgebra.Dual.Lemmas
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 public import TauCeti.Topology.VectorBundle.Dual
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
-# Smooth dual evaluation and transpose maps in vector bundles
+# Smooth transpose maps and duality in vector bundles
 
 For a vector bundle `V` over `B`, Mathlib realizes `StrongDual 𝕜 (V x)` as the Hom bundle into
-`Bundle.Trivial B 𝕜`. Thus evaluating a `C^n` covector field on a `C^n` vector field is `C^n`
-(`ContMDiffWithinAt.dual_bundle_apply`), and fibrewise precomposition gives `C^n` regularity of
-fibrewise dual (transpose) maps (`ContMDiffWithinAt.clm_bundle_dual_precomp`). In finite rank over a
-complete field, this upgrades to an equivalence
-(`TauCeti.contMDiffWithinAt_clm_bundle_dual_precomp_iff`,
+`Bundle.Trivial B 𝕜`. Thus fibrewise precomposition gives `C^n` regularity of fibrewise dual
+(transpose) maps (`ContMDiffWithinAt.clm_bundle_dual_precomp`). In finite rank over a complete
+field, this upgrades to an equivalence (`TauCeti.contMDiffWithinAt_clm_bundle_dual_precomp_iff`,
 `TauCeti.contMDiff_clm_bundle_dual_precomp_iff`,
 `TauCeti.contMDiff_totalSpaceMap_dual_precomp_iff`), inducing dual bundle diffeomorphisms
 (`TauCeti.bundleDualDiffeomorph`, `TauCeti.exists_bundleDiffeomorph_dual_precomp_iff`).
@@ -43,46 +41,6 @@ variable {𝕜 EB EM HB HM B M : Type*} [NontriviallyNormedField 𝕜]
   [TopologicalSpace HB] [TopologicalSpace HM] {IB : ModelWithCorners 𝕜 EB HB}
   {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace B] [ChartedSpace HB B]
   [TopologicalSpace M] [ChartedSpace HM M] {n : ℕ∞ω}
-
-section DualApply
-
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {V : B → Type*}
-  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
-  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
-  {b : M → B} {α : ∀ y, StrongDual 𝕜 (V (b y))} {v : ∀ y, V (b y)} {s : Set M} {x : M}
-
-/-- Evaluating a `C^n` dual-bundle section along `b` on a `C^n` section of `V` along `b` gives a
-`C^n` scalar function within `s` at `x`. -/
-theorem ContMDiffWithinAt.dual_bundle_apply
-    (hα : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F)) n (fun y ↦ TotalSpace.mk'
-      (StrongDual 𝕜 F) (E := fun z ↦ StrongDual 𝕜 (V z)) (b y) (α y)) s x)
-    (hv : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F (b y) (v y)) s x) :
-    ContMDiffWithinAt IM 𝓘(𝕜) n (fun y ↦ α y (v y)) s x := by
-  simpa [Trivial.eq_trivialization] using (Bundle.contMDiffWithinAt_totalSpace_iff.1
-    (hα.clm_bundle_apply (F₁ := F) (F₂ := 𝕜) (E₁ := V) (E₂ := Trivial B 𝕜) hv)).2
-
-/-- Evaluating a `C^n` dual-bundle section along `b` on a `C^n` section of `V` at `x` is `C^n`. -/
-theorem ContMDiffAt.dual_bundle_apply
-    (hα : ContMDiffAt IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F)) n (fun y ↦ TotalSpace.mk'
-      (StrongDual 𝕜 F) (E := fun z ↦ StrongDual 𝕜 (V z)) (b y) (α y)) x)
-    (hv : ContMDiffAt IM (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F (b y) (v y)) x) :
-    ContMDiffAt IM 𝓘(𝕜) n (fun y ↦ α y (v y)) x := ContMDiffWithinAt.dual_bundle_apply hα hv
-
-/-- Evaluating a `C^n` dual-bundle section along `b` on a `C^n` section of `V` on `s` is `C^n`. -/
-theorem ContMDiffOn.dual_bundle_apply
-    (hα : ContMDiffOn IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F)) n (fun y ↦ TotalSpace.mk'
-      (StrongDual 𝕜 F) (E := fun z ↦ StrongDual 𝕜 (V z)) (b y) (α y)) s)
-    (hv : ContMDiffOn IM (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F (b y) (v y)) s) :
-    ContMDiffOn IM 𝓘(𝕜) n (fun y ↦ α y (v y)) s := fun y hy ↦ (hα y hy).dual_bundle_apply (hv y hy)
-
-/-- Evaluating a `C^n` dual-bundle section along `b` on a `C^n` section of `V` is `C^n`. -/
-theorem ContMDiff.dual_bundle_apply
-    (hα : ContMDiff IM (IB.prod 𝓘(𝕜, StrongDual 𝕜 F)) n (fun y ↦ TotalSpace.mk'
-      (StrongDual 𝕜 F) (E := fun z ↦ StrongDual 𝕜 (V z)) (b y) (α y)))
-    (hv : ContMDiff IM (IB.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F (b y) (v y))) :
-    ContMDiff IM 𝓘(𝕜) n (fun y ↦ α y (v y)) := fun y ↦ (hα y).dual_bundle_apply (hv y)
-
-end DualApply
 
 section Precomp
 

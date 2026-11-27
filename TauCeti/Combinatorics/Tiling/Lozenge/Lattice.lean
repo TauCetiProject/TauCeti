@@ -47,6 +47,8 @@ the translations by `ℤ²` and the rotation `ρ(x, y) = (-y, x - y)` of order t
   `TriEdge → Bool` (the last one Mathlib's `arrowAddAction`).
 * `TauCeti.latticeRot`, `TauCeti.TriEdge.rot`, `TauCeti.TriFace.rot`: the rotation `ρ` on vertices,
   edges and faces.
+* `TauCeti.edgesOfDir k`: the set of all edges of direction `k`; `ρ` maps it onto
+  `edgesOfDir (k + 1)` (`TauCeti.image_rot_edgesOfDir`).
 
 ## Main statements
 
@@ -628,6 +630,20 @@ theorem orderOf_rot : orderOf rot = 3 := by
   ext <;> simp [rot_apply] <;> split_ifs <;> simp <;> abel
 
 end TriEdge
+
+/-- The set of all edges of direction `k`. -/
+def edgesOfDir (k : Fin 3) : Set TriEdge :=
+  {e | e.k = k}
+
+@[simp] theorem mem_edgesOfDir {k : Fin 3} {e : TriEdge} : e ∈ edgesOfDir k ↔ e.k = k :=
+  Iff.rfl
+
+/-- `ρ` maps the edges of direction `k` onto the edges of direction `k + 1`. -/
+@[simp] theorem image_rot_edgesOfDir (k : Fin 3) :
+    TriEdge.rot '' edgesOfDir k = edgesOfDir (k + 1) := by
+  ext e
+  obtain ⟨e, rfl⟩ := TriEdge.rot.surjective e
+  simp
 
 namespace TriFace
 

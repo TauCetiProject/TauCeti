@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Determinant
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Topology.VectorBundle.Trivialization
 

@@ -15,6 +15,7 @@ public import Mathlib.GroupTheory.GroupAction.Transitive
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Algebra.Group.NormalizerQuotient.Basic
 public import TauCeti.Data.Setoid.Basic
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # Generic orbit-relation quotient helpers
@@ -77,18 +78,12 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   (`TauCeti.MulAction.card_le_card_orbitRelQuotient_closure_of_surjective`).
 * `TauCeti.MulAction.orbitRelQuotientRec`: a `G`-invariant section of the pullback of a family
   `V` over the orbit space descends to a section of `V`, uniquely
-  (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`), every section of `V` is the descent of its
-  pullback (`TauCeti.MulAction.orbitRelQuotientRec_apply_mk`), and descent commutes with unary and
-  binary fibrewise operations (`TauCeti.MulAction.apply_orbitRelQuotientRec`,
-  `TauCeti.MulAction.apply₂_orbitRelQuotientRec`) as well as fibrewise maps into a fixed codomain
-  (`TauCeti.MulAction.apply_orbitRelQuotientRec_eq_orbitRelQuotientLift`,
-  `TauCeti.MulAction.apply₂_orbitRelQuotientRec_eq_orbitRelQuotientLift`).
+  (`TauCeti.MulAction.eq_orbitRelQuotientRec_iff`), and every section of `V` is the descent of its
+  pullback (`TauCeti.MulAction.orbitRelQuotientRec_apply_mk`).
 * `MulActionHom.orbitRelQuotientMap` and `AddActionHom.orbitRelQuotientMap`: an equivariant map
   induces a map of orbit spaces, functorially. An injection induces an injection when the
   acting-group map is surjective; its image consists of the orbits meeting the image upstairs.
-  Both non-dependent and dependent descent are natural along it
-  (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`,
-  `MulActionHom.orbitRelQuotientRec_orbitRelQuotientMap_apply`).
+  Descent is natural along it (`MulActionHom.orbitRelQuotientLift_comp_orbitRelQuotientMap`).
 * `SubMulAction.orbitRelQuotientMap`: for an `H`-invariant subset `S` of `X`, the map
   `S / H → X / G` sending an `H`-orbit to its `G`-orbit; it is injective when `S` is a slice for
   `H`, that is when every element of `G` carrying a point of `S` into `S` lies in `H`
@@ -109,7 +104,14 @@ This file records small generic additions to Mathlib's `MulAction.orbitRel.Quoti
   Mathlib's `equivSubgroupOrbitsQuotientGroup` and its naturality in subgroup inclusions.
 * `MulAction.orbitRel.Quotient.instMulActionQuotientGroup`: for a normal subgroup `H`, the
   quotient group `G ⧸ H` acts on the space of `H`-orbits by translating representatives
-  (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version.
+  (`MulAction.orbitRel.Quotient.mk_smul_mk`), and its additive version;
+  `Subgroup.orbitRelQuotientEquiv` (and `AddSubgroup.orbitRelQuotientEquiv`) identifies the
+  `(G ⧸ N)`-orbits on `N`-orbits with the `G`-orbits, and
+  `Subgroup.stabilizer_quotientGroup_orbitRelQuotient_mk`,
+  `Subgroup.comap_stabilizer_quotientGroup_orbitRelQuotient_mk`, and
+  `Subgroup.card_orbit_quotientGroup_mul_card_orbit_normal` (with their additive versions)
+  compute the stabilizer in `G ⧸ N` of an `N`-orbit, its preimage in `G`, and the orbit-size
+  factorization across `N`.
 * `MulAction.orbitRel.Quotient.instMulActionOfSMulCommClass`: an action commuting with that of
   `K` acts on the space of `K`-orbits by translating representatives
   (`MulAction.orbitRel.Quotient.smul_mk`, `MulAction.orbitRel.Quotient.smul_comp_mk`,
@@ -1037,99 +1039,6 @@ theorem MulAction.orbitRelQuotientRec_apply_mk (s : ∀ q : MulAction.orbitRel.Q
       (MulAction.apply_mk_smul_heq s) = s :=
   (MulAction.eq_orbitRelQuotientRec_iff.2 fun _ ↦ rfl).symm
 
-/-- Applying a fibrewise operation over the orbit space to an invariant pulled-back section yields
-an invariant pulled-back section of the target family. -/
-theorem MulAction.apply_smul_heq {W : MulAction.orbitRel.Quotient G X → Sort*}
-    (F : ∀ q : MulAction.orbitRel.Quotient G X, V q → W q)
-    (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (g : G) (x : X) :
-    F (Quotient.mk (MulAction.orbitRel G X) (g • x)) (t (g • x)) ≍
-      F (Quotient.mk (MulAction.orbitRel G X) x) (t x) := by
-  have aux {q₁ q₂} {v₁ : V q₁} {v₂ : V q₂} (hq : q₁ = q₂) (hv : v₁ ≍ v₂) :
-      F q₁ v₁ ≍ F q₂ v₂ := by subst hq; subst hv; rfl
-  exact aux (Quotient.sound ⟨g, rfl⟩) (ht g x)
-
-/-- **Fibrewise operations commute with quotient descent.** Applying a fibrewise map `F` over the
-orbit space to the descent of `t` is the descent of `x ↦ F [x] (t x)`. -/
-theorem MulAction.apply_orbitRelQuotientRec {W : MulAction.orbitRel.Quotient G X → Sort*}
-    (F : ∀ q : MulAction.orbitRel.Quotient G X, V q → W q)
-    (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (q : MulAction.orbitRel.Quotient G X) :
-    F q (MulAction.orbitRelQuotientRec t ht q) =
-      MulAction.orbitRelQuotientRec (fun x ↦ F (Quotient.mk (MulAction.orbitRel G X) x) (t x))
-        (MulAction.apply_smul_heq F ht) q := by
-  induction q using Quotient.inductionOn; rfl
-
-/-- Applying a fibrewise map into a fixed codomain `Z` to an invariant pulled-back section yields a
-`G`-invariant map into `Z`. -/
-theorem MulAction.apply_smul_eq {Z : Type*} (F : ∀ q : MulAction.orbitRel.Quotient G X, V q → Z)
-    (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (g : G) (x : X) :
-    F (Quotient.mk (MulAction.orbitRel G X) (g • x)) (t (g • x)) =
-      F (Quotient.mk (MulAction.orbitRel G X) x) (t x) :=
-  eq_of_heq (MulAction.apply_smul_heq (W := fun _ ↦ Z) F ht g x)
-
-/-- Evaluating a fibrewise map into a fixed codomain `Z` on a descended section agrees with the
-non-dependent descent `orbitRelQuotientLift` of the upstairs composite. -/
-theorem MulAction.apply_orbitRelQuotientRec_eq_orbitRelQuotientLift {Z : Type*}
-    (F : ∀ q : MulAction.orbitRel.Quotient G X, V q → Z)
-    (ht : ∀ (g : G) (x : X), t (g • x) ≍ t x) (q : MulAction.orbitRel.Quotient G X) :
-    F q (MulAction.orbitRelQuotientRec t ht q) =
-      MulAction.orbitRelQuotientLift (fun x ↦ F (Quotient.mk (MulAction.orbitRel G X) x) (t x))
-        (MulAction.apply_smul_eq F ht) q := by
-  induction q using Quotient.inductionOn; rfl
-
-/-- Applying a binary fibrewise operation over the orbit space to two invariant pulled-back
-sections yields an invariant pulled-back section. -/
-theorem MulAction.apply₂_smul_heq {V₁ V₂ V₃ : MulAction.orbitRel.Quotient G X → Sort*}
-    (B : ∀ q : MulAction.orbitRel.Quotient G X, V₁ q → V₂ q → V₃ q)
-    {t₁ : ∀ x : X, V₁ (Quotient.mk (MulAction.orbitRel G X) x)}
-    {t₂ : ∀ x : X, V₂ (Quotient.mk (MulAction.orbitRel G X) x)}
-    (ht₁ : ∀ (g : G) (x : X), t₁ (g • x) ≍ t₁ x)
-    (ht₂ : ∀ (g : G) (x : X), t₂ (g • x) ≍ t₂ x) (g : G) (x : X) :
-    B (Quotient.mk (MulAction.orbitRel G X) (g • x)) (t₁ (g • x)) (t₂ (g • x)) ≍
-      B (Quotient.mk (MulAction.orbitRel G X) x) (t₁ x) (t₂ x) := by
-  have aux {q₁ q₂} {v₁ : V₁ q₁} {v₂ : V₁ q₂} {w₁ : V₂ q₁} {w₂ : V₂ q₂}
-      (hq : q₁ = q₂) (hv : v₁ ≍ v₂) (hw : w₁ ≍ w₂) : B q₁ v₁ w₁ ≍ B q₂ v₂ w₂ := by
-    subst hq; subst hv; subst hw; rfl
-  exact aux (Quotient.sound ⟨g, rfl⟩) (ht₁ g x) (ht₂ g x)
-
-/-- **Binary fibrewise operations commute with quotient descent.** Applying `B` fibrewise to two
-descended sections is the descent of `x ↦ B [x] (t₁ x) (t₂ x)`. -/
-theorem MulAction.apply₂_orbitRelQuotientRec {V₁ V₂ V₃ : MulAction.orbitRel.Quotient G X → Sort*}
-    (B : ∀ q : MulAction.orbitRel.Quotient G X, V₁ q → V₂ q → V₃ q)
-    {t₁ : ∀ x : X, V₁ (Quotient.mk (MulAction.orbitRel G X) x)}
-    {t₂ : ∀ x : X, V₂ (Quotient.mk (MulAction.orbitRel G X) x)}
-    (ht₁ : ∀ (g : G) (x : X), t₁ (g • x) ≍ t₁ x)
-    (ht₂ : ∀ (g : G) (x : X), t₂ (g • x) ≍ t₂ x) (q : MulAction.orbitRel.Quotient G X) :
-    B q (MulAction.orbitRelQuotientRec t₁ ht₁ q) (MulAction.orbitRelQuotientRec t₂ ht₂ q) =
-      MulAction.orbitRelQuotientRec (fun x ↦ B (Quotient.mk (MulAction.orbitRel G X) x) (t₁ x)
-        (t₂ x)) (MulAction.apply₂_smul_heq B ht₁ ht₂) q := by
-  induction q using Quotient.inductionOn; rfl
-
-/-- Applying a binary fibrewise pairing into a fixed codomain `Z` to two invariant pulled-back
-sections yields a `G`-invariant map into `Z`. -/
-theorem MulAction.apply₂_smul_eq {V₁ V₂ : MulAction.orbitRel.Quotient G X → Sort*} {Z : Type*}
-    (B : ∀ q : MulAction.orbitRel.Quotient G X, V₁ q → V₂ q → Z)
-    {t₁ : ∀ x : X, V₁ (Quotient.mk (MulAction.orbitRel G X) x)}
-    {t₂ : ∀ x : X, V₂ (Quotient.mk (MulAction.orbitRel G X) x)}
-    (ht₁ : ∀ (g : G) (x : X), t₁ (g • x) ≍ t₁ x)
-    (ht₂ : ∀ (g : G) (x : X), t₂ (g • x) ≍ t₂ x) (g : G) (x : X) :
-    B (Quotient.mk (MulAction.orbitRel G X) (g • x)) (t₁ (g • x)) (t₂ (g • x)) =
-      B (Quotient.mk (MulAction.orbitRel G X) x) (t₁ x) (t₂ x) :=
-  eq_of_heq (MulAction.apply₂_smul_heq (V₃ := fun _ ↦ Z) B ht₁ ht₂ g x)
-
-/-- Evaluating a binary fibrewise pairing into a fixed codomain `Z` on two descended sections
-agrees with the non-dependent descent `orbitRelQuotientLift` of the upstairs pairing. -/
-theorem MulAction.apply₂_orbitRelQuotientRec_eq_orbitRelQuotientLift
-    {V₁ V₂ : MulAction.orbitRel.Quotient G X → Sort*} {Z : Type*}
-    (B : ∀ q : MulAction.orbitRel.Quotient G X, V₁ q → V₂ q → Z)
-    {t₁ : ∀ x : X, V₁ (Quotient.mk (MulAction.orbitRel G X) x)}
-    {t₂ : ∀ x : X, V₂ (Quotient.mk (MulAction.orbitRel G X) x)}
-    (ht₁ : ∀ (g : G) (x : X), t₁ (g • x) ≍ t₁ x)
-    (ht₂ : ∀ (g : G) (x : X), t₂ (g • x) ≍ t₂ x) (q : MulAction.orbitRel.Quotient G X) :
-    B q (MulAction.orbitRelQuotientRec t₁ ht₁ q) (MulAction.orbitRelQuotientRec t₂ ht₂ q) =
-      MulAction.orbitRelQuotientLift (fun x ↦ B (Quotient.mk (MulAction.orbitRel G X) x) (t₁ x)
-        (t₂ x)) (MulAction.apply₂_smul_eq B ht₁ ht₂) q := by
-  induction q using Quotient.inductionOn; rfl
-
 end Rec
 
 end TauCeti
@@ -1167,6 +1076,144 @@ instance instMulActionQuotientGroup : MulAction (G ⧸ H) (orbitRel.Quotient H P
     | h p => rw [← QuotientGroup.mk_mul, mk_smul_mk, mk_smul_mk, mk_smul_mk, mul_smul]
 
 end MulAction.orbitRel.Quotient
+
+namespace Subgroup
+
+variable {G X : Type*} [Group G] [MulAction G X]
+
+/-- **Orbits of a quotient group on normal-subgroup orbits.** For a normal subgroup `N` of `G`
+acting on `X`, the `(G ⧸ N)`-orbits on the `N`-orbit space identify with the `G`-orbits on `X`. -/
+@[to_additive
+  /-- **Orbits of a quotient group on normal-subgroup orbits.** For a normal additive subgroup `N`
+  of `G` acting on `X`, the `(G ⧸ N)`-orbits on the `N`-orbit space identify with the `G`-orbits on
+  `X`. -/]
+def orbitRelQuotientEquiv (N : Subgroup G) [N.Normal] :
+    MulAction.orbitRel.Quotient (G ⧸ N) (MulAction.orbitRel.Quotient N X) ≃
+      MulAction.orbitRel.Quotient G X where
+  toFun := Quotient.lift
+    (Quotient.lift (fun x ↦ (Quotient.mk'' x : MulAction.orbitRel.Quotient G X))
+      fun _ _ ⟨n, hn⟩ ↦ Quotient.sound' ⟨(n : G), hn⟩)
+    fun ω₁ ω₂ h ↦ by
+      induction ω₁ using Quotient.inductionOn' with | h x =>
+      induction ω₂ using Quotient.inductionOn' with | h y =>
+      obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
+      induction g using QuotientGroup.induction_on with | H g =>
+      rw [MulAction.orbitRel.Quotient.mk_smul_mk] at hg
+      obtain ⟨n, hn⟩ :=
+        MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp (Quotient.exact' hg))
+      exact Quotient.sound' (MulAction.orbitRel_apply.mpr
+        (MulAction.mem_orbit_iff.mpr ⟨(n : G)⁻¹ * g, by
+          rw [mul_smul, inv_smul_eq_iff, ← Subgroup.smul_def, hn]⟩))
+  invFun := Quotient.lift
+    (fun x ↦ Quotient.mk'' (Quotient.mk'' x : MulAction.orbitRel.Quotient N X))
+    fun _ _ h ↦ by
+      obtain ⟨g, hg⟩ := MulAction.mem_orbit_iff.mp (MulAction.orbitRel_apply.mp h)
+      exact Quotient.sound' (MulAction.orbitRel_apply.mpr (MulAction.mem_orbit_iff.mpr
+        ⟨(g : G ⧸ N), by rw [MulAction.orbitRel.Quotient.mk_smul_mk, hg]⟩))
+  left_inv q := by
+    induction q using Quotient.inductionOn' with | h ω =>
+    induction ω using Quotient.inductionOn' with | h x =>
+    rfl
+  right_inv q := by
+    induction q using Quotient.inductionOn' with | h x =>
+    rfl
+
+/-- `orbitRelQuotientEquiv` sends the `(G ⧸ N)`-orbit of the `N`-orbit of `x` to the `G`-orbit of
+`x`. -/
+@[to_additive (attr := simp)
+  /-- `orbitRelQuotientEquiv` sends the `(G ⧸ N)`-orbit of the `N`-orbit of `x` to the `G`-orbit
+  of `x`. -/]
+theorem orbitRelQuotientEquiv_mk (N : Subgroup G) [N.Normal] (x : X) :
+    orbitRelQuotientEquiv N
+        (Quotient.mk'' (Quotient.mk'' x : MulAction.orbitRel.Quotient N X)) =
+      Quotient.mk'' x :=
+  (rfl)
+
+/-- The inverse of `orbitRelQuotientEquiv` sends the `G`-orbit of `x` to the `(G ⧸ N)`-orbit of
+the `N`-orbit of `x`. -/
+@[to_additive (attr := simp)
+  /-- The inverse of `orbitRelQuotientEquiv` sends the `G`-orbit of `x` to the `(G ⧸ N)`-orbit of
+  the `N`-orbit of `x`. -/]
+theorem orbitRelQuotientEquiv_symm_mk (N : Subgroup G) [N.Normal] (x : X) :
+    (orbitRelQuotientEquiv N).symm (Quotient.mk'' x) =
+      Quotient.mk'' (Quotient.mk'' x : MulAction.orbitRel.Quotient N X) :=
+  (rfl)
+
+section Stabilizer
+
+open MulAction
+
+/-- **Stabilizer of an `N`-orbit in `G ⧸ N`.** An element of `G ⧸ N` stabilizes the `N`-orbit of
+`x` exactly when it is the image of an element of `stabilizer G x`. -/
+@[to_additive
+  /-- **Stabilizer of an `N`-orbit in `G ⧸ N`.** An element of the additive quotient group `G ⧸ N`
+  stabilizes the `N`-orbit of `x` exactly when it is the image of an element of
+  `AddAction.stabilizer G x`. -/]
+theorem stabilizer_quotientGroup_orbitRelQuotient_mk (N : Subgroup G) [N.Normal] (x : X) :
+    stabilizer (G ⧸ N) (_root_.Quotient.mk'' x : orbitRel.Quotient N X) =
+      (stabilizer G x).map (QuotientGroup.mk' N) := by
+  ext q
+  induction q using QuotientGroup.induction_on with | H g =>
+  simp only [mem_stabilizer_iff, orbitRel.Quotient.mk_smul_mk, Subgroup.mem_map,
+    QuotientGroup.mk'_apply]
+  constructor
+  · intro h
+    obtain ⟨n, hn⟩ := mem_orbit_iff.mp (orbitRel_apply.mp (_root_.Quotient.exact' h))
+    refine ⟨(n : G)⁻¹ * g, ?_, ?_⟩
+    · rw [mul_smul, inv_smul_eq_iff, ← Subgroup.smul_def, hn]
+    · rw [QuotientGroup.eq, mul_inv_rev, inv_inv]
+      exact ‹N.Normal›.conj_mem' n n.property g
+  · rintro ⟨s, hs, hsg⟩
+    have hns : s⁻¹ * g ∈ N := QuotientGroup.eq.mp hsg
+    have hgn : g * s⁻¹ ∈ N := ‹N.Normal›.mem_comm hns
+    exact _root_.Quotient.sound' (orbitRel_apply.mpr (mem_orbit_iff.mpr
+      ⟨⟨g * s⁻¹, hgn⟩, by rw [Subgroup.smul_def, mul_smul]; congr 1; rw [inv_smul_eq_iff, hs]⟩))
+
+/-- **Preimage of the stabilizer of an `N`-orbit.** The elements of `G` whose coset stabilizes the
+`N`-orbit of `x` form the join `N ⊔ stabilizer G x`. -/
+@[to_additive
+  /-- **Preimage of the stabilizer of an `N`-orbit.** The elements of `G` whose coset stabilizes
+  the `N`-orbit of `x` form the join `N ⊔ AddAction.stabilizer G x`. -/]
+theorem comap_stabilizer_quotientGroup_orbitRelQuotient_mk (N : Subgroup G) [N.Normal] (x : X) :
+    (stabilizer (G ⧸ N) (_root_.Quotient.mk'' x : orbitRel.Quotient N X)).comap
+        (QuotientGroup.mk' N) =
+      N ⊔ stabilizer G x := by
+  rw [stabilizer_quotientGroup_orbitRelQuotient_mk, Subgroup.comap_map_eq, QuotientGroup.ker_mk',
+    sup_comm]
+
+/-- **Orbit-size factorization across a normal subgroup.** For a normal subgroup `N` of `G`, the
+size of the `(G ⧸ N)`-orbit of the `N`-orbit of `x`, times the size of the `N`-orbit of `x`, equals
+the size of the `G`-orbit of `x`. No finiteness hypothesis is needed. -/
+@[to_additive card_orbit_quotientAddGroup_mul_card_orbit_normal
+  /-- **Orbit-size factorization across a normal additive subgroup.** For a normal additive subgroup
+  `N` of `G`, the size of the `(G ⧸ N)`-orbit of the `N`-orbit of `x`, times the size of the
+  `N`-orbit of `x`, equals the size of the `G`-orbit of `x`. No finiteness hypothesis is needed. -/]
+theorem card_orbit_quotientGroup_mul_card_orbit_normal (N : Subgroup G) [N.Normal] (x : X) :
+    Nat.card (orbit (G ⧸ N) (_root_.Quotient.mk'' x : orbitRel.Quotient N X)) *
+        Nat.card (orbit N x) =
+      Nat.card (orbit G x) := by
+  calc
+    Nat.card (orbit (G ⧸ N) (_root_.Quotient.mk'' x : orbitRel.Quotient N X)) *
+        Nat.card (orbit N x)
+      = (stabilizer (G ⧸ N) (_root_.Quotient.mk'' x : orbitRel.Quotient N X)).index *
+          (stabilizer N x).index := by
+        rw [Nat.card_congr (orbitEquivQuotientStabilizer _ _),
+          Nat.card_congr (orbitEquivQuotientStabilizer _ _),
+          Subgroup.index_eq_card, Subgroup.index_eq_card]
+    _ = (N ⊔ stabilizer G x).index * (stabilizer G x).relIndex N := by
+        rw [← Subgroup.index_comap_of_surjective _ (QuotientGroup.mk'_surjective N),
+          comap_stabilizer_quotientGroup_orbitRelQuotient_mk, ← stabilizer_subgroupOf,
+          Subgroup.relIndex]
+    _ = (stabilizer G x).relIndex (stabilizer G x ⊔ N) * (stabilizer G x ⊔ N).index := by
+        rw [Subgroup.relIndex_sup_of_le_normalizer Subgroup.le_normalizer_of_normal,
+          sup_comm, mul_comm]
+    _ = (stabilizer G x).index := Subgroup.relIndex_mul_index le_sup_left
+    _ = Nat.card (orbit G x) := by
+        rw [Nat.card_congr (orbitEquivQuotientStabilizer G x), Subgroup.index_eq_card]
+
+end Stabilizer
+
+end Subgroup
 
 /-! ### Commuting actions on orbit spaces -/
 
@@ -1311,35 +1358,6 @@ theorem orbitRelQuotientLift_comp_orbitRelQuotientMap {Z : Type*} (φ : X →ₑ
   ext q
   induction q using Quotient.inductionOn with
   | h x => rfl
-
-/-- If a family `t'` over the pulled-back fibre family `q ↦ V (orbitRelQuotientMap φ q)` agrees
-heterogeneously with `x ↦ t (φ x)` for an `H`-invariant family `t`, then `t'` is `G`-invariant. -/
-theorem smul_heq_of_comp_orbitRelQuotientMap {V : MulAction.orbitRel.Quotient H Y → Sort*}
-    (φ : X →ₑ[σ] Y) {t : ∀ y : Y, V (Quotient.mk (MulAction.orbitRel H Y) y)}
-    (ht : ∀ (h : H) (y : Y), t (h • y) ≍ t y)
-    {t' : ∀ x : X, V (orbitRelQuotientMap φ (Quotient.mk (MulAction.orbitRel G X) x))}
-    (ht' : ∀ x : X, t' x ≍ t (φ x)) (g : G) (x : X) :
-    t' (g • x) ≍ t' x := by
-  have aux {y₁ y₂ : Y} (hy : y₁ = y₂) : t y₁ ≍ t y₂ := hy ▸ HEq.rfl
-  exact (ht' (g • x)).trans ((aux (map_smulₛₗ φ g x)).trans ((ht (σ g) (φ x)).trans (ht' x).symm))
-
-/-- **Dependent naturality of section descent.** Pulling back the `H`-orbit descent of `t` along
-`orbitRelQuotientMap φ` agrees with the `G`-orbit descent of any family `t'` representing
-`x ↦ t (φ x)` over `q ↦ V (orbitRelQuotientMap φ q)`. -/
-theorem orbitRelQuotientRec_orbitRelQuotientMap_apply
-    {V : MulAction.orbitRel.Quotient H Y → Sort*} (φ : X →ₑ[σ] Y)
-    {t : ∀ y : Y, V (Quotient.mk (MulAction.orbitRel H Y) y)}
-    (ht : ∀ (h : H) (y : Y), t (h • y) ≍ t y)
-    {t' : ∀ x : X, V (orbitRelQuotientMap φ (Quotient.mk (MulAction.orbitRel G X) x))}
-    (ht' : ∀ x : X, t' x ≍ t (φ x)) (q : MulAction.orbitRel.Quotient G X) :
-    MulAction.orbitRelQuotientRec t ht (orbitRelQuotientMap φ q) =
-      MulAction.orbitRelQuotientRec (V := fun q ↦ V (orbitRelQuotientMap φ q))
-        t' (smul_heq_of_comp_orbitRelQuotientMap φ ht ht') q := by
-  induction q using Quotient.inductionOn with | h x =>
-  rw [MulAction.orbitRelQuotientRec_mk]
-  exact eq_of_heq <| (congr_arg_heq (MulAction.orbitRelQuotientRec t ht)
-    (orbitRelQuotientMap_mk φ x)).trans <|
-    (heq_of_eq (MulAction.orbitRelQuotientRec_mk (φ x))).trans (ht' x).symm
 
 end MulActionHom
 

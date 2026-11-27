@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Alternating.Basic
-public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient.Operations
 
 /-!
 # Orbit-quotient descent for alternating-map domain pullbacks

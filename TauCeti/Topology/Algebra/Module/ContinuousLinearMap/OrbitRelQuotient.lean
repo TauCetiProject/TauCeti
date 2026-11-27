@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
-public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient.Operations
 
 /-!
 # Orbit-quotient descent for continuous linear precomposition and dual evaluation

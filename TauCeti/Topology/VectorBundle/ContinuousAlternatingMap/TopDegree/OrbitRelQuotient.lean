@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.Algebra.GroupAction.OrbitRelQuotient.Operations
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap.TopDegree.Basic
 import TauCeti.Topology.Algebra.Module.Determinant.OrbitRelQuotient
 

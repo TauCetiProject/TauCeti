@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pushforward
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Distribution.Pushforward
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.WaveFrontSet
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Geometry.Manifold.VectorBundle.Section.ChartLocalization
 
@@ -43,10 +43,9 @@ all these points, so its pushforward vanishes near `y`
 source of a chart `c`, the components of `f_* (ρ χ T)` in `c'` are the Euclidean pushforwards of the
 components of `T` in `c` along `Φ = c' ∘ f ∘ c⁻¹`, with the cutoff `(ρ χ) ∘ c⁻¹`, so the Euclidean
 theorem `Distribution.IsMicrolocallySmoothAt.cutoffPushforwardCLM` applies to them. Covectors
-match by the chain rule `D(c'⁻¹) ∘ DΦ = D f ∘ D(c⁻¹)`
-(`OpenPartialHomeomorph.mfderiv_symm_comp_fderiv_comp_comp_symm`): the transpose of `DΦ` takes `η`
-read in `c'` to `η ∘ D f(x)` read in `c`. The supports correspond as well
-(`Bundle.Trivialization.dsupport_chartComponent_inter_target_subset`).
+match: the transpose of `DΦ` takes `η` read in `c'` to `η ∘ D f(x)` read in `c`
+(`OpenPartialHomeomorph.adjoint_fderiv_toDual_symm_comp_mfderiv_symm`). The supports correspond as
+well (`Bundle.Trivialization.dsupport_chartComponent_inter_target_subset`).
 
 ## Main results
 
@@ -197,26 +196,6 @@ private theorem chartComponent_cutoffPushforwardCLM_eq {χ : C^∞⟮I, X; ℝ�
   · rw [chartTestCLM_apply_of_notMem _ _ _ _ _ hx, hχx fun h ↦ hx h.1]
     simp
 
-omit [T2Space X] [IsManifold I ∞ X] [T2Space Y] [IsManifold J ∞ Y] in
-include hcs hc' hcs' in
-/-- Reading `f` in the charts `c` and `c'` as `Φ = c' ∘ f ∘ c⁻¹`, the transpose of `DΦ(c x)`
-takes a covector `η` at `f x`, read in `c'`, to the pullback `η ∘ D f(x)`, read in `c`. -/
-private theorem adjoint_fderiv_toDual_symm_comp_mfderiv_symm {x : X} (hx : x ∈ c.source)
-    (hfx : f x ∈ c'.source) (η : TangentSpace J (f x) →L[ℝ] ℝ) :
-    ((fderiv ℝ (c' ∘ f ∘ c.symm) (c x))†)
-        ((toDual ℝ E').symm (η ∘L mfderiv 𝓘(ℝ, E') J c'.symm (c' (f x)))) =
-      (toDual ℝ E).symm ((η ∘L mfderiv I J f x) ∘L mfderiv 𝓘(ℝ, E) I c.symm (c x)) := by
-  have hD := c.mfderiv_symm_comp_fderiv_comp_comp_symm hx hfx (f.contMDiff.mdifferentiableAt
-    (by simp)) ((hcs.contMDiffAt (c.open_target.mem_nhds (c.map_source hx))).mdifferentiableAt
-      (by simp)) ((hc'.contMDiffAt (c'.open_source.mem_nhds hfx)).mdifferentiableAt (by simp))
-    ((hcs'.contMDiffAt (c'.open_target.mem_nhds (c'.map_source hfx))).mdifferentiableAt
-      (by simp))
-  apply (toDual ℝ E).injective
-  ext u
-  rw [LinearIsometryEquiv.apply_symm_apply, toDual_apply_apply, adjoint_inner_left,
-    toDual_symm_apply]
-  exact congrArg η congr($hD u)
-
 include hc hcs hc' hcs' hct hct' in
 /-- **Microlocal smoothness of a pushforward, in charts.** Let `χ` be a cutoff supported in the
 source of a chart `c` of `X` and over the source of a chart `c'` of `Y`, and let `y` lie in the
@@ -246,10 +225,13 @@ private theorem isMicrolocallySmoothAt_cutoffPushforwardCLM_of_tsupport_subset {
       ⟨Distribution.dsupport_comp_monoCLM_subset _ hz₂, c.map_source hxc⟩
   subst hxy
   obtain ⟨hne, hT⟩ := h x ⟨hxχ, hxT⟩ rfl
-  rw [adjoint_fderiv_toDual_symm_comp_mfderiv_symm hcs hc' hcs' f hxc hfx η]
-  refine ⟨mt ((toDual ℝ E).symm.map_eq_zero_iff.trans
-    (OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_eq_zero_iff
-      ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hxc)).1 hne, ?_⟩
+  rw [OpenPartialHomeomorph.adjoint_fderiv_toDual_symm_comp_mfderiv_symm hxc hfx
+    ((hcs.contMDiffAt (c.open_target.mem_nhds (c.map_source hxc))).mdifferentiableAt (by simp))
+    (f.contMDiff.mdifferentiableAt (by simp))
+    ((hc'.contMDiffAt (c'.open_source.mem_nhds hfx)).mdifferentiableAt (by simp))
+    ((hcs'.contMDiffAt (c'.open_target.mem_nhds (c'.map_source hfx))).mdifferentiableAt
+      (by simp)) η]
+  refine ⟨mt (c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hxc).1 hne, ?_⟩
   rw [isInvariantMicrolocalRegularity_isMicrolocallySmoothAt.restrictCLM_iff (chartPreimage_le f)
     (χ'.tsupport_subset hz.1)]
   exact (isMicrolocallySmoothAt_iff T hc hcs hct hxc _).1 hT v
@@ -280,15 +262,9 @@ private theorem cutoffPushforwardCLM_eq_sum_add {ι : Type*} [Fintype ι] (ρ : 
     {χ : C^∞⟮I, X; ℝ⟯} (hχ : HasCompactSupport χ) :
     cutoffPushforwardCLM χ hχ f T = ∑ i, cutoffPushforwardCLM (ρ i * χ) hχ.mul_left f T +
       cutoffPushforwardCLM ((1 - ∑ i, ρ i) * χ) hχ.mul_left f T := by
-  have hT : ∑ i, smulLeftDualCLM (ρ i) T + smulLeftDualCLM (1 - ∑ i, ρ i) T = T := by
-    ext s
-    rw [_root_.add_apply, _root_.sum_apply]
-    simp only [smulLeftDualCLM_apply, ← map_sum, ← map_add]
-    congr 1
-    refine BundleTest.ext fun x ↦ ?_
-    simp [smulLeftCLM_apply, ← Finset.sum_smul, ← add_smul]
-  conv_lhs => rw [← hT]
-  simp only [map_add, map_sum, cutoffPushforwardCLM_smulLeftDualCLM]
+  conv_lhs => rw [← smulLeftDualCLM_one T, ← add_sub_cancel (∑ i, ρ i) 1, smulLeftDualCLM_add,
+    _root_.add_apply, smulLeftDualCLM_sum, _root_.sum_apply, map_add, map_sum]
+  simp only [cutoffPushforwardCLM_smulLeftDualCLM]
 
 /-- **Microlocal smoothness of a pushforward along a smooth map.** Let `χ` be a compactly
 supported smooth function on `X`, `y ∈ Y` and `η` a covector at `y`. If for every
@@ -321,9 +297,7 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {χ : C^∞⟮I, X; ℝ⟯}
   set ρ := fs.toSmoothPartitionOfUnity
   have hρ := hfs.toSmoothPartitionOfUnity
   rw [cutoffPushforwardCLM_eq_sum_add (fun i ↦ ρ i)]
-  refine IsMicrolocallySmoothAt.add (Finset.sum_induction _ (IsMicrolocallySmoothAt · y η)
-    (fun _ _ ↦ IsMicrolocallySmoothAt.add) (isMicrolocallySmoothAt_of_notMem_dsupport (by simp) η)
-    fun i _ ↦ ?_) ?_
+  refine (IsMicrolocallySmoothAt.sum _ fun i _ ↦ ?_).add ?_
   · -- Each piece `ρ i χ` is supported in a chart source over the source of `c'`.
     have hsupp : tsupport ⇑(ρ i * χ) ⊆ tsupport (ρ i) := by
       rw [ContMDiffMap.coe_mul]

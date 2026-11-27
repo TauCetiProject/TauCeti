@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Quotient.BundleMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Dual
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.OrbitRelQuotient
 
 /-!
@@ -57,7 +58,8 @@ theorem _root_.ContMDiff.orbitRelQuotientLift_dual_apply {F : Type*} [NormedAddC
     (hm : m ≤ n) :
     ContMDiff I 𝓘(𝕜) m (MulAction.orbitRelQuotientLift (fun x ↦ α x (t x))
       (MulAction.apply₂_smul_eq (fun _ (f : StrongDual 𝕜 _) v ↦ f v) hα ht)) :=
-  (contMDiff_orbitRelQuotientLift_iff hm).2 (hα_smooth.dual_bundle_apply ht_smooth)
+  (contMDiff_orbitRelQuotientLift_iff hm).2 fun x ↦
+    (hα_smooth x).clm_bundle_apply_scalar (ht_smooth x)
 
 section Hom
 
