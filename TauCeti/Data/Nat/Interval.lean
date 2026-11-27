@@ -23,9 +23,10 @@ most `2 * b` elements. This covers both `[a - b, a + b)`, the `k` with `a ≤ k 
 `k < a + b`, and `[a + 1 - b, a + b)`, the `k` with `a < k + b` and `k < a + b`. Dyadic
 decompositions sum over such windows of neighbouring scales.
 
-For `k > 0`, the `b` in `(l, u]` with `k * b ≤ N` are those in `(l, min u (N / k)]`, so there are
-`min u (N / k) - l` of them (`Nat.card_filter_Ioc_mul_le`). Exchanging the order of summation in
-the hyperbola method rests on this count.
+For `k > 0`, the `b` in `(l, u]` with `k * b ≤ N` are those in `(l, min u (N / k)]`
+(`Nat.filter_Ioc_mul_le`), so there are `min u (N / k) - l` of them
+(`Nat.card_filter_Ioc_mul_le`). Exchanging the order of summation in the hyperbola method rests
+on this count.
 -/
 
 public section
@@ -74,14 +75,18 @@ theorem card_Ico_add_le_two_mul_of_sub_le (a b : ℕ) {lo : ℕ} (h : a - b ≤ 
   rw [card_Ico]
   omega
 
+/-- For `k > 0`, the `b` in `(l, u]` with `k * b ≤ N` are the elements of
+`(l, min u (N / k)]`. -/
+theorem filter_Ioc_mul_le {k : ℕ} (hk : 0 < k) (l u N : ℕ) :
+    (Finset.Ioc l u).filter (k * · ≤ N) = Finset.Ioc l (min u (N / k)) := by
+  ext b
+  simp only [Finset.mem_filter, Finset.mem_Ioc, le_min_iff, Nat.le_div_iff_mul_le hk,
+    mul_comm b k]
+  tauto
+
 /-- For `k > 0`, the number of `b` in `(l, u]` with `k * b ≤ N` is `min u (N / k) - l`. -/
 theorem card_filter_Ioc_mul_le {k : ℕ} (hk : 0 < k) (l u N : ℕ) :
     ((Finset.Ioc l u).filter (k * · ≤ N)).card = min u (N / k) - l := by
-  have h : (Finset.Ioc l u).filter (k * · ≤ N) = Finset.Ioc l (min u (N / k)) := by
-    ext b
-    simp only [Finset.mem_filter, Finset.mem_Ioc, le_min_iff, Nat.le_div_iff_mul_le hk,
-      mul_comm b k]
-    tauto
-  rw [h, Nat.card_Ioc]
+  rw [filter_Ioc_mul_le hk, Nat.card_Ioc]
 
 end Nat
