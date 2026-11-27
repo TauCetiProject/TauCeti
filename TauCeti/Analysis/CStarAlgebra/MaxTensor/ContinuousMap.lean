@@ -5,28 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.UniformSpace.ProdApproximation
 public import TauCeti.Analysis.CStarAlgebra.MinTensorNorm
 import Mathlib.Analysis.CStarAlgebra.GelfandDuality
 import Mathlib.Topology.ContinuousMap.StoneWeierstrass
+import Mathlib.Topology.Separation.CompletelyRegular
+import TauCeti.Analysis.Normed.Algebra.Character.ContinuousMap
 
 /-!
 # The minimal and maximal C*-norms on `C(X) ⊙ C(Y)`
 
 For compact Hausdorff spaces `X` and `Y`, the star homomorphism
 `TauCeti.continuousMapTensorHom X Y : C(X) ⊗[ℂ] C(Y) → C(X × Y)`,
-`f ⊗ g ↦ ((x, y) ↦ f x * g y)`, is isometric for both the minimal and the maximal C*-norm:
+`f ⊗ g ↦ ((x, y) ↦ f x * g y)` (a star homomorphism version of Mathlib's linear map
+`ContinuousMap.tensorHom`, see `TauCeti.coe_continuousMapTensorHom`), is isometric for both the
+minimal and the maximal C*-norm:
 
 * `TauCeti.minTensorNorm_continuousMap` and `TauCeti.maxTensorNorm_continuousMap`:
   `‖z‖_min = ‖z‖_max = ‖(continuousMapTensorHom X Y) z‖_∞`;
 * `TauCeti.minTensorNorm_eq_maxTensorNorm_continuousMap`: the two norms agree on
   `C(X) ⊗[ℂ] C(Y)`;
 * `TauCeti.continuousMapTensorHom_injective` and `TauCeti.denseRange_continuousMapTensorHom`
-  (Stone–Weierstrass): the completion of `C(X) ⊙ C(Y)` in either norm is `C(X × Y)`.
+  (Stone–Weierstrass): the map is injective with dense range, from which the identification
+  of the completion of `C(X) ⊙ C(Y)` in either norm with `C(X × Y)` follows once that completion
+  isomorphism is constructed. Through `TauCeti.coe_continuousMapTensorHom` the density also holds
+  for Mathlib's `ContinuousMap.tensorHom` (`ContinuousMap.denseRange_tensorHom_complex`).
 
 The upper bound is the content. A commuting pair of representations `π`, `ρ` of `C(X)` and `C(Y)`
 on a Hilbert space `H` has commuting, star-closed ranges, so their double commutant `D` is a
 closed commutative C*-subalgebra of `B(H)` containing every `(π × ρ) z`
-(`TauCeti.CommutingRepresentationPair.tensorHom_mem_centralizer_centralizer`). By Gelfand
+(`TauCeti.CommutingRepresentationPair.tensorHom_mem_doubleCommutant`). By Gelfand
 theory the norm of an element of `D` is the supremum of `|χ(·)|` over the characters `χ` of `D`.
 A character `χ` restricts along `π` to a multiplicative linear functional on `C(X)`, which is
 either `0` or the evaluation at a point `x`
@@ -34,9 +42,6 @@ either `0` or the evaluation at a point `x`
 `χ((π × ρ) z)` is `0` or the value of `(continuousMapTensorHom X Y) z` at a point `(x, y)`.
 The lower bound comes from the one-dimensional representations `f ↦ f x` and `g ↦ g y`, whose
 spatial tensor product sends `z` to the scalar `(continuousMapTensorHom X Y) z (x, y)`.
-
-This is the `C(X) ⊙ C(Y)` Check of CStarAlgebras C5.1 and the norm half of the identification
-`C(X) ⊗min C(Y) ≅ C(X × Y)` of C5.2.
 
 ## References
 
@@ -51,44 +56,6 @@ open TensorProduct ContinuousLinearMap UniformSpace
 open scoped InnerProductSpace Pointwise
 
 universe u v
-
-/-! ### Multiplicative functionals on `C(X)` -/
-
-namespace ContinuousMap
-
-variable {X : Type u} [TopologicalSpace X] [CompactSpace X] [T2Space X]
-
-/-- A multiplicative linear functional on `C(X, ℂ)` that need not preserve `1` is either `0` or
-the evaluation at a point. -/
-theorem nonUnitalAlgHom_eq_zero_or_exists_eval (ψ : C(X, ℂ) →ₙₐ[ℂ] ℂ) :
-    ψ = 0 ∨ ∃ x : X, ∀ f, ψ f = f x := by
-  have hidem : ψ 1 * ψ 1 = ψ 1 := by rw [← map_mul, mul_one]
-  rcases IsIdempotentElem.iff_eq_zero_or_one.mp hidem with h0 | h1
-  · left
-    ext f
-    rw [← mul_one f, map_mul, h0, mul_zero, NonUnitalAlgHom.zero_apply]
-  · right
-    let φ : C(X, ℂ) →ₐ[ℂ] ℂ :=
-      { ψ with
-        map_one' := h1
-        commutes' := fun c ↦ by
-          simp [Algebra.algebraMap_eq_smul_one, h1] }
-    obtain ⟨x, hx⟩ :=
-      (WeakDual.CharacterSpace.continuousMapEval_bijective X ℂ).2
-        (WeakDual.CharacterSpace.equivAlgHom.symm φ)
-    refine ⟨x, fun f ↦ ?_⟩
-    have := congr($hx f)
-    simpa [φ] using this.symm
-
-/-- Continuous complex functions separate the points of a compact Hausdorff space. -/
-theorem exists_complex_apply_ne {x x' : X} (h : x ≠ x') : ∃ f : C(X, ℂ), f x ≠ f x' := by
-  obtain ⟨f, h0, h1, -⟩ := exists_continuous_zero_one_of_isClosed
-    (isClosed_singleton : IsClosed {x}) (isClosed_singleton : IsClosed {x'})
-    (Set.disjoint_singleton.mpr h)
-  refine ⟨(⟨fun t : ℝ ↦ (t : ℂ), Complex.continuous_ofReal⟩ : C(ℝ, ℂ)).comp f, ?_⟩
-  simp [h0 (Set.mem_singleton x), h1 (Set.mem_singleton x')]
-
-end ContinuousMap
 
 namespace TauCeti
 
@@ -106,10 +73,19 @@ def continuousMapTensorHom : C(X, ℂ) ⊗[ℂ] C(Y, ℂ) →⋆ₙₐ[ℂ] C(X 
 
 variable {X Y}
 
+/-- `TauCeti.continuousMapTensorHom` is Mathlib's linear map `ContinuousMap.tensorHom`. -/
+theorem coe_continuousMapTensorHom :
+    ⇑(continuousMapTensorHom X Y) =
+      ⇑(ContinuousMap.tensorHom : C(X, ℂ) ⊗[ℂ] C(Y, ℂ) →ₗ[ℂ] C(X × Y, ℂ)) := by
+  funext z
+  induction z using TensorProduct.inductionOn with
+  | tmul f g => ext; simp [continuousMapTensorHom]
+  | add z z' hz hz' => rw [map_add, map_add, hz, hz']
+
 @[simp]
 theorem continuousMapTensorHom_tmul_apply (f : C(X, ℂ)) (g : C(Y, ℂ)) (p : X × Y) :
     continuousMapTensorHom X Y (f ⊗ₜ g) p = f p.1 * g p.2 := by
-  simp [continuousMapTensorHom]
+  rw [coe_continuousMapTensorHom, ContinuousMap.tensorHom_tmul, ContinuousMap.prodMul_apply]
 
 /-! ### The upper bound: commuting pairs and Gelfand theory -/
 
@@ -120,17 +96,14 @@ section Commutative
 variable {A : Type u} {B : Type v} [NonUnitalCommCStarAlgebra A] [NonUnitalCommCStarAlgebra B]
 variable (p : CommutingRepresentationPair A B)
 
-/-- The union of the ranges of the two representations of a commuting pair of commutative
-C*-algebras: a commuting star-closed set of operators. -/
-def rangeUnion : Set (p.H →L[ℂ] p.H) :=
-  Set.range p.left ∪ Set.range p.right
-
-theorem star_rangeUnion_subset : star p.rangeUnion ⊆ p.rangeUnion := by
+private theorem star_range_union_subset :
+    star (Set.range p.left ∪ Set.range p.right) ⊆ Set.range p.left ∪ Set.range p.right := by
   rintro _ (⟨f, hf⟩ | ⟨g, hg⟩)
   · exact Or.inl ⟨star f, by rw [map_star, hf, star_star]⟩
   · exact Or.inr ⟨star g, by rw [map_star, hg, star_star]⟩
 
-theorem rangeUnion_pairwise_commute : p.rangeUnion.Pairwise Commute := by
+private theorem range_union_pairwise_commute :
+    (Set.range p.left ∪ Set.range p.right).Pairwise Commute := by
   have hl : ∀ f f' : A, Commute (p.left f) (p.left f') := fun f f' ↦ by
     rw [Commute, SemiconjBy, ← map_mul, ← map_mul, mul_comm]
   have hr : ∀ g g' : B, Commute (p.right g) (p.right g') := fun g g' ↦ by
@@ -141,83 +114,72 @@ theorem rangeUnion_pairwise_commute : p.rangeUnion.Pairwise Commute := by
   · exact (p.commute f' g).symm
   · exact hr g g'
 
-/-- The double commutant of the ranges of a commuting pair of commutative C*-algebras: a closed
-commutative star subalgebra of `B(H)`. -/
-def commutant : StarSubalgebra ℂ (p.H →L[ℂ] p.H) :=
-  StarSubalgebra.centralizer ℂ (StarSubalgebra.centralizer ℂ p.rangeUnion : Set _)
+/-- The double commutant of the union of the ranges of a commuting pair of commutative
+C*-algebras: a closed commutative star subalgebra of `B(H)`. -/
+def doubleCommutant : StarSubalgebra ℂ (p.H →L[ℂ] p.H) :=
+  StarSubalgebra.centralizer ℂ
+    (StarSubalgebra.centralizer ℂ (Set.range p.left ∪ Set.range p.right) : Set _)
 
-theorem coe_commutant :
-    (p.commutant : Set (p.H →L[ℂ] p.H)) = p.rangeUnion.centralizer.centralizer := by
-  rw [commutant, StarSubalgebra.coe_centralizer_centralizer,
-    Set.union_eq_left.mpr p.star_rangeUnion_subset]
+theorem coe_doubleCommutant :
+    (p.doubleCommutant : Set (p.H →L[ℂ] p.H)) =
+      (Set.range p.left ∪ Set.range p.right).centralizer.centralizer := by
+  rw [doubleCommutant, StarSubalgebra.coe_centralizer_centralizer,
+    Set.union_eq_left.mpr p.star_range_union_subset]
 
-theorem isClosed_commutant : IsClosed (p.commutant : Set (p.H →L[ℂ] p.H)) := by
-  rw [coe_commutant]
+theorem isClosed_doubleCommutant : IsClosed (p.doubleCommutant : Set (p.H →L[ℂ] p.H)) := by
+  rw [coe_doubleCommutant]
   exact Set.isClosed_centralizer _
 
-theorem mul_comm_commutant (a b : p.commutant) : a * b = b * a := by
+theorem mul_comm_doubleCommutant (a b : p.doubleCommutant) : a * b = b * a := by
   refine Subtype.ext ?_
   have ha := a.property
   have hb := b.property
-  rw [← SetLike.mem_coe, coe_commutant] at ha hb
-  exact Set.centralizer_centralizer_comm_of_comm p.rangeUnion_pairwise_commute _ ha _ hb
+  rw [← SetLike.mem_coe, coe_doubleCommutant] at ha hb
+  exact Set.centralizer_centralizer_comm_of_comm p.range_union_pairwise_commute _ ha _ hb
 
-theorem left_mem_commutant (f : A) : p.left f ∈ p.commutant := by
-  rw [← SetLike.mem_coe, coe_commutant]
+theorem left_mem_doubleCommutant (f : A) : p.left f ∈ p.doubleCommutant := by
+  rw [← SetLike.mem_coe, coe_doubleCommutant]
   exact Set.subset_centralizer_centralizer (Or.inl ⟨f, rfl⟩)
 
-theorem right_mem_commutant (g : B) : p.right g ∈ p.commutant := by
-  rw [← SetLike.mem_coe, coe_commutant]
+theorem right_mem_doubleCommutant (g : B) : p.right g ∈ p.doubleCommutant := by
+  rw [← SetLike.mem_coe, coe_doubleCommutant]
   exact Set.subset_centralizer_centralizer (Or.inr ⟨g, rfl⟩)
 
-theorem tensorHom_mem_commutant (z : A ⊗[ℂ] B) : p.tensorHom z ∈ p.commutant := by
+theorem tensorHom_mem_doubleCommutant (z : A ⊗[ℂ] B) : p.tensorHom z ∈ p.doubleCommutant := by
   induction z using TensorProduct.inductionOn with
   | tmul f g =>
     rw [tensorHom_tmul]
-    exact mul_mem (p.left_mem_commutant f) (p.right_mem_commutant g)
+    exact mul_mem (p.left_mem_doubleCommutant f) (p.right_mem_doubleCommutant g)
   | add z z' hz hz' => rw [map_add]; exact add_mem hz hz'
 
 /-- The double commutant of a commuting pair of commutative C*-algebras is a commutative unital
 C*-algebra. -/
-@[reducible]
-def commutantCommCStarAlgebra : CommCStarAlgebra p.commutant :=
-  haveI := p.isClosed_commutant
-  { StarSubalgebra.cstarAlgebra p.commutant with mul_comm := p.mul_comm_commutant }
+private abbrev doubleCommutantCommCStarAlgebra : CommCStarAlgebra p.doubleCommutant :=
+  haveI := p.isClosed_doubleCommutant
+  { StarSubalgebra.cstarAlgebra p.doubleCommutant with mul_comm := p.mul_comm_doubleCommutant }
 
 /-- The restriction of the representation of `A` to a multiplicative functional, through a
 character of the double commutant. -/
-def leftChar (χ : p.commutant →ₙₐ[ℂ] ℂ) : A →ₙₐ[ℂ] ℂ :=
-  χ.comp
-    { toFun := fun f ↦ ⟨p.left f, p.left_mem_commutant f⟩
-      map_smul' := fun c f ↦ Subtype.ext (map_smul p.left c f)
-      map_zero' := Subtype.ext (map_zero p.left)
-      map_add' := fun f f' ↦ Subtype.ext (map_add p.left f f')
-      map_mul' := fun f f' ↦ Subtype.ext (map_mul p.left f f') }
+private def leftChar (χ : p.doubleCommutant →ₙₐ[ℂ] ℂ) : A →ₙₐ[ℂ] ℂ :=
+  χ.comp ((p.left : A →ₙₐ[ℂ] (p.H →L[ℂ] p.H)).codRestrict
+    p.doubleCommutant.toNonUnitalSubalgebra p.left_mem_doubleCommutant)
 
 /-- The restriction of the representation of `B` to a multiplicative functional, through a
 character of the double commutant. -/
-def rightChar (χ : p.commutant →ₙₐ[ℂ] ℂ) : B →ₙₐ[ℂ] ℂ :=
-  χ.comp
-    { toFun := fun g ↦ ⟨p.right g, p.right_mem_commutant g⟩
-      map_smul' := fun c g ↦ Subtype.ext (map_smul p.right c g)
-      map_zero' := Subtype.ext (map_zero p.right)
-      map_add' := fun g g' ↦ Subtype.ext (map_add p.right g g')
-      map_mul' := fun g g' ↦ Subtype.ext (map_mul p.right g g') }
+private def rightChar (χ : p.doubleCommutant →ₙₐ[ℂ] ℂ) : B →ₙₐ[ℂ] ℂ :=
+  χ.comp ((p.right : B →ₙₐ[ℂ] (p.H →L[ℂ] p.H)).codRestrict
+    p.doubleCommutant.toNonUnitalSubalgebra p.right_mem_doubleCommutant)
+
+/-- The pullback of a character of the double commutant along the integrated form. -/
+private def tensorChar (χ : p.doubleCommutant →ₙₐ[ℂ] ℂ) : A ⊗[ℂ] B →ₙₐ[ℂ] ℂ :=
+  χ.comp ((p.tensorHom : A ⊗[ℂ] B →ₙₐ[ℂ] (p.H →L[ℂ] p.H)).codRestrict
+    p.doubleCommutant.toNonUnitalSubalgebra p.tensorHom_mem_doubleCommutant)
 
 /-- A character of the double commutant is multiplicative on `π a * ρ b`. -/
-theorem apply_tensorHom_tmul (χ : p.commutant →ₙₐ[ℂ] ℂ) (f : A) (g : B) :
-    χ ⟨p.tensorHom (f ⊗ₜ g), p.tensorHom_mem_commutant _⟩ = p.leftChar χ f * p.rightChar χ g := by
-  change _ = χ ⟨p.left f, p.left_mem_commutant f⟩ * χ ⟨p.right g, p.right_mem_commutant g⟩
-  rw [← map_mul]
+private theorem tensorChar_tmul (χ : p.doubleCommutant →ₙₐ[ℂ] ℂ) (f : A) (g : B) :
+    p.tensorChar χ (f ⊗ₜ g) = p.leftChar χ f * p.rightChar χ g := by
+  rw [leftChar, rightChar, NonUnitalAlgHom.comp_apply, NonUnitalAlgHom.comp_apply, ← map_mul]
   exact congr_arg χ (Subtype.ext (p.tensorHom_tmul f g))
-
-/-- A character of the double commutant is additive along the integrated form. -/
-theorem apply_tensorHom_add (χ : p.commutant →ₙₐ[ℂ] ℂ) (z z' : A ⊗[ℂ] B) :
-    χ ⟨p.tensorHom (z + z'), p.tensorHom_mem_commutant _⟩ =
-      χ ⟨p.tensorHom z, p.tensorHom_mem_commutant _⟩ +
-        χ ⟨p.tensorHom z', p.tensorHom_mem_commutant _⟩ := by
-  rw [← map_add]
-  exact congr_arg χ (Subtype.ext (map_add p.tensorHom z z'))
 
 end Commutative
 
@@ -226,28 +188,25 @@ variable (p : CommutingRepresentationPair C(X, ℂ) C(Y, ℂ))
 
 /-- A character of the double commutant takes values on the integrated form of the pair that are
 bounded by the supremum norm of the corresponding function on `X × Y`. -/
-theorem norm_apply_tensorHom_le [T2Space X] [T2Space Y] (χ : p.commutant →ₙₐ[ℂ] ℂ)
-    (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) :
-    ‖χ ⟨p.tensorHom z, p.tensorHom_mem_commutant z⟩‖ ≤ ‖continuousMapTensorHom X Y z‖ := by
-  rcases ContinuousMap.nonUnitalAlgHom_eq_zero_or_exists_eval (p.leftChar χ) with hl | ⟨x, hx⟩
-  · have : χ ⟨p.tensorHom z, p.tensorHom_mem_commutant z⟩ = 0 := by
+private theorem norm_tensorChar_le [T2Space X] [T2Space Y] (χ : p.doubleCommutant →ₙₐ[ℂ] ℂ)
+    (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) : ‖p.tensorChar χ z‖ ≤ ‖continuousMapTensorHom X Y z‖ := by
+  by_cases h0 : ∀ f g, p.leftChar χ f * p.rightChar χ g = 0
+  · have : p.tensorChar χ z = 0 := by
       induction z using TensorProduct.inductionOn with
-      | tmul f g => rw [apply_tensorHom_tmul, hl, NonUnitalAlgHom.zero_apply, zero_mul]
-      | add z z' hz hz' => rw [apply_tensorHom_add, hz, hz', add_zero]
+      | tmul f g => rw [tensorChar_tmul, h0]
+      | add z z' hz hz' => rw [map_add, hz, hz', add_zero]
     rw [this, norm_zero]
     exact norm_nonneg _
-  rcases ContinuousMap.nonUnitalAlgHom_eq_zero_or_exists_eval (p.rightChar χ) with hr | ⟨y, hy⟩
-  · have : χ ⟨p.tensorHom z, p.tensorHom_mem_commutant z⟩ = 0 := by
-      induction z using TensorProduct.inductionOn with
-      | tmul f g => rw [apply_tensorHom_tmul, hr, NonUnitalAlgHom.zero_apply, mul_zero]
-      | add z z' hz hz' => rw [apply_tensorHom_add, hz, hz', add_zero]
-    rw [this, norm_zero]
-    exact norm_nonneg _
-  have : χ ⟨p.tensorHom z, p.tensorHom_mem_commutant z⟩ = continuousMapTensorHom X Y z (x, y) := by
+  push Not at h0
+  obtain ⟨f₀, g₀, hfg⟩ := h0
+  obtain ⟨x, hx⟩ := (ContinuousMap.nonUnitalAlgHom_eq_zero_or_exists_eval
+    (p.leftChar χ)).resolve_left fun h ↦ hfg (by rw [h, NonUnitalAlgHom.zero_apply, zero_mul])
+  obtain ⟨y, hy⟩ := (ContinuousMap.nonUnitalAlgHom_eq_zero_or_exists_eval
+    (p.rightChar χ)).resolve_left fun h ↦ hfg (by rw [h, NonUnitalAlgHom.zero_apply, mul_zero])
+  have : p.tensorChar χ z = continuousMapTensorHom X Y z (x, y) := by
     induction z using TensorProduct.inductionOn with
-    | tmul f g => rw [apply_tensorHom_tmul, hx, hy, continuousMapTensorHom_tmul_apply]
-    | add z z' hz hz' =>
-      rw [apply_tensorHom_add, hz, hz', map_add, ContinuousMap.add_apply]
+    | tmul f g => rw [tensorChar_tmul, hx, hy, continuousMapTensorHom_tmul_apply]
+    | add z z' hz hz' => rw [map_add, hz, hz', map_add, ContinuousMap.add_apply]
   rw [this]
   exact (continuousMapTensorHom X Y z).norm_coe_le_norm (x, y)
 
@@ -255,13 +214,22 @@ theorem norm_apply_tensorHom_le [T2Space X] [T2Space Y] (χ : p.commutant →ₙ
 `C(Y)` is bounded by the supremum norm on `X × Y`. -/
 theorem norm_tensorHom_le_norm_continuousMapTensorHom [T2Space X] [T2Space Y]
     (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) : ‖p.tensorHom z‖ ≤ ‖continuousMapTensorHom X Y z‖ := by
-  let := p.commutantCommCStarAlgebra
-  let T : p.commutant := ⟨p.tensorHom z, p.tensorHom_mem_commutant z⟩
-  have hT : ‖p.tensorHom z‖ = ‖WeakDual.gelfandTransform ℂ p.commutant T‖ :=
-    ((AddMonoidHomClass.isometry_iff_norm _).mp (gelfandTransform_isometry p.commutant) T).symm
-  rw [hT, ContinuousMap.norm_le _ (norm_nonneg _)]
+  let := p.doubleCommutantCommCStarAlgebra
+  let T : p.doubleCommutant := ⟨p.tensorHom z, p.tensorHom_mem_doubleCommutant z⟩
+  -- The double commutant carries the norm of `B(H)`, restricted to the subalgebra.
+  have hT : ‖p.tensorHom z‖ = ‖T‖ := rfl
+  have hG : ‖T‖ = ‖WeakDual.gelfandTransform ℂ p.doubleCommutant T‖ :=
+    ((AddMonoidHomClass.isometry_iff_norm _).mp
+      (gelfandTransform_isometry p.doubleCommutant) T).symm
+  rw [hT, hG, ContinuousMap.norm_le _ (norm_nonneg _)]
   intro χ
-  exact p.norm_apply_tensorHom_le (WeakDual.CharacterSpace.toNonUnitalAlgHom χ) z
+  have hχ : WeakDual.gelfandTransform ℂ p.doubleCommutant T χ =
+      p.tensorChar (WeakDual.CharacterSpace.toNonUnitalAlgHom χ) z := by
+    rw [WeakDual.gelfandTransform_apply_apply, tensorChar, NonUnitalAlgHom.comp_apply]
+    -- `T` is the corestriction of the integrated form to the double commutant, evaluated at `z`.
+    rfl
+  rw [hχ]
+  exact p.norm_tensorChar_le (WeakDual.CharacterSpace.toNonUnitalAlgHom χ) z
 
 end CommutingRepresentationPair
 
@@ -294,14 +262,7 @@ theorem norm_continuousMapTensorHom_le_minTensorNorm [CompactSpace X] [CompactSp
   have key : ⟪w, T w⟫_ℂ = continuousMapTensorHom X Y z (x, y) := by
     induction z using TensorProduct.inductionOn with
     | tmul a b =>
-      simp only [T, w, π, ρ, NonUnitalStarAlgHom.spatialTensorHom_tmul, mapLCompletion_tmul,
-        StarAlgHom.coe_toNonUnitalStarAlgHom, StarAlgHom.comp_apply, StarAlgHom.ofId_apply,
-        ContinuousMap.evalStarAlgHom_apply, Algebra.algebraMap_eq_smul_one]
-      simp only [smul_apply, one_apply_eq_self]
-      rw [Completion.inner_coe, TensorProduct.inner_tmul, inner_smul_right, inner_smul_right,
-        inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K, he, hf,
-        continuousMapTensorHom_tmul_apply]
-      simp [mul_comm]
+      simp [T, w, π, ρ, Algebra.algebraMap_eq_smul_one, inner_smul_right, he, hf, mul_comm]
     | add z z' hz hz' =>
       simp only [T, map_add, add_apply, inner_add_right, ContinuousMap.add_apply]
       rw [hz, hz']
@@ -328,8 +289,7 @@ theorem minTensorNorm_continuousMap (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) :
   le_antisymm ((minTensorNorm_le_maxTensorNorm z).trans (maxTensorNorm_continuousMap z).le)
     (norm_continuousMapTensorHom_le_minTensorNorm z)
 
-/-- **`C(X) ⊙ C(Y)` has a unique C*-norm between the minimal and the maximal one**: the two
-agree. -/
+/-- **The minimal and maximal C*-norms on `C(X) ⊙ C(Y)` agree.** -/
 theorem minTensorNorm_eq_maxTensorNorm_continuousMap (z : C(X, ℂ) ⊗[ℂ] C(Y, ℂ)) :
     minTensorNorm C(X, ℂ) C(Y, ℂ) z = maxTensorNorm C(X, ℂ) C(Y, ℂ) z := by
   rw [minTensorNorm_continuousMap, maxTensorNorm_continuousMap]
@@ -358,14 +318,23 @@ theorem denseRange_continuousMapTensorHom : DenseRange (continuousMapTensorHom X
     rintro ⟨x, y⟩ ⟨x', y'⟩ hne
     by_cases hx : x = x'
     · subst hx
-      obtain ⟨g, hg⟩ := ContinuousMap.exists_complex_apply_ne (fun h ↦ hne (by rw [h]) : y ≠ y')
-      exact ⟨_, ⟨_, ⟨1 ⊗ₜ g, rfl⟩, rfl⟩, by simpa using hg⟩
-    · obtain ⟨f, hf⟩ := ContinuousMap.exists_complex_apply_ne hx
-      exact ⟨_, ⟨_, ⟨f ⊗ₜ 1, rfl⟩, rfl⟩, by simpa using hf⟩
+      obtain ⟨g, hg, hgy⟩ :=
+        separatesPoints_continuous_of_t35Space (fun h ↦ hne (by rw [h]) : y ≠ y')
+      exact ⟨_, ⟨_, ⟨1 ⊗ₜ ⟨fun t ↦ (g t : ℂ), Complex.continuous_ofReal.comp hg⟩, rfl⟩, rfl⟩,
+        by simpa using hgy⟩
+    · obtain ⟨f, hf, hfx⟩ := separatesPoints_continuous_of_t35Space hx
+      exact ⟨_, ⟨_, ⟨⟨fun t ↦ (f t : ℂ), Complex.continuous_ofReal.comp hf⟩ ⊗ₜ 1, rfl⟩, rfl⟩,
+        by simpa using hfx⟩
   have h := ContinuousMap.starSubalgebra_topologicalClosure_eq_top_of_separatesPoints S hsep
   rw [DenseRange, dense_iff_closure_eq]
   have := congr_arg (fun T : StarSubalgebra ℂ C(X × Y, ℂ) ↦ (T : Set C(X × Y, ℂ))) h
   simp only [StarSubalgebra.topologicalClosure_coe, StarSubalgebra.coe_top] at this
   exact this
+
+/-- Mathlib's linear map `ContinuousMap.tensorHom : C(X, ℂ) ⊗[ℂ] C(Y, ℂ) → C(X × Y, ℂ)` has dense
+range for compact Hausdorff `X` and `Y`. -/
+theorem _root_.ContinuousMap.denseRange_tensorHom_complex :
+    DenseRange (ContinuousMap.tensorHom : C(X, ℂ) ⊗[ℂ] C(Y, ℂ) → C(X × Y, ℂ)) :=
+  coe_continuousMapTensorHom (X := X) (Y := Y) ▸ denseRange_continuousMapTensorHom
 
 end TauCeti
