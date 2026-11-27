@@ -17,6 +17,8 @@ This file records small generic additions to Mathlib's `Setoid` API.
 
 * `TauCeti.Setoid.map_of_le_mk`: the quotient map induced by a setoid inequality sends a
   representative to the same representative in the larger quotient.
+* `Setoid.coe_quotientKerEquivRange_mk`: Mathlib's `Setoid.quotientKerEquivRange` sends `⟦x⟧` to
+  `f x` in `β`.
 * `Setoid.comapQuotientEquiv_mk` and `Setoid.comapQuotientEquiv_symm_mk`: Mathlib's
   `Setoid.comapQuotientEquiv` sends `⟦x⟧` to `⟨Quotient.mk s (f x), ⟨x, rfl⟩⟩` and back.
 * `Setoid.comapValQuotientEquiv`, `Setoid.comapValQuotientEquiv_mk`, and
@@ -51,7 +53,9 @@ end TauCeti
 
 namespace Setoid
 
-private theorem coe_quotientKerEquivRange_mk {α β : Type*} (f : α → β) (x : α) :
+/-- Mathlib's `Setoid.quotientKerEquivRange` sends the equivalence class `⟦x⟧` to `f x` in `β`. -/
+@[simp]
+theorem coe_quotientKerEquivRange_mk {α β : Type*} (f : α → β) (x : α) :
     (quotientKerEquivRange f ⟦x⟧ : β) = f x := by
   simp [quotientKerEquivRange, quotientKerEquivRangeKerLift]
 
@@ -64,7 +68,7 @@ theorem comapQuotientEquiv_mk {α β : Type*} (f : α → β) (s : Setoid β) (x
   have h : Quotient.congrRight (Setoid.ext_iff.1 (comap_eq (f := f) (r := s))) ⟦x⟧ =
       Quotient.mk (ker (Quotient.mk'' ∘ f)) x :=
     Quotient.congr_mk (Equiv.refl α) (Setoid.ext_iff.1 comap_eq) x
-  simp [comapQuotientEquiv, h, coe_quotientKerEquivRange_mk, Quotient.mk''_eq_mk]
+  simp [comapQuotientEquiv, h, Quotient.mk''_eq_mk]
 
 /-- The inverse of `Setoid.comapQuotientEquiv` sends the range point represented by `x : α`
 back to `⟦x⟧`. -/
