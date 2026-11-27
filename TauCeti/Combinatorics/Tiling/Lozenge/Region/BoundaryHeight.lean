@@ -21,6 +21,8 @@ vertex, agree on the boundary: the boundary height depends only on the region.
 
 ## Main statements
 
+* `TauCeti.IsBoundaryHeight.sub_eq_sub_of_reachable`: two boundary heights differ by a constant
+  on each component of the boundary graph.
 * `TauCeti.IsBoundaryHeight.eqOn_boundaryVertices`: on a region with preconnected boundary graph,
   two boundary heights agreeing at a boundary vertex agree on all boundary vertices.
 
@@ -65,6 +67,16 @@ theorem sub_eq_sub_of_adj (hh : IsBoundaryHeight R h) (hh' : IsBoundaryHeight R 
   · rw [← h₃, ← h₄]
     omega
 
+/-- Two boundary heights have equal values of `h − h'` at any two boundary vertices in the same
+component of the boundary graph. -/
+theorem sub_eq_sub_of_reachable (hh : IsBoundaryHeight R h) (hh' : IsBoundaryHeight R h')
+    {u u' : boundaryVertices R} (huu' : (boundaryGraph R).Reachable u u') :
+    h u - h' u = h u' - h' u' := by
+  obtain ⟨p⟩ := huu'
+  induction p with
+  | nil => rfl
+  | cons hab _ ih => exact (hh.sub_eq_sub_of_adj hh' hab).trans ih
+
 /-- **Uniqueness of boundary heights.** If the boundary graph of `R` is preconnected, two boundary
 heights of `R` agreeing at a boundary vertex `u₀` agree on all boundary vertices. By
 `IsHeightFunctionOn.isTiling_tilingOfHeightOn_iff` this applies to the height functions on `R` of
@@ -72,16 +84,9 @@ any two tilings of `R`, so the boundary height depends only on the region. -/
 theorem eqOn_boundaryVertices (hR : (boundaryGraph R).Preconnected) (hh : IsBoundaryHeight R h)
     (hh' : IsBoundaryHeight R h') {u₀ : ℤ × ℤ} (hu₀ : u₀ ∈ boundaryVertices R)
     (h₀ : h u₀ = h' u₀) : Set.EqOn h h' (boundaryVertices R) := fun u hu => by
-  obtain ⟨p⟩ := hR ⟨u₀, hu₀⟩ ⟨u, hu⟩
-  suffices ∀ {a b : boundaryVertices R} (_ : (boundaryGraph R).Walk a b),
-      h a - h' a = h b - h' b by
-    have := this p
-    simp only at this
-    omega
-  intro a b q
-  induction q with
-  | nil => rfl
-  | cons hab _ ih => exact (hh.sub_eq_sub_of_adj hh' hab).trans ih
+  have := hh.sub_eq_sub_of_reachable hh' (hR ⟨u₀, hu₀⟩ ⟨u, hu⟩)
+  simp only at this
+  omega
 
 end IsBoundaryHeight
 
