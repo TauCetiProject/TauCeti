@@ -134,29 +134,25 @@ class. -/
 theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R n) :
     (coordinateMap R n).hom h =
       Ideal.Quotient.mkₐ R (definingHopfIdeal R n).toIdeal h := by
-  unfold coordinateMap
-  exact CommHopfAlgCat.mkQuotient_apply
-    (GeneralLinear.coordinateHopfAlgebra R n) (definingHopfIdeal R n) h
+  unfold coordinateMap definingHopfIdeal
+  rw [← ConstantForm.Special.coordinateMap_def]
+  exact ConstantForm.Special.coordinateMap_apply R n 1 h
 
 /-- Every orthogonality relation vanishes in the special orthogonal coordinate Hopf algebra. -/
 @[simp]
 theorem coordinateMap_relationMatrix (i j : Fin n) :
     (coordinateMap R n).hom (Orthogonal.relationMatrix R n i j) = 0 := by
-  rw [coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk]
-  exact Ideal.Quotient.eq_zero_iff_mem.mpr
-    (definingHopfIdeal_toIdeal R n ▸
-      Ideal.mem_sup_left
-        (Ideal.subset_span (ConstantForm.relationMatrix_mem_relationSet R n 1 i j)))
+  unfold coordinateMap definingHopfIdeal
+  rw [← ConstantForm.Special.coordinateMap_def]
+  exact ConstantForm.Special.coordinateMap_relationMatrix R n 1 i j
 
 /-- The generic determinant maps to one in the special orthogonal coordinate Hopf algebra. -/
 @[simp↓]
 theorem coordinateMap_determinantGroupLike :
     (coordinateMap R n).hom (GeneralLinear.determinantGroupLike R n) = 1 := by
-  rw [coordinateMap_apply]
-  apply sub_eq_zero.mp
-  rw [← map_one (Ideal.Quotient.mkₐ R (definingHopfIdeal R n).toIdeal), ← map_sub,
-    Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, definingHopfIdeal_toIdeal]
-  exact Ideal.mem_sup_right (Ideal.subset_span rfl)
+  unfold coordinateMap definingHopfIdeal
+  rw [← ConstantForm.Special.coordinateMap_def]
+  exact ConstantForm.Special.coordinateMap_determinantGroupLike R n 1
 
 /-- The special orthogonal subgroup scheme of `GL n`. -/
 noncomputable def groupScheme :=

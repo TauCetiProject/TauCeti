@@ -281,27 +281,25 @@ theorem coordinateMap_def :
 /-- The coordinate morphism of `SO_l^J` sends an ambient coordinate to its quotient class. -/
 theorem coordinateMap_apply (h : GeneralLinear.coordinateHopfAlgebra R l) :
     (coordinateMap R l).hom h = Ideal.Quotient.mkₐ R (definingHopfIdeal R l).toIdeal h := by
-  rw [coordinateMap_def]
-  exact CommHopfAlgCat.mkQuotient_apply _ _ h
+  unfold coordinateMap definingHopfIdeal
+  rw [← ConstantForm.Special.coordinateMap_def]
+  exact ConstantForm.Special.coordinateMap_apply R l (formMatrix R l) h
 
 /-- Every entry of `X J_l Xᵀ - J_l` vanishes in the coordinate Hopf algebra of `SO_l^J`. -/
 @[simp]
 theorem coordinateMap_relationMatrix (i j : Fin l) :
     (coordinateMap R l).hom (ConstantForm.relationMatrix R l (formMatrix R l) i j) = 0 := by
-  rw [coordinateMap_apply, Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem,
-    definingHopfIdeal_toIdeal]
-  exact Ideal.mem_sup_left
-    (Ideal.subset_span (ConstantForm.relationMatrix_mem_relationSet R l _ i j))
+  unfold coordinateMap definingHopfIdeal
+  rw [← ConstantForm.Special.coordinateMap_def]
+  exact ConstantForm.Special.coordinateMap_relationMatrix R l (formMatrix R l) i j
 
 /-- The generic determinant is one in the coordinate Hopf algebra of `SO_l^J`. -/
 @[simp↓]
 theorem coordinateMap_determinantGroupLike :
     (coordinateMap R l).hom (GeneralLinear.determinantGroupLike R l) = 1 := by
-  rw [coordinateMap_apply]
-  apply sub_eq_zero.mp
-  rw [← map_one (Ideal.Quotient.mkₐ R (definingHopfIdeal R l).toIdeal), ← map_sub,
-    Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq_zero_iff_mem, definingHopfIdeal_toIdeal]
-  exact Ideal.mem_sup_right (Ideal.subset_span rfl)
+  unfold coordinateMap definingHopfIdeal
+  rw [← ConstantForm.Special.coordinateMap_def]
+  exact ConstantForm.Special.coordinateMap_determinantGroupLike R l (formMatrix R l)
 
 /-- **The group scheme `SO_l^J`**, the closed subgroup scheme of `GL_l` preserving `J_l` with
 determinant one. -/
