@@ -84,7 +84,9 @@ pairing on the density `μ`.
   `TauCeti.exists_norm_le_of_forall_norm_chartSobolevPairing_le_right`: the norms of `H^{-s}(M)`
   and `H^s(M)` are controlled by the dual norms for the pairing.
 * `TauCeti.chartSobolevDualEquiv`: the isomorphism `H^{-s}(M) ≃ (H^s(M))⋆` it induces, with
-  `TauCeti.chartSobolevPairing_chartSobolevDualEquiv_symm` representing a functional as a pairing.
+  `TauCeti.chartSobolevPairing_chartSobolevDualEquiv_symm` representing a functional as a pairing
+  and `TauCeti.chartSobolevDualEquiv_symm_chartSobolevPairing` recovering an element from its
+  pairing.
 
 ## References
 
@@ -484,9 +486,15 @@ theorem chartSobolevDualEquiv_apply (x : chartSobolevSpace he ψ (-s)) :
 `(chartSobolevDualEquiv he hμ hψ s).symm f ∈ H^{-s}(M)`. -/
 @[simp]
 theorem chartSobolevPairing_chartSobolevDualEquiv_symm
-    (f : StrongDual ℂ (chartSobolevSpace he ψ s)) (y : chartSobolevSpace he ψ s) :
-    chartSobolevPairing he hμ hψ s ((chartSobolevDualEquiv he hμ hψ s).symm f) y = f y := by
+    (f : StrongDual ℂ (chartSobolevSpace he ψ s)) :
+    chartSobolevPairing he hμ hψ s ((chartSobolevDualEquiv he hμ hψ s).symm f) = f := by
   rw [← chartSobolevDualEquiv_apply, ContinuousLinearEquiv.apply_symm_apply]
+
+/-- The inverse of `chartSobolevDualEquiv` recovers `x ∈ H^{-s}(M)` from its pairing. -/
+@[simp]
+theorem chartSobolevDualEquiv_symm_chartSobolevPairing (x : chartSobolevSpace he ψ (-s)) :
+    (chartSobolevDualEquiv he hμ hψ s).symm (chartSobolevPairing he hμ hψ s x) = x := by
+  rw [← chartSobolevDualEquiv_apply, ContinuousLinearEquiv.symm_apply_apply]
 
 end Pairing
 
