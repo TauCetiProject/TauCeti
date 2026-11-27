@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Linear.HomCokernel.Basic
+import TauCeti.LinearAlgebra.LinearMap.Range
 public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Basic
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Basic
 public import TauCeti.RingTheory.Length.Algebra
@@ -68,6 +70,7 @@ preserves and reflects indecomposability.
 public section
 
 open CategoryTheory TauCeti TauCeti.MatlisDual
+open scoped ModuleCat.Algebra
 
 universe u v w t
 
@@ -394,6 +397,60 @@ theorem bijective_matlisDualOpMap (hN' : IsFiniteLength R N') :
     apply (matlisDualOpObjEquiv R E N).injective
     ext x
     simpa using congrArg (fun k ↦ equivLinearMap R E N (k (matlisDualOpObjEquiv R E N' ψ)) x) hg
+
+include hE in
+/-- Matlis duality is linear and bijective on morphisms of right modules into a module of
+finite length over the scalar ring, provided the coefficients `E` are injective and
+`Hom_R(R/𝔪, E)` has length one for every maximal ideal `𝔪`. -/
+noncomputable def matlisDualOpHomLinearEquiv
+    (hN' : IsFiniteLength R N') :
+    (N ⟶ N') ≃ₗ[R] (matlisDualOpObj R E N' ⟶ matlisDualOpObj R E N) := by
+  refine LinearEquiv.ofBijective
+    { toFun := matlisDualOpMap R E
+      map_add' := matlisDualOpMap_add R E
+      map_smul' := fun c f ↦ ?_ } (bijective_matlisDualOpMap hE hN')
+  ext φ : 2
+  apply (matlisDualOpObjEquiv R E N).injective
+  ext x
+  simp only [matlisDualOpObjEquiv_map_apply]
+  have hφ (y : matlisDualOpObj R E N) :
+      matlisDualOpObjEquiv R E N (c • y) = c • matlisDualOpObjEquiv R E N y := by
+    rw [← IsScalarTower.algebraMap_smul A c y, map_smul, IsScalarTower.algebraMap_smul]
+  simp only [RingHom.id_apply, hom_smul, LinearMap.smul_apply]
+  rw [map_smul, hφ, map_smul, LinearMap.smul_apply, matlisDualOpObjEquiv_map_apply]
+
+/-- The Hom equivalence sends a morphism to its Matlis dual. -/
+@[simp]
+theorem matlisDualOpHomLinearEquiv_apply
+    (hN' : IsFiniteLength R N') (f : N ⟶ N') :
+    matlisDualOpHomLinearEquiv hE hN' f = matlisDualOpMap R E f :=
+  (rfl)
+
+include hE in
+/-- Dualizing morphisms identifies the cokernel of precomposition with `f` and the
+cokernel of postcomposition with its Matlis dual, for a finite-length coefficient module. -/
+noncomputable def matlisDualOpHomCokernelEquiv {X Y B : ModuleCat.{max v w} Aᵐᵒᵖ}
+    (hB : IsFiniteLength R B) (f : X ⟶ Y) :
+    HomCokernel R f B ≃ₗ[R]
+      CovariantHomCokernel R (matlisDualOpMap R E f) (matlisDualOpObj R E B) := by
+  letI : Module R (Y ⟶ B) := Linear.homModule Y B
+  letI : Module R (X ⟶ B) := Linear.homModule X B
+  let e₀ : (Y ⟶ B) ≃ₗ[R] _ := matlisDualOpHomLinearEquiv hE hB
+  let e₁ : (X ⟶ B) ≃ₗ[R] _ := matlisDualOpHomLinearEquiv hE hB
+  refine Submodule.Quotient.equiv _ _ e₁
+    ((Linear.leftComp R B f).map_range_eq_range_of_comp_eq e₀.surjective ?_)
+  ext g
+  simp [e₀, e₁]
+
+/-- The quotient comparison sends the class of a morphism to the class of its Matlis dual. -/
+@[simp]
+theorem matlisDualOpHomCokernelEquiv_mk {X Y B : ModuleCat.{max v w} Aᵐᵒᵖ}
+    (hB : IsFiniteLength R B) (f : X ⟶ Y) (g : X ⟶ B) :
+    let _ := Linear.homModule (R := R) X B
+    matlisDualOpHomCokernelEquiv hE hB f (Submodule.Quotient.mk g) =
+      Submodule.Quotient.mk (matlisDualOpMap R E g) := by
+  simp only [matlisDualOpHomCokernelEquiv, Submodule.Quotient.equiv_apply, Submodule.mapQ_apply,
+    LinearEquiv.coe_coe, matlisDualOpHomLinearEquiv_apply]
 
 include hE in
 /-- **Matlis duality reflects isomorphisms** of right modules of finite length over `R`. -/

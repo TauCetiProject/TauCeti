@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Projective.FinitePresentation
+public import TauCeti.Algebra.Category.ModuleCat.Projective.Presentation
 public import TauCeti.LinearAlgebra.Dual.FiniteProjective
 public import TauCeti.LinearAlgebra.Dual.Opposite
 public import TauCeti.Algebra.Module.AuslanderReiten.Transpose
@@ -72,6 +72,29 @@ theorem rightTransposeEquiv_symm_mk (Q : FiniteProjectivePresentation N)
     Q.rightTransposeEquiv.symm (AuslanderReitenTranspose.mk Q.p φ) =
       Submodule.Quotient.mk ((opDualCodomainEquiv A Q.P₁).symm φ) := by
   simp [rightTransposeEquiv]
+
+variable {N' : ModuleCat.{v} Aᵐᵒᵖ}
+
+/-- A morphism of right presentations induces a map of transposes in the reverse direction. -/
+noncomputable def rightTransposeMap (Q : FiniteProjectivePresentation N)
+    (P : FiniteProjectivePresentation N') (φ : Q.shortComplex ⟶ P.shortComplex) :
+    P.rightTranspose →ₗ[A] Q.rightTranspose :=
+  (P.p.lcomp A A).range.mapQ (Q.p.lcomp A A).range (φ.τ₁.hom.lcomp A A) (by
+    rintro _ ⟨g, rfl⟩
+    refine ⟨g ∘ₗ φ.τ₂.hom, ?_⟩
+    have h := congrArg ModuleCat.Hom.hom φ.comm₁₂
+    ext x
+    exact congrArg g (LinearMap.congr_fun h.symm x))
+
+/-- On a functional, the induced transpose map is precomposition on the relation modules. -/
+@[simp]
+theorem rightTransposeMap_mk (Q : FiniteProjectivePresentation N)
+    (P : FiniteProjectivePresentation N') (φ : Q.shortComplex ⟶ P.shortComplex)
+    (g : P.P₁ →ₗ[Aᵐᵒᵖ] A) :
+    Q.rightTransposeMap P φ (Submodule.Quotient.mk g) =
+      Submodule.Quotient.mk (g ∘ₗ φ.τ₁.hom) := by
+  simp only [rightTransposeMap, Submodule.mapQ_apply]
+  rfl
 
 /-- The finite projective presentation of a right transpose obtained by dualizing its
 right presentation. The abbreviation keeps the dual modules and their maps definitionally

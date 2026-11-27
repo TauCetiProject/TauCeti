@@ -203,6 +203,7 @@ theorem matlisDualOpMap_add {N N' : ModuleCat.{w} Aᵐᵒᵖ} (g h : N ⟶ N') :
   simp [ModuleCat.hom_add, map_add]
 
 /-- Dualizing a composite of right-module maps reverses the order of composition. -/
+@[simp]
 theorem matlisDualOpMap_comp {N₁ N₂ N₃ : ModuleCat.{w} Aᵐᵒᵖ}
     (f : N₁ ⟶ N₂) (g : N₂ ⟶ N₃) :
     matlisDualOpMap R E (f ≫ g) = matlisDualOpMap R E g ≫ matlisDualOpMap R E f := by

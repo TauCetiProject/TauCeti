@@ -230,6 +230,24 @@ variable {R : Type u} {M : Type v} {P₀ : Type w} {P₁ : Type w'}
 
 namespace IsMinimalProjectivePresentation
 
+/-- The relation map of a minimal presentation is injective exactly when its syzygy
+is projective. -/
+theorem p₁_injective_iff_projective_ker {S U V W : Type*} [Ring S]
+    [AddCommGroup U] [Module S U] [AddCommGroup V] [Module S V]
+    [AddCommMonoid W] [Module S W] {p₁ : U →ₗ[S] V} {p₀ : V →ₗ[S] W}
+    (h : IsMinimalProjectivePresentation p₁ p₀) :
+    Function.Injective p₁ ↔ Module.Projective S (LinearMap.ker p₀) := by
+  let c := p₁.codRestrict (LinearMap.ker p₀) h.apply_mem_ker
+  have hc : IsProjectiveCover c := h.isProjectiveCover_codRestrict
+  constructor
+  · intro hp
+    let : Module.Projective S _ := h.projective
+    exact Module.Projective.of_equiv (LinearEquiv.ofBijective c
+      ⟨fun x y hxy ↦ hp (congrArg Subtype.val hxy), hc.surjective⟩)
+  · intro hker
+    let : Module.Projective S _ := hker
+    exact (LinearMap.ker p₀).injective_subtype.comp hc.bijective_of_projective.injective
+
 variable {p₁ : P₁ →ₗ[R] P₀} {p₀ : P₀ →ₗ[R] M} [Module.Projective R M]
 
 /-- **A projective module presents itself.** In a minimal projective presentation of a projective

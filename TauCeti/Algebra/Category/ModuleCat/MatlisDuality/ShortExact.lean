@@ -8,7 +8,10 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.MatlisDuality.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.ShortExact
 import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-import TauCeti.LinearAlgebra.Exact
+import Mathlib.Algebra.Exact.Basic
+import Mathlib.Algebra.Category.ModuleCat.ChangeOfRingsExact
+import Mathlib.Algebra.Category.ModuleCat.Injective
+import Mathlib.CategoryTheory.Abelian.Injective.Basic
 
 /-!
 # Dual short exact sequences of right modules
@@ -34,44 +37,51 @@ variable (R : Type u) [CommRing R] (E : Type v) [AddCommGroup E] [Module R E]
 short exact sequences of left modules. -/
 theorem ShortExact.matlisDualOp [Small.{v} R] [Module.Injective R E] (hS : S.ShortExact) :
     (S.op.map (ModuleCat.matlisDualOp R E)).ShortExact := by
+  let F := ModuleCat.restrictScalars.{max v t} (algebraMap R Aᵐᵒᵖ)
+  let J := ModuleCat.of R (ULift.{t} E)
+  let G := preadditiveYonedaObj J
+  have : Module.Injective R (ULift.{t} E) := Module.ulift_injective_of_injective R inferInstance
+  have : Injective J := Module.injective_object_of_injective_module R (ULift.{t} E)
+  have := G.preservesFiniteLimits_of_preservesHomology
+  have hT := (hS.map_of_exact F).op.map_of_exact G
   let e (N : ModuleCat.{max v t} Aᵐᵒᵖ) :
-      ModuleCat.matlisDualOpObj R E N ≃ (N →ₗ[R] E) :=
-    (ModuleCat.matlisDualOpObjEquiv R E N).toEquiv.trans
-      (MatlisDual.equivLinearMap R E N).toEquiv
+      ModuleCat.matlisDualOpObj R E N ≃+ (F.obj N ⟶ J) :=
+    (ModuleCat.matlisDualOpObjEquiv R E N).toAddEquiv.trans
+      ((MatlisDual.equivLinearMap R E N).toAddEquiv.trans
+        ((LinearEquiv.arrowCongr (LinearEquiv.refl R N) ULift.moduleEquiv.symm).toAddEquiv.trans
+          (ModuleCat.homAddEquiv (R := R) (M := F.obj N) (N := J)).symm))
   have hmap {N N' : ModuleCat.{max v t} Aᵐᵒᵖ} (f : N ⟶ N')
       (φ : ModuleCat.matlisDualOpObj R E N') :
-      e N (ModuleCat.matlisDualOpMap R E f φ) = (e N' φ).comp (f.hom.restrictScalars R) :=
-    LinearMap.ext fun x ↦ ModuleCat.matlisDualOpObjEquiv_map_apply R E f φ x
-  have hex : Function.Exact S.f.hom S.g.hom :=
-    (ShortExact.moduleCat_exact_iff_function_exact S).mp hS.exact
-  have hexDual : Function.Exact (ModuleCat.matlisDualOpMap R E S.g).hom
-      (ModuleCat.matlisDualOpMap R E S.f).hom := by
-    intro φ
-    have hex' : Function.Exact (S.f.hom.restrictScalars R) (S.g.hom.restrictScalars R) := hex
-    have hd := hex'.lcomp_of_surjective (T := R) E hS.moduleCat_surjective_g
-    constructor
-    · intro hφ
-      have hzero : (e S.X₂ φ).comp (S.f.hom.restrictScalars R) = 0 := by
-        rw [← hmap, hφ]
-        simp [e]
-      obtain ⟨χ, hχ⟩ := (hd (e S.X₂ φ)).mp hzero
-      refine ⟨(e S.X₃).symm χ, (e S.X₂).injective ?_⟩
-      rw [hmap, Equiv.apply_symm_apply]
-      exact hχ
-    · rintro ⟨χ, rfl⟩
-      exact (S.op.map (ModuleCat.matlisDualOp R E)).moduleCat_zero_apply χ
-  have hsurj : Function.Surjective (ModuleCat.matlisDualOpMap R E S.f).hom := by
-    intro ψ
-    have : Module.Injective R (ULift.{t} E) := Module.ulift_injective_of_injective R inferInstance
-    obtain ⟨χ, hχ⟩ := Module.Injective.out (S.f.hom.restrictScalars R)
-      hS.moduleCat_injective_f (ULift.moduleEquiv.symm.toLinearMap ∘ₗ e S.X₁ ψ)
-    refine ⟨(e S.X₂).symm (ULift.moduleEquiv.toLinearMap ∘ₗ χ), (e S.X₁).injective ?_⟩
-    rw [hmap, Equiv.apply_symm_apply]
+      e N ((ModuleCat.matlisDualOpMap R E f).hom φ) = (G.map (F.map f).op).hom (e N' φ) := by
     ext x
-    simpa using congrArg ULift.down (hχ x)
-  -- The maps of the opposite complex become the two bundled dual maps under the functor.
-  exact ModuleCat.shortComplex_shortExact _ hexDual
-    ((ModuleCat.mono_iff_injective _).mp
-      (ModuleCat.mono_matlisDualOp_map_of_surjective R E S.g hS.moduleCat_surjective_g)) hsurj
+    -- Evaluation of a Yoneda map is precomposition followed by evaluation in the lift.
+    change ((MatlisDual.equivLinearMap R E N) (ModuleCat.matlisDualOpObjEquiv R E N
+      (ModuleCat.matlisDualOpMap R E f φ))) x =
+      ((MatlisDual.equivLinearMap R E N') (ModuleCat.matlisDualOpObjEquiv R E N' φ)) (f x)
+    exact ModuleCat.matlisDualOpObjEquiv_map_apply R E f φ x
+  have hex : Function.Exact (G.map (F.map S.g).op).hom (G.map (F.map S.f).op).hom :=
+    (ShortExact.moduleCat_exact_iff_function_exact _).mp hT.exact
+  have hi : Function.Injective (G.map (F.map S.g).op).hom := hT.moduleCat_injective_f
+  have hs : Function.Surjective (G.map (F.map S.f).op).hom := hT.moduleCat_surjective_g
+  have hd : Function.Exact (ModuleCat.matlisDualOpMap R E S.g).hom
+      (ModuleCat.matlisDualOpMap R E S.f).hom :=
+    Function.Exact.of_ladder_addEquiv_of_exact' (e S.X₃) (e S.X₂) (e S.X₁)
+      (f₁₂ := (ModuleCat.matlisDualOpMap R E S.g).hom.toAddMonoidHom)
+      (f₂₃ := (ModuleCat.matlisDualOpMap R E S.f).hom.toAddMonoidHom)
+      (g₁₂ := (G.map (F.map S.g).op).hom.toAddMonoidHom)
+      (g₂₃ := (G.map (F.map S.f).op).hom.toAddMonoidHom)
+      (AddMonoidHom.ext fun x ↦ (hmap S.g x).symm)
+      (AddMonoidHom.ext fun x ↦ (hmap S.f x).symm) hex
+  have hdi : Function.Injective (ModuleCat.matlisDualOpMap R E S.g).hom := by
+    intro x y h
+    apply (e S.X₃).injective
+    exact hi ((hmap S.g x).symm.trans ((congrArg (e S.X₂) h).trans (hmap S.g y)))
+  have hds : Function.Surjective (ModuleCat.matlisDualOpMap R E S.f).hom := by
+    intro y
+    obtain ⟨x, hx⟩ := hs (e S.X₁ y)
+    refine ⟨(e S.X₂).symm x, (e S.X₁).injective ?_⟩
+    exact (hmap _ _).trans ((congrArg _ ((e S.X₂).apply_symm_apply x)).trans hx)
+  -- The functor on the opposite complex uses the bundled dual maps.
+  exact ModuleCat.shortComplex_shortExact _ hd hdi hds
 
 end CategoryTheory.ShortComplex

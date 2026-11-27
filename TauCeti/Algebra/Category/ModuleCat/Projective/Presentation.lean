@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Algebra.Module.Projective.FinitePresentation
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import TauCeti.Algebra.Module.MinimalProjectivePresentation.Basic
-public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
 
 /-!
 # Short complexes of finite projective presentations
@@ -34,18 +32,5 @@ abbrev shortComplex : ShortComplex (ModuleCat A) :=
 /-- A finite projective presentation with an injective relation map is short exact. -/
 theorem shortExact_shortComplex (hp : Function.Injective P.p) : P.shortComplex.ShortExact :=
   ModuleCat.shortComplex_shortExact _ P.exact hp P.surjective
-
-/-- If the presented module has projective dimension at most one, the relation map of a
-minimal projective presentation is injective. -/
-theorem p_injective_of_hasProjectiveDimensionLE_one [Small.{v} A]
-    (hP : IsMinimalProjectivePresentation P.p P.π) (hM : HasProjectiveDimensionLE M 1) :
-    Function.Injective P.p := by
-  have hker := (LinearMap.hasProjectiveDimensionLE_succ_iff_ker P.surjective 0).mp hM
-  have : Projective (ModuleCat.of A (LinearMap.ker P.π)) :=
-    projective_iff_hasProjectiveDimensionLT_one.mpr hker
-  have : Module.Projective A (LinearMap.ker P.π) :=
-    (ModuleCat.of A (LinearMap.ker P.π)).projective_of_module_projective
-  exact (LinearMap.ker P.π).injective_subtype.comp
-    hP.isProjectiveCover_codRestrict.bijective_of_projective.injective
 
 end TauCeti.FiniteProjectivePresentation

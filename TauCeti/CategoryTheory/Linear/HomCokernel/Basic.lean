@@ -123,4 +123,39 @@ theorem precomp_injective (f : X ⟶ P) (e : W ⟶ X) [Epi e] :
 
 end HomCokernel
 
+/-- The cokernel of postcomposition with `g : Y ⟶ Z` on morphisms from `X`. -/
+abbrev CovariantHomCokernel (g : Y ⟶ Z) (X : C) :=
+  (X ⟶ Z) ⧸ (Linear.rightComp R X g).range
+
+namespace CovariantHomCokernel
+
+/-- Precomposition on the cokernel of postcomposition with `g`. -/
+def map (g : Y ⟶ Z) (f : W ⟶ X) :
+    CovariantHomCokernel R g X →ₗ[R] CovariantHomCokernel R g W :=
+  (Linear.rightComp R X g).range.mapQ (Linear.rightComp R W g).range
+    (Linear.leftComp R Z f) (by
+      rintro _ ⟨h, rfl⟩
+      exact ⟨f ≫ h, Category.assoc _ _ _⟩)
+
+/-- Precomposition sends the class of `h` to the class of `f ≫ h`. -/
+@[simp]
+theorem map_mk (g : Y ⟶ Z) (f : W ⟶ X) (h : X ⟶ Z) :
+    map R g f (Submodule.Quotient.mk h) = Submodule.Quotient.mk (f ≫ h) := by
+  simp [map]
+
+/-- Precomposition with an identity acts as the identity on the cokernel. -/
+@[simp]
+theorem map_id (g : Y ⟶ Z) : map R g (𝟙 X) = LinearMap.id := by
+  ext
+  simp
+
+/-- Precomposition on the cokernel reverses composition. -/
+@[simp]
+theorem map_comp (g : Y ⟶ Z) (f : W ⟶ X) (e : P ⟶ W) :
+    map R g (e ≫ f) = (map R g e).comp (map R g f) := by
+  ext
+  simp
+
+end CovariantHomCokernel
+
 end TauCeti
