@@ -42,8 +42,11 @@ maps to the circle, a model of `B ℤ`, by a map that is not null-homotopic.
 * `TauCeti.PointedHomotopyCat.isPathConnectedCWComplex_iff`,
   `TauCeti.PointedHomotopyCat.isPathConnectedCWComplex_of`: membership in the subcategory.
 
-* `TauCeti.fundamentalGroupClassifyingSpaceAdjunction_homEquiv_symm_apply`: the hom-set bijection
+* `TauCeti.fundamentalGroupClassifyingSpaceAdjunction_homEquiv_symm_apply`,
+  `TauCeti.fundamentalGroupClassifyingSpaceAdjunction_homEquiv_apply`: the hom-set bijection
   sends a pointed homotopy class to the homomorphism it induces on fundamental groups.
+* `TauCeti.fundamentalGroupClassifyingSpaceAdjunction_unit_app`: the unit is the class
+  `X ⟶ B(π₁(X))` inducing the identity.
 * `TauCeti.fundamentalGroupClassifyingSpaceAdjunction_counit_app`: the counit is
   `classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso`.
 
@@ -199,6 +202,29 @@ theorem fundamentalGroupClassifyingSpaceAdjunction_homEquiv_symm_apply
         classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app G := by
   rw [fundamentalGroupClassifyingSpaceAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
   exact homEquiv_symm_apply X G f
+
+/-- The hom-set bijection of `fundamentalGroupClassifyingSpaceAdjunction` sends a homomorphism
+`φ : π₁(X) ⟶ G` to the pointed homotopy class `X ⟶ BG` inducing `φ`, read through `π₁(BG) ≅ G`.
+It is stated without naming a CW structure on `X`, which `isPathConnectedCWComplex` only asserts
+to exist. -/
+theorem fundamentalGroupClassifyingSpaceAdjunction_homEquiv_apply
+    (X : isPathConnectedCWComplex.{u}.FullSubcategory) (G : GrpCat.{u})
+    (φ : fundamentalGroupCWFunctor.obj X ⟶ G) :
+    fundamentalGroupFunctor.map (fundamentalGroupClassifyingSpaceAdjunction.homEquiv X G φ).hom ≫
+        classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app G = φ := by
+  rw [← fundamentalGroupClassifyingSpaceAdjunction_homEquiv_symm_apply, Equiv.symm_apply_apply]
+
+/-- The unit of `fundamentalGroupClassifyingSpaceAdjunction` at `X` is the pointed homotopy class
+`X ⟶ B(π₁(X))` inducing the identity of `π₁(X)`, read through `π₁(B(π₁(X))) ≅ π₁(X)`. -/
+theorem fundamentalGroupClassifyingSpaceAdjunction_unit_app
+    (X : isPathConnectedCWComplex.{u}.FullSubcategory) :
+    fundamentalGroupFunctor.map (fundamentalGroupClassifyingSpaceAdjunction.unit.app X).hom ≫
+        classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso.hom.app
+          (fundamentalGroupCWFunctor.obj X) = 𝟙 _ := by
+  rw [← Adjunction.homEquiv_id, fundamentalGroupClassifyingSpaceAdjunction_homEquiv_apply]
+  -- Both identities are on `π₁(X)`: `(𝟭 _).obj X` is `X` and `fundamentalGroupCWFunctor.obj X` is
+  -- `fundamentalGroupFunctor.obj X.obj` (`fundamentalGroupCWFunctor_obj`).
+  rfl
 
 /-- The counit of `fundamentalGroupClassifyingSpaceAdjunction` is the identification
 `π₁(BG) ≅ G` of `classifyingSpaceHomotopyFunctorCompFundamentalGroupFunctorIso`. -/
