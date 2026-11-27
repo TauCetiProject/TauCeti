@@ -227,12 +227,15 @@ theorem conjSubrepIsotypicComponent_eq_smul [ρ.IsIrreducible]
     conjSubrepIsotypicComponent ρ σ hσ g = g • conjSubrepIsotypicComponent ρ σ hσ 1 := by
   rw [smul_conjSubrepIsotypicComponent, mul_one]
 
-/-- **`G` permutes the isotypic components transitively.** If there is no isotypic component
-there is nothing to prove; otherwise one component gives a minimal `N`-stable subspace `σ`, and
-every component is that of a translate of `σ` (`isotypicComponents_eq_range`). -/
+/-- **`G` permutes the isotypic components transitively.** For an irreducible representation `ρ`
+of `G`, translation by `G` acts transitively on the isotypic components of the restriction of `ρ`
+to the normal subgroup `N`. -/
 instance isPretransitive_isotypicComponents [ρ.IsIrreducible] :
     MulAction.IsPretransitive G
       (isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) := by
+  -- With no isotypic component there is nothing to prove. Otherwise one component gives a
+  -- minimal `N`-stable subspace `σ`, and every component is that of a translate of `σ`
+  -- (`isotypicComponents_eq_range`).
   refine ⟨fun c₀ d₀ ↦ ?_⟩
   obtain ⟨S, hS, -⟩ := c₀.prop
   obtain ⟨σ, rfl⟩ := Subrepresentation.subrepresentationSubmoduleOrderIso.surjective S
