@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 public import Mathlib.LinearAlgebra.Matrix.Reindex
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
+public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.Unique
 
 /-!
-# Topological group equivalences for reindexed and `1 × 1` unitary matrices
+# Continuous equivalences of unitary matrices
 
 Over any topological star semiring `α`:
 * reindexing rows and columns along an equivalence `e : m ≃ n` induces an isomorphism of
@@ -22,12 +24,17 @@ Over any topological star semiring `α`:
   `Matrix.uniqueStarRingEquiv` induces an isomorphism of topological groups
   `Matrix.unitaryUniqueContinuousMulEquiv` between `unitary (Matrix m m α)` and `unitary α`.
 
+Conjugation by a fixed unitary matrix and by its inverse are continuous for the
+entrywise topology, giving a continuous linear equivalence on the matrix space.
+
 ## Main definitions
 
 * `Matrix.unitaryReindexContinuousMulEquiv`: the isomorphism of topological groups
   `unitary (Matrix m m α) ≃ₜ* unitary (Matrix n n α)` induced by `e : m ≃ n`.
 * `Matrix.unitaryUniqueContinuousMulEquiv`: the isomorphism of topological groups
   `unitary (Matrix m m α) ≃ₜ* unitary α` for `[Unique m]`.
+* `Matrix.UnitaryGroup.conjStarAlgAutCLE`: the continuous linear equivalence induced by
+  unitary conjugation on the matrix space.
 -/
 
 public section
@@ -116,3 +123,60 @@ theorem coe_unitaryUniqueContinuousMulEquiv_symm_apply (u : unitary α) :
 end Unique
 
 end Matrix
+
+namespace Matrix.UnitaryGroup
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+variable {R : Type*} [CommSemiring R] [StarRing R] [TopologicalSpace R]
+  [ContinuousAdd R] [ContinuousMul R]
+
+/-- Conjugation by a unitary matrix, as a continuous linear equivalence of the matrix space. -/
+def conjStarAlgAutCLE (U : unitary (Matrix n n R)) :
+    Matrix n n R ≃L[R] Matrix n n R where
+  toLinearEquiv := (Unitary.conjStarAlgAut R _ U).toAlgEquiv.toLinearEquiv
+  continuous_toFun := by
+    -- The forgetful maps to a linear equivalence preserve the forward function.
+    change Continuous fun A ↦ Unitary.conjStarAlgAut R _ U A
+    simp only [Unitary.conjStarAlgAut_apply]
+    exact (continuous_const.mul continuous_id).mul continuous_const
+  continuous_invFun := by
+    -- The forgetful maps also preserve the inverse function.
+    change Continuous fun A ↦ (Unitary.conjStarAlgAut R _ U).symm A
+    simp only [Unitary.conjStarAlgAut_symm_apply]
+    exact (continuous_const.mul continuous_id).mul continuous_const
+
+/-- The linear part of the continuous equivalence is the unitary conjugation automorphism. -/
+theorem conjStarAlgAutCLE_toLinearEquiv (U : unitary (Matrix n n R)) :
+    (conjStarAlgAutCLE U).toLinearEquiv = (Unitary.conjStarAlgAut R _ U).toAlgEquiv.toLinearEquiv :=
+  (rfl)
+
+/-- The continuous linear equivalence acts by unitary conjugation. -/
+@[simp] theorem conjStarAlgAutCLE_apply (U : unitary (Matrix n n R))
+    (A : Matrix n n R) : conjStarAlgAutCLE U A = Unitary.conjStarAlgAut R _ U A :=
+  (rfl)
+
+/-- Conjugation by the identity unitary is the identity continuous linear equivalence. -/
+@[simp] theorem conjStarAlgAutCLE_one :
+    conjStarAlgAutCLE (1 : unitary (Matrix n n R)) = ContinuousLinearEquiv.refl R _ := by
+  apply ContinuousLinearEquiv.ext
+  funext A
+  simp only [conjStarAlgAutCLE_apply, map_one, StarAlgEquiv.one_apply,
+    ContinuousLinearEquiv.refl_apply]
+
+/-- Conjugating first by `U` and then by `V` is conjugation by `V * U`. -/
+theorem conjStarAlgAutCLE_trans (U V : unitary (Matrix n n R)) :
+    (conjStarAlgAutCLE U).trans (conjStarAlgAutCLE V) = conjStarAlgAutCLE (V * U) := by
+  apply ContinuousLinearEquiv.ext
+  funext A
+  simp only [ContinuousLinearEquiv.trans_apply, conjStarAlgAutCLE_apply,
+    Unitary.conjStarAlgAut_mul_apply]
+
+/-- The inverse continuous linear equivalence is conjugation by the inverse unitary. -/
+@[simp] theorem conjStarAlgAutCLE_symm (U : unitary (Matrix n n R)) :
+    (conjStarAlgAutCLE U).symm = conjStarAlgAutCLE U⁻¹ := by
+  apply ContinuousLinearEquiv.toLinearEquiv_injective
+  simp only [ContinuousLinearEquiv.toLinearEquiv_symm, conjStarAlgAutCLE_toLinearEquiv,
+    ← AlgEquiv.toLinearEquiv_symm, ← StarAlgEquiv.toAlgEquiv_symm, Unitary.conjStarAlgAut_symm,
+    Unitary.star_eq_inv]
+
+end Matrix.UnitaryGroup

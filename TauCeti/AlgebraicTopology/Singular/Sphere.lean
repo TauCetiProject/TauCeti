@@ -148,6 +148,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
   strong rank condition, the unit sphere of a real normed space `E` of dimension `n + 1`, and the
   complement `E ∖ {y}` of a point in `E`, have Betti number `1` in degrees `0` and `n` (`2` in
   degree `0` when `n = 0`) and `0` in every other degree.
+* `TauCeti.nontrivial_singularHomology_sphere`: with coefficients in a nontrivial ring, the top
+  homology of the unit sphere of a real normed space of dimension at least two is nontrivial.
 
 ## References
 
@@ -707,6 +709,22 @@ theorem reducedSingularHomologyFunctor_map_unitSphereMap {n : ℕ} (hE : finrank
     LinearIsometry.ext fun x ↦ by simp [← hl]
   exact reducedSingularHomologyFunctor_map_list_prod_reflection R hE l
 
+/-- **A linear isometry acts on the top homology of a sphere by the sign of its determinant.**
+For a real inner product space `E` of dimension `n + 2` and a linear isometry `f : E →ₗᵢ[ℝ] E`,
+the restriction of `f` to the unit sphere `S` induces multiplication by `sign (det f) = ±1` on
+`Hₙ₊₁(S)`. -/
+theorem singularHomologyFunctor_map_unitSphereMap {n : ℕ} (hE : finrank ℝ E = n + 2)
+    (f : E →ₗᵢ[ℝ] E) :
+    ((AlgebraicTopology.singularHomologyFunctor C (n + 1)).obj R).map
+        (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩) =
+      (SignType.sign (LinearMap.det f.toLinearMap) : ℤ) • 𝟙 _ := by
+  -- In positive degrees ordinary and reduced homology agree naturally.
+  have h := (reducedSingularHomologySuccIso R n).hom.naturality
+    (TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩)
+  rw [reducedSingularHomologyFunctor_map_unitSphereMap R hE] at h
+  rw [← cancel_epi ((reducedSingularHomologySuccIso R n).hom.app _), ← h]
+  simp
+
 /-- **Change of basis for the generators of the homology of spheres.**  For two orthonormal bases
 `b` and `c` of a real inner product space, indexed by `Fin (n + 1)`, the generator of `H_redₙ(S)`
 determined by `c` is `sign (det_b c) = ±1` times the generator determined by `b`. -/
@@ -1204,5 +1222,16 @@ theorem bettiNumber_compl_singleton (hE : finrank ℝ E = n + 1) (y : E) (j : �
   rw [(complSingletonHomotopyEquivSphere y).bettiNumber_eq k j, bettiNumber_sphere k hE]
 
 end BettiNumber
+
+/-- **The top homology of a sphere is nontrivial.** With coefficients in a nontrivial ring `k`, the
+unit sphere `Sⁿ⁺¹` of a real normed space of dimension `n + 2` has `Hₙ₊₁(Sⁿ⁺¹; k) ≅ k`
+(`ContinuousMap.HomotopyEquiv.singularHomologySphereIso`), which is nontrivial. For `k = 𝔽₂`, a
+sphere of positive dimension does not have the mod-two homology of a point. -/
+theorem nontrivial_singularHomology_sphere (k : Type w) [Ring k] [Nontrivial k] {E : Type w}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ} (hE : finrank ℝ E = n + 2) :
+    Nontrivial (((singularChains k).obj (TopCat.of (sphere (0 : E) 1))).homology (n + 1)) :=
+  have : Nontrivial (ModuleCat.of k k) := inferInstanceAs (Nontrivial k)
+  ((ContinuousMap.HomotopyEquiv.refl _).singularHomologySphereIso (ModuleCat.of k k) hE
+    (Nat.le_add_left 1 n)).toLinearEquiv.toEquiv.nontrivial
 
 end TauCeti

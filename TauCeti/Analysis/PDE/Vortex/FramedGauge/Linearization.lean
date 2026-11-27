@@ -27,6 +27,13 @@ to changes of end trivialization without requiring a globally framed gauge. Poin
 and pointwise vanishing are preserved. No claim about boundedness on higher Sobolev spaces
 follows from the pointwise isometry alone.
 
+A constant gauge `c` is a change of the line frame. It acts on fields by the gauge frame
+`gaugeFrame c` at every point (`TauCeti.Vortex.gaugeTransform_const_apply`), and the two parts of
+the gauge-fixed operator are covariant under it: the zeroth-order part for the frame on the value of
+the field, of the variation and of the target (`gaugeFixedZerothOrder_gaugeFrame`), and the
+first-order part for the frame mixing the gradients of the coordinates
+(`gaugeFixedFirstOrder_gaugeFrame`).
+
 ## References
 
 * A. Jaffe and C. H. Taubes, *Vortices and Monopoles*, Birkhäuser, 1980, Chapter III.
@@ -116,5 +123,32 @@ theorem gaugeFixedAdjoint_gaugeTransform {u : ℂ → Circle} {z : ℂ}
   · linear_combination (-x z 2 * η z 2 - x z 3 * η z 3) * hn
   · ring
   · ring
+
+/-! ### Changes of the line frame -/
+
+/-- The zeroth-order part of `L_x` is covariant under a change of the line frame: changing the
+frame of the value of the field and of the variation changes the frame of the target value. -/
+theorem gaugeFixedZerothOrder_gaugeFrame (c : Circle) (w v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedZerothOrder (gaugeFrame c w) (gaugeFrame c v) =
+      gaugeFrame c (gaugeFixedZerothOrder w v) := by
+  have hn := Circle.re_sq_add_im_sq c
+  ext i
+  fin_cases i <;>
+    simp [gaugeFrame_apply, gaugeFixedZerothOrderMatrix, Fin.sum_univ_four]
+  · linear_combination (w 2 * v 3 - w 3 * v 2) * hn
+  · linear_combination (w 2 * v 2 + w 3 * v 3) * hn
+  · ring
+  · ring
+
+/-- The first-order part of `L_x` is covariant under a change of the line frame: mixing the
+gradients of the coordinates by the gauge frame changes the frame of the target value. -/
+theorem gaugeFixedFirstOrder_gaugeFrame (c : Circle) (G : Fin 4 → ℂ) :
+    gaugeFixedFirstOrder (fun i ↦ ∑ k, gaugeFrame c (EuclideanSpace.single k 1) i • G k) =
+      gaugeFrame c (gaugeFixedFirstOrder G) := by
+  ext i
+  fin_cases i <;>
+    simp [gaugeFixedFirstOrder_apply, gaugeFrame_apply, Fin.sum_univ_four, PiLp.single_apply,
+      Complex.inner, real_smul] <;>
+    ring
 
 end TauCeti.Vortex

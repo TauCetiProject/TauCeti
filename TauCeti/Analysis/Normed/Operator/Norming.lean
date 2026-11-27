@@ -16,6 +16,11 @@ import TauCeti.Analysis.Normed.Operator.Basic
 Finite-dimensional subspaces of continuous linear maps admit finite norming sets in the
 domain unit ball, with any prescribed loss greater than one. Norm-separable sets
 of maps admit countable sets in that ball which recover their norms exactly.
+For a separable domain, a single sequence in its unit ball norms all continuous linear maps,
+even when their family is not norm-separable.
+Dually, on a separable normed space every norming set of functionals, and every set of
+functionals separating points, contains a countable subset with the same property
+(`TauCeti.exists_countable_norming_subset`, `TauCeti.exists_countable_separating_subset`).
 Tests uniformly norming an increasing sequence of operator subspaces separate points
 in the closure of their union.
 
@@ -26,9 +31,11 @@ evaluations at elements of the original dual. Unlike arbitrary functionals on th
 bidual, these evaluations are weak-star continuous. Such norming sets are used in
 separable reductions for weak compactness.
 
-The proofs use Mathlib's operator-norm supremum formulas and compactness of the
-finite-dimensional unit sphere; no separability or completeness of the domain
-is required.
+The operator results use Mathlib's operator-norm supremum formulas and compactness of the
+finite-dimensional unit sphere. The finite-dimensional and norm-separable-family results
+require neither separability nor completeness of the domain. The countable subsets of
+functionals are extracted from a dense sequence and from the Lindelöf property of the
+separable space.
 
 ## References
 
@@ -152,6 +159,94 @@ theorem TopologicalSpace.IsSeparable.exists_countable_norming
     exact f.unit_le_opNorm x (htunit x hx)))
 
 end Countable
+
+section SeparableDomain
+
+variable {𝕜 E F : Type*} [DenselyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- On a separable domain, one sequence in the closed unit ball recovers the norm of
+every continuous linear map, with no separability assumption on the family of maps. -/
+theorem ContinuousLinearMap.exists_seq_norming [SeparableSpace E] :
+    ∃ v : ℕ → E, (∀ n, ‖v n‖ ≤ 1) ∧
+      ∀ f : E →L[𝕜] F, IsLUB (range fun n ↦ ‖f (v n)‖) ‖f‖ := by
+  let B := closedBall (0 : E) 1
+  let : Nonempty B := ⟨⟨0, by simp [B]⟩⟩
+  let u := denseSeq B
+  refine ⟨fun n ↦ (u n : E), fun n ↦ mem_closedBall_zero_iff.mp (u n).property, ?_⟩
+  intro f
+  have hb : BddAbove ((fun x ↦ ‖f x‖) '' B) := by
+    refine ⟨‖f‖, ?_⟩
+    rintro _ ⟨x, hx, rfl⟩
+    exact f.unit_le_opNorm x (mem_closedBall_zero_iff.mp hx)
+  have hsup : IsLUB ((fun x ↦ ‖f x‖) '' B) ‖f‖ := by
+    rw [← f.sSup_unitClosedBall_eq_norm]
+    exact isLUB_csSup ((nonempty_closedBall.mpr zero_le_one).image _) hb
+  have hrange : (range fun x : B ↦ ‖f (x : E)‖) = (fun x ↦ ‖f x‖) '' B := by
+    ext r
+    simp
+  have hdense : Dense (range u) := denseRange_denseSeq B
+  have hd := hdense.upperBounds_image
+    (f.continuous.comp continuous_subtypeVal).norm
+  simp only [← range_comp, Function.comp_def, hrange] at hd
+  exact (isLUB_congr hd).mpr hsup
+
+end SeparableDomain
+
+namespace TauCeti
+
+section CountableDual
+
+variable {𝕜 X : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+  [SeparableSpace X]
+
+/-- On a separable normed space, a norming set `T` of functionals, in the sense that `‖x‖` is the
+supremum of `‖x' x‖` over the members of `T` of norm at most one, contains a countable norming
+subset all of whose members have norm at most one. -/
+theorem exists_countable_norming_subset {T : Set (StrongDual 𝕜 X)}
+    (hT : ∀ x : X, ∀ r < ‖x‖, ∃ x' ∈ T, ‖x'‖ ≤ 1 ∧ r < ‖x' x‖) :
+    ∃ T₀ ⊆ T, T₀.Countable ∧ (∀ x' ∈ T₀, ‖x'‖ ≤ 1) ∧ ∀ x : X, ∀ r < ‖x‖, ∃ x' ∈ T₀, r < ‖x' x‖ := by
+  obtain ⟨d, hd⟩ := exists_dense_seq X
+  -- Countably many tests nearly attain the norms of the points of a dense sequence.
+  have hchoice (p : ℕ × ℕ) : ∃ x' ∈ T, ‖x'‖ ≤ 1 ∧ ‖d p.1‖ - 1 / (p.2 + 1) < ‖x' (d p.1)‖ :=
+    hT (d p.1) _ (sub_lt_self _ Nat.one_div_pos_of_nat)
+  choose g hgT hg1 hgd using hchoice
+  refine ⟨range g, range_subset_iff.2 hgT, countable_range g, forall_mem_range.2 hg1,
+    fun x r hr ↦ ?_⟩
+  -- These tests recover the norm of every point, up to three small errors.
+  obtain ⟨n, hn⟩ := hd.exists_dist_lt x (by linarith : 0 < (‖x‖ - r) / 3)
+  obtain ⟨k, hk⟩ := exists_nat_one_div_lt (by linarith : 0 < (‖x‖ - r) / 3)
+  refine ⟨g (n, k), mem_range_self _, ?_⟩
+  have h1 : ‖g (n, k) (x - d n)‖ ≤ ‖x - d n‖ :=
+    (g (n, k)).le_of_opNorm_le (hg1 _) _ |>.trans_eq (one_mul _)
+  have h2 : ‖g (n, k) (d n)‖ ≤ ‖g (n, k) x‖ + ‖g (n, k) (x - d n)‖ := by
+    rw [map_sub, norm_sub_rev]
+    exact norm_le_insert' _ _
+  have h3 : ‖x‖ ≤ ‖d n‖ + ‖x - d n‖ := norm_le_insert' _ _
+  rw [dist_eq_norm] at hn
+  linarith [hgd (n, k)]
+
+/-- On a separable normed space, a set `T` of functionals separating points contains a countable
+subset that still separates points. -/
+theorem exists_countable_separating_subset {T : Set (StrongDual 𝕜 X)}
+    (hT : ∀ x : X, (∀ x' ∈ T, x' x = 0) → x = 0) :
+    ∃ T₀ ⊆ T, T₀.Countable ∧ ∀ x : X, (∀ x' ∈ T₀, x' x = 0) → x = 0 := by
+  -- The sets `{x | x' x ≠ 0}`, `x' ∈ T`, cover `{x | x ≠ 0}`; extract a countable subcover.
+  obtain ⟨T₀, hT₀T, hT₀c, hT₀⟩ := isOpen_biUnion_countable T (fun x' ↦ {x : X | x' x ≠ 0})
+    fun x' _ ↦ isOpen_ne_fun x'.continuous continuous_const
+  refine ⟨T₀, hT₀T, hT₀c, fun x hx ↦ by_contra fun hne ↦ ?_⟩
+  obtain ⟨x', hx'T, hx'⟩ : ∃ x' ∈ T, x' x ≠ 0 := by
+    by_contra! h
+    exact hne (hT x h)
+  have hmem : x ∈ ⋃ x' ∈ T, {x : X | x' x ≠ 0} := mem_biUnion hx'T hx'
+  rw [← hT₀] at hmem
+  obtain ⟨i, hi, hix⟩ := mem_iUnion₂.1 hmem
+  exact hix (hx i hi)
+
+end CountableDual
+
+end TauCeti
 
 /-- Tests uniformly norming an increasing sequence of operator subspaces separate points
 in the closure of their union. -/

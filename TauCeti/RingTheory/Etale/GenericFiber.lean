@@ -9,9 +9,9 @@ public import Mathlib.RingTheory.Etale.Field
 public import Mathlib.RingTheory.Localization.BaseChange
 public import Mathlib.RingTheory.Unramified.Locus
 import Mathlib.RingTheory.LocalProperties.Reduced
-import Mathlib.RingTheory.Smooth.Fiber
 import TauCeti.Algebra.Polynomial.AlgebraMap
 import TauCeti.FieldTheory.RatFunc.Transcendental
+import TauCeti.RingTheory.Etale.FlatUnramified
 import TauCeti.RingTheory.Ideal.GoingUp
 import TauCeti.RingTheory.LocalRing.ResidueField.Ideal
 import TauCeti.RingTheory.Unramified.Localization
@@ -34,7 +34,8 @@ hence a nonzero element of `P`. At a minimal prime the local ring of `B`, which 
 of the reduced ring `FP ⊗[P] B`, is the residue field, so `FP ⊗[P] B` is unramified over `FP` at
 every prime, hence formally unramified over `FP` by `Algebra.formallyUnramified_iff_forall`. Over
 the field `FP` it is then formally étale (`Algebra.FormallyEtale.of_formallyUnramified_of_field`)
-and finite, so étale (`Algebra.Etale.of_formallyUnramified_of_flat`).
+and finite, so étale
+(`TauCeti.Algebra.Etale.of_formallyUnramified_of_flat_of_isNoetherianRing`).
 
 Together with torsion-freeness
 (`TauCeti.isTorsionFree_of_algebraMap_quotient_minimalPrimes_ne_zero`) these are the two
@@ -109,9 +110,7 @@ theorem etale_tensorProduct_of_isAlgebraic_and_formallyUnramified_at_minimalPrim
     exact .of_equiv (AlgEquiv.ofBijective (IsScalarTower.toAlgHom P _ _)
       (Ideal.bijective_algebraMap_residueField_of_mem_minimalPrimes _ hq)).symm
   have := Algebra.FormallyUnramified.finite_of_free FP (FP ⊗[P] B)
-  have : Algebra.FinitePresentation FP (FP ⊗[P] B) :=
-    Algebra.FinitePresentation.of_finiteType.mp inferInstance
-  exact .of_formallyUnramified_of_flat
+  exact Algebra.Etale.of_formallyUnramified_of_flat_of_isNoetherianRing
 
 section Coordinate
 
