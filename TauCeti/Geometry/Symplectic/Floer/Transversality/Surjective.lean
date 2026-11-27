@@ -331,6 +331,44 @@ section Compatible
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
   {U : Set (ℝ × ℝ)}
 
+/-- **The linearized Floer operator of `C³` data cylindrical near the ends is Fredholm.** This is
+`isFredholm_floerSobolevOperator_of_cylindrical_of_compatible` with the `C³` regularity of the end
+Hamiltonians `H±` derived from that of `K_t`, of which they are the slices at `s = ∓R`. -/
+private theorem isFredholm_floerSobolevOperator_of_cylindrical_of_compatible_of_contDiff
+    (ω : SymplecticForm F) (hω : ∀ v w, ω v w = (inner ℂ v w).im)
+    {J : ℝ × ℝ → F → AlmostComplexStructure F} {Ks Kt : ℝ × ℝ → F → ℝ} {Hm Hp : ℝ → F → ℝ}
+    {Jm Jp : ℝ → F → AlmostComplexStructure F} {R : ℝ} {u : ℝ × ℝ → F}
+    (hcyl : Floer.IsCylindricalNearEnds J Ks Kt Jm Jp Hm Hp R u)
+    (hJ : ContDiff ℝ 1 fun p : (ℝ × ℝ) × F ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap)
+    (hKs : ContDiff ℝ 2 (uncurry Ks)) (hKt : ContDiff ℝ 3 (uncurry Kt))
+    (hJc : ∀ z y, ω.Compatible (J z y)) (hu : ContDiff ℝ 1 u)
+    {Km : ℝ≥0} (hXm : LipschitzWith Km (ω.timeDependentHamiltonianSuspension Hm))
+    (hHmper : Periodic Hm 1) {xm : ℝ → F}
+    (hxm : ∀ t, HasDerivAt xm (ω.hamiltonianVectorField (Hm t) (xm t)) t) (hxmper : Periodic xm 1)
+    (hndm : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hm hXm 0 1) (xm 0))
+    (huxm : TendstoUniformlyOn (fun s t ↦ u (s, t)) xm atBot (Icc 0 1))
+    (hδm : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hm t)) u (s, t)) 0 atBot
+        (Icc 0 1))
+    {Kp : ℝ≥0} (hXp : LipschitzWith Kp (ω.timeDependentHamiltonianSuspension Hp))
+    (hHpper : Periodic Hp 1) {xp : ℝ → F}
+    (hxp : ∀ t, HasDerivAt xp (ω.hamiltonianVectorField (Hp t) (xp t)) t) (hxpper : Periodic xp 1)
+    (hndp : IsNondegenerateFixedPt 𝓘(ℝ, F) (ω.timeDependentHamiltonianFlow Hp hXp 0 1) (xp 0))
+    (huxp : TendstoUniformlyOn (fun s t ↦ u (s, t)) xp atTop (Icc 0 1))
+    (hδp : TendstoUniformlyOn
+      (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (Hp t)) u (s, t)) 0 atTop
+        (Icc 0 1)) :
+    (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
+      u).IsFredholm :=
+  ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω hcyl hJ hKs
+    (hKt.of_le (by norm_num)) hJc hu hXm
+    (contDiff_endData_of_eq (-R) (fun t ↦ hcyl.almostComplex_eq_of_le_neg (-R, t) le_rfl)
+      (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (-R, t) le_rfl) hJ hKt).2
+    hHmper hxm hxmper hndm huxm hδm hXp
+    (contDiff_endData_of_eq R (fun t ↦ hcyl.almostComplex_eq_of_le (R, t) le_rfl)
+      (fun t ↦ hcyl.hamiltonianT_eq_of_le (R, t) le_rfl) hJ hKt).2
+    hHpper hxp hxpper hndp huxp hδp
+
 /-- **The universal linearized Floer operator of data cylindrical near the ends is onto.** Let `F`
 be a finite-dimensional complex inner product space whose symplectic form `ω` is `Im ⟪·, ·⟫`, and
 let the Floer data `(J, K_s, K_t)` be compatible with `ω`, with `J` of class `C²` and `K_s`, `K_t`
@@ -385,9 +423,9 @@ theorem
   have hp := contDiff_endData_of_eq R (fun t ↦ hcyl.almostComplex_eq_of_le (R, t) le_rfl)
     (fun t ↦ hcyl.hamiltonianT_eq_of_le (R, t) le_rfl) hJ₁ hKt
   -- The realization of the linearized operator is Fredholm.
-  have hD := ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω hcyl hJ₁
-    (hKs.of_le (by norm_num)) (hKt.of_le (by norm_num)) hJc (hu.of_le (by norm_num)) hXm hm.2
-    hHmper hxm hxmper hndm huxm hδm hXp hp.2 hHpper hxp hxpper hndp huxp hδp
+  have hD := isFredholm_floerSobolevOperator_of_cylindrical_of_compatible_of_contDiff ω hω hcyl hJ₁
+    (hKs.of_le (by norm_num)) hKt hJc (hu.of_le (by norm_num)) hXm hHmper hxm hxmper hndm huxm hδm
+    hXp hHpper hxp hxpper hndp huxp hδp
   exact range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top
     (fun _ _ ↦ hJ.contDiffAt) (fun _ _ ↦ by ext v; simp) (fun _ _ ↦ hKs.contDiffAt)
     (fun _ _ ↦ hKt.contDiffAt) (fun _ _ ↦ hu.contDiffAt)
@@ -431,15 +469,9 @@ theorem
         (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u W ∧
       (ω.floerSobolevOperator 2 (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt
         u).range ⊔ Submodule.span ℝ t = ⊤ := by
-  -- The Hamiltonians of the ends are those of the cylinder at `s = ∓R`, so they are `C³`.
-  have hm := contDiff_endData_of_eq (-R) (fun t ↦ hcyl.almostComplex_eq_of_le_neg (-R, t) le_rfl)
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le_neg (-R, t) le_rfl) hJ hKt
-  have hp := contDiff_endData_of_eq R (fun t ↦ hcyl.almostComplex_eq_of_le (R, t) le_rfl)
-    (fun t ↦ hcyl.hamiltonianT_eq_of_le (R, t) le_rfl) hJ hKt
-  have := (ω.isFredholm_floerSobolevOperator_of_cylindrical_of_compatible hω hcyl
-    (hJ.of_le (by norm_num)) (hKs.of_le (by norm_num)) (hKt.of_le (by norm_num)) hJc
-    (hu.of_le (by norm_num)) hXm hm.2 hHmper hxm hxmper hndm huxm hδm hXp hp.2 hHpper hxp hxpper
-    hndp huxp hδp).finite_coker
+  have := (isFredholm_floerSobolevOperator_of_cylindrical_of_compatible_of_contDiff ω hω hcyl
+    (hJ.of_le (by norm_num)) (hKs.of_le (by norm_num)) hKt hJc (hu.of_le (by norm_num)) hXm hHmper
+    hxm hxmper hndm huxm hδm hXp hHpper hxp hxpper hndp huxp hδp).finite_coker
   exact Submodule.exists_finset_subset_sup_span_eq_top
     (range_floerSobolevOperator_sup_span_hamiltonianVariations_eq_top_of_cylindrical_of_compatible
       ω hω hcyl hJ hKs hKt hJc hu hXm hHmper hxm hxmper hndm huxm hδm hXp hHpper hxp hxpper hndp
