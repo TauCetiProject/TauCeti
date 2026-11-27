@@ -780,19 +780,21 @@ universe u
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {M : Type u} [TopologicalSpace M] [ChartedSpace E M] [T2Space M] [IsManifold 𝓘(ℝ, E) ∞ M]
 
-/-- **Chart cutoffs summing to one on a compact set.** A compact set `K` of a Hausdorff manifold
-modelled on a finite-dimensional space has finitely many points `cᵢ` and cutoffs `ρᵢ` with compact
-supports in the targets of the preferred charts at the `cᵢ` such that the functions
-`ρᵢ ∘ chartAt cᵢ`, extended by `0` off the chart sources (`OpenPartialHomeomorph.cutoffPullback`),
-add up to `1` on `K`. These are the cutoffs through which operators on `M` are assembled from
-operators in charts. -/
-theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K) :
+/-- **Subordinate chart cutoffs summing to one on a compact set.** Let `K` be a compact set of a
+Hausdorff manifold modelled on a finite-dimensional space and `U x` a neighbourhood of each
+`x ∈ K`. There are finitely many points `cᵢ ∈ K` and cutoffs `ρᵢ` with compact supports in the
+targets of the preferred charts at the `cᵢ` such that the functions `ρᵢ ∘ chartAt cᵢ`, extended by
+`0` off the chart sources (`OpenPartialHomeomorph.cutoffPullback`), add up to `1` on `K`, and the
+support `(chartAt cᵢ)⁻¹(supp ρᵢ)` of the `i`-th one lies in `U cᵢ`. Taking for `U x` the base set
+of a trivialization at `x` gives charts in which a vector bundle is trivial. -/
+theorem IsCompact.exists_sum_cutoffPullback_eq_one_of_mem_nhds {K : Set M} (hK : IsCompact K)
+    {U : M → Set M} (hU : ∀ x ∈ K, U x ∈ 𝓝 x) :
     ∃ (N : ℕ) (c : Fin N → M)
       (ρ : ∀ i, 𝓓(⟨(chartAt E (c i)).target, (chartAt E (c i)).open_target⟩, ℝ)),
-      ∀ y ∈ K, ∑ i, (chartAt E (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
-        (ρ i) 1 y = 1 := by
-  obtain ⟨ι, _, fs, -⟩ := hK.exists_smoothBumpCovering_isSubordinate 𝓘(ℝ, E)
-    (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
+      (∀ i, c i ∈ K ∧ (chartAt E (c i)).symm '' tsupport (ρ i) ⊆ U (c i)) ∧
+        ∀ y ∈ K, ∑ i, (chartAt E (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
+          (ρ i) 1 y = 1 := by
+  obtain ⟨ι, _, fs, hfs⟩ := hK.exists_smoothBumpCovering_isSubordinate 𝓘(ℝ, E) hU
   set f := fs.toSmoothPartitionOfUnity
   -- The partition function `fᵢ` is supported in the compact support of the bump function at `cᵢ`,
   -- which lies in the source of the chart at `cᵢ`.
@@ -826,9 +828,29 @@ theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K
   -- Index the finitely many charts by `Fin N`.
   set σ := Fintype.equivFin ι
   refine ⟨Fintype.card ι, fun j ↦ fs.c (σ.symm j),
-    fun j ↦ TestFunction.smulLeftCLMOfContDiffOn (hg (σ.symm j)) (θ (σ.symm j)), fun y hy ↦ ?_⟩
+    fun j ↦ TestFunction.smulLeftCLMOfContDiffOn (hg (σ.symm j)) (θ (σ.symm j)),
+    fun j ↦ ⟨fs.c_mem' (σ.symm j), ?_⟩, fun y hy ↦ ?_⟩
+  · -- The support of `ρᵢ ∘ chartAt cᵢ` is that of `fᵢ`, inside the support of the bump function.
+    rw [← OpenPartialHomeomorph.tsupport_cutoffPullback_one
+      (IsManifold.chart_mem_maximalAtlas _), funext (hρ (σ.symm j))]
+    exact (hf _).trans (hfs _)
   rw [← f.sum_eq_one hy, finsum_eq_sum_of_fintype, ← σ.symm.sum_comp]
   exact Finset.sum_congr rfl fun j _ ↦ hρ (σ.symm j) y
+
+/-- **Chart cutoffs summing to one on a compact set.** A compact set `K` of a Hausdorff manifold
+modelled on a finite-dimensional space has finitely many points `cᵢ` and cutoffs `ρᵢ` with compact
+supports in the targets of the preferred charts at the `cᵢ` such that the functions
+`ρᵢ ∘ chartAt cᵢ`, extended by `0` off the chart sources (`OpenPartialHomeomorph.cutoffPullback`),
+add up to `1` on `K`. These are the cutoffs through which operators on `M` are assembled from
+operators in charts. -/
+theorem IsCompact.exists_sum_cutoffPullback_eq_one {K : Set M} (hK : IsCompact K) :
+    ∃ (N : ℕ) (c : Fin N → M)
+      (ρ : ∀ i, 𝓓(⟨(chartAt E (c i)).target, (chartAt E (c i)).open_target⟩, ℝ)),
+      ∀ y ∈ K, ∑ i, (chartAt E (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
+        (ρ i) 1 y = 1 := by
+  obtain ⟨N, c, ρ, -, hρ⟩ := hK.exists_sum_cutoffPullback_eq_one_of_mem_nhds (E := E)
+    (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
+  exact ⟨N, c, ρ, hρ⟩
 
 namespace TauCeti
 
