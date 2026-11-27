@@ -63,7 +63,11 @@ rule `δ(a ∪ b) = δa ∪ b + a ∪ δb` of the cup product for the coboundary
 forms `a` and `b` (`TauCeti.morseCupProduct_comp_morseBoundary_eq_iff`); over `ZMod 2` the Koszul
 sign `(-1)^|a|` is `1`. The geometric half, that the broken Y-flow lines are the ends of the
 compactified one-dimensional spaces of Y-flow lines and so come in pairs, needs their
-compactification and gluing, and is not proved here.
+compactification and gluing, and is not proved here. For a Morse–Smale triple of Morse–Smale
+pseudo-gradients, it is proved in `TauCeti.Geometry.Manifold.Morse.Boundary.Diagonal.ChainMap`
+(in the namespace `TauCeti.IsAdaptedPseudoGradient`,
+`IsMorseSmaleTriple.even_ncard_root_add_ncard_firstLeaf_add_ncard_secondLeaf`), so the Morse
+diagonal of the Y-slices is a chain map (`IsMorseSmaleTriple.morseDiagonalMap_comp_morseBoundary`).
 
 ## Main declarations
 
