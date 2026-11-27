@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 import TauCeti.Analysis.InnerProductSpace.Nondegenerate
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Square
@@ -154,25 +155,12 @@ theorem exteriorPower_map_comp_bivectorAd {W V : Type*}
     map 2 e.toLinearMap ∘ₗ bivectorAd =
       bivectorAd ∘ₗ map 2 (map 2 e.toLinearMap) := by
   refine linearMap_ext_ιMulti_two fun X Y ↦ ext_inner_ιMulti_two fun u v ↦ ?_
-  have hinner (A B : ⋀[ℝ]^2 W) :
-      ⟪map 2 e.toLinearMap A, map 2 e.toLinearMap B⟫ = ⟪A, B⟫ :=
-    exteriorPower.inner_map_map e.toLinearIsometry A B
-  have heX (Z : ⋀[ℝ]^2 W) (x : V) :
-      twoVectorContraction (map 2 e.toLinearMap Z) x =
-        e (twoVectorContraction Z (e.symm x)) := by
-    refine ext_inner_right ℝ fun y ↦ ?_
-    have hy : ιMulti ℝ 2 ![x, y] =
-        map 2 e.toLinearMap (ιMulti ℝ 2 ![e.symm x, e.symm y]) := by
-      rw [map_apply_ιMulti_two]; simp
-    rw [inner_twoVectorContraction_apply, hy, hinner,
-      ← inner_twoVectorContraction_apply, ← e.inner_map_map _ (e.symm y), apply_symm_apply]
-  have huv : ιMulti ℝ 2 ![u, v] =
-      map 2 e.toLinearMap (ιMulti ℝ 2 ![e.symm u, e.symm v]) := by
-    rw [map_apply_ιMulti_two]; simp
   rw [LinearMap.comp_apply, LinearMap.comp_apply, map_apply_ιMulti_two]
-  conv_lhs => rw [huv, hinner]
+  conv_lhs =>
+    rw [e.ιMulti_two_eq_exteriorPower_map_symm u v, ← e.toLinearIsometry_toLinearMap,
+      exteriorPower.inner_map_map]
   rw [inner_bivectorAd_ιMulti, inner_bivectorAd_ιMulti]
-  simp only [heX, e.inner_map_map]
+  simp only [e.twoVectorContraction_exteriorPower_map, e.inner_map_map]
 
 /-- The adjoint of `TauCeti.bivectorAd` is equivariant under linear isometric equivalences. -/
 theorem adjoint_bivectorAd_comp_exteriorPower_map {W V : Type*}

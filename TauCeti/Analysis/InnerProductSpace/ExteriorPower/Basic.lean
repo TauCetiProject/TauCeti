@@ -15,6 +15,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.ExteriorSquare
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.GramSchmidt.Ortho
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
+import TauCeti.Analysis.Normed.Operator.LinearIsometry
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
@@ -51,10 +52,15 @@ skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represe
 ## Main results
 
 * `exteriorPower.inner_map_map`: `⟪⋀ⁿ f x, ⋀ⁿ f y⟫ = ⟪x, y⟫` for a linear isometry `f`.
+* `LinearIsometryEquiv.ιMulti_two_eq_exteriorPower_map_symm`:
+  `u ∧ v = ⋀² e (e.symm u ∧ e.symm v)` for a linear isometric equivalence `e`.
 * `LinearIsometryEquiv.adjoint_exteriorPower_map` and
   `LinearIsometryEquiv.exteriorPower_map_comp_adjoint`:
   `LinearMap.adjoint (⋀ⁿ e) = ⋀ⁿ e.symm` and `⋀ⁿ e ∘ₗ LinearMap.adjoint (⋀ⁿ e) = id` for a
   linear isometric equivalence `e`.
+* `LinearIsometry.twoVectorContraction_exteriorPower_map` and
+  `LinearIsometryEquiv.twoVectorContraction_exteriorPower_map`: equivariance of
+  `TauCeti.twoVectorContraction` under linear isometries and linear isometric equivalences.
 * `exteriorPower.norm_map`, `exteriorPower.norm_map_linearIsometryEquiv`: `‖⋀ⁿ f x‖ = ‖x‖` for a
   linear isometry `f`.
 * `exteriorPower.inner_ιMulti_two`: `⟪a ∧ b, u ∧ w⟫ = ⟪a, u⟫ ⟪b, w⟫ - ⟪a, w⟫ ⟪b, u⟫`, and
@@ -317,6 +323,16 @@ namespace LinearIsometryEquiv
 
 open exteriorPower
 open scoped RealInnerProductSpace
+
+/-- A pure wedge `x ∧ y` in the codomain of a linear isometric equivalence `e` is the image
+under `exteriorPower.map 2 e.toLinearMap` of `e.symm x ∧ e.symm y`. -/
+theorem ιMulti_two_eq_exteriorPower_map_symm {E F : Type*}
+    [SeminormedAddCommGroup E] [Module ℝ E]
+    [SeminormedAddCommGroup F] [Module ℝ F]
+    (e : E ≃ₗᵢ[ℝ] F) (x y : F) :
+    ιMulti ℝ 2 ![x, y] = map 2 e.toLinearMap (ιMulti ℝ 2 ![e.symm x, e.symm y]) := by
+  rw [map_apply_ιMulti_two]
+  simp
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {n : ℕ}
@@ -766,6 +782,52 @@ theorem twoVectorContraction_injective :
 end Normed
 
 end TwoVectorContraction
+
+end TauCeti
+
+namespace LinearIsometry
+
+open exteriorPower TauCeti
+open scoped RealInnerProductSpace
+
+/-- Contracting a two-vector mapped by a linear isometry against an image vector commutes with
+the linear isometry. -/
+theorem twoVectorContraction_exteriorPower_map {W V : Type*}
+    [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (f : W →ₗᵢ[ℝ] V) (Z : ⋀[ℝ]^2 W) (w : W) :
+    twoVectorContraction (map 2 f.toLinearMap Z) (f w) =
+      f (twoVectorContraction Z w) := by
+  have key : LinearMap.applyₗ (R := ℝ) (f w) ∘ₗ twoVectorContractionₗ ∘ₗ
+        map 2 f.toLinearMap =
+      f.toLinearMap ∘ₗ LinearMap.applyₗ (R := ℝ) w ∘ₗ twoVectorContractionₗ := by
+    refine linearMap_ext_ιMulti_two fun a b ↦ ?_
+    simp [f.inner_map_map]
+  exact LinearMap.congr_fun key Z
+
+end LinearIsometry
+
+namespace LinearIsometryEquiv
+
+open exteriorPower TauCeti
+
+/-- Contracting a two-vector mapped by a linear isometric equivalence commutes with the
+equivalence. -/
+theorem twoVectorContraction_exteriorPower_map {W V : Type*}
+    [SeminormedAddCommGroup W] [InnerProductSpace ℝ W]
+    [SeminormedAddCommGroup V] [InnerProductSpace ℝ V]
+    (e : W ≃ₗᵢ[ℝ] V) (Z : ⋀[ℝ]^2 W) (x : V) :
+    twoVectorContraction (map 2 e.toLinearMap Z) x =
+      e (twoVectorContraction Z (e.symm x)) := by
+  simpa [e.apply_symm_apply x] using
+    e.toLinearIsometry.twoVectorContraction_exteriorPower_map Z (e.symm x)
+
+end LinearIsometryEquiv
+
+namespace TauCeti
+
+open _root_.exteriorPower
+open scoped RealInnerProductSpace
 
 /-! ### Alternating sum of a two-vector-valued map -/
 
