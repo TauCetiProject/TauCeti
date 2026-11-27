@@ -115,6 +115,14 @@ theorem Ideal.residueFieldAlgEquivOfIsLocalization_algebraMap (r : R) :
   rw [AlgEquiv.commutes, IsScalarTower.algebraMap_apply R S (IsLocalRing.ResidueField S),
     IsLocalRing.ResidueField.algebraMap_eq]
 
+/-- The inverse of `Ideal.residueFieldAlgEquivOfIsLocalization` sends the residue of the image of
+`r : R` in `S` to the image of `r` in `κ(P)`. -/
+@[simp]
+theorem Ideal.residueFieldAlgEquivOfIsLocalization_symm_residue (r : R) :
+    (P.residueFieldAlgEquivOfIsLocalization S).symm (IsLocalRing.residue S (algebraMap R S r)) =
+      algebraMap R P.ResidueField r := by
+  rw [AlgEquiv.symm_apply_eq, Ideal.residueFieldAlgEquivOfIsLocalization_algebraMap]
+
 end IsLocalization
 
 namespace TauCeti.IsLocalRing
