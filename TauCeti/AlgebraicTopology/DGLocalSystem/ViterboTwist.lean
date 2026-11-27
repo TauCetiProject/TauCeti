@@ -45,6 +45,8 @@ The laws of the two factors combine:
   (`TauCeti.RankOneLocalSystem.mapRingHom_torusSign`,
   `TauCeti.RankOneLocalSystem.mapRingHom_viterboOrientationTwist`). So the twist over any
   commutative ring is the extension of coefficients of the twist over `ℤ`;
+* it is additive in the class through the torus sign, `η₀(c + c') = η₀(c) ⊗ σ_{c'}`
+  (`TauCeti.RankOneLocalSystem.viterboTwist_add`);
 * on an orientable manifold it is the torus sign
   (`TauCeti.HomologicalOrientation.viterboTwist_eq_torusSign`), so it is trivial exactly when `c`
   vanishes on the torus classes or `2 = 0`
@@ -66,6 +68,7 @@ The torus sign, and so the twist, is defined for manifolds `M` in the lowest uni
 * `TauCeti.RankOneLocalSystem.inv_viterboTwist`: the twist is its own inverse.
 * `TauCeti.RankOneLocalSystem.mapRingHom_viterboTwist`: the twist is compatible with extension of
   coefficients.
+* `TauCeti.RankOneLocalSystem.viterboTwist_add`: `η₀(c + c') = η₀(c) ⊗ σ_{c'}`.
 * `TauCeti.HomologicalOrientation.viterboTwist_eq_one_iff`: on an orientable manifold the twist is
   trivial exactly when `c` vanishes on the torus classes or `2 = 0`.
 
@@ -154,6 +157,14 @@ theorem mapRingHom_viterboTwist {R' : Type*} [CommRing R'] (φ : R →+* R')
     (γ : MooreFreeLoopSpace M) : mapRingHom φ (viterboTwist R hd c γ) = viterboTwist R' hd c γ := by
   rw [viterboTwist_def, viterboTwist_def, map_mul, mapRingHom_torusSign,
     mapRingHom_viterboOrientationTwist]
+
+/-- **The tensor law of the Viterbo twist in the class**: replacing `c` by `c + c'` tensors the
+twist with the torus sign of `c'`, `η₀(c + c') = η₀(c) ⊗ σ_{c'}`. -/
+theorem viterboTwist_add
+    (c' : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) 2).obj
+      (ModuleCat.of ℤ ℤ)).obj (TopCat.of M) →+ ZMod 2) (γ : MooreFreeLoopSpace M) :
+    viterboTwist R hd (c + c') γ = viterboTwist R hd c γ * torusSign R c' γ := by
+  rw [viterboTwist_def, viterboTwist_def, torusSign_add, mul_right_comm]
 
 /-- **Along the constant loops the Viterbo twist is the orientation local system**:
 `i_M^* η₀ = o_M`, since the torus sign is trivial along the constant loops. -/

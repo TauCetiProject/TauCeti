@@ -17,7 +17,14 @@ Let `W` be an open of a scheme `X` and `M` a sheaf of modules on `X`. Pullback a
 `W.ι : W ⟶ X`, followed by restriction to all of `W`, is a map
 `Scheme.Opens.cohomologyOnPullbackι W M n : Hⁿ(W, M) ⟶ Hⁿ(W, M|_W)` from the cohomology of `M` over
 the open `W` to the cohomology of the open subscheme `W` with coefficients in the pullback of `M`.
-It is injective (`AlgebraicGeometry.Scheme.Opens.cohomologyOnPullbackι_injective`).
+It is bijective (`AlgebraicGeometry.Scheme.Opens.cohomologyOnPullbackι_bijective`), so the
+cohomology of `M` over the open `W` is the cohomology of the open subscheme `W` with coefficients in
+`M|_W`. Both directions compute with one injective resolution `P` of `M`, whose pullback to `W` is
+again a resolution by flasque modules: a class over `W` is the class of a cocycle of `P` over `W`,
+pullback to `W` is a bijection on the sections of each term of `P`
+(`AlgebraicGeometry.Scheme.Modules.bijective_pullbackSectionsLE_ι`), and it commutes with the
+differentials, so cocycles and coboundaries of `P` over `W` correspond to those of the pulled-back
+resolution over all of `W`.
 
 The target is a module over the global functions of the open subscheme `W`, which are the
 functions on the open `W` of `X` (`AlgebraicGeometry.Scheme.Opens.topIso`). The library's
@@ -186,5 +193,42 @@ theorem cohomologyOnPullbackι_injective (M : X.Modules) (n : ℕ) :
       ⟨t, (Scheme.Modules.bijective_pullbackSectionsLE_ι (P.cocomplex.X (m + 1)) W ⊤ rfl).1 ?_⟩
     exact (Scheme.Hom.pullbackSectionsLE_naturality _ _ _ _ _ _ _).symm.trans
       (ht'.trans (Scheme.Hom.pullbackSectionsLE_apply W.ι _ W ⊤ _ s).symm)
+
+/-- Pullback along the inclusion of an open `W` is surjective on the cohomology of `W`: every class
+of the open subscheme `W` with coefficients in `M|_W` is the image of a class of `M` over `W`. -/
+theorem cohomologyOnPullbackι_surjective (M : X.Modules) (n : ℕ) :
+    Function.Surjective (W.cohomologyOnPullbackι M n) := by
+  let P := injectiveResolution M
+  intro y
+  -- A class of `M|_W` is the class of a cocycle `t'` of the pulled-back resolution over `W`, whose
+  -- terms are flasque, and `t'` is the pullback of a section `t` of `P` over `W`.
+  obtain ⟨t', ht', rfl⟩ := CategoryTheory.Sheaf.H'.resolutionClass_surjective
+    (K := ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).mapHomologicalComplex _).obj P.cocomplex)
+    ((Scheme.Modules.pullback W.ι ⋙ toSheaf W).map (P.ι.f 0))
+    (CochainComplex.map_augmentation_comp_d _ P.ι_f_zero_comp_complex_d)
+    (CochainComplex.map_augmentation_exact _ P.exact₀)
+    (CochainComplex.map_exactAt_succ _ P.cocomplex_exactAt_succ) ⊤
+    (fun j k ↦ Scheme.Modules.subsingleton_cohomologyOn_succ_of_isFlasque
+      ((Scheme.Modules.pullback W.ι).obj (P.cocomplex.X j)) k ⊤) y
+  obtain ⟨t, rfl⟩ := (Scheme.Modules.bijective_pullbackSectionsLE_ι (P.cocomplex.X n) W ⊤ rfl).2 t'
+  -- The section `t` is a cocycle, since its pullback is and pullback to `W` is injective.
+  have ht : (P.cocomplex.d n (n + 1)).app W t = 0 :=
+    (Scheme.Modules.bijective_pullbackSectionsLE_ι (P.cocomplex.X (n + 1)) W ⊤ rfl).1
+      ((Scheme.Hom.pullbackSectionsLE_naturality _ _ _ _ _ _ _).symm.trans
+        (ht'.trans (map_zero _).symm))
+  exact ⟨_, (cohomologyOnPullbackι_resolutionClass W P t ht).trans
+    (by congr 1; exact (Scheme.Hom.pullbackSectionsLE_apply _ _ _ _ _ t).symm)⟩
+
+/-- Pullback along the inclusion of an open `W` is bijective on the cohomology of `W`: the
+cohomology of `M` over `W` is the cohomology of the open subscheme `W` with coefficients in
+`M|_W`. -/
+theorem cohomologyOnPullbackι_bijective (M : X.Modules) (n : ℕ) :
+    Function.Bijective (W.cohomologyOnPullbackι M n) :=
+  ⟨W.cohomologyOnPullbackι_injective M n, W.cohomologyOnPullbackι_surjective M n⟩
+
+/-- Pullback along the inclusion of an open `W` is an isomorphism on the cohomology of `W`. -/
+instance isIso_cohomologyOnPullbackι (M : X.Modules) (n : ℕ) :
+    IsIso (W.cohomologyOnPullbackι M n) :=
+  (ConcreteCategory.isIso_iff_bijective _).2 (W.cohomologyOnPullbackι_bijective M n)
 
 end AlgebraicGeometry.Scheme.Opens

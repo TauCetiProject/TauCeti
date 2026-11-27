@@ -125,11 +125,6 @@ private theorem isOpen_movingEndsDomain [Finite ι] (c : ι → ℂ) :
 private noncomputable def movingEndsTruncation (c a : ι → ℂ) (T : ℝ) : Set (ℝ × ℝ) :=
   Complex.equivRealProdCLM.symm ⁻¹' puncturedSphereTruncation c a T
 
-private theorem isCompact_movingEndsTruncation (c a : ι → ℂ) (T : ℝ) :
-    IsCompact (movingEndsTruncation c a T) :=
-  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-    (isCompact_puncturedSphereTruncation c a T)
-
 private theorem movingEndsTruncation_mono (c a : ι → ℂ) {T T' : ℝ} (h : T ≤ T') :
     movingEndsTruncation c a T ⊆ movingEndsTruncation c a T' :=
   preimage_mono (puncturedSphereTruncation_mono h)
@@ -267,11 +262,6 @@ private theorem mem_movingEndsTruncation_iff (ha : ∀ i, a i ≠ 0) {T : ℝ} (
       positivity
     · exact not_lt.1 fun h ↦ (he none).not_gt ((lt_fst_positiveEndCoord_inf_iff h0).2 h)
 
-/-- The truncation `Σ_T` lies in the sphere. -/
-private theorem movingEndsTruncation_subset (ha : ∀ i, a i ≠ 0) (T : ℝ) :
-    movingEndsTruncation c a T ⊆ movingEndsDomain c :=
-  fun _ hz i ↦ ne_of_mem_puncturedSphereTruncation (ha i) hz
-
 /-- The longitudinal coordinate of every end is bounded above on a compact subset of the sphere. -/
 private theorem exists_forall_movingEndCoord_le (ha : ∀ i, a i ≠ 0) {K : Set (ℝ × ℝ)}
     (hK : IsCompact K) (hKU : K ⊆ movingEndsDomain c) (e : Option ι) :
@@ -326,12 +316,7 @@ private theorem exists_movingEndChart_eq (ha : ∀ i, a i ≠ 0) {e : Option ι}
     exact ⟨endBandCoord inf z, by simp [movingEndCoord, endBandCoord_apply],
       positiveEndChart_endBandCoord inf h0⟩
   | some i =>
-    set v := (Complex.equivRealProdCLM.symm z - c i) / a i
-    have hv : v ≠ zero.endCenter := sub_div_ne_endCenter_zero ha (hz i)
-    refine ⟨Complex.equivRealProdCLM (zero.endCoord v), by simp [movingEndCoord, v], ?_⟩
-    simp only [movingEndChart, TauCeti.Complex.realChart_apply,
-      ContinuousLinearEquiv.symm_apply_apply, zero.cylindricalEndLift_endCoord hv, v,
-      mul_div_cancel₀ _ (ha i), add_sub_cancel, ContinuousLinearEquiv.apply_symm_apply]
+    exact ⟨_, by simp [movingEndCoord], realChart_add_mul_cylindricalEndLift_endCoord (ha i) (hz i)⟩
 
 /-! ### Cutoffs on a sphere with moving input ends -/
 
@@ -622,7 +607,7 @@ private theorem setIntegral_sobolevDensity_comp_movingEndChart_le_of_end [Finite
         2 * (M * (1 + B)) ^ 2 * ∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2) := by
   have hβξ := contDiff_movingEndCutoff_smul ha (R₀ := R₀) (by linarith) e hξ hξU
   have hD := ω.integral_norm_floerLinearization_fun_smul_sq_le (isOpen_movingEndsDomain c) hJ hKs
-    hKt hu (isCompact_movingEndsTruncation c a _)
+    hKt hu (isCompact_preimage_puncturedSphereTruncation c a _)
     (fun z hz ↦ contDiffAt_movingEndCutoff ha (by linarith) e hz)
     (fun z _ ↦ abs_le.2 ⟨by linarith [movingEndCutoff_nonneg (c := c) (a := a) R₀ e z],
       movingEndCutoff_le_one R₀ e z⟩)
@@ -666,8 +651,8 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
           ∫ z in movingEndsTruncation c a (R₀ + 1), ‖ξ z‖ ^ 2) := by
   set K := movingEndsTruncation c a (R₀ + 1)
-  have hK : IsCompact K := isCompact_movingEndsTruncation c a _
-  have hKU : K ⊆ movingEndsDomain c := movingEndsTruncation_subset ha _
+  have hK : IsCompact K := isCompact_preimage_puncturedSphereTruncation c a _
+  have hKU : K ⊆ movingEndsDomain c := preimage_puncturedSphereTruncation_subset ha _
   set J' : ℝ × ℝ → V → V →L[ℝ] V := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap
   -- Bounds for `J` along `u` and for the derivatives of the cutoffs on `K`.
   obtain ⟨B, hB⟩ := hK.exists_bound_of_continuousOn (f := fun z ↦ J' z (u z))
@@ -702,7 +687,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_a
       C₀ * (2 * X + 2 * c' ^ 2 * Y + Y) + Y :=
     (ω.setIntegral_sobolevDensity_le_mul_integral_floerLinearization_smul_add (J := J')
       (isOpen_movingEndsDomain c) hJ hKs hKt hu
-      (isCompact_movingEndsTruncation c a R₀).measurableSet hK
+      (isCompact_preimage_puncturedSphereTruncation c a R₀).measurableSet hK
       (movingEndsTruncation_mono c a (by linarith)) hKU
       (fun z hz ↦ contDiffAt_movingCoreCutoff ha (by linarith) hz)
       (fun z hz ↦ abs_movingCoreCutoff_le_one ha hsep hout hR₀.le (hKU hz))
@@ -782,7 +767,7 @@ theorem
     | none => exact hendOut hξ hξc hξR
     | some i => exact hend i hξ hξc hξR
   obtain ⟨C', hC', T, hT, hest⟩ := exists_forall_sum_setIntegral_add_setIntegral_le_of_forall_le
-    (K := movingEndsTruncation c a) (isCompact_movingEndsTruncation c a)
+    (K := movingEndsTruncation c a) (isCompact_preimage_puncturedSphereTruncation c a)
     (fun _ _ h ↦ movingEndsTruncation_mono c a h) (r := 2) (S := movingEndsDomain c) (R := Re)
     (G := fun e ξ ↦ ξ ∘ movingEndChart c a e) fun _ hR₀ hR ↦
       ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_movingEnds_aux ha hsep hout hJ hKs hKt
@@ -888,24 +873,17 @@ exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization
       (realChart (fun z ↦ c i + a i * zero.cylindricalEndLift z) ζ) ≠ c j := by
     rw [equivRealProdCLM_symm_realChart]
     exact add_mul_cylindricalEndLift_ne hsep (ha i) (by simpa using hζ) j
-  -- Beyond `s = 1` the output end lies outside the disc `‖w‖ ≤ 2 exp (2π)` of the input ends.
-  have hinf (ζ : ℝ × ℝ) (hζ : 1 < ζ.1) (j : ι) :
-      Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j := by
-    intro h
-    have h₁ := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
-    rw [Prod.mk.eta, h] at h₁
-    have : Real.exp (2 * π) < Real.exp (2 * π * ζ.1) :=
-      Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
-    linarith [hout j, norm_nonneg (a j)]
   choose C R _ hend using fun i ↦
     exists_forall_setIntegral_comp_realChart_le_mul_integral_floerLinearization_of_movingEnds
       ω hH hHs hHout hHouts ha hsep hout i (hX i) (hx i) (hnd i) (hJe i) (hJex i) (hJeq i)
       (fun ζ hζ ↦ hJ _ (hin i ζ (by linarith))) (fun ζ hζ ↦ hu _ (hin i ζ (by linarith)))
       (hF i) (hux i) (hδ i)
+  have hcout (i : ι) : ‖c i‖ ≤ 2 * Real.exp (2 * π) := by linarith [hout i, norm_nonneg (a i)]
   obtain ⟨Cout, Rout, -, hendOut⟩ :=
     exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLinearization_of_movingEnds
       ω hH hHs hHout hHouts ha hout hXout hxout hndout hJout hJoutx hJoutq
-      (fun ζ hζ ↦ hJ _ (hinf ζ (by linarith))) (fun ζ hζ ↦ hu _ (hinf ζ (by linarith))) hFout
+      (fun ζ hζ ↦ hJ _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hcout (by linarith)))
+      (fun ζ hζ ↦ hu _ (equivRealProdCLM_symm_positiveEndChart_inf_ne hcout (by linarith))) hFout
       huxout hδout
   exact
     exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearization_add_of_movingEnds_of_ends

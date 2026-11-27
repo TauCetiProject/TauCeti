@@ -20,10 +20,11 @@ coefficients with the `k`-th seminorms are dominated by a summable sequence `b k
 its sum converges to the sum of the limit series
 (`ContDiffMapSupportedIn.tendsto_tsum_smul_of_dominated`).
 
-With the parameter in a topological space, this gives the continuity of such series; with the
-coefficients tending to zero at infinity, it gives a compact set `{0} ∪ {∑ m, c x m • v m}` of
-`C^n` functions supported in `K`, as used for the Fourier series of test functions with modulated
-cutoffs `v m`.
+With the parameter in a topological space, this gives the continuity of such series
+(`ContDiffMapSupportedIn.continuous_tsum_smul_of_dominated`); with the coefficients tending to
+zero at infinity, it gives a compact set `{0} ∪ {∑ m, c x m • v m}` of `C^n` functions supported
+in `K` (`ContDiffMapSupportedIn.isCompact_insert_range_tsum_smul_of_dominated`), as used for the
+Fourier series of test functions with modulated cutoffs `v m`.
 -/
 
 public section
@@ -85,5 +86,30 @@ theorem tendsto_tsum_smul_of_dominated {X ι : Type*} {l : Filter X} {v : ι →
     rw [map_smul_eq_mul]
     exact hdom hx m
   · simpa only [map_smul_eq_mul] using hxε
+
+/-- **Continuity of dominated series.** If the products `‖c x m‖ N_k (v m)` are dominated by
+summable sequences `b k m`, uniformly in `x`, and each coefficient depends continuously on `x`,
+then so does `∑ m, c x m • v m`. -/
+theorem continuous_tsum_smul_of_dominated {X ι : Type*} [TopologicalSpace X]
+    {v : ι → 𝓓^{n}_{K}(E, F)} {c : X → ι → 𝕜} {b : ℕ → ι → ℝ} (hb : ∀ k, Summable (b k))
+    (hc : ∀ x k m, ‖c x m‖ * N[𝕜]_{K, n, k} (v m) ≤ b k m)
+    (hcont : ∀ m, Continuous fun x ↦ c x m) :
+    Continuous fun x ↦ ∑' m, c x m • v m :=
+  continuous_iff_continuousAt.2 fun x₀ ↦ tendsto_tsum_smul_of_dominated hb
+    (Eventually.of_forall (hc ·)) (hc x₀) fun m ↦ (hcont m).continuousAt
+
+/-- **Compactness of dominated series vanishing at infinity.** If moreover the dominating
+sequences are nonnegative and each coefficient tends to zero at infinity, then the sums
+`∑ m, c x m • v m` and `0` form a compact set. -/
+theorem isCompact_insert_range_tsum_smul_of_dominated {X ι : Type*} [TopologicalSpace X]
+    {v : ι → 𝓓^{n}_{K}(E, F)} {c : X → ι → 𝕜} {b : ℕ → ι → ℝ} (hb : ∀ k, Summable (b k))
+    (hb0 : ∀ k m, 0 ≤ b k m) (hc : ∀ x k m, ‖c x m‖ * N[𝕜]_{K, n, k} (v m) ≤ b k m)
+    (hcont : ∀ m, Continuous fun x ↦ c x m)
+    (hlim : ∀ m, Tendsto (fun x ↦ c x m) (cocompact X) (𝓝 0)) :
+    IsCompact (insert 0 (Set.range fun x ↦ ∑' m, c x m • v m)) := by
+  have h := tendsto_tsum_smul_of_dominated (c₀ := 0) hb (Eventually.of_forall (hc ·))
+    (fun k m ↦ by simpa using hb0 k m) hlim
+  simp only [Pi.zero_apply, zero_smul, tsum_zero] at h
+  exact h.isCompact_insert_range_of_cocompact (continuous_tsum_smul_of_dominated hb hc hcont)
 
 end ContDiffMapSupportedIn

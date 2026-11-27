@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Algebra.Polynomial.FieldDivision
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 
 /-!
 # Analytic dependence of polynomial division on coefficients

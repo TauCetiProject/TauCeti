@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.LinearAlgebra.Dimension.Localization
 public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.Rank
 
 /-!
 # The rank of a finite flat morphism is the degree of its function-field extension
@@ -90,15 +91,13 @@ theorem Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap (f : X ⟶ Y) 
   obtain ⟨U, hU, hyU, -⟩ := exists_isAffineOpen_mem_and_subset (TopologicalSpace.Opens.mem_top y)
   have : Nonempty U := ⟨⟨y, hyU⟩⟩
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
-  -- Over `U`, the morphism `f` is the spectrum of the map of coordinate rings `φ`.
+  -- Over `U`, the morphism `f` is the spectrum of the finite flat map of coordinate rings `φ`.
+  have : (f.appLE U (f ⁻¹ᵁ U) le_rfl).hom.Finite := by
+    rw [← f.app_eq_appLE]; exact f.finite_app U hU
+  have : (f.appLE U (f ⁻¹ᵁ U) le_rfl).hom.Flat := f.flat_appLE hU hV le_rfl
   set φ := f.appLE U (f ⁻¹ᵁ U) le_rfl
-  have H : IsPullback (Spec.map φ) hV.fromSpec hU.fromSpec f :=
-    IsOpenImmersion.isPullback _ _ _ _ (IsAffineOpen.SpecMap_appLE_fromSpec f hU hV le_rfl).symm
-      (by rw [hU.opensRange_fromSpec, hV.opensRange_fromSpec])
-  have hfin : IsFinite (Spec.map φ) := MorphismProperty.of_isPullback H.flip ‹_›
-  have hflat : Flat (Spec.map φ) := MorphismProperty.of_isPullback H.flip ‹_›
   obtain ⟨p, rfl⟩ : y ∈ Set.range hU.fromSpec := by rwa [hU.range_fromSpec]
-  rw [← finrank_of_isPullback _ _ _ _ H.flip]
+  rw [f.finrank_fromSpec_eq_finrank_SpecMap_appLE hU p]
   -- The coordinate rings are domains with fraction fields `K(Y)` and `K(X)`, and `f^*` extends
   -- `φ`.
   have := functionField_isFractionRing_of_isAffineOpen Y U hU
@@ -111,8 +110,6 @@ theorem Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap (f : X ⟶ Y) 
     have := congr($(f.germToFunctionField_functionFieldMap U).hom a)
     simp only [CommRingCat.hom_comp, RingHom.comp_apply, Scheme.Hom.app_eq_appLE] at this
     exact this.symm
-  have : Module.Finite Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := by rwa [IsFinite.SpecMap_iff] at hfin
-  have : Module.Flat Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := by rwa [Flat.SpecMap_iff] at hflat
   -- `φ` is the `algebraMap` of the algebra structure it defines, so `Spec.map φ` is the morphism
   -- of the affine statement.
   refine (TauCeti.AlgebraicGeometry.finrank_SpecMap_eq_finrank_fractionRing

@@ -13,6 +13,9 @@ import Mathlib.NumberTheory.Padics.ProperSpace
 import TauCeti.Data.Nat.Factorization.Basic
 import TauCeti.Data.ZMod.Pow
 import TauCeti.GroupTheory.OrderOfElement.Basic
+import TauCeti.RingTheory.RootsOfUnity.PPower
+import TauCeti.RingTheory.RootsOfUnity.Basic
+import TauCeti.Topology.Algebra.Module.AutomaticContinuity
 
 /-!
 # The `p`-adic Tate twist
@@ -58,6 +61,8 @@ When all the `ℓ`-power roots of unity exist, each factor is noncanonically `�
 
 * `TauCeti.PadicTateTwist.levelAddEquivRootsOfUnity`: the `n`-th level is `μ_{p^n}`.
 * `TauCeti.PadicTateTwist.instCompactSpace`: for nonzero `p`, `ℤ_p(1)` is compact over a domain.
+* `TauCeti.PadicTateTwist.subsingleton_of_expChar`: over a reduced ring of exponential
+  characteristic `p`, `ℤ_p(1) = 0`.
 * `TauCeti.PadicTateTwist.nonempty_linearEquiv`: when `K` has enough `p`-power roots of unity,
   `ℤ_p(1)` is noncanonically linearly equivalent to `ℤ_p`.
 * `TauCeti.PadicTateTwist.nonempty_continuousAddEquiv`: in that case `ℤ_p(1)` is also
@@ -175,21 +180,12 @@ some `N`, then the `p`-adic Tate twist over `K` is trivial. -/
 theorem subsingleton_of_not_exists_isPrimitiveRoot {N : ℕ}
     (h : ¬ ∃ ζ : K, IsPrimitiveRoot ζ (p ^ N)) : Subsingleton (PadicTateTwist p K) := by
   -- every `p`-power torsion unit is killed by `p ^ N`
-  have hkill : ∀ (m : ℕ) (ζ : Kˣ), ζ ^ p ^ m = 1 → ζ ^ p ^ N = 1 := by
-    intro m ζ hζ
-    obtain ⟨e, -, hord⟩ := (Nat.dvd_prime_pow Fact.out).mp (orderOf_dvd_of_pow_eq_one hζ)
-    by_contra hne
-    have hNe : N < e := by
-      by_contra hle
-      exact hne (orderOf_dvd_iff_pow_eq_one.mp (hord ▸ pow_dvd_pow p (not_lt.mp hle)))
-    have hprim : IsPrimitiveRoot ζ (p ^ e) := hord ▸ IsPrimitiveRoot.orderOf ζ
-    have hdvd : p ^ (e - N) ∣ p ^ e := pow_dvd_pow p (Nat.sub_le e N)
-    have h2 := hprim.pow_of_dvd (pow_ne_zero _ (Fact.out : p.Prime).ne_zero) hdvd
-    have : p ^ e / p ^ (e - N) = p ^ N := by
-      rw [Nat.div_eq_iff_eq_mul_left (pow_pos (Fact.out : p.Prime).pos _) hdvd, ← pow_add]
-      congr 1; omega
-    rw [this] at h2
-    exact h ⟨(ζ ^ p ^ (e - N) : Kˣ), IsPrimitiveRoot.coe_units_iff.mpr h2⟩
+  have hkill (m : ℕ) (ζ : Kˣ) (hζ : ζ ^ p ^ m = 1) : ζ ^ p ^ N = 1 := by
+    rcases N with _ | k
+    · exact (h ⟨1, by simp⟩).elim
+    have hk := pow_prime_pow_eq_one_of_forall_not_isPrimitiveRoot (M := Kˣ) Fact.out
+      (fun ζ hζ ↦ h ⟨ζ, IsPrimitiveRoot.coe_units_iff.mpr hζ⟩) hζ
+    simp [pow_succ, pow_mul, hk]
   have hzero : ∀ z : PadicTateTwist p K, z = 0 := fun z ↦
     TateModule.eq_zero_of_pow_nsmul_eq_zero (k := N) <| TateModule.ext fun n ↦ Subtype.ext <| by
       apply Additive.toMul.injective
@@ -199,6 +195,13 @@ theorem subsingleton_of_not_exists_isPrimitiveRoot {N : ℕ}
   exact ⟨fun x y ↦ (hzero x).trans (hzero y).symm⟩
 
 end Subsingleton
+
+/-- **In exponential characteristic `p`, `PadicTateTwist p K = 0`** for a reduced ring `K`: such a
+ring has no nontrivial `p ^ n`-th root of unity (`TauCeti.subsingleton_rootsOfUnity_prime_pow`). -/
+theorem subsingleton_of_expChar (p : ℕ) (K : Type*) [CommRing K] [IsReduced K] [ExpChar K p] :
+    Subsingleton (PadicTateTwist p K) :=
+  ⟨fun _ _ ↦ ext fun n ↦ Additive.toMul.injective <|
+    (subsingleton_rootsOfUnity_prime_pow (R := K) p n).elim _ _⟩
 
 section RankOne
 
@@ -241,15 +244,9 @@ variable (p K) in
 `ℤ_p` as a topological group. -/
 theorem nonempty_continuousAddEquiv : Nonempty (PadicTateTwist p K ≃ₜ+ ℤ_[p]) := by
   obtain ⟨e⟩ := nonempty_linearEquiv p K
-  -- The inverse of a `ℤ_p`-linear equivalence is `a ↦ a • e.symm 1`, which is continuous; it is a
-  -- continuous bijection from the compact `ℤ_p` to the Hausdorff `ℤ_p(1)`, hence a homeomorphism.
-  have hc : Continuous e.symm := by
-    have h : ⇑e.symm = fun a : ℤ_[p] ↦ a • e.symm 1 :=
-      funext fun a ↦ by rw [← map_smul, smul_eq_mul, mul_one]
-    rw [h]
-    exact continuous_id.smul continuous_const
-  exact ⟨(ContinuousAddEquiv.mk' (hc.homeoOfEquivCompactToT2 (f := e.symm.toEquiv))
-    fun x y ↦ map_add e.symm x y).symm⟩
+  exact ⟨{ e.toAddEquiv with
+    continuous_toFun := e.toLinearMap.continuous_of_finite_of_compactSpace
+    continuous_invFun := IsModuleTopology.continuous_of_linearMap e.symm.toLinearMap }⟩
 
 end RankOne
 

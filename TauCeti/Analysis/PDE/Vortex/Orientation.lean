@@ -34,11 +34,10 @@ identifies this orientation with the complex orientation of the tangent space of
   (`TauCeti.IsComplexLinearMap.IsComplexPositiveDetLine`).
 * At a plane vortex `x` lying in `A_m^k` for every `k`, with zero divisor `D`, the kernel of the
   realization is identified with the space `D → ℂ` of principal parts, the tangent space of
-  `Sym^m ℂ` at `D`: an element `y` of the kernel is taken to the weak `L²` kernel, there to the
-  smooth classical solution with the same values
-  (`TauCeti.Vortex.framedGaugeFixedKernelEquivWeak`), and then to the principal parts of `δα / α`
-  at the zeros of `α` (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv`). Every element of the
-  kernel has the values of such a classical solution
+  `Sym^m ℂ` at `D`: an element `y` of the kernel is taken to the smooth classical solution with
+  the same values (`TauCeti.Vortex.kerSobolevGaugeFixedOperatorEquiv`), and then to the principal
+  parts of `δα / α` at the zeros of `α` (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv`). Every
+  element of the kernel has the values of such a classical solution
   (`TauCeti.Vortex.exists_gaugeFixedKernel_ae_eq_values`), and the isomorphism reads off the
   principal parts of that solution
   (`TauCeti.Vortex.sobolevKernelPrincipalPartEquiv_apply_of_ae_eq`). This identification is
@@ -96,9 +95,11 @@ def sobolevKernelPrincipalPartEquiv (hx : Continuous x)
     (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) (hν : Differentiable ℝ ν)
     (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2) :
     (sobolevGaugeFixedOperator a).ker ≃ₗ[ℝ] (Multiset.ToType D → ℂ) :=
-  (sobolevGaugeFixedKernelEquiv hx hax).trans ((framedGaugeFixedKernelEquivWeak hx hmem).symm.trans
+  (kerSobolevGaugeFixedOperatorEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem)
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
+    hax).trans
     (principalPartEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem) hhol
-      (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hD hν hνeq))
+      (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hD hν hνeq)
 
 /-- `sobolevKernelPrincipalPartEquiv` is `principalPartEquiv` of a classical kernel element with
 the same values. -/
@@ -115,14 +116,14 @@ private theorem sobolevKernelPrincipalPartEquiv_eq_of_ae_eq (hx : Continuous x)
       principalPartEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem) hhol
         (tendsto_normSq_of_forall_mem_framedFieldSpace hx hmem) hD hν hνeq u := by
   have hu :
-      (framedGaugeFixedKernelEquivWeak hx hmem).symm (sobolevGaugeFixedKernelEquiv hx hax y) =
-        u := by
-    rw [LinearEquiv.symm_apply_eq]
-    refine Subtype.ext (Lp.ext ?_)
-    rw [framedGaugeFixedKernelEquivWeak_apply, coe_gaugeFixedKernelToWeak]
-    exact (coeFn_sobolevGaugeFixedKernelEquiv hx hax y).trans
-      (h.symm.trans (coeFn_gaugeFixedKernelToLp u).symm)
-  rw [sobolevKernelPrincipalPartEquiv, LinearEquiv.trans_apply, LinearEquiv.trans_apply, hu]
+      kerSobolevGaugeFixedOperatorEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem)
+        (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
+        hax y = u :=
+    (kerSobolevGaugeFixedOperatorEquiv_eq_iff (contDiff_of_forall_mem_framedFieldSpace hx hmem)
+      (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
+      hax y u).2 fun j ↦
+      ae_restrict_of_ae (h.symm.mono fun z hz ↦ by simpa using congrArg (· j) hz)
+  rw [sobolevKernelPrincipalPartEquiv, LinearEquiv.trans_apply, hu]
 
 /-- **Every element of the kernel of the realization has the values of a classical solution.** Let
 `x` be a continuous field lying in the affine field space `A_m^k` for every `k`, and let `a` be its
@@ -135,11 +136,17 @@ theorem exists_gaugeFixedKernel_ae_eq_values (hx : Continuous x)
     ∃ u : gaugeFixedKernel x, (u : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume]
       fun z ↦ (WithLp.toLp 2 fun j ↦ W1p.value ((y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) j) z :
         EuclideanSpace ℝ (Fin 4)) := by
-  obtain ⟨u, hu⟩ := (framedGaugeFixedKernelEquivWeak hx hmem).surjective
-    (sobolevGaugeFixedKernelEquiv hx hax y)
-  refine ⟨u, (coeFn_gaugeFixedKernelToLp u).symm.trans ?_⟩
-  rw [← coe_gaugeFixedKernelToWeak hx, ← framedGaugeFixedKernelEquivWeak_apply hx hmem, hu]
-  exact coeFn_sobolevGaugeFixedKernelEquiv hx hax y
+  refine ⟨kerSobolevGaugeFixedOperatorEquiv (contDiff_of_forall_mem_framedFieldSpace hx hmem)
+    (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
+    hax y, ?_⟩
+  have hae (j : Fin 4) :=
+    kerSobolevGaugeFixedOperatorEquiv_apply_ae (contDiff_of_forall_mem_framedFieldSpace hx hmem)
+      (fun i n _ ↦ exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n)
+      hax y j
+  simp only [Opens.coe_top, Measure.restrict_univ] at hae
+  filter_upwards [ae_all_iff.2 hae] with z hz
+  ext j
+  exact (hz j).symm
 
 /-- **`sobolevKernelPrincipalPartEquiv` reads off the principal parts of the classical solution**:
 if a classical kernel element `u` agrees almost everywhere with the values of `y`, then

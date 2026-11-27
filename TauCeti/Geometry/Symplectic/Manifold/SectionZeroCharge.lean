@@ -66,6 +66,8 @@ pseudoholomorphic curves from positive cohomology assignments.
 * `ContinuousMap.sectionZeroCharge_eq_of_eq_smul`: invariance under nonvanishing rescaling.
 * `ContinuousMap.sectionZeroCharge_eq_of_homotopy`, `ContinuousMap.sectionZeroCharge_comp`,
   `ContinuousMap.sectionZeroCharge_eq_sum`: the homotopy, degree and additivity laws.
+* `ContinuousMap.exists_sectionZeroCharge_comp_eq_zeroCharge`: along a map from a contractible
+  space, the zero charges are those of the coordinate function in a frame.
 
 ## References
 
@@ -255,5 +257,19 @@ theorem sectionZeroCharge_eq_sum {ι : Type} [Fintype ι] {σ : C(𝔻, Y)}
   · exact Finset.sum_congr rfl fun i _ ↦
       (α.sectionZeroCharge_eq_comp hΦ hC (subdisc (c i) (r i) (hc i) (hr i)) fun _ ↦ rfl).symm
   · exact (Set.ext_iff.1 hZ z).1 hz
+
+/-- **The zero charges along a map are those of a function.** Along a continuous map `G : B → Y`
+from a contractible paracompact R₁ space, for instance the disc `𝔻` or the cylinder
+`[0, 1] × 𝔻`, the zero charges of the discs `G ∘ τ` for `α` are the zero charges of the discs `τ`
+for one continuous function `c : B → ℂ`, which vanishes exactly where `α ∘ G` does: the coordinate
+of `α ∘ G` in a continuous frame of `E` along it. -/
+theorem exists_sectionZeroCharge_comp_eq_zeroCharge {B : Type*} [TopologicalSpace B] [R1Space B]
+    [ParacompactSpace B] [ContractibleSpace B] (G : C(B, Y)) :
+    ∃ c : C(B, ℂ), (∀ τ : C(𝔻, B), α.sectionZeroCharge (G.comp τ) = c.zeroCharge τ) ∧
+      ∀ b, c b = 0 ↔ (α (G b)).snd = 0 := by
+  obtain ⟨Φ, C, hΦ, hC⟩ := exists_continuous_frame_coordinate (𝕜 := ℂ) (α.comp G)
+  refine ⟨C, fun τ ↦ ?_, fun b ↦ ?_⟩
+  · rw [α.sectionZeroCharge_eq_comp hΦ hC τ fun _ ↦ rfl, id_zeroCharge_comp]
+  · rw [snd_eq_frame_apply α hC b, (Φ b).map_eq_zero_iff]
 
 end ContinuousMap

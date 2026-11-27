@@ -7,11 +7,15 @@ module
 
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
+public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Symplectic.AlmostComplex.Rotation
 public import TauCeti.Geometry.Symplectic.Liouville.ContactType
 public import TauCeti.Geometry.Symplectic.Liouville.Radial.Basic
+import TauCeti.Analysis.InnerProductSpace.Complex
+import TauCeti.Geometry.Contact.Pullback
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Symplectic.CompatibleMetric
@@ -38,6 +42,24 @@ the metric `ω(u, J v)` of a compatible complex structure `J`, then `K = J`, and
 rotates each point along the complex line through it. For the standard form above `K x = J x / 2`,
 so `R_α(z) = i z` on `S^(2n+1) ⊂ ℂ^(n+1)`, the generator of the Hopf fibration.
 
+The inclusion of the sphere pulls `ω` back to `dα`
+(`TauCeti.SymplecticForm.mpullback_coe_sphere_constSmooth`), so the kernel of the form induced by
+`ω` on `S`, its characteristic line, is spanned by the Reeb vector of `α`
+(`TauCeti.SymplecticForm.ker_bilinFormAt_mpullback_coe_sphere`): it is a line, of the codimension
+one of `S` (`TauCeti.SymplecticForm.finrank_ker_bilinFormAt_mpullback_coe_sphere`). Read in `E`,
+the characteristic line at `x` is `ℝ (K x)`
+(`TauCeti.SymplecticForm.map_ker_bilinFormAt_mpullback_coe_sphere`). For `ℂⁿ` with
+`ω = Σⱼ dxⱼ ∧ dyⱼ`, `K` is multiplication by `i`, so the characteristic line of `S²ⁿ⁻¹` at `z` is
+`ℝ (i z)`, the tangent line of the Hopf circle `t ↦ e^{it} z` through `z`; this is the form in
+which the null directions of `Im ⟪·, ·⟫_ℂ` on `S²ⁿ⁺¹ ⊂ ℂⁿ⁺¹` are used to build the Fubini–Study
+form (`TauCeti.ComplexProjectiveSpace.ker_bilinFormAt_mpullback_coe_sphere`).
+
+For `E = ℂ^ι` with its Kähler form `Ω(v, w) = Im ⟪v, w⟫_ℂ`, the contact form `λ|S` is invariant
+under the circle action `z ↦ u z` of the unit complex numbers
+(`TauCeti.SymplecticForm.mpullback_smul_sphereContactForm`), since multiplication by `u` preserves
+the Hermitian inner product, and it takes the value `1 / 2` on the generator `i z` of that action
+(`TauCeti.SymplecticForm.sphereContactForm_apply_of_mvfderiv_eq_I_smul`).
+
 In the compatible case the Reeb orbits are the great circles `cos (2 t) x + sin (2 t) J x` of the
 complex lines through the points of `S`, the fibres of the Hopf fibration
 (`TauCeti.SymplecticForm.isMIntegralCurve_reebVectorField_sphereContactForm_iff`), since the
@@ -59,6 +81,16 @@ the Reeb periods of the sphere are exactly the multiples `k π`
   contact type.
 * `TauCeti.SymplecticForm.isContactForm_sphereContactForm`: `λ|S` is a contact form.
 * `TauCeti.SymplecticForm.mvfderiv_reebVectorField_sphereContactForm`: its Reeb vector field.
+* `TauCeti.SymplecticForm.mpullback_coe_sphere_constSmooth`: the form induced by `ω` on the
+  sphere is the exterior derivative of its contact form.
+* `TauCeti.SymplecticForm.ker_bilinFormAt_mpullback_coe_sphere`: the characteristic line of the
+  sphere is spanned by its Reeb vector field.
+* `TauCeti.SymplecticForm.map_ker_bilinFormAt_mpullback_coe_sphere`: read in the ambient space,
+  the characteristic line at `x` is `ℝ (K x)`, the Hopf direction.
+* `TauCeti.SymplecticForm.mpullback_smul_sphereContactForm`: for the Kähler form of `ℂ^ι`, it is
+  invariant under the circle action.
+* `TauCeti.SymplecticForm.sphereContactForm_apply_of_mvfderiv_eq_I_smul`: for the Kähler form of
+  `ℂ^ι`, it takes the value `1 / 2` on the generator `i z` of the circle action.
 * `TauCeti.SymplecticForm.isMIntegralCurve_reebVectorField_sphereContactForm_iff`: the Reeb
   orbits of the unit sphere are the great circles `cos (2 t) x + sin (2 t) J x`.
 * `TauCeti.SymplecticForm.periodic_iff_of_isMIntegralCurve_reebVectorField_sphereContactForm`:
@@ -202,9 +234,108 @@ theorem mvfderiv_reebVectorField_sphereContactForm {K : E → E}
     rw [mextDeriv_sphereContactForm_apply, hw, ← ω.neg_eq]
     simp only [map_smul, h, smul_zero, neg_zero]
 
+/-- **The form induced on the sphere is exact.** The inclusion of the unit sphere pulls the
+constant form `ω` back to `dα`, the exterior derivative of the contact form `α = λ|S` given by the
+radial primitive `λₓ(v) = ω(x, v) / 2`. -/
+theorem mpullback_coe_sphere_constSmooth :
+    SmoothForm.mpullback ((↑) : sphere (0 : E) 1 → E) contMDiff_coe_sphere ω.constSmooth =
+      mextDerivₗ (𝓡 n) 1 (ω.sphereContactForm n) := by
+  refine SmoothBundleForm.ext_eval₂ fun x v w ↦ ?_
+  rw [SmoothForm.eval₂_mpullback, eval₂_constSmooth_mfderiv_eq, SmoothBundleForm.eval₂_apply,
+    mextDerivₗ_apply, mextDeriv_sphereContactForm_apply]
+
+/-- **The characteristic line of the sphere is spanned by its Reeb vector field.** At each point
+`x` of the unit sphere, the kernel of the form induced by `ω` is the line spanned by the Reeb
+vector of the contact form `λ|S`. -/
+theorem ker_bilinFormAt_mpullback_coe_sphere (x : sphere (0 : E) 1) :
+    LinearMap.ker ((SmoothForm.mpullback ((↑) : sphere (0 : E) 1 → E) contMDiff_coe_sphere
+        ω.constSmooth).bilinFormAt x) =
+      ℝ ∙ (ω.sphereContactForm n).reebVectorField x := by
+  have hα := ω.isContactForm_sphereContactForm (n := n)
+  rw [sphereContactForm_def] at hα ⊢
+  rw [← ω.mextDerivₗ_radialPrimitive]
+  exact SmoothForm.ker_bilinFormAt_mpullback_mextDerivₗ contMDiff_coe_sphere hα x
+
+/-- The characteristic line of the sphere is a line: the kernel of the form induced by `ω` has
+dimension one, the codimension of the sphere. -/
+theorem finrank_ker_bilinFormAt_mpullback_coe_sphere (x : sphere (0 : E) 1) :
+    finrank ℝ (LinearMap.ker ((SmoothForm.mpullback ((↑) : sphere (0 : E) 1 → E)
+      (contMDiff_coe_sphere (n := n)) ω.constSmooth).bilinFormAt x)) = 1 := by
+  rw [ker_bilinFormAt_mpullback_coe_sphere]
+  exact finrank_span_singleton
+    ((ω.isContactForm_sphereContactForm (n := n)).reebVectorField_ne_zero x)
+
+/-- **The characteristic line of the sphere is the Hopf direction.** Let `K` be a map with
+`ω(u, K v) = ⟪u, v⟫` for all `u` and `v`, such as a compatible complex structure whose metric is
+the inner product. Read in the ambient space, the characteristic line of the unit sphere at `x` is
+the line `ℝ (K x)`. For `ℂⁿ` with its standard symplectic form, `K x = i x`, and this is the
+direction of the Hopf circle through `x`. -/
+theorem map_ker_bilinFormAt_mpullback_coe_sphere {K : E → E} (hK : ∀ u v, ω u (K v) = ⟪u, v⟫_ℝ)
+    (x : sphere (0 : E) 1) :
+    (LinearMap.ker ((SmoothForm.mpullback ((↑) : sphere (0 : E) 1 → E) contMDiff_coe_sphere
+        ω.constSmooth).bilinFormAt x)).map
+        (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x : TangentSpace (𝓡 n) x →ₗ[ℝ] E) =
+      ℝ ∙ K x := by
+  rw [ker_bilinFormAt_mpullback_coe_sphere, Submodule.map_span, Set.image_singleton,
+    ContinuousLinearMap.coe_coe, ω.mvfderiv_reebVectorField_sphereContactForm hK,
+    Submodule.span_singleton_smul_eq (IsUnit.mk0 (2 : ℝ) two_ne_zero)]
+
 end SymplecticForm
 
 end Sphere
+
+/-! ### Invariance under the circle action -/
+
+section Circle
+
+namespace SymplecticForm
+
+variable {ι : Type*} [Fintype ι] {d : ℕ} [Fact (finrank ℝ (EuclideanSpace ℂ ι) = d + 1)]
+  {Ω : SymplecticForm (EuclideanSpace ℂ ι)}
+
+/-- **The contact form of the sphere of `ℂ^ι` is invariant under the circle action.** For the
+Kähler form `Ω(v, w) = Im ⟪v, w⟫_ℂ` of `ℂ^ι`, the rotation `z ↦ u z` of the unit sphere by a unit
+complex number `u` pulls the contact form `λ|S` back to itself. -/
+theorem mpullback_smul_sphereContactForm (hΩ : ∀ v w, Ω v w = (⟪v, w⟫_ℂ).im) (u : Circle) :
+    SmoothForm.mpullback (fun z : sphere (0 : EuclideanSpace ℂ ι) 1 ↦ u • z)
+      (ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) u) (Ω.sphereContactForm d) =
+        Ω.sphereContactForm d := by
+  refine SmoothBundleForm.ext fun z v ↦ ?_
+  have hv : v = ![v 0] := (FinVec.etaExpand_eq v).symm
+  set L : EuclideanSpace ℂ ι →L[ℝ] EuclideanSpace ℂ ι :=
+    ((u : ℂ) • ContinuousLinearMap.id ℂ (EuclideanSpace ℂ ι)).restrictScalars ℝ
+  have hL (x : EuclideanSpace ℂ ι) : L x = (u : ℂ) • x := by simp [L]
+  -- Read in `ℂ^ι`, the rotation of the sphere is the restriction of `L`.
+  have hcomp : ((↑) : sphere (0 : EuclideanSpace ℂ ι) 1 → EuclideanSpace ℂ ι) ∘
+      (fun z ↦ u • z) = L ∘ (↑) :=
+    funext fun z ↦ by simp [hL, Circle.coe_smul_sphere]
+  have hd : mvfderiv (𝓡 d) ((↑) : sphere (0 : EuclideanSpace ℂ ι) 1 → EuclideanSpace ℂ ι) (u • z)
+      (mfderiv (𝓡 d) (𝓡 d) (fun z ↦ u • z) z (v 0)) =
+        L (mvfderiv (𝓡 d) ((↑) : sphere (0 : EuclideanSpace ℂ ι) 1 → EuclideanSpace ℂ ι) z
+          (v 0)) := by
+    rw [← mvfderiv_comp_apply z ((contMDiff_coe_sphere (n := d) (m := 1) _).mdifferentiableAt
+      one_ne_zero) ((ContMDiffSMul.contMDiff_const_smul (I := 𝓡 1) (n := 1) u z).mdifferentiableAt
+        one_ne_zero) (v 0), hcomp,
+      L.mvfderiv_comp_apply ((contMDiff_coe_sphere (n := d) (m := 1) z).mdifferentiableAt
+        one_ne_zero)]
+  rw [hv, SmoothForm.mpullback_apply_one, sphereContactForm_apply, sphereContactForm_apply, hd, hL,
+    hΩ, hΩ, Circle.coe_smul_sphere, inner_smul_smul_of_norm_eq_one (Circle.norm_coe u)]
+
+/-- **The contact form on the generator of the circle action.** For the Kähler form
+`Ω(v, w) = Im ⟪v, w⟫_ℂ` of `ℂ^ι`, the contact form `λ|S` takes the value `1 / 2` on a tangent
+vector at `z` that reads as `i z`, the velocity of the circle orbit `t ↦ e^(it) z`. -/
+theorem sphereContactForm_apply_of_mvfderiv_eq_I_smul (hΩ : ∀ v w, Ω v w = (⟪v, w⟫_ℂ).im)
+    {z : sphere (0 : EuclideanSpace ℂ ι) 1} {v : TangentSpace (𝓡 d) z}
+    (hv : mvfderiv (𝓡 d) ((↑) : sphere (0 : EuclideanSpace ℂ ι) 1 → EuclideanSpace ℂ ι) z v =
+      Complex.I • (z : EuclideanSpace ℂ ι)) :
+    (Ω.sphereContactForm d).val z ![v] = 1 / 2 := by
+  rw [sphereContactForm_apply, hv, hΩ, inner_smul_right, inner_self_eq_norm_sq_to_K,
+    norm_eq_of_mem_sphere z]
+  simp
+
+end SymplecticForm
+
+end Circle
 
 /-! ### The Reeb flow of the unit sphere -/
 
