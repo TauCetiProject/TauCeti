@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Homotopy.Path
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.Attachment
+import TauCeti.Analysis.Complex.Circle.Basic
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Topology.Circle.Degree
 import TauCeti.Topology.Homotopy.Homotopic.Rel
@@ -370,31 +371,13 @@ private theorem circleArcHomotopy_mem (γ : Path circleOne circleOne) (t : I) (p
     (s : TopCat.diskBoundary.{0} 1) :
     circleArcHomotopy γ (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1 := by
   rcases eq_sphereMinus_or_eq_spherePlus s with rfl | rfl
-  · simp [circleArcHomotopy_apply_sphereMinus]
+  · rw [circleArcHomotopy_apply_sphereMinus]
+    simp
   · rw [circleArcHomotopy_apply_spherePlus]
     exact (γ t).property
 
-/-- The counterclockwise loop `t ↦ exp (2πit)` around the unit circle in `ℂ`. -/
-private def circleLoop : Path circleOne circleOne where
-  toFun t := ⟨(Circle.expLoop t : ℂ), (Circle.expLoop t).property⟩
-  continuous_toFun := (continuous_subtypeVal.comp Circle.expLoop.continuous).subtype_mk _
-  source' := Subtype.ext (congrArg Subtype.val Circle.expLoop.source)
-  target' := Subtype.ext (congrArg Subtype.val Circle.expLoop.target)
-
-/-- A point of the unit circle in `ℂ` lies in `Submonoid.unitSphere ℂ`, the carrier of `Circle`. -/
-private theorem mem_unitSphere_of_mem_sphere (z : sphere (0 : ℂ) 1) :
-    (z : ℂ) ∈ Submonoid.unitSphere ℂ := by
-  rw [← SetLike.mem_coe, Submonoid.coe_unitSphere]
-  exact z.property
-
-/-- The unit circle in `ℂ`, as the type `Circle`: the identity on the underlying complex
-numbers. -/
-private def sphereToCircle : C(sphere (0 : ℂ) 1, Circle) where
-  toFun z := ⟨z.val, mem_unitSphere_of_mem_sphere z⟩
-  continuous_toFun := continuous_subtypeVal.subtype_mk mem_unitSphere_of_mem_sphere
-
-private theorem coe_sphereToCircle_apply (z : sphere (0 : ℂ) 1) : (sphereToCircle z : ℂ) = z :=
-  (rfl)
+private theorem homeomorphSphere_one : Circle.homeomorphSphere 1 = circleOne :=
+  Subtype.ext (by simp [coe_circleOne])
 
 /-- The degree of the loop `H₋ · H₊⁻¹` of the boundary homotopy `circleArcHomotopy γ`: the end `-1`
 stays at `1`, so it is minus the degree of `γ`. -/
@@ -402,16 +385,19 @@ private theorem degree_circleArcHomotopy (γ : Path circleOne circleOne) :
     Circle.degree (((arcBoundaryTrack circleOne (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
       (fun _ _ hw ↦ hw) (circleArcHomotopy_mem γ) sphereMinus).trans
         (arcBoundaryTrack circleOne (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw)
-          (circleArcHomotopy_mem γ) spherePlus).symm).map sphereToCircle.continuous) =
-      -Circle.degree (γ.map sphereToCircle.continuous) := by
+          (circleArcHomotopy_mem γ) spherePlus).symm).map
+            Circle.homeomorphSphere.symm.continuous) =
+      -Circle.degree (γ.map Circle.homeomorphSphere.symm.continuous) := by
   rw [Path.map_trans, ← Path.map_symm, Circle.degree_trans, Circle.degree_symm,
-    Circle.degree_congr _ (Path.refl (sphereToCircle circleOne)) fun t ↦ Circle.ext (by
-      simp only [Path.map_coe, Function.comp_apply, coe_sphereToCircle_apply, Path.refl_apply]
-      exact (coe_arcBoundaryTrack_apply ..).trans
-        ((circleArcHomotopy_apply_sphereMinus γ t PUnit.unit).trans coe_circleOne.symm)),
+    Circle.degree_congr _ (Path.refl (Circle.homeomorphSphere.symm circleOne)) fun t ↦
+      Circle.ext (by
+        simp only [Path.map_coe, Function.comp_apply, Circle.coe_homeomorphSphere_symm_apply,
+          Path.refl_apply]
+        exact (coe_arcBoundaryTrack_apply ..).trans
+          ((circleArcHomotopy_apply_sphereMinus γ t PUnit.unit).trans coe_circleOne.symm)),
     Circle.degree_refl, zero_add, neg_inj]
   exact Circle.degree_congr _ _ fun t ↦ Circle.ext (by
-    simp only [Path.map_coe, Function.comp_apply, coe_sphereToCircle_apply]
+    simp only [Path.map_coe, Function.comp_apply, Circle.coe_homeomorphSphere_symm_apply]
     exact (coe_arcBoundaryTrack_apply ..).trans (circleArcHomotopy_apply_spherePlus γ t PUnit.unit))
 
 /-- **The endpoints of a boundary homotopy do not determine the reattachment class.** Attach an
@@ -440,17 +426,21 @@ theorem exists_not_homotopicRel_fiberwiseCellReattachment_sphere :
         (range (fiberwiseCellAttachmentIncl (k := fun _ : PUnit.{1} ↦ 1)
           (fun _ ↦ ContinuousMap.const (PUnit.{1} × TopCat.diskBoundary.{0} 1)
             (⟨1, by simp⟩ : sphere (0 : ℂ) 1)))) := by
-  refine ⟨circleArcHomotopy (Path.refl circleOne), circleArcHomotopy circleLoop,
+  refine ⟨circleArcHomotopy (Path.refl circleOne),
+    circleArcHomotopy ((Circle.expLoop.map Circle.homeomorphSphere.continuous).cast
+      homeomorphSphere_one.symm homeomorphSphere_one.symm),
     circleArcHomotopy_mem _, circleArcHomotopy_mem _, fun hE ↦ ?_⟩
   have hd := Circle.degree_eq_of_homotopic
     ((homotopic_arcBoundaryTrack_trans_symm_of_homotopicRel_fiberwiseCellReattachment circleOne
       (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw) (circleArcHomotopy_mem _) (fun _ _ ↦ rfl)
-      (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw) (circleArcHomotopy_mem _) hE).map sphereToCircle)
+      (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw) (circleArcHomotopy_mem _) hE).map
+        Circle.homeomorphSphere.symm)
   rw [degree_circleArcHomotopy, degree_circleArcHomotopy,
-    Circle.degree_congr ((Path.refl circleOne).map sphereToCircle.continuous)
-      (Path.refl (sphereToCircle circleOne)) (fun _ ↦ Circle.ext (by simp)),
-    Circle.degree_congr (circleLoop.map sphereToCircle.continuous) Circle.expLoop
-      (fun _ ↦ Circle.ext (by simp [coe_sphereToCircle_apply, circleLoop])),
+    Circle.degree_congr ((Path.refl circleOne).map Circle.homeomorphSphere.symm.continuous)
+      (Path.refl (Circle.homeomorphSphere.symm circleOne)) (fun _ ↦ Circle.ext (by simp)),
+    Circle.degree_congr (((Circle.expLoop.map Circle.homeomorphSphere.continuous).cast
+        homeomorphSphere_one.symm homeomorphSphere_one.symm).map
+          Circle.homeomorphSphere.symm.continuous) Circle.expLoop (fun _ ↦ Circle.ext (by simp)),
     Circle.degree_refl, Circle.degree_expLoop] at hd
   norm_num at hd
 
