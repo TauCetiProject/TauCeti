@@ -259,6 +259,23 @@ theorem exists_forall_eq (hB : IsCoercive B) (ℓ : StrongDual ℝ V) :
 
 end IsCoercive
 
+namespace ContinuousLinearMap
+
+section SeminormedSesq
+
+variable {𝕜 V : Type*} [RCLike 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- The diagonal real part of a bounded sesquilinear (or bilinear) form `a` is bounded in absolute
+value by `‖a‖ * ‖u‖ ^ 2`. -/
+theorem abs_re_apply_self_le {σ₁ σ₂ : 𝕜 →+* 𝕜} [RingHomIsometric σ₁] [RingHomIsometric σ₂]
+    (a : V →SL[σ₁] V →SL[σ₂] 𝕜) (u : V) :
+    |RCLike.re (a u u)| ≤ ‖a‖ * ‖u‖ ^ 2 :=
+  (RCLike.abs_re_le_norm (a u u)).trans ((a.le_opNorm₂ u u).trans_eq (by ring))
+
+end SeminormedSesq
+
+end ContinuousLinearMap
+
 /-! ### Sesquilinear Lax--Milgram over `RCLike` scalars -/
 
 namespace InnerProductSpace

@@ -139,8 +139,7 @@ private theorem image_energy_unitConstraint (P : CompactFormPair 𝕜 V H) (W : 
       by simp [(mem_unitConstraint.1 hv).2]⟩
   · rintro ⟨v, hvW, hvne, rfl⟩
     refine ⟨((‖P.inclusion v‖⁻¹ : ℝ) : 𝕜) • v, inv_norm_smul_mem_unitConstraint hvW hvne, ?_⟩
-    have hpos : 0 < ‖P.inclusion v‖ := norm_pos_iff.mpr hvne
-    rw [P.energy_smul, RCLike.norm_ofReal, abs_of_pos (inv_pos.mpr hpos), inv_pow, div_eq_inv_mul]
+    simp [div_eq_inv_mul]
 
 /-- Rayleigh-quotient characterization of constrained minimizers: `u ∈ P.unitConstraint W`
 minimizes `P.energy` on `P.unitConstraint W` if and only if `P.energy u` is the least value of

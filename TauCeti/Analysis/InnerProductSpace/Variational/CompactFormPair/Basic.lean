@@ -65,14 +65,6 @@ theorem re_form_symm (P : CompactFormPair 𝕜 V H) (u v : V) :
     RCLike.re (P.form u v) = RCLike.re (P.form v u) := by
   rw [P.hermitian u v, RCLike.star_def, RCLike.conj_re]
 
-/-- Increasing the shift preserves a shifted lower bound with the same coercivity constant. -/
-theorem shifted_lower_bound_mono (P : CompactFormPair 𝕜 V H) {c ω ω' : ℝ} (hω : ω ≤ ω')
-    (hbound : ∀ u : V, c * ‖u‖ ^ 2 ≤ P.energy u + ω * ‖P.inclusion u‖ ^ 2) (u : V) :
-    c * ‖u‖ ^ 2 ≤ P.energy u + ω' * ‖P.inclusion u‖ ^ 2 := by
-  have h1 : ω * ‖P.inclusion u‖ ^ 2 ≤ ω' * ‖P.inclusion u‖ ^ 2 :=
-    mul_le_mul_of_nonneg_right hω (sq_nonneg _)
-  linarith [hbound u]
-
 /-- Expansion of the quadratic energy on a sum `u + v`. -/
 theorem energy_add (P : CompactFormPair 𝕜 V H) (u v : V) :
     P.energy (u + v) = P.energy u + 2 * RCLike.re (P.form u v) + P.energy v := by
@@ -95,23 +87,14 @@ theorem energy_sub_energy (P : CompactFormPair 𝕜 V H) (u v : V) :
 theorem energy_add_real_smul (P : CompactFormPair 𝕜 V H) (u v : V) (t : ℝ) :
     P.energy (u + (t : 𝕜) • v) =
       P.energy u + 2 * t * RCLike.re (P.form u v) + t ^ 2 * P.energy v := by
-  rw [P.energy_add, P.energy_smul, map_smul, smul_eq_mul, RCLike.re_ofReal_mul, RCLike.norm_ofReal,
-    sq_abs]
+  simp [energy_add, energy_smul]
   ring
-
-private theorem abs_re_form_self_le {𝕜 V : Type*} [RCLike 𝕜]
-    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
-    (a : V →L⋆[𝕜] V →L[𝕜] 𝕜) (u : V) :
-    |RCLike.re (a u u)| ≤ ‖a‖ * ‖u‖ ^ 2 := by
-  calc |RCLike.re (a u u)| ≤ ‖a u u‖ := RCLike.abs_re_le_norm _
-    _ ≤ ‖a‖ * ‖u‖ * ‖u‖ := a.le_opNorm₂ u u
-    _ = ‖a‖ * ‖u‖ ^ 2 := by rw [mul_assoc, ← sq]
 
 /-- The quadratic energy is bounded by `‖P.form‖ ‖u‖²`. -/
 theorem abs_energy_le (P : CompactFormPair 𝕜 V H) (u : V) :
     |P.energy u| ≤ ‖P.form‖ * ‖u‖ ^ 2 := by
   rw [energy_def]
-  exact abs_re_form_self_le P.form u
+  exact P.form.abs_re_apply_self_le u
 
 end Energy
 
@@ -168,10 +151,10 @@ theorem shift_shift (P : CompactFormPair 𝕜 V H) (α β : ℝ) :
 /-- Every compact form pair becomes strictly coercive after a sufficiently large real shift. -/
 theorem exists_shift_coercive (P : CompactFormPair 𝕜 V H) :
     ∃ ω₀ : ℝ, ∀ α : ℝ, ω₀ ≤ α → ∃ c : ℝ, 0 < c ∧ ∀ u : V, c * ‖u‖ ^ 2 ≤ (P.shift α).energy u := by
-  obtain ⟨c, hc, ω, hbound⟩ := P.exists_mul_norm_sq_le_energy_add
-  refine ⟨ω, fun α hα => ⟨c, hc, fun u => ?_⟩⟩
-  rw [shift_energy]
-  exact P.shifted_lower_bound_mono hα hbound u
+  obtain ⟨c, hc, ω, hbound⟩ := P.exists_shifted_coercive
+  exact ⟨ω, fun α hα => ⟨c, hc, by
+    simpa only [energy_def, shift_form] using
+      ContinuousLinearMap.mul_norm_sq_le_re_shiftedForm_self P.inclusion hα hbound⟩⟩
 
 /-- Over `ℝ`, shifting a compact form pair by any `α` above its lower-bound shift yields a
 Mathlib-coercive bilinear form. -/
@@ -471,9 +454,7 @@ variable {𝕜 V H : Type*} [RCLike 𝕜]
 private def formAsRealLinear (P : CompactFormPair 𝕜 V H) : V →L[ℝ] StrongDual 𝕜 V where
   toFun := P.form
   map_add' := P.form.map_add'
-  map_smul' r u := by
-    rw [RCLike.real_smul_eq_coe_smul (K := 𝕜), map_smulₛₗ, RCLike.conj_ofReal,
-      RingHom.id_apply, ← RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+  map_smul' r u := by simp [RCLike.real_smul_eq_coe_smul (K := 𝕜), -algebraMap_smul]
   cont := P.form.continuous
 
 omit [InnerProductSpace ℝ H] [IsScalarTower ℝ 𝕜 H] in
@@ -543,7 +524,7 @@ def ofFiniteDimensional (a : H →L⋆[𝕜] H →L[𝕜] 𝕜) (ha : ∀ u v : 
   exists_shifted_coercive := by
     refine ⟨1, zero_lt_one, ‖a‖ + 1, fun u => ?_⟩
     have hre : -RCLike.re (a u u) ≤ ‖a‖ * ‖u‖ ^ 2 :=
-      (neg_le_abs _).trans (abs_re_form_self_le a u)
+      (neg_le_abs _).trans (a.abs_re_apply_self_le u)
     simp only [ContinuousLinearMap.id_apply]
     linarith
 

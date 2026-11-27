@@ -146,10 +146,7 @@ private theorem norm_toEnergySpaceₗ (u : V) : ‖a.toEnergySpaceₗ u‖ = √
 
 private theorem norm_toEnergySpaceₗ_le (u : V) : ‖a.toEnergySpaceₗ u‖ ≤ √‖a.form‖ * ‖u‖ := by
   rw [norm_toEnergySpaceₗ, ← Real.sqrt_sq (norm_nonneg u), ← Real.sqrt_mul' _ (sq_nonneg _)]
-  refine Real.sqrt_le_sqrt ?_
-  calc re (a.form u u) ≤ ‖a.form u u‖ := re_le_norm _
-    _ ≤ ‖a.form‖ * ‖u‖ * ‖u‖ := a.form.le_opNorm₂ u u
-    _ = ‖a.form‖ * ‖u‖ ^ 2 := by ring
+  exact Real.sqrt_le_sqrt ((le_abs_self _).trans (a.form.abs_re_apply_self_le u))
 
 private theorem sqrt_mul_norm_le_norm_toEnergySpaceₗ {c : ℝ} (u : V)
     (h : c * ‖u‖ ^ 2 ≤ re (a.form u u)) : √c * ‖u‖ ≤ ‖a.toEnergySpaceₗ u‖ := by
