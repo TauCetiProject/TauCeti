@@ -221,8 +221,7 @@ private theorem cubicalChainModuleLof_leftAct_point (ω : MooreLoopSpace X b) {q
     ContinuousMap.ext fun y ↦ by simp [leftActMap_apply, leftActBy_apply]
   rw [← cubicalChainModuleLof_cast (Nat.zero_add q), NormalizedCubicalChain.leftAct_def,
     ← NormalizedCubicalChain.map_cast, NormalizedCubicalChain.crossProduct_point_left, ← h,
-    NormalizedCubicalChain.map_comp]
-  rfl
+    NormalizedCubicalChain.map_map]
 
 /-- A path in the based path space from the constant path to the loop `ω` read as a path, by
 truncation of `ω`. Its end points run along `ω`. -/
