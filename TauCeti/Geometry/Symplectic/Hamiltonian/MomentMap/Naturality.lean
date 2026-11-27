@@ -30,23 +30,23 @@ on Hamiltonian torus actions.
   polytope of a subtorus is the projection of the polytope of `G`
   (`TauCeti.SmoothTwoForm.IsMomentMap.convexHull_range_comp_eq_convexHull_image_fixedPoints`). If
   `μ(M) = conv μ(M^G)`, then also `μ_K(M) = conv μ_K(M^K)` for every `K` acting through `G`
-  (`TauCeti.SmoothTwoForm.IsMomentMap.range_comp_eq_convexHull_image_fixedPoints_of_smul_eq`).
+  (`TauCeti.range_comp_eq_convexHull_image_fixedPoints_of_smul_eq`).
 * **Translations.** The equality `μ(M) = conv μ(M^G)` holds for `μ + ν` exactly when it holds for
-  `μ` (`TauCeti.SmoothTwoForm.IsMomentMap.range_add_const_eq_convexHull_image_fixedPoints_iff`).
+  `μ` (`TauCeti.range_add_const_eq_convexHull_image_fixedPoints_iff`).
 * **Naturality.** Along an equivariant bijection `f : N → M`, such as an equivariant
   symplectomorphism, it holds for `μ ∘ f` exactly when it holds for `μ`
-  (`TauCeti.SmoothTwoForm.IsMomentMap.range_comp_eq_convexHull_image_fixedPoints_iff`).
+  (`TauCeti.range_comp_eq_convexHull_image_fixedPoints_iff`).
 * **Products.** Let `G` act on `M` with moment map `μ` and `G₂` act on `N` with moment map `ν`,
   and let `G × G₂` act on `M × N` componentwise, with moment map `(x, y) ↦ e (μ x, ν y)`, where
   `e : 𝔤* × 𝔤₂* ≃ Lie(G × G₂)*` is `TauCeti.Lie.groupLieAlgebraDualProdDualEquivDual`
   (`TauCeti.SmoothTwoForm.HamiltonianTorusData.prodMap`). The fixed points of the product action
   are the pairs of fixed points, so the polytope of the product is the product of the polytopes,
   `e (conv μ(M^G) × conv ν(N^G₂))`
-  (`TauCeti.SmoothTwoForm.IsMomentMap.convexHull_image_fixedPoints_prod`). If `μ(M) = conv μ(M^G)`
+  (`TauCeti.convexHull_image_fixedPoints_prod`). If `μ(M) = conv μ(M^G)`
   and `ν(N) = conv ν(N^G₂)`, the product satisfies the same equality
-  (`TauCeti.SmoothTwoForm.IsMomentMap.range_prod_eq_convexHull_image_fixedPoints`), and if the
+  (`TauCeti.range_prod_eq_convexHull_image_fixedPoints`), and if the
   fibres of `μ` and `ν` are connected, so are those of the product moment map
-  (`TauCeti.SmoothTwoForm.IsMomentMap.isPreconnected_preimage_singleton_prod`).
+  (`TauCeti.isPreconnected_preimage_singleton_prod`).
 
 Combined with the convexity theorem for tori of dimension at most two, the product statement gives
 `μ(M × N) = conv μ((M × N)^(G × G₂))` for the product of two such actions, a torus of dimension up
@@ -70,53 +70,7 @@ public section
 open Set
 open scoped ContDiff Manifold Pointwise
 
-namespace TauCeti.SmoothTwoForm.IsMomentMap
-
-attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
-attribute [local instance] ContMDiffMul.boundarylessManifold
-
-/-! ### Subtori -/
-
-section Subtorus
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
-  [IsTopologicalGroup G] [IsMulCommutative G] [CompactSpace G] [PreconnectedSpace G]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [T2Space M]
-  [BoundarylessManifold I' M] [CompactSpace M] [MulAction G M] [ContMDiffSMul I I' ∞ G M]
-  {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
-  {V : Type*} [AddCommGroup V] [Module ℝ V]
-
-/-- **The polytope of a subtorus is the projection of the polytope of the torus.** Let `μ` be a
-moment map of a smooth action of a compact connected commutative Lie group `G` on a compact
-boundaryless manifold `M` with a nondegenerate two-form, and let `L : V → 𝔤` be linear, for
-instance the differential of a homomorphism `K →* G`. Then the convex hull of the image of
-`x ↦ μ x ∘ L` is spanned by its values at the points fixed by all of `G`. -/
-theorem convexHull_range_comp_eq_convexHull_image_fixedPoints
-    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate)
-    (L : V →ₗ[ℝ] GroupLieAlgebra I G) :
-    convexHull ℝ (range fun x ↦ (μ x).comp L) =
-      convexHull ℝ ((fun x ↦ (μ x).comp L) '' MulAction.fixedPoints G M) := by
-  have hL : (fun x ↦ (μ x).comp L) = L.dualMap ∘ μ := funext fun x ↦ (L.dualMap_apply' _).symm
-  rw [hL, range_comp, image_comp, ← L.dualMap.image_convexHull, ← L.dualMap.image_convexHull,
-    h.convexHull_range_eq_convexHull_image_fixedPoints hσ]
-
-/-- **The image of a subtorus moment map lies in the projected polytope.** Let `μ` be a moment map
-of a smooth action of a compact connected commutative Lie group `G` on a compact boundaryless
-manifold `M` with a nondegenerate two-form, and let `L : V → 𝔤` be linear, for instance the
-differential of a homomorphism `K →* G`. Then the image of `x ↦ μ x ∘ L` lies in the convex hull
-of its values at the points fixed by all of `G`. -/
-theorem range_comp_subset_convexHull_image_fixedPoints
-    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate)
-    (L : V →ₗ[ℝ] GroupLieAlgebra I G) :
-    range (fun x ↦ (μ x).comp L) ⊆
-      convexHull ℝ ((fun x ↦ (μ x).comp L) '' MulAction.fixedPoints G M) :=
-  (subset_convexHull ℝ _).trans (h.convexHull_range_comp_eq_convexHull_image_fixedPoints hσ L).le
-
-end Subtorus
+namespace TauCeti
 
 /-! ### Transfer of the convexity theorem -/
 
@@ -228,6 +182,56 @@ theorem isPreconnected_preimage_singleton_prod [TopologicalSpace M] [Topological
   exact (hμ a).prod (hν b)
 
 end Transfer
+
+end TauCeti
+
+namespace TauCeti.SmoothTwoForm.IsMomentMap
+
+attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
+attribute [local instance] ContMDiffMul.boundarylessManifold
+
+/-! ### Subtori -/
+
+section Subtorus
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G] [T2Space G]
+  [IsTopologicalGroup G] [IsMulCommutative G] [CompactSpace G] [PreconnectedSpace G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [T2Space M]
+  [BoundarylessManifold I' M] [CompactSpace M] [MulAction G M] [ContMDiffSMul I I' ∞ G M]
+  {σ : SmoothTwoForm I' M} {μ : M → Module.Dual ℝ (GroupLieAlgebra I G)}
+  {V : Type*} [AddCommGroup V] [Module ℝ V]
+
+/-- **The polytope of a subtorus is the projection of the polytope of the torus.** Let `μ` be a
+moment map of a smooth action of a compact connected commutative Lie group `G` on a compact
+boundaryless manifold `M` with a nondegenerate two-form, and let `L : V → 𝔤` be linear, for
+instance the differential of a homomorphism `K →* G`. Then the convex hull of the image of
+`x ↦ μ x ∘ L` is spanned by its values at the points fixed by all of `G`. -/
+theorem convexHull_range_comp_eq_convexHull_image_fixedPoints
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate)
+    (L : V →ₗ[ℝ] GroupLieAlgebra I G) :
+    convexHull ℝ (range fun x ↦ (μ x).comp L) =
+      convexHull ℝ ((fun x ↦ (μ x).comp L) '' MulAction.fixedPoints G M) := by
+  have hL : (fun x ↦ (μ x).comp L) = L.dualMap ∘ μ := funext fun x ↦ (L.dualMap_apply' _).symm
+  rw [hL, range_comp, image_comp, ← L.dualMap.image_convexHull, ← L.dualMap.image_convexHull,
+    h.convexHull_range_eq_convexHull_image_fixedPoints hσ]
+
+/-- **The image of a subtorus moment map lies in the projected polytope.** Let `μ` be a moment map
+of a smooth action of a compact connected commutative Lie group `G` on a compact boundaryless
+manifold `M` with a nondegenerate two-form, and let `L : V → 𝔤` be linear, for instance the
+differential of a homomorphism `K →* G`. Then the image of `x ↦ μ x ∘ L` lies in the convex hull
+of its values at the points fixed by all of `G`. -/
+theorem range_comp_subset_convexHull_image_fixedPoints
+    (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate)
+    (L : V →ₗ[ℝ] GroupLieAlgebra I G) :
+    range (fun x ↦ (μ x).comp L) ⊆
+      convexHull ℝ ((fun x ↦ (μ x).comp L) '' MulAction.fixedPoints G M) :=
+  (subset_convexHull ℝ _).trans (h.convexHull_range_comp_eq_convexHull_image_fixedPoints hσ L).le
+
+end Subtorus
 
 /-! ### Products of tori of dimension at most two -/
 
