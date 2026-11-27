@@ -381,6 +381,26 @@ theorem rectangleTrans_apply_add_snd {u₁ u₂ : ℝ × ℝ → M} {T : ℝ}
   simp only [rectangleTrans, h₁ (_, z.2), h₂ (_, z.2)]
 
 omit [TopologicalSpace M] in
+/-- A map applied to a concatenation is the concatenation of the composites. -/
+theorem apply_rectangleTrans {N : Type*} (f : M → N) (u₁ u₂ : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    f (rectangleTrans u₁ u₂ z) = rectangleTrans (f ∘ u₁) (f ∘ u₂) z := by
+  rw [rectangleTrans, rectangleTrans]
+  rcases le_or_gt z.1 2⁻¹ with h | h
+  · rw [curveConcat_of_le h, curveConcat_of_le h, Function.comp_apply]
+  · rw [curveConcat_of_lt h, curveConcat_of_lt h, Function.comp_apply]
+
+omit [TopologicalSpace M] in
+/-- The concatenation of two maps with values in a set `A` has values in `A`. -/
+theorem rectangleTrans_mem {u₁ u₂ : ℝ × ℝ → M} {A : Set M} (h₁ : ∀ z, u₁ z ∈ A)
+    (h₂ : ∀ z, u₂ z ∈ A) (z : ℝ × ℝ) : rectangleTrans u₁ u₂ z ∈ A := by
+  rw [rectangleTrans]
+  rcases le_or_gt z.1 2⁻¹ with h | h
+  · rw [curveConcat_of_le h]
+    exact h₁ _
+  · rw [curveConcat_of_lt h]
+    exact h₂ _
+
+omit [TopologicalSpace M] in
 /-- Below `s = 2/3` the concatenation is a reparametrization of the first map. -/
 theorem rectangleTrans_eq_left {u₁ u₂ : ℝ × ℝ → M} (h : ∀ t, u₁ (1, t) = u₂ (0, t))
     {z : ℝ × ℝ} (hz : z.1 < 2 / 3) :

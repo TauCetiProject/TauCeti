@@ -18,6 +18,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.Instances.Icc
+import TauCeti.LinearAlgebra.Determinant.Basic
 
 /-!
 # Integrals of two-forms over rectangles and their homotopy invariance
@@ -91,6 +92,10 @@ contracts with `∂ₜ` first.
 * `TauCeti.rectangleIntegral_comp_fst`, `TauCeti.rectangleIntegral_comp_snd`: the integral over a
   map depending on only one coordinate vanishes.
 * `TauCeti.rectangleIntegral_const`: the integral over a constant map vanishes.
+* `TauCeti.rectangleIntegral_comp_eq_zero`: the integral over a map that factors through a curve
+  vanishes.
+* `TauCeti.mpullback_comp_apply_eq_det_smul`: along a change of coordinates `L` of the plane the
+  integrand is multiplied by the Jacobian determinant of `L`.
 * `TauCeti.rectangleIntegral_add_adjacent`: additivity over adjacent rectangles.
 * `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization invariance in the first coordinate,
   and `TauCeti.rectangleIntegral_comp_prodMap_of_contDiff` for a `C¹` change of parameter.
@@ -301,6 +306,46 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
 theorem rectangleIntegral_const (φ : RoughForm I M F 2) (x : M) (a b : ℝ × ℝ) :
     rectangleIntegral φ (fun _ ↦ x) a b = 0 :=
   rectangleIntegral_comp_fst φ (fun _ ↦ x) a b
+
+/-- The pullback of a two-form along a map `γ ∘ Ψ` of the plane that factors through a curve
+`γ : ℝ → M` vanishes, since every alternating two-form on the line `ℝ` vanishes. -/
+theorem mpullback_comp_apply_eq_zero (φ : RoughForm I M F 2) {γ : ℝ → M} {Ψ : ℝ × ℝ → ℝ}
+    {z : ℝ × ℝ} (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ (Ψ z)) (hΨ : DifferentiableAt ℝ Ψ z)
+    (v : Fin 2 → ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Ψ) φ z v = 0 := by
+  rw [mpullback_comp_apply_of_hasFDerivAt hΨ.hasFDerivAt hγ]
+  -- Read the pullback along `γ` as a flat form on the line, whose tangent spaces are `ℝ`.
+  let ψ : ℝ [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ) I γ φ (Ψ z)
+  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans ?_
+  have hw : (fderiv ℝ Ψ z ∘ v) = fun i ↦ (fderiv ℝ Ψ z (v i)) • (1 : ℝ) := by
+    funext i
+    simp
+  rw [hw, ψ.map_smul_univ, ψ.map_eq_zero_of_eq (fun _ ↦ (1 : ℝ)) (i := 0) (j := 1) rfl
+    (by decide), smul_zero]
+
+/-- The integral of a two-form over a map `γ ∘ Ψ` of the plane that factors through a
+differentiable curve `γ : ℝ → M` vanishes. This covers reparametrizations of a loop through
+maps of the plane into its parameter line, whose image is one-dimensional. -/
+theorem rectangleIntegral_comp_eq_zero (φ : RoughForm I M F 2) {γ : ℝ → M} {Ψ : ℝ × ℝ → ℝ}
+    (hγ : MDifferentiable 𝓘(ℝ, ℝ) I γ) (hΨ : Differentiable ℝ Ψ) (a b : ℝ × ℝ) :
+    rectangleIntegral φ (γ ∘ Ψ) a b = 0 := by
+  have h (z : ℝ × ℝ) : mpullback 𝓘(ℝ, ℝ × ℝ) I (γ ∘ Ψ) φ z ![(1, 0), (0, 1)] = 0 :=
+    mpullback_comp_apply_eq_zero φ (hγ _) (hΨ z) _
+  simp [rectangleIntegral_def, h]
+
+/-- **The pullback along a change of coordinates of the plane.** The pullback of a two-form along
+`u ∘ L`, evaluated on the coordinate vectors, is the Jacobian determinant of `L` times the
+pullback along `u` at the image point. -/
+theorem mpullback_comp_apply_eq_det_smul (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
+    {L : ℝ × ℝ → ℝ × ℝ} {A : ℝ × ℝ →L[ℝ] ℝ × ℝ} {z : ℝ × ℝ} (hL : HasFDerivAt L A z)
+    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (L z)) :
+    mpullback 𝓘(ℝ, ℝ × ℝ) I (u ∘ L) φ z ![(1, 0), (0, 1)] =
+      A.det • mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (L z) ![(1, 0), (0, 1)] := by
+  rw [mpullback_comp_apply_of_hasFDerivAt hL hu]
+  -- Read the pullback along `u` as a flat form on the plane, whose tangent spaces are `ℝ × ℝ`.
+  let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (L z)
+  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans ?_
+  exact congrArg (· ![((1 : ℝ), (0 : ℝ)), (0, 1)])
+    (ψ.toAlternatingMap.compLinearMap_eq_det_smul (Module.Basis.finTwoProd ℝ) A.toLinearMap)
 
 /-- The integrand of `TauCeti.rectangleIntegral` along `u ∘ Prod.map σ τ` is the integrand along
 `u` at the image point, scaled by the product of the derivatives of `σ` and `τ`. -/
