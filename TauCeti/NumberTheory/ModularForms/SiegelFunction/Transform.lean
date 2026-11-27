@@ -114,15 +114,11 @@ theorem siegelFunction_smul_eq_etaMultiplier_sq_mul (γ : SL(2, ℤ)) (r : Fin 2
   | one => simp
   | mem g hg =>
     rcases hg with rfl | rfl
-    · rw [etaMultiplier_S, ← Complex.exp_natCast_mul,
-        show ((2 : ℕ) : ℂ) * -(π * I / 4) = -π / 2 * I by push_cast; ring,
-        exp_neg_pi_div_two_mul_I, vecMul_map_modularGroup_S,
+    · rw [etaMultiplier_S_sq, vecMul_map_modularGroup_S,
         ← siegelFunction_apply_neg_one_div r τ.im_pos, modular_S_smul, coe_mk, neg_div, one_div,
         inv_neg]
-    · rw [etaMultiplier_T, ← Complex.exp_natCast_mul,
-        show ((2 : ℕ) : ℂ) * (π * I / 12) = π * I / 6 by push_cast; ring,
-        vecMul_map_modularGroup_T, ← siegelFunction_apply_add_one, modular_T_smul, coe_vadd,
-        add_comm, ofReal_one]
+    · rw [etaMultiplier_T_sq, vecMul_map_modularGroup_T, ← siegelFunction_apply_add_one,
+        modular_T_smul, coe_vadd, add_comm, ofReal_one]
   | mul g h _ _ hg hh =>
     rw [mul_smul, hg, hh, SpecialLinearGroup.vecMul_map_mul, etaMultiplier_mul_sq, mul_assoc]
   | inv g _ hg =>

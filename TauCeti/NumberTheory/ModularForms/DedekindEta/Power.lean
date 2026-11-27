@@ -55,6 +55,8 @@ The proof reads `ε` off its Kronecker-symbol form (`etaMultiplier_eq_kroneckerS
 * `TauCeti.ModularForm.eta_zpow_two_mul_slash`: `η ^ (2 k) ∣[k] γ = ε(γ) ^ (2 k) • η ^ (2 k)`.
 * `TauCeti.ModularForm.etaMultiplier_mul_sq`: `ε(γ δ)² = ε(γ)² ε(δ)²`, and
   `TauCeti.ModularForm.etaMultiplier_neg_sq`: `ε(-γ)² = -ε(γ)²`.
+* `TauCeti.ModularForm.etaMultiplier_S_sq`, `TauCeti.ModularForm.etaMultiplier_T_sq`:
+  `ε(S)² = -i` and `ε(T)² = e^{π i / 6}`.
 * `TauCeti.ModularForm.etaMultiplier_sq_eq_exp_of_odd_c`,
   `TauCeti.ModularForm.etaMultiplier_sq_eq_neg_I_mul_exp_of_odd_d`: `ε(γ)²` in closed form.
 * `TauCeti.ModularForm.etaMultiplier_zpow_eq_one_of_mem_Gamma`: `ε(γ) ^ r = 1` for `γ ∈ Γ(N)`,
@@ -121,40 +123,23 @@ theorem etaMultiplier_mul_sq (γ δ : SL(2, ℤ)) :
 theorem etaMultiplier_neg_sq (γ : SL(2, ℤ)) : etaMultiplier (-γ) ^ 2 = -etaMultiplier γ ^ 2 := by
   rw [← neg_one_mul, etaMultiplier_mul_sq, etaMultiplier_neg_one, neg_sq, I_sq, neg_one_mul]
 
-/-- `exp(π i m / 6) = e(2 m / 24)`. -/
-private theorem exp_pi_mul_I_mul_div_six (m : ℤ) : cexp (π * I * m / 6) = e24 (2 * m) := by
-  rw [e24_def]
-  congr 1
-  push_cast
-  ring
+/-- `ε(S)² = -i` for `S = (0 -1; 1 0)`. -/
+theorem etaMultiplier_S_sq : etaMultiplier S ^ 2 = -I := by
+  rw [etaMultiplier_S, ← Complex.exp_natCast_mul,
+    show ((2 : ℕ) : ℂ) * -(π * I / 4) = -π / 2 * I by push_cast; ring, exp_neg_pi_div_two_mul_I]
 
-/-- `-e(m / 24) = e((m + 12 (2 k + 1)) / 24)`. -/
-private theorem neg_e24 (m k : ℤ) : -e24 m = e24 (m + 12 * (2 * k + 1)) := by
-  rw [e24_add, e24_congr (show 12 * (2 * k + 1) ≡ 12 * (1 : ℕ) [ZMOD 24] from
-    Int.modEq_iff_dvd.2 ⟨-k, by push_cast; ring⟩), e24_twelve_mul, pow_one, mul_neg_one]
+/-- `ε(T)² = e^{π i / 6}` for `T = (1 1; 0 1)`. -/
+theorem etaMultiplier_T_sq : etaMultiplier T ^ 2 = cexp (π * I / 6) := by
+  rw [etaMultiplier_T, ← Complex.exp_natCast_mul,
+    show ((2 : ℕ) : ℂ) * (π * I / 12) = π * I / 6 by push_cast; ring]
 
-/-- The square of the eta multiplier for odd `c > 0`, read off its Kronecker-symbol form. -/
-private theorem etaMultiplier_sq_eq_e24_of_odd_c_of_pos (γ : SL(2, ℤ)) (hc : Odd (γ 1 0))
-    (hpos : 0 < γ 1 0) :
-    etaMultiplier γ ^ 2 =
-      e24 (2 * (γ 0 1 * γ 1 1 * (1 - γ 1 0 ^ 2) + γ 1 0 * (γ 0 0 + γ 1 1 - 3))) := by
-  rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c γ hpos hc, mul_pow,
-    sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1).symm),
-    one_mul, ← e24_def, sq, ← e24_add]
-  congr 1
-  ring
-
-/-- The square of the eta multiplier for odd `d` and `c ≥ 0`, read off its Kronecker-symbol form
-and `a d - b c = 1`. -/
-private theorem etaMultiplier_sq_eq_e24_of_odd_d_of_nonneg (γ : SL(2, ℤ)) (hd : Odd (γ 1 1))
-    (hc : 0 ≤ γ 1 0) :
-    etaMultiplier γ ^ 2 =
-      e24 (2 * (γ 0 0 * γ 1 0 * (1 - γ 1 1 ^ 2) + γ 1 1 * (γ 0 1 - γ 1 0 + 3)) - 6) := by
-  rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d γ hc hd, mul_pow,
-    sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1)),
-    one_mul, ← e24_def, sq, ← e24_add]
-  congr 1
-  linear_combination (2 * γ 1 0 * γ 1 1) * Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
+/-- Passing to `-γ`: since `ε(γ)² = -ε(-γ)²`, a value `ε(-γ)² = e(m / 24)` gives
+`ε(γ)² = e(n / 24)` for every `n ≡ m + 12 (mod 24)`. -/
+private theorem etaMultiplier_sq_eq_e24_of_neg (γ : SL(2, ℤ)) {m n : ℤ}
+    (h : etaMultiplier (-γ) ^ 2 = e24 m) (hmn : n ≡ m + 12 [ZMOD 24]) :
+    etaMultiplier γ ^ 2 = e24 n := by
+  rw [← neg_neg (etaMultiplier γ ^ 2), ← etaMultiplier_neg_sq, h, neg_e24 m 0, e24_congr hmn]
+  norm_num
 
 /-- **The square of the eta multiplier, odd `c`**: for `γ = (a b; c d) ∈ SL(2, ℤ)` with `c` odd,
 `ε(γ)² = exp(π i (b d (1 - c²) + c (a + d - 3)) / 6)`. This is the multiplier of the Siegel
@@ -163,18 +148,20 @@ theorem etaMultiplier_sq_eq_exp_of_odd_c (γ : SL(2, ℤ)) (hc : Odd (γ 1 0)) :
     etaMultiplier γ ^ 2 = cexp (π * I *
       ((γ 0 1 * γ 1 1 * (1 - γ 1 0 ^ 2) + γ 1 0 * (γ 0 0 + γ 1 1 - 3) : ℤ) : ℂ) / 6) := by
   rw [exp_pi_mul_I_mul_div_six]
-  rcases lt_or_gt_of_ne (show γ 1 0 ≠ 0 from fun h ↦ Int.not_odd_zero (h ▸ hc)) with hneg | hpos
-  · -- For `c < 0` pass to `-γ`, whose lower left entry is positive: `ε(γ)² = -ε(-γ)²`.
-    have h := etaMultiplier_sq_eq_e24_of_odd_c_of_pos (-γ) (by simpa using hc)
-      (by simpa using hneg)
+  wlog hpos : 0 < γ 1 0 generalizing γ
+  · -- For `c < 0` pass to `-γ`, whose lower left entry is positive.
+    have hc' : Odd ((-γ) 1 0) := by simpa using hc
     obtain ⟨k, hk⟩ := hc
-    rw [etaMultiplier_neg_sq, neg_eq_iff_eq_neg, neg_e24 _ (-k - 1)] at h
-    rw [h]
-    congr 1
+    refine etaMultiplier_sq_eq_e24_of_neg γ (this (-γ) hc' (by simp; omega))
+      (Int.modEq_iff_dvd.2 ⟨k + 1, ?_⟩)
     simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
-    rw [hk]
-    ring
-  · exact etaMultiplier_sq_eq_e24_of_odd_c_of_pos γ hc hpos
+    linear_combination 12 * hk
+  -- For `c > 0` read `ε(γ)²` off the Kronecker-symbol form.
+  rw [etaMultiplier_eq_kroneckerSym_mul_of_c_pos_of_odd_c γ hpos hc, mul_pow,
+    sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1).symm),
+    one_mul, ← e24_def, sq, ← e24_add]
+  congr 1
+  ring
 
 /-- **The square of the eta multiplier, odd `d`**: for `γ = (a b; c d) ∈ SL(2, ℤ)` with `d` odd,
 `ε(γ)² = -i exp(π i (a c (1 - d²) + d (b - c + 3)) / 6)`. This is the multiplier of the Siegel
@@ -182,24 +169,21 @@ functions in the form of Kubert and Lang; it holds for every such `γ`, includin
 theorem etaMultiplier_sq_eq_neg_I_mul_exp_of_odd_d (γ : SL(2, ℤ)) (hd : Odd (γ 1 1)) :
     etaMultiplier γ ^ 2 = -I * cexp (π * I *
       ((γ 0 0 * γ 1 0 * (1 - γ 1 1 ^ 2) + γ 1 1 * (γ 0 1 - γ 1 0 + 3) : ℤ) : ℂ) / 6) := by
-  have hI : -I = e24 (-6) := by
-    rw [e24_def, ← exp_neg_pi_div_two_mul_I]
-    congr 1
-    push_cast
-    ring
-  rw [exp_pi_mul_I_mul_div_six, hI, ← e24_add, neg_add_eq_sub]
-  rcases lt_or_ge (γ 1 0) 0 with hneg | hc
-  · -- For `c < 0` pass to `-γ`, whose lower left entry is positive: `ε(γ)² = -ε(-γ)²`.
-    have h := etaMultiplier_sq_eq_e24_of_odd_d_of_nonneg (-γ) (by simpa using hd)
-      (by simpa using hneg.le)
+  rw [exp_pi_mul_I_mul_div_six, ← e24_neg_six, ← e24_add, neg_add_eq_sub]
+  wlog hc : 0 ≤ γ 1 0 generalizing γ
+  · -- For `c < 0` pass to `-γ`, whose lower left entry is positive.
+    have hd' : Odd ((-γ) 1 1) := by simpa using hd
     obtain ⟨k, hk⟩ := hd
-    rw [etaMultiplier_neg_sq, neg_eq_iff_eq_neg, neg_e24 _ k] at h
-    rw [h]
-    congr 1
+    refine etaMultiplier_sq_eq_e24_of_neg γ (this (-γ) hd' (by simp; omega))
+      (Int.modEq_iff_dvd.2 ⟨-k, ?_⟩)
     simp only [Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply]
-    rw [hk]
-    ring
-  · exact etaMultiplier_sq_eq_e24_of_odd_d_of_nonneg γ hd hc
+    linear_combination (-12) * hk
+  -- For `c ≥ 0` read `ε(γ)²` off the Kronecker-symbol form and `a d - b c = 1`.
+  rw [etaMultiplier_eq_kroneckerSym_mul_of_c_nonneg_of_odd_d γ hc hd, mul_pow,
+    sq_intCast_kroneckerSym_eq_one (Int.isCoprime_iff_gcd_eq_one.1 (γ.isCoprime_row 1)),
+    one_mul, ← e24_def, sq, ← e24_add]
+  congr 1
+  linear_combination (2 * γ 1 0 * γ 1 1) * Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one γ
 
 /-! ### The multiplier on principal congruence subgroups -/
 

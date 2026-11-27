@@ -50,8 +50,9 @@ checked modulo `8` and modulo `3` by evaluation.
 
 * `TauCeti.ModularForm.e24`: the root of unity `e(m / 24) = exp(2 π i m / 24)`, with its
   homomorphism laws `e24_zero`, `e24_add`, `e24_mul`, `prod_mul_e24_zpow`, its nonvanishing
-  `e24_ne_zero`, its periodicity `e24_congr`, and its values `e24_twelve_mul`,
-  `e24_twelve_mul_eq_χ₄` at multiples of `12`.
+  `e24_ne_zero`, its periodicity `e24_congr`, its values `e24_twelve_mul`,
+  `e24_twelve_mul_eq_χ₄` at multiples of `12`, `e24_six`, `e24_neg_six` and `neg_e24`, and its
+  relation `exp_pi_mul_I_mul_div_six` to `exp(π i m / 6)`.
 
 ## Main results
 
@@ -154,12 +155,26 @@ private theorem e24_neg_three : e24 (-3) = cexp (-(π * I / 4)) := by
   push_cast
   ring
 
-private theorem e24_six : e24 6 = I := by
+/-- `e(6 / 24) = i`. -/
+theorem e24_six : e24 6 = I := by
   rw [e24, show 2 * π * I * ((6 : ℤ) : ℂ) / 24 = π / 2 * I by push_cast; ring, exp_pi_div_two_mul_I]
 
-private theorem e24_neg_six : e24 (-6) = -I := by
+/-- `e(-6 / 24) = -i`. -/
+theorem e24_neg_six : e24 (-6) = -I := by
   rw [e24_congr (show (-6 : ℤ) ≡ 12 * (1 : ℕ) + 6 [ZMOD 24] by decide), e24_add, e24_twelve_mul,
     e24_six, pow_one, neg_one_mul]
+
+/-- `exp(π i m / 6) = e(2 m / 24)`. -/
+theorem exp_pi_mul_I_mul_div_six (m : ℤ) : cexp (π * I * m / 6) = e24 (2 * m) := by
+  rw [e24_def]
+  congr 1
+  push_cast
+  ring
+
+/-- `-e(m / 24) = e((m + 12 (2 k + 1)) / 24)`. -/
+theorem neg_e24 (m k : ℤ) : -e24 m = e24 (m + 12 * (2 * k + 1)) := by
+  rw [e24_add, e24_congr (show 12 * (2 * k + 1) ≡ 12 * (1 : ℕ) [ZMOD 24] from
+    Int.modEq_iff_dvd.2 ⟨-k, by push_cast; ring⟩), e24_twelve_mul, pow_one, mul_neg_one]
 
 /-! ### Congruences modulo `24` -/
 
