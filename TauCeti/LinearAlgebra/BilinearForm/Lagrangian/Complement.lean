@@ -77,8 +77,9 @@ def lagrangianCorrection : V →ₗ[K] L :=
 theorem apply_lagrangianCorrection (v w : V) :
     B (B.lagrangianCorrection hnd hL hc v) w = -(⅟(2 : K)) * B v w := by
   let := B.isPerfPair_domRestrict₁₂_of_isCompl_orthogonal hnd (hL.symm ▸ hc)
-  exact DFunLike.congr_fun ((B.domRestrict₁₂ L V).apply_symm_toPerfPair_self
-    ((-(⅟(2 : K)) • B.restrict V) v)) w
+  rw [lagrangianCorrection, LinearMap.comp_apply, LinearEquiv.coe_coe,
+    ← domRestrict₁₂_apply B L V, apply_symm_toPerfPair_self]
+  simp [restrict_apply]
 
 /-- The negative half-form determines the correction map uniquely. -/
 theorem eq_lagrangianCorrection_iff (A : V →ₗ[K] L) :
