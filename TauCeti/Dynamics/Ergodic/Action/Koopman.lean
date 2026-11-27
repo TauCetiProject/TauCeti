@@ -454,26 +454,26 @@ theorem koopmanGroup_isUnitary (F : Type*) [NormedAddCommGroup F] [InnerProductS
 
 /-- The Koopman correlation of two indicators is the measure of an intersection:
 `⟪1_C, U_t 1_A⟫ = μ((t +ᵥ ·)⁻¹' A ∩ C)`. -/
-theorem inner_indicatorConstLp_koopmanGroup [IsFiniteMeasure μ] {A C : Set X}
-    (hA : MeasurableSet A) (hC : MeasurableSet C) (t : ℝ) :
-    ⟪indicatorConstLp 2 hC (measure_ne_top μ C) (1 : ℂ),
-        koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t
-          (indicatorConstLp 2 hA (measure_ne_top μ A) (1 : ℂ))⟫_ℂ =
+theorem inner_indicatorConstLp_koopmanGroup {A C : Set X} (hA : MeasurableSet A)
+    (hC : MeasurableSet C) (hμA : μ A ≠ ∞) (hμC : μ C ≠ ∞) (t : ℝ) :
+    ⟪indicatorConstLp 2 hC hμC (1 : ℂ),
+        koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t (indicatorConstLp 2 hA hμA (1 : ℂ))⟫_ℂ =
       (μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ C) : ℂ) := by
-  rw [koopmanGroup_indicatorConstLp, L2.inner_indicatorConstLp_indicatorConstLp, Set.inter_comm C]
+  rw [koopmanGroup_indicatorConstLp, L2.inner_indicatorConstLp_indicatorConstLp _ _ hμC
+    (by rwa [(measurePreserving_vadd t μ).measure_preimage hA.nullMeasurableSet]),
+    Set.inter_comm C]
   simp
 
-/-- For a jointly measurable action of `ℝ` preserving a finite measure `μ`, the measure
-`μ((t +ᵥ ·)⁻¹' A ∩ C)` depends continuously on `t`. -/
-theorem continuous_measureReal_preimage_vadd_inter [IsFiniteMeasure μ] {A C : Set X}
-    (hA : MeasurableSet A) (hC : MeasurableSet C) :
+/-- For a jointly measurable action of `ℝ` preserving an s-finite measure `μ`, and sets `A`, `C`
+of finite measure, the measure `μ((t +ᵥ ·)⁻¹' A ∩ C)` depends continuously on `t`. -/
+theorem continuous_measureReal_preimage_vadd_inter {A C : Set X} (hA : MeasurableSet A)
+    (hC : MeasurableSet C) (hμA : μ A ≠ ∞) (hμC : μ C ≠ ∞) :
     Continuous fun t : ℝ => μ.real ((fun x => t +ᵥ x) ⁻¹' A ∩ C) := by
-  have h : Continuous fun t : ℝ => ⟪indicatorConstLp 2 hC (measure_ne_top μ C) (1 : ℂ),
-      koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t
-        (indicatorConstLp 2 hA (measure_ne_top μ A) (1 : ℂ))⟫_ℂ :=
+  have h : Continuous fun t : ℝ => ⟪indicatorConstLp 2 hC hμC (1 : ℂ),
+      koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top t (indicatorConstLp 2 hA hμA (1 : ℂ))⟫_ℂ :=
     continuous_const.inner ((koopmanGroup μ ℂ 2 ENNReal.ofNat_ne_top).continuous_orbit _)
   have h' := Complex.continuous_re.comp h
-  simpa only [Function.comp_def, inner_indicatorConstLp_koopmanGroup μ hA hC, Complex.ofReal_re]
-    using h'
+  simpa only [Function.comp_def, inner_indicatorConstLp_koopmanGroup μ hA hC hμA hμC,
+    Complex.ofReal_re] using h'
 
 end TauCeti

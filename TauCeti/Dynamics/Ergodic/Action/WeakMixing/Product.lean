@@ -84,7 +84,8 @@ private theorem inner_rectL2_koopmanGroup [IsProbabilityMeasure μ] [IsProbabili
         ℂ) := by
   have hpre : (fun z : X × Y => t +ᵥ z) ⁻¹' A ×ˢ B =
       ((fun x => t +ᵥ x) ⁻¹' A) ×ˢ ((fun y => t +ᵥ y) ⁻¹' B) := rfl
-  rw [TauCeti.inner_indicatorConstLp_koopmanGroup (μ.prod ν) (hA.prod hB) (hC.prod hD) t, hpre,
+  rw [TauCeti.inner_indicatorConstLp_koopmanGroup (μ.prod ν) (hA.prod hB) (hC.prod hD)
+    (measure_ne_top _ _) (measure_ne_top _ _) t, hpre,
     prod_inter_prod, measureReal_prod_prod]
 
 /-- The averaged Koopman correlations of two rectangles, for `X` weakly mixing and `Y` ergodic,
@@ -102,14 +103,17 @@ private theorem tendsto_average_inner_rectL2 [IsProbabilityMeasure μ] [IsProbab
     have h := TauCeti.tendsto_average_inner_koopmanGroup_of_ergodicVAdd
       (indicatorConstLp 2 hB (measure_ne_top ν B) (1 : ℂ))
       (indicatorConstLp 2 hD (measure_ne_top ν D) (1 : ℂ))
-    simp only [TauCeti.inner_indicatorConstLp_koopmanGroup ν hB hD,
+    simp only [TauCeti.inner_indicatorConstLp_koopmanGroup ν hB hD (measure_ne_top _ _)
+        (measure_ne_top _ _),
       intervalIntegral.integral_ofReal, integral_indicatorConstLp] at h
     have h' := (Complex.continuous_re.tendsto _).comp h
     simpa only [Function.comp_def, ← Complex.ofReal_inv, Complex.real_smul, mul_one,
       Complex.conj_ofReal, ← Complex.ofReal_mul, Complex.ofReal_re] using h'
   have hlim := TauCeti.tendsto_average_mul_of_tendsto_average_abs_sub
-    (fun T => (TauCeti.continuous_measureReal_preimage_vadd_inter μ hA hC).intervalIntegrable 0 T)
-    (fun T => (TauCeti.continuous_measureReal_preimage_vadd_inter ν hB hD).intervalIntegrable 0 T)
+    (fun T => (TauCeti.continuous_measureReal_preimage_vadd_inter μ hA hC
+      (measure_ne_top _ _) (measure_ne_top _ _)).intervalIntegrable 0 T)
+    (fun T => (TauCeti.continuous_measureReal_preimage_vadd_inter ν hB hD
+      (measure_ne_top _ _) (measure_ne_top _ _)).intervalIntegrable 0 T)
     (C := 1) (fun t => by
       rw [abs_of_nonneg measureReal_nonneg]
       exact measureReal_le_one) ((isWeaklyMixing_def.1 hμ) A C hA hC) h₂
