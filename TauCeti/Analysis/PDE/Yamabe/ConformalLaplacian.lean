@@ -283,15 +283,15 @@ theorem scalarCurvature_rescale_eq_iff_conformalLaplacian_eq
 
 /-- **The conformal Laplacian of a conformal metric.** In dimension `n ≠ 2`, let `u` be a
 positive function such that `ĝ = u ^ (4 / (n - 2)) g` is a smooth metric. Then the conformal
-Laplacians of `ĝ` and `g` are related by `L_ĝ v = u ^ (-(n + 2) / (n - 2)) L_g (u v)` for every
-`C²` function `v`. For `v = 1` this is the scalar curvature law
+Laplacians of `ĝ` and `g` are related by `L_ĝ v = u ^ (-(n + 2) / (n - 2)) L_g (u v)` at every
+point where `v` is `C²`. For `v = 1` this is the scalar curvature law
 `scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian`. -/
 theorem conformalLaplacian_rescale
     (g : ContMDiffRiemannianMetric I ∞ E (fun x : M ↦ TangentSpace I x))
     (hn : finrank ℝ E ≠ 2) {u : M → ℝ} (hu_pos : ∀ x, 0 < u x)
     {hf : ContMDiff I 𝓘(ℝ) ∞ fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))}
     {hf_pos : ∀ x, 0 < u x ^ (4 / ((finrank ℝ E : ℝ) - 2))} {v : M → ℝ}
-    (hv : ContMDiff I 𝓘(ℝ) 2 v) (x : M) :
+    {x : M} (hv : ContMDiffAt I 𝓘(ℝ) 2 v x) :
     (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
         ⟨(g.rescale (fun x ↦ u x ^ (4 / ((finrank ℝ E : ℝ) - 2))) hf hf_pos).toRiemannianMetric⟩;
       conformalLaplacian I v x) =
@@ -321,9 +321,10 @@ theorem conformalLaplacian_rescale
     rw [Real.rpow_sub_one hux.ne', div_eq_mul_inv]
   rw [conformalLaplacian_def, ← (g.rescale (fun x ↦ u x ^ p) hf hf_pos).scalarCurvature_def x,
     scalarCurvature_rescale_eq_rpow_mul_conformalLaplacian g hn hu_pos x,
-    g.laplaceBeltrami_rescale (by simp) hf hf_pos (hv.contMDiffAt), hgrad]
+    g.laplaceBeltrami_rescale (by simp) hf hf_pos hv, hgrad]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  rw [conformalLaplacian_def, conformalLaplacian_def, laplaceBeltrami_mul I hu₂ hv x,
+  rw [conformalLaplacian_def, conformalLaplacian_def,
+    laplaceBeltrami_mul_of_contMDiffAt I hu₂.contMDiffAt hv,
     real_inner_smul_left, hpow, hpow', conformalCoefficient_def]
   simp only [Pi.mul_apply, p]
   field_simp
