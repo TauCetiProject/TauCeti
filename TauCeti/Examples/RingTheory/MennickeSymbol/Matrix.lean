@@ -53,8 +53,10 @@ theorem map_ofSL_fiveTranspose {C : Type*} [Group C] {s : MennickePair (span {(2
     (hs : IsMennickeSymbol s) : s (ofSL fiveTranspose) = (s (ofSL five))⁻¹ := by
   rw [← ofGL_kerMapToGL, ← ofGL_kerMapToGL]
   refine hs.map_ofGL_eq_inv_of_transpose ?_
+  rw [SpecialLinearGroup.coe_kerMapToGL, SpecialLinearGroup.coe_kerMapToGL,
+    SpecialLinearGroup.coe_GL_coe_matrix, SpecialLinearGroup.coe_GL_coe_matrix]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [five, fiveTranspose, SpecialLinearGroup.toGL]
+  fin_cases i <;> fin_cases j <;> simp [five, fiveTranspose]
 
 /-- The pair `(3, 2)` is admissible at level `2`. -/
 theorem exists_mennickePair_three_two :

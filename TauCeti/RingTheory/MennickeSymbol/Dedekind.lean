@@ -239,8 +239,11 @@ theorem map_eq_of_isUnit_mul_sub_mul (hs : IsMennickeSymbol s) {p q : MennickePa
     q.snd_mem, r.isCoprime.mul_left q.isCoprime⟩
   have hpr : s p * s r = 1 := hs.map_mul_map_eq_one rfl h
   have hr' : s r' = s r * s q := hs.map_eq_mul_of_fst_eq_mul rfl rfl rfl
-  have hr'_one : s r' = 1 := hs.map_eq_one_of_dvd_fst_sub h
-    ⟨p.snd, show p.fst * q.fst - (p.fst * q.fst - p.snd * q.snd) = q.snd * p.snd by ring⟩
+  have hr'_fst : r'.fst = p.fst * q.fst := rfl
+  have hr'_snd : r'.snd = q.snd := rfl
+  have hr'_one : s r' = 1 := hs.map_eq_one_of_dvd_fst_sub h <| by
+    rw [hr'_fst, hr'_snd]
+    exact ⟨p.snd, by ring⟩
   rw [eq_inv_of_mul_eq_one_left hpr, eq_inv_of_mul_eq_one_right (hr'.symm.trans hr'_one)]
 
 end IsMennickeSymbol
