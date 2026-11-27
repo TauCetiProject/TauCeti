@@ -138,18 +138,13 @@ theorem exists_trace_eq_typeTrace [Algebra.FormallyUnramified ℚ E] (Φ : CMTyp
   have : Algebra.FormallyEtale ℚ E := .of_formallyUnramified_of_field ℚ E
   have : Algebra.Etale ℚ E :=
     { finitePresentation := Algebra.FinitePresentation.of_finiteType.mp inferInstance }
-  -- The complex embeddings of `E` are the `k`-algebra maps `k ⊗_ℚ E → ℂ`.
-  let e : (E →+* ℂ) ≃ (k ⊗[ℚ] E →ₐ[k] ℂ) :=
-    (RingHom.equivRatAlgHom E ℂ).trans (Algebra.TensorProduct.liftEquivRight ℚ k E ℂ)
-  have he (φ : E →+* ℂ) (r : k) (a : E) : e φ (r ⊗ₜ a) = r * φ a := by
-    simp [e, Algebra.TensorProduct.liftEquivRight]
   -- The selected idempotent gives a module with the descended partial trace.
   obtain ⟨n, ρ, hρ⟩ := TauCeti.Algebra.Etale.exists_trace_eq_finsum (K := k)
-    (A := k ⊗[ℚ] E) (Ω := ℂ) _ (Φ.finsum_liftEquivRight_image_mem_range hk)
+    (A := k ⊗[ℚ] E) (Ω := ℂ) _ (Φ.finsum_tensorEmbeddingEquiv_image_mem_range hk)
   refine ⟨n, ρ.toRingHom.comp Algebra.TensorProduct.includeRight.toRingHom, fun a ↦ ?_⟩
   have h := hρ (1 ⊗ₜ a)
-  rw [finsum_mem_image e.injective.injOn] at h
-  simpa [he, typeTrace_apply] using h
+  rw [finsum_mem_image k.tensorEmbeddingEquiv.injective.injOn] at h
+  simpa [typeTrace_apply] using h
 
 /-- **Representations with the type trace (Milne, *Complex Multiplication*, Proposition 1.21).**
 Let `E` be a finite-dimensional formally unramified `ℚ`-algebra, such as a finite product of CM
