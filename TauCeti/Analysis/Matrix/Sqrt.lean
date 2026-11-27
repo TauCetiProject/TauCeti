@@ -44,8 +44,8 @@ commutative ring in `TauCeti/LinearAlgebra/Matrix/InvSub.lean`.
   rank;
 * `Matrix.PosSemidef.sqrt_mul_transpose_sqrt` — over the reals, the square root times its
   transpose recovers the matrix;
-* `Matrix.sqrt_diagonal` — the square root of a real diagonal matrix with nonnegative entries is
-  computed entry by entry;
+* `Matrix.sqrt_diagonal_ofReal` — the square root of a diagonal matrix with nonnegative real
+  entries is computed entry by entry, with the real form `Matrix.sqrt_diagonal`;
 * `Matrix.PosSemidef.range_toEuclideanLin_sqrt` — its Euclidean linear map has the same range;
 * `Matrix.inner_toEuclideanCLM_sqrt_toEuclideanLin` — the quadratic form of `Θ` at
   `CFC.sqrt S x` is the quadratic form of the sandwich at `x`;
@@ -105,15 +105,22 @@ theorem PosSemidef.sqrt_mul_transpose_sqrt {S : Matrix ι ι ℝ} (hS : S.PosSem
     (Matrix.LE.le.posSemidef (CFC.sqrt_nonneg S)).isHermitian.eq]
   exact CFC.sqrt_mul_sqrt_self S hS.nonneg
 
+/-- The square root of a diagonal matrix whose entries are nonnegative reals is computed entry by
+entry. -/
+theorem sqrt_diagonal_ofReal [DecidableEq ι] {d : ι → ℝ} (hd : 0 ≤ d) :
+    CFC.sqrt (diagonal fun i ↦ (d i : 𝕜)) = diagonal fun i ↦ ((√(d i) : ℝ) : 𝕜) := by
+  refine CFC.sqrt_unique ?_
+    (PosSemidef.diagonal fun i ↦ RCLike.ofReal_nonneg.2 (Real.sqrt_nonneg (d i))).nonneg
+  rw [diagonal_mul_diagonal]
+  congr 1
+  ext i
+  rw [← RCLike.ofReal_mul, Real.mul_self_sqrt (hd i)]
+
 /-- The square root of a real diagonal matrix with nonnegative entries is computed entry by
 entry. -/
 theorem sqrt_diagonal [DecidableEq ι] {d : ι → ℝ} (hd : 0 ≤ d) :
     CFC.sqrt (diagonal d) = diagonal fun i ↦ √(d i) := by
-  refine CFC.sqrt_unique ?_ (PosSemidef.diagonal fun i ↦ Real.sqrt_nonneg (d i)).nonneg
-  rw [diagonal_mul_diagonal]
-  congr 1
-  ext i
-  exact Real.mul_self_sqrt (hd i)
+  simpa using sqrt_diagonal_ofReal (𝕜 := ℝ) hd
 
 open scoped Classical in
 /-- The Euclidean linear maps of a positive-semidefinite matrix and its square root have the same
