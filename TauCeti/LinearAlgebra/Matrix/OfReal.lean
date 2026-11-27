@@ -119,10 +119,11 @@ theorem map_ofReal_mulVec_of_rotation [Fintype n] {A : Matrix n n ℝ} {e₁ e�
     (he₂ : A *ᵥ e₂ = Real.sin α • e₁ + Real.cos α • e₂) :
     (A.map ((↑) : ℝ → ℂ)) *ᵥ (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) =
       Complex.exp ((α : ℂ) * Complex.I) • (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) := by
-  rw [show (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) =
-      (fun i ↦ (e₁ i : ℂ)) + Complex.I • (fun i ↦ (e₂ i : ℂ)) from
-      funext fun _ ↦ by simp [smul_eq_mul],
-    mulVec_add, mulVec_smul, map_ofReal_mulVec, map_ofReal_mulVec, he₁, he₂, Complex.exp_mul_I]
+  have hv : (fun i ↦ (e₁ i : ℂ) + Complex.I * (e₂ i : ℂ)) =
+      (fun i ↦ (e₁ i : ℂ)) + Complex.I • (fun i ↦ (e₂ i : ℂ)) :=
+    funext fun _ ↦ by simp [smul_eq_mul]
+  rw [hv, mulVec_add, mulVec_smul, map_ofReal_mulVec, map_ofReal_mulVec, he₁, he₂,
+    Complex.exp_mul_I]
   ext i; simp only [Pi.add_apply, Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Complex.ofReal_sub,
     Complex.ofReal_add, Complex.ofReal_mul, ← Complex.ofReal_cos, ← Complex.ofReal_sin]
   linear_combination -↑(Real.sin α) * (e₂ i : ℂ) * Complex.I_sq

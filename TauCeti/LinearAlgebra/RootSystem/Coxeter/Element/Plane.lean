@@ -192,12 +192,12 @@ private theorem coxeterPlane_exists_corootEval_zero [Nontrivial b.support]
     (P.weylGroupToPerm (c ^ n)⁻¹ (i₁ : ι)) (b.planePoint col θ x 0)
   rw [inv_pow, inv_inv, map_inv, Equiv.Perm.coe_inv, Equiv.apply_symm_apply, Matrix.map_pow] at heq
   refine ⟨(P.weylGroupToPerm (c ^ n)).symm (i₁ : ι), ?_⟩
-  rw [show b.planePoint col θ x (2 * (n : ℝ) * θ + (q : ℝ) * Real.pi) = ((-1 : ℝ) ^ q) •
+  have hpt : b.planePoint col θ x (2 * (n : ℝ) * θ + (q : ℝ) * Real.pi) = ((-1 : ℝ) ^ q) •
       ((((b.colorClassMatrix col false * b.colorClassMatrix col true).map (Int.castRingHom ℝ)) ^
-        n) *ᵥ b.planePoint col θ x 0) by
+        n) *ᵥ b.planePoint col θ x 0) := by
     rw [(coxeterPlane_rotation b col hxC hμ_eq).2.2 n 0]; ext i
-    simp [planePoint, Real.cos_add_int_mul_pi, Real.sin_add_int_mul_pi]; ring,
-    map_smul, ← heq, coxeterPlane_corootEval b col hxC hμ_eq i₁ 0]; simp [hi₁]
+    simp [planePoint, Real.cos_add_int_mul_pi, Real.sin_add_int_mul_pi]; ring
+  rw [hpt, map_smul, ← heq, coxeterPlane_corootEval b col hxC hμ_eq i₁ 0]; simp [hi₁]
 
 private theorem coxeterPlane_angle_eq_pi_div_orderOf [Nontrivial b.support]
     (hconn : (diagramGraph b.cartanMatrix).Preconnected) (hx : ∀ i, 0 < x i) (hθpos : 0 < θ)
@@ -220,12 +220,12 @@ private theorem coxeterPlane_angle_eq_pi_div_orderOf [Nontrivial b.support]
       b.corootEval_ne_zero_of_forall_pos
         (coxeterPlane_corootEval_pos b col hxC hμ_eq hx hθlt hsinθ h0 hlt) j hj
   obtain ⟨m', hm'⟩ := (Real.cos_eq_one_iff (2 * (h' : ℝ) * θ)).mp hcos'
+  have hang : θ / 2 + 2 * (h' : ℝ) * θ = θ / 2 + m' * (2 * Real.pi) := by linarith
   exact Nat.not_dvd_of_pos_of_lt hh'0 hh'lt <| orderOf_dvd_iff_pow_eq_one.mpr <| inv_eq_one.mp <|
     inv_pow c h' ▸ eq_one_of_actsBy_fix_of_forall_pos b
       (coxeterPlane_corootEval_pos b col hxC hμ_eq hx hθlt hsinθ (φ := θ / 2) (by linarith)
         (by linarith)) ((b.actsBy_bipartiteCoxeterElement_inv col).pow h') (by
-        rw [Matrix.map_pow, hWinv_pow h' (θ / 2), show θ / 2 + 2 * (h' : ℝ) * θ =
-          θ / 2 + m' * (2 * Real.pi) by linarith]
+        rw [Matrix.map_pow, hWinv_pow h' (θ / 2), hang]
         simp [planePoint, Real.cos_add_int_mul_two_pi, Real.sin_add_int_mul_two_pi])
 
 end Helpers
@@ -263,11 +263,12 @@ theorem exists_coxeterPlane_bipartiteCoxeterElement_of_isFiniteType
   obtain ⟨hWe₁, hWe₂, hWinv_pow⟩ := coxeterPlane_rotation b col hxC hμ_eq
   have hθ_eq := coxeterPlane_angle_eq_pi_div_orderOf b col hxC hμ_eq hconn hx
     (Real.arccos_pos.mpr (by linarith)) hθlt hsinθ
+  have hWinv_rw (k : ℕ) (φ : ℝ) : φ + 2 * (k : ℝ) * θ = φ + 2 * Real.pi * k / h := by
+    rw [hθ_eq]; ring
   refine ⟨b.planeBasis₁ col θ x, b.planeBasis₂ col θ x,
     coxeterPlane_linearIndependent b col hconn hx hsinθ, by rw [hWe₁, hθ_eq, mul_div_assoc],
-    by rw [hWe₂, hθ_eq, mul_div_assoc], fun k φ ↦ by
-      simpa only [planePoint, hθ_eq, Winv, h, c, show φ + 2 * (k : ℝ) * (Real.pi / orderOf _) =
-        φ + 2 * Real.pi * k / orderOf _ by ring] using hWinv_pow k φ,
+    by rw [hWe₂, hθ_eq, mul_div_assoc],
+    fun k φ ↦ by simpa only [planePoint, Winv, hWinv_rw k φ] using hWinv_pow k φ,
     fun φ hφ0 hφh ↦ coxeterPlane_corootEval_pos b col hxC hμ_eq hx hθlt hsinθ hφ0
       (hθ_eq.symm ▸ hφh)⟩
 
@@ -325,9 +326,10 @@ private theorem exists_eigenvector_subsingleton [Nonempty ι] (b : P.Base) [Subs
   have hv_re (k : b.support) : 0 < b.corootEval ℝ (k : ι) (fun _ ↦ (1 : ℝ)) := by
     rw [Subsingleton.elim k i₀, corootEval_coe_support, Fintype.sum_subsingleton _ i₀,
       b.cartanMatrix_apply_same i₀]; norm_num
+  have harg : (2 : ℂ) * Real.pi * Complex.I / (2 : ℕ) = Real.pi * Complex.I := by
+    push_cast; ring
   refine ⟨fun _ ↦ ((1 : ℝ) : ℂ), fun h ↦ by simpa using congrFun h i₀, by
-      rw [hW_eq, hord, show (2 : ℂ) * Real.pi * Complex.I / (2 : ℕ) = Real.pi * Complex.I by
-        push_cast; ring, Complex.exp_pi_mul_I]; simp [Matrix.map_neg, neg_mulVec, one_mulVec],
+      rw [hW_eq, hord, harg, Complex.exp_pi_mul_I]; simp [Matrix.map_neg, neg_mulVec, one_mulVec],
     fun j hj ↦ b.corootEval_ne_zero_of_forall_pos hv_re j
       (by simpa [corootEval_apply] using congrArg Complex.re hj),
     fun g G hG hGv ↦ eq_one_of_actsBy_fix_of_forall_pos b hv_re hG <| funext fun i ↦
@@ -344,21 +346,25 @@ private theorem exists_eigenvector_bipartite_of_isFiniteType [DecidableEq ι] (b
   obtain ⟨e₁, e₂, hli, hWe₁, hWe₂, -, hsector⟩ :=
     b.exists_coxeterPlane_bipartiteCoxeterElement_of_isFiniteType hft hconn col
   have hy₀ := hsector ((Real.pi / orderOf c₀) / 2) (by positivity) (half_lt_self (by positivity))
+  have harg : (2 : ℂ) * ↑Real.pi * Complex.I / orderOf c₀ =
+      ↑(2 * Real.pi / (orderOf c₀ : ℝ)) * Complex.I := by push_cast; ring
   refine ⟨(fun i ↦ (e₁ i : ℂ)) + Complex.I • (fun i ↦ (e₂ i : ℂ)), fun hv0 ↦
       hli.ne_zero (0 : Fin 2) (funext fun i ↦ by simpa using congrArg Complex.re (congrFun hv0 i)),
-    by rw [map_intCast_complex_eq_map_ofReal, show (2 : ℂ) * ↑Real.pi * Complex.I / orderOf c₀ =
-        ↑(2 * Real.pi / (orderOf c₀ : ℝ)) * Complex.I by push_cast; ring]
+    by rw [map_intCast_complex_eq_map_ofReal, harg]
        exact map_ofReal_mulVec_of_rotation hWe₁ hWe₂,
-    fun j hj0 ↦ b.corootEval_ne_zero_of_forall_pos hy₀ j (by simp [
-      show b.corootEval ℝ j e₁ = 0 by simpa [corootEval_apply] using congrArg Complex.re hj0,
-      show b.corootEval ℝ j e₂ = 0 by simpa [corootEval_apply] using congrArg Complex.im hj0]),
+    fun j hj0 ↦
+      have hre : b.corootEval ℝ j e₁ = 0 := by
+        simpa [corootEval_apply] using congrArg Complex.re hj0
+      have him : b.corootEval ℝ j e₂ = 0 := by
+        simpa [corootEval_apply] using congrArg Complex.im hj0
+      b.corootEval_ne_zero_of_forall_pos hy₀ j (by simp [hre, him]),
     fun g G hG hGv ↦ eq_one_of_actsBy_fix_of_forall_pos b hy₀ hG <| funext fun i ↦ by
       rw [mulVec_add, mulVec_smul, map_intCast_mulVec_ofReal, map_intCast_mulVec_ofReal] at hGv
-      simp only [mulVec_add, mulVec_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul,
-        show ((G.map (Int.castRingHom ℝ)) *ᵥ e₁) i = e₁ i by
-          simpa using congrArg Complex.re (congrFun hGv i),
-        show ((G.map (Int.castRingHom ℝ)) *ᵥ e₂) i = e₂ i by
-          simpa using congrArg Complex.im (congrFun hGv i)]⟩
+      have hre : ((G.map (Int.castRingHom ℝ)) *ᵥ e₁) i = e₁ i := by
+        simpa using congrArg Complex.re (congrFun hGv i)
+      have him : ((G.map (Int.castRingHom ℝ)) *ᵥ e₂) i = e₂ i := by
+        simpa using congrArg Complex.im (congrFun hGv i)
+      simp only [mulVec_add, mulVec_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul, hre, him]⟩
 
 private theorem exists_eigenvector_of_isConj (b : P.Base)
     {c c₀ : P.weylGroup} {W W₀ : Matrix b.support b.support ℤ}
@@ -372,10 +378,10 @@ private theorem exists_eigenvector_of_isConj (b : P.Base)
   have hU : b.ActsBy (wordProd P b lu) U := b.actsBy_wordProd lu
   set Uinv := (lu'.map (reflMatrix b.cartanMatrix)).prod
   have hUinv : b.ActsBy (wordProd P b lu)⁻¹ Uinv := hlu' ▸ b.actsBy_wordProd lu'
+  have hActsOne : b.ActsBy 1 (Uinv * U) := inv_mul_cancel (wordProd P b lu) ▸ hUinv.mul hU
   have hUinvU (x : b.support → ℂ) :
       (Uinv.map (Int.castRingHom ℂ)) *ᵥ ((U.map (Int.castRingHom ℂ)) *ᵥ x) = x := by
-    rw [mulVec_mulVec, ← Matrix.map_mul, (show b.ActsBy 1 (Uinv * U) from
-      inv_mul_cancel (wordProd P b lu) ▸ hUinv.mul hU).unique b.actsBy_one]; simp
+    rw [mulVec_mulVec, ← Matrix.map_mul, hActsOne.unique b.actsBy_one]; simp
   refine ⟨(U.map (Int.castRingHom ℂ)) *ᵥ v₀, fun hv0 ↦ hv₀_ne (by
       simpa only [hUinvU, mulVec_zero] using congrArg ((Uinv.map (Int.castRingHom ℂ)) *ᵥ ·) hv0),
     by rw [hW.unique (hu ▸ (hU.mul hW₀).mul hUinv), hconj.choose_spec.orderOf_eq]

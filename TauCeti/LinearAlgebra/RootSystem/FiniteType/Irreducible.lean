@@ -226,8 +226,8 @@ theorem connected_diagramGraph_cartanMatrix {R M N ι : Type*} [CommRing R] [Add
     {b : P.Base} {t : DynkinType} (h : HasCartanType P b t) (ht : t.Valid) :
     (diagramGraph b.cartanMatrix).Connected := by
   obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
-  rw [show b.cartanMatrix = t.cartanMatrix.submatrix e e from Matrix.ext he,
-    diagramGraph_submatrix e.injective]
+  have hmat : b.cartanMatrix = t.cartanMatrix.submatrix e e := Matrix.ext he
+  rw [hmat, diagramGraph_submatrix e.injective]
   exact (_root_.SimpleGraph.Iso.comap e _).connected_iff.mpr
     (DynkinType.connected_diagramGraph_cartanMatrix ht)
 

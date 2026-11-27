@@ -92,9 +92,11 @@ theorem isReduced_of_nodup (cs : CoxeterSystem M W) {l : List B} (hl : l.Nodup) 
   rw [List.mem_toFinset] at hi ⊢; by_contra hiσ; obtain ⟨l₁, l₂, rfl⟩ := List.append_of_mem hi
   obtain ⟨-, hl₂', hdisj⟩ := List.nodup_append.mp hl; rw [List.nodup_cons] at hl₂'
   let J : Set B := {j | j ≠ i}
+  have hsi : cs.simple i =
+      (cs.wordProd l₁)⁻¹ * cs.wordProd (l₁ ++ i :: l₂) * (cs.wordProd l₂)⁻¹ := by
+    simp [wordProd_append, wordProd_cons, mul_assoc]
   exact (cs.simple_mem_parabolic_iff (J := J)).mp (by
-    rw [show cs.simple i = (cs.wordProd l₁)⁻¹ * cs.wordProd (l₁ ++ i :: l₂) *
-        (cs.wordProd l₂)⁻¹ by simp [wordProd_append, wordProd_cons, mul_assoc]]
+    rw [hsi]
     exact mul_mem (mul_mem (inv_mem <| cs.wordProd_mem_parabolic (J := J) fun j hj hji ↦
       hdisj j hj i List.mem_cons_self hji) (hprod ▸ cs.wordProd_mem_parabolic
         fun j hj hji ↦ hiσ (hji ▸ hj))) (inv_mem <| cs.wordProd_mem_parabolic (J := J)

@@ -94,11 +94,12 @@ theorem corootEval_ite_color {S : Type*} [CommRing S] {y : b.support → S} {κ 
     simp [ht]
   split_ifs with hkz
   · exact hsame z hkz
-  · have htot : b.corootEval S (k : ι) (fun i ↦ if col i = z then y i else 0) +
+  · have hsum_z : (fun i ↦ if col i = z then y i else 0) +
+        (fun i ↦ if col i = !z then y i else 0) = y :=
+      funext fun i ↦ by by_cases hci : col i = z <;> simp [hci]
+    have htot : b.corootEval S (k : ι) (fun i ↦ if col i = z then y i else 0) +
         b.corootEval S (k : ι) (fun i ↦ if col i = !z then y i else 0) = κ * y k := by
-      rw [← map_add, show ((fun i ↦ if col i = z then y i else 0) +
-          fun i ↦ if col i = !z then y i else 0) = y from funext fun i ↦ by
-          by_cases hci : col i = z <;> simp [hci], corootEval_coe_support]
+      rw [← map_add, hsum_z, corootEval_coe_support]
       simpa [vecMul, dotProduct, mul_comm] using congrFun hy k
     rw [hsame (!z) (by cases hck : col k <;> cases z <;> simp_all)] at htot
     exact (eq_sub_of_add_eq htot).trans (by ring)
@@ -116,9 +117,10 @@ theorem colorClassMatrix_mulVec_ite_color {S : Type*} [CommRing S] {y : b.suppor
     Int.cast_sub, Int.cast_ite, Int.cast_one, Int.cast_zero, sub_mul, Finset.sum_sub_distrib,
     ite_mul, one_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte]
   by_cases hck : col k = s
-  · rw [show (∑ x, if col k = s then (b.cartanMatrix x k : S) * if col x = z then y x else 0
-        else 0) = (if col k = z then 2 else κ - 2) * y k by
-      rw [← b.corootEval_ite_color col hy z k, b.corootEval_coe_support]; simp [hck]]
+  · have hsum : (∑ x, if col k = s then (b.cartanMatrix x k : S) * if col x = z then y x else 0
+        else 0) = (if col k = z then 2 else κ - 2) * y k := by
+      rw [← b.corootEval_ite_color col hy z k, b.corootEval_coe_support]; simp [hck]
+    rw [hsum]
     rcases eq_or_ne z s with rfl | hzs <;> [simp [hck]; simp [hck, hzs, hzs.symm]]
   · rcases eq_or_ne z s with rfl | hzs <;> simp [*]
 

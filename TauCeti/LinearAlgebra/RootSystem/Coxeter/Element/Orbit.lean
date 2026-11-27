@@ -223,13 +223,14 @@ private theorem natCard_eq_card_support_mul_orderOf_wordProd_subsingleton [Subsi
           hnd.eq_singleton_of_mem (hall i₀), wordProd_cons, wordProd_nil, mul_one]
     have hncard := b.ncard_setOf_sameCycle_weylGroupToPerm_wordProd_of_isFiniteType hft hconn
       hnd hall (i₀ : ι)
-    rw [show {k : ι | Equiv.Perm.SameCycle (P.weylGroupToPerm c) (i₀ : ι) k} = Set.univ from
-        Set.eq_univ_of_forall fun j ↦ by
-          obtain ⟨i, hi, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b j
-          obtain ⟨lw, -, hw⟩ := (weylCoxeterSystem P b).exists_isReduced w
-          exact ⟨lw.length, by rw [zpow_natCast, ← map_pow, ← hword_pow lw,
-            ← weylCoxeterSystem_wordProd, hw, Subtype.ext_iff.mp (Subsingleton.elim i₀ ⟨i, hi⟩)]⟩,
-      Set.ncard_univ] at hncard
+    have hsame_univ : {k : ι | Equiv.Perm.SameCycle (P.weylGroupToPerm c) (i₀ : ι) k} =
+        Set.univ :=
+      Set.eq_univ_of_forall fun j ↦ by
+        obtain ⟨i, hi, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b j
+        obtain ⟨lw, -, hw⟩ := (weylCoxeterSystem P b).exists_isReduced w
+        exact ⟨lw.length, by rw [zpow_natCast, ← map_pow, ← hword_pow lw,
+          ← weylCoxeterSystem_wordProd, hw, Subtype.ext_iff.mp (Subsingleton.elim i₀ ⟨i, hi⟩)]⟩
+    rw [hsame_univ, Set.ncard_univ] at hncard
     rw [← Fintype.card_coe, Fintype.card_eq_one_iff.mpr ⟨i₀, (Subsingleton.elim · i₀)⟩,
       one_mul, hncard]
   · have : IsEmpty ι := ⟨fun j ↦ let ⟨i, hi, _, _⟩ := exists_mem_support_weylGroupToPerm_eq b j

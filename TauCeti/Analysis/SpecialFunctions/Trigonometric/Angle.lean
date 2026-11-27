@@ -218,8 +218,9 @@ theorem toIcoMod_neg_pi_mem_Ico_of_cos_pos_of_cos_add_nonpos {δ α : ℝ}
   have hβ_lt : β < Real.pi / 2 := by
     by_contra! hge; linarith [Real.cos_nonpos_of_pi_div_two_le_of_le hge (by linarith [hmem.2])]
   refine ⟨?_, hβ_lt⟩; by_contra! hlt
+  have hβδ : β + δ = α + δ - m * (2 * Real.pi) := by rw [hshift]; ring
   have hca : Real.cos (β + δ) = Real.cos (α + δ) := by
-    rw [show β + δ = α + δ - m * (2 * Real.pi) by rw [hshift]; ring, Real.cos_sub_int_mul_two_pi]
+    rw [hβδ, Real.cos_sub_int_mul_two_pi]
   linarith [Real.cos_pos_of_mem_Ioo (x := β + δ) ⟨by linarith, by linarith⟩]
 
 /-- A sampled sinusoid `cos (α₀ + 2π k / h)` passes from strictly positive at `k` to nonpositive at
