@@ -497,7 +497,7 @@ theorem exists_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_setAverage_le {
 every ball of radius at most `r₀` some constant matrix, uniformly elliptic with the same constants
 (the average of `a` over the ball), has mean deviation at most `δ` from `a`. This is the oscillation
 hypothesis of the a priori estimates above. -/
-private theorem exists_uniformlyEllipticOn_const_and_setAverage_le_of_vmoModulus_le {lam Lam : ℝ}
+theorem exists_uniformlyEllipticOn_const_and_setAverage_le_of_vmoModulus_le {lam Lam : ℝ}
     {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     (ham : AEStronglyMeasurable a volume) (hell : UniformlyEllipticOn univ a lam Lam) {r₀ δ : ℝ}
     (hδ : 0 ≤ δ)
