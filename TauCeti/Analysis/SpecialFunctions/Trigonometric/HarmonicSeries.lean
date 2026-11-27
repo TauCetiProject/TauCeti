@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Complex.Log.UnitCircle
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
-import TauCeti.Analysis.SpecificLimits.Basic
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Harmonic sine and cosine series
@@ -15,7 +15,7 @@ import TauCeti.Analysis.SpecificLimits.Basic
 On `(0, 2π)`, `Real.tendsto_sum_Icc_cos_mul_div` gives the cosine series limit
 `-log (2 * sin (θ / 2))`. On the same interval, `Real.tendsto_sum_Icc_sin_mul_div` gives the
 sawtooth series limit `(π - θ) / 2`. Both limits follow from the remainder estimates below
-by `TauCeti.tendsto_of_dist_le_one_div_add_mul`.
+by `TauCeti.tendsto_of_dist_pow_le_of_tendsto_zero`.
 
 The remainder estimates `Real.abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le` and
 `Real.abs_neg_log_two_mul_sin_half_sub_sum_Icc_cos_mul_div_le` follow from the joint bound
@@ -101,16 +101,22 @@ theorem abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le {θ : ℝ}
 theorem tendsto_sum_Icc_cos_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
     Tendsto (fun N : ℕ ↦ ∑ j ∈ Icc 1 N, cos (j * θ) / j) atTop
       (𝓝 (-log (2 * sin (θ / 2)))) := by
-  refine TauCeti.tendsto_of_dist_le_one_div_add_mul (c := sin (θ / 2)) (.of_forall fun N ↦ ?_)
-  rw [dist_comm, Real.dist_eq]
-  exact abs_neg_log_two_mul_sin_half_sub_sum_Icc_cos_mul_div_le hθ N
+  refine TauCeti.tendsto_of_dist_pow_le_of_tendsto_zero (n := 1)
+    (g := fun N ↦ 1 / ((N + 1 : ℝ) * sin (θ / 2))) (.of_forall fun N ↦ ?_) ?_
+  · rw [pow_one, dist_comm, Real.dist_eq]
+    exact abs_neg_log_two_mul_sin_half_sub_sum_Icc_cos_mul_div_le hθ N
+  · simpa only [div_mul_eq_div_div, zero_div] using
+      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).div_const (sin (θ / 2))
 
 /-- **The sawtooth series.** For `0 < θ < 2π`, the ordered partial sums of `∑ sin (n θ) / n`
 tend to `(π - θ) / 2`. -/
 theorem tendsto_sum_Icc_sin_mul_div {θ : ℝ} (hθ : θ ∈ Set.Ioo 0 (2 * π)) :
     Tendsto (fun N : ℕ ↦ ∑ n ∈ Icc 1 N, sin (n * θ) / n) atTop (𝓝 ((π - θ) / 2)) := by
-  refine TauCeti.tendsto_of_dist_le_one_div_add_mul (c := sin (θ / 2)) (.of_forall fun N ↦ ?_)
-  rw [dist_comm, Real.dist_eq]
-  exact abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le hθ N
+  refine TauCeti.tendsto_of_dist_pow_le_of_tendsto_zero (n := 1)
+    (g := fun N ↦ 1 / ((N + 1 : ℝ) * sin (θ / 2))) (.of_forall fun N ↦ ?_) ?_
+  · rw [pow_one, dist_comm, Real.dist_eq]
+    exact abs_pi_sub_div_two_sub_sum_Icc_sin_mul_div_le hθ N
+  · simpa only [div_mul_eq_div_div, zero_div] using
+      (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).div_const (sin (θ / 2))
 
 end Real
