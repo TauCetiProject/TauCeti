@@ -16,7 +16,9 @@ import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Congruence.Map
 
 For a field `F` embedded in `ℂ`, `bianchi F ι` is the image of `SL(2, 𝓞 F)` in `PSL(2, ℂ)`.
 For an ideal `I` of `𝓞 F`, `bianchiGamma F ι I` is the image of the kernel of reduction
-`SL(2, 𝓞 F) → SL(2, 𝓞 F ⧸ I)`. It is normal in the Bianchi group.
+`SL(2, 𝓞 F) → SL(2, 𝓞 F ⧸ I)`. It is normal in the Bianchi group by
+`Subgroup.normal_subgroupOf_map_range`. To use the instance, rewrite the normality goal with
+`bianchiGamma_def` and `bianchi_def`, then use `infer_instance`.
 
 These algebraic constructions require no degree or signature assumption. Their classical
 geometric application is to imaginary quadratic fields. Changing the field by an isomorphism

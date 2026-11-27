@@ -28,9 +28,8 @@ variable {n R S : Type*} [Fintype n] [DecidableEq n] [CommRing R] [CommRing S]
   rw [← toMonoidHom_mapEquiv (n := n) (e := e), ← MulEquiv.toMonoidHom_eq_coe]
   ext A
   rw [Subgroup.mem_map_equiv, mem_ker_map_quotientMk_iff, mem_ker_map_quotientMk_iff]
-  simp_rw [← Ideal.symm_apply_mem_of_equiv_iff (f := e)]
+  simp_rw [symm_mapEquiv, coe_mapEquiv_apply, ← Ideal.symm_apply_mem_of_equiv_iff (f := e)]
   apply forall_congr' fun i ↦ forall_congr' fun j ↦ ?_
-  by_cases hij : i = j <;>
-    simp [mapEquiv, Matrix.one_apply, hij]
+  by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
 
 end Matrix.SpecialLinearGroup
