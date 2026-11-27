@@ -9,11 +9,12 @@ public import TauCeti.Examples.Probability.Gibbs.Dimer.Basic
 import TauCeti.Dynamics.Ergodic.Action.TimeMap
 
 /-!
-# Checks for invariant and ergodic dimer Gibbs measures on the line
+# Checks for invariant, non-invariant and ergodic dimer Gibbs measures
 
 On the nearest-neighbour graph of `ℤ` with `2ℤ` acting by translations (`ofAdd n` translating by
 `2n`), the subshift `𝔛(ℤ) = dimerSubshiftInt` has the two points `evenPt`, `oddPt` of the even
-and the odd edges, and `2ℤ` fixes both (`smul_eq_self_dimerSubshiftInt`).
+and the odd edges, and `2ℤ` fixes both (`smul_eq_self_dimerSubshiftInt`). The file also treats
+the line under translation by one, and the hexagon `C₆` under the trivial group.
 
 * Every measure on `𝔛(ℤ)` is invariant, and Gibbs for the dimer specification (on the line every
   completion set is a singleton), so `𝒢_inv` is the set of all probability measures, and
@@ -24,8 +25,9 @@ and the odd edges, and `2ℤ` fixes both (`smul_eq_self_dimerSubshiftInt`).
   (`not_ergodicSMul_diracMidpoint`): the event "the edge `{0, 1}` is present", the point `evenPt`,
   is `2ℤ`-invariant of measure `1/2`.
 * **Gibbs measures need not be invariant.** With `ℤ` acting on the line by translation by one
-  (`shiftOne`), which swaps the even and the odd edges, `δ_even` is dimer Gibbs but moved to
-  `δ_odd` (`isDimerGibbs_dirac_evenConfig`, `map_shiftOneConfig_dirac_evenConfig_ne`).
+  (`shiftConfig 1`), which swaps the even and the odd edges (`shiftConfig_evenConfig_of_odd`),
+  `δ_even` is dimer Gibbs (`isDimerGibbs_dirac_evenConfig`) but moved to `δ_odd`
+  (`map_shiftConfig_one_dirac_evenConfig_ne`).
 * **The group must be infinite.** On the hexagon `C₆` with unit weights, under the trivial group
   (for which every measure is invariant), the only dimer Gibbs measure `(δ_{M_a} + δ_{M_b})/2` is
   the midpoint of `δ_{M_a}` and `δ_{M_b}`, which are not dimer Gibbs
@@ -53,7 +55,7 @@ instance smulInvariantMeasure_dimerSubshiftInt (μ : Measure dimerSubshiftInt) :
 theorem mem_gibbsInvariant_of_isProbabilityMeasure {w : (nnGraph ℤ).edgeSet → ℝ}
     (hw : ∀ e, 0 < w e) (μ : Measure dimerSubshiftInt) [IsProbabilityMeasure μ] :
     μ ∈ ((nnGraph ℤ).dimerSpecification (Multiplicative ℤ)
-      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)) hw).gibbsInvariant :=
+      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ (shift 2))) hw).gibbsInvariant :=
   Specification.mem_gibbsInvariant_iff.2
     ⟨TauCeti.MeasureTheory.mem_invariantMeasuresOfMeasureUnivEq_iff.2
       ⟨inferInstance, measure_univ⟩, isGibbs_dimerSpecification_int hw μ⟩
@@ -61,13 +63,13 @@ theorem mem_gibbsInvariant_of_isProbabilityMeasure {w : (nnGraph ℤ).edgeSet �
 /-- `δ_even` is an invariant Gibbs measure. -/
 theorem dirac_evenPt_mem_gibbsInvariant {w : (nnGraph ℤ).edgeSet → ℝ} (hw : ∀ e, 0 < w e) :
     Measure.dirac evenPt ∈ ((nnGraph ℤ).dimerSpecification (Multiplicative ℤ)
-      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)) hw).gibbsInvariant :=
+      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ (shift 2))) hw).gibbsInvariant :=
   mem_gibbsInvariant_of_isProbabilityMeasure hw _
 
 /-- `δ_odd` is an invariant Gibbs measure. -/
 theorem dirac_oddPt_mem_gibbsInvariant {w : (nnGraph ℤ).edgeSet → ℝ} (hw : ∀ e, 0 < w e) :
     Measure.dirac oddPt ∈ ((nnGraph ℤ).dimerSpecification (Multiplicative ℤ)
-      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)) hw).gibbsInvariant :=
+      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ (shift 2))) hw).gibbsInvariant :=
   mem_gibbsInvariant_of_isProbabilityMeasure hw _
 
 /-- The midpoint `(δ_even + δ_odd)/2` of the two point masses. -/
@@ -89,7 +91,7 @@ instance : IsProbabilityMeasure diracMidpoint :=
 /-- The midpoint `(δ_even + δ_odd)/2` is an invariant Gibbs measure. -/
 theorem diracMidpoint_mem_gibbsInvariant {w : (nnGraph ℤ).edgeSet → ℝ} (hw : ∀ e, 0 < w e) :
     diracMidpoint ∈ ((nnGraph ℤ).dimerSpecification (Multiplicative ℤ)
-      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ shiftTwo)) hw).gibbsInvariant :=
+      (Iso.exists_compHom_smul_eq_mapEdgeSet (zpowersHom _ (shift 2))) hw).gibbsInvariant :=
   mem_gibbsInvariant_of_isProbabilityMeasure hw _
 
 /-- **The midpoint is not ergodic**: the point `evenPt` (the event "the edge `{0, 1}` is
@@ -102,49 +104,16 @@ theorem not_ergodicSMul_diracMidpoint :
 
 /-! ### Gibbs measures need not be invariant -/
 
-/-- Translation by `1` as an automorphism of the line. -/
-def shiftOne : nnGraph ℤ ≃g nnGraph ℤ where
-  toEquiv := Equiv.addRight 1
-  map_rel_iff' := by
-    intro a b
-    simp only [Equiv.coe_addRight, nnGraph_adj]
-    omega
-
-/-- The configuration `ω` translated by one: `(τω)(e) = ω(τ⁻¹ e)`. -/
-def shiftOneConfig (ω : (nnGraph ℤ).edgeSet → Bool) : (nnGraph ℤ).edgeSet → Bool :=
-  fun e => ω (shiftOne.symm.mapEdgeSet e)
-
-/-- Translation by one moves the edge `{a, a + 1}` back to `{a − 1, a}` under `τ⁻¹`. -/
-theorem shiftOne_symm_mapEdgeSet_edge (a : ℤ) :
-    shiftOne.symm.mapEdgeSet (DimerConfiguration.edge a) = DimerConfiguration.edge (a - 1) :=
-  Subtype.ext <| by
-    simp [shiftOne, coe_edge, Iso.mapEdgeSet, Hom.mapEdgeSet, sub_eq_add_neg]
-
-/-- Translation by one swaps the even and the odd edges. -/
-theorem shiftOneConfig_evenConfig : shiftOneConfig evenConfig = oddConfig := by
-  funext e
-  obtain ⟨a, rfl⟩ := exists_edge_eq e
-  simp only [shiftOneConfig, shiftOne_symm_mapEdgeSet_edge, evenConfig_edge, oddConfig_edge]
-  simp
-
-/-- Translating configurations by one is measurable. -/
-theorem measurable_shiftOneConfig : Measurable shiftOneConfig :=
-  measurable_pi_iff.2 fun _ => measurable_pi_apply _
-
-/-- `δ_even` is dimer Gibbs on the line for every weight. -/
-theorem isDimerGibbs_dirac_evenConfig (w : (nnGraph ℤ).edgeSet → ℝ) :
-    (nnGraph ℤ).IsDimerGibbs w (Measure.dirac evenConfig) :=
-  isDimerGibbs_iff.2 ⟨inferInstance, by
-    rw [Measure.dirac_apply' _ (by simpa only [compl_ofPred] using
-      measurableSet_setOf_isDimerConfiguration.compl)]
-    simp [isDimerConfiguration_evenConfig],
-    fun F E _ _ hω hω' hF _ => ofReal_mul_measure_cylinder_int w _ F E hω hω' hF⟩
+/-- Translating configurations by `n` is measurable. -/
+theorem measurable_shiftConfig (n : ℤ) : Measurable (shiftConfig n) :=
+  measurable_pi_iff.2 fun e => by
+    simpa only [shiftConfig_apply] using measurable_pi_apply ((shift n).symm.mapEdgeSet e)
 
 /-- **Gibbs measures need not be invariant**: translation by one moves the dimer Gibbs measure
-`δ_even` to `δ_odd`. -/
-theorem map_shiftOneConfig_dirac_evenConfig_ne :
-    (Measure.dirac evenConfig).map shiftOneConfig ≠ Measure.dirac evenConfig := by
-  rw [Measure.map_dirac' measurable_shiftOneConfig, shiftOneConfig_evenConfig]
+`δ_even` (`isDimerGibbs_dirac_evenConfig`) to `δ_odd`. -/
+theorem map_shiftConfig_one_dirac_evenConfig_ne :
+    (Measure.dirac evenConfig).map (shiftConfig 1) ≠ Measure.dirac evenConfig := by
+  rw [Measure.map_dirac' (measurable_shiftConfig 1), shiftConfig_evenConfig_of_odd odd_one]
   intro h
   have hs : MeasurableSet
       {ω : (nnGraph ℤ).edgeSet → Bool | ω (DimerConfiguration.edge 0) = true} :=
@@ -155,30 +124,17 @@ theorem map_shiftOneConfig_dirac_evenConfig_ne :
 
 /-! ### The group must be infinite -/
 
-/-- With unit weights, neither point mass at a matching of the hexagon is dimer Gibbs: a dimer
-Gibbs measure gives each matching mass `1/2`. -/
-theorem not_isDimerGibbs_one_dirac_hexConfig (b : Bool) :
-    ¬ (nnGraph (ZMod 6)).IsDimerGibbs 1 (Measure.dirac (hexConfig b)) := fun h => by
-  have h₁ := measure_hexConfig_of_one h
-  have h₂ : Measure.dirac (hexConfig b) {hexConfig b} = 1 :=
-    Measure.dirac_apply_of_mem (Set.mem_singleton _)
-  have h₃ : (1 : ℝ≥0∞) ≠ 2⁻¹ := by
-    rw [ne_eq, eq_comm, ENNReal.inv_eq_one]
-    norm_num
-  cases b
-  · exact h₃ (h₂.symm.trans h₁.2)
-  · exact h₃ (h₂.symm.trans h₁.1)
-
 /-- **The face statement fails for a finite group.** Under the trivial group every probability
 measure on the configurations of the hexagon is invariant, and the dimer Gibbs measures for unit
 weights do not form a face of them: the Gibbs measure `(δ_{M_a} + δ_{M_b})/2` lies in the open
-segment between `δ_{M_a}` and `δ_{M_b}`, which are not Gibbs. -/
+segment between `δ_{M_a}` and `δ_{M_b}`, which are not Gibbs
+(`not_isDimerGibbs_one_dirac_hexConfig`). -/
 theorem not_isExtreme_setOf_isDimerGibbs_one_hexagon :
     ¬ IsExtreme ℝ≥0∞ {μ : Measure ((nnGraph (ZMod 6)).edgeSet → Bool) | IsProbabilityMeasure μ}
       {μ | (nnGraph (ZMod 6)).IsDimerGibbs 1 μ} := fun h =>
   not_isDimerGibbs_one_dirac_hexConfig true
-    (h.left_mem_of_mem_openSegment (show IsProbabilityMeasure _ from inferInstance)
-      (show IsProbabilityMeasure _ from inferInstance) isDimerGibbs_one_hexConfig
+    (h.left_mem_of_mem_openSegment (by rw [mem_ofPred_eq]; infer_instance)
+      (by rw [mem_ofPred_eq]; infer_instance) isDimerGibbs_one_hexConfig
       ⟨2⁻¹, 2⁻¹, by simp, by simp, ENNReal.inv_two_add_inv_two, rfl⟩)
 
 end TauCeti.Examples.DimerGibbsInvariant
