@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.Variational.FormEigenspace.Basic
-import Mathlib.Order.Interval.Set.Nat
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.InnerProductSpace.Variational.Shift
 import TauCeti.Topology.Algebra.Module.Span
