@@ -9,9 +9,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 
 /-!
 # Iterated derivatives of a map and of its coordinates in a basis
@@ -42,12 +41,9 @@ theorem norm_iteratedFDeriv_le_sum (b : Basis ι 𝕜 G) {f : E → G} {i : ℕ}
   have hf' : f = fun y ↦ ∑ l, (ContinuousLinearMap.id ℝ 𝕜).smulRight (b l) (b.coord l (f y)) :=
     funext fun y ↦ by simp [b.sum_repr (f y)]
   nth_rewrite 1 [hf']
-  rw [iteratedFDeriv_sum (f := fun l y ↦ (ContinuousLinearMap.id ℝ 𝕜).smulRight (b l)
-    (b.coord l (f y))) fun l _ ↦ ((ContinuousLinearMap.id ℝ 𝕜).smulRight (b l)).contDiff.comp
-      (hΛ l), Finset.sum_apply]
-  refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun l _ ↦ ?_)
-  refine (((ContinuousLinearMap.id ℝ 𝕜).smulRight (b l)).norm_iteratedFDeriv_comp_left
-    (hΛ l).contDiffAt le_rfl).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
+  refine (TauCeti.norm_iteratedFDeriv_sum_comp_left_le (𝕜 := ℝ) Finset.univ
+    (fun l ↦ (ContinuousLinearMap.id ℝ 𝕜).smulRight (b l)) fun l _ ↦ (hΛ l).contDiffAt).trans
+    (Finset.sum_le_sum fun l _ ↦ mul_le_mul_of_nonneg_right ?_ (norm_nonneg _))
   exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun z ↦ by simp [norm_smul, mul_comm]
 
 end Module.Basis
