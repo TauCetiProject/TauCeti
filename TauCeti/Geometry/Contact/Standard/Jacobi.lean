@@ -82,7 +82,7 @@ theorem jacobiBracket_standardContactForm (f g : ℝ × ℝ × ℝ → ℝ) (p :
   -- `{f, g}_α = X_f(g) - g R_α(f)`, with `X_f(g)` expanded in the coordinates of `X_f`.
   rw [isContactForm_standardContactForm.jacobiBracket_eq_mvfderiv, mvfderiv_eq_fderiv_apply,
     mvfderiv_eq_fderiv_apply, reebVectorField_standardContactForm, standardReebField_apply,
-    ← ContinuousLinearMap.coe_coe (fderiv ℝ g p), LinearMap.prod_prod_apply_eq_sum _
+    ← ContinuousLinearMap.coe_coe (fderiv ℝ g p), LinearMap.apply_eq_smul_add_smul_add_smul _
       (standardContactForm.contactHamiltonianVectorField f p),
     contactHamiltonianVectorField_standardContactForm]
   simp only [ContinuousLinearMap.coe_coe, smul_eq_mul]

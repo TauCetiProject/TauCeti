@@ -84,7 +84,7 @@ theorem contactHamiltonianVectorField_standardContactForm (f : ℝ × ℝ × ℝ
     · rw [mextDeriv_standardContactForm_apply, standardContactForm_apply,
         reebVectorField_standardContactForm, mvfderiv_eq_fderiv_apply, mvfderiv_eq_fderiv_apply,
         standardReebField_apply, ← ContinuousLinearMap.coe_coe (fderiv ℝ f q),
-        LinearMap.prod_prod_apply_eq_sum _ v]
+        LinearMap.apply_eq_smul_add_smul_add_smul _ v]
       simp only [X, ContinuousLinearMap.coe_coe, smul_eq_mul]
       ring
   exact congrFun ((isContactForm_standardContactForm.isContactHamiltonianVectorField_iff_eq).1
