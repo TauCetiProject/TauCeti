@@ -493,7 +493,7 @@ private theorem nonempty_homotopy_thomPairTwistedChainMap
   obtain ⟨θ, hθ⟩ := (HomologicalComplex.moduleCat_homologyπ_eq_iff _ rfl ψ ψ').1 hψ
   by_cases hrel : (ComplexShape.up ℕ).Rel ((ComplexShape.up ℕ).prev (finrank ℝ F)) (finrank ℝ F)
   · -- the lifts differ by the coboundary of the lift of `θ`, which is semi-invariant
-    refine ⟨thomPairTwistedChainMapHomotopy F E hι k hrel
+    refine ⟨thomPairTwistedChainMapHomotopy F E hι k (by rwa [ComplexShape.up_Rel] at hrel)
       (η := (thomPairSignCochainMap F E hι k k (ModuleCat.of k k)).f _ θ) _ _
       (isSemiInvariantCochain_thomPairSignCochainMap_f hι k θ) ?_⟩
     have hcomm := ConcreteCategory.congr_hom
@@ -543,6 +543,28 @@ theorem thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass_eq_of_homologyπ
     h.homologyMap_eq]
 
 variable (F E) in
+/-- A cocycle representing a class of `Hʳ(E, E₀; π^*o(E), k)`, chosen once for the Thom
+isomorphisms of the class. -/
+private def thomRepresentative
+    (U : (thomPair F E).twistedCohomology (thomPairSignLocalSystem F E k hι) k (ModuleCat.of k k)
+      (finrank ℝ F)) :
+    ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).cycles (finrank ℝ F) :=
+  ((ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose
+
+omit [FiniteDimensional ℝ F] in
+variable (F E) in
+/-- `thomRepresentative U` represents `U`. -/
+private theorem homologyπ_thomRepresentative
+    (U : (thomPair F E).twistedCohomology (thomPairSignLocalSystem F E k hι) k (ModuleCat.of k k)
+      (finrank ℝ F)) :
+    ((thomPair F E).twistedCochainComplex (thomPairSignLocalSystem F E k hι) k
+      (ModuleCat.of k k)).homologyπ (finrank ℝ F) (thomRepresentative F E hι k U) = U :=
+  ((ModuleCat.epi_iff_surjective _).1
+    (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose_spec
+
+variable (F E) in
 /-- **The Thom isomorphism with orientation-twisted coefficients of a class.** Let `E → B` be a
 real vector bundle of rank `r`, `E'` its pull-back to the orientation double cover and `k` a
 commutative ring. A class `U ∈ Hʳ(E, E₀; π^*o(E), k)` whose lift to `(E', E'₀)` is a Thom class of
@@ -557,11 +579,8 @@ def thomPairSingularHomologyIsoTwistedHomologyOfClass
       (thomPairSignCohomologyMap F E hι k k (ModuleCat.of k k) (finrank ℝ F) U)) (p : ℕ) :
     (thomPair F E).singularHomology (ModuleCat.of k k) (p + finrank ℝ F) ≅
       twistedHomology (signLocalSystem F E k hι) p :=
-  thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k
-    ((ModuleCat.epi_iff_surjective _).1
-      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose
-    (by rwa [((ModuleCat.epi_iff_surjective _).1
-      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose_spec]) p
+  thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k (thomRepresentative F E hι k U)
+    (by rwa [homologyπ_thomRepresentative]) p
 
 variable (F E) in
 /-- `thomPairSingularHomologyIsoTwistedHomologyOfClass` of a class `U` is the isomorphism
@@ -578,8 +597,7 @@ theorem thomPairSingularHomologyIsoTwistedHomologyOfClass_eq
           (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ) hu p =
       thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass F E hι k ψ hu p :=
   thomPairSingularHomologyIsoTwistedHomologyOfIsThomClass_eq_of_homologyπ_eq F E hι k _ _
-    ((ModuleCat.epi_iff_surjective _).1
-      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) _).choose_spec p
+    (homologyπ_thomRepresentative F E hι k _) p
 
 /-- **The Thom isomorphism with coefficients in the orientation system, from a twisted class whose
 lift is a Thom class.** Let `E → B` be a real vector bundle of rank `r`, `E'` its pull-back to the
@@ -668,10 +686,7 @@ def thomPairSingularCohomologyIsoTwistedCohomologyOfClass
     (thomPair F E).singularCohomology (ModuleCat.of k k) k N (p + finrank ℝ F) ≅
       (signLocalSystem F E k hι).twistedCohomology k N p :=
   thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass F E hι k
-    ((ModuleCat.epi_iff_surjective _).1
-      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose
-    (by rwa [((ModuleCat.epi_iff_surjective _).1
-      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) U).choose_spec]) N p
+    (thomRepresentative F E hι k U) (by rwa [homologyπ_thomRepresentative]) N p
 
 variable (F E) in
 /-- `thomPairSingularCohomologyIsoTwistedCohomologyOfClass` of a class `U` is the isomorphism
@@ -688,8 +703,7 @@ theorem thomPairSingularCohomologyIsoTwistedCohomologyOfClass_eq
           (ModuleCat.of k k)).homologyπ (finrank ℝ F) ψ) hu N p =
       thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass F E hι k ψ hu N p :=
   thomPairSingularCohomologyIsoTwistedCohomologyOfIsThomClass_eq_of_homologyπ_eq F E hι k _ _
-    ((ModuleCat.epi_iff_surjective _).1
-      (inferInstance : Epi (HomologicalComplex.homologyπ _ (finrank ℝ F))) _).choose_spec N p
+    (homologyπ_thomRepresentative F E hι k _) N p
 
 /-- **The Thom isomorphism in cohomology with coefficients in the orientation system, from a
 twisted class whose lift is a Thom class.** Let `E → B` be a real vector bundle of rank `r`, `E'`

@@ -50,8 +50,8 @@ The equivariant cap product depends on `φ` only up to semi-invariant coboundari
 (`TauCeti.ChainComplex.capChain_d_comp`) makes capping with `η` a homotopy between the
 equivariant cap products with `φ'` and with `φ`, by equivariant maps
 (`TopPair.singularChainsRepCapHomotopy`). Any additive functor, such as coinvariants, then takes
-them to homotopic chain maps, so what is computed after descent depends only on the class of `φ`
-among semi-invariant cocycles.
+them to homotopic chain maps, so what is computed after descent depends only on `φ` modulo
+coboundaries `δη` of semi-invariant cochains `η`.
 
 The intended use is the orientation double cover of a vector bundle `E → B` of rank `r`, with
 `G = ℤˣ` acting by the deck involution and `χ` the sign character. A Thom cocycle of the pulled-back
@@ -516,6 +516,14 @@ private def capRep {ψ : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleC
           Representation.ofLinearCharacter_apply, mul_one, ← TensorProduct.smul_tmul, smul_eq_mul,
           mul_one] }
 
+/-- The underlying map of `capRep` sends a singular chain `c` to `1 ⊗ signedCapComponent c`. -/
+private theorem capRep_hom_apply
+    {ψ : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).X n}
+    (hψ : IsSemiInvariantCochain χ ψ) (q m : ℕ) (h : n + q = m)
+    (c : ((singularChains k).obj P.fst).X m) :
+    (capRep P hp₀ χ hψ q m h).hom c = (1 : k) ⊗ₜ[k] (signedCapComponent P p₀ ψ q m h).hom c :=
+  rfl
+
 include hp₀ hφ in
 /-- The equivariant sign-corrected cap products commute with the boundaries. -/
 private theorem capRep_comp_d (q : ℕ) :
@@ -584,13 +592,9 @@ private theorem singularChainsRepι_f_comp_capRep
   refine Rep.hom_ext (Representation.IntertwiningMap.ext (LinearMap.ext fun c ↦ ?_))
   -- evaluate on `c`: the cap product vanishes on the image of the chains of the subspace
   change (capRep P hp₀ χ hψ q m h).hom (((P.singularChainsRepι k G hP).f m).hom c) = 0
-  rw [singularChainsRepι_f_hom_apply P k hP m c]
-  -- the underlying linear map of `capRep` is `c ↦ 1 ⊗ signedCapComponent c`, by its definition
-  change (1 : k) ⊗ₜ[k] (signedCapComponent P p₀ ψ q m h).hom
-      (((singularChains k).map P.map).f m c) = 0
-  rw [← TensorProduct.tmul_zero (R := k) (((singularChains k).obj Y).X q) (1 : k)]
-  exact congrArg ((1 : k) ⊗ₜ[k] ·) (ConcreteCategory.congr_hom
-    (map_f_comp_signedCapComponent P p₀ ψ q m h) c)
+  rw [singularChainsRepι_f_hom_apply P k hP m c, capRep_hom_apply]
+  exact (congrArg ((1 : k) ⊗ₜ[k] ·) (ConcreteCategory.congr_hom
+    (map_f_comp_signedCapComponent P p₀ ψ q m h) c)).trans (TensorProduct.tmul_zero _ _)
 
 include hp₀ hφ in
 /-- The equivariant cap product vanishes on the chains of the subspace. -/
@@ -723,31 +727,21 @@ private theorem capRep_sub_capRep
   simp only [Rep.sub_hom, Rep.add_hom, Rep.zsmul_hom, Rep.hom_comp,
     Representation.IntertwiningMap.coe_sub, Representation.IntertwiningMap.coe_add,
     Representation.IntertwiningMap.coe_zsmul, Pi.sub_apply, Pi.add_apply, Pi.smul_apply,
-    Representation.IntertwiningMap.comp_apply]
-  -- evaluate both sides on `c`: the carriers are those of the singular chain modules, and the
-  -- underlying linear map of `capRep` is `c ↦ 1 ⊗ signedCapComponent c`, by its definition
-  change (1 : k) ⊗ₜ[k] (signedCapComponent P p₀ ψ' q (q + r + 1) (by omega)).hom c -
-      (1 : k) ⊗ₜ[k] (signedCapComponent P p₀ ψ q (q + r + 1) (by omega)).hom c = _
-  change _ = ((-1 : ℤ) ^ q) • ((1 : k) ⊗ₜ[k] (signedCapComponent P p₀ η q (q + r) (by omega)).hom
-        (((TauCeti.singularChainsRep k P.fst G).d (q + r + 1) (q + r)).hom c)) + _
-  change _ = _ + ((-1 : ℤ) ^ (q + 1)) • ((1 : k) ⊗ₜ[k]
-        ((TauCeti.singularChainsRep k Y G).d (q + 1) q).hom
-          ((signedCapComponent P p₀ η (q + 1) (q + r + 1) (by omega)).hom c))
-  rw [singularChainsRep_d_hom_apply, singularChainsRep_d_hom_apply k P.fst G _ _ c]
+    Representation.IntertwiningMap.comp_apply, Rep.hom_whiskerLeft]
   -- read `c` as a singular chain, the carrier of the representation only after unfolding
   revert c
-  change ∀ c : ((singularChains k).obj P.fst).X (q + r + 1),
-    (1 : k) ⊗ₜ[k] (signedCapComponent P p₀ ψ' q (q + r + 1) (by omega)).hom c -
-        (1 : k) ⊗ₜ[k] (signedCapComponent P p₀ ψ q (q + r + 1) (by omega)).hom c =
-      ((-1 : ℤ) ^ q) • ((1 : k) ⊗ₜ[k] (signedCapComponent P p₀ η q (q + r) (by omega)).hom
-          (((singularChains k).obj P.fst).d (q + r + 1) (q + r) c)) +
-        ((-1 : ℤ) ^ (q + 1)) • ((1 : k) ⊗ₜ[k] ((singularChains k).obj Y).d (q + 1) q
-          ((signedCapComponent P p₀ η (q + 1) (q + r + 1) (by omega)).hom c))
+  change ∀ c : ((singularChains k).obj P.fst).X (q + r + 1), _
   intro c
-  rw [← TensorProduct.tmul_sub, ← TensorProduct.tmul_smul, ← TensorProduct.tmul_smul,
-    ← TensorProduct.tmul_add]
-  refine congrArg ((1 : k) ⊗ₜ[k] ·) ?_
-  simpa using ConcreteCategory.congr_hom hs c
+  rw [capRep_hom_apply, capRep_hom_apply, singularChainsRep_d_hom_apply, capRep_hom_apply,
+    capRep_hom_apply]
+  have hc := congrArg ((1 : k) ⊗ₜ[k] ·) (ConcreteCategory.congr_hom hs c)
+  simp only [ModuleCat.hom_sub, ModuleCat.hom_add, ModuleCat.hom_smul, ModuleCat.hom_comp,
+    LinearMap.sub_apply, LinearMap.add_apply, LinearMap.smul_apply, LinearMap.coe_comp,
+    Function.comp_apply, TensorProduct.tmul_sub, TensorProduct.tmul_add,
+    TensorProduct.tmul_smul] at hc
+  rw [← singularChainsRep_d_hom_apply k Y G] at hc
+  -- `k_χ ◁ d` sends `1 ⊗ x` to `1 ⊗ d x` by definition
+  exact hc
 
 include hp₀ in
 /-- The component in degree `i` of the equivariant null-homotopy capping with a semi-invariant
@@ -826,9 +820,9 @@ private theorem singularChainsRepπ_f_capHomotopyRel
     (singularChainsRepι_f_comp_capHomotopyAmbient P hp₀ χ hP hη i)).property
 
 include hp₀ in
-/-- In degree `q + r + 1`, the difference of the equivariant cap products with cohomologous
-semi-invariant cocycles is the null-homotopic map of `capHomotopyRel`, after the quotient onto the
-relative chains. -/
+/-- If `φ' = φ + δη` for a semi-invariant relative cochain `η`, the difference of the equivariant
+cap products with the semi-invariant cocycles `φ'` and `φ` is the null-homotopic map built from
+`capHomotopyRel`. -/
 private theorem singularChainsRepCap_sub_singularChainsRepCap
     {φ φ' : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).cycles (r + 1)}
     {η : (P.singularCochainComplex (ModuleCat.of k k) k (ModuleCat.of k k)).X r}
@@ -870,11 +864,10 @@ private theorem singularChainsRepCap_sub_singularChainsRepCap
         (by rw [ComplexShape.embeddingDownNatAdd_f]; omega)
         (by rw [ComplexShape.embeddingDownNatAdd_f]; omega),
       ← Preadditive.sub_comp, capRep_sub_capRep P hp₀ χ hφ hφ' hη h q]
+    -- the differential of the twisted chains is `(tensorLeft k_χ).map d`, that is `k_χ ◁ d`
     simp only [Preadditive.add_comp, Preadditive.zsmul_comp, Preadditive.comp_zsmul,
-      Category.assoc, Iso.inv_hom_id_assoc, Functor.mapHomologicalComplex_obj_d]
-    -- the differential of the twisted chains is `(tensorLeft k_χ).map d`, which is `k_χ ◁ d` by
-    -- definition
-    rfl
+      Category.assoc, Iso.inv_hom_id_assoc, Functor.mapHomologicalComplex_obj_d,
+      curriedTensor_obj_map]
   · -- Below `r + 1` the shifted complex is zero.
     exact (HomologicalComplex.isZero_extend_embeddingDownNatAdd_X _ (by omega)).eq_of_tgt _ _
 
