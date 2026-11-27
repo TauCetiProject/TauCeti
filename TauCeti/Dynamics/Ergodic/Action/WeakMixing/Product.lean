@@ -20,7 +20,7 @@ import TauCeti.MeasureTheory.Function.L2Space
 Let `ℝ` act jointly measurably on `X` and on `Y`, preserving probability measures `μ` and `ν`, and
 let `ℝ` act on `X × Y` diagonally, `t +ᵥ (x, y) = (t +ᵥ x, t +ᵥ y)`. If the action on `X` is weakly
 mixing and the action on `Y` is ergodic, then the diagonal action is ergodic for `μ.prod ν`
-(`MeasureTheory.Measure.ergodicVAdd_prod_of_isWeaklyMixing`).
+(`MeasureTheory.Measure.IsWeaklyMixing.ergodicVAdd_prod`).
 
 The proof goes through the Koopman groups `U_t f = f ∘ (t +ᵥ ·)` on complex `L²`, and uses that
 an action preserving a finite measure is ergodic exactly when the only Koopman-fixed vectors are
@@ -42,7 +42,7 @@ the almost everywhere constant functions (`TauCeti.ergodicVAdd_of_forall_koopman
 
 ## Main results
 
-* `MeasureTheory.Measure.ergodicVAdd_prod_of_isWeaklyMixing`: the multiplier property of weak
+* `MeasureTheory.Measure.IsWeaklyMixing.ergodicVAdd_prod`: the multiplier property of weak
   mixing.
 
 ## References
@@ -148,7 +148,7 @@ private theorem tendsto_average_inner_koopmanGroup_rectL2 [IsProbabilityMeasure 
 /-- **The multiplier property of weak mixing.** Let `ℝ` act jointly measurably on `X` and on `Y`,
 preserving probability measures `μ` and `ν`. If the action on `X` is weakly mixing and the action
 on `Y` is ergodic, then the diagonal action on `X × Y` is ergodic for `μ.prod ν`. -/
-theorem ergodicVAdd_prod_of_isWeaklyMixing [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
+theorem IsWeaklyMixing.ergodicVAdd_prod [IsProbabilityMeasure μ] [IsProbabilityMeasure ν]
     [VAddInvariantMeasure ℝ X μ] [ErgodicVAdd ℝ Y ν] (hμ : IsWeaklyMixing μ) :
     ErgodicVAdd ℝ (X × Y) (μ.prod ν) := by
   refine TauCeti.ergodicVAdd_of_forall_koopmanGroup_eq fun F hF => ⟨∫ z, F z ∂(μ.prod ν), ?_⟩
