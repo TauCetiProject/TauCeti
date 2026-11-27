@@ -92,8 +92,8 @@ statements the classification runs on.
   be a null vector, only to point away from the positive cone coordinatewise, so a single vector can
   rule out a whole family of diagrams.
 * `TauCeti.isFiniteType_cartanMatrix`: **the Cartan matrix of a base of a finite crystallographic
-  root system is of finite type**, and `TauCeti.HasCartanType.isFiniteType`: so is the standard
-  Cartan matrix of any Dynkin type realized by such a base.
+  root system is of finite type** (for standard Cartan matrices of `TauCeti.DynkinType`, see
+  `TauCeti.DynkinType.isFiniteType_cartanMatrix`).
 
 ## References
 
@@ -803,17 +803,6 @@ theorem isFiniteType_cartanMatrix [Finite ι] [CharZero R] [IsDomain R]
   convert Matrix.posDef_map_intCast hpd using 1
   ext i j
   simp [Matrix.diagonal_mul]
-
-/-- **The standard Cartan matrix of a Dynkin type realized by a base is of finite type.** This is
-the shape in which the finite-type condition eliminates candidate Dynkin types. -/
-theorem HasCartanType.isFiniteType [Finite ι] [CharZero R] [IsDomain R]
-    [P.IsRootSystem] [P.IsCrystallographic] {b : P.Base} {t : DynkinType}
-    (h : HasCartanType P b t) : IsFiniteType t.cartanMatrix := by
-  -- Relabelling by the inverse of the matching turns the standard matrix into a principal
-  -- submatrix - indeed a reindexing - of the Cartan matrix of the base.
-  obtain ⟨e, he⟩ := (hasCartanType_iff_reindex b t).mp h
-  rw [← he]
-  exact (isFiniteType_cartanMatrix b).submatrix e.symm.injective
 
 end RootPairing
 

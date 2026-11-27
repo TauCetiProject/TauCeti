@@ -332,7 +332,12 @@ private theorem exists_eigenvector_subsingleton [Nonempty ι] (b : P.Base) [Subs
     fun j hj ↦ b.corootEval_ne_zero_of_forall_pos hv_re j
       (by simpa [corootEval_apply] using congrArg Complex.re hj),
     fun g G hG hGv ↦ eq_one_of_actsBy_fix_of_forall_pos b hv_re hG <| funext fun i ↦
-      Complex.ofReal_injective (congrFun (map_intCast_mulVec_ofReal G _ ▸ hGv) i)⟩
+      Complex.ofReal_injective <| by
+        have h1 : (((G.map (Int.castRingHom ℝ)) *ᵥ (fun _ ↦ (1 : ℝ))) i : ℂ) =
+            ((G.map (Int.castRingHom ℂ)) *ᵥ (fun _ ↦ ((1 : ℝ) : ℂ))) i := by
+          simpa [Matrix.map_map, Function.comp_def] using
+            Complex.ofRealHom.map_mulVec (G.map (Int.castRingHom ℝ)) (fun _ ↦ 1) i
+        exact h1.trans (congrFun hGv i)⟩
 
 private theorem exists_eigenvector_bipartite_of_isFiniteType [DecidableEq ι] (b : P.Base)
     [Nontrivial b.support] (hft : IsFiniteType b.cartanMatrix)
@@ -349,7 +354,9 @@ private theorem exists_eigenvector_bipartite_of_isFiniteType [DecidableEq ι] (b
       ↑(2 * Real.pi / (orderOf c₀ : ℝ)) * Complex.I := by push_cast; ring
   refine ⟨(fun i ↦ (e₁ i : ℂ)) + Complex.I • (fun i ↦ (e₂ i : ℂ)), fun hv0 ↦
       hli.ne_zero (0 : Fin 2) (funext fun i ↦ by simpa using congrArg Complex.re (congrFun hv0 i)),
-    by rw [map_intCast_complex_eq_map_ofReal, harg]
+    by rw [show (b.bipartiteCoxeterMatrix col).map (Int.castRingHom ℂ) =
+           ((b.bipartiteCoxeterMatrix col).map (Int.castRingHom ℝ)).map ((↑) : ℝ → ℂ) by
+             rw [Matrix.map_map]; rfl, harg]
        exact map_ofReal_mulVec_of_rotation hWe₁ hWe₂,
     fun j hj0 ↦
       have hre : b.corootEval ℝ j e₁ = 0 := by
@@ -358,11 +365,17 @@ private theorem exists_eigenvector_bipartite_of_isFiniteType [DecidableEq ι] (b
         simpa [corootEval_apply] using congrArg Complex.im hj0
       b.corootEval_ne_zero_of_forall_pos hy₀ j (by simp [hre, him]),
     fun g G hG hGv ↦ eq_one_of_actsBy_fix_of_forall_pos b hy₀ hG <| funext fun i ↦ by
-      rw [mulVec_add, mulVec_smul, map_intCast_mulVec_ofReal, map_intCast_mulVec_ofReal] at hGv
+      have hmul (u : b.support → ℝ) :
+          ((G.map (Int.castRingHom ℂ)) *ᵥ (fun k ↦ (u k : ℂ))) i =
+            (((G.map (Int.castRingHom ℝ)) *ᵥ u) i : ℂ) := by
+        simpa [Matrix.map_map, Function.comp_def] using
+          (Complex.ofRealHom.map_mulVec (G.map (Int.castRingHom ℝ)) u i).symm
+      have hi := congrFun hGv i
+      rw [mulVec_add, mulVec_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul, hmul, hmul] at hi
       have hre : ((G.map (Int.castRingHom ℝ)) *ᵥ e₁) i = e₁ i := by
-        simpa using congrArg Complex.re (congrFun hGv i)
+        simpa using congrArg Complex.re hi
       have him : ((G.map (Int.castRingHom ℝ)) *ᵥ e₂) i = e₂ i := by
-        simpa using congrArg Complex.im (congrFun hGv i)
+        simpa using congrArg Complex.im hi
       simp only [mulVec_add, mulVec_smul, Pi.add_apply, Pi.smul_apply, smul_eq_mul, hre, him]⟩
 
 private theorem exists_eigenvector_of_isConj (b : P.Base)

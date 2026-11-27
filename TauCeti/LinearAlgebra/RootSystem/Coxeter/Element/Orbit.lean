@@ -61,7 +61,7 @@ namespace TauCeti
 open RootPairing
 
 variable {ι R M N : Type*} [CommRing R] [CharZero R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [Finite ι] (b : P.Base)
+  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} (b : P.Base)
 
 section FiniteWeylGroup
 
@@ -83,27 +83,16 @@ private theorem sum_range_height_weylGroupToPerm_pow_eq_zero {w : P.weylGroup}
     refine hw _ hmem ?_
     rw [Finset.smul_sum, hn, Finset.sum_range_succ, Finset.sum_range_succ']
     simp only [← mul_smul, ← pow_succ', ← hn, pow_orderOf_eq_one, pow_zero]
-  let _ := Fintype.ofFinite ι; classical
+  classical
   let a : ℕ → ι := fun k ↦ P.weylGroupToPerm (w ^ k) j
-  let e : ι → ℤ := fun i ↦ ((Finset.range (orderOf w)).filter fun k ↦ a k = i).card
-  have hsum_root : ∑ i : ι, e i • P.root i = 0 := by
-    rw [← hfix, ← Finset.sum_fiberwise_of_maps_to (t := Finset.univ) (g := a)
-      (fun _ _ ↦ Finset.mem_univ _)]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hcongr : ∑ k ∈ (Finset.range (orderOf w)).filter (a · = i), (w ^ k) • P.root j =
-        ∑ _ ∈ (Finset.range (orderOf w)).filter (a · = i), P.root i :=
-      Finset.sum_congr rfl fun k hk ↦ by
-        rw [P.weylGroup_apply_root]; exact congrArg P.root (Finset.mem_filter.mp hk).2
-    simpa [e, Finset.sum_const, natCast_zsmul] using hcongr.symm
-  have hsum_eq : ∑ i : ι, e i * b.height i = ∑ k ∈ Finset.range (orderOf w), b.height (a k) := by
-    rw [← Finset.sum_fiberwise_of_maps_to (t := Finset.univ) (g := a)
-      (fun _ _ ↦ Finset.mem_univ _)]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    have hcongr : ∑ k ∈ (Finset.range (orderOf w)).filter (a · = i), b.height (a k) =
-        ∑ _ ∈ (Finset.range (orderOf w)).filter (a · = i), b.height i :=
-      Finset.sum_congr rfl fun k hk ↦ congrArg b.height (Finset.mem_filter.mp hk).2
-    simpa [e, Finset.sum_const, smul_eq_mul] using hcongr.symm
-  exact hsum_eq ▸ sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero P b hsum_root
+  have hsum_root : ∑ i ∈ (Finset.range (orderOf w)).image a,
+      (((Finset.range (orderOf w)).filter (fun k ↦ a k = i)).card : ℤ) • P.root i = 0 := by
+    simp_rw [natCast_zsmul]
+    rw [← Finset.sum_comp P.root a]
+    simpa only [a, P.weylGroup_apply_root] using hfix
+  have hsum_ht := sum_mul_height_eq_zero_of_sum_zsmul_root_eq_zero P b hsum_root
+  simp_rw [← smul_eq_mul, natCast_zsmul] at hsum_ht
+  rwa [Finset.sum_comp b.height a]
 
 /-- **Every orbit of a Weyl-group element with no nonzero fixed vector in the root span meets its
 inversion set.** If `w` fixes no nonzero vector in `Submodule.span ℤ (Set.range P.root)`, then for
@@ -151,7 +140,7 @@ theorem exists_lt_orderOf_weylGroupToPerm_pow_mem_inversions_of_finite_weylGroup
 
 end FiniteWeylGroup
 
-variable [P.IsRootSystem]
+variable [Finite ι] [P.IsRootSystem]
 
 /-- **Every orbit of a fixed-point-free Weyl-group element meets its inversion set.** If `w` fixes
 no nonzero vector, then for every root `j` some `w ^ k j` with `k < orderOf w` is a positive root
@@ -222,14 +211,9 @@ private theorem eq_zero_of_mem_span_root_of_wordProd_smul_eq_self
     (hy : y ∈ Submodule.span ℤ (Set.range P.root)) (hfix : wordProd P b l • y = y) :
     y = 0 := by
   classical
-  have hsub : Submodule.span ℤ (Set.range P.root) ≤
-      Submodule.span ℤ (Set.range fun i : b.support ↦ P.root i) := by
-    refine Submodule.span_le.mpr ?_
-    rintro _ ⟨j, rfl⟩
-    obtain ⟨f, -, -, hf⟩ := b.exists_root_eq_sum_int j
-    rw [hf, ← Finset.sum_coe_sort b.support]
-    exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℤ).mp (hsub hy)
+  rw [← b.span_int_root_support,
+    show P.root '' (b.support : Set ι) = Set.range fun i : b.support ↦ P.root i by ext; simp] at hy
+  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℤ).mp hy
   have hcor : ∀ k : b.support, P.coroot' (k : ι) y = 0 := fun k ↦
     (wordProd_smul_eq_self_iff_forall_coroot'_eq_zero b hnd hall).mp hfix k
   have hker : (b.cartanMatrix.map (Int.castRingHom ℚ))ᵀ *ᵥ (fun i ↦ (c i : ℚ)) = 0 := by

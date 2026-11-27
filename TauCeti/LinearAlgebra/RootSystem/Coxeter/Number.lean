@@ -28,10 +28,14 @@ reduced crystallographic finite root systems:
 * **Order of any Coxeter element**:
   `orderOf (wordProd P b l) = (classifiedDynkinType b).coxeterNumber`, independent of both the base
   `b` and the ordering `l` of its simple reflections.
-* **Root-count and exponent-sum formulas**: `Nat.card ι = b.support.card * orderOf (wordProd P b l)`
-  (`orderOf (wordProd P b l) = Nat.card ι / b.support.card`),
-  `2 * (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l)`, and
-  `(classifiedDynkinType b).exponents.sum = (posRoots P b).ncard`.
+* **Exponent-sum and `HasCartanType` root-count formulas**:
+  `(classifiedDynkinType b).exponents.sum = (posRoots P b).ncard`, together with the
+  `TauCeti.HasCartanType` root-count identities
+  `Nat.card ι = b.support.card * orderOf (wordProd P b l)`
+  (`orderOf (wordProd P b l) = Nat.card ι / b.support.card`) and
+  `2 * (posRoots P b).ncard = b.support.card * orderOf (wordProd P b l)` (the unconditional
+  `RootPairing.Base` root-count formulas live in
+  `TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Orbit`).
 * **Eigenvalues with multiplicity**: over `ℂ`, the root multiset of
   `(P.weylGroupRootRep (wordProd P b l)).charpoly` consists of `exp (2πi e / h)` as `e` runs over
   `(classifiedDynkinType b).exponents`.
