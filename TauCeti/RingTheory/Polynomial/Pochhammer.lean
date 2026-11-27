@@ -362,6 +362,32 @@ theorem ascPochhammer_eval_eq_prod_range [CommSemiring R] (n : ℕ) (x : R) :
   | zero => simp
   | succ n ih => rw [ascPochhammer_succ_eval, ih, Finset.prod_range_succ]
 
+/-- The multiplication formula for rising factorials on an equally spaced grid. -/
+theorem prod_ascPochhammer_eval_div {K : Type*} [Semifield K] (x : K) (m n : ℕ) :
+    ∏ i ∈ Finset.range m, (ascPochhammer K n).eval ((x + i) / m) =
+      (ascPochhammer K (n * m)).eval x / (m : K) ^ (n * m) := by
+  by_cases hm : (m : K) = 0
+  · rcases eq_or_ne m 0 with rfl | hm'
+    · simp
+    rcases eq_or_ne n 0 with rfl | hn
+    · simp
+    simp [hm, hm', hn]
+  simp_rw [ascPochhammer_eval_eq_prod_range]
+  rw [Finset.prod_comm]
+  have hterm (i j : ℕ) : (x + i) / (m : K) + j = (x + (i + m * j : ℕ)) / m := by
+    push_cast
+    field_simp
+    ring
+  simp_rw [hterm, Finset.prod_div_distrib]
+  simp only [Finset.prod_const, Finset.card_range, ← pow_mul]
+  rw [Nat.mul_comm m n]
+  congr 1
+  -- The factor in column `i` and row `j` has index `i + m * j` in the full product.
+  have h := (finProdFinEquiv (m := n) (n := m)).prod_comp
+    (fun k : Fin (n * m) ↦ x + (k.val : K))
+  simp_rw [← Fin.prod_univ_eq_prod_range]
+  simpa only [Fintype.prod_prod_type, finProdFinEquiv_apply_val] using h
+
 /-- `(−n)ₖ = (−1)ᵏ k! C(n, k)`. -/
 theorem ascPochhammer_eval_neg_natCast [Ring R] (n k : ℕ) :
     (ascPochhammer R k).eval (-(n : R)) = (-1) ^ k * k.factorial * n.choose k := by

@@ -162,6 +162,32 @@ theorem card_primitiveClasses (A : Multiset ℕ) :
   rw [Function.comp_apply, Multiset.card_map, Finset.card_val, h,
     Nat.filter_coprime_Ico_eq_totient]
 
+/-- Taking the primitive classes for all divisors of `m` gives each fraction
+`1/m, …, m/m` once, using representatives in `(0,1]`. -/
+theorem map_rep_primitiveClasses_divisors (m : ℕ) :
+    (primitiveClasses m.divisors.val).map rep =
+      (Finset.range m).val.map (fun i : ℕ ↦ (1 + i : ℚ) / m) := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · simp
+  have hm' : (m : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr hm
+  symm
+  apply Multiset.eq_of_le_of_card_le
+  · refine (Multiset.le_iff_subset <| (Finset.range m).nodup.map ?_).2 ?_
+    · intro i j h
+      simpa [div_left_inj₀ hm'] using h
+    · intro q hq
+      obtain ⟨i, hi, rfl⟩ := Multiset.mem_map.1 hq
+      have hi' := Finset.mem_range.1 hi
+      let q : ℚ := (1 + i : ℚ) / m
+      refine Multiset.mem_map.2 ⟨(q : AddCircle (1 : ℚ)), ?_, rep_coe_of_mem ?_⟩
+      · rw [mem_primitiveClasses, Finset.mem_val, Nat.mem_divisors]
+        refine ⟨addOrderOf_dvd_of_nsmul_eq_zero ?_, hm⟩
+        rw [← AddCircle.coe_nsmul, nsmul_eq_mul, AddCircle.coe_eq_zero_iff]
+        exact ⟨(1 + i : ℤ), by simp [q, mul_div_cancel₀ _ hm']⟩
+      · simpa [q, add_comm] using div_mem_Ioc (a := m) (k := i + 1)
+          (Finset.mem_Icc.2 ⟨by omega, by omega⟩)
+  · simpa [← Finset.sum_eq_multiset_sum] using (Nat.sum_totient m).le
+
 /-- Multisets of positive indices are determined by their primitive classes. -/
 theorem primitiveClasses_inj {A B : Multiset ℕ} (hA : 0 ∉ A) (hB : 0 ∉ B) :
     primitiveClasses A = primitiveClasses B ↔ A = B := by
