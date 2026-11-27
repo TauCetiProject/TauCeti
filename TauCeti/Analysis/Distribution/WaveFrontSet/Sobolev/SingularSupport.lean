@@ -56,8 +56,12 @@ The point mass in dimension `d > 0` has `H^s` singular support `{x₀}` for `s �
 
 * `Distribution.isLocallySobolevAt_iff_forall_isMicrolocallySobolevAt`: `T` is `H^s` near a point
   `x ∈ Ω` exactly when it is microlocally `H^s` at `x` in every nonzero direction.
+* `Distribution.isMicrolocallySobolevAt_zero_iff`: at the zero covector, being microlocally `H^s`
+  is being `H^s` near the point.
 * `Distribution.fst_image_sobolevWaveFrontSet`: the projection of the `H^s` wave front set is the
   `H^s` singular support.
+* `Distribution.isMicrolocallySobolevAt_iff_of_isVanishingOn_sub`: microlocal `H^s` regularity
+  at `x` only depends on the distribution near `x`.
 * `Distribution.isOpen_diff_sobolevSingularSupport`, `Distribution.sobolevSingularSupport_mono`,
   `Distribution.sobolevSingularSupport_subset_singularSupport`: the `H^s` singular support is
   closed in `Ω`, grows with `s`, and lies in the singular support.
@@ -120,6 +124,22 @@ theorem IsLocallySobolevAt.isMicrolocallySobolevAt {s : ℝ} {T : 𝓓'(Ω, ℂ)
     (h : T.IsLocallySobolevAt s x) (ξ : E) : T.IsMicrolocallySobolevAt s x ξ := by
   obtain ⟨φ, hφ, hL⟩ := h
   exact isMicrolocallySobolevAt_of_memLp hφ hL ξ
+
+/-- At the zero covector, being microlocally `H^s` is being `H^s` near the point: an open cone
+containing `0` is all of `E`. -/
+theorem isMicrolocallySobolevAt_zero_iff {s : ℝ} {T : 𝓓'(Ω, ℂ)} {x : E} :
+    T.IsMicrolocallySobolevAt s x 0 ↔ T.IsLocallySobolevAt s x := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.isMicrolocallySobolevAt 0⟩
+  obtain ⟨φ, hφ, Γ, hΓ, h0, hcone, hL⟩ := isMicrolocallySobolevAt_iff.1 h
+  have hΓu : Γ = univ := by
+    refine eq_univ_of_forall fun η ↦ ?_
+    -- A small positive multiple of `η` lies in the neighbourhood `Γ` of `0`.
+    have hη : ∀ᶠ t in 𝓝[>] (0 : ℝ), t • η ∈ Γ :=
+      ((continuous_id.smul continuous_const).tendsto' (0 : ℝ) 0 (zero_smul ℝ η)).eventually
+        (hΓ.mem_nhds h0) |>.filter_mono nhdsWithin_le_nhds
+    obtain ⟨t, htΓ, ht⟩ := (hη.and self_mem_nhdsWithin).exists
+    simpa [smul_smul, (mem_Ioi.1 ht).ne'] using hcone t⁻¹ (inv_pos.2 ht) _ htΓ
+  exact ⟨φ, hφ, by simpa [hΓu] using hL⟩
 
 /-- The set of points near which a distribution is `H^s` is open. -/
 theorem isOpen_setOf_isLocallySobolevAt (s : ℝ) (T : 𝓓'(Ω, ℂ)) :
@@ -355,6 +375,20 @@ theorem isLocallySobolevAt_of_notMem_dsupport {T : 𝓓'(Ω, ℂ)} {x : E} (hx :
     (hxT : x ∉ dsupport T) (s : ℝ) : T.IsLocallySobolevAt s x :=
   (notMem_sobolevSingularSupport_iff hx).1 fun h ↦
     hxT (sobolevSingularSupport_subset_dsupport s T h)
+
+/-- Microlocal `H^s` regularity is local: if `S - T` vanishes on an open set `O ∋ x`, then `S` is
+microlocally `H^s` at `(x, ξ)` exactly when `T` is. -/
+theorem isMicrolocallySobolevAt_iff_of_isVanishingOn_sub {s : ℝ} {S T : 𝓓'(Ω, ℂ)} {O : Set E}
+    {x ξ : E} (hO : IsOpen O) (hx : x ∈ O) (h : IsVanishingOn ⇑(S - T) O) :
+    S.IsMicrolocallySobolevAt s x ξ ↔ T.IsMicrolocallySobolevAt s x ξ := by
+  have hd (hxΩ : x ∈ Ω) : (S - T).IsMicrolocallySobolevAt s x ξ :=
+    (isLocallySobolevAt_of_notMem_dsupport hxΩ
+      (fun h' ↦ (h.disjoint_dsupport hO).ne_of_mem hx h' rfl) s).isMicrolocallySobolevAt ξ
+  refine ⟨fun hS ↦ ?_, fun hT ↦ ?_⟩
+  · convert hS.add ((hd hS.mem).smul (-1)) using 1
+    module
+  · convert hT.add (hd hT.mem) using 1
+    abel
 
 /-- A function smooth on `Ω` has empty `H^s` singular support. -/
 theorem sobolevSingularSupport_ofFun_eq_empty (s : ℝ) {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f Ω) :
