@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.PowerSeries.Basic
+import Mathlib.RingTheory.PowerSeries.Trunc
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -37,6 +38,8 @@ coefficients `map f` acts on the constant coefficient.
   `f₀ * gₙ₊₁ + Σ_{j ≤ n} fₙ₊₁₋ⱼ * gⱼ`.
 * `PowerSeries.eq_of_eq_add_C_mul_X_pow_mul`: for `d > 0`, the equation `D = B + a X ^ d D` has
   at most one solution `D`.
+* `PowerSeries.exists_degree_lt_coe_eq`: a power series whose coefficients vanish from `d₀` on is a
+  polynomial of degree less than `d₀`.
 * `Polynomial.coeff_coe_eq_zero_of_degree_lt`: a polynomial of degree less than `s`, viewed as a
   power series, has zero coefficients from `s` on.
 -/
@@ -189,6 +192,17 @@ theorem eq_of_eq_add_C_mul_X_pow_mul {B D₁ D₂ : R⟦X⟧} {a : R} {d : ℕ} 
     split_ifs with hdn
     · rw [ih (n - d) (by omega)]
     · rfl
+
+/-- A power series whose coefficients vanish from `d₀` on is a polynomial of degree less than `d₀`
+(the zero polynomial if `d₀ = 0`). -/
+theorem exists_degree_lt_coe_eq {f : R⟦X⟧} {d₀ : ℕ} (h : ∀ d ≥ d₀, coeff d f = 0) :
+    ∃ p : Polynomial R, p.degree < d₀ ∧ (p : R⟦X⟧) = f := by
+  refine ⟨trunc d₀ f, degree_trunc_lt _ _, ?_⟩
+  ext d
+  rw [Polynomial.coeff_coe, coeff_trunc]
+  split_ifs with hd
+  · rfl
+  · exact (h d (not_lt.1 hd)).symm
 
 end Coeff
 

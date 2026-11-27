@@ -24,10 +24,10 @@ import TauCeti.RingTheory.UniqueFactorizationDomain.SubsetProduct
 
 Let `F` be a finite field and `λ : F[X] → R` a function that is multiplicative on monic
 polynomials: `λ 1 = 1` and `λ (g * h) = λ g * λ h` for monic `g` and `h`
-(`Polynomial.IsMonicMultiplicative`; the values off the monic polynomials do not matter). Its
-`L`-series is the power series
+(`TauCeti.Polynomial.IsMonicMultiplicative`; the values off the monic polynomials do not matter).
+Its `L`-series is the power series
 
-`L(λ, T) = ∑_{d ≥ 0} (∑_{g monic, deg g = d} λ(g)) T ^ d` (`Polynomial.lSeries`),
+`L(λ, T) = ∑_{d ≥ 0} (∑_{g monic, deg g = d} λ(g)) T ^ d` (`TauCeti.Polynomial.lSeries`),
 
 whose degree-`d` coefficient sums over the `q ^ d` monic polynomials `X ^ d + ∑_{i < d} c_i X ^ i`
 (`TauCeti.Polynomial.monicOfCoeff`). The character sums of Weil's theorem are coefficients of such
@@ -38,11 +38,11 @@ series. This file proves the three facts that make the series useful.
   in Mathlib's coefficientwise topology `PowerSeries.WithPiTopology`. Only the finitely many `P`
   of degree at most `n` affect the coefficient of `T ^ n`, so the finite products converge
   coefficientwise. The Euler factor `(1 - λ(P) T ^ deg P)⁻¹` is
-  `Polynomial.lSeriesFactor λ P = ∑_k λ(P) ^ k T ^ (k deg P)`, which makes sense over any
+  `TauCeti.Polynomial.lSeriesFactor λ P = ∑_k λ(P) ^ k T ^ (k deg P)`, which makes sense over any
   commutative semiring `R`; over a field it is the inverse.
 * **The logarithmic derivative.** `T L'(λ, T) = (∑_{n ≥ 1} S_n(λ) T ^ n) L(λ, T)`, where
   `S_n(λ) = ∑_P deg P · λ(P) ^ (n / deg P)` over the monic irreducible `P` of degree dividing `n`
-  (`Polynomial.lSeriesPowerSum`). Each Euler factor `E` satisfies `T E' = D E` with
+  (`TauCeti.Polynomial.lSeriesPowerSum`). Each Euler factor `E` satisfies `T E' = D E` with
   `D = deg P · λ(P) T ^ deg P · E`, and the identity for `L` is the limit of the finite products.
 * **The polynomial criterion.** If the coefficient sums vanish from degree `d₀` on, then
   `L(λ, T)` is a polynomial of degree less than `d₀`.
@@ -50,32 +50,34 @@ series. This file proves the three facts that make the series useful.
 The definitions, the identities for a single Euler factor and the polynomial criterion hold for
 every finite commutative semiring `F`. The degree-`d` coefficient sums over the polynomials
 `monicOfCoeff c`, `c : Fin d → F`, which are the monic polynomials of degree `d` when `F` is
-nontrivial (`Polynomial.coeff_lSeries`). The Euler product and the logarithmic derivative of
-`L(λ, T)` use unique factorization in `F[X]`, so they need a field.
+nontrivial (`TauCeti.Polynomial.coeff_lSeries`). The Euler product and the logarithmic derivative
+of `L(λ, T)` use unique factorization in `F[X]`, so they need a field.
 
 ## Main definitions
 
-* `Polynomial.IsMonicMultiplicative λ`: `λ` is multiplicative on monic polynomials.
-* `Polynomial.lSeries λ`: the `L`-series `L(λ, T)`.
-* `Polynomial.lSeriesFactor λ P`: the Euler factor, `∑_k λ(P) ^ k T ^ (k deg P)` for `deg P > 0`
-  and `1` for `deg P = 0`.
-* `Polynomial.lSeriesPowerSum λ n`: the power sum `S_n(λ)`.
+* `TauCeti.Polynomial.IsMonicMultiplicative λ`: `λ` is multiplicative on monic polynomials.
+* `TauCeti.Polynomial.lSeries λ`: the `L`-series `L(λ, T)`.
+* `TauCeti.Polynomial.lSeriesFactor λ P`: the Euler factor, `∑_k λ(P) ^ k T ^ (k deg P)` for
+  `deg P > 0` and `1` for `deg P = 0`.
+* `TauCeti.Polynomial.lSeriesPowerSum λ n`: the power sum `S_n(λ)`.
 
 ## Main results
 
-* `Polynomial.coeff_lSeriesFactor`, `Polynomial.lSeriesFactor_eq_one_add`,
-  `Polynomial.lSeriesFactor_eq_inv`: the coefficients of an Euler factor, the equation that it
-  satisfies, and its value `(1 - λ(P) T ^ deg P)⁻¹` over a field.
-* `Polynomial.coeff_lSeries`, `Polynomial.constantCoeff_lSeries_of_isMonicMultiplicative`: the
-  coefficients of `L(λ, T)`, and its constant coefficient `1`.
-* `Polynomial.coeff_prod_lSeriesFactor`: for a finite set `S` of monic irreducibles, the
+* `TauCeti.Polynomial.coeff_lSeriesFactor`, `TauCeti.Polynomial.lSeriesFactor_eq_one_add`,
+  `TauCeti.Polynomial.lSeriesFactor_eq_inv`: the coefficients of an Euler factor, the equation
+  that it satisfies, and its value `(1 - λ(P) T ^ deg P)⁻¹` over a field.
+* `TauCeti.Polynomial.coeff_lSeries`,
+  `TauCeti.Polynomial.constantCoeff_lSeries_of_isMonicMultiplicative`: the coefficients of
+  `L(λ, T)`, and its constant coefficient `1`.
+* `TauCeti.Polynomial.coeff_prod_lSeriesFactor`: for a finite set `S` of monic irreducibles, the
   coefficient of `T ^ n` in `∏_{P ∈ S} lSeriesFactor λ P` is the sum of `λ` over the monic
   polynomials of degree `n` whose irreducible factors lie in `S`.
-* `Polynomial.hasProd_lSeriesFactor`, `Polynomial.hasProd_inv_one_sub_lSeries`,
-  `Polynomial.lSeries_eq_tprod`: the Euler product.
-* `Polynomial.X_mul_derivative_lSeries`, `Polynomial.X_mul_derivative_lSeries_mul_inv`: the
-  logarithmic derivative.
-* `Polynomial.exists_degree_lt_coe_eq_lSeries`: the polynomial criterion.
+* `TauCeti.Polynomial.hasProd_lSeriesFactor`, `TauCeti.Polynomial.hasProd_inv_one_sub_lSeries`,
+  `TauCeti.Polynomial.lSeries_eq_tprod`: the Euler product.
+* `TauCeti.Polynomial.X_mul_derivative_lSeries`,
+  `TauCeti.Polynomial.X_mul_derivative_lSeries_mul_inv`: the logarithmic derivative.
+* `TauCeti.Polynomial.exists_degree_lt_coe_eq_lSeries`: the polynomial criterion, from
+  `PowerSeries.exists_degree_lt_coe_eq`.
 
 ## References
 
@@ -85,9 +87,9 @@ nontrivial (`Polynomial.coeff_lSeries`). The Euler product and the logarithmic d
 
 public section
 
-open Finset UniqueFactorizationMonoid
+open Finset Polynomial UniqueFactorizationMonoid
 
-namespace Polynomial
+namespace TauCeti.Polynomial
 
 section CommSemiring
 
@@ -136,8 +138,8 @@ theorem IsMonicMultiplicative.map_prod_pow {lam : F[X] → R} (hlam : IsMonicMul
 /-- The Euler factor of `L(λ, T)` at `P`: the coefficient of `T ^ m` is `λ(P) ^ (m / deg P)` if
 `deg P ∣ m` and `0` otherwise. For `deg P > 0` it is the geometric series
 `∑_k λ(P) ^ k T ^ (k deg P)`, the inverse of `1 - λ(P) T ^ deg P`
-(`Polynomial.one_sub_mul_lSeriesFactor`). For `deg P = 0` it is `1`
-(`Polynomial.lSeriesFactor_of_natDegree_eq_zero`). -/
+(`TauCeti.Polynomial.one_sub_mul_lSeriesFactor`). For `deg P = 0` it is `1`
+(`TauCeti.Polynomial.lSeriesFactor_of_natDegree_eq_zero`). -/
 noncomputable def lSeriesFactor (lam : F[X] → R) (P : F[X]) : PowerSeries R :=
   PowerSeries.mk fun m ↦ if P.natDegree ∣ m then lam P ^ (m / P.natDegree) else 0
 
@@ -165,19 +167,12 @@ theorem coeff_C_mul_X_pow_mul_lSeriesFactor_of_natDegree_pos (lam : F[X] → R) 
   · obtain ⟨k, rfl⟩ := hdi
     rcases k with _ | j
     · simp [hP.ne']
-    · have h1 : d ≤ d * (j + 1) := Nat.le_mul_of_pos_right _ (Nat.succ_pos j)
-      have h2 : d * (j + 1) - d = d * j := by rw [Nat.mul_succ, Nat.add_sub_cancel]
-      have h3 : d * (j + 1) ≠ 0 := Nat.mul_ne_zero hP.ne' (Nat.succ_ne_zero j)
-      simp only [dvd_mul_right, h1, h2, h3, ↓reduceIte, Nat.mul_div_cancel_left _ hP, ne_eq,
-        not_false_eq_true, and_self]
-      ring
+    · have h : d * (j + 1) - d = d * j := by rw [mul_add_one, Nat.add_sub_cancel]
+      simp [h, Nat.mul_div_cancel_left _ hP, hP.ne', Nat.le_mul_of_pos_right _ j.succ_pos,
+        pow_succ']
   · have h : ¬(d ≤ i ∧ d ∣ i - d) := fun h ↦
       hdi (by simpa [Nat.sub_add_cancel h.1] using Nat.dvd_add h.2 (dvd_refl d))
-    have h4 : (if d ≤ i then (if d ∣ i - d then lam P ^ ((i - d) / d) else 0) else 0) = 0 := by
-      split_ifs with h1 h2
-      · exact (h ⟨h1, h2⟩).elim
-      all_goals rfl
-    simp only [h4, hdi, false_and, ↓reduceIte, mul_zero]
+    split_ifs <;> simp_all
 
 /-- For `deg P > 0`, the Euler factor `E` satisfies `E = 1 + λ(P) T ^ deg P · E`. -/
 theorem lSeriesFactor_eq_one_add (lam : F[X] → R) {P : F[X]} (hP : 0 < P.natDegree) :
@@ -194,10 +189,7 @@ theorem lSeriesFactor_eq_one_add (lam : F[X] → R) {P : F[X]} (hP : 0 < P.natDe
 theorem one_sub_mul_lSeriesFactor {R : Type*} [CommRing R] (lam : F[X] → R) {P : F[X]}
     (hP : 0 < P.natDegree) :
     (1 - PowerSeries.C (lam P) * PowerSeries.X ^ P.natDegree) * lSeriesFactor lam P = 1 := by
-  have h := lSeriesFactor_eq_one_add lam hP
-  rw [sub_mul, one_mul]
-  nth_rw 1 [h]
-  ring
+  linear_combination lSeriesFactor_eq_one_add lam hP
 
 /-- Over a field, the Euler factor is `(1 - λ(P) T ^ deg P)⁻¹`. -/
 theorem lSeriesFactor_eq_inv {K : Type*} [Field K] (lam : F[X] → K) {P : F[X]}
@@ -272,12 +264,13 @@ variable [Fintype F]
 /-- The `L`-series of a function `λ` on `F[X]`: the coefficient of `T ^ d` sums `λ` over the
 polynomials `monicOfCoeff c`, `c : Fin d → F`. For a nontrivial `F` (for instance a field) these
 are the monic polynomials of degree `d`, so `L(λ, T) = ∑_d (∑_{g monic, deg g = d} λ(g)) T ^ d`
-(`Polynomial.coeff_lSeries`). -/
+(`TauCeti.Polynomial.coeff_lSeries`). -/
 noncomputable def lSeries (lam : F[X] → R) : PowerSeries R :=
   PowerSeries.mk fun d ↦ ∑ c : Fin d → F, lam (TauCeti.Polynomial.monicOfCoeff c)
 
 /-- For a nontrivial `F`, the degree-`d` coefficient of `L(λ, T)` is the sum of `λ` over the monic
 polynomials of degree `d`. -/
+@[simp]
 theorem coeff_lSeries [Nontrivial F] (lam : F[X] → R) (d : ℕ) :
     PowerSeries.coeff d (lSeries lam) = ∑ g ∈ monicsOfDegree F d, lam g := by
   rw [lSeries, PowerSeries.coeff_mk, TauCeti.Polynomial.sum_monicsOfDegree]
@@ -301,13 +294,8 @@ theorem constantCoeff_lSeries_of_isMonicMultiplicative {lam : F[X] → R}
 `d₀ = 0`). -/
 theorem exists_degree_lt_coe_eq_lSeries (lam : F[X] → R) {d₀ : ℕ}
     (h : ∀ d ≥ d₀, PowerSeries.coeff d (lSeries lam) = 0) :
-    ∃ p : R[X], p.degree < d₀ ∧ (p : PowerSeries R) = lSeries lam := by
-  refine ⟨PowerSeries.trunc d₀ (lSeries lam), PowerSeries.degree_trunc_lt _ _, ?_⟩
-  ext d
-  rw [Polynomial.coeff_coe, PowerSeries.coeff_trunc]
-  split_ifs with hd
-  · rfl
-  · exact (h d (not_lt.1 hd)).symm
+    ∃ p : R[X], p.degree < d₀ ∧ (p : PowerSeries R) = lSeries lam :=
+  PowerSeries.exists_degree_lt_coe_eq h
 
 end CommSemiring
 
@@ -388,19 +376,6 @@ theorem coeff_prod_lSeriesFactor_eq_coeff_lSeries [Fintype F] {lam : F[X] → R}
   rw [← hgm.2]
   exact natDegree_le_of_dvd (dvd_of_mem_normalizedFactors hPg) hgm.1.ne_zero
 
-/-- A finite set of monic irreducible polynomials that contains every monic irreducible of degree
-at most `n`. -/
-private theorem exists_finset_monic_irreducible [Finite F] (n : ℕ) :
-    ∃ S : Finset F[X], (∀ P ∈ S, P.Monic ∧ Irreducible P) ∧
-      ∀ P : F[X], P.Monic → Irreducible P → P.natDegree ≤ n → P ∈ S := by
-  classical
-  refine ⟨((range (n + 1)).biUnion (monicsOfDegree F)).filter Irreducible, fun P hP ↦ ?_,
-    fun P hPm hPirr hPn ↦ ?_⟩
-  · simp only [mem_filter, mem_biUnion, mem_monicsOfDegree] at hP
-    exact ⟨hP.1.choose_spec.2.1, hP.2⟩
-  · simp only [mem_filter, mem_biUnion, mem_range, mem_monicsOfDegree]
-    exact ⟨⟨P.natDegree, by omega, hPm, rfl⟩, hPirr⟩
-
 /-! ### The Euler product -/
 
 section EulerProduct
@@ -418,7 +393,7 @@ theorem hasProd_lSeriesFactor {lam : F[X] → R} (hlam : IsMonicMultiplicative l
   simp only [HasProd, SummationFilter.unconditional_filter]
   rw [PowerSeries.WithPiTopology.tendsto_iff_coeff_tendsto]
   intro n
-  obtain ⟨S, -, hSn⟩ := exists_finset_monic_irreducible (F := F) n
+  obtain ⟨S, -, hSn⟩ := exists_finset_monic_irreducible_natDegree_le F n
   refine tendsto_atTop_of_eventually_const (i₀ := S.subtype _) fun s hs ↦ ?_
   have hS : ∀ P ∈ s.map (Function.Embedding.subtype _), P.Monic ∧ Irreducible P := by
     intro P hP
@@ -453,7 +428,7 @@ end EulerProduct
 
 open Classical in
 /-- The power sum `S_n(λ) = ∑_P deg P · λ(P) ^ (n / deg P)` over the monic irreducible `P` whose
-degree divides `n`; it is `0` for `n = 0` (`Polynomial.lSeriesPowerSum_zero`). -/
+degree divides `n`; it is `0` for `n = 0` (`TauCeti.Polynomial.lSeriesPowerSum_zero`). -/
 noncomputable def lSeriesPowerSum [Finite F] (lam : F[X] → R) (n : ℕ) : R :=
   ∑ P ∈ n.divisors.biUnion fun e ↦ (finite_monicIrreduciblesOfDegree F e).toFinset,
     (P.natDegree : R) * lam P ^ (n / P.natDegree)
@@ -485,16 +460,11 @@ theorem sum_ite_eq_lSeriesPowerSum [Finite F] (lam : F[X] → R) {S : Finset F[X
     (hi : ∀ P : F[X], P.Monic → Irreducible P → P.natDegree ≤ i → P ∈ S) :
     ∑ P ∈ S, (if P.natDegree ∣ i ∧ i ≠ 0 then (P.natDegree : R) * lam P ^ (i / P.natDegree)
       else 0) = lSeriesPowerSum lam i := by
-  classical
-  rw [← sum_filter, lSeriesPowerSum]
-  refine sum_congr (ext fun P ↦ ?_) fun _ _ ↦ rfl
-  simp only [mem_filter, mem_biUnion, Nat.mem_divisors, Set.Finite.mem_toFinset,
-    mem_monicIrreduciblesOfDegree_iff]
-  constructor
-  · rintro ⟨hP, hdi, hi0⟩
-    exact ⟨P.natDegree, ⟨hdi, hi0⟩, (hS P hP).1, (hS P hP).2, rfl⟩
-  · rintro ⟨e, ⟨hei, hi0⟩, hPm, hPirr, rfl⟩
-    exact ⟨hi P hPm hPirr (Nat.le_of_dvd (Nat.pos_of_ne_zero hi0) hei), hei, hi0⟩
+  rw [← sum_filter]
+  refine (lSeriesPowerSum_eq_sum lam fun P ↦ ?_).symm
+  rw [mem_filter]
+  exact ⟨fun ⟨hP, h⟩ ↦ ⟨(hS P hP).1, (hS P hP).2, h⟩, fun ⟨hPm, hPirr, hdi, hi0⟩ ↦
+    ⟨hi P hPm hPirr (Nat.le_of_dvd (Nat.pos_of_ne_zero hi0) hdi), hdi, hi0⟩⟩
 
 /-- **The logarithmic derivative** of the `L`-series: `X L' = (∑_n S_n(λ) X ^ n) L`. -/
 theorem X_mul_derivative_lSeries [Fintype F] {lam : F[X] → R} (hlam : IsMonicMultiplicative lam) :
@@ -502,7 +472,7 @@ theorem X_mul_derivative_lSeries [Fintype F] {lam : F[X] → R} (hlam : IsMonicM
       PowerSeries.mk (lSeriesPowerSum lam) * lSeries lam := by
   classical
   ext n
-  obtain ⟨S, hS, hSn⟩ := exists_finset_monic_irreducible (F := F) n
+  obtain ⟨S, hS, hSn⟩ := exists_finset_monic_irreducible_natDegree_le F n
   have hA : ∀ j ≤ n, PowerSeries.coeff j (∏ P ∈ S, lSeriesFactor lam P) =
       PowerSeries.coeff j (lSeries lam) := fun j hj ↦
     coeff_prod_lSeriesFactor_eq_coeff_lSeries hlam hS fun P hPm hPirr hPd ↦
@@ -530,4 +500,4 @@ theorem X_mul_derivative_lSeries_mul_inv [Fintype F] {K : Type*} [Field K] {lam 
 
 end Field
 
-end Polynomial
+end TauCeti.Polynomial
