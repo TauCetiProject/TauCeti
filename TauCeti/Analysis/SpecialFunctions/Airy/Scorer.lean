@@ -50,7 +50,8 @@ Airy's equation, a combination of `Ai` and `Bi` (DLMF 9.12.2). On the real line 
 * DLMF 9.12.2, every entire solution `w` of `w'' = z w + 1/π` is `Hi + c₁ Ai + c₂ Bi`, is the
   application `differentiable_scorerHi.exists_eq_add_airy_combination hw scorerHi_ode hode` of
   `Differentiable.exists_eq_add_airy_combination` in
-  `TauCeti.Analysis.SpecialFunctions.Airy.Equation`.
+  `TauCeti.Analysis.SpecialFunctions.Airy.Equation`. This file imports that module privately, so
+  a caller must also import `TauCeti.Analysis.SpecialFunctions.Airy.Equation` to use it.
 * `Nat.iterate_deriv_scorerHi_zero` — `Hi⁽ⁿ⁾(0) = 3^{(n−2)/3} Γ((n+1)/3) / π`, and
   `TauCeti.scorerHi_zero` — `Hi(0) = 3^{−2/3} Γ(1/3) / π`.
 
@@ -256,10 +257,12 @@ theorem scorerHi_rotation_ode {ν : ℂ} (hν : ν ^ 3 = 1) (z : ℂ) :
 /-- `Gi` solves the inhomogeneous Airy equation `Gi'' = z Gi − 1/π` (DLMF 9.12.3). -/
 theorem _root_.Complex.scorerGi_ode (z : ℂ) :
     deriv^[2] scorerGi z = z * scorerGi z - (π : ℂ)⁻¹ := by
-  have h := differentiable_airyBi.contDiff.contDiffAt.airy_inhomogeneous_ode_sub (c := 0)
-    differentiable_scorerHi.contDiff.contDiffAt (by rw [airyBi_ode, add_zero]) (scorerHi_ode z)
+  have h := differentiable_airyBi.contDiff.contDiffAt.iteratedDeriv_two_sub_eq_smul_add (a := z)
+    (c := 0) differentiable_scorerHi.contDiff.contDiffAt
+    (by rw [iteratedDeriv_eq_iterate, airyBi_ode, smul_eq_mul, add_zero])
+    (by rw [iteratedDeriv_eq_iterate, scorerHi_ode, smul_eq_mul])
   have hGi : scorerGi = airyBi - scorerHi := funext Complex.scorerGi_def
-  rw [hGi, h, Pi.sub_apply]
+  rw [hGi, ← iteratedDeriv_eq_iterate, h, Pi.sub_apply, smul_eq_mul]
   ring
 
 /-! ### The value at the origin -/

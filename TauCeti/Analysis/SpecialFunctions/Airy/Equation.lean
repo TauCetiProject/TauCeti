@@ -33,8 +33,6 @@ solution satisfies the Riccati equation `W' = z − W²`.
   Riccati form (DLMF 9.2.16), pointwise and for entire solutions;
 * `TauCeti.airy_inhomogeneous_ode_rotation`: for a cube root of unity `ν`, the rotation
   `f ↦ (z ↦ ν f(ν z))` preserves every equation `w'' = z w + c`;
-* `ContDiffAt.airy_inhomogeneous_ode_sub`: the difference of solutions of `w'' = z w + c` and
-  `w'' = z w + d` solves `w'' = z w + (c − d)`;
 * `Differentiable.exists_eq_add_airy_combination`: every entire solution of `w'' = z w + g(z)`
   is a given entire solution plus a combination of `Ai` and `Bi`.
 
@@ -276,17 +274,6 @@ theorem airy_inhomogeneous_ode_rotation {f : ℂ → ℂ} {c ν : ℂ}
   rw [iteratedDeriv_eq_iterate, hf]
   linear_combination (ν * z * f (ν * z) + c) * hν
 
-/-- The difference of a solution of `w'' = z w + c` and a solution of `w'' = z w + d`, both twice
-continuously differentiable at `z`, solves `w'' = z w + (c − d)` at `z`. -/
-theorem _root_.ContDiffAt.airy_inhomogeneous_ode_sub {f g : ℂ → ℂ} {c d z : ℂ}
-    (hf : ContDiffAt ℂ 2 f z) (hg : ContDiffAt ℂ 2 g z) (hf' : deriv^[2] f z = z * f z + c)
-    (hg' : deriv^[2] g z = z * g z + d) :
-    deriv^[2] (f - g) z = z * (f - g) z + (c - d) := by
-  have h : deriv^[2] (f - g) z = deriv^[2] f z - deriv^[2] g z := by
-    simpa only [iteratedDeriv_eq_iterate] using iteratedDeriv_sub hf hg
-  simp only [h, hf', hg', Pi.sub_apply]
-  ring
-
 /-- **The inhomogeneous Airy equation**: if `p` and `w` are entire solutions of
 `w'' = z w + g(z)` with the same forcing `g`, then `w` is `p` plus a combination of `Ai` and `Bi`.
 With `p = Hi` and `g = 1/π` this is DLMF 9.12.2: every entire solution of `w'' = z w + 1/π` is
@@ -296,8 +283,10 @@ theorem _root_.Differentiable.exists_eq_add_airy_combination {g p w : ℂ → �
     (hw' : ∀ z, deriv^[2] w z = z * w z + g z) :
     ∃ c₁ c₂ : ℂ, w = fun z => p z + c₁ * airyAi z + c₂ * airyBi z := by
   have hode (z : ℂ) : deriv^[2] (w - p) z = z * (w - p) z := by
-    simpa using hw.contDiff.contDiffAt.airy_inhomogeneous_ode_sub hp.contDiff.contDiffAt (hw' z)
-      (hp' z)
+    have h := hw.contDiff.contDiffAt.iteratedDeriv_two_sub_eq_smul_add (a := z)
+      hp.contDiff.contDiffAt (by rw [iteratedDeriv_eq_iterate, hw' z, smul_eq_mul])
+      (by rw [iteratedDeriv_eq_iterate, hp' z, smul_eq_mul])
+    rwa [iteratedDeriv_eq_iterate, sub_self, add_zero, smul_eq_mul] at h
   obtain ⟨c₁, c₂, h⟩ : ∃ c₁ c₂ : ℂ, w - p = fun z => c₁ * airyAi z + c₂ * airyBi z :=
     ⟨_, _, eq_airy_combination (hw.sub hp) hode⟩
   refine ⟨c₁, c₂, funext fun z => ?_⟩
