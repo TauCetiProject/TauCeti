@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.LinearAlgebra.Matrix.IndefiniteUnitaryGroup
 import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 
 /-!
@@ -20,8 +21,8 @@ slot, the convention of `Matrix.unitaryGroupOf`. For Gram matrices `J` on `n` an
 
 When `J` is invertible it is the unique matrix `T†` with `⟨x, T† y⟩_J = ⟨T x, y⟩_J'` for all
 vectors `x` and `y` (`Matrix.formAdjoint_eq_iff_forall_dotProduct`). For `J = J' = 1` it is the
-conjugate transpose, and for invertible `J` the inverse of an element `g` of
-`Matrix.unitaryGroupOf J` is `formAdjoint J J g` (`Matrix.val_inv_of_mem_unitaryGroupOf`).
+conjugate transpose (`Matrix.formAdjoint_one_one`), and for invertible `J` the inverse of an
+element `g` of `Matrix.unitaryGroupOf J` is `formAdjoint J J g` (`Matrix.val_inv_eq_formAdjoint`).
 
 ## Main definitions
 
@@ -34,6 +35,9 @@ conjugate transpose, and for invertible `J` the inverse of an element `g` of
 * `Matrix.dotProduct_mulVec_formAdjoint`: the adjunction `⟨x, T† y⟩_J = ⟨T x, y⟩_J'`.
 * `Matrix.formAdjoint_eq_iff_forall_dotProduct`: the adjunction characterises the form adjoint.
 * `Matrix.formAdjoint_mul`: `(S * T)† = T† * S†` when the middle Gram matrix is invertible.
+* `Matrix.formAdjoint_one_one`: for `J = J' = 1` the form adjoint is the conjugate transpose.
+* `Matrix.val_inv_eq_formAdjoint`: for invertible `J`, the inverse of `g ∈ unitaryGroupOf J` is
+  its form adjoint `formAdjoint J J g`.
 -/
 
 public section
@@ -54,6 +58,11 @@ variable {J : Matrix n n R} {J' : Matrix m m R} {T : Matrix m n R}
 theorem formAdjoint_def (J : Matrix n n R) (J' : Matrix m m R) (T : Matrix m n R) :
     formAdjoint J J' T = J⁻¹ * Tᴴ * J' :=
   (rfl)
+
+/-- For the standard forms `J = J' = 1`, the form adjoint is the conjugate transpose. -/
+@[simp]
+theorem formAdjoint_one_one [DecidableEq m] (T : Matrix m n R) : formAdjoint 1 1 T = Tᴴ := by
+  simp [formAdjoint_def]
 
 /-- The defining equation of the form adjoint: `J * T† = Tᴴ * J'` when `J` is invertible. -/
 theorem mul_formAdjoint (hJ : IsUnit J.det) : J * formAdjoint J J' T = Tᴴ * J' := by
@@ -90,5 +99,12 @@ theorem formAdjoint_mul [Fintype l] [DecidableEq m] {J'' : Matrix l l R} (hJ' : 
     formAdjoint J J'' (S * T) = formAdjoint J J' T * formAdjoint J' J'' S := by
   simp only [formAdjoint_def, conjTranspose_mul, Matrix.mul_assoc,
     mul_nonsing_inv_cancel_left _ _ hJ']
+
+/-- **The inverse of an isometry is its form adjoint**: for invertible `J`, the inverse of an
+element `g` of `unitaryGroupOf J` is `formAdjoint J J g = J⁻¹ * gᴴ * J`. -/
+theorem val_inv_eq_formAdjoint (hJ : IsUnit J.det) {g : GL n R} (hg : g ∈ unitaryGroupOf J) :
+    (↑g⁻¹ : Matrix n n R) = formAdjoint J J (g : Matrix n n R) := by
+  rw [val_inv_of_mem_unitaryGroupOf ((isUnit_iff_isUnit_det J).2 hJ) hg, formAdjoint_def,
+    star_eq_conjTranspose]
 
 end Matrix

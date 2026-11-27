@@ -38,14 +38,15 @@ Two maps lower the grade.
   one.
 
 With the form adjoint `T† = J⁻¹ * Tᴴ * J'` of `Matrix.formAdjoint`, the shift factors through the
-string map in both orders: `T† * T` is the shift of the longer string and `T * T†` that of the
-shorter one. The string itself is the orbit under the shift of one vector: the **string powers**
-`𝔢^i = TauCeti.stringPower X s N c i` are multiples of `e_i` with `𝔢 𝔢^i = 𝔢^(i+1)`, all of whose
-nonzero products `⟨𝔢^i, 𝔢^l⟩` (for `i + l + 1 = s`) equal `-N`, and the string map carries them to
-the string powers of the shorter string. When `N` and `c` are units, every vector orthogonal to `X`
-is a combination of the string powers. All objects are defined over any ring and are compatible
-with ring homomorphisms, so that the statements over a field `E` pass to vectors with coefficients
-in any `E`-algebra, such as the finite adeles.
+string map in both orders: for a self-adjoint unit `N` and a self-adjoint `c`, `T† * T` is the shift
+of the longer string and `T * T†` that of the shorter one. The string itself is the orbit under the
+shift of one vector: the **string powers** `𝔢^i = TauCeti.stringPower X s N c i` are multiples of
+`e_i` with `𝔢 𝔢^i = 𝔢^(i+1)`. When `c` is a unit, the string map carries them to the string powers
+of the shorter string, and, for self-adjoint `N` and `c`, all nonzero products `⟨𝔢^i, 𝔢^l⟩` (for
+`i + l + 1 = s`) equal `-N`. When `N` and `c` are units, every vector orthogonal to `X` is a
+combination of the string powers. All objects are defined over any ring and are compatible with
+ring homomorphisms (the string powers when `c` is a unit), so that the statements over a field `E`
+pass to vectors with coefficients in any `E`-algebra, such as the finite adeles.
 
 ## Main definitions
 
@@ -60,21 +61,25 @@ in any `E`-algebra, such as the finite adeles.
 
 ## Main results
 
-* `TauCeti.isHermitian_gradedGram`, `TauCeti.inv_gradedGram`: the graded Gram matrix is hermitian,
-  and its inverse is the graded Gram matrix of `N⁻¹`.
+* `TauCeti.isHermitian_gradedGram`, `TauCeti.inv_gradedGram`: for self-adjoint `N` the graded Gram
+  matrix is hermitian, and for `N * N' = 1` its inverse is the graded Gram matrix of `N'`.
 * `TauCeti.gradedGram_eq_submatrix_splitGram`, `TauCeti.reindex_gradedGram`: for odd length the
   graded Gram matrix is the split form `splitGram ϱ (middleGram N)`, reordered.
 * `TauCeti.raisesDegree_gradedShift`, `TauCeti.stringMap_apply_eq_zero_of_ne`: the shift lowers
   the grade by two and the string map by one.
-* `TauCeti.conjTranspose_stringMap_mul_gradedGram_mul_stringMap`: `⟨T x, T y⟩ = ⟨x, 𝔢 y⟩`.
-* `TauCeti.formAdjoint_stringMap_mul_stringMap`: `T† * T = 𝔢`.
-* `TauCeti.stringMap_mul_formAdjoint_stringMap`: `T * T† = 𝔢'`.
+* `TauCeti.conjTranspose_stringMap_mul_gradedGram_mul_stringMap`: `⟨T x, T y⟩ = ⟨x, 𝔢 y⟩`, for
+  self-adjoint `N` and `c`.
+* `TauCeti.stringMap_mul_gradedGram_mul_conjTranspose_stringMap`: the inverse-free form
+  `T J⁻¹ Tᴴ = 𝔢' J'⁻¹` of `T * T† = 𝔢'`, stated with the graded Gram matrices of `N'` for
+  `N * N' = 1` and self-adjoint `N` and `c`.
+* `TauCeti.formAdjoint_stringMap_mul_stringMap`, `TauCeti.stringMap_mul_formAdjoint_stringMap`:
+  `T† * T = 𝔢` and `T * T† = 𝔢'`, for a self-adjoint unit `N` and a self-adjoint `c`.
 * `TauCeti.gradedShift_mulVec_stringPower`: `𝔢 𝔢^i = 𝔢^(i+1)`.
-* `TauCeti.star_stringPower_dotProduct_gradedGram_mulVec_stringPower`: `⟨𝔢^i, 𝔢^l⟩ = -N` if
-  `i + l + 1 = s`, and `0` otherwise.
-* `TauCeti.stringMap_mulVec_stringPower`: `T 𝔢^i = 𝔢'^i`.
-* `TauCeti.exists_eq_sum_smul_stringPower`: the vectors orthogonal to `X` are the combinations of
-  the string powers.
+* `TauCeti.star_stringPower_dotProduct_gradedGram_mulVec_stringPower`: for a self-adjoint unit `c`
+  and self-adjoint `N`, `⟨𝔢^i, 𝔢^l⟩ = -N` if `i + l + 1 = s`, and `0` otherwise.
+* `TauCeti.stringMap_mulVec_stringPower`: `T 𝔢^i = 𝔢'^i`, for a unit `c`.
+* `TauCeti.exists_eq_sum_smul_stringPower`: when `N` and `c` are units, the vectors orthogonal to
+  `X` are the combinations of the string powers.
 * `TauCeti.gradedGram_map`, `TauCeti.comp_stringPower`: compatibility with ring homomorphisms.
 
 ## References
@@ -87,8 +92,10 @@ in any `E`-algebra, such as the finite adeles.
   (`New.Grading.stringPower`, `New.Grading.shift_mulVec_stringPower`,
   `New.Grading.form_stringPower`, `New.Grading.stringMap_mulVec_stringPower`,
   `New.Grading.exists_stringSum_eq`, `New.Grading.stringMapFin_stringSum`); Apache 2.0,
-  Copyright 2026 Anthropic, PBC. These declarations prove the statements of this file there; the
-  definitions and statements here follow their conventions.
+  Copyright 2026 Anthropic, PBC. The statements corresponding to the listed declarations follow
+  them, and the definitions here follow their conventions; the comparison with the split form
+  (`TauCeti.gradedSplitEquiv`, `TauCeti.gradedGram_eq_submatrix_splitGram`,
+  `TauCeti.reindex_gradedGram`) and the compatibility with ring homomorphisms are new here.
 -/
 
 public section
@@ -336,6 +343,18 @@ lemma gradedSplitEquiv_inr (ϱ : ℕ) (a : Fin (2 * ϱ + 1)) :
       else if h' : (a : ℕ) = ϱ then .inr (.inl (.inr ()))
       else .inr (.inr ⟨2 * ϱ - a, by have := a.isLt; omega⟩) := (rfl)
 
+@[simp] lemma gradedSplitEquiv_symm_inl (ϱ : ℕ) (a : Fin ϱ) :
+    (gradedSplitEquiv X ϱ).symm (.inl a) = .inr ⟨a, by omega⟩ := (rfl)
+
+@[simp] lemma gradedSplitEquiv_symm_inr_inl_inl (ϱ : ℕ) (x : X) :
+    (gradedSplitEquiv X ϱ).symm (.inr (.inl (.inl x))) = .inl x := (rfl)
+
+@[simp] lemma gradedSplitEquiv_symm_inr_inl_inr (ϱ : ℕ) (u : Unit) :
+    (gradedSplitEquiv X ϱ).symm (.inr (.inl (.inr u))) = .inr ⟨ϱ, by omega⟩ := (rfl)
+
+@[simp] lemma gradedSplitEquiv_symm_inr_inr (ϱ : ℕ) (a : Fin ϱ) :
+    (gradedSplitEquiv X ϱ).symm (.inr (.inr a)) = .inr ⟨2 * ϱ - a, by omega⟩ := (rfl)
+
 variable [Zero R] [One R] [Neg R] [DecidableEq X]
 
 /-- **For odd length the graded Gram matrix is the split form**: the graded Gram matrix of a string
@@ -476,9 +495,11 @@ theorem conjTranspose_stringMap_mul_gradedGram_mul_stringMap (hN : star N = N)
           ite_eq_right (show s + 1 - (a + 1) ≠ (b : ℕ) + 1 by omega)]
         simp
 
-/-- The inverse-free form of `T * T† = 𝔢'`: `T J⁻¹ Tᴴ = 𝔢' J'⁻¹`, with `J⁻¹` and `J'⁻¹` the
-graded Gram matrices of `N' = N⁻¹`. -/
-private lemma stringMap_mul_gradedGram_mul_conjTranspose {N' : R} (h : N * N' = 1)
+/-- **The inverse-free form of `T * T† = 𝔢'`**: `T J⁻¹ Tᴴ = 𝔢' J'⁻¹`. For `N * N' = 1`, the graded
+Gram matrices of `N'` are the inverses `J⁻¹` and `J'⁻¹` of the graded forms `J` of
+`X ⊕ Fin (s + 1)` and `J'` of `X' ⊕ Fin s` (`TauCeti.inv_gradedGram`), and no determinant needs
+to be inverted. -/
+theorem stringMap_mul_gradedGram_mul_conjTranspose_stringMap {N' : R} (h : N * N' = 1)
     (hN : star N = N) (hc : star c = c) :
     stringMap X X' s N c * gradedGram X (s + 1) N' * (stringMap X X' s N c)ᴴ =
       gradedShift X' s N c * gradedGram X' s N' := by
@@ -522,7 +543,7 @@ theorem stringMap_mul_formAdjoint_stringMap (hN : IsUnit N) (hN' : star N = N)
       gradedShift X' s N c := by
   obtain ⟨u, rfl⟩ := hN
   rw [formAdjoint_def, inv_gradedGram u.mul_inv, ← Matrix.mul_assoc, ← Matrix.mul_assoc,
-    stringMap_mul_gradedGram_mul_conjTranspose u.mul_inv hN' hc, Matrix.mul_assoc,
+    stringMap_mul_gradedGram_mul_conjTranspose_stringMap u.mul_inv hN' hc, Matrix.mul_assoc,
     gradedGram_mul_gradedGram u.inv_mul, Matrix.mul_one]
 
 end Adjoint
