@@ -63,8 +63,7 @@ theorem mem_absoluteUpperRamificationGroup_iff {u : ℝ} {σ : Field.absoluteGal
           (upperRamificationGroup ((Oₘ M).decompositionSubgroup K) (Oₘ M) u).map
             ((Oₘ M).decompositionSubgroup K).subtype := by
   rw [absoluteUpperRamificationGroup, Subgroup.mem_iInf]
-  -- Each membership in a comap is membership of the restriction in the finite group.
-  rfl
+  exact forall_congr' fun M ↦ Subgroup.mem_comap
 
 /-- The absolute upper ramification subgroups form a decreasing filtration. -/
 theorem absoluteUpperRamificationGroup_antitone :
@@ -99,19 +98,14 @@ Galois group. This holds for every valuation subring of the algebraic closure. -
 theorem absoluteUpperRamificationGroup_zero :
     O.absoluteUpperRamificationGroup 0 =
       (O.inertiaSubgroup K).map (O.decompositionSubgroup K).subtype := by
-  ext σ
-  rw [mem_absoluteUpperRamificationGroup_iff]
+  refine Subgroup.ext fun (σ : AlgebraicClosure K ≃ₐ[K] AlgebraicClosure K) ↦ ?_
+  refine (mem_absoluteUpperRamificationGroup_iff (σ := σ)).trans
+    (Iff.trans ?_ (mem_map_inertiaSubgroup_iff (σ := σ)).symm)
   simp_rw [upperRamificationGroup_of_le_zero _ _ le_rfl, ramificationGroupReal_def,
     Int.ceil_zero, ramificationGroup_zero_eq_inertiaSubgroup]
-  let τ : AlgebraicClosure K ≃+* AlgebraicClosure K := σ.toRingEquiv
-  have hinertia :
-      σ ∈ (O.inertiaSubgroup K).map (O.decompositionSubgroup K).subtype ↔
-        ∀ x ∈ O, τ x - x ∈ O.nonunits :=
-    mem_map_inertiaSubgroup_iff
-  refine Iff.trans ?_ hinertia.symm
   have hrestrict (M : FiniteGaloisIntermediateField K (AlgebraicClosure K)) (x : M) :
       algebraMap M (AlgebraicClosure K) (AlgEquiv.restrictNormalHom M σ x) =
-        τ (algebraMap M (AlgebraicClosure K) x) :=
+        σ (algebraMap M (AlgebraicClosure K) x) :=
     AlgEquiv.restrictNormalHom_apply M.toIntermediateField σ x
   simp only [mem_map_inertiaSubgroup_iff, mem_comap, mem_nonunits_comap, map_sub, hrestrict]
   constructor
@@ -122,12 +116,11 @@ theorem absoluteUpperRamificationGroup_zero :
       expChar_of_injective_algebraMap (algebraMap K (AlgebraicClosure K)).injective p
     obtain ⟨n, M, hxM⟩ := FiniteGaloisIntermediateField.exists_expChar_pow_mem K p x
     let z : M := ⟨x ^ p ^ n, hxM⟩
-    have hz : algebraMap M (AlgebraicClosure K) z = x ^ p ^ n := rfl
+    have hz : algebraMap M (AlgebraicClosure K) z = x ^ p ^ n := by
+      simp only [IntermediateField.algebraMap_apply, z]
     have hpow := h M z (hz ▸ O.pow_mem hx _)
     rw [hz, map_pow, ← sub_pow_expChar_pow] at hpow
-    rw [mem_nonunits_iff, map_pow, pow_lt_one_iff_of_nonneg zero_le
-      (pow_ne_zero _ (expChar_ne_zero K p))] at hpow
-    exact O.mem_nonunits_iff.mpr hpow
+    exact (pow_mem_nonunits_iff (pow_ne_zero _ (expChar_ne_zero K p))).mp hpow
   · exact fun h M x hx ↦ h _ hx
 
 end ValuationSubring

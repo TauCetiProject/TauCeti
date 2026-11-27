@@ -28,6 +28,8 @@ maximal ideal.
   and its complement in `L`.
 * `ValuationSubring.mem_decompositionSubgroup_iff`: an automorphism of `L` lies in the
   decomposition group exactly when it preserves `A` and its complement.
+* `ValuationSubring.mem_decompositionSubgroup_of_sub_mem_nonunits`: nonunit displacements
+  suffice for membership in the decomposition group.
 * `ValuationSubring.restrictScalars_mem_decompositionSubgroup_iff`: decomposition-group membership
   is unchanged by restricting scalars along a tower of fields `K ⊆ E ⊆ L`.
 * `ValuationSubring.decompositionSubgroup.ext`: two elements of the decomposition group that agree
@@ -84,6 +86,23 @@ theorem mem_decompositionSubgroup_iff (A : ValuationSubring L) (σ : L ≃ₐ[K]
   rw [← inv_mem_iff, MulAction.mem_stabilizer_iff]
   ext x
   rw [mem_inv_pointwise_smul_iff, AlgEquiv.smul_def, h]
+
+/-- An automorphism lies in the decomposition group if it moves each element of the
+valuation subring by a nonunit of that subring. -/
+theorem mem_decompositionSubgroup_of_sub_mem_nonunits (A : ValuationSubring L) {σ : L ≃ₐ[K] L}
+    (h : ∀ x ∈ A, σ x - x ∈ A.nonunits) : σ ∈ A.decompositionSubgroup K := by
+  refine (A.mem_decompositionSubgroup_iff σ).mpr fun x ↦ ⟨?_, ?_⟩
+  · intro hσx
+    rcases eq_or_ne x 0 with rfl | hx
+    · exact A.zero_mem
+    by_contra hxA
+    -- Outside the valuation subring, the inverse is a nonunit.
+    have hinv : x⁻¹ ∈ A.nonunits := A.inv_mem_nonunits_iff.mpr (Or.inr hxA)
+    have hσinv := A.nonunits.add_mem (h x⁻¹ (A.nonunits_subset hinv)) hinv
+    rw [sub_add_cancel, map_inv₀, A.inv_mem_nonunits_iff] at hσinv
+    exact (hσinv.resolve_left ((map_ne_zero σ).2 hx)) hσx
+  · intro hx
+    simpa only [sub_add_cancel] using A.add_mem _ _ (A.nonunits_subset (h x hx)) hx
 
 /-- **Decomposition-group membership is unchanged by restricting scalars**: for a tower of fields
 `K ⊆ E ⊆ L`, an automorphism of `L` over `E` lies in the decomposition group of `A` over `E`
@@ -145,26 +164,15 @@ theorem mem_map_inertiaSubgroup_iff {A : ValuationSubring L} {σ : L ≃ₐ[K] L
   rw [Subgroup.mem_map]
   constructor
   · rintro ⟨g, hg, rfl⟩ x hx
-    have h := (A.mem_inertiaSubgroup_iff g).mp hg ⟨x, hx⟩
-    simpa only [pow_one, AlgEquiv.smul_def, Subgroup.subtype_apply] using
-      (A.residue_smul_eq_pow_iff g ⟨x, hx⟩ 1).mp (by simpa only [pow_one] using h)
+    have h := (A.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal g).mp hg ⟨x, hx⟩
+    simpa only [AddSubgroupClass.coe_sub, coe_decompositionSubgroup_smul,
+      Subgroup.subtype_apply] using
+      (A.coe_mem_nonunits_iff).mpr h
   · intro h
-    have hσ : σ ∈ A.decompositionSubgroup K := A.mem_decompositionSubgroup_iff σ |>.mpr fun x ↦ by
-      constructor
-      · intro hx
-        by_contra hx'
-        -- The inverse of an element outside the ring is a nonunit.
-        have hinv : x⁻¹ ∈ A.nonunits := A.inv_mem_nonunits_iff.mpr (Or.inr hx')
-        have hd := A.nonunits.add_mem (h _ (A.nonunits_subset hinv)) hinv
-        rw [sub_add_cancel, map_inv₀, A.inv_mem_nonunits_iff] at hd
-        exact hd.elim (fun hz ↦ hx' (σ.injective (hz.trans σ.map_zero.symm) ▸ A.zero_mem))
-          (fun hnot ↦ hnot hx)
-      · intro hx
-        simpa only [sub_add_cancel] using A.add_mem _ _ (A.nonunits_subset (h x hx)) hx
-    refine ⟨⟨σ, hσ⟩, (A.mem_inertiaSubgroup_iff _).mpr fun x ↦ ?_, rfl⟩
-    have hx := (A.residue_smul_eq_pow_iff ⟨σ, hσ⟩ x 1).mpr (by
-      simpa only [pow_one, AlgEquiv.smul_def] using h x x.property)
-    simpa only [pow_one] using hx
+    let g : A.decompositionSubgroup K := ⟨σ, A.mem_decompositionSubgroup_of_sub_mem_nonunits h⟩
+    refine ⟨g, (A.mem_inertiaSubgroup_iff_sub_mem_maximalIdeal g).mpr fun x ↦ ?_, rfl⟩
+    apply (A.coe_mem_nonunits_iff).mp
+    simpa only [AddSubgroupClass.coe_sub, coe_decompositionSubgroup_smul] using h x x.property
 
 /-- **The inertia group over an intermediate field**: the inertia group of `A` over an intermediate
 field `E` of `L / K`, read as automorphisms over `K`, is the part of the inertia group of `A` over

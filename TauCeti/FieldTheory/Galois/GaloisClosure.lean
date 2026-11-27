@@ -79,7 +79,8 @@ theorem exists_expChar_pow_mem (p : ℕ) [ExpChar k p] (x : K) :
     (mem_separableClosure_iff.mp y.property)
   have hyM := le_normalClosure k (IntermediateField.adjoin k {(y : K)})
     (IntermediateField.mem_adjoin_simple_self k (y : K))
-  have hy' : (y : K) = x ^ p ^ n := hy
+  have hy' : (y : K) = x ^ p ^ n := by
+    simpa only [IntermediateField.algebraMap_apply] using hy
   exact ⟨n, normalClosure k (IntermediateField.adjoin k {(y : K)}), hy' ▸ hyM⟩
 
 end FiniteGaloisIntermediateField

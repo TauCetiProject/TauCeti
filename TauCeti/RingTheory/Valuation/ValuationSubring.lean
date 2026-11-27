@@ -30,6 +30,8 @@ subfield `K` do not change the restriction to `K`.
 ## Main results
 
 * `ValuationSubring.mem_nonunits_comap`: nonunits of a pulled-back valuation subring.
+* `ValuationSubring.pow_mem_nonunits_iff`: membership in the nonunits is detected by any
+  nonzero natural power.
 * `ValuationSubring.valuation_map_eq_one`: units of `O` map to units of every valuation subring
   whose pullback contains `O`.
 * `ValuationSubring.exists_ne_zero_and_div_mem`: among finitely many elements, not all zero, one
@@ -82,6 +84,12 @@ lies in the nonunits of the original one. -/
 theorem mem_nonunits_comap {A : ValuationSubring L} {f : K →+* L} {x : K} :
     x ∈ (A.comap f).nonunits ↔ f x ∈ A.nonunits := by
   simp [mem_nonunits_iff_or, map_inv₀]
+
+/-- A nonzero natural power belongs to the nonunits of a valuation subring exactly when
+its base does. -/
+theorem pow_mem_nonunits_iff {A : ValuationSubring K} {x : K} {n : ℕ} (hn : n ≠ 0) :
+    x ^ n ∈ A.nonunits ↔ x ∈ A.nonunits := by
+  simp only [mem_nonunits_iff, map_pow, pow_lt_one_iff_of_nonneg zero_le hn]
 
 /-- Units of `O` are sent to units of every valuation subring `W` of `L` whose pullback along
 `f : K →+* L` contains `O`. -/
