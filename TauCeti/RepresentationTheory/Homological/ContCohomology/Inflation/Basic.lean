@@ -279,14 +279,6 @@ theorem explicitInfl1_injective : Function.Injective (explicitInfl1 G M N) := by
 
 variable {G M N}
 
-omit [ContinuousSMul G M] [N.Normal]
-  [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
-/-- A continuous `1`-cocycle vanishing on `N` is constant on the cosets of `N`. -/
-private theorem apply_mul_eq_self_of_vanishing {z : Z1 G M}
-    (hz : ∀ n : N, (z : G → M) (n : G) = 0) (g : G) (n : N) :
-    (z : G → M) (g * (n : G)) = (z : G → M) g := by
-  rw [(mem_Z1_iff.1 z.property).2 g (n : G), hz n, smul_zero, zero_add]
-
 omit [ContinuousSMul G M] [ContinuousSMul (G ⧸ N) (FixedPoints.addSubgroup N M)] in
 /-- The values of a continuous `1`-cocycle vanishing on `N` are fixed by `N`: the cocycle identity
 computes `z (n * g)` as `n • z g`, and `n * g = g * (g⁻¹ * n * g)` has its second factor in the
@@ -297,12 +289,12 @@ private theorem smul_apply_eq_self_of_vanishing {z : Z1 G M}
   have h := (mem_Z1_iff.1 z.property).2 (n : G) g
   rw [hz n, add_zero] at h
   have hconj : ((n : G) * g) = g * (g⁻¹ * (n : G) * g) := by group
-  rw [hconj, apply_mul_eq_self_of_vanishing hz g ⟨g⁻¹ * (n : G) * g,
-    ‹N.Normal›.conj_mem' (n : G) n.property g⟩] at h
+  rw [hconj, apply_mul_eq_of_mem_Z1 z.property g (hz ⟨g⁻¹ * (n : G) * g,
+    ‹N.Normal›.conj_mem' (n : G) n.property g⟩)] at h
   exact h.symm
 
 /-- The descent to `G ⧸ N` of a continuous `1`-cocycle vanishing on `N`. It is well defined by
-`apply_mul_eq_self_of_vanishing`, takes its values in `M ^ N` by
+`TauCeti.ContCohomology.apply_mul_eq_of_mem_Z1`, takes its values in `M ^ N` by
 `smul_apply_eq_self_of_vanishing`, and is continuous because `G ⧸ N` carries the quotient
 topology. Together with `TauCeti.ContCohomology.explicitInfl1_descendZ1` it says that a cocycle
 vanishing on `N` is *itself* inflated, with no coboundary subtracted. -/
@@ -314,7 +306,8 @@ def descendZ1 (z : Z1 G M) (hz : ∀ n : N, (z : G → M) (n : G) = 0) :
           FixedPoints.addSubgroup N M))
       fun a b hab => Subtype.ext <| by
         simpa using
-          (apply_mul_eq_self_of_vanishing hz a ⟨a⁻¹ * b, QuotientGroup.leftRel_apply.1 hab⟩).symm,
+          (apply_mul_eq_of_mem_Z1 z.property a
+            (hz ⟨a⁻¹ * b, QuotientGroup.leftRel_apply.1 hab⟩)).symm,
     mem_Z1_iff.2 ⟨(QuotientGroup.isQuotientMap_mk N).continuous_iff.2
         (((mem_Z1_iff.1 z.property).1).subtype_mk _), fun q q' => by
       induction q using QuotientGroup.induction_on with
