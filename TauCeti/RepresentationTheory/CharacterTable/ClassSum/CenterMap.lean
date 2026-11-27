@@ -37,6 +37,8 @@ those of `R[G]`.
 
 * `TauCeti.classSum_mk_eq_conjOrbitSum`: class sums are the orbit sums of conjugation by `G`.
 * `TauCeti.centerMapRingHom_classSumCenter`: the map on centres sends class sums to class sums.
+* `TauCeti.exists_centerMapRingHom_mul_classSumCenter`: if every class sum acts on a central
+  element by a scalar, the same holds for its image.
 * `TauCeti.centerMapRingHom_surjective`: the map on centres is surjective when `f` is.
 * `TauCeti.ker_centerMapRingHom`: for finite `G`, its kernel is
   `(ker f).map (algebraMap R Z(R[G]))`.
@@ -82,6 +84,24 @@ theorem centerMapRingHom_classSumCenter (f : R →+* S) (C : ConjClasses G) :
   obtain ⟨g, rfl⟩ := ConjClasses.exists_rep C
   ext1
   simp [classSum_mk_eq_conjOrbitSum]
+
+/-- If the class sum of `C` acts on a central element `b` of `R[G]` by a scalar `c`, then it acts
+on the image of `b` in `S[G]` by `f c`. -/
+theorem centerMapRingHom_mul_classSumCenter (f : R →+* S)
+    {b : Subalgebra.center R (MonoidAlgebra R G)} {C : ConjClasses G} {c : R}
+    (hc : b * classSumCenter C = c • b) :
+    centerMapRingHom G f b * classSumCenter C = f c • centerMapRingHom G f b := by
+  rw [← centerMapRingHom_classSumCenter f C, ← map_mul, hc, centerMapRingHom_smul]
+
+/-- **Class sums acting by scalars survive scalar extension.** If every class sum acts on a central
+element `b` of `R[G]` by a scalar, the same holds for the image of `b` in `S[G]` along any ring
+homomorphism `f : R →+* S`: the image of `b K_C = c b` is `f(b) K_C = f(c) f(b)`. -/
+theorem exists_centerMapRingHom_mul_classSumCenter (f : R →+* S)
+    {b : Subalgebra.center R (MonoidAlgebra R G)}
+    (h : ∀ C : ConjClasses G, ∃ c : R, b * classSumCenter C = c • b) (C : ConjClasses G) :
+    ∃ c : S, centerMapRingHom G f b * classSumCenter C = c • centerMapRingHom G f b :=
+  let ⟨c, hc⟩ := h C
+  ⟨f c, centerMapRingHom_mul_classSumCenter f hc⟩
 
 end Fintype
 

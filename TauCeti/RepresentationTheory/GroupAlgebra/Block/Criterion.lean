@@ -29,13 +29,15 @@ decidable, which gives a criterion for `b` to be a block idempotent
 A central element `b` on which every `g ∈ G` acts by a scalar `c(g)` spans its block algebra
 `b k[G] = k b` (`TauCeti.mul_eq_smul_of_mul_of_eq_smul`). Over a domain it is a block idempotent
 when its coefficient at `1` is `1` and `∑ g, b(g) c(g) = 1`
-(`TauCeti.isBlockIdempotent_of_mul_of_eq_smul`).
+(`TauCeti.isBlockIdempotent_of_mul_of_eq_smul`). Every class sum then acts on `b` by a scalar
+(`TauCeti.exists_mul_classSumCenter_of_mul_of_eq_smul`).
 
 ## Main results
 
 * `TauCeti.isBlockIdempotent_of_coeff`: a block criterion on coefficient functions.
 * `TauCeti.eq_of_isBlockIdempotent_of_coeff`: a uniqueness criterion on coefficient functions.
 * `TauCeti.isBlockIdempotent_of_mul_of_eq_smul`: blocks whose block algebra is the line `k b`.
+* `TauCeti.exists_mul_classSumCenter_of_mul_of_eq_smul`: class sums act on such `b` by scalars.
 -/
 
 public section
@@ -124,5 +126,16 @@ theorem isBlockIdempotent_of_mul_of_eq_smul [IsDomain k]
     rcases IsIdempotentElem.iff_eq_zero_or_one.mp hss with h0 | h1
     · exact .inl (Subtype.ext (by rw [hfs, h0, zero_smul, ZeroMemClass.coe_zero]))
     · exact .inr (Subtype.ext (by rw [hfs, h1, one_smul]))
+
+
+/-- **Class sums act on a common eigenvector by scalars.** If every `g` acts on a central element
+`b` by a scalar, `b g = c(g) b`, then so does every class sum. -/
+theorem exists_mul_classSumCenter_of_mul_of_eq_smul [DecidableEq G]
+    {b : Subalgebra.center k (MonoidAlgebra k G)} (c : G → k)
+    (hc : ∀ g, (b : MonoidAlgebra k G) * of k G g = c g • (b : MonoidAlgebra k G))
+    (C : ConjClasses G) : ∃ c' : k, b * classSumCenter C = c' • b :=
+  ⟨_, Subtype.ext (by
+    rw [Subalgebra.coe_mul, Subalgebra.coe_smul]
+    exact mul_eq_smul_of_mul_of_eq_smul hc _)⟩
 
 end TauCeti
