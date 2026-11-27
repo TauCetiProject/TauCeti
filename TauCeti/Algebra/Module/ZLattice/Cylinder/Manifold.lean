@@ -162,7 +162,6 @@ private theorem contMDiff_orbitRelQuotientCylinderEquiv_symm :
   exact (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℝ, E)) (n := n)).contMDiff.comp
     ((ContinuousLinearMap.contMDiff _).comp (contMDiff_fst.prodMk_space contMDiff_snd))
 
-omit [FiniteDimensional ℝ E] in
 /-- **Cylinder coordinates are a `C^n` diffeomorphism.** If `L` is the integer span of the vectors
 `B (inl i)` of a real basis `B` of `E` indexed by `ι ⊕ κ`, reducing the `ι`-coordinates in `B`
 modulo one and keeping the `κ`-coordinates identifies the orbit space `E / L` of translation by
@@ -172,8 +171,6 @@ the orbit space through `Submodule.orbitRelQuotientContinuousAddEquiv`. -/
 def orbitRelQuotientCylinderDiffeomorph :
     AddAction.orbitRel.Quotient L E ≃ₘ^n⟮𝓘(ℝ, E),
       (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, κ → ℝ)⟯ UnitAddTorus ι × (κ → ℝ) :=
-  -- `E` is finite-dimensional, having a finite basis.
-  have : FiniteDimensional ℝ E := Module.Finite.of_basis B
   { toEquiv := (B.orbitRelQuotientCylinderEquiv hL).toEquiv
     contMDiff_toFun := B.contMDiff_orbitRelQuotientCylinderEquiv hL n
     contMDiff_invFun := B.contMDiff_orbitRelQuotientCylinderEquiv_symm hL n }
