@@ -188,9 +188,10 @@ theorem not_densityZeroOutsideCones_of_not_le {x : V} {L P : Submodule ℝ V}
     (A.hasFDerivAt.const_add x).hasFDerivWithinAt
   have hi : AntilipschitzWith ‖v‖₊⁻¹ ((univ : Set ℝ).domRestrict fun t ↦ x + A t) :=
     AntilipschitzWith.of_le_mul_dist fun s t ↦ by
-      simp [A, Set.domRestrict_apply, Subtype.dist_eq, dist_eq_norm, ← sub_smul, norm_smul]
-      field_simp [norm_ne_zero_iff.mpr hv0]
-      exact le_rfl
+      -- `(x + A s) - (x + A t) = (s - t) • v`, so the distance scales by `‖v‖`.
+      have hd : dist (x + A s) (x + A t) = ‖v‖ * dist (s : ℝ) t := by
+        simp [A, dist_eq_norm, ← sub_smul, norm_smul, mul_comm]
+      simp [Subtype.dist_eq, hd, hv0]
   have hsub : (fun t : ℝ ↦ x + A t) '' univ ⊆ E := by
     rintro _ ⟨t, -, rfl⟩
     exact hLE _ (L.smul_mem t hvL)
