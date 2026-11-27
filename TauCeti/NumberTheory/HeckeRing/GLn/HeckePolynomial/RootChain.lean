@@ -63,15 +63,11 @@ variable {V : Type*} [AddCommGroup V] [Module ℂ V]
 private lemma aeval_glnHeckePolynomial_succ_apply (U : End ℂ V) (m : ℕ) (q : ℂ)
     (T : Fin (m + 2) → ℂ) (y : V) :
     aeval U (glnHeckePolynomial (m + 1) q T) y =
-      U (aeval U (glnHeckePolynomial m q (fun i ↦ T i.castSucc)) y) +
+      U (aeval U (glnHeckePolynomial m q (T ∘ Fin.castSucc)) y) +
         ((-1) ^ (m + 1) * q ^ (m + 1).choose 2 * T (Fin.last (m + 1))) • y := by
   rw [glnHeckePolynomial_succ]
   simp only [map_add, LinearMap.add_apply, map_mul, aeval_X, mul_apply_eq_comp,
     aeval_C, Module.algebraMap_end_apply, smul_smul, ← mul_assoc]
-
-/-- Reindexing `t ∘ Fin.castLE` along `Fin.castSucc`. -/
-private lemma comp_castLE_castSucc {k m : ℕ} (h : k + 1 ≤ m) (f : Fin m → ℂ) :
-    (fun i : Fin k ↦ (f ∘ Fin.castLE h) i.castSucc) = f ∘ Fin.castLE (Nat.le_of_succ_le h) :=
   rfl
 
 /-- `Fin.castLE` sends `Fin.last k` to `⟨k, h⟩`. -/
@@ -159,7 +155,8 @@ private lemma aeval_glnHeckePolynomial_prefix {U : End ℂ V} {n : ℕ} {q : ℂ
     have hrec : U (T ⟨m, by omega⟩) =
         q ^ m • (t ⟨m + 1, by omega⟩ • T 0 - T ⟨m + 1, by omega⟩) := by
       simpa [Fin.castSucc_mk, Fin.succ_mk] using rec_U ⟨m, hm_lt⟩
-    rw [aeval_glnHeckePolynomial_succ_apply, comp_castLE_castSucc, ih hm_lt.le, map_smul, hrec]
+    rw [aeval_glnHeckePolynomial_succ_apply, Function.comp_assoc, Fin.castLE_comp_castSucc,
+      ih hm_lt.le, map_smul, hrec]
     simp only [Function.comp_apply, castLE_last, Nat.choose_succ_succ, Nat.choose_one_right]
     module
 
@@ -184,7 +181,9 @@ private lemma exists_mul_eq_sub_eval_and_apply {U U' : End ℂ V} {n : ℕ} {q :
   | succ m ih =>
     obtain ⟨D, hD, hU'⟩ := ih (Nat.lt_of_succ_le hm).le
     have hstep := glnHeckePolynomial_succ m q (t ∘ Fin.castLE (by omega : m + 2 ≤ n + 2))
-    rw [comp_castLE_castSucc] at hstep
+    have hcomp : (fun i : Fin (m + 1) ↦ (t ∘ Fin.castLE (by omega : m + 2 ≤ n + 2)) i.castSucc) =
+        t ∘ Fin.castLE (by omega) := funext fun i ↦ by simp
+    rw [hcomp] at hstep
     refine ⟨c • D + glnHeckePolynomial m q (t ∘ Fin.castLE (by omega)), ?_, ?_⟩
     · rw [hstep]
       have h_poly :
@@ -317,10 +316,11 @@ private lemma glnHeckePolynomial_adjoint_core {B : V →ₛₗ[starRingEnd ℂ] 
   have q_ne : (q : ℂ) ≠ 0 := by exact_mod_cast (zero_lt_one.trans hq).ne'
   have aeval_p := aeval_glnHeckePolynomial_prefix ht_zero rec_U
   have aeval_P : aeval U P (T 0) = 0 := by
-    rw [show P = glnHeckePolynomial (n + 1) (q : ℂ) t from rfl, aeval_glnHeckePolynomial_succ_apply,
-      show (fun i : Fin (n + 1) ↦ t i.castSucc) = t ∘ Fin.castLE (by omega) from rfl,
-      aeval_p n le_rfl, show (⟨n, by omega⟩ : Fin (n + 1)) = Fin.last n from Fin.ext rfl,
-      map_smul, U_last]
+    have hcast : t ∘ Fin.castSucc = t ∘ Fin.castLE (by omega) :=
+      funext fun i ↦ congrArg t (Fin.ext (by simp))
+    have hlast : (⟨n, by omega⟩ : Fin (n + 1)) = Fin.last n := Fin.ext rfl
+    dsimp only [P]
+    rw [aeval_glnHeckePolynomial_succ_apply, hcast, aeval_p n le_rfl, hlast, map_smul, U_last]
     simp only [Nat.choose_succ_succ, Nat.choose_one_right]; module
   choose D hD hU' using fun c : ℂ ↦
     exists_mul_eq_sub_eval_and_apply q_ne ht_last rec_U' U'_first aeval_p aeval_P (n + 1) le_rfl c
@@ -413,6 +413,47 @@ namespace TauCeti
 
 section RootSymmetry
 
+/-- Term-by-term reflection identity behind `isRoot_of_glnHeckePolynomial_star_mul_eq`. -/
+private lemma glnHeckePolynomial_term_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N + 1) → ℂ}
+    {b₀ z y y' : ℂ} (hqC : (q : ℂ) ≠ 0) (h_dual : ∀ d : Fin (N + 1), star (t d) * b₀ = t d.rev * z)
+    (hy : star y * y' * (q : ℂ) = (q : ℂ) ^ N) (d : Fin (N + 1)) :
+    star (eval y (C ((-1) ^ (d : ℕ) * (q : ℂ) ^ (d : ℕ).choose 2 * t d) * X ^ (N - (d : ℕ)))) *
+        (b₀ * (q : ℂ) ^ N.choose 2) =
+      (-star y) ^ N * z *
+        eval y' (C ((-1) ^ (d.rev : ℕ) * (q : ℂ) ^ (d.rev : ℕ).choose 2 * t d.rev) *
+          X ^ (N - (d.rev : ℕ))) := by
+  refine mul_right_cancel₀ (pow_ne_zero d.val hqC) ?_
+  have hN : N = d.val + d.rev.val := by simp [Fin.val_rev]; omega
+  have h_exp : N.choose 2 + d.val.choose 2 + d.val = d.rev.val.choose 2 + N * d.val := by
+    generalize d.val = a, d.rev.val = b at hN ⊢
+    subst hN
+    have h1 := Nat.add_choose_two_add_choose_two b a
+    have h2 : (b + a - 1) * a + a = (b + a) * a := by
+      cases a with
+      | zero => simp
+      | succ k => rw [Nat.add_succ_sub_one]; ring
+    rw [add_comm a b]; omega
+  have hsub1 : N - d.val = d.rev.val := by omega
+  have hsub2 : N - d.rev.val = d.val := by omega
+  have h_sign : (-1 : ℂ) ^ d.val = (-1) ^ N * (-1) ^ d.rev.val := by
+    generalize d.val = a, d.rev.val = b at hN ⊢
+    subst hN; rw [pow_add, mul_assoc, ← mul_pow]; simp
+  have hneg : (-star y) ^ N = (-1) ^ N * (star y ^ d.val * star y ^ d.rev.val) := by
+    generalize d.val = a, d.rev.val = b at hN ⊢
+    subst hN; rw [neg_pow, pow_add (star y)]
+  calc
+    _ = (-1) ^ d.val * star y ^ d.rev.val * (star (t d) * b₀) *
+          (q : ℂ) ^ (N.choose 2 + d.val.choose 2 + d.val) := by
+      simp only [eval_mul, eval_C, eval_pow, eval_X, star_mul', star_pow, Complex.star_def,
+        Complex.conj_ofReal, map_neg, map_one, hsub1]
+      rw [pow_add, pow_add]; ring
+    _ = (-1) ^ d.val * star y ^ d.rev.val * (t d.rev * z) *
+          ((q : ℂ) ^ d.rev.val.choose 2 * (star y * y' * (q : ℂ)) ^ d.val) := by
+      rw [h_dual d, h_exp, hy, pow_add, pow_mul]
+    _ = _ := by
+      simp only [eval_mul, eval_C, eval_pow, eval_X, hsub2]
+      rw [h_sign, hneg]; ring
+
 /-- Root symmetry of a `GL_N` Hecke polynomial under Hermitian coefficient duality:
 if `star (t d) * b₀ = t d.rev * z` with `b₀ ≠ 0` and `q ≠ 0`, then `P(y') = 0` and
 `star y * y' * q = q ^ N` imply `P(y) = 0`. -/
@@ -428,34 +469,7 @@ theorem isRoot_of_glnHeckePolynomial_star_mul_eq {N : ℕ} {q : ℝ} {t : Fin (N
       star (P.eval y) * (b₀ * (q : ℂ) ^ N.choose 2) = (-star y) ^ N * z * P.eval y' := by
     simp only [P, glnHeckePolynomial_def, eval_finsetSum, mul_sum, star_sum, sum_mul]
     conv_rhs => rw [← Equiv.sum_comp Fin.revPerm]
-    refine sum_congr rfl fun d _ ↦ mul_right_cancel₀ (pow_ne_zero d.val hqC) ?_
-    have hN : N = d.val + d.rev.val := by simp [Fin.val_rev]; omega
-    have h_exp : N.choose 2 + d.val.choose 2 + d.val = d.rev.val.choose 2 + N * d.val := by
-      have h1 := Nat.add_choose_two_add_choose_two_add_left d.val d.rev.val
-      have hNc : N.choose 2 = (d.val + d.rev.val).choose 2 := congrArg (·.choose 2) hN
-      have hNm : N * d.val = (d.val + d.rev.val) * d.val := congrArg (· * d.val) hN
-      rw [hNc, hNm]
-      exact h1
-    have hsub1 : N - d.val = d.rev.val := by omega
-    have hsub2 : N - d.rev.val = d.val := by omega
-    calc
-      _ = (-1) ^ d.val * star y ^ d.rev.val * (star (t d) * b₀) *
-            (q : ℂ) ^ (N.choose 2 + d.val.choose 2 + d.val) := by
-        simp only [eval_mul, eval_C, eval_pow, eval_X, star_mul', star_pow, Complex.star_def,
-          Complex.conj_ofReal, map_neg, map_one, hsub1]
-        rw [pow_add, pow_add]
-        ring
-      _ = (-1) ^ d.val * star y ^ d.rev.val * (t d.rev * z) *
-            ((q : ℂ) ^ d.rev.val.choose 2 * (star y * y' * (q : ℂ)) ^ d.val) := by
-        rw [h_dual d, h_exp, hy, pow_add, pow_mul]
-      _ = _ := by
-        have h_sign : (-1 : ℂ) ^ d.rev.val * (-1) ^ d.rev.val = 1 := by simp [← mul_pow]
-        have hneg : (-star y) ^ N = (-1) ^ (d.val + d.rev.val) * star y ^ (d.val + d.rev.val) := by
-          calc (-star y) ^ N = (-star y) ^ (d.val + d.rev.val) := congrArg ((-star y) ^ ·) hN
-            _ = (-1) ^ (d.val + d.rev.val) * star y ^ (d.val + d.rev.val) := neg_pow (star y) _
-        simp only [Fin.revPerm_apply, eval_mul, eval_C, eval_pow, eval_X, hsub2, hneg]
-        linear_combination -((-1) ^ d.val * star y ^ (d.val + d.rev.val) * t d.rev * z *
-          (q : ℂ) ^ d.rev.val.choose 2 * y' ^ d.val * (q : ℂ) ^ d.val) * h_sign
+    exact sum_congr rfl fun d _ ↦ glnHeckePolynomial_term_star_mul_eq hqC h_dual hy d
   simpa [hy'.eq_zero, hqC, hb₀] using h_star_eval
 
 /-- Root-chain propagation for a `GL_N` Hecke polynomial: combining the top-root lower bound with
