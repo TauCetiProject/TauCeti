@@ -18,8 +18,10 @@ operator norm at most `‖f‖ + ‖g‖` (`ContinuousLinearMap.opNorm_coprod_le
 operators assembled from separate operators for each component of the data, for instance the
 forcing and the initial datum of an evolution equation. A continuous linear map out of `𝕜 × 𝕜`
 is determined by its values on the coordinate vectors
-(`ContinuousLinearMap.apply_mk_eq_smul_add_smul`), and has operator norm at most
-`‖f (1, 0)‖ + ‖f (0, 1)‖`
+(`ContinuousLinearMap.apply_mk_eq_smul_add_smul`), so it vanishes once it vanishes on them
+(`ContinuousLinearMap.eq_zero_of_apply_one_zero_of_apply_zero_one`); a vector `(a, b)` is in the
+kernel of a functional `f` exactly when `a f(1, 0) + b f(0, 1) = 0`
+(`ContinuousLinearMap.mk_mem_ker_iff`). It has operator norm at most `‖f (1, 0)‖ + ‖f (0, 1)‖`
 (`ContinuousLinearMap.opNorm_le_norm_apply_one_zero_add_norm_apply_zero_one`). The map
 `(x, y) ↦ (x, c • y)` on a product with `‖c‖ ≤ 1` is a contraction
 (`ContinuousLinearMap.norm_inl_comp_fst_add_smul_inr_comp_snd_le`). For an
@@ -67,6 +69,19 @@ theorem apply_mk_eq_smul_add_smul (f : 𝕜 × 𝕜 →L[𝕜] G) (a b : 𝕜) :
     f (a, b) = a • f (1, 0) + b • f (0, 1) := by
   rw [← map_smul, ← map_smul, ← map_add]
   simp
+
+/-- A continuous linear map out of `𝕜 × 𝕜` vanishing on the coordinate vectors `(1, 0)` and
+`(0, 1)` is zero. -/
+theorem eq_zero_of_apply_one_zero_of_apply_zero_one {f : 𝕜 × 𝕜 →L[𝕜] G} (h₁ : f (1, 0) = 0)
+    (h₂ : f (0, 1) = 0) : f = 0 :=
+  ext fun ⟨a, b⟩ ↦ by
+    rw [f.apply_mk_eq_smul_add_smul, h₁, h₂, smul_zero, smul_zero, add_zero, zero_apply]
+
+/-- A vector `(a, b)` lies in the kernel of a continuous linear functional `f` on `𝕜 × 𝕜` exactly
+when `a f(1, 0) + b f(0, 1) = 0`. -/
+theorem mk_mem_ker_iff {f : 𝕜 × 𝕜 →L[𝕜] 𝕜} {a b : 𝕜} :
+    (a, b) ∈ LinearMap.ker (f : 𝕜 × 𝕜 →ₗ[𝕜] 𝕜) ↔ a * f (1, 0) + b * f (0, 1) = 0 := by
+  rw [LinearMap.mem_ker, coe_coe, f.apply_mk_eq_smul_add_smul, smul_eq_mul, smul_eq_mul]
 
 /-- A continuous linear map out of `𝕜 × 𝕜` has operator norm at most the sum of the norms of its
 values on the coordinate vectors. -/
