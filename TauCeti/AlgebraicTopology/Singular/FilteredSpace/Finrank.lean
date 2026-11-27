@@ -61,6 +61,11 @@ a sum of ranks of connecting maps along the resulting filtration by sublevels. A
 filtration can hide cancellations within a piece, and then these ranks need not recover the
 coefficients.
 
+Over any abelian coefficient category, membership in a Serre class `Q` passes along an
+`ℕ`-indexed filtration: if every step `Hᵢ(A (j + 1), A j)` lies in `Q`, so does
+`Hᵢ(A (N + 1), A 0)` (`TauCeti.prop_singularHomology_ofInclusion_of_monotone`). For `Q` the zero
+objects this is the vanishing case of the weak inequalities.
+
 The `ℕ`-indexed filtrations also have the statements above, with the steps finite-dimensional in
 every degree: finiteness (`TauCeti.finite_singularHomology_ofInclusion_of_monotone`), the weak and
 strong inequalities (`TauCeti.finrank_singularHomology_ofInclusion_le_sum_of_monotone` and
@@ -346,6 +351,22 @@ variable {Y : TopCat.{w}} {A : ℕ → Set Y} (hA : Monotone A) {k : Type*} [Div
   (V : ModuleCat.{w} k)
 
 namespace TauCeti
+
+/-- **Serre classes along a filtration.** Let `Q` be a Serre class in an abelian coefficient
+category, for instance the zero objects or the torsion abelian groups. If
+`A 0 ⊆ A 1 ⊆ ⋯ ⊆ A (N + 1)` and every step `Hᵢ(A (j + 1), A j; R)`, `j ≤ N`, lies in `Q`, then so
+does `Hᵢ(A (N + 1), A 0; R)`. -/
+theorem prop_singularHomology_ofInclusion_of_monotone {C : Type*} [Category* C]
+    [HasCoproducts.{w} C] [Abelian C] (R : C) (Q : ObjectProperty C) [Q.IsSerreClass] {N : ℕ}
+    (i : ℕ) (hQ : ∀ j ≤ N, Q ((TopPair.ofInclusion (hA j.le_succ)).singularHomology R i)) :
+    Q ((TopPair.ofInclusion (hA (Nat.zero_le (N + 1)))).singularHomology R i) := by
+  induction N with
+  | zero => exact hQ 0 le_rfl
+  | succ N ih =>
+    -- Add the triple `(A (N + 2), A (N + 1), A 0)` to the filtration of `A (N + 1)`.
+    exact (TopTriple.ofInclusions (hA (Nat.zero_le (N + 1))) (hA (N + 1).le_succ)
+      ).prop_singularHomology_totalPair R Q i (ih fun j hj ↦ hQ j (hj.trans N.le_succ))
+        (hQ (N + 1) le_rfl)
 
 /-- **Finiteness along a filtration.** If `A 0 ⊆ A 1 ⊆ ⋯ ⊆ A (N + 1)` and every step
 `Hᵢ(A (j + 1), A j)`, `j ≤ N`, is finite-dimensional, then so is `Hᵢ(A (N + 1), A 0)`. -/
