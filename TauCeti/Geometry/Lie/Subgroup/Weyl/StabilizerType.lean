@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Subgroup.Weyl.Chamber
-import TauCeti.RepresentationTheory.Continuous.Basic
 
 /-!
 # Stabilizer types of the adjoint action and the faces of a closed Weyl chamber
@@ -22,7 +21,9 @@ with the root data, and so with the faces of a closed Weyl chamber.
   (`TauCeti.Lie.IsMaximalTorus.exists_map_conj_stabilizer_eq_iff`). If `g Z_G(X) g⁻¹ = Z_G(Y)`,
   then `T` and `g T g⁻¹` are maximal tori of the closed subgroup `Z_G(Y)`, so some `c ∈ Z_G(Y)`
   conjugates the second to the first; `c g` normalizes `T` and still conjugates `Z_G(X)` to
-  `Z_G(Y)`, because `c` normalizes `Z_G(Y)`. Neither `G` nor the stabilizers need be connected.
+  `Z_G(Y)`, because `c` normalizes `Z_G(Y)`; this holds for any two closed subgroups containing
+  `T` (`TauCeti.Lie.IsMaximalTorus.exists_mem_normalizer_map_conj_eq_of_map_conj_eq`). Neither `G`
+  nor the stabilizers need be connected.
 * **Stabilizer types and root vanishing patterns.** Decompose `𝔤 = 𝔱 ⊕ E₁ ⊕ ⋯ ⊕ E_r` into
   nonzero root planes with roots `α_i` (`TauCeti.IsRootPlaneDecomposition`). For a compact
   connected group, `Z_G(X)` is determined by the set of roots vanishing at `X`
@@ -40,21 +41,22 @@ with the root data, and so with the faces of a closed Weyl chamber.
   the wall of `α₂` only have conjugate stabilizers. Every stabilizer type of the adjoint action
   occurs on `C`: each `Z_G(Z)`, `Z ∈ 𝔤`, is conjugate to `Z_G(Y)` for a point `Y` of `C`
   (`TauCeti.Lie.IsMaximalTorus.exists_mem_sameSideChamber_map_conj_stabilizer_eq`).
-* **Stabilizers near a point of `𝔱`.** For a compact connected group, every `Y ∈ 𝔱` close enough
-  to `X` has `Z_G(Y) ≤ Z_G(X)`
-  (`TauCeti.IsRootPlaneDecomposition.eventually_stabilizer_continuousAdjointRepresentation_le`):
-  the roots not vanishing at `X` do not vanish near `X`.
 * **The stabilizer comparison of a cross-section.** For a compact connected group and a regular
   `X₀`, an element `g` of `G` carrying a point `Y` of the closed chamber into the chamber fixes
   `Y`, so `g ∈ Z_G(Y)` (`TauCeti.Lie.IsMaximalTorus.mem_stabilizer_of_Ad_apply_eq`), by the
-  uniqueness of chamber representatives of adjoint orbits. Combined with the previous item, for
-  `Y` near a point `X` of `𝔱` every such `g` lies in `Z_G(X)`
+  uniqueness of chamber representatives of adjoint orbits. Every `Y ∈ 𝔱` close enough to a point
+  `X` of `𝔱` has `Z_G(Y) ≤ Z_G(X)`, since the roots not vanishing at `X` do not vanish near `X`
+  (`TauCeti.IsRootPlaneDecomposition.eventually_stabilizer_continuousAdjointRepresentation_le`).
+  Hence for `Y` near `X` every such `g` lies in `Z_G(X)`
   (`TauCeti.Lie.IsMaximalTorus.eventually_mem_stabilizer_of_Ad_apply_eq`). This is the stabilizer
   comparison behind the symplectic cross-section of a Hamiltonian action of a compact connected
   group at a point of the closed chamber.
 
-Connectedness of `G` is needed for the last three items: for `G = O(2)` and `T = SO(2)` there are
-no roots, so every point of `𝔱` has the same vanishing pattern, while the stabilizer of `0` is
+Connectedness of `G` is used for the vanishing-pattern, face-pattern and cross-section results,
+but not for `TauCeti.Lie.IsMaximalTorus.exists_map_conj_stabilizer_eq_iff` or for
+`TauCeti.Lie.IsMaximalTorus.exists_mem_sameSideChamber_map_conj_stabilizer_eq`. Without it the
+vanishing pattern alone does not determine the stabilizer: for `G = O(2)` and `T = SO(2)` there
+are no roots, so every point of `𝔱` has the same vanishing pattern, while the stabilizer of `0` is
 `O(2)` and that of a nonzero point is `SO(2)`.
 
 ## Main results
@@ -65,8 +67,6 @@ no roots, so every point of `𝔱` has the same vanishing pattern, while the sta
   conjugate exactly when the Weyl group relates the roots vanishing at the two points.
 * `TauCeti.Lie.IsMaximalTorus.exists_mem_sameSideChamber_map_conj_stabilizer_eq`: every adjoint
   stabilizer is conjugate to the stabilizer of a point of a closed chamber.
-* `TauCeti.IsRootPlaneDecomposition.eventually_stabilizer_continuousAdjointRepresentation_le`:
-  stabilizers of points of `𝔱` near `X` lie in `Z_G(X)`.
 * `TauCeti.Lie.IsMaximalTorus.mem_stabilizer_of_Ad_apply_eq`,
   `TauCeti.Lie.IsMaximalTorus.eventually_mem_stabilizer_of_Ad_apply_eq`: elements of `G` relating
   two points of the closed chamber stabilize them, and near a point `X` of the chamber they lie
@@ -100,40 +100,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
-/-! ### Stabilizers near a point of `𝔱` -/
-
-namespace IsRootPlaneDecomposition
-
-variable [CompactSpace G] [ConnectedSpace G]
-  {B : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)}
-  {t : Submodule ℝ (LeftInvariantDerivation I G)} {ι : Type*} [Finite ι] {α : ι → Dual ℝ t}
-  {V : ι → Submodule ℝ (LeftInvariantDerivation I G)} {J : (i : ι) → Module.End ℝ (V i)}
-
-/-- **Stabilizers near a point of `𝔱` are smaller.** For a compact connected Lie group, a
-separating invariant form, and a decomposition of `𝔤` over `t` into nonzero root planes, every
-`Y ∈ t` close enough to `X ∈ t` has adjoint stabilizer `Z_G(Y) ≤ Z_G(X)`: the finitely many roots
-not vanishing at `X` do not vanish near `X`. -/
-theorem eventually_stabilizer_continuousAdjointRepresentation_le
-    (hD : IsRootPlaneDecomposition B t α V J) (hB : B.lieInvariant (LeftInvariantDerivation I G))
-    (hsep : B.SeparatingLeft) (hV : ∀ i, V i ≠ ⊥) (X : t) :
-    ∀ᶠ Y : t in 𝓝 X,
-      (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
-          (Y : LeftInvariantDerivation I G) ≤
-        (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
-          (X : LeftInvariantDerivation I G) := by
-  have : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
-    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
-  simp_rw [hD.stabilizer_continuousAdjointRepresentation_le_iff hB hsep hV]
-  refine eventually_all.2 fun i ↦ ?_
-  rcases eq_or_ne (α i X) 0 with hi | hi
-  · exact Eventually.of_forall fun _ _ ↦ hi
-  · -- `α_i` is continuous, so it does not vanish near `X`.
-    filter_upwards [(LinearMap.continuous_of_finiteDimensional (α i)).continuousAt.eventually_ne
-      hi] with Y hY hY0
-    exact absurd hY0 hY
-
-end IsRootPlaneDecomposition
-
 namespace Lie
 
 /-! ### Conjugate stabilizers in the Lie algebra of a maximal torus -/
@@ -156,31 +122,19 @@ theorem IsMaximalTorus.exists_map_conj_stabilizer_eq_iff (hT : IsMaximalTorus T)
             (T.weylAdjointRepresentation (I := I) w X : LeftInvariantDerivation I G) =
           (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation.stabilizer
             (Y : LeftInvariantDerivation I G) := by
-  set ρ := (continuousAdjointRepresentation (I := I) (G := G)).toRepresentation
   refine ⟨fun ⟨g, hg⟩ ↦ ?_, fun ⟨w, hw⟩ ↦ ?_⟩
-  · -- `T` and `g T g⁻¹` lie in the closed subgroup `Z_G(Y)`, so some `c ∈ Z_G(Y)` makes `c g`
-    -- normalize `T`.
-    have hgT :
-        T.map (MulAut.conj g).toMonoidHom ≤ ρ.stabilizer (Y : LeftInvariantDerivation I G) :=
-      hg ▸ Subgroup.map_mono (le_stabilizer_continuousAdjointRepresentation X.property)
-    obtain ⟨c, hc, hn⟩ := hT.exists_mem_connectedComponentIn_mul_mem_normalizer_of_le I
+  · -- Both stabilizers are closed and contain `T`, so they are conjugate by the normalizer.
+    obtain ⟨n, hn, hnY⟩ := hT.exists_mem_normalizer_map_conj_eq_of_map_conj_eq I
       (isClosed_stabilizer_continuousAdjointRepresentation _)
-      (le_stabilizer_continuousAdjointRepresentation Y.property) hgT
-    have hcY : c ∈ ρ.stabilizer (Y : LeftInvariantDerivation I G) :=
-      connectedComponentIn_subset _ _ hc
-    refine ⟨QuotientGroup.mk ⟨c * g, hn⟩, ?_⟩
-    -- Conjugation by `c ∈ Z_G(Y)` preserves `Z_G(Y)`.
-    rw [Subgroup.coe_weylAdjointRepresentation_mk_apply, ← continuousAdjointRepresentation_apply,
-      ← ContRepresentation.toRepresentation_apply, Representation.stabilizer_conj, map_mul]
-    refine (Subgroup.map_map _ (MulAut.conj c).toMonoidHom
-      (MulAut.conj g).toMonoidHom).symm.trans ?_
-    rw [hg]
-    exact Subgroup.mem_normalizer_iff_map_conj_eq.1 (Subgroup.le_normalizer hcY)
+      (le_stabilizer_continuousAdjointRepresentation X.property)
+      (le_stabilizer_continuousAdjointRepresentation Y.property) hg
+    refine ⟨QuotientGroup.mk ⟨n, hn⟩, ?_⟩
+    rw [Subgroup.coe_weylAdjointRepresentation_mk_apply,
+      stabilizer_continuousAdjointRepresentation_Ad, hnY]
   · obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
     refine ⟨n, ?_⟩
     rw [← hw, Subgroup.coe_weylAdjointRepresentation_mk_apply,
-      ← continuousAdjointRepresentation_apply, ← ContRepresentation.toRepresentation_apply,
-      Representation.stabilizer_conj, MulEquiv.toMonoidHom_eq_coe]
+      stabilizer_continuousAdjointRepresentation_Ad]
 
 /-- **Every adjoint stabilizer is conjugate to the stabilizer of a point of a closed chamber.** Let
 `T` be a maximal torus of a compact Lie group, `B` a symmetric positive definite invariant form on
@@ -207,8 +161,7 @@ theorem IsMaximalTorus.exists_mem_sameSideChamber_map_conj_stabilizer_eq (hT : I
   obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
   refine ⟨_, hw, n * g, ?_⟩
   rw [Subgroup.coe_weylAdjointRepresentation_mk_apply, ← LieEquiv.trans_apply, ← Ad_mul,
-    ← continuousAdjointRepresentation_apply, ← ContRepresentation.toRepresentation_apply,
-    Representation.stabilizer_conj, MulEquiv.toMonoidHom_eq_coe]
+    stabilizer_continuousAdjointRepresentation_Ad]
 
 section Connected
 
