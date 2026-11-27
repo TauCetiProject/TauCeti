@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.MaximalRealSubfield
 import TauCeti.Algebra.Group.Subgroup.ZPowers
 import TauCeti.Data.ZMod.Units
+import TauCeti.FieldTheory.Galois.Restriction
 
 /-!
 # Real cyclotomic subfields and odd-order Frobenius
@@ -39,15 +40,40 @@ noncomputable def realCyclotomicSubfield (h : m ∣ N) : IntermediateField ℚ L
   fixedField ((Subgroup.zpowers (-1 : (ZMod m)ˣ)).comap
     ((ZMod.unitsMap h).comp (galEquivZMod N L).toMonoidHom))
 
+/-- The fixing subgroup of the real subfield at level `m` is the preimage of `{±1}` under
+reduction of cyclotomic exponents from `N` to `m`. -/
+theorem fixingSubgroup_realCyclotomicSubfield (h : m ∣ N) :
+    (realCyclotomicSubfield (L := L) h).fixingSubgroup =
+      (Subgroup.zpowers (-1 : (ZMod m)ˣ)).comap
+        ((ZMod.unitsMap h).comp (galEquivZMod N L).toMonoidHom) := by
+  have := _root_.IsCyclotomicExtension.isGalois {N} ℚ L
+  rw [realCyclotomicSubfield, fixingSubgroup_fixedField]
+
 /-- An automorphism fixes the real subfield at level `m` exactly when its exponent reduces to a
 sign modulo `m`. -/
+theorem mem_fixingSubgroup_realCyclotomicSubfield_iff (h : m ∣ N) (σ : Gal(L/ℚ)) :
+    σ ∈ (realCyclotomicSubfield h).fixingSubgroup ↔
+      ZMod.unitsMap h (galEquivZMod N L σ) = 1 ∨
+        ZMod.unitsMap h (galEquivZMod N L σ) = -1 := by
+  rw [fixingSubgroup_realCyclotomicSubfield]
+  simp
+
+/-- The pointwise form of `mem_fixingSubgroup_realCyclotomicSubfield_iff`. This is the simp
+normal form, since `IntermediateField.mem_fixingSubgroup_iff` is a simp lemma. -/
 @[simp]
 theorem forall_eq_self_on_realCyclotomicSubfield_iff (h : m ∣ N) (σ : Gal(L/ℚ)) :
     (∀ x ∈ realCyclotomicSubfield h, σ x = x) ↔
       ZMod.unitsMap h (galEquivZMod N L σ) = 1 ∨
         ZMod.unitsMap h (galEquivZMod N L σ) = -1 := by
-  have := _root_.IsCyclotomicExtension.isGalois {N} ℚ L
-  rw [← IntermediateField.mem_fixingSubgroup_iff, realCyclotomicSubfield, fixingSubgroup_fixedField]
+  rw [← IntermediateField.mem_fixingSubgroup_iff, mem_fixingSubgroup_realCyclotomicSubfield_iff]
+
+/-- An element lies in the real subfield at level `m` exactly when it is fixed by every
+automorphism whose exponent reduces to a sign modulo `m`. -/
+theorem mem_realCyclotomicSubfield_iff (h : m ∣ N) (x : L) :
+    x ∈ realCyclotomicSubfield h ↔ ∀ σ : Gal(L/ℚ),
+      (ZMod.unitsMap h (galEquivZMod N L σ) = 1 ∨
+        ZMod.unitsMap h (galEquivZMod N L σ) = -1) → σ x = x := by
+  rw [realCyclotomicSubfield, IntermediateField.mem_fixedField_iff]
   simp
 
 /-- Containment of the real subfield at level `m` can be checked on the fixing subgroup of the
@@ -57,9 +83,9 @@ theorem realCyclotomicSubfield_le_iff (h : m ∣ N) (E : IntermediateField ℚ L
       ZMod.unitsMap h (galEquivZMod N L σ) = 1 ∨
         ZMod.unitsMap h (galEquivZMod N L σ) = -1 := by
   have := _root_.IsCyclotomicExtension.isGalois {N} ℚ L
-  rw [realCyclotomicSubfield, IsGalois.fixedField_le_iff_fixingSubgroup_le]
-  simp only [IsConcreteLE.le_iff, Subgroup.mem_comap, MonoidHom.comp_apply,
-    MulEquiv.coe_toMonoidHom, Subgroup.mem_zpowers_neg_one_iff]
+  rw [← IsGalois.fixedField_fixingSubgroup (realCyclotomicSubfield h),
+    IsGalois.fixedField_le_iff_fixingSubgroup_le]
+  simp only [IsConcreteLE.le_iff, mem_fixingSubgroup_realCyclotomicSubfield_iff]
 
 /-- The real subfield of level `m` is the image of the maximal real subfield of an embedded
 `m`-th cyclotomic field. -/
@@ -83,16 +109,17 @@ theorem realCyclotomicSubfield_eq_map_maximalRealSubfield (h : m ∣ N)
     apply IntermediateField.toSubfield_injective
     simpa only [Subfield.toIntermediateField_toSubfield] using
       (toSubfield_fixedField_zpowers_galEquivZMod_symm_neg_one m F).symm
-  rw [hreal, realCyclotomicSubfield, IsGalois.fixedField_eq_iff_fixingSubgroup_eq,
+  rw [hreal, ← IsGalois.fixedField_fixingSubgroup (realCyclotomicSubfield h),
+    fixingSubgroup_realCyclotomicSubfield, IsGalois.fixedField_eq_iff_fixingSubgroup_eq,
     IntermediateField.map_fixingSubgroup, fixingSubgroup_fixedField]
   exact Subgroup.ext fun σ ↦ by
     simpa only [Subgroup.mem_comap, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-      Subgroup.mem_zpowers_neg_one_iff, AlgEquiv.restrictNormalHom,
-      MonoidHom.mk'_apply] using hH σ
+      Subgroup.mem_zpowers_neg_one_iff,
+      AlgEquiv.restrictNormalHom_apply_eq_restrictNormal] using hH σ
 
 /-- An automorphism that has odd order on `E` has exponent `±1` modulo the dyadic level of
 any real cyclotomic subfield contained in `E`. -/
-theorem unitsMap_eq_sign_of_odd_order_restrictNormal {n : ℕ} (h : 2 ^ (n + 1) ∣ N)
+theorem unitsMap_eq_one_or_neg_one_of_odd_orderOf_restrictNormal {n : ℕ} (h : 2 ^ (n + 1) ∣ N)
     (E : IntermediateField ℚ L) [Normal ℚ E] (hE : realCyclotomicSubfield h ≤ E)
     (σ : Gal(L/ℚ)) (hodd : Odd (orderOf (σ.restrictNormal E))) :
     ZMod.unitsMap h (galEquivZMod N L σ) = 1 ∨ ZMod.unitsMap h (galEquivZMod N L σ) = -1 := by
@@ -116,14 +143,14 @@ theorem unitsMap_eq_sign_of_odd_order_restrictNormal {n : ℕ} (h : 2 ^ (n + 1) 
 /-- If the Artin image of `-p` in `E` has odd order and `E` contains the real subfield of level
 `2 ^ (n + 2)`, then `p` is `±1` at that level. For a prime `p` coprime to `N`, this Artin image is
 complex conjugation times arithmetic Frobenius. -/
-theorem natCast_eq_sign_of_odd_order_signed_frobenius {n p : ℕ} (h : 2 ^ (n + 2) ∣ N)
+theorem natCast_eq_one_or_neg_one_of_odd_orderOf_restrictNormal {n p : ℕ} (h : 2 ^ (n + 2) ∣ N)
     (hp : p.Coprime N) (E : IntermediateField ℚ L) [Normal ℚ E]
     (hE : realCyclotomicSubfield h ≤ E)
     (hodd : Odd (orderOf (((galEquivZMod N L).symm (-ZMod.unitOfCoprime p hp)).restrictNormal E))) :
     (p : ZMod (2 ^ (n + 2))) = 1 ∨ (p : ZMod (2 ^ (n + 2))) = -1 := by
-  have hs := unitsMap_eq_sign_of_odd_order_restrictNormal h E hE _ hodd
-  rw [MulEquiv.apply_symm_apply, ZMod.unitsMap_def, Units.map_neg, ← ZMod.unitsMap_def,
-    ZMod.unitsMap_unitOfCoprime, Units.ext_iff, Units.ext_iff] at hs
+  have hs := unitsMap_eq_one_or_neg_one_of_odd_orderOf_restrictNormal h E hE _ hodd
+  rw [MulEquiv.apply_symm_apply, ZMod.unitsMap_neg, ZMod.unitsMap_unitOfCoprime, Units.ext_iff,
+    Units.ext_iff] at hs
   simpa only [Units.val_neg, ZMod.coe_unitOfCoprime, Units.val_one, neg_eq_iff_eq_neg, neg_neg,
     or_comm] using hs
 
