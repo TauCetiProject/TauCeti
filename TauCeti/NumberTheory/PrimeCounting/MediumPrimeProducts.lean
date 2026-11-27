@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Archimedean.Real.Basic
-public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.Bertrand
 public import TauCeti.Data.Nat.Squarefree
@@ -79,6 +77,7 @@ theorem mediumPrimes_natCast (N : ℕ) :
   rw [mem_mediumPrimes, mem_filter, mem_Icc, h, cast_le, and_comm]
 
 /-- There is a prime in `[x / 2, x]` exactly when `2 ≤ x`, by Bertrand's postulate. -/
+@[simp]
 theorem mediumPrimes_nonempty_iff : (mediumPrimes x).Nonempty ↔ 2 ≤ x := by
   constructor
   · rintro ⟨p, hp⟩
@@ -146,12 +145,14 @@ theorem mediumPrimeProducts_one (x : ℝ) : mediumPrimeProducts x 1 = mediumPrim
 
 /-- The number of products of `m` distinct primes in `[x / 2, x]` is the binomial coefficient of
 the number of such primes and `m`. -/
+@[simp]
 theorem card_mediumPrimeProducts (x : ℝ) (m : ℕ) :
     #(mediumPrimeProducts x m) = (#(mediumPrimes x)).choose m := by
   rw [mediumPrimeProducts_def]
   exact card_image_prod_powersetCard (fun p ↦ prime_of_mem_mediumPrimes) m
 
 /-- `N_m(x)` is empty exactly when there are fewer than `m` primes in `[x / 2, x]`. -/
+@[simp]
 theorem mediumPrimeProducts_eq_empty_iff :
     mediumPrimeProducts x m = ∅ ↔ #(mediumPrimes x) < m := by
   rw [← Finset.card_eq_zero, card_mediumPrimeProducts, choose_eq_zero_iff]
