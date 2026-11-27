@@ -81,21 +81,27 @@ theorem hasWeakKernels_finiteProjectiveModules_of_hasKernels
     HasWeakKernels (finiteProjectiveModules R).FullSubcategory where
   hasWeakLimit {P Q} f := by
     let ι := ObjectProperty.ιOfLE (finiteProjectiveModules_le_finitePresentationModules R)
+    have hmap {A B : (finiteProjectiveModules R).FullSubcategory} (g : A ⟶ B) :
+        (ι.map g).hom = g.hom := rfl
     let f' := ι.map f
     let K := kernel f'
     obtain ⟨n, q, hq⟩ := Module.Finite.exists_fin' R K.obj
     let F : (finiteProjectiveModules R).FullSubcategory :=
-      ⟨ModuleCat.of R (Fin n → R), finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
+      FiniteProjectiveModules.of R (Fin n → R)
     let w : F ⟶ P := ObjectProperty.homMk (ModuleCat.ofHom q ≫ (kernel.ι f').hom)
     have hwf : w ≫ f = 0 := ObjectProperty.hom_ext _ <| by
       simp only [ObjectProperty.FullSubcategory.comp_hom, ObjectProperty.homMk_hom, w]
-      exact (congrArg (ModuleCat.ofHom q ≫ ·) congr($(kernel.condition f').hom)).trans
-        Limits.comp_zero
+      have hcond : (kernel.ι f').hom ≫ f.hom = 0 := by
+        rw [← hmap f]
+        exact congr($(kernel.condition f').hom)
+      exact (congrArg (ModuleCat.ofHom q ≫ ·) hcond).trans Limits.comp_zero
     refine HasWeakLimit.mk ⟨KernelFork.ofι w hwf, Fork.IsWeakLimit.mk' _ fun s ↦ ?_⟩
     have hs : ι.map s.ι ≫ f' = 0 := by
       rw [← ι.map_comp, KernelFork.condition, ι.map_zero]
     let u : ι.obj s.pt ⟶ K := kernel.lift f' (ι.map s.ι) hs
-    have hu : u.hom ≫ (kernel.ι f').hom = s.ι.hom := congr($(kernel.lift_ι f' (ι.map s.ι) hs).hom)
+    have hu : u.hom ≫ (kernel.ι f').hom = s.ι.hom := by
+      rw [← hmap s.ι]
+      exact congr($(kernel.lift_ι f' (ι.map s.ι) hs).hom)
     have : Epi (ModuleCat.ofHom q : F.obj ⟶ K.obj) := (ModuleCat.epi_iff_surjective _).mpr hq
     let v : s.pt.obj ⟶ F.obj := Projective.factorThru u.hom (ModuleCat.ofHom q)
     refine ⟨ObjectProperty.homMk v, ObjectProperty.hom_ext _ ?_⟩
@@ -114,7 +120,7 @@ theorem isCoherentRing_of_hasWeakKernels_finiteProjectiveModules
   rw [isCoherentRing_iff, Module.isCoherent_iff_forall_fg_ker]
   refine ⟨inferInstance, fun n f ↦ ?_⟩
   let F : (finiteProjectiveModules R).FullSubcategory :=
-    ⟨ModuleCat.of R (Fin n → R), finiteProjectiveModules_iff.mpr ⟨inferInstance, inferInstance⟩⟩
+    FiniteProjectiveModules.of R (Fin n → R)
   let eR : (finiteProjectiveModulesRegular R).obj ≅ ModuleCat.of R R :=
     eqToIso (finiteProjectiveModulesRegular_obj R)
   let φ : F ⟶ finiteProjectiveModulesRegular R :=

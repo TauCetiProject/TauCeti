@@ -31,10 +31,9 @@ In particular, over any ring `R`, the regular module `R`, any positive finite fr
 
 * `FGModuleCat.isProgenerator_of_projective_of_isGenerator`: every finitely generated projective
   generator is a progenerator of `FGModuleCat R`.
-* `FGModuleCat.isGenerator_of_isProgenerator` and `FGModuleCat.isProgenerator_iff`: the equivalence
-  between `TauCeti.IsProgenerator P` in `FGModuleCat R` and
-  `Module.Projective R P ∧ TauCeti.Module.IsGenerator R P` (when `R` is `v`-small, which is
-  automatic for `FGModuleCat.{u} R`).
+* `FGModuleCat.isProgenerator_iff`: the equivalence between `TauCeti.IsProgenerator P` in
+  `FGModuleCat R` and `Module.Projective R P ∧ TauCeti.Module.IsGenerator R P` (when `R` is
+  `v`-small, which is automatic for `FGModuleCat.{u} R`).
 * `FGModuleCat.isProgenerator_self`, `FGModuleCat.isProgenerator_pi`, and
   `FGModuleCat.isProgenerator_prod_self`: the regular module `R`, `Fin n → R` (`[NeZero n]`), and
   `R × R` are progenerators of `FGModuleCat R`.
@@ -71,12 +70,6 @@ theorem isProgenerator_iff [Small.{v} R] (P : FGModuleCat.{v} R) :
   have : Module.Finite R (Shrink.{v} R) := Module.Finite.equiv eR.symm
   (ModuleCat.isFG.{v} R).isProgenerator_iff_moduleProjective_and_isGenerator le_rfl
     (R₀ := FGModuleCat.of R (Shrink.{v} R)) eR P
-
-/-- A progenerator of `FGModuleCat R` is a generator as an `R`-module (when `R` is `v`-small, which
-holds automatically for `FGModuleCat.{u} R`). -/
-theorem isGenerator_of_isProgenerator [Small.{v} R] {P : FGModuleCat.{v} R}
-    (hP : IsProgenerator P) : TauCeti.Module.IsGenerator R P :=
-  ((isProgenerator_iff P).mp hP).2
 
 variable (R)
 

@@ -64,20 +64,9 @@ theorem isProgenerator_of_projective_of_isGenerator [S.IsClosedUnderFiniteProduc
     IsProgenerator P where
   exists_epi_biproduct X := by
     have : Module.Finite R X.obj := (ModuleCat.isFG_iff X.obj).mp (hS X.obj X.property)
-    obtain ⟨m, q, hq⟩ := Module.Finite.exists_fin' R X.obj
-    obtain ⟨k, p, hp⟩ :=
-      (TauCeti.Module.isGenerator_iff_exists_surjective (R := R) (M := P.obj)).mp inferInstance
-    let eFin : (Fin (m * k) → P.obj) ≃ₗ[R] (Fin m → Fin k → P.obj) :=
-      (LinearEquiv.funCongrLeft R P.obj finProdFinEquiv).trans
-        (LinearEquiv.curry R P.obj (Fin m) (Fin k))
-    let pMap : (Fin m → Fin k → P.obj) →ₗ[R] (Fin m → R) :=
-      LinearMap.pi fun i ↦ p ∘ₗ LinearMap.proj i
-    have hpMap : Function.Surjective pMap := fun f ↦ by
-      choose g hg using fun i ↦ hp (f i)
-      exact ⟨g, funext hg⟩
-    let φ : (Fin (m * k) → P.obj) →ₗ[R] X.obj := q ∘ₗ pMap ∘ₗ eFin.toLinearMap
-    have hφ : Function.Surjective φ := hq.comp (hpMap.comp eFin.surjective)
-    exact ⟨m * k, _, S.epi_homMk_biproductObjIsoPi_comp hφ⟩
+    obtain ⟨n, φ, hφ⟩ :=
+      TauCeti.Module.IsGenerator.exists_surjective_of_finite (R := R) (M := P.obj) X.obj
+    exact ⟨n, _, S.epi_homMk_biproductObjIsoPi_comp hφ⟩
 
 /-- A progenerator of a full subcategory `S.FullSubcategory` of `ModuleCat R` is a generator as an
 `R`-module, provided `S` is closed under finite products, `S.ι` preserves epimorphisms, and `S`
