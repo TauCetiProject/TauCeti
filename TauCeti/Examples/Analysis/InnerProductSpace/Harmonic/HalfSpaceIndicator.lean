@@ -75,7 +75,7 @@ theorem not_weaklyHarmonicOn_indicator {v : E} (hv : v ≠ 0) {Ω : Opens E} {x�
   have hpos := hconst {x | 0 < ⟪v, x⟫} 1 (isOpen_lt continuous_const hinner)
     fun x hx ↦ by simp [indicator_of_mem hx]
   have hneg := hconst {x | ⟪v, x⟫ < 0} 0 (isOpen_lt hinner continuous_const)
-    fun x hx ↦ indicator_of_notMem (fun h' ↦ lt_asymm hx (show 0 < ⟪v, x⟫ from h')) _
+    fun x hx ↦ by simp [(mem_ofPred.1 hx).le]
   -- Approach `x₀` along the line `x₀ + t v`, which crosses the hyperplane at `t = 0`.
   set γ : ℝ → E := fun t ↦ x₀ + t • v
   have hγ : Tendsto γ (𝓝 0) (𝓝 x₀) :=
@@ -89,11 +89,11 @@ theorem not_weaklyHarmonicOn_indicator {v : E} (hv : v ≠ 0) {Ω : Opens E} {x�
   have h1 : h x₀ = 1 := by
     refine tendsto_nhds_unique (hlim (𝓝[>] 0) nhdsWithin_le_nhds) (tendsto_const_nhds.congr' ?_)
     filter_upwards [nhdsWithin_le_nhds hΩ, self_mem_nhdsWithin] with t ht ht0
-    exact hpos ⟨ht, show 0 < ⟪v, γ t⟫ by rw [hγv]; exact mul_pos ht0 hv2⟩
+    exact hpos ⟨ht, mem_ofPred.2 (by rw [hγv]; exact mul_pos ht0 hv2)⟩
   have h0 : h x₀ = 0 := by
     refine tendsto_nhds_unique (hlim (𝓝[<] 0) nhdsWithin_le_nhds) (tendsto_const_nhds.congr' ?_)
     filter_upwards [nhdsWithin_le_nhds hΩ, self_mem_nhdsWithin] with t ht ht0
-    exact hneg ⟨ht, show ⟪v, γ t⟫ < 0 by rw [hγv]; exact mul_neg_of_neg_of_pos ht0 hv2⟩
+    exact hneg ⟨ht, mem_ofPred.2 (by rw [hγv]; exact mul_neg_of_neg_of_pos ht0 hv2)⟩
   exact one_ne_zero (h1.symm.trans h0)
 
 /-- **Weyl's lemma non-example.** On `ℝⁿ⁺¹`, the indicator `u = 1_{x₁ > 0}` of a half-space is
