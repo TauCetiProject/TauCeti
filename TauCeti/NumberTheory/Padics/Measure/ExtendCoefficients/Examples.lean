@@ -84,27 +84,21 @@ variable {O : Type*} [NormedCommRing O] [Algebra ℤ_[p] O] [ContinuousSMul ℤ_
 variable {K : Type*} [NormedCommRing K] [CompleteSpace K] [IsUltrametricDist K] {B : ℝ}
 
 example (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (a : O) (x : ℤ_[p]) :
-    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
     extendCoefficients j hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x)) =
       j a • dirac K x := by
-  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   simp
 
 example {G : Type*} [TopologicalSpace G] [CompactSpace G] [T2Space G]
     [TotallyDisconnectedSpace G] [Monoid G] [ContinuousMul G]
     (χ : G →ₜ* K) (j : O →+* K) (hj : ∀ a, ‖j a‖ ≤ B) (a : O) (x : G) :
-    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
     χ.extendedCharacterRingHom j hj (baseChangeAlgEquiv O (a ⊗ₜ[ℤ_[p]] dirac ℤ_[p] x)) =
       j a * χ x := by
-  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   simp
 
 example {L : Type*} [NormedField L] [CompleteSpace L] [IsUltrametricDist L]
     [Algebra ℤ_[p] L] [ContinuousSMul ℤ_[p] L] (j : O →ₐ[ℤ_[p]] L) (hj : ∀ a, ‖j a‖ ≤ 1)
     (a : O) (μ : D(ℤ_[p], ℤ_[p])) :
-    let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
     (extendCoefficients (j : O →+* L) hj (baseChangeLinearEquiv O (a ⊗ₜ[ℤ_[p]] μ))).amiceTransform =
       j a • PowerSeries.map (algebraMap ℤ_[p] L) μ.amiceTransform := by
-  let := TauCeti.isModuleTopology_of_finite_of_compactSpace (R := ℤ_[p]) (M := O)
   ext n
   simp
