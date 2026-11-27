@@ -55,7 +55,8 @@ isometry is closed when `E` is complete, and it contains the classes `𝟙_A c` 
   `MeasureTheory.Lp.curryₗᵢ_indicatorConstLp_prod`.
 * `MeasureTheory.Lp.curryEquiv`: for complete `E`, the linear isometric equivalence
   `Lᵖ(μ ⊗ ν; E) ≃ Lᵖ(μ; Lᵖ(ν; E))`, with the section formula for its inverse
-  `MeasureTheory.Lp.ae_ae_curryEquiv_symm_apply`.
+  `MeasureTheory.Lp.ae_ae_curryEquiv_symm_apply` and the rectangle formula for its inverse
+  `MeasureTheory.Lp.curryEquiv_symm_indicatorConstLp`.
 
 ## References
 
@@ -131,12 +132,13 @@ theorem curryLp_sub {f g : α × β → E} {x : α} (hf : MemLp (fun y ↦ f (x,
   rw [curryLp_of_memLp (hf.sub hg), curryLp_of_memLp hf, curryLp_of_memLp hg, ← MemLp.toLp_sub]
   exact MemLp.toLp_congr _ _ (.of_forall fun _ ↦ Pi.sub_apply _ _ _)
 
-/-- The class of the section of a negation is the negation of the class when the section is in
-`Lᵖ(ν; E)`. -/
-theorem curryLp_neg {f : α × β → E} {x : α} (hf : MemLp (fun y ↦ f (x, y)) p ν) :
-    curryLp p ν (-f) x = -curryLp p ν f x := by
-  rw [curryLp_of_memLp hf.neg, curryLp_of_memLp hf, ← MemLp.toLp_neg]
-  exact MemLp.toLp_congr _ _ (.of_forall fun _ ↦ Pi.neg_apply _ _)
+/-- The class of the section of a negation is the negation of the class. -/
+theorem curryLp_neg (f : α × β → E) (x : α) : curryLp p ν (-f) x = -curryLp p ν f x := by
+  by_cases hf : MemLp (fun y ↦ f (x, y)) p ν
+  · rw [curryLp_of_memLp hf.neg, curryLp_of_memLp hf, ← MemLp.toLp_neg]
+    exact MemLp.toLp_congr _ _ (.of_forall fun _ ↦ Pi.neg_apply _ _)
+  · rw [curryLp_of_not_memLp hf, neg_zero, curryLp_of_not_memLp]
+    exact fun h ↦ hf (memLp_neg_iff.1 h)
 
 /-- The class of the section of a scalar multiple is the scalar multiple of the class when the
 section is in `Lᵖ(ν; E)`. -/
@@ -277,13 +279,9 @@ private theorem stronglyMeasurable_curryLp_indicator [Fact (1 ≤ p)] (hp : p �
   · simp only [indicator_of_notMem hx]
     rw [curryLp_of_not_memLp]
     · exact tendsto_const_nhds
-    intro hmem
-    have hx' : ν (Prod.mk x ⁻¹' A) = ∞ := not_lt_top_iff.1 hx
-    rw [memLp_iff, indicator_section,
-      eLpNorm_indicator_const (measurable_prodMk_left hA).nullMeasurableSet hp0 hp, hx',
-      ENNReal.top_rpow_of_pos (by simp [ENNReal.toReal_pos hp0 hp]),
-      ENNReal.mul_top (by simpa using hc)] at hmem
-    exact lt_irrefl _ hmem
+    rw [indicator_section,
+      TauCeti.memLp_indicator_const_iff (measurable_prodMk_left hA).nullMeasurableSet hp0 hp]
+    exact not_or.2 ⟨hc, not_not.2 (not_lt_top_iff.1 hx)⟩
 
 variable {μ : Measure α}
 
@@ -354,7 +352,7 @@ of `Lᵖ(μ; Lᵖ(ν; E))`. -/
 theorem MemLp.memLp_curryLp [Fact (1 ≤ p)] (hp : p ≠ ∞) [SigmaFinite ν] {f : α × β → E}
     (hf : MemLp f p (μ.prod ν)) : MemLp (curryLp p ν f) p μ := by
   rw [memLp_iff, hf.eLpNorm_curryLp (hf.aestronglyMeasurable_curryLp hp)]
-  exact hf
+  exact hf.eLpNorm_lt_top
 
 end Measurability
 
@@ -406,6 +404,7 @@ theorem ae_ae_curryₗᵢ_apply (hp : p ≠ ∞) (F : Lp E p (μ.prod ν)) :
 /-- **Rectangle formula.** `Lp.curryₗᵢ` sends the class of the indicator of a rectangle `s ×ˢ t`
 with value `c` to the class of the indicator of `s` whose value is the class of the indicator of
 `t` with value `c`. -/
+@[simp]
 theorem curryₗᵢ_indicatorConstLp_prod (hp : p ≠ ∞) {s : Set α} {t : Set β} (hs : MeasurableSet s)
     (ht : MeasurableSet t) (hμs : μ s ≠ ∞) (hνt : ν t ≠ ∞) (c : E) :
     curryₗᵢ 𝕜 E μ ν hp (indicatorConstLp p (hs.prod ht)
@@ -488,6 +487,17 @@ theorem curryEquiv_symm_curryₗᵢ [CompleteSpace E] (hp : p ≠ ∞) (F : Lp E
 theorem curryₗᵢ_curryEquiv_symm [CompleteSpace E] (hp : p ≠ ∞) (G : Lp (Lp E p ν) p μ) :
     curryₗᵢ 𝕜 E μ ν hp ((curryEquiv 𝕜 E μ ν hp).symm G) = G := by
   rw [← curryEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
+
+/-- **Rectangle formula for the inverse.** The inverse of `Lp.curryEquiv` sends the class of the
+indicator of `s` whose value is the class of the indicator of `t` with value `c` to the class of
+the indicator of the rectangle `s ×ˢ t` with value `c`. -/
+@[simp]
+theorem curryEquiv_symm_indicatorConstLp [CompleteSpace E] (hp : p ≠ ∞) {s : Set α} {t : Set β}
+    (hs : MeasurableSet s) (ht : MeasurableSet t) (hμs : μ s ≠ ∞) (hνt : ν t ≠ ∞) (c : E) :
+    (curryEquiv 𝕜 E μ ν hp).symm (indicatorConstLp p hs hμs (indicatorConstLp p ht hνt c)) =
+      indicatorConstLp p (hs.prod ht)
+        (by rw [Measure.prod_prod]; exact ENNReal.mul_ne_top hμs hνt) c := by
+  rw [← curryₗᵢ_indicatorConstLp_prod 𝕜 hp hs ht hμs hνt, curryEquiv_symm_curryₗᵢ]
 
 /-- **Section formula for the inverse.** For `G ∈ Lᵖ(μ; Lᵖ(ν; E))`, for almost every `x` the
 value `G x` is represented by the section `y ↦ (Lp.curryEquiv).symm G (x, y)`. -/

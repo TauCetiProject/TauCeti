@@ -45,6 +45,8 @@ constant indicator classes it intersects the supporting sets.
 
 * `TauCeti.indicatorConstLp_eq_zero_iff`: an `Lᵖ` constant indicator class vanishes if and only if
   the set has measure zero or the constant is zero.
+* `TauCeti.memLp_indicator_const_iff`: for `0 < p < ∞`, the indicator of a set with a nonzero
+  constant value is in `Lᵖ` if and only if the set has finite measure.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
 * `TauCeti.indicatorConstLpₗ`: the indicator class `indicatorConstLp p hs hμs c` as a linear map
   in `c`.
@@ -99,6 +101,17 @@ theorem indicatorConstLp_eq_zero_iff {s : Set α} {hs : MeasurableSet s} {hμs :
     simp
   · simp only [hc, or_false, ← indicatorConstLp_empty (p := p) (μ := μ) (c := c),
       indicatorConstLp_inj hs hμs .empty (by simp) hc, ae_eq_empty]
+
+/-- For an exponent `0 < p < ∞`, the indicator of a set with a constant value is in `Lᵖ` if and
+only if the constant is zero or the set has finite measure. -/
+theorem memLp_indicator_const_iff {s : Set α} (hs : NullMeasurableSet s μ) (hp0 : p ≠ 0)
+    (hp : p ≠ ∞) {c : E} : MemLp (s.indicator fun _ ↦ c) p μ ↔ c = 0 ∨ μ s ≠ ∞ := by
+  refine ⟨fun h ↦ or_iff_not_imp_left.2 fun hc hμs ↦ ?_, memLp_indicator_const p hs c⟩
+  have := h.eLpNorm_lt_top
+  rw [eLpNorm_indicator_const hs hp0 hp, hμs,
+    ENNReal.top_rpow_of_pos (by simp [ENNReal.toReal_pos hp0 hp]),
+    ENNReal.mul_top (eNorm_ne_zero.2 hc)] at this
+  exact lt_irrefl _ this
 
 end Zero
 
@@ -251,11 +264,13 @@ theorem sum_indicatorConstLp (t : Finset ι) (hs : ∀ i, MeasurableSet (s i))
 converge to the indicator class of their union, provided the union has finite measure. -/
 theorem tendsto_indicatorConstLp_of_monotone [Fact (1 ≤ p)] (hp : p ≠ ∞) [Preorder ι]
     [IsCountablyGenerated (atTop : Filter ι)] {u : Set α} {hu : MeasurableSet u} {hμu : μ u ≠ ∞}
-    {t : ι → Set α} (ht : ∀ i, MeasurableSet (t i)) {hμt : ∀ i, μ (t i) ≠ ∞} (hmono : Monotone t)
-    (htu : ⋃ i, t i = u) (c : E) :
-    Tendsto (fun i ↦ indicatorConstLp p (ht i) (hμt i) c) atTop
+    {t : ι → Set α} (ht : ∀ i, MeasurableSet (t i)) (hmono : Monotone t) (htu : ⋃ i, t i = u)
+    (c : E) :
+    Tendsto (fun i ↦ indicatorConstLp p (ht i)
+        (ne_top_of_le_ne_top hμu (measure_mono (htu ▸ Set.subset_iUnion t i))) c) atTop
       (𝓝 (indicatorConstLp p hu hμu c)) := by
   subst htu
+  have hμt (i : ι) : μ (t i) ≠ ∞ := ne_top_of_le_ne_top hμu (measure_mono (Set.subset_iUnion t i))
   refine tendsto_indicatorConstLp_set hp ?_
   have hdiff (i : ι) : μ (t i ∆ ⋃ j, t j) = μ (⋃ j, t j) - μ (t i) := by
     rw [symmDiff_of_le (Set.subset_iUnion t i),
