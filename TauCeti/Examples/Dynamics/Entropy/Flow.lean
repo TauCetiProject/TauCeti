@@ -88,11 +88,9 @@ theorem flowTopologicalPressure_translationFlow_one (F : C(UnitAddCircle, ℝ)) 
     flowTopologicalPressure (AddCircle.translationFlow 1) F = ((∫ y, F y : ℝ) : EReal) := by
   have hid : AddCircle.translationFlow 1 1 = id :=
     (AddCircle.translationFlow_eq_id_iff 1).2 (AddSubgroup.mem_zmultiples 1)
-  have hF₁ : flowTimeOnePotential (AddCircle.translationFlow 1) F =
-      fun x ↦ (0 : UnitAddCircle → ℝ) x + ∫ y, F y :=
-    funext fun x ↦ by rw [flowTimeOnePotential_translationFlow_one, Pi.zero_apply, zero_add]
-  rw [flowTopologicalPressure_def, hid, hF₁, topologicalPressure_add_const,
-    topologicalPressure_zero, coverEntropy_id_eq_zero isCompact_univ.totallyBounded univ_nonempty,
-    zero_add]
+  have hF₁ : flowTimeOnePotential (AddCircle.translationFlow 1) F = fun _ ↦ ∫ y, F y :=
+    funext (flowTimeOnePotential_translationFlow_one F)
+  rw [flowTopologicalPressure_def, hid, hF₁, topologicalPressure_const,
+    coverEntropy_id_eq_zero isCompact_univ.totallyBounded univ_nonempty, zero_add]
 
 end TauCeti.FlowEntropyExamples
