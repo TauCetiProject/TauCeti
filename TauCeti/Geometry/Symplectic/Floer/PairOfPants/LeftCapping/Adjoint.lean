@@ -107,36 +107,6 @@ private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_cappedExchangeP
     (fun z hz ↦ contDiffAt_uncurry_cappedExchangePerturbation hH hHs hL c hz (u z) Complex.I)
     (fun z hz ↦ hu z hz) hw (hη.of_le one_le_two) subset_rfl hηc hηU
 
-/-- Beyond the height `0` of the output end recentred at `c ∈ [0, 1]`, `|w - c|² ≤ 8 ρ⁻¹` for the
-cylindrical weight `ρ` of the capped surface. -/
-private theorem norm_sub_sq_le_inv_cappedCylindricalWeight (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
-    {z : ℝ × ℝ} (h : 0 < (positiveEndCoord inf (z - (c, 0))).1) :
-    ‖Complex.equivRealProdCLM.symm z - c‖ ^ 2 ≤ 8 * (cappedCylindricalWeight z)⁻¹ := by
-  set v := Complex.equivRealProdCLM.symm z
-  have hd : 2 < ‖v - c‖ := two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub h
-  have hc : ‖(c : ℂ)‖ ≤ 1 := by rw [Complex.norm_real, Real.norm_of_nonneg hc₀]; exact hc₁
-  -- Both `|w|` and `|w - 1|` are at least `|w - c| / 2`.
-  have hv : ‖v - c‖ / 2 ≤ ‖v‖ := by linarith [norm_sub_le v (c : ℂ)]
-  have hv1 : ‖v - c‖ / 2 ≤ ‖v - 1‖ := by
-    linarith [Complex.norm_sub_ofReal_le_norm_sub_one_add_one hc₀ (by linarith) v]
-  have hA : ‖v - c‖ ^ 2 / 4 ≤ max (‖v‖ ^ 2) (1 / 4) := le_max_of_le_left (by nlinarith)
-  have hA₀ : 0 < max (‖v‖ ^ 2) (1 / 4) := lt_max_of_lt_right (by norm_num)
-  have hB : ‖v - c‖ ^ 2 / 4 ≤ ‖v - 1‖ ^ 2 := by nlinarith
-  have hB₀ : 0 < ‖v - 1‖ ^ 2 := by nlinarith
-  have hρ : 0 < cappedCylindricalWeight z :=
-    isWeight_cappedCylindricalWeight.pos z fun h1 ↦ by
-      have h0 : ‖v - 1‖ = 0 := by rw [show v = 1 from h1, sub_self, norm_zero]
-      linarith
-  rw [← div_eq_mul_inv, le_div_iff₀ hρ, cappedCylindricalWeight_apply,
-    Complex.normSq_eq_norm_sq, Complex.normSq_eq_norm_sq, mul_add]
-  have h₁ : ‖v - c‖ ^ 2 * (max (‖v‖ ^ 2) (1 / 4))⁻¹ ≤ 4 := by
-    rw [← div_eq_mul_inv, div_le_iff₀ hA₀]
-    linarith
-  have h₂ : ‖v - c‖ ^ 2 * (‖v - 1‖ ^ 2)⁻¹ ≤ 4 := by
-    rw [← div_eq_mul_inv, div_le_iff₀ hB₀]
-    linarith
-  linarith
-
 /-- **The input end of the capped family.** Far out on the input end at `1`, read in the positive
 end chart `φ'_1`, the formal adjoint of the linearized operator of the capped datum controls the
 energy of covector fields against the weight `ρ⁻¹`: on the part `s > 0` the capped datum is the

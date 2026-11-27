@@ -508,70 +508,6 @@ private theorem setIntegral_sobolevDensity_covectorPullback_le_of_cappedEndCutof
           (fun z hz ↦ mem_cappedCore_of_fderiv_cappedEndCutoff_ne_zero hc₀ hc₁ (by linarith) hz)
           hM hB hw hwc hΛ₀ hΛ (hη.of_le one_le_two) hηc hηU) (le_max_right _ _))
 
-/-- **The core estimate of the adjoint.** If `D^*` satisfies the `L²` estimate `hint` on covector
-fields supported in `K = Σ_{R₀ + 1}`, and the weight `w`, positive on the capped surface,
-satisfies `w⁻¹ ≤ Λ` on `K`, the energy of a covector field on `Σ_{R₀}` is controlled by the
-`w`-weighted `L²` norm of `D^*` on the cut-off field `(1 - ∑_e β_e) η` and by the `L²` norm of
-`η` on `K`. -/
-private theorem setIntegral_sobolevDensity_le_of_cappedCoreCutoff (ω : SymplecticForm V)
-    (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
-    {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ cappedDomain, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z ∈ cappedDomain, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ cappedDomain, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
-    (hu : ∀ z ∈ cappedDomain, ContDiffAt ℝ 1 u z) {R₀ : ℝ} (hR₀ : 1 ≤ R₀) {C₀ : ℝ}
-    (hC₀ : 0 ≤ C₀)
-    (hint : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η → tsupport η ⊆ cappedCore c (R₀ + 1) →
-      ∫ z in cappedCore c (R₀ + 1), sobolevDensity η z ≤
-        C₀ * ∫ z in cappedCore c (R₀ + 1),
-          (‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 + ‖η z‖ ^ 2))
-    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) (hwc : ContinuousOn w cappedDomain)
-    (hwS : ∀ z ∈ cappedDomain, 0 < w z) {Λ : ℝ} (hΛ₀ : 0 ≤ Λ)
-    (hΛ : ∀ z ∈ cappedCore c (R₀ + 1), (w z)⁻¹ ≤ Λ)
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηU : tsupport η ⊆ cappedDomain) :
-    ∫ z in cappedCore c R₀, sobolevDensity η z ≤
-      C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u
-          (fun w ↦ cappedCoreCutoff c R₀ w • η w) z‖ ^ 2) +
-        ∫ z in cappedCore c (R₀ + 1), ‖η z‖ ^ 2) := by
-  have hK : IsCompact (cappedCore c (R₀ + 1)) := isCompact_cappedCore c _
-  have hKU : cappedCore c (R₀ + 1) ⊆ cappedDomain := cappedCore_subset c _
-  have hηc' : ContDiff ℝ 2 fun w ↦ cappedCoreCutoff c R₀ w • η w :=
-    (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
-      (fun z hz ↦ (contDiffAt_cappedCoreCutoff (by linarith) hz).contDiffWithinAt)
-      hη.contDiffOn isOpen_cappedDomain hηU
-  have hηcY : ∫ z in cappedCore c (R₀ + 1), ‖cappedCoreCutoff c R₀ z • η z‖ ^ 2 ≤
-      ∫ z in cappedCore c (R₀ + 1), ‖η z‖ ^ 2 := by
-    refine setIntegral_mono_on ((hηc'.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)
-      ((hη.continuous.norm.pow 2).continuousOn.integrableOn_compact hK) hK.measurableSet
-      fun z _ ↦ ?_
-    simp only [norm_smul, Real.norm_eq_abs]
-    gcongr
-    exact mul_le_of_le_one_left (norm_nonneg _)
-      (abs_cappedCoreCutoff_le_one hc₀ hc₁ (by linarith) z)
-  -- On `Σ_{R₀ + 1}`, where `w⁻¹ ≤ Λ`, we have `1 ≤ Λ w`.
-  have hΛK (z : ℝ × ℝ) (hz : z ∈ cappedCore c (R₀ + 1)) : 1 ≤ Λ * w z := by
-    have hρ := hwS z (hKU hz)
-    rw [← inv_mul_cancel₀ hρ.ne']
-    exact mul_le_mul_of_nonneg_right (hΛ z hz) hρ.le
-  calc _ ≤ ∫ z in cappedCore c (R₀ + 1),
-        sobolevDensity (fun w ↦ cappedCoreCutoff c R₀ w • η w) z :=
-        setIntegral_sobolevDensity_le_setIntegral_sobolevDensity_smul
-          (isCompact_cappedCore c R₀).measurableSet hK
-          (cappedCore_mono c (by linarith : R₀ ≤ R₀ + 1))
-          (fun z hz ↦ (contDiffAt_cappedCoreCutoff (by linarith) (cappedCore_subset c R₀ hz)
-            (n := 1)).differentiableAt one_ne_zero)
-          (fun z hz ↦ cappedCoreCutoff_eq_one_and_fderiv_eq_zero (by linarith) hz)
-          (hη.differentiable two_ne_zero) (hηc'.of_le one_le_two)
-    _ ≤ C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u
-          (fun w ↦ cappedCoreCutoff c R₀ w • η w) z‖ ^ 2) +
-          ∫ z in cappedCore c (R₀ + 1), ‖cappedCoreCutoff c R₀ z • η z‖ ^ 2) :=
-        setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_add
-          (θ := fun w ↦ cappedCoreCutoff c R₀ w • η w) (K := cappedCore c (R₀ + 1))
-          (S := cappedDomain) ω isOpen_cappedDomain hJ hKs hKt hu hw hwc hK hΛ₀ hΛK hC₀ hint
-          hηc' ((tsupport_smul_subset_right _ _).trans hηU)
-          (tsupport_cappedCoreCutoff_smul_subset (R₀ := R₀) hc₀ hc₁ (by linarith) hηU)
-    _ ≤ _ := by gcongr
-
 /-! ### Patching -/
 
 /-- **Patching at one height.** Under the hypotheses of
@@ -629,16 +565,20 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_capped_aux
   set Y := ∫ z in cappedCore c (R₀ + 1), ‖η z‖ ^ 2
   have hX : 0 ≤ X := integral_nonneg fun z ↦ by have := hw z; positivity
   have hY : 0 ≤ Y := setIntegral_nonneg hK.measurableSet fun _ _ ↦ sq_nonneg _
-  have hE : 2 * X + 2 * c' ^ 2 * Λ * Y ≤ (2 + 2 * c' ^ 2 * Λ) * (X + Y) := by
-    nlinarith [mul_nonneg (mul_nonneg (sq_nonneg c') hΛ₀) hX]
   -- The ends and the core, through their cutoffs.
   have hends (e : Bool) := ω.setIntegral_sobolevDensity_covectorPullback_le_of_cappedEndCutoff
     hc₀ hc₁ (J := J') hJ hKs hKt hu hw hwc hR₀ e (hR e) (hend e) (hMe e) hB hΛ₀
     (fun z hz ↦ (hΛ z hz).1) hη hηc hηU
   have hcore : ∫ z in cappedCore c R₀, sobolevDensity η z ≤
       C₀ * (Λ * (2 * X + 2 * c' ^ 2 * Λ * Y) + Y) :=
-    (ω.setIntegral_sobolevDensity_le_of_cappedCoreCutoff hc₀ hc₁ (J := J') hJ hKs hKt hu hR₀ hC₀
-      hint hw hwc hwS hΛ₀ (fun z hz ↦ (hΛ z hz).2) hη hηU).trans (by
+    (ω.setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_smul_add
+      (J := J') isOpen_cappedDomain hJ hKs hKt hu (isCompact_cappedCore c R₀).measurableSet hK
+      (cappedCore_mono c (by linarith : R₀ ≤ R₀ + 1)) hKU
+      (fun z hz ↦ contDiffAt_cappedCoreCutoff (by linarith) hz)
+      (fun z _ ↦ abs_cappedCoreCutoff_le_one hc₀ hc₁ (by linarith) z)
+      (fun z hz ↦ cappedCoreCutoff_eq_one_and_fderiv_eq_zero (by linarith) hz) hC₀ hint hw hwc hwS
+      hΛ₀ (fun z hz ↦ (hΛ z hz).2) hη hηU
+      (tsupport_cappedCoreCutoff_smul_subset hc₀ hc₁ (by linarith) hηU)).trans (by
       gcongr
       exact ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
         (J := J') isOpen_cappedDomain hJ hKs hKt hu hK
@@ -647,11 +587,8 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_capped_aux
         (fun z hz ↦ mem_cappedCore_of_fderiv_cappedCoreCutoff_ne_zero hc₀ hc₁ (by linarith) hz)
         hMc hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) (hη.of_le one_le_two) hηc hηU)
   -- Summing the pieces.
-  refine (add_le_add (Finset.sum_le_sum fun e (_ : e ∈ Finset.univ) ↦ hends e) hcore).trans ?_
-  rw [← Finset.sum_mul]
-  have h₁ := mul_le_mul_of_nonneg_left hE (by positivity : 0 ≤ Cs)
-  have h₂ := mul_le_mul_of_nonneg_left hE (mul_nonneg hC₀ hΛ₀)
-  nlinarith [mul_nonneg hC₀ hX]
+  exact sum_add_le_mul_add_adjoint (fun e ↦ le_max_right (C e) 0) hC₀ hΛ₀ (by positivity) hX hY
+    hends hcore
 
 /-- **Patching end estimates into the semi-Fredholm estimate of the formal adjoint on the pair of
 pants capped at `0`.** Let `0 ≤ c ≤ 1`. Let `J(z)` be compatible along `u` on the capped surface

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Linearization.Adjoint
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Adjoint
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
@@ -39,8 +40,13 @@ records the steps of the patching that do not depend on the domain.
   the core estimate. If `D_u` satisfies an `L²` estimate on sections supported in a compact set
   `K`, and the cutoff `f` is `1` to first order on `K₀ ⊆ K` with `f ξ` supported in `K`, the
   energy of `ξ` on `K₀` is at most `C₀ (∫ ‖D_u (f ξ)‖² + ∫_K ‖ξ‖²) + ∫_K ‖ξ‖²`.
+* `setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_smul_add`, in the
+  namespace `TauCeti.SymplecticForm`: the core estimate of the formal adjoint, for a weight `w`
+  with `w⁻¹ ≤ Λ` on `K`. The energy of a covector field `η` on `K₀` is at most
+  `C₀ (Λ ∫ w ‖D_u^* (f η)‖² + ∫_K ‖η‖²)`.
 * `TauCeti.Floer.sum_add_le_mul_add`: the arithmetic that sums the end and core estimates into
-  one constant times `∫ ‖D_u ξ‖² + ∫_K ‖ξ‖²`.
+  one constant times `∫ ‖D_u ξ‖² + ∫_K ‖ξ‖²`, and its counterpart for the formal adjoint
+  `TauCeti.Floer.sum_add_le_mul_add_adjoint`.
 
 These are shared by the pair of pants
 (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.SemiFredholm`), the spheres with moving input ends
@@ -245,6 +251,54 @@ theorem setIntegral_sobolevDensity_le_mul_integral_floerLinearization_smul_add
         rw [hsplit]
         exact mul_le_mul_of_nonneg_left (add_le_add hDK hξcY) hC₀
 
+/-- **The core estimate of the formal adjoint.** Let `f` be `C²` on an open set `S`, `1` to first
+order on a measurable set `K₀`, and `|f| ≤ 1` on a compact set `K ⊆ S` containing `K₀`, and let the
+weight `w ≥ 0`, continuous and positive on `S`, satisfy `w⁻¹ ≤ Λ` on `K`. If `D_u^*` satisfies the
+`L²` estimate `hint` on covector fields supported in `K`, then a `C²` covector field `η` with
+support in `S`, whose cut-off `f η` is supported in `K`, satisfies
+`∫_{K₀} (‖∂s η‖² + ‖∂t η‖² + ‖η‖²) ≤ C₀ (Λ ∫ w ‖D_u^* (f η)‖² + ∫_K ‖η‖²)`. This is the adjoint
+counterpart of `setIntegral_sobolevDensity_le_mul_integral_floerLinearization_smul_add`. -/
+theorem setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_smul_add
+    (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
+    {S : Set (ℝ × ℝ)} (hS : IsOpen S)
+    (hJ : ∀ z ∈ S, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ S, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ S, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ S, ContDiffAt ℝ 1 u z) {K₀ K : Set (ℝ × ℝ)} (hK₀ : MeasurableSet K₀)
+    (hK : IsCompact K) (hK₀K : K₀ ⊆ K) (hKS : K ⊆ S) {f : ℝ × ℝ → ℝ}
+    (hf : ∀ z ∈ S, ContDiffAt ℝ 2 f z) (hf₁ : ∀ z ∈ K, |f z| ≤ 1)
+    (hf₀ : ∀ z ∈ K₀, f z = 1 ∧ fderiv ℝ f z = 0) {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
+    (hint : ∀ ⦃θ : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 θ → tsupport θ ⊆ K →
+      ∫ z in K, sobolevDensity θ z ≤
+        C₀ * ∫ z in K, (‖ω.floerLinearizationAdjoint J Ks Kt u θ z‖ ^ 2 + ‖θ z‖ ^ 2))
+    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) (hwc : ContinuousOn w S) (hwS : ∀ z ∈ S, 0 < w z)
+    {Λ : ℝ} (hΛ₀ : 0 ≤ Λ) (hΛ : ∀ z ∈ K, (w z)⁻¹ ≤ Λ) {η : ℝ × ℝ → V →L[ℝ] ℝ}
+    (hη : ContDiff ℝ 2 η) (hηS : tsupport η ⊆ S) (hfηK : tsupport (fun z ↦ f z • η z) ⊆ K) :
+    ∫ z in K₀, sobolevDensity η z ≤
+      C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u (fun w ↦ f w • η w) z‖ ^ 2) +
+        ∫ z in K, ‖η z‖ ^ 2) := by
+  have hfη : ContDiff ℝ 2 fun z ↦ f z • η z :=
+    (ContinuousLinearMap.lsmul ℝ ℝ).contDiff_of_tsupport_subset_right
+      (fun z hz ↦ (hf z hz).contDiffWithinAt) hη.contDiffOn hS hηS
+  have hfηY : ∫ z in K, ‖f z • η z‖ ^ 2 ≤ ∫ z in K, ‖η z‖ ^ 2 :=
+    integral_norm_smul_sq_le ((ae_restrict_iff' hK.measurableSet).2 (ae_of_all _ hf₁))
+      ((hη.continuous.norm.pow 2).continuousOn.integrableOn_compact hK)
+  -- On `K`, where `w⁻¹ ≤ Λ`, we have `1 ≤ Λ w`.
+  have hΛK (z : ℝ × ℝ) (hz : z ∈ K) : 1 ≤ Λ * w z := by
+    have hρ := hwS z (hKS hz)
+    rw [← inv_mul_cancel₀ hρ.ne']
+    exact mul_le_mul_of_nonneg_right (hΛ z hz) hρ.le
+  calc _ ≤ ∫ z in K, sobolevDensity (fun w ↦ f w • η w) z :=
+        setIntegral_sobolevDensity_le_setIntegral_sobolevDensity_smul hK₀ hK hK₀K
+          (fun z hz ↦ (hf z (hKS (hK₀K hz))).differentiableAt two_ne_zero) hf₀
+          (hη.differentiable two_ne_zero) (hfη.of_le one_le_two)
+    _ ≤ C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u
+          (fun w ↦ f w • η w) z‖ ^ 2) + ∫ z in K, ‖f z • η z‖ ^ 2) :=
+        ω.setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_add hS hJ
+          hKs hKt hu hw hwc hK hΛ₀ hΛK hC₀ hint hfη ((tsupport_smul_subset_right _ _).trans hηS)
+          hfηK
+    _ ≤ _ := by gcongr
+
 end TauCeti.SymplecticForm
 
 namespace TauCeti.Floer
@@ -312,6 +366,24 @@ theorem sum_add_le_mul_add {ι : Type*} [Fintype ι] {E C : ι → ℝ} {E₀ C�
         gcongr with e
         · rw [mul_assoc]
           exact (hE e).trans (mul_le_mul_of_nonneg_left h₁ (hC e))
+        · exact hE₀.trans (by gcongr; linarith)
+    _ = _ := by rw [← Finset.sum_mul]; ring
+
+/-- **Summing the pieces of the patching of the formal adjoint.** If the energy `E e` on each end
+`e` is at most `C e (2 X + a Y)` with `C e ≥ 0`, and the energy `E₀` on the core is at most
+`C₀ (Λ (2 X + a Y) + Y)` with `C₀, Λ ≥ 0`, where `X` and `Y` are the nonnegative weighted `L²` norm
+of `D_u^* η` and `L²` norm of `η` on a compact part of the domain and `a ≥ 0`, then the total energy
+is at most `((∑_e C e) (2 + a) + C₀ Λ (2 + a) + C₀) (X + Y)`. This is the adjoint counterpart of
+`sum_add_le_mul_add`. -/
+theorem sum_add_le_mul_add_adjoint {ι : Type*} [Fintype ι] {E C : ι → ℝ} {E₀ C₀ Λ a X Y : ℝ}
+    (hC : ∀ e, 0 ≤ C e) (hC₀ : 0 ≤ C₀) (hΛ : 0 ≤ Λ) (ha : 0 ≤ a) (hX : 0 ≤ X) (hY : 0 ≤ Y)
+    (hE : ∀ e, E e ≤ C e * (2 * X + a * Y)) (hE₀ : E₀ ≤ C₀ * (Λ * (2 * X + a * Y) + Y)) :
+    ∑ e, E e + E₀ ≤ ((∑ e, C e) * (2 + a) + C₀ * Λ * (2 + a) + C₀) * (X + Y) := by
+  have h₁ : 2 * X + a * Y ≤ (2 + a) * (X + Y) := by nlinarith [mul_nonneg ha hX]
+  calc ∑ e, E e + E₀ ≤ ∑ e, C e * ((2 + a) * (X + Y)) +
+        C₀ * (Λ * ((2 + a) * (X + Y)) + (X + Y)) := by
+        gcongr with e
+        · exact (hE e).trans (mul_le_mul_of_nonneg_left h₁ (hC e))
         · exact hE₀.trans (by gcongr; linarith)
     _ = _ := by rw [← Finset.sum_mul]; ring
 

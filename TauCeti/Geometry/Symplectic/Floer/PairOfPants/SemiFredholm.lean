@@ -662,65 +662,6 @@ private theorem setIntegral_sobolevDensity_covectorPullback_le_of_endCutoff (ω 
       (fun z hz ↦ mem_preimage_truncation_of_fderiv_endCutoff_ne_zero hR₀ hz) hM hB hw hwc hΛ₀
       hΛ (hη.of_le one_le_two) hηc hηS)
 
-/-- **The core estimate of the adjoint.** If `D^*` satisfies the `L²` estimate `hint` on covector
-fields supported in `K = S_{R₀ + 1}`, and the weight `w`, positive on `S`, satisfies `w⁻¹ ≤ Λ` on
-`K`, the energy of a covector field on `S_{R₀}` is controlled by the `w`-weighted `L²` norm of
-`D^*` on the cut-off field `(1 - ∑_q β_q) η` and by the `L²` norm of `η` on `K`. -/
-private theorem setIntegral_sobolevDensity_le_of_coreCutoff_adjoint (ω : SymplecticForm V)
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hKs : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {R₀ : ℝ} (hR₀ : 0 ≤ R₀)
-    {C₀ : ℝ} (hC₀ : 0 ≤ C₀)
-    (hint : ∀ ⦃η : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 η →
-      tsupport η ⊆ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1) →
-      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), sobolevDensity η z ≤
-        C₀ * ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1),
-          (‖ω.floerLinearizationAdjoint J Ks Kt u η z‖ ^ 2 + ‖η z‖ ^ 2))
-    {w : ℝ × ℝ → ℝ} (hw : ∀ z, 0 ≤ w z) (hwc : ContinuousOn w thricePuncturedSphereReal)
-    (hwS : ∀ z ∈ thricePuncturedSphereReal, 0 < w z) {Λ : ℝ} (hΛ₀ : 0 ≤ Λ)
-    (hΛ : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), (w z)⁻¹ ≤ Λ)
-    {η : ℝ × ℝ → V →L[ℝ] ℝ} (hη : ContDiff ℝ 2 η) (hηS : tsupport η ⊆ thricePuncturedSphereReal) :
-    ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity η z ≤
-      C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u
-          (fun w ↦ coreCutoff R₀ w • η w) z‖ ^ 2) +
-        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1), ‖η z‖ ^ 2) := by
-  set K := Complex.equivRealProdCLM.symm ⁻¹' truncation (R₀ + 1)
-  have hK : IsCompact K := isCompact_preimage_truncation _
-  have hKS : K ⊆ thricePuncturedSphereReal :=
-    preimage_truncation_subset_thricePuncturedSphereReal _
-  set ηc : ℝ × ℝ → V →L[ℝ] ℝ := fun w ↦ coreCutoff R₀ w • η w
-  have hηc' : ContDiff ℝ 2 ηc :=
-    contDiff_smul_of_tsupport_subset (fun z hz ↦ contDiffAt_coreCutoff R₀ hz) hη hηS
-  have hηcS : tsupport ηc ⊆ tsupport η := tsupport_smul_subset_right _ _
-  have hI {g : ℝ × ℝ → ℝ} (hg : ContinuousOn g K) : IntegrableOn g K := hg.integrableOn_compact hK
-  have hηcY : ∫ z in K, ‖ηc z‖ ^ 2 ≤ ∫ z in K, ‖η z‖ ^ 2 := by
-    refine setIntegral_mono_on (hI (hηc'.continuous.norm.pow 2).continuousOn)
-      (hI (hη.continuous.norm.pow 2).continuousOn) hK.measurableSet fun z _ ↦ ?_
-    simp only [ηc, norm_smul, Real.norm_eq_abs]
-    gcongr
-    exact mul_le_of_le_one_left (norm_nonneg _) (abs_coreCutoff_le_one hR₀ z)
-  -- On `K`, where `w⁻¹ ≤ Λ`, we have `1 ≤ Λ w`.
-  have hΛK (z : ℝ × ℝ) (hz : z ∈ K) : 1 ≤ Λ * w z := by
-    have hρ := hwS z (hKS hz)
-    rw [← inv_mul_cancel₀ hρ.ne']
-    exact mul_le_mul_of_nonneg_right (hΛ z hz) hρ.le
-  calc _ ≤ ∫ z in K, sobolevDensity ηc z :=
-        setIntegral_sobolevDensity_le_setIntegral_sobolevDensity_smul
-          (isCompact_preimage_truncation R₀).measurableSet hK
-          (preimage_mono (truncation_mono (by linarith)))
-          (fun z hz ↦ (contDiffAt_coreCutoff R₀
-            (preimage_truncation_subset_thricePuncturedSphereReal R₀ hz) (n := 1)).differentiableAt
-            one_ne_zero) (fun z hz ↦ coreCutoff_eq_one_and_fderiv_eq_zero hz)
-          (hη.differentiable two_ne_zero) (hηc'.of_le one_le_two)
-    _ ≤ C₀ * (Λ * (∫ z, w z * ‖ω.floerLinearizationAdjoint J Ks Kt u ηc z‖ ^ 2) +
-          ∫ z in K, ‖ηc z‖ ^ 2) :=
-        ω.setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_add
-          isOpen_thricePuncturedSphereReal hJ hKs hKt hu hw hwc hK hΛ₀ hΛK hC₀ hint hηc'
-          (hηcS.trans hηS) (by simpa only [ηc, K] using tsupport_coreCutoff_smul_subset hR₀ hηS)
-    _ ≤ _ := by gcongr
-
 /-- **Patching the adjoint at one height.** Under the hypotheses of
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends`,
 for every height `R₀ ≥ 1` above the heights `R q` of the end estimates, the energy of a covector
@@ -777,16 +718,20 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
   set Y := ∫ z in K, ‖η z‖ ^ 2
   have hX : 0 ≤ X := integral_nonneg fun z ↦ by have := hw z; positivity
   have hY : 0 ≤ Y := setIntegral_nonneg hK.measurableSet fun _ _ ↦ sq_nonneg _
-  have hE : 2 * X + 2 * c ^ 2 * Λ * Y ≤ (2 + 2 * c ^ 2 * Λ) * (X + Y) := by
-    nlinarith [mul_nonneg (mul_nonneg (sq_nonneg c) hΛ₀) hX]
   -- The ends and the core, through their cutoffs.
   have hends (q : Puncture) := ω.setIntegral_sobolevDensity_covectorPullback_le_of_endCutoff
     (J := J') hJ hKs hKt hu hw hwc (by linarith) (hR q) (hend q) (hMq q) hB hΛ₀
     (fun z hz ↦ (hΛ z hz).1) hη hηc hηS
   have hcore : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R₀, sobolevDensity η z ≤
       C₀ * (Λ * (2 * X + 2 * c ^ 2 * Λ * Y) + Y) :=
-    (ω.setIntegral_sobolevDensity_le_of_coreCutoff_adjoint (J := J') hJ hKs hKt hu
-    (by linarith) hC₀ hint hw hwc hwS hΛ₀ (fun z hz ↦ (hΛ z hz).2) hη hηS).trans (by
+    (ω.setIntegral_sobolevDensity_le_mul_integral_mul_norm_floerLinearizationAdjoint_smul_add
+      (J := J') isOpen_thricePuncturedSphereReal hJ hKs hKt hu
+      (isCompact_preimage_truncation R₀).measurableSet hK
+      (preimage_mono (truncation_mono (by linarith))) hKS (fun z hz ↦ contDiffAt_coreCutoff R₀ hz)
+      (fun z _ ↦ abs_coreCutoff_le_one (by linarith) z)
+      (fun z hz ↦ coreCutoff_eq_one_and_fderiv_eq_zero hz) hC₀ hint hw hwc hwS hΛ₀
+      (fun z hz ↦ (hΛ z hz).2) hη hηS
+      (by simpa only [K] using tsupport_coreCutoff_smul_subset (by linarith) hηS)).trans (by
       gcongr
       exact ω.integral_mul_norm_floerLinearizationAdjoint_fun_smul_sq_le
         (J := J') isOpen_thricePuncturedSphereReal hJ hKs hKt hu hK
@@ -794,11 +739,8 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
         (fun z hz ↦ mem_preimage_truncation_of_fderiv_coreCutoff_ne_zero (by linarith) hz) hMc
         hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) (hη.of_le one_le_two) hηc hηS)
   -- Summing the pieces.
-  refine (add_le_add (Finset.sum_le_sum fun q (_ : q ∈ Finset.univ) ↦ hends q) hcore).trans ?_
-  rw [← Finset.sum_mul]
-  have h₁ := mul_le_mul_of_nonneg_left hE (by positivity : 0 ≤ Cs)
-  have h₂ := mul_le_mul_of_nonneg_left hE (mul_nonneg hC₀ hΛ₀)
-  nlinarith [mul_nonneg hC₀ hX]
+  exact sum_add_le_mul_add_adjoint (fun q ↦ le_max_right (C q) 0) hC₀ hΛ₀ (by positivity) hX hY
+    hends hcore
 
 /-- **Patching end estimates into the semi-Fredholm estimate of the formal adjoint on the pair of
 pants.** Let `J(z)` be compatible along `u` on `S = ℂ ∖ {0, 1}`, with `J` `C¹` and `K_s`, `K_t`
