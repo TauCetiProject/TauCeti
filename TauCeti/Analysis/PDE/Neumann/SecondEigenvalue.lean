@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Spectrum.Operator.Mixed
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.RellichKondrachov
 import TauCeti.Analysis.InnerProductSpace.Variational.FormKernel
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
+import TauCeti.Analysis.Sobolev.W1p.ConnectedComponents
 import TauCeti.Analysis.Sobolev.W1p.InfiniteDimensional
 import TauCeti.Analysis.Sobolev.W1p.Zero
 
@@ -53,9 +54,11 @@ the least positive eigenvalue.
   on `Ω ⊆ ℝⁿ`, when `H¹_∅(Ω) = H¹(Ω)`, so that `-Δ_∅` is the Neumann Laplacian: its least
   positive spectral value exists and is the least Rayleigh quotient of mean zero.
 
-Connectedness cannot be dropped: on `(0, 1) ∪ (2, 3)` the function equal to `1` on the first
-interval and `-1` on the second has mean zero and zero gradient, so the Rayleigh quotient of mean
-zero has minimum `0`, which is not a positive eigenvalue.
+Connectedness cannot be dropped. On an open set of finite measure that is not preconnected, a
+function constant on each of two disjoint open pieces can have mean zero and zero gradient, so the
+Rayleigh quotient of mean zero has minimum `0`, which is not a positive eigenvalue
+(`TauCeti.PDE.isLeast_rayleigh_meanZero_zero_of_not_isPreconnected`). On `(0, 1) ∪ (2, 3)` such a
+function is the one equal to `1` on the first interval and `-1` on the second.
 
 ## References
 
@@ -229,6 +232,22 @@ theorem exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero [Nontrivial E]
       hu₀ hmin
   · rw [← setOf_rayleigh_neumannPair hconn]
     exact CompactFormPair.isLeast_rayleigh_of_isMinOn hu₀ hmin
+
+/-- **On a disconnected domain the least Rayleigh quotient of mean zero is `0`.** If the open set
+`Ω` has finite measure and is not preconnected, the minimum of `‖∇u‖² / ‖u‖²` over the nonzero
+`u ∈ H¹(Ω)` with `∫_Ω u = 0` is `0`, attained by a function constant on each of two disjoint open
+pieces of `Ω`. So it is not a positive Neumann eigenvalue, and the connectedness hypothesis of
+`TauCeti.PDE.exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero` cannot be dropped. -/
+theorem isLeast_rayleigh_meanZero_zero_of_not_isPreconnected
+    (hconn : ¬IsPreconnected (Omega : Set E)) :
+    IsLeast {r | ∃ u : W1p mu Omega 2, W1p.value u ≠ 0 ∧
+      ∫ x in Omega, W1p.value u x ∂mu = 0 ∧ r = ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2} 0 := by
+  obtain ⟨u, hu, hgrad, hint⟩ :=
+    W1p.exists_ne_zero_and_gradient_eq_zero_and_setIntegral_eq_zero (mu := mu) (p := 2) hconn
+  refine ⟨⟨u, fun h => hu (W1p.ext_value (h.trans W1p.value_zero.symm)), hint, by simp [hgrad]⟩,
+    ?_⟩
+  rintro _ ⟨v, -, -, rfl⟩
+  positivity
 
 end FiniteMeasure
 

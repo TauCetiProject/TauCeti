@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Neumann.Kernel
+public import TauCeti.Analysis.PDE.Neumann.SecondEigenvalue
 public import TauCeti.Analysis.PDE.Spectrum.Interval
 public import TauCeti.Analysis.Sobolev.W1p.ConnectedComponents
+import TauCeti.Algebra.Group.Indicator
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.LocallyConstant.ConnectedComponents
 
@@ -20,6 +22,10 @@ functions `u ∈ H¹(Ω)` with `∫_Ω u' v' = 0` for every `v ∈ H¹(Ω)` are 
 the indicators of the two intervals. So uniqueness up to one additive constant needs `Ω`
 connected, and the Neumann eigenvalue `0` of this `Ω` has multiplicity `2`.
 
+The second Neumann eigenvalue is therefore `0` as well. The function `1_{(0,1)} - 1_{(2,3)}` has
+mean zero and vanishing gradient, so the least Rayleigh quotient `‖∇u‖² / ‖u‖²` over the nonzero
+`u ∈ H¹(Ω)` of mean zero is `0`, not a positive eigenvalue as on a connected domain.
+
 ## Main declarations
 
 * `TauCeti.Examples.NeumannTwoIntervals.twoIntervals`: the open set `(0, 1) ∪ (2, 3)` of `ℝ¹`.
@@ -29,6 +35,11 @@ connected, and the Neumann eigenvalue `0` of this `Ω` has multiplicity `2`.
   functions on it with vanishing weak gradient form a space of dimension `2`, for every `p`.
 * `TauCeti.Examples.NeumannTwoIntervals.forall_energyFormH1_eq_zero_iff_twoIntervals`: the
   Neumann kernel on it consists of the combinations `a 1_{(0,1)} + b 1_{(2,3)}`.
+* `TauCeti.Examples.NeumannTwoIntervals.not_isPreconnected_twoIntervals`: it is not preconnected.
+* `exists_ae_eq_indicator_add_indicator_and_gradient_eq_zero_and_setIntegral_eq_zero_twoIntervals`
+  and `isLeast_rayleigh_meanZero_twoIntervals`, in the namespace
+  `TauCeti.Examples.NeumannTwoIntervals`: `1_{(0,1)} - 1_{(2,3)}` has mean zero and vanishing
+  gradient, and the least Rayleigh quotient of mean zero is `0`.
 -/
 
 public section
@@ -85,22 +96,6 @@ private theorem fiveHalves_mem_intervalDomain :
     WithLp.toLp 2 (fun _ : Fin 1 => (5 / 2 : ℝ)) ∈ PDE.intervalDomain 2 3 := by
   rw [PDE.mem_intervalDomain, mem_Ioo]
   norm_num
-
-/-- On the left interval, `a 1_{(0,1)} + b 1_{(2,3)}` takes the value `a`. -/
-private theorem indicator_add_indicator_of_mem_left {a b : ℝ} {x : EuclideanSpace ℝ (Fin 1)}
-    (hx : x ∈ PDE.intervalDomain 0 1) :
-    ((PDE.intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => a) +
-      (PDE.intervalDomain 2 3 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => b)) x = a := by
-  rw [Pi.add_apply, indicator_of_mem hx, indicator_of_notMem
-    (disjoint_intervalDomain.notMem_of_mem_left hx), add_zero]
-
-/-- On the right interval, `a 1_{(0,1)} + b 1_{(2,3)}` takes the value `b`. -/
-private theorem indicator_add_indicator_of_mem_right {a b : ℝ} {x : EuclideanSpace ℝ (Fin 1)}
-    (hx : x ∈ PDE.intervalDomain 2 3) :
-    ((PDE.intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => a) +
-      (PDE.intervalDomain 2 3 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => b)) x = b := by
-  rw [Pi.add_apply, indicator_of_mem hx, indicator_of_notMem
-    (disjoint_intervalDomain.notMem_of_mem_right hx), zero_add]
 
 /-- **`(0, 1) ∪ (2, 3)` has two connected components.** -/
 theorem card_connectedComponents_twoIntervals :
@@ -162,22 +157,54 @@ theorem forall_energyFormH1_eq_zero_iff_twoIntervals (u : W1p volume twoInterval
     refine ⟨g (WithLp.toLp 2 fun _ => 1 / 2), g (WithLp.toLp 2 fun _ => 5 / 2), ?_⟩
     refine hug.trans ((ae_restrict_mem twoIntervals.isOpen.measurableSet).mono fun x hx => ?_)
     rcases mem_twoIntervals.1 hx with hx | hx
-    · rw [indicator_add_indicator_of_mem_left hx]
+    · rw [disjoint_intervalDomain.indicator_add_indicator_apply_of_mem_left _ _ hx]
       exact hg.apply_eq_of_isPreconnected_of_subset (PDE.isPreconnected_intervalDomain 0 1)
         intervalDomain_zero_one_subset hx half_mem_intervalDomain
-    · rw [indicator_add_indicator_of_mem_right hx]
+    · rw [disjoint_intervalDomain.indicator_add_indicator_apply_of_mem_right _ _ hx]
       exact hg.apply_eq_of_isPreconnected_of_subset (PDE.isPreconnected_intervalDomain 2 3)
         intervalDomain_two_three_subset hx fiveHalves_mem_intervalDomain
   · rintro ⟨a, b, hu⟩
-    refine ⟨_, (IsLocallyConstant.iff_eventually_eq _).2 fun x => ?_, hu⟩
-    rcases mem_twoIntervals.1 x.property with hx | hx
-    · filter_upwards [((PDE.intervalDomain 0 1).isOpen.preimage continuous_subtypeVal).mem_nhds hx]
-        with y hy
-      simp only [Set.domRestrict_apply, indicator_add_indicator_of_mem_left hx,
-        indicator_add_indicator_of_mem_left (Set.mem_preimage.1 hy)]
-    · filter_upwards [((PDE.intervalDomain 2 3).isOpen.preimage continuous_subtypeVal).mem_nhds hx]
-        with y hy
-      simp only [Set.domRestrict_apply, indicator_add_indicator_of_mem_right hx,
-        indicator_add_indicator_of_mem_right (Set.mem_preimage.1 hy)]
+    exact ⟨_, isLocallyConstant_domRestrict_indicator_add_indicator (PDE.intervalDomain 0 1).isOpen
+      (PDE.intervalDomain 2 3).isOpen disjoint_intervalDomain coe_twoIntervals a b, hu⟩
+
+/-- **`(0, 1) ∪ (2, 3)` is not preconnected**, since it has two connected components. -/
+theorem not_isPreconnected_twoIntervals :
+    ¬IsPreconnected (twoIntervals : Set (EuclideanSpace ℝ (Fin 1))) := fun h => by
+  have := isPreconnected_iff_preconnectedSpace.1 h
+  have h1 : Nat.card (ConnectedComponents (twoIntervals : Set (EuclideanSpace ℝ (Fin 1)))) ≤ 1 :=
+    Finite.card_le_one_iff_subsingleton.2 inferInstance
+  rw [card_connectedComponents_twoIntervals] at h1
+  omega
+
+/-- **The function `1_{(0,1)} - 1_{(2,3)}` has mean zero and vanishing gradient.** Some
+`u ∈ H¹(Ω)` agrees almost everywhere with `1_{(0,1)} + (-1) 1_{(2,3)}`, has `∫_Ω u = 0` and
+vanishing weak gradient, so its Rayleigh quotient `‖∇u‖² / ‖u‖²` is `0`. -/
+theorem
+    exists_ae_eq_indicator_add_indicator_and_gradient_eq_zero_and_setIntegral_eq_zero_twoIntervals :
+    ∃ u : W1p volume twoIntervals 2,
+      W1p.value u =ᵐ[volume.restrict twoIntervals]
+        (PDE.intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => 1) +
+          (PDE.intervalDomain 2 3 : Set (EuclideanSpace ℝ (Fin 1))).indicator (fun _ => -1) ∧
+      W1p.gradient u = 0 ∧ ∫ x in twoIntervals, W1p.value u x = 0 := by
+  obtain ⟨u, hval, hgrad, hint⟩ :=
+    W1p.exists_value_ae_eq_indicator_add_indicator_and_gradient_eq_zero_and_setIntegral_eq
+      (mu := volume) (p := 2) (PDE.intervalDomain 0 1).isOpen (PDE.intervalDomain 2 3).isOpen
+      disjoint_intervalDomain coe_twoIntervals 1 (-1)
+  refine ⟨u, hval, hgrad, ?_⟩
+  -- The two intervals have length `1`, so they contribute `1` and `-1`.
+  rw [hint, PDE.volume_real_intervalDomain_of_le zero_le_one,
+    PDE.volume_real_intervalDomain_of_le (by norm_num : (2 : ℝ) ≤ 3)]
+  norm_num
+
+/-- **On `(0, 1) ∪ (2, 3)` the least Rayleigh quotient of mean zero is `0`.** The Neumann
+eigenvalue `0` has multiplicity `2` here, so the minimum of `‖∇u‖² / ‖u‖²` over the nonzero
+`u ∈ H¹(Ω)` with `∫_Ω u = 0` is `0` rather than a positive eigenvalue: the second eigenvalue
+statement `TauCeti.PDE.exists_isLeast_neumannEigenvalue_pos_rayleigh_meanZero` needs `Ω`
+connected. -/
+theorem isLeast_rayleigh_meanZero_twoIntervals :
+    IsLeast {r | ∃ u : W1p volume twoIntervals 2, W1p.value u ≠ 0 ∧
+      ∫ x in twoIntervals, W1p.value u x = 0 ∧
+        r = ‖W1p.gradient u‖ ^ 2 / ‖W1p.value u‖ ^ 2} 0 :=
+  PDE.isLeast_rayleigh_meanZero_zero_of_not_isPreconnected not_isPreconnected_twoIntervals
 
 end TauCeti.Examples.NeumannTwoIntervals
