@@ -62,6 +62,12 @@ theorem mul_uniformizerChangeUnit (π π' : R) (hπ : Irreducible π)
     π * (uniformizerChangeUnit π π' hπ hπ' : R) = π' :=
   (IsDiscreteValuationRing.associated_of_irreducible R hπ hπ').choose_spec
 
+/-- The difference identity `π * (uniformizerChangeUnit π π' - 1) = π' - π` in `R`. -/
+theorem mul_uniformizerChangeUnit_sub_one (π π' : R) (hπ : Irreducible π)
+    (hπ' : Irreducible π') :
+    π * ((uniformizerChangeUnit π π' hπ hπ' : R) - 1) = π' - π := by
+  rw [mul_sub, mul_uniformizerChangeUnit, mul_one]
+
 /-- The change unit from a uniformizer to itself is one. -/
 @[simp]
 theorem uniformizerChangeUnit_self (π : R) (hπ : Irreducible π) :

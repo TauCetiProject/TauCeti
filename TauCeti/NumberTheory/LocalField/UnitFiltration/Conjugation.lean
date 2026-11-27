@@ -44,13 +44,7 @@ variable {G : Type*} [Group G] [MulSemiringAction G L] [IsInvariantSubring G �
 theorem ramificationGroupGradedConj_zero
     (σ : ramificationGroup G 𝒪[L] 0)
     (τ : RamificationGroupGraded G 𝒪[L] 0) :
-    ramificationGroupGradedConj G 𝒪[L] (σ : G) 0 τ = τ := by
-  apply tameCharacterGraded_injective (G := G) (FixedPoints.subalgebra ℤ 𝒪[L] G)
-  induction τ using QuotientGroup.induction_on with
-  | _ τ =>
-    simp only [ramificationGroupGradedConj_mk]
-    rw [tameCharacterGraded_mk, tameCharacterGraded_mk, MulAut.conjNormal_val, MulAut.conj_apply,
-      map_mul, map_mul, map_inv, mul_comm (tameCharacter G 𝒪[L] σ) (tameCharacter G 𝒪[L] τ),
-      mul_assoc, mul_inv_cancel, mul_one]
+    ramificationGroupGradedConj G 𝒪[L] (σ : G) 0 τ = τ :=
+  IsDiscreteValuationRing.ramificationGroupGradedConj_zero (FixedPoints.subalgebra ℤ 𝒪[L] G) σ τ
 
 end TauCeti

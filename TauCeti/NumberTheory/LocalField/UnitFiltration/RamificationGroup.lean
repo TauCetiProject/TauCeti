@@ -224,8 +224,7 @@ theorem ramificationGroupToUnitFiltrationGraded_apply (hϖ : Irreducible ϖ)
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
   rw [ramificationGroupToUnitFiltrationGraded, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     IsDiscreteValuationRing.ramificationGroupToPrincipalUnitGraded_apply,
-    unitFiltrationGradedEquivPrincipalUnitGraded_symm_mk]
-  rfl
+    unitFiltrationGradedEquivPrincipalUnitGraded_symm_mk, uniformizerRatio]
 
 /-- The quotient homomorphism does not depend on the choice of uniformizer: two uniformizers
 differ by a unit of `𝒪[L]`, and `σ` moves that unit inside `U(L,i+1)`. -/
@@ -386,8 +385,7 @@ theorem ramificationGroupGradedToUnitFiltrationGraded_mk (hϖ : Irreducible ϖ)
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
   rw [ramificationGroupGradedToUnitFiltrationGraded, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     IsDiscreteValuationRing.ramificationGroupGradedToPrincipalUnitGraded_mk,
-    unitFiltrationGradedEquivPrincipalUnitGraded_symm_mk]
-  rfl
+    unitFiltrationGradedEquivPrincipalUnitGraded_symm_mk, uniformizerRatio]
 
 /-- **The quotient embeddings are injective.** -/
 theorem ramificationGroupGradedToUnitFiltrationGraded_injective (hϖ : Irreducible ϖ) :
