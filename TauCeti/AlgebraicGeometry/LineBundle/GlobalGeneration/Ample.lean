@@ -10,7 +10,6 @@ public import Mathlib.Topology.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.LineBundle.Ample
 public import TauCeti.AlgebraicGeometry.LineBundle.Power
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
-import Mathlib.CategoryTheory.Monoidal.Preadditive
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresentation
 import TauCeti.AlgebraicGeometry.LineBundle.Dual
 import TauCeti.AlgebraicGeometry.LineBundle.Monoidal
@@ -220,7 +219,6 @@ theorem exists_epi_biproduct_of_isAmple
   have : Fintype σ.I := Fintype.ofFinite σ.I
   let k : ℕ := Fintype.card σ.I
   let eI : Fin k ≃ σ.I := (Fintype.equivFin σ.I).symm
-  have : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
   -- Tensor the epimorphism `free σ.I ⟶ F ⊗ K^∨` on the left by `K`.
   let π : (SheafOfModules.free (R := X.ringCatSheaf) σ.I : X.Modules) ⟶ F ⊗ K.dual.obj := σ.π
   have hπ : Epi (C := X.Modules) π := σ.epi
@@ -235,12 +233,7 @@ theorem exists_epi_biproduct_of_isAmple
   -- Identify `⨁_{Fin k} K ≅ K ⊗ free σ.I`.
   let eFree : (⨁ fun _ : Fin k ↦ K.obj) ≅
       K.obj ⊗ (SheafOfModules.free (R := X.ringCatSheaf) σ.I : X.Modules) :=
-    biproduct.mapIso (fun _ : Fin k ↦ (ρ_ K.obj).symm) ≪≫
-      (leftDistributor K.obj (fun _ : Fin k ↦ 𝟙_ X.Modules)).symm ≪≫
-      whiskerLeftIso K.obj
-        (biproduct.whiskerEquiv (f := fun _ : Fin k ↦ 𝟙_ X.Modules)
-            (g := fun _ : σ.I ↦ 𝟙_ X.Modules) eI (fun _ ↦ Iso.refl _) ≪≫
-          TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) σ.I)
+    biproductIsoFreeTensor K.obj eI ≪≫ β_ _ K.obj
   exact ⟨k, (eFree.hom ≫ (K.obj ◁ π)) ≫ eF.hom, inferInstance⟩
 
 end AlgebraicGeometry.Scheme.Modules

@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.LineBundle.GlobalGeneration.Ample
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Ample
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
 import TauCeti.Algebra.Category.ModuleCat.Sheaf.GeneratingSections
-import Mathlib.CategoryTheory.Monoidal.Preadditive
 
 /-!
 # Serre's theorem on twists of quasi-coherent sheaves on `Proj`
@@ -110,28 +109,8 @@ theorem eventually_exists_epi_free_tensor_twistingSheaf [CompactSpace (Proj 𝒜
   rw [zpow_neg, zpow_natCast] at hK
   let K : TauCeti.AlgebraicGeometry.InvertibleSheaf (Proj 𝒜) := ⟨twistingSheaf 𝒜 (-n), hinv⟩
   obtain ⟨k, p, hp⟩ := hn₀ n hn K hK
-  have : MonoidalPreadditive (Proj 𝒜).Modules :=
-    TauCeti.SheafOfModules.monoidalPreadditive (Proj 𝒜).sheaf
-  let M : (Proj 𝒜).Modules := K.obj
-  let e1 : Limits.biproduct (C := (Proj 𝒜).Modules)
-      (fun _ : ULift.{u} (Fin k) ↦ 𝟙_ (Proj 𝒜).Modules) ≅
-      (SheafOfModules.free (R := (Proj 𝒜).ringCatSheaf) (ULift.{u} (Fin k)) :
-        (Proj 𝒜).Modules) :=
-    TauCeti.SheafOfModules.biproductIsoFree (R := (Proj 𝒜).sheaf) (ULift.{u} (Fin k))
-  let e2 : Limits.biproduct (C := (Proj 𝒜).Modules)
-      (fun _ : ULift.{u} (Fin k) ↦ 𝟙_ (Proj 𝒜).Modules) ≅
-      Limits.biproduct (C := (Proj 𝒜).Modules) (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules) :=
-    Limits.biproduct.whiskerEquiv
-      (f := fun _ : ULift.{u} (Fin k) ↦ 𝟙_ (Proj 𝒜).Modules)
-      (g := fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules) Equiv.ulift (fun _ ↦ Iso.refl _)
-  let e3 : (Limits.biproduct (C := (Proj 𝒜).Modules)
-      (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules)) ⊗ M ≅
-      Limits.biproduct (C := (Proj 𝒜).Modules) (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules ⊗ M) :=
-    rightDistributor (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules) M
-  let e4 : Limits.biproduct (C := (Proj 𝒜).Modules) (fun _ : Fin k ↦ 𝟙_ (Proj 𝒜).Modules ⊗ M) ≅
-      Limits.biproduct (C := (Proj 𝒜).Modules) (fun _ : Fin k ↦ M) :=
-    Limits.biproduct.mapIso fun _ ↦ λ_ M
-  let e := whiskerRightIso (e1.symm ≪≫ e2) M ≪≫ e3 ≪≫ e4
+  let e := (Scheme.Modules.biproductIsoFreeTensor K.obj
+    (Equiv.ulift.symm : Fin k ≃ ULift.{u} (Fin k))).symm
   exact ⟨ULift.{u} (Fin k), inferInstance, e.hom ≫ p, epi_comp e.hom p⟩
 
 end AlgebraicGeometry.Proj

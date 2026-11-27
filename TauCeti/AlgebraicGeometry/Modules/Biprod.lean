@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Quasicoherent.Biprod
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!
 # Direct sums of `𝒪ₓ`-modules
@@ -33,13 +35,15 @@ hypotheses to stay within the default typeclass search-size bound.
   `AlgebraicGeometry.Scheme.Modules.isClosedUnderFiniteProducts_isFinitePresentation` and
   `AlgebraicGeometry.Scheme.Modules.isFinitePresentation_biproduct`: finitely presented sheaves
   contain zero and are closed under binary products, finite products, and finite direct sums.
+* `AlgebraicGeometry.Scheme.Modules.biproductIsoFreeTensor`: a finite biproduct of copies of `M`
+  indexed by `J ≃ I` is isomorphic to `(free I) ⊗ M`.
 -/
 
 public section
 
 namespace AlgebraicGeometry.Scheme.Modules
 
-open AlgebraicGeometry CategoryTheory Limits TauCeti
+open AlgebraicGeometry CategoryTheory Limits MonoidalCategory TauCeti
 
 universe u
 
@@ -92,5 +96,19 @@ instance isFinitePresentation_biproduct {J : Type*} [Finite J] (F : J → X.Modu
   (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
     (biproduct.isoProduct F).symm
     ((SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_product fun _ ↦ inferInstance)
+
+/-- A finite biproduct of copies of an `𝒪ₓ`-module `M`, indexed by a type `J` equivalent to a
+finite type `I : Type u`, is isomorphic to `(free I) ⊗ M`. -/
+noncomputable def biproductIsoFreeTensor (M : X.Modules) {I : Type u} [Finite I]
+    {J : Type*} [Fintype J] (e : J ≃ I) :
+    (⨁ fun _ : J ↦ M) ≅
+      (SheafOfModules.free (R := X.ringCatSheaf) I : X.Modules) ⊗ M :=
+  letI : Fintype I := Fintype.ofFinite I
+  biproduct.mapIso (fun _ : J ↦ (λ_ M).symm) ≪≫
+    ((tensorRight M).mapBiproduct (fun _ : J ↦ 𝟙_ X.Modules)).symm ≪≫
+    whiskerRightIso
+      (biproduct.whiskerEquiv (f := fun _ : J ↦ 𝟙_ X.Modules)
+          (g := fun _ : I ↦ 𝟙_ X.Modules) e (fun _ ↦ Iso.refl _) ≪≫
+        TauCeti.SheafOfModules.biproductIsoFree (R := X.sheaf) I) M
 
 end AlgebraicGeometry.Scheme.Modules
