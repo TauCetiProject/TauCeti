@@ -18,9 +18,8 @@ of `L` and `r ∈ L` a nonzero element with `σ r = -r` (for instance `L = K(√
 `L ⊗_K L → L × L`, `x ⊗ y ↦ (x y, x σ(y))` (`coordinates`), sends the two terms of
 `e = (1 ⊗ 1 + (r²)⁻¹ (r ⊗ r)) / 2` to `(1/2, 1/2)` and `(1/2, -1/2)`, so `e` goes to the
 idempotent `(1, 0)`. This fixes the order of the identity coordinate and the conjugate
-coordinate (*plus_ring_two_coordinates*, a convention Check of §A0.1 of the AdicEtaleGeometry
-roadmap), including over fields of residue characteristic two such as `ℚ₂(√2)`: only `2 ≠ 0` in
-`L` is used.
+coordinate, including over fields of residue characteristic two such as `ℚ₂(√2)`: only `2 ≠ 0`
+in `L` is used.
 -/
 
 public section
