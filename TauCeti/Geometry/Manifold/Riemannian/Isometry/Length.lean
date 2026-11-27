@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Local
 public import Mathlib.Geometry.Manifold.Riemannian.PathELength
+public import TauCeti.Geometry.Manifold.Riemannian.Distance
 
 /-!
 # Actual curve length under local Riemannian isometries
@@ -15,6 +16,8 @@ The native local-isometry differential preserves tangent norms, so the actual Ri
 length integral is preserved on curves differentiable almost everywhere. In particular this
 holds for `C¹` curves on closed parameter intervals, including in native boundary or corner
 source manifolds. Differentiability is required only where the length density is integrated.
+Consequently a local Riemannian isometry does not increase the Riemannian extended distance
+(`TauCeti.IsLocalRiemannianIsometry.riemannianEDist_le`).
 
 Ported from Riccardo Brasca's `ForTauCeti` formalization.
 -/
@@ -56,4 +59,14 @@ theorem IsLocalRiemannianIsometry.pathELength_comp
   filter_upwards [ae_restrict_mem measurableSet_Ioo] with t ht
   exact (hγ.mdifferentiableOn one_ne_zero t ⟨ht.1.le, ht.2.le⟩).mdifferentiableAt
     (Icc_mem_nhds ht.1 ht.2)
+
+/-- A native local Riemannian isometry does not increase the Riemannian extended distance: every
+`C¹` curve joining `x` to `y` is carried to a curve of the same length joining `f x` to `f y`. -/
+theorem IsLocalRiemannianIsometry.riemannianEDist_le
+    {f : M → N} (hf : IsLocalRiemannianIsometry I J f) (x y : M) :
+    Manifold.riemannianEDist J (f x) (f y) ≤ Manifold.riemannianEDist I x y :=
+  Manifold.le_riemannianEDist_of_forall_le_pathELength fun γ h0 h1 hγ ↦
+    (Manifold.riemannianEDist_le_pathELength
+      ((hf.contMDiff.of_le (by simp)).comp_contMDiffOn hγ) (congrArg f h0) (congrArg f h1)
+      zero_le_one).trans_eq (hf.pathELength_comp hγ)
 end TauCeti
