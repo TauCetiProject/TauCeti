@@ -38,6 +38,8 @@ direction one uses in practice to read off a residue.
   f z₀` (at most a simple pole); the analytic case gives the limit `0 = residue f z₀`.
 * `TauCeti.Contour.residue_eq_of_tendsto_sub_mul` — the converse: if `f` is meromorphic at `z₀` and
   `(z − z₀) · f z` converges to `L`, then `residue f z₀ = L`.
+* `TauCeti.Contour.residue_mul_of_neg_one_le` — at most a simple pole weighted by a function `w`
+  analytic at `z₀`: `residue (f · w) z₀ = residue f z₀ · w z₀`.
 * `TauCeti.Contour.meromorphicAt_of_tendsto_sub_mul` — if `f` is holomorphic on a punctured
   neighbourhood of `z₀` and `(z − z₀) · f z` converges, then `f` is meromorphic at `z₀`, so the
   converse applies without a separate meromorphy hypothesis.
@@ -178,6 +180,16 @@ theorem residue_eq_of_tendsto_sub_mul {L : ℂ} (hf : MeromorphicAt f z₀)
     residue f z₀ = L := by
   exact tendsto_nhds_unique
     (tendsto_sub_mul_nhds_residue hf (neg_one_le_meromorphicOrderAt_of_tendsto_sub_mul h)) h
+
+/-- **Weighting a simple pole by an analytic function.** If `f` has at most a simple pole at `z₀`
+(`−1 ≤ meromorphicOrderAt f z₀`) and `w` is analytic at `z₀`, then the residue of `f · w` at `z₀`
+is `residue f z₀ · w z₀`. -/
+theorem residue_mul_of_neg_one_le {w : ℂ → ℂ} (hf : MeromorphicAt f z₀)
+    (hord : -1 ≤ meromorphicOrderAt f z₀) (hw : AnalyticAt ℂ w z₀) :
+    residue (fun z => f z * w z) z₀ = residue f z₀ * w z₀ :=
+  residue_eq_of_tendsto_sub_mul (hf.mul hw.meromorphicAt)
+    (((tendsto_sub_mul_nhds_residue hf hord).mul
+      (hw.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)).congr fun z => by ring)
 
 /-- The reciprocal `(· − z₀)⁻¹` of the simple factor `(· − z₀)` is meromorphic at `z₀`. -/
 theorem meromorphicAt_sub_inv (z₀ : ℂ) : MeromorphicAt (fun z => (z - z₀)⁻¹) z₀ :=
