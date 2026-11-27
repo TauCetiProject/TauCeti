@@ -5,10 +5,12 @@ Authors: Chris Birkbeck
 -/
 module
 
+public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.RingTheory.Nilpotent.Defs
+public import TauCeti.LinearAlgebra.Matrix.Minor
 import Mathlib.LinearAlgebra.Matrix.Reindex
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.Order.Preorder.Finite
@@ -38,6 +40,8 @@ Lie-algebra theory.
 
 * `Matrix.BlockTriangular.det_eq_prod_diag` — a matrix that is block triangular for an injective
   ranking of its indices has the product of its diagonal entries as determinant.
+* `Matrix.BlockTriangular.principalMinor_eq_prod_diag` — a principal minor of a matrix triangular
+  for an injective ranking is the product of the chosen diagonal entries.
 * `Matrix.mul_apply_diag_of_isUpperTriangular` — the diagonal of a product of upper-triangular
   matrices is the pointwise product of the diagonals.
 * `Matrix.mul_apply_diag_of_isLowerTriangular` — the corresponding formula for lower-triangular
@@ -72,6 +76,10 @@ Lie-algebra theory.
   entries strictly above the diagonal.
 * `Matrix.IsUpperUnitriangular.submatrix` — selecting rows and columns by a strictly increasing
   map preserves upper unitriangularity.
+* `Matrix.isUnit_det_of_isUpperTriangular_map` — a matrix whose image under a local ring
+  homomorphism is upper triangular with unit diagonal has a unit determinant.
+* `Matrix.exists_isUpperUnitriangular_mul_apply` — subtracting a combination of later rows
+  from each row is left multiplication by an upper-unitriangular matrix.
 * `Matrix.IsUpperUnitriangular.det_eq_one` — an upper-unitriangular matrix has determinant one.
 * `Matrix.IsUpperUnitriangular.diagonal_mul_mul_diagonal` — conjugation by an invertible diagonal
   matrix preserves upper-unitriangular matrices.
@@ -122,6 +130,16 @@ theorem BlockTriangular.det_eq_prod_diag {ι α S : Type*} [Fintype ι] [Decidab
   refine Finset.prod_congr rfl fun i _ ↦ ?_
   let _ : Unique {j // b j = b i} := ⟨⟨⟨i, rfl⟩⟩, fun j ↦ Subtype.ext (hb j.property)⟩
   exact det_unique _
+
+/-- A principal minor of a matrix that is block triangular for an injective ranking of its
+indices is the product of the chosen diagonal entries. -/
+theorem BlockTriangular.principalMinor_eq_prod_diag {ι S α : Type*} [DecidableEq ι] [CommRing S]
+    [LinearOrder α] {b : Matrix ι ι S} {o : ι → α} (hb : b.BlockTriangular o)
+    (ho : Function.Injective o) (s : Finset ι) : b.principalMinor s = ∏ a ∈ s, b a a := by
+  rw [principalMinor_def,
+    (hb.submatrix (f := Subtype.val)).det_eq_prod_diag (ho.comp Subtype.val_injective),
+    ← Finset.prod_coe_sort s]
+  simp only [submatrix_apply]
 
 /-- A square matrix is upper unitriangular when it is upper triangular and every diagonal entry
 is one. -/
@@ -199,6 +217,17 @@ theorem IsUpperUnitriangular.isUnit_det [Fintype m] [DecidableEq m] [LinearOrder
     {M : Matrix m m R} (hM : M.IsUpperUnitriangular) : IsUnit M.det := by
   rw [hM.det_eq_one]
   exact isUnit_one
+
+/-- A square matrix whose image under a local ring homomorphism `f` is upper triangular, with
+units on the diagonal, has a unit determinant. -/
+theorem isUnit_det_of_isUpperTriangular_map {n : Type*} [Fintype n] [DecidableEq n]
+    [LinearOrder n] {R S : Type*} [CommRing R] [CommRing S] {f : R →+* S} [IsLocalHom f]
+    {M : Matrix n n R}
+    (htri : (M.map f).IsUpperTriangular)
+    (hdiag : ∀ i, IsUnit (f (M i i))) : IsUnit M.det := by
+  rw [← _root_.isUnit_map_iff f, RingHom.map_det, RingHom.mapMatrix_apply,
+    det_of_isUpperTriangular htri, IsUnit.prod_univ_iff]
+  exact hdiag
 
 /-- The identity matrix is upper unitriangular. -/
 @[simp]
@@ -907,3 +936,31 @@ theorem isUpperUnitriangular_unitDiagonalMatrixOfEntries [Preorder ι] (P : ι �
 end UnitDiagonalMatrixOfEntries
 
 end TauCeti
+
+namespace Matrix
+
+open Classical in
+/-- Subtracting from each row of `G` a combination of the rows below it is multiplication on the
+left by an upper-unitriangular matrix. -/
+theorem exists_isUpperUnitriangular_mul_apply {R m n : Type*} [Ring R] [Fintype m] [Preorder m]
+    (G : Matrix m n R) {w : m → n → R}
+    (hw : ∀ i, w i ∈ Submodule.span R (G.row '' ↑(Finset.univ.filter fun j ↦ i < j))) :
+    ∃ U : Matrix m m R, U.IsUpperUnitriangular ∧ ∀ i l, (U * G) i l = G i l - w i l := by
+  classical
+  choose c hc using fun i ↦ (Submodule.mem_span_image_finset_iff_exists_fun' R).mp (hw i)
+  let U := TauCeti.unitDiagonalMatrixOfEntries (fun p : m × m ↦ p.1 < p.2)
+    (fun p ↦ -c p.val.1 p.val.2)
+  refine ⟨U, TauCeti.isUpperUnitriangular_unitDiagonalMatrixOfEntries _ (fun _ h ↦ h) _,
+    fun i l ↦ ?_⟩
+  have hterm (j : m) : U i j * G j l =
+      (if i = j then G j l else 0) - (if i < j then c i j * G j l else 0) := by
+    by_cases hij : i = j
+    · subst j
+      simp [U, TauCeti.unitDiagonalMatrixOfEntries_apply_self]
+    · by_cases hlt : i < j
+      · simp [U, TauCeti.unitDiagonalMatrixOfEntries_apply_of_mem, hij, hlt]
+      · simp [U, TauCeti.unitDiagonalMatrixOfEntries_apply_of_notMem, hij, hlt]
+  rw [← hc i]
+  simp [Matrix.mul_apply, hterm, Finset.sum_sub_distrib, Finset.sum_filter, Finset.sum_apply]
+
+end Matrix

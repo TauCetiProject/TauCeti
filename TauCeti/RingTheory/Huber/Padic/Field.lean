@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.Huber.AdicHom.Basic
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Padic.Basic
+import TauCeti.NumberTheory.Padics.Basic
 
 /-!
 # The p-adic numbers are a Tate ring
@@ -36,6 +38,8 @@ maximalIdeal ℤ_[p]` typechecks against the expected `Ideal ↥(PadicInt.subrin
   The ring of definition is pinned down by an equation, the ideal of definition by the
   membership form `‖x‖ < 1` — see the note on that lemma for why.
 * `TauCeti.Huber.Padic.isPseudoUniformizer_p`: `p` is a pseudouniformiser of `ℚ_[p]`.
+* `TauCeti.Huber.Padic.isAdicHom_algebraMap`: the inclusion `ℤ_[p] → ℚ_[p]` is adic although
+  its source is not Tate.
 
 ## References
 
@@ -102,6 +106,17 @@ theorem mem_pairOfDefinition_idealOfDefinition
     x ∈ (pairOfDefinition (p := p)).idealOfDefinition ↔ ‖(x : ℚ_[p])‖ < 1 := by
   simp only [pairOfDefinition]
   exact _root_.PadicInt.mem_nonunits
+
+/-- The inclusion `ℤ_[p] → ℚ_[p]` is adic: it is continuous, and it sends every open ideal of
+`ℤ_[p]`, which is nonzero, to the open unit ideal of the field `ℚ_[p]`. -/
+instance isAdicHom_algebraMap : IsAdicHom (algebraMap ℤ_[p] ℚ_[p]) := by
+  apply IsAdicHom.of_continuous_isOpen_map PadicInt.isEmbedding_algebraMap.continuous
+  intro I hI
+  have hI0 : I ≠ ⊥ := IsDiscreteValuationRing.isOpen_iff.mp hI
+  have hmap : I.map (algebraMap ℤ_[p] ℚ_[p]) ≠ ⊥ :=
+    (Ideal.map_eq_bot_iff_of_injective (IsFractionRing.injective ℤ_[p] ℚ_[p])).not.mpr hI0
+  rw [(Ideal.eq_bot_or_top (I.map (algebraMap ℤ_[p] ℚ_[p]))).resolve_left hmap]
+  exact isOpen_univ
 
 end Padic
 

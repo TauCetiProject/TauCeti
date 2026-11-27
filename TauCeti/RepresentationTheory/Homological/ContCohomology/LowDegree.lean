@@ -1071,6 +1071,11 @@ theorem map_mul_of_smul_eq_self_of_mem_Z1 [Mul G] {f : G → M} (hf : f ∈ Z1 G
   rw [ha (f b)] at h
   exact h.trans (add_comm _ _)
 
+/-- A continuous `1`-cocycle that vanishes at `n` satisfies `f (g * n) = f g` for every `g`. -/
+theorem apply_mul_eq_of_mem_Z1 [Mul G] {f : G → M} (hf : f ∈ Z1 G M) (g : G) {n : G}
+    (hn : f n = 0) : f (g * n) = f g := by
+  rw [(mem_Z1_iff.1 hf).2 g n, hn, smul_zero, zero_add]
+
 /-- A continuous `1`-cocycle satisfies `f (a ^ k) = k • f a` whenever `a` acts trivially on `M`. -/
 theorem map_pow_of_smul_eq_self_of_mem_Z1 {G : Type u} [Monoid G] [TopologicalSpace G]
     {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGroup M]
