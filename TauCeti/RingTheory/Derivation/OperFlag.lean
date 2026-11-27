@@ -99,8 +99,21 @@ theorem iterateSpan_le_iff {i : ℕ} {W : Submodule R V} :
     iterateSpan R D v i ≤ W ↔ ∀ j < i, (⇑D)^[j] v ∈ W := by
   simp [iterateSpan_def, Submodule.span_le, Set.range_subset_iff, Fin.forall_iff]
 
+/-- The vectors in `iterateSpan R D v i` are the combinations of `v, D v, …, Dⁱ⁻¹ v`. -/
+theorem mem_iterateSpan_iff {i : ℕ} {w : V} :
+    w ∈ iterateSpan R D v i ↔ ∃ c : Fin i → R, ∑ j, c j • (⇑D)^[j] v = w :=
+  Submodule.mem_span_range_iff_exists_fun R
+
 theorem iterateSpan_mono : Monotone (iterateSpan R D v) := fun _ _ hij ↦
   iterateSpan_le_iff.2 fun _ hj ↦ iterate_mem_iterateSpan (hj.trans_le hij)
+
+theorem iterateSpan_succ (i : ℕ) :
+    iterateSpan R D v (i + 1) = iterateSpan R D v i ⊔ R ∙ (⇑D)^[i] v := by
+  refine le_antisymm (iterateSpan_le_iff.2 fun j hj ↦ ?_) (sup_le (iterateSpan_mono i.le_succ)
+    ((Submodule.span_singleton_le_iff_mem _ _).2 (iterate_mem_iterateSpan i.lt_succ_self)))
+  obtain hj | rfl := Nat.lt_succ_iff_lt_or_eq.1 hj
+  · exact Submodule.mem_sup_left (iterate_mem_iterateSpan hj)
+  · exact Submodule.mem_sup_right (Submodule.mem_span_singleton_self _)
 
 @[simp]
 theorem iterateSpan_zero : iterateSpan R D v 0 = ⊥ := by
