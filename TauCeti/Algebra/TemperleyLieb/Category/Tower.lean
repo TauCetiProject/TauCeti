@@ -70,12 +70,7 @@ theorem incl_e (i : Fin (n - 1)) :
       (TLDiagCat.e n i).diagram :=
     TLDiagram.ext rfl (TLDiagCat.circles_e n i).symm
   rw [he]
-  apply congrArg TLDiagram.matching
-  rw [TLDiagCat.diagram_e, TLDiagCat.diagram_e, TLDiagram.cast_tensor,
-    TLDiagram.tensor_assoc, TLDiagram.id_tensor_id, TLDiagram.cast_cast]
-  have h : n - 2 - (i : ℕ) + 1 = n + 1 - 2 - (i : ℕ) := by omega
-  congr! (config := { preTransparency := .default }) 3 <;>
-    simpa using congrArg (fun k => (i : ℕ) + 2 + k) h
+  exact congrArg TLDiagram.matching (TLDiagCat.diagram_e_tensor_id n i)
 
 /-- Adding a strand preserves all coefficients, pushing them forward along the injection
 of planar matchings. -/
