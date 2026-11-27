@@ -93,11 +93,8 @@ private theorem abs_det_mul_norm_sq_le_mul_sobolevDensity {φ : ℝ × ℝ → �
     (hB : NJ ≤ B) :
     |(fderiv ℝ φ ζ).det| * ‖η (φ ζ)‖ ^ 2 ≤ (1 + B) ^ 2 * sobolevDensity η' ζ := by
   rw [abs_of_pos hdet]
-  refine h.trans (mul_le_mul (pow_le_pow_left₀ (by positivity) (by linarith) 2) ?_ (sq_nonneg _)
-    (sq_nonneg _))
-  rw [sobolevDensity_apply]
-  nlinarith [sq_nonneg ‖fderiv ℝ η' ζ stdComplexLineReal‖,
-    sq_nonneg ‖fderiv ℝ η' ζ stdComplexLineImag‖]
+  exact h.trans (mul_le_mul (pow_le_pow_left₀ (by positivity) (by linarith) 2)
+    (norm_sq_le_sobolevDensity η' ζ) (sq_nonneg _) (sq_nonneg _))
 
 /-- **The `L²` norm on the sphere from the energies.** Let the discs `‖w - c i‖ < ‖a i‖ / 2` of the
 input ends be pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, with nonzero scales, let
@@ -139,6 +136,9 @@ private theorem setIntegral_norm_sq_le_of_movingEnds (ha : ∀ i, a i ≠ 0)
     sobolevDensity g z
   have hP : MeasurableSet (Ioi T ×ˢ Icc (0 : ℝ) 1) := measurableSet_Ioi.prod measurableSet_Icc
   have hE0 (i : ι) : 0 ≤ E i := setIntegral_nonneg hP fun ζ _ ↦ sobolevDensity_nonneg _ ζ
+  have hEs0 : 0 ≤ ∑ i, (1 + B) ^ 2 * E i := Finset.sum_nonneg fun i _ ↦ by
+    have := hE0 i
+    positivity
   have hEo0 : 0 ≤ Eo := setIntegral_nonneg hP fun ζ _ ↦ sobolevDensity_nonneg _ ζ
   have hEc0 : 0 ≤ Ec := setIntegral_nonneg hTr.measurableSet fun z _ ↦ sobolevDensity_nonneg _ z
   have hband {G : ℝ × ℝ → ℝ} (hG : IntegrableOn G (Ioi T ×ˢ Icc 0 1)) (hG0 : ∀ ζ, 0 ≤ G ζ) :
@@ -201,10 +201,7 @@ private theorem setIntegral_norm_sq_le_of_movingEnds (ha : ∀ i, a i ≠ 0)
     · rw [ofReal_integral_eq_lintegral_ofReal
         ((continuous_sobolevDensity hg).continuousOn.integrableOn_compact hTr)
         (ae_of_all _ fun z ↦ sobolevDensity_nonneg _ z)]
-      refine lintegral_mono fun z ↦ ENNReal.ofReal_le_ofReal ?_
-      rw [sobolevDensity_apply]
-      nlinarith [sq_nonneg ‖fderiv ℝ g z stdComplexLineReal‖,
-        sq_nonneg ‖fderiv ℝ g z stdComplexLineImag‖]
+      exact lintegral_mono fun z ↦ ENNReal.ofReal_le_ofReal (norm_sq_le_sobolevDensity g z)
     · rw [tsum_fintype]
       refine Finset.sum_le_sum fun i _ ↦ (lintegral_image_ofReal_le_of_abs_det_mul_le volume
         hS.nullMeasurableSet
@@ -222,17 +219,8 @@ private theorem setIntegral_norm_sq_le_of_movingEnds (ha : ∀ i, a i ≠ 0)
           (integrableOn_sobolevDensity_covectorPullback_positiveEndChart_of_movingEnds ha hJ hu hg
             hgc hgU T) (sobolevDensity_nonneg _))
   rw [← ENNReal.ofReal_sum_of_nonneg (fun i _ ↦ by have := hE0 i; positivity),
-    ← ENNReal.ofReal_add (Finset.sum_nonneg fun i _ ↦ by have := hE0 i; positivity)
-      (by positivity), ← ENNReal.ofReal_add hEc0 (by
-        have := Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) ↦ by
-          have := hE0 i
-          exact (by positivity : 0 ≤ (1 + B) ^ 2 * E i)
-        positivity)] at hlin
-  have hle := (ENNReal.ofReal_le_ofReal_iff (by
-    have := Finset.sum_nonneg fun i (_ : i ∈ Finset.univ) ↦ by
-      have := hE0 i
-      exact (by positivity : 0 ≤ (1 + B) ^ 2 * E i)
-    positivity)).1 hlin
+    ← ENNReal.ofReal_add hEs0 (by positivity), ← ENNReal.ofReal_add hEc0 (by positivity)] at hlin
+  have hle := (ENNReal.ofReal_le_ofReal_iff (by positivity)).1 hlin
   rw [← Finset.mul_sum] at hle
   linarith
 
