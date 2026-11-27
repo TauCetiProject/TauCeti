@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Data.Matrix.Mul
 import Mathlib.Algebra.BigOperators.Fin
-import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # Path weights of a square matrix
