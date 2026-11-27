@@ -80,13 +80,6 @@ variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
 
 /-! ### Positivity of `q` -/
 
-variable {K} in
-/-- The cardinality `q` of the residue field is nonzero in every additive monoid with one of
-characteristic zero (for instance `ℂ`). -/
-theorem natCard_residueField_ne_zero {R : Type*} [AddMonoidWithOne R] [CharZero R] :
-    (Nat.card 𝓀[K] : R) ≠ 0 :=
-  Nat.cast_ne_zero.2 Nat.card_pos.ne'
-
 private theorem log_natCard_residueField_ne_zero : Real.log (Nat.card 𝓀[K]) ≠ 0 :=
   Real.log_ne_zero_of_pos_of_ne_one (natCard_residueField_pos (K := K) (R := ℝ))
     (one_lt_natCard_residueField (K := K) (R := ℝ)).ne'
