@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.BaseChange.Form
 public import TauCeti.LinearAlgebra.CliffordAlgebra.GSpin.CliffordGroup
+public import TauCeti.LinearAlgebra.CliffordAlgebra.GSpin.IsometryEquiv
 
 /-!
 # Base change of general spin groups
@@ -20,7 +21,10 @@ even with `g ι(A^n) g⁻¹ ⊆ ι(A^n)`, and likewise for `g⁻¹`: base change
 `GSpin(q_A)` (`CliffordAlgebra.specialCliffordGroupBaseChange`), compatibly with the norm
 `ν(g) = reverse(g) g`, and so maps `Spin(q)` to `Spin(q_A)`
 (`CliffordAlgebra.normOneSpinGroupBaseChange`). These are the maps from `R`-points to `A`-points of
-`A ↦ GSpin(q_A)` and `A ↦ Spin(q_A)` induced by `R → A`.
+`A ↦ GSpin(q_A)` and `A ↦ Spin(q_A)` induced by `R → A`. They are functorial in `A`: over `A = R`
+they are the identity, and for a tower `R → A → B` the composite `GSpin(q) → GSpin(q_A) →
+GSpin((q_A)_B)` is `GSpin(q) → GSpin(q_B)`, both up to the identification of the equal forms
+`q_R = q` and `(q_A)_B = q_B` (`QuadraticMap.IsometryEquiv.ofEq`), and likewise for `Spin`.
 
 ## Main results
 
@@ -28,6 +32,10 @@ even with `g ι(A^n) g⁻¹ ⊆ ι(A^n)`, and likewise for `g⁻¹`: base change
 * `CliffordAlgebra.specialCliffordGroupNorm_specialCliffordGroupBaseChange`: compatibility with
   the norm `ν`.
 * `CliffordAlgebra.normOneSpinGroupBaseChange`: the homomorphism `Spin(q) → Spin(q_A)`.
+* `CliffordAlgebra.specialCliffordGroupBaseChange_self`,
+  `CliffordAlgebra.specialCliffordGroupBaseChange_specialCliffordGroupBaseChange`, and the `Spin`
+  versions `CliffordAlgebra.normOneSpinGroupBaseChange_self`,
+  `CliffordAlgebra.normOneSpinGroupBaseChange_normOneSpinGroupBaseChange`: functoriality in `A`.
 
 ## References
 
@@ -117,5 +125,53 @@ theorem coe_normOneSpinGroupBaseChange (g : normOneSpinGroup q) :
         CliffordAlgebra (baseChangeForm q A)) =
       baseChangeHom q A ((g : (CliffordAlgebra q)ˣ) : CliffordAlgebra q) := by
   simp [normOneSpinGroupBaseChange]
+
+/-- **Base change of `GSpin` over `R` itself is the identity**, up to the identification of the
+equal forms `q` and `q_R`. -/
+theorem specialCliffordGroupBaseChange_self (g : specialCliffordGroup q) :
+    specialCliffordGroupBaseChange q R g =
+      (QuadraticMap.IsometryEquiv.ofEq
+        (QuadraticForm.baseChangeForm_self q).symm).specialCliffordGroupEquiv g :=
+  Subtype.ext <| Units.ext <| by
+    rw [coe_specialCliffordGroupBaseChange,
+      QuadraticMap.IsometryEquiv.coe_specialCliffordGroupEquiv_apply, baseChangeHom_self]
+
+/-- **Base change of `GSpin` is transitive**: for a tower `R → A → B`,
+`GSpin(q) → GSpin(q_A) → GSpin((q_A)_B)` is `GSpin(q) → GSpin(q_B)` followed by the
+identification of the equal forms `q_B` and `(q_A)_B`. -/
+theorem specialCliffordGroupBaseChange_specialCliffordGroupBaseChange (B : Type*) [CommRing B]
+    [Algebra A B] [Algebra R B] [IsScalarTower R A B] (g : specialCliffordGroup q) :
+    specialCliffordGroupBaseChange (baseChangeForm q A) B (specialCliffordGroupBaseChange q A g) =
+      (QuadraticMap.IsometryEquiv.ofEq
+        (QuadraticForm.baseChangeForm_baseChangeForm q A B).symm).specialCliffordGroupEquiv
+        (specialCliffordGroupBaseChange q B g) :=
+  Subtype.ext <| Units.ext <| by
+    rw [coe_specialCliffordGroupBaseChange, coe_specialCliffordGroupBaseChange,
+      QuadraticMap.IsometryEquiv.coe_specialCliffordGroupEquiv_apply,
+      coe_specialCliffordGroupBaseChange, baseChangeHom_baseChangeHom]
+
+/-- **Base change of `Spin` over `R` itself is the identity**, up to the identification of the
+equal forms `q` and `q_R`. -/
+theorem normOneSpinGroupBaseChange_self (g : normOneSpinGroup q) :
+    normOneSpinGroupBaseChange q R g =
+      (QuadraticMap.IsometryEquiv.ofEq
+        (QuadraticForm.baseChangeForm_self q).symm).normOneSpinGroupEquiv g :=
+  Subtype.ext <| Units.ext <| by
+    rw [coe_normOneSpinGroupBaseChange,
+      QuadraticMap.IsometryEquiv.coe_normOneSpinGroupEquiv_apply, baseChangeHom_self]
+
+/-- **Base change of `Spin` is transitive**: for a tower `R → A → B`,
+`Spin(q) → Spin(q_A) → Spin((q_A)_B)` is `Spin(q) → Spin(q_B)` followed by the identification of
+the equal forms `q_B` and `(q_A)_B`. -/
+theorem normOneSpinGroupBaseChange_normOneSpinGroupBaseChange (B : Type*) [CommRing B]
+    [Algebra A B] [Algebra R B] [IsScalarTower R A B] (g : normOneSpinGroup q) :
+    normOneSpinGroupBaseChange (baseChangeForm q A) B (normOneSpinGroupBaseChange q A g) =
+      (QuadraticMap.IsometryEquiv.ofEq
+        (QuadraticForm.baseChangeForm_baseChangeForm q A B).symm).normOneSpinGroupEquiv
+        (normOneSpinGroupBaseChange q B g) :=
+  Subtype.ext <| Units.ext <| by
+    rw [coe_normOneSpinGroupBaseChange, coe_normOneSpinGroupBaseChange,
+      QuadraticMap.IsometryEquiv.coe_normOneSpinGroupEquiv_apply,
+      coe_normOneSpinGroupBaseChange, baseChangeHom_baseChangeHom]
 
 end CliffordAlgebra

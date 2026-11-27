@@ -37,6 +37,8 @@ the parameter bounds exclude them by hypothesis.
   characteristic zero.
 * `SimpleGraph.IsSRGWith.le_of_ne_top`, `SimpleGraph.IsSRGWith.lt_of_ne_bot`: `μ ≤ k` when `G` is
   not complete, and `ℓ < k` when `G` has an edge.
+* `SimpleGraph.IsSRGWith.ne_bot`: a strongly regular graph with `0 < μ` that is not complete has
+  an edge.
 * `SimpleGraph.IsSRGWith.param_eq_cast`: the parameter relation `k (k - ℓ - 1) = (n - k - 1) μ`
   with subtraction in a commutative ring.
 
@@ -137,6 +139,14 @@ theorem IsSRGWith.lt_of_ne_bot (h : G.IsSRGWith n k ℓ μ) (hbot : G ≠ ⊥) :
   obtain ⟨v, w, hvw⟩ := ne_bot_iff_exists_adj.1 hbot
   rw [← h.of_adj v w hvw, ← h.regular v]
   exact hvw.card_commonNeighbors_lt_degree
+
+/-- A strongly regular graph with `0 < μ` that is not complete has an edge. -/
+theorem IsSRGWith.ne_bot (h : G.IsSRGWith n k ℓ μ) (hμ : 0 < μ) (htop : G ≠ ⊤) : G ≠ ⊥ := by
+  obtain ⟨v, w, hne, hvw⟩ := ne_top_iff_exists_not_adj.1 htop
+  obtain ⟨⟨u, hu⟩⟩ : Nonempty (G.commonNeighbors v w) := by
+    rw [← Fintype.card_pos_iff, h.of_not_adj hne hvw]
+    exact hμ
+  exact ne_bot_iff_exists_adj.2 ⟨v, u, ((G.mem_commonNeighbors).1 hu).1⟩
 
 /-- **The parameter relation in a commutative ring.** For a strongly regular graph with at least
 one vertex, `k (k - ℓ - 1) = (n - k - 1) μ` with subtraction in any commutative ring, in

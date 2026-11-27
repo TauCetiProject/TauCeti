@@ -39,7 +39,9 @@ forms are two instances.
 
 ## Main results
 
-* `TauCeti.FrobeniusCycle.twistedAction_X`: the action on a variable.
+* `TauCeti.FrobeniusCycle.twistedAction_X`, `TauCeti.FrobeniusCycle.twistedAction_X_eq_sum_C_mul`:
+  the action on a variable, the second through `g` at even and its inverse transpose at odd
+  letters.
 * `TauCeti.FrobeniusCycle.isWeightedHomogeneous_twistedAction`: the action preserves the degree
   in each letter.
 * `TauCeti.FrobeniusCycle.isWeightedHomogeneous_formToMvPolynomial`,
@@ -60,6 +62,9 @@ forms are two instances.
   `New/UpperBound/ElementaryDivisors/TwistingData.lean`; the definitions here correspond to
   `New.FrobeniusCycle.letterRep`, `New.FrobeniusCycle.translatesIn`,
   `New.FrobeniusCycle.defectConditions` and `New.FrobeniusCycle.deepForms` there.
+  `TauCeti.FrobeniusCycle.twistedAction_X_eq_sum_C_mul` is adapted from the file
+  `New/UpperBound/ElementaryDivisors/RootLemma.lean` there (Apache 2.0, Copyright 2026 Anthropic,
+  PBC).
 -/
 
 public section
@@ -105,6 +110,22 @@ theorem twistedAction_X (g : GL (Fin k) W) (c : Fin k) (s : ZMod N) :
   have := T.neZero
   simp [twistedAction_apply, blockDiagonal_apply, Fintype.sum_prod_type, smul_eq_C_mul,
     apply_ite C, ite_mul]
+
+/-- The action on a variable, through `g` at even and its inverse transpose at odd letters. -/
+theorem twistedAction_X_eq_sum_C_mul (g : GL (Fin k) W) (z : Fin k × ZMod N) :
+    T.twistedAction g (X z) = ∑ b, C (T.ι z.2
+      ((if T.isEven z.2 then g else GeneralLinearGroup.inverseTranspose g : GL (Fin k) W) b z.1)) *
+        X (b, z.2) := by
+  obtain ⟨c, s⟩ := z
+  rw [twistedAction_X]
+  cases h : T.isEven s <;> simp [h, GeneralLinearGroup.coe_inverseTranspose, smul_eq_C_mul]
+
+/-- The twisted action does not raise the total degree. -/
+theorem totalDegree_twistedAction_le (g : GL (Fin k) W) (f : MvPolynomial (Fin k × ZMod N) R) :
+    (T.twistedAction g f).totalDegree ≤ f.totalDegree := by
+  have := T.neZero
+  rw [twistedAction_apply]
+  exact totalDegree_polynomialAction_le _ f
 
 /-! ### Forms of degree `n` in each letter -/
 

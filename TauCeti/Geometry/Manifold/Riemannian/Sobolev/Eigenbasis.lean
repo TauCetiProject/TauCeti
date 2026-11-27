@@ -394,6 +394,22 @@ instance finiteDimensional_eigenspace_smoothLaplaceBeltrami (ν : ℝ) :
   rw [← neg_neg ν]
   exact (weakEigenspaceEquiv I M (-ν)).symm.finiteDimensional
 
+/-- **The eigenvalues of the Laplacian are those of any eigenbasis.** If a Hilbert basis `b` of
+`L²(M)` consists of the classes of smooth functions `uᵢ` with `Δuᵢ = -μᵢ uᵢ`, then `-ν` is an
+eigenvalue of `Δ` on smooth functions exactly when `ν = μᵢ` for some `i`. -/
+theorem hasEigenvalue_smoothLaplaceBeltrami_iff_exists_eq {ι : Type*}
+    (b : HilbertBasis ι ℝ (Lp ℝ 2 (riemannianVolume I M))) {u : ι → C^∞⟮I, M; ℝ⟯} {μ : ι → ℝ}
+    (hu : ∀ i, toLp (ofSmooth (u i)) = b i)
+    (hμ : ∀ i, smoothLaplaceBeltrami I M (u i) = -μ i • u i) (ν : ℝ) :
+    Module.End.HasEigenvalue (smoothLaplaceBeltrami I M) (-ν) ↔ ∃ i, μ i = ν := by
+  refine ⟨fun h ↦ Set.nonempty_of_ncard_ne_zero (s := {i | μ i = ν}) ?_, fun ⟨i, hi⟩ ↦ ?_⟩
+  · rw [← finrank_eigenspace_smoothLaplaceBeltrami_eq_ncard b hu hμ]
+    exact Submodule.finrank_eq_zero.not.2 (Module.End.hasEigenvalue_iff.1 h)
+  · refine Module.End.hasEigenvalue_of_hasEigenvector (x := u i)
+      (Module.End.hasEigenvector_iff.2 ⟨?_, fun h ↦ b.orthonormal.ne_zero i ?_⟩)
+    · rw [Module.End.mem_eigenspace_iff, hμ i, hi]
+    · rw [← hu i, h, map_zero, map_zero]
+
 end Smooth
 
 end TauCeti.Manifold.SobolevH1

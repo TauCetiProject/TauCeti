@@ -86,6 +86,11 @@ def deckShift (k : ℤ) (p : PolarPoint) : PolarPoint :=
 @[simp, grind =] theorem angle_deckShift (k : ℤ) (p : PolarPoint) :
     angle (deckShift k p) = angle p + (k : ℝ) * (2 * Real.pi) := (rfl)
 
+/-- A deck shift is translation by a constant vector in the coordinates of the cover. -/
+theorem val_deckShift (k : ℤ) (p : PolarPoint) :
+    (deckShift k p).val = p.val + (0, (k : ℝ) * (2 * Real.pi)) := by
+  exact Prod.ext (by simp [deckShift, radius_def]) (by simp [deckShift, angle_def])
+
 @[simp, grind =] theorem deckShift_zero (p : PolarPoint) : deckShift 0 p = p := by
   apply PolarPoint.ext <;> simp
 

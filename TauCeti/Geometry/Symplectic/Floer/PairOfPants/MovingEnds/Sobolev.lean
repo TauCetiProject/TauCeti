@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.SemiFredh
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Sobolev
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Conformal
 import TauCeti.Analysis.Complex.RealChart
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.Chart
 import TauCeti.Geometry.Symplectic.JHolomorphic.RealChart
 import TauCeti.Topology.Separation.Basic

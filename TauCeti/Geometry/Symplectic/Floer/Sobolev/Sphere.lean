@@ -9,7 +9,10 @@ public import TauCeti.Geometry.Symplectic.Floer.SemiFredholm.Sphere
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Conformal
 public import TauCeti.Analysis.Fredholm.SemiFredholm
 import TauCeti.Analysis.Calculus.BumpFunction.LipschitzCutoff
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Complex.EquivRealProd
+import TauCeti.Analysis.Fredholm.ContinuousFamily
+import TauCeti.Geometry.Symplectic.Floer.Continuation.Path
 import TauCeti.Geometry.Symplectic.Floer.Linearization.Infinity
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
@@ -66,8 +69,20 @@ sections are dense in `W^{1,2}` of the sphere.
   (`finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereWeight_of_eq_base`),
   so that `D_u` is Fredholm (`isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base`),
   all in the namespace `TauCeti.SymplecticForm`.
+* **The index does not depend on the data.** Two sets of such data with the same structure `J₀`
+  at infinity, tame everywhere, are joined by the path of data whose structures run along the
+  segment between their Cayley coordinates relative to `J₀` (`TauCeti.Floer.pathAlmostComplex`)
+  and whose Hamiltonians run along the segment between them (`TauCeti.Floer.pathHamiltonian`).
+  Every member is Fredholm, and the coefficient fields of the members agree near infinity and are
+  jointly continuous in the parameter on a compact square, so the operators form a continuous path
+  (`continuousOn_floerConformalSobolevOperator_sphereWeight_family`) along which the index is
+  constant
+  (`index_floerConformalSobolevOperator_sphereWeight_eq_of_eq_base`). In particular the index is
+  that of the Cauchy–Riemann operator `∂s + J₀ ∂t` of the constant data
+  (`index_floerConformalSobolevOperator_sphereWeight_eq_const`), both in the namespace
+  `TauCeti.SymplecticForm`.
 
-The target is a symplectic vector space. The index of `D_u` is not treated here.
+The target is a symplectic vector space. The value of the index is not computed here.
 
 ## References
 
@@ -572,6 +587,15 @@ private theorem exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero_
   rw [← integral_add_compl hKb hηi]
   linarith
 
+omit [FiniteDimensional ℝ V] in
+/-- The structure `J₀` at infinity is `ω`-compatible when `J` is compatible along `u`: it is
+`J(w, u w)` at a far point `w`. -/
+private theorem compatible_of_eq_base (ω : SymplecticForm V)
+    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀) (hc : ∀ z, ω.Compatible (J z (u z))) :
+    ω.Compatible J₀ := by
+  have hfar : T ≤ ‖((T, 0) : ℝ × ℝ)‖ := by simp [le_abs_self]
+  simpa [hJ₀ _ hfar] using hc (T, 0)
+
 /-- **The cokernel of the linearized operator on the sphere is finite-dimensional.** Let the Floer
 data `J`, `K_s`, `K_t` on the plane `ℝ × ℝ ≅ ℂ` be the fixed structure `J₀` and the zero
 perturbation on `‖w‖ ≥ T`, a neighbourhood of the point at infinity of the sphere. Let `J` be `C³`
@@ -591,35 +615,18 @@ theorem finiteDimensional_orthogonal_range_floerConformalSobolevOperator_sphereW
     FiniteDimensional ℝ (ω.floerConformalSobolevOperator univ sphereWeight
       (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).rangeᗮ := by
   -- The structure at infinity is the compatible structure `J₀`.
-  have hT : T ≤ ‖((|T|, 0) : ℝ × ℝ)‖ := by simp [le_abs_self]
-  have h₀ : ω.Compatible J₀ := by simpa [hJ₀ _ hT] using hc (|T|, 0)
-  -- `J` is bounded along `u`: it is continuous on the compact ball `‖w‖ ≤ T`, and `J₀` outside.
-  have hJc : Continuous fun z ↦ (J z (u z)).toLinearMap.toContinuousLinearMap :=
-    continuous_iff_continuousAt.2 fun z ↦
-    (hJ z).continuousAt.comp (f := fun z ↦ (z, u z))
-      (continuousAt_id.prodMk (hu.continuous.continuousAt))
-  obtain ⟨B₁, hB₁⟩ := (isCompact_closedBall (0 : ℝ × ℝ) T).exists_bound_of_continuousOn
-    hJc.continuousOn
-  have hB (z : ℝ × ℝ) : ‖(J z (u z)).toLinearMap.toContinuousLinearMap‖ ≤
-      max B₁ ‖J₀.toLinearMap.toContinuousLinearMap‖ := by
-    rcases le_or_gt ‖z‖ T with hz | hz
-    · exact (hB₁ z (mem_closedBall_zero_iff.2 hz)).trans (le_max_left _ _)
-    · rw [hJ₀ z hz.le]
-      exact le_max_right _ _
-  have hρ1 (z : ℝ × ℝ) : sphereWeight z ≤ 1 := by
-    rw [sphereWeight_apply]
-    exact inv_le_one_of_one_le₀ (one_le_pow₀ (by nlinarith [sq_nonneg z.1, sq_nonneg z.2]))
+  have h₀ : ω.Compatible J₀ := compatible_of_eq_base ω hJ₀ hc
   obtain ⟨A, b, hglob⟩ :=
     exists_integral_norm_sq_le_of_floerLinearizationAdjoint_eq_zero_of_eq_base (u := u) ω h₀ hJ₀
       hKs₀ hKt₀
   exact finiteDimensional_orthogonal_range_floerConformalSobolevOperator_of_integral_norm_sq_le ω
-    isWeight_sphereWeight hρ1 hJ hKs hKt hu hc hB
+    isWeight_sphereWeight hJ hKs hKt hu hc
     (ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight
       (J := fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
       (fun z hz y ↦ by rw [hJ₀ z hz y]) hKs₀ hKt₀ (fun z ↦ (hJ z).of_le (by norm_num))
       (fun z ↦ (hKs z).of_le (by norm_num)) (fun z ↦ (hKt z).of_le (by norm_num))
       (hu.of_le (by norm_num)))
-    hglob
+    (isCompact_setOf_norm_equivRealProdCLM_symm_le b) hglob
 
 /-- **The linearized operator on the sphere is Fredholm.** Let the Floer data `J`, `K_s`, `K_t` on
 the plane `ℝ × ℝ ≅ ℂ` be the fixed structure `J₀` and the zero perturbation on `‖w‖ ≥ T`, a
@@ -651,6 +658,153 @@ theorem isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base
       hJ₀ hKs₀ hKt₀ hJ hKs hKt hu hc)
 
 end Cokernel
+
+/-! ### The index does not depend on the data -/
+
+section Index
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
+  {J₀ : AlmostComplexStructure V} {u : ℝ × ℝ → V}
+
+/-- **Continuity of the sphere operators along a family of data.** Let `(J_p, K_{s,p}, K_{t,p})`,
+for `p` in a subset `s` of a normed space `P`, be a family of Floer data on the plane, all equal to
+the fixed structure `J₀` and the zero perturbation on `‖w‖ ≥ T`, and `C¹` (with `C²` Hamiltonians)
+jointly in the parameter, the domain point and the target point along the graph of a `C¹` map `u`,
+at every parameter of `s`. Then the realizations of the linearized Floer operators of the members
+from `W^{1,2}` of the sphere to `L²` depend continuously on `p ∈ s` in the operator norm: their
+coefficient fields agree on `‖w‖ > T` and are jointly continuous in `(p, w)` on the compact square
+`‖w‖ ≤ T`, hence converge in `L^∞`. -/
+theorem continuousOn_floerConformalSobolevOperator_sphereWeight_family (ω : SymplecticForm V)
+    {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P] {s : Set P}
+    {J : P × (ℝ × ℝ) → V → AlmostComplexStructure V} {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {T : ℝ}
+    (hJ₀ : ∀ p ∈ s, ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J (p, z) y = J₀)
+    (hKs₀ : ∀ p ∈ s, ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks (p, z) y = 0)
+    (hKt₀ : ∀ p ∈ s, ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt (p, z) y = 0)
+    (hJ : ∀ p ∈ s, ∀ z, ContDiffAt ℝ 1
+      (fun q : (P × (ℝ × ℝ)) × V ↦ (J q.1 q.2).toLinearMap.toContinuousLinearMap) ((p, z), u z))
+    (hKs : ∀ p ∈ s, ∀ z, ContDiffAt ℝ 2 (uncurry Ks) ((p, z), u z))
+    (hKt : ∀ p ∈ s, ∀ z, ContDiffAt ℝ 2 (uncurry Kt) ((p, z), u z)) (hu : ContDiff ℝ 1 u) :
+    ContinuousOn (fun p ↦ ω.floerConformalSobolevOperator univ sphereWeight
+      (fun z y ↦ (J (p, z) y).toLinearMap.toContinuousLinearMap) (fun z ↦ Ks (p, z))
+      (fun z ↦ Kt (p, z)) u) s := by
+  -- Every member has an essentially bounded coefficient field on conformal jets.
+  have hM (p : P) (hp : p ∈ s) := ω.memLp_floerConformalJetCoeff_of_eq_base isWeight_sphereWeight
+    (J := fun z y ↦ (J (p, z) y).toLinearMap.toContinuousLinearMap)
+    (Ks := fun z ↦ Ks (p, z)) (Kt := fun z ↦ Kt (p, z)) (fun z hz y ↦ by rw [hJ₀ p hp z hz y])
+    (hKs₀ p hp) (hKt₀ p hp) (fun z ↦ (hJ p hp z).comp_prodMap_prodMk_right)
+    (fun z ↦ (hKs p hp z).comp_prodMap_prodMk_right)
+    (fun z ↦ (hKt p hp z).comp_prodMap_prodMk_right) hu
+  -- Off the compact square `‖w‖ ≤ T` the data do not depend on the parameter.
+  refine ω.continuousOn_floerConformalSobolevOperator_family MeasurableSet.univ
+    (isCompact_closedBall (0 : ℝ × ℝ) T) (J := fun q y ↦ (J q y).toLinearMap.toContinuousLinearMap)
+    (fun p hp z _ ↦ hJ p hp z) (fun p hp z _ ↦ hKs p hp z) (fun p hp z _ ↦ hKt p hp z)
+    (fun z _ ↦ hu.contDiffAt) (fun z _ ↦ isWeight_sphereWeight.continuousOn.continuousAt univ_mem)
+    (fun z _ ↦ isWeight_sphereWeight.pos z (mem_univ z)) (fun p hp p' hp' z _ hz ↦ ?_) hM
+  have hT : T ≤ ‖z‖ := (not_le.1 (mt mem_closedBall_zero_iff.2 hz)).le
+  refine ⟨funext fun y ↦ ?_, funext fun y ↦ ?_, funext fun y ↦ ?_⟩
+  · rw [hJ₀ p hp z hT y, hJ₀ p' hp' z hT y]
+  · rw [hKs₀ p hp z hT y, hKs₀ p' hp' z hT y]
+  · rw [hKt₀ p hp z hT y, hKt₀ p' hp' z hT y]
+
+/-- **The index of the linearized operator on the sphere does not depend on the data.** Let
+`(J, K_s, K_t)` and `(J', K'_s, K'_t)` be two sets of Floer data on the plane `ℝ × ℝ ≅ ℂ`, equal to
+the same structure `J₀` and the zero perturbation on `‖w‖ ≥ T` and on `‖w‖ ≥ T'` respectively, a
+neighbourhood of the point at infinity of the sphere. Let `J` and `J'` tame `ω` everywhere, be `C³`
+at the points `(z, u z)` along a `C³` map `u` and compatible with `ω` there, and let the
+Hamiltonians be `C⁴` there. Then the realizations of the linearized Floer operators of the two sets
+of data from `W^{1,2}` of the sphere to `L²`, which are Fredholm
+(`isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base`), have the same index. -/
+theorem index_floerConformalSobolevOperator_sphereWeight_eq_of_eq_base (ω : SymplecticForm V)
+    {J J' : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt Ks' Kt' : ℝ × ℝ → V → ℝ} {T T' : ℝ}
+    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
+    (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
+    (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0)
+    (hJ₀' : ∀ z : ℝ × ℝ, T' ≤ ‖z‖ → ∀ y, J' z y = J₀)
+    (hKs₀' : ∀ z : ℝ × ℝ, T' ≤ ‖z‖ → ∀ y, Ks' z y = 0)
+    (hKt₀' : ∀ z : ℝ × ℝ, T' ≤ ‖z‖ → ∀ y, Kt' z y = 0)
+    (hJ : ∀ z, ContDiffAt ℝ 3
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hJ' : ∀ z, ContDiffAt ℝ 3
+      (fun p : (ℝ × ℝ) × V ↦ (J' p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 4 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 4 (uncurry Kt) (z, u z))
+    (hKs' : ∀ z, ContDiffAt ℝ 4 (uncurry Ks') (z, u z))
+    (hKt' : ∀ z, ContDiffAt ℝ 4 (uncurry Kt') (z, u z))
+    (hJt : ∀ z y, ω.Tames (J z y)) (hJ't : ∀ z y, ω.Tames (J' z y)) (hu : ContDiff ℝ 3 u)
+    (hc : ∀ z, ω.Compatible (J z (u z))) (hc' : ∀ z, ω.Compatible (J' z (u z))) :
+    (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun w y ↦ (J' w y).toLinearMap.toContinuousLinearMap) Ks' Kt' u).index =
+      (ω.floerConformalSobolevOperator univ sphereWeight
+        (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).index := by
+  set S := max T T'
+  have hS : T ≤ S := le_max_left _ _
+  have hS' : T' ≤ S := le_max_right _ _
+  -- The two sets of data are joined by the path whose structures run along the segment between
+  -- their Cayley coordinates relative to `J₀` and whose Hamiltonians run along the segment between
+  -- them. Every member is Fredholm and the members form a continuous path of operators, along
+  -- which the index is constant. The structure at infinity is compatible with `ω`.
+  have h₀ : ω.Compatible J₀ := compatible_of_eq_base ω hJ₀ hc
+  -- On `‖w‖ ≥ S` every member of the path is `J₀` and the zero perturbation.
+  have hJμ (μ : ℝ) (z : ℝ × ℝ) (hz : S ≤ ‖z‖) (y : V) :
+      pathAlmostComplex h₀ hJt hJ't (μ, z) y = J₀ := by
+    rw [pathAlmostComplex_of_eq h₀ μ
+      ((hJ₀ z (hS.trans hz) y).trans (hJ₀' z (hS'.trans hz) y).symm), hJ₀ z (hS.trans hz) y]
+  have hKμ {K K' : ℝ × ℝ → V → ℝ} (h : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, K z y = 0)
+      (h' : ∀ z : ℝ × ℝ, T' ≤ ‖z‖ → ∀ y, K' z y = 0) (μ : ℝ) (z : ℝ × ℝ) (hz : S ≤ ‖z‖)
+      (y : V) : pathHamiltonian K K' (μ, z) y = 0 := by
+    rw [pathHamiltonian_of_eq μ
+      (funext fun y ↦ (h z (hS.trans hz) y).trans (h' z (hS'.trans hz) y).symm),
+      h z (hS.trans hz) y]
+  -- The path is `C³` (with `C⁴` Hamiltonians) jointly in the parameter and along `u`.
+  have hJp (μ : ℝ) (z : ℝ × ℝ) : ContDiffAt ℝ 3 (fun q : (ℝ × (ℝ × ℝ)) × V ↦
+      (pathAlmostComplex h₀ hJt hJ't q.1 q.2).toLinearMap.toContinuousLinearMap) ((μ, z), u z) :=
+    contDiffAt_pathAlmostComplex h₀ hJt hJ't (p := (μ, z)) (hJ z) (hJ' z)
+  have hKp {K K' : ℝ × ℝ → V → ℝ} (h : ∀ z, ContDiffAt ℝ 4 (uncurry K) (z, u z))
+      (h' : ∀ z, ContDiffAt ℝ 4 (uncurry K') (z, u z)) (μ : ℝ) (z : ℝ × ℝ) :
+      ContDiffAt ℝ 4 (uncurry (pathHamiltonian K K')) ((μ, z), u z) :=
+    contDiffAt_pathHamiltonian (p := (μ, z)) (h z) (h' z)
+  -- The operators of the path are Fredholm and depend continuously on the parameter.
+  have hFred (μ : ℝ) := ω.isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base
+    (hJμ μ) (hKμ hKs₀ hKs₀' μ) (hKμ hKt₀ hKt₀' μ) (fun z ↦ (hJp μ z).comp_prodMap_prodMk_right)
+    (fun z ↦ (hKp hKs hKs' μ z).comp_prodMap_prodMk_right)
+    (fun z ↦ (hKp hKt hKt' μ z).comp_prodMap_prodMk_right)
+    hu fun z ↦ compatible_pathAlmostComplex h₀ (p := (μ, z)) (hc z) (hc' z)
+  have hcont := continuousOn_floerConformalSobolevOperator_sphereWeight_family ω (T := S)
+    (s := univ) (fun μ _ ↦ hJμ μ) (fun μ _ ↦ hKμ hKs₀ hKs₀' μ) (fun μ _ ↦ hKμ hKt₀ hKt₀' μ)
+    (fun μ _ z ↦ (hJp μ z).of_le (by norm_num))
+    (fun μ _ z ↦ (hKp hKs hKs' μ z).of_le (by norm_num))
+    (fun μ _ z ↦ (hKp hKt hKt' μ z).of_le (by norm_num)) (hu.of_le (by norm_num))
+  simpa only [pathAlmostComplex_zero, pathAlmostComplex_one, pathHamiltonian_zero,
+    pathHamiltonian_one] using
+    (continuousOn_univ.1 hcont).index_eq_of_preconnectedSpace hFred 1 0
+
+/-- **The index on the sphere is that of the Cauchy–Riemann operator of `J₀`.** Under the
+hypotheses of `isFredholm_floerConformalSobolevOperator_sphereWeight_of_eq_base`, if moreover `J`
+tames `ω` everywhere, then the realization of `D_u` from `W^{1,2}` of the sphere to `L²` has the
+index of the realization of the linearized operator `∂s + J₀ ∂t` of the constant data `J₀` and `0`
+along `u`. -/
+theorem index_floerConformalSobolevOperator_sphereWeight_eq_const (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → AlmostComplexStructure V} {Ks Kt : ℝ × ℝ → V → ℝ} {T : ℝ}
+    (hJ₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, J z y = J₀)
+    (hKs₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Ks z y = 0)
+    (hKt₀ : ∀ z : ℝ × ℝ, T ≤ ‖z‖ → ∀ y, Kt z y = 0)
+    (hJ : ∀ z, ContDiffAt ℝ 3
+      (fun p : (ℝ × ℝ) × V ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap) (z, u z))
+    (hKs : ∀ z, ContDiffAt ℝ 4 (uncurry Ks) (z, u z))
+    (hKt : ∀ z, ContDiffAt ℝ 4 (uncurry Kt) (z, u z)) (hJt : ∀ z y, ω.Tames (J z y))
+    (hu : ContDiff ℝ 3 u) (hc : ∀ z, ω.Compatible (J z (u z))) :
+    (ω.floerConformalSobolevOperator univ sphereWeight
+      (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u).index =
+      (ω.floerConformalSobolevOperator univ sphereWeight
+        (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) u).index := by
+  -- The structure at infinity is compatible with `ω`.
+  have h₀ : ω.Compatible J₀ := compatible_of_eq_base ω hJ₀ hc
+  exact (index_floerConformalSobolevOperator_sphereWeight_eq_of_eq_base ω hJ₀ hKs₀ hKt₀
+    (J' := fun _ _ ↦ J₀) (T' := T) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) (fun _ _ _ ↦ rfl) hJ
+    (fun _ ↦ contDiffAt_const) hKs hKt (fun _ ↦ contDiffAt_const) (fun _ ↦ contDiffAt_const) hJt
+    (fun _ _ ↦ h₀.tames) hu hc fun _ ↦ h₀).symm
+
+end Index
 
 end SymplecticForm
 

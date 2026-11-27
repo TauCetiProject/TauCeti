@@ -259,10 +259,6 @@ theorem isGenericEigenvalues_inv_iff :
   · simp [isGenericEigenvalues_iff]
   -- For `q ≠ 0`, inverting two eigenvalues reverses their ratio.
   have key (a b : R) : a⁻¹ = q * b⁻¹ ↔ b = q * a := by
-    rcases eq_or_ne a 0 with rfl | ha
-    · simp [hq, eq_comm]
-    rcases eq_or_ne b 0 with rfl | -
-    · simp [ha, hq]
     rw [inv_eq_iff_eq_inv, mul_inv, inv_inv, eq_inv_mul_iff_mul_eq₀ hq, eq_comm]
   simp only [isGenericEigenvalues_iff, Pi.inv_apply, ne_eq, key]
   exact ⟨fun h i j hij ↦ h j i (Ne.symm hij), fun h i j hij ↦ h j i (Ne.symm hij)⟩
