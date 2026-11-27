@@ -157,15 +157,24 @@ namespace Jet
 
 /-- The coefficient at an index `i ≤ N` of an `N`-jet, independent of its representative. -/
 noncomputable def coeff {N : ℕ} (x : Jet R N) (i : Fin (N + 1)) : R :=
-  PowerSeries.coeff i (Function.surjInv (jet_surjective N) x).toPowerSeries
+  Quotient.liftOn x (fun φ : FormalCoordinate R ↦ PowerSeries.coeff i φ.toPowerSeries)
+    (fun φ ψ h ↦ by
+      have hjet : jet N φ = jet N ψ := Quotient.sound h
+      exact (jet_eq_jet_iff_coeff.mp hjet) i (Nat.le_of_lt_succ i.isLt))
 
 /-- The coefficients of a jet are those of any representative, up to its jet order. -/
 @[simp]
 theorem coeff_jet {N : ℕ} (φ : FormalCoordinate R) (i : Fin (N + 1)) :
-    (jet N φ).coeff i = PowerSeries.coeff i φ.toPowerSeries := by
-  have h : jet N (Function.surjInv (jet_surjective N) (jet N φ)) = jet N φ :=
-    Function.rightInverse_surjInv (jet_surjective N) _
-  exact (jet_eq_jet_iff_coeff.mp h) i (Nat.le_of_lt_succ i.isLt)
+    (jet N φ).coeff i = PowerSeries.coeff i φ.toPowerSeries :=
+  (rfl)
+
+/-- Jets are equal if they agree at every coefficient through their jet order. -/
+@[ext]
+theorem ext {N : ℕ} {x y : Jet R N} (h : ∀ i, x.coeff i = y.coeff i) : x = y := by
+  obtain ⟨φ, rfl⟩ := jet_surjective N x
+  obtain ⟨ψ, rfl⟩ := jet_surjective N y
+  exact jet_eq_jet_iff_coeff.mpr fun i hi ↦ by
+    simpa only [coeff_jet, Fin.val_mk] using h ⟨i, Nat.lt_succ_of_le hi⟩
 
 /-- For `N ≤ M`, the truncation of `M`-jets to `N`-jets. -/
 noncomputable def truncate {N M : ℕ} (h : N ≤ M) : Jet R M →* Jet R N :=
@@ -229,6 +238,13 @@ noncomputable def map (N : ℕ) : Jet R N →* Jet S N :=
 theorem map_jet (N : ℕ) (φ : FormalCoordinate R) :
     Jet.map f N (jet N φ) = jet N (FormalCoordinate.map f φ) :=
   (rfl)
+
+/-- Base change applies the ring homomorphism to each jet coefficient. -/
+@[simp]
+theorem coeff_map {N : ℕ} (x : Jet R N) (i : Fin (N + 1)) :
+    (Jet.map f N x).coeff i = f (x.coeff i) := by
+  obtain ⟨φ, rfl⟩ := jet_surjective N x
+  simp only [map_jet, coeff_jet, toPowerSeries_map, PowerSeries.coeff_map]
 
 theorem map_comp_jet (N : ℕ) :
     (Jet.map f N).comp (jet N) = (jet N).comp (FormalCoordinate.map f) :=
