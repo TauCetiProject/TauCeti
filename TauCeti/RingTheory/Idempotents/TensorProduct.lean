@@ -65,13 +65,13 @@ private def idealTensorToSpan (he : IsIdempotentElem e) (hf : IsIdempotentElem f
       (Ideal.span {e ⊗ₜ[k] f} : Ideal (A ⊗[k] B)) :=
   (idealTensorInclude k).codRestrict
     ((Ideal.span {e ⊗ₜ[k] f} : Ideal (A ⊗[k] B)).restrictScalars k) fun t ↦ by
-    apply (mem_span_singleton_iff_mul_eq_self (he.tmul (k := k) hf)).mpr
+    apply (he.tmul (k := k) hf).mem_span_singleton_iff_mul_eq_self.mpr
     induction t using TensorProduct.inductionOn with
     | tmul x y =>
       simp only [idealTensorInclude, TensorProduct.map_tmul, LinearMap.restrictScalars_apply,
         Submodule.subtype_apply, Algebra.TensorProduct.tmul_mul_tmul,
-        (mem_span_singleton_iff_mul_eq_self he).mp x.property,
-        (mem_span_singleton_iff_mul_eq_self hf).mp y.property]
+        he.mem_span_singleton_iff_mul_eq_self.mp x.property,
+        hf.mem_span_singleton_iff_mul_eq_self.mp y.property]
     | add t t' ht ht' => simp only [map_add, add_mul, ht, ht']
 
 @[simp]
@@ -114,7 +114,7 @@ def spanSingletonTensorProductEquiv (he : IsIdempotentElem e) (hf : IsIdempotent
       simpa only [LinearMap.comp_apply, coe_idealTensorToSpan, spanToIdealTensor_apply,
         LinearMap.id_apply] using
           (LinearMap.congr_fun (idealTensorInclude_projection k) (x : A ⊗[k] B)).trans
-            ((mem_span_singleton_iff_mul_eq_self (he.tmul (k := k) hf)).mp x.property))
+            ((he.tmul (k := k) hf).mem_span_singleton_iff_mul_eq_self.mp x.property))
     (by
       apply TensorProduct.ext'
       intro x y

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Basic
 import Mathlib.RingTheory.DedekindDomain.Factorization
 public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # Coprime representatives of narrow ideal classes
@@ -45,21 +46,6 @@ namespace NumberField
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- Shifting a generator by an element of `H` preserves the ideal generated together with `H`. -/
-private theorem sup_span_singleton_eq_of_sub_mem {R : Type*} [CommRing R] {H : Ideal R} {a b : R}
-    (hba : b - a ∈ H) : H ⊔ Ideal.span {b} = H ⊔ Ideal.span {a} := by
-  apply le_antisymm
-  · refine sup_le le_sup_left ?_
-    rw [Ideal.span_singleton_le_iff_mem, ← sub_add_cancel b a]
-    exact Ideal.add_mem _ (Ideal.mem_sup_left hba)
-      (Ideal.mem_sup_right (Ideal.mem_span_singleton_self a))
-  · refine sup_le le_sup_left ?_
-    rw [Ideal.span_singleton_le_iff_mem]
-    have hab : a = b - (b - a) := by abel
-    rw [hab]
-    exact Ideal.sub_mem _ (Ideal.mem_sup_right (Ideal.mem_span_singleton_self b))
-      (Ideal.mem_sup_left hba)
-
 /-- **A totally positive coprime quotient of an ideal.** Given nonzero integral ideals `I` and `M`,
 there are a nonzero totally positive algebraic integer `a` and a nonzero ideal `J`, coprime to `M`,
 such that `(a) = I * J`.
@@ -83,7 +69,7 @@ theorem exists_isTotallyPositive_span_eq_mul_isCoprime (I M : (Ideal (𝓞 K))�
   obtain ⟨c, hc0, hcsub, hcpos⟩ :=
     exists_isTotallyPositive_sub_mem (by rwa [← Ideal.zero_eq_bot]) a
   have hsupc : H ⊔ Ideal.span {c} = (I : Ideal (𝓞 K)) :=
-    (sup_span_singleton_eq_of_sub_mem hcsub).trans ha
+    (H.sup_span_singleton_eq_of_sub_mem hcsub).trans ha
   have hcI : Ideal.span {c} ≤ (I : Ideal (𝓞 K)) := le_sup_right.trans_eq hsupc
   obtain ⟨J, hJ⟩ := Ideal.dvd_iff_le.mpr hcI
   have hJ0 : J ≠ 0 := by

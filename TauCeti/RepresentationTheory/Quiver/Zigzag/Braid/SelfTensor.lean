@@ -115,8 +115,8 @@ private theorem vertexVolumeTensor_mem (i : V) :
 
 private def volumeInIdeal (i : V) : L i :=
   ⟨zigzagAlgebraBasis k G (.inr (.inr i)),
-    (mem_span_singleton_iff_mul_eq_self
-      (isIdempotentElem_zigzagAlgebraBasis_inl k G i)).mpr (by simp)⟩
+    (isIdempotentElem_zigzagAlgebraBasis_inl k G i).mem_span_singleton_iff_mul_eq_self.mpr
+      (by simp)⟩
 
 private theorem vertexVolumeTensor_eq (i : V) :
     vertexVolumeTensor k G i = (zigzagBraidBimoduleFactorsEquiv k G i).symm
@@ -312,7 +312,7 @@ theorem zigzagBraidSelfTensorInl_evaluationRight (i : V) :
     have heop : IsIdempotentElem (op (e i)) := by rw [IsIdempotentElem, ← op_mul, he.eq]
     have hr : e i * unop (r : Zᵐᵒᵖ) = unop (r : Zᵐᵒᵖ) := by
       simpa only [unop_mul, unop_op] using
-        congrArg unop ((mem_span_singleton_iff_mul_eq_self heop).mp r.property)
+        congrArg unop (heop.mem_span_singleton_iff_mul_eq_self.mp r.property)
     simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
       GradedModuleCat.hom_id, LinearMap.id_apply]
     rw [zigzagBraidSelfTensorInl_hom_factors k G i l r,
@@ -336,7 +336,7 @@ theorem zigzagBraidSelfTensorInl_evaluationLeft (i : V) :
   | tmul l r =>
     have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
     have hl : (l : Z) * e i = (l : Z) :=
-      (mem_span_singleton_iff_mul_eq_self he).mp l.property
+      he.mem_span_singleton_iff_mul_eq_self.mp l.property
     simp only [GradedModuleCat.hom_comp, LinearMap.comp_apply,
       GradedModuleCat.hom_id, LinearMap.id_apply]
     rw [zigzagBraidSelfTensorInl_hom_factors k G i l r,

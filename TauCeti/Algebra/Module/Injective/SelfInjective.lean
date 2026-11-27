@@ -82,7 +82,7 @@ variable {A : Type u} [Ring A]
 if the regular module is Baer then so is a left ideal `p` consisting of the elements fixed by right
 multiplication by an idempotent `e`, such a `p` being a retract of the regular module by right
 multiplication by `e`. For `p = Ideal.span {e}` the hypothesis `hp` is
-`TauCeti.mem_span_singleton_iff_mul_eq_self`. -/
+`IsIdempotentElem.mem_span_singleton_iff_mul_eq_self`. -/
 theorem _root_.Module.Baer.of_isIdempotentElem (hA : Module.Baer A A) {e : A}
     (he : IsIdempotentElem e) {p : Ideal A} (hp : ∀ x : A, x ∈ p ↔ x * e = x) :
     Module.Baer A p :=

@@ -124,8 +124,8 @@ theorem isSimpleModule_gradedPositiveMulQuotient {f : A} (hf : IsPrimitiveIdempo
   have : Nontrivial (gradedPositiveMulQuotient 𝒜 hf₀) :=
     nontrivial_gradedPositiveMulQuotient hneg hf₀ hf.ne_zero
   have hmem (x : (Ideal.span {⟨f, hf₀⟩} : Ideal R₀)) : ((x : R₀) : A) ∈ Ideal.span {f} :=
-    (mem_span_singleton_iff_mul_eq_self hf.isIdempotentElem).2 <| congrArg Subtype.val <|
-      (mem_span_singleton_iff_mul_eq_self hf₀'.isIdempotentElem).1 x.property
+    hf.isIdempotentElem.mem_span_singleton_iff_mul_eq_self.2 <| congrArg Subtype.val <|
+      hf₀'.isIdempotentElem.mem_span_singleton_iff_mul_eq_self.1 x.property
   -- The class map `A₀ f ⟶ A f / A₊f` is `A₀`-linear and onto, since every class has a
   -- degree-zero representative.
   let π : (Ideal.span {⟨f, hf₀⟩} : Ideal R₀) →ₗ[R₀] gradedPositiveMulQuotient 𝒜 hf₀ :=
@@ -139,8 +139,8 @@ theorem isSimpleModule_gradedPositiveMulQuotient {f : A} (hf : IsPrimitiveIdempo
     obtain ⟨x, hx, rfl⟩ := (mem_gradedPositiveMulQuotient_piece_iff hf₀).1
       ((gradedPositiveMulQuotient_piece_zero_eq_top hneg hf.isIdempotentElem hf₀).ge
         (Submodule.mem_top (x := y)))
-    refine ⟨⟨⟨x, hx⟩, (mem_span_singleton_iff_mul_eq_self hf₀'.isIdempotentElem).2
-      (Subtype.ext ((mem_span_singleton_iff_mul_eq_self hf.isIdempotentElem).1 x.property))⟩, rfl⟩
+    refine ⟨⟨⟨x, hx⟩, hf₀'.isIdempotentElem.mem_span_singleton_iff_mul_eq_self.2
+      (Subtype.ext (hf.isIdempotentElem.mem_span_singleton_iff_mul_eq_self.1 x.property))⟩, rfl⟩
   have : IsSimpleModule R₀ (gradedPositiveMulQuotient 𝒜 hf₀) := hf₀'.isSimpleModule_of_surjective hπ
   -- Simplicity over `A₀` gives simplicity over `A`, as `A₀` acts through `A`.
   refine (isSimpleModule_iff_toSpanSingleton_surjective).2 ⟨inferInstance, fun z hz y => ?_⟩

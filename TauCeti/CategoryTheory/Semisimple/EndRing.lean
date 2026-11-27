@@ -92,7 +92,8 @@ variable [Preadditive C]
 of `X ⊞ Y` is semisimple, every morphism `f : X ⟶ Y` has some `g` with `f ≫ g ≫ f = f`. -/
 theorem exists_comp_comp_eq_self_of_isSemisimpleRing_end {X Y : C} [HasBinaryBiproduct X Y]
     [IsSemisimpleRing (End (X ⊞ Y))] (f : X ⟶ Y) : ∃ g : Y ⟶ X, f ≫ g ≫ f = f := by
-  obtain ⟨φ, hφ⟩ := IsSemisimpleRing.exists_mul_mul_eq_self (End.of (biprod.fst ≫ f ≫ biprod.inr))
+  obtain ⟨φ, hφ⟩ :=
+    IsVonNeumannRegularRing.exists_mul_mul_eq_self (End.of (biprod.fst ≫ f ≫ biprod.inr))
   refine ⟨biprod.inr ≫ φ.asHom ≫ biprod.fst, ?_⟩
   simpa using congrArg (fun ψ : End (X ⊞ Y) ↦ biprod.inl ≫ ψ.asHom ≫ biprod.snd) hφ
 
@@ -222,7 +223,7 @@ semisimple.** This applies in particular to a finite semisimple category
 (`TauCeti.IsFiniteSemisimpleCategory.splitMonoCategory`). -/
 theorem isSemisimpleRing_end_of_splitMonoCategory [SplitMonoCategory C] (X : C)
     [IsArtinianRing (End X)] : IsSemisimpleRing (End X) := by
-  refine IsArtinianRing.isSemisimpleRing_of_forall_exists_mul_mul_eq_self fun a ↦ ?_
+  refine IsArtinianRing.isSemisimpleRing_iff_isVonNeumannRegularRing.mpr ⟨fun a ↦ ?_⟩
   obtain ⟨g, hg⟩ := exists_comp_comp_eq_self_of_splitMonoCategory a.asHom
   exact ⟨End.of g, End.ext (by simpa using hg)⟩
 

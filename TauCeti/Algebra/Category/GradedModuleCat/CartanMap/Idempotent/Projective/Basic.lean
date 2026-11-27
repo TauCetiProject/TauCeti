@@ -128,7 +128,7 @@ private def freeIdempotentProjection (r : J) (i : I) :
   let f := (LinearMap.mulRight A (e i)).comp (DirectSum.component A J (fun _ => A) r)
   refine GradedModuleCat.ofHom (f.codRestrict (Ideal.span {e i}) fun x => ?_)
     (LinearMap.isHomogeneous_def.2 fun p x hx => ?_)
-  · exact (mem_span_singleton_iff_mul_eq_self (he.idem i)).2
+  · exact (he.idem i).mem_span_singleton_iff_mul_eq_self.2
       (by simp only [f, LinearMap.comp_apply, LinearMap.mulRight_apply, mul_assoc,
         (he.idem i).eq])
   · rw [add_zero, GradedModuleCat.mem_shiftObj_piece_iff,
@@ -201,7 +201,7 @@ theorem cornerSubmodule_inf_zero_eq_span_singleton (i : I) :
   constructor
   · rintro ⟨hc, hx⟩
     have hxi : x ∈ (Ideal.span {e i} : Ideal A) :=
-      (mem_span_singleton_iff_mul_eq_self (ho.idem i)).2
+      (ho.idem i).mem_span_singleton_iff_mul_eq_self.2
         (by rw [← hc, mul_assoc, (ho.idem i).eq])
     obtain ⟨c, rfl⟩ := exists_eq_smul_of_mem_zero ho hspan hx hxi
     exact ⟨c, rfl⟩
@@ -223,7 +223,7 @@ theorem pos_of_mem_cornerSubmodule_inf {i j : I} (hij : i ≠ j) {p : ℤ} {x : 
   · rw [hneg p hp, Submodule.mem_bot] at hx
     exact hx₀ hx
   · have hxj : x ∈ (Ideal.span {e j} : Ideal A) :=
-      (mem_span_singleton_iff_mul_eq_self (ho.idem j)).2
+      (ho.idem j).mem_span_singleton_iff_mul_eq_self.2
         (by rw [← hc, mul_assoc, (ho.idem j).eq])
     obtain ⟨c, rfl⟩ := exists_eq_smul_of_mem_zero ho hspan hx hxj
     apply hx₀

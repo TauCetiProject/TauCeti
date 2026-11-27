@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Artinian.Module
-public import TauCeti.RingTheory.VonNeumannRegular
+public import TauCeti.RingTheory.VonNeumannRegular.Basic
+import TauCeti.RingTheory.VonNeumannRegular.Jacobson
 import TauCeti.RingTheory.Idempotents.Ideal
 
 /-!
@@ -23,9 +24,9 @@ as idempotents split.
 
 ## Main results
 
-* `IsSemisimpleRing.exists_mul_mul_eq_self`: every element of a semisimple ring is regular.
-* `IsArtinianRing.isSemisimpleRing_iff_forall_exists_mul_mul_eq_self`: an Artinian ring is
-  semisimple if and only if every element is regular.
+* Every semisimple ring has an `IsVonNeumannRegularRing` instance.
+* `IsArtinianRing.isSemisimpleRing_iff_isVonNeumannRegularRing`: an Artinian ring is semisimple if
+  and only if it is von Neumann regular.
 
 ## References
 
@@ -37,30 +38,14 @@ public section
 
 variable {R : Type*} [Ring R]
 
-/-- **Every element of a semisimple ring is von Neumann regular**: `a * b * a = a` for some `b`. -/
-theorem IsSemisimpleRing.exists_mul_mul_eq_self [IsSemisimpleRing R] (a : R) :
-    ∃ b, a * b * a = a :=
-  (TauCeti.exists_isIdempotentElem_span_singleton_eq_iff a).mp
-    (IsSemisimpleRing.ideal_eq_span_idempotent (Ideal.span {a}))
-
 /-- A semisimple ring is von Neumann regular. -/
-instance [IsSemisimpleRing R] : TauCeti.IsVonNeumannRegularRing R :=
-  ⟨IsSemisimpleRing.exists_mul_mul_eq_self⟩
+instance [IsSemisimpleRing R] : TauCeti.IsVonNeumannRegularRing R where
+  exists_mul_mul_eq_self a :=
+    (TauCeti.exists_isIdempotentElem_span_singleton_eq_iff a).mp
+      (IsSemisimpleRing.ideal_eq_span_idempotent (Ideal.span {a}))
 
-namespace IsArtinianRing
-
-variable [IsArtinianRing R]
-
-/-- **An Artinian ring whose elements are all von Neumann regular is semisimple.** -/
-theorem isSemisimpleRing_of_forall_exists_mul_mul_eq_self (h : ∀ a : R, ∃ b, a * b * a = a) :
-    IsSemisimpleRing R := by
-  let : TauCeti.IsVonNeumannRegularRing R := ⟨h⟩
-  exact isSemisimpleRing_iff_jacobson.mpr TauCeti.IsVonNeumannRegularRing.jacobson_eq_bot
-
-/-- **An Artinian ring is semisimple exactly when it is von Neumann regular.** -/
-theorem isSemisimpleRing_iff_forall_exists_mul_mul_eq_self :
-    IsSemisimpleRing R ↔ ∀ a : R, ∃ b, a * b * a = a :=
-  ⟨fun _ ↦ IsSemisimpleRing.exists_mul_mul_eq_self,
-    isSemisimpleRing_of_forall_exists_mul_mul_eq_self⟩
-
-end IsArtinianRing
+/-- An Artinian ring is semisimple exactly when it is von Neumann regular. -/
+theorem IsArtinianRing.isSemisimpleRing_iff_isVonNeumannRegularRing [IsArtinianRing R] :
+    IsSemisimpleRing R ↔ TauCeti.IsVonNeumannRegularRing R :=
+  ⟨fun _ ↦ inferInstance, fun _ ↦
+    isSemisimpleRing_iff_jacobson.mpr TauCeti.IsVonNeumannRegularRing.jacobson_eq_bot⟩

@@ -139,7 +139,8 @@ multiplication by `e_i` fixes it. -/
 @[simp]
 theorem mem_zigzagProjective_iff {i : V} {x : nonisolatedZigzagQuotient k G} :
     x ∈ zigzagProjective k G i ↔ x * zigzagVertexIdempotent k G i = x :=
-  mem_span_singleton_iff_mul_eq_self (zigzagMk_vertexIdempotent_mul_self k G i)
+  IsIdempotentElem.mem_span_singleton_iff_mul_eq_self
+    (zigzagMk_vertexIdempotent_mul_self k G i)
 
 /-- The distinguished generator `e_i` of the vertex projective. -/
 noncomputable def zigzagProjectiveGenerator (i : V) : zigzagProjective k G i :=

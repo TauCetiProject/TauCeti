@@ -184,7 +184,7 @@ variable {k Q}
 theorem tmul_mem_span_arrowTensorIdempotent (b : Σ i j : Q, i ⟶ j) (x y : 𝒜) :
     (x * ε b.2.1) ⊗ₜ[k] op (ε b.1 * y) ∈
       (Ideal.span {arrowTensorIdempotent k Q b} : Ideal 𝒜ᵉ) := by
-  rw [mem_span_singleton_iff_mul_eq_self (isIdempotentElem_arrowTensorIdempotent k Q b)]
+  rw [(isIdempotentElem_arrowTensorIdempotent k Q b).mem_span_singleton_iff_mul_eq_self]
   simp [arrowTensorIdempotent_def, ← op_mul, mul_assoc,
     IsIdempotentElem.mul_self_mul (x := ε b.1) (vertexIdempotent_mul_self _)]
 
@@ -489,7 +489,7 @@ variable {k Q}
 `∑ᵥ eᵥ ⊗ eᵥ`. -/
 theorem mem_vertexTensorBimodule_iff {u : 𝒜ᵉ} :
     u ∈ vertexTensorBimodule k Q ↔ u * vertexTensorIdempotent k Q = u :=
-  mem_span_singleton_iff_mul_eq_self (isIdempotentElem_vertexTensorIdempotent k Q)
+  (isIdempotentElem_vertexTensorIdempotent k Q).mem_span_singleton_iff_mul_eq_self
 
 /-- The pure tensor `x eᵥ ⊗ eᵥ y` lies in `kQ ⊗_{kQ₀} kQ`. -/
 theorem tmul_mem_vertexTensorBimodule (v : Q) (x y : 𝒜) :

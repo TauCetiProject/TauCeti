@@ -83,6 +83,6 @@ theorem range_spanSingletonRelationMap (he : IsIdempotentElem e) :
   · rintro ⟨y, rfl⟩
     exact I.mul_mem_right e y.property
   · intro hx
-    exact ⟨⟨x, hx⟩, Subtype.ext ((mem_span_singleton_iff_mul_eq_self he).mp x.property)⟩
+    exact ⟨⟨x, hx⟩, Subtype.ext (he.mem_span_singleton_iff_mul_eq_self.mp x.property)⟩
 
 end TauCeti

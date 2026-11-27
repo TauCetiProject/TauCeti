@@ -155,7 +155,7 @@ theorem zigzagBraidAdjacentTripleUnderlyingEquiv_tmul {i j : V} (h : G.Adj j i)
 
 private def adjacentArrowLeft {i j : V} (h : G.Adj j i) : L j :=
   ⟨zigzagAlgebraBasis k G (.inr (.inl (⟨(j, i), h⟩ : G.Dart))), by
-    rw [mem_span_singleton_iff_mul_eq_self (isIdempotentElem_zigzagAlgebraBasis_inl k G j)]
+    rw [(isIdempotentElem_zigzagAlgebraBasis_inl k G j).mem_span_singleton_iff_mul_eq_self]
     simp⟩
 
 private def adjacentVertexGenerator (i : V) : U i :=

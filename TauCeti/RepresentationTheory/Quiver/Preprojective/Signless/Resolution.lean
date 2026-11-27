@@ -84,7 +84,7 @@ private theorem isIdempotentElem_op_signlessVertexIdempotent (i : R) :
 theorem mem_signlessPreprojectiveRightProjective_iff (i : R) (x : Πᵐᵒᵖ) :
     x ∈ signlessPreprojectiveRightProjective k i ↔ e i * unop x = unop x := by
   rw [signlessPreprojectiveRightProjective,
-    mem_span_singleton_iff_mul_eq_self (isIdempotentElem_op_signlessVertexIdempotent k i),
+    (isIdempotentElem_op_signlessVertexIdempotent k i).mem_span_singleton_iff_mul_eq_self,
     ← unop_inj, unop_mul, unop_op]
 
 /-- Right vertex projectives are projective over the opposite algebra. -/

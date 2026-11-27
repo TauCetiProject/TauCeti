@@ -113,7 +113,7 @@ noncomputable def smulTopRadicalLayerEquiv (hf : IsIdempotentElem f) (hg : IsIde
     have hfy : f • y = t := by
       refine Subtype.ext (Subtype.ext ?_)
       rw [hte]
-      simp [mul_assoc, (mem_span_singleton_iff_mul_eq_self hg).mp (y : P).property]
+      simp [mul_assoc, hg.mem_span_singleton_iff_mul_eq_self.mp (y : P).property]
     refine Subtype.ext ?_
     simpa [← hfm, hfy, Submodule.Quotient.mk_eq_zero] using ht
   have hrange : LinearMap.range φ = radicalLayerCorner k J f g := by
@@ -126,7 +126,7 @@ noncomputable def smulTopRadicalLayerEquiv (hf : IsIdempotentElem f) (hg : IsIde
       simp only [φ, LinearMap.comp_apply, Submodule.subtype_apply]
       rw [← hfm, radicalLayerToQuotient_mk]
       congr 1
-      simp [mul_assoc, (mem_span_singleton_iff_mul_eq_self hg).mp (y : P).property]
+      simp [mul_assoc, hg.mem_span_singleton_iff_mul_eq_self.mp (y : P).property]
     · intro z hz
       obtain ⟨x, hx, rfl⟩ := mem_radicalLayerCorner.mp hz
       have hxg : x • spanSingletonGenerator g ∈ K := Submodule.smul_mem_smul hx Submodule.mem_top

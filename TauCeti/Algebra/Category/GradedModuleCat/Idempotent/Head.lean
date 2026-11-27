@@ -274,7 +274,7 @@ theorem gradedPositiveMulQuotient_piece_eq_bot (hneg : ∀ p < 0, 𝒜 p = ⊥)
   · rw [hneg p hp, Submodule.mem_bot] at hx
     rw [hx]
     exact Submodule.zero_mem _
-  · rw [← (mem_span_singleton_iff_mul_eq_self he).1 x.property]
+  · rw [← he.mem_span_singleton_iff_mul_eq_self.1 x.property]
     exact mul_mem_gradedPositiveMulIdeal 𝒜 hp hx
 
 /-- **`Ae / A₊e` is its own degree-zero piece** for an idempotent `e` of degree zero of a
@@ -445,7 +445,7 @@ theorem exists_eq_smul_of_mem_zero (he : OrthogonalIdempotents e)
       obtain ⟨b, hb⟩ := hy
       exact ⟨a * b, by rw [smul_mul_assoc, hb, smul_smul]⟩
   obtain ⟨c, hc⟩ := hmul x (hspan hx)
-  rw [mem_span_singleton_iff_mul_eq_self (he.idem i)] at hxi
+  rw [(he.idem i).mem_span_singleton_iff_mul_eq_self] at hxi
   exact ⟨c, hxi ▸ hc⟩
 
 variable [GradedAlgebra 𝒜]
@@ -556,7 +556,7 @@ private theorem mem_gradedPositiveMulIdeal_of_decompose_eq_zero {f : A} (hf : Is
     {x : A} (hx : x ∈ (Ideal.span {f} : Ideal A)) (hx₀ : (decompose 𝒜 x 0 : A) = 0) :
     x ∈ gradedPositiveMulIdeal 𝒜 f := by
   classical
-  rw [mem_span_singleton_iff_mul_eq_self hf] at hx
+  rw [hf.mem_span_singleton_iff_mul_eq_self] at hx
   rw [← hx, ← sum_support_decompose 𝒜 x, Finset.sum_mul]
   refine Ideal.sum_mem _ fun p _ => ?_
   rcases lt_trichotomy p 0 with hp | rfl | hp

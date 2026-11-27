@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Preadditive.ModCat.Basic
-public import TauCeti.CategoryTheory.VonNeumannRegular
+public import TauCeti.CategoryTheory.VonNeumannRegular.Basic
 
 /-!
 # Principal submodules of representables over regular categories
@@ -27,7 +27,7 @@ variable {C : Type*} [Category* C] [Preadditive C]
 
 /-- Von Neumann regularity is equivalent to the splitting of all principal submodules of
 representable modules. -/
-theorem isVonNeumannRegularCategory_iff_isSplitMono_image_ι_yoneda_map :
+theorem isVonNeumannRegularCategory_iff_forall_isSplitMono_image_ι_yoneda_map :
     IsVonNeumannRegularCategory C ↔
       ∀ ⦃X Y : C⦄ (f : X ⟶ Y), IsSplitMono (image.ι ((yoneda C).map f)) :=
   ⟨fun h _ _ f ↦ f.isSplitMono_image_ι_yoneda_map_iff.mpr (h.exists_comp_comp_eq_self f),

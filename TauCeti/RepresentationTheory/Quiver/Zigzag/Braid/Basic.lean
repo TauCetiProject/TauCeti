@@ -133,8 +133,8 @@ theorem mem_zigzagBraidBimodule_iff {i : V} {u : 𝒵ᵉ} :
     u ∈ zigzagBraidBimodule k G i ↔
       u * (zigzagAlgebraBasis k G (.inl i) ⊗ₜ[k] op (zigzagAlgebraBasis k G (.inl i))) = u := by
   have he := isIdempotentElem_zigzagAlgebraBasis_inl k G i
-  exact mem_span_singleton_iff_mul_eq_self (he.tmul (k := k)
-    (by rw [IsIdempotentElem, ← op_mul, he.eq]))
+  exact IsIdempotentElem.mem_span_singleton_iff_mul_eq_self
+    (he.tmul (k := k) (by rw [IsIdempotentElem, ← op_mul, he.eq]))
 
 /-- The pure tensor `x e_i ⊗ e_i y` lies in `P_i ⊗_k e_i Z`. -/
 theorem tmul_mem_zigzagBraidBimodule (i : V) (x y : 𝒵) :

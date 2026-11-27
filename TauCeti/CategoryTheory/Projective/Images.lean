@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.Images
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
+import TauCeti.CategoryTheory.EpiMono
+import TauCeti.CategoryTheory.Limits.Shapes.Images
 
 /-!
 # Images of morphisms into projective objects
@@ -25,18 +26,9 @@ theorem Quiver.Hom.isSplitMono_image_ι_iff_exists_comp_comp_eq_self
     {C : Type*} [Category* C] {X Y : C} (f : X ⟶ Y)
     [HasImage f] [Epi (factorThruImage f)] [Projective Y] :
     IsSplitMono (image.ι f) ↔ ∃ g : Y ⟶ X, f ≫ g ≫ f = f := by
-  constructor
-  · intro h
-    let i := image.ι f
-    let p := factorThruImage f
-    refine ⟨Projective.factorThru (retraction i) p, ?_⟩
-    calc
-      f ≫ Projective.factorThru (retraction i) p ≫ f =
-          p ≫ i ≫ (Projective.factorThru (retraction i) p ≫ p) ≫ i := by
-        simp only [Category.assoc, image.fac, image.fac_assoc, i, p]
-      _ = f := by rw [Projective.factorThru_comp, IsSplitMono.id_assoc, image.fac]
-  · rintro ⟨g, hg⟩
-    refine IsSplitMono.mk' ⟨g ≫ factorThruImage f, ?_⟩
-    apply (cancel_epi (factorThruImage f)).mp
-    apply (cancel_mono (image.ι f)).mp
-    simpa only [Category.assoc, image.fac, image.fac_assoc, Category.comp_id] using hg
+  refine ⟨fun hi ↦ ?_, f.isSplitMono_image_ι_of_exists_comp_comp_eq_self⟩
+  have hp : IsSplitEpi (factorThruImage f) := .mk'
+    ⟨image.ι f ≫ Projective.factorThru (retraction (image.ι f)) (factorThruImage f), by simp⟩
+  simpa only [image.fac] using
+    ((factorThruImage f).exists_comp_comp_eq_self_iff_isSplitEpi_and_isSplitMono
+      (image.ι f)).mpr ⟨hp, hi⟩
