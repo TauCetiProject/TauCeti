@@ -37,6 +37,10 @@ variable, and matrix-valued kernels acting on sections of a trivial finite-rank 
 * `TauCeti.ae_integrable_apply_of_memLp`: for `u ∈ Lᵖ` the integrand `y ↦ K x y (u y)` is
   integrable for almost every `x`.
 * `TauCeti.eLpNorm_integral_apply_le`: the `Lᵖ` bound for the integral operator on functions.
+* `TauCeti.integralOperatorLpOfBound`: the integral operator as a bounded operator
+  `Lᵖ(ν; F) → L^q(μ; G)`, built from integrability, membership and norm estimates supplied by the
+  caller, with `TauCeti.coeFn_integralOperatorLpOfBound` and
+  `TauCeti.norm_integralOperatorLpOfBound_le`.
 * `TauCeti.integralOperatorLp`: the integral operator as a bounded operator on `Lᵖ`.
 * `TauCeti.norm_integralOperatorLp_le`, `TauCeti.norm_integralOperatorLp_le_max`: its norm
   bounds.
@@ -158,22 +162,28 @@ theorem memLp_integral_apply (hK : AEStronglyMeasurable (uncurry K) (μ.prod ν)
 
 variable [SMulCommClass ℝ 𝕜 G]
 
-/-- The integral operator `u ↦ (x ↦ ∫ y, K x y (u y) ∂ν)` with an a.e. strongly measurable kernel
-`K : α → β → (F →L[𝕜] G)`, as a bounded operator from `Lᵖ(ν; F)` to `Lᵖ(μ; G)` for
-`1 ≤ p ≤ ∞`, when the operator-norm row integrals of `K` are a.e. at most `A` and its column
-integrals are a.e. at most `B`. Its norm is at most `A ^ (1 - 1/p) * B ^ (1/p)`
-(`TauCeti.norm_integralOperatorLp_le`). -/
-def integralOperatorLp (K : α → β → F →L[𝕜] G) (p : ℝ≥0∞) [Fact (1 ≤ p)]
-    (hK : AEStronglyMeasurable (uncurry K) (μ.prod ν)) {A B : ℝ≥0}
-    (hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ A) (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
-    Lp F p ν →L[𝕜] Lp G p μ :=
+section integralOperatorLpOfBound
+
+omit [SFinite μ] [SFinite ν]
+
+variable (K) (p) (q : ℝ≥0∞) [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+
+/-- The integral operator `u ↦ (x ↦ ∫ y, K x y (u y) ∂ν)` as a bounded operator from
+`Lᵖ(ν; F)` to `L^q(μ; G)`, from estimates supplied by the caller: for every `u ∈ Lᵖ(ν)` the
+integrand is integrable for almost every `x`, the output is in `L^q(μ)`, and its `L^q` norm is at
+most `C * ‖u‖_p`. Schur's test (`TauCeti.integralOperatorLp`) and square-integrable kernels supply
+such estimates. -/
+def integralOperatorLpOfBound
+    (hint : ∀ u : Lp F p ν, ∀ᵐ x ∂μ, Integrable (fun y ↦ K x y (u y)) ν)
+    (hmem : ∀ u : Lp F p ν, MemLp (fun x ↦ ∫ y, K x y (u y) ∂ν) q μ) (C : ℝ≥0)
+    (hle : ∀ u : Lp F p ν, eLpNorm (fun x ↦ ∫ y, K x y (u y) ∂ν) q μ ≤ C * eLpNorm u p ν) :
+    Lp F p ν →L[𝕜] Lp G q μ :=
   LinearMap.mkContinuous
-    { toFun u := (memLp_integral_apply hK (Lp.memLp u) Fact.out hA hB).toLp
+    { toFun u := (hmem u).toLp
       map_add' u v := by
         rw [← MemLp.toLp_add]
         refine MemLp.toLp_congr _ _ ?_
-        filter_upwards [ae_integrable_apply_of_memLp hK (Lp.memLp u) Fact.out hA hB,
-          ae_integrable_apply_of_memLp hK (Lp.memLp v) Fact.out hA hB] with x hu hv
+        filter_upwards [hint u, hint v] with x hu hv
         rw [Pi.add_apply, ← integral_add hu hv]
         refine integral_congr_ae ?_
         filter_upwards [Lp.coeFn_add u v] with y hy
@@ -185,11 +195,51 @@ def integralOperatorLp (K : α → β → F →L[𝕜] G) (p : ℝ≥0∞) [Fact
         refine integral_congr_ae ?_
         filter_upwards [Lp.coeFn_smul c u] with y hy
         rw [hy, Pi.smul_apply, map_smul] }
-    (A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) fun u ↦ by
-      refine (Lp.norm_toLp _ (memLp_integral_apply hK (Lp.memLp u) Fact.out hA hB)).trans_le
+    C fun u ↦ by
+      refine (Lp.norm_toLp _ (hmem u)).trans_le
         (ENNReal.toReal_le_of_le_ofReal (by positivity) ?_)
-      rw [ENNReal.ofReal_mul NNReal.zero_le_coe, ENNReal.ofReal_coe_nnreal,
-        ofReal_norm, Lp.eNorm_def, coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv Fact.out]
+      rw [ENNReal.ofReal_mul NNReal.zero_le_coe, ENNReal.ofReal_coe_nnreal, ofReal_norm,
+        Lp.eNorm_def]
+      exact hle u
+
+variable {K p q} {hint : ∀ u : Lp F p ν, ∀ᵐ x ∂μ, Integrable (fun y ↦ K x y (u y)) ν}
+  {hmem : ∀ u : Lp F p ν, MemLp (fun x ↦ ∫ y, K x y (u y) ∂ν) q μ} {C : ℝ≥0}
+  {hle : ∀ u : Lp F p ν, eLpNorm (fun x ↦ ∫ y, K x y (u y) ∂ν) q μ ≤ C * eLpNorm u p ν}
+
+/-- `TauCeti.integralOperatorLpOfBound` acts by `x ↦ ∫ y, K x y (u y) ∂ν` almost everywhere. -/
+theorem coeFn_integralOperatorLpOfBound (u : Lp F p ν) :
+    integralOperatorLpOfBound K p q hint hmem C hle u =ᵐ[μ] fun x ↦ ∫ y, K x y (u y) ∂ν :=
+  MemLp.coeFn_toLp (hmem u)
+
+/-- An `L^q` class equal almost everywhere to `x ↦ ∫ y, K x y (u y) ∂ν` is the image of `u`
+under `TauCeti.integralOperatorLpOfBound`. -/
+theorem integralOperatorLpOfBound_eq_iff {u : Lp F p ν} {v : Lp G q μ} :
+    integralOperatorLpOfBound K p q hint hmem C hle u = v ↔
+      (fun x ↦ ∫ y, K x y (u y) ∂ν) =ᵐ[μ] v :=
+  ⟨fun h ↦ h ▸ (coeFn_integralOperatorLpOfBound u).symm,
+    fun h ↦ Lp.ext ((coeFn_integralOperatorLpOfBound u).trans h)⟩
+
+/-- `TauCeti.integralOperatorLpOfBound` has norm at most the supplied constant `C`. -/
+theorem norm_integralOperatorLpOfBound_le :
+    ‖integralOperatorLpOfBound K p q hint hmem C hle‖ ≤ C :=
+  LinearMap.mkContinuous_norm_le _ (NNReal.coe_nonneg _) _
+
+end integralOperatorLpOfBound
+
+/-- The integral operator `u ↦ (x ↦ ∫ y, K x y (u y) ∂ν)` with an a.e. strongly measurable kernel
+`K : α → β → (F →L[𝕜] G)`, as a bounded operator from `Lᵖ(ν; F)` to `Lᵖ(μ; G)` for
+`1 ≤ p ≤ ∞`, when the operator-norm row integrals of `K` are a.e. at most `A` and its column
+integrals are a.e. at most `B`. Its norm is at most `A ^ (1 - 1/p) * B ^ (1/p)`
+(`TauCeti.norm_integralOperatorLp_le`). -/
+def integralOperatorLp (K : α → β → F →L[𝕜] G) (p : ℝ≥0∞) [Fact (1 ≤ p)]
+    (hK : AEStronglyMeasurable (uncurry K) (μ.prod ν)) {A B : ℝ≥0}
+    (hA : ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ ∂ν ≤ A) (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
+    Lp F p ν →L[𝕜] Lp G p μ :=
+  integralOperatorLpOfBound K p p
+    (fun u ↦ ae_integrable_apply_of_memLp hK (Lp.memLp u) Fact.out hA hB)
+    (fun u ↦ memLp_integral_apply hK (Lp.memLp u) Fact.out hA hB)
+    (A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹) fun u ↦ by
+      rw [coe_rpow_one_sub_toReal_inv_mul_rpow_toReal_inv Fact.out]
       exact eLpNorm_integral_apply_le hK (Lp.memLp u).aestronglyMeasurable Fact.out hA hB
 
 section integralOperatorLp
@@ -200,7 +250,7 @@ variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {hK : AEStronglyMeasurable (uncurry K
 /-- The integral operator acts by `x ↦ ∫ y, K x y (u y) ∂ν` almost everywhere. -/
 theorem coeFn_integralOperatorLp (u : Lp F p ν) :
     integralOperatorLp K p hK hA hB u =ᵐ[μ] fun x ↦ ∫ y, K x y (u y) ∂ν :=
-  MemLp.coeFn_toLp (memLp_integral_apply hK (Lp.memLp u) Fact.out hA hB)
+  coeFn_integralOperatorLpOfBound u
 
 /-- An `Lᵖ` class equal almost everywhere to `x ↦ ∫ y, K x y (u y) ∂ν` is the image of `u` under
 the integral operator. -/
@@ -214,7 +264,7 @@ where `A` bounds the row integrals and `B` the column integrals of `‖K‖`. Fo
 is `A`. -/
 theorem norm_integralOperatorLp_le :
     ‖integralOperatorLp K p hK hA hB‖ ≤ ((A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ : ℝ≥0) : ℝ) :=
-  LinearMap.mkContinuous_norm_le _ (NNReal.coe_nonneg _) _
+  norm_integralOperatorLpOfBound_le
 
 /-- The integral operator has norm at most the larger of the bounds on the row and column
 integrals of `‖K‖`. In particular, a common bound `A` on both gives norm at most `A`. -/

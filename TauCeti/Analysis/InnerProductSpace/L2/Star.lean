@@ -21,7 +21,8 @@ Consequently the pointwise conjugate of a Hilbert basis of `L²(ν)` is again a 
 
 * `MeasureTheory.Lp.inner_star_star`: `⟪star f, star g⟫ = ⟪g, f⟫`.
 * `MeasureTheory.Lp.inner_star_comm`: `⟪star f, g⟫ = ⟪star g, f⟫`.
-* `HilbertBasis.star`: the complex conjugate of a Hilbert basis of `L²`.
+* `HilbertBasis.star`: the complex conjugate of a Hilbert basis of `L²`, with
+  `HilbertBasis.star_apply`, `HilbertBasis.star_star` and `HilbertBasis.repr_star_star_apply`.
 -/
 
 public section
@@ -46,10 +47,7 @@ theorem inner_star_star (f g : Lp 𝕜 2 ν) : ⟪star f, star g⟫_𝕜 = ⟪g,
 /-- Conjugating the first argument of the `L²` inner product gives the bilinear pairing
 `∫ f g`, which is symmetric. -/
 theorem inner_star_comm (f g : Lp 𝕜 2 ν) : ⟪star f, g⟫_𝕜 = ⟪star g, f⟫_𝕜 := by
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_star f, coeFn_star g] with y hf hg
-  simp [hf, hg, RCLike.inner_apply, mul_comm]
+  simpa only [star_star] using inner_star_star f (star g)
 
 end MeasureTheory.Lp
 
@@ -77,5 +75,18 @@ protected def star (b : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν)) : HilbertBasis ι �
 @[simp]
 theorem star_apply (b : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν)) (i : ι) : b.star i = star (b i) := by
   rw [HilbertBasis.star, HilbertBasis.coe_mkOfOrthogonalEqBot]
+
+/-- Conjugating a Hilbert basis of `L²` twice gives it back. -/
+@[simp]
+protected theorem star_star (b : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν)) : b.star.star = b :=
+  HilbertBasis.eq_of_apply_eq fun i ↦ by rw [star_apply, star_apply, _root_.star_star]
+
+/-- The coordinates of `star f` in the conjugate basis are the conjugates of the coordinates of
+`f`. -/
+@[simp]
+theorem repr_star_star_apply (b : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν)) (f : Lp 𝕜 2 ν) (i : ι) :
+    b.star.repr (star f) i = star (b.repr f i) := by
+  rw [HilbertBasis.repr_apply_apply, HilbertBasis.repr_apply_apply, star_apply,
+    Lp.inner_star_star, RCLike.star_def, inner_conj_symm]
 
 end HilbertBasis
