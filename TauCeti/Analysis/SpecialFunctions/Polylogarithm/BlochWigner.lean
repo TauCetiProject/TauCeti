@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.ClosedDisc
 public import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Lobachevsky
 import Mathlib.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.SpecialFunctions.Polylogarithm.Conj
 
 /-!
 # The Bloch–Wigner dilogarithm
@@ -27,7 +28,8 @@ dilogarithm. On the unit circle the correction vanishes, so `D` is continuous th
 `Im Li₂`, with Fourier series `D(e^{it}) = ∑_{k ≥ 1} sin (k t) / k²`; it is the imaginary part of
 Mathlib's exponential zeta function `expZeta a 2` at `e^{2πia}`, and twice Lobachevsky's function
 at `e^{2iθ}`. At `i` the series is Catalan's constant `∑_{m ≥ 0} (-1)^m / (2m + 1)²`, which is
-positive, and `D(-i) = -D(i)`.
+positive. Off the cut `(1, ∞)` the function is odd under conjugation, `D(conj z) = -D(z)`, so
+`D(-i) = -D(i)`.
 
 ## Main results
 
@@ -41,6 +43,7 @@ positive, and `D(-i) = -D(i)`.
 * `TauCeti.Polylog.blochWigner_exp_two_mul_I`: `D(e^{2iθ}) = 2 Λ(θ)`.
 * `TauCeti.Polylog.hasSum_blochWigner_I`, `TauCeti.Polylog.blochWigner_I_pos`: `D(i)` is
   Catalan's constant, hence positive.
+* `TauCeti.Polylog.blochWigner_conj`: `D(conj z) = -D(z)` off the cut `(1, ∞)`.
 
 ## References
 
@@ -53,7 +56,7 @@ positive, and `D(-i) = -D(i)`.
 public section
 
 open Filter Finset Real
-open scoped Topology
+open scoped ComplexConjugate Topology
 
 namespace TauCeti.Polylog
 
@@ -146,14 +149,20 @@ theorem blochWigner_I_pos : 0 < blochWigner Complex.I := by
   norm_num [sum_range_succ, f] at h
   linarith
 
+/-- The Bloch–Wigner function is odd under complex conjugation, away from the cut `(1, ∞)` where
+the principal dilogarithm does not commute with conjugation. -/
+theorem blochWigner_conj {z : ℂ} (hz : (1 - z).arg ≠ π) :
+    blochWigner (conj z) = -blochWigner z := by
+  rw [blochWigner_def, blochWigner_def, polylog_conj 2 hz, show 1 - conj z = conj (1 - z) by simp,
+    Complex.arg_conj]
+  simp only [hz, ↓reduceIte, Complex.conj_im, Complex.norm_conj]
+  ring
+
 /-- The Bloch–Wigner function takes opposite values at `-i` and `i`. -/
 theorem blochWigner_neg_I : blochWigner (-Complex.I) = -blochWigner Complex.I := by
-  have h := hasSum_blochWigner_exp_mul_I (-(π / 2))
-  rw [show ((-(π / 2) : ℝ) : ℂ) * Complex.I = -π / 2 * Complex.I by push_cast; ring,
-    Complex.exp_neg_pi_div_two_mul_I] at h
-  have h' := (hasSum_blochWigner_exp_mul_I (π / 2)).neg
-  rw [show ((π / 2 : ℝ) : ℂ) * Complex.I = π / 2 * Complex.I by push_cast; ring,
-    Complex.exp_pi_div_two_mul_I] at h'
-  exact h.unique (h'.congr_fun fun k ↦ by rw [mul_neg, sin_neg, neg_div])
+  have hI : (1 - Complex.I).arg ≠ π := fun h ↦ by
+    have := (Complex.arg_eq_pi_iff.1 h).1
+    norm_num at this
+  simpa using blochWigner_conj hI
 
 end TauCeti.Polylog
