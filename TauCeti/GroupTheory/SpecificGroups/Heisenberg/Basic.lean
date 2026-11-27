@@ -39,7 +39,8 @@ group.
 * `TauCeti.HeisenbergGroup`: the Heisenberg group over a ring, with its group structure.
 * `TauCeti.HeisenbergGroup.zAxis`: the central subgroup of elements `(0, 0, z)`.
 * `TauCeti.HeisenbergGroup.map`: the homomorphism induced by a ring homomorphism, with
-  `map_id` and `map_comp`.
+  `map_id` and `map_comp`; it is injective or surjective along with the ring homomorphism
+  (`map_injective`, `map_surjective`).
 * `TauCeti.HeisenbergGroup.toMatrix`: the unipotent upper triangular matrix
   `!![1, x, z; 0, 1, y; 0, 0, 1]` of `(x, y, z)`, an injective monoid homomorphism
   (`TauCeti.HeisenbergGroup.toMatrix_injective`).
@@ -107,6 +108,9 @@ instance [Nonempty R] : Nonempty (HeisenbergGroup R) :=
 instance [Fintype R] : Fintype (HeisenbergGroup R) := Fintype.ofEquiv _ equivProd.symm
 
 instance [Finite R] : Finite (HeisenbergGroup R) := Finite.of_equiv _ equivProd.symm
+
+/-- The Heisenberg group over a countable ring is countable. -/
+instance [Countable R] : Countable (HeisenbergGroup R) := equivProd.injective.countable
 
 /-- The Heisenberg group over `R` has cardinality `(Nat.card R) ^ 3`; over `𝔽_p` its order is
 `p ^ 3`. -/
@@ -223,6 +227,12 @@ theorem map_surjective {S : Type*} [Ring S] {f : R →+* S} (hf : Function.Surje
   obtain ⟨y, hy⟩ := hf b.y
   obtain ⟨z, hz⟩ := hf b.z
   exact ⟨⟨x, y, z⟩, by ext <;> simp [hx, hy, hz]⟩
+
+/-- The homomorphism induced by an injective ring homomorphism is injective. -/
+theorem map_injective {S : Type*} [Ring S] {f : R →+* S} (hf : Function.Injective f) :
+    Function.Injective (map f) := fun a b h ↦ by
+  simp only [map_apply, mk.injEq] at h
+  exact HeisenbergGroup.ext (hf h.1) (hf h.2.1) (hf h.2.2)
 
 /-- The **unipotent upper triangular matrix** `!![1, x, z; 0, 1, y; 0, 0, 1]` of `(x, y, z)`. The
 group law of the Heisenberg group is the matrix product, so this is a monoid homomorphism. -/

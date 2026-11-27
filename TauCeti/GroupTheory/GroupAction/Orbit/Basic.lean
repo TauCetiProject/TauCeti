@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Subgroup.Actions
+public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
+public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.GroupAction.IterateAct
+public import TauCeti.Dynamics.ForwardOrbit
 
 /-!
 # Invariant-and-witness orbit criteria
@@ -30,8 +33,8 @@ the witness membership condition (`∀ g ∈ ws, g ∈ H`) from the covering che
 ambient elements without packing subgroup-membership proofs into the witness list.
 
 The file also identifies two orbits of cyclic actions: the orbit of `x` under the `ℕ`-action of
-`IterateMulAct f` is its forward orbit `range fun n ↦ f^[n] x`, and the orbit under
-`Subgroup.zpowers g` consists of the points `g ^ n • x`, `n : ℤ`.
+`IterateMulAct f` is its forward orbit `Function.forwardOrbit f x = range fun n ↦ f^[n] x`, and
+the orbit under `Subgroup.zpowers g` consists of the points `g ^ n • x`, `n : ℤ`.
 
 ## Main results
 
@@ -43,6 +46,10 @@ The file also identifies two orbits of cyclic actions: the orbit of `x` under th
   of `a` whose fiber lies in `s`, together with a witness set `W ⊆ H` covering `s`.
 * `MulAction.orbit_eq_of_invariant_list`: specialization of `MulAction.orbit_eq_of_invariant` to an
   explicit witness list `ws : List G`.
+* `MulAction.orbit_eq_of_eq_top`: a subgroup equal to `⊤` has the same orbits as the ambient
+  group.
+* `MulAction.minimalPeriod_conj_smul`: minimal periods of actions are invariant under
+  simultaneous conjugation of the acting element and translation of the basepoint.
 * `MulAction.orbit_iterateMulAct`: the orbit under `IterateMulAct f` is the forward orbit of `f`.
 * `MulAction.mem_orbit_zpowers_iff`: membership in the orbit under `Subgroup.zpowers g`.
 -/
@@ -100,12 +107,33 @@ theorem orbit_eq_of_invariant_list {G α S : Type*} {β : Sort*} [SetLike S G] [
     obtain ⟨g, hg, rfl⟩ := List.mem_map.mp (hcov x hx)
     exact ⟨g, hg, rfl⟩
 
+/-- If a subgroup `H` equals `⊤`, its orbits coincide with those of the ambient group. -/
+@[to_additive /-- If an additive subgroup `H` equals `⊤`, its orbits coincide with those of the
+ambient group. -/]
+theorem orbit_eq_of_eq_top {G α : Type*} [Group G] [MulAction G α] {H : Subgroup G}
+    (hH : H = ⊤) (a : α) : orbit H a = orbit G a :=
+  Set.Subset.antisymm (orbit_subgroup_subset H a) fun _ ⟨g, hg⟩ ↦
+    ⟨⟨g, hH ▸ Subgroup.mem_top g⟩, hg⟩
+
+/-- **Conjugation invariance of minimal period.** Conjugating an acting group element by `c`
+and translating the point by `c` preserves the minimal period of the action. -/
+theorem minimalPeriod_conj_smul {G α : Type*} [Group G] [MulAction G α] (g c : G) (x : α) :
+    Function.minimalPeriod ((c * g * c⁻¹) • ·) (c • x) = Function.minimalPeriod (g • ·) x := by
+  have hsc : Function.Semiconj (c • ·) (g • ·) ((c * g * c⁻¹) • ·) := fun y : α ↦ calc
+    c • (g • y) = (c * g) • y := (mul_smul c g y).symm
+    _ = ((c * g * c⁻¹) * c) • y := by rw [inv_mul_cancel_right]
+    _ = (c * g * c⁻¹) • (c • y) := mul_smul (c * g * c⁻¹) c y
+  refine Function.minimalPeriod_eq_minimalPeriod_iff.mpr fun n ↦ ?_
+  simp only [Function.IsPeriodicPt, Function.IsFixedPt, ← (hsc.iterate_right n).eq]
+  exact (MulAction.injective c).eq_iff
+
 /-- The orbit of `x` under the `ℕ`-action of `IterateMulAct f` is its forward orbit. -/
 @[to_additive (attr := simp) /-- The orbit of `x` under the `ℕ`-action of `IterateAddAct f` is its
 forward orbit. -/]
 theorem orbit_iterateMulAct {α : Type*} (f : α → α) (x : α) :
-    orbit (IterateMulAct f) x = Set.range fun n : ℕ ↦ f^[n] x := by
+    orbit (IterateMulAct f) x = Function.forwardOrbit f x := by
   ext y
+  rw [Function.mem_forwardOrbit]
   constructor
   · rintro ⟨⟨n⟩, rfl⟩
     exact ⟨n, (IterateMulAct.mk_smul n x).symm⟩

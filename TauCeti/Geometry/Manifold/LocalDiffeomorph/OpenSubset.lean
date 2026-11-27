@@ -63,6 +63,8 @@ subset of the target manifold.
   diffeomorphism.
 * `TauCeti.bijective_mfderiv_subtype_val`, `TauCeti.bijective_mfderiv_inclusion`: the inclusions
   of an open subset in `M` and in a larger open subset have bijective differentials.
+* `Submodule.comap_mfderiv_subtype_val`: pulling a subspace of `T_x M` back along the differential
+  of the inclusion of an open subset gives the same subspace.
 * `PartialDiffeomorph.exists_ambient_of_opens`: a partial diffeomorphism out of an open subset
   agrees near a point of its source with a partial diffeomorphism out of the ambient manifold.
 * `PartialDiffeomorph.subtypeVal`: the inclusion of a nonempty open subset as a partial
@@ -447,6 +449,14 @@ theorem isLocalDiffeomorph_subtype_val {U : TopologicalSpace.Opens M} :
 theorem bijective_mfderiv_subtype_val {U : TopologicalSpace.Opens M} (x : U) :
     Function.Bijective (mfderiv I I (Subtype.val : U → M) x) :=
   ((isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero).bijective
+
+/-- The differential of the inclusion of an open subset `U` is the identity of the common tangent
+space, so pulling a subspace of `T_x M` back along it, at a point `x` of `U`, gives the same
+subspace. -/
+theorem _root_.Submodule.comap_mfderiv_subtype_val {U : TopologicalSpace.Opens M} {x : U}
+    (S : Submodule 𝕜 (TangentSpace I (x : M))) :
+    S.comap (mfderiv I I (Subtype.val : U → M) x).toLinearMap = S :=
+  Submodule.ext fun v ↦ Iff.of_eq (congrArg (· ∈ S) (Manifold.mfderiv_subtype_val_apply x v))
 
 /-- The differential of the inclusion of `V` in `M` factors through the inclusion of `V` in a
 larger open set `U`. -/

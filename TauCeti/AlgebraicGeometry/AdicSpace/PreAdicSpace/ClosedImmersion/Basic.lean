@@ -347,19 +347,12 @@ theorem isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMappin
   -- Huber pairs, both homeomorphisms
   let φ := f.quotientLift K le_rfl
   let ψ := hf.quotientKerInverse
-  have hψφ : ∀ x, ψ.toRingHom (φ.toRingHom x) = x := fun x ↦ by
-    have h := congrArg Pair.Hom.toRingHom hf.quotientKerInverse_comp_quotientLift
-    rw [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_id] at h
-    exact DFunLike.congr_fun h x
-  have hφψ : ∀ x, φ.toRingHom (ψ.toRingHom x) = x := fun x ↦ by
-    have h := congrArg Pair.Hom.toRingHom hf.quotientLift_comp_quotientKerInverse
-    rw [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_id] at h
-    exact DFunLike.congr_fun h x
   -- `Spa(A ⧸ K)` is sheafy, being isomorphic to `Spa(B, B⁺)`
   have hsK : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa (S.quotient K).plus))
       (presentationLimitPresheaf (P.quotient K) (S.quotient K).plus) :=
     ObjectProperty.prop_of_iso PreAdicSpace.isSheafy (presentationLimitPreAdicSpaceComapIso
-      φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus ψ.toRingHom ψ.continuous_toRingHom hψφ hφψ
+      φ.toRingHom φ.continuous_toRingHom φ.map_mem_plus ψ.toRingHom ψ.continuous_toRingHom
+      hf.quotientKerInverse_toRingHom_quotientLift hf.quotientLift_toRingHom_quotientKerInverse
       ψ.map_mem_plus (S.quotient K).isRingOfIntegralElements.isPowerBounded_of_mem
       T.isRingOfIntegralElements.isPowerBounded_of_mem
       (P.quotient_ringOfDefinition_le_quotient_plus hP K) hP') hsheafT
@@ -374,11 +367,11 @@ theorem isClosedImmersion_presentationLimitPreAdicSpaceComap_of_isQuotientMappin
     · rw [← presentationLimitPreAdicSpaceComap_comp, ← presentationLimitPreAdicSpaceComap_id
         (P := P') _ _ hsheafT]
       congr 1
-      exact RingHom.ext hφψ
+      exact RingHom.ext hf.quotientLift_toRingHom_quotientKerInverse
     · rw [← presentationLimitPreAdicSpaceComap_comp, ← presentationLimitPreAdicSpaceComap_id
         (P := P.quotient K) _ _ hsK]
       congr 1
-      exact RingHom.ext hψφ
+      exact RingHom.ext hf.quotientKerInverse_toRingHom_quotientLift
   rw [← presentationLimitPreAdicSpaceComap_quotientLift_comp_quotientComap S P hP K hsK P' hP' f
     le_rfl, MorphismProperty.cancel_left_of_respectsIso (@IsClosedImmersion.{u})]
   exact isClosedImmersion_presentationLimitPreAdicSpaceQuotientComap S P hP K hsK hker

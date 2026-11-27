@@ -30,7 +30,9 @@ uniform order statements:
   in a set with empty interior, for instance a null set of `ℝ`, is constant on `s`.
 
 A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
-`c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`.
+`c` somewhere in `Ioo a b` has a least such point, `ContinuousOn.exists_mem_Ioo_le_and_forall_gt`;
+over a densely ordered domain it takes the value `c` there,
+`ContinuousOn.exists_mem_Ioo_eq_and_forall_gt`.
 
 If `[a, b]` is covered by `P ∪ N`, `a` is adherent to `P` and `b` is not, then some point of
 `[a, b)` adherent to both `P` and `N` is followed by a segment contained in `N`,
@@ -156,6 +158,20 @@ theorem ContinuousOn.exists_mem_Ioo_le_and_forall_gt
     hr.2.not_ge (csInf_le hbdd ⟨⟨hr.1, hr.2.trans ht₁.2⟩, h⟩)⟩
   exact ContinuousWithinAt.closure_le (csInf_mem_closure hZ hbdd)
     ((hf _ ht₁).mono inter_subset_left) continuousWithinAt_const fun _ hz ↦ hz.2
+
+/-- A continuous function on `Ioo a b` which lies above `c` just to the right of `a` and is at most
+`c` somewhere in `Ioo a b` takes the value `c` at a first point: there is `t₁ ∈ Ioo a b` with
+`f t₁ = c` and `c < f` on `Ioo a t₁`. -/
+theorem ContinuousOn.exists_mem_Ioo_eq_and_forall_gt
+    [ConditionallyCompleteLinearOrder X] [OrderTopology X] [DenselyOrdered X] {f : X → α}
+    {a b : X} {c : α} (hf : ContinuousOn f (Ioo a b)) (hpos : ∀ᶠ r in 𝓝[>] a, c < f r)
+    (hne : ∃ t ∈ Ioo a b, f t ≤ c) : ∃ t₁ ∈ Ioo a b, f t₁ = c ∧ ∀ r ∈ Ioo a t₁, c < f r := by
+  obtain ⟨t₁, ht₁, hle, hgt⟩ := hf.exists_mem_Ioo_le_and_forall_gt hpos hne
+  -- `f t₁` is a limit of values above `c`.
+  refine ⟨t₁, ht₁, le_antisymm hle (ContinuousWithinAt.closure_le ?_ continuousWithinAt_const
+    ((hf t₁ ht₁).mono (Ioo_subset_Ioo_right ht₁.2.le)) fun r hr ↦ (hgt r hr).le), hgt⟩
+  rw [closure_Ioo ht₁.1.ne]
+  exact right_mem_Icc.2 ht₁.1.le
 
 /-- A function continuous on `Ioi a`, with values eventually in `Icc l u` to the right of `a`,
 which tends neither to `l` nor to `u` at `a⁺`, takes values in a fixed interval `Icc c d` with

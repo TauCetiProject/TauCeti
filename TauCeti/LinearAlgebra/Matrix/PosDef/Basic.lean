@@ -52,6 +52,12 @@ the positive definiteness of `1 + A Aᴴ` over a star-ordered ring with a proper
   vectors `c` with `c ⬝ᵥ S *ᵥ c ≤ c ⬝ᵥ w` have uniformly bounded coordinates.
 * `Matrix.PosDef.eq_of_eq_smul_of_trace_eq_trace_inv`: two positive definite scalar multiples
   with `Tr M = Tr M⁻¹` are equal.
+* `Matrix.PosDef.mul_mul_conjTranspose_same_eq_zero_iff`: for positive definite `S`, the
+  congruence `M S Mᴴ` vanishes exactly when `M` does.
+* `Matrix.PosDef.inv_add_conjTranspose_mul_inv_mul`: for positive definite `P` and positive
+  semidefinite `R`, the information matrix `P⁻¹ + Cᴴ R⁻¹ C` is positive definite.
+* `Matrix.PosSemidef.mul_mul_transpose_same`: over a ring with trivial star, a congruence
+  `M S Mᵀ` of a positive semidefinite matrix is positive semidefinite.
 -/
 
 public section
@@ -316,4 +322,46 @@ theorem eq_of_eq_smul_of_trace_eq_trace_inv {n K : Type*} [Fintype n] [Decidable
         rw [hFG, neg_one_smul, Matrix.trace_neg, neg_add_cancel]
       exact (add_pos hFtr hGtr).ne' hsum
 
+section MulMulConjTranspose
+
+variable {m n R : Type*} [Fintype n] [Ring R] [PartialOrder R] [StarRing R]
+
+/-- A congruence `M S Mᴴ` of a positive definite matrix `S` vanishes only when `M` does: the
+diagonal entry in row `i` is the quadratic form of `S` at the conjugate of the `i`-th row. -/
+theorem mul_mul_conjTranspose_same_eq_zero_iff {S : Matrix n n R} (hS : S.PosDef)
+    {M : Matrix m n R} : M * S * Mᴴ = 0 ↔ M = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
+  ext i j
+  by_contra hij
+  have hi : star (M i) ≠ 0 := fun h0 ↦ hij <| by
+    simpa using congr_fun (star_eq_zero.mp h0) j
+  have hdiag := congr_fun (congr_fun h i) i
+  rw [mul_mul_apply] at hdiag
+  have hpos := hS.dotProduct_mulVec_pos hi
+  rw [star_star] at hpos
+  have hrow : (Mᴴ)ᵀ i = star (M i) := by ext; simp
+  rw [hrow] at hdiag
+  simp [hdiag] at hpos
+
+end MulMulConjTranspose
+
+/-- If `P` is positive definite and `R` positive semidefinite, the information matrix
+`P⁻¹ + Cᴴ R⁻¹ C` is positive definite. -/
+theorem inv_add_conjTranspose_mul_inv_mul {m n K : Type*} [Fintype m] [Fintype n]
+    [DecidableEq m] [DecidableEq n] [Field K] [PartialOrder K] [StarRing K] [AddLeftMono K]
+    {P : Matrix n n K} (hP : P.PosDef) {R : Matrix m m K} (hR : R.PosSemidef)
+    (C : Matrix m n K) : (P⁻¹ + Cᴴ * R⁻¹ * C).PosDef :=
+  hP.inv.add_posSemidef (hR.inv.conjTranspose_mul_mul_same C)
+
 end Matrix.PosDef
+
+namespace Matrix.PosSemidef
+
+/-- Over a ring with trivial star, a congruence `M S Mᵀ` of a positive semidefinite matrix `S` is
+positive semidefinite: this is `Matrix.PosSemidef.mul_mul_conjTranspose_same` with `Mᴴ = Mᵀ`. -/
+theorem mul_mul_transpose_same {m n R : Type*} [Fintype n] [Ring R] [PartialOrder R]
+    [StarRing R] [TrivialStar R] {S : Matrix n n R} (hS : S.PosSemidef) (M : Matrix m n R) :
+    (M * S * Mᵀ).PosSemidef := by
+  simpa only [conjTranspose_eq_transpose_of_trivial] using hS.mul_mul_conjTranspose_same M
+
+end Matrix.PosSemidef

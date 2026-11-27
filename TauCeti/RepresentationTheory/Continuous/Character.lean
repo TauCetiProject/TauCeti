@@ -27,6 +27,9 @@ it to the matrix coefficients of `TauCeti/RepresentationTheory/Continuous/Matrix
 
 * `ContRepresentation.character_one`: the character at the identity is the dimension.
 * `ContRepresentation.character_conj`: the character is a class function.
+* `ContRepresentation.character_mul_of_mem_ker`: the character is constant on the cosets of the
+  kernel.
+* `ContRepresentation.character_eq_of_equiv`: equivalent representations have the same character.
 * `ContRepresentation.star_character`: the conjugate of the character is the sum of the
   diagonal matrix coefficients `∑ i, ⟪π g eᵢ, eᵢ⟫` in an orthonormal basis. The conjugation is not
   decoration: Mathlib's inner product is conjugate linear in its *first* argument, so the diagonal
@@ -113,6 +116,19 @@ theorem character_mul_comm (g h : G) :
     character π hπ (h * g) = character π hπ (g * h) :=
   Representation.char_mul_comm π.toRepresentation g h
 
+/-- The character of a representation on a zero space vanishes. -/
+theorem character_eq_zero_of_subsingleton [Subsingleton V] : character π hπ = 0 := by
+  ext g
+  simp [Subsingleton.elim (π g : V →ₗ[𝕜] V) 0]
+
+variable {π} in
+/-- Representations whose underlying algebraic representations are equivalent have the same
+character. This is `Representation.char_iso` transported to the continuous packaging. -/
+theorem character_eq_of_equiv {W : Type*} [NormedAddCommGroup W] [NormedSpace 𝕜 W]
+    [FiniteDimensional 𝕜 W] {ρ : ContRepresentation 𝕜 G W} (hρ : Continuous ρ)
+    (e : π.toRepresentation.Equiv ρ.toRepresentation) : character π hπ = character ρ hρ :=
+  ContinuousMap.coe_injective (Representation.char_iso e)
+
 /-- The character of the trivial representation is the constant function at the dimension: every
 action operator is the identity, whose trace is the dimension. The trivial action is constant, so
 `continuous_const` is its continuity witness. -/
@@ -190,6 +206,12 @@ continuous packaging. -/
 theorem character_conj (g h : G) :
     character π hπ (h * g * h⁻¹) = character π hπ g :=
   Representation.char_conj π.toRepresentation g h
+
+/-- The character is constant on the cosets of the kernel. -/
+theorem character_mul_of_mem_ker (g : G) {k : G} (hk : k ∈ π.toMonoidHom.ker) :
+    character π hπ (g * k) = character π hπ g := by
+  have hk' : π k = 1 := MonoidHom.mem_ker.mp hk
+  rw [character_apply, character_apply, map_mul, hk', mul_one]
 
 end Group
 
