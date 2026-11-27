@@ -13,8 +13,8 @@ public import TauCeti.RingTheory.Spectrum.Prime.LocallyConstant
 
 For a submodule with finite projective quotient, the clopen rank fibres cut out coefficient
 rings over which scalar extension gives native constant-rank Grassmannian points. Stability
-under an endomorphism is preserved. For a finite flat ambient module of bounded stalk rank,
-the finitely many rank factors reconstruct the coefficient ring as a product.
+under an endomorphism is preserved. A bound on the quotient stalk ranks makes the finitely
+many rank factors reconstruct the coefficient ring as a product.
 
 These points supply the affine pieces of the classifying morphism to the finite coproduct of
 stable Grassmannians, including for nonreduced coefficient algebras.
@@ -43,28 +43,43 @@ section RankFactors
 variable (N : Submodule A (A ⊗[R] M)) [Module.Finite A ((A ⊗[R] M) ⧸ N)]
   [Module.Projective A ((A ⊗[R] M) ⧸ N)]
 
+/-- The idempotent cutting out the locus where the quotient by `N` has rank `r`. -/
+noncomputable abbrev quotientRankIdempotent (r : ℕ) : A :=
+  fiberIdempotent (Module.isLocallyConstant_rankAtStalk (R := A) (M := (A ⊗[R] M) ⧸ N)) r
+
 /-- The coefficient ring of the clopen locus where the quotient by `N` has rank `r`. -/
 noncomputable abbrev quotientRankRing (r : ℕ) : Type w :=
-  A ⧸ Ideal.span {(1 - fiberIdempotent
-    (Module.isLocallyConstant_rankAtStalk (R := A) (M := (A ⊗[R] M) ⧸ N)) r)}
+  A ⧸ Ideal.span {(1 - quotientRankIdempotent N r)}
+
+/-- The rank-fibre idempotent becomes one on its coefficient factor. -/
+@[simp]
+theorem quotientMk_quotientRankIdempotent (r : ℕ) :
+    Ideal.Quotient.mk (Ideal.span {1 - quotientRankIdempotent N r})
+      (quotientRankIdempotent N r) = 1 := by
+  rw [Ideal.Quotient.mk_eq_one_iff_sub_mem]
+  simpa only [neg_sub] using
+    (Ideal.span {1 - quotientRankIdempotent N r}).neg_mem
+      (Ideal.subset_span (Set.mem_singleton (1 - quotientRankIdempotent N r)))
+
+/-- Scalar extension of the quotient to its rank-`r` factor has constant stalk rank `r`. -/
+@[simp]
+theorem rankAtStalk_quotientRankRing_tensor_quotient (r : ℕ)
+    (p : PrimeSpectrum (quotientRankRing N r)) :
+    Module.rankAtStalk (quotientRankRing N r ⊗[A] ((A ⊗[R] M) ⧸ N)) p = r := by
+  have hne : quotientRankIdempotent N r ∉
+      (p.comap (algebraMap A (quotientRankRing N r))).asIdeal := by
+    simpa only [comap_asIdeal, Ideal.mem_comap, Ideal.Quotient.algebraMap_eq,
+      quotientMk_quotientRankIdempotent] using p.isPrime.one_notMem
+  rw [Module.rankAtStalk_baseChange]
+  exact not_ne_iff.1 (mt (fiberIdempotent_mem_iff
+    (Module.isLocallyConstant_rankAtStalk (R := A) (M := (A ⊗[R] M) ⧸ N))).2 hne)
 
 /-- The fixed-rank quotient on the canonical rank-`r` factor. Its kernel is the scalar
 extension of `N`, defined using the native quotient map `baseChangeMkQ`. -/
 noncomputable def quotientRankPoint (r : ℕ) :
     G(r, quotientRankRing N r ⊗[R] M; quotientRankRing N r) :=
   ofSurjective (baseChangeMkQ (quotientRankRing N r) N)
-    (baseChangeMkQ_surjective N) fun p ↦ by
-      let e := fiberIdempotent
-        (Module.isLocallyConstant_rankAtStalk (R := A) (M := (A ⊗[R] M) ⧸ N)) r
-      have he : algebraMap A (quotientRankRing N r) e = 1 := by
-        apply Ideal.Quotient.eq.2
-        simpa only [neg_sub] using
-          (Ideal.span {1 - e}).neg_mem (Ideal.subset_span (Set.mem_singleton (1 - e)))
-      have hne : e ∉ (p.comap (algebraMap A (quotientRankRing N r))).asIdeal := by
-        simpa only [comap_asIdeal, Ideal.mem_comap, he] using p.isPrime.one_notMem
-      rw [Module.rankAtStalk_baseChange]
-      exact not_ne_iff.1 (mt (fiberIdempotent_mem_iff
-        (Module.isLocallyConstant_rankAtStalk (R := A) (M := (A ⊗[R] M) ⧸ N))).2 hne)
+    (baseChangeMkQ_surjective N) (rankAtStalk_quotientRankRing_tensor_quotient N r)
 
 /-- The kernel on a rank factor is the kernel of the scalar-extended quotient map. -/
 @[simp]
@@ -80,6 +95,27 @@ theorem quotientRankPoint_mem_invtSubmodule {t : Module.End R M}
       Module.End.invtSubmodule (t.baseChange (quotientRankRing N r)) := by
   rw [quotientRankPoint_toSubmodule]
   exact invtSubmodule_ker_baseChangeMkQ hN
+
+/-- The finite family of quotient-rank factors reconstructs the coefficient ring. -/
+theorem bijective_pi_quotientRankRing {d : ℕ}
+    (hd : ∀ p : PrimeSpectrum A, Module.rankAtStalk ((A ⊗[R] M) ⧸ N) p ≤ d) :
+    Function.Bijective (RingHom.pi fun r : Fin (d + 1) ↦
+      algebraMap A (quotientRankRing N r)) := by
+  classical
+  have hc := completeOrthogonalIdempotents_fiberIdempotent
+    (Module.isLocallyConstant_rankAtStalk (R := A) (M := (A ⊗[R] M) ⧸ N))
+    (s := Finset.range (d + 1)) (by
+      rintro _ ⟨p, rfl⟩
+      exact Finset.mem_range.2 (Nat.lt_succ_of_le (hd p)))
+  let e : Fin (d + 1) ≃ ↥(Finset.range (d + 1)) :=
+    { toFun := fun r ↦ ⟨r, Finset.mem_range.2 r.isLt⟩
+      invFun := fun r ↦ ⟨r, Finset.mem_range.1 r.property⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+  have hc' : CompleteOrthogonalIdempotents
+      (fun r : Fin (d + 1) ↦ quotientRankIdempotent N r) :=
+    (CompleteOrthogonalIdempotents.equiv e).2 hc
+  exact hc'.bijective_pi
 
 end RankFactors
 
@@ -100,25 +136,6 @@ theorem rankAtStalk_quotient_tensorProduct_le {d : ℕ}
   rw [← Module.rankAtStalk_eq_finrank_tensorProduct, ← Module.rankAtStalk_eq_finrank_tensorProduct,
     Module.rankAtStalk_baseChange] at h
   exact h.trans (hd _)
-
-/-- The finite family of quotient-rank factors reconstructs the coefficient ring. -/
-theorem bijective_pi_quotientRankRing {d : ℕ}
-    (hd : ∀ p : PrimeSpectrum R, Module.rankAtStalk M p ≤ d) :
-    Function.Bijective (RingHom.pi fun r : ULift.{w} (Fin (d + 1)) ↦
-      algebraMap A (quotientRankRing N r.down)) := by
-  classical
-  have hc := completeOrthogonalIdempotents_fiberIdempotent
-    (Module.isLocallyConstant_rankAtStalk (R := A) (M := (A ⊗[R] M) ⧸ N))
-    (s := Finset.range (d + 1)) (by
-      rintro _ ⟨p, rfl⟩
-      exact Finset.mem_range.2 (Nat.lt_succ_of_le (rankAtStalk_quotient_tensorProduct_le N hd p)))
-  let e : Fin (d + 1) ≃ ↥(Finset.range (d + 1)) :=
-    { toFun := fun r ↦ ⟨r, Finset.mem_range.2 r.isLt⟩
-      invFun := fun r ↦ ⟨r, Finset.mem_range.1 r.property⟩
-      left_inv := fun _ ↦ rfl
-      right_inv := fun _ ↦ rfl }
-  have hc' := (CompleteOrthogonalIdempotents.equiv (Equiv.ulift.trans e)).2 hc
-  exact hc'.bijective_pi
 
 end BoundedRank
 
