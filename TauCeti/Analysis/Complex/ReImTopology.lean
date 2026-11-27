@@ -26,7 +26,9 @@ open half-plane `{a < im}` (`TauCeti.setOfPred_le_im_mem_nhds`). A relatively op
 `Ω ∩ {0 ≤ im}` is a limit of interior points
 (`TauCeti.subset_closure_interior_inter_setOf_im_nonneg`). The set `Ω ∩ {0 ≤ im}` is also the
 closed upper part of a conjugation-invariant open set
-(`TauCeti.exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq`). If the closure of `U` lies in `Ω`,
+(`TauCeti.exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq`), and a compact subset of a
+conjugation-invariant open set lies in a conjugation-invariant open set with compact closure inside
+it (`TauCeti.exists_mapsTo_conj_between_and_isCompact_closure`). If the closure of `U` lies in `Ω`,
 the closure of `U ∩ {0 ≤ im}` lies in `Ω ∩ {0 ≤ im}`
 (`TauCeti.closure_inter_setOf_im_nonneg_subset`). A local property holds on
 `Ω ∩ {0 ≤ im}` once it holds on the upper half of `Ω` and on the half-discs centred on the real
@@ -107,6 +109,23 @@ theorem exists_isOpen_mapsTo_conj_inter_setOf_im_nonneg_eq {Ω : Set ℂ} (hΩ :
   ext z
   exact and_congr_left fun h ↦ by
     rw [Set.mem_preimage, abs_of_nonneg (show 0 ≤ z.im from h), Complex.re_add_im]
+
+/-- **A conjugation-invariant open set between a compact set and an open set.** If `Ω ⊆ ℂ` is open
+and invariant under conjugation and `K ⊆ Ω` is compact, there is an open set `W`, invariant under
+conjugation, with `K ⊆ W` and compact closure contained in `Ω`. -/
+theorem exists_mapsTo_conj_between_and_isCompact_closure {K : Set ℂ} (hK : IsCompact K)
+    {Ω : Opens ℂ} (hΩ : Set.MapsTo (starRingEnd ℂ) Ω Ω) (hKΩ : K ⊆ Ω) :
+    ∃ W : Opens ℂ, Set.MapsTo (starRingEnd ℂ) W W ∧ K ⊆ W ∧ closure (W : Set ℂ) ⊆ Ω ∧
+      IsCompact (closure (W : Set ℂ)) := by
+  -- Take an open set between `K ∪ conj K` and `Ω`, and intersect it with its conjugate.
+  obtain ⟨V, hVo, hKV, hVΩ, hVc⟩ := exists_open_between_and_isCompact_closure
+    (hK.union (hK.image Complex.continuous_conj)) Ω.isOpen
+    (Set.union_subset hKΩ (Set.image_subset_iff.2 fun z hz => hΩ (hKΩ hz)))
+  have hW : closure (V ∩ starRingEnd ℂ ⁻¹' V) ⊆ closure V := closure_mono Set.inter_subset_left
+  refine ⟨⟨V ∩ starRingEnd ℂ ⁻¹' V, hVo.inter (hVo.preimage Complex.continuous_conj)⟩,
+    fun z hz => ⟨hz.2, by simpa using hz.1⟩,
+    fun z hz => ⟨hKV (Or.inl hz), hKV (Or.inr ⟨z, hz, rfl⟩)⟩, hW.trans hVΩ,
+    hVc.of_isClosed_subset isClosed_closure hW⟩
 
 /-- The closure of `U ∩ {0 ≤ im}` lies in `Ω ∩ {0 ≤ im}` when the closure of `U` lies in `Ω`,
 since it lies in `closure U ∩ {0 ≤ im}`. -/
