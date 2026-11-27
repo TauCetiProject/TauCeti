@@ -292,6 +292,16 @@ theorem norm_sub_one_lt_of_pos_fst_positiveEndCoord_one {z : ℝ × ℝ}
   rw [fst_positiveEndCoord, endSign_one, one_mul]
   exact re_endCoord_nonpos_of_le_norm_sub_endCenter (by decide) (by rwa [endCenter_one])
 
+/-- Beyond the height `0` of the input end, a point of the capped surface lies in the pair of
+pants `S = ℂ ∖ {0, 1}`. -/
+theorem mem_thricePuncturedSphereReal_of_pos_fst_positiveEndCoord_one {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 1) (h : 0 < (positiveEndCoord one z).1) :
+    z ∈ thricePuncturedSphereReal := by
+  refine mem_thricePuncturedSphereReal_iff.2 ⟨fun h0 ↦ ?_, hz⟩
+  have h₁ := norm_sub_one_lt_of_pos_fst_positiveEndCoord_one h
+  rw [h0, zero_sub, norm_neg, norm_one] at h₁
+  norm_num at h₁
+
 /-- Beyond the height `0` of the output end recentred at `c`, points lie off the closed disc
 `|w - c| ≤ 2` bounded by the circle `s = 0` of that end. -/
 theorem two_lt_norm_sub_of_pos_fst_positiveEndCoord_inf_sub {z : ℝ × ℝ}

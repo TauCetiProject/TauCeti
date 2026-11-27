@@ -84,16 +84,6 @@ private theorem equivRealProdCLM_symm_positiveEndChart_inf_add_ne_one (hc₀ : 0
   linarith [Complex.norm_one_sub_ofReal_le_one hc₀ (by linarith),
     Real.one_lt_exp_iff.2 (by positivity : 0 < 2 * π * ζ.1)]
 
-/-- Beyond the height `0` of the input end, a point of the capped surface lies in the pair of
-pants `S = ℂ ∖ {0, 1}`. -/
-private theorem mem_thricePuncturedSphereReal_of_pos_fst_positiveEndCoord_one {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 1) (h : 0 < (positiveEndCoord one z).1) :
-    z ∈ thricePuncturedSphereReal := by
-  refine mem_thricePuncturedSphereReal_iff.2 ⟨fun h0 ↦ ?_, hz⟩
-  have h₁ := norm_sub_one_lt_of_pos_fst_positiveEndCoord_one h
-  rw [h0, zero_sub, norm_neg, norm_one] at h₁
-  norm_num at h₁
-
 /-- The weighted square norm of the formal adjoint of the capped datum on a `C¹` covector field
 with compact support in the capped surface is integrable, for a weight continuous there. -/
 private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_cappedExchangePerturbation
@@ -116,29 +106,6 @@ private theorem integrable_mul_norm_floerLinearizationAdjoint_sq_cappedExchangeP
     (fun z hz ↦ contDiffAt_uncurry_cappedExchangePerturbation hH hHs hL c hz (u z) 1)
     (fun z hz ↦ contDiffAt_uncurry_cappedExchangePerturbation hH hHs hL c hz (u z) Complex.I)
     (fun z hz ↦ hu z hz) hw (hη.of_le one_le_two) subset_rfl hηc hηU
-
-/-- The inverse `ρ⁻¹` of the cylindrical weight of the capped surface is continuous there. -/
-private theorem continuousOn_inv_cappedCylindricalWeight :
-    ContinuousOn (fun z ↦ (cappedCylindricalWeight z)⁻¹)
-      {z | Complex.equivRealProdCLM.symm z ≠ 1} :=
-  isWeight_cappedCylindricalWeight.continuousOn.inv₀
-    fun z hz ↦ (isWeight_cappedCylindricalWeight.pos z hz).ne'
-
-/-- Beyond the height `0` of the input end, `|w - 1|² ≤ 5 ρ⁻¹` for the cylindrical weight `ρ` of the
-capped surface. -/
-private theorem norm_sub_one_sq_le_inv_cappedCylindricalWeight {z : ℝ × ℝ}
-    (hz : Complex.equivRealProdCLM.symm z ≠ 1) (h : 0 < (positiveEndCoord one z).1) :
-    ‖Complex.equivRealProdCLM.symm z - 1‖ ^ 2 ≤ 5 * (cappedCylindricalWeight z)⁻¹ := by
-  have h₁ := norm_sub_one_lt_of_pos_fst_positiveEndCoord_one h
-  have hw : 1 / 2 ≤ ‖Complex.equivRealProdCLM.symm z‖ := by
-    have := norm_sub_norm_le (1 : ℂ) (Complex.equivRealProdCLM.symm z)
-    rw [norm_one, norm_sub_rev] at this
-    linarith
-  have hzS := mem_thricePuncturedSphereReal_of_pos_fst_positiveEndCoord_one hz h
-  rw [cappedCylindricalWeight_eq_cylindricalWeight hw, ← div_eq_mul_inv,
-    le_div_iff₀ (isWeight_cylindricalWeight.pos z hzS)]
-  have h₂ := norm_sub_endCenter_sq_mul_cylindricalWeight_le one hzS h.le
-  rwa [endCenter_one] at h₂
 
 /-- Beyond the height `0` of the output end recentred at `c ∈ [0, 1]`, `|w - c|² ≤ 8 ρ⁻¹` for the
 cylindrical weight `ρ` of the capped surface. -/

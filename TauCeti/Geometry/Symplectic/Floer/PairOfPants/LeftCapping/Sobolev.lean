@@ -116,6 +116,13 @@ theorem isWeight_cappedCylindricalWeight :
   pos z _ := add_pos_of_pos_of_nonneg (inv_pos.2 (lt_max_of_lt_right (by norm_num)))
     (inv_nonneg.2 (Complex.normSq_nonneg _))
 
+/-- The inverse `ρ⁻¹` of the cylindrical weight of the capped surface is continuous there. -/
+theorem continuousOn_inv_cappedCylindricalWeight :
+    ContinuousOn (fun z ↦ (cappedCylindricalWeight z)⁻¹)
+      {z | Complex.equivRealProdCLM.symm z ≠ 1} :=
+  isWeight_cappedCylindricalWeight.continuousOn.inv₀
+    fun z hz ↦ (isWeight_cappedCylindricalWeight.pos z hz).ne'
+
 /-- Off the disc `|w| < 1/2`, the cylindrical weight of the capped surface is the cylindrical
 weight of the pair of pants. -/
 theorem cappedCylindricalWeight_eq_cylindricalWeight {z : ℝ × ℝ}
@@ -133,6 +140,22 @@ theorem cappedCylindricalWeight_positiveEndChart {q : Puncture} (hq : q ≠ zero
     (hζ : 0 < ζ.1) :
     cappedCylindricalWeight (positiveEndChart q ζ) = cylindricalWeight (positiveEndChart q ζ) :=
   cappedCylindricalWeight_eq_cylindricalWeight (half_le_norm_positiveEndChart hq hζ)
+
+/-- Beyond the height `0` of the input end, `|w - 1|² ≤ 5 ρ⁻¹` for the cylindrical weight `ρ` of the
+capped surface. -/
+theorem norm_sub_one_sq_le_inv_cappedCylindricalWeight {z : ℝ × ℝ}
+    (hz : Complex.equivRealProdCLM.symm z ≠ 1) (h : 0 < (positiveEndCoord one z).1) :
+    ‖Complex.equivRealProdCLM.symm z - 1‖ ^ 2 ≤ 5 * (cappedCylindricalWeight z)⁻¹ := by
+  have h₁ := norm_sub_one_lt_of_pos_fst_positiveEndCoord_one h
+  have hw : 1 / 2 ≤ ‖Complex.equivRealProdCLM.symm z‖ := by
+    have := norm_sub_norm_le (1 : ℂ) (Complex.equivRealProdCLM.symm z)
+    rw [norm_one, norm_sub_rev] at this
+    linarith
+  have hzS := mem_thricePuncturedSphereReal_of_pos_fst_positiveEndCoord_one hz h
+  rw [cappedCylindricalWeight_eq_cylindricalWeight hw, ← div_eq_mul_inv,
+    le_div_iff₀ (isWeight_cylindricalWeight.pos z hzS)]
+  have h₂ := norm_sub_endCenter_sq_mul_cylindricalWeight_le one hzS h.le
+  rwa [endCenter_one] at h₂
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 

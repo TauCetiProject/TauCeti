@@ -188,6 +188,30 @@ theorem contDiff_covectorPullback_of_eqOn {φ : ℝ × ℝ → ℝ × ℝ} {J : 
   filter_upwards [hU.mem_nhds hζ] with ζ' hζ'
   simp only [Pi.smul_apply', ← hJeq hζ', Function.comp_apply]
 
+/-- The pulled-back covector field is `C^n` when `φ` is `C^(n+1)`, `η` is `C^n` with support in a
+set `S`, and on `S` the map `u` is `C^n` and `J` is `C^n` along `u`: near a point whose image lies
+off the support of `η`, the pulled-back field vanishes. -/
+theorem contDiff_covectorPullback {φ : ℝ × ℝ → ℝ × ℝ} {J : ℝ × ℝ → V → V →L[ℝ] V}
+    {u : ℝ × ℝ → V} {η : ℝ × ℝ → V →L[ℝ] ℝ} {n : WithTop ℕ∞} {S : Set (ℝ × ℝ)}
+    (hφ : ContDiff ℝ (n + 1) φ) (hJ : ∀ z ∈ S, ContDiffAt ℝ n (uncurry J) (z, u z))
+    (hu : ∀ z ∈ S, ContDiffAt ℝ n u z) (hη : ContDiff ℝ n η) (hηS : tsupport η ⊆ S) :
+    ContDiff ℝ n (covectorPullback φ J u η) := by
+  refine contDiff_iff_contDiffAt.2 fun ζ ↦ ?_
+  have hφn : ContDiffAt ℝ n φ ζ := (hφ.of_le le_self_add).contDiffAt
+  by_cases hζ : φ ζ ∈ tsupport η
+  · have hS := hηS hζ
+    have hdφ : ContDiffAt ℝ n (fun w ↦ fderiv ℝ φ w stdComplexLineReal) ζ :=
+      ((hφ.fderiv_right le_rfl).clm_apply contDiff_const).contDiffAt
+    have hJu : ContDiffAt ℝ n (fun w ↦ J (φ w) (u (φ w))) ζ :=
+      (hJ _ hS).comp (f := fun w ↦ (φ w, u (φ w))) ζ (hφn.prodMk ((hu _ hS).comp ζ hφn))
+    rw [show covectorPullback φ J u η = _ from funext (covectorPullback_apply φ J u η)]
+    exact (hη.contDiffAt.comp ζ hφn).clm_comp ((hdφ.fst.smul
+      (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add (hdφ.snd.smul hJu))
+  · refine contDiffAt_const (c := (0 : V →L[ℝ] ℝ)).congr_of_eventuallyEq ?_
+    filter_upwards [((isClosed_tsupport η).isOpen_compl.preimage hφ.continuous).mem_nhds hζ]
+      with ζ' hζ'
+    exact covectorPullback_eq_zero_of_apply_eq_zero φ J u (image_eq_zero_of_notMem_tsupport hζ')
+
 end TauCeti.Floer
 
 namespace TauCeti.SymplecticForm

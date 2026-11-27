@@ -129,35 +129,6 @@ theorem integrableOn_sobolevDensity_comp_positiveEndChart {ξ : ℝ × ℝ → V
   exact integrableOn_sobolevDensity_of_eventuallyEq_zero
     (continuous_sobolevDensity (hξ.comp (contDiff_positiveEndChart q 1))) hzero a
 
-/-- **Continuity of the energy density in the end chart.** If `J` is `C¹` along `u` and `u` is
-`C¹` on `S`, then the `W^{1,2}` density of the pulled-back form of a `C¹` covector field supported
-in `S` is continuous: near a point whose image lies off the support of the covector field, the
-pulled-back form vanishes. -/
-private theorem continuous_sobolevDensity_covectorPullback_positiveEndChart
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hu : ∀ z ∈ thricePuncturedSphereReal, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hη : ContDiff ℝ 1 η) (hηS : tsupport η ⊆ thricePuncturedSphereReal) (q : Puncture) :
-    Continuous (sobolevDensity (covectorPullback (positiveEndChart q) J u η)) := by
-  set φ := positiveEndChart q
-  refine continuous_sobolevDensity (contDiff_iff_contDiffAt.2 fun ζ ↦ ?_)
-  have hφ : ContDiffAt ℝ 1 φ ζ := (contDiff_positiveEndChart q 1).contDiffAt
-  by_cases hζ : φ ζ ∈ tsupport η
-  · have hS := hηS hζ
-    have hdφ : ContDiffAt ℝ 1 (fun w ↦ fderiv ℝ φ w stdComplexLineReal) ζ :=
-      (((contDiff_positiveEndChart q 2).fderiv_right (m := 1) (by norm_num)).clm_apply
-        contDiff_const).contDiffAt
-    have hJu : ContDiffAt ℝ 1 (fun w ↦ J (φ w) (u (φ w))) ζ :=
-      (hJ _ hS).comp (f := fun w ↦ (φ w, u (φ w))) ζ (hφ.prodMk ((hu _ hS).comp ζ hφ))
-    rw [show covectorPullback φ J u η = _ from funext (covectorPullback_apply φ J u η)]
-    exact (hη.contDiffAt.comp ζ hφ).clm_comp (((contDiffAt_fst.comp ζ hdφ).smul
-      (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add ((contDiffAt_snd.comp ζ hdφ).smul hJu))
-  · refine contDiffAt_const (c := (0 : V →L[ℝ] ℝ)).congr_of_eventuallyEq ?_
-    filter_upwards [((isClosed_tsupport η).isOpen_compl.preimage
-      (contDiff_positiveEndChart q 1).continuous).mem_nhds hζ] with ζ' hζ'
-    have h₀ : η (φ ζ') = 0 := image_eq_zero_of_notMem_tsupport hζ'
-    simp [covectorPullback_apply, h₀]
-
 /-- If `J` is `C¹` along `u` and `u` is `C¹` on `S`, a `C¹` covector field with compact support
 in `S` has integrable `W^{1,2}` energy density in each positive end chart, read as the pulled-back
 form, over every half-cylinder `(a, ∞) × [0, 1]`: it vanishes far out on the end. -/
@@ -173,7 +144,8 @@ theorem integrableOn_sobolevDensity_covectorPullback_positiveEndChart
   obtain ⟨N, hzero⟩ := exists_forall_comp_positiveEndChart_eventuallyEq_zero hηc fun z hz ↦
     Puncture.ne_endCenter (mem_thricePuncturedSphereReal_iff.1 (hηS hz)) q
   refine integrableOn_sobolevDensity_of_eventuallyEq_zero
-    (continuous_sobolevDensity_covectorPullback_positiveEndChart hJ hu hη hηS q)
+    (continuous_sobolevDensity
+      (contDiff_covectorPullback (contDiff_positiveEndChart q _) hJ hu hη hηS))
     (N := N) (fun ζ hζN ↦ ?_) a
   filter_upwards [hzero ζ hζN] with ζ' hζ'
   have h₀ : η (positiveEndChart q ζ') = 0 := by simpa using hζ'

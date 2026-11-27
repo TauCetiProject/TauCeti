@@ -408,37 +408,6 @@ end Geometry
 
 /-! ### Covector fields read on the ends -/
 
-omit [FiniteDimensional ℝ V] in
-/-- If `J` is `C¹` along `u` and `u` is `C¹` on the capped surface, the `W^{1,2}` density of the
-pulled-back form, in the chart of an end, of a `C¹` covector field supported in the capped surface
-is continuous: near a point whose image lies off the support of the field, the form vanishes. -/
-private theorem continuous_sobolevDensity_covectorPullback_cappedEndChart
-    {J : ℝ × ℝ → V → V →L[ℝ] V} {u : ℝ × ℝ → V}
-    (hJ : ∀ z ∈ cappedDomain, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
-    (hu : ∀ z ∈ cappedDomain, ContDiffAt ℝ 1 u z) {η : ℝ × ℝ → V →L[ℝ] ℝ}
-    (hη : ContDiff ℝ 1 η) (hηU : tsupport η ⊆ cappedDomain) (e : Bool) :
-    Continuous (sobolevDensity (covectorPullback (cappedEndChart c e) J u η)) := by
-  refine continuous_sobolevDensity (contDiff_iff_contDiffAt.2 fun ζ ↦ ?_)
-  have hφ : ContDiffAt ℝ 1 (cappedEndChart c e) ζ := (contDiff_cappedEndChart e).contDiffAt
-  by_cases hζ : cappedEndChart c e ζ ∈ tsupport η
-  · have hS := hηU hζ
-    have hdφ : ContDiffAt ℝ 1 (fun w ↦ fderiv ℝ (cappedEndChart c e) w stdComplexLineReal) ζ :=
-      (((contDiff_cappedEndChart (c := c) e (n := 2)).fderiv_right (m := 1)
-        (by norm_num)).clm_apply contDiff_const).contDiffAt
-    have hJu : ContDiffAt ℝ 1
-        (fun w ↦ J (cappedEndChart c e w) (u (cappedEndChart c e w))) ζ :=
-      (hJ _ hS).comp (f := fun w ↦ (cappedEndChart c e w, u (cappedEndChart c e w))) ζ
-        (hφ.prodMk ((hu _ hS).comp ζ hφ))
-    rw [show covectorPullback (cappedEndChart c e) J u η = _ from
-      funext (covectorPullback_apply (cappedEndChart c e) J u η)]
-    exact (hη.contDiffAt.comp ζ hφ).clm_comp (((contDiffAt_fst.comp ζ hdφ).smul
-      (contDiffAt_const (c := (1 : V →L[ℝ] V)))).add ((contDiffAt_snd.comp ζ hdφ).smul hJu))
-  · refine contDiffAt_const (c := (0 : V →L[ℝ] ℝ)).congr_of_eventuallyEq ?_
-    filter_upwards [((isClosed_tsupport η).isOpen_compl.preimage
-      (contDiff_cappedEndChart (c := c) e (n := 1)).continuous).mem_nhds hζ] with ζ' hζ'
-    have h₀ : η (cappedEndChart c e ζ') = 0 := image_eq_zero_of_notMem_tsupport hζ'
-    simp [covectorPullback_apply, h₀]
-
 /-- The coordinate of each end is bounded above on a compact subset of the capped surface. -/
 private theorem exists_forall_cappedEndCoord_le {K : Set (ℝ × ℝ)} (hK : IsCompact K)
     (hKU : K ⊆ cappedDomain) (e : Bool) : ∃ N, ∀ z ∈ K, cappedEndCoord c e z ≤ N := by
@@ -463,7 +432,8 @@ private theorem integrableOn_sobolevDensity_covectorPullback_cappedEndChart
       (Ioi a ×ˢ Icc 0 1) := by
   obtain ⟨N, hN⟩ := exists_forall_cappedEndCoord_le (c := c) hηc.isCompact hηU e
   refine integrableOn_sobolevDensity_of_eventuallyEq_zero
-    (continuous_sobolevDensity_covectorPullback_cappedEndChart hJ hu hη hηU e) (N := N)
+    (continuous_sobolevDensity
+      (contDiff_covectorPullback (contDiff_cappedEndChart e) hJ hu hη hηU)) (N := N)
     (fun ζ hζN ↦ ?_) a
   filter_upwards [(isOpen_lt continuous_const continuous_fst).mem_nhds hζN] with ζ' hζ'
   have h₀ : η (cappedEndChart c e ζ') = 0 := by
