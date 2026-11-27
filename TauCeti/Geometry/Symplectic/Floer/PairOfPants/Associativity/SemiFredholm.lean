@@ -41,7 +41,10 @@ chart `φ'_∞` (the part `s ≤ -1` along its end lift `φ_∞`, where `φ'_∞
 neck data vanish, and `K_τ` is the datum `Σ_τ` of the moving input ends
 (`associativityPerturbation_add_mul_cylindricalEndLift_eq_puncturedSpherePerturbation`,
 `associativityPerturbation_cylindricalEndLift_inf_eq_puncturedSpherePerturbation`, in the
-namespace `TauCeti.Floer`).
+namespace `TauCeti.Floer`). In the end charts `ψ_i` and `φ'_∞` this agreement reads
+`TauCeti.Floer.associativityPerturbation_realChart_eq` and
+`TauCeti.Floer.associativityPerturbation_positiveEndChart_inf_eq`, the form in which the analysis
+of the family on spheres with moving input ends consumes it.
 So the estimate is the case of the semi-Fredholm estimate
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds`
 on spheres with moving input ends for Floer data that are `Σ_τ` far out on the ends. On the
@@ -69,17 +72,16 @@ open Filter Function Set MeasureTheory TauCeti.ThricePuncturedSphere
 open scoped NNReal Manifold Real
 open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart)
 
-namespace TauCeti.SymplecticForm
-
-open Floer
+namespace TauCeti.Floer
 
 section Charts
 
 variable {M : Type*} {H : Fin 3 → ℝ → M → ℝ} {Hout G G' : ℝ → M → ℝ} {L : ℝ} {τ : ℝ}
 
-/-- On the part `s > 0` of the input end `i`, read in the chart `ψ_i` of the configuration at
-`τ`, the associativity family is the datum of the moving input ends. -/
-private theorem associativityPerturbation_realChart_eq (hL : 2 < L)
+/-- On the part `s > 0` of the input end `i`, read in the chart
+`ψ_i = realChart (z ↦ c i + a i φ₀(z))` of the configuration at `τ`, the associativity family is
+the datum of the moving input ends. -/
+theorem associativityPerturbation_realChart_eq (hL : 2 < L)
     (hH : ∀ i, Periodic (H i) 1) (i : Fin 3) {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) :
     associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm
         (realChart (fun z ↦ associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
@@ -97,7 +99,7 @@ private theorem associativityPerturbation_realChart_eq (hL : 2 < L)
 
 /-- On the part `s ≥ 1` of the output end, read in the positive end chart `φ'_∞`, the
 associativity family is the datum of the moving input ends. -/
-private theorem associativityPerturbation_positiveEndChart_inf_eq (hL : 2 < L)
+theorem associativityPerturbation_positiveEndChart_inf_eq (hL : 2 < L)
     (hHout : Periodic Hout 1) {ζ : ℝ × ℝ} (hζ : 1 ≤ ζ.1) :
     associativityPerturbation H Hout G G' L τ
         (Complex.equivRealProdCLM.symm (positiveEndChart inf ζ)) =
@@ -112,6 +114,12 @@ private theorem associativityPerturbation_positiveEndChart_inf_eq (hL : 2 < L)
     neg_one_mul, neg_le_neg_iff] using hζ
 
 end Charts
+
+end TauCeti.Floer
+
+namespace TauCeti.SymplecticForm
+
+open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
