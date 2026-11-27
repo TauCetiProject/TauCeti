@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Orientation.Basic
 public import TauCeti.Topology.VectorBundle.Orientation.OfThomClass
+import TauCeti.Geometry.Manifold.Topology
 
 /-!
 # Orientability and the integral Thom class of the tangent bundle
@@ -46,16 +47,16 @@ namespace TauCeti
 
 variable {E H M : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I 1 M] [LocallyPathConnectedSpace M]
+  [IsManifold I 1 M]
 
 /-- **A manifold is orientable exactly when its tangent bundle has an integral Thom class.** For
-a manifold of positive dimension `n + 1` over a locally path-connected space, an orientation is the
-same as a class of `Hⁿ⁺¹(TM, TM₀; ℤ)` restricting to a generator of the local cohomology of every
-tangent space. -/
+a manifold of positive dimension `n + 1`, an orientation is the same as a class of
+`Hⁿ⁺¹(TM, TM₀; ℤ)` restricting to a generator of the local cohomology of every tangent space. -/
 theorem orientable_iff_exists_isThomClass {n : ℕ} (hE : finrank ℝ E = n + 1) :
     Orientable I M ↔ ∃ u : (thomPair E (TangentSpace I : M → Type w)).singularCohomology
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{w} ℤ)) (finrank ℝ E),
       IsThomClass E (TangentSpace I : M → Type w) u := by
+  have := I.locallyPathConnectedSpace_of_chartedSpace M
   rw [orientable_iff_nonempty_vectorBundleOrientation,
     ← nonempty_vectorBundleOrientation_iff_exists_isThomClass hE]
   exact (VectorBundleOrientation.reindex (finCongr hE)).nonempty_congr

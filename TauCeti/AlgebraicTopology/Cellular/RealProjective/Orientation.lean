@@ -152,8 +152,6 @@ theorem not_exists_isThomClass_tangentSpace_projectivization (hN : Even N) (hN0 
         (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ (ModuleCat.of ℤ (ULift.{0} ℤ))
         (Module.finrank ℝ (Fin N → ℝ)),
       IsThomClass (Fin N → ℝ) (TangentSpace 𝓘(ℝ, Fin N → ℝ) : ℙ ℝ (Fin (N + 1) → ℝ) → Type) u := by
-  have : LocallyPathConnectedSpace (ℙ ℝ (Fin (N + 1) → ℝ)) :=
-    ChartedSpace.locallyPathConnectedSpace (Fin N → ℝ) _
   obtain ⟨n, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hN0
   rw [← orientable_iff_exists_isThomClass (Module.finrank_fin_fun ℝ)]
   exact not_orientable_projectivization_of_even hN hN0
