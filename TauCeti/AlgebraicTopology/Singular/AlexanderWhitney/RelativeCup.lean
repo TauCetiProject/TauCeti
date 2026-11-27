@@ -41,6 +41,8 @@ which relative cup products are taken.
 * `TopPair.rightAlexanderWhitneyDiagonal`, characterized by
   `TopPair.singularChainComplexπ_rightAlexanderWhitneyDiagonal` and natural in maps of pairs
   (`TopPair.rightAlexanderWhitneyDiagonal_naturality`).
+* `TopPair.alexanderWhitneyDiagonal_whiskerLeft_singularChainComplexπ`: the relative diagonal and
+  the right relative diagonal agree after the quotient map on the remaining absolute factor.
 * `TopPair.rightAlexanderWhitneyDiagonalKoszulBraidingHomotopy`: the right relative diagonal
   followed by the Koszul braiding is chain homotopic to the relative diagonal
   `TopPair.alexanderWhitneyDiagonal` of the braided coefficient morphism.
@@ -126,6 +128,27 @@ lemma rightAlexanderWhitneyDiagonal_naturality {P P' : TopPair.{w}} (f : P ⟶ P
       (singularChainComplexπ_rightAlexanderWhitneyDiagonal_assoc P u _).symm
   exact (congrArg (_ ⊗ₘ ·) (singularChainComplexπ_pair_naturality f S)).trans
     (whiskerLeft_comp_tensorHom _ _ _).symm
+
+/-- The doubly relative Alexander–Whitney diagonal `C(X, A) ⟶ C(X, A) ⊗ C(X, A)` is both relative
+diagonals followed by the quotient map on the remaining absolute factor: the relative diagonal
+`TopPair.alexanderWhitneyDiagonal` followed by the quotient map on the second factor is the right
+relative diagonal followed by the quotient map on the first factor. -/
+@[reassoc]
+lemma alexanderWhitneyDiagonal_whiskerLeft_singularChainComplexπ (P : TopPair.{w})
+    (u : T ⟶ R ⊗ S) :
+    P.alexanderWhitneyDiagonal u ≫ (P.singularChainComplex R ◁ P.singularChainComplexπ S) =
+      P.rightAlexanderWhitneyDiagonal u ≫
+        (P.singularChainComplexπ R ▷ P.singularChainComplex S) := by
+  rw [← cancel_epi (P.singularChainComplexπ T)]
+  -- Term-mode steps: the ambient chains appear both as `(toSSetPair.obj P).right.chainComplex R`
+  -- and as `(TopCat.toSSet.obj P.fst).chainComplex R`, so `rw` cannot match.
+  refine (Category.assoc _ _ _).symm.trans ?_
+  refine (congrArg (· ≫ _) (singularChainComplexπ_alexanderWhitneyDiagonal P u)).trans ?_
+  refine Eq.trans ?_ (Category.assoc _ _ _)
+  refine Eq.trans ?_
+    (congrArg (· ≫ _) (singularChainComplexπ_rightAlexanderWhitneyDiagonal P u)).symm
+  refine (Category.assoc _ _ _).trans (Eq.trans (congrArg (_ ≫ ·) ?_) (Category.assoc _ _ _).symm)
+  exact (whisker_exchange (P.singularChainComplexπ R) (P.singularChainComplexπ S)).symm
 
 section Braiding
 
