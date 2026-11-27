@@ -49,6 +49,8 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
   whose image in `Q` is a unit has an `R`-linear right inverse.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
+* `LinearEquiv.baseChangeₛₗ`: a `σ`-semilinear equivalence `M ≃ M'` and a ring isomorphism
+  `τ : A → B` restricting to `σ` give the `τ`-semilinear equivalence `A ⊗[R] M ≃ B ⊗[S] M'`.
 -/
 
 public section
@@ -320,3 +322,46 @@ theorem exists_smul_linearMap_eq_self {P : Type*} [AddCommMonoid P] [Module R P]
 end Invertible
 
 end TensorProduct
+
+namespace LinearEquiv
+
+open TensorProduct
+
+variable {R S A B M M' : Type*} [CommSemiring R] [CommSemiring S] [Semiring A] [Semiring B]
+  [Algebra R A] [Algebra S B]
+  {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+  {τ : A →+* B} {τ' : B →+* A} [RingHomInvPair τ τ'] [RingHomInvPair τ' τ]
+  [AddCommMonoid M] [Module R M] [AddCommMonoid M'] [Module S M']
+
+/-- The scalar extension of a semilinear equivalence along a compatible ring isomorphism: for a
+`σ`-semilinear equivalence `f : M ≃ₛₗ[σ] M'` and a ring isomorphism `τ : A → B` of algebras that
+restricts to `σ` on scalars, the `τ`-semilinear equivalence `A ⊗[R] M ≃ B ⊗[S] M'` sending
+`a ⊗ m` to `τ a ⊗ f m`. -/
+def baseChangeₛₗ (f : M ≃ₛₗ[σ] M') (h : ∀ r, τ (algebraMap R A r) = algebraMap S B (σ r)) :
+    A ⊗[R] M ≃ₛₗ[τ] B ⊗[S] M' where
+  __ := TensorProduct.congr
+    { toFun := τ
+      invFun := τ'
+      map_add' := map_add τ
+      map_smul' r a := by simp [Algebra.smul_def, h]
+      left_inv _ := RingHomInvPair.comp_apply_eq
+      right_inv _ := RingHomInvPair.comp_apply_eq₂ : A ≃ₛₗ[σ] B } f
+  map_smul' a t := by
+    induction t with
+    | tmul b m => simp [smul_tmul']
+    | add x y hx hy => simp_all
+
+variable (f : M ≃ₛₗ[σ] M') (h : ∀ r, τ (algebraMap R A r) = algebraMap S B (σ r))
+
+/-- `LinearEquiv.baseChangeₛₗ` sends `a ⊗ m` to `τ a ⊗ f m`. -/
+@[simp]
+theorem baseChangeₛₗ_tmul (a : A) (m : M) : baseChangeₛₗ f h (a ⊗ₜ m) = τ a ⊗ₜ f m :=
+  (rfl)
+
+/-- The inverse of `LinearEquiv.baseChangeₛₗ` sends `b ⊗ m` to `τ' b ⊗ f.symm m`. -/
+@[simp]
+theorem baseChangeₛₗ_symm_tmul (b : B) (m : M') :
+    (baseChangeₛₗ f h).symm (b ⊗ₜ m) = τ' b ⊗ₜ f.symm m :=
+  (rfl)
+
+end LinearEquiv

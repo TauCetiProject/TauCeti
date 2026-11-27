@@ -36,6 +36,8 @@ along `Shrink.ringEquiv K : Shrink.{0} K ≃+* K` from `Type` to number fields i
 
 ## Main results
 
+* `TauCeti.valuation_equivOfRingEquiv`: `e` carries the `v`-adic valuation to the valuation of the
+  corresponding finite place of `L`.
 * `TauCeti.units_map_adicCompletionCongr_unitAtFinitePlace`: `adicCompletionCongr` intertwines
   `unitAtFinitePlace` with `Units.map e`.
 * `TauCeti.isSquare_unitAtFinitePlace_iff_of_ringEquiv`,
@@ -73,6 +75,14 @@ section FinitePlace
 variable {K L : Type*} [Field K] [NumberField K] [Field L] [NumberField L]
 
 namespace TauCeti
+
+/-- The `v`-adic valuation is carried along a ring isomorphism `e : K ≃+* L` of number fields to the
+valuation of the corresponding finite place of `L`. -/
+theorem valuation_equivOfRingEquiv (e : K ≃+* L) (v : HeightOneSpectrum (𝓞 K)) (x : K) :
+    (HeightOneSpectrum.equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v).valuation L (e x) =
+      v.valuation K x := by
+  simpa using valuation_ringEquivOfRingEquiv (K := K) (K' := L) (RingOfIntegers.mapRingEquiv e)
+    (asIdeal_equivOfRingEquiv (RingOfIntegers.mapRingEquiv e) v) x
 
 /-- Extending a valuation-preserving isomorphism `e : K ≃+* L` to the adic completions intertwines
 `unitAtFinitePlace` with `Units.map e`. -/
