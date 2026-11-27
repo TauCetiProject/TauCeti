@@ -89,6 +89,12 @@ theorem normalizedEsymm_of_card_lt {k : ℕ} (h : Fintype.card ι < k) (μ : ι 
 theorem normalizedEsymm_card (μ : ι → ℝ) : normalizedEsymm (Fintype.card ι) μ = ∏ i, μ i := by
   simp [normalizedEsymm, esymm_card]
 
+/-- `S_n = ∏ λ_i` for `λ : Fin n → ℝ`, the form of `TauCeti.normalizedEsymm_card` that applies
+after `simp` has rewritten `Fintype.card (Fin n)` to `n`. -/
+@[simp]
+theorem normalizedEsymm_card_fin {n : ℕ} (μ : Fin n → ℝ) : normalizedEsymm n μ = ∏ i, μ i := by
+  simpa using normalizedEsymm_card μ
+
 private theorem eval_esymm_eq_esymm_map (μ : ι → ℝ) (k : ℕ) :
     eval μ (esymm ι ℝ k) = (univ.val.map μ).esymm k :=
   aeval_esymm_eq_multiset_esymm ι ℝ k μ

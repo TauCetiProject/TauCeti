@@ -125,8 +125,7 @@ theorem wedgePow_div_rpow_le_wedge_wedgePow_div_rpow {n k l : ℕ} (hn : finrank
       Real.zero_rpow (one_div_ne_zero (by norm_cast; omega))]
   rw [wedgePow_ofComplexModule hα hn, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
     mul_div_assoc, div_self hv, mul_one,
-    wedge_wedgePow_wedgePow_div_eq_normalizedEsymm hα hn hkl v hv, ← normalizedEsymm_card,
-    Fintype.card_fin]
+    wedge_wedgePow_wedgePow_div_eq_normalizedEsymm hα hn hkl v hv, ← normalizedEsymm_card_fin]
   exact normalizedEsymm_rpow_le_of_nonneg (relEigenvalues_hermitianSesqForm_nonneg hα hn hpos)
     hk (by omega)
 
