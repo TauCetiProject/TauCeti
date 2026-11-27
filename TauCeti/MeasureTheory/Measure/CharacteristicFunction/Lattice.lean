@@ -16,7 +16,9 @@ its phase is almost surely an integer multiple of `2π`. This concerns equality 
 not merely modulus one: the latter also allows translated lattices.
 
 The inner-product-space statement identifies the frequencies `t` with `charFun μ t = 1`.
-On the real line, its phase condition describes an unshifted lattice.
+On the real line, its phase condition describes an unshifted lattice. Modulus one at `t` is the
+same condition up to a translation: the phases `⟪x, t⟫` lie almost surely in a single coset
+`c + 2πℤ` (`MeasureTheory.norm_charFun_eq_one_iff`).
 For a probability law on `ℝ≥0`, the characteristic function of its real pushforward equals
 one at `2π/a` exactly when the law is concentrated on `a ℕ`, for `a > 0`. Consequently,
 laws not concentrated on any such unshifted lattice are precisely those for which zero is
@@ -68,6 +70,39 @@ theorem charFun_eq_one_iff_ae_inner_mem_int_mul (t : E) :
   · simpa using congrArg Complex.im hn
   · simp only [hn, ofReal_mul, ofReal_intCast, ofReal_ofNat]
     ring
+
+/-- A characteristic function has modulus one at a frequency `t` exactly when the phases
+`⟪x, t⟫` lie almost surely in a single translated lattice `c + 2πℤ`. -/
+theorem norm_charFun_eq_one_iff (t : E) :
+    ‖charFun μ t‖ = 1 ↔ ∃ c : ℝ, ∀ᵐ x ∂μ, ∃ n : ℤ, ⟪x, t⟫ = c + n * (2 * Real.pi) := by
+  constructor
+  · intro h
+    set c := arg (charFun μ t)
+    have hone : charFun (μ.map fun x ↦ ⟪x, t⟫ - c) 1 = 1 := by
+      rw [charFun_apply_real, integral_map (by fun_prop) (by fun_prop)]
+      have hz := norm_mul_exp_arg_mul_I (charFun μ t)
+      rw [h, ofReal_one, one_mul] at hz
+      calc ∫ x, exp (((1 : ℝ) : ℂ) * ((⟪x, t⟫ - c : ℝ) : ℂ) * I) ∂μ
+          = (∫ x, exp (⟪x, t⟫ * I) ∂μ) * exp (-(c * I)) := by
+            rw [← integral_mul_const]
+            congr 1 with x
+            rw [← exp_add]
+            push_cast
+            ring_nf
+        _ = 1 := by rw [← charFun_apply, ← hz, ← exp_add, add_neg_cancel, exp_zero]
+    have hae := ae_of_ae_map (f := fun x ↦ ⟪x, t⟫ - c) (by fun_prop)
+      ((charFun_eq_one_iff_ae_inner_mem_int_mul 1).1 hone)
+    refine ⟨c, hae.mono fun x ⟨n, hn⟩ ↦ ⟨n, ?_⟩⟩
+    simp only [RCLike.inner_apply, conj_trivial, one_mul] at hn
+    linarith
+  · rintro ⟨c, hc⟩
+    have hint : charFun μ t = exp (c * I) := by
+      rw [charFun_apply, integral_congr_ae (g := fun _ ↦ exp (c * I)) ?_]
+      · simp
+      refine hc.mono fun x ⟨n, hn⟩ ↦ ?_
+      simp only [hn, exp_eq_exp_iff_exists_int]
+      exact ⟨n, by push_cast; ring⟩
+    rw [hint, norm_exp_ofReal_mul_I]
 
 end MeasureTheory
 
