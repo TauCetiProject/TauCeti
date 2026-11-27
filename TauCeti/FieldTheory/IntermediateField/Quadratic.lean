@@ -29,7 +29,8 @@ finite Galois extensions this also identifies each index-two subgroup as the sta
 nonzero square root (`exists_sq_mem_range_apply_eq_self_iff_of_index_eq_two`).
 Two square roots of nonzero radicands generate the same simple extension exactly when the
 radicands lie in the same square class (`isSquare_mul_of_adjoin_simple_eq`, which needs `2 ≠ 0`,
-and its converse `adjoin_simple_eq_of_isSquare_mul`).
+and its converse `adjoin_simple_eq_of_isSquare_mul`), and a square root lying in `K(x)` but not in
+`K` is then a `K`-multiple of `x` (`exists_algebraMap_mul_eq_of_mem_adjoin_simple`).
 The finrank lemmas live here because they combine the normal form with intermediate-field
 scalar restriction for one quadratic tower step.
 Iterating the degree doubling, `Finset.finrank_adjoin_eq_two_pow_card` shows that a finite set of
@@ -208,6 +209,36 @@ theorem adjoin_simple_eq_bot_iff_isSquare {a : K} {x : L} (hx : x ^ 2 = algebraM
     · exact ⟨r, h.symm⟩
     · exact ⟨-r, by rw [map_neg, h]⟩
 
+/-- **A square root outside the base field generates a quadratic extension.** If `x ^ 2 = a` for
+some `a ∈ K` and `x ∉ K`, then `K(x)` has degree `2` over `K`. -/
+theorem finrank_adjoin_simple_eq_two_of_notMem_bot {a : K} {x : L}
+    (hx : x ^ 2 = algebraMap K L a) (hxb : x ∉ (⊥ : IntermediateField K L)) :
+    Module.finrank K (IntermediateField.adjoin K {x}) = 2 :=
+  finrank_adjoin_simple_eq_two_of_not_isSquare hx (by
+    rwa [← adjoin_simple_eq_bot_iff_isSquare hx, IntermediateField.adjoin_simple_eq_bot_iff])
+
+/-- **A square root in a simple quadratic field is a multiple of the generator.** Let `x` and `y` be
+square roots of elements of `K` in a field extension `L / K` with `2 ≠ 0`. If `y` lies in `K(x)`
+but not in `K`, then `y = q x` for some `q ∈ K`: writing `y = p + q x`, the cross term `2 p q x` of
+`y²` must lie in `K`, so `p q = 0`, and `q ≠ 0` since `y ∉ K`. -/
+theorem exists_algebraMap_mul_eq_of_mem_adjoin_simple [NeZero (2 : K)] {a c : K} {x y : L}
+    (hx : x ^ 2 = algebraMap K L a) (hy : y ^ 2 = algebraMap K L c)
+    (hyx : y ∈ IntermediateField.adjoin K {x}) (hyb : y ∉ (⊥ : IntermediateField K L)) :
+    ∃ q : K, algebraMap K L q * x = y := by
+  have : NeZero (2 : L) :=
+    NeZero.nat_of_injective (n := 2) (f := algebraMap K L) (algebraMap K L).injective
+  have hx2 : x ^ 2 ∈ (⊥ : IntermediateField K L) := by
+    rw [hx]; exact IntermediateField.algebraMap_mem _ _
+  have hxb : x ∉ (⊥ : IntermediateField K L) := fun hxb ↦ hyb (by
+    rwa [IntermediateField.adjoin_simple_eq_bot_iff.mpr hxb] at hyx)
+  obtain ⟨p, q, hp, hq, rfl⟩ := (mem_sup_adjoin_sq hx2).mp (by rwa [bot_sup_eq])
+  have hpq : p * q = 0 := (add_mul_sq_mem_iff_mul_eq_zero hx2 hxb hp hq).mp (by
+    rw [hy]; exact IntermediateField.algebraMap_mem _ _)
+  obtain ⟨q₀, rfl⟩ := IntermediateField.mem_bot.mp hq
+  rcases mul_eq_zero.mp hpq with rfl | hq0
+  · exact ⟨q₀, (zero_add _).symm⟩
+  · exact (hyb (by rw [hq0, zero_mul, add_zero]; exact hp)).elim
+
 /-- **Same square class from a shared simple quadratic field.** Let `x` and `y` be square roots of
 `a` and `c` in a field extension `L / K` with `2 ≠ 0`. If the simple extensions `K(x)` and `K(y)`
 coincide, then `a · c` is a square in `K`: two square roots generate the same quadratic subfield
@@ -226,46 +257,14 @@ theorem isSquare_mul_of_adjoin_simple_eq [NeZero (2 : K)] {a c : K} {x y : L}
     refine ⟨x₀ * y₀, FaithfulSMul.algebraMap_injective K L ?_⟩
     rw [map_mul, map_mul, map_mul, hx₀, hy₀, ← hx, ← hy]
     ring
-  have : NeZero (2 : L) :=
-    NeZero.nat_of_injective (n := 2) (f := algebraMap K L) (algebraMap K L).injective
-  -- Write `y` in the base-field normal form `algebraMap p₀ + algebraMap q₀ * x`.
-  have hx2 : x ^ 2 ∈ (⊥ : IntermediateField K L) := by
-    rw [hx]; exact IntermediateField.algebraMap_mem _ _
-  have hy_mem : y ∈ (⊥ : IntermediateField K L) ⊔ IntermediateField.adjoin K {x} := by
-    rw [bot_sup_eq, hxy]; exact IntermediateField.mem_adjoin_simple_self K y
-  obtain ⟨p, q, hp, hq, hy_eq⟩ := (mem_sup_adjoin_sq hx2).mp hy_mem
-  rw [IntermediateField.mem_bot] at hp hq
-  obtain ⟨p₀, rfl⟩ := hp
-  obtain ⟨q₀, rfl⟩ := hq
-  -- The square `y² = c` lands in `⊥`, so the shared cross-term lemma forces `p₀ * q₀ = 0`.
-  have hab_mem :
-      (algebraMap K L p₀ + algebraMap K L q₀ * x) ^ 2 ∈ (⊥ : IntermediateField K L) := by
-    rw [← hy_eq, hy]; exact IntermediateField.algebraMap_mem _ _
-  have hpq : algebraMap K L p₀ * algebraMap K L q₀ = 0 :=
-    (add_mul_sq_mem_iff_mul_eq_zero hx2 hxb (IntermediateField.algebraMap_mem _ _)
-      (IntermediateField.algebraMap_mem _ _)).mp hab_mem
-  have hpq0 : p₀ * q₀ = 0 := by
-    apply FaithfulSMul.algebraMap_injective K L
-    rw [map_mul, map_zero]
-    exact hpq
-  -- The vanishing cross term forces `c = p₀² + q₀² * a`.
-  have hc : c = p₀ ^ 2 + q₀ ^ 2 * a := by
-    have hy2 : (algebraMap K L p₀ + algebraMap K L q₀ * x) ^ 2 = algebraMap K L c := by
-      rw [← hy_eq]; exact hy
-    apply FaithfulSMul.algebraMap_injective K L
-    rw [map_add, map_pow, map_mul, map_pow]
-    linear_combination -hy2 + (algebraMap K L q₀) ^ 2 * hx + 2 * x * hpq
-  -- Either `p₀ = 0`, giving `a * c = (q₀ * a)²`, or `q₀ = 0`, forcing `x ∈ K`, a contradiction.
-  rcases mul_eq_zero.mp hpq0 with hp0 | hq0
-  · -- `p₀ = 0`, so `c = q₀² * a` and `a * c = (q₀ * a)²`.
-    exact ⟨q₀ * a, by rw [hc, hp0]; ring⟩
-  · -- `q₀ = 0` puts `y` in the base field, forcing `x ∈ K`, a contradiction.
-    refine absurd ?_ hxb
-    have hyb : y ∈ (⊥ : IntermediateField K L) := by
-      rw [hy_eq, hq0, map_zero, zero_mul, add_zero]
-      exact IntermediateField.algebraMap_mem _ _
-    exact IntermediateField.adjoin_simple_eq_bot_iff.mp
-      (hxy.trans (IntermediateField.adjoin_simple_eq_bot_iff.mpr hyb))
+  -- Otherwise `y ∉ K` lies in `K(x)`, so `y = q₀ x`, `c = q₀² a` and `a · c = (q₀ a)²`.
+  have hyb : y ∉ (⊥ : IntermediateField K L) := fun hyb ↦ hxb
+    (IntermediateField.adjoin_simple_eq_bot_iff.mp
+      (hxy.trans (IntermediateField.adjoin_simple_eq_bot_iff.mpr hyb)))
+  obtain ⟨q₀, rfl⟩ := exists_algebraMap_mul_eq_of_mem_adjoin_simple hx hy
+    (hxy ▸ IntermediateField.mem_adjoin_simple_self K y) hyb
+  rw [mul_pow, hx, ← map_pow, ← map_mul] at hy
+  exact ⟨q₀ * a, by rw [← FaithfulSMul.algebraMap_injective K L hy]; ring⟩
 
 /-- **A square root in a shared square class lies in the other simple field.** Let `x` and `y` be
 square roots of `a` and `c` in a field extension `L / K`. If `a` is nonzero and `a · c` is a square

@@ -55,7 +55,9 @@ change of variables, again over any commutative ring in which the relevant param
   `WeierstrassCurve.exists_smul_quadraticTwistOf_eq`: the double twist is isomorphic to the
   original curve, and changing the generator moves the twist by a change of variables.
 * `WeierstrassCurve.exists_smul_quadraticTwistOf_zero_eq`: in characteristic other than `2`,
-  completing the square makes the trace parameter `0`.
+  completing the square makes the trace parameter `0`;
+  `WeierstrassCurve.exists_smul_quadraticTwistOf_zero_neg_discrim_eq` does so with the norm
+  parameter `-(t² - 4n)` itself.
 * `WeierstrassCurve.exists_smul_eq_quadraticTwistOf_zero_neg_sq`: in characteristic other than
   `2`, the twist by `(0, -c²)` with `c ≠ 0` is trivial.
 * `WeierstrassCurve.quadraticTwistOfVariableChange_smul_quadraticTwistOf_zero_neg_sq`: the
@@ -400,6 +402,17 @@ theorem exists_smul_quadraticTwistOf_eq {a : A} (b : A) (ha : IsUnit a) :
   ⟨(E.quadraticTwistOfVariableChange t n v b)⁻¹, by
     rw [inv_smul_eq_iff, ← hv]
     exact (E.quadraticTwistOfVariableChange_smul t n v b).symm⟩
+
+/-- **Twisting by the discriminant.** When `2` is a unit, the twist by parameters `(t, n)` is the
+twist by `(0, -D)` with `D = t² - 4n`: these are the trace and norm of the generator `2θ - t`, a
+square root of `D`. -/
+theorem exists_smul_quadraticTwistOf_zero_neg_discrim_eq (h2 : IsUnit (2 : A)) :
+    ∃ C : VariableChange A,
+      C • E.quadraticTwistOf 0 (-(t ^ 2 - 4 * n)) = E.quadraticTwistOf t n := by
+  obtain ⟨C, hC⟩ := E.exists_smul_quadraticTwistOf_eq t n (-t) h2
+  refine ⟨C⁻¹, ?_⟩
+  rw [inv_smul_eq_iff, hC]
+  congr 1 <;> ring
 
 /-- Twisting by a **split** quadratic `(x - r)(x - s)` is trivial up to isomorphism: the twist
 by its trace and norm `(r + s, rs)` is a change of variables away from `E`, provided the

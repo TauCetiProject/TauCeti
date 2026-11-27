@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.QuadraticTwist.Classificat
 public import TauCeti.FieldTheory.Galois.SquareRoot.Character
 
 import TauCeti.Data.Nat.Cast.Basic
+import TauCeti.FieldTheory.IntermediateField.Quadratic
 import TauCeti.FieldTheory.Galois.SquareRoot.Basic
 
 /-!
@@ -48,10 +49,15 @@ The trivial character gives exactly the curves isomorphic to `W` over `K`
 * `WeierstrassCurve.IsQuadraticTwistBy.exists_smul_eq`,
   `WeierstrassCurve.isQuadraticTwistBy_iff_exists_smul_eq`: the twist by `η` may be computed from
   any unit `d` and square root of `d` on which `η` describes the Galois action.
+* `WeierstrassCurve.IsQuadraticTwistBy.exists_smul_quadraticTwistOf_zero_eq_of_mem_adjoin`: in
+  particular, from any square root outside `K` in the quadratic field of `η`.
 * `WeierstrassCurve.isQuadraticTwistBy_one_iff`: the twist by the trivial character is `W` itself,
   up to isomorphism over `K`.
 * `WeierstrassCurve.exists_isQuadraticTwistBy_iff_j_eq`: for `j(W) ∉ {0, 1728}`, an elliptic
   curve is a quadratic twist of `W` by some character exactly when it has the `j`-invariant of `W`.
+* `WeierstrassCurve.IsQuadraticTwistBy.two_ne_zero`,
+  `WeierstrassCurve.IsQuadraticTwistBy.two_ne_zero_algebraicClosure`: an elliptic curve is a twist
+  by a character only in characteristic other than `2`.
 * `WeierstrassCurve.IsQuadraticTwistBy.unique`: for `j(W) ∉ {0, 1728}`, the twisting character of
   an elliptic curve is unique.
 * `WeierstrassCurve.existsUnique_isQuadraticTwistBy`: for `j(W) ∉ {0, 1728}`, an elliptic curve
@@ -107,6 +113,22 @@ theorem isQuadraticTwistBy_smul_iff {W E : WeierstrassCurve K}
     W.IsQuadraticTwistBy (C • E) η ↔ W.IsQuadraticTwistBy E η :=
   ⟨fun ⟨d, a, ha, hη, C', hC'⟩ ↦ ⟨d, a, ha, hη, C⁻¹ * C', by rw [mul_smul, hC', inv_smul_smul]⟩,
     fun ⟨d, a, ha, hη, C', hC'⟩ ↦ ⟨d, a, ha, hη, C * C', by rw [mul_smul, hC']⟩⟩
+
+/-- An elliptic curve can be a quadratic twist by a character only in characteristic other than
+`2`: the twist by `(0, -d)` has discriminant `(4d)⁶ Δ`, which vanishes when `2 = 0`. -/
+theorem IsQuadraticTwistBy.two_ne_zero {W E : WeierstrassCurve K} [E.IsElliptic]
+    {η : Gal(AlgebraicClosure K/K) →ₜ* ℤˣ} (h : W.IsQuadraticTwistBy E η) : (2 : K) ≠ 0 := by
+  obtain ⟨d, a, -, -, C, hC⟩ := h
+  have hell : (W.quadraticTwistOf 0 (-(d : K))).IsElliptic :=
+    (isElliptic_smul_iff C _).mp (hC ▸ inferInstance)
+  have h4d := ((W.isElliptic_quadraticTwistOf_iff _ _).mp hell).1.ne_zero
+  exact fun h ↦ h4d (by linear_combination 2 * (d : K) * h)
+
+/-- An elliptic curve can be a quadratic twist by a character only when `2 ≠ 0` in `Kᵃˡᵍ`. -/
+theorem IsQuadraticTwistBy.two_ne_zero_algebraicClosure {W E : WeierstrassCurve K} [E.IsElliptic]
+    {η : Gal(AlgebraicClosure K/K) →ₜ* ℤˣ} (h : W.IsQuadraticTwistBy E η) :
+    (2 : AlgebraicClosure K) ≠ 0 := by
+  simpa only [map_ofNat] using (map_ne_zero (algebraMap K (AlgebraicClosure K))).mpr h.two_ne_zero
 
 /-- **The Galois action on the isomorphism of a quadratic twist.** If `E` is the twist of `W` by
 `η`, in characteristic other than `2`, there is a change of variables `ρ` over `Kᵃˡᵍ` carrying `W`
@@ -171,6 +193,25 @@ theorem IsQuadraticTwistBy.exists_smul_eq {W E : WeierstrassCurve K}
   rw [mul_smul, hC', hd']
   congr 2 <;> field_simp <;> ring
 
+/-- **The twist by any square root generating the same quadratic field.** In characteristic other
+than `2`, let `E` be the twist of `W` by `η`, described by a square root `a` of `d` on which `η`
+acts. If `b ∉ K` is a square root of a unit `c` lying in `K(a)`, then `E` is isomorphic over `K` to
+the twist by `(0, -c)`: `b` is a `K`-multiple of `a`, so `η` describes the Galois action on `b`
+too. -/
+theorem IsQuadraticTwistBy.exists_smul_quadraticTwistOf_zero_eq_of_mem_adjoin
+    {W E : WeierstrassCurve K} {η : Gal(AlgebraicClosure K/K) →ₜ* ℤˣ}
+    (h : W.IsQuadraticTwistBy E η) (h2 : (2 : K) ≠ 0) {a : AlgebraicClosure K} {d : K}
+    (ha : a ^ 2 = algebraMap K _ d) (hη : ∀ g : Gal(AlgebraicClosure K/K), g a = (η g : ℤ) • a)
+    (c : Kˣ) {b : AlgebraicClosure K} (hb : b ^ 2 = algebraMap K _ c)
+    (hbK : b ∉ Set.range (algebraMap K (AlgebraicClosure K)))
+    (hba : b ∈ IntermediateField.adjoin K {a}) :
+    ∃ C : VariableChange K, C • W.quadraticTwistOf 0 (-(c : K)) = E := by
+  have : NeZero (2 : K) := ⟨h2⟩
+  obtain ⟨q, rfl⟩ := TauCeti.IntermediateField.exists_algebraMap_mul_eq_of_mem_adjoin_simple ha hb
+    hba fun hbK' ↦ hbK (IntermediateField.mem_bot.mp hbK')
+  exact h.exists_smul_eq h2 c hb fun g ↦ by
+    rw [map_mul, AlgEquiv.commutes, hη g, mul_smul_comm]
+
 /-- With a fixed unit `d` and a square root `a` of `d` on which `η` describes the Galois action,
 `E` is the twist of `W` by `η` exactly when it is isomorphic over `K` to the twist by `(0, -d)`, in
 characteristic other than `2`. -/
@@ -212,13 +253,10 @@ quadratic twist of `W` by at most one character. -/
 theorem IsQuadraticTwistBy.unique (hj₀ : W.j ≠ 0) (hj₁₇₂₈ : W.j ≠ 1728) {E : WeierstrassCurve K}
     [E.IsElliptic] {η η' : Gal(AlgebraicClosure K/K) →ₜ* ℤˣ} (h : W.IsQuadraticTwistBy E η)
     (h' : W.IsQuadraticTwistBy E η') : η = η' := by
+  have h2 := h.two_ne_zero
+  have h2' := h.two_ne_zero_algebraicClosure
   obtain ⟨d, a, ha, hη, C, hC⟩ := h
   obtain ⟨d', a', ha', hη', C', hC'⟩ := h'
-  -- the twist is isomorphic to the elliptic curve `E`, so `4d` is a unit and `2 ≠ 0`
-  have hell : (W.quadraticTwistOf 0 (-(d : K))).IsElliptic :=
-    (isElliptic_smul_iff C _).mp (hC ▸ inferInstance)
-  have h4d := ((W.isElliptic_quadraticTwistOf_iff _ _).mp hell).1.ne_zero
-  have h2 : (2 : K) ≠ 0 := fun h ↦ h4d (by linear_combination 2 * (d : K) * h)
   obtain ⟨w, hw⟩ := W.exists_eq_sq_mul_of_smul_quadraticTwistOf hj₀ hj₁₇₂₈ d.ne_zero h2
     (C := C'⁻¹ * C) (by rw [mul_smul, hC, ← hC', inv_smul_smul])
   -- `a'` and `w a` are square roots of `d'`, so they agree up to sign
@@ -227,9 +265,6 @@ theorem IsQuadraticTwistBy.unique (hj₀ : W.j ≠ 0) (hj₁₇₂₈ : W.j ≠ 
   have ha'0 : a' ≠ 0 := by
     rintro rfl
     exact d'.ne_zero (by simpa using ha'.symm)
-  have h2' : (2 : AlgebraicClosure K) ≠ 0 := by
-    rw [← map_ofNat (algebraMap K (AlgebraicClosure K)) 2]
-    exact (map_ne_zero _).mpr h2
   have hηa' (g : Gal(AlgebraicClosure K/K)) : g a' = (η g : ℤ) • a' := by
     rcases sq_eq_sq_iff_eq_or_eq_neg.mp hsq with e | e <;>
       simp only [e, map_mul, map_neg, AlgEquiv.commutes, hη g, smul_neg, mul_smul_comm]
