@@ -127,6 +127,13 @@ theorem dgCompZero_cochainHomLinearEquivDGCycles {F G K : CochainComplex C ℤ} 
     rw [mul_zero, Int.negOnePow_zero, one_smul]
     exact (Cochain.ofHom_comp f g).symm))
 
+/-- Composition of the degree-zero cochains of two maps is the cochain of their composite. -/
+@[simp]
+theorem dgCompZero_ofHom_ofHom {F G K : CochainComplex C ℤ} (f : F ⟶ G) (g : G ⟶ K) :
+    dgCompZero R (X := F) (Y := G) (Z := K) (Cochain.ofHom f) (Cochain.ofHom g) =
+      Cochain.ofHom (f ≫ g) :=
+  dgCompZero_cochainHomLinearEquivDGCycles R f g
+
 /-- The identity cochain map is the identity of the DG category of cochain complexes. -/
 theorem cochainHomLinearEquivDGCycles_id (K : CochainComplex C ℤ) :
     (cochainHomLinearEquivDGCycles R K K (𝟙 K) : DGHom R 0 K K) = dgId R K :=

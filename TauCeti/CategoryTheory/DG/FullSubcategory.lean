@@ -90,6 +90,44 @@ theorem inclusion_dgMap_heq {X Y : DGFullSubcategory P} {n : ℤ} (f : DGHom R n
   rw [CategoryTheory.EnrichedFunctor.dgMap_apply, inclusion_map]
   rfl
 
+/-- Restrict an enriched endofunctor to a full DG subcategory it preserves. -/
+-- The underlying object must compute to type homogeneous morphisms in the ambient category.
+@[expose]
+def restrict (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C C)
+    (hF : ∀ X, P X → P (F.obj X)) :
+    EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ)
+      (DGFullSubcategory P) (DGFullSubcategory P) where
+  obj X := ⟨F.obj X.obj, hF X.obj X.property⟩
+  map X Y := F.map X.obj Y.obj
+  map_id X := F.map_id X.obj
+  map_comp X Y Z := F.map_comp X.obj Y.obj Z.obj
+
+variable (F : EnrichedFunctor (CochainComplex (ModuleCat.{v} R) ℤ) C C)
+  (hF : ∀ X, P X → P (F.obj X))
+
+/-- Restriction retains the underlying object map. -/
+@[simp]
+theorem restrict_obj_obj (X : DGFullSubcategory P) :
+    ((restrict R F hF).obj X).obj = F.obj X.obj := (rfl)
+
+/-- Restriction retains the maps on homogeneous morphisms. -/
+@[simp]
+theorem restrict_dgMap {X Y : DGFullSubcategory P} (n : ℤ) (f : DGHom R n X Y) :
+    (restrict R F hF).dgMap n f = F.dgMap n (X := X.obj) (Y := Y.obj) f := by
+  rw [EnrichedFunctor.dgMap_apply, EnrichedFunctor.dgMap_apply]
+  rfl
+
+/-- Restriction commutes with the inclusion into the ambient DG category. -/
+theorem restrict_comp_inclusion :
+    (restrict R F hF).comp _ (inclusion (R := R)) =
+      (inclusion (R := R)).comp _ F := by
+  apply EnrichedFunctor.ext _ (fun X ↦ by
+    simp only [EnrichedFunctor.comp_obj, inclusion_obj, restrict_obj_obj])
+  intro X Y
+  simp only [EnrichedFunctor.comp_map, inclusion_map]
+  -- Expose the restriction's map and the full-subcategory Hom complexes to compose transports.
+  erw [Category.assoc, eqToHom_trans]
+
 /-- The Hom complex in the full DG subcategory is the ambient Hom complex. -/
 @[simp]
 theorem dgHomComplex_eq (X Y : DGFullSubcategory P) :
