@@ -108,30 +108,26 @@ private theorem exists_cutoff_of_isFiniteRank {g : E →L[R] E} (hg : (g : E →
   refine ⟨t.sup id + 1, fun x i hi ↦ (Finsupp.mem_supported' _ _).1 (hspan (hQ x)) i ?_⟩
   exact fun hit ↦ (Nat.not_succ_le_self (t.sup id)) (hi.trans (Finset.le_sup (f := id) hit))
 
-private theorem not_uniformly_bounded_sub {d g : E →L[R] E}
-    (h : ∃ N : ℕ, ∀ k ≥ N, g (Finsupp.single (2 * k) 1) k =
-      d (Finsupp.single (2 * k) 1) k) (C : ℝ) :
-    ¬ ∀ x, ‖(halveIndex + d) x - g x‖ ≤ C * ‖x‖ := by
+private theorem not_exists_bound_add {d : E →L[R] E}
+    (h : ∃ N : ℕ, ∀ k ≥ N, d (Finsupp.single (2 * k) 1) k = 0) :
+    ¬ ∃ C, ∀ x, ‖(halveIndex + d) x‖ ≤ C * ‖x‖ := by
   obtain ⟨N, hN⟩ := h
-  intro h
+  rintro ⟨C, hC⟩
   obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt C (by norm_num : (1 : ℝ) < 2)
   let k := max N m
   let x := Finsupp.single (2 * k) (1 : R)
-  have hshift : halveIndex x = Finsupp.single k 1 := by
-    rw [halveIndex_single, Nat.mul_div_cancel_left _ (by norm_num : 0 < 2)]
-  have hcoord : ((halveIndex + d) x - g x) k = 1 := by
-    have hgx : g x k = d x k := hN k (le_max_left _ _)
-    simp only [add_apply, Finsupp.sub_apply, Finsupp.add_apply, hshift, Finsupp.single_eq_same,
-      hgx, add_sub_cancel_right]
+  have hcoord : (halveIndex + d) x k = 1 := by
+    simp only [x, add_apply, Finsupp.add_apply, halveIndex_single, Nat.mul_div_cancel_left k
+      (by norm_num : 0 < 2), Finsupp.single_eq_same, hN k (le_max_left _ _), add_zero]
   have hratio : C * (weight k : ℝ) < 1 := by
-    have hC : C < (2 : ℝ) ^ k := hm.trans_le (pow_le_pow_right₀ (by norm_num) (le_max_right _ _))
-    rwa [coe_weight, inv_pow, ← div_eq_mul_inv, div_lt_one (by positivity)]
-  have hinput : ‖x‖ = (weight k : ℝ) * weight k := by
-    rw [norm_single_one, coe_weight, coe_weight, two_mul, pow_add]
-  have hlower := weight_le_norm (ne_zero_of_eq_one hcoord)
-  have hupper := mul_lt_mul_of_pos_right hratio (weight_pos k)
-  rw [one_mul, mul_assoc, ← hinput] at hupper
-  exact hupper.not_ge (hlower.trans (h x))
+    have hk : C < (2 : ℝ) ^ k := hm.trans_le (pow_le_pow_right₀ (by norm_num) (le_max_right _ _))
+    rw [coe_weight, inv_pow]
+    exact (mul_inv_lt_iff₀ (by positivity)).2 (by simpa only [one_mul] using hk)
+  have hinput : ‖x‖ = (weight k : ℝ) ^ 2 := by
+    simpa only [x, norm_single_one, coe_weight] using (pow_mul' (2⁻¹ : ℝ) 2 k)
+  have hbound := (weight_le_norm (ne_zero_of_eq_one hcoord)).trans (hC x)
+  rw [hinput] at hbound
+  nlinarith only [hbound, mul_pos (sub_pos.mpr hratio) (weight_pos k)]
 
 /-- The identity is at ring-scalar operator distance at least one from every continuous
 finite-rank map on the dyadically normed sequence space. -/
@@ -176,18 +172,14 @@ theorem exists_add_eq_id_ringOpNorm_eq_zero :
   have key (d : E →L[R] E) (hd : ∀ k > 0, d (Finsupp.single (2 * k) 1) k = 0) :
       ‖halveIndex + d‖ = 0 ∧ ¬(halveIndex + d).IsCompletelyContinuous := by
     constructor
-    · rw [ContinuousLinearMap.ringOpNorm_def]
-      have hempty : {c : ℝ | 0 ≤ c ∧ ∀ x, ‖(halveIndex + d) x‖ ≤ c * ‖x‖} = ∅ := by
-        refine Set.eq_empty_iff_forall_notMem.2 fun c hc ↦ not_uniformly_bounded_sub (g := 0)
-          ⟨1, fun k hk ↦ by rw [hd k (by lia), zero_apply,
-            Finsupp.zero_apply]⟩ c ?_
-        simpa only [zero_apply, sub_zero] using hc.2
-      rw [hempty, Real.sInf_empty]
+    · exact (halveIndex + d).ringOpNorm_eq_zero_of_not_exists_bound
+        (not_exists_bound_add ⟨1, fun k hk ↦ hd k (by lia)⟩)
     · intro h
       obtain ⟨g, hg, hC⟩ := ContinuousLinearMap.isCompletelyContinuous_iff.mp h 1 one_pos
       obtain ⟨N, hN⟩ := exists_cutoff_of_isFiniteRank hg
-      exact not_uniformly_bounded_sub ⟨N + 1, fun k hk ↦
-        (hN _ k (by lia)).trans (hd k (by lia)).symm⟩ 1 hC
+      refine not_exists_bound_add (d := d - g) ⟨N + 1, fun k hk ↦ ?_⟩ ⟨1, fun x ↦ ?_⟩
+      · simp only [sub_apply, Finsupp.sub_apply, hd k (by lia), hN _ k (by lia), sub_zero]
+      · simpa only [sub_apply, add_apply, add_sub_assoc] using hC x
   have hzero := key 0 (by simp)
   have hid := key (-ContinuousLinearMap.id R E) (fun k hk ↦ by
     simp only [neg_apply, ContinuousLinearMap.id_apply, Finsupp.neg_apply, neg_eq_zero]
