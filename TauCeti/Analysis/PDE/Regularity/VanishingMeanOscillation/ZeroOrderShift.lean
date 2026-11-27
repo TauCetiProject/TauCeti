@@ -342,11 +342,6 @@ private theorem add_le_mul_add_of_le {A K : ℝ≥0} {X U Gn Fn gn : ℝ≥0∞}
 
 end Shift
 
-/-- The value of `u ∈ H¹(ℝ^{n+1})` is square integrable on `ℝ^{n+1}`. -/
-private theorem memLp_value_top (u : W1p volume (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2) :
-    MemLp (W1p.value u : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) 2 volume := by
-  simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp (W1p.value u)
-
 /-- The shifted equation `-∂ᵢ(aⁱʲ ∂ⱼu) + κ u = f - div G` on `ℝ^{n+1}`, tested against test
 functions, is the unshifted equation with the scalar datum `f - κ u`. -/
 private theorem forall_energyFormH1_zero_zero_eq_of_shift
@@ -367,7 +362,7 @@ private theorem forall_energyFormH1_zero_zero_eq_of_shift
           ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ ∂volume +
         ∫ x in (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))),
           (f x - κ * W1p.value u x) * φ x ∂volume := by
-  have hu2 := memLp_value_top u
+  have hu2 := W1p.memLp_value u
   have hφ2 : MemLp (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) 2 volume :=
     φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport
   have hsplit := energyFormH1_eq_energyFormH1_zero_add_setIntegral (b := 0) hcoeff
@@ -451,7 +446,7 @@ private theorem sqrt_mul_eLpNorm_value_le_of_shift {p : ℝ≥0∞} (hp : 2 ≤ 
       ENNReal.ofReal (√κ)⁻¹ * eLpNorm f p volume +
         ENNReal.ofReal √((p.toReal - 1) / (4 * lam)) * eLpNorm G p volume := by
   have hsκ : 0 < √κ := Real.sqrt_pos.2 hκ0
-  have hu2 := memLp_value_top u
+  have hu2 := W1p.memLp_value u
   have hfT : MemLp f 2 (volume.restrict
       ((⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) : Set (EuclideanSpace ℝ (Fin (n + 1))))) := by
     simpa only [Opens.coe_top, Measure.restrict_univ] using hf
@@ -544,7 +539,7 @@ theorem exists_eLpNorm_gradient_add_sqrt_mul_eLpNorm_value_le_of_setAverage_le {
   have h4R : 4 * R ≤ r₀ := four_mul_inv_sqrt_le hr₀ hκ
   have hcoeff := (hell.mono_set (subset_univ _)).memLp_energyIntegrand_zero_zero
     (Omega := (⊤ : Opens (EuclideanSpace ℝ (Fin (n + 1))))) ham.restrict
-  have hu2 := memLp_value_top u
+  have hu2 := W1p.memLp_value u
   have hu' := forall_energyFormH1_zero_zero_eq_of_shift hcoeff hf hu
   -- The interior estimates at the radius `R`, on every ball `B(y, 2R)`.
   have hlocal : ∀ y, eLpNorm (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) →
