@@ -145,7 +145,9 @@ def simplexChainMapsOpIso : K.simplexChainMaps.op ≅ K.simplexChainMaps :=
       (fun _ ↦ SimplexChainMap.reverse_reverse _)
       (fun _ ↦ SimplexChainMap.reverse_reverse _)).toIso)
     (fun {Δ Δ'} θ ↦ by
-      ext g
+      apply ConcreteCategory.hom_ext
+      intro g
+      simp only [types_comp_apply, SSet.op_map, simplexChainMaps_map_apply]
       exact SimplexChainMap.reverse_map (SSet.opObjEquiv g) θ.unop)
 
 /-- The opposite comparison sends a simplex to its signed vertex reversal. -/
@@ -169,8 +171,15 @@ identification. -/
 lemma simplexChainMapsOpIso_op_trans :
     SSet.opFunctor.mapIso K.simplexChainMapsOpIso ≪≫ K.simplexChainMapsOpIso =
       SSet.opFunctorCompOpFunctorIso.app K.simplexChainMaps := by
-  ext Δ g
-  exact SimplexChainMap.reverse_reverse (SSet.opObjEquiv (SSet.opObjEquiv g))
+  apply Iso.ext
+  ext Δ : 1
+  apply ConcreteCategory.hom_ext
+  intro g
+  simp only [Iso.trans_hom, Functor.mapIso_hom, NatTrans.comp_app, types_comp_apply,
+    SSet.opFunctor_map, simplexChainMapsOpIso_hom_app_apply, Iso.app_hom,
+    SSet.opFunctorCompOpFunctorIso_hom_app_app_hom_apply]
+  -- The simplex type is the exposed model; `erw` identifies it with the functor value.
+  erw [Equiv.apply_symm_apply, SimplexChainMap.reverse_reverse]
 
 variable (R) in
 /-- Signed vertex reversal gives a natural isomorphism from the opposite of the
@@ -178,13 +187,27 @@ normalized-chain model functor to that functor. -/
 def simplexChainMapsOpNatIso :
     simplexChainMapsFunctor R ⋙ SSet.opFunctor ≅ simplexChainMapsFunctor R :=
   NatIso.ofComponents (fun K ↦ K.simplexChainMapsOpIso) fun f ↦ by
-    ext Δ g
+    ext Δ : 1
+    apply ConcreteCategory.hom_ext
+    intro g
+    simp only [Functor.comp_map, NatTrans.comp_app, types_comp_apply]
+    -- The component types use the exposed functor object, so these rewrites need `erw`.
+    erw [SSet.opFunctor_map ((simplexChainMapsFunctor R).map f) g,
+      simplexChainMapsOpIso_hom_app_apply, Equiv.apply_symm_apply,
+      simplexChainMapsFunctor_map_app_apply, simplexChainMapsFunctor_map_app_apply,
+      simplexChainMapsOpIso_hom_app_apply]
     exact SimplexChainMap.reverse_postcomp (SSet.opObjEquiv g) f
 
-/-- The component of the natural opposite comparison is signed vertex reversal. -/
+/-- The forward component of the natural opposite comparison is signed vertex reversal. -/
 @[simp]
-lemma simplexChainMapsOpNatIso_app :
-    (simplexChainMapsOpNatIso R).app K = K.simplexChainMapsOpIso :=
+lemma simplexChainMapsOpNatIso_hom_app :
+    (simplexChainMapsOpNatIso R).hom.app K = K.simplexChainMapsOpIso.hom :=
+  (rfl)
+
+/-- The inverse component of the natural opposite comparison is signed vertex reversal. -/
+@[simp]
+lemma simplexChainMapsOpNatIso_inv_app :
+    (simplexChainMapsOpNatIso R).inv.app K = K.simplexChainMapsOpIso.inv :=
   (rfl)
 
 end CochainComplex

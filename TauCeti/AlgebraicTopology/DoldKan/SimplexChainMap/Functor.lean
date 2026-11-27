@@ -83,7 +83,9 @@ functorial in cochain complexes. -/
   map f :=
     { app _ := ↾fun g ↦ g.postcomp f
       naturality _ _ θ := by
-        ext g
+        apply ConcreteCategory.hom_ext
+        intro g
+        simp only [types_comp_apply, simplexChainMaps_map_apply]
         exact g.postcomp_map θ.unop.toOrderHom f }
   map_id _ := by ext Δ g; exact g.postcomp_id
   map_comp _ _ := by ext Δ g; exact (g.postcomp_postcomp _ _).symm
