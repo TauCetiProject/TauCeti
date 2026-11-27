@@ -50,6 +50,8 @@ nonautonomous replacement for the group law of an ordinary `Flow`.
   tangent to a slice `E × {c}` preserves that slice.
 * `TauCeti.timeDependentFlow_snd_mem_Icc`: the flow of a field on `E × ℝ` tangent to the slices
   `E × {a}` and `E × {b}` preserves the band `E × [a, b]`.
+* `TauCeti.timeDependentFlow_freeze`: for a family of fields `v u` depending on a parameter `u`,
+  the flow of `(x, u) ↦ (v u t x, 0)` on `E × F` moves `x` by the flow of `v u` and keeps `u`.
 -/
 
 public section
@@ -259,6 +261,65 @@ theorem timeDependentFlow_snd_mem_Icc {v : ℝ → E × ℝ → E × ℝ}
     exact hlt.ne' (hline b hb u hu)
 
 end Slice
+
+/-! ### Fields depending on a parameter -/
+
+section Parameter
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] {K : ℝ≥0}
+  {v : F → ℝ → E → E}
+
+omit [NormedSpace ℝ E] [CompleteSpace E] [NormedSpace ℝ F] [CompleteSpace F] in
+/-- For a family of time-dependent fields `v u` which is jointly Lipschitz in the parameter `u`,
+the time and the point, each field `v u` has a Lipschitz suspension, with the same constant. -/
+theorem lipschitzWith_timeDependentSuspension_apply
+    (hv : LipschitzWith K fun q : F × ℝ × E ↦ v q.1 q.2.1 q.2.2) (u : F) :
+    LipschitzWith K (timeDependentSuspension (v u)) := by
+  refine lipschitzWith_timeDependentSuspension (LipschitzWith.of_dist_le_mul fun a b ↦ ?_)
+  have h := hv.dist_le_mul (u, a) (u, b)
+  simp only [Prod.dist_eq (x := (u, a)) (y := (u, b)), dist_self,
+    max_eq_right dist_nonneg] at h
+  exact h
+
+omit [NormedSpace ℝ E] [CompleteSpace E] [NormedSpace ℝ F] [CompleteSpace F] in
+/-- For a family of time-dependent fields `v u` which is jointly Lipschitz in the parameter `u`,
+the time and the point, the field `(x, u) ↦ (v u t x, 0)` on `E × F`, which moves `x` along `v u`
+and freezes the parameter, has a Lipschitz suspension, with the same constant. -/
+theorem lipschitzWith_timeDependentSuspension_freeze
+    (hv : LipschitzWith K fun q : F × ℝ × E ↦ v q.1 q.2.1 q.2.2) :
+    LipschitzWith K (timeDependentSuspension fun t (q : E × F) ↦ (v q.2 t q.1, (0 : F))) := by
+  refine lipschitzWith_timeDependentSuspension (LipschitzWith.of_dist_le_mul fun a b ↦ ?_)
+  have h := hv.dist_le_mul (a.2.2, a.1, a.2.1) (b.2.2, b.1, b.2.1)
+  simp only [Prod.dist_eq, dist_self, max_eq_left dist_nonneg] at h ⊢
+  refine h.trans (mul_le_mul_of_nonneg_left ?_ K.coe_nonneg)
+  exact max_le (le_max_of_le_right (le_max_right _ _))
+    (max_le (le_max_left _ _) (le_max_of_le_right (le_max_left _ _)))
+
+/-- **Flowing with a frozen parameter.** For a family of time-dependent fields `v u` which is
+jointly Lipschitz in the parameter `u`, the time and the point, the flow of the field
+`(x, u) ↦ (v u t x, 0)` on `E × F` keeps the parameter `u` and moves `x` by the flow of `v u`.
+So the flows of the fields `v u` inherit from this single flow their joint regularity in the
+parameter. -/
+theorem timeDependentFlow_freeze (hv : LipschitzWith K fun q : F × ℝ × E ↦ v q.1 q.2.1 q.2.2)
+    (s t : ℝ) (x : E) (u : F) :
+    timeDependentFlow (fun t (q : E × F) ↦ (v q.2 t q.1, (0 : F)))
+        (lipschitzWith_timeDependentSuspension_freeze hv) s t (x, u) =
+      (timeDependentFlow (v u) (lipschitzWith_timeDependentSuspension_apply hv u) s t x, u) := by
+  set Φ := timeDependentFlow (fun t (q : E × F) ↦ (v q.2 t q.1, (0 : F)))
+    (lipschitzWith_timeDependentSuspension_freeze hv) with hΦ
+  have hsnd (τ : ℝ) : (Φ s τ (x, u)).2 = u :=
+    timeDependentFlow_snd_eq_of_snd_eq _ (fun _ _ ↦ rfl) s τ rfl
+  -- The first component of an orbit of `Φ` is an orbit of `v u`, by uniqueness of solutions.
+  have hy (τ : ℝ) : HasDerivAt (fun τ ↦ (Φ s τ (x, u)).1) (v u τ (Φ s τ (x, u)).1) τ := by
+    have h := (hasDerivAt_timeDependentFlow (fun t (q : E × F) ↦ (v q.2 t q.1, (0 : F)))
+      (lipschitzWith_timeDependentSuspension_freeze hv) s τ (x, u)).hasFDerivAt.fst.hasDerivAt
+    rw [← hΦ] at h
+    simpa [hsnd] using h
+  have h := eq_timeDependentFlow (v u) (lipschitzWith_timeDependentSuspension_apply hv u) hy s t
+  rw [hΦ, timeDependentFlow_self, ← hΦ] at h
+  exact Prod.ext h (hsnd t)
+
+end Parameter
 
 end TauCeti
 
