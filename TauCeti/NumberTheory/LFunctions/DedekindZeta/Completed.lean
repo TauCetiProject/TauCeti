@@ -519,6 +519,14 @@ theorem dedekindZetaC_eq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
     completedDedekindZeta_eq_mul_dedekindZeta K hs, ← mul_assoc, ← invDedekindZetaCompletionFactor,
     invDedekindZetaCompletionFactor_mul_eq_one K (zero_lt_one.trans hs), one_mul]
 
+/-- The continued Dedekind zeta function agrees with its Dirichlet series on a neighborhood
+of every point in the open half-plane of absolute convergence. -/
+theorem dedekindZetaC_eventuallyEq_dedekindZeta {s : ℂ} (hs : 1 < s.re) :
+    dedekindZetaC K =ᶠ[𝓝 s] dedekindZeta K := by
+  have hopen : IsOpen {z : ℂ | 1 < z.re} := isOpen_lt continuous_const continuous_re
+  filter_upwards [hopen.mem_nhds hs] with z hz
+  exact dedekindZetaC_eq_dedekindZeta K hz
+
 /-- **`ζ_K` is analytic away from `s = 1`.** At `s = 0` the simple pole of `Λ_K` is cancelled by
 the zero of the reciprocal completion factor. -/
 @[fun_prop]
