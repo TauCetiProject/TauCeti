@@ -73,7 +73,15 @@ For `s ⊆ U`, the preimage of `s` under the orthogonal projection onto `U` is t
 Conjugating the orthogonal projection onto `V` by a linear isometry equivalence `e` of Hilbert
 spaces gives the orthogonal projection onto `e(V)`.
 
+A finite family of line projections comes from an orthonormal basis exactly when the projections
+sum to the identity (`TauCeti.exists_orthonormalBasis_eq_rankOne_iff`). The forward implication
+uses Mathlib's `OrthonormalBasis.sum_rankOne_eq_id`.
 
+Two unit vectors defining the same line projection differ by a scalar of norm one. Thus a
+phase-invariant function on unit vectors has a well-defined value on each line projection, and
+the characterization expresses its basis-sum condition in terms of projections. For this
+frame-function condition, see A. M. Gleason, *Measures on the Closed Subspaces of a Hilbert
+Space*, 1957, §1.
 
 ## Provenance
 
