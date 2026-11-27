@@ -16,13 +16,13 @@ import Mathlib.Data.Set.Finite.Range
 /-!
 # Floors and decompositions into intervals
 
-A point of `[0, n)` in an ordered ring with a floor operation is the sum of an index in `Fin n` and
-a remainder in `[0, 1)`. This describes, for example, time along one of the finitely many edges in a
-polygonal boundary parametrization. In the same way, a `1`-periodic function is determined by its
-values on `[0, 1)`: it takes the same value at `t` and at the fractional part of `t`. The integers
-in `[a, y)` number `max (y - a) 0` up to one, a closed interval `[a, b]` with `a ≤ b + 1` contains
-at most `b - a + 1` integers, and for `N ≠ 0` only finitely many points `q` of a closed interval
-have `N q` an integer.
+A point of `[0, n)` in an ordered ring with a floor operation is the sum of an index in
+`Fin n` and a remainder in `[0, 1)`. This describes, for example, time along one of the
+finitely many edges in a polygonal boundary parametrization. In the same way, a `1`-periodic
+function is determined by its values on `[0, 1)`: it takes the same value at `t` and at the
+fractional part of `t`. The integers in `[a, y)` number `max (y - a) 0` up to one, a closed
+interval `[a, b]` with `a ≤ b + 1` contains at most `b - a + 1` integers, and for `N ≠ 0` only
+finitely many points `q` of a closed interval have `N q` an integer.
 
 For a step `δ > 0` in a linearly ordered field with an integer floor, the multiples of `δ` cut
 the line into the closed intervals `[δ m, δ (m + 1)]` with `m ∈ ℤ`. Every point `x` lies in the
