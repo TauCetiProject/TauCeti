@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Garding
+import Mathlib.Analysis.Convex.Deriv
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.MeanInequalities
 
 /-!
@@ -23,6 +26,12 @@ and, being positively homogeneous of degree one (`MvPolynomial.IsHomogeneous.eva
 is concave on the convex cone `Γ` (`MvPolynomial.IsHyperbolic.concaveOn_rpow`). This is the
 concavity part of Gårding's theorem.
 
+Its tangent form is **Gårding's inequality**
+(`MvPolynomial.IsHyperbolic.mul_rpow_mul_rpow_le_eval_sum_smul_pderiv`): for `m ≥ 1`, `x ∈ Γ` and
+`y` in the closure of `Γ`,
+
+`m p(y)^{1/m} p(x)^{1 - 1/m} ≤ D_y p(x) = ∑ᵢ yᵢ ∂p/∂Xᵢ (x)`.
+
 ## Implementation notes
 
 By Gårding's theorem on the directions (`MvPolynomial.IsHyperbolic.of_mem_gardingCone`), `p` is
@@ -32,6 +41,11 @@ coefficient `p(y)` and `m` roots `rᵢ`, all negative since `x ∈ Γ(p, y)`:
 `p(x + y) = p(y) ∏ᵢ (1 - rᵢ)`, and the inequality is the superadditivity of the geometric mean
 (`Real.multiset_prod_map_rpow_inv_card_add_le`) for the families `-rᵢ` and `1`.
 
+For Gårding's inequality with `y ∈ Γ`, the function `φ(t) = p(x + t • (y - x))^{1/m}` is concave
+on `[0, 1]`, so `φ(1) - φ(0) ≤ φ'(0) = (1/m) p(x)^{1/m - 1} D_{y - x} p(x)`, and Euler's identity
+`D_x p(x) = m p(x)` turns this into the inequality. Both sides are continuous in `y`, which
+extends it to the closure of `Γ`.
+
 ## References
 
 * L. Gårding, *An inequality for hyperbolic polynomials*, J. Math. Mech. 8 (1959), 957–965.
@@ -40,6 +54,8 @@ coefficient `p(y)` and `m` roots `rᵢ`, all negative since `x ∈ Γ(p, y)`:
 -/
 
 public section
+
+open Set
 
 variable {σ : Type*} {p : MvPolynomial σ ℝ} {m : ℕ} {a : σ → ℝ}
 
@@ -115,5 +131,77 @@ theorem concaveOn_rpow (hp : IsHyperbolic p m a) :
     ← hp.isHomogeneous.eval_smul_rpow hm (hpos hy) hη]
   exact hp.eval_rpow_add_le hm (smul_mem_gardingCone hp.isHomogeneous hx hθ')
     (smul_mem_gardingCone hp.isHomogeneous hy hη')
+
+/-- **Gårding's inequality**, for `y` in the cone. -/
+private theorem mul_rpow_mul_rpow_le_eval_sum_smul_pderiv_of_mem [Fintype σ]
+    (hp : IsHyperbolic p m a) (hm : 1 ≤ m) {x y : σ → ℝ} (hx : x ∈ gardingCone p a)
+    (hy : y ∈ gardingCone p a) :
+    m * eval y p ^ (m : ℝ)⁻¹ * eval x p ^ (1 - (m : ℝ)⁻¹) ≤ eval x (∑ i, y i • pderiv i p) := by
+  have hpos {z : σ → ℝ} (hz : z ∈ gardingCone p a) : 0 < eval z p :=
+    eval_pos_of_mem_gardingCone hp.isHomogeneous hp.eval_pos hz
+  -- The segment from `x` to `y` lies in the cone.
+  have hseg (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) : x + t • (y - x) ∈ gardingCone p a := by
+    convert hp.convex_gardingCone hx hy (sub_nonneg.2 ht.2) ht.1 (sub_add_cancel 1 t) using 1
+    module
+  set q := aeval (fun i ↦ Polynomial.C (x i) + Polynomial.C ((y - x) i) * Polynomial.X) p
+  have hq (t : ℝ) : q.eval t = eval (x + t • (y - x)) p := eval_aeval_C_add_C_mul_X p x _ t
+  -- `φ = q^{1/m}` is concave on `[0, 1]`.
+  have hconc : ConcaveOn ℝ (Icc 0 1) fun t ↦ q.eval t ^ (m : ℝ)⁻¹ := by
+    refine ⟨convex_Icc 0 1, fun s hs t ht c d hc hd hcd ↦ ?_⟩
+    have h := hp.concaveOn_rpow.2 (hseg s hs) (hseg t ht) hc hd hcd
+    simp only [hq, smul_eq_mul] at h ⊢
+    convert h using 3
+    rw [smul_add, smul_add, add_add_add_comm, ← add_smul, hcd, one_smul, smul_smul, smul_smul,
+      ← add_smul]
+  have hx0 : q.eval 0 = eval x p := by simp [hq]
+  have hderiv := (q.hasDerivAt 0).rpow_const (p := (m : ℝ)⁻¹) (Or.inl (hx0 ▸ (hpos hx).ne'))
+  have hs := hconc.slope_le_of_hasDerivAt (left_mem_Icc.2 zero_le_one)
+    (right_mem_Icc.2 zero_le_one) zero_lt_one hderiv
+  -- `φ'(0) = (1/m) p(x)^{1/m - 1} (D_y p(x) - m p(x))`, by Euler's identity.
+  have hq' : q.derivative.eval 0 = eval x (∑ i, y i • pderiv i p) - m * eval x p := by
+    rw [derivative_aeval_C_add_C_mul_X, eval_aeval_C_add_C_mul_X, zero_smul, add_zero]
+    have heuler := congrArg (eval x) hp.isHomogeneous.sum_X_mul_pderiv
+    simp only [map_sum, eval_mul, eval_X, nsmul_eq_mul, map_natCast] at heuler
+    simp only [map_sum, smul_eval, Pi.sub_apply, sub_mul, Finset.sum_sub_distrib, heuler]
+  rw [slope_def_field, sub_zero, div_one, hq', hx0, hq, one_smul, add_sub_cancel] at hs
+  -- Multiply by `m p(x)^{1 - 1/m}`.
+  set P := eval x p
+  have hP := hpos hx
+  have hm' : (0 : ℝ) < m := by exact_mod_cast hm
+  have hs' := mul_le_mul_of_nonneg_left hs (by positivity : 0 ≤ m * P ^ (1 - (m : ℝ)⁻¹))
+  have h1 : P ^ (m : ℝ)⁻¹ * P ^ (1 - (m : ℝ)⁻¹) = P := by
+    rw [← Real.rpow_add hP, add_sub_cancel, Real.rpow_one]
+  have h2 : P ^ ((m : ℝ)⁻¹ - 1) * P ^ (1 - (m : ℝ)⁻¹) = 1 := by
+    rw [← Real.rpow_add hP, sub_add_sub_cancel, sub_self, Real.rpow_zero]
+  have h3 : m * P ^ (1 - (m : ℝ)⁻¹) *
+      ((eval x (∑ i, y i • pderiv i p) - m * P) * (m : ℝ)⁻¹ * P ^ ((m : ℝ)⁻¹ - 1)) =
+        eval x (∑ i, y i • pderiv i p) - m * P := by
+    rw [show m * P ^ (1 - (m : ℝ)⁻¹) *
+        ((eval x (∑ i, y i • pderiv i p) - m * P) * (m : ℝ)⁻¹ * P ^ ((m : ℝ)⁻¹ - 1)) =
+        (eval x (∑ i, y i • pderiv i p) - m * P) * (m * (m : ℝ)⁻¹) *
+          (P ^ ((m : ℝ)⁻¹ - 1) * P ^ (1 - (m : ℝ)⁻¹)) by ring,
+      h2, mul_inv_cancel₀ hm'.ne', mul_one, mul_one]
+  rw [h3, mul_sub, show m * P ^ (1 - (m : ℝ)⁻¹) * P ^ (m : ℝ)⁻¹ = m * P by
+    rw [mul_assoc, mul_comm (P ^ _), h1]] at hs'
+  linarith
+
+/-- **Gårding's inequality.** For `p` hyperbolic of degree `m ≥ 1` in the direction `a`, `x` in
+the Gårding cone `Γ(p, a)` and `y` in its closure,
+`m p(y)^{1/m} p(x)^{1 - 1/m} ≤ D_y p(x) = ∑ᵢ yᵢ ∂p/∂Xᵢ (x)`. This is the tangent inequality of
+the concave function `p^{1/m}`, positively homogeneous of degree one, at `x`. -/
+theorem mul_rpow_mul_rpow_le_eval_sum_smul_pderiv [Fintype σ] (hp : IsHyperbolic p m a)
+    (hm : 1 ≤ m) {x y : σ → ℝ} (hx : x ∈ gardingCone p a) (hy : y ∈ closure (gardingCone p a)) :
+    m * eval y p ^ (m : ℝ)⁻¹ * eval x p ^ (1 - (m : ℝ)⁻¹) ≤ eval x (∑ i, y i • pderiv i p) := by
+  have hm' : (0 : ℝ) < (m : ℝ)⁻¹ := inv_pos.2 (by exact_mod_cast hm)
+  -- Both sides are continuous in `y`; the left side through `t ↦ t^{1/m}` with `1/m > 0`.
+  have hclosed : IsClosed {y : σ → ℝ |
+      m * eval y p ^ (m : ℝ)⁻¹ * eval x p ^ (1 - (m : ℝ)⁻¹) ≤ eval x (∑ i, y i • pderiv i p)} := by
+    refine isClosed_le ?_ ?_
+    · exact ((continuous_const.mul ((continuous_eval p).rpow_const fun _ ↦ Or.inr hm'.le)).mul
+        continuous_const)
+    · simp only [map_sum, smul_eval]
+      fun_prop
+  exact closure_minimal (fun y hy ↦ hp.mul_rpow_mul_rpow_le_eval_sum_smul_pderiv_of_mem hm hx hy)
+    hclosed hy
 
 end MvPolynomial.IsHyperbolic
