@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
+import TauCeti.Analysis.Matrix.GramFactorization
 
 /-!
 # Covolume bounds for complex families in rational coordinates
@@ -57,9 +58,19 @@ theorem covolumeLE_sum_of_forall_norm_diag_le
       ‖((A.map σ)ᴴ * G.map (algebraMap ℚ ℂ) * A.map σ) i i‖ ≤ Real.exp (b i)) :
     A.CovolumeLE G (∑ i, b i) := by
   refine covolumeLE_iff.mpr fun σ ↦ ?_
-  rw [Real.exp_sum]
-  exact (hG.conjTranspose_mul_mul_same _).norm_det_le_prod_norm_diag.trans
-    (Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) (fun i _ ↦ hA σ i))
+  obtain ⟨X, hX⟩ := posSemidef_iff_eq_conjTranspose_mul_self.mp
+    (hG.conjTranspose_mul_mul_same (A.map σ))
+  let v : n → EuclideanSpace ℂ n := fun j ↦ WithLp.toLp 2 (fun i ↦ X i j)
+  have hv : gram ℂ v = (A.map σ)ᴴ * G.map (algebraMap ℚ ℂ) * A.map σ := by
+    rw [hX]
+    ext i j
+    simp [v, gram_apply, EuclideanSpace.inner_toLp_toLp, Matrix.mul_apply, dotProduct, mul_comm]
+  have hdiag (i : n) : ‖v i‖ ^ 2 ≤ Real.exp (b i) := by
+    simpa only [← hv, gram_apply, inner_self_eq_norm_sq_to_K, norm_pow,
+      RCLike.norm_of_nonneg (norm_nonneg _)] using hA σ i
+  rw [← hv, Real.exp_sum, ← ofReal_re_det_gram v, RCLike.norm_of_nonneg (re_det_gram_nonneg v)]
+  exact (re_det_gram_le_prod_norm_sq v).trans
+    (Finset.prod_le_prod₀ (fun i _ ↦ sq_nonneg (‖v i‖)) (fun i _ ↦ hdiag i))
 
 /-- Logarithmic covolume bounds add when concatenating columns in the same metric. -/
 theorem CovolumeLE.fromCols [Fintype p] [DecidableEq p] {B : Matrix m p ℂ} {d : ℝ}
@@ -79,7 +90,7 @@ theorem CovolumeLE.norm_map_det_conjTranspose_mul_mul_le (hA : A.CovolumeLE G c)
   let τ : ℂ ≃+* ℂ := ((starRingAut : ℂ ≃+* ℂ).trans σ).trans starRingAut
   have hτ : Aᴴ.map σ = (A.map τ)ᴴ := by
     ext i j
-    simp [τ, conjTranspose_apply, starRingAut]
+    simp [τ, conjTranspose_apply]
   have hfix : (G.map (algebraMap ℚ ℂ)).map σ = G.map (algebraMap ℚ ℂ) := by
     ext i j
     simp
