@@ -68,8 +68,10 @@ chart as a strictly monotone function of the longitudinal coordinate
 The patching of the end estimates of `D_u` with the interior estimate into the semi-Fredholm
 estimate on the whole sphere is
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearization_add_of_movingEnds`
-in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.SemiFredholm`; the corresponding
-patching for the formal adjoint is not treated here.
+in `TauCeti.Geometry.Symplectic.Floer.PairOfPants.MovingEnds.SemiFredholm`, and the corresponding
+patching for the formal adjoint is
+`exists_forall_sum_setIntegral_add_le_mul_integral_floerLinearizationAdjoint_add_of_movingEnds`
+there.
 
 ## References
 
