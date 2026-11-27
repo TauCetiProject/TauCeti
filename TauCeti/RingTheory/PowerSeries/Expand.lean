@@ -108,8 +108,8 @@ theorem logOf_expand [Algebra ℚ R] (p : ℕ) (hp : p ≠ 0) {f : R⟦X⟧} (hf
 /-- The logarithm of `1 - c X ^ j` (`j ≠ 0`) is the `j`-fold expansion of `-∑ cⁿ Xⁿ / n`. -/
 theorem logOf_one_sub_C_mul_X_pow [Algebra ℚ R] (c : R) {j : ℕ} (hj : j ≠ 0) :
     logOf (1 - C c * X ^ j) = expand j hj (mk fun n ↦ (n : ℚ)⁻¹ • -c ^ n) := by
-  rw [show (1 - C c * X ^ j : R⟦X⟧) = expand j hj (1 - C c * X) by simp [expand_C],
-    logOf_expand j hj (by simp), logOf_one_sub_C_mul_X]
+  have hexp : expand j hj (1 - C c * X) = 1 - C c * X ^ j := by simp [expand_C]
+  rw [← hexp, logOf_expand j hj (by simp), logOf_one_sub_C_mul_X]
 
 /-- Embedding a series in one coordinate commutes with expansion. -/
 theorem toMvPowerSeries_expand {σ : Type*} (p : ℕ) (hp : p ≠ 0) (i : σ) (f : R⟦X⟧) :

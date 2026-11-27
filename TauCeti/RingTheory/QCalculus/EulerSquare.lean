@@ -59,6 +59,19 @@ theorem eulerOddProd_eq_tprod [TopologicalSpace R] [DiscreteTopology R] :
   obtain rfl := DiscreteTopology.eq_bot (α := R)
   rfl
 
+/-- Multiplying by factors `1 + X ^ (2 * i + 1)` with `k < 2 * i + 1` does not change the
+`k`-th coefficient. -/
+private theorem coeff_mul_prod_one_add_X_pow_eq (k : ℕ) (t : Finset ℕ)
+    (ht : ∀ i ∈ t, k < 2 * i + 1) (f : R⟦X⟧) :
+    coeff k (f * ∏ i ∈ t, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) = coeff k f := by
+  classical
+  induction t using Finset.induction_on generalizing f with
+  | empty => simp
+  | insert a t ha ih =>
+    rw [Finset.prod_insert ha, ← mul_assoc, ih (fun i hi ↦ ht i (Finset.mem_insert_of_mem hi)),
+      mul_add, mul_one, map_add, coeff_mul_X_pow',
+      ite_eq_right (Nat.not_le.mpr (ht a (Finset.mem_insert_self a t))), add_zero]
+
 /-- **Stabilization of `eulerOddProd`**: the `k`-th coefficient equals that of the finite product
 over `i < N` whenever `k < 2 * N + 1`. -/
 theorem coeff_eulerOddProd_eq_prod_of_lt (k : ℕ) {N : ℕ} (hN : k < 2 * N + 1) :
@@ -82,21 +95,10 @@ theorem coeff_eulerOddProd_eq_prod_of_lt (k : ℕ) {N : ℕ} (hN : k < 2 * N + 1
   have hs := hs₀ (s₀ ∪ range N) Finset.subset_union_left
   rw [← eulerOddProd_eq_tprod] at hs
   rw [← hs, ← Finset.prod_sdiff (Finset.subset_union_right (s₁ := s₀) (s₂ := range N)), mul_comm]
-  classical
-  have htail : ∀ t : Finset ℕ, (∀ i ∈ t, N ≤ i) → ∀ f : R⟦X⟧,
-      coeff k (f * ∏ i ∈ t, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) = coeff k f := by
-    intro t ht f
-    induction t using Finset.induction_on generalizing f with
-    | empty => simp
-    | insert a t ha ih =>
-      rw [Finset.prod_insert ha, ← mul_assoc, ih (fun i hi ↦ ht i (Finset.mem_insert_of_mem hi))]
-      rw [mul_add, mul_one, map_add, coeff_mul_X_pow']
-      have haN : N ≤ a := ht a (Finset.mem_insert_self a t)
-      simp [Nat.not_le.mpr (by omega : k < 2 * a + 1)]
-  exact htail ((s₀ ∪ range N) \ range N)
+  exact coeff_mul_prod_one_add_X_pow_eq k ((s₀ ∪ range N) \ range N)
     (fun i hi ↦ by
       simp only [Finset.mem_sdiff, Finset.mem_union, Finset.mem_range, not_lt] at hi
-      exact hi.2) _
+      omega) _
 
 /-- Constant coefficient of `eulerOddProd R` is `1`. -/
 @[simp] theorem constantCoeff_eulerOddProd : constantCoeff (eulerOddProd R) = 1 := by

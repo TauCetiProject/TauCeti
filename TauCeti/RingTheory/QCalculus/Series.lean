@@ -463,6 +463,14 @@ noncomputable def integralQPochhammer : (R⟦X⟧)⟦X⟧ :=
   PowerSeries.mk fun k ↦ PowerSeries.mk fun m ↦
     coeff m (coeff k (qPochhammer (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) (m + 1)))
 
+/-- **Power-series stabilization equation**: for every `N > m`, the `[q ^ m t ^ k]` coefficient
+of `integralQPochhammer R` equals that of the finite power-series product
+`qPochhammer X (C X) N` in `(R⟦X⟧)⟦X⟧`. -/
+theorem coeff_coeff_integralQPochhammer_eq_qPochhammer_of_lt (m k : ℕ) {N : ℕ} (hN : m < N) :
+    coeff m (coeff k (integralQPochhammer R)) =
+      coeff m (coeff k (qPochhammer (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) N)) := by
+  rw [integralQPochhammer, coeff_mk, coeff_mk, coeff_coeff_qPochhammer_eq_of_lt m k hN]
+
 /-- **Polynomial-product projection equation**: for every `N > m`, the `[q ^ m t ^ k]` coefficient
 of `integralQPochhammer R` equals the `q ^ m` coefficient of the `k`-th polynomial coefficient of
 `qPochhammer Polynomial.X (Polynomial.C X) N`. -/
@@ -475,8 +483,8 @@ theorem coeff_coeff_integralQPochhammer_eq_of_lt (m k : ℕ) {N : ℕ} (hN : m <
         qPochhammer (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) N := by
     rw [← Polynomial.coeToPowerSeries.ringHom_apply, map_qPochhammer]
     simp
-  rw [← Polynomial.coeff_coe, hcoe, integralQPochhammer, coeff_mk, coeff_mk,
-    coeff_coeff_qPochhammer_eq_of_lt m k hN]
+  rw [← Polynomial.coeff_coe, hcoe,
+    coeff_coeff_integralQPochhammer_eq_qPochhammer_of_lt m k hN]
 
 /-- The constant coefficient of `TauCeti.integralQPochhammer R` is `1`. -/
 @[simp] theorem constantCoeff_integralQPochhammer : constantCoeff (integralQPochhammer R) = 1 := by
@@ -490,12 +498,8 @@ theorem coeff_coeff_integralQPochhammer_eq_of_lt (m k : ℕ) {N : ℕ} (hN : m <
 `(t; q)_∞ = (1 - t) (q t; q)_∞` in `(R⟦X⟧)⟦X⟧`. -/
 theorem integralQPochhammer_eq_one_sub_X_mul_rescale :
     integralQPochhammer R = (1 - X) * rescale (X : R⟦X⟧) (integralQPochhammer R) := by
-  have hqPoch (m k N : ℕ) (hN : m < N) :
-      coeff m (coeff k (integralQPochhammer R)) =
-        coeff m (coeff k (qPochhammer (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) N)) := by
-    rw [integralQPochhammer, coeff_mk, coeff_mk, coeff_coeff_qPochhammer_eq_of_lt m k hN]
   ext k m
-  rw [hqPoch m k (m + 2) (by omega),
+  rw [coeff_coeff_integralQPochhammer_eq_qPochhammer_of_lt m k (N := m + 2) (by omega),
     qPochhammer_succ' (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) (m + 1)]
   have hres : qPochhammer ((X : (R⟦X⟧)⟦X⟧) * C (X : R⟦X⟧)) (C (X : R⟦X⟧)) (m + 1) =
       rescale (X : R⟦X⟧) (qPochhammer (X : (R⟦X⟧)⟦X⟧) (C (X : R⟦X⟧)) (m + 1)) := by
@@ -505,9 +509,10 @@ theorem integralQPochhammer_eq_one_sub_X_mul_rescale :
   · simp [coeff_zero_eq_constantCoeff_apply, map_qPochhammer]
   · simp only [sub_mul, one_mul, map_sub, coeff_succ_X_mul, coeff_rescale, coeff_X_pow_mul']
     congr 1 <;> split_ifs with h
-    · exact (hqPoch (m - (k + 1)) (k + 1) (m + 1) (by omega)).symm
+    · exact (coeff_coeff_integralQPochhammer_eq_qPochhammer_of_lt (m - (k + 1)) (k + 1)
+        (by omega)).symm
     · rfl
-    · exact (hqPoch (m - k) k (m + 1) (by omega)).symm
+    · exact (coeff_coeff_integralQPochhammer_eq_qPochhammer_of_lt (m - k) k (by omega)).symm
     · rfl
 
 /-- The `q`-adically stabilized integral product `integralQPochhammer R` equals the formal series
