@@ -59,6 +59,9 @@ Two integers whose images in `ℂ` are at distance less than `1` are equal, and 
 subset of `ℂ` avoiding the nonpositive integers `-ℕ`, the shifted norms `‖(n : ℂ) + c‖` have a
 positive uniform lower bound (`IsCompact.exists_pos_le_norm_natCast_add`).
 
+The oriented area `Im (conj ω₁ ω₂)` of the parallelogram spanned by `ω₁`, `ω₂` satisfies
+`2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂` (`TauCeti.two_mul_I_mul_im_conj_mul`).
+
 A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`
 (`Complex.add_im_ne_zero_of_abs_im_lt`).
 
@@ -97,7 +100,11 @@ On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at l
 
 At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
 (`Complex.one_le_norm_sub_one`), so `s ≠ 1` (`Complex.ne_one_of_one_le_abs_im`) and
-`‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`).
+`‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`). For real `1 ≤ r`,
+`‖(r : ℂ) - 1‖ = r - 1` (`Complex.norm_ofReal_sub_one`).
+
+Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies `ε ≤ ‖w‖ ≤ 2 * ε`
+(`Complex.norm_bounds_of_abs_re_le_of_abs_im_le`).
 
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
@@ -309,6 +316,14 @@ theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1)
   have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
     rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
   linarith
+
+open Complex in
+/-- `2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂`. -/
+theorem two_mul_I_mul_im_conj_mul {ω₁ ω₂ : ℂ} :
+    (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
+  have h := sub_conj (conj ω₁ * ω₂)
+  simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
+  linear_combination -h
 
 /-- Reverse triangle lower bound for a natural-number shift: `(n : ℝ) - ‖c‖ ≤ ‖(n : ℂ) + c‖`. -/
 theorem _root_.Complex.sub_norm_le_norm_natCast_add (n : ℕ) (c : ℂ) :
@@ -572,12 +587,26 @@ theorem norm_inv_sub_one_le_one {s : ℂ} (ht : 1 ≤ |s.im|) : ‖(s - 1)⁻¹�
   rw [norm_inv]
   exact inv_le_one_of_one_le₀ (one_le_norm_sub_one ht)
 
+/-- For real `1 ≤ r`, the norm of `(r : ℂ) - 1` is `r - 1`. -/
+theorem norm_ofReal_sub_one {r : ℝ} (h : 1 ≤ r) : ‖(r : ℂ) - 1‖ = r - 1 := by
+  rw [← ofReal_one, ← ofReal_sub, norm_real, Real.norm_of_nonneg (sub_nonneg.mpr h)]
+
 /-- A shift `s + μ` stays off the real axis when `|Im μ| < |Im s|`. -/
 theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + μ).im ≠ 0 :=
   fun h0 ↦ by
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies
+`ε ≤ ‖w‖ ≤ 2 * ε`. -/
+theorem norm_bounds_of_abs_re_le_of_abs_im_le (w : ℂ) (ε : ℝ) (hre : |w.re| ≤ ε)
+    (him : |w.im| ≤ ε) (hside : |w.re| = ε ∨ |w.im| = ε) :
+    ε ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ε := by
+  refine ⟨?_, (norm_le_abs_re_add_abs_im w).trans (by linarith)⟩
+  rcases hside with h | h
+  · exact h ▸ abs_re_le_norm w
+  · exact h ▸ abs_im_le_norm w
 
 /-- There is no ring homomorphism from `ℂ` to a semireal semiring `R` (one in which `1 + s ≠ 0`
 for every sum of squares `s`), such as `ℝ` or any linearly ordered ring: it would send

@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSpace.Basic
+public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 
 /-!
-# Pointwise behaviour of infinite sums in `Lᵖ`
+# Infinite sums in `Lᵖ`: pointwise behaviour and absolutely convergent series in `L^r`
 
 If a family `u` in `Lᵖ` has sum `v` in the `Lᵖ` norm, then `‖v x‖ₑ ≤ ∑' i, ‖u i x‖ₑ` at almost
 every point. Unlike `MeasureTheory.Lp.hasSum_coeFn_tsum`, this needs neither a countable index
@@ -17,11 +17,20 @@ type nor summability of the norms `‖u i‖`: it only uses that some sequence o
 converges to `v` almost everywhere. A typical use is a sum of functions with disjoint supports in
 `L²`, whose norms are square-summable but need not be summable.
 
+Conversely, a series `∑ᵢ xᵢ` of `Lᵖ` functions whose `L^r` seminorms are summable has a sum `v` in
+the Banach space `L^r`, even though the `xᵢ` are a priori elements of a different space `Lᵖ`, and
+the tails of the series obey `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ s} ‖xᵢ‖_{L^r}`.
+
 ## Main declarations
 
 * `MeasureTheory.Lp.ae_enorm_le_tsum_enorm_of_hasSum`: the pointwise bound.
 * `MeasureTheory.Lp.ae_eq_of_hasSum_of_ae_hasSum`: for a countable family, the sum in `Lᵖ`
   agrees almost everywhere with the pointwise sum, wherever the latter exists.
+* `MeasureTheory.exists_eLpNorm_sub_sum_le_tsum_compl`: a series of `Lᵖ` functions whose `L^r`
+  seminorms are summable has a sum in `L^r`, with the tail bound
+  `‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ s} ‖xᵢ‖_{L^r}`.
+* `MeasureTheory.ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum`: a sum in `L^r` agrees almost
+  everywhere with a limit in `Lᵖ` of partial sums along an exhausting sequence of finite sets.
 -/
 
 public section
@@ -65,5 +74,60 @@ theorem ae_eq_of_hasSum_of_ae_hasSum [Countable κ] {u : κ → Lp E p μ} {v : 
   exact tendsto_nhds_unique hx (hgx.comp hS)
 
 end Lp
+
+variable {α ι F : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup F]
+  {p r : ℝ≥0∞} [Fact (1 ≤ r)]
+
+/-- **Absolutely convergent series in `L^r`.** If `xᵢ ∈ Lᵖ(μ)` have summable `L^r` seminorms, then
+`∑ᵢ xᵢ` has a sum `v` in `L^r(μ)`: for every finite set `s` of indices,
+`‖v - ∑_{i ∈ s} xᵢ‖_{L^r} ≤ ∑_{i ∉ s} ‖xᵢ‖_{L^r}`, and
+`‖∑_{i ∈ t} xᵢ - ∑_{i ∈ s} xᵢ‖_{L^r} → ‖v - ∑_{i ∈ s} xᵢ‖_{L^r}` as the finite set `t` grows. -/
+theorem exists_eLpNorm_sub_sum_le_tsum_compl [CompleteSpace F] {x : ι → Lp F p μ}
+    (hx : ∑' i, eLpNorm (x i) r μ ≠ ∞) :
+    ∃ v : Lp F r μ,
+      (∀ s : Finset ι,
+        eLpNorm (⇑v - ⇑(∑ i ∈ s, x i)) r μ ≤ ∑' i : ↥(s : Set ι)ᶜ, eLpNorm (x i) r μ) ∧
+      ∀ s : Finset ι, Tendsto (fun t : Finset ι ↦ eLpNorm (⇑(∑ i ∈ t, x i) - ⇑(∑ i ∈ s, x i)) r μ)
+        atTop (𝓝 (eLpNorm (⇑v - ⇑(∑ i ∈ s, x i)) r μ)) := by
+  have hmem (i : ι) : MemLp (x i) r μ :=
+    memLp_iff.2 ((le_tsum _ i).trans_lt hx.lt_top)
+  set y : ι → Lp F r μ := fun i ↦ (hmem i).toLp _
+  have hy (i : ι) : ‖y i‖ₑ = eLpNorm (x i) r μ := Lp.eNorm_toLp _
+  have hsum : Summable y :=
+    .of_norm (tsum_eNorm_ne_top_iff_summable_norm.1 (by simpa only [hy] using hx))
+  -- A partial sum of the `xᵢ` and the same partial sum of the `yᵢ` are the same function.
+  have hcoe (t : Finset ι) : ⇑(∑ i ∈ t, x i) =ᵐ[μ] ⇑(∑ i ∈ t, y i) := by
+    filter_upwards [Lp.coeFn_finsetSum t x, Lp.coeFn_finsetSum t y,
+      t.eventually_all.2 fun i _ ↦ (hmem i).coeFn_toLp] with a h₁ h₂ h₃
+    simp only [h₁, h₂, Finset.sum_apply, y]
+    exact Finset.sum_congr rfl fun i hi ↦ (h₃ i hi).symm
+  have hnorm (v : Lp F r μ) (s : Finset ι) :
+      eLpNorm (⇑v - ⇑(∑ i ∈ s, x i)) r μ = ‖v - ∑ i ∈ s, y i‖ₑ := by
+    rw [Lp.eNorm_def]
+    exact eLpNorm_congr_ae
+      (((EventuallyEq.refl _ (⇑v)).sub (hcoe s)).trans (Lp.coeFn_sub _ _).symm)
+  refine ⟨∑' i, y i, fun s ↦ ?_, fun s ↦ ?_⟩
+  · rw [hnorm _ s, ← hsum.sum_add_tsum_compl, add_sub_cancel_left]
+    refine eNorm_tsum_le_tsum_eNorm.trans_eq ?_
+    simp only [hy]
+  · have hlim := ((hsum.hasSum.sub_const (∑ i ∈ s, y i)).eNorm)
+    rw [← hnorm _ s] at hlim
+    refine hlim.congr fun t ↦ ?_
+    rw [eLpNorm_congr_ae ((hcoe t).sub (hcoe s) |>.trans (Lp.coeFn_sub _ _).symm), ← Lp.eNorm_def]
+
+/-- **A sum in `L^r` agrees with a limit in `Lᵖ` of its partial sums.** If the partial sums
+`∑_{i ∈ s} gᵢ` of `gᵢ ∈ Lᵖ(μ)` converge to `U` in `L^r(μ)` along the finite sets `s` of indices,
+and along an exhausting sequence `sₙ` of finite sets they converge to `v` in `Lᵖ(μ)`, then `U = v`
+almost everywhere: both limits are limits in measure. -/
+theorem ae_eq_of_tendsto_eLpNorm_sub_sum_of_tendsto_sum [Fact (1 ≤ p)] {g : ι → Lp F p μ}
+    {U : Lp F r μ}
+    (hU : Tendsto (fun s : Finset ι ↦ eLpNorm (⇑U - ⇑(∑ i ∈ s, g i)) r μ) atTop (𝓝 0))
+    {s : ℕ → Finset ι} (hs : Tendsto s atTop atTop) {v : Lp F p μ}
+    (hv : Tendsto (fun n ↦ ∑ i ∈ s n, g i) atTop (𝓝 v)) :
+    ⇑U =ᵐ[μ] ⇑v := by
+  refine tendstoInMeasure_ae_unique ?_ (tendstoInMeasure_of_tendsto_Lp hv)
+  refine tendstoInMeasure_of_tendsto_eLpNorm (zero_lt_one.trans_le (Fact.out : 1 ≤ r)).ne' ?_
+  refine (hU.comp hs).congr fun n ↦ ?_
+  rw [Function.comp_apply, eLpNorm_sub_comm]
 
 end MeasureTheory

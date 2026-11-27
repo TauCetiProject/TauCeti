@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
+import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.FlatBaseChange
 
 /-!
 # Extending closed subschemes across open immersions
@@ -40,13 +41,8 @@ variable {X Y : Scheme.{u}}
 @[simp]
 theorem comap_map_of_isOpenImmersion (I : X.IdealSheafData) (j : X ⟶ Y)
     [IsOpenImmersion j] [QuasiCompact j] : (I.map j).comap j = I := by
-  have h : IsPullback I.subschemeι (𝟙 _) j (I.subschemeι ≫ j) :=
-    .of_vert_isIso_mono ⟨by simp⟩
-  apply IdealSheafData.ext
-  funext U
-  rw [ideal_comap_of_isOpenImmersion, map]
-  simpa only [ker_subschemeι] using
-    (ker_ideal_of_isPullback_of_isOpenImmersion _ _ _ _ h U).symm
+  have h : IsPullback (𝟙 X) (𝟙 X) j j := .of_vert_isIso_mono ⟨by simp⟩
+  simpa using I.comap_map_of_isPullback_of_flat j h
 
 /-- A schematic image avoids an open subset precisely when the original closed subscheme
 avoids its inverse image. The morphism need not be an immersion. -/

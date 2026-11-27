@@ -7,9 +7,12 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+public import Mathlib.Analysis.ODE.Basic
+import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.ODE.Heteroclinic
 
 /-!
 # Nondegenerate critical points of functions of one real variable
@@ -35,9 +38,17 @@ of one variable.
   positive (a local minimum at a critical point).
 * `TauCeti.isNondegenerateCriticalPoint_pow_iff`: the only nondegenerate critical point of a power
   `y ↦ yⁿ` is `0`, for `n = 2`.
+* `TauCeti.exists_isIntegralCurve_neg_gradient_of_deriv_neg`: two consecutive critical points
+  `p < q` of a `C²` function `f` which decreases between them are joined by a negative gradient
+  trajectory from `p` to `q`, and every negative gradient trajectory from `p` to `q` is one of its
+  time translates. So they are joined by exactly one unparametrized trajectory, as in the Morse
+  complex of a function of one variable, where `p` is a local maximum and `q` a local minimum.
 -/
 
 public section
+
+open Filter Set
+open scoped Topology Gradient
 
 namespace TauCeti
 
@@ -112,6 +123,32 @@ theorem isNondegenerateCriticalPoint_pow_iff {n : ℕ} :
   · have h₂ : (n : ℝ) + 1 + 1 ≠ 0 := by positivity
     have h₃ : (n : ℝ) + 1 + 1 + 1 ≠ 0 := by positivity
     simp [h₂, h₃]
+
+/-- **Consecutive critical points of a function of one variable are joined by exactly one
+trajectory.** Let `f` be `C²` near `[p, q]`, with `p < q` critical points of `f` and `f' < 0` on
+`(p, q)`. Then there is a negative gradient trajectory `γ` of `f` with values in `(p, q)`, strictly
+increasing, tending to `p` at `-∞` and to `q` at `+∞`, and every negative gradient trajectory of `f`
+tending to `p` at `-∞` and to `q` at `+∞` is a time translate of `γ`. -/
+theorem exists_isIntegralCurve_neg_gradient_of_deriv_neg {p q : ℝ} (hpq : p < q)
+    (hf : ∀ y ∈ Icc p q, ContDiffAt ℝ 2 f y) (hp : deriv f p = 0) (hq : deriv f q = 0)
+    (hneg : ∀ y ∈ Ioo p q, deriv f y < 0) :
+    ∃ γ : ℝ → ℝ, IsIntegralCurve γ (fun _ y ↦ -∇ f y) ∧ StrictMono γ ∧ (∀ σ, γ σ ∈ Ioo p q) ∧
+      Tendsto γ atBot (𝓝 p) ∧ Tendsto γ atTop (𝓝 q) ∧
+      ∀ δ : ℝ → ℝ, IsIntegralCurve δ (fun _ y ↦ -∇ f y) → Tendsto δ atBot (𝓝 p) →
+        Tendsto δ atTop (𝓝 q) → ∃ τ, δ = fun σ ↦ γ (σ + τ) := by
+  -- On the line, the negative gradient field is `-f'`, which is `C¹`, so Lipschitz, on `[p, q]`.
+  have hV : (fun y ↦ -∇ f y) = fun y ↦ -deriv f y := funext fun _ ↦ by rw [gradient_eq_deriv']
+  obtain ⟨K, hK⟩ : ∃ K, LipschitzOnWith K (fun y ↦ -deriv f y) (Icc p q) :=
+    ContDiffOn.exists_lipschitzOnWith (n := 1)
+      (fun y hy ↦ ((hf y hy).derivWithin (by norm_num)).neg.contDiffWithinAt) one_ne_zero
+      (convex_Icc p q) isCompact_Icc
+  rw [hV]
+  obtain ⟨γ, hγ, hmono, hmem, hbot, htop⟩ := exists_isIntegralCurve_tendsto_of_pos hpq hK
+    (by simp [hp]) (by simp [hq]) fun y hy ↦ neg_pos.2 (hneg y hy)
+  exact ⟨γ, hγ, hmono, hmem, hbot, htop, fun δ hδ hδp hδq ↦
+    exists_eq_comp_add_of_isIntegralCurve_of_tendsto
+      (fun _ _ ↦ ⟨K, Ioo p q, self_mem_nhdsWithin, hK.mono Ioo_subset_Icc_self⟩) hγ hmem hδ hδp
+      hδq⟩
 
 end TauCeti
 
