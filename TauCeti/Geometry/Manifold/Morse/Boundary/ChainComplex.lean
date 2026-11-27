@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
 public import TauCeti.Algebra.Homology.EulerCharacteristic.MorseInequalities
 public import TauCeti.Geometry.Manifold.Morse.EulerCharacteristic
 public import Mathlib.Algebra.Field.ZMod
+import TauCeti.Algebra.Homology.ModuleCat.Finrank
 
 /-!
 # The mod-two Morse chain complex of a compact manifold

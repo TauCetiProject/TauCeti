@@ -53,7 +53,9 @@ The hypothesis `α ≤ 1` is used for both: a bounded Lipschitz function is `α`
   `TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_succ`), which keeps the map and its fields
   (`TauCeti.ParabolicCkHolderSpace.inclusionOfLEL_apply`,
   `TauCeti.ParabolicCkHolderSpace.mixedDerivL_inclusionOfLEL`) and has norm at most
-  `(8 n²) ^ (n - m)` (`TauCeti.ParabolicCkHolderSpace.norm_inclusionOfLEL_le`).
+  `(8 n²) ^ (n - m)` (`TauCeti.ParabolicCkHolderSpace.norm_inclusionOfLEL_le`); reading a map one
+  order lower multiplies its norm by at most `8 (n + 1)²`
+  (`TauCeti.ParabolicCkHolderSpace.norm_inclusionOfLEL_succ_apply_le`).
 * `TauCeti.ParabolicCkHolderSpace.inclusionL_injective`: the inclusion of consecutive orders is
   injective.
 * `TauCeti.ParabolicCkHolderSpace.memHolder_mixedDerivL_of_le`: every field of order at most `k`
@@ -223,6 +225,13 @@ theorem norm_inclusionOfLEL_le (hα : α ≤ 1) {m n : ℕ} (h : m ≤ n) :
     gcongr
     · exact ih.trans (by gcongr; linarith)
     · exact norm_inclusionL_le_mul_sq hα
+
+/-- Reading a map of order `n + 1` at order `n` multiplies its norm by at most `8 (n + 1)²`. -/
+theorem norm_inclusionOfLEL_succ_apply_le (hα : α ≤ 1) {n : ℕ}
+    (f : ParabolicCkHolderSpace (n + 1) α E F hab) :
+    ‖inclusionOfLEL hα (Nat.le_succ n) f‖ ≤ 8 * (n + 1) ^ 2 * ‖f‖ := by
+  refine (ContinuousLinearMap.le_opNorm _ f).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg f))
+  simpa using norm_inclusionOfLEL_le (E := E) (F := F) (hab := hab) hα (Nat.le_succ n)
 
 /-- **Every field is parabolically Hölder.** For `α ≤ 1`, every field `D_t^r D_x^m u` with
 `2 r + m ≤ k` of a map of order `k` is parabolically `α`-Hölder, not only those of top order:

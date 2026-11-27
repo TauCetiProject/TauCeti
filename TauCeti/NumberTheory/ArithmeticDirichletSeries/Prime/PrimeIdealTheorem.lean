@@ -42,6 +42,28 @@ theorem primeIdealTheorem :
       primeCount K Set.univ ~[atTop] Real.logIntegral :=
   primeIdealTheorem_of_boundary (LFunctions.primeIdealVonMangoldtBoundary K)
 
+/-- Chebyshev's function for the prime ideals of a number field has a linear bound for
+all nonnegative cutoffs, not just eventually. -/
+theorem exists_primePsi_univ_le_mul : ∃ C ≥ (0 : ℝ), ∀ x ≥ (0 : ℝ),
+    primePsi K Set.univ x ≤ C * x := by
+  obtain ⟨B, hB₀, hB⟩ := (primeIdealTheorem K).1.isBigO.exists_pos
+  obtain ⟨X, hX⟩ := eventually_atTop.mp hB.bound
+  have hC : 0 ≤ max B (primePsi K Set.univ X) := hB₀.le.trans (le_max_left ..)
+  refine ⟨_, hC, fun x hx ↦ ?_⟩
+  by_cases h : X ≤ x
+  · calc
+      primePsi K Set.univ x ≤ B * x := by
+        refine (le_abs_self _).trans ?_
+        simpa [Real.norm_eq_abs, abs_of_nonneg hx] using hX x h
+      _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_left ..) hx
+  by_cases hx₁ : 1 ≤ x
+  · calc
+      primePsi K Set.univ x ≤ primePsi K Set.univ X := primePsi_mono Set.univ (le_of_not_ge h)
+      _ ≤ max B (primePsi K Set.univ X) := le_max_right ..
+      _ ≤ _ := le_mul_of_one_le_right hC hx₁
+  · rw [primePsi_eq_zero_of_lt_two Set.univ ((lt_of_not_ge hx₁).trans one_lt_two)]
+    exact mul_nonneg hC hx
+
 /-- **The prime ideal theorem, in the form `π_K(x) ~ x / log x`.** -/
 theorem primeCount_univ_isEquivalent_div_log :
     primeCount K Set.univ ~[atTop] fun x : ℝ ↦ x / Real.log x :=

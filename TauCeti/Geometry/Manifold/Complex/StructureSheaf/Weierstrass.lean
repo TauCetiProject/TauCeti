@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.RingHom.Finite
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Separated
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.RingTheory.AdjoinRoot

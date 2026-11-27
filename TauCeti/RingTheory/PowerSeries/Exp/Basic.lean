@@ -9,7 +9,6 @@ public import Mathlib.Algebra.MonoidAlgebra.Basic
 public import Mathlib.RingTheory.PowerSeries.Exp
 public import TauCeti.RingTheory.PowerSeries.Rescale
 
-import Mathlib.Data.Rat.Cast.Lemmas
 import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
@@ -44,8 +43,6 @@ the coefficients (the augmentation), and the higher coefficients are the moments
 * `AddMonoidAlgebra.expAlgHom_single`: `e^m ↦ e^{φ(m) X}`.
 * `AddMonoidAlgebra.constantCoeff_expAlgHom`: the constant coefficient of the exponential
   specialization is the sum of the coefficients.
-* `TauCeti.sum_antidiagonal_inv_factorial_mul_neg_one_pow`: the coefficients of `e^X e^{-X} = 1`,
-  `∑_{i + j = n} (-1)ʲ / (i! j!) = 0` for `n > 0`.
 -/
 
 public section
@@ -132,23 +129,3 @@ theorem constantCoeff_expAlgHom (φ : M →+ R) (f : k[M]) :
   simp [expAlgHom, lift_apply, Finsupp.sum, Algebra.smul_def, PowerSeries.algebraMap_apply]
 
 end AddMonoidAlgebra
-
-namespace TauCeti
-
-open Finset
-
-open scoped Nat
-
-/-- The coefficients of `e^X e^{-X} = 1`: `∑_{i + j = n} (-1)ʲ / (i! j!)` is `1` for `n = 0` and
-`0` otherwise. -/
-theorem sum_antidiagonal_inv_factorial_mul_neg_one_pow {K : Type*} [DivisionRing K] [CharZero K]
-    (n : ℕ) :
-    ∑ ij ∈ antidiagonal n, (ij.1 ! : K)⁻¹ * ((-1) ^ ij.2 * (ij.2 ! : K)⁻¹) =
-      if n = 0 then 1 else 0 := by
-  have h := congr(PowerSeries.coeff n $(PowerSeries.exp_mul_exp_neg_eq_one (A := ℚ)))
-  rw [PowerSeries.coeff_mul, PowerSeries.coeff_one] at h
-  replace h := congr(Rat.castHom K $h)
-  simpa [PowerSeries.evalNegHom, PowerSeries.coeff_rescale, PowerSeries.coeff_exp, apply_ite]
-    using h
-
-end TauCeti
