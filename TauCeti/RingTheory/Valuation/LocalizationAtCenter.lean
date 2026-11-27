@@ -404,22 +404,9 @@ theorem map_inertiaSubgroup_eq (h : A.IsCenteredAt P) :
     (A.inertiaSubgroup K).map (A.decompositionSubgroup K).subtype =
       P.inertia (L ≃ₐ[K] L) := by
   ext σ
-  have hiff := h.forall_smul_sub_pow_mem_iff (g := σ) (q := 1)
-  simp only [pow_one] at hiff
-  rw [Ideal.mem_inertia, hiff]
-  constructor
-  · rintro ⟨g, hg, rfl⟩ x hx
-    have := (mem_inertiaSubgroup_iff_sub_mem_maximalIdeal A g).mp hg ⟨x, hx⟩
-    rwa [← coe_mem_nonunits_iff, AddSubgroupClass.coe_sub, coe_decompositionSubgroup_smul,
-      ← AlgEquiv.smul_def] at this
-  · intro hσ
-    have hdec : σ ∈ A.decompositionSubgroup K := by
-      rw [h.decompositionSubgroup_eq]
-      exact Ideal.inertia_le_stabilizer P (Ideal.mem_inertia.mpr (hiff.mpr hσ))
-    refine ⟨⟨σ, hdec⟩, (mem_inertiaSubgroup_iff_sub_mem_maximalIdeal A _).mpr fun x ↦ ?_, rfl⟩
-    rw [← coe_mem_nonunits_iff, AddSubgroupClass.coe_sub, coe_decompositionSubgroup_smul,
-      ← AlgEquiv.smul_def]
-    exact hσ x x.property
+  rw [mem_map_inertiaSubgroup_iff, Ideal.mem_inertia]
+  simpa only [pow_one, AlgEquiv.smul_def] using
+    (h.forall_smul_sub_pow_mem_iff (g := σ) (q := 1)).symm
 
 /-- **Arithmetic Frobenius elements at a valuation subring and at its centre**: `σ ∈ Gal(L/K)` is
 an arithmetic Frobenius element at the centre `P` in Mathlib's sense (`IsArithFrobAt`, for a base
