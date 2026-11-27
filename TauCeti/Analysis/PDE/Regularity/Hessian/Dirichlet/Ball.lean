@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Dirichlet.Existence
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
+import TauCeti.Analysis.Calculus.IteratedGradient.Trace
 import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Bounds
 import TauCeti.Analysis.Sobolev.Wkp.LinearIsometry
@@ -289,14 +290,7 @@ private theorem contraction_iteratedGradientCongr_symm_one [FiniteDimensional �
         Matrix.toEuclideanCLM (𝕜 := ℝ) A ∘L (g : V →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))) ∘L
           H) := by
   rw [Matrix.contraction_apply_eq_traceCLM, TauCeti.traceCLM_apply, TauCeti.traceCLM_apply,
-    ← LinearMap.trace_conj' _ g.symm.toLinearEquiv]
-  congr 1
-  ext v
-  have hH : (g.symm.iteratedGradientCongr 1).symm H (g v) = g (H v) := by
-    rw [LinearIsometryEquiv.iteratedGradientCongr_symm_succ_apply]
-    simp only [LinearIsometryEquiv.iteratedGradientCongr_zero]
-    exact congrArg (fun w => g (H w)) (g.toContinuousLinearEquiv.symm_apply_apply v)
-  simp [LinearEquiv.conj_apply, hH, Matrix.coe_toEuclideanCLM_eq_toEuclideanLin]
+    LinearIsometryEquiv.trace_comp_iteratedGradientCongr_symm_one, LinearIsometryEquiv.symm_symm]
 
 /-- **The constant-coefficient Dirichlet problem on a ball of `ℝ^{n+1}`, with a uniform estimate.**
 Let `1 < p < ∞` and `0 < λ`. There is a constant `C ≥ 0`, depending only on `n`, `p`, `λ` and
@@ -353,11 +347,8 @@ theorem exists_forall_exists_sum_mul_inner_iteratedGradient_eq_and_norm_le_of_ba
       (volume.restrict (Ω' : Set _)) := by
     rw [hΩΩ']
     exact hgs.restrict_preimage Ω'.isOpen.measurableSet
-  refine ⟨compLinearIsometryEquiv hgs hΩΩ' 2 u', ?_, ?_, ?_⟩
-  · have h := compLinearIsometryEquiv_mem_wkp0Submodule hgs hΩΩ' 1
-      (show lowerOrder 1 u' ∈ wkp0Submodule volume Ω' p 1 by
-        rwa [wkp0Submodule_one, ← firstOrder_one])
-    rwa [wkp0Submodule_one, ← lowerOrder_compLinearIsometryEquiv, ← firstOrder_one] at h
+  refine ⟨compLinearIsometryEquiv hgs hΩΩ' 2 u',
+    firstOrder_compLinearIsometryEquiv_mem_w1p0Submodule hgs hΩΩ' hu'0, ?_, ?_⟩
   · filter_upwards [iteratedGradient_compLinearIsometryEquiv_ae hgs hΩΩ' 1 u',
       hgsΩ.quasiMeasurePreserving.ae hu',
       hgsΩ.quasiMeasurePreserving.ae (Lp.coeFn_compMeasurePreserving f hgΩ)] with x h₁ h₂ h₃
