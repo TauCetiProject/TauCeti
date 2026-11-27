@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TemperedDistribution.Cutoff
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.SingularSupport
+public import TauCeti.Analysis.Pseudodifferential.CharacteristicSet
 public import TauCeti.Analysis.Pseudodifferential.Microlocality
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Distribution
 public import TauCeti.Analysis.Pseudodifferential.TemperedDistribution
@@ -14,6 +15,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Closure
 import TauCeti.Analysis.Distribution.WaveFrontSet.Sobolev.Tempered
 import TauCeti.Analysis.Pseudodifferential.Microlocal
+import TauCeti.Analysis.Pseudodifferential.ProperSupport.EllipticRegularity
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
@@ -47,6 +49,18 @@ spatial support acting on `H^t` this is
 Unlike `TauCeti.Symbol.sobolevSingularSupport_quantizeDistribution_subset_cthickening`, the
 `H^{s - m}` singular support of `Op(a) T` lies in the `H^s` singular support of `T` itself, not
 only in its closed `R`-neighbourhood.
+
+For **systems**, symbols `a` with values in `V →L[ℂ] W` for finite-dimensional complex inner
+product spaces `V` and `W`, acting on `V`-valued distributions, microlocality and microlocal
+elliptic regularity hold for the wave front set of vector-valued distributions, the union of the
+wave front sets of the components (`Distribution.vectorWaveFrontSet`):
+
+`WF(Op(a) T) ⊆ WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`
+
+(`TauCeti.Symbol.vectorWaveFrontSet_quantizeDistribution_subset`,
+`TauCeti.Symbol.vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet`).
+In a local frame this is how a properly supported operator between vector bundles acts on
+distributional sections in a chart.
 
 ## Proof
 
@@ -105,6 +119,13 @@ and every `H^s` wave front set are preserved up to the shift by `m`.
 * `TauCeti.Symbol.IsEllipticAbove.waveFrontSet_quantizeDistribution`,
   `TauCeti.ClassicalSymbol.IsElliptic.waveFrontSet_quantizeDistribution`: for elliptic `a`,
   `WF(Op(a) T) = WF(T)`.
+* `TauCeti.Symbol.vectorWaveFrontSet_quantizeDistribution_subset`: **microlocality of systems**,
+  `WF(Op(a) T) ⊆ WF(T)` for `V`-valued `T`.
+* `TauCeti.Symbol.vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn`,
+  `TauCeti.Symbol.vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet`:
+  **microlocal elliptic regularity of systems**, `WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`.
+* `TauCeti.Symbol.vectorWaveFrontSet_quantizeDistribution_sdiff_characteristicSet_eq`:
+  `WF(Op(a) T) \ Char(a) = WF(T) \ Char(a)` for systems.
 
 ## References
 
@@ -572,5 +593,127 @@ theorem ClassicalSymbol.IsElliptic.waveFrontSet_quantizeDistribution
     (Symbol.quantizeDistribution ha T).waveFrontSet = T.waveFrontSet :=
   Symbol.waveFrontSet_quantizeDistribution_of_forall_isEllipticOn
     hell.forall_exists_isEllipticOn ha T
+
+end TauCeti
+
+/-! ### Systems
+
+A symbol `a` with values in `V →L[ℂ] W`, for finite-dimensional complex inner product spaces `V`
+and `W`, whose quantization has kernel supported within distance `R` of the diagonal, acts on all
+`V`-valued distributions on `ℝⁿ` (`TauCeti.Symbol.quantizeDistribution`). In a local frame this is
+how a properly supported operator between vector bundles acts on distributional sections in a
+chart. Both microlocality and microlocal elliptic regularity hold for these systems, for the wave
+front sets of vector-valued distributions (`Distribution.vectorWaveFrontSet`). Microlocality
+reduces to the scalar case entry by entry
+(`TauCeti.Symbol.mapCLM_quantizeDistribution_eq_sum`). Microlocal elliptic regularity reduces to the
+statement for systems on `H^r`,
+`TauCeti.Symbol.vectorWaveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn`:
+a cut-off distribution `χ T` lies in some `H^r(ℝⁿ; V)`, and the components of `Op(ψ a) (χ T)` are
+`ψ (ℓ ∘ Op(a) T)` when `χ = 1` on the closed `R`-neighbourhood of the support of `ψ`
+(`TauCeti.Symbol.toDistr_postcomp_quantizeSobolev_smulLeft`). -/
+
+namespace TauCeti
+
+namespace Symbol
+
+open Distribution Set Metric
+open scoped Topology
+
+variable {n : ℕ} {m R R' : ℝ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V]
+  [CompleteSpace V] [FiniteDimensional ℂ V] [NormedAddCommGroup W] [InnerProductSpace ℂ W]
+  [CompleteSpace W] [FiniteDimensional ℂ W] {a : Symbol n V W m}
+
+/-- **Microlocality of properly supported systems.** For a symbol `a` with values in `V →L[ℂ] W`
+whose quantization has kernel supported within distance `R` of the diagonal, and every `V`-valued
+distribution `T` on `ℝⁿ`, `WF(Op(a) T) ⊆ WF(T)`, for the wave front sets of vector-valued
+distributions. -/
+theorem vectorWaveFrontSet_quantizeDistribution_subset (ha : a.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    (quantizeDistribution ha T).vectorWaveFrontSet ⊆ T.vectorWaveFrontSet := by
+  intro p hp
+  obtain ⟨ℓ, hp⟩ := mem_vectorWaveFrontSet_iff.1 hp
+  rw [mapCLM_quantizeDistribution_eq_sum ha (Module.finBasis ℂ V) ℓ] at hp
+  obtain ⟨j, -, hj⟩ := mem_iUnion₂.1 (waveFrontSet_sum_subset _ _ hp)
+  exact waveFrontSet_mapCLM_subset_vectorWaveFrontSet _ _
+    (waveFrontSet_quantizeDistribution_subset _ _ hj)
+
+/-- **Microlocal elliptic regularity of properly supported systems on a conic region.** Let `a` be
+a symbol with values in `V →L[ℂ] W` whose quantization has kernel supported within distance `R` of
+the diagonal, and which is elliptic on the points `(x, ξ)` with `x ∈ U`, `ξ ∈ Γ` and `‖ξ‖ ≥ R'`,
+for an open set `U` and an open cone `Γ`. Then `Op(a)` keeps every singularity in `U × Γ` of a
+`V`-valued distribution `T` on `ℝⁿ`: `WF(T) ∩ (U × Γ) ⊆ WF(Op(a) T)`. No a priori regularity of
+`T` is assumed, and the symbol needs neither compact spatial support nor estimates uniform in the
+position. -/
+theorem vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V))
+    {U Γ : Set (CoordinateSpace n)} (hU : IsOpen U) (hΓ : IsOpen Γ)
+    (hcone : ∀ s : ℝ, 0 < s → ∀ η ∈ Γ, s • η ∈ Γ)
+    (hell : a.IsEllipticOn {p | p.1 ∈ U ∧ p.2 ∈ Γ ∧ R' ≤ ‖p.2‖}) :
+    T.vectorWaveFrontSet ∩ U ×ˢ Γ ⊆ (quantizeDistribution ha T).vectorWaveFrontSet := by
+  rintro ⟨x, ξ⟩ ⟨hp, hx, hξ⟩
+  -- A cutoff `ψ` equal to `1` on an open neighbourhood `O` of `x`, and a cutoff `χ` equal to `1`
+  -- on the closed `R`-neighbourhood of the support of `ψ`.
+  obtain ⟨ψ, O, hO, hxO, hψO, -⟩ := TestFunction.exists_eqOn_one_tsupport_subset (n := ⊤)
+    (𝕜 := ℂ) (Ω := ⊤) Filter.univ_mem (mem_univ x)
+  obtain ⟨χ, hχ1, -⟩ := TestFunction.exists_complex_cutoff_tsupport_subset (n := ⊤) (Ω := ⊤)
+    (ψ.hasCompactSupport.isCompact.cthickening (r := R)) isOpen_univ (subset_univ _) (by simp)
+  have hχψ (y : CoordinateSpace n) (hy : y ∈ cthickening R (tsupport ψ)) : χ y = 1 :=
+    hχ1.self_of_nhdsSet y hy
+  have hOψ : O ⊆ tsupport ψ := fun y hy ↦ subset_tsupport _ (by simp [hψO hy])
+  -- Some `u ∈ H^r(ℝⁿ; V)` has the cut-off coordinates `χ (c_j ∘ T)`, so it agrees with `T` on
+  -- `O` and is singular at `(x, ξ)`.
+  set b := Module.finBasis ℂ V
+  obtain ⟨r, u, hu⟩ := exists_toDistr_postcomp_coord_eq_cutoffTempered b T χ
+  have hpu : (x, ξ) ∈ (toDistribution ⊤ u.toDistr).vectorWaveFrontSet := by
+    rw [vectorWaveFrontSet_eq_iUnion_basis b] at hp ⊢
+    obtain ⟨j, hj⟩ := mem_iUnion.1 hp
+    refine mem_iUnion.2 ⟨j, ?_⟩
+    rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp, hu j]
+    exact (mem_waveFrontSet_iff_of_isVanishingOn_sub hO hxO
+      (isVanishingOn_sub_toDistribution_cutoffTempered _ fun y hy ↦
+        hχψ y (self_subset_cthickening _ (hOψ hy)))).1 hj
+  -- `ψ a` agrees with `a` on `O`, so it is elliptic on `(U ∩ O) × Γ` at large frequencies, and the
+  -- statement on `H^r` puts `(x, ξ)` in the wave front set of `Op(ψ a) u`.
+  have hb := hasCompactSpatialSupport_smulLeft ψ.contDiff ψ.hasCompactSupport a
+  have hellb : (smulLeft ψ.contDiff a).IsEllipticOn
+      {q | q.1 ∈ U ∩ O ∧ q.2 ∈ Γ ∧ R' ≤ ‖q.2‖} :=
+    (hell.mono (S' := {q | q.1 ∈ U ∩ O ∧ q.2 ∈ Γ ∧ R' ≤ ‖q.2‖})
+      fun _ hq ↦ ⟨hq.1.1, hq.2⟩).congr rfl fun q hq ↦ by
+      rw [coefficient_smulLeft, hψO hq.1.2, Pi.one_apply, one_smul]
+  obtain ⟨ℓ, hℓ⟩ := mem_vectorWaveFrontSet_iff.1
+    (vectorWaveFrontSet_toDistribution_inter_subset_quantizeSobolev_of_isEllipticOn hb r u
+      (hU.inter hO) hΓ hcone hellb ⟨hpu, ⟨hx, hxO⟩, hξ⟩)
+  -- The component of `Op(ψ a) u` along `ℓ` is `ψ (ℓ ∘ Op(a) T)`, which agrees with `ℓ ∘ Op(a) T`
+  -- on `O`.
+  rw [← BesselPotentialSpace.toDistribution_toDistr_postcomp,
+    toDistr_postcomp_quantizeSobolev_smulLeft b ha hχψ T u hu ℓ] at hℓ
+  exact waveFrontSet_mapCLM_subset_vectorWaveFrontSet ℓ _
+    ((mem_waveFrontSet_iff_of_isVanishingOn_sub hO hxO
+      (isVanishingOn_sub_toDistribution_cutoffTempered _ fun y hy ↦ hψO hy)).2 hℓ)
+
+/-- **Microlocal elliptic regularity of properly supported systems.** For a symbol `a` with values
+in `V →L[ℂ] W` whose quantization has kernel supported within distance `R` of the diagonal, and
+every `V`-valued distribution `T` on `ℝⁿ`, every singularity of `T` is a singularity of `Op(a) T`
+or a characteristic point of `a`: `WF(T) ⊆ WF(Op(a) T) ∪ Char(a)`. -/
+theorem vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    T.vectorWaveFrontSet ⊆
+      (quantizeDistribution ha T).vectorWaveFrontSet ∪ a.characteristicSet :=
+  subset_union_characteristicSet (fun _ hp ↦ (vectorWaveFrontSet_subset _ hp).2)
+    fun hU hΓ hcone _ hell ↦
+      vectorWaveFrontSet_inter_subset_quantizeDistribution_of_isEllipticOn ha T hU hΓ hcone hell
+
+/-- Off the characteristic set of a symbol `a` with values in `V →L[ℂ] W` whose quantization has
+kernel supported within distance `R` of the diagonal, `Op(a)` neither creates nor removes
+singularities: `WF(Op(a) T) \ Char(a) = WF(T) \ Char(a)` for every `V`-valued distribution `T` on
+`ℝⁿ`. -/
+theorem vectorWaveFrontSet_quantizeDistribution_sdiff_characteristicSet_eq
+    (ha : a.HasNearDiagonalKernel R) (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
+    (quantizeDistribution ha T).vectorWaveFrontSet \ a.characteristicSet =
+      T.vectorWaveFrontSet \ a.characteristicSet :=
+  sdiff_characteristicSet_eq_of_subset (vectorWaveFrontSet_quantizeDistribution_subset ha T)
+    (vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet ha T)
+
+end Symbol
 
 end TauCeti

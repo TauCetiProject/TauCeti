@@ -267,13 +267,10 @@ theorem IsWeaklyMixing.exists_ae_eq_const_of_eigenfunction (h : IsWeaklyMixing �
   set F := hF.toLp f
   -- The integral of `f` vanishes: it is multiplied by `exp(2πia t) = -1` at `t = 1/(2a)`.
   have hint : ∫ x, f x ∂μ = 0 := by
-    have ha' : (a : ℂ) ≠ 0 := by exact_mod_cast ha
     have hcomp := (measurePreserving_vadd (1 / (2 * a)) μ).integral_comp
       (MeasurableEquiv.vadd (1 / (2 * a)) : X ≃ᵐ X).measurableEmbedding f
     rw [integral_congr_ae (heig _), integral_const_mul,
-      show 2 * (Real.pi : ℂ) * a * ((1 / (2 * a) : ℝ) : ℂ) * Complex.I = Real.pi * Complex.I by
-        push_cast; field_simp] at hcomp
-    simp only [Complex.exp_pi_mul_I] at hcomp
+      exp_two_pi_mul_one_div_two_mul_mul_I_eq_neg_one ha] at hcomp
     linear_combination -hcomp / 2
   have hFint : ∫ x, F x ∂μ = 0 := by
     rw [integral_congr_ae hF.coeFn_toLp, hint]

@@ -46,7 +46,9 @@ Integrating by parts against this pairing gives the **formal adjoint**
   the adjoint is `-ω♭` of `∂s ζ - J ∂t ζ + Aᵀ ζ`, a Cauchy–Riemann operator for `-J`, with
   `A = ∂t J - C` and `ᵀ` the `ω`-transpose (`floerLinearizationAdjoint_eq_neg_flatEquiv`); for a
   constant structure `J₀` and the zero perturbation, `A = 0`
-  (`floerLinearizationAdjoint_const_eq_neg_flatEquiv`). From
+  (`floerLinearizationAdjoint_const_eq_neg_flatEquiv`), and `D^* η = 0` reads
+  `∂s η = -(∂t η) ∘ J₀`
+  (`fderiv_apply_eq_neg_fderiv_apply_apply_of_floerLinearizationAdjoint_eq_zero`). From
   the first form, two adjoints differ on `η` by at most `‖J - J₁‖ ‖∂t η‖ + ‖A - A₁‖ ‖η‖`
   (`norm_floerLinearizationAdjoint_sub_floerLinearizationAdjoint_le`), and translating the data,
   the map and `η` translates the adjoint (`floerLinearizationAdjoint_comp_add_right`). The adjoint
@@ -314,6 +316,24 @@ theorem floerLinearizationAdjoint_const_eq_neg_flatEquiv (ω : SymplecticForm V)
     (differentiableAt_const _) h,
     ω.floerLinearizationCoeff_eq_zero_of_eq_base u (fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl)]
   simp
+
+/-- **The formal adjoint of constant data as a Cauchy–Riemann equation.** For a constant
+`ω`-invariant structure `J₀` and the zero perturbation, a covector field annihilated by the formal
+adjoint at `z` satisfies `∂s η = -(∂t η) ∘ J₀` there. -/
+theorem fderiv_apply_eq_neg_fderiv_apply_apply_of_floerLinearizationAdjoint_eq_zero
+    {J₀ : AlmostComplexStructure V} (hJ₀ : ω.Invariant J₀) (u : ℝ × ℝ → V)
+    (hD : ω.floerLinearizationAdjoint (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap)
+      (fun _ _ ↦ 0) (fun _ _ ↦ 0) u η z = 0) (y : V) :
+    fderiv ℝ η z (1, 0) y = -fderiv ℝ η z (0, 1) (J₀ y) := by
+  by_cases hη : DifferentiableAt ℝ η z
+  swap
+  · simp [fderiv_zero_of_not_differentiableAt hη]
+  rw [floerLinearizationAdjoint_const_eq_neg_flatEquiv ω u hη hJ₀, neg_eq_zero,
+    ω.flatEquiv.map_eq_zero_iff] at hD
+  simp only [fderiv_flatEquiv_symm_apply, stdComplexLineReal_eq, stdComplexLineImag_eq,
+    AlmostComplexStructure.neg_apply, ← sub_eq_add_neg, sub_eq_zero] at hD
+  -- `hD` says `ω♭⁻¹ (∂s η) = J₀ (ω♭⁻¹ (∂t η))`; pair both sides with `y` through `ω`.
+  simpa [hJ₀.apply_apply_eq_neg] using congr(ω $hD y)
 
 /-- **Comparing two formal adjoints.** At a point where `w ↦ J(w, u w)` and
 `w ↦ J₁(w, u₁ w)` are differentiable, the formal adjoints along two data sets differ on `η` by at
