@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Category.Grp.EpiMono
 public import Mathlib.Algebra.Homology.ShortComplex.Exact
 public import Mathlib.CategoryTheory.Abelian.SerreClass.Basic
 public import Mathlib.CategoryTheory.Sites.Sheaf
@@ -39,6 +40,9 @@ hence zero after tensoring with `ℚ`, but no single integer kills it.
   kills it.
 * `AddCommGrpCat.prop_isBoundedTorsion_iff_exponentExists`: an abelian group has bounded torsion
   exactly when it has an exponent.
+* `AddCommGrpCat.prop_isBoundedTorsion_iff_exists_pow_nsmul_eq_zero`: if every natural number
+  prime to `p` acts surjectively on an abelian group, it has bounded torsion exactly when a power
+  of `p` kills it.
 * `CategoryTheory.Sheaf.prop_isBoundedTorsion_iff`: a sheaf of abelian groups has bounded torsion
   exactly when one nonzero natural number kills all of its sections.
 
@@ -158,6 +162,19 @@ theorem prop_isBoundedTorsion_iff_exponentExists (M : AddCommGrpCat) :
     isBoundedTorsion AddCommGrpCat M ↔ AddMonoid.ExponentExists M := by
   simp only [prop_isBoundedTorsion_iff, nsmul_id_eq_zero_iff, AddMonoid.ExponentExists,
     Nat.pos_iff_ne_zero]
+
+/-- If multiplication by every natural number prime to a prime `p` is surjective on an abelian
+group `M`, for instance when `M` is a module over a ring in which those numbers are units, then `M`
+has bounded torsion exactly when a power of `p` kills every element. -/
+theorem prop_isBoundedTorsion_iff_exists_pow_nsmul_eq_zero {p : ℕ} (hp : p.Prime)
+    {M : AddCommGrpCat} (h : ∀ m : ℕ, m.Coprime p → Function.Surjective fun x : M ↦ m • x) :
+    isBoundedTorsion AddCommGrpCat M ↔ ∃ n : ℕ, ∀ x : M, p ^ n • x = 0 := by
+  rw [isBoundedTorsion_iff_exists_isKilledBy_pow hp fun m hm ↦ ?_]
+  · simp only [prop_isKilledBy_iff, nsmul_id_eq_zero_iff]
+  · rw [AddCommGrpCat.epi_iff_surjective]
+    intro y
+    obtain ⟨x, rfl⟩ := h m hm y
+    exact ⟨x, by simp⟩
 
 end AddCommGrpCat
 

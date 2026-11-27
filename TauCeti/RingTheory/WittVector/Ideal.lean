@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Exponent
-public import Mathlib.RingTheory.WittVector.Domain
-public import Mathlib.RingTheory.WittVector.Teichmuller
+public import Mathlib.RingTheory.WittVector.TeichmullerSeries
 public import TauCeti.RingTheory.WittVector.Truncated.Basic
 
 /-!
@@ -21,12 +20,12 @@ a scheme of characteristic `p`, whose cohomology defines Witt vector cohomology 
 coefficients.
 
 We record the characterizing API: membership is coordinatewise, the kernel of `W(f)` is the Witt
-ideal of the kernel of `f`, Witt ideals commute with sums and intersections of ideals and are
-compatible with preimages and with images under surjections, `W(A) ⧸ W(I) ≃ W(A ⧸ I)`, and the
-Witt ideal is stable under Teichmüller lifts of `I`, Frobenius and Verschiebung. Truncation maps
-`W(I)` onto `W_n(I)` and `W_m(I)` onto `W_n(I)` for `n ≤ m`, and the Witt vectors in `W(I)` whose
-first `n` coordinates vanish are exactly the `V^n y` with `y ∈ W(I)`. These are the affine forms
-of the exact sequences of Witt ideal sheaves.
+ideal of the kernel of `f` and its image is described coordinatewise, Witt ideals commute with
+sums and intersections of ideals and are compatible with preimages and with images under
+surjections, `W(A) ⧸ W(I) ≃ W(A ⧸ I)`, and the Witt ideal is stable under Teichmüller lifts of
+`I`, Frobenius and Verschiebung. Truncation maps `W(I)` onto `W_n(I)` and `W_m(I)` onto `W_n(I)`
+for `n ≤ m`, and the Witt vectors in `W(I)` whose first `n` coordinates vanish are exactly the
+`V^n y` with `y ∈ W(I)`. These are the affine forms of the exact sequences of Witt ideal sheaves.
 
 In characteristic `p` the Frobenius raises each coordinate to its `p`-th power and `V ∘ F = p`.
 Hence if `a ^ p ^ c ∈ I` for every `a ∈ J`, then `F^c` and multiplication by `p ^ c` carry `W(J)`
@@ -46,6 +45,8 @@ nilpotents.
 
 * `WittVector.mem_ideal_iff`: `x ∈ W(I)` iff every coordinate of `x` lies in `I`.
 * `WittVector.ker_map`: the kernel of `W(f)` is `W(ker f)`.
+* `WittVector.mem_range_map_iff`: a Witt vector lies in the image of `W(f)` iff every coordinate
+  lies in the image of `f`.
 * `WittVector.ideal_sup`, `WittVector.ideal_inf`: `W(I + J) = W(I) + W(J)` and
   `W(I ∩ J) = W(I) ∩ W(J)`.
 * `TruncatedWittVector.ideal_sup`, `TruncatedWittVector.ideal_inf`: the same for `W_n`.
@@ -56,6 +57,8 @@ nilpotents.
   then `x * p ^ c ∈ W(I)` for all `x ∈ W(J)`.
 * `WittVector.exponentExists_ideal`: in characteristic `p`, the Witt ideal of a nil ideal `N`
   with `a ^ p ^ c = 0` for all `a ∈ N` has an additive exponent.
+* `WittVector.forall_mem_ideal_mul_p_pow_eq_zero_iff`: in characteristic `p`, `p ^ c` kills `W(N)`
+  exactly when `a ^ p ^ c = 0` for all `a ∈ N`.
 
 ## References
 
@@ -94,6 +97,16 @@ the kernel of `f`. -/
 theorem ker_map (f : A →+* B) : RingHom.ker (map (p := p) f) = ideal p (RingHom.ker f) := by
   ext x
   simp only [RingHom.mem_ker, WittVector.ext_iff, map_coeff, zero_coeff, mem_ideal_iff]
+
+/-- A Witt vector lies in the image of `WittVector.map f` if and only if each of its coordinates
+lies in the image of `f`. -/
+theorem mem_range_map_iff (f : A →+* B) (x : 𝕎 B) :
+    x ∈ Set.range (map f) ↔ ∀ n, x.coeff n ∈ Set.range f := by
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro ⟨y, rfl⟩ n
+    exact ⟨y.coeff n, (map_coeff f y n).symm⟩
+  · choose c hc using h
+    exact ⟨mk p c, ext fun n ↦ by rw [map_coeff, coeff_mk, hc]⟩
 
 /-- The Witt ideal is monotone. -/
 theorem ideal_mono {I J : Ideal A} (h : I ≤ J) : ideal p I ≤ ideal p J := fun _ hx ↦
@@ -268,6 +281,14 @@ theorem exponentExists_ideal {N : Ideal A} {c : ℕ} (h : ∀ a ∈ N, a ^ p ^ c
     AddMonoid.ExponentExists (ideal p N) := by
   refine ⟨p ^ c, pow_pos hp.out.pos c, fun x ↦ Subtype.ext ?_⟩
   simpa [← Nat.cast_pow, Nat.cast_comm] using mul_p_pow_eq_zero_of_mem_ideal h x.property
+
+/-- In characteristic `p`, `p ^ c` kills the Witt ideal `W(N)` exactly when `a ^ p ^ c = 0` for
+every `a ∈ N`. -/
+theorem forall_mem_ideal_mul_p_pow_eq_zero_iff {N : Ideal A} {c : ℕ} :
+    (∀ x ∈ ideal p N, x * (p : 𝕎 A) ^ c = 0) ↔ ∀ a ∈ N, a ^ p ^ c = 0 := by
+  refine ⟨fun h a ha ↦ ?_, fun h _ ↦ mul_p_pow_eq_zero_of_mem_ideal h⟩
+  -- The `c`-th Witt coordinate of `[a] * p ^ c` is `a ^ p ^ c`.
+  rw [← teichmuller_mul_pow_coeff, h _ (teichmuller_mem_ideal_iff.mpr ha), zero_coeff]
 
 end CharP
 
