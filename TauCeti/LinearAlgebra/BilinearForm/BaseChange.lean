@@ -16,6 +16,7 @@ public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import Mathlib.Algebra.Order.Algebra
 import Mathlib.Algebra.Ring.Hom.InjSurj
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
+import TauCeti.LinearAlgebra.BilinearForm.TensorProduct
 
 /-!
 # Bilinear forms and base change
@@ -68,8 +69,7 @@ compared with its real extension.
 * `LinearMap.BilinForm.compl₁₂_baseChange_eq_smul`: a similitude `B.compl₁₂ f f = c • B`
   base-changes to a similitude of `B.baseChange A` with multiplier `algebraMap R A c`.
 * `LinearMap.BilinForm.IsAlt.baseChange`: scalar extension preserves alternating forms, using
-  `LinearMap.BilinForm.IsAlt.add_flip_eq_zero` (an alternating form is skew-symmetric over a
-  semiring).
+  `LinearMap.BilinForm.IsSymm.tmul_isAlt` with the algebra's multiplication form.
 * `LinearMap.BilinForm.liftBaseChange`: lifting a form-preserving map preserves the
   base-changed form, without assuming the map exhibits a base change.
 * `IsBaseChange.bilinForm_baseChange`: if a bilinear form restricts along a map to a
@@ -243,26 +243,10 @@ theorem baseChange_add (B B' : LinearMap.BilinForm R M) :
   ext a x
   simp [add_smul]
 
-/-- An alternating bilinear form is skew-symmetric, `B + B.flip = 0`, over any commutative
-semiring (Mathlib's `LinearMap.IsAlt.neg` needs additive inverses). -/
-theorem IsAlt.add_flip_eq_zero {B : LinearMap.BilinForm R M} (hB : B.IsAlt) : B + B.flip = 0 := by
-  ext x y
-  have := hB (x + y)
-  simp only [map_add, LinearMap.add_apply, hB x, hB y, zero_add, add_zero] at this
-  simpa [add_comm] using this
-
 /-- Scalar extension of an alternating bilinear form is alternating. -/
 theorem IsAlt.baseChange {B : LinearMap.BilinForm R M} (hB : B.IsAlt) :
-    (B.baseChange A).IsAlt := by
-  have hB' := hB.add_flip_eq_zero
-  have hskew : B.baseChange A + (B.baseChange A).flip = 0 := by
-    rw [← baseChange_flip, ← baseChange_add, hB', baseChange_zero]
-  intro x
-  induction x using TensorProduct.inductionOn with
-  | tmul a x => simp [hB x]
-  | add x x' hx hx' =>
-    simp only [map_add, LinearMap.add_apply, hx, hx', zero_add, add_zero]
-    simpa using congr($hskew x' x)
+    (B.baseChange A).IsAlt :=
+  IsSymm.tmul_isAlt ⟨mul_comm⟩ hB
 
 /-- Scalar extension commutes with composing a bilinear form with linear maps on both sides. -/
 @[simp]
