@@ -977,13 +977,14 @@ theorem exists_forall_energyFormH1_compL_restrictL_eq
   exact integral_congr_ae (hf'.coeFn_toLp.mono fun x hx => by simp only [hx])
 
 /-- **Transforming a weak solution with a `W^{m,2}` right-hand side.** Let `Φ` be a change of
-variables of order `m + 1` from `Ω'` into an open `D ⊆ Ω`, with inverse change of variables `Ψ`,
-both with Jacobian determinants at least one in absolute value. If `u ∈ H¹(Ω)` is a weak solution
-of `-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω` with `F ∈ W^{m,2}(Ω)`, then `u ∘ Φ` is a weak solution in `Ω'` of the
-transformed equation `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ`, whose right-hand side lies in `W^{m,2}(Ω')`. -/
-theorem energyFormH1_w1pCompL_restrictL_eq_setIntegral {m : ℕ}
+variables of order `k ≥ max 1 m` from `Ω'` into an open `D ⊆ Ω`, with inverse change of variables
+`Ψ`, both with Jacobian determinants at least one in absolute value. If `u ∈ H¹(Ω)` is a weak
+solution of `-∂ᵢ(aⁱʲ ∂ⱼu) = F` in `Ω` with `F ∈ W^{m,2}(Ω)`, then `u ∘ Φ` is a weak solution in `Ω'`
+of the transformed equation `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ`, whose right-hand side lies in
+`W^{m,2}(Ω')`. -/
+theorem energyFormH1_w1pCompL_restrictL_eq_setIntegral {k m : ℕ}
     {Omega D Ω' : Opens (EuclideanSpace ℝ ι)} (hD : D ≤ Omega)
-    (hΦ : Wkp.IsChangeOfVariables (m + 1) Ω' D Φ L 1)
+    (hΦ : Wkp.IsChangeOfVariables k Ω' D Φ L 1) (hk : 1 ≤ k) (hmk : m ≤ k)
     (hΨ : Wkp.IsChangeOfVariables 1 D Ω' Ψ L' 1) (hΨΦ : LeftInvOn Ψ Φ Ω')
     (hΦΨ : RightInvOn Ψ Φ D) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {F : Wkp mu Omega 2 m}
     {u : W1p mu Omega 2}
@@ -991,17 +992,17 @@ theorem energyFormH1_w1pCompL_restrictL_eq_setIntegral {m : ℕ}
       ∫ x in Omega, Wkp.value m F x * W1p.value (v : W1p mu Omega 2) x ∂mu)
     (v : W1p0 mu Ω' 2) :
     energyFormH1 (pullbackPrincipal Φ a) 0 0
-        (hΦ.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD u)) (v : W1p mu Ω' 2) =
-      ∫ x in Ω', Wkp.value m (Wkp.compL (hΦ.mono m.le_succ) (Wkp.restrictL hD m F)) x *
+        ((hΦ.mono hk).w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD u)) (v : W1p mu Ω' 2) =
+      ∫ x in Ω', Wkp.value m (Wkp.compL (hΦ.mono hmk) (Wkp.restrictL hD m F)) x *
         W1p.value (v : W1p mu Ω' 2) x ∂mu := by
-  have hΦ1 := hΦ.mono (Nat.le_add_left 1 m)
+  have hΦ1 := hΦ.mono hk
   have h := energyFormH1_compL_eq_setIntegral hΦ1.differentiableOn hΦ1.injOn hΦ1.mapsTo
     hΦ1.norm_fderiv_le hΦ1.pos hΦ1.le_abs_det hΨ.differentiableOn hΨ.mapsTo hΨ.norm_fderiv_le
     hΨ.pos hΨ.le_abs_det hΨΦ hΦΨ (energyFormH1_restrictL_eq_setIntegral hD hu) v
   rw [pullbackDrift_zero, pullbackDensity_zero] at h
   -- Since `|det DΦ| = 1`, the pulled-back density of `F` is `F ∘ Φ`.
   refine h.trans (integral_congr_ae ?_)
-  filter_upwards [Wkp.value_compL_ae (hΦ.mono m.le_succ) (Wkp.restrictL hD m F),
+  filter_upwards [Wkp.value_compL_ae (hΦ.mono hmk) (Wkp.restrictL hD m F),
     hΦ.ae_comp (Wkp.value_restrictL_ae hD m F), ae_restrict_mem Ω'.isOpen.measurableSet]
     with x h1 h2 hx
   rw [pullbackDensity_apply, hΦ1.abs_det_fderiv_eq_one hΨ hΨΦ hΦΨ hx, one_mul, h1, h2]

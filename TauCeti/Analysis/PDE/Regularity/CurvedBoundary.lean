@@ -51,9 +51,9 @@ boundary, the weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem for
 (`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph`), with the global
 estimate `‖u‖_{H^{m+2}(Ω)} ≤ C (‖u‖_{L²(Ω)} + ‖F‖_{W^{m,2}(Ω)})`
 (`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_norm_value_of_value_eq_value_of_contDiff_graph`).
-This is Evans, §6.3.2, Theorem 5. Smoothness, rather than finitely many derivatives, of the
-boundary and of `a` is what the flat model
-`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace` asks of the
+This is Evans, §6.3.2, Theorem 5, for a smooth boundary and smooth principal coefficients.
+Smoothness, rather than finitely many derivatives, of the boundary and of `a` is what the flat
+model `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace` asks of the
 transformed coefficient.
 
 ## The argument
@@ -119,7 +119,8 @@ The classical proof (Evans, §6.3.2, Theorem 4) flattens the boundary.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_restrictL_of_contDiff_graph`: local
   `H^{m+2}` regularity near a smooth boundary portion on which the solution vanishes.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph`: `H^{m+2}` regularity
-  of the Dirichlet problem on a bounded open set with smooth boundary (Evans, §6.3.2, Theorem 5).
+  of the Dirichlet problem on a bounded open set with smooth boundary (Evans, §6.3.2, Theorem 5,
+  for a smooth boundary and smooth principal coefficients).
 * `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_norm_value_of_value_eq_value_of_contDiff_graph`:
   the global `H^{m+2}` estimate in terms of `‖u‖_{L²}` and `‖F‖_{W^{m,2}}`.
 
@@ -177,17 +178,18 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat {
       ∀ Ω' D : Opens (EuclideanSpace ℝ ι),
       (Ω' : Set (EuclideanSpace ℝ ι)) ∩ ball y₀ r = (H : Set (EuclideanSpace ℝ ι)) ∩ ball y₀ r →
       ((Ω' : Set (EuclideanSpace ℝ ι)) ∩ ball y₀ r).Nonempty →
-      ∀ (hD : D ≤ Omega) (hΦ' : Wkp.IsChangeOfVariables 1 Ω' D Φ L 1),
-      Wkp.IsChangeOfVariables 1 D Ω' Ψ L 1 → Wkp.IsChangeOfVariables k Ω' D Φ L 1 →
+      ∀ (hD : D ≤ Omega) (hΦk : Wkp.IsChangeOfVariables k Ω' D Φ L 1),
+      Wkp.IsChangeOfVariables 1 D Ω' Ψ L 1 →
       MapsTo Φ Ω' ((Omega : Set (EuclideanSpace ℝ ι)) ∩ W) →
       (∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
         tsupport ψ ⊆ ball y₀ r → ∃ v : W1p0 mu Ω' 2,
           W1p.value (v : W1p mu Ω' 2) =ᵐ[mu.restrict Ω'] fun x =>
-            ψ x * W1p.value (hΦ'.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD u)) x) →
+            ψ x * W1p.value ((hΦk.mono hk).w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD u)) x) →
       ∀ V'' : Opens (EuclideanSpace ℝ ι), IsCompact (closure (V'' : Set (EuclideanSpace ℝ ι))) →
         closure (V'' : Set (EuclideanSpace ℝ ι)) ⊆ ball y₀ r →
         ∃ w : Wkp mu (Ω' ⊓ V'') 2 k, Wkp.value k w = W1p.value
-          (W1p.restrictL inf_le_left (hΦ'.w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD u)))) :
+          (W1p.restrictL inf_le_left
+            ((hΦk.mono hk).w1pCompL ENNReal.ofNat_ne_top (W1p.restrictL hD u)))) :
     ∃ V : Opens (EuclideanSpace ℝ ι), Φ y₀ ∈ V ∧
       ∃ w : Wkp mu (Omega ⊓ V) 2 k, Wkp.value k w = W1p.value (W1p.restrictL inf_le_left u) := by
   -- `ι` is nonempty, since `ν ≠ 0`.
@@ -226,8 +228,8 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat {
   obtain ⟨z, hzH, hz⟩ := Metric.mem_closure_iff.1 hy₀H r hr
   obtain ⟨w'', hw''⟩ := hflat H (fun _ => Iff.rfl) r hrB Ω' D
     (by rw [Opens.coe_inf, inter_assoc]; exact congrArg _ (inter_self _))
-    ⟨z, ⟨hzH, mem_ball_comm.1 hz⟩, mem_ball_comm.1 hz⟩ inf_le_left hΦ'
-    ((hΨ.mono_set hDU hΨmaps).mono hk) hΦk (fun x hx => ⟨(hΦmaps hx).1, hOW (hΦmaps hx).2⟩) hu0'
+    ⟨z, ⟨hzH, mem_ball_comm.1 hz⟩, mem_ball_comm.1 hz⟩ inf_le_left hΦk
+    ((hΨ.mono_set hDU hΨmaps).mono hk) (fun x hx => ⟨(hΦmaps hx).1, hOW (hΦmaps hx).2⟩) hu0'
     V''
     ((isCompact_closedBall y₀ (r / 2)).of_isClosed_subset isClosed_closure
       closure_ball_subset_closedBall)
@@ -271,11 +273,11 @@ private theorem exists_lowerOrder_eq_restrictL_of_isChangeOfVariables
       ∃ w : Wkp mu (Omega ⊓ V) 2 2, Wkp.lowerOrder 1 w = W1p.restrictL inf_le_left u := by
   obtain ⟨V, hV, w, hw⟩ := exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat
     one_le_two hΦ hΨ hΨΦ hΦΨ hΦc hΨc hν himage hy₀ hy₀H hy₀W hu0
-    fun H hH r hrB Ω' D hΩU hne hD hΦ' hΨ' _ hΦmaps hu0' V'' hV hVU => by
+    fun H hH r hrB Ω' D hΩU hne hD hΦk hΨ' hΦmaps hu0' V'' hV hVU => by
       -- On the flat side, `u ∘ Φ` solves an equation of the same form, with uniformly elliptic
       -- and Lipschitz principal coefficient.
       obtain ⟨hb', hc', f', hu₁⟩ := exists_forall_energyFormH1_compL_restrictL_eq (mu := mu) hD
-        hΦ' hΨ' (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) hb hc hu
+        (hΦk.mono one_le_two) hΨ' (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) hb hc hu
       obtain ⟨lam', Lam', K', hellip, hK'⟩ :=
         exists_uniformlyEllipticOn_and_lipschitzOnWith_pullbackPrincipal (hΦ.mono one_le_two) hΨ
           (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) (isCompact_closedBall y₀ r)
@@ -575,7 +577,7 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables (m : ℕ)
   have h1 : 1 ≤ m + 2 := by omega
   refine exists_value_eq_value_restrictL_of_isChangeOfVariables_of_flat h1 hΦ hΨ hΨΦ
     hΦΨ hΦs.continuous hΨs.continuous hν himage hy₀ hy₀H hy₀W hu0
-    fun H hH r hrB Ω' D hΩU hne hD _ hΨ' hΦk hΦmaps hu0' V'' hV hVU => ?_
+    fun H hH r hrB Ω' D hΩU hne hD hΦk hΨ' hΦmaps hu0' V'' hV hVU => ?_
   have hBU' : ball y₀ r ⊆ (U' : Set (EuclideanSpace ℝ ι)) :=
     ball_subset_closedBall.trans (hrB.trans inter_subset_left)
   -- The transformed coefficient is uniformly elliptic on `Ω'` and smooth on `B(y₀, r)`.
@@ -591,7 +593,7 @@ private theorem exists_value_eq_value_restrictL_of_isChangeOfVariables (m : ℕ)
   -- `-∂ᵢ(a'ⁱʲ ∂ⱼ(u ∘ Φ)) = F ∘ Φ` with `F ∘ Φ ∈ W^{m,2}`.
   exact UniformlyEllipticOn.exists_value_eq_value_restrictL_of_halfSpace (H := H)
     (U := ⟨ball y₀ r, isOpen_ball⟩) hν hH hΩU hellip hsm' m
-    (energyFormH1_w1pCompL_restrictL_eq_setIntegral hD (hΦk.mono (by omega)) hΨ'
+    (energyFormH1_w1pCompL_restrictL_eq_setIntegral hD hΦk h1 (by omega) hΨ'
       (fun x _ => hΨΦ x) (fun y _ => hΦΨ y) hu) hu0' hV hVU
 
 /-- **Local `H^{m+2}` regularity near a smooth boundary portion.** Let `Ω` be open, and suppose
@@ -689,12 +691,13 @@ private theorem UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph_prin
 
 variable {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {c : EuclideanSpace ℝ ι → ℝ}
 
-/-- **`H^{m+2}` regularity up to a smooth boundary** (Evans, §6.3.2, Theorem 5). Let `Ω` be a
-bounded open set with smooth boundary: at every boundary point `x`, in rigid coordinates `e` with
-`e x = 0`, inside a normal cylinder, `Ω` is the region above the graph of a smooth function `γ`
-with `γ 0 = 0`. Let `a` be uniformly elliptic on `Ω`, with entries smooth on an open set `W`
-containing `closure Ω`, let `m ≥ 0`, let the drift `b` and the mass `c` be `Cᵐ` on `W`, let
-`F ∈ W^{m,2}(Ω)`, and let `u ∈ H¹₀(Ω)` be a weak solution of the Dirichlet problem
+/-- **`H^{m+2}` regularity up to a smooth boundary** (Evans, §6.3.2, Theorem 5, for a smooth
+boundary and smooth principal coefficients). Let `Ω` be a bounded open set with smooth boundary:
+at every boundary point `x`, in rigid coordinates `e` with `e x = 0`, inside a normal cylinder,
+`Ω` is the region above the graph of a smooth function `γ` with `γ 0 = 0`. Let `a` be uniformly
+elliptic on `Ω`, with entries smooth on an open set `W` containing `closure Ω`, let `m ≥ 0`, let
+the drift `b` and the mass `c` be `Cᵐ` on `W`, let `F ∈ W^{m,2}(Ω)`, and let `u ∈ H¹₀(Ω)` be a
+weak solution of the Dirichlet problem
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = F` in `Ω`, `u = 0` on `∂Ω`.
 
@@ -730,6 +733,7 @@ theorem UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph
   -- By induction on `m`, `u ∈ H^{m+1}(Ω)`: for `m = 0` this is `u ∈ H¹(Ω)`, and otherwise it is
   -- the conclusion one order lower.
   induction m with
+  -- `Wkp … 1` is `W1p` definitionally but not reducibly, so `Wkp.value_one` converts.
   | zero => exact step 0 hb hc hu ⟨(u : Wkp mu Omega 2 1), Wkp.value_one _⟩
   | succ m ih =>
     exact step (m + 1) hb hc hu (ih (hb.of_le (by exact_mod_cast m.le_succ))
@@ -788,9 +792,10 @@ private theorem UniformlyEllipticOn.exists_norm_le_of_value_eq_value_of_contDiff
   rw [← Submodule.norm_coe, Prod.norm_def]
   exact max_le_add_of_nonneg (norm_nonneg _) (norm_nonneg _)
 
-/-- **The global `H^{m+2}` estimate up to a smooth boundary** (Evans, §6.3.2, Theorem 5). Under
-the hypotheses of `UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph`, there is a
-constant `C` such that for every weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem
+/-- **The global `H^{m+2}` estimate up to a smooth boundary** (Evans, §6.3.2, Theorem 5, for a
+smooth boundary and smooth principal coefficients). Under the hypotheses of
+`UniformlyEllipticOn.exists_value_eq_value_of_contDiff_graph`, there is a constant `C` such that
+for every weak solution `u ∈ H¹₀(Ω)` of the Dirichlet problem
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = F` in `Ω`, `u = 0` on `∂Ω`, with `F ∈ W^{m,2}(Ω)`,
 
