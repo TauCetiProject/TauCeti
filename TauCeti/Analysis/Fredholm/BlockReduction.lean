@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
 public import TauCeti.Analysis.Fredholm.Basic
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-import Mathlib.Tactic.Abel
 import TauCeti.Analysis.Fredholm.Prod
+import TauCeti.Analysis.Fredholm.SchurComplement
 import TauCeti.Analysis.Normed.Module.ContinuousInverse
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
@@ -353,6 +353,26 @@ theorem decCodom_prodEquiv_symm_apply_decDom_prodEquiv (T : E →L[𝕜] F)
         pkg.botLeftBlock T p.1 + pkg.botRightBlock T p.2) := by
   simp [Submodule.prodEquivOfIsTopCompl_apply, Submodule.prodEquivOfIsTopCompl_symm_apply, map_add]
 
+/-- In package coordinates, `T` is the `2 × 2` block operator formed by its four blocks. -/
+private theorem decCodom_prodEquiv_symm_comp_comp_decDom_prodEquiv (T : E →L[𝕜] F) :
+    ((pkg.decCodom.X₁.prodEquivOfIsTopCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl).symm :
+        F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀) ∘L T ∘L
+      (pkg.decDom.X₁.prodEquivOfIsTopCompl pkg.decDom.X₀ pkg.decDom.isTopCompl :
+        (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E) =
+      ((pkg.topLeftBlock T).coprod (pkg.topRightBlock T)).prod
+        ((pkg.botLeftBlock T).coprod (pkg.botRightBlock T)) := by
+  ext p <;> simp
+
+omit [IsTopologicalAddGroup E] in
+/-- Identification of `pkg.schurComplement T` with `ContinuousLinearEquiv.schurComplement` when the
+top-left block is given by a continuous linear equivalence `A`. -/
+private theorem schurComplement_eq_cleSchurComplement {T : E →L[𝕜] F}
+    {A : pkg.decDom.X₁ ≃L[𝕜] pkg.decCodom.X₁}
+    (hAe : (A : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁) = pkg.topLeftBlock T) :
+    pkg.schurComplement T =
+      A.schurComplement (pkg.topRightBlock T) (pkg.botLeftBlock T) (pkg.botRightBlock T) := by
+  rw [ContinuousLinearEquiv.schurComplement_eq_sub_comp_inverse, hAe, schurComplement_def]
+
 /-! ### Exact block-diagonalization and kernel/cokernel reduction -/
 
 /-- **Block-diagonalization of an operator with invertible top-left block.** Whenever
@@ -363,32 +383,67 @@ theorem codomTriangularEquiv_comp_self_comp_domTriangularEquiv {T : E →L[𝕜]
     (pkg.codomTriangularEquiv T : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀) ∘L T ∘L
         (pkg.domTriangularEquiv T : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E) =
       (pkg.topLeftBlock T).prodMap (pkg.schurComplement T) := by
-  refine ContinuousLinearMap.ext fun ⟨x, k⟩ ↦ ?_
-  have hdom : pkg.domTriangularEquiv T (x, k) =
-      pkg.decDom.X₁.prodEquivOfIsTopCompl pkg.decDom.X₀ pkg.decDom.isTopCompl
-        (x - (pkg.topLeftBlock T).inverse (pkg.topRightBlock T k), k) := by
-    simp [Submodule.prodEquivOfIsTopCompl_apply]
-  have h12 := pkg.decCodom_prodEquiv_symm_apply_decDom_prodEquiv T
-      (x - (pkg.topLeftBlock T).inverse (pkg.topRightBlock T k), k)
-  -- First coordinate: `A (x - A⁻¹ (B k)) + B k = A x`.
-  have h1 : pkg.decCodom.proj (T (pkg.domTriangularEquiv T (x, k))) = pkg.topLeftBlock T x := by
-    have hf := congrArg Prod.fst h12
-    simp only [Submodule.prodEquivOfIsTopCompl_symm_apply, map_sub,
-      hA.self_apply_inverse] at hf
-    rw [hdom, hf]
-    abel
-  refine Prod.ext ?_ ?_
-  · simp only [comp_apply, ContinuousLinearEquiv.coe_coe, codomTriangularEquiv_apply, h1,
-      coe_prodMap', Prod.map_fst]
-  · -- Second coordinate: `C (x - A⁻¹ (B k)) + D k - C (A⁻¹ (A x)) = (D - C A⁻¹ B) k`.
-    have h2 : pkg.decCodom.X₀.projectionOntoL pkg.decCodom.X₁ pkg.decCodom.isTopCompl.symm
-          (T (pkg.domTriangularEquiv T (x, k))) =
-        pkg.botLeftBlock T (x - (pkg.topLeftBlock T).inverse (pkg.topRightBlock T k)) +
-          pkg.botRightBlock T k := by
-      simpa only [Submodule.prodEquivOfIsTopCompl_symm_apply, ← hdom] using congrArg Prod.snd h12
-    simp only [comp_apply, ContinuousLinearEquiv.coe_coe, codomTriangularEquiv_apply, h1, h2,
-      map_sub, hA.inverse_apply_self, coe_prodMap', Prod.map_snd, schurComplement_apply]
-    abel
+  obtain ⟨A, hAe⟩ := hA
+  let eDom := pkg.decDom.X₁.prodEquivOfIsTopCompl pkg.decDom.X₀ pkg.decDom.isTopCompl
+  let eCodom := pkg.decCodom.X₁.prodEquivOfIsTopCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl
+  have hM : (eCodom.symm : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀) ∘L T ∘L
+      (eDom : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E) =
+      ((A : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).coprod (pkg.topRightBlock T)).prod
+        ((pkg.botLeftBlock T).coprod (pkg.botRightBlock T)) := by
+    rw [hAe]
+    exact pkg.decCodom_prodEquiv_symm_comp_comp_decDom_prodEquiv T
+  have hLDU := ContinuousLinearEquiv.coprod_prod_coprod_eq_comp A
+    (pkg.topRightBlock T) (pkg.botLeftBlock T) (pkg.botRightBlock T)
+  have hT : T = (eCodom : (pkg.decCodom.X₁ × pkg.decCodom.X₀) →L[𝕜] F) ∘L
+      (((A : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).coprod (pkg.topRightBlock T)).prod
+        ((pkg.botLeftBlock T).coprod (pkg.botRightBlock T))) ∘L
+      (eDom.symm : E →L[𝕜] pkg.decDom.X₁ × pkg.decDom.X₀) := by
+    rw [← hM]
+    ext x
+    simp
+  have hL : ((pkg.codomTriangularEquiv T : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀) ∘L
+        (eCodom : (pkg.decCodom.X₁ × pkg.decCodom.X₀) →L[𝕜] F)) ∘L
+      (((ContinuousLinearMap.id 𝕜 pkg.decCodom.X₁).coprod 0).prod
+        ((pkg.botLeftBlock T ∘L (A.symm : pkg.decCodom.X₁ →L[𝕜] pkg.decDom.X₁)).coprod
+          (.id 𝕜 pkg.decCodom.X₀))) = .id 𝕜 (pkg.decCodom.X₁ × pkg.decCodom.X₀) := by
+    ext p <;> simp [eCodom, Submodule.prodEquivOfIsTopCompl_apply, ← hAe,
+      ContinuousLinearMap.inverse_equiv, -botLeftBlock_apply]
+  have hU : (((ContinuousLinearMap.id 𝕜 pkg.decDom.X₁).coprod
+        ((A.symm : pkg.decCodom.X₁ →L[𝕜] pkg.decDom.X₁) ∘L pkg.topRightBlock T)).prod
+        ((0 : pkg.decDom.X₁ →L[𝕜] pkg.decDom.X₀).coprod (.id 𝕜 pkg.decDom.X₀))) ∘L
+      ((eDom.symm : E →L[𝕜] pkg.decDom.X₁ × pkg.decDom.X₀) ∘L
+        (pkg.domTriangularEquiv T : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E)) =
+      .id 𝕜 (pkg.decDom.X₁ × pkg.decDom.X₀) := by
+    ext p <;> simp [eDom, Submodule.prodEquivOfIsTopCompl_symm_apply, ← hAe,
+      ContinuousLinearMap.inverse_equiv, -topRightBlock_apply]
+  calc
+    (pkg.codomTriangularEquiv T : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀) ∘L T ∘L
+        (pkg.domTriangularEquiv T : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E)
+      = ((pkg.codomTriangularEquiv T : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀) ∘L
+          (eCodom : (pkg.decCodom.X₁ × pkg.decCodom.X₀) →L[𝕜] F)) ∘L
+          (((A : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).coprod (pkg.topRightBlock T)).prod
+            ((pkg.botLeftBlock T).coprod (pkg.botRightBlock T))) ∘L
+          ((eDom.symm : E →L[𝕜] pkg.decDom.X₁ × pkg.decDom.X₀) ∘L
+            (pkg.domTriangularEquiv T : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E)) := by
+        nth_rw 2 [hT]
+        simp only [comp_assoc]
+    _ = (((pkg.codomTriangularEquiv T : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀) ∘L
+          (eCodom : (pkg.decCodom.X₁ × pkg.decCodom.X₀) →L[𝕜] F)) ∘L
+          (((ContinuousLinearMap.id 𝕜 pkg.decCodom.X₁).coprod 0).prod
+            ((pkg.botLeftBlock T ∘L (A.symm : pkg.decCodom.X₁ →L[𝕜] pkg.decDom.X₁)).coprod
+              (.id 𝕜 pkg.decCodom.X₀)))) ∘L
+          ((A : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).prodMap
+            (A.schurComplement (pkg.topRightBlock T) (pkg.botLeftBlock T)
+              (pkg.botRightBlock T))) ∘L
+          ((((ContinuousLinearMap.id 𝕜 pkg.decDom.X₁).coprod
+            ((A.symm : pkg.decCodom.X₁ →L[𝕜] pkg.decDom.X₁) ∘L pkg.topRightBlock T)).prod
+            ((0 : pkg.decDom.X₁ →L[𝕜] pkg.decDom.X₀).coprod (.id 𝕜 pkg.decDom.X₀))) ∘L
+          ((eDom.symm : E →L[𝕜] pkg.decDom.X₁ × pkg.decDom.X₀) ∘L
+            (pkg.domTriangularEquiv T : (pkg.decDom.X₁ × pkg.decDom.X₀) →L[𝕜] E))) := by
+        rw [hLDU]
+        simp only [comp_assoc]
+    _ = (pkg.topLeftBlock T).prodMap (pkg.schurComplement T) := by
+        rw [hL, hU, id_comp, comp_id, hAe, pkg.schurComplement_eq_cleSchurComplement hAe]
 
 /-- Pointwise form of the block-diagonalization identity. -/
 theorem codomTriangularEquiv_apply_domTriangularEquiv {T : E →L[𝕜] F}
@@ -420,15 +475,29 @@ private theorem domTriangularEquiv_symm_apply_ker {T : E →L[𝕜] F}
         (0, pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm (v : E)) ∧
       pkg.schurComplement T
           (pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm (v : E)) = 0 := by
-  let p := (pkg.domTriangularEquiv T).symm (v : E)
-  have hp2 :
-      p.2 = pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm (v : E) := by
-    simp [p]
-  have hv0 : T (v : E) = 0 := v.property
-  have hdiag := pkg.codomTriangularEquiv_apply_domTriangularEquiv hA p
-  rw [(pkg.domTriangularEquiv T).apply_symm_apply, hv0, map_zero] at hdiag
-  have hp1 : p.1 = 0 := hA.injective ((congrArg Prod.fst hdiag).symm.trans (map_zero _).symm)
-  exact ⟨Prod.ext hp1 hp2, hp2 ▸ (congrArg Prod.snd hdiag).symm⟩
+  obtain ⟨A, hAe⟩ := hA
+  let eDom := pkg.decDom.X₁.prodEquivOfIsTopCompl pkg.decDom.X₀ pkg.decDom.isTopCompl
+  have hcoord := pkg.decCodom_prodEquiv_symm_comp_comp_decDom_prodEquiv T
+  rw [← hAe] at hcoord
+  have hker : eDom.symm (v : E) ∈
+      (((A : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).coprod (pkg.topRightBlock T)).prod
+        ((pkg.botLeftBlock T).coprod (pkg.botRightBlock T))).ker := by
+    rw [LinearMap.mem_ker, ← ContinuousLinearEquiv.coe_coe, ← hcoord]
+    change (pkg.decCodom.X₁.prodEquivOfIsTopCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl).symm
+        (T (eDom (eDom.symm (v : E)))) = 0
+    rw [eDom.apply_symm_apply, show T (v : E) = 0 from v.property, map_zero]
+  obtain ⟨h1, h2⟩ := (ContinuousLinearEquiv.mem_ker_coprod_prod_coprod_iff A
+    (pkg.topRightBlock T) (pkg.botLeftBlock T) (pkg.botRightBlock T)).mp hker
+  rw [← pkg.schurComplement_eq_cleSchurComplement hAe] at h2
+  have hp1 : (eDom.symm (v : E)).1 = pkg.decDom.proj (v : E) := by
+    simp [eDom, Submodule.prodEquivOfIsTopCompl_symm_apply]
+  have hp2 : (eDom.symm (v : E)).2 =
+      pkg.decDom.X₀.projectionOntoL pkg.decDom.X₁ pkg.decDom.isTopCompl.symm (v : E) := by
+    simp [eDom, Submodule.prodEquivOfIsTopCompl_symm_apply]
+  refine ⟨Prod.ext ?_ hp2, ?_⟩
+  · simp only [domTriangularEquiv_symm_apply, ← hp1, ← hp2, h1, ← hAe,
+      ContinuousLinearMap.inverse_equiv, ContinuousLinearEquiv.coe_coe, neg_add_cancel]
+  · exact LinearMap.mem_ker.mp (by rwa [hp2] at h2)
 
 /-- Projecting a kernel vector of `T` onto `X₀` lands in the kernel of the Schur complement. -/
 private theorem projectionOntoL_mem_ker_schurComplement {T : E →L[𝕜] F}
@@ -449,8 +518,8 @@ private theorem domTriangularEquiv_inr_mem_ker {T : E →L[𝕜] F}
   rw [ContinuousLinearMap.coe_coe]
   simp only [comp_apply, inr_apply, subtypeL_apply, ContinuousLinearEquiv.coe_coe]
   apply (pkg.codomTriangularEquiv T).injective
-  rw [pkg.codomTriangularEquiv_apply_domTriangularEquiv hA, map_zero, hk0, map_zero]
-  rfl
+  rw [pkg.codomTriangularEquiv_apply_domTriangularEquiv hA, map_zero, hk0, map_zero,
+    Prod.mk_zero_zero]
 
 /-- **Kernel reduction to the Schur complement.** When the top-left block of `T` is invertible,
 projection to `X₀` restricts to a continuous linear equivalence between `ker T` and the kernel of
@@ -496,15 +565,56 @@ theorem coe_kerEquivSchurComplementKer_symm_apply {T : E →L[𝕜] F}
       pkg.domTriangularEquiv T (0, k) :=
   (rfl)
 
+/-- A vector `y : F` lies in `range T` if and only if the second coordinate of
+`pkg.codomTriangularEquiv T y` lies in `range (pkg.schurComplement T)`. -/
+private theorem codomTriangularEquiv_snd_mem_range_iff {T : E →L[𝕜] F}
+    (hA : (pkg.topLeftBlock T).IsInvertible) (y : F) :
+    (pkg.codomTriangularEquiv T y).2 ∈ (pkg.schurComplement T).range ↔ y ∈ T.range := by
+  obtain ⟨A, hAe⟩ := hA
+  let eDom := pkg.decDom.X₁.prodEquivOfIsTopCompl pkg.decDom.X₀ pkg.decDom.isTopCompl
+  let eCodom := pkg.decCodom.X₁.prodEquivOfIsTopCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl
+  have hmem := ContinuousLinearEquiv.mem_range_coprod_prod_coprod_iff A
+    (pkg.topRightBlock T) (pkg.botLeftBlock T) (pkg.botRightBlock T) (y := eCodom.symm y)
+  have hsnd : (eCodom.symm y).2 - pkg.botLeftBlock T (A.symm (eCodom.symm y).1) =
+      (pkg.codomTriangularEquiv T y).2 := by
+    simp [eCodom, Submodule.prodEquivOfIsTopCompl_symm_apply, ← hAe,
+      ContinuousLinearMap.inverse_equiv, -botLeftBlock_apply]
+  have hrange : eCodom.symm y ∈
+      (((A : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).coprod (pkg.topRightBlock T)).prod
+        ((pkg.botLeftBlock T).coprod (pkg.botRightBlock T))).range ↔ y ∈ T.range := by
+    have hcoord := pkg.decCodom_prodEquiv_symm_comp_comp_decDom_prodEquiv T
+    rw [← hAe] at hcoord
+    rw [← hcoord]
+    simp only [LinearMap.mem_range]
+    constructor
+    · rintro ⟨p, hp⟩
+      exact ⟨_, eCodom.symm.injective hp⟩
+    · rintro ⟨u, rfl⟩
+      refine ⟨eDom.symm u, ?_⟩
+      change eCodom.symm (T (eDom (eDom.symm u))) = eCodom.symm (T u)
+      rw [eDom.apply_symm_apply]
+  rw [hsnd, ← pkg.schurComplement_eq_cleSchurComplement hAe] at hmem
+  exact hmem.symm.trans hrange
+
 /-- Every value of the Schur complement, viewed in the ambient codomain `F`, lies in `range T`. -/
 private theorem coe_schurComplement_mem_range {T : E →L[𝕜] F}
     (hA : (pkg.topLeftBlock T).IsInvertible) (k : pkg.decDom.X₀) :
     ((pkg.schurComplement T k : pkg.decCodom.X₀) : F) ∈ T.range := by
-  refine ⟨pkg.domTriangularEquiv T (0, k), ?_⟩
-  rw [ContinuousLinearMap.coe_coe]
-  apply (pkg.codomTriangularEquiv T).injective
-  rw [pkg.codomTriangularEquiv_apply_domTriangularEquiv hA, map_zero]
+  rw [← pkg.codomTriangularEquiv_snd_mem_range_iff hA]
   simp
+
+/-- Subtracting the second coordinate of `pkg.codomTriangularEquiv T y` from `y` lands in
+`range T`. -/
+private theorem sub_codomTriangularEquiv_snd_mem_range {T : E →L[𝕜] F}
+    (hA : (pkg.topLeftBlock T).IsInvertible) (y : F) :
+    y - ((pkg.codomTriangularEquiv T y).2 : pkg.decCodom.X₀) ∈ T.range := by
+  rw [← pkg.codomTriangularEquiv_snd_mem_range_iff hA, map_sub, codomTriangularEquiv_apply,
+    codomTriangularEquiv_apply]
+  dsimp only
+  rw [pkg.decCodom.X₁.projectionOntoL_apply_right pkg.decCodom.isTopCompl,
+    pkg.decCodom.X₀.projectionOntoL_apply_left pkg.decCodom.isTopCompl.symm,
+    map_zero, map_zero, sub_zero, Prod.snd_sub, sub_self]
+  exact zero_mem _
 
 /-- **Cokernel reduction to the Schur complement.** When the top-left block of `T` is invertible,
 the second coordinate of `pkg.codomTriangularEquiv T` descends to a continuous linear equivalence
@@ -519,41 +629,19 @@ noncomputable def cokerEquivSchurComplementCoker {T : E →L[𝕜] F}
         (pkg.codomTriangularEquiv T : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀))
       (by
         rintro _ ⟨u, rfl⟩
-        rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe]
-        let p := (pkg.domTriangularEquiv T).symm u
-        have hp : pkg.domTriangularEquiv T p = u := (pkg.domTriangularEquiv T).apply_symm_apply u
-        simp only [comp_apply, ContinuousLinearEquiv.coe_coe, coe_snd', mkQL_apply,
-          Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero, ← hp,
-          pkg.codomTriangularEquiv_apply_domTriangularEquiv hA]
-        exact LinearMap.mem_range_self _ p.2))
+        exact (Submodule.Quotient.mk_eq_zero _).mpr <|
+          (pkg.codomTriangularEquiv_snd_mem_range_iff hA (T u)).mpr (LinearMap.mem_range_self _ u)))
     ((pkg.schurComplement T).range.liftQL (T.range.mkQL ∘L pkg.decCodom.X₀.subtypeL)
       (by
         rintro _ ⟨k, rfl⟩
-        rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.coe_coe]
-        simp only [comp_apply, subtypeL_apply, mkQL_apply, Submodule.mkQ_apply,
-          Submodule.Quotient.mk_eq_zero]
-        exact pkg.coe_schurComplement_mem_range hA k))
+        exact (Submodule.Quotient.mk_eq_zero _).mpr (pkg.coe_schurComplement_mem_range hA k)))
     (ContinuousLinearMap.ext fun w ↦ by
       obtain ⟨y₀, rfl⟩ := (pkg.schurComplement T).range.mkQ_surjective w
       simp)
     (ContinuousLinearMap.ext fun z ↦ by
       obtain ⟨y, rfl⟩ := T.range.mkQ_surjective z
-      simp only [comp_apply, liftQL_apply, Submodule.mkQ_apply, Submodule.liftQ_apply,
-        ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe, coe_snd',
-        mkQL_apply, subtypeL_apply, id_apply]
-      symm
-      rw [Submodule.Quotient.eq]
-      let q := pkg.codomTriangularEquiv T y
-      have hdiff : pkg.codomTriangularEquiv T (y - ((q.2 : pkg.decCodom.X₀) : F)) = (q.1, 0) := by
-        rw [map_sub]
-        have hq2 : pkg.codomTriangularEquiv T ((q.2 : pkg.decCodom.X₀) : F) = (0, q.2) := by simp
-        rw [hq2]
-        ext <;> simp [q]
-      refine ⟨pkg.domTriangularEquiv T ((pkg.topLeftBlock T).inverse q.1, 0), ?_⟩
-      rw [ContinuousLinearMap.coe_coe]
-      apply (pkg.codomTriangularEquiv T).injective
-      rw [hdiff, pkg.codomTriangularEquiv_apply_domTriangularEquiv hA, hA.self_apply_inverse,
-        map_zero])
+      simpa using ((Submodule.Quotient.eq _).mpr
+        (pkg.sub_codomTriangularEquiv_snd_mem_range hA y)).symm)
 
 /-- On a quotient representative `y : F`, `cokerEquivSchurComplementCoker` takes the class of the
 second coordinate of `pkg.codomTriangularEquiv T y`. -/
@@ -578,10 +666,23 @@ invertible, `T` is invertible if and only if its finite-dimensional Schur comple
 theorem isInvertible_iff_isInvertible_schurComplement {T : E →L[𝕜] F}
     (hA : (pkg.topLeftBlock T).IsInvertible) :
     T.IsInvertible ↔ (pkg.schurComplement T).IsInvertible := by
-  have h := congrArg ContinuousLinearMap.IsInvertible
-    (pkg.codomTriangularEquiv_comp_self_comp_domTriangularEquiv hA)
-  simpa only [isInvertible_equiv_comp, isInvertible_comp_equiv, isInvertible_prodMap_iff,
-    hA, true_and] using iff_of_eq h
+  obtain ⟨A, hAe⟩ := hA
+  let eDom := pkg.decDom.X₁.prodEquivOfIsTopCompl pkg.decDom.X₀ pkg.decDom.isTopCompl
+  let eCodom := pkg.decCodom.X₁.prodEquivOfIsTopCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl
+  have hcoord := pkg.decCodom_prodEquiv_symm_comp_comp_decDom_prodEquiv T
+  rw [← hAe] at hcoord
+  have hT : T = (eCodom : (pkg.decCodom.X₁ × pkg.decCodom.X₀) →L[𝕜] F) ∘L
+      (((A : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).coprod (pkg.topRightBlock T)).prod
+        ((pkg.botLeftBlock T).coprod (pkg.botRightBlock T))) ∘L
+      (eDom.symm : E →L[𝕜] pkg.decDom.X₁ × pkg.decDom.X₀) := by
+    rw [← hcoord]
+    ext x
+    dsimp only [eDom, eCodom]
+    simp only [comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+  nth_rw 1 [hT]
+  rw [ContinuousLinearMap.isInvertible_equiv_comp, ContinuousLinearMap.isInvertible_comp_equiv,
+    ContinuousLinearEquiv.isInvertible_coprod_prod_coprod_iff,
+    ← pkg.schurComplement_eq_cleSchurComplement hAe]
 
 /-- **Index reduction to the Schur complement.** Whenever the top-left block of `T` is invertible,
 `T` has the same index as its finite-dimensional Schur complement. -/
@@ -615,11 +716,23 @@ theorem isFredholm_of_isInvertible_topLeftBlock [CompleteSpace 𝕜]
     T.IsFredholm := by
   have := pkg.decDom.finite_X₀
   have := pkg.decCodom.finite_X₀
-  have hprod : ((pkg.topLeftBlock T).prodMap (pkg.schurComplement T)).IsFredholm :=
-    hA.isFredholm.prodMap (ContinuousLinearMap.isFredholm_of_finiteDimensional _)
-  rw [pkg.eq_codomTriangularEquiv_symm_comp_prodMap_comp_domTriangularEquiv_symm hA]
-  exact (hprod.equiv_comp (pkg.codomTriangularEquiv T).symm).comp_equiv
-    (pkg.domTriangularEquiv T).symm
+  obtain ⟨A, hAe⟩ := hA
+  let eDom := pkg.decDom.X₁.prodEquivOfIsTopCompl pkg.decDom.X₀ pkg.decDom.isTopCompl
+  let eCodom := pkg.decCodom.X₁.prodEquivOfIsTopCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl
+  have hcoord := pkg.decCodom_prodEquiv_symm_comp_comp_decDom_prodEquiv T
+  rw [← hAe] at hcoord
+  have hconj : (eCodom.symm : F →L[𝕜] pkg.decCodom.X₁ × pkg.decCodom.X₀) ∘L T =
+      (((A : pkg.decDom.X₁ →L[𝕜] pkg.decCodom.X₁).coprod (pkg.topRightBlock T)).prod
+        ((pkg.botLeftBlock T).coprod (pkg.botRightBlock T))) ∘L
+      (eDom.symm : E →L[𝕜] pkg.decDom.X₁ × pkg.decDom.X₀) := by
+    rw [← hcoord]
+    refine ContinuousLinearMap.ext fun x ↦ ?_
+    dsimp only [eDom, eCodom]
+    simp only [comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply]
+  rw [ContinuousLinearMap.isFredholm_iff_of_comp_eq eDom.symm eCodom.symm hconj,
+    ContinuousLinearEquiv.isFredholm_coprod_prod_coprod_iff,
+    ← pkg.schurComplement_eq_cleSchurComplement hAe]
+  exact ContinuousLinearMap.isFredholm_of_finiteDimensional _
 
 end TVS
 

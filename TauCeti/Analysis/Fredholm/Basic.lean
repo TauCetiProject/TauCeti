@@ -319,16 +319,25 @@ theorem FredholmPackage.index_quasiInverse {T : E →L[𝕜] F} (pkg : T.Fredhol
       (pkg.decCodom.X₁.quotientEquivOfIsCompl pkg.decCodom.X₀ pkg.decCodom.isTopCompl.isCompl)]
   omega
 
+private theorem isStrictMap_subtypeL_comp_equiv_comp_of_isQuotientMap
+    {X Y : Type*} [AddCommGroup X] [TopologicalSpace X] [Module 𝕜 X]
+    [AddCommGroup Y] [TopologicalSpace Y] [Module 𝕜 Y]
+    {S : Submodule 𝕜 E} (e : X ≃L[𝕜] S) {P : Y →L[𝕜] X}
+    (hP : Topology.IsQuotientMap P) :
+    Topology.IsStrictMap (S.subtypeL ∘L (e : X →L[𝕜] S) ∘L P) := by
+  simpa only [coe_comp, Submodule.coe_subtypeL, Submodule.coe_subtype,
+    ContinuousLinearEquiv.coe_coe, Function.comp_assoc] using
+    (Topology.IsEmbedding.subtypeVal.comp e.isHomeomorph.isEmbedding).isStrictMap_iff.mp
+      hP.isStrictMap
+
 /-- The canonical quasi-inverse of a Fredholm package is itself Fredholm. -/
 theorem FredholmPackage.isFredholm_quasiInverse [ContinuousSub E] [ContinuousSub F]
     {T : E →L[𝕜] F} (pkg : T.FredholmPackage) [T1Space pkg.decDom.X₀] :
     pkg.quasiInverse.IsFredholm where
   isStrictMap := by
-    rw [FredholmPackage.quasiInverse, coe_comp, coe_comp, Submodule.coe_subtypeL,
-      Submodule.coe_subtype, ← Topology.IsEmbedding.subtypeVal.isStrictMap_iff,
-      ContinuousLinearEquiv.coe_coe, ← ContinuousLinearEquiv.coe_toHomeomorph]
-    exact pkg.equiv.symm.toHomeomorph.comp_isStrictMap_iff.mpr
-      (Submodule.isQuotientMap_projectionOntoL pkg.decCodom.isTopCompl).isStrictMap
+    rw [FredholmPackage.quasiInverse]
+    exact isStrictMap_subtypeL_comp_equiv_comp_of_isQuotientMap pkg.equiv.symm
+      (Submodule.isQuotientMap_projectionOntoL pkg.decCodom.isTopCompl)
   isClosed_range := by
     rw [pkg.range_quasiInverse]
     exact pkg.decDom.isTopCompl.isClosed

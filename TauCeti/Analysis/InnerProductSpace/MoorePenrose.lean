@@ -319,35 +319,36 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
 
+private lemma adjoint_comp_comp_self {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [CompleteSpace F] {A : E →L[𝕜] F} {B : F →L[𝕜] E}
+    (h : ((A : E →ₗ[𝕜] F) ∘ₗ (B : F →ₗ[𝕜] E) ∘ₗ (A : E →ₗ[𝕜] F)) = A) :
+    ((A† : F →ₗ[𝕜] E) ∘ₗ (B† : E →ₗ[𝕜] F) ∘ₗ (A† : F →ₗ[𝕜] E)) = A† := by
+  have h1 : A ∘L B ∘L A = A := ContinuousLinearMap.coe_inj.mp h
+  rw [← ContinuousLinearMap.toLinearMap_comp, ← ContinuousLinearMap.toLinearMap_comp]
+  exact congrArg ContinuousLinearMap.toLinearMap <|
+    calc A† ∘L B† ∘L A† = (A ∘L B ∘L A)† := by simp [ContinuousLinearMap.comp_assoc]
+      _ = A† := congrArg ContinuousLinearMap.adjoint h1
+
+private lemma isSymmetric_adjoint_comp {E F : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F]
+    [CompleteSpace F] {A : E →L[𝕜] F} {B : F →L[𝕜] E}
+    (h : ((B : F →ₗ[𝕜] E) ∘ₗ (A : E →ₗ[𝕜] F)).IsSymmetric) :
+    ((A† : F →ₗ[𝕜] E) ∘ₗ (B† : E →ₗ[𝕜] F)).IsSymmetric := by
+  have hBA : IsSelfAdjoint (B ∘L A) := (B ∘L A).isSelfAdjoint_iff_isSymmetric.mpr h
+  have hAB : A† ∘L B† = B ∘L A := (ContinuousLinearMap.adjoint_comp B A).symm.trans hBA.adjoint_eq
+  rw [← ContinuousLinearMap.toLinearMap_comp, hAB]
+  exact h
+
 /-- For bounded operators between Hilbert spaces, the Moore–Penrose relation is preserved by taking
 Hilbert adjoints. -/
 theorem isMoorePenroseInverse_adjoint {A : E →L[𝕜] F} {B : F →L[𝕜] E}
     (h : LinearMap.IsMoorePenroseInverse (A : E →ₗ[𝕜] F) (B : F →ₗ[𝕜] E)) :
     LinearMap.IsMoorePenroseInverse (A† : F →ₗ[𝕜] E) (B† : E →ₗ[𝕜] F) where
-  comp_comp_self := by
-    have h1 : A ∘L B ∘L A = A := ContinuousLinearMap.coe_inj.mp h.comp_comp_self
-    rw [← ContinuousLinearMap.toLinearMap_comp, ← ContinuousLinearMap.toLinearMap_comp]
-    exact congrArg ContinuousLinearMap.toLinearMap <|
-      calc A† ∘L B† ∘L A† = (A ∘L B ∘L A)† := by simp [ContinuousLinearMap.comp_assoc]
-        _ = A† := congrArg ContinuousLinearMap.adjoint h1
-  comp_comp_self' := by
-    have h2 : B ∘L A ∘L B = B := ContinuousLinearMap.coe_inj.mp h.comp_comp_self'
-    rw [← ContinuousLinearMap.toLinearMap_comp, ← ContinuousLinearMap.toLinearMap_comp]
-    exact congrArg ContinuousLinearMap.toLinearMap <|
-      calc B† ∘L A† ∘L B† = (B ∘L A ∘L B)† := by simp [ContinuousLinearMap.comp_assoc]
-        _ = B† := congrArg ContinuousLinearMap.adjoint h2
-  isSymmetric_comp := by
-    have hBA : IsSelfAdjoint (B ∘L A) :=
-      (B ∘L A).isSelfAdjoint_iff_isSymmetric.mpr h.isSymmetric_comp'
-    have h3 : A† ∘L B† = B ∘L A := (ContinuousLinearMap.adjoint_comp B A).symm.trans hBA.adjoint_eq
-    rw [← ContinuousLinearMap.toLinearMap_comp, h3]
-    exact h.isSymmetric_comp'
-  isSymmetric_comp' := by
-    have hAB : IsSelfAdjoint (A ∘L B) :=
-      (A ∘L B).isSelfAdjoint_iff_isSymmetric.mpr h.isSymmetric_comp
-    have h4 : B† ∘L A† = A ∘L B := (ContinuousLinearMap.adjoint_comp A B).symm.trans hAB.adjoint_eq
-    rw [← ContinuousLinearMap.toLinearMap_comp, h4]
-    exact h.isSymmetric_comp
+  comp_comp_self := adjoint_comp_comp_self h.comp_comp_self
+  comp_comp_self' := adjoint_comp_comp_self h.comp_comp_self'
+  isSymmetric_comp := isSymmetric_adjoint_comp h.isSymmetric_comp'
+  isSymmetric_comp' := isSymmetric_adjoint_comp h.isSymmetric_comp
 
 /-- For bounded operators between Hilbert spaces, `B†` is a Moore–Penrose inverse of `A†` if and
 only if `B` is a Moore–Penrose inverse of `A`. -/
