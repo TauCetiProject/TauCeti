@@ -11,6 +11,8 @@ public import Mathlib.RingTheory.PowerSeries.Substitution
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.RingTheory.PowerSeries.Expand
 import Mathlib.RingTheory.PowerSeries.Trunc
+import TauCeti.Data.Nat.Pow
+import TauCeti.RingTheory.PowerSeries.Basic
 import TauCeti.RingTheory.PowerSeries.Dvd
 import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.Substitution
@@ -95,8 +97,7 @@ private theorem coeff_mem_range_of_rescale_eq [IsLocalRing O] {π : O} (hπ : π
     rw [hH, add_comm]
     exact (eq_X_pow_mul_shift_add_trunc n Y).symm
   obtain ⟨s, hs, hs₀⟩ := exists_subst_add_X_pow_mul G (a := map c H)
-    (by rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply,
-      hH₀, map_zero]) (mk fun i ↦ coeff (i + n) Y) (by omega : n ≠ 0)
+    (by rw [constantCoeff_map, hH₀, map_zero]) (mk fun i ↦ coeff (i + n) Y) (by omega : n ≠ 0)
   rw [hY', subst_map_algebraMap (.of_constantCoeff_zero' hH₀)] at hs
   -- the coefficient of `Xⁿ` in the equation: `πⁿ yₙ = π (wₙ + g₁ yₙ)`
   have h := congrArg (coeff n) hY
@@ -190,9 +191,7 @@ theorem exists_map_eq_and_C_dvd_sub_pow_sub_X [IsLocalRing O] [FaithfulSMul O R]
     exact hinj (hπR h')
   obtain ⟨H, rfl⟩ := exists_map_eq_of_rescale_eq_smul_subst hπ hπR (hG₁ ▸ isUnit_one) hY₀
     ⟨1, by rw [hY₁, map_one]⟩ hY
-  have hH₀ : constantCoeff H = 0 := hinj <| by
-    rw [map_zero, ← hY₀, ← coeff_zero_eq_constantCoeff_apply,
-      ← coeff_zero_eq_constantCoeff_apply, coeff_map]
+  have hH₀ : constantCoeff H = 0 := hinj (by rw [← constantCoeff_map, hY₀, map_zero])
   have hH₁ : coeff 1 H = 1 := hinj (by rw [map_one, ← hY₁, coeff_map])
   have hπO : IsLeftRegular π := fun a b hab ↦ hinj (hπR (by simpa using congrArg c hab))
   refine ⟨H, rfl, C_dvd_sub_pow_sub_X_of_rescale_eq (E := E) hπO hH₀ hH₁ (map_injective _ hinj ?_)⟩
@@ -206,21 +205,6 @@ end Integrality
 section CharP
 
 variable {A : Type*} [CommRing A] {p : ℕ} [hp : Fact p.Prime] [CharP A p]
-
-/-- For `q ≥ 2`, a natural number is a power of `q` exactly when it is `1` or `q` times a power of
-`q`. -/
-private theorem mem_range_pow_iff {q : ℕ} (hq : 2 ≤ q) {n : ℕ} :
-    n ∈ Set.range (q ^ ·) ↔ n = 1 ∨ q ∣ n ∧ n / q ∈ Set.range (q ^ ·) := by
-  simp only [Set.mem_range]
-  refine ⟨?_, ?_⟩
-  · rintro ⟨_ | j, rfl⟩
-    · exact .inl (pow_zero q)
-    · refine .inr ⟨dvd_pow_self q j.succ_ne_zero, j, ?_⟩
-      rw [pow_succ, Nat.mul_div_cancel _ (by omega)]
-  · rintro (rfl | ⟨⟨m, rfl⟩, j, hj⟩)
-    · exact ⟨0, pow_zero q⟩
-    · rw [Nat.mul_div_cancel_left _ (by omega)] at hj
-      exact ⟨j + 1, by rw [pow_succ, hj, mul_comm]⟩
 
 /-- In characteristic `p` and for `q = p ^ k ≥ 2`, the series `S = ∑_{j ≥ 0} X ^ (q ^ j)` satisfies
 `S - S ^ q = X`: since its coefficients are `0` and `1`, `S ^ q = S(X ^ q) = S - X`. -/
@@ -242,22 +226,16 @@ private theorem mk_indicator_sub_pow_eq_X {k : ℕ} (hq : 2 ≤ p ^ k) :
     split_ifs
     · exact s.indicator_eq_zero_or_self 1 _
     · exact .inl rfl
+  -- the coefficient of `Xⁿ` in `S₀ - S₀(X ^ q)`: `n` is a power of `q` exactly when it is `1` or
+  -- `q` times a power of `q`
   ext n
-  rw [hpow, map_sub, coeff_expand, coeff_X, coeff_mk]
+  classical
+  rw [hpow, map_sub, coeff_expand, coeff_X]
   by_cases hn : n = 1
-  · subst hn
-    rw [Set.indicator_of_mem (Set.mem_range.mpr ⟨0, pow_zero _⟩), ite_eq_right fun h ↦ by
-      have := Nat.le_of_dvd one_pos h; omega, ite_eq_left rfl, sub_zero, Pi.one_apply]
-  rw [ite_eq_right hn, sub_eq_zero]
-  by_cases hmem : n ∈ s
-  · obtain ⟨hd, hdiv⟩ := ((mem_range_pow_iff hq).mp hmem).resolve_left hn
-    rw [Set.indicator_of_mem hmem, ite_eq_left hd, coeff_mk, Set.indicator_of_mem hdiv]
-    rfl
-  · rw [Set.indicator_of_notMem hmem]
-    split_ifs with hd
-    · rw [coeff_mk, Set.indicator_of_notMem fun h ↦ hmem ((mem_range_pow_iff hq).mpr
-        (.inr ⟨hd, h⟩))]
-    · rfl
+  · have h1 : ¬p ^ k ∣ 1 := fun h ↦ by have := Nat.le_of_dvd one_pos h; omega
+    simp [S₀, hn, h1, s]
+  · have hmem : n ∈ s ↔ p ^ k ∣ n ∧ n / p ^ k ∈ s := Nat.mem_range_pow_iff.trans (or_iff_right hn)
+    by_cases hd : p ^ k ∣ n <;> simp [S₀, hn, hd, hmem, Set.indicator_apply]
 
 /-- **The series `∑ X ^ (q ^ j)` in characteristic `p`.** Over a ring of prime characteristic `p`,
 for `q = p ^ k` with `k ≥ 1`, the series `S = ∑_{j ≥ 0} X ^ (q ^ j)` is the only series without
@@ -305,14 +283,12 @@ theorem C_dvd_sub_mk_of_C_dvd_sub_pow_sub_X {O : Type*} [CommRing O] {π : O} (h
   rw [C_dvd_iff_map_mk_eq_zero] at hS ⊢
   rw [map_sub, map_sub, map_pow, map_X, sub_eq_zero] at hS
   have hS₀' : constantCoeff (map (Ideal.Quotient.mk I) S) = 0 := by
-    rw [← coeff_zero_eq_constantCoeff_apply, coeff_map, coeff_zero_eq_constantCoeff_apply, hS₀,
-      map_zero]
+    rw [constantCoeff_map, hS₀, map_zero]
   rw [map_sub, (sub_pow_eq_X_iff hk hS₀').mp hS, sub_eq_zero]
   ext n
-  rw [coeff_map, coeff_mk, coeff_mk]
-  by_cases hn : n ∈ Set.range ((p ^ k) ^ ·)
-  · rw [Set.indicator_of_mem hn, Set.indicator_of_mem hn, Pi.one_apply, Pi.one_apply, map_one]
-  · rw [Set.indicator_of_notMem hn, Set.indicator_of_notMem hn, map_zero]
+  classical
+  simp only [coeff_map, coeff_mk, Set.indicator_apply, Pi.one_apply]
+  split_ifs <;> simp
 
 end CharP
 

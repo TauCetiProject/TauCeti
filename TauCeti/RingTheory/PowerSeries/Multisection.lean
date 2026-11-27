@@ -215,9 +215,10 @@ theorem natCast_smul_multisection {K : Type*} [Field K] {m : ℕ} {ζ : K}
   simp only [coeff_smul, coeff_rescale, smul_eq_mul, ← mul_assoc]
   -- the coefficient of `Xⁿ` is `fₙ` times the sum of the powers of `ζ ^ (n - r)`
   have hterm (a : ℕ) : (ζ ^ a)⁻¹ ^ r * (ζ ^ a) ^ n = (ζ ^ ((n : ℤ) - r)) ^ a := by
-    rw [zpow_sub₀ (hζ.ne_zero hm.ne'), zpow_natCast, zpow_natCast, div_eq_mul_inv, mul_pow,
-      inv_pow, inv_pow, ← pow_mul, ← pow_mul, ← pow_mul, ← pow_mul, mul_comm a r, mul_comm a n,
-      mul_comm]
+    have hζ₀ : ζ ≠ 0 := hζ.ne_zero hm.ne'
+    rw [zpow_sub₀ hζ₀, zpow_natCast, zpow_natCast]
+    field_simp
+    ring
   simp_rw [hterm]
   have hc : (m : ℤ) ∣ (n : ℤ) - r ↔ (n : ZMod m) = r := by
     rw [← ZMod.intCast_eq_intCast_iff_dvd_sub, Int.cast_natCast, Int.cast_natCast, eq_comm]
