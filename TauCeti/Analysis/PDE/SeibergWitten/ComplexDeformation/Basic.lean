@@ -53,6 +53,9 @@ elliptic principal symbol as `δ₀`
   `TauCeti.SeibergWitten.coe_deformationTargetComplexStructure_apply_snd`, and
   `TauCeti.SeibergWitten.deformationTargetComplexStructure_apply_eq`: global component formulas and
   fibrewise identification of `J′` with `deformationComplexStructure`.
+* `TauCeti.SeibergWitten.inner_deformationTargetComplexStructure` and
+  `TauCeti.SeibergWitten.inner_deformationTargetComplexStructure_left`: `J′` is pointwise
+  orthogonal and skew-adjoint.
 * `TauCeti.SeibergWitten.isComplexLinearMap_complexDeformationOperator`: `δ_ω` is `(J₁, J′)`-complex
   linear.
 * `TauCeti.SeibergWitten.complexDeformationOperator_sub_asdDeformationOperator_wedge`: `δ_ω - δ₀` is
@@ -372,6 +375,26 @@ theorem inner_deformationTargetComplexStructure (J : SmoothAlmostComplexStructur
     (Prod.mk.inj hfp).1, (Prod.mk.inj hfp).2, (Prod.mk.inj hfq).1, (Prod.mk.inj hfq).2]
   exact inner_deformationComplexStructure (o.fact_finrank_tangentSpace x).out.symm he h₀ h₂
     (SmoothForm.hodgeStar_alternatingFormEquiv_symm_of_mem_selfDualForms o p.2.property x)
+
+/-- **The pointwise skew-adjointness of `J′`:** at every point `x : M`,
+`⟨J′ p, q⟩_x = -⟨p, J′ q⟩_x` for the pointwise inner product
+`(p, q) ↦ p.1(x) q.1(x) + ⟨p.2(x), q.2(x)⟩` on `Ω⁰(M) × Ω⁺(M)`. -/
+theorem inner_deformationTargetComplexStructure_left (J : SmoothAlmostComplexStructure I M)
+    (hJo : J.IsCompatibleOrientation o)
+    (p q : SmoothForm I M ℝ 0 × SmoothForm.selfDualForms (I := I) (M := M) o) (x : M) :
+    (deformationTargetComplexStructure o J hJo p).1.val x 0 * q.1.val x 0 +
+      alternatingFormInner (TangentSpace I x) 2
+        (((deformationTargetComplexStructure o J hJo p).2 : SmoothForm I M ℝ 2).val x)
+        ((q.2 : SmoothForm I M ℝ 2).val x) =
+      -(p.1.val x 0 * (deformationTargetComplexStructure o J hJo q).1.val x 0 +
+        alternatingFormInner (TangentSpace I x) 2 ((p.2 : SmoothForm I M ℝ 2).val x)
+          (((deformationTargetComplexStructure o J hJo q).2 : SmoothForm I M ℝ 2).val x)) := by
+  have h := inner_deformationTargetComplexStructure o J hJo p
+    (deformationTargetComplexStructure o J hJo q) x
+  rw [AlmostComplexStructure.apply_apply] at h
+  simp only [Prod.fst_neg, Prod.snd_neg, Submodule.coe_neg, Pi.neg_apply,
+    ContinuousAlternatingMap.neg_apply, LinearMap.map_neg, mul_neg] at h
+  linarith
 
 /-- `deformationTargetComplexStructure o J hJo` commutes with right multiplication by smooth
 functions (`C^∞(M)`-linearity). -/

@@ -22,6 +22,8 @@ identification with `TauCeti.alternatingFormEquiv` in degree `1`.
 
 * `TauCeti.SmoothForm.alternatingFormEquiv_rieszDual_degreeOneEquiv`: under
   `TauCeti.alternatingFormEquiv`, the `1`-vector `ιMulti ℝ 1 ![(a_x)♯]` maps to `a.1 x`.
+* `TauCeti.SmoothForm.alternatingFormInner_eq_inner_rieszDual`: the pointwise inner product of
+  two one-forms is the inner product of their Riesz-dual tangent vectors.
 
 ## References
 
@@ -34,7 +36,7 @@ public section
 noncomputable section
 
 open Bundle exteriorPower
-open scoped Manifold
+open scoped Manifold RealInnerProductSpace
 
 namespace TauCeti.SmoothForm
 
@@ -58,5 +60,20 @@ theorem alternatingFormEquiv_rieszDual_degreeOneEquiv (a : SmoothForm I M ℝ 1)
   rw [alternatingFormEquiv_ιMulti_apply, Matrix.det_fin_one]
   simp only [Matrix.of_apply, Matrix.cons_val_fin_one, Riemannian.Tensor.inner_rieszDual,
     degreeOneEquiv_apply_apply_vec, hw]
+
+/-- The pointwise inner product of two smooth one-forms is the inner product of their Riesz-dual
+tangent vectors: `⟨a_x, b_x⟩ = ⟪(a_x)♯, (b_x)♯⟫`. -/
+theorem alternatingFormInner_eq_inner_rieszDual (a b : SmoothForm I M ℝ 1) (x : M) :
+    (letI : FiniteDimensional ℝ (TangentSpace I x) :=
+      VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
+     alternatingFormInner (TangentSpace I x) 1 (a.val x) (b.val x)) =
+      ⟪Riemannian.Tensor.rieszDual (I := I) x (degreeOneEquiv a x),
+        Riemannian.Tensor.rieszDual (I := I) x (degreeOneEquiv b x)⟫ := by
+  let _ : FiniteDimensional ℝ (TangentSpace I x) :=
+    VectorBundle.finiteDimensional ℝ E (TangentSpace I) x
+  rw [← alternatingFormEquiv_rieszDual_degreeOneEquiv a x,
+    ← alternatingFormEquiv_rieszDual_degreeOneEquiv b x,
+    alternatingFormInner_alternatingFormEquiv, inner_ιMulti_ιMulti, Matrix.det_fin_one]
+  simp
 
 end TauCeti.SmoothForm

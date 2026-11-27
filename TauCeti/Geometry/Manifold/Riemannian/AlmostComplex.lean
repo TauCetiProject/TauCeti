@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.Riemannian.HodgeStar
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Riesz
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
+import TauCeti.Geometry.Manifold.Riemannian.DegreeOne
 
 /-!
 # Smooth forms on almost-Hermitian Riemannian manifolds
@@ -94,6 +95,30 @@ theorem rieszDual_covectorComplexStructure {J : SmoothAlmostComplexStructure I M
   simpa only [almostComplexStructureAt_apply] using
     AlmostComplexStructure.inner_apply_left hJ'
       (Riemannian.Tensor.rieszDual (I := I) x (SmoothForm.degreeOneEquiv a x)) w
+
+/-- When `J` is fibrewise orthogonal, `J.covectorComplexStructure` preserves the pointwise inner
+product of one-forms: `⟨(J₁ a)_x, (J₁ b)_x⟩ = ⟨a_x, b_x⟩`. -/
+theorem alternatingFormInner_covectorComplexStructure {J : SmoothAlmostComplexStructure I M}
+    (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫)
+    (a b : SmoothForm I M ℝ 1) (x : M) :
+    alternatingFormInner (TangentSpace I x) 1 ((J.covectorComplexStructure a).val x)
+        ((J.covectorComplexStructure b).val x) =
+      alternatingFormInner (TangentSpace I x) 1 (a.val x) (b.val x) := by
+  rw [SmoothForm.alternatingFormInner_eq_inner_rieszDual,
+    SmoothForm.alternatingFormInner_eq_inner_rieszDual, rieszDual_covectorComplexStructure hJ,
+    rieszDual_covectorComplexStructure hJ, hJ]
+
+/-- When `J` is fibrewise orthogonal, `J.covectorComplexStructure` is skew for the pointwise inner
+product of one-forms: `⟨(J₁ a)_x, b_x⟩ = -⟨a_x, (J₁ b)_x⟩`. -/
+theorem alternatingFormInner_covectorComplexStructure_left {J : SmoothAlmostComplexStructure I M}
+    (hJ : ∀ (x : M) (u w : TangentSpace I x), ⟪J x u, J x w⟫ = ⟪u, w⟫)
+    (a b : SmoothForm I M ℝ 1) (x : M) :
+    alternatingFormInner (TangentSpace I x) 1 ((J.covectorComplexStructure a).val x) (b.val x) =
+      -alternatingFormInner (TangentSpace I x) 1 (a.val x)
+        ((J.covectorComplexStructure b).val x) := by
+  rw [← alternatingFormInner_covectorComplexStructure hJ a (J.covectorComplexStructure b),
+    AlmostComplexStructure.apply_apply, Submodule.coe_neg, Pi.neg_apply, LinearMap.map_neg]
+  rw [_root_.neg_neg]
 
 /-- Under `(alternatingFormEquiv _ 2).symm`, `-J.toEndomorphism.realAlternatingDerivation` of an
 orthogonal `J` acts on smooth two-forms as `exteriorPower.lieMap 2 J_x`. -/
