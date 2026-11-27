@@ -40,7 +40,7 @@ theorem Prod.isStarProjection_iff {A B : Type*} [Mul A] [Star A] [Mul B] [Star B
 /-- The four-pair classification of star projections in a square holds exactly when the scalar
 star projections are zero and one. -/
 theorem TauCeti.forall_isStarProjection_prod_iff_eq_zero_or_one {R : Type*}
-    [MulZeroOneClass R] [Star R] :
+    [Mul R] [Zero R] [One R] [Star R] :
     (∀ x : R × R, IsStarProjection x ↔ x = 0 ∨ x = (1, 0) ∨ x = (0, 1) ∨ x = 1) ↔
       ∀ p : R, IsStarProjection p ↔ p = 0 ∨ p = 1 := by
   constructor
