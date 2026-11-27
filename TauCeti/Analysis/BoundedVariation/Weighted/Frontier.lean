@@ -34,10 +34,12 @@ Euclidean frontier bound `TauCeti.perimeter_le_euclideanHausdorffMeasure_frontie
 The perimeter measure `|D1_s|` lives on the frontier of `s`
 (`TauCeti.variationMeasure_indicator_compl_frontier_eq_zero`). So if `e^{−W}` takes a constant
 value `a` on the frontier of a null-measurable set `s` in `Ω`, then `P_μ(s; Ω) = a P(s; Ω)`
-(`TauCeti.weightedPerimeter_eq_ofReal_mul_perimeter`). The Gaussian density is constant on
-spheres about the origin, which gives the Gaussian perimeter of a ball in every dimension `n`:
-`P_γ(B(0, r)) = (2π)^{−n/2} e^{−r²/2} n ω_n r^{n−1}` with `ω_n` the volume of the unit ball
-(`TauCeti.gaussianPerimeter_ball`).
+(`TauCeti.weightedPerimeter_eq_ofReal_mul_perimeter`), and if `e^{−W} ≤ a` there, then
+`P_μ(s; Ω) ≤ a P(s; Ω)` (`TauCeti.weightedPerimeter_le_ofReal_mul_perimeter`), in every
+dimension; so a set of finite perimeter with bounded frontier has finite weighted perimeter. The
+Gaussian density is constant on spheres about the origin, which gives the Gaussian perimeter of a
+ball in every dimension `n`: `P_γ(B(0, r)) = (2π)^{−n/2} e^{−r²/2} n ω_n r^{n−1}` with `ω_n` the
+volume of the unit ball (`TauCeti.gaussianPerimeter_ball`).
 
 ## References
 
@@ -106,6 +108,41 @@ theorem weightedPerimeter_le_setLIntegral_frontier_inter (hW : ContDiff ℝ 1 W)
     (measure_mono fun x hx => ?_)
   exact ⟨hx.2.1, frontier_interior_subset hx.1, hx.2.2⟩
 
+/-- **The perimeter measure lives on the frontier.** For a `C¹` weight `W` and a set `s`
+null-measurable in `Ω`, either `s` has infinite perimeter in `Ω`, infinite weighted perimeter and
+frontier meeting `Ω`, or `P_μ(s; Ω) = ∫ e^{−W} dν` for a measure `ν` on `Ω` of total mass
+`P(s; Ω)` carried by `∂s`. -/
+private theorem weightedPerimeter_eq_top_or_eq_lintegral (hW : ContDiff ℝ 1 W)
+    (hs : NullMeasurableSet s (volume.restrict Ω)) :
+    (perimeter volume Ω s = ∞ ∧ weightedPerimeter W Ω s = ∞ ∧ (frontier s ∩ Ω).Nonempty) ∨
+      ∃ ν : Measure Ω, ν univ = perimeter volume Ω s ∧ (∀ᵐ x : Ω ∂ν, ↑x ∈ frontier s) ∧
+        weightedPerimeter W Ω s = ∫⁻ x, ENNReal.ofReal (Real.exp (-W x)) ∂ν := by
+  have hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω :=
+    locallyIntegrableOn_indicator_const hs 1
+  by_cases hfin : ∀ K, IsCompact K → K ⊆ Ω →
+      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞
+  · refine .inr ⟨variationMeasure volume Ω (s.indicator 1), by
+      rw [variationMeasure_univ hu hfin, perimeter_def], ?_, by
+      rw [weightedPerimeter_def, weightedVariation_eq_lintegral_variationMeasure hW hu hfin]⟩
+    filter_upwards [measure_eq_zero_iff_ae_notMem.1
+      (variationMeasure_indicator_compl_frontier_eq_zero (μ := volume) (Ω := Ω) (s := s))]
+      with x hx
+    exact not_not.1 hx
+  -- Without locally finite perimeter both perimeters are infinite.
+  have hW' : weightedPerimeter W Ω s = ∞ := by
+    by_contra h
+    rw [weightedPerimeter_def] at h
+    exact hfin (exists_totalVariationOn_ne_top_of_weightedVariation_ne_top hW hu h)
+  have hP : perimeter volume Ω s = ∞ := by
+    by_contra h
+    rw [perimeter_def] at h
+    exact hfin fun K _ hKΩ => ⟨Ω, hKΩ, h⟩
+  refine .inl ⟨hP, hW', ?_⟩
+  by_contra h
+  rw [not_nonempty_iff_eq_empty, ← disjoint_iff_inter_eq_empty] at h
+  rw [perimeter_eq_zero_of_disjoint_frontier h] at hP
+  exact ENNReal.zero_ne_top hP
+
 /-- **A density constant on the frontier.** For a `C¹` weight `W` and a set `s` null-measurable
 in `Ω`, if `e^{−W}` takes the constant value `a` on `∂s ∩ Ω`, then `P_μ(s; Ω) = a P(s; Ω)`: the
 perimeter measure of `s` lives on its frontier. -/
@@ -113,34 +150,28 @@ theorem weightedPerimeter_eq_ofReal_mul_perimeter (hW : ContDiff ℝ 1 W)
     (hs : NullMeasurableSet s (volume.restrict Ω)) {a : ℝ}
     (ha : ∀ x ∈ frontier s ∩ Ω, Real.exp (-W x) = a) :
     weightedPerimeter W Ω s = ENNReal.ofReal a * perimeter volume Ω s := by
-  have hu : LocallyIntegrableOn (s.indicator (1 : E → ℝ)) Ω :=
-    locallyIntegrableOn_indicator_const hs 1
-  by_cases hfin : ∀ K, IsCompact K → K ⊆ Ω →
-      ∃ U : Opens E, K ⊆ (U : Set E) ∧ totalVariationOn volume U (s.indicator 1) ≠ ∞
-  swap
-  · -- Without locally finite perimeter both sides are infinite.
-    have hW' : weightedPerimeter W Ω s = ∞ := by
-      by_contra h
-      rw [weightedPerimeter_def] at h
-      exact hfin (exists_totalVariationOn_ne_top_of_weightedVariation_ne_top hW hu h)
-    have hP : perimeter volume Ω s = ∞ := by
-      by_contra h
-      rw [perimeter_def] at h
-      exact hfin fun K _ hKΩ => ⟨Ω, hKΩ, h⟩
-    obtain ⟨x, hx⟩ : (frontier s ∩ Ω).Nonempty := by
-      by_contra h
-      rw [not_nonempty_iff_eq_empty, ← disjoint_iff_inter_eq_empty] at h
-      rw [perimeter_eq_zero_of_disjoint_frontier h] at hP
-      exact ENNReal.zero_ne_top hP
-    rw [hW', hP, ENNReal.mul_top (by simpa [← ha x hx] using Real.exp_pos (-W x))]
-  rw [weightedPerimeter_def, weightedVariation_eq_lintegral_variationMeasure hW hu hfin]
-  have hae : ∀ᵐ x : Ω ∂variationMeasure volume Ω (s.indicator 1),
-      ENNReal.ofReal (Real.exp (-W x)) = ENNReal.ofReal a := by
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1
-      (variationMeasure_indicator_compl_frontier_eq_zero (μ := volume) (Ω := Ω) (s := s))]
-      with x hx
-    rw [ha x ⟨not_not.1 hx, x.property⟩]
-  rw [lintegral_congr_ae hae, lintegral_const, variationMeasure_univ hu hfin, perimeter_def]
+  rcases weightedPerimeter_eq_top_or_eq_lintegral hW hs with ⟨hP, hW', x, hx⟩ | ⟨ν, hν, hfr, hW'⟩
+  · rw [hW', hP, ENNReal.mul_top (by simpa [← ha x hx] using Real.exp_pos (-W x))]
+  rw [hW', ← hν, ← lintegral_const]
+  refine lintegral_congr_ae ?_
+  filter_upwards [hfr] with x hx
+  rw [ha x ⟨hx, x.property⟩]
+
+/-- **A density bounded on the frontier.** For a `C¹` weight `W` and a set `s` null-measurable in
+`Ω`, if `e^{−W} ≤ a` on `∂s ∩ Ω`, then `P_μ(s; Ω) ≤ a P(s; Ω)`: the perimeter measure of `s` lives
+on its frontier. In particular a set of finite perimeter with bounded frontier has finite weighted
+perimeter, in every dimension. -/
+theorem weightedPerimeter_le_ofReal_mul_perimeter (hW : ContDiff ℝ 1 W)
+    (hs : NullMeasurableSet s (volume.restrict Ω)) {a : ℝ}
+    (ha : ∀ x ∈ frontier s ∩ Ω, Real.exp (-W x) ≤ a) :
+    weightedPerimeter W Ω s ≤ ENNReal.ofReal a * perimeter volume Ω s := by
+  rcases weightedPerimeter_eq_top_or_eq_lintegral hW hs with ⟨hP, -, x, hx⟩ | ⟨ν, hν, hfr, hW'⟩
+  · rw [hP, ENNReal.mul_top (ENNReal.ofReal_pos.2 ((Real.exp_pos _).trans_le (ha x hx))).ne']
+    exact le_top
+  rw [hW', ← hν, ← lintegral_const]
+  refine lintegral_mono_ae ?_
+  filter_upwards [hfr] with x hx
+  exact ENNReal.ofReal_le_ofReal (ha x ⟨hx, x.property⟩)
 
 /-- **The Gaussian perimeter of a ball.** For `r > 0`, the ball of radius `r` about the origin has
 Gaussian perimeter `(2π)^{−n/2} e^{−r²/2} n ω_n r^{n−1}`, where `ω_n` is the volume of the unit
