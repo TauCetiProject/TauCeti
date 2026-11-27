@@ -24,7 +24,9 @@ along `f` is its ordinary derivative
 (`TauCeti.Manifold.alongMap_leviCivitaConnection_model_space`), since the Christoffel map of the
 flat metric vanishes. So the second fundamental form of `f` is the
 normal part of the derivative of `y ↦ df_y (Y y)`
-(`TauCeti.immersionSecondFundamentalForm_model_space`).
+(`TauCeti.immersionSecondFundamentalForm_model_space`), and the normal connection of a field `ν`
+along `f` is the normal part of the derivative of `ν`
+(`TauCeti.immersionNormalConnection_model_space`).
 
 This computes the second fundamental form, shape operator, principal curvatures and mean curvature
 vector of two basic examples:
@@ -44,6 +46,7 @@ vector of two basic examples:
 * `TauCeti.immersionSecondFundamentalForm_model_space`: `B(X, Y) = (D_X (df Y))^⊥`.
 * `TauCeti.immersionSecondFundamentalFormAt_model_space_eq_sub`: for an isometric immersion,
   `B(v, w) = D_v (df W) - df (∇_v W)`.
+* `TauCeti.immersionNormalConnection_model_space`: `∇^⊥_X ν = (D_X ν)^⊥`.
 * `TauCeti.immersionSecondFundamentalFormAt_affine`, `TauCeti.immersionShapeOperatorAt_affine`,
   `TauCeti.immersionPrincipalCurvatures_affine`, `TauCeti.immersionMeanCurvatureVector_affine`:
   affine maps have `B = 0`, `S_ν = 0`, principal curvatures `0` and `H = 0`.
@@ -89,6 +92,17 @@ theorem immersionSecondFundamentalForm_model_space {f : M → F} {X Y : Π y : M
       (orthogonalNormalSpace I 𝓘(ℝ, F) f x).starProjection
         (mfderiv I 𝓘(ℝ, F) (fun y ↦ (mfderiv I 𝓘(ℝ, F) f y (Y y) : F)) x (X x)) := by
   rw [immersionSecondFundamentalForm_def, alongMap_leviCivitaConnection_model_space hf hY]
+
+/-- **The normal connection of a map into a Euclidean space**: `∇^⊥_X ν` is the normal part of the
+derivative, in the direction `X`, of the `F`-valued map `ν`. -/
+theorem immersionNormalConnection_model_space {f : M → F}
+    {ν : Π y : M, TangentSpace 𝓘(ℝ, F) (f y)} {X : Π y : M, TangentSpace I y} {x : M}
+    (hf : MDifferentiableAt I 𝓘(ℝ, F) f x)
+    (hν : MDifferentiableAt I 𝓘(ℝ, F) (fun y ↦ (ν y : F)) x) :
+    immersionNormalConnection (leviCivitaConnection 𝓘(ℝ, F) F) f ν X x =
+      (orthogonalNormalSpace I 𝓘(ℝ, F) f x).starProjection
+        (mfderiv I 𝓘(ℝ, F) (fun y ↦ (ν y : F)) x (X x)) := by
+  rw [immersionNormalConnection_def, alongMap_leviCivitaConnection_model_space hf hν]
 
 variable [FiniteDimensional ℝ E] [IsManifold I 2 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
