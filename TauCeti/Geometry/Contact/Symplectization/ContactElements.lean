@@ -411,6 +411,13 @@ private def toAnnihilatorPunctured :
     rw [← SetLike.mem_coe, ← range_cotangentToContactElementAnnihilator]
     exact mem_range_self z⟩
 
+/-- The map into `ξ⁰ ∖ 0` is the map into `ξ⁰`, with its codomain restricted. -/
+private theorem coe_toAnnihilatorPunctured :
+    (toAnnihilatorPunctured z : TotalSpace (Fin 1 → ℝ) fun x : (ℝ × ℝ) × AddCircle π ↦
+        annihilatorSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) contactElementDistribution x) =
+      cotangentToContactElementAnnihilator z :=
+  rfl
+
 /-- The map into `ξ⁰ ∖ 0` is a local diffeomorphism, by the inverse function theorem. -/
 private theorem isLocalDiffeomorph_toAnnihilatorPunctured :
     IsLocalDiffeomorph (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, (ℝ × ℝ) →L[ℝ] ℝ))
@@ -420,8 +427,9 @@ private theorem isLocalDiffeomorph_toAnnihilatorPunctured :
     (ContMDiff.subtypeVal_comp_iff _ _).1 contMDiff_cotangentToContactElementAnnihilator
   -- The differential of the map into `ξ⁰` factors through that of the map into `ξ⁰ ∖ 0`.
   have hinj := injective_mfderiv_cotangentToContactElementAnnihilator z
-  rw [show cotangentToContactElementAnnihilator = Subtype.val ∘ toAnnihilatorPunctured from rfl,
-    mfderiv_comp z ((contMDiff_subtypeVal (n := 1)).mdifferentiableAt one_ne_zero)
+  have hcomp : cotangentToContactElementAnnihilator = Subtype.val ∘ toAnnihilatorPunctured :=
+    funext fun y ↦ (coe_toAnnihilatorPunctured y).symm
+  rw [hcomp, mfderiv_comp z ((contMDiff_subtypeVal (n := 1)).mdifferentiableAt one_ne_zero)
       ((hcont z).mdifferentiableAt (by simp)), ContinuousLinearMap.coe_comp] at hinj
   refine isLocalDiffeomorphAt_of_injective_mfderiv hcont.contMDiffOn isOpen_univ (mem_univ z)
     BoundarylessManifold.isInteriorPoint (by simp) hinj.of_comp ?_
@@ -459,8 +467,8 @@ theorem coe_contactElementSymplectizationDiffeomorph_apply :
         TotalSpace (Fin 1 → ℝ) fun x : (ℝ × ℝ) × AddCircle π ↦
           annihilatorSpace (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ)) contactElementDistribution x) =
       cotangentToContactElementAnnihilator z := by
-  rw [contactElementSymplectizationDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective]
-  rfl
+  rw [contactElementSymplectizationDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective,
+    coe_toAnnihilatorPunctured]
 
 /-- The inverse of the diffeomorphism sends a nonzero covector `w` of `ξ⁰` over `(q, θ)` to the
 covector `u ↦ w(u, 0)` at `q`. -/
