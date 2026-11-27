@@ -33,7 +33,8 @@ hypothesis is placed on `X`.
   `0 ≤ H(P | m)`, and for a probability measure
   `H(P | m) ≤ H(P) = ∑ i, negMulLog (μ.real (a ⁻¹' {i}))`.
 * `TauCeti.condExpPartitionEntropy_anti`: enlarging the σ-algebra decreases the conditional
-  entropy, by the conditional Jensen inequality.
+  entropy, by the conditional Jensen inequality; `TauCeti.integral_negMulLog_condAtomProb_anti`
+  and `TauCeti.integral_negMulLog_condAtomProb_le` are the bounds for one atom.
 * `TauCeti.condExpPartitionEntropy_bot`: conditioning on the trivial σ-algebra gives `H(P)`.
 * `TauCeti.condExpPartitionEntropy_eq_zero_of_measurableSet`: conditioning on a σ-algebra for
   which the atoms are measurable, in particular on the ambient σ-algebra, gives zero.
@@ -201,12 +202,11 @@ theorem condExpPartitionEntropy_eq_sum (m : MeasurableSpace X) (a : X → ι) :
     condExpPartitionEntropy μ m a = ∑ i, ∫ x, negMulLog (condAtomProb μ m a i x) ∂μ :=
   integral_finsetSum _ fun i _ ↦ integrable_negMulLog_condAtomProb a i
 
-/-- **Monotonicity.** Enlarging the σ-algebra decreases the conditional entropy:
-`H(P | m₂) ≤ H(P | m₁)` for `m₁ ≤ m₂`. -/
-theorem condExpPartitionEntropy_anti (h₁₂ : m₁ ≤ m₂) (a : X → ι) :
-    condExpPartitionEntropy μ m₂ a ≤ condExpPartitionEntropy μ m₁ a := by
-  rw [condExpPartitionEntropy_eq_sum, condExpPartitionEntropy_eq_sum]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
+omit [Fintype ι] in
+/-- **Monotonicity, one atom.** Enlarging the σ-algebra decreases the integral of `negMulLog` of
+the conditional probability of an atom, by the conditional Jensen inequality. -/
+theorem integral_negMulLog_condAtomProb_anti (h₁₂ : m₁ ≤ m₂) (a : X → ι) (i : ι) :
+    ∫ x, negMulLog (condAtomProb μ m₂ a i x) ∂μ ≤ ∫ x, negMulLog (condAtomProb μ m₁ a i x) ∂μ := by
   rcases condAtomProb_eq_zero_or (μ := μ) (m := m₂) a i with h | ⟨hm₂, -, -⟩
   · simpa [h] using integral_negMulLog_condAtomProb_nonneg m₁ a i
   -- Tower property and conditional Jensen for the concave `negMulLog` on `[0, 1]`.
@@ -226,6 +226,13 @@ theorem condExpPartitionEntropy_anti (h₁₂ : m₁ ≤ m₂) (a : X → ι) :
         filter_upwards [hJ, htower] with x hx hx'
         simpa [Function.comp_def, hx'] using hx
 
+/-- **Monotonicity.** Enlarging the σ-algebra decreases the conditional entropy:
+`H(P | m₂) ≤ H(P | m₁)` for `m₁ ≤ m₂`. -/
+theorem condExpPartitionEntropy_anti (h₁₂ : m₁ ≤ m₂) (a : X → ι) :
+    condExpPartitionEntropy μ m₂ a ≤ condExpPartitionEntropy μ m₁ a := by
+  rw [condExpPartitionEntropy_eq_sum, condExpPartitionEntropy_eq_sum]
+  exact Finset.sum_le_sum fun i _ ↦ integral_negMulLog_condAtomProb_anti h₁₂ a i
+
 /-- The conditional probabilities of null-measurable atoms sum to `1` almost everywhere. -/
 theorem sum_condAtomProb_ae_eq_one (hm : m ≤ mX) {a : X → ι}
     (ha : ∀ i, NullMeasurableSet (a ⁻¹' {i}) μ) :
@@ -242,12 +249,11 @@ theorem sum_condAtomProb_ae_eq_one (hm : m ≤ mX) {a : X → ι}
 
 end Finite
 
-/-- **Upper bound.** For a probability measure the conditional entropy is at most the entropy
-`∑ i, negMulLog (μ.real (a ⁻¹' {i}))` of the partition, by Jensen's inequality. -/
-theorem condExpPartitionEntropy_le [IsProbabilityMeasure μ] (a : X → ι) :
-    condExpPartitionEntropy μ m a ≤ ∑ i, negMulLog (μ.real (a ⁻¹' {i})) := by
-  rw [condExpPartitionEntropy_eq_sum]
-  refine Finset.sum_le_sum fun i _ ↦ ?_
+omit [Fintype ι] in
+/-- **Upper bound, one atom.** For a probability measure, the integral of `negMulLog` of the
+conditional probability of an atom is at most `negMulLog` of its mass, by Jensen's inequality. -/
+theorem integral_negMulLog_condAtomProb_le [IsProbabilityMeasure μ] (a : X → ι) (i : ι) :
+    ∫ x, negMulLog (condAtomProb μ m a i x) ∂μ ≤ negMulLog (μ.real (a ⁻¹' {i})) := by
   have hR : 0 ≤ negMulLog (μ.real (a ⁻¹' {i})) :=
     negMulLog_nonneg measureReal_nonneg measureReal_le_one
   -- In the degenerate cases the conditional probability vanishes.
@@ -258,6 +264,13 @@ theorem condExpPartitionEntropy_le [IsProbabilityMeasure μ] (a : X → ι) :
   exact concaveOn_negMulLog.le_map_integral continuous_negMulLog.continuousOn isClosed_Ici
     ((condAtomProb_mem_Icc a i).mono fun x hx ↦ hx.1) integrable_condExp
     (integrable_negMulLog_condAtomProb a i)
+
+/-- **Upper bound.** For a probability measure the conditional entropy is at most the entropy
+`∑ i, negMulLog (μ.real (a ⁻¹' {i}))` of the partition, by Jensen's inequality. -/
+theorem condExpPartitionEntropy_le [IsProbabilityMeasure μ] (a : X → ι) :
+    condExpPartitionEntropy μ m a ≤ ∑ i, negMulLog (μ.real (a ⁻¹' {i})) := by
+  rw [condExpPartitionEntropy_eq_sum]
+  exact Finset.sum_le_sum fun i _ ↦ integral_negMulLog_condAtomProb_le a i
 
 /-- **Trivial σ-algebra.** For a probability measure and null-measurable atoms, conditioning on
 `⊥` gives the entropy `∑ i, negMulLog (μ.real (a ⁻¹' {i}))` of the partition. -/
