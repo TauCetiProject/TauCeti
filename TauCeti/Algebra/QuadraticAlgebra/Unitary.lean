@@ -47,9 +47,9 @@ def unitaryMap (ha : f a = a') (hb : f b = b') :
     unitary (QuadraticAlgebra R a b) →* unitary (QuadraticAlgebra S a' b') :=
   (Unitary.map
     { toFun z := ⟨f z.re, f z.im⟩
-      map_one' := by subst ha hb; exact map_one (mapRingHom f a b)
-      map_mul' z w := by subst ha hb; exact map_mul (mapRingHom f a b) z w
-      map_star' z := by subst ha hb; exact mapRingHom_star f a b z }).toMonoidHom
+      map_one' := by ext <;> simp
+      map_mul' z w := by ext <;> simp [ha, hb]
+      map_star' z := by ext <;> simp [hb] }).toMonoidHom
 
 variable {f}
 
@@ -70,8 +70,10 @@ theorem im_unitaryMap (ha : f a = a') (hb : f b = b') (z : unitary (QuadraticAlg
 /-- For injective `f`, distinct norm-one elements have distinct images. -/
 theorem unitaryMap_injective (hf : Function.Injective f) (ha : f a = a') (hb : f b = b') :
     Function.Injective (unitaryMap f ha hb) := by
-  subst ha hb
-  exact Unitary.map_injective (mapRingHom_injective f a b hf)
+  intro z w h
+  ext
+  · exact hf (by rw [← re_unitaryMap ha hb, ← re_unitaryMap ha hb, h])
+  · exact hf (by rw [← im_unitaryMap ha hb, ← im_unitaryMap ha hb, h])
 
 /-- **Norm-one elements with coefficients in a subring.** For injective `f`, a norm-one element of
 `QuadraticAlgebra S a' b'` is the image of a norm-one element of `QuadraticAlgebra R a b` exactly
