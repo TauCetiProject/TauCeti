@@ -113,6 +113,30 @@ theorem latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup :
     P.latticeFundamentalAlcoveStabilizer b Y hQ hP ≤ P.latticeAffineWeylGroup Y hQ hP :=
   inf_le_right
 
+variable [P.IsCrystallographic] in
+omit [CharZero R] [Preorder R] [Finite ι] [Nonempty ι] in
+/-- Inclusion through an intermediate lattice agrees with direct inclusion of an affine element. -/
+@[simp]
+theorem inclusion_inclusion_affineWeylGroup (w : P.affineWeylGroup) :
+    Subgroup.inclusion (P.latticeAffineWeylGroup_le_extendedAffineWeylGroup hQ hP)
+        (Subgroup.inclusion (P.affineWeylGroup_le_latticeAffineWeylGroup hQ hP) w) =
+      Subgroup.inclusion P.affineWeylGroup_le_extendedAffineWeylGroup w := by
+  apply Subtype.ext
+  simp
+
+/-- The inclusions of lattice alcove stabilizers commute with the ambient group inclusions. -/
+@[simp]
+theorem inclusion_inclusion_latticeFundamentalAlcoveStabilizer
+    (ω : P.latticeFundamentalAlcoveStabilizer b Y hQ hP) :
+    Subgroup.inclusion (P.latticeAffineWeylGroup_le_extendedAffineWeylGroup hQ hP)
+        (Subgroup.inclusion
+          (latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup b hQ hP) ω) =
+      Subgroup.inclusion (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b)
+        (Subgroup.inclusion
+          (latticeFundamentalAlcoveStabilizer_le_fundamentalAlcoveStabilizer b hQ hP) ω) := by
+  apply Subtype.ext
+  simp
+
 /-- `Ω_Y` normalizes the affine Weyl group, since `W_aff` is normal in `W_Y`. -/
 theorem latticeFundamentalAlcoveStabilizer_le_normalizer_affineWeylGroup :
     P.latticeFundamentalAlcoveStabilizer b Y hQ hP ≤
@@ -232,6 +256,20 @@ theorem coe_extendedAffineWeylGroupMulEquiv_apply
       P.fundamentalAlcoveStabilizer b) :
     (P.extendedAffineWeylGroupMulEquiv b x : N ≃ᵃ[R] N) = x.left * x.right :=
   SemidirectProduct.coe_mulEquivSup_apply _ _ x
+
+/-- The affine subgroup inclusion is the first-factor inclusion in the semidirect decomposition. -/
+theorem inclusion_affineWeylGroup_eq_mulEquiv (w : P.affineWeylGroup) :
+    Subgroup.inclusion P.affineWeylGroup_le_extendedAffineWeylGroup w =
+      P.extendedAffineWeylGroupMulEquiv b (.inl w) := by
+  apply Subtype.ext
+  simp
+
+/-- The alcove stabilizer inclusion is the second-factor inclusion in the decomposition. -/
+theorem inclusion_stabilizer_eq_mulEquiv_inr (ω : P.fundamentalAlcoveStabilizer b) :
+    Subgroup.inclusion (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b) ω =
+      P.extendedAffineWeylGroupMulEquiv b (.inr ω) := by
+  apply Subtype.ext
+  simp
 
 /-- **The inverse of `W_aff ⋊ Ω ≃* W_ext`**: its `Ω`-component is the element of `Ω` whose
 translation part is congruent to that of `f` modulo `Q∨`, and the `W_aff`-component is then

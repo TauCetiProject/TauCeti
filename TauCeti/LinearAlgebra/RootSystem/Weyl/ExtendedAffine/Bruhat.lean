@@ -64,6 +64,16 @@ theorem extendedAffineBruhatLE_mulEquiv_iff
       x.right = y.right ∧ b.affineWeylCoxeterSystem.BruhatLE x.left y.left := by
   simp [ExtendedAffineBruhatLE]
 
+/-- Extended affine Bruhat order restricts to Coxeter Bruhat order on the affine subgroup. -/
+@[simp]
+theorem extendedAffineBruhatLE_inclusion_affineWeylGroup_iff (u w : P.affineWeylGroup) :
+    b.ExtendedAffineBruhatLE
+      (Subgroup.inclusion P.affineWeylGroup_le_extendedAffineWeylGroup u)
+      (Subgroup.inclusion P.affineWeylGroup_le_extendedAffineWeylGroup w) ↔
+      b.affineWeylCoxeterSystem.BruhatLE u w := by
+  simp only [inclusion_affineWeylGroup_eq_mulEquiv b, extendedAffineBruhatLE_mulEquiv_iff,
+    SemidirectProduct.right_inl, SemidirectProduct.left_inl, true_and]
+
 /-- The extended affine Bruhat relation is a partial order. -/
 @[instance_reducible]
 def extendedAffineBruhatPartialOrder : PartialOrder P.extendedAffineWeylGroup where
@@ -78,6 +88,13 @@ def extendedAffineBruhatPartialOrder : PartialOrder P.extendedAffineWeylGroup wh
 theorem extendedAffineBruhatPartialOrder_le_iff (f g : P.extendedAffineWeylGroup) :
     @LE.le _ b.extendedAffineBruhatPartialOrder.toLE f g ↔ b.ExtendedAffineBruhatLE f g :=
   Iff.rfl
+
+/-- Strict extended affine Bruhat order is Bruhat comparison between distinct elements. -/
+@[simp]
+theorem extendedAffineBruhatPartialOrder_lt_iff (f g : P.extendedAffineWeylGroup) :
+    @LT.lt _ b.extendedAffineBruhatPartialOrder.toLT f g ↔
+      b.ExtendedAffineBruhatLE f g ∧ f ≠ g :=
+  @lt_iff_le_and_ne _ b.extendedAffineBruhatPartialOrder f g
 
 /-- Extended affine length is monotone in Bruhat order. -/
 theorem ExtendedAffineBruhatLE.length_le {f g : P.extendedAffineWeylGroup}
@@ -127,6 +144,16 @@ theorem latticeAffineBruhatLE_iff_extendedAffineBruhatLE
       (Subgroup.inclusion (P.latticeAffineWeylGroup_le_extendedAffineWeylGroup hQ hP) g) :=
   Iff.rfl
 
+/-- Lattice affine Bruhat order restricts to Coxeter Bruhat order on the affine subgroup. -/
+@[simp]
+theorem latticeAffineBruhatLE_inclusion_affineWeylGroup_iff (u w : P.affineWeylGroup) :
+    b.LatticeAffineBruhatLE Y hQ hP
+      (Subgroup.inclusion (P.affineWeylGroup_le_latticeAffineWeylGroup hQ hP) u)
+      (Subgroup.inclusion (P.affineWeylGroup_le_latticeAffineWeylGroup hQ hP) w) ↔
+      b.affineWeylCoxeterSystem.BruhatLE u w := by
+  rw [latticeAffineBruhatLE_iff_extendedAffineBruhatLE, inclusion_inclusion_affineWeylGroup,
+    inclusion_inclusion_affineWeylGroup, extendedAffineBruhatLE_inclusion_affineWeylGroup_iff]
+
 /-- For every intermediate lattice, `wω ≤ vτ` exactly when `ω = τ` and `w ≤ v`. -/
 @[simp]
 theorem latticeAffineBruhatLE_mulEquiv_iff
@@ -157,6 +184,13 @@ theorem latticeAffineBruhatPartialOrder_le_iff (f g : P.latticeAffineWeylGroup Y
       b.LatticeAffineBruhatLE Y hQ hP f g :=
   Iff.rfl
 
+/-- Strict lattice affine Bruhat order is Bruhat comparison between distinct elements. -/
+@[simp]
+theorem latticeAffineBruhatPartialOrder_lt_iff (f g : P.latticeAffineWeylGroup Y hQ hP) :
+    @LT.lt _ (b.latticeAffineBruhatPartialOrder Y hQ hP).toLT f g ↔
+      b.LatticeAffineBruhatLE Y hQ hP f g ∧ f ≠ g :=
+  @lt_iff_le_and_ne _ (b.latticeAffineBruhatPartialOrder Y hQ hP) f g
+
 /-- Lattice affine length is monotone in Bruhat order. -/
 theorem LatticeAffineBruhatLE.length_le {f g : P.latticeAffineWeylGroup Y hQ hP}
     (h : b.LatticeAffineBruhatLE Y hQ hP f g) :
@@ -172,6 +206,17 @@ theorem latticeAffineBruhatLE_iff_eq_of_length_eq_zero
   rw [latticeAffineBruhatLE_iff_extendedAffineBruhatLE,
     b.extendedAffineBruhatLE_iff_eq_of_length_eq_zero hg]
   exact (Subgroup.inclusion_injective _).eq_iff
+
+/-- An element lies below a lattice alcove stabilizer exactly when it equals that stabilizer. -/
+@[simp]
+theorem latticeAffineBruhatLE_stabilizer_iff (f : P.latticeAffineWeylGroup Y hQ hP)
+    (ω : P.latticeFundamentalAlcoveStabilizer b Y hQ hP) :
+    b.LatticeAffineBruhatLE Y hQ hP f (Subgroup.inclusion
+      (latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup b hQ hP) ω) ↔
+      f = Subgroup.inclusion
+        (latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup b hQ hP) ω :=
+  b.latticeAffineBruhatLE_iff_eq_of_length_eq_zero Y hQ hP
+    (b.latticeAffineLength_stabilizer Y hQ hP ω)
 
 end Lattice
 

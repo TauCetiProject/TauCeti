@@ -30,51 +30,6 @@ open Set Function
 
 namespace RootPairing
 
-section SeparatingRoots
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
-  [Module R N] (P : RootPairing ι R M N) [PartialOrder R] [IsOrderedAddMonoid R]
-
-/-- The extended affine Weyl group preserves the number of affine roots separating two points.
-This counts indexed affine roots and does not require the root pairing to be reduced. -/
-theorem ncard_separatingAffineRoots_apply_of_mem_extendedAffineWeylGroup
-    {f : N ≃ᵃ[R] N} (hf : f ∈ P.extendedAffineWeylGroup) (x y : N) :
-    (P.separatingAffineRoots (f x) (f y)).ncard = (P.separatingAffineRoots x y).ncard := by
-  classical
-  obtain ⟨π, hπ, hπc⟩ :=
-    P.exists_root'_apply_eq_and_apply_coroot_eq_of_mem_closure_range_coreflection
-      (P.mem_extendedAffineWeylGroup_iff.mp hf).1
-  have hπinj : Injective π := fun i j hij ↦ P.coroot.injective <| by
-    rw [← hπc i, ← hπc j, hij]
-  have hπsurj : Surjective π := by
-    obtain ⟨ρ, _, hρc⟩ :=
-      P.exists_root'_apply_eq_and_apply_coroot_eq_of_mem_closure_range_coreflection
-        (inv_mem (P.mem_extendedAffineWeylGroup_iff.mp hf).1)
-    intro j
-    refine ⟨ρ j, P.coroot.injective (f.linear.injective ?_)⟩
-    rw [hπc]
-    simpa using congrArg f.linear (hρc j)
-  have hm := P.mem_coweightLattice.mp (P.mem_extendedAffineWeylGroup_iff.mp hf).2
-  choose m hm using hm
-  have hroot (j : ι) (z : N) : P.root' j (f z) = P.root' (π j) z + (m j : R) := by
-    rw [AffineEquiv.apply_eq_linear_add f z, map_add, hπ, hm]
-  have hmem (j : ι) (k : ℤ) :
-      (j, k) ∈ P.separatingAffineRoots (f x) (f y) ↔
-        (π j, k - m j) ∈ P.separatingAffineRoots x y := by
-    simp only [mem_separatingAffineRoots, hroot, Int.cast_sub, sub_lt_iff_lt_add,
-      lt_sub_iff_add_lt]
-  refine Set.ncard_congr (fun p _ ↦ (π p.1, p.2 - m p.1))
-    (fun p hp ↦ (hmem p.1 p.2).mp hp) ?_ ?_
-  · rintro ⟨i, k⟩ ⟨j, l⟩ _ _ h
-    have hij : i = j := hπinj (congrArg Prod.fst h)
-    subst j
-    exact Prod.ext rfl (by simpa using congrArg Prod.snd h)
-  · rintro ⟨j, k⟩ hk
-    obtain ⟨i, rfl⟩ := hπsurj j
-    exact ⟨(i, k + m i), (hmem i _).mpr (by simpa using hk), by simp⟩
-
-end SeparatingRoots
-
 namespace Base
 
 variable {ι R M N : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
@@ -141,6 +96,15 @@ theorem extendedAffineLength_mulEquiv
       b.affineWeylCoxeterSystem.length x.left := by
   simp [extendedAffineLength]
 
+/-- Extended affine length restricts to Coxeter length on the affine Weyl subgroup. -/
+@[simp]
+theorem extendedAffineLength_inclusion_affineWeylGroup (w : P.affineWeylGroup) :
+    b.extendedAffineLength
+      (Subgroup.inclusion P.affineWeylGroup_le_extendedAffineWeylGroup w) =
+      b.affineWeylCoxeterSystem.length w := by
+  rw [inclusion_affineWeylGroup_eq_mulEquiv b, extendedAffineLength_mulEquiv]
+  rfl
+
 /-- Length vanishes exactly on the stabilizer of the fundamental alcove. -/
 @[simp]
 theorem extendedAffineLength_eq_zero_iff (f : P.extendedAffineWeylGroup) :
@@ -206,11 +170,8 @@ theorem extendedAffineLength_mul_stabilizer (f : P.extendedAffineWeylGroup)
       (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b) ω) =
       b.extendedAffineLength f := by
   obtain ⟨x, rfl⟩ := (P.extendedAffineWeylGroupMulEquiv b).surjective f
-  have hω : Subgroup.inclusion (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b) ω =
-      P.extendedAffineWeylGroupMulEquiv b (.inr ω) := by
-    apply Subtype.ext
-    simp
-  rw [hω, ← map_mul, extendedAffineLength_mulEquiv, extendedAffineLength_mulEquiv]
+  rw [inclusion_stabilizer_eq_mulEquiv_inr b, ← map_mul,
+    extendedAffineLength_mulEquiv, extendedAffineLength_mulEquiv]
   simp
 
 /-- Left multiplication by an alcove stabilizer preserves extended affine length. -/
@@ -261,6 +222,15 @@ theorem latticeAffineLength_mulEquiv
   rw [latticeAffineLength_eq_extendedAffineLength]
   rw [inclusion_latticeAffineWeylGroupMulEquiv, extendedAffineLength_mulEquiv]
 
+/-- Lattice affine length restricts to Coxeter length on the affine Weyl subgroup. -/
+@[simp]
+theorem latticeAffineLength_inclusion_affineWeylGroup (w : P.affineWeylGroup) :
+    b.latticeAffineLength Y hQ hP
+      (Subgroup.inclusion (P.affineWeylGroup_le_latticeAffineWeylGroup hQ hP) w) =
+      b.affineWeylCoxeterSystem.length w := by
+  rw [latticeAffineLength_eq_extendedAffineLength, inclusion_inclusion_affineWeylGroup,
+    extendedAffineLength_inclusion_affineWeylGroup]
+
 /-- The length-zero subgroup for an intermediate lattice is its fundamental alcove stabilizer. -/
 @[simp]
 theorem latticeAffineLength_eq_zero_iff (f : P.latticeAffineWeylGroup Y hQ hP) :
@@ -296,6 +266,30 @@ theorem latticeAffineLength_stabilizer
       (latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup b hQ hP) ω) = 0 :=
   (b.latticeAffineLength_eq_zero_iff Y hQ hP _).mpr ω.property
 
+/-- Right multiplication by a lattice alcove stabilizer preserves lattice affine length. -/
+@[simp]
+theorem latticeAffineLength_mul_stabilizer (f : P.latticeAffineWeylGroup Y hQ hP)
+    (ω : P.latticeFundamentalAlcoveStabilizer b Y hQ hP) :
+    b.latticeAffineLength Y hQ hP (f * Subgroup.inclusion
+      (latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup b hQ hP) ω) =
+      b.latticeAffineLength Y hQ hP f := by
+  simpa only [latticeAffineLength_eq_extendedAffineLength, map_mul,
+    inclusion_inclusion_latticeFundamentalAlcoveStabilizer] using
+    b.extendedAffineLength_mul_stabilizer
+      (Subgroup.inclusion (P.latticeAffineWeylGroup_le_extendedAffineWeylGroup hQ hP) f)
+      (Subgroup.inclusion
+        (latticeFundamentalAlcoveStabilizer_le_fundamentalAlcoveStabilizer b hQ hP) ω)
+
+/-- Left multiplication by a lattice alcove stabilizer preserves lattice affine length. -/
+@[simp]
+theorem latticeAffineLength_stabilizer_mul (f : P.latticeAffineWeylGroup Y hQ hP)
+    (ω : P.latticeFundamentalAlcoveStabilizer b Y hQ hP) :
+    b.latticeAffineLength Y hQ hP (Subgroup.inclusion
+      (latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup b hQ hP) ω * f) =
+      b.latticeAffineLength Y hQ hP f := by
+  rw [← latticeAffineLength_inv, mul_inv_rev, ← map_inv,
+    latticeAffineLength_mul_stabilizer, latticeAffineLength_inv]
+
 /-- Conjugation by a lattice alcove stabilizer preserves lattice affine length. -/
 theorem latticeAffineLength_stabilizer_conj (f : P.latticeAffineWeylGroup Y hQ hP)
     (ω : P.latticeFundamentalAlcoveStabilizer b Y hQ hP) :
@@ -303,15 +297,7 @@ theorem latticeAffineLength_stabilizer_conj (f : P.latticeAffineWeylGroup Y hQ h
       (latticeFundamentalAlcoveStabilizer_le_latticeAffineWeylGroup b hQ hP)
     b.latticeAffineLength Y hQ hP (i ω * f * (i ω)⁻¹) = b.latticeAffineLength Y hQ hP f := by
   intro i
-  have hω : Subgroup.inclusion
-      (P.latticeAffineWeylGroup_le_extendedAffineWeylGroup hQ hP) (i ω) =
-      Subgroup.inclusion (P.fundamentalAlcoveStabilizer_le_extendedAffineWeylGroup b)
-        (Subgroup.inclusion
-          (latticeFundamentalAlcoveStabilizer_le_fundamentalAlcoveStabilizer b hQ hP) ω) := by
-    apply Subtype.ext
-    simp [i]
-  simp only [latticeAffineLength_eq_extendedAffineLength, map_mul, map_inv, hω,
-    extendedAffineLength_stabilizer_conj]
+  rw [← map_inv, latticeAffineLength_mul_stabilizer, latticeAffineLength_stabilizer_mul]
 
 end Lattice
 
