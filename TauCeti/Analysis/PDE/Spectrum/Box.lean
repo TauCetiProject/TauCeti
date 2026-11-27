@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Spectrum.Basic
 public import TauCeti.Analysis.PDE.ClassicalSolution
+public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.Calculus.Deriv.Second
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
@@ -47,6 +48,9 @@ Dirichlet solution operator for `κ⁻¹`, is the number of positive multi-indic
 `∑ᵢ (kᵢ π / (bᵢ - aᵢ))² = κ` (`TauCeti.PDE.finrank_eigenspace_dirichletSolutionOperator_boxDomain`).
 An eigenvalue may have several separated modes: on `(0, π)²` the value `5 = 1² + 2² = 2² + 1²` is
 attained twice, and is an eigenvalue of multiplicity `2`.
+
+On the Euclidean plane, an integral over the rectangle `boxDomain a b` is the iterated integral
+over its sides (`TauCeti.PDE.setIntegral_boxDomain_eq_intervalIntegral`).
 
 The passage from classical to weak eigenfunctions uses
 `TauCeti.PDE.exists_value_ae_eq_and_energyFormH1_eq_of_laplacian_eq`.
@@ -189,6 +193,36 @@ theorem setIntegral_boxDomain_le [DecidableEq ι] {a b : ι → ℝ} {i : ι}
   split_ifs with hx
   · exact h x hx
   · exact le_rfl
+
+/-- The rectangle `boxDomain a b` of the Euclidean plane is the preimage of
+`(a₀, b₀) × (a₁, b₁)` under the coordinates `TauCeti.euclideanPlaneEquivProd`. -/
+theorem preimage_euclideanPlaneEquivProd_Ioo_prod_Ioo (a b : Fin 2 → ℝ) :
+    euclideanPlaneEquivProd ⁻¹' (Ioo (a 0) (b 0) ×ˢ Ioo (a 1) (b 1)) =
+      (boxDomain a b : Set (EuclideanSpace ℝ (Fin 2))) := by
+  ext x
+  simp [mem_boxDomain, Fin.forall_fin_two]
+
+/-- **Fubini on a rectangle.** The integral of a continuous function over the rectangle
+`boxDomain a b` of the Euclidean plane is the iterated integral over its sides. -/
+theorem setIntegral_boxDomain_eq_intervalIntegral {a b : Fin 2 → ℝ} (hab : ∀ i, a i ≤ b i)
+    {F : EuclideanSpace ℝ (Fin 2) → ℝ} (hF : Continuous F) :
+    ∫ x in boxDomain a b, F x =
+      ∫ s in a 0..b 0, ∫ t in a 1..b 1, F (WithLp.toLp 2 ![s, t]) := by
+  have hG : Continuous fun p : ℝ × ℝ => F (WithLp.toLp 2 ![p.1, p.2]) :=
+    (hF.comp euclideanPlaneEquivProdL.symm.continuous).congr fun p => by simp
+  have hFE : (fun x => F x) = fun x => F (WithLp.toLp 2
+      ![(euclideanPlaneEquivProd x).1, (euclideanPlaneEquivProd x).2]) := by
+    funext x
+    rw [← euclideanPlaneEquivProd_symm_apply, MeasurableEquiv.symm_apply_apply]
+  rw [← preimage_euclideanPlaneEquivProd_Ioo_prod_Ioo, hFE,
+    measurePreserving_euclideanPlaneEquivProd.setIntegral_preimage_emb
+      euclideanPlaneEquivProd.measurableEmbedding (fun p => F (WithLp.toLp 2 ![p.1, p.2])),
+    Measure.volume_eq_prod, setIntegral_prod _
+      ((hG.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)).mono_set
+        (prod_mono Ioo_subset_Icc_self Ioo_subset_Icc_self)),
+    intervalIntegral.integral_of_le (hab 0), integral_Ioc_eq_integral_Ioo]
+  refine setIntegral_congr_fun measurableSet_Ioo fun s _ => ?_
+  rw [intervalIntegral.integral_of_le (hab 1), integral_Ioc_eq_integral_Ioo]
 
 /-- The separated sine mode of a rectangular box, extended smoothly to the whole space. -/
 def boxSineMode (a b : ι → ℝ) (k : ι → ℕ) (x : EuclideanSpace ℝ ι) : ℝ :=

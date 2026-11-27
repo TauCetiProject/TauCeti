@@ -72,6 +72,9 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
 * `TauCeti.W1p.eLpNorm_two_eq_ofReal_sqrt_setIntegral`: on `s ⊆ Ω`, the `L²(s)` seminorm of the
   value of `w ∈ W^{1,2}(Ω)` is `√(∫_s w²)`, which is at most `‖w‖`
   (`TauCeti.W1p.sqrt_setIntegral_value_sq_le_norm`).
+* `TauCeti.W1p.inner_value_eq_setIntegral` and
+  `TauCeti.W1p.setIntegral_mul_eq_inner_value_of_ae_eq`: the `L²(Ω)` pairing with the value of a
+  Sobolev function as an integral over `Ω`.
 * `TauCeti.W1p.locallyIntegrableOn_gradient`: the weak gradient is locally integrable on `Ω`.
 * `TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`: the weak gradient vanishes wherever
   the value vanishes on an open subset, and with it the whole jet
@@ -812,6 +815,16 @@ theorem W1p.inner_value_eq_setIntegral (u v : W1p mu Omega 2) :
   rw [L2.inner_def]
   exact integral_congr_ae (Filter.Eventually.of_forall fun x => by
     simp [RCLike.inner_apply, mul_comm])
+
+/-- The integral of `f ∈ L²(Ω)` against a function `F` is the `L²(Ω)` pairing of `f` with any
+Sobolev function whose value is `F`. -/
+theorem W1p.setIntegral_mul_eq_inner_value_of_ae_eq {u : W1p mu Omega 2} {F : E → ℝ}
+    (hu : W1p.value u =ᵐ[mu.restrict Omega] F) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ∫ x in Omega, f x * F x ∂mu = ⟪f, W1p.value u⟫_ℝ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hu] with x hx
+  simp [hx, mul_comm]
 
 /-- Convergence in the first-order Sobolev norm is equivalent to convergence of both the
 value and the weak gradient in `Lᵖ`. -/

@@ -39,6 +39,8 @@ truncations at positive levels vanish near `closure Γ`.
 * `TauCeti.W1p.mem_w1p0Submodule_of_continuousOn_closure`: a Sobolev function on a bounded
   domain that agrees with a function continuous on the closure and vanishing on the frontier
   lies in `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.exists_mem_w1p0Submodule_value_ae_eq_of_contDiff`: on a bounded domain, a `C¹`
+  function vanishing on the frontier is the value of an element of `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.posPart_add_mem_w1p0Submodule`: the positive part of `ψ + G`, for `ψ ∈ W^{1,p}_0(Ω)`
   and `G` continuous up to the boundary and nonpositive there, lies in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.mem_w1pVanishingOnSubmodule_of_locallyLipschitz_of_eqOn_zero`: a Sobolev function
@@ -163,6 +165,20 @@ theorem W1p.mem_w1p0Submodule_of_continuousOn_closure (hp : p ≠ ∞)
   rw [← W1p.posPart_sub_posPart_neg hp u]
   exact (w1p0Submodule mu Omega p).toSubmodule.sub_mem (hpos hg hg0 hu)
     (hpos hg.neg (fun x hx => by simp [hg0 x hx]) hneg)
+
+/-- **A `C¹` function vanishing on the boundary gives an element of `W^{1,p}_0(Ω)`.** Let `Ω` be
+bounded and `1 ≤ p < ∞`. A `C¹` function `g` on the whole space that is zero on `frontier Ω` is,
+on `Ω`, the value of an element of `W^{1,p}_0(Ω)`: it is `C¹` near the compact closure of `Ω`, so
+it lies in `W^{1,p}(Ω)`, and it vanishes continuously on the boundary. -/
+theorem W1p.exists_mem_w1p0Submodule_value_ae_eq_of_contDiff (hp : p ≠ ∞)
+    (hb : Bornology.IsBounded (Omega : Set E)) {g : E → ℝ} (hg : ContDiff ℝ 1 g)
+    (hg0 : ∀ x ∈ frontier (Omega : Set E), g x = 0) :
+    ∃ u : W1p mu Omega p, u ∈ w1p0Submodule mu Omega p ∧
+      W1p.value u =ᵐ[mu.restrict Omega] g := by
+  obtain ⟨u, hu, -⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := mu)
+    (p := p) isOpen_univ hg.contDiffOn hb.isCompact_closure subset_closure (Set.subset_univ _)
+  exact ⟨u, W1p.mem_w1p0Submodule_of_continuousOn_closure hp hb hg.continuous.continuousOn hg0 hu,
+    hu⟩
 
 /-- **Positive parts below continuous boundary values.** Let `Ω` be bounded and `1 ≤ p < ∞`. If
 `ψ ∈ W^{1,p}_0(Ω)` and `G ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with a function `g`
