@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
+public import Mathlib.Algebra.Module.LinearMap.Polynomial
 public import Mathlib.LinearAlgebra.Matrix.Rank
+public import TauCeti.LinearAlgebra.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.RingTheory.MvPolynomial.DualNumber
 
@@ -36,6 +38,12 @@ the polynomial `det (∂(p i)/∂X_j)`. Its value at a point is the determinant 
 matrix there, it commutes with change of coefficients, and reordering the equations changes it
 by a sign. Inverting it on the zero locus of `p` gives the Jacobian-open algebra of the system.
 
+Joining two families stacks their Jacobian matrices, and a family of linear forms
+`Matrix.toMvPolynomial M` has the constant Jacobian matrix `M`. So adding the equation of a
+hyperplane `ℓ = 0` to a family of full rank at `v` keeps the rank full exactly when `ℓ` is not a
+linear combination of the rows of `J_p(v)`, the gradients of the equations: this is the
+transversality test for hyperplane sections.
+
 The Jacobian matrix is also the infinitesimal part of evaluation at a dual-number point: evaluating
 `p` at `v + ε w` with `ε² = 0` gives `p(v) + ε J_p(v) w`. This turns the computation of a
 Jacobian into a computation of values, which is convenient when `p` is built from matrix
@@ -62,6 +70,11 @@ products, as the multiplicativity of evaluation then replaces the Leibniz rule.
   than the number of variables, so full rank needs fewer equations than variables.
 * `TauCeti.mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero`: a single equation
   has full rank exactly where some partial derivative does not vanish.
+* `TauCeti.jacobiMatrixAt_sumElim`, `TauCeti.jacobiMatrixAt_toMvPolynomial`: the Jacobian
+  matrix of a joined family is stacked, and that of a family of linear forms is its matrix.
+* `TauCeti.mulVec_surjective_jacobiMatrixAt_sumElim_toMvPolynomial_iff`: adding the equation of
+  the hyperplane `ℓ = 0` to a family of full rank keeps full rank exactly when `ℓ` is not a
+  combination of the rows of the Jacobian matrix.
 
 ## References
 
@@ -92,6 +105,24 @@ noncomputable def jacobiMatrixAt (p : ι → MvPolynomial σ R) (v : σ → R) :
 @[simp]
 theorem jacobiMatrixAt_apply (p : ι → MvPolynomial σ R) (v : σ → R) (i : ι) (j : σ) :
     jacobiMatrixAt p v i j = eval v (pderiv j (p i)) := (rfl)
+
+/-- The Jacobian matrix of the union of two families of equations stacks their Jacobian
+matrices. -/
+@[simp]
+theorem jacobiMatrixAt_sumElim {κ : Type*} (p : ι → MvPolynomial σ R) (q : κ → MvPolynomial σ R)
+    (v : σ → R) :
+    jacobiMatrixAt (Sum.elim p q) v = (jacobiMatrixAt p v).fromRows (jacobiMatrixAt q v) := by
+  ext (i | i) j <;> simp
+
+/-- The Jacobian matrix of the family of linear forms `Matrix.toMvPolynomial M` is `M` at every
+point. -/
+@[simp]
+theorem jacobiMatrixAt_toMvPolynomial [Fintype σ] (M : Matrix ι σ R) (v : σ → R) :
+    jacobiMatrixAt M.toMvPolynomial v = M := by
+  classical
+  ext i j
+  simp [Matrix.toMvPolynomial, pderiv_monomial, Finsupp.single_apply, apply_ite,
+    Finset.sum_ite_eq']
 
 /-- **Euler's identity** for the Jacobian matrix of a family of homogeneous polynomials: applied
 to the point itself, it returns each equation's value scaled by its degree. -/
@@ -341,6 +372,17 @@ theorem mulVec_surjective_jacobiMatrixAt_iff_exists_eval_pderiv_ne_zero [Unique 
     simpa [Matrix.mulVec, dotProduct, h0] using congrFun hx default
   · simp only [Unique.eq_default i, Matrix.mulVec_single]
     simp [field]
+
+/-- **Transversality of a hyperplane section.** At a point where the Jacobian matrix of `p` is
+onto, adding the equation of the hyperplane `ℓ = 0` keeps it onto exactly when `ℓ` is not a
+linear combination `c ᵥ* J_p(v)` of the gradients of the equations. -/
+theorem mulVec_surjective_jacobiMatrixAt_sumElim_toMvPolynomial_iff [Fintype ι] [Fintype σ]
+    {p : ι → MvPolynomial σ K} {v : σ → K} (hv : (jacobiMatrixAt p v).mulVec.Surjective)
+    (ℓ : σ → K) :
+    (jacobiMatrixAt (Sum.elim p (replicateRow Unit ℓ).toMvPolynomial) v).mulVec.Surjective ↔
+      ℓ ∉ Set.range (· ᵥ* jacobiMatrixAt p v) := by
+  rw [jacobiMatrixAt_sumElim, jacobiMatrixAt_toMvPolynomial]
+  exact mulVec_surjective_fromRows_replicateRow_iff hv ℓ
 
 end Field
 

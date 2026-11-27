@@ -42,6 +42,8 @@ under the induced map of projective spaces.
   in the zero locus exactly when every `p i` vanishes on every multiple of `v`.
 * `TauCeti.complexProjectiveZeroLocus_mk_iff`: for homogeneous equations, the class of a nonzero
   vector `v` lies in the zero locus exactly when every `p i` vanishes at `v`.
+* `TauCeti.mem_complexProjectiveZeroLocus_replicateRow_toMvPolynomial_iff`: a point lies on the
+  hyperplane cut out by a linear form `ℓ` exactly when `ℓ` vanishes on its representative.
 * `TauCeti.complexProjectiveZeroLocus_mk_iff_dehomogenize` and
   `TauCeti.complexProjectiveZeroLocus_mk_insertNth_iff` and
   `TauCeti.mem_complexProjectiveZeroLocus_iff_eval_affineChart`: the equations of the zero locus
@@ -109,6 +111,15 @@ theorem mem_complexProjectiveZeroLocus_iff_eval_rep {p : ι → MvPolynomial (Fi
     L ∈ complexProjectiveZeroLocus p ↔ ∀ i, eval L.rep (p i) = 0 := by
   conv_lhs => rw [← L.mk_rep]
   exact complexProjectiveZeroLocus_mk_iff hp _ _
+
+/-- A point `L` lies on the hyperplane `ℓ = 0` exactly when `ℓ` vanishes on its representative. -/
+theorem mem_complexProjectiveZeroLocus_replicateRow_toMvPolynomial_iff (ℓ : Fin N → ℂ)
+    (L : ℙ ℂ (Fin N → ℂ)) :
+    L ∈ complexProjectiveZeroLocus (Matrix.replicateRow Unit ℓ).toMvPolynomial ↔
+      dotProduct ℓ L.rep = 0 := by
+  rw [mem_complexProjectiveZeroLocus_iff_eval_rep
+    (fun _ ↦ Matrix.toMvPolynomial_isHomogeneous _ _)]
+  simp [Matrix.toMvPolynomial_eval_eq_apply, Matrix.replicateRow_mulVec_eq_const]
 
 /-- **Chart equations.** In the standard affine chart where coordinate `i` is nonzero, a
 homogeneous family cuts out the zero locus of its dehomogenizations: the class of `v` with
