@@ -8,10 +8,10 @@ module
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Topology.MetricSpace.HolderNorm
 public import Mathlib.Topology.MetricSpace.Thickening
+public import Mathlib.Topology.ExtendFrom
 
 import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
-import Mathlib.Topology.ExtendFrom
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Analysis.SpecificLimits.DyadicSum
 
@@ -73,7 +73,9 @@ seminorm of `g`.
 
 A family of maps that are Hölder near each point of a set, with a common constant and a common
 positive exponent, is equicontinuous on that set
-(`TauCeti.equicontinuousOn_of_forall_holderOnWith`).
+(`TauCeti.equicontinuousOn_of_forall_holderOnWith`). A map that is Hölder of positive exponent on
+every compact subset of an open subset of a locally compact space is continuous on that open set
+(`TauCeti.continuousOn_of_forall_isCompact_holderOnWith`).
 
 ## Main declarations
 
@@ -119,8 +121,10 @@ positive exponent, is equicontinuous on that set
   a common constant is Hölder with that constant.
 * `HolderOnWith.of_subset_closure`: a Hölder bound on `s` holds on every `t ⊆ closure s` at whose
   points the function is continuous within `s`.
-* `HolderOnWith.exists_eqOn_holderOnWith_closure`: a function Hölder on `s` with a positive
-  exponent and complete values extends to a function Hölder on the closure of `s`.
+* `HolderOnWith.tendsto_extendFrom`, `HolderOnWith.extendFrom_closure`,
+  `HolderOnWith.exists_eqOn_holderOnWith_closure`: a function Hölder on `s` with a positive
+  exponent and complete values converges along `s` at each point of the closure, and its limit
+  extension `extendFrom s f` is Hölder on the closure of `s`.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
   constant `2 M`.
 * `TauCeti.exists_holderWith_tsum_of_rpow_mul_le`: for `0 < α < 1`, a series `∑ⱼ fⱼ` whose terms
@@ -531,23 +535,41 @@ theorem HolderOnWith.of_subset_closure {X Y : Type*} [PseudoEMetricSpace X]
   exact ContinuousWithinAt.closure_le hab h1 h2.continuousWithinAt
     fun q hq => h q.1 hq.1 q.2 hq.2
 
+/-- A function which is Hölder continuous on `s`, with a positive exponent and values in a complete
+space, converges along `s` at each point `x` of the closure of `s`, to the value at `x` of its
+extension `extendFrom s f`. -/
+theorem HolderOnWith.tendsto_extendFrom {X Y : Type*} [PseudoEMetricSpace X]
+    [EMetricSpace Y] [CompleteSpace Y] {C r : ℝ≥0} {f : X → Y} {s : Set X}
+    (hf : HolderOnWith C r f s) (hr : 0 < r) {x : X} (hx : x ∈ closure s) :
+    Tendsto f (𝓝[s] x) (𝓝 (extendFrom s f x)) := by
+  have := mem_closure_iff_nhdsWithin_neBot.1 hx
+  exact _root_.tendsto_extendFrom (CompleteSpace.complete
+    ((cauchy_nhds.mono nhdsWithin_le_nhds).map_of_le (hf.uniformContinuousOn hr) inf_le_right))
+
+/-- **Hölder functions extend to the closure.** A function which is Hölder continuous on `s`, with
+a positive exponent and values in a complete space, has an extension `extendFrom s f`, the limit
+of `f` along `s`, which agrees with `f` on `s` and is Hölder continuous on the closure of `s`, with
+the same constant and exponent. -/
+theorem HolderOnWith.extendFrom_closure {X Y : Type*} [PseudoEMetricSpace X]
+    [EMetricSpace Y] [CompleteSpace Y] {C r : ℝ≥0} {f : X → Y} {s : Set X}
+    (hf : HolderOnWith C r f s) (hr : 0 < r) :
+    EqOn (extendFrom s f) f s ∧ HolderOnWith C r (extendFrom s f) (closure s) := by
+  have heq : EqOn (extendFrom s f) f s := extendFrom_extends (hf.continuousOn hr)
+  exact ⟨heq, (hf.congr heq.symm).of_subset_closure subset_rfl fun x hx ↦
+    (hf.tendsto_extendFrom hr hx).congr'
+      (eventually_nhdsWithin_of_forall fun y hy ↦ (heq hy).symm)⟩
+
 /-- **Hölder functions extend to the closure.** A function which is Hölder continuous on `s`, with
 a positive exponent and values in a complete space, agrees on `s` with a function which is Hölder
 continuous on the closure of `s`, with the same constant and exponent. The extension at a point of
-the closure is the limit of `f` along `s`, which is Mathlib's `extendFrom s f`. Compare
-`HolderOnWith.extend_of_dense`, which extends from a dense set to the whole space. -/
+the closure is the limit of `f` along `s`, which is Mathlib's `extendFrom s f`
+(`HolderOnWith.extendFrom_closure`). Compare `HolderOnWith.extend_of_dense`, which extends from a
+dense set to the whole space. -/
 theorem HolderOnWith.exists_eqOn_holderOnWith_closure {X Y : Type*} [PseudoEMetricSpace X]
     [EMetricSpace Y] [CompleteSpace Y] {C r : ℝ≥0} {f : X → Y} {s : Set X}
     (hf : HolderOnWith C r f s) (hr : 0 < r) :
-    ∃ g : X → Y, EqOn g f s ∧ HolderOnWith C r g (closure s) := by
-  have hlim (x : X) (hx : x ∈ closure s) : ∃ y, Tendsto f (𝓝[s] x) (𝓝 y) := by
-    have := mem_closure_iff_nhdsWithin_neBot.1 hx
-    exact CompleteSpace.complete
-      ((cauchy_nhds.mono nhdsWithin_le_nhds).map_of_le (hf.uniformContinuousOn hr) inf_le_right)
-  have heq : EqOn (extendFrom s f) f s := extendFrom_extends (hf.continuousOn hr)
-  refine ⟨extendFrom s f, heq, (hf.congr heq.symm).of_subset_closure subset_rfl fun x hx ↦ ?_⟩
-  exact (tendsto_extendFrom (hlim x hx)).congr'
-    (eventually_nhdsWithin_of_forall fun y hy ↦ (heq hy).symm)
+    ∃ g : X → Y, EqOn g f s ∧ HolderOnWith C r g (closure s) :=
+  ⟨extendFrom s f, hf.extendFrom_closure hr⟩
 
 /-- **Hölder functions extend from dense sets.** If `f` is Hölder continuous with constant `C` and
 exponent `r` on a dense set `s`, and the target is complete, then some function which is Hölder
@@ -972,5 +994,15 @@ theorem equicontinuousOn_of_forall_holderOnWith {ι X Y : Type*} [PseudoMetricSp
     simpa [Real.zero_rpow (NNReal.coe_pos.2 hr).ne'] using hcont.tendsto x
   · filter_upwards [ht] with y hy i
     exact (hC i).dist_le (mem_of_mem_nhds ht) hy
+
+/-- **Local Hölder bounds give continuity.** A map that is Hölder of a positive exponent `r` on
+every compact subset of an open set `U` of a locally compact space is continuous on `U`. -/
+theorem continuousOn_of_forall_isCompact_holderOnWith {X Y : Type*} [PseudoEMetricSpace X]
+    [LocallyCompactSpace X] [PseudoEMetricSpace Y] {U : Set X} (hU : IsOpen U) {f : X → Y}
+    {r : ℝ≥0} (hr : 0 < r) (hf : ∀ K ⊆ U, IsCompact K → ∃ C, HolderOnWith C r f K) :
+    ContinuousOn f U := fun x hx ↦ by
+  obtain ⟨K, hKx, hKU, hK⟩ := local_compact_nhds (hU.mem_nhds hx)
+  obtain ⟨C, hC⟩ := hf K hKU hK
+  exact ((hC.continuousOn hr).continuousAt hKx).continuousWithinAt
 
 end TauCeti

@@ -30,6 +30,9 @@ argument. This gives the involution-transpose formula for a sesquilinear form.
 * `LinearMap.toMatrix₂Aux_mul_map_basis_toMatrixₛₗ`: the change-of-basis law for a
   sesquilinear map into a commutative semiring, with each coordinate matrix transformed by the
   ring homomorphism governing the corresponding argument. The new families need not be bases.
+* `LinearMap.det_toMatrix₂_basis_change`: under a change of basis, the determinant of the
+  matrix of a form semilinear in its first argument for `σ` is multiplied by the norm
+  `σ (det P) * det P` of the change-of-basis matrix `P`.
 * `LinearMap.toMatrix₂Aux_mul_map_basis_toMatrix`: the change-of-basis law, oriented as Mathlib's
   is, with the change-of-basis matrices pushed into the codomain. The codomain need only be a
   possibly noncommutative semiring, and the new families need not be bases.
@@ -45,8 +48,9 @@ The statements differ in what they ask of the codomain. `toMatrix₂Aux_comp_ind
 additive commutative monoid carrying the required actions. The sesquilinear change-of-basis law
 allows distinct source scalar rings and has values in a commutative semiring. The bilinear law
 allows values in an `R`-algebra, which may be a **noncommutative** semiring: the proof uses only
-that the images of `algebraMap` are central. The determinant result needs a commutative ring, and
-`ℤ` as the scalars.
+that the images of `algebraMap` are central. The determinant results need a commutative ring: the
+sesquilinear one takes it as both scalars and values, and the basis-independent one takes `ℤ` as
+the scalars.
 
 ## Implementation notes
 
@@ -112,6 +116,18 @@ theorem toMatrix₂Aux_mul_map_basis_toMatrixₛₗ [Fintype ι₁] [Fintype ι�
   rw [Finsupp.sum_fintype _ _ fun _ ↦ by simp]
   exact Finset.sum_congr rfl fun l _ ↦ by
     simp [mul_comm, mul_left_comm]
+
+/-- **The determinant of the matrix of a sesquilinear form changes by a norm.** For a form on a
+single module, semilinear in its first argument for `σ`, if `P` is the matrix of the basis `c` in
+the basis `b`, then `det G_c = σ (det P) * det P * det G_b`. -/
+theorem det_toMatrix₂_basis_change {R M ι : Type*} [CommRing R] [AddCommMonoid M] [Module R M]
+    [Fintype ι] [DecidableEq ι] {σ : R →+* R} (B : M →ₛₗ[σ] M →ₗ[R] R)
+    (b c : Module.Basis ι R M) :
+    (toMatrix₂ c c B).det = σ (b.toMatrix c).det * (b.toMatrix c).det * (toMatrix₂ b b B).det := by
+  rw [← toMatrix₂Aux_eq, ← toMatrix₂Aux_eq, ← toMatrix₂Aux_mul_map_basis_toMatrixₛₗ B b b c c,
+    det_mul, det_mul, det_transpose, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
+    RingHom.coe_id, Matrix.map_id]
+  ring
 
 end SesquilinearBasisChange
 

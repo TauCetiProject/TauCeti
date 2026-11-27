@@ -185,6 +185,15 @@ theorem rescale_one : g.rescale (fun _ ↦ 1) contMDiff_const (fun _ ↦ one_pos
   ext b v w
   simp
 
+/-- Rescaling by the square of the positive square root is rescaling by the original constant. -/
+@[simp]
+theorem rescale_const_sqrt_sq {c : ℝ} (hc : 0 < c) :
+    g.rescale (fun _ ↦ Real.sqrt c ^ 2) contMDiff_const
+        (fun _ ↦ sq_pos_of_pos (Real.sqrt_pos.mpr hc)) =
+      g.rescale (fun _ ↦ c) contMDiff_const (fun _ ↦ hc) := by
+  congr 1
+  exact funext fun _ ↦ Real.sq_sqrt hc.le
+
 /-- Rescaling `f g` by `h` is rescaling `g` by the product `h f`. -/
 @[simp]
 theorem rescale_rescale (h : B → ℝ) (hh : ContMDiff IB 𝓘(ℝ) n h) (hh_pos : ∀ b, 0 < h b) :

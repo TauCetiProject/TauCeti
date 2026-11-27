@@ -33,6 +33,10 @@ isomorphism of groups, and under translation:
   representatives of `G ⧸ H` and of `H ⧸ K.subgroupOf H` form a transversal of `K` in `G`;
 * `Subgroup.mk_mulEquiv_out_bijective`: an isomorphism `e : G ≃* G'` carrying `H` onto `H'` carries
   the chosen representatives of `G ⧸ H` to a transversal of `H'` in `G'`;
+* `QuotientGroup.apply_out_mk`: a function invariant under right multiplication by `H` takes the
+  same value at `g` and at the chosen representative of `g H`, and
+  `QuotientGroup.finite_support_comp_inv_mul`: a left translate of such a function supported on
+  finitely many cosets is again supported on finitely many cosets.
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
   translated coset `g • q` lies in the coset of `g * q.out`, and `QuotientGroup.inv_smul_of_mk_eq`
   and `QuotientGroup.out_inv_smul`: the inverse of a representative of `q`, for instance
@@ -54,7 +58,8 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
 `Subgroup.finite_image_mk_of_inv_mul_mem` passes finiteness of the image of a set in `G ⧸ K` to
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
-`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
+`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`, and
+`Subgroup.sum_comp_quotientMapOfLE` sums a function on `G / K` along that map.
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
 read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection;
 `Subgroup.finiteIndex_of_surjective` and `Subgroup.index_le_of_surjective` deduce `FiniteIndex`
@@ -176,6 +181,18 @@ theorem card_fiber_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G}
     Nat.card_prod, Nat.card_unique, one_mul]
   -- Relative index is the cardinality of the quotient by the subgroup inside `K`.
   rfl
+
+/-- **Summing along the quotient map of a tower.** For `H ≤ K`, a function on `G / K` summed
+along `G / H → G / K` is `[K : H]` times its sum over `G / K`, since each fibre has `[K : H]`
+points (`card_fiber_quotientMapOfLE`). -/
+theorem sum_comp_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G} [Fintype (G ⧸ H)]
+    [Fintype (G ⧸ K)] (hHK : H ≤ K) {M : Type*} [AddCommMonoid M] (F : G ⧸ K → M) :
+    ∑ q : G ⧸ H, F (quotientMapOfLE hHK q) = H.relIndex K • ∑ q : G ⧸ K, F q := by
+  classical
+  rw [← Finset.sum_fiberwise Finset.univ (quotientMapOfLE hHK), ← Finset.sum_nsmul]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [Finset.sum_congr rfl fun p hp ↦ by rw [(Finset.mem_filter.mp hp).2], Finset.sum_const,
+    ← card_fiber_quotientMapOfLE hHK q, Nat.card_eq_fintype_card, Fintype.card_subtype]
 
 /-- **Transversals multiply along a tower.** For subgroups `K ≤ H` of `G`, the products
 `p.out * k.out` of the chosen representatives of the cosets `p ∈ G ⧸ H` and
@@ -349,6 +366,26 @@ coset of `x` to the right coset of `-x`. -/]
 theorem quotientRightRelEquivQuotientLeftRel_symm_mk (x : G) :
     (quotientRightRelEquivQuotientLeftRel H).symm (x : G ⧸ H) = Quotient.mk'' x⁻¹ :=
   rfl
+
+/-- A function invariant under right multiplication by `H` takes the same value at `g` and at the
+chosen representative of the coset `g H`. -/
+@[to_additive /-- A function invariant under right addition of `H` takes the same value at `g` and
+at the chosen representative of the coset `g + H`. -/]
+theorem apply_out_mk {X : Type*} {f : G → X} (hf : ∀ g, ∀ h ∈ H, f (g * h) = f g) (g : G) :
+    f (g : G ⧸ H).out = f g := by
+  obtain ⟨h, hh⟩ := QuotientGroup.mk_out_eq_mul H g
+  rw [hh, hf g h h.property]
+
+/-- A left translate `g ↦ f (x⁻¹ g)` of a right `K`-invariant `f` supported on finitely many cosets
+is again supported on finitely many cosets. -/
+theorem finite_support_comp_inv_mul {A : Type*} [Zero A] {K : Subgroup G} {f : G → A}
+    (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
+    (hf_fin : (Function.support fun q : G ⧸ K ↦ f q.out).Finite) (x : G) :
+    (Function.support fun q : G ⧸ K ↦ f (x⁻¹ * q.out)).Finite := by
+  have h_value (q : G ⧸ K) : f (x⁻¹ * q.out) = f (x⁻¹ • q).out := by
+    rw [← MulAction.Quotient.mk_smul_out, smul_eq_mul, QuotientGroup.apply_out_mk hf]
+  refine (hf_fin.preimage (MulAction.injective x⁻¹).injOn).subset fun q hq ↦ ?_
+  simpa [h_value] using hq
 
 /-- The chosen representative of the translate `g • q` of a left coset `q` lies in the same coset
 as `g` times the chosen representative of `q`. -/

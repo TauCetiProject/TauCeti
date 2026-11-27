@@ -86,11 +86,16 @@ endpoints of a corestricted subpath, with that corestriction. The last two are u
 construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
 
 The path-homotopy quotient API also records that reversing twice is the identity, that the
-reverse of the constant class is constant, and that mapping a composite class and casting its
-endpoints composes the cast images of the factors (`Path.Homotopic.Quotient.map_trans_cast`).
-`Path.refl_trans_eq_reparam`, the left counterpart of Mathlib's
-`Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps along a
-pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
+reverse of the constant class is constant, left and right cancellation of concatenation
+(`Path.Homotopic.Quotient.trans_left_cancel`, `Path.Homotopic.Quotient.trans_right_cancel`),
+naturality of homotopy traces along path classes (`Path.Homotopic.Quotient.map_trans_evalAt`,
+`Path.Homotopic.Quotient.evalAt_trans_map_of_mk_evalAt_eq`,
+`Path.Homotopic.Quotient.homotopic_refl_evalAt_of_mk_evalAt_eq`), endpoint-cast rules
+(`Path.Homotopic.Quotient.cast_refl_trans`, `Path.Homotopic.Quotient.trans_cast_refl`), and that
+mapping a composite class and casting its endpoints composes the cast images of the factors
+(`Path.Homotopic.Quotient.map_trans_cast`). `Path.refl_trans_eq_reparam`, the left counterpart of
+Mathlib's `Path.Homotopy.trans_refl_reparam`, and `map_trans_cast` are used by the gluing of caps
+along a pair of pants in `Geometry/Symplectic/Floer/Cap/Loop.lean`.
 `Path.Homotopy.reflTransSymm_apply` evaluates Mathlib's homotopy from the constant path to
 `p.trans p.symm`, which has no `simps` lemmas of its own.
 
@@ -982,6 +987,76 @@ theorem eq_of_trans_symm {γ γ' : Homotopic.Quotient x₀ x₁}
   induction γ' using Quotient.ind with | mk γ' =>
   simp only [← mk_trans, ← mk_symm, ← mk_refl] at h
   exact Quotient.sound (Homotopic.of_trans_symm (Quotient.exact h))
+
+/-- Right cancellation in the path-homotopy quotient: if `γ.trans e = δ.trans e`, then `γ = δ`. -/
+theorem trans_right_cancel {x₀ x₁ x₂ : X} {γ δ : Homotopic.Quotient x₀ x₁}
+    {e : Homotopic.Quotient x₁ x₂} (h : γ.trans e = δ.trans e) : γ = δ := by
+  induction γ using Quotient.ind with | mk γ =>
+  induction δ using Quotient.ind with | mk δ =>
+  induction e using Quotient.ind with | mk e =>
+  simp only [← mk_trans] at h
+  exact Quotient.sound (Homotopic.trans_right_cancel (Quotient.exact h))
+
+/-- Left cancellation in the path-homotopy quotient: if `e.trans γ = e.trans δ`, then `γ = δ`. -/
+theorem trans_left_cancel {x₀ x₁ x₂ : X} {e : Homotopic.Quotient x₀ x₁}
+    {γ δ : Homotopic.Quotient x₁ x₂} (h : e.trans γ = e.trans δ) : γ = δ := by
+  induction e using Quotient.ind with | mk e =>
+  induction γ using Quotient.ind with | mk γ =>
+  induction δ using Quotient.ind with | mk δ =>
+  simp only [← mk_trans] at h
+  exact Quotient.sound (Homotopic.trans_left_cancel (Quotient.exact h))
+
+/-- Naturality of homotopy traces on path-homotopy classes: for a homotopy `F` from `f` to `g` and
+a class `P` from `x₁` to `x₂`, `(P.map f).trans (mk (F.evalAt x₂))` equals
+`(mk (F.evalAt x₁)).trans (P.map g)`. -/
+theorem map_trans_evalAt {Y : Type*} [TopologicalSpace Y] {f g : C(X, Y)} (F : f.Homotopy g)
+    {x₁ x₂ : X} (P : Homotopic.Quotient x₁ x₂) :
+    (P.map f).trans (mk (F.evalAt x₂)) = (mk (F.evalAt x₁)).trans (P.map g) := by
+  induction P using Quotient.ind with
+  | mk p =>
+    simp only [← mk_map, ← mk_trans]
+    exact Quotient.sound (Homotopic.map_trans_evalAt F p)
+
+/-- Composing on the left with a cast reflexivity class casts the left endpoint. -/
+@[simp]
+theorem cast_refl_trans {u v w : X} (h : v = u) (P : Homotopic.Quotient v w) :
+    ((refl u).cast rfl h).trans P = P.cast h.symm rfl := by
+  subst h
+  simp
+
+/-- Composing on the right with a cast reflexivity class casts the right endpoint. -/
+@[simp]
+theorem trans_cast_refl {u v w : X} (P : Homotopic.Quotient u v) (h : v = w) :
+    P.trans ((refl w).cast h rfl) = P.cast rfl h.symm := by
+  subst h
+  simp
+
+/-- **Solving trace naturality when the far-endpoint trace is `(f ∘ p)⁻¹ · (g ∘ p)`.** If a
+homotopy `F : f.Homotopy h` moves the endpoint `v` of `p : Path u v` along the class of
+`(f ∘ p)⁻¹ · (g ∘ p)`, then `[F.evalAt u] · [h ∘ p]` equals `[g ∘ p]` up to endpoint casts. -/
+theorem evalAt_trans_map_of_mk_evalAt_eq {Y : Type*} [TopologicalSpace Y]
+    {f g h : C(X, Y)} (F : f.Homotopy h) {u v : X} (p : Path u v)
+    (hg : g u = f u) (hhv : h v = g v)
+    (hF : mk (F.evalAt v) =
+      (mk (p.symm.map f.continuous)).trans ((mk (p.map g.continuous)).cast hg.symm hhv)) :
+    (mk (F.evalAt u)).trans (mk (p.map h.continuous)) =
+      (mk (p.map g.continuous)).cast hg.symm hhv := by
+  have hnat := (map_trans_evalAt F (mk p)).symm
+  rw [← mk_map, ← mk_map, hF, ← Path.map_symm, mk_symm, ← trans_assoc, trans_symm] at hnat
+  simpa using hnat
+
+/-- If a homotopy `F : f.Homotopy g` between maps agreeing at `u` moves the far endpoint `v` of a
+path `p : Path u v` along the class of `(f ∘ p)⁻¹ · (g ∘ p)`, then the trace of `F` at `u` is
+null-homotopic. -/
+theorem homotopic_refl_evalAt_of_mk_evalAt_eq {Y : Type*} [TopologicalSpace Y]
+    {f g : C(X, Y)} (F : f.Homotopy g) {u v : X} (p : Path u v) (hg : g u = f u)
+    (hF : mk (F.evalAt v) =
+      (mk (p.symm.map f.continuous)).trans ((mk (p.map g.continuous)).cast hg.symm rfl)) :
+    ((F.evalAt u).cast rfl hg.symm).Homotopic (Path.refl (f u)) := by
+  apply exact
+  have h := evalAt_trans_map_of_mk_evalAt_eq F p hg rfl hF
+  rw [← cast_refl_trans hg] at h
+  simpa using congrArg (fun q ↦ q.cast rfl hg.symm) (trans_right_cancel h)
 
 end Quotient
 end Path.Homotopic

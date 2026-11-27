@@ -128,6 +128,12 @@ instance : LinearMapClass (InfinitesimalAction 𝔤 I M) ℝ 𝔤 ((x : M) → T
 theorem coe_toLinearMap (a : InfinitesimalAction 𝔤 I M) : ⇑a.toLinearMap = a :=
   (rfl)
 
+/-- `Z` lies in the kernel of an infinitesimal action exactly when the vector field `Z_M` vanishes
+identically. -/
+theorem mem_ker_toLinearMap_iff (a : InfinitesimalAction 𝔤 I M) {Z : 𝔤} :
+    Z ∈ LinearMap.ker a.toLinearMap ↔ a Z = 0 :=
+  LinearMap.mem_ker
+
 @[simp]
 theorem coe_mk (f : 𝔤 →ₗ[ℝ] (x : M) → TangentSpace I x) (h₁ h₂) :
     ⇑(⟨f, h₁, h₂⟩ : InfinitesimalAction 𝔤 I M) = f :=
@@ -243,6 +249,11 @@ theorem mem_isotropy_iff {Z : 𝔤} : Z ∈ a.isotropy x ↔ a Z x = 0 :=
 
 theorem isotropy_toSubmodule : (a.isotropy x).toSubmodule = LinearMap.ker (a.eval x) :=
   (rfl)
+
+/-- Every isotropy algebra `𝔤_x` contains the kernel `{Z | Z_M = 0}` of the action. -/
+theorem ker_toLinearMap_le_isotropy :
+    LinearMap.ker a.toLinearMap ≤ (a.isotropy x).toSubmodule := fun Z hZ ↦ by
+  simp [(a.mem_ker_toLinearMap_iff).1 hZ]
 
 /-- The isotropy algebra is trivial exactly when `Z ↦ Z_M(x)` is injective, that is, when the
 action is locally free at `x`. -/

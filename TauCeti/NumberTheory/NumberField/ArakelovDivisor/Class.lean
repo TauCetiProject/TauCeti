@@ -7,6 +7,8 @@ module
 
 public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.Isometry
 public import TauCeti.NumberTheory.NumberField.ArakelovDivisor.OfHermitianLine
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.Contraction
+public import TauCeti.NumberTheory.NumberField.HermitianBundle.Degree.Line
 public import TauCeti.NumberTheory.NumberField.HermitianBundle.TensorProduct
 
 import TauCeti.RingTheory.FractionalIdeal.Operations
@@ -28,7 +30,8 @@ have the same class exactly when they are isometric
 (`TauCeti.ArakelovDivisor.arakelovClass_hermitianMetric`), and the degree of the class is the
 Arakelov degree of the line (`TauCeti.HermitianMetric.degree_arakelovClass`). The group law of
 `Pic^(𝓞 K)` is the tensor product of lines (`TauCeti.HermitianMetric.arakelovClass_tmul`), with
-the trivial line `Ō_K` as identity (`TauCeti.HermitianMetric.arakelovClass_trivial`).
+the trivial line `Ō_K` as identity (`TauCeti.HermitianMetric.arakelovClass_trivial`) and the dual
+line as inverse (`TauCeti.HermitianMetric.arakelovClass_dual`).
 
 ## Main definitions
 
@@ -46,11 +49,14 @@ the trivial line `Ō_K` as identity (`TauCeti.HermitianMetric.arakelovClass_triv
 * `TauCeti.ArakelovDivisor.arakelovClass_hermitianMetric`: the class of `O(D)` is `[D]`; hence
   every class is the class of a hermitian line.
 * `TauCeti.HermitianMetric.degree_arakelovClass`: the degree of the class of `(E, h)` is the
-  degree of `(E, h)` computed with any nonzero section.
+  Arakelov degree `deg^(E, h)` of the line.
+* `TauCeti.HermitianMetric.degree_arakelovClass_eq_sectionDegree`: the same degree, computed with
+  any nonzero section.
 * `TauCeti.ArakelovDivisor.nonempty_isometryEquiv_tmul_hermitianMetric`:
   `O(D) ⊗ O(D') ≅ O(D + D')`, by multiplication.
 * `TauCeti.HermitianMetric.arakelovClass_tmul`: the class of `L ⊗ M` is the sum of the classes.
 * `TauCeti.HermitianMetric.arakelovClass_trivial`: the class of the trivial line `Ō_K` is `0`.
+* `TauCeti.HermitianMetric.arakelovClass_dual`: the class of the dual line `Ē^∨` is `-[Ē]`.
 
 ## References
 
@@ -125,14 +131,22 @@ theorem IsometryEquiv.arakelovClass_eq (e : IsometryEquiv h h') :
       fun ⟨D, ⟨e'⟩⟩ ↦ hD ⟨D, ⟨e.trans e'⟩⟩
     simp only [arakelovClass, hD, hD', ↓reduceDIte]
 
-/-- **The degree of the class of a hermitian line is its Arakelov degree**, computed with any
-nonzero section. -/
-theorem degree_arakelovClass [Module.Invertible (𝓞 K) E] {s : E} (hs : s ≠ 0) :
+/-- The degree of the class of a hermitian line is its Arakelov degree computed with any nonzero
+section. -/
+theorem degree_arakelovClass_eq_sectionDegree [Module.Invertible (𝓞 K) E] {s : E} (hs : s ≠ 0) :
     ArakelovPicardGroup.degree K h.arakelovClass = h.sectionDegree s := by
   obtain ⟨D, hD, ⟨e⟩⟩ := h.exists_isometryEquiv_arakelovClass
   have hes : e s ≠ 0 := (map_ne_zero_iff e e.toLinearEquiv.injective).2 hs
   rw [hD, ArakelovPicardGroup.degree_mk, ← D.sectionDegree_hermitianMetric hes,
     IsometryEquiv.sectionDegree_map h e s]
+
+/-- **The degree of the class of a hermitian line is its Arakelov degree** `deg^(Ē)`. -/
+@[simp]
+theorem degree_arakelovClass [Module.Invertible (𝓞 K) E] :
+    ArakelovPicardGroup.degree K h.arakelovClass = h.lineDegree := by
+  have := Module.Invertible.nontrivial (𝓞 K) E
+  obtain ⟨s, hs⟩ := exists_ne (0 : E)
+  rw [h.degree_arakelovClass_eq_sectionDegree hs, h.lineDegree_eq_sectionDegree_of_invertible hs]
 
 end HermitianMetric
 
@@ -216,6 +230,15 @@ variable (K) in
 theorem arakelovClass_trivial : (trivial K).arakelovClass = 0 := by
   have h := (tensorLId (trivial K)).arakelovClass_eq
   rwa [arakelovClass_tmul, add_eq_right] at h
+
+/-- **The class of the dual line is the inverse class**: `[Ē^∨] = -[Ē]` in `Pic^(𝓞 K)`, since the
+contraction `Ē^∨ ⊗ Ē ≃ Ō_K` is an isometry. -/
+@[simp]
+theorem arakelovClass_dual [Module.Invertible (𝓞 K) E] :
+    h.dual.arakelovClass = -h.arakelovClass := by
+  have e := h.isometryEquivDualTmul.arakelovClass_eq
+  rw [arakelovClass_tmul, arakelovClass_trivial] at e
+  exact eq_neg_of_add_eq_zero_left e
 
 end HermitianMetric
 

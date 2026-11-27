@@ -90,8 +90,9 @@ theorem firstContact_sphere (hn : 1 ≤ n) (he : ‖e‖ = 1) :
   have : CompactSpace S := isCompact_iff_compactSpace.1 (isCompact_sphere 0 1)
   have hiff (t : ℝ) (ht : 0 ≤ t) :=
     nonempty_translatedGraph_inter_range_coe_sphere_iff (e := e) hn he ht
-  obtain ⟨t₀, ht₀, hne, hmax, hside⟩ := exists_firstContact_tangent (I := 𝓡 n) (T := 2)
-    continuous_subtypeVal.isProperMap he isClosed_univ continuousOn_const (by norm_num)
+  obtain ⟨t₀, ht₀, hne, hmax, hside⟩ :=
+    continuous_subtypeVal.isProperMap.isClosed_range.exists_firstContact_tangent (I := 𝓡 n) (T := 2)
+    he isClosed_univ continuousOn_const (by norm_num)
     (by
       rw [disjoint_iff_inter_eq_empty, ← not_nonempty_iff_eq_empty, hiff 2 (by norm_num)]
       norm_num)
@@ -100,7 +101,8 @@ theorem firstContact_sphere (hn : 1 ≤ n) (he : ‖e‖ = 1) :
     ((isBounded_closedBall (x := (0 : F)) (r := 1)).subset fun y hy ↦ by
       obtain ⟨-, -, -, x, rfl⟩ := mem_iUnion₂.1 hy
       exact sphere_subset_closedBall x.property)
-    ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero) (differentiableOn_const 0)
+    (fun _ _ x _ ↦ (contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero x)
+    (fun _ _ _ _ ↦ differentiableAt_const 0)
   have h1 : t₀ = 1 := le_antisymm ((hiff t₀ ht₀.1).1 hne)
     (hmax 1 ⟨zero_le_one, by norm_num⟩ ((hiff 1 zero_le_one).2 le_rfl))
   refine ⟨t₀, ht₀, h1, fun x ↦ ?_, fun x hx ↦ ?_⟩

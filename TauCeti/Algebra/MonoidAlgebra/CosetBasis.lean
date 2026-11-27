@@ -25,6 +25,9 @@ left-coset representatives of `p.range`, which represent its right cosets.
 * `TauCeti.MonoidAlgebra.basisCosets`: the coset basis of `R[N]` over `R[M]`.
 * `TauCeti.MonoidAlgebra.coeff_basisCosets_repr`: evaluates arbitrary `m : M` coefficients of the
   `q`-th coordinate in `basisCosets`.
+* `TauCeti.MonoidAlgebra.bijective_mapDomain_add_mapDomain_mul_single`: when `p.range` has the
+  two right cosets `p.range` and `p.range * g`, every element of `R[N]` is uniquely
+  `p(a) + p(b) * g`.
 * `Subgroup.restrictSubgroup_compHom_finite_projective` and
   `Subgroup.restrictSubgroup_compHom_isScalarTower_finite_projective`: restricting a finitely
   generated projective `R[G]`-module to the group algebra of a finite-index subgroup along the
@@ -222,6 +225,48 @@ theorem subsingleton_of_infinite_group (G : Type*) [Group G] [Infinite G]
     (congrArg (· • p) (mapDomain_smul H.subtype c r)).trans (smul_assoc c _ p)⟩
   have : Module.Finite R[H] P := Module.Finite.of_restrictScalars_finite R R[H] P
   exact subsingleton_of_infinite_quotient R H P fun _ _ ↦ rfl
+
+variable {R}
+
+/-- **A group algebra over a subgroup with two right cosets.** Let `p : M →* N` be injective and
+let `g ∉ p.range` be such that every element of `N` lies in `p.range` or in `p.range * g`, so that
+these are the two right cosets of `p.range`. Then every element of `R[N]` is uniquely
+`p(a) + p(b) * g` with `a, b ∈ R[M]`: as a module over `R[M]` through `mapDomain p`, `R[N]` is
+free with basis `1, g`. -/
+theorem bijective_mapDomain_add_mapDomain_mul_single (p : M →* N) (hp : Function.Injective p)
+    {g : N} (hg : g ∉ p.range) (h : ∀ x, x ∈ p.range ∨ x * g⁻¹ ∈ p.range) :
+    Function.Bijective fun ab : R[M] × R[M] ↦
+      mapDomain p ab.1 + mapDomain p ab.2 * single g (1 : R) := by
+  -- The coefficients at `p m` and `p m * g` read off the two components.
+  have h₁ (a b : R[M]) (m : M) :
+      (mapDomain p a + mapDomain p b * single g (1 : R)).coeff (p m) = a.coeff m := by
+    have : p m * g⁻¹ ∉ Set.range p := by
+      rintro ⟨k, hk⟩
+      exact hg ⟨k⁻¹ * m, by simp [hk]⟩
+    simp [coeff_mul_single_apply, Finsupp.mapDomain_apply_of_injective hp,
+      Finsupp.mapDomain_of_notMem_range _ _ this]
+  have h₂ (a b : R[M]) (m : M) :
+      (mapDomain p a + mapDomain p b * single g (1 : R)).coeff (p m * g) = b.coeff m := by
+    have : p m * g ∉ Set.range p := by
+      rintro ⟨k, hk⟩
+      exact hg ⟨m⁻¹ * k, by simp [hk]⟩
+    simp [coeff_mul_single_apply, Finsupp.mapDomain_apply_of_injective hp,
+      Finsupp.mapDomain_of_notMem_range _ _ this]
+  refine ⟨fun ⟨a, b⟩ ⟨a', b'⟩ hab ↦ ?_, fun u ↦ ?_⟩
+  · have hc (x : N) := congrArg (fun v : R[N] ↦ v.coeff x) hab
+    refine Prod.ext (coeff_injective (Finsupp.ext fun m ↦ ?_))
+      (coeff_injective (Finsupp.ext fun m ↦ ?_))
+    · simpa only [h₁] using hc (p m)
+    · simpa only [h₂] using hc (p m * g)
+  · refine ⟨(ofCoeff (u.coeff.comapDomain p hp.injOn),
+      ofCoeff (u.coeff.comapDomain (fun m ↦ p m * g) ((mul_left_injective g).comp hp).injOn)), ?_⟩
+    refine coeff_injective (Finsupp.ext fun x ↦ ?_)
+    rcases h x with ⟨m, rfl⟩ | ⟨m, hm⟩
+    · rw [h₁]
+      simp
+    · obtain rfl : x = p m * g := by rw [hm, inv_mul_cancel_right]
+      rw [h₂]
+      simp
 
 end TauCeti.MonoidAlgebra
 

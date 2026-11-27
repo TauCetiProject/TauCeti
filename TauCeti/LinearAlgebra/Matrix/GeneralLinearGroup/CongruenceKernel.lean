@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.RingTheory.ZMod
 import TauCeti.GroupTheory.Torsion
+import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.RingTheory.AdicCompletion.Pi
 import TauCeti.RingTheory.RootsOfUnity.Congruence
 
@@ -155,11 +156,8 @@ variable {p : ℕ} [Fact p.Prime]
 kernel of reduction `GL n ℤ_[p] → GL n (ZMod p)` has no nontrivial element of finite order. -/
 theorem isMulTorsionFree_ker_map_toZMod (hp : Odd p) :
     IsMulTorsionFree (map (n := n) (PadicInt.toZMod : ℤ_[p] →+* ZMod p)).ker := by
-  have hsep : IsHausdorff (Ideal.span {(p : ℤ_[p])}) ℤ_[p] := by
-    rw [← PadicInt.maximalIdeal_eq_span_p]
-    infer_instance
   exact isMulTorsionFree_ker_map Fact.out hp (IsSMulRegular.of_ne_zero (by exact_mod_cast
-    (Fact.out : p.Prime).ne_zero)) hsep _
+    (Fact.out : p.Prime).ne_zero)) inferInstance _
     (by rw [PadicInt.ker_toZMod, PadicInt.maximalIdeal_eq_span_p])
 
 /-- **Finite subgroups of `GL n ℤ_[p]` inject modulo `p`** for an odd prime `p`: reduction
