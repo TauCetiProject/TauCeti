@@ -1021,6 +1021,11 @@ theorem gaugeDirection_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : gaugeDire
 theorem vacuumField_apply (z : ℂ) : vacuumField z = !₂[0, 0, 1 / 2, 0] := by
   rfl
 
+/-- The section of the vacuum field is the constant `1`. -/
+@[simp]
+theorem sectionValue_vacuumField (z : ℂ) : sectionValue vacuumField z = 1 := by
+  simp [sectionValue_apply]
+
 /-- The vacuum field is constant. -/
 theorem vacuumField_eq_const : vacuumField = fun _ ↦ vacuumField 0 :=
   funext fun z ↦ by rw [vacuumField_apply, vacuumField_apply]

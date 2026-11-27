@@ -196,6 +196,28 @@ theorem continuous_sum_map {M : Type*} [AddCommMonoid M] [TopologicalSpace M] [C
   rw [h]
   exact continuous_finsetSum _ fun i _ => hg.comp (continuous_apply i)
 
+/-! ### The first symmetric power -/
+
+/-- **The first symmetric power of a space is the space itself**: `Sym.oneEquiv`, sending a
+point to the singleton, is a homeomorphism `α ≃ₜ Sym α 1`. -/
+def oneHomeomorph : α ≃ₜ Sym α 1 where
+  toEquiv := oneEquiv
+  continuous_toFun := (continuous_ofFn.comp (continuous_pi fun _ => continuous_id)).congr
+    fun a => ofFn_eq_oneEquiv fun _ => a
+  continuous_invFun := by
+    rw [continuous_iff_comp_ofFn]
+    exact (continuous_apply 0).congr fun f => by
+      rw [Function.comp_apply, ofFn_eq_oneEquiv]
+      exact (oneEquiv.left_inv (f 0)).symm
+
+@[simp]
+theorem oneHomeomorph_apply (a : α) : oneHomeomorph a = oneEquiv a :=
+  (rfl)
+
+@[simp]
+theorem oneHomeomorph_symm_apply (s : Sym α 1) : oneHomeomorph.symm s = oneEquiv.symm s :=
+  (rfl)
+
 /-! ### Separation and compactness -/
 
 /-- The symmetric power of a compact space is compact, being a continuous image of a finite power
