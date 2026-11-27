@@ -241,7 +241,7 @@ twisted by `V`: the pairing of `X₁ ⊗ X₂` and `Y₂ ⊗ Y₁` twisted by `V
 `Y₁ ⊗ X₁` and then evaluates `Y₂ ⊗ X₂ ⟶ V`, and whose coevaluation expands `𝟙 ⟶ X₁ ⊗ Y₁`, braids
 `Y₁` past `V` and then expands `V ⟶ X₂ ⊗ Y₂`. For `V = 𝟙` this is Mathlib's
 `CategoryTheory.ExactPairing.tensor` (`TauCeti.TwistedPairing.tensor_ofExactPairing`). -/
-def tensor {X₁ Y₁ X₂ Y₂ V : C} [ExactPairing X₁ Y₁] (P : TwistedPairing X₂ Y₂ V) :
+def tensor (X₁ Y₁ : C) {X₂ Y₂ V : C} [ExactPairing X₁ Y₁] (P : TwistedPairing X₂ Y₂ V) :
     TwistedPairing (X₁ ⊗ X₂) (Y₂ ⊗ Y₁) V where
   coevaluation :=
     (λ_ V).inv ≫ η_ X₁ Y₁ ▷ V ⊗≫ X₁ ◁ ((β_ Y₁ V).hom ≫ P.coevaluation ▷ Y₁) ⊗≫ 𝟙 _
@@ -253,7 +253,7 @@ def tensor {X₁ Y₁ X₂ Y₂ V : C} [ExactPairing X₁ Y₁] (P : TwistedPair
 expands `V ⟶ X₂ ⊗ Y₂`. -/
 @[simp]
 theorem tensor_coevaluation {X₁ Y₁ X₂ Y₂ V : C} [ExactPairing X₁ Y₁] (P : TwistedPairing X₂ Y₂ V) :
-    (P.tensor (X₁ := X₁) (Y₁ := Y₁)).coevaluation =
+    (P.tensor X₁ Y₁).coevaluation =
       (λ_ V).inv ≫ η_ X₁ Y₁ ▷ V ⊗≫ X₁ ◁ ((β_ Y₁ V).hom ≫ P.coevaluation ▷ Y₁) ⊗≫ 𝟙 _ :=
   (rfl)
 
@@ -261,14 +261,14 @@ theorem tensor_coevaluation {X₁ Y₁ X₂ Y₂ V : C} [ExactPairing X₁ Y₁]
 `Y₂ ⊗ X₂ ⟶ V`. -/
 @[simp]
 theorem tensor_evaluation {X₁ Y₁ X₂ Y₂ V : C} [ExactPairing X₁ Y₁] (P : TwistedPairing X₂ Y₂ V) :
-    (P.tensor (X₁ := X₁) (Y₁ := Y₁)).evaluation =
+    (P.tensor X₁ Y₁).evaluation =
       𝟙 _ ⊗≫ Y₂ ◁ (ε_ X₁ Y₁ ▷ X₂) ⊗≫ P.evaluation :=
   (rfl)
 
 /-- For two exact pairings, the tensor product of twisted pairings is the twisted pairing of
 Mathlib's tensor product of exact pairings `CategoryTheory.ExactPairing.tensor`. -/
 theorem tensor_ofExactPairing (X₁ Y₁ X₂ Y₂ : C) [ExactPairing X₁ Y₁] [ExactPairing X₂ Y₂] :
-    (ofExactPairing X₂ Y₂).tensor (X₁ := X₁) (Y₁ := Y₁) = ofExactPairing (X₁ ⊗ X₂) (Y₂ ⊗ Y₁) := by
+    (ofExactPairing X₂ Y₂).tensor X₁ Y₁ = ofExactPairing (X₁ ⊗ X₂) (Y₂ ⊗ Y₁) := by
   ext
   · simp only [tensor_coevaluation, ofExactPairing_coevaluation,
       ExactPairing.tensor_coevaluation, braiding_tensorUnit_right]

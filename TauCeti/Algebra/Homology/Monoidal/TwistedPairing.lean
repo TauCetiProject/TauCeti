@@ -53,6 +53,7 @@ variable [BraidedCategory C] {X Y V : CochainComplex C ℤ} (P : TwistedPairing 
 /-- **The Koszul sign of a swapped evaluation.** On the summand `X^p ⊗ Y^q` of degree `j = p + q`,
 the evaluation of the swap of `P` is `(-1)^(p q)` times the coefficient braiding into
 `Y^q ⊗ X^p` followed by the evaluation of `P`. -/
+@[reassoc]
 theorem ιTensorObj_swap_evaluation_f (p q j : ℤ) (h : p + q = j) :
     HomologicalComplex.ιTensorObj X Y p q j h ≫ P.swap.evaluation.f j =
       (p * q).negOnePow • ((β_ (X.X p) (Y.X q)).hom ≫

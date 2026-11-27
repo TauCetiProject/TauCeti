@@ -101,7 +101,7 @@ negative-first evaluation, and whose coevaluation `V ⟶ C⁻ ⊗ C⁺` is the s
 of the tensor product of the pairing of `o` and `o'` with `P`. -/
 def capPairing (o o' : C) [ExactPairing o o'] {l l' V : C} (P : TwistedPairing l l' V) :
     TwistedPairing (l' ⊗ o') (o ⊗ l) V :=
-  (P.tensor (X₁ := o) (Y₁ := o')).swap
+  (P.tensor o o').swap
 
 variable (o o' : C) [ExactPairing o o'] {l l' V : C} (P : TwistedPairing l l' V)
 
@@ -141,24 +141,26 @@ private theorem negOnePow_mul_eq_negOnePow_add (μ n p q : ℤ) (hp : p = -(n + 
 /-- **The Koszul sign of the cap pairing.** For cochain complexes of modules, on the summand
 `C⁺_p ⊗ C⁻_q` of degree `j = p + q`, the cap pairing is `(-1)^(p q)` times the unsigned flip into
 `C⁻_q ⊗ C⁺_p` followed by the negative-first evaluation. -/
+@[reassoc]
 theorem ιTensorObj_capPairing_evaluation_f (p q j : ℤ) (h : p + q = j) :
     HomologicalComplex.ιTensorObj (O ⊗ L) (L' ⊗ O') p q j h ≫
         (capPairing O (O') P).evaluation.f j =
       (p * q).negOnePow • ((β_ ((O ⊗ L).X p) ((L' ⊗ O').X q)).hom ≫
         HomologicalComplex.ιTensorObj (L' ⊗ O') (O ⊗ L) q p j (by omega) ≫
-          (P.tensor (X₁ := O) (Y₁ := O')).evaluation.f j) :=
+          (P.tensor O O').evaluation.f j) :=
   TwistedPairing.ιTensorObj_swap_evaluation_f _ p q j h
 
 /-- **The coefficient `(-1)^(μ + n)` of the cap pairing.** On the cap lines of homological degrees
 `n + μ` and `n - μ`, which sit in cochain degrees `-(n + μ)` and `μ - n`, the cap pairing is
 `(-1)^(μ + n)` times the unsigned flip followed by the negative-first evaluation. -/
+@[reassoc]
 theorem ιTensorObj_capPairing_evaluation_f_of_eq (μ n p q j : ℤ) (hp : p = -(n + μ))
     (hq : q = μ - n) (h : p + q = j) :
     HomologicalComplex.ιTensorObj (O ⊗ L) (L' ⊗ O') p q j h ≫
         (capPairing O (O') P).evaluation.f j =
       (μ + n).negOnePow • ((β_ ((O ⊗ L).X p) ((L' ⊗ O').X q)).hom ≫
         HomologicalComplex.ιTensorObj (L' ⊗ O') (O ⊗ L) q p j (by omega) ≫
-          (P.tensor (X₁ := O) (Y₁ := O')).evaluation.f j) := by
+          (P.tensor O O').evaluation.f j) := by
   rw [ιTensorObj_capPairing_evaluation_f, negOnePow_mul_eq_negOnePow_add μ n p q hp hq]
 
 /-- **The Koszul sign of the sewing coevaluation.** For cochain complexes of modules, if the
@@ -167,7 +169,7 @@ summand `C⁺_p ⊗ C⁻_q`, then the sewing coevaluation in degree `j` is `(-1)
 followed by the unsigned flip into `C⁻_q ⊗ C⁺_p`. -/
 theorem capPairing_coevaluation_f (p q j : ℤ) (h : p + q = j)
     (g : V.X j ⟶ (O ⊗ L).X p ⊗ (L' ⊗ O').X q)
-    (hg : (P.tensor (X₁ := O) (Y₁ := O')).coevaluation.f j =
+    (hg : (P.tensor O O').coevaluation.f j =
       g ≫ HomologicalComplex.ιTensorObj (O ⊗ L) (L' ⊗ O') p q j h) :
     (capPairing O (O') P).coevaluation.f j =
       (p * q).negOnePow • (g ≫ (β_ ((O ⊗ L).X p) ((L' ⊗ O').X q)).hom ≫
@@ -179,7 +181,7 @@ negative-first evaluation lands in the cap lines, in cochain degrees `-(n + μ)`
 the sewing coevaluation is `(-1)^(μ + n)` times it followed by the unsigned flip. -/
 theorem capPairing_coevaluation_f_of_eq (μ n p q j : ℤ) (hp : p = -(n + μ)) (hq : q = μ - n)
     (h : p + q = j) (g : V.X j ⟶ (O ⊗ L).X p ⊗ (L' ⊗ O').X q)
-    (hg : (P.tensor (X₁ := O) (Y₁ := O')).coevaluation.f j =
+    (hg : (P.tensor O O').coevaluation.f j =
       g ≫ HomologicalComplex.ιTensorObj (O ⊗ L) (L' ⊗ O') p q j h) :
     (capPairing O (O') P).coevaluation.f j =
       (μ + n).negOnePow • (g ≫ (β_ ((O ⊗ L).X p) ((L' ⊗ O').X q)).hom ≫
