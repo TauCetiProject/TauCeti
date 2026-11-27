@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Star.SelfAdjoint
 
 /-!
 # Dot products
@@ -30,7 +31,11 @@ Over a ring, the bilinear form of a matrix with its diagonal removed is the sum 
 ordered off-diagonal index pairs.
 
 For a matrix `J`, a vector orthogonal under `(u, v) ↦ u ⬝ᵥ J *ᵥ v`, or under the sesquilinear
-`(u, v) ↦ star u ⬝ᵥ J *ᵥ v`, to every element of a set is orthogonal to its span.
+`(u, v) ↦ star u ⬝ᵥ J *ᵥ v`, to every element of a set is orthogonal to its span. For a
+self-adjoint unit `ρ`, the difference of two values of the sesquilinear form is `ρ` times a sum of
+two values at the differences divided by `ρ`; and along a dual `ζ` of a vector `e_a` of a family
+`e`, a vector orthogonal to the `e_b`, `b < a`, splits into a multiple of `ζ` and a vector
+orthogonal to the `e_b`, `b ≤ a`.
 
 ## Main results
 
@@ -50,6 +55,10 @@ For a matrix `J`, a vector orthogonal under `(u, v) ↦ u ⬝ᵥ J *ᵥ v`, or u
   every unit vector of `K³` has an orthogonal unit vector.
 * `Matrix.dotProduct_mulVec_eq_zero_of_mem_span`,
   `Matrix.star_dotProduct_mulVec_eq_zero_of_mem_span`: orthogonality to a set extends to its span.
+* `Matrix.star_dotProduct_mulVec_sub_eq`: with `D₁ = (u - u') / ρ` and `D₂ = (v - v') / ρ` for a
+  self-adjoint unit `ρ`, `⟨u, v⟩ - ⟨u', v'⟩ = ρ (⟨D₁, v⟩ + ⟨u', D₂⟩)`.
+* `Matrix.star_dotProduct_mulVec_sub_smul_eq_zero`: if `ω` and `ζ` are orthogonal to the `e_b`,
+  `b < a`, and `⟨e_a, ζ⟩ = 1`, then `ω - ⟨e_a, ω⟩ ζ` is orthogonal to the `e_b`, `b < a + 1`.
 -/
 
 public section
@@ -203,3 +212,31 @@ theorem Matrix.star_dotProduct_mulVec_eq_of_sub_mem_span {n R : Type*} [Fintype 
     star u ⬝ᵥ J *ᵥ w = star u' ⬝ᵥ J *ᵥ w := by
   have h0 := star_dotProduct_mulVec_eq_zero_of_mem_span h hu
   rwa [star_sub, sub_dotProduct, sub_eq_zero] at h0
+
+/-- **The difference of two values of the form at nearby vectors**: for a self-adjoint unit `ρ`,
+with `D₁ = (u - u') / ρ` and `D₂ = (v - v') / ρ`, `⟨u, v⟩ - ⟨u', v'⟩ = ρ (⟨D₁, v⟩ + ⟨u', D₂⟩)`,
+where `⟨u, v⟩ = star u ⬝ᵥ J *ᵥ v`. -/
+theorem Matrix.star_dotProduct_mulVec_sub_eq {n R : Type*} [Fintype n] [CommRing R] [StarRing R]
+    {J : Matrix n n R} {ρ : Rˣ} (hρ : IsSelfAdjoint (ρ : R)) (u u' v v' : n → R) :
+    star u ⬝ᵥ J *ᵥ v - star u' ⬝ᵥ J *ᵥ v' =
+      ρ * (star (((ρ⁻¹ : Rˣ) : R) • (u - u')) ⬝ᵥ J *ᵥ v +
+        star u' ⬝ᵥ J *ᵥ (((ρ⁻¹ : Rˣ) : R) • (v - v'))) := by
+  have hρ' := (hρ.of_mul_eq_one (Units.mul_inv ρ)).star_eq
+  have h1 : (ρ : R) * ((ρ⁻¹ : Rˣ) : R) = 1 := Units.mul_inv ρ
+  simp only [star_smul, hρ', star_sub, mulVec_smul, mulVec_sub, smul_dotProduct, dotProduct_smul,
+    sub_dotProduct, dotProduct_sub, smul_eq_mul]
+  linear_combination (-(star u ⬝ᵥ J *ᵥ v - star u' ⬝ᵥ J *ᵥ v')) * h1
+
+/-- **Splitting along a dual**: if `ω` and `ζ` are orthogonal to the `e_b`, `b < a`, under
+`(u, v) ↦ star u ⬝ᵥ J *ᵥ v`, and `⟨e_a, ζ⟩ = 1`, then `ω - ⟨e_a, ω⟩ ζ` is orthogonal to the
+`e_b`, `b < a + 1`. -/
+theorem Matrix.star_dotProduct_mulVec_sub_smul_eq_zero {n R : Type*} [Fintype n] [CommRing R]
+    [Star R] {J : Matrix n n R} {e : ℕ → n → R} {a : ℕ} {ω ζ : n → R}
+    (hω : ∀ b < a, star (e b) ⬝ᵥ J *ᵥ ω = 0) (hζ : ∀ b < a, star (e b) ⬝ᵥ J *ᵥ ζ = 0)
+    (hζa : star (e a) ⬝ᵥ J *ᵥ ζ = 1) :
+    ∀ b < a + 1, star (e b) ⬝ᵥ J *ᵥ (ω - (star (e a) ⬝ᵥ J *ᵥ ω) • ζ) = 0 := by
+  intro b hb
+  simp only [mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul]
+  rcases Nat.lt_succ_iff_lt_or_eq.mp hb with hb | rfl
+  · rw [hω b hb, hζ b hb, mul_zero, sub_zero]
+  · rw [hζa, mul_one, sub_self]

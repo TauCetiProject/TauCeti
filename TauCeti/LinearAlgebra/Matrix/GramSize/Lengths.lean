@@ -163,7 +163,7 @@ theorem hasShortDual_iff {e : ℕ → ι → A} {a : ℕ} {ρ : Aˣ} {g g' : GL 
 /-- A vector of length at most `L ^ i` at `g` has length at most `L ^ j` there for `i ≤ j`. -/
 theorem LengthLeAt.mono {g : GL ι A} {i j : ℕ} {y : ι → A} (h : S.LengthLeAt g i y)
     (hij : i ≤ j) : S.LengthLeAt g j y :=
-  S.mem_vecsOfSize_of_le h hij
+  lengthLeAt_iff.mpr (S.mem_vecsOfSize_of_le (lengthLeAt_iff.mp h) hij)
 
 /-- A vector of length at most `L ^ i` at `g` has a class of induced length at most `L ^ i`. -/
 theorem LengthLeAt.inducedLengthLe {e : ℕ → ι → A} {l : ℕ} {g : GL ι A} {i : ℕ} {y : ι → A}
@@ -194,26 +194,6 @@ theorem HasShortDual.mono {e : ℕ → ι → A} {a : ℕ} {ρ : Aˣ} {g g' : GL
   let ⟨ζ, hζ, hζa, hζg, hD⟩ := h
   ⟨ζ, hζ, hζa, hζg.mono hcc', hD.mono hcc'⟩
 
-/-! ### Elementary facts about the form -/
-
-section Form
-
-omit [DecidableEq ι] in
-/-- The difference of two values of the form at nearby vectors: with `D₁ = (u - u') / ρ` and
-`D₂ = (v - v') / ρ`, `⟨u, v⟩ - ⟨u', v'⟩ = ρ (⟨D₁, v⟩ + ⟨u', D₂⟩)` for self-adjoint `ρ`. -/
-private theorem star_dotProduct_mulVec_sub_eq {ρ : Aˣ} (hρ : IsSelfAdjoint (ρ : A))
-    (u u' v v' : ι → A) :
-    star u ⬝ᵥ J *ᵥ v - star u' ⬝ᵥ J *ᵥ v' =
-      ρ * (star (((ρ⁻¹ : Aˣ) : A) • (u - u')) ⬝ᵥ J *ᵥ v +
-        star u' ⬝ᵥ J *ᵥ (((ρ⁻¹ : Aˣ) : A) • (v - v'))) := by
-  have hρ' := (hρ.of_mul_eq_one (Units.mul_inv ρ)).star_eq
-  have h1 : (ρ : A) * ((ρ⁻¹ : Aˣ) : A) = 1 := Units.mul_inv ρ
-  simp only [star_smul, hρ', star_sub, mulVec_smul, mulVec_sub, smul_dotProduct, dotProduct_smul,
-    sub_dotProduct, dotProduct_sub, smul_eq_mul]
-  linear_combination (-(star u ⬝ᵥ J *ᵥ v - star u' ⬝ᵥ J *ᵥ v')) * h1
-
-end Form
-
 /-! ### Comparing the lengths at two points -/
 
 variable {e : ℕ → ι → A} {ρ : Aˣ} {g g' : GL ι A}
@@ -227,20 +207,7 @@ private theorem star_dotProduct_mulVec_mem_of_inducedLengthLe (hg : g ∈ unitar
   obtain ⟨e₁, he₁, he₁g⟩ := h
   rw [star_dotProduct_mulVec_eq_of_sub_mem_span (by rintro _ ⟨b, hb, rfl⟩; exact hω b hb) he₁,
     ← mem_unitaryGroupOf_iff_forall_dotProduct.mp (inv_mem hg)]
-  exact S.star_dotProduct_mulVec_mem he₁g hωg
-
-omit [DecidableEq ι] in
-/-- Splitting along a dual `ζ` of `e_a`: if `ω` is orthogonal below `a`, then `ω - ⟨e_a, ω⟩ ζ` is
-orthogonal below `a + 1`. -/
-private theorem star_dotProduct_mulVec_sub_smul_eq_zero {a : ℕ} {ω ζ : ι → A}
-    (hω : ∀ b < a, star (e b) ⬝ᵥ J *ᵥ ω = 0) (hζ : ∀ b < a, star (e b) ⬝ᵥ J *ᵥ ζ = 0)
-    (hζa : star (e a) ⬝ᵥ J *ᵥ ζ = 1) :
-    ∀ b < a + 1, star (e b) ⬝ᵥ J *ᵥ (ω - (star (e a) ⬝ᵥ J *ᵥ ω) • ζ) = 0 := by
-  intro b hb
-  simp only [mulVec_sub, mulVec_smul, dotProduct_sub, dotProduct_smul, smul_eq_mul]
-  rcases Nat.lt_succ_iff_lt_or_eq.mp hb with hb | rfl
-  · rw [hω b hb, hζ b hb, mul_zero, sub_zero]
-  · rw [hζa, mul_one, sub_self]
+  exact S.star_dotProduct_mulVec_mem (lengthLeAt_iff.mp he₁g) (lengthLeAt_iff.mp hωg)
 
 /-- The coefficient along `e_a` of the difference between a vector `ω₀` orthogonal below `a + 1`
 and a lift `ω₀'` of its class, divided by `ρ`, is small. It is read off by a short dual `ζ` of
@@ -291,10 +258,10 @@ private theorem inv_mul_mem_of_add_eq_sub [Nonempty ι] (hJ : J.IsHermitian)
   rw [hμ', star_dotProduct_mulVec_sub_eq hρ, Units.inv_mul_cancel_left]
   -- `g'⁻¹ ζ' = g⁻¹ ζ - ρ D₁` has size `c + 2`.
   have hu' : ((g'⁻¹ : GL ι A) : Matrix ι ι A) *ᵥ ζ' ∈ S.vecsOfSize (c + 2) := by
-    have h := S.sub_mem_vecsOfSize (hζg.mono (by omega : c ≤ 1 + c))
+    have h := S.sub_mem_vecsOfSize (lengthLeAt_iff.mp (hζg.mono (by omega : c ≤ 1 + c)))
       (S.smul_mem_vecsOfSize hρS hD₁)
     simpa [smul_smul] using S.mem_vecsOfSize_of_le h (by omega : 1 + c + 1 ≤ c + 2)
-  have h₁ := S.star_dotProduct_mulVec_mem hD₁ hω₀g
+  have h₁ := S.star_dotProduct_mulVec_mem hD₁ (lengthLeAt_iff.mp hω₀g)
   have h₂ := S.star_dotProduct_mulVec_mem hu' hD₂
   exact S.add_mem (i := i + c + t + 5) (S.mem_of_le h₁ (by omega)) (S.mem_of_le h₂ (by omega))
 
@@ -321,10 +288,10 @@ theorem LengthsDifferLe.of_succ (hJ : J.IsHermitian) (hg : g ∈ unitaryGroupOf 
     star_dotProduct_mulVec_mem_of_inducedLengthLe hg h₁ hω hωg
   set ω₀ := ω - lam • ζ with hω₀
   have hω₀g : S.LengthLeAt g (i + 2 * c + 4) ω₀ := by
-    have h := S.sub_mem_vecsOfSize (hωg.mono (by omega : i ≤ c + i + 3 + c))
-      (S.smul_mem_vecsOfSize hlam hζg)
-    simpa only [LengthLeAt, hω₀, mulVec_sub, mulVec_smul,
-      show c + i + 3 + c + 1 = i + 2 * c + 4 by omega] using h
+    have h := S.sub_mem_vecsOfSize (lengthLeAt_iff.mp (hωg.mono (by omega : i ≤ c + i + 3 + c)))
+      (S.smul_mem_vecsOfSize hlam (lengthLeAt_iff.mp hζg))
+    have hexp : c + i + 3 + c + 1 = i + 2 * c + 4 := by omega
+    simpa only [lengthLeAt_iff, hω₀, mulVec_sub, mulVec_smul, hexp] using h
   -- Compare `ω₀` by hypothesis, and split the difference `ω₀ - ω₀' = μ e_a + s`.
   have hω₀orth := star_dotProduct_mulVec_sub_smul_eq_zero hω hζ hζa
   obtain ⟨ω₀', hω₀ω₀', hD₂⟩ := ht (i + 2 * c + 4) ω₀ hω₀orth hω₀g
@@ -353,7 +320,7 @@ theorem LengthsDifferLe.of_succ (hJ : J.IsHermitian) (hg : g ∈ unitaryGroupOf 
       module
     rw [hdiff]
     have hsub := S.sub_mem_vecsOfSize (S.mem_vecsOfSize_of_le hD₂ (by omega))
-      (S.smul_mem_vecsOfSize hμ he₂g')
+      (S.smul_mem_vecsOfSize hμ (lengthLeAt_iff.mp he₂g'))
     exact S.mem_vecsOfSize_of_le (S.add_mem_vecsOfSize hsub
       (S.mem_vecsOfSize_of_le (S.smul_mem_vecsOfSize hlam hD₁) (by omega))) (by omega)
 
@@ -379,7 +346,8 @@ theorem LengthsDifferLe.zero_of_hasShortDual (hJ : J.IsHermitian) (hg : g ∈ un
       (fun b hb b' hb' => he b (by omega) b' (by omega)) h₁ h₂ hd
     have := ih (fun b hb b' hb' => he b (by omega) b' (by omega))
       (fun a ha => h a (by omega)) hj
-    rwa [show t + 4 * c + 12 + (4 * c + 12) * j = t + (4 * c + 12) * (j + 1) by ring] at this
+    have hexp : t + 4 * c + 12 + (4 * c + 12) * j = t + (4 * c + 12) * (j + 1) := by ring
+    rwa [hexp] at this
 
 /-- **Points with comparable lengths are close.** If `x` lies in the unitary group of an
 invertible Gram matrix `J`, `ρ` is a self-adjoint unit, and the lengths at `g` and `g x` differ by
@@ -395,7 +363,7 @@ theorem LengthsDifferLe.smul_sub_one_mem_matsOfSize (hJ : IsUnit J) {x : GL ι A
     refine S.mem_matsOfSize_of_col fun k => ?_
     obtain ⟨ω', hω', hk⟩ := h 0 ((g : Matrix ι ι A) *ᵥ Pi.single k 1) (fun b hb => absurd hb
       (Nat.not_lt_zero b)) (by
-        rw [LengthLeAt, mulVec_mulVec, Units.inv_mul, one_mulVec]
+        rw [lengthLeAt_iff, mulVec_mulVec, Units.inv_mul, one_mulVec]
         exact S.single_one_mem_vecsOfSize 0 k)
     have hω'eq : ω' = (g : Matrix ι ι A) *ᵥ Pi.single k 1 := by
       simpa [sub_eq_zero, eq_comm] using hω'
