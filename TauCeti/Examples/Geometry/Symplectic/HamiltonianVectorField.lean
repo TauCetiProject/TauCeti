@@ -334,16 +334,16 @@ theorem not_isHamiltonianVectorField_dilationField (f : ℝ × ℝ → ℝ) :
   have hF := fun x hx ↦ differentiableAt_of_isHamiltonianVectorField_dilationField hf (x := x) hx
   -- Along `q ↦ (q, p)` for `q ∈ [1, 2]`, the derivative of `f` vanishes.
   have hq : ∀ p : ℝ, f (2, p) = f (1, p) := fun p ↦ by
-    have h := sub_eq_mul_of_fderiv_apply_eq ((0 : ℝ), p) ((1 : ℝ), (0 : ℝ)) (c := 0)
-      (by norm_num : (1 : ℝ) < 2) fun s hs ↦ by
+    have h := sub_eq_smul_of_fderiv_apply_eq (f := f) ((0 : ℝ), p) ((1 : ℝ), (0 : ℝ)) (c := 0)
+      (by norm_num : (1 : ℝ) ≤ 2) fun s hs ↦ by
         have h := hF (((0 : ℝ), p) + s • ((1 : ℝ), (0 : ℝ)))
           (by simpa using (by linarith [hs.1] : (0 : ℝ) < s).ne')
         exact ⟨h.1, by rw [h.2]; simp⟩
     simpa [sub_eq_zero] using h
   -- Along `p ↦ (q, p)` for `p ∈ [0, 1]` and `q ≥ 1`, the derivative of `f` is `q`.
   have hp : ∀ q : ℝ, 1 ≤ q → f (q, 1) - f (q, 0) = q := fun q hq ↦ by
-    have h := sub_eq_mul_of_fderiv_apply_eq (q, (0 : ℝ)) ((0 : ℝ), (1 : ℝ)) (c := q)
-      (by norm_num : (0 : ℝ) < 1) fun s _ ↦ by
+    have h := sub_eq_smul_of_fderiv_apply_eq (f := f) (q, (0 : ℝ)) ((0 : ℝ), (1 : ℝ)) (c := q)
+      (by norm_num : (0 : ℝ) ≤ 1) fun s _ ↦ by
         have h := hF ((q, (0 : ℝ)) + s • ((0 : ℝ), (1 : ℝ)))
           (by simpa using (by linarith : (0 : ℝ) < q).ne')
         exact ⟨h.1, by rw [h.2]; simp⟩

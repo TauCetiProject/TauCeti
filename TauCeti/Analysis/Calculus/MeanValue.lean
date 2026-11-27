@@ -121,9 +121,9 @@ projection and the derivative of a map kills `ker π` on a ball about `0`, then 
 only depends on the `π` component (`TauCeti.apply_proj_eq_of_fderiv_apply_eq_zero`), and a
 compactly supported differentiable map whose derivative kills a nonzero `v` everywhere is zero
 (`HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero`).
-Over `ℝ`, if the derivative of a real function in a direction `e` is a constant `c` along the
-segment from `x + a • e` to `x + b • e`, the function grows by `c (b - a)` along it
-(`TauCeti.sub_eq_mul_of_fderiv_apply_eq`).
+Over `ℝ`, if the derivative of a function in a direction `e` is a constant `c` along the
+segment from `x + a • e` to `x + b • e`, the function grows by `(b - a) • c` along it
+(`TauCeti.sub_eq_smul_of_fderiv_apply_eq`).
 
 ## Constancy from a vanishing derivative
 
@@ -500,21 +500,23 @@ theorem _root_.HasCompactSupport.eq_zero_of_fderiv_apply_eq_zero {g : F → G}
 end Direction
 
 /-- If `f` is differentiable at every point `x + s • e` with `s ∈ [a, b]` and its derivative in
-the direction `e` is the constant `c` there, then `f` grows by `c (b - a)` from `x + a • e` to
+the direction `e` is the constant `c` there, then `f` grows by `(b - a) • c` from `x + a • e` to
 `x + b • e`. Unlike `TauCeti.apply_add_smul_eq_of_fderiv_apply_eq`, differentiability and the
 directional derivative are only assumed on the segment. -/
-theorem sub_eq_mul_of_fderiv_apply_eq {f : E → ℝ} (x e : E) {a b c : ℝ} (hab : a < b)
+theorem sub_eq_smul_of_fderiv_apply_eq {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {f : E → G} (x e : E) {a b : ℝ} {c : G} (hab : a ≤ b)
     (hf : ∀ s ∈ Set.Icc a b, DifferentiableAt ℝ f (x + s • e) ∧ fderiv ℝ f (x + s • e) e = c) :
-    f (x + b • e) - f (x + a • e) = c * (b - a) := by
-  have hd : ∀ s ∈ Set.Icc a b, HasDerivAt (fun s ↦ f (x + s • e)) c s := fun s hs ↦ by
-    refine ((hf s hs).1.hasFDerivAt.comp_hasDerivAt s
-      (((hasDerivAt_id s).smul_const e).const_add x)).congr_deriv ?_
+    f (x + b • e) - f (x + a • e) = (b - a) • c := by
+  have hd : ∀ s ∈ Set.Icc a b, HasDerivAt (fun s ↦ f (x + s • e) - s • c) 0 s := fun s hs ↦ by
+    refine (((hf s hs).1.hasFDerivAt.comp_hasDerivAt s
+      (((hasDerivAt_id s).smul_const e).const_add x)).sub
+      ((hasDerivAt_id s).smul_const c)).congr_deriv ?_
     simp [(hf s hs).2]
-  obtain ⟨d, -, hd'⟩ := exists_hasDerivAt_eq_slope (fun s ↦ f (x + s • e)) (fun _ ↦ c) hab
+  have h := constant_of_has_deriv_right_zero
     (fun s hs ↦ (hd s hs).continuousAt.continuousWithinAt)
-    (fun s hs ↦ hd s (Set.Ioo_subset_Icc_self hs))
-  rw [eq_div_iff (sub_ne_zero.2 hab.ne')] at hd'
-  exact hd'.symm
+    (fun s hs ↦ (hd s (Set.Ico_subset_Icc_self hs)).hasDerivWithinAt) b ⟨hab, le_rfl⟩
+  rw [sub_smul]
+  exact sub_eq_sub_iff_sub_eq_sub.1 h
 
 /-- **The mean value inequality along three segments.** If the segments `[x, p]`, `[p, q]` and
 `[q, y]` lie in a set `s` on which `g` is differentiable with derivative bounded by `L`, then
