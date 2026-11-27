@@ -39,6 +39,7 @@ cut out by `J`, namely its normal closure.
 * `TauCeti.HopfIdeal.IsNormal.map`: normality is preserved by the image of a Hopf ideal.
 * `TauCeti.HopfIdeal.IsNormal.comapOfSurjective_of_bijective`: normality is preserved by
   pullback along a bijective bialgebra morphism.
+* `TauCeti.CommHopfAlgCat.NormalHopfIdeal`: the normal Hopf ideals, ordered by inclusion.
 * `TauCeti.CommHopfAlgCat.quotientPointsSubgroup_normal`: a normal Hopf ideal cuts out a normal
   subgroup on points over every commutative value algebra.
 
@@ -184,6 +185,10 @@ end HopfIdeal
 namespace CommHopfAlgCat
 
 variable {R : Type u} [CommRing R]
+
+/-- The normal Hopf ideals of a commutative Hopf algebra, ordered by inclusion. -/
+abbrev NormalHopfIdeal (H : _root_.CommHopfAlgCat.{v} R) : Type v :=
+  {I : HopfIdeal R H // I.IsNormal}
 
 /-- A normal Hopf ideal cuts out a normal subgroup of points over every commutative
 `R`-algebra. -/
