@@ -214,7 +214,6 @@ private theorem exists_identityChart :
     rw [Bialgebra.ofConv_one_eq_counitAlgHom, chartDimension_eq_finrank_cotangentSpace]
     rfl
   have hchart := Algebra.Smooth.exists_openPartialHomeomorph_points (1 : G).ofConv
-  dsimp only at hchart
   rw [hdim] at hchart
   obtain ⟨E, s, b, h₁, -, hsource, he, ha⟩ := hchart
   let j : G ≃ₜ (H →ₐ[K] K) := isHomeomorph_ofConv.homeomorph
@@ -290,7 +289,7 @@ scoped instance lieGroup : letI := chartedSpace K H
 
 /-- Every coordinate evaluation is analytic in the chosen charted space of smooth affine
 group points. -/
-theorem contMDiff_eval (b : H) : letI := chartedSpace K H
+theorem contMDiff_eval_ofConv (b : H) : letI := chartedSpace K H
     ContMDiff 𝓘(K, Fin (chartDimension K H) → K) 𝓘(K) ω (fun p : G ↦ p.ofConv b) :=
   contMDiff_eval_chartedSpaceOfOne (one_mem_identityChart_source K H)
     (analyticOnNhd_eval_identityChart_symm K H) b

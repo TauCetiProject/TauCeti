@@ -239,8 +239,8 @@ finitely many elements `a i` of `A`. Every coordinate evaluation pulled back by 
 is analytic on the target. -/
 theorem IsStandardSmooth.exists_openPartialHomeomorph_points [IsStandardSmooth K A]
     (x : A →ₐ[K] K) :
-    let n := Module.finrank A Ω[A⁄K]
-    ∃ (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)) (a : Fin n → A),
+    ∃ (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin (Module.finrank A Ω[A⁄K]) → K))
+      (a : Fin (Module.finrank A Ω[A⁄K]) → A),
       x ∈ e.source ∧ (∀ y i, e y i = y (a i)) ∧
         ∀ b : A, AnalyticOnNhd K (fun z ↦ e.symm z b) e.target := by
   obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := ‹IsStandardSmooth K A›.out
@@ -268,9 +268,9 @@ at finitely many elements `b i` of the localization `A[1/g]` through the unique 
 point to `A[1/g]`.
 Every coordinate evaluation on `A` pulled back by the inverse chart is analytic on the target. -/
 theorem Smooth.exists_openPartialHomeomorph_points [Smooth K A] (x : A →ₐ[K] K) :
-    let n := Module.finrank K (RingHom.ker x).Cotangent
-    ∃ (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin n → K)) (g : A)
-      (b : Fin n → Localization.Away g), x ∈ e.source ∧ x g ≠ 0 ∧
+    ∃ (e : OpenPartialHomeomorph (A →ₐ[K] K) (Fin (Module.finrank K (RingHom.ker x).Cotangent) → K))
+      (g : A) (b : Fin (Module.finrank K (RingHom.ker x).Cotangent) → Localization.Away g),
+      x ∈ e.source ∧ x g ≠ 0 ∧
       e.source ⊆ {y | IsUnit (y g)} ∧
       (∀ (y : Localization.Away g →ₐ[K] K) i,
         e (y.comp (IsScalarTower.toAlgHom K A (Localization.Away g))) i = y (b i)) ∧
@@ -308,7 +308,6 @@ theorem Smooth.exists_openPartialHomeomorph_points [Smooth K A] (x : A →ₐ[K]
         (AlgebraTensorModule.cancelBaseChange A B K K _).finrank_eq.symm
       _ = Module.finrank K (K ⊗[B] Ω[B⁄K]) := baseChange.finrank_eq
       _ = _ := Module.finrank_baseChange
-  dsimp only
   rw [hdim]
   obtain ⟨e, b, he, heb, ha⟩ := IsStandardSmooth.exists_openPartialHomeomorph_points y
   refine ⟨e.lift_openEmbedding hj, g, b, Set.mem_image_of_mem j he, hxg, ?_, fun z i ↦ ?_, ?_⟩
