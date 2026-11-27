@@ -67,6 +67,16 @@ def splitCartanElement (i : p) : so' p q ℝ :=
 def splitCartanSubmodule : Submodule ℝ (so' p q ℝ) :=
   span ℝ (Set.range (splitCartanElement e))
 
+/-- `𝔞` is the span of the `H_i`. -/
+theorem splitCartanSubmodule_eq_span :
+    splitCartanSubmodule e = span ℝ (Set.range (splitCartanElement e)) :=
+  (rfl)
+
+/-- The elements of `𝔞` are the combinations `∑ᵢ c_i H_i`. -/
+theorem mem_splitCartanSubmodule_iff {x : so' p q ℝ} :
+    x ∈ splitCartanSubmodule e ↔ ∃ c : p → ℝ, ∑ i, c i • splitCartanElement e i = x :=
+  mem_span_range_iff_exists_fun ℝ
+
 /-- Each `H_i` lies in `𝔞`. -/
 theorem splitCartanElement_mem_splitCartanSubmodule (i : p) :
     splitCartanElement e i ∈ splitCartanSubmodule e :=
@@ -76,6 +86,11 @@ theorem splitCartanElement_mem_splitCartanSubmodule (i : p) :
 injective `e` its underlying submodule is `𝔞` (`splitCartanSubalgebra_toSubmodule`). -/
 def splitCartanSubalgebra : LieSubalgebra ℝ (so' p q ℝ) :=
   LieSubalgebra.lieSpan ℝ _ (Set.range (splitCartanElement e))
+
+/-- `splitCartanSubalgebra` is the Lie span of the `H_i`. -/
+theorem splitCartanSubalgebra_eq_lieSpan :
+    splitCartanSubalgebra e = LieSubalgebra.lieSpan ℝ _ (Set.range (splitCartanElement e)) :=
+  (rfl)
 
 /-- The underlying matrix of `H_i` is `E_(i, e i) + E_(e i, i)`. -/
 @[simp]
@@ -240,7 +255,7 @@ theorem restrictedRootSpace_zero_splitCartanSubmodule (he : Function.Injective e
   rw [mem_restrictedRootSpace_zero] at hX
   rw [eq_sum_smul_splitCartanElement hc fun i ↦
     hX ⟨_, splitCartanElement_mem_splitCartanSubmodule e i⟩]
-  exact sum_mem fun i _ ↦ smul_mem _ _ (splitCartanElement_mem_splitCartanSubmodule e i)
+  exact (mem_splitCartanSubmodule_iff e).mpr ⟨_, rfl⟩
 
 /-- **`𝔞` is a maximal abelian subspace of `𝔭`** when `e` is injective and at most one index of
 `q` lies outside its range. -/
