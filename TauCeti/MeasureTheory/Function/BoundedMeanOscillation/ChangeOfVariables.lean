@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 import TauCeti.Analysis.Normed.Group.UniformContinuity
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
+import TauCeti.MeasureTheory.Measure.QuasiMeasurePreserving
 import TauCeti.Topology.Algebra.Order.Field
 
 /-!
@@ -110,13 +111,6 @@ private theorem setLAverage_ball_enorm_comp_sub_le (hΦ : LipschitzWith L Φ) (h
     _ = K * D * A * ((μ (ball c s))⁻¹ * μ (ball c s)) := by ring
     _ = K * D * A := by rw [ENNReal.inv_mul_cancel h0 htop, mul_one]
 
-/-- `f ∘ Φ` agrees almost everywhere with the composite of a strongly measurable modification of
-`f`, since `Φ_* μ ≪ ν`. -/
-private theorem comp_ae_eq_mk (hΦ : LipschitzWith L Φ) (hmap : μ.map Φ ≤ K • ν)
-    (hf : AEStronglyMeasurable f ν) : f ∘ Φ =ᵐ[μ] hf.mk f ∘ Φ :=
-  ae_eq_comp hΦ.continuous.measurable.aemeasurable
-    ((Measure.absolutelyContinuous_of_le_smul hmap).ae_le hf.ae_eq_mk)
-
 variable [NormedSpace ℝ F] [CompleteSpace F]
 
 /-- **Mean oscillation under a change of variables.** Let `Φ : X → Y` be `L`-Lipschitz, `L ≠ 0`,
@@ -127,7 +121,9 @@ theorem vmoModulus_comp_le_of_map_le (hΦ : LipschitzWith L Φ) (hL : L ≠ 0)
     (hD : ∀ c s, 0 < s → ν (ball (Φ c) (L * s)) ≤ D * μ (ball c s))
     (hf : AEStronglyMeasurable f ν) (r : ℝ) :
     vmoModulus (f ∘ Φ) μ r ≤ 2 * K * D * vmoModulus f ν (L * r) := by
-  rw [vmoModulus_congr_ae (comp_ae_eq_mk hΦ hmap hf), vmoModulus_congr_ae hf.ae_eq_mk]
+  rw [vmoModulus_congr_ae ((QuasiMeasurePreserving.of_map_le_smul
+    hΦ.continuous.measurable.aemeasurable hmap).ae_eq_comp hf.ae_eq_mk),
+    vmoModulus_congr_ae hf.ae_eq_mk]
   set g := hf.mk f
   have hg : StronglyMeasurable g := hf.stronglyMeasurable_mk
   refine vmoModulus_le fun c s hs => ?_

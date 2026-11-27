@@ -448,8 +448,7 @@ theorem memVMO_nondivPullbackPrincipal {A : E → E →L[ℝ] E} (hA : MemVMO A 
     (hM : UniformContinuous fun x => fderiv ℝ Ψ (Φ x)) (hMN : ∀ x, ‖fderiv ℝ Ψ (Φ x)‖ ≤ N) :
     MemVMO (nondivPullbackPrincipal Φ Ψ A) mu := by
   have hAΦΛ : ∀ᵐ x ∂mu, ‖A (Φ x)‖ ≤ Λ :=
-    ae_of_ae_map hΦ.continuous.measurable.aemeasurable
-      ((Measure.absolutelyContinuous_of_le_smul hmap).ae_le hAΛ)
+    (QuasiMeasurePreserving.of_map_le_smul hΦ.continuous.measurable.aemeasurable hmap).ae hAΛ
   have hadj : UniformContinuous fun x => (fderiv ℝ Ψ (Φ x)).adjoint :=
     (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := E) (F := E)).isometry.uniformContinuous.comp hM
   -- First the product `x ↦ A(Φ x) ∘ M(x)†`, then its product with `M`.
