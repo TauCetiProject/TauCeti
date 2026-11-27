@@ -86,6 +86,15 @@ theorem strictFeasibleSet_of_isEmpty [IsEmpty ι] (S : Set E) (g : ι → E → 
   ext x
   simp
 
+/-- The strictly feasible set of convex constraints on a convex set is convex. -/
+theorem convex_strictFeasibleSet [AddCommGroup E] [Module ℝ E] {S : Set E} {g : ι → E → ℝ}
+    (hS : Convex ℝ S) (hg : ∀ i, ConvexOn ℝ S (g i)) : Convex ℝ (strictFeasibleSet S g) := by
+  have h : strictFeasibleSet S g = S ∩ ⋂ i, {x | x ∈ S ∧ g i x < 0} := by
+    ext x
+    simp +contextual [iff_def]
+  rw [h]
+  exact hS.inter (convex_iInter fun i => (hg i).convex_lt 0)
+
 variable [Fintype ι]
 
 /-- The logarithmic barrier `x ↦ -∑ i, log (-g i x)` of the constraints `g i ≤ 0`. It is meant
@@ -109,15 +118,18 @@ theorem logBarrier_sub_logBarrier {g : ι → E → ℝ} {x y : E} (hx : ∀ i, 
   rw [sum_congr rfl fun i _ => Real.log_div (hy i).ne (hx i).ne, sum_sub_distrib]
   ring
 
+/-- A convex combination `(1 - s) a + s b` with `a ≠ 0` is `a` times `1 + s (b / a - 1)`. -/
+private lemma sub_mul_add_mul_eq_mul {a b s : ℝ} (ha : a ≠ 0) :
+    (1 - s) * a + s * b = a * (1 + s * (b / a - 1)) := by
+  field_simp
+  ring
+
 /-- One constraint along a segment: if `a < 0`, `q = 1 + s (b / a - 1) > 0` and
 `u ≤ (1 - s) a + s b`, then `log (-u)` exceeds `log (-a)` by at least `s (b / a - 1) / q`. -/
 private lemma mul_div_le_log_neg_sub_log_neg {a b u s : ℝ} (ha : a < 0)
     (hq : 0 < 1 + s * (b / a - 1)) (hu : u ≤ (1 - s) * a + s * b) :
     s * ((b / a - 1) / (1 + s * (b / a - 1))) ≤ Real.log (-u) - Real.log (-a) := by
-  have ha0 : a ≠ 0 := ha.ne
-  have hcomb : (1 - s) * a + s * b = a * (1 + s * (b / a - 1)) := by
-    field_simp
-    ring
+  have hcomb := sub_mul_add_mul_eq_mul (b := b) (s := s) ha.ne
   have hpos : 0 < -a * (1 + s * (b / a - 1)) := mul_pos (neg_pos.2 ha) hq
   have hlog := Real.log_le_log hpos (show -a * (1 + s * (b / a - 1)) ≤ -u by
     rw [neg_mul, ← hcomb]
@@ -134,13 +146,16 @@ private lemma mul_div_le_log_neg_sub_log_neg {a b u s : ℝ} (ha : a < 0)
 variable [AddCommGroup E] [Module ℝ E] {S : Set E} {f₀ : E → ℝ} {g : ι → E → ℝ} {t : ℝ} {x : E}
 
 /-- The central point inequality with the ratios of the constraint values: at a central point
-`x` for `t > 0`, `∑ i, (g i z / g i x - 1) ≤ t (f₀ z - f₀ x)` for every `z ∈ S`. -/
+`x` for `t > 0`, `∑ i, g i z / g i x - m ≤ t (f₀ z - f₀ x)` for every `z ∈ S`, where `m` is the
+number of constraints. -/
 private lemma sum_div_sub_one_le (hf₀ : ConvexOn ℝ S f₀) (hg : ∀ i, ConvexOn ℝ S (g i))
     (hx : x ∈ strictFeasibleSet S g)
     (hmin : IsMinOn (fun z => t * f₀ z + logBarrier g z) (strictFeasibleSet S g) x)
     (ht : 0 ≤ t) {z : E} (hz : z ∈ S) :
-    ∑ i, (g i z / g i x - 1) ≤ t * (f₀ z - f₀ x) := by
-  set c : ι → ℝ := fun i => g i z / g i x - 1 with hc
+    ∑ i, g i z / g i x - Fintype.card ι ≤ t * (f₀ z - f₀ x) := by
+  suffices h : ∑ i, (g i z / g i x - 1) ≤ t * (f₀ z - f₀ x) by
+    simpa [sum_sub_distrib] using h
+  set c : ι → ℝ := fun i => g i z / g i x - 1
   -- The difference quotient of the barrier along the segment, as a function of the step `s`.
   have hcont : ContinuousAt (fun s : ℝ => ∑ i, c i / (1 + s * c i)) 0 := by
     fun_prop (disch := simp)
@@ -166,12 +181,9 @@ private lemma sum_div_sub_one_le (hf₀ : ConvexOn ℝ S f₀) (hg : ∀ i, Conv
   have hstep (i : ι) : s * (c i / (1 + s * c i)) ≤ Real.log (-g i xs) - Real.log (-g i x) :=
     mul_div_le_log_neg_sub_log_neg (hx.2 i) (hq i) (hgxs i)
   have hfeas : xs ∈ strictFeasibleSet S g := by
-    refine ⟨hmem, fun i => ?_⟩
-    have : (1 - s) * g i x + s * g i z = g i x * (1 + s * c i) := by
-      simp only [hc]
-      field_simp [(hx.2 i).ne]
-      ring
-    nlinarith [hgxs i, hx.2 i, hq i]
+    refine ⟨hmem, fun i => (hgxs i).trans_lt ?_⟩
+    rw [sub_mul_add_mul_eq_mul (hx.2 i).ne]
+    exact mul_neg_of_neg_of_pos (hx.2 i) (hq i)
   have hminxs : t * f₀ x + logBarrier g x ≤ t * f₀ xs + logBarrier g xs := hmin hfeas
   have hsum := sum_le_sum fun i (_ : i ∈ univ) => hstep i
   rw [← mul_sum, sum_sub_distrib] at hsum
@@ -191,12 +203,14 @@ theorem centralPath_bound (hf₀ : ConvexOn ℝ S f₀) (hg : ∀ i, ConvexOn �
     {z : E} (hz : z ∈ S) :
     f₀ x - Fintype.card ι / t ≤ f₀ z + ∑ i, g i z / (-(t * g i x)) := by
   have key := sum_div_sub_one_le hf₀ hg hx hmin ht.le hz
-  rw [sum_sub_distrib, sum_const, card_univ, nsmul_eq_mul, mul_one] at key
   have hsum : ∑ i, g i z / (-(t * g i x)) = -(∑ i, g i z / g i x) / t := by
     rw [neg_div, sum_div, ← sum_neg_distrib]
     refine sum_congr rfl fun i _ => ?_
     field_simp [(hx.2 i).ne]
-  rw [hsum, sub_le_iff_le_add, add_assoc, ← sub_le_iff_le_add', ← add_div, le_div_iff₀ ht]
+  have hdiv : (∑ i, g i z / g i x - Fintype.card ι) / t ≤ f₀ z - f₀ x := by
+    rwa [div_le_iff₀' ht]
+  rw [hsum, neg_div]
+  rw [sub_div] at hdiv
   linarith
 
 /-- **Central points are `m / t`-optimal.** Let `f₀` and the constraints `g i` be convex on `S`,
@@ -222,7 +236,6 @@ theorem centering_gap {μ : ℝ} {y : E} (hf₀ : ConvexOn ℝ S f₀) (hg : ∀
     μ * t * f₀ x + logBarrier g x - (μ * t * f₀ y + logBarrier g y) ≤
       Fintype.card ι * (μ - 1 - Real.log μ) := by
   have key := sum_div_sub_one_le hf₀ hg hx hmin ht hy.1
-  rw [sum_sub_distrib, sum_const, card_univ, nsmul_eq_mul, mul_one] at key
   -- Each `log (g i y / g i x) = log (μ * (g i y / g i x)) - log μ` is at most
   -- `μ * (g i y / g i x) - 1 - log μ`.
   have hlog (i : ι) : Real.log (g i y / g i x) ≤ μ * (g i y / g i x) - 1 - Real.log μ := by
@@ -231,8 +244,7 @@ theorem centering_gap {μ : ℝ} {y : E} (hf₀ : ConvexOn ℝ S f₀) (hg : ∀
     rw [Real.log_mul hμ.ne' ha.ne'] at this
     linarith
   have hsum := sum_le_sum fun i (_ : i ∈ univ) => hlog i
-  rw [sum_sub_distrib, sum_sub_distrib, ← mul_sum, sum_const, sum_const, card_univ,
-    nsmul_eq_mul, nsmul_eq_mul, mul_one] at hsum
+  simp only [sum_sub_distrib, ← mul_sum, sum_const, card_univ, nsmul_eq_mul, mul_one] at hsum
   have hgap := logBarrier_sub_logBarrier hx.2 hy.2
   linarith [mul_le_mul_of_nonneg_left key hμ.le]
 
