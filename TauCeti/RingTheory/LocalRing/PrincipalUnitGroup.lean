@@ -114,9 +114,10 @@ theorem principalUnitGroupGradedSuccEquivMaximalIdealGraded_mk (n : ℕ)
     principalUnitGroupGradedSuccEquivMaximalIdealGraded S n (QuotientGroup.mk u) =
       .ofAdd (Submodule.Quotient.mk
         ⟨((u : Sˣ) : S) - 1, Ideal.mem_principalUnitGroup.mp u.property⟩) := by
-  simp only [principalUnitGroupGradedSuccEquivMaximalIdealGraded, MulEquiv.trans_apply,
-    Ideal.principalUnitGroupPowQuotientEquiv_mk]
-  rfl
+  rw [principalUnitGroupGradedSuccEquivMaximalIdealGraded, MulEquiv.trans_apply,
+    Ideal.principalUnitGroupPowQuotientEquiv_mk, AddEquiv.toMultiplicative_apply_apply,
+    toAdd_ofAdd, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    Submodule.quotEquivOfEq_mk]
 
 end IsLocalRing
 

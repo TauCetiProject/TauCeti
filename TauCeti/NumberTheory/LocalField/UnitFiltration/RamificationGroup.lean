@@ -218,8 +218,7 @@ theorem ramificationGroupToUnitFiltrationGraded_apply (hϖ : Irreducible ϖ)
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
   rw [ramificationGroupToUnitFiltrationGraded, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     IsDiscreteValuationRing.ramificationGroupToPrincipalUnitGroupGraded_apply hϖ,
-    principalUnitGroupGradedEquivUnitFiltrationGraded_mk]
-  rfl
+    principalUnitGroupGradedEquivUnitFiltrationGraded_mk, uniformizerRatio]
 
 /-! ### Membership decided at a uniformizer -/
 
@@ -447,8 +446,7 @@ theorem isPGroup_ramificationGroup (p : ℕ) [CharP 𝓀[L] p] [FaithfulSMul G �
     [Finite (ramificationGroup G 𝒪[L] 0)] {i : ℤ} (hi : 0 < i) :
     IsPGroup p (ramificationGroup G 𝒪[L] i) :=
   have : Finite (ramificationGroup G 𝒪[L] i) :=
-    Finite.of_injective (Subgroup.inclusion (ramificationGroup_antitone G 𝒪[L] hi.le))
-      (Subgroup.inclusion_injective _)
+    finite_ramificationGroup_of_le hi.le
   IsLocalRing.isPGroup_ramificationGroup G 𝒪[L] p hi
 
 /-! ### Wild inertia as the Sylow subgroup of inertia -/

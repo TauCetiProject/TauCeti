@@ -152,8 +152,7 @@ theorem smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup {n k : ℕ} {σ :
     · -- `σ (a b) - a b = (σ a - a) σ b + a (σ b - b)`, with each term of order `n + k + 2`.
       have hb' : σ • b ∈ maximalIdeal S ^ 1 := by
         rw [smul_mem_maximalIdeal_pow_iff, pow_one]; exact hb
-      rw [smul_mul',
-        (by ring : σ • a * σ • b - a * b = (σ • a - a) * σ • b + a * (σ • b - b))]
+      rw [smul_mul_sub_mul]
       refine add_mem ?_ ?_
       · rw [(by omega : n + (k + 1) + 1 = (n + k + 1) + 1), pow_add]
         exact Ideal.mul_mem_mul (ih ha) hb'
@@ -161,23 +160,6 @@ theorem smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup {n k : ℕ} {σ :
         exact Ideal.mul_mem_mul ha (hσ b)
     · rw [smul_add, (by ring : σ • a + σ • b - (a + b) = (σ • a - a) + (σ • b - b))]
       exact add_mem ha hb
-
-omit [IsLocalRing S] in
-/-- If `σ ∈ J.inertia G` moves every element of `J` into `I`, then powers of `σ` act to first
-order modulo `I` like multiples of `σ`: `σ ^ m x - x ≡ m (σ x - x)` modulo `I`. -/
-private theorem smul_pow_sub_sub_nsmul_mem_of_inertia {I J : Ideal S} {σ : G}
-    (hσ : σ ∈ J.inertia G) (hJ : ∀ w ∈ J, σ • w - w ∈ I) (m : ℕ) (x : S) :
-    σ ^ m • x - x - m • (σ • x - x) ∈ I := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    have hy : σ ^ m • x - x ∈ J := Ideal.mem_inertia.mp (pow_mem hσ m) x
-    have hsplit : σ ^ (m + 1) • x - x - (m + 1) • (σ • x - x) =
-        (σ ^ m • x - x - m • (σ • x - x)) + (σ • (σ ^ m • x - x) - (σ ^ m • x - x)) := by
-      simp only [pow_succ', mul_smul, smul_sub, add_nsmul, one_nsmul]
-      abel
-    rw [hsplit]
-    exact add_mem ih (hJ _ hy)
 
 /-- A positive integer index is a successor of a natural number. -/
 private theorem exists_natCast_add_one_eq {i : ℤ} (hi : 0 < i) : ∃ n : ℕ, i = (n + 1 : ℕ) :=
@@ -198,7 +180,7 @@ theorem pow_mem_ramificationGroup_of_charP (p : ℕ) [CharP (ResidueField S) p] 
     rw [nsmul_eq_mul, pow_succ']
     exact Ideal.mul_mem_mul hp (mem_ramificationGroup_natCast_iff.mp hσ x)
   have hrem : σ ^ p • x - x - p • (σ • x - x) ∈ maximalIdeal S ^ (n + 3) :=
-    smul_pow_sub_sub_nsmul_mem_of_inertia
+    TauCeti.Ideal.smul_pow_sub_sub_nsmul_mem_of_inertia
       (Ideal.mem_inertia.mpr (mem_ramificationGroup_natCast_iff.mp hσ))
       (fun _ hy ↦ Ideal.pow_le_pow_right (by omega)
         (smul_sub_mem_maximalIdeal_pow_of_mem_ramificationGroup hσ hy))
@@ -215,7 +197,7 @@ theorem mem_inertia_of_forall_mem_of_pow_mem {I J : Ideal S} {σ : G}
     σ ∈ I.inertia G := by
   rw [Ideal.mem_inertia] at hpow ⊢
   intro x
-  have hrem := smul_pow_sub_sub_nsmul_mem_of_inertia hσ hJ m x
+  have hrem := TauCeti.Ideal.smul_pow_sub_sub_nsmul_mem_of_inertia hσ hJ m x
   have hu : IsUnit (m : S) := by
     rwa [← residue_ne_zero_iff_isUnit, map_natCast]
   refine (Ideal.unit_mul_mem_iff_mem _ hu).mp ?_
@@ -441,8 +423,7 @@ private theorem mem_ramificationGroup_succ_of_smul_sub_mem {π : S}
   refine mem_inertia_of_forall_mem_maximalIdeal R
     (ramificationGroup_antitone G S (Int.natCast_nonneg n) hσ) fun w hw ↦ ?_
   obtain ⟨y, rfl⟩ := Ideal.mem_span_singleton.mp (hπ ▸ hw)
-  rw [smul_mul',
-    (by ring : σ • π * σ • y - π * y = (σ • π - π) * σ • y + π * (σ • y - y))]
+  rw [smul_mul_sub_mul]
   refine add_mem (Ideal.mul_mem_right _ _ hσπ) ?_
   rw [pow_succ']
   exact Ideal.mul_mem_mul (hπ ▸ Ideal.mem_span_singleton_self π)
@@ -822,9 +803,7 @@ noncomputable def ramificationGroupOneSylow (p : ℕ) [Fact p.Prime] [CharP (Res
     (hp : ¬ p ∣ ((ramificationGroup G S 1).subgroupOf (ramificationGroup G S 0)).index) :
     Sylow p (ramificationGroup G S 0) :=
   have : Finite (ramificationGroup G S 1) :=
-    Finite.of_injective
-      (Subgroup.inclusion (ramificationGroup_antitone G S (by omega : (0 : ℤ) ≤ 1)))
-      (Subgroup.inclusion_injective _)
+    finite_ramificationGroup_of_le (by omega : (0 : ℤ) ≤ 1)
   ((isPGroup_ramificationGroup G S p (i := 1) one_pos).comap_subtype).toSylow hp
 
 variable {G S}

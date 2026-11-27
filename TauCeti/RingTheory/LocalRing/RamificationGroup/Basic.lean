@@ -52,8 +52,10 @@ integer indexing that Herbrand theory uses.
   `Ideal.ramificationGroup` of the maximal ideal.
 * `TauCeti.IsLocalRing.unitsMap_mul_inv_mem_principalUnitGroup_natCast`: an element of `G_n` moves
   every unit of `S` by a factor in `(𝔪 ^ (n + 1)).principalUnitGroup`.
-* `TauCeti.IsLocalRing.ramificationGroup_eq_top_of_le_neg_one` and
-  `TauCeti.IsLocalRing.ramificationGroup_antitone`: the filtration starts at `⊤` and decreases.
+* `TauCeti.IsLocalRing.ramificationGroup_eq_top_of_le_neg_one`,
+  `TauCeti.IsLocalRing.ramificationGroup_antitone`, and
+  `TauCeti.IsLocalRing.finite_ramificationGroup_of_le`: the filtration starts at `⊤`, decreases,
+  and inherits finiteness from earlier steps.
 * `TauCeti.IsLocalRing.ramificationGroup_zero_eq_inertia`: `G_0` is the inertia subgroup of the
   maximal ideal, `TauCeti.IsLocalRing.ramificationGroup_zero_eq_ker_toRingAut` identifies it with
   the kernel of the action on the residue field, and
@@ -206,6 +208,13 @@ theorem ramificationGroup_antitone : Antitone (ramificationGroup G S) := by
   intro i j hij σ hσ
   rw [mem_ramificationGroup_iff] at hσ ⊢
   exact fun x ↦ Ideal.pow_le_pow_right (by omega) (hσ x)
+
+variable {G S} in
+/-- If `G_i` is finite and `i ≤ j`, then `G_j` is finite. -/
+theorem finite_ramificationGroup_of_le {i j : ℤ} (h : i ≤ j)
+    [Finite (ramificationGroup G S i)] : Finite (ramificationGroup G S j) :=
+  Finite.of_injective (Subgroup.inclusion (ramificationGroup_antitone G S h))
+    (Subgroup.inclusion_injective _)
 
 end Defs
 

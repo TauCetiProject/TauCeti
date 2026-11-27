@@ -246,8 +246,8 @@ theorem ramificationGroupToPrincipalUnitGroupGraded_apply (hϖ : Irreducible ϖ)
     ramificationGroupToPrincipalUnitGroupGraded G B i σ =
       QuotientGroup.mk (uniformizerRatio i hϖ σ) := by
   rw [ramificationGroupToPrincipalUnitGroupGraded,
-    ramificationGroupToPrincipalUnitGroupGradedOf_eq (G := G) _ hϖ]
-  rfl
+    ramificationGroupToPrincipalUnitGroupGradedOf_eq (G := G) _ hϖ,
+    ramificationGroupToPrincipalUnitGroupGradedOf, MonoidHom.mk'_apply]
 
 /-- An element `σ ∈ G_i` lies in the kernel of `ramificationGroupToPrincipalUnitGroupGraded G B i`
 precisely when `σ • ϖ - ϖ ∈ 𝔪 ^ (i + 2)` for a uniformizer `ϖ`. -/
@@ -512,9 +512,7 @@ theorem ker_tameCharacter_of_charZero [CharZero (ResidueField B)] [FaithfulSMul 
     mem_ramificationGroup_one_of_charZero hϖ σ.property
       ((ramificationGroup G B 0).subtype.isOfFinOrder (isOfFinOrder_of_finite σ)) hσ
   have : Finite (ramificationGroup G B 1) :=
-    Finite.of_injective
-      (Subgroup.inclusion (ramificationGroup_antitone G B (by omega : (0 : ℤ) ≤ 1)))
-      (Subgroup.inclusion_injective _)
+    finite_ramificationGroup_of_le (by omega : (0 : ℤ) ≤ 1)
   rw [ramificationGroup_eq_bot_of_charZero one_pos (iInf_ramificationGroup_eq_bot G B)] at h1
   exact Subtype.ext h1
 
