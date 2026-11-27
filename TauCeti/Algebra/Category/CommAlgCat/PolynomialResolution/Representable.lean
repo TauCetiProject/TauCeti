@@ -71,10 +71,9 @@ def evalVar (a : ι) : P.polynomialLifts t ⟶ P.left ⋙ forget (CommAlgCat.{ma
   naturality _ _ _ := by
     apply ConcreteCategory.hom_ext
     intro x
+    rw [Functor.comp_map, ConcreteCategory.forget_map_eq_ofHom]
     simp only [ConcreteCategory.comp_apply, TypeCat.ofHom_apply, polynomialLifts_map_left,
       CommAlgCat.hom_comp, AlgHom.comp_apply]
-    -- The forgetful functor acts by the underlying algebra homomorphism.
-    rfl
 
 /-- Evaluation at a variable sends every lift to its prescribed image under the augmentation. -/
 @[simp] lemma evalVar_comp_augmentation (a : ι) :
@@ -83,7 +82,8 @@ def evalVar (a : ι) : P.polynomialLifts t ⟶ P.left ⋙ forget (CommAlgCat.{ma
   ext n f
   exact congrArg (fun g ↦ g.hom (MvPolynomial.X a)) (Over.w (objEquiv P t f))
 
-private lemma obj_ext {n : SimplexCategoryᵒᵖ} {x y : (P.polynomialLifts t).obj n}
+/-- Two simplices of polynomial lifts agree if their slice maps agree on every variable. -/
+@[ext] lemma obj_ext {n : SimplexCategoryᵒᵖ} {x y : (P.polynomialLifts t).obj n}
     (h : ∀ a, (objEquiv P t x).left.hom (MvPolynomial.X a) =
       (objEquiv P t y).left.hom (MvPolynomial.X a)) : x = y := by
   apply (objEquiv P t).injective
@@ -119,14 +119,27 @@ def lift {K : SSet.{max u v}} (s : ι → (K ⟶ P.left ⋙ forget (CommAlgCat.{
 lemma evalVar_app {n : SimplexCategoryᵒᵖ} (a : ι) (x : (P.polynomialLifts t).obj n) :
     (evalVar P t a).app n x = (objEquiv P t x).left.hom (MvPolynomial.X a) := (rfl)
 
+/-- The slice map of a lifted simplex is polynomial evaluation at the specified variable images. -/
+@[simp] lemma objEquiv_lift_app_left {K : SSet.{max u v}}
+    (s : ι → (K ⟶ P.left ⋙ forget (CommAlgCat.{max u v} A)))
+    (hs : ∀ a, s a ≫ Functor.whiskerRight P.hom (forget (CommAlgCat.{max u v} A)) =
+      SSet.const (t.hom (MvPolynomial.X a))) {n : SimplexCategoryᵒᵖ} (x : K.obj n) :
+    (objEquiv P t ((lift P t s hs).app n x)).left =
+      ofHom (MvPolynomial.aeval (S₁ := P.left.obj n) (fun a ↦ (s a).app n x)) := (rfl)
+
 /-- The map constructed from variable images recovers those images upon evaluation. -/
 @[simp] lemma lift_comp_evalVar {K : SSet.{max u v}}
     (s : ι → (K ⟶ P.left ⋙ forget (CommAlgCat.{max u v} A)))
     (hs : ∀ a, s a ≫ Functor.whiskerRight P.hom (forget (CommAlgCat.{max u v} A)) =
       SSet.const (t.hom (MvPolynomial.X a))) (a : ι) :
     lift P t s hs ≫ evalVar P t a = s a := by
-  ext n x
-  exact MvPolynomial.aeval_X (S₁ := P.left.obj n) (fun b ↦ (s b).app n x) a
+  apply SSet.hom_ext
+  intro n
+  apply ConcreteCategory.hom_ext
+  intro x
+  simp only [NatTrans.comp_app, ConcreteCategory.comp_apply, evalVar_app,
+    objEquiv_lift_app_left, CommAlgCat.hom_ofHom]
+  rw [MvPolynomial.aeval_X]
 
 /-- Maps into the simplicial set of polynomial lifts agree if they agree on every variable. -/
 @[ext] lemma hom_ext {K : SSet.{max u v}} {f g : K ⟶ P.polynomialLifts t}
