@@ -53,9 +53,10 @@ components of `Φ`
 (`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.coe_orbitFiberProductDiffeomorph_mk`).
 `TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.ReducedForm` transports this
 identity across `Φ` to `W_O` (`existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub`,
-in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`) and identifies `W_O` with the zero
-level of the shifting map on `M × O⁻`
-(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorphShiftingLevel`).
+in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`), and
+`TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.Shifting` identifies `W_O`
+with the zero level of the shifting map on `M × O⁻`
+(`TauCeti.SmoothTwoForm.IsEquivariantMomentMap.orbitFiberProductDiffeomorphLevelSubMulAction`).
 
 ## Main definitions
 
