@@ -350,17 +350,10 @@ private theorem forall_notMem_singularSupport_chartComponent_iff
     (∀ v, c x ∉ Distribution.singularSupport (t.chartComponent c hc hct T v)) ↔
       ∀ ξ : TangentSpace I x →L[ℝ] ℝ, ξ ≠ 0 → IsMicrolocallySmoothAt T x ξ := by
   have hcx : c x ∈ (⟨c.target, c.open_target⟩ : Opens E) := c.map_source hx
-  -- Reading covectors at `x` in the chart is a bijection onto the covectors of `E`.
-  have hb := OpenPartialHomeomorph.MDifferentiable.comp_mfderiv_symm_bijective
-    ⟨hc.mdifferentiableOn (by simp), hcs.mdifferentiableOn (by simp)⟩ hx
-  refine ⟨fun h ξ hξ ↦ (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).2 fun v ↦
-    (Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hcx).1 (h v) _
-      (mt (c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).1 hξ), fun h v ↦ ?_⟩
-  refine (Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hcx).2 fun η hη ↦ ?_
-  obtain ⟨ξ, hξη⟩ := hb.2 (toDual ℝ E η)
-  rw [← (toDual ℝ E).symm_apply_apply η, ← hξη] at hη ⊢
-  have hξ : ξ ≠ 0 := mt (c.toDual_symm_comp_mfderiv_symm_eq_zero_iff hc hcs hx).2 hη
-  exact (isMicrolocallySmoothAt_iff T hc hcs hct hx ξ).1 (h ξ hξ) v
+  exact (forall_congr' fun v ↦
+    Distribution.notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hcx).trans
+      (forall_chartComponent_iff_forall_isMicrolocallyAt
+        isInvariantMicrolocalRegularity_isMicrolocallySmoothAt T hc hcs hct hx)
 
 /-- **The singular support in any chart and frame.** For a smooth chart `c` at `x` with smooth
 inverse and a frame `t` over its source, `x` lies outside the singular support of `T` exactly when
@@ -389,13 +382,8 @@ theorem notMem_singularSupport_iff_forall_isMicrolocallySmoothAt [I.Boundaryless
 
 /-- **The projection of the wave front set is the singular support** (Hörmander I, §8.2). -/
 theorem proj_image_waveFrontSet [I.Boundaryless] (T : BundleTest I F V →L_c[ℝ] ℝ) :
-    TotalSpace.proj '' waveFrontSet I T = singularSupport I T := by
-  ext x
-  rw [← not_iff_not, notMem_singularSupport_iff_forall_isMicrolocallySmoothAt]
-  refine ⟨fun h ξ hξ ↦ by_contra fun hT ↦ h ⟨⟨x, ξ⟩, mem_waveFrontSet_iff.2 ⟨hξ, hT⟩, rfl⟩, ?_⟩
-  rintro h ⟨p, hpT, rfl⟩
-  obtain ⟨hp, hT⟩ := mem_waveFrontSet_iff.1 hpT
-  exact hT (h p.snd hp)
+    TotalSpace.proj '' waveFrontSet I T = singularSupport I T :=
+  proj_image_microlocalSingularSet fun _ ↦ notMem_singularSupport_iff_forall_isMicrolocallySmoothAt
 
 /-- On a manifold without boundary, a functional has empty singular support exactly when it has
 empty wave front set. -/
