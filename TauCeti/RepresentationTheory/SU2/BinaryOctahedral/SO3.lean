@@ -75,12 +75,11 @@ private theorem toSO3_binaryDihedralRotation_four_mem_range :
   refine ⟨cubeEdgeHalfTurn * cubeFaceQuarterTurn * cubeEdgeHalfTurn, Subtype.ext ?_⟩
   rw [coe_cubeRotationToSpecialOrthogonalGroup, hA, binaryDihedralRotation_def, coe_toSO3_torusHom]
   have hz : ((ZMod.toCircle (1 : ZMod (2 * 4)) : ℂ) ^ 2) = Complex.I := by
-    rw [← Nat.cast_one (R := ZMod (2 * 4)), ZMod.toCircle_natCast, ← Complex.exp_natCast_mul]
-    have hexp : (2 : ℕ) * (2 * Real.pi * Complex.I * (1 : ℕ) / ((2 * 4 : ℕ) : ℂ)) =
-        Real.pi / 2 * Complex.I := by
-      push_cast
-      ring
-    rw [hexp, Complex.exp_pi_div_two_mul_I]
+    have hsq := congrArg (fun g : SU2 => (g : Matrix (Fin 2) (Fin 2) ℂ) 0 0)
+      (binaryDihedralRotation_two_mul_sq 2)
+    rw [binaryDihedralRotation_def (2 * 2), ← map_pow, coe_torusHom, torusMatrix_apply_zero_zero,
+      coe_binaryDihedralRotation 2] at hsq
+    simpa [Nat.cast_ofNat, mul_div_right_comm, Complex.exp_pi_div_two_mul_I] using hsq
   ext i j
   fin_cases i <;> fin_cases j <;> simp [hz]
 

@@ -216,15 +216,12 @@ theorem coe_binaryDihedralRotation_four_eq_toComplexMatrix :
 theorem binaryDihedralRotation_two_mul_sq :
     binaryDihedralRotation (2 * n) ^ 2 = binaryDihedralRotation n := by
   have hn : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
-  rw [binaryDihedralRotation_def, binaryDihedralRotation_def, ← map_pow,
-    ← AddChar.map_nsmul_eq_pow]
-  congr 1
-  ext
-  rw [nsmul_eq_mul, mul_one, ZMod.toCircle_natCast,
-    ← Nat.cast_one (R := ZMod (2 * n)), ZMod.toCircle_natCast]
-  congr 1
-  push_cast
-  field_simp
+  refine Subtype.ext ?_
+  rw [SubmonoidClass.coe_pow, coe_binaryDihedralRotation, coe_binaryDihedralRotation, sq,
+    Matrix.diagonal_mul_diagonal]
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [← Complex.exp_add] <;> congr 1 <;> field_simp <;> ring
 
 /-- The rotations of the binary dihedral group are the powers of the rotation generator. -/
 theorem binaryDihedralHom_a_eq_pow (i : ZMod (2 * n)) :
