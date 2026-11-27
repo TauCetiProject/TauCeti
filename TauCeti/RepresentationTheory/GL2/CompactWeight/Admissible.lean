@@ -29,8 +29,8 @@ weights the polynomial `q = ∏_{ℓ ∈ S} (X - z ^ ℓ)` in `r` kills exactly 
 
 ## Main results
 
-* `TauCeti.CompactWeightModule.equivFinsupp_apply_mem_supported`: an intertwining map from a
-  subrepresentation preserves the support of a vector in the weight basis.
+* `TauCeti.CompactWeightModule.equivFinsupp_intertwiningMap_apply_mem_supported`: an
+  intertwining map from a subrepresentation preserves the support of a vector in the weight basis.
 * `TauCeti.CompactWeightModule.hasFiniteMultiplicities_orthogonalRep`: the action of `O(2)` on the
   compact weights has finite multiplicities.
 
@@ -55,7 +55,8 @@ variable {k μ : ℂ}
 /-- **Intertwining maps preserve supports of weights**: if `u` lies in a subrepresentation `U` and
 is supported on a finite set `S` of weights, then so is `f u` for every intertwining map
 `f : U → V`. -/
-theorem equivFinsupp_apply_mem_supported {U : Subrepresentation (orthogonalRep k μ)}
+theorem equivFinsupp_intertwiningMap_apply_mem_supported
+    {U : Subrepresentation (orthogonalRep k μ)}
     (f : IntertwiningMap U.toRepresentation (orthogonalRep k μ)) {S : Finset ℤ} {u : U.toSubmodule}
     (hu : equivFinsupp k μ (u : CompactWeightModule k μ) ∈ Finsupp.supported ℂ ℂ (S : Set ℤ)) :
     equivFinsupp k μ (f u) ∈ Finsupp.supported ℂ ℂ (S : Set ℤ) := by
@@ -89,7 +90,7 @@ theorem hasFiniteMultiplicities_orthogonalRep :
   let Φ : IntertwiningMap U.toRepresentation (orthogonalRep k μ) →ₗ[ℂ]
       Finsupp.supported ℂ ℂ (S : Set ℤ) :=
     { toFun f := ⟨equivFinsupp k μ (f u),
-        equivFinsupp_apply_mem_supported f (Finsupp.mem_supported_support ℂ _)⟩
+        equivFinsupp_intertwiningMap_apply_mem_supported f (Finsupp.mem_supported_support ℂ _)⟩
       map_add' f f' := by ext; simp
       map_smul' c f := by ext; simp }
   have : FiniteDimensional ℂ (Finsupp.supported ℂ ℂ (S : Set ℤ)) :=

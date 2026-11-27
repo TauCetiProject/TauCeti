@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Trigonometric
 public import Mathlib.Basic.Complex.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Unitary
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.MatrixFinTwo.Basic
 
 /-!
 # Orthogonal `2 × 2` matrices
@@ -232,9 +233,9 @@ theorem orthogonalSign_orthogonalDiagonalReflection :
   orthogonalSign_of_det_eq_neg_one (det_orthogonalDiagonalReflection ℝ 1)
 
 /-- The **rotation** `r_θ = exp(θJ) = !![cos θ, sin θ; -sin θ, cos θ]` in `O(2)`, with
-`J = !![0, 1; -1, 0]`. -/
+`J = !![0, 1; -1, 0]`: the matrix of `Matrix.SpecialLinearGroup.rotation θ`. -/
 def orthogonalRotation (θ : ℝ) : orthogonalGroup (Fin 2) ℝ :=
-  ⟨!![Real.cos θ, Real.sin θ; -Real.sin θ, Real.cos θ], by
+  ⟨(SpecialLinearGroup.rotation θ : Matrix (Fin 2) (Fin 2) ℝ), by
     rw [mem_orthogonalGroup_iff]
     have h := Real.cos_sq_add_sin_sq θ
     ext i j
@@ -246,12 +247,12 @@ def orthogonalRotation (θ : ℝ) : orthogonalGroup (Fin 2) ℝ :=
 theorem coe_orthogonalRotation (θ : ℝ) :
     (orthogonalRotation θ : Matrix (Fin 2) (Fin 2) ℝ) =
       !![Real.cos θ, Real.sin θ; -Real.sin θ, Real.cos θ] :=
-  (rfl)
+  SpecialLinearGroup.coe_rotation θ
 
 /-- The rotation `r_θ` has determinant `1`. -/
 theorem det_orthogonalRotation (θ : ℝ) :
-    (orthogonalRotation θ : Matrix (Fin 2) (Fin 2) ℝ).det = 1 := by
-  simp [det_fin_two, ← sq, Real.cos_sq_add_sin_sq]
+    (orthogonalRotation θ : Matrix (Fin 2) (Fin 2) ℝ).det = 1 :=
+  (SpecialLinearGroup.rotation θ).det_coe
 
 /-- The rotation `r_θ` has sign `1`. -/
 @[simp]
@@ -267,19 +268,14 @@ theorem orthogonalPhase_orthogonalRotation (θ : ℝ) :
 /-- The rotation by the angle `0` is the identity. -/
 @[simp]
 theorem orthogonalRotation_zero : orthogonalRotation 0 = 1 :=
-  Subtype.ext <| by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp
+  Subtype.ext congr(($(SpecialLinearGroup.rotation_zero) : Matrix (Fin 2) (Fin 2) ℝ))
 
 -- Not `@[simp]`: the family form `orthogonalRotation θ` is the simp normal form, as for
 -- `Matrix.SpecialLinearGroup.rotation_add`.
 /-- The rotations form a one-parameter subgroup: `r_{θ + φ} = r_θ r_φ`. -/
 theorem orthogonalRotation_add (θ φ : ℝ) :
     orthogonalRotation (θ + φ) = orthogonalRotation θ * orthogonalRotation φ :=
-  Subtype.ext <| by
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [Real.cos_add, Real.sin_add, Matrix.mul_apply] <;> ring
+  Subtype.ext congr(($(SpecialLinearGroup.rotation_add θ φ) : Matrix (Fin 2) (Fin 2) ℝ))
 
 /-- The inverse of `r_θ` is `r_{-θ}`. -/
 @[simp]
