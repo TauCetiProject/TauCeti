@@ -115,13 +115,14 @@ section ChangeOfField
 
 variable {F} {K : Type*} [Field K]
 
-/-- Applying a field isomorphism to integral matrix entries commutes with the complex
-projective realization. -/
-theorem bianchiMap_comp_mapEquiv (e : K ≃+* F) (A : SL(2, 𝓞 K)) :
-    bianchiMap K (ι.comp e.toRingHom) A =
-      bianchiMap F ι
-        (Matrix.SpecialLinearGroup.mapEquiv (Fin 2) (RingOfIntegers.mapRingEquiv e) A) := by
-  rw [bianchiMap_apply, bianchiMap_apply]
+/-- The Bianchi homomorphism for the composite embedding factors through the induced
+isomorphism on integral special linear groups. -/
+theorem bianchiMap_comp_ringEquiv (e : K ≃+* F) :
+    bianchiMap K (ι.comp e.toRingHom) = (bianchiMap F ι).comp
+      (Matrix.SpecialLinearGroup.mapEquiv (Fin 2)
+        (RingOfIntegers.mapRingEquiv e)).toMonoidHom := by
+  ext A
+  rw [MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom, bianchiMap_apply, bianchiMap_apply]
   apply congrArg (fun B : SL(2, ℂ) ↦ (B : PSL(2, ℂ)))
   ext i j
   simp [Matrix.SpecialLinearGroup.coe_mapEquiv_apply, ← RingOfIntegers.coe_eq_algebraMap]
@@ -130,27 +131,16 @@ theorem bianchiMap_comp_mapEquiv (e : K ≃+* F) (A : SL(2, 𝓞 K)) :
 the embedding with that isomorphism. In particular it is invariant under field automorphisms. -/
 theorem bianchi_comp_ringEquiv (e : K ≃+* F) :
     bianchi K (ι.comp e.toRingHom) = bianchi F ι := by
-  ext g
-  simp only [mem_bianchi_iff]
-  constructor
-  · rintro ⟨A, rfl⟩
-    exact ⟨_, (bianchiMap_comp_mapEquiv ι e A).symm⟩
-  · rintro ⟨A, rfl⟩
-    obtain ⟨B, rfl⟩ := (Matrix.SpecialLinearGroup.mapEquiv (Fin 2)
-      (RingOfIntegers.mapRingEquiv e)).surjective A
-    exact ⟨B, bianchiMap_comp_mapEquiv ι e B⟩
+  simp only [bianchi_def, bianchiMap_comp_ringEquiv, MonoidHom.range_comp,
+    MulEquiv.toMonoidHom_eq_coe, MulEquiv.range_eq_top, Subgroup.map_top]
 
 /-- Changing the field by an isomorphism transports the ideal defining a Bianchi congruence
 subgroup. For an automorphism this is the change-of-embedding formula. -/
 theorem bianchiGamma_comp_ringEquiv (e : K ≃+* F) (I : Ideal (𝓞 K)) :
     bianchiGamma K (ι.comp e.toRingHom) I =
       bianchiGamma F ι (I.map (RingOfIntegers.mapRingEquiv e)) := by
-  have h : bianchiMap K (ι.comp e.toRingHom) = (bianchiMap F ι).comp
-      (Matrix.SpecialLinearGroup.mapEquiv (Fin 2)
-        (RingOfIntegers.mapRingEquiv e)).toMonoidHom := by
-    ext A
-    exact bianchiMap_comp_mapEquiv ι e A
-  simp only [bianchiGamma_def, h, ← Subgroup.map_map, MulEquiv.toMonoidHom_eq_coe,
+  simp only [bianchiGamma_def, bianchiMap_comp_ringEquiv, ← Subgroup.map_map,
+    MulEquiv.toMonoidHom_eq_coe,
     Matrix.SpecialLinearGroup.toMonoidHom_mapEquiv,
     Matrix.SpecialLinearGroup.map_ker_map_quotientMk]
 
