@@ -15,10 +15,10 @@ import Mathlib.RingTheory.WittVector.Identities
 
 Let `S` be a perfect domain of characteristic `p` and `ε ≠ 1` in `S`. The cyclotomic periods `μ`,
 `ξ`, `xiTilde = φ(ξ)` and their finite Frobenius products `ξ_r` and `xiTilde_r` are
-nonzerodivisors of `W(S)`, and `p` is a nonzerodivisor on `W(S) ⧸ (ξ)`. For a `p`-adically
-complete domain `A` and `ε ∈ A♭` such that the sharp of `ε ^ (1 / p)` is a primitive `p`-th root
-of unity, the pairs `(p, μ)`, `(p, ξ)`, `(p, xiTilde)`, `(p, ξ_r)` and `(p, xiTilde_r)` for
-`r ≥ 1` are regular sequences of `W(A♭)`.
+nonzerodivisors of `W(S)`, `p, ξ` is a weakly regular sequence, and `p` is a nonzerodivisor on
+`W(S) ⧸ (ξ)`. For a `p`-adically complete domain `A` and `ε ∈ A♭` such that the sharp of
+`ε ^ (1 / p)` is a primitive `p`-th root of unity, the pairs `(p, μ)`, `(p, ξ)`, `(p, xiTilde)`,
+`(p, ξ_r)` and `(p, xiTilde_r)` for `r ≥ 1` are regular sequences of `W(A♭)`.
 
 Everything is read off from zeroth Witt coordinates: the zeroth coordinate of `μ` is
 `ε - 1 ≠ 0`, and the factorizations `μ = ξ_r * φ^(-r)(μ)` and `φ^r(ξ_r) = xiTilde_r` propagate
@@ -32,6 +32,8 @@ it is not a unit.
   `TauCeti.Perfectoid.xiTilde_mem_nonZeroDivisors`,
   `TauCeti.Perfectoid.xiTildeLevel_mem_nonZeroDivisors`: over a perfect domain the periods are
   nonzerodivisors.
+* `TauCeti.Perfectoid.isWeaklyRegular_natCast_xi`: over a perfect domain, `p, ξ` is weakly
+  regular.
 * `TauCeti.Perfectoid.mk_natCast_mem_nonZeroDivisors_quotient_span_xi`: `p` is a nonzerodivisor
   on `W(S) ⧸ (ξ)`.
 * `PreTilt.isRegular_natCast_mu`, `PreTilt.isRegular_natCast_xi`,
@@ -87,6 +89,14 @@ theorem xiTilde_mem_nonZeroDivisors (hε : ε ≠ 1) : xiTilde p ε ∈ (WittVec
 theorem xiTildeLevel_mem_nonZeroDivisors (hε : ε ≠ 1) (r : ℕ) :
     xiTildeLevel p ε r ∈ (WittVector p S)⁰ :=
   mem_nonZeroDivisors_of_ne_zero (xiTildeLevel_ne_zero p hε r)
+
+/-- Over a perfect domain, `p, ξ` is a weakly regular sequence of `W(S)` for `ε ≠ 1`: the zeroth
+Witt coordinate of `ξ` is nonzero. No completeness is needed, and `(p, ξ)` may be the unit ideal,
+for instance when `S` is a field. -/
+theorem isWeaklyRegular_natCast_xi (hε : ε ≠ 1) :
+    IsWeaklyRegular (WittVector p S) [(p : WittVector p S), xi p ε] :=
+  isWeaklyRegular_natCast_cons_singleton _
+    (mem_nonZeroDivisors_of_ne_zero (coeff_zero_xi_ne_zero p hε))
 
 /-- Over a perfect domain, `p` is a nonzerodivisor on `W(S) ⧸ (ξ)` for `ε ≠ 1`. -/
 theorem mk_natCast_mem_nonZeroDivisors_quotient_span_xi (hε : ε ≠ 1) :
