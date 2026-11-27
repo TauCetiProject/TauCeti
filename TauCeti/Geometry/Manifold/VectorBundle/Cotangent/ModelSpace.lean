@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Opens
 
 /-!
 # The cotangent bundle of a normed space
@@ -30,6 +31,10 @@ covector `p` through its value `p 1` gives the global coordinates `T*𝕜 ≃ �
 `(q, p) ↦ (q, p 1)` (`TauCeti.CotangentBundle.lineDiffeomorph`). In these coordinates the canonical
 symplectic form of the cotangent bundle is a constant linear form
 (`TauCeti.Geometry.Symplectic.Cotangent.Bundle.ModelSpace`).
+
+Over an open subset `U` of `E`, a covector is likewise an element of the dual of `E`, and a map
+into `T*U` is continuous as soon as its base point and its covector depend continuously on the
+parameter (`TauCeti.CotangentBundle.continuous_totalSpaceMk_opens`).
 
 ## References
 
@@ -157,5 +162,31 @@ theorem mfderiv_lineDiffeomorph_apply (z : CotangentBundle 𝓘(𝕜) 𝕜) (v :
   -- The identity of the tangent space followed by `lineEquiv`, which reads `p` as `p 1`.
   rw [lineDiffeomorph, Diffeomorph.coe_trans, hcomp, ContinuousLinearEquiv.coe_toDiffeomorph, he]
   exact lineEquiv_apply 𝕜 v
+
+variable {E} in
+/-- **Continuous covector fields over an open subset of a normed space.** Let `U` be an open subset
+of a normed space `E`. A map into the cotangent bundle of `U`, sending `x` to the covector `φ x` of
+`E` at the point `β x` of `U`, is continuous when `β` and `φ` are. -/
+theorem continuous_totalSpaceMk_opens {U : TopologicalSpace.Opens E} {X : Type*}
+    [TopologicalSpace X] {β : X → U} (hβ : Continuous β) {φ : X → E →L[𝕜] 𝕜}
+    (hφ : Continuous φ) :
+    Continuous fun x ↦ (TotalSpace.mk' (E →L[𝕜] 𝕜) (β x) (φ x) : CotangentBundle 𝓘(𝕜, E) U) := by
+  -- Through the open embedding `T*U → T*E`, this is the map `x ↦ (β x, φ x)` into `E × E*`.
+  refine (isOpenEmbedding_openInclusion U).isInducing.continuous_iff.2 ?_
+  have h : (openInclusion U ∘ fun x ↦
+      (TotalSpace.mk' (E →L[𝕜] 𝕜) (β x) (φ x) : CotangentBundle 𝓘(𝕜, E) U)) =
+      (modelSpaceDiffeomorph E).symm ∘ fun x ↦ ((β x : E), φ x) := by
+    funext x
+    rw [Function.comp_apply, openInclusion_def, Function.comp_apply,
+      modelSpaceDiffeomorph_symm_apply]
+    congr 1
+    ext v
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      Manifold.tangentSpaceOpenEquiv_symm_apply]
+    -- Both sides evaluate `φ x` at `v`, read in the tangent spaces of `U` and of `E`.
+    rfl
+  rw [h]
+  exact (modelSpaceDiffeomorph E).symm.continuous.comp
+    ((continuous_subtypeVal.comp hβ).prodMk hφ)
 
 end TauCeti.CotangentBundle
