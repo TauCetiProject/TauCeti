@@ -147,6 +147,40 @@ theorem isoOfEquiv_inv_apply (e : ∀ a, X.basis a ≃ Y.basis a) (a : ι) :
     (isoOfEquiv e).inv a = (e a).symm.toPEquiv.toMatrix :=
   (rfl)
 
+/-- A basis bijection has entry one at its image and zero at every other column. -/
+theorem isoOfEquiv_hom_entry (e : ∀ a, X.basis a ≃ Y.basis a) (a : ι)
+    (i : X.basis a) (j : Y.basis a) : (isoOfEquiv e).hom a i j = if j = e a i then 1 else 0 := by
+  rw [isoOfEquiv_hom_apply, PEquiv.toMatrix_toPEquiv_apply, Pi.single_apply]
+
+/-- The identity basis bijections induce the identity morphism. -/
+@[simp]
+theorem isoOfEquiv_refl_hom (X : Model P) :
+    (isoOfEquiv (fun a ↦ Equiv.refl (X.basis a))).hom = 𝟙 X := by
+  ext1 a
+  simp
+
+/-- Inverting an isomorphism induced by basis bijections inverts those bijections. -/
+@[simp]
+theorem isoOfEquiv_symm (e : ∀ a, X.basis a ≃ Y.basis a) :
+    (isoOfEquiv e).symm = isoOfEquiv (fun a ↦ (e a).symm) := by
+  ext1
+  ext1 a
+  simp
+
+/-- A square with basis bijections commutes if the two maps have the same entries in
+the corresponding bases. -/
+theorem isoOfEquiv_hom_naturality {X' Y' : Model P}
+    (e : ∀ a, X.basis a ≃ Y.basis a) (e' : ∀ a, X'.basis a ≃ Y'.basis a)
+    (f : X ⟶ X') (g : Y ⟶ Y')
+    (h : ∀ a i j, f a ((e a).symm i) ((e' a).symm j) = g a i j) :
+    f ≫ (isoOfEquiv e').hom = (isoOfEquiv e).hom ≫ g := by
+  ext1 a
+  rw [comp_apply, comp_apply, isoOfEquiv_hom_apply, isoOfEquiv_hom_apply,
+    PEquiv.mul_toMatrix_toPEquiv, PEquiv.toMatrix_toPEquiv_mul]
+  ext i j
+  obtain ⟨i, rfl⟩ := (e a).symm.surjective i
+  simpa only [Matrix.submatrix_apply, id_eq, Equiv.apply_symm_apply] using h a i j
+
 /-- Over the zero ring, every morphism of the model is `0`. -/
 instance [Subsingleton R] (X Y : Model P) : Subsingleton (X ⟶ Y) :=
   inferInstanceAs <| Subsingleton (∀ a, Matrix (X.basis a) (Y.basis a) R)
