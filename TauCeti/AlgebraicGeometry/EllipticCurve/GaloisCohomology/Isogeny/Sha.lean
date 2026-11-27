@@ -63,8 +63,10 @@ it enters the isogeny invariance of the Birch–Swinnerton-Dyer quotient (Cassel
   when the degree-torsion of both Shafarevich–Tate groups is finite.
 * `TauCeti.Isogeny.Hom.card_shafarevichTateGroup_eq_of_degree_eq_one`: degree-one morphisms
   preserve `#Sha(W)` for any family of local conditions.
-* `TauCeti.Isogeny.Hom.shaMap_eq_zero_iff`: `f.shaMap = 0` holds if and only if
-  `f.shafarevichTateMap τ = 0` for any family `τ` of embeddings.
+* `TauCeti.Isogeny.Hom.addSubgroupCongr_comp_shaMap`, `TauCeti.Isogeny.Hom.shaMap_eq_zero_iff`,
+  `TauCeti.Isogeny.Hom.card_ker_shaMap`, `TauCeti.Isogeny.Hom.card_range_shaMap`: `f.shaMap`
+  commutes with `f.shafarevichTateMap τ` under `AddEquiv.addSubgroupCongr` for any family `τ` of
+  embeddings, and therefore has the same vanishing, kernel order, and image order.
 * `TauCeti.Isogeny.Hom.finite_sha_iff` and `TauCeti.Isogeny.Hom.exists_isogeny_shaMap_eq_zero`:
   over a number field, for any nonzero morphism `W₁ → W₂`, `Sha(W₁/K)` is finite if and only if
   `Sha(W₂/K)` is, and when `Sha(W₂/K)` is finite a nonzero multiple is an isogeny killing `Sha`
@@ -448,15 +450,85 @@ theorem shaMap_dual_shaMap (f : Hom W₁.toAffine W₂.toAffine) (c : W₂.sha) 
     shaMap_natCast]
 
 /-- Along any family `τ` of embeddings of separable closures over the places of `K`, `f.shaMap`
+commutes with `f.shafarevichTateMap τ` under `AddEquiv.addSubgroupCongr`. -/
+theorem addSubgroupCongr_comp_shaMap (f : Hom W₁.toAffine W₂.toAffine)
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    (AddEquiv.addSubgroupCongr (W₂.sha_eq_shafarevichTateGroup τ) :
+          W₂.sha →+ W₂.shafarevichTateGroup τ).comp f.shaMap =
+      (f.shafarevichTateMap τ).comp
+        (AddEquiv.addSubgroupCongr (W₁.sha_eq_shafarevichTateGroup τ) :
+          W₁.sha →+ W₁.shafarevichTateGroup τ) := by
+  ext c
+  simp only [AddMonoidHom.coe_comp, Function.comp_apply, AddMonoidHom.coe_ofClass,
+    AddEquiv.addSubgroupCongr_apply, coe_shaMap, coe_shafarevichTateMap]
+
+/-- Along any family `τ` of embeddings of separable closures over the places of `K`, `f.shaMap`
 is zero if and only if `f.shafarevichTateMap τ` is zero. -/
 theorem shaMap_eq_zero_iff (f : Hom W₁.toAffine W₂.toAffine)
     (τ : ∀ v : GlobalNumberFields.Place K,
       SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
     f.shaMap = 0 ↔ f.shafarevichTateMap τ = 0 := by
-  simp only [← f.shafarevichTateMap_eq_zero_iff (defaultPlaceEmbeddings K) τ,
-    AddMonoidHom.ext_iff, AddMonoidHom.zero_apply, shaMap, AddMonoidHom.comp_apply,
-    AddEquiv.coe_toAddMonoidHom, AddEquiv.map_eq_zero_iff]
-  exact (shaCongr W₁).forall_congr_left
+  have hinj : Function.Injective
+      (AddEquiv.addSubgroupCongr (W₂.sha_eq_shafarevichTateGroup τ) :
+        W₂.sha →+ W₂.shafarevichTateGroup τ) := by
+    simpa using (AddEquiv.addSubgroupCongr (W₂.sha_eq_shafarevichTateGroup τ)).injective
+  have hsurj : Function.Surjective
+      (AddEquiv.addSubgroupCongr (W₁.sha_eq_shafarevichTateGroup τ) :
+        W₁.sha →+ W₁.shafarevichTateGroup τ) := by
+    simpa using (AddEquiv.addSubgroupCongr (W₁.sha_eq_shafarevichTateGroup τ)).surjective
+  rw [← AddMonoidHom.cancel_left hinj, AddMonoidHom.comp_zero, f.addSubgroupCongr_comp_shaMap τ,
+    ← AddMonoidHom.zero_comp
+      (AddEquiv.addSubgroupCongr (W₁.sha_eq_shafarevichTateGroup τ) :
+        W₁.sha →+ W₁.shafarevichTateGroup τ),
+    AddMonoidHom.cancel_right hsurj]
+
+/-- Along any family `τ` of embeddings over the places of `K`, the canonical identification
+`AddEquiv.addSubgroupCongr` maps `f.shaMap.ker` onto `(f.shafarevichTateMap τ).ker`. -/
+theorem map_addSubgroupCongr_ker_shaMap (f : Hom W₁.toAffine W₂.toAffine)
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    f.shaMap.ker.map
+        (AddEquiv.addSubgroupCongr (W₁.sha_eq_shafarevichTateGroup τ) :
+          W₁.sha →+ W₁.shafarevichTateGroup τ) =
+      (f.shafarevichTateMap τ).ker := by
+  have h := congrArg AddMonoidHom.ker (f.addSubgroupCongr_comp_shaMap τ)
+  rw [AddMonoidHom.ker_addEquiv_comp, AddMonoidHom.ker_comp_addEquiv] at h
+  rw [h, AddSubgroup.map_map]
+  ext c
+  simp
+
+/-- Along any family `τ` of embeddings over the places of `K`, the kernel of `f.shaMap` has the
+same cardinality as the kernel of `f.shafarevichTateMap τ`. -/
+theorem card_ker_shaMap (f : Hom W₁.toAffine W₂.toAffine)
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    Nat.card f.shaMap.ker = Nat.card (f.shafarevichTateMap τ).ker := by
+  rw [← f.map_addSubgroupCongr_ker_shaMap τ]
+  exact Nat.card_congr (AddSubgroup.equivMapOfInjective _ _ (AddEquiv.injective _)).toEquiv
+
+/-- Along any family `τ` of embeddings over the places of `K`, the canonical identification
+`AddEquiv.addSubgroupCongr` maps `f.shaMap.range` onto `(f.shafarevichTateMap τ).range`. -/
+theorem map_addSubgroupCongr_range_shaMap (f : Hom W₁.toAffine W₂.toAffine)
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    f.shaMap.range.map
+        (AddEquiv.addSubgroupCongr (W₂.sha_eq_shafarevichTateGroup τ) :
+          W₂.sha →+ W₂.shafarevichTateGroup τ) =
+      (f.shafarevichTateMap τ).range := by
+  have h := congrArg AddMonoidHom.range (f.addSubgroupCongr_comp_shaMap τ)
+  rw [AddMonoidHom.range_comp, AddMonoidHom.range_comp, AddEquiv.range_eq_top,
+    AddSubgroup.map_top] at h
+  exact h
+
+/-- Along any family `τ` of embeddings over the places of `K`, the image of `f.shaMap` has the
+same cardinality as the image of `f.shafarevichTateMap τ`. -/
+theorem card_range_shaMap (f : Hom W₁.toAffine W₂.toAffine)
+    (τ : ∀ v : GlobalNumberFields.Place K,
+      SeparableClosure K →ₐ[K] SeparableClosure v.Completion) :
+    Nat.card f.shaMap.range = Nat.card (f.shafarevichTateMap τ).range := by
+  rw [← f.map_addSubgroupCongr_range_shaMap τ]
+  exact Nat.card_congr (AddSubgroup.equivMapOfInjective _ _ (AddEquiv.injective _)).toEquiv
 
 /-- **Isogeny invariance of the finiteness of `Sha(E/K)`** over a number field `K`: for a nonzero
 morphism `f : W₁ → W₂` over `K`, the Shafarevich–Tate group of `W₁` is finite if and only if that
