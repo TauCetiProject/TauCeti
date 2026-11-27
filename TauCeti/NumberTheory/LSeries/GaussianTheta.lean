@@ -59,7 +59,6 @@ namespace TauCeti
 section ThetaSeries
 
 open MeasureTheory Real Set
-open scoped ComplexConjugate
 
 /-- The Gaussian weight of parity `j ∈ {0, 1}`. -/
 def gaussianMonomial (j : Fin 2) (x : ℝ) : ℝ := x ^ j.val * exp (-π * x ^ 2)
@@ -91,16 +90,6 @@ theorem gaussianThetaSeries_def (j : Fin 2) (c : ℕ → ℂ) (u : ℝ) :
     gaussianThetaSeries j c u = (√u : ℝ) * gaussianTheta j c u := by
   unfold gaussianThetaSeries
   rfl
-
-/-- Conjugating the coefficients conjugates the Gaussian theta sum. -/
-@[simp] theorem gaussianTheta_conj (j : Fin 2) (c : ℕ → ℂ) (u : ℝ) :
-    gaussianTheta j (fun n ↦ conj (c n)) u = conj (gaussianTheta j c u) := by
-  simp only [gaussianTheta_def, Complex.conj_tsum, map_mul, Complex.conj_ofReal]
-
-/-- Conjugating the coefficients conjugates the normalized Gaussian theta series. -/
-@[simp] theorem gaussianThetaSeries_conj (j : Fin 2) (c : ℕ → ℂ) (u : ℝ) :
-    gaussianThetaSeries j (fun n ↦ conj (c n)) u = conj (gaussianThetaSeries j c u) := by
-  simp only [gaussianThetaSeries_def, gaussianTheta_conj, map_mul, Complex.conj_ofReal]
 
 /-- The Mellin transform of the Gaussian weight of parity `j`. -/
 def gaussianMellin (j : Fin 2) : ℂ → ℂ := mellin fun x ↦ (gaussianMonomial j x : ℂ)
