@@ -41,7 +41,8 @@ that the later theory transports invariants along:
 * `TauCeti.Hypergeometric.rep`, `TauCeti.Hypergeometric.rep0`: the representatives, with
   `coe_rep`, `rep_injective`, `rep_zero`, `rep_eq_iff` and their `rep0` counterparts, and
   `rep_neg`, `rep0_neg` relating them under negation, and `rep_add`.
-* `TauCeti.Hypergeometric.Parameters`: a hypergeometric parameter pair, with its `degree`.
+* `TauCeti.Hypergeometric.Parameters`: a hypergeometric parameter pair, with its `degree` and
+  `count_add_of_mem_α`, `count_add_of_mem_β`.
 * `TauCeti.Hypergeometric.Parameters.swap`, the `Neg` and `InvolutiveNeg` instances, and the
   `AddAction (AddCircle (1 : ℚ))` instance of shifts.
 * `TauCeti.Hypergeometric.Parameters.denominator`, with `denominator_eq_lcm`,
@@ -216,6 +217,17 @@ theorem degree_eq_zero_iff : P.degree = 0 ↔ P.α = 0 ∧ P.β = 0 := by
 
 theorem notMem_β_of_mem_α {a : AddCircle (1 : ℚ)} (ha : a ∈ P.α) : a ∉ P.β :=
   Multiset.disjoint_left.1 P.disjoint ha
+
+/-- A class of `α` has in `α + β` its multiplicity in `α`. -/
+theorem count_add_of_mem_α {a : AddCircle (1 : ℚ)} (ha : a ∈ P.α) :
+    (P.α + P.β).count a = P.α.count a := by
+  rw [Multiset.count_add, Multiset.count_eq_zero.2 (P.notMem_β_of_mem_α ha), add_zero]
+
+/-- A class of `β` has in `α + β` its multiplicity in `β`. -/
+theorem count_add_of_mem_β {a : AddCircle (1 : ℚ)} (ha : a ∈ P.β) :
+    (P.α + P.β).count a = P.β.count a := by
+  rw [Multiset.count_add, Multiset.count_eq_zero.2 (Multiset.disjoint_right.1 P.disjoint ha),
+    zero_add]
 
 /-! ### Swap -/
 

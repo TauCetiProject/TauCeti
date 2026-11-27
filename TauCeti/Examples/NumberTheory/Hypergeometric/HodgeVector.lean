@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Examples.NumberTheory.Hypergeometric.Zigzag
 public import TauCeti.NumberTheory.Hypergeometric.HodgeVector
-import Mathlib.Tactic.NormNum
 
 /-!
 # Examples of the weight and the Hodge vector
@@ -22,12 +21,9 @@ import Mathlib.Tactic.NormNum
 
 public section
 
-open TauCeti.Hypergeometric Set
+open TauCeti.Hypergeometric
 
 namespace TauCeti.Hypergeometric.Examples
-
-private theorem rep_half : rep ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) = 1 / 2 :=
-  rep_coe_of_mem (by norm_num)
 
 /-- The weight and the Hodge vector of a pair of positive degree whose recorded heights are
 `{m, m + 1}`. -/
@@ -57,13 +53,6 @@ theorem recordedHeights_zigzagLegendre : zigzagLegendre.recordedHeights = {0, 1}
 example : zigzagLegendre.weight = 1 ∧ zigzagLegendre.hodgeVector = [1, 1] :=
   (weight_hodgeVector_of_recordedHeights (m := 0) (by simpa using
     recordedHeights_zigzagLegendre)).2
-
-theorem countingFunction_zigzagHalfQuarter : zigzagHalfQuarter.countingFunction (1 / 2) = 1 := by
-  simp only [Parameters.countingFunction_def, zigzagHalfQuarter_α, zigzagHalfQuarter_β,
-    Multiset.insert_eq_cons, Multiset.filter_cons, Multiset.filter_singleton, rep_half,
-    rep_coe_of_mem (show (1 / 4 : ℚ) ∈ Ioc 0 1 by norm_num),
-    rep_coe_of_mem (show (3 / 4 : ℚ) ∈ Ioc 0 1 by norm_num)]
-  norm_num
 
 theorem recordedHeights_zigzagHalfQuarter : zigzagHalfQuarter.recordedHeights = {-1, 0} := by
   have hZ : zigzagHalfQuarter.countingFunction (rep ((2⁻¹ : ℚ) : AddCircle (1 : ℚ))) = 1 := by

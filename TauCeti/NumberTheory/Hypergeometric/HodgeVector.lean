@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Data.Int.Interval
 public import Mathlib.Order.Int.ConditionallyCompleteOrder
+public import TauCeti.NumberTheory.Hypergeometric.Dictionary
 public import TauCeti.NumberTheory.Hypergeometric.Zigzag
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.Linarith
@@ -46,6 +47,8 @@ For the pair of degree `0` nothing is recorded; then `m = w = 0` and the Hodge v
   `hodgeNumber_pos_iff`, `sum_range_hodgeNumber` and `sum_hodgeVector`.
 * `TauCeti.Hypergeometric.Parameters.recordedHeights_vadd`, `weight_vadd` and
   `hodgeVector_vadd`: invariance under shifts.
+* `TauCeti.Hypergeometric.CyclotomicData.weight`, `hodgeVector`: the weight and the Hodge vector
+  of a cyclotomic datum, those of its parameter pair.
 
 ## References
 
@@ -58,7 +61,9 @@ For the pair of degree `0` nothing is recorded; then `m = w = 0` and the Hodge v
 
 public section
 
-namespace TauCeti.Hypergeometric.Parameters
+namespace TauCeti.Hypergeometric
+
+namespace Parameters
 
 variable (P : Parameters) {a : AddCircle (1 : ℚ)} {h : ℤ} {i p : ℕ}
 
@@ -95,9 +100,8 @@ theorem mem_recordedHeights_iff_exists_height : h ∈ P.recordedHeights ↔
   constructor
   · -- The copy recorded at `Z(rep a) - 1 - j` leaves from position `blockStart a + (c - 1 - j)`.
     rintro ⟨a, ha, j, hj, rfl⟩
-    have hβ := Multiset.count_eq_zero.2 (Multiset.disjoint_left.1 P.disjoint ha)
     have hblock := P.take_count_drop_blockStart a
-    rw [Multiset.count_add, hβ, add_zero] at hblock
+    rw [P.count_add_of_mem_α ha] at hblock
     have hlen := congrArg List.length hblock
     rw [List.length_take, List.length_drop, List.length_replicate, min_eq_left_iff] at hlen
     refine ⟨P.blockStart a + (P.α.count a - 1 - j), by omega, ?_, ?_⟩
@@ -114,8 +118,7 @@ theorem mem_recordedHeights_iff_exists_height : h ∈ P.recordedHeights ↔
     have h₁ := P.blockStart_le hi
     have h₂ := P.lt_blockStart_add_count hi
     set a : AddCircle (1 : ℚ) := ((P.sortedReps[i] : ℚ) : AddCircle (1 : ℚ))
-    have hβ := Multiset.count_eq_zero.2 (Multiset.disjoint_left.1 P.disjoint hα)
-    rw [Multiset.count_add, hβ, add_zero] at h₂
+    rw [P.count_add_of_mem_α hα] at h₂
     refine ⟨a, hα, P.α.count a - 1 - (i - P.blockStart a), by omega, ?_⟩
     have := P.height_blockStart_add_of_mem_α hα (j := i - P.blockStart a) (by omega)
     rw [Nat.add_sub_cancel' h₁] at this
@@ -298,43 +301,12 @@ theorem getElem_hodgeVector (hp : p < P.hodgeVector.length) :
 @[simp]
 theorem sum_hodgeVector : P.hodgeVector.sum = P.degree := by
   rw [hodgeVector_def, ← P.sum_range_hodgeNumber, Finset.sum_eq_multiset_sum, Finset.range_val,
-    Multiset.range, Multiset.map_coe, Multiset.sum_coe]
+    ← Multiset.coe_range, Multiset.map_coe, Multiset.sum_coe]
 
 theorem hodgeVector_of_degree_eq_zero (hd : P.degree = 0) : P.hodgeVector = [0] := by
   simp [hodgeVector_def, P.weight_of_degree_eq_zero hd, P.hodgeNumber_of_degree_eq_zero hd]
 
 /-! ### Shifts -/
-
-/-- How the representatives order after a shift by `μ`: the classes with representative
-above `1 - rep μ` come first, in their old order, followed by the others. Counted over a
-multiset, this is the counting identity behind `countingFunction_vadd`. -/
-private theorem card_filter_rep_add_le (s : Multiset (AddCircle (1 : ℚ)))
-    (μ a : AddCircle (1 : ℚ)) :
-    ((s.filter fun c ↦ rep (μ + c) ≤ rep (μ + a)).card : ℤ) +
-        (s.filter fun c ↦ rep c ≤ 1 - rep μ).card =
-      (s.filter fun c ↦ rep c ≤ rep a).card + if rep a ≤ 1 - rep μ then s.card else 0 := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons x s ih =>
-    have hx := rep_mem_Ioc x
-    have ha := rep_mem_Ioc a
-    have hμ := rep_mem_Ioc μ
-    simp only [Multiset.filter_cons, Multiset.card_add, Multiset.card_cons, rep_add μ x,
-      rep_add μ a] at ih ⊢
-    split_ifs at ih ⊢ <;> simp only [Multiset.card_singleton, Multiset.card_zero] <;> push_cast <;>
-      first | omega | (exfalso; linarith [hx.1, hx.2, ha.1, ha.2, hμ.1, hμ.2])
-
-/-- After a shift by `μ`, the counting function at the shifted representatives is the old one
-minus its value at `1 - rep μ`. -/
-theorem countingFunction_vadd_rep_add (μ a : AddCircle (1 : ℚ)) :
-    (μ +ᵥ P).countingFunction (rep (μ + a)) =
-      P.countingFunction (rep a) - P.countingFunction (1 - rep μ) := by
-  have hα := card_filter_rep_add_le P.α μ a
-  have hβ := card_filter_rep_add_le P.β μ a
-  simp only [countingFunction_def, vadd_α, vadd_β, Multiset.filter_map, Multiset.card_map,
-    Function.comp_def]
-  rw [P.card_eq] at hα
-  linarith
 
 /-- A shift by `μ` translates the recorded heights by `-Z(1 - rep μ)`. -/
 theorem recordedHeights_vadd (μ : AddCircle (1 : ℚ)) :
@@ -354,9 +326,8 @@ theorem recordedHeights_vadd (μ : AddCircle (1 : ℚ)) :
 theorem minHeight_vadd (μ : AddCircle (1 : ℚ)) :
     (μ +ᵥ P).minHeight = P.minHeight - P.countingFunction (1 - rep μ) := by
   rcases Nat.eq_zero_or_pos P.degree with hd | hd
-  · have hd' : (μ +ᵥ P).degree = 0 := by rwa [degree_vadd]
-    simp [(μ +ᵥ P).minHeight_of_degree_eq_zero hd', P.minHeight_of_degree_eq_zero hd,
-      countingFunction_def, (P.degree_eq_zero_iff.1 hd).1, (P.degree_eq_zero_iff.1 hd).2]
+  · rw [(μ +ᵥ P).minHeight_of_degree_eq_zero (by rwa [degree_vadd]),
+      P.minHeight_of_degree_eq_zero hd, P.countingFunction_of_degree_eq_zero hd, sub_zero]
   refine ((μ +ᵥ P).isLeast_minHeight (by rwa [degree_vadd])).unique ⟨?_, ?_⟩
   · exact (P.recordedHeights_vadd μ).symm ▸ Multiset.mem_map.2 ⟨_, P.minHeight_mem hd, rfl⟩
   · intro x hx
@@ -366,9 +337,8 @@ theorem minHeight_vadd (μ : AddCircle (1 : ℚ)) :
 theorem maxHeight_vadd (μ : AddCircle (1 : ℚ)) :
     (μ +ᵥ P).maxHeight = P.maxHeight - P.countingFunction (1 - rep μ) := by
   rcases Nat.eq_zero_or_pos P.degree with hd | hd
-  · have hd' : (μ +ᵥ P).degree = 0 := by rwa [degree_vadd]
-    simp [(μ +ᵥ P).maxHeight_of_degree_eq_zero hd', P.maxHeight_of_degree_eq_zero hd,
-      countingFunction_def, (P.degree_eq_zero_iff.1 hd).1, (P.degree_eq_zero_iff.1 hd).2]
+  · rw [(μ +ᵥ P).maxHeight_of_degree_eq_zero (by rwa [degree_vadd]),
+      P.maxHeight_of_degree_eq_zero hd, P.countingFunction_of_degree_eq_zero hd, sub_zero]
   refine ((μ +ᵥ P).isGreatest_maxHeight (by rwa [degree_vadd])).unique ⟨?_, ?_⟩
   · exact (P.recordedHeights_vadd μ).symm ▸ Multiset.mem_map.2 ⟨_, P.maxHeight_mem hd, rfl⟩
   · intro x hx
@@ -391,4 +361,24 @@ theorem hodgeNumber_vadd (μ : AddCircle (1 : ℚ)) (p : ℕ) :
 theorem hodgeVector_vadd (μ : AddCircle (1 : ℚ)) : (μ +ᵥ P).hodgeVector = P.hodgeVector := by
   simp [hodgeVector_def]
 
-end TauCeti.Hypergeometric.Parameters
+end Parameters
+
+/-! ### Cyclotomic data -/
+
+namespace CyclotomicData
+
+variable (D : CyclotomicData)
+
+/-- The weight of a cyclotomic datum: the weight of its parameter pair. -/
+noncomputable def weight : ℕ := D.toParameters.weight
+
+theorem weight_def : D.weight = D.toParameters.weight := (rfl)
+
+/-- The Hodge vector of a cyclotomic datum: the Hodge vector of its parameter pair. -/
+noncomputable def hodgeVector : List ℕ := D.toParameters.hodgeVector
+
+theorem hodgeVector_def : D.hodgeVector = D.toParameters.hodgeVector := (rfl)
+
+end CyclotomicData
+
+end TauCeti.Hypergeometric
