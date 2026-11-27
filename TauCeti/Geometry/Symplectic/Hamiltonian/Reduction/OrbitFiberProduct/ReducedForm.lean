@@ -49,11 +49,14 @@ When `G` acts properly and `G_c` acts freely on the level, the Marsden–Weinste
 (`existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub`, in the namespace
 `TauCeti.SmoothTwoForm.IsEquivariantMomentMap`), where `pr_M` and `pr_O` are the two projections of
 `W_O ⊆ M × O`. This is the form `ω - μ^* ω_KKS` of orbit reduction on `μ⁻¹(O)`, read on the
-manifold `W_O`. Pulled back along `Φ`, the two sides become the two sides of the orbit-reduction
-identity `q_Y^* ω_red = i_Y^* σ - pr_Y^* ω_KKS` on `Y_O`
-(`existsUnique_isSymplectic_mpullback_orbitProj_eq_sub`), and pullback along a diffeomorphism is
-injective. Consequently `pr_M^* σ - pr_O^* ω_KKS` is a closed two-form on `W_O` whose null space at
-each point is the kernel of the differential of `q_W`
+manifold `W_O`. More generally, for an action preserving `σ`, a two-form `η` on `Q` satisfies
+`π^* η = i^* σ` exactly when `q_W^* η = pr_M^* σ - pr_O^* ω_KKS`
+(`mpullback_quotientMk_eq_iff_mpullback_orbitFiberProductProj_eq_sub`): pulled back along `Φ`, the
+two sides become the two sides of the orbit-reduction identity `q_Y^* η = i_Y^* σ - pr_Y^* ω_KKS`
+on `Y_O`
+(`TauCeti.SmoothTwoForm.IsMomentMap.mpullback_quotientMk_eq_iff_mpullback_orbitProj_eq_sub`), and
+pullback along a diffeomorphism is injective. Consequently `pr_M^* σ - pr_O^* ω_KKS` is a closed
+two-form on `W_O` whose null space at each point is the kernel of the differential of `q_W`
 (`isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv_orbitFiberProductProj`): its null spaces are
 the tangent spaces of the fibres of `q_W`, which are the `G`-orbits of `W_O`.
 
@@ -69,9 +72,9 @@ both make the inclusion into `M × O` a smooth embedding. Read on `Ψ⁻¹(0)` t
 projection `q_O (x, g G_c) = [g⁻¹ • x]` satisfies `q_O^* ω_red = pr_M^* σ - pr_O^* ω_KKS`, and
 `ω_red` is the unique symplectic form doing so
 (`existsUnique_isSymplectic_mpullback_orbitFiberProductProj_comp_symm_eq_sub`): the reduced space
-of `M` at `c` is reduced from `M × O⁻` along the zero level of `Ψ`. Neither the quotient of
-`Ψ⁻¹(0)` by `G` as a manifold of its own nor the identification of `q_O` with its quotient map is
-constructed here.
+of `M` at `c` is reduced from `M × O⁻` along the zero level of `Ψ`. The Marsden–Weinstein–Meyer
+reduced space of `M × O⁻` at zero, and its symplectomorphism with the reduced space of `M` at `c`,
+are in `TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.OrbitFiberProduct.Shifting`.
 
 ## Main definitions
 
@@ -91,6 +94,8 @@ All declarations are in the namespace `TauCeti.SmoothTwoForm.IsEquivariantMoment
 * `orbitFiberProductProj_orbitFiberProductDiffeomorph`: `q_W ∘ Φ = q_Y`.
 * `orbitFiberProductProj_eq_orbitFiberProductProj_iff`: the fibres of `q_W` are the `G`-orbits.
 * `isSubmersion_orbitFiberProductProj`: `q_W` is a smooth submersion.
+* `mpullback_quotientMk_eq_iff_mpullback_orbitFiberProductProj_eq_sub`: a two-form `η` on the
+  reduced space satisfies `π^* η = i^* σ` exactly when `q_W^* η = pr_M^* σ - pr_O^* ω_KKS`.
 * `existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub`: the reduced form is the
   unique symplectic form with `q_W^* ω_red = pr_M^* σ - pr_O^* ω_KKS`.
 * `isClosed_and_ker_bilinFormAt_sub_eq_ker_mfderiv_orbitFiberProductProj`: the form
@@ -358,7 +363,7 @@ theorem isSubmersion_orbitFiberProductProj :
   have := h.isManifold_orbitFiberProduct hreg b
   have hq := BalancedProduct.isSubmersion_orbitProj_rightTranslation (I := I) (F := F)
     (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d)
-  -- `q_W = q_Y ∘ Φ⁻¹`, and precomposing with a diffeomorphism keeps the differentials onto.
+  -- `q_W = q_Y ∘ Φ⁻¹`, and a submersion precomposed with a diffeomorphism is a submersion.
   set Φ := h.orbitFiberProductDiffeomorph hreg hn d b
   have hqΦ : h.orbitFiberProductProj c b = BalancedProduct.orbitProj ∘ Φ.symm :=
     funext fun p ↦ by
@@ -366,41 +371,42 @@ theorem isSubmersion_orbitFiberProductProj :
         ← h.orbitFiberProductProj_orbitFiberProductDiffeomorph hreg hn d b (Φ.symm p),
         Φ.apply_symm_apply]
   rw [hqΦ]
-  refine (ContMDiff.isSubmersionOfComplement_of_surjective_mfderiv
-    (hq.contMDiff.comp Φ.symm.contMDiff) (by simp) fun p ↦ ?_).isSubmersion
-  exact LinearMap.range_eq_top.1 ((Φ.symm.range_mfderiv_comp_diffeomorph (by simp) _ p).trans
-    (LinearMap.range_eq_top.2 (hq.surjective_mfderiv (by simp) _)))
+  exact hq.comp_diffeomorph Φ.symm (by simp)
 
-/-- **The Marsden–Weinstein–Meyer reduced form on the orbit fibre product.** Let a Lie group `G`
-act smoothly and properly by symplectomorphisms on a symplectic manifold `(M, σ)`, with
-coadjoint-equivariant moment map `μ`, let `c` be a regular value of `μ`, and let the coadjoint
-stabilizer `G_c`, with the Lie group structure `d`, act freely on the level `μ⁻¹(c)`. Then the
-reduced space `Q = μ⁻¹(c) ⧸ G_c` carries a unique symplectic form `ω_red` with
+/-- **Reduced forms read on the orbit fibre product.** With the hypotheses of the
+Marsden–Weinstein–Meyer theorem, and for an action of `G` preserving `σ`, a two-form `η` on the
+reduced space `μ⁻¹(c) ⧸ G_c` is a reduced form, `π^* η = i^* σ` for the orbit projection `π` and
+the inclusion `i` of the level, exactly when
 
-`q_W^* ω_red = pr_M^* σ - pr_O^* ω_KKS`
+`q_W^* η = pr_M^* σ - pr_O^* ω_KKS`
 
 on the orbit fibre product `W_O = {(x, o) ∈ M × O | μ(x) = ι_O(o)}`, for the orbit projection
-`q_W (x, g G_c) = [g⁻¹ • x]` and the two projections `pr_M (x, o) = x` and `pr_O (x, o) = o`, with
-the Kirillov–Kostant–Souriau form `ω_KKS` on `O = G ⧸ G_c`. It is the reduced form
-`π^* ω_red = i^* σ` of `existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback`. -/
-theorem existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub (hσ : σ.IsSymplectic)
+`q_W (x, g G_c) = [g⁻¹ • x]` and the two projections `pr_M (x, o) = x` and `pr_O (x, o) = o`.
+Neither closedness nor nondegeneracy of `σ` or `η` is needed. -/
+theorem mpullback_quotientMk_eq_iff_mpullback_orbitFiberProductProj_eq_sub
     (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
-      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) :
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ)
+    (η : letI := h.orbitRelQuotientChartedSpace c hreg hn d
+      haveI := h.isManifold_orbitRelQuotient hreg hn d
+      SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+          (h.levelSubMulAction c))) :
+    letI := h.levelSubMulActionChartedSpace c hreg hn
+    haveI := h.isManifold_levelSubMulAction hreg hn
     letI := h.orbitFiberProductChartedSpace c hreg b
     haveI := h.isManifold_orbitFiberProduct hreg b
     letI := h.orbitRelQuotientChartedSpace c hreg hn d
     haveI := h.isManifold_orbitRelQuotient hreg hn d
-    ∃! η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
-        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
-          (h.levelSubMulAction c)),
-      η.IsSymplectic ∧
-        SmoothForm.mpullback (h.orbitFiberProductProj c b)
-            (h.isSubmersion_orbitFiberProductProj hreg hn d b).contMDiff η =
-          SmoothForm.mpullback (fun p : OrbitFiberProduct μ c b ↦ p.val.1)
-              (contMDiff_fst.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff) σ -
-            SmoothForm.mpullback (fun p : OrbitFiberProduct μ c b ↦ p.val.2)
-              (contMDiff_snd.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff)
-              c.coadjointOrbitForm := by
+    SmoothForm.mpullback _ (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).contMDiff η =
+        SmoothForm.mpullback Subtype.val
+          (h.isSmoothEmbedding_coe_levelSubMulAction hreg hn).contMDiff σ ↔
+      SmoothForm.mpullback (h.orbitFiberProductProj c b)
+          (h.isSubmersion_orbitFiberProductProj hreg hn d b).contMDiff η =
+        SmoothForm.mpullback (fun p : OrbitFiberProduct μ c b ↦ p.val.1)
+            (contMDiff_fst.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff) σ -
+          SmoothForm.mpullback (fun p : OrbitFiberProduct μ c b ↦ p.val.2)
+            (contMDiff_snd.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff)
+            c.coadjointOrbitForm := by
   let _ := d.chartedSpace
   have := d.lieGroup
   have := d.contMDiffSMul (M := G) (I'' := I)
@@ -434,14 +440,60 @@ theorem existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub (hσ : 
     funext fun y ↦ by
       rw [Function.comp_apply, h.coe_orbitFiberProductDiffeomorph hreg hn d b y,
         BalancedProduct.snd_liftProjRightTranslation]
-  -- Pullback along the diffeomorphism `Φ` is injective, so the two identities are equivalent.
+  -- Pullback along the diffeomorphism `Φ` is injective, so the identity on `W_O` is the
+  -- orbit-reduction identity on the balanced product.
   have hΦ := SmoothForm.mpullback_injective_of_rightInverse (F := ℝ) (k := 2) Φ.contMDiff
     Φ.symm.contMDiff Φ.apply_symm_apply
-  refine (existsUnique_congr fun η ↦ and_congr_right fun _ ↦ ?_).1
-    (h.existsUnique_isSymplectic_mpullback_orbitProj_eq_sub hreg hn d hσ hG)
+  have key := h.toIsMomentMap.mpullback_quotientMk_eq_iff_mpullback_orbitProj_eq_sub (F := F)
+    (ι := h.levelSubMulActionSubtype c) hG (h.contMDiff_levelSubMulActionSubtype hreg hn)
+    (fun z ↦ by simpa using h.mem_levelSubMulAction.1 z.property)
+    (fun _ ↦ h.momentCocycle_eq_zero _)
+    (h.isSubmersion_quotientMk_levelSubMulAction hreg hn d).contMDiff η
+  simp only [coe_levelSubMulActionSubtype] at key
+  refine key.trans ?_
   rw [← hΦ.eq_iff, map_sub, SmoothForm.mpullback_mpullback, SmoothForm.mpullback_mpullback,
     SmoothForm.mpullback_mpullback]
   simp only [hq, hM, hO]
+
+/-- **The Marsden–Weinstein–Meyer reduced form on the orbit fibre product.** Let a Lie group `G`
+act smoothly and properly by symplectomorphisms on a symplectic manifold `(M, σ)`, with
+coadjoint-equivariant moment map `μ`, let `c` be a regular value of `μ`, and let the coadjoint
+stabilizer `G_c`, with the Lie group structure `d`, act freely on the level `μ⁻¹(c)`. Then the
+reduced space `Q = μ⁻¹(c) ⧸ G_c` carries a unique symplectic form `ω_red` with
+
+`q_W^* ω_red = pr_M^* σ - pr_O^* ω_KKS`
+
+on the orbit fibre product `W_O = {(x, o) ∈ M × O | μ(x) = ι_O(o)}`, for the orbit projection
+`q_W (x, g G_c) = [g⁻¹ • x]` and the two projections `pr_M (x, o) = x` and `pr_O (x, o) = o`, with
+the Kirillov–Kostant–Souriau form `ω_KKS` on `O = G ⧸ G_c`. It is the reduced form
+`π^* ω_red = i^* σ` of `existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback`. -/
+theorem existsUnique_isSymplectic_mpullback_orbitFiberProductProj_eq_sub (hσ : σ.IsSymplectic)
+    (hG : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
+      (ContMDiffSMul.contMDiff_const_smul (I := I) g) σ = σ) :
+    letI := h.orbitFiberProductChartedSpace c hreg b
+    haveI := h.isManifold_orbitFiberProduct hreg b
+    letI := h.orbitRelQuotientChartedSpace c hreg hn d
+    haveI := h.isManifold_orbitRelQuotient hreg hn d
+    ∃! η : SmoothTwoForm 𝓘(ℝ, ProperSMul.QuotientModelSpace F (Fin n → ℝ))
+        (MulAction.orbitRel.Quotient ((Lie.coadjointRepresentation ℝ I G).stabilizer c)
+          (h.levelSubMulAction c)),
+      η.IsSymplectic ∧
+        SmoothForm.mpullback (h.orbitFiberProductProj c b)
+            (h.isSubmersion_orbitFiberProductProj hreg hn d b).contMDiff η =
+          SmoothForm.mpullback (fun p : OrbitFiberProduct μ c b ↦ p.val.1)
+              (contMDiff_fst.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff) σ -
+            SmoothForm.mpullback (fun p : OrbitFiberProduct μ c b ↦ p.val.2)
+              (contMDiff_snd.comp (h.isSmoothEmbedding_coe_orbitFiberProduct hreg b).contMDiff)
+              c.coadjointOrbitForm := by
+  let _ := h.levelSubMulActionChartedSpace c hreg hn
+  have := h.isManifold_levelSubMulAction hreg hn
+  let _ := h.orbitFiberProductChartedSpace c hreg b
+  have := h.isManifold_orbitFiberProduct hreg b
+  let _ := h.orbitRelQuotientChartedSpace c hreg hn d
+  have := h.isManifold_orbitRelQuotient hreg hn d
+  exact (existsUnique_congr fun η ↦ and_congr_right fun _ ↦
+    h.mpullback_quotientMk_eq_iff_mpullback_orbitFiberProductProj_eq_sub hreg hn d b hG η).1
+      (h.existsUnique_isSymplectic_mpullback_quotientMk_eq_mpullback hreg hn d hσ hG)
 
 /-- **The null foliation of `pr_M^* σ - pr_O^* ω_KKS` on the orbit fibre product.** With the
 hypotheses of the Marsden–Weinstein–Meyer theorem, the two-form `pr_M^* σ - pr_O^* ω_KKS` on
