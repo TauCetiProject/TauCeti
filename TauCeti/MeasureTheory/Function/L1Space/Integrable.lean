@@ -34,8 +34,11 @@ nonnegative both its extended `p`-th moment and the `p`-th power of its `eLpNorm
 `MeasureTheory.MemLp.eLpNorm_rpow_eq_ofReal_integral`), converting `eLpNorm` bounds between almost
 everywhere nonnegative functions into Bochner `p`-th moment inequalities
 (`MeasureTheory.integral_rpow_le_mul_integral_rpow_of_eLpNorm_le`). Membership of the identity in
-`Lᵖ` gives integrability of its norm power even on a seminormed group, and on the real line
-positive-order `Lᵖ` membership is equivalent to integrability of the corresponding absolute power.
+`Lᵖ` gives integrability of its norm power even on a seminormed group. For a positive real order
+`r`, an almost everywhere strongly measurable function lies in `Lʳ` exactly when the `r`-th power
+of its norm is integrable (`TauCeti.memLp_ofReal_iff_integrable_norm_rpow`); on the real line this
+makes positive-order `Lᵖ` membership of the identity equivalent to integrability of the
+corresponding absolute power (`TauCeti.memLp_id_ofReal_iff_integrable_abs_rpow`).
 By Hölder's inequality, a finite product of functions, the `i`th in `L^(p i)`, is integrable when
 `∑ i, (p i)⁻¹ = 1` (`TauCeti.integrable_fun_prod_of_memLp`); in particular a product of `k`
 functions in `Lᵏ` is integrable when `k ≠ 0`
@@ -300,13 +303,21 @@ theorem integrable_norm_rpow_of_memLp_id_ofReal {E : Type*} [SeminormedAddCommGr
   simpa only [ENNReal.toReal_ofReal hp, id_eq, norm_norm] using
     (hν.of_le_eNorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
 
+/-- For a positive real order `r`, an almost everywhere strongly measurable function lies in
+`Lʳ` exactly when the `r`-th power of its norm is integrable. -/
+theorem memLp_ofReal_iff_integrable_norm_rpow {α F : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup F] {r : ℝ} (hr : 0 < r) {g : α → F}
+    (hg : AEStronglyMeasurable g μ) :
+    MemLp g (ENNReal.ofReal r) μ ↔ Integrable (fun x ↦ ‖g x‖ ^ r) μ := by
+  simpa only [ENNReal.toReal_ofReal hr.le] using
+    (integrable_norm_rpow_iff hg (ENNReal.ofReal_pos.mpr hr).ne' ENNReal.ofReal_ne_top).symm
+
 /-- For a positive real order, `Lᵖ` membership of the identity on the real line is
 equivalent to integrability of the absolute power. -/
 theorem memLp_id_ofReal_iff_integrable_abs_rpow {q : ℝ} (hq : 0 < q) (μ : Measure ℝ) :
     MemLp id (ENNReal.ofReal q) μ ↔ Integrable (fun x : ℝ ↦ |x| ^ q) μ := by
-  simpa only [id_eq, Real.norm_eq_abs, ENNReal.toReal_ofReal hq.le] using
-    (integrable_norm_rpow_iff (f := id) (μ := μ) aestronglyMeasurable_id
-      (ENNReal.ofReal_pos.mpr hq).ne' ENNReal.ofReal_ne_top).symm
+  simpa only [id_eq, Real.norm_eq_abs] using
+    memLp_ofReal_iff_integrable_norm_rpow (μ := μ) hq aestronglyMeasurable_id
 
 /-- **Hölder's inequality** for finite products, as an integrability criterion: a finite product
 of functions, the `i`th in `L^(p i)`, is integrable when the reciprocal exponents sum to `1`.

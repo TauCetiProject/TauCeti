@@ -26,6 +26,8 @@ generators to the subring they generate, and then to powers of `z * w`.
 ## Main results
 
 * `Subring.inclusion_rfl`: the inclusion `R ⊆ R` is `RingHom.id R`.
+* `Subring.map_equiv_eq_of_le_comap`: a ring equivalence `e` maps `S` onto `S'` when `e(S) ⊆ S'`
+  and `e⁻¹(S') ⊆ S`.
 * `Subring.coe_algebraMap_algebraOfMem`, `Subring.coe_smul_algebraOfMem`: the algebra map and
   scalar action of `Subring.algebraOfMem` agree with those on `B`.
 * `Subring.isScalarTower_algebraOfMem`: scalar towers on `B` lift to `Subring.algebraOfMem`.
@@ -48,6 +50,14 @@ namespace Subring
 theorem inclusion_rfl {A : Type*} [Ring A] (R : Subring A) :
     R.inclusion le_rfl = RingHom.id R :=
   rfl
+
+/-- If a ring equivalence `e : A ≃+* B` maps `S` into `S'` and `e.symm` maps `S'` into `S`,
+then `S.map e = S'`. -/
+theorem map_equiv_eq_of_le_comap {A B : Type*} [Ring A] [Ring B] {S : Subring A} {S' : Subring B}
+    (e : A ≃+* B) (h₁ : S ≤ S'.comap e.toRingHom) (h₂ : S' ≤ S.comap e.symm.toRingHom) :
+    S.map e.toRingHom = S' :=
+  le_antisymm (Subring.map_le_iff_le_comap.mpr h₁)
+    (by rwa [RingEquiv.toRingHom_eq_coe, Subring.map_equiv_eq_comap_symm])
 
 section Algebra
 

@@ -41,8 +41,9 @@ Integral cohomology classes are compared with the cohomology of products with sp
 circles, which is computed with chain coefficients and cochain values the unit object `ℤ` of
 `ModuleCat ℤ`, through the isomorphism of chain coefficients `ULift ℤ ≅ ℤ` and the uniqueness of
 the `ℤ`-linear structure of `ModuleCat ℤ` (`CategoryTheory.Linear.subsingletonInt`): this is the
-equivalence `TopCat.integralCohomologyEquiv`, natural in the space and compatible with Kronecker
-pairings.
+equivalence `TopCat.integralCohomologyEquiv`, natural in the space, compatible with Kronecker
+pairings, and carrying the integral cup product to the cup product along the left unitor of `ℤ`.
+A basis or a cup product computed with unit coefficients can thus be read in integral cohomology.
 
 ## Main definitions
 
@@ -56,7 +57,8 @@ pairings.
 * `TopCat.integralCohomologyEquiv`: `Hⁿ(X; ℤ)` is the cohomology with chain coefficients and
   cochain values the unit object `ℤ` of `ModuleCat ℤ`, the convention of the cohomology of
   products with spheres and circles, with `TopCat.integralCohomologyEquiv_naturality` its
-  naturality and `TopCat.singularKronecker_integralCohomologyEquiv` its Kronecker pairings.
+  naturality, `TopCat.singularKronecker_integralCohomologyEquiv` its Kronecker pairings and
+  `TopCat.integralCohomologyEquiv_integralCup` its cup products.
 * `TauCeti.integralCoeffIso`: the isomorphism `ULift ℤ ≅ ℤ` of chain coefficients, through which
   the diagonal and the multiplication are the inverse left unitor and the left unitor of `ℤ`
   (`TauCeti.integralCoeffComul_comp_tensorHom`, `TauCeti.integralCoeffMul_eq_leftUnitor_hom`).
@@ -77,6 +79,8 @@ pairings.
   one.
 * `TopCat.integralCupProd_add_self_eq_zero`: an iterated product of degree-one classes with a
   repeated factor has order at most two.
+* `TopCat.integralCohomologyEquiv_integralCup`: in unit coefficients, the integral cup product is
+  the cup product along the inverse left unitor and the left unitor of `ℤ`.
 
 ## References
 
@@ -459,6 +463,55 @@ theorem singularKronecker_integralCohomologyEquiv (n : ℕ) (a : X.integralCohom
   -- defines to be the unit object `𝟙_ (ModuleCat ℤ)`
   exact congrArg _ (singularKronecker_eqToHom (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ ℤ)
     Linear.preadditiveIntLinear ModuleCat.instLinear (Subsingleton.elim _ _) X n a)
+
+/-- **Cup products through `TopCat.integralCohomologyEquiv`**: the comparison of integral
+cohomology with the cohomology with unit coefficients carries the integral cup product to the cup
+product along the inverse left unitor and the left unitor of `ℤ`. -/
+theorem integralCohomologyEquiv_integralCup (p q n : ℕ) (h : p + q = n)
+    (a : X.integralCohomology p) (b : X.integralCohomology q) :
+    X.integralCohomologyEquiv n (X.integralCup p q n h a b) =
+      X.singularCup ℤ (λ_ (𝟙_ (ModuleCat.{0} ℤ))).inv (λ_ (𝟙_ (ModuleCat.{0} ℤ))).hom p q n h
+        (X.integralCohomologyEquiv p a) (X.integralCohomologyEquiv q b) := by
+  -- Write `a` and `b` as images of classes with chain coefficients `ℤ`, where the integral cup
+  -- product is the cup product along the left unitor.
+  have hsurj : ∀ m (x : X.integralCohomology m), ∃ x₀, x =
+      @singularCohomologyChainCoefficientMap _ _ _ _ _ _ X ℤ _ Linear.preadditiveIntLinear
+        (ModuleCat.of ℤ ℤ) integralCoeffIso.hom m x₀ := by
+    intro m x
+    refine ⟨@singularCohomologyChainCoefficientMap _ _ _ _ _ _ X ℤ _ Linear.preadditiveIntLinear
+      (ModuleCat.of ℤ ℤ) integralCoeffIso.inv m x, ?_⟩
+    simpa only [singularCohomologyChainCoefficientIso_hom,
+      singularCohomologyChainCoefficientIso_inv] using (Iso.inv_hom_id_apply
+        (@singularCohomologyChainCoefficientIso _ _ _ _ _ _ X ℤ _ Linear.preadditiveIntLinear
+          (ModuleCat.of ℤ ℤ) integralCoeffIso m) x).symm
+  have hinv : ∀ m (x : X.singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (𝟙_ (ModuleCat.{0} ℤ)) m),
+      X.singularCohomologyChainCoefficientMap ℤ (𝟙_ (ModuleCat.{0} ℤ)) integralCoeffIso.inv m
+          (X.singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) integralCoeffIso.hom m x) =
+        x :=
+    fun m x ↦ by
+      have hx := Iso.hom_inv_id_apply
+        (X.singularCohomologyChainCoefficientIso ℤ (𝟙_ (ModuleCat.{0} ℤ)) integralCoeffIso m) x
+      simp only [singularCohomologyChainCoefficientIso_hom,
+        singularCohomologyChainCoefficientIso_inv] at hx
+      -- `hx` writes the inner cochain values as the unit object `𝟙_ (ModuleCat ℤ)`, which Mathlib
+      -- defines to be `ModuleCat.of ℤ ℤ`
+      exact hx
+  obtain ⟨a, rfl⟩ := hsurj p a
+  obtain ⟨b, rfl⟩ := hsurj q b
+  simp only [integralCohomologyEquiv, Iso.toLinearEquiv_apply, Iso.trans_hom, Iso.symm_hom,
+    singularCohomologyChainCoefficientIso_inv, ConcreteCategory.comp_apply, eqToIso.hom]
+  rw [integralCup_singularCohomologyChainCoefficientMap]
+  -- Move the changes of `ℤ`-linear structure past the changes of chain coefficients, which then
+  -- cancel, and past the cup product.
+  have hcoeff := fun m ↦ ConcreteCategory.congr_hom
+    (singularCohomologyChainCoefficientMap_comp_eqToHom X ℤ Linear.preadditiveIntLinear
+      ModuleCat.instLinear (Subsingleton.elim _ _) (ModuleCat.of ℤ ℤ) integralCoeffIso.hom m)
+  simp only [ConcreteCategory.comp_apply] at hcoeff
+  rw [hcoeff, hcoeff, hcoeff, hinv, hinv, hinv]
+  -- the cup product on the left pairs cochain values written as `ModuleCat.of ℤ ℤ`, which Mathlib
+  -- defines to be the unit object `𝟙_ (ModuleCat ℤ)` of the cup product on the right
+  exact singularCup_eqToHom X ℤ Linear.preadditiveIntLinear ModuleCat.instLinear
+    (Subsingleton.elim _ _) _ _ p q n h _ _
 
 end UnitCoefficients
 

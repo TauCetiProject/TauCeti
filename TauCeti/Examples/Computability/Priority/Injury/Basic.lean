@@ -19,6 +19,10 @@ only:
   cardinal inequality is strict;
 * without monotone stages, a single number can leave and re-enter, injuring at infinitely many
   stages: finitely many injuring numbers do not bound the injury stages;
+* even with finitely many injury stages and one injuring number per transition, a number that
+  re-enters once gives more injury stages than injuring numbers, so monotonicity is needed;
+* the injuries through a stage collect the batches of the earlier transitions, and with monotone
+  stages entering one number at a time the injury stages and injuring numbers are equinumerous;
 * the restraint is inclusive: an entry exactly at the restraint injures, although it does not lie
   strictly below it;
 * contribution budgets apply to batched entries, including the sharp one-entry-per-contributor
@@ -140,3 +144,54 @@ example (e : ℕ) :
     omega
   simpa [Nat.mul_comm] using
     finite_injurySet_and_ncard_le_sum_of_causes _ (fun _ => 2) hbudget hcover
+
+-- Without monotone stages, `0` enters at stage `1`, leaves, and re-enters for good at stage `3`:
+-- both sets are finite and each transition has at most one injuring number, but there are two
+-- injury stages and one injuring number.
+example :
+    (injurySet (fun s => if s = 1 ∨ 3 ≤ s then {0} else ∅) (fun _ _ => some 0) 0).ncard <
+      (injuryStages (fun s => if s = 1 ∨ 3 ≤ s then {0} else ∅) (fun _ _ => some 0) 0).ncard := by
+  have hI : injurySet (fun s => if s = 1 ∨ 3 ≤ s then {0} else ∅) (fun _ _ => some 0) 0 = {0} := by
+    ext x
+    simp only [mem_injurySet, mem_injuriesAt, Set.mem_singleton_iff, Option.some.injEq]
+    refine ⟨fun ⟨_, _, _, _, rfl, hx⟩ => Nat.le_zero.1 hx, fun hx => ⟨0, ?_⟩⟩
+    simp [hx]
+  have hS : injuryStages (fun s => if s = 1 ∨ 3 ≤ s then {0} else ∅) (fun _ _ => some 0) 0 =
+      {1, 3} := by
+    ext t
+    simp only [mem_injuryStages, Set.mem_insert_iff, Set.mem_singleton_iff]
+    constructor
+    · rintro ⟨s, rfl, x, hx⟩
+      simp only [mem_injuriesAt, Option.some.injEq] at hx
+      split_ifs at hx <;> grind
+    · rintro (rfl | rfl)
+      · exact ⟨0, rfl, 0, by simp⟩
+      · exact ⟨2, rfl, 0, by simp⟩
+  rw [hI, hS, Set.ncard_singleton, Set.ncard_pair (by decide)]
+  decide
+
+-- The injuries through stage `1` of the batched entry are the whole batch.
+example : injuriesThrough (fun s => if s = 0 then ∅ else {0, 1}) (fun _ _ => some 1) 0 1 =
+    {0, 1} := by
+  ext x
+  simp only [mem_injuriesThrough, mem_injuriesAt, Nat.lt_one_iff, Finset.mem_insert,
+    Finset.mem_singleton]
+  constructor
+  · rintro ⟨s, rfl, hx, -⟩
+    simpa using hx
+  · intro hx
+    refine ⟨0, rfl, by simpa using hx, by simp, 1, rfl, by omega⟩
+
+-- `0` and `1` enter one at a time under the restraint `some 1`: two injury stages for the two
+-- injuring numbers.
+example : (injuryStages (fun s => Finset.range (min s 2)) (fun _ _ => some 1) 0).ncard = 2 := by
+  have hI : injurySet (fun s => Finset.range (min s 2)) (fun _ _ => some 1) 0 = {0, 1} := by
+    ext x
+    simp only [mem_injurySet, mem_injuriesAt, Finset.mem_range, Option.some.injEq,
+      Set.mem_insert_iff, Set.mem_singleton_iff]
+    refine ⟨fun ⟨_, _, _, _, rfl, hx⟩ => Nat.le_one_iff_eq_zero_or_eq_one.1 hx,
+      fun hx => ⟨x, by omega, by omega, 1, rfl, by omega⟩⟩
+  rw [ncard_injuryStages_eq_ncard_injurySet
+      (fun _ _ h => Finset.range_subset_range.2 (by omega))
+      (fun s => Finset.card_le_one.2 fun a ha b hb => by simp at ha hb; omega),
+    hI, Set.ncard_pair (by decide)]

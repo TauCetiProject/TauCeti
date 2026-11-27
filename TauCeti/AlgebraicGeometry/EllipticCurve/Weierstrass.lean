@@ -30,6 +30,8 @@ Facts about the invariants of an elliptic curve, complementing
 * `WeierstrassCurve.baseChange_c₄_ne_zero` and `WeierstrassCurve.baseChange_c₆_ne_zero`: the two
   corollaries of those criteria that say `j ≠ 0` and `j ≠ 1728` survive base change along an
   injection, in the `c₄`/`c₆` form the automorphism criterion consumes.
+* `WeierstrassCurve.baseChange_baseChange`: base change along a scalar tower `R → A → B` is
+  transitive.
 * `WeierstrassCurve.algebraMap_Δ_of_baseChange_eq`,
   `WeierstrassCurve.algebraMap_c₄_of_baseChange_eq` and
   `WeierstrassCurve.algebraMap_c₆_of_baseChange_eq`: the invariants of an equation known to be a
@@ -45,8 +47,9 @@ Mathlib results they complement; the cusp curve itself needs only a `0` in its c
 Adapted from the FLT project (`ImperialCollegeLondon/FLT`,
 `FLT/Mathlib/AlgebraicGeometry/EllipticCurve/Weierstrass.lean` at commit `bc2fe8ff7396`
 (FLT PR #1088), Apache 2.0, by Kevin Buzzard and Claude). Every result here except the cusp curve,
-`WeierstrassCurve.Δ_eq_invOf_mul`, `WeierstrassCurve.adjoin_c₄_c₆_Δ_eq` and
-`WeierstrassCurve.Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero` is adapted from that file. All adapted results
+`WeierstrassCurve.baseChange_baseChange`, `WeierstrassCurve.Δ_eq_invOf_mul`,
+`WeierstrassCurve.adjoin_c₄_c₆_Δ_eq` and `WeierstrassCurve.Δ_eq_of_a₃_eq_zero_of_a₄_eq_zero` is
+adapted from that file. All adapted results
 are generalised from FLT's field-level statements to a commutative ring: the two `j`-criteria,
 and the base-change pair `baseChange_c₄_ne_zero` / `baseChange_c₆_ne_zero`, which FLT states only
 for a field extension.
@@ -148,6 +151,14 @@ theorem baseChange_c₄_ne_zero (hRA : Function.Injective (algebraMap R A)) (hc�
 theorem baseChange_c₆_ne_zero (hRA : Function.Injective (algebraMap R A)) (hc₆ : E.c₆ ≠ 0) :
     (E.baseChange A).c₆ ≠ 0 := by
   rwa [baseChange, map_c₆, map_ne_zero_iff _ hRA]
+
+/-- **Base change is transitive**: base changing along `R → A` and then along `A → B` is base
+changing along `R → B`, for a scalar tower `R → A → B`. Stated in the `baseChange` spelling, so
+it rewrites directly in goals phrased that way. -/
+@[simp]
+theorem baseChange_baseChange (B : Type*) [CommRing B] [Algebra R B] [Algebra A B]
+    [IsScalarTower R A B] : (E.baseChange A).baseChange B = E.baseChange B :=
+  E.map_baseChange (Algebra.ofId A B)
 
 /-- The discriminant of a base change is the image of the discriminant, stated against an
 equation `W` known to be the base change of `W₀`. -/

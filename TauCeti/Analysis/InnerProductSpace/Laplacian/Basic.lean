@@ -221,6 +221,13 @@ theorem _root_.ContDiff.laplacian {n m : WithTop ℕ∞} {f : E → F}
   rw [hΔ]
   exact traceL.contDiff.comp hD
 
+/-- **The Laplacian in an orthonormal frame**: `Δ f x = ∑ᵢ D²f x (vᵢ, vᵢ)` is the sum of the second
+derivative of `f` at `x` on the pairs `(vᵢ, vᵢ)` of an orthonormal basis. -/
+theorem laplacian_eq_sum_fderiv_fderiv_orthonormalBasis {ι : Type*} [Fintype ι]
+    (v : OrthonormalBasis ι ℝ E) (f : E → F) (x : E) :
+    Δ f x = ∑ i, fderiv ℝ (fderiv ℝ f) x (v i) (v i) := by
+  simp [laplacian_eq_iteratedFDeriv_orthonormalBasis f v, iteratedFDeriv_two_apply]
+
 /-- The Laplacian is the sum of the second directional derivatives along an orthonormal basis:
 if `fderiv ℝ f` is differentiable at `x`, then `Δ f x = ∑ᵢ ∂ᵥᵢ (∂ᵥᵢ f) x`. -/
 theorem laplacian_eq_sum_fderiv_fderiv_apply {ι : Type*} [Fintype ι]
@@ -297,8 +304,6 @@ theorem _root_.ContDiffAt.laplacian_fderiv {f : E → F} {x : E} (hf : ContDiffA
     Δ (fderiv ℝ f) x = fderiv ℝ (Δ f) x := by
   let b := stdOrthonormalBasis ℝ E
   have hDf : ContDiffAt ℝ 2 (fderiv ℝ f) x := hf.fderiv_right (m := 2) (by norm_num)
-  have hD2 : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ f)) x :=
-    (hDf.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   -- The Laplacian of `f` is the trace of the second derivative.
   have hΔ : Δ f =ᶠ[𝓝 x] fun y ↦ ∑ i, fderiv ℝ (fderiv ℝ f) y (b i) (b i) :=
     .of_forall fun y ↦ by rw [laplacian_eq_traceL, ContinuousLinearMap.traceL_apply]
@@ -306,16 +311,7 @@ theorem _root_.ContDiffAt.laplacian_fderiv {f : E → F} {x : E} (hf : ContDiffA
   have hl : Δ (fderiv ℝ f) x v = Δ (fun y ↦ fderiv ℝ f y v) x :=
     (hDf.laplacian_CLM_comp_left (l := ContinuousLinearMap.apply ℝ F v)).symm
   rw [hl, laplacian_eq_traceL, ContinuousLinearMap.traceL_apply, hΔ.fderiv_eq,
-    fderiv_fun_sum fun i _ ↦ (hD2.clm_apply (differentiableAt_const _)).clm_apply
-      (differentiableAt_const _)]
-  simp only [FunLike.coe_sum, Finset.sum_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  -- Both summands are values of the symmetric third derivative.
-  have hsymm := (hDf.isSymmSndFDerivAt (by simp [minSmoothness_of_isRCLikeNormedField])) (b i) v
-  rw [fderiv_fderiv_fderiv_apply hf, fderiv_fderiv_fderiv_apply_comm hf (by simp), hsymm,
-    fderiv_clm_apply (hD2.clm_apply (differentiableAt_const _)) (differentiableAt_const _),
-    fderiv_clm_apply hD2 (differentiableAt_const _)]
-  simp [b]
+    fderiv_sum_fderiv_fderiv_apply hf (by simp) b v]
 
 /-- **The Laplacian commutes with iterated derivatives.** For a map of class `C^(n+2)`,
 `Δ (Dⁿ f) = Dⁿ (Δ f)`. -/

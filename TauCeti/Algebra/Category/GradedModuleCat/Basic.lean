@@ -135,6 +135,16 @@ theorem map_mem (f : M ⟶ N) {p : ℤ} {x : M} (hx : x ∈ M.grading.piece p) :
     f.hom x ∈ N.grading.piece p := by
   simpa using f.isHomogeneous.map_mem hx
 
+/-- Along a surjective morphism of graded modules, every element of degree `p` has a preimage of
+degree `p`. -/
+theorem exists_mem_piece_of_surjective (f : M ⟶ N) (hf : Function.Surjective f.hom) (p : ℤ)
+    {y : N} (hy : y ∈ N.grading.piece p) :
+    ∃ x ∈ M.grading.piece p, f.hom x = y := by
+  obtain ⟨x, rfl⟩ := hf y
+  have h := f.isHomogeneous.map_decompose p x
+  rw [add_zero, _root_.DirectSum.decompose_of_mem_same N.grading.piece hy] at h
+  exact ⟨_, (_root_.DirectSum.decompose M.grading.piece x p).property, h⟩
+
 /-- A graded surjection preserves vanishing of a homogeneous piece. In particular, a quotient
 of a module concentrated in one degree is concentrated in that degree. -/
 theorem piece_eq_bot_of_surjective (f : M ⟶ N)

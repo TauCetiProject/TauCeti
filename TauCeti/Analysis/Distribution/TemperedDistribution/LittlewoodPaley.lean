@@ -165,6 +165,11 @@ blocks `Δⱼ u`.
   (`TemperedDistribution.exists_fourierMultiplierCLM_inv_smul_eq_and_norm_le`), in particular the
   truncations `S_{N+1} = ∑_{j ≤ N} Δⱼ`
   (`TemperedDistribution.exists_littlewoodPaleyLowPass_succ_eq_and_norm_le`).
+* `TemperedDistribution.littlewoodPaleyBlockLp` and
+  `TemperedDistribution.toTemperedDistribution_littlewoodPaleyBlockLp`: the blocks as bounded
+  operators on `Lᵖ`, `1 ≤ p ≤ ∞`.
+* `TemperedDistribution.littlewoodPaleyBlock_mem_closure_range_schwartz_toLp`: the blocks preserve
+  the `Lᵖ` closure of the Schwartz functions.
 * `TemperedDistribution.ae_eq_convolution_of_littlewoodPaleyBlock_eq`: on `Lᵖ`, the block `Δⱼ` is
   convolution with `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le`: the commutator of
@@ -1070,6 +1075,57 @@ theorem exists_enlargedLittlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] (L 
             (Nat.sub_le_sub_right (Nat.le_add_right j 1) L)
       _ = 2 * L * max C₀ 0 * ‖f‖ := by ring
 
+variable (F) in
+/-- The `j`-th Littlewood–Paley block as a bounded operator on `Lᵖ`, for `1 ≤ p ≤ ∞`. -/
+noncomputable def littlewoodPaleyBlockLp [CompleteSpace F] (p : ℝ≥0∞) [Fact (1 ≤ p)] (j : ℕ) :
+    Lp F p (volume : Measure E) →L[ℂ] Lp F p (volume : Measure E) :=
+  let hC := (exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ).choose_spec
+  let i : Lp F p (volume : Measure E) →ₗ[ℂ] 𝓢'(E, F) :=
+    (Lp.toTemperedDistributionCLM F volume p).toLinearMap
+  let B : Lp F p (volume : Measure E) →ₗ[ℂ] 𝓢'(E, F) :=
+    (littlewoodPaleyBlock F φ j).toLinearMap ∘ₗ i
+  have hmem : ∀ u, B u ∈ LinearMap.range i :=
+    fun u ↦ let ⟨g, hg, _⟩ := hC j u; ⟨g, hg.symm⟩
+  let T₀ := LinearMap.codRestrictOfInjective B i Lp.toTemperedDistribution_injective hmem
+  T₀.mkContinuous (exists_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ).choose fun u ↦ by
+    obtain ⟨g, hg, hgn⟩ := hC j u
+    have hT₀ : (T₀ u : 𝓢'(E, F)) = littlewoodPaleyBlock F φ j (u : 𝓢'(E, F)) :=
+      LinearMap.codRestrictOfInjective_comp_apply B i Lp.toTemperedDistribution_injective hmem u
+    have hug : T₀ u = g := Lp.toTemperedDistribution_injective (hT₀.trans hg)
+    simpa only [hug] using hgn
+
+/-- The tempered distribution of `littlewoodPaleyBlockLp F φ p j u` is
+`littlewoodPaleyBlock F φ j (u : 𝓢'(E, F))`. -/
+@[simp]
+theorem toTemperedDistribution_littlewoodPaleyBlockLp [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (j : ℕ) (u : Lp F p (volume : Measure E)) :
+    (littlewoodPaleyBlockLp F φ p j u : 𝓢'(E, F)) =
+      littlewoodPaleyBlock F φ j (u : 𝓢'(E, F)) := by
+  dsimp only [littlewoodPaleyBlockLp]
+  exact LinearMap.codRestrictOfInjective_comp_apply _
+    (Lp.toTemperedDistributionCLM F volume p).toLinearMap Lp.toTemperedDistribution_injective _ u
+
+/-- **Littlewood–Paley blocks preserve the `Lᵖ` closure of Schwartz functions.** If `f ∈ Lᵖ` lies in
+the `Lᵖ` closure of the Schwartz functions and its block `Δⱼ f` is represented by `v ∈ Lᵖ`, then
+`v` also lies in the `Lᵖ` closure of the Schwartz functions. -/
+theorem littlewoodPaleyBlock_mem_closure_range_schwartz_toLp [CompleteSpace F]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : Lp F p (volume : Measure E)}
+    (hf : f ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp p)) {j : ℕ}
+    {v : Lp F p (volume : Measure E)}
+    (hv : littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = v) :
+    v ∈ closure (Set.range fun g : 𝓢(E, F) ↦ g.toLp p) := by
+  have hvT : v = littlewoodPaleyBlockLp F φ p j f :=
+    Lp.toTemperedDistribution_injective
+      (hv.symm.trans (toTemperedDistribution_littlewoodPaleyBlockLp φ j f).symm)
+  rw [hvT]
+  refine map_mem_closure (littlewoodPaleyBlockLp F φ p j).continuous hf fun _ ⟨g, hg⟩ ↦ ?_
+  refine ⟨SchwartzMap.fourierMultiplierCLM F
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) g,
+    Lp.toTemperedDistribution_injective ?_⟩
+  dsimp only
+  rw [← hg, toTemperedDistribution_littlewoodPaleyBlockLp, Lp.toTemperedDistribution_toLp_eq,
+    Lp.toTemperedDistribution_toLp_eq, littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
+
 /-- **The low-pass truncations are bounded on `Lᵖ` uniformly in the scale.** For every
 `1 ≤ p ≤ ∞`, every `R ≠ 0` and every `f ∈ Lᵖ`, the truncation `𝓕⁻ (φ (R⁻¹ ·) • 𝓕 f)` is a
 function in `Lᵖ` with norm at most `‖𝓕⁻ φ‖₁ ‖f‖_p`: its kernel is an `L¹`-normalised dilate of
@@ -1105,8 +1161,6 @@ theorem littlewoodPaleyLowPass_eq_sum [CompleteSpace F] {p : ℝ≥0∞} [Fact (
   rw [littlewoodPaleyLowPass_def, _root_.sum_apply, Lp.toTemperedDistribution_sum]
   exact Finset.sum_congr rfl fun k _ ↦ hz k
 
-open ContinuousLinearMap in
-open scoped Convolution in
 open ContinuousLinearMap in
 open scoped Convolution in
 /-- **The blocks of an `Lᵖ` function are convolutions.** For `1 ≤ p, q ≤ ∞` and `h ∈ Lᵖ`, if the
