@@ -201,7 +201,7 @@ theorem IsWeaklyExact.isWeaklyExactRel_twistedProd_graph {σ : SmoothTwoForm I M
   -- `φ ∘ u₁` caps the loop `φ ∘ γ₁`, which is the second component `γ₂` of the boundary.
   have hφu₁ : IsCap J (φ ∘ Prod.fst ∘ u) (Prod.snd ∘ γ) := by
     have h := hu₁.comp (hφ.of_le (by simp))
-    rw [show φ ∘ Prod.fst ∘ γ = Prod.snd ∘ γ from funext hγ] at h
+    rw [show φ ∘ Prod.fst ∘ γ = Prod.snd ∘ γ from funext fun t ↦ Function.mem_graph.1 (hγ t)] at h
     exact isCap_iff.2 ⟨φ x.1, h⟩
   rw [SmoothTwoForm.rectangleIntegral_twistedProd σ τ (hu.contMDiff.of_le one_le_two), ← hφστ,
     SmoothForm.coe_mpullback, rectangleIntegral_mpullback _
@@ -224,7 +224,7 @@ theorem IsWeaklyExactRel.isWeaklyExact_of_twistedProd_graph {σ : SmoothTwoForm 
       fun _ ↦ (y, φ x) :=
     ⟨hw.contMDiff.prodMk contMDiff_const, fun z ↦ by rw [hw.apply_add_one],
       fun t ↦ by rw [hw.apply_zero], fun t ↦ by rw [hw.apply_one]⟩
-  have h0 := h hcyl.isCap fun _ ↦ rfl
+  have h0 := h hcyl.isCap fun _ ↦ Function.mem_graph.2 rfl
   rw [SmoothTwoForm.rectangleIntegral_twistedProd σ τ (hcyl.contMDiff.of_le one_le_two)] at h0
   simpa only [Function.comp_def, rectangleIntegral_const, sub_zero] using h0
 
@@ -245,7 +245,8 @@ theorem IsWeaklyExact.isWeaklyExactRel_twistedProd_inv_graph {σ : SmoothTwoForm
   -- `φ ∘ u₂` caps the loop `φ ∘ γ₂`, which is the first component `γ₁` of the boundary.
   have hφu₂ : IsCap I (φ ∘ Prod.snd ∘ u) (Prod.fst ∘ γ) := by
     have h := hu₂.comp (hφ.of_le (by simp))
-    rw [show φ ∘ Prod.snd ∘ γ = Prod.fst ∘ γ from funext hγ] at h
+    rw [show φ ∘ Prod.snd ∘ γ = Prod.fst ∘ γ from
+      funext fun t ↦ Function.mem_graph.1 (SetRel.mem_inv.1 (hγ t))] at h
     exact isCap_iff.2 ⟨φ x.2, h⟩
   rw [SmoothTwoForm.rectangleIntegral_twistedProd σ τ (hu.contMDiff.of_le one_le_two), ← hφστ,
     SmoothForm.coe_mpullback, rectangleIntegral_mpullback _
@@ -269,7 +270,7 @@ theorem IsWeaklyExactRel.isWeaklyExact_of_twistedProd_inv_graph {σ : SmoothTwoF
       fun _ ↦ (φ x, y) :=
     ⟨contMDiff_const.prodMk hw.contMDiff, fun z ↦ by rw [hw.apply_add_one],
       fun t ↦ by rw [hw.apply_zero], fun t ↦ by rw [hw.apply_one]⟩
-  have h0 := h hcyl.isCap fun _ ↦ rfl
+  have h0 := h hcyl.isCap fun _ ↦ SetRel.mem_inv.2 (Function.mem_graph.2 rfl)
   rw [SmoothTwoForm.rectangleIntegral_twistedProd σ τ (hcyl.contMDiff.of_le one_le_two)] at h0
   simpa only [Function.comp_def, rectangleIntegral_const, zero_sub, neg_eq_zero] using h0
 
@@ -280,7 +281,8 @@ namespace SmoothTwoForm
 exact. This is the case of the graph of the identity. -/
 theorem isWeaklyExactRel_twistedProd_diagonal_iff {σ : SmoothTwoForm I M} :
     IsWeaklyExactRel (I.prod I) (twistedProd σ σ).val (diagonal M) ↔ IsWeaklyExact σ.val := by
-  have hdiag : diagonal M = Function.graph id := rfl
+  have hdiag : diagonal M = Function.graph id :=
+    Set.ext fun _ ↦ Set.mem_diagonal_iff.trans Function.mem_graph.symm
   have hid : SmoothForm.mpullback (id : M → M) contMDiff_id σ = σ := by
     rw [SmoothForm.mpullback_id, LinearMap.id_apply]
   rw [hdiag]
