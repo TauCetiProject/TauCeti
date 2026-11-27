@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.FunctionField.Differential.Weil
 public import TauCeti.FieldTheory.FunctionField.Repartition.IndexOfSpecialty
 public import TauCeti.Topology.KrullDimension.Basic
+import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.LocallyPrincipal
 
 /-!
 # First cohomology as a repartition quotient
@@ -36,7 +37,9 @@ also identifies the dual of `H¹(X, 𝒪_X(D))` with the space `Ω(D)` of such d
 * `SchemeWeilDivisor.repartitionToCohomologyOne` sends a repartition to its first cohomology
   class, naturally in the divisor (`SchemeWeilDivisor.repartitionToCohomologyOne_naturality`) and
   under multiplication by a nonzero rational function
-  (`SchemeWeilDivisor.repartitionToCohomologyOne_sheafMul`);
+  (`SchemeWeilDivisor.repartitionToCohomologyOne_sheafMul`), and more generally under every
+  morphism of divisor sheaves which is multiplication by a rational function
+  (`SchemeWeilDivisor.cohomologyMapBaseLinear_repartitionToCohomologyOne_of_comp_sheafι_eq`);
 * `SchemeWeilDivisor.repartitionQuotientEquivCohomologyOne` identifies the quotient by the
   divisor filtration and diagonal rational functions with `H¹(X, 𝒪_X(D))`;
 * `SchemeWeilDivisor.cohomologyOneDualEquivWeilDifferentialFiltration` identifies the dual of
@@ -215,6 +218,57 @@ lemma repartitionToCohomologyOne_sheafMul (hF : IsFunctionField k X.functionFiel
     (fun x ↦ isClosed_singleton_of_forall_coheight_le_one_of_coheight_eq_one hdim x.property) D
   cohomologyMapBaseLinear_repartitionToCohomologyOne hex hdim _ _ (sheafMul_ι g D).symm <| by
     rw [principalPartsMap_sheafMul, repartitionToPrincipalParts_principalPartsMul hex hdim hF]
+
+include hdim in
+omit [X.IsSeparated] in
+/-- A morphism `ψ : 𝒪(D) ⟶ 𝒪(E)` which is multiplication by a nonzero rational function `g`
+inside `𝒦_X` is multiplication by `g`, `𝒪(D) ⟶ 𝒪(D - div g)`, followed by an inclusion of
+divisor sheaves. -/
+private lemma exists_eq_sheafMul_comp_sheafHomOfLE {D E : SchemeWeilDivisor X}
+    (ψ : sheaf D ⟶ sheaf E) (g : Additive X.functionFieldˣ)
+    (hψ : ψ ≫ sheafι E = sheafι D ≫ Scheme.rationalFunctionsMul X
+      ((Additive.toMul g : X.functionFieldˣ) : X.functionField)) :
+    ∃ h : D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g ≤ E,
+      ψ = sheafMul g D ≫ sheafHomOfLE h := by
+  -- `χ` is `ψ` precomposed with multiplication by `g⁻¹`, so it is the identity inside `𝒦_X`
+  set χ := (sheafMulIso g D).inv ≫ ψ with hχdef
+  have hχ : χ ≫ sheafι E = sheafι _ := by
+    rw [hχdef, Category.assoc, hψ, sheafMulIso_inv_ι_assoc, toMul_neg,
+      Scheme.rationalFunctionsMul_inv_comp, Category.comp_id]
+  have hle : D - (WeilDivisor.OrderSystem.ofScheme X).principalDivisor g ≤ E := by
+    refine le_of_sections_le (isLocallyPrincipal_of_forall_coheight_le_one hdim _)
+      fun U t ht ↦ ?_
+    have := rationalFunctionsMul_app_mem_sections_of_comp_sheafι_eq
+      (hχ.trans (by rw [Scheme.rationalFunctionsMul_one, Category.comp_id])) U ht
+    rwa [Scheme.rationalFunctionsMul_one, Scheme.Modules.Hom.id_app,
+      ConcreteCategory.id_apply] at this
+  refine ⟨hle, ?_⟩
+  rw [← sheafMulIso_hom, ← Iso.inv_comp_eq, ← hχdef, ← cancel_mono (sheafι E), hχ,
+    sheafHomOfLE_ι]
+
+/-- The map on first sheaf cohomology induced by a morphism `ψ : 𝒪(D) ⟶ 𝒪(E)` which is
+multiplication by a rational function `g` inside `𝒦_X` multiplies the repartition representing
+a class by `g`. Every morphism of divisor sheaves on a curve is of this form
+(`SchemeWeilDivisor.IsLocallyPrincipal.exists_rationalFunctionsMul_eq`). -/
+lemma cohomologyMapBaseLinear_repartitionToCohomologyOne_of_comp_sheafι_eq
+    (hF : IsFunctionField k X.functionField) {D E : SchemeWeilDivisor X}
+    (ψ : sheaf D ⟶ sheaf E) (g : X.functionField)
+    (hψ : ψ ≫ sheafι E = sheafι D ≫ Scheme.rationalFunctionsMul X g)
+    (a : repartitionSpace k X.functionField) :
+    Scheme.Modules.cohomologyMapBaseLinear k X ψ 1 (repartitionToCohomologyOne hex hdim D a) =
+      repartitionToCohomologyOne hex hdim E (repartitionMul hF g a) := by
+  rcases eq_or_ne g 0 with rfl | hg
+  · have hψ0 : ψ = 0 := by
+      rw [← cancel_mono (sheafι E), hψ, Scheme.rationalFunctionsMul_zero, Limits.comp_zero,
+        Limits.zero_comp]
+    rw [hψ0, Scheme.Modules.cohomologyMapBaseLinear_zero, LinearMap.zero_apply, map_zero,
+      LinearMap.zero_apply, map_zero]
+  · set γ : Additive X.functionFieldˣ := Additive.ofMul (Units.mk0 g hg)
+    have hγ : ((Additive.toMul γ : X.functionFieldˣ) : X.functionField) = g := by
+      rw [toMul_ofMul, Units.val_mk0]
+    obtain ⟨hle, rfl⟩ := exists_eq_sheafMul_comp_sheafHomOfLE hdim ψ γ (by rw [hψ, hγ])
+    rw [Scheme.Modules.cohomologyMapBaseLinear_comp, LinearMap.comp_apply,
+      repartitionToCohomologyOne_sheafMul hex hdim hF, repartitionToCohomologyOne_naturality, hγ]
 
 /-- Every first cohomology class is represented by a repartition. -/
 theorem repartitionToCohomologyOne_surjective (D : SchemeWeilDivisor X) :

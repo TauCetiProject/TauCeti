@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
 public import Mathlib.Algebra.Homology.HomotopyCategory.Shift
 public import Mathlib.Tactic.Ring
 import TauCeti.Algebra.Homology.Embedding.Restriction.Basic
+import TauCeti.Algebra.Homology.Embedding.Restriction.Homology
 
 /-!
 # Regrading a chain complex as a cochain complex
@@ -264,15 +265,8 @@ theorem regradeHomologyIso_hom_naturality {K L : ChainComplex C ℤ} (φ : K ⟶
     [K.HasHomology (n - k)] [L.HasHomology (n - k)] :
     homologyMap (restrictionMap φ (embeddingUpIntDownIntSub n)) k ≫
         (regradeHomologyIso n L k).hom =
-      (regradeHomologyIso n K k).hom ≫ homologyMap φ (n - k) := by
-  rw [← cancel_mono (L.homologyι (n - k))]
-  simp only [Category.assoc, regradeHomologyIso_hom_homologyι, homologyι_naturality,
-    homologyι_naturality_assoc, regradeHomologyIso_hom_homologyι_assoc]
-  congr 1
-  rw [← cancel_epi ((K.restriction (embeddingUpIntDownIntSub n)).pOpcycles k),
-    p_opcyclesMap_assoc,
-    restrictionMap_f' φ _ (by simp : (embeddingUpIntDownIntSub n).f k = n - k)]
-  simp
+      (regradeHomologyIso n K k).hom ≫ homologyMap φ (n - k) :=
+  HomologicalComplex.restrictionHomologyIso_hom_naturality φ _ ..
 
 end HasZeroMorphisms
 
