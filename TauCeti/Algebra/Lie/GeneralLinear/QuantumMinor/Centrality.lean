@@ -60,19 +60,21 @@ theorem commute_quantumMinor_self (E : Matrix ι ι A) (hE : E.HasMatrixUnitLieR
     · rfl
   rw [hl, hc, sub_self]
 
-/-- The value of a principal quantum determinant commutes with that of any principal minor
-whose indices lie in the determinant's block. The spectral parameters are independent. -/
-theorem commute_quantumMinor_self_of_range_subset (E : Matrix ι ι A)
-    (hE : E.HasMatrixUnitLieRelations) (u v : K) (a : Fin n → ι) (b : Fin m → ι)
-    (h : Set.range b ⊆ Set.range a) : Commute (E.quantumMinor u a a) (E.quantumMinor v b b) := by
-  have hm : E.quantumMinor v b b ∈ Subalgebra.centralizer K {E.quantumMinor u a a} := by
+/-- The value of a principal quantum determinant commutes with that of any quantum minor whose
+row and column indices lie in the determinant's block. The spectral parameters are
+independent. -/
+theorem commute_quantumMinor_self_quantumMinor_of_range_subset (E : Matrix ι ι A)
+    (hE : E.HasMatrixUnitLieRelations) (u v : K) (a : Fin n → ι) (b c : Fin m → ι)
+    (hb : Set.range b ⊆ Set.range a) (hc : Set.range c ⊆ Set.range a) :
+    Commute (E.quantumMinor u a a) (E.quantumMinor v b c) := by
+  have hm : E.quantumMinor v b c ∈ Subalgebra.centralizer K {E.quantumMinor u a a} := by
     apply E.quantumMinor_mem_subalgebra
     intro i j
     rw [Subalgebra.mem_centralizer_iff]
     intro z hz
     rw [Set.mem_singleton_iff.mp hz]
     exact (E.commute_quantumMinor_self hE u a
-      (iff_of_true (h (Set.mem_range_self i)) (h (Set.mem_range_self j)))).symm.eq
+      (iff_of_true (hb (Set.mem_range_self i)) (hc (Set.mem_range_self j)))).symm.eq
   rw [Subalgebra.mem_centralizer_iff] at hm
   exact hm _ (Set.mem_singleton _)
 
