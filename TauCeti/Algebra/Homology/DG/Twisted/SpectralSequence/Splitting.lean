@@ -43,6 +43,8 @@ differential of the homogeneous component of that element one degree lower.
 
 ## Main results
 
+* `TauCeti.isIso_indexGradedPieceEval`: at the only generator of index `p`, the evaluation is an
+  isomorphism of complexes, with inverse the insertion.
 * `TauCeti.shiftedModuleComplexHomologyEquiv_homologyπ`: the identification sends the class of a
   cycle to its class in `H(ℳ)`, and `TauCeti.shiftedModuleComplexHomologyEquiv_symm_mk`: its
   inverse sends the class of a homogeneous cycle of `ℳ` to the class of the corresponding cycle.
@@ -309,6 +311,34 @@ theorem sum_indexGradedPieceEval_comp_single :
     shiftedModuleComplexXEquiv_indexGradedPieceEval_f, Pi.single_apply]
   rw [Finset.sum_eq_single y (fun x _ hx ↦ ite_eq_right fun h : y = x ↦ absurd h.symm hx)
     (fun h ↦ absurd (Finset.mem_univ _) h), ite_eq_left rfl]
+
+/-- When `x` is the only generator of index `p`, evaluating and inserting at `x` is the identity
+of the `p`-th graded piece. -/
+theorem indexGradedPieceEval_comp_single_of_forall_eq (x : {x : P // ind x = p})
+    (hx : ∀ y : {x : P // ind x = p}, y = x) :
+    indexGradedPieceEval hM ind x ≫ indexGradedPieceSingle hM ind x =
+      𝟙 (indexGradedPieceComplex hM ind p) := by
+  have : Subsingleton {x : P // ind x = p} := ⟨fun a b ↦ (hx a).trans (hx b).symm⟩
+  rw [← sum_indexGradedPieceEval_comp_single, Fintype.sum_subsingleton _ x]
+
+omit [DecidableEq P] in
+/-- When `x` is the only generator of index `p`, the evaluation at `x` is an isomorphism of
+complexes, with inverse the insertion at `x`. -/
+theorem isIso_indexGradedPieceEval (x : {x : P // ind x = p})
+    (hx : ∀ y : {x : P // ind x = p}, y = x) : IsIso (indexGradedPieceEval hM ind x) := by
+  classical
+  exact ⟨indexGradedPieceSingle hM ind x, indexGradedPieceEval_comp_single_of_forall_eq hM ind x hx,
+    by simp⟩
+
+omit [DecidableEq P] in
+/-- When `x` is the only generator of index `p`, the evaluation at `x` is injective on the
+cohomology of the `p`-th graded piece. -/
+theorem injective_homologyMap_indexGradedPieceEval (x : {x : P // ind x = p})
+    (hx : ∀ y : {x : P // ind x = p}, y = x) (n : ℤ) :
+    Function.Injective (HomologicalComplex.homologyMap (indexGradedPieceEval hM ind x) n).hom := by
+  have := isIso_indexGradedPieceEval hM ind x hx
+  exact (asIso (HomologicalComplex.homologyMap (indexGradedPieceEval hM ind x) n)).toLinearEquiv
+    |>.injective
 
 /-- **The cohomology of a graded piece of the index filtration**: the cohomology of
 `⊕_{ind x = p} ℳ ⊗ ⟨x⟩` in total degree `n` is the product over the generators `x` of index `p`
