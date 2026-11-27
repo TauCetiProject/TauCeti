@@ -431,14 +431,7 @@ theorem isIso_of_isIso_toQuasicoherentAlgebra_map {A B : GradedQuasicoherentAlge
           ((congrArg (ιTotal B n ≫ ·) ((Category.assoc _ _ _).symm.trans
             ((congrArg (· ≫ πTotal B n) h₂).trans (Category.id_comp _)))).trans
               (ιTotal_πTotal_self B n))
-  have : IsIso f.hom.hom.hom := GradedObject.isIso_of_isIso_apply _
-  -- The forgetful functor to graded modules sends `f` to its underlying morphism
-  -- `f.hom.hom.hom` (`Functor.comp_map`, `ObjectProperty.ι_map`, `CommMon.forget₂Mon_map_hom`,
-  -- `Mon.forget_map`), and it reflects isomorphisms.
-  have : IsIso ((ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _).map f) := by
-    simpa only [Functor.comp_map, ObjectProperty.ι_map, CommMon.forget₂Mon_map_hom,
-      Mon.forget_map]
-  exact isIso_of_reflects_iso f (ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _)
+  exact isIso_of_isIso_hom_hom_hom f this
 
 end GradedQuasicoherentAlgebra
 
