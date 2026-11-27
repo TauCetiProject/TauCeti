@@ -18,8 +18,9 @@ cylinders to the ends of the pair of pants `S = ℂ ∖ {0, 1}`. The datum of th
 Hamiltonians `G` on the pants side of necks placed at the positions `L_q`, a continuation datum from
 `G_q` to `H_q` along each neck, and `H_q(t) dt` beyond it. Moving the neck positions along a path
 gives the one-parameter families of pairs of pants whose broken ends compare continuation maps with
-pair-of-pants products. The moduli spaces of these families are cut out by the linearized operator
-`D_u` of this datum, and their dimensions are its index.
+pair-of-pants products. For fixed neck positions the moduli spaces are cut out by the linearized
+operator `D_u` of this datum, and its index is their expected dimension (their dimension when they
+are regular); the moduli space over a path of neck positions has expected dimension one more.
 
 Let `F` be a finite-dimensional complex inner product space whose symplectic form `ω` is
 `Im ⟪·, ·⟫`, and let `u` be a map on `S` whose ends converge to nondegenerate one-periodic orbits of
