@@ -109,13 +109,3 @@ theorem isComplemented_iff_eq_span_idempotent (I : Ideal R) :
     exact ⟨_, he.isCompl_span_singleton_one_sub⟩
 
 end Ideal
-
-namespace TauCeti
-
-/-- A principal left ideal is complemented exactly when its generator has an inner inverse. -/
-theorem isComplemented_span_singleton_iff {R : Type*} [Ring R] (a : R) :
-    IsComplemented (Ideal.span {a} : Ideal R) ↔ ∃ b : R, a * b * a = a :=
-  (Ideal.span {a}).isComplemented_iff_eq_span_idempotent.trans
-    (exists_isIdempotentElem_span_singleton_eq_iff a)
-
-end TauCeti

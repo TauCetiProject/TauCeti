@@ -24,7 +24,7 @@ open CategoryTheory
 /-- The one-object category of a monoid is von Neumann regular exactly when the monoid is. -/
 @[simp]
 theorem isVonNeumannRegularCategory_singleObj_iff (R : Type*) [Monoid R] :
-    IsVonNeumannRegularCategory (SingleObj R) ↔ IsVonNeumannRegularRing R := by
+    IsVonNeumannRegularCategory (SingleObj R) ↔ IsVonNeumannRegularSemigroup R := by
   constructor
   · intro h
     constructor
@@ -39,7 +39,7 @@ theorem isVonNeumannRegularCategory_singleObj_iff (R : Type*) [Monoid R] :
     exact ⟨g, by simpa only [SingleObj.comp_as_mul, mul_assoc] using hg⟩
 
 /-- The one-object category of a von Neumann regular monoid is von Neumann regular. -/
-instance (R : Type*) [Monoid R] [IsVonNeumannRegularRing R] :
+instance (R : Type*) [Monoid R] [IsVonNeumannRegularSemigroup R] :
     IsVonNeumannRegularCategory (SingleObj R) :=
   (isVonNeumannRegularCategory_singleObj_iff R).mpr inferInstance
 

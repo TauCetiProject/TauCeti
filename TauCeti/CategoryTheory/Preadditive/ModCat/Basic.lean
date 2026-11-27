@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Basic
+import TauCeti.CategoryTheory.Functor.InnerInverse
 import TauCeti.CategoryTheory.Projective.Images
 
 /-!
@@ -93,16 +94,10 @@ instance (X : C) : Projective ((yoneda C).obj X) where
 
 /-- The image of a map between representable modules is a direct summand precisely when the
 representing morphism has an inner inverse. -/
-theorem _root_.Quiver.Hom.isSplitMono_image_ι_yoneda_map_iff {X Y : C} (f : X ⟶ Y) :
-    IsSplitMono (image.ι ((yoneda C).map f)) ↔ ∃ g : Y ⟶ X, f ≫ g ≫ f = f := by
-  let F := yoneda C
-  rw [(F.map f).isSplitMono_image_ι_iff_exists_comp_comp_eq_self]
-  constructor
-  · rintro ⟨g, hg⟩
-    obtain ⟨g', rfl⟩ := F.map_surjective g
-    exact ⟨g', F.map_injective (by simpa only [Functor.map_comp] using hg)⟩
-  · rintro ⟨g, hg⟩
-    exact ⟨F.map g, by simpa only [Functor.map_comp] using congrArg F.map hg⟩
+theorem _root_.Quiver.Hom.isSplitMono_image_ι_modCatYoneda_map_iff {X Y : C} (f : X ⟶ Y) :
+    IsSplitMono (image.ι ((yoneda C).map f)) ↔ ∃ g : Y ⟶ X, f ≫ g ≫ f = f :=
+  ((yoneda C).map f).isSplitMono_image_ι_iff_exists_comp_comp_eq_self.trans
+    ((yoneda C).exists_comp_comp_eq_self_map_iff f)
 
 end ModCat
 

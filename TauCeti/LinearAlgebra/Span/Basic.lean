@@ -69,6 +69,19 @@ end TauCeti.Submodule
 
 namespace Submodule
 
+/-- Shifting a generator by an element of a submodule preserves the span together with that
+submodule. -/
+theorem sup_span_singleton_eq_of_sub_mem {R M : Type*} [Ring R] [AddCommGroup M]
+    [Module R M] (H : Submodule R M) {a b : M} (hba : b - a ∈ H) :
+    H ⊔ (R ∙ b) = H ⊔ (R ∙ a) := by
+  apply le_antisymm
+  · refine sup_le le_sup_left ?_
+    rw [span_singleton_le_iff_mem, ← sub_add_cancel b a]
+    exact add_mem (mem_sup_left hba) (mem_sup_right (mem_span_singleton_self a))
+  · refine sup_le le_sup_left ?_
+    rw [span_singleton_le_iff_mem, ← sub_sub_cancel b a]
+    exact sub_mem (mem_sup_right (mem_span_singleton_self b)) (mem_sup_left hba)
+
 /-- A property `P` closed under `u + a • v` holds on `S ⊔ (R ∙ x)` when it holds on `S` and at
 `x`. -/
 theorem forall_mem_sup_span_singleton {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]

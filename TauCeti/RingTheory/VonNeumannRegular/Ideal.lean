@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Finiteness.Basic
+import TauCeti.LinearAlgebra.Span.Basic
 import TauCeti.RingTheory.Idempotents.Ideal
 public import TauCeti.RingTheory.VonNeumannRegular.Basic
-import TauCeti.RingTheory.Ideal.Span
 
 /-!
 # Finitely generated ideals of von Neumann regular rings
@@ -26,11 +26,11 @@ namespace TauCeti
 
 variable {R : Type*} [Ring R]
 
-namespace IsVonNeumannRegularRing
+namespace IsVonNeumannRegularSemigroup
 
 /-- The sum of an idempotent-generated left ideal and a principal left ideal in a regular ring
 is idempotent-generated. -/
-private theorem exists_span_singleton_eq_sup [IsVonNeumannRegularRing R] {e : R}
+private theorem exists_span_singleton_eq_sup [IsVonNeumannRegularSemigroup R] {e : R}
     (he : IsIdempotentElem e) (a : R) :
     ∃ p : R, IsIdempotentElem p ∧ Ideal.span {e} ⊔ Ideal.span {a} = Ideal.span {p} := by
   let x := a * (1 - e)
@@ -52,7 +52,7 @@ private theorem exists_span_singleton_eq_sup [IsVonNeumannRegularRing R] {e : R}
     exact ⟨Ideal.mem_span_singleton'.mpr ⟨f, hfq⟩,
       Ideal.mem_span_singleton'.mpr ⟨1 - e, rfl⟩⟩
   have hsup : Ideal.span {e} ⊔ Ideal.span {a} = Ideal.span {e} ⊔ Ideal.span {x} :=
-    (Ideal.span {e}).sup_span_singleton_eq_of_sub_mem (by
+    Submodule.sup_span_singleton_eq_of_sub_mem (Ideal.span {e}) (by
       simpa only [x, mul_sub, mul_one, sub_sub_cancel] using
         Ideal.mul_mem_left (Ideal.span {e}) a (Ideal.mem_span_singleton_self e))
   let family : Bool → R := fun i ↦ if i then e else q
@@ -69,11 +69,11 @@ private theorem exists_span_singleton_eq_sup [IsVonNeumannRegularRing R] {e : R}
   · rw [hsup, hspan, hspan_q]
     simpa [family, Fintype.univ_bool] using (ho.span_singleton_sum_eq_sup Finset.univ).symm
 
-end IsVonNeumannRegularRing
+end IsVonNeumannRegularSemigroup
 
 /-- Every finitely generated left ideal of a von Neumann regular ring has an idempotent
 generator. -/
-theorem _root_.Ideal.eq_span_idempotent_of_fg [IsVonNeumannRegularRing R]
+theorem _root_.Ideal.eq_span_idempotent_of_fg [IsVonNeumannRegularSemigroup R]
     (I : Ideal R) (hI : I.FG) :
     ∃ e : R, IsIdempotentElem e ∧ I = Ideal.span {e} := by
   refine Submodule.fg_sup_span_induction (motive := fun J _ ↦
@@ -81,12 +81,12 @@ theorem _root_.Ideal.eq_span_idempotent_of_fg [IsVonNeumannRegularRing R]
   · exact ⟨0, by simp [IsIdempotentElem], by simp⟩
   · intro J a _ hJ
     obtain ⟨e, he, rfl⟩ := hJ
-    exact IsVonNeumannRegularRing.exists_span_singleton_eq_sup he a
+    exact IsVonNeumannRegularSemigroup.exists_span_singleton_eq_sup he a
 
 /-- A ring is von Neumann regular exactly when every finitely generated left ideal is generated
 by an idempotent. -/
-theorem isVonNeumannRegularRing_iff_forall_fg_eq_span_idempotent :
-    IsVonNeumannRegularRing R ↔
+theorem isVonNeumannRegularSemigroup_iff_forall_fg_eq_span_idempotent :
+    IsVonNeumannRegularSemigroup R ↔
       ∀ I : Ideal R, I.FG → ∃ e : R, IsIdempotentElem e ∧ I = Ideal.span {e} := by
   constructor
   · intro h
@@ -99,9 +99,9 @@ theorem isVonNeumannRegularRing_iff_forall_fg_eq_span_idempotent :
 
 /-- A ring is von Neumann regular exactly when its finitely generated left ideals are direct
 summands of the left regular module. -/
-theorem isVonNeumannRegularRing_iff_forall_fg_isComplemented :
-    IsVonNeumannRegularRing R ↔ ∀ I : Ideal R, I.FG → IsComplemented I := by
-  rw [isVonNeumannRegularRing_iff_forall_fg_eq_span_idempotent]
+theorem isVonNeumannRegularSemigroup_iff_forall_fg_isComplemented :
+    IsVonNeumannRegularSemigroup R ↔ ∀ I : Ideal R, I.FG → IsComplemented I := by
+  rw [isVonNeumannRegularSemigroup_iff_forall_fg_eq_span_idempotent]
   exact ⟨fun h I hI ↦ I.isComplemented_iff_eq_span_idempotent.mpr (h I hI),
     fun h I hI ↦ I.isComplemented_iff_eq_span_idempotent.mp (h I hI)⟩
 

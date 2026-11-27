@@ -7,7 +7,6 @@ module
 
 public import Mathlib.CategoryTheory.Preadditive.Projective.Basic
 import TauCeti.CategoryTheory.EpiMono
-import TauCeti.CategoryTheory.Limits.Shapes.Images
 
 /-!
 # Images of morphisms into projective objects
@@ -26,9 +25,10 @@ theorem Quiver.Hom.isSplitMono_image_ι_iff_exists_comp_comp_eq_self
     {C : Type*} [Category* C] {X Y : C} (f : X ⟶ Y)
     [HasImage f] [Epi (factorThruImage f)] [Projective Y] :
     IsSplitMono (image.ι f) ↔ ∃ g : Y ⟶ X, f ≫ g ≫ f = f := by
-  refine ⟨fun hi ↦ ?_, f.isSplitMono_image_ι_of_exists_comp_comp_eq_self⟩
-  have hp : IsSplitEpi (factorThruImage f) := .mk'
+  have h : (∃ g : Y ⟶ X, f ≫ g ≫ f = f) ↔
+      IsSplitEpi (factorThruImage f) ∧ IsSplitMono (image.ι f) := by
+    simpa only [image.fac] using
+      (factorThruImage f).exists_comp_comp_eq_self_iff_isSplitEpi_and_isSplitMono (image.ι f)
+  refine ⟨fun hi ↦ h.mpr ⟨?_, hi⟩, fun hf ↦ (h.mp hf).2⟩
+  exact .mk'
     ⟨image.ι f ≫ Projective.factorThru (retraction (image.ι f)) (factorThruImage f), by simp⟩
-  simpa only [image.fac] using
-    ((factorThruImage f).exists_comp_comp_eq_self_iff_isSplitEpi_and_isSplitMono
-      (image.ι f)).mpr ⟨hp, hi⟩

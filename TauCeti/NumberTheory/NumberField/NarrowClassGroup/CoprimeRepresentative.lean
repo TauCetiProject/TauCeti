@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.NarrowClassGroup.Basic
 import Mathlib.RingTheory.DedekindDomain.Factorization
 public import TauCeti.RingTheory.Ideal.Norm.AbsNorm
-import TauCeti.RingTheory.Ideal.Span
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Coprime representatives of narrow ideal classes
@@ -69,7 +69,7 @@ theorem exists_isTotallyPositive_span_eq_mul_isCoprime (I M : (Ideal (𝓞 K))�
   obtain ⟨c, hc0, hcsub, hcpos⟩ :=
     exists_isTotallyPositive_sub_mem (by rwa [← Ideal.zero_eq_bot]) a
   have hsupc : H ⊔ Ideal.span {c} = (I : Ideal (𝓞 K)) :=
-    (H.sup_span_singleton_eq_of_sub_mem hcsub).trans ha
+    (Submodule.sup_span_singleton_eq_of_sub_mem H hcsub).trans ha
   have hcI : Ideal.span {c} ≤ (I : Ideal (𝓞 K)) := le_sup_right.trans_eq hsupc
   obtain ⟨J, hJ⟩ := Ideal.dvd_iff_le.mpr hcI
   have hJ0 : J ≠ 0 := by

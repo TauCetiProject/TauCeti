@@ -24,9 +24,9 @@ as idempotents split.
 
 ## Main results
 
-* Every semisimple ring has an `IsVonNeumannRegularRing` instance.
-* `IsArtinianRing.isSemisimpleRing_iff_isVonNeumannRegularRing`: an Artinian ring is semisimple if
-  and only if it is von Neumann regular.
+* Every semisimple ring has an `IsVonNeumannRegularSemigroup` instance.
+* `IsArtinianRing.isSemisimpleRing_iff_isVonNeumannRegularSemigroup`: an Artinian ring is
+  semisimple if and only if it is von Neumann regular.
 
 ## References
 
@@ -39,13 +39,13 @@ public section
 variable {R : Type*} [Ring R]
 
 /-- A semisimple ring is von Neumann regular. -/
-instance [IsSemisimpleRing R] : TauCeti.IsVonNeumannRegularRing R where
+instance [IsSemisimpleRing R] : TauCeti.IsVonNeumannRegularSemigroup R where
   exists_mul_mul_eq_self a :=
     (TauCeti.exists_isIdempotentElem_span_singleton_eq_iff a).mp
       (IsSemisimpleRing.ideal_eq_span_idempotent (Ideal.span {a}))
 
 /-- An Artinian ring is semisimple exactly when it is von Neumann regular. -/
-theorem IsArtinianRing.isSemisimpleRing_iff_isVonNeumannRegularRing [IsArtinianRing R] :
-    IsSemisimpleRing R ↔ TauCeti.IsVonNeumannRegularRing R :=
+theorem IsArtinianRing.isSemisimpleRing_iff_isVonNeumannRegularSemigroup [IsArtinianRing R] :
+    IsSemisimpleRing R ↔ TauCeti.IsVonNeumannRegularSemigroup R :=
   ⟨fun _ ↦ inferInstance, fun _ ↦
-    isSemisimpleRing_iff_jacobson.mpr TauCeti.IsVonNeumannRegularRing.jacobson_eq_bot⟩
+    isSemisimpleRing_iff_jacobson.mpr TauCeti.IsVonNeumannRegularSemigroup.jacobson_eq_bot⟩

@@ -22,11 +22,11 @@ namespace TauCeti
 
 variable {R : Type*} [Ring R]
 
-namespace IsVonNeumannRegularRing
+namespace IsVonNeumannRegularSemigroup
 
 /-- A von Neumann regular ring has zero Jacobson radical. -/
 @[simp]
-theorem jacobson_eq_bot [IsVonNeumannRegularRing R] : Ring.jacobson R = ⊥ := by
+theorem jacobson_eq_bot [IsVonNeumannRegularSemigroup R] : Ring.jacobson R = ⊥ := by
   refine eq_bot_iff.mpr fun a ha ↦ ?_
   obtain ⟨e, he, hspan⟩ :=
     (exists_isIdempotentElem_span_singleton_eq_iff a).mpr (exists_mul_mul_eq_self a)
@@ -35,6 +35,6 @@ theorem jacobson_eq_bot [IsVonNeumannRegularRing R] : Ring.jacobson R = ⊥ := b
   rw [he.eq_zero_of_mem_jacobson hle, Ideal.span_singleton_zero] at hspan
   exact hspan ▸ Ideal.mem_span_singleton_self a
 
-end IsVonNeumannRegularRing
+end IsVonNeumannRegularSemigroup
 
 end TauCeti

@@ -8,7 +8,9 @@ module
 public import Mathlib.CategoryTheory.Idempotents.Basic
 public import TauCeti.CategoryTheory.Semisimple.Basic
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Semiperfect
-import TauCeti.RingTheory.Semisimple.Regular
+public import TauCeti.CategoryTheory.VonNeumannRegular.Abelian
+public import TauCeti.CategoryTheory.VonNeumannRegular.Endomorphism
+public import TauCeti.RingTheory.Semisimple.Regular
 
 /-!
 # Finite semisimplicity from endomorphism rings
@@ -19,9 +21,9 @@ object is semisimple, then `C` is abelian, with the given addition of morphisms
 (`TauCeti.exists_biproduct_simples_of_isSemisimpleRing_end`), so `C` is a finite semisimple
 category (`TauCeti.isFiniteSemisimpleCategory_abelianOfIsSemisimpleRingEnd`). Conversely, every
 endomorphism ring of a finite semisimple category is semisimple
-(`TauCeti.IsFiniteSemisimpleCategory.isSemisimpleRing_end`), and in an abelian category in which
-monomorphisms split, an object with Artinian endomorphism ring has a semisimple endomorphism ring
-(`TauCeti.isSemisimpleRing_end_of_splitMonoCategory`).
+(`TauCeti.IsFiniteSemisimpleCategory.isSemisimpleRing_end`). In a von Neumann regular
+preadditive category, an object with Artinian endomorphism ring has a semisimple endomorphism ring
+(`TauCeti.isSemisimpleRing_end_of_isVonNeumannRegularCategory`).
 
 This is Jannsen's criterion: it is how one shows that a category of motives modulo numerical
 equivalence is abelian and semisimple, knowing only that its endomorphism algebras are
@@ -29,9 +31,9 @@ finite-dimensional and semisimple.
 
 The construction rests on von Neumann regularity. A semisimple ring has `a * b * a = a` for some
 `b` given any `a`, so every morphism `f : X ⟶ Y` has some `g : Y ⟶ X` with `f ≫ g ≫ f = f`
-(`TauCeti.exists_comp_comp_eq_self_of_isSemisimpleRing_end`, applied in the endomorphism ring of
-`X ⊞ Y`). Then `𝟙 X - f ≫ g` and `𝟙 Y - g ≫ f` are idempotents, and their splittings are a kernel
-and a cokernel of `f` (`TauCeti.hasKernel_of_comp_comp_eq_self`,
+(`TauCeti.exists_comp_comp_eq_self_of_isVonNeumannRegularSemigroup_end`, applied in the
+endomorphism ring of `X ⊞ Y`). Then `𝟙 X - f ≫ g` and `𝟙 Y - g ≫ f` are idempotents, and their
+splittings are a kernel and a cokernel of `f` (`TauCeti.hasKernel_of_comp_comp_eq_self`,
 `TauCeti.hasCokernel_of_comp_comp_eq_self`). The comparison from the coimage to the image of `f`
 has inverse induced by `g` (`TauCeti.isIso_coimageImageComparison_of_comp_comp_eq_self`).
 
@@ -87,15 +89,6 @@ theorem simple_of_idempotent_eq_zero_or_id [HasZeroMorphisms C] {X : C} (hX : ¬
 section Preadditive
 
 variable [Preadditive C]
-
-/-- **Semisimple endomorphism rings make morphisms von Neumann regular**: if the endomorphism ring
-of `X ⊞ Y` is semisimple, every morphism `f : X ⟶ Y` has some `g` with `f ≫ g ≫ f = f`. -/
-theorem exists_comp_comp_eq_self_of_isSemisimpleRing_end {X Y : C} [HasBinaryBiproduct X Y]
-    [IsSemisimpleRing (End (X ⊞ Y))] (f : X ⟶ Y) : ∃ g : Y ⟶ X, f ≫ g ≫ f = f := by
-  obtain ⟨φ, hφ⟩ :=
-    IsVonNeumannRegularRing.exists_mul_mul_eq_self (End.of (biprod.fst ≫ f ≫ biprod.inr))
-  refine ⟨biprod.inr ≫ φ.asHom ≫ biprod.fst, ?_⟩
-  simpa using congrArg (fun ψ : End (X ⊞ Y) ↦ biprod.inl ≫ ψ.asHom ≫ biprod.snd) hφ
 
 section Kernels
 
@@ -161,7 +154,7 @@ theorem exists_biproduct_simples_of_isSemisimpleRing_end [HasFiniteBiproducts C]
   exact simple_of_idempotent_eq_zero_or_id indecomposable_of_isLocalRing_end.1
     (fun p hp ↦ (IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing
       (a := End.of p) (End.ext (by simpa using hp))).imp (congrArg End.asHom) (congrArg End.asHom))
-    fun _ f _ ↦ exists_comp_comp_eq_self_of_isSemisimpleRing_end f
+    fun _ f _ ↦ exists_comp_comp_eq_self_of_isVonNeumannRegularSemigroup_end f
 
 variable (C) in
 /-- **An additive category with split idempotents and semisimple endomorphism rings is abelian.**
@@ -173,12 +166,14 @@ structure, such as a linear structure, be used together with it. -/
 def abelianOfIsSemisimpleRingEnd [HasFiniteBiproducts C] [IsIdempotentComplete C]
     [∀ X : C, IsSemisimpleRing (End X)] : Abelian C :=
   have : HasBinaryBiproducts C := hasBinaryBiproducts_of_finite_biproducts C
-  have : HasKernels C := ⟨fun f ↦ (exists_comp_comp_eq_self_of_isSemisimpleRing_end f).elim
-    fun _ h ↦ hasKernel_of_comp_comp_eq_self h⟩
-  have : HasCokernels C := ⟨fun f ↦ (exists_comp_comp_eq_self_of_isSemisimpleRing_end f).elim
-    fun _ h ↦ hasCokernel_of_comp_comp_eq_self h⟩
+  have : HasKernels C := ⟨fun f ↦
+    (exists_comp_comp_eq_self_of_isVonNeumannRegularSemigroup_end f).elim
+      fun _ h ↦ hasKernel_of_comp_comp_eq_self h⟩
+  have : HasCokernels C := ⟨fun f ↦
+    (exists_comp_comp_eq_self_of_isVonNeumannRegularSemigroup_end f).elim
+      fun _ h ↦ hasCokernel_of_comp_comp_eq_self h⟩
   have (X Y : C) (f : X ⟶ Y) : IsIso (Abelian.coimageImageComparison f) :=
-    (exists_comp_comp_eq_self_of_isSemisimpleRing_end f).elim
+    (exists_comp_comp_eq_self_of_isVonNeumannRegularSemigroup_end f).elim
       fun _ h ↦ isIso_coimageImageComparison_of_comp_comp_eq_self h
   Abelian.ofCoimageImageComparisonIsIso
 
@@ -189,43 +184,23 @@ theorem abelianOfIsSemisimpleRingEnd_toPreadditive [HasFiniteBiproducts C]
     (abelianOfIsSemisimpleRingEnd C).toPreadditive = ‹Preadditive C› :=
   rfl
 
+/-- Artinian endomorphism rings in a von Neumann regular preadditive category are semisimple.
+This applies in particular to abelian categories in which monomorphisms split. -/
+theorem isSemisimpleRing_end_of_isVonNeumannRegularCategory [IsVonNeumannRegularCategory C]
+    (X : C) [IsArtinianRing (End X)] : IsSemisimpleRing (End X) :=
+  IsArtinianRing.isSemisimpleRing_iff_isVonNeumannRegularSemigroup.mpr inferInstance
+
 end Preadditive
 
 section Abelian
 
 variable [Abelian C]
 
-/-- **In an abelian category where monomorphisms split, morphisms are von Neumann regular**:
-every `f : X ⟶ Y` has some `g` with `f ≫ g ≫ f = f`. -/
-theorem exists_comp_comp_eq_self_of_splitMonoCategory [SplitMonoCategory C] {X Y : C}
-    (f : X ⟶ Y) : ∃ g : Y ⟶ X, f ≫ g ≫ f = f := by
-  -- A retraction of the kernel of `f` gives a section `s` of its coimage, and a retraction of the
-  -- image of `f` gives the rest.
-  have := isSplitMono_of_mono (kernel.ι f)
-  have := isSplitMono_of_mono (Abelian.image.ι f)
-  let s : Abelian.coimage f ⟶ X := cokernel.desc (kernel.ι f)
-    (𝟙 X - retraction (kernel.ι f) ≫ kernel.ι f) (by simp [Preadditive.comp_sub])
-  have hf : Abelian.coimage.π f ≫ Abelian.coimageImageComparison f =
-      f ≫ retraction (Abelian.image.ι f) := by
-    simpa using Abelian.coimage_image_factorisation_assoc f (retraction (Abelian.image.ι f))
-  refine ⟨retraction (Abelian.image.ι f) ≫ inv (Abelian.coimageImageComparison f) ≫ s, ?_⟩
-  rw [Category.assoc, Category.assoc, ← Category.assoc f (retraction _), ← hf]
-  simp [s, Preadditive.sub_comp]
-
 /-- **An abelian category with semisimple endomorphism rings is finite semisimple.** -/
 theorem IsFiniteSemisimpleCategory.of_isSemisimpleRing_end [∀ X : C, IsSemisimpleRing (End X)] :
     IsFiniteSemisimpleCategory C :=
   have := Abelian.hasFiniteBiproducts (C := C)
   ⟨exists_biproduct_simples_of_isSemisimpleRing_end⟩
-
-/-- **Artinian endomorphism rings in an abelian category where monomorphisms split are
-semisimple.** This applies in particular to a finite semisimple category
-(`TauCeti.IsFiniteSemisimpleCategory.splitMonoCategory`). -/
-theorem isSemisimpleRing_end_of_splitMonoCategory [SplitMonoCategory C] (X : C)
-    [IsArtinianRing (End X)] : IsSemisimpleRing (End X) := by
-  refine IsArtinianRing.isSemisimpleRing_iff_isVonNeumannRegularRing.mpr ⟨fun a ↦ ?_⟩
-  obtain ⟨g, hg⟩ := exists_comp_comp_eq_self_of_splitMonoCategory a.asHom
-  exact ⟨End.of g, End.ext (by simpa using hg)⟩
 
 /-- **Endomorphism rings in a finite semisimple category are semisimple.** -/
 instance IsFiniteSemisimpleCategory.isSemisimpleRing_end [IsFiniteSemisimpleCategory C] (X : C) :
