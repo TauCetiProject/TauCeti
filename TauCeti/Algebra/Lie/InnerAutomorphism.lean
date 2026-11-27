@@ -81,6 +81,8 @@ restricting scalars along `algebraMap ℚ K`.
 * `LieHom.map_expAd`: a Lie homomorphism `f` carries `exp (ad x)` to `exp (ad (f x))`.
 * `TauCeti.expAd_apply_eq_exp_mul_exp_neg`: on an associative algebra, `exp (ad x)` is
   conjugation by `exp x`.
+* `TauCeti.exp_mul_exp_mul_exp_neg_eq_exp_expAd`: conjugation carries `exp y` to the
+  exponential of `expAd x y`.
 * `TauCeti.exp_mul_exp_eq_exp_mul_exp_mul_of_lie_eq_of_commute`: the exponential relation for a
   central commutator.
 
@@ -227,20 +229,30 @@ theorem expAd_apply_eq_exp_mul_exp_neg {x y : A} (hx : IsNilpotent x) :
   rw [mul_apply_eq_comp, hnegRight, hx.neg.exp_mulRight_apply, hx.exp_mulLeft_apply]
   exact (mul_assoc _ _ _).symm
 
+/-- Conjugating `exp y` by the exponential of a nilpotent element `x` gives the exponential
+of `exp (ad x) y`. When `y` is not nilpotent, both sides use the zero value of the finite
+exponential. -/
+theorem exp_mul_exp_mul_exp_neg_eq_exp_expAd {x y : A} (hx : IsNilpotent x) :
+    IsNilpotent.exp x * IsNilpotent.exp y * IsNilpotent.exp (-x) =
+      IsNilpotent.exp
+        (expAd (K := K) x
+          (LieAlgebra.ad_nilpotent_of_nilpotent (R := K) hx).exists_pow_apply_eq_zero y) := by
+  let u := ConjAct.toConjAct (nilpotentExpUnit hx)
+  have he : u • IsNilpotent.exp y = IsNilpotent.exp (u • y) := by
+    by_cases hy : IsNilpotent y
+    · exact (IsNilpotent.exp_smul u hy).symm
+    · have huy : ¬ IsNilpotent (u • y) := fun h => hy (by
+        simpa only [MulSemiringAction.toRingHom_apply, inv_smul_smul] using
+          h.map (MulSemiringAction.toRingHom _ A u⁻¹))
+      rw [IsNilpotent.exp_eq_zero_of_not_isNilpotent hy, smul_zero,
+        IsNilpotent.exp_eq_zero_of_not_isNilpotent huy]
+  rw [expAd_apply_eq_exp_mul_exp_neg (K := K) hx]
+  simpa only [u, ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, coe_nilpotentExpUnit,
+    coe_inv_nilpotentExpUnit] using he
+
 end Conjugation
 
 variable {A : Type*} [Ring A] [Algebra ℚ A]
-
-private theorem exp_mul_exp_mul_exp_neg {x y : A} (hx : IsNilpotent x)
-    (hy : IsNilpotent y) :
-    IsNilpotent.exp x * IsNilpotent.exp y * IsNilpotent.exp (-x) =
-      IsNilpotent.exp
-        (expAd (K := ℚ) x
-          (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hx).exists_pow_apply_eq_zero y) := by
-  rw [expAd_apply_eq_exp_mul_exp_neg (K := ℚ) hx]
-  simpa only [ConjAct.units_smul_def, ConjAct.ofConjAct_toConjAct, coe_nilpotentExpUnit,
-    coe_inv_nilpotentExpUnit] using
-    (IsNilpotent.exp_smul (ConjAct.toConjAct (nilpotentExpUnit hx)) hy).symm
 
 /-- **The central-commutator exponential relation.** If `[x, y] = z`, the element `z` commutes
 with `x` and `y`, and `x` and `y` are nilpotent, then
@@ -258,7 +270,7 @@ theorem exp_mul_exp_eq_exp_mul_exp_mul_of_lie_eq_of_commute {x y z : A}
     Associative.isNilpotent_of_commutator_eq (by rw [← hxy, Ring.lie_def]; abel) hxz hyz hx
   have hconj : IsNilpotent.exp x * IsNilpotent.exp y * IsNilpotent.exp (-x) =
       IsNilpotent.exp y * IsNilpotent.exp z := by
-    rw [exp_mul_exp_mul_exp_neg hx hy,
+    rw [exp_mul_exp_mul_exp_neg_eq_exp_expAd (K := ℚ) hx,
       expAd_apply_of_lie_lie_eq_zero
         (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hx).exists_pow_apply_eq_zero
         (by rw [hxy]; exact hxz.lie_eq),
