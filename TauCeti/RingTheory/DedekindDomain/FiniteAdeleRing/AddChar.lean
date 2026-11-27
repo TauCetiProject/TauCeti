@@ -122,6 +122,7 @@ theorem extendAddChar_algebraMap (x : K) :
   extendAddChar_apply_of_sub_mem χ hχ (by simp)
 
 /-- The extended character is trivial on the integral finite adeles. -/
+@[simp]
 theorem extendAddChar_apply_of_mem_integralAdeles {a : FiniteAdeleRing R K}
     (ha : a ∈ integralAdeles R K) : extendAddChar χ hχ a = 1 := by
   rw [extendAddChar_apply_of_sub_mem χ hχ (x := 0) (by simpa using ha), AddChar.map_zero_eq_one]

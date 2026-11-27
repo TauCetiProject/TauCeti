@@ -10,6 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.Topology.Algebra.Nonarchimedean.Basic
 public import Mathlib.Topology.LocallyConstant.Basic
 
+import TauCeti.Topology.Algebra.Group.LocallyConstant
+
 /-!
 # Additive characters trivial on a neighbourhood of zero
 
@@ -66,15 +68,13 @@ theorem setOf_mulShift_eq_one_mem_nhds_zero {R M : Type*} [Ring R] [TopologicalS
   simpa using hb h0
 
 /-- An additive character of an additive group with continuous translations which is trivial on a
-neighbourhood of `0` is locally constant: near `x` it equals `ψ x`, since
-`ψ y = ψ x * ψ (-x + y)`. -/
+neighbourhood of `0` is locally constant. This is `AddMonoidHom.isLocallyConstant_of_isOpen_ker`
+for `ψ.toAddMonoidHom`, whose kernel `{x | ψ x = 1}` is an open subgroup as it is a neighbourhood
+of `0`. -/
 theorem isLocallyConstant_of_setOf_eq_one_mem_nhds_zero {G M : Type*} [AddGroup G]
     [TopologicalSpace G] [SeparatelyContinuousAdd G] [Monoid M] {ψ : AddChar G M}
-    (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : G)) : IsLocallyConstant ψ := by
-  refine (IsLocallyConstant.iff_eventually_eq _).2 fun x ↦ ?_
-  have hx : Tendsto (-x + ·) (𝓝 x) (𝓝 0) := by
-    simpa using ((continuous_const_add (-x)).tendsto x)
-  filter_upwards [hx h0] with y hy
-  rw [← add_neg_cancel_left x y, map_add_eq_mul, hy.out, mul_one]
+    (h0 : {x | ψ x = 1} ∈ 𝓝 (0 : G)) : IsLocallyConstant ψ :=
+  (ψ.toAddMonoidHom.isLocallyConstant_of_isOpen_ker
+    (ψ.toAddMonoidHom.ker.isOpen_of_mem_nhds h0)).comp Additive.toMul
 
 end AddChar

@@ -108,6 +108,7 @@ theorem finiteAdeleAddChar_algebraMap (x : K) :
   extendAddChar_algebraMap _ _ x
 
 /-- `ψ_f` is trivial on the integral finite adeles. -/
+@[simp]
 theorem finiteAdeleAddChar_apply_of_mem_integralAdeles {a : FiniteAdeleRing (𝓞 K) K}
     (ha : a ∈ integralAdeles (𝓞 K) K) : finiteAdeleAddChar K a = 1 :=
   extendAddChar_apply_of_mem_integralAdeles _ _ ha
