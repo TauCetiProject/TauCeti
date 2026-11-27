@@ -98,17 +98,21 @@ theorem continuous_tsum_smul_of_dominated {X ι : Type*} [TopologicalSpace X]
   continuous_iff_continuousAt.2 fun x₀ ↦ tendsto_tsum_smul_of_dominated hb
     (Eventually.of_forall (hc ·)) (hc x₀) fun m ↦ (hcont m).continuousAt
 
-/-- **Compactness of dominated series vanishing at infinity.** If moreover the dominating
-sequences are nonnegative and each coefficient tends to zero at infinity, then the sums
-`∑ m, c x m • v m` and `0` form a compact set. -/
+/-- **Compactness of dominated series vanishing at infinity.** If moreover each coefficient
+tends to zero at infinity, then the sums `∑ m, c x m • v m` and `0` form a compact set. -/
 theorem isCompact_insert_range_tsum_smul_of_dominated {X ι : Type*} [TopologicalSpace X]
     {v : ι → 𝓓^{n}_{K}(E, F)} {c : X → ι → 𝕜} {b : ℕ → ι → ℝ} (hb : ∀ k, Summable (b k))
-    (hb0 : ∀ k m, 0 ≤ b k m) (hc : ∀ x k m, ‖c x m‖ * N[𝕜]_{K, n, k} (v m) ≤ b k m)
+    (hc : ∀ x k m, ‖c x m‖ * N[𝕜]_{K, n, k} (v m) ≤ b k m)
     (hcont : ∀ m, Continuous fun x ↦ c x m)
     (hlim : ∀ m, Tendsto (fun x ↦ c x m) (cocompact X) (𝓝 0)) :
     IsCompact (insert 0 (Set.range fun x ↦ ∑' m, c x m • v m)) := by
-  have h := tendsto_tsum_smul_of_dominated (c₀ := 0) hb (Eventually.of_forall (hc ·))
-    (fun k m ↦ by simpa using hb0 k m) hlim
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · simp [Set.range_eq_empty]
+  -- The dominating sequences are nonnegative, since they dominate the terms at `x₀`.
+  have hc₀ (k : ℕ) (m : ι) : ‖(0 : 𝕜)‖ * N[𝕜]_{K, n, k} (v m) ≤ b k m := by
+    rw [norm_zero, zero_mul]
+    exact (by positivity : 0 ≤ ‖c x₀ m‖ * N[𝕜]_{K, n, k} (v m)).trans (hc x₀ k m)
+  have h := tendsto_tsum_smul_of_dominated (c₀ := 0) hb (Eventually.of_forall (hc ·)) hc₀ hlim
   simp only [Pi.zero_apply, zero_smul, tsum_zero] at h
   exact h.isCompact_insert_range_of_cocompact (continuous_tsum_smul_of_dominated hb hc hcont)
 

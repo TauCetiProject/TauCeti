@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TestFunction.FourierAtom
 import TauCeti.Analysis.Distribution.TestFunction.Frechet
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Module.Cone
@@ -46,7 +47,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 
 * `Distribution.localFourier_eq_complexPairing_modulate`,
   `Distribution.localFourier_eq_complexPairing_mul_modulate`: the localized Fourier transform as
-  the pairing with a modulated test function.
+  the pairing with a modulated test function; `Distribution.hasSum_mul_localFourier_neg` pairs
+  `T` with a convergent series of modulated cutoffs termwise.
 * `Distribution.exists_norm_localFourier_le`: the localized Fourier transform of a distribution
   grows at most polynomially, with a degree and a constant that are uniform over the cutoffs
   supported in a fixed compact set with bounded derivatives
@@ -63,7 +65,10 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.hasSum_fourier_mul_localFourier`,
   `Distribution.hasSum_fourier_ofReal_mul_localFourier`: at the frequency `0`, the pairing of `T`
   with a test function `φ` as the lattice series
-  `T φ = ∑ m, (covolume L)⁻¹ 𝓕 φ (m) T.localFourier χ (-m)`.
+  `T φ = ∑ m, (covolume L)⁻¹ 𝓕 φ (m) T.localFourier χ (-m)`;
+  `Distribution.hasSum_fourier_add_mul_localFourier` is the same series for `φ e_η`,
+  `T (φ e_η) = ∑ m, (covolume L)⁻¹ 𝓕 φ (m + η) T.localFourier χ (-m)`, whose frequencies `-m`
+  do not depend on `η`.
 * `Distribution.exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul`: decay of each order
   of the localized Fourier transform on a set `Γ` survives multiplication of the cutoff by a smooth
   function, on any set `Γ'` whose conic neighbourhoods `closedBall η (c ‖η‖)` lie in `Γ`.
@@ -136,6 +141,24 @@ theorem localFourier_eq_complexPairing_modulate (T : 𝓓'(Ω, ℂ)) {φ : 𝓓(
   congr 2
   push_cast
   ring
+
+omit [FiniteDimensional ℝ E] in
+/-- **The pairing with a series of modulated cutoffs.** If the series `∑ m, c m • χ e_{w m}` of
+modulations of the cutoff `χ` converges in `𝓓_{tsupport χ}`, then the pairing of `T` with it is
+the series `∑ m, c m T.localFourier χ (-w m)`. -/
+theorem hasSum_mul_localFourier_neg (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(Ω, ℂ)) {ι : Type*} {c : ι → ℂ}
+    {w : ι → E} (hc : Summable fun m ↦ c m • χ.toSupportedInTSupport.modulate (w m)) :
+    HasSum (fun m ↦ c m * T.localFourier χ (-w m)) (T.complexPairing
+      (ofSupportedIn χ.tsupport_subset (∑' m, c m • χ.toSupportedInTSupport.modulate (w m)))) := by
+  have hfun : (fun m ↦ c m * T.localFourier χ (-w m)) =
+      (T.complexPairing.comp (ofSupportedInCLM ℂ χ.tsupport_subset)) ∘
+        fun m ↦ c m • χ.toSupportedInTSupport.modulate (w m) := by
+    ext m
+    rw [Function.comp_apply, map_smul, smul_eq_mul, ContinuousLinearMap.comp_apply,
+      coe_ofSupportedInCLM, localFourier_eq_complexPairing_modulate T χ.tsupport_subset
+        (f := χ.toSupportedInTSupport) (congrFun (coe_toSupportedInTSupport χ)), neg_neg]
+  rw [hfun]
+  exact (T.complexPairing.comp (ofSupportedInCLM ℂ χ.tsupport_subset)).hasSum hc.hasSum
 
 omit [FiniteDimensional ℝ E] in
 /-- If the cutoff `ψ` is `φ f` with `f` a test function supported in a compact set `K ⊆ Ω`, the
@@ -496,6 +519,26 @@ theorem hasSum_fourier_mul_localFourier [MeasurableSpace E] [BorelSpace E] (T : 
       simpa [χK, ContDiffMapSupportedIn.coe_of_support_subset] using hφ hy) 0
   rw [hχK, hφK', localFourier_at_zero, hφK''] at h
   simpa only [zero_sub, smul_eq_mul] using h
+
+/-- **The localized Fourier transform as a lattice series.** Let `L` be a full lattice none of
+whose nonzero vectors translates `tsupport χ` into a set meeting it. If `χ = 1` on the support of
+a test function `φ`, then
+
+`T (φ e_η) = ∑ m : L^∨, (covolume L)⁻¹ 𝓕 φ (m + η) T.localFourier χ (-m)`.
+
+Unlike `Distribution.hasSum_localFourier_ofSupportedIn`, the frequencies `-m` at which the
+localized Fourier transform of `T` is evaluated do not depend on `η`. -/
+theorem hasSum_fourier_add_mul_localFourier [MeasurableSpace E] [BorelSpace E] (T : 𝓓'(Ω, ℂ))
+    (χ : 𝓓(Ω, ℂ)) (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
+    (hL : ∀ x ∈ tsupport χ, ∀ ℓ ∈ L, x + ℓ ∈ tsupport χ → ℓ = 0) {φ : 𝓓(Ω, ℂ)}
+    (hφ : EqOn (χ : E → ℂ) 1 (support φ)) (η : E) :
+    HasSum (fun m : ZLattice.dual L ↦ (ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (φ : E → ℂ) (m + η) *
+      T.localFourier χ (-m)) (T.localFourier φ η) := by
+  have h := hasSum_fourier_mul_localFourier T χ L hL
+    (φ := bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom η) φ)
+    fun y hy ↦ hφ (by simpa [bilinLeftCLM_apply] using hy)
+  rw [← localFourier_def] at h
+  simpa only [TestFunction.fourier_bilinLeftCLM_fourierAtom] using h
 
 /-- `Distribution.hasSum_fourier_mul_localFourier` for a real test function `φ`:
 `T φ = ∑ m : L^∨, (covolume L)⁻¹ 𝓕 φ (m) T.localFourier χ (-m)`. -/
