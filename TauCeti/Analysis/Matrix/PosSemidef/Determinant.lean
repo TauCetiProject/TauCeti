@@ -35,8 +35,9 @@ For positive-semidefinite `n × n` matrices `A` and `B` over `ℝ` or `ℂ`, the
 arithmetic and geometric means for the eigenvalues (`Real.geom_mean_le_arith_mean_weighted`)
 gives `n * (Re det A) ^ (1 / n) ≤ Re tr A`, with equality exactly for real multiples of `1`
 (`Real.geom_mean_eq_arith_mean_weighted_iff_of_pos`, with
-`Matrix.IsHermitian.eq_smul_one_of_eigenvalues_eq` from the spectral theorem), and the mixed
-form `n * (Re (det A * det B)) ^ (1 / n) ≤ Re tr (A * B)`, applied to `√A * B * √A`. For
+`Matrix.IsHermitian.eq_smul_one_of_eigenvalues_eq` from the spectral theorem), its exponential
+form `Re det A ≤ exp (Re tr A - n)` (`Matrix.PosSemidef.re_det_le_exp_re_trace_sub_card`), and the
+mixed form `n * (Re (det A * det B)) ^ (1 / n) ≤ Re tr (A * B)`, applied to `√A * B * √A`. For
 positive-definite `A` equality holds exactly when `B` is a real multiple of `A⁻¹`. The mixed
 bound turns a lower bound on `det A * det B` into a lower bound on the trace pairing
 `Re tr (A * B)`, as in the complex Hessian equation estimates. Determinants and traces of
@@ -275,6 +276,20 @@ theorem PosSemidef.card_mul_re_det_rpow_le_re_trace {N : Matrix n n 𝕜} (hN : 
   calc (Fintype.card n : ℝ) * (∏ i, μ i) ^ (Fintype.card n : ℝ)⁻¹
       ≤ Fintype.card n * ((Fintype.card n : ℝ)⁻¹ * ∑ i, μ i) := by gcongr
     _ = ∑ i, μ i := by field_simp
+
+/-- **The determinant–trace inequality in exponential form.** For a positive-semidefinite
+`n × n` matrix `N`, `Re det N ≤ exp (Re tr N - n)`, since each eigenvalue `μ ≥ 0` satisfies
+`μ ≤ exp (μ - 1)`. -/
+theorem PosSemidef.re_det_le_exp_re_trace_sub_card {N : Matrix n n 𝕜} (hN : N.PosSemidef) :
+    RCLike.re N.det ≤ Real.exp (RCLike.re N.trace - Fintype.card n) := by
+  set μ := hN.isHermitian.eigenvalues
+  rw [hN.isHermitian.re_det_eq_prod_eigenvalues, hN.isHermitian.re_trace_eq_sum_eigenvalues]
+  calc ∏ i, μ i ≤ ∏ i, Real.exp (μ i - 1) :=
+        Finset.prod_le_prod₀ (fun i _ ↦ hN.eigenvalues_nonneg i)
+          fun i _ ↦ by linarith [Real.add_one_le_exp (μ i - 1)]
+    _ = Real.exp (∑ i, μ i - Fintype.card n) := by
+        rw [← Real.exp_sum, Finset.sum_sub_distrib]
+        simp
 
 /-- **The equality case of the determinant–trace inequality.** For a positive-semidefinite
 `n × n` matrix `N`, `n * (Re det N) ^ (1 / n) = Re tr N` exactly when `N` is a real multiple
