@@ -21,12 +21,12 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 Let `Φ : ℝ × ℝ → L(V, W)` be a frame on the cylinder `ℝ × S¹`: a `C²` family of linear maps of
 period one in `t`, bounded together with its derivative. Reading sections of the trivial bundle
 with fibre `V` in the frame, `ξ ↦ (w ↦ Φ w (ξ w))`, acts on jets through the coefficient field
-`TauCeti.StripSobolev.frameJetCoeff Φ`, and this file shows that it acts on the Sobolev space
-`W^{1,2}(ℝ × S¹)`:
+`TauCeti.StripSobolev.frameJetCoeff Φ`, and this file shows that it acts on the Sobolev spaces of
+the cylinder:
 
-* it maps `W^{1,2}(ℝ × S¹, V)` into `W^{1,2}(ℝ × S¹, W)`
-  (`TauCeti.CylinderSobolev.jetOperator_frameJetCoeff_mem_H1`), giving the bounded operator
-  `TauCeti.CylinderSobolev.frameL`;
+* it maps `W^{1,p}(ℝ × S¹, V)` into `W^{1,p}(ℝ × S¹, W)` for every exponent `p ≥ 1`
+  (`TauCeti.CylinderSobolev.jetOperator_frameJetCoeff_mem_W1p`), giving for `p = 2` the bounded
+  operator `TauCeti.CylinderSobolev.frameL`;
 * if `Ψ z` is a two-sided inverse of `Φ z` and `Ψ` is `C²` and bounded, then `Ψ` is a frame as
   well, the two operators are mutually inverse
   (`TauCeti.CylinderSobolev.frameL_comp_frameL_eq_id_of_comp_eq_id`), and reading in a frame is an
@@ -98,43 +98,49 @@ theorem frame_mem_testSection (hΦ : ContDiff ℝ 2 Φ) (hΦp : ∀ s t, Φ (s, 
 variable {B B' : ℝ} (hΦ : ContDiff ℝ 2 Φ) (hΦp : ∀ s t, Φ (s, t + 1) = Φ (s, t))
   (hΦB : ∀ z, ‖Φ z‖ ≤ B) (hΦ'B : ∀ z, ‖fderiv ℝ Φ z‖ ≤ B')
 
+section Exponent
+
+variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
 include hΦ in
-/-- On the `L²` jet of a test section `ξ`, the change of frame gives the `L²` jet of the test
+/-- On the `Lᵖ` jet of a test section `ξ`, the change of frame gives the `Lᵖ` jet of the test
 section `w ↦ Φ w (ξ w)`. -/
 theorem jetOperator_frameJetCoeff_jetLp (hN : MemLp (frameJetCoeff Φ) ∞ stripMeasure)
     (ξ : testSection V) :
-    jetOperator 2 stripMeasure (frameJetCoeff Φ) (jetLp 2 (testSection V) ξ) =
-      jetLp 2 (testSection W) ⟨_, frame_mem_testSection hΦ hΦp ξ.property⟩ := by
+    jetOperator p stripMeasure (frameJetCoeff Φ) (jetLp p (testSection V) ξ) =
+      jetLp p (testSection W) ⟨_, frame_mem_testSection hΦ hΦp ξ.property⟩ := by
   have hξd : Differentiable ℝ (ξ : ℝ × ℝ → V) :=
     (mem_testSection_iff.1 ξ.property).1.differentiable (by norm_num)
   refine Lp.ext ?_
-  filter_upwards [jetOperator_jetLp_ae_eq hN ξ,
-    coeFn_jetLp 2 (S := testSection W) ⟨_, frame_mem_testSection hΦ hΦp ξ.property⟩]
-    with z h₁ h₂
-  rw [h₁, h₂, jet_frame_eq_frameJetCoeff ((hΦ.differentiable (by norm_num)) z) (hξd z)]
+  filter_upwards [coeFn_jetOperator hN (jetLp p (testSection V) ξ), coeFn_jetLp p ξ,
+    coeFn_jetLp p (S := testSection W) ⟨_, frame_mem_testSection hΦ hΦp ξ.property⟩]
+    with z h₁ h₂ h₃
+  rw [h₁, h₂, h₃, jet_frame_eq_frameJetCoeff ((hΦ.differentiable (by norm_num)) z) (hξd z)]
 
 include hΦ hΦp in
-/-- **Changes of frame preserve `W^{1,2}`.** For a `C²` frame `Φ` of period one in `t` whose
+/-- **Changes of frame preserve `W^{1,p}`.** For a `C²` frame `Φ` of period one in `t` whose
 coefficient field `frameJetCoeff Φ` is essentially bounded (for instance when `Φ` and `dΦ` are
 bounded, `TauCeti.StripSobolev.memLp_frameJetCoeff`), the operator of `frameJetCoeff Φ`, which reads
-a section in the frame `Φ`, maps `H1 V` into `H1 W`. -/
-theorem jetOperator_frameJetCoeff_mem_H1 (hN : MemLp (frameJetCoeff Φ) ∞ stripMeasure)
-    {f : Lp (V × V × V) 2 stripMeasure} (hf : f ∈ H1 V) :
-    jetOperator 2 stripMeasure (frameJetCoeff Φ) f ∈ H1 W := by
+a section in the frame `Φ`, maps `W1p V p` into `W1p W p`, for every exponent `p ≥ 1`. -/
+theorem jetOperator_frameJetCoeff_mem_W1p (hN : MemLp (frameJetCoeff Φ) ∞ stripMeasure)
+    {f : Lp (V × V × V) p stripMeasure} (hf : f ∈ W1p V p) :
+    jetOperator p stripMeasure (frameJetCoeff Φ) f ∈ W1p W p := by
   refine jetClosure_subset_of_isClosed
-    (s := jetOperator 2 stripMeasure (frameJetCoeff Φ) ⁻¹'
-      (H1 W : Set (Lp (W × W × W) 2 stripMeasure)))
-    ((isClosed_jetClosure 2 _).preimage (jetOperator 2 stripMeasure _).continuous) ?_ hf
+    (s := jetOperator p stripMeasure (frameJetCoeff Φ) ⁻¹'
+      (W1p W p : Set (Lp (W × W × W) p stripMeasure)))
+    ((isClosed_jetClosure p _).preimage (jetOperator p stripMeasure _).continuous) ?_ hf
   rintro _ ⟨ξ, rfl⟩
   simp only [Set.mem_preimage, SetLike.mem_coe, jetOperator_frameJetCoeff_jetLp hΦ hΦp hN ξ]
   exact jetLp_mem_jetClosure _
+
+end Exponent
 
 /-- Reading sections in a `C²` frame `Φ` of period one in `t`, with `Φ` and `dΦ` bounded, as an
 operator `H1 V →L[ℝ] H1 W`: the operator of the coefficient field `frameJetCoeff Φ`, restricted to
 `H1 V` (`TauCeti.CylinderSobolev.coe_frameL`). -/
 def frameL : H1 V →L[ℝ] H1 W :=
   ((jetOperator 2 stripMeasure (frameJetCoeff Φ)).comp (H1 V).subtypeL).codRestrict (H1 W) fun x ↦
-    jetOperator_frameJetCoeff_mem_H1 hΦ hΦp (memLp_frameJetCoeff (hΦ.of_le one_le_two) hΦB hΦ'B)
+    jetOperator_frameJetCoeff_mem_W1p hΦ hΦp (memLp_frameJetCoeff (hΦ.of_le one_le_two) hΦB hΦ'B)
       x.property
 
 /-- As an `L²` jet, `frameL` is the operator of the coefficient field `frameJetCoeff Φ`. -/
