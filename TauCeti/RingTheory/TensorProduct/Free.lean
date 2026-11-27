@@ -9,7 +9,7 @@ public import Mathlib.RingTheory.TensorProduct.Free
 public import Mathlib.RingTheory.TensorProduct.Maps
 
 /-!
-# Bijectivity of a lift of tensor products from bases
+# Bases of scalar extensions
 
 Let `R → S → T` be a tower of commutative semirings, `U` a commutative `R`-algebra and
 `u : U →ₐ[R] T` an `R`-algebra map. The `S`-algebra map `S ⊗[R] U → T`, `x ⊗ y ↦ x * u y`, is
@@ -17,13 +17,20 @@ bijective as soon as `u` carries a basis of `U` over `R` to a basis of `T` over 
 basis `1 ⊗ bᵢ` of `S ⊗[R] U` over `S` (Mathlib's `Algebra.TensorProduct.basis`) to that basis of
 `T`.
 
+The coordinates in these bases are natural in the algebra: for `φ : A →ₐ[R] A'`, the coordinates
+of `(φ ⊗ id) x` in the basis `1 ⊗ bᵢ` of `A' ⊗[R] M` are `φ` applied to those of `x`.
+
 ## Main results
 
 * `Algebra.TensorProduct.lift_bijective_of_basis`: the lift `S ⊗[R] U → T` of `S → T` and `u` is
   bijective if `u` carries a basis of `U` over `R` to a basis of `T` over `S`.
+* `Algebra.TensorProduct.basis_repr_rTensor`: the coordinates of `(φ ⊗ id) x` are `φ` applied to
+  the coordinates of `x`.
 -/
 
 public section
+
+open scoped TensorProduct
 
 namespace Algebra.TensorProduct
 
@@ -43,5 +50,16 @@ theorem lift_bijective_of_basis {R S U T : Type*} [CommSemiring R] [CommSemiring
       simp [b, hb]
   rw [← AlgHom.coe_toLinearMap, hψ]
   exact (b.equiv bT (Equiv.refl ι)).bijective
+
+/-- The coordinates of `(φ ⊗ id) x` in the basis `1 ⊗ bᵢ` of `A' ⊗[R] M` are `φ` applied to the
+coordinates of `x` in the basis `1 ⊗ bᵢ` of `A ⊗[R] M`. -/
+@[simp]
+theorem basis_repr_rTensor {R A A' M ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [Semiring A'] [Algebra R A'] [AddCommMonoid M] [Module R M] (b : Module.Basis ι R M)
+    (φ : A →ₐ[R] A') (x : A ⊗[R] M) (i : ι) :
+    (basis A' b).repr (φ.toLinearMap.rTensor M x) i = φ ((basis A b).repr x i) := by
+  induction x using _root_.TensorProduct.inductionOn with
+  | tmul a m => simp
+  | add x y hx hy => simp_all
 
 end Algebra.TensorProduct

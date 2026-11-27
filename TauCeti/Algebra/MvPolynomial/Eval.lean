@@ -49,6 +49,8 @@ isomorphisms and by reindexing.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
 * `MvPolynomial.aeval_surjective_iff_adjoin_range_eq_top`: `aeval x` is surjective exactly when
   the `x i` generate the algebra.
+* `MvPolynomial.adjoin_range_eq_of_aeval_comp_eq`: a surjective algebra homomorphism factoring
+  `aeval c` through `aeval b` preserves the generated subalgebra.
 * `MvPolynomial.bijective_aeval_algEquiv_comp_iff`: an algebra isomorphism carries polynomial
   generators to polynomial generators.
 * `MvPolynomial.bijective_aeval_comp_equiv_iff`: reindexing a family of polynomial generators
@@ -132,6 +134,16 @@ theorem aeval_surjective_iff_adjoin_range_eq_top {R A : Type*} [CommSemiring R] 
     [Algebra R A] {x : σ → A} :
     Function.Surjective (aeval (R := R) x) ↔ Algebra.adjoin R (Set.range x) = ⊤ := by
   rw [← AlgHom.range_eq_top, Algebra.adjoin_range_eq_range_aeval]
+
+/-- If `φ : MvPolynomial B R →ₐ[R] MvPolynomial A R` is surjective and `(aeval b).comp φ = aeval c`,
+then `c` and `b` generate the same `R`-subalgebra. -/
+theorem adjoin_range_eq_of_aeval_comp_eq {R A B C : Type*} [CommSemiring R]
+    [CommSemiring C] [Algebra R C] {b : A → C} {c : B → C}
+    {φ : MvPolynomial B R →ₐ[R] MvPolynomial A R}
+    (hcomp : (aeval b).comp φ = aeval c) (hφ : Function.Surjective φ) :
+    Algebra.adjoin R (Set.range c) = Algebra.adjoin R (Set.range b) := by
+  rw [Algebra.adjoin_range_eq_range_aeval, Algebra.adjoin_range_eq_range_aeval, ← hcomp,
+    AlgHom.range_comp, (AlgHom.range_eq_top φ).2 hφ, Algebra.map_top]
 
 /-- Composing a family with an algebra isomorphism `e` does not change whether evaluation at it is
 bijective, since `aeval (e ∘ x) = e ∘ aeval x`. In particular `e` carries a family of polynomial

@@ -116,6 +116,8 @@ of two rays. Finally, `c √u` tends to `0` as `u → 0` (and through positive v
   and `1 ≤ r`.
 * `Real.tendsto_sqrt_nhds_zero_iff`: an eventually nonnegative function tends to `0` exactly when
   its square root does.
+* `TauCeti.sum_range_inv_sqrt_add_one_le`: the sum of the reciprocal square roots of `1` through
+  `n` is at most `2√n`.
 * `TauCeti.tendsto_sqrt_natCast_add_one_atTop`: `√(n + 1) → ∞` along the natural numbers, the
   divergence of the normalization of an `(n + 1) × (n + 1)` random matrix.
 
@@ -819,6 +821,23 @@ theorem tendsto_sqrt_nhds_zero_iff {α : Type*} {l : Filter α} {f : α → ℝ}
 end Real
 
 namespace TauCeti
+
+/-- The sum of the reciprocal square roots of the first `n` positive integers is at most `2√n`. -/
+theorem sum_range_inv_sqrt_add_one_le (n : ℕ) :
+    (∑ i ∈ Finset.range n, (√((i : ℝ) + 1))⁻¹) ≤ 2 * √(n : ℝ) := by
+  calc
+    _ ≤ ∑ i ∈ Finset.range n, 2 * (√((i : ℝ) + 1) - √(i : ℝ)) := by
+      refine Finset.sum_le_sum fun i _ ↦ ?_
+      have hpos : 0 < √((i : ℝ) + 1) := by positivity
+      have hsq := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ (i : ℝ) + 1)
+      have hsq' := Real.sq_sqrt (Nat.cast_nonneg i : (0 : ℝ) ≤ i)
+      rw [inv_eq_one_div, div_le_iff₀ hpos]
+      nlinarith only [hsq, hsq', sq_nonneg (√((i : ℝ) + 1) - √(i : ℝ))]
+    _ = _ := by
+      rw [← Finset.mul_sum]
+      simp only [← Nat.cast_succ]
+      rw [Finset.sum_range_sub (fun i : ℕ ↦ √(i : ℝ))]
+      simp
 
 open Filter in
 /-- The square roots of the successive natural numbers `n + 1` tend to infinity. -/

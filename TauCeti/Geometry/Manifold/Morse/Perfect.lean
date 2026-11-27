@@ -68,10 +68,12 @@ perfect Morse function exists depends on the coefficients, as projective spaces 
   than `2` (`TauCeti.not_isPerfectMorse_projectivization_real`). For odd `N` the top homology
   `H_N(ℝPᴺ; k)` is one-dimensional and does not see this; only the loops do. On `ℝP²`
   the moment function with three distinct weights has three critical points, of indices `0`, `1`
-  and `2`; the Betti numbers are `1, 1, 1` over `ℤ/2` but `1, 0, 0` over `ℚ`. Over `ℚ` its Morse
-  polynomial is `Q = t`: `1 + t + t² = 1 + (1 + t) t`. On `ℝPⁿ`, away from characteristic two, it
-  is the sum of the `tⁱ` over the odd `i < n`
-  (`TauCeti.forall_criticalCount_projectiveMomentFunction_real_eq_bettiNumber_add_coeff_iff`). Its
+  and `2`; the Betti numbers are `1, 1, 1` over `ℤ/2` but `1, 0, 0` over `ℚ`. Every Morse function
+  on `ℝPⁿ` with one critical point of each index `0, …, n` is perfect over `ℤ/2`
+  (`TauCeti.IsMorse.isPerfectMorse_projectivization_real`). Over `ℚ` its Morse polynomial on
+  `ℝP²` is `Q = t`: `1 + t + t² = 1 + (1 + t) t`. On `ℝPⁿ`, away from characteristic two, it is the
+  sum of the `tⁱ` over the odd `i < n`
+  (`TauCeti.forall_criticalCount_projectivization_real_eq_bettiNumber_add_coeff_iff`). Its
   coefficients are the ranks of the cellular differentials of the standard cell structure of
   `ℝPⁿ`, which has one cell in each dimension
   (`TauCeti.RealProjectiveSpace.finrank_range_cellularChainComplex_d_of_two_ne_zero`).
@@ -328,17 +330,37 @@ theorem isPerfectMorse_projectiveMomentFunction_complex (hw : Function.Injective
   (isMorse_projectiveMomentFunction hw).isPerfectMorse_of_forall_ne_add_one
     (manifoldMorseIndex_projectiveMomentFunction_complex_ne_add_one hw)
 
+/-- A function on `ℝPⁿ` with one critical point of each index `j ≤ n` has no critical point of
+larger index, so its critical count of index `j` is `1` for `j ≤ n` and `0` otherwise. -/
+private theorem criticalCount_projectivization_real_eq_ite {f : ℙ ℝ (Fin (n + 1) → ℝ) → ℝ}
+    (hc : ∀ j ≤ n, criticalCount 𝓘(ℝ, Fin n → ℝ) f j = 1) (j : ℕ) :
+    criticalCount 𝓘(ℝ, Fin n → ℝ) f j = if j ≤ n then 1 else 0 := by
+  split_ifs with hj
+  · exact hc j hj
+  · exact criticalCount_eq_zero_of_finrank_lt (by rw [finrank_fin_fun]; omega)
+
+/-- **A Morse function on `ℝPⁿ` with one critical point of each index is perfect in
+characteristic two.** If a Morse function on `ℝPⁿ` has exactly one critical point of each index
+`0, …, n`, then it is a perfect Morse function with coefficients in every division ring in which
+`2 = 0`, such as `ZMod 2`, since `Hⱼ(ℝPⁿ; k)` is then one-dimensional for every `j ≤ n`. -/
+theorem IsMorse.isPerfectMorse_projectivization_real {f : ℙ ℝ (Fin (n + 1) → ℝ) → ℝ}
+    (hf : IsMorse 𝓘(ℝ, Fin n → ℝ) f) (hc : ∀ j ≤ n, criticalCount 𝓘(ℝ, Fin n → ℝ) f j = 1)
+    {k : Type} [DivisionRing k] (h2 : (2 : k) = 0) :
+    IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k f := by
+  refine isPerfectMorse_iff.2 ⟨hf, fun j ↦ ?_⟩
+  rw [criticalCount_projectivization_real_eq_ite hc,
+    RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero h2 j]
+  simp
+
 /-- **The moment function on `ℝPⁿ` is perfect in characteristic two.** For pairwise distinct
 weights, the moment function on `ℝPⁿ` has one critical point of each index `0, …, n`, and it is a
 perfect Morse function with coefficients in every division ring in which `2 = 0`, such as
 `ZMod 2`. -/
 theorem isPerfectMorse_projectiveMomentFunction_real (hw : Function.Injective w) {k : Type}
     [DivisionRing k] (h2 : (2 : k) = 0) :
-    IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k (projectiveMomentFunction ℝ w) := by
-  refine isPerfectMorse_iff.2 ⟨isMorse_projectiveMomentFunction hw, fun j ↦ ?_⟩
-  rw [criticalCount_projectiveMomentFunction_real hw,
-    RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_eq_zero h2 j]
-  simp
+    IsPerfectMorse 𝓘(ℝ, Fin n → ℝ) k (projectiveMomentFunction ℝ w) :=
+  (isMorse_projectiveMomentFunction hw).isPerfectMorse_projectivization_real
+    (fun j hj ↦ by simp [criticalCount_projectiveMomentFunction_real hw, hj]) h2
 
 /-- **No perfect Morse function on `ℝPᴺ` outside characteristic two.** For `N ≥ 2`, no Morse
 function on `ℝPᴺ` is perfect with coefficients in a division ring in which `2 ≠ 0`, such as `ℚ`:
@@ -355,23 +377,25 @@ theorem not_isPerfectMorse_projectivization_real (hn : 2 ≤ n) {k : Type} [Divi
   rw [RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_ne_zero h2] at h
   exact h (ite_eq_right_iff.2 fun h₁ ↦ by obtain h₁ | ⟨rfl, -⟩ := h₁ <;> omega)
 
-/-- **The Morse polynomial of the moment function on `ℝPⁿ` away from characteristic two.** For
-pairwise distinct weights and a division ring `k` in which `2 ≠ 0`, such as `ℚ`, the moment
-function on `ℝPⁿ` has one critical point of each index `0, …, n`, while `Hⱼ(ℝPⁿ; k)` is
-one-dimensional in degree `0` and, for odd `n`, in degree `n`, and vanishes otherwise. Its Morse
-polynomial is the sum of the `Xⁱ` over the odd `i < n`: the identity
-`cⱼ = bⱼ + coeff ((1 + X) * Q) j` holds in every degree exactly for this `Q`. For `ℝP²` it reads
-`1 + t + t² = 1 + (1 + t) t`. -/
-theorem forall_criticalCount_projectiveMomentFunction_real_eq_bettiNumber_add_coeff_iff
-    (hw : Function.Injective w) {k : Type} [DivisionRing k] (h2 : (2 : k) ≠ 0) {Q : ℕ[X]} :
-    (∀ j : ℕ, criticalCount 𝓘(ℝ, Fin n → ℝ) (projectiveMomentFunction ℝ w) j =
+/-- **The Morse polynomial on `ℝPⁿ` of a function with one critical point of each index, away
+from characteristic two.** Let `f` be a function on `ℝPⁿ` with exactly one critical point of each
+index `0, …, n`, for instance a moment function with pairwise distinct weights
+(`TauCeti.criticalCount_projectiveMomentFunction_real`), and let `k` be a division ring in which
+`2 ≠ 0`, such as `ℚ`. Then `Hⱼ(ℝPⁿ; k)` is one-dimensional in degree `0` and, for odd `n`, in
+degree `n`, and vanishes otherwise, and the Morse polynomial of `f` is the sum of the `Xⁱ` over the
+odd `i < n`: the identity `cⱼ = bⱼ + coeff ((1 + X) * Q) j` holds in every degree exactly for this
+`Q`. For `ℝP²` it reads `1 + t + t² = 1 + (1 + t) t`. -/
+theorem forall_criticalCount_projectivization_real_eq_bettiNumber_add_coeff_iff
+    {f : ℙ ℝ (Fin (n + 1) → ℝ) → ℝ} (hc : ∀ j ≤ n, criticalCount 𝓘(ℝ, Fin n → ℝ) f j = 1)
+    {k : Type} [DivisionRing k] (h2 : (2 : k) ≠ 0) {Q : ℕ[X]} :
+    (∀ j : ℕ, criticalCount 𝓘(ℝ, Fin n → ℝ) f j =
       ((bettiNumber k (ℙ ℝ (Fin (n + 1) → ℝ)) j + ((1 + X) * Q).coeff j : ℕ) : ℕ∞)) ↔
       Q = ∑ i ∈ Finset.range n with Odd i, X ^ i := by
   refine forall_criticalCount_eq_bettiNumber_add_coeff_iff fun j ↦ ?_
   have hsum (m : ℕ) : (∑ i ∈ Finset.range n with Odd i, (X : ℕ[X]) ^ i).coeff m =
       if m < n ∧ Odd m then 1 else 0 := by
     simp [Polynomial.coeff_X_pow]
-  rw [criticalCount_projectiveMomentFunction_real hw, bettiNumber_def,
+  rw [criticalCount_projectivization_real_eq_ite hc, bettiNumber_def,
     RealProjectiveSpace.finrank_singularHomology_projectivization_of_two_ne_zero h2, add_mul,
     one_mul, Polynomial.coeff_add, hsum]
   rcases j with _ | j

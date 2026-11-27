@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Topology.FiberBundle.ModelFiber
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Changing the model fibre of a vector bundle
@@ -23,7 +25,8 @@ The two model fibres may lie in different universes. A construction that needs t
 the universe of the base and the fibres, for instance one taking `TopCat.of F` alongside spaces
 built from `E`, applies to a bundle with model fibre `Fin r → ℝ : Type` over a base in a higher
 universe through a lift of the model fibre to that universe
-(`VectorBundle.exists_modelFiber_of_continuousLinearEquiv`).
+(`VectorBundle.exists_modelFiber_of_continuousLinearEquiv`), for instance
+`ULift (Fin r → ℝ)` (`VectorBundle.exists_modelFiber_ulift_fin`).
 
 For transport along fibrewise continuous linear equivalences with a fixed model fibre see
 `TauCeti.Topology.VectorBundle.Transfer`.
@@ -33,7 +36,9 @@ public section
 
 noncomputable section
 
-open Bundle Set Topology
+open Bundle Set Topology Module
+
+universe w
 
 namespace Bundle.Trivialization
 
@@ -120,5 +125,20 @@ theorem VectorBundle.exists_modelFiber_of_continuousLinearEquiv {𝕜 : Type*}
   let := TauCeti.totalSpaceModelFiberInduced F F' E
   have h_ind := TauCeti.isInducing_totalSpaceModelFiberInduced F F' E
   exact ⟨_, h_ind, _, VectorBundle.ofModelFiberContinuousLinearEquiv F L h_ind⟩
+
+/-- A finite-dimensional vector bundle with model fibre `F` is a vector bundle with model fibre
+`ULift.{w} (Fin (finrank 𝕜 F) → 𝕜)`, in any universe `w`, for a topology on its total space
+induced along the identity of points. For `𝕜 = ℝ` this puts the model fibre in the universe of the
+base and of the fibres. Its rank is that of `F`, by `simp`. -/
+theorem VectorBundle.exists_modelFiber_ulift_fin {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+    [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [FiberBundle F E] [VectorBundle 𝕜 F E] :
+    ∃ (_ : TopologicalSpace (TotalSpace (ULift.{w} (Fin (finrank 𝕜 F) → 𝕜)) E))
+      (_ : IsInducing fun p : TotalSpace (ULift.{w} (Fin (finrank 𝕜 F) → 𝕜)) E ↦
+        TotalSpace.mk' F p.proj p.snd)
+      (_ : FiberBundle (ULift.{w} (Fin (finrank 𝕜 F) → 𝕜)) E),
+      VectorBundle 𝕜 (ULift.{w} (Fin (finrank 𝕜 F) → 𝕜)) E :=
+  VectorBundle.exists_modelFiber_of_continuousLinearEquiv F
+    ((ContinuousLinearEquiv.ofFinrankEq (by simp)).trans ContinuousLinearEquiv.ulift.symm)
 
 end Transport

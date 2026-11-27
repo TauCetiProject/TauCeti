@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.Block
 public import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
+public import Mathlib.LinearAlgebra.Matrix.Unique
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.RingTheory.Finiteness.Basic
 
@@ -50,6 +51,8 @@ vanishing on the range is a dot product with such a `z`.
   rows and columns are reindexed along equivalences via `Matrix.submatrix`.
 * `Matrix.rangeMulVecBilinOneEquiv` and `Matrix.rangeMulVecBilinSingleOneEquiv`: the column ranges
   of `1 : Matrix m m R` and of a diagonal matrix unit `Eᵢᵢ` are `m → Rᵐᵒᵖ` and `Rᵐᵒᵖ`.
+* `Matrix.rangeMulVecBilinOfUniqueEquivSpan`: the column range of the `1 × 1` matrix
+  `Matrix.uniqueRingEquiv.symm a` with entry `a` is the principal right ideal `aR`.
 
 ## Main result
 
@@ -559,5 +562,37 @@ theorem finrank_range_mulVecBilin_single_one (R : Type*) [Semiring R] [StrongRan
     {m : Type*} [Fintype m] [DecidableEq m] (i : m) :
     Module.finrank Rᵐᵒᵖ (LinearMap.range ((single i i (1 : R)).mulVecBilin R Rᵐᵒᵖ)) = 1 :=
   (rangeMulVecBilinSingleOneEquiv R i).finrank_eq.trans (Module.finrank_self Rᵐᵒᵖ)
+
+/-- The column range of the `1 × 1` matrix `Matrix.uniqueRingEquiv.symm a` with entry `a` is the
+principal right ideal `aR`, a submodule of `Rᵐᵒᵖ`: a column is sent to the opposite of its unique
+entry. -/
+def rangeMulVecBilinOfUniqueEquivSpan (R : Type*) [Semiring R] (m : Type*) [Unique m] (a : R) :
+    LinearMap.range ((uniqueRingEquiv.symm a : Matrix m m R).mulVecBilin R Rᵐᵒᵖ) ≃ₗ[Rᵐᵒᵖ]
+      Submodule.span Rᵐᵒᵖ {MulOpposite.op a} where
+  toFun w := ⟨MulOpposite.op ((w : m → R) default), by
+    obtain ⟨v, hv⟩ := w.property
+    rw [← hv, Submodule.mem_span_singleton]
+    exact ⟨MulOpposite.op (v default), by simp [mulVec, dotProduct]⟩⟩
+  invFun x := ⟨fun _ ↦ MulOpposite.unop (x : Rᵐᵒᵖ), by
+    obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.1 x.property
+    exact ⟨fun _ ↦ MulOpposite.unop r, funext fun _ ↦ by simp [mulVec, dotProduct, ← hr]⟩⟩
+  map_add' _ _ := Subtype.ext (MulOpposite.op_add _ _)
+  map_smul' r w := Subtype.ext (by simp)
+  left_inv w := Subtype.ext (funext fun i ↦ by simp [Unique.eq_default i])
+  right_inv _ := Subtype.ext (by simp)
+
+@[simp]
+theorem coe_rangeMulVecBilinOfUniqueEquivSpan_apply (R : Type*) [Semiring R] (m : Type*)
+    [Unique m] (a : R)
+    (w : LinearMap.range ((uniqueRingEquiv.symm a : Matrix m m R).mulVecBilin R Rᵐᵒᵖ)) :
+    (rangeMulVecBilinOfUniqueEquivSpan R m a w : Rᵐᵒᵖ) = MulOpposite.op ((w : m → R) default) :=
+  (rfl)
+
+@[simp]
+theorem coe_rangeMulVecBilinOfUniqueEquivSpan_symm_apply (R : Type*) [Semiring R] (m : Type*)
+    [Unique m] (a : R) (x : Submodule.span Rᵐᵒᵖ {MulOpposite.op a}) :
+    ((rangeMulVecBilinOfUniqueEquivSpan R m a).symm x : m → R) =
+      fun _ ↦ MulOpposite.unop (x : Rᵐᵒᵖ) :=
+  (rfl)
 
 end Matrix

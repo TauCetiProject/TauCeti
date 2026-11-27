@@ -43,7 +43,8 @@ that the circle is two closed intervals glued at their endpoints `±1`.
 
 * `Circle.homeomorphSphere`: `Circle ≃ₜ sphere (0 : ℂ) 1`, the identity on underlying complex
   numbers, with `Circle.coe_homeomorphSphere_exp_re` and `Circle.coe_homeomorphSphere_exp_im`
-  computing the real and imaginary parts of `exp (i x)` on the sphere.
+  computing the real and imaginary parts of `exp (i x)` on the sphere, and
+  `Circle.pathConnectedSpace_sphere`: the unit sphere of `ℂ` is path-connected.
 * `Circle.expContinuousMonoidHom`: `t ↦ exp (i t)` as a continuous homomorphism
   `Multiplicative ℝ →ₜ* Circle`.
 * `Circle.coordinate`: the coordinate function `z ↦ z` in `C(S¹, ℂ)`, and
@@ -122,6 +123,10 @@ theorem coe_homeomorphSphere_apply (z : Circle) : (homeomorphSphere z : ℂ) = z
 theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
     (homeomorphSphere.symm z : ℂ) = z :=
   (rfl)
+
+/-- The unit sphere `sphere (0 : ℂ) 1` is path-connected, being homeomorphic to `Circle`. -/
+instance pathConnectedSpace_sphere : PathConnectedSpace (sphere (0 : ℂ) 1) :=
+  homeomorphSphere.surjective.pathConnectedSpace homeomorphSphere.continuous
 
 /-- The real part of `exp (i x)`, read on the unit sphere of `ℂ`, is `cos x`. -/
 theorem coe_homeomorphSphere_exp_re (x : ℝ) : (homeomorphSphere (exp x) : ℂ).re = Real.cos x := by

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.LinearAlgebra.DirectSum.Finsupp
+public import TauCeti.LinearAlgebra.Finsupp.SignReversal
 
 /-!
 # Tensor products with spaces of finitely supported functions
@@ -25,6 +26,11 @@ which identifies `(α →₀ R) ⊗[R] (β →₀ R)` with `α × β →₀ R`.
   index types.
 * `finsuppTensorFinsupp'_rTensor_apply`, `finsuppTensorFinsupp'_lTensor_apply`: the coefficients
   of `(φ ⊗ 1) t` and `(1 ⊗ ψ) t` are those of `t` multiplied by the matrix of `φ` or `ψ`.
+* `finsuppTensorFinsupp'_lid_rTensor_apply`, `finsuppTensorFinsupp'_rid_lTensor_apply`: the
+  coefficients of `(g ⊗ 1) t` and `(1 ⊗ g) t` for a linear form `g`, read in `β →₀ R` and in
+  `α →₀ R`.
+* `finsuppTensorFinsupp'_map_signReversal_apply`: the coefficients of the tensor product of two
+  sign reversals.
 * `LinearMap.mul'_map_lapply_lapply`, `LinearMap.mul'_map_apply_eq_sum`: the product of two linear
   forms evaluated on `(α →₀ R) ⊗ (β →₀ R)` reads the coefficients, weighted by the values of the
   forms on the basis.
@@ -114,6 +120,42 @@ theorem finsuppTensorFinsupp'_lTensor_apply [Fintype β] (ψ : (β →₀ R) →
       Finset.sum_apply, Finset.mul_sum]
     refine Finset.sum_congr rfl fun b _ ↦ ?_
     rw [finsuppTensorFinsupp'_apply_apply, Finsupp.smul_apply, smul_eq_mul]
+    ring
+  | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+/-- **The coefficients of `(g ⊗ 1) t` for a linear form `g`.** Under the identification of
+`R ⊗ (β →₀ R)` with `β →₀ R`, the coefficient of `b` in the image of `t` under `g ⊗ 1` is the sum
+over `a` of the coefficient of `(a, b)` in `t` times the value of `g` on the basis vector `a`. -/
+theorem finsuppTensorFinsupp'_lid_rTensor_apply [Fintype α] (g : (α →₀ R) →ₗ[R] R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (b : β) :
+    TensorProduct.lid R (β →₀ R) (g.rTensor (β →₀ R) t) b =
+      ∑ a, finsuppTensorFinsupp' R α β t (a, b) * g (Finsupp.single a 1) := by
+  induction t with
+  | tmul x y =>
+    -- Expand `x` in the standard basis.
+    rw [LinearMap.rTensor_tmul, TensorProduct.lid_tmul, Finsupp.smul_apply, smul_eq_mul]
+    conv_lhs => rw [← Finsupp.univ_sum_single x]
+    simp_rw [← Finsupp.smul_single_one _ (x _), map_sum, map_smul, smul_eq_mul, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun a _ ↦ ?_
+    rw [finsuppTensorFinsupp'_apply_apply]
+    ring
+  | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
+
+/-- **The coefficients of `(1 ⊗ g) t` for a linear form `g`.** Under the identification of
+`(α →₀ R) ⊗ R` with `α →₀ R`, the coefficient of `a` in the image of `t` under `1 ⊗ g` is the sum
+over `b` of the coefficient of `(a, b)` in `t` times the value of `g` on the basis vector `b`. -/
+theorem finsuppTensorFinsupp'_rid_lTensor_apply [Fintype β] (g : (β →₀ R) →ₗ[R] R)
+    (t : (α →₀ R) ⊗[R] (β →₀ R)) (a : α) :
+    TensorProduct.rid R (α →₀ R) (g.lTensor (α →₀ R) t) a =
+      ∑ b, finsuppTensorFinsupp' R α β t (a, b) * g (Finsupp.single b 1) := by
+  induction t with
+  | tmul x y =>
+    -- Expand `y` in the standard basis.
+    rw [LinearMap.lTensor_tmul, TensorProduct.rid_tmul, Finsupp.smul_apply, smul_eq_mul]
+    conv_lhs => rw [← Finsupp.univ_sum_single y]
+    simp_rw [← Finsupp.smul_single_one _ (y _), map_sum, map_smul, smul_eq_mul, Finset.sum_mul]
+    refine Finset.sum_congr rfl fun b _ ↦ ?_
+    rw [finsuppTensorFinsupp'_apply_apply]
     ring
   | add x y hx hy => simp [hx, hy, add_mul, Finset.sum_add_distrib]
 
@@ -227,3 +269,29 @@ theorem domLCongr_trans_finsuppTensorFinsupp'_symm_comp_eq_rTensor_add_lTensor {
   by_cases h : p = p' <;> simp [h]
 
 end FinsuppTensorFinsupp
+
+section SignReversal
+
+open scoped TensorProduct
+
+variable {R : Type*} [CommRing R] {α β : Type*}
+
+/-- **The coefficients of a tensor product of sign reversals.** The coefficient of `(q, r)` in the
+image of `t` under the tensor product of the sign reversals `Finsupp.signReversal` on `S₁` and on
+`S₂` is that of `t`, multiplied by `-1` for `q ∈ S₁` and by `-1` for `r ∈ S₂`. -/
+theorem finsuppTensorFinsupp'_map_signReversal_apply (S₁ : Set α) [DecidablePred (· ∈ S₁)]
+    (S₂ : Set β) [DecidablePred (· ∈ S₂)] (t : (α →₀ R) ⊗[R] (β →₀ R)) (q : α) (r : β) :
+    finsuppTensorFinsupp' R α β
+        (TensorProduct.map (Finsupp.signReversal R S₁).toLinearMap
+          (Finsupp.signReversal R S₂).toLinearMap t) (q, r) =
+      ((if q ∈ S₁ then -1 else 1) * (if r ∈ S₂ then -1 else 1) : R) *
+        finsuppTensorFinsupp' R α β t (q, r) := by
+  induction t with
+  | tmul x y =>
+    rw [TensorProduct.map_tmul, finsuppTensorFinsupp'_apply_apply,
+      finsuppTensorFinsupp'_apply_apply, LinearEquiv.coe_coe, LinearEquiv.coe_coe,
+      Finsupp.signReversal_apply, Finsupp.signReversal_apply]
+    by_cases hq : q ∈ S₁ <;> by_cases hr : r ∈ S₂ <;> simp [hq, hr]
+  | add t t' ht ht' => simp only [map_add, Finsupp.add_apply, ht, ht', mul_add]
+
+end SignReversal

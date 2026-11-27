@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Basic
 public import Mathlib.Algebra.Group.Action.End
 public import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
+public import Mathlib.Algebra.Module.Pi
 public import Mathlib.Algebra.Module.Submodule.Equiv
 public import Mathlib.LinearAlgebra.BilinearMap
 
@@ -56,11 +57,44 @@ through `g`.
   linear map.
 * `LinearEquiv.funCongrLeft_toAddMonoidHom`: forgetting linearity in coordinate transport
   gives additive coordinate transport.
+* `LinearEquiv.piCongrRightₛₗ`: a family of semilinear equivalences induces a semilinear
+  equivalence of dependent function spaces.
 -/
 
 public section
 
 namespace LinearEquiv
+
+section PiCongrRight
+
+variable {R S : Type*} [Semiring R] [Semiring S] {ι : Type*} {M N : ι → Type*}
+  [∀ i, AddCommMonoid (M i)] [∀ i, AddCommMonoid (N i)]
+  [∀ i, Module R (M i)] [∀ i, Module S (N i)]
+  {σ : R →+* S} {τ : S →+* R} [RingHomInvPair σ τ] [RingHomInvPair τ σ]
+
+/-- A family of semilinear equivalences induces a semilinear equivalence of dependent
+function spaces. -/
+def piCongrRightₛₗ (e : ∀ i, M i ≃ₛₗ[σ] N i) : (∀ i, M i) ≃ₛₗ[σ] (∀ i, N i) :=
+  { AddEquiv.piCongrRight fun i => (e i).toAddEquiv with
+    map_smul' := fun r x => by
+      ext i
+      simp only [AddEquiv.toFun_eq_coe, AddEquiv.piCongrRight_apply, coe_toAddEquiv,
+        Pi.smul_apply]
+      exact (e i).map_smulₛₗ r (x i) }
+
+/-- Pointwise semilinear transport applies the corresponding equivalence at each coordinate. -/
+@[simp]
+theorem piCongrRightₛₗ_apply (e : ∀ i, M i ≃ₛₗ[σ] N i) (x : ∀ i, M i) (i : ι) :
+    piCongrRightₛₗ e x i = e i (x i) := by
+  rfl
+
+/-- Inverse pointwise semilinear transport applies the inverse equivalence at each coordinate. -/
+@[simp]
+theorem piCongrRightₛₗ_symm_apply (e : ∀ i, M i ≃ₛₗ[σ] N i) (x : ∀ i, N i) (i : ι) :
+    (piCongrRightₛₗ e).symm x i = (e i).symm (x i) := by
+  rfl
+
+end PiCongrRight
 
 section Coordinates
 
