@@ -19,7 +19,8 @@ shows that `[M]_or` lives over the fundamental class of `M` at every point `b`: 
 
 `Hₙ₊₁(M; o(TM)) → Hₙ₊₁(M, M ∖ {b}; o(TM))`
 
-is nonzero (`TauCeti.Manifold.OrientationCover.livesOverFundamentalClass_twistedFundamentalClass`).
+is nonzero
+(`TauCeti.Manifold.OrientationCover.livesOverFundamentalClass_id_twistedFundamentalClass`).
 This is the case of a point fibre of the notion
 `TauCeti.LocalCoefficientSystem.LivesOverFundamentalClass`, which is stated with coefficients
 twisted by the orientation system precisely so that it applies over a base with no integral
@@ -39,7 +40,7 @@ localization of `[M]_or` at `b` vanishes only if the image of `[M']` in
 
 ## Main results
 
-* `TauCeti.Manifold.OrientationCover.livesOverFundamentalClass_twistedFundamentalClass`: the
+* `TauCeti.Manifold.OrientationCover.livesOverFundamentalClass_id_twistedFundamentalClass`: the
   orientation-twisted fundamental class lives over the fundamental class at every point.
 
 ## References
@@ -93,7 +94,7 @@ private theorem singularHomologyπ_coverFundamentalClass_ne_zero (b : M) :
 localization `Hₙ₊₁(M; o(TM)) → Hₙ₊₁(M, M ∖ {b}; o(TM))` sends the orientation-twisted fundamental
 class `[M]_or` to a nonzero class, for every point `b` of `M`. This holds whether or not `M` is
 orientable. -/
-theorem livesOverFundamentalClass_twistedFundamentalClass (b : M) :
+theorem livesOverFundamentalClass_id_twistedFundamentalClass (b : M) :
     ((isCoveringMap_projHom E M).signLocalSystem ℤ _
       VectorBundleOrientationCover.proj_comp_deck).LivesOverFundamentalClass (id : M → M) b
         (twistedFundamentalClass M hE) := by

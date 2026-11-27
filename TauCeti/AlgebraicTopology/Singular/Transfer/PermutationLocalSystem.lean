@@ -648,7 +648,7 @@ homology: under the absolute and relative comparisons, the map `H(E; R) ⟶ H(E,
 absolute to relative homology corresponds to the map `H(B; L) ⟶ H(B, A; L)` from absolute to
 relative twisted homology, where `L` is the permutation local system `hp.permutationLocalSystem R`.
 -/
-@[reassoc]
+@[reassoc (attr := simp)]
 theorem singularHomologyπ_comp_singularPairHomologyPermutationIso_hom (k : ℕ) :
     (TopPair.ofSubset (p ⁻¹' A)).singularHomologyπ (ModuleCat.of R R) k ≫
         (hp.singularPairHomologyPermutationIso R A k).hom =
