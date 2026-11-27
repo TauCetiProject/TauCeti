@@ -18,10 +18,11 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 # The gradient on a normed space
 
 On a flat inner product space with its standard Riemannian metric, the manifold gradient agrees
-with Mathlib's `gradient`; the squared norm therefore has the expected radial gradient. For an
-arbitrary Riemannian metric on a normed space, the gradient is read in linear coordinates through
-its pairing with constant vectors, and its squared length is `|dφ|² = dφ(g⁻¹ dφ)` for the metric
-coefficient field `g`.
+with Mathlib's `gradient`; the squared norm therefore has the expected radial gradient `2x`, of
+length `2 ‖x‖`, and the negated squared norm has gradient `-2x`. For an arbitrary Riemannian
+metric on a normed space, the gradient is read in linear coordinates through its pairing with
+constant vectors, and its squared length is `|dφ|² = dφ(g⁻¹ dφ)` for the metric coefficient field
+`g`.
 
 Every nonzero continuous linear functional has nonzero gradient for any positive Riemannian
 metric. In particular, the first-coordinate function has nonzero gradient, whose normalization
@@ -121,6 +122,41 @@ theorem norm_mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
   dsimp only
   rw [norm_tangentSpace_vectorSpace, fromTangentSpace_mgradient_norm_sq_model_space, norm_smul,
     Real.norm_two]
+
+/-- The gradient of the squared norm in the standard flat metric has length `2 ‖x‖`. -/
+theorem norm_mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) :
+    let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
+      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
+    ‖mgradient 𝓘(ℝ, F) (fun y : F ↦ ‖y‖ ^ 2) x‖ = 2 * ‖x‖ := by
+  dsimp only
+  have h : ‖(2 : ℕ) • x‖ = 2 * ‖x‖ := by
+    rw [← ofNat_smul_eq_nsmul (R := ℝ), norm_smul, Real.norm_ofNat]
+  rw [mgradient_norm_sq_model_space, norm_tangentSpace_vectorSpace,
+    NormedSpace.fromTangentSpace_apply]
+  -- The radial vector `2 • x` lies in `TangentSpace 𝓘(ℝ, F) x`, which is `F` by definition.
+  exact h
+
+/-- The gradient of the negated squared norm in the standard flat metric is `-2x`. -/
+@[simp]
+theorem mgradient_neg_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) :
+    let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
+      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
+    mgradient 𝓘(ℝ, F) (fun y : F ↦ -‖y‖ ^ 2) x = -((2 : ℝ) • x) := by
+  dsimp only
+  rw [← Pi.neg_def, mgradient_neg, mgradient_norm_sq_model_space]
+  -- The radial vector `2 • x` lies in `TangentSpace 𝓘(ℝ, F) x`, which is `F` by definition.
+  exact congrArg Neg.neg (ofNat_smul_eq_nsmul ℝ 2 x).symm
+
+/-- The gradient of the negated squared norm in the standard flat metric has length `2 ‖x‖`. -/
+theorem norm_mgradient_neg_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) :
+    let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
+      ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
+    ‖mgradient 𝓘(ℝ, F) (fun y : F ↦ -‖y‖ ^ 2) x‖ = 2 * ‖x‖ := by
+  dsimp only
+  rw [← Pi.neg_def, mgradient_neg, norm_neg, norm_mgradient_norm_sq_model_space]
 
 /-- A genuine nonzero linear defining functional has nonzero native metric gradient. -/
 theorem _root_.ContinuousLinearMap.mgradient_ne_zero {F : Type*} [NormedAddCommGroup F]
