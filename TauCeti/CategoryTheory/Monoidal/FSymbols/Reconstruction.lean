@@ -290,7 +290,7 @@ theorem homLinearEquiv_symm_apply {X Y : Model P} (f : X ⟶ Y) :
     (homLinearEquiv P S hEnd hOrth X Y).symm f = (functor P S).map f := (rfl)
 
 @[simp]
-theorem homLinearEquiv_map {X Y : Model P} (f : X ⟶ Y) :
+theorem homLinearEquiv_functor_map {X Y : Model P} (f : X ⟶ Y) :
     homLinearEquiv P S hEnd hOrth X Y ((functor P S).map f) = f := by
   rw [← homLinearEquiv_symm_apply P S hEnd hOrth]
   exact LinearEquiv.apply_symm_apply _ _
