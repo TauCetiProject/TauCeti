@@ -17,7 +17,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Restriction
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.L2Space.Basic
 
 /-!
 # First-order weak Sobolev spaces

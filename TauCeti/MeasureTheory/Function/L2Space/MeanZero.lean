@@ -84,7 +84,7 @@ theorem mem_meanZeroL2_iff {P : Measure X} [IsFiniteMeasure P] {𝕜 E : Type*} 
     f ∈ meanZeroL2 P 𝕜 ↔ ∫ x, f x ∂P = 0 := by
   rw [meanZeroL2_def, Submodule.mem_orthogonal]
   simp only [LinearMap.mem_range, Lp.constₗ_apply, forall_exists_index, forall_apply_eq_imp_iff,
-    L2.inner_const_eq_inner_integral]
+    L2.inner_const_left]
   exact ⟨fun h ↦ inner_self_eq_zero.mp (h _), fun h c ↦ by rw [h, inner_zero_right]⟩
 
 /-- The mean-zero subspace `L²₀(P)` is closed in `Lp E 2 P`. -/

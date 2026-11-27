@@ -43,13 +43,11 @@ More generally, the L² pairing of an L² function with the class of any square-
 function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`), also
 in the other order for an L² function given by an almost-everywhere representative
 (`MeasureTheory.L2.toLp_inner_of_ae_eq`). On a finite measure space the pairing of a constant
-class `c` with `f` is `⟪c, ∫ f⟫` (`MeasureTheory.L2.inner_const_left`). The zero class pairs to
+class `c` with `f` is `⟪c, ∫ f⟫` (`MeasureTheory.L2.inner_const_left`), and for the scalar
+constant `1` it equals `∫ f ∂μ` (`MeasureTheory.L2.inner_const_one`). The zero class pairs to
 zero with every function
 (`MeasureTheory.Lp.integral_inner_coeFn_zero_left`), and composition with a measure-preserving map
 preserves the L² inner product (`MeasureTheory.Lp.inner_compMeasurePreserving`).
-On a finite measure space, the L² inner product of a constant function `Lp.const 2 μ c` with `f`
-is `⟪c, ∫ f ∂μ⟫` (`MeasureTheory.L2.inner_const_eq_inner_integral`), and for the scalar constant
-`1` it equals `∫ f ∂μ` (`MeasureTheory.L2.inner_const_one`).
 An L² function orthogonal to every L² function vanishing outside a measurable set vanishes
 almost everywhere on that set (`MeasureTheory.L2.ae_restrict_eq_zero_of_forall_inner_eq_zero`).
 The second moment of a finite sum of pairwise orthogonal functions with values in a real inner
@@ -327,18 +325,11 @@ theorem Lp.integral_inner_coeFn_zero_left {p : ℝ≥0∞} (g : α → E) :
   rw [integral_congr_ae ((Lp.coeFn_zero E p μ).mono fun x hx ↦ by
     rw [hx, Pi.zero_apply, inner_zero_left]), integral_zero]
 
-/-- On a finite measure space, the `L²` inner product of a constant function `Lp.const 2 μ c` with
-`f` equals `⟪c, ∫ x, f x ∂μ⟫`. -/
-theorem L2.inner_const_eq_inner_integral [IsFiniteMeasure μ] [CompleteSpace E] [NormedSpace ℝ E]
-    (c : E) (f : Lp E 2 μ) :
-    ⟪Lp.const 2 μ c, f⟫_𝕜 = ⟪c, ∫ x, f x ∂μ⟫_𝕜 := by
-  rw [← indicatorConstLp_univ, L2.inner_indicatorConstLp_eq_inner_setIntegral, setIntegral_univ]
-
 /-- On a finite measure space, the `L²` inner product of the constant function `1` with a scalar
 `L²` function `f` is its integral. -/
 theorem L2.inner_const_one [IsFiniteMeasure μ] (f : Lp 𝕜 2 μ) :
     ⟪Lp.const 2 μ (1 : 𝕜), f⟫_𝕜 = ∫ x, f x ∂μ := by
-  rw [L2.inner_const_eq_inner_integral]
+  rw [L2.inner_const_left]
   simp
 
 /-- Composition with a measure-preserving map preserves the `L²` inner product. -/
