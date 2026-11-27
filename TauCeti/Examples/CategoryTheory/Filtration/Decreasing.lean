@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Filtration.Complete
 import TauCeti.RingTheory.Ideal.Operations
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.Ring.GeomSum
+import Mathlib.RingTheory.AdicCompletion.Noetherian
 import Mathlib.RingTheory.Multiplicity
 import Mathlib.Tactic.LinearCombination
 
@@ -24,9 +25,9 @@ lattice of submodules. Checks on `ℤ` as a `ℤ`-module:
 * the zero filtration `F^p = 0` is separated and not exhaustive
   (`isSeparated_const_bot`, `not_isExhaustive_const_bot`);
 * the `ℓ`-adic filtration `adicFiltration (Ideal.span {ℓ}) ℤ`, with `F^p = ℓ^p ℤ` for `p ≥ 0`,
-  and `ℤ` for `p ≤ 0`, is exhaustive (`isExhaustive_adicFiltration`), and separated for
-  `|ℓ| ≠ 1` (`isSeparated_adicFiltration`):
-  by Mathlib's `Int.finiteMultiplicity_iff`, an integer divisible by every power of `ℓ` is `0`.
+  and `ℤ` for `p ≤ 0`, is exhaustive (`CategoryTheory.FilteredObject.isExhaustive_adicFiltration`),
+  and separated for `|ℓ| ≠ 1` (`isSeparated_adicFiltration`): `ℤ` is `(ℓ)`-adically Hausdorff
+  (Mathlib's `IsHausdorff.of_isDomain`).
   For `ℓ ≥ 2` it is not complete (`not_isComplete_adicFiltration`): the partial sums
   `∑_{i < p} (-ℓ)^i` of the `ℓ`-adic expansion of `1 / (1 + ℓ)` are a compatible family in the
   quotients `ℤ / ℓ^p` that no integer represents.
@@ -66,20 +67,13 @@ theorem not_isExhaustive_const_bot :
 
 /-! ### The `ℓ`-adic filtration of `ℤ` -/
 
-/-- The `ℓ`-adic filtration of `ℤ` is exhaustive: its step `F^0` is `ℤ`. -/
-theorem isExhaustive_adicFiltration (ℓ : ℤ) :
-    (adicFiltration (Ideal.span {ℓ}) ℤ).IsExhaustive :=
-  FilteredObject.isExhaustive_adicFiltration _ _
-
-/-- The `ℓ`-adic filtration of `ℤ`, for `|ℓ| ≠ 1`, is separated: an integer divisible by every
-power of `ℓ` is `0`. -/
+/-- The `ℓ`-adic filtration of `ℤ`, for `|ℓ| ≠ 1`, is separated: `ℤ` is `(ℓ)`-adically
+Hausdorff, as `(ℓ)` is a proper ideal of a domain. -/
 theorem isSeparated_adicFiltration {ℓ : ℤ} (hℓ : ℓ.natAbs ≠ 1) :
-    (adicFiltration (Ideal.span {ℓ}) ℤ).IsSeparated := by
-  refine (isSeparated_ofSubmodules_iff_forall_mem _ _).2 fun n hn ↦ ?_
-  by_contra h0
-  refine FiniteMultiplicity.not_iff_forall.2 (fun k ↦ ?_) (Int.finiteMultiplicity_iff.2 ⟨hℓ, h0⟩)
-  have := hn (op (k : ℤ))
-  rwa [unop_op, Int.toNat_natCast, Ideal.mem_span_singleton_pow_smul_top_iff] at this
+    (adicFiltration (Ideal.span {ℓ}) ℤ).IsSeparated :=
+  have : IsHausdorff (Ideal.span {ℓ}) ℤ := .of_isDomain _ <| by
+    rwa [Ne, Ideal.span_singleton_eq_top, Int.isUnit_iff_natAbs_eq]
+  FilteredObject.isSeparated_adicFiltration _ _
 
 /-- The partial sums `sₖ = ∑_{i < k} (-ℓ)^i` of the `ℓ`-adic expansion of `1 / (1 + ℓ)`. -/
 private def adicPartialSum (ℓ : ℤ) (k : ℕ) : ℤ :=
