@@ -138,10 +138,12 @@ theorem spec_obj_obj (A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ) :
   (rfl)
 
 /-- The scheme over `Spec R` underlying the finite étale spectrum of `A` is `Spec A`, with the
-spectrum of the algebra map as structure morphism. -/
+spectrum of the algebra map as structure morphism: `TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk`
+transported along `spec_obj_obj`. Since `spec` is not exposed, that transport is not definitional
+outside this file, so later files use this isomorphism instead. -/
 noncomputable def specObjObjIso (A : CommAlgCat.FiniteEtale.{u} R) :
-    ((spec R).obj (op A)).obj ≅ Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R A.obj))) :=
-  Iso.refl _
+    ((spec R).obj (op A)).obj ≅ Over.mk (Spec.algebraMap R A.obj) :=
+  eqToIso (spec_obj_obj R (op A)) ≪≫ TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk A.obj
 
 /-- Under `specObjObjIso`, the finite étale spectrum of a morphism `f : A ⟶ B` of finite étale
 `R`-algebras is `Spec f`. -/
@@ -149,12 +151,16 @@ noncomputable def specObjObjIso (A : CommAlgCat.FiniteEtale.{u} R) :
 theorem spec_map_hom_comp_specObjObjIso_hom {A B : CommAlgCat.FiniteEtale.{u} R} (f : A ⟶ B) :
     ((spec R).map f.op).hom ≫ (specObjObjIso R A).hom =
       (specObjObjIso R B).hom ≫
-        Over.homMk (V := Over.mk (Spec.map (CommRingCat.ofHom (algebraMap R A.obj))))
+        Over.homMk (V := Over.mk (Spec.algebraMap R A.obj))
           (Spec.map (CommRingCat.ofHom (f.hom.hom : A.obj →+* B.obj))) (by
-          simp only [Over.mk_hom, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
+          simp only [Over.mk_hom, Spec.algebraMap, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
             AlgHom.comp_algebraMap]) :=
-  -- Both sides are `Spec f`, since `specObjObjIso` is the identity.
-  (Category.comp_id _).trans (Category.id_comp _).symm
+  -- On underlying schemes both sides are `Spec f`, since `specObjObjIso` is the identity there.
+  Over.OverMorphism.ext (by
+    simp only [specObjObjIso, Iso.trans_hom, eqToIso.hom, Over.comp_left, Over.eqToHom_left,
+      AlgebraicGeometry.algSpecObjIsoOverMk_hom_left, Over.homMk_left]
+    -- `spec_obj_obj` holds by `rfl` here, so both `eqToHom`s are identities.
+    exact (Category.comp_id _).trans (Category.id_comp _).symm)
 
 private theorem exists_spec_iso (X : FiniteEtaleScheme (Spec R)) :
     ∃ A : (CommAlgCat.FiniteEtale.{u} R)ᵒᵖ, Nonempty ((spec R).obj A ≅ X) := by
