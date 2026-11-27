@@ -28,12 +28,14 @@ the line under translation by one, and the hexagon `C₆` under the trivial grou
   `fun ω e => ω ((shift 1)⁻¹ • e)`, swaps the even and the odd edges
   (`evenConfig_shift_inv_smul_of_odd`), so it does not fix `δ_even`, which is dimer Gibbs
   (`isDimerGibbs_dirac_evenConfig`, `map_shift_one_dirac_evenConfig_ne`).
-* **A finite-group counterexample to the face property.** On the hexagon `C₆` with unit weights,
-  the only dimer Gibbs measure `(δ_{M_a} + δ_{M_b})/2` is the midpoint of `δ_{M_a}` and
-  `δ_{M_b}`, which are not dimer Gibbs (`not_isDimerGibbs_one_dirac_hexConfig`): the dimer Gibbs
-  measures do not form a face of the probability measures
-  (`not_isExtreme_setOf_isDimerGibbs_one_hexagon`). Under the trivial group every probability
-  measure is invariant, so they are not a face of the invariant probability measures either.
+* **A finite-group counterexample to the face property.** Let the trivial group act on the
+  hexagon `C₆` through the trivial homomorphism to its automorphism group, and on configurations
+  by `(g • ω) e = ω (g⁻¹ • e)`; being finite, it acts properly, and every probability measure is
+  invariant. With unit weights, the only dimer Gibbs measure `(δ_{M_a} + δ_{M_b})/2` is the
+  midpoint of the invariant probability measures `δ_{M_a}` and `δ_{M_b}`, which are not dimer
+  Gibbs (`not_isDimerGibbs_one_dirac_hexConfig`): the invariant dimer Gibbs measures do not form a
+  face of the invariant probability measures
+  (`not_isExtreme_inter_setOf_isDimerGibbs_one_hexagon`).
 -/
 
 public section
@@ -116,17 +118,35 @@ theorem map_shift_one_dirac_evenConfig_ne :
 
 /-! ### A finite-group counterexample to the face property -/
 
-/-- **The dimer Gibbs measures need not be a face.** With unit weights on the hexagon, the dimer
-Gibbs measures are not a face of the probability measures: the Gibbs measure
-`(δ_{M_a} + δ_{M_b})/2` lies in the open segment between `δ_{M_a}` and `δ_{M_b}`, which are not
-Gibbs (`not_isDimerGibbs_one_dirac_hexConfig`). Under the trivial group every probability measure
-is invariant, so they are not a face of the invariant probability measures either. -/
-theorem not_isExtreme_setOf_isDimerGibbs_one_hexagon :
-    ¬ IsExtreme ℝ≥0∞ {μ : Measure ((nnGraph (ZMod 6)).edgeSet → Bool) | IsProbabilityMeasure μ}
-      {μ | (nnGraph (ZMod 6)).IsDimerGibbs 1 μ} := fun h =>
-  not_isDimerGibbs_one_dirac_hexConfig true
-    (h.left_mem_of_mem_openSegment (by rw [mem_ofPred_eq]; infer_instance)
-      (by rw [mem_ofPred_eq]; infer_instance) isDimerGibbs_one_hexConfig
-      ⟨2⁻¹, 2⁻¹, by simp, by simp, ENNReal.inv_two_add_inv_two, rfl⟩)
+/-- The trivial group acts on the edges of the hexagon through the trivial homomorphism to the
+automorphism group of the hexagon. -/
+local instance : MulAction Unit (nnGraph (ZMod 6)).edgeSet :=
+  MulAction.compHom _ (1 : Unit →* (nnGraph (ZMod 6) ≃g nnGraph (ZMod 6)))
+
+/-- The trivial group acts on the configurations of the hexagon by `(g • ω) e = ω (g⁻¹ • e)`. -/
+local instance : MulAction Unit ((nnGraph (ZMod 6)).edgeSet → Bool) :=
+  arrowAction
+
+/-- **The invariant dimer Gibbs measures need not be a face when the group is finite.** With
+unit weights on the hexagon and the trivial group, the invariant dimer Gibbs measures are not a
+face of the invariant probability measures: the Gibbs measure `(δ_{M_a} + δ_{M_b})/2` lies in the
+open segment between the invariant probability measures `δ_{M_a}` and `δ_{M_b}`, which are not
+Gibbs (`not_isDimerGibbs_one_dirac_hexConfig`). -/
+theorem not_isExtreme_inter_setOf_isDimerGibbs_one_hexagon :
+    ¬ IsExtreme ℝ≥0∞
+      (TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq Unit
+        ((nnGraph (ZMod 6)).edgeSet → Bool) 1)
+      (TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq Unit
+        ((nnGraph (ZMod 6)).edgeSet → Bool) 1 ∩ {μ | (nnGraph (ZMod 6)).IsDimerGibbs 1 μ}) :=
+  fun h => by
+    have hmem (μ : Measure ((nnGraph (ZMod 6)).edgeSet → Bool)) (hμ : IsProbabilityMeasure μ) :
+        μ ∈ TauCeti.MeasureTheory.invariantMeasuresOfMeasureUnivEq Unit
+          ((nnGraph (ZMod 6)).edgeSet → Bool) 1 :=
+      TauCeti.MeasureTheory.mem_invariantMeasuresOfMeasureUnivEq_iff.2
+        ⟨⟨fun g s _ => by rw [Subsingleton.elim g 1]; simp⟩, measure_univ⟩
+    exact not_isDimerGibbs_one_dirac_hexConfig true
+      (h.left_mem_of_mem_openSegment (hmem _ inferInstance) (hmem _ inferInstance)
+        ⟨hmem _ isDimerGibbs_one_hexConfig.isProbabilityMeasure, isDimerGibbs_one_hexConfig⟩
+        ⟨2⁻¹, 2⁻¹, by simp, by simp, ENNReal.inv_two_add_inv_two, rfl⟩).2
 
 end TauCeti.Examples.DimerGibbsInvariant
