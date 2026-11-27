@@ -68,6 +68,10 @@ All declarations are in the namespace `TauCeti.Rotation`.
 * `etaPos_le_fract_sub_fract`, `etaNeg_le_fract_sub_fract`: for indices `i ≤ j < N`, the points
   of index `i` and `j` are at least `etaPos α N` apart when the point of index `j` is the
   larger, and at least `etaNeg α N` apart when it is the smaller.
+* `sub_eq_etaPos_of_add_lt`, `sub_eq_etaNeg_of_le`, `sub_eq_etaPos_add_etaNeg`: the gap from
+  the point of index `n` to the next point above it. It is `etaPos α N` when `n + r < N` for an
+  index `r` of the least positive point, it is `etaNeg α N` when `s ≤ n < N` for an index `s` of
+  the largest point, and it is `etaPos α N + etaNeg α N` when neither holds for any such index.
 * `sub_eq_etaPos_or_etaNeg_or_add`: the gap from a point `x` to the next point `y` above it is
   `etaPos α N`, `etaNeg α N` or `etaPos α N + etaNeg α N`.
 * `gaps_toFinset_subset`: **the three-gap theorem**, sharp form. Every gap is `etaPos α N`,
@@ -376,11 +380,11 @@ Let `r` be the least index of the least positive point `etaPos α N`, and `s` th
 the largest point `1 - etaNeg α N`. The gap from a point `x` to the next point `y` above it is
 `etaPos α N` if `x` has an index `n` with `n + r < N`, it is `etaNeg α N` if `x` has an index
 `n` with `s ≤ n`, and it is `etaPos α N + etaNeg α N` otherwise. In the last case no index `m` of
-`y` has `r ≤ m` or `m + s < N`, since `x` would then have the index `m - r` or `m + s`. -/
+`y` has `r ≤ m`, since `x` would then have the index `m - r`. -/
 
 /-- If a point has an index `n` such that `n + r` is still an index below `N`, where `r` is an
 index of the least positive point, then the gap from this point is `etaPos α N`. -/
-private theorem sub_eq_etaPos_of_add_lt {n r : ℕ} {y : ℝ} (hr : Int.fract (r * α) = etaPos α N)
+theorem sub_eq_etaPos_of_add_lt {n r : ℕ} {y : ℝ} (hr : Int.fract (r * α) = etaPos α N)
     (hnr : n + r < N)
     (hy : IsLeast ((orbitFract α N : Set ℝ) ∩ Set.Ioi (Int.fract (n * α))) y) :
     y - Int.fract (n * α) = etaPos α N := by
@@ -427,7 +431,7 @@ private theorem sub_eq_etaPos_of_add_lt {n r : ℕ} {y : ℝ} (hr : Int.fract (r
 
 /-- If a point has an index `n` with `s ≤ n`, where `s` is an index of the largest point, and it
 is not the largest point, then the gap from this point is `etaNeg α N`. -/
-private theorem sub_eq_etaNeg_of_le {n s : ℕ} {y : ℝ} (hs : Int.fract (s * α) = 1 - etaNeg α N)
+theorem sub_eq_etaNeg_of_le {n s : ℕ} {y : ℝ} (hs : Int.fract (s * α) = 1 - etaNeg α N)
     (hsn : s ≤ n) (hn : n < N)
     (hy : IsLeast ((orbitFract α N : Set ℝ) ∩ Set.Ioi (Int.fract (n * α))) y) :
     y - Int.fract (n * α) = etaNeg α N := by
@@ -471,34 +475,6 @@ private theorem fract_natCast_sub_mul_eq_of_isLeast {m r : ℕ} {x : ℝ}
   · rw [h]
   · by_contra hne
     have := etaPos_le_fract_sub_fract (i := m - r) (j := n) h.le hn (lt_of_le_of_ne h3 hne)
-    linarith
-
-/-- If the point `y` next above the point `x` has an index `m` such that `m + s` is still an
-index below `N`, where `s` is an index of the largest point, then `x` has the index `m + s`. -/
-private theorem fract_natCast_add_mul_eq_of_isLeast {m s : ℕ} {x : ℝ}
-    (hs : Int.fract (s * α) = 1 - etaNeg α N) (hms : m + s < N) (hx : x ∈ orbitFract α N)
-    (hy : IsLeast ((orbitFract α N : Set ℝ) ∩ Set.Ioi x) (Int.fract (m * α))) :
-    Int.fract (↑(m + s) * α) = x := by
-  obtain ⟨n, hn, rfl⟩ := mem_orbitFract.1 hx
-  have hxy : Int.fract (n * α) < Int.fract (m * α) := hy.1.2
-  have hb := etaNeg_pos α N
-  have hn0 := Int.fract_nonneg (n * α)
-  have h1 : 1 ≤ Int.fract (m * α) + Int.fract (s * α) := by
-    by_contra h
-    have h2 := Int.fract_natCast_add_mul_of_lt (not_le.1 h)
-    have := le_one_sub_etaNeg_of_mem (fract_natCast_mul_mem_orbitFract α hms)
-    linarith
-  have h2 := Int.fract_natCast_add_mul_of_le h1
-  have h3 : Int.fract (↑(m + s) * α) ≤ Int.fract (n * α) := by
-    by_contra h
-    have := hy.2 ⟨mem_coe.2 (fract_natCast_mul_mem_orbitFract α hms), not_le.1 h⟩
-    linarith
-  rcases lt_trichotomy n (m + s) with h | h | h
-  · by_contra hne
-    have := etaNeg_le_fract_sub_fract (i := n) (j := m + s) h.le hms (lt_of_le_of_ne h3 hne)
-    linarith
-  · rw [h]
-  · have := etaNeg_le_fract_sub_fract (i := m) (j := n) (by omega) hn hxy
     linarith
 
 /-- Let `r` be the least index of the least positive point and `s` an index of the largest
@@ -576,45 +552,63 @@ private theorem etaPos_add_etaNeg_le_fract_sub_fract {n m r s : ℕ}
         (fract_natCast_mul_mem_orbitFract α (N := N) (n := s - (n - m)) (by omega)) h4
       linarith
 
+/-- If a point has an index `n` such that `n + r` is not an index below `N` for any index `r` of
+the least positive point, and such that `n < s` for every index `s` of the largest point, then
+the gap from this point is `etaPos α N + etaNeg α N`. -/
+theorem sub_eq_etaPos_add_etaNeg {n : ℕ} {y : ℝ}
+    (hr : ∀ j : ℕ, Int.fract (j * α) = etaPos α N → N ≤ n + j)
+    (hs : ∀ j : ℕ, Int.fract (j * α) = 1 - etaNeg α N → n < j)
+    (hy : IsLeast ((orbitFract α N : Set ℝ) ∩ Set.Ioi (Int.fract (n * α))) y) :
+    y - Int.fract (n * α) = etaPos α N + etaNeg α N := by
+  obtain ⟨m, hm, rfl⟩ := mem_orbitFract.1 (mem_coe.1 hy.1.1)
+  -- Let `r` and `s` be the least indices of the least positive point and of the largest point.
+  obtain ⟨s₀, hs₀N, hs₀⟩ :=
+    mem_orbitFract.1 (mem_coe.1 (isGreatest_one_sub_etaNeg α (Nat.zero_lt_of_lt hm)).1)
+  have hx := fract_natCast_mul_mem_orbitFract α ((hs s₀ hs₀).trans hs₀N)
+  have hcard : 2 ≤ #(orbitFract α N) :=
+    one_lt_card.2 ⟨_, hx, _, mem_coe.1 hy.1.1, (Set.mem_Ioi.1 hy.1.2).ne⟩
+  obtain ⟨r₀, hr₀N, hr₀⟩ := mem_orbitFract.1 (mem_coe.1 (isLeast_etaPos hcard).1.1)
+  have hexr : ∃ j : ℕ, Int.fract (j * α) = etaPos α N := ⟨r₀, hr₀⟩
+  have hexs : ∃ j : ℕ, Int.fract (j * α) = 1 - etaNeg α N := ⟨s₀, hs₀⟩
+  obtain ⟨r, hr', hrmin⟩ : ∃ r : ℕ, Int.fract (r * α) = etaPos α N ∧
+      ∀ j : ℕ, Int.fract (j * α) = etaPos α N → r ≤ j :=
+    ⟨Nat.find hexr, Nat.find_spec hexr, fun j hj => Nat.find_min' hexr hj⟩
+  obtain ⟨s, hs', hsmin⟩ : ∃ s : ℕ, Int.fract (s * α) = 1 - etaNeg α N ∧
+      ∀ j : ℕ, Int.fract (j * α) = 1 - etaNeg α N → s ≤ j :=
+    ⟨Nat.find hexs, Nat.find_spec hexs, fun j hj => Nat.find_min' hexs hj⟩
+  have hrN : r < N := (hrmin r₀ hr₀).trans_lt hr₀N
+  have hsN : s < N := (hsmin s₀ hs₀).trans_lt hs₀N
+  have hns : n < s := hs s hs'
+  have hnr : N ≤ n + r := hr r hr'
+  -- No index `m` of `y` has `r ≤ m`: the point of index `n` would have the index `m - r` too,
+  -- and the point of index `s - (n - (m - r))` would be the largest point.
+  have hmr : m < r := by
+    by_contra hC
+    have h := fract_natCast_sub_mul_eq_of_isLeast hr' (not_lt.1 hC) hm hx hy
+    have h0 := Int.fract_natCast_sub_mul_of_le (a := α) (i := m - r) (j := n) (by omega) h.le
+    rw [h, sub_self] at h0
+    have h1 := Int.fract_natCast_sub_mul_of_le (a := α) (i := n - (m - r)) (j := s) (by omega)
+      (by rw [h0]; exact Int.fract_nonneg _)
+    have := hsmin _ (by rw [h1, h0, sub_zero, hs'])
+    omega
+  exact le_antisymm (sub_le_etaPos_add_etaNeg hr' hrmin hs' hrN hsN hns hnr hy)
+    (etaPos_add_etaNeg_le_fract_sub_fract hr' hrmin hs' hsmin hrN hsN hns hmr hy.1.2)
+
 /-- The gap from a point `x` of the orbit to the next point `y` above it is `etaPos α N`,
 `etaNeg α N` or `etaPos α N + etaNeg α N`. -/
 theorem sub_eq_etaPos_or_etaNeg_or_add {x y : ℝ} (hx : x ∈ orbitFract α N)
     (hy : IsLeast ((orbitFract α N : Set ℝ) ∩ Set.Ioi x) y) :
     y - x = etaPos α N ∨ y - x = etaNeg α N ∨ y - x = etaPos α N + etaNeg α N := by
   obtain ⟨n, hn, rfl⟩ := mem_orbitFract.1 hx
-  obtain ⟨m, hm, rfl⟩ := mem_orbitFract.1 (mem_coe.1 hy.1.1)
-  have hcard : 2 ≤ #(orbitFract α N) :=
-    one_lt_card.2 ⟨_, hx, _, mem_coe.1 hy.1.1, (Set.mem_Ioi.1 hy.1.2).ne⟩
-  -- Let `r` and `s` be the least indices of the least positive point and of the largest point.
-  obtain ⟨r₀, hr₀N, hr₀⟩ := mem_orbitFract.1 (mem_coe.1 (isLeast_etaPos hcard).1.1)
-  obtain ⟨s₀, hs₀N, hs₀⟩ :=
-    mem_orbitFract.1 (mem_coe.1 (isGreatest_one_sub_etaNeg α (Nat.zero_lt_of_lt hn)).1)
-  have hexr : ∃ j : ℕ, Int.fract (j * α) = etaPos α N := ⟨r₀, hr₀⟩
-  have hexs : ∃ j : ℕ, Int.fract (j * α) = 1 - etaNeg α N := ⟨s₀, hs₀⟩
-  obtain ⟨r, hr, hrmin⟩ : ∃ r : ℕ, Int.fract (r * α) = etaPos α N ∧
-      ∀ j : ℕ, Int.fract (j * α) = etaPos α N → r ≤ j :=
-    ⟨Nat.find hexr, Nat.find_spec hexr, fun j hj => Nat.find_min' hexr hj⟩
-  obtain ⟨s, hs, hsmin⟩ : ∃ s : ℕ, Int.fract (s * α) = 1 - etaNeg α N ∧
-      ∀ j : ℕ, Int.fract (j * α) = 1 - etaNeg α N → s ≤ j :=
-    ⟨Nat.find hexs, Nat.find_spec hexs, fun j hj => Nat.find_min' hexs hj⟩
-  have hrN : r < N := (hrmin r₀ hr₀).trans_lt hr₀N
-  have hsN : s < N := (hsmin s₀ hs₀).trans_lt hs₀N
-  by_cases hA : n + r < N
-  · exact Or.inl (sub_eq_etaPos_of_add_lt hr hA hy)
-  by_cases hB : s ≤ n
-  · exact Or.inr (Or.inl (sub_eq_etaNeg_of_le hs hB hn hy))
-  by_cases hC : r ≤ m
-  · have h := fract_natCast_sub_mul_eq_of_isLeast hr hC hm hx hy
-    rw [← h] at hy ⊢
-    exact Or.inl (sub_eq_etaPos_of_add_lt hr (by omega) hy)
-  by_cases hD : m + s < N
-  · have h := fract_natCast_add_mul_eq_of_isLeast hs hD hx hy
-    rw [← h] at hy ⊢
-    exact Or.inr (Or.inl (sub_eq_etaNeg_of_le hs (Nat.le_add_left s m) hD hy))
-  exact Or.inr (Or.inr (le_antisymm
-    (sub_le_etaPos_add_etaNeg hr hrmin hs hrN hsN (by omega) (by omega) hy)
-    (etaPos_add_etaNeg_le_fract_sub_fract hr hrmin hs hsmin hrN hsN (by omega) (by omega)
-      hy.1.2)))
+  by_cases hA : ∃ r : ℕ, Int.fract (r * α) = etaPos α N ∧ n + r < N
+  · obtain ⟨r, hr, hnr⟩ := hA
+    exact Or.inl (sub_eq_etaPos_of_add_lt hr hnr hy)
+  by_cases hB : ∃ s : ℕ, Int.fract (s * α) = 1 - etaNeg α N ∧ s ≤ n
+  · obtain ⟨s, hs, hsn⟩ := hB
+    exact Or.inr (Or.inl (sub_eq_etaNeg_of_le hs hsn hn hy))
+  exact Or.inr (Or.inr (sub_eq_etaPos_add_etaNeg
+    (fun j hj => not_lt.1 fun h => hA ⟨j, hj, h⟩) (fun j hj => not_le.1 fun h => hB ⟨j, hj, h⟩)
+    hy))
 
 /-- **The three-gap theorem**, in its sharp form: every gap is one of `etaPos α N`, `etaNeg α N`
 and `etaPos α N + etaNeg α N`. This holds for every real `α`, rational or not, and for every
