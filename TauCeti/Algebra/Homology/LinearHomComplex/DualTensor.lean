@@ -123,14 +123,6 @@ lemma cochainFromTensorUnitLinearEquiv_apply (K : CochainComplex (ModuleCat.{v} 
         z.v 0 n (zero_add n)).hom 1 :=
   (rfl)
 
-/-- The identification `HomologicalComplex.singleObjXSelf` of the degree-zero term of the single
-cochain complex on a module `A` with `A` is the identity on elements: that term is `A` itself, by
-definition of `HomologicalComplex.single` at its own index. -/
-@[simp]
-lemma singleObjXSelf_inv_apply (A : ModuleCat.{v} R) (a : A) :
-    (HomologicalComplex.singleObjXSelf (.up ℤ) 0 A).inv a = a :=
-  (rfl)
-
 /-- The tensor unit `𝟙_ (ModuleCat R)` is the module `ModuleCat.of R R`, so the identifications
 `HomologicalComplex.singleObjXSelf` of the degree-zero term of the single complexes on the two
 cancel, although the two single complexes are presented differently. -/

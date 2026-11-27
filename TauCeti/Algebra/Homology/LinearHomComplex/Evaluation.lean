@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.Embedding.Restriction.Basic
 public import TauCeti.Algebra.Homology.LinearHomComplex.ExactPairing
 public import TauCeti.Algebra.Homology.LinearHomComplex.Regrade
+public import TauCeti.Algebra.Homology.ModuleCat.Single
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Regrade
 
 /-!
@@ -261,7 +262,7 @@ private theorem regradeLinearDualIso_hom_whiskerRight_comp_regradeTensorHom_comp
     ((K.XIsoOfEq (show n - -a = -(-n - a) by omega)).hom.hom y)
   rw [hα, hy] at hg
   rw [hg, Units.smul_def (a * n).negOnePow, smul_smul, negOnePow_mul_negOnePow_eq,
-    TauCeti.singleObjXSelf_inv_apply, CochainComplex.linearDualXEquiv_apply,
+    HomologicalComplex.singleObjXSelf_inv_apply, CochainComplex.linearDualXEquiv_apply,
     TauCeti.cochainToTensorUnitLinearEquiv_apply]
 
 /-- **The evaluations of the two gradings differ by `(-1)^n`.** The regrading by `-n + n` of the
