@@ -28,7 +28,9 @@ of real dimension two, this symbol is bijective at every nonzero real covector b
 `cauchyRiemannSymbolAntilinear_bijective`.
 These statements do not require `u` to be immersive; for an embedding the quotient is its
 normal fiber. Global bundle gluing, Sobolev realizations and Fredholm theory are not asserted
-here. The source endomorphism is constant, as in a holomorphic coordinate on a Riemann surface.
+here. The linearization freezes the source endomorphism at `x`, as in a holomorphic coordinate on
+a Riemann surface; for the reparametrization statements the curve may be J-holomorphic for a
+source structure varying with the point and differentiable at `x`, as in an arbitrary chart.
 
 We use the unnormalized defect `du ∘ j - J(u) ∘ du` of
 `cauchyRiemannOperator`, rather than the normalized anti-complex-linear differential.
@@ -87,35 +89,36 @@ theorem normalCauchyRiemannLinearization_smul
   ext v
   simp [cauchyRiemannLinearization_smul]
 
-/-- For `u` C² at `x` and J-holomorphic near `x`, with `J` differentiable at `u x`,
-infinitesimal reparametrizations differentiable at `x` vanish in the normal quotient. -/
+/-- For `u` C² at `x` and J-holomorphic near `x` for a source structure `j` differentiable at `x`,
+with `J` differentiable at `u x`, infinitesimal reparametrizations differentiable at `x` vanish in
+the normal quotient of the linearization with the source structure frozen at `j x`. -/
 @[simp]
 theorem normalCauchyRiemannLinearization_fderiv_apply
-    (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (a : U → U) (x : U)
-    (hu : ContDiffAt ℝ 2 u x) (ha : DifferentiableAt ℝ a x)
+    (j : U → U →L[ℝ] U) (J : V → V →L[ℝ] V) (u : U → V) (a : U → U) (x : U)
+    (hu : ContDiffAt ℝ 2 u x) (ha : DifferentiableAt ℝ a x) (hj : DifferentiableAt ℝ j x)
     (hJ : DifferentiableAt ℝ J (u x))
-    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator j J u y = 0) :
-    normalCauchyRiemannLinearization j J u (fun y ↦ fderiv ℝ u y (a y)) x = 0 := by
+    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator (j y) J u y = 0) :
+    normalCauchyRiemannLinearization (j x) J u (fun y ↦ fderiv ℝ u y (a y)) x = 0 := by
   ext v
   rw [normalCauchyRiemannLinearization_apply,
-    cauchyRiemannLinearization_fderiv_apply j J u a x v hu ha hJ hhol]
+    cauchyRiemannLinearization_fderiv_apply j J u a x v hu ha hj hJ hhol]
   rw [LinearMap.zero_apply, Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
   exact LinearMap.mem_range_self _ _
 
-/-- For `u` C² at `x` and J-holomorphic near `x`, with `J` differentiable at `u x`,
-adding `du · a` to a differentiable ambient lift does not change the normal linearization,
-provided `a` is differentiable at `x`. This is lift invariance modulo differentiable
-infinitesimal reparametrizations. -/
+/-- For `u` C² at `x` and J-holomorphic near `x` for a source structure `j` differentiable at `x`,
+with `J` differentiable at `u x`, adding `du · a` to a differentiable ambient lift does not change
+the normal linearization with the source structure frozen at `j x`, provided `a` is differentiable
+at `x`. This is lift invariance modulo differentiable infinitesimal reparametrizations. -/
 theorem normalCauchyRiemannLinearization_add_fderiv_apply
-    (j : U →L[ℝ] U) (J : V → V →L[ℝ] V) (u ξ : U → V) (a : U → U) (x : U)
+    (j : U → U →L[ℝ] U) (J : V → V →L[ℝ] V) (u ξ : U → V) (a : U → U) (x : U)
     (hu : ContDiffAt ℝ 2 u x) (hξ : DifferentiableAt ℝ ξ x)
-    (ha : DifferentiableAt ℝ a x) (hJ : DifferentiableAt ℝ J (u x))
-    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator j J u y = 0) :
-    normalCauchyRiemannLinearization j J u (ξ + fun y ↦ fderiv ℝ u y (a y)) x =
-      normalCauchyRiemannLinearization j J u ξ x := by
+    (ha : DifferentiableAt ℝ a x) (hj : DifferentiableAt ℝ j x) (hJ : DifferentiableAt ℝ J (u x))
+    (hhol : ∀ᶠ y in 𝓝 x, cauchyRiemannOperator (j y) J u y = 0) :
+    normalCauchyRiemannLinearization (j x) J u (ξ + fun y ↦ fderiv ℝ u y (a y)) x =
+      normalCauchyRiemannLinearization (j x) J u ξ x := by
   have hdu := (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  simp only [normalCauchyRiemannLinearization_add j J u ξ _ x hξ (hdu.clm_apply ha),
-    normalCauchyRiemannLinearization_fderiv_apply j J u a x hu ha hJ hhol, add_zero]
+  simp only [normalCauchyRiemannLinearization_add (j x) J u ξ _ x hξ (hdu.clm_apply ha),
+    normalCauchyRiemannLinearization_fderiv_apply j J u a x hu ha hj hJ hhol, add_zero]
 
 /-- The first-order symbol on the normal quotient, read from the Leibniz rule. -/
 theorem normalCauchyRiemannLinearization_fun_smul

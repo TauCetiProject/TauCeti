@@ -10,6 +10,9 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CauchyRiemann.Basic
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Linearization
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.NormalBundle
+import TauCeti.Analysis.Calculus.LeftInverseAlong
+import TauCeti.Geometry.Manifold.MFDeriv.Coordinates
+import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Coordinates
 import TauCeti.Geometry.Symplectic.Manifold.CauchyRiemann
 import TauCeti.Geometry.Manifold.VectorBundle.ComplexStructure
 
@@ -61,11 +64,18 @@ complex charts is differentiable as a section of the real normal bundle
 the chart centre (`TauCeti.SmoothEmbedding.differentiableAt_normalChartLift`). This is where the
 embedding is assumed `C²` and the metric `C¹`.
 
-**The choice of lift.** The lift fixes the ambient metric. Two lifts of the same normal section
-differ by a tangent vector field `du · a`, and the normal class of `L (du · a)` vanishes at a
-pseudoholomorphic map, so the operator does not depend on the metric; this independence is not
-proved here. For a source structure that is constant in the chart, the vanishing of the normal
-class of `L (du · a)` is `TauCeti.normalCauchyRiemannLinearization_add_fderiv_apply`.
+**The choice of lift.** The lift fixes the ambient metric, but the operator does not depend on
+it. Let `ξ` be any vector field along `u`, differentiable at the chart centre, that lifts `ν` near
+`x`. Near the centre, `ξ` and the chart lift differ by a vector in the range of `du`, so their
+difference is `du · a` for a vector field `a` differentiable at the centre, by a differentiable
+family of left inverses of `du` (`DifferentiableAt.exists_differentiableAt_eventually_eq_apply`).
+Near the centre `u` solves the Cauchy–Riemann equation for the source structure `j` read in the
+chart at `x` (`TauCeti.eventually_cauchyRiemannOperator_writtenInExtChartAt_eq_zero`), so
+`L (du · a)` is tangent, `du (da ∘ j_x - j_x ∘ da - ∂_a j)`
+(`TauCeti.cauchyRiemannLinearization_fderiv_apply`). Hence `[L ξ] = [L ν]`
+(`TauCeti.SmoothEmbedding.normalClass_cauchyRiemannLinearization_eq_of_lift`),
+and the operators built from two `C¹` metrics agree on sections differentiable at the point
+(`TauCeti.SmoothEmbedding.normalCauchyRiemannOperator_eq_of_riemannianBundle`).
 
 ## Main definitions
 
@@ -81,6 +91,11 @@ class of `L (du · a)` is `TauCeti.normalCauchyRiemannLinearization_add_fderiv_a
 * `TauCeti.SmoothEmbedding.isRealCauchyRiemannOperator_normalCauchyRiemannOperator`: the normal
   Cauchy–Riemann operator of a `C²` pseudoholomorphic embedding is a real Cauchy–Riemann operator
   on its complex normal bundle.
+* `TauCeti.SmoothEmbedding.normalClass_cauchyRiemannLinearization_eq_of_lift`:
+  the normal class of the linearization in the direction of any differentiable lift of a normal
+  section is that of the chart linearization.
+* `TauCeti.SmoothEmbedding.normalCauchyRiemannOperator_eq_of_riemannianBundle`: the normal
+  Cauchy–Riemann operator does not depend on the metric on the target.
 
 ## References
 
@@ -159,6 +174,21 @@ theorem normalChartLift_extChartAt (ν : Π x, f.isImmersion.NormalSpace x hn) (
   rw [normalChartLift, extChartAt_to_inv]
   -- The tangent trivialization at `f x`, read at `f x`, is the identity coordinate change.
   exact tangentCoordChange_self (I := I') (mem_extChartAt_source (f x))
+
+/-- The chart lift lifts the normal section: at a chart point `z` whose point `y` is mapped into
+the chart at `f x`, the tangent vector at `f y` with coordinates the chart lift at `z` has normal
+class `ν y`. -/
+theorem normalClass_trivializationAt_symm_normalChartLift (ν : Π x, f.isImmersion.NormalSpace x hn)
+    {x : M} {z : E} (hz : f ((extChartAt I x).symm z) ∈ (chartAt H' (f x)).source) :
+    f.isImmersion.normalClass ((extChartAt I x).symm z) hn
+        ((trivializationAt V (TangentSpace I') (f x)).symm (f ((extChartAt I x).symm z))
+          (f.normalChartLift hn ν x z)) =
+      ν ((extChartAt I x).symm z) := by
+  have hb : f ((extChartAt I x).symm z) ∈ (trivializationAt V (TangentSpace I') (f x)).baseSet := by
+    rw [TangentBundle.trivializationAt_baseSet]
+    exact hz
+  rw [normalChartLift_apply, (trivializationAt V (TangentSpace I') (f x)).symm_apply_apply_mk hb,
+    normalClass_normalRepresentative]
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ P] [IsManifold I ∞ M]
 
@@ -317,6 +347,36 @@ theorem normalChartLinearization_smul_apply {x : M} {g : M → ℝ}
   rw [← j.inChart_extChartAt_self, ← J.inChart_extChartAt_self]
   exact h
 
+omit [I.Boundaryless] [I'.Boundaryless] [RiemannianBundle (fun y : X ↦ TangentSpace I' y)] in
+/-- A section of the complex normal bundle that is differentiable at `x` is differentiable at `x`
+as a section of the real normal bundle. -/
+private theorem mdifferentiableAt_fiberEquiv (h2 : 2 ≤ n)
+    (hdim : finrank ℝ P = finrank ℝ V - finrank ℝ E)
+    (hJ : ∀ x, MapsTo (J (f x)) (f.isImmersion.tangentRange x hn)
+      (f.isImmersion.tangentRange x hn))
+    {ν : letI := f.normalSpaceFiberBundle hn hdim
+      letI := f.normalSpaceVectorBundle hn hdim
+      Π x, (f.normalComplexStructure hn J hdim hJ).Fiber x} {x : M}
+    (hν : letI := f.normalSpaceFiberBundle hn hdim
+      letI := f.normalSpaceVectorBundle hn hdim
+      MDifferentiableAt I (I.prod 𝓘(ℝ, G)) (fun y ↦ TotalSpace.mk' G y (ν y)) x) :
+    letI := f.normalSpaceFiberBundle hn hdim
+    letI := f.normalSpaceVectorBundle hn hdim
+    MDifferentiableAt I (I.prod 𝓘(ℝ, P)) (fun y ↦ TotalSpace.mk' P y
+      ((f.normalComplexStructure hn J hdim hJ).fiberEquiv y (ν y))) x := by
+  let := f.normalSpaceFiberBundle hn hdim
+  let := f.normalSpaceVectorBundle hn hdim
+  have hJN := ((f.contMDiff_normalComplexStructureAt_hom_bundle (m := 1) hn J
+    (by rw [one_add_one_eq_two]; exact h2) hdim hJ) x).mdifferentiableAt one_ne_zero
+  -- `J_N` as a section of the endomorphism bundle, read as the normal complex structures.
+  have hJN' : MDifferentiableAt I (I.prod 𝓘(ℝ, P →L[ℝ] P))
+      (fun b ↦ TotalSpace.mk' (P →L[ℝ] P)
+        (E := fun b ↦ f.isImmersion.NormalSpace b hn →L[ℝ] f.isImmersion.NormalSpace b hn) b
+        (f.normalComplexStructure hn J hdim hJ b)) x := by
+    convert hJN using 3 with b
+    exact ContinuousLinearMap.ext fun w ↦ normalComplexStructure_apply f hn J hdim hJ b w
+  exact (f.normalComplexStructure hn J hdim hJ).mdifferentiableAt_totalSpace_fiberEquiv G hJN' hν
+
 variable [IsContMDiffRiemannianBundle I' 1 V (fun y : X ↦ TangentSpace I' y)]
 
 omit [I'.Boundaryless] in
@@ -336,20 +396,8 @@ private theorem differentiableAt_normalChartLift_fiberEquiv (h2 : 2 ≤ n)
     letI := f.normalSpaceVectorBundle hn hdim
     DifferentiableAt ℝ (f.normalChartLift hn
       (fun y ↦ (f.normalComplexStructure hn J hdim hJ).fiberEquiv y (ν y)) x)
-      (extChartAt I x x) := by
-  let := f.normalSpaceFiberBundle hn hdim
-  let := f.normalSpaceVectorBundle hn hdim
-  have hJN := ((f.contMDiff_normalComplexStructureAt_hom_bundle (m := 1) hn J
-    (by rw [one_add_one_eq_two]; exact h2) hdim hJ) x).mdifferentiableAt one_ne_zero
-  -- `J_N` as a section of the endomorphism bundle, read as the normal complex structures.
-  have hJN' : MDifferentiableAt I (I.prod 𝓘(ℝ, P →L[ℝ] P))
-      (fun b ↦ TotalSpace.mk' (P →L[ℝ] P)
-        (E := fun b ↦ f.isImmersion.NormalSpace b hn →L[ℝ] f.isImmersion.NormalSpace b hn) b
-        (f.normalComplexStructure hn J hdim hJ b)) x := by
-    convert hJN using 3 with b
-    exact ContinuousLinearMap.ext fun w ↦ normalComplexStructure_apply f hn J hdim hJ b w
-  exact differentiableAt_normalChartLift h2 hdim
-    ((f.normalComplexStructure hn J hdim hJ).mdifferentiableAt_totalSpace_fiberEquiv G hJN' hν)
+      (extChartAt I x x) :=
+  differentiableAt_normalChartLift h2 hdim (mdifferentiableAt_fiberEquiv h2 hdim hJ hν)
 
 variable (P G) in
 /-- **The normal Cauchy–Riemann operator is a real Cauchy–Riemann operator.** For a `C²`
@@ -405,6 +453,197 @@ theorem isRealCauchyRiemannOperator_normalCauchyRiemannOperator (h2 : 2 ≤ n)
       ← normalComplexStructureAt_normalClass (hJ x),
       normalComplexStructureAt_normalComplexStructureAt]
     module
+
+/-! ### Independence of the lift -/
+
+omit [FiniteDimensional ℝ E] [I'.Boundaryless]
+  [IsContMDiffRiemannianBundle I' 1 V (fun y : X ↦ TangentSpace I' y)] in
+/-- Near the chart centre, a vector field `ξ` along the coordinate expression of `f` that lifts
+the normal section `ν` differs from the chart lift of `ν` by a vector in the range of the derivative
+of the coordinate expression. -/
+private theorem eventually_sub_normalChartLift_mem_range
+    {ν : Π x, f.isImmersion.NormalSpace x hn} {x : M} {ξ : E → V}
+    (hlift : ∀ᶠ z in 𝓝 (extChartAt I x x),
+      f.isImmersion.normalClass ((extChartAt I x).symm z) hn
+        ((trivializationAt V (TangentSpace I') (f x)).symm (f ((extChartAt I x).symm z)) (ξ z)) =
+        ν ((extChartAt I x).symm z)) :
+    ∀ᶠ z in 𝓝 (extChartAt I x x), (ξ - f.normalChartLift hn ν x) z ∈
+      Set.range (fderiv ℝ (writtenInExtChartAt I I' x f) z) := by
+  have hsymm := continuousAt_extChartAt_symm (I := I) x
+  have hsrc : (f : M → X) ⁻¹' (chartAt H' (f x)).source ∈
+      𝓝 ((extChartAt I x).symm (extChartAt I x x)) := by
+    rw [extChartAt_to_inv]
+    exact f.contMDiff.continuous.continuousAt.preimage_mem_nhds
+      ((chartAt H' (f x)).open_source.mem_nhds (mem_chart_source H' (f x)))
+  filter_upwards [extChartAt_target_mem_nhds (I := I) x, hsymm.preimage_mem_nhds hsrc, hlift]
+    with z hz hzf hzν
+  set y := (extChartAt I x).symm z
+  set T := trivializationAt V (TangentSpace I') (f x)
+  have hy : y ∈ (chartAt H x).source := by
+    rw [← extChartAt_source I]
+    exact (extChartAt I x).map_target hz
+  have hb : f y ∈ T.baseSet := by
+    rw [TangentBundle.trivializationAt_baseSet]
+    exact hzf
+  set e := T.continuousLinearEquivAt ℝ (f y) hb
+  -- In the trivialization at `f x`, `ξ z` and the chart lift are the coordinates of two ambient
+  -- vectors at `f y` with the same normal class, whose difference is tangent.
+  have hξz : ξ z = e (T.symm (f y) (ξ z)) := by
+    rw [← Trivialization.continuousLinearEquivAt_symm_apply ℝ _ _ hb,
+      ContinuousLinearEquiv.apply_symm_apply]
+  have hℓz : f.normalChartLift hn ν x z = e (f.normalRepresentative y hn (ν y)) := by
+    rw [normalChartLift_apply, Trivialization.continuousLinearEquivAt_apply]
+  have hmem : T.symm (f y) (ξ z) - f.normalRepresentative y hn (ν y) ∈
+      f.isImmersion.tangentRange y hn := by
+    rw [← Manifold.IsImmersion.normalClass_eq_iff, normalClass_normalRepresentative]
+    exact hzν
+  have hrange := f.map_tangentRange_inTangentCoordinates hn hy hzf
+  rw [← (f.contMDiff.mdifferentiableAt (by simpa using hn) :
+      MDifferentiableAt I I' f y).fderiv_writtenInExtChartAt_eq_inTangentCoordinates hy hzf,
+    (extChartAt I x).right_inv hz] at hrange
+  have he := Submodule.mem_map_of_mem (f := e.toLinearMap) hmem
+  rw [hrange] at he
+  obtain ⟨w, hw⟩ := he
+  refine ⟨w, ?_⟩
+  rw [Pi.sub_apply, hξz, hℓz, ← map_sub]
+  exact hw
+
+/-- **The normal linearization does not depend on the lift.** Let `f` be a `C²` embedding,
+pseudoholomorphic near `x`, and `ξ` a vector field along its coordinate expression `u` in the
+charts at `x` and `f x`, differentiable at the chart centre, that lifts the normal section `ν` near
+`x`: at each chart point `z` near the centre, the tangent vector at `f y`, `y = φ⁻¹ z`, with
+coordinates `ξ z` in the trivialization at `f x` has normal class `ν y`. Then the linearization of
+the Cauchy–Riemann defect of `u` in the direction `ξ`, at the chart centre, has the same normal
+class as the chart linearization of `ν`, which uses the orthogonal lift. -/
+theorem normalClass_cauchyRiemannLinearization_eq_of_lift
+    (h2 : 2 ≤ n) (hdim : finrank ℝ P = finrank ℝ V - finrank ℝ E) {x : M}
+    (hf : ∀ᶠ y in 𝓝 x, IsPseudoholomorphicAt j J f y) {ν : Π x, f.isImmersion.NormalSpace x hn}
+    (hν : letI := f.normalSpaceFiberBundle hn hdim
+      MDifferentiableAt I (I.prod 𝓘(ℝ, P)) (fun y ↦ TotalSpace.mk' P y (ν y)) x)
+    {ξ : E → V} (hξ : DifferentiableAt ℝ ξ (extChartAt I x x))
+    (hlift : ∀ᶠ z in 𝓝 (extChartAt I x x),
+      f.isImmersion.normalClass ((extChartAt I x).symm z) hn
+        ((trivializationAt V (TangentSpace I') (f x)).symm (f ((extChartAt I x).symm z)) (ξ z)) =
+        ν ((extChartAt I x).symm z))
+    (v : E) :
+    f.isImmersion.normalClass x hn
+        (cauchyRiemannLinearization (j.inChart x (extChartAt I x x)) (J.inChart (f x))
+          (writtenInExtChartAt I I' x f) ξ (extChartAt I x x) v) =
+      f.isImmersion.normalClass x hn (f.normalChartLinearization hn j J ν x v) := by
+  set c := extChartAt I x x
+  set u := writtenInExtChartAt I I' x f
+  have hfC2 : ContMDiffAt I I' 2 f x := (f.contMDiff x).of_le h2
+  have hu : ContDiffAt ℝ 2 u c := hfC2.contDiffAt_writtenInExtChartAt
+  have hdu : DifferentiableAt ℝ (fderiv ℝ u) c :=
+    (hu.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hfx : MDifferentiableAt I I' f x := hfC2.mdifferentiableAt (by norm_num)
+  have hℓ := differentiableAt_normalChartLift h2 hdim hν
+  -- The difference of the two lifts is `du · a` near the centre, with `a` differentiable there.
+  have hinj : (fderiv ℝ u c).HasLeftInverse := by
+    refine .of_injective_of_finiteDimensional ?_
+    rw [hfx.fderiv_writtenInExtChartAt]
+    exact f.isImmersion.mfderiv_injective hn x
+  obtain ⟨a, ha, hη⟩ := hdu.exists_differentiableAt_eventually_eq_apply hinj (hξ.sub hℓ)
+    (eventually_sub_normalChartLift_mem_range hlift)
+  have hξeq : ξ =ᶠ[𝓝 c] f.normalChartLift hn ν x + fun z ↦ fderiv ℝ u z (a z) := by
+    filter_upwards [hη] with z hz
+    rw [Pi.add_apply, ← hz, Pi.sub_apply, add_sub_cancel]
+  -- Near the centre `u` solves the Cauchy–Riemann equation for the structures read in charts.
+  have hhol := eventually_cauchyRiemannOperator_writtenInExtChartAt_eq_zero (x := x)
+    (hf.mono fun y hy ↦ ⟨hy, f.contMDiff.continuous.continuousAt⟩)
+    f.contMDiff.continuous.continuousAt
+  have hj : DifferentiableAt ℝ (j.inChart x) c :=
+    ((j.contDiffOn_inChart x).contDiffAt (extChartAt_target_mem_nhds x)).differentiableAt
+      (by simp)
+  have huc : u c = extChartAt I' (f x) (f x) :=
+    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
+  have hJ : DifferentiableAt ℝ (J.inChart (f x)) (u c) := by
+    rw [huc]
+    exact ((J.contDiffOn_inChart (f x)).contDiffAt
+      (extChartAt_target_mem_nhds (f x))).differentiableAt (by simp)
+  have hL : cauchyRiemannLinearization (j.inChart x c) (J.inChart (f x)) u ξ c =
+      cauchyRiemannLinearization (j.inChart x c) (J.inChart (f x)) u
+        (f.normalChartLift hn ν x + fun z ↦ fderiv ℝ u z (a z)) c := by
+    ext w
+    simp only [cauchyRiemannLinearization_apply, hξeq.fderiv_eq, hξeq.eq_of_nhds]
+  rw [hL, cauchyRiemannLinearization_add _ _ _ _ _ _ hℓ (hdu.clm_apply ha)]
+  rw [add_apply, cauchyRiemannLinearization_fderiv_apply (j.inChart x) _ u a c v hu ha hj hJ hhol,
+    hfx.fderiv_writtenInExtChartAt]
+  have hB : f.normalChartLinearization hn j J ν x v =
+      cauchyRiemannLinearization (j.inChart x c) (J.inChart (f x)) u
+        (f.normalChartLift hn ν x) c v := rfl
+  rw [hB]
+  -- The ambient vectors live in `TangentSpace I' (f x)`, whose additive structure is that of `V`.
+  exact (f.isImmersion.normalClass_eq_iff x hn _ _).2
+    ((f.isImmersion.mem_tangentRange_iff x hn _).2 ⟨_, (add_sub_cancel_left _ _).symm⟩)
+
+/-! ### Independence of the metric -/
+
+omit [RiemannianBundle (fun y : X ↦ TangentSpace I' y)]
+  [IsContMDiffRiemannianBundle I' 1 V (fun y : X ↦ TangentSpace I' y)] in
+/-- **The normal Cauchy–Riemann operator does not depend on the metric.** For a `C²`
+pseudoholomorphic embedding `f`, the normal Cauchy–Riemann operators built from two `C¹` metrics on
+the target agree on every section of the complex normal bundle differentiable at `x`. The metric
+only chooses the orthogonal lift of a normal section, and the normal class of the linearization
+does not depend on the lift
+(`TauCeti.SmoothEmbedding.normalClass_cauchyRiemannLinearization_eq_of_lift`). -/
+theorem normalCauchyRiemannOperator_eq_of_riemannianBundle
+    (g₁ g₂ : RiemannianBundle (fun y : X ↦ TangentSpace I' y))
+    (hg₁ : letI := g₁; IsContMDiffRiemannianBundle I' 1 V (fun y : X ↦ TangentSpace I' y))
+    (hg₂ : letI := g₂; IsContMDiffRiemannianBundle I' 1 V (fun y : X ↦ TangentSpace I' y))
+    (h2 : 2 ≤ n) (hdim : finrank ℝ P = finrank ℝ V - finrank ℝ E)
+    (hf : IsPseudoholomorphic j J f)
+    {ν : letI := f.normalSpaceFiberBundle hn hdim
+      letI := f.normalSpaceVectorBundle hn hdim
+      Π x, (f.normalComplexStructure hn J hdim
+        fun x ↦ mapsTo_tangentRange_of_isPseudoholomorphicAt hn (hf.isPseudoholomorphicAt x)).Fiber
+          x} {x : M}
+    (hν : letI := f.normalSpaceFiberBundle hn hdim
+      letI := f.normalSpaceVectorBundle hn hdim
+      MDifferentiableAt I (I.prod 𝓘(ℝ, G)) (fun y ↦ TotalSpace.mk' G y (ν y)) x) :
+    (letI := g₁; f.normalCauchyRiemannOperator P hn j J hdim
+      (fun x ↦ mapsTo_tangentRange_of_isPseudoholomorphicAt hn (hf.isPseudoholomorphicAt x)) ν x) =
+      (letI := g₂; f.normalCauchyRiemannOperator P hn j J hdim
+        (fun x ↦ mapsTo_tangentRange_of_isPseudoholomorphicAt hn (hf.isPseudoholomorphicAt x))
+          ν x) := by
+  let := f.normalSpaceFiberBundle hn hdim
+  let := f.normalSpaceVectorBundle hn hdim
+  have hJ : ∀ x, MapsTo (J (f x)) (f.isImmersion.tangentRange x hn)
+      (f.isImmersion.tangentRange x hn) := fun x ↦
+    mapsTo_tangentRange_of_isPseudoholomorphicAt hn (hf.isPseudoholomorphicAt x)
+  let JN := f.normalComplexStructure hn J hdim hJ
+  let μ := fun y ↦ JN.fiberEquiv y (ν y)
+  have hμ : MDifferentiableAt I (I.prod 𝓘(ℝ, P)) (fun y ↦ TotalSpace.mk' P y (μ y)) x :=
+    mdifferentiableAt_fiberEquiv h2 hdim hJ hν
+  -- The chart lift of `μ` for the first metric is a lift of `μ` near `x`, differentiable at the
+  -- chart centre, so the second metric's operator may be computed with it.
+  have hlift : ∀ᶠ z in 𝓝 (extChartAt I x x),
+      f.isImmersion.normalClass ((extChartAt I x).symm z) hn
+        ((trivializationAt V (TangentSpace I') (f x)).symm (f ((extChartAt I x).symm z))
+          (letI := g₁; f.normalChartLift hn μ x z)) = μ ((extChartAt I x).symm z) := by
+    have hsrc : (f : M → X) ⁻¹' (chartAt H' (f x)).source ∈
+        𝓝 ((extChartAt I x).symm (extChartAt I x x)) := by
+      rw [extChartAt_to_inv]
+      exact f.contMDiff.continuous.continuousAt.preimage_mem_nhds
+        ((chartAt H' (f x)).open_source.mem_nhds (mem_chart_source H' (f x)))
+    filter_upwards [(continuousAt_extChartAt_symm (I := I) x).preimage_mem_nhds hsrc] with z hz
+    let := g₁
+    exact normalClass_trivializationAt_symm_normalChartLift μ hz
+  have hξ : DifferentiableAt ℝ (letI := g₁; f.normalChartLift hn μ x) (extChartAt I x x) := by
+    let := g₁
+    exact differentiableAt_normalChartLift h2 hdim hμ
+  ext v
+  apply (JN.fiberEquiv x).injective
+  have h₁ := letI := g₁; fiberEquiv_normalCauchyRiemannOperator_apply (j := j) hdim hJ ν x v
+  have h₂ := letI := g₂; fiberEquiv_normalCauchyRiemannOperator_apply (j := j) hdim hJ ν x v
+  have hL := letI := g₂
+    normalClass_cauchyRiemannLinearization_eq_of_lift (j := j)
+      h2 hdim (.of_forall hf.isPseudoholomorphicAt) hμ hξ hlift v
+  have hdef := letI := g₁; normalChartLinearization_def (j := j) (J := J) μ x
+  rw [h₁, h₂, ← hL, hdef]
+  -- Both sides now use the first metric's chart lift; they differ only in how its instance is
+  -- written, as the local instance of `h₁` or the term `g₁` of `hlift`.
+  rfl
 
 end Boundaryless
 
