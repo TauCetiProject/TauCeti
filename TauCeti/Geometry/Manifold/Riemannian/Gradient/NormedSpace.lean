@@ -97,7 +97,7 @@ in `F` through `NormedSpace.fromTangentSpace`, it is `2 • x`.
 Source: `Mathlib.Analysis.InnerProductSpace.Calculus.fderiv_norm_sq_apply`.
 -/
 @[simp]
-theorem mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
+theorem fromTangentSpace_mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
     [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (x : F) :
     let _ : RiemannianBundle (fun x : F ↦ TangentSpace 𝓘(ℝ, F) x) :=
       ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
@@ -119,7 +119,8 @@ theorem norm_mgradient_norm_sq_model_space {F : Type*} [NormedAddCommGroup F]
       ⟨(riemannianMetricVectorSpace F).toRiemannianMetric⟩
     ‖mgradient 𝓘(ℝ, F) (fun y : F ↦ ‖y‖ ^ 2) x‖ = 2 * ‖x‖ := by
   dsimp only
-  rw [norm_tangentSpace_vectorSpace, mgradient_norm_sq_model_space, norm_smul, Real.norm_two]
+  rw [norm_tangentSpace_vectorSpace, fromTangentSpace_mgradient_norm_sq_model_space, norm_smul,
+    Real.norm_two]
 
 /-- A genuine nonzero linear defining functional has nonzero native metric gradient. -/
 theorem _root_.ContinuousLinearMap.mgradient_ne_zero {F : Type*} [NormedAddCommGroup F]

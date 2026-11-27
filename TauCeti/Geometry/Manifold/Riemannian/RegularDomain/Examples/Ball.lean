@@ -97,7 +97,7 @@ theorem mfderiv_inwardUnitNormal_normSqSublevel
     norm_eq_sqrt_of_mem_boundary_normSqSublevel hc hn q]
   congr 1
   apply (NormedSpace.fromTangentSpace (𝕜 := ℝ) _).injective
-  rw [map_smul, Manifold.mgradient_norm_sq_model_space, smul_smul]
+  rw [map_smul, Manifold.fromTangentSpace_mgradient_norm_sq_model_space, smul_smul]
   -- The right side applies `fromTangentSpace` to `(√c)⁻¹ • x`, a vector of `E` rather than of
   -- `TangentSpace 𝓘(ℝ, E) x`, so `rw` and `simp` reject the pattern of `fromTangentSpace_apply`
   -- as ill-typed; the equation is used explicitly instead.
