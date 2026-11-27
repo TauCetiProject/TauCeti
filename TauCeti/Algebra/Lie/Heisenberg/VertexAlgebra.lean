@@ -19,13 +19,13 @@ operator `T`. The **free boson field** of `h : H` is
 
 `h(z) = ∑ₙ h(n) z^{-n-1}`
 
-(`TauCeti.HeisenbergFockSpace.field`), a field on `π` because every state is killed by all
+(`TauCeti.HeisenbergFockSpace.bosonField`), a field on `π` because every state is killed by all
 sufficiently high modes. The free boson fields are
 
 * translation covariant, `[T, h(z)] = ∂_z h(z)`, which is `[T, h(n)] = -n h(n-1)`
-  (`TauCeti.HeisenbergFockSpace.lie_translation_ncoeff_field`);
-* mutually local of order `2`, since `[h(z), k(w)] = -B(h, k) ∂_w δ(z - w)` is killed by
-  `(z - w)²` (`TauCeti.HeisenbergFockSpace.isLocalOfOrder_field`);
+  (`TauCeti.HeisenbergFockSpace.lie_translation_ncoeff_bosonField`);
+* mutually local of order `2`, since `[h(z), k(w)] = B(h, k) ∂_w δ(z - w)` is killed by
+  `(z - w)²` (`TauCeti.HeisenbergFockSpace.isLocalOfOrder_bosonField`);
 * generating: the negative modes `h(-(j+1))` build `π` from the vacuum.
 
 So when `π` has unique divisibility, for instance over a `ℚ`-algebra, the reconstruction theorem
@@ -41,9 +41,9 @@ states `h(-1)|0⟩` are the operator product expansion
 
 `h(z) k(w) ∼ B(h, k) / (z - w)²`
 
-(`TauCeti.HeisenbergFockSpace.ncoeff_natCast_field_ι_single_zero`): `h₍₁₎ k(-1)|0⟩ = B(h, k)|0⟩`
-and `h₍ₙ₎ k(-1)|0⟩ = 0` for the other `n ≥ 0`. The form `B` may be degenerate, including zero,
-when every nonnegative product of generating states vanishes.
+(`TauCeti.HeisenbergFockSpace.ncoeff_natCast_bosonField_ι_single_zero`):
+`h₍₁₎ k(-1)|0⟩ = B(h, k)|0⟩` and `h₍ₙ₎ k(-1)|0⟩ = 0` for the other `n ≥ 0`. The form `B` may be
+degenerate, including zero, when every nonnegative product of generating states vanishes.
 
 The construction is functorial for isometries. A linear map `f : H → H'` with
 `B'(f h, f k) = B(h, k)` induces the algebra map `π(H) → π(H')` of symmetric algebras
@@ -55,21 +55,21 @@ vertex algebras (`TauCeti.HeisenbergFockSpace.formalVertexAxiomsHom`).
 
 ## Main definitions
 
-* `TauCeti.HeisenbergFockSpace.field`: the free boson field `h(z)`.
+* `TauCeti.HeisenbergFockSpace.bosonField`: the free boson field `h(z)`.
 * `TauCeti.HeisenbergFockSpace.formalVertexAxioms`: the Heisenberg vertex algebra.
 * `TauCeti.HeisenbergFockSpace.formalVertexAxiomsHom`: the morphism of Heisenberg vertex algebras
   induced by an isometry.
 
 ## Main results
 
-* `TauCeti.HeisenbergFockSpace.isLocalOfOrder_field`: free boson fields are mutually local of
+* `TauCeti.HeisenbergFockSpace.isLocalOfOrder_bosonField`: free boson fields are mutually local of
   order `2`.
 * `TauCeti.HeisenbergFockSpace.formalVertexAxioms_field_ι_single_zero`: `Y(h(-1)|0⟩, z) = h(z)`.
 * `TauCeti.HeisenbergFockSpace.formalVertexAxioms_field_modeOperator_apply`:
   `Y(h(n) b, z) = h(z)₍ₙ₎ Y(b, z)`.
 * `TauCeti.HeisenbergFockSpace.eq_formalVertexAxioms`: uniqueness of the Heisenberg vertex
   algebra.
-* `TauCeti.HeisenbergFockSpace.ncoeff_natCast_field_ι_single_zero`: the operator product
+* `TauCeti.HeisenbergFockSpace.ncoeff_natCast_bosonField_ι_single_zero`: the operator product
   expansion of two free boson fields.
 * `TauCeti.HeisenbergFockSpace.adjoin_range_ι_single_zero_eq_top`: the states `h(-1)|0⟩` generate
   the Heisenberg vertex algebra.
@@ -112,8 +112,8 @@ private theorem bddBelow_support_modeOperator (h : H) (p : HeisenbergFockSpace R
 
 /-- The **free boson field** `h(z) = ∑ₙ h(n) z^{-n-1}` of `h : H` on the Fock space. Its
 normalized coefficients are the mode operators, `h(z)₍ₙ₎ = h(n)`
-(`TauCeti.HeisenbergFockSpace.ncoeff_field`). -/
-def field : H →ₗ[R] VertexOperator R (HeisenbergFockSpace R H) where
+(`TauCeti.HeisenbergFockSpace.ncoeff_bosonField`). -/
+def bosonField : H →ₗ[R] VertexOperator R (HeisenbergFockSpace R H) where
   toFun h := VertexOperator.of_coeff (fun k ↦ modeOperator B (-k - 1) h)
     (bddBelow_support_modeOperator B h)
   map_add' h k := VertexOperator.ext_ncoeff fun n ↦ by simp
@@ -121,31 +121,32 @@ def field : H →ₗ[R] VertexOperator R (HeisenbergFockSpace R H) where
 
 /-- The normalized coefficients of the free boson field of `h` are the mode operators `h(n)`. -/
 @[simp]
-theorem ncoeff_field (h : H) (n : ℤ) : (field B h)[[n]] = modeOperator B n h := by
-  simp [field]
+theorem ncoeff_bosonField (h : H) (n : ℤ) : (bosonField B h)[[n]] = modeOperator B n h := by
+  simp [bosonField]
 
 /-- The free boson field applied to the vacuum at `z = 0` is the generating state:
 `h(-1)|0⟩ = ι (single 0 h)`. -/
-theorem ncoeff_neg_one_field_one (h : H) :
-    ((field B h)[[-1]]) 1 = ι R (ℕ →₀ H) (Finsupp.single 0 h) := by
+theorem ncoeff_neg_one_bosonField_one (h : H) :
+    ((bosonField B h)[[-1]]) 1 = ι R (ℕ →₀ H) (Finsupp.single 0 h) := by
   simpa using modeOperator_neg_natCast_sub_one_apply B 0 h 1
 
 /-- **Translation covariance.** `[T, h(z)] = ∂_z h(z)`, that is `[T, h(n)] = -n h(n-1)`. -/
-theorem lie_translation_ncoeff_field (h : H) (n : ℤ) :
-    ⁅(translation (R := R) (H := H) : Module.End R (HeisenbergFockSpace R H)), (field B h)[[n]]⁆ =
-      (derivative (field B h))[[n]] := by
-  rw [Ring.lie_def, ncoeff_derivative, ncoeff_field, ncoeff_field, translation_commutator,
-    ← Int.cast_neg, Int.cast_smul_eq_zsmul]
+theorem lie_translation_ncoeff_bosonField (h : H) (n : ℤ) :
+    ⁅(translation (R := R) (H := H) : Module.End R (HeisenbergFockSpace R H)),
+        (bosonField B h)[[n]]⁆ =
+      (derivative (bosonField B h))[[n]] := by
+  rw [Ring.lie_def, ncoeff_derivative, ncoeff_bosonField, ncoeff_bosonField, translation_commutator]
+  simp [Int.cast_smul_eq_zsmul]
 
 /-- **Locality.** For a symmetric form `B`, any two free boson fields are mutually local of
 order `2`: `(z - w)² [h(z), k(w)] = 0`. -/
-theorem isLocalOfOrder_field (hB : B.IsSymm) (h k : H) :
-    (field B h).IsLocalOfOrder (field B k) 2 := by
+theorem isLocalOfOrder_bosonField (hB : B.IsSymm) (h k : H) :
+    (bosonField B h).IsLocalOfOrder (bosonField B k) 2 := by
   refine isLocalOfOrder_iff.2 fun m n ↦ ?_
   -- All three index pairs `(m + i, n + j)` with `i + j = 2` have the same sum `m + n + 2`.
   have hmn (i j : ℕ) (h : i + j = 2) : m + i + (n + j) = m + n + 2 := by omega
   simp only [Finset.Nat.sum_antidiagonal_succ, Finset.Nat.antidiagonal_zero,
-    Finset.sum_singleton, ncoeff_field, modeOperator_commutator B hB, hmn]
+    Finset.sum_singleton, ncoeff_bosonField, modeOperator_commutator B hB, hmn]
   split_ifs
   · -- The central terms `m - 2 (m + 1) + (m + 2)` cancel.
     simp only [Nat.choose_zero_right, Nat.choose_self, show Nat.choose 2 1 = 2 from rfl]
@@ -156,12 +157,12 @@ theorem isLocalOfOrder_field (hB : B.IsSymm) (h k : H) :
 /-- **The operator product expansion** `h(z) k(w) ∼ B(h, k) / (z - w)²`: for `n ≥ 0`, the mode
 `h(n)` sends the generating state `k(-1)|0⟩` to `B(h, k)|0⟩` for `n = 1` and to zero otherwise. In
 the Heisenberg vertex algebra this is the `n`-th product of `h(-1)|0⟩` and `k(-1)|0⟩`. -/
-theorem ncoeff_natCast_field_ι_single_zero (h k : H) (n : ℕ) :
-    ((field B h)[[(n : ℤ)]]) (ι R (ℕ →₀ H) (Finsupp.single 0 k)) =
+theorem ncoeff_natCast_bosonField_ι_single_zero (h k : H) (n : ℕ) :
+    ((bosonField B h)[[(n : ℤ)]]) (ι R (ℕ →₀ H) (Finsupp.single 0 k)) =
       if n = 1 then algebraMap R (HeisenbergFockSpace R H) (B h k) else 0 := by
   rcases n with _ | j
   · simp
-  · rw [ncoeff_field, Nat.cast_succ, modeOperator_natCast_add_one_apply, annihilation_ι_single]
+  · rw [ncoeff_bosonField, Nat.cast_succ, modeOperator_natCast_add_one_apply, annihilation_ι_single]
     rcases j with _ | j <;> simp
 
 /-! ### The Heisenberg vertex algebra -/
@@ -175,10 +176,10 @@ algebra on the Fock space reconstructed from the free boson fields, with vacuum 
 `T` and `Y(h(-1)|0⟩, z) = h(z)`. It exists when the Fock space has unique divisibility, for
 instance over a `ℚ`-algebra. -/
 def formalVertexAxioms : FormalVertexAxioms R (HeisenbergFockSpace R H) :=
-  FormalVertexAxioms.ofGeneratingFields (F := field B) (vac := 1)
+  FormalVertexAxioms.ofGeneratingFields (F := bosonField B) (vac := 1)
     (T := (translation (R := R) (H := H) : Module.End R (HeisenbergFockSpace R H)))
     translation.map_one_eq_zero
-    (lie_translation_ncoeff_field B) (fun h k ↦ ⟨2, isLocalOfOrder_field B hB h k⟩)
+    (lie_translation_ncoeff_bosonField B) (fun h k ↦ ⟨2, isLocalOfOrder_bosonField B hB h k⟩)
     (fun W h1 hW ↦ eq_top_of_one_mem B W h1 fun n _ h p hp ↦ by simpa using hW h n p hp)
 
 /-- The vacuum of the Heisenberg vertex algebra is `1`. -/
@@ -197,8 +198,8 @@ theorem formalVertexAxioms_translation :
 -/
 @[simp]
 theorem formalVertexAxioms_field_ι_single_zero (h : H) :
-    (formalVertexAxioms B hB).field (ι R (ℕ →₀ H) (Finsupp.single 0 h)) = field B h := by
-  rw [← ncoeff_neg_one_field_one]
+    (formalVertexAxioms B hB).field (ι R (ℕ →₀ H) (Finsupp.single 0 h)) = bosonField B h := by
+  rw [← ncoeff_neg_one_bosonField_one]
   exact FormalVertexAxioms.ofGeneratingFields_field_ncoeff_neg_one_apply_vacuum ..
 
 /-- The fields of the Heisenberg vertex algebra are iterated products of free boson fields:
@@ -206,8 +207,8 @@ theorem formalVertexAxioms_field_ι_single_zero (h : H) :
 theorem formalVertexAxioms_field_modeOperator_apply (h : H) (n : ℤ)
     (b : HeisenbergFockSpace R H) :
     (formalVertexAxioms B hB).field (modeOperator B n h b) =
-      nthProduct n (field B h) ((formalVertexAxioms B hB).field b) := by
-  rw [← ncoeff_field]
+      nthProduct n (bosonField B h) ((formalVertexAxioms B hB).field b) := by
+  rw [← ncoeff_bosonField]
   exact FormalVertexAxioms.ofGeneratingFields_field_ncoeff_apply ..
 
 variable {B hB} in
@@ -216,10 +217,10 @@ vacuum `1`, translation `T` and `Y(h(-1)|0⟩, z) = h(z)` for every `h` is `form
 theorem eq_formalVertexAxioms {A : FormalVertexAxioms R (HeisenbergFockSpace R H)}
     (hvac : A.vacuum = 1)
     (htr : A.translation = (translation (R := R) (H := H) : Module.End R (HeisenbergFockSpace R H)))
-    (hfield : ∀ h : H, A.field (ι R (ℕ →₀ H) (Finsupp.single 0 h)) = field B h) :
+    (hfield : ∀ h : H, A.field (ι R (ℕ →₀ H) (Finsupp.single 0 h)) = bosonField B h) :
     A = formalVertexAxioms B hB :=
   FormalVertexAxioms.eq_ofGeneratingFields _ _ _ _ hvac htr fun h ↦ by
-    rw [ncoeff_neg_one_field_one, hfield]
+    rw [ncoeff_neg_one_bosonField_one, hfield]
 
 /-- The generating states `h(-1)|0⟩` generate the Heisenberg vertex algebra. -/
 theorem adjoin_range_ι_single_zero_eq_top :
@@ -296,11 +297,9 @@ theorem formalVertexAxiomsHom_comp {H'' : Type*} [AddCommGroup H''] [Module R H'
     (hB'' : B''.IsSymm) (f : H →ₗ[R] H') (hf : ∀ h k, B' (f h) (f k) = B h k)
     (g : H' →ₗ[R] H'') (hg : ∀ h k, B'' (g h) (g k) = B' h k) :
     (formalVertexAxiomsHom B' B'' hB' hB'' g hg).comp (formalVertexAxiomsHom B B' hB hB' f hf) =
-      formalVertexAxiomsHom B B'' hB hB'' (g ∘ₗ f) (fun h k ↦ by simp [hg, hf]) := by
-  refine FormalVertexAxioms.Hom.ext fun p ↦ ?_
-  rw [FormalVertexAxioms.Hom.comp_apply, coe_formalVertexAxiomsHom, coe_formalVertexAxiomsHom,
-    coe_formalVertexAxiomsHom, ← AlgHom.comp_apply, SymmetricAlgebra.map_comp_map,
-    Finsupp.mapRange.linearMap_comp]
+      formalVertexAxiomsHom B B'' hB hB'' (g ∘ₗ f) (fun h k ↦ by simp [hg, hf]) :=
+  FormalVertexAxioms.Hom.ext fun p ↦ by
+    simp [← AlgHom.comp_apply, SymmetricAlgebra.map_comp_map, Finsupp.mapRange.linearMap_comp]
 
 end Map
 
