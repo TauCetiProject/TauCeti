@@ -84,6 +84,21 @@ def homogeneousQuotientPresheafMk
     (homogeneousQuotientPresheaf H I).obj A :=
   ULift.up (QuotientGroup.mk g)
 
+/-- Sections of the homogeneous quotient presheaf are native left cosets. This equivalence
+forgets the universe lift. -/
+def homogeneousQuotientPresheafObjEquiv (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ) :
+    (homogeneousQuotientPresheaf H I).obj A ≃
+      (HopfAlgebra.points (R := R) (H := H) A.unop.unop ⧸
+        quotientPointsSubgroup H I A.unop.unop) :=
+  Equiv.ulift
+
+/-- The native-coset equivalence preserves representatives. -/
+@[simp]
+theorem homogeneousQuotientPresheafObjEquiv_mk (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (g : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    homogeneousQuotientPresheafObjEquiv H I A (homogeneousQuotientPresheafMk H I A g) =
+      QuotientGroup.mk g := (rfl)
+
 /-- To prove a property of a coset section, it suffices to prove it for representatives. -/
 @[elab_as_elim]
 theorem homogeneousQuotientPresheaf_induction_on
