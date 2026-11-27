@@ -39,9 +39,7 @@ of bilinear maps along two fixed maps is also a continuous linear operation
 
 The quadratic map `x ↦ B x x` of a continuous bilinear map is Lipschitz on every ball, with a
 constant proportional to the radius: `‖B x x - B y y‖ ≤ ‖B‖ (‖x‖ + ‖y‖) ‖x - y‖`
-(`ContinuousLinearMap.norm_apply_apply_sub_apply_apply_le`). Pointwise, when `‖a‖ ≤ M`, a
-continuous bilinear map satisfies `‖B a b‖ₑ ≤ ENNReal.ofReal (‖B‖ * M) * ‖b‖ₑ`
-(`ContinuousLinearMap.enorm_apply_apply_le_of_norm_le`). This is the quadratic estimate on the
+(`ContinuousLinearMap.norm_apply_apply_sub_apply_apply_le`). This is the quadratic estimate on the
 nonlinear terms of an equation that is quadratic in its unknown.
 
 For a continuous map of two variables, semilinear in each argument with respect to isometric
@@ -202,21 +200,6 @@ theorem norm_apply_apply_sub_apply_apply_le (B : V →L[𝕜] V →L[𝕜] G) (x
   calc ‖B x (x - y) + B (x - y) y‖ ≤ ‖B‖ * ‖x‖ * ‖x - y‖ + ‖B‖ * ‖x - y‖ * ‖y‖ :=
         (norm_add_le _ _).trans (add_le_add (B.le_opNorm₂ _ _) (B.le_opNorm₂ _ _))
     _ = ‖B‖ * (‖x‖ + ‖y‖) * ‖x - y‖ := by ring
-
-/-- Pointwise extended-norm bound for a continuous bilinear map when the left factor has norm at
-most `M`. -/
-theorem enorm_apply_apply_le_of_norm_le {𝕜₁ 𝕜₂ 𝕜₃ E F H : Type*}
-    [NontriviallyNormedField 𝕜₁] [NontriviallyNormedField 𝕜₂] [NontriviallyNormedField 𝕜₃]
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜₁ E]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
-    [SeminormedAddCommGroup H] [NormedSpace 𝕜₃ H]
-    {σ₁₃ : 𝕜₁ →+* 𝕜₃} {σ₂₃ : 𝕜₂ →+* 𝕜₃} [RingHomIsometric σ₁₃] [RingHomIsometric σ₂₃]
-    (B : E →SL[σ₁₃] F →SL[σ₂₃] H) {a : E} {b : F} {M : ℝ} (ha : ‖a‖ ≤ M) :
-    ‖B a b‖ₑ ≤ ENNReal.ofReal (‖B‖ * M) * ‖b‖ₑ := by
-  have hM : 0 ≤ M := (norm_nonneg a).trans ha
-  rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (mul_nonneg (norm_nonneg B) hM)]
-  exact ENNReal.ofReal_le_ofReal <| (B.le_opNorm₂ a b).trans <|
-    mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ha (norm_nonneg B)) (norm_nonneg b)
 
 /-- Pulling a nondegenerate bilinear map back along a bijective continuous linear map keeps it
 nondegenerate. -/

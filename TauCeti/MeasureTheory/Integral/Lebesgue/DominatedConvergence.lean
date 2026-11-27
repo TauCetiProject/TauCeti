@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
-import TauCeti.Analysis.Normed.Operator.Bilinear
 
 /-!
 # Consequences of dominated convergence for Lebesgue integrals
@@ -105,11 +104,13 @@ theorem _root_.ContinuousLinearMap.tendsto_lintegral_enorm_bilin_sub_of_norm_le
     {l : Filter ι} {g : ι → α → F} {g₀ : α → F}
     (hg : Tendsto (fun i ↦ ∫⁻ x, ‖g i x - g₀ x‖ₑ ∂μ) l (𝓝 0)) :
     Tendsto (fun i ↦ ∫⁻ x, ‖B (f₀ x) (g i x) - B (f₀ x) (g₀ x)‖ₑ ∂μ) l (𝓝 0) :=
-  tendsto_lintegral_zero_of_le_const_mul (c := ENNReal.ofReal (‖B‖ * C)) ENNReal.ofReal_ne_top
-    (.of_forall fun _ ↦ hC.mono fun _ hx ↦ by
+  tendsto_lintegral_zero_of_le_const_mul (c := ‖B‖ₑ * ENNReal.ofReal C)
+    (ENNReal.mul_ne_top eNorm_ne_top ENNReal.ofReal_ne_top)
+    (.of_forall fun _ ↦ hC.mono fun x hx ↦ by
       dsimp only
       rw [← ContinuousLinearMap.map_sub]
-      exact B.enorm_apply_apply_le_of_norm_le hx)
+      exact (B.le_opENorm₂ _ _).trans
+        (by gcongr; exact ofReal_norm (f₀ x) ▸ ENNReal.ofReal_le_ofReal hx))
     hg
 
 /-- If `f₀` is bounded in norm on a measurable set `s` and `g i → g₀` in `L¹(s)`, then

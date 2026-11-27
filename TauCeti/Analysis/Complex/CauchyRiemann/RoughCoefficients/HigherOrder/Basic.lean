@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Local.Multiplication.Higher
 import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.PartialDerivative
 import TauCeti.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.Distribution.TestFunction.Inner
+import TauCeti.Analysis.Sobolev.Local.Coordinates
 import TauCeti.Analysis.Sobolev.Local.SobolevEmbedding
 import TauCeti.Data.ENNReal.Inv
 
@@ -132,7 +133,7 @@ theorem memWkpLoc_succ [FiniteDimensional ℝ V] {p q r : ℝ≥0∞} {k : ℕ}
     obtain ⟨Dξ, hDξ, -⟩ := hξ.exists_weakFDeriv_of_isOpen
     obtain ⟨DS, hDS, hDSk⟩ := hS.exists_weakFDeriv_of_isOpen
     obtain ⟨Dη, hDη, hDηk⟩ := hη.exists_weakFDeriv_of_isOpen
-    have hDξ₂ : MemLpLoc 2 Ω Dξ := memWkpLoc_zero_iff.1 (hξ₂.memWkpLoc_of_hasWeakFDerivOn hDξ)
+    have hDξ₂ : MemLpLoc 2 Ω Dξ := hξ₂.memLpLoc_of_hasWeakFDerivOn hDξ
     have hDJk : MemWkpLoc p₀ Ω k DJ := hJ.memWkpLoc_of_hasWeakFDerivOn hc.hasWeakFDerivOn
     -- `∂_t ξ` solves an equation of the same kind in `L²_loc` with data one order lower, so
     -- `∂_t ξ ∈ W^{k+1,r}_loc` by the induction hypothesis.
@@ -152,9 +153,7 @@ theorem memWkpLoc_succ [FiniteDimensional ℝ V] {p q r : ℝ≥0∞} {k : ℕ}
       ((hη.sub (hJ.clm_apply_succ hp₀ hr₀ hrp₀' hTk)).sub
         (hS.clm_apply_succ hp₀ hr₀ hrp₀' hξ)).congr_ae
         (heq.mono fun z hz => by simp only [Pi.sub_apply, ← hz]; abel)
-    refine memWkpLoc_succ_iff_of_isOpen.2 ⟨hξ.memLpLoc, Dξ, hDξ, ?_⟩
-    rw [fun_eq_smulRightL_reCLM_add_smulRightL_imCLM Dξ]
-    exact (h1.clm_comp _).add (hTk.clm_comp _)
+    exact hξ.memLpLoc.memWkpLoc_succ_of_hasWeakFDerivOn (by simpa using hDξ) h1 hTk
 
 end IsWeakCRSolution
 

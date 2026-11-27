@@ -422,10 +422,8 @@ theorem tendsto_integral_bilin_clm_of_tendstoUniformlyOn [OpensMeasurableSpace E
   rw [← lintegral_const_mul'' _ huK.aestronglyMeasurable.eNorm]
   refine setLIntegral_mono' hKm fun x hx => ?_
   rw [← sub_apply]
-  have h1 : ‖(A i x - B x) (u x)‖ₑ ≤ ‖A i x - B x‖ₑ * ‖u x‖ₑ := by
-    simpa only [← ofReal_norm, ENNReal.ofReal_mul (norm_nonneg _)] using
-      ENNReal.ofReal_le_ofReal ((A i x - B x).le_opNorm (u x))
-  exact h1.trans (by gcongr; exact le_biSup (fun y => ‖A i y - B y‖ₑ) hx)
+  exact ((A i x - B x).le_opENorm (u x)).trans
+    (by gcongr; exact le_biSup (fun y => ‖A i y - B y‖ₑ) hx)
 
 /-- Pairing a `C^n` test function supported in a null-measurable set `W` through `P` against
 `x ↦ B (((ρ i).normed μ ⋆ 1_W U) x) (u x)` converges to `∫ x, P (φ x) (B (U x) (u x)) ∂μ` when

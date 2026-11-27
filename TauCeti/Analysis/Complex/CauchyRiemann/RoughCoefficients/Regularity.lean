@@ -85,12 +85,12 @@ theorem IsWeakCRSolution.exists_contDiffOn_ae_eq
     (hS : MemWkpLoc p Ω k S) (hη : MemWkpLoc r Ω k η)
     (hsol : IsWeakCRSolution q Ω J DJ S ξ η) :
     ∃ g : ℂ → V, ContDiffOn ℝ k g Ω ∧ ξ =ᵐ[volume.restrict Ω] g := by
-  obtain ⟨r₀, hr₀, hr₀_top, hr₀r⟩ := ENNReal.exists_lt_ne_top_le hr
+  obtain ⟨r₀, hr₀, hr₀r⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hr
   have hc : IsSobolevCRCoefficients p Ω J DJ S :=
     IsSobolevCRCoefficients.of_memWkpLoc (hJ.of_le (le_max_left 1 k)) hDJ hS.memLpLoc
   exact (hsol.memWkpLoc_succ hc (hr.trans_le hrp) hJsq hpq
-    ((by norm_num : (1 : ℝ≥0∞) < 2).trans hr₀) hr₀_top (hr₀r.trans hrp)
-    (hJ.of_le (le_max_right 1 k)) hS (hη.mono_exponent hr₀r)).exists_contDiffOn_ae_eq hr₀
+    ((by norm_num : (1 : ℝ≥0∞) < 2).trans hr₀) ENNReal.coe_ne_top (hr₀r.le.trans hrp)
+    (hJ.of_le (le_max_right 1 k)) hS (hη.mono_exponent hr₀r.le)).exists_contDiffOn_ae_eq hr₀
 
 end HigherRegularity
 
@@ -101,25 +101,6 @@ section NormedSpace
 section InnerProductHelper
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- Testing the almost-everywhere equation `Dξ 1 + J (Dξ I) + S ξ = η` against a test function
-`ψ ∈ 𝓓(Ω, E)` splits `∫ ⟪ψ, η⟫` into the sum of the three inner-product integrals. -/
-private theorem integral_inner_add_eq_of_ae_cauchyRiemann {Ω : Opens ℂ}
-    {J S : ℂ → E →L[ℝ] E} {ξ η : ℂ → E} {Dξ : ℂ → ℂ →L[ℝ] E} (ψ : 𝓓(Ω, E))
-    (iD1 : Integrable (fun z => ⟪(ψ : ℂ → E) z, Dξ z 1⟫_ℝ))
-    (iJD : Integrable (fun z => ⟪(ψ : ℂ → E) z, J z (Dξ z I)⟫_ℝ))
-    (iSξ : Integrable (fun z => ⟪(ψ : ℂ → E) z, S z (ξ z)⟫_ℝ))
-    (heq : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z) :
-    (∫ z, ⟪(ψ : ℂ → E) z, Dξ z 1⟫_ℝ) +
-        (∫ z, ⟪(ψ : ℂ → E) z, J z (Dξ z I)⟫_ℝ) +
-        (∫ z, ⟪(ψ : ℂ → E) z, S z (ξ z)⟫_ℝ) =
-      ∫ z, ⟪(ψ : ℂ → E) z, η z⟫_ℝ := by
-  rw [← integral_add iD1 iJD]
-  refine (integral_add (iD1.add iJD) iSξ).symm.trans
-    (integral_congr_ae ((ae_imp_of_ae_restrict heq).mono fun z hz => ?_))
-  by_cases hzΩ : z ∈ (Ω : Set ℂ)
-  · simp only [Pi.add_apply, ← inner_add_right, hz hzΩ]
-  · simp [image_eq_zero_of_notMem_tsupport fun h => hzΩ (ψ.tsupport_subset h)]
 
 /-- On a finite-dimensional real inner product space, any map `ξ` with weak derivative `Dξ` on `Ω`
 satisfying `∂_s ξ + J ∂_t ξ + S ξ = η` almost everywhere on `Ω` for Sobolev coefficients at
@@ -153,33 +134,19 @@ private theorem isWeakCRSolution_of_hasWeakFDerivOn_ae [FiniteDimensional ℝ E]
       hc.memLpLoc_deriv, hc.memLpLoc_zeroth⟩
   have heq' : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J' z (Dξ z I) + S z (ξ z) = η z := by
     filter_upwards [heq, hJJ'] with z hz hJ using by rwa [← hJ]
-  refine (isWeakCRSolution_congr_ae hJJ' .rfl .rfl .rfl .rfl).2 <|
-    isWeakCRSolution_iff.2 ⟨hξ2, hη, fun φ =>
-      ⟨hc'.integrable_inner_crFormalAdjoint hp2.le hξ2 φ, ?_⟩⟩
-  rw [hc'.integral_inner_crFormalAdjoint_eq_terms hp2.le hξ2 φ]
-  -- Integrate `J' ξ` by parts in direction `I` via the endpoint weak Leibniz rule.
-  have iDJξ : Integrable (fun z => ⟪(φ : ℂ → E) z, DJ z I (ξ z)⟫_ℝ) volume := by
-    simpa only [ContinuousLinearMap.apply_apply] using φ.integrable_inner
-      ((hc'.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I)
-        ).locallyIntegrableOn_clm_apply hξ2 hp2.le hloc)
-  have iJD := φ.integrable_inner
-    ((hDξ.hasWeakLineDerivOn I).locallyIntegrableOn_deriv.continuousOn_clm_apply hloc hJ'cont)
-  have hibpI : (∫ z, ⟪fderiv ℝ (φ : ℂ → E) z I, J' z (ξ z)⟫_ℝ) +
-      (∫ z, ⟪(φ : ℂ → E) z, DJ z I (ξ z)⟫_ℝ) = -∫ z, ⟪(φ : ℂ → E) z, J' z (Dξ z I)⟫_ℝ := by
-    have hweak := (hc'.hasWeakFDerivOn.hasWeakLineDerivOn I).bilin_of_continuousOn
-      (ContinuousLinearMap.id ℝ (E →L[ℝ] E)) hp2.le hJ'cont
-      (hc'.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I))
-      (hDξ.hasWeakLineDerivOn I) hξ2
-    have h := hweak.integral_inner_lineDeriv_eq_neg φ
-    simp only [ContinuousLinearMap.id_apply, TestFunction.lineDeriv_eq_fderiv, inner_add_right] at h
-    rw [integral_add iDJξ iJD] at h
-    linarith
-  have ibp1 := (hDξ.hasWeakLineDerivOn 1).integral_inner_lineDeriv_eq_neg φ
-  simp only [TestFunction.lineDeriv_eq_fderiv] at ibp1
-  have iD1 := φ.integrable_inner (hDξ.hasWeakLineDerivOn 1).locallyIntegrableOn_deriv
-  have iSξ := φ.integrable_inner (hc'.memLpLoc_zeroth.locallyIntegrableOn_clm_apply hξ2 hp2.le hloc)
-  have hpde := integral_inner_add_eq_of_ae_cauchyRiemann φ iD1 iJD iSξ heq'
-  linarith
+  have hDξ1 : LocallyIntegrableOn (fun z => Dξ z 1) Ω :=
+    (hDξ.hasWeakLineDerivOn 1).locallyIntegrableOn_deriv
+  have hJ'DξI : LocallyIntegrableOn (fun z => J' z (Dξ z I)) Ω :=
+    (hDξ.hasWeakLineDerivOn I).locallyIntegrableOn_deriv.continuousOn_clm_apply hloc hJ'cont
+  have hJ'ξ : HasWeakLineDerivOn volume Ω (fun z => J' z (ξ z))
+      (fun z => DJ z I (ξ z) + J' z (Dξ z I)) I := by
+    simpa only [ContinuousLinearMap.id_apply] using
+      (hc'.hasWeakFDerivOn.hasWeakLineDerivOn I).bilin_of_continuousOn
+        (ContinuousLinearMap.id ℝ (E →L[ℝ] E)) hp2.le hJ'cont
+        (hc'.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (E →L[ℝ] E) I))
+        (hDξ.hasWeakLineDerivOn I) hξ2
+  exact (isWeakCRSolution_congr_ae hJJ' .rfl .rfl .rfl .rfl).2 <|
+    (hc'.isWeakCRSolution_iff_ae_of_hasWeakLineDerivOn hp2.le hDξ hξ2 hJ'ξ hDξ1 hJ'DξI hη).2 heq'
 
 end InnerProductHelper
 
@@ -199,10 +166,12 @@ theorem HasWeakFDerivOn.memWkpLoc_succ_of_ae_cauchyRiemann {Dξ : ℂ → ℂ �
     (heq : ∀ᵐ z ∂volume.restrict Ω, Dξ z 1 + J z (Dξ z I) + S z (ξ z) = η z) :
     MemWkpLoc r Ω (k + 1) ξ := by
   let E := EuclideanSpace ℝ (Fin (Module.finrank ℝ V))
-  let A : V ≃L[ℝ] E := (LinearEquiv.ofFinrankEq V E (by simp [E])).toContinuousLinearEquiv
-  let conjA : (V →L[ℝ] V) ≃L[ℝ] E →L[ℝ] E := A.arrowCongr A
-  have hJ' : MemWkpLoc p Ω (max 1 k) (fun z => conjA (J z)) := conjA.comp_memWkpLoc_iff.2 hJ
-  have hS' : MemWkpLoc p Ω k (fun z => conjA (S z)) := conjA.comp_memWkpLoc_iff.2 hS
+  let A : V ≃L[ℝ] E := ContinuousLinearEquiv.ofFinrankEq (by simp [E])
+  let conjA := A.conjContinuousAlgEquiv
+  have hJ' : MemWkpLoc p Ω (max 1 k) (fun z => conjA (J z)) :=
+    conjA.toContinuousLinearEquiv.comp_memWkpLoc_iff.2 hJ
+  have hS' : MemWkpLoc p Ω k (fun z => conjA (S z)) :=
+    conjA.toContinuousLinearEquiv.comp_memWkpLoc_iff.2 hS
   have hη' : MemWkpLoc r Ω k (fun z => A (η z)) := A.comp_memWkpLoc_iff.2 hη
   obtain ⟨DJ', hDJ', -⟩ := (hJ'.of_le (le_max_left 1 k)).exists_weakFDeriv_of_isOpen
   have hc' : IsSobolevCRCoefficients p Ω (fun z => conjA (J z)) DJ' (fun z => conjA (S z)) :=
@@ -219,9 +188,7 @@ theorem HasWeakFDerivOn.memWkpLoc_succ_of_ae_cauchyRiemann {Dξ : ℂ → ℂ �
   have hp2 : p⁻¹ + (2 : ℝ≥0∞)⁻¹ < 1 := ENNReal.inv_add_inv_two_lt_one_iff.2 hp
   have hJsq' : ∀ᵐ z ∂volume.restrict Ω, conjA (J z) * conjA (J z) = -1 := by
     filter_upwards [hJsq] with z hz
-    refine ContinuousLinearMap.ext fun y => ?_
-    have hy : J z (J z (A.symm y)) = -A.symm y := by simpa using congr($hz (A.symm y))
-    simp [conjA, ContinuousLinearMap.mul_def, hy]
+    simpa [map_mul, map_neg, map_one] using congrArg conjA hz
   exact A.comp_memWkpLoc_iff.1
     (hsol'.memWkpLoc_succ hc' hp hJsq' hp2 hr hr_top hrp (hJ'.of_le (le_max_right 1 k)) hS' hη')
 
@@ -245,10 +212,9 @@ theorem IsWeakLinearCauchyRiemannOn.contDiffOn (hp : 2 < p)
     (hJ : MemWkpLoc p Ω (max 1 k) J) (hJsq : ∀ᵐ z ∂volume.restrict Ω, J z * J z = -1)
     (hS : MemWkpLoc p Ω k S) (h : IsWeakLinearCauchyRiemannOn q Ω J S ξ) :
     ContDiffOn ℝ k ξ Ω := by
-  obtain ⟨p₀, hp₀, hp₀_top, hp₀p⟩ := ENNReal.exists_lt_ne_top_le hp
-  obtain ⟨g, hg, hae⟩ := (h.memWkpLoc_succ hp₀ hp₀_top (hJ.mono_exponent hp₀p) hJsq
-    (hS.mono_exponent hp₀p)).exists_contDiffOn_ae_eq hp₀
-  exact hg.congr (Measure.eqOn_open_of_ae_eq hae Ω.isOpen h.continuousOn hg.continuousOn)
+  obtain ⟨p₀, hp₀, hp₀p⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hp
+  exact (h.memWkpLoc_succ hp₀ ENNReal.coe_ne_top (hJ.mono_exponent hp₀p.le) hJsq
+    (hS.mono_exponent hp₀p.le)).contDiffOn_of_continuousOn hp₀ h.continuousOn .rfl
 
 /-- **`C^∞` interior regularity for `TauCeti.IsWeakLinearCauchyRiemannOn` with smooth
 coefficients.** If `J` and `S` are `C^∞` on `Ω` and `J² = -1` almost everywhere on `Ω`, then every

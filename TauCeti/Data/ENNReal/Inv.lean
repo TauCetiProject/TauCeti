@@ -57,7 +57,6 @@ is at most `2 b`. Finally, an upper bound `x ≤ y` may be checked against the f
   nonzero.
 * `ENNReal.inv_mul_inv_mul_cancel`: the Hölder exponent `(c * (p * c)⁻¹)⁻¹` of `c` factors in
   `L^(p * c)` is `p`, for `c` finite and nonzero.
-* `ENNReal.exists_lt_ne_top_le`: given `a < x`, produces a finite `x₀` with `a < x₀ ≤ x`.
 * `ENNReal.exists_nnreal_lt_and_le_and_inv_add_inv_lt_one`: truncates `a < p ≤ ∞` above a
   finite `r ≤ p` while preserving `p₀⁻¹ + q⁻¹ < 1`.
 * `ENNReal.inv_add_inv_two_lt_one_iff`: `p⁻¹ + 2⁻¹ < 1 ↔ 2 < p`.
@@ -300,13 +299,6 @@ theorem inv_mul_inv_mul_cancel {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ �
     (c * (p * c)⁻¹)⁻¹ = p := by
   rw [ENNReal.mul_inv (.inr hc) (.inr hc₀), mul_left_comm, ENNReal.mul_inv_cancel hc₀ hc, mul_one,
     inv_inv]
-
-/-- Given `a < x` in `ℝ≥0∞`, there exists a finite `x₀` with `a < x₀` and `x₀ ≤ x`. -/
-theorem exists_lt_ne_top_le {a x : ℝ≥0∞} (hax : a < x) :
-    ∃ x₀ : ℝ≥0∞, a < x₀ ∧ x₀ ≠ ∞ ∧ x₀ ≤ x :=
-  ⟨min x (a + 1), lt_min hax (ENNReal.lt_add_right hax.ne_top one_ne_zero),
-    ne_top_of_le_ne_top (add_ne_top.2 ⟨hax.ne_top, one_ne_top⟩) (min_le_right _ _),
-    min_le_left _ _⟩
 
 /-- Given `a < p` (with `a : ℝ≥0`), a finite `r ≤ p`, and `p⁻¹ + q⁻¹ < 1` in `ℝ≥0∞` (allowing
 `p = ∞` and `q = ∞`), there exists a finite exponent `p₀ : ℝ≥0` with `a < p₀`, `r ≤ p₀`,
