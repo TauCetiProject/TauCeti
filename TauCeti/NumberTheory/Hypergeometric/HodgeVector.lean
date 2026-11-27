@@ -27,8 +27,9 @@ of the variation of Hodge structure attached to the family.
 
 This file defines these invariants and proves their basic properties:
 
-* the recorded heights are exactly the heights of the walk at its up-steps;
-* for positive degree they fill the interval `[m, m + w]`, so every Hodge number `h_p` with
+* a height is recorded exactly when the walk takes an up-step from it (as sets, not counting
+  multiplicities);
+* for positive degree the recorded heights fill `[m, m + w]`, so every Hodge number `h_p` with
   `p ≤ w` is positive, and those with `p > w` vanish;
 * the Hodge numbers add up to the degree;
 * the shift `(α, β) ↦ (μ + α, μ + β)` translates all recorded heights by the same integer, so it
