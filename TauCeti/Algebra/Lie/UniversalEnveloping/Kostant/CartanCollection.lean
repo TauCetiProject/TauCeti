@@ -81,6 +81,38 @@ theorem exists_mem_closure_kostantCartanGenerators_mul_dividedPower_eq
       exact ⟨a' * b', mul_mem ha' hb', by
         rw [mul_assoc, heb, ← mul_assoc, hea, mul_assoc]⟩
 
+/-- A root divided power passes to the right of a toral subring element when the root
+has integral weight for every toral generator. The new toral factor remains integral. -/
+theorem exists_mem_closure_kostantCartanGenerators_dividedPower_mul_eq
+    (h : κ → L) (x : L) (w : κ → ℤ) (hw : ∀ j, ⁅h j, x⁆ = w j • x)
+    (n : ℕ) {t : U} (ht : t ∈ Subring.closure (kostantCartanGenerators h)) :
+    ∃ t' ∈ Subring.closure (kostantCartanGenerators h), Associative.dividedPower n
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ x) * t = t' * Associative.dividedPower n
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ x) := by
+  induction ht using Subring.closure_induction with
+  | mem t ht =>
+      obtain ⟨j, m, rfl⟩ := mem_kostantCartanGenerators_iff.mp ht
+      refine ⟨Ring.choose (_root_.UniversalEnvelopingAlgebra.ι ℚ (h j) - ((n * w j : ℤ) : U)) m, ?_,
+        dividedPower_ι_mul_ringChoose_ι (hw j) m n⟩
+      simpa only [sub_eq_add_neg, ← Int.cast_neg] using
+        Ring.choose_add_intCast_mem (fun k _ =>
+          Subring.subset_closure (ringChoose_mem_kostantCartanGenerators h j k))
+          (-(n * w j))
+  | zero => exact ⟨0, zero_mem _, by simp⟩
+  | one => exact ⟨1, one_mem _, by simp⟩
+  | add a b _ _ ha hb =>
+      obtain ⟨a', ha', hea⟩ := ha
+      obtain ⟨b', hb', heb⟩ := hb
+      exact ⟨a' + b', add_mem ha' hb', by simp only [mul_add, add_mul, hea, heb]⟩
+  | neg a _ ha =>
+      obtain ⟨a', ha', hea⟩ := ha
+      exact ⟨-a', neg_mem ha', by simp only [mul_neg, neg_mul, hea]⟩
+  | mul a b _ _ ha hb =>
+      obtain ⟨a', ha', hea⟩ := ha
+      obtain ⟨b', hb', heb⟩ := hb
+      exact ⟨a' * b', mul_mem ha' hb', by
+        rw [← mul_assoc, hea, mul_assoc, heb, ← mul_assoc]⟩
+
 /-- **Integral root–Cartan collection.** If every root vector has integral weight under every
 Cartan vector, the Kostant form is exactly the integer span of products from its root and Cartan
 subrings, in that order. No commutativity, independence, finiteness or Lie-generation hypothesis
