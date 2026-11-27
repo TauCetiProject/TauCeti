@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.ResidueField.Defs
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import Mathlib.RingTheory.Polynomial.GaussLemma
 import TauCeti.Algebra.CharP.LocalRing
 import TauCeti.RingTheory.DiscreteValuationRing.Basic

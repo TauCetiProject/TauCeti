@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.Character.Basic
+public import TauCeti.Analysis.Normed.Algebra.Character.ApproximateUnit
 public import TauCeti.Analysis.Normed.Algebra.GroupAlgebra.Basic
 public import TauCeti.MeasureTheory.Group.Convolution.Kernel
 public import TauCeti.Topology.ApproximateUnit
@@ -43,9 +43,9 @@ net approximate identity `L1GroupAlgebra.approximateIdentity 𝕜 μ` on `TauCet
 * **Characters of `L¹(G)`:** Every algebraic character `χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜` is
   automatically continuous and contractive (`NonUnitalAlgHom.instContinuousLinearMapClass`), and
   every nonzero character satisfies `χ (approximateIdentity 𝕜 μ U) → 1` along `atBot` and has
-  operator norm `‖χ.toContinuousLinearMap‖ = 1`
+  operator norm `‖χ.toStrongDual‖ = 1`
   (`L1GroupAlgebra.tendsto_character_approximateIdentity`,
-  `L1GroupAlgebra.norm_character_toContinuousLinearMap`). Haar integration
+  `L1GroupAlgebra.norm_toStrongDual_eq_one_of_ne_zero`). Haar integration
   `L1GroupAlgebra.integralNonUnitalAlgHom 𝕜 μ` provides an explicit nonzero character of norm `1`.
 
 ## References
@@ -310,26 +310,23 @@ instance instFaithfulSMulMulOpposite :
 /-- Every nonzero algebraic character `χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜` tends to `1` along the
 chosen approximate identity. -/
 theorem tendsto_character_approximateIdentity {χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜} (hχ : χ ≠ 0) :
-    Tendsto (fun U ↦ χ (approximateIdentity 𝕜 μ U)) atBot (𝓝 1) := by
-  obtain ⟨f, hf⟩ : ∃ f, χ f ≠ 0 := by simpa [DFunLike.ext_iff] using hχ
-  exact tendsto_map'_iff.1 <|
-    NonUnitalAlgHom.tendsto_one_of_tendsto_mul_right hf
-      ((isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).tendsto_mul_right f)
+    Tendsto (fun U ↦ χ (approximateIdentity 𝕜 μ U)) atBot (𝓝 1) :=
+  tendsto_map'_iff.1 <|
+    NonUnitalAlgHom.tendsto_one_of_isApproximateUnit isApproximateUnit_map_approximateIdentity hχ
 
 /-- **Every nonzero algebraic character of `L¹(G)` is bounded of operator norm `1`.** No continuity
 is assumed on `χ`. -/
-theorem norm_character_toContinuousLinearMap {χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜} (hχ : χ ≠ 0) :
-    ‖χ.toContinuousLinearMap‖ = 1 := by
-  have := (isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).neBot
-  exact NonUnitalAlgHom.norm_toContinuousLinearMap_eq_one_of_tendsto_mul_right hχ
+theorem norm_toStrongDual_eq_one_of_ne_zero {χ : L1GroupAlgebra 𝕜 μ →ₙₐ[𝕜] 𝕜} (hχ : χ ≠ 0) :
+    ‖χ.toStrongDual‖ = 1 :=
+  NonUnitalAlgHom.norm_toStrongDual_eq_one_of_isApproximateUnit
+    isApproximateUnit_map_approximateIdentity hχ
     (eventually_norm_eq_one_map_approximateIdentity.mono fun _ hu ↦ hu.le)
-    (isApproximateUnit_map_approximateIdentity (𝕜 := 𝕜) (μ := μ)).tendsto_mul_right
 
 @[simp]
-theorem toContinuousLinearMap_integralNonUnitalAlgHom :
-    (integralNonUnitalAlgHom 𝕜 μ).toContinuousLinearMap = integralCLM 𝕜 μ := by
+theorem toStrongDual_integralNonUnitalAlgHom :
+    (integralNonUnitalAlgHom 𝕜 μ).toStrongDual = integralCLM 𝕜 μ := by
   ext f
-  rw [NonUnitalAlgHom.toContinuousLinearMap_apply, integralNonUnitalAlgHom_apply,
+  rw [NonUnitalAlgHom.coe_toStrongDual, integralNonUnitalAlgHom_apply,
     integralCLM_apply]
 
 /-- Haar integration is a nonzero character on `L1GroupAlgebra 𝕜 μ`. -/
@@ -342,8 +339,8 @@ theorem integralNonUnitalAlgHom_ne_zero : integralNonUnitalAlgHom 𝕜 μ ≠ 0 
 /-- Haar integration on `L1GroupAlgebra 𝕜 μ` has operator norm `1`. -/
 @[simp]
 theorem norm_integralCLM : ‖integralCLM 𝕜 μ‖ = 1 := by
-  rw [← toContinuousLinearMap_integralNonUnitalAlgHom]
-  exact norm_character_toContinuousLinearMap integralNonUnitalAlgHom_ne_zero
+  rw [← toStrongDual_integralNonUnitalAlgHom]
+  exact norm_toStrongDual_eq_one_of_ne_zero integralNonUnitalAlgHom_ne_zero
 
 end RegularHaar
 

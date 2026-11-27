@@ -49,10 +49,12 @@ variables (`CategoryTheory.Functor.hasLeftDerivedFunctor₂_tensor_of_inverts`).
   K-flat `P` the functor `LF.obj (DerivedCategory.Q.obj P)` is naturally isomorphic to
   `P.kFlatTensor` compatibly with morphisms of K-flat models
   (`TauCeti.leftDerivedTensorObjIsoKFlatTensor`,
-  `TauCeti.leftDerivedTensorObjIsoKFlatTensor_naturality`), on the homotopy category the functor
-  `LF.flip.obj (DerivedCategory.Q.obj P)` is the totalized tensor product with `P`
-  (`TauCeti.qhCompFlipObjIsoOfIsKFlat`), and derived tensoring with the unit
-  complex `𝟙_ (CochainComplex C ℤ)` on either side is naturally isomorphic to the identity
+  `TauCeti.leftDerivedTensorObjIsoKFlatTensor_naturality`), on the homotopy category the functors
+  `LF.obj (DerivedCategory.Q.obj P)` and `LF.flip.obj (DerivedCategory.Q.obj P)` are the
+  totalized tensor products with `P` on the left and on the right
+  (`TauCeti.qhCompObjIsoOfIsKFlat`, `TauCeti.qhCompFlipObjIsoOfIsKFlat`), and derived tensoring
+  with the unit complex `𝟙_ (CochainComplex C ℤ)` on either side is naturally isomorphic to the
+  identity
   (`TauCeti.leftDerivedTensorLeftUnitor`, `TauCeti.leftDerivedTensorRightUnitor`).
 
 Bounded-above complexes of flat objects are K-flat, so on either side they compute the derived
@@ -103,11 +105,12 @@ variable {H : Type*} [Category* H]
   (F : CochainComplex C ℤ ⥤ H)
   (hF : (quasiIso C (.up ℤ)).IsInvertedBy F)
 
+include hF
+
 section HasLeftResolutions
 
 variable [(CochainComplex.KFlat.localizerMorphism C).HasLeftResolutions]
 
-include hF in
 /-- Resolving the first factor by K-flat complexes derives the postcomposition
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` with any functor `F` that
 inverts quasi-isomorphisms. -/
@@ -126,7 +129,6 @@ theorem derives_tensor_left_of_inverts :
   simp only [ObjectProperty.ι_map, ObjectProperty.ι_obj]
   infer_instance
 
-include hF in
 /-- Resolving the second factor by K-flat complexes derives the postcomposition
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` with any functor `F` that
 inverts quasi-isomorphisms. -/
@@ -145,7 +147,6 @@ theorem derives_tensor_right_of_inverts :
   simp only [ObjectProperty.ι_map, ObjectProperty.ι_obj]
   infer_instance
 
-include hF in
 /-- For a fixed left complex `K`, resolving the right factor by K-flat complexes derives
 `(curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F).obj K` whenever `F` inverts
 quasi-isomorphisms. -/
@@ -155,7 +156,6 @@ theorem derives_tensor_obj_of_inverts (K : CochainComplex C ℤ) :
         (whiskeringRight _ _ _).obj F).obj K) :=
   (derives_tensor_right_of_inverts F hF).obj K
 
-include hF in
 /-- For a fixed right complex `L`, resolving the left factor by K-flat complexes derives
 `(curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F).flip.obj L` whenever `F`
 inverts quasi-isomorphisms. -/
@@ -171,7 +171,6 @@ section DerivabilityStructure
 
 variable [(CochainComplex.KFlat.localizerMorphism C).IsLeftDerivabilityStructure]
 
-include hF in
 /-- Postcomposing the total tensor product on `CochainComplex C ℤ` with any functor `F` that
 inverts quasi-isomorphisms yields a bifunctor admitting a left derived bifunctor with respect to
 quasi-isomorphisms in both variables. -/
@@ -191,7 +190,6 @@ variable {D₁ D₂ : Type*} [Category* D₁] [Category* D₂]
   (α : (((whiskeringLeft₂ H).obj L₁).obj L₂).obj LF ⟶
     MonoidalCategory.curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F)
 
-include hF in
 /-- When `F` inverts quasi-isomorphisms, a bifunctor `(LF, α)` is a left derived bifunctor of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` if and only if
 `(α.app P).app L` is an isomorphism whenever `P` is K-flat. -/
@@ -206,7 +204,6 @@ theorem isLeftDerivedFunctor₂_tensor_iff_isIso_left :
   exact ⟨fun h P hP L ↦ h (⟨P, (CochainComplex.kFlat_iff P).2 hP⟩, L),
     fun h ⟨⟨P, hP⟩, L⟩ ↦ @h P ((CochainComplex.kFlat_iff P).1 hP) L⟩
 
-include hF in
 /-- When `F` inverts quasi-isomorphisms, a bifunctor `(LF, α)` is a left derived bifunctor of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` if and only if
 `(α.app K).app Q` is an isomorphism whenever `Q` is K-flat. -/
@@ -221,7 +218,6 @@ theorem isLeftDerivedFunctor₂_tensor_iff_isIso_right :
   exact ⟨fun h K Q hQ ↦ h (K, ⟨Q, (CochainComplex.kFlat_iff Q).2 hQ⟩),
     fun h ⟨K, ⟨Q, hQ⟩⟩ ↦ @h K Q ((CochainComplex.kFlat_iff Q).1 hQ)⟩
 
-include hF in
 /-- When `F` inverts quasi-isomorphisms, any left derived bifunctor `(LF, α)` of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` has invertible comparison
 component `(α.app P).app L` whenever the left factor `P` is K-flat. -/
@@ -231,7 +227,6 @@ theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_left
     IsIso ((α.app P).app L) :=
   (isLeftDerivedFunctor₂_tensor_iff_isIso_left F hF α).1 inferInstance P L
 
-include hF in
 /-- When `F` inverts quasi-isomorphisms, any left derived bifunctor `(LF, α)` of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` has invertible comparison
 component `(α.app K).app Q` whenever the right factor `Q` is K-flat. -/
@@ -241,7 +236,6 @@ theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right
     IsIso ((α.app K).app Q) :=
   (isLeftDerivedFunctor₂_tensor_iff_isIso_right F hF α).1 inferInstance K Q
 
-include hF in
 /-- **Flat-model comparison on the left.** When `F` inverts quasi-isomorphisms and sequential
 colimits in `C` are exact and commute with tensoring, any left derived bifunctor `(LF, α)` of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` has invertible comparison
@@ -257,7 +251,6 @@ theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_lef
   have := P.isKFlat_of_boundedAbove_flat b
   isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_left F hF α P L
 
-include hF in
 /-- **Flat-model comparison on the right.** When `F` inverts quasi-isomorphisms and sequential
 colimits in `C` are exact and commute with tensoring, any left derived bifunctor `(LF, α)` of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` has invertible comparison
@@ -273,7 +266,6 @@ theorem isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_boundedAbove_flat_rig
   have := Q.isKFlat_of_boundedAbove_flat b
   isIso_app_app_of_isLeftDerivedFunctor₂_tensor_of_isKFlat_right F hF α K Q
 
-include hF in
 /-- When `F` inverts quasi-isomorphisms and `(LF, α)` is a left derived bifunctor of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F`, evaluating at `L₁.obj K`
 exhibits `LF.obj (L₁.obj K)` as a left derived functor of
@@ -285,7 +277,6 @@ theorem isLeftDerivedFunctor_bifunctorCounit₁_of_isLeftDerivedFunctor₂_tenso
       (Functor.bifunctorCounit₁ α K) (quasiIso C (.up ℤ)) :=
   (derives_tensor_right_of_inverts F hF).isLeftDerivedFunctor_bifunctorCounit₁ α K
 
-include hF in
 /-- When `F` inverts quasi-isomorphisms and `(LF, α)` is a left derived bifunctor of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F`, evaluating the flipped
 bifunctor at `L₂.obj L` exhibits `LF.flip.obj (L₂.obj L)` as a left derived functor of
@@ -297,7 +288,6 @@ theorem isLeftDerivedFunctor_bifunctorCounit₂_of_isLeftDerivedFunctor₂_tenso
       (Functor.bifunctorCounit₂ α L) (quasiIso C (.up ℤ)) :=
   (derives_tensor_left_of_inverts F hF).isLeftDerivedFunctor_bifunctorCounit₂ α L
 
-include hF in
 /-- **The left derived tensor bifunctor is absolute.** When `F` inverts quasi-isomorphisms,
 postcomposing any left derived bifunctor `(LF, α)` of
 `curriedTensor (CochainComplex C ℤ) ⋙ (whiskeringRight _ _ _).obj F` with an arbitrary functor
@@ -563,6 +553,45 @@ lemma qhCompFlipObjIsoOfIsKFlat_hom_app (P : CochainComplex C ℤ) [P.IsKFlat]
     Functor.flip_obj_map, Category.id_comp]
   -- The two sides are the same composite; they differ only in writing its target as
   -- `Qh.obj (quotient.obj (K ⊗ P))` or as its image under the homotopy-category tensor bifunctor
+  -- (`Functor.map₂HomotopyCategory_obj_obj`).
+  rfl
+
+/-- For a K-flat complex `P`, the derived tensor product `LF(P, -)` on the homotopy category is
+the totalized tensor product with `P` on the left: this is the partial counit
+`Functor.bifunctorCounit₁ α P`, an isomorphism since `P` is K-flat, descended to the homotopy
+category. -/
+def qhCompObjIsoOfIsKFlat (P : CochainComplex C ℤ) [P.IsKFlat] :
+    DerivedCategory.Qh ⋙ LF.obj (DerivedCategory.Q.obj P) ≅
+      ((MonoidalCategory.curriedTensor C).map₂HomotopyCategory (.up ℤ) (.up ℤ) (.up ℤ)).obj
+        ((HomotopyCategory.quotient _ _).obj P) ⋙ DerivedCategory.Qh :=
+  -- The class of `P ⊗ L` is the totalized tensor product of the classes of `P` and `L`
+  -- (`Functor.map₂HomotopyCategory_obj_obj`, `Functor.map₂HomotopyCategory_obj_map`), so the
+  -- functor `(P ⊗ -) ⋙ quotient` is the composite `quotient ⋙ (P ⊗ -)` on homotopy categories.
+  CategoryTheory.Quotient.natIsoLift _
+    ((Functor.associator _ _ _).symm ≪≫
+      Functor.isoWhiskerRight (DerivedCategory.quotientCompQhIso _) _ ≪≫
+      asIso (Functor.bifunctorCounit₁ α P) ≪≫
+      Functor.isoWhiskerLeft ((MonoidalCategory.curriedTensor _).obj P)
+        (DerivedCategory.quotientCompQhIso _).symm :
+      HomotopyCategory.quotient _ _ ⋙ DerivedCategory.Qh ⋙ LF.obj (DerivedCategory.Q.obj P) ≅
+        (MonoidalCategory.curriedTensor _).obj P ⋙ HomotopyCategory.quotient _ _ ⋙
+          DerivedCategory.Qh)
+
+/-- The component of `qhCompObjIsoOfIsKFlat` at the class of a complex `L` is the derived
+tensor comparison `(α.app P).app L`, conjugated by `DerivedCategory.quotientCompQhIso`. -/
+@[simp]
+lemma qhCompObjIsoOfIsKFlat_hom_app (P : CochainComplex C ℤ) [P.IsKFlat]
+    (L : CochainComplex C ℤ) :
+    (qhCompObjIsoOfIsKFlat LF α P).hom.app ((HomotopyCategory.quotient _ _).obj L) =
+      (LF.obj (DerivedCategory.Q.obj P)).map ((DerivedCategory.quotientCompQhIso _).hom.app L) ≫
+        (α.app P).app L ≫ (DerivedCategory.quotientCompQhIso _).inv.app (P ⊗ L) := by
+  refine (CategoryTheory.Quotient.natTransLift_app _ _ _ _ L).trans ?_
+  simp only [Iso.trans_hom, Iso.symm_hom, Functor.isoWhiskerRight_hom, asIso_hom,
+    Functor.isoWhiskerLeft_hom, NatTrans.comp_app, Functor.whiskerRight_app,
+    Functor.whiskerLeft_app, Functor.associator_inv_app, Functor.bifunctorCounit₁_app,
+    Category.id_comp]
+  -- The two sides are the same composite; they differ only in writing its target as
+  -- `Qh.obj (quotient.obj (P ⊗ L))` or as its image under the homotopy-category tensor bifunctor
   -- (`Functor.map₂HomotopyCategory_obj_obj`).
   rfl
 

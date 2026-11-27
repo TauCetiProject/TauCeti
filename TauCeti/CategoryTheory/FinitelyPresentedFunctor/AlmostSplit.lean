@@ -26,10 +26,10 @@ finiteness questions for the functor `S_Z`.
   of a projective presentation of `S_Z`.
 * **Minimality.** `g` is moreover right minimal exactly when `(-, Y) ⟶ rad(-, Z)` is a projective
   cover.
-* **Finiteness.** `Z` ends a right almost split morphism exactly when `rad(-, Z)` is finitely
-  generated, and exactly when `S_Z` is finitely presented. The functor `rad(-, Z)` need not itself
-  be finitely presented, as `C` need not have weak kernels. In a Krull-Schmidt category such a `Z`
-  also ends a right minimal right almost split morphism.
+* **Finiteness.** When `C` has finite biproducts, `Z` ends a right almost split morphism exactly
+  when `rad(-, Z)` is finitely generated, and exactly when `S_Z` is finitely presented. The functor
+  `rad(-, Z)` need not itself be finitely presented, as `C` need not have weak kernels. In a
+  Krull-Schmidt category such a `Z` also ends a right minimal right almost split morphism.
 * **Simple functors.** A simple quotient of `(-, Z)` is isomorphic to `S_Z`. Hence in a
   Krull-Schmidt category the finitely generated simple functors are exactly the functors `S_Z`
   with `End Z` local, and the finitely presented ones are those with `S_Z` finitely presented.
@@ -268,11 +268,12 @@ section Finiteness
 
 variable (Z : C) [IsLocalRing (End Z)]
 
-/-- `Z` ends a right almost split morphism exactly when `rad(-, Z)` is finitely generated. -/
-theorem isFinitelyGeneratedFunctor_radicalFunctor_iff :
+/-- With finite biproducts, `Z` ends a right almost split morphism exactly when `rad(-, Z)` is
+finitely generated. -/
+theorem isFinitelyGeneratedFunctor_radicalFunctor_iff [HasFiniteBiproducts C] :
     IsFinitelyGeneratedFunctor (radicalFunctor Z) ↔
       ∃ (Y : C) (g : Y ⟶ Z), IsRightAlmostSplit g := by
-  rw [isFinitelyGeneratedFunctor_def]
+  rw [isFinitelyGeneratedFunctor_iff_exists_single]
   constructor
   · rintro ⟨Y, p, hp⟩
     obtain ⟨g, hg, rfl⟩ := exists_eq_radicalFunctorLift p
@@ -281,18 +282,16 @@ theorem isFinitelyGeneratedFunctor_radicalFunctor_iff :
     obtain ⟨hg, hepi⟩ := isRightAlmostSplit_iff_exists_epi_radicalFunctorLift.1 hrs
     exact ⟨Y, _, hepi⟩
 
-/-- **The finite presentation criterion.** `Z` ends a right almost split morphism exactly when the
-simple functor `S_Z` is finitely presented. -/
-theorem isFinitelyPresentedFunctor_simpleFunctor_iff :
+/-- **The finite presentation criterion.** With finite biproducts, `Z` ends a right almost split
+morphism exactly when the simple functor `S_Z` is finitely presented. -/
+theorem isFinitelyPresentedFunctor_simpleFunctor_iff [HasFiniteBiproducts C] :
     IsFinitelyPresentedFunctor (simpleFunctor Z) ↔
       ∃ (Y : C) (g : Y ⟶ Z), IsRightAlmostSplit g := by
-  rw [isFinitelyPresentedFunctor_iff_exists_isColimit]
+  rw [isFinitelyPresentedFunctor_iff_exists_single]
   constructor
   · -- Given a presentation `(-, X) ⟶ (-, Y') ⟶ S_Z ⟶ 0`, the projective cover `(-, Z) ⟶ S_Z` is a
     -- retract of `(-, Y') ⟶ S_Z`, along `u : Y' ⟶ Z`; the composite `X ⟶ Y' ⟶ Z` is the sought map.
-    rintro ⟨X, Y', f, q, h, ⟨hc⟩⟩
-    have : Epi q := Cofork.IsColimit.epi hc
-    have hS := ShortComplex.exact_of_g_is_cokernel (ShortComplex.mk _ _ h) hc
+    rintro ⟨X, Y', f, q, h, _, hS⟩
     obtain ⟨u, rfl, hsplit⟩ :=
       (isRepresentableProjectiveCover_preadditiveYonedaMap_jacobsonRadicalIdeal
         Z).exists_comp_eq_and_isSplitEpi q
@@ -307,7 +306,7 @@ theorem isFinitelyPresentedFunctor_simpleFunctor_iff :
       exact ⟨w, by rw [← Category.assoc, hw, hsu]⟩
   · rintro ⟨Y, g, hrs⟩
     obtain ⟨h, hS⟩ := isRightAlmostSplit_iff_exists_exact_simpleFunctorπ.1 hrs
-    exact ⟨Y, Z, g, simpleFunctorπ Z, h, ⟨hS.gIsCokernel⟩⟩
+    exact ⟨Y, Z, g, simpleFunctorπ Z, h, inferInstance, hS⟩
 
 /-- **Existence of minimal right almost split morphisms.** In a Krull-Schmidt category, if `End Z`
 is local and `S_Z` is finitely presented, then `Z` ends a right minimal right almost split
@@ -367,7 +366,7 @@ variable [HasFiniteBiproducts C] [IsKrullSchmidt C]
 simple functor is `S_Z` for some `Z` with local endomorphism ring. -/
 theorem IsKrullSchmidt.exists_iso_simpleFunctor [Simple F] (hF : IsFinitelyGeneratedFunctor F) :
     ∃ Z : C, IsLocalRing (End Z) ∧ Nonempty (simpleFunctor Z ≅ F) := by
-  obtain ⟨Y, p, hp⟩ := isFinitelyGeneratedFunctor_def.1 hF
+  obtain ⟨Y, p, hp⟩ := (isFinitelyGeneratedFunctor_iff_exists_single _).1 hF
   obtain ⟨n, P, hP, ⟨e⟩⟩ := IsKrullSchmidt.exists_iso_biproduct Y
   let p' := preadditiveYoneda.map e.inv ≫ p
   have hp' : p' ≠ 0 := fun h ↦ id_ne_zero F (by

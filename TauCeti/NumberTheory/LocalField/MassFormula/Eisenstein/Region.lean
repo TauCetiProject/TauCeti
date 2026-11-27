@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Group.Defs
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import TauCeti.MeasureTheory.Group.LocalFieldScaling
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import TauCeti.Data.Set.Function
 import TauCeti.NumberTheory.LocalField.Uniformizer
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly

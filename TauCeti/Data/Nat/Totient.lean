@@ -24,6 +24,7 @@ the reciprocal form used for Euler products over a field of characteristic zero.
 * `TauCeti.Nat.totient_le_two_iff`: `φ(n) ≤ 2` iff `n ∈ {0, 1, 2, 3, 4, 6}`.
 * `TauCeti.Nat.prod_inv_one_sub_inv_eq_div_totient`: for `n ≠ 0`,
   `∏_{p ∣ n} (1 - 1 / p)⁻¹ = n / φ(n)`.
+* `TauCeti.Nat.pow_dvd_totient_pow_succ`: `ℓ ^ m ∣ φ(ℓ ^ (m + 1))` for every `ℓ`.
 -/
 
 public section
@@ -74,5 +75,14 @@ theorem prod_inv_one_sub_inv_eq_div_totient {K : Type*} [Field K] [CharZero K] {
   have h := congrArg (Rat.cast : ℚ → K) (Nat.totient_eq_mul_prod_factors n)
   push_cast at h
   rw [Finset.prod_inv_distrib, h, div_mul_cancel_left₀ (Nat.cast_ne_zero.mpr hn)]
+
+/-- `ℓ ^ m ∣ φ(ℓ ^ (m + 1))` for every `ℓ`, not only for primes as in Mathlib's
+`Nat.totient_prime_pow_succ`. -/
+theorem pow_dvd_totient_pow_succ (ℓ m : ℕ) : ℓ ^ m ∣ (ℓ ^ (m + 1)).totient := by
+  induction m with
+  | zero => exact one_dvd _
+  | succ m ih =>
+    rw [pow_succ' ℓ (m + 1), Nat.totient_mul_of_dvd (dvd_pow_self ℓ m.succ_ne_zero)]
+    simpa only [pow_succ'] using mul_dvd_mul_left ℓ ih
 
 end TauCeti.Nat

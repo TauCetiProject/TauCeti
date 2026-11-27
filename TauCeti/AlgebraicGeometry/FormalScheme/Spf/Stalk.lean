@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Basic
 public import TauCeti.RingTheory.CohenMacaulay.Basic
+public import Mathlib.RingTheory.Ideal.Height
 public import Mathlib.RingTheory.RegularLocalRing.Defs
 public import Mathlib.RingTheory.RingHom.Flat
 
@@ -49,6 +50,8 @@ Cohen–Macaulay condition at a point of a formal spectrum are computed from its
   generates the maximal ideal of the stalk.
 * `TauCeti.FormalScheme.Spf.ringKrullDim_stalk`: the stalk `O_{Spf A, p}` and `A_𝔭` have the same
   Krull dimension.
+* `TauCeti.FormalScheme.Spf.ringKrullDim_stalk_eq_height`: the stalk `O_{Spf A, p}` has Krull
+  dimension the height of `𝔭`.
 * `TauCeti.FormalScheme.Spf.isRegularLocalRing_stalk_iff`: the stalk is regular if and only if
   `A_𝔭` is.
 * `TauCeti.FormalScheme.Spf.isCohenMacaulay_stalk_iff`: the stalk is Cohen–Macaulay if and only if
@@ -278,6 +281,12 @@ theorem ringKrullDim_stalk [IsNoetherianRing A] :
     ringKrullDim ((Spf A).presheaf.stalk p) =
       ringKrullDim (Localization.AtPrime (p : PrimeSpectrum A).asIdeal) :=
   ringKrullDim_eq_of_hasGoingDown_of_map_maximalIdeal_eq (map_maximalIdeal_localizationToStalk p)
+
+/-- The stalk of the formal spectrum of a noetherian adic ring `A` at an open prime `𝔭` has
+Krull dimension the height of `𝔭`. -/
+theorem ringKrullDim_stalk_eq_height [IsNoetherianRing A] :
+    ringKrullDim ((Spf A).presheaf.stalk p) = (p : PrimeSpectrum A).asIdeal.height :=
+  (ringKrullDim_stalk p).trans (IsLocalization.AtPrime.ringKrullDim_eq_height _ _)
 
 /-- The stalk of the formal spectrum of a noetherian adic ring `A` at an open prime `𝔭` is a
 regular local ring if and only if `A_𝔭` is. -/

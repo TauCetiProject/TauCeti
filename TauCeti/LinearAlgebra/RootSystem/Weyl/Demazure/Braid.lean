@@ -40,7 +40,7 @@ derived from the localization identity `(1 - e^{-αₖ}) Dₖ(g) = g - e^{-αₖ
 applied, and from the invariance `sₖ(Dₖ g) = Dₖ g`: peeling off the operators from the outside
 in, the coefficient of each term `w(Dₖ g)` is divisible by `1 - e^{-w αₖ}` with `w αₖ` positive,
 and the resulting `linear_combination` certificate is checked by `ring`. Since multiplication by
-`1 - e^{-β}` is injective (`RootPairing.isLeftRegular_one_sub_single_neg_root`), the two words
+`1 - e^{-β}` is injective (`RootPairing.isRegular_one_sub_single_neg_root`), the two words
 give the same operator. No rank-two root system needs to be classified: the computation only uses
 the two Cartan entries.
 
@@ -102,7 +102,7 @@ private lemma isLeftRegular_one_sub_map (σ : AddMonoidAlgebra ℤ M ≃+* AddMo
   intro X Y h
   have h' := congr(σ.symm $h)
   simp only [map_mul, map_sub, map_one, ← hc, RingEquiv.symm_apply_apply] at h'
-  exact σ.symm.injective (P.isLeftRegular_one_sub_single_neg_root k h')
+  exact σ.symm.injective ((P.isRegular_one_sub_single_neg_root k).left h')
 
 /-- The reindexings `sᵢ`, `sⱼ` of `ℤ[M]` satisfy the braid relation of length `2`: orthogonal
 reflections commute (`RootPairing.isOrthogonal_comm`). -/
@@ -587,7 +587,8 @@ subsystem of type `A₁ × A₁` is not a zero divisor. -/
 private lemma isLeftRegular_A1A1 {a b : AddMonoidAlgebra ℤ M} (ha : single (-P.root i) 1 = a)
     (hb : single (-P.root j) 1 = b) : IsLeftRegular ((1 - b) * (1 - a)) := by
   subst ha hb
-  exact (P.isLeftRegular_one_sub_single_neg_root j).mul (P.isLeftRegular_one_sub_single_neg_root i)
+  exact (P.isRegular_one_sub_single_neg_root j).left.mul
+    (P.isRegular_one_sub_single_neg_root i).left
 
 /-- The product of the factors `1 - e^{-β}` over the positive roots `β` of the rank-two
 subsystem of type `A₂` is not a zero divisor. -/
