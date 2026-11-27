@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Topology.Constructions.Join
-
-import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # The join of two spheres is a sphere
@@ -105,22 +104,42 @@ theorem sphereJoinMap_injective :
   · refine smul_right_injective F (Real.sqrt_ne_zero'.2 ?_) hy
     exact lt_of_le_of_ne (nonneg s) fun h => hs (Subtype.ext h.symm)
 
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- The squared norms of the two components of a unit vector of the `L²` product add up to `1`. -/
+theorem sq_norm_fst_add_sq_norm_snd_eq_one (p : sphere (0 : WithLp 2 (E × F)) 1) :
+    ‖(p : WithLp 2 (E × F)).fst‖ ^ 2 + ‖(p : WithLp 2 (E × F)).snd‖ ^ 2 = 1 := by
+  rw [← prod_norm_sq_eq_of_L2, norm_eq_of_mem_sphere, one_pow]
+
+omit [NormedSpace ℝ E] [NormedSpace ℝ F] in
+/-- The squared norm of the second component of a unit vector of the `L²` product lies in the unit
+interval. -/
+theorem sq_norm_snd_mem_unitInterval (p : sphere (0 : WithLp 2 (E × F)) 1) :
+    ‖(p : WithLp 2 (E × F)).snd‖ ^ 2 ∈ I := by
+  have hn := sq_norm_fst_add_sq_norm_snd_eq_one p
+  exact ⟨by positivity, by nlinarith [sq_nonneg ‖(p : WithLp 2 (E × F)).fst‖]⟩
+
+/-- A unit vector `(a, b)` of the `L²` product is the image of the point
+`[a / ‖a‖, b / ‖b‖, ‖b‖²]` of the join, where the directions of `a` and `b` are
+`TauCeti.sphereDirection` with any fallback unit vectors `e` and `e'`. -/
+theorem sphereJoinMap_mk_sphereDirection (e : sphere (0 : E) 1) (e' : sphere (0 : F) 1)
+    (p : sphere (0 : WithLp 2 (E × F)) 1) :
+    sphereJoinMap (Join.mk _ _ (sphereDirection e (p : WithLp 2 (E × F)).fst,
+      sphereDirection e' (p : WithLp 2 (E × F)).snd, ⟨_, sq_norm_snd_mem_unitInterval p⟩)) = p := by
+  have h1 : 1 - ‖(p : WithLp 2 (E × F)).snd‖ ^ 2 = ‖(p : WithLp 2 (E × F)).fst‖ ^ 2 := by
+    linarith [sq_norm_fst_add_sq_norm_snd_eq_one p]
+  ext1
+  rw [coe_sphereJoinMap_mk]
+  simp only [h1, Real.sqrt_sq (norm_nonneg _), norm_smul_sphereDirection]
+  -- `toLp 2 (p.fst, p.snd) = p` is the eta law of the product and of `WithLp`.
+  rfl
+
 /-- The map from the join of the unit spheres of nontrivial spaces to the sphere of the `L²`
 product is surjective. -/
 theorem sphereJoinMap_surjective [Nontrivial E] [Nontrivial F] :
     Function.Surjective (sphereJoinMap (E := E) (F := F)) := by
-  rintro ⟨p, hp⟩
-  have hn : ‖p.fst‖ ^ 2 + ‖p.snd‖ ^ 2 = 1 := by
-    rw [← prod_norm_sq_eq_of_L2, mem_sphere_zero_iff_norm.1 hp, one_pow]
   obtain ⟨e⟩ := (NormedSpace.sphere_nonempty (x := (0 : E)) (r := 1)).2 zero_le_one |>.coe_sort
   obtain ⟨e'⟩ := (NormedSpace.sphere_nonempty (x := (0 : F)) (r := 1)).2 zero_le_one |>.coe_sort
-  have ht : ‖p.snd‖ ^ 2 ∈ I := ⟨by positivity, by nlinarith [sq_nonneg ‖p.fst‖]⟩
-  refine ⟨Join.mk _ _ (sphereDirection e p.fst, sphereDirection e' p.snd, ⟨_, ht⟩), Subtype.ext ?_⟩
-  rw [coe_sphereJoinMap_mk]
-  have h1 : 1 - ‖p.snd‖ ^ 2 = ‖p.fst‖ ^ 2 := by linarith
-  simp only [h1, Real.sqrt_sq (norm_nonneg _), norm_smul_sphereDirection]
-  -- `toLp 2 (p.fst, p.snd) = p` is the eta law of the product and of `WithLp`.
-  rfl
+  exact fun p => ⟨_, sphereJoinMap_mk_sphereDirection e e' p⟩
 
 theorem sphereJoinMap_bijective [Nontrivial E] [Nontrivial F] :
     Function.Bijective (sphereJoinMap (E := E) (F := F)) :=
