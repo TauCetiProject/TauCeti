@@ -68,6 +68,12 @@ private theorem lift_trdeg_eq {k : Type*} {E : Type u} [CommRing k] [Countable k
     Cardinal.lift.{0} (trdeg k E) = Cardinal.lift.{u} (trdeg k ℂ) := by
   simp [trdeg_eq_continuum, trdeg_eq_cardinalMk (hE ▸ aleph0_lt_continuum), hE]
 
+/-- A commutative ring over which some element of `A` is transcendental acts faithfully on `A`. -/
+private theorem _root_.Transcendental.faithfulSMul {R A : Type*} [CommRing R] [Ring A]
+    [Algebra R A] {x : A} (hx : Transcendental R x) : FaithfulSMul R A :=
+  have : Algebra.Transcendental R A := ⟨⟨x, hx⟩⟩
+  (faithfulSMul_iff_algebraMap_injective R A).2 Algebra.injective_of_transcendental
+
 section CommRing
 
 variable {k : Type*} {E : Type u} [CommRing k] [Countable k] [Algebra k ℂ] [FaithfulSMul k ℂ]
@@ -77,7 +83,10 @@ variable {k : Type*} {E : Type u} [CommRing k] [Countable k] [Algebra k ℂ] [Fa
 private theorem lift_trdeg_le [CommRing E] [Algebra k E] (hE : #E ≤ 𝔠) :
     Cardinal.lift.{0} (trdeg k E) ≤ Cardinal.lift.{u} (trdeg k ℂ) := by
   rw [trdeg_eq_continuum, lift_continuum, lift_le_continuum]
-  have hle : trdeg k E ≤ #E := ciSup_le' fun s ↦ mk_set_le s.val
+  -- `Algebra.trdeg` is the supremum of the cardinalities of algebraically independent subsets.
+  have hle : trdeg k E ≤ #E := by
+    rw [Algebra.trdeg]
+    exact ciSup_le' fun s ↦ mk_set_le s.val
   exact hle.trans hE
 
 /-- Every complex embedding of a countable commutative ring `k`, given as a faithful `k`-algebra
@@ -101,9 +110,7 @@ transcendental over `k` and a complex number `z` transcendental over `k`, some `
 homomorphism `E →ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algHom_apply_eq [CommRing E] [IsDomain E] [Algebra k E] (hE : #E ≤ 𝔠) {α : E}
     {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E →ₐ[k] ℂ, φ α = z := by
-  have : Algebra.Transcendental k ℂ := ⟨⟨z, hz⟩⟩
-  have : FaithfulSMul k ℂ :=
-    (faithfulSMul_iff_algebraMap_injective k ℂ).2 Algebra.injective_of_transcendental
+  have := hz.faithfulSMul
   obtain ⟨φ, _, hφ⟩ := hα.exists_algHom_apply_eq hz (lift_trdeg_le hE)
   exact ⟨φ, hφ⟩
 
@@ -113,12 +120,8 @@ an element `α ∈ E` transcendental over `k` and a complex number `z` transcend
 isomorphism `E ≃ₐ[k] ℂ` sends `α` to `z`. -/
 theorem exists_algEquiv_apply_eq [Field E] [IsAlgClosed E] [Algebra k E] (hE : #E = 𝔠) {α : E}
     {z : ℂ} (hα : Transcendental k α) (hz : Transcendental k z) : ∃ φ : E ≃ₐ[k] ℂ, φ α = z := by
-  have : Algebra.Transcendental k E := ⟨⟨α, hα⟩⟩
-  have : Algebra.Transcendental k ℂ := ⟨⟨z, hz⟩⟩
-  have : FaithfulSMul k E :=
-    (faithfulSMul_iff_algebraMap_injective k E).2 Algebra.injective_of_transcendental
-  have : FaithfulSMul k ℂ :=
-    (faithfulSMul_iff_algebraMap_injective k ℂ).2 Algebra.injective_of_transcendental
+  have := hα.faithfulSMul
+  have := hz.faithfulSMul
   exact hα.exists_algEquiv_apply_eq hz (lift_trdeg_eq hE)
 
 end CommRing
