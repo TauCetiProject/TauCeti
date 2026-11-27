@@ -13,7 +13,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
 import Mathlib.RingTheory.Polynomial.Vieta
 import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Order
 import TauCeti.Analysis.Complex.RiemannSurface.FunctionField.Separation
-import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 
 /-!
 # The degree of a meromorphic function over `ℂ(t)`
@@ -204,31 +204,50 @@ theorem meromorphicAt_esymm_map_finitePart_fiberMultiset (k : ℕ) (y₀ : OnePo
 
 /-! ### The polynomial equation -/
 
-/-- **The polynomial equation of a meromorphic function over `ℂ(t)`.** A meromorphic function
-`f` on a compact connected Riemann surface `X` is a root of a monic polynomial of degree `deg β`
-whose coefficients are meromorphic functions on the sphere, pulled back along a finite holomorphic
-map `β : X → OnePoint ℂ`. One such polynomial, built in the proof, has as coefficients, up to
-sign, the elementary symmetric functions of the values of `f` along the fibres of `β`. -/
-theorem exists_monic_natDegree_eq_degree_eval₂_eq_zero :
-    ∃ p : (MeromorphicFunction (OnePoint ℂ))[X], p.Monic ∧ p.natDegree = degree β ∧
-      p.eval₂ (comapₐ β β.holomorphic β.nonconstant).toRingHom f = 0 := by
-  set n := degree β
-  -- The polynomial `∏ (T - f(x))` over the fibre multiset of `y`, and its coefficients.
-  set Q : OnePoint ℂ → ℂ[X] := fun y ↦
-    (((fiberMultiset β y).map f.finitePart).map fun v ↦ Polynomial.X - C v).prod
-  have hcard (y : OnePoint ℂ) : Multiset.card ((fiberMultiset β y).map f.finitePart) = n := by
-    rw [Multiset.card_map, β.card_fiberMultiset]
-  have hQ (i : ℕ) (hi : i ≤ n) : (fun y ↦ (Q y).coeff i) = fun y ↦
-      (-1) ^ (n - i) * ((fiberMultiset β y).map f.finitePart).esymm (n - i) := by
-    funext y
-    simp only [Q]
-    rw [Multiset.prod_X_sub_C_coeff _ (hcard y ▸ hi), hcard]
-  have hmero (i : Fin n) (y : OnePoint ℂ) : MeromorphicAt (fun y ↦ (Q y).coeff i) y := by
-    rw [hQ i i.isLt.le]
-    exact (meromorphicAt_const _ y).mul (meromorphicAt_esymm_map_finitePart_fiberMultiset β f _ y)
-  set A : Fin n → MeromorphicFunction (OnePoint ℂ) := fun i ↦ ofMeromorphic (hmero i)
-  refine ⟨TauCeti.Polynomial.monicOfCoeff A, TauCeti.Polynomial.monic_monicOfCoeff A,
-    TauCeti.Polynomial.natDegree_monicOfCoeff A, ?_⟩
+/-- The polynomial `∏ (T - f(x))` over the fibre multiset of `y`. -/
+private def fiberPolynomial (y : OnePoint ℂ) : ℂ[X] :=
+  (((fiberMultiset β y).map f.finitePart).map fun v ↦ Polynomial.X - C v).prod
+
+omit [ConnectedSpace X] in
+/-- The fibre polynomial has `deg β` roots, counted with multiplicity. -/
+private theorem card_map_finitePart_fiberMultiset (y : OnePoint ℂ) :
+    Multiset.card ((fiberMultiset β y).map f.finitePart) = degree β := by
+  rw [Multiset.card_map, β.card_fiberMultiset]
+
+omit [ConnectedSpace X] in
+/-- The coefficients of the fibre polynomial are, up to sign, the elementary symmetric functions
+of the values of `f` along the fibre. -/
+private theorem coeff_fiberPolynomial {i : ℕ} (hi : i ≤ degree β) :
+    (fun y ↦ (fiberPolynomial β f y).coeff i) = fun y ↦
+      (-1) ^ (degree β - i) * ((fiberMultiset β y).map f.finitePart).esymm (degree β - i) := by
+  funext y
+  rw [fiberPolynomial, Multiset.prod_X_sub_C_coeff _
+    ((card_map_finitePart_fiberMultiset β f y).symm ▸ hi), card_map_finitePart_fiberMultiset]
+
+/-- The coefficients of the fibre polynomial are meromorphic functions on the sphere. -/
+private theorem meromorphicAt_coeff_fiberPolynomial {i : ℕ} (hi : i ≤ degree β)
+    (y : OnePoint ℂ) : MeromorphicAt (fun y ↦ (fiberPolynomial β f y).coeff i) y := by
+  rw [coeff_fiberPolynomial β f hi]
+  exact (meromorphicAt_const _ y).mul (meromorphicAt_esymm_map_finitePart_fiberMultiset β f _ y)
+
+/-- Over a fibre carrying no pole of `f`, the meromorphic function given by a coefficient of the
+fibre polynomial takes the value of that coefficient. -/
+private theorem ofMeromorphic_coeff_fiberPolynomial_apply {i : ℕ} (hi : i ≤ degree β)
+    {y : OnePoint ℂ} (hy : ∀ x ∈ β ⁻¹' {y}, f x ≠ ∞) :
+    ofMeromorphic (meromorphicAt_coeff_fiberPolynomial β f hi) y =
+      ↑((fiberPolynomial β f y).coeff i) := by
+  refine ofMeromorphic_apply_of_continuousAt _ ?_
+  rw [coeff_fiberPolynomial β f hi]
+  exact continuousAt_const.mul (continuousAt_esymm β f hy _)
+
+/-- The monic polynomial with the fibre-polynomial coefficients annihilates `f`. -/
+private theorem eval₂_monicOfCoeff_fiber_eq_zero
+    (A : Fin (degree β) → MeromorphicFunction (OnePoint ℂ))
+    (hA : ∀ y, (∀ x ∈ β ⁻¹' {y}, f x ≠ ∞) → ∀ i : Fin (degree β),
+      A i y = ↑((fiberPolynomial β f y).coeff i)) :
+    (TauCeti.Polynomial.monicOfCoeff A).eval₂
+      (comapₐ β β.holomorphic β.nonconstant).toRingHom f = 0 := by
+  let n := degree β
   -- Compare values at the points whose fibre carries no pole of `f`: all but finitely many.
   refine eq_of_forall_apply_eq (p := fun x ↦ ∀ x' ∈ β ⁻¹' {β x}, f x' ≠ ∞) (fun x₀ ↦ ?_)
     fun x hx ↦ ?_
@@ -237,33 +256,63 @@ theorem exists_monic_natDegree_eq_degree_eval₂_eq_zero :
     filter_upwards [mem_codiscrete_iff_forall_mem_nhdsNE.1 hB.compl_mem_codiscrete x₀]
       with x hx x' hx' hfx'
     exact hx ⟨x', hfx', hx'⟩
-  -- At such a point, the coefficients of the polynomial take the values of those of `Q (β x)`.
+  -- At such a point, the coefficients of the polynomial take the values of those of the fibre
+  -- polynomial of `β x`.
   have hcoeff (i : ℕ) (hi : i ∈ Finset.range (n + 1)) :
       (comapₐ β β.holomorphic β.nonconstant).toRingHom
-          ((TauCeti.Polynomial.monicOfCoeff A).coeff i) x = ↑((Q (β x)).coeff i) := by
+          ((TauCeti.Polynomial.monicOfCoeff A).coeff i) x =
+        ↑((fiberPolynomial β f (β x)).coeff i) := by
     have hi' : i ≤ n := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
     rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, comapₐ_apply, comap_apply]
     rcases hi'.lt_or_eq with hin | rfl
-    · have hA := TauCeti.Polynomial.coeff_monicOfCoeff A ⟨i, hin⟩
-      rw [Fin.val_mk] at hA
-      rw [hA]
-      refine ofMeromorphic_apply_of_continuousAt _ ?_
-      rw [hQ i hi']
-      exact continuousAt_const.mul (continuousAt_esymm β f hx _)
+    · have hAi := TauCeti.Polynomial.coeff_monicOfCoeff A ⟨i, hin⟩
+      rw [Fin.val_mk] at hAi
+      rw [hAi]
+      exact hA _ hx ⟨i, hin⟩
     · rw [TauCeti.Polynomial.coeff_monicOfCoeff_self, coe_one,
-        congrFun (hQ n le_rfl) (β x), Nat.sub_self, pow_zero, Multiset.esymm_zero, one_mul]
+        congrFun (coeff_fiberPolynomial β f le_rfl) (β x), Nat.sub_self, pow_zero,
+        Multiset.esymm_zero, one_mul]
   rw [eval₂_eq_sum_range, TauCeti.Polynomial.natDegree_monicOfCoeff, coe_zero,
     sum_apply_of_eq_coe fun i hi ↦ mul_apply_of_eq_coe (hcoeff i hi)
       (pow_apply_of_eq_coe (coe_finitePart (hx x rfl)).symm i)]
-  -- The value is `Q (β x)` evaluated at `f x`, which is one of its roots.
+  -- The value is the fibre polynomial of `β x` evaluated at `f x`, which is one of its roots.
   rw [← eval_eq_sum_range' (by
-      simp only [Q]
-      rw [natDegree_multiset_prod_X_sub_C_eq_card, hcard]
+      rw [fiberPolynomial, natDegree_multiset_prod_X_sub_C_eq_card,
+        card_map_finitePart_fiberMultiset]
       omega),
-    eval_multiset_prod, Multiset.map_map]
+    fiberPolynomial, eval_multiset_prod, Multiset.map_map]
   refine congrArg _ (Multiset.prod_eq_zero (Multiset.mem_map.2 ⟨f.finitePart x, ?_, by simp⟩))
   exact Multiset.mem_map_of_mem _ ((mem_fiberMultiset (β.finite_fiber (β x))).2
     ⟨rfl, localMultiplicity_pos β x⟩)
+
+/-- **The polynomial equation of a meromorphic function over `ℂ(t)`.** A meromorphic function
+`f` on a compact connected Riemann surface `X` is a root of a monic polynomial of degree `deg β`
+whose coefficients are meromorphic functions on the sphere, pulled back along a finite holomorphic
+map `β : X → OnePoint ℂ`. One such polynomial, built in the proof, has as coefficients, up to
+sign, the elementary symmetric functions of the values of `f` along the fibres of `β`.
+Its coefficients have no poles over any fibre on which `f` has no poles. -/
+theorem exists_monic_natDegree_eq_degree_eval₂_eq_zero :
+    ∃ p : (MeromorphicFunction (OnePoint ℂ))[X], p.Monic ∧ p.natDegree = degree β ∧
+      p.eval₂ (comapₐ β β.holomorphic β.nonconstant).toRingHom f = 0 ∧
+      ∀ (i : ℕ) (y : OnePoint ℂ), (∀ x ∈ β ⁻¹' {y}, f x ≠ ∞) → p.coeff i y ≠ ∞ := by
+  set n := degree β
+  set A : Fin n → MeromorphicFunction (OnePoint ℂ) := fun i ↦
+    ofMeromorphic (meromorphicAt_coeff_fiberPolynomial β f i.isLt.le)
+  have hA (y : OnePoint ℂ) (hy : ∀ x ∈ β ⁻¹' {y}, f x ≠ ∞) (i : Fin n) :
+      A i y = ↑((fiberPolynomial β f y).coeff i) :=
+    ofMeromorphic_coeff_fiberPolynomial_apply β f i.isLt.le hy
+  refine ⟨TauCeti.Polynomial.monicOfCoeff A, TauCeti.Polynomial.monic_monicOfCoeff A,
+    TauCeti.Polynomial.natDegree_monicOfCoeff A, eval₂_monicOfCoeff_fiber_eq_zero β f A hA,
+    fun i y hy ↦ ?_⟩
+  by_cases hi : i < n
+  · rw [TauCeti.Polynomial.coeff_monicOfCoeff A ⟨i, hi⟩, hA y hy]
+    exact OnePoint.coe_ne_infty _
+  · rcases (Nat.le_of_not_gt hi).eq_or_lt with rfl | hi
+    · simp only [TauCeti.Polynomial.coeff_monicOfCoeff_self, coe_one]
+      exact OnePoint.coe_ne_infty _
+    · rw [coeff_eq_zero_of_natDegree_lt (by
+        rwa [TauCeti.Polynomial.natDegree_monicOfCoeff])]
+      simp
 
 /-! ### Functions constant along the fibres are pullbacks -/
 
@@ -373,10 +422,18 @@ variable [Algebra (RatFunc ℂ) (MeromorphicFunction X)]
     ((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).toRingHom)
 include h
 
+omit [CompactSpace X] [T2Space X] in
+/-- For the `ℂ(t)`-algebra structure on `M(X)` given by pullback along `β`, the constants act
+through `ℂ(t)`. -/
+theorem isScalarTower_ratFunc : IsScalarTower ℂ (RatFunc ℂ) (MeromorphicFunction X) :=
+  .of_algebraMap_eq fun c ↦ by
+    rw [h]
+    exact (((comapₐ β β.holomorphic β.nonconstant).comp ratFuncEquiv.toAlgHom).commutes c).symm
+
 /-- The polynomial equation of `f`, transported to `ℂ(t)` along `ratFuncEquiv`. -/
 private theorem exists_monic_natDegree_eq_degree_aeval_eq_zero :
     ∃ q : (RatFunc ℂ)[X], q.Monic ∧ q.natDegree = degree β ∧ aeval f q = 0 := by
-  obtain ⟨p, hp, hdeg, hpf⟩ := exists_monic_natDegree_eq_degree_eval₂_eq_zero β f
+  obtain ⟨p, hp, hdeg, hpf, -⟩ := exists_monic_natDegree_eq_degree_eval₂_eq_zero β f
   have hcomp : (algebraMap (RatFunc ℂ) (MeromorphicFunction X)).comp
       ratFuncEquiv.symm.toRingEquiv.toRingHom = (comapₐ β β.holomorphic β.nonconstant).toRingHom :=
     RingHom.ext fun g ↦ by simp [h]

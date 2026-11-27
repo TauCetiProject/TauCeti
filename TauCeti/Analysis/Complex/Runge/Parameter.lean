@@ -11,7 +11,7 @@ public import TauCeti.Analysis.Complex.Runge.Operator
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
-import TauCeti.Analysis.Complex.MixedDeriv
+import TauCeti.Analysis.Complex.Parameter.Deriv
 
 /-!
 # Finite-rank Runge operators with parameters
@@ -34,7 +34,7 @@ parameters.
   most `ε` times any nonnegative bound for the same derivative of `h` on `L`. Parameter
   derivatives commute with `A`, whose data do not depend on the parameter (Mathlib's
   `iteratedFDeriv_fun_sum_apply` and `iteratedFDeriv_const_smul_apply'`), and they are again
-  holomorphic in the complex variable (`ContDiffOn.differentiableOn_iteratedFDeriv_partial`), so
+  holomorphic in the complex variable (`ContDiffOn.differentiableOn_iteratedFDeriv_slice`), so
   the vector-valued form of the operator estimate (`TauCeti.norm_sub_sum_smul_le_of_scalar`)
   applies to them.
 * `TauCeti.norm_iteratedFDeriv_sub_sum_smul_apply_le`: the same estimate for the values of these
@@ -109,7 +109,7 @@ theorem norm_iteratedFDeriv_sub_sum_smul_le {X : Type*} [NormedAddCommGroup X]
     iteratedFDeriv_fun_sum_apply fun j _ ↦ (hslice (hζ j)).const_smul _]
   simp_rw [iteratedFDeriv_const_smul_apply' (hslice (hζ _))]
   exact norm_sub_sum_smul_le_of_scalar hA
-    (hh.differentiableOn_iteratedFDeriv_partial hS hU hhol hk hx) hB hhB hz
+    (hh.differentiableOn_iteratedFDeriv_slice (h := fun x z ↦ h (x, z)) hS hU hhol hk hx) hB hhB hz
 
 /-- **Parameter derivatives under the finite-rank Runge operator, in fixed directions.** Under
 the hypotheses of `TauCeti.norm_iteratedFDeriv_sub_sum_smul_le`, for directions `m : Fin k → X`
@@ -141,7 +141,8 @@ theorem norm_iteratedFDeriv_sub_sum_smul_apply_le {X : Type*} [NormedAddCommGrou
   exact norm_sub_sum_smul_le_of_scalar hA
     (f := fun y ↦ iteratedFDeriv ℝ k (fun x' ↦ h (x', y)) x m)
     ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin k ↦ X) G m).comp_differentiableOn_of_map_smul
-      (fun _ _ ↦ by simp) (hh.differentiableOn_iteratedFDeriv_partial hS hU hhol hk hx))
+      (fun _ _ ↦ by simp)
+      (hh.differentiableOn_iteratedFDeriv_slice (h := fun x z ↦ h (x, z)) hS hU hhol hk hx))
     hB hhB hz
 
 /-- **The finite-rank Runge operator on smooth families of holomorphic functions.** For a Runge
