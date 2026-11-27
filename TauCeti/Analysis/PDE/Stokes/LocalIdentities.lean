@@ -25,9 +25,10 @@ viscosity `μ` on the coordinate space `ι → ℝ`, this file defines
 * the predicate `TauCeti.Stokes.IsStokesSolutionAt`, consisting of exactly the momentum equation
   and the incompressibility condition `div u = 0` at a point.
 
-The velocity gradient, the stress and the row divergence are linear at points of
+The velocity gradient, the stress and the row divergence are additive at points of
 differentiability (`TauCeti.Stokes.velocityGradient_add`, `TauCeti.Stokes.stress_add`,
-`TauCeti.Stokes.stressDivergence_add` and their `_sub` and `_const_smul` forms).
+`TauCeti.Stokes.stressDivergence_add` and their `_sub` forms) and commute with scaling everywhere
+(their `_const_smul` forms).
 
 The main results are the pointwise identities behind the work–dissipation identity and the
 Lorentz reciprocal theorem (Kim–Karrila, *Microhydrodynamics*, §2.2–2.3). For the work flux
@@ -133,11 +134,10 @@ theorem velocityGradient_sub {u v : (ι → ℝ) → ι → ℝ} {x : ι → ℝ
   rw [velocityGradient, velocityGradient, velocityGradient, fderiv_sub hu hv,
     ContinuousLinearMap.toLinearMap_sub, map_sub]
 
-/-- The velocity gradient commutes with scaling a field differentiable at the point. -/
-theorem velocityGradient_const_smul {u : (ι → ℝ) → ι → ℝ} {x : ι → ℝ}
-    (hu : DifferentiableAt ℝ u x) (c : ℝ) :
+/-- The velocity gradient commutes with scaling the field. -/
+theorem velocityGradient_const_smul (c : ℝ) (u : (ι → ℝ) → ι → ℝ) (x : ι → ℝ) :
     velocityGradient (c • u) x = c • velocityGradient u x := by
-  rw [velocityGradient, velocityGradient, fderiv_const_smul hu c,
+  rw [velocityGradient, velocityGradient, fderiv_const_smul_field c, Pi.smul_apply,
     ContinuousLinearMap.toLinearMap_smul, map_smul]
 
 /-- The Newtonian stress field `σ(u,p)(x) = -p(x) I + μ (Du(x) + Du(x)ᵀ)` of a velocity `u` and a
@@ -178,12 +178,10 @@ theorem stress_sub (μ : ℝ) {u v : (ι → ℝ) → ι → ℝ} (p q : (ι →
   simp only [newtonianStress_def, transpose_sub]
   module
 
-/-- The stress commutes with scaling the pair `(u, p)` at a point where the velocity is
-differentiable. -/
-theorem stress_const_smul (μ : ℝ) {u : (ι → ℝ) → ι → ℝ} (p : (ι → ℝ) → ℝ) {x : ι → ℝ}
-    (hu : DifferentiableAt ℝ u x) (c : ℝ) :
+/-- The stress commutes with scaling the pair `(u, p)`. -/
+theorem stress_const_smul (μ c : ℝ) (u : (ι → ℝ) → ι → ℝ) (p : (ι → ℝ) → ℝ) (x : ι → ℝ) :
     stress μ (c • u) (c • p) x = c • stress μ u p x := by
-  rw [stress_def, stress_def, velocityGradient_const_smul hu c, Pi.smul_apply, smul_eq_mul,
+  rw [stress_def, stress_def, velocityGradient_const_smul, Pi.smul_apply, smul_eq_mul,
     newtonianStress_smul]
 
 /-- The row divergence `(Div σ)ᵢ = ∑ⱼ ∂ⱼ σᵢⱼ` of a matrix field `σ` at `x`. For the stress field
@@ -215,14 +213,14 @@ theorem stressDivergence_sub {σ τ : (ι → ℝ) → Matrix ι ι ℝ} {x : ι
   simp only [stressDivergence_apply, Pi.sub_apply, Matrix.sub_apply, ← Finset.sum_sub_distrib,
     fderiv_fun_sub (hσ i _) (hτ i _), sub_apply]
 
-/-- The row divergence commutes with scaling a matrix field whose entries are differentiable at
-`x`. -/
-theorem stressDivergence_const_smul {σ : (ι → ℝ) → Matrix ι ι ℝ} {x : ι → ℝ}
-    (hσ : ∀ i j, DifferentiableAt ℝ (fun y => σ y i j) x) (c : ℝ) :
+/-- The row divergence commutes with scaling the matrix field. -/
+theorem stressDivergence_const_smul (c : ℝ) (σ : (ι → ℝ) → Matrix ι ι ℝ) (x : ι → ℝ) :
     stressDivergence (c • σ) x = c • stressDivergence σ x := by
   funext i
-  simp only [stressDivergence_apply, Pi.smul_apply, Matrix.smul_apply, smul_eq_mul,
-    fderiv_const_mul (hσ i _) c, smul_apply, Finset.mul_sum]
+  rw [stressDivergence_apply, Pi.smul_apply, stressDivergence_apply, smul_eq_mul, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [show (fun y => (c • σ) y i j) = c • fun y => σ y i j from rfl, fderiv_const_smul_field,
+    Pi.smul_apply, smul_apply, smul_eq_mul]
 
 /-- The row divergence at `x` only depends on the matrix field near `x`. -/
 theorem _root_.Filter.EventuallyEq.stressDivergence_eq {σ τ : (ι → ℝ) → Matrix ι ι ℝ}
