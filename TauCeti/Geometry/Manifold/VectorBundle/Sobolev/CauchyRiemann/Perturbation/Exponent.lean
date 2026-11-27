@@ -17,9 +17,9 @@ import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Chart.Basic
 
 Let `M` be a complex curve without boundary and `V → M` a complex vector bundle with
 finite-dimensional model fibre `F`, smooth as a real vector bundle, with a finite bundle atlas `A`
-(so `M` is compact). Let `D₀` be a smooth real Cauchy–Riemann operator on `V`, `p > 2` and `α` an
+(so `M` is compact). Let `D` be a smooth real Cauchy–Riemann operator on `V`, `p > 2` and `α` an
 `Lᵖ` zeroth-order term. For `1 ≤ q ≤ p` the realization
-`P_q : W^{1,q}(M, V) → L^q(M, Λ^{0,1} ⊗ V)` of `D₀ + α`
+`P_q : W^{1,q}(M, V) → L^q(M, Λ^{0,1} ⊗ V)` of `D + α`
 (`TauCeti.IsRealCauchyRiemannOperator.perturbedSobolevL`) commutes with lowering the exponent
 (`TauCeti.IsRealCauchyRiemannOperator.perturbedSobolevL_ofExponentLEL`). This file proves the
 regularity of this square: for `1 < q ≤ q' ≤ p`, a `W^{1,q}` section `ξ` with `P_q ξ ∈ L^{q'}` is a
@@ -34,7 +34,7 @@ class `W^{0,p}` at the order `ℓ = k = 1` on closed surfaces.
 ## The argument
 
 In chart `i` the chart data `u` of `ξ` satisfy `∂ₛu + i ∂ₜu + S u = η` almost everywhere, with
-`S = 2 (Zᵢ + αᵢ^{0,1})(·)(1)` locally `Lᵖ` (the smooth zeroth-order term `Zᵢ` of `D₀` plus the
+`S = 2 (Zᵢ + αᵢ^{0,1})(·)(1)` locally `Lᵖ` (the smooth zeroth-order term `Zᵢ` of `D` plus the
 chart data of `α`) and `η = 2 g(1)` locally `L^{q'}`, for the chart data `g` of `P_q ξ`. The planar
 regularity theorem `TauCeti.memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq` puts `u` in
 `W^{1,q'}_loc`, and the chart images cover `M`
@@ -115,7 +115,7 @@ theorem perturbationL_ofExponentLEL (μ : Measure ℂ) [μ.IsAddHaarMeasure] (hp
   rw [h₁, h₂, hw]
 
 /-- **The realizations commute with lowering the exponent.** For `q ≤ q' ≤ p`, the realization
-of `D₀ + α` at exponent `q` of the `W^{1,q}` copy of a `W^{1,q'}` section `w` is the `L^q` copy of
+of `D + α` at exponent `q` of the `W^{1,q}` copy of a `W^{1,q'}` section `w` is the `L^q` copy of
 the realization at exponent `q'` of `w`. -/
 theorem perturbedSobolevL_ofExponentLEL (μ : Measure ℂ) [μ.IsAddHaarMeasure] (hp : 2 < p)
     (hqq' : q ≤ q') (hq'p : q' ≤ p)
@@ -130,7 +130,7 @@ theorem perturbedSobolevL_ofExponentLEL (μ : Measure ℂ) [μ.IsAddHaarMeasure]
 
 include hD hDs in
 /-- **Regularity in a chart.** For `p > 2`, `1 < q ≤ q' ≤ p` and an `Lᵖ` zeroth-order term `α`,
-let `ξ ∈ W^{1,q}(M, V)` have the chart data of the section `s`, and let the realization of `D₀ + α`
+let `ξ ∈ W^{1,q}(M, V)` have the chart data of the section `s`, and let the realization of `D + α`
 send `ξ` to the `L^q` copy of an `L^{q'}` `(0,1)`-form `y`. Then in every chart `i` the chart
 expression `A.coord i s` lies in `W^{1,q'}_loc` on the chart image. -/
 theorem memWkpLoc_coord_of_perturbedSobolevL_eq (hp : 2 < p) (hq : 1 < q) (hqq' : q ≤ q')
@@ -147,7 +147,7 @@ theorem memWkpLoc_coord_of_perturbedSobolevL_eq (hp : 2 < p) (hq : 1 < q) (hqq' 
   have hg := SobolevSection.memWkpLoc_coord (A := A.tangentHom) _ ht i
   rw [A.image_tangentHom] at hg
   have hDu := A.sectionChartData.hasWeakFDerivOn_chartValueL volume q i ξ
-  -- The chart data of `α` and the zeroth-order term of `D₀`, as one locally `Lᵖ` field.
+  -- The chart data of `α` and the zeroth-order term of `D`, as one locally `Lᵖ` field.
   let a : ℂ → F →L[ℝ] ℂ →L[ℝ] F :=
     ⇑((A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet).sectionChartData.chartValueL
       volume p 0 i α)
@@ -191,7 +191,7 @@ include hD hDs in
 /-- **Regularity across exponents** (McDuff–Salamon, Theorem C.1.10 (i), regularity of kernel and
 cokernel, for operators of class `W^{0,p}` on closed surfaces). For `p > 2`, `1 < q ≤ q' ≤ p` and
 an `Lᵖ` zeroth-order term `α`, a `W^{1,q}` section `ξ` whose image under the realization of
-`D₀ + α` is the `L^q` copy of an `L^{q'}` `(0,1)`-form is the `W^{1,q}` copy of a `W^{1,q'}`
+`D + α` is the `L^q` copy of an `L^{q'}` `(0,1)`-form is the `W^{1,q}` copy of a `W^{1,q'}`
 section. -/
 theorem exists_ofExponentLEL_eq_of_perturbedSobolevL_eq (hp : 2 < p) (hq : 1 < q)
     (hqq' : q ≤ q') (hq'p : q' ≤ p)
@@ -215,7 +215,7 @@ include hD hDs in
 /-- **The kernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (i), for
 operators of class `W^{0,p}` on closed surfaces). For `p > 2`, `1 < q ≤ q' ≤ p` and an `Lᵖ`
 zeroth-order term `α`, lowering the exponent is a linear equivalence from the kernel of the
-realization `W^{1,q'}(M, V) → L^{q'}(M, Λ^{0,1} ⊗ V)` of `D₀ + α` to the kernel of its realization
+realization `W^{1,q'}(M, V) → L^{q'}(M, Λ^{0,1} ⊗ V)` of `D + α` to the kernel of its realization
 `W^{1,q}(M, V) → L^q(M, Λ^{0,1} ⊗ V)`. Taking `q' = p`, every kernel element lies in `W^{1,p}`. -/
 def kerPerturbedSobolevLEquiv (hp : 2 < p) (hq : 1 < q) (hqq' : q ≤ q') (hq'p : q' ≤ p)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0) :
@@ -248,7 +248,7 @@ include hD hDs in
 /-- **The cokernel does not depend on the exponent** (McDuff–Salamon, Theorem C.1.10 (i), for
 operators of class `W^{0,p}` on closed surfaces). For `p > 2`, `1 < q ≤ q' ≤ p` and an `Lᵖ`
 zeroth-order term `α`, lowering the exponent induces a linear equivalence from the cokernel of the
-realization of `D₀ + α` at `q'` to its cokernel at `q`. -/
+realization of `D + α` at `q'` to its cokernel at `q`. -/
 def cokerPerturbedSobolevLEquiv (hp : 2 < p) (hq : 1 < q) (hqq' : q ≤ q') (hq'p : q' ≤ p)
     (α : SobolevSection (A.hom (𝕜 := ℝ) A.tangentHom.closure_dom_subset_baseSet) volume p 0) :
     (zeroOneSobolevSections A volume q' 0 ⧸ (hD.perturbedSobolevL A hDs volume hp hq'p α).range)

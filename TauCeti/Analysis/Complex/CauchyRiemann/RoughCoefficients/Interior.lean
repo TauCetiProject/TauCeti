@@ -47,9 +47,9 @@ arbitrary, so the induction runs on the reciprocal exponents directly.
 * `TauCeti.exists_inv_le_inv_sub_and_eLpNorm_le_mul_eLpNormWkp_one`: one rung of the exponent
   ladder, the Sobolev or Morrey estimate of `W^{1,r'}` for `1/r' = 1/p + 1/s`.
 * `TauCeti.IsWeakCRSolution.memWkpLoc_one_of_le`: interior `W^{1,r}` regularity for `r ≤ p`.
-* `TauCeti.memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq`: the same for a `W^{1,q}_loc` function with
-  a weak derivative solving `∂_s ξ + J₀ ∂_t ξ + S ξ = η` almost everywhere, for a constant complex
-  structure `J₀` on a finite-dimensional normed target and any `1 < q < ∞`.
+* `TauCeti.memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq`: the same for a `W^{1,q}_loc` function `u`
+  with a weak derivative solving `∂_s u + J₀ ∂_t u + S u = η` almost everywhere, for a constant
+  complex structure `J₀` on a finite-dimensional normed target and any `1 < q < ∞`.
 
 ## References
 
@@ -241,11 +241,11 @@ private theorem memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq_of_inner [FiniteDimens
   simpa only [sub_add_cancel] using hη
 
 /-- **Interior `W^{1,r}` regularity for a strong solution with an `Lᵖ` zeroth-order term.** Let
-`V` be a finite-dimensional real normed space, `J₀` a constant complex structure on `V`, `p > 2`
-and `S ∈ Lᵖ_loc(Ω)`. If `ξ ∈ W^{1,q}_loc(Ω)`, `1 < q < ∞`, with weak derivative `Dξ` satisfies
-`∂_s ξ + J₀ ∂_t ξ + S ξ = η` almost everywhere on `Ω`, and `η ∈ Lʳ_loc` with `1 < r < ∞` and
-`r ≤ p`, then `ξ ∈ W^{1,r}_loc(Ω)`. No relation between `q` and `p` is needed: the Sobolev
-embedding first puts `ξ` in `L^{2q}_loc`, where `1/p + 1/(2q) < 1`. -/
+`G` be a finite-dimensional real normed space, `J₀` a constant complex structure on `G`, `p > 2`
+and `S ∈ Lᵖ_loc(Ω)`. If `u ∈ W^{1,q}_loc(Ω)`, `1 < q < ∞`, has a weak derivative `Du` satisfying
+`∂_s u + J₀ ∂_t u + S u = η` almost everywhere on `Ω`, and `η ∈ Lʳ_loc` with `1 < r < ∞` and
+`r ≤ p`, then `u ∈ W^{1,r}_loc(Ω)`. No relation between `q` and `p` is needed: the Sobolev
+embedding first puts `u` in `L^{2q}_loc`, where `1/p + 1/(2q) < 1`. -/
 theorem memWkpLoc_one_of_hasWeakFDerivOn_of_ae_eq {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] [FiniteDimensional ℝ G] {J₀ : G →L[ℝ] G} (hJ₀ : J₀ * J₀ = -1)
     {S : ℂ → G →L[ℝ] G} (hp : 2 < p) (hS : MemLpLoc p Ω S) (hq : 1 < q) (hq_top : q ≠ ⊤)
