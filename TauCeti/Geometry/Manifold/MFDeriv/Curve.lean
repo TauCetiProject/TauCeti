@@ -86,10 +86,15 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
 * `TauCeti.Manifold.hasMFDerivWithinAt_curveVelocityWithin` and
   `TauCeti.Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt`: the two directions relating the
   named velocity to a `HasMFDerivWithinAt` witness.
+* `TauCeti.Manifold.injective_mfderiv_iff_curveVelocity_ne_zero`: the derivative of a curve is
+  injective exactly when its velocity is nonzero.
 * `TauCeti.Manifold.isMIntegralCurve_iff_curveVelocity_eq`: a curve is an integral curve of a
   vector field exactly when it is differentiable with velocity given by the field at every time.
-* `TauCeti.Manifold.curveVelocityWithin_subset` and
-  `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction and obeys the
+* `TauCeti.Manifold.curveVelocityWithin_subset`,
+  `TauCeti.Manifold.curveVelocityWithin_Icc_eq_of_subset`, and
+  `TauCeti.Manifold.curveVelocityWithin_comp`: velocity is unchanged by restriction (in particular
+  between a subinterval `[c, d] ⊆ [a, b]` and `[a, b]` for a curve differentiable on `(a, b)`)
+  and obeys the
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
   reparametrizations. `MDifferentiableAt.curveVelocity_eq_mfderiv_uncurry_apply_mk_zero` is the
@@ -264,6 +269,17 @@ theorem mfderiv_apply_eq_smul_curveVelocity (c : 𝕜) :
   -- On the tangent space `𝕜`, the scalar action is multiplication, so `c • 1 = c`.
   exact (congrArg _ (mul_one c).symm).trans ((mfderiv 𝓘(𝕜, 𝕜) I γ t).map_smul c (1 : 𝕜))
 
+/-- The derivative of a curve is injective exactly when its velocity is nonzero. -/
+theorem injective_mfderiv_iff_curveVelocity_ne_zero :
+    Function.Injective (mfderiv 𝓘(𝕜, 𝕜) I γ t) ↔ curveVelocity I γ t ≠ 0 := by
+  -- The tangent space `TangentSpace 𝓘(𝕜, 𝕜) t` is `𝕜` by definition, so its vectors are scalars.
+  refine ⟨fun h h0 ↦ one_ne_zero (α := 𝕜) (h (a₁ := (1 : 𝕜)) (a₂ := (0 : 𝕜)) ?_),
+    fun h (c₁ c₂ : 𝕜) hc ↦ ?_⟩
+  · rw [mfderiv_apply_eq_smul_curveVelocity, mfderiv_apply_eq_smul_curveVelocity, h0, smul_zero,
+      smul_zero]
+  · rw [mfderiv_apply_eq_smul_curveVelocity c₁, mfderiv_apply_eq_smul_curveVelocity c₂] at hc
+    exact smul_left_injective 𝕜 h hc
+
 /-- The velocity of the image of a curve under a differentiable map is the differential of the
 map applied to the velocity of the curve. The derivative within the parameter set is uniquely
 determined at `t`. -/
@@ -314,6 +330,38 @@ theorem curveVelocityWithin_subset {u : Set 𝕜} (hus : u ⊆ s)
     curveVelocityWithin I γ u t = curveVelocityWithin I γ s t := by
   rw [curveVelocityWithin_apply, curveVelocityWithin_apply,
     mfderivWithin_subset hus hu.uniqueMDiffWithinAt hγ]
+
+open Set in
+/-- On a nondegenerate subinterval `[c, d] ⊆ [a, b]`, the velocity of a curve within `[c, d]`
+agrees at every point of `[c, d]` with its velocity within `[a, b]`, provided the curve is
+differentiable at all interior points of `(a, b)`. -/
+theorem curveVelocityWithin_Icc_eq_of_subset
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {γ : ℝ → M} {a b c d x : ℝ}
+    (hcd : c < d) (hac : a ≤ c) (hdb : d ≤ b) (hx : x ∈ Icc c d)
+    (hγ : ∀ t ∈ Ioo a b, MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) :
+    curveVelocityWithin I γ (Icc c d) x = curveVelocityWithin I γ (Icc a b) x := by
+  have hxab : x ∈ Icc a b := ⟨hac.trans hx.1, hx.2.trans hdb⟩
+  by_cases hxo : x ∈ Ioo a b
+  · rw [curveVelocityWithin_subset (subset_univ _) (uniqueDiffOn_Icc hcd _ hx)
+        (hγ _ hxo).mdifferentiableWithinAt,
+      curveVelocityWithin_subset (subset_univ _)
+        (uniqueDiffOn_Icc (hac.trans_lt (hcd.trans_le hdb)) _ hxab)
+        (hγ _ hxo).mdifferentiableWithinAt]
+  · have hset : Icc c d =ᶠ[𝓝 x] Icc a b := by
+      rcases hxab.1.eq_or_lt with hax | hax
+      · have hca : c = a := le_antisymm (hax ▸ hx.1) hac
+        rw [← hax, hca]
+        filter_upwards [Iio_mem_nhds (hca ▸ hcd)] with t ht
+        exact ⟨fun h ↦ ⟨h.1, ht.le.trans hdb⟩, fun h ↦ ⟨h.1, ht.le⟩⟩
+      · have hxb : x = b := hxab.2.eq_or_lt.resolve_right fun hlt ↦ hxo ⟨hax, hlt⟩
+        have hdb' : d = b := le_antisymm hdb (hxb ▸ hx.2)
+        rw [hxb, hdb']
+        filter_upwards [Ioi_mem_nhds (hdb' ▸ hcd)] with t ht
+        exact ⟨fun h ↦ ⟨hac.trans ht.le, h.2⟩, fun h ↦ ⟨ht.le, h.2⟩⟩
+    simp only [curveVelocityWithin_apply, mfderivWithin_congr_set hset]
 
 /-- The velocity within `s` of a curve in a normed space, read in its own model, is its derivative
 within `s`. -/
@@ -458,25 +506,25 @@ variable
 
 section Surface
 
-variable {f : 𝕜 → 𝕜 → M} {u : 𝕜}
+variable {u : 𝕜}
 
-/-- **The velocity of a curve of a two-parameter family.** The velocity of the curve `f u` of a
-family `f : 𝕜 → 𝕜 → M` is the differential of the uncurried family in the direction of the
-second parameter. -/
-theorem curveVelocity_eq_mfderiv_snd
-    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) :
+/-- **The velocity of a curve in a family.** The velocity of the curve `f u` of a
+family `f : F → 𝕜 → M` is the differential of the uncurried family in the direction of the
+curve parameter. -/
+theorem curveVelocity_eq_mfderiv_snd {f : F → 𝕜 → M} {u : F}
+    (hf : MDifferentiableAt 𝓘(𝕜, F × 𝕜) I (fun z : F × 𝕜 ↦ f z.1 z.2) (u, t)) :
     curveVelocity I (f u) t =
-      mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t) ((0 : 𝕜), (1 : 𝕜)) :=
+      mfderiv 𝓘(𝕜, F × 𝕜) I (fun z : F × 𝕜 ↦ f z.1 z.2) (u, t) ((0 : F), (1 : 𝕜)) :=
   hf.curveVelocity_comp_mfderiv (g := fun r : 𝕜 ↦ (u, r))
     ((hasDerivAt_const t u).prodMk (hasDerivAt_id t))
 
-/-- **The transverse velocity of a two-parameter family.** The velocity of the curve
-`q ↦ f q t` of a family `f : 𝕜 → 𝕜 → M` is the differential of the uncurried family in the
+/-- **The velocity in the first parameter of a family.** The velocity of the curve
+`q ↦ f q t` of a family `f : 𝕜 → F → M` is the differential of the uncurried family in the
 direction of the first parameter. -/
-theorem curveVelocity_eq_mfderiv_fst
-    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t)) :
+theorem curveVelocity_eq_mfderiv_fst {f : 𝕜 → F → M} {t : F}
+    (hf : MDifferentiableAt 𝓘(𝕜, 𝕜 × F) I (fun z : 𝕜 × F ↦ f z.1 z.2) (u, t)) :
     curveVelocity I (fun q ↦ f q t) u =
-      mfderiv 𝓘(𝕜, 𝕜 × 𝕜) I (fun z : 𝕜 × 𝕜 ↦ f z.1 z.2) (u, t) ((1 : 𝕜), (0 : 𝕜)) :=
+      mfderiv 𝓘(𝕜, 𝕜 × F) I (fun z : 𝕜 × F ↦ f z.1 z.2) (u, t) ((1 : 𝕜), (0 : F)) :=
   hf.curveVelocity_comp_mfderiv (g := fun q : 𝕜 ↦ (q, t))
     ((hasDerivAt_id u).prodMk (hasDerivAt_const u t))
 

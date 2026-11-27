@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart.Output
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Analysis.Complex.ThricePuncturedSphere.MovingEnds
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
@@ -420,6 +421,19 @@ theorem perturbationPullback_positiveEndChart_inf_puncturedSpherePerturbation
     perturbationPullback_endChart_eq_cylindricalEndLift,
     puncturedSpherePerturbation_cylindricalEndLift_inf hout hHout hre]
   simp
+
+omit [Fintype ι] in
+/-- If the centers lie in the disc `‖w‖ ≤ 2 exp (2π)`, then beyond `s = 1` the output end, in the
+positive end chart `φ'_∞`, lies outside that disc, so it misses every center. -/
+theorem equivRealProdCLM_symm_positiveEndChart_inf_ne
+    (hc : ∀ i, ‖c i‖ ≤ 2 * Real.exp (2 * π)) {ζ : ℝ × ℝ} (hζ : 1 < ζ.1) (j : ι) :
+    Complex.equivRealProdCLM.symm (positiveEndChart inf ζ) ≠ c j := by
+  intro h
+  have h₁ := norm_equivRealProdCLM_symm_positiveEndChart_inf ζ.1 ζ.2
+  rw [Prod.mk.eta, h] at h₁
+  have : Real.exp (2 * π) < Real.exp (2 * π * ζ.1) :=
+    Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos])
+  linarith [hc j]
 
 end Sphere
 

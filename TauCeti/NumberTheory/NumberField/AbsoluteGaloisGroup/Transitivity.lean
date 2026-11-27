@@ -47,26 +47,16 @@ variable {F : Type*} [Field F]
 /-- For a perfect field `F`, the elements of `O` fixed by `G_F` are those of `𝓞 F`. -/
 instance isInvariant_integralClosure [PerfectField F] :
     Algebra.IsInvariant (𝓞 F) (integralClosure (𝓞 F) (AlgebraicClosure F))
-      (Field.absoluteGaloisGroup F) where
-  isInvariant x hx := by
-    obtain ⟨r, hr⟩ := (InfiniteGalois.mem_range_algebraMap_iff_isIntegral_and_fixed F
-      (x : AlgebraicClosure F)).2 ⟨x.property, fun σ ↦ (smul_integralClosure_eq_iff σ x).1 (hx σ)⟩
-    exact ⟨r, Subtype.ext hr⟩
+      (Field.absoluteGaloisGroup F) :=
+  InfiniteGalois.isInvariant_integralClosure (𝓞 F) F (AlgebraicClosure F)
 
 variable (F) in
 /-- The action of `G_F` on `O` is continuous for the discrete topology on `O`. -/
 theorem continuousSMul_integralClosure
     [TopologicalSpace (integralClosure (𝓞 F) (AlgebraicClosure F))]
     [DiscreteTopology (integralClosure (𝓞 F) (AlgebraicClosure F))] :
-    ContinuousSMul (Field.absoluteGaloisGroup F) (integralClosure (𝓞 F) (AlgebraicClosure F)) := by
-  refine continuousSMul_iff_stabilizer_isOpen.2 fun x ↦ ?_
-  have h : (MulAction.stabilizer (Field.absoluteGaloisGroup F) x :
-      Set (Field.absoluteGaloisGroup F)) =
-      {σ | DFunLike.coe (F := AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F) σ
-        (x : AlgebraicClosure F) = x} :=
-    Set.ext fun σ ↦ MulAction.mem_stabilizer_iff.trans (smul_integralClosure_eq_iff σ x)
-  rw [h]
-  exact stabilizer_isOpen_of_isIntegral (K := F) (x : AlgebraicClosure F)
+    ContinuousSMul (Field.absoluteGaloisGroup F) (integralClosure (𝓞 F) (AlgebraicClosure F)) :=
+  InfiniteGalois.continuousSMul_integralClosure (𝓞 F) F (AlgebraicClosure F)
 
 /-- For a perfect field `F`, `G_F` acts transitively on the prime ideals of the integral closure
 `O` of `𝓞 F` in `F^alg` lying over a given prime of `𝓞 F`. -/

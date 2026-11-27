@@ -23,7 +23,9 @@ Hölder inequality is iterated.
 
 Finally, it chooses a dyadic scale `2ᵏ` comparable to a given length: for `ρ, n > 0` there is
 an integer `k` with `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`. Covering arguments with dyadic cubes use it to fit
-a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`.
+a cube of side `2ᵏ` and diameter `2ᵏ √d` into a ball of radius `ρ`, with `n = √d`. A bound
+`a ^ (2 ^ j) ≤ m * R ^ (2 ^ j)` for every `j` forces `a ≤ R`, since the constant `m` is eventually
+dominated by the powers of `a / R`.
 
 Beyond ordered semifields, in an Archimedean linearly ordered additive group the integer
 multiples `k • ℓ` of a nonzero element `ℓ` are unbounded above, whatever the sign of `ℓ`. For maps
@@ -34,6 +36,7 @@ lines, and that the inverse of a positive twist lift twists negatively.
 ## Main results
 
 * `TauCeti.exists_pos_nat_mul_inv_lt`: for `0 < c` there is `n > 0` with `L * n⁻¹ < c`.
+* `TauCeti.exists_div_pow_lt`: for `1 < r` and `0 < ε` there is `m` with `w / r ^ m < ε`.
 * `TauCeti.exists_div_pow_lt_and_forall_mul_pow_lt_one`: for `1 < r`, `s < r` and `0 < p`
   there is `M > 0` with `s / r ^ M < p` and `s / r ^ M * r ^ k < 1` for all `k < M`.
 * `TauCeti.exists_nat_ge_and_div_le`: for `0 < δ` and `n₀ : ℕ` there are `n ≥ n₀` and `N > 0`
@@ -41,6 +44,8 @@ lines, and that the inverse of a positive twist lift twists negatively.
 * `TauCeti.exists_four_mul_two_zpow_mul_le_and_lt`: for `ρ, n > 0` there is `k : ℤ` with
   `4 · 2ᵏ n ≤ ρ < 8 · 2ᵏ n`.
 * `TauCeti.exists_zpow_neg_lt`: for `1 < b` and `0 < ε` there is `n : ℕ` with `b ^ (-n) < ε`.
+* `TauCeti.le_of_forall_pow_two_pow_le`: if `a ^ (2 ^ j) ≤ m * R ^ (2 ^ j)` for every `j` and
+  `0 < R`, then `a ≤ R`.
 * `TauCeti.exists_lt_zsmul`: in an Archimedean linearly ordered additive group, the integer
   multiples of a nonzero element are unbounded above.
 -/
@@ -65,6 +70,15 @@ theorem exists_div_pow_lt_and_forall_mul_pow_lt_one [ExistsAddOfLE K] {r s p : K
     calc s * r ^ k < r * r ^ k := by gcongr
       _ = r ^ (k + 1) := (pow_succ' r k).symm
       _ ≤ r ^ (m + 1) := pow_le_pow_right₀ hr.le hk
+
+/-- For `r > 1` and `ε > 0`, dividing any `w` by a large enough power of `r` brings it below
+`ε`. -/
+theorem exists_div_pow_lt [ExistsAddOfLE K] (w : K) {r ε : K} (hr : 1 < r) (hε : 0 < ε) :
+    ∃ m : ℕ, w / r ^ m < ε := by
+  obtain ⟨m, hm⟩ := pow_unbounded_of_one_lt (w / ε) hr
+  refine ⟨m, ?_⟩
+  rw [div_lt_iff₀ (pow_pos (zero_lt_one.trans hr) m), ← div_lt_iff₀' hε]
+  exact hm
 
 /-- For any `L` and `c > 0` there is a positive integer `n` with `L * n⁻¹ < c`. -/
 theorem exists_pos_nat_mul_inv_lt (L : K) {c : K} (hc : 0 < c) :
@@ -104,6 +118,18 @@ theorem exists_four_mul_two_zpow_mul_le_and_lt {ρ n : L} (hρ : 0 < ρ) (hn : 0
   rw [le_div_iff₀ (by positivity)] at hk1
   rw [div_lt_iff₀ (by positivity), zpow_add_one₀ two_ne_zero] at hk2
   exact ⟨k, by linarith, by linarith⟩
+
+/-- If `a ^ (2 ^ j) ≤ m * R ^ (2 ^ j)` for every `j`, with `0 < R`, then `a ≤ R`. -/
+theorem le_of_forall_pow_two_pow_le {a R m : L} (hR : 0 < R)
+    (h : ∀ j : ℕ, a ^ 2 ^ j ≤ m * R ^ 2 ^ j) : a ≤ R := by
+  by_contra hlt
+  push Not at hlt
+  have hq : 1 < a / R := (one_lt_div hR).2 hlt
+  obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt m hq
+  have h2n : (a / R) ^ n ≤ (a / R) ^ 2 ^ n := pow_le_pow_right₀ hq.le Nat.lt_two_pow_self.le
+  have := h n
+  rw [← div_le_iff₀ (pow_pos hR _), ← div_pow] at this
+  linarith
 
 end Field
 

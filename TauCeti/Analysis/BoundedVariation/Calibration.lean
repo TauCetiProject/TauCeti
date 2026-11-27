@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
-public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+public import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.Clamp

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
-public import TauCeti.Analysis.Sobolev.W1p.Interval.Trace
+public import TauCeti.Analysis.Sobolev.W1p.Interval.VanishingOn
 import TauCeti.Analysis.Sobolev.W1p.Interval.AbsolutelyContinuous
 import TauCeti.Data.ENNReal.Inv
 
@@ -24,11 +24,18 @@ particular `t ↦ t - a` lies in `W^{1,p}_{{a}}(a, b)` for finite `p`. At `p = �
 every generator has derivative zero near `a` while `t ↦ t - a` has derivative `1`; so finite `p`
 is assumed.
 
-The restriction of a test function whose support misses `a` vanishes at `a`
-(`TauCeti.W1p.intervalTraceL_restrictL_ofTestFunctionₗ`), and the condition is closed. For the
+Every class of `W^{1,p}_{{a}}(a, b)` vanishes at `a`, for every `p`, as every class of
+`W^{1,p}_Γ(a, b)` vanishes on `[a, b] ∩ closure Γ`
+(`TauCeti.W1p.intervalRepresentativeL_eq_zero_of_mem_w1pVanishingOnSubmodule`). For the
 converse, the affine function `t ↦ t - a` is the restriction to `(a, b)` of the tent
 `(b - a) - |t - b|`, which lies in `W^{1,p}_0(a, 2b - a)`, and restriction maps `W^{1,p}_0` of a
 larger open set missing `Γ` into `W^{1,p}_Γ` (`TauCeti.W1p.restrictL_mem_w1pVanishingOnSubmodule`).
+
+The two one-endpoint spaces together give the remaining boundary part, `Γ = ∅`: for finite `p`,
+`W^{1,p}_∅(a, b)` is all of `W^{1,p}(a, b)`
+(`TauCeti.W1p.w1pVanishingOnSubmodule_empty_Ioo_eq_top`), since every class is a class vanishing at
+`a` plus an affine class vanishing at `b`. So the mixed problem with no Dirichlet part on an
+interval is the Neumann problem, tested on all of `W^{1,p}(a, b)`.
 
 The continuous representative of `u ∈ W^{1,p}(a, b)` is Hölder continuous of exponent `1 - 1/p`,
 
@@ -51,6 +58,8 @@ at `p = ∞`, and so on all of `W^{1,p}_{{a}}(a, b)`, since every class there va
 * `TauCeti.W1p.mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero` and
   `TauCeti.W1p.mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero`: the trace
   characterization of `W^{1,p}_{{a}}(a, b)` and `W^{1,p}_{{b}}(a, b)` for finite `p`.
+* `TauCeti.W1p.w1pVanishingOnSubmodule_empty_Ioo_eq_top`: `W^{1,p}_∅(a, b) = W^{1,p}(a, b)` for
+  finite `p`.
 * `TauCeti.W1p.abs_intervalRepresentativeL_le_of_intervalTraceL_fst_eq_zero`,
   `TauCeti.W1p.norm_value_le_mul_norm_gradient_of_intervalTraceL_fst_eq_zero` and their versions
   at `b`: the pointwise bound and the Poincaré–Friedrichs inequality.
@@ -150,30 +159,24 @@ private theorem intervalLiftL_snd_zero_mem_w1pVanishingOnSubmodule (hp : p ≠ �
     ring
 
 /-- A class in `W^{1,p}_{{a}}(a, b)` has continuous representative vanishing at `a`, even at
-`p = ∞`: the condition is closed and holds for every generator, whose support misses `a`. -/
+`p = ∞`, as every class of `W^{1,p}_Γ(a, b)` vanishes on `[a, b] ∩ closure Γ`. -/
 theorem intervalTraceL_fst_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
     (hu : u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {a}) :
     (intervalTraceL hab u).1 = 0 := by
-  refine w1pVanishingOnSubmodule_subset_of_isClosed
-    (isClosed_eq (continuous_fst.comp (intervalTraceL hab).continuous) continuous_const)
-    (fun φ hφ ↦ ?_) hu
-  rw [closure_singleton, disjoint_singleton_right] at hφ
-  rw [mem_ofPred_eq, Function.comp_apply, intervalTraceL_restrictL_ofTestFunctionₗ]
-  exact (image_eq_zero_of_notMem_tsupport hφ : φ a = 0)
+  rw [intervalTraceL_apply]
+  exact intervalRepresentativeL_eq_zero_of_mem_w1pVanishingOnSubmodule hab hu
+    (subset_closure (mem_singleton a))
 
 /-- A class in `W^{1,p}_{{b}}(a, b)` has continuous representative vanishing at `b`, even at
-`p = ∞`: the condition is closed and holds for every generator, whose support misses `b`. -/
+`p = ∞`, as every class of `W^{1,p}_Γ(a, b)` vanishes on `[a, b] ∩ closure Γ`. -/
 theorem intervalTraceL_snd_eq_zero_of_mem_w1pVanishingOnSubmodule_singleton (hab : a < b)
     {u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p}
     (hu : u ∈ w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {b}) :
     (intervalTraceL hab u).2 = 0 := by
-  refine w1pVanishingOnSubmodule_subset_of_isClosed
-    (isClosed_eq (continuous_snd.comp (intervalTraceL hab).continuous) continuous_const)
-    (fun φ hφ ↦ ?_) hu
-  rw [closure_singleton, disjoint_singleton_right] at hφ
-  rw [mem_ofPred_eq, Function.comp_apply, intervalTraceL_restrictL_ofTestFunctionₗ]
-  exact (image_eq_zero_of_notMem_tsupport hφ : φ b = 0)
+  rw [intervalTraceL_apply]
+  exact intervalRepresentativeL_eq_zero_of_mem_w1pVanishingOnSubmodule hab hu
+    (subset_closure (mem_singleton b))
 
 /-- **The trace characterization of `W^{1,p}_{{a}}(a, b)`.** For `1 ≤ p < ∞`, a class lies in the
 space of Sobolev functions vanishing at the endpoint `a` exactly when its continuous representative
@@ -211,6 +214,31 @@ theorem mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero (hp
     (disjoint_singleton_left.2 (by simp)) h0)
     (intervalLiftL_snd_zero_mem_w1pVanishingOnSubmodule hp hab
       (intervalTraceL hab u).1)
+  rwa [sub_add_cancel] at hmem
+
+/-- **No boundary part, no condition, on an interval.** For `1 ≤ p < ∞`, the space
+`W^{1,p}_∅(a, b)` of Sobolev functions vanishing on the empty boundary part is all of
+`W^{1,p}(a, b)`: every class is the sum of a class vanishing at `a` and the affine class with the
+same value at `a` that vanishes at `b`, and both lie in `W^{1,p}_∅(a, b)`. -/
+theorem w1pVanishingOnSubmodule_empty_Ioo_eq_top (hp : p ≠ ⊤) :
+    w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p ∅ = ⊤ := by
+  refine eq_top_iff.2 fun u _ ↦ ?_
+  rcases le_or_gt b a with hba | hab
+  · -- On an empty interval every class is zero.
+    have h0 : volume.restrict (Ioo a b) = 0 := by simp [Ioo_eq_empty_of_le hba]
+    have hu : u = 0 := ext_value <| Lp.ext <| by simp [h0, Filter.EventuallyEq]
+    exact hu ▸ zero_mem _
+  set c := (intervalTraceL hab u).1
+  have ha : u - intervalLiftL a b (c, 0) ∈
+      w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {a} := by
+    rw [mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_fst_eq_zero hp hab, map_sub,
+      intervalTraceL_intervalLiftL, Prod.fst_sub, sub_self]
+  have hb : intervalLiftL a b (c, 0) ∈
+      w1pVanishingOnSubmodule volume ⟨Ioo a b, isOpen_Ioo⟩ p {b} := by
+    rw [mem_w1pVanishingOnSubmodule_singleton_iff_intervalTraceL_snd_eq_zero hp hab,
+      intervalTraceL_intervalLiftL]
+  have hmem := add_mem (w1pVanishingOnSubmodule_antitone (empty_subset _) ha)
+    (w1pVanishingOnSubmodule_antitone (empty_subset _) hb)
   rwa [sub_add_cancel] at hmem
 
 /-! ### Pointwise bounds and the Poincaré–Friedrichs inequality -/

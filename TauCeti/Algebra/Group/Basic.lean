@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Basic
+public import Mathlib.Algebra.Group.Commute.Defs
 
 /-!
 # Basic identities in groups
@@ -23,6 +24,9 @@ public import Mathlib.Algebra.Group.Basic
   `{1, t}` indicators produces `if Xor p q then t else 1`.
 * `TauCeti.ite_mul_ite_mul_ite_of_mul_self` and `TauCeti.ite_add_ite_add_ite_of_add_self`:
   multiplying three `{1, t}` indicators produces `if Xor p (Xor q r) then t else 1`.
+* `Commute.apply_right_of_conj`: if `g` commutes with `h` and a map `T` takes `g * h * g⁻¹` to
+  `g * T h * g⁻¹`, then `g` commutes with `T h`. So a map that commutes with conjugation maps
+  every centralizer to itself.
 -/
 
 public section
@@ -79,3 +83,18 @@ theorem ite_mul_ite_mul_ite_of_mul_self {M : Type*} [MulOneClass M] {t : M} (ht 
   by_cases hp : p <;> by_cases hq : q <;> by_cases hr : r <;> simp [hp, hq, hr, Xor]
 
 end TauCeti
+
+namespace Commute
+
+variable {G : Type*} [Group G] {g h : G}
+
+/-- If `g` commutes with `h` and a map `T` takes `g * h * g⁻¹` to `g * T h * g⁻¹`, then `g`
+commutes with `T h`. -/
+@[to_additive /-- If `g` commutes with `h` and a map `T` takes `g + h + -g` to `g + T h + -g`,
+then `g` commutes with `T h`. -/]
+theorem apply_right_of_conj {T : G → G} (hc : Commute g h)
+    (hT : T (g * h * g⁻¹) = g * T h * g⁻¹) : Commute g (T h) := by
+  rw [hc.mul_inv_cancel, eq_mul_inv_iff_mul_eq] at hT
+  exact (commute_iff_eq _ _).2 hT.symm
+
+end Commute

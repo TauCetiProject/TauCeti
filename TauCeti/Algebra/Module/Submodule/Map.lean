@@ -54,6 +54,8 @@ of `A`, every `A`-linear map sends the scalar product `I • ⊤` into `I • �
   defined by a bijective map `f` agrees with `f.restrict`.
 * `Submodule.map_mem_smul_top`: every `A`-linear map sends `I • ⊤` into `I • ⊤` for any
   `k`-submodule `I` of `A`.
+* `Submodule.inf_restrictScalars_eq_map_comap`: `P ⊓ W` is the image of the pullback of `P` to a
+  submodule `W` over a larger ring of scalars.
 * `LinearMap.map_equivMapOfInjective_comap_subtype`: the restriction of an injective map to `B`
   carries the trace of `A` in `B` onto the trace of `A.map f` in `B.map f`.
 -/
@@ -139,6 +141,15 @@ theorem map_mem_smul_top {k : Type*} {A : Type*} [Semiring k] [Semiring A] [Modu
     exact Submodule.smul_mem_smul ha Submodule.mem_top
   · rw [map_add]
     exact add_mem hx hy
+
+/-- For an `S`-submodule `W` and an `R`-submodule `P`, viewing `W` as an `R`-submodule,
+`P ⊓ W` is the image of the pullback of `P` along the inclusion of `W`. -/
+theorem inf_restrictScalars_eq_map_comap {R S M : Type*} [Semiring R] [Semiring S]
+    [AddCommMonoid M] [Module R M] [Module S M] [SMul R S] [IsScalarTower R S M]
+    (P : Submodule R M) (W : Submodule S M) :
+    P ⊓ W.restrictScalars R =
+      (P.comap (W.subtype.restrictScalars R)).map (W.subtype.restrictScalars R) := by
+  rw [map_comap_eq, LinearMap.range_restrictScalars, range_subtype, inf_comm]
 
 end Submodule
 
