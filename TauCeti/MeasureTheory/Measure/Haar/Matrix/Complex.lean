@@ -28,6 +28,9 @@ on `κ → ℂ` by `mulVec` and on `ι → κ → ℂ` by affine left matrix mul
   `c : Matrix ι κ ℂ`,
   `∫⁻ A : ι → κ → ℂ, g (of.symm (S * of A + c)) =`
   `ENNReal.ofReal (‖S.det‖⁻¹ ^ (2 * Fintype.card κ)) * ∫⁻ A : ι → κ → ℂ, g A`.
+* `MeasureTheory.lintegral_comp_matrix_mul_mul`: for invertible complex matrices `P` and `Q`,
+  the substitution `A ↦ P * A * Q` has the real Jacobian
+  `‖P.det‖ ^ (2 * Fintype.card κ) * ‖Q.det‖ ^ (2 * Fintype.card ι)`.
 -/
 
 public section
@@ -76,5 +79,44 @@ theorem lintegral_comp_matrix_mul_add {ι κ : Type*} [Fintype ι] [DecidableEq 
     lintegral_comp_linearMap (volume : Measure (ι → κ → ℂ)) (h_det.trans_ne h_pos.ne')
       (fun A ↦ g (A + of.symm c)),
     lintegral_add_right_eq_self, h_det, abs_of_pos (inv_pos.2 h_pos), inv_pow]
+
+/-- **Change of variables for two-sided multiplication** on `ι → κ → ℂ`: for invertible complex
+matrices `P` and `Q`, the substitution `A ↦ P * A * Q` has the real Jacobian
+`|det P| ^ (2 |κ|) * |det Q| ^ (2 |ι|)`. -/
+theorem lintegral_comp_matrix_mul_mul {ι κ : Type*} [Fintype ι] [DecidableEq ι] [Fintype κ]
+    [DecidableEq κ] {P : Matrix ι ι ℂ} {Q : Matrix κ κ ℂ} (hP : P.det ≠ 0)
+    (hQ : Q.det ≠ 0) (g : (ι → κ → ℂ) → ENNReal) :
+    ∫⁻ A : ι → κ → ℂ, g (of.symm (P * of A * Q)) =
+      ENNReal.ofReal ((‖P.det‖ ^ (2 * card κ) * ‖Q.det‖ ^ (2 * card ι))⁻¹) *
+        ∫⁻ A : ι → κ → ℂ, g A := by
+  let e : (ι × κ → ℂ) ≃ₗ[ℂ] (ι → κ → ℂ) := LinearEquiv.curry ℂ ℂ ι κ
+  let f : (ι → κ → ℂ) →ₗ[ℂ] (ι → κ → ℂ) :=
+    e.toLinearMap ∘ₗ (Matrix.kroneckerMap (· * ·) P Qᵀ).toLin' ∘ₗ e.symm.toLinearMap
+  have hf (A : ι → κ → ℂ) : f A = of.symm (P * of A * Q) := by
+    ext a b
+    simp only [f, e, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+      LinearEquiv.coe_curry_symm, Matrix.toLin'_apply, LinearEquiv.coe_curry,
+      Function.curry_apply, Matrix.mulVec, dotProduct, Matrix.kroneckerMap_apply,
+      Matrix.transpose_apply, Fintype.sum_prod_type, Function.uncurry_apply_pair, Matrix.symm_of,
+      Matrix.coe_rowEquiv, Matrix.row_apply, Matrix.mul_apply, Matrix.of_apply, Finset.sum_mul]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
+  have h_det : LinearMap.det (f.restrictScalars ℝ) =
+      ‖P.det‖ ^ (2 * card κ) * ‖Q.det‖ ^ (2 * card ι) := by
+    rw [LinearMap.det_restrictScalars, LinearMap.det_conj, LinearMap.det_toLin', det_kronecker,
+      det_transpose, Algebra.norm_complex_apply, Complex.normSq_eq_norm_sq, norm_mul, norm_pow,
+      norm_pow]
+    ring
+  have h_pos : 0 < ‖P.det‖ ^ (2 * card κ) * ‖Q.det‖ ^ (2 * card ι) := by
+    have := norm_pos_iff.2 hP
+    have := norm_pos_iff.2 hQ
+    positivity
+  -- Typeclass search does not chain `IsAddHaarMeasure` across nested `Pi` spaces `ι → κ → ℂ`.
+  have : (volume : Measure (κ → ℂ)).IsAddHaarMeasure := ⟨⟩
+  have : (volume : Measure (ι → κ → ℂ)).IsAddHaarMeasure := ⟨⟩
+  rw [lintegral_congr fun A ↦ by rw [← hf]]
+  refine (lintegral_comp_linearMap (volume : Measure (ι → κ → ℂ))
+    (h_det.trans_ne h_pos.ne') g).trans ?_
+  rw [h_det, abs_of_pos (inv_pos.2 h_pos)]
 
 end MeasureTheory
