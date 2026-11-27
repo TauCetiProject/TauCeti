@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
+public import Mathlib.Algebra.Order.Module.PositiveLinearMap
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Topology.Algebra.Star.Unitary
 public import TauCeti.Analysis.CStarAlgebra.Basic
-import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+import Mathlib.Algebra.Order.Star.Basic
 
 /-!
 # Unitary conjugation averages in C⋆-algebras
@@ -53,8 +54,8 @@ theorem unitaryConjAverage_apply_real_smul {N : ℕ} (u : Fin N → unitary A)
     [SMul ℝ A] [IsScalarTower ℝ ℂ A] (z : A) :
     unitaryConjAverage u z =
       (N : ℝ)⁻¹ • ∑ j : Fin N, (u j : A) * z * star (u j : A) := by
-  rw [unitaryConjAverage_apply, show (N : ℂ)⁻¹ = (N : ℝ)⁻¹ • (1 : ℂ) by simp, smul_assoc,
-    one_smul]
+  rw [unitaryConjAverage_apply, ← smul_one_smul ℂ (N : ℝ)⁻¹, Complex.real_smul, mul_one,
+    Complex.ofReal_inv, Complex.ofReal_natCast]
 
 /-- Unitary conjugation averaging is unital for `0 < N`. -/
 @[simp]
@@ -103,15 +104,19 @@ end Normed
 
 section Order
 
-variable {A : Type*} [CStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+variable {A : Type*} [Ring A] [StarRing A] [Algebra ℂ A] [PartialOrder A] [StarOrderedRing A]
+  [SMul ℝ A] [IsScalarTower ℝ ℂ A] [PosSMulMono ℝ A]
 
-/-- Unitary conjugation averaging preserves positivity in a unital C⋆-algebra. -/
+/-- Unitary conjugation averaging preserves positivity in a star-ordered complex ⋆-algebra. -/
 theorem unitaryConjAverage_nonneg {N : ℕ} (u : Fin N → unitary A) {z : A} (hz : 0 ≤ z) :
     0 ≤ unitaryConjAverage u z := by
   rw [unitaryConjAverage_apply_real_smul]
-  have hconj (j : Fin N) : 0 ≤ (u j : A) * z * star (u j : A) := by
-    simpa [mul_assoc] using star_left_conjugate_nonneg hz (star (u j : A))
-  exact smul_nonneg (by positivity) (Finset.sum_nonneg fun j _ ↦ hconj j)
+  have hconj (j : Fin N) : 0 ≤ (u j : A) * z * star (u j : A) :=
+    star_right_conjugate_nonneg hz (u j : A)
+  have hzero : (N : ℝ)⁻¹ • (0 : A) = 0 := by
+    rw [← zero_smul ℂ (0 : A), ← smul_assoc, smul_zero, zero_smul]
+  simpa [hzero] using smul_le_smul_of_nonneg_left (Finset.sum_nonneg fun j _ ↦ hconj j)
+    (by positivity : (0 : ℝ) ≤ (N : ℝ)⁻¹)
 
 /-- Unitary conjugation averaging as a positive linear map `A →ₚ[ℂ] A`. -/
 def unitaryConjAveragePositive {N : ℕ} (u : Fin N → unitary A) : A →ₚ[ℂ] A where
