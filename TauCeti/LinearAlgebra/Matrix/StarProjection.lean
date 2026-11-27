@@ -8,13 +8,16 @@ module
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Matrix.Hermitian
+public import TauCeti.Data.Matrix.Composition
 
 /-!
 # Matrix star projections
 
 A matrix projection is a square matrix `p` over a star ring with `p * p = p` and `pᴴ = p`. This
 file records facts about matrix projections that do not depend on comparing projections.
-Applying a star ring homomorphism to the entries of a matrix projection gives a matrix projection.
+Applying a star ring homomorphism to the entries of a matrix projection gives a matrix projection,
+and the flattening `M_k(M_n(R)) ≅ M_{k × n}(R)` of Mathlib's `Matrix.comp` preserves and reflects
+matrix projections.
 If `a` is self-adjoint and `a * b = 0`, then rectangular matrices whose columns lie in the ranges
 of `a` and `b` are orthogonal: `vᴴ * w = 0`, and likewise for rows.
 Over a star-ordered proper star ring, such as `ℂ` or a C⋆-algebra with its spectral order,
@@ -26,6 +29,7 @@ isometry, `v * vᴴ * v = v`.
 
 * `IsStarProjection.matrix_map`: the entrywise image of a matrix projection under a star ring
   homomorphism is a matrix projection.
+* `Matrix.isStarProjection_comp_iff`: flattening preserves and reflects matrix projections.
 * `Matrix.conjTranspose_mul_eq_zero_of_mul_eq_zero` and
   `Matrix.mul_conjTranspose_eq_zero_of_mul_eq_zero`: if `a * b = 0` and `a` (respectively `b`)
   is self-adjoint, then rectangular matrices with columns (respectively rows) in the ranges of
@@ -54,6 +58,13 @@ theorem _root_.IsStarProjection.matrix_map {S F : Type*} [NonUnitalNonAssocSemir
 section NonUnitalSemiring
 
 variable [NonUnitalSemiring R] [StarRing R]
+
+/-- Flattening preserves and reflects star projections. -/
+@[simp]
+theorem isStarProjection_comp_iff {L : Type*} [Fintype L] {p : Matrix m m (Matrix L L R)} :
+    IsStarProjection (comp m m L L R p) ↔ IsStarProjection p := by
+  simp only [isStarProjection_iff, IsIdempotentElem, ← isHermitian_iff_isSelfAdjoint,
+    isHermitian_comp_iff, ← comp_mul, (comp m m L L R).injective.eq_iff]
 
 /-- If `a` is self-adjoint and `a * b = 0`, then matrices `v` and `w` with `a * v = v` and
 `b * w = w` (columns in the ranges of `a` and `b`) satisfy `vᴴ * w = 0`. -/

@@ -151,9 +151,7 @@ theorem index_familyDomainTrajectoryOperator_eq_zero_of_forall_isInvertible
   obtain ⟨t₀, -, ht₀⟩ := (((hD.tendsto _).comp (tendsto_atBot_of_ae_eq_comp_min hbot
     (fun t ↦ (hm t).coeFn_toLp) (memLp_top_const Bbot).coeFn_toLp)).eventually
     hFredbot.eventually_isFredholm_and_index_eq).exists
-  have hSymmtop (x y : D) : ⟪Btop x, ι y⟫_ℝ = ⟪ι x, Btop y⟫_ℝ :=
-    ContinuousLinearMap.inner_apply_eq_inner_apply_of_tendsto htop (.of_forall fun s ↦ hSymm s x y)
-  have hFredA := isFredholm_familyDomainTrajectoryOperator hι hSymmbot hBbot hSymmtop hBtop hAL
+  have hFredA := isFredholm_familyDomainTrajectoryOperator_of_forall_symm hι hSymm hBbot hBtop hAL
     hbot htop hc
   obtain ⟨t₁, -, ht₁⟩ := (((hD.tendsto _).comp (tendsto_atTop_of_ae_eq_comp_min htop
     (fun t ↦ (hm t).coeFn_toLp) hAL)).eventually

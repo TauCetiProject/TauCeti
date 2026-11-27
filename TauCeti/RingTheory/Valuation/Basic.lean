@@ -10,13 +10,18 @@ public import Mathlib.RingTheory.Valuation.Basic
 /-!
 # Elementary bounds for valuations
 
-Two elementary consequences of the ultrametric inequality `v (x + y) ≤ max (v x) (v y)`: it
-persists after raising both sides to a power, and every natural number has value at most `1`.
+Three elementary consequences of the ultrametric inequality `v (x + y) ≤ max (v x) (v y)`: it
+persists after raising both sides to a power, every natural number has value at most `1`, and
+when `v x ≠ v y` the corresponding inequality for `x - y` is an equality,
+`v (x - y) = max (v x) (v y)`. The closed ball `{x | v x ≤ γ}` is also recorded as the
+underlying set of Mathlib's additive subgroup `Valuation.leAddSubgroup`.
 
 ## Main results
 
 * `Valuation.map_add_pow_le_max`: `v (x + y) ^ n ≤ max (v x ^ n) (v y ^ n)`.
 * `Valuation.map_natCast_le_one`: `v n ≤ 1` for every natural number `n`.
+* `Valuation.map_sub_of_distinct_val`: when `v x ≠ v y`, `v (x - y) = max (v x) (v y)`.
+* `Valuation.coe_leAddSubgroup`: the subgroup `v.leAddSubgroup γ` is the set `{x | v x ≤ γ}`.
 -/
 
 public section
@@ -32,6 +37,16 @@ theorem map_add_pow_le_max (x y : R) (n : ℕ) : v (x + y) ^ n ≤ max (v x ^ n)
 /-- Every natural number has value at most `1`. -/
 theorem map_natCast_le_one (n : ℕ) : v (n : R) ≤ 1 := by
   simpa using v.map_sum_le (s := Finset.range n) (f := fun _ ↦ 1) fun _ _ ↦ v.map_one.le
+
+/-- When `x` and `y` have distinct valuations, `v (x - y) = max (v x) (v y)`. -/
+theorem map_sub_of_distinct_val {x y : R} (h : v x ≠ v y) : v (x - y) = max (v x) (v y) := by
+  rw [sub_eq_add_neg, v.map_add_of_distinct_val (by simpa [v.map_neg] using h), v.map_neg]
+
+/-- The additive subgroup `v.leAddSubgroup γ` is the closed ball `{x | v x ≤ γ}`. -/
+@[simp]
+theorem coe_leAddSubgroup {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation R Γ₀)
+    (γ : Γ₀) : (v.leAddSubgroup γ : Set R) = {x | v x ≤ γ} :=
+  Set.ext fun _ ↦ mem_leAddSubgroup_iff
 
 end Valuation
 
