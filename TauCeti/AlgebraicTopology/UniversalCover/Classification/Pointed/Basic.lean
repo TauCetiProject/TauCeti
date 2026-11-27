@@ -104,17 +104,10 @@ theorem exists_continuousMap_comp_eq_iff_range_le
     (hq : _root_.IsCoveringMap q) (hp : Continuous p) (hpe : p e₀ = x) (hqf : q f₀ = x) :
     (∃ g : C(E, F), g e₀ = f₀ ∧ q ∘ g = p) ↔
       (mapOfEq ⟨p, hp⟩ hpe).range ≤ (mapOfEq ⟨q, hq.continuous⟩ hqf).range := by
-  constructor
-  · rintro ⟨g, hg, hcomp⟩
-    have hfg : (⟨q, hq.continuous⟩ : C(F, X)).comp g = ⟨p, hp⟩ := by
-      ext e
-      exact congrFun hcomp e
-    rintro _ ⟨γ, rfl⟩
-    refine ⟨mapOfEq g hg γ, ?_⟩
-    rw [FundamentalGroup.mapOfEq_comp ⟨q, hq.continuous⟩ g hg hqf]
-    exact FundamentalGroup.mapOfEq_congr hfg _ _ γ
-  · intro hle
-    exact (IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hq hp hpe hqf hle).exists
+  refine ⟨fun ⟨g, hg, hcomp⟩ ↦ FundamentalGroup.range_mapOfEq_le_of_comp_eq (f := g)
+    (g := ⟨q, hq.continuous⟩) (k := ⟨p, hp⟩) (ContinuousMap.ext fun e ↦ congrFun hcomp e) hg hqf
+      hpe, fun hle ↦ ?_⟩
+  exact (IsCoveringMap.existsUnique_continuousMap_comp_eq_of_range_le hq hp hpe hqf hle).exists
 
 /-- Two pointed covers of `(X, x)` with path-connected, locally path-connected total spaces which
 recover the *same* subgroup of `π₁(X, x)` are isomorphic over `X`, by a homeomorphism matching the
