@@ -609,11 +609,8 @@ theorem not_isCyclic_binaryOctahedralSubgroup : ¬ IsCyclic binaryOctahedralSubg
   intro hc
   obtain ⟨g, hg⟩ := IsCyclic.exists_ofOrder_eq_natCard (α := binaryOctahedralSubgroup)
   rw [natCard_binaryOctahedralSubgroup, ← Subgroup.orderOf_coe] at hg
-  rcases pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup g.property with h | h
-  · have hdvd : 48 ∣ 8 := hg ▸ orderOf_dvd_of_pow_eq_one h
-    omega
-  · have hdvd : 48 ∣ 6 := hg ▸ orderOf_dvd_of_pow_eq_one h
-    omega
+  rcases pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup g.property with
+    h | h <;> exact absurd (hg ▸ orderOf_dvd_of_pow_eq_one h) (by norm_num)
 
 /-- **The binary octahedral subgroup is not isomorphic to any dicyclic group `QuaternionGroup n`**:
 for `n = 12` the generator `a 1` has order `24`, while every element of `2O` has order dividing `8`
@@ -629,10 +626,7 @@ theorem isEmpty_mulEquiv_binaryOctahedralSubgroup_quaternionGroup (n : ℕ) :
     rw [← natCard_binaryOctahedralSubgroup, Nat.card_congr e.toEquiv, natCard_quaternionGroup]
   have hn : n = 12 := by omega
   subst hn
-  rcases pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup g.property with h | h
-  · have hdvd := hord ▸ orderOf_dvd_of_pow_eq_one h
-    norm_num at hdvd
-  · have hdvd := hord ▸ orderOf_dvd_of_pow_eq_one h
-    norm_num at hdvd
+  rcases pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup g.property with
+    h | h <;> exact absurd (hord ▸ orderOf_dvd_of_pow_eq_one h) (by norm_num)
 
 end TauCeti.SU2
