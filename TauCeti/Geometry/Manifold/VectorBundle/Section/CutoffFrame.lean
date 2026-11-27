@@ -420,6 +420,33 @@ theorem chartCutoffSection_eq_sum [FiniteDimensional ℂ F]
   · simp [t.chartCutoffSection_apply_of_notMem he hE _ _ hx,
       e.complexCutoffPullback_apply_of_notMem he _ _ hx]
 
+/-- **A chart cut-off section along a vector.** Let `ρ` be a real smooth function on `M`,
+supported in the base set of `t`, which equals `1` on `e⁻¹(supp ψ)`. Then the chart cut-off
+section of `u v`, for a scalar Schwartz function `u` and a vector `v` of the model fibre, is the
+complex pullback `(ψ u) ∘ e` times the cut-off frame section `ρ t⁻¹ v`. -/
+theorem chartCutoffSection_postcompCLM_toSpanSingleton (ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
+    (u : 𝓢(EM, ℂ)) (v : F) (ρ : C^∞⟮𝓘(ℝ, EM), M; ℝ⟯) (hρ : tsupport ρ ⊆ t.baseSet)
+    (hρψ : ∀ y ∈ tsupport ψ, ρ (e.symm y) = 1) :
+    t.chartCutoffSection he hE ψ (u.postcompCLM (ContinuousLinearMap.toSpanSingleton ℂ v)) =
+      e.complexCutoffPullback he ψ (ContMDiffMap.ofContDiff u (u.smooth ⊤)) •
+        t.cutoffFrameSection ρ hρ v := by
+  ext x
+  by_cases hx : x ∈ e.source
+  · simp only [t.chartCutoffSection_apply_of_mem he hE _ _ hx,
+      ContMDiffSection.smul_apply_of_normedAlgebra,
+      e.complexCutoffPullback_apply_of_mem he _ _ hx, t.cutoffFrameSection_apply,
+      ContMDiffMap.coe_ofContDiff, SchwartzMap.postcompCLM_apply,
+      ContinuousLinearMap.toSpanSingleton_apply]
+    by_cases hψx : ψ (e x) = 0
+    · simp [hψx, ← t.symmL_apply (R := ℂ) (hE hx)]
+    have hρx : ρ x = 1 := by
+      simpa [e.left_inv hx] using hρψ (e x) (subset_tsupport _ hψx)
+    simp only [hρx, one_smul, ← t.symmL_apply (R := ℂ) (hE hx), ← map_smul]
+    congr 1
+    simp [← smul_assoc, Complex.real_smul]
+  · simp [t.chartCutoffSection_apply_of_notMem he hE _ _ hx,
+      e.complexCutoffPullback_apply_of_notMem he _ _ hx]
+
 end ChartCutoff
 
 end Bundle.Trivialization

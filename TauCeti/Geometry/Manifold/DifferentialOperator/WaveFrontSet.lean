@@ -230,16 +230,8 @@ theorem IsMicrolocallySmoothAt.localOperatorDualCLM {r : ℕ}
     IsMicrolocallySmoothAt (localOperatorDualCLM P
       (fun _ _ ↦ differentialOperators_section_apply_eq_zero_of_eventuallyEq hP) T) x ξ := by
   -- A chart of the maximal atlas at `x` over which both bundles are trivial.
-  let tV := trivializationAt F V x
-  let tW := trivializationAt F' W x
-  have hopen : IsOpen (tV.baseSet ∩ tW.baseSet) := tV.open_baseSet.inter tW.open_baseSet
-  obtain ⟨c, he, hxc, hV, hW⟩ : ∃ c : OpenPartialHomeomorph M E,
-      c ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧ x ∈ c.source ∧ c.source ⊆ tV.baseSet ∧
-        c.source ⊆ tW.baseSet := by
-    refine ⟨_, restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x) hopen, ?_⟩
-    rw [OpenPartialHomeomorph.restr_source' _ _ hopen]
-    exact ⟨⟨mem_chart_source E x, FiberBundle.mem_baseSet_trivializationAt' x,
-      FiberBundle.mem_baseSet_trivializationAt' x⟩, fun _ hy ↦ hy.2.1, fun _ hy ↦ hy.2.2⟩
+  obtain ⟨c, he, hxc, hV, hW⟩ :=
+    exists_mem_maximalAtlas_source_subset_baseSet 𝓘(ℝ, E) ∞ F V F' W x
   have hc := contMDiffOn_of_mem_maximalAtlas he
   have hcs := contMDiffOn_symm_of_mem_maximalAtlas he
   -- Microlocal smoothness is read on the components in this chart and these frames.

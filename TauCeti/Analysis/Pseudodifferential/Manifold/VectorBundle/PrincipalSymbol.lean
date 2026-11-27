@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Manifold.Composition
 public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Dual
+import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -79,6 +81,8 @@ are no nonzero covectors, every operator is elliptic and the ranks are unconstra
 * `TauCeti.isSectionClassicalEllipticAt_smul_iff`: ellipticity is unchanged by nonzero scalars.
 * `TauCeti.IsSectionClassicalEllipticAt.finrank_eq`: in positive dimension, ellipticity at a
   point forces `rank E = rank F`.
+* `TauCeti.IsSectionClassicalEllipticAt.mem_or_subsingleton`: in positive dimension, ellipticity at
+  a point forces order `m` unless both model fibres are trivial.
 
 ## References
 
@@ -627,14 +631,34 @@ is elliptic at some point, then `E` and `F` have the same rank: the principal sy
 covector is a linear isomorphism between the fibres. -/
 theorem IsSectionClassicalEllipticAt.finrank_eq [Nontrivial (CoordinateSpace n)] {x : M}
     (hPx : IsSectionClassicalEllipticAt m P x) : finrank ℂ V = finrank ℂ W := by
-  obtain ⟨η, hη⟩ := exists_ne (0 : CoordinateSpace n)
-  have hξ : (innerSL ℝ η : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) ≠ 0 := fun h ↦
-    hη (by simpa using DFunLike.congr_fun h η)
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
   rw [← ((trivializationAt V E x).continuousLinearEquivAt ℂ x
       (FiberBundle.mem_baseSet_trivializationAt V E x)).toLinearEquiv.finrank_eq,
     ← ((trivializationAt W F x).continuousLinearEquivAt ℂ x
       (FiberBundle.mem_baseSet_trivializationAt W F x)).toLinearEquiv.finrank_eq]
   exact (LinearEquiv.ofBijective _ (hPx _ hξ)).finrank_eq
+
+/-- **Ellipticity forces the order.** Over a manifold of positive dimension, an operator between
+bundles elliptic at some point is a classical pseudodifferential operator of order `m` unless both
+model fibres are trivial: otherwise its principal symbol vanishes, and the zero map between the
+fibres is not bijective. -/
+theorem IsSectionClassicalEllipticAt.mem_or_subsingleton [Nontrivial (CoordinateSpace n)] {x : M}
+    (hPx : IsSectionClassicalEllipticAt m P x) :
+    P ∈ sectionClassicalPseudodifferentialOperators m ∨ (Subsingleton V ∧ Subsingleton W) := by
+  refine or_iff_not_imp_left.2 fun hP ↦ ?_
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
+  have h0 := isSectionClassicalEllipticAt_iff.1 hPx _ hξ
+  rw [sectionClassicalPrincipalSymbol_of_notMem hP] at h0
+  -- The zero map `E_x → F_x` is bijective, so both fibres are trivial.
+  have hE : Subsingleton (E x) := ⟨fun u v ↦ h0.1 (by simp)⟩
+  have hF : Subsingleton (F x) := ⟨fun u v ↦ by
+    obtain ⟨u', rfl⟩ := h0.2 u
+    obtain ⟨v', rfl⟩ := h0.2 v
+    simp⟩
+  exact ⟨((trivializationAt V E x).continuousLinearEquivAt ℂ x
+      (FiberBundle.mem_baseSet_trivializationAt V E x)).symm.toEquiv.subsingleton,
+    ((trivializationAt W F x).continuousLinearEquivAt ℂ x
+      (FiberBundle.mem_baseSet_trivializationAt W F x)).symm.toEquiv.subsingleton⟩
 
 /-- In dimension zero every covector vanishes, so every operator between bundles is elliptic at
 every point, whatever the ranks of the bundles. -/
@@ -644,6 +668,14 @@ theorem isSectionClassicalEllipticAt_of_subsingleton [Subsingleton (CoordinateSp
   have : Subsingleton (TangentSpace 𝓘(ℝ, CoordinateSpace n) x) :=
     inferInstanceAs (Subsingleton (CoordinateSpace n))
   exact absurd (ContinuousLinearMap.ext fun v ↦ by simp [Subsingleton.elim v 0]) hξ
+
+/-- Between bundles whose model fibres are both trivial, every operator is elliptic at every point:
+every linear map between the trivial fibres is bijective. -/
+theorem isSectionClassicalEllipticAt_of_subsingleton_fiber [Subsingleton V] [Subsingleton W]
+    (x : M) : IsSectionClassicalEllipticAt m P x := fun _ _ ↦ by
+  have := subsingleton_fiber_of_subsingleton V E x
+  have := subsingleton_fiber_of_subsingleton W F x
+  exact ⟨fun _ _ _ ↦ Subsingleton.elim _ _, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 omit [FiniteDimensional ℂ W] in
 /-- **The identity is elliptic** of order `0`: its principal symbol at a nonzero covector is the
