@@ -53,6 +53,8 @@ example.
   differential of a symplectomorphism is a linear symplectomorphism of the tangent-fiber forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
   diffeomorphism pulls a nondegenerate form back to a nondegenerate form.
+* `IsLocalDiffeomorph.eq_zero_of_isNondegenerate_mpullback`: a two-form whose pullback along a
+  local diffeomorphism `f` is nondegenerate is nondegenerate at every point of the image of `f`.
 * `IsLocalDiffeomorph.isNondegenerate_mpullback_iff`: for a surjective
   local diffeomorphism the converse holds as well.
 * `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
@@ -241,6 +243,17 @@ theorem IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph {f : M�
   obtain ⟨u, rfl⟩ := hinv.surjective w
   simpa only [SmoothForm.eval₂_mpullback] using hv u
 
+/-- A two-form whose pullback along a local diffeomorphism `f` is nondegenerate is nondegenerate at
+every point `f x`: a tangent vector at `f x` pairing to zero with every vector is zero. -/
+theorem _root_.IsLocalDiffeomorph.eq_zero_of_isNondegenerate_mpullback {f : M₂ → M}
+    (hf : IsLocalDiffeomorph I₂ I ∞ f)
+    (h : SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ)) (x : M₂)
+    (v : TangentSpace I (f x)) (hv : ∀ w, SmoothBundleForm.eval₂ σ (f x) v w = 0) : v = 0 := by
+  rw [isNondegenerate_iff_separatingLeft] at h
+  -- The differential at `x` is onto, so `v = df u`, and `u` pairs to zero with every vector.
+  obtain ⟨u, rfl⟩ := (hf.isInvertible_mfderiv (by simp) x).surjective v
+  rw [h x u fun w ↦ by rw [SmoothForm.eval₂_mpullback]; exact hv _, map_zero]
+
 /-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
 back to a nondegenerate form exactly when the form is nondegenerate. -/
 theorem _root_.IsLocalDiffeomorph.isNondegenerate_mpullback_iff {f : M₂ → M}
@@ -248,12 +261,10 @@ theorem _root_.IsLocalDiffeomorph.isNondegenerate_mpullback_iff {f : M₂ → M}
     SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ) ↔
       σ.IsNondegenerate := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.isNondegenerate_mpullback_of_isLocalDiffeomorph hf⟩
-  rw [isNondegenerate_iff_separatingLeft] at h ⊢
+  rw [isNondegenerate_iff_separatingLeft]
   intro y v hv
   obtain ⟨x, rfl⟩ := hsurj y
-  -- The differential at `x` is onto, so `v = df u`, and `u` pairs to zero with every vector.
-  obtain ⟨u, rfl⟩ := (hf.isInvertible_mfderiv (by simp) x).surjective v
-  rw [h x u fun w ↦ by rw [SmoothForm.eval₂_mpullback]; exact hv _, map_zero]
+  exact hf.eq_zero_of_isNondegenerate_mpullback h x v hv
 
 /-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
 back to a symplectic form exactly when the form is symplectic. -/

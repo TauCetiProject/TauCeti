@@ -34,6 +34,8 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   strict pair in order except `a < a + 1` itself.
 * `Fin.cons_comp_perm`: prepending a fixed first entry commutes with permuting the other entries,
   through the permutation `Equiv.Perm.decomposeFin.symm (0, σ)` of `Fin (n + 1)` fixing `0`.
+* `Fin.exists_perm_mem_iff_val_lt_card`: some permutation of `Fin n` carries the first `#S`
+  indices onto a given `S : Finset (Fin n)`.
 * `TauCeti.isCycleOn_finRotate`: the rotation `finRotate n` is a single cycle on all of `Fin n`.
 * `TauCeti.closure_finRotate_swap_eq_top`: the rotation `finRotate n` and the transposition `(0 1)`
   generate the permutations of `Fin n`.
@@ -105,6 +107,20 @@ theorem cons_comp_perm {α : Type*} {n : ℕ} (a : α) (y : Fin n → α) (σ : 
   funext i
   cases i using Fin.cases <;>
     simp [Equiv.Perm.decomposeFin_symm_apply_zero, Equiv.Perm.decomposeFin_symm_apply_succ]
+
+open Finset in
+/-- For `S : Finset (Fin n)`, some permutation of `Fin n` carries the first `#S` indices onto
+`S`. -/
+theorem exists_perm_mem_iff_val_lt_card {n : ℕ} (S : Finset (Fin n)) :
+    ∃ σ : Equiv.Perm (Fin n), ∀ i, σ i ∈ S ↔ (i : ℕ) < #S := by
+  classical
+  have h₁ : Fintype.card {i : Fin n // (i : ℕ) < #S} = Fintype.card {i : Fin n // i ∈ S} := by
+    rw [Fintype.card_subtype, Fin.card_filter_val_lt, Fintype.card_coe,
+      min_eq_right (by simpa using S.card_le_univ)]
+  -- Match the indices below `#S` with `S`; the others go to its complement.
+  exact ⟨(Fintype.equivOfCardEq h₁).extendSubtype, fun i ↦
+    ⟨fun h ↦ by_contra fun hi ↦ Equiv.extendSubtype_not_mem _ i hi h,
+      fun hi ↦ Equiv.extendSubtype_mem _ i hi⟩⟩
 
 end Fin
 

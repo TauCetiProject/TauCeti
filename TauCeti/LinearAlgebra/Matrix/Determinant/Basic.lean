@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.RingTheory.Jacobson.Ideal
+import Mathlib.LinearAlgebra.Matrix.Adjugate
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.Algebra.Ring.Idempotent.Basic
@@ -36,6 +37,8 @@ differences of the remaining columns.
 
 * `Matrix.det_updateRow_updateRow_swap`: exchanging the vectors in two prescribed rows reverses
   the determinant.
+* `Matrix.det_updateRow_one`: replacing row `k` of the identity matrix by `v` produces determinant
+  `v k`.
 * `Matrix.det_eq_add_of_row_eq_add`: additivity of the determinant in one row, for matrices that
   agree in every other row.
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
@@ -222,6 +225,13 @@ theorem isUnit_det_one_add_smul {n R : Type*} [Fintype n] [DecidableEq n] [CommR
   rw [det_one_add_smul, add_assoc, add_sub_cancel_left]
   exact (Ring.jacobson R).add_mem (Ideal.mul_mem_left _ _ hr)
     (Ideal.mul_mem_left _ _ (Ideal.pow_mem_of_mem _ hr 2 two_pos))
+
+/-- Replacing row `k` of the identity matrix by `v` produces determinant `v k`. -/
+@[simp]
+theorem det_updateRow_one {n R : Type*} [Fintype n] [DecidableEq n] [CommRing R]
+    (k : n) (v : n → R) :
+    ((1 : Matrix n n R).updateRow k v).det = v k := by
+  rw [← Matrix.cramer_transpose_apply, Matrix.transpose_one, Matrix.cramer_one, one_apply_eq_self]
 
 end Matrix
 

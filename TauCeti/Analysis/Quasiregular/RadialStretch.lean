@@ -66,7 +66,8 @@ theorem isQuasiregularOn_norm_rpow_smul_self_of_forall_ne {a K : ℝ} (ha : 0 < 
         K * LinearMap.det (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E))
     (Ω : Opens E) : IsQuasiregularOn K Ω (fun x : E ↦ ‖x‖ ^ (a - 1) • x) := by
   have hp : -1 < a - 1 := by linarith
-  have hDu := hasWeakFDerivOn_norm_rpow_smul_self (μ := volume) hp Ω
+  have hDu := hasWeakFDerivOn_norm_rpow_smul_self (μ := volume)
+    (lt_of_le_of_lt (neg_le_neg (le_max_left _ _)) hp) Ω
   refine (isQuasiregularOn_iff hDu).2
     ⟨hK, (continuous_norm_rpow_smul_self hp).continuousOn, ?_, ?_⟩
   · exact (locallyIntegrable_norm_rpow_smul_id_add_smulRight_pow hp).locallyIntegrableOn _
@@ -124,7 +125,8 @@ private theorem le_of_isQuasiregularOn_norm_rpow_smul_self [Nontrivial E] {a c K
       ‖fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x‖ ^ finrank ℝ E =
         c * LinearMap.det (fderiv ℝ (fun y : E ↦ ‖y‖ ^ (a - 1) • y) x : E →ₗ[ℝ] E)) :
     c ≤ K := by
-  have hDu := hasWeakFDerivOn_norm_rpow_smul_self (μ := volume) (by linarith : -1 < a - 1) Ω
+  have hDu := hasWeakFDerivOn_norm_rpow_smul_self (μ := volume) (p := a - 1)
+    (by linarith [le_max_left (1 : ℝ) (finrank ℝ E)]) Ω
   have hmain : ∀ᵐ _ ∂volume.restrict (Ω : Set E), c ≤ K := by
     filter_upwards [hf.ae_norm_pow_le_mul_det hDu,
       ae_restrict_of_ae (Measure.ae_ne volume (0 : E))] with x hle hx

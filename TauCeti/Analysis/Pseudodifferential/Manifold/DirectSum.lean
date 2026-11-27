@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle
+public import TauCeti.Analysis.Pseudodifferential.Manifold.VectorBundle.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Prod
 
 /-!
