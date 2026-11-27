@@ -72,6 +72,9 @@ injective, the orbit projection is an open partial homeomorphism onto its image.
 * `TauCeti.isClopen_preimage_val_orbit_of_finite`: if a set meets finitely many orbits, all
   closed, then every orbit is open and closed in the set.
 * `TauCeti.frontier_smul₀`: `frontier (c • s) = c • frontier s` for `c ≠ 0`.
+* `TauCeti.specializes_iff_orbit_subset_closure_orbit`: in the orbit space of a group acting by
+  homeomorphisms, `q ⤳ q'` exactly when the orbit `q'` lies in the closure of the orbit `q`, with
+  the additive form `TauCeti.specializes_iff_addOrbit_subset_closure_addOrbit`.
 * `TauCeti.finite_stabilizer_of_properlyDiscontinuousSMul`: a properly discontinuous action has
   finite point stabilisers, as an instance rather than as `Set.Finite` of the carrier.
 * `TauCeti.countable_of_properlyDiscontinuousSMul`: a properly discontinuous scalar family on a
@@ -190,6 +193,24 @@ theorem frontier_smul₀ {G₀ X : Type*} [GroupWithZero G₀] [MulAction G₀ X
     [ContinuousConstSMul G₀ X] {c : G₀} (hc : c ≠ 0) (s : Set X) :
     frontier (c • s) = c • frontier s :=
   ((Homeomorph.smulOfNeZero c hc).image_frontier s).symm
+
+/-- **Specialization of orbits.** For a group acting by homeomorphisms, one point of the orbit space
+specializes to another exactly when the second orbit lies in the closure of the first. The orbit
+projection is an open quotient map, so it commutes with taking closures of saturated sets. -/
+@[to_additive specializes_iff_addOrbit_subset_closure_addOrbit
+  /-- **Specialization of orbits.** For an additive group acting by homeomorphisms, one point of
+  the orbit space specializes to another exactly when the second orbit lies in the closure of the
+  first. -/]
+theorem specializes_iff_orbit_subset_closure_orbit {G X : Type*} [Group G] [MulAction G X]
+    [TopologicalSpace X] [ContinuousConstSMul G X] {q q' : MulAction.orbitRel.Quotient G X} :
+    q ⤳ q' ↔ q'.orbit ⊆ closure q.orbit := by
+  have hπ := MulAction.isOpenQuotientMap_quotientMk (Γ := G) (T := X)
+  have horbit (p : MulAction.orbitRel.Quotient G X) :
+      p.orbit = Quotient.mk (MulAction.orbitRel G X) ⁻¹' {p} :=
+    Set.ext fun _ ↦ MulAction.orbitRel.Quotient.mem_orbit
+  rw [horbit, horbit, ← hπ.isOpenMap.preimage_closure_eq_closure_preimage hπ.continuous,
+    Set.preimage_subset_preimage_iff (hπ.surjective.range_eq ▸ Set.subset_univ _),
+    Set.singleton_subset_iff, specializes_iff_mem_closure]
 
 section DisjointTranslates
 
