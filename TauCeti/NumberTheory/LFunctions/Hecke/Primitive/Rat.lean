@@ -66,6 +66,7 @@ theorem isPrimitive_toDirichletCharacter (ψ : PrimitiveRayClassCharacter ℚ) :
   rw [DirichletCharacter.isPrimitive_def, toDirichletCharacter_def,
     RayClassCharacter.conductor_toDirichletCharacter, ψ.conductor_character]
 
+/-- A primitive ray class character of `ℚ` is trivial iff its Dirichlet character is trivial. -/
 theorem toDirichletCharacter_eq_one_iff (ψ : PrimitiveRayClassCharacter ℚ) :
     ψ.toDirichletCharacter = 1 ↔ ψ = 1 :=
   (RayClassCharacter.toDirichletCharacter_eq_one_iff ψ.character).trans (character_eq_one_iff ψ)

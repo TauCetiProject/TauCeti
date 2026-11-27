@@ -141,4 +141,5 @@ theorem heckeLFunctionC_eventuallyEq_primitive (χ : RayClassCharacter 𝔪) (s 
         (PrimitiveRayClassCharacter.of χ).character.eulerCorrection 𝔪 z := by
   conv_lhs => rw [← PrimitiveRayClassCharacter.induced_character_of χ]
   exact heckeLFunctionC_induced_eventuallyEq _ _ s
+
 end TauCeti.LFunctions
