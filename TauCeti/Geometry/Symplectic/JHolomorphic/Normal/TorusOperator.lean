@@ -265,16 +265,25 @@ bundle atlas `A` of the trivial line
 (`TauCeti.IsRealCauchyRiemannOperator.sobolevL`). Such an atlas exists when `ℂ ⧸ Λ` is compact
 (`TauCeti.FiniteBundleAtlas.nonempty`), for instance when `Λ` is a full lattice
 (`QuotientAddGroup.instCompactSpaceOfIsZLattice`). -/
-abbrev torusCauchyRiemannSobolevL :
+def torusCauchyRiemannSobolevL :
     SobolevSection A volume p 1 →L[ℝ] zeroOneSobolevSections A volume p 0 :=
   (isRealCauchyRiemannOperator_torusCauchyRiemannOperator ν μ).sobolevL A
     (contMDiffCovariantDerivativeOn_torusCauchyRiemannOperator le_rfl hν hμ) volume p
 
+/-- The realization is the generic realization
+`TauCeti.IsRealCauchyRiemannOperator.sobolevL` of the normal operator of the torus. -/
+theorem torusCauchyRiemannSobolevL_eq :
+    torusCauchyRiemannSobolevL A hν hμ p =
+      (isRealCauchyRiemannOperator_torusCauchyRiemannOperator ν μ).sobolevL A
+        (contMDiffCovariantDerivativeOn_torusCauchyRiemannOperator le_rfl hν hμ) volume p :=
+  (rfl)
+
 /-- **The normal operator of a torus is Fredholm** on `W^{1,p}`, `1 < p < ∞`
 (`TauCeti.IsRealCauchyRiemannOperator.isFredholm_sobolevL`). -/
 theorem isFredholm_torusCauchyRiemannSobolevL (hp : 1 < p) (hp_top : p ≠ ⊤) :
-    (torusCauchyRiemannSobolevL A hν hμ p).IsFredholm :=
-  IsRealCauchyRiemannOperator.isFredholm_sobolevL A _ _ hp hp_top
+    (torusCauchyRiemannSobolevL A hν hμ p).IsFredholm := by
+  rw [torusCauchyRiemannSobolevL_eq]
+  exact IsRealCauchyRiemannOperator.isFredholm_sobolevL A _ _ hp hp_top
 
 /-- **The index does not depend on the coefficients**: any two pairs of smooth coefficients give
 realizations of the same index (`TauCeti.IsRealCauchyRiemannOperator.index_sobolevL_eq`). -/
@@ -282,8 +291,9 @@ theorem index_torusCauchyRiemannSobolevL_eq {ν' μ' : ℂ ⧸ Λ → ℂ}
     (hν' : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ ν') (hμ' : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ μ')
     (hp : 1 < p) (hp_top : p ≠ ⊤) :
     (torusCauchyRiemannSobolevL A hν' hμ' p).index =
-      (torusCauchyRiemannSobolevL A hν hμ p).index :=
-  IsRealCauchyRiemannOperator.index_sobolevL_eq A _ _ _ _ hp hp_top
+      (torusCauchyRiemannSobolevL A hν hμ p).index := by
+  rw [torusCauchyRiemannSobolevL_eq, torusCauchyRiemannSobolevL_eq]
+  exact IsRealCauchyRiemannOperator.index_sobolevL_eq A _ _ _ _ hp hp_top
 
 variable {p}
 
@@ -331,7 +341,8 @@ theorem coe_kerTorusCauchyRiemannSobolevLLift_ofContMDiffSection (hp : 1 < p)
   -- (its `simp` unfolding times out on the kernel types).
   change (liftKer A hν hμ hp ((IsRealCauchyRiemannOperator.kerSobolevLEquivComap A _ _ hp).symm
     ⟨_, hσ⟩) : ℂ → ℂ) = _
-  rw [IsRealCauchyRiemannOperator.kerSobolevLEquivComap_symm_ofContMDiffSection, coe_liftKer_apply]
+  exact congrArg (fun t ↦ (liftKer A hν hμ hp t : ℂ → ℂ))
+    (IsRealCauchyRiemannOperator.kerSobolevLEquivComap_symm_ofContMDiffSection A _ _ hp hσ)
 
 private theorem liftKer_injective (hp : 1 < p) : Function.Injective (liftKer A hν hμ hp) := by
   refine (injective_iff_map_eq_zero _).2 fun t ht ↦ Subtype.ext (ContMDiffSection.ext fun x ↦ ?_)
