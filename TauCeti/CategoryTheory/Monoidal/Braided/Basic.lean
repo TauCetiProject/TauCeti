@@ -18,6 +18,11 @@ with a crossing of `Z` and `B`. With `B = 𝟙_ C` these identities move objects
 and coevaluations of exact pairings, for which no rigidity is needed; the crossing with `𝟙_ C`
 is then given by unitors (`braiding_tensorUnit_left`, `braiding_tensorUnit_right`).
 
+Two further identities in three objects trade a crossing of two factors followed by a braiding of
+the third past one of them for a braiding past their tensor product followed by an inverse crossing
+(`TauCeti.whiskerLeft_braiding_inv_comp_braiding_whiskerRight` and
+`TauCeti.braiding_inv_whiskerRight_comp_whiskerLeft_braiding`).
+
 This file also records naturality of the re-associated crossing
 `(α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom : X ⊗ (Y ⊗ Z) ⟶ Y ⊗ (X ⊗ Z)` of the first
 two factors of a right-bracketed triple with respect to whiskered and tensor-product morphisms,
@@ -73,6 +78,24 @@ theorem whiskerRight_comp_whiskerLeft_braiding {A A' B : C} (Z : C) (g : B ⟶ A
       (β_ B Z).hom ≫ Z ◁ g ≫ (α_ Z A' A).inv ≫ (β_ A' Z).inv ▷ A ≫ (α_ A' Z A).hom := by
   rw [← braiding_naturality_left_assoc, braiding_tensor_left_hom]
   simp
+
+/-- Crossing `Y` back under `X` behind `Z` and then braiding `Z` past `Y` is braiding `Z` past
+`X ⊗ Y` and then crossing `X` back under `Y ⊗ Z`. -/
+@[reassoc]
+theorem whiskerLeft_braiding_inv_comp_braiding_whiskerRight (X Y Z : C) :
+    Z ◁ (β_ Y X).inv ≫ (α_ Z Y X).inv ≫ (β_ Z Y).hom ▷ X =
+      (β_ Z (X ⊗ Y)).hom ≫ (α_ X Y Z).hom ≫ (β_ (Y ⊗ Z) X).inv := by
+  rw [← cancel_epi (Z ◁ (β_ Y X).hom), braiding_naturality_right_assoc]
+  simp [braiding_tensor_right_hom, braiding_tensor_left_inv]
+
+/-- Crossing `Y` back under `X` before `Z` and then braiding `X` past `Z` is braiding `X ⊗ Y` past
+`Z` and then crossing `Z ⊗ X` back under `Y`. -/
+@[reassoc]
+theorem braiding_inv_whiskerRight_comp_whiskerLeft_braiding (X Y Z : C) :
+    (β_ Y X).inv ▷ Z ≫ (α_ Y X Z).hom ≫ Y ◁ (β_ X Z).hom =
+      (β_ (X ⊗ Y) Z).hom ≫ (α_ Z X Y).inv ≫ (β_ Y (Z ⊗ X)).inv := by
+  rw [← cancel_epi ((β_ Y X).hom ▷ Z), braiding_naturality_left_assoc]
+  simp [braiding_tensor_left_hom, braiding_tensor_right_inv]
 
 /-- Whiskering a morphism on the first factor of `X ⊗ (Y ⊗ Z)` commutes with swapping the first
 two factors via `(α_ _ Y Z).inv ≫ (β_ _ Y).hom ▷ Z ≫ (α_ Y _ Z).hom`, moving the morphism onto
