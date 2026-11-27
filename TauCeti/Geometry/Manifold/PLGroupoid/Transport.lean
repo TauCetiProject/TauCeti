@@ -22,9 +22,10 @@ manifold modelled on `H'` for the atlas of its charts followed by `φ`, the char
 
 This is how a PL structure built in one coordinate model is read in another. For instance, the
 half-space `{q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}` of `TauCeti.modelWithCornersHalfSpace` and Mathlib's
-`EuclideanHalfSpace (n + 1)` are related by the linear isomorphism `(v, t) ↦ (t, v)`, which
-restricts to a homeomorphism of the model spaces (`TauCeti.halfSpaceHomeomorphEuclideanHalfSpace`),
-PL in both directions, carrying the boundary hyperplane `{q | q.2 = 0}` onto `{x | x 0 = 0}`.
+`EuclideanHalfSpace (n + 1)` are related by the linear isomorphism `(v, t) ↦ (t, v)`
+(`TauCeti.halfSpaceLinearEquiv`), which restricts to a homeomorphism of the model spaces
+(`TauCeti.halfSpaceHomeomorphEuclideanHalfSpace`), PL in both directions, carrying the boundary
+hyperplane `{q | q.2 = 0}` onto `{x | x 0 = 0}`.
 
 ## Main results
 
@@ -99,14 +100,31 @@ theorem _root_.Homeomorph.hasGroupoid_PLGroupoid_chartedSpaceComp (φ : H ≃ₜ
     OpenPartialHomeomorph.trans_assoc, Homeomorph.symm_toOpenPartialHomeomorph] using
     φ.symm_trans_trans_mem_PLGroupoid hφ hφ' (HasGroupoid.compatible hc hc')
 
+/-- The continuous linear isomorphism `(v, t) ↦ (t, v)` of `(Fin n → ℝ) × ℝ` with `ℝⁿ⁺¹`: the
+factors are swapped, then `TauCeti.euclideanFinConsEquiv` puts `t` in the zeroth coordinate. -/
+noncomputable def halfSpaceLinearEquiv (n : ℕ) :
+    ((Fin n → ℝ) × ℝ) ≃L[ℝ] EuclideanSpace ℝ (Fin (n + 1)) :=
+  (ContinuousLinearEquiv.prodComm ℝ (Fin n → ℝ) ℝ).trans (euclideanFinConsEquiv rfl)
+
+/-- `TauCeti.halfSpaceLinearEquiv` sends `(v, t)` to `(t, v)` in `ℝⁿ⁺¹`. -/
+@[simp]
+theorem halfSpaceLinearEquiv_apply {n : ℕ} (q : (Fin n → ℝ) × ℝ) :
+    halfSpaceLinearEquiv n q = euclideanFinConsEquiv rfl q.swap := by
+  simp [halfSpaceLinearEquiv]
+
+/-- The inverse of `TauCeti.halfSpaceLinearEquiv` sends `(t, v)` in `ℝⁿ⁺¹` to `(v, t)`. -/
+@[simp]
+theorem halfSpaceLinearEquiv_symm_apply {n : ℕ} (x : EuclideanSpace ℝ (Fin (n + 1))) :
+    (halfSpaceLinearEquiv n).symm x = ((euclideanFinConsEquiv rfl).symm x).swap := by
+  simp [halfSpaceLinearEquiv]
+
 /-- The homeomorphism `(v, t) ↦ (t, v)` of the product half-space `{q : (Fin n → ℝ) × ℝ | 0 ≤ q.2}`,
 the model space of `TauCeti.modelWithCornersHalfSpace`, with Mathlib's Euclidean half-space
 `EuclideanHalfSpace (n + 1)`: the height `t` becomes the zeroth coordinate. It is the restriction
-of `TauCeti.euclideanFinConsEquiv` after swapping the two factors. -/
+of `TauCeti.halfSpaceLinearEquiv`. -/
 noncomputable def halfSpaceHomeomorphEuclideanHalfSpace (n : ℕ) :
     {q : (Fin n → ℝ) × ℝ | 0 ≤ q.2} ≃ₜ EuclideanHalfSpace (n + 1) :=
-  ((ContinuousLinearEquiv.prodComm ℝ (Fin n → ℝ) ℝ).trans
-    (euclideanFinConsEquiv rfl)).toHomeomorph.subtype fun q => by simp
+  (halfSpaceLinearEquiv n).toHomeomorph.subtype fun q => by simp
 
 /-- `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` sends `(v, t)` to `(t, v)` in `ℝⁿ⁺¹`. -/
 @[simp]
@@ -136,21 +154,21 @@ theorem image_halfSpaceHomeomorphEuclideanHalfSpace_setOf_snd_eq_zero (n : ℕ) 
 theorem isPLOn_halfSpaceHomeomorphEuclideanHalfSpace (n : ℕ) :
     IsPLOn ((𝓡∂ (n + 1)) ∘ halfSpaceHomeomorphEuclideanHalfSpace n ∘
       (modelWithCornersHalfSpace (Fin n → ℝ)).symm) (range (modelWithCornersHalfSpace _)) := by
-  let L := (ContinuousLinearEquiv.prodComm ℝ (Fin n → ℝ) ℝ).trans (euclideanFinConsEquiv rfl)
-  refine (isPLOn_continuousAffineMap (L : _ →L[ℝ] _).toContinuousAffineMap _).congr ?_
+  refine (isPLOn_continuousAffineMap
+    (halfSpaceLinearEquiv n : _ →L[ℝ] _).toContinuousAffineMap _).congr ?_
   rintro q hq
   rw [range_modelWithCornersHalfSpace] at hq
-  simp [L, coe_modelWithCornersHalfSpace_symm_apply _ hq]
+  simp [coe_modelWithCornersHalfSpace_symm_apply _ hq]
 
 /-- Read in the models, the inverse of `TauCeti.halfSpaceHomeomorphEuclideanHalfSpace` is PL. -/
 theorem isPLOn_halfSpaceHomeomorphEuclideanHalfSpace_symm (n : ℕ) :
     IsPLOn (modelWithCornersHalfSpace (Fin n → ℝ) ∘
       (halfSpaceHomeomorphEuclideanHalfSpace n).symm ∘ (𝓡∂ (n + 1)).symm)
       (range (𝓡∂ (n + 1))) := by
-  let L := (ContinuousLinearEquiv.prodComm ℝ (Fin n → ℝ) ℝ).trans (euclideanFinConsEquiv rfl)
-  refine (isPLOn_continuousAffineMap (L.symm : _ →L[ℝ] _).toContinuousAffineMap _).congr ?_
+  refine (isPLOn_continuousAffineMap
+    ((halfSpaceLinearEquiv n).symm : _ →L[ℝ] _).toContinuousAffineMap _).congr ?_
   rintro y hy
   rw [range_modelWithCornersEuclideanHalfSpace] at hy
-  simp [L, modelWithCornersEuclideanHalfSpace_symm_apply_of_le hy]
+  simp [modelWithCornersEuclideanHalfSpace_symm_apply_of_le hy]
 
 end TauCeti
