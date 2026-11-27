@@ -21,6 +21,8 @@ roots relate to each other, the fact that `R` is reduced when `p` is prime, and 
 
 * `MulEquiv.perfectRing`: a multiplicative equivalence preserves bijectivity of the
   `p`-th power map.
+* `Function.Surjective.surjective_pow`: a surjective multiplicative map preserves surjectivity of
+  the `n`-th power map; for instance every quotient of a perfect ring is semiperfect.
 * `TauCeti.iterateFrobeniusEquiv_symm_pow`: the `p ^ n`-th power of the `p ^ n`-th root of `x`
   is `x`.
 * `TauCeti.iterateFrobeniusEquiv_symm_add_pow`: the `p ^ n`-th power of the `p ^ (m + n)`-th root
@@ -57,6 +59,17 @@ theorem MulEquiv.perfectRing {M N : Type*} [Monoid M] [Monoid N] (e : M ≃* N)
     funext fun x ↦ (map_pow e x p).symm
   rw [hcomm]
   exact e.bijective.comp PerfectRing.bijective_frobenius
+
+/-- A surjective multiplicative map preserves surjectivity of the `n`-th power map. For instance,
+if every element of a ring is an `n`-th power, then so is every element of each of its quotients;
+no ideal or characteristic hypothesis is needed. -/
+theorem Function.Surjective.surjective_pow {F M N : Type*} [Monoid M] [Monoid N] [FunLike F M N]
+    [MonoidHomClass F M N] {f : F} (hf : Function.Surjective f) {n : ℕ}
+    (h : Function.Surjective fun x : M ↦ x ^ n) : Function.Surjective fun y : N ↦ y ^ n := by
+  intro y
+  obtain ⟨x, rfl⟩ := hf y
+  obtain ⟨z, rfl⟩ := h x
+  exact ⟨f z, (map_pow f z n).symm⟩
 
 namespace TauCeti
 
