@@ -23,7 +23,7 @@ variable {R : Type*} [Ring R] [BinomialRing R]
 -- With no coordinates, integer binomials still lie in the integral span of one.
 example (c : ℤ) (n : ℕ) :
     Ring.choose (c : R) n ∈ ringChooseFilteredSpan (Fin.elim0 : Fin 0 → R) n := by
-  simpa using choose_sum_zsmul_add_intCast_mem_ringChooseFilteredSpan
+  simpa using ringChoose_sum_zsmul_add_intCast_mem_ringChooseFilteredSpan
     (Fin.elim0 : Fin 0 → R) (fun i => Fin.elim0 i) (Fin.elim0 : Fin 0 → ℤ) c n
 
 -- Both signs and the shift retain the degree-two bound.
@@ -33,7 +33,7 @@ example {x y : R} (hxy : Commute x y) :
     intro i j
     fin_cases i <;> fin_cases j <;> simp [hxy, hxy.symm, Commute.refl]
   simpa [Fin.sum_univ_two, zsmul_eq_mul, sub_eq_add_neg] using
-    choose_sum_zsmul_add_intCast_mem_ringChooseFilteredSpan ![x, y] hcomm ![2, -1] 1 2
+    ringChoose_sum_zsmul_add_intCast_mem_ringChooseFilteredSpan ![x, y] hcomm ![2, -1] 1 2
 
 -- The integral coefficients are 4, -2, 1, and 3, on monomials of total degree at most two.
 example {x y : R} (hxy : Commute x y) :

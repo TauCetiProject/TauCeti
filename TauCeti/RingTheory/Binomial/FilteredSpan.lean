@@ -66,7 +66,7 @@ theorem mul_mem_span_ringChoose_Iic (x : R) {u v : R} {m n : ℕ}
 
 /-- An integer multiple of an argument has its degree-`n` binomial coefficient in the integral
 span of the original coefficients through degree `n`. -/
-theorem choose_zsmul_mem_span_ringChoose_Iic (x : R) (z : ℤ) (n : ℕ) :
+theorem ringChoose_zsmul_mem_span_ringChoose_Iic (x : R) (z : ℤ) (n : ℕ) :
     Ring.choose (z • x) n ∈ span ℤ (Ring.choose x '' Set.Iic n) := by
   have hnat (m : ℕ) : ∀ k, Ring.choose (m • x) k ∈
       span ℤ (Ring.choose x '' Set.Iic k) := by
@@ -233,7 +233,7 @@ theorem mul_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
 
 /-- The degree-`n` binomial coefficient of an integer linear combination of a commuting family
 has an integral ordered expansion of total degree at most `n`. -/
-theorem choose_sum_zsmul_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
+theorem ringChoose_sum_zsmul_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
     (hcomm : ∀ i j, Commute (h i) (h j)) (z : Fin r → ℤ) (n : ℕ) :
     Ring.choose (∑ i, z i • h i) n ∈ ringChooseFilteredSpan h n := by
   induction r generalizing n with
@@ -248,19 +248,19 @@ theorem choose_sum_zsmul_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
     rw [Fin.sum_univ_succ, Ring.add_choose_eq n hhead]
     refine sum_mem fun ab hab => ?_
     have hmem := mul_mem_ringChooseFilteredSpan_cons (h 0) (fun i => h i.succ)
-      (choose_zsmul_mem_span_ringChoose_Iic (h 0) (z 0) ab.1)
+      (ringChoose_zsmul_mem_span_ringChoose_Iic (h 0) (z 0) ab.1)
       (ih (fun i => h i.succ) htail (fun i => z i.succ) ab.2)
     simpa only [mem_antidiagonal.mp hab, ← Fin.tail_def, Fin.cons_self_tail] using hmem
 
 /-- Integer translation preserves the total-degree bound in the ordered integral expansion of
 the binomial coefficient of an integer linear combination of commuting elements. -/
-theorem choose_sum_zsmul_add_intCast_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
+theorem ringChoose_sum_zsmul_add_intCast_mem_ringChooseFilteredSpan {r : ℕ} (h : Fin r → R)
     (hcomm : ∀ i j, Commute (h i) (h j)) (z : Fin r → ℤ) (c : ℤ) (n : ℕ) :
     Ring.choose ((∑ i, z i • h i) + (c : R)) n ∈ ringChooseFilteredSpan h n := by
   apply Ring.choose_add_intCast_mem
     (A := (ringChooseFilteredSpan h n).toAddSubgroup) (z := c)
   intro k hk
   exact ringChooseFilteredSpan_mono h hk
-    (choose_sum_zsmul_mem_ringChooseFilteredSpan h hcomm z k)
+    (ringChoose_sum_zsmul_mem_ringChooseFilteredSpan h hcomm z k)
 
 end TauCeti
