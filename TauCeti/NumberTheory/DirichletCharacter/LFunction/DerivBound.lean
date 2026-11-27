@@ -35,7 +35,7 @@ polynomial of length `N` plus a tail integral over `(N, ∞)`:
 * `L(s, χ) = ∑_{n=1}^N χ(n) n ^ (-s) + s ∫_{t > N} S(t) t ^ (-(s + 1))`,
 * `L'(s, χ) = -∑_{n=1}^N χ(n) (log n) n ^ (-s) + ∫_{t > N} S(t) (1 - s log t) t ^ (-(s + 1))`.
 
-Bounding `‖χ(n)‖ ≤ 1` on the initial sum via `TauCeti.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq`
+Bounding `‖χ(n)‖ ≤ 1` on the initial sum via `Nat.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq`
 and `‖S(t)‖ ≤ N` on the tail yields explicit level-uniform derivative bounds throughout `Re(s) > 0`,
 and in particular the half-line bound `‖L'(σ, χ)‖ ≤ 64 (log N) ^ 2` for every real
 `σ ≥ 1 - 1 / log N`, the corresponding Lipschitz bound on `[1 - 1 / log N, ∞)`, and unconditional
@@ -163,7 +163,7 @@ theorem deriv_LFunction_eq_neg_sum_Icc_add_integral (hχ : χ ≠ 1) {s : ℂ} (
       (Or.inr (zero_lt_one.trans_le ht).ne')).continuousWithinAt
   have hhead := χ.integral_Ioc_one_level_sum_mul_eq hχ
     (g := fun y : ℝ ↦ (y : ℂ) ^ (-s) * Real.log y)
-    (fun t ht ↦ (TauCeti.hasDerivAt_ofReal_cpow_mul_log (-s)
+    (fun t ht ↦ (Complex.hasDerivAt_ofReal_cpow_mul_log (-s)
       (zero_lt_one.trans_le ht.1).ne').congr_deriv (by
         rw [← neg_add']
         ring)) (hcont.mono Set.Icc_subset_Ici_self).integrableOn_Icc
@@ -282,7 +282,7 @@ theorem norm_deriv_LFunction_le_mul_log_sq (hχ : χ ≠ 1) {σ : ℝ}
     linarith
   have hσ_lo : (2 : ℝ) / 23 < σ := by linarith
   have hσ_pos : 0 < σ := by linarith
-  have hsum := TauCeti.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq N zero_le_one hσ
+  have hsum := Nat.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq N zero_le_one hσ
   have htail : (N : ℝ) ^ (1 - σ) * (Real.log N + 2 / σ) ≤ 22 * Real.exp 1 * Real.log N ^ 2 := by
     have h1 : (N : ℝ) ^ (1 - σ) ≤ Real.exp 1 :=
       (Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast (by omega : 1 ≤ N))

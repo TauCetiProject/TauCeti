@@ -23,15 +23,15 @@ improper integrals of `t ^ a * log t`.
 
 ## Main results
 
-* `TauCeti.hasDerivAt_rpow_mul_log`: derivative of `y ↦ y ^ r * Real.log y` for any `r : ℝ` and
+* `Real.hasDerivAt_rpow_mul_log`: derivative of `y ↦ y ^ r * Real.log y` for any `r : ℝ` and
   `x ≠ 0`.
-* `TauCeti.hasDerivAt_ofReal_cpow_mul_log`: derivative of `y ↦ (y : ℂ) ^ r * Real.log y` for any
+* `Complex.hasDerivAt_ofReal_cpow_mul_log`: derivative of `y ↦ (y : ℂ) ^ r * Real.log y` for any
   `r : ℂ` and `x ≠ 0`.
 -/
 
 public section
 
-namespace TauCeti
+namespace Real
 
 /-- For any real exponent `r` and nonzero `x : ℝ`, the derivative of `y ↦ y ^ r * log y` at `x`
 is `(r * log x + 1) * x ^ (r - 1)`. -/
@@ -44,6 +44,10 @@ theorem hasDerivAt_rpow_mul_log (r : ℝ) {x : ℝ} (hx : x ≠ 0) :
     rw [Real.rpow_sub_one hx, div_eq_mul_inv]
   rw [hinv]
   ring
+
+end Real
+
+namespace Complex
 
 /-- For any complex exponent `r` and nonzero `x : ℝ`, the derivative of
 `y ↦ (y : ℂ) ^ r * log y` at `x` is `(r * log x + 1) * (x : ℂ) ^ (r - 1)`. -/
@@ -63,4 +67,4 @@ theorem hasDerivAt_ofReal_cpow_mul_log (r : ℂ) {x : ℝ} (hx : x ≠ 0) :
     rw [hinv]
     ring
 
-end TauCeti
+end Complex

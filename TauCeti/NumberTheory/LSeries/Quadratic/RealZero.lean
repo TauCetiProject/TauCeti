@@ -121,7 +121,7 @@ theorem div_sqrt_conductor_mul_log_sq_le_one_sub_of_LFunction_eq_zero
   · have hprim_ne : χ.primitiveCharacter ≠ 1 := (primitiveCharacter_eq_one_iff χ).not.mpr hχ
     have hprim_zero : χ.primitiveCharacter.LFunction β = 0 :=
       (LFunction_changeLevel_eq_zero_iff χ.primitiveCharacter χ.conductor_dvd_level
-        (by simpa using hβ0) (.inl hprim_ne)).mp (by rwa [χ.changeLevel_primitiveCharacter])
+        (by simpa using hβ0.ne') (.inl hprim_ne)).mp (by rwa [χ.changeLevel_primitiveCharacter])
     have hgap := χ.primitiveCharacter.norm_LFunction_one_div_log_sq_le_one_sub_of_LFunction_eq_zero
       hprim_ne hprim_zero
     have hL1 : 2 * Real.log Real.goldenRatio / √(χ.conductor : ℝ) ≤

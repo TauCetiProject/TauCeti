@@ -448,7 +448,7 @@ theorem integral_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
       HasDerivAt (fun x : ℝ ↦ ((a + 1) * (x ^ (a + 1) * Real.log x) - x ^ (a + 1)) / (a + 1) ^ 2)
         (t ^ a * Real.log t) t := fun t (ht : c ≤ t) ↦ by
     have ht0 : t ≠ 0 := (hc.trans_le ht).ne'
-    refine ((((hasDerivAt_rpow_mul_log (a + 1) ht0).const_mul (a + 1)).sub
+    refine ((((Real.hasDerivAt_rpow_mul_log (a + 1) ht0).const_mul (a + 1)).sub
       (Real.hasDerivAt_rpow_const (p := a + 1) (Or.inl ht0))).div_const
       ((a + 1) ^ 2)).congr_deriv ?_
     rw [add_sub_cancel_right]

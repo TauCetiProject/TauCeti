@@ -23,9 +23,9 @@ partial summation up to the level `N`.
 
 ## Main results
 
-* `TauCeti.sum_Icc_log_div_le_log_sq`: `∑ k ∈ Finset.Icc 1 n, Real.log k / k ≤ (Real.log n) ^ 2`
+* `Nat.sum_Icc_log_div_le_log_sq`: `∑ k ∈ Finset.Icc 1 n, Real.log k / k ≤ (Real.log n) ^ 2`
   for all `n : ℕ`.
-* `TauCeti.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq`:
+* `Nat.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq`:
   `∑ k ∈ Finset.Icc 1 n, Real.log k * k ^ (-σ) ≤ Real.exp c * (Real.log n) ^ 2` for all `n : ℕ`,
   `0 ≤ c`, and `1 - c / Real.log n ≤ σ`.
 -/
@@ -34,7 +34,7 @@ public section
 
 open Finset
 
-namespace TauCeti
+namespace Nat
 
 /-- For every natural number `n`, `∑_{k=1}^n (log k) / k ≤ (log n)²`. -/
 theorem sum_Icc_log_div_le_log_sq (n : ℕ) :
@@ -102,4 +102,4 @@ theorem sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq (n : ℕ) {c σ : ℝ} (hc : 
     _ ≤ Real.exp c * Real.log n ^ 2 :=
       mul_le_mul_of_nonneg_left (sum_Icc_log_div_le_log_sq n) (Real.exp_nonneg c)
 
-end TauCeti
+end Nat
