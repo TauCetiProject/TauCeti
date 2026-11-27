@@ -104,6 +104,22 @@ noncomputable def nerveFiberEval (b : FinPointed.{max u v}) (i : Fin b.len) :
     (fiber (nerveMap (toFinPointed C)) (nerveEquiv.symm b) : SSet) ⟶ nerve C :=
   (nerveFiberIso C b).inv ≫ nerveMap (CategoryTheory.Pi.eval (fun _ : Fin b.len ↦ C) i)
 
+/-- Evaluation is the inverse family comparison followed by coordinate evaluation. -/
+lemma nerveFiberEval_eq (b : FinPointed.{max u v}) (i : Fin b.len) :
+    nerveFiberEval C b i =
+      (nerveFiberIso C b).inv ≫ nerveMap (CategoryTheory.Pi.eval (fun _ : Fin b.len ↦ C) i) :=
+  (rfl)
+
+/-- Evaluation of a fiber simplex is its reconstructed string at the given coordinate. -/
+-- Normalize the subfunctor simplex type in implicit arguments for simp matching.
+@[simp]
+lemma nerveFiberEval_app (b : FinPointed.{max u v}) (i : Fin b.len)
+    (n : SimplexCategoryᵒᵖ)
+    (s : (fiber (nerveMap (toFinPointed C)) (nerveEquiv.symm b) : SSet).obj n) :
+    (dsimp% only [Subfunctor.toFunctor_obj] (nerveFiberEval C b i).app n s) =
+      (nerveFiberIso C b).inv.app n s ⋙ CategoryTheory.Pi.eval (fun _ : Fin b.len ↦ C) i :=
+  (rfl)
+
 /-- Under the family comparison, evaluation is ordinary coordinate evaluation on strings. -/
 @[reassoc (attr := simp)]
 lemma nerveFiberIso_hom_eval (b : FinPointed.{max u v}) (i : Fin b.len) :
@@ -158,27 +174,22 @@ nerve of `FinPointed`, with its given projection as the forward map. -/
 noncomputable def nerveIsoOfSubsingleton [Subsingleton C] [Quiver.IsThin C] :
     nerve (CategoryOfOperators.{max u v} C) ≅ nerve FinPointed.{max u v} :=
   let e := (toFinPointed.{max u v} C).asIsomorphism
-  { hom := nerveMap e.functor
-    inv := nerveMap e.inverse
-    hom_inv_id := by
-      apply NatTrans.ext
-      funext n
-      apply ConcreteCategory.hom_ext
-      intro s
-      exact (Functor.assoc s _ _).trans
-        ((congrArg (s ⋙ ·) e.unit_eq.symm).trans (Functor.comp_id s))
-    inv_hom_id := by
-      apply NatTrans.ext
-      funext n
-      apply ConcreteCategory.hom_ext
-      intro s
-      exact (Functor.assoc s _ _).trans
-        ((congrArg (s ⋙ ·) e.counit_eq).trans (Functor.comp_id s)) }
+  nerveFunctor.mapIso
+    { hom := e.functor.toCatHom
+      inv := e.inverse.toCatHom
+      hom_inv_id := congrArg Functor.toCatHom e.unit_eq.symm
+      inv_hom_id := congrArg Functor.toCatHom e.counit_eq }
 
 /-- The terminal operator-nerve comparison is an isomorphism over the original base. -/
 @[simp]
 lemma nerveIsoOfSubsingleton_hom [Subsingleton C] [Quiver.IsThin C] :
     (nerveIsoOfSubsingleton C).hom = nerveMap (toFinPointed.{max u v} C) :=
+  (rfl)
+
+/-- The inverse terminal operator-nerve comparison is the nerve of the strict inverse. -/
+@[simp]
+lemma nerveIsoOfSubsingleton_inv [Subsingleton C] [Quiver.IsThin C] :
+    (nerveIsoOfSubsingleton C).inv = nerveMap (toFinPointed.{max u v} C).strictInv :=
   (rfl)
 
 end TauCeti.CategoryOfOperators

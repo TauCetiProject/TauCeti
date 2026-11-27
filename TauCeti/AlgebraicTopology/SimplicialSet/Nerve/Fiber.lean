@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.FiberedCategory.Fiber
 public import TauCeti.AlgebraicTopology.SimplicialSet.Fiber
-public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
+public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 
 /-!
 # Strict fibers of ordinary nerves
