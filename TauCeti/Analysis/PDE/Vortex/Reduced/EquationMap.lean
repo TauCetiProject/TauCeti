@@ -10,7 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.Reduced.Regularity
 public import TauCeti.Analysis.Sobolev.BesselPotential.Exp
 public import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 public import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
-public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff
+public import TauCeti.RingTheory.Polynomial.Monic.OfCoeff.Basic
 import TauCeti.Analysis.Polynomial.AtInfinity
 import TauCeti.Analysis.Polynomial.Monic.OfCoeff
 import TauCeti.Analysis.Polynomial.NormSq
