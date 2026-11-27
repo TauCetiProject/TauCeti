@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.BoundaryData
+import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.PDE.EnergyForm.SmallDrift
 import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness.LowerOrder
 import TauCeti.Analysis.PDE.Regularity.FrozenCoefficient
@@ -38,9 +39,12 @@ This file adds the zero-order term to the global `C^{1,β}` theory without lower
 * **Solvability** (Gilbarg–Trudinger, Theorem 8.34). For `c ≥ 0` and a boundary datum `g` that is
   moreover essentially bounded, the Dirichlet problem has exactly one weak solution; it is
   essentially bounded and its gradient agrees almost everywhere with a function `β`-Hölder on
-  `closure Ω` (in the `TauCeti.PDE` namespace,
-  `existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWith_of_mass_nonneg`), so
-  the estimate above applies to it. Without a sign condition on `c` uniqueness fails: on
+  `closure Ω`, so the estimate above applies to it. In the `TauCeti.PDE` namespace, this theorem
+  carries the name of its counterpart without lower-order terms,
+  `existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWith_gradient_closure`,
+  with the suffix `_of_mass`. The weak solvability step for `c ≥ 0` alone is
+  `UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_isBounded`.
+  Without a sign condition on `c` uniqueness fails: on
   `(0, π)` the function `sin x` solves `-u'' - u = 0` with zero boundary values.
 
 ## The argument
@@ -130,13 +134,9 @@ private theorem memLp_sub_mul_value_and_toReal_eLpNorm_le
   set U := (eLpNorm (W1p.value u) ⊤ ν).toReal
   -- `|c u| ≤ Γ ‖u‖_∞` almost everywhere.
   have hcu : ∀ᵐ x ∂ν, ‖c x * W1p.value u x‖ ≤ Γ * U := by
-    filter_upwards [hcΓ, ae_le_eLpNormEssSup (f := W1p.value u) (μ := ν)] with x hcx hux
-    have hux' : ‖W1p.value u x‖ ≤ U := by
-      rw [← toReal_eNorm]
-      exact ENNReal.toReal_mono hu.eLpNorm_ne_top
-        (hux.trans_eq (eLpNorm_exponent_top hu.aestronglyMeasurable).symm)
+    filter_upwards [hcΓ, ae_le_lpNorm_exponent_top hu] with x hcx hux
     rw [norm_mul]
-    exact mul_le_mul hcx hux' (norm_nonneg _) hΓ
+    exact mul_le_mul hcx hux (norm_nonneg _) hΓ
   have hcum : AEStronglyMeasurable (fun x => c x * W1p.value u x) ν :=
     hc.mul hu.aestronglyMeasurable
   refine ⟨hf.sub (MemLp.of_bound hcum _ hcu), ?_⟩
@@ -265,48 +265,6 @@ theorem exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule_of_mass {E
         exact mul_le_mul_of_nonneg_left (by nlinarith [mul_nonneg (mul_nonneg hΓ' hV) hU]) hC₀
   refine ⟨h, hae, hK.mono_const (Real.toNNReal_le_toNNReal key), fun y hy => (hM y hy).trans key⟩
 
-attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace in
-/-- The Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f - div G` in `Ω`, `u = g` on `∂Ω`, with `a`
-uniformly elliptic and measurable on `Ω`, `0 ≤ c ≤ Γ`, `f ∈ L²(Ω)` and `G ∈ L²(Ω; ℝ^{n+1})`, has
-exactly one weak solution on a bounded `Ω`: the energy form is coercive on `H¹₀(Ω)` since `Ω` lies
-in a ball, and Lax–Milgram applies. -/
-private theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_mass_eq
-    {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {c f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {lam Lam Γ : ℝ}
-    (hell : UniformlyEllipticOn (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
-    (ha : AEStronglyMeasurable a (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (hc : AEStronglyMeasurable c (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (hcΓ : ∀ x ∈ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ Γ)
-    (hc0 : ∀ x ∈ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
-    (hf : MemLp f 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (hG : MemLp G 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (g : W1p volume Ω 2) :
-    ∃! u : W1p volume Ω 2, u - g ∈ w1p0Submodule volume Ω 2 ∧
-      ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 c u (v : W1p volume Ω 2) =
-        (∫ x in Ω, ⟪G x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ) +
-          ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x := by
-  -- The right-hand side as a functional on `H¹₀(Ω)`.
-  set ℓ := dirichletForcing (hf.toLp f) - divergenceForcing (hG.toLp G)
-  have hℓ : ∀ v : W1p0 volume Ω 2, ℓ v =
-      (∫ x in Ω, ⟪G x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ) +
-        ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x := fun v => by
-    rw [sub_apply, divergenceForcing_toLp_apply hG,
-      dirichletForcing_apply_eq_setIntegral, sub_neg_eq_add, add_comm]
-    congr 1
-    refine integral_congr_ae ?_
-    filter_upwards [hf.coeFn_toLp] with x hx
-    rw [hx]
-  obtain ⟨R, hR⟩ := hΩ.subset_ball 0
-  obtain ⟨u, ⟨hu0, hu⟩, huniq⟩ :=
-    hell.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
-      (b := 0) (beta := 0) ha aestronglyMeasurable_const hc (fun _ _ => by simp) hcΓ hc0 hR
-      (by simpa using hell.pos) ℓ g
-  exact ⟨u, ⟨hu0, fun v => (hu v).trans (hℓ v)⟩,
-    fun u' hu' => huniq u' ⟨hu'.1, fun v => (hu'.2 v).trans (hℓ v).symm⟩⟩
-
 /-- **The Dirichlet problem with a nonnegative zero-order term on a `C^{1,α}` domain is uniquely
 solvable, with a gradient Hölder up to the boundary** (Gilbarg–Trudinger, Theorem 8.34). Let
 `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{1,α}` boundary, given by rigid graph charts at its
@@ -329,7 +287,8 @@ bounded, and its gradient agrees almost everywhere on `Ω` with a function that 
 
 Some sign condition on `c` is needed for uniqueness: `sin x` solves `-u'' - u = 0` on `(0, π)` with
 zero boundary values. -/
-theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWith_of_mass_nonneg
+theorem
+existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWith_gradient_closure_of_mass
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {α β : ℝ≥0} (hβ : 0 < β)
     (hβ1 : β < 1) (hβα : β ≤ α) {q : ℝ≥0∞} (hq : 2 ≤ q)
     (hβq : (β : ℝ) ≤ 1 - ((n : ℝ) + 1) / q.toReal) {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
@@ -356,10 +315,14 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWi
     (hDg : HolderOnWith Kg α Dg (closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
     (hMg : ∀ y ∈ closure (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖Dg y‖ ≤ Mg)
     (hg : MemLp (W1p.value g) ⊤ (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))) :
-    ∃! u : W1p volume Ω 2, (u - g ∈ w1p0Submodule volume Ω 2 ∧
+    (∃! u : W1p volume Ω 2, u - g ∈ w1p0Submodule volume Ω 2 ∧
         ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 c u (v : W1p volume Ω 2) =
           (∫ x in Ω, ⟪G x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ) +
             ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x) ∧
+    ∀ u : W1p volume Ω 2, u - g ∈ w1p0Submodule volume Ω 2 →
+      (∀ v : W1p0 volume Ω 2, energyFormH1 a 0 c u (v : W1p volume Ω 2) =
+        (∫ x in Ω, ⟪G x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ) +
+          ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x) →
       MemLp (W1p.value u) ⊤ (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))) ∧
       ∃ h : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)),
         ⇑(W1p.gradient u) =ᵐ[volume.restrict Ω] h ∧
@@ -371,35 +334,31 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWi
   have ha := aestronglyMeasurable_of_holderOnWith_matrixBilinearForm (mu := volume)
     Ω.isOpen.measurableSet subset_closure hα hKa
   have hGinf : MemLp G ⊤ ν := hG.memLp_top hα hΩ.closure Ω.isOpen.measurableSet subset_closure
-  obtain ⟨u, ⟨hu0, hu⟩, huniq⟩ := existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_mass_eq
-    hΩ hellΩ ha hc hcΓ hc0 (hf.mono_exponent hq) (hGinf.mono_exponent le_top) g
+  refine ⟨hellΩ.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_isBounded hΩ ha hc
+    hcΓ hc0 (hf.mono_exponent hq) (hGinf.mono_exponent le_top) g, fun u hu0 hu => ?_⟩
+  -- The weak equation with the divergence datum written as `-div (-G)`.
+  have hu' : ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 c u (v : W1p volume Ω 2) =
+      (∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x) -
+        ∫ x in Ω, ⟪(-G) x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ := fun v => by
+    rw [hu v]
+    simp only [Pi.neg_apply, inner_neg_left, integral_neg, sub_neg_eq_add, add_comm]
   -- `u` is essentially bounded, by Stampacchia's bound with the boundary values of `g`.
   obtain ⟨r, hr2, hrn, hfr⟩ := exists_two_lt_and_lt_and_memLp_div_two hβ hq hβq hf
   obtain ⟨CS, -, HS⟩ := exists_ae_abs_value_le_add_of_sub_mem_w1p0Submodule (mu := volume)
     (ι := Fin (n + 1)) hr2 (by simpa using hrn) 0
   have hbd := HS (b := 0) (beta := 0) (k := (eLpNorm (W1p.value g) ⊤ ν).toReal)
     hΩ.measure_lt_top.ne hellΩ ha aestronglyMeasurable_zero hc (fun _ _ => by simp) hcΓ hc0
-    (by simp) hfr (hGinf.mono_exponent le_top).neg (fun v => by
-      rw [hu v]
-      simp only [Pi.neg_apply, inner_neg_left, integral_neg, sub_neg_eq_add, add_comm]) hu0 (by
-      filter_upwards [ae_le_eLpNormEssSup (f := W1p.value g) (μ := ν)] with x hx
-      rw [← Real.norm_eq_abs, ← toReal_eNorm]
-      exact ENNReal.toReal_mono hg.eLpNorm_ne_top
-        (hx.trans_eq (eLpNorm_exponent_top hg.aestronglyMeasurable).symm))
+    (by simp) hfr (hGinf.mono_exponent le_top).neg hu' hu0
+    ((ae_le_lpNorm_exponent_top hg).mono fun x hx => by rwa [← Real.norm_eq_abs])
   have huinf : MemLp (W1p.value u) ⊤ ν :=
     memLp_top_of_bound (Lp.aestronglyMeasurable _) _ (hbd.mono fun x hx => by
       rwa [Real.norm_eq_abs])
-  -- The weak equation against `H¹₀(Ω)` gives it against the test functions, and the estimate.
-  have htest : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 c u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
-      (∫ x in Ω, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ) +
-        ∫ x in Ω, f x * φ x := by
-    simpa only [neg_neg] using energyFormH1_ofTestFunctionₗ_eq_of_forall_w1p0 (F := -G)
-      fun v => by rw [hu v, Pi.neg_def]; simp only [inner_neg_left, integral_neg, sub_neg_eq_add,
-        add_comm]
+  -- The weak equation against the test functions, and the estimate.
   obtain ⟨C, -, hreg⟩ := exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule_of_mass hβ
     hβ1 hβα hq hβq hΩ hchart lam Lam Ka Γ
-  obtain ⟨h, hae, hK, -⟩ := hreg hell hKa le_rfl hc hcΓ hG hf hu0 hgD hDg hMg huinf htest
-  exact ⟨u, ⟨⟨hu0, hu⟩, huinf, h, hae, _, hK⟩, fun u' hu' => huniq u' hu'.1⟩
+  obtain ⟨h, hae, hK, -⟩ := hreg hell hKa le_rfl hc hcΓ hG hf hu0 hgD hDg hMg huinf
+    (by simpa only [neg_neg] using energyFormH1_ofTestFunctionₗ_eq_of_forall_w1p0 hu')
+  exact ⟨huinf, h, hae, _, hK⟩
 
 end PDE
 
