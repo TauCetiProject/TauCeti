@@ -97,6 +97,14 @@ lemma reindex_page_d_eq (r r' : ℤ) (hr : r₀' ≤ r) (hr' : r + d = r') (i j 
   rw [reindexPageXIso, reindexPageXIso, eqToIso.hom, eqToIso.inv]
   exact (conj_eqToHom_iff_heq' _ _ _ _).2 .rfl
 
+/-- At the page `r + d` of `E` and the index `f j`, the identification `reindexPageXIso` of the
+object at `j` of page `r` of the reindexed spectral sequence is the identity. -/
+@[simp]
+lemma reindexPageXIso_hom_self (r : ℤ) (hr : r₀' ≤ r) (j : κ') :
+    (E.reindexPageXIso d f hf hd r (r + d) hr rfl j (f j) rfl).hom = 𝟙 _ := by
+  rw [reindexPageXIso, eqToIso.hom]
+  exact eqToHom_refl _ _
+
 /-- The computation of `liftCycles_homologyπ_reindex_iso_hom` on the pages `r + d` and `r' + d`
 of `E`, at the index `f j`, where the identifications `reindexPageXIso` are identities. -/
 @[reassoc]
@@ -116,7 +124,12 @@ private lemma liftCycles_homologyπ_reindex_iso_hom_aux {A : C} (r r' : ℤ) (hr
   exact (HomologicalComplex.liftCycles_homologyπ_restrictionHomologyIsoOfSurjective_hom_assoc
     (ComplexShape.Embedding.mk' _ _ f f.injective (hf r)) f.surjective (E.page (r + d)) j (f j)
     rfl x k hk hx _).trans
-      (by simp [HomologicalComplex.restrictionXIso]; rfl)
+      (by
+        simp [HomologicalComplex.restrictionXIso]
+        -- The two sides differ only in the proofs that `x` is a cycle: one is stated with the
+        -- differential of the restriction, the other with that of `E.page (r + d)`, and these
+        -- agree by definition of `HomologicalComplex.restriction` (`reindex_page_d`).
+        rfl)
 
 /-- On cycles, the identification of the homology of page `r` of the reindexed spectral sequence
 with page `r'` is that of `E` on pages `s = r + d` and `s' = r' + d`: through the identifications
@@ -145,15 +158,11 @@ lemma liftCycles_homologyπ_reindex_iso_hom {A : C} (r r' : ℤ) (hrr' : r + 1 =
   subst hs hs' hi hl
   rw [liftCycles_homologyπ_reindex_iso_hom_aux_assoc d f hf hd E r r' hrr' hr j k hk x hx]
   -- With these indices, the identifications `reindexPageXIso` are identities by definition.
-  rw [show (E.reindexPageXIso d f hf hd r' (r' + d) (by lia) rfl j (f j) rfl).hom =
-    𝟙 ((E.page (r' + d)).X (f j)) from rfl]
+  rw [reindexPageXIso_hom_self]
   refine (Category.comp_id _).trans ?_
   congr 1
-  rw [← cancel_mono ((E.page (r + d)).iCycles (f j))]
-  -- the identification `reindexPageXIso` at `j` is the identity by definition
-  rw [HomologicalComplex.liftCycles_i,
-    show (E.reindexPageXIso d f hf hd r (r + d) hr rfl j (f j) rfl).hom =
-      𝟙 ((E.page (r + d)).X (f j)) from rfl]
+  rw [← cancel_mono ((E.page (r + d)).iCycles (f j)), HomologicalComplex.liftCycles_i,
+    reindexPageXIso_hom_self]
   exact (HomologicalComplex.liftCycles_i _ _ _ _ _).trans (Category.comp_id x).symm
 
 variable {E} {E' E'' : SpectralSequence C c r₀}

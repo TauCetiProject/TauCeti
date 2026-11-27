@@ -35,8 +35,9 @@ degree `p`, so the homological spectral sequence of the filtration
   `E^r_{p,0} = H_p(C)` for every `r ≥ 2`
   (`CochainComplex.stupidFiltrationSpectralSequencePageXIso`);
 * this identification is the one given by the abutment: the limit object `E^∞_{p,0}` is the piece
-  `F_p H_p(C)` of the filtration of `H_p(C)`, which is all of `H_p(C)` since `F_{p-1}` vanishes in
-  the degree `p` (`CochainComplex.isIso_stupidFiltration_EInftyToAbutment`), and the passage from
+  `F_p H_p(C)` of the filtration of `H_p(C)` since `F_{p-1}` vanishes in the degree `p`, and this
+  is all of `H_p(C)` since `F_p` is all of `C` in the degree `p`
+  (`CochainComplex.isIso_stupidFiltration_EInftyToAbutment`), and the passage from
   `E^r_{p,0}` to `E^∞_{p,0} = H_p(C)` is `CochainComplex.stupidFiltrationSpectralSequencePageXIso`
   (`CochainComplex.stupidFiltrationSpectralSequencePageXIso_hom_eq`).
 
@@ -444,12 +445,21 @@ lemma stupidFiltrationSpectralSequencePageXIso_add_one (r : ℤ) (hr : 2 ≤ r) 
 
 /-! ### The abutment -/
 
-/-- In the degree `-p`, the piece `F_{p-1} H^{-p}` of the filtration of `H^{-p}(K)` induced by the
-brutal filtration vanishes, since `F_{p-1}` vanishes in that degree. -/
-lemma isZero_stupidFiltration_abutmentFiltration (p q : ℤ) (hq : q = 0) :
+/-- In the degrees `n ≤ -p`, the piece `F_{p-1} H^n` of the filtration of `H^n(K)` induced by the
+brutal filtration vanishes, since `F_{p-1}` vanishes in those degrees. -/
+lemma isZero_stupidFiltration_abutmentFiltration (p n : ℤ) (hn : n ≤ -p) :
     IsZero ((spectralObject (filtrationFunctor K.stupidFiltration
-      K.monotone_stupidFiltration)).abutmentFiltration (p - 1) (-(p + q))) :=
+      K.monotone_stupidFiltration)).abutmentFiltration (p - 1) n) :=
   isZero_filtrationAbutmentFiltration_of_isZero_X _ _ (isZero_stupidFiltration_X (by omega))
+
+/-- For the brutal filtration, `H^m(⊥ ≤ i)` vanishes when `m + i < 0`, since `F_i` vanishes in the
+degree `m`. -/
+lemma isZero_stupidFiltration_spectralObject_H_bot {m i : ℤ} (h : m + i < 0) :
+    IsZero (((spectralObject (filtrationFunctor K.stupidFiltration
+      K.monotone_stupidFiltration)).H m).obj
+        (ComposableArrows.mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ i)))) :=
+  isZero_spectralObject_H_bot_of_isZero_X _ _
+    (K.isZero_stupidFiltration_X (p := i) (i := m) (by omega)) le_rfl
 
 /-- The identifications of the terms of `F_p` with those of `K` invert the inclusion. -/
 @[reassoc (attr := simp)]
@@ -471,9 +481,7 @@ private lemma epi_homologyMap_stupidFiltration_arrow {p n : ℤ} (hn : n = -p) :
   have hs : s ≫ HomologicalComplex.cyclesMap (K.stupidFiltration p).arrow n = 𝟙 _ := by
     rw [← cancel_mono (K.iCycles n)]
     simp [s]
-  have : Epi (HomologicalComplex.cyclesMap (K.stupidFiltration p).arrow n ≫ K.homologyπ n) :=
-    epi_of_epi_fac (f := s) (by rw [reassoc_of% hs])
-  exact epi_of_epi_fac (HomologicalComplex.homologyπ_naturality _ n)
+  exact ShortComplex.epi_homologyMap_of_epi_cyclesMap' _ (epi_of_epi_fac hs)
 
 /-- The class of a cycle `x` of `F_p` in the degree `-p`, sent to the homology of the graded piece
 `F_p/F_{p-1}` and to `E¹_{p,0}` through the first page of `CochainComplex.spectralSequence`, is the
@@ -578,11 +586,9 @@ private lemma stupidSecondPageClass_spectralSequencePageXToEInfty_EInftyToAbutme
       (spectralObject (filtrationFunctor K.stupidFiltration
         K.monotone_stupidFiltration)).spectralSequencePageXToEInfty 3 (by norm_num)
         (1 - 2 * p - 0, p - 1) (-(p + 0)) (by dsimp; lia)
-        (isZero_spectralObject_H_bot_of_isZero_X _ _
-          (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + 0) + 1) (by lia))
-          (by dsimp; lia)) ≫
+        (K.isZero_stupidFiltration_spectralObject_H_bot (by lia)) ≫
       (spectralObject _).EInftyToAbutment (p - 1) (-(p + 0))
-        (K.isZero_stupidFiltration_abutmentFiltration p 0 rfl) ≫
+        (K.isZero_stupidFiltration_abutmentFiltration p _ (by lia)) ≫
       (filtrationAbutmentIso _ _ (-(p + 0))).hom =
     HomologicalComplex.homologyMap (K.stupidFiltration p).arrow (-(p + 0)) := by
   simp only [stupidSecondPageClass, Category.assoc]
@@ -604,11 +610,9 @@ private lemma stupidFiltrationSpectralSequencePageXIso_two_hom_eq (p q : ℤ) (h
         (spectralObject (filtrationFunctor K.stupidFiltration
           K.monotone_stupidFiltration)).spectralSequencePageXToEInfty 3 (by norm_num)
           (1 - 2 * p - q, p - 1) (-(p + q)) (by dsimp; lia)
-          (isZero_spectralObject_H_bot_of_isZero_X _ _
-            (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
-            (by dsimp; lia)) ≫
+          (K.isZero_stupidFiltration_spectralObject_H_bot (by lia)) ≫
         (spectralObject _).EInftyToAbutment (p - 1) (-(p + q))
-          (K.isZero_stupidFiltration_abutmentFiltration p q hq) ≫
+          (K.isZero_stupidFiltration_abutmentFiltration p _ (by lia)) ≫
         (filtrationAbutmentIso _ _ (-(p + q))).hom := by
   subst hq
   have : Epi (K.stupidSecondPageClass p) := by
@@ -628,9 +632,10 @@ filtration `F_p = σ^{≥ -p} K` of `K`, read as a chain complex with `C_n = K^{
 `r ≥ 2`, the identification `E^r_{p,0} ≅ H_p(C) = H^{-p}(K)` of
 `CochainComplex.stupidFiltrationSpectralSequencePageXIso` is the passage from the page `r` to the
 limit object `E^∞_{p,0}` (`spectralSequencePageXToEInfty`), followed by the identification of
-`E^∞_{p,0}` with the piece `F_p H_p(C)` of the abutment, which is all of `H_p(C)` since
-`F_{p-1} H_p(C) = 0` (`EInftyToAbutment`), and by the identification of the abutment with
-`H^{-p}(K)` (`CochainComplex.filtrationAbutmentIso`). -/
+`E^∞_{p,0}` with the piece `F_p H_p(C)` of the abutment, which holds since `F_{p-1} H_p(C) = 0`
+(`EInftyToAbutment`), and by the identification of the abutment with `H^{-p}(K)`
+(`CochainComplex.filtrationAbutmentIso`). The piece `F_p H_p(C)` is all of `H_p(C)` since `F_p` is
+all of `C` in the degree `p`. -/
 theorem stupidFiltrationSpectralSequencePageXIso_hom_eq (r : ℤ) (hr : 2 ≤ r) (p q : ℤ)
     (hq : q = 0) :
     (K.stupidFiltrationSpectralSequencePageXIso r hr p q hq).hom =
@@ -639,11 +644,9 @@ theorem stupidFiltrationSpectralSequencePageXIso_hom_eq (r : ℤ) (hr : 2 ≤ r)
         (spectralObject (filtrationFunctor K.stupidFiltration
           K.monotone_stupidFiltration)).spectralSequencePageXToEInfty (r + 1) (by lia)
           (1 - 2 * p - q, p - 1) (-(p + q)) (by dsimp; lia)
-          (isZero_spectralObject_H_bot_of_isZero_X _ _
-            (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
-            (by dsimp; lia)) ≫
+          (K.isZero_stupidFiltration_spectralObject_H_bot (by lia)) ≫
         (spectralObject _).EInftyToAbutment (p - 1) (-(p + q))
-          (K.isZero_stupidFiltration_abutmentFiltration p q hq) ≫
+          (K.isZero_stupidFiltration_abutmentFiltration p _ (by lia)) ≫
         (filtrationAbutmentIso _ _ (-(p + q))).hom := by
   obtain ⟨m, hm⟩ : ∃ m : ℕ, r = 2 + m := ⟨(r - 2).toNat, by lia⟩
   induction m generalizing r with
@@ -657,12 +660,8 @@ theorem stupidFiltrationSpectralSequencePageXIso_hom_eq (r : ℤ) (hr : 2 ≤ r)
     have hPP := (spectralObject (filtrationFunctor K.stupidFiltration
       K.monotone_stupidFiltration)).iCycles_spectralSequencePageXToPageX (r + 1) (r + 1 + 1) rfl
       (by lia) (1 - 2 * p - q, p - 1) (-(p + q)) (by dsimp; lia)
-      (isZero_spectralObject_H_bot_of_isZero_X _ _
-        (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
-        (by dsimp; lia))
-      (isZero_spectralObject_H_bot_of_isZero_X _ _
-        (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
-        (by dsimp; lia))
+      (K.isZero_stupidFiltration_spectralObject_H_bot (by lia))
+      (K.isZero_stupidFiltration_spectralObject_H_bot (by lia))
     have hL := homologicalFiltrationSpectralSequence_liftCycles_homologyπ_iso_hom _
       K.monotone_stupidFiltration r (r + 1) (r + 1) (r + 1 + 1) (by lia) rfl rfl (by lia) p q
       ((K.stupidFiltrationSpectralSequence.page r).iCycles (p, q))
@@ -681,9 +680,7 @@ theorem stupidFiltrationSpectralSequencePageXIso_hom_eq (r : ℤ) (hr : 2 ≤ r)
       HomologicalComplex.iCyclesIso_hom,
       ← (spectralObject _).spectralSequencePageXToPageX_spectralSequencePageXToEInfty (r + 1)
         (r + 1 + 1) (by lia) (by lia) _ _ _ _
-        (isZero_spectralObject_H_bot_of_isZero_X _ _
-          (isZero_stupidFiltration_X (K := K) (p := p - 2) (i := -(p + q) + 1) (by lia))
-          (by dsimp; lia))]
+        (K.isZero_stupidFiltration_spectralObject_H_bot (by lia))]
     simp only [Category.assoc]
     rw [reassoc_of% key]
     simp
@@ -696,7 +693,7 @@ theorem stupidFiltrationSpectralSequencePageXIso_hom_eq (r : ℤ) (hr : 2 ≤ r)
 lemma isIso_stupidFiltration_EInftyToAbutment (p q : ℤ) (hq : q = 0) :
     IsIso ((spectralObject (filtrationFunctor K.stupidFiltration
       K.monotone_stupidFiltration)).EInftyToAbutment (p - 1) (-(p + q))
-        (K.isZero_stupidFiltration_abutmentFiltration p q hq)) := by
+        (K.isZero_stupidFiltration_abutmentFiltration p _ (by lia))) := by
   -- `K / F_p` vanishes in the degree `-p`, so `F_p H^{-p}(K)` is all of `H^{-p}(K)`.
   have hX : IsZero ((cokernel (K.stupidFiltration (p - 1 + 1)).arrow).X (-(p + q))) := by
     have := isIso_stupidFiltration_arrow_f (K := K) (p := p - 1 + 1) (i := -(p + q)) (by lia)
