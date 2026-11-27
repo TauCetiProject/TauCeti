@@ -38,9 +38,6 @@ abelian group without `p`-torsion for every prime `p` is torsion-free, and by Na
 * `TauCeti.finrank_zmod_quotSMulTop_two`: its dimension is the rank of a finite free `M`.
 * `AddEquiv.isTorsion'_iff`: for a submonoid `S` of `ℤ`, being `S`-torsion is invariant under
   additive equivalences.
-* `TauCeti.isOfFinAddOrder_iff_exists_nonZeroDivisors`,
-  `TauCeti.not_isOfFinAddOrder_iff_forall_nonZeroDivisors`: elementwise characterizations of
-  finite and infinite additive order via `nonZeroDivisors ℤ`.
 * `AddMonoidHom.map_mem_torsion'`: an additive homomorphism maps `S`-torsion elements to
   `S`-torsion elements.
 * `AddMonoidHom.zero_mem_of_injective_of_isTorsion'`: if an `S`-torsion `ℤ`-module contains a
@@ -182,18 +179,6 @@ invariant under additive equivalences of abelian groups, for the canonical actio
 theorem _root_.AddEquiv.isTorsion'_iff {G H : Type*} [AddCommGroup G] [AddCommGroup H]
     (e : G ≃+ H) {S : Submonoid ℤ} : Module.IsTorsion' G S ↔ Module.IsTorsion' H S :=
   e.toIntLinearEquiv.isTorsion'_iff
-
-/-- An element of an additive commutative group has finite additive order if and only if some
-nonzero integer kills it. -/
-theorem isOfFinAddOrder_iff_exists_nonZeroDivisors {M : Type*} [AddCommGroup M] {x : M} :
-    IsOfFinAddOrder x ↔ ∃ s ∈ nonZeroDivisors ℤ, s • x = 0 := by
-  simp [isOfFinAddOrder_iff_zsmul_eq_zero, mem_nonZeroDivisors_iff_ne_zero]
-
-/-- An element of an additive commutative group has infinite additive order if and only if no
-nonzero integer kills it. -/
-theorem not_isOfFinAddOrder_iff_forall_nonZeroDivisors {M : Type*} [AddCommGroup M] {x : M} :
-    ¬ IsOfFinAddOrder x ↔ ∀ s ∈ nonZeroDivisors ℤ, s • x ≠ 0 := by
-  simp [isOfFinAddOrder_iff_exists_nonZeroDivisors]
 
 end TauCeti
 

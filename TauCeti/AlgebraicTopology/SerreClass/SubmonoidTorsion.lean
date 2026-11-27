@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.SerreClass.Torsion
+public import Mathlib.Algebra.Category.ModuleCat.Products
+public import Mathlib.CategoryTheory.Abelian.SerreClass.MorphismProperty
+public import TauCeti.AlgebraicTopology.SerreClass.PowerTorsion
 import TauCeti.Algebra.Module.Torsion.Finite
 import TauCeti.Algebra.Module.Torsion.Int
 
@@ -17,14 +19,10 @@ element of `S` (`Module.IsTorsion' M S`) form a Serre class `AddCommGrpCat.isSub
 Equivalently, by `Submonoid.isTorsion'_iff_subsingleton_tensorProduct`, it is the class of abelian
 groups `G` whose localization `A ⊗[ℤ] G` at `S` vanishes.
 
-Special cases include:
-
-* `S = nonZeroDivisors ℤ`: `isSubmonoidTorsion (nonZeroDivisors ℤ) = isTorsion`, the Serre class
-  of all torsion abelian groups.
-* `S = Submonoid.powers (d : ℤ)`: the class of abelian groups in which every element is killed by
-  some power of `d`. It contains the uniform power-torsion class `isKilledBySomePower d` and agrees
-  with it on finitely generated abelian groups
-  (`AddCommGrpCat.isSubmonoidTorsion_powers_iff_isKilledBySomePower_of_finite`).
+For `S = Submonoid.powers (d : ℤ)`, this is the class of abelian groups in which every element is
+killed by some power of `d`. It contains the uniform power-torsion class `isKilledBySomePower d`
+and agrees with it on finitely generated abelian groups
+(`AddCommGrpCat.isSubmonoidTorsion_powers_iff_isKilledBySomePower_of_finite`).
 
 ## Main definitions
 
@@ -78,21 +76,6 @@ instance (S : Submonoid ℤ) : (isSubmonoidTorsion.{u} S).IsSerreClass where
       (by rw [Submonoid.smul_def, map_zsmul]; exact hs₃)
     obtain ⟨s₁, hs₁⟩ := C.f.hom.map_mem_torsion' (@h₁ x₁)
     exact ⟨s₁ * s₃, by rw [mul_smul, ← hx₁, hs₁]⟩
-
-/-- For the submonoid of nonzero integers, `isSubmonoidTorsion` is the class of torsion abelian
-groups. -/
-@[simp]
-lemma isSubmonoidTorsion_nonZeroDivisors :
-    isSubmonoidTorsion.{u} (nonZeroDivisors ℤ) = isTorsion := by
-  ext M
-  rw [prop_isSubmonoidTorsion_iff, prop_isTorsion_iff]
-  exact (isAddTorsion_iff_isTorsion_int (M := M)).symm
-
-/-- Whenever `0 ∉ S`, every `S`-torsion abelian group is a torsion group. -/
-lemma isSubmonoidTorsion_le_isTorsion {S : Submonoid ℤ} (h0 : (0 : ℤ) ∉ S) :
-    isSubmonoidTorsion.{u} S ≤ isTorsion := fun _ hM ↦ (prop_isTorsion_iff _).2 fun x ↦ by
-  obtain ⟨⟨s, hs⟩, hsx⟩ := @hM x
-  exact isOfFinAddOrder_iff_zsmul_eq_zero.2 ⟨s, fun h ↦ h0 (h ▸ hs), hsx⟩
 
 /-- Uniform `d`-power torsion is contained in elementwise `d`-power torsion. -/
 lemma isKilledBySomePower_le_isSubmonoidTorsion (d : ℕ) :

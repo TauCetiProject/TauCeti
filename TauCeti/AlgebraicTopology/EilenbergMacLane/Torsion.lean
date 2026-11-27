@@ -106,19 +106,6 @@ theorem subsingleton_singularHomology_of_isTorsion'
   hX.subsingleton_singularHomology_of_forall_isUnit_addOrderOf R
     (hA.isUnit_addOrderOf fun s hs ↦ by simpa using IsLocalization.map_units R ⟨s, hs⟩) i
 
-/-- Multiplicative-group variant of
-`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isTorsion'`, for a commutative
-group `G` whose additive counterpart `Additive G` is `S`-torsion (such as a higher homotopy group
-`π_{m + 2}(Z, z)`). -/
-theorem subsingleton_singularHomology_of_isTorsion'_additive
-    {G : Type} [CommGroup G] {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
-    (hX : IsEilenbergMacLaneSpace G n X x)
-    {S : Submonoid ℤ} (hG : Module.IsTorsion' (Additive G) S)
-    (R : Type) [CommRing R] [Algebra ℤ R] [IsLocalization S R] (i : ℕ) :
-    Subsingleton (((singularChains R).obj (TopCat.of X)).homology (i + 1)) :=
-  (hX.of_mulEquiv (MulEquiv.multiplicativeAdditive
-    G).symm).subsingleton_singularHomology_of_isTorsion' hG R i
-
 /-- **Integral positive-degree homology of `K(A, n)` is `S`-torsion when `A` is `S`-torsion.**
 This verifies Serre's `K(A, n)` property for every submonoid-torsion class. -/
 theorem isTorsion'_singularHomology

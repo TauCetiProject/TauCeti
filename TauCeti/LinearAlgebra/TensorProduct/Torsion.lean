@@ -75,13 +75,34 @@ theorem isTorsionBy_tensorProduct_right {S : Type*} [Semiring S] [Module S M]
   | tmul x y => rw [← TensorProduct.tmul_smul, h (x := y), TensorProduct.tmul_zero]
   | add x y hx hy => simp [smul_add, hx, hy]
 
+end TauCeti
+
+namespace Module.IsTorsion'
+
+/-- Tensoring an `S`-torsion module on the left with any module over a commuting base semiring
+yields an `S`-torsion module. -/
+theorem tensorProduct_left {R R₀ M N : Type*} [CommSemiring R] [CommSemiring R₀]
+    [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N] [Module R₀ M]
+    [SMulCommClass R R₀ M] {S : Submonoid R₀} (hM : Module.IsTorsion' M S) :
+    Module.IsTorsion' (M ⊗[R] N) S := by
+  rw [Submodule.isTorsion'_iff_torsion'_eq_top (R := R₀), eq_top_iff]
+  refine fun t _ ↦ t.inductionOn (fun x y ↦ ?_) fun _ _ ↦ add_mem
+  obtain ⟨s, hs⟩ := @hM x
+  exact ⟨s, by rw [Submonoid.smul_def, TensorProduct.smul_tmul', ← Submonoid.smul_def, hs,
+    TensorProduct.zero_tmul]⟩
+
+end Module.IsTorsion'
+
+namespace TauCeti
+
+variable {R M N : Type*} [CommSemiring R] [AddCommMonoid M] [AddCommMonoid N]
+  [Module R M] [Module R N]
+
 /-- Tensoring a torsion commutative additive monoid on the left with any commutative additive
 monoid gives a torsion monoid. -/
-theorem isAddTorsion_tensorProduct_left (h : IsAddTorsion M) : IsAddTorsion (M ⊗[R] N) := by
-  intro t
-  induction t using TensorProduct.inductionOn with
-  | tmul x y => exact ((TensorProduct.mk R M N).flip y).toAddMonoidHom.isOfFinAddOrder (h x)
-  | add x y hx hy => exact hx.add hy
+theorem isAddTorsion_tensorProduct_left (h : IsAddTorsion M) : IsAddTorsion (M ⊗[R] N) :=
+  isAddTorsion_iff_isTorsion_nat.2
+    (Module.IsTorsion'.tensorProduct_left (R₀ := ℕ) (isAddTorsion_iff_isTorsion_nat.1 h))
 
 /-- Tensoring a torsion commutative additive monoid on the right with any commutative additive
 monoid gives a torsion monoid. -/
@@ -215,19 +236,3 @@ theorem span_one_tmul_eq_top_of_isOfFinAddOrder {A G : Type*} [Ring A] [Module �
     exact Submodule.tmul_mem_baseChange_of_mem r hy
 
 end TauCeti
-
-namespace Module.IsTorsion'
-
-/-- Tensoring an `S`-torsion module on the left with any module over a commuting base semiring
-yields an `S`-torsion module. -/
-theorem tensorProduct_left {R R₀ M N : Type*} [CommSemiring R] [CommSemiring R₀]
-    [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N] [Module R₀ M]
-    [SMulCommClass R R₀ M] {S : Submonoid R₀} (hM : Module.IsTorsion' M S) :
-    Module.IsTorsion' (M ⊗[R] N) S := by
-  rw [Submodule.isTorsion'_iff_torsion'_eq_top (R := R₀), eq_top_iff]
-  refine fun t _ ↦ t.inductionOn (fun x y ↦ ?_) fun _ _ ↦ add_mem
-  obtain ⟨s, hs⟩ := @hM x
-  exact ⟨s, by rw [Submonoid.smul_def, TensorProduct.smul_tmul', ← Submonoid.smul_def, hs,
-    TensorProduct.zero_tmul]⟩
-
-end Module.IsTorsion'

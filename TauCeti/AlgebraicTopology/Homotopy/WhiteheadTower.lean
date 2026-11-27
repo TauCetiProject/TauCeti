@@ -30,9 +30,6 @@ must be invariant under weak homotopy equivalences and `Q` under isomorphisms.
 ## Main results
 
 * `TauCeti.whiteheadTower_induction`: the induction principle above.
-* `TauCeti.exists_nConnectedCover_map`: finite Whitehead tower up to degree `n + 1`, constructing an
-  `(n + 1)`-connected Hausdorff cover `q : Z → Y` in any morphism property `M` stable under weak
-  homotopy equivalences, composition, and `nConnectedCoverProj`.
 
 ## References
 
@@ -93,63 +90,5 @@ theorem whiteheadTower_induction (H : TopCat.{u} → Prop) (Q : ∀ (G : Type u)
     -- The cover has the homotopy groups of `X`, hence of `Y`, above dimension `n + 2`.
     exact hQ ((nConnectedCoverHomotopyGroupMulEquiv (n + 2) X x₀ _ (by omega)).trans (e _))
       (ih c₀ hC (step n hn X x₀ hX (hH f hf hYH)))
-
-/-- **Finite Whitehead tower up to degree `n + 1`.** Given a morphism property `M` on `TopCat.{u}`
-containing weak homotopy equivalences (`hW`), closed under composition (`hcomp`), and containing
-each `(m + 2)`-connected cover projection (`hstep`) along an isomorphism-invariant property `Q`
-satisfied by `π_{m + 2}(Y, y)` for `m < n`, any simply connected space `(Y, y)` admits a
-Hausdorff `(n + 1)`-connected space `(Z, z)` and a based map `q : Z → Y` in `M` which is bijective
-on `π_k` for `k ≥ n + 2`. -/
-theorem exists_nConnectedCover_map
-    (M : ∀ ⦃A B : TopCat.{u}⦄, (A ⟶ B) → Prop)
-    (hW : ∀ ⦃A B : TopCat.{u}⦄ (f : A ⟶ B), f.hom.IsWeakHomotopyEquivalence → M f)
-    (hcomp : ∀ ⦃A B C : TopCat.{u}⦄ {f : A ⟶ B} {g : B ⟶ C}, M f → M g → M (f ≫ g))
-    (Q : ∀ (G : Type u) [CommGroup G], Prop)
-    (hQ : ∀ ⦃G G' : Type u⦄ [CommGroup G] [CommGroup G'], G ≃* G' → Q G → Q G')
-    (hstep : ∀ (Z : Type u) [TopologicalSpace Z] [T2Space Z] [PathConnectedSpace Z] (z : Z)
-      (m : ℕ), (∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k Z z)) →
-        Q (π_ (m + 2) Z z) → M (nConnectedCoverProj (m + 2) (TopCat.of Z) z))
-    {Y : Type u} [TopologicalSpace Y] [PathConnectedSpace Y] (y : Y) [Subsingleton (π_ 1 Y y)] :
-    ∀ (n : ℕ), (∀ m < n, Q (π_ (m + 2) Y y)) →
-      ∃ (Z : Type u) (_ : TopologicalSpace Z) (_ : T2Space Z) (_ : PathConnectedSpace Z)
-        (z : Z) (q : C(Z, Y)) (hqz : q z = y),
-        M (TopCat.ofHom q) ∧
-        (∀ k < n + 2, Subsingleton (π_ k Z z)) ∧
-        (∀ k, n + 2 ≤ k → Function.Bijective (HomotopyGroup.map (N := Fin k) q hqz))
-  | 0, _ => by
-    let q := (cwApproximationMap (TopCat.of Y) y).hom
-    have hqz := cwApproximationMap_cwApproximationBasepoint (TopCat.of Y) y
-    refine ⟨cwApproximation (TopCat.of Y) y, inferInstance, inferInstance, inferInstance,
-      cwApproximationBasepoint (TopCat.of Y) y, q, hqz,
-      hW _ (isWeakHomotopyEquivalence_cwApproximationMap (TopCat.of Y) y), fun k hk ↦ ?_,
-      fun k hk ↦ ?_⟩
-    · match k with
-      | 0 => exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero _).1 inferInstance
-      | 1 => exact ((HomotopyGroup.bijective_map_congr rfl rfl hqz).mp
-          (bijective_homotopyGroupMap_cwApproximationMap (TopCat.of Y) y 0 _)).1.subsingleton
-      | k + 2 => omega
-    · obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by omega : k ≠ 0)
-      exact (HomotopyGroup.bijective_map_congr rfl rfl hqz).mp
-        (bijective_homotopyGroupMap_cwApproximationMap (TopCat.of Y) y j _)
-  | n + 1, hπ => by
-    obtain ⟨Z, _, _, _, z, q, hqz, hMq, hZconn, hZbij⟩ :=
-      exists_nConnectedCover_map M hW hcomp Q hQ hstep y n fun m hm ↦ hπ m (Nat.lt_succ_of_lt hm)
-    let z' := nConnectedCoverBasepoint (n + 2) (TopCat.of Z) z
-    let p := nConnectedCoverProj (n + 2) (TopCat.of Z) z
-    have hpz' : p.hom z' = z := nConnectedCoverProj_nConnectedCoverBasepoint (n + 2) (TopCat.of Z) z
-    have hq'z' : (q.comp p.hom) z' = y := (congrArg q hpz').trans hqz
-    have hQZ : Q (π_ (n + 2) Z z) :=
-      hQ (MulEquiv.ofBijective (HomotopyGroup.mapHom (N := Fin (n + 2)) q hqz)
-        (hZbij (n + 2) le_rfl)).symm (hπ n (Nat.lt_succ_self n))
-    refine ⟨nConnectedCover (n + 2) (TopCat.of Z) z, inferInstance, inferInstance,
-      pathConnectedSpace_nConnectedCover (n + 2) (TopCat.of Z) z, z', q.comp p.hom, hq'z',
-      hcomp (hstep Z z n (fun k _ hk ↦ hZconn k hk) hQZ) hMq,
-      fun k hk ↦ subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace (n + 2)
-        (TopCat.of Z) z z' (Nat.lt_succ_iff.1 hk),
-      fun k hk ↦ ?_⟩
-    rw [(HomotopyGroup.map_comp_map q hqz p.hom hpz').symm]
-    exact (hZbij k (Nat.le_of_succ_le hk)).comp
-      (bijective_homotopyGroupMap_nConnectedCoverProj (n + 2) (TopCat.of Z) z z' hpz'
-        (Nat.lt_of_succ_le hk))
 
 end TauCeti

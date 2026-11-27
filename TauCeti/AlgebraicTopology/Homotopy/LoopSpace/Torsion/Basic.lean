@@ -209,7 +209,11 @@ theorem exists_not_isOfFinAddOrder_reducedSingularHomology_doubleLoopSpace
         (TopCat.of (Ω (Ω Q q) (Path.refl q))), ¬ IsOfFinAddOrder x := by
   obtain ⟨k, hk, x, hx⟩ := exists_forall_smul_ne_zero_reducedSingularHomology_doubleLoopSpace q
     (nonZeroDivisors ℤ) m (isAddTorsion_iff_isTorsion_int.not.1 hπ)
-  exact ⟨k, hk, x, not_isOfFinAddOrder_iff_forall_nonZeroDivisors.2 hx⟩
+  refine ⟨k, hk, x, fun h ↦ ?_⟩
+  have hx' := (AddCommGroup.mem_torsion x).mpr h
+  rw [← Submodule.torsion_int, Submodule.mem_toAddSubgroup] at hx'
+  obtain ⟨s, hs⟩ := (@Submodule.mem_torsion_iff ℤ _ _ _ (AddCommGroup.toIntModule _) x).mp hx'
+  exact hx s s.property (by convert hs)
 
 end DoubleLoopSpace
 
@@ -274,7 +278,11 @@ theorem exists_not_isOfFinAddOrder_reducedSingularHomology_doubleMooreLoopSpace
         (TopCat.of (MooreLoopSpace (MooreLoopSpace Q q) 1)), ¬ IsOfFinAddOrder x := by
   obtain ⟨k, hk, x, hx⟩ := exists_forall_smul_ne_zero_reducedSingularHomology_doubleMooreLoopSpace q
     (nonZeroDivisors ℤ) m (isAddTorsion_iff_isTorsion_int.not.1 hπ)
-  exact ⟨k, hk, x, not_isOfFinAddOrder_iff_forall_nonZeroDivisors.2 hx⟩
+  refine ⟨k, hk, x, fun h ↦ ?_⟩
+  have hx' := (AddCommGroup.mem_torsion x).mpr h
+  rw [← Submodule.torsion_int, Submodule.mem_toAddSubgroup] at hx'
+  obtain ⟨s, hs⟩ := (@Submodule.mem_torsion_iff ℤ _ _ _ (AddCommGroup.toIntModule _) x).mp hx'
+  exact hx s s.property (by convert hs)
 
 end DoubleMooreLoopSpace
 

@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Torsion.Basic
-public import Mathlib.RingTheory.Localization.Defs
 public import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 import TauCeti.AlgebraicTopology.EilenbergMacLane.PathFibration
-import TauCeti.AlgebraicTopology.EilenbergMacLane.Torsion
 import TauCeti.AlgebraicTopology.Homotopy.WhiteheadTower
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 
@@ -47,9 +44,6 @@ and no spectral sequence is needed.
 * `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_fiber`: the projection from the
   `(m + 2)`-connected cover induces a `k`-homology isomorphism when the `K(πₘ₊₂, m + 1)`
   fibres are `k`-acyclic.
-* `TauCeti.isIso_singularHomologyMap_nConnectedCoverProj_of_isTorsion'`: killing an `S`-torsion
-  bottom homotopy group induces an isomorphism on homology with coefficients in a localization
-  `ℤ[S⁻¹]`.
 * `TauCeti.subsingleton_singularHomology_nConnectedCover_of_fiber`: the `(n + 2)`-connected cover
   of an `(n + 1)`-connected Hausdorff `k`-acyclic space is `k`-acyclic when the
   `K(πₙ₊₂, n + 1)` spaces are.
@@ -91,20 +85,6 @@ theorem isIso_singularHomologyMap_nConnectedCoverProj_of_fiber (X : TopCat.{u}) 
   isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber k
     (serreFibrations_nConnectedCoverProj (m + 2) X x)
     (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj X x m hX) hK i
-
-/-- **Killing an `S`-torsion bottom homotopy group is an `H_*(-; A)`-isomorphism.** Let `Z` be a
-Hausdorff, `(m + 1)`-connected space whose homotopy group `π_{m + 2}(Z, z)` is `S`-torsion, and let
-`A` be a localization of `ℤ` at `S`. Then the projection of the `(m + 2)`-connected cover
-`Z⟨m + 2⟩ → Z` induces an isomorphism on `H_k(-; A)` for every `k : ℕ`. -/
-theorem isIso_singularHomologyMap_nConnectedCoverProj_of_isTorsion' {Z : Type}
-    [TopologicalSpace Z] [T2Space Z] [PathConnectedSpace Z] (z : Z) (m : ℕ)
-    (hZ : ∀ k, k ≠ 0 → k < m + 2 → Subsingleton (π_ k Z z))
-    {S : Submonoid ℤ} (hπ : Module.IsTorsion' (Additive (π_ (m + 2) Z z)) S)
-    (A : Type) [CommRing A] [Algebra ℤ A] [IsLocalization S A] (k : ℕ) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{0} A) k).obj (ModuleCat.of A A)).map
-      (nConnectedCoverProj (m + 2) (TopCat.of Z) z)) :=
-  isIso_singularHomologyMap_nConnectedCoverProj_of_fiber A (TopCat.of Z) z m hZ
-    (fun hY i ↦ hY.subsingleton_singularHomology_of_isTorsion'_additive hπ A i) k
 
 /-- **The `(n + 2)`-connected cover of a `k`-acyclic space.** Let `X` be a Hausdorff,
 path-connected space whose homotopy groups `πⱼ` vanish for `1 ≤ j < m + 2`, and which has the
