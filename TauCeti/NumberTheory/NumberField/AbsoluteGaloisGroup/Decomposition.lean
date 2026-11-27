@@ -133,6 +133,13 @@ theorem coe_smul_integralClosure (σ : Field.absoluteGaloisGroup F)
         (x : AlgebraicClosure F) := by
   rw [integralClosure_smul_def, coe_toIntegralClosure_apply]
 
+/-- An element of `O` is fixed by `σ ∈ G_F` exactly when its image in `F^alg` is. -/
+theorem smul_integralClosure_eq_iff (σ : Field.absoluteGaloisGroup F)
+    (x : integralClosure (𝓞 F) (AlgebraicClosure F)) :
+    σ • x = x ↔ DFunLike.coe (F := AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F) σ
+      (x : AlgebraicClosure F) = x := by
+  rw [← coe_smul_integralClosure, Subtype.ext_iff]
+
 /-- `toIntegralClosure F σ` is the `𝓞 F`-algebra automorphism by which `σ` acts on `O`. -/
 theorem toIntegralClosure_eq_toAlgEquiv (σ : Field.absoluteGaloisGroup F) :
     toIntegralClosure F σ = MulSemiringAction.toAlgEquiv (𝓞 F)

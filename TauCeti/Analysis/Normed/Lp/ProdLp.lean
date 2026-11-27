@@ -6,11 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import Mathlib.Algebra.Algebra.Spectrum.Basic
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+public import TauCeti.Analysis.Normed.Lp.WithLp
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import Mathlib.Analysis.Normed.Operator.Prod
 import Mathlib.Topology.MetricSpace.Thickening
@@ -40,10 +42,13 @@ Finally, it bundles the componentwise action of two continuous linear maps `f` a
 Mathlib's `LinearIsometry.withLpProdMap`. For `p = 2` and inner product spaces this is the
 orthogonal block sum `f ⊕ g`. It is compatible with the algebraic operations on the pair
 `(f, g)` and continuous in it, its rank is the sum of the ranks of `f` and `g`, it is invertible
-exactly when `f` and `g` are, so the spectrum of a block sum of endomorphisms is the union of
-their spectra, and its operator norm is the larger of the two operator norms. The
+exactly when `f` and `g` are, with the block sum of the inverses as its inverse, so the spectrum
+of a block sum of endomorphisms is the union of their spectra, it is compact when `f` and `g`
+are, and its operator norm is the larger of the two operator norms. The
 projections onto the factors and the inclusions of the factors are contractions, and fixing one
-coordinate embeds the other factor isometrically into `WithLp p (α × β)`. A kernel on
+coordinate embeds the other factor isometrically into `WithLp p (α × β)`, and as a closed subset
+when the fixed coordinate's factor is `T1`. The diagonal `{(x, x)}` of
+`WithLp p (M × M)` is a submodule, isomorphic to `M` through `x ↦ (x, x)`. A kernel on
 `WithLp p (X × Y)` consisting of the pairs whose components lie in the ranges of two injective
 linear maps is identified with the product of their sources.
 
@@ -73,6 +78,8 @@ linear maps is identified with the product of their sources.
   `ContinuousLinearMap.finiteDimensional_range_withLpProdMap_iff` — the same for finite ranks.
 * `ContinuousLinearMap.isInvertible_withLpProdMap_iff` — `f ⊕ g` is invertible exactly when `f`
   and `g` are.
+* `ContinuousLinearMap.inverse_withLpProdMap` — `(f ⊕ g)⁻¹ = f⁻¹ ⊕ g⁻¹` for invertible `f`, `g`.
+* `IsCompactOperator.withLpProdMap` — a block sum of compact operators is compact.
 * `ContinuousLinearMap.spectrum_withLpProdMap` — the spectrum of `f ⊕ g` is the union of the
   spectra of `f` and `g`.
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
@@ -85,6 +92,12 @@ linear maps is identified with the product of their sources.
   inclusions of the factors are contractions.
 * `WithLp.isometry_toLp_prodMk_left`, `WithLp.isometry_toLp_prodMk_right` — fixing one coordinate
   embeds the other factor isometrically into `WithLp p (α × β)`.
+* `WithLp.isClosedEmbedding_toLp_prodMk_left`, `WithLp.isClosedEmbedding_toLp_prodMk_right` — the
+  slice inclusions `y ↦ (a, y)` and `t ↦ (t, y)` into `WithLp p (X × Y)` are closed embeddings.
+* `WithLp.diagonal`, `WithLp.diagonalEquiv` — the diagonal of `WithLp p (M × M)` and its
+  isomorphism `x ↦ (x, x)` with `M`.
+* `LinearIsometryEquiv.toLinearEquiv_withLpProdAssoc` — the underlying linear equivalence of
+  `LinearIsometryEquiv.withLpProdAssoc` is `LinearEquiv.withLpProdAssoc`.
 -/
 
 public section
@@ -377,6 +390,28 @@ theorem isUnit_withLpProdMap_iff {f : α →L[𝕜] α} {g : β →L[𝕜] β} :
     IsUnit (f.withLpProdMap p g) ↔ IsUnit f ∧ IsUnit g := by
   simp only [← isInvertible_iff_isUnit, isInvertible_withLpProdMap_iff]
 
+/-- The inverse of a block sum of invertible maps is the block sum of their inverses. -/
+theorem inverse_withLpProdMap {f : α →L[𝕜] α'} {g : β →L[𝕜] β'} (hf : f.IsInvertible)
+    (hg : g.IsInvertible) : (f.withLpProdMap p g).inverse = f.inverse.withLpProdMap p g.inverse :=
+  inverse_eq
+    (by rw [← withLpProdMap_comp, hf.self_comp_inverse, hg.self_comp_inverse, withLpProdMap_id])
+    (by rw [← withLpProdMap_comp, hf.inverse_comp_self, hg.inverse_comp_self, withLpProdMap_id])
+
+/-- A block sum of compact operators is compact. -/
+theorem _root_.IsCompactOperator.withLpProdMap {f : α →L[𝕜] α'} {g : β →L[𝕜] β'}
+    (hf : IsCompactOperator f) (hg : IsCompactOperator g) :
+    IsCompactOperator (f.withLpProdMap p g) := by
+  obtain ⟨K₁, hK₁, h₁⟩ := hf
+  obtain ⟨K₂, hK₂, h₂⟩ := hg
+  refine ⟨WithLp.toLp p '' K₁ ×ˢ K₂, (hK₁.prod hK₂).image (WithLp.prod_continuous_toLp p α' β'),
+    ?_⟩
+  have hfst : Filter.Tendsto (WithLp.fst (p := p) (α := α) (β := β)) (nhds 0) (nhds 0) := by
+    simpa using (WithLp.continuous_fst p α β).tendsto 0
+  have hsnd : Filter.Tendsto (WithLp.snd (p := p) (α := α) (β := β)) (nhds 0) (nhds 0) := by
+    simpa using (WithLp.continuous_snd p α β).tendsto 0
+  filter_upwards [hfst h₁, hsnd h₂] with x hx₁ hx₂
+  exact ⟨(f x.fst, g x.snd), ⟨hx₁, hx₂⟩, (withLpProdMap_apply f g x).symm⟩
+
 end Topological
 
 section Seminormed
@@ -626,4 +661,86 @@ theorem isometry_toLp_prodMk_right (p : ℝ≥0∞) [Fact (1 ≤ p)] {α β : Ty
   simpa [Function.comp_def] using
     (IsometryEquiv.withLpProdComm p β α).isometry.comp (isometry_toLp_prodMk_left p y)
 
+section Embedding
+
+open Topology
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- The inclusion `y ↦ (a, y)` of the slice `{a} × Y` into `WithLp p (X × Y)` is a closed
+embedding. -/
+theorem isClosedEmbedding_toLp_prodMk_left [T1Space X] (p : ℝ≥0∞) (a : X) :
+    IsClosedEmbedding fun y : Y ↦ toLp p (a, y) :=
+  (homeomorphProd p X Y).symm.isClosedEmbedding.comp
+    (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight a) (isClosedMap_prodMk_left a))
+
+/-- The inclusion `t ↦ (t, y)` of the slice `X × {y}` into `WithLp p (X × Y)` is a closed
+embedding. -/
+theorem isClosedEmbedding_toLp_prodMk_right [T1Space Y] (p : ℝ≥0∞) (y : Y) :
+    IsClosedEmbedding fun t : X ↦ toLp p (t, y) :=
+  (homeomorphProd p X Y).symm.isClosedEmbedding.comp
+    (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y) (isClosedMap_prodMk_right y))
+
+end Embedding
+
+/-! ### The diagonal -/
+
+section Diagonal
+
+variable (p : ℝ≥0∞) (R M : Type*) [Semiring R] [AddCommGroup M] [Module R M]
+
+/-- The diagonal `{(x, x)}` of `WithLp p (M × M)`, as a submodule. -/
+def diagonal : Submodule R (WithLp p (M × M)) where
+  carrier := {x | x.fst = x.snd}
+  add_mem' hx hy := by simp_all
+  zero_mem' := by simp
+  smul_mem' c x hx := by simp_all
+
+variable {p R M} in
+@[simp]
+theorem mem_diagonal_iff {x : WithLp p (M × M)} : x ∈ diagonal p R M ↔ x.fst = x.snd :=
+  Iff.rfl
+
+variable [TopologicalSpace M]
+
+/-- The diagonal map `x ↦ (x, x)`, as an isomorphism of `M` onto the diagonal of
+`WithLp p (M × M)`. -/
+def diagonalEquiv : M ≃L[R] diagonal p R M where
+  toFun x := ⟨toLp p (x, x), rfl⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun x := (x : WithLp p (M × M)).fst
+  left_inv _ := rfl
+  right_inv x := Subtype.ext (WithLp.ofLp_injective p (Prod.ext rfl x.property))
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+variable {p R M}
+
+@[simp]
+theorem coe_diagonalEquiv_apply (x : M) :
+    (diagonalEquiv p R M x : WithLp p (M × M)) = toLp p (x, x) :=
+  (rfl)
+
+@[simp]
+theorem diagonalEquiv_symm_apply (x : diagonal p R M) :
+    (diagonalEquiv p R M).symm x = (x : WithLp p (M × M)).fst :=
+  (rfl)
+
+end Diagonal
+
 end WithLp
+
+namespace LinearIsometryEquiv
+
+/-- The underlying linear equivalence of `LinearIsometryEquiv.withLpProdAssoc` is the algebraic
+associator `LinearEquiv.withLpProdAssoc`. -/
+@[simp]
+theorem toLinearEquiv_withLpProdAssoc (p : ℝ≥0∞) [Fact (1 ≤ p)] (𝕜 α β γ : Type*) [Semiring 𝕜]
+    [SeminormedAddCommGroup α] [Module 𝕜 α] [SeminormedAddCommGroup β] [Module 𝕜 β]
+    [SeminormedAddCommGroup γ] [Module 𝕜 γ] :
+    (withLpProdAssoc p 𝕜 α β γ).toLinearEquiv = LinearEquiv.withLpProdAssoc p 𝕜 α β γ := by
+  ext x
+  simp
+
+end LinearIsometryEquiv

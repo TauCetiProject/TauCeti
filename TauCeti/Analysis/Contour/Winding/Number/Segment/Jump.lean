@@ -7,13 +7,11 @@ module
 
 public import TauCeti.Analysis.Contour.Winding.Number.Segment.Formula
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On
-import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.AbsolutelyContinuous
 import TauCeti.Analysis.Complex.Coordinates
-import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Basic
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Concat
 import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.Continuity
-import TauCeti.Analysis.Contour.Winding.LocallyConstant
+import TauCeti.Analysis.Contour.Winding.AbsolutelyContinuous.LocallyConstant
 
 /-!
 # The winding number differs by one across a straight segment
@@ -204,7 +202,7 @@ private theorem windingNumber_eq_of_mem_ball_of_mul_im_pos {Γ : ℝ → ℂ} {p
     intro w hw
     have hw2 : 0 < σ * ((w - p) / v).im := hw.2
     exact hoff w hw.1 fun h0 ↦ hw2.ne' (by rw [h0, mul_zero])
-  exact hΓ.windingNumber_eq_of_mem_connectedComponentIn hclosed
+  exact hΓ.absolutelyContinuousOnInterval.windingNumber_eq_of_mem_connectedComponentIn hclosed
     ((convex_ball_inter_halfSpace_gt p v r σ).isPreconnected.subset_connectedComponentIn
       ⟨hw₂, h₂⟩ hDsub ⟨hw₁, h₁⟩)
 

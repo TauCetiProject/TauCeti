@@ -33,12 +33,13 @@ height.
   critical point `v`, of index `n`.
 * For `-1 ≤ a < 1` and `a ≤ b`, the quotient map `Hₖ₊₁({h ≤ b}) ⟶ Hₖ₊₁({h ≤ b}, {h ≤ a})` is
   an isomorphism (`TauCeti.isIso_singularHomologyπ_sublevelPair_sphereHeight`), since the lower
-  sublevel is contractible. With the previous item, for `-1 < a < 1 < b` and `n ≥ 1` the homology
-  `Hₙ({h ≤ b})` is one copy of the coefficients, carried by the cell at the north pole. For
-  `b ≥ 1` the subspace `{h ≤ b}` is the whole sphere as a set, so this is the cell-structure
-  reading of `Hₙ(Sⁿ)`, and of `H₁(S¹; ℤ) ≅ ℤ` for the circle with integer coefficients; the
-  identification of the homology of `{h ≤ b}` with that of `Sⁿ` is not formalized here. The
-  homology of spheres itself is computed by the Mayer–Vietoris sequence in
+  sublevel is contractible. For `b ≥ 1` the subspace `{h ≤ b}` is the whole sphere, so in positive
+  degrees the homology of `Sⁿ` is the relative homology across the maximum
+  (`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`). With the previous item, for
+  `n ≥ 1` the homology `Hₙ(Sⁿ)` is one copy of the coefficients, carried by the cell at the north
+  pole, and `Hₖ(Sⁿ)` vanishes for `0 < k ≠ n`: this is the cell-structure reading of the homology
+  of the sphere, and of `H₁(S¹; ℤ) ≅ ℤ` for the circle with integer coefficients. The homology of
+  spheres is also computed, independently of Morse theory, by the Mayer–Vietoris sequence in
   `TauCeti.reducedSingularHomologySphereIso`.
 * Consequently, the connecting morphism `Hₖ₊₁({h ≤ b}, {h ≤ a}) ⟶ Hₖ({h ≤ a})` vanishes
   (`TauCeti.singularHomologyδ_sublevelPair_sphereHeight_eq_zero`): the top cell is a cycle. For
@@ -77,26 +78,6 @@ universe u v w
 namespace TauCeti
 
 variable {E : Type u} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-
-/-- The sublevel `{h ≤ a}`, for `a < 1`, misses the north pole `v`, so it lies in the source of
-the stereographic projection from `v`. -/
-private theorem sublevel_sphereHeight_subset_source (v : sphere (0 : E) 1) {a : ℝ} (ha' : a < 1) :
-    {x | sphereHeight v x ≤ a} ⊆ (stereographic (norm_eq_of_mem_sphere v)).source := by
-  intro x hx hxv
-  rw [mem_singleton_iff] at hxv
-  simp only [mem_ofPred_eq, hxv, Subtype.coe_eta, sphereHeight_self] at hx
-  linarith
-
-/-- The stereographic projection from the north pole `v` carries the sublevel `{h ≤ a}`, for
-`a < 1`, onto the sublevel `{w | -stereographicHeight w ≤ a}` of the height read in the chart. -/
-private theorem image_stereographic_sublevel_sphereHeight (v : sphere (0 : E) 1) {a : ℝ}
-    (ha' : a < 1) : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
-      {w | -stereographicHeight w ≤ a} := by
-  rw [OpenPartialHomeomorph.image_eq_target_inter_inv_preimage _
-    (sublevel_sphereHeight_subset_source v ha')]
-  ext w
-  simp only [stereographic_target, univ_inter, mem_preimage, mem_ofPred_eq,
-    sphereHeight_stereographic_symm_apply]
 
 /-- **The lower sublevels of the height are contractible.** For `-1 ≤ a < 1`, the sublevel
 `{x | ⟪x, v⟫ ≤ a}` of the unit sphere is contractible: it misses the north pole `v`, and the
@@ -146,11 +127,7 @@ theorem exists_homeomorph_sublevel_sphereHeight_disk (v : sphere (0 : E) 1) {a :
         sphereHeight v x = a ↔ ‖((e x).down : EuclideanSpace ℝ (Fin n))‖ = 1 := by
   set R := √(4 * (1 + a) / (1 - a))
   have hR : 0 < R := Real.sqrt_pos.2 (div_pos (by linarith) (by linarith))
-  have himage : stereographic (norm_eq_of_mem_sphere v) '' {x | sphereHeight v x ≤ a} =
-      closedBall 0 R := by
-    rw [image_stereographic_sublevel_sphereHeight v ha']
-    ext w
-    rw [mem_ofPred_eq, neg_stereographicHeight_le_iff ha.le ha' w, mem_closedBall_zero_iff]
+  have himage := image_stereographic_sublevel_sphereHeight_eq_closedBall v ha.le ha'
   set U := (OrthonormalBasis.fromOrthogonalSpanSingleton (𝕜 := ℝ) n
     (ne_zero_of_mem_unit_sphere v)).repr
   set e₀ := (stereographic (norm_eq_of_mem_sphere v)).homeomorphOfImageSubsetSource
@@ -230,9 +207,10 @@ theorem isZero_singularHomology_sublevelPair_sphereHeight (v : sphere (0 : E) 1)
 /-- **The homology of an upper sublevel is carried by the top cell of the height.** For
 `-1 ≤ a < 1` and `a ≤ b`, the quotient map `Hₖ₊₁({h ≤ b}) ⟶ Hₖ₊₁({h ≤ b}, {h ≤ a})` is an
 isomorphism, since the lower sublevel is contractible. The source is the homology of the subspace
-`{h ≤ b}`, which is the whole sphere as a set when `b ≥ 1`; its identification with the homology of
-`Sⁿ` is not stated here. For `a > -1`, `b > 1` and `k + 1 = n` the target is one copy of the
-coefficients (`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`). -/
+`{h ≤ b}`, which is the whole sphere as a set when `b ≥ 1`; then the homology of `Sⁿ` is the target
+(`TauCeti.singularHomologyIsoSublevelPairOfContractibleSpace`). For `a > -1`, `b > 1` and
+`k + 1 = n` the target is one copy of the coefficients
+(`TauCeti.nonempty_singularHomology_sublevelPair_sphereHeight_iso`). -/
 theorem isIso_singularHomologyπ_sublevelPair_sphereHeight (v : sphere (0 : E) 1) {a b : ℝ}
     (ha : -1 ≤ a) (ha' : a < 1) (hab : a ≤ b) (k : ℕ) :
     IsIso ((sublevelPair (sphereHeight v) hab).singularHomologyπ R (k + 1)) := by

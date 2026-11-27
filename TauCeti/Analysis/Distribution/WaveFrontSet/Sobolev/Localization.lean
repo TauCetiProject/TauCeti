@@ -52,9 +52,10 @@ converges absolutely in `L²` (`TauCeti.memLp_one_add_norm_sq_rpow_smul_of_hasSu
 * `Distribution.IsMicrolocallySobolevAt.exists_nhds_cone`: at a point where `T` is microlocally
   `H^s` there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every
   cutoff supported in `U` has weighted localized Fourier transform square integrable on `Γ`.
-* `Distribution.IsMicrolocallySobolevAt.add`, `Distribution.sobolevWaveFrontSet_add_subset`,
-  `Distribution.sobolevWaveFrontSet_sub_subset`, `Distribution.sobolevWaveFrontSet_sum_subset`:
-  the `H^s` wave front set of a sum lies in the union of the `H^s` wave front sets.
+* `Distribution.IsMicrolocallySobolevAt.add`, `Distribution.IsMicrolocallySobolevAt.sum`,
+  `Distribution.sobolevWaveFrontSet_add_subset`, `Distribution.sobolevWaveFrontSet_sub_subset`,
+  `Distribution.sobolevWaveFrontSet_sum_subset`: the `H^s` wave front set of a sum lies in the
+  union of the `H^s` wave front sets.
 * `Distribution.IsMicrolocallySobolevAt.smulLeftCLM`,
   `Distribution.isMicrolocallySobolevAt_smulLeftCLM_iff`,
   `Distribution.sobolevWaveFrontSet_smulLeftCLM_subset`,
@@ -329,6 +330,14 @@ theorem IsMicrolocallySobolevAt.add {s : ℝ} {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
   convert h₁.add h₂ using 1
   ext η
   simp [smul_add]
+
+/-- A finite sum of distributions microlocally `H^s` at `(x, ξ)`, for `x ∈ Ω`, is microlocally
+`H^s` there. -/
+theorem IsMicrolocallySobolevAt.sum {s : ℝ} {ι : Type*} (t : Finset ι) {T : ι → 𝓓'(Ω, ℂ)}
+    {x ξ : E} (hx : x ∈ Ω) (h : ∀ i ∈ t, (T i).IsMicrolocallySobolevAt s x ξ) :
+    (∑ i ∈ t, T i).IsMicrolocallySobolevAt s x ξ :=
+  Finset.sum_induction _ (fun S : 𝓓'(Ω, ℂ) ↦ S.IsMicrolocallySobolevAt s x ξ) (fun _ _ ↦ .add)
+    ((isMicrolocallySmoothAt_zero hx ξ).isMicrolocallySobolevAt s) h
 
 /-- The `H^s` wave front set of a sum lies in the union of the `H^s` wave front sets. -/
 theorem sobolevWaveFrontSet_add_subset (s : ℝ) (S T : 𝓓'(Ω, ℂ)) :

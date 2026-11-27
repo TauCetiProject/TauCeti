@@ -26,6 +26,7 @@ are flat, then so is `M`: a submodule of a flat module with flat quotient is fla
   `R ⧸ I`.
 * `Function.Exact.flat_left_of_injective_of_surjective`: the first term of a short exact
   sequence whose other two terms are flat is flat.
+* `Submodule.flat_of_flat_quotient`: a submodule of a flat module with flat quotient is flat.
 -/
 
 public section
@@ -94,3 +95,9 @@ theorem Function.Exact.flat_left_of_injective_of_surjective
     LinearMap.coe_comp]
   exact (Module.Flat.rTensor_preserves_injective_linearMap i hi).comp
     (LinearMap.lTensor_injective_of_exact_of_flat g hg f hf h A)
+
+/-- A submodule of a flat module with flat quotient is flat. -/
+theorem Submodule.flat_of_flat_quotient (p : Submodule R M) [Module.Flat R M]
+    [Module.Flat R (M ⧸ p)] : Module.Flat R p :=
+  (LinearMap.exact_subtype_mkQ p).flat_left_of_injective_of_surjective p.injective_subtype
+    p.mkQ_surjective

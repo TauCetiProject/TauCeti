@@ -51,6 +51,9 @@ is a `Cⁿ` manifold, so they are among the admissible charts.
 * `TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm`: a
   section whose expressions in a covering family of charts and trivializations are in the local
   classes defines an element of `W^{k,p}(V)`.
+* `TauCeti.SobolevSection.exists_ae_eq_coord_of_forall_memWkpLoc_coord`: in particular, a section
+  whose chart expressions in a finite bundle atlas are in the local classes on the chart images
+  defines one.
 
 ## Checks
 
@@ -192,11 +195,31 @@ theorem exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm {ι : Typ
       ∀ i, A.sectionChartData.chartValueL volume p k i w
         =ᵐ[volume.restrict (A.image i)] A.coord i s := by
   refine exists_ae_eq_coord_of_memWkpLoc fun i ↦ ⟨_, (A.chart i).isOpen_inter_preimage_symm
-    (A.triv i).open_baseSet, (A.closure_image_subset_chart_image_closure_dom i).trans
-      (A.chart_image_closure_dom_subset i), ?_⟩
+    (A.triv i).open_baseSet, A.closure_image_subset_target_inter_preimage_baseSet i, ?_⟩
   rw [funext (A.coord_def i s)]
   exact memWkpLoc_trivialization_comp_chart_symm_of_cover (IsManifold.chart_mem_maximalAtlas _)
     (A.triv i) φ hφ e U hU (fun x _ ↦ hcover x) hs (.inr Fact.out) hn hkn
+
+/-- **Sobolev sections from local classes on chart images.** Let `n ≠ 0` and `k ≤ n`, and let `B`
+be a finite bundle atlas. A section `s` whose chart expressions `B.coord i s` lie in the local
+Sobolev class `MemWkpLoc p (B.image i) k` for every chart `i` of `B` defines an element of
+`W^{k,p}(V)` for the atlas `A`: there is an element whose chart data are the coordinates of `s`. For
+`B = A` this is the converse of `TauCeti.SobolevSection.memWkpLoc_coord`. No control near the
+boundary of the chart images is needed, unlike in
+`TauCeti.SobolevSection.exists_ae_eq_coord_of_memWkpLoc`, since the open chart images of `B`
+already cover `M`. -/
+theorem exists_ae_eq_coord_of_forall_memWkpLoc_coord (hn : n ≠ 0) (hkn : (k : WithTop ℕ∞) ≤ n)
+    {B : FiniteBundleAtlas ℂ M F V} {s : ∀ x, V x}
+    (hs : ∀ i, MemWkpLoc p (B.image i) k (B.coord i s)) :
+    ∃ w : SobolevSection A volume p k,
+      ∀ i, A.sectionChartData.chartValueL volume p k i w
+        =ᵐ[volume.restrict (A.image i)] A.coord i s :=
+  exists_ae_eq_coord_of_memWkpLoc_trivialization_comp_chart_symm B.chart
+    (fun _ ↦ IsManifold.chart_mem_maximalAtlas _) B.triv (fun i ↦ B.image i)
+    (fun i ↦ (B.image i).isOpen)
+    (fun x ↦ let ⟨i, hi⟩ := B.exists_mem_dom x
+      ⟨i, B.dom_subset_chart_source i hi, B.dom_subset_baseSet i hi, B.mem_image.2 ⟨_, hi, rfl⟩⟩)
+    (fun i ↦ by simpa only [funext (B.coord_def i s)] using hs i) hn hkn
 
 /-- **Not the half-plane indicator.** Let `w` be an element of `W^{1,p}(V)` whose chart data are the
 coordinates of the section `s`, and let `n ≠ 0`. In no chart `φ` of the maximal `Cⁿ` atlas of `M`

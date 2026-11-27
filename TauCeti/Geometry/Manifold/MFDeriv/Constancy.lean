@@ -14,7 +14,8 @@ public import Mathlib.Analysis.Calculus.MeanValue
 A differentiable map with zero differential on an open subset of a real manifold is locally
 constant there. Both manifolds may have boundary or corners, and neither needs to be finite
 dimensional. On a preconnected source, or on a preconnected open set, the map is constant.
-Conversely, a locally constant map is smooth (`IsLocallyConstant.contMDiff`).
+Conversely, a locally constant map is smooth (`IsLocallyConstant.contMDiff`), and a locally
+constant vector-valued function has zero differential (`IsLocallyConstant.mvfderiv_eq_zero`).
 
 These results turn infinitesimal independence of a parameter into independence of that
 parameter itself, for example when separating the factors of a product isometry.
@@ -145,5 +146,12 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E F : Type*} [NormedAddC
 agrees with a constant map. -/
 theorem contMDiff (hf : IsLocallyConstant f) {n : WithTop ℕ∞} : ContMDiff I J n f := fun x ↦
   contMDiffAt_const.congr_of_eventuallyEq ((IsLocallyConstant.iff_eventually_eq f).mp hf x)
+
+/-- A locally constant vector-valued function on a manifold has zero differential: near each point
+it agrees with a constant function. -/
+theorem mvfderiv_eq_zero {g : M → F} (hg : IsLocallyConstant g) (x : M) : mvfderiv I g x = 0 := by
+  rw [mvfderiv, Filter.EventuallyEq.mfderiv_eq ((IsLocallyConstant.iff_eventually_eq g).mp hg x),
+    mfderiv_const]
+  exact ContinuousLinearMap.comp_zero _
 
 end IsLocallyConstant
