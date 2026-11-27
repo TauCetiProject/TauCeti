@@ -31,7 +31,9 @@ Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequ
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
 (`Memℓp.sum_Ico_sub_add`, `lp.norm_le_of_forall_eq_sum_Ico_sub_add`); together, for `f ∈ ℓᵖ`
 they give an element of `ℓᵖ` with these entries and norm bound
-(`lp.exists_eq_sum_Ico_sub_add_and_norm_le`). Such sums arise when a
+(`lp.exists_eq_sum_Ico_sub_add_and_norm_le`); over `ℤ` the window sums
+`j ↦ ∑_{-L ≤ i < L} f (j + i)` satisfy the same bound (`lp.exists_eq_sum_Ico_add_and_norm_le`).
+Such sums arise when a
 sequence of dyadic pieces is replaced by another one in which each piece only interacts with the
 pieces of nearby index, as for two Littlewood–Paley decompositions of the same function.
 
@@ -392,6 +394,33 @@ theorem lp.norm_eq_of_forall_eq_comp_equiv {α : Type*} {β : Type*} {H : Type*}
     [NormedAddCommGroup H] {q : ℝ≥0∞} {f : lp (fun _ : β ↦ H) q}
     {g : lp (fun _ : α ↦ H) q} (e : α ≃ β) (h : ∀ i, g i = f (e i)) : ‖g‖ = ‖f‖ :=
   lp.norm_eq_of_forall_norm_eq_comp_equiv e fun i ↦ congrArg norm (h i)
+
+/-- **Window sums over `ℤ` as an element of `ℓᵖ`.** For `1 ≤ p` and `f ∈ ℓᵖ(ℤ)`, the window sums
+`j ↦ ∑_{-L ≤ i < L} f (j + i)` are the entries of an element of `ℓᵖ(ℤ)` of norm at most
+`2 L ‖f‖`. This is the `ℤ`-indexed form of `lp.exists_eq_sum_Ico_sub_add_and_norm_le`: over `ℤ`
+every shift `j ↦ f (j + i)` is a reindexing along an equivalence, so it has the norm of `f`. -/
+theorem lp.exists_eq_sum_Ico_add_and_norm_le [Fact (1 ≤ p)] (f : lp (fun _ : ℤ ↦ G) p)
+    (L : ℕ) : ∃ f' : lp (fun _ : ℤ ↦ G) p,
+      (∀ j, f' j = ∑ i ∈ Finset.Ico (-(L : ℤ)) L, f (j + i)) ∧ ‖f'‖ ≤ 2 * L * ‖f‖ := by
+  -- The shift of `f` by `i`, an element of `ℓᵖ(ℤ)` with the norm of `f`.
+  set T : ℤ → lp (fun _ : ℤ ↦ G) p := fun i ↦
+    ⟨fun j ↦ f (j + i), (lp.memℓp f).comp_injective (add_left_injective i)⟩
+  -- The entries of the anonymous `lp` element `T i` are its defining sequence by definition:
+  -- `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
+  have hT (i j : ℤ) : T i j = f (j + i) := rfl
+  have hTn (i : ℤ) : ‖T i‖ = ‖f‖ :=
+    lp.norm_eq_of_forall_eq_comp_equiv (Equiv.addRight i) fun j ↦ hT i j
+  refine ⟨∑ i ∈ Finset.Ico (-(L : ℤ)) L, T i, fun j ↦ ?_, ?_⟩
+  · simp only [lp.coeFn_sum, Finset.sum_apply, hT]
+  · calc ‖∑ i ∈ Finset.Ico (-(L : ℤ)) L, T i‖ ≤ ∑ i ∈ Finset.Ico (-(L : ℤ)) L, ‖T i‖ :=
+          norm_sum_le _ _
+      _ = 2 * L * ‖f‖ := by
+        have hcard : (Finset.Ico (-(L : ℤ)) L).card = 2 * L := by
+          rw [Int.card_Ico]
+          omega
+        rw [Finset.sum_congr rfl fun i _ ↦ hTn i, Finset.sum_const, hcard, nsmul_eq_mul]
+        push_cast
+        ring
 
 namespace AddEquiv
 
