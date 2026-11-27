@@ -205,7 +205,7 @@ lemma id_evalFiber (p : X ⟶ B) (b : B _⦋0⦌) :
 
 /-- On vertices, fibre evaluation is the usual induced map of fibres. -/
 @[simp]
-lemma evalFiber_app_obj₀Equiv (b : B _⦋0⦌) (f : (ihomOver q p : SSet) _⦋0⦌) :
+lemma ihomObj₀Equiv_evalFiber_app (b : B _⦋0⦌) (f : (ihomOver q p : SSet) _⦋0⦌) :
     dsimp% ihomObj₀Equiv _ _ ((evalFiber p q b).app _ f) =
       fiber.map (obj₀Equiv f).val (obj₀Equiv f).property b := by
   rw [← cancel_mono (fiber q b).ι, ihomObj₀Equiv_app, Category.assoc,

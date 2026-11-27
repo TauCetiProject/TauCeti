@@ -63,7 +63,7 @@ lemma mem_coCartesianFunctors_obj_zero_iff (f : (ihomOver q p : SSet) _⦋0⦌) 
     mem_fullEnhancedSubcategory_obj_zero_iff]
 
 /-- Preservation for a family is tested only at parameter vertices. -/
-@[simp]
+@[simp low]
 lemma mem_coCartesianFunctors_obj_iff {n : ℕ} (f : (ihomOver q p : SSet) _⦋n⦌) :
     f ∈ (coCartesianFunctors p q).obj (op ⦋n⦌) ↔
       ∀ (i : Fin (n + 1)) ⦃x y : X _⦋0⦌⦄ (e : Edge x y), e.IsCoCartesian p →
@@ -151,9 +151,8 @@ def comp (p : X ⟶ B) (q : Y ⟶ B) (r : Z ⟶ B) :
         (isCoCartesian_map
           ((fst (coCartesianFunctors p q : SSet) (coCartesianFunctors q r : SSet)).app _ a)
           e he)).of_edge_eq (by
-            -- Both inclusions forget the subcomplex membership proofs.
-            simp
-            rfl))
+            simp only [Edge.map_edge, NatTrans.comp_app_apply, Subfunctor.ι_app,
+              TypeCat.hom_ofHom, TypeCat.Fun.mk_apply]))
 
 /-- The preserving composition is induced by relative simplicial composition. -/
 @[reassoc (attr := simp)]
@@ -190,41 +189,6 @@ lemma assoc (p : X ⟶ B) (q : Y ⟶ B) (r : Z ⟶ B) (s : W ⟶ B) :
         _ ◁ comp q r s ≫ comp p q s := by
   rw [← cancel_mono (coCartesianFunctors p s).ι]
   simp [comp, ihomOver.comp_compHom, ihomOver.compHom_assoc]
-
-/-- Evaluation at a base vertex, as a family of functors between the fibres. -/
-def evalFiber (p : X ⟶ B) (q : Y ⟶ B) (b : B _⦋0⦌) :
-    (coCartesianFunctors p q : SSet) ⟶
-      (ihom (fiber p b : SSet)).obj (fiber q b : SSet) :=
-  (coCartesianFunctors p q).ι ≫ ihomOver.evalFiber p q b
-
-/-- The evaluation map is the restriction of relative fibre evaluation. -/
-lemma evalFiber_eq (p : X ⟶ B) (q : Y ⟶ B) (b : B _⦋0⦌) :
-    evalFiber p q b = (coCartesianFunctors p q).ι ≫ ihomOver.evalFiber p q b :=
-  (rfl)
-
-/-- Fibre evaluation preserves composition of coCartesian functors. -/
-@[reassoc]
-lemma comp_evalFiber (p : X ⟶ B) (q : Y ⟶ B) (r : Z ⟶ B) (b : B _⦋0⦌) :
-    comp p q r ≫ evalFiber p r b =
-      (evalFiber p q b ⊗ₘ evalFiber q r b) ≫
-        MonoidalClosed.comp (fiber p b : SSet) (fiber q b : SSet) (fiber r b : SSet) := by
-  rw [evalFiber_eq, comp_ι_assoc, ihomOver.comp_evalFiber]
-  simp [evalFiber_eq, tensorHom_comp_tensorHom_assoc]
-
-/-- Fibre evaluation preserves the identity coCartesian functor. -/
-@[reassoc (attr := simp)]
-lemma id_evalFiber (p : X ⟶ B) (b : B _⦋0⦌) :
-    id p ≫ evalFiber p p b = MonoidalClosed.id (fiber p b : SSet) := by
-  rw [evalFiber_eq, id_ι_assoc, ihomOver.id_evalFiber]
-
-/-- Evaluation at a parameter vertex is the usual map of fibres. -/
-@[simp]
-lemma evalFiber_app_obj₀Equiv (b : B _⦋0⦌)
-    (f : (coCartesianFunctors p q : SSet) _⦋0⦌) :
-    dsimp% ihomObj₀Equiv _ _ ((evalFiber p q b).app _ f) =
-      fiber.map (ihomOver.obj₀Equiv f.val).val (ihomOver.obj₀Equiv f.val).property b := by
-  rw [evalFiber_eq, NatTrans.comp_app_apply, ihomOver.evalFiber_app_obj₀Equiv]
-  rfl
 
 end coCartesianFunctors
 
