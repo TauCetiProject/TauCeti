@@ -85,10 +85,9 @@ theorem hasSmoothPositiveDensity_riemannianVolume [MeasureSpace E] [BorelSpace E
       fun x hx ↦ image_eq_zero_of_notMem_tsupport fun h ↦ hx (hfs h),
     ← e.symm_image_target_eq_source,
     b.setIntegral_riemannianVolume_image_of_injOn rfl e.open_target.measurableSet e.symm.injOn hd,
-    Measure.isAddLeftInvariant_eq_smul b.addHaar volume, Measure.restrict_smul,
-    integral_smul_nnreal_measure, NNReal.smul_def, ← integral_smul]
-  refine setIntegral_congr_fun e.open_target.measurableSet fun y _ ↦ ?_
-  simp only [Complex.real_smul, Complex.ofReal_mul]
-  exact (mul_assoc _ _ _).symm
+    Measure.isAddLeftInvariant_eq_smul b.addHaar volume]
+  -- Scale `b.addHaar = c • volume`.
+  simp [integral_smul_nnreal_measure, NNReal.smul_def, Complex.real_smul, ← integral_const_mul,
+    mul_assoc, c]
 
 end TauCeti

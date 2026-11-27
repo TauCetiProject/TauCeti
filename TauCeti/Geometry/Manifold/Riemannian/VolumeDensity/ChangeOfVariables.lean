@@ -53,7 +53,8 @@ orientation is used, and `M` may have boundary or corners.
 
 ## Main results
 
-* `TauCeti.riemannianJacobian_pos`: the Jacobian is positive where the differential is injective.
+* `TauCeti.det_gram_mfderiv_pos`, `TauCeti.riemannianJacobian_pos`: the Gram determinant and the
+  Jacobian are positive where the differential is injective.
 * `TauCeti.contDiffOn_riemannianJacobian`: the Jacobian of a `C^(m+1)` map with injective
   differentials is `C^m` for a `C^m` metric.
 * `TauCeti.riemannianJacobian_unique`: for a basis consisting of a single vector, the Jacobian is
@@ -143,14 +144,22 @@ theorem riemannianJacobian_nonneg (b : Module.Basis ι ℝ F) (f : F → M) (x :
     0 ≤ riemannianJacobian (I := I) b f x :=
   Real.sqrt_nonneg _
 
-/-- The Riemannian Jacobian is positive where the differential is injective: the vectors
-`df_x (b i)` are then linearly independent, so their Gram matrix is positive definite. -/
-theorem riemannianJacobian_pos (b : Module.Basis ι ℝ F) {f : F → M} {x : F}
+/-- The Gram determinant of the vectors `df_x (b i)` is positive where the differential is
+injective: these vectors are then linearly independent, so their Gram matrix is positive
+definite. -/
+theorem det_gram_mfderiv_pos (b : Module.Basis ι ℝ F) {f : F → M} {x : F}
     (hf : Function.Injective (mfderiv 𝓘(ℝ, F) I f x)) :
-    0 < riemannianJacobian (I := I) b f x :=
-  Real.sqrt_pos.2 (Matrix.posDef_gram_of_linearIndependent
+    0 < (Matrix.gram ℝ (fun i ↦ mfderiv 𝓘(ℝ, F) I f x (b i))).det :=
+  (Matrix.posDef_gram_of_linearIndependent
     (b.linearIndependent.map' (mfderiv 𝓘(ℝ, F) I f x).toLinearMap
       (LinearMap.ker_eq_bot.2 hf))).det_pos
+
+/-- The Riemannian Jacobian is positive where the differential is injective. -/
+theorem riemannianJacobian_pos (b : Module.Basis ι ℝ F) {f : F → M} {x : F}
+    (hf : Function.Injective (mfderiv 𝓘(ℝ, F) I f x)) :
+    0 < riemannianJacobian (I := I) b f x := by
+  rw [riemannianJacobian_eq_sqrt_det_gram]
+  exact Real.sqrt_pos.2 (det_gram_mfderiv_pos b hf)
 
 /-- Relabeling the basis leaves the Riemannian Jacobian unchanged. -/
 @[simp]
@@ -310,7 +319,10 @@ theorem contDiffOn_riemannianJacobian {m n : ℕ∞ω}
       (fun x ↦ (Matrix.gram ℝ (fun i ↦ mfderiv 𝓘(ℝ, F) I f x (b i))).det) U :=
     ContDiffOn.matrix_det fun i j ↦ by
       simpa only [Matrix.gram_apply] using hf.contDiffOn_inner_mfderiv hmn hU (b i) (b j)
-  exact hdet.sqrt fun x hx ↦ (Real.sqrt_pos.1 (riemannianJacobian_pos b (hinj x hx))).ne'
+  rw [show riemannianJacobian (I := I) b f = fun x ↦
+      Real.sqrt (Matrix.gram ℝ (fun i ↦ mfderiv 𝓘(ℝ, F) I f x (b i))).det from
+    funext (riemannianJacobian_eq_sqrt_det_gram b f)]
+  exact hdet.sqrt fun x hx ↦ (det_gram_mfderiv_pos b (hinj x hx)).ne'
 
 variable [FiniteDimensional ℝ E]
 
