@@ -141,14 +141,6 @@ theorem ofPreSobolevH1_toPreSobolevH1 (u : Cₛ^∞⟮I; F, V⟯) :
 
 end PreSobolevH1
 
-omit [VectorBundle ℝ F V] in
-/-- The integral `∫ |∇σ|² dμ` of the squared Hilbert–Schmidt norm of the covariant derivative is
-nonnegative. -/
-theorem integral_innerCovariantDerivative_self_nonneg [FiniteDimensional ℝ E]
-    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [MeasurableSpace M] (μ : Measure M)
-    (σ : Π x : M, V x) : 0 ≤ ∫ x, cov.innerCovariantDerivative σ σ x ∂μ :=
-  integral_nonneg (cov.innerCovariantDerivative_self_nonneg σ)
-
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]

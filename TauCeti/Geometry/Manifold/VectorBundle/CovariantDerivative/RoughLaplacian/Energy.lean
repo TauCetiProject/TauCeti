@@ -83,6 +83,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
   [FiberBundle F V] {σ τ : Π x : M, V x}
 
+/-- The integral `∫ |∇σ|² dμ` of the squared Hilbert–Schmidt norm of the covariant derivative is
+nonnegative. -/
+theorem integral_innerCovariantDerivative_self_nonneg (cov : CovariantDerivative I F V)
+    [MeasurableSpace M] (μ : Measure M) (σ : Π x : M, V x) :
+    0 ≤ ∫ x, cov.innerCovariantDerivative σ σ x ∂μ :=
+  integral_nonneg (cov.innerCovariantDerivative_self_nonneg σ)
+
 /-! ### The energy identity -/
 
 namespace IsMetricCompatible
@@ -143,7 +150,7 @@ theorem integral_inner_roughLaplacian_self_nonneg (hcov : cov.IsMetricCompatible
     (hσ : CMDiff ∞ (T% σ)) (hσc : IsCompact (closure {x | σ x ≠ 0})) :
     0 ≤ ∫ x, ⟪cov.roughLaplacian (leviCivitaConnection I M) σ x, σ x⟫ ∂riemannianVolume I M := by
   rw [hcov.integral_inner_roughLaplacian hσ hσ hσc]
-  exact integral_nonneg fun x ↦ cov.innerCovariantDerivative_self_nonneg σ x
+  exact cov.integral_innerCovariantDerivative_self_nonneg _ σ
 
 /-- **A compactly supported smooth section in the kernel of the rough Laplacian is parallel.**
 For a metric connection on a Riemannian vector bundle over a manifold without boundary, a smooth
