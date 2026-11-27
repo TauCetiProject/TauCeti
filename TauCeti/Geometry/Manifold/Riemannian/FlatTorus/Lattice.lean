@@ -59,6 +59,10 @@ def orbitRelQuotientMetric : ContMDiffRiemannianMetric 𝓘E ∞ E (fun x : Q �
   sourceMetric.descend (f := q) TauCeti.isLocalDiffeomorph_addQuotientMk
     _root_.Quotient.mk_surjective (compatible_inner L)
 
+/-- The tangent bundle of the orbit space equipped with the descended Euclidean metric. -/
+abbrev orbitRelQuotientRiemannianBundle : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
+  ⟨(orbitRelQuotientMetric L).toRiemannianMetric⟩
+
 /-- In the quotient charts the descended metric is the Euclidean inner product. -/
 @[simp]
 theorem orbitRelQuotientMetric_inner_mk (x v w : E) :
@@ -87,11 +91,9 @@ theorem ofWithMetric_flatQuotientMk (x : E) :
 
 /-- The native orbit projection is a local Riemannian isometry for the descended metric. -/
 theorem isLocalRiemannianIsometry_orbitRelQuotient_mk :
-    let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
-      ⟨(orbitRelQuotientMetric L).toRiemannianMetric⟩
+    letI := orbitRelQuotientRiemannianBundle L
     IsLocalRiemannianIsometry 𝓘E 𝓘E q := by
-  let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
-    ⟨(orbitRelQuotientMetric L).toRiemannianMetric⟩
+  let := orbitRelQuotientRiemannianBundle L
   have hd : IsLocalDiffeomorph 𝓘E 𝓘E ∞ q := TauCeti.isLocalDiffeomorph_addQuotientMk
   refine ⟨hd.contMDiff, hd.isInvertible_mfderiv (by simp), fun x v w ↦ ?_⟩
   rw [L.mfderiv_orbitRelQuotient_mk]
@@ -100,8 +102,7 @@ theorem isLocalRiemannianIsometry_orbitRelQuotient_mk :
 /-- The projection to a flat quotient preserves the metric locally. -/
 theorem isLocalRiemannianIsometry_flatQuotientMk :
     IsLocalRiemannianIsometry 𝓘E 𝓘E (flatQuotientMk L) := by
-  let : RiemannianBundle (fun x : Q ↦ TangentSpace 𝓘E x) :=
-    ⟨(orbitRelQuotientMetric L).toRiemannianMetric⟩
+  let := orbitRelQuotientRiemannianBundle L
   rw [flatQuotientMk_eq_comp]
   simpa only [WithMetric.coe_riemannianIsometry_symm] using
     (WithMetric.riemannianIsometry (orbitRelQuotientMetric L)).symm.isLocalRiemannianIsometry.comp
