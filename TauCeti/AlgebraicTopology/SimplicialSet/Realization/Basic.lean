@@ -22,7 +22,7 @@ import TauCeti.CategoryTheory.Functor.KanExtension.Dense
 Every point of the geometric realization `|X|` of `X : SSet` has the form `SSet.toTopObjMk x w`
 (`SSet.exists_toTopObjMk`). Comparing `|X|` with the thin geometric realization of
 `X ⋙ TopCat.discrete` (`SSet.toTopIsoGeometricRealization`) gives Milnor's open-cell bijection
-onto nondegenerate simplices and interior coordinates (`SSet.ToTopCell`, `SSet.toTopCellEquiv`).
+onto nondegenerate simplices and interior coordinates (`SSet.toTopCellEquiv`).
 Evaluating at any interior point (`SSet.toTopObjMk_injective_of_weights_ne_zero`,
 `SSet.toTopObjMk_barycenter_injective`) shows that `sSetTopAdj.unit.app X` is a monomorphism,
 `SSet.toTop` is faithful, and `SSet.toTopPoint` is injective. We also identify realizations of
@@ -48,10 +48,6 @@ namespace SSet
 section Points
 
 variable {X : SSet.{u}}
-
-lemma toTopPoint_def {X : SSet.{u}} (x : X _⦋0⦌) :
-    toTopPoint x = TopCat.toSSetObj₀Equiv ((sSetTopAdj.unit.app X).app _ x) := by
-  rw [toTopPoint_eq_toTopObjMk x default, toTopObjMk_def, TopCat.toSSetObj₀Equiv_apply]
 
 /-- On a `0`-simplex, `toTopObjMk` is independent of the coordinates and equals `toTopPoint`. -/
 @[simp] lemma toTopObjMk_zero (x : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) :
@@ -92,21 +88,6 @@ coordinates along `stdSimplex.objEquiv x`. -/
 end Points
 
 section Discrete
-
-private noncomputable def toTopConstHom (S : Type u) :
-    |(Functor.const SimplexCategoryᵒᵖ).obj S| ⟶ TopCat.discrete.obj S :=
-  (sSetTopAdj.homEquiv _ (TopCat.discrete.obj S)).symm
-    ((constHomEquiv S).symm fun s ↦ TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S).symm s)
-
-private lemma toTopConstHom_toTopPoint (S : Type u) (s : S) :
-    toTopConstHom S (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s := by
-  rw [toTopConstHom, toTopPoint_eq_toTopObjMk (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s
-    default, apply_toTopObjMk, Equiv.apply_symm_apply]
-  have h0 := constHomEquiv_symm_app_zero S
-    (fun t ↦ TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S).symm t) s
-  dsimp at h0 ⊢
-  rw [h0, ← TopCat.toSSetObj₀Equiv_apply]
-  exact Equiv.apply_symm_apply (TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S)) s
 
 private noncomputable def toTopConstInv (S : Type u) :
     TopCat.discrete.obj S ⟶ |(Functor.const SimplexCategoryᵒᵖ).obj S| :=
@@ -254,39 +235,22 @@ lemma exists_toTopObjMk {X : SSet.{u}} (p : |X|) :
 @[simp] lemma isEmpty_toTop_iff (X : SSet.{u}) : IsEmpty |X| ↔ IsEmpty (X _⦋0⦌) := by
   rw [← not_nonempty_iff, nonempty_toTop_iff, SSet.Nonempty, not_nonempty_iff]
 
-/-- An open cell point of `|X|`: a dimension `dim`, a nondegenerate `dim`-simplex of `X`, and an
-interior point of `StdSimplex ℝ (Fin (dim + 1))`. -/
-@[ext] structure ToTopCell (X : SSet.{u}) : Type u where
-  /-- Dimension of the open cell. -/
-  dim : ℕ
-  /-- Nondegenerate `dim`-simplex of `X`. -/
-  simplex : X.nonDegenerate dim
-  /-- Interior coordinates in `StdSimplex ℝ (Fin (dim + 1))`. -/
-  point : {w : StdSimplex ℝ (Fin (dim + 1)) // ∀ j, 0 < w.weights j}
-
-private noncomputable def normalFormEquivToTopCell (X : SSet.{u}) :
-    SimplicialObject.geometricRealization.NormalForm (X ⋙ TopCat.discrete) ≃ ToTopCell X where
-  toFun c :=
-    ⟨c.dim, c.simplex, ⟨c.point.val.down, SimplexCategory.mem_toTopInterior_iff.1 c.point.property⟩⟩
-  invFun c :=
-    ⟨c.dim, c.simplex,
-      ⟨ULift.up c.point.val, SimplexCategory.mem_toTopInterior_iff.2 c.point.property⟩⟩
-  left_inv c := by rcases c with ⟨_, _, ⟨⟨_⟩, _⟩⟩; rfl
-  right_inv c := by rcases c with ⟨_, _, ⟨_, _⟩⟩; rfl
-
-/-- Milnor's open-cell bijection `|X| ≃ SSet.ToTopCell X` onto pairs of a nondegenerate simplex
-of `X` and an interior point of the standard simplex, obtained by transporting
-`SimplicialObject.geometricRealization.NormalForm.realizationEquiv` along
+/-- Milnor's open-cell bijection
+`|X| ≃ SimplicialObject.geometricRealization.NormalForm (X ⋙ TopCat.discrete)` onto pairs of a
+nondegenerate simplex of `X` and an interior point of the standard simplex, obtained by
+transporting `SimplicialObject.geometricRealization.NormalForm.realizationEquiv` along
 `toTopIsoGeometricRealization X`. -/
-noncomputable def toTopCellEquiv (X : SSet.{u}) : |X| ≃ ToTopCell X :=
+noncomputable def toTopCellEquiv (X : SSet.{u}) :
+    |X| ≃ SimplicialObject.geometricRealization.NormalForm (X ⋙ TopCat.discrete) :=
   (TopCat.homeoOfIso (toTopIsoGeometricRealization X)).toEquiv.trans
-    ((SimplicialObject.geometricRealization.NormalForm.realizationEquiv
-      (X ⋙ TopCat.discrete)).symm.trans (normalFormEquivToTopCell X))
+    (SimplicialObject.geometricRealization.NormalForm.realizationEquiv
+      (X ⋙ TopCat.discrete)).symm
 
-@[simp] lemma toTopCellEquiv_symm_apply {X : SSet.{u}} (c : ToTopCell X) :
-    (toTopCellEquiv X).symm c = toTopObjMk c.simplex.val c.point.val := by
-  dsimp only [toTopCellEquiv, normalFormEquivToTopCell]
-  rw [Equiv.symm_trans_apply, Equiv.symm_trans_apply, Equiv.symm_symm,
+@[simp] lemma toTopCellEquiv_symm_apply {X : SSet.{u}}
+    (c : SimplicialObject.geometricRealization.NormalForm (X ⋙ TopCat.discrete)) :
+    (toTopCellEquiv X).symm c = toTopObjMk c.simplex.val c.point.val.down := by
+  dsimp only [toTopCellEquiv]
+  rw [Equiv.symm_trans_apply, Equiv.symm_symm,
     SimplicialObject.geometricRealization.NormalForm.realizationEquiv_apply,
     SimplicialObject.geometricRealization.NormalForm.toRealization_def]
   exact (TopCat.homeoOfIso_symm_apply (toTopIsoGeometricRealization X) _).trans
@@ -295,7 +259,8 @@ noncomputable def toTopCellEquiv (X : SSet.{u}) : |X| ≃ ToTopCell X :=
 @[simp] lemma toTopCellEquiv_toTopObjMk {X : SSet.{u}} {n : ℕ}
     {x : X _⦋n⦌} (hx : x ∈ X.nonDegenerate n) {w : StdSimplex ℝ (Fin (n + 1))}
     (hw : ∀ j, 0 < w.weights j) :
-    toTopCellEquiv X (toTopObjMk x w) = ⟨n, ⟨x, hx⟩, ⟨w, hw⟩⟩ := by
+    toTopCellEquiv X (toTopObjMk x w) =
+      ⟨n, ⟨x, hx⟩, ⟨ULift.up w, SimplexCategory.mem_toTopInterior_iff.2 hw⟩⟩ := by
   dsimp only [toTopCellEquiv, Equiv.trans_apply]
   rw [Homeomorph.coe_toEquiv, TopCat.homeoOfIso_apply,
     toTopIsoGeometricRealization_hom_toTopObjMk]
@@ -303,8 +268,7 @@ noncomputable def toTopCellEquiv (X : SSet.{u}) : |X| ≃ ToTopCell X :=
   -- agree definitionally, so `normalForm_ι_of_nonDegenerate` applies directly.
   have hnf := SimplicialObject.geometricRealization.normalForm_ι_of_nonDegenerate
     (X ⋙ TopCat.discrete) hx (SimplexCategory.mem_toTopInterior_iff.2 hw)
-  rw [← SimplicialObject.geometricRealization.NormalForm.realizationEquiv_symm_apply] at hnf
-  exact congrArg (normalFormEquivToTopCell X) hnf
+  rwa [← SimplicialObject.geometricRealization.NormalForm.realizationEquiv_symm_apply] at hnf
 
 /-- Evaluating `toTopObjMk · w` at any interior point `w` of `StdSimplex ℝ (Fin (n + 1))` is
 injective on `n`-simplices. -/
@@ -319,13 +283,16 @@ theorem toTopObjMk_injective_of_weights_ne_zero (X : SSet.{u}) {n : ℕ}
       toTopCellEquiv X (toTopObjMk z₂.val (w.map π₂)) :=
     congrArg (toTopCellEquiv X) h
   rw [toTopCellEquiv_toTopObjMk z₁.property (fun j ↦ ((w.map π₁).nonneg j).lt_iff_ne'.2
-        (SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π₁ hw j)),
+        (StdSimplex.weights_map_ne_zero_of_surjective
+          (SimplexCategory.epi_iff_surjective.1 ‹_›) hw j)),
     toTopCellEquiv_toTopObjMk z₂.property (fun j ↦ ((w.map π₂).nonneg j).lt_iff_ne'.2
-        (SimplexCategory.weights_stdSimplex_map_ne_zero_of_epi π₂ hw j))] at hc
-  obtain rfl : r₁ = r₂ := congrArg ToTopCell.dim hc
+        (StdSimplex.weights_map_ne_zero_of_surjective
+          (SimplexCategory.epi_iff_surjective.1 ‹_›) hw j))] at hc
+  obtain rfl : r₁ = r₂ :=
+    congrArg SimplicialObject.geometricRealization.NormalForm.dim hc
   injection hc with _ hsimp hp
   obtain rfl : z₁ = z₂ := Subtype.ext (congrArg Subtype.val hsimp)
-  have hcoords : w.map π₁ = w.map π₂ := congrArg Subtype.val hp
+  have hcoords : w.map π₁ = w.map π₂ := congrArg (fun t ↦ t.val.down) hp
   rw [SimplexCategory.eq_of_stdSimplex_map_eq_of_weights_ne_zero hw hcoords]
 
 /-- Evaluating `toTopObjMk · StdSimplex.barycenter` on `n`-simplices is injective. -/

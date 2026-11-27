@@ -104,20 +104,32 @@ lemma bijective_mapπ₀_toSSet_map {T T' : TopCat.{u}} (g : T ⟶ T')
 
 variable (X : SSet.{u})
 
+/-- The continuous map from the realization of the constant simplicial set on `S` to the discrete
+space `TopCat.discrete.obj S`, adjoint to the identification on `0`-simplices. -/
+noncomputable def toTopConstHom (S : Type u) :
+    |(Functor.const SimplexCategoryᵒᵖ).obj S| ⟶ TopCat.discrete.obj S :=
+  (sSetTopAdj.homEquiv _ (TopCat.discrete.obj S)).symm
+    ((constHomEquiv S).symm fun s ↦ TopCat.toSSetObj₀Equiv (X := TopCat.discrete.obj S).symm s)
+
+/-- `toTopConstHom S` maps the realized vertex `toTopPoint s` back to `s`. -/
+lemma toTopConstHom_toTopPoint (S : Type u) (s : S) :
+    toTopConstHom S (toTopPoint (X := (Functor.const SimplexCategoryᵒᵖ).obj S) s) = s := by
+  have h := ConcreteCategory.congr_hom
+    (NatTrans.congr_app (sSetTopAdj.homEquiv_unit _ _ (toTopConstHom S)) (Opposite.op ⦋0⦌)) s
+  rw [toTopConstHom, Equiv.apply_symm_apply] at h
+  dsimp at h
+  rw [constHomEquiv_symm_app_zero] at h
+  rw [toTopPoint, ← TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
+  exact (TopCat.toSSetObj₀Equiv.symm_apply_eq.1 h).symm
+
 /-- The continuous map from `|X|` to the discrete space `π₀ X` adjoint to the map from `X` to the
 discrete simplicial set on `π₀ X`. -/
 private noncomputable def toTopToπ₀ : |X| ⟶ TopCat.discrete.obj (π₀ X) :=
-  (sSetTopAdj.homEquiv X _).symm (X.toπ₀ ≫
-    (constHomEquiv (π₀ X)).symm fun c ↦ TopCat.toSSetObj₀Equiv.symm c)
+  toTop.map X.toπ₀ ≫ toTopConstHom (π₀ X)
 
 private lemma toTopToπ₀_toTopPoint (x : X _⦋0⦌) : toTopToπ₀ X (toTopPoint x) = π₀.mk x := by
-  have h := ConcreteCategory.congr_hom
-    (NatTrans.congr_app (sSetTopAdj.homEquiv_unit X _ (toTopToπ₀ X)) (Opposite.op ⦋0⦌)) x
-  rw [toTopToπ₀, Equiv.apply_symm_apply] at h
-  dsimp at h
-  rw [toπ₀_app_zero, constHomEquiv_symm_app_zero] at h
-  rw [toTopPoint, ← TauCeti.TopCat.toSSetObj₀Equiv_toSSet_map_app]
-  exact (TopCat.toSSetObj₀Equiv.symm_apply_eq.1 h).symm
+  rw [toTopToπ₀, ConcreteCategory.comp_apply, toTop_map_toTopPoint, toπ₀_app_zero,
+    toTopConstHom_toTopPoint]
 
 /-- The unit `X ⟶ Sing |X|` is injective on connected components: a path in `|X|` between the
 points of two vertices stays in one connected component of `X`. -/

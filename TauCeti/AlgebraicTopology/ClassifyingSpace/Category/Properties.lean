@@ -7,8 +7,8 @@ module
 
 public import Mathlib.CategoryTheory.Category.Cat
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Category.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.FundamentalGroupoid
-public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.FundamentalGroupoid
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.ULift
+public import TauCeti.AlgebraicTopology.SimplicialSet.Realization.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroupoid.Basic
 import TauCeti.CategoryTheory.Category.ULift
 
@@ -259,16 +259,6 @@ lemma edge_apply {X Y : C} (f : X ⟶ Y) (t : unitInterval) :
   exact ((nerve.edgeMk f).toTopPath_apply t).trans
     (congrArg (SSet.toTopObjMk · _) (nerve.objEquiv_symm_eq _).symm)
 
-/-- Pushing `edge f` forward along `mapOfFunctor F` gives `edge (F.map f)` up to `Path.cast`. -/
-lemma edge_mapOfFunctor {C : Type u₁} [Category.{v₁} C] {D : Type u₂} [Category.{v₂} D]
-    (F : C ⥤ D) {X Y : C} (f : X ⟶ Y) :
-    edge (F.map f) =
-      ((edge f).map (mapOfFunctor F).continuous).cast
-        (mapOfFunctor_vertex F X).symm (mapOfFunctor_vertex F Y).symm := by
-  ext t
-  rw [edge_apply, Path.cast_coe, Path.map_coe, Function.comp_apply, edge_apply,
-    mapOfFunctor_toTopObjMk, Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_mk₁]
-
 /-- Naturality isomorphism comparing `toFundamentalGroupoid` along `F : C ⥤ D` across arbitrary
 universes with `FundamentalGroupoid.map (mapOfFunctor F)`. -/
 noncomputable def toFundamentalGroupoidMapOfFunctorNatIso {C : Type u₁} [Category.{v₁} C]
@@ -280,9 +270,11 @@ noncomputable def toFundamentalGroupoidMapOfFunctorNatIso {C : Type u₁} [Categ
     fun f ↦ by
       dsimp only [Functor.comp_obj, Functor.comp_map]
       rw [toFundamentalGroupoid_map, toFundamentalGroupoid_map]
-      exact _root_.FundamentalGroupoid.fromPath_naturality_eqToHom (φ := mapOfFunctor F)
-        (mapOfFunctor_vertex F _) (mapOfFunctor_vertex F _)
-        (edge f) (edge (F.map f)) (edge_mapOfFunctor F f)
+      refine _root_.FundamentalGroupoid.fromPath_naturality_eqToHom (φ := mapOfFunctor F)
+        (mapOfFunctor_vertex F _) (mapOfFunctor_vertex F _) (edge f) (edge (F.map f)) ?_
+      ext t
+      rw [edge_apply, Path.cast_coe, Path.map_coe, Function.comp_apply, edge_apply,
+        mapOfFunctor_toTopObjMk, Equiv.apply_symm_apply, Functor.mapComposableArrows_obj_mk₁]
 
 @[simp] lemma toFundamentalGroupoidMapOfFunctorNatIso_hom_app {C : Type u₁} [Category.{v₁} C]
     {D : Type u₂} [Category.{v₂} D] (F : C ⥤ D) (X : C) :

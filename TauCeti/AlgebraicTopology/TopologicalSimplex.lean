@@ -106,22 +106,6 @@ lemma exists_mono_stdSimplex_map_eq {n : ℕ} (w : StdSimplex R (Fin (n + 1))) :
   let ⟨k, f, w₀, hf, hw₀, hw⟩ := StdSimplex.exists_strictMono_map_eq w
   ⟨k, Hom.mk ⟨f, hf.monotone⟩, mono_iff_injective.2 hf.injective, w₀, hw₀, hw⟩
 
-/-- Pushing an interior point forward along an epimorphism `π : ⦋k⦌ ⟶ ⦋r⦌` preserves nonzero
-weights. -/
-lemma weights_stdSimplex_map_ne_zero_of_epi {k r : ℕ} (π : ⦋k⦌ ⟶ ⦋r⦌) [Epi π]
-    {w₀ : StdSimplex R (Fin (k + 1))} (hw₀ : ∀ j, w₀.weights j ≠ 0) (j : Fin (r + 1)) :
-    (w₀.map π).weights j ≠ 0 :=
-  StdSimplex.weights_map_ne_zero_of_surjective (epi_iff_surjective.1 ‹_›) hw₀ j
-
-/-- Two monomorphisms `⦋k₁⦌ ⟶ ⦋n⦌` and `⦋k₂⦌ ⟶ ⦋n⦌` pushing interior points to the same point
-satisfy `k₁ = k₂`. -/
-lemma eq_dim_of_mono_stdSimplex_map_eq {n k₁ k₂ : ℕ} {ι₁ : ⦋k₁⦌ ⟶ ⦋n⦌} [Mono ι₁]
-    {w₁ : StdSimplex R (Fin (k₁ + 1))} (hw₁ : ∀ j, w₁.weights j ≠ 0) {ι₂ : ⦋k₂⦌ ⟶ ⦋n⦌} [Mono ι₂]
-    {w₂ : StdSimplex R (Fin (k₂ + 1))} (hw₂ : ∀ j, w₂.weights j ≠ 0) (h : w₁.map ι₁ = w₂.map ι₂) :
-    k₁ = k₂ :=
-  StdSimplex.eq_of_injective_map_eq_fin
-    (mono_iff_injective.1 ‹_›) hw₁ (mono_iff_injective.1 ‹_›) hw₂ h
-
 /-- A monomorphism `⦋k⦌ ⟶ ⦋n⦌` pushing an interior point to a given point is uniquely determined
 together with the interior point. -/
 lemma eq_of_mono_stdSimplex_map_eq {n k : ℕ} {ι₁ ι₂ : ⦋k⦌ ⟶ ⦋n⦌} [Mono ι₁] [Mono ι₂]
@@ -192,7 +176,7 @@ theorem mem_toTopInterior_iff_support_eq_univ {n : SimplexCategory} {t : toTop.{
 theorem toTop_map_mem_toTopInterior_of_epi {m n : SimplexCategory} (f : m ⟶ n) [Epi f]
     {t : toTop.{u}.obj m} (ht : t ∈ toTopInterior m) : toTop.{u}.map f t ∈ toTopInterior n :=
   fun i ↦ ((toTop.{u}.map f t).down.nonneg i).lt_iff_ne'.2 <|
-    weights_stdSimplex_map_ne_zero_of_epi f (fun j ↦ (ht j).ne') i
+    StdSimplex.weights_map_ne_zero_of_surjective (epi_iff_surjective.1 ‹_›) (fun j ↦ (ht j).ne') i
 
 /-- The relative boundary of the topological simplex `n`, the complement of `toTopInterior n`. -/
 def toTopBoundary (n : SimplexCategory) : Set (toTop.{u}.obj n) := (toTopInterior n)ᶜ
@@ -255,7 +239,8 @@ theorem unique_mono_toTop_map_dim {n k₁ k₂ : ℕ} {μ₁ : ⦋k₁⦌ ⟶ �
     {u₁ : toTop.{u}.obj ⦋k₁⦌} (hu₁ : u₁ ∈ toTopInterior ⦋k₁⦌)
     {μ₂ : ⦋k₂⦌ ⟶ ⦋n⦌} [Mono μ₂] {u₂ : toTop.{u}.obj ⦋k₂⦌} (hu₂ : u₂ ∈ toTopInterior ⦋k₂⦌)
     (h : toTop.{u}.map μ₁ u₁ = toTop.{u}.map μ₂ u₂) : k₁ = k₂ :=
-  eq_dim_of_mono_stdSimplex_map_eq (fun i ↦ (hu₁ i).ne') (fun i ↦ (hu₂ i).ne')
+  StdSimplex.eq_of_injective_map_eq_fin (mono_iff_injective.1 ‹_›) (fun i ↦ (hu₁ i).ne')
+    (mono_iff_injective.1 ‹_›) (fun i ↦ (hu₂ i).ne')
     ((toTop_map_down μ₁ u₁).symm.trans ((congrArg ULift.down h).trans (toTop_map_down μ₂ u₂)))
 
 /-- The face morphism `⦋k⦌ ⟶ ⦋n⦌` whose open interior contains a point of `Δⁿ` is unique. -/
