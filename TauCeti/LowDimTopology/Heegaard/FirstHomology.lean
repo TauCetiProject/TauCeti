@@ -97,8 +97,6 @@ theorem ker_singularHomologyMap_subtypeVal_inter (hE : finrank ℝ E = 3) (e : R
         LinearMap.ker (singularHomologyMap R 1 (inclusion (inter_subset_right (s := s.left)))) := by
   obtain ⟨x, hxL, hxR⟩ := (s.isPathConnected_left_inter_right hE).nonempty
   have := isPathConnected_iff_pathConnectedSpace.1 (s.isPathConnected_left_inter_right hE)
-  have := s.pathConnectedSpace_left
-  have := s.pathConnectedSpace_right
   have := s.pathConnectedSpace hE
   apply Submodule.toAddSubgroup_injective
   rw [Submodule.sup_toAddSubgroup, toAddSubgroup_ker_singularHomologyMap_one e _

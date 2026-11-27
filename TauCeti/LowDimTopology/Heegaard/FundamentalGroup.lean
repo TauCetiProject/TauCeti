@@ -307,12 +307,12 @@ private theorem fundamentalGroup_map_inclusion_bijective_of_homotopyEquiv {S T :
 
 /-- The first handlebody of a Heegaard splitting is path connected, being homeomorphic to the
 standard handlebody. -/
-theorem pathConnectedSpace_left : PathConnectedSpace s.left :=
+instance pathConnectedSpace_left : PathConnectedSpace s.left :=
   s.nonempty_homeomorph_left.some.symm.toHomotopyEquiv.pathConnectedSpace
 
 /-- The second handlebody of a Heegaard splitting is path connected, being homeomorphic to the
 standard handlebody. -/
-theorem pathConnectedSpace_right : PathConnectedSpace s.right :=
+instance pathConnectedSpace_right : PathConnectedSpace s.right :=
   s.nonempty_homeomorph_right.some.symm.toHomotopyEquiv.pathConnectedSpace
 
 /-- **The Heegaard surface is path connected.** For a Heegaard splitting of a manifold without
@@ -465,8 +465,6 @@ theorem isPushout_fundamentalGroup (hE : finrank ℝ E = 3) {x : M} (hxL : x ∈
       ((inter_comm s.left s.right).subset.trans
         (inter_subset_image eR (s.coe_mem_left_iff hE eR) hSV))).ge.trans
       (union_subset_union_right _ (interior_mono subset_union_left))
-  have := s.pathConnectedSpace_left
-  have := s.pathConnectedSpace_right
   have hvk := TauCeti.isPushout_fundamentalGroup hcover
     (isPathConnected_iff_pathConnectedSpace.2 eA.pathConnectedSpace)
     (isPathConnected_iff_pathConnectedSpace.2 eB.pathConnectedSpace)
@@ -549,7 +547,6 @@ theorem fundamentalGroup_map_left_surjective (hE : finrank ℝ E = 3) (x : s.lef
   -- There, loops in the manifold come from the Heegaard surface, hence from the first handlebody.
   have h := s.fundamentalGroup_map_inter_surjective hE hyL (eR.symm y).property
   rw [← s.fundamentalGroup_map_subtypeVal_comp_inclusion_inter_left hyL (eR.symm y).property] at h
-  have := s.pathConnectedSpace_left
   exact FundamentalGroup.map_surjective_of_path _ (PathConnectedSpace.somePath ⟨_, hyL⟩ x)
     (Function.Surjective.of_comp h)
 
