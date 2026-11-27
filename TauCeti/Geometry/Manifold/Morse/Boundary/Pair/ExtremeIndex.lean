@@ -42,6 +42,26 @@ point has index `0` or `1`, so the two formulas determine the whole signed pair 
 `TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.ExtremeIndex` they are applied to the
 integral continuation maps.
 
+For a Morse–Smale pair `(X₀, X₁)`, every point lies on exactly one stable manifold of `X₁` and on
+exactly one unstable manifold of `X₀`, and the index cannot rise from a critical point of `f₀` to
+one of `f₁` along `W^u_{X₀}(p) ∩ W^s_{X₁}(q)`. So a critical point `p` of index `0` lies on the
+stable manifold of exactly one critical point of `f₁`, which has index `0`, and dually a critical
+point `q` of index `n` lies on the unstable manifold of exactly one critical point of `f₀`, which
+has index `n`. Consequently, over every ring of coefficients:
+
+* the signed pair map commutes with the augmentations
+  `TauCeti.MorseOrientation.signedMorseAugmentation` of `f₀` and `f₁`
+  (`IsMorseSmalePair.signedMorseAugmentation_comp_signedPairMap`);
+* for every orientation of `M`, the signed pair map sends the fundamental chain
+  `TauCeti.IsAdaptedPseudoGradient.signedMorseFundamentalChain` of `f₀` to that of `f₁`
+  (`IsMorseSmalePair.signedPairMap_signedMorseFundamentalChain`).
+
+The integral continuation map along a diffeomorphism `Φ` is the signed pair map of `(X₀, Φ^* X₁)`
+followed by a relabelling of the critical points
+(`TauCeti.IsAdaptedPseudoGradient.signedContinuationMap_eq_comp_signedPairMap`), so the first
+consequence makes the integral continuation maps commute with the augmentations
+(`TauCeti.Geometry.Manifold.Morse.Boundary.Continuation.Signed`).
+
 ## Main results
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
@@ -53,6 +73,13 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   `q` is the product of the fundamental signs.
 * `signedPairCoeff_of_morseIndex_eq_finrank`: the coefficients between critical points of top
   index.
+* `IsMorseSmalePair.finsum_signedPairCoeff_mul_augmentationSign`,
+  `IsMorseSmalePair.signedMorseAugmentation_comp_signedPairMap`,
+  `IsMorseSmalePair.signedMorseAugmentation_signedPairMap`: the signed pair map commutes with the
+  augmentations.
+* `IsMorseSmalePair.finsum_fundamentalSign_mul_signedPairCoeff`,
+  `IsMorseSmalePair.signedPairMap_signedMorseFundamentalChain`: the signed pair map preserves the
+  fundamental chains.
 
 ## References
 
@@ -142,16 +169,21 @@ private theorem pairComparison_self_eq {p q : M} {φp : MorseChart E f₀ p}
 variable (𝔬₀ : MorseOrientation f₀ X₀) (𝔬₁ : MorseOrientation f₁ X₁)
 
 open scoped Classical in
-/-- **The signed pair coefficients between critical points of index `0`.** The unstable manifold of
-a critical point `p` of index `0` is the point `p` itself, so it meets the stable manifold of a
-critical point `q` of index `0` exactly when `p` flows to `q`, and then the coefficient of `q` in
-the image of `p` is the product of the augmentation signs of `p` and `q`. -/
+/-- **The signed pair coefficients at a critical point of index `0`.** The unstable manifold of a
+critical point `p` of index `0` is the point `p` itself, so it meets the stable manifold of a
+critical point `q` exactly when `p` flows to `q`, and then the coefficient of `q` in the image of
+`p` is the product of the augmentation signs of `p` and `q`. Both sides vanish unless `q` has
+index `0`. -/
 theorem signedPairCoeff_of_morseIndex_eq_zero (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     {p : criticalPoints 𝓘(ℝ, E) f₀} {q : criticalPoints 𝓘(ℝ, E) f₁}
-    (hp : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = 0) (hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = 0) :
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = 0) :
     hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q =
       if (p : M) ∈ hX₁.flow.stableSet q then 𝔬₀.augmentationSign p * 𝔬₁.augmentationSign q
       else 0 := by
+  by_cases hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = 0
+  swap
+  · rw [signedPairCoeff_eq_zero_of_morseIndex_ne (by omega),
+      𝔬₁.augmentationSign_of_morseIndex_ne_zero hq, mul_zero, ite_self]
   rw [signedPairCoeff_of_morseIndex_eq (hp.trans hq.symm), signedPairCount_def,
     hX₀.unstableSet_eq_singleton_of_manifoldMorseIndex_eq_zero hf₀
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.property) hp,
@@ -226,19 +258,22 @@ theorem pairSign_of_morseIndex_eq_finrank (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
       simp [Module.Ray.ne_neg_self, (Module.Ray.ne_neg_self _).symm]
 
 open scoped Classical in
-/-- **The signed pair coefficients between critical points of top index.** The stable manifold of
-a critical point `q` of index `n = dim M` is the point `q` itself, so it meets the unstable
-manifold of a critical point `p` of index `n` exactly when `q` lies in `W^u_{X₀}(p)`, and then the
-coefficient of `q` in the image of `p` is the product of the fundamental signs of `p` and `q` for
-any orientation `oM` of `M`. -/
+/-- **The signed pair coefficients at a critical point of top index.** The stable manifold of a
+critical point `q` of index `n = dim M` is the point `q` itself, so it meets the unstable manifold
+of a critical point `p` exactly when `q` lies in `W^u_{X₀}(p)`, and then the coefficient of `q` in
+the image of `p` is the product of the fundamental signs of `p` and `q` for any orientation `oM`
+of `M`. Both sides vanish unless `p` has index `n`. -/
 theorem signedPairCoeff_of_morseIndex_eq_finrank (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
     (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E))) {p : criticalPoints 𝓘(ℝ, E) f₀}
-    {q : criticalPoints 𝓘(ℝ, E) f₁} (hp : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = finrank ℝ E)
-    (hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = finrank ℝ E) :
+    {q : criticalPoints 𝓘(ℝ, E) f₁} (hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = finrank ℝ E) :
     hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q =
       if (q : M) ∈ hX₀.flow.unstableSet p then
         hX₀.fundamentalSign 𝔬₀ oM p * hX₁.fundamentalSign 𝔬₁ oM q
       else 0 := by
+  by_cases hp : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = finrank ℝ E
+  swap
+  · rw [signedPairCoeff_eq_zero_of_morseIndex_ne (by omega), fundamentalSign_of_morseIndex_ne hp,
+      zero_mul, ite_self]
   rw [signedPairCoeff_of_morseIndex_eq (hp.trans hq.symm), signedPairCount_def,
     hX₁.stableSet_eq_singleton_of_manifoldMorseIndex_eq_finrank
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.property) hq]
@@ -246,6 +281,119 @@ theorem signedPairCoeff_of_morseIndex_eq_finrank (hf₀ : IsMorse 𝓘(ℝ, E) f
   · rw [inter_singleton_of_mem h, finsum_mem_singleton]
     exact pairSign_of_morseIndex_eq_finrank 𝔬₀ 𝔬₁ hf₀ oM hp hq h
   · rw [inter_singleton_eq_empty.2 h, finsum_mem_empty]
+
+/-! ### Augmentations and fundamental chains -/
+
+namespace IsMorseSmalePair
+
+variable (h : IsMorseSmalePair hX₀ hX₁) (hf₀ : IsMorse 𝓘(ℝ, E) f₀) (hf₁ : IsMorse 𝓘(ℝ, E) f₁)
+include h hf₀
+
+/-- **The signed pair map commutes with the augmentations**, at the level of coefficients: for a
+Morse–Smale pair, the coefficients of the image of a critical point `p` of `f₀`, weighted by the
+augmentation signs of `f₁`, add up to the augmentation sign of `p`. -/
+theorem finsum_signedPairCoeff_mul_augmentationSign (p : criticalPoints 𝓘(ℝ, E) f₀) :
+    ∑ᶠ q, hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q * 𝔬₁.augmentationSign q = 𝔬₀.augmentationSign p := by
+  classical
+  by_cases hp : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = 0
+  · -- `p` lies on the stable manifold of a single critical point `q₀` of `f₁`, of index `0`.
+    obtain ⟨c, hc, hpc⟩ := hX₁.exists_mem_stableSet (p : M)
+    set q₀ : criticalPoints 𝓘(ℝ, E) f₁ := ⟨c, mem_criticalPoints_iff_mfderiv_eq_zero.2 hc⟩
+    have hq₀ : manifoldMorseIndex 𝓘(ℝ, E) f₁ q₀ = 0 := Nat.le_zero.1 (hp ▸
+      h.manifoldMorseIndex_le hf₀ ⟨p, hX₀.mem_unstableSet_self p.property, hpc⟩)
+    rw [finsum_eq_single _ q₀ fun q hq ↦ ?_]
+    · rw [signedPairCoeff_of_morseIndex_eq_zero 𝔬₀ 𝔬₁ hf₀ (q := q₀) hp, ite_eq_left hpc]
+      have hsq := 𝔬₁.augmentationSign_mul_self (R := ℤ) hq₀
+      rw [Int.cast_id] at hsq
+      rw [mul_assoc, hsq, mul_one]
+    · -- The stable manifolds of distinct critical points are disjoint.
+      have hpq : (p : M) ∉ hX₁.flow.stableSet q := fun hpq ↦
+        disjoint_left.1 (Flow.disjoint_stableSet (Subtype.coe_injective.ne hq)) hpq hpc
+      rw [signedPairCoeff_of_morseIndex_eq_zero 𝔬₀ 𝔬₁ hf₀ (q := q) hp, ite_eq_right hpq, zero_mul]
+  · -- Nonzero coefficients join `p` to critical points of the same positive index.
+    rw [𝔬₀.augmentationSign_of_morseIndex_ne_zero hp]
+    refine finsum_eq_zero_of_forall_eq_zero fun q ↦ ?_
+    by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q
+    · rw [𝔬₁.augmentationSign_of_morseIndex_ne_zero (hpq ▸ hp), mul_zero]
+    · rw [signedPairCoeff_eq_zero_of_morseIndex_ne hpq, zero_mul]
+
+include hf₁ in
+/-- **The signed pair map commutes with the augmentations.** For a Morse–Smale pair of
+pseudo-gradients adapted to Morse functions, `ε₁ ∘ P = ε₀` for the augmentations `ε₀` and `ε₁` of
+the Morse chains of `f₀` and `f₁`, with coefficients in any ring. -/
+theorem signedMorseAugmentation_comp_signedPairMap (R : Type*) [Ring R] :
+    𝔬₁.signedMorseAugmentation R ∘ₗ hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R =
+      𝔬₀.signedMorseAugmentation R := by
+  classical
+  have := hf₁.finite_criticalPoints.to_subtype
+  have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f₁)
+  refine Finsupp.lhom_ext fun p a ↦ ?_
+  rw [LinearMap.comp_apply, MorseOrientation.signedMorseAugmentation_apply,
+    Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _, MorseOrientation.signedMorseAugmentation_single,
+    ← h.finsum_signedPairCoeff_mul_augmentationSign 𝔬₀ 𝔬₁ hf₀ p, finsum_eq_sum_of_fintype]
+  simp only [signedPairMap_single_apply, Int.cast_sum, Int.cast_mul, Finset.mul_sum, mul_assoc]
+
+/-- **The augmentation of the image of a chain under the signed pair map** is the augmentation of
+the chain. The applied form of `ε₁ ∘ P = ε₀`. -/
+@[simp]
+theorem signedMorseAugmentation_signedPairMap {R : Type*} [Ring R]
+    (c : criticalPoints 𝓘(ℝ, E) f₀ →₀ R) :
+    𝔬₁.signedMorseAugmentation R (hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R c) =
+      𝔬₀.signedMorseAugmentation R c := by
+  rw [← LinearMap.comp_apply, h.signedMorseAugmentation_comp_signedPairMap 𝔬₀ 𝔬₁ hf₀ hf₁ R]
+
+variable (oM : Manifold.Orientation 𝓘(ℝ, E) M (Fin (finrank ℝ E)))
+
+/-- **The signed pair map preserves the fundamental chains**, at the level of coefficients: for a
+Morse–Smale pair and an orientation `oM` of `M`, the coefficients of a critical point `q` of `f₁`
+in the images of the critical points of `f₀`, weighted by the fundamental signs of `f₀`, add up to
+the fundamental sign of `q`. -/
+theorem finsum_fundamentalSign_mul_signedPairCoeff (q : criticalPoints 𝓘(ℝ, E) f₁) :
+    ∑ᶠ p, hX₀.fundamentalSign 𝔬₀ oM p * hX₀.signedPairCoeff hX₁ 𝔬₀ 𝔬₁ p q =
+      hX₁.fundamentalSign 𝔬₁ oM q := by
+  classical
+  by_cases hq : manifoldMorseIndex 𝓘(ℝ, E) f₁ q = finrank ℝ E
+  · -- `q` lies on the unstable manifold of a single critical point `p₀` of `f₀`, of index `n`.
+    obtain ⟨c, hc, hqc⟩ := hX₀.exists_mem_unstableSet (q : M)
+    set p₀ : criticalPoints 𝓘(ℝ, E) f₀ := ⟨c, mem_criticalPoints_iff_mfderiv_eq_zero.2 hc⟩
+    have hp₀ : manifoldMorseIndex 𝓘(ℝ, E) f₀ p₀ = finrank ℝ E :=
+      le_antisymm manifoldMorseIndex_le_finrank (hq ▸
+        h.manifoldMorseIndex_le hf₀ ⟨q, hqc, hX₁.mem_stableSet_self q.property⟩)
+    rw [finsum_eq_single _ p₀ fun p hp ↦ ?_]
+    · rw [signedPairCoeff_of_morseIndex_eq_finrank 𝔬₀ 𝔬₁ hf₀ oM (p := p₀) hq, ite_eq_left hqc]
+      have hsq := fundamentalSign_mul_self (R := ℤ) (hX := hX₀) (𝔬 := 𝔬₀) (oM := oM) hp₀
+      rw [Int.cast_id] at hsq
+      rw [← mul_assoc, hsq, one_mul]
+    · -- The unstable manifolds of distinct critical points are disjoint.
+      have hqp : (q : M) ∉ hX₀.flow.unstableSet p := fun hqp ↦
+        disjoint_left.1 (Flow.disjoint_unstableSet (Subtype.coe_injective.ne hp)) hqp hqc
+      rw [signedPairCoeff_of_morseIndex_eq_finrank 𝔬₀ 𝔬₁ hf₀ oM (p := p) hq, ite_eq_right hqp,
+        mul_zero]
+  · -- Nonzero coefficients join `q` to critical points of the same index, less than `n`.
+    rw [fundamentalSign_of_morseIndex_ne hq]
+    refine finsum_eq_zero_of_forall_eq_zero fun p ↦ ?_
+    by_cases hpq : manifoldMorseIndex 𝓘(ℝ, E) f₀ p = manifoldMorseIndex 𝓘(ℝ, E) f₁ q
+    · rw [fundamentalSign_of_morseIndex_ne (hpq ▸ hq), zero_mul]
+    · rw [signedPairCoeff_eq_zero_of_morseIndex_ne hpq, mul_zero]
+
+/-- **The signed pair map preserves the fundamental chains.** For a Morse–Smale pair of
+pseudo-gradients adapted to Morse functions and an orientation `oM` of `M`, the signed pair map
+sends the fundamental chain `[M]` of `f₀` to the fundamental chain of `f₁`, with coefficients in any
+ring. -/
+@[simp]
+theorem signedPairMap_signedMorseFundamentalChain (R : Type*) [Ring R] :
+    hX₀.signedPairMap hX₁ 𝔬₀ 𝔬₁ hf₁ R (hX₀.signedMorseFundamentalChain 𝔬₀ oM hf₀ R) =
+      hX₁.signedMorseFundamentalChain 𝔬₁ oM hf₁ R := by
+  classical
+  have := hf₀.finite_criticalPoints.to_subtype
+  have := Fintype.ofFinite (criticalPoints 𝓘(ℝ, E) f₀)
+  ext q
+  rw [signedPairMap_apply, Finsupp.sum_fintype _ _ fun _ ↦ zero_mul _,
+    signedMorseFundamentalChain_apply,
+    ← h.finsum_fundamentalSign_mul_signedPairCoeff 𝔬₀ 𝔬₁ hf₀ oM q, finsum_eq_sum_of_fintype]
+  simp only [signedMorseFundamentalChain_apply, Int.cast_sum, Int.cast_mul]
+
+end IsMorseSmalePair
 
 end IsAdaptedPseudoGradient
 
