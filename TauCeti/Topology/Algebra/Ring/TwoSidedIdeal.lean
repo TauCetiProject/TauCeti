@@ -279,6 +279,45 @@ theorem isEssential_iff_forall_isClosed [StarRing A] [IsProperStar A] {I : TwoSi
 
 end Annihilator
 
+end TwoSidedIdeal
+
+namespace AddSubgroup
+
+section ApproximateUnit
+
+variable {R A : Type*} [NonUnitalNonAssocRing A] [TopologicalSpace A]
+  [SMul R A] [ContinuousConstSMul R A]
+
+/-- In a topological nonunital ring with a scalar-compatible `R`-action and a nontrivial filter
+`l` satisfying `a * e → a`, every closed additive subgroup closed under right multiplication is
+closed under `R`-scalar multiplication. -/
+theorem smul_mem_of_isClosed_right_of_tendsto [SMulCommClass R A A]
+    (I : AddSubgroup A) (hI : IsClosed (I : Set A))
+    (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, a * b ∈ I)
+    {l : Filter A} [l.NeBot] (c : R) {a : A}
+    (hl : Tendsto (a * ·) l (𝓝 a)) (ha : a ∈ I) : c • a ∈ I := by
+  have hlim : Tendsto (fun e : A => a * (c • e)) l (𝓝 (c • a)) := by
+    simpa only [mul_smul_comm] using hl.const_smul c
+  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => hmul ha (c • e))
+
+/-- In a topological nonunital ring with a scalar-compatible `R`-action and a nontrivial filter
+`l` satisfying `e * a → a`, every closed additive subgroup closed under left multiplication is
+closed under `R`-scalar multiplication. -/
+theorem smul_mem_of_isClosed_left_of_tendsto [IsScalarTower R A A]
+    (I : AddSubgroup A) (hI : IsClosed (I : Set A))
+    (hmul : ∀ {a : A}, a ∈ I → ∀ b : A, b * a ∈ I)
+    {l : Filter A} [l.NeBot] (c : R) {a : A}
+    (hl : Tendsto (· * a) l (𝓝 a)) (ha : a ∈ I) : c • a ∈ I := by
+  have hlim : Tendsto (fun e : A => (c • e) * a) l (𝓝 (c • a)) := by
+    simpa only [smul_mul_assoc] using hl.const_smul c
+  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => hmul ha (c • e))
+
+end ApproximateUnit
+
+end AddSubgroup
+
+namespace TwoSidedIdeal
+
 section ApproximateUnit
 
 variable {R A : Type*} [Semiring R] [NonUnitalRing A] [TopologicalSpace A]
@@ -290,9 +329,8 @@ theorem smul_mem_of_isApproximateUnit (I : TwoSidedIdeal A) [hI : IsClosed (I : 
     {l : Filter A} (hl : l.IsApproximateUnit) (c : R) {a : A} (ha : a ∈ I) :
     c • a ∈ I := by
   have := hl.neBot
-  have hlim : Tendsto (fun e => (c • e) * a) l (𝓝 (c • a)) := by
-    simpa only [smul_mul_assoc] using (hl.tendsto_mul_right a).const_smul c
-  exact hI.mem_of_tendsto hlim (Eventually.of_forall fun e => I.mul_mem_left (c • e) a ha)
+  exact (AddSubgroup.ofClass I).smul_mem_of_isClosed_left_of_tendsto hI
+    (fun hx b => I.mul_mem_left b _ hx) c (hl.tendsto_mul_right a) ha
 
 end ApproximateUnit
 
