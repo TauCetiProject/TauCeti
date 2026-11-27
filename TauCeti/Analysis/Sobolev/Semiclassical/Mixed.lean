@@ -53,7 +53,11 @@ At scale one the mixed norm is equivalent to the ordinary Sobolev norm
 `∑_{n ≤ j} ‖Dⁿ f‖₂`, with constants depending only on `j`
 (`Submodule.memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le`,
 `Submodule.mixedSemiclassicalSobolevNorm_one_le_mul_semiclassicalSobolevNorm_one`). Together with
-the dilation identity this gives the **Sobolev embedding uniformly in the scale**: if `2j > dim E`,
+the dilation identity, the mixed norm at scale `h` is equivalent to the Sobolev norm of the dilated
+field, with the same constants
+(`Submodule.memLp_iteratedFDeriv_comp_normalDilation_and_semiclassicalSobolevNorm_le`,
+`Submodule.memLp_mixedIteratedFDeriv_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation`).
+This gives the **Sobolev embedding uniformly in the scale**: if `2j > dim E`,
 then `|f(x)| ≤ C ‖f‖_{j,h,V}` for every real-valued `f` of class `Cʲ` whose mixed derivatives
 through total order `j` are square integrable, and every `h > 0`, with `C` independent of `h`
 (`Submodule.exists_norm_le_mul_mixedSemiclassicalSobolevNorm`). This is the pointwise control
@@ -425,6 +429,36 @@ theorem mixedSemiclassicalSobolevNorm_one_le_mul_semiclassicalSobolevNorm_one {j
         refine mul_le_mul_of_nonneg_right ?_ lpNorm_nonneg
         exact_mod_cast Nat.succ_le_succ hn
 
+/-- **The mixed norm at scale `h` controls the Sobolev norm of the dilated field.** For `h > 0`
+and `u` of class `Cʲ` whose mixed derivatives through total order `j` are square integrable, the
+derivatives of `u ∘ normalDilation V h` through order `j` are square integrable and
+`∑_{n ≤ j} ‖Dⁿ (u ∘ normalDilation V h)‖₂ ≤ 2ʲ ‖u‖_{j,h,V}`. -/
+theorem memLp_iteratedFDeriv_comp_normalDilation_and_semiclassicalSobolevNorm_le {j : ℕ}
+    {u : E → F} (hu : ContDiff ℝ j u)
+    (hum : ∀ n ≤ j, ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a u) 2) {h : ℝ} (hh : 0 < h) :
+    (∀ n ≤ j, MemLp (iteratedFDeriv ℝ n (u ∘ V.normalDilation h)) 2) ∧
+      TauCeti.semiclassicalSobolevNorm j 1 (u ∘ V.normalDilation h) ≤
+        2 ^ j * V.mixedSemiclassicalSobolevNorm j h u := by
+  rw [V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j u hh]
+  exact V.memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le
+    (hu.comp (V.normalDilation h).contDiff) fun n hn a ha ↦
+      (V.memLp_mixedIteratedFDeriv_comp_normalDilation_iff n a u hh.ne').2 (hum n hn a ha)
+
+/-- **The Sobolev norm of the dilated field controls the mixed norm at scale `h`.** For `h > 0`
+and `φ` such that the derivatives of `φ ∘ normalDilation V h` through order `j` are square
+integrable, the mixed derivatives of `φ` through total order `j` are square integrable and
+`‖φ‖_{j,h,V} ≤ (j + 1) ∑_{n ≤ j} ‖Dⁿ (φ ∘ normalDilation V h)‖₂`. -/
+theorem memLp_mixedIteratedFDeriv_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation
+    {j : ℕ} {φ : E → F} {h : ℝ} (hh : 0 < h)
+    (hφ : ∀ n ≤ j, MemLp (iteratedFDeriv ℝ n (φ ∘ V.normalDilation h)) 2) :
+    (∀ n ≤ j, ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a φ) 2) ∧
+      V.mixedSemiclassicalSobolevNorm j h φ ≤
+        (j + 1) * TauCeti.semiclassicalSobolevNorm j 1 (φ ∘ V.normalDilation h) := by
+  refine ⟨fun n hn a _ ↦ (V.memLp_mixedIteratedFDeriv_comp_normalDilation_iff n a φ hh.ne').1
+    (V.memLp_mixedIteratedFDeriv (hφ n hn) a), ?_⟩
+  rw [V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j φ hh]
+  exact V.mixedSemiclassicalSobolevNorm_one_le_mul_semiclassicalSobolevNorm_one hφ
+
 /-- **The Sobolev embedding for the mixed norms, uniformly in the scale.** If `2j > dim E`, there
 is a constant `C ≥ 0` such that for every `h > 0` and every real-valued function `f` of class
 `Cʲ` whose mixed derivatives through total order `j` are square integrable,
@@ -436,18 +470,14 @@ theorem exists_norm_le_mul_mixedSemiclassicalSobolevNorm {j : ℕ} (hj : finrank
   obtain ⟨C, hC, hCf⟩ := TauCeti.exists_norm_le_mul_semiclassicalSobolevNorm (E := E) hj
   refine ⟨C * 2 ^ j, by positivity, fun h hh f hf hm x ↦ ?_⟩
   -- Read `f` in the normal coordinate rescaled by `h`.
-  set g := f ∘ V.normalDilation h with hg_def
-  have hg : ContDiff ℝ j g := hf.comp (V.normalDilation h).contDiff
-  have hgm (n : ℕ) (hn : n ≤ j) (a : ℕ) (ha : a ≤ n) :
-      MemLp (V.mixedIteratedFDeriv n a g) 2 :=
-    (V.memLp_mixedIteratedFDeriv_comp_normalDilation_iff n a f hh.ne').2 (hm n hn a ha)
-  obtain ⟨hDg, hle⟩ := V.memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le hg hgm
-  have hx : g ((V.normalDilationEquiv hh.ne').symm x) = f x := by
-    rw [hg_def, Function.comp_apply,
-      ← normalDilationEquiv_apply _ hh.ne',
+  obtain ⟨hD, hle⟩ :=
+    V.memLp_iteratedFDeriv_comp_normalDilation_and_semiclassicalSobolevNorm_le hf hm hh
+  have hx : (f ∘ V.normalDilation h) ((V.normalDilationEquiv hh.ne').symm x) = f x := by
+    rw [Function.comp_apply, ← normalDilationEquiv_apply _ hh.ne',
       ContinuousLinearEquiv.apply_symm_apply]
-  rw [← hx, V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j f hh, mul_assoc]
-  exact (hCf 1 one_pos g hg hDg _).trans (mul_le_mul_of_nonneg_left hle hC)
+  rw [← hx, mul_assoc]
+  exact (hCf 1 one_pos _ (hf.comp (V.normalDilation h).contDiff) hD _).trans
+    (mul_le_mul_of_nonneg_left hle hC)
 
 
 /-- **A horizontal derivative is bounded on the mixed norms, without loss in the scale.** For `f`
@@ -535,29 +565,24 @@ theorem exists_mixedSemiclassicalSobolevNorm_mul_le {j : ℕ} (hj : finrank ℝ 
   -- Sobolev norm, where the algebra estimate holds; the product of the dilated fields is the
   -- dilated product.
   set δ := V.normalDilation h
-  have hδ {u : E → ℝ} (hu : ContDiff ℝ j u)
-      (hum : ∀ n ≤ j, ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a u) 2) :=
-    V.memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le (hu.comp δ.contDiff)
-      fun n hn a ha ↦ (V.memLp_mixedIteratedFDeriv_comp_normalDilation_iff n a u hh.ne').2
-        (hum n hn a ha)
-  obtain ⟨hfD, hfle⟩ := hδ hf hfm
-  obtain ⟨hgD, hgle⟩ := hδ hg hgm
+  obtain ⟨hfD, hfle⟩ :=
+    V.memLp_iteratedFDeriv_comp_normalDilation_and_semiclassicalSobolevNorm_le hf hfm hh
+  obtain ⟨hgD, hgle⟩ :=
+    V.memLp_iteratedFDeriv_comp_normalDilation_and_semiclassicalSobolevNorm_le hg hgm hh
   obtain ⟨hfgD, hfgle⟩ := hCfg 1 one_pos _ _ (hf.comp δ.contDiff) (hg.comp δ.contDiff) hfD hgD
-  refine ⟨fun n hn a _ ↦ (V.memLp_mixedIteratedFDeriv_comp_normalDilation_iff n a (f * g)
-    hh.ne').1 (Pi.mul_comp f g δ ▸ V.memLp_mixedIteratedFDeriv (hfgD n hn) a), ?_⟩
-  rw [V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j _ hh, Pi.mul_comp,
-    V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j f hh,
-    V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j g hh]
+  obtain ⟨hfgm, hle⟩ :=
+    V.memLp_mixedIteratedFDeriv_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation
+      (φ := f * g) hh (Pi.mul_comp f g δ ▸ hfgD)
+  refine ⟨hfgm, hle.trans ?_⟩
+  rw [Pi.mul_comp]
   have h4 : (4 : ℝ) ^ j = 2 ^ j * 2 ^ j := by rw [← mul_pow]; norm_num
-  calc _ ≤ (j + 1) * TauCeti.semiclassicalSobolevNorm j 1 ((f ∘ δ) * (g ∘ δ)) :=
-        V.mixedSemiclassicalSobolevNorm_one_le_mul_semiclassicalSobolevNorm_one hfgD
-    _ ≤ (j + 1) * (C * (2 ^ j * V.mixedSemiclassicalSobolevNorm j 1 (f ∘ δ)) *
-          (2 ^ j * V.mixedSemiclassicalSobolevNorm j 1 (g ∘ δ))) := by
+  calc _ ≤ (j + 1) * (C * (2 ^ j * V.mixedSemiclassicalSobolevNorm j h f) *
+          (2 ^ j * V.mixedSemiclassicalSobolevNorm j h g)) := by
         refine mul_le_mul_of_nonneg_left (hfgle.trans (mul_le_mul
           (mul_le_mul_of_nonneg_left hfle hC) hgle
           (TauCeti.semiclassicalSobolevNorm_nonneg j zero_le_one _) ?_)) (by positivity)
         exact mul_nonneg hC (mul_nonneg (by positivity)
-          (V.mixedSemiclassicalSobolevNorm_nonneg j zero_le_one _))
+          (V.mixedSemiclassicalSobolevNorm_nonneg j hh.le _))
     _ = _ := by rw [h4]; ring
 
 section Multiplier
@@ -584,24 +609,20 @@ private theorem memLp_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilatio
     (∀ n ≤ j, ∀ a ≤ n, MemLp (V.mixedIteratedFDeriv n a φ) 2) ∧
       V.mixedSemiclassicalSobolevNorm j h φ ≤
         (j + 1) ^ 2 * 8 ^ j * B * V.mixedSemiclassicalSobolevNorm j h u := by
-  obtain ⟨huD, hule⟩ := V.memLp_iteratedFDeriv_and_semiclassicalSobolevNorm_one_le
-    (hu.comp (V.normalDilation h).contDiff) fun n hn a ha ↦
-      (V.memLp_mixedIteratedFDeriv_comp_normalDilation_iff n a u hh.ne').2 (hum n hn a ha)
+  obtain ⟨huD, hule⟩ :=
+    V.memLp_iteratedFDeriv_comp_normalDilation_and_semiclassicalSobolevNorm_le hu hum hh
   have hB0 : 0 ≤ B :=
     (mul_nonneg (pow_nonneg hh.le _) (norm_nonneg _)).trans (hB 0 (Nat.zero_le _) 0 le_rfl 0)
   obtain ⟨hφD, hφle⟩ := hφ huD fun i hi x ↦ by
     rw [one_pow, one_mul]
     exact (V.norm_iteratedFDeriv_comp_normalDilation_le (hg.of_le (by exact_mod_cast hi)) hh.le
       (hB i hi) x).trans (mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two hi) hB0)
-  refine ⟨fun n hn a _ ↦ (V.memLp_mixedIteratedFDeriv_comp_normalDilation_iff n a φ hh.ne').1
-    (V.memLp_mixedIteratedFDeriv (hφD n hn) a), ?_⟩
-  rw [V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j φ hh,
-    V.mixedSemiclassicalSobolevNorm_eq_comp_normalDilation j u hh]
+  obtain ⟨hφm, hle⟩ :=
+    V.memLp_mixedIteratedFDeriv_and_mixedSemiclassicalSobolevNorm_le_of_comp_normalDilation hh hφD
+  refine ⟨hφm, hle.trans ?_⟩
   have h8 : (8 : ℝ) ^ j = 2 ^ j * 2 ^ j * 2 ^ j := by rw [← mul_pow, ← mul_pow]; norm_num
-  calc _ ≤ (j + 1) * TauCeti.semiclassicalSobolevNorm j 1 (φ ∘ V.normalDilation h) :=
-        V.mixedSemiclassicalSobolevNorm_one_le_mul_semiclassicalSobolevNorm_one hφD
-    _ ≤ (j + 1) * ((j + 1) * 2 ^ j * (2 ^ j * B) * (2 ^ j *
-          V.mixedSemiclassicalSobolevNorm j 1 (u ∘ V.normalDilation h))) :=
+  calc _ ≤ (j + 1) * ((j + 1) * 2 ^ j * (2 ^ j * B) * (2 ^ j *
+          V.mixedSemiclassicalSobolevNorm j h u)) :=
         mul_le_mul_of_nonneg_left (hφle.trans (mul_le_mul_of_nonneg_left hule (by positivity)))
           (by positivity)
     _ = _ := by rw [h8]; ring
