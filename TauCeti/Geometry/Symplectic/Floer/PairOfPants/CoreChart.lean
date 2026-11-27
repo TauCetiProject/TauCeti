@@ -165,13 +165,6 @@ theorem norm_circleMap_half_pairOfPantsOuterRadius (θ : ℝ) :
   rw [add_assoc, mul_comm, add_comm (Real.cos θ * _), pairOfPantsOuterRadius_sq_add] at h
   nlinarith [norm_nonneg (circleMap (1 / 2 : ℂ) (pairOfPantsOuterRadius θ) θ)]
 
-/-- **Membership in the truncation `S₀`.** A point lies in `S₀` exactly when it is at distance at
-least `1/2` from both inputs `0` and `1` and at distance at most `2` from `0`. -/
-theorem mem_truncation_zero_iff {w : ℂ} :
-    w ∈ truncation 0 ↔ 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ ∧ ‖w‖ ≤ 2 := by
-  rw [truncation_eq]
-  simp [and_assoc]
-
 /-- On the ray from `1/2` at the angle `θ`, the truncation `S₀` is the segment of radii
 `[|cos θ|, R θ]`. -/
 private theorem circleMap_half_mem_truncation_zero_iff {ρ θ : ℝ} (hρ : 0 < ρ) :

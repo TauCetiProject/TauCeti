@@ -54,7 +54,10 @@ taken; an open set on which all three are at most `R` already lies in `S_R`
 `R q` gives the truncation at these heights (`TauCeti.ThricePuncturedSphere.truncationAt`), also
 compact (`TauCeti.ThricePuncturedSphere.isCompact_truncationAt`); with a smaller height on one end
 it is `S_R` cut short along a circle of that end
-(`TauCeti.ThricePuncturedSphere.truncation_inter_eq_truncationAt`). In the real coordinates
+(`TauCeti.ThricePuncturedSphere.truncation_inter_eq_truncationAt`). For `R ≥ 0`, `S_R` is
+`S₀ = {1/2 ≤ ‖w‖, 1/2 ≤ ‖w - 1‖, ‖w‖ ≤ 2}` (`TauCeti.ThricePuncturedSphere.mem_truncation_zero_iff`)
+together with the annuli of the three ends between the heights `0` and `R`
+(`TauCeti.ThricePuncturedSphere.truncation_eq_union`). In the real coordinates
 `ℝ × ℝ ≃ ℂ` the longitudinal coordinates are measurable
 (`Puncture.measurable_re_endCoord`), and so are the truncation and its parts `±s ≤ c` on an end
 (`TauCeti.ThricePuncturedSphere.measurableSet_preimage_truncation`,
@@ -854,6 +857,41 @@ theorem truncation_eq (R : ℝ) :
       {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖} ∩
         Metric.closedBall 0 (2 * Real.exp (2 * π * R)) := by
   rw [← truncationAt_const, truncationAt_eq]
+
+/-- **Membership in the truncation `S₀`.** A point lies in `S₀` exactly when it is at distance at
+least `1/2` from both inputs `0` and `1` and at distance at most `2` from `0`. -/
+theorem mem_truncation_zero_iff {w : ℂ} :
+    w ∈ truncation 0 ↔ 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ ∧ ‖w‖ ≤ 2 := by
+  rw [truncation_eq]
+  simp [and_assoc]
+
+/-- For `R ≥ 0`, the truncation `S_R` is the truncation `S₀` together with the annuli of the three
+ends between the heights `0` and `R`. -/
+theorem truncation_eq_union {R : ℝ} (hR : 0 ≤ R) :
+    truncation R = ((truncation 0 ∪ {w | 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * Real.exp (2 * π * R)}) ∪
+      {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 1 / 2}) ∪
+        {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ ∧ ‖w - 1‖ ≤ 1 / 2} := by
+  have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have he' : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp_iff.2 (by nlinarith [Real.pi_pos])
+  ext w
+  have h₁ : ‖w‖ - 1 ≤ ‖w - 1‖ := by simpa using norm_sub_norm_le w 1
+  have h₂ : 1 - ‖w‖ ≤ ‖w - 1‖ := by simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w
+  simp only [truncation_eq, mul_zero, neg_zero, Real.exp_zero, mul_one, mem_union, mem_inter_iff,
+    mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
+  constructor
+  · rintro ⟨⟨ha, hb⟩, hc⟩
+    by_cases h₃ : 2 < ‖w‖
+    · exact .inl (.inl (.inr ⟨h₃.le, hc⟩))
+    by_cases h₄ : ‖w‖ < 1 / 2
+    · exact .inl (.inr ⟨ha, h₄.le⟩)
+    by_cases h₅ : ‖w - 1‖ < 1 / 2
+    · exact .inr ⟨hb, h₅.le⟩
+    exact .inl (.inl (.inl ⟨⟨by linarith, by linarith⟩, by linarith⟩))
+  · rintro (((⟨⟨ha, hb⟩, hc⟩ | ⟨ha, hb⟩) | ⟨ha, hb⟩) | ⟨ha, hb⟩)
+    · exact ⟨⟨by linarith, by linarith⟩, by linarith⟩
+    · exact ⟨⟨by linarith, by linarith⟩, hb⟩
+    · exact ⟨⟨ha, by linarith⟩, by linarith⟩
+    · exact ⟨⟨by linarith, ha⟩, by linarith⟩
 
 /-- The points of the disc `‖w‖ ≤ 2 exp (2πR)` outside the truncation `S_R` lie in the open disc
 `‖w‖ < 2 exp (2π)`: for `R ≥ 0` they are within `exp (-2πR) / 2 ≤ 1 / 2` of `0` or `1`, and for

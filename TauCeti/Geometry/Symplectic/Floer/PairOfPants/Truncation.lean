@@ -700,33 +700,6 @@ private theorem le_norm_sub_one (w : ℂ) :
     ‖w‖ - 1 ≤ ‖w - 1‖ ∧ 1 - ‖w‖ ≤ ‖w - 1‖ :=
   ⟨by simpa using norm_sub_norm_le w 1, by simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w⟩
 
-/-- For `R ≥ 0`, the truncation `S_R` is the truncation `S₀` together with the annuli of the three
-ends between the heights `0` and `R`. -/
-private theorem truncation_eq_union {R : ℝ} (hR : 0 ≤ R) :
-    truncation R = ((truncation 0 ∪ {w | 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * Real.exp (2 * π * R)}) ∪
-      {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ ∧ ‖w‖ ≤ 1 / 2}) ∪
-        {w | Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖ ∧ ‖w - 1‖ ≤ 1 / 2} := by
-  have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-  have he' : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp_iff.2 (by nlinarith [Real.pi_pos])
-  ext w
-  obtain ⟨h₁, h₂⟩ := le_norm_sub_one w
-  simp only [truncation_eq, mul_zero, neg_zero, Real.exp_zero, mul_one, mem_union, mem_inter_iff,
-    mem_ofPred_eq, Metric.mem_closedBall, dist_zero_right]
-  constructor
-  · rintro ⟨⟨ha, hb⟩, hc⟩
-    by_cases h₃ : 2 < ‖w‖
-    · exact .inl (.inl (.inr ⟨h₃.le, hc⟩))
-    by_cases h₄ : ‖w‖ < 1 / 2
-    · exact .inl (.inr ⟨ha, h₄.le⟩)
-    by_cases h₅ : ‖w - 1‖ < 1 / 2
-    · exact .inr ⟨hb, h₅.le⟩
-    exact .inl (.inl (.inl ⟨⟨by linarith, by linarith⟩, by linarith⟩))
-  · rintro (((⟨⟨ha, hb⟩, hc⟩ | ⟨ha, hb⟩) | ⟨ha, hb⟩) | ⟨ha, hb⟩)
-    · exact ⟨⟨by linarith, by linarith⟩, by linarith⟩
-    · exact ⟨⟨by linarith, by linarith⟩, hb⟩
-    · exact ⟨⟨ha, by linarith⟩, by linarith⟩
-    · exact ⟨⟨by linarith, ha⟩, by linarith⟩
-
 /-- **The integral over the truncation, piece by piece.** For `R ≥ 0` and a function integrable
 on `S_R`, its integral over `S_R` is the sum of its integrals over the annuli of the inputs, over
 `S₀` and over the annulus of the output; the pieces meet only along the circles `‖w‖ = 2`,
