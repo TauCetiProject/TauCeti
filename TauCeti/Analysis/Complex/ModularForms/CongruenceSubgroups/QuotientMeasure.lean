@@ -44,6 +44,9 @@ domain (`Subgroup.lintegral_quotientVolume`, `Subgroup.integral_quotientVolume`)
   measure is finite for `Γ` of finite index and nonzero for every `Γ`.
 * `Subgroup.quotientVolume_top_univ`, `CongruenceSubgroup.quotientVolume_Gamma_two_univ`: the
   areas `π / 3` of `SL(2, ℤ) \ ℍ` and `2π` of `Γ(2) \ ℍ`.
+* `CongruenceSubgroup.quotientVolume_Gamma0_univ`,
+  `CongruenceSubgroup.quotientVolume_Gamma0_univ_eq_mul_prod`: the area of `Γ₀(N) \ ℍ` is
+  `[SL(2, ℤ) : Γ₀(N)] · π / 3 = (π / 3) · N · ∏_{p ∣ N} (1 + 1 / p)`.
 
 ## References
 
@@ -173,6 +176,29 @@ theorem quotientVolume_Gamma_two_univ :
   rw [Subgroup.quotientVolume_univ_eq_index_mul_of_neg_one_mem _
     (neg_one_mem_Gamma_iff.mpr dvd_rfl), index_Gamma_two, ← ENNReal.ofReal_natCast,
     ← ENNReal.ofReal_mul (by norm_num)]
+  ring_nf
+
+/-- **The area of `Γ₀(N) \ ℍ`** is `[SL(2, ℤ) : Γ₀(N)] · π / 3`: the group `Γ₀(N)` contains
+`-I`. -/
+theorem quotientVolume_Gamma0_univ {N : ℕ} [NeZero N] :
+    (Gamma0 N).quotientVolume univ = (Gamma0 N).index * ENNReal.ofReal (Real.pi / 3) :=
+  Subgroup.quotientVolume_univ_eq_index_mul_of_neg_one_mem _ (by simp [Gamma0_mem])
+
+/-- **Dedekind's form of the area of `Γ₀(N) \ ℍ`**: `(π / 3) · N · ∏_{p ∣ N} (1 + 1 / p)`. -/
+theorem quotientVolume_Gamma0_univ_eq_mul_prod {N : ℕ} [NeZero N] :
+    (Gamma0 N).quotientVolume univ =
+      ENNReal.ofReal (Real.pi / 3 * N * ∏ p ∈ N.primeFactors, (1 + (p : ℝ)⁻¹)) := by
+  have hp0 {p : ℕ} (hp : p ∈ N.primeFactors) : (p : ℝ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Nat.prime_of_mem_primeFactors hp).ne_zero
+  have hprod : (∏ p ∈ N.primeFactors, (p : ℝ)) ≠ 0 := Finset.prod_ne_zero_iff.mpr fun _ ↦ hp0
+  have hindex : ((Gamma0 N).index : ℝ) = N * ∏ p ∈ N.primeFactors, (1 + (p : ℝ)⁻¹) := by
+    have h := congrArg (Nat.cast (R := ℝ)) (Gamma0_index_mul_prod_primeFactors (N := N))
+    push_cast at h
+    rw [eq_div_of_mul_eq hprod h, mul_div_assoc, ← Finset.prod_div_distrib]
+    refine congrArg _ (Finset.prod_congr rfl fun p hp ↦ ?_)
+    field_simp [hp0 hp]
+  rw [quotientVolume_Gamma0_univ, ← ENNReal.ofReal_natCast,
+    ← ENNReal.ofReal_mul (Nat.cast_nonneg _), hindex]
   ring_nf
 
 end CongruenceSubgroup

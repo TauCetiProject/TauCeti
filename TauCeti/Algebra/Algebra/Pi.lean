@@ -28,7 +28,8 @@ they disagree on `Pi.single s 1`, so the evaluations enumerate those homomorphis
 repetition**: `Pi.evalAlgHomEquiv` packages that as an equivalence `ι ≃ ((ι → R) →ₐ[R] R)`.
 More generally, `AlgHom.sigmaEquivPi` identifies algebra maps from a finite product into a
 nontrivial semiring without zero divisors with maps from one factor, precomposed with its
-projection.
+projection, so a sum over the maps from a finite product splits along the factors
+(`AlgHom.finsum_apply_pi`).
 
 The injectivity half, `Pi.evalAlgHom_injective`, is what Mathlib does not record, and it is what
 makes the equivalence useful for counting: a split commutative algebra has exactly as many
@@ -79,6 +80,7 @@ algebra map `R → (ι → A)` of the product algebra.
   into a domain factors through one of the projections.
 * `AlgHom.sigmaEquivPi`: maps from a finite product into a nontrivial semiring without zero divisors
   are precisely maps from one factor, precomposed with its projection.
+* `AlgHom.finsum_apply_pi`: `∑_{φ : ∏ Aᵢ → B} φ x = ∑ᵢ ∑_{σ : Aᵢ → B} σ (xᵢ)`.
 * `Pi.evalAlgHom_injective`: distinct coordinates give distinct evaluation homomorphisms.
 * `Pi.evalAlgHomEquiv`: the coordinates of `ι → R` are exactly the `R`-algebra homomorphisms
   `(ι → R) →ₐ[R] R`.
@@ -264,6 +266,22 @@ theorem sigmaEquivPi_apply {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
     (i : ι) (φ : A i →ₐ[R] B) :
     sigmaEquivPi A B ⟨i, φ⟩ = φ.comp (Pi.evalAlgHom R A i) :=
   (rfl)
+
+/-- **Sums over the maps from a finite product.** The sum of `φ x` over the algebra maps `φ` from a
+finite product into a semiring without zero divisors splits along the factors:
+`∑_{φ : ∏ Aᵢ → B} φ x = ∑ᵢ ∑_{σ : Aᵢ → B} σ (xᵢ)`. -/
+theorem finsum_apply_pi {R ι : Type*} [CommSemiring R] [_root_.Finite ι]
+    {A : ι → Type*} [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)]
+    (B : Type*) [Semiring B] [Algebra R B] [NoZeroDivisors B]
+    [∀ i, _root_.Finite (A i →ₐ[R] B)] (x : Π i, A i) :
+    ∑ᶠ φ : (Π i, A i) →ₐ[R] B, φ x = ∑ᶠ i, ∑ᶠ σ : A i →ₐ[R] B, σ (x i) := by
+  -- Over the zero ring both sides vanish.
+  cases subsingleton_or_nontrivial B
+  · exact Subsingleton.elim _ _
+  have := Fintype.ofFinite ι
+  have (i : ι) := Fintype.ofFinite (A i →ₐ[R] B)
+  rw [← finsum_comp_equiv (sigmaEquivPi A B), finsum_eq_sum_of_fintype, Fintype.sum_sigma]
+  simp [finsum_eq_sum_of_fintype]
 
 end AlgHom
 

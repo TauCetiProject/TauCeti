@@ -39,6 +39,8 @@ of `TauCeti.exists_isOutwardPointingField`, is the classical construction of a c
 * `TauCeti.exists_contMDiffOn_localFlow_of_isOutwardPointing_neg`: an inward-pointing smooth
   vector field has smooth local forward integral curves through the points near a boundary point,
   which enter the interior at once.
+* `TauCeti.exists_contDiffOn_chartFlow_of_isOutwardPointing_neg`: the same flow read in the
+  preferred chart at `a`, as the forward part of a smooth local flow defined at negative times too.
 
 ## References
 
@@ -130,6 +132,55 @@ private theorem exists_isOpen_contDiffOn_chartField
     hv).mono hOdom').congr fun z _ ↦ ?_⟩
   exact (TangentBundle.trivializationAt_snd_eq_tangentCoordChange _).symm
 
+/-- **The chart flow of an inward field.** Let `v` be a vector field smooth on a neighbourhood `V`
+of a boundary point `a` of a manifold modeled on `𝓡∂ (n + 1)`, pointing inward at `a`, and let `φ`
+be the extended chart at `a`. Then there is a local flow `Ψ` of `v` read in `φ`, jointly smooth on
+`U × (-ε, ε)` for a neighbourhood `U` of `φ a`, which starts at the identity and whose zeroth
+coordinate increases strictly in time. For `z ∈ U` in the half-space, the forward curve
+`t ↦ Ψ z t` stays in the chart target over `V` and is an integral curve of `v` when read back on
+`M`. The velocity of `t ↦ Ψ (φ a) t` at time zero points strictly inward. -/
+theorem exists_contDiffOn_chartFlow_of_isOutwardPointing_neg
+    (v : (x : M) → TangentSpace (𝓡∂ (n + 1)) x) {a : M} {V : Set M}
+    (hv : ContMDiffOn (𝓡∂ (n + 1)) (𝓡∂ (n + 1)).tangent ∞ (fun x ↦ (⟨x, v x⟩ :
+      TangentBundle (𝓡∂ (n + 1)) M)) V)
+    (hV : V ∈ 𝓝 a) (ha : IsOutwardPointing a (-v a)) :
+    ∃ Ψ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ → EuclideanSpace ℝ (Fin (n + 1)),
+      ∃ U ∈ 𝓝 (extChartAt (𝓡∂ (n + 1)) a a), ∃ ε > 0,
+        ContDiffOn ℝ ∞ (fun q : EuclideanSpace ℝ (Fin (n + 1)) × ℝ ↦ Ψ q.1 q.2)
+          (U ×ˢ Ioo (-ε) ε) ∧ (∀ z, Ψ z 0 = z) ∧
+        (∀ z ∈ U, StrictMonoOn (fun t ↦ Ψ z t 0) (Ioo (-ε) ε)) ∧
+        (∀ z ∈ U, 0 ≤ z 0 → ∀ t ∈ Ico 0 ε, Ψ z t ∈ (extChartAt (𝓡∂ (n + 1)) a).target ∩
+          (extChartAt (𝓡∂ (n + 1)) a).symm ⁻¹' V) ∧
+        (∀ z ∈ U, 0 ≤ z 0 →
+          IsMIntegralCurveOn ((extChartAt (𝓡∂ (n + 1)) a).symm ∘ Ψ z) v (Ico 0 ε)) ∧
+        ∃ w₀, HasDerivAt (Ψ (extChartAt (𝓡∂ (n + 1)) a a)) w₀ 0 ∧ 0 < w₀ 0 := by
+  let φ := extChartAt (𝓡∂ (n + 1)) a
+  let w : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) := fun z ↦
+    tangentCoordChange (𝓡∂ (n + 1)) (φ.symm z) a (φ.symm z) (v (φ.symm z))
+  obtain ⟨O, hO, haO, hOdom, hw⟩ := exists_isOpen_contDiffOn_chartField v hv hV
+  -- Inwardness at `a` is positivity of the zeroth coordinate of the chart field.
+  have hwa : 0 < w (φ a) 0 := by
+    simp only [w]
+    rw [φ.left_inv (mem_extChartAt_source a)]
+    exact (isOutwardPointing_neg_iff_tangentCoordChange (isOutwardPointing_iff.mp ha).1
+      (mem_extChartAt_source a) (v a)).mp ha
+  have hφa0 : 0 ≤ φ a 0 := by
+    have h := extChartAt_target_subset_range (I := 𝓡∂ (n + 1)) a
+      (mem_extChartAt_target (I := 𝓡∂ (n + 1)) a)
+    rwa [range_modelWithCornersEuclideanHalfSpace] at h
+  -- The local flow `Ψ` of the coordinate field, extended across the boundary hyperplane.
+  obtain ⟨Ψ, U, hU, ε, hε, hΨ, hΨ0, -, hmono, hcurve⟩ :=
+    exists_contDiffOn_localFlow_euclideanHalfSpace (k := ⊤) (hw.of_le (by simp))
+      (hO.mem_nhds haO) hφa0 hwa
+  refine ⟨Ψ, U, hU, ε, hε, by simpa using hΨ, hΨ0, hmono,
+    fun z hz hz0 t ht ↦ hOdom (hcurve z ⟨hz, hz0⟩ t ht).1, fun z hz hz0 ↦ ?_, w (φ a), ?_, hwa⟩
+  · exact IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt
+      (fun t ht ↦ (hcurve z ⟨hz, hz0⟩ t ht).2.hasDerivWithinAt)
+      fun t ht ↦ (hOdom (hcurve z ⟨hz, hz0⟩ t ht).1).1
+  · have h := (hcurve (φ a) ⟨mem_of_mem_nhds hU, hφa0⟩ 0 (left_mem_Ico.2 hε)).2
+    rw [hΨ0] at h
+    exact h
+
 /-- **Flowing the boundary inward.** Let `v` be a vector field smooth on a neighbourhood of a
 boundary point `a` of a manifold modeled on `𝓡∂ (n + 1)`, and pointing inward at `a`. Then there
 are a neighbourhood `U` of `a`, a time `ε > 0` and a family `Φ x t`, jointly smooth on `U × [0, ε)`,
@@ -148,26 +199,15 @@ theorem exists_contMDiffOn_localFlow_of_isOutwardPointing_neg
   let φ := extChartAt (𝓡∂ (n + 1)) a
   have hrange (z : EuclideanSpace ℝ (Fin (n + 1))) : z ∈ range (𝓡∂ (n + 1)) ↔ 0 ≤ z 0 := by
     simp [range_modelWithCornersEuclideanHalfSpace]
-  let w : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1)) := fun z ↦
-    tangentCoordChange (𝓡∂ (n + 1)) (φ.symm z) a (φ.symm z) (v (φ.symm z))
-  obtain ⟨O, hO, haO, hOdom', hw⟩ := exists_isOpen_contDiffOn_chartField v hv hV
-  -- Inwardness at `a` is positivity of the zeroth coordinate of the chart field.
-  have hwa : 0 < w (φ a) 0 := by
-    simp only [w]
-    rw [φ.left_inv (mem_extChartAt_source a)]
-    exact (isOutwardPointing_neg_iff_tangentCoordChange (isOutwardPointing_iff.mp ha).1
-      (mem_extChartAt_source a) (v a)).mp ha
-  obtain ⟨Ψ, U', hU', ε, hε, hΨ, hΨ0, -, hmono, hcurve⟩ :=
-    exists_contDiffOn_localFlow_euclideanHalfSpace (k := ⊤) (hw.of_le (by simp))
-      (hO.mem_nhds haO) ((hrange _).mp (extChartAt_target_subset_range a (mem_extChartAt_target a)))
-      hwa
+  obtain ⟨Ψ, U', hU', ε, hε, hΨ', hΨ0, hmono, hdomain', hcurve, -⟩ :=
+    exists_contDiffOn_chartFlow_of_isOutwardPointing_neg v hv hV ha
   let U := φ.source ∩ φ ⁻¹' U'
   have hU : U ∈ 𝓝 a := inter_mem (extChartAt_source_mem_nhds a)
     ((continuousAt_extChartAt a).preimage_mem_nhds hU')
-  have hstart (x : M) (hx : x ∈ U) : φ x ∈ U' ∩ {z | 0 ≤ z 0} :=
+  have hstart (x : M) (hx : x ∈ U) : φ x ∈ U' ∧ 0 ≤ φ x 0 :=
     ⟨hx.2, (hrange _).mp (extChartAt_target_subset_range a (φ.map_source hx.1))⟩
   have hdomain (x : M) (hx : x ∈ U) (t : ℝ) (ht : t ∈ Ico 0 ε) :
-      Ψ (φ x) t ∈ φ.target ∩ φ.symm ⁻¹' V := hOdom' (hcurve _ (hstart x hx) t ht).1
+      Ψ (φ x) t ∈ φ.target ∩ φ.symm ⁻¹' V := hdomain' _ (hstart x hx).1 (hstart x hx).2 t ht
   refine ⟨U, hU, ε, hε, fun x t ↦ φ.symm (Ψ (φ x) t), ?_, fun x hx ↦ ⟨?_, ?_, fun t ht ↦ ?_⟩⟩
   · -- Smoothness: the chart, then the coordinate flow, then the inverse chart.
     have hchart : ContMDiffOn ((𝓡∂ (n + 1)).prod 𝓘(ℝ)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)) × ℝ) ∞
@@ -175,15 +215,11 @@ theorem exists_contMDiffOn_localFlow_of_isOutwardPointing_neg
       ((contMDiffOn_extChartAt (n := ∞)).comp contMDiff_fst.contMDiffOn fun p hp ↦ by
         rw [mem_preimage, ← extChartAt_source (𝓡∂ (n + 1))]
         exact hp.1.1).prodMk_space contMDiff_snd.contMDiffOn
-    have hΨ' : ContDiffOn ℝ ∞ (fun q : EuclideanSpace ℝ (Fin (n + 1)) × ℝ ↦ Ψ q.1 q.2)
-        (U' ×ˢ Ioo (-ε) ε) := by simpa using hΨ
     have hflow := hΨ'.contMDiffOn.comp hchart fun p hp ↦ ⟨hp.1.2, by linarith [hp.2.1], hp.2.2⟩
     exact (contMDiffOn_extChartAt_symm a).comp hflow fun p hp ↦ (hdomain p.1 hp.1 p.2 hp.2).1
   · simp only [hΨ0]
     exact φ.left_inv hx.1
-  · exact IsMIntegralCurveOn.of_extChartAt_symm_of_hasDerivWithinAt
-      (fun t ht ↦ (hcurve _ (hstart x hx) t ht).2.hasDerivWithinAt)
-      fun t ht ↦ (hdomain x hx t ht).1
+  · exact hcurve _ (hstart x hx).1 (hstart x hx).2
   · -- At positive times the zeroth chart coordinate is positive, so the point is interior.
     have hpos : 0 < Ψ (φ x) t 0 := by
       have h := hmono _ (hstart x hx).1 ⟨neg_lt_zero.mpr hε, hε⟩ ⟨by linarith [ht.1], ht.2⟩ ht.1

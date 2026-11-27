@@ -139,16 +139,9 @@ theorem stationaryCylinderAdjoint_eq_stationaryCylinderOperator_comp (η : ℝ �
     (z : ℝ × ℝ) :
     stationaryCylinderAdjoint J S η z =
       stationaryCylinderOperator J S (fun w ↦ η (-w.1, w.2)) (-z.1, z.2) := by
-  set ρ : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ :=
-    (ContinuousLinearEquiv.neg ℝ).prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)
-  have hρ : (fun w : ℝ × ℝ ↦ η (-w.1, w.2)) = η ∘ ρ := by
-    funext w
-    simp [ρ]
-  have hd : fderiv ℝ (η ∘ ρ) (-z.1, z.2) = (fderiv ℝ η z).comp (ρ : (ℝ × ℝ) →L[ℝ] ℝ × ℝ) := by
-    rw [ρ.comp_right_fderiv]
-    simp [ρ]
-  rw [stationaryCylinderAdjoint_def, stationaryCylinderOperator_def, hρ, hd]
-  simp [ρ, stdComplexLineReal_eq, stdComplexLineImag_eq, ← map_neg]
+  simp only [stationaryCylinderAdjoint_def, stationaryCylinderOperator_def, stdComplexLineReal,
+    stdComplexLineImag, fderiv_comp_neg_fst_apply_one_zero, fderiv_comp_neg_fst_apply_zero_one,
+    neg_neg]
 
 /-- The formal adjoint at `z` depends only on the germ of the map at `z`. -/
 theorem _root_.Filter.EventuallyEq.stationaryCylinderAdjoint_eq {η₁ η₂ : ℝ × ℝ → V}
@@ -532,13 +525,11 @@ theorem eq_zero_of_stationaryCylinderAdjoint_eq_zero (hJ : ∀ t, ω.Compatible 
       (comap Prod.fst (cocompact ℝ)) (𝓝 0)) :
     η = 0 := by
   -- The reflection `ρ (s, t) = (-s, t)` turns `D†` into `D`.
-  set ρ : (ℝ × ℝ) ≃L[ℝ] ℝ × ℝ :=
-    (ContinuousLinearEquiv.neg ℝ).prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)
-  have hρ (z : ℝ × ℝ) : ρ z = (-z.1, z.2) := by simp [ρ]
+  set ρ := LinearIsometryEquiv.negFst ℝ ℝ ℝ
+  have hρ (z : ℝ × ℝ) : ρ z = (-z.1, z.2) := LinearIsometryEquiv.negFst_apply ℝ ℝ ℝ z
   have hfd (z : ℝ × ℝ) :
       fderiv ℝ (η ∘ ρ) z stdComplexLineImag = fderiv ℝ η (ρ z) stdComplexLineImag := by
-    rw [ρ.comp_right_fderiv]
-    simp [hρ, stdComplexLineImag_eq]
+    simp only [Function.comp_def, hρ, stdComplexLineImag, fderiv_comp_neg_fst_apply_zero_one]
   have hρF : Tendsto ρ (comap Prod.fst (cocompact ℝ)) (comap Prod.fst (cocompact ℝ)) := by
     rw [tendsto_comap_iff]
     simpa [Function.comp_def, hρ] using
