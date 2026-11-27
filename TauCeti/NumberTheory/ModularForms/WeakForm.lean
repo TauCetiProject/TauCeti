@@ -59,6 +59,9 @@ hypothesis on `-1 ∈ Γ` or on the regularity of the cusps is needed.
   `-1` vanishes.
 * `TauCeti.isWeakForm_inv_discriminant`, `TauCeti.not_exists_modularForm_coe_eq_inv_discriminant`:
   `Δ⁻¹` is a weak form and not a modular form.
+* `TauCeti.IsWeakForm.tendsto_slash_atImInfty`, `ModularFormClass.analyticAt_cuspFunction_slash`:
+  regularity at the cusps when the Laurent expansion has no negative powers of `q`, and for
+  modular forms.
 * `TauCeti.isWeakForm_discriminant_zpow`: every integer power `Δ ^ m` is a weak form of weight
   `12 m`.
 * `TauCeti.IsWeakForm.exists_forall_isBigO_exp`: on a finite-index subgroup, one exponential
@@ -225,6 +228,20 @@ theorem meromorphicAt_cuspFunction_slash [Γ.FiniteIndex] (hf : IsWeakForm Γ k 
   rw [SL_slash]
   exact hf.mdifferentiable.slash k _ τ
 
+/-- On a finite-index subgroup, a translate `f ∣[k] g` of a weak form whose Laurent expansion at
+`∞` in `exp (2 π i τ / N)`, for `N` the strict level of `Γ`, has no negative powers of `q` tends
+at `i∞` to the constant coefficient of that expansion. -/
+theorem tendsto_slash_atImInfty [Γ.FiniteIndex] (hf : IsWeakForm Γ k f) (g : SL(2, ℤ))
+    (h0 : 0 ≤ (UpperHalfPlane.laurentQExpansion Γ.strictLevel (f ∣[k] g)).orderTop) :
+    Tendsto (f ∣[k] g) atImInfty
+      (nhds ((UpperHalfPlane.laurentQExpansion Γ.strictLevel (f ∣[k] g)).coeff 0)) := by
+  have hN : (0 : ℝ) < Γ.strictLevel := by exact_mod_cast Γ.strictLevel_pos
+  have han := (UpperHalfPlane.analyticAt_cuspFunction_iff_orderTop_laurentQExpansion_nonneg
+    (hf.meromorphicAt_cuspFunction_slash g)).mpr h0
+  rw [UpperHalfPlane.laurentQExpansion_coeff_zero_of_analyticAt han]
+  exact (han.continuousAt.tendsto.comp (qParam_tendsto_atImInfty hN)).congr fun τ ↦
+    eq_cuspFunction τ hN.ne' (periodic_slash_comp_ofComplex hf.slash_eq g)
+
 end IsWeakForm
 
 /-- **Weak forms have meromorphic cusp germs.** On a finite-index subgroup `Γ`, a function `f` is a
@@ -261,6 +278,17 @@ theorem _root_.ModularFormClass.isWeakForm {F : Type*} [FunLike F ℍ ℂ]
     exact SlashInvariantFormClass.slash_action_eq f _ (Subgroup.mem_map_of_mem _ hγ)
   exists_isBigO_exp g :=
     ⟨0, (ModularFormClass.bdd_at_infty_slash f g).trans (isBigO_of_le _ fun _ ↦ by simp)⟩
+
+/-- On a finite-index subgroup `Γ`, every translate `f ∣[k] g`, `g ∈ SL₂(ℤ)`, of a modular form
+`f` has a cusp function in `exp (2 π i τ / N)`, for `N` the strict level of `Γ`, analytic at
+`0`. -/
+theorem _root_.ModularFormClass.analyticAt_cuspFunction_slash {F : Type*} [FunLike F ℍ ℂ]
+    [ModularFormClass F (Γ.map (mapGL ℝ)) k] [Γ.FiniteIndex] (f : F) (g : SL(2, ℤ)) :
+    AnalyticAt ℂ (cuspFunction Γ.strictLevel (f ∣[k] g)) 0 := by
+  have hf := ModularFormClass.isWeakForm (Γ := Γ) f
+  exact analyticAt_cuspFunction_zero (by exact_mod_cast Γ.strictLevel_pos)
+    (periodic_slash_comp_ofComplex hf.slash_eq g) (hf.slash g).mdifferentiable
+    (ModularFormClass.bdd_at_infty_slash f g)
 
 /-- **Modular forms are the weak forms bounded at every cusp.** On a finite-index subgroup `Γ`, a
 function is the function of a modular form of weight `k` on `Γ` exactly when it is a weak form of

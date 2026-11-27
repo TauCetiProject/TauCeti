@@ -55,6 +55,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.map_intCast_zmod_surjective`: strong approximation for `SL₂`,
   with `Matrix.SpecialLinearGroup.map_intCast_zmod_prod_surjective` its two-modulus form:
   reductions prescribed at coprime `d` and `d'` are realized by one integral matrix.
+* `Matrix.SpecialLinearGroup.exists_mul_diagonal_eq_diagonal_mul`: for a unit `u` modulo `d`,
+  every `γ ∈ SL₂(ℤ)` has a twist `γ'` with `γ' diag(1, u) = diag(1, u) γ` modulo `d`.
 * `Matrix.SpecialLinearGroup.mem_ker_map_iff`, `Matrix.SpecialLinearGroup.ker_map_mono`: an
   element of `SL(ι, R)` lies in the kernel of base change along `f : R →+* S` iff it is congruent
   to the identity modulo `RingHom.ker f` entrywise, and these kernels grow with `RingHom.ker f`.
@@ -718,6 +720,25 @@ theorem map_intCast_zmod_surjective :
   obtain ⟨τ, hτ⟩ := exists_map_eq_of_col_eq (M⁻¹ * g)
     (inv_mul_zero_zero_eq_one M g hcol0 hcol1) (inv_mul_one_zero_eq_zero M g hcol0 hcol1)
   exact ⟨σ * τ, by rw [map_mul, ← hMdef, hτ, mul_inv_cancel_left]⟩
+
+/-- **Twisting by a diagonal matrix.** For a unit `u` modulo `d`, every `γ ∈ SL₂(ℤ)` has a twist
+`γ' ∈ SL₂(ℤ)` with `γ' diag(1, u) = diag(1, u) γ` modulo `d`. -/
+theorem exists_mul_diagonal_eq_diagonal_mul (u : (ZMod d)ˣ) (γ : SL(2, ℤ)) :
+    ∃ γ' : SL(2, ℤ), ((γ' : SL(2, ZMod d)) : Matrix (Fin 2) (Fin 2) (ZMod d)) *
+        Matrix.diagonal ![1, (u : ZMod d)] =
+      Matrix.diagonal ![1, (u : ZMod d)] * (γ : SL(2, ZMod d)) := by
+  set g := ((γ : SL(2, ZMod d)) : Matrix (Fin 2) (Fin 2) (ZMod d))
+  have hg : g 0 0 * g 1 1 - g 0 1 * g 1 0 = 1 := by
+    rw [← Matrix.det_fin_two]
+    exact (γ : SL(2, ZMod d)).det_coe
+  let g' : SL(2, ZMod d) := ⟨!![g 0 0, g 0 1 * ↑u⁻¹; ↑u * g 1 0, g 1 1], by
+    rw [Matrix.det_fin_two_of]
+    linear_combination hg - g 0 1 * g 1 0 * Units.inv_mul u⟩
+  obtain ⟨γ', hγ'⟩ := map_intCast_zmod_surjective g'
+  refine ⟨γ', ?_⟩
+  rw [hγ']
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [g', Matrix.mul_apply, Fin.sum_univ_two, mul_comm]
 
 
 /-- **Strong approximation for `SL₂` at two coprime moduli**: for coprime `d` and `d'`, the joint
