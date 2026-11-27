@@ -30,7 +30,9 @@ The real coordinates of `ℂⁱ` (`TauCeti.complexEuclideanRealCoords`) identify
 `ℝ²ⁱ`, the real parts of the coordinates first and then their imaginary parts. They carry the
 closed disks in which characteristic maps of CW complexes are defined onto complex Euclidean
 disks. The real inner product of `ℂⁱ`, the one for which its unit sphere is a manifold, is the real
-part of its complex inner product (`EuclideanSpace.real_inner_eq_re_inner`).
+part of its complex inner product (`EuclideanSpace.real_inner_eq_re_inner`). The self pairing
+`star x ⬝ᵥ x` of a vector of `𝕜ⁱ` is its squared norm
+(`EuclideanSpace.star_dotProduct_self_eq_norm_sq`).
 -/
 
 public section
@@ -42,6 +44,13 @@ coordinates, is the real part of the complex inner product. -/
 theorem EuclideanSpace.real_inner_eq_re_inner {ι : Type*} [Fintype ι]
     (x y : EuclideanSpace ℂ ι) : ⟪x, y⟫_ℝ = (⟪x, y⟫_ℂ).re := by
   simp [PiLp.inner_apply, Complex.inner, Complex.re_sum]
+
+/-- The self pairing `star x ⬝ᵥ x` of a vector of Euclidean space is its squared norm. -/
+theorem EuclideanSpace.star_dotProduct_self_eq_norm_sq {ι 𝕜 : Type*} [Fintype ι] [RCLike 𝕜]
+    (x : EuclideanSpace 𝕜 ι) :
+    star (WithLp.ofLp x) ⬝ᵥ WithLp.ofLp x = ((‖x‖ ^ 2 : ℝ) : 𝕜) := by
+  rw [dotProduct_comm, ← inner_eq_star_dotProduct, inner_self_eq_norm_sq_to_K]
+  norm_cast
 
 namespace TauCeti
 
