@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convolution
-public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 import Mathlib.MeasureTheory.Function.AEEqOfIntegral
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -19,8 +19,8 @@ import TauCeti.MeasureTheory.Integral.Dilation
 /-!
 # Convolution with an integrable kernel as an operator on `Lᵖ`
 
-On a commutative measurable group `G` with an s-finite measure `μ` invariant under translation
-and negation, for instance a Haar measure on a locally compact abelian group, the classical
+On a measurable additive group `G` with an s-finite right-invariant measure `μ`, for instance
+an additive Haar measure on a finite-dimensional real normed space, the classical
 convolution `(k ⋆ f)(x) = ∫ t, k(t) • f(x - t) dμ(t)` of `k ∈ L¹(μ; 𝕜)`, with `𝕜` real or
 complex, and `f ∈ Lᵖ(μ; X)` exists almost everywhere and lies in `Lᵖ(μ; X)` for every
 `1 ≤ p ≤ ∞`, and its class does not depend on the representatives of `k` and `f`. The first part
@@ -58,8 +58,8 @@ is in `TauCeti.MeasureTheory.Integral.Dilation`.
 
 ## Main declarations
 
-* `MeasureTheory.Lp.addConvolutionL`: convolution `L¹(μ; 𝕜) × Lᵖ(μ; X) → Lᵖ(μ; X)` on a
-  commutative group, for `1 ≤ p ≤ ∞`, as a continuous bilinear map.
+* `MeasureTheory.Lp.addConvolutionL`: convolution `L¹(μ; 𝕜) × Lᵖ(μ; X) → Lᵖ(μ; X)` on an
+  additive group, for `1 ≤ p ≤ ∞`, as a continuous bilinear map.
 * `MeasureTheory.Lp.coeFn_addConvolutionL`: its values are represented almost everywhere by the
   pointwise convolution `k ⋆ f`.
 * `MeasureTheory.Lp.norm_addConvolutionL_apply_le`: Young's inequality `‖k ⋆ f‖_p ≤ ‖k‖₁ ‖f‖_p`.
@@ -114,18 +114,19 @@ namespace MeasureTheory.Lp
 open ContinuousLinearMap Filter
 open scoped Convolution ENNReal
 
-/-! ### Convolution of `L¹` with `Lᵖ` on a commutative group
+/-! ### Convolution of `L¹` with `Lᵖ` on an additive group
 
-On a commutative measurable group with an s-finite measure invariant under translation and
-negation, such as a Haar measure on a locally compact abelian group, the convolution
+On a measurable additive group with an s-finite right-invariant measure, such as an additive
+Haar measure on a finite-dimensional real normed space, the convolution
 `(k ⋆ f)(x) = ∫ t, k(t) • f(x - t) dμ(t)` of `k ∈ L¹(μ; 𝕜)` and `f ∈ Lᵖ(μ; X)` converges
 absolutely almost everywhere and lies in `Lᵖ(μ; X)` for every `1 ≤ p ≤ ∞`
-(`MeasureTheory.MemLp.ae_convolution_exists` and `MeasureTheory.MemLp.convolution`), and its
+(`MeasureTheory.Integrable.ae_convolution_exists_of_memLp` and
+`MeasureTheory.eLpNorm_convolution_le`), and its
 almost-everywhere class does not depend on the representatives of `k` and `f`
 (`MeasureTheory.convolution_congr`). -/
 
-variable {G X : Type*} [MeasurableSpace G] [AddCommGroup G] [MeasurableAdd₂ G]
-  [MeasurableNeg G] {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+variable {G X : Type*} [MeasurableSpace G] [AddGroup G] [MeasurableAdd₂ G]
+  [MeasurableNeg G] {μ : Measure G} [SFinite μ] [μ.IsAddRightInvariant]
   [NormedAddCommGroup X] [NormedSpace ℝ X] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 section NontriviallyNormedField
@@ -135,11 +136,13 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 X]
 omit [NormedSpace ℝ X] in
 private theorem ae_convolutionExistsAt (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
     ∀ᵐ x ∂μ, ConvolutionExistsAt (k : G → 𝕜) (f : G → X) x (lsmul 𝕜 𝕜) μ :=
-  (Lp.memLp k).ae_convolution_exists _ (Lp.memLp f) (q := p) le_rfl Fact.out (by simp)
+  (L1.integrable_coeFn k).ae_convolution_exists_of_memLp _ (Lp.memLp f) Fact.out
 
 private theorem memLp_convolution (k : Lp 𝕜 1 μ) (f : Lp X p μ) :
     MemLp ((k : G → 𝕜) ⋆[lsmul 𝕜 𝕜, μ] (f : G → X)) p μ :=
-  (Lp.memLp k).convolution _ (Lp.memLp f) le_rfl Fact.out (by simp)
+  (eLpNorm_convolution_le _ (Lp.aestronglyMeasurable k) (Lp.aestronglyMeasurable f)
+    Fact.out).trans_lt (ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top
+      (Lp.eLpNorm_lt_top k)) (Lp.eLpNorm_lt_top f))
 
 private theorem toLp_convolution_add_left (k₁ k₂ : Lp 𝕜 1 μ) (f : Lp X p μ) :
     (memLp_convolution (k₁ + k₂) f).toLp _ =
