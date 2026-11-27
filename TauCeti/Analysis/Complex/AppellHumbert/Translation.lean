@@ -416,16 +416,6 @@ variable (B : V →L[ℝ] V →L[ℂ] ℂ) (hB : ∀ u v, (B u v).re = (B v u).r
     (B w u - B u w).im / (2 * π))
   (hint : ∀ l m : L, ∃ k : ℤ, (B m (b l) - B (b l) m).im / (2 * π) = k)
 
-/-- The Heisenberg law `N_x N_y = exp (2πi E (y, b x)) N_(x + y)` of the normalised translations
-of the datum `(B, χ_b)` of the canonical multiplier. -/
-theorem normalizedTranslate_normalizedTranslate_ofCanonicalSemichar (x y : V) (f : V → ℂ) :
-    (ofCanonicalSemichar B hB b hadj hint).normalizedTranslate b x
-        ((ofCanonicalSemichar B hB b hadj hint).normalizedTranslate b y f) =
-      (Circle.exp (2 * π * (ofCanonicalSemichar B hB b hadj hint).riemannForm y (b x)) : ℂ) •
-        (ofCanonicalSemichar B hB b hadj hint).normalizedTranslate b (x + y) f :=
-  normalizedTranslate_normalizedTranslate (fun u w ↦ by
-    simpa only [riemannForm_ofCanonicalSemichar_apply] using hadj u w) x y f
-
 /-- The theta functions of `(B, χ_b)` are the entire functions fixed by the normalised
 translations `N_l`, `l ∈ L`. -/
 theorem mem_thetaSpace_ofCanonicalSemichar_iff {f : V → ℂ} :

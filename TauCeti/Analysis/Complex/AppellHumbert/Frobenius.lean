@@ -18,8 +18,7 @@ import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
 import Mathlib.LinearAlgebra.FreeModule.Finite.Quotient
 import TauCeti.Algebra.Module.Lattice
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
-import TauCeti.Analysis.Fourier.Monomial
-import TauCeti.Analysis.Fourier.Torus.Periodic
+import TauCeti.Analysis.Fourier.Torus.ZLatticeMean
 
 /-!
 # Frobenius' dimension formula for theta functions
@@ -57,10 +56,11 @@ No symplectic basis of `L` enters the statements or the proofs.
 
 The upper bound comes from a pairing. For theta functions `f, g` and `b ∈ V`, the function
 `x ↦ exp (-B₁ (b, b) / 2) conj ((U_x f) (0)) (U_x g) (b)`, with `B₁` the complex bilinear part of
-`B`, is `L`-periodic in `x`; let `m (f, g, b)` be its mean over the torus `V ⧸ L`, computed in the
-coordinates of a basis of `L`. It is holomorphic in `b`, and `m (g, f, -b) = conj (m (f, g, b))`.
-For tuples `s`, `t` of theta functions, `m (s, t, 0) = 0` therefore forces `m (t, s, ·) = 0` by
-Liouville's theorem applied to `exp (-|m (t, s, b)|²)`. If moreover `m (U_a s, t, 0) = 0` for every
+`B`, is `L`-periodic in `x`; let `m (f, g, b)` be its mean over the torus `V ⧸ L`
+(`TauCeti.ZLattice.torusMean`), computed in the coordinates of a basis of `L`. It is holomorphic
+in `b`, and `m (g, f, -b) = conj (m (f, g, b))`. For tuples `s`, `t` of theta functions,
+`m (s, t, 0) = 0` therefore forces `m (t, s, ·) = 0` by Liouville's theorem applied to
+`exp (-|m (t, s, b)|²)`. If moreover `m (U_a s, t, 0) = 0` for every
 `a ∈ L^⊥`, the Fourier coefficients of `x ↦ ∑ᵢ conj ((U_x tᵢ) (0)) (U_x sᵢ) (b)` all vanish, so this
 function does too, and evaluating gives `∑ᵢ conj (tᵢ (y)) sᵢ = 0`. For a basis `s` of `Θ` this
 shows that `t ↦ (q ↦ m (U_q s, t, 0))` embeds `Θⁿ`, `n = dim Θ`, in the functions on `L^⊥ / L`;
@@ -87,9 +87,9 @@ The results and the method are adapted from `New.IsAppellHumbert.finrank_sq_eq_r
 (https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0, Copyright 2026 Anthropic, PBC).
 The source takes means over `V ⧸ L` with its Haar probability measure and Fourier uniqueness from
 its own Stone–Weierstrass argument; here the means are integrals over the unit cube in the
-coordinates of a basis of `L`, and Fourier uniqueness is that of Mathlib's `mFourierBasis`
-(`TauCeti.UnitAddTorus.eq_zero_of_forall_setIntegral_mFourier_mul_eq_zero`). The holomorphy of the
-mean is `TauCeti.analyticAt_integral_smul`.
+coordinates of a basis of `L` (`TauCeti.ZLattice.torusMean`), and Fourier uniqueness
+(`TauCeti.ZLattice.eq_zero_of_forall_torusMean_exp_mul_eq_zero`) is that of Mathlib's
+`mFourierBasis`. The holomorphy of the mean is `TauCeti.analyticAt_integral_smul`.
 
 ## References
 
@@ -226,111 +226,6 @@ private theorem exists_pairingIntegrand_sub_self (y z : V) :
     map_mul]
   ring
 
-/-! ### Means over the torus in lattice coordinates -/
-
-section Torus
-
-variable [FiniteDimensional ℂ V] [DiscreteTopology L] [IsZLattice ℝ L]
-
-variable (L) in
-/-- The real basis of `V` given by a `ℤ`-basis of the full lattice `L`. -/
-private noncomputable def latticeBasis : Basis (Free.ChooseBasisIndex ℤ L) ℝ V :=
-  (Free.chooseBasis ℤ L).ofZLatticeBasis ℝ L
-
-variable (L) in
-/-- The mean of a function `G` on `V` over the torus `V ⧸ L`, as the integral over the unit cube in
-the coordinates of `latticeBasis L`. -/
-private noncomputable def torusMean (G : V → ℂ) : ℂ :=
-  ∫ φ in univ.pi fun _ : Free.ChooseBasisIndex ℤ L ↦ Icc (0 : ℝ) 1,
-    G ((latticeBasis L).equivFun.symm φ)
-
-private theorem continuous_latticeBasis_equivFun_symm :
-    Continuous (latticeBasis L).equivFun.symm :=
-  LinearMap.continuous_of_finiteDimensional (latticeBasis L).equivFun.symm.toLinearMap
-
-/-- A continuous function is integrable over the unit cube in lattice coordinates. -/
-private theorem integrable_comp_latticeBasis {G : V → ℂ} (hG : Continuous G) :
-    Integrable (fun φ ↦ G ((latticeBasis L).equivFun.symm φ))
-      ((volume : Measure (Free.ChooseBasisIndex ℤ L → ℝ)).restrict
-        (univ.pi fun _ ↦ Icc (0 : ℝ) 1)) :=
-  (hG.comp continuous_latticeBasis_equivFun_symm).continuousOn.integrableOn_compact
-    (isCompact_univ_pi fun _ ↦ isCompact_Icc)
-
-/-- An `L`-periodic function, read in lattice coordinates, is periodic under `ℤ^ι`. -/
-private theorem periodic_comp_latticeBasis {G : V → ℂ} (hG : ∀ (x : V) (l : L), G (x + l) = G x)
-    (φ : Free.ChooseBasisIndex ℤ L → ℝ) (n : Free.ChooseBasisIndex ℤ L → ℤ) :
-    G ((latticeBasis L).equivFun.symm (φ + fun i ↦ (n i : ℝ))) =
-      G ((latticeBasis L).equivFun.symm φ) := by
-  have h : (latticeBasis L).equivFun.symm (fun i ↦ (n i : ℝ)) =
-      ((∑ i, n i • Free.chooseBasis ℤ L i : L) : V) := by
-    simp [latticeBasis, Basis.equivFun_symm_apply, Basis.ofZLatticeBasis_apply,
-      Int.cast_smul_eq_zsmul]
-  rw [map_add, h, hG]
-
-/-- **Translation invariance** of the mean of an `L`-periodic function. -/
-private theorem torusMean_comp_add_right {G : V → ℂ} (hG : ∀ (x : V) (l : L), G (x + l) = G x)
-    (v : V) : torusMean L (fun x ↦ G (x + v)) = torusMean L G := by
-  have h (φ : Free.ChooseBasisIndex ℤ L → ℝ) : (latticeBasis L).equivFun.symm φ + v =
-      (latticeBasis L).equivFun.symm (φ + (latticeBasis L).equivFun v) := by
-    rw [map_add, LinearEquiv.symm_apply_apply]
-  simp only [torusMean, h]
-  exact UnitAddTorus.setIntegral_unitCube_comp_add_right
-    (g := fun φ ↦ G ((latticeBasis L).equivFun.symm φ)) (periodic_comp_latticeBasis hG) _
-
-/-- The mean is additive on continuous functions. -/
-private theorem torusMean_add {G G' : V → ℂ} (hG : Continuous G) (hG' : Continuous G') :
-    torusMean L (fun x ↦ G x + G' x) = torusMean L G + torusMean L G' :=
-  integral_add (integrable_comp_latticeBasis hG) (integrable_comp_latticeBasis hG')
-
-/-- The mean of a finite sum of continuous functions is the sum of the means. -/
-private theorem torusMean_sum {κ : Type*} {s : Finset κ} {G : κ → V → ℂ}
-    (hG : ∀ i, Continuous (G i)) :
-    torusMean L (fun x ↦ ∑ i ∈ s, G i x) = ∑ i ∈ s, torusMean L (G i) :=
-  integral_finsetSum s fun i _ ↦ integrable_comp_latticeBasis (hG i)
-
-/-- The mean is homogeneous. -/
-private theorem torusMean_const_mul (c : ℂ) (G : V → ℂ) :
-    torusMean L (fun x ↦ c * G x) = c * torusMean L G :=
-  integral_const_mul c _
-
-/-- **Fourier uniqueness on the torus.** For a positive datum, a continuous `L`-periodic function
-all of whose Fourier coefficients `∫ exp (2πi E (a, x)) G (x)`, `a ∈ L^⊥`, vanish is zero. -/
-private theorem IsPositive.eq_zero_of_forall_torusMean_eq_zero (hD : D.IsPositive) {G : V → ℂ}
-    (hc : Continuous G) (hG : ∀ (x : V) (l : L), G (x + l) = G x)
-    (h : ∀ a ∈ D.riemannForm.dualSubmodule L,
-      torusMean L (fun x ↦ exp (2 * π * I * D.riemannForm a x) * G x) = 0) :
-    G = 0 := by
-  classical
-  set e := D.riemannForm.dualBasis hD.nondegenerate (latticeBasis L)
-  have h_zero : (fun φ ↦ G ((latticeBasis L).equivFun.symm φ)) = 0 := by
-    refine UnitAddTorus.eq_zero_of_forall_setIntegral_mFourier_mul_eq_zero
-      (hc.comp continuous_latticeBasis_equivFun_symm) (periodic_comp_latticeBasis hG) fun n ↦ ?_
-    -- The character of `a = -∑ⱼ nⱼ eⱼ` is the monomial `mFourier (-n)`.
-    set a : V := ∑ j, ((-n j : ℤ) : ℝ) • e j
-    have ha : a ∈ D.riemannForm.dualSubmodule L := by
-      rw [D.riemannForm.dualSubmodule_eq_span_dualBasis_ofZLatticeBasis hD.nondegenerate L
-        (Free.chooseBasis ℤ L)]
-      exact Submodule.sum_mem _ fun j _ ↦ by
-        rw [Int.cast_smul_eq_zsmul]
-        exact zsmul_mem (Submodule.subset_span (mem_range_self j)) _
-    have hE (j i : Free.ChooseBasisIndex ℤ L) :
-        D.riemannForm (e j) (latticeBasis L i) = if i = j then 1 else 0 :=
-      LinearMap.BilinForm.apply_dualBasis_left _ _ _ _
-    have hn (i : Free.ChooseBasisIndex ℤ L) : D.riemannForm a (latticeBasis L i) = (-n) i := by
-      simp only [a, map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, hE,
-        mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ite_true, Pi.neg_apply]
-    have h_char (φ : Free.ChooseBasisIndex ℤ L → ℝ) :=
-      UnitAddTorus.exp_two_pi_I_mul_equivFun_symm_eq_mFourier (latticeBasis L) (D.riemannForm a)
-        hn φ
-    have := h a ha
-    simp only [torusMean, h_char] at this
-    exact this
-  funext x
-  have := congrFun h_zero ((latticeBasis L).equivFun x)
-  rwa [LinearEquiv.symm_apply_apply] at this
-
-end Torus
-
 /-! ### The pairing of tuples of theta functions -/
 
 section Pairing
@@ -342,10 +237,10 @@ against a function that is jointly holomorphic in `b` and in parameters dependin
 the point of the cube. -/
 private theorem differentiable_torusMean_pairingIntegrand {f g : V → ℂ} (hf : f ∈ D.thetaSpace)
     (hg : g ∈ D.thetaSpace) :
-    Differentiable ℂ fun b ↦ torusMean L (D.pairingIntegrand f g b) := by
+    Differentiable ℂ fun b ↦ ZLattice.torusMean L (D.pairingIntegrand f g b) := by
   set Q : Set (Free.ChooseBasisIndex ℤ L → ℝ) := univ.pi fun _ ↦ Icc (0 : ℝ) 1
-  set X : (Free.ChooseBasisIndex ℤ L → ℝ) → V := fun φ ↦ (latticeBasis L).equivFun.symm φ
-  have hX : Continuous X := continuous_latticeBasis_equivFun_symm
+  set X : (Free.ChooseBasisIndex ℤ L → ℝ) → V := fun φ ↦ (ZLattice.realBasis L).equivFun.symm φ
+  have hX : Continuous X := ZLattice.continuous_realBasis_equivFun_symm
   -- Clamp the coordinates to the cube, so that the parameters stay in a compact set.
   set clamp : (Free.ChooseBasisIndex ℤ L → ℝ) → Free.ChooseBasisIndex ℤ L → ℝ :=
     fun φ i ↦ projIcc (0 : ℝ) 1 zero_le_one (φ i)
@@ -376,8 +271,9 @@ private theorem differentiable_torusMean_pairingIntegrand {f g : V → ℂ} (hf 
       (differentiable_fst.comp differentiable_snd).clm_apply differentiable_fst
     simp only [F]
     fun_prop
-  have h_eq (b : V) : torusMean L (D.pairingIntegrand f g b) =
+  have h_eq (b : V) : ZLattice.torusMean L (D.pairingIntegrand f g b) =
       ∫ φ in Q, w φ • F (b, ψ (clamp φ)) := by
+    rw [ZLattice.torusMean_def]
     refine setIntegral_congr_fun (MeasurableSet.univ_pi fun _ ↦ measurableSet_Icc) fun φ hφ ↦ ?_
     simp only [w, F, ψ, hclamp_eq hφ, pairingIntegrand, twistedTranslate_apply, smul_eq_mul,
       _root_.neg_apply, exp_add]
@@ -385,7 +281,7 @@ private theorem differentiable_torusMean_pairingIntegrand {f g : V → ℂ} (hf 
       -(D.form (X φ) (X φ) / 2) + -(D.form (X φ) b) by ring, exp_add]
     ring
   intro b
-  rw [show (fun b ↦ torusMean L (D.pairingIntegrand f g b)) =
+  rw [show (fun b ↦ ZLattice.torusMean L (D.pairingIntegrand f g b)) =
     fun b ↦ ∫ φ in Q, w φ • F (b, ψ (clamp φ)) from funext h_eq]
   have hint : Integrable w ((volume : Measure (Free.ChooseBasisIndex ℤ L → ℝ)).restrict Q) :=
     hw.continuousOn.integrableOn_compact (isCompact_univ_pi fun _ ↦ isCompact_Icc)
@@ -396,14 +292,15 @@ private theorem differentiable_torusMean_pairingIntegrand {f g : V → ℂ} (hf 
 /-- **Conjugate symmetry of the pairing mean.** -/
 private theorem torusMean_pairingIntegrand_neg {f g : V → ℂ} (hf : f ∈ D.thetaSpace)
     (hg : g ∈ D.thetaSpace) (b : V) :
-    torusMean L (D.pairingIntegrand g f (-b)) = conj (torusMean L (D.pairingIntegrand f g b)) := by
-  rw [← torusMean_comp_add_right (pairingIntegrand_add hg hf (-b)) b]
-  simp only [pairingIntegrand_neg_add, torusMean]
+    ZLattice.torusMean L (D.pairingIntegrand g f (-b)) =
+      conj (ZLattice.torusMean L (D.pairingIntegrand f g b)) := by
+  rw [← ZLattice.torusMean_comp_add_right (pairingIntegrand_add hg hf (-b)) b]
+  simp only [pairingIntegrand_neg_add, ZLattice.torusMean_def]
   exact integral_conj
 
 /-- The pairing mean `∑ᵢ m (sᵢ, tᵢ, b)` of two tuples of functions. -/
 private noncomputable def tupleMean {κ : Type*} [Fintype κ] (s t : κ → V → ℂ) (b : V) : ℂ :=
-  ∑ i, torusMean L (D.pairingIntegrand (s i) (t i) b)
+  ∑ i, ZLattice.torusMean L (D.pairingIntegrand (s i) (t i) b)
 
 variable {κ : Type*} [Fintype κ]
 
@@ -449,7 +346,8 @@ private theorem IsPositive.sum_conj_smul_eq_zero (hD : D.IsPositive) {s t : κ �
     have hcont (i : κ) : Continuous (D.pairingIntegrand (t i) (s i) b) :=
       continuous_pairingIntegrand (differentiable_of_mem_thetaSpace (ht i)).continuous
         (differentiable_of_mem_thetaSpace (hs i)).continuous b
-    refine hD.eq_zero_of_forall_torusMean_eq_zero (continuous_finsetSum _ fun i _ ↦ hcont i)
+    refine ZLattice.eq_zero_of_forall_torusMean_exp_mul_eq_zero hD.nondegenerate
+      (continuous_finsetSum _ fun i _ ↦ hcont i)
       (fun x l ↦ Finset.sum_congr rfl fun i _ ↦ pairingIntegrand_add (ht i) (hs i) b x l)
       fun a ha ↦ ?_
     obtain ⟨κ₀, hκ₀, hκ⟩ := D.exists_pairingIntegrand_twistedTranslate_right a b
@@ -461,8 +359,8 @@ private theorem IsPositive.sum_conj_smul_eq_zero (hD : D.IsPositive) {s t : κ �
       funext (hκ (t i) (s i))
     have h_liouville := D.tupleMean_eq_zero_of_eq_zero
       (fun i ↦ twistedTranslate_mem_thetaSpace_of_mem_dualSubmodule ha (hs i)) ht (h a ha) (b - a)
-    simp only [tupleMean, hfun, torusMean_const_mul, ← Finset.mul_sum] at h_liouville
-    rw [← torusMean_sum (G := fun i x ↦ exp (2 * π * I * D.riemannForm a x) *
+    simp only [tupleMean, hfun, ZLattice.torusMean_const_mul, ← Finset.mul_sum] at h_liouville
+    rw [← ZLattice.torusMean_sum (G := fun i x ↦ exp (2 * π * I * D.riemannForm a x) *
       D.pairingIntegrand (t i) (s i) b x) fun i ↦ hchar.mul (hcont i)] at h_liouville
     simp only [← Finset.mul_sum] at h_liouville
     exact (mul_eq_zero.mp h_liouville).resolve_left hκ₀
@@ -503,12 +401,12 @@ private noncomputable def dualPairing {κ : Type*} [Fintype κ] (s : κ → D.th
       hc ⟨_, twistedTranslate_mem_thetaSpace_of_mem_dualSubmodule q.out.property (s i).property⟩
     simp only [tupleMean, Pi.add_apply, Submodule.coe_add, pairingIntegrand_add_right,
       ← Finset.sum_add_distrib]
-    exact Finset.sum_congr rfl fun i _ ↦ torusMean_add
+    exact Finset.sum_congr rfl fun i _ ↦ ZLattice.torusMean_add
       (continuous_pairingIntegrand (hT i) (hc _) 0) (continuous_pairingIntegrand (hT i) (hc _) 0)
   map_smul' c t := by
     funext q
     simp only [tupleMean, Pi.smul_apply, Submodule.coe_smul, RingHom.id_apply, smul_eq_mul,
-      Finset.mul_sum, pairingIntegrand_smul_right, torusMean_const_mul]
+      Finset.mul_sum, pairingIntegrand_smul_right, ZLattice.torusMean_const_mul]
 
 /-- For a positive datum and a linearly independent tuple `s` of theta functions, the map
 `t ↦ (q ↦ m (U_q s, t, 0))` is injective. -/
@@ -528,7 +426,7 @@ private theorem IsPositive.injective_dualPairing (hD : D.IsPositive) {κ : Type*
       rw [hl, Submodule.coe_add]
       exact twistedTranslate_add_eq_smul_of_mem_thetaSpace (s i).property a l'
     simp only [dualPairing, LinearMap.coe_mk, AddHom.coe_mk, Pi.zero_apply, tupleMean, h_out,
-      pairingIntegrand_smul_left, torusMean_const_mul, ← Finset.mul_sum] at h0
+      pairingIntegrand_smul_left, ZLattice.torusMean_const_mul, ← Finset.mul_sum] at h0
     refine (mul_eq_zero.mp h0).resolve_left ?_
     simp [exp_ne_zero]
   -- Hence `∑ᵢ conj (tᵢ y) sᵢ = 0`, and `t = 0` by independence.
@@ -578,8 +476,9 @@ theorem IsPositive.linearIndependent_twistedTranslateEnd_out (hD : D.IsPositive)
       rw [algebraMap_int_eq, eq_intCast, LinearMap.BilinForm.flip_apply, map_sub, Int.cast_neg,
         hk'']
       ring
-    refine Quotient.out_equiv_out.mp (QuotientAddGroup.leftRel_apply.mpr
-      ((Submodule.mem_submoduleOf_toAddSubgroup _).mpr ?_))
+    refine Quotient.out_equiv_out.mp (QuotientAddGroup.leftRel_apply.mpr ?_)
+    refine (AddSubgroup.mem_addSubgroupOf (H := L.toAddSubgroup)
+      (K := (D.riemannForm.dualSubmodule L).toAddSubgroup)).mpr ?_
     simpa [neg_add_eq_sub] using h_mem
   have h_eigen (q : D.DualQuotient) (y : D.riemannForm.dualSubmodule L) :
       D.twistedTranslateEnd (-y) * D.twistedTranslateEnd q.out * D.twistedTranslateEnd y =

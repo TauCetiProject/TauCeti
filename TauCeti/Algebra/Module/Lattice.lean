@@ -49,8 +49,7 @@ of `L`.
   in the `ℤ`-spans of two `ℚ`-bases differ by the determinant of the change of basis.
 * `Submodule.toAddSubgroup_submoduleOf`: taking the underlying additive subgroup commutes
   with restricting a submodule to another submodule.
-* `Submodule.mem_submoduleOf_toAddSubgroup`, `Submodule.natCard_quotient_submoduleOf`: membership
-  in `L ∩ N` as an additive subgroup of `N`, and the order of `N / (L ∩ N)` is `[N : L]`.
+* `Submodule.natCard_quotient_submoduleOf`: the order of `N / (L ∩ N)` is `[N : L]`.
 * `Submodule.isFullLattice_span`: the span of a finite set spanning the ambient module is a full
   lattice.
 * `Submodule.isFullLattice_comap_of_isLocalization`: pullback of a full lattice along an injective
@@ -178,13 +177,6 @@ submodule. -/
 theorem _root_.Submodule.toAddSubgroup_submoduleOf {R V : Type*} [Ring R] [AddCommGroup V]
     [Module R V] (p q : Submodule R V) :
     (p.submoduleOf q).toAddSubgroup = p.toAddSubgroup.addSubgroupOf q.toAddSubgroup := rfl
-
-/-- An element of `N` lies in `L ∩ N`, seen as an additive subgroup of `N`, iff it lies in `L`. -/
-theorem _root_.Submodule.mem_submoduleOf_toAddSubgroup {R M : Type*} [Ring R] [AddCommGroup M]
-    [Module R M] {L N : Submodule R M} (x : N) :
-    x ∈ (L.submoduleOf N).toAddSubgroup ↔ (x : M) ∈ L := by
-  rw [Submodule.mem_toAddSubgroup, Submodule.submoduleOf, Submodule.mem_comap,
-    Submodule.subtype_apply]
 
 /-- The order of the quotient `N / (L ∩ N)` is the relative index `[N : L]`. -/
 theorem _root_.Submodule.natCard_quotient_submoduleOf {R M : Type*} [Ring R] [AddCommGroup M]
