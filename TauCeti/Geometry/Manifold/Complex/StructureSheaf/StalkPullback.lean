@@ -140,7 +140,7 @@ theorem stalkPullback_algebraMap (c : ℂ) :
     stalkPullback hf (algebraMap ℂ _ c) = algebraMap ℂ _ c :=
   toFilterGerm_nhds_injective a <| by
     rw [toFilterGerm_stalkPullback, toFilterGerm_algebraMap, toFilterGerm_algebraMap,
-      Germ.algebraMap_eq, Germ.algebraMap_eq, Germ.coe_compTendsto, Function.comp_def]
+      Germ.algebraMap_self_eq, Germ.algebraMap_self_eq, Germ.const_compTendsto]
 
 /-- Local analytic pullback on stalks, bundled as a `ℂ`-algebra homomorphism. -/
 def stalkPullbackAlgHom :

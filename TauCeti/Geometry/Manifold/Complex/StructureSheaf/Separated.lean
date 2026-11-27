@@ -70,15 +70,22 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 
 include he in
 /-- Reading any representative of a holomorphic germ at `x` in the extended chart `e.extend I`
+gives a function analytic at `e.extend I x`. -/
+private theorem analyticAt_comp_extend_symm_of_toFilterGerm_eq {x : X} (hx : x ∈ e.source)
+    {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {φ : X → ℂ}
+    (hφ : toFilterGerm I X x (𝓝 x) le_rfl s = φ) :
+    AnalyticAt ℂ (φ ∘ (e.extend I).symm) (e.extend I x) := by
+  simpa only [OpenPartialHomeomorph.extend_coe, Function.comp_apply] using
+    ((exists_toFilterGerm_nhds_eq_iff.1 ⟨s, hφ⟩).self_of_nhds.analyticAt_comp_extend_symm he hx)
+
+include he in
+/-- Reading any representative of a holomorphic germ at `x` in the extended chart `e.extend I`
 along a complex line through `e.extend I x` gives a function analytic at `0`. -/
 private theorem analyticAt_line_of_toFilterGerm_eq {x : X} (hx : x ∈ e.source)
     {s : (holomorphicStructureSheaf I X).presheaf.stalk x} {φ : X → ℂ}
     (hφ : toFilterGerm I X x (𝓝 x) le_rfl s = φ) (v : E) :
-    AnalyticAt ℂ (fun z : ℂ ↦ φ ((e.extend I).symm (e.extend I x + z • v))) 0 := by
-  have hφe : AnalyticAt ℂ (φ ∘ (e.extend I).symm) (e.extend I x) := by
-    simpa only [OpenPartialHomeomorph.extend_coe, Function.comp_apply] using
-      ((exists_toFilterGerm_nhds_eq_iff.1 ⟨s, hφ⟩).self_of_nhds.analyticAt_comp_extend_symm he hx)
-  exact hφe.comp_of_eq (by fun_prop) (by simp)
+    AnalyticAt ℂ (fun z : ℂ ↦ φ ((e.extend I).symm (e.extend I x + z • v))) 0 :=
+  (analyticAt_comp_extend_symm_of_toFilterGerm_eq e he hx hφ).comp_of_eq (by fun_prop) (by simp)
 
 include he in
 /-- Every representative of a germ in `RingHom.ker (eval I X x) ^ n` vanishes to analytic order at
@@ -134,10 +141,8 @@ theorem iInf_pow_ker_eval_eq_bot {x : X} (hx : x ∈ e.source) :
     (⨅ n : ℕ, RingHom.ker (eval I X x) ^ n) = ⊥ := by
   refine eq_bot_iff.2 fun s hs ↦ Ideal.mem_bot.2 ?_
   obtain ⟨φ, -, hφ⟩ := exists_toFilterGerm_eq x s
-  have hφe : AnalyticAt ℂ (φ ∘ (e.extend I).symm) (e.extend I x) := by
-    simpa only [OpenPartialHomeomorph.extend_coe, Function.comp_apply] using
-      ((exists_toFilterGerm_nhds_eq_iff.1 ⟨s, hφ _ le_rfl⟩).self_of_nhds.analyticAt_comp_extend_symm
-        he hx)
+  have hφe : AnalyticAt ℂ (φ ∘ (e.extend I).symm) (e.extend I x) :=
+    analyticAt_comp_extend_symm_of_toFilterGerm_eq e he hx (hφ _ le_rfl)
   have hline_zero (v : E) : ∀ᶠ z : ℂ in 𝓝 0, φ ((e.extend I).symm (e.extend I x + z • v)) = 0 := by
     rw [← analyticOrderAt_eq_top]
     by_contra hne

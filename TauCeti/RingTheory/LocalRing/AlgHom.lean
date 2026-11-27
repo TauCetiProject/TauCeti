@@ -27,12 +27,14 @@ surjective (`AlgHom.surjective_algebraMap_residueField`).
 We also record an elementary adic uniqueness principle for `k`-algebra homomorphisms into an
 adically separated commutative ring (`IsHausdorff J S`): if `G` generates a left ideal modulo which
 every element of `R` is represented by a scalar in `k`, then two `k`-algebra homomorphisms
-`R →ₐ[k] S` that agree on `G` and send `G` into `J` are congruent modulo every power `J ^ n`, hence
-equal (`AlgHom.sub_mem_pow_of_eqOn`, `AlgHom.ext_of_isHausdorff`), without assuming `R` is
-commutative. Specializing to local `k`-algebras `R` and `S` with `algebraMap k (ResidueField R)`
-surjective yields uniqueness from agreement on any generating set of `maximalIdeal R`
-(`AlgHom.ext_of_span_eq_maximalIdeal`), even when `R` is not finitely generated as a `k`-algebra
-(as for rings of analytic germs or formal power series).
+`φ, ψ : R →ₐ[k] S` that agree on `G` and map `G` into `J` are congruent modulo every power `J ^ n`
+(`AlgHom.sub_mem_pow_of_eqOn`), and hence equal when `IsHausdorff J S` holds
+(`AlgHom.ext_of_isHausdorff`), without assuming `R` is commutative. Specializing to commutative
+local `k`-algebras `R` and `S` where `algebraMap k (ResidueField R)` is surjective and `S` is
+separated (`IsHausdorff`) with respect to its maximal ideal yields uniqueness of `φ, ψ : R →ₐ[k] S`
+from agreement on any generating set of `maximalIdeal R`, provided one of the homomorphisms (`φ`) is
+local (`AlgHom.ext_of_span_eq_maximalIdeal`), even when `R` is not finitely generated as a
+`k`-algebra (as for rings of analytic germs or formal power series).
 
 ## Main results
 
@@ -47,10 +49,12 @@ surjective yields uniqueness from agreement on any generating set of `maximalIde
 * `AlgHom.surjective_algebraMap_residueField`: if a commutative local `k`-algebra `R` over a
   commutative ring `k` admits `R →ₐ[k] k`, then `algebraMap k (ResidueField R)` is surjective.
 * `AlgHom.sub_mem_pow_of_eqOn`, `AlgHom.ext_of_isHausdorff`: adic congruences to every order and
-  uniqueness of `k`-algebra homomorphisms into an adically separated commutative ring from
-  agreement on a set `G` generating an ideal modulo which every element is represented by a scalar.
+  (under `IsHausdorff J S`) uniqueness of `k`-algebra homomorphisms into a commutative ring `S`
+  from agreement on a set `G` mapped into `J` and generating an ideal modulo which every element is
+  represented by a scalar.
 * `AlgHom.ext_of_span_eq_maximalIdeal`: specialization to commutative local `k`-algebras, giving
-  uniqueness from agreement on generators of the maximal ideal.
+  uniqueness from agreement on generators of `maximalIdeal R` when `algebraMap k (ResidueField R)`
+  is surjective, `S` is maximal-ideal separated (`IsHausdorff`), and `φ` is a local homomorphism.
 
 ## References
 
@@ -88,11 +92,11 @@ instance isLocalHom_to_ring {k R : Type*} [CommSemiring k] [Ring R] [IsLocalRing
     have : Nontrivial k := (algebraMap k R).domain_nontrivial
     by_contra hnr
     have hker : ¬ IsUnit (algebraMap k R (ε r) - r) := fun hu ↦ by
-      have h0 : algebraMap k R (ε (algebraMap k R (ε r) - r)) = 0 := by
-        have h : algebraMap k R (ε (algebraMap k R (ε r) - r)) + algebraMap k R (ε r) =
-            algebraMap k R (ε r) := by
-          rw [← map_add, ← map_add, sub_add_cancel, ε.commutes, Algebra.algebraMap_self_apply]
-        simpa using congrArg (· - algebraMap k R (ε r)) h
+      -- `k` is only a `CommSemiring`, so cancel `+ algebraMap k R (ε r)` in the `Ring` `R`.
+      have h0 : algebraMap k R (ε (algebraMap k R (ε r) - r)) = 0 :=
+        add_right_cancel (b := algebraMap k R (ε r)) <| by
+          rw [zero_add, ← map_add, ← map_add, sub_add_cancel, ε.commutes,
+            Algebra.algebraMap_self_apply]
       have hε : ε (algebraMap k R (ε r) - r) = 0 :=
         (ε.commutes _).symm.trans ((congrArg ε h0).trans (map_zero ε))
       exact not_isUnit_zero (hε ▸ hu.map ε)

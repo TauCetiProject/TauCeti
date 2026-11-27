@@ -62,6 +62,12 @@ instance algebra : Algebra R (Germ l A) where
 theorem algebraMap_eq (r : R) :
     algebraMap R (Germ l A) r = (fun _ : α ↦ algebraMap R A r : Germ l A) := (rfl)
 
+/-- For a commutative semiring `R`, the scalar map into `Germ l R` sends `r` to the constant germ
+`(r : Germ l R)`. -/
+theorem algebraMap_self_eq (r : R) :
+    algebraMap R (Germ l R) r = (r : Germ l R) :=
+  (algebraMap_eq r).trans (by simp; rfl)
+
 /-- Projection of algebra-valued functions to their germs. -/
 def coeAlgHom (l : Filter α) : (α → A) →ₐ[R] Germ l A where
   __ := coeRingHom l

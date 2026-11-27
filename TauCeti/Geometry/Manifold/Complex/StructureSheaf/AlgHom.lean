@@ -54,6 +54,15 @@ public noncomputable section
 open CategoryTheory Filter IsManifold Opposite TopologicalSpace Topology
 open scoped ContDiff Manifold
 
+private theorem eventually_mem_of_eventually_contMDiffAt
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [TopologicalSpace H]
+    {I : ModelWithCorners ℂ E H} {X : Type*} [TopologicalSpace X] [ChartedSpace H X]
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H']
+    {J : ModelWithCorners ℂ E' H'} {Y : Type*} [TopologicalSpace Y] [ChartedSpace H' Y]
+    {f : X → Y} {x : X} {y : Y} (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w)
+    (hfx : f x = y) {s : Set Y} (hs : s ∈ 𝓝 y) : ∀ᶠ w in 𝓝 x, f w ∈ s :=
+  (hfx ▸ hf.self_of_nhds.continuousAt.tendsto).eventually hs
+
 namespace OpenPartialHomeomorph
 
 open TauCeti TauCeti.holomorphicStructureSheaf
@@ -79,10 +88,8 @@ theorem eventuallyEq_of_stalkPullbackAt_eq_on_coordinates {ι : Type*} (b : Modu
         (e.holomorphicLinearCoordinateGerm he y (LinearMap.toContinuousLinearMap (b.coord i)) hy)) :
     f₁ =ᶠ[𝓝 x] f₂ := by
   have := Module.Finite.finite_basis b
-  have hmem₁ : ∀ᶠ w in 𝓝 x, f₁ w ∈ e.source :=
-    (hfx₁ ▸ hf₁.self_of_nhds.continuousAt.tendsto).eventually (e.open_source.mem_nhds hy)
-  have hmem₂ : ∀ᶠ w in 𝓝 x, f₂ w ∈ e.source :=
-    (hfx₂ ▸ hf₂.self_of_nhds.continuousAt.tendsto).eventually (e.open_source.mem_nhds hy)
+  have hmem₁ := eventually_mem_of_eventually_contMDiffAt hf₁ hfx₁ (e.open_source.mem_nhds hy)
+  have hmem₂ := eventually_mem_of_eventually_contMDiffAt hf₂ hfx₂ (e.open_source.mem_nhds hy)
   have hall : ∀ᶠ w in 𝓝 x, ∀ i : ι, b.coord i (e (f₁ w) - e y) = b.coord i (e (f₂ w) - e y) :=
     eventually_all.2 fun i ↦ by
       have hi := congrArg (toFilterGerm I X x (𝓝 x) le_rfl) (hcoord i)
@@ -119,9 +126,8 @@ theorem exists_stalkPullbackAt_eq {x : X} {y : Y} (hy : y ∈ e.source)
     refine contMDiffAt_const.add (ContMDiffAt.sum fun i _ ↦ ?_)
     exact ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (b i)).contDiff
       (n := ω)).contMDiff.contMDiffAt.comp w (hw i)
-  have hg_mem : ∀ᶠ w in 𝓝 x, g w ∈ e.target :=
-    (hgx ▸ hg_cm.self_of_nhds.continuousAt.tendsto).eventually
-      (e.open_target.mem_nhds (e.map_source hy))
+  have hg_mem := eventually_mem_of_eventually_contMDiffAt hg_cm hgx
+    (e.open_target.mem_nhds (e.map_source hy))
   let f : X → Y := e.symm ∘ g
   have hfx : f x = y := by simp [f, hgx, e.left_inv hy]
   have hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I 𝓘(ℂ, E') ω f w := by
@@ -151,6 +157,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [Top
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'} [J.Boundaryless]
   {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y] [IsManifold J 1 Y]
 
+private def modelCoordEquiv (E' : Type*) [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    [FiniteDimensional ℂ E'] : E' ≃L[ℂ] (Fin (Module.finrank ℂ E') → ℂ) :=
+  LinearEquiv.toContinuousLinearEquiv (Module.finBasis ℂ E').equivFun
+
+private def modelCoordMap (J : ModelWithCorners ℂ E' H') (y : Y) :
+    Y → (Fin (Module.finrank ℂ E') → ℂ) :=
+  modelCoordEquiv E' ∘ extChartAt J y
+
+private theorem eventually_contMDiffAt_modelCoordMap (y : Y) :
+    ∀ᶠ v in 𝓝 y, ContMDiffAt J 𝓘(ℂ, Fin (Module.finrank ℂ E') → ℂ) ω (modelCoordMap J y) v :=
+  let : IsManifold J ω Y := IsManifold.of_ne_zero ω one_ne_zero inferInstance
+  eventually_contMDiffAt_comp_extChartAt (I := J) (n := ω) y (modelCoordEquiv E').contDiff
+
 /-- Two locally analytic maps from `(X, x)` into a finite-dimensional boundaryless complex manifold
 `(Y, y)` induce the same `ℂ`-algebra homomorphism on holomorphic stalks if and only if they agree
 on a neighbourhood of `x`. No manifold assumption on `X` is required. -/
@@ -159,25 +178,24 @@ theorem stalkPullbackAt_eq_iff_eventuallyEq {x : X} {y : Y} {f₁ f₂ : X → Y
     (hf₂ : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f₂ w) (hfx₂ : f₂ x = y) :
     stalkPullbackAt hf₁ hfx₁ = stalkPullbackAt hf₂ hfx₂ ↔ f₁ =ᶠ[𝓝 x] f₂ := by
   refine ⟨fun heq ↦ ?_, stalkPullbackAt_congr hf₁ hfx₁ hf₂ hfx₂⟩
-  have : IsManifold J ω Y := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  let V : Type := Fin (Module.finrank ℂ E') → ℂ
-  let L : E' ≃L[ℂ] V := LinearEquiv.toContinuousLinearEquiv (Module.finBasis ℂ E').equivFun
-  have hΦ := eventually_contMDiffAt_comp_extChartAt (I := J) (n := ω) y L.contDiff
+  have hΦ := eventually_contMDiffAt_modelCoordMap (J := J) y
   have hcomp :
       stalkPullbackAt (eventually_contMDiffAt_comp hΦ hf₁ hfx₁)
-        (congrArg (L ∘ extChartAt J y) hfx₁) =
+        (congrArg (modelCoordMap J y) hfx₁) =
       stalkPullbackAt (eventually_contMDiffAt_comp hΦ hf₂ hfx₂)
-        (congrArg (L ∘ extChartAt J y) hfx₂) := by
+        (congrArg (modelCoordMap J y) hfx₂) := by
     rw [stalkPullbackAt_comp hΦ rfl hf₁ hfx₁, stalkPullbackAt_comp hΦ rfl hf₂ hfx₂, heq]
-  have hevV := (OpenPartialHomeomorph.refl V).eventuallyEq_of_stalkPullbackAt_eq_on_coordinates
-    (contDiffGroupoid ω 𝓘(ℂ, V)).id_mem_maximalAtlas (Pi.basisFun ℂ (Fin (Module.finrank ℂ E')))
-    (Set.mem_univ _) _ _ _ _ fun i ↦ AlgHom.congr_fun hcomp _
-  have hmem₁ : ∀ᶠ w in 𝓝 x, f₁ w ∈ (extChartAt J y).source :=
-    (hfx₁ ▸ hf₁.self_of_nhds.continuousAt.tendsto).eventually (extChartAt_source_mem_nhds y)
-  have hmem₂ : ∀ᶠ w in 𝓝 x, f₂ w ∈ (extChartAt J y).source :=
-    (hfx₂ ▸ hf₂.self_of_nhds.continuousAt.tendsto).eventually (extChartAt_source_mem_nhds y)
+  have hevV := (OpenPartialHomeomorph.refl
+      (Fin (Module.finrank ℂ E') → ℂ)).eventuallyEq_of_stalkPullbackAt_eq_on_coordinates
+    (contDiffGroupoid ω 𝓘(ℂ, Fin (Module.finrank ℂ E') → ℂ)).id_mem_maximalAtlas
+    (Pi.basisFun ℂ (Fin (Module.finrank ℂ E'))) (Set.mem_univ _) _ _ _ _
+    fun i ↦ AlgHom.congr_fun hcomp _
+  have hmem₁ := eventually_mem_of_eventually_contMDiffAt hf₁ hfx₁
+    (extChartAt_source_mem_nhds (I := J) y)
+  have hmem₂ := eventually_mem_of_eventually_contMDiffAt hf₂ hfx₂
+    (extChartAt_source_mem_nhds (I := J) y)
   filter_upwards [hevV, hmem₁, hmem₂] with w hw hw₁ hw₂
-  exact (extChartAt J y).injOn hw₁ hw₂ (L.injective hw)
+  exact (extChartAt J y).injOn hw₁ hw₂ ((modelCoordEquiv E').injective hw)
 
 /-- Pullback of holomorphic stalks along an analytic map germ `(X, x) → (Y, y)` into a
 finite-dimensional boundaryless complex manifold is injective. No manifold or separatedness
@@ -203,27 +221,27 @@ theorem exists_stalkPullbackAt_eq (x : X) (y : Y)
     ∃ (f : X → Y) (hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω f w) (hfx : f x = y),
       stalkPullbackAt hf hfx = ψ := by
   have : IsManifold J ω Y := IsManifold.of_ne_zero ω one_ne_zero inferInstance
-  let V : Type := Fin (Module.finrank ℂ E') → ℂ
-  let L : E' ≃L[ℂ] V := LinearEquiv.toContinuousLinearEquiv (Module.finBasis ℂ E').equivFun
-  let Φ : Y → V := L ∘ extChartAt J y
-  have hΦ := eventually_contMDiffAt_comp_extChartAt (I := J) (n := ω) y L.contDiff
-  obtain ⟨g, hg, hgx, hgψ⟩ := (OpenPartialHomeomorph.refl V).exists_stalkPullbackAt_eq
-    (contDiffGroupoid ω 𝓘(ℂ, V)).id_mem_maximalAtlas (Set.mem_univ (Φ y))
-    (ψ.comp (stalkPullbackAlgHom hΦ))
-  let Ψ : V → Y := (extChartAt J y).symm ∘ L.symm
+  let L := modelCoordEquiv E'
+  let Φ := modelCoordMap J y
+  have hΦ := eventually_contMDiffAt_modelCoordMap (J := J) y
+  obtain ⟨g, hg, hgx, hgψ⟩ := (OpenPartialHomeomorph.refl
+      (Fin (Module.finrank ℂ E') → ℂ)).exists_stalkPullbackAt_eq
+    (contDiffGroupoid ω 𝓘(ℂ, Fin (Module.finrank ℂ E') → ℂ)).id_mem_maximalAtlas
+    (Set.mem_univ (Φ y)) (ψ.comp (stalkPullbackAlgHom hΦ))
+  let Ψ : (Fin (Module.finrank ℂ E') → ℂ) → Y := (extChartAt J y).symm ∘ L.symm
   have hmemV : ∀ᶠ z in 𝓝 (Φ y), L.symm z ∈ (extChartAt J y).target :=
-    (by simpa [Φ] using L.symm.continuous.tendsto (Φ y) :
+    (by simpa [Φ, modelCoordMap, L] using L.symm.continuous.tendsto (Φ y) :
       Tendsto L.symm (𝓝 (Φ y)) (𝓝 (extChartAt J y y))).eventually (extChartAt_target_mem_nhds y)
-  have hΨ : ∀ᶠ z in 𝓝 (Φ y), ContMDiffAt 𝓘(ℂ, V) J ω Ψ z :=
+  have hΨ : ∀ᶠ z in 𝓝 (Φ y), ContMDiffAt 𝓘(ℂ, Fin (Module.finrank ℂ E') → ℂ) J ω Ψ z :=
     hmemV.mono fun z hz ↦ ((contMDiffOn_extChartAt_symm (n := ω) y).contMDiffAt
       (extChartAt_target_mem_nhds' hz)).comp z L.symm.contDiff.contMDiff.contMDiffAt
   have hf : ∀ᶠ w in 𝓝 x, ContMDiffAt I J ω (Ψ ∘ g) w := eventually_contMDiffAt_comp hΨ hg hgx
-  have hfx : (Ψ ∘ g) x = y := (congrArg Ψ hgx).trans (by simp [Ψ, Φ])
+  have hfx : (Ψ ∘ g) x = y := (congrArg Ψ hgx).trans (by simp [Ψ, Φ, modelCoordMap, L])
   refine ⟨Ψ ∘ g, hf, hfx, ?_⟩
   have hΦf_eq : Φ ∘ (Ψ ∘ g) =ᶠ[𝓝 x] g := by
-    filter_upwards [(hgx ▸ hg.self_of_nhds.continuousAt.tendsto).eventually hmemV] with w hw
-    simp only [Function.comp_apply, Φ, Ψ, (extChartAt J y).right_inv hw,
-      ContinuousLinearEquiv.apply_symm_apply]
+    filter_upwards [eventually_mem_of_eventually_contMDiffAt hg hgx hmemV] with w hw
+    simp only [Function.comp_apply, Φ, modelCoordMap, Ψ, (extChartAt J y).right_inv hw,
+      L, ContinuousLinearEquiv.apply_symm_apply]
   have hcomp : (stalkPullbackAt hf hfx).comp (stalkPullbackAlgHom hΦ) =
       ψ.comp (stalkPullbackAlgHom hΦ) := calc
     (stalkPullbackAt hf hfx).comp (stalkPullbackAlgHom hΦ)
@@ -235,8 +253,8 @@ theorem exists_stalkPullbackAt_eq (x : X) (y : Y)
   refine (AlgHom.cancel_right ?_).1 hcomp
   intro s
   obtain ⟨t, ht⟩ := (stalkEquivModelSpace y L).symm.surjective s
-  refine ⟨t, ?_⟩
-  rw [stalkPullbackAlgHom_apply, ← ht, stalkEquivModelSpace_symm_apply]
+  exact ⟨t, (stalkPullbackAlgHom_apply hΦ t).trans
+    ((stalkEquivModelSpace_symm_apply y L t).symm.trans ht)⟩
 
 /-- **Equivalence between analytic map germs and `ℂ`-algebra homomorphisms of holomorphic stalks.**
 For any finite-dimensional boundaryless complex manifold `Y` and any complex charted space `X`

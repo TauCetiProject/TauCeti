@@ -171,8 +171,8 @@ theorem taylorSeries_algebraMap (r : ℂ) :
   have h : toFilterGerm 𝓘(ℂ, ι → ℂ) (ι → ℂ) x (𝓝 x) le_rfl
       (algebraMap ℂ ((holomorphicStructureSheaf 𝓘(ℂ, ι → ℂ) (ι → ℂ)).presheaf.stalk x) r) =
       (fun _ ↦ r : (ι → ℂ) → ℂ) := by
-    rw [toFilterGerm_algebraMap, Germ.algebraMap_eq]
-    simp_rw [Algebra.algebraMap_self_apply]
+    rw [toFilterGerm_algebraMap, Germ.algebraMap_self_eq]
+    rfl
   rw [coeff_taylorSeries h, mvTaylorCoeff_const, coeff_C]
   simp only [Finsupp.coe_eq_zero]
 

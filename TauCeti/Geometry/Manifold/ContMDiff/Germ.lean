@@ -669,15 +669,26 @@ theorem AnalyticMapGerm.comp_mk {x : X} {y : Y} {z : Z}
         ((congrArg g hfx).trans hgy) :=
   Subtype.ext rfl
 
+private theorem AnalyticMapGerm.id_def (I : ModelWithCorners 𝕜 E H) (x : X) :
+    AnalyticMapGerm.id I x =
+      AnalyticMapGerm.mk _root_.id (Eventually.of_forall fun _ ↦ contMDiffAt_id) rfl :=
+  rfl
+
 /-- Left composition with `AnalyticMapGerm.id` is the identity. -/
 @[simp]
 theorem AnalyticMapGerm.id_comp {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
-    (AnalyticMapGerm.id J y).comp F = F := by obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk; rfl
+    (AnalyticMapGerm.id J y).comp F = F := by
+  obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk
+  rw [AnalyticMapGerm.id_def, AnalyticMapGerm.comp_mk]
+  rfl
 
 /-- Right composition with `AnalyticMapGerm.id` is the identity. -/
 @[simp]
 theorem AnalyticMapGerm.comp_id {x : X} {y : Y} (F : AnalyticMapGerm I J x y) :
-    F.comp (AnalyticMapGerm.id I x) = F := by obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk; rfl
+    F.comp (AnalyticMapGerm.id I x) = F := by
+  obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk
+  rw [AnalyticMapGerm.id_def, AnalyticMapGerm.comp_mk]
+  rfl
 
 /-- Composition of analytic map germs is associative. -/
 theorem AnalyticMapGerm.comp_assoc {E''' : Type*} [NormedAddCommGroup E'''] [NormedSpace 𝕜 E''']
@@ -685,8 +696,12 @@ theorem AnalyticMapGerm.comp_assoc {E''' : Type*} [NormedAddCommGroup E'''] [Nor
     {W : Type*} [TopologicalSpace W] [ChartedSpace H''' W] {x : X} {y : Y} {z : Z} {w : W}
     (H : AnalyticMapGerm K L z w) (G : AnalyticMapGerm J K y z) (F : AnalyticMapGerm I J x y) :
     (H.comp G).comp F = H.comp (G.comp F) := by
-  obtain ⟨h, hh, hhz, rfl⟩ := H.exists_mk; obtain ⟨g, hg, hgy, rfl⟩ := G.exists_mk
-  obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk; rfl
+  obtain ⟨h, hh, hhz, rfl⟩ := H.exists_mk
+  obtain ⟨g, hg, hgy, rfl⟩ := G.exists_mk
+  obtain ⟨f, hf, hfx, rfl⟩ := F.exists_mk
+  rw [AnalyticMapGerm.comp_mk, AnalyticMapGerm.comp_mk, AnalyticMapGerm.comp_mk,
+    AnalyticMapGerm.comp_mk]
+  rfl
 
 end AnalyticMapGerm
 

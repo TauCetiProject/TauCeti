@@ -16,6 +16,7 @@ import TauCeti.Geometry.RingedSpace.PresheafedSpace.Basic
 
 This file characterizes which morphisms between the holomorphic locally ringed spaces
 `locallyRingedSpace I X` and `locallyRingedSpace J Y` (constructed in
+`StructureSheaf.RingedSpace.Defs`, with induced maps and comparisons in
 `StructureSheaf.RingedSpace.Basic`) come from complex analytic maps:
 
 * On arbitrary complex charted spaces `X` and `Y` (with no manifold, boundaryless, or
@@ -588,9 +589,12 @@ theorem contMDiff_base_of_c_app_top_algebraMap : ContMDiff I J ω φ.base := by
   have hG_cm : ContMDiff I 𝓘(ℂ, E') ω G := fun w ↦ ContMDiffAt.sum fun i _ ↦
     ((ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) (b i)).contDiff
       (n := ω)).contMDiff.contMDiffAt.comp w (contMDiff (t i) w)
+  have hGx₀ : G ⟨x₀, hx₀⟩ = extChartAt J y₀ y₀ := by
+    dsimp [G, t, y₀, e, extChartAt]
+    exact (e.extend_base_sub_eq_sum_of_c_app_top_algebraMap he b φ hφ 0 ⟨x₀, hx₀⟩).trans
+      (sub_zero _)
   have hx₀_tgt : G ⟨x₀, hx₀⟩ ∈ (extChartAt J y₀).target := by
-    rw [show G ⟨x₀, hx₀⟩ = extChartAt J y₀ y₀ from
-      (e.extend_base_sub_eq_sum_of_c_app_top_algebraMap he b φ hφ 0 ⟨x₀, hx₀⟩).trans (sub_zero _)]
+    rw [hGx₀]
     exact mem_extChartAt_target y₀
   refine (((contMDiffOn_extChartAt_symm (n := ω) y₀).contMDiffAt
     (extChartAt_target_mem_nhds' hx₀_tgt)).comp (⟨x₀, hx₀⟩ : V)
