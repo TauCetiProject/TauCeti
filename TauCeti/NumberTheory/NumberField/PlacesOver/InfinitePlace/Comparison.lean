@@ -25,8 +25,8 @@ For `v = |φ ·|` with `φ : L →+* ℂ`, an element `σ` of `L ≃ₐ[K] L` li
 inertia) group of `v` exactly when `σ = 1` or `φ ∘ σ = conj ∘ φ`
 (`NumberField.InfinitePlace.mem_inertia_toPlace_mk_iff`): the nontrivial elements are the complex
 conjugations at `v`. If such a `σ` exists, the group is `{1, σ}`. For `L / K` Galois it is trivial
-exactly when `v` is unramified over `K`, that is, when `v` is complex or its restriction to `K` is
-real, and otherwise it has order two. None of this needs `L / K` to be finite, so it applies to
+exactly when `v` is unramified over `K`, that is, when `v` is real or its restriction to `K` is
+complex, and otherwise it has order two. None of this needs `L / K` to be finite, so it applies to
 `L = F^alg` and `K = F` for a number field `F`.
 
 ## Main results
@@ -52,6 +52,7 @@ variable {K L : Type*} [Field K] [Field L] [CharZero L] [Algebra K L]
 
 /-- **Decomposition groups at infinite places.** The stabiliser of the place underlying an
 infinite place `v` is Mathlib's stabiliser of `v`. -/
+@[simp]
 theorem stabilizer_toPlace (v : InfinitePlace L) :
     MulAction.stabilizer (L ≃ₐ[K] L) v.toPlace = MulAction.stabilizer (L ≃ₐ[K] L) v := by
   ext σ

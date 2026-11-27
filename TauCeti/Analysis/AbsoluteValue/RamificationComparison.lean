@@ -46,7 +46,7 @@ The specialisation to the absolute Galois group of a number field acting on its 
 integers, with Tau Ceti's `TauCeti.GaloisRep.decompositionGroup` and `inertiaGroup`, is in
 `TauCeti/NumberTheory/NumberField/AbsoluteGaloisGroup/PlaceComparison.lean`; the infinite places
 are compared with Mathlib's stabiliser lemmas in
-`TauCeti/NumberTheory/NumberField/PlacesOver/InfinitePlaceComparison.lean`.
+`TauCeti/NumberTheory/NumberField/PlacesOver/InfinitePlace/Comparison.lean`.
 
 ## Main results
 
@@ -112,9 +112,8 @@ namespace Place
 
 variable [CharZero L]
 
-/-- **The stabiliser of a finite place is the stabiliser of its valuation subring.** If `σ`
-preserves `A_w`, then `σ • w` and `w` have the same valuation subring, so they are equivalent, and
-equivalent places are equal. -/
+/-- **The stabiliser of a finite place is the stabiliser of its valuation subring.** An element
+of `G` fixes a finite place `w` exactly when it maps the valuation subring `A_w` to itself. -/
 theorem stabilizer_valuationSubring (w : Place L) (hw : IsNonarchimedean w.val) :
     MulAction.stabilizer G (w.val.valuationSubring hw) = MulAction.stabilizer G w := by
   rw [stabilizer_eq]

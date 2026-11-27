@@ -197,6 +197,7 @@ variable {G : Type*} [Group G] [MulSemiringAction G K]
 
 /-- **Equivariance of the valuation subring.** The valuation subring of `g • w` is the image under
 `g` of the valuation subring of `w`. -/
+@[simp]
 theorem valuationSubring_smul (g : G) (hw : IsNonarchimedean w) :
     (g • w).valuationSubring (isNonarchimedean_smul_iff.mpr hw) = g • w.valuationSubring hw := by
   ext x

@@ -57,7 +57,8 @@ private theorem isCenteredAt_valuationSubring_place
     (hQ : ∀ b : integralClosure (𝓞 F) (AlgebraicClosure F), b ∈ Q ↔ w b < 1) :
     (w.val.valuationSubring hw).IsCenteredAt Q where
   algebraMap_mem b := algebraMap_mem_valuationSubring F (w.val.valuationSubring hw) b
-  algebraMap_mem_nonunits_iff b := by rw [mem_nonunits_valuationSubring_iff, hQ]; rfl
+  algebraMap_mem_nonunits_iff b := by
+    rw [mem_nonunits_valuationSubring_iff, Subalgebra.algebraMap_apply, hQ, Place.coe_apply]
 
 /-- **Decomposition groups.** The stabiliser in `G_F` of a finite place `w` of `F^alg` is the
 decomposition group `D_Q` of the prime `Q = {b ∈ O | w b < 1}`. -/
