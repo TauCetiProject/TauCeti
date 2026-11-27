@@ -335,6 +335,22 @@ theorem coe_latticeAffineWeylGroupMulEquiv_apply
     (P.latticeAffineWeylGroupMulEquiv b Y hQ hP x : N ≃ᵃ[R] N) = x.left * x.right :=
   SemidirectProduct.coe_mulEquivSup_apply _ _ x
 
+/-- The semidirect decompositions for an intermediate lattice and the coweight lattice commute
+with the inclusions of the corresponding affine Weyl groups and alcove stabilizers. -/
+@[simp]
+theorem inclusion_latticeAffineWeylGroupMulEquiv
+    (g : P.affineWeylGroup ⋊[(P.affineWeylGroup.normalizerMonoidHom).comp
+      (Subgroup.inclusion
+        (latticeFundamentalAlcoveStabilizer_le_normalizer_affineWeylGroup b hQ hP))]
+      P.latticeFundamentalAlcoveStabilizer b Y hQ hP) :
+    Subgroup.inclusion (P.latticeAffineWeylGroup_le_extendedAffineWeylGroup hQ hP)
+        (P.latticeAffineWeylGroupMulEquiv b Y hQ hP g) =
+      P.extendedAffineWeylGroupMulEquiv b
+        ⟨g.left, Subgroup.inclusion
+          (latticeFundamentalAlcoveStabilizer_le_fundamentalAlcoveStabilizer b hQ hP) g.right⟩ := by
+  apply Subtype.ext
+  simp
+
 /-- **The inverse of `W_aff ⋊ Ω_Y ≃* W_Y`**: its `Ω_Y`-component is the element of `Ω_Y` whose
 translation part is congruent to that of `f` modulo `Q∨`, and the `W_aff`-component is then
 determined by `g ω = f`. -/
