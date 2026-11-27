@@ -393,7 +393,8 @@ private theorem IsWeakForm.laurentQExpansion_twelve_mul (hf : IsWeakForm (Gamma 
     TauCeti.UpperHalfPlane.laurentQExpansion ((12 * N : ℕ) : ℝ) f =
       LaurentSeries.expand ℂ 12 (TauCeti.UpperHalfPlane.laurentQExpansion N f) := by
   simpa using
-    TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul hf.periodic_level hf.meromorphicAt_level 12
+    TauCeti.UpperHalfPlane.laurentQExpansion_pnat_mul hf.periodic_level
+      hf.meromorphicAt_cuspFunction_level 12
 
 /-- **Conjugates of weak forms, with their translates.** Let `σ (ζ_{12N}) = ζ_{12N} ^ d`. For a
 weak form `f` of weight `k` on `Γ(N)`, some weak form `g` of weight `k` on `Γ(N)` has, whenever
