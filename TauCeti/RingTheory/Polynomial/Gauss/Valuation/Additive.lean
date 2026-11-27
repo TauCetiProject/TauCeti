@@ -60,16 +60,23 @@ theorem addGaussValuation_def (g : R[X]) :
       (g.gaussValuation v.toValuation (.ofAdd (.toDual (ρ : WithTop Γ)))).toAdd.ofDual := by
   rw [addGaussValuation, AddValuation.ofValuation_apply, Valuation.gauss_apply]
 
+private lemma ofDual_toAdd_weighted_term (a : R) (n : ℕ) :
+    (v.toValuation a * (.ofAdd (.toDual (ρ : WithTop Γ))) ^ n).toAdd.ofDual =
+      v a + n • (ρ : WithTop Γ) := by
+  rw [AddValuation.toValuation_apply, toAdd_mul, toAdd_pow, toAdd_ofAdd, toAdd_ofAdd,
+    ofDual_add, OrderDual.ofDual_toDual]
+  have hsmul : OrderDual.ofDual (n • OrderDual.toDual (ρ : WithTop Γ)) =
+      n • (ρ : WithTop Γ) := ofDual_smul n (OrderDual.toDual (ρ : WithTop Γ))
+  rw [hsmul]
+
 /-- A lower bound for the additive Gauss valuation bounds every weighted coefficient. -/
 theorem le_addGaussValuation_iff {g : R[X]} {a : WithTop Γ} :
     a ≤ addGaussValuation v ρ g ↔ ∀ i, a ≤ v (g.coeff i) + i • (ρ : WithTop Γ) := by
   rw [addGaussValuation_def, ← OrderDual.le_toDual, ← Multiplicative.ofAdd_le,
     ofAdd_toAdd, gaussValuation_le_iff]
-  simp only [AddValuation.toValuation_apply, ← ofAdd_nsmul, ← ofAdd_add,
-    Multiplicative.ofAdd_le]
   refine forall_congr' fun i ↦ ?_
-  erw [← OrderDual.ofDual_le_ofDual, ofDual_add, ofDual_smul, OrderDual.ofDual_toDual,
-    OrderDual.ofDual_toDual]
+  rw [← Multiplicative.toAdd_le, ← OrderDual.ofDual_le_ofDual,
+    ofDual_toAdd_weighted_term, toAdd_ofAdd, OrderDual.ofDual_toDual]
 
 /-- The additive Gauss valuation is at most every weighted coefficient. -/
 theorem addGaussValuation_le_coeff (g : R[X]) (i : ℕ) :
@@ -86,12 +93,7 @@ theorem addGaussValuation_C (a : R) : addGaussValuation v ρ (C a) = v a := by
 @[simp]
 theorem addGaussValuation_monomial (n : ℕ) (a : R) :
     addGaussValuation v ρ (monomial n a) = v a + n • (ρ : WithTop Γ) := by
-  rw [addGaussValuation_def, gaussValuation_monomial, AddValuation.toValuation_apply,
-    toAdd_mul, toAdd_pow, toAdd_ofAdd, toAdd_ofAdd, ofDual_add,
-    OrderDual.ofDual_toDual]
-  have hsmul : OrderDual.ofDual (n • OrderDual.toDual (ρ : WithTop Γ)) =
-      n • (ρ : WithTop Γ) := ofDual_smul n (OrderDual.toDual (ρ : WithTop Γ))
-  rw [hsmul]
+  rw [addGaussValuation_def, gaussValuation_monomial, ofDual_toAdd_weighted_term]
 
 /-- The variable has additive Gauss valuation equal to the radius. -/
 @[simp]
@@ -102,17 +104,13 @@ theorem addGaussValuation_X : addGaussValuation v ρ (X : R[X]) = ρ := by
 theorem addGaussValuation_le_iff {g : R[X]} {b : Γ} :
     addGaussValuation v ρ g ≤ b ↔ ∃ i, v (g.coeff i) + i • (ρ : WithTop Γ) ≤ b := by
   refine ⟨fun hb ↦ ?_, fun ⟨i, hi⟩ ↦ (addGaussValuation_le_coeff v ρ g i).trans hi⟩
-  have hne : g.gaussValuation v.toValuation (.ofAdd (.toDual (ρ : WithTop Γ))) ≠ 0 := by
-    intro hz
-    rw [addGaussValuation_def, hz, ofDual_toAdd_zero] at hb
-    exact WithTop.not_top_le_coe _ hb
+  have hg : g ≠ 0 := by
+    rintro rfl
+    simp only [AddValuation.map_zero, WithTop.not_top_le_coe] at hb
   obtain ⟨i, _, hi⟩ := exists_eq_gaussValuation (v := v.toValuation)
-    (r := .ofAdd (.toDual (ρ : WithTop Γ))) (show g ≠ 0 by rintro rfl; simp at hne)
+    (r := .ofAdd (.toDual (ρ : WithTop Γ))) hg
   have hi' := congrArg (fun t : Multiplicative (WithTop Γ)ᵒᵈ ↦ t.toAdd.ofDual) hi
-  rw [AddValuation.toValuation_apply, toAdd_mul, toAdd_pow, toAdd_ofAdd, toAdd_ofAdd,
-    ofDual_add, OrderDual.ofDual_toDual] at hi'
-  erw [ofDual_smul, OrderDual.ofDual_toDual] at hi'
-  rw [← addGaussValuation_def] at hi'
+  rw [ofDual_toAdd_weighted_term, ← addGaussValuation_def] at hi'
   exact ⟨i, hi'.trans_le hb⟩
 
 /-- The additive Gauss valuation increases with the radius. -/
@@ -179,9 +177,8 @@ variable {R Γ₀ : Type*} [CommRing R] [IsDomain R]
 the valuations of the distances to its roots, counted with multiplicity. -/
 theorem addValuation_eval_eq_add_sum_roots (g : R[X]) (hg : g.Splits) (x : R) :
     v (g.eval x) = v g.leadingCoeff + (g.roots.map fun a ↦ v (x - a)).sum := by
-  conv_lhs => rw [hg.eq_prod_roots]
-  simp only [eval_mul, eval_C, eval_multiset_prod, v.map_mul, v.map_multiset_prod,
-    Multiset.map_map, Function.comp_def, eval_sub, eval_X]
+  simp only [hg.eval_eq_prod_roots x, v.map_mul, v.map_multiset_prod,
+    Multiset.map_map, Function.comp_def]
 
 /-- For a split polynomial evaluated at a point of valuation `r`, the correction to
 the sum of root valuations truncated at `r` comes from roots of valuation exactly `r`. -/

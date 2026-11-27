@@ -337,18 +337,18 @@ private lemma exists_root_eval_family_le_add {ι : Type*} [Fintype ι]
   let e : O →+* K := O.subtype
   let G (r : ℚ≥0) : AddValuation O[X] (WithTop ℝ) :=
     (addGaussValuation V (r : ℝ)).comap (Polynomial.mapRingHom e)
+  have hmap (r : ℚ≥0) (P : O[X]) : G r P = addGaussValuation V (r : ℝ) (P.map e) :=
+    Valuation.comap_apply (Polynomial.mapRingHom e) (addGaussValuation V (r : ℝ)) P
   have heval (r : ℚ≥0) (P : O[X]) (y : O)
       (hy : ((r : ℝ) : WithTop ℝ) ≤ V (y : K)) : G r P ≤ V (↑(P.eval y) : K) := by
     have heval' : (P.map e).eval (y : K) = (↑(P.eval y) : K) := eval_map_apply e y
-    have hmap : G r P = addGaussValuation V (r : ℝ) (P.map e) :=
-      Valuation.comap_apply (Polynomial.mapRingHom e) (addGaussValuation V (r : ℝ)) P
     rw [hmap, ← heval']
     exact (P.map e).addGaussValuation_le_valuation_eval V (r : ℝ) hy
   have hG : G ρ (∏ i, g i) ≤ (B : ℝ) := by
     rw [AddValuation.map_prod]
     exact (sum_le_sum fun i _ ↦ heval ρ (g i) (x i) (hx i)).trans hP
   obtain ⟨h, hh, ζ, hpow, hy, hbound⟩ :=
-    exists_integer_root_eval_le_gauss_add hδ h_harmonic (∏ i, g i) hG
+    exists_integer_root_eval_le_gauss_add hδ h_harmonic (∏ i, g i) (by rwa [hmap] at hG)
   have hrρ := (mem_primePowerRadiusExponents.1 hh).2.2
   have hrρ' : ((primePowerRootRadius p h : ℝ) : WithTop ℝ) ≤ ((ρ : ℝ) : WithTop ℝ) := by
     exact_mod_cast hrρ
@@ -361,7 +361,8 @@ private lemma exists_root_eval_family_le_add {ι : Type*} [Fintype ι]
     have heprod : (↑(∏ i, (g i).eval (ζ - 1)) : K) = ∏ i, (↑((g i).eval (ζ - 1)) : K) :=
       _root_.map_prod O.subtype (fun i ↦ (g i).eval (ζ - 1)) univ
     have H : V (↑((∏ i, g i).eval (ζ - 1)) : K) ≤
-        G (primePowerRootRadius p h) (∏ i, g i) + (δ : ℝ) := hbound
+        G (primePowerRootRadius p h) (∏ i, g i) + (δ : ℝ) := by
+      rwa [hmap]
     rw [eval_prod, heprod, AddValuation.map_prod, AddValuation.map_prod] at H
     exact H
   have hcomp := sum_le_sum fun i (_ : i ∈ univ) ↦ hold i
