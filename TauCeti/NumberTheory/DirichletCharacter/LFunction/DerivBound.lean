@@ -6,36 +6,40 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.Complex.RealDeriv
-import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.SpecialFunctions.Log.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.NumberTheory.DirichletCharacter.Basic
+import TauCeti.NumberTheory.DirichletCharacter.IntervalSum
+import TauCeti.NumberTheory.Harmonic.Bounds
 
 /-!
-# Derivative bounds for continued Dirichlet L-functions near one
+# Derivative representations and near-one bounds for continued Dirichlet L-functions
 
-Bounding `L'(σ, χ)` uniformly on `[1 - 1 / log N, 1]` controls the slope of the continued
-`L`-function near `1`, allowing lower bounds on `L(1, χ)` to be converted via the mean value
-theorem into zero-free intervals and effective real-zero separation from `1`. Throughout, `N` is
-any nonzero level (`[NeZero N]`), `χ` is any nonprincipal complex Dirichlet character modulo `N`
-(not necessarily primitive, so `N` need not be `χ.conductor`), and `DirichletCharacter.LFunction`
-denotes the meromorphic continuation rather than the Dirichlet series (which need not converge on
-`0 < Re(s) ≤ 1`).
+For a nonprincipal complex Dirichlet character `χ` of nonzero level `N` (not necessarily primitive,
+so `N` need not be `χ.conductor`), partial summation represents the continued `L`-function on
+`Re(s) > 0` by `s * ∫_{t > 1} S(t) t ^ (-(s + 1))`, where `S(t)` is the sum of `χ(k)` over
+`1 ≤ k ≤ t` (`DirichletCharacter.LFunction_eq_mul_integral`). Differentiating this Mellin-type
+integral gives an absolutely convergent integral representation for `L'(s, χ)` across the whole
+right half-plane `Re(s) > 0`:
 
-Differentiating the partial-summation continuation
-`L(s, χ) = s ∫_1^∞ A(⌊t⌋₊) t ^ (-(s + 1)) dt` gives the absolutely convergent integral
-representation
+`L'(s, χ) = ∫_{t > 1} S(t) (1 - s log t) t ^ (-(s + 1))`.
 
-`L'(s, χ) = ∫_1^∞ (∑_{k=1}^{⌊t⌋₊} χ(k)) (1 - s log t) t ^ (-(s + 1)) dt`
+Splitting the integral at the level `N` and integrating by parts over `[1, N]` — where period
+cancellation `S(N) = 0` (`DirichletCharacter.intervalSum_level_eq_zero`) eliminates the boundary
+term at `N` — decomposes both `L(s, χ)` and `L'(s, χ)` on `Re(s) > 0` into a finite Dirichlet
+polynomial of length `N` plus a tail integral over `(N, ∞)`:
 
-on the whole half-plane `Re(s) > 0`, without any zero-free hypothesis. Estimating `(1, N]` and
-`(N, ∞)` separately bounds `‖L'(s, χ)‖` throughout `Re(s) > 0` with an explicit `N ^ (1 - Re(s))`
-dependence, yields the uniform real-segment bound `‖L'(σ, χ)‖ ≤ 81 (log N) ^ 2` for
-`σ ∈ [1 - 1 / log N, 1]`, and combines with nonvanishing on `Re(s) ≥ 1` and the mean value theorem
-to give `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for every real zero `β` of `L(s, χ)`.
+* `L(s, χ) = ∑_{n=1}^N χ(n) n ^ (-s) + s ∫_{t > N} S(t) t ^ (-(s + 1))`,
+* `L'(s, χ) = -∑_{n=1}^N χ(n) (log n) n ^ (-s) + ∫_{t > N} S(t) (1 - s log t) t ^ (-(s + 1))`.
+
+Bounding `‖χ(n)‖ ≤ 1` on the initial sum via `Nat.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq`
+and `‖S(t)‖ ≤ N` on the tail yields explicit level-uniform derivative bounds throughout `Re(s) > 0`,
+and in particular the half-line bound `‖L'(σ, χ)‖ ≤ 64 (log N) ^ 2` for every real
+`σ ≥ 1 - 1 / log N`, the corresponding Lipschitz bound on `[1 - 1 / log N, ∞)`, and unconditional
+real-zero separation `‖L(1, χ)‖ / (64 (log N) ^ 2) ≤ 1 - β` for every real zero `β` of `L(s, χ)`.
 
 ## Main results
 
@@ -43,18 +47,26 @@ to give `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for every real zero `β` of 
   `DirichletCharacter.deriv_LFunction_eq_integral`, and
   `DirichletCharacter.integrableOn_sum_Icc_mul_one_sub_mul_log_mul_cpow`: integral representation
   and absolute integrability of `L'(s, χ)` on `Re(s) > 0` for `χ ≠ 1`.
-* `DirichletCharacter.norm_deriv_LFunction_le_of_re_pos`: explicit right-half-plane bound for
-  `‖L'(s, χ)‖` when `χ ≠ 1` and `Re(s) > 0`.
-* `DirichletCharacter.norm_deriv_LFunction_le_mul_log_sq`: uniform bound
-  `‖L'(σ, χ)‖ ≤ 81 * (log N) ^ 2` for `χ ≠ 1` and `σ ∈ [1 - 1 / log N, 1]`.
-* `DirichletCharacter.LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero`:
-  unconditional real-zero separation `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β` for any real zero `β`
+* `DirichletCharacter.LFunction_eq_sum_Icc_add_mul_integral` and
+  `DirichletCharacter.deriv_LFunction_eq_neg_sum_Icc_add_integral`: level-split partial-summation
+  formulas for `L(s, χ)` and `L'(s, χ)` on `Re(s) > 0`.
+* `DirichletCharacter.norm_deriv_LFunction_le_of_re_pos` and
+  `DirichletCharacter.norm_deriv_LFunction_ofReal_le_of_pos`: explicit right-half-plane and
+  positive-real bounds for `‖L'(s, χ)‖`.
+* `DirichletCharacter.norm_deriv_LFunction_le_mul_log_sq` and
+  `DirichletCharacter.norm_LFunction_sub_le_of_one_sub_one_div_log_le`: uniform derivative bound
+  `‖L'(σ, χ)‖ ≤ 64 * (log N) ^ 2` and Lipschitz bound on `[1 - 1 / log N, ∞)`.
+* `DirichletCharacter.one_lt_log_level_of_ne_one`: `1 < log N` for any nonprincipal character of
+  nonzero level `N`.
+* `DirichletCharacter.norm_LFunction_one_div_log_sq_le_one_sub_of_LFunction_eq_zero`:
+  unconditional real-zero separation `‖L(1, χ)‖ / (64 (log N) ^ 2) ≤ 1 - β` for any real zero `β`
   of any nonprincipal character `χ` of nonzero level `N`.
 
 ## References
 
 * D. Koukoulopoulos, *The Distribution of Prime Numbers*, Graduate Studies in Mathematics 203,
   American Mathematical Society, 2019, Lemma 11.2, p. 113, and (12.11), p. 124.
+* H. Davenport, *Multiplicative Number Theory*, 3rd ed., Springer, 2000, Chapters 4 and 14.
 -/
 
 public section
@@ -63,6 +75,12 @@ open Finset Filter MeasureTheory Complex Asymptotics
 open scoped Topology
 
 namespace DirichletCharacter
+
+/-- A nonprincipal Dirichlet character at a nonzero level `N` has `1 < log N`, since `N ≥ 3 > e`
+(`DirichletCharacter.three_le_level_of_ne_one`). -/
+theorem one_lt_log_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 1 < Real.log N :=
+  Real.one_lt_log_of_three_le (mod_cast χ.three_le_level_of_ne_one hχ)
 
 variable {N : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
@@ -97,60 +115,68 @@ theorem integrableOn_sum_Icc_mul_one_sub_mul_log_mul_cpow (hχ : χ ≠ 1) {s : 
   TauCeti.LSeries.integrableOn_sum_mul_one_sub_mul_log_mul_cpow_of_isBigO _
     (by simpa only [Real.rpow_zero] using χ.isBigO_sum_Icc_one hχ) hs
 
-/-- Initial-range estimate on `(1, N]`, using the trivial partial-sum bound `‖∑_{k≤t} χ(k)‖ ≤ t`. -/
-private lemma norm_integral_Ioc_le (hχ : χ ≠ 1) {s : ℂ} :
-    ‖∫ t in Set.Ioc (1 : ℝ) N,
-        (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1))‖ ≤
-      max 1 ((N : ℝ) ^ (1 - s.re)) * (1 + ‖s‖ * Real.log N) * Real.log N := by
-  have hN3 := χ.three_le_level_of_ne_one hχ
-  have hN1 : (1 : ℝ) < N := by exact_mod_cast (by omega : 1 < N)
-  set C := max 1 ((N : ℝ) ^ (1 - s.re)) * (1 + ‖s‖ * Real.log N)
-  have hC_int : IntegrableOn (fun t : ℝ ↦ C * t⁻¹) (Set.Ioc (1 : ℝ) N) :=
-    (ContinuousOn.integrableOn_Icc (a := (1 : ℝ)) (b := (N : ℝ))
-      (continuousOn_const.mul (continuousOn_inv₀.mono fun t (ht : t ∈ Set.Icc (1 : ℝ) N) ↦
-        (zero_lt_one.trans_le ht.1).ne'))).mono_set Set.Ioc_subset_Icc_self
-  calc
-    _ ≤ ∫ t in Set.Ioc (1 : ℝ) N, C * t⁻¹ := by
-      refine norm_integral_le_of_norm_le hC_int ?_
-      filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-      have ht0 : 0 < t := zero_lt_one.trans ht.1
-      have hsum : ‖∑ k ∈ Icc 1 ⌊t⌋₊, χ k‖ ≤ t := by
-        calc
-          ‖∑ k ∈ Icc 1 ⌊t⌋₊, χ k‖ ≤ ∑ _ ∈ Icc 1 ⌊t⌋₊, (1 : ℝ) :=
-            (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ χ.norm_le_one k)
-          _ = (⌊t⌋₊ : ℝ) := by simp
-          _ ≤ t := Nat.floor_le ht0.le
-      have hlog : ‖(1 : ℂ) - s * Real.log t‖ ≤ 1 + ‖s‖ * Real.log N := by
-        calc
-          ‖(1 : ℂ) - s * Real.log t‖ ≤ ‖(1 : ℂ)‖ + ‖s * (Real.log t : ℂ)‖ := norm_sub_le _ _
-          _ = 1 + ‖s‖ * Real.log t := by
-            rw [norm_one, norm_mul, Complex.norm_real,
-              Real.norm_of_nonneg (Real.log_nonneg ht.1.le)]
-          _ ≤ 1 + ‖s‖ * Real.log N := by
-            linarith [mul_le_mul_of_nonneg_left (Real.log_le_log ht0 ht.2) (norm_nonneg s)]
-      have hpow_max : t ^ (1 - s.re) ≤ max 1 ((N : ℝ) ^ (1 - s.re)) := by
-        rcases le_total 0 (1 - s.re) with hle | hle
-        · exact (Real.rpow_le_rpow ht0.le ht.2 hle).trans (le_max_right _ _)
-        · exact (Real.rpow_le_one_of_one_le_of_nonpos ht.1.le hle).trans (le_max_left _ _)
-      have ht_eq : t * t ^ (-(s.re + 1)) = t ^ (1 - s.re) * t⁻¹ := by
-        calc
-          t * t ^ (-(s.re + 1)) = t ^ (1 : ℝ) * t ^ (-(s.re + 1)) := by rw [Real.rpow_one]
-          _ = t ^ (1 - s.re + -1) := by rw [← Real.rpow_add ht0]; congr 1; ring
-          _ = t ^ (1 - s.re) * t⁻¹ := by rw [Real.rpow_add ht0, Real.rpow_neg_one]
-      rw [norm_mul, norm_mul, norm_cpow_eq_rpow_re_of_pos ht0]
-      simp only [neg_re, add_re, one_re]
-      calc
-        ‖∑ k ∈ Icc 1 ⌊t⌋₊, χ k‖ * ‖(1 : ℂ) - s * Real.log t‖ * t ^ (-(s.re + 1))
-            ≤ (t * (1 + ‖s‖ * Real.log N)) * t ^ (-(s.re + 1)) :=
-          mul_le_mul_of_nonneg_right
-            (mul_le_mul hsum hlog (norm_nonneg _) ht0.le) (Real.rpow_nonneg ht0.le _)
-        _ = (t * t ^ (-(s.re + 1))) * (1 + ‖s‖ * Real.log N) := by ring
-        _ = (t ^ (1 - s.re) * (1 + ‖s‖ * Real.log N)) * t⁻¹ := by rw [ht_eq]; ring
-        _ ≤ C * t⁻¹ := mul_le_mul_of_nonneg_right
-          (mul_le_mul_of_nonneg_right hpow_max (by positivity)) (inv_nonneg.mpr ht0.le)
-    _ = C * Real.log N := by
-      rw [integral_const_mul, ← intervalIntegral.integral_of_le hN1.le,
-        integral_inv_of_pos zero_lt_one (zero_lt_one.trans hN1), div_one]
+/-! ### Level-split partial summation on `(1, N]` and `(N, ∞)` -/
+
+/-- **Level-split partial summation for `L(s, χ)`.** For a nonprincipal character `χ` of level `N`
+and `Re(s) > 0`, `L(s, χ)` is the finite Dirichlet polynomial up to `N` plus `s` times the tail
+integral over `(N, ∞)`. -/
+theorem LFunction_eq_sum_Icc_add_mul_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
+    χ.LFunction s = (∑ n ∈ Icc 1 N, χ n / (n : ℂ) ^ s) +
+      s * ∫ t in Set.Ioi (N : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (t : ℂ) ^ (-(s + 1)) := by
+  have hs0 : s ≠ 0 := fun h ↦ by simp [h] at hs
+  have hN1' : (1 : ℝ) ≤ N := Nat.one_le_cast.mpr NeZero.one_le
+  have hint := TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _
+    (by simpa only [Real.rpow_zero] using χ.isBigO_sum_Icc_one hχ) hs
+  have hcont : ContinuousOn (fun t : ℝ ↦ (t : ℂ) ^ (-(s + 1))) (Set.Ici 1) := fun t ht ↦
+    (continuousAt_ofReal_cpow_const _ _ (Or.inr (zero_lt_one.trans_le ht).ne')).continuousWithinAt
+  have hexp : -(s + 1) + 1 = -s := by ring
+  have hhead := χ.integral_Ioc_one_level_sum_mul_eq hχ
+    (g := fun y : ℝ ↦ (y : ℂ) ^ (-(s + 1) + 1) / (-(s + 1) + 1))
+    (fun t ht ↦ hasDerivAt_ofReal_cpow_const' (zero_lt_one.trans_le ht.1).ne'
+      (by intro h; exact hs0 (by linear_combination -h)))
+    (hcont.mono Set.Icc_subset_Ici_self).integrableOn_Icc
+  simp only [ofReal_natCast] at hhead
+  rw [χ.LFunction_eq_mul_integral hχ hs, ← Set.Ioc_union_Ioi_eq_Ioi hN1',
+    setIntegral_union Set.Ioc_disjoint_Ioi_same measurableSet_Ioi
+      (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN1')),
+    mul_add, hhead, mul_neg, mul_sum, ← sum_neg_distrib]
+  congr 1
+  refine sum_congr rfl fun n _ ↦ ?_
+  rw [hexp, cpow_neg, div_eq_mul_inv]
+  field_simp [hs0]
+
+/-- **Level-split partial summation for `L'(s, χ)`.** For a nonprincipal character `χ` of level `N`
+and `Re(s) > 0`, `L'(s, χ)` is `-∑_{n=1}^N χ(n) (log n) n ^ (-s)` plus the tail integral over
+`(N, ∞)`. -/
+theorem deriv_LFunction_eq_neg_sum_Icc_add_integral (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
+    deriv χ.LFunction s = -(∑ n ∈ Icc 1 N, χ n * Real.log n / (n : ℂ) ^ s) +
+      ∫ t in Set.Ioi (N : ℝ),
+        (∑ k ∈ Icc 1 ⌊t⌋₊, χ k) * (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1)) := by
+  have hN1' : (1 : ℝ) ≤ N := Nat.one_le_cast.mpr NeZero.one_le
+  have hint := χ.integrableOn_sum_Icc_mul_one_sub_mul_log_mul_cpow hχ hs
+  have hcont : ContinuousOn
+      (fun t : ℝ ↦ (1 - s * Real.log t) * (t : ℂ) ^ (-(s + 1))) (Set.Ici 1) := by
+    refine (continuousOn_const.sub (continuousOn_const.mul (continuous_ofReal.comp_continuousOn
+      (Real.continuousOn_log.mono fun t ht ↦ (zero_lt_one.trans_le ht).ne')))).mul fun t ht ↦ ?_
+    exact (continuousAt_ofReal_cpow_const _ _
+      (Or.inr (zero_lt_one.trans_le ht).ne')).continuousWithinAt
+  have hhead := χ.integral_Ioc_one_level_sum_mul_eq hχ
+    (g := fun y : ℝ ↦ (y : ℂ) ^ (-s) * Real.log y)
+    (fun t ht ↦ (Complex.hasDerivAt_ofReal_cpow_mul_log (-s)
+      (zero_lt_one.trans_le ht.1).ne').congr_deriv (by
+        rw [← neg_add']
+        ring)) (hcont.mono Set.Icc_subset_Ici_self).integrableOn_Icc
+  simp only [ofReal_natCast, ← mul_assoc] at hhead
+  rw [χ.deriv_LFunction_eq_integral hχ hs, ← Set.Ioc_union_Ioi_eq_Ioi hN1',
+    setIntegral_union Set.Ioc_disjoint_Ioi_same measurableSet_Ioi
+      (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN1')),
+    hhead]
+  congr 2
+  refine sum_congr rfl fun n _ ↦ ?_
+  rw [cpow_neg, div_eq_mul_inv]
+  ring
+
+/-! ### Explicit bounds on `Re(s) > 0` and near `s = 1` -/
 
 /-- Tail estimate on `(N, ∞)`, using period cancellation `‖∑_{k≤t} χ(k)‖ ≤ N`. -/
 private lemma norm_integral_Ioi_le (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
@@ -209,104 +235,111 @@ private lemma norm_integral_Ioi_le (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
           ring
 
 /-- **Right-half-plane bound for `L'(s, χ)`.** For any nonprincipal character `χ` of nonzero level
-`N` and any `s` with `Re(s) > 0`, `‖L'(s, χ)‖` is bounded above by
-`max 1 (N ^ (1 - Re(s))) * (1 + ‖s‖ log N) * log N` plus
-`N ^ (1 - Re(s)) * ((1 + ‖s‖ log N) / Re(s) + ‖s‖ / Re(s) ^ 2)`. -/
+`N` and any `s` with `Re(s) > 0`,
+`‖L'(s, χ)‖ ≤ ∑_{n=1}^N (log n) n ^ (-Re(s)) +
+N ^ (1 - Re(s)) * ((1 + ‖s‖ log N) / Re(s) + ‖s‖ / Re(s) ^ 2)`. -/
 theorem norm_deriv_LFunction_le_of_re_pos (hχ : χ ≠ 1) {s : ℂ} (hs : 0 < s.re) :
-    ‖deriv χ.LFunction s‖ ≤
-      max 1 ((N : ℝ) ^ (1 - s.re)) * (1 + ‖s‖ * Real.log N) * Real.log N +
-        (N : ℝ) ^ (1 - s.re) * ((1 + ‖s‖ * Real.log N) / s.re + ‖s‖ / s.re ^ 2) := by
-  have hN3 := χ.three_le_level_of_ne_one hχ
-  have hN1 : (1 : ℝ) ≤ N := by exact_mod_cast (by omega : 1 ≤ N)
-  have hint := χ.integrableOn_sum_Icc_mul_one_sub_mul_log_mul_cpow hχ hs
-  rw [χ.deriv_LFunction_eq_integral hχ hs, ← Set.Ioc_union_Ioi_eq_Ioi hN1,
-    setIntegral_union Set.Ioc_disjoint_Ioi_same measurableSet_Ioi
-      (hint.mono_set Set.Ioc_subset_Ioi_self) (hint.mono_set (Set.Ioi_subset_Ioi hN1))]
-  exact (norm_add_le _ _).trans
-    (add_le_add (χ.norm_integral_Ioc_le hχ) (χ.norm_integral_Ioi_le hχ hs))
+    ‖deriv χ.LFunction s‖ ≤ (∑ n ∈ Icc 1 N, Real.log n * (n : ℝ) ^ (-s.re)) +
+      (N : ℝ) ^ (1 - s.re) * ((1 + ‖s‖ * Real.log N) / s.re + ‖s‖ / s.re ^ 2) := by
+  have hhead : ‖-(∑ n ∈ Icc 1 N, χ n * Real.log n / (n : ℂ) ^ s)‖ ≤
+      ∑ n ∈ Icc 1 N, Real.log n * (n : ℝ) ^ (-s.re) := by
+    rw [norm_neg]
+    refine (norm_sum_le _ _).trans (sum_le_sum fun n hn ↦ ?_)
+    have hn1 : (1 : ℝ) ≤ n := mod_cast (mem_Icc.mp hn).1
+    have hn0 : (0 : ℝ) < n := zero_lt_one.trans_le hn1
+    rw [norm_div, norm_mul, Complex.norm_real, Real.norm_of_nonneg (Real.log_nonneg hn1),
+      ← ofReal_natCast, norm_cpow_eq_rpow_re_of_pos hn0, div_eq_mul_inv, ← Real.rpow_neg hn0.le]
+    exact mul_le_mul_of_nonneg_right
+      (mul_le_of_le_one_left (Real.log_nonneg hn1) (χ.norm_le_one n)) (by positivity)
+  rw [χ.deriv_LFunction_eq_neg_sum_Icc_add_integral hχ hs]
+  exact (norm_add_le _ _).trans (add_le_add hhead (χ.norm_integral_Ioi_le hχ hs))
 
-/-- **Near-one derivative bound for Dirichlet L-functions** (Koukoulopoulos, Lemma 11.2).
-Uniformly for any nonprincipal character `χ` of nonzero level `N` and any real
-`σ ∈ [1 - 1 / log N, 1]`, we have `‖L'(σ, χ)‖ ≤ 81 (log N) ^ 2`. -/
+/-- **Explicit bound for `L'(σ, χ)` at real `σ > 0`.** For a nonprincipal character `χ` of nonzero
+level `N` and real `σ > 0`, `‖L'(σ, χ)‖ ≤ ∑_{n=1}^N (log n) n ^ (-σ) + N ^ (1 - σ) (log N + 2 / σ)`.
+-/
+theorem norm_deriv_LFunction_ofReal_le_of_pos (hχ : χ ≠ 1) {σ : ℝ} (hσ : 0 < σ) :
+    ‖deriv χ.LFunction σ‖ ≤ (∑ n ∈ Icc 1 N, Real.log n * (n : ℝ) ^ (-σ)) +
+      (N : ℝ) ^ (1 - σ) * (Real.log N + 2 / σ) := by
+  refine (χ.norm_deriv_LFunction_le_of_re_pos hχ (s := σ) (by simpa using hσ)).trans_eq ?_
+  simp only [ofReal_re, Complex.norm_real, Real.norm_of_nonneg hσ.le]
+  field_simp [hσ.ne']
+  ring
+
+/-- **Near-one and right-half-line derivative bound for Dirichlet L-functions**
+(Koukoulopoulos, Lemma 11.2). Uniformly for any nonprincipal character `χ` of nonzero level `N` and
+every real `σ ≥ 1 - 1 / log N`, we have `‖L'(σ, χ)‖ ≤ 64 (log N) ^ 2`. -/
 theorem norm_deriv_LFunction_le_mul_log_sq (hχ : χ ≠ 1) {σ : ℝ}
-    (hσ₁ : 1 - 1 / Real.log N ≤ σ) (hσ₂ : σ ≤ 1) :
-    ‖deriv χ.LFunction σ‖ ≤ 81 * Real.log N ^ 2 := by
-  have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast χ.three_le_level_of_ne_one hχ
-  have hL3 : (12 : ℝ) / 11 < Real.log N :=
-    (by linarith [Real.log_three_gt_d9] : (12 : ℝ) / 11 < Real.log 3).trans_le
-      (Real.log_le_log (by norm_num) hN3)
-  have hL1 : 1 < Real.log N := by linarith
-  have hL0 : 0 < Real.log N := by linarith
-  have h_inv_L : 1 / Real.log N < 11 / 12 := by
-    rw [div_lt_div_iff₀ hL0 (by norm_num)]; linarith
-  have hσ_low : (1 : ℝ) / 12 < σ := by linarith
-  have hσ0 : 0 < σ := by linarith
-  have h_inv_σ : 1 / σ ≤ 12 := by rw [div_le_iff₀ hσ0]; linarith
-  -- On `[1 - 1 / log N, 1]`, `1 ≤ N ^ (1 - σ) ≤ e < 3`.
-  have hN_ge_one : 1 ≤ (N : ℝ) ^ (1 - σ) :=
-    Real.one_le_rpow (by linarith) (by linarith)
-  have hN_le_three : (N : ℝ) ^ (1 - σ) ≤ 3 := by
-    rw [Real.rpow_def_of_pos (by linarith : (0 : ℝ) < N), mul_comm]
-    have hprod : (1 - σ) * Real.log N ≤ 1 := by
-      have : 1 - σ ≤ 1 / Real.log N := by linarith
-      exact (mul_le_mul_of_nonneg_right this hL0.le).trans (one_div_mul_cancel hL0.ne').le
-    exact (Real.exp_le_exp.mpr hprod).trans (by linarith [Real.exp_one_lt_d9])
-  have hmain := χ.norm_deriv_LFunction_le_of_re_pos hχ (s := (σ : ℂ)) (by simpa using hσ0)
-  have hnorm_σ : ‖(σ : ℂ)‖ = σ := by rw [Complex.norm_real, Real.norm_of_nonneg hσ0.le]
-  simp only [ofReal_re, hnorm_σ, max_eq_right hN_ge_one] at hmain
-  have h_tail_simp : (1 + σ * Real.log N) / σ + σ / σ ^ 2 = 2 * (1 / σ) + Real.log N := by
-    field_simp
-    ring
-  rw [h_tail_simp] at hmain
-  have h_init : (N : ℝ) ^ (1 - σ) * (1 + σ * Real.log N) * Real.log N ≤ 6 * Real.log N ^ 2 := by
-    have hfac : (N : ℝ) ^ (1 - σ) * (1 + σ * Real.log N) ≤ 6 * Real.log N :=
-      (mul_le_mul hN_le_three (by nlinarith : 1 + σ * Real.log N ≤ 2 * Real.log N)
-        (by positivity) (by norm_num)).trans_eq (by ring)
-    exact (mul_le_mul_of_nonneg_right hfac hL0.le).trans_eq (by ring)
-  have h_tail : (N : ℝ) ^ (1 - σ) * (2 * (1 / σ) + Real.log N) ≤ 75 * Real.log N ^ 2 := by
-    nlinarith [sq_nonneg (Real.log N - 1)]
-  linarith
+    (hσ : 1 - 1 / Real.log N ≤ σ) :
+    ‖deriv χ.LFunction σ‖ ≤ 64 * Real.log N ^ 2 := by
+  have hN3 : 3 ≤ N := χ.three_le_level_of_ne_one hχ
+  have hN3' : (3 : ℝ) ≤ N := mod_cast hN3
+  have hlog_pos : 0 < Real.log N := zero_lt_one.trans (χ.one_lt_log_level_of_ne_one hχ)
+  have hlog : (23 : ℝ) / 21 < Real.log N := by
+    linarith [Real.log_three_gt_d9, Real.log_le_log (by norm_num) hN3']
+  have hinv : 1 / Real.log N < 21 / 23 := by
+    rw [div_lt_div_iff₀ hlog_pos (by norm_num)]
+    linarith
+  have hσ_lo : (2 : ℝ) / 23 < σ := by linarith
+  have hσ_pos : 0 < σ := by linarith
+  have hsum := Nat.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq N zero_le_one hσ
+  have htail : (N : ℝ) ^ (1 - σ) * (Real.log N + 2 / σ) ≤ 22 * Real.exp 1 * Real.log N ^ 2 := by
+    have h1 : (N : ℝ) ^ (1 - σ) ≤ Real.exp 1 :=
+      (Real.rpow_le_rpow_of_exponent_le (by exact_mod_cast (by omega : 1 ≤ N))
+        (by rw [← one_div]; linarith)).trans Real.rpow_inv_log_le_exp_one
+    have h2 : 2 / σ ≤ 23 := by
+      rw [div_le_iff₀ hσ_pos]
+      linarith
+    have h3 : Real.log N + 2 / σ ≤ 22 * Real.log N ^ 2 := by
+      nlinarith [sq_nonneg (Real.log N - 1)]
+    calc
+      (N : ℝ) ^ (1 - σ) * (Real.log N + 2 / σ)
+        ≤ Real.exp 1 * (22 * Real.log N ^ 2) :=
+          mul_le_mul h1 h3 (by positivity) (Real.exp_nonneg 1)
+      _ = 22 * Real.exp 1 * Real.log N ^ 2 := by ring
+  refine (χ.norm_deriv_LFunction_ofReal_le_of_pos hχ hσ_pos).trans ?_
+  nlinarith [Real.exp_one_lt_d9, sq_nonneg (Real.log N)]
+
+/-- **Lipschitz bound for `L(σ, χ)` near and above `1`.** For any nonprincipal character `χ` of
+nonzero level `N` and `σ₁, σ₂ ≥ 1 - 1 / log N`,
+`‖L(σ₂, χ) - L(σ₁, χ)‖ ≤ 64 (log N) ^ 2 |σ₂ - σ₁|`. -/
+theorem norm_LFunction_sub_le_of_one_sub_one_div_log_le (hχ : χ ≠ 1) {σ₁ σ₂ : ℝ}
+    (h₁ : 1 - 1 / Real.log N ≤ σ₁) (h₂ : 1 - 1 / Real.log N ≤ σ₂) :
+    ‖χ.LFunction σ₂ - χ.LFunction σ₁‖ ≤ 64 * Real.log N ^ 2 * |σ₂ - σ₁| := by
+  have hd : ∀ x : ℝ, HasDerivAt (fun t : ℝ ↦ χ.LFunction t) (deriv χ.LFunction x) x := fun x ↦
+    (χ.differentiable_LFunction hχ).differentiableAt.hasDerivAt.comp_ofReal
+  have hb : ∀ x ∈ Set.uIcc σ₁ σ₂, ‖deriv (fun t : ℝ ↦ χ.LFunction t) x‖ ≤
+      64 * Real.log N ^ 2 := by
+    intro x hx
+    rw [(hd x).deriv]
+    exact χ.norm_deriv_LFunction_le_mul_log_sq hχ ((le_min h₁ h₂).trans hx.1)
+  simpa only [Real.norm_eq_abs] using (convex_uIcc σ₁ σ₂).norm_image_sub_le_of_norm_deriv_le
+    (fun x _ ↦ (hd x).differentiableAt) hb Set.left_mem_uIcc Set.right_mem_uIcc
 
 /-- **Unconditional real-zero separation from `L(1, χ)`** (Koukoulopoulos, (12.11)). For any
 nonprincipal character `χ` of nonzero level `N` (not necessarily primitive or quadratic) and any
-real zero `β` of `L(s, χ)`, `Re L(1, χ) / (81 (log N) ^ 2) ≤ 1 - β`. -/
-theorem LFunction_one_re_div_log_sq_le_one_sub_of_LFunction_eq_zero
-    (hχ : χ ≠ 1) {β : ℝ} (hβ : χ.LFunction β = 0) :
-    (χ.LFunction 1).re / (81 * Real.log N ^ 2) ≤ 1 - β := by
-  have hβ1 : β < 1 :=
-    not_le.mp fun h ↦ χ.LFunction_ne_zero_of_one_le_re (.inl hχ) (by simpa using h) hβ
-  have hN3 : (3 : ℝ) ≤ N := by exact_mod_cast χ.three_le_level_of_ne_one hχ
-  have hL1 : 1 < Real.log N :=
-    (by linarith [Real.log_three_gt_d9] : (1 : ℝ) < Real.log 3).trans_le
-      (Real.log_le_log (by norm_num) hN3)
-  have : 0 < Real.log N := zero_lt_one.trans hL1
-  rcases le_or_gt (1 - 1 / Real.log N) β with hnear | hfar
-  · -- Near `1`, apply Lagrange's mean value theorem to `σ ↦ Re L(σ, χ)` on `[β, 1]`.
-    have hf' (σ : ℝ) :
-        HasDerivAt (fun x : ℝ ↦ (χ.LFunction x).re) (deriv χ.LFunction σ).re σ :=
-      reCLM.hasFDerivAt.comp_hasDerivAt σ
-        ((differentiable_LFunction hχ).differentiableAt.hasDerivAt.comp_ofReal)
-    have hfc : ContinuousOn (fun x : ℝ ↦ (χ.LFunction x).re) (Set.Icc β 1) :=
-      fun x _ ↦ (hf' x).continuousAt.continuousWithinAt
-    obtain ⟨c, hc, hslope⟩ := exists_hasDerivAt_eq_slope
-      (fun x : ℝ ↦ (χ.LFunction x).re) (fun x : ℝ ↦ (deriv χ.LFunction x).re)
-      hβ1 hfc (fun x _ ↦ hf' x)
-    have hc_le : (deriv χ.LFunction c).re ≤ 81 * Real.log N ^ 2 :=
-      (Complex.re_le_norm _).trans
-        (χ.norm_deriv_LFunction_le_mul_log_sq hχ (hnear.trans hc.1.le) hc.2.le)
-    rw [ofReal_one, hβ, zero_re, sub_zero] at hslope
-    rw [div_le_iff₀ (by positivity)]
-    have hmul := (div_le_iff₀ (sub_pos.mpr hβ1)).mp (hslope ▸ hc_le)
+real zero `β` of `L(s, χ)`, `‖L(1, χ)‖ / (64 (log N) ^ 2) ≤ 1 - β`. -/
+theorem norm_LFunction_one_div_log_sq_le_one_sub_of_LFunction_eq_zero (hχ : χ ≠ 1) {β : ℝ}
+    (hβ : χ.LFunction β = 0) :
+    ‖χ.LFunction 1‖ / (64 * Real.log N ^ 2) ≤ 1 - β := by
+  -- Nonvanishing on `Re(s) ≥ 1` forces `β < 1`; for `β < 1 - 1 / log N` use
+  -- `‖L(1, χ)‖ ≤ 1 + log N`.
+  have hlog : 1 < Real.log N := χ.one_lt_log_level_of_ne_one hχ
+  have hlog_pos : 0 < Real.log N := zero_lt_one.trans hlog
+  have hβ1 : β < 1 := by
+    by_contra! h1
+    exact LFunction_ne_zero_of_one_le_re χ (.inl hχ) (by simpa using h1) hβ
+  rcases lt_or_ge β (1 - 1 / Real.log N) with hfar | hnear
+  · have hL1 := χ.norm_LFunction_one_le_one_add_log hχ
+    have hlt : ‖χ.LFunction 1‖ / (64 * Real.log N ^ 2) < 1 / Real.log N := by
+      rw [div_lt_div_iff₀ (by positivity) hlog_pos]
+      nlinarith
     linarith
-  · -- Left of `1 - 1 / log N`, use `Re L(1, χ) ≤ 1 + log N ≤ 81 log N`.
-    calc
-      (χ.LFunction 1).re / (81 * Real.log N ^ 2)
-          ≤ (1 + Real.log N) / (81 * Real.log N ^ 2) :=
-        div_le_div_of_nonneg_right
-          ((Complex.re_le_norm _).trans (χ.norm_LFunction_one_le_one_add_log hχ)) (by positivity)
-      _ ≤ 81 * Real.log N / (81 * Real.log N ^ 2) :=
-        div_le_div_of_nonneg_right (by linarith) (by positivity)
-      _ = 1 / Real.log N := by field_simp
-      _ ≤ 1 - β := by linarith
+  · have h1_mem : 1 - 1 / Real.log N ≤ 1 := by
+      have : 0 ≤ 1 / Real.log N := by positivity
+      linarith
+    have hlip := χ.norm_LFunction_sub_le_of_one_sub_one_div_log_le hχ hnear h1_mem
+    rw [ofReal_one, hβ, sub_zero, abs_of_pos (sub_pos.mpr hβ1)] at hlip
+    rw [div_le_iff₀ (by positivity)]
+    linarith
 
 end DirichletCharacter

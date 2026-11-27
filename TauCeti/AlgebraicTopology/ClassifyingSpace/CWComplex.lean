@@ -447,20 +447,14 @@ theorem cellFrontier_classifyingSpaceCellEquiv_symm_mk
   exact image_congr fun x _ => map_classifyingSpaceCellEquiv_symm_mk c x
 
 variable (G) in
-/-- The base point of the classifying space is a `0`-cell, hence lies in the `0`-skeleton. -/
+/-- The base point of the classifying space is a `0`-cell, the orbit of the vertex over index zero
+labelled by the unit. -/
 theorem classifyingSpaceBasepoint_mem_skeletonLT_one :
-    classifyingSpaceBasepoint G ∈
-      (skeletonLT (univ : Set (classifyingSpace G)) 1 : Set (classifyingSpace G)) := by
-  let c : (indexedJoin fun _ : ℕ => G).RealizationCell 0 :=
-    ⟨⟨{⟨0, (1 : G)⟩}, mem_indexedJoin_iff.2 ⟨Finset.singleton_nonempty _, by
-        intro v hv w hw _
-        simp only [Finset.coe_singleton, mem_singleton_iff] at hv hw
-        exact hv.trans hw.symm⟩⟩, Finset.card_singleton _⟩
-  refine openCell_subset_skeletonLT 0
-    ((classifyingSpaceCellEquiv G 0).symm (Quotient.mk'' c)) ?_
+    classifyingSpaceBasepoint G ∈ skeletonLT (univ : Set (classifyingSpace G)) 1 := by
+  refine openCell_subset_skeletonLT 0 ((classifyingSpaceCellEquiv G 0).symm
+    (Quotient.mk'' (RealizationCell.vertex _ ⟨0, 1⟩))) ?_
   rw [openCell_classifyingSpaceCellEquiv_symm_mk]
-  refine ⟨universalGSpaceBasepoint G, ?_, classifyingSpaceProj_universalGSpaceBasepoint G⟩
-  simp [c, universalGSpaceBasepoint_val]
+  exact ⟨universalGSpaceBasepoint G, by simp, classifyingSpaceProj_universalGSpaceBasepoint G⟩
 
 /-- **Milnor's classifying space is well-pointed.** Its base point lies in a Hausdorff CW complex,
 so it has the homotopy extension property. -/

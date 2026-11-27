@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Linearization
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.WeakKernel
+public import TauCeti.MeasureTheory.Function.Lp.LinearIsometry
 public import TauCeti.MeasureTheory.Function.Lp.Operator.Multiplication
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Complex.Circle.Basic
@@ -36,7 +37,9 @@ gauges `u^(-m)` that restore the end framing after a rotation and do not tend to
   multiplication by the bounded continuous symbol `z ↦ gaugeFrame (u z)`
   (`BoundedContinuousFunction.mulLp`). It acts almost everywhere as `gaugeLinearAction u`
   (`TauCeti.Vortex.coeFn_gaugeLp`), and `u ↦ gaugeLp μ u` respects the group structure
-  (`TauCeti.Vortex.gaugeLp_one`, `TauCeti.Vortex.gaugeLp_mul`, `TauCeti.Vortex.gaugeLp_symm`).
+  (`TauCeti.Vortex.gaugeLp_one`, `TauCeti.Vortex.gaugeLp_mul`, `TauCeti.Vortex.gaugeLp_symm`). A
+  constant gauge `c` acts by the pointwise isometry `(gaugeFrame c).compLpₗᵢ`
+  (`TauCeti.Vortex.gaugeLp_const`).
 * **The weak kernel.** The weak kernel at `u · x` is the image of the weak kernel at `x`, so the
   two have the same dimension and the orthogonal projections onto them are conjugate. This holds
   for a smooth gauge at every field `x` (`TauCeti.Vortex.weakGaugeFixedKernel_gaugeTransform`,
@@ -195,6 +198,16 @@ theorem gaugeLp_gaugeLp_inv (u : C(ℂ, Circle)) (f : Lp (EuclideanSpace ℝ (Fi
 theorem gaugeLp_inv_gaugeLp (u : C(ℂ, Circle)) (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
     gaugeLp μ u⁻¹ (gaugeLp μ u f) = f := by
   rw [← gaugeLp_symm, LinearIsometryEquiv.symm_apply_apply]
+
+/-- **A constant gauge acts on `L²` by its gauge frame.** The `L²` gauge action of the constant
+gauge `c` is postcomposition with `gaugeFrame c`, the change of line frame by `c`. -/
+@[simp]
+theorem gaugeLp_const (c : Circle) :
+    gaugeLp μ (ContinuousMap.const ℂ c) = (gaugeFrame c).compLpₗᵢ 2 μ := by
+  ext1 f
+  refine gaugeLp_eq_iff.2 ?_
+  filter_upwards [(gaugeFrame c).coeFn_compLpₗᵢ (p := 2) (μ := μ) f] with z hz
+  rw [hz, gaugeLinearAction_apply_eq_gaugeFrame, ContinuousMap.const_apply]
 
 /-! ### The weak kernel -/
 

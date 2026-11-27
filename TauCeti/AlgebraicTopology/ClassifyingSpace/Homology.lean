@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Contractible
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.GroupHomology
 
 /-!

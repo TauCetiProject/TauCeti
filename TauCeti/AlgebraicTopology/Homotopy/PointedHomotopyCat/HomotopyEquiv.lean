@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Equiv
-public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.Basic
+public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
 public import TauCeti.Topology.Homotopy.Extension.Basic
 import TauCeti.Topology.Homotopy.Extension.HomotopyEquivRel
 

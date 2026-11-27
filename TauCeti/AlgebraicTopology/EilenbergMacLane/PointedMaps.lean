@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.Basic
-public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.Basic
+public import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat
 public import TauCeti.Topology.CWComplex.Classical.CWType
 public import TauCeti.Topology.Homotopy.Extension.Basic
-import TauCeti.AlgebraicTopology.ClassifyingSpace.Cellular
+import TauCeti.AlgebraicTopology.ClassifyingSpace.HomotopyFunctor
 import TauCeti.AlgebraicTopology.Homotopy.PointedHomotopyCat.HomotopyEquiv
 
 /-!
@@ -22,8 +22,8 @@ fundamental groups:
 * Every homomorphism `π₁(X, x) →* π₁(Z, z)` is realized by a continuous map sending `x` to `z`
   (`TauCeti.IsAspherical.exists_mapOfEq`).
 * Two maps `X → Z` sending `x` to `z` that induce the same homomorphism on `π₁` are homotopic
-  relative to `{x}` (`TauCeti.IsAspherical.homotopicRel_of_mapOfEq_eq`), provided `πₙ(Z, z')`
-  vanishes for `n ≥ 2` at every point `z' ∈ Z`.
+  relative to `{x}` (`TauCeti.IsAspherical.homotopicRel_of_mapOfEq_eq`), provided `πₙ(Z, z)`
+  vanishes for `n ≥ 2`.
 * In `TauCeti.PointedHomotopyCat`, taking `π₁` gives a bijection from pointed homotopy classes
   `X ⟶ Y` to group homomorphisms `π₁(X) ⟶ π₁(Y)`
   (`TauCeti.IsAspherical.fundamentalGroupFunctor_map_bijective`).
@@ -34,7 +34,7 @@ fundamental groups:
 
 The proofs transport the corresponding results for the cellular classifying space
 (`TauCeti.exists_mapOfEq_cellularClassifyingSpace`,
-`TauCeti.homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace`) along the pointed homotopy
+`TauCeti.homotopicRel_of_mapOfEq_eq_of_cwComplex`) along the pointed homotopy
 equivalence `TauCeti.cellularClassifyingSpaceHomotopyEquivIso`, applied to the tautological
 cellular presentation from `TauCeti.isEilenbergMacLaneSpaceOne_cellularClassifyingSpace_ker`.
 
@@ -122,21 +122,20 @@ theorem IsAspherical.exists_mapOfEq {X Z : Type u} [TopologicalSpace X] [CWType 
   exact congrArg fπ (φ.apply_symm_apply a)
 
 /-- **Pointed maps out of a well-pointed aspherical space of CW type are determined up to pointed
-homotopy by `π₁`.** If the homotopy groups of `Z` vanish from degree `2` on, at every point, two
-maps `X → Z` sending `x` to `z` and inducing the same homomorphism on `π₁` are homotopic relative
-to `{x}`. -/
+homotopy by `π₁`.** If the homotopy groups of `(Z, z)` vanish from degree `2` on, two maps `X → Z`
+sending `x` to `z` and inducing the same homomorphism on `π₁` are homotopic relative to `{x}`. -/
 theorem IsAspherical.homotopicRel_of_mapOfEq_eq {X : Type u} {Z : Type v} [TopologicalSpace X]
     [CWType X] [TopologicalSpace Z] {x : X} (hX : IsAspherical X x)
     (hX_hep : HasHomotopyExtensionProperty ({x} : Set X))
-    (hZ : ∀ (z : Z) (n : ℕ), Subsingleton (π_ (n + 2) Z z))
-    {f g : C(X, Z)} {z : Z} (hf : f x = z) (hg : g x = z)
+    {f g : C(X, Z)} {z : Z} (hZ : ∀ n : ℕ, Subsingleton (π_ (n + 2) Z z))
+    (hf : f x = z) (hg : g x = z)
     (hfg : FundamentalGroup.mapOfEq f hf = FundamentalGroup.mapOfEq g hg) :
     f.HomotopicRel g {x} := by
   obtain ⟨R, -, u, v, hu, hv, -, -, hright⟩ :=
     exists_cellularClassifyingSpace_pointedHomotopyEquiv hX hX_hep
   -- Pulling back along `u` transfers the problem to the cellular model.
   have hcell : (f.comp u).HomotopicRel (g.comp u) {cellularClassifyingSpaceBasepoint R} :=
-    homotopicRel_of_mapOfEq_eq_cellularClassifyingSpace R hZ
+    homotopicRel_of_mapOfEq_eq_of_cwComplex hZ
       (by rw [ContinuousMap.comp_apply, hu, hf]) (by rw [ContinuousMap.comp_apply, hu, hg]) <|
       MonoidHom.ext fun a ↦ by
         rw [← FundamentalGroup.mapOfEq_comp f u hu hf a,
@@ -146,12 +145,12 @@ theorem IsAspherical.homotopicRel_of_mapOfEq_eq {X : Type u} {Z : Type v} [Topol
   exact ((hright.comp_continuousMap f).symm.trans hpre).trans (hright.comp_continuousMap g)
 
 /-- **Pointed maps out of a well-pointed aspherical space of CW type are classified by `π₁`.** If
-the homotopy groups of `Y` vanish from degree `2` on, at every point, then `π₁` gives a bijection
+the homotopy groups of `(Y, Y.basepoint)` vanish from degree `2` on, then `π₁` gives a bijection
 from pointed homotopy classes `X ⟶ Y` to group homomorphisms `π₁(X) ⟶ π₁(Y)`. -/
 theorem IsAspherical.fundamentalGroupFunctor_map_bijective {X Y : BasedTopologicalSpace.{u}}
     [CWType X.carrier] (hX : IsAspherical X.carrier X.basepoint)
     (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier))
-    (hY : ∀ (y : Y.carrier) (n : ℕ), Subsingleton (π_ (n + 2) Y.carrier y)) :
+    (hY : ∀ n : ℕ, Subsingleton (π_ (n + 2) Y.carrier Y.basepoint)) :
     Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
       (X := PointedHomotopyCat.quotient.obj X) (Y := PointedHomotopyCat.quotient.obj Y)) := by
   refine ⟨fun a b hab ↦ ?_, fun ψ ↦ ?_⟩
@@ -163,7 +162,7 @@ theorem IsAspherical.fundamentalGroupFunctor_map_bijective {X Y : BasedTopologic
   · obtain ⟨f, hf, hfψ⟩ := hX.exists_mapOfEq hX_hep
       (fun k hk ↦ by
         obtain ⟨n, rfl⟩ := Nat.exists_eq_add_of_le' hk
-        exact hY _ n) ψ.hom
+        exact hY n) ψ.hom
     exact ⟨PointedHomotopyCat.quotient.map ⟨f, hf⟩, GrpCat.hom_ext <|
       (congrArg GrpCat.Hom.hom
         (PointedHomotopyCat.fundamentalGroupFunctor_map_quotient_map _)).trans
@@ -175,7 +174,7 @@ private theorem fundamentalGroupFunctor_map_bijective_of_isAspherical
     (hX_hep : HasHomotopyExtensionProperty ({X.basepoint} : Set X.carrier)) :
     Function.Bijective (PointedHomotopyCat.fundamentalGroupFunctor.map
       (X := PointedHomotopyCat.quotient.obj X) (Y := PointedHomotopyCat.quotient.obj Y)) :=
-  hX.fundamentalGroupFunctor_map_bijective hX_hep hY.subsingleton_homotopyGroup_add_two
+  hX.fundamentalGroupFunctor_map_bijective hX_hep hY.subsingleton_homotopyGroup
 
 /-- **Pointed uniqueness of well-pointed aspherical spaces of CW type.** Two well-pointed
 aspherical spaces of CW type are isomorphic in `PointedHomotopyCat` by a canonical isomorphism

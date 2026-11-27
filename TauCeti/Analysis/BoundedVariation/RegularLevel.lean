@@ -14,7 +14,9 @@ import TauCeti.Analysis.Calculus.Sard.OutermostStratum
 # Quantitative selection of regular superlevel sets
 
 Every interval of levels of a smooth scalar function contains a regular value whose superlevel
-set has perimeter at most the total variation divided by the interval's length. For a compactly
+set has perimeter at most the total variation divided by the interval's length. The same holds
+for a function smooth on an open set `U`, with a level regular on `U` and perimeter and variation
+measured in an open subset of `U`. For a compactly
 supported function and a positive interval, the selected superlevel set has compact closure,
 and its frontier is precisely the regular level set. These are the regular-value and perimeter
 estimates used when approximating sets of finite perimeter by bounded open sets with smooth
@@ -39,6 +41,40 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
   {u : E → ℝ} {Ω : Opens E} {a b : ℝ}
 
+/-- A function smooth on an open set `U` has a level in every nonempty interval `(a, b)` that is
+regular on `U` and whose superlevel set has perimeter in any open `Ω ⊆ U` at most the variation of
+the function on `Ω` divided by `b - a`. The estimate also holds when the variation is infinite. -/
+theorem ContDiffOn.exists_mem_Ioo_surjective_fderiv_perimeter_le {U : Set E}
+    (hu : ContDiffOn ℝ ∞ u U) (hU : IsOpen U) (hΩU : (Ω : Set E) ⊆ U) (hab : a < b) :
+    ∃ t ∈ Ioo a b, (∀ x ∈ U, u x = t → Surjective (fderiv ℝ u x)) ∧
+      TauCeti.perimeter μ Ω {x | t < u x} ≤
+        TauCeti.totalVariationOn μ Ω u / ENNReal.ofReal (b - a) := by
+  let ν : Measure ℝ := volume.restrict (Ioo a b)
+  let N : Set ℝ := (Ioo a b)ᶜ ∪ u '' (U ∩ {x | ¬ Surjective (fderiv ℝ u x)})
+  have hν : ν ≠ 0 := by
+    rw [Ne, Measure.restrict_eq_zero, Real.volume_Ioo, ENNReal.ofReal_eq_zero]
+    exact not_le.mpr (sub_pos.mpr hab)
+  have hN : ν N = 0 := by
+    refine measure_union_null ?_ ?_
+    · simp [ν]
+    · exact le_antisymm ((Measure.restrict_apply_le _ _).trans_eq
+        (TauCeti.addHaar_image_criticalPoints_eq_zero volume
+          (fun x hx ↦ (hu x hx).contDiffAt (hU.mem_nhds hx))
+          (ENat.natCast_le_of_coe_top_le_withTop le_rfl _))) bot_le
+  have huΩ : ContinuousOn u Ω := hu.continuousOn.mono hΩU
+  have hmeas : Measurable (fun t ↦ TauCeti.perimeter μ Ω {x | t < u x}) :=
+    TauCeti.measurable_perimeter_setOf_lt (huΩ.aemeasurable Ω.isOpen.measurableSet)
+  obtain ⟨t, htN, ht⟩ := exists_notMem_null_le_laverage hν hmeas.aemeasurable hN
+  have htI : t ∈ Ioo a b := by simpa [N] using (not_or.mp htN).1
+  refine ⟨t, htI, fun x hx hxt ↦ ?_, ht.trans ?_⟩
+  · by_contra hcrit
+    exact (not_or.mp htN).2 ⟨x, ⟨hx, hcrit⟩, hxt⟩
+  · rw [laverage_eq, Measure.restrict_apply_univ, Real.volume_Ioo]
+    gcongr
+    exact (setLIntegral_le_lintegral (Ioo a b) _).trans_eq
+      (TauCeti.totalVariationOn_eq_lintegral_perimeter
+        (huΩ.locallyIntegrableOn Ω.isOpen.measurableSet)).symm
+
 /-- A smooth function has a regular value in every nonempty interval such that the perimeter
 of its superlevel set is at most its variation divided by the interval's length. The estimate
 also holds when the variation is infinite. -/
@@ -47,30 +83,10 @@ theorem ContDiff.exists_mem_Ioo_surjective_fderiv_perimeter_le (hu : ContDiff �
     ∃ t ∈ Ioo a b, (∀ x, u x = t → Surjective (fderiv ℝ u x)) ∧
       TauCeti.perimeter μ Ω {x | t < u x} ≤
         TauCeti.totalVariationOn μ Ω u / ENNReal.ofReal (b - a) := by
-  let ν : Measure ℝ := volume.restrict (Ioo a b)
-  let N : Set ℝ := (Ioo a b)ᶜ ∪ u '' {x | ¬ Surjective (fderiv ℝ u x)}
-  have hν : ν ≠ 0 := by
-    rw [Ne, Measure.restrict_eq_zero, Real.volume_Ioo, ENNReal.ofReal_eq_zero]
-    exact not_le.mpr (sub_pos.mpr hab)
-  have hN : ν N = 0 := by
-    refine measure_union_null ?_ ?_
-    · simp [ν]
-    · exact le_antisymm ((Measure.restrict_apply_le _ _).trans_eq
-        (hu.addHaar_image_criticalPoints_eq_zero volume
-          (ENat.natCast_le_of_coe_top_le_withTop le_rfl _))) bot_le
-  have hmeas : Measurable (fun t ↦ TauCeti.perimeter μ Ω {x | t < u x}) :=
-    TauCeti.measurable_perimeter_setOf_lt hu.continuous.measurable.aemeasurable
-  obtain ⟨t, htN, ht⟩ := exists_notMem_null_le_laverage hν hmeas.aemeasurable hN
-  have htI : t ∈ Ioo a b := by simpa [N] using (not_or.mp htN).1
-  refine ⟨t, htI, ?_, ht.trans ?_⟩
-  · intro x hx
-    by_contra hcrit
-    exact (not_or.mp htN).2 ⟨x, hcrit, hx⟩
-  · rw [laverage_eq, Measure.restrict_apply_univ, Real.volume_Ioo]
-    gcongr
-    exact (setLIntegral_le_lintegral (Ioo a b) _).trans_eq
-      (TauCeti.totalVariationOn_eq_lintegral_perimeter
-        (hu.continuous.locallyIntegrable.locallyIntegrableOn Ω)).symm
+  obtain ⟨t, ht, hreg, hP⟩ :=
+    hu.contDiffOn.exists_mem_Ioo_surjective_fderiv_perimeter_le (μ := μ) isOpen_univ
+      (subset_univ _) hab
+  exact ⟨t, ht, fun x ↦ hreg x (mem_univ x), hP⟩
 
 /-- For a compactly supported smooth function, a positive interval contains a regular value
 whose strict superlevel set has compact closure and the quantitative perimeter bound. Its

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Binomial
+public import Mathlib.Data.Nat.Choose.Central
 public import TauCeti.Algebra.Ring.Subgroup
 public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 import TauCeti.RingTheory.Polynomial.Pochhammer
@@ -80,6 +81,8 @@ span. This gives independence of integral toral constructions from a choice of l
   in the integer span of a commuting set.
 * `TauCeti.exists_forall_sum_mul_choose_eq`: prescribed integer values on an initial segment are
   attained by an integral combination of binomial coefficients.
+* `TauCeti.Ring.multichoose_inv_two`: the multiset coefficients of one half are the normalized
+  central binomial coefficients `(2n choose n) / 4 ^ n`, the coefficients of `(1 - y) ^ (-1/2)`.
 
 ## References
 
@@ -521,6 +524,9 @@ The identity combines them without division, which is the integral step needed i
   Chu--Vandermonde sum of the coefficients `(r choose k)`.
 * `TauCeti.Ring.choose_neg_mem`: an additive subgroup containing the coefficients of `r` up to
   degree `n` contains the degree-`n` coefficient of `-r`.
+* `TauCeti.Ring.add_multichoose_eq`: the Chu--Vandermonde identity for multiset coefficients,
+  `(r + s multichoose k) = ∑_{i + j = k} (r multichoose i) (s multichoose j)` for commuting `r`
+  and `s`, obtained from `Ring.add_choose_eq` at `-r` and `-s` by upper negation.
 * `TauCeti.ringChooseSpan_neg`: negation leaves the integral span unchanged.
 * `TauCeti.Ring.mul_weighted_choose_add_mul_choose`: a scalar-weighted Pascal identity.
 * `TauCeti.Ring.choose_mul_add_one_eq`: the analogue `(r choose k) (r + 1) =
@@ -528,9 +534,13 @@ The identity combines them without division, which is the integral step needed i
 * `TauCeti.Ring.add_one_nsmul_choose_add_one` and `TauCeti.Ring.add_one_nsmul_multichoose_add_one`:
   the product recursions `(k + 1) (r choose (k + 1)) = (r choose k) (r - k)` and
   `(k + 1) (r multichoose (k + 1)) = (r multichoose k) (r + k)`.
+* `TauCeti.Ring.add_one_nsmul_choose_add_one_add_one`: the absorption identity
+  `(k + 1) (r + 1 choose (k + 1)) = (r + 1) (r choose k)`.
 * `TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer`: expression of
   `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero
-  division semiring.
+  division semiring, and its analogue
+  `TauCeti.Ring.choose_eq_inv_factorial_mul_eval_descPochhammer` for `Ring.choose x n` over a
+  characteristic-zero field.
 
 ## References
 
@@ -605,6 +615,17 @@ theorem add_one_nsmul_choose_add_one (r : R) (k : ℕ) :
   simpa [Nat.choose_succ_self_right] using
     _root_.Ring.choose_smul_choose r (n := k + 1) (k := k) (Nat.le_succ k)
 
+/-- The absorption identity for generalized binomial coefficients:
+
+```text
+(k + 1) (r + 1 choose (k + 1)) = (r + 1) (r choose k).
+```
+-/
+theorem add_one_nsmul_choose_add_one_add_one (r : R) (k : ℕ) :
+    (k + 1) • _root_.Ring.choose (r + 1) (k + 1) = (r + 1) * _root_.Ring.choose r k := by
+  simpa [Nat.choose_one_right] using
+    _root_.Ring.choose_smul_choose (r + 1) (n := k + 1) (k := 1) (by omega)
+
 end WeightedPascal
 
 /-! ## The product recursion for multiset coefficients -/
@@ -634,6 +655,35 @@ theorem multichoose_eq_inv_factorial_mul_eval_ascPochhammer {R : Type*} [Divisio
   have h := _root_.Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
   rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at h
   rw [← h, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
+
+/-- Over a field of characteristic zero, `Ring.choose x n` equals
+`(n!)⁻¹ * (descPochhammer R n).eval x`. -/
+theorem choose_eq_inv_factorial_mul_eval_descPochhammer {R : Type*} [Field R] [CharZero R]
+    (x : R) (n : ℕ) :
+    _root_.Ring.choose x n = (n.factorial : R)⁻¹ * (descPochhammer R n).eval x := by
+  rw [_root_.Ring.choose_eq_smul, smul_eq_mul, ← Polynomial.aeval_eq_smeval,
+    ← descPochhammer_map (algebraMap ℤ R), Polynomial.aeval_def, Polynomial.eval_map]
+
+/-- The multiset coefficients of one half are the normalized central binomial coefficients:
+`(1/2 multichoose n) = (2n choose n) / 4 ^ n`, because
+`(1/2) (3/2) ⋯ ((2n - 1)/2) / n! = (2n)! / (4 ^ n (n!) ^ 2)`. -/
+theorem multichoose_inv_two {R : Type*} [DivisionRing R] [CharZero R] (n : ℕ) :
+    _root_.Ring.multichoose (2⁻¹ : R) n = n.centralBinom / 4 ^ n := by
+  have hℚ : _root_.Ring.multichoose (2⁻¹ : ℚ) n = n.centralBinom / 4 ^ n := by
+    induction n with
+    | zero => simp
+    | succ n ih =>
+      have h := add_one_nsmul_multichoose_add_one (2⁻¹ : ℚ) n
+      have hc : ((n + 1 : ℕ) : ℚ) * (n + 1).centralBinom =
+          2 * (2 * n + 1) * n.centralBinom := by
+        exact_mod_cast Nat.succ_mul_centralBinom_succ n
+      rw [nsmul_eq_mul, ih] at h
+      apply mul_left_cancel₀ (Nat.cast_ne_zero.mpr n.succ_ne_zero : ((n + 1 : ℕ) : ℚ) ≠ 0)
+      rw [h, ← mul_div_assoc, hc, pow_succ]
+      field_simp
+      ring
+  rw [show (2⁻¹ : R) = Rat.castHom R 2⁻¹ by simp, ← _root_.Ring.map_multichoose, hℚ, map_div₀,
+    map_pow, map_natCast, map_ofNat]
 
 /-! ## The coefficients of one -/
 
@@ -692,6 +742,21 @@ theorem choose_neg_succ_eq_sum (r : R) (n : ℕ) :
   have hshift : r + ((n + 1 : ℕ) : R) - 1 = r + (n : R) := by push_cast; abel
   rw [hshift, _root_.Ring.add_choose_eq _ (Nat.cast_commute n r).symm]
   exact sum_congr rfl fun ij _ => by rw [_root_.Ring.choose_natCast]
+
+/-- **The Chu--Vandermonde identity for multiset coefficients.** For commuting `r` and `s`,
+`(r + s multichoose k) = ∑_{i + j = k} (r multichoose i) (s multichoose j)`. Upper negation
+(`Ring.choose_neg'`) turns it into `Ring.add_choose_eq` at `-r` and `-s`, the signs
+`(-1) ^ i (-1) ^ j = (-1) ^ k` cancelling. -/
+theorem add_multichoose_eq {r s : R} (k : ℕ) (h : Commute r s) :
+    _root_.Ring.multichoose (r + s) k = ∑ ij ∈ antidiagonal k,
+      _root_.Ring.multichoose r ij.1 * _root_.Ring.multichoose s ij.2 := by
+  have key (x : R) (n : ℕ) :
+      _root_.Ring.multichoose x n = Int.negOnePow n • _root_.Ring.choose (-x) n := by
+    rw [_root_.Ring.choose_neg', smul_smul, Int.units_mul_self, one_smul]
+  simp only [key, neg_add, _root_.Ring.add_choose_eq k h.neg_left.neg_right, smul_sum]
+  refine sum_congr rfl fun ij hij ↦ ?_
+  rw [Units.smul_def, Units.smul_def, Units.smul_def, smul_mul_smul_comm, ← Units.val_mul,
+    ← Int.negOnePow_add, ← Nat.cast_add, mem_antidiagonal.1 hij]
 
 /-- An additive subgroup-like set containing the generalized binomial coefficients of `r` up to
 degree `n` contains the degree-`n` coefficient of `-r`. -/

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality.Basic
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Functoriality
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.One.Naturality
 public import Mathlib.RepresentationTheory.Homological.GroupHomology.LowDegree
 
