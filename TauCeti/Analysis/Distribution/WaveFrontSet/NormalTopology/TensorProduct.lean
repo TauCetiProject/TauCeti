@@ -951,10 +951,7 @@ private theorem mapsTo_withLpProdComm_comap (W : Opens (WithLp 2 (E × D))) :
         C(WithLp 2 (D × E), WithLp 2 (E × D))) W : Set (WithLp 2 (D × E))) := by
   intro p hp
   -- The swap of `D × E` inverts the swap of `E × D`.
-  rw [SetLike.mem_coe, Opens.mem_comap, ContinuousMap.coe_ofClass,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, ← LinearIsometryEquiv.withLpProdComm_symm,
-    LinearIsometryEquiv.symm_apply_apply]
-  exact hp
+  simpa [← WithLp.ofLp_fst, ← WithLp.ofLp_snd] using hp
 
 private theorem mapsTo_withLpProdComm_symm_comap (W : Opens (WithLp 2 (E × D))) :
     MapsTo (LinearIsometryEquiv.withLpProdComm 2 ℝ E D).toContinuousLinearEquiv.symm
@@ -962,9 +959,7 @@ private theorem mapsTo_withLpProdComm_symm_comap (W : Opens (WithLp 2 (E × D)))
         C(WithLp 2 (D × E), WithLp 2 (E × D))) W : Set (WithLp 2 (D × E))) W := by
   intro p hp
   -- The inverse of the swap of `E × D` is the swap of `D × E`.
-  rw [SetLike.mem_coe, Opens.mem_comap, ContinuousMap.coe_ofClass] at hp
-  rwa [LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv,
-    LinearIsometryEquiv.withLpProdComm_symm]
+  simpa using hp
 
 end Swap
 

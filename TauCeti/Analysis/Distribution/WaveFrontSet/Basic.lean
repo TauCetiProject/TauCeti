@@ -410,6 +410,12 @@ theorem IsMicrolocallySmoothAt.smul {T : 𝓓'(Ω, ℂ)} {x ξ : E} (h : T.IsMic
   rw [localFourier_smul, norm_mul, mul_left_comm]
   exact mul_le_mul_of_nonneg_left (hC η hη) (norm_nonneg c)
 
+/-- A nonzero scalar multiple of `T` is microlocally smooth exactly where `T` is. -/
+theorem isMicrolocallySmoothAt_smul_iff_of_ne_zero {T : 𝓓'(Ω, ℂ)} {x ξ : E} {c : ℂ}
+    (hc : c ≠ 0) : (c • T).IsMicrolocallySmoothAt x ξ ↔ T.IsMicrolocallySmoothAt x ξ := by
+  refine ⟨fun h => ?_, fun h => h.smul c⟩
+  simpa [smul_smul, inv_mul_cancel₀ hc] using h.smul c⁻¹
+
 /-- A scalar multiple of `T` has wave front set contained in that of `T`. -/
 theorem waveFrontSet_smul_subset (c : ℂ) (T : 𝓓'(Ω, ℂ)) :
     (c • T).waveFrontSet ⊆ T.waveFrontSet :=
@@ -964,13 +970,12 @@ theorem isMicrolocallySmoothAt_compCLMOfContinuousLinearEquiv_iff {T : 𝓓'(Ω,
     (e : E ≃L[ℝ] E) (hVO : MapsTo e V Ω) (hOV : MapsTo e.symm Ω V) :
     (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySmoothAt x ξ ↔
       T.IsMicrolocallySmoothAt (e x) (((e.symm : E →L[ℝ] E)†) ξ) := by
-  refine ⟨fun h => ?_, fun h => h.compCLMOfContinuousLinearEquiv e hVO hOV⟩
-  -- Pull `e^* T` back along `e⁻¹`, which gives back `T`.
-  have h' : (compCLMOfContinuousLinearEquiv e hVO T).IsMicrolocallySmoothAt (e.symm (e x))
-      (((e.symm.symm : E →L[ℝ] E)†) (((e.symm : E →L[ℝ] E)†) ξ)) := by
-    simpa only [ContinuousLinearEquiv.adjoint_symm_adjoint_apply,
-      ContinuousLinearEquiv.symm_apply_apply] using h
-  simpa using h'.compCLMOfContinuousLinearEquiv e.symm hOV (by simpa using hVO)
+  -- The pullback is a nonzero scalar multiple of the transport.
+  have hdet : ((|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ : ℝ) : ℂ) ≠ 0 := by
+    simpa using LinearEquiv.isUnit_det' e.toLinearEquiv |>.ne_zero
+  rw [compCLMOfContinuousLinearEquiv_eq_smul_transportCLM, _root_.smul_apply, ← Complex.coe_smul,
+    isMicrolocallySmoothAt_smul_iff_of_ne_zero hdet,
+    isMicrolocallySmoothAt_transportCLM_iff e hVO hOV]
 
 /-- **The wave front set under a linear change of coordinates.** When `e` identifies `V` with
 `Ω`, the wave front set of the pullback `e^* T` consists of the `(x, ξ)` with
