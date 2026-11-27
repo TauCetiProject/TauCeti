@@ -92,11 +92,11 @@ theorem ker_singularHomologyMap_cellAttachmentIncl_le
   let _ := c.toRelativeCWComplex.toRelCWComplex
   have hD := c.skeletonLT_toRelCWComplex (m := m + 1) le_rfl
   have hY := c.skeletonLT_toRelCWComplex_eq_univ (m := m + 1 + 1) (by omega)
-  let eIso : X ≅ skeletonObj (univ : Set (cellAttachment φ)) (m + 1) := TopCat.isoOfHomeo
-    ((isClosedEmbedding_cellAttachmentIncl φ).isEmbedding.toHomeomorph.trans
-      (Homeomorph.setCongr hD.symm))
+  let eIso : X ≅ skeletonObj (univ : Set (cellAttachment φ)) (m + 1) :=
+    skeletonObjIsoOfRangeEq (f := (cellAttachmentIncl φ).hom)
+      (isClosedEmbedding_cellAttachmentIncl φ).isEmbedding hD.symm
   let jIso : skeletonObj (univ : Set (cellAttachment φ)) (m + 1 + 1) ≅ cellAttachment φ :=
-    TopCat.isoOfHomeo ((Homeomorph.setCongr hY).trans (Homeomorph.Set.univ _))
+    skeletonObjIsoOfEqUniv hY
   -- The class dies in the top skeleton, which is `Y` itself.
   have h₁ : (F.map (skeletonPair (univ : Set (cellAttachment φ)) (m + 1)).map).hom
       ((F.map eIso.hom).hom a) = 0 := by
@@ -105,8 +105,9 @@ theorem ker_singularHomologyMap_cellAttachmentIncl_le
           jIso.hom)).hom a :=
           (congrArg (fun t ↦ ModuleCat.Hom.hom t a)
             ((F.map_comp _ _).trans (congrArg (_ ≫ ·) (F.map_comp _ _)))).symm
-      -- `eIso` followed by the inclusions of skeleta is the inclusion of `X`, by definition.
-      _ = (F.map (cellAttachmentIncl φ)).hom a := rfl
+      -- `eIso` followed by the inclusions of skeleta is the inclusion of `X`.
+      _ = (F.map (cellAttachmentIncl φ)).hom a := by
+        rw [skeletonObjIsoOfRangeEq_hom_comp_map_comp _ hD.symm hY, TopCat.ofHom_hom]
       _ = _ := ha.trans (map_zero _).symm
   -- By exactness it comes from the cellular chains of dimension `m + 1`, so it lies in the span
   -- of the images of the classical attaching maps.
@@ -125,8 +126,9 @@ theorem ker_singularHomologyMap_cellAttachmentIncl_le
       show c.cell (c.cellToRelCWComplexEquiv j) =
         cellAttachmentCell φ (c.cellToRelCWComplexEquiv j) from cellAttachmentAttachCells_cell φ _,
       ← hb]
-    -- `eIso` is the corestriction of the inclusion of `X`, by definition.
-    rfl
+    -- `eIso` is the corestriction of the inclusion of `X`.
+    rw [ConcreteCategory.comp_apply]
+    exact (coe_skeletonObjIsoOfRangeEq_hom_apply _ hD.symm _).symm
   have h₂ : (⨆ j : cell (univ : Set (cellAttachment φ)) (m + 1), LinearMap.range
       (SSet.homologyMap (TopCat.toSSet.map (cellAttachingMap j)) M m).hom) ≤
         (⨆ i, LinearMap.range (F.map (φ i)).hom).map (F.map eIso.hom).hom := by

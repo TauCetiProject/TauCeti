@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Module.Torsion.PrimaryComponent
 public import TauCeti.RingTheory.AdicCompletion.Exactness
 public import TauCeti.RingTheory.AdicCompletion.Nilpotent
-public import TauCeti.RingTheory.AdicCompletion.Regular
+public import TauCeti.RingTheory.AdicCompletion.Regular.Basic
 
 /-!
 # Parameter-power torsion and principal-adic completion

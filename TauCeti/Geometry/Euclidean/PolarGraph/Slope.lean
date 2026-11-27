@@ -38,11 +38,12 @@ theorem sq_radius_mul_norm_gradient_sq {f : ℂ → ℝ} {h : ℝ × ℝ → ℝ
   have hD' := hD.congr_of_eventuallyEq he
   have h₁ : fderiv ℝ h p (1, 0) = ⟪v, w⟫ := by
     rw [hD'.fderiv]
-    simp [v, w, TauCeti.equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero]
+    simp [-TauCeti.fderivComplexPolarCoordSymm_apply, v, w,
+      TauCeti.fderivComplexPolarCoordSymm_apply_one_zero]
   have h₂ : fderiv ℝ h p (0, 1) = p.1 * ⟪v, w * Complex.I⟫ := by
     rw [hD'.fderiv]
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      TauCeti.equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one, circleMap_zero]
+    simp only [ContinuousLinearMap.comp_apply,
+      TauCeti.fderivComplexPolarCoordSymm_apply_zero_one, circleMap_zero]
     rw [mul_assoc, ← Complex.real_smul, map_smul]
     simp [v, w]
   rw [h₁, h₂, Complex.norm_sq_eq_real_inner_sq_add_real_inner_mul_I_sq v w

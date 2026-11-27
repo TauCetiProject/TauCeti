@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Normed.Module.Seminorm.WeightedSup
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Topology
 import Mathlib.Analysis.Normed.Module.Normalize
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Parametric
+import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol.IteratedFDeriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Bounds
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
@@ -34,6 +36,14 @@ lifts a homogeneous symbol to a symbol of order `m`, depends continuously on `a`
   Hausdorff (`TauCeti.HomogeneousSymbol.instT1Space`).
 * `TauCeti.HomogeneousSymbol.mixedDerivCLM`: every mixed derivative at a point with nonzero
   frequency is a continuous linear function of the homogeneous symbol.
+* `TauCeti.HomogeneousSymbol.continuous_iff_forall_continuousOn_iteratedFDeriv`: a family of
+  homogeneous symbols is continuous in this topology exactly when its jets are jointly continuous
+  in the parameter, the position and the frequency away from the zero frequency.
+* `TauCeti.HomogeneousSymbol.continuous_of_contDiffOn`: in particular a family whose coefficient
+  is jointly smooth in a real parameter, the position and the frequency is continuous. So the
+  jointly smooth homotopies of elliptic symbols used in index theory are continuous paths in every
+  seminorm `p_{K,α,β}`, and by `TauCeti.HomogeneousSymbol.continuous_cutoffSymbol` their cut-off
+  terms are continuous paths of symbols of order `m`.
 * `TauCeti.HomogeneousSymbol.exists_seminorm_cutoffSymbol_le`: the seminorm `p_{K,α,β}` of the
   cut-off term `χ(ξ) a(x, ξ)` in the symbol class `S^m_{1,0}` is bounded by finitely many
   seminorms `p_{K,α,β'}(a)` with `|β'| ≤ |β|`, with a constant depending only on `χ`, `m` and `β`.
@@ -41,6 +51,13 @@ lifts a homogeneous symbol to a symbol of order `m`, depends continuously on `a`
   the homogeneous symbols of degree `m` to the symbols of order `m`.
 
 ## Implementation notes
+
+A family is continuous exactly when its jets are jointly continuous because, at a nonzero
+frequency, the mixed derivatives of order `k` and the Fréchet derivative of order `k` bound each
+other (`TauCeti.HomogeneousSymbol.norm_mixedDeriv_coefficient_le`,
+`TauCeti.HomogeneousSymbol.norm_iteratedFDeriv_coefficient_le_sum`), while uniform convergence on a
+compact set of positions times the unit sphere follows from joint continuity there
+(`IsCompact.mem_uniformity_of_prod`).
 
 The seminorms are the best constants `Seminorm.weightedSup` of the weighted estimates above, like
 the seminorms `TauCeti.Symbol.seminorm` of the symbol classes.
@@ -64,6 +81,7 @@ public section
 noncomputable section
 
 open Filter Topology
+open scoped ContDiff
 open TopologicalSpace (Compacts)
 
 namespace TauCeti
@@ -224,6 +242,134 @@ theorem mixedDerivCLM_apply (α β : List (Fin n)) (x : CoordinateSpace n) {ξ :
     mixedDerivCLM V W m α β x hξ a = mixedDeriv α β a.coefficient x ξ := (rfl)
 
 end Topology
+
+/-! ### Continuous families of homogeneous symbols -/
+
+section Family
+
+/-- Near a nonzero frequency `ξ₀`, frequencies are nonzero and every power of their norm is
+bounded by the same power of `‖ξ₀‖ / 2` plus that of `3 ‖ξ₀‖ / 2`. -/
+private theorem eventually_rpow_norm_le {ξ₀ : CoordinateSpace n} (hξ₀ : ξ₀ ≠ 0) :
+    ∀ᶠ ξ in 𝓝 ξ₀, ξ ≠ 0 ∧ ∀ e : ℝ, ‖ξ‖ ^ e ≤ (‖ξ₀‖ / 2) ^ e + (3 * (‖ξ₀‖ / 2)) ^ e := by
+  have hr : 0 < ‖ξ₀‖ / 2 := by positivity
+  filter_upwards [Metric.ball_mem_nhds ξ₀ hr] with ξ hξ
+  rw [Metric.mem_ball, dist_eq_norm] at hξ
+  have hlo : ‖ξ₀‖ / 2 ≤ ‖ξ‖ := by linarith [norm_sub_norm_le ξ₀ ξ, norm_sub_rev ξ₀ ξ]
+  have hhi : ‖ξ‖ ≤ 3 * (‖ξ₀‖ / 2) := by linarith [norm_sub_norm_le ξ ξ₀]
+  refine ⟨norm_pos_iff.1 (hr.trans_le hlo), fun e ↦ ?_⟩
+  rcases le_total 0 e with he | he
+  · exact (Real.rpow_le_rpow (norm_nonneg _) hhi he).trans
+      (le_add_of_nonneg_left (Real.rpow_nonneg hr.le _))
+  · exact (Real.rpow_le_rpow_of_nonpos hr hlo he).trans
+      (le_add_of_nonneg_right (Real.rpow_nonneg (by positivity) _))
+
+/-- Continuous families of homogeneous symbols have jointly continuous jets. -/
+private theorem continuousOn_iteratedFDeriv_of_continuous {Y : Type*} [TopologicalSpace Y]
+    {a : Y → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m} (ha : Continuous a)
+    (k : ℕ) :
+    ContinuousOn
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1).coefficient p.2)
+      (Set.univ ×ˢ {p | p.2 ≠ 0}) := by
+  rintro ⟨y₀, x₀, ξ₀⟩ ⟨-, hξ₀ : ξ₀ ≠ 0⟩
+  refine ContinuousAt.continuousWithinAt ?_
+  -- Split `D^k (a y)` as `D^k (a y - a y₀) + D^k (a y₀)`; the second term is continuous.
+  have hG : ContinuousAt (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+      iteratedFDeriv ℝ k (a y₀).coefficient p.2) (y₀, x₀, ξ₀) :=
+    (((a y₀).contDiffAt_coefficient hξ₀).continuousAt_iteratedFDeriv
+      (by exact_mod_cast le_top)).comp continuous_snd.continuousAt
+  -- Near `(x₀, ξ₀)`, positions lie in the closed unit ball `K` about `x₀` and the powers of the
+  -- frequency norms are bounded.
+  set K : Compacts (CoordinateSpace n) := ⟨Metric.closedBall x₀ 1, isCompact_closedBall _ _⟩
+  set α : (Fin k → Fin n ⊕ Fin n) → List (Fin n) := fun w ↦ (List.ofFn w).filterMap Sum.getLeft?
+  set β : (Fin k → Fin n ⊕ Fin n) → List (Fin n) := fun w ↦ (List.ofFn w).filterMap Sum.getRight?
+  set C : ℝ → ℝ := fun e ↦ (‖ξ₀‖ / 2) ^ e + (3 * (‖ξ₀‖ / 2)) ^ e
+  have hnear : ∀ᶠ p : Y × (CoordinateSpace n × CoordinateSpace n) in 𝓝 (y₀, x₀, ξ₀),
+      p.2.1 ∈ K ∧ p.2.2 ≠ 0 ∧ ∀ e : ℝ, ‖p.2.2‖ ^ e ≤ C e :=
+    ((continuous_snd.fst.tendsto (y₀, x₀, ξ₀)).eventually
+        (Metric.closedBall_mem_nhds x₀ one_pos)).and
+      ((continuous_snd.snd.tendsto (y₀, x₀, ξ₀)).eventually (eventually_rpow_norm_le hξ₀))
+  -- The difference is bounded by seminorms of `a y - a y₀`, which tend to `0`.
+  have hF : Tendsto (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+      iteratedFDeriv ℝ k (a p.1 - a y₀).coefficient p.2) (𝓝 (y₀, x₀, ξ₀)) (𝓝 0) := by
+    have hc : Continuous fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        ∑ w, HomogeneousSymbol.seminorm K (α w) (β w) (a p.1 - a y₀) * C (m - (β w).length) :=
+      continuous_finsetSum _ fun w _ ↦
+        ((withSeminorms.continuous_seminorm (K, α w, β w)).comp
+          ((ha.comp continuous_fst).sub continuous_const)).mul continuous_const
+    refine squeeze_zero_norm' ?_ (by simpa using hc.tendsto (y₀, x₀, ξ₀))
+    filter_upwards [hnear] with p ⟨hpK, hp0, hpC⟩
+    refine (norm_iteratedFDeriv_coefficient_le_sum _ k p.2.1 hp0).trans
+      (Finset.sum_le_sum fun w _ ↦ ?_)
+    exact (le_seminorm K (α w) (β w) _ hpK hp0).trans
+      (mul_le_mul_of_nonneg_left (hpC _) (apply_nonneg _ _))
+  have h := hF.add hG
+  rw [zero_add] at h
+  refine h.congr' ?_
+  filter_upwards [hnear] with p ⟨_, hp0, _⟩
+  rw [iteratedFDeriv_coefficient_sub _ _ _ hp0, sub_add_cancel]
+
+/-- Families of homogeneous symbols with jointly continuous jets are continuous: as `y` tends to
+`y₀`, every mixed derivative of `a y` converges to that of `a y₀` uniformly on compact sets of
+positions times the unit sphere. -/
+private theorem continuous_of_continuousOn_iteratedFDeriv {Y : Type*} [TopologicalSpace Y]
+    {a : Y → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m}
+    (ha : ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1).coefficient p.2)
+      (Set.univ ×ˢ {p | p.2 ≠ 0})) :
+    Continuous a := by
+  refine continuous_iff_continuousAt.2 fun y₀ ↦ (withSeminorms.tendsto_nhds _ _).2 ?_
+  rintro ⟨K, α, β⟩ ε hε
+  -- The jets of order `|α| + |β|` converge uniformly on `K` times the unit sphere.
+  have hsub : (Set.univ : Set Y) ×ˢ ((K : Set (CoordinateSpace n)) ×ˢ Metric.sphere 0 1) ⊆
+      Set.univ ×ˢ {p : CoordinateSpace n × CoordinateSpace n | p.2 ≠ 0} :=
+    Set.prod_mono subset_rfl fun p hp ↦
+      ne_zero_of_norm_ne_zero (by simp [mem_sphere_zero_iff_norm.1 hp.2])
+  obtain ⟨v, hv, hvε⟩ := (K.isCompact.prod (isCompact_sphere 0 1)).mem_uniformity_of_prod
+    (f := fun y q ↦ iteratedFDeriv ℝ (α.length + β.length) (a y).coefficient q)
+    ((ha _).mono hsub) (Set.mem_univ y₀) (Metric.dist_mem_uniformity (half_pos hε))
+  rw [nhdsWithin_univ] at hv
+  filter_upwards [hv] with y hy
+  rw [seminormFamily_apply]
+  refine lt_of_le_of_lt ((seminorm_le_iff_norm_eq_one (half_pos hε).le).2 fun x hx ξ hξ ↦ ?_)
+    (half_lt_self hε)
+  have hξ0 : ξ ≠ 0 := ne_zero_of_norm_ne_zero (by simp [hξ])
+  refine (norm_mixedDeriv_coefficient_le _ α β x hξ0).trans ?_
+  rw [iteratedFDeriv_coefficient_sub _ _ _ hξ0, ← dist_eq_norm]
+  exact (hvε y hy (x, ξ) ⟨hx, mem_sphere_zero_iff_norm.2 hξ⟩).le
+
+/-- **The topology of the homogeneous symbols is that of joint continuity of jets.** A family
+`y ↦ a y` of homogeneous symbols of degree `m` is continuous exactly when each Fréchet derivative
+`D^k (a y)(x, ξ)` in the position and the frequency depends continuously on `(y, x, ξ)` away from
+the zero frequency. -/
+theorem continuous_iff_forall_continuousOn_iteratedFDeriv {Y : Type*} [TopologicalSpace Y]
+    {a : Y → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m} :
+    Continuous a ↔ ∀ k : ℕ, ContinuousOn
+      (fun p : Y × (CoordinateSpace n × CoordinateSpace n) ↦
+        iteratedFDeriv ℝ k (a p.1).coefficient p.2)
+      (Set.univ ×ˢ {p | p.2 ≠ 0}) :=
+  ⟨continuousOn_iteratedFDeriv_of_continuous, continuous_of_continuousOn_iteratedFDeriv⟩
+
+/-- **Smooth families are continuous.** A family `a t` of homogeneous symbols of degree `m`, indexed
+by a real normed space, whose coefficient `(t, x, ξ) ↦ (a t)(x, ξ)` is jointly smooth away from the
+zero frequency, is continuous for the topology of the homogeneous symbols. This applies to the
+smoothed homotopies of elliptic symbols of `HomogeneousSymbol.exists_contDiffOn_isElliptic_homotopy`
+and `HomogeneousSymbol.exists_contDiffOn_isElliptic_equivariant_homotopy`, which are therefore
+continuous paths in every seminorm `p_{K,α,β}`. -/
+theorem continuous_of_contDiffOn {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    {a : P → HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m}
+    (ha : ContDiffOn ℝ ∞
+      (fun p : P × CoordinateSpace n × CoordinateSpace n ↦ (a p.1).coefficient p.2)
+      {p | p.2.2 ≠ 0}) :
+    Continuous a := by
+  refine continuous_iff_forall_continuousOn_iteratedFDeriv.2 fun k p hp ↦ ?_
+  have hU : {q : P × CoordinateSpace n × CoordinateSpace n | q.2.2 ≠ 0} ∈ 𝓝 p :=
+    (isOpen_ne_fun (continuous_snd.comp continuous_snd) continuous_const).mem_nhds hp.2
+  exact ((ha.contDiffAt hU).iteratedFDeriv_snd (f := fun t ↦ (a t).coefficient) (m := 0)
+    (by simp)).continuousAt.continuousWithinAt
+
+end Family
 
 /-! ### The cut-off term depends continuously on the homogeneous symbol -/
 
