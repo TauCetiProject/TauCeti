@@ -31,7 +31,8 @@ As immediate consequences we also deduce nonemptiness of `relationSet r ζ g` an
 and hence non-freeness of the central-twist action for every `r ≥ 2` and primitive `ζ`
 (`TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`). In contrast to the
 coprime case `r = 2, ζ = -1` (whose relation set is nonempty by
-`TauCeti.relationSet_two_neg_one_one_nonempty` and whose moduli is a point), at the non-coprime
+`TauCeti.GaugeModuli.nonempty_relationSet_genus_one` applied to
+`IsPrimitiveRoot.neg_one 0 two_ne_zero.symm`, and whose moduli is a point), at the non-coprime
 parameter `r = 2`, `ζ = 1`, the moduli `relationModuli 2 1 1` is not a subsingleton
 (`TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`) and the `SU(2)` action admits
 non-central stabilizers
