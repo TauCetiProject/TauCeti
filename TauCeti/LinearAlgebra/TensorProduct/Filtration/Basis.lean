@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Filtration.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
+import TauCeti.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # The total tensor filtration in coordinates
@@ -26,8 +27,6 @@ when its image `(id ⊗ f) t` has total degree at most `n` for `G`
 
 ## Main results
 
-* `TauCeti.tensorFiltration_le_comap_map`: tensor products of maps preserving the factor families
-  preserve the total filtration.
 * `TauCeti.mem_tensorFiltration_iff_of_basis`: the coefficient criterion.
 * `TauCeti.lTensor_mem_tensorFiltration_iff_of_basis`: strictness along an injective map of the
   second factor.
@@ -44,26 +43,9 @@ open Submodule TensorProduct
 variable {R M N : Type*} [CommSemiring R]
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
-/-- Tensoring linear maps preserving the factor families preserves the total filtration. -/
-theorem tensorFiltration_le_comap_map {M' N' : Type*}
-    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
-    {F : ℕ → Submodule R M} {G : ℕ → Submodule R N}
-    {F' : ℕ → Submodule R M'} {G' : ℕ → Submodule R N'}
-    {f : M →ₗ[R] M'} {g : N →ₗ[R] N'}
-    (hf : ∀ i, F i ≤ (F' i).comap f) (hg : ∀ j, G j ≤ (G' j).comap g) (n : ℕ) :
-    tensorFiltration F G n ≤ (tensorFiltration F' G' n).comap (TensorProduct.map f g) :=
-  tensorFiltration_le_iff.mpr fun i j hij x hx y hy ↦ by
-    simpa only [Submodule.mem_comap, TensorProduct.map_tmul] using
-      tmul_mem_tensorFiltration hij (hf i hx) (hg j hy)
-
 section Basis
 
 variable {ι : Type*} [DecidableEq ι] (b : Module.Basis ι R M) (deg : ι → ℕ)
-
-/-- The submodule allowed for the `i`-th coefficient of a tensor of total degree at most `n`:
-`G (n - deg i)` if `deg i ≤ n`, and `0` otherwise. -/
-private def coeffBound (G : ℕ → Submodule R N) (n : ℕ) (i : ι) : Submodule R N :=
-  if deg i ≤ n then G (n - deg i) else ⊥
 
 /-- **Coefficient criterion for the total filtration.** If `F k` is spanned by the basis vectors
 `b i` with `deg i ≤ k`, and `G` is increasing, then `t = ∑ᵢ bᵢ ⊗ tᵢ` has total degree at most
@@ -73,11 +55,12 @@ theorem mem_tensorFiltration_iff_of_basis {F : ℕ → Submodule R M}
     {n : ℕ} {t : M ⊗[R] N} :
     t ∈ tensorFiltration F G n ↔
       ∀ i, equivFinsuppOfBasisLeft b t i ∈ if deg i ≤ n then G (n - deg i) else ⊥ := by
-  let P : Submodule R (M ⊗[R] N) := ⨅ i, (coeffBound deg G n i).comap
+  let P : Submodule R (M ⊗[R] N) := ⨅ i, (if deg i ≤ n then G (n - deg i) else ⊥).comap
     ((Finsupp.lapply i).comp (equivFinsuppOfBasisLeft b).toLinearMap)
-  have hP : ∀ s, s ∈ P ↔ ∀ i, equivFinsuppOfBasisLeft b s i ∈ coeffBound deg G n i := fun s ↦ by
-    simp [P]
-  change t ∈ tensorFiltration F G n ↔ ∀ i, _ ∈ coeffBound deg G n i
+  have hP : ∀ s, s ∈ P ↔
+      ∀ i, equivFinsuppOfBasisLeft b s i ∈ if deg i ≤ n then G (n - deg i) else ⊥ := fun s ↦ by
+    simp only [P, mem_iInf, mem_comap, LinearMap.comp_apply, LinearEquiv.coe_coe,
+      Finsupp.lapply_apply]
   rw [← hP]
   refine ⟨fun ht ↦ tensorFiltration_le_iff.mpr ?_ ht, fun ht ↦ ?_⟩
   · intro k j hkj x hx y hy
@@ -89,25 +72,16 @@ theorem mem_tensorFiltration_iff_of_basis {F : ℕ → Submodule R M}
     have hik : deg i ≤ k := by
       rw [hF, Module.Basis.mem_span_image] at hx
       exact hx (Finsupp.mem_support_iff.mpr hi)
-    rw [coeffBound, ite_eq_left_iff.mpr fun h ↦ absurd (hik.trans (le_of_add_le_left hkj)) h]
+    rw [ite_eq_left (hik.trans (le_of_add_le_left hkj))]
     exact smul_mem _ _ (hG (by omega) hy)
   · rw [← (equivFinsuppOfBasisLeft b).symm_apply_apply t, equivFinsuppOfBasisLeft_symm_apply]
     refine sum_mem fun i hi ↦ ?_
     have hc := (hP t).mp ht i
-    rw [coeffBound] at hc
     split_ifs at hc with hin
     · refine tmul_mem_tensorFiltration (i := deg i) (by omega) ?_ hc
       rw [hF]
       exact subset_span ⟨i, Set.mem_ofPred_eq ▸ le_rfl, rfl⟩
     · exact absurd ((mem_bot R).mp hc) (Finsupp.mem_support_iff.mp hi)
-
-/-- The coefficients of `(id ⊗ f) t` are the images under `f` of the coefficients of `t`. -/
-theorem equivFinsuppOfBasisLeft_lTensor_apply {N' : Type*} [AddCommMonoid N'] [Module R N']
-    (f : N' →ₗ[R] N) (t : M ⊗[R] N') (i : ι) :
-    equivFinsuppOfBasisLeft b (f.lTensor M t) i = f (equivFinsuppOfBasisLeft b t i) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul x y => simp
-  | add s t hs ht => simp only [map_add, Finsupp.add_apply, hs, ht]
 
 omit [DecidableEq ι] in
 /-- **Strictness of the total filtration along an injective map of the second factor.** If
@@ -125,7 +99,7 @@ theorem lTensor_mem_tensorFiltration_iff_of_basis {N' : Type*} [AddCommMonoid N'
     mem_tensorFiltration_iff_of_basis b deg hF (G := fun j ↦ (G j).comap f)
       fun _ _ h ↦ comap_mono (hG h)]
   refine forall_congr' fun i ↦ ?_
-  rw [equivFinsuppOfBasisLeft_lTensor_apply]
+  rw [b.equivFinsuppOfBasisLeft_lTensor_apply]
   split_ifs
   · exact mem_comap.symm
   · simp only [mem_bot]
