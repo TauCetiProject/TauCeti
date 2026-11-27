@@ -38,6 +38,8 @@ no separability assumption (`MeasureTheory.MemLp.id_map`).
   `MeasureTheory.MeasurePreserving.memLp_comp_restrict_preimage_iff`: a measure-preserving
   measurable embedding `f` identifies the `Lᵖ` seminorm of `g ∘ f` on `f ⁻¹' s` with that of `g`
   on `s`.
+* `MeasureTheory.MeasurePreserving.eLpNorm_comp_restrict_le_of_mapsTo`: a measure-preserving map
+  sending `s` into a measurable set `t` satisfies `‖g ∘ f‖_{Lᵖ(s)} ≤ ‖g‖_{Lᵖ(t)}`.
 * `MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`: precomposition with a
   quasi-measure-preserving map preserves `L^∞`.
 * `MeasureTheory.MemLp.id_map`: if `f ∈ Lᵖ(μ)` takes values in a Borel pseudometrizable space,
@@ -46,6 +48,9 @@ no separability assumption (`MeasureTheory.MemLp.id_map`).
   `eLpNorm` by at most its operator norm, with no measurability assumption.
 * `MeasureTheory.MemLp.comp_of_norm_le_mul_one_add`: over a finite measure, postcomposition with a
   strongly measurable map of linear growth preserves `Lᵖ`.
+* `MeasureTheory.MeasurePreserving.eLpNorm_clm_comp_restrict_le_of_mapsTo`: for a
+  measure-preserving map sending `s` into a measurable set `t` and a continuous semilinear map `L`
+  of norm at most `κ`, `‖L ∘ g ∘ f‖_{Lᵖ(s)} ≤ κ ‖g‖_{Lᵖ(t)}`.
 * `Isometry.eLpNorm_comp_of_map_zero`, `LinearIsometry.eLpNorm_comp`,
   `LinearIsometryEquiv.eLpNorm_comp`: postcomposition with an isometry fixing zero, such as a
   linear isometry, preserves `eLpNorm`.
@@ -55,7 +60,7 @@ no separability assumption (`MeasureTheory.MemLp.id_map`).
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace MeasureTheory
 
@@ -92,6 +97,18 @@ theorem MeasurePreserving.memLp_comp_restrict_preimage_iff (hf : MeasurePreservi
     (he : MeasurableEmbedding f) {g : β → ε} {p : ℝ≥0∞} {s : Set β} :
     MemLp (g ∘ f) p (μ.restrict (f ⁻¹' s)) ↔ MemLp g p (ν.restrict s) := by
   rw [← he.memLp_map_measure_iff, (hf.restrict_preimage_emb he s).map_eq]
+
+/-- **Measure-preserving change of variables into a set.** If `f` carries `μ` to `ν` and maps `s`
+into a measurable set `t`, then `eLpNorm (g ∘ f) p (μ.restrict s) ≤ eLpNorm g p (ν.restrict t)`.
+No measurability assumption on `g` is needed. -/
+theorem MeasurePreserving.eLpNorm_comp_restrict_le_of_mapsTo (hf : MeasurePreserving f μ ν)
+    {s : Set α} {t : Set β} (ht : MeasurableSet t) (h : Set.MapsTo f s t) (g : β → ε)
+    (p : ℝ≥0∞) :
+    eLpNorm (g ∘ f) p (μ.restrict s) ≤ eLpNorm g p (ν.restrict t) := by
+  have hf' := hf.restrict_preimage ht
+  refine (eLpNorm_mono_measure _ (Measure.restrict_mono (s' := f ⁻¹' t) h le_rfl)).trans ?_
+  simpa using eLpNorm_comp_le_of_map_le_smul (C := 1) hf'.measurable.aemeasurable
+    (by rw [hf'.map_eq, one_smul]) p
 
 /-- **Precomposition preserves `L^∞`.** If `g ∈ L^∞(ν)` and `f` is quasi-measure-preserving
 from `μ` to `ν`, then `g ∘ f ∈ L^∞(μ)`. -/
@@ -146,6 +163,19 @@ theorem MemLp.comp_of_norm_le_mul_one_add {E F : Type*} [NormedAddCommGroup E] [
     (.of_forall fun a ↦ ?_)
   rw [Real.norm_eq_abs]
   exact (hvC (u a)).trans (le_abs_self _)
+
+/-- **Weighted measure-preserving change of variables into a set.** If `f` carries `μ` to `ν` and
+maps `s` into a measurable set `t`, and `L` is a continuous semilinear map of norm at most `κ`,
+then `‖L ∘ g ∘ f‖_{Lᵖ(μ|s)} ≤ κ ‖g‖_{Lᵖ(ν|t)}`. No measurability assumption on `g` is needed. -/
+theorem MeasurePreserving.eLpNorm_clm_comp_restrict_le_of_mapsTo {𝕜 𝕜₂ E F : Type*}
+    [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂] [SeminormedAddCommGroup E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 E] [NormedSpace 𝕜₂ F] {σ₁₂ : 𝕜 →+* 𝕜₂}
+    [RingHomIsometric σ₁₂] (hf : MeasurePreserving f μ ν) {s : Set α} {t : Set β}
+    (ht : MeasurableSet t) (h : Set.MapsTo f s t) {L : E →SL[σ₁₂] F} {κ : ℝ≥0} (hL : ‖L‖ ≤ κ)
+    (g : β → E) (p : ℝ≥0∞) :
+    eLpNorm (fun x => L (g (f x))) p (μ.restrict s) ≤ κ * eLpNorm g p (ν.restrict t) :=
+  L.eLpNorm_comp_le.trans (mul_le_mul' (eNorm_le_coe.2 (NNReal.coe_le_coe.1 hL))
+    (hf.eLpNorm_comp_restrict_le_of_mapsTo ht h g p))
 
 end MeasureTheory
 
