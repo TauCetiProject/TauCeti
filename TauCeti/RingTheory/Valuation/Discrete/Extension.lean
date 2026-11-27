@@ -118,15 +118,6 @@ theorem IsRankOneDiscrete.of_finite [Field K] [DivisionRing L] [Algebra K L] [Mo
     w.IsRankOneDiscrete :=
   of_isFiniteRelIndex v w
 
-/-- For a finite field extension `L / K`, the valuation subring of any valuation extending a
-rank-one discrete valuation on `K` is a discrete valuation ring. -/
-theorem valuationSubring_isDiscreteValuationRing_of_finite [Field K] [Field L] [Algebra K L]
-    [Module.Finite K L] (v : Valuation K ΓK) [v.IsRankOneDiscrete]
-    (w : Valuation L ΓL) [v.HasExtension w] :
-    IsDiscreteValuationRing w.valuationSubring :=
-  have := IsRankOneDiscrete.of_finite v w
-  inferInstance
-
 end Discreteness
 
 section Scaling
@@ -461,10 +452,6 @@ section DivisionRing
 variable {K L ΓL : Type*} [CommRing K] [DivisionRing L] [Algebra K L]
   [LinearOrderedCommGroupWithZero ΓL]
   (w : Valuation L ΓL) [w.IsRankOneDiscrete]
-
-/-- On a division ring `L`, `w.extRealAddVal K` takes the value `⊤` only at `0`. -/
-theorem extRealAddVal_eq_top_iff_eq_zero {y : L} : w.extRealAddVal K y = ⊤ ↔ y = 0 :=
-  w.extRealAddVal_eq_top_iff.trans w.zero_iff
 
 /-- On a division ring `L`, `w.extRealAddVal K y` equals
 `(ord w.intValuation y : ℝ) / w.ramificationIdx K` for every nonzero `y`. -/

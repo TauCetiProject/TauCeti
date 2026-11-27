@@ -231,7 +231,7 @@ theorem coeff_zero_residualPolynomial_ne_zero {φ : K[X]} {α : L} {k l h m : �
     (hface : IsFiniteFace ((ramificationPolynomial φ α).newtonPolygon (valuation L).realAddVal)
       σ k (k + l)) : (residualPolynomial φ α k l h m).coeff 0 ≠ 0 :=
   (coeff_zero_residualPolynomial_ne_zero_iff hα).mpr <|
-    (valuation L).realAddVal_eq_top_iff_eq_zero.not.mp <|
+    (valuation L).realAddVal.ne_top_iff.mp <|
       ((ramificationPolynomial φ α).isLowerConvexEnvelope_newtonPolygon
         (valuation L).realAddVal).eq_left_of_isFiniteFace hface ▸ hface.left_ne_top
 
@@ -261,7 +261,7 @@ theorem coeff_div_residualPolynomial_ne_zero {φ : K[X]} {α : L} {k l h m : ℕ
       (-(h : ℝ) / m) k (k + l)) :
     (residualPolynomial φ α k l h m).coeff (l / m) ≠ 0 := by
   have hc0 : (ramificationPolynomial φ α).coeff (k + l) ≠ 0 :=
-    (valuation L).realAddVal_eq_top_iff_eq_zero.not.mp <|
+    (valuation L).realAddVal.ne_top_iff.mp <|
       ((ramificationPolynomial φ α).isLowerConvexEnvelope_newtonPolygon
         (valuation L).realAddVal).eq_right_of_isFiniteFace hface ▸ hface.right_ne_top
   have hidx : (l / m) * m + k = k + l := by
