@@ -335,7 +335,7 @@ theorem _root_.MeasureTheory.Measure.integrable_mul_comp_snd_of_integrable_margi
       _ = ∫ x, ‖g (x, y) * w y‖ ∂μ := by
         apply integral_congr_ae
         filter_upwards [hy] with x hx
-        change 0 ≤ g (x, y) at hx
+        simp only [Pi.zero_apply, Prod.swap_prod_mk] at hx
         simp only [norm_mul, Real.norm_eq_abs, abs_of_nonneg hx]
 
 /-- If two integrals over the second factor of a product measure with a probability first factor

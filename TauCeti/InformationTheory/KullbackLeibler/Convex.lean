@@ -59,10 +59,9 @@ open scoped ENNReal NNReal
 
 namespace MeasureTheory.Measure
 
-/-- The log-sum of two nonnegative integrable functions is bounded by the integrated weighted
-logarithmic difference. The proof uses the scalar Klein inequality
-`Real.sub_le_mul_log_sub_mul_log`. A zero of the second function must also be a zero of the first
-almost everywhere. Integrability is required for the difference, not for each logarithmic term. -/
+/-- For `A = ∫ f dμ` and `B = ∫ h dμ`, the log-sum inequality is
+`A log (A / B) ≤ ∫ (f log f - f log h) dμ`. A zero of `h` must also be a zero of `f` almost
+everywhere. Integrability is required for the difference, not for each logarithmic term. -/
 theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
     {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
     (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
@@ -179,6 +178,31 @@ theorem integral_log_sum_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
         (∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ)) :=
       mul_le_mul_of_nonneg_left hlog_le hA_pos.le
     _ = _ := by field_simp [hA_pos.ne']
+
+/-- The split-log form of the integral log-sum inequality, including zero total masses. -/
+theorem integral_log_sum_split_le {α : Type*} [MeasurableSpace α] (μ : Measure α)
+    {f h : α → ℝ} (hf : 0 ≤ᵐ[μ] f) (hh : 0 ≤ᵐ[μ] h)
+    (hzero : ∀ᵐ x ∂μ, h x = 0 → f x = 0)
+    (hfi : Integrable f μ) (hhi : Integrable h μ)
+    (hdiff : Integrable (fun x ↦ f x * Real.log (f x) - f x * Real.log (h x)) μ) :
+    (∫ x, f x ∂μ) * Real.log (∫ x, f x ∂μ) -
+        (∫ x, f x ∂μ) * Real.log (∫ x, h x ∂μ) ≤
+      ∫ x, f x * Real.log (f x) - f x * Real.log (h x) ∂μ := by
+  have hsum := integral_log_sum_le μ hf hh hzero hfi hhi hdiff
+  by_cases hB : (∫ x, h x ∂μ) = 0
+  · have hhzero : h =ᵐ[μ] fun _ ↦ 0 :=
+      (integral_eq_zero_iff_of_nonneg_ae hh hhi).mp hB
+    have hfzero : f =ᵐ[μ] fun _ ↦ 0 := by
+      filter_upwards [hzero, hhzero] with x hx hhx
+      exact hx hhx
+    have hA : (∫ x, f x ∂μ) = 0 := by
+      rw [integral_congr_ae hfzero]
+      simp
+    simpa [hA] using hsum
+  · by_cases hA : (∫ x, f x ∂μ) = 0
+    · simpa [hA] using hsum
+    · rw [Real.log_div hA hB] at hsum
+      linarith
 
 end MeasureTheory.Measure
 

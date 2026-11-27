@@ -17,6 +17,8 @@ Defines the entropy `Ent_μ(g) = ∫ g log g dμ - (∫ g dμ) log (∫ g dμ)`.
 Entropy is nonnegative for an a.e. nonnegative function under a probability measure, assuming
 integrability of the function and its `x log x` transform. The file also gives formulas for
 constants, Dirac measures, and scaling the measure.
+Logarithmic Sobolev inequalities control the entropy of the square of a test function by its
+gradient energy.
 -/
 
 public section
@@ -93,15 +95,16 @@ theorem entropy_const_mul {α : Type*} [MeasurableSpace α] (μ : Measure α) (c
     (g : α → ℝ) (hg : Integrable g μ)
     (hlog : Integrable (fun x ↦ g x * Real.log (g x)) μ) :
     entropy μ (fun x ↦ c * g x) = c * entropy μ g := by
-  by_cases hc : c = 0
-  · simp [entropy_def, hc]
+  have hmul (t : ℝ) :
+      (c * t) * Real.log (c * t) =
+        c * (t * Real.log t) + (c * Real.log c) * t := by
+    have h := Real.negMulLog_mul c t
+    simp only [Real.negMulLog_eq_neg] at h
+    linear_combination -h
   have hlog_ae : (fun x ↦ (c * g x) * Real.log (c * g x)) =ᵐ[μ]
       fun x ↦ c * (g x * Real.log (g x)) + (c * Real.log c) * g x := by
     filter_upwards with x
-    by_cases hx : g x = 0
-    · simp [hx]
-    · rw [Real.log_mul hc hx]
-      ring
+    exact hmul (g x)
   have hlog_integral :
       (∫ x, (c * g x) * Real.log (c * g x) ∂μ) =
         c * (∫ x, g x * Real.log (g x) ∂μ) +
@@ -110,10 +113,8 @@ theorem entropy_const_mul {α : Type*} [MeasurableSpace α] (μ : Measure α) (c
       (hg.const_mul (c * Real.log c)), integral_const_mul, integral_const_mul]
   have hmass : (∫ x, c * g x ∂μ) = c * ∫ x, g x ∂μ := integral_const_mul _ _
   rw [entropy_def, entropy_def, hlog_integral, hmass]
-  by_cases hm : (∫ x, g x ∂μ) = 0
-  · simp [hm]
-  · rw [Real.log_mul hc hm]
-    ring
+  have h := hmul (∫ x, g x ∂μ)
+  linear_combination -h
 
 /-- Functional entropy is nonnegative under a probability measure for an a.e. nonnegative
 function, when the function and its `x log x` transform are integrable. -/

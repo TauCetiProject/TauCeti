@@ -52,6 +52,15 @@ example {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
     (μ : Measure α) (ν : Measure β) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (g : α × β → ℝ) (hg : Integrable g (μ.prod ν))
     (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
+    Integrable (fun x ↦ entropy ν (fun y ↦ g (x, y))) μ ∧
+      Integrable (fun y ↦ entropy μ (fun x ↦ g (x, y))) ν :=
+  ⟨integrable_entropy_prod_left μ ν g hlog (integrable_marginal_mul_log_left μ ν hg hlog),
+    integrable_entropy_prod_right μ ν g hlog (integrable_marginal_mul_log_right μ ν hg hlog)⟩
+
+example {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (μ : Measure α) (ν : Measure β) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+    (g : α × β → ℝ) (hg : Integrable g (μ.prod ν))
+    (hlog : Integrable (fun p ↦ g p * Real.log (g p)) (μ.prod ν)) :
     entropy (μ.prod ν) g =
       (∫ x, entropy ν (fun y ↦ g (x, y)) ∂μ) +
         entropy μ (fun x ↦ ∫ y, g (x, y) ∂ν) :=
