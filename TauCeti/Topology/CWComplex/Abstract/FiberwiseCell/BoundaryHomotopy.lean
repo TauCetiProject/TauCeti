@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.Attachment
-import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Topology.Circle.Degree
 import TauCeti.Topology.Homotopy.Homotopic.Rel
 
