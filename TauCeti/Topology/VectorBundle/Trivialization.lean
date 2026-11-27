@@ -726,7 +726,12 @@ def lineCoord : E b ≃L[𝕜] 𝕜 :=
   letI := VectorBundle.isTopologicalAddGroup 𝕜 F E b
   letI := VectorBundle.continuousSMul 𝕜 F E b
   let φ := (LinearEquiv.ofBijective _ (bijective_toSpanSingleton hF hv)).symm
-  { φ with
+  { toFun := φ
+    invFun c := c • v
+    map_add' := φ.map_add
+    map_smul' := φ.map_smul
+    left_inv w := φ.symm_apply_apply w
+    right_inv c := φ.apply_symm_apply c
     continuous_toFun := (LinearMap.continuous_iff_isClosed_ker φ.toLinearMap).2 <| by
       rw [LinearEquiv.ker, Submodule.bot_coe]
       exact isClosed_singleton
@@ -734,6 +739,7 @@ def lineCoord : E b ≃L[𝕜] 𝕜 :=
 
 @[simp]
 theorem lineCoord_symm_apply (c : 𝕜) : (lineCoord hF hv).symm c = c • v :=
+  -- The inverse of `lineCoord` is given explicitly as `c ↦ c • v` in its definition.
   (rfl)
 
 theorem lineCoord_apply_smul (c : 𝕜) : lineCoord hF hv (c • v) = c := by
