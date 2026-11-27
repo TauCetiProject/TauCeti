@@ -58,10 +58,7 @@ theorem languageCount_sftOneSided {R : Type*} [CommSemiring R] {A : α → α �
       ((Finset.univ.filter fun w : Fin (n + 1) → α ↦
         ∀ k : Fin n, A (w k.castSucc) (w k.succ) : Finset _) : Set (Fin (n + 1) → α)) := by
     ext w
-    simp only [mem_wordsOf, Finset.coe_filter, Finset.mem_univ, true_and, mem_ofPred_eq]
-    refine ⟨fun ⟨x, hx, hxw⟩ k ↦ ?_, fun hw ↦ exists_mem_sftOneSided_of_admissible hrow hw⟩
-    rw [← hxw, ← hxw]
-    simpa using mem_sftOneSided.1 hx k
+    simp [mem_wordsOf_sftOneSided hrow]
   rw [languageCount_def, hwords, ncard_coe_finset, ← Matrix.sum_pathWeight, Finset.card_filter]
   push_cast
   exact Finset.sum_congr rfl fun w _ ↦ (pathWeight_sftTransitionMatrix A w).symm

@@ -10,6 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Nonnegative
 import Mathlib.Analysis.Matrix.Normed
 import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 import TauCeti.Analysis.Asymptotics.ExpGrowth
+import TauCeti.LinearAlgebra.Matrix.OfReal
 
 /-!
 # Exponential growth of the entry sums of powers of a matrix
@@ -54,8 +55,8 @@ theorem expGrowthSup_sum_pow_mulVec_le (M : Matrix n n ℝ) :
       (Fintype.card n : ℝ≥0∞) * (‖N ^ k‖₊ : ℝ≥0∞) := by
     have hrow (i : n) : (M ^ k *ᵥ 1) i ≤ ‖N ^ k‖ := by
       have hk : (N ^ k *ᵥ 1) i = ((M ^ k *ᵥ 1) i : ℂ) := by
-        rw [show N = M.map Complex.ofRealHom by ext; simp [N], ← Matrix.map_pow,
-          ← Complex.ofRealHom_eq_coe, RingHom.map_mulVec, map_comp_one]
+        have hpow : (M ^ k).map (↑) = N ^ k := Matrix.map_pow M Complex.ofRealHom k
+        simpa [hpow, ← Pi.one_def] using congrFun (map_ofReal_mulVec (M ^ k) 1) i
       calc (M ^ k *ᵥ 1) i ≤ ‖(N ^ k *ᵥ 1) i‖ := by
             rw [hk, Complex.norm_real, Real.norm_eq_abs]
             exact le_abs_self _

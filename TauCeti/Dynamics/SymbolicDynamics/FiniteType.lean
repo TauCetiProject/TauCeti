@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
+public import TauCeti.Dynamics.SymbolicDynamics.Language
 public import TauCeti.LinearAlgebra.Matrix.PathWeight
 
 /-!
@@ -30,6 +31,8 @@ and if every symbol has a successor, every admissible word extends to a point of
 * `TauCeti.mapsTo_shift_sftOneSided`: the shift maps `sftOneSided A` into itself.
 * `TauCeti.exists_mem_sftOneSided_of_admissible`: if every symbol has a successor, every
   admissible word extends to a point of `sftOneSided A`.
+* `TauCeti.mem_wordsOf_sftOneSided`: if every symbol has a successor, the words read off
+  `sftOneSided A` are exactly the admissible words.
 -/
 
 public section
@@ -122,5 +125,15 @@ theorem exists_mem_sftOneSided_of_admissible {A : α → α → Bool} (hrow : �
   · rw [hx k hk, hx (k + 1) (by omega), show k + 1 - n = k - n + 1 by omega,
       Function.iterate_succ_apply']
     exact hf _
+
+/-- If every symbol has a successor, the words of length `n + 1` read off `sftOneSided A` are
+exactly the admissible words. -/
+theorem mem_wordsOf_sftOneSided {A : α → α → Bool} (hrow : ∀ i, ∃ j, A i j) {n : ℕ}
+    {w : Fin (n + 1) → α} :
+    w ∈ wordsOf (sftOneSided A) (n + 1) ↔ ∀ k : Fin n, A (w k.castSucc) (w k.succ) := by
+  refine ⟨fun hw k ↦ ?_, fun hw ↦ mem_wordsOf.2 (exists_mem_sftOneSided_of_admissible hrow hw)⟩
+  obtain ⟨x, hx, hxw⟩ := mem_wordsOf.1 hw
+  rw [← hxw, ← hxw]
+  simpa using mem_sftOneSided.1 hx k
 
 end TauCeti

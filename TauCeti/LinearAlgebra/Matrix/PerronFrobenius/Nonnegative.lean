@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.PerronFrobenius.Positive
+import TauCeti.LinearAlgebra.Matrix.OfReal
 
 /-!
 # The Perron–Frobenius theorem for nonnegative matrices
@@ -170,9 +171,9 @@ theorem spectralRadius_real_eq_of_nonneg (hA : ∀ i j, 0 ≤ A i j) :
       obtain ⟨j, hj⟩ := Function.ne_iff.1 hz
       exact fun h ↦ hj (by simpa using congrFun h j)
     have hAz' : A.map (↑) *ᵥ (fun i ↦ (z i : ℂ)) = (μ : ℂ) • fun i ↦ (z i : ℂ) := by
+      rw [map_ofReal_mulVec, hAz]
       ext i
-      rw [show A.map (↑) = A.map Complex.ofRealHom by ext; simp]
-      simpa [hAz, Function.comp_def] using (Complex.ofRealHom.map_mulVec A z i).symm
+      simp
     have hmem : (μ : ℂ) ∈ spectrum ℂ (A.map (↑) : Matrix n n ℂ) :=
       mem_spectrum_iff_exists_mulVec_eq_smul.2 ⟨_, hz', hAz'⟩
     have := le_iSup₂ (f := fun (k : ℂ) (_ : k ∈ spectrum ℂ (A.map (↑) : Matrix n n ℂ)) ↦ ‖k‖ₑ)
