@@ -275,8 +275,9 @@ theorem isGloballyGenerated_iff_nonempty_generatingSections {L : InvertibleSheaf
   funext i
   apply (Scheme.skyscraperResidueField x).sectionsEquivTop.injective
   rw [Scheme.Modules.sectionsEquivTop_sectionsMap, Scheme.Modules.sectionsEquivTop_sectionsMap,
-    htop]
-  rfl
+    htop, Scheme.Modules.Hom.zero_app]
+  exact ((congrArg (fun f : _ →+ _ ↦ f _) AddCommGrpCat.hom_zero).trans
+    (AddMonoidHom.zero_apply _)).symm
 
 /-- The trivial line bundle on a scheme is globally generated. -/
 @[simp]

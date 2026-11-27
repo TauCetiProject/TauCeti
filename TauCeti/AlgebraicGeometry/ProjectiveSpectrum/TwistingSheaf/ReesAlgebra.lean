@@ -133,6 +133,6 @@ theorem epi_freeHomEquiv_symm_toTwistingSheaf_span_pair (x₁ x₂ : R) :
   convert epi_freeHomEquiv_symm_toTwistingSheaf_reesAlgebra
     (fun i : ULift.{u} (Fin 2) ↦ ![x₁, x₂] i.down) hspan using 2
   funext ⟨i⟩
-  fin_cases i <;> rfl
+  fin_cases i <;> simp
 
 end TauCeti.AlgebraicGeometry
