@@ -72,8 +72,7 @@ theorem existsUnique_sl2CoordinateMap (t : IsSl2Triple h e f) :
     rw [GeneralLinear.tangentLinearEquivMatrix_apply, GeneralLinear.tangentLinearEquivMatrix_apply,
       Derivation.tangentMatrix_comp_coordinateBialgHom (H := H) _ b,
       Derivation.tangentMatrix_comp_coordinateBialgHom (H := A) d b]
-    congr 1; refine LinearMap.ext fun m ↦ ?_
-    rw [SpecialLinear.differential_comoduleOfLieModule]
+    congr 1; refine LinearMap.ext fun m ↦ ?_; rw [SpecialLinear.differential_comoduleOfLieModule]
     exact (LieRingModule.compLieHom_apply M ρLie _ m).symm
   have hconn := SpecialLinear.geometricallyConnectedCommHopfAlgProperty_coordinateHopfAlgebra k 2
   obtain ⟨φ, ⟨-, hφ⟩, -⟩ :=

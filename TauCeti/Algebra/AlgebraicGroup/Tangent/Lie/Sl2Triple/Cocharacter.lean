@@ -78,12 +78,9 @@ theorem cocharacter_def (t : IsSl2Triple h e f) : t.cocharacter =
     SpecialLinear.tangentLieEquivSl_apply,
     SpecialLinear.tangentMatrix_derivationComp_simpleCorootCocharacter, Fin.castSucc_zero,
     Fin.succ_zero_eq_one]
-  have hsingle : SpecialLinear.singleSubSingle (0 : Fin 2) 1
-      (MultiplicativeGroup.tangentLinearEquiv d) =
-      MultiplicativeGroup.tangentLinearEquiv d • SpecialLinear.singleSubSingle (0 : Fin 2) 1 1 := by
-    simpa only [smul_eq_mul, mul_one] using
-      (SpecialLinear.singleSubSingle (0 : Fin 2) 1 (R := k)).map_smul
-        (MultiplicativeGroup.tangentLinearEquiv d) 1
+  have hsingle := (SpecialLinear.singleSubSingle (0 : Fin 2) 1 (R := k)).map_smul
+    (MultiplicativeGroup.tangentLinearEquiv d) 1
+  rw [smul_eq_mul, mul_one] at hsingle
   rw [hsingle, map_smul, t.toLieHom_singleSubSingle k]
 
 /-- The unit tangent vector of `𝔾ₘ` maps under `t.cocharacter` to `h`. -/
@@ -204,9 +201,8 @@ theorem adDerivationLieEquiv_pointsHom_cocharacter (t : IsSl2Triple h e f) (s : 
   have hend := Derivation.tangentScalarExtensionEquiv_adjointComodule_endOfPoint
     (R := k) (H := H) (CommAlgCat.of k k) (Cocharacter.pointsHom k t.cocharacter s) (1 ⊗ₜ[k] x)
   rw [Comodule.endOfPoint_tmul, one_smul,
-    Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation, hact,
-    Derivation.tangentScalarExtensionEquiv_one_tmul_self,
-    Derivation.tangentScalarExtensionEquiv_one_tmul_self, map_smul] at hend
+    Comodule.endOfPoint_one_tmul_eq_one_tmul_basePointsRepresentation, hact] at hend
+  simp_rw [Derivation.tangentScalarExtensionEquiv_one_tmul_self] at hend; rw [map_smul] at hend
   rw [LinearEquiv.coe_toLinearMap, LieEquiv.coe_toLinearEquiv,
     Derivation.adDerivationLieEquiv_apply]; exact hend.symm
 

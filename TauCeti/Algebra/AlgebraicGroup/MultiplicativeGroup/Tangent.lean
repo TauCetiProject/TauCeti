@@ -183,8 +183,7 @@ theorem derivationToTrivSqZeroExtEquivLift_tangentLinearEquiv_symm (b : B) :
     (derivationToTrivSqZeroExtEquivLift R H C
         ((tangentLinearEquiv (R := R) (B := B)).symm b)).val =
       laurentEval (R := R) (dualNumberUnit ((CounitAlgebra.algEquivSelf R H B).symm b)) := by
-  apply laurentEval_unique
-  refine TrivSqZeroExt.ext ?_ ?_
+  apply laurentEval_unique; refine TrivSqZeroExt.ext ?_ ?_
   · rw [derivationToTrivSqZeroExtEquivLift_apply_fst, CounitAlgebra.algebraMap_apply,
       LaurentPolynomial.counit_T, ← CounitAlgebra.algebraMap_base R H B, map_one,
       coe_dualNumberUnit, fst_add, fst_one, fst_inr, add_zero]
@@ -216,10 +215,8 @@ theorem mapValue_derivationComp_tangentLinearEquiv_symm_one
 end Ring
 
 /-- Applying `domCongrBialgEquiv` along `ℤ`-negation equals `LaurentPolynomial.invert`. -/
-@[simp]
-theorem domCongrBialgEquiv_neg_apply {R : Type u} [CommSemiring R] (p : R[T;T⁻¹]) :
-    AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ) p = LaurentPolynomial.invert p :=
-  rfl
+@[simp] theorem domCongrBialgEquiv_neg_apply {R : Type u} [CommSemiring R] (p : R[T;T⁻¹]) :
+    AddMonoidAlgebra.domCongrBialgEquiv R R (AddEquiv.neg ℤ) p = LaurentPolynomial.invert p := rfl
 
 /-- Pulling a tangent derivation of `𝔾ₘ` back along inversion `T ↦ T⁻¹` negates it. -/
 theorem derivationComp_invert {R : Type u} [CommRing R] [Ring B] [Algebra R B]

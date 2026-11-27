@@ -101,13 +101,9 @@ private theorem weight_eq_ite (r : ℕ) (a : Fin (r + 1)) (i : Fin r) :
       congr 1; simp only [ψ, AddMonoidHom.coe_toMultiplicative, Function.comp_apply, toAdd_ofAdd,
         Finsupp.applyAddHom_apply, Finsupp.single_apply, ULift.up.injEq]
     simp_rw [hcoord, ← zpow_mul]
-    rw [Finset.prod_eq_single i (fun j _ hji ↦ by simp [hji])
-      (fun hi ↦ (hi (Finset.mem_univ i)).elim)]
-    simp only [↓reduceIte, one_mul]
-    rw [weight_eq_ite]
-    split_ifs <;> simp
-  exact fun a b ↦ congr_fun (congr_fun
-    (congrArg (fun g : GL (Fin (r + 1)) A ↦ (g : Matrix (Fin (r + 1)) (Fin (r + 1)) A)) hGL) a) b
+    rw [Finset.prod_eq_single i (fun j _ hji ↦ by simp [hji]) fun h ↦ absurd (Finset.mem_univ i) h]
+    simp only [↓reduceIte, one_mul]; rw [weight_eq_ite]; split_ifs <;> simp
+  exact fun a b ↦ congr_fun (congr_fun (congrArg (Units.val : GL (Fin (r + 1)) A → _) hGL) a) b
 
 /-- Differential of `simpleCorootCocharacter r R i` on tangent vectors of `𝔾ₘ`. -/
 @[simp] theorem tangentMatrix_derivationComp_simpleCorootCocharacter {B : Type v} [CommRing B]

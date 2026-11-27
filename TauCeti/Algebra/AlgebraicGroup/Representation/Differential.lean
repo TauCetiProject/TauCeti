@@ -181,8 +181,7 @@ theorem differential_pi {ι : Type*} [Fintype ι] [DecidableEq ι] (B : ι → T
     (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (f : ∀ i, B i) (i : ι) :
     (@differential R H (∀ j, B j) _ _ _ _ _ (pi (R := R) (C := H) B c) d f) i =
       @differential R H (B i) _ _ _ _ _ (c i) d (f i) := by
-  let _ := pi (R := R) (C := H) B c
-  let _ := c i
+  let _ := pi (R := R) (C := H) B c; let _ := c i
   simpa only [piProj_apply] using (piProj (R := R) (C := H) B c i).map_differential d f
 
 end TauCeti.Comodule

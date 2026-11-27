@@ -84,8 +84,7 @@ theorem moduleFinite_quotient_augmentation {R : Type u} [CommRing R]
 
 /-- Over any commutative ring satisfying the strong rank condition, the quotient of a commutative
 Hopf algebra by its augmentation ideal has rank `1`. -/
-@[simp]
-theorem finrank_quotient_augmentation {R : Type u} [CommRing R] [StrongRankCondition R]
+@[simp] theorem finrank_quotient_augmentation {R : Type u} [CommRing R] [StrongRankCondition R]
     (A : _root_.CommHopfAlgCat.{v} R) :
     Module.finrank R (_root_.CommHopfAlgCat.quotient A (augmentation R A)) = 1 := by
   rw [augmentation_def]

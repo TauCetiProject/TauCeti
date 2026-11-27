@@ -48,9 +48,8 @@ theorem derivationCompLieHom_conjugationMap_two_ne_zero :
   intro h0
   let d₀ := (tangentLieEquivSl (R := R) (B := R) 2).symm
     (LieAlgebra.SpecialLinear.singleSubSingle 0 1 1)
-  have hd : ProjectiveGeneralLinear.tangentEnd 2
-      (derivationComp (B := R) (conjugationMap 2 R).hom d₀) = 0 := by
-    rw [← derivationCompLieHom_apply, h0, map_zero]
+  have hd : ProjectiveGeneralLinear.tangentEnd 2 (derivationComp (B := R)
+      (conjugationMap 2 R).hom d₀) = 0 := by rw [← derivationCompLieHom_apply, h0, map_zero]
   have hmat : GeneralLinear.tangentMatrix 2 (derivationComp (B := R) (coordinateMap R 2).hom d₀) =
       (LieAlgebra.SpecialLinear.singleSubSingle (0 : Fin 2) 1 (1 : R)).val := by
     rw [coordinateMap, CommHopfAlgCat.hom_mkQuotient, ← HopfIdeal.quotientLieHom_apply,

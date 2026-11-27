@@ -172,9 +172,8 @@ theorem basePointsRepresentation_pointsHom_of_mem_weightSpace
   have hmap : (Cocharacter.pointsHom R l s).ofConv = f.comp (eMult.toBialgHom.comp l).toAlgHom := by
     ext a; simp [Cocharacter.pointsHom_apply, BialgHom.mapDomain_apply, f, eMult]
   have ht : eMult.symm (MonoidAlgebra.single (Multiplicative.ofAdd m) (1 : R)) =
-      LaurentPolynomial.T m :=
-    eMult.symm_apply_eq.mpr
-      (AddMonoidAlgebra.toMultiplicativeBialgEquiv_single (R := R) (A := R) (M := ℤ) m 1).symm
+      LaurentPolynomial.T m := eMult.symm_apply_eq.mpr
+    (AddMonoidAlgebra.toMultiplicativeBialgEquiv_single (R := R) (A := R) (M := ℤ) m 1).symm
   rw [Comodule.basePointsRepresentation_apply, hmap,
     DiagonalizableGroup.endOfPoint_tmul_of_mem_weightSpace V _ f 1 hv]
   simp [f, ht]
