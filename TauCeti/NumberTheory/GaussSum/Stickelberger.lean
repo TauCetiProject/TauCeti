@@ -8,10 +8,10 @@ module
 public import Mathlib.Data.Nat.Digits.Defs
 public import Mathlib.LinearAlgebra.SModEq.Basic
 public import Mathlib.NumberTheory.GaussSum
+public import Mathlib.NumberTheory.JacobiSum.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Valuation
 public import Mathlib.RingTheory.Trace.Defs
 import Mathlib.Data.Nat.Prime.Factorial
-import Mathlib.NumberTheory.JacobiSum.Basic
 import Mathlib.NumberTheory.Multiplicity
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Data.Nat.Digits
@@ -47,6 +47,11 @@ For `m ∣ q - 1` and the character `χ = ω^{-(q - 1) / m}` of order `m`, the d
 power `g(χ ^ t, ψ) ^ m` has valuation `∑_{i < f} (p ^ i t mod m)`: these are the exponents of
 Stickelberger's relation `(g(χ, ψ) ^ m) = P ^ (∑ t σ_t⁻¹)` in the `m`-th cyclotomic field.
 
+Write `s(n)` for the base-`p` digit sum of `n`. For `0 ≤ a, b < q - 1` with `q - 1 ∤ a + b`, put
+`c = (a + b) % (q - 1)`. Then `ω⁻ᵃ ω⁻ᵇ = ω⁻ᶜ` is nontrivial, and Mathlib's
+`jacobiSum_mul_nontrivial` gives `g(ω⁻ᶜ) J(ω⁻ᵃ, ω⁻ᵇ) = g(ω⁻ᵃ) g(ω⁻ᵇ)`. So the Jacobi sum has
+valuation `s(a) + s(b) - s(c)`, the digit-sum formula for Jacobi sums.
+
 ## Main results
 
 * `TauCeti.stickelberger_congruence`: `h · (-g(ω⁻ᵃ, ψ)) ≡ (ζ - 1) ^ s (mod P ^ (s + 1))`.
@@ -57,6 +62,10 @@ Stickelberger's relation `(g(χ, ψ) ^ m) = P ^ (∑ t σ_t⁻¹)` in the `m`-th
   `(p - 1) v(g(ω⁻ᵃ, ψ)) = s v(p)`.
 * `TauCeti.intValuation_gaussSum_inv_pow_div_mul_pow`: under the same hypotheses, for `m ∣ q - 1`
   and every `t`, `v(g(ω^{-(q - 1) / m · t}, ψ) ^ m) = (∑_{i < f} (p ^ i t mod m)) v(p)`.
+* `TauCeti.intValuation_jacobiSum_inv_pow`: if `ζ ^ p = 1` and `v(ζ - 1) = 1`, then
+  `v(J(ω⁻ᵃ, ω⁻ᵇ)) = s(a) + s(b) - s(c)`.
+* `TauCeti.intValuation_jacobiSum_inv_pow_pow_sub_one`: under the same hypotheses,
+  `(p - 1) v(J(ω⁻ᵃ, ω⁻ᵇ)) + s(c) v(p) = (s(a) + s(b)) v(p)`.
 
 ## Implementation notes
 
@@ -417,5 +426,71 @@ theorem intValuation_gaussSum_inv_pow_div_mul_pow {p : ℕ} [Fact p.Prime] {F : 
   rw [map_pow, intValuation_gaussSum_inv_pow hω hψ hζ ha, intValuation_natCast_eq_exp hψ hζ]
   simp only [← WithZero.exp_nsmul, smul_neg, nsmul_eq_mul]
   rw [← Nat.cast_mul, ← Nat.cast_mul, mul_comm _ (p - 1), key]
+
+open IsDedekindDomain in
+/-- **The valuation of a Jacobi sum.** In a Dedekind domain `R`, at a height-one prime `v` with a
+`p`-th root of unity `ζ` such that `v(ζ - 1) = exp(-1)`, let `0 ≤ a, b < q - 1` with `q - 1 ∤ a + b`
+and `c = (a + b) % (q - 1)`. Then `v(J(ω⁻ᵃ, ω⁻ᵇ)) = exp(s(c) - s(a) - s(b))`, where `s` is the
+base-`p` digit sum: `J(ω⁻ᵃ, ω⁻ᵇ)` has valuation `s(a) + s(b) - s(c)`. -/
+theorem intValuation_jacobiSum_inv_pow {p : ℕ} [Fact p.Prime] {F : Type*} [Field F] [Fintype F]
+    [Algebra (ZMod p) F] {R : Type*} [CommRing R] [IsDedekindDomain R]
+    {v : HeightOneSpectrum R} {f : F →+* R ⧸ v.asIdeal} {ω : MulChar F R} {ζ : R}
+    (hω : ∀ x, Ideal.Quotient.mk v.asIdeal (ω x) = f x) (hζp : ζ ^ p = 1)
+    (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) {a b : ℕ} (ha : a < Fintype.card F - 1)
+    (hb : b < Fintype.card F - 1) (hab : ¬Fintype.card F - 1 ∣ a + b) :
+    v.intValuation (jacobiSum (ω⁻¹ ^ a) (ω⁻¹ ^ b)) =
+      WithZero.exp ((Nat.digits p ((a + b) % (Fintype.card F - 1))).sum -
+        (Nat.digits p a).sum - (Nat.digits p b).sum : ℤ) := by
+  classical
+  have := v.isMaximal
+  -- The additive character `ψ(x) = ζ ^ Tr(x)` gives the Gauss sums of the three characters.
+  let ψ : AddChar F R :=
+    (AddChar.zmodChar p hζp).compAddMonoidHom (Algebra.trace (ZMod p) F).toAddMonoidHom
+  have hψ : ∀ x, ψ x = ζ ^ (Algebra.trace (ZMod p) F x).val := fun _ ↦ rfl
+  have hq : 0 < Fintype.card F - 1 := by
+    have := Fintype.one_lt_card (α := F)
+    omega
+  have hc := Nat.mod_lt (a + b) hq
+  have hc0 : 0 < (a + b) % (Fintype.card F - 1) :=
+    Nat.pos_of_ne_zero fun h ↦ hab (Nat.dvd_of_mod_eq_zero h)
+  -- `ω⁻ᵃ ω⁻ᵇ = ω⁻ᶜ`, since `ω ^ (q - 1) = 1`.
+  have hmul : ω⁻¹ ^ a * ω⁻¹ ^ b = ω⁻¹ ^ ((a + b) % (Fintype.card F - 1)) := by
+    have h1 : ω⁻¹ ^ (Fintype.card F - 1) = 1 := by
+      rw [← Fintype.card_units]
+      exact MulChar.pow_card_eq_one _
+    conv_lhs => rw [← pow_add, ← Nat.mod_add_div (a + b) (Fintype.card F - 1)]
+    rw [pow_add, pow_mul, h1, one_pow, mul_one]
+  -- Apply `v` to `g(ω⁻ᶜ) J(ω⁻ᵃ, ω⁻ᵇ) = g(ω⁻ᵃ) g(ω⁻ᵇ)` and cancel `v(g(ω⁻ᶜ)) ≠ 0`.
+  have hrel := congrArg v.intValuation
+    (jacobiSum_mul_nontrivial (hmul ▸ inv_pow_ne_one hω hc0 hc) ψ)
+  rw [map_mul, map_mul, hmul, intValuation_gaussSum_inv_pow hω hψ hζ hc,
+    intValuation_gaussSum_inv_pow hω hψ hζ ha, intValuation_gaussSum_inv_pow hω hψ hζ hb] at hrel
+  refine mul_left_cancel₀ WithZero.exp_ne_zero (hrel.trans ?_)
+  rw [← WithZero.exp_add, ← WithZero.exp_add]
+  congr 1
+  ring
+
+open IsDedekindDomain in
+/-- **The Jacobi sum valuation normalised at `p`.** Under the hypotheses of
+`intValuation_jacobiSum_inv_pow`, `v(J(ω⁻ᵃ, ω⁻ᵇ)) ^ (p - 1) v(p) ^ s(c) = v(p) ^ (s(a) + s(b))`:
+for the valuation normalised by `v(p) = 1`, the Jacobi sum has valuation
+`(s(a) + s(b) - s(c)) / (p - 1)`. -/
+theorem intValuation_jacobiSum_inv_pow_pow_sub_one {p : ℕ} [Fact p.Prime] {F : Type*} [Field F]
+    [Fintype F] [Algebra (ZMod p) F] {R : Type*} [CommRing R] [IsDedekindDomain R]
+    {v : HeightOneSpectrum R} {f : F →+* R ⧸ v.asIdeal} {ω : MulChar F R} {ζ : R}
+    (hω : ∀ x, Ideal.Quotient.mk v.asIdeal (ω x) = f x) (hζp : ζ ^ p = 1)
+    (hζ : v.intValuation (ζ - 1) = WithZero.exp (-1)) {a b : ℕ} (ha : a < Fintype.card F - 1)
+    (hb : b < Fintype.card F - 1) (hab : ¬Fintype.card F - 1 ∣ a + b) :
+    v.intValuation (jacobiSum (ω⁻¹ ^ a) (ω⁻¹ ^ b)) ^ (p - 1) *
+        v.intValuation (p : R) ^ (Nat.digits p ((a + b) % (Fintype.card F - 1))).sum =
+      v.intValuation (p : R) ^ ((Nat.digits p a).sum + (Nat.digits p b).sum) := by
+  let ψ : AddChar F R :=
+    (AddChar.zmodChar p hζp).compAddMonoidHom (Algebra.trace (ZMod p) F).toAddMonoidHom
+  rw [intValuation_jacobiSum_inv_pow hω hζp hζ ha hb hab,
+    intValuation_natCast_eq_exp (ψ := ψ) (fun _ ↦ rfl) hζ]
+  simp only [← WithZero.exp_nsmul, ← WithZero.exp_add, nsmul_eq_mul]
+  congr 1
+  push_cast
+  ring
 
 end TauCeti
