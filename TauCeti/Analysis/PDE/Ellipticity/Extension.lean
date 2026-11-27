@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
+public import TauCeti.Analysis.Calculus.ContDiff.BoundedDerivatives
 public import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 public import TauCeti.Analysis.Normed.Operator.Holder
 public import Mathlib.Analysis.Calculus.ContDiff.RCLike
@@ -28,8 +29,8 @@ field `χ ā + (1 - χ) λ I` is bounded and Lipschitz on the whole space, it ag
 near `C`.
 
 When `a` has smooth entries near `C`, the same cutoff gives a field `a'` whose entries are smooth,
-with Lipschitz first derivatives, since `a' - λ I` has compact support. This is the form needed by
-the higher regularity theorems on a half-space.
+with derivatives of every order bounded on the whole space, since `a' - λ I` has compact support.
+This is the form needed by the higher regularity theorems on a half-space.
 
 The case of a field that is locally Lipschitz and uniformly elliptic on an open set `Ω`, with
 `C ⊆ Ω` and `T` the whole space, is a corollary: apply the construction with `S` a compact
@@ -47,7 +48,8 @@ subsolution on `Ω` to its zero extension on the whole space.
   with a bounded Lipschitz field on the whole space that is uniformly elliptic on a prescribed
   set `T`, such as a half-space that coincides with `S` near `C`.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_contDiff_eqOn_inter`: the same for a field with smooth
-  entries near `C`, giving a field with smooth entries and Lipschitz first derivatives.
+  entries near `C`, giving a field with smooth entries whose derivatives of every order are
+  bounded.
 * `TauCeti.PDE.UniformlyEllipticOn.exists_lipschitzWith_eqOn`: near a compact subset of `Ω`, a
   locally Lipschitz uniformly elliptic field agrees with a Lipschitz uniformly elliptic field on
   the whole space.
@@ -217,15 +219,15 @@ theorem UniformlyEllipticOn.exists_lipschitzWith_eqOn [DecidableEq ι] {lam Lam 
 
 /-- **Blending a field smooth on `U` with a constant one by a cutoff supported in `U`.** If the
 entries of `a` are smooth on an open `U` and `χ` is smooth with compact support in `U`, then
-`χ a + (1 - χ) c` has smooth entries with Lipschitz first derivatives, and its bilinear forms are
-bounded and Lipschitz, for every constant matrix `c`. -/
+`χ a + (1 - χ) c` has smooth entries whose derivatives of every order are bounded, and its
+bilinear forms are bounded and Lipschitz, for every constant matrix `c`. -/
 private theorem exists_lipschitzWith_contDiff_smul_add_one_sub_smul
     {U : Opens (EuclideanSpace ℝ ι)} (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) U)
     {χ : EuclideanSpace ℝ ι → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
     (hχs : tsupport χ ⊆ U) (c : Matrix ι ι ℝ) :
-    ∃ K K' : ℝ≥0, ∃ M : ℝ, (∀ i j, ContDiff ℝ ∞ fun x => (χ x • a x + (1 - χ x) • c) i j) ∧
+    ∃ K : ℝ≥0, ∃ M : ℝ, (∀ i j, ContDiff ℝ ∞ fun x => (χ x • a x + (1 - χ x) • c) i j) ∧
       LipschitzWith K (fun x => matrixBilinearForm (χ x • a x + (1 - χ x) • c)) ∧
-      (∀ i j, LipschitzWith K' fun x => fderiv ℝ (fun y => (χ y • a y + (1 - χ y) • c) i j) x) ∧
+      (∀ i j (k : ℕ), BddDerivOn ℝ k (fun x => (χ x • a x + (1 - χ x) • c) i j) univ) ∧
       ∀ x, ‖matrixBilinearForm (χ x • a x + (1 - χ x) • c)‖ ≤ M := by
   set a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ := fun x => χ x • a x + (1 - χ x) • c
   -- Each entry of `a'` is a constant plus the smooth compactly supported `χ (aᵢⱼ - cᵢⱼ)`.
@@ -238,26 +240,21 @@ private theorem exists_lipschitzWith_contDiff_smul_add_one_sub_smul
     funext x
     simp only [a', g, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul]
     ring
-  -- Lipschitz bounds for the entries and their first derivatives, and bounds for the entries.
+  -- Lipschitz bounds and bounds for the entries.
   choose L hL using fun i j =>
     (hg i j).lipschitzWith_of_hasCompactSupport (hgc i j) (by simp)
-  choose L' hL' using fun i j =>
-    ((hg i j).fderiv_right (m := 1) (by simp)).lipschitzWith_of_hasCompactSupport
-      ((hgc i j).fderiv ℝ) (by simp)
   choose B hB using fun i j => (hgc i j).exists_bound_of_continuous (hg i j).continuous
   have hLa : ∀ i j, LipschitzWith (L i j) fun x => a' x i j := fun i j => by
     rw [ha'g]
     simpa using (hL i j).add (LipschitzWith.const (c i j))
-  refine ⟨∑ i, ∑ j, L i j, ∑ i, ∑ j, L' i j, ∑ i, ∑ j, (B i j + |c i j|), fun i j => ?_,
+  refine ⟨∑ i, ∑ j, L i j, ∑ i, ∑ j, (B i j + |c i j|), fun i j => ?_,
     lipschitzOnWith_univ.1 (holderOnWith_one.1 (holderOnWith_matrixBilinearForm_of_forall
-      fun i j => (holderWith_one.2 (hLa i j)).holderOnWith univ)), fun i j => ?_, fun x => ?_⟩
+      fun i j => (holderWith_one.2 (hLa i j)).holderOnWith univ)), fun i j k => ?_, fun x => ?_⟩
   · rw [ha'g]
     exact (hg i j).add contDiff_const
-  · rw [show (fun x => fderiv ℝ (fun y => a' y i j) x) = fderiv ℝ (g i j) from funext fun x => by
-      rw [ha'g, fderiv_add_const]]
-    exact (hL' i j).weaken ((Finset.single_le_sum (fun _ _ => zero_le) (Finset.mem_univ j)).trans
-      (Finset.single_le_sum (f := fun i => ∑ j, L' i j) (fun _ _ => zero_le)
-        (Finset.mem_univ i)))
+  · -- The derivatives of `g i j` are bounded, and the constant `c i j` only adds to the value.
+    rw [ha'g]
+    exact ((hgc i j).bddDerivOn ((hg i j).of_le (by exact_mod_cast le_top)) univ).add_const _
   · refine (norm_matrixBilinearForm_le_sum_abs (a' x)).trans
       (Finset.sum_le_sum fun i _ => Finset.sum_le_sum fun j _ => ?_)
     rw [show a' x i j = g i j x + c i j from congrFun (ha'g i j) x]
@@ -268,7 +265,8 @@ a smooth field on the whole space.** Let `a` be uniformly elliptic on a set `S` 
 `λ, Λ`, with entries smooth on an open set `U`. Let `T` be a set with `T ∩ U ⊆ S`, and let
 `C ⊆ U` be compact. Then there is a field `a'` on the whole space, uniformly elliptic on `T` with
 the same constants, that agrees with `a` on an open `W` with `C ⊆ W ⊆ U`; its entries are smooth
-with Lipschitz first derivatives, and its bilinear forms are bounded and Lipschitz.
+with derivatives of every order bounded on the whole space, and its bilinear forms are bounded and
+Lipschitz.
 
 As in `TauCeti.PDE.UniformlyEllipticOn.exists_lipschitzWith_eqOn_inter`, `C` need not lie in `S`:
 typically `S = Ω ∩ U` for a domain `Ω` and a half-space `T` with `Ω ∩ U = T ∩ U`. One may take
@@ -279,19 +277,19 @@ theorem UniformlyEllipticOn.exists_contDiff_eqOn_inter [DecidableEq ι] {lam Lam
     (ha : UniformlyEllipticOn S a lam Lam)
     (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x => a x i j) U)
     (hTU : T ∩ U ⊆ S) (hC : IsCompact C) (hCU : C ⊆ U) :
-    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ, ∃ K K' : ℝ≥0, ∃ M : ℝ,
+    ∃ a' : EuclideanSpace ℝ ι → Matrix ι ι ℝ, ∃ K : ℝ≥0, ∃ M : ℝ,
       ∃ W : Opens (EuclideanSpace ℝ ι), C ⊆ W ∧ W ≤ U ∧ UniformlyEllipticOn T a' lam Lam ∧
         (∀ i j, ContDiff ℝ ∞ fun x => a' x i j) ∧
         LipschitzWith K (fun x => matrixBilinearForm (a' x)) ∧
-        (∀ i j, LipschitzWith K' fun x => fderiv ℝ (fun y => a' y i j) x) ∧
+        (∀ i j (k : ℕ), BddDerivOn ℝ k (fun x => a' x i j) univ) ∧
         (∀ x, ‖matrixBilinearForm (a' x)‖ ≤ M) ∧ EqOn a' a (W : Set (EuclideanSpace ℝ ι)) := by
   classical
   obtain ⟨χ, hχ, hχr, hχ1, hχc, hχs⟩ := hC.exists_contDiff_cutoff U.isOpen hCU
   obtain ⟨W, hCW, hWU, hT, hW1⟩ :=
     exists_uniformlyEllipticOn_smul_add_one_sub_smul ha hTU hχr hχ1 hχs
-  obtain ⟨K, K', M, hsm, hK, hK', hM⟩ :=
+  obtain ⟨K, M, hsm, hK, hbd, hM⟩ :=
     exists_lipschitzWith_contDiff_smul_add_one_sub_smul hsmooth hχ hχc hχs (lam • 1)
-  exact ⟨_, K, K', M, W, hCW, hWU, hT, hsm, hK, hK', hM, fun x hx => by
+  exact ⟨_, K, M, W, hCW, hWU, hT, hsm, hK, hbd, hM, fun x hx => by
     simp only [hW1 x hx, one_smul, sub_self, zero_smul, add_zero]⟩
 
 /-- **Extending a measurable uniformly elliptic field by `λ I`.** A field `a`, measurable and
