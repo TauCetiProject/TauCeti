@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Geometry.Manifold.DifferentialOperator.ChartCompression.Schwartz
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
+import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Rellich
 import TauCeti.Geometry.Manifold.Sobolev.ChartReading
@@ -36,20 +37,31 @@ satisfy an a priori estimate in the chart-reading norms (`TauCeti.chartSobolevEx
 extension is unique, and extensions compose.
 
 * For `r ≤ s`, the inclusions `H^s(ℝⁿ) ⊆ H^r(ℝⁿ)` give the inclusion `H^s(M) ⊆ H^r(M)`
-  (`TauCeti.chartSobolevInclusion`), which restricts to the identity on smooth functions.
+  (`TauCeti.chartSobolevInclusion`), which restricts to the identity on smooth functions. It is
+  injective (`TauCeti.chartSobolevInclusion_injective`) with dense range
+  (`TauCeti.denseRange_chartSobolevInclusion`), and it commutes with the extensions of operators
+  (`TauCeti.chartSobolevInclusion_comp_chartSobolevExtension`,
+  `TauCeti.chartSobolevExtension_comp_chartSobolevInclusion`).
 * **Independence of the charts.** If the readings `ψᵢ ∘ eᵢ` of the cutoffs on `M`, extended by `0`,
   add up to `1`, then the chart readings of `u` in any other finite family of charts and cutoffs are
   bounded in `H^s` by those in the `eᵢ` (`TauCeti.exists_norm_chartReading_le`), because changing
   the chart of a reading costs a constant
   (`TauCeti.exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le`). So two
   such families define the same space up to a continuous linear isomorphism that is the identity on
-  smooth functions (`TauCeti.chartSobolevSpaceCongr`).
+  smooth functions (`TauCeti.chartSobolevSpaceCongr`), and these isomorphisms transport the
+  extension of an operator between the spaces of one pair of families to its extension between
+  those of another (`TauCeti.chartSobolevExtension_eq_chartSobolevSpaceCongr_comp`).
 * **Rellich's theorem.** For `r < s` the inclusion `H^s(M) ⊆ H^r(M)` is compact
   (`TauCeti.isCompactOperator_chartSobolevInclusion`). Every component of an element of `H^s(M)` is
   fixed by a Schwartz function equal to `1` on the support of its cutoff
   (`TauCeti.smulLeftCLM_chartSobolevSpace_apply_of_eqOn_one`), so componentwise the inclusion is
   multiplication by that function, compact by the Euclidean Rellich theorem for a common compact
   support in a finite Hilbert sum (`BesselPotentialSpace.isCompactOperator_piLp_of_smulLeftCLM_eq`).
+* **Charts.** A single chart `c` with a cutoff `χ` localizes in both directions: the reading
+  `u ↦ χ · (u ∘ c⁻¹)` extends to `H^s(M) → H^s(ℝⁿ)` for a chart partition
+  (`TauCeti.chartSobolevReading`), and the pullback `u ↦ (χ u) ∘ c` of Schwartz functions extends
+  to `H^s(ℝⁿ) → H^s(M)` (`TauCeti.chartSobolevPullback`). Through them an operator on `H^s(M)` is
+  compared with its chart compressions on `ℝⁿ`.
 
 Such families of cutoffs exist on every compact manifold
 (`IsCompact.exists_sum_cutoffPullback_eq_one`).
@@ -63,17 +75,25 @@ Such families of cutoffs exist on every compact manifold
 * `TauCeti.chartSobolevExtension`: the continuous extension `H^s(M) → H^t(M)` of an operator on
   smooth functions satisfying an a priori estimate.
 * `TauCeti.chartSobolevSpaceCongr`: the isomorphism between the spaces of two chart partitions.
+* `TauCeti.chartSobolevReading`: the reading `H^s(M) → H^s(ℝⁿ)` in a chart through a cutoff.
+* `TauCeti.chartSobolevPullback`: the pullback `H^s(ℝⁿ) → H^s(M)` through a cutoff in a chart.
 
 ## Main results
 
 * `TauCeti.denseRange_toChartSobolevSpace`: smooth functions are dense in `H^s(M)`.
+* `TauCeti.toChartSobolevSpace_injective`: for a chart partition, a smooth function is determined
+  by its element of `H^s(M)`.
 * `TauCeti.chartSobolevExtension_toChartSobolevSpace`, `TauCeti.chartSobolevExtension_eq`: the
   extension of an operator satisfying an a priori estimate agrees with it on smooth functions, and
   is the only continuous map that does; `TauCeti.chartSobolevExtension_comp`: extensions compose.
 * `TauCeti.isCompactOperator_chartSobolevInclusion`: the Rellich theorem, `H^s(M) ⊆ H^r(M)` is
   compact for `r < s`.
+* `TauCeti.chartSobolevInclusion_injective`, `TauCeti.denseRange_chartSobolevInclusion`: the
+  inclusion `H^s(M) ⊆ H^r(M)` is injective with dense range.
 * `TauCeti.exists_norm_chartReading_le`: chart readings in any family of charts are bounded by
   those in a chart partition.
+* `TauCeti.exists_norm_chartReading_complexCutoffPullback_le`: the chart readings of `(χ u) ∘ c`
+  are bounded by the `H^s` norm of the Schwartz function `u`.
 
 ## References
 
@@ -237,6 +257,23 @@ theorem chartSobolevInclusion_comp_chartSobolevInclusion {t : ℝ} (h₁ : r ≤
       chartSobolevInclusion he ψ (h₂.trans h₁) :=
   chartSobolevSpace_ext he ψ fun u ↦ by simp
 
+/-- The inclusion `H^s(M) ⊆ H^r(M)` is injective. -/
+theorem chartSobolevInclusion_injective (h : r ≤ s) :
+    Function.Injective (chartSobolevInclusion he ψ h) := fun x y hxy ↦ by
+  ext1
+  ext1 i
+  refine BesselPotentialSpace.inclusion_injective h ?_
+  simpa using congrArg (fun z : chartSobolevSpace he ψ r ↦
+    (z : PiLp 2 fun _ : ι ↦ H^{r}(CoordinateSpace n)) i) hxy
+
+/-- The inclusion `H^s(M) ⊆ H^r(M)` has dense range: its range contains the smooth functions. -/
+theorem denseRange_chartSobolevInclusion (h : r ≤ s) :
+    DenseRange (chartSobolevInclusion he ψ h) :=
+  .of_comp (g := toChartSobolevSpace he ψ s) <| by
+    convert denseRange_toChartSobolevSpace he ψ r using 1
+    ext1 u
+    exact chartSobolevInclusion_toChartSobolevSpace he ψ h u
+
 /-! ### The Rellich theorem -/
 
 /-- **Elements of `H^s(M)` are fixed by cutoffs equal to one on the chart supports.** If a Schwartz
@@ -345,6 +382,16 @@ theorem chartSobolevInclusion_comp_chartSobolevExtension {r : ℝ} (h : r ≤ t)
     rw [ContinuousLinearMap.comp_apply, chartSobolevExtension_toChartSobolevSpace hP,
       chartSobolevInclusion_toChartSobolevSpace]).symm
 
+/-- Precomposing the extension of `P` to `H^s(M) → H^t(M)` with the inclusion `H^r(M) ⊆ H^s(M)`
+gives the extension of `P` to `H^r(M) → H^t(M)`. -/
+theorem chartSobolevExtension_comp_chartSobolevInclusion {r : ℝ} (h : s ≤ r)
+    (hP : ∃ C, ∀ u, ‖chartReading he' φ t (P u)‖ ≤ C * ‖chartReading he ψ s u‖) :
+    chartSobolevExtension he ψ he' φ P s t ∘L chartSobolevInclusion he ψ h =
+      chartSobolevExtension he ψ he' φ P r t :=
+  (chartSobolevExtension_eq _ fun u ↦ by
+    rw [ContinuousLinearMap.comp_apply, chartSobolevInclusion_toChartSobolevSpace,
+      chartSobolevExtension_toChartSobolevSpace hP]).symm
+
 /-- The extension of a sum of operators satisfying a priori estimates is the sum of their
 extensions. -/
 theorem chartSobolevExtension_add {Q : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
@@ -395,6 +442,18 @@ theorem chartSobolevExtension_comp {ν : Type*} [Fintype ν]
 /-! ### Changing the charts -/
 
 variable (he ψ he' φ) [T2Space M]
+
+/-- **A smooth function is determined by its element of `H^s(M)`** when the readings `ψᵢ ∘ eᵢ` of
+the cutoffs on `M`, extended by `0`, add up to `1`: its readings `ψᵢ · (u ∘ eᵢ⁻¹)` are then its
+components, and they determine `u`. -/
+theorem toChartSobolevSpace_injective
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) (s : ℝ) :
+    Function.Injective (toChartSobolevSpace he ψ s) := by
+  refine (injective_iff_map_eq_zero _).2 fun u hu ↦
+    eq_zero_of_forall_cutoffPushforwardSchwartz_eq_zero he ψ hψ fun i ↦ ?_
+  refine SchwartzMap.toBesselPotentialSpaceCLM_injective s 2 ?_
+  rw [map_zero, ← chartReading_apply, ← coe_toChartSobolevSpace, hu, ZeroMemClass.coe_zero,
+    PiLp.zero_apply]
 
 /-- **Chart readings are controlled by those in a chart partition.** If the readings `ψᵢ ∘ eᵢ` of
 the cutoffs `ψᵢ` on `M`, extended by `0`, add up to `1`, then for any finitely many cutoffs `φⱼ` in
@@ -455,5 +514,147 @@ theorem chartSobolevSpaceCongr_symm_toChartSobolevSpace
       toChartSobolevSpace he ψ s u := by
   rw [chartSobolevSpaceCongr, LinearEquiv.extend_symm_eq, LinearEquiv.refl_symm,
     LinearEquiv.refl_apply]
+
+variable {he ψ he' φ} in
+/-- **The extension of an operator does not depend on the chart partitions.** Let `P` satisfy an a
+priori estimate `‖P u‖_{H^t} ≤ C ‖u‖_{H^s}` in the chart readings of the partitions `ψ` and `φ`.
+Its extension between the spaces of two other chart partitions `ψ₂` and `φ₂` is its extension
+between those of `ψ` and `φ`, transported along the isomorphisms `TauCeti.chartSobolevSpaceCongr`.
+-/
+theorem chartSobolevExtension_eq_chartSobolevSpaceCongr_comp {ι₂ κ₂ : Type*} [Fintype ι₂]
+    [Fintype κ₂] {e₂ : ι₂ → OpenPartialHomeomorph M (CoordinateSpace n)}
+    {he₂ : ∀ i, e₂ i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+    {ψ₂ : ∀ i, 𝓓(⟨(e₂ i).target, (e₂ i).open_target⟩, ℝ)}
+    {e₂' : κ₂ → OpenPartialHomeomorph M (CoordinateSpace n)}
+    {he₂' : ∀ j, e₂' j ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M}
+    {φ₂ : ∀ j, 𝓓(⟨(e₂' j).target, (e₂' j).open_target⟩, ℝ)}
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1)
+    (hψ₂ : ∀ x, ∑ i, (e₂ i).cutoffPullback (he₂ i) (ψ₂ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (e' j).cutoffPullback (he' j) (φ j) 1 x = 1)
+    (hφ₂ : ∀ x, ∑ j, (e₂' j).cutoffPullback (he₂' j) (φ₂ j) 1 x = 1)
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} {s t : ℝ}
+    (hP : ∃ C, ∀ u, ‖chartReading he' φ t (P u)‖ ≤ C * ‖chartReading he ψ s u‖) :
+    chartSobolevExtension he₂ ψ₂ he₂' φ₂ P s t =
+      (chartSobolevSpaceCongr he' φ he₂' φ₂ hφ hφ₂ t : _ →L[ℂ] _) ∘L
+        chartSobolevExtension he ψ he' φ P s t ∘L
+          ((chartSobolevSpaceCongr he ψ he₂ ψ₂ hψ hψ₂ s).symm : _ →L[ℂ] _) :=
+  chartSobolevExtension_eq _ fun u ↦ by
+    simp [chartSobolevExtension_toChartSobolevSpace hP]
+
+/-! ### Reading in a chart and pulling back from a chart -/
+
+section Chart
+
+variable {c : OpenPartialHomeomorph M (CoordinateSpace n)}
+  (hc : c ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+  (χ : 𝓓(⟨c.target, c.open_target⟩, ℝ))
+
+/-- **Reading an element of `H^s(M)` in a chart.** The continuous linear map
+`H^s(M) → H^s(ℝⁿ)` extending the reading `u ↦ χ · (u ∘ c⁻¹)` of smooth functions in a chart `c`
+through a cutoff `χ`. It extends the reading when the readings `ψᵢ ∘ eᵢ` of the cutoffs defining
+`H^s(M)` add up to `1` (`TauCeti.chartSobolevReading_toChartSobolevSpace`). -/
+def chartSobolevReading (s : ℝ) : chartSobolevSpace he ψ s →L[ℂ] H^{s}(CoordinateSpace n) :=
+  ((SchwartzMap.toBesselPotentialSpaceCLM s 2).toLinearMap ∘ₗ
+    c.cutoffPushforwardSchwartz hc χ).extendOfNorm (toChartSobolevSpace he ψ s)
+
+/-- For a chart partition, the reading of `H^s(M)` in the chart `c` through the cutoff `χ` sends a
+smooth function `u` to its reading `χ · (u ∘ c⁻¹)`. -/
+@[simp]
+theorem chartSobolevReading_toChartSobolevSpace
+    (hψ : ∀ x, ∑ i, (e i).cutoffPullback (he i) (ψ i) 1 x = 1) (s : ℝ)
+    (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    chartSobolevReading he ψ hc χ s (toChartSobolevSpace he ψ s u) =
+      SchwartzMap.toBesselPotentialSpaceCLM s 2 (c.cutoffPushforwardSchwartz hc χ u) := by
+  obtain ⟨C, hC⟩ := exists_norm_chartReading_le he ψ (fun _ : Unit ↦ hc) (fun _ ↦ χ) hψ s
+  exact LinearMap.extendOfNorm_eq (denseRange_toChartSobolevSpace he ψ s)
+    ⟨C, fun v ↦ (PiLp.norm_apply_le (chartReading (fun _ : Unit ↦ hc) (fun _ ↦ χ) s v) ()).trans
+      (hC v)⟩ u
+
+/-- **The readings of a function pulled back from a chart.** For a cutoff `χ` in a chart `c` and
+every real `s` there is a constant `C` such that for every Schwartz function `u`, the smooth
+function `(χ u) ∘ c` on `M`, extended by `0`, has chart readings
+
+`‖(ψᵢ · (((χ u) ∘ c) ∘ eᵢ⁻¹))ᵢ‖_{⨁ H^s} ≤ C ‖u‖_{H^s}`. -/
+theorem exists_norm_chartReading_complexCutoffPullback_le (s : ℝ) :
+    ∃ C, ∀ u : 𝓢(CoordinateSpace n, ℂ),
+      ‖chartReading he ψ s
+          (c.complexCutoffPullback hc χ (ContMDiffMap.ofContDiff u (u.smooth ⊤)))‖ ≤
+        C * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 u‖ := by
+  -- A cutoff `χ₁` equal to `1` near the support of `χ`, so that `(χ u) ∘ c` is `χ ∘ c` times
+  -- `(χ₁ u) ∘ c`, whose reading in `c` through `χ` is `χ u`.
+  obtain ⟨χ₁, hχ₁, -⟩ := TestFunction.exists_eventually_eq_one (Ω := ⟨c.target, c.open_target⟩)
+    (n := ⊤) χ.hasCompactSupport.isCompact χ.tsupport_subset
+  obtain ⟨θ, hθ⟩ : ∃ θ : 𝓢(CoordinateSpace n, ℂ), ∀ y, θ y = χ y :=
+    ⟨(χ.hasCompactSupport.comp_left Complex.ofReal_zero).toSchwartzMap
+      (Complex.ofRealCLM.contDiff.comp χ.contDiff), HasCompactSupport.toSchwartzMap_toFun _ _⟩
+  choose C hC using fun i ↦
+    exists_norm_toBesselPotentialSpaceCLM_cutoffPushforwardSchwartz_mulLeft_le (he i) hc (ψ i) χ
+      ENNReal.one_lt_two ENNReal.ofNat_ne_top s
+  refine ⟨(∑ i, |C i|) * ‖BesselPotentialSpace.smulLeftCLM (F := ℂ) s θ‖, fun u ↦ ?_⟩
+  set U := ContMDiffMap.ofContDiff u (u.smooth ⊤)
+  have h1 : ∀ y ∈ tsupport χ, χ₁ y = 1 := fun y hy ↦ hχ₁.self_of_nhdsSet y hy
+  have hread : SchwartzMap.toBesselPotentialSpaceCLM s 2
+      (c.cutoffPushforwardSchwartz hc χ (c.complexCutoffPullback hc χ₁ U)) =
+        BesselPotentialSpace.smulLeftCLM s θ (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) := by
+    refine BesselPotentialSpace.ext ?_
+    rw [BesselPotentialSpace.toDistr_smulLeftCLM, SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+      SchwartzMap.toDistr_toBesselPotentialSpaceCLM,
+      TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq]
+    congr 1
+    ext y
+    rw [SchwartzMap.smulLeftCLM_apply_apply θ.hasTemperateGrowth, cutoffPushforwardSchwartz_apply,
+      hθ]
+    by_cases hy : χ y = 0
+    · simp [hy]
+    · have hyt : y ∈ c.target := χ.tsupport_subset (subset_tsupport _ hy)
+      rw [complexCutoffPullback_apply_of_mem hc _ _ (c.map_target hyt), c.right_inv hyt,
+        h1 _ (subset_tsupport _ hy), one_smul, ContMDiffMap.coe_ofContDiff, Complex.coe_smul]
+  have hi (i : ι) : ‖chartReading he ψ s (c.complexCutoffPullback hc χ U) i‖ ≤
+      |C i| * (‖BesselPotentialSpace.smulLeftCLM (F := ℂ) s θ‖ *
+        ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 u‖) := by
+    rw [chartReading_apply,
+      ← mulLeft_ofReal_cutoffPullback_one_complexCutoffPullback_eq_complexCutoffPullback hc h1]
+    refine (hC i _).trans ?_
+    rw [hread]
+    exact mul_le_mul (le_abs_self _) (ContinuousLinearMap.le_opNorm _ _) (norm_nonneg _)
+      (abs_nonneg _)
+  calc ‖chartReading he ψ s (c.complexCutoffPullback hc χ U)‖
+      ≤ ∑ i, ‖chartReading he ψ s (c.complexCutoffPullback hc χ U) i‖ := PiLp.norm_le_sum_norm _
+    _ ≤ ∑ i, |C i| * (‖BesselPotentialSpace.smulLeftCLM (F := ℂ) s θ‖ *
+          ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 u‖) := Finset.sum_le_sum fun i _ ↦ hi i
+    _ = (∑ i, |C i|) * ‖BesselPotentialSpace.smulLeftCLM (F := ℂ) s θ‖ *
+          ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 u‖ := by
+      rw [← Finset.sum_mul, mul_assoc]
+
+/-- **Pulling back from a chart into `H^s(M)`.** The continuous linear map `H^s(ℝⁿ) → H^s(M)`
+extending the map that sends a Schwartz function `u` to the smooth function `(χ u) ∘ c` on `M`,
+extended by `0` outside the chart source (`OpenPartialHomeomorph.complexCutoffPullback`), for a
+cutoff `χ` in a chart `c` (`TauCeti.chartSobolevPullback_toBesselPotentialSpaceCLM`). -/
+def chartSobolevPullback (s : ℝ) : H^{s}(CoordinateSpace n) →L[ℂ] chartSobolevSpace he ψ s :=
+  (toChartSobolevSpace he ψ s ∘ₗ c.complexCutoffPullback hc χ ∘ₗ
+    ({ toFun u := ContMDiffMap.ofContDiff u (u.smooth ⊤)
+       map_add' u v := by
+         ext
+         simp
+       map_smul' a u := by
+         ext
+         simp } :
+      𝓢(CoordinateSpace n, ℂ) →ₗ[ℂ]
+        C^∞⟮𝓘(ℝ, CoordinateSpace n), CoordinateSpace n; 𝓘(ℝ, ℂ), ℂ⟯)).extendOfNorm
+    (SchwartzMap.toBesselPotentialSpaceCLM s 2).toLinearMap
+
+/-- The pullback `H^s(ℝⁿ) → H^s(M)` through the cutoff `χ` in the chart `c` sends a Schwartz
+function `u` to the smooth function `(χ u) ∘ c` on `M`, extended by `0`. -/
+@[simp]
+theorem chartSobolevPullback_toBesselPotentialSpaceCLM (s : ℝ) (u : 𝓢(CoordinateSpace n, ℂ)) :
+    chartSobolevPullback he ψ hc χ s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
+      toChartSobolevSpace he ψ s
+        (c.complexCutoffPullback hc χ (ContMDiffMap.ofContDiff u (u.smooth ⊤))) := by
+  obtain ⟨C, hC⟩ := exists_norm_chartReading_complexCutoffPullback_le he ψ hc χ s
+  exact LinearMap.extendOfNorm_eq
+    (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (p := 2) s ENNReal.ofNat_ne_top) ⟨C, hC⟩ u
+
+end Chart
 
 end TauCeti

@@ -72,6 +72,9 @@ it `s k` becomes a function `c k`. These functions form a zero-charge limit with
 (`TauCeti.IsSectionZeroChargeLimit.exists_isZeroChargeLimit`), and each law for `s` is the law for
 `c`. So a section zero-charge limit with positive charges on pseudoholomorphic discs also gives a
 positive cohomology assignment (`TauCeti.PositiveCohomologyAssignment.ofIsSectionZeroChargeLimit`).
+The limit zero charges do not change when each `s k` is multiplied by a function that vanishes
+nowhere, such as a gauge transformation (`TauCeti.limitSectionZeroCharge_eq_of_eq_smul`), and
+section zero-charge limits are preserved by it (`TauCeti.IsSectionZeroChargeLimit.of_eq_smul`).
 
 ## Main definitions
 
@@ -96,6 +99,8 @@ positive cohomology assignment (`TauCeti.PositiveCohomologyAssignment.ofIsSectio
   `TauCeti.IsSectionZeroChargeLimit.limitSectionZeroCharge_eq_of_homotopy`,
   `TauCeti.IsSectionZeroChargeLimit.limitSectionZeroCharge_comp`,
   `TauCeti.IsSectionZeroChargeLimit.limitSectionZeroCharge_eq_sum`: the same laws for sections.
+* `TauCeti.limitSectionZeroCharge_eq_of_eq_smul`, `TauCeti.IsSectionZeroChargeLimit.of_eq_smul`:
+  gauge invariance of the limit zero charge and of section zero-charge limits.
 
 ## References
 
@@ -165,12 +170,19 @@ open scoped Classical in
 between `1` and a radius `ρ₀` with `σ⁻¹(Z)` in the open disc of radius `ρ₀`. For a zero-charge
 limit this value exists and does not depend on the choice of `ρ`
 (`TauCeti.IsZeroChargeLimit.eventually_zeroCharge_eq_limitZeroCharge`). It is `0` when no such
-`ρ₀` exists. -/
+`ρ₀` exists (`TauCeti.limitZeroCharge_of_not_exists`). -/
 def limitZeroCharge (l : Filter ι) (α : ι → C(Y, ℂ)) (Z : Set Y) (σ : C(𝔻, Y)) : ℤ :=
   if h : ∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀ then
     limUnder l fun k ↦ (α k).zeroCharge (σ.comp (discRetraction ((h.choose + 1) / 2)
       (by linarith [h.choose_spec.1]) (by linarith [h.choose_spec.2.1])))
   else 0
+
+/-- The limit zero charge vanishes on a disc that sends points of norm arbitrarily close to `1`
+into `Z`. -/
+theorem limitZeroCharge_of_not_exists {σ : C(𝔻, Y)}
+    (h : ¬∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) :
+    limitZeroCharge l α Z σ = 0 := by
+  simp [limitZeroCharge, h]
 
 /-- A family of continuous functions `α k : Y → ℂ` along a filter `l` is a **zero-charge limit
 with support `Z`** if it is eventually nonvanishing on every compact set missing `Z`, and if the
@@ -466,13 +478,20 @@ value along `l` of the zero charges `ContinuousMap.sectionZeroCharge (s k)` of `
 `ρ₀` with `σ⁻¹(Z)` in the open disc of radius `ρ₀`. For a section zero-charge limit this value
 exists and does not depend on the choice of `ρ`
 (`TauCeti.IsSectionZeroChargeLimit.eventually_sectionZeroCharge_eq_limitSectionZeroCharge`). It
-is `0` when no such `ρ₀` exists. -/
+is `0` when no such `ρ₀` exists (`TauCeti.limitSectionZeroCharge_of_not_exists`). -/
 def limitSectionZeroCharge (l : Filter ι) (s : ι → C(Y, TotalSpace ℂ L)) (Z : Set Y)
     (σ : C(𝔻, Y)) : ℤ :=
   if h : ∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀ then
     limUnder l fun k ↦ (s k).sectionZeroCharge (σ.comp (discRetraction ((h.choose + 1) / 2)
       (by linarith [h.choose_spec.1]) (by linarith [h.choose_spec.2.1])))
   else 0
+
+/-- The limit zero charge along a family of maps to a line bundle vanishes on a disc that sends
+points of norm arbitrarily close to `1` into `Z`. -/
+theorem limitSectionZeroCharge_of_not_exists {σ : C(𝔻, Y)}
+    (h : ¬∃ ρ₀, 0 ≤ ρ₀ ∧ ρ₀ < 1 ∧ ∀ z : 𝔻, σ z ∈ Z → ‖(z : ℂ)‖ < ρ₀) :
+    limitSectionZeroCharge l s Z σ = 0 := by
+  simp [limitSectionZeroCharge, h]
 
 /-- A family of continuous maps `s k` to the total space of a complex line bundle `L` along a filter
 `l`, for instance the framing sections of a sequence of Seiberg–Witten solutions, is a **section
@@ -636,7 +655,37 @@ theorem limitSectionZeroCharge_eq_sum [l.NeBot] {κ : Type} [Fintype κ] {σ : C
   rw [hid, ha.limitZeroCharge_eq_sum (σ := ContinuousMap.id 𝔻) hσ c r hc hr hdisj hcov]
   simp only [ContinuousMap.id_comp, hlim]
 
+/-- **Gauge invariance.** Multiplying each `s k` by a continuous function `u k : Y → ℂ` that
+vanishes nowhere, for instance a unitary gauge transformation, gives a section zero-charge limit
+with the same support. -/
+theorem of_eq_smul {t : ι → C(Y, TotalSpace ℂ L)} {u : ι → C(Y, ℂ)}
+    (ht : ∀ k y, t k y = TotalSpace.mk' ℂ (s k y).proj (u k y • (s k y).snd))
+    (hu : ∀ k y, u k y ≠ 0) : IsSectionZeroChargeLimit l t Z where
+  eventually_ne_zero K hK hKZ := by
+    filter_upwards [h.eventually_ne_zero hK hKZ] with k hk y hy
+    rw [ht]
+    exact smul_ne_zero (hu k y) (hk y hy)
+  exists_eventually_sectionZeroCharge_eq σ _ _ hρ hρ₁ hρ₀ hσ := by
+    obtain ⟨n, hn⟩ := h.exists_eventually_sectionZeroCharge_eq σ hρ hρ₁ hρ₀ hσ
+    refine ⟨n, hn.mono fun k hk ↦ ?_⟩
+    rw [← hk]
+    exact (s k).sectionZeroCharge_eq_of_eq_smul (u := (u k).comp _) (fun _ ↦ ht k _)
+      fun _ ↦ hu k _
+
 end IsSectionZeroChargeLimit
+
+/-- **Gauge invariance.** Multiplying each `s k` by a continuous function `u k : Y → ℂ` that
+vanishes nowhere, for instance a unitary gauge transformation, does not change the limit zero
+charges. This holds for every family, since it holds for the zero charge of every disc
+(`ContinuousMap.sectionZeroCharge_eq_of_eq_smul`). -/
+theorem limitSectionZeroCharge_eq_of_eq_smul {t : ι → C(Y, TotalSpace ℂ L)} {u : ι → C(Y, ℂ)}
+    (ht : ∀ k y, t k y = TotalSpace.mk' ℂ (s k y).proj (u k y • (s k y).snd))
+    (hu : ∀ k y, u k y ≠ 0) (σ : C(𝔻, Y)) :
+    limitSectionZeroCharge l t Z σ = limitSectionZeroCharge l s Z σ := by
+  have hts (k : ι) (τ : C(𝔻, Y)) : (t k).sectionZeroCharge τ = (s k).sectionZeroCharge τ :=
+    (s k).sectionZeroCharge_eq_of_eq_smul (u := (u k).comp τ) (fun _ ↦ ht k _) fun _ ↦ hu k _
+  unfold limitSectionZeroCharge
+  split_ifs <;> simp only [hts]
 
 /-! #### Constant families -/
 

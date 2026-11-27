@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Poisson.Boundary.Function
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.MeasureTheory.Function.Jacobian
-import TauCeti.Analysis.Complex.RadialUniqueness
+import TauCeti.Analysis.Complex.Radial.Uniqueness
 import TauCeti.Analysis.Complex.UpperHalfPlane.Cayley
 
 /-!
