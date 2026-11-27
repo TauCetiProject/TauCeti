@@ -456,8 +456,8 @@ theorem gluedLatticePiCongrIsometry_apply (σ : κ ≃ ι)
     (hgH : ∀ w, (fun k ↦ g k (w (σ k))) ∈ H' ↔ w ∈ H)
     (x : ∀ i, Fin (t i).rank → ℚ) (k : κ) :
     gluedLatticePiCongrIsometry t ht hv H hH hvs hH' σ f g hfg hgH x k = f k (x (σ k)) := by
-  rw [gluedLatticePiCongrIsometry, gluedLatticeIsometry_apply, Isometry.piCongr'_apply]
-  rfl
+  simp only [gluedLatticePiCongrIsometry, gluedLatticeIsometry_apply, Isometry.piCongr'_apply,
+    Equiv.symm_symm]
 
 end PiCongr
 

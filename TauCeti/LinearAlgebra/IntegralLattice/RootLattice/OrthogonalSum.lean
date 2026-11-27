@@ -52,7 +52,7 @@ Isotropic and Lagrangian subgroups of glue words correspond to those of the disc
   to the discriminant quadratic module of the orthogonal sum of root lattices.
 * `TauCeti.DynkinType.discriminantQuadraticIsometry_pi_glueWordIsometry`,
   `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry`,
-  `TauCeti.DynkinType.discriminantQuadraticIsometry_isometryPiCongr_glueWordIsometry`,
+  `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongr_glueWordIsometry`,
   `TauCeti.DynkinType.discriminantQuadraticIsometry_piCongr'_glueWordIsometry`: naturality of
   the glue-word isometry under componentwise isometries, permutations of the components, and their
   composites.
@@ -285,7 +285,7 @@ theorem discriminantQuadraticIsometry_piCongrLeft_glueWordIsometry (hv : ∀ i, 
 isometries `f i` from `t i` to `s (σ i)`, and compatible glue-label maps `g i`,
 `Isometry.piCongr σ f` carries the discriminant class of a glue word `w` to the class of
 `Equiv.piCongrLeft _ σ (fun i ↦ g i (w i))`. -/
-theorem discriminantQuadraticIsometry_isometryPiCongr_glueWordIsometry (hv : ∀ i, (t i).Valid)
+theorem discriminantQuadraticIsometry_piCongr_glueWordIsometry (hv : ∀ i, (t i).Valid)
     {κ : Type*} [Fintype κ] {s : κ → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced}
     (hvs : ∀ k, (s k).Valid) (σ : ι ≃ κ)
     (f : ∀ i, IntegralLattice.Isometry ((t i).rootLattice (ht i))
@@ -352,7 +352,7 @@ theorem discriminantQuadraticIsometry_signedPerm_glueWordIsometry (u : ι → �
       glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT) (fun _ ↦ hvT)
         fun j ↦ u (σ.symm j) • w (σ.symm j) := by
   rw [← Isometry.piCongr_def (M' := fun _ ↦ T.rootLattice hT)]
-  refine (discriminantQuadraticIsometry_isometryPiCongr_glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT)
+  refine (discriminantQuadraticIsometry_piCongr_glueWordIsometry (fun _ ↦ T) (fun _ ↦ hT)
     (fun _ ↦ hvT) (s := fun _ ↦ T) (hs := fun _ ↦ hT) (fun _ ↦ hvT) σ
     (fun i ↦ Isometry.unitsSMul (u i) (T.rootLattice hT))
     (fun i x ↦ u i • x) (fun i x ↦ glueAlphabetIsometry_unitsSMul hvT (u i) x) w).trans

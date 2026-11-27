@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4
 
 import TauCeti.Data.Fin.Cast
-import TauCeti.GroupTheory.Perm.PermCongr
 
 /-!
 # The coupled triality symmetry of the table row `A₅⁴ D₄`
@@ -32,8 +31,9 @@ of `TauCeti.niemeierA5FourthD4`.  This yields a faithful action
 * `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_zero`,
   `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_one`,
   `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_two`,
-  `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_three`:
-  `A₅`-coordinate corollaries for `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry`.
+  `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_three`,
+  `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry_apply_four`:
+  coordinate-specific corollaries for `TauCeti.RootfulNiemeierType.a5FourthD4TrialityIsometry`.
 * `TauCeti.RootfulNiemeierType.mem_symmetries_cyclic_a5FourthD4_iff`,
   `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom`,
   `TauCeti.RootfulNiemeierType.a5FourthD4CyclicSymmetryHom_injective`: membership characterization
@@ -54,7 +54,7 @@ namespace RootfulNiemeierType
 
 open DynkinType IntegralLattice
 
-/-! ### `A₅`-coordinate corollaries for `a5FourthD4TrialityIsometry` -/
+/-! ### Coordinate corollaries for `a5FourthD4TrialityIsometry` -/
 
 private theorem a5FourthD4TrialityIsometry_apply_of_eq
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ)
@@ -94,6 +94,16 @@ theorem a5FourthD4TrialityIsometry_apply_three
   a5FourthD4TrialityIsometry_apply_of_eq x (k := ⟨3, by decide⟩) (b := ⟨2, by decide⟩)
     (by decide) (a5FourthD4BlockRotation_symm_apply_mk_three (by decide))
 
+/-- On the `D₄` component in position `4`, `a5FourthD4TrialityIsometry` applies `D₄` triality. -/
+@[simp]
+theorem a5FourthD4TrialityIsometry_apply_four
+    (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ) :
+    a5FourthD4TrialityIsometry x (4 : Fin 5) =
+      typeD4Triality (isSimplyLaced_D 4) (x (4 : Fin 5)) :=
+  -- Unfolding `a5FourthD4D4Index`, the numeral `(4 : Fin 5)`, and `a5FourthD4.components`
+  -- identifies both indices with `⟨4, _⟩`; the bound proofs agree by proof irrelevance.
+  a5FourthD4TrialityIsometry_apply_d4Index x
+
 /-! ### Faithful action of `[2(024)0].symmetries` on `niemeierA5FourthD4` -/
 
 private theorem mem_symmetries_cyclic_a5FourthD4_iff_mem_zpowers
@@ -106,6 +116,9 @@ private theorem mem_symmetries_cyclic_a5FourthD4_iff_mem_zpowers
       cyclic_mem_gluePatterns_a5FourthD4)).permCongr
         (show Equiv.Perm (Fin (GluePattern.cyclic [2] [0, 2, 4] [0]).length) from g) = g := by
     ext x
+    rw [Equiv.permCongr_apply, finCongr_apply, Fin.val_cast, finCongr_symm, finCongr_apply]
+    -- Both `Fin` lengths reduce definitionally to `5`, so the `Fin.cast` and type ascription
+    -- cancel definitionally.
     rfl
   rw [← map_symmetries_cyclic_a5FourthD4, ← he]
   exact (Subgroup.mem_map_iff_mem (f := (finCongr (length_eq_of_mem_gluePatterns
@@ -166,7 +179,7 @@ noncomputable def a5FourthD4CyclicSymmetryHom :
 /-- The generator `a5FourthD4BlockRotation` of `[2(024)0].symmetries` acts as
 `a5FourthD4TrialityIsometry`. -/
 @[simp]
-theorem a5FourthD4CyclicSymmetryHom_blockRot :
+theorem a5FourthD4CyclicSymmetryHom_blockRotation :
     a5FourthD4CyclicSymmetryHom
         ⟨(a5FourthD4BlockRotation : Equiv.Perm (Fin 5)),
           a5FourthD4BlockRotation_mem_symmetries⟩ =

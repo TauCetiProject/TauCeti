@@ -434,17 +434,9 @@ identity. -/
 theorem piCongr'_refl :
     piCongr' (Equiv.refl ι) (fun i ↦ Isometry.refl (L i)) =
       Isometry.refl (IntegralLattice.pi L) := by
-  have hrefl {i : ι} : (Isometry.refl (L i)).symm = Isometry.refl (L i) :=
-    (trans_refl _).symm.trans (symm_trans_self _)
-  unfold piCongr'
-  have hfn : (fun k ↦ (Isometry.refl (L k)).symm) = fun k ↦ Isometry.refl (L k) :=
-    funext fun _ ↦ hrefl
-  have hpi : piCongr (Equiv.refl ι) (fun k ↦ (Isometry.refl (L k)).symm) =
-      Isometry.refl (IntegralLattice.pi L) := by
-    rw [hfn, piCongr_refl]
-  exact (congrArg Isometry.symm hpi).trans
-    ((trans_refl (Isometry.refl (IntegralLattice.pi L)).symm).symm.trans
-      (symm_trans_self (Isometry.refl (IntegralLattice.pi L))))
+  ext x i
+  exact (piCongr'_apply (Equiv.refl ι) _ x i).trans
+    ((refl_apply (L i) (x i)).trans (congrFun (refl_apply (IntegralLattice.pi L) x) i).symm)
 
 /-- Composing two `Isometry.piCongr'` maps composes the index equivalences and the pulled-back
 summand isometries. -/
