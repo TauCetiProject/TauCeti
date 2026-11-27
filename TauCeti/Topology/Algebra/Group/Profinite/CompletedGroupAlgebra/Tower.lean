@@ -50,6 +50,10 @@ Iwasawa algebra `R[[ℤ_p]]`.
   transition maps.
 * `TauCeti.completedGroupAlgebra.proj_eq_mapDomain_towerProj`: the projection onto `R[Γ ⧸ U]`
   factors through any level whose kernel lies in `U`.
+* `TauCeti.completedGroupAlgebra.continuous_towerProj`: each finite-level projection is
+  continuous from the inverse-limit topology to the module topology.
+* `TauCeti.completedGroupAlgebra.continuous_iff_towerProj`: for compact `Γ` and a topological
+  coefficient ring, continuity into `R[[Γ]]` can be tested on the tower projections.
 * `TauCeti.completedGroupAlgebra.ext_towerProj`,
   `TauCeti.completedGroupAlgebra.algHom_ext_towerProj`: elements of `R[[Γ]]`, and algebra maps
   into it, are determined by their tower projections.

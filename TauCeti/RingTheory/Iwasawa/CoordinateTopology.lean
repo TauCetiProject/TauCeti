@@ -69,16 +69,7 @@ theorem continuous_levelCoordinate (n : ℕ) [TopologicalSpace O] [TopologicalSp
   let J := (maximalIdeal O).map (algebraMap O (B n))
   let φ : Λ →+* B n := levelCoordinate hp n
   have hB : Module.Finite O (B n) := Module.Finite.of_basis (MonoidAlgebra.basis _ O)
-  have : IsTopologicalRing O := hO ▸ (maximalIdeal O).nonarchimedean.toIsTopologicalRing
-  have hJ : IsAdic J := by
-    have hJGroup : @IsTopologicalAddGroup (B n) J.adicTopology _ := by
-      let _ := J.adicTopology
-      have := J.nonarchimedean.toIsTopologicalRing
-      infer_instance
-    refine IsTopologicalAddGroup.ext (IsModuleTopology.isTopologicalAddGroup O (B n)) hJGroup ?_
-    apply (hO.hasBasis_nhds_zero_pow_smul (M := B n)).eq_of_same_basis
-    simpa only [J, Ideal.map_pow, Ideal.smul_top_eq_map, Ideal.coe_restrictScalars] using
-      J.hasBasis_nhds_zero_adic
+  have hJ : IsAdic J := hO.isAdic_map_algebraMap
   have hgen := TauCeti.PowerSeries.maximalIdeal_eq_span_insert_X (maximalIdeal O).span_eq
   have hmap : (maximalIdeal Λ).map φ = Ideal.span {φ X} ⊔ J := by
     -- The generators are the image of `X` and the extended coefficient ideal.
