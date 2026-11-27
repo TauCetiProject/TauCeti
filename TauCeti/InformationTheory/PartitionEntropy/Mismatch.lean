@@ -115,8 +115,7 @@ theorem tendsto_countablePartitionEntropy_mismatchLabel [IsProbabilityMeasure μ
       have hset : mismatchLabel a (b n) ⁻¹' {Sum.inr u} = {x | a x ≠ b n x}ᶜ := by
         ext x
         simp
-      have hmeas : MeasurableSet {x | a x ≠ b n x} :=
-        (ha.prodMk (hb n)) (Set.to_countable {p : ι × ι | p.1 ≠ p.2}).measurableSet
+      have hmeas : MeasurableSet {x | a x ≠ b n x} := (measurableSet_eq_fun ha (hb n)).compl
       rw [hset, measureReal_compl hmeas, probReal_univ]
     simp only [hreal]
     simpa using (tendsto_const_nhds (x := (1 : ℝ))).sub h

@@ -81,8 +81,9 @@ theorem exists_measure_ne_le_of_monotone [IsFiniteMeasure μ] {m : ℕ → Measu
   -- The label `b` picks a fiber containing `x`; it is read off which of the sets `t i` contain `x`.
   set g : (κ → Prop) → κ := fun w ↦ if h : ∃ i, w i then h.choose else κ₀
   set v : X → (κ → Prop) := fun x i ↦ x ∈ t i
-  have hv : Measurable[m n] v := @Measurable.of_eval X κ (fun _ ↦ Prop) (m n) _ v fun i ↦
-    (@measurableSet_setOfPred X (m n) (· ∈ t i)).1 (htn i)
+  have hv : Measurable[m n] v := by
+    let := m n
+    exact measurable_pi_iff.2 fun i ↦ measurableSet_setOfPred.1 (htn i)
   refine ⟨n, g ∘ v, fun i ↦ hv (Set.toFinite (g ⁻¹' {i})).measurableSet, ?_⟩
   have hsub : {x | η x ≠ g (v x)} ⊆ ⋃ i, t i ∆ (η ⁻¹' {i}) := by
     intro x hx

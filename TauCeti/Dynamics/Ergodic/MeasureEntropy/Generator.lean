@@ -8,6 +8,7 @@ module
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.FinitePartition
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Iterate
 public import TauCeti.InformationTheory.PartitionEntropy.Mismatch
+import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.MeasureTheory.Measure.Real
 import TauCeti.MeasureTheory.Measure.MonotoneApproximation
 
@@ -54,36 +55,29 @@ namespace TauCeti
 
 variable {X ι κ : Type*} {mX : MeasurableSpace X} {μ : Measure X} {T : X → X}
 
-/-- **Approximation through itineraries.** Let `ξ` be a measurable countable label whose shifted
+/-- **Approximation through itineraries.** Let `ξ` be a measurable label whose shifted
 labels `ξ ∘ T^[k]` generate the σ-algebra of `X` modulo `μ`-null sets. Every measurable label `η`
 into a finite type is approximated by labels factoring through an itinerary of `ξ`: for `ε > 0`
 there are `N` and `g` with `μ {η ≠ g ∘ join_N ξ} ≤ card κ * ε`. -/
 theorem exists_measure_ne_comp_iteratedPartitionLabel_le [IsFiniteMeasure μ] (hT : Measurable T)
-    [Countable ι] [MeasurableSpace ι] [MeasurableSingletonClass ι] {ξ : X → ι} (hξ : Measurable ξ)
+    [MeasurableSpace ι] {ξ : X → ι} (hξ : Measurable ξ)
     (hgen : ∀ s : Set X, MeasurableSet s → ∃ t : Set X,
       MeasurableSet[⨆ k : ℕ, MeasurableSpace.comap (fun x ↦ ξ (T^[k] x)) ‹_›] t ∧ s =ᵐ[μ] t)
-    [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] {η : X → κ}
-    (hη : Measurable η) (κ₀ : κ) {ε : ℝ≥0∞} (hε : 0 < ε) :
+    [Fintype κ] [Nonempty κ] [MeasurableSpace κ] [MeasurableSingletonClass κ] {η : X → κ}
+    (hη : Measurable η) {ε : ℝ≥0∞} (hε : 0 < ε) :
     ∃ (N : ℕ) (g : (Fin N → ι) → κ),
       μ {x | η x ≠ g (iteratedPartitionLabel T ξ N x)} ≤ Fintype.card κ * ε := by
-  classical
   obtain ⟨N, b, hb, hlt⟩ := exists_measure_ne_le_of_monotone
     (monotone_comap_iteratedPartitionLabel T ξ)
     (fun N ↦ (measurable_iteratedPartitionLabel hT hξ N).comap_le)
     (fun s hs ↦ (hgen s hs).imp fun _ ht ↦
       ⟨iSup_comap_iterate_le_iSup_comap_iteratedPartitionLabel T ξ _ ht.1, ht.2⟩) hη hε
-  -- Each fiber of `b` is the preimage of a set of itineraries, so `b` factors through them.
-  choose S _ hS using hb
-  set g : (Fin N → ι) → κ := fun w ↦ if h : ∃ i, w ∈ S i then h.choose else κ₀
-  have hbg : b = g ∘ iteratedPartitionLabel T ξ N := by
-    funext x
-    have hx : ∃ i, iteratedPartitionLabel T ξ N x ∈ S i :=
-      ⟨b x, by rw [← Set.mem_preimage, hS]; rfl⟩
-    have := hx.choose_spec
-    rw [← Set.mem_preimage, hS] at this
-    simp only [Function.comp_apply, g, dite_eq_left_of_eq_true (eq_true hx)]
-    exact this
-  exact ⟨N, g, by rwa [hbg] at hlt⟩
+  -- Each fiber of `b` is measurable for the itinerary σ-algebra, so `b` factors through it.
+  have hbm : Measurable[MeasurableSpace.comap (iteratedPartitionLabel T ξ N) inferInstance] b := by
+    let := MeasurableSpace.comap (iteratedPartitionLabel T ξ N) inferInstance
+    exact measurable_to_countable' hb
+  refine ⟨N, Function.extend (iteratedPartitionLabel T ξ N) b fun _ ↦ Classical.arbitrary κ, ?_⟩
+  simpa only [hbm.factorsThrough.extend_apply] using hlt
 
 /-- The entropy rate of a measurable finite label is at most that of a one-sided generator. -/
 theorem partitionEntropyRate_le_of_generator [IsProbabilityMeasure μ]
@@ -97,10 +91,11 @@ theorem partitionEntropyRate_le_of_generator [IsProbabilityMeasure μ]
   classical
   have := Fintype.ofFinite κ
   obtain ⟨x₀⟩ := nonempty_of_isProbabilityMeasure μ
+  have : Nonempty κ := ⟨η x₀⟩
   have hε (k : ℕ) : (0 : ℝ≥0∞) < ((k + 1 : ℕ) : ℝ≥0∞)⁻¹ :=
     ENNReal.inv_pos.2 (ENNReal.natCast_ne_top _)
   choose N g hg using fun k : ℕ ↦
-    exists_measure_ne_comp_iteratedPartitionLabel_le hT.measurable hξ hgen hη (η x₀) (hε k)
+    exists_measure_ne_comp_iteratedPartitionLabel_le hT.measurable hξ hgen hη (hε k)
   set b : ℕ → X → κ := fun k ↦ g k ∘ iteratedPartitionLabel T ξ (N k)
   have hζ (k : ℕ) := measurable_iteratedPartitionLabel hT.measurable hξ (N k)
   have hb (k : ℕ) : Measurable (b k) := (measurable_of_countable _).comp (hζ k)
@@ -110,9 +105,8 @@ theorem partitionEntropyRate_le_of_generator [IsProbabilityMeasure μ]
         (tendsto_add_atTop_nat 1))
     have := ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.natCast_ne_top _)
       (ENNReal.inv_ne_top.2 (by positivity))) (hg k)
-    rw [ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast, ENNReal.toReal_natCast,
-      ← div_eq_mul_inv] at this
-    exact this
+    rwa [ENNReal.toReal_mul, ENNReal.toReal_inv, ENNReal.toReal_natCast, ENNReal.toReal_natCast,
+      ← div_eq_mul_inv, ← measureReal_def] at this
   have hkey (k : ℕ) : partitionEntropyRate μ T η ≤
       partitionEntropyRate μ T ξ + countablePartitionEntropy μ (mismatchLabel η (b k)) :=
     calc partitionEntropyRate μ T η
