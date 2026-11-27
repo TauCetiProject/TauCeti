@@ -68,7 +68,8 @@ one cutoff serves all the tests supported in a fixed compact set.
   `TauCeti.BundleTest.isProperOnSupport_of_isCompact_dsupport` and
   `TauCeti.BundleTest.isProperOnSupport_of_isCompact_preimage`.
 * `TauCeti.BundleTest.pushforward`: the pushforward `f_* T`, with its values
-  `TauCeti.BundleTest.pushforward_apply_of_eventuallyEq` and
+  `TauCeti.BundleTest.pushforward_apply_of_eventuallyEq` on tests supplied by
+  `TauCeti.BundleTest.IsProperOnSupport.exists_forall_eventually_eq`, and
   `TauCeti.BundleTest.pushforward_apply_eq_cutoffCompCLM`, and
   `TauCeti.BundleTest.pushforward_eq_cutoffPushforwardCLM` for compactly supported `T`.
 * `TauCeti.BundleTest.dsupport_cutoffPushforwardCLM_subset`: `supp f_* (χ T) ⊆ f (supp χ ∩ supp T)`.
@@ -652,6 +653,16 @@ private theorem map_cutoffCompCLM_eq {s : BundleTest J G (Trivial Y G)} {χ : C^
     T (cutoffCompCLM χ hχc f s) = T t :=
   map_eq_map_of_eventuallyEq T <| eventually_nhdsSet_iff_forall.2 fun x hx ↦
     ((cutoffCompCLM_eventuallyEq hχc f s hχ hx).and (ht x hx)).mono fun _ h ↦ h.1.trans h.2.symm
+
+/-- If `f` is proper on the support of `T`, every test `s` on `Y` has a test on `X` agreeing with
+`s ∘ f` near each point of the support of `T`; by
+`TauCeti.BundleTest.pushforward_apply_of_eventuallyEq`, `T` pairs it with the value of `f_* T`
+on `s`. -/
+theorem IsProperOnSupport.exists_forall_eventually_eq (hT : IsProperOnSupport ⇑T f)
+    (s : BundleTest J G (Trivial Y G)) :
+    ∃ t : BundleTest I G (Trivial X G), ∀ x ∈ dsupport ⇑T, ∀ᶠ z in 𝓝 x, t z = s (f z) :=
+  have h := (hT.exists_eventually_eq_one s.isCompact_tsupport).choose_spec
+  ⟨cutoffCompCLM _ h.1 f s, fun _ hx ↦ cutoffCompCLM_eventuallyEq h.1 f s h.2 hx⟩
 
 variable [IsTopologicalAddGroup W] [ContinuousSMul ℝ W] [LocallyConvexSpace ℝ W]
 
