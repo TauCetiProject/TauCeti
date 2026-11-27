@@ -33,17 +33,23 @@ the cotangent bundle is read as the homogeneous symbol `(y, η) ↦ ρ(y) s(e⁻
 term `χ(η) ρ(y) s(e⁻¹ y, ⟪η, ·⟫ ∘ de)` is a classical symbol, and the principal symbol of its chart
 quantization is `ρ(e x) s(x, ξ)` (`OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization`
 computes the principal symbol of every chart quantization). Summing over finitely many chart
-cutoffs whose pullbacks sum to `1` on the compact set
-(`IsCompact.exists_sum_cutoffPullback_eq_one`) gives `s`. On a σ-compact manifold the operator is
-instead the symmetric patched quantization `∑ᵢ χᵢ Op(aᵢ) χᵢ`
-(`TauCeti.patchedQuantization`) over a locally finite family of chart cutoffs `χᵢ` whose squares
-sum to `1` (`TauCeti.exists_locallyFinite_finsum_sq_cutoffPullback_eq_one`); its principal symbol
-is `∑ᵢ χᵢ(x)² s(x, ξ) = s(x, ξ)` (`TauCeti.classicalPrincipalSymbol_patchedQuantization`).
+cutoffs `ρᵢ`, with right cutoffs `θᵢ` equal to `1` on their supports, gives a quantization
+`Q(s) = ∑ᵢ Op_{cᵢ}(χ(η) θᵢ(y) s(cᵢ⁻¹ y, ⟪η, ·⟫ ∘ dcᵢ))` linear in `s`
+(`TauCeti.principalSymbolQuantization`) with principal symbol `(∑ᵢ ρᵢ ∘ cᵢ) s`; for cutoffs whose
+pullbacks sum to `1` on the compact set (`IsCompact.exists_sum_cutoffPullback_eq_one`) this is
+`s`. On a σ-compact manifold the operator is instead the symmetric patched quantization
+`∑ᵢ χᵢ Op(aᵢ) χᵢ` (`TauCeti.patchedQuantization`) over a locally finite family of chart cutoffs
+`χᵢ` whose squares sum to `1` (`TauCeti.exists_locallyFinite_finsum_sq_cutoffPullback_eq_one`);
+its principal symbol is `∑ᵢ χᵢ(x)² s(x, ξ) = s(x, ξ)`
+(`TauCeti.classicalPrincipalSymbol_patchedQuantization`).
 
 ## Main definitions
 
 * `OpenPartialHomeomorph.chartHomogeneousSymbol`: a smooth homogeneous function on the cotangent
   bundle read in a chart and localized by a cutoff, as a homogeneous symbol on `ℝⁿ`.
+* `TauCeti.principalSymbolQuantization`: the quantization of principal symbols for finitely many
+  chart cutoffs, a linear map from the smooth homogeneous functions on the cotangent bundle to the
+  classical pseudodifferential operators.
 
 ## Main results
 
@@ -55,6 +61,9 @@ is `∑ᵢ χᵢ(x)² s(x, ξ) = s(x, ξ)` (`TauCeti.classicalPrincipalSymbol_pa
 * `OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous`: for the
   cut-off term `a` of a smooth homogeneous function `s` read in the chart and localized by `ρ`,
   this is `φ ψ ρ s`, with the cutoffs read on `M`.
+* `TauCeti.classicalPrincipalSymbol_principalSymbolQuantization_apply`,
+  `TauCeti.classicalPrincipalSymbol_principalSymbolQuantization`: the principal symbol of `Q(s)` is
+  `(∑ᵢ ρᵢ ∘ cᵢ) s`, hence `s` when the cutoffs add up to `1`.
 * `TauCeti.exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol_eq`: every
   smooth positively homogeneous function of degree `m` on the cotangent bundle that vanishes over
   the complement of a compact set is the principal symbol of a classical pseudodifferential
@@ -228,6 +237,91 @@ namespace TauCeti
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpace n) M]
   [T2Space M] [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] {m : ℝ}
 
+/-! ### A linear quantization of principal symbols -/
+
+section Quantization
+
+variable {ι : Type*} [Fintype ι] {c : ι → OpenPartialHomeomorph M (CoordinateSpace n)}
+  (hc : ∀ i, c i ∈ IsManifold.maximalAtlas 𝓘(ℝ, CoordinateSpace n) ∞ M)
+  (ρ θ : ∀ i, 𝓓(⟨(c i).target, (c i).open_target⟩, ℝ)) (χ : FrequencyCutoff (CoordinateSpace n))
+
+variable (m) in
+/-- **A linear quantization of principal symbols.** For finitely many charts `cᵢ`, cutoffs `ρᵢ`
+and `θᵢ` with compact supports in their targets and a frequency cutoff `χ`, the operator
+
+`Q(s) = ∑ᵢ Op_{cᵢ}(aᵢ)`, `aᵢ(y, η) = χ(η) θᵢ(y) s(cᵢ⁻¹ y, ⟪η, ·⟫ ∘ dcᵢ)`,
+
+where the chart quantization `Op_{cᵢ}` is localized by `ρᵢ` on the left and `θᵢ` on the right,
+depends linearly on the smooth homogeneous function `s` of degree `m` on the cotangent bundle.
+When `θᵢ = 1` on the support of `ρᵢ`, the principal symbol of `Q(s)` is `(∑ᵢ ρᵢ ∘ cᵢ) s`
+(`TauCeti.classicalPrincipalSymbol_principalSymbolQuantization_apply`), hence `s` when the
+`ρᵢ ∘ cᵢ` add up to `1` (`TauCeti.classicalPrincipalSymbol_principalSymbolQuantization`). -/
+def principalSymbolQuantization :
+    homogeneousCotangentSymbols n M m →ₗ[ℂ]
+      (C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) where
+  toFun s := ∑ i, (c i).chartQuantization (hc i) (ρ i) (θ i)
+    (ClassicalSymbol.ofHomogeneous χ ((c i).chartHomogeneousSymbol (hc i) (θ i) s.property))
+  map_add' s s' := by
+    rw [← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun i _ ↦ (c i).chartQuantization_eq_add (hc i) _ _ ?_
+    funext ⟨y, η⟩
+    refine ContinuousLinearMap.ext_ring ?_
+    simp [mul_add]
+  map_smul' a s := by
+    rw [RingHom.id_apply, Finset.smul_sum]
+    refine Finset.sum_congr rfl fun i _ ↦ (c i).chartQuantization_eq_smul (hc i) _ _ a ?_
+    funext ⟨y, η⟩
+    refine ContinuousLinearMap.ext_ring ?_
+    simp [mul_left_comm]
+
+omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- Unfolding `TauCeti.principalSymbolQuantization`. -/
+theorem principalSymbolQuantization_apply (s : homogeneousCotangentSymbols n M m) :
+    principalSymbolQuantization m hc ρ θ χ s = ∑ i, (c i).chartQuantization (hc i) (ρ i) (θ i)
+      (ClassicalSymbol.ofHomogeneous χ ((c i).chartHomogeneousSymbol (hc i) (θ i) s.property)) :=
+  (rfl)
+
+omit [IsManifold 𝓘(ℝ, CoordinateSpace n) ∞ M] in
+/-- The quantization of a principal symbol is a classical pseudodifferential operator of order
+`m`. -/
+theorem principalSymbolQuantization_mem_classicalPseudodifferentialOperators
+    (s : homogeneousCotangentSymbols n M m) :
+    principalSymbolQuantization m hc ρ θ χ s ∈ classicalPseudodifferentialOperators m :=
+  Submodule.sum_mem _ fun i _ ↦
+    (c i).chartQuantization_mem_classicalPseudodifferentialOperators (hc i) _ _ _
+
+/-- **The principal symbol of the quantization.** If `θᵢ = 1` on the support of `ρᵢ`, then the
+principal symbol of `Q(s)` at `(x, ξ)` is `(∑ᵢ ρᵢ(cᵢ x)) s(x, ξ)`, with the cutoffs read on `M`
+through the charts and extended by `0`. -/
+theorem classicalPrincipalSymbol_principalSymbolQuantization_apply
+    (hθ : ∀ i, ∀ y ∈ tsupport (ρ i), θ i y = 1) (s : homogeneousCotangentSymbols n M m) (x : M)
+    (ξ : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) :
+    classicalPrincipalSymbol m (principalSymbolQuantization m hc ρ θ χ s) x ξ =
+      ((∑ i, (c i).cutoffPullback (hc i) (ρ i) 1 x : ℝ) : ℂ) * (s : (x : M) →
+        (TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ) → ℂ) x ξ := by
+  rw [principalSymbolQuantization_apply, classicalPrincipalSymbol_sum _ fun i _ ↦
+    (c i).chartQuantization_mem_classicalPseudodifferentialOperators (hc i) _ _ _,
+    Complex.ofReal_sum, Finset.sum_mul]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  -- `θᵢ = 1` on the support of `ρᵢ` absorbs both cutoffs `θᵢ`.
+  have h := (c i).cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset (hc i)
+    (fun z hz ↦ hθ i z hz) x
+  rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous, h, h]
+
+/-- **The quantization inverts the principal symbol map**: if `θᵢ = 1` on the support of `ρᵢ`
+and the cutoffs `ρᵢ`, read on `M`, add up to `1`, then `σ_m(Q(s)) = s`. -/
+theorem classicalPrincipalSymbol_principalSymbolQuantization
+    (hθ : ∀ i, ∀ y ∈ tsupport (ρ i), θ i y = 1)
+    (hρ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ρ i) 1 x = 1)
+    (s : homogeneousCotangentSymbols n M m) :
+    classicalPrincipalSymbol m (principalSymbolQuantization m hc ρ θ χ s) = s := by
+  ext x ξ
+  rw [classicalPrincipalSymbol_principalSymbolQuantization_apply hc ρ θ χ hθ, hρ,
+    Complex.ofReal_one, one_mul]
+
+end Quantization
+
 /-! ### Quantization of principal symbols -/
 
 /-- **Quantization of principal symbols.** Every smooth positively homogeneous function `s` of
@@ -238,37 +332,23 @@ theorem exists_mem_classicalPseudodifferentialOperators_classicalPrincipalSymbol
     (hs : s ∈ homogeneousCotangentSymbols n M m) {K : Set M} (hK : IsCompact K)
     (hsK : ∀ x ∉ K, s x = 0) :
     ∃ P ∈ classicalPseudodifferentialOperators m, classicalPrincipalSymbol m P = s := by
-  -- The operator is the sum of the chart quantizations of the cut-off terms of the homogeneous
-  -- symbols `θᵢ(y) s(eᵢ⁻¹ y, ⟪η, ·⟫ ∘ deᵢ)`, localized by `ρᵢ` and `θᵢ`, for chart cutoffs `ρᵢ`
-  -- whose pullbacks sum to `1` on the compact set.
+  -- The operator is the quantization `principalSymbolQuantization` for chart cutoffs `ρᵢ` whose
+  -- pullbacks sum to `1` on the compact set, and cutoffs `θᵢ` equal to `1` on their supports.
   obtain ⟨N, c, ρ, hρ⟩ := hK.exists_sum_cutoffPullback_eq_one (E := CoordinateSpace n)
-  -- For each chart, a cutoff `θᵢ` equal to `1` on the support of `ρᵢ`.
   choose θ hθ using fun i ↦ TestFunction.exists_eventually_eq_one
     (Ω := ⟨(chartAt (CoordinateSpace n) (c i)).target,
       (chartAt (CoordinateSpace n) (c i)).open_target⟩) (n := ⊤)
     (ρ i).hasCompactSupport.isCompact (ρ i).tsupport_subset
-  set Q := fun i ↦ (chartAt (CoordinateSpace n) (c i)).chartQuantization
-    (IsManifold.chart_mem_maximalAtlas (c i)) (ρ i) (θ i)
-    (ClassicalSymbol.ofHomogeneous default
-      ((chartAt (CoordinateSpace n) (c i)).chartHomogeneousSymbol
-        (IsManifold.chart_mem_maximalAtlas (c i)) (θ i) hs))
-  have hQ (i : Fin N) : Q i ∈ classicalPseudodifferentialOperators m :=
-    OpenPartialHomeomorph.chartQuantization_mem_classicalPseudodifferentialOperators _ _ _ _
-  refine ⟨∑ i, Q i, Submodule.sum_mem _ fun i _ ↦ hQ i, ?_⟩
+  have hc (i : Fin N) := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, CoordinateSpace n)) (n := ∞)
+    (c i)
+  refine ⟨principalSymbolQuantization m hc ρ θ default ⟨s, hs⟩,
+    principalSymbolQuantization_mem_classicalPseudodifferentialOperators hc ρ θ default _, ?_⟩
   ext y ξ
-  rw [classicalPrincipalSymbol_sum _ fun i _ ↦ hQ i]
-  -- Each chart contributes `ρᵢ(chartAt cᵢ y) s(y, ξ)`, or `0` when `y` is outside its source.
-  have hterm (i : Fin N) : classicalPrincipalSymbol m (Q i) y ξ =
-      (chartAt (CoordinateSpace n) (c i)).cutoffPullback (IsManifold.chart_mem_maximalAtlas (c i))
-        (ρ i) 1 y * s y ξ := by
-    -- `θᵢ = 1` on the support of `ρᵢ` absorbs both cutoffs `θᵢ`.
-    have h := OpenPartialHomeomorph.cutoffPullback_one_mul_cutoffPullback_one_of_tsupport_subset
-      (IsManifold.chart_mem_maximalAtlas (c i)) (fun z hz ↦ (hθ i).1.self_of_nhdsSet z hz) y
-    rw [OpenPartialHomeomorph.classicalPrincipalSymbol_chartQuantization_ofHomogeneous, h, h]
-  simp_rw [hterm, ← Finset.sum_mul, ← Complex.ofReal_sum]
+  rw [classicalPrincipalSymbol_principalSymbolQuantization_apply hc ρ θ default
+    (fun i z hz ↦ (hθ i).1.self_of_nhdsSet z hz)]
   by_cases hy : y ∈ K
   · rw [hρ y hy, Complex.ofReal_one, one_mul]
-  · rw [hsK y hy, Pi.zero_apply, mul_zero]
+  · simp [hsK y hy]
 
 /-! ### Square partitions in charts -/
 
