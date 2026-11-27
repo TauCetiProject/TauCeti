@@ -95,7 +95,7 @@ private theorem exists_smoothForm_pos_smul_near (hD : IsContMDiffDistribution I 
   obtain ⟨c, -, hσc⟩ := hmem _ hqW _ (hσD q) (hσ₀ q)
   set α' := c • α with hα'
   have hα'_apply : ∀ y, SmoothForm.degreeOneEquiv α' y = c • SmoothForm.degreeOneEquiv α y :=
-    fun y ↦ by rw [hα', map_smul]; rfl
+    fun y ↦ by rw [hα', map_smul, ContMDiffSection.coe_smul, Pi.smul_apply]
   -- The sign of the factor between `α'` and `σ` is read off by pairing both with a vector field
   -- `Y` on which `σ q` does not vanish.
   obtain ⟨v₀, hv₀⟩ : ∃ v₀ : TangentSpace I (ι q), σ q v₀ ≠ 0 := by
