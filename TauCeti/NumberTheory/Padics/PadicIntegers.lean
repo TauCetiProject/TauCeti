@@ -28,8 +28,8 @@ to every `ℤ_p`) and valuation lemmas for `ℚ_p`.
 The unit group `ℤ_pˣ` is a profinite group: it is the closed unit sphere of the compact
 totally disconnected space `ℤ_p`, and the topology of the units is the subspace topology because
 `ℤ_p` is a complete normed ring. Compactness is Mathlib's instance for the units of a compact `T₁`
-topological monoid, recorded here as a shortcut instance; total disconnectedness comes from
-`Units.instTotallyDisconnectedSpace`.
+topological monoid and total disconnectedness comes from `Units.instTotallyDisconnectedSpace`, both
+recorded here as shortcut instances.
 
 Two consequences of the ultrametric divisibility in `ℤ_p` are recorded as well: an element
 divides every element of no larger norm, so that a nonempty family of `p`-adic integers is a common
@@ -102,7 +102,8 @@ The ring `ℤ_[p]` is also profinite in the sequence-ultralimit sense
 * `Padic.zpow_neg_le_norm_natCast_iff`: `p ^ (-k) ≤ ‖m‖` exactly when `p ^ (k + 1) ∤ m`.
 * `Padic.exists_forall_norm_pow_mul_le_one`: a single power of `p` carries a finite family of
   `p`-adic numbers into `ℤ_[p]`.
-* `PadicInt.compactSpace_units`: `ℤ_[p]ˣ` is a compact group (shortcut instance).
+* `PadicInt.compactSpace_units`, `PadicInt.totallyDisconnectedSpace_units`: `ℤ_[p]ˣ` is a
+  profinite group (shortcut instances).
 
 ## Main definitions
 
@@ -293,6 +294,11 @@ instance term matters for unification: elaborating continuous linear maps on `C(
 (`TauCeti.NumberTheory.Padics.Measure.UnitCoordinates`) identifies the sup-norm topology with the
 compact-open topology, which times out at `whnf` with Mathlib's applied instance term. -/
 instance compactSpace_units : CompactSpace ℤ_[p]ˣ := inferInstance
+
+/-- `ℤ_pˣ` is totally disconnected: shortcut instance matching `compactSpace_units` so
+typeclass synthesis and unification on `AbstractMeasure ℤ_[p]ˣ` do not unfold through
+`Units.instTotallyDisconnectedSpace` and the metric/ultrametric stack. -/
+instance totallyDisconnectedSpace_units : TotallyDisconnectedSpace ℤ_[p]ˣ := inferInstance
 
 variable (p) in
 /-- The power character `u ↦ u ^ k` of the unit group `ℤ_pˣ`, as a continuous homomorphism to
