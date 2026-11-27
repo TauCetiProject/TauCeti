@@ -5,14 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.MvPolynomial.Equiv
-public import Mathlib.LinearAlgebra.Matrix.ElementaryRowOperations
-public import Mathlib.LinearAlgebra.Matrix.Swap
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.RootSL
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Transvection
-public import TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Basic
-public import TauCeti.RingTheory.MvPolynomial.LinearSubst
+public import TauCeti.NumberTheory.ThetaLift.FrobeniusCycle.Action
+import TauCeti.Data.ZMod.Periodic
 
 /-!
 # Roots of a Frobenius cycle and the matrices that exchange them
@@ -20,8 +17,9 @@ public import TauCeti.RingTheory.MvPolynomial.LinearSubst
 Let `T` be a Frobenius cycle (`TauCeti.FrobeniusCycle`) with letters `s : ZMod N`. The group
 `GL_k(W)` acts on polynomials over `R` in the variables `x (b, s)`, `b : Fin k`, by the twisted
 action: `g` acts through the block diagonal matrix of its letter matrices `T.letterMatrix s g`, by
-Tau Ceti's substitution of standard vectors `TauCeti.polynomialAction`. This file sets up the data
-for the root lemma (`TauCeti.FrobeniusCycle.defect_nonpos_of_extreme_term`): a root `(a, a')` and a
+Tau Ceti's substitution of standard vectors `TauCeti.polynomialAction`
+(`TauCeti.FrobeniusCycle.polynomialAction_letterMatrix_X`). This file sets up the data for the root
+lemma (`TauCeti.FrobeniusCycle.defect_nonpos_of_extreme_term`): a root `(a, a')` and a
 letter `i` (`TauCeti.FrobeniusCycle.RootAt`), the variables `X_s = ū_s` and `Y_s = u_s` of the
 root at each letter, the orders of poles and zeros of the auxiliary polynomial, and the matrices
 `!![0, 1; -1, ±r]` of `SL₂^{a,a'}(W)` that exchange the point at infinity with the finite points
@@ -49,7 +47,7 @@ The definitions and lemmas are adapted from `New.FrobeniusCycle.RootAt` and its 
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -59,40 +57,8 @@ namespace FrobeniusCycle
 
 variable {W : Type*} [CommRing W] [IsLocalRing W] {R : Type*} [CommRing R] {N k : ℕ}
 
-/-! ### The twisted action -/
-
-/-- The twisted action of `g` on a variable, through `g` at even and its inverse transpose at odd
-letters. -/
-theorem polynomialAction_letterMatrix_X [NeZero N] (T : FrobeniusCycle W R N) (g : GL (Fin k) W)
-    (z : Fin k × ZMod N) :
-    polynomialAction (blockDiagonal (T.letterMatrix · g)) (X z) = ∑ b, C (T.ι z.2
-      ((if T.isEven z.2 then g else GeneralLinearGroup.inverseTranspose g : GL (Fin k) W) b z.1)) *
-        X (b, z.2) := by
-  obtain ⟨c, s⟩ := z
-  rw [polynomialAction_blockDiagonal_X]
-  cases h : T.isEven s <;> simp [h, GeneralLinearGroup.coe_inverseTranspose]
-
-/-- The twisted action is an action. -/
-theorem polynomialAction_letterMatrix_mul [NeZero N] (T : FrobeniusCycle W R N) (g h : GL (Fin k) W)
-    (f : MvPolynomial (Fin k × ZMod N) R) :
-    polynomialAction (blockDiagonal (T.letterMatrix · (g * h))) f =
-      polynomialAction (blockDiagonal (T.letterMatrix · g))
-        (polynomialAction (blockDiagonal (T.letterMatrix · h)) f) := by
-  rw [← polynomialAction_mul_apply, ← blockDiagonal_mul]
-  simp only [map_mul]
-
-/-- The identity acts trivially. -/
-theorem polynomialAction_letterMatrix_one [NeZero N] (T : FrobeniusCycle W R N)
-    (f : MvPolynomial (Fin k × ZMod N) R) :
-    polynomialAction (blockDiagonal (T.letterMatrix · (1 : GL (Fin k) W))) f = f := by
-  simp
-
-/-- Reading `s - 1 - i` in `[0, N)`, one more than it is `N` if `s = i`, and `(s - i).val`
-otherwise. -/
-private theorem one_add_val_sub_one_sub [NeZero N] (s i : ZMod N) :
-    1 + (s - 1 - i).val = if s = i then N else (s - i).val := by
-  zify
-  simp [sub_right_comm, ZMod.cast_sub_one, sub_eq_zero]
+private theorem cast_q_pos (T : FrobeniusCycle W R N) : (0 : ℝ) < T.q :=
+  Nat.cast_pos.2 (zero_lt_one.trans T.one_lt_q)
 
 /-! ### A root and a letter -/
 
@@ -132,32 +98,36 @@ variables. -/
 def sign (z : Fin k × ZMod N) : ℤ :=
   if z = D.varY z.2 then if T.isEven z.2 = T.isEven D.letter then -1 else 1 else 0
 
-/-- The number `q = P ^ N` of residue classes of `W`, as a constant whose casts `simp` keeps. -/
-def card (_ : T.RootAt k) : ℕ := T.q
-
 /-- The power `P_s = P ^ (s - i)`, with `s - i` read in `[0, N)`. -/
 def frobPower (s : ZMod N) : ℕ := T.P ^ (s - D.letter).val
 
 /-- The weights `q P_s` at `X_s` and `0` at the other variables: the weight of an exponent bounds
 the degree in `t` of the auxiliary polynomial. -/
-def poleOrder (z : Fin k × ZMod N) : ℕ := if z = D.varX z.2 then D.card * D.frobPower z.2 else 0
+def poleOrder (z : Fin k × ZMod N) : ℕ := if z = D.varX z.2 then T.q * D.frobPower z.2 else 0
 
 /-- The weights `q` at `Y_i`, `P_s` at `Y_s` for `s ≠ i`, and `0` at the other variables: the
 weight of an exponent bounds from below the order of vanishing of the auxiliary polynomial at the
 points `t = ι i r`, `r ∈ W`. -/
 def zeroOrder (z : Fin k × ZMod N) : ℕ :=
-  if z = D.varY z.2 then if z.2 = D.letter then D.card else D.frobPower z.2 else 0
+  if z = D.varY z.2 then if z.2 = D.letter then T.q else D.frobPower z.2 else 0
 
 /-- The sign of `Y_s` at both `X_s` and `Y_s` for `s ≠ i`, and `0` at the other variables. -/
 def crossSign (z : Fin k × ZMod N) : R :=
   if z.2 = D.letter then 0 else D.sign z + D.sign (D.swapVar z)
 
-theorem cast_card_pos : (0 : ℝ) < D.card :=
-  Nat.cast_pos.2 (lt_of_lt_of_le (by norm_num) T.five_le_q)
+theorem varX_def (s : ZMod N) : D.varX s = (T.negIndex D.fst D.snd s, s) := (rfl)
 
-@[simp] theorem varX_snd : (D.varX s).2 = s := rfl
+theorem varY_def (s : ZMod N) : D.varY s = (T.posIndex D.fst D.snd s, s) := (rfl)
 
-@[simp] theorem varY_snd : (D.varY s).2 = s := rfl
+theorem merge_def (z : Fin k × ZMod N) :
+    D.merge z = if z = D.varY D.letter then D.varX D.letter else z :=
+  (rfl)
+
+theorem frobPower_def (s : ZMod N) : D.frobPower s = T.P ^ (s - D.letter).val := (rfl)
+
+@[simp] theorem varX_snd : (D.varX s).2 = s := (rfl)
+
+@[simp] theorem varY_snd : (D.varY s).2 = s := (rfl)
 
 @[simp] theorem varX_ne_varY (s t : ZMod N) : D.varX s ≠ D.varY t := by
   have := D.ne
@@ -168,7 +138,9 @@ theorem cast_card_pos : (0 : ℝ) < D.card :=
 @[simp] theorem varY_inj {t : ZMod N} : D.varY s = D.varY t ↔ s = t :=
   ⟨congrArg Prod.snd, congrArg D.varY⟩
 
-@[simp] theorem swapVar_snd : (D.swapVar z).2 = z.2 := rfl
+@[simp] theorem swapVar_snd : (D.swapVar z).2 = z.2 := (rfl)
+
+@[simp] theorem swapVar_swapVar : D.swapVar (D.swapVar z) = z := by simp [swapVar]
 
 @[simp] theorem swapVar_varX : D.swapVar (D.varX s) = D.varY s := by
   grind [swapVar, varX, varY, posIndex_eq_ite, negIndex_eq_ite]
@@ -199,7 +171,7 @@ theorem sign_varY_eq_one_or_neg_one (s : ZMod N) :
     D.merge (D.varY s) = if s = D.letter then D.varX D.letter else D.varY s := by
   simp [merge]
 
-@[simp] theorem poleOrder_varX : D.poleOrder (D.varX s) = D.card * D.frobPower s := by
+@[simp] theorem poleOrder_varX : D.poleOrder (D.varX s) = T.q * D.frobPower s := by
   simp [poleOrder]
 
 @[simp] theorem poleOrder_varY : D.poleOrder (D.varY s) = 0 := by simp [poleOrder]
@@ -207,7 +179,7 @@ theorem sign_varY_eq_one_or_neg_one (s : ZMod N) :
 @[simp] theorem zeroOrder_varX : D.zeroOrder (D.varX s) = 0 := by simp [zeroOrder]
 
 @[simp] theorem zeroOrder_varY :
-    D.zeroOrder (D.varY s) = if s = D.letter then D.card else D.frobPower s :=
+    D.zeroOrder (D.varY s) = if s = D.letter then T.q else D.frobPower s :=
   ite_eq_left rfl
 
 @[simp] theorem crossSign_varX : D.crossSign (D.varX s) =
@@ -245,20 +217,21 @@ end IsFixed
 `(D.zeroOrder z - D.poleOrder z / q) / (q - 1)`. -/
 theorem defectWeight_eq (z : Fin k × ZMod N) :
     T.defectWeight D.fst D.snd D.letter z =
-      (D.zeroOrder z - D.poleOrder z / D.card) / (D.card - 1) := by
+      (D.zeroOrder z - D.poleOrder z / T.q) / (T.q - 1) := by
   have := T.neZero
-  have h_q' : (T.q : ℝ) = (T.P : ℝ) ^ N := by rw [q_def]; push_cast; rfl
+  have h_q' : (T.q : ℝ) = (T.P : ℝ) ^ N := by exact_mod_cast T.q_def
+  have h_q0 : (T.q : ℝ) ≠ 0 := T.cast_q_pos.ne'
   rcases D.var_cases z with rfl | rfl | ⟨s, hs, rfl | rfl⟩ | hz
-  · rw [zeroOrder_varY, poleOrder_varY, varY, T.defectWeight_posIndex, one_add_val_sub_one_sub]
-    simp [card, h_q']
-  · rw [zeroOrder_varX, poleOrder_varX, varX, T.defectWeight_negIndex D.ne]
-    have h_q0 : (T.q : ℝ) ≠ 0 := D.cast_card_pos.ne'
-    simp [card, frobPower, neg_div, h_q0]
-  · rw [zeroOrder_varY, poleOrder_varY, varY, T.defectWeight_posIndex, one_add_val_sub_one_sub]
-    simp [hs, frobPower, card]
-  · rw [zeroOrder_varX, poleOrder_varX, varX, T.defectWeight_negIndex D.ne]
-    have h_q0 : (T.q : ℝ) ≠ 0 := D.cast_card_pos.ne'
-    simp [card, frobPower, neg_div, h_q0]
+  · rw [zeroOrder_varY, poleOrder_varY, varY_def, T.defectWeight_posIndex, sub_right_comm,
+      ZMod.one_add_val_sub_one]
+    simp [h_q']
+  · rw [zeroOrder_varX, poleOrder_varX, varX_def, T.defectWeight_negIndex D.ne]
+    simp [frobPower_def, neg_div, h_q0]
+  · rw [zeroOrder_varY, poleOrder_varY, varY_def, T.defectWeight_posIndex, sub_right_comm,
+      ZMod.one_add_val_sub_one]
+    simp [hs, frobPower_def, sub_eq_zero]
+  · rw [zeroOrder_varX, poleOrder_varX, varX_def, T.defectWeight_negIndex D.ne]
+    simp [frobPower_def, neg_div, h_q0]
   · obtain ⟨b, s⟩ := z
     obtain ⟨h_fst, h_snd⟩ := hz
     have h_pos : b ≠ T.posIndex D.fst D.snd s := by rw [posIndex_eq_ite]; split_ifs <;> assumption
@@ -300,6 +273,7 @@ theorem swapTransvection_mem_rootSL (r : W) : D.swapTransvection r ∈ rootSL W 
   have h_sign : diagGL D.signAt ∈ columnRowFixingSubgroup W P P := by
     refine mem_columnRowFixingSubgroup_iff.2 ⟨fun j hj i ↦ ?_, fun i hi j ↦ ?_⟩ <;>
       simp only [hP] at * <;> by_cases h : i = j <;> simp_all [signAt, Matrix.one_apply]
+  rw [rootSL_def]
   refine Subgroup.mem_inf.2 ⟨mul_mem (mul_mem h_perm (h_tr _)) h_sign, ?_⟩
   -- The three factors have determinants `-1`, `1` and `-1`.
   have h_diag : GeneralLinearGroup.det (diagGL D.signAt) = -1 := by
@@ -378,41 +352,54 @@ theorem polynomialAction_swapTransvection_X [NeZero N] (r : W) (z : Fin k × ZMo
 def HasBoundedIncrements (c : Fin k × ZMod N → ℝ) : Prop :=
   ∀ s : ZMod N, c (D.varY s) - c (D.varX s) ∈ Set.Icc 2⁻¹ 1
 
+theorem hasBoundedIncrements_iff {c : Fin k × ZMod N → ℝ} :
+    D.HasBoundedIncrements c ↔ ∀ s : ZMod N, c (D.varY s) - c (D.varX s) ∈ Set.Icc 2⁻¹ 1 :=
+  Iff.rfl
+
 /-- The slope `ρ = (c Y_i - c X_i) / q` of weights `c` of the variables. The variable `t` of the
 auxiliary polynomial weighs `-ρ` in the expansion at infinity and `ρ` in the expansion at a finite
 point. -/
 noncomputable def slope (c : Fin k × ZMod N → ℝ) : ℝ :=
-  (c (D.varY D.letter) - c (D.varX D.letter)) / D.card
+  (c (D.varY D.letter) - c (D.varX D.letter)) / T.q
+
+theorem slope_def (c : Fin k × ZMod N → ℝ) :
+    D.slope c = (c (D.varY D.letter) - c (D.varX D.letter)) / T.q :=
+  (rfl)
 
 variable {D} {c : Fin k × ZMod N → ℝ}
 
-theorem card_mul_slope :
-    D.card * D.slope c = c (D.varY D.letter) - c (D.varX D.letter) := by
-  have := T.neZero
-  exact mul_div_cancel₀ _ D.cast_card_pos.ne'
+/-- The step of weights with bounded increments at the letter `s`. -/
+theorem HasBoundedIncrements.sub_mem_Icc (hc : D.HasBoundedIncrements c) (s : ZMod N) :
+    c (D.varY s) - c (D.varX s) ∈ Set.Icc 2⁻¹ 1 :=
+  hc s
+
+theorem q_mul_slope : T.q * D.slope c = c (D.varY D.letter) - c (D.varX D.letter) := by
+  rw [slope_def, mul_div_cancel₀ _ T.cast_q_pos.ne']
 
 theorem HasBoundedIncrements.slope_pos (hc : D.HasBoundedIncrements c) : 0 < D.slope c := by
-  have := T.neZero
-  exact div_pos (by linarith [(hc D.letter).1]) D.cast_card_pos
+  rw [slope_def]
+  exact div_pos (by linarith [(hc D.letter).1]) T.cast_q_pos
 
 /-- If the steps of `c` lie in `[1 / 2, 1]`, then `P_s` times the slope is at most `1 / 5`, because
 `5 P_s ≤ q`. -/
 theorem HasBoundedIncrements.frobPower_mul_slope_le (hc : D.HasBoundedIncrements c)
     (s : ZMod N) : D.frobPower s * D.slope c ≤ 1 / 5 := by
-  have := T.neZero
-  have h_power : (5 * D.frobPower s : ℝ) ≤ D.card := mod_cast T.five_mul_P_pow_le_q (s - D.letter)
-  have h_step : D.card * D.slope c ≤ 1 := card_mul_slope.trans_le (hc D.letter).2
+  have h_power : (5 * D.frobPower s : ℝ) ≤ T.q := by
+    rw [frobPower_def]
+    exact_mod_cast T.five_mul_P_pow_le_q (s - D.letter)
+  have h_step : T.q * D.slope c ≤ 1 := q_mul_slope.trans_le (hc D.letter).2
   nlinarith [hc.slope_pos]
 
 /-- If the steps of `c` lie in `[1 / 2, 1]` and `s ≠ i`, then `q P_s` times the slope is at least
 `2`, because `P_s ≥ 5`. -/
-theorem HasBoundedIncrements.two_le_card_mul_frobPower_mul_slope {s : ZMod N}
+theorem HasBoundedIncrements.two_le_q_mul_frobPower_mul_slope {s : ZMod N}
     (hc : D.HasBoundedIncrements c) (hs : s ≠ D.letter) :
-    2 ≤ D.card * D.frobPower s * D.slope c := by
+    2 ≤ T.q * D.frobPower s * D.slope c := by
   have := T.neZero
-  have h_power : (5 : ℝ) ≤ D.frobPower s :=
-    mod_cast T.five_le_P.trans (Nat.le_self_pow (by simpa [sub_eq_zero] using hs) _)
-  have h_step : (2⁻¹ : ℝ) ≤ D.card * D.slope c := (hc D.letter).1.trans_eq card_mul_slope.symm
+  have h_power : (5 : ℝ) ≤ D.frobPower s := by
+    rw [frobPower_def]
+    exact_mod_cast T.five_le_P.trans (Nat.le_self_pow (by simpa [sub_eq_zero] using hs) _)
+  have h_step : (2⁻¹ : ℝ) ≤ T.q * D.slope c := (hc D.letter).1.trans_eq q_mul_slope.symm
   nlinarith
 
 /-! ### The auxiliary polynomial -/
@@ -424,6 +411,10 @@ noncomputable def mainSubst (z : Fin k × ZMod N) :
     MvPolynomial (Fin k × ZMod N) (MvPolynomial Unit R) :=
   C (monomial (single () (D.poleOrder z)) 1) * X (D.merge z)
 
+theorem mainSubst_apply (z : Fin k × ZMod N) :
+    D.mainSubst z = C (monomial (single () (D.poleOrder z)) 1) * X (D.merge z) :=
+  (rfl)
+
 variable (D) in
 /-- The cross terms: for `s ≠ i`, `Y_s ↦ ε_s X_s` and `X_s ↦ ε_s t ^ P_s Y_s`, where `ε_s` is the
 sign `D.sign` at `Y_s`; the other variables go to `0`. The substitution that defines the auxiliary
@@ -431,6 +422,11 @@ polynomial is `D.mainSubst - D.crossSubst`. -/
 noncomputable def crossSubst (z : Fin k × ZMod N) :
     MvPolynomial (Fin k × ZMod N) (MvPolynomial Unit R) :=
   C (monomial (single () (D.zeroOrder (D.swapVar z))) (D.crossSign z)) * X (D.swapVar z)
+
+theorem crossSubst_apply (z : Fin k × ZMod N) :
+    D.crossSubst z =
+      C (monomial (single () (D.zeroOrder (D.swapVar z))) (D.crossSign z)) * X (D.swapVar z) :=
+  (rfl)
 
 end RootAt
 

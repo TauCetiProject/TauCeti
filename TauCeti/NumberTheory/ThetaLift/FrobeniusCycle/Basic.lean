@@ -148,7 +148,8 @@ theorem one_lt_q : 1 < T.q := by
   omega
 
 /-- For every letter `s`, read in `{0, …, N - 1}`, one has `5 P ^ s ≤ q`. -/
-theorem five_mul_P_pow_le_q [NeZero N] (s : ZMod N) : 5 * T.P ^ s.val ≤ T.q := by
+theorem five_mul_P_pow_le_q (s : ZMod N) : 5 * T.P ^ s.val ≤ T.q := by
+  have := T.neZero
   rw [T.q_def]
   calc 5 * T.P ^ s.val ≤ T.P * T.P ^ s.val := Nat.mul_le_mul_right _ T.five_le_P
     _ = T.P ^ (s.val + 1) := (pow_succ' ..).symm

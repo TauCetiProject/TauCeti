@@ -37,8 +37,8 @@ filtration this is the Gauss valuation with weights of the variables, read as a 
   `TauCeti.antitone_gaussFiltration` say that they decrease.
 * `TauCeti.algHom_sub_mem_of_mem_gaussFiltration`: substitutions respect weights. If `χ` sends
   each variable `X i` to level `c i` of a multiplicative filtration `G` of an algebra, and
-  `ψ X i - χ X i` lies a little higher, at level `c i + 1 / 20`, then `ψ` sends level `t` of the
-  Gauss filtration to level `t` of `G`, and `ψ f - χ f` lies in level `t + 1 / 20`.
+  `ψ X i - χ X i` lies higher, at level `c i + ε` for some `ε ≥ 0`, then `ψ` sends level `t` of
+  the Gauss filtration to level `t` of `G`, and `ψ f - χ f` lies in level `t + ε`.
 
 The definitions and results are adapted from `New.adicFiltration`, `New.gaussFiltration` and
 `New.algHom_sub_mem_of_mem_gaussFiltration` in the file
@@ -46,7 +46,7 @@ The definitions and results are adapted from `New.adicFiltration`, `New.gaussFil
 (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC).
 -/
 
-@[expose] public section
+public section
 
 namespace TauCeti
 
@@ -98,6 +98,7 @@ def gaussFiltration (F : ℝ → AddSubgroup R) (c : σ → ℝ) (t : ℝ) :
 
 variable {F : ℝ → AddSubgroup R} {c : σ → ℝ} {t : ℝ}
 
+@[simp]
 theorem mem_gaussFiltration_iff {f : MvPolynomial σ R} :
     f ∈ gaussFiltration F c t ↔ ∀ α : σ →₀ ℕ, f.coeff α ∈ F (t - weight c α) :=
   Iff.rfl
@@ -135,18 +136,18 @@ theorem antitone_gaussFiltration (hF : Antitone F) : Antitone (gaussFiltration F
 /-- **Substitutions respect weights.** Let `G` be a decreasing multiplicative filtration of the
 `R`-algebra `A` such that the algebra map sends `F s` into `G s`, and let `f` lie in level `t` of
 the Gauss filtration for `F` and the weights `c` of the variables. Let `χ`, `ψ` be substitutions
-with `χ X i` in `G (c i)` and `ψ X i - χ X i` in `G (c i + 1 / 20)`. Then `ψ f` lies in `G t` and
-`ψ f - χ f` in `G (t + 1 / 20)`. -/
+with `χ X i` in `G (c i)` and `ψ X i - χ X i` in `G (c i + ε)` for some `ε ≥ 0`. Then `ψ f` lies
+in `G t` and `ψ f - χ f` in `G (t + ε)`. -/
 theorem algHom_sub_mem_of_mem_gaussFiltration (χ : MvPolynomial σ R →ₐ[R] A)
     (G : ℝ → AddSubgroup A) [SetLike.GradedMonoid G] (hG : Antitone G)
     {f : MvPolynomial σ R} (hf : f ∈ gaussFiltration F c t)
-    (hχ : ∀ i : σ, χ (X i) ∈ G (c i)) (ψ : MvPolynomial σ R →ₐ[R] A)
-    (hψ : ∀ i : σ, ψ (X i) - χ (X i) ∈ G (c i + 20⁻¹))
+    (hχ : ∀ i : σ, χ (X i) ∈ G (c i)) (ψ : MvPolynomial σ R →ₐ[R] A) {ε : ℝ} (hε : 0 ≤ ε)
+    (hψ : ∀ i : σ, ψ (X i) - χ (X i) ∈ G (c i + ε))
     (hF : ∀ {s : ℝ} {x : R}, x ∈ F s → algebraMap R A x ∈ G s) :
-    ψ f ∈ G t ∧ ψ f - χ f ∈ G (t + 20⁻¹) := by
+    ψ f ∈ G t ∧ ψ f - χ f ∈ G (t + ε) := by
   classical
-  -- Induction on `f`: degrees in the filtration add in products, so a gain of `1 / 20` on one
-  -- factor is a gain of `1 / 20` on the product.
+  -- Induction on `f`: degrees in the filtration add in products, so a gain of `ε` on one factor is
+  -- a gain of `ε` on the product.
   induction f using induction_on'' generalizing t with
   | C x => simpa using hF (hf 0)
   | monomial_add α x f hα _ ih_f ih_monomial =>
@@ -162,12 +163,12 @@ theorem algHom_sub_mem_of_mem_gaussFiltration (χ : MvPolynomial σ R →ₐ[R] 
         simp [weight_single, sub_add_eq_sub_sub_swap]
       rw [h_level, ← coeff_mul_X α i p]
       exact hf _
-    obtain ⟨hψp, h_diff⟩ : ψ p ∈ G (t - c i) ∧ ψ p - χ p ∈ G (t - c i + 20⁻¹) := ih hp
-    have hψX : ψ (X i) ∈ G (c i) := by simpa using add_mem (hχ i) (hG (by simp) (hψ i))
+    obtain ⟨hψp, h_diff⟩ : ψ p ∈ G (t - c i) ∧ ψ p - χ p ∈ G (t - c i + ε) := ih hp
+    have hψX : ψ (X i) ∈ G (c i) := by simpa using add_mem (hχ i) (hG (by simpa) (hψ i))
     refine ⟨by simpa using mul_mem_graded hψp hψX, ?_⟩
     rw [show ψ (p * X i) - χ (p * X i) =
       (ψ p - χ p) * χ (X i) + ψ p * (ψ (X i) - χ (X i)) by simp [sub_mul, mul_sub]]
-    exact add_mem (by simpa [add_right_comm] using mul_mem_graded h_diff (hχ i))
+    exact add_mem (by simpa [add_right_comm _ ε] using mul_mem_graded h_diff (hχ i))
       (by simpa [← add_assoc] using mul_mem_graded hψp (hψ i))
 
 end Filtration
