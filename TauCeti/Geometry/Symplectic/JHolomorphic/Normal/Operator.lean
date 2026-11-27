@@ -71,7 +71,7 @@ where the last term records that `j` varies in the chart while `L` freezes it at
 (`TauCeti.cauchyRiemannLinearization_fderiv_apply_of_varying`). So the two chart linearizations
 have the same normal class
 (`TauCeti.SmoothEmbedding.normalClass_normalChartLinearization_congr_riemannianBundle`), and the
-two operators agree on sections differentiable at `x`.
+two operators take the same value at `x` on sections differentiable at `x`.
 
 ## Main definitions
 
@@ -87,8 +87,9 @@ two operators agree on sections differentiable at `x`.
 * `TauCeti.SmoothEmbedding.isRealCauchyRiemannOperator_normalCauchyRiemannOperator`: the normal
   Cauchy–Riemann operator of a `C²` pseudoholomorphic embedding is a real Cauchy–Riemann operator
   on its complex normal bundle.
-* `TauCeti.SmoothEmbedding.normalCauchyRiemannOperator_congr_riemannianBundle`: it does not
-  depend on the metric used to lift normal sections.
+* `TauCeti.SmoothEmbedding.normalCauchyRiemannOperator_congr_riemannianBundle`: at a point near
+  which `f` is pseudoholomorphic, its value on a section differentiable there does not depend on
+  the metric used to lift normal sections.
 
 ## References
 
@@ -547,7 +548,8 @@ omit [RiemannianBundle (fun y : X ↦ TangentSpace I' y)]
   [IsContMDiffRiemannianBundle I' 1 V (fun y : X ↦ TangentSpace I' y)] in
 /-- **The normal Cauchy–Riemann operator does not depend on the metric.** For a `C²` embedding
 `f` pseudoholomorphic near `x`, the normal Cauchy–Riemann operators built from any two `C¹`
-metrics on the target agree on every section of the complex normal bundle differentiable at `x`.
+metrics on the target take the same value at `x` on every section of the complex normal bundle
+differentiable at `x`.
 The metric only chooses the orthogonal lift of a normal section, and two lifts differ by a vector
 field tangent to `f` (`normalClass_normalChartLinearization_congr_riemannianBundle`). -/
 theorem normalCauchyRiemannOperator_congr_riemannianBundle (h2 : 2 ≤ n)
