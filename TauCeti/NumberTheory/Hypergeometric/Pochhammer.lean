@@ -51,20 +51,13 @@ theorem prod_ascPochhammer_div_eq_mul_prod_factorial (D : CyclotomicData) (n : �
     simp only [Multiset.map_map, Function.comp_def] at heval
     exact heval.trans (by simpa [mul_comm n m, Finset.prod_eq_multiset_prod] using
       prod_ascPochhammer_eval_div (1 : ℚ) m n)
-  -- Positivity lets us apply the gamma product formula in the group of rational units.
-  let u (a : ℕ) : ℚˣ := Units.mk0 (f a) (hf a).ne'
-  have hγ := congrArg (Units.val : ℚˣ → ℚ) (D.prod_map_div_prod_map_eq_prod_zpow_gamma u)
-  simp only [Units.val_div_eq_div_val, Units.coe_prod, Units.val_zpow_eq_zpow_val] at hγ
-  rw [← Units.coeHom_apply, ← Units.coeHom_apply (D.B.map u).prod,
-    map_multiset_prod, map_multiset_prod] at hγ
-  simp only [Multiset.map_map, Function.comp_def, Units.coeHom_apply, u, Units.val_mk0] at hγ
-  rw [toParameters_α, toParameters_β, hprod, hprod, hγ]
+  rw [toParameters_α, toParameters_β, hprod, hprod,
+    D.prod_map_div_prod_map_eq_prod_zpow_gamma_of_ne_zero f (fun a ↦ (hf a).ne')]
   simp_rw [hgrid, div_zpow, Finset.prod_div_distrib]
   rw [gammaScale_def, ← Finset.prod_zpow, div_eq_inv_mul, ← Finset.prod_inv_distrib]
   congr 1
   refine Finset.prod_congr rfl fun m _ ↦ ?_
-  rw [← zpow_natCast, ← zpow_mul, ← zpow_neg, ← zpow_mul]
-  push_cast
-  ring_nf
+  have hexp : -((m : ℤ) * n * D.gamma m) = ((m : ℤ) * D.gamma m) * -(n : ℤ) := by ring
+  simp only [← zpow_natCast, ← zpow_neg, ← zpow_mul, Nat.cast_mul, hexp]
 
 end TauCeti.Hypergeometric.CyclotomicData

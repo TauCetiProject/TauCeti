@@ -162,6 +162,19 @@ theorem prod_map_div_prod_map_eq_prod_zpow_gamma {G : Type*} [CommGroup G]
     ← Finset.prod_div_distrib]
   exact Finset.prod_congr rfl fun m _ ↦ by rw [gamma_def, zpow_sub, div_eq_mul_inv]
 
+/-- The gamma product formula for nonzero weights in a commutative group with zero. -/
+theorem prod_map_div_prod_map_eq_prod_zpow_gamma_of_ne_zero {G : Type*} [CommGroupWithZero G]
+    (f : ℕ → G) (hf : ∀ a, f a ≠ 0) :
+    (D.A.map f).prod / (D.B.map f).prod =
+      ∏ m ∈ D.gammaSupport, (∏ d ∈ m.divisors, f d) ^ D.gamma m := by
+  let u (a : ℕ) : Gˣ := Units.mk0 (f a) (hf a)
+  have hprod (S : Multiset ℕ) : ((S.map u).prod : G) = (S.map f).prod := by
+    simpa only [Units.coeHom_apply, Multiset.map_map, Function.comp_def, u, Units.val_mk0] using
+      map_multiset_prod (Units.coeHom G) (S.map u)
+  simpa only [Units.val_div_eq_div_val, hprod, Units.coe_prod, Units.val_zpow_eq_zpow_val,
+    u, Units.val_mk0] using
+    congrArg (Units.val : Gˣ → G) (D.prod_map_div_prod_map_eq_prod_zpow_gamma u)
+
 /-! ### The defining identity -/
 
 section RatFunc
@@ -171,15 +184,12 @@ variable {K : Type*} [Field K]
 /-- The defining rational function of a cyclotomic datum is `∏_n (X ^ n - 1) ^ γ(n)`. -/
 theorem ratFunc_eq_prod_zpow :
     D.ratFunc K = ∏ n ∈ D.gammaSupport, algebraMap K[X] (RatFunc K) (X ^ n - 1) ^ D.gamma n := by
-  have hS {S : Multiset ℕ} (hS : S ≤ D.A + D.B) : ∀ a ∈ S, a.divisors ⊆ D.gammaSupport :=
-    fun a ha n hn ↦ D.mem_gammaSupport.2 ⟨a, Multiset.mem_of_le hS ha, Nat.dvd_of_mem_divisors hn⟩
-  rw [ratFunc_def, phiA_def, phiB_def,
-    algebraMap_prod_cyclotomic_eq_prod_zpow _ (hS (Multiset.le_add_right _ _)),
-    algebraMap_prod_cyclotomic_eq_prod_zpow _ (hS (Multiset.le_add_left _ _)),
-    ← Finset.prod_div_distrib]
+  simp only [ratFunc_def, phiA_def, phiB_def, map_multiset_prod, Multiset.map_map,
+    Function.comp_def]
+  rw [D.prod_map_div_prod_map_eq_prod_zpow_gamma_of_ne_zero _
+    (fun a ↦ RatFunc.algebraMap_ne_zero (cyclotomic_ne_zero a K))]
   refine Finset.prod_congr rfl fun n hn ↦ ?_
-  rw [gamma_def,
-    zpow_sub₀ (RatFunc.algebraMap_ne_zero (X_pow_sub_C_ne_zero (D.pos_of_mem_gammaSupport hn) 1))]
+  rw [← map_prod, prod_cyclotomic_eq_X_pow_sub_one (D.pos_of_mem_gammaSupport hn)]
 
 end RatFunc
 
