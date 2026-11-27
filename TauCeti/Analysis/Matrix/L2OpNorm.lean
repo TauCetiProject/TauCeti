@@ -329,15 +329,15 @@ theorem l2_opNorm_map_star {m : Type*} [Fintype m] (A : Matrix m n 𝕜) :
       have hi := congrArg norm ((starRingEnd 𝕜).map_mulVec M (star a) i)
       simpa [Function.comp_def] using hi.symm
     simpa only [he, Pi.star_apply, norm_star] using M.sum_norm_sq_mulVec_le (star a)
-  apply le_antisymm (h A)
-  simpa [Matrix.map_map, Function.comp_def] using h (A.map star)
+  simpa only [RCLike.star_def] using le_antisymm (h A)
+    (by simpa [Matrix.map_map, Function.comp_def] using h (A.map star))
 
 /-- Transposition preserves the Euclidean operator norm. -/
 @[simp]
 theorem l2_opNorm_transpose {m : Type*} [Fintype m] [DecidableEq m]
     (A : Matrix m n 𝕜) : ‖Aᵀ‖ = ‖A‖ := by
   rw [← l2_opNorm_conjTranspose Aᵀ, transpose_conjTranspose]
-  exact l2_opNorm_map_star A
+  simpa only [RCLike.star_def] using l2_opNorm_map_star A
 
 omit [DecidableEq n] in
 /-- **Large-sieve duality.** For a rectangular matrix `A` and `C ≥ 0`, the inequality
