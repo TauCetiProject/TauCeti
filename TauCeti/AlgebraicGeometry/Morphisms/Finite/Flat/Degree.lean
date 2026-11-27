@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
 public import Mathlib.LinearAlgebra.Dimension.Localization
-public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
+public import TauCeti.AlgebraicGeometry.Morphisms.Affine.Degree
 
 /-!
 # The rank of a finite flat morphism is the degree of its function-field extension
@@ -25,11 +25,13 @@ integral curve smooth over a field is flat
 (`AlgebraicGeometry.Scheme.Hom.flat_of_isDominant_of_smooth`), so its constant fibre length is
 the degree of its function-field extension.
 
-The local rank is Mathlib's `Scheme.Hom.finrank`. Its affine formula reduces the result to
-Mathlib's fibre-rank calculation for finite flat modules and the invariance of dimension under
-passage to fraction rings. The global statement restricts `f` over an affine open of `Y`, whose
-preimage is affine because `f` is finite. Both coordinate rings are domains whose fraction
-fields are the function fields, and `f^*` extends the map of coordinate rings.
+The local rank is Mathlib's `Scheme.Hom.finrank`. Over an affine open `U` of `Y`, whose preimage
+is affine because `f` is finite, Mathlib's fibre-rank calculation for finite flat modules over a
+domain identifies it with the rank of `Γ(X, f⁻¹ U)` over `Γ(Y, U)`. For any dominant affine
+morphism of integral schemes, flat or not, that rank is `[K(X) : f^* K(Y)]`
+(`AlgebraicGeometry.Scheme.Hom.finrank_appLE_eq_finrank_fieldRange_functionFieldMap`): both
+coordinate rings are domains whose fraction fields are the function fields, and `f^*` extends the
+map of coordinate rings.
 
 The degree is stated as the dimension of `K(X)` over the subfield `f^* K(Y)`, as for the degree
 of an isogeny of Weierstrass curves (`TauCeti.Isogeny.degree`). This avoids putting an algebra
@@ -98,26 +100,16 @@ theorem Scheme.Hom.finrank_eq_finrank_fieldRange_functionFieldMap (f : X ⟶ Y) 
   have hfin : IsFinite (Spec.map φ) := MorphismProperty.of_isPullback H.flip ‹_›
   have hflat : Flat (Spec.map φ) := MorphismProperty.of_isPullback H.flip ‹_›
   obtain ⟨p, rfl⟩ : y ∈ Set.range hU.fromSpec := by rwa [hU.range_fromSpec]
-  rw [← finrank_of_isPullback _ _ _ _ H.flip]
-  -- The coordinate rings are domains with fraction fields `K(Y)` and `K(X)`, and `f^*` extends
-  -- `φ`.
-  have := functionField_isFractionRing_of_isAffineOpen Y U hU
-  have := functionField_isFractionRing_of_isAffineOpen X _ hV
-  algebraize [φ.hom, f.functionFieldMap.hom]
-  let : Algebra Γ(Y, U) X.functionField :=
-    ((X.germToFunctionField (f ⁻¹ᵁ U)).hom.comp φ.hom).toAlgebra
-  have : IsScalarTower Γ(Y, U) Γ(X, f ⁻¹ᵁ U) X.functionField := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsScalarTower Γ(Y, U) Y.functionField X.functionField := .of_algebraMap_eq fun a ↦ by
-    have := congr($(f.germToFunctionField_functionFieldMap U).hom a)
-    simp only [CommRingCat.hom_comp, RingHom.comp_apply, Scheme.Hom.app_eq_appLE] at this
-    exact this.symm
+  rw [← finrank_of_isPullback _ _ _ _ H.flip,
+    ← f.finrank_appLE_eq_finrank_fieldRange_functionFieldMap hU]
+  algebraize [φ.hom]
   have : Module.Finite Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := by rwa [IsFinite.SpecMap_iff] at hfin
   have : Module.Flat Γ(Y, U) Γ(X, f ⁻¹ᵁ U) := by rwa [Flat.SpecMap_iff] at hflat
+  have : p.asIdeal.IsPrime := p.isPrime
   -- `φ` is the `algebraMap` of the algebra structure it defines, so `Spec.map φ` is the morphism
-  -- of the affine statement.
-  refine (TauCeti.AlgebraicGeometry.finrank_SpecMap_eq_finrank_fractionRing
-    (K := Y.functionField) (L := X.functionField) p).trans ?_
-  exact Algebra.finrank_eq_of_equiv_equiv f.functionFieldMap.hom.rangeRestrictFieldEquiv
-    (.refl _) (by ext; simp [Subfield.algebraMap_ofSubfield, RingHom.algebraMap_toAlgebra])
+  -- whose rank at `p` is the rank of the fibre of `Γ(X, f⁻¹ U)`, constant over the domain
+  -- `Γ(Y, U)`.
+  exact (Scheme.Hom.finrank_SpecMap_algebraMap _ _ p).trans
+    ((Module.rankAtStalk_eq p).trans (Ideal.finrank_fiber_eq_finrank p.asIdeal))
 
 end AlgebraicGeometry
