@@ -90,6 +90,9 @@ the stabilizer `L_ν`, the kernel of the alternating form `ν.kirillovForm`.
 ## Main results
 
 * `Module.Dual.ker_kirillovForm`: the kernel of the Kirillov form is the stabilizer `L_ν`.
+* `Module.Dual.forall_kirillovForm_add_eq_zero_iff`: when `π : L → P` maps `L_ν` onto `P` and
+  `β` has trivial left radical, the left radical of the Marle–Guillemin–Sternberg tensor
+  `b(π ξ) - a(π ζ) + ν ⁅ξ, ζ⁆ + β(v, w)` on `L × P* × V` is `(L_ν ∩ ker π) × 0 × 0`.
 * `Module.Dual.coadjointTangentMap_injective`: the orbit derivative is injective.
 * `Module.Dual.isAlt_kksForm`, `Module.Dual.kksForm_nondegenerate`: `ω_ν` is alternating and
   nondegenerate.
@@ -155,6 +158,55 @@ theorem ker_kirillovForm :
   ext ξ
   simp only [LinearMap.mem_ker, LieSubalgebra.mem_toSubmodule, mem_lieAnnihilator,
     LinearMap.ext_iff, kirillovForm_eq_neg_lie_apply, LinearMap.zero_apply, neg_eq_zero]
+
+/-- An element `ξ` of the coadjoint stabilizer `L_ν` pairs to zero with every `η` under the Kirillov
+form: `ν ⁅ξ, η⁆ = 0`. -/
+theorem kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_left {ξ : L}
+    (hξ : ξ ∈ lieAnnihilator R L ν) (η : L) : ν.kirillovForm ξ η = 0 := by
+  rw [← LieSubalgebra.mem_toSubmodule, ← ker_kirillovForm, LinearMap.mem_ker] at hξ
+  rw [hξ, LinearMap.zero_apply]
+
+/-- Every `ξ` pairs to zero with an element `η` of the coadjoint stabilizer `L_ν` under the
+Kirillov form: `ν ⁅ξ, η⁆ = 0`. -/
+theorem kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_right (ξ : L) {η : L}
+    (hη : η ∈ lieAnnihilator R L ν) : ν.kirillovForm ξ η = 0 := by
+  rw [← ν.isAlt_kirillovForm.neg_eq, ν.kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_left hη,
+    neg_zero]
+
+section Radical
+
+variable {𝕜 L P V : Type*} [Field 𝕜] [LieRing L] [LieAlgebra 𝕜 L] [AddCommGroup P] [Module 𝕜 P]
+  [AddCommGroup V] [Module 𝕜 V] (ν : Dual 𝕜 L) {π : L →ₗ[𝕜] P} {β : LinearMap.BilinForm 𝕜 V}
+
+/-- **The radical of the Marle–Guillemin–Sternberg tensor.** Let `ν ∈ L*`, let `π : L → P` map
+the coadjoint stabilizer `L_ν` onto `P`, and let `β` be a bilinear form on `V` with trivial left
+radical. Then `(ξ, a, v) ∈ L × P* × V` pairs to zero with every `(ζ, b, w)` under
+
+`b(π ξ) - a(π ζ) + ν ⁅ξ, ζ⁆ + β(v, w)`
+
+exactly when `ξ ∈ L_ν`, `π ξ = 0`, `a = 0` and `v = 0`. -/
+theorem forall_kirillovForm_add_eq_zero_iff (hβ : β.SeparatingLeft)
+    (hπ : (lieAnnihilator 𝕜 L ν).toSubmodule.map π = ⊤) (ξ : L) (a : Dual 𝕜 P) (v : V) :
+    (∀ (ζ : L) (b : Dual 𝕜 P) (w : V),
+        b (π ξ) - a (π ζ) + ν.kirillovForm ξ ζ + β v w = 0) ↔
+      ξ ∈ lieAnnihilator 𝕜 L ν ∧ π ξ = 0 ∧ a = 0 ∧ v = 0 := by
+  constructor
+  · intro h
+    have hv : v = 0 := hβ v fun w ↦ by simpa using h 0 0 w
+    have hπξ : π ξ = 0 :=
+      (forall_dual_apply_eq_zero_iff 𝕜 (π ξ)).1 fun b ↦ by simpa using h 0 b 0
+    -- `a` vanishes on `π L_ν = P`, since `ν ⁅ξ, ζ⁆ = 0` for `ζ ∈ L_ν`.
+    have ha : a = 0 := by
+      refine LinearMap.ext fun p ↦ ?_
+      obtain ⟨ζ, hζ, rfl⟩ : p ∈ (lieAnnihilator 𝕜 L ν).toSubmodule.map π := hπ ▸ Submodule.mem_top
+      simpa [hπξ, hv, ν.kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_right ξ hζ] using h ζ 0 0
+    refine ⟨?_, hπξ, ha, hv⟩
+    rw [← LieSubalgebra.mem_toSubmodule, ← ker_kirillovForm, LinearMap.mem_ker]
+    exact LinearMap.ext fun ζ ↦ by simpa [hπξ, ha, hv] using h ζ 0 0
+  · rintro ⟨hξ, hπξ, rfl, rfl⟩ ζ b w
+    simp [hπξ, ν.kirillovForm_apply_eq_zero_of_mem_lieAnnihilator_left hξ ζ]
+
+end Radical
 
 /-- The algebraic orbit derivative `[ξ] ↦ ⁅ξ, ν⁆`, identifying the algebraic tangent model
 `L ⧸ L_ν` with the subspace `L · ν = {⁅ξ, ν⁆}` of `L*`. When `L` integrates to a Lie group `G` whose
