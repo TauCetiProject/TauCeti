@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Tensoriality
+public import Mathlib.Topology.Algebra.Module.Multilinear.Basic
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Tensoriality of globally smooth operations
@@ -29,6 +31,14 @@ these operations are required beyond the stated laws for the section operation.
 * `TauCeti.Manifold.eq_zero_of_contMDiff_tensorial_of_const`: on the trivial bundle with
   finite-dimensional fibre, an operation satisfying these laws and vanishing on constant sections
   vanishes, over any base.
+
+It also extends Mathlib's two-argument criterion `TensorialAt.mkHom₂` to operations on families
+of sections indexed by a finite type `ι`, as needed for tensors with several arguments:
+
+* `TensorialAt.pointwise_pi`: an operation which is tensorial at `x` in each argument, while the
+  other arguments are differentiable at `x`, depends only on the values of the arguments at `x`.
+* `TensorialAt.mkMultilinear`: such an operation is a continuous multilinear map on the fibre at
+  `x`, with evaluation rule `TensorialAt.mkMultilinear_apply`.
 -/
 
 public section
@@ -194,3 +204,111 @@ theorem eq_of_contMDiff_tensorial
   simp only [coeff', ρ.eq_one, one_mul, t.localFrameCoeff_congr (I := I) b (i := i) hss']
 
 end TauCeti.Manifold
+
+/-! ### Tensoriality in several arguments -/
+
+namespace TensorialAt
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V] [ContMDiffVectorBundle 1 F V I]
+  {A : Type*} [AddCommGroup A] [Module 𝕜 A]
+  {ι : Type*} [hdec : DecidableEq ι]
+
+/-- If an operation `Φ` on families of sections of a vector bundle `V`, indexed by a finite type
+`ι`, is tensorial at `x` in each argument whenever the other arguments are differentiable at `x`,
+then it depends only on the values of the sections at `x`. For two arguments this is
+`TensorialAt.pointwise₂`. -/
+theorem pointwise_pi [Finite ι] {Φ : (ι → Π x : M, V x) → A} {x : M}
+    (hΦ : ∀ σ : ι → Π x : M, V x, (∀ i, MDiffAt (T% (σ i)) x) →
+      ∀ i, TensorialAt I F (fun τ ↦ Φ (Function.update σ i τ)) x)
+    {σ σ' : ι → Π x : M, V x} (hσ : ∀ i, MDiffAt (T% (σ i)) x)
+    (hσ' : ∀ i, MDiffAt (T% (σ' i)) x) (hσσ' : ∀ i, σ i x = σ' i x) :
+    Φ σ = Φ σ' := by
+  have := Fintype.ofFinite ι
+  -- Replace the arguments of `σ` by those of `σ'` one at a time.
+  suffices h : ∀ s : Finset ι, Φ (s.piecewise σ' σ) = Φ σ by
+    simpa using (h Finset.univ).symm
+  intro s
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    set τ := s.piecewise σ' σ
+    have hτ (j : ι) : MDiffAt (T% (τ j)) x := by
+      by_cases hj : j ∈ s
+      · simpa [τ, hj] using hσ' j
+      · simpa [τ, hj] using hσ j
+    have hτi : τ i = σ i := by simp [τ, hi]
+    rw [Finset.piecewise_insert, ← ih]
+    conv_rhs => rw [← Function.update_eq_self i τ]
+    exact (hΦ τ hτ i).pointwise (hσ' i) (hτ i) (by rw [hτi, hσσ'])
+
+variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
+  [TopologicalSpace A] [ContinuousAdd A] [ContinuousSMul 𝕜 A]
+
+/-- Given an `A`-valued operation `Φ` on families of sections of a vector bundle `V`, indexed by
+a finite type `ι`, which is tensorial at `x` in each argument whenever the other arguments are
+differentiable at `x`, the construction `TensorialAt.mkMultilinear` provides the associated
+continuous multilinear map on the fibre `V x`. Its value on vectors `vᵢ` is the value of `Φ` on
+any differentiable sections through them (`TensorialAt.mkMultilinear_apply`). -/
+noncomputable def mkMultilinear [Finite ι]
+    -- `Φ` and `x` explicit to make it easier to generate the side condition at point of use
+    (Φ : (ι → Π x : M, V x) → A) (x : M)
+    (hΦ : ∀ σ : ι → Π x : M, V x, (∀ i, MDiffAt (T% (σ i)) x) →
+      ∀ i, TensorialAt I F (fun τ ↦ Φ (Function.update σ i τ)) x) :
+    ContinuousMultilinearMap 𝕜 (fun _ : ι ↦ V x) A :=
+  have : T2Space (V x) := FiberBundle.t2Space F V x
+  have : FiniteDimensional 𝕜 (V x) := VectorBundle.finiteDimensional 𝕜 F V x
+  -- Extending the vectors to sections, the value of `Φ` changes in one argument only by
+  -- operations on sections with the same value at `x`.
+  have hext (u : ι → V x) (i : ι) (c : V x) :
+      (fun j ↦ extend F (Function.update u i c j)) =
+        Function.update (fun j ↦ extend F (u j)) i (extend F c) :=
+    funext fun j ↦ Function.apply_update (fun _ ↦ extend F) u i c j
+  have hdiff (u : ι → V x) (j : ι) : MDiffAt (T% ((fun j ↦ extend F (u j)) j)) x :=
+    mdifferentiableAt_extend ..
+  let f : MultilinearMap (RingHom.id 𝕜) (fun _ : ι ↦ V x) A :=
+    { toFun u := Φ (fun i ↦ extend F (u i))
+      map_update_add' := by
+        intro inst u i a b
+        obtain rfl : hdec = inst := Subsingleton.elim _ _
+        simp only [hext]
+        rw [← (hΦ _ (hdiff u) i).add (mdifferentiableAt_extend ..) (mdifferentiableAt_extend ..)]
+        exact (hΦ _ (hdiff u) i).pointwise (mdifferentiableAt_extend ..)
+          (mdifferentiableAt_add_section (mdifferentiableAt_extend ..)
+            (mdifferentiableAt_extend ..)) (by simp)
+      map_update_smul' := by
+        intro inst u i c a
+        obtain rfl : hdec = inst := Subsingleton.elim _ _
+        simp only [hext, RingHom.id_apply]
+        rw [← (hΦ _ (hdiff u) i).smul (f := fun _ ↦ c) (mdifferentiable_const ..)
+          (mdifferentiableAt_extend ..)]
+        exact (hΦ _ (hdiff u) i).pointwise (mdifferentiableAt_extend ..)
+          (mdifferentiableAt_const.smul_section (mdifferentiableAt_extend ..)) (by simp) }
+  ⟨f, f.continuous_of_finiteDimensional⟩
+
+/-- The multilinear map of a tensorial operation evaluates the operation on the local extensions
+`FiberBundle.extend` of the vectors. -/
+theorem mkMultilinear_apply_eq_extend [Finite ι] {Φ : (ι → Π x : M, V x) → A} {x : M}
+    (hΦ : ∀ σ : ι → Π x : M, V x, (∀ i, MDiffAt (T% (σ i)) x) →
+      ∀ i, TensorialAt I F (fun τ ↦ Φ (Function.update σ i τ)) x)
+    (u : ι → V x) :
+    mkMultilinear Φ x hΦ u = Φ (fun i ↦ extend F (u i)) :=
+  (rfl)
+
+/-- The multilinear map of a tensorial operation, evaluated on the values at `x` of sections
+differentiable at `x`, is the value of the operation on those sections. -/
+theorem mkMultilinear_apply [Finite ι] {Φ : (ι → Π x : M, V x) → A} {x : M}
+    (hΦ : ∀ σ : ι → Π x : M, V x, (∀ i, MDiffAt (T% (σ i)) x) →
+      ∀ i, TensorialAt I F (fun τ ↦ Φ (Function.update σ i τ)) x)
+    {σ : ι → Π x : M, V x} (hσ : ∀ i, MDiffAt (T% (σ i)) x) :
+    mkMultilinear Φ x hΦ (fun i ↦ σ i x) = Φ σ := by
+  rw [mkMultilinear_apply_eq_extend]
+  exact pointwise_pi hΦ (fun _ ↦ mdifferentiableAt_extend ..) hσ (by simp)
+
+end TensorialAt
