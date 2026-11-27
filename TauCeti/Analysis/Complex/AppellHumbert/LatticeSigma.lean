@@ -236,16 +236,18 @@ theorem differentiable_weierstrassPMulSq {f : ℂ → ℂ} (hf : Differentiable 
 
 variable {χ : L.lattice → Circle} {hχ : IsAppellHumbertMultiplier L.lattice χ} {f : ℂ → ℂ}
 
-/-- **`℘ f²` is a theta function of degree two**: for `f ∈ Th_1(Λ, χ)` with `f (0) = 0`, the
-function `℘ f²`, extended to the lattice by `f′ (l)²`, lies in `Th_2(Λ, χ)`. -/
-theorem weierstrassPMulSq_mem_thetaSpace (hf : f ∈ (appellHumbertData L.lattice χ hχ).thetaSpace)
-    (hf0 : f 0 = 0) :
-    L.weierstrassPMulSq f ∈ (2 • appellHumbertData L.lattice χ hχ).thetaSpace := by
+/-- **`℘ f²` is a theta function of degree two**: for a theta function `f` of an Appell–Humbert
+datum `D` on the lattice with `f (0) = 0`, the function `℘ f²`, extended to the lattice by
+`f′ (l)²`, is a theta function of `2 • D`. In particular `f ∈ Th_1(Λ, χ)` gives `℘ f² ∈ Th_2(Λ, χ)`.
+-/
+theorem weierstrassPMulSq_mem_thetaSpace {D : AppellHumbertData L.lattice}
+    (hf : f ∈ D.thetaSpace) (hf0 : f 0 = 0) :
+    L.weierstrassPMulSq f ∈ (2 • D).thetaSpace := by
   have entire : Differentiable ℂ (L.weierstrassPMulSq f) :=
     differentiable_weierstrassPMulSq (AppellHumbertData.differentiable_of_mem_thetaSpace hf)
       fun _ hl ↦ AppellHumbertData.apply_coe_eq_zero_of_mem_thetaSpace hf hf0 ⟨_, hl⟩
   refine (AppellHumbertData.mem_thetaSpace_iff _).mpr ⟨entire, fun l ↦ ?_⟩
-  have h_factor : Differentiable ℂ fun z ↦ (2 • appellHumbertData L.lattice χ hχ).factor l z := by
+  have h_factor : Differentiable ℂ fun z ↦ (2 • D).factor l z := by
     simp only [AppellHumbertData.factor_def]
     fun_prop
   -- Both sides are entire in `z`, so it suffices to compare them off the lattice, where this is
