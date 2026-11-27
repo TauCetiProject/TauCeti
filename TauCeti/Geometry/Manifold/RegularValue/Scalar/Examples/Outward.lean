@@ -58,8 +58,8 @@ theorem isOutwardPointing_normSqSublevel_iff {x : {x : E | ‖x‖ ^ 2 ≤ 1}}
         mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, E) (Subtype.val : {x : E | ‖x‖ ^ 2 ≤ 1} → E) x v⟫ := by
   rw [isOutwardPointing_scalarRegularSublevel_iff_mfderiv _ Fact.out _ hx, mvfderiv_eq_fderiv,
     ContinuousLinearMap.comp_apply, fderiv_norm_sq_apply]
-  simp only [FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, nsmul_eq_mul,
-    Nat.cast_ofNat, NormedSpace.fromTangentSpace]
+  simp only [FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply, nsmul_eq_mul, Nat.cast_ofNat]
+  rw [ContinuousLinearEquiv.coe_coe, NormedSpace.fromTangentSpace_apply]
   exact ⟨fun h ↦ pos_of_mul_pos_right h zero_le_two, fun h ↦ mul_pos zero_lt_two h⟩
 
 /-- On the closed unit ball, the tangent vector over the radius `x` at a point `x` of the unit
@@ -137,8 +137,7 @@ theorem isOutwardPointing_halfSpaceSublevel_iff
         (Subtype.val : {x : EuclideanSpace ℝ (Fin (n + 1)) | -x 0 ≤ 0} → _) x v) 0 < 0 := by
   rw [isOutwardPointing_scalarRegularSublevel_iff_mfderiv _ finrank_euclideanSpace_fin _ hx,
     mvfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, fderiv_neg_apply_zero_apply]
-  simp only [NormedSpace.fromTangentSpace, neg_pos]
-  exact Iff.rfl
+  rw [ContinuousLinearEquiv.coe_coe, NormedSpace.fromTangentSpace_apply, neg_pos]
 
 /-- On the half-space `{x₀ ≥ 0}`, the tangent vector over `-e₀` at a point of the hyperplane
 `{x₀ = 0}` points outward. -/
