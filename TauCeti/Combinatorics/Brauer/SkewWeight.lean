@@ -46,6 +46,8 @@ Hence for any skew-symmetric matrix `W` (`∀ x y, W y x = -W x y`), the quantit
 
 ## Main results
 
+* `TauCeti.BrauerDiagram.skewArcProd_eq_prod_isLowerEnd`: formula for `skewArcProd` indexed by
+  the lower ends of `D`.
 * `TauCeti.BrauerDiagram.skewArcProd_eq_of_isFraming`: **framing independence** of the signed arc
   product for skew-symmetric `W`.
 * `TauCeti.BrauerDiagram.skewArcProd_permToBrauer`, `TauCeti.BrauerDiagram.skewArcProd_capCup`,
@@ -120,7 +122,22 @@ theorem skewArcProd_def (D : BrauerDiagram k)
     D.skewArcProd W = ((Equiv.Perm.sign D.framing : ℤ) : R) *
       ∏ r : Fin k, W (D.framing (Sum.inl r)) (D.framing (Sum.inr r)) := (rfl)
 
+/-- **Signed arc product indexed by the lower ends of `D`**: `D.skewArcProd W` equals
+`sign D.framing` times the product of `W x (D.val x)` over the lower ends `x` of `D`. -/
+theorem skewArcProd_eq_prod_isLowerEnd (D : BrauerDiagram k)
+    (W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R) :
+    D.skewArcProd W = ((Equiv.Perm.sign D.framing : ℤ) : R) *
+      ∏ x : {x // D.IsLowerEnd x}, W x (D.val x) := by
+  let e : Fin k ≃ {x // D.IsLowerEnd x} := Equiv.ofBijective
+    (fun r => ⟨D.framing (Sum.inl r), D.isLowerEnd_framing_inl r⟩)
+    ((Fintype.bijective_iff_injective_and_card _).mpr
+      ⟨fun _ _ h => Sum.inl_injective (D.framing.injective (congrArg Subtype.val h)), by simp⟩)
+  rw [skewArcProd_def]
+  refine congrArg _ (Eq.trans ?_ (Equiv.prod_comp e fun x : {x // D.IsLowerEnd x} => W x (D.val x)))
+  exact Finset.prod_congr rfl fun r _ => by simp [e, D.isFraming_framing.val_inl r]
+
 /-- Applying a ring homomorphism commutes with `TauCeti.BrauerDiagram.skewArcProd`. -/
+@[simp]
 theorem map_skewArcProd {S : Type*} [CommRing S] (f : R →+* S) (D : BrauerDiagram k)
     (W : Matrix (Fin k ⊕ Fin k) (Fin k ⊕ Fin k) R) :
     f (D.skewArcProd W) = D.skewArcProd (W.map f) := by
@@ -133,8 +150,7 @@ theorem skewArcProd_eq_of_isFraming (D : BrauerDiagram k)
     {π : Equiv.Perm (Fin k ⊕ Fin k)} (hπ : D.IsFraming π) :
     D.skewArcProd W =
       ((Equiv.Perm.sign π : ℤ) : R) * ∏ r : Fin k, W (π (Sum.inl r)) (π (Sum.inr r)) := by
-  obtain ⟨σ, τ, hdecomp⟩ := exists_mul_sumCongr_mul_of_congr_permToBrauer_one_eq
-    (((D.isFraming_def π).mp hπ).trans ((D.isFraming_def D.framing).mp D.isFraming_framing).symm)
+  obtain ⟨σ, τ, hdecomp⟩ := exists_mul_sumCongr_mul_of_isFraming hπ D.isFraming_framing
   rw [skewArcProd, hdecomp, rawArcProd_mul_prodCongrLeft hW, rawArcProd_mul_sumCongr]
   rfl
 
