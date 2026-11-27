@@ -442,6 +442,60 @@ lemma absoluteCapFundamentalClassRel_singularCohomologyπ (p q : ℕ) (h : p + q
   -- evaluated by unification rather than by rewriting.
   exact ConcreteCategory.comp_apply _ _ _
 
+/-! The five-lemma arguments below need the rows elementwise exact and the squares of the ladder as
+equations of additive maps. -/
+
+/-- An exact short complex of abelian groups is exact elementwise. -/
+private lemma function_exact_of_exact {S : ShortComplex (ModuleCat.{0} ℤ)} (hS : S.Exact) :
+    Function.Exact S.f S.g :=
+  (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).1 hS
+
+/-- The square of the connecting morphisms, `i_* ∘ ([∂X] ⌢ ·) = ([X, ∂X] ⌢ ·) ∘ δ`, as an equation
+of additive maps. -/
+private lemma map_comp_singularCapAddHom {m : ℕ} (hm : m + 1 = n) (p q : ℕ) (h : p + q = m) :
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+      (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).map).hom.toAddMonoidHom.comp
+      ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCapAddHom ℤ (ρ_ _).inv
+        (ρ_ L).hom h ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm (o.fundamentalClassRel hn hι hιf hf))) =
+      (o.capFundamentalClassRel hn hι hιf hf L (p + 1) q (by omega)).hom.toAddMonoidHom.comp
+        ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomologyδ _ ℤ L p (p + 1)
+          rfl).hom.toAddMonoidHom :=
+  AddMonoidHom.ext fun β ↦ (congrArg (((AlgebraicTopology.singularHomologyFunctor
+    (ModuleCat.{0} ℤ) q).obj L).map _).hom (TopCat.singularCapAddHom_apply ℤ (ρ_ _).inv
+      (ρ_ L).hom _ _ _ β)).trans
+    (o.capFundamentalClassRel_singularCohomologyδ hn hι hιf hf L hm p q h β).symm
+
+/-- The square of the restriction to `∂X` and the connecting morphism,
+`∂ ∘ ([X, ∂X] ⌢ ·) = ((-1)ᵖ [∂X] ⌢ ·) ∘ i^*`, as an equation of additive maps. -/
+private lemma singularHomologyδ_comp_absoluteCapFundamentalClassRel {m : ℕ} (hm : m + 1 = n)
+    (p q : ℕ) (h : p + (q + 1) = n) (h' : p + q = m) :
+    ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ L (q + 1) q
+      rfl).hom.toAddMonoidHom.comp
+      (o.absoluteCapFundamentalClassRel hn hι hιf hf L p (q + 1) h).hom.toAddMonoidHom =
+      (((-1 : ℤ) ^ p) • (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).snd.singularCapAddHom
+        ℤ (ρ_ _).inv (ρ_ L).hom h'
+          ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyδ
+            (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm (o.fundamentalClassRel hn hι hιf hf))).comp
+        (TopCat.singularCohomologyMap (TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).map
+          p).hom.toAddMonoidHom :=
+  AddMonoidHom.ext fun α ↦
+    (o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L hm p q h h' α).trans
+      (congrArg (((-1 : ℤ) ^ p) • ·) (TopCat.singularCapAddHom_apply ℤ (ρ_ _).inv (ρ_ L).hom _
+        h' _ _).symm)
+
+/-- The square of the maps from relative to absolute cohomology and from absolute to relative
+homology, `j_* ∘ ([X, ∂X] ⌢ ·) = ([X, ∂X] ⌢ ·) ∘ j^*`, as an equation of additive maps. -/
+private lemma singularHomologyπ_comp_capFundamentalClassRel (p q : ℕ) (h : p + q = n) :
+    ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularHomologyπ L
+      q).hom.toAddMonoidHom.comp
+      (o.capFundamentalClassRel hn hι hιf hf L p q h).hom.toAddMonoidHom =
+      (o.absoluteCapFundamentalClassRel hn hι hιf hf L p q h).hom.toAddMonoidHom.comp
+        ((TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))).singularCohomologyπ _ ℤ L
+          p).hom.toAddMonoidHom :=
+  AddMonoidHom.ext fun β ↦
+    (o.absoluteCapFundamentalClassRel_singularCohomologyπ hn hι hιf hf L p q h β).symm
+
 /-- The duality ladder in degree `q = 0`, by the five lemma: if capping with `[∂X]` is surjective
 in degree `(n - 1, 0)` and `Hⁿ(∂X; L)` vanishes, then capping with `[X, ∂X]` is bijective on
 `Hⁿ(X; L)`. The rows end with `Hⁿ(X, ∂X) ⟶ Hⁿ(X)`, onto since `Hⁿ(∂X) = 0`, and with
@@ -458,8 +512,6 @@ private lemma bijective_absoluteCapFundamentalClassRel_zero {m : ℕ} (hm : m + 
     Function.Bijective (o.absoluteCapFundamentalClassRel hn hι hιf hf L n 0 h) := by
   subst hm
   let P := TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))
-  have hexact {S : ShortComplex (ModuleCat.{0} ℤ)} (hS : S.Exact) :=
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).1 hS
   exact AddMonoidHom.bijective_of_surjective_of_bijective_of_right_exact
     (f₁ := (P.singularCohomologyδ _ ℤ L m (m + 1) rfl).hom.toAddMonoidHom)
     (f₂ := (P.singularCohomologyπ _ ℤ L (m + 1)).hom.toAddMonoidHom)
@@ -471,17 +523,13 @@ private lemma bijective_absoluteCapFundamentalClassRel_zero {m : ℕ} (hm : m + 
         (o.fundamentalClassRel hn hι hιf hf)))
     (i₂ := (o.capFundamentalClassRel hn hι hιf hf L (m + 1) 0 h).hom.toAddMonoidHom)
     (i₃ := (o.absoluteCapFundamentalClassRel hn hι hιf hf L (m + 1) 0 h).hom.toAddMonoidHom)
-    (AddMonoidHom.ext fun β ↦ (congrArg (((AlgebraicTopology.singularHomologyFunctor
-      (ModuleCat.{0} ℤ) 0).obj L).map P.map).hom (TopCat.singularCapAddHom_apply ℤ (ρ_ _).inv
-        (ρ_ L).hom _ _ _ β)).trans
-      (o.capFundamentalClassRel_singularCohomologyδ hn hι hιf hf L rfl m 0 _ β).symm)
-    (AddMonoidHom.ext fun β ↦
-      (o.absoluteCapFundamentalClassRel_singularCohomologyπ hn hι hιf hf L _ 0 h β).symm)
-    (hexact (P.singularCohomology_exact_relative _ ℤ L m (m + 1) rfl))
-    (hexact (P.singularHomology_exact_space L 0)) hPD
+    (o.map_comp_singularCapAddHom hn hι hιf hf L rfl m 0 _)
+    (o.singularHomologyπ_comp_capFundamentalClassRel hn hι hιf hf L _ 0 h)
+    (function_exact_of_exact (P.singularCohomology_exact_relative _ ℤ L m (m + 1) rfl))
+    (function_exact_of_exact (P.singularHomology_exact_space L 0)) hPD
     (o.bijective_capFundamentalClassRel hn hι hιf hf L _ 0 h)
-    (fun α ↦
-      (hexact (P.singularCohomology_exact_space _ ℤ L (m + 1)) α).1 (Subsingleton.elim _ _))
+    (fun α ↦ (function_exact_of_exact (P.singularCohomology_exact_space _ ℤ L (m + 1)) α).1
+      (Subsingleton.elim _ _))
     ((ModuleCat.epi_iff_surjective _).1 inferInstance)
 
 /-- Injectivity in the duality ladder, by the four lemma: if capping with `[∂X]` is bijective in
@@ -499,28 +547,14 @@ private lemma injective_absoluteCapFundamentalClassRel_of_bijective {m : ℕ} (h
     (p q : ℕ) (h : p + (q + 1) = n) :
     Function.Injective (o.absoluteCapFundamentalClassRel hn hι hιf hf L p (q + 1) h) := by
   let P := TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))
-  have hexact {S : ShortComplex (ModuleCat.{0} ℤ)} (hS : S.Exact) :=
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).1 hS
   have hpq : p + q = m := by omega
-  have hc₂ : (P.singularHomologyπ L (q + 1)).hom.toAddMonoidHom.comp
-      (o.capFundamentalClassRel hn hι hιf hf L p (q + 1) h).hom.toAddMonoidHom =
-      (o.absoluteCapFundamentalClassRel hn hι hιf hf L p (q + 1) h).hom.toAddMonoidHom.comp
-        (P.singularCohomologyπ _ ℤ L p).hom.toAddMonoidHom := AddMonoidHom.ext fun β ↦
-    (o.absoluteCapFundamentalClassRel_singularCohomologyπ hn hι hιf hf L p (q + 1) h β).symm
-  have hc₃ : (P.singularHomologyδ L (q + 1) q rfl).hom.toAddMonoidHom.comp
-      (o.absoluteCapFundamentalClassRel hn hι hιf hf L p (q + 1) h).hom.toAddMonoidHom =
-      (((-1 : ℤ) ^ p) • P.snd.singularCapAddHom ℤ (ρ_ _).inv (ρ_ L).hom hpq
-        (P.singularHomologyδ (ModuleCat.of ℤ (ULift.{0} ℤ)) n m hm
-          (o.fundamentalClassRel hn hι hιf hf))).comp
-        (TopCat.singularCohomologyMap P.map p).hom.toAddMonoidHom :=
-    AddMonoidHom.ext fun α ↦
-      (o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L hm p q h hpq α).trans
-        (congrArg (((-1 : ℤ) ^ p) • ·) (TopCat.singularCapAddHom_apply ℤ (ρ_ _).inv (ρ_ L).hom _
-          hpq _ _).symm)
+  have hc₂ := o.singularHomologyπ_comp_capFundamentalClassRel hn hι hιf hf L p (q + 1) h
+  have hc₃ := o.singularHomologyδ_comp_absoluteCapFundamentalClassRel hn hι hιf hf L hm p q h hpq
   have hi₂ := (o.bijective_capFundamentalClassRel hn hι hιf hf L p (q + 1) h).1
   have hi₄ := (((isUnit_neg_one (α := ℤ)).pow p).smul_bijective.comp (hPD p q hpq)).1
-  have hf₂ := hexact (P.singularCohomology_exact_space (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p)
-  have hg₁ := hexact (P.singularHomology_exact_space L (q + 1))
+  have hf₂ := function_exact_of_exact
+    (P.singularCohomology_exact_space (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p)
+  have hg₁ := function_exact_of_exact (P.singularHomology_exact_space L (q + 1))
   rcases p with _ | p
   · -- In degree `p = 0` the rows start with `0 ⟶ H⁰(X, ∂X)` and `Hₙ(∂X) = 0`.
     obtain rfl : m = q := by omega
@@ -540,12 +574,10 @@ private lemma injective_absoluteCapFundamentalClassRel_of_bijective {m : ℕ} (h
           (o.fundamentalClassRel hn hι hιf hf)))
       (g₁ := (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (q + 1)).obj L).map
         P.map).hom.toAddMonoidHom)
-      (hc₁ := AddMonoidHom.ext fun β ↦ (congrArg (((AlgebraicTopology.singularHomologyFunctor
-        (ModuleCat.{0} ℤ) (q + 1)).obj L).map P.map).hom (TopCat.singularCapAddHom_apply ℤ
-          (ρ_ _).inv (ρ_ L).hom _ _ _ β)).trans
-        (o.capFundamentalClassRel_singularCohomologyδ hn hι hιf hf L hm p (q + 1) _ β).symm)
+      (hc₁ := o.map_comp_singularCapAddHom hn hι hιf hf L hm p (q + 1) _)
       (hc₂ := hc₂) (hc₃ := hc₃) (hf₂ := hf₂) (hg₁ := hg₁) (hi₂ := hi₂) (hi₁ := (hPD p (q + 1) _).2)
-      (hf₁ := hexact (P.singularCohomology_exact_relative _ ℤ L p (p + 1) rfl)) (hi₄ := hi₄)
+      (hf₁ := function_exact_of_exact (P.singularCohomology_exact_relative _ ℤ L p (p + 1) rfl))
+      (hi₄ := hi₄)
 
 /-- Surjectivity in the duality ladder, by the four lemma: if capping with `[∂X]` is bijective in
 every degree, then capping with `[X, ∂X]` is surjective onto `H_{q+1}(X, ∂X; L)`. The sign `(-1)ᵖ`
@@ -559,8 +591,6 @@ private lemma surjective_absoluteCapFundamentalClassRel_of_bijective {m : ℕ} (
     (p q : ℕ) (h : p + (q + 1) = n) :
     Function.Surjective (o.absoluteCapFundamentalClassRel hn hι hιf hf L p (q + 1) h) := by
   let P := TopPair.ofSubset ((range ι)ᶜ : Set (TopCat.of X))
-  have hexact {S : ShortComplex (ModuleCat.{0} ℤ)} (hS : S.Exact) :=
-    (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact S).1 hS
   have hpq : p + q = m := by omega
   have hunit := (isUnit_neg_one (α := ℤ)).pow p
   exact AddMonoidHom.surjective_of_surjective_of_surjective_of_injective
@@ -578,19 +608,14 @@ private lemma surjective_absoluteCapFundamentalClassRel_of_bijective {m : ℕ} (
         (o.fundamentalClassRel hn hι hιf hf)))
     (i₄ := ((-1 : ℤ) ^ p) •
       (o.capFundamentalClassRel hn hι hιf hf L (p + 1) q (by omega)).hom.toAddMonoidHom)
-    (AddMonoidHom.ext fun β ↦
-      (o.absoluteCapFundamentalClassRel_singularCohomologyπ hn hι hιf hf L p (q + 1) h β).symm)
-    (AddMonoidHom.ext fun α ↦
-      (o.singularHomologyδ_absoluteCapFundamentalClassRel hn hι hιf hf L hm p q h hpq α).trans
-        (congrArg (((-1 : ℤ) ^ p) • ·) (TopCat.singularCapAddHom_apply ℤ (ρ_ _).inv (ρ_ L).hom _
-          hpq _ _).symm))
-    (AddMonoidHom.ext fun β ↦ (map_zsmul _ _ _).trans (congrArg (((-1 : ℤ) ^ p) • ·)
-      ((congrArg (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
-        P.map).hom (TopCat.singularCapAddHom_apply ℤ (ρ_ _).inv (ρ_ L).hom _ hpq _ β)).trans
-          (o.capFundamentalClassRel_singularCohomologyδ hn hι hιf hf L hm p q hpq β).symm)))
-    (hexact (P.singularCohomology_exact_subspace _ ℤ L p (p + 1) rfl))
-    (hexact (P.singularHomology_exact_relative L (q + 1) q rfl))
-    (hexact (P.singularHomology_exact_subspace L (q + 1) q rfl))
+    (o.singularHomologyπ_comp_capFundamentalClassRel hn hι hιf hf L p (q + 1) h)
+    (o.singularHomologyδ_comp_absoluteCapFundamentalClassRel hn hι hιf hf L hm p q h hpq)
+    (AddMonoidHom.ext fun β ↦ (map_zsmul (((AlgebraicTopology.singularHomologyFunctor
+      (ModuleCat.{0} ℤ) q).obj L).map P.map).hom _ _).trans (congrArg (((-1 : ℤ) ^ p) • ·)
+        (DFunLike.congr_fun (o.map_comp_singularCapAddHom hn hι hιf hf L hm p q hpq) β)))
+    (function_exact_of_exact (P.singularCohomology_exact_subspace _ ℤ L p (p + 1) rfl))
+    (function_exact_of_exact (P.singularHomology_exact_relative L (q + 1) q rfl))
+    (function_exact_of_exact (P.singularHomology_exact_subspace L (q + 1) q rfl))
     (o.bijective_capFundamentalClassRel hn hι hιf hf L p (q + 1) h).2
     (hunit.smul_bijective.comp (hPD p q hpq)).2
     (hunit.smul_bijective.comp (o.bijective_capFundamentalClassRel hn hι hιf hf L _ _ _)).1
