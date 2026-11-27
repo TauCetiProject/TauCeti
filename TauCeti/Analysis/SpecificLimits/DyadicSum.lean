@@ -96,6 +96,9 @@ dyadic series.
   `(b^k)^s`.
 * `TauCeti.sum_ofReal_two_zpow_add_rpow_mul`: shifting the dyadic weight `2^{lσ}` of a term by
   each element of a finite set `S` and summing multiplies it by `∑_{d ∈ S} 2^{dσ}`.
+* `TauCeti.tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero`: a dyadically weighted series whose terms
+  vanish outside a window `j - L < k < j + L` is at most `(∑_{-L < d < L} 2^{dσ}) 2^{jσ}` times a
+  bound on its terms.
 * `TauCeti.sum_range_sub_le_tsum`: a sum over the truncation `-N ≤ k < N` of `ℤ` is at most the
   sum over all of `ℤ`.
 * `AntitoneOn.le_tsum_indicator_Ioc`, `AntitoneOn.le_tsum_indicator_Ico`: a function antitone on
@@ -517,6 +520,23 @@ theorem sum_ofReal_two_zpow_add_rpow_mul (σ : ℝ) (S : Finset ℤ) (l : ℤ) (
   refine Finset.sum_congr rfl fun d _ ↦ ?_
   rw [ENNReal.ofNNReal_toNNReal, ofReal_zpow_add_rpow two_pos]
   ring
+
+/-- **Dyadic weights over a window.** If `w k` vanishes for `k` outside the window
+`j - L < k < j + L` and is at most `B` inside it, then
+`∑ₖ 2^{kσ} w k ≤ (∑_{-L < d < L} 2^{dσ}) 2^{jσ} B`. -/
+theorem tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero (σ : ℝ) {L : ℕ} {j : ℤ} {w : ℤ → ℝ≥0∞}
+    {B : ℝ≥0∞} (hfar : ∀ k ∉ Finset.Ioo (j - L) (j + L), w k = 0) (hnear : ∀ k, w k ≤ B) :
+    ∑' k : ℤ, ENNReal.ofReal (((2 : ℝ) ^ k) ^ σ) * w k ≤
+      ((∑ d ∈ Finset.Ioo (-(L : ℤ)) L, (((2 : ℝ) ^ d) ^ σ).toNNReal : ℝ≥0) : ℝ≥0∞) *
+        (ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) * B) := by
+  rw [tsum_eq_sum (s := Finset.Ioo (j - L) (j + L)) fun k hk ↦ by rw [hfar k hk, mul_zero],
+    show Finset.Ioo (j - L) (j + L) = (Finset.Ioo (-(L : ℤ)) L).map (addRightEmbedding j) by
+      rw [Finset.map_add_right_Ioo, neg_add_eq_sub, add_comm (L : ℤ)],
+    Finset.sum_map, ← sum_ofReal_two_zpow_add_rpow_mul]
+  refine Finset.sum_le_sum fun d _ ↦ ?_
+  rw [addRightEmbedding_apply]
+  gcongr
+  exact hnear _
 
 /-- A sum over the truncation `-N ≤ k < N` is at most the sum over all of `ℤ`. -/
 theorem sum_range_sub_le_tsum (f : ℤ → ℝ≥0∞) (N : ℕ) :

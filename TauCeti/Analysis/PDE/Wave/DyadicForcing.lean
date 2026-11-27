@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.HomogeneousLitt
 public import TauCeti.Analysis.PDE.Wave.InhomogeneousStrichartz
 import Mathlib.Order.Filter.AtTopBot.Interval
 import TauCeti.Analysis.Fourier.LittlewoodPaley
+import TauCeti.Analysis.SpecificLimits.DyadicSum
 import TauCeti.MeasureTheory.Function.Lp.InfiniteSum
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm
 import TauCeti.MeasureTheory.Function.Lp.MixedNorm.Series
@@ -155,27 +156,10 @@ private theorem exists_eLpNorm_eLpNorm_setIntegral_Iio_waveSinPropagator_sub_le_
     eLpNorm_eLpNorm_apply_le (Lp.fourierMultiplierCLM ℂ (m k)).continuous
       (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le (hm k) f hr₁')
       hG.aestronglyMeasurable
-  have hw (d : ℤ) : ENNReal.ofReal (((2 : ℝ) ^ (d + j)) ^ σ) =
-      ENNReal.ofReal (((2 : ℝ) ^ d) ^ σ) * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) := by
-    rw [zpow_add₀ two_ne_zero, Real.mul_rpow (by positivity) (by positivity),
-      ENNReal.ofReal_mul (by positivity)]
   refine (hC m hm G hG).trans ?_
-  rw [tsum_eq_sum (s := Finset.Ioo (j - L) (j + L)) fun k hk ↦ by rw [hfar k hk, mul_zero],
-    show Finset.Ioo (j - L) (j + L) = S.map (addRightEmbedding j) by
-      rw [Finset.map_add_right_Ioo, neg_add_eq_sub, add_comm (L : ℤ)],
-    Finset.sum_map]
-  simp only [addRightEmbedding_apply, hw]
-  calc C * ∑ d ∈ S, ENNReal.ofReal (((2 : ℝ) ^ d) ^ σ) * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
-          eLpNorm (fun s ↦ eLpNorm (Lp.fourierMultiplierCLM ℂ (m (d + j)) (G s)) r₁' volume) p₁
-            volume
-      ≤ C * ∑ d ∈ S, ENNReal.ofReal (((2 : ℝ) ^ d) ^ σ) * ENNReal.ofReal (((2 : ℝ) ^ j) ^ σ) *
-          (K * X) := by
-        gcongr with d
-        exact hnear (d + j)
-    _ = _ := by
-        rw [← Finset.sum_mul, ← Finset.sum_mul, ENNReal.coe_mul, ENNReal.coe_mul, hK]
-        simp_rw [ENNReal.ofNNReal_finsetSum, ENNReal.ofNNReal_toNNReal]
-        ring
+  grw [tsum_ofReal_two_zpow_rpow_mul_le_of_eq_zero σ hfar hnear]
+  rw [ENNReal.coe_mul, ENNReal.coe_mul, hK]
+  exact le_of_eq (by ring)
 
 /-- **Summation of the retarded estimates over the blocks of a forcing term.** If the retarded
 Duhamel integrals of integrable `L²` forcing terms satisfy

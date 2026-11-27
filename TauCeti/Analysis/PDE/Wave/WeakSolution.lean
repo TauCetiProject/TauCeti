@@ -169,6 +169,20 @@ theorem waveDuhamelSolution_add (f₁ f₂ g₁ g₂ : Lp F 2 (volume : Measure 
     intervalIntegral.integral_add hG₁.waveSinPropagator_sub_apply hG₂.waveSinPropagator_sub_apply]
   abel
 
+/-- Every `L²` Fourier multiplier commutes with the solution: for a forcing integrable between `0`
+and `t`, applying it to the solution at time `t` gives the solution at time `t` with the multiplier
+applied to the data and to the forcing. -/
+theorem fourierMultiplierCLM_waveDuhamelSolution (m : Lp ℂ ∞ (volume : Measure E))
+    (f g : Lp F 2 (volume : Measure E)) {G : ℝ → Lp F 2 (volume : Measure E)} {t : ℝ}
+    (hG : IntervalIntegrable G volume 0 t) :
+    Lp.fourierMultiplierCLM F m (waveDuhamelSolution F f g G t) =
+      waveDuhamelSolution F (Lp.fourierMultiplierCLM F m f) (Lp.fourierMultiplierCLM F m g)
+        (fun s ↦ Lp.fourierMultiplierCLM F m (G s)) t := by
+  rw [waveDuhamelSolution_def, waveDuhamelSolution_def, map_add, map_add,
+    fourierMultiplierCLM_waveCosPropagator_apply, fourierMultiplierCLM_waveSinPropagator_apply,
+    ← ContinuousLinearMap.intervalIntegral_comp_comm _ hG.waveSinPropagator_sub_apply]
+  simp_rw [fourierMultiplierCLM_waveSinPropagator_apply]
+
 /-- The **a priori bound** `‖u(t)‖ ≤ ‖f‖ + |t| ‖g‖ + |∫₀ᵗ |t - s| ‖G(s)‖ ds|`, for forcing `G`
 integrable between `0` and `t`. -/
 theorem norm_waveDuhamelSolution_le (f g : Lp F 2 (volume : Measure E))
