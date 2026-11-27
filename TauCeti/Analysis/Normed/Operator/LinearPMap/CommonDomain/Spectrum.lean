@@ -36,7 +36,7 @@ eigenvalues away from `0` transfer to the shifts:
 
 Neither injectivity of `ι` nor completeness of `H` is assumed. When `ι` is injective and `H` is
 complete these are statements about the partial operator
-`ContinuousLinearMap.domainOperator ι A hι` with domain `range ι`: its spectrum meets every bounded
+`LinearMap.domainOperator ι A hι` with domain `range ι`: its spectrum meets every bounded
 set in finitely many points (`ContinuousLinearMap.finite_inter_spectrum_domainOperator`). An
 injective shift makes `ι` injective on the kernel of `A`, where the shift agrees with `c • ι`
 (`ContinuousLinearMap.injective_comp_subtype_ker_of_injective_smul_sub`).
@@ -205,12 +205,13 @@ theorem eventually_isInvertible_smul_sub [CompleteSpace D] (hcpt : IsCompactOper
   exact hc ⟨⟨hball, h⟩, hne⟩
 
 /-- **Discreteness of the spectrum of an operator on a compactly embedded domain.** If `ι` is
-compact and injective and `domainOperator ι A hι` has a resolvent point, its spectrum meets every
-bounded set in finitely many points. -/
+compact and injective and `LinearMap.domainOperator ι A hι` has a resolvent point, its spectrum
+meets every bounded set in finitely many points. -/
 theorem finite_inter_spectrum_domainOperator [CompleteSpace D] [CompleteSpace H]
     (hcpt : IsCompactOperator ι) {hι : Injective ι}
-    (h₀ : (domainOperator ι A hι).resolventSet.Nonempty) {s : Set 𝕜}
-    (hs : Bornology.IsBounded s) : (s ∩ (domainOperator ι A hι).spectrum).Finite := by
+    (h₀ : (ι.toLinearMap.domainOperator A.toLinearMap hι).resolventSet.Nonempty) {s : Set 𝕜}
+    (hs : Bornology.IsBounded s) :
+    (s ∩ (ι.toLinearMap.domainOperator A.toLinearMap hι).spectrum).Finite := by
   obtain ⟨c₀, hc₀⟩ := h₀
   refine (finite_inter_setOf_not_isInvertible_smul_sub hcpt
     (mem_resolventSet_domainOperator_iff.1 hc₀) hs).subset fun c ⟨hcs, hc⟩ ↦ ⟨hcs, fun h ↦ ?_⟩
