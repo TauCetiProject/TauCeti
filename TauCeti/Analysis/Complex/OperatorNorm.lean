@@ -75,6 +75,12 @@ theorem antilinearOfOneL_apply_apply_one {V : Type*} [SeminormedAddCommGroup V]
     antilinearOfOneL V v 1 = v := by
   simp
 
+/-- `antilinearOfOneL V` is injective: `antilinearOfOneL V v` has value `v` at `1`. -/
+theorem antilinearOfOneL_injective {V : Type*} [SeminormedAddCommGroup V] [NormedSpace ℝ V]
+    [NormedSpace ℂ V] [IsScalarTower ℝ ℂ V] : Function.Injective (antilinearOfOneL V) :=
+  fun u v h ↦ by
+    simpa only [antilinearOfOneL_apply_apply_one] using congrArg (fun L : ℂ →L[ℝ] V ↦ L 1) h
+
 /-- `antilinearOfOneL V v` is complex antilinear: `w ↦ conj w • v` anticommutes with `i`, since
 `conj (i w) = -i conj w`. -/
 theorem antilinearOfOneL_apply_I_smul {V : Type*} [SeminormedAddCommGroup V]
