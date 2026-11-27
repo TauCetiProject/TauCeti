@@ -14,7 +14,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Normed.Group.Ultra
 import TauCeti.Analysis.Polynomial.Ultra
-import TauCeti.RingTheory.Polynomial.GaussNorm
+import TauCeti.RingTheory.Polynomial.Gauss.Norm
 import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.RingTheory.PowerSeries.Trunc
 

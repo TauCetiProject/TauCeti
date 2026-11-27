@@ -44,6 +44,9 @@ component of a level is compact, and every `X_{Fᵢ}` is complete when `F` is an
   on `x` exactly when they differ by an element of its stabilizer.
 * `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_hamiltonianFlowAction_apply`: the
   points of an orbit have the same stabilizer.
+* `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec`: the
+  stabilizer for a linear recombination `A F` is the preimage of the stabilizer for `F` under
+  `w ↦ w A`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.hamiltonianFlowStabilizer_mpullback_subtype_val`: restricting
   the family to an open subset where its flows stay complete does not change the stabilizers.
 * `eval₂_mfderiv_hamiltonianFlowAction_of_mem_hamiltonianFlowStabilizer`, in the namespace
@@ -78,7 +81,7 @@ public section
 noncomputable section
 
 open Function Set Filter Module
-open scoped ContDiff Manifold Topology
+open scoped ContDiff Manifold Matrix Topology
 
 namespace TauCeti
 
@@ -311,6 +314,20 @@ theorem hamiltonianFlowStabilizer_hamiltonianFlowAction_apply (v : ι → ℝ) (
       hσ.hamiltonianFlowStabilizer hF hcomm hc x :=
   letI := hσ.hamiltonianFlowAddAction hF hcomm hc
   AddAction.stabilizer_vadd_eq_right v x
+
+/-- **The stabilizer of a linear recombination of the functions.** If `G = A F` for a matrix `A`,
+then `w` stabilizes `x` for the flow action of `G` exactly when `w A`, the vector `Aᵀ w`, stabilizes
+it for that of `F`: the period lattice of `G` is the preimage of that of `F` under `w ↦ w A`. -/
+theorem hamiltonianFlowStabilizer_eq_comap_of_eq_mulVec {κ : Type*} [Fintype κ] {G : M → κ → ℝ}
+    (hG : ContMDiff I 𝓘(ℝ, κ → ℝ) ∞ G) (hcommG : ∀ i j x, σ.poissonBracket (G · i) (G · j) x = 0)
+    (hcG : ∀ i, IsCompleteVectorField (σ.hamiltonianVectorField (G · i))) (A : Matrix κ ι ℝ)
+    (hGF : ∀ y, G y = A *ᵥ F y) (x : M) :
+    hσ.hamiltonianFlowStabilizer hG hcommG hcG x =
+      (hσ.hamiltonianFlowStabilizer hF hcomm hc x).comap A.vecMulLinear.toAddMonoidHom := by
+  ext w
+  rw [AddSubgroup.mem_comap, mem_hamiltonianFlowStabilizer, mem_hamiltonianFlowStabilizer,
+    hσ.hamiltonianFlowAction_apply_of_eq_mulVec hF hcomm hc hG hcommG hcG A hGF,
+    LinearMap.toAddMonoidHom_coe, Matrix.vecMulLinear_apply]
 
 /-- **Stabilizers on open subsets.** Let `V` be an open subset of `M` on which the restrictions of
 the `Fᵢ` have complete Hamiltonian vector fields for the restriction of `σ`, as when `V` is a union

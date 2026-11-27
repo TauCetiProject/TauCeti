@@ -43,6 +43,8 @@ perfect ring, where `p ^ n 𝕎 R` consists of the Witt vectors whose first `n` 
 * `WittVector.teichmuller_add_p_mul_coeff_zero`, `WittVector.teichmuller_add_p_mul_coeff_succ`:
   the Witt coordinates of `[a] + p u` in characteristic `p`.
 * `WittVector.isUnit_iff_isUnit_coeff_zero`: in characteristic `p`, `x` is a unit iff `x₀` is.
+* `WittVector.isUnit_natCast_iff`: in characteristic `p`, a natural number `n` is a unit of `𝕎 R`
+  iff `p ∤ n`.
 * `WittVector.p_mem_jacobson`: in characteristic `p`, `p` lies in the Jacobson radical of `𝕎 R`.
 * `WittVector.associated_p_pow_iff`: over a perfect ring, `x` is `p ^ n` times a unit iff
   `x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit.
@@ -147,6 +149,12 @@ Witt vector is a unit exactly when its zeroth Witt coordinate is a unit of `R`. 
 theorem isUnit_iff_isUnit_coeff_zero {x : 𝕎 R} : IsUnit x ↔ IsUnit (x.coeff 0) :=
   ⟨fun h ↦ by simpa using h.map (constantCoeff (p := p) (R := R)),
     fun ⟨_, ha⟩ ↦ (mkUnit ha.symm).isUnit⟩
+
+/-- In characteristic `p`, a natural number is a unit of `𝕎 R` exactly when `p` does not divide
+it. -/
+theorem isUnit_natCast_iff {n : ℕ} : IsUnit (n : 𝕎 R) ↔ ¬p ∣ n := by
+  rw [isUnit_iff_isUnit_coeff_zero, ← constantCoeff_apply, map_natCast,
+    CharP.isUnit_natCast_iff hp.out]
 
 /-- In characteristic `p`, `p` lies in the Jacobson radical of `𝕎 R`: every `p y + 1` has zeroth
 Witt coordinate `1`. -/
