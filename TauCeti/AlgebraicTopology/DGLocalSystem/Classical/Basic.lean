@@ -178,6 +178,23 @@ theorem classicalAction_lof_ofCube (L : LocalCoefficientSystem.{u, u, w} R X)
     loopZeroChainToGroupAlgebra_ofCube]
   simp
 
+/-- The point chain of a Moore loop acts on the fiber by transport along the homotopy class of its
+reparametrization to the unit interval. -/
+theorem classicalAction_lof_point (L : LocalCoefficientSystem.{u, u, w} R X)
+    (ω : MooreLoopSpace X x) :
+    classicalAction L (op (cubicalChainLof (MooreLoopSpace X x) R 0
+        (NormalizedCubicalChain.ofCube (MooreLoopSpace X x) R (SingularCube.point ω)))) =
+      (LocalCoefficientSystem.transport L (Path.Homotopic.Quotient.mk ω.toPath)).toLinearMap := by
+  ext m
+  simp [FundamentalGroup.fromPath]
+
+/-- Chains of positive dimension act by zero on the fiber. -/
+@[simp]
+theorem classicalAction_lof_succ (L : LocalCoefficientSystem.{u, u, w} R X) (k : ℕ)
+    (y : NormalizedCubicalChain (MooreLoopSpace X x) R (k + 1)) :
+    classicalAction L (op (cubicalChainLof (MooreLoopSpace X x) R (k + 1) y)) = 0 :=
+  classicalAction_eq_zero L (loopChainToGroupAlgebra_lof_succ k y)
+
 theorem classicalAction_naturality {L L' : LocalCoefficientSystem.{u, u, w} R X} (φ : L ⟶ L')
     (a : (loopChainAlgebra X x R)ᵐᵒᵖ) (m : L.obj (FundamentalGroupoid.mk x)) :
     (φ.app (FundamentalGroupoid.mk x)).hom (classicalAction L a m) =
