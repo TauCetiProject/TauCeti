@@ -36,7 +36,11 @@ coefficients in a commutative ring `k`, exactness identifies the cokernel of `�
 `Hₙ(F)` with the image of the fibre in `Hₙ(T_φ)` (`TauCeti.MappingTorus.wangCokernelEquiv`).
 When the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)` is onto, this gives the Wang short exact
 sequence `0 ⟶ Hₙ₊₁(F) ⧸ range (𝟙 - φ_*) ⟶ Hₙ₊₁(T_φ) ⟶ Hₙ(F) ⟶ 0`
-(`TauCeti.MappingTorus.wangCokernelShortComplex_shortExact`).
+(`TauCeti.MappingTorus.wangCokernelShortComplex_shortExact`). For every monodromy, the image of
+the Wang connecting morphism is the kernel of `𝟙 - φ_*` on `Hₙ(F)`
+(`TauCeti.MappingTorus.range_wangδ`), so the Wang sequence breaks into the short exact sequences
+`0 ⟶ Hₙ₊₁(F) ⧸ range (𝟙 - φ_*) ⟶ Hₙ₊₁(T_φ) ⟶ ker (𝟙 - φ_*) ⟶ 0`
+(`TauCeti.MappingTorus.wangKernelShortComplex_shortExact`).
 
 When `𝟙 - φ_*` is a monomorphism on `Hₙ(F)`, the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)`
 vanishes (`TauCeti.MappingTorus.wangδ_eq_zero`), so the fibre inclusion is an epimorphism on
@@ -508,6 +512,12 @@ theorem wangCokernelShortComplex_g (n : ℕ) :
     (wangCokernelShortComplex (k := k) φ n).g = wangδ φ (ModuleCat.of k k) n :=
   (rfl)
 
+/-- The first map of the Wang short complex is injective: the fibre inclusion kills exactly the
+range of `𝟙 - φ_*`. -/
+instance mono_wangCokernelShortComplex_f (n : ℕ) : Mono (wangCokernelShortComplex (k := k) φ n).f :=
+  (ModuleCat.mono_iff_injective _).2 <| LinearMap.ker_eq_bot.1 <|
+    Submodule.ker_liftQ_eq_bot _ _ _ (ker_homologyMap_fibreInclusionChainMap φ (n + 1)).le
+
 /-- **The Wang short exact sequence.** If the Wang connecting morphism `Hₙ₊₁(T_φ) ⟶ Hₙ(F)` is
 onto, then `0 ⟶ Hₙ₊₁(F) ⧸ range (𝟙 - φ_*) ⟶ Hₙ₊₁(T_φ) ⟶ Hₙ(F) ⟶ 0` is short exact. -/
 theorem wangCokernelShortComplex_shortExact (n : ℕ) [Epi (wangδ φ (ModuleCat.of k k) n)] :
@@ -515,9 +525,70 @@ theorem wangCokernelShortComplex_shortExact (n : ℕ) [Epi (wangδ φ (ModuleCat
   exact := (ShortComplex.moduleCat_exact_iff_ker_sub_range _).2 fun y hy ↦ by
     obtain ⟨x, rfl⟩ := (range_homologyMap_fibreInclusionChainMap φ n).ge hy
     exact ⟨Submodule.Quotient.mk x, wangCokernelShortComplex_f_mk φ n x⟩
-  mono_f := (ModuleCat.mono_iff_injective _).2 <| LinearMap.ker_eq_bot.1 <|
-    Submodule.ker_liftQ_eq_bot _ _ _ (ker_homologyMap_fibreInclusionChainMap φ (n + 1)).le
+  mono_f := inferInstance
   epi_g := by rw [wangCokernelShortComplex_g]; exact ‹Epi (wangδ φ (ModuleCat.of k k) n)›
+
+/-- **The image of the Wang connecting morphism** `Hₙ₊₁(T_φ) ⟶ Hₙ(F)` is the kernel of `𝟙 - φ_*`
+on `Hₙ(F)`. -/
+theorem range_wangδ (n : ℕ) :
+    LinearMap.range (wangδ φ (ModuleCat.of k k) n).hom =
+      LinearMap.ker
+        (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom) := by
+  have := (wang_exact₁ φ (ModuleCat.of k k) n).moduleCat_range_eq_ker
+  simpa only [homologyMap_wangEndomorphism, ModuleCat.hom_sub, ModuleCat.hom_id] using this
+
+/-- **The Wang short complex with kernel**
+`Hₙ₊₁(F) ⧸ range (𝟙 - φ_*) ⟶ Hₙ₊₁(T_φ) ⟶ ker (𝟙 - φ_*)`: the map induced by the fibre inclusion
+on the cokernel of `𝟙 - φ_*` on `Hₙ₊₁(F)`, followed by the Wang connecting morphism, with values
+in the kernel of `𝟙 - φ_*` on `Hₙ(F)`. Unlike `TauCeti.MappingTorus.wangCokernelShortComplex`, it
+is short exact for every monodromy (`TauCeti.MappingTorus.wangKernelShortComplex_shortExact`). -/
+@[expose] def wangKernelShortComplex (n : ℕ) : ShortComplex (ModuleCat.{w} k) where
+  X₁ := ModuleCat.of k ((((singularChainComplexFunctor (ModuleCat.{w} k)).obj
+      (ModuleCat.of k k)).obj (TopCat.of F)).homology (n + 1) ⧸ LinearMap.range
+        (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) (n + 1)).hom))
+  X₂ := (((singularChainComplexFunctor (ModuleCat.{w} k)).obj
+      (ModuleCat.of k k)).obj (TopCat.of (MappingTorus φ))).homology (n + 1)
+  X₃ := ModuleCat.of k (LinearMap.ker
+      (LinearMap.id - (homologyMap (monodromyChainMap φ (ModuleCat.of k k)) n).hom))
+  f := (wangCokernelShortComplex φ n).f
+  g := ConcreteCategory.ofHom ((wangδ φ (ModuleCat.of k k) n).hom.codRestrict _
+    fun y ↦ (range_wangδ φ n).le (LinearMap.mem_range_self _ y))
+  zero := by
+    ext x
+    -- As for `wangCokernelShortComplex`, the composite is `wangδ (ι_* x) = 0`.
+    exact (wangCokernelShortComplex φ n).moduleCat_zero_apply (Submodule.Quotient.mk x)
+
+/-- The first map of the Wang short complex with kernel sends the class of `x` to the image of `x`
+under the fibre inclusion. -/
+@[simp]
+theorem wangKernelShortComplex_f_mk (n : ℕ)
+    (x : (((singularChainComplexFunctor (ModuleCat.{w} k)).obj (ModuleCat.of k k)).obj
+      (TopCat.of F)).homology (n + 1)) :
+    (wangKernelShortComplex φ n).f.hom (Submodule.Quotient.mk x) =
+      (homologyMap (fibreInclusionChainMap φ (ModuleCat.of k k)) (n + 1)).hom x :=
+  wangCokernelShortComplex_f_mk φ n x
+
+/-- The second map of the Wang short complex with kernel is the Wang connecting morphism. -/
+@[simp]
+theorem coe_wangKernelShortComplex_g_apply (n : ℕ)
+    (y : (((singularChainComplexFunctor (ModuleCat.{w} k)).obj
+      (ModuleCat.of k k)).obj (TopCat.of (MappingTorus φ))).homology (n + 1)) :
+    Subtype.val ((wangKernelShortComplex φ n).g.hom y) = (wangδ φ (ModuleCat.of k k) n).hom y :=
+  (rfl)
+
+/-- **The Wang short exact sequence.** For every monodromy,
+`0 ⟶ Hₙ₊₁(F) ⧸ range (𝟙 - φ_*) ⟶ Hₙ₊₁(T_φ) ⟶ ker (𝟙 - φ_*) ⟶ 0` is short exact, with `𝟙 - φ_*`
+acting on `Hₙ₊₁(F)` and on `Hₙ(F)` respectively. -/
+theorem wangKernelShortComplex_shortExact (n : ℕ) :
+    (wangKernelShortComplex (k := k) φ n).ShortExact where
+  exact := (ShortComplex.moduleCat_exact_iff_ker_sub_range _).2 fun y hy ↦ by
+    obtain ⟨x, rfl⟩ :=
+      (range_homologyMap_fibreInclusionChainMap φ n).ge ((LinearMap.ker_codRestrict _ _ _).le hy)
+    exact ⟨Submodule.Quotient.mk x, wangKernelShortComplex_f_mk φ n x⟩
+  mono_f := mono_wangCokernelShortComplex_f φ n
+  epi_g := (ModuleCat.epi_iff_surjective _).2 fun ⟨y, hy⟩ ↦ by
+    obtain ⟨x, hx⟩ := (range_wangδ φ n).ge hy
+    exact ⟨x, Subtype.ext hx⟩
 
 end ModuleCat
 
