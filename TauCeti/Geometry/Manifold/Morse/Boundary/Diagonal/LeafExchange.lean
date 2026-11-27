@@ -190,8 +190,10 @@ theorem morseYSign_swap
     Orientation.linearMapSign_units_smul_right (by
       rw [Fintype.card_fin, Module.finrank_prod, φr.finrank_negativeWeight_fun,
         φq.finrank_negativeWeight_fun, hpqr, add_comm])] at h
-  rw [morseYSign_def, morseYSign_def, ← h, ← mul_assoc, Units.val_pow_eq_pow_val, Units.val_neg,
-    Units.val_one, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+  have hsq : (-1 : ℤ) ^ k * (-1) ^ k = 1 := by rw [← mul_pow]; norm_num
+  rw [morseYSign_def, morseYSign_def, ← h]
+  push_cast
+  rw [← mul_assoc, hsq, one_mul]
 
 /-- **The Koszul sign of an exchanged Y-slice.** Exchanging the two leaves multiplies the signed
 count of the Y-slice by `(-1) ^ (ind q * ind r)`. -/
@@ -318,6 +320,22 @@ private theorem neg_one_pow_mul_boundary_eq (q q' : criticalPoints 𝓘(ℝ, E) 
   · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one h]
     simp
 
+/-- The same comparison with the factor `(-1) ^ n` on the other side: when the coefficient of `q`
+in the Morse boundary of `q'` is nonzero, `(-1) ^ (ind q * n) * (-1) ^ n` is
+`(-1) ^ (ind q' * n)`. -/
+private theorem neg_one_pow_mul_neg_one_pow_mul_boundary_eq (q q' : criticalPoints 𝓘(ℝ, E) f₁)
+    (n : ℕ) (t : R) :
+    (-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f₁ q * n) *
+        ((-1) ^ n * (t * hX₁.signedMorseBoundary 𝔬₁ hf₁ R (Finsupp.single q' 1) q)) =
+      (-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f₁ q' * n) *
+        (t * hX₁.signedMorseBoundary 𝔬₁ hf₁ R (Finsupp.single q' 1) q) := by
+  rw [signedMorseBoundary_single_apply, one_mul]
+  by_cases h : manifoldMorseIndex 𝓘(ℝ, E) f₁ q' = manifoldMorseIndex 𝓘(ℝ, E) f₁ q + 1
+  · rw [h, add_mul, one_mul, pow_add]
+    ring
+  · rw [signedMorseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one h]
+    simp
+
 /-- One direction of `signedMorseDiagonalMap_swap_comp_signedMorseBoundary_eq_iff`. -/
 private theorem signedMorseDiagonalMap_swap_comp_signedMorseBoundary_eq
     (h : hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R ∘ₗ
@@ -351,20 +369,12 @@ private theorem signedMorseDiagonalMap_swap_comp_signedMorseBoundary_eq
   simp only [finsuppTensorFinsupp'_signedMorseDiagonalMap_swap_apply (hX₁ := hX₁) (hX₂ := hX₂),
     hqr, Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one, Int.cast_pow, Int.cast_neg,
     Int.cast_one, mul_add, Finset.mul_sum]
-  have hsq : (-1 : R) ^ manifoldMorseIndex 𝓘(ℝ, E) f₁ q * (-1) ^ manifoldMorseIndex 𝓘(ℝ, E) f₁ q =
-      1 := by
-    rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
   rw [add_comm]
   congr 1
   · refine Finset.sum_congr rfl fun r' _ ↦ ?_
-    linear_combination (-1 : R) ^ manifoldMorseIndex 𝓘(ℝ, E) f₁ q *
-        neg_one_pow_mul_boundary_eq r r' (manifoldMorseIndex 𝓘(ℝ, E) f₁ q)
-          (finsuppTensorFinsupp' R _ _
-            (hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R (Finsupp.single p a)) (q, r')) +
-      (-1) ^ (manifoldMorseIndex 𝓘(ℝ, E) f₂ r' * manifoldMorseIndex 𝓘(ℝ, E) f₁ q) *
-        (finsuppTensorFinsupp' R _ _
-            (hX₀.signedMorseDiagonalMap hX₁ hX₂ 𝔬₀ 𝔬₁ 𝔬₂ hf₁ hf₂ R (Finsupp.single p a)) (q, r') *
-          hX₂.signedMorseBoundary 𝔬₂ hf₂ R (Finsupp.single r' 1) r) * hsq
+    rw [mul_comm (manifoldMorseIndex 𝓘(ℝ, E) f₁ q), mul_comm (manifoldMorseIndex 𝓘(ℝ, E) f₁ q),
+      neg_one_pow_mul_neg_one_pow_mul_boundary_eq r r']
+    ring
   · refine Finset.sum_congr rfl fun q' _ ↦ ?_
     rw [neg_one_pow_mul_boundary_eq q q']
     ring
