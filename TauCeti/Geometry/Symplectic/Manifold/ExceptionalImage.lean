@@ -156,8 +156,8 @@ theorem isGoodClass_zero : IsGoodClass J B 0 := fun _ _ ↦ by simp
 
 /-- **The canonical class is good.** If every exceptional image satisfies the adjunction formula
 for a sphere, `[S] · [S] + κ · [S] = -2`, then `κ · [S] = -1` for each of them, so `κ` is good.
-On a nonminimal manifold `κ` is negative on the exceptional images, so it would not be good for
-the stronger condition `0 ≤ κ · [S]`. -/
+Under this hypothesis `κ` is negative on every exceptional image, so it would not be good for the
+stronger condition `0 ≤ κ · [S]` whenever one exists. -/
 theorem isGoodClass_canonical
     (hadj : ∀ S ∈ exceptionalImages J B,
       B (embeddedCurveClass J S) (embeddedCurveClass J S) + B κ (embeddedCurveClass J S) = -2) :

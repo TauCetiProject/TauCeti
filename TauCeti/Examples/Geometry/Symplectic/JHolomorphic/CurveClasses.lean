@@ -24,7 +24,7 @@ and shows how each competing convention fails.
 by the class `H` of a line (`LinearMap.mul ℤ ℤ`), and `κ = -3 H`.
 
 * `κ` is characteristic for the intersection form (`isCharacteristic_mul_neg_three`), so every
-  virtual dimension is even (`two_dvd_mul_self_add_three_mul`): `d(j H) = j² + 3 j`
+  virtual dimension is even (`two_dvd_sq_add_three_mul`): `d(j H) = j² + 3 j`
   (`mul_apply_self_sub_apply_neg_three`), with `d / 2 = 0, 2, 5, 9` for `j = 0, 1, 2, 3`
   (`mul_apply_self_sub_apply_neg_three_eq`), the numbers of points through which curves of
   degree `j` are counted.
@@ -51,22 +51,23 @@ are made for any intersection lattice with a class `E` of square `-1` and `κ = 
   (`TauCeti.configurationCount_eq_zero_of_apply_lt_neg_one`) and because its dimension is
   negative (`TauCeti.configurationCount_eq_zero_of_apply_self_sub_apply_canonical_neg`).
 * The exceptional sphere, with multiplicity one, is a canonical cycle
-  (`isCanonicalCycle_const_one`); with multiplicity two it is not, since it would pair with `κ`
-  to `-2` rather than `-1` (`not_isCanonicalCycle_const_two`).
+  (`isCanonicalCycle_const_one`); with multiplicity two it is not, for any `κ`, since it would
+  force `κ = 2 E` and so `κ · E = -2` rather than `-1` (`not_isCanonicalCycle_const_two`).
 
 **Exceptional spheres and tori.** By adjunction, a regular simple curve of negative square has
 square `-1`, pairs to `-1` with `κ` and has index `0`, and a regular simple torus of square zero
 is embedded and orthogonal to `κ`
-(`TauCeti.IsRegularSimpleCurve.apply_canonical_eq_zero_of_genus_eq_one`), so of index `0`. So the
-canonical class is good for every almost complex structure (`TauCeti.isGoodClass_canonical`),
-while it is negative on every exceptional sphere: the condition `0 ≤ e · S` in place of
-`-1 ≤ e · S` would make `κ` bad on every nonminimal manifold.
+(`TauCeti.IsRegularSimpleCurve.apply_canonical_eq_zero_of_genus_eq_one`), so of index `0`. So if
+every exceptional image satisfies the adjunction formula for a sphere, the canonical class is good
+(`TauCeti.isGoodClass_canonical`), while it is negative on every such exceptional image: the
+condition `0 ≤ e · S` in place of `-1 ≤ e · S` would make `κ` bad for any `J` with an exceptional
+image.
 
 **Multiple covers.** The virtual dimension of `m C` is `m d(C) + m (m - 1) C · C`. On a K3
 surface (`κ = 0`) a square-zero torus `T` therefore gives `d(2 T) = 0`, and `2 T` is a good cycle
-through no points (`isGoodCycle_const_two`). A curve `C` of square `1` gives
-`d(2 C) = 2 d(C) + 2`, and `2 C` is not a good cycle (`not_isGoodCycle_const_two`): multiplicity
-above one occurs only on square-zero classes.
+through no points (`isGoodCycle_const_two`). For a class `C` of nonzero square, `2 C` is not a
+good cycle (`not_isGoodCycle_const_two`): multiplicity above one occurs only on square-zero
+classes.
 
 ## References
 
@@ -94,7 +95,7 @@ theorem isCharacteristic_mul_neg_three : BilinForm.IsCharacteristic (LinearMap.m
   have h : (-3 : ℤ) = -(1 + (2 : ℤ) • 1) := by norm_num
   rw [h, BilinForm.isCharacteristic_neg_iff, BilinForm.isCharacteristic_add_two_smul_iff]
   exact BilinForm.isCharacteristic_mul_one fun x ↦
-    (Int.even_mul_pred_self x).two_dvd.trans (by rw [sq, mul_sub, mul_one])
+    by simpa [sq, mul_sub] using (Int.even_mul_pred_self x).two_dvd
 
 /-- The virtual dimension `d(j H) = (j H) · (j H) - κ · (j H)` of a class of `ℂP²` is
 `j² + 3 j`. -/
@@ -104,7 +105,7 @@ theorem mul_apply_self_sub_apply_neg_three (j : ℤ) :
   ring
 
 /-- Every virtual dimension of `ℂP²` is even, because `κ` is characteristic. -/
-theorem two_dvd_mul_self_add_three_mul (j : ℤ) : 2 ∣ j ^ 2 + 3 * j := by
+theorem two_dvd_sq_add_three_mul (j : ℤ) : 2 ∣ j ^ 2 + 3 * j := by
   rw [← mul_apply_self_sub_apply_neg_three]
   simpa using (BilinForm.isCharacteristic_iff.1 isCharacteristic_mul_neg_three j).neg_right
 
@@ -159,8 +160,8 @@ theorem pointConfigurations_one :
     -- The class of `l` is its total multiplicity, so `l` is a single candidate.
     have hsum : (l.sum fun _ n ↦ n) = 1 := by
       have : ((l.sum fun _ n ↦ n : ℕ) : ℤ) = 1 := by
-        rw [← hl, Finsupp.linearCombination_apply, Finsupp.sum, Finsupp.sum, Nat.cast_sum]
-        simp
+        rw [← hl]
+        simp [Finsupp.linearCombination_apply, Finsupp.sum]
       exact_mod_cast this
     obtain ⟨c, rfl⟩ := (Finsupp.sum_eq_one_iff l).1 hsum
     refine ⟨c, ⟨hs (by simp), fun p ↦ ?_⟩, rfl⟩
@@ -178,9 +179,8 @@ theorem pointConfigurationCount_one_eq (hc₀ : c₀ ∈ s)
     pointConfigurationCount r (fun _ ↦ (1 : ℤ)) pts w s 1 = w c₀ 1 := by
   have h : {c ∈ s | ∀ p, p ∈ pts c} = {c₀} :=
     Set.eq_singleton_iff_unique_mem.2 ⟨⟨hc₀, hcov⟩, fun c hc ↦ huniq c hc.1 hc.2⟩
-  rw [pointConfigurationCount_def, pointConfigurations_one, h, Set.image_singleton,
-    finsum_mem_singleton, Finsupp.prod, Finsupp.support_single c₀ one_ne_zero,
-    Finset.prod_singleton, Finsupp.single_eq_same]
+  rw [pointConfigurationCount_def, pointConfigurations_one, h]
+  simp [Finsupp.prod]
 
 /-- **One line through two points.** With candidates in the class `H` of `ℂP²`, only one of which
 passes through two given points, and that line counted with sign `+1`, the count through the two
@@ -227,8 +227,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [Top
   {κ : secondHomology X} {S : Set X}
 
 /-- The canonical class is negative on an exceptional image satisfying the adjunction formula
-for a sphere. So, on a manifold with an exceptional sphere, `κ` would not be good for the
-condition `0 ≤ e · [S]`, although it is good (`TauCeti.isGoodClass_canonical`). -/
+for a sphere. So, for any `J` with such an exceptional image, `κ` would not be good for the
+condition `0 ≤ e · [S]`, although it is good if every exceptional image satisfies the sphere
+adjunction formula (`TauCeti.isGoodClass_canonical`). -/
 example (hS : S ∈ exceptionalImages J B)
     (hadj : B (embeddedCurveClass J S) (embeddedCurveClass J S) + B κ (embeddedCurveClass J S) =
       -2) :
@@ -257,7 +258,7 @@ example (hE : B E E = -1) :
     (B ((2 : ℤ) • E) ((2 : ℤ) • E)).toNat - (B E ((2 : ℤ) • E)).toNat = 0 := by
   obtain ⟨h₁, h₂, -⟩ := apply_two_smul_self_sub_apply_two_smul hE
   rw [h₁, h₂]
-  rfl
+  decide
 
 /-- The class `2 E` is not good: it pairs to `-2 < -1` with the exceptional class. -/
 theorem apply_two_smul_lt_neg_one (hE : B E E = -1) : B ((2 : ℤ) • E) E < -1 := by
@@ -298,8 +299,9 @@ theorem isCanonicalCycle_const_one (hE : B E E = -1) :
   apply_canonical_eq_neg_one_of_apply_self_neg _ _ := hE
   sum_eq := by simp
 
-/-- **An exceptional sphere does not occur twice in a canonical cycle.** If `E` has square `-1`
-and pairs to `-1` with `κ`, the cycle `2 E` is not canonical: it would pair with `E` to `-2`. -/
+/-- **An exceptional sphere does not occur twice in a canonical cycle.** If `E` has square `-1`,
+the cycle `2 E` is not canonical for any `κ`: it forces `κ = 2 E`, so `κ · E = -2`, while a
+canonical cycle needs `κ · E = -1`. -/
 theorem not_isCanonicalCycle_const_two {κ : H} (hE : B E E = -1) :
     ¬IsCanonicalCycle B κ (fun _ : Unit ↦ E) (fun _ ↦ 2) := by
   intro h
@@ -337,24 +339,15 @@ theorem isGoodCycle_const_two (hT : B T T = 0) :
   exists_mem p := p.elim
   apply_self_sub_apply_canonical := by simp [hT]
 
-/-- **Multiplicity two excludes square one.** The cycle `2 C`, for a class `C` of square `1`, is
-not a good cycle: it would have to pass through `d(2 C) / 2 = d(C) + 1` points, while `C` carries
-at most `d(C) / 2` of them. -/
+/-- **Multiplicity two excludes nonzero square.** The cycle `2 C`, for a class `C` of nonzero
+square, is not a good cycle: a good cycle has `e · C = C · C`, while here `e · C = 2 C · C`. -/
 theorem not_isGoodCycle_const_two {P : Type*} [Fintype P] {e : H} {δ : Unit → ℕ}
-    {pts : Unit → Finset P} (hC : B C C = 1) :
+    {pts : Unit → Finset P} (hC : B C C ≠ 0) :
     ¬IsGoodCycle B κ e (fun _ ↦ C) (fun _ ↦ 2) δ pts := fun h ↦ by
-  -- Every point lies on the single image `C`.
-  have hcard : Fintype.card P ≤ (pts ()).card := by
-    rw [← Finset.card_univ]
-    exact Finset.card_le_card fun p _ ↦ let ⟨(), hp⟩ := h.exists_mem p; hp
-  have hle := h.two_mul_card_add_le ()
-  have hdim := h.apply_self_sub_apply_canonical
-  rw [← h.sum_eq] at hdim
-  simp only [Finset.univ_unique, Finset.sum_singleton, map_nsmul, LinearMap.smul_apply,
-    nsmul_eq_mul, hC] at hdim
-  rw [hC] at hle
-  have : (Fintype.card P : ℤ) ≤ (pts ()).card := by exact_mod_cast hcard
-  push_cast at hdim
+  have he := h.apply_eq_apply_self ()
+  rw [← h.sum_eq] at he
+  simp only [Finset.univ_unique, Finset.sum_singleton, two_nsmul, map_add,
+    LinearMap.add_apply] at he
   omega
 
 end MultipleCover
