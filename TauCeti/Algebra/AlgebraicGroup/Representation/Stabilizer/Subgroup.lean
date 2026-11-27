@@ -17,9 +17,8 @@ Let `M` be a representation of an affine group `G = Spec H` over a field `k`. A 
 is a subrepresentation exactly when its stabilizer Hopf ideal is `⊥`
 (`Submodule.stabilizerHopfIdeal_eq_bot_iff`). This file records two consequences.
 
-* An injective morphism of representations `f : V → W` preserves and reflects
-  subrepresentations: `f(L)` is a subrepresentation of `W` exactly when `L` is one of `V`
-  (`Submodule.stabilizerHopfIdeal_map_eq_bot_iff`).
+* An injective morphism of representations `f : V → W` does not change stabilizers: `f(L)` and
+  `L` have the same stabilizer Hopf ideal (`Submodule.stabilizerHopfIdeal_map_of_injective`).
 * For the closed subgroup cut out by a Hopf ideal `I`, the subspaces stable under the subgroup
   are those whose stabilizer Hopf ideal lies below `I`. So `M`, as a representation of the
   subgroup, is completely reducible exactly when every such subspace has a complement of the same
@@ -39,15 +38,17 @@ namespace Submodule
 variable {k H V W : Type*} [Field k] [CommRing H] [HopfAlgebra k H] [AddCommGroup V]
   [Module k V] [TauCeti.Comodule k H V] [AddCommGroup W] [Module k W] [TauCeti.Comodule k H W]
 
-/-- **Subrepresentations along an injective morphism.** For an injective morphism `f : V → W` of
-representations, a subspace `L ≤ V` is a subrepresentation exactly when `f(L)` is. -/
-theorem stabilizerHopfIdeal_map_eq_bot_iff (f : TauCeti.Comodule.Hom k H V W)
+/-- **Stabilizers along an injective morphism.** An injective morphism `f : V → W` of
+representations does not change stabilizers: `f(L)` and `L` have the same stabilizer Hopf ideal. -/
+theorem stabilizerHopfIdeal_map_of_injective (f : TauCeti.Comodule.Hom k H V W)
     (hf : Function.Injective f) (L : Submodule k V) :
-    (L.map f.toLinearMap).stabilizerHopfIdeal H = ⊥ ↔ L.stabilizerHopfIdeal H = ⊥ := by
-  have hid : Function.Injective (WithConv.toConv (AlgHom.id k H)).ofConv := fun _ _ h ↦ h
-  rw [← TauCeti.HopfIdeal.toIdeal_le_ker_iff_of_injective hid,
-    ← TauCeti.HopfIdeal.toIdeal_le_ker_iff_of_injective hid, stabilizerHopfIdeal_le_ker_iff,
-    stabilizerHopfIdeal_le_ker_iff]
+    (L.map f.toLinearMap).stabilizerHopfIdeal H = L.stabilizerHopfIdeal H := by
+  refine eq_of_forall_ge_iff fun J ↦ ?_
+  -- Test both stabilizers against the quotient point `H → H ⧸ J`, whose kernel is `J`.
+  let g := WithConv.toConv (Ideal.Quotient.mkₐ k J.toIdeal)
+  have hJ : RingHom.ker g.ofConv = J.toIdeal := Ideal.Quotient.mkₐ_ker k _
+  rw [← TauCeti.HopfIdeal.toIdeal_le_toIdeal, ← TauCeti.HopfIdeal.toIdeal_le_toIdeal, ← hJ,
+    stabilizerHopfIdeal_le_ker_iff, stabilizerHopfIdeal_le_ker_iff]
   exact TauCeti.Comodule.Hom.map_endOfPoint_baseChange_eq_iff f hf L _
 
 end Submodule
