@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.Lifts
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import TauCeti.Algebra.Colimit.CommonStage
+import TauCeti.Algebra.Colimit.Ring.Basic
+import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+import TauCeti.RingTheory.Polynomial.ScaleRoots
 
 /-!
 # Integral closedness in a directed colimit of rings
@@ -25,6 +27,8 @@ integrally closed.
 
 * `TauCeti.DirectLimit.isIntegrallyClosedIn`: the colimit of integrally closed subrings is
   integrally closed in the colimit.
+* `TauCeti.isIntegrallyClosed_of_directed`: a directed colimit of integrally closed domains,
+  described elementwise, is integrally closed.
 -/
 
 public section
@@ -78,3 +82,48 @@ theorem isIntegrallyClosedIn
   simpa [hφt] using hφS m _ (Subring.isIntegrallyClosedIn_iff.mp inferInstance hint)
 
 end TauCeti.DirectLimit
+
+namespace TauCeti
+
+variable {ι : Type*} [Preorder ι] [IsDirectedOrder ι] {G : ι → Type*} [∀ i, CommRing (G i)]
+  {R : Type*} [CommRing R]
+
+/-- **A directed colimit of integrally closed domains is an integrally closed domain**
+(`TauCeti.isDomain_of_directed` gives the domain). Here `R` is the colimit of the `G i` along `φ`,
+as in `TauCeti.isDomain_of_directed`. -/
+theorem isIntegrallyClosed_of_directed (f : ∀ i j, i ≤ j → G i →+* G j)
+    (φ : ∀ i, G i →+* R) (hf : ∀ i j h x, φ j (f i j h x) = φ i x)
+    (hsurj : ∀ x : R, ∃ i y, φ i y = x) (hker : ∀ i y, φ i y = 0 → ∃ j h, f i j h y = 0)
+    [∀ i, IsDomain (G i)] [∀ i, IsIntegrallyClosed (G i)] :
+    IsIntegrallyClosed R := by
+  classical
+  have := isDomain_of_directed f φ hf hsurj hker
+  refine (isIntegrallyClosed_iff (FractionRing R)).mpr fun {z} ⟨p, hpm, hp⟩ ↦ ?_
+  obtain ⟨a, b, hb, rfl⟩ := IsFractionRing.div_surjective R z
+  have hb' : algebraMap R (FractionRing R) b ≠ 0 :=
+    IsFractionRing.to_map_ne_zero_of_mem_nonZeroDivisors hb
+  -- The cleared equation `(p.scaleRoots b).eval a = 0` holds in `R`.
+  have hrel : (p.scaleRoots b).eval a = 0 := by
+    apply IsFractionRing.injective R (FractionRing R)
+    rw [← eval₂_at_apply, map_zero]
+    exact scaleRoots_eval₂_eq_zero_of_eval₂_div_eq_zero (IsFractionRing.injective R _) hp hb
+  -- Lift `a`, `b` and the coefficients of `p` to a common stage `i`.
+  obtain ⟨i, g, hg⟩ := DirectLimit.exists_lift (t := fun i j h ↦ f i j h) (φ := fun i ↦ φ i)
+    hf hsurj (insert a (insert b p.coeffs))
+  obtain ⟨a', rfl⟩ : ∃ a', φ i a' = a := ⟨g a, hg a (by simp)⟩
+  obtain ⟨b', rfl⟩ : ∃ b', φ i b' = b := ⟨g b, hg b (by simp)⟩
+  have hlifts : p ∈ lifts (φ i) := (lifts_iff_coeff_lifts _).mpr fun n ↦ by
+    by_cases h : p.coeff n = 0
+    · exact ⟨0, by simp [h]⟩
+    · exact ⟨g _, hg _ (by simp [coeff_mem_coeffs h])⟩
+  obtain ⟨p', rfl, -, hp'⟩ := lifts_and_degree_eq_and_monic hlifts hpm
+  -- The cleared equation holds at a later stage `j`.
+  obtain ⟨j, hij, hj⟩ := hker i ((p'.scaleRoots b').eval a') (by
+    rw [map_eval_scaleRoots _ (hp'.natDegree_map _), hrel])
+  rw [map_eval_scaleRoots _ (hp'.natDegree_map _)] at hj
+  -- So `f a'` is divisible by `f b'` in the integrally closed domain `G j`.
+  obtain ⟨c, hc⟩ := IsIntegrallyClosed.dvd_of_eval_scaleRoots_eq_zero (hp'.map _) hj
+  refine ⟨φ j c, ?_⟩
+  rw [eq_div_iff hb', ← map_mul, ← hf i j hij b', ← map_mul, mul_comm, ← hc, hf]
+
+end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.QuotientGroup.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Nilpotent
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Transvection
 
 /-!
 # The adjacent quotient of an upper-unitriangular group
@@ -32,6 +33,8 @@ filtration by conjugation.
 
 * `TauCeti.UpperUnitriangularGroup.adjacentHom`: the homomorphism `U →* Multiplicative (Fin n → R)`
   reading off the first superdiagonal.
+* `TauCeti.UpperUnitriangularGroup.adjacentHom_transvection`: the first superdiagonal of a
+  transvection.
 * `TauCeti.UpperUnitriangularGroup.sparseLift`: the section `a ↦ 1 + ∑ᵢ aᵢ E_{i,i+1}`.
 * `TauCeti.UpperUnitriangularGroup.ker_adjacentHom`: the kernel is `U^2`.
 * `TauCeti.UpperUnitriangularGroup.adjacentQuotientEquiv`: `U ⧸ U^2 ≃* Multiplicative (Fin n → R)`.
@@ -87,6 +90,15 @@ def adjacentHom : upperUnitriangularGroup (Fin (n + 1)) R →* Multiplicative (F
 theorem toAdd_adjacentHom_apply (g : upperUnitriangularGroup (Fin (n + 1)) R) (i : Fin n) :
     (adjacentHom R n g).toAdd i = (g : GL (Fin (n + 1)) R) i.castSucc i.succ :=
   (rfl)
+
+/-- The first superdiagonal of a transvection: its entry `c` when the transvection sits on the
+first superdiagonal at `(k.castSucc, k.succ)`, and zero otherwise. -/
+theorem adjacentHom_transvection {i j : Fin (n + 1)} (hij : i < j) (c : R) (k : Fin n) :
+    (adjacentHom R n (transvection hij c)).toAdd k =
+      if (i, j) = (k.castSucc, k.succ) then c else 0 := by
+  rw [toAdd_adjacentHom_apply, coe_transvection, coe_transvectionUnit_eq_one_add_single]
+  simp only [Matrix.add_apply, Matrix.one_apply, Matrix.single_apply, Prod.mk.injEq,
+    ite_eq_right (Fin.castSucc_lt_succ (i := k)).ne, zero_add]
 
 /-- An upper-unitriangular matrix lies in the kernel of `adjacentHom` exactly when its first
 superdiagonal vanishes. -/

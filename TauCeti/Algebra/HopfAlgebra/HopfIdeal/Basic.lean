@@ -259,6 +259,11 @@ instance : OrderBot (HopfIdeal R H) where
     rw [hx]
     exact zero_mem I
 
+/-- A Hopf ideal is zero exactly when its underlying ideal is the zero ideal. -/
+@[simp]
+theorem toIdeal_eq_bot_iff {I : HopfIdeal R H} : I.toIdeal = ⊥ ↔ I = ⊥ := by
+  rw [← le_bot_iff, ← bot_toIdeal (R := R), toIdeal_le_toIdeal, le_bot_iff]
+
 /-- The sum of two Hopf ideals is a Hopf ideal. -/
 instance instMax : Max (HopfIdeal R H) where
   max I J :=
@@ -477,5 +482,22 @@ instance instIsHopfIdeal (I : HopfIdeal R H) : I.toIdeal.IsHopfIdeal R where
 end HopfIdeal
 
 end Bridge
+
+section Ring
+
+variable {R : Type u} {H : Type v}
+variable [CommSemiring R] [Ring H] [HopfAlgebra R H]
+
+namespace HopfIdeal
+
+/-- A Hopf ideal lies in the kernel of an injective ring homomorphism exactly when it is zero. -/
+theorem toIdeal_le_ker_iff_of_injective {F A : Type*} [Semiring A] [FunLike F H A]
+    [RingHomClass F H A] {f : F} (hf : Function.Injective f) {I : HopfIdeal R H} :
+    I.toIdeal ≤ RingHom.ker f ↔ I = ⊥ := by
+  rw [(RingHom.injective_iff_ker_eq_bot f).mp hf, le_bot_iff, toIdeal_eq_bot_iff]
+
+end HopfIdeal
+
+end Ring
 
 end TauCeti

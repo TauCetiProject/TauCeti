@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
 import TauCeti.Analysis.LocallyConvex.Polar
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.QuotientRange
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.SmulRight
 
 /-!
 # The annihilator subbundle of a distribution
@@ -63,6 +64,13 @@ Pointwise, `D x` and `D⁰_x` have complementary dimensions
 kernel of `D⁰_x` (`TauCeti.CotangentBundle.mem_iff_forall_mem_annihilatorSpace`), and for a
 hyperplane `D x = ker α` the annihilator is the line spanned by `α`
 (`TauCeti.CotangentBundle.annihilatorSpace_eq_span_singleton`).
+
+A vector field `V` on `M` determines the function `F_V(z) = z(V x)` on the annihilators
+(`TauCeti.CotangentBundle.annihilatorPairing`). It is linear on each fibre
+(`TauCeti.CotangentBundle.annihilatorPairing_mk_smul`), smooth for smooth `V` and `D`
+(`TauCeti.CotangentBundle.contMDiff_annihilatorPairing`), and depends exactly on `V` modulo `D`:
+`F_V = F_W` if and only if `V - W` is tangent to `D`
+(`TauCeti.CotangentBundle.annihilatorPairing_eq_annihilatorPairing_iff`).
 
 ## References
 
@@ -468,6 +476,97 @@ theorem mfderiv_annihilatorInclusion_zeroSection (q : M)
   exact Prod.ext (add_zero v) (zero_add _)
 
 end ZeroSection
+
+/-! ### Fibre-linear functions on the annihilator bundle -/
+
+section Pairing
+
+variable {P : Type*}
+
+/-- The **fibre-linear function of a vector field** `V` on the annihilator bundle of a distribution
+`D`: a covector `z` annihilating `D` over `x` is sent to `z(V x)`. It is linear on each fibre and
+depends only on `V` modulo `D`
+(`TauCeti.CotangentBundle.annihilatorPairing_eq_annihilatorPairing_iff`). -/
+def annihilatorPairing (V : Π x : M, TangentSpace I x)
+    (z : TotalSpace P fun x ↦ annihilatorSpace I D x) : 𝕜 :=
+  (z.snd : TangentSpace I z.proj →L[𝕜] 𝕜) (V z.proj)
+
+/-- The fibre-linear function of `V` evaluates the covector on `V` at its base point. -/
+@[simp]
+theorem annihilatorPairing_apply (V : Π x : M, TangentSpace I x)
+    (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
+    annihilatorPairing V z = (z.snd : TangentSpace I z.proj →L[𝕜] 𝕜) (V z.proj) :=
+  (rfl)
+
+/-- The fibre-linear function of `V` is the value on `V` of the covector in `T*M`. -/
+theorem annihilatorPairing_eq_snd_annihilatorInclusion (V : Π x : M, TangentSpace I x)
+    (z : TotalSpace P fun x ↦ annihilatorSpace I D x) :
+    annihilatorPairing V z =
+      (annihilatorInclusion I D P z).snd (V (annihilatorInclusion I D P z).proj) := by
+  rw [annihilatorInclusion_apply]
+  rfl
+
+/-- **Fibre-linearity.** The function of `V` is linear on each fibre of the annihilator bundle. -/
+theorem annihilatorPairing_mk_smul (V : Π x : M, TangentSpace I x) (x : M) (c : 𝕜)
+    (q : annihilatorSpace I D x) :
+    annihilatorPairing V (TotalSpace.mk' P x (c • q)) =
+      c * annihilatorPairing V (TotalSpace.mk' P x q) := by
+  simp
+
+/-- The function of a sum of vector fields is the sum of their functions. -/
+theorem annihilatorPairing_add (V W : Π x : M, TangentSpace I x) :
+    annihilatorPairing (P := P) (D := D) (V + W) =
+      annihilatorPairing V + annihilatorPairing W := by
+  ext z
+  simp
+
+/-- The function of a constant multiple of a vector field is the multiple of its function. -/
+theorem annihilatorPairing_smul (c : 𝕜) (V : Π x : M, TangentSpace I x) :
+    annihilatorPairing (P := P) (D := D) (c • V) = c • annihilatorPairing V := by
+  ext z
+  simp
+
+/-- **The function of `V` depends exactly on `V` modulo `D`.** On a finite-dimensional manifold, two
+vector fields have the same function on the annihilator bundle of `D` exactly when their
+difference is tangent to `D`. -/
+theorem annihilatorPairing_eq_annihilatorPairing_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
+    {V W : Π x : M, TangentSpace I x} :
+    annihilatorPairing (P := P) (D := D) V = annihilatorPairing W ↔ ∀ x, V x - W x ∈ D x := by
+  refine ⟨fun h x ↦ mem_iff_forall_mem_annihilatorSpace.2 fun q hq ↦ ?_, fun h ↦ ?_⟩
+  · have hx := congrFun h (TotalSpace.mk' P x ⟨q, hq⟩)
+    simp only [annihilatorPairing_apply] at hx
+    rw [map_sub, hx, sub_self]
+  · ext z
+    rw [annihilatorPairing_apply, annihilatorPairing_apply, ← sub_eq_zero, ← map_sub]
+    exact mem_annihilatorSpace_iff.1 z.snd.property _ (h z.proj)
+
+end Pairing
+
+section Smooth
+
+variable [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E] {n : ℕ∞ω} {k r : ℕ}
+  [IsManifold I 1 M] [IsManifold I (n + 1) M]
+
+/-- **Smoothness of fibre-linear functions.** For a `C^n` distribution `D` of rank `k` on a
+manifold of dimension `k + r`, the function of a `C^n` vector field `V` on the annihilator bundle
+of `D` is `C^n`. -/
+theorem contMDiff_annihilatorPairing (hD : IsContMDiffDistribution I n k D)
+    (hk : k + r = Module.finrank 𝕜 E) {V : Π x : M, TangentSpace I x}
+    (hV : ContMDiff I I.tangent n (T% V)) :
+    letI := hD.annihilatorFiberBundle hk
+    ContMDiff (I.prod 𝓘(𝕜, Fin r → 𝕜)) 𝓘(𝕜) n
+      (annihilatorPairing (P := Fin r → 𝕜) (D := D) V) :=
+  letI := hD.annihilatorFiberBundle hk
+  by
+  have hj := hD.contMDiff_annihilatorInclusion hk
+  -- The inclusion into `T*M` is the covector field `z ↦ z` along the bundle projection.
+  rw [show annihilatorInclusion I D (Fin r → 𝕜) = fun z ↦ ⟨z.proj, z.snd⟩ from
+    funext (annihilatorInclusion_apply I D _)] at hj
+  exact fun z ↦ ContMDiffAt.clm_bundle_apply_scalar (V := TangentSpace I)
+    (b := fun w : TotalSpace (Fin r → 𝕜) (fun x ↦ annihilatorSpace I D x) ↦ w.proj)
+    (hj z) ((hV.comp (Bundle.contMDiff_proj fun x ↦ annihilatorSpace I D x)) z)
+
+end Smooth
 
 end CotangentBundle
 

@@ -15,6 +15,7 @@ public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Geometry.Manifold.IsManifold.Pi
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.OfCompLeft
 
@@ -65,7 +66,8 @@ analytic diffeomorphism with derivative `p⁻¹ * q`.
   lifts and the inverses of the extended charts have derivative the identity of `ℝ`.
 * `AddCircle.coe_extChartAt_apply`, `AddCircle.coe_extChartAt_self`,
   `AddCircle.extChartAt_symm_apply`: the extended charts are local lifts, and their inverses are
-  the quotient map on their targets.
+  the quotient map on their targets. On a torus `∀ i, AddCircle (p i)`, the inverses of the
+  extended charts are the coordinatewise quotient map (`AddCircle.extChartAt_pi_symm_apply`).
 * `AddCircle.contDiffAt_chartAt_comp_coe`, `AddCircle.hasFDerivAt_chartAt_comp_coe`: a map out of
   `AddCircle p`, lifted to `ℝ` and read in a chart of its target, keeps its smoothness and its
   derivative.
@@ -552,6 +554,17 @@ theorem extChartAt_symm_apply (x : AddCircle p) {z : ℝ} (hz : z ∈ (extChartA
   simpa using symm_apply_of_coe_apply
     (fun y hy ↦ coe_apply_of_mem_atlas (chart_mem_atlas ℝ x) hy) (by simpa using hz)
 
+/-- On its target, the inverse of an extended chart of a torus `∀ i, AddCircle (p i)` is the
+coordinatewise quotient map. -/
+theorem extChartAt_pi_symm_apply {ι : Type*} [Fintype ι] {p : ι → ℝ} [∀ i, Fact (0 < p i)]
+    (x : ∀ i, AddCircle (p i)) {y : ι → ℝ}
+    (hy : y ∈ (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).target) :
+    (extChartAt (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) x).symm y =
+      fun i ↦ (y i : AddCircle (p i)) := by
+  rw [extChartAt_pi] at hy ⊢
+  rw [PartialEquiv.pi_symm_apply]
+  exact funext fun i ↦ extChartAt_symm_apply (x i) (hy i (Set.mem_univ i))
+
 variable {p} in
 /-- At each point of its target, the inverse of an extended chart of `AddCircle p` has derivative
 the identity of `ℝ`: near that point it is the quotient map `ℝ → AddCircle p`. -/
@@ -757,6 +770,13 @@ theorem diffeomorphAddCircle_trans (n : ℕ∞ω) :
   simp only [Diffeomorph.coe_trans, Function.comp_apply, diffeomorphAddCircle_apply_mk]
   congr 1
   field_simp [(Fact.out : 0 < q).ne']
+
+/-- Rescaling a point of `AddCircle p` to `AddCircle q` and then to `AddCircle r` is rescaling it
+from `AddCircle p` to `AddCircle r`, whatever the smoothness exponents of the two rescalings. -/
+@[simp]
+theorem diffeomorphAddCircle_apply_diffeomorphAddCircle (n m : ℕ∞ω) (x : AddCircle p) :
+    diffeomorphAddCircle q r m (diffeomorphAddCircle p q n x) = diffeomorphAddCircle p r n x :=
+  DFunLike.congr_fun (diffeomorphAddCircle_trans p q r n) x
 
 /-- The rescaling from `AddCircle p` to `AddCircle q` has derivative multiplication by `p⁻¹ * q`
 at every point. -/

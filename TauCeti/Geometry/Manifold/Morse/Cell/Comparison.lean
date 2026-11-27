@@ -617,8 +617,7 @@ theorem IsMorse.exists_morseCellAttachment_deformation (hf : IsMorse I f) {δ : 
   simp only [forall_and] at hψp
   obtain ⟨hmem, -, hzero, hball, hψf⟩ := hψp
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
-    ((hf.finite_criticalPoints_inter hcompact).subset
-      (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
+    (hf.finite_criticalPoints_inter_level hδ.le hcompact).to_subtype
   exact ⟨ε, hε, hεδ, ψ, hψ, fun p ↦ ⟨hmem p, hzero p⟩, _, _,
     TauCeti.exists_morseCellAttachment_deformation hf.contMDiff ψ hψ _
       (fun _ ↦ manifoldMorseIndex_le_finrank) hε hball hψf
