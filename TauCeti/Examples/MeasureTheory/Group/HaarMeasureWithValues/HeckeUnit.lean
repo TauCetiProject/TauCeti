@@ -14,8 +14,9 @@ public import TauCeti.Topology.Algebra.Nonarchimedean.Basic
 /-!
 # Examples: identity elements for convolution
 
-* On the discrete group `ZMod 3` with counting volume (`μ({1}) = 1`), the point mass at `1` is a
-  two-sided identity for convolution on `C_c^∞(ZMod 3, ℤ)`.
+* On the discrete group `Multiplicative (ZMod 3)` with counting volume (`μ({1}) = 1`), the point
+  mass at its identity `1` (the element `0` of `ZMod 3`) is a two-sided identity for convolution
+  on `C_c^∞(Multiplicative (ZMod 3), ℤ)`.
 * On `ℤ_p`, which is not discrete, no element of `C_c^∞(ℤ_p, ℚ)` is a left identity for
   convolution, for any `ℚ`-valued Haar measure.
 -/
@@ -26,7 +27,8 @@ open TopologicalSpace LocallyConstant
 
 namespace TauCeti.HaarMeasureWithValues
 
-/-- With counting volume on `ZMod 3`, the point mass at `1` is an identity for convolution. -/
+/-- With counting volume on `Multiplicative (ZMod 3)`, the point mass at its identity `1` (the
+element `0` of `ZMod 3`) is an identity for convolution. -/
 example (μ : HaarMeasureWithValues ℤ (Multiplicative (ZMod 3)))
     (h1 : μ ⟨⟨{1}, isCompact_singleton⟩, isOpen_discrete _⟩ = 1)
     (f : compactlySupported ℤ (Multiplicative (ZMod 3)) ℤ) :
