@@ -212,7 +212,11 @@ def chargeConjEquivTwistCanonicalBundle :
       ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).twist
         (canonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂)) :=
   (canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).chargeConjEquivTwist.trans
-    (SpinCStructure.twistEquiv (OrthonormalFrameLift.Equiv.refl _)
+    (OrthonormalFrameLift.twistEquiv μ hμ
+      (spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle _ _)
+      spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+      spinCGroup.continuous_toSpecialOrthogonal_apply
+      (OrthonormalFrameLift.Equiv.refl _)
       (inverseDeterminantBundleEquivCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂))
 
 /-- **The equivalence `conj s_ω ≃ s_ω ⊗ K` at `[[p, 1], 1]`**: it sends `[[p, 1], 1]` to
@@ -228,11 +232,15 @@ theorem chargeConjEquivTwistCanonicalBundle_toEquiv_inl {x : X}
         (FiberProd.mk (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
           (Extend.inl κ hκ p)) := by
   refine (OrthonormalFrameLift.Equiv.trans_toEquiv_apply _ _ x _).trans ?_
-  exact (congrArg ((SpinCStructure.twistEquiv (OrthonormalFrameLift.Equiv.refl _)
+  exact (congrArg ((OrthonormalFrameLift.twistEquiv μ hμ
+      (spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle _ _)
+      spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+      spinCGroup.continuous_toSpecialOrthogonal_apply
+      (OrthonormalFrameLift.Equiv.refl _)
       (inverseDeterminantBundleEquivCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂)).toEquiv x)
     ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).chargeConjEquivTwist_toEquiv_inl x
       (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p))).trans <|
-  (SpinCStructure.twistEquiv_toEquiv_inl _ _ x _ _).trans <| by
+  (OrthonormalFrameLift.twistEquiv_toEquiv_inl _ _ _ _ _ _ _ x _ _).trans <| by
     rw [OrthonormalFrameLift.Equiv.refl_toEquiv, _root_.Equiv.refl_apply,
       inverseDeterminantBundleEquivCanonicalBundle_toEquiv_inl]
     -- The two sides differ only in the fibre `FiberProd (P ×_σ Spinᶜ(4)) _ x` versus
@@ -275,7 +283,11 @@ def chargeConjTwistEquivTwistCanonicalBundle :
       ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).twist
         (Tensor Circle (canonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂) (Inverse Circle Q))) :=
   ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).chargeConjTwistEquivTwist Q).trans
-    (SpinCStructure.twistEquiv (OrthonormalFrameLift.Equiv.refl _)
+    (OrthonormalFrameLift.twistEquiv μ hμ
+      (spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle _ _)
+      spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+      spinCGroup.continuous_toSpecialOrthogonal_apply
+      (OrthonormalFrameLift.Equiv.refl _)
       (((inverseDeterminantBundleEquivCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂).fiberProd
         (PrincipalBundle.Equiv.refl Circle (Inverse Circle Q))).extend τ hτ))
 
@@ -295,12 +307,16 @@ theorem chargeConjTwistEquivTwistCanonicalBundle_toEquiv_inl {x : X}
         (FiberProd.mk (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p)
           (Extend.inl τ hτ (FiberProd.mk (Extend.inl κ hκ p) (Extend.inl ν hν q)))) := by
   refine (OrthonormalFrameLift.Equiv.trans_toEquiv_apply _ _ x _).trans ?_
-  exact (congrArg ((SpinCStructure.twistEquiv (OrthonormalFrameLift.Equiv.refl _)
+  exact (congrArg ((OrthonormalFrameLift.twistEquiv μ hμ
+      (spinCGroup.subtype_comp_toSpecialOrthogonal_comp_mulCircle _ _)
+      spinCGroup.norm_toLp_toSpecialOrthogonal_apply
+      spinCGroup.continuous_toSpecialOrthogonal_apply
+      (OrthonormalFrameLift.Equiv.refl _)
       (((inverseDeterminantBundleEquivCanonicalBundle hJ hJ₂ hJ₀ hF e h₀ h₂).fiberProd
         (PrincipalBundle.Equiv.refl Circle (Inverse Circle Q))).extend τ hτ)).toEquiv x)
     ((canonicalSpinCStructure hJ hJ₂ hJ₀ hF e h₀ h₂).chargeConjTwistEquivTwist_toEquiv_inl Q x
       (canonicalSpinCStructureInl hJ hJ₂ hJ₀ hF e h₀ h₂ p) q)).trans <|
-  (SpinCStructure.twistEquiv_toEquiv_inl _ _ x _ _).trans <| by
+  (OrthonormalFrameLift.twistEquiv_toEquiv_inl _ _ _ _ _ _ _ x _ _).trans <| by
     rw [OrthonormalFrameLift.Equiv.refl_toEquiv, _root_.Equiv.refl_apply,
       PrincipalBundle.Equiv.extend_toEquiv_inl, PrincipalBundle.Equiv.fiberProd_toEquiv_mk,
       inverseDeterminantBundleEquivCanonicalBundle_toEquiv_inl, PrincipalBundle.Equiv.refl_toEquiv,

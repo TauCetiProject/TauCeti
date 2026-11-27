@@ -358,6 +358,19 @@ theorem trans_toEquiv_apply (φ : s.Equiv t) (ψ : t.Equiv u) (x : X) (a : s.P x
     (φ.trans ψ).toEquiv x a = ψ.toEquiv x (φ.toEquiv x a) :=
   (rfl)
 
+/-- If `φ` sends `z` to `w` and `ψ` sends `w` to `r`, then `φ.trans ψ` sends `z` to `r`. The values
+are taken as hypotheses, so that they can be supplied when the fibres are only definitionally equal
+to the expected ones, where `rw` cannot rewrite. -/
+theorem trans_toEquiv_apply_of_eq (φ : s.Equiv t) (ψ : t.Equiv u) {x : X} {z : s.P x}
+    {w : t.P x} {r : u.P x} (hz : φ.toEquiv x z = w) (hw : ψ.toEquiv x w = r) :
+    (φ.trans ψ).toEquiv x z = r := by
+  rw [trans_toEquiv, _root_.Equiv.trans_apply, hz, hw]
+
+/-- If `φ` sends `w` to `z`, then `φ.symm` sends `z` to `w`. -/
+theorem symm_toEquiv_apply_of_eq (φ : s.Equiv t) {x : X} {z : t.P x} {w : s.P x}
+    (h : φ.toEquiv x w = z) : φ.symm.toEquiv x z = w := by
+  rw [symm_toEquiv, _root_.Equiv.symm_apply_eq, h]
+
 @[simp]
 theorem symm_symm (φ : s.Equiv t) : φ.symm.symm = φ :=
   (rfl)

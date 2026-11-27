@@ -63,6 +63,9 @@ values on compactly supported functions, and hence by its chart compressions.
   the operators on `C^∞(M, ℂ)`.
 * `TauCeti.classicalPseudodifferentialOperators_le`: an operator of order `m - k`, `k ∈ ℕ`, has
   order `m`.
+* `TauCeti.mem_classicalPseudodifferentialOperators_of_forall_mulLeft_comp_mem`: the class is
+  local; a properly supported operator which near every compact set agrees with a classical
+  pseudodifferential operator of order `m` is one.
 * `TauCeti.mem_classicalPseudodifferentialOperators_iff_forall_isCompact`: membership is local on
   inputs. A properly supported operator has order `m` exactly when, on the functions supported in
   any given compact set, it agrees with some operator of order `m`.
@@ -399,6 +402,28 @@ theorem classicalPseudodifferentialOperators_le {m m' : ℝ} (k : ℕ) (hk : m' 
     let ⟨a, ha⟩ := hP.2 e he φ ψ
     ⟨ClassicalSymbol.inclusion k hk a, fun u x ↦ by
       rw [ClassicalSymbol.toSymbol_inclusion, Symbol.coefficient_inclusion, ha]⟩⟩
+
+/-- **The class is local.** A properly supported operator `P` is a classical pseudodifferential
+operator of order `m` as soon as, near every compact set `K`, it agrees with one: for every compact
+`K` there is a smooth function `g` equal to `1` on `K` such that `u ↦ g · P u` is a classical
+pseudodifferential operator of order `m`. Indeed a chart compression of `P` by `φ` and `ψ` only
+sees `P u` on the compact set `e⁻¹(supp φ)`. -/
+theorem mem_classicalPseudodifferentialOperators_of_forall_mulLeft_comp_mem {m : ℝ}
+    {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯} (hP : IsProperlySupported P)
+    (h : ∀ K : Set M, IsCompact K → ∃ g : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯,
+      EqOn (⇑g) 1 K ∧ LinearMap.mulLeft ℂ g ∘ₗ P ∈ classicalPseudodifferentialOperators m) :
+    P ∈ classicalPseudodifferentialOperators m := by
+  refine mem_classicalPseudodifferentialOperators_iff.2 ⟨hP, fun e he φ ψ ↦ ?_⟩
+  obtain ⟨g, hg1, hgP⟩ := h _ (e.isCompact_symm_image_tsupport φ)
+  obtain ⟨a, ha⟩ := (mem_classicalPseudodifferentialOperators_iff.1 hgP).2 e he φ ψ
+  refine ⟨a, fun u x ↦ ?_⟩
+  rw [ha, OpenPartialHomeomorph.complexChartCompression_apply,
+    OpenPartialHomeomorph.complexChartCompression_apply, LinearMap.comp_apply,
+    LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply]
+  by_cases hx : x ∈ tsupport φ
+  · rw [hg1 (mem_image_of_mem _ hx), Pi.one_apply, one_mul]
+  · rw [image_eq_zero_of_notMem_tsupport hx, zero_smul, zero_smul]
 
 /-- **Dimension zero.** On a manifold modelled on `ℝ⁰`, every properly supported operator is a
 classical pseudodifferential operator of every order: each chart compression is multiplication by

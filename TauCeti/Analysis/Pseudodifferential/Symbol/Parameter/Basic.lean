@@ -1214,39 +1214,46 @@ private theorem bounds_laplacianSymbol (Λ : Set ℂ) (hΛ : IsOpen Λ) (s : ℝ
   simp only [laplacianSymbol, Complex.ofReal_add]
   ring
 
-/-- The sector estimate for a real `q ≥ μ ‖ξ‖²`, `μ > 0`: for a spectral parameter `z` in the
-sector `Re z ≤ c ‖z‖`, `c < 1`, with `δ ≤ q + ‖z‖`, `δ > 0`, the modulus of `q - z` is at least a
-fixed multiple of the squared weight. -/
-private theorem mul_parameterWeight_sq_le_norm_ofReal_sub {q μ c δ : ℝ} (hμ : 0 < μ) (hc : c < 1)
-    (hδ : 0 < δ) {ξ : CoordinateSpace n} {z : ℂ} (hq : μ * ‖ξ‖ ^ 2 ≤ q) (hz : z.re ≤ c * ‖z‖)
-    (hzδ : δ ≤ q + ‖z‖) :
-    (1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)) * parameterWeight ξ z ^ 2 ≤ ‖(q : ℂ) - z‖ := by
-  set c₀ := max c (-1)
-  have hc₀' : c₀ < 1 := max_lt hc (by norm_num)
-  have hq₀ : 0 ≤ q := (mul_nonneg hμ.le (sq_nonneg _)).trans hq
-  -- Sector estimate: `‖q - z‖ ≥ (1 - c₀) / 2 * (‖z‖ + q)`.
-  have hsector : (1 - c₀) / 2 * (‖z‖ + q) ≤ ‖(q : ℂ) - z‖ := by
-    simpa only [add_comm q] using Complex.mul_add_norm_le_norm_ofReal_sub hq₀ hz
-  -- Weight estimate: `w² ≤ 3 (1 + ‖ξ‖² + ‖z‖) ≤ 3 (1 + μ⁻¹ + δ⁻¹) (‖z‖ + q)`.
-  have hw : parameterWeight ξ z ^ 2 ≤ 3 * (1 + μ⁻¹ + δ⁻¹) * (‖z‖ + q) := by
-    have hsqrt := Real.sq_sqrt (norm_nonneg z)
-    have h3 : parameterWeight ξ z ^ 2 ≤ 3 * (1 + ‖ξ‖ ^ 2 + ‖z‖) := by
-      rw [parameterWeight_def]
-      nlinarith [sq_nonneg (1 - ‖ξ‖), sq_nonneg (1 - Real.sqrt ‖z‖),
-        sq_nonneg (‖ξ‖ - Real.sqrt ‖z‖)]
-    have h1 : 1 ≤ δ⁻¹ * (‖z‖ + q) := by
-      rw [inv_mul_eq_div, one_le_div hδ]
-      linarith
-    have hξ : ‖ξ‖ ^ 2 ≤ μ⁻¹ * (‖z‖ + q) := by
-      rw [inv_mul_eq_div, le_div_iff₀ hμ]
-      nlinarith [norm_nonneg z]
-    nlinarith [norm_nonneg z, inv_pos.2 hμ, inv_pos.2 hδ]
-  have hκ : 0 < 3 * (1 + μ⁻¹ + δ⁻¹) := by positivity
-  calc (1 - c₀) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)) * parameterWeight ξ z ^ 2
-      ≤ (1 - c₀) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)) * (3 * (1 + μ⁻¹ + δ⁻¹) * (‖z‖ + q)) :=
-        mul_le_mul_of_nonneg_left hw (div_nonneg (by linarith) hκ.le)
-    _ = (1 - c₀) / 2 * (‖z‖ + q) := by field_simp
-    _ ≤ _ := hsector
+/-- **The weight estimate.** If `μ ‖ξ‖² ≤ q` and `δ ≤ q + ‖z‖` with `μ, δ > 0`, then the squared
+weight `(1 + ‖ξ‖ + ‖z‖ ^ (1 / 2))²` is at most `3 (1 + μ⁻¹ + δ⁻¹) (q + ‖z‖)`. This turns lower
+bounds `‖q - z‖ ≥ c (q + ‖z‖)` into the inverse estimates of parameter-ellipticity. -/
+theorem parameterWeight_sq_le_mul_add_norm {q μ δ : ℝ} (hμ : 0 < μ) (hδ : 0 < δ)
+    {ξ : CoordinateSpace n} {z : ℂ} (hq : μ * ‖ξ‖ ^ 2 ≤ q) (hzδ : δ ≤ q + ‖z‖) :
+    parameterWeight ξ z ^ 2 ≤ 3 * (1 + μ⁻¹ + δ⁻¹) * (q + ‖z‖) := by
+  have hsqrt := Real.sq_sqrt (norm_nonneg z)
+  have h3 : parameterWeight ξ z ^ 2 ≤ 3 * (1 + ‖ξ‖ ^ 2 + ‖z‖) := by
+    rw [parameterWeight_def]
+    nlinarith [sq_nonneg (1 - ‖ξ‖), sq_nonneg (1 - Real.sqrt ‖z‖),
+      sq_nonneg (‖ξ‖ - Real.sqrt ‖z‖)]
+  have h1 : 1 ≤ δ⁻¹ * (q + ‖z‖) := by
+    rw [inv_mul_eq_div, one_le_div hδ]
+    exact hzδ
+  have hξ : ‖ξ‖ ^ 2 ≤ μ⁻¹ * (q + ‖z‖) := by
+    rw [inv_mul_eq_div, le_div_iff₀ hμ]
+    nlinarith [norm_nonneg z]
+  nlinarith [norm_nonneg z, inv_pos.2 hμ, inv_pos.2 hδ]
+
+variable (V) in
+/-- If `κ w² ≤ ‖c‖` for the weight `w = 1 + ‖ξ‖ + ‖z‖ ^ (1 / 2)` and `κ > 0`, then `c • id` is
+invertible, with inverse bounded by `κ⁻¹ w ^ (-2)`: the pointwise form of parameter-ellipticity of
+order `2` for scalar symbols. -/
+theorem isInvertible_smul_id_and_norm_inverse_le {c : ℂ} {κ : ℝ} (hκ : 0 < κ)
+    {ξ : CoordinateSpace n} {z : ℂ} (h : κ * parameterWeight ξ z ^ 2 ≤ ‖c‖) :
+    (c • ContinuousLinearMap.id ℂ V).IsInvertible ∧
+      ‖(c • ContinuousLinearMap.id ℂ V).inverse‖ ≤ κ⁻¹ * parameterWeight ξ z ^ (-2 : ℝ) := by
+  have hpos := mul_pos hκ (pow_pos (parameterWeight_pos ξ z) 2)
+  have hne : c ≠ 0 := fun h0 => by
+    rw [h0, norm_zero] at h
+    exact hpos.not_ge h
+  refine ⟨(ContinuousLinearMap.isInvertible_smul_iff hne).2
+    (ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)), ?_⟩
+  rw [ContinuousLinearMap.inverse_smul, ContinuousLinearMap.inverse_id,
+    Real.rpow_neg (parameterWeight_pos ξ z).le, Real.rpow_two, ← mul_inv]
+  calc ‖c⁻¹ • ContinuousLinearMap.id ℂ V‖
+      ≤ ‖c⁻¹‖ := (ContinuousLinearMap.opNorm_smul_le _ _).trans
+        (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
+    _ = ‖c‖⁻¹ := norm_inv _
+    _ ≤ _ := inv_anti₀ hpos h
 
 variable (V) in
 /-- **Inverse estimate in a sector.** Let `q ≥ μ ‖ξ‖²` be real, `μ > 0`, and let the spectral
@@ -1261,24 +1268,17 @@ theorem isInvertible_ofReal_sub_smul_id_and_norm_inverse_le {q μ c δ : ℝ} (h
     (((q : ℂ) - z) • ContinuousLinearMap.id ℂ V).IsInvertible ∧
       ‖(((q : ℂ) - z) • ContinuousLinearMap.id ℂ V).inverse‖ ≤
         ((1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)))⁻¹ * parameterWeight ξ z ^ (-2 : ℝ) := by
-  set κ := (1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹))
-  have hκ : 0 < κ := div_pos (by linarith [max_lt hc (by norm_num : (-1 : ℝ) < 1)])
-    (by positivity)
-  have hw := pow_pos (parameterWeight_pos ξ z) 2
-  have hle := mul_parameterWeight_sq_le_norm_ofReal_sub hμ hc hδ hq hz hzδ
-  have hne : (q : ℂ) - z ≠ 0 := fun h0 => by
-    rw [h0, norm_zero] at hle
-    exact (mul_pos hκ hw).not_ge hle
-  refine ⟨(ContinuousLinearMap.isInvertible_smul_iff hne).2
-    (ContinuousLinearMap.isInvertible_equiv (f := ContinuousLinearEquiv.refl ℂ V)), ?_⟩
-  rw [ContinuousLinearMap.inverse_smul, ContinuousLinearMap.inverse_id,
-    Real.rpow_neg (parameterWeight_pos ξ z).le, Real.rpow_two]
-  calc ‖((q : ℂ) - z)⁻¹ • ContinuousLinearMap.id ℂ V‖
-      ≤ ‖((q : ℂ) - z)⁻¹‖ := (ContinuousLinearMap.opNorm_smul_le _ _).trans
-        (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
-    _ = ‖(q : ℂ) - z‖⁻¹ := norm_inv _
-    _ ≤ (κ * parameterWeight ξ z ^ 2)⁻¹ := inv_anti₀ (mul_pos hκ hw) hle
-    _ = κ⁻¹ * (parameterWeight ξ z ^ 2)⁻¹ := mul_inv _ _
+  have hκ : 0 < 3 * (1 + μ⁻¹ + δ⁻¹) := by positivity
+  have hq₀ : 0 ≤ q := (mul_nonneg hμ.le (sq_nonneg _)).trans hq
+  refine isInvertible_smul_id_and_norm_inverse_le V
+    (div_pos (by linarith [max_lt hc (by norm_num : (-1 : ℝ) < 1)]) hκ) ?_
+  -- Sector estimate `‖q - z‖ ≥ (1 - max c (-1)) / 2 * (q + ‖z‖)`, then the weight estimate.
+  calc (1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)) * parameterWeight ξ z ^ 2
+      ≤ (1 - max c (-1)) / 2 / (3 * (1 + μ⁻¹ + δ⁻¹)) * (3 * (1 + μ⁻¹ + δ⁻¹) * (q + ‖z‖)) :=
+        mul_le_mul_of_nonneg_left (parameterWeight_sq_le_mul_add_norm hμ hδ hq hzδ)
+          (div_nonneg (by linarith [max_lt hc (by norm_num : (-1 : ℝ) < 1)]) hκ.le)
+    _ = (1 - max c (-1)) / 2 * (q + ‖z‖) := by field_simp
+    _ ≤ _ := by simpa only [add_comm q] using Complex.mul_add_norm_le_norm_ofReal_sub hq₀ hz
 
 open scoped Classical in
 variable (V) in

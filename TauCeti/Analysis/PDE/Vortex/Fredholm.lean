@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import TauCeti.Analysis.PDE.Vortex.EllipticRegularity
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
-public import TauCeti.Analysis.PDE.Vortex.SobolevRealization
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Realization
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Fredholm.Criteria
@@ -25,7 +25,7 @@ linearized vortex operator `L_x = d₀* ⊕ d₁` is realized as the bounded lin
 
 `TauCeti.Vortex.sobolevGaugeFixedOperator a : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)`
 
-constructed in `TauCeti.Analysis.PDE.Vortex.SobolevRealization`. At a `C¹` vortex with `|α| → 1`
+constructed in `TauCeti.Analysis.PDE.Vortex.Sobolev.Realization`. At a `C¹` vortex with `|α| → 1`
 and `∇₁ α → 0` at infinity, its kernel is finite dimensional and its range is closed
 (`TauCeti.Vortex.finiteDimensional_ker_sobolevGaugeFixedOperator`,
 `TauCeti.Vortex.isClosed_range_sobolevGaugeFixedOperator`). This file establishes the weak
@@ -54,7 +54,7 @@ formulation, surjectivity, and Fredholm property of this Sobolev realization.
   realization is surjective (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`) and its
   cokernel vanishes.
 * **Fredholm property.** Combining vanishing cokernel with the finite-dimensional kernel from
-  `TauCeti.Analysis.PDE.Vortex.SobolevRealization` via
+  `TauCeti.Analysis.PDE.Vortex.Sobolev.Realization` via
   `ContinuousLinearMap.IsFredholm.of_surjective` yields
   `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator` (for `C¹` vortices with `∇₁ α → 0`),
   `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_contDiff` (for `C²` vortices, where
@@ -149,14 +149,12 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
   · exact isClosed_eq ((sobolevGaugeFixedOperator a).continuous.inner continuous_const)
       (continuous_finsetSum _ fun j _ ↦
         ((W1p.valueL.continuous.comp (continuous_apply j)).inner continuous_const))
-  · set Y : ℂ → EuclideanSpace ℝ (Fin 4) := fun z ↦ WithLp.toLp 2 fun j ↦ φ j z
-    have hY : ContDiff ℝ 1 Y := ((contDiff_piLp 2).2 fun j ↦ (φ j).contDiff).of_le (by simp)
-    have hYc : HasCompactSupport Y :=
-      (hasCompactSupport_pi_iff.2 fun j ↦ (φ j).hasCompactSupport).comp_left
-        (g := WithLp.toLp 2) (WithLp.toLp_zero 2)
+  · set Y := testField φ
+    have hY : ContDiff ℝ 1 Y := (contDiff_testField φ).of_le (by simp)
+    have hYc : HasCompactSupport Y := hasCompactSupport_testField φ
     have hvalue (j : Fin 4) : W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)) =ᵐ[μ⊤]
         fun z ↦ Y z j :=
-      W1p.value_ofTestFunctionₗ_ae (φ j)
+      (W1p.value_ofTestFunctionₗ_ae (p := 2) (φ j)).mono fun z hz ↦ by simp [Y, hz]
     have hT := (sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator hax
       (y := Pi.map (fun _ ↦ W1p.ofTestFunctionₗ volume ⊤ 2) φ) hY hvalue).filter_mono
         (ae_mono (Measure.restrict_coe_opens_top _).ge)
@@ -166,7 +164,7 @@ theorem integral_inner_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =�
     refine integral_congr_ae ?_
     filter_upwards [ae_all_iff.2 fun j ↦ ae_mono (Measure.restrict_coe_opens_top _).ge (hvalue j)]
       with z hz
-    simp only [Pi.map_apply, hz, Y]
+    simp only [Pi.map_apply, hz, Y, testField_apply]
 
 /-- **The weak equation of the realization.** At a continuous field `x` with `L∞` class `a`, the
 values of every `e ∈ H¹(ℂ)⁴` are a weak solution of `L_x y = L_a e`: tested against compactly

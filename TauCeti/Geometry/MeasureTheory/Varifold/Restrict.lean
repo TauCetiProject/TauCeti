@@ -29,6 +29,10 @@ variation of a varifold*, Section 3).
 * The weight of the restriction is `‖V‖` restricted to `W`
   (`TauCeti.grassmannBundle.weight_restrictOpens`), so `spt ‖V'‖ = spt ‖V‖ ∩ W`, the support being
   taken in `W` (`TauCeti.grassmannBundle.support_weight_restrictOpens`).
+* Restriction to open sets is transitive: for open `W' ⊆ W`, the iterated restriction
+  `(V|_W)|_{W'}` is `V|_{W'}` up to the homeomorphism of Grassmann bundles
+  `TauCeti.grassmannBundle.restrictRestrictHomeomorph`
+  (`TauCeti.grassmannBundle.map_restrictRestrictHomeomorph_restrictOpens_restrictOpens`).
 * Over a Lindelöf base, a varifold is determined by its restrictions to the sets of an open cover
   (`TauCeti.grassmannBundle.ext_of_restrictOpens`).
 
@@ -118,6 +122,57 @@ theorem ext_of_restrictOpens [LindelofSpace B] {ι : Type*} {U : ι → Set B}
     (h : ∀ i, restrictOpens (U i) V₁ = restrictOpens (U i) V₂) : V₁ = V₂ :=
   ext_of_restrict_preimage hU hcover fun i ↦ by
     rw [← map_inclusion_restrictOpens _ (hU i), ← map_inclusion_restrictOpens _ (hU i), h i]
+
+section Transitivity
+
+variable {W' : Set W}
+
+/-- The iterated restriction `(V|_W)|_{W'}` is the pullback of `V` along the composite of the
+inclusions `G_k((E|_W)|_{W'}) → G_k(E|_W) → G_k(E)`. -/
+theorem restrictOpens_restrictOpens_eq_comap (hW : IsOpen W) (hW' : IsOpen W') :
+    restrictOpens W' (restrictOpens W V) =
+      V.comap (inclusion F E k W ∘ inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W') := by
+  rw [restrictOpens_def, restrictOpens_def, Measure.comap_comap
+    (measurableEmbedding_inclusion hW').measurableSet_image'
+    (measurableEmbedding_inclusion hW).injective
+    (measurableEmbedding_inclusion hW).measurableSet_image']
+
+/-- Pushed back to `G_k(E)` through both inclusions, the iterated restriction `(V|_W)|_{W'}` is
+`V⌞W'`, the part of `V` over `W'`. -/
+theorem map_inclusion_map_inclusion_restrictOpens_restrictOpens (hW : IsOpen W)
+    (hW' : IsOpen W') :
+    ((restrictOpens W' (restrictOpens W V)).map
+        (inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W')).map (inclusion F E k W) =
+      V.restrict (proj ⁻¹' (Subtype.val '' W')) := by
+  have h : (proj ⁻¹' W' : Set (grassmannBundle F (ContinuousMap.subtypeVal W *ᵖ E) k)) =
+      proj ⁻¹' (Subtype.val ⁻¹' (Subtype.val '' W')) := by
+    rw [preimage_image_eq _ Subtype.val_injective]
+  rw [map_inclusion_restrictOpens _ hW', h, ← restrictOpens_restrict _ hW,
+    map_inclusion_restrictOpens _ hW,
+    Measure.restrict_restrict (hW.preimage continuous_proj).measurableSet,
+    inter_eq_right.2 (preimage_mono (Subtype.coe_image_subset W W'))]
+
+/-- **Restriction to open sets is transitive.** For open `W ⊆ B` and open `W' ⊆ W`, the iterated
+restriction `(V|_W)|_{W'}`, carried to `G_k(E|_{W'})` by the homeomorphism
+`TauCeti.grassmannBundle.restrictRestrictHomeomorph`, is the restriction `V|_{W'}`, with `W'` read
+as a subset of `B`. -/
+theorem map_restrictRestrictHomeomorph_restrictOpens_restrictOpens (hW : IsOpen W)
+    (hW' : IsOpen W') :
+    (restrictOpens W' (restrictOpens W V)).map (restrictRestrictHomeomorph F E k W') =
+      restrictOpens (Subtype.val '' W') V := by
+  have hg := measurableEmbedding_inclusion (F := F) (E := E) (k := k)
+    (hW.isOpenMap_subtypeVal W' hW')
+  have hcomp : inclusion F E k (Subtype.val '' W') ∘ restrictRestrictHomeomorph F E k W' =
+      inclusion F E k W ∘ inclusion F (ContinuousMap.subtypeVal W *ᵖ E) k W' :=
+    funext inclusion_restrictRestrictHomeomorph
+  rw [← hg.comap_map ((restrictOpens W' (restrictOpens W V)).map _),
+    Measure.map_map hg.measurable (restrictRestrictHomeomorph F E k W').measurable, hcomp,
+    ← Measure.map_map (measurableEmbedding_inclusion hW).measurable
+      (measurableEmbedding_inclusion hW').measurable,
+    map_inclusion_map_inclusion_restrictOpens_restrictOpens _ hW hW',
+    ← map_inclusion_restrictOpens _ (hW.isOpenMap_subtypeVal W' hW'), hg.comap_map]
+
+end Transitivity
 
 variable [MeasurableSpace B] [BorelSpace B]
 

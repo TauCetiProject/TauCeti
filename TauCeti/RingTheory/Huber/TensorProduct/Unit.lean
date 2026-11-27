@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.TensorProduct.Finite.Algebra
+public import TauCeti.RingTheory.Huber.TensorProduct.Pair
+import Mathlib.RingTheory.TensorProduct.Finite
 
 /-!
 # The unit of the completed tensor product
@@ -15,7 +17,7 @@ For an adic map `A → B` with `B` complete Hausdorff, the completed tensor prod
 and its inverse is the left coprojection. Neither completeness of `A` nor a Tate hypothesis
 is required.
 
-The construction specializes `Pair.finiteAlgebra.baseChangeEquiv` to the rank-one algebra
+The construction specializes `CompletedTensor.baseChangeEquiv` to the rank-one algebra
 `A`, then applies Mathlib's algebraic tensor unit. If `A⁺` maps into `B⁺`, this identifies
 the completed tensor plus ring with the specified `B⁺`. Thus the unit comparison also
 holds for Huber pairs, including pairs whose plus ring is smaller than the power-bounded
@@ -43,9 +45,12 @@ variable (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
 
 namespace CompletedTensor
 
+attribute [local instance] leftAlgebra
+
 /-- The right unit of the completed tensor product, for a complete Hausdorff Huber algebra. -/
 noncomputable def rightUnitor : CompletedTensor A B A ≃+* B :=
-  (Pair.finiteAlgebra.baseChangeEquiv A B A).symm.trans
+  (baseChangeEquiv A B A
+    (IsNaturallyComplete.of_projective (A := B) (M := B ⊗[A] A))).toRingEquiv.symm.trans
     (Algebra.TensorProduct.rid A B B).toRingEquiv
 
 /-- The right unit sends the left coprojection to the identity. -/
@@ -76,10 +81,12 @@ theorem rightUnitor_tmul (b : B) (a : A) :
 /-- The right unit is continuous. -/
 @[fun_prop] theorem continuous_rightUnitor : Continuous (rightUnitor A B) := by
   let : TopologicalSpace (B ⊗[A] A) := moduleTopology B (B ⊗[A] A)
+  have hnc : IsNaturallyComplete B (B ⊗[A] A) :=
+    IsNaturallyComplete.of_projective (A := B) (M := B ⊗[A] A)
   exact (IsModuleTopology.continuous_of_linearMap
     (Algebra.TensorProduct.rid A B B).toLinearMap).comp
-      ((Pair.finiteAlgebra.baseChangeEquiv A B A).toEquiv.isHomeomorph_iff.mp
-        (Pair.finiteAlgebra.isHomeomorph_baseChangeEquiv A B A)).2
+      ((baseChangeEquiv A B A hnc).toEquiv.isHomeomorph_iff.mp
+        (isHomeomorph_baseChangeEquiv A B A hnc)).2
 
 /-- The inverse right unit is continuous. -/
 @[fun_prop] theorem continuous_rightUnitor_symm : Continuous (rightUnitor A B).symm := by
