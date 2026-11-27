@@ -117,11 +117,8 @@ theorem euclideanSoThreeEquiv_symm_orthogonalLieAlgebraEquiv_lie
       euclideanCrossProduct
         (euclideanSoThreeEquiv.symm (orthogonalLieAlgebraEquiv ℝ³ ξ))
         (euclideanSoThreeEquiv.symm (orthogonalLieAlgebraEquiv ℝ³ η)) := by
-  rw [LieEquiv.map_lie,
-    ← euclideanSoThreeEquiv.apply_symm_apply (orthogonalLieAlgebraEquiv ℝ³ ξ),
-    ← euclideanSoThreeEquiv.apply_symm_apply (orthogonalLieAlgebraEquiv ℝ³ η),
-    lie_euclideanSoThreeEquiv, LinearEquiv.symm_apply_apply, LinearEquiv.symm_apply_apply,
-    LinearEquiv.symm_apply_apply, euclideanCrossProduct_apply]
+  rw [LinearEquiv.symm_apply_eq, euclideanCrossProduct_apply, ← lie_euclideanSoThreeEquiv]
+  simp only [LinearEquiv.apply_symm_apply, LieEquiv.map_lie]
 
 /-- **The bracket of the fundamental vector fields of the rotations of `ℝ³`.** If `ξ` and `η`
 correspond to the axes `u` and `w`, as in `TauCeti.fundamentalVectorField_unitary_euclideanSpace`,

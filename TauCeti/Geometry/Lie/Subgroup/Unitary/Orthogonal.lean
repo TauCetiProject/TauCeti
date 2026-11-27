@@ -102,6 +102,9 @@ private theorem coe_orthogonalLieAlgebraMap_apply
     (orthogonalLieAlgebraMap V ξ : Module.End ℝ V) =
       ((mvfderiv (Unitary.model (V →L[ℝ] V)) (Subtype.val : unitary (V →L[ℝ] V) → V →L[ℝ] V) 1
         ξ : V →L[ℝ] V) : Module.End ℝ V) :=
+  -- `mvfderiv` post-composes `mfderiv` with `NormedSpace.fromTangentSpace (Subtype.val 1)`, which
+  -- is defined as `tangentSpaceCastModel 𝓘(ℝ, V →L[ℝ] V) (Subtype.val 1)`, and `Subtype.val 1` is
+  -- `1`; this is the map defining `orthogonalLieAlgebraMap`.
   (rfl)
 
 /-- The differential at the identity of the inclusion `O(V) → V →L[ℝ] V` carries the Lie bracket
@@ -115,10 +118,8 @@ private theorem orthogonalLieAlgebraMap_lie
   have h := (unitary (V →L[ℝ] V)).subtype.mvfderiv_lie (Unitary.contMDiff_val.of_le (by simp)) ξ η
   rw [Submonoid.coe_subtype, Ring.lie_def] at h
   refine Subtype.ext ?_
-  rw [LieSubalgebra.coe_bracket, coe_orthogonalLieAlgebraMap_apply,
-    coe_orthogonalLieAlgebraMap_apply, coe_orthogonalLieAlgebraMap_apply, h, Ring.lie_def,
-    ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_mul,
-    ContinuousLinearMap.toLinearMap_mul]
+  simp only [LieSubalgebra.coe_bracket, coe_orthogonalLieAlgebraMap_apply, h, Ring.lie_def,
+    ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_mul]
 
 variable (V) in
 /-- **The Lie algebra of the orthogonal group is `so(V)`.** For a finite-dimensional real inner

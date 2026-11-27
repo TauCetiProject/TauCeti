@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-public import TauCeti.Geometry.Lie.Basic
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Related
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -50,14 +50,12 @@ public section
 noncomputable section
 
 open Manifold VectorField
-open scoped ContDiff Manifold
+open scoped Manifold
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I (minSmoothness ℝ 3) G]
   {R : Type*} [NormedRing R] [NormedAlgebra ℝ R]
-
-attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 namespace MonoidHom
 
@@ -75,7 +73,7 @@ theorem mfderiv_mulInvariantVectorField (φ : G →* R) (hφ : MDifferentiable I
     simp
   have hleft := mfderiv_comp (I := I) (I' := I) (I'' := 𝓘(ℝ, R)) (x := (1 : G))
     (g := (φ : G → R)) (f := fun h : G ↦ g * h) (by simpa using hφd g)
-    (mdifferentiableAt_mul_left (a := g))
+    ((contMDiffAt_mul_left (n := minSmoothness ℝ 3) (a := g)).mdifferentiableAt (by simp))
   have hright := mfderiv_comp (I := I) (I' := 𝓘(ℝ, R)) (I'' := 𝓘(ℝ, R)) (x := (1 : G))
     (g := (ContinuousLinearMap.mul ℝ R (φ g) : R → R)) (f := (φ : G → R))
     (ContinuousLinearMap.mul ℝ R (φ g)).mdifferentiableAt (hφd 1)
@@ -113,10 +111,9 @@ theorem mvfderiv_lie [CompleteSpace E] [CompleteSpace R] (φ : G →* R)
     (Filter.Eventually.of_forall fun g ↦ mfderiv_mulInvariantVectorField φ hφd η g)
   -- On the vector space `R` the manifold bracket of the linear fields is the commutator.
   have hbr : mlieBracket 𝓘(ℝ, R) VA VB (φ 1) = A * B - B * A := by
-    rw [← mlieBracketWithin_univ, mlieBracketWithin_eq_lieBracketWithin, lieBracketWithin_univ,
-      lieBracket_eq]
-    simp only [LA.fderiv, LB.fderiv, map_one]
-    simp only [LA, LB, ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply', one_mul]
+    rw [mlieBracket_continuousLinearMap_model_space LA LB (φ 1)]
+    simp only [LA, LB, map_one, ContinuousLinearMap.flip_apply, ContinuousLinearMap.mul_apply',
+      one_mul]
     -- The left side is a difference in the tangent space `TangentSpace 𝓘(ℝ, R) 1`, which is `R`.
     rfl
   rw [mvfderiv_apply_eq_mfderiv_apply, GroupLieAlgebra.bracket_def, h, hbr, Ring.lie_def]
