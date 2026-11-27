@@ -356,6 +356,14 @@ private theorem coe_reattachmentLoop_of_le_norm (K : LoopHomotopy) (hK : Boundar
   rw [reattachmentLoop_apply, cellDiameter_apply, exampleReattachment_cell_of_le_norm K hK ht]
   exact coe_collapseCell_incl _
 
+/-- The coordinate of the boundary direction of a point of the outer annulus of the `1`-disk. -/
+private theorem diskOneCoord_annulusDir {d : ℝ} (hd : 0 < d)
+    (w : {w : TopCat.disk.{0} 1 // d ≤ ‖w.down.val‖}) :
+    diskOneCoord (TopCat.diskBoundaryInclusion 1 (TopCat.annulusDir hd w)) =
+      |diskOneCoord w.val|⁻¹ * diskOneCoord w.val := by
+  rw [diskOneCoord, TopCat.coe_diskBoundaryInclusion_apply_down]
+  exact TopCat.annulusDir_down_apply_zero hd w
+
 /-- The constant homotopy gives the constant loop. -/
 private theorem degree_reattachmentLoop_constHomotopy :
     Circle.degree (reattachmentLoop constHomotopy constHomotopy_mem) = 0 := by
@@ -380,9 +388,7 @@ private theorem degree_reattachmentLoop_windingHomotopy :
     refine Circle.ext ((coe_reattachmentLoop_of_le_norm _ _ hn).trans ?_).symm
     have hneg : diskOneCoord (diskSegment.{0} t) < 0 := by rw [hc]; linarith
     rw [windingHomotopy_of_diskOneCoord_eq_neg_one (hw := by
-      rw [diskOneCoord, TopCat.coe_diskBoundaryInclusion_apply_down,
-        TopCat.annulusDir_down_apply_zero, diskSegment_coord, ← hc, abs_of_neg hneg, inv_neg,
-        neg_mul, inv_mul_cancel₀ hneg.ne]),
+      rw [diskOneCoord_annulusDir, abs_of_neg hneg, inv_neg, neg_mul, inv_mul_cancel₀ hneg.ne]),
       min_eq_left (by linarith)]
     congr 3
     rw [TopCat.coe_reattachmentTime_of_le_norm hn, norm_diskSegment, abs_of_neg (by linarith)]
@@ -397,9 +403,7 @@ private theorem degree_reattachmentLoop_windingHomotopy :
         rcases abs_cases (2 * (t : ℝ) - 1) with ⟨h, -⟩ | ⟨h, -⟩ <;> linarith
       refine Circle.ext ((coe_reattachmentLoop_of_le_norm _ _ hn.le).trans ?_).symm
       rw [windingHomotopy_of_diskOneCoord_eq_one (hw := by
-        rw [diskOneCoord, TopCat.coe_diskBoundaryInclusion_apply_down,
-          TopCat.annulusDir_down_apply_zero, diskSegment_coord, ← hc, abs_of_pos hpos,
-          inv_mul_cancel₀ hpos.ne']),
+        rw [diskOneCoord_annulusDir, abs_of_pos hpos, inv_mul_cancel₀ hpos.ne']),
         Circle.coe_one]
 
 /-- **The reattachment class depends on the boundary homotopy.** Attach one `1`-cell at both ends
