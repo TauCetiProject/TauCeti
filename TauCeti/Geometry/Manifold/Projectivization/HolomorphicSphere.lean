@@ -34,11 +34,11 @@ degree `d = 1` is the line `[x] ↦ [A x]` of an injective linear map `A : ℂ²
 
 The proof goes through the field of meromorphic functions on the sphere.
 
-* **Ratios are meromorphic.** For a holomorphic map `u : X → ℂℙⁿ` from any Riemann surface, the
-  ratio `x ↦ uⱼ(x) / uᵢ(x)` of two homogeneous coordinates is meromorphic at every point
-  (`TauCeti.RiemannSurface.meromorphicAt_rep_div_rep`): near each point `u` has holomorphic
-  homogeneous coordinates `F` (`Projectivization.exists_contMDiffAt_eventually_eq_mk`), and the
-  ratio is `Fⱼ / Fᵢ`, a quotient of holomorphic functions.
+* **Ratios are meromorphic.** For a map `u : X → ℂℙⁿ` from any Riemann surface, the ratio
+  `x ↦ uⱼ(x) / uᵢ(x)` of two homogeneous coordinates is meromorphic at every point near which `u`
+  is holomorphic (`TauCeti.RiemannSurface.meromorphicAt_rep_div_rep`): near such a point `u` has
+  holomorphic homogeneous coordinates `F` (`Projectivization.exists_contMDiffAt_eventually_eq_mk`),
+  and the ratio is `Fⱼ / Fᵢ`, a quotient of holomorphic functions.
 * **The identity theorem.** On a connected `X`, if the coordinate `uᵢ` is nonzero at one point,
   it is nonzero on a punctured neighbourhood of every point
   (`TauCeti.RiemannSurface.eventually_rep_ne_zero`). The meromorphic function `m` of the ratio
@@ -91,14 +91,14 @@ section RiemannSurface
 variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X]
   {u : X → ℙ ℂ (Fin (n + 1) → ℂ)}
 
-/-- **The ratios of homogeneous coordinates are meromorphic.** For a holomorphic map `u` from a
-Riemann surface to projective space, the ratio `x ↦ uⱼ(x) / uᵢ(x)` of two homogeneous coordinates
-of `u x` is meromorphic at every point; it does not depend on the representatives chosen, and is
-`0` where `uᵢ` vanishes. -/
-theorem meromorphicAt_rep_div_rep (hu : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, Fin n → ℂ) u)
-    (i j : Fin (n + 1)) (x : X) :
+/-- **The ratios of homogeneous coordinates are meromorphic.** For a map `u` from a Riemann surface
+to projective space that is holomorphic near a point `x` (of class `C¹` at `x`), the ratio
+`y ↦ uⱼ(y) / uᵢ(y)` of two homogeneous coordinates of `u y` is meromorphic at `x`; it does not
+depend on the representatives chosen, and is `0` where `uᵢ` vanishes. -/
+theorem meromorphicAt_rep_div_rep {x : X} (hu : ContMDiffAt 𝓘(ℂ) 𝓘(ℂ, Fin n → ℂ) 1 u x)
+    (i j : Fin (n + 1)) :
     MeromorphicAt (fun y ↦ (u y).rep j / (u y).rep i) x := by
-  obtain ⟨F, hF, hFu⟩ := exists_contMDiffAt_eventually_eq_mk (hu.contMDiff (n := 1) x)
+  obtain ⟨F, hF, hFu⟩ := exists_contMDiffAt_eventually_eq_mk hu
   have hd := (contMDiffAt_iff_eventually_mdifferentiableAt one_ne_zero).1 hF
   have hcoord (k : Fin (n + 1)) : MeromorphicAt (fun y ↦ F y k) x :=
     meromorphicAt_of_eventually_mdifferentiableAt <| hd.mono fun y hy ↦
@@ -115,7 +115,7 @@ in a discrete set. -/
 theorem eventually_rep_ne_zero [ConnectedSpace X] (hu : MDifferentiable 𝓘(ℂ) 𝓘(ℂ, Fin n → ℂ) u)
     {i : Fin (n + 1)} {x₀ : X} (hx₀ : (u x₀).rep i ≠ 0) (x : X) :
     ∀ᶠ y in 𝓝[≠] x, (u y).rep i ≠ 0 := by
-  have hk := meromorphicAt_rep_div_rep hu i i
+  have hk (y : X) := meromorphicAt_rep_div_rep (hu.contMDiff (n := 1) y) i i
   set m := MeromorphicFunction.ofMeromorphic hk
   have hev (x : X) :
       m.finitePart =ᶠ[𝓝[≠] x] fun y ↦ (u y).rep i / (u y).rep i :=
@@ -152,7 +152,8 @@ private theorem exists_polynomial_eventually_eq_mk
   obtain ⟨i, hi⟩ : ∃ i, (u ∞).rep i ≠ 0 := Function.ne_iff.1 (u ∞).rep_ne_zero
   -- The ratios `uⱼ / uᵢ` are rational functions `r j`; clear their denominators.
   set g : Fin (n + 1) → MeromorphicFunction (OnePoint ℂ) :=
-    fun j ↦ MeromorphicFunction.ofMeromorphic (meromorphicAt_rep_div_rep hu i j)
+    fun j ↦ MeromorphicFunction.ofMeromorphic fun x ↦
+      meromorphicAt_rep_div_rep (hu.contMDiff (n := 1) x) i j
   set r : Fin (n + 1) → RatFunc ℂ := fun j ↦ MeromorphicFunction.ratFuncEquiv.symm (g j)
   set D : ℂ[X] := ∏ j, (r j).denom
   have hdvd (j : Fin (n + 1)) : (r j).denom ∣ D := Finset.dvd_prod_of_mem _ (Finset.mem_univ j)
