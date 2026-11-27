@@ -17,6 +17,7 @@ inverses are their conjugates, to the conjugate character.
 
 ## Main results
 
+* `MulChar.ofUnitHom_eq_mulEquivToUnitHom_symm`: `ofUnitHom χ = mulEquivToUnitHom.symm χ`.
 * `MulChar.ofUnitHom_inv`: `ofUnitHom χ⁻¹ = (ofUnitHom χ)⁻¹`.
 * `MulChar.ofUnitHom_inv_eq_star`: for `RCLike` values, `ofUnitHom χ⁻¹ = star (ofUnitHom χ)`.
 -/
@@ -24,6 +25,12 @@ inverses are their conjugates, to the conjugate character.
 public section
 
 namespace MulChar
+
+/-- The zero extension of a unit homomorphism is its image under the inverse of the
+multiplicative equivalence `MulChar.mulEquivToUnitHom`. -/
+theorem ofUnitHom_eq_mulEquivToUnitHom_symm {R R' : Type*} [CommMonoid R]
+    [CommMonoidWithZero R'] (χ : Rˣ →* R'ˣ) : ofUnitHom χ = mulEquivToUnitHom.symm χ :=
+  ofUnitHom_eq χ
 
 /-- The zero extension of the inverse of a unit homomorphism is the inverse character. -/
 theorem ofUnitHom_inv {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] (χ : Rˣ →* R'ˣ) :

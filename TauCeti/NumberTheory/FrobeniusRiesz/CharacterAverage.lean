@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.FrobeniusRiesz.PrimeSide
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive.Riesz
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Riesz.FrobeniusMainTerm
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
+import TauCeti.NumberTheory.MulChar.Lemmas
 
 /-!
 # The character average of a Frobenius Riesz remainder
@@ -59,8 +60,8 @@ theorem frobeniusRieszMainTerm_def [Fintype G] (f : (ZMod N)ˣ →* G) (q : G �
     conj (f.frobeniusRieszMainTerm q w a) = f.frobeniusRieszMainTerm q w a := by
   have hsq : MulChar.ofUnitHom (q.comp f) * MulChar.ofUnitHom (q.comp f) = 1 := by
     apply MulChar.mulEquivToUnitHom.injective
-    have hχ : MulChar.mulEquivToUnitHom (MulChar.ofUnitHom (q.comp f)) = q.comp f :=
-      MulChar.mulEquivToUnitHom.apply_symm_apply _
+    have hχ : MulChar.mulEquivToUnitHom (MulChar.ofUnitHom (q.comp f)) = q.comp f := by
+      rw [MulChar.ofUnitHom_eq_mulEquivToUnitHom_symm, MulEquiv.apply_symm_apply]
     rw [map_mul, map_one, hχ]
     exact DFunLike.ext _ _ fun u ↦ DFunLike.congr_fun hq (f u)
   have hp : (PrimitiveDirichletCharacter.of (MulChar.ofUnitHom (q.comp f)))⁻¹ =

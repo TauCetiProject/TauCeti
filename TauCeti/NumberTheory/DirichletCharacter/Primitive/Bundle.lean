@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.DirichletCharacter.Primitive
+import TauCeti.NumberTheory.MulChar.Lemmas
 
 /-!
 # Primitive Dirichlet characters bundled with their conductor
@@ -184,9 +185,8 @@ trivial exactly when `χ` is. -/
 theorem of_ofUnitHom_comp_eq_one_iff [NeZero N] {G : Type*} [MulOneClass G]
     {f : (ZMod N)ˣ →* G} (hf : Function.Surjective f) {χ : G →* ℂˣ} :
     of (MulChar.ofUnitHom (χ.comp f)) = 1 ↔ χ = 1 := by
-  rw [of_eq_one_iff]
-  change MulChar.mulEquivToUnitHom.symm (χ.comp f) = 1 ↔ χ = 1
-  rw [MulEquiv.map_eq_one_iff, ← MonoidHom.one_comp f, MonoidHom.cancel_right hf]
+  rw [of_eq_one_iff, MulChar.ofUnitHom_eq_mulEquivToUnitHom_symm, MulEquiv.map_eq_one_iff,
+    ← MonoidHom.one_comp f, MonoidHom.cancel_right hf]
 
 /-- A bundle is trivial exactly when its character is the principal character of its level. -/
 theorem character_eq_one_iff (ψ : PrimitiveDirichletCharacter) : ψ.character = 1 ↔ ψ = 1 :=
