@@ -94,14 +94,15 @@ variable {R : Type u} [CommRing R] (J : Ideal R) (M : Type v) [AddCommGroup M] [
 /-- The `J`-adic decreasing filtration `F^p = J^p • M` of a module `M`, with `F^p = M` for
 `p ≤ 0`. -/
 noncomputable abbrev adicFiltration : FilteredObject (ModuleCat.{v} R) ℤᵒᵖ :=
-  ofSubmodules (fun p : ℤᵒᵖ ↦ J ^ p.unop.toNat • (⊤ : Submodule R M)) fun _ _ f ↦
-    Submodule.smul_mono_left (Ideal.pow_le_pow_right (Int.toNat_le_toNat (leOfHom f.unop)))
+  ofAntitone (fun p : ℤ ↦ J ^ p.toNat • (⊤ : Submodule R M)) fun _ _ hpq ↦
+    Submodule.smul_mono_left (Ideal.pow_le_pow_right (Int.toNat_le_toNat hpq))
 
 /-- The steps `F^p` of the `J`-adic filtration with `p ≤ 0` are the whole module. -/
 theorem step_adicFiltration_of_nonpos {p : ℤ} (hp : p ≤ 0) :
     (adicFiltration J M).step (op p) = ⊤ := by
-  rw [step_ofSubmodules, unop_op, Int.toNat_eq_zero.2 hp, pow_zero, Ideal.one_eq_top,
-    Submodule.top_smul, map_top]
+  rw [step_ofSubmodules, unop_op]
+  beta_reduce
+  rw [Int.toNat_eq_zero.2 hp, pow_zero, Ideal.one_eq_top, Submodule.top_smul, map_top]
 
 /-- The `J`-adic filtration is exhaustive: its step `F^0` is the whole module. -/
 theorem isExhaustive_adicFiltration : (adicFiltration J M).IsExhaustive :=
