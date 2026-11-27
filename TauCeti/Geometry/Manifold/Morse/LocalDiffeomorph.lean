@@ -20,13 +20,10 @@ of `π` is invertible, the chain rule shows that `x` is a critical point of `f �
 For nondegeneracy, let `M` and `M'` be boundaryless. In the preferred charts at `x` and `π x`, the
 coordinate expression of `f ∘ π` is that of `f` composed with the coordinate expression of `π`,
 whose derivative at the chart image of `x` is invertible, and nondegeneracy is invariant under
-such a change of coordinates; the two models may differ. They may also differ for the kernel of
-the critical Hessian at a critical point, which the second-order chain rule shows the differential
-of `π` carries onto the kernel for `f`. For the Morse index, let the models agree. Near
-`x`, a chart of `M'` at `π x` composed with `π` is a chart of the maximal atlas of `M`, and in it
-the coordinate expression of `f ∘ π` is the coordinate expression of `f`. Since the Morse index
-of a `C²` function at a critical point can be read in any chart of the maximal atlas, it is
-unchanged under composition with `π`.
+such a change of coordinates; the two models may differ. The Morse index of a critical point is
+invariant under the same change of coordinates, so it is unchanged under composition with `π`. The
+models may also differ for the kernel of the critical Hessian at a critical point, which the
+second-order chain rule shows the differential of `π` carries onto the kernel for `f`.
 
 This is how Morse data is lifted to a covering space: the critical points of `f ∘ π` are the
 preimages of those of `f`, with the same nondegeneracy and indices.
@@ -37,7 +34,7 @@ preimages of those of `f`, with the same nondegeneracy and indices.
   critical point of `f ∘ π` exactly when `π x` is one of `f`, for local diffeomorphisms between
   boundaryless manifolds with possibly different models.
 * `IsLocalDiffeomorphAt.manifoldMorseIndex_comp`: at a critical point the Morse index of `f ∘ π`
-  at `x` is that of `f` at `π x`.
+  at `x` is that of `f` at `π x`, again for possibly different models.
 * `IsLocalDiffeomorphAt.ker_criticalHessian_eq_map`: at a critical point the differential of `π`
   carries the kernel of the critical Hessian of `f ∘ π` onto that of `f`.
 * `IsLocalDiffeomorph.criticalPoints_comp`: the critical set of `f ∘ π`, for a local
@@ -65,6 +62,16 @@ variable {E H M E' H' M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [To
   {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless] [TopologicalSpace M'] [ChartedSpace H' M']
   {n : WithTop ℕ∞} {π : M → M'} {x : M}
 
+omit [I'.Boundaryless] in
+/-- The coordinate expression of a local diffeomorphism at `x` in the preferred extended charts
+has invertible derivative at the chart image of `x`: on a boundaryless source this is
+`isInvertible_fderivWithin_writtenInExtChartAt`, read on the whole model space. -/
+private theorem isInvertible_fderiv_writtenInExtChartAt (hπ : IsLocalDiffeomorphAt I I' n π x)
+    (hn : n ≠ 0) :
+    (fderiv ℝ (writtenInExtChartAt I I' x π) (extChartAt I x x)).IsInvertible := by
+  have h := isInvertible_fderivWithin_writtenInExtChartAt (hπ.isInvertible_mfderiv hn)
+  rwa [I.range_eq_univ, fderivWithin_univ] at h
+
 /-- **Nondegeneracy under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at `x`
 with `2 ≤ n`, between boundaryless manifolds possibly modelled on different spaces, then `x` is a
 nondegenerate critical point of `f ∘ π` exactly when `π x` is a nondegenerate critical point of
@@ -78,18 +85,16 @@ theorem isManifoldNondegenerateCriticalPoint_comp_iff
   swap
   · exact iff_of_false (fun h ↦ hf ((hπ.contMDiffAt_comp_iff hn).1 h.contMDiffAt))
       fun h ↦ hf h.contMDiffAt
-  have hπd : MDifferentiableAt I I' π x := hπ.mdifferentiableAt hn0
   have hy : writtenInExtChartAt I I' x π (extChartAt I x x) = extChartAt I' (π x) (π x) :=
     writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
   -- Near the chart image of `x`, the coordinate expression of `f ∘ π` is that of `f` composed
   -- with the coordinate expression of `π`, whose derivative there is the invertible `dπ`.
-  have heq := hπd.continuousAt.comp_comp_extChartAt_symm_eventuallyEq (I := I) (I' := I') f
-  have hinv : (fderiv ℝ (writtenInExtChartAt I I' x π) (extChartAt I x x)).IsInvertible := by
-    rw [writtenInExtChartAt, ← hπd.mfderiv_eq_fderiv_extChartAt_conj rfl]
-    exact hπ.isInvertible_mfderiv hn0
+  have heq := (hπ.mdifferentiableAt hn0).continuousAt.comp_comp_extChartAt_symm_eventuallyEq
+    (I := I) (I' := I') f
   rw [isManifoldNondegenerateCriticalPoint_iff, isManifoldNondegenerateCriticalPoint_iff, ← hy,
     ← isNondegenerateCriticalPoint_comp_iff (hy ▸ hf.contDiffAt_comp_extChartAt_symm)
-      (hπ.contMDiffAt.of_le hn).contDiffAt_writtenInExtChartAt hinv]
+      (hπ.contMDiffAt.of_le hn).contDiffAt_writtenInExtChartAt
+      (hπ.isInvertible_fderiv_writtenInExtChartAt hn0)]
   exact heq.isNondegenerateCriticalPoint_iff
 
 /-- **The kernel of the critical Hessian under a local diffeomorphism.** If `π` is a `C^n` local
@@ -119,34 +124,31 @@ theorem ker_criticalHessian_eq_map
     obtain ⟨w, rfl⟩ := hD.surjective w
     rw [← hcomp, hu, zero_apply, zero_apply]
 
-end Models
-
-variable {E H M M' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M] [ChartedSpace H M]
-  [TopologicalSpace M'] [ChartedSpace H M'] {n : WithTop ℕ∞} [IsManifold I n M]
-  [IsManifold I n M'] {π : M → M'} {x : M}
-
 /-- **The Morse index under a local diffeomorphism.** If `π` is a `C^n` local diffeomorphism at
-`x` with `2 ≤ n`, and `π x` is a critical point of a function `f` which is `C²` there, then the
-Morse index of `f ∘ π` at `x` is the Morse index of `f` at `π x`. -/
+`x` with `2 ≤ n`, between boundaryless manifolds possibly modelled on different spaces, and `π x` is
+a critical point of a function `f` which is `C²` there, then the Morse index of `f ∘ π` at `x` is
+the Morse index of `f` at `π x`. -/
 theorem manifoldMorseIndex_comp
-    (hπ : IsLocalDiffeomorphAt I I n π x) (hn : 2 ≤ n) {f : M' → ℝ}
-    (hf : ContMDiffAt I 𝓘(ℝ) 2 f (π x)) (hcrit : π x ∈ criticalPoints I f) :
-    manifoldMorseIndex I (f ∘ π) x = manifoldMorseIndex I f (π x) := by
-  have : IsManifold I 2 M := IsManifold.of_le hn
-  have : IsManifold I 2 M' := IsManifold.of_le hn
-  have hcrit' : x ∈ criticalPoints I (f ∘ π) :=
-    (hπ.mem_criticalPoints_comp_iff (one_le_two.trans hn)).2 hcrit
-  obtain ⟨e, he, hx, hpt, hcomp⟩ := hπ.exists_mem_maximalAtlas_extend_eventuallyEq
-    (IsManifold.chart_mem_maximalAtlas (π x)) (mem_chart_source H (π x))
-  have hcomp' : (f ∘ π) ∘ (e.extend I).symm =ᶠ[𝓝 (e.extend I x)]
-      f ∘ ((chartAt H (π x)).extend I).symm := hcomp.fun_comp f
-  rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas
-      (IsManifold.maximalAtlas_subset_of_le hn he) hx (hf.comp x (hπ.contMDiffAt.of_le hn))
-      (mem_criticalPoints.1 hcrit'),
-    manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (IsManifold.chart_mem_maximalAtlas (π x))
-      (mem_chart_source H (π x)) hf (mem_criticalPoints.1 hcrit),
-    morseIndex_congr_of_eventuallyEq hcomp', hpt]
+    (hπ : IsLocalDiffeomorphAt I I' n π x) (hn : 2 ≤ n) {f : M' → ℝ}
+    (hf : ContMDiffAt I' 𝓘(ℝ) 2 f (π x)) (hcrit : π x ∈ criticalPoints I' f) :
+    manifoldMorseIndex I (f ∘ π) x = manifoldMorseIndex I' f (π x) := by
+  have hn0 : n ≠ 0 := (two_pos.trans_le hn).ne'
+  have hy : writtenInExtChartAt I I' x π (extChartAt I x x) = extChartAt I' (π x) (π x) :=
+    writtenInExtChartAt_apply_extChartAt (mem_extChartAt_source x)
+  have hcrit' : fderiv ℝ (f ∘ (extChartAt I' (π x)).symm)
+      (writtenInExtChartAt I I' x π (extChartAt I x x)) = 0 := by
+    rw [hy, ← mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    exact mem_criticalPoints.1 hcrit
+  -- As for nondegeneracy, the coordinate expression of `f ∘ π` is that of `f` composed with the
+  -- coordinate expression of `π`, a change of coordinates with invertible derivative.
+  rw [manifoldMorseIndex_def, manifoldMorseIndex_def, morseIndex_congr_of_eventuallyEq
+      ((hπ.mdifferentiableAt hn0).continuousAt.comp_comp_extChartAt_symm_eventuallyEq
+        (I := I) (I' := I') f),
+    morseIndex_comp (hy ▸ hf.contDiffAt_comp_extChartAt_symm)
+      (hπ.contMDiffAt.of_le hn).contDiffAt_writtenInExtChartAt hcrit'
+      (hπ.isInvertible_fderiv_writtenInExtChartAt hn0), hy]
+
+end Models
 
 end IsLocalDiffeomorphAt
 

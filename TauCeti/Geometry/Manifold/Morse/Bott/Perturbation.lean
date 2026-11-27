@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 import TauCeti.Analysis.Calculus.Morse.Bott.Perturbation
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Morse.LocalDiffeomorph
-import TauCeti.Geometry.Manifold.Morse.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.Submersion
 import TauCeti.Geometry.Manifold.VectorBundle.ZeroSection
 import TauCeti.Topology.VectorBundle.Trivialization
@@ -52,7 +51,7 @@ the tangent space of `i`, the image under `dΘ` of the tangent space of the zero
 points, nondegeneracy and Morse indices are then carried across `Θ`
 (`IsLocalDiffeomorphAt.mem_criticalPoints_comp_iff`,
 `IsLocalDiffeomorphAt.isManifoldNondegenerateCriticalPoint_comp_iff`,
-`TauCeti.IsRegularPoint.manifoldMorseIndex_comp`).
+`IsLocalDiffeomorphAt.manifoldMorseIndex_comp`).
 
 ## Main results
 
@@ -442,9 +441,6 @@ theorem manifoldMorseIndex_add_comp (s : S) {φ : S → ℝ} (hφ : ContMDiffAt 
   obtain ⟨hg, hcrit, hker⟩ := zeroSection_hypotheses h hm hΘ hΘi
   obtain ⟨N, -, hZN, hN⟩ := exists_isOpen_forall_mem_criticalPoints_add_comp_proj_iff hg hcrit hker
   have hloc := PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ Θ (hΘ s)
-  have hΘ₂ := hloc.contMDiffAt.of_le hm
-  have hreg : IsRegularPoint (J.prod 𝓘(ℝ, F)) I Θ (zeroSection F V s) :=
-    isRegularPoint_iff.2 (hloc.isInvertible_mfderiv (two_pos.trans_le hm).ne').surjective
   have heq := add_comp_eventuallyEq (f := f) φ (hΘ s)
   -- The perturbed function is `C²` and critical at `Θ 0_s = i s`.
   have hF : ContMDiffAt I 𝓘(ℝ) 2 (fun y ↦ f y + φ (Θ.symm y).proj) (Θ (zeroSection F V s)) :=
@@ -454,9 +450,9 @@ theorem manifoldMorseIndex_add_comp (s : S) {φ : S → ℝ} (hφ : ContMDiffAt 
     rw [← hloc.mem_criticalPoints_comp_iff (one_le_two.trans hm), heq.mem_criticalPoints_iff,
       hN _ (hZN (mem_range_self s)) φ (hφ.mdifferentiableAt two_ne_zero)]
     exact ⟨rfl, hs⟩
-  rw [← hΘi s, ← hreg.manifoldMorseIndex_comp hF hΘ₂ hcritF,
+  rw [← hΘi s, ← hloc.manifoldMorseIndex_comp hm hF hcritF,
     manifoldMorseIndex_congr_of_eventuallyEq heq, manifoldMorseIndex_add_comp_proj_zeroSection
-      (hg s) hcrit hφ, hreg.manifoldMorseIndex_comp (hΘi s ▸ h.contMDiffAt s) hΘ₂
+      (hg s) hcrit hφ, hloc.manifoldMorseIndex_comp hm (hΘi s ▸ h.contMDiffAt s)
       (hΘi s ▸ h.mem_criticalPoints s)]
 
 end SmoothEmbedding.IsNondegenerateCriticalSubmanifold
