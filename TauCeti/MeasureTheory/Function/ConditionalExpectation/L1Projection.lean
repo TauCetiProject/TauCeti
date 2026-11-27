@@ -164,7 +164,7 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- The `L²` conditional expectation of the indicator `𝟙_s x` of a measurable set of finite measure
 is integrable, for an arbitrary measure and an arbitrary sub-σ-algebra. -/
-theorem integrable_condExpIndSMul (hm : m ≤ m0) {s : Set α} (hs : MeasurableSet s)
+theorem integrable_condExpIndSMul_of_le (hm : m ≤ m0) {s : Set α} (hs : MeasurableSet s)
     (hμs : μ s ≠ ∞) (x : G) : Integrable (condExpIndSMul hm hs hμs x) μ :=
   ⟨Lp.aestronglyMeasurable _,
     (lintegral_eNorm_condExpIndSMul_le hm hs hμs x).trans_lt (by finiteness)⟩
@@ -174,7 +174,7 @@ measurable set `s` of finite measure. -/
 private def condExpL1ProjIndFin (hm : m ≤ m0) {s : Set α} (hs : MeasurableSet s)
     (hμs : μ s ≠ ∞) : G →L[ℝ] α →₁[μ] G :=
   LinearMap.mkContinuous
-    { toFun x := (TauCeti.integrable_condExpIndSMul hm hs hμs x).toL1 _
+    { toFun x := (integrable_condExpIndSMul_of_le hm hs hμs x).toL1 _
       map_add' x y := by
         rw [← Integrable.toL1_add, Integrable.toL1_eq_toL1_iff, condExpIndSMul_add]
         exact Lp.coeFn_add _ _
@@ -191,7 +191,7 @@ private def condExpL1ProjIndFin (hm : m ≤ m0) {s : Set α} (hs : MeasurableSet
 private theorem condExpL1ProjIndFin_ae_eq (hm : m ≤ m0) {s : Set α} (hs : MeasurableSet s)
     (hμs : μ s ≠ ∞) (x : G) :
     condExpL1ProjIndFin hm hs hμs x =ᵐ[μ] condExpIndSMul hm hs hμs x :=
-  (TauCeti.integrable_condExpIndSMul hm hs hμs x).coeFn_toL1
+  (integrable_condExpIndSMul_of_le hm hs hμs x).coeFn_toL1
 
 open scoped Classical in
 /-- The conditional expectation of indicators, as a set function with values in continuous linear
