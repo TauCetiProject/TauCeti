@@ -23,7 +23,7 @@ This file establishes exact rank criteria and formulas for `TauCeti.firstJetMatr
 
 1. **Full column rank.** Over a nontrivial commutative semiring satisfying `OrzechProperty`,
    `firstJetMap P d` is injective if and only if `firstJetMatrix P d` has full column rank
-   `(d + r) choose r` (`TauCeti.injective_firstJetMap_iff_rank_eq`).
+   `(d + r) choose r` (`TauCeti.firstJetMap_injective_iff_rank_eq`).
 2. **Univariate Hermite interpolation.** In one variable (`[Unique σ]`), identifying
    `restrictTotalDegree σ R d` with `Polynomial.degreeLT R (d + 1)` via
    `MvPolynomial.uniqueAlgEquiv` connects `firstJetMap P d` (and `firstJetValueMap P d`) directly
@@ -57,7 +57,7 @@ This file establishes exact rank criteria and formulas for `TauCeti.firstJetMatr
 
 ## Main results
 
-* `TauCeti.injective_firstJetMap_iff_rank_eq`: full column rank criterion over `OrzechProperty`
+* `TauCeti.firstJetMap_injective_iff_rank_eq`: full column rank criterion over `OrzechProperty`
   semirings.
 * `TauCeti.finrank_range_firstJetValueMap_univariate`: univariate value evaluation rank
   `min (d + 1) (Fintype.card ι)` over an integral domain.
@@ -89,7 +89,7 @@ open MvPolynomial
 /-- **Full column rank criterion.** Over a nontrivial commutative semiring satisfying
 `OrzechProperty`, `firstJetMap P d` is injective if and only if `firstJetMatrix P d` has rank
 `(d + Fintype.card σ).choose (Fintype.card σ)`. -/
-theorem injective_firstJetMap_iff_rank_eq {σ ι R : Type*} [CommSemiring R] [Nontrivial R]
+theorem firstJetMap_injective_iff_rank_eq {σ ι R : Type*} [CommSemiring R] [Nontrivial R]
     [OrzechProperty R] [Fintype σ] {d : ℕ} (P : ι → σ → R) :
     Function.Injective (firstJetMap P d) ↔
       (firstJetMatrix P d).rank = (d + Fintype.card σ).choose (Fintype.card σ) := by
@@ -174,7 +174,7 @@ theorem finrank_range_firstJetValueMap_univariate [Unique σ] [Fintype ι]
   rw [firstJetValueMap_eq_hasseJet,
     LinearMap.finrank_range_comp_comp _ _ _ (univariateValueCodomainEquiv R ι).injective
       (restrictTotalDegreeEquivDegreeLT σ R d).surjective]
-  simpa using Polynomial.finrank_range_hermiteJet_degreeLT (fun _ ↦ 1)
+  simpa using Polynomial.finrank_range_hasseJet_comp_degreeLT (fun _ ↦ 1)
     (injective_eval_default hP).injOn (d + 1)
 
 /-- In one variable, the range of `firstJetMap P d` at `n` distinct points over any integral domain
@@ -186,7 +186,7 @@ theorem finrank_range_firstJetMap_univariate [Unique σ] [Fintype ι]
   rw [firstJetMap_eq_hasseJet,
     LinearMap.finrank_range_comp_comp _ _ _ (univariateJetCodomainEquiv R ι σ).injective
       (restrictTotalDegreeEquivDegreeLT σ R d).surjective]
-  simpa [mul_comm] using Polynomial.finrank_range_hermiteJet_degreeLT (fun _ ↦ 2)
+  simpa [mul_comm] using Polynomial.finrank_range_hasseJet_comp_degreeLT (fun _ ↦ 2)
     (injective_eval_default hP).injOn (d + 1)
 
 /-- **Univariate Hermite interpolation rank.** Over any integral domain `R` in any characteristic,

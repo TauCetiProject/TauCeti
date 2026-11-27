@@ -111,7 +111,7 @@ interpolation over arbitrary commutative rings and fields (`Polynomial.hermiteJe
   `Polynomial.ordinaryHermiteJet_bijective_iff_ne`: exact `↔` characterizations of when Hasse
   and ordinary-derivative Hermite interpolation are bijective over commutative rings and fields.
 * `Polynomial.range_hasseJet_comp_degreeLT_eq_range_hermiteJet`,
-  `Polynomial.finrank_range_hermiteJet_degreeLT`: over an integral domain, when nodes of nonzero
+  `Polynomial.finrank_range_hasseJet_comp_degreeLT`: over an integral domain, when nodes of nonzero
   multiplicity are pairwise distinct, the image of `hasseJet a m` on polynomials of degree below `N`
   equals the range of `hermiteJet a m` once `∑ i, m i ≤ N`, and has dimension `min N (∑ i, m i)`.
 
@@ -973,7 +973,7 @@ theorem range_hasseJet_comp_degreeLT_eq_range_hermiteJet (m : ι → ℕ)
 
 /-- Over an integral domain, when nodes of nonzero multiplicity are pairwise distinct, the image of
 `hasseJet a m` on polynomials of degree below `N` has dimension `min N (∑ i, m i)`. -/
-theorem finrank_range_hermiteJet_degreeLT (m : ι → ℕ) (ha : Set.InjOn a {i | m i ≠ 0}) (N : ℕ) :
+theorem finrank_range_hasseJet_comp_degreeLT (m : ι → ℕ) (ha : Set.InjOn a {i | m i ≠ 0}) (N : ℕ) :
     Module.finrank R (LinearMap.range ((hasseJet a m).comp (degreeLT R N).subtype)) =
       min N (∑ i, m i) := by
   classical
