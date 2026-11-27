@@ -24,7 +24,14 @@ the same with local coefficients: for every local system `L` on the free loop sp
 
 `Hₖ(𝓛M; L) = colimₙ Hₖ(𝓛ⁿM; (geoⁿ)^* L)`
 
-(`TauCeti.Manifold.isColimitWhiskerOverTwistedHomologyCyclicDistanceCutCocone`).
+(`TauCeti.Manifold.isColimitWhiskerOverTwistedHomologyCyclicDistanceCutCocone`). The same holds
+over a union `S` of path components of the free loop space, such as the contractible loops `𝓛₀M`,
+for every local system `L` on `S`, with the parts `(geoⁿ)⁻¹(S)` of the distance cuts:
+`Hₖ(S; L) = colimₙ Hₖ((geoⁿ)⁻¹(S); (geoⁿ)^* L)`
+(`TauCeti.Manifold.isColimitWhiskerOverTwistedHomologyRestrictPreimageCyclicDistanceCutCocone`).
+Local systems pulled back from `M` along the evaluation of a loop at its base point, such as the
+orientation system of `M`, are examples, but `L` need not be of this form: its monodromy along a
+loop of loops, such as the rotation of a loop, need not be seen at the base points.
 
 It is the compact-approximation criterion with local coefficients,
 `TauCeti.LocalCoefficientSystem.isColimitWhiskerOverTwistedHomologyCoconeOfCompactApprox`. Its new
@@ -52,12 +59,19 @@ The proof reparametrizes `γ` by time maps (`TauCeti.MooreFreeLoopSpace.reparam`
   sides, which are homotopic because the time maps are simply connected, and `geoᵐ ∘ H` and the
   path of `G` at `γ` as the other pair.
 
+Over a union `S` of path components the same homotopies serve. They start in `S` and so stay in it,
+and so does the homotopy between the two traced paths
+(`TauCeti.homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset`): the coherence within
+`S` is the restriction of the coherence over `𝓛M`.
+
 ## Main results
 
 * `TauCeti.Manifold.homotopic_map_evalAt_cyclicDistanceCutSampleBrokenGeodesicHomotopy`: sliding
   the vertices and straightening the arcs agree up to homotopy.
 * `TauCeti.Manifold.isColimitWhiskerOverTwistedHomologyCyclicDistanceCutCocone`: the homology of
   the free loop space with local coefficients is the colimit of the homology of the distance cuts.
+* `TauCeti.Manifold.isColimitWhiskerOverTwistedHomologyRestrictPreimageCyclicDistanceCutCocone`:
+  the same for a union of path components of the free loop space.
 
 ## References
 
@@ -888,6 +902,97 @@ def isColimitWhiskerOverTwistedHomologyCyclicDistanceCutCocone {R : Type*} [Ring
     (fun j K K' _ hK' hKK' ↦
       let ⟨i, f, e, G, H, h⟩ := cyclicDistanceCutCocone_coherent hr hpos hlt hδ j K K' hK' hKK'
       ⟨i, f, e, G, H, fun x ↦ congrArg L.map (Path.Homotopic.Quotient.eq.2 (h x))⟩) k
+
+/-! ### Unions of components of the free loop space -/
+
+section Component
+
+variable {S : Set (MooreFreeLoopSpace M)}
+
+include hr in
+/-- **The two homotopies of the approximation by broken geodesics are coherent within a union of
+components.** Let `S` be a union of path components of the free loop space. For a compact family
+`K` of tuples of the part `(geoʲ)⁻¹(S)` of the distance cut `𝓛ʲM` and a compact family `K'` of
+loops of `S` containing their broken geodesics, the sampling, straightening and sliding over the
+whole free loop space stay over `S`, and the two paths they trace are homotopic within `S`. -/
+private theorem restrictPreimage_cyclicDistanceCutCocone_coherent
+    (hS : ∀ γ ∈ S, pathComponent γ ⊆ S) (hpos : 0 < δ 0 0) (hlt : ∀ n i, δ n i < r)
+    (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j) (j : ℕ)
+    (K : Set (((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).obj j))
+    (K' : Set ((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).pt)
+    (hK' : IsCompact K')
+    (hKK' : Set.MapsTo
+      (((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).ι.app j) K K') :
+    ∃ (i : ℕ) (f : j ⟶ i)
+      (e : C(K', ((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).obj i))
+      (G : ((((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).ι.app i).hom.comp
+        e).Homotopy (ContinuousMap.subtypeVal K'))
+      (H : (e.comp ⟨hKK'.restrict,
+        (((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).ι.app
+          j).hom.continuous.restrict hKK'⟩).Homotopy
+          ((((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).map f).hom.comp
+            (ContinuousMap.subtypeVal K))),
+      ∀ x : K, ((H.evalAt x).map (((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage
+        S).ι.app i).hom.continuous).Homotopic
+          ((G.evalAt ⟨((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).ι.app j x,
+            hKK' x.property⟩).cast rfl (ConcreteCategory.congr_hom
+              (((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).w f) x.val)) := by
+  -- Run the construction for all free loops on the images of `K` and `K'`, and restrict it.
+  have hKK'₀ : MapsTo ((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app j)
+      (Subtype.val '' K) (Subtype.val '' K') := by
+    rintro _ ⟨q, hq, rfl⟩
+    exact ⟨_, hKK' hq, rfl⟩
+  obtain ⟨i, f, e₀, G₀, H₀, h⟩ := cyclicDistanceCutCocone_coherent hr hpos hlt hδ j _ _
+    (hK'.image continuous_subtypeVal) hKK'₀
+  let φ : C(K', Subtype.val '' K') :=
+    ⟨(mapsTo_image _ K').restrict, continuous_subtypeVal.restrict _⟩
+  let ψ : C(K, Subtype.val '' K) :=
+    ⟨(mapsTo_image _ K).restrict, continuous_subtypeVal.restrict _⟩
+  -- The broken geodesics through the samples of the loops of `K'` lie in `S`.
+  have hmem (γ : K') : (cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app i (e₀ (φ γ)) ∈ S :=
+    (ContinuousMap.Homotopic.symm ⟨G₀⟩).apply_mem hS γ.val.property
+  refine ⟨i, f,
+    ⟨fun γ ↦ ⟨e₀ (φ γ), hmem γ⟩, ((map_continuous e₀).comp (map_continuous φ)).subtype_mk _⟩,
+    ContinuousMap.Homotopy.codRestrict hS ((G₀.compContinuousMap φ).cast
+      (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)),
+    ContinuousMap.Homotopy.codRestrict
+      (fun _ hq ↦ (map_continuous _).pathComponent_subset_preimage hS hq)
+      ((H₀.compContinuousMap ψ).cast (ContinuousMap.ext fun _ ↦ rfl)
+        (ContinuousMap.ext fun q ↦ (Cocone.coe_preimageFunctor_map_apply
+          (cyclicDistanceCutCocone hr hlt hpos.le hδ) S _ q.val).symm)), fun x ↦ ?_⟩
+  -- Both paths stay in `S`, where they are the restrictions of the homotopic paths over `𝓛M`.
+  refine homotopic_of_map_subtypeVal_homotopic_of_pathComponent_subset (hS _ (Subtype.property _))
+    (Path.Homotopic.of_coe_eq (h := h (ψ x)) (funext fun t ↦ ?_) (funext fun t ↦ ?_))
+  · exact congrArg ((cyclicDistanceCutCocone hr hlt hpos.le hδ).ι.app i)
+      (ContinuousMap.Homotopy.coe_codRestrict_apply _ _ (t, x))
+  · exact ContinuousMap.Homotopy.coe_codRestrict_apply _ _ (t, _)
+
+/-- **The homology of a union of components of the free loop space with local coefficients is the
+colimit of the homology of its parts of the distance cuts.** Let `S` be a union of path components
+of the free loop space, such as the contractible loops `𝓛₀M`. For cut-offs `δ n i < r` which grow
+from each stage to the next, `δ n i ≤ δ (n + 1) j`, and with `δ 0 0` positive, and for a local
+system `L` on `S`, the restrictions of the broken-geodesic maps to the parts `(geoⁿ)⁻¹(S)` of the
+distance cuts (`CategoryTheory.Limits.Cocone.restrictPreimage`) induce an isomorphism
+`colimₙ Hₖ((geoⁿ)⁻¹(S); (geoⁿ)^* L) ≅ Hₖ(S; L)`. -/
+def isColimitWhiskerOverTwistedHomologyRestrictPreimageCyclicDistanceCutCocone {R : Type*}
+    [Ring R] (hS : ∀ γ ∈ S, pathComponent γ ⊆ S) (hpos : 0 < δ 0 0) (hlt : ∀ n i, δ n i < r)
+    (hδ : ∀ n i j, δ n i ≤ δ (n + 1) j)
+    (L : LocalCoefficientSystem.{_, u, max u w} R
+      ((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).pt)
+    (k : ℕ) :
+    IsColimit ((LocalCoefficientSystem.overTwistedHomologyCocone L k).whisker
+      (((cyclicDistanceCutCocone hr hlt hpos.le hδ).preimageFunctor S).toOver _
+        ((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).ι.app
+        ((cyclicDistanceCutCocone hr hlt hpos.le hδ).restrictPreimage S).w)) :=
+  LocalCoefficientSystem.isColimitWhiskerOverTwistedHomologyCoconeOfCompactApprox _ L
+    (fun _ hK ↦
+      exists_restrictPreimage_cyclicDistanceCutCocone_ι_app_comp_homotopic hr hS hpos hlt hδ hK)
+    (fun j K K' _ hK' hKK' ↦
+      let ⟨i, f, e, G, H, h⟩ :=
+        restrictPreimage_cyclicDistanceCutCocone_coherent hr hS hpos hlt hδ j K K' hK' hKK'
+      ⟨i, f, e, G, H, fun x ↦ congrArg L.map (Path.Homotopic.Quotient.eq.2 (h x))⟩) k
+
+end Component
 
 end Colimit
 
