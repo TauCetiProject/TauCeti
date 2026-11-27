@@ -7,19 +7,19 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
-# Complex analyticity of the Gamma function
+# Complex analyticity of the Gamma prefactor `Γ(2b) / Γ(b)²`
 
-`Complex.Gamma` is complex analytic away from the nonpositive integers (`Complex.analyticAt_Gamma`),
-because its reciprocal is entire (`Complex.differentiable_one_div_Gamma`) and `Gamma` does not
-vanish away from `-ℕ`. Consequently the zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic
-wherever `2b` avoids `-ℕ` (`TauCeti.analyticAt_Gamma_two_mul_div_Gamma_sq`,
+Since `Complex.Gamma` is complex analytic away from the nonpositive integers
+(`Complex.analyticAt_Gamma` in `TauCeti.Analysis.SpecialFunctions.Gamma.Basic`) and does not
+vanish away from `-ℕ`, the zero-balanced prefactor `b ↦ Γ(2b) / Γ(b)²` is analytic wherever `2b`
+avoids `-ℕ` (`TauCeti.analyticAt_Gamma_two_mul_div_Gamma_sq`,
 `TauCeti.analyticOnNhd_Gamma_two_mul_div_Gamma_sq`).
 
 ## Main results
 
-* `Complex.analyticAt_Gamma`: `AnalyticAt ℂ Complex.Gamma s` wherever `∀ n : ℕ, s ≠ -(n : ℂ)`.
 * `TauCeti.ne_neg_natCast_of_two_mul_ne`: if `2 * a ∉ -ℕ`, then `a ∉ -ℕ`.
 * `TauCeti.analyticAt_Gamma_two_mul_div_Gamma_sq` and
   `TauCeti.analyticOnNhd_Gamma_two_mul_div_Gamma_sq`: complex analyticity of
@@ -27,16 +27,6 @@ wherever `2b` avoids `-ℕ` (`TauCeti.analyticAt_Gamma_two_mul_div_Gamma_sq`,
 -/
 
 public section
-
-namespace Complex
-
-/-- Gamma is analytic away from the nonpositive integers. -/
-@[fun_prop]
-theorem analyticAt_Gamma {s : ℂ} (hs : ∀ n : ℕ, s ≠ -(n : ℂ)) : AnalyticAt ℂ Gamma s := by
-  have h := (differentiable_one_div_Gamma.analyticAt s).inv (inv_ne_zero (Gamma_ne_zero hs))
-  simpa only [Pi.inv_def, inv_inv] using h
-
-end Complex
 
 namespace TauCeti
 

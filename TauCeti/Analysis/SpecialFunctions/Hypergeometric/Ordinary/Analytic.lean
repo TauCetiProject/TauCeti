@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.Ordinary.Basic
 import TauCeti.Analysis.Complex.NegNatTopology
-import TauCeti.Analysis.SpecialFunctions.Gamma.Analytic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric.Basic
 
 /-!

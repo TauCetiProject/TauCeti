@@ -53,6 +53,8 @@ coupling of `s` with the distribution `(1 - t, t)` on `Fin 2`, which is natural 
 * `SSet.prodStdSimplex₁.prism`: the triangulation `Δᵖ × I → |Δ[p] ⊗ Δ[1]|` of the prism, natural
   in `Δ[p]` (`SSet.prodStdSimplex₁.prism_naturality`), with ends `ι₀` and `ι₁`.
 * `SSet.toTopCylinder X`: the triangulation `|X| × I → |X ⊗ Δ[1]|` of the realized cylinder.
+* `SSet.toTopCylinder_toTopObjMk_verticalEdge`: over a vertex `v`, the triangulation traces the
+  vertical edge `{v} × Δ[1]`, so a realized homotopy moves `v` along the image of that edge.
 * `SSet.Homotopy.toTop`: the realization of a simplicial homotopy.
 * `SSet.toTopHomotopyEquiv`: the realization of a simplicial homotopy equivalence.
 * `SSet.nonempty_homotopy_iff_homotopic_homEquiv_symm`: maps into a singular simplicial set are
@@ -471,6 +473,33 @@ lemma prism_one (s : StdSimplex ℝ (Fin (p + 1))) :
     (funext fun i ↦ Prod.ext (prodStdSimplex.objEquiv_apply_fst _ i)
       (prodStdSimplex.objEquiv_apply_snd _ i)) s
 
+/-- Over the `0`-simplex, the triangulation of the prism is the vertical edge `{0} × Δ[1]`: the
+point `(s, t)` has barycentric coordinates `(1 - t, t)` in it. -/
+private lemma prism_zero_eq (s : StdSimplex ℝ (Fin 1)) (t : I) :
+    prism.{u} 0 (s, t) = toTopObjMk (verticalEdge (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))
+      (StdSimplex.homeomorphI.symm t) := by
+  have hb (b : Fin 2) : prodStdSimplex.objEquiv
+      (verticalEdge (X := Δ[0]) (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))) b = (0, b) := by
+    refine Prod.ext (Subsingleton.elim (α := Fin 1) _ _)
+      ((prodStdSimplex.objEquiv_apply_snd _ b).trans ?_)
+    rw [verticalEdge_snd (X := Δ[0]) (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌))]
+    fin_cases b <;> rfl
+  have hinj : Function.Injective (prodStdSimplex.objEquiv
+      (verticalEdge (X := Δ[0]) (stdSimplex.objEquiv.symm (𝟙 ⦋0⦌)))) := fun i j h ↦ by
+    rw [hb, hb] at h
+    exact congrArg Prod.snd h
+  refine prism_eq _ _ ?_
+  rw [← StdSimplex.weights_inj]
+  ext ⟨i, b⟩
+  obtain rfl := Subsingleton.elim (α := Fin 1) i 0
+  have h₁ : prefixSum 1 s.weights = 1 := by
+    rw [TauCeti.prefixSum_of_le le_rfl, StdSimplex.total_of_fintype]
+  rw [← hb, StdSimplex.weights_map_apply_of_injective hinj, hb, prismMeasure_weights]
+  simp only [prismWeights, Fin.val_zero, zero_add, h₁, TauCeti.prefixSum_zero]
+  fin_cases b
+  · simp [min_eq_right (sub_le_self 1 t.property.1), min_eq_left (sub_nonneg.2 t.property.2)]
+  · simp [max_eq_left (sub_le_self 1 t.property.1), max_eq_right (sub_nonneg.2 t.property.2)]
+
 end prodStdSimplex₁
 
 /-! ### Realization of the cylinder and of homotopies -/
@@ -526,6 +555,20 @@ lemma toTopCylinder_toTopObjMk {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (F
   have h := apply_toTopObjMk ((sSetTopAdj.homEquiv _ _).symm (cylinderPaths X)) x w
   rw [Equiv.apply_symm_apply] at h
   exact DFunLike.congr_fun h t
+
+/-- Over a vertex `v` of `X`, the triangulation of the realized cylinder traces the vertical edge
+`{v} × Δ[1]`: at time `t` it is the point of `SSet.verticalEdge v` with barycentric coordinates
+`(1 - t, t)`. -/
+lemma toTopCylinder_toTopObjMk_verticalEdge (v : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) (t : I) :
+    toTopCylinder X (toTopObjMk v w, t) =
+      toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
+  rw [toTopCylinder_toTopObjMk, prodStdSimplex₁.prism_zero_eq, toTop_map_toTopObjMk]
+  congr 1
+  refine (whiskerRight_app_apply _ _ _).trans
+    (Prod.ext ?_ ((verticalEdge_snd _).trans (verticalEdge_snd v).symm))
+  refine (congrArg _ (verticalEdge_fst _)).trans ((σ_naturality_apply _ 0 _).trans ?_)
+  rw [verticalEdge_fst, yonedaEquiv_symm_app_objEquiv_symm, op_id, CategoryTheory.Functor.map_id,
+    types_id_apply]
 
 /-- If at the end `t` the triangulation of every prism is the realization of `j`, for a natural
 family `j : Z ⟶ Z ⊗ Δ[1]`, then so is the triangulation of the realized cylinder. -/
