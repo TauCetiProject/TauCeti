@@ -354,8 +354,8 @@ theorem mk_toInvertibleSheaf_blowupSupResidualLeft_mul_inv_blowupSupResidualRigh
     (mk_toInvertibleSheaf_congr _
         (h2.colon hF.locallyPrincipal (comap_mono _ le_sup_right)) rfl).trans
       (mk_toInvertibleSheaf_colon h2 hF (comap_mono _ le_sup_right))
-  rw [hL, hR, mul_inv_rev, inv_inv, mul_assoc, inv_mul_cancel_left,
-    pullback_mul, pullback_inv,
+  rw [hL, hR, pullback_mul, pullback_inv,
     hD₁.pullback_mk_toInvertibleSheaf h1, hD₂.pullback_mk_toInvertibleSheaf h2]
+  group
 
 end TauCeti.AlgebraicGeometry.LineBundleClass
