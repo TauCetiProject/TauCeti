@@ -50,6 +50,8 @@ orbit of a character of order `m` has `φ(m)` elements.
 * `MulChar.ncard_galoisOrbit`: the Galois orbit of `χ` has `φ(orderOf χ)` elements.
 * `MulChar.ringHomComp_mem_galoisOrbit`: composing with an injective ring endomorphism of a
   domain, such as an automorphism of `ℂ`, stays in the Galois orbit.
+* `MulChar.ringHomComp_eq_pow`: if `χ ^ n = 1` and `σ` sends a primitive `n`-th root of unity `μ`
+  to `μ ^ t`, then `σ ∘ χ = χ ^ t`.
 * `MulChar.apply_neg_one_eq_of_mem_galoisOrbit`: characters in one Galois orbit have the same
   parity.
 * `MulChar.exists_isPrimitiveRoot_apply`: a character of order `m` with values in a domain takes
@@ -247,6 +249,18 @@ theorem ringHomComp_mem_galoisOrbit (χ : MulChar M R) {σ : R →+* R}
     ⟨a, (hu.pow_iff_coprime χ.orderOf_pos a).mp (ha ▸ hu.map_of_injective hσ), ext fun v ↦ ?_⟩
   obtain ⟨j, hj⟩ := exists_pow_eq_apply hu v
   rw [pow_apply_coe_eq_pow_pow hj, ha, ringHomComp_apply, ← hj, map_pow]
+
+omit [Finite Mˣ] in
+/-- **The Galois action on a character.** If `χ ^ n = 1` and a ring endomorphism `σ` of a domain
+sends a primitive `n`-th root of unity `μ` to `μ ^ t`, then `σ ∘ χ = χ ^ t`: every value of `χ`
+at a unit is a power of `μ`. -/
+theorem ringHomComp_eq_pow {χ : MulChar M R} {n : ℕ} [NeZero n] (hχ : χ ^ n = 1) {μ : R}
+    (hμ : IsPrimitiveRoot μ n) {σ : R →+* R} {t : ℕ} (hσ : σ μ = μ ^ t) :
+    χ.ringHomComp σ = χ ^ t := by
+  refine MulChar.ext fun u ↦ ?_
+  obtain ⟨k, -, hk⟩ := hμ.eq_pow_of_pow_eq_one (ξ := χ u) <| by
+    rw [← pow_apply_coe, hχ, one_apply_coe]
+  rw [ringHomComp_apply, pow_apply_coe, ← hk, map_pow, hσ, ← pow_mul, ← pow_mul, mul_comm]
 
 end IsDomain
 
