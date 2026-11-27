@@ -50,7 +50,8 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 
 ## Main results
 
-* `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`, `Matrix.pow_three_eq_fin_two`: the
+* `Matrix.sq_eq_trace_smul_sub_det_smul_one_fin_two`,
+  `Matrix.pow_three_eq_trace_sq_sub_det_smul_sub_trace_mul_det_smul_one_fin_two`: the
   Cayley–Hamilton square and cube identities in size two.
 * `Matrix.pow_add_two_fin_two`, `Matrix.trace_pow_add_two_fin_two`: the Cayley–Hamilton recurrence
   for the powers of a `2 × 2` matrix and for their traces.
@@ -129,7 +130,8 @@ theorem trace_pow_add_two_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : ℕ) :
 
 /-- **Cayley–Hamilton cube identity in size two**: a `2 × 2` matrix `A` satisfies
 `A ^ 3 = (trace A ^ 2 - det A) • A - (trace A * det A) • 1`. -/
-theorem pow_three_eq_fin_two (A : Matrix (Fin 2) (Fin 2) R) :
+theorem pow_three_eq_trace_sq_sub_det_smul_sub_trace_mul_det_smul_one_fin_two
+    (A : Matrix (Fin 2) (Fin 2) R) :
     A ^ 3 = (A.trace ^ 2 - A.det) • A - (A.trace * A.det) • 1 := by
   calc A ^ 3 = A.trace • A ^ 2 - A.det • A := by
         rw [pow_add_two_fin_two, pow_one]
@@ -150,7 +152,8 @@ square is `trace A ^ 2 • 1 = 1`. -/
 theorem pow_six_eq_one_of_det_eq_one_of_trace_sq_eq_one_fin_two {A : Matrix (Fin 2) (Fin 2) R}
     (hdet : A.det = 1) (htr : A.trace ^ 2 = 1) : A ^ 6 = 1 := by
   have h3 : A ^ 3 = -(A.trace • (1 : Matrix (Fin 2) (Fin 2) R)) := by
-    rw [pow_three_eq_fin_two, hdet, htr, sub_self, zero_smul, mul_one, zero_sub]
+    rw [pow_three_eq_trace_sq_sub_det_smul_sub_trace_mul_det_smul_one_fin_two, hdet, htr, sub_self,
+      zero_smul, mul_one, zero_sub]
   calc A ^ 6 = (A ^ 3) ^ 2 := by rw [← pow_mul]
     _ = (-(A.trace • (1 : Matrix (Fin 2) (Fin 2) R))) ^ 2 := by rw [h3]
     _ = A.trace ^ 2 • (1 : Matrix (Fin 2) (Fin 2) R) := by
@@ -162,7 +165,8 @@ By Cayley–Hamilton, `A ^ 3 = A - trace A • 1` and `A ^ 4 = A * (A - trace A 
 theorem pow_four_eq_neg_one_of_det_eq_one_of_trace_sq_eq_two_fin_two {A : Matrix (Fin 2) (Fin 2) R}
     (hdet : A.det = 1) (htr : A.trace ^ 2 = 2) : A ^ 4 = -1 := by
   have h3 : A ^ 3 = A - A.trace • 1 := by
-    rw [pow_three_eq_fin_two, hdet, htr, show (2 : R) - 1 = 1 by norm_num, one_smul, mul_one]
+    rw [pow_three_eq_trace_sq_sub_det_smul_sub_trace_mul_det_smul_one_fin_two, hdet, htr,
+      show (2 : R) - 1 = 1 by norm_num, one_smul, mul_one]
   calc A ^ 4 = A * A ^ 3 := by rw [pow_succ']
     _ = A * (A - A.trace • 1) := by rw [h3]
     _ = A ^ 2 - A.trace • A := by rw [mul_sub, Matrix.mul_smul, mul_one, sq]

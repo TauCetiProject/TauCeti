@@ -118,7 +118,8 @@ private theorem exists_mem_binaryTetrahedralCoords_of_coe_eq {g : SU2} {v : Fin 
     (hg : (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩) :
     ∃ v ∈ binaryTetrahedralCoords,
       (g : Matrix (Fin 2) (Fin 2) ℂ) = toComplexMatrix ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ := by
-  have hnorm := normSq_eq_one_of_toComplexMatrix_mem_specialUnitaryGroup (hg ▸ g.property)
+  have hnorm := (mem_unitary_iff_normSq_eq_one _).mp
+    (toComplexMatrix_mem_specialUnitaryGroup_iff.mp (hg ▸ g.property))
   rw [normSq_mk_div_two, div_eq_one_iff_eq four_ne_zero] at hnorm
   refine ⟨v, mem_binaryTetrahedralCoords_iff.mpr ?_, hg⟩
   rw [Fin.sum_univ_four]
@@ -129,7 +130,7 @@ private theorem toComplexMatrix_mem_of_mem_binaryTetrahedralCoords {v : Fin 4 �
     (hv : v ∈ binaryTetrahedralCoords) :
     toComplexMatrix ⟨v 0 / 2, v 1 / 2, v 2 / 2, v 3 / 2⟩ ∈
       Matrix.specialUnitaryGroup (Fin 2) ℂ := by
-  refine mem_specialUnitaryGroup_toComplexMatrix ((mem_unitary_iff_normSq_eq_one _).mpr ?_)
+  refine toComplexMatrix_mem_specialUnitaryGroup_iff.mpr ((mem_unitary_iff_normSq_eq_one _).mpr ?_)
   have hv := mem_binaryTetrahedralCoords_iff.mp hv
   rw [Fin.sum_univ_four] at hv
   rw [normSq_mk_div_two, div_eq_one_iff_eq four_ne_zero]
@@ -260,7 +261,7 @@ theorem binaryDihedralSubgroup_two_le_binaryTetrahedralSubgroup :
 /-- The element `ω = (-1 + i + j + k) / 2` of the binary tetrahedral group, of order three. -/
 noncomputable def binaryTetrahedralOmega : SU2 :=
   ⟨toComplexMatrix ⟨-1 / 2, 1 / 2, 1 / 2, 1 / 2⟩,
-    mem_specialUnitaryGroup_toComplexMatrix
+    toComplexMatrix_mem_specialUnitaryGroup_iff.mpr
       ((mem_unitary_iff_normSq_eq_one _).mpr (by rw [normSq_def']; norm_num))⟩
 
 /-- The matrix of `ω` is that of the quaternion `(-1 + i + j + k) / 2`. -/

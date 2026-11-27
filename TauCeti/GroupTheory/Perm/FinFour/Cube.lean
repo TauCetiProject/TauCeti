@@ -628,11 +628,10 @@ def cubeRotationToSpecialOrthogonalGroup (R : Type*) [CommRing R] :
 @[simp]
 theorem coe_cubeRotationToSpecialOrthogonalGroup (R : Type*) [CommRing R] (A : cubeRotationGroup) :
     (cubeRotationToSpecialOrthogonalGroup R A : Matrix (Fin 3) (Fin 3) R) =
-      (Int.castRingHom R).mapMatrix (A.val : Matrix (Fin 3) (Fin 3) ℤ) := by
+      (A.val : Matrix (Fin 3) (Fin 3) ℤ).map (Int.castRingHom R) := by
   simp only [cubeRotationToSpecialOrthogonalGroup, MonoidHom.comp_apply,
     Matrix.SpecialOrthogonalGroup.coe_map, cubeRotationToIntSpecialOrthogonalGroup,
-    MonoidHom.codRestrict_apply, Subgroup.coe_subtype, SpecialLinearGroup.coeMonoidHom_apply,
-    RingHom.mapMatrix_apply]
+    MonoidHom.codRestrict_apply, Subgroup.coe_subtype, SpecialLinearGroup.coeMonoidHom_apply]
 
 /-- **The homomorphism `cubeRotationGroup →* SO(3, R)` is injective whenever `2 ≠ 0` in `R`**:
 signed permutation matrices have entries in `{-1, 0, 1}`, and those three integers remain distinct
@@ -653,8 +652,7 @@ theorem cubeRotationToSpecialOrthogonalGroup_injective (R : Type*) [CommRing R] 
   intro A B hAB
   refine Subtype.ext (Subtype.ext (Matrix.ext fun i j => ?_))
   have hij : ((A.val i j : ℤ) : R) = ((B.val i j : ℤ) : R) := by
-    simpa [RingHom.mapMatrix_apply, Matrix.map_apply] using
-      congrFun (congrFun (congrArg Subtype.val hAB) i) j
+    simpa [Matrix.map_apply] using congrFun (congrFun (congrArg Subtype.val hAB) i) j
   exact Int.cast_injOn_of_ringChar_ne_two hchar (hmem A i j) (hmem B i j) hij
 
 /-! ### The two inscribed tetrahedra -/

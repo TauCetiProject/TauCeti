@@ -89,7 +89,7 @@ private theorem rotationMatrix_mem (φ : ℝ) :
   have hq : (⟨Real.cos φ, 0, Real.sin φ, 0⟩ : ℍ[ℝ]) ∈ unitary ℍ[ℝ] := by
     rw [Quaternion.mem_unitary_iff_normSq_eq_one, Quaternion.normSq_def']
     linear_combination Real.cos_sq_add_sin_sq φ
-  convert Quaternion.mem_specialUnitaryGroup_toComplexMatrix hq using 1
+  convert Quaternion.toComplexMatrix_mem_specialUnitaryGroup_iff.mpr hq using 1
   rw [Quaternion.toComplexMatrix_apply, rotationMatrix]
   simp
 

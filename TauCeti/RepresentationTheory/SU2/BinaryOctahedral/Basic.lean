@@ -52,8 +52,8 @@ image under the double cover `SU(2) →* SO(3)` with the cube rotation group `S�
   `TauCeti.SU2.mem_binaryOctahedralCosetCoords_iff_card_support`: the two characterizations of the
   24 scaled coordinates of the second family.
 * `TauCeti.SU2.mem_binaryOctahedralSubgroup_iff_exists_int` and
-  `TauCeti.SU2.mem_binaryOctahedralSubgroup_iff_mem_binaryTetrahedralSubgroup_or_mul`: coordinate
-  and coset characterizations of the binary octahedral subgroup.
+  `TauCeti.SU2.mem_binaryOctahedralSubgroup_iff_mem_binaryTetrahedralSubgroup_or_mul_mem`:
+  coordinate and coset characterizations of the binary octahedral subgroup.
 * `TauCeti.SU2.natCard_binaryOctahedralSubgroup`: it has exactly 48 elements.
 * `TauCeti.SU2.relIndex_binaryTetrahedralSubgroup_binaryOctahedralSubgroup`: the binary tetrahedral
   subgroup has index two in it.
@@ -71,7 +71,8 @@ image under the double cover `SU(2) →* SO(3)` with the cube rotation group `S�
 
 * J. H. Conway and D. A. Smith, *On Quaternions and Octonions*, A K Peters, 2003, Chapter 3 and
   §6.5.
-* J.-H. Choi and Y. Lee, *Finite subgroups of `SU(2)` and their realizations*, 2018, §§2–4.
+* Jihyun Choi and Jae-Hyouk Lee, *Binary Icosahedral Group and 600-Cell*, Symmetry 10 (2018), 326,
+  §§2–4, DOI 10.3390/sym10080326.
 -/
 
 public section
@@ -152,7 +153,8 @@ private theorem exists_mem_binaryOctahedralCosetCoords_of_coe_eq {g : SU2} {w : 
       toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩) :
     ∃ w ∈ binaryOctahedralCosetCoords, (g : Matrix (Fin 2) (Fin 2) ℂ) =
       toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ := by
-  have hnorm := normSq_eq_one_of_toComplexMatrix_mem_specialUnitaryGroup (hg ▸ g.property)
+  have hnorm := (mem_unitary_iff_normSq_eq_one _).mp
+    (toComplexMatrix_mem_specialUnitaryGroup_iff.mp (hg ▸ g.property))
   rw [normSq_mk_div, Real.sq_sqrt zero_le_two, div_eq_one_iff_eq two_ne_zero] at hnorm
   refine ⟨w, mem_binaryOctahedralCosetCoords_iff.mpr ?_, hg⟩
   rw [Fin.sum_univ_four]
@@ -163,7 +165,7 @@ private theorem toComplexMatrix_mem_of_mem_binaryOctahedralCosetCoords {w : Fin 
     (hw : w ∈ binaryOctahedralCosetCoords) :
     toComplexMatrix ⟨w 0 / √2, w 1 / √2, w 2 / √2, w 3 / √2⟩ ∈
       Matrix.specialUnitaryGroup (Fin 2) ℂ := by
-  refine mem_specialUnitaryGroup_toComplexMatrix ((mem_unitary_iff_normSq_eq_one _).mpr ?_)
+  refine toComplexMatrix_mem_specialUnitaryGroup_iff.mpr ((mem_unitary_iff_normSq_eq_one _).mpr ?_)
   have hw := mem_binaryOctahedralCosetCoords_iff.mp hw
   rw [Fin.sum_univ_four] at hw
   rw [normSq_mk_div, Real.sq_sqrt zero_le_two, div_eq_one_iff_eq two_ne_zero]
@@ -412,7 +414,7 @@ theorem torusHom_neg_one_mem_binaryOctahedralSubgroup :
 
 /-- **Coset characterization of the binary octahedral subgroup**: an element of `SU(2)` lies in
 `2O` exactly when either `g` or `τ g` lies in `2T`, where `τ = (1 + i) / √2`. -/
-theorem mem_binaryOctahedralSubgroup_iff_mem_binaryTetrahedralSubgroup_or_mul {g : SU2} :
+theorem mem_binaryOctahedralSubgroup_iff_mem_binaryTetrahedralSubgroup_or_mul_mem {g : SU2} :
     g ∈ binaryOctahedralSubgroup ↔
       g ∈ binaryTetrahedralSubgroup ∨ binaryDihedralRotation 4 * g ∈ binaryTetrahedralSubgroup := by
   constructor
@@ -593,8 +595,8 @@ theorem pow_eight_eq_one_or_pow_six_eq_one_of_mem_binaryOctahedralSubgroup {g : 
     -- elements of trace `±2` can be unipotent): `normSq q = 1` and `(2 * q.re)² = 4` force
     -- `q = ±1`.
     refine Or.inl (hpow 8 ?_)
-    have hnorm : normSq q = 1 :=
-      normSq_eq_one_of_toComplexMatrix_mem_specialUnitaryGroup (hgq ▸ g.property)
+    have hnorm : normSq q = 1 := (mem_unitary_iff_normSq_eq_one _).mp
+      (toComplexMatrix_mem_specialUnitaryGroup_iff.mp (hgq ▸ g.property))
     rw [normSq_def'] at hnorm
     have him : q.imI = 0 ∧ q.imJ = 0 ∧ q.imK = 0 := ⟨by nlinarith, by nlinarith, by nlinarith⟩
     have hqre : q = q.re := by ext <;> simp [him.1, him.2.1, him.2.2]
