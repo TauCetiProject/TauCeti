@@ -172,6 +172,12 @@ points of `s` and vanishes at the others. -/
 def indicator (s : Set X) (ω : RoughForm I X F k) : RoughForm I X F k :=
   (s.indicator (ω : X → E [⋀^Fin k]→L[ℝ] F) : X → E [⋀^Fin k]→L[ℝ] F)
 
+/-- The restriction of `ω` to `s` is the indicator function of `s` applied to the underlying
+function of `ω`. -/
+theorem indicator_def (s : Set X) (ω : RoughForm I X F k) :
+    ω.indicator s = (s.indicator (ω : X → E [⋀^Fin k]→L[ℝ] F) : X → E [⋀^Fin k]→L[ℝ] F) :=
+  (rfl)
+
 /-- The restriction of `ω` to `s` takes the value `ω x` at the points `x` of `s` and `0` at the
 others. -/
 theorem indicator_apply (s : Set X) (ω : RoughForm I X F k) (x : X) [Decidable (x ∈ s)] :
@@ -207,21 +213,22 @@ theorem indicator_add [IsTopologicalAddGroup F] (s : Set X) (ω η : RoughForm I
 
 @[simp]
 theorem indicator_smul [ContinuousConstSMul ℝ F] (s : Set X) (c : ℝ) (ω : RoughForm I X F k) :
-    (c • ω).indicator s = c • ω.indicator s := by
-  funext x
-  by_cases hx : x ∈ s
-  · rw [Pi.smul_apply, indicator_apply_of_mem _ hx, indicator_apply_of_mem _ hx]
-    rfl
-  · rw [Pi.smul_apply, indicator_apply_of_notMem _ hx, indicator_apply_of_notMem _ hx]
-    ext v
-    simp
+    (c • ω).indicator s = c • ω.indicator s :=
+  -- `Set.indicator_const_smul` needs `SMulZeroClass`, which the model fibre only has when `F` has
+  -- continuous addition; scaling by `c` fixes `0`, which is all the indicator needs.
+  Set.indicator_comp_of_zero (M := E [⋀^Fin k]→L[ℝ] F) (g := (c • ·)) (by ext; simp)
+
+/-- The support of the restriction of `ω` to `s` is the part of the support of `ω` in `s`. -/
+theorem support_indicator (s : Set X) (ω : RoughForm I X F k) :
+    Function.support (M := E [⋀^Fin k]→L[ℝ] F) (ω.indicator s) =
+      s ∩ Function.support (M := E [⋀^Fin k]→L[ℝ] F) ω :=
+  Set.support_indicator (M := E [⋀^Fin k]→L[ℝ] F)
 
 /-- The support of a restriction is contained in the support of the form. -/
 theorem tsupport_indicator_subset (s : Set X) (ω : RoughForm I X F k) :
     _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) (ω.indicator s) ⊆
       _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] F) ω :=
-  closure_mono ((Set.support_indicator (M := E [⋀^Fin k]→L[ℝ] F)).trans_subset
-    inter_subset_right)
+  closure_mono ((support_indicator s ω).trans_subset inter_subset_right)
 
 /-- The support of a restriction to `s` is contained in the closure of `s`. -/
 theorem tsupport_indicator_subset_closure (s : Set X) (ω : RoughForm I X F k) :

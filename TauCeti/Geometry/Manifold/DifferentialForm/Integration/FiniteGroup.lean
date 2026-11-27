@@ -75,13 +75,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 
 variable {G : Type*} [Group G] [MulAction G M]
 
-/-- Pulling the restriction of a form to `g • V` back along `g` gives the restriction to `V` of
-the pulled back form. -/
-theorem mpullback_smul_indicator_smul_set (g : G) (V : Set M) (ω : RoughForm I M F k) :
-    mpullback I I (fun x : M ↦ g • x) (ω.indicator (g • V)) =
-      (mpullback I I (fun x : M ↦ g • x) ω).indicator V := by
-  rw [RoughForm.mpullback_indicator, preimage_smul, inv_smul_smul]
-
 /-- If `V` is a block of the action, its translates being pairwise equal or disjoint, then for a
 form supported in their union the restrictions of the form to the translates of `V` add up to `|H|`
 times the form, for the stabilizer `H` of `V`. -/
@@ -177,7 +170,7 @@ theorem inv_natCard_mul_integralTopForm_eq_of_isBlock [Finite G]
     have he : Topology.IsOpenEmbedding fun x : M ↦ g • x := (Homeomorph.smul g).isOpenEmbedding
     rw [← he.integralTopForm_mpullback_of_isOrientationPreservingAt (ho g)
         fun x _ ↦ ⟨g⁻¹ • x, smul_inv_smul g x⟩,
-      mpullback_smul_indicator_smul_set, hinv]
+      RoughForm.mpullback_indicator, preimage_smul, inv_smul_smul, hinv]
   -- Each restriction to a translate is continuous and compactly supported, hence integrable.
   have hint (g : G) : IntegrableTopForm (ω.indicator (g • (V : Set M))) :=
     (hω.indicator_smul_set_of_isBlock V.isOpen hV hsupp g).integrableTopForm
