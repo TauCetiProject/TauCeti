@@ -72,6 +72,8 @@ exponential.
   reflection `H ↦ H - α(H) (2 Z)`.
 * `TauCeti.Lie.lieExp_pi_smul_mem_normalizer_of_lie_eq_smul`: `exp (π x)` normalizes a closed
   connected subgroup with Lie algebra `t`.
+* `TauCeti.Lie.IsMaximalTorus.lie_mem_of_isRootPlane`: for `v` in a root plane of a maximal
+  torus with rotation `J`, the bracket `⁅v, J v⁆` lies in `𝔱`.
 * `TauCeti.Lie.IsMaximalTorus.exists_weylAdjointRepresentation_eq_reflection`: every real root
   of a maximal torus of a compact Lie group has a representative in the normalizer acting on `𝔱`
   by the orthogonal reflection in the root, lying in `Z_G(X)⁰` whenever `α(X) = 0`.
@@ -185,6 +187,20 @@ section MaximalTorus
 
 variable [CompactSpace G]
 
+/-- **The bracket of a root vector with its rotation lies in the Lie algebra of a maximal torus.**
+For a root plane `V` of the Lie algebra `𝔱` of a maximal torus, with rotation `J`, and `v ∈ V`, the
+bracket `⁅v, J v⁆` commutes with `𝔱`, so it lies in `𝔱` by maximality. -/
+theorem IsMaximalTorus.lie_mem_of_isRootPlane {T : Subgroup G} (hT : IsMaximalTorus T)
+    {B : LinearMap.BilinForm ℝ (LeftInvariantDerivation I G)}
+    {α : Dual ℝ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule}
+    {V : Submodule ℝ (LeftInvariantDerivation I G)} {J : Module.End ℝ V}
+    (h : IsRootPlane B (lieSubalgebraOfSubgroup (I := I) T).toSubmodule α V J) (v : V) :
+    ⁅(v : LeftInvariantDerivation I G), (J v : LeftInvariantDerivation I G)⁆ ∈
+      (lieSubalgebraOfSubgroup (I := I) T).toSubmodule :=
+  lie_mem_of_lie_eq_smul (fun z hz ↦ hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero
+      fun Y hY ↦ by rw [← lie_skew, hz ⟨Y, hY⟩, neg_zero])
+    (h.lie_apply · v) fun X ↦ by rw [h.lie_apply, h.apply_apply, Submodule.coe_neg, smul_neg]
+
 /-- A nonzero root plane of a maximal torus with nonzero root contains a normalized root pair: the
 images `x, y` of `ê₀, ê₁` under its rank-one homomorphism `so(3) → 𝔤`. -/
 private theorem IsMaximalTorus.exists_lie_eq_smul_of_isRootPlane {T : Subgroup G}
@@ -201,14 +217,8 @@ private theorem IsMaximalTorus.exists_lie_eq_smul_of_isRootPlane {T : Subgroup G
       ∃ hxy : ⁅x, y⁆ ∈ (lieSubalgebraOfSubgroup (I := I) T).toSubmodule, α ⟨_, hxy⟩ = 1 := by
   have : Nontrivial V := Submodule.nontrivial_iff_ne_bot.mpr hV
   obtain ⟨w, hw⟩ := exists_ne (0 : V)
-  -- `⁅w, J w⁆` commutes with `𝔱`, so it lies in `𝔱` by maximality.
-  have hwt : ⁅(w : LeftInvariantDerivation I G), (J w : LeftInvariantDerivation I G)⁆ ∈
-      (lieSubalgebraOfSubgroup (I := I) T).toSubmodule :=
-    lie_mem_of_lie_eq_smul (fun z hz ↦ hT.mem_lieSubalgebraOfSubgroup_of_forall_lie_eq_zero
-        fun Y hY ↦ by rw [← lie_skew, hz ⟨Y, hY⟩, neg_zero])
-      (h.lie_apply · w) fun X ↦ by rw [h.lie_apply, h.apply_apply, Submodule.coe_neg, smul_neg]
   obtain ⟨f, -, ⟨c, -, hf₀, hf₁⟩, hf₂, hα₁⟩ :=
-    h.exists_injective_lieHom_soThree hBs hBp hB hα hw hwt
+    h.exists_injective_lieHom_soThree hBs hBp hB hα hw (hT.lie_mem_of_isRootPlane h w)
   have hxy : ⁅f (soThreeEquiv ℝ (Pi.single 0 1)), f (soThreeEquiv ℝ (Pi.single 1 1))⁆ =
       f (soThreeEquiv ℝ (Pi.single 2 1)) := by
     rw [← LieHom.map_lie, lie_soThreeEquiv_single_zero_one]
