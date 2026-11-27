@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.SpectralObject.EpiMono
+import Mathlib.CategoryTheory.Abelian.DiagramLemmas.Four
 
 /-!
 # Raising the last index of `E^n(i₀ ≤ i₁ ≤ i₂ ≤ i₃)` along a monomorphism
@@ -96,21 +97,14 @@ lemma isIso_mapFourδ₄Toδ₃'_of_mono (i₀ i₁ i₂ i₃ i₄ : ι) (hi₀�
         (X.opcyclesMap_comp _ _ _ _ _ _ _ _ _ n₁ (Subsingleton.elim _ _)).symm
       comm₂₃ := (X.opcyclesToE_map _ _ _ _ _ _ _ _ _ _ _ _ n₀ n₁ n₂
         (Subsingleton.elim _ _) (Subsingleton.elim _ _)).symm }
-  -- `φ` is an isomorphism on the first two terms, hence on the cokernels of the first maps
+  -- `φ` is an isomorphism on the first two terms, hence on the cokernels of the first maps, by
+  -- the four lemma
   have : IsIso φ.τ₁ := X.isIso_opcyclesMap_of_mono hi₀₁ (hi₁₂.trans hi₂₃) hi₃₄ α₁ n₁ h
   have : IsIso φ.τ₂ := X.isIso_opcyclesMap_of_mono (hi₀₁.trans hi₁₂) hi₂₃ hi₃₄ α₂ n₁ h
-  have hS' := X.shortComplexOpcyclesThreeδ₂Toδ₁_exact (homOfLE hi₀₁) (homOfLE hi₁₂)
-    (homOfLE (hi₂₃.trans hi₃₄)) (homOfLE (hi₀₁.trans hi₁₂))
-    (homOfLE (hi₁₂.trans (hi₂₃.trans hi₃₄))) (Subsingleton.elim _ _) (Subsingleton.elim _ _)
-    n₀ n₁ n₂ hn₁ hn₂
-  have : IsIso φ.τ₃ := by
-    refine ⟨hS'.desc (inv φ.τ₂ ≫ S.g) ?_, ?_, ?_⟩
-    · rw [← cancel_epi φ.τ₁, comp_zero, φ.comm₁₂_assoc, IsIso.hom_inv_id_assoc, S.zero]
-    · rw [← cancel_epi S.g, ← φ.comm₂₃_assoc, hS'.g_desc, IsIso.hom_inv_id_assoc]
-      exact (Category.comp_id _).symm
-    · rw [← cancel_epi S'.g, hS'.g_desc_assoc, Category.assoc, ← φ.comm₂₃,
-        IsIso.inv_hom_id_assoc]
-      exact (Category.comp_id _).symm
-  exact this
+  exact isIso_of_epi_of_isIso (φ := ShortComplex.mapToComposableArrows φ)
+    (X.shortComplexOpcyclesThreeδ₂Toδ₁_exact ..).exact_toComposableArrows
+    (X.shortComplexOpcyclesThreeδ₂Toδ₁_exact ..).exact_toComposableArrows
+    (inferInstanceAs (Epi S.g)) (inferInstanceAs (Epi S'.g)) (inferInstanceAs (Epi φ.τ₁))
+    (inferInstanceAs (IsIso φ.τ₂))
 
 end CategoryTheory.Abelian.SpectralObject

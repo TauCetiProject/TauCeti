@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Abutment
-public import TauCeti.Algebra.Homology.SpectralObject.EpiMono
 public import TauCeti.Algebra.Homology.SpectralObject.PageHomology
 
 /-!
@@ -39,10 +38,13 @@ the graded pieces of the abutment in degree `n` on its late pages. At the positi
   (`HasConvergenceBounds.isIso_mapFourδ₄Toδ₃'`), because `H^n(⊥ ≤ q + r - 1) ⟶ H^n(⊥ ≤ ⊤)` is a
   monomorphism (`isIso_mapFourδ₄Toδ₃'_of_mono`);
 * hence the page object maps isomorphically onto the limit object `X.EInfty q n`, the graded piece
-  of the abutment (`HasConvergenceBounds.isIso_spectralSequencePageXToEInfty`), and isomorphically
-  onto the objects at `(p, q)` of all later pages
+  of the abutment (`HasConvergenceBounds.isIso_spectralSequencePageXToEInfty`, an instance of the
+  general criterion `isIso_spectralSequencePageXToEInfty_of_mono`), and isomorphically onto the
+  objects at `(p, q)` of all later pages
   (`HasConvergenceBounds.isIso_spectralSequencePageXToPageX`);
-* both differentials at `(p, q)` vanish (`HasConvergenceBounds.page_d_eq_zero`).
+* both differentials at `(p, q)` vanish (`HasConvergenceBounds.page_d_eq_zero`), as they do at any
+  position where the passage to the next page is an isomorphism
+  (`page_d_eq_zero_of_isIso_spectralSequencePageXToPageX`).
 
 The limit object `X.EInfty q n` vanishes for `q < a` and for `q ≥ b`
 (`HasConvergenceBounds.isZero_EInfty_of_lt`, `HasConvergenceBounds.isZero_EInfty_of_le`), so the
@@ -194,10 +196,9 @@ page `r` onto the limit object `X.EInfty q n` is an isomorphism on every page `r
 theorem isIso_spectralSequencePageXToEInfty (h : X.HasConvergenceBounds n a b) (r : ℤ)
     (hr : 2 ≤ r) (pq : ℤ × ℤ) (hn : n = pq.1 + pq.2) (hra : pq.2 - a + 2 ≤ r)
     (hrb : b - pq.2 + 1 ≤ r) :
-    IsIso (X.spectralSequencePageXToEInfty r hr pq n hn (h.isZero_H_add_one _ (by lia))) := by
-  have := h.isIso_mapFourδ₄Toδ₃' pq.2 (pq.2 + r - 1) (by lia) (by lia)
-  rw [spectralSequencePageXToEInfty_def]
-  infer_instance
+    IsIso (X.spectralSequencePageXToEInfty r hr pq n hn (h.isZero_H_add_one _ (by lia))) :=
+  have := h.isIso_H_map (pq.2 + r - 1) (by lia)
+  X.isIso_spectralSequencePageXToEInfty_of_mono r hr pq n hn _ inferInstance
 
 /-- Under convergence bounds `a, b` in degree `n = p + q`, the canonical maps between the objects at
 `(p, q)` on the pages `r ≤ r'` are isomorphisms as soon as `r ≥ 2`, `r ≥ q - a + 2` and
@@ -225,25 +226,7 @@ theorem page_d_eq_zero (h : X.HasConvergenceBounds n a b) (r : ℤ) (hr : 2 ≤ 
     (hij : i = pq ∨ j = pq) :
     ((X.spectralSequence coreE₂Cohomological).page r hr).d i j = 0 := by
   have := h.isIso_spectralSequencePageXToPageX r (r + 1) hr (by lia) pq hn hra hrb
-  -- on cycles, the isomorphism from the page `r` to the page `r + 1` is the projection onto the
-  -- homology of the page `r`
-  have e := X.iCycles_spectralSequencePageXToPageX r (r + 1) rfl hr pq n hn
-    (h.isZero_H_add_one _ (by lia)) (h.isZero_H_add_one _ (by lia))
-  rcases hij with rfl | rfl
-  · -- every element of the page `r` at `pq` is a cycle
-    have : Epi (((X.spectralSequence coreE₂Cohomological).page r hr).iCycles i) := by
-      rw [(IsIso.eq_comp_inv _).2 e]
-      infer_instance
-    rw [← cancel_epi (((X.spectralSequence coreE₂Cohomological).page r hr).iCycles i),
-      HomologicalComplex.iCycles_d, comp_zero]
-  · -- no cycle of the page `r` at `pq` is a boundary
-    have : Mono (((X.spectralSequence coreE₂Cohomological).page r hr).homologyπ j) := by
-      rw [(IsIso.eq_comp_inv _).2 e.symm]
-      infer_instance
-    have h₀ : ((X.spectralSequence coreE₂Cohomological).page r hr).toCycles i j = 0 := by
-      rw [← cancel_mono (((X.spectralSequence coreE₂Cohomological).page r hr).homologyπ j),
-        HomologicalComplex.toCycles_comp_homologyπ, zero_comp]
-    rw [← HomologicalComplex.toCycles_i, h₀, zero_comp]
+  exact X.page_d_eq_zero_of_isIso_spectralSequencePageXToPageX r hr pq n hn _ _ hij
 
 /-- Under convergence bounds `a, b` in degree `n`, the limit object `X.EInfty q n` vanishes for
 `q < a`: it is the graded piece `F_{q+1} H^n / F_q H^n`, and `F_{q+1} H^n` vanishes. -/
