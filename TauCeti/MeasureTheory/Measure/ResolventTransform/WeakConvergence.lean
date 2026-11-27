@@ -11,6 +11,9 @@ public import Mathlib.MeasureTheory.Measure.Tight
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Atoms
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 import TauCeti.MeasureTheory.Measure.ResolventTransform.Inversion
+import Mathlib.Analysis.Analytic.IsolatedZeros
+import Mathlib.Analysis.Complex.Convex
+import Mathlib.Analysis.Complex.HalfPlane
 import Mathlib.MeasureTheory.Measure.Prokhorov
 import Mathlib.MeasureTheory.Measure.TightNormed
 import Mathlib.Topology.MetricSpace.Equicontinuity
@@ -191,6 +194,40 @@ theorem tendsto_resolventTransform_of_tendsto {μs : ι → ProbabilityMeasure �
   simpa only [resolventTransform_apply, BoundedContinuousFunction.coe_ofNormedAddCommGroup] using
     h (BoundedContinuousFunction.ofNormedAddCommGroup _ (Complex.continuous_resolvent_real hz) _
       (Complex.norm_resolvent_real_le z · hz))
+
+/-- If the resolvent transforms of a tight family of probability measures on `ℝ` converge on
+a set with an accumulation point in the upper half-plane, the family has a unique weak limit.
+The limiting transform values need only be specified on that set. -/
+theorem existsUnique_tendsto_of_isTightMeasureSet_of_tendsto_resolventTransform [l.NeBot]
+    {μs : ι → ProbabilityMeasure ℝ} {D : Set ℂ} {z₀ : ℂ} {f : ℂ → ℂ}
+    (h_tight : IsTightMeasureSet {(μs i : Measure ℝ) | i})
+    (hz₀ : 0 < z₀.im) (hacc : z₀ ∈ closure (D \ {z₀}))
+    (h : ∀ z ∈ D, Tendsto (fun i ↦ resolventTransform (μs i : Measure ℝ) z) l (𝓝 (f z))) :
+    ∃! μ : ProbabilityMeasure ℝ, Tendsto μs l (𝓝 μ) := by
+  have hcompact : IsCompact (closure (range μs)) :=
+    isCompact_closure_of_isTightMeasureSet (by simpa using h_tight)
+  have hmem : ∀ᶠ i in l, μs i ∈ closure (range μs) :=
+    .of_forall fun i ↦ subset_closure (mem_range_self i)
+  obtain ⟨μ, -, hμ⟩ := hcompact.exists_mapClusterPt_of_frequently hmem.frequently
+  have hagrees {ν : ProbabilityMeasure ℝ} (hν : MapClusterPt ν l μs)
+      {z : ℂ} (hz : z ∈ D) (hzim : 0 < z.im) :
+      resolventTransform (ν : Measure ℝ) z = f z := by
+    obtain ⟨U, hU, hνU⟩ := mapClusterPt_iff_ultrafilter.mp hν
+    exact tendsto_nhds_unique (tendsto_resolventTransform_of_tendsto hνU hzim.ne')
+      ((h z hz).mono_left hU)
+  have htend : Tendsto μs l (𝓝 μ) := by
+    refine hcompact.tendsto_nhds_of_unique_mapClusterPt hmem fun ν _ hν ↦ ?_
+    apply toMeasure_injective
+    apply Measure.ext_of_resolventTransform
+    apply AnalyticOnNhd.eqOn_of_preconnected_of_frequently_eq
+      (analyticOnNhd_resolventTransform_setOf_im_pos (μ := (ν : Measure ℝ)))
+      (analyticOnNhd_resolventTransform_setOf_im_pos (μ := (μ : Measure ℝ)))
+      (convex_halfSpace_im_gt 0).isPreconnected hz₀
+    have hpos : ∀ᶠ z in 𝓝[≠] z₀, 0 < z.im :=
+      eventually_nhdsWithin_of_eventually_nhds ((isOpen_im_gt 0).mem_nhds hz₀)
+    exact ((mem_closure_ne_iff_frequently_within.mp hacc).and_eventually hpos).mono
+      fun _ ⟨hz, hzim⟩ ↦ (hagrees hν hz hzim).trans (hagrees hμ hz hzim).symm
+  exact ⟨μ, htend, fun _ hν ↦ tendsto_nhds_unique hν htend⟩
 
 /-- A tight family of probability measures on `ℝ` whose resolvent transforms converge on the
 upper half-plane to the transform of a probability measure `μ` converges weakly to `μ`. -/
