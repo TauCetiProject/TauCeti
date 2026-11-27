@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import TauCeti.LinearAlgebra.RootSystem.EquivComp
-public import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+public import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 public import TauCeti.LinearAlgebra.RootSystem.HomInvariance.RootForm
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.MulAction
 

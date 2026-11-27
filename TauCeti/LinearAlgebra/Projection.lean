@@ -224,10 +224,7 @@ element in `M`. -/
 theorem internalDirectSumEquiv_single [Fintype ι] [inst : DecidableEq ι]
     (hQi : iSupIndep Q) (hQt : ⨆ i, Q i = ⊤) (i : ι) (x : Q i) :
     internalDirectSumEquiv hQi hQt (Pi.single i x) = (x : M) := by
-  rw [internalDirectSumEquiv_apply, Finset.sum_eq_single_of_mem i (Finset.mem_univ i)]
-  · simp
-  · intro j _ hji
-    simp [Pi.single_eq_of_ne hji]
+  simp [Pi.apply_single (fun j (y : Q j) ↦ (y : M)) (fun _ ↦ rfl)]
 
 end TauCeti
 

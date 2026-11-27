@@ -9,7 +9,7 @@ public import TauCeti.LinearAlgebra.Projection
 public import TauCeti.LinearAlgebra.RootSystem.DirectSum.Basic
 import Mathlib.Algebra.Ring.Regular
 import TauCeti.LinearAlgebra.RootSystem.EquivComp
-import TauCeti.LinearAlgebra.RootSystem.HomInvariance
+import TauCeti.LinearAlgebra.RootSystem.HomInvariance.Basic
 
 /-!
 # Finite internal direct sums of root pairings
@@ -546,20 +546,20 @@ theorem Equiv.internalDirectSumCongr_weightMap_coe
     (Equiv.internalDirectSumCongr hEi hEt hEi' hEt' eκ e).weightMap (x : M) =
       ((e c).weightMap x : M') := by
   let _ := Fintype.ofFinite κ; let _ := Fintype.ofFinite κ'; classical
-  have hw : (Equiv.internalDirectSumCongr hEi hEt hEi' hEt' eκ e).weightMap (x : M) =
-      (piEquivInternalDirectSum hEi' hEt' Q).weightMap
-        ((Equiv.piCongr eκ e).weightMap
-          ((piEquivInternalDirectSum hEi hEt P).weightEquiv.symm (x : M))) := by
-    simp only [Equiv.internalDirectSumCongr, Equiv.toHom_comp, Hom.comp,
-      LinearMap.comp_apply, Equiv.inv_weightMap, LinearEquiv.coe_coe]
-  rw [hw, piEquivInternalDirectSum_weightMap_apply,
-    Finset.sum_eq_single_of_mem (eκ c) (Finset.mem_univ (eκ c))]
-  · simp [Equiv.piCongr_weightMap_apply]
-  · intro c' _ hc'
+  have hsingle : (piEquivInternalDirectSum hEi hEt P).weightEquiv.symm (x : M) =
+      Pi.single c x := by
+    rw [LinearEquiv.symm_apply_eq]
+    exact (internalDirectSumEquiv_single hEi hEt c x).symm
+  have hpi : (Equiv.piCongr eκ e).weightMap (Pi.single c x) =
+      Pi.single (eκ c) ((e c).weightMap x) := by
+    ext c'
     obtain ⟨d, rfl⟩ := eκ.surjective c'
-    rw [Equiv.piCongr_weightMap_apply, piEquivInternalDirectSum_weightEquiv_symm_apply,
-      internalProjection_apply_of_ne hEi hEt (by rintro rfl; exact hc' rfl)]
-    simp
+    rw [Equiv.piCongr_weightMap_apply]
+    rcases eq_or_ne d c with rfl | h
+    · simp
+    · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (eκ.injective.ne h)]
+  simp [Equiv.internalDirectSumCongr, Equiv.toHom_comp, hsingle, hpi,
+    Pi.apply_single (fun c' (y : E' c') ↦ (y : M')) (fun _ ↦ rfl)]
 
 @[simp]
 theorem Equiv.internalProjection_internalDirectSumCongr_weightMap

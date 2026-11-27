@@ -54,15 +54,14 @@ variable {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommRing R] [NeZero (2 : 
   [∀ c, AddCommGroup (N c)] [∀ c, Module R (N c)]
   (P : ∀ c, RootPairing (ι c) R (M c) (N c)) [∀ c, Fintype (ι c)]
 
+/-- The polarization of `RootPairing.pi P` acts coordinatewise as `(P c).Polarization`. -/
 @[simp]
 theorem pi_polarization_apply (x : ∀ c, M c) (c : κ) :
     (pi P).Polarization x c = (P c).Polarization (x c) := by
-  simp only [Polarization_apply, Fintype.sum_sigma, Finset.sum_apply, Pi.smul_apply, pi_coroot,
-    pi_coroot'_apply]
-  rw [Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-  · simp
-  · intro d _ hdc
-    simp [Pi.single_eq_of_ne (Ne.symm hdc)]
+  rw [Polarization_apply, Fintype.sum_sigma]
+  simp only [pi_coroot, pi_coroot'_apply, ← Pi.single_smul]
+  simp_rw [← LinearMap.single_apply (R := R) (φ := N), ← map_sum, LinearMap.single_apply]
+  simp [Polarization_apply]
 
 /-- **The canonical bilinear form of a finite direct sum is the orthogonal sum of the summands'
 canonical forms.** -/
@@ -83,10 +82,7 @@ theorem pi_corootForm_apply_apply (x y : ∀ c, N c) :
 in the same summand `c` recovers `(P c).RootForm`. -/
 theorem pi_rootForm_single_single (c : κ) (x y : M c) :
     (pi P).RootForm (Pi.single c x) (Pi.single c y) = (P c).RootForm x y := by
-  rw [pi_rootForm_apply_apply, Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-  · simp
-  · intro d _ hdc
-    simp [Pi.single_eq_of_ne hdc]
+  simp [Pi.apply_single (fun d z ↦ (P d).RootForm z (Pi.single c y d)) (fun _ ↦ by simp)]
 
 /-- Evaluating the canonical coroot form of `RootPairing.pi P` on two single-coordinate vectors
 in the same summand `c` recovers `(P c).CorootForm`. -/
@@ -151,41 +147,31 @@ theorem internalDirectSum_corootForm_apply_apply (f g : Module.Dual R M) :
     simpa [CorootForm, Hom.flip_weightMap] using (e.toHom.flip.rootForm_weightMap f g).symm
   simp [h, e]
 
+end Internal
+
+section InternalAnisotropic
+
+variable {κ R M : Type*} [Finite κ] [CommRing R] [NeZero (2 : R)]
+  [AddCommGroup M] [Module R M]
+  {E : κ → Submodule R M} (hEi : iSupIndep E) (hEt : ⨆ c, E c = ⊤)
+  {ι N : κ → Type*} [∀ c, AddCommGroup (N c)] [∀ c, Module R (N c)]
+  (P : ∀ c, RootPairing (ι c) R (E c) (N c)) [∀ c, Fintype (ι c)] [Fintype (Σ c, ι c)]
+
 /-- **A finite internal direct sum of finite root pairings is anisotropic iff every summand is
 anisotropic.** -/
 theorem isAnisotropic_internalDirectSum_iff :
     (internalDirectSum hEi hEt P).IsAnisotropic ↔ ∀ c, (P c).IsAnisotropic := by
+  let _ : Fintype κ := Fintype.ofFinite κ
   let _ : DecidableEq κ := Classical.decEq κ
-  let e := piEquivInternalDirectSum hEi hEt P
-  have hroot (s : Σ c, ι c) :
-      (internalDirectSum hEi hEt P).RootForm ((internalDirectSum hEi hEt P).root s)
-          ((internalDirectSum hEi hEt P).root s) =
-        (pi P).RootForm ((pi P).root s) ((pi P).root s) := by
-    have hs : (internalDirectSum hEi hEt P).root s = e.weightMap ((pi P).root s) := by
-      rw [Hom.root_weightMap_apply]
-      exact congrArg _ (piEquivInternalDirectSum_indexEquiv hEi hEt P s).symm
-    rw [hs, e.toHom.rootForm_weightMap]
-  have hcoroot (s : Σ c, ι c) :
-      (internalDirectSum hEi hEt P).CorootForm ((internalDirectSum hEi hEt P).coroot s)
-          ((internalDirectSum hEi hEt P).coroot s) =
-        (pi P).CorootForm ((pi P).coroot s) ((pi P).coroot s) := by
-    have hs : (pi P).coroot s = e.coweightMap ((internalDirectSum hEi hEt P).coroot s) := by
-      rw [Hom.coroot_coweightMap_apply]
-      exact congrArg _ (piEquivInternalDirectSum_indexEquiv_symm hEi hEt P s).symm
-    rw [hs]
-    simpa [CorootForm, Hom.flip_weightMap] using (e.toHom.flip.rootForm_weightMap _ _).symm
-  have hequiv : (internalDirectSum hEi hEt P).IsAnisotropic ↔ (pi P).IsAnisotropic :=
-    ⟨fun _ ↦ ⟨fun s ↦ hroot s ▸ IsAnisotropic.rootForm_root_ne_zero s,
-        fun s ↦ hcoroot s ▸ IsAnisotropic.corootForm_coroot_ne_zero s⟩,
-      fun _ ↦ ⟨fun s ↦ (hroot s).symm ▸ IsAnisotropic.rootForm_root_ne_zero s,
-        fun s ↦ (hcoroot s).symm ▸ IsAnisotropic.corootForm_coroot_ne_zero s⟩⟩
-  exact hequiv.trans (isAnisotropic_pi_iff P)
+  obtain rfl : ‹Fintype (Σ c, ι c)› = Sigma.instFintype := Subsingleton.elim _ _
+  exact (Equiv.isAnisotropic_iff (piEquivInternalDirectSum hEi hEt P)).symm.trans
+    (isAnisotropic_pi_iff P)
 
 /-- A finite internal direct sum of anisotropic finite root pairings is anisotropic. -/
 instance isAnisotropic_internalDirectSum [∀ c, (P c).IsAnisotropic] :
     (internalDirectSum hEi hEt P).IsAnisotropic :=
   (isAnisotropic_internalDirectSum_iff hEi hEt P).mpr ‹_›
 
-end Internal
+end InternalAnisotropic
 
 end RootPairing

@@ -65,53 +65,91 @@ variable {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommRing R] [NeZero (2 : 
   [∀ c, AddCommGroup (N c)] [∀ c, Module R (N c)]
   (P : ∀ c, RootPairing (ι c) R (M c) (N c))
 
+private theorem linearIndepOn_pi_single_of_eq {κ R : Type*} [Fintype κ] [DecidableEq κ] [CommRing R]
+    {ι M : κ → Type*} [∀ c, AddCommGroup (M c)] [∀ c, Module R (M c)]
+    {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
+    (hw : ∀ c i, w ⟨c, i⟩ = Pi.single c (v c i)) {s : ∀ c, Finset (ι c)}
+    (hv : ∀ c, LinearIndepOn R (v c) (s c : Set (ι c))) :
+    LinearIndepOn R w ((Finset.univ.sigma s : Finset (Σ c, ι c)) : Set (Σ c, ι c)) := by
+  have hfn : w = fun p : Σ c, ι c ↦ Pi.single p.1 (v p.1 p.2) := funext fun ⟨c, i⟩ ↦ hw c i
+  rw [hfn, Finset.coe_sigma, Finset.coe_univ]
+  exact (Pi.linearIndepOn_single_iff v).mpr fun c _ ↦ hv c
+
+private theorem linearIndepOn_restrictPi_of_eq {κ R : Type*} [DecidableEq κ] [CommRing R]
+    {ι M : κ → Type*} [∀ c, AddCommGroup (M c)] [∀ c, Module R (M c)]
+    {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
+    (hw : ∀ c i, w ⟨c, i⟩ = Pi.single c (v c i)) {t : Finset (Σ c, ι c)}
+    (ht : LinearIndepOn R w (t : Set (Σ c, ι c))) (c : κ) :
+    LinearIndepOn R (v c)
+      ((t.preimage (Sigma.mk c) sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c)) := by
+  have hfn : (fun p : Σ d, ι d ↦ Pi.single p.1 (v p.1 p.2)) = w :=
+    funext fun ⟨d, i⟩ ↦ (hw d i).symm
+  have hsupp : (t : Set (Σ d, ι d)) = Set.univ.sigma fun d ↦
+      ((t.preimage (Sigma.mk d) sigma_mk_injective.injOn : Finset (ι d)) : Set (ι d)) := by
+    simp only [Finset.coe_preimage, Set.univ_sigma_preimage_mk]
+  exact (Pi.linearIndepOn_single_iff v).mp (by rw [hfn, ← hsupp]; exact ht) c (Set.mem_univ c)
+
+private theorem mem_closure_pi_single_or_neg_mem {κ : Type*} [Fintype κ] [DecidableEq κ]
+    {ι M : κ → Type*} [∀ c, AddCommGroup (M c)]
+    {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
+    (hw : ∀ c i, w ⟨c, i⟩ = Pi.single c (v c i)) {s : ∀ c, Finset (ι c)}
+    (hv : ∀ c i, v c i ∈ AddSubmonoid.closure (v c '' (s c : Set (ι c))) ∨
+      -v c i ∈ AddSubmonoid.closure (v c '' (s c : Set (ι c)))) (p : Σ c, ι c) :
+    w p ∈ AddSubmonoid.closure
+        (w '' ((Finset.univ.sigma s : Finset (Σ d, ι d)) : Set (Σ d, ι d))) ∨
+      -w p ∈ AddSubmonoid.closure
+        (w '' ((Finset.univ.sigma s : Finset (Σ d, ι d)) : Set (Σ d, ι d))) := by
+  rcases p with ⟨c, i⟩
+  have hmono : (AddSubmonoid.closure (v c '' (s c : Set (ι c)))).map (AddMonoidHom.single M c) ≤
+      AddSubmonoid.closure
+        (w '' ((Finset.univ.sigma s : Finset (Σ d, ι d)) : Set (Σ d, ι d))) := by
+    rw [AddMonoidHom.map_mclosure]
+    refine AddSubmonoid.closure_mono ?_
+    rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
+    exact ⟨⟨c, j⟩, by simpa using hj, hw c j⟩
+  rw [hw]
+  rcases hv c i with h | h
+  · exact Or.inl (hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single M c) h))
+  · exact Or.inr <| by
+      simpa [Pi.single_neg] using hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single M c) h)
+
+private theorem mem_closure_restrictPi_or_neg_mem {κ : Type*} [DecidableEq κ]
+    {ι M : κ → Type*} [∀ c, AddCommGroup (M c)]
+    {w : (Σ c, ι c) → ∀ c, M c} {v : ∀ c, ι c → M c}
+    (hw : ∀ c i, w ⟨c, i⟩ = Pi.single c (v c i)) {t : Finset (Σ c, ι c)}
+    (ht : ∀ p, w p ∈ AddSubmonoid.closure (w '' (t : Set (Σ d, ι d))) ∨
+      -w p ∈ AddSubmonoid.closure (w '' (t : Set (Σ d, ι d)))) (c : κ) (i : ι c) :
+    v c i ∈ AddSubmonoid.closure (v c '' ((t.preimage (Sigma.mk c)
+        sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) ∨
+      -v c i ∈ AddSubmonoid.closure (v c '' ((t.preimage (Sigma.mk c)
+        sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
+  have hle : (AddSubmonoid.closure (w '' (t : Set (Σ d, ι d)))).map
+        (Pi.evalAddMonoidHom M c) ≤
+      AddSubmonoid.closure (v c '' ((t.preimage (Sigma.mk c)
+        sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
+    rw [AddMonoidHom.map_mclosure, AddSubmonoid.closure_le]
+    rintro _ ⟨_, ⟨⟨d, j⟩, hj, rfl⟩, rfl⟩
+    rcases eq_or_ne d c with rfl | hdc
+    · exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp [hw]⟩
+    · simp [hw, Pi.single_eq_of_ne hdc.symm, zero_mem]
+  rcases ht ⟨c, i⟩ with h | h
+  · exact Or.inl <| by
+      simpa [hw] using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
+  · exact Or.inr <| by
+      simpa [hw] using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
+
 /-- **The base of a finite direct sum of root pairings** assembled from bases of its summands.
 Its simple-root support is the disjoint union `Finset.univ.sigma fun c ↦ (b c).support`. -/
 noncomputable def Base.pi {P : ∀ c, RootPairing (ι c) R (M c) (N c)} (b : ∀ c, (P c).Base) :
     (RootPairing.pi P).Base where
   support := Finset.univ.sigma fun c ↦ (b c).support
-  linearIndepOn_root := by
-    have hroot : ⇑(RootPairing.pi P).root = fun p : Σ c, ι c ↦ Pi.single p.1 ((P p.1).root p.2) :=
-      funext fun ⟨c, i⟩ ↦ pi_root P c i
-    rw [hroot, Finset.coe_sigma, Finset.coe_univ]
-    exact (Pi.linearIndepOn_single_iff fun c ↦ (P c).root).mpr fun c _ ↦ (b c).linearIndepOn_root
-  linearIndepOn_coroot := by
-    have hcoroot : ⇑(RootPairing.pi P).coroot =
-        fun p : Σ c, ι c ↦ Pi.single p.1 ((P p.1).coroot p.2) :=
-      funext fun ⟨c, i⟩ ↦ pi_coroot P c i
-    rw [hcoroot, Finset.coe_sigma, Finset.coe_univ]
-    exact (Pi.linearIndepOn_single_iff fun c ↦ (P c).coroot).mpr
-      fun c _ ↦ (b c).linearIndepOn_coroot
-  root_mem_or_neg_mem := by
-    rintro ⟨c, i⟩
-    have hmono : (AddSubmonoid.closure ((P c).root '' (b c).support)).map
-          (AddMonoidHom.single M c) ≤
-        AddSubmonoid.closure ((RootPairing.pi P).root ''
-          ((Finset.univ.sigma fun d ↦ (b d).support : Finset (Σ d, ι d)) : Set (Σ d, ι d))) := by
-      rw [AddMonoidHom.map_mclosure]
-      refine AddSubmonoid.closure_mono ?_
-      rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
-      exact ⟨⟨c, j⟩, by simpa using hj, pi_root P c j⟩
-    rw [pi_root]
-    rcases (b c).root_mem_or_neg_mem i with h | h
-    · exact Or.inl (hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single M c) h))
-    · exact Or.inr <| by
-        simpa [Pi.single_neg] using hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single M c) h)
-  coroot_mem_or_neg_mem := by
-    rintro ⟨c, i⟩
-    have hmono : (AddSubmonoid.closure ((P c).coroot '' (b c).support)).map
-          (AddMonoidHom.single N c) ≤
-        AddSubmonoid.closure ((RootPairing.pi P).coroot ''
-          ((Finset.univ.sigma fun d ↦ (b d).support : Finset (Σ d, ι d)) : Set (Σ d, ι d))) := by
-      rw [AddMonoidHom.map_mclosure]
-      refine AddSubmonoid.closure_mono ?_
-      rintro _ ⟨_, ⟨j, hj, rfl⟩, rfl⟩
-      exact ⟨⟨c, j⟩, by simpa using hj, pi_coroot P c j⟩
-    rw [pi_coroot]
-    rcases (b c).coroot_mem_or_neg_mem i with h | h
-    · exact Or.inl (hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single N c) h))
-    · exact Or.inr <| by
-        simpa [Pi.single_neg] using hmono (AddSubmonoid.mem_map_of_mem (AddMonoidHom.single N c) h)
+  linearIndepOn_root := linearIndepOn_pi_single_of_eq (pi_root P) fun c ↦ (b c).linearIndepOn_root
+  linearIndepOn_coroot :=
+    linearIndepOn_pi_single_of_eq (pi_coroot P) fun c ↦ (b c).linearIndepOn_coroot
+  root_mem_or_neg_mem :=
+    mem_closure_pi_single_or_neg_mem (pi_root P) fun c ↦ (b c).root_mem_or_neg_mem
+  coroot_mem_or_neg_mem :=
+    mem_closure_pi_single_or_neg_mem (pi_coroot P) fun c ↦ (b c).coroot_mem_or_neg_mem
 
 variable {P}
 
@@ -122,52 +160,12 @@ theorem Base.support_pi (b : ∀ c, (P c).Base) :
 
 /-- **Restricting a base of `RootPairing.pi P` to a summand** by taking the simple roots lying in
 that summand. -/
-noncomputable def Base.restrictPi (b : (RootPairing.pi P).Base) (c : κ) : (P c).Base :=
-  have hsupp : (b.support : Set (Σ d, ι d)) = Set.univ.sigma fun d ↦
-      ((b.support.preimage (Sigma.mk d) sigma_mk_injective.injOn : Finset (ι d)) : Set (ι d)) := by
-    simp only [Finset.coe_preimage, Set.univ_sigma_preimage_mk]
-  { support := b.support.preimage (Sigma.mk c) sigma_mk_injective.injOn
-    linearIndepOn_root := by
-      have hfn : (fun p : Σ d, ι d ↦ Pi.single p.1 ((P p.1).root p.2)) = (RootPairing.pi P).root :=
-        funext fun ⟨d, i⟩ ↦ (pi_root P d i).symm
-      exact (Pi.linearIndepOn_single_iff fun d ↦ (P d).root).mp
-        (by rw [hfn, ← hsupp]; exact b.linearIndepOn_root) c (Set.mem_univ c)
-    linearIndepOn_coroot := by
-      have hfn : (fun p : Σ d, ι d ↦ Pi.single p.1 ((P p.1).coroot p.2)) =
-          (RootPairing.pi P).coroot :=
-        funext fun ⟨d, i⟩ ↦ (pi_coroot P d i).symm
-      exact (Pi.linearIndepOn_single_iff fun d ↦ (P d).coroot).mp
-        (by rw [hfn, ← hsupp]; exact b.linearIndepOn_coroot) c (Set.mem_univ c)
-    root_mem_or_neg_mem i := by
-      have hle : (AddSubmonoid.closure
-            ((RootPairing.pi P).root '' (b.support : Set (Σ d, ι d)))).map
-            (Pi.evalAddMonoidHom M c) ≤
-          AddSubmonoid.closure ((P c).root '' ((b.support.preimage (Sigma.mk c)
-            sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
-        rw [AddMonoidHom.map_mclosure, AddSubmonoid.closure_le]
-        rintro _ ⟨_, ⟨⟨d, j⟩, hj, rfl⟩, rfl⟩
-        rcases eq_or_ne d c with rfl | hdc
-        · exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp⟩
-        · simp [Pi.single_eq_of_ne hdc.symm, zero_mem]
-      rcases b.root_mem_or_neg_mem ⟨c, i⟩ with h | h
-      · exact Or.inl <| by simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
-      · exact Or.inr <| by simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom M c) h)
-    coroot_mem_or_neg_mem i := by
-      have hle : (AddSubmonoid.closure
-            ((RootPairing.pi P).coroot '' (b.support : Set (Σ d, ι d)))).map
-            (Pi.evalAddMonoidHom N c) ≤
-          AddSubmonoid.closure ((P c).coroot '' ((b.support.preimage (Sigma.mk c)
-            sigma_mk_injective.injOn : Finset (ι c)) : Set (ι c))) := by
-        rw [AddMonoidHom.map_mclosure, AddSubmonoid.closure_le]
-        rintro _ ⟨_, ⟨⟨d, j⟩, hj, rfl⟩, rfl⟩
-        rcases eq_or_ne d c with rfl | hdc
-        · exact AddSubmonoid.subset_closure ⟨j, by simpa using hj, by simp⟩
-        · simp [Pi.single_eq_of_ne hdc.symm, zero_mem]
-      rcases b.coroot_mem_or_neg_mem ⟨c, i⟩ with h | h
-      · exact Or.inl <| by
-          simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom N c) h)
-      · exact Or.inr <| by
-          simpa using hle (AddSubmonoid.mem_map_of_mem (Pi.evalAddMonoidHom N c) h) }
+noncomputable def Base.restrictPi (b : (RootPairing.pi P).Base) (c : κ) : (P c).Base where
+  support := b.support.preimage (Sigma.mk c) sigma_mk_injective.injOn
+  linearIndepOn_root := linearIndepOn_restrictPi_of_eq (pi_root P) b.linearIndepOn_root c
+  linearIndepOn_coroot := linearIndepOn_restrictPi_of_eq (pi_coroot P) b.linearIndepOn_coroot c
+  root_mem_or_neg_mem := mem_closure_restrictPi_or_neg_mem (pi_root P) b.root_mem_or_neg_mem c
+  coroot_mem_or_neg_mem := mem_closure_restrictPi_or_neg_mem (pi_coroot P) b.coroot_mem_or_neg_mem c
 
 @[simp]
 theorem Base.mem_support_restrictPi (b : (RootPairing.pi P).Base) (c : κ) (i : ι c) :
@@ -187,6 +185,8 @@ theorem Base.restrictPi_pi (b : ∀ c, (P c).Base) (c : κ) : (Base.pi b).restri
   ext i
   simp
 
+/-- The diagonal block at summand `c` of the Cartan matrix of `Base.pi b` is the Cartan matrix of
+`b c`. -/
 @[simp]
 theorem Base.cartanMatrixIn_pi_same (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
     [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) (c : κ)
@@ -196,6 +196,7 @@ theorem Base.cartanMatrixIn_pi_same (S : Type*) [CommRing S] [Algebra S R] [Fait
       (b c).cartanMatrixIn S i j := by
   simp [Base.cartanMatrixIn_def]
 
+/-- The off-diagonal blocks of the Cartan matrix of `Base.pi b` vanish. -/
 @[simp]
 theorem Base.cartanMatrixIn_pi_ne (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
     [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) {c d : κ} (hcd : c ≠ d)
@@ -212,18 +213,13 @@ theorem Base.height_pi [CharZero R] (b : ∀ c, (P c).Base) (c : κ) (i : ι c) 
   let g : (Σ d, ι d) → ℤ := fun p ↦ if h : p.1 = c then f (h ▸ p.2) else 0
   have hg : (RootPairing.pi P).root ⟨c, i⟩ =
       ∑ p ∈ (Base.pi b).support, g p • (RootPairing.pi P).root p := by
-    rw [Base.support_pi, Finset.sum_sigma, Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-    · simp only [g, ↓reduceDIte, pi_root, hf]
-      rw [← LinearMap.single_apply (R := R) (φ := M), map_sum]
-      refine Finset.sum_congr rfl fun j _ ↦ ?_
-      simp [map_zsmul]
-    · intro d _ hdc
-      simp [g, hdc]
-  rw [(Base.pi b).height_eq_sum hg, (b c).height_eq_sum hf, Base.support_pi, Finset.sum_sigma,
-    Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-  · simp [g]
-  · intro d _ hdc
-    simp [g, hdc]
+    simp only [Base.support_pi, Finset.sum_sigma, g, pi_root, dite_smul, zero_smul,
+      Finset.sum_dite_irrel, Finset.sum_const_zero, Finset.sum_dite_eq', Finset.mem_univ,
+      ↓reduceIte, hf]
+    rw [← LinearMap.single_apply (R := R) (φ := M), map_sum]
+    simp [map_zsmul]
+  rw [(Base.pi b).height_eq_sum hg, (b c).height_eq_sum hf]
+  simp [g, Finset.sum_sigma, Finset.sum_dite_irrel, Finset.sum_const_zero, Finset.sum_dite_eq']
 
 /-- A root of a finite direct sum is positive for `Base.pi b` iff it is positive in its summand. -/
 @[simp]
@@ -288,6 +284,8 @@ theorem Base.restrictInternalDirectSum_internalDirectSum (b : ∀ c, (P c).Base)
   ext i
   simp
 
+/-- The diagonal block at summand `c` of the Cartan matrix of `Base.internalDirectSum hEi hEt b`
+is the Cartan matrix of `b c`. -/
 @[simp]
 theorem Base.cartanMatrixIn_internalDirectSum_same (S : Type*) [CommRing S] [Algebra S R]
     [FaithfulSMul S R] [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) (c : κ)
@@ -297,6 +295,7 @@ theorem Base.cartanMatrixIn_internalDirectSum_same (S : Type*) [CommRing S] [Alg
       (b c).cartanMatrixIn S i j := by
   simp [Base.cartanMatrixIn_def]
 
+/-- The off-diagonal blocks of the Cartan matrix of `Base.internalDirectSum hEi hEt b` vanish. -/
 @[simp]
 theorem Base.cartanMatrixIn_internalDirectSum_ne (S : Type*) [CommRing S] [Algebra S R]
     [FaithfulSMul S R] [∀ c, (P c).IsValuedIn S] (b : ∀ c, (P c).Base) {c d : κ} (hcd : c ≠ d)

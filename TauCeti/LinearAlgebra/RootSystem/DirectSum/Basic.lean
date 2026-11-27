@@ -394,24 +394,16 @@ noncomputable def Equiv.piCongr (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (e
       pi_toLinearMap_apply]
     rw [← eκ.sum_comp]
     refine Finset.sum_congr rfl fun c _ ↦ ?_
-    have h1 : (LinearEquiv.piCongrLeft R M' eκ
-        (LinearEquiv.piCongrRight (fun c ↦ (e c).weightEquiv) x)) (eκ c) =
-        (e c).weightEquiv (x c) := _root_.Equiv.piCongrLeft_apply_apply M' eκ _ c
-    have h2 : (LinearEquiv.piCongrRight (fun c ↦ (e c).coweightEquiv)
-        ((LinearEquiv.piCongrLeft R N' eκ).symm y)) c = (e c).coweightEquiv (y (eκ c)) := rfl
-    rw [h1, h2]
+    simp only [LinearEquiv.piCongrLeft_apply_apply, LinearEquiv.piCongrRight_apply,
+      LinearEquiv.piCongrLeft_symm_apply]
     exact (e c).toLinearMap_weightEquiv (x c) (y (eκ c))
   root_weightMap := by
     ext ⟨c, i⟩ d
     obtain ⟨c', rfl⟩ := eκ.surjective d
-    have hidx : (Equiv.sigmaCongr eκ fun c ↦ (e c).indexEquiv) ⟨c, i⟩ =
-        ⟨eκ c, (e c).indexEquiv i⟩ := rfl
-    simp only [comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply, pi_root]
-    have h1 : (LinearEquiv.piCongrLeft R M' eκ
-        (LinearEquiv.piCongrRight (fun c ↦ (e c).weightEquiv) (Pi.single c ((P c).root i))))
-        (eκ c') = (e c').weightEquiv (Pi.single c ((P c).root i) c') :=
-      _root_.Equiv.piCongrLeft_apply_apply M' eκ _ c'
-    rw [hidx, pi_root, h1]
+    simp only [comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
+      _root_.Equiv.sigmaCongr, _root_.Equiv.trans_apply, _root_.Equiv.sigmaCongrRight_apply,
+      _root_.Equiv.sigmaCongrLeft_apply, pi_root, LinearEquiv.piCongrLeft_apply_apply,
+      LinearEquiv.piCongrRight_apply]
     rcases eq_or_ne c' c with rfl | h
     · simp [Hom.root_weightMap_apply]
     · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (eκ.injective.ne h)]
@@ -420,13 +412,10 @@ noncomputable def Equiv.piCongr (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (e
     obtain ⟨c', rfl⟩ := eκ.surjective d
     have hidx : (_root_.Equiv.sigmaCongr eκ fun c ↦ (e c).indexEquiv).symm ⟨eκ c', j⟩ =
         ⟨c', (e c').indexEquiv.symm j⟩ := by
-      rw [_root_.Equiv.symm_apply_eq]; simp [_root_.Equiv.sigmaCongr]
+      rw [_root_.Equiv.symm_apply_eq]
+      simp [_root_.Equiv.sigmaCongr]
     simp only [comp_apply, LinearEquiv.coe_coe, LinearEquiv.trans_apply,
-      LinearEquiv.piCongrRight_apply, hidx, pi_coroot]
-    have hsymm : (LinearEquiv.piCongrLeft R N' eκ).symm
-        (Pi.single (eκ c') ((Q (eκ c')).coroot j)) c =
-        Pi.single (eκ c') ((Q (eκ c')).coroot j) (eκ c) := rfl
-    rw [hsymm]
+      LinearEquiv.piCongrRight_apply, LinearEquiv.piCongrLeft_symm_apply, hidx, pi_coroot]
     rcases eq_or_ne c c' with rfl | h
     · simp [Hom.coroot_coweightMap_apply]
     · simp [Pi.single_eq_of_ne h, Pi.single_eq_of_ne (eκ.injective.ne h)]
@@ -442,14 +431,14 @@ theorem Equiv.piCongr_indexEquiv (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (
 @[simp]
 theorem Equiv.piCongr_weightMap_apply (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c)))
     (x : ∀ c, M c) (c : κ) :
-    (Equiv.piCongr eκ e).weightMap x (eκ c) = (e c).weightMap (x c) :=
-  _root_.Equiv.piCongrLeft_apply_apply M' eκ _ c
+    (Equiv.piCongr eκ e).weightMap x (eκ c) = (e c).weightMap (x c) := by
+  simp [Equiv.piCongr]
 
 @[simp]
 theorem Equiv.piCongr_coweightMap_apply (eκ : κ ≃ κ') (e : ∀ c, (P c).Equiv (Q (eκ c)))
     (y : ∀ c, N' c) (c : κ) :
-    (Equiv.piCongr eκ e).coweightMap y c = (e c).coweightMap (y (eκ c)) :=
-  (rfl)
+    (Equiv.piCongr eκ e).coweightMap y c = (e c).coweightMap (y (eκ c)) := by
+  simp [Equiv.piCongr]
 
 /-- Assembling the identity equivalences along `Equiv.refl κ` gives the identity equivalence of
 `RootPairing.pi P`. -/

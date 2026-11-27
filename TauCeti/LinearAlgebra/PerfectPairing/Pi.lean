@@ -60,10 +60,7 @@ theorem flip_piPairing (p : ∀ c, M c →ₗ[R] N c →ₗ[R] R) :
 theorem piPairing_single_left [DecidableEq κ] (p : ∀ c, M c →ₗ[R] N c →ₗ[R] R)
     (c : κ) (x : M c) (y : ∀ d, N d) :
     piPairing p (Pi.single c x) y = p c x (y c) := by
-  rw [piPairing_apply_apply, Finset.sum_eq_single_of_mem c (Finset.mem_univ c)]
-  · simp
-  · intro d _ hdc
-    simp [Pi.single_eq_of_ne hdc]
+  simp [piPairing_apply_apply, Pi.apply_single (fun d z ↦ p d z (y d)) (fun _ ↦ by simp)]
 
 @[simp]
 theorem piPairing_single_right [DecidableEq κ] (p : ∀ c, M c →ₗ[R] N c →ₗ[R] R)

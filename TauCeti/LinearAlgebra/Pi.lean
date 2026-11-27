@@ -202,7 +202,7 @@ public theorem span_iUnion_single {R ι : Type*} {M : ι → Type*} [Semiring R]
   rw [span_iUnion]
   have hsingle (i : ι) :
       span R (Pi.single i '' s i) = (span R (s i)).map (LinearMap.single R M i) := by
-    rw [show Pi.single i '' s i = (LinearMap.single R M i) '' s i from rfl, ← map_span]
+    rw [← LinearMap.coe_single (R := R) (φ := M), ← map_span]
   simp_rw [hsingle, iSup_map_single]
 
 end Submodule
