@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
+public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.ClosedDisc
 public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.DoubledBundle.MaslovIndex
 public import TauCeti.Topology.VectorBundle.FiniteRank.LocalFrames
@@ -60,12 +61,6 @@ def halfTwistDomain (i : 𝕔𝔻) : Set 𝕔𝔻 :=
 def halfTwistExponent (k : ℤ) (i z : 𝕔𝔻) : ℂ :=
   if ‖(i : ℂ)‖ < 1 then 0 else (k / 2 : ℂ) * (log i + log ((z : ℂ) / i))
 
-private theorem not_norm_lt_one {i : 𝕔𝔻} (hi : ‖(i : ℂ)‖ = 1) : ¬‖(i : ℂ)‖ < 1 :=
-  hi.symm ▸ lt_irrefl 1
-
-private theorem coe_ne_zero_of_norm_eq_one {i : 𝕔𝔻} (hi : ‖(i : ℂ)‖ = 1) : (i : ℂ) ≠ 0 :=
-  ne_zero_of_norm_ne_zero (hi ▸ one_ne_zero)
-
 /-- The domain of a frame centred at an interior point is the open disc. -/
 theorem mem_halfTwistDomain_of_norm_lt_one {i z : 𝕔𝔻} (hi : ‖(i : ℂ)‖ < 1) :
     z ∈ halfTwistDomain i ↔ ‖(z : ℂ)‖ < 1 := by
@@ -74,7 +69,7 @@ theorem mem_halfTwistDomain_of_norm_lt_one {i z : 𝕔𝔻} (hi : ‖(i : ℂ)�
 /-- The domain of a frame centred at a point of the circle is the half-disc `re (z / i) > 0`. -/
 theorem mem_halfTwistDomain_of_norm_eq_one {i z : 𝕔𝔻} (hi : ‖(i : ℂ)‖ = 1) :
     z ∈ halfTwistDomain i ↔ 0 < ((z : ℂ) / i).re := by
-  simp only [halfTwistDomain, not_norm_lt_one hi, ↓reduceIte, mem_ofPred_eq]
+  simp only [halfTwistDomain, hi.not_lt, ↓reduceIte, mem_ofPred_eq]
 
 /-- A frame centred at an interior point is `1`. -/
 @[simp] theorem halfTwistExponent_of_norm_lt_one (k : ℤ) {i : 𝕔𝔻} (hi : ‖(i : ℂ)‖ < 1) (z : 𝕔𝔻) :
@@ -84,7 +79,7 @@ theorem mem_halfTwistDomain_of_norm_eq_one {i z : 𝕔𝔻} (hi : ‖(i : ℂ)�
 /-- A frame centred at a point `i` of the circle is `exp ((k / 2) (log i + log (z / i)))`. -/
 theorem halfTwistExponent_of_norm_eq_one (k : ℤ) {i : 𝕔𝔻} (hi : ‖(i : ℂ)‖ = 1) (z : 𝕔𝔻) :
     halfTwistExponent k i z = (k / 2 : ℂ) * (log i + log ((z : ℂ) / i)) := by
-  simp only [halfTwistExponent, not_norm_lt_one hi, ↓reduceIte]
+  simp only [halfTwistExponent, hi.not_lt, ↓reduceIte]
 
 /-- The domains of the half-twisted frames are open. -/
 theorem isOpen_halfTwistDomain (i : 𝕔𝔻) : IsOpen (halfTwistDomain i) := by
@@ -97,7 +92,8 @@ theorem isOpen_halfTwistDomain (i : 𝕔𝔻) : IsOpen (halfTwistDomain i) := by
 theorem mem_halfTwistDomain_self (i : 𝕔𝔻) : i ∈ halfTwistDomain i := by
   rcases (norm_le_one i).lt_or_eq with hi | hi
   · exact (mem_halfTwistDomain_of_norm_lt_one hi).2 hi
-  · simp [mem_halfTwistDomain_of_norm_eq_one hi, div_self (coe_ne_zero_of_norm_eq_one hi)]
+  · simp [mem_halfTwistDomain_of_norm_eq_one hi,
+      div_self (ne_zero_of_norm_ne_zero (hi ▸ one_ne_zero))]
 
 /-- The logarithm of each half-twisted frame is continuous on its domain: on the half-disc
 `re (z / i) > 0` the quotient `z / i` stays in the slit plane of the principal logarithm. -/
@@ -115,7 +111,7 @@ theorem continuousOn_halfTwistExponent (k : ℤ) (i : 𝕔𝔻) :
 /-- Away from `0`, the square of a frame centred on the circle is `z ^ k`. -/
 theorem sq_exp_halfTwistExponent (k : ℤ) {i z : 𝕔𝔻} (hi : ‖(i : ℂ)‖ = 1) (hz : (z : ℂ) ≠ 0) :
     exp (halfTwistExponent k i z) ^ 2 = (z : ℂ) ^ k := by
-  have hi0 := coe_ne_zero_of_norm_eq_one hi
+  have hi0 := ne_zero_of_norm_ne_zero (hi ▸ one_ne_zero)
   -- The two logarithms add up to a logarithm of `z`.
   have hlog : exp (log i + log ((z : ℂ) / i)) = z := by
     rw [exp_add, exp_log hi0, exp_log (div_ne_zero hz hi0), mul_div_cancel₀ _ hi0]
@@ -128,8 +124,9 @@ theorem sq_exp_halfTwistExponent (k : ℤ) {i z : 𝕔𝔻} (hi : ‖(i : ℂ)�
 `i ^ (k / 2)`. -/
 theorem exp_halfTwistExponent_self (k : ℤ) {i : 𝕔𝔻} (hi : ‖(i : ℂ)‖ = 1) :
     exp (halfTwistExponent k i i) = (i : ℂ) ^ ((k : ℂ) / 2) := by
-  rw [halfTwistExponent_of_norm_eq_one k hi, div_self (coe_ne_zero_of_norm_eq_one hi), log_one,
-    add_zero, cpow_def_of_ne_zero (coe_ne_zero_of_norm_eq_one hi), mul_comm]
+  have hi0 : (i : ℂ) ≠ 0 := ne_zero_of_norm_ne_zero (hi ▸ one_ne_zero)
+  rw [halfTwistExponent_of_norm_eq_one k hi, div_self hi0, log_one, add_zero,
+    cpow_def_of_ne_zero hi0, mul_comm]
 
 /-- The half-twisted frames: multiplication by `exp (halfTwistExponent k i z)`, which is `1` at an
 interior centre `i` and `i^{k/2} (z / i)^{k/2}` at a centre `i` on the circle. -/
@@ -143,9 +140,8 @@ def halfTwistFrames (k : ℤ) : LocalFrames ℂ 𝕔𝔻 1 where
         (Units.mk0 _ (exp_ne_zero (halfTwistExponent k i z))) : (Fin 1 → ℂ) ≃L[ℂ] (Fin 1 → ℂ)) :
           (Fin 1 → ℂ) →L[ℂ] (Fin 1 → ℂ))) =
         fun z : halfTwistDomain i ↦
-          exp (halfTwistExponent k i z) • ContinuousLinearMap.id ℂ (Fin 1 → ℂ) := by
-      ext z v : 2
-      simp [Units.smul_def]
+          exp (halfTwistExponent k i z) • ContinuousLinearMap.id ℂ (Fin 1 → ℂ) :=
+      funext fun _ ↦ ContinuousLinearEquiv.coe_smulLeft_mk0 _
     rw [h]
     exact (continuous_exp.comp ((continuousOn_iff_continuous_domRestrict.1
       (continuousOn_halfTwistExponent k i)))).smul continuous_const
@@ -157,29 +153,28 @@ def halfTwistFrames (k : ℤ) : LocalFrames ℂ 𝕔𝔻 1 where
 /-- The half-twisted frame at `i` over `z` is multiplication by `exp (halfTwistExponent k i z)`. -/
 theorem coe_halfTwistFrames_frame (k : ℤ) (i : 𝕔𝔻) (z : (halfTwistFrames k).domain i) :
     ((halfTwistFrames k).frame i z : (Fin 1 → ℂ) →L[ℂ] (Fin 1 → ℂ)) =
-      exp (halfTwistExponent k i z) • ContinuousLinearMap.id ℂ (Fin 1 → ℂ) := by
-  ext v : 1
-  simp [halfTwistFrames, Units.smul_def]
-
-/-- The half-twisted frame at `i` over `z` applied to a vector. -/
-@[simp] theorem halfTwistFrames_frame_apply (k : ℤ) (i : 𝕔𝔻) (z : (halfTwistFrames k).domain i)
-    (v : Fin 1 → ℂ) : (halfTwistFrames k).frame i z v = exp (halfTwistExponent k i z) • v := by
-  simp [halfTwistFrames, Units.smul_def]
-
-/-- The inverse of the half-twisted frame at `i` over `z` applied to a vector. -/
-@[simp] theorem halfTwistFrames_frame_symm_apply (k : ℤ) (i : 𝕔𝔻)
-    (z : (halfTwistFrames k).domain i) (v : Fin 1 → ℂ) :
-    ((halfTwistFrames k).frame i z).symm v = (exp (halfTwistExponent k i z))⁻¹ • v := by
-  rw [ContinuousLinearEquiv.symm_apply_eq, halfTwistFrames_frame_apply, smul_inv_smul₀
-    (exp_ne_zero _)]
+      exp (halfTwistExponent k i z) • ContinuousLinearMap.id ℂ (Fin 1 → ℂ) :=
+  ContinuousLinearEquiv.coe_smulLeft_mk0 _
 
 /-- The inverse of the half-twisted frame at `i` over `z` is multiplication by
 `exp (halfTwistExponent k i z)⁻¹`. -/
 theorem coe_halfTwistFrames_frame_symm (k : ℤ) (i : 𝕔𝔻) (z : (halfTwistFrames k).domain i) :
     (((halfTwistFrames k).frame i z).symm : (Fin 1 → ℂ) →L[ℂ] (Fin 1 → ℂ)) =
-      (exp (halfTwistExponent k i z))⁻¹ • ContinuousLinearMap.id ℂ (Fin 1 → ℂ) := by
-  ext v : 1
-  simp
+      (exp (halfTwistExponent k i z))⁻¹ • ContinuousLinearMap.id ℂ (Fin 1 → ℂ) :=
+  ContinuousLinearEquiv.coe_smulLeft_mk0_symm _
+
+/-- The half-twisted frame at `i` over `z` applied to a vector. -/
+@[simp] theorem halfTwistFrames_frame_apply (k : ℤ) (i : 𝕔𝔻) (z : (halfTwistFrames k).domain i)
+    (v : Fin 1 → ℂ) : (halfTwistFrames k).frame i z v = exp (halfTwistExponent k i z) • v := by
+  rw [← ContinuousLinearEquiv.coe_coe, coe_halfTwistFrames_frame, _root_.smul_apply,
+    ContinuousLinearMap.id_apply]
+
+/-- The inverse of the half-twisted frame at `i` over `z` applied to a vector. -/
+@[simp] theorem halfTwistFrames_frame_symm_apply (k : ℤ) (i : 𝕔𝔻)
+    (z : (halfTwistFrames k).domain i) (v : Fin 1 → ℂ) :
+    ((halfTwistFrames k).frame i z).symm v = (exp (halfTwistExponent k i z))⁻¹ • v := by
+  rw [← ContinuousLinearEquiv.coe_coe, coe_halfTwistFrames_frame_symm, _root_.smul_apply,
+    ContinuousLinearMap.id_apply]
 
 /-- **The half-twisted bundle pair** `(ℂ, e^{ikθ/2} ℝ)` over the closed unit disc: the trivial line
 bundle read in the frames `halfTwistFrames k`. -/
@@ -202,7 +197,7 @@ theorem isRealAlong_halfTwistCore (k : ℤ) : (halfTwistCore k).IsRealAlong A :=
       (ne_of_lt ((mem_halfTwistDomain_of_norm_lt_one h).1 hl)) ha1
   set c := (exp (halfTwistExponent k j a))⁻¹ * exp (halfTwistExponent k i a)
   have hsq : c * c = 1 := by
-    have ha0 : (a : ℂ) ≠ 0 := coe_ne_zero_of_norm_eq_one ha1
+    have ha0 : (a : ℂ) ≠ 0 := ne_zero_of_norm_ne_zero (ha1 ▸ one_ne_zero)
     rw [show c * c = (exp (halfTwistExponent k j a) ^ 2)⁻¹ * exp (halfTwistExponent k i a) ^ 2 by
       ring, sq_exp_halfTwistExponent k (hc hi) ha0, sq_exp_halfTwistExponent k (hc hj) ha0,
       inv_mul_cancel₀ (zpow_ne_zero _ ha0)]

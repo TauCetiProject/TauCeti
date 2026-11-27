@@ -16,7 +16,9 @@ The construction uses Mathlib's `ContinuousLinearEquiv.equivOfInverse'`.
 
 Dually, multiplying a continuous linear map by a nonzero scalar `c` is composing it with the
 scalar equivalence `ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)`, so results about
-composition with equivalences apply to scalar multiples.
+composition with equivalences apply to scalar multiples. As a continuous linear map, the scalar
+equivalence of `c ≠ 0` is `c • id`, and its inverse is `c⁻¹ • id`
+(`ContinuousLinearEquiv.coe_smulLeft_mk0`, `ContinuousLinearEquiv.coe_smulLeft_mk0_symm`).
 -/
 
 public section
@@ -49,3 +51,24 @@ theorem smul_eq_smulLeft_comp {c : 𝕜} (hc : c ≠ 0) (f : M →L[𝕜] M₂) 
   ext; simp
 
 end ContinuousLinearMap
+
+namespace ContinuousLinearEquiv
+
+variable {𝕜 M : Type*} [Semifield 𝕜] [TopologicalSpace M] [AddCommMonoid M] [Module 𝕜 M]
+  [ContinuousConstSMul 𝕜 M]
+
+/-- The scalar equivalence of a nonzero scalar `c` is `c • id` as a continuous linear map. -/
+theorem coe_smulLeft_mk0 {c : 𝕜} (hc : c ≠ 0) :
+    ((smulLeft (Units.mk0 c hc) : M ≃L[𝕜] M) : M →L[𝕜] M) = c • ContinuousLinearMap.id 𝕜 M := by
+  rw [ContinuousLinearMap.smul_eq_smulLeft_comp hc, ContinuousLinearMap.comp_id]
+
+/-- The inverse of the scalar equivalence of a nonzero scalar `c` is `c⁻¹ • id` as a continuous
+linear map. -/
+theorem coe_smulLeft_mk0_symm {c : 𝕜} (hc : c ≠ 0) :
+    (((smulLeft (Units.mk0 c hc) : M ≃L[𝕜] M).symm : M ≃L[𝕜] M) : M →L[𝕜] M) =
+      c⁻¹ • ContinuousLinearMap.id 𝕜 M := by
+  ext v
+  rw [_root_.smul_apply, ContinuousLinearMap.id_apply, coe_coe, symm_apply_eq,
+    smulLeft_apply_apply, Units.smul_def, Units.val_mk0, smul_inv_smul₀ hc]
+
+end ContinuousLinearEquiv

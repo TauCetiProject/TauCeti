@@ -80,6 +80,11 @@ def frameAt (i x : B) : (Fin n → 𝕜) ≃L[𝕜] (Fin n → 𝕜) :=
     F.frameAt i x = F.frame i ⟨x, hx⟩ := by
   simp only [frameAt, hx, ↓reduceDIte]
 
+/-- Off its domain the frame at `i` is extended by the identity. -/
+@[simp] theorem frameAt_of_notMem {i x : B} (hx : x ∉ F.domain i) :
+    F.frameAt i x = ContinuousLinearEquiv.refl 𝕜 _ := by
+  simp only [frameAt, hx, ↓reduceDIte]
+
 /-- The frames are continuous on their domains. -/
 theorem continuousOn_frameAt (i : B) :
     ContinuousOn (fun x ↦ (F.frameAt i x : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜))) (F.domain i) := by
@@ -123,6 +128,12 @@ def core : FiniteRankBundleCore 𝕜 B where
 
 /-- The transition of `F.core` from the chart at `i` to the chart at `j` is the frame at `i`
 followed by the inverse of the frame at `j`. -/
+theorem coordChange_core (i j x : B) :
+    F.core.core.coordChange i j x =
+      ((F.frameAt i x).trans (F.frameAt j x).symm : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)) :=
+  (rfl)
+
+/-- The transition of `F.core` from the chart at `i` to the chart at `j`, applied to a vector. -/
 @[simp] theorem coordChange_core_apply (i j x : B) (v : Fin n → 𝕜) :
     F.core.core.coordChange i j x v = (F.frameAt j x).symm (F.frameAt i x v) := (rfl)
 
@@ -186,9 +197,14 @@ theorem isRealAlong_core_iff (F : LocalFrames ℂ B n) {A : Set B} :
       (F.frame j ⟨a, hj⟩).symm (F.frame i ⟨a, hi⟩ (star v)) =
         star ((F.frame j ⟨a, hj⟩).symm (F.frame i ⟨a, hi⟩ v)) := by
   rw [isRealAlong_iff_coordChange_star]
-  refine forall₄_congr fun i j a _ ↦ forall₂_congr fun hi hj ↦ forall_congr' fun v ↦ ?_
-  rw [← F.frameAt_of_mem hi, ← F.frameAt_of_mem hj]
-  -- The transitions of `F.core` are `(F.frameAt j a)⁻¹ ∘ F.frameAt i a` (`coordChange_core_apply`).
+  refine forall₄_congr fun i j a _ ↦ forall₂_congr fun hi hj ↦
+    forall_congr' fun (v : Fin n → ℂ) ↦ ?_
+  rw [coordChange_core]
+  simp only [F.frameAt_of_mem hi, F.frameAt_of_mem hj]
+  -- Both sides apply `(F.frame j _)⁻¹ ∘ F.frame i _`, once as the continuous linear map of
+  -- `ContinuousLinearEquiv.trans` (`ContinuousLinearEquiv.coe_coe`,
+  -- `ContinuousLinearEquiv.trans_apply`). These lemmas do not rewrite here: the transition acts on
+  -- the fibre `Fin F.core.rank → ℂ`, which is `Fin n → ℂ` only by `rank_core`.
   exact Iff.rfl
 
 end LocalFrames
