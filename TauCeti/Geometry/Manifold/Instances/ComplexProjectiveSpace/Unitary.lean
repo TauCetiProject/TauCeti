@@ -28,8 +28,9 @@ the Fubini–Study form `ω_FS` (`TauCeti.ComplexProjectiveSpace.fubiniStudyForm
   (`TauCeti.ComplexProjectiveSpace.mpullback_smul_fubiniStudyForm`).
 * **Areas of sphere classes.** By the naturality of the integral over spheres, the Fubini–Study
   area of a class of `π₂(CPⁿ, x)` equals that of its image under `A` in `π₂(CPⁿ, A • x)`
-  (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_map_smul`). Since `U(n + 1)`
-  acts transitively on `CPⁿ`, this compares the areas of sphere classes at any two base points.
+  (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_homotopyGroupMap_smul`). Since
+  `U(n + 1)` acts transitively on `CPⁿ`, this compares the areas of sphere classes at any two base
+  points.
 
 ## References
 
@@ -78,8 +79,8 @@ theorem mpullback_smul_fubiniStudyForm :
 `x ↦ A • x` of a class of `π₂(CPⁿ, x)`, a class of `π₂(CPⁿ, y)` for `y = A • x`, has the same
 Fubini–Study area as the class itself. -/
 @[simp]
-theorem sphereIntegral_fubiniStudyForm_map_smul {x y : ComplexProjectiveSpace n} (h : A • x = y)
-    (a : π_ 2 (ComplexProjectiveSpace n) x) :
+theorem sphereIntegral_fubiniStudyForm_homotopyGroupMap_smul {x y : ComplexProjectiveSpace n}
+    (h : A • x = y) (a : π_ 2 (ComplexProjectiveSpace n) x) :
     sphereIntegral (fubiniStudyForm n).val y
         (HomotopyGroup.map ⟨(A • ·), continuous_const_smul A⟩ h a) =
       sphereIntegral (fubiniStudyForm n).val x a := by

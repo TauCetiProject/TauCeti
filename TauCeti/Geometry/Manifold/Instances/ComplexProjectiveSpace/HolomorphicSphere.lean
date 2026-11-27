@@ -25,9 +25,9 @@ holomorphic spheres.
   (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt`). At
   `[e₁]` this holds because every class is a power of the line class; a unitary matrix carrying
   `[e₁]` to `[v]` preserves both the area
-  (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_map_smul`) and the isomorphism
-  with `ℤ` (`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_map_smul`). So at every base point the
-  area of a sphere class is an integer
+  (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_homotopyGroupMap_smul`) and the
+  isomorphism with `ℤ` (`TauCeti.ComplexProjectiveSpace.pi2MulEquivInt_homotopyGroupMap_smul`). So
+  at every base point the area of a sphere class is an integer
   (`TauCeti.ComplexProjectiveSpace.exists_sphereIntegral_fubiniStudyForm_eq_intCast`) and a sphere
   class is determined by its area
   (`TauCeti.ComplexProjectiveSpace.sphereIntegral_fubiniStudyForm_injective`). In particular a
@@ -118,7 +118,7 @@ theorem sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt
   rw [← HomotopyGroup.map_map_of_comp_eq_id ⟨(A • ·), continuous_const_smul A⟩
       ⟨(A⁻¹ • ·), continuous_const_smul A⁻¹⟩ hb (smul_mk A _)
       (ContinuousMap.ext fun x ↦ smul_inv_smul A x) a,
-    sphereIntegral_fubiniStudyForm_map_smul, pi2MulEquivInt_map_smul,
+    sphereIntegral_fubiniStudyForm_homotopyGroupMap_smul, pi2MulEquivInt_homotopyGroupMap_smul,
     sphereIntegral_fubiniStudyForm_eq_toAdd_pi2MulEquivInt_affineUnitVector]
 
 /-- **Sphere classes of `CPⁿ⁺¹` have integral area.** At every base point `x`, the integral of the
