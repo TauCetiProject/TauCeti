@@ -67,7 +67,7 @@ theorem formalCpow_def (ℓ r : ℂ) (P : ℂ⟦X⟧) :
 
 /-- Rescaling a power series `P` with constant coefficient `Complex.exp ℓ` by `Complex.exp (-ℓ)`
 yields a power series with constant coefficient `1`. -/
-theorem constantCoeff_exp_neg_mul {ℓ : ℂ} {P : ℂ⟦X⟧}
+theorem constantCoeff_C_cexp_neg_mul {ℓ : ℂ} {P : ℂ⟦X⟧}
     (hP : constantCoeff P = Complex.exp ℓ) :
     constantCoeff (C (Complex.exp (-ℓ)) * P) = 1 := by
   rw [map_mul, constantCoeff_C, hP, ← Complex.exp_add, neg_add_cancel, Complex.exp_zero]
@@ -78,7 +78,7 @@ theorem constantCoeff_exp_neg_mul {ℓ : ℂ} {P : ℂ⟦X⟧}
 theorem constantCoeff_formalCpow {ℓ r : ℂ} {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
     constantCoeff (formalCpow ℓ r P) = Complex.exp (r * ℓ) := by
   rw [formalCpow_def, map_mul, constantCoeff_C,
-    constantCoeff_binomialPow (constantCoeff_exp_neg_mul hP), mul_one]
+    constantCoeff_binomialPow (constantCoeff_C_cexp_neg_mul hP), mul_one]
 
 /-- The zeroth formal complex power of any power series is `1`. -/
 @[simp]
@@ -89,21 +89,21 @@ theorem formalCpow_zero (ℓ : ℂ) (P : ℂ⟦X⟧) : formalCpow ℓ 0 P = 1 :=
 @[simp]
 theorem formalCpow_one {ℓ : ℂ} {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
     formalCpow ℓ 1 P = P := by
-  rw [formalCpow_def, one_mul, binomialPow_one (constantCoeff_exp_neg_mul hP), ← mul_assoc,
+  rw [formalCpow_def, one_mul, binomialPow_one (constantCoeff_C_cexp_neg_mul hP), ← mul_assoc,
     ← map_mul, ← Complex.exp_add, add_neg_cancel, Complex.exp_zero, map_one, one_mul]
 
 /-- Exponent addition law for formal complex powers with a fixed branch `ℓ`. -/
 theorem formalCpow_add {ℓ : ℂ} (r r' : ℂ) {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
     formalCpow ℓ (r + r') P = formalCpow ℓ r P * formalCpow ℓ r' P := by
   rw [formalCpow_def, formalCpow_def, formalCpow_def, add_mul, Complex.exp_add, map_mul,
-    binomialPow_add (constantCoeff_exp_neg_mul hP)]
+    binomialPow_add (constantCoeff_C_cexp_neg_mul hP)]
   ring
 
 /-- Natural formal complex powers agree with ordinary powers in `ℂ⟦X⟧`. -/
 @[simp]
 theorem formalCpow_natCast {ℓ : ℂ} (n : ℕ) {P : ℂ⟦X⟧} (hP : constantCoeff P = Complex.exp ℓ) :
     formalCpow ℓ (n : ℂ) P = P ^ n := by
-  rw [formalCpow_def, binomialPow_natCast (constantCoeff_exp_neg_mul hP), mul_pow, ← map_pow,
+  rw [formalCpow_def, binomialPow_natCast (constantCoeff_C_cexp_neg_mul hP), mul_pow, ← map_pow,
     ← Complex.exp_natCast_mul, ← mul_assoc, ← map_mul, ← Complex.exp_add]
   simp
 

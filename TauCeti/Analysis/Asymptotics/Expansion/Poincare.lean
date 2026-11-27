@@ -25,8 +25,8 @@ inverse powers, and convergent power series.
   `Asymptotics.HasAsymptoticExpansion.unique_inv_pow_atTop`,
   `Asymptotics.HasAsymptoticExpansion.unique_sub_pow_nhdsWithin`: coefficient uniqueness for
   Poincaré scales.
-* `Asymptotics.hasAsymptoticExpansion_inv_pow_iff`: DLMF 2.1.15 characterization of Poincaré
-  expansions at infinity.
+* `Asymptotics.hasAsymptoticExpansion_inv_pow_iff_tendsto`: DLMF 2.1.15 characterization of
+  Poincaré expansions at infinity.
 * `Asymptotics.hasAsymptoticExpansion_of_hasSum`: a series `∑ (z ^ s)⁻¹ • a s` converging outside
   a ball is the Poincaré expansion of its sum along `Bornology.cobounded`.
 * `HasFPowerSeriesAt.hasAsymptoticExpansion`: a convergent power series at `c` is the
@@ -83,19 +83,22 @@ section Poincare
 
 variable {𝕜 E : Type*}
 
+private lemma eventually_inv_pow_ne_zero_cobounded [NormedField 𝕜] (X : Set 𝕜) (n : ℕ) :
+    ∀ᶠ z in Bornology.cobounded 𝕜 ⊓ 𝓟 X, (z ^ n)⁻¹ ≠ 0 := by
+  filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop 0).filter_mono inf_le_left]
+    with z hz
+  exact inv_ne_zero (pow_ne_zero n (norm_pos_iff.mp hz))
+
 /-- Uniqueness of Poincaré expansions at infinity on an unbounded subset `X`
 (`(Bornology.cobounded 𝕜 ⊓ 𝓟 X).NeBot`). -/
 theorem HasAsymptoticExpansion.unique_inv_pow_cobounded [NormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {X : Set 𝕜}
-    [hX : (Bornology.cobounded 𝕜 ⊓ 𝓟 X).NeBot] {a b : ℕ → E} {f : 𝕜 → E}
+    [(Bornology.cobounded 𝕜 ⊓ 𝓟 X).NeBot] {a b : ℕ → E} {f : 𝕜 → E}
     (ha : HasAsymptoticExpansion (Bornology.cobounded 𝕜 ⊓ 𝓟 X) (fun n z => (z ^ n)⁻¹) a f)
     (hb : HasAsymptoticExpansion (Bornology.cobounded 𝕜 ⊓ 𝓟 X) (fun n z => (z ^ n)⁻¹) b f) :
-    a = b := by
-  refine ha.unique (isAsymptoticScale_inv_pow_cobounded X) (fun n => ?_) hb
-  refine Filter.Eventually.frequently ?_
-  filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop 0).filter_mono inf_le_left]
-    with z hz
-  exact inv_ne_zero (pow_ne_zero n (norm_pos_iff.mp hz))
+    a = b :=
+  ha.unique (isAsymptoticScale_inv_pow_cobounded X)
+    (fun n => (eventually_inv_pow_ne_zero_cobounded X n).frequently) hb
 
 /-- Uniqueness of Poincaré expansions along `atTop` on `ℝ`. -/
 theorem HasAsymptoticExpansion.unique_inv_pow_atTop [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -123,17 +126,14 @@ theorem HasAsymptoticExpansion.unique_sub_pow_nhdsWithin [NormedField 𝕜]
 
 /-- DLMF 2.1.15: the Poincaré expansion at infinity in `X` is equivalent to the limits
 `z ^ n • (f z - ∑_{s < n} (z ^ s)⁻¹ • a s) → a n`. -/
-theorem hasAsymptoticExpansion_inv_pow_iff [NormedField 𝕜] [NormedAddCommGroup E]
+theorem hasAsymptoticExpansion_inv_pow_iff_tendsto [NormedField 𝕜] [NormedAddCommGroup E]
     [NormedSpace 𝕜 E] (X : Set 𝕜) (a : ℕ → E) (f : 𝕜 → E) :
     HasAsymptoticExpansion (Bornology.cobounded 𝕜 ⊓ 𝓟 X) (fun n z => (z ^ n)⁻¹) a f ↔
       ∀ n, Tendsto (fun z => z ^ n • (f z - ∑ s ∈ range n, (z ^ s)⁻¹ • a s))
-        (Bornology.cobounded 𝕜 ⊓ 𝓟 X) (𝓝 (a n)) := by
-  have hne : ∀ n, ∀ᶠ z in Bornology.cobounded 𝕜 ⊓ 𝓟 X, (z ^ n)⁻¹ ≠ 0 := fun n => by
-    filter_upwards [(tendsto_norm_cobounded_atTop.eventually_gt_atTop 0).filter_mono inf_le_left]
-      with z hz
-    exact inv_ne_zero (pow_ne_zero n (norm_pos_iff.mp hz))
-  exact (hasAsymptoticExpansion_iff_tendsto (isAsymptoticScale_inv_pow_cobounded X) hne).trans
-    (forall_congr' fun n => by simp only [inv_inv])
+        (Bornology.cobounded 𝕜 ⊓ 𝓟 X) (𝓝 (a n)) :=
+  (hasAsymptoticExpansion_iff_tendsto (isAsymptoticScale_inv_pow_cobounded X)
+    (eventually_inv_pow_ne_zero_cobounded X)).trans
+    (forall_congr' fun _ => by simp only [inv_inv])
 
 /-- A series `∑ (z ^ s)⁻¹ • a s` convergent for `‖z‖ > R` is the Poincaré asymptotic expansion
 of its sum along `Bornology.cobounded 𝕜`. -/
@@ -245,22 +245,8 @@ example :
     ¬ HasAsymptoticExpansion atTop (fun n (x : ℝ) => 2 * (x ^ n)⁻¹)
       (Pi.single (M := fun _ : ℕ => ℝ) 0 1) (fun _ : ℝ => (1 : ℝ)) := by
   have h1 : HasAsymptoticExpansion atTop (fun n (x : ℝ) => (x ^ n)⁻¹)
-      (Pi.single (M := fun _ : ℕ => ℝ) 0 1) (fun _ : ℝ => (1 : ℝ)) := by
-    rw [hasAsymptoticExpansion_iff]
-    intro N
-    cases N with
-    | zero =>
-      simpa using (isBigO_refl (fun _ : ℝ => (1 : ℝ)) atTop)
-    | succ N =>
-      have hsum : ∀ x : ℝ,
-          ∑ n ∈ range (N + 1), (x ^ n)⁻¹ * Pi.single (M := fun _ : ℕ => ℝ) 0 1 n = 1 :=
-        fun x => by
-          rw [Finset.sum_eq_single 0]
-          · simp
-          · intro b _ hb; simp [Pi.single_eq_of_ne hb]
-          · intro h0; exact absurd (mem_range.mpr (Nat.succ_pos N)) h0
-      simp only [smul_eq_mul, hsum, sub_self]
-      exact isBigO_zero _ _
+      (Pi.single (M := fun _ : ℕ => ℝ) 0 1) (fun _ : ℝ => (1 : ℝ)) :=
+    (HasAsymptoticExpansion.single_zero (1 : ℝ)).congr' (Eventually.of_forall fun _ => by simp)
   have h2 : HasAsymptoticExpansion atTop (fun n (x : ℝ) => 2 * (x ^ n)⁻¹)
       (Pi.single (M := fun _ : ℕ => ℝ) 0 2⁻¹) (fun _ : ℝ => (1 : ℝ)) := by
     have hr := h1.smul_scale (ψ := fun n (x : ℝ) => 2 * (x ^ n)⁻¹) (κ := fun _ => 2⁻¹)

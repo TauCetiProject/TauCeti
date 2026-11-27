@@ -41,13 +41,23 @@ open Filter Topology Finset PowerSeries
 namespace Asymptotics
 
 private lemma hasAsymptoticExpansion_pow_unit_sub_one {α : Type*} {l : Filter α} {w : α → ℂ}
-    (hw : Tendsto w l (𝓝 0)) {P : ℂ⟦X⟧} {f : α → ℂ} {ℓ : ℂ}
-    (hP : constantCoeff P = Complex.exp ℓ)
+    (hw : Tendsto w l (𝓝 0)) {P : ℂ⟦X⟧} {f : α → ℂ}
+    (hP : constantCoeff P ∈ Complex.slitPlane)
     (hf : HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n P) f) :
+    constantCoeff P ≠ 0 ∧
+    constantCoeff (C (Complex.exp (-Complex.log (constantCoeff P))) * P - 1) = 0 ∧
     HasAsymptoticExpansion l (fun n x => w x ^ n)
-      (fun n => coeff n (C (Complex.exp (-ℓ)) * P - 1))
-      (fun x => Complex.exp (-ℓ) * f x - 1) ∧
-    Tendsto (fun x => Complex.exp (-ℓ) * f x - 1) l (𝓝 0) := by
+      (fun n => coeff n (C (Complex.exp (-Complex.log (constantCoeff P))) * P - 1))
+      (fun x => Complex.exp (-Complex.log (constantCoeff P)) * f x - 1) ∧
+    Tendsto (fun x => Complex.exp (-Complex.log (constantCoeff P)) * f x - 1) l (𝓝 0) ∧
+    (∀ x, f x = constantCoeff P *
+      (1 + (Complex.exp (-Complex.log (constantCoeff P)) * f x - 1))) := by
+  set p₀ : ℂ := constantCoeff P
+  set ℓ : ℂ := Complex.log p₀
+  have hp₀_ne : p₀ ≠ 0 := (Complex.mem_slitPlane_iff_arg.mp hP).2
+  have hexpℓ : Complex.exp ℓ = p₀ := Complex.exp_log hp₀_ne
+  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
+    rw [map_sub, map_one, constantCoeff_C_cexp_neg_mul hexpℓ.symm, sub_self]
   have hu_exp : HasAsymptoticExpansion l (fun n x => w x ^ n)
       (fun n => coeff n (C (Complex.exp (-ℓ)) * P - 1))
       (fun x => Complex.exp (-ℓ) * f x - 1) := by
@@ -56,10 +66,13 @@ private lemma hasAsymptoticExpansion_pow_unit_sub_one {α : Type*} {l : Filter �
       (hasAsymptoticExpansion_pow_const (l := l) (w := w) (1 : ℂ))
     exact (hsub.congr_coeff fun n => by simp only [map_one]).congr'
       (Eventually.of_forall fun _ => rfl)
-  refine ⟨hu_exp, ?_⟩
-  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
-    rw [map_sub, map_one, constantCoeff_exp_neg_mul hP, sub_self]
-  simpa only [hU0] using hu_exp.tendsto_constantCoeff hw
+  have hu0 : Tendsto (fun x => Complex.exp (-ℓ) * f x - 1) l (𝓝 0) := by
+    simpa only [hU0] using hu_exp.tendsto_constantCoeff hw
+  have hfx : ∀ x, f x = p₀ * (1 + (Complex.exp (-ℓ) * f x - 1)) := fun x => by
+    rw [Complex.exp_neg, hexpℓ]
+    field_simp [hp₀_ne]
+    ring
+  exact ⟨hp₀_ne, hU0, hu_exp, hu0, hfx⟩
 
 /-- Principal logarithm of a complex asymptotic power series whose constant coefficient lies in
 `Complex.slitPlane` (DLMF §2.1(iii)). -/
@@ -71,13 +84,7 @@ theorem hasAsymptoticExpansion_pow_log {α : Type*} {l : Filter α} {w : α → 
       (fun n => coeff n (C (Complex.log (constantCoeff P)) +
         PowerSeries.logOf (C (Complex.exp (-Complex.log (constantCoeff P))) * P)))
       fun x => Complex.log (f x) := by
-  set p₀ : ℂ := constantCoeff P
-  set ℓ : ℂ := Complex.log p₀
-  have hp₀_ne : p₀ ≠ 0 := (Complex.mem_slitPlane_iff_arg.mp hP).2
-  have hexpℓ : Complex.exp ℓ = p₀ := Complex.exp_log hp₀_ne
-  obtain ⟨hu_exp, hu0⟩ := hasAsymptoticExpansion_pow_unit_sub_one hw hexpℓ.symm hf
-  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
-    rw [map_sub, map_one, constantCoeff_exp_neg_mul hexpℓ.symm, sub_self]
+  obtain ⟨_, hU0, hu_exp, hu0, hfx⟩ := hasAsymptoticExpansion_pow_unit_sub_one hw hP hf
   have hlog_at0 : HasAsymptoticExpansion (𝓝 (0 : ℂ)) (fun n z => z ^ n)
       (fun n => coeff n (PowerSeries.log ℂ)) (fun z => Complex.log (1 + z)) := by
     have hfp := hasFPowerSeriesAt_clog_one_add.hasAsymptoticExpansion
@@ -91,16 +98,12 @@ theorem hasAsymptoticExpansion_pow_log {α : Type*} {l : Filter α} {w : α → 
       rw [pow_succ, pow_succ]
       ring
   have hcomp := hasAsymptoticExpansion_pow_subst hw hu0 hU0 hlog_at0 hu_exp
-  have hadd := hasAsymptoticExpansion_pow_add (hasAsymptoticExpansion_pow_const (l := l) (w := w) ℓ)
-    hcomp
+  have hadd := hasAsymptoticExpansion_pow_add
+    (hasAsymptoticExpansion_pow_const (l := l) (w := w) (Complex.log (constantCoeff P))) hcomp
   refine (hadd.congr_coeff fun n => by rw [PowerSeries.logOf_eq]).congr' ?_
   filter_upwards [Complex.eventually_log_mul_one_add hP hu0] with x hx
-  have hfx : f x = p₀ * (1 + (Complex.exp (-ℓ) * f x - 1)) := by
-    rw [Complex.exp_neg, hexpℓ]
-    field_simp [hp₀_ne]
-    ring
   dsimp only [Pi.add_apply]
-  conv_rhs => rw [hfx, hx]
+  conv_rhs => rw [hfx x, hx]
 
 /-- Principal complex power of a complex asymptotic power series whose constant coefficient lies in
 `Complex.slitPlane` (DLMF §2.1(iii)). -/
@@ -113,11 +116,7 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
       fun x => f x ^ r := by
   set p₀ : ℂ := constantCoeff P
   set ℓ : ℂ := Complex.log p₀
-  have hp₀_ne : p₀ ≠ 0 := (Complex.mem_slitPlane_iff_arg.mp hP).2
-  have hexpℓ : Complex.exp ℓ = p₀ := Complex.exp_log hp₀_ne
-  obtain ⟨hu_exp, hu0⟩ := hasAsymptoticExpansion_pow_unit_sub_one hw hexpℓ.symm hf
-  have hU0 : constantCoeff (C (Complex.exp (-ℓ)) * P - 1) = 0 := by
-    rw [map_sub, map_one, constantCoeff_exp_neg_mul hexpℓ.symm, sub_self]
+  obtain ⟨hp₀_ne, hU0, hu_exp, hu0, hfx⟩ := hasAsymptoticExpansion_pow_unit_sub_one hw hP hf
   have hbin_at0 : HasAsymptoticExpansion (𝓝 (0 : ℂ)) (fun n z => z ^ n)
       (fun n => coeff n (PowerSeries.binomialSeries ℂ r)) (fun z => (1 + z) ^ r) := by
     have hfp := (Complex.one_add_cpow_hasFPowerSeriesAt_zero (a := r)).hasAsymptoticExpansion
@@ -131,11 +130,7 @@ theorem hasAsymptoticExpansion_pow_cpow {α : Type*} {l : Filter α} {w : α →
     simpa only [add_zero] using tendsto_const_nhds.add hu0
   filter_upwards [Complex.eventually_log_mul_one_add hP hu0, h1u.eventually_ne one_ne_zero]
     with x hx h1ne
-  have hfx : f x = p₀ * (1 + (Complex.exp (-ℓ) * f x - 1)) := by
-    rw [Complex.exp_neg, hexpℓ]
-    field_simp [hp₀_ne]
-    ring
-  conv_rhs => rw [hfx, Complex.cpow_def_of_ne_zero (mul_ne_zero hp₀_ne h1ne), hx]
+  conv_rhs => rw [hfx x, Complex.cpow_def_of_ne_zero (mul_ne_zero hp₀_ne h1ne), hx]
   rw [Complex.cpow_def_of_ne_zero h1ne, add_mul, Complex.exp_add, mul_comm ℓ r]
 
 end Asymptotics

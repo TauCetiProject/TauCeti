@@ -95,33 +95,16 @@ in `w`. -/
 theorem hasAsymptoticExpansion_pow_eval (hw : Tendsto w l (𝓝 0)) (p : 𝕜[X]) :
     HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n (p : 𝕜⟦X⟧))
       (fun x => p.eval (w x)) := by
-  rw [hasAsymptoticExpansion_iff]
-  intro M
-  by_cases hMp : M ≤ p.natDegree + 1
-  · have hdiff : ∀ x : α,
-        p.eval (w x) - ∑ n ∈ range M, w x ^ n * coeff n (p : 𝕜⟦X⟧) =
-          ∑ k ∈ Ico M (p.natDegree + 1), w x ^ k * p.coeff k := fun x => by
-      rw [Polynomial.eval_eq_sum_range, ← sum_range_add_sum_Ico _ hMp]
-      have heq : ∑ n ∈ range M, w x ^ n * coeff n (p : 𝕜⟦X⟧) =
-          ∑ n ∈ range M, p.coeff n * w x ^ n :=
-        sum_congr rfl fun n _ => by rw [Polynomial.coeff_coe, mul_comm]
-      rw [heq, add_sub_cancel_left]
-      exact sum_congr rfl fun k _ => mul_comm _ _
-    simp_rw [smul_eq_mul, hdiff]
-    refine IsBigO.fun_sum fun k hk => ?_
-    have h1 := ((isAsymptoticScale_pow hw).isBigO_of_le (mem_Ico.mp hk).1).const_mul_left
-      (p.coeff k)
-    exact h1.congr' (Eventually.of_forall fun x => mul_comm _ _) EventuallyEq.rfl
-  · have hpM : p.natDegree < M := by omega
-    have hdiff : ∀ x : α,
-        p.eval (w x) - ∑ n ∈ range M, w x ^ n * coeff n (p : 𝕜⟦X⟧) = 0 := fun x => by
-      rw [Polynomial.eval_eq_sum_range' hpM]
-      have heq : ∑ n ∈ range M, w x ^ n * coeff n (p : 𝕜⟦X⟧) =
-          ∑ n ∈ range M, p.coeff n * w x ^ n :=
-        sum_congr rfl fun n _ => by rw [Polynomial.coeff_coe, mul_comm]
-      rw [heq, sub_self]
-    simp_rw [smul_eq_mul, hdiff]
-    exact isBigO_zero _ _
+  have hsum := HasAsymptoticExpansion.sum (range (p.natDegree + 1)) fun k _ =>
+    (isAsymptoticScale_pow hw).hasAsymptoticExpansion_single k (p.coeff k)
+  refine (hsum.congr_coeff fun n => ?_).congr' (Eventually.of_forall fun x => ?_)
+  · simp only [Finset.sum_apply, Polynomial.coeff_coe, Pi.single_apply, Finset.sum_ite_eq,
+      mem_range]
+    split_ifs with hn
+    · rfl
+    · exact (Polynomial.coeff_eq_zero_of_natDegree_lt (not_lt.mp hn)).symm
+  · simp only [Finset.sum_apply, smul_eq_mul, Polynomial.eval_eq_sum_range]
+    exact Finset.sum_congr rfl fun k _ => mul_comm _ _
 
 /-- The remainder of an asymptotic power series `P` of `f` after degree `< N` is
 `f x - (PowerSeries.trunc N P).eval (w x) = O(w x ^ N)`. -/
@@ -213,21 +196,9 @@ variable {α 𝕜 : Type*} [NormedField 𝕜] {l : Filter α} {w : α → 𝕜}
 
 /-- A constant function `fun _ => c` has the constant asymptotic power series `C c`. -/
 theorem hasAsymptoticExpansion_pow_const (c : 𝕜) :
-    HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n (C c)) (fun _ => c) := by
-  rw [hasAsymptoticExpansion_iff]
-  intro N
-  cases N with
-  | zero =>
-    refine IsBigO.of_bound ‖c‖ <| Eventually.of_forall fun x => ?_
-    simp
-  | succ N =>
-    have hsum : ∀ x : α, ∑ n ∈ range (N + 1), w x ^ n * coeff n (C c) = c := fun x => by
-      rw [Finset.sum_eq_single 0]
-      · simp
-      · intro b _ hb; simp [coeff_C, hb]
-      · intro h0; exact absurd (mem_range.mpr (Nat.succ_pos N)) h0
-    simp only [smul_eq_mul, hsum, sub_self]
-    exact isBigO_zero _ _
+    HasAsymptoticExpansion l (fun n x => w x ^ n) (fun n => coeff n (C c)) (fun _ => c) :=
+  ((HasAsymptoticExpansion.single_zero (φ := fun n x => w x ^ n) c).congr_coeff fun n => by
+    cases n <;> simp [coeff_C]).congr' (Eventually.of_forall fun _ => by simp)
 
 /-- Sums of asymptotic power series (DLMF §2.1(iii)). -/
 theorem hasAsymptoticExpansion_pow_add {P Q : 𝕜⟦X⟧} {f g : α → 𝕜}
@@ -410,21 +381,14 @@ private lemma isBigO_sum_trunc_substInv {P Q : 𝕜⟦X⟧} {M : ℕ}
   congr 1
   exact sum_congr rfl fun k _ => mul_comm _ _
 
-/-- Inversion of asymptotic power series (DLMF §2.1(iii)). The condition `Tendsto y l m` selects
-the branch of the inverse near `σ = 0`. -/
-theorem hasAsymptoticExpansion_pow_substInv {σ H : β → 𝕜} {y : α → β} {P : 𝕜⟦X⟧}
+private lemma isBigO_substInv_linear {σ H : β → 𝕜} {y : α → β} {P : 𝕜⟦X⟧}
     (hσ : Tendsto σ m (𝓝 0))
     (hH : HasAsymptoticExpansion m (fun n x => σ x ^ n) (fun n => coeff n P) H)
     (hP0 : constantCoeff P = 0) (hP1 : coeff 1 P ≠ 0) (hy : Tendsto y l m)
     (heq : ∀ᶠ x in l, H (y x) = w x) :
-    HasAsymptoticExpansion l (fun n x => w x ^ n)
-      (fun n => coeff n (P.substInvOfIsUnit hP1.isUnit)) fun x => σ (y x) := by
-  set Q : 𝕜⟦X⟧ := P.substInvOfIsUnit hP1.isUnit
+    (fun x => σ (y x)) =O[l] w ∧ w =O[l] fun x => σ (y x) := by
   set s : α → 𝕜 := fun x => σ (y x)
-  have hQ0 : constantCoeff Q = 0 := PowerSeries.constantCoeff_substInvOfIsUnit P hP1.isUnit
-  have hPQ : P.subst Q = X := PowerSeries.subst_substInvOfIsUnit_right P hP0 hP1.isUnit
   have hs0 : Tendsto s l (𝓝 0) := hσ.comp hy
-  -- Step 1: Linearization `w = s * P₁ + o(s)`, giving `s = O(w)`, `w = O(s)`, and `w → 0`.
   have hlin : (fun x => w x - s x * coeff 1 P) =o[l] s := by
     have h2 : (fun x => H (y x) - s x * coeff 1 P) =O[l] fun x => s x ^ 2 := by
       refine ((hH.isBigO 2).comp_tendsto hy).congr' (Eventually.of_forall fun x => ?_)
@@ -450,8 +414,24 @@ theorem hasAsymptoticExpansion_pow_substInv {σ H : β → 𝕜} {y : α → β}
   have hwO : w =O[l] s := by
     refine (hlin.isBigO.add ((isBigO_refl s l).const_mul_left (coeff 1 P))).congr'
       (Eventually.of_forall fun x => by dsimp only; ring) EventuallyEq.rfl
+  exact ⟨hsO, hwO⟩
+
+/-- Inversion of asymptotic power series (DLMF §2.1(iii)). The condition `Tendsto y l m` selects
+the branch of the inverse near `σ = 0`. -/
+theorem hasAsymptoticExpansion_pow_substInv {σ H : β → 𝕜} {y : α → β} {P : 𝕜⟦X⟧}
+    (hσ : Tendsto σ m (𝓝 0))
+    (hH : HasAsymptoticExpansion m (fun n x => σ x ^ n) (fun n => coeff n P) H)
+    (hP0 : constantCoeff P = 0) (hP1 : coeff 1 P ≠ 0) (hy : Tendsto y l m)
+    (heq : ∀ᶠ x in l, H (y x) = w x) :
+    HasAsymptoticExpansion l (fun n x => w x ^ n)
+      (fun n => coeff n (P.substInvOfIsUnit hP1.isUnit)) fun x => σ (y x) := by
+  set Q : 𝕜⟦X⟧ := P.substInvOfIsUnit hP1.isUnit
+  set s : α → 𝕜 := fun x => σ (y x)
+  have hQ0 : constantCoeff Q = 0 := PowerSeries.constantCoeff_substInvOfIsUnit P hP1.isUnit
+  have hPQ : P.subst Q = X := PowerSeries.subst_substInvOfIsUnit_right P hP0 hP1.isUnit
+  have hs0 : Tendsto s l (𝓝 0) := hσ.comp hy
+  obtain ⟨hsO, hwO⟩ := isBigO_substInv_linear hσ hH hP0 hP1 hy heq
   have hw0 : Tendsto w l (𝓝 0) := hwO.trans_tendsto hs0
-  -- Step 2: Induction on the truncation order `N`.
   rw [hasAsymptoticExpansion_iff]
   intro N
   induction N with
