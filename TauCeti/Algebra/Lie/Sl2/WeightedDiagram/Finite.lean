@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Sl2.WeightedDiagram.Basic
-import Mathlib.Data.Set.Card
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.SetTheory.Cardinal.NatCard
 
 /-!
 # Finitely many dominant neutral elements
@@ -122,23 +122,25 @@ instance : Finite (dominantNeutralElements b) :=
 theorem finite_dominantNeutralElements : (dominantNeutralElements b).Finite :=
   Set.toFinite _
 
+/-- Extending `weightedDynkinDiagram b` to `Option (dominantNeutralElements b)` by sending `none`
+to `0` remains injective because no dominant neutral element has the all-zero diagram. -/
+theorem injective_optionElim_weightedDynkinDiagram :
+    Function.Injective (fun x : Option (dominantNeutralElements b) ↦
+      x.elim (0 : b.support → Fin 3) (weightedDynkinDiagram b)) := by
+  rintro (_ | h₁) (_ | h₂) h
+  · rfl
+  · exact absurd h.symm (weightedDynkinDiagram_ne_zero b h₂)
+  · exact absurd h (weightedDynkinDiagram_ne_zero b h₁)
+  · exact congrArg some (weightedDynkinDiagram_injective b h)
+
 /-- Since every dominant neutral element has a nonzero weighted Dynkin diagram, adding the zero
 diagram stays within `3 ^ finrank K H`. -/
 theorem ncard_dominantNeutralElements_add_one_le :
     (dominantNeutralElements b).ncard + 1 ≤ 3 ^ finrank K H := by
-  have hinj : Function.Injective
-      (Option.elim · (0 : b.support → Fin 3) (weightedDynkinDiagram b)) := by
-    rintro (_ | h₁) (_ | h₂) h
-    · rfl
-    · exact absurd h.symm (weightedDynkinDiagram_ne_zero b h₂)
-    · exact absurd h (weightedDynkinDiagram_ne_zero b h₁)
-    · exact congrArg some (weightedDynkinDiagram_injective b h)
-  have hcard := Nat.card_le_card_of_injective _ hinj
+  have hcard := Nat.card_le_card_of_injective _ (injective_optionElim_weightedDynkinDiagram b)
   have hrank : Nat.card b.support = finrank K H := by
     simpa using (Module.finrank_eq_card_basis b.toWeightBasis).symm
-  have := Fintype.ofFinite (dominantNeutralElements b)
-  rw [Nat.card_eq_fintype_card, Fintype.card_option, ← Nat.card_eq_fintype_card,
-    Nat.card_coe_set_eq, Nat.card_fun, Nat.card_fin, hrank] at hcard
+  rw [Finite.card_option, Nat.card_coe_set_eq, Nat.card_fun, Nat.card_fin, hrank] at hcard
   exact hcard
 
 /-- There are at most three choices per simple root for a dominant neutral element. -/

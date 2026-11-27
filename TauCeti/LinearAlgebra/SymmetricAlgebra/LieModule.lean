@@ -46,7 +46,8 @@ functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan sub
 
 * `TauCeti.SymmetricAlgebra.lieModuleDerivation_ι`: `x` sends a generator `ι m` to `ι ⁅x, m⁆`.
 * `LieModuleHom.map_apply_lieModuleDerivation`: naturality under Lie module maps.
-* `LieHom.map_apply_lieModuleDerivation`: naturality of the adjoint action under Lie algebra maps.
+* `LieHom.map_apply_lieModuleDerivation` and `LieHom.map_dualMap_apply_lieModuleDerivation`:
+  naturality of the adjoint and coadjoint actions under Lie algebra maps.
 * `TauCeti.SymmetricAlgebra.lieModuleDerivation_mem_homogeneousSubmodule`: the action preserves
   each homogeneous degree.
 * `TauCeti.SymmetricAlgebra.mem_lieInvariants_iff_mem_maxTrivSubmodule`: the invariants are the
@@ -57,8 +58,9 @@ functions `S(L*)^L` with the Weyl-invariant polynomial functions on a Cartan sub
   on all brackets.
 * `TauCeti.SymmetricAlgebra.decompose_mem_lieInvariants_iff`: an element is invariant exactly when
   all of its homogeneous components are.
-* `LieModuleEquiv.map_lieInvariants`: a Lie module equivalence carries the invariants
-  onto the invariants.
+* `LieModuleEquiv.map_lieInvariants` and `LieHom.map_dualMap_mem_lieInvariants`: a Lie module
+  equivalence carries the invariants onto the invariants, and pulling back along a Lie algebra
+  homomorphism preserves coadjoint invariants.
 * `TauCeti.SymmetricAlgebra.lift_eval_eq_zero_of_mem_homogeneousLieInvariant`,
   `TauCeti.SymmetricAlgebra.lift_eval_eq_zero_of_mem_lieInvariants`: an invariant polynomial
   function on `M` of positive degree, respectively with zero constant term, vanishes at every
@@ -164,6 +166,17 @@ theorem _root_.LieHom.map_apply_lieModuleDerivation (f : L →ₗ⁅R⁆ L') (x 
   map_apply_derivationOfEnd R f.toLinearMap (f := LieModule.toEnd R L L x)
     (g := LieModule.toEnd R L' L' (f x)) (LinearMap.ext fun y ↦ by simp) p
 
+/-- Pulling polynomial functions back along a Lie algebra homomorphism intertwines the coadjoint
+derivations. -/
+theorem _root_.LieHom.map_dualMap_apply_lieModuleDerivation (f : L →ₗ⁅R⁆ L') (x : L)
+    (p : _root_.SymmetricAlgebra R (Module.Dual R L')) :
+    map R f.toLinearMap.dualMap (lieModuleDerivation R L' (Module.Dual R L') (f x) p) =
+      lieModuleDerivation R L (Module.Dual R L) x (map R f.toLinearMap.dualMap p) :=
+  map_apply_derivationOfEnd R f.toLinearMap.dualMap
+    (f := LieModule.toEnd R L' (Module.Dual R L') (f x))
+    (g := LieModule.toEnd R L (Module.Dual R L) x)
+    (LinearMap.ext fun _ ↦ LinearMap.ext fun _ ↦ by simp) p
+
 end LieHom
 
 end Naturality
@@ -267,6 +280,22 @@ theorem _root_.LieModuleEquiv.map_lieInvariants (e : M ≃ₗ⁅R,L⁆ N) :
   exact ⟨_, e.map_mem_lieInvariants_iff.mp (hq'.symm ▸ hq), hq'⟩
 
 end Equiv
+
+section LieHomInvariants
+
+variable {L' : Type w'} [LieRing L'] [LieAlgebra R L']
+
+/-- **Contravariant functoriality of coadjoint invariants.** Pulling back an invariant polynomial
+function on `L'` along a Lie algebra homomorphism `f : L →ₗ⁅R⁆ L'` yields an invariant polynomial
+function on `L`. -/
+theorem _root_.LieHom.map_dualMap_mem_lieInvariants (f : L →ₗ⁅R⁆ L')
+    {p : _root_.SymmetricAlgebra R (Module.Dual R L')}
+    (hp : p ∈ lieInvariants R L' (Module.Dual R L')) :
+    map R f.toLinearMap.dualMap p ∈ lieInvariants R L (Module.Dual R L) :=
+  mem_lieInvariants.mpr fun x ↦ by
+    rw [← f.map_dualMap_apply_lieModuleDerivation x p, mem_lieInvariants.mp hp (f x), map_zero]
+
+end LieHomInvariants
 
 /-! ### Vanishing at eigenvectors -/
 

@@ -86,6 +86,29 @@ theorem differential_adjointComodule (d : Derivation R H (Bialgebra.CounitAlgebr
   rw [pointInCounitAlgebra_eq_pointsMulEquiv_symm, adDerivation_dualNumber_apply]
   simp only [snd_add, snd_inl, snd_inr, zero_add, cotangentDualLieEquiv_apply]
 
+/-- Differentiating the adjoint comodule at `cotangentLinearEquiv x` yields the adjoint
+endomorphism `LieAlgebra.ad R 𝔤 x`. -/
+@[simp]
+theorem differential_cotangentLinearEquiv_adjointComodule
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    Comodule.differential (R := R) (H := H)
+        (M := Module.Dual R (Bialgebra.CotangentSpace R H))
+        (cotangentLinearEquiv (R := R) (A := H) (B := R) x) =
+      LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x := by
+  ext y
+  rw [← cotangentDualLieEquiv_apply, differential_adjointComodule, LieEquiv.symm_apply_apply,
+    LieAlgebra.ad_apply]
+
+/-- Differentiating the adjoint comodule at `cotangentDualLieEquiv x` yields the adjoint
+endomorphism `LieAlgebra.ad R 𝔤 x`. -/
+theorem differential_cotangentDualLieEquiv_adjointComodule
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    Comodule.differential (R := R) (H := H)
+        (M := Module.Dual R (Bialgebra.CotangentSpace R H))
+        (cotangentDualLieEquiv (R := R) (H := H) x) =
+      LieAlgebra.ad R (Module.Dual R (Bialgebra.CotangentSpace R H)) x := by
+  simp
+
 end Derivation
 
 namespace TauCeti

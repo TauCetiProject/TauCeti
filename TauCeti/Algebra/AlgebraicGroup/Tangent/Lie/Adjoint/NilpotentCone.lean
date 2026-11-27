@@ -18,6 +18,7 @@ public import TauCeti.Algebra.Lie.AdjointAction.InvariantZeroLocus
 public import TauCeti.Algebra.Lie.TracePowerPolynomial
 public import TauCeti.Algebra.Lie.Reductive.InvariantZeroLocus
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
+import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Fixed
 import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Coalgebra.Comodule.Evaluation
 import TauCeti.Algebra.Polynomial.Degree.Map
@@ -42,12 +43,14 @@ Adjoint-invariant polynomials are constant on rational adjoint orbits and, for a
 over an algebraically closed field, across the closure order on `TauCeti.Comodule.VectorOrbit k H 𝔤`
 (`TauCeti.lift_eval_basePointsRepresentation_of_mem_adjointInvariantPolynomials`,
 `TauCeti.lift_eval_eq_of_mk_le_mk_of_mem_adjointInvariantPolynomials`), so the nilpotent cone is
-closed under orbit specialization (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`).
-Similarly, the predicate `TauCeti.Comodule.VectorOrbit.IsNilpotentAd` of nilpotent rational adjoint
-orbits is downward closed in the closure order (`TauCeti.Comodule.VectorOrbit.IsNilpotentAd.of_le`)
-without any characteristic, connectedness, or Killing hypothesis, and the `k`-rational vectors
-`{y : 𝔤 | mk y ≤ O}` whose orbit lies below a nilpotent orbit `O` decompose into `O` together with
-the union of all strictly smaller nilpotent orbits
+closed under orbit specialization (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk`), and
+its rational orbits (`TauCeti.nilpotentConeOrbits`) form a downward-closed set
+(`TauCeti.mem_nilpotentConeOrbits_of_le`). Similarly, the predicate
+`TauCeti.Comodule.VectorOrbit.IsNilpotentAd` of `ad`-nilpotent rational adjoint orbits is downward
+closed in the closure order (`TauCeti.Comodule.VectorOrbit.IsNilpotentAd.of_le`) without any
+characteristic, connectedness, or Killing hypothesis, and the `k`-rational vectors
+`{y : 𝔤 | mk y ≤ O}` whose orbit lies below an `ad`-nilpotent orbit `O` decompose into `O` together
+with the union of all strictly smaller `ad`-nilpotent orbits
 (`TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd`).
 
 The infinitesimal adjoint action of `x ∈ 𝔤` on `O(𝔤)` is the coadjoint action of `x` by
@@ -58,19 +61,21 @@ two rings of invariants coincide (`TauCeti.adjointInvariantPolynomials_eq_lieInv
 the Killing form of `𝔤` is nondegenerate, the Lie-invariant functions of positive degree cut out the
 `ad`-nilpotent elements (`TauCeti.isNilpotent_ad_iff_forall_lift_eval_eq_zero`). Hence the
 `k`-points of the nilpotent cone are exactly the `ad`-nilpotent elements of `𝔤`
-(`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`). Each inclusion holds under weaker hypotheses:
-`ad`-nilpotent elements lie on the cone for every group with nondegenerate Killing form in
-characteristic zero, and points of the cone are `ad`-nilpotent for every connected group over an
-algebraically closed field of characteristic zero.
+(`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`), and `TauCeti.nilpotentConeOrbits` coincides
+with `{O | O.IsNilpotentAd}` (`TauCeti.nilpotentConeOrbits_eq_setOf_isNilpotentAd`). Each inclusion
+holds under weaker hypotheses: `ad`-nilpotent elements lie on the cone for every group with
+nondegenerate Killing form in characteristic zero, and points of the cone are `ad`-nilpotent for
+every connected group over an algebraically closed field of characteristic zero.
 
 When `𝔤` is only reductive, `𝔤 = Z(𝔤) ⊕ ⁅𝔤, 𝔤⁆`, the linear functions vanishing on `⁅𝔤, 𝔤⁆` are
 invariants of degree one, and the cone is cut out inside `⁅𝔤, 𝔤⁆`: its `k`-points are the
 `ad`-nilpotent elements of the derived ideal
 (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad`). These
 have zero central coordinate (`TauCeti.nilpotentConeIdeal_le_ker_lift_eval_add_iff`), whereas
-the `ad`-nilpotent elements of `𝔤` form the larger set `Z(𝔤) × 𝒩(⁅𝔤, 𝔤⁆)`: they are the sums of a
-central element and a point of the cone
-(`TauCeti.isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval`).
+the `ad`-nilpotent elements of `𝔤` form the larger set `Z(𝔤) × 𝒩(⁅𝔤, 𝔤⁆)`
+(`TauCeti.isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval`), and at
+the orbit level `{O // O.IsNilpotentAd}` splits canonically as
+`LieAlgebra.center k 𝔤 × nilpotentConeOrbits k H` (`TauCeti.centerProdNilpotentConeOrbitsEquiv`).
 
 The cone is not reduced in general, so the statement about `k`-points does not by itself say
 anything about points with values in a nonreduced ring. For a connected affine group of finite
@@ -113,11 +118,16 @@ matrix of the point acting on `M` has characteristic polynomial `T ^ d`.
   polynomials and stability of the nilpotent cone along the adjoint orbit closure order.
 * `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_basePointsRepresentation_iff`: the `k`-points of
   the nilpotent cone are stable under the adjoint action of rational points.
+* `TauCeti.nilpotentConeOrbits`, `TauCeti.mem_nilpotentConeOrbits_of_le`, and
+  `TauCeti.centerProdNilpotentConeOrbitsEquiv`: rational adjoint orbits in the nilpotent cone,
+  their downward closure, and the product comparison
+  `Z(𝔤) × nilpotentConeOrbits ≃ {O // O.IsNilpotentAd}` for connected groups with reductive Lie
+  algebra.
 * `TauCeti.Comodule.VectorOrbit.IsNilpotentAd`, `TauCeti.Comodule.VectorOrbit.IsNilpotentAd.of_le`,
-  and `TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd`: nilpotent
+  and `TauCeti.Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_isNilpotentAd`: `ad`-nilpotent
   rational adjoint orbits, downward closure in the closure order, and decomposition of the
-  `k`-rational vectors `{y : 𝔤 | mk y ≤ O}` whose orbit lies in the closure of a nilpotent orbit
-  `O`.
+  `k`-rational vectors `{y : 𝔤 | mk y ≤ O}` whose orbit lies in the closure of an `ad`-nilpotent
+  orbit `O`.
 * `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_iff`: its `k`-points are the `ad`-nilpotent
   elements, with the two inclusions `TauCeti.nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent`
   and `TauCeti.isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval`. More generally, points of
@@ -760,19 +770,299 @@ theorem setOf_mk_le_eq_union_biUnion_of_isNilpotentAd {O : VectorOrbit k H 𝔤}
     {y : 𝔤 | (mk y : VectorOrbit k H 𝔤) ≤ O} =
       {y : 𝔤 | mk y = O} ∪
         ⋃ O' ∈ {O' : VectorOrbit k H 𝔤 | O'.IsNilpotentAd ∧ O' < O},
-          {y : 𝔤 | mk y = O'} := by
-  ext y
-  simp only [Set.mem_ofPred_eq, Set.mem_union, Set.mem_iUnion, exists_prop]
-  refine ⟨fun hle ↦ ?_, ?_⟩
-  · rcases eq_or_lt_of_le hle with rfl | hlt
-    · exact Or.inl rfl
-    · exact Or.inr ⟨mk y, ⟨hO.of_le hle, hlt⟩, rfl⟩
-  · rintro (rfl | ⟨_, ⟨-, hlt⟩, rfl⟩)
-    · exact le_rfl
-    · exact hlt.le
+          {y : 𝔤 | mk y = O'} :=
+  setOf_mk_le_eq_union_biUnion_of_forall_le (S := {O' | O'.IsNilpotentAd}) fun _ hle ↦ hO.of_le hle
 
 end Closure
 
+section Subsingleton
+
+variable {k : Type u} {H : Type v} [Field k] [CommRing H] [HopfAlgebra k H]
+  [Module.Finite k (Bialgebra.CotangentSpace k H)]
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- In a trivial (subsingleton) Lie algebra, the zero orbit is the sole `ad`-nilpotent orbit. -/
+theorem setOf_isNilpotentAd_eq_singleton_of_subsingleton [Subsingleton 𝔤] :
+    {O : VectorOrbit k H 𝔤 | O.IsNilpotentAd} = {mk (0 : 𝔤)} := by
+  ext O
+  induction O using VectorOrbit.ind with | h x =>
+  simp [Subsingleton.elim x 0]
+
+end Subsingleton
+
 end Comodule.VectorOrbit
+
+section NilpotentConeOrbits
+
+section General
+
+variable (k H : Type u) [Field k] [CommRing H] [HopfAlgebra k H]
+  [Module.Finite k (Bialgebra.CotangentSpace k H)]
+
+attribute [local instance] Derivation.adjointComodule
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- **Rational adjoint orbits in the nilpotent cone** of `G = Spec H`: the `G(k)`-orbits of vectors
+`x ∈ 𝔤` on which `TauCeti.nilpotentConeIdeal k H` vanishes. Unlike
+`Comodule.VectorOrbit.IsNilpotentAd`, this excludes nonzero central orbits when `𝔤` is reductive
+with nontrivial centre. -/
+def nilpotentConeOrbits : Set (Comodule.VectorOrbit k H 𝔤) :=
+  {O | O.lift
+    (fun x ↦ nilpotentConeIdeal k H ≤
+      RingHom.ker (_root_.SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)))
+    fun g x ↦ propext (nilpotentConeIdeal_le_ker_lift_eval_basePointsRepresentation_iff g x)}
+
+/-- Unfolding equation for `TauCeti.nilpotentConeOrbits`. -/
+theorem nilpotentConeOrbits_def :
+    nilpotentConeOrbits k H =
+      {O | O.lift
+        (fun x ↦ nilpotentConeIdeal k H ≤
+          RingHom.ker (_root_.SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)))
+        fun g x ↦ propext (nilpotentConeIdeal_le_ker_lift_eval_basePointsRepresentation_iff g x)} :=
+  (rfl)
+
+variable {k H}
+
+/-- The orbit of `x ∈ 𝔤` belongs to `nilpotentConeOrbits` precisely when evaluation at `x`
+annihilates `nilpotentConeIdeal k H`. -/
+@[simp]
+theorem mk_mem_nilpotentConeOrbits_iff {x : 𝔤} :
+    (Comodule.VectorOrbit.mk x : Comodule.VectorOrbit k H 𝔤) ∈ nilpotentConeOrbits k H ↔
+      nilpotentConeIdeal k H ≤
+        RingHom.ker (_root_.SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)) := by
+  simp [nilpotentConeOrbits_def]
+
+/-- An orbit belongs to `nilpotentConeOrbits` iff it has a representative annihilating
+`nilpotentConeIdeal k H`. -/
+theorem mem_nilpotentConeOrbits_iff {O : Comodule.VectorOrbit k H 𝔤} :
+    O ∈ nilpotentConeOrbits k H ↔
+      ∃ x : 𝔤, nilpotentConeIdeal k H ≤
+        RingHom.ker (_root_.SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 x)) ∧
+        Comodule.VectorOrbit.mk x = O := by
+  induction O using Comodule.VectorOrbit.ind with | h x =>
+  rw [mk_mem_nilpotentConeOrbits_iff]
+  refine ⟨fun hx ↦ ⟨x, hx, rfl⟩, fun ⟨y, hy, hyx⟩ ↦ ?_⟩
+  obtain ⟨g, rfl⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp hyx
+  rwa [nilpotentConeIdeal_le_ker_lift_eval_basePointsRepresentation_iff]
+
+/-- The zero orbit lies in `nilpotentConeOrbits`. -/
+theorem mk_zero_mem_nilpotentConeOrbits :
+    (Comodule.VectorOrbit.mk (0 : 𝔤) : Comodule.VectorOrbit k H 𝔤) ∈ nilpotentConeOrbits k H := by
+  rw [mk_mem_nilpotentConeOrbits_iff]
+  have heq : _root_.SymmetricAlgebra.lift (Module.Dual.eval k 𝔤 (0 : 𝔤)) =
+      SymmetricAlgebra.algebraMapInv :=
+    _root_.SymmetricAlgebra.algHom_ext <| LinearMap.ext fun φ ↦ by
+      simp [SymmetricAlgebra.algebraMapInv_ι]
+  rw [heq]
+  exact nilpotentConeIdeal_le_ker_algebraMapInv
+
+/-- In a trivial (subsingleton) Lie algebra, the zero orbit is the sole orbit in the nilpotent
+cone. -/
+theorem nilpotentConeOrbits_eq_singleton_of_subsingleton [Subsingleton 𝔤] :
+    nilpotentConeOrbits k H = {Comodule.VectorOrbit.mk (0 : 𝔤)} := by
+  ext O
+  induction O using Comodule.VectorOrbit.ind with | h x =>
+  rw [Subsingleton.elim x 0]
+  exact ⟨fun _ ↦ rfl, fun _ ↦ mk_zero_mem_nilpotentConeOrbits⟩
+
+/-- In characteristic zero, when the Killing form is nondegenerate, every `ad`-nilpotent orbit lies
+in `nilpotentConeOrbits` (without connectedness or algebraic closure). -/
+theorem mem_nilpotentConeOrbits_of_isNilpotentAd [CharZero k] [LieAlgebra.IsKilling k 𝔤]
+    {O : Comodule.VectorOrbit k H 𝔤} (hO : O.IsNilpotentAd) :
+    O ∈ nilpotentConeOrbits k H := by
+  induction O using Comodule.VectorOrbit.ind with | h x =>
+  rw [mk_mem_nilpotentConeOrbits_iff]
+  exact nilpotentConeIdeal_le_ker_lift_eval_of_isNilpotent
+    (Comodule.VectorOrbit.isNilpotentAd_mk_iff.mp hO)
+
+end General
+
+section Closure
+
+variable {k H : Type u} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
+  [Algebra.FiniteType k H]
+
+attribute [local instance] Derivation.adjointComodule
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- **Orbits in the nilpotent cone are downward closed in the closure order.** -/
+theorem mem_nilpotentConeOrbits_of_le {O O' : Comodule.VectorOrbit k H 𝔤}
+    (hle : O' ≤ O) (hO : O ∈ nilpotentConeOrbits k H) :
+    O' ∈ nilpotentConeOrbits k H := by
+  induction O using Comodule.VectorOrbit.ind with | h x =>
+  induction O' using Comodule.VectorOrbit.ind with | h y =>
+  rw [mk_mem_nilpotentConeOrbits_iff] at hO ⊢
+  exact nilpotentConeIdeal_le_ker_lift_eval_of_mk_le_mk hle hO
+
+/-- **Decomposition of the `k`-rational vectors below an orbit in the nilpotent cone.** -/
+theorem setOf_mk_le_eq_union_biUnion_of_mem_nilpotentConeOrbits {O : Comodule.VectorOrbit k H 𝔤}
+    (hO : O ∈ nilpotentConeOrbits k H) :
+    {y : 𝔤 | (Comodule.VectorOrbit.mk y : Comodule.VectorOrbit k H 𝔤) ≤ O} =
+      {y : 𝔤 | Comodule.VectorOrbit.mk y = O} ∪
+        ⋃ O' ∈ {O' : Comodule.VectorOrbit k H 𝔤 | O' ∈ nilpotentConeOrbits k H ∧ O' < O},
+          {y : 𝔤 | Comodule.VectorOrbit.mk y = O'} :=
+  Comodule.VectorOrbit.setOf_mk_le_eq_union_biUnion_of_forall_le fun _ hle ↦
+    mem_nilpotentConeOrbits_of_le hle hO
+
+end Closure
+
+section ConnectedOrbits
+
+variable {k H : Type u} [Field k] [CharZero k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H]
+  [Algebra.FiniteType k H] [ConnectedSpace (PrimeSpectrum H)]
+
+attribute [local instance] Derivation.adjointComodule
+
+local notation "𝔤" => Module.Dual k (Bialgebra.CotangentSpace k H)
+
+/-- For a connected group over an algebraically closed field of characteristic zero, every orbit in
+`nilpotentConeOrbits` is `ad`-nilpotent. -/
+theorem isNilpotentAd_of_mem_nilpotentConeOrbits {O : Comodule.VectorOrbit k H 𝔤}
+    (hO : O ∈ nilpotentConeOrbits k H) : O.IsNilpotentAd := by
+  induction O using Comodule.VectorOrbit.ind with | h x =>
+  rw [mk_mem_nilpotentConeOrbits_iff] at hO
+  exact Comodule.VectorOrbit.isNilpotentAd_mk_iff.mpr <|
+    isNilpotent_ad_of_nilpotentConeIdeal_le_ker_lift_eval (H := FiniteTypeCommHopfAlgCat.of k H) hO
+
+/-- For a connected group with Killing tangent Lie algebra, `nilpotentConeOrbits` coincides with
+`IsNilpotentAd`. -/
+@[simp]
+theorem mem_nilpotentConeOrbits_iff_isNilpotentAd [LieAlgebra.IsKilling k 𝔤]
+    {O : Comodule.VectorOrbit k H 𝔤} :
+    O ∈ nilpotentConeOrbits k H ↔ O.IsNilpotentAd :=
+  ⟨isNilpotentAd_of_mem_nilpotentConeOrbits, mem_nilpotentConeOrbits_of_isNilpotentAd⟩
+
+/-- Set-level equality `nilpotentConeOrbits k H = {O | O.IsNilpotentAd}` for connected groups with
+Killing tangent Lie algebra. -/
+theorem nilpotentConeOrbits_eq_setOf_isNilpotentAd [LieAlgebra.IsKilling k 𝔤] :
+    nilpotentConeOrbits k H = {O : Comodule.VectorOrbit k H 𝔤 | O.IsNilpotentAd} :=
+  Set.ext fun _ ↦ mem_nilpotentConeOrbits_iff_isNilpotentAd
+
+/-- **Reductive nilpotent-cone orbit criterion.** For a connected group with reductive tangent Lie
+algebra, the orbit of `x ∈ 𝔤` lies in `nilpotentConeOrbits` iff `x ∈ ⁅𝔤, 𝔤⁆` and `ad x` is
+nilpotent. -/
+theorem mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad
+    [LieAlgebra.HasCentralRadical k 𝔤] {x : 𝔤} :
+    (Comodule.VectorOrbit.mk x : Comodule.VectorOrbit k H 𝔤) ∈ nilpotentConeOrbits k H ↔
+      x ∈ LieAlgebra.derivedSeries k 𝔤 1 ∧ IsNilpotent (LieAlgebra.ad k 𝔤 x) := by
+  rw [mk_mem_nilpotentConeOrbits_iff]
+  exact nilpotentConeIdeal_le_ker_lift_eval_iff_mem_derivedSeries_and_isNilpotent_ad
+    (H := FiniteTypeCommHopfAlgCat.of k H)
+
+/-- Auxiliary map translating an orbit in `nilpotentConeOrbits` by a central element `z ∈ Z(𝔤)`. -/
+private noncomputable def centerAddNilpotentConeOrbit
+    (z : LieAlgebra.center k 𝔤) (O : Comodule.VectorOrbit k H 𝔤) : Comodule.VectorOrbit k H 𝔤 :=
+  O.lift (fun y ↦ Comodule.VectorOrbit.mk ((z : 𝔤) + y)) fun g y ↦
+    Comodule.VectorOrbit.mk_eq_mk_iff.mpr ⟨g⁻¹, by
+      rw [map_add, Comodule.basePointsRepresentation_eq_of_coact_eq_tmul_one (z : 𝔤)
+        ((FiniteTypeCommHopfAlgCat.coact_adjointComodule_eq_tmul_one_iff_mem_center
+          (FiniteTypeCommHopfAlgCat.of k H) _).mpr z.property) g⁻¹,
+        Representation.inv_self_apply]⟩
+
+@[simp]
+private theorem centerAddNilpotentConeOrbit_mk (z : LieAlgebra.center k 𝔤) (y : 𝔤) :
+    centerAddNilpotentConeOrbit (k := k) (H := H) z (Comodule.VectorOrbit.mk y) =
+      Comodule.VectorOrbit.mk ((z : 𝔤) + y) :=
+  Comodule.VectorOrbit.lift_mk _ _ y
+
+private noncomputable def centerProdToNilpotentAdOrbit
+    (p : LieAlgebra.center k 𝔤 × nilpotentConeOrbits k H) :
+    {O : Comodule.VectorOrbit k H 𝔤 // O.IsNilpotentAd} :=
+  ⟨centerAddNilpotentConeOrbit p.fst p.snd.val, by
+    rcases p with ⟨z, ⟨O, hO⟩⟩
+    induction O using Comodule.VectorOrbit.ind with | h y =>
+    rw [centerAddNilpotentConeOrbit_mk, Comodule.VectorOrbit.isNilpotentAd_mk_iff,
+      LieAlgebra.isNilpotent_ad_add_iff_of_mem_center_left z.property]
+    exact Comodule.VectorOrbit.isNilpotentAd_mk_iff.mp
+      (isNilpotentAd_of_mem_nilpotentConeOrbits hO)⟩
+
+private theorem coe_centerProdToNilpotentAdOrbit
+    (p : LieAlgebra.center k 𝔤 × nilpotentConeOrbits k H) :
+    (centerProdToNilpotentAdOrbit (k := k) (H := H) p : Comodule.VectorOrbit k H 𝔤) =
+      centerAddNilpotentConeOrbit p.fst p.snd.val :=
+  (rfl)
+
+private theorem centerProdToNilpotentAdOrbit_bijective [LieAlgebra.HasCentralRadical k 𝔤] :
+    Function.Bijective (centerProdToNilpotentAdOrbit (k := k) (H := H)) := by
+  constructor
+  · rintro ⟨z₁, ⟨O₁, hO₁⟩⟩ ⟨z₂, ⟨O₂, hO₂⟩⟩ heq
+    induction O₁ using Comodule.VectorOrbit.ind with | h y₁ =>
+    induction O₂ using Comodule.VectorOrbit.ind with | h y₂ =>
+    have heq' : (Comodule.VectorOrbit.mk ((z₁ : 𝔤) + y₁) : Comodule.VectorOrbit k H 𝔤) =
+        Comodule.VectorOrbit.mk ((z₂ : 𝔤) + y₂) := by
+      simpa only [coe_centerProdToNilpotentAdOrbit, centerAddNilpotentConeOrbit_mk] using
+        congrArg Subtype.val heq
+    obtain ⟨g, hg⟩ := Comodule.VectorOrbit.mk_eq_mk_iff.mp heq'
+    rw [map_add, Comodule.basePointsRepresentation_eq_of_coact_eq_tmul_one (z₁ : 𝔤)
+      ((FiniteTypeCommHopfAlgCat.coact_adjointComodule_eq_tmul_one_iff_mem_center
+        (FiniteTypeCommHopfAlgCat.of k H) _).mpr z₁.property) g] at hg
+    have hy₁ := (mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad.mp hO₁).left
+    have hy₂ := (mk_mem_nilpotentConeOrbits_iff_mem_derivedSeries_and_isNilpotent_ad.mp hO₂).left
+    have hgy₁ : Comodule.basePointsRepresentation 𝔤 g y₁ ∈ LieAlgebra.derivedSeries k 𝔤 1 :=
+      (Derivation.basePointsRepresentation_adjointComodule_mem_derivedSeries_iff g 1 y₁).mpr hy₁
+    have hz_eq : z₁ = z₂ := by
+      have hsub : (z₁ : 𝔤) - z₂ = y₂ - Comodule.basePointsRepresentation 𝔤 g y₁ :=
+        sub_eq_sub_iff_add_eq_add.mpr (hg.trans (add_comm _ _))
+      have hmem : (z₁ : 𝔤) - z₂ ∈
+          (LieAlgebra.center k 𝔤 ⊓ LieAlgebra.derivedSeries k 𝔤 1 : LieIdeal k 𝔤) :=
+        ⟨sub_mem z₁.property z₂.property, hsub.symm ▸ sub_mem hy₂ hgy₁⟩
+      rw [center_inf_derivedSeries_eq_bot k 𝔤, LieSubmodule.mem_bot, sub_eq_zero] at hmem
+      exact Subtype.ext hmem
+    subst hz_eq
+    exact Prod.ext rfl (Subtype.ext <|
+      Comodule.VectorOrbit.mk_eq_mk_iff.mpr ⟨g, add_left_cancel hg⟩)
+  · rintro ⟨O, hO⟩
+    induction O using Comodule.VectorOrbit.ind with | h x =>
+    obtain ⟨z, hz, y, hy, hzy⟩ :=
+      (isNilpotent_ad_iff_exists_mem_center_add_nilpotentConeIdeal_le_ker_lift_eval
+        (H := FiniteTypeCommHopfAlgCat.of k H)).mp
+        (Comodule.VectorOrbit.isNilpotentAd_mk_iff.mp hO)
+    exact ⟨(⟨z, hz⟩, ⟨Comodule.VectorOrbit.mk y, mk_mem_nilpotentConeOrbits_iff.mpr hy⟩),
+      Subtype.ext <| by rw [coe_centerProdToNilpotentAdOrbit, centerAddNilpotentConeOrbit_mk, hzy]⟩
+
+/-- **Decomposition of `ad`-nilpotent orbits for a reductive tangent Lie algebra.** For a connected
+affine group in characteristic zero over an algebraically closed field with `𝔤` reductive, adding a
+central element to a nilpotent-cone orbit gives a bijection
+`Z(𝔤) × nilpotentConeOrbits k H ≃ {O : VectorOrbit k H 𝔤 // O.IsNilpotentAd}`. -/
+noncomputable def centerProdNilpotentConeOrbitsEquiv [LieAlgebra.HasCentralRadical k 𝔤] :
+    LieAlgebra.center k 𝔤 × nilpotentConeOrbits k H ≃
+      {O : Comodule.VectorOrbit k H 𝔤 // O.IsNilpotentAd} :=
+  Equiv.ofBijective (centerProdToNilpotentAdOrbit (k := k) (H := H))
+    (centerProdToNilpotentAdOrbit_bijective (k := k) (H := H))
+
+private theorem centerProdNilpotentConeOrbitsEquiv_apply [LieAlgebra.HasCentralRadical k 𝔤]
+    (p : LieAlgebra.center k 𝔤 × nilpotentConeOrbits k H) :
+    centerProdNilpotentConeOrbitsEquiv (k := k) (H := H) p = centerProdToNilpotentAdOrbit p :=
+  Equiv.ofBijective_apply _ _ p
+
+/-- On `(z, mk y)`, `centerProdNilpotentConeOrbitsEquiv` sends the pair to `mk (z + y)`. -/
+@[simp]
+theorem coe_centerProdNilpotentConeOrbitsEquiv_mk [LieAlgebra.HasCentralRadical k 𝔤]
+    (z : LieAlgebra.center k 𝔤) {y : 𝔤}
+    (hy : (Comodule.VectorOrbit.mk y : Comodule.VectorOrbit k H 𝔤) ∈ nilpotentConeOrbits k H) :
+    (centerProdNilpotentConeOrbitsEquiv (k := k) (H := H) (z, ⟨Comodule.VectorOrbit.mk y, hy⟩) :
+        Comodule.VectorOrbit k H 𝔤) =
+      Comodule.VectorOrbit.mk ((z : 𝔤) + y) := by
+  rw [centerProdNilpotentConeOrbitsEquiv_apply, coe_centerProdToNilpotentAdOrbit,
+    centerAddNilpotentConeOrbit_mk]
+
+/-- The inverse of `centerProdNilpotentConeOrbitsEquiv` splits `mk (z + y)` into `(z, mk y)`. -/
+@[simp]
+theorem centerProdNilpotentConeOrbitsEquiv_symm_mk_add [LieAlgebra.HasCentralRadical k 𝔤]
+    (z : LieAlgebra.center k 𝔤) {y : 𝔤}
+    (hy : (Comodule.VectorOrbit.mk y : Comodule.VectorOrbit k H 𝔤) ∈ nilpotentConeOrbits k H)
+    (h : (Comodule.VectorOrbit.mk ((z : 𝔤) + y) : Comodule.VectorOrbit k H 𝔤).IsNilpotentAd) :
+    (centerProdNilpotentConeOrbitsEquiv (k := k) (H := H)).symm
+        ⟨Comodule.VectorOrbit.mk ((z : 𝔤) + y), h⟩ =
+      (z, ⟨Comodule.VectorOrbit.mk y, hy⟩) :=
+  (centerProdNilpotentConeOrbitsEquiv (k := k) (H := H)).symm_apply_eq.mpr <|
+    Subtype.ext (coe_centerProdNilpotentConeOrbitsEquiv_mk (k := k) (H := H) z hy).symm
+
+end ConnectedOrbits
+
+end NilpotentConeOrbits
 
 end TauCeti

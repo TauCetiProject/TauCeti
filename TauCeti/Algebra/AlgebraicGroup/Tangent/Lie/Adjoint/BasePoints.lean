@@ -26,7 +26,10 @@ universes. Consequently, base-valued points carry `sl₂` triples in `Lie(G)` to
 * `Derivation.basePointsRepresentation_adjointComodule_bracket`: `basePointsRepresentation` of the
   adjoint comodule preserves the Lie bracket.
 * `Derivation.basePointsAdjointLieEquiv`: the Lie algebra automorphism of
-  `Module.Dual R (Bialgebra.CotangentSpace R H)` attached to a base-valued point.
+  `Module.Dual R (Bialgebra.CotangentSpace R H)` attached to a base-valued point, preserving every
+  term of the derived series
+  (`Derivation.basePointsRepresentation_adjointComodule_mem_derivedSeries_iff`,
+  `Derivation.map_basePointsAdjointLieEquiv_derivedSeries`).
 * `IsSl2Triple.basePointsRepresentation_adjointComodule`: the base-point adjoint action carries
   `sl₂` triples to `sl₂` triples.
 
@@ -139,6 +142,44 @@ theorem basePointsAdjointLieEquiv_symm (g : WithConv (H →ₐ[R] R)) :
     (basePointsAdjointLieEquiv_mul (R := R) (H := H) g g⁻¹)
   simpa only [mul_inv_cancel, basePointsAdjointLieEquiv_one, one_apply_eq_self,
     LieEquiv.trans_apply] using h
+
+/-- The base-point adjoint action preserves every term of the derived series of the tangent Lie
+algebra. -/
+@[simp]
+theorem basePointsRepresentation_adjointComodule_mem_derivedSeries_iff
+    (g : WithConv (H →ₐ[R] R)) (k : ℕ)
+    (x : Module.Dual R (Bialgebra.CotangentSpace R H)) :
+    letI := adjointComodule (R := R) (H := H)
+    Comodule.basePointsRepresentation (Module.Dual R (Bialgebra.CotangentSpace R H)) g x ∈
+      LieAlgebra.derivedSeries R (Module.Dual R (Bialgebra.CotangentSpace R H)) k ↔
+      x ∈ LieAlgebra.derivedSeries R (Module.Dual R (Bialgebra.CotangentSpace R H)) k := by
+  let := adjointComodule (R := R) (H := H)
+  have hmem (h : WithConv (H →ₐ[R] R)) {y : Module.Dual R (Bialgebra.CotangentSpace R H)}
+      (hy : y ∈ LieAlgebra.derivedSeries R (Module.Dual R (Bialgebra.CotangentSpace R H)) k) :
+      Comodule.basePointsRepresentation (Module.Dual R (Bialgebra.CotangentSpace R H)) h y ∈
+        LieAlgebra.derivedSeries R (Module.Dual R (Bialgebra.CotangentSpace R H)) k := by
+    rw [← basePointsAdjointLieEquiv_apply,
+      ← LieIdeal.derivedSeries_map_eq k (basePointsAdjointLieEquiv h).surjective]
+    exact LieIdeal.mem_map hy
+  exact ⟨fun hx ↦ by simpa only [Representation.inv_self_apply] using hmem g⁻¹ hx, hmem g⟩
+
+/-- Every base-valued point maps each term of the derived series of the tangent Lie algebra onto
+itself as a Lie subalgebra. -/
+theorem map_basePointsAdjointLieEquiv_derivedSeries
+    (g : WithConv (H →ₐ[R] R)) (k : ℕ) :
+    (LieAlgebra.derivedSeries R (Module.Dual R (Bialgebra.CotangentSpace R H)) k
+      ).toLieSubalgebra.map (basePointsAdjointLieEquiv (R := R) (H := H) g).toLieHom =
+      (LieAlgebra.derivedSeries R (Module.Dual R (Bialgebra.CotangentSpace R H)) k
+        ).toLieSubalgebra := by
+  let := adjointComodule (R := R) (H := H)
+  ext x
+  simp only [LieSubalgebra.mem_map, LieIdeal.mem_toLieSubalgebra, LieEquiv.coe_toLieHom,
+    basePointsAdjointLieEquiv_apply]
+  refine ⟨fun ⟨y, hy, hyx⟩ ↦ hyx ▸
+    (basePointsRepresentation_adjointComodule_mem_derivedSeries_iff g k y).mpr hy,
+    fun hx ↦ ⟨Comodule.basePointsRepresentation _ g⁻¹ x,
+      (basePointsRepresentation_adjointComodule_mem_derivedSeries_iff g⁻¹ k x).mpr hx,
+      Representation.self_inv_apply _ g x⟩⟩
 
 end Derivation
 

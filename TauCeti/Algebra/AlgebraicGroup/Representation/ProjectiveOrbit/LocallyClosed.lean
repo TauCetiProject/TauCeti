@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.ClosedPoints
 public import TauCeti.Algebra.AlgebraicGroup.Representation.ProjectiveOrbit.Translation
 public import TauCeti.Topology.Algebra.MulAction.Orbit
+import TauCeti.Topology.Constructible.Jacobson
 
 /-!
 # Projective orbit images are locally closed
@@ -95,6 +96,30 @@ theorem range_projectiveOrbitMap_eq_iff
   refine ⟨fun h ↦ h ▸ Set.mem_range_self _, fun hnm ↦ ?_⟩
   obtain ⟨g, hg⟩ := exists_span_basePointsRepresentation_eq_of_mem_range m hm n hn hnm
   exact (range_projectiveOrbitMap_eq_of_span_basePointsRepresentation_eq hm hn hg).symm
+
+/-- **Distinct projective orbit images are disjoint**, including at nonclosed scheme points. -/
+theorem disjoint_range_projectiveOrbitMap_of_ne
+    {m : M} (hm : Module.IsUnimodular k m) {n : M} (hn : Module.IsUnimodular k n)
+    (hne : Set.range (projectiveOrbitMap (H := H) m hm) ≠
+      Set.range (projectiveOrbitMap (H := H) n hn)) :
+    Disjoint (Set.range (projectiveOrbitMap (H := H) m hm))
+      (Set.range (projectiveOrbitMap (H := H) n hn)) := by
+  rw [Set.disjoint_iff_inter_eq_empty]
+  by_contra hne'
+  obtain ⟨x, ⟨hxm, hxn⟩, hxc⟩ :=
+    ((isConstructible_range_projectiveOrbitMap (H := H) m hm).inter
+      (isConstructible_range_projectiveOrbitMap (H := H) n hn))
+      |>.nonempty_inter_closedPoints (Set.ne_empty_iff_nonempty.mp hne')
+  obtain ⟨g₁, rfl⟩ :=
+    (range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints (H := H) m hm).ge ⟨hxm, hxc⟩
+  obtain ⟨g₂, hg₂⟩ :=
+    (range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints (H := H) n hn).ge ⟨hxn, hxc⟩
+  have hspan := (projectiveOrbitMap_kernelPoint_eq_iff_span_eq n hn m hm g₂ g₁).mp hg₂
+  have hspan' : k ∙ basePointsRepresentation M (g₁⁻¹ * g₂) n = k ∙ m := by
+    simpa only [Submodule.map_span, Set.image_singleton, Representation.inv_self_apply, map_mul,
+      mul_apply_eq_comp] using
+      congrArg (Submodule.map (basePointsRepresentation M g₁⁻¹)) hspan
+  exact hne (range_projectiveOrbitMap_eq_of_span_basePointsRepresentation_eq hn hm hspan').symm
 
 /-- The entire topological image of a finite-type affine group's projective orbit morphism
 is locally closed over an algebraically closed field, including for nonreduced groups. -/
