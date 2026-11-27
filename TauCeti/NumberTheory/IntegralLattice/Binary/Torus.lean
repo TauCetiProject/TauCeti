@@ -94,19 +94,15 @@ theorem toBinaryQuadraticForm_norm_baseChange :
     rw [Algebra.smul_def, mul_one, map_intCast]
   have hn (x : L) : (L.norm.baseChange A) (1 ⊗ₜ[ℚ] (x : V)) = ((L.integralNorm x : ℤ) : A) := by
     rw [QuadraticForm.baseChange_tmul, mul_one, ← integralNorm_cast, hcast]
-  ext
-  · rw [QuadraticMap.toBinaryQuadraticForm_a, Basis.baseChange_apply,
-      Basis.extendOfIsFullLattice_apply, hn, BinaryQuadraticForm.map_a, binaryNormForm_a,
-      gramMatrix_apply, integralNorm_apply, eq_intCast]
-  · rw [QuadraticMap.toBinaryQuadraticForm_b, Basis.baseChange_apply, Basis.baseChange_apply,
-      Basis.extendOfIsFullLattice_apply, Basis.extendOfIsFullLattice_apply, QuadraticMap.polar,
-      ← TensorProduct.tmul_add, ← Submodule.coe_add, hn, hn, hn, BinaryQuadraticForm.map_b,
-      binaryNormForm_b, gramMatrix_apply, eq_intCast, integralNorm_add]
-    push_cast
-    ring
-  · rw [QuadraticMap.toBinaryQuadraticForm_c, Basis.baseChange_apply,
-      Basis.extendOfIsFullLattice_apply, hn, BinaryQuadraticForm.map_c, binaryNormForm_c,
-      gramMatrix_apply, integralNorm_apply, eq_intCast]
+  ext <;> simp only [QuadraticMap.toBinaryQuadraticForm_a, QuadraticMap.toBinaryQuadraticForm_b,
+    QuadraticMap.toBinaryQuadraticForm_c, Basis.baseChange_apply, Basis.extendOfIsFullLattice_apply,
+    QuadraticMap.polar, ← TensorProduct.tmul_add, ← Submodule.coe_add, hn,
+    BinaryQuadraticForm.map_a, BinaryQuadraticForm.map_b, BinaryQuadraticForm.map_c,
+    binaryNormForm_a, binaryNormForm_b, binaryNormForm_c, gramMatrix_apply, integralNorm_add,
+    eq_intCast] <;>
+    simp only [integralNorm_apply]
+  push_cast
+  ring
 
 /-- Over a `ℚ`-algebra, the binary norm form of `b` and its primitive part have the same
 automorphs: they differ by the content, which is a nonzero integer and hence a unit. -/
@@ -120,13 +116,11 @@ private theorem stabilizer_map_binaryNormForm (hL : L.form ≠ 0) :
     exact_mod_cast (content_binaryNormForm_pos L b hL).ne'
   have hmap : f.map (Int.castRingHom A) =
       ((f.content : ℤ) : A) • f.primPart.map (Int.castRingHom A) := by
+    conv_lhs => rw [← f.content_smul_primPart]
     ext <;> simp only [BinaryQuadraticForm.map_a, BinaryQuadraticForm.map_b,
       BinaryQuadraticForm.map_c, BinaryQuadraticForm.smul_a', BinaryQuadraticForm.smul_b',
-      BinaryQuadraticForm.smul_c', BinaryQuadraticForm.primPart_a, BinaryQuadraticForm.primPart_b,
-      BinaryQuadraticForm.primPart_c, eq_intCast, Int.cast_natCast, smul_eq_mul]
-    · exact_mod_cast congrArg (Int.cast : ℤ → A) (Int.mul_ediv_cancel' f.content_dvd_a).symm
-    · exact_mod_cast congrArg (Int.cast : ℤ → A) (Int.mul_ediv_cancel' f.content_dvd_b).symm
-    · exact_mod_cast congrArg (Int.cast : ℤ → A) (Int.mul_ediv_cancel' f.content_dvd_c).symm
+      BinaryQuadraticForm.smul_c', nsmul_eq_mul, smul_eq_mul, eq_intCast, Int.cast_mul,
+      Int.cast_natCast]
   have : SMulCommClass SL(2, A) A (BinaryQuadraticForm A) := SMulCommClass.symm _ _ _
   rw [hmap, ← hc.unit_spec, ← Units.smul_def, stabilizer_smul_eq_right]
 
@@ -217,20 +211,20 @@ theorem specialOrthogonalToOrthogonal_mem_localStabilizer_iff_mem_range
       specialOrthogonalGroupBaseChangeEquivUnitary b hV ℚ_[p] hL g ∈
         (unitaryMap PadicInt.Coe.ringHom (map_intCast _ _)
           (map_intCast _ _)).range := by
-  have hrange (x : ℚ_[p]) : x ∈ (PadicInt.Coe.ringHom (p := p)).range ↔ x ∈ PadicInt.subring p :=
-    ⟨fun ⟨y, hy⟩ ↦ hy ▸ y.property, fun hx ↦ ⟨⟨x, hx⟩, rfl⟩⟩
+  have hrange : (PadicInt.Coe.ringHom (p := p)).range = PadicInt.subring p :=
+    Subring.range_subtype _
   rw [specialOrthogonalToOrthogonal_mem_localStabilizer_iff,
-    mem_range_unitaryMap_iff Subtype.coe_injective, hrange, hrange]
+    mem_range_unitaryMap_iff Subtype.coe_injective, hrange]
 
 /-- The image of the proper local stabilizer `K_p⁺(L)` under `SO(V_p) ≅ T_L(ℚ_p)` is the image of
 `T_L(ℤ_p)`. -/
 private theorem map_localStabilizer_comap (hL : L.form ≠ 0) :
     ((L.localStabilizer p).comap (QuadraticMap.specialOrthogonalToOrthogonal _)).map
-        (specialOrthogonalGroupBaseChangeEquivUnitary b hV ℚ_[p] hL).toMonoidHom =
+        (MonoidHom.ofClass (specialOrthogonalGroupBaseChangeEquivUnitary b hV ℚ_[p] hL)) =
       (unitaryMap PadicInt.Coe.ringHom (map_intCast _ _)
         (map_intCast _ _)).range := by
   ext z
-  rw [Subgroup.mem_map_equiv, Subgroup.mem_comap,
+  rw [← MulEquiv.toMonoidHom_eq_coe, Subgroup.mem_map_equiv, Subgroup.mem_comap,
     specialOrthogonalToOrthogonal_mem_localStabilizer_iff_mem_range b hV p hL,
     MulEquiv.apply_symm_apply]
 
@@ -257,15 +251,9 @@ theorem unitaryMap_localStabilizerSpecialOrthogonalEquivUnitary (hL : L.form ≠
     unitaryMap PadicInt.Coe.ringHom (map_intCast _ _) (map_intCast _ _)
         (localStabilizerSpecialOrthogonalEquivUnitary b hV p hL k) =
       specialOrthogonalGroupBaseChangeEquivUnitary b hV ℚ_[p] hL k := by
-  have h := MonoidHom.apply_ofInjective_symm
-    (unitaryMap_injective (f := PadicInt.Coe.ringHom (p := p)) Subtype.coe_injective
-      (map_intCast _ _) (map_intCast _ _))
-    (MulEquiv.subgroupCongr (map_localStabilizer_comap b hV p hL)
-      ((specialOrthogonalGroupBaseChangeEquivUnitary b hV ℚ_[p] hL).subgroupMap _ k))
-  -- Both sides of `h` unfold to those of the goal: the left side is the composite defining
-  -- `localStabilizerSpecialOrthogonalEquivUnitary` applied to `k`, and the right side is the
-  -- underlying element of `k` carried by `SO(V_p) ≅ T_L(ℚ_p)`.
-  exact h
+  simp only [localStabilizerSpecialOrthogonalEquivUnitary, MulEquiv.trans_apply,
+    MonoidHom.apply_ofInjective_symm, MulEquiv.subgroupCongr_apply,
+    MulEquiv.coe_subgroupMap_apply]
 
 end Local
 

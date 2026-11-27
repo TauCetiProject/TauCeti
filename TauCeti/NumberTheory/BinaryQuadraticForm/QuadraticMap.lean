@@ -8,8 +8,8 @@ module
 public import Mathlib.LinearAlgebra.SpecialLinearGroup
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Basic
-import Mathlib.Tactic.Module
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ToLin
 
 /-!
 # The binary form of a quadratic map in a basis
@@ -25,7 +25,9 @@ of `Q` with the stabilizer in `SL(2, R)` of this binary form under the action `�
 (`QuadraticMap.specialOrthogonalGroupEquivStabilizer`). Combined with the description of the
 automorphs of a binary form by norm-one elements of a quadratic order
 (`TauCeti.BinaryQuadraticForm.stabilizerEquivUnitary`), this computes the special orthogonal
-groups of rank-two quadratic spaces and lattices over any coefficient ring.
+group of `Q` whenever its binary form is read from an integral form whose coefficients generate
+the unit ideal of `R`, and `2` is not a zero divisor in `R`. The first identification alone holds
+over any commutative ring.
 
 ## Main definitions
 
@@ -76,18 +78,6 @@ theorem eval_toBinaryQuadraticForm (x y : R) :
   simp only [smul_eq_mul]
   ring
 
-/-- The automorphism of `M` with matrix `γ` in `e` sends the vector with coordinates `(x, y)` to
-the vector with coordinates `γ (x, y)`. -/
-private theorem toLin_equiv_apply (γ : SL(2, R)) (x y : R) :
-    ((SpecialLinearGroup.toLin_equiv e γ : M ≃ₗ[R] M) : M → M) (x • e 0 + y • e 1) =
-      (γ 0 0 * x + γ 0 1 * y) • e 0 + (γ 1 0 * x + γ 1 1 * y) • e 1 := by
-  have h (i : Fin 2) : ((SpecialLinearGroup.toLin_equiv e γ : M ≃ₗ[R] M) : M → M) (e i) =
-      γ 0 i • e 0 + γ 1 i • e 1 := by
-    rw [← LinearEquiv.coe_coe, SpecialLinearGroup.toLin_equiv.toLinearMap_eq, Matrix.toLin_self,
-      Fin.sum_univ_two]
-  rw [map_add, map_smul, map_smul, h, h]
-  module
-
 /-- **Isometries of a rank-two module are automorphs of its binary form.** A matrix `γ` of
 determinant one is the matrix in `e` of an isometry of `Q` exactly when it fixes the binary form of
 `Q` in `e`. -/
@@ -101,7 +91,7 @@ theorem toLin_equiv_mem_orthogonalGroup_iff (γ : SL(2, R)) :
   · -- Both sides of `γ • f = f` evaluate `Q` at the same vector, the image under `γ⁻¹`.
     intro h
     refine TauCeti.BinaryQuadraticForm.eval_injective (funext₂ fun x y ↦ ?_)
-    have hinv := toLin_equiv_apply e γ⁻¹ x y
+    have hinv := SpecialLinearGroup.toLin_equiv_apply_fin_two e γ⁻¹ x y
     simp only [SpecialLinearGroup.inv_apply_zero_zero, SpecialLinearGroup.inv_apply_zero_one,
       SpecialLinearGroup.inv_apply_one_zero, SpecialLinearGroup.inv_apply_one_one] at hinv
     have hu (w : M) : ((SpecialLinearGroup.toLin_equiv e γ : M ≃ₗ[R] M) : M → M)
@@ -117,7 +107,8 @@ theorem toLin_equiv_mem_orthogonalGroup_iff (γ : SL(2, R)) :
       eval_toBinaryQuadraticForm, hw, ← h, hu]
   · intro h v
     obtain ⟨x, y, rfl⟩ : ∃ x y : R, x • e 0 + y • e 1 = v := ⟨_, _, (hv v).symm⟩
-    rw [toLin_equiv_apply, ← eval_toBinaryQuadraticForm, ← eval_toBinaryQuadraticForm,
+    rw [SpecialLinearGroup.toLin_equiv_apply_fin_two, ← eval_toBinaryQuadraticForm,
+      ← eval_toBinaryQuadraticForm,
       ← TauCeti.BinaryQuadraticForm.eval_smul_apply γ (Q.toBinaryQuadraticForm e) x y, h]
 
 /-- **The special orthogonal group of a rank-two module.** Writing a proper isometry of `Q` as its
@@ -143,9 +134,9 @@ noncomputable def specialOrthogonalGroupEquivStabilizer :
   map_mul' g h := by
     ext1
     simp only [Subgroup.coe_mul, ← map_mul]
-    -- Both arguments are `g * h` with its determinant-one proof: the product in the special
-    -- linear group of `M` is the product of the underlying linear equivalences.
-    rfl
+    -- The product in the special linear group of `M` is the product of the linear equivalences.
+    refine congrArg _ (Subtype.ext ?_)
+    rw [_root_.SpecialLinearGroup.coe_mul]
 
 /-- The automorph attached to a proper isometry is its matrix in `e`. -/
 @[simp]
