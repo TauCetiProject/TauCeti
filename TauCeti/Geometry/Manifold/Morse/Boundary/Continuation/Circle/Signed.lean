@@ -36,11 +36,11 @@ Then the coefficient of `q` in the image of `p` is the product of the signs of `
 `q = p + c`, and `0` otherwise
 (`TauCeti.IsAdaptedPseudoGradient.signedContinuationCoeff_circleCosTwo`).
 This has the shape of the mod-two count `TauCeti.morseContinuationCoeff_circleCylinderField` of
-the circle continuation examples. For the half-turn `r₁ = r₀ + π`, where `f₁ = f₀`
-(`TauCeti.circleCosTwo_add_pi`), a diffeomorphism satisfying the hypotheses with `n = 1`, so
-`c = 0`, sends each critical point to itself with the weight of the signs: in the fixed spatial
-basis the matrix is diagonal, while in the labels `p_j(r₀) ↦ p_j(r₀ + π)` tracked along the path it
-is the exchange `S` (`TauCeti.circleCosTwoMax_add_pi`, `TauCeti.circleCosTwoMin_add_pi`).
+the circle continuation examples. For the half-turn `r₁ = r₀ + π` with `δ₁ = δ₀`, where
+`f₁ = f₀` (`TauCeti.circleCosTwo_add_pi`), a diffeomorphism satisfying the hypotheses with
+`n = 1`, so `c = 0`, sends each critical point to itself with the weight of the signs: in the fixed
+spatial basis the matrix is diagonal, while in the labels `p_j(r₀) ↦ p_j(r₀ + π)` tracked along the
+path it is the exchange `S` (`TauCeti.circleCosTwoMax_add_pi`, `TauCeti.circleCosTwoMin_add_pi`).
 
 ## Main results
 
@@ -206,13 +206,9 @@ theorem signedContinuationCoeff_circleCosTwo (hδ₀ : 0 < δ₀) (hδ₁ : 0 < 
           (𝔬₁.augmentationSign q + hX₁.fundamentalSign 𝔬₁ oM q)
       else 0 := by
   have hrank : finrank ℝ ℝ = 1 := finrank_self ℝ
-  obtain ⟨i, hi | hi⟩ := (mem_criticalPoints_circleCosTwo_iff_exists hδ₀.ne' r₀).1 p.property <;>
-    obtain ⟨j, hj | hj⟩ := (mem_criticalPoints_circleCosTwo_iff_exists hδ₁.ne' r₁).1 q.property
+  obtain ⟨i, rfl | rfl⟩ := exists_eq_circleCosTwoMaxCrit_or_eq_circleCosTwoMinCrit hδ₀.ne' r₀ p <;>
+    obtain ⟨j, rfl | rfl⟩ := exists_eq_circleCosTwoMaxCrit_or_eq_circleCosTwoMinCrit hδ₁.ne' r₁ q
   · -- Two maxima, whose augmentation signs vanish.
-    obtain rfl : p = circleCosTwoMaxCrit δ₀ r₀ i :=
-      Subtype.ext (hi.trans (coe_circleCosTwoMaxCrit δ₀ r₀ i).symm)
-    obtain rfl : q = circleCosTwoMaxCrit δ₁ r₁ j :=
-      Subtype.ext (hj.trans (coe_circleCosTwoMaxCrit δ₁ r₁ j).symm)
     rw [signedContinuationCoeff_circleCosTwoMaxCrit hX₀ hX₁ 𝔬₀ 𝔬₁ Φ hδ₀ hδ₁ n oM (hmax j) (hΦ j),
       MorseOrientation.augmentationSign_of_morseIndex_ne_zero _ (by
         rw [manifoldMorseIndex_circleCosTwoMaxCrit hδ₀]; exact one_ne_zero),
@@ -220,10 +216,6 @@ theorem signedContinuationCoeff_circleCosTwo (hδ₀ : 0 < δ₀) (hδ₁ : 0 < 
         rw [manifoldMorseIndex_circleCosTwoMaxCrit hδ₁]; exact one_ne_zero),
       zero_add, zero_add, coe_circleCosTwoMaxCrit, coe_circleCosTwoMaxCrit]
   · -- A maximum and a minimum: the rotation by `c` carries the maximum to a maximum.
-    obtain rfl : p = circleCosTwoMaxCrit δ₀ r₀ i :=
-      Subtype.ext (hi.trans (coe_circleCosTwoMaxCrit δ₀ r₀ i).symm)
-    obtain rfl : q = circleCosTwoMinCrit δ₁ r₁ j :=
-      Subtype.ext (hj.trans (coe_circleCosTwoMinCrit δ₁ r₁ j).symm)
     rw [signedContinuationCoeff_eq_zero_of_morseIndex_ne 𝔬₀ 𝔬₁ (by
       rw [manifoldMorseIndex_circleCosTwoMaxCrit hδ₀, manifoldMorseIndex_circleCosTwoMinCrit hδ₁]
       exact one_ne_zero), eq_comm, ite_eq_right_iff]
@@ -231,10 +223,6 @@ theorem signedContinuationCoeff_circleCosTwo (hδ₀ : 0 < δ₀) (hδ₁ : 0 < 
     rw [coe_circleCosTwoMinCrit, coe_circleCosTwoMaxCrit, ← hk]
     exact fun h ↦ absurd h (circleCosTwoMin_ne_circleCosTwoMax r₁ j k)
   · -- A minimum and a maximum: the rotation by `c` carries the minimum to a minimum.
-    obtain rfl : p = circleCosTwoMinCrit δ₀ r₀ i :=
-      Subtype.ext (hi.trans (coe_circleCosTwoMinCrit δ₀ r₀ i).symm)
-    obtain rfl : q = circleCosTwoMaxCrit δ₁ r₁ j :=
-      Subtype.ext (hj.trans (coe_circleCosTwoMaxCrit δ₁ r₁ j).symm)
     rw [signedContinuationCoeff_eq_zero_of_morseIndex_ne 𝔬₀ 𝔬₁ (by
       rw [manifoldMorseIndex_circleCosTwoMinCrit hδ₀, manifoldMorseIndex_circleCosTwoMaxCrit hδ₁]
       exact zero_ne_one), eq_comm, ite_eq_right_iff]
@@ -242,10 +230,6 @@ theorem signedContinuationCoeff_circleCosTwo (hδ₀ : 0 < δ₀) (hδ₁ : 0 < 
     rw [coe_circleCosTwoMinCrit, coe_circleCosTwoMaxCrit, ← hk]
     exact fun h ↦ absurd h (circleCosTwoMax_ne_circleCosTwoMin r₁ j k)
   · -- Two minima, whose fundamental signs vanish.
-    obtain rfl : p = circleCosTwoMinCrit δ₀ r₀ i :=
-      Subtype.ext (hi.trans (coe_circleCosTwoMinCrit δ₀ r₀ i).symm)
-    obtain rfl : q = circleCosTwoMinCrit δ₁ r₁ j :=
-      Subtype.ext (hj.trans (coe_circleCosTwoMinCrit δ₁ r₁ j).symm)
     rw [signedContinuationCoeff_circleCosTwoMinCrit hX₀ hX₁ 𝔬₀ 𝔬₁ Φ hδ₀ hδ₁ n (hmin i),
       fundamentalSign_of_morseIndex_ne (by
         rw [manifoldMorseIndex_circleCosTwoMinCrit hδ₀, hrank]; exact zero_ne_one),
