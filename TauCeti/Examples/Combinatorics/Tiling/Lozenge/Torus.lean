@@ -16,7 +16,10 @@ import Mathlib.Tactic.FinCases
   lozenges of a single type, with height changes `(1, 0)`, `(0, 1)`, `(0, 0)`.
 * `n₁ = n₂ = 2`, `(a, b) = (1, 1)`: the floor tiling of `H(x, y) = ⌊(x + y)/2⌋` is a torus tiling
   with height change `(1, 1)`. It has no type-3 lozenge (shown in the `Height` Checks), matching
-  `4 − 2 − 2 = 0`.
+  `4 − 2 − 2 = 0`; by the count per fundamental domain, every torus tiling of the `2 × 2` torus
+  with height change `(1, 1)` has no type-3 lozenge in `[0, 2) × [0, 2)`.
+* `(a, b) = (2, 1)` on the `2 × 2` torus violates `2a + 2b ≤ 4` and is not attained, while
+  `(1, 1)` and `(2, 0)` are attained.
 -/
 
 public section
@@ -94,5 +97,28 @@ example : heightChange 2 2 (tilingOfHeight halfSumHeight) = (1, 1) := by
   rw [hT] at h₁ h₂
   norm_num [halfSumHeight_apply] at h₁ h₂
   exact Prod.ext (by exact_mod_cast h₁) (by exact_mod_cast h₂)
+
+open Classical in
+/-- A torus tiling of the `2 × 2` torus with height change `(1, 1)` has no type-3 lozenge in the
+fundamental domain, matching `4 − 2 − 2 = 0`. -/
+example {M : Set TriEdge} (hM : IsTorusTiling 2 2 M) (hc : heightChange 2 2 M = (1, 1)) :
+    ((Finset.range 2 ×ˢ Finset.range 2).filter
+      fun p : ℕ × ℕ => (⟨((p.1 : ℤ), (p.2 : ℤ)), 2⟩ : TriEdge) ∈ M).card = 0 := by
+  have := hM.add_card_filter_type_three
+  rw [hc] at this
+  omega
+
+/-! ### Attainable height changes on the `2 × 2` torus -/
+
+/-- `(2, 1)` is not the height change of a torus tiling of the `2 × 2` torus. -/
+example : ¬ ∃ M, IsTorusTiling 2 2 M ∧ heightChange 2 2 M = (2, 1) := by
+  rw [exists_isTorusTiling_heightChange_eq_iff (by decide) (by decide)]
+  decide
+
+/-- `(1, 1)` and `(2, 0)` are attained. -/
+example : (∃ M, IsTorusTiling 2 2 M ∧ heightChange 2 2 M = (1, 1)) ∧
+    ∃ M, IsTorusTiling 2 2 M ∧ heightChange 2 2 M = (2, 0) :=
+  ⟨(exists_isTorusTiling_heightChange_eq_iff (by decide) (by decide)).2 (by decide),
+    (exists_isTorusTiling_heightChange_eq_iff (by decide) (by decide)).2 (by decide)⟩
 
 end TauCeti.Examples.LozengeTorusChecks
