@@ -154,6 +154,26 @@ theorem covectorDifferential_single (C : P.CovectorCube) (a : PlumbingCoefficien
     P.covectorDifferential (Finsupp.single C a) = a • P.covectorDifferentialOnGenerator C :=
   Finsupp.linearCombination_single _ _ _
 
+/-- The component at `D` of the differential of a finitely supported chain is a sum over any finite
+set containing the generators whose differential involves `D`. -/
+theorem covectorDifferential_apply_eq_sum (x : P.CovectorChain) (D : P.CovectorCube)
+    {s : Finset P.CovectorCube}
+    (hs : ∀ C, P.covectorDifferentialOnGenerator C D ≠ 0 → C ∈ s) :
+    P.covectorDifferential x D = ∑ C ∈ s, x C * P.covectorDifferentialOnGenerator C D := by
+  classical
+  conv_lhs => rw [← Finsupp.sum_single x]
+  rw [map_finsuppSum, Finsupp.sum, Finsupp.finsetSum_apply]
+  simp only [covectorDifferential_single, Finsupp.smul_apply, smul_eq_mul]
+  have h₁ : ∑ C ∈ x.support, x C * P.covectorDifferentialOnGenerator C D =
+      ∑ C ∈ x.support ∪ s, x C * P.covectorDifferentialOnGenerator C D :=
+    Finset.sum_subset Finset.subset_union_left fun C _ hC => by
+      rw [Finsupp.notMem_support_iff.mp hC, zero_mul]
+  have h₂ : ∑ C ∈ s, x C * P.covectorDifferentialOnGenerator C D =
+      ∑ C ∈ x.support ∪ s, x C * P.covectorDifferentialOnGenerator C D :=
+    Finset.sum_subset Finset.subset_union_right fun C _ hC => by
+      rw [not_not.mp (mt (hs C) hC), mul_zero]
+  rw [h₁, h₂]
+
 /-! ### Comparison with Némethi's complex -/
 
 /-- The generator `[k + 2 A x, E]` attached to the cube `(x, E)` of Némethi's complex of `k`. -/
