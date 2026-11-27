@@ -14,16 +14,17 @@ import TauCeti.MeasureTheory.Function.Lp.Const
 /-!
 # Density of bounded continuous mean-zero functions in `L²₀`
 
-On a normal space with its Borel σ-algebra and a weakly regular finite measure `P`, centering the
-dense subspace `BoundedContinuousFunction.toLp_denseRange` along the orthogonal projection onto
-`MeasureTheory.Measure.meanZeroL2` shows that bounded continuous mean-zero functions are dense in
-`L²₀(P)`.
+On a normal space `X` with its Borel σ-algebra, a weakly regular finite measure `P`, and a Hilbert
+space `E` such that either `X` or `E` is second-countable (`SecondCountableTopologyEither X E`),
+centering the dense subspace `BoundedContinuousFunction.toLp_denseRange` along the orthogonal
+projection onto `MeasureTheory.Measure.meanZeroL2` shows that bounded continuous mean-zero
+functions are dense in `L²₀(P)`.
 
 ## Main results
 
 * `MeasureTheory.Measure.meanZeroL2_subset_closure_boundedContinuous`: density of bounded
   continuous mean-zero elements in `L²₀(P)`, obtained by centering
-  `BoundedContinuousFunction.toLp_denseRange`.
+  `BoundedContinuousFunction.toLp_denseRange` when `X` or `E` is second-countable.
 -/
 
 public section
@@ -37,9 +38,10 @@ namespace MeasureTheory.Measure
 
 variable {X : Type*} [MeasurableSpace X]
 
-/-- On a normal space with its Borel σ-algebra and a weakly regular finite measure `P`, bounded
-continuous mean-zero functions are dense in `L²₀(P)`, obtained by centering
-`BoundedContinuousFunction.toLp_denseRange`. -/
+/-- On a normal space `X` with its Borel σ-algebra, a weakly regular finite measure `P`, and a
+Hilbert space `E` such that either `X` or `E` is second-countable
+(`SecondCountableTopologyEither X E`), bounded continuous mean-zero functions are dense in
+`L²₀(P)`, obtained by centering `BoundedContinuousFunction.toLp_denseRange`. -/
 theorem meanZeroL2_subset_closure_boundedContinuous (P : Measure X) [IsFiniteMeasure P]
     (𝕜 : Type*) {E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
     [CompleteSpace E] [NormedSpace ℝ E]
