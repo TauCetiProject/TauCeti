@@ -45,9 +45,6 @@ theorem charpoly_polynomialExtension_coeff_mem_range (ρ : Λ →ₐ[R] Matrix �
   refine charpoly_coeff_mem_range_of_span _ hS ?_ p k
   rintro _ ⟨w, rfl⟩ k
   obtain ⟨r, hr⟩ := hρ w k
-  have hC : polynomialExtension ρ (C w) = (ρ w).map C := by
-    ext s t i
-    simp [coeff_polynomialExtension_apply, coeff_C, apply_ite (ρ · s t)]
-  exact ⟨C r, by rw [hC, charpoly_map, coeff_map, ← hr]; simp⟩
+  exact ⟨C r, by rw [polynomialExtension_C, charpoly_map, coeff_map, ← hr]; simp⟩
 
 end AlgHom

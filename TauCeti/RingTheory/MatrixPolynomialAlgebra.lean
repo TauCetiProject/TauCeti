@@ -45,6 +45,22 @@ noncomputable def polynomialExtension (ρ : Λ →ₐ[R] Matrix σ σ L) :
     (k : ℕ) : (polynomialExtension ρ p s t).coeff k = ρ (p.coeff k) s t := by
   simp [polynomialExtension, RingHom.polyToMatrix, matPolyEquiv_symm_apply_coeff]
 
+/-- A constant polynomial is sent to the image of its coefficient, with constant entries. -/
+@[simp] theorem polynomialExtension_C (ρ : Λ →ₐ[R] Matrix σ σ L) (w : Λ) :
+    polynomialExtension ρ (C w) = (ρ w).map C := by
+  ext s t k
+  simp [coeff_C, apply_ite (ρ · s t)]
+
+/-- The variable is sent to the diagonal matrix with entries `X`. -/
+@[simp] theorem polynomialExtension_X (ρ : Λ →ₐ[R] Matrix σ σ L) :
+    polynomialExtension ρ X = diagonal fun _ ↦ X := by
+  have h := (polynomialExtension ρ).commutes X
+  rw [Polynomial.algebraMap_def, coe_mapRingHom, map_X] at h
+  rw [h, algebraMap_eq_diagonal]
+  congr 1
+  ext
+  simp [Polynomial.algebraMap_def]
+
 end AlgHom
 
 namespace TauCeti
@@ -61,8 +77,18 @@ noncomputable def matrixPolynomialMulRightAction (ρ₀ : Λ) :
     (polynomialMulRightAction R ρ₀).mapMatrix
 
 /-- The vector action is the row sum of the entrywise polynomial actions. -/
-theorem matrixPolynomialMulRightAction_apply (ρ₀ : Λ) (M : Matrix N N Λ[X]) (v : N → Λ)
+@[simp] theorem matrixPolynomialMulRightAction_apply (ρ₀ : Λ) (M : Matrix N N Λ[X]) (v : N → Λ)
     (i : N) : matrixPolynomialMulRightAction R ρ₀ M v i =
       ∑ j, polynomialMulRightAction R ρ₀ (M i j) (v j) := (rfl)
+
+attribute [local instance] Polynomial.algebra in
+/-- The scalar matrix of `F : R[X]` acts by right multiplication by `aeval ρ₀ F`. -/
+@[simp] theorem matrixPolynomialMulRightAction_algebraMap (ρ₀ : Λ) (F : R[X]) (v : N → Λ) :
+    matrixPolynomialMulRightAction R ρ₀ (algebraMap R[X] (Matrix N N Λ[X]) F) v =
+      fun i ↦ v i * aeval ρ₀ F := by
+  ext i
+  rw [matrixPolynomialMulRightAction_apply, Finset.sum_eq_single i
+    (fun j _ hj ↦ by simp [algebraMap_matrix_apply, Ne.symm hj]) (by simp)]
+  simp [algebraMap_matrix_apply, polynomialMulRightAction_map_algebraMap]
 
 end TauCeti

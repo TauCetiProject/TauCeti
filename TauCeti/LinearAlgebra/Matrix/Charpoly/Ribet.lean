@@ -111,14 +111,10 @@ private theorem exists_polynomial_of_mulVec_sub_mem (ρ : Λ →ₐ[R] Matrix σ
     have hKy : matrixPolynomialMulRightAction R ρ₀ K y i ∈ 𝔞 := by
       rw [matrixPolynomialMulRightAction_apply]
       exact sum_mem fun j _ ↦ 𝔞.polynomialMulRightAction_mem_of_coeff_mem ρ₀ (hK i j) _
-    have hF : matrixPolynomialMulRightAction R ρ₀ (algebraMap R[X] (Matrix N N Λ[X]) F) y i =
-        y i * aeval ρ₀ F := by
-      simp only [matrixPolynomialMulRightAction_apply, algebraMap_matrix_apply]
-      rw [Finset.sum_eq_single i (fun j _ hj ↦ by simp [Ne.symm hj]) (by simp)]
-      simp [polynomialMulRightAction_map_algebraMap]
     have hsub : V * BX - K = algebraMap R[X] (Matrix N N Λ[X]) F := sub_sub_cancel _ _
-    rw [← hF, ← hsub, map_sub, LinearMap.sub_apply, Pi.sub_apply]
-    exact 𝔞.sub_mem hVBX hKy
+    have h := 𝔞.sub_mem hVBX hKy
+    rwa [← Pi.sub_apply, ← LinearMap.sub_apply, ← map_sub, hsub,
+      matrixPolynomialMulRightAction_algebraMap] at h
 
 /-- **Ribet's polynomial.** Let `ρ : Λ →ₐ[R] Matrix σ σ L` be an `R`-algebra homomorphism such
 that `Λ` is spanned over `R` by elements `w` for which the characteristic polynomial of `ρ w` has
