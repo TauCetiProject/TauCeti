@@ -36,8 +36,8 @@ Dirichlet boundary data, as needed in weak comparison arguments.
   by `(u - k)⁺ ∈ W^{1,p}_0(Ω)`, persists at every higher level.
 * `TauCeti.W1p.posPartAbove_mem_w1p0Submodule_of_sub_mem`: if `u - g ∈ W^{1,p}_0(Ω)` and `g ≤ k`,
   then `(u - k)⁺ ∈ W^{1,p}_0(Ω)`.
-* `TauCeti.W1p.contDiffComp_mem_w1p0Submodule_of_nonneg`: a Lipschitz `C¹` function `F` with
-  `0 ≤ F s ≤ C s` for `s ≥ 0` maps a nonnegative `v ∈ W^{1,p}_0(Ω)` into `W^{1,p}_0(Ω)`.
+* `TauCeti.W1p.contDiffComp_mem_w1p0Submodule`: a Lipschitz `C¹` function `F` with `F 0 = 0` maps
+  `W^{1,p}_0(Ω)` into itself.
 * `TauCeti.W1p.exists_mem_w1p0Submodule_value_eq_sq_div`: the truncated squares
   `v² / (1 + t v²)` of a nonnegative `v ∈ W^{1,p}_0(Ω)` lie in `W^{1,p}_0(Ω)`.
 * `TauCeti.W1p.norm_posPartAbove_le`: truncation does not increase the Sobolev norm.
@@ -319,10 +319,10 @@ theorem W1p.posPartAbove_mem_w1p0Submodule_of_sub_mem (hp : p ≠ ∞) {k : ℝ}
   rw [h₁, W1p.value_posPart, h₂, h₃, Pi.sub_apply]
   exact max_le_max (by linarith) le_rfl
 
-/-- **Composition preserves zero boundary values.** If `F` is a Lipschitz `C¹` function with
+/-- If `F` is a Lipschitz `C¹` function with
 `F 0 = 0` and `0 ≤ F s ≤ C s` for `s ≥ 0`, and `v ∈ W^{1,p}_0(Ω)` is nonnegative, then
 `F ∘ v ∈ W^{1,p}_0(Ω)`, since it lies between `0` and `C v`. -/
-theorem W1p.contDiffComp_mem_w1p0Submodule_of_nonneg (hp : p ≠ ∞) {F : ℝ → ℝ} {M : NNReal}
+private theorem W1p.contDiffComp_mem_w1p0Submodule_of_nonneg (hp : p ≠ ∞) {F : ℝ → ℝ} {M : NNReal}
     (hF : ContDiff ℝ 1 F) (hM : ∀ s, ‖deriv F s‖₊ ≤ M) (hF0 : F 0 = 0) {C : ℝ}
     (hFnonneg : ∀ s, 0 ≤ s → 0 ≤ F s) (hFle : ∀ s, 0 ≤ s → F s ≤ C * s)
     {v : W1p mu Omega p} (hv : v ∈ w1p0Submodule mu Omega p)
@@ -337,6 +337,89 @@ theorem W1p.contDiffComp_mem_w1p0Submodule_of_nonneg (hp : p ≠ ∞) {F : ℝ �
   · filter_upwards [hval, W1p.value_smul_ae C v, hv0] with x hx hsx hs
     rw [hx, hsx, Pi.smul_apply, smul_eq_mul]
     exact hFle _ hs
+
+/-- A Lipschitz `C¹` function `G` with `G 0 = 0` maps a nonnegative `v ∈ W^{1,p}_0(Ω)` into
+`W^{1,p}_0(Ω)`: `G ∘ v = H ∘ v - M v` with `H s = M s + G s`, which lies between `0` and `2 M s`
+for `s ≥ 0`. -/
+private theorem W1p.contDiffComp_mem_w1p0Submodule_of_ae_nonneg (hp : p ≠ ∞) {G : ℝ → ℝ}
+    {M : NNReal} (hG : ContDiff ℝ 1 G) (hGM : ∀ s, ‖deriv G s‖₊ ≤ M) (hG0 : G 0 = 0)
+    {v : W1p mu Omega p} (hv : v ∈ w1p0Submodule mu Omega p)
+    (hv0 : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value v x) :
+    W1p.contDiffComp hp hG hGM hG0 v ∈ w1p0Submodule mu Omega p := by
+  have hlip := lipschitzWith_of_nnNorm_deriv_le (hG.differentiable one_ne_zero) hGM
+  have hle (s : ℝ) (hs : 0 ≤ s) : -(M * s) ≤ G s ∧ G s ≤ M * s := by
+    have h := hlip.dist_le_mul s 0
+    rw [Real.dist_eq, Real.dist_eq, hG0, sub_zero, sub_zero, abs_of_nonneg hs] at h
+    exact abs_le.1 h
+  set H : ℝ → ℝ := fun s => M * s + G s
+  have hHd (s : ℝ) : HasDerivAt H (M + deriv G s) s := by
+    have h := ((hasDerivAt_id' s).const_mul (M : ℝ)).add
+      ((hG.differentiable one_ne_zero) s).hasDerivAt
+    rwa [mul_one] at h
+  have hH : ContDiff ℝ 1 H := (contDiff_const.mul contDiff_id).add hG
+  have hHM (s : ℝ) : ‖deriv H s‖₊ ≤ 2 * M := by
+    have h := hGM s
+    rw [← NNReal.coe_le_coe, coe_nnNorm] at h
+    rw [(hHd s).deriv, ← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_mul, NNReal.coe_ofNat]
+    calc ‖(M : ℝ) + deriv G s‖ ≤ ‖(M : ℝ)‖ + ‖deriv G s‖ := norm_add_le _ _
+      _ ≤ M + M := by rw [Real.norm_of_nonneg M.coe_nonneg]; gcongr
+      _ = 2 * M := by ring
+  have hH0 : H 0 = 0 := by simp [H, hG0]
+  have hmem := W1p.contDiffComp_mem_w1p0Submodule_of_nonneg hp hH hHM hH0 (C := 2 * M)
+    (fun s hs => by simp only [H]; linarith [hle s hs])
+    (fun s hs => by simp only [H]; linarith [hle s hs]) hv hv0
+  have heq : W1p.contDiffComp hp hG hGM hG0 v =
+      W1p.contDiffComp hp hH hHM hH0 v - (M : ℝ) • v := by
+    apply W1p.ext_value
+    apply Lp.ext
+    filter_upwards [W1p.value_contDiffComp_ae hp hG hGM hG0 v,
+      W1p.value_contDiffComp_ae hp hH hHM hH0 v,
+      W1p.value_sub_ae (W1p.contDiffComp hp hH hHM hH0 v) ((M : ℝ) • v),
+      W1p.value_smul_ae (M : ℝ) v] with x h1 h2 h3 h4
+    rw [h1, h3, Pi.sub_apply, h2, h4, Pi.smul_apply, smul_eq_mul]
+    simp only [H]
+    ring
+  rw [heq]
+  exact (w1p0Submodule mu Omega p).toSubmodule.sub_mem hmem
+    ((w1p0Submodule mu Omega p).toSubmodule.smul_mem _ hv)
+
+/-- **Composition preserves zero boundary values.** For `1 ≤ p < ∞`, a Lipschitz `C¹` function
+`F` with `F 0 = 0` maps `W^{1,p}_0(Ω)` into itself: `F ∘ u ∈ W^{1,p}_0(Ω)` for every
+`u ∈ W^{1,p}_0(Ω)`. -/
+theorem W1p.contDiffComp_mem_w1p0Submodule (hp : p ≠ ∞) {F : ℝ → ℝ} {M : NNReal}
+    (hF : ContDiff ℝ 1 F) (hM : ∀ s, ‖deriv F s‖₊ ≤ M) (hF0 : F 0 = 0) {u : W1p mu Omega p}
+    (hu : u ∈ w1p0Submodule mu Omega p) :
+    W1p.contDiffComp hp hF hM hF0 u ∈ w1p0Submodule mu Omega p := by
+  -- `F ∘ u = F ∘ u⁺ + G ∘ (-u)⁺` with `G s = F (-s)`, and both terms are compositions with
+  -- nonnegative elements of `W^{1,p}_0(Ω)`.
+  have hG : ContDiff ℝ 1 (fun s => F (-s)) := hF.comp contDiff_neg
+  have hGM (s : ℝ) : ‖deriv (fun s => F (-s)) s‖₊ ≤ M := by
+    rw [deriv_comp_neg, nnNorm_neg]; exact hM _
+  have hG0 : (fun s => F (-s)) 0 = 0 := by simp [hF0]
+  have hneg : -u ∈ w1p0Submodule mu Omega p := (w1p0Submodule mu Omega p).toSubmodule.neg_mem hu
+  have heq : W1p.contDiffComp hp hF hM hF0 u =
+      W1p.contDiffComp hp hF hM hF0 (W1p.posPart hp u) +
+        W1p.contDiffComp hp hG hGM hG0 (W1p.posPart hp (-u)) := by
+    apply W1p.ext_value
+    apply Lp.ext
+    filter_upwards [W1p.value_contDiffComp_ae hp hF hM hF0 u,
+      W1p.value_add_ae (W1p.contDiffComp hp hF hM hF0 (W1p.posPart hp u))
+        (W1p.contDiffComp hp hG hGM hG0 (W1p.posPart hp (-u))),
+      W1p.value_contDiffComp_ae hp hF hM hF0 (W1p.posPart hp u),
+      W1p.value_contDiffComp_ae hp hG hGM hG0 (W1p.posPart hp (-u)),
+      (W1p.value_posPart hp u) ▸ Lp.coeFn_posPart (W1p.value u),
+      (W1p.value_posPart hp (-u)) ▸ Lp.coeFn_posPart (W1p.value (-u)),
+      W1p.value_neg_ae u] with x h1 h2 h3 h4 h5 h6 h7
+    rw [h1, h2, Pi.add_apply, h3, h4, h5, h6, h7, Pi.neg_apply]
+    rcases le_total 0 (W1p.value u x) with hx | hx
+    · rw [max_eq_left hx, max_eq_right (neg_nonpos.2 hx), neg_zero, hF0, add_zero]
+    · rw [max_eq_right hx, max_eq_left (neg_nonneg.2 hx), neg_neg, hF0, zero_add]
+  rw [heq]
+  exact (w1p0Submodule mu Omega p).toSubmodule.add_mem
+    (W1p.contDiffComp_mem_w1p0Submodule_of_ae_nonneg hp hF hM hF0
+      (W1p.posPart_mem_w1p0Submodule hp hu) (W1p.value_posPart_nonneg_ae hp u))
+    (W1p.contDiffComp_mem_w1p0Submodule_of_ae_nonneg hp hG hGM hG0
+      (W1p.posPart_mem_w1p0Submodule hp hneg) (W1p.value_posPart_nonneg_ae hp (-u)))
 
 /-- **Truncated squares.** For `t > 0` and a nonnegative `v ∈ W^{1,p}_0(Ω)`, the truncated
 square `v² / (1 + t v²)` lies in `W^{1,p}_0(Ω)`, with gradient `2 v ∇v / (1 + t v²)²`. Unlike `v²`,

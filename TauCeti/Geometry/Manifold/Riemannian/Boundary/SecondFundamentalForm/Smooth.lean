@@ -8,8 +8,10 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.SecondFundamentalForm.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Hessian.Regularity
 import TauCeti.Geometry.Manifold.Boundary.Charts
+import TauCeti.Geometry.Manifold.Boundary.Derivative
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
+import TauCeti.Geometry.Manifold.VectorBundle.GramSchmidt
 
 /-!
 # Smoothness of the second fundamental form of the boundary
@@ -36,13 +38,20 @@ In particular the coefficients of `II` in Tau Ceti's boundary charts are `C^k`.
 Pairing `II` with a local frame of `T∂M` at `k = 0` shows that `II` is a continuous section of the
 bundle of bilinear forms on `T∂M` (`TauCeti.continuousAt_boundarySecondFundamentalForm`,
 `TauCeti.continuous_boundarySecondFundamentalForm`).
+
+Near every point the boundary also carries tangent fields `e₁, …, eₙ` that are `C^k` and
+orthonormal for the induced metric `h`
+(`TauCeti.exists_contMDiffAt_boundaryInducedForm_orthonormal`). They are obtained by applying
+Gram–Schmidt to the images under `dι` of a local frame of `T∂M`, as vector fields of `M` along the
+inclusion `ι : ∂M → M` (`ContMDiffAt.gramSchmidtNormed_bundle`), and reading the result back in
+`T∂M` (`TauCeti.contMDiffAt_of_mfderiv_subtypeVal_boundary`).
 -/
 
 public section
 
 noncomputable section
 
-open Bundle Filter
+open Bundle Filter InnerProductSpace
 open scoped Manifold ContDiff InnerProductSpace Topology
 
 namespace TauCeti
@@ -153,5 +162,66 @@ theorem continuous_boundarySecondFundamentalForm :
         TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q →L[ℝ] ℝ) q
       (boundarySecondFundamentalForm q).toContinuousBilinearMap) :=
   continuous_iff_continuousAt.2 continuousAt_boundarySecondFundamentalForm
+
+omit [IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) 1 (EuclideanSpace ℝ (Fin (n + 1)))
+    (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x)] in
+/-- **Local orthonormal frames of the boundary.** Near every point `q₀` of the boundary there are
+tangent fields `e₁, …, eₙ` of the boundary manifold, `C^k` at `q₀` and orthonormal for the induced
+metric at every point near `q₀`, on a `C^(k + 1)` manifold with a `C^k` metric. -/
+theorem exists_contMDiffAt_boundaryInducedForm_orthonormal (hm : k + 1 ≤ m) (hl : k ≤ l)
+    (q₀ : (𝓡∂ (n + 1)).boundary M) :
+    ∃ e : Fin n → (q : (𝓡∂ (n + 1)).boundary M) → TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) q,
+      (∀ i, ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 𝓘(ℝ, EuclideanSpace ℝ (Fin n)).tangent k
+        (T% (e i)) q₀) ∧
+      ∀ᶠ q in 𝓝 q₀, ∀ i j, boundaryInducedForm q (e i q) (e j q) = if i = j then 1 else 0 := by
+  have : IsManifold (𝓡∂ (n + 1)) (k + 1) M := .of_le hm
+  have : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (k + 1) ((𝓡∂ (n + 1)).boundary M) :=
+    isManifold_boundary M
+  have : ContMDiffVectorBundle k (EuclideanSpace ℝ (Fin n))
+      (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) : (𝓡∂ (n + 1)).boundary M → Type _)
+      𝓘(ℝ, EuclideanSpace ℝ (Fin n)) :=
+    TangentBundle.contMDiffVectorBundle
+  have : IsContMDiffRiemannianBundle (𝓡∂ (n + 1)) k (EuclideanSpace ℝ (Fin (n + 1)))
+      (fun x : M ↦ TangentSpace (𝓡∂ (n + 1)) x) := .of_le hl
+  -- A local frame `(bᵢ)` of `T∂M` at `q₀`, pushed forward to `M` along `ι`.
+  set t := trivializationAt (EuclideanSpace ℝ (Fin n))
+    (TangentSpace 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) : (𝓡∂ (n + 1)).boundary M → Type _) q₀
+  set b := (EuclideanSpace.basisFun (Fin n) ℝ).toBasis
+  have hq₀ : q₀ ∈ t.baseSet := FiberBundle.mem_baseSet_trivializationAt' q₀
+  have hframe := t.isLocalFrameOn_localFrame_baseSet 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k b
+  set E : Fin n → (q : (𝓡∂ (n + 1)).boundary M) → TangentSpace (𝓡∂ (n + 1)) (q : M) :=
+    fun i q ↦ mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1))
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) q (t.localFrame b i q)
+  have hι : ContMDiff 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (𝓡∂ (n + 1)) (k + 1)
+      (Subtype.val : (𝓡∂ (n + 1)).boundary M → M) :=
+    (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k + 1) M).contMDiff
+  have hE (i : Fin n) : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin n))
+      ((𝓡∂ (n + 1)).prod 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))) k
+      (fun q : (𝓡∂ (n + 1)).boundary M ↦
+        TotalSpace.mk' (EuclideanSpace ℝ (Fin (n + 1))) (q : M) (E i q)) q₀ :=
+    ContMDiffAt.mfderiv_apply_sectionAlong hι.contMDiffAt
+      ((hframe.contMDiffOn i).contMDiffAt (t.open_baseSet.mem_nhds hq₀)) le_rfl
+  have hli {q : (𝓡∂ (n + 1)).boundary M} (hq : q ∈ t.baseSet) :
+      LinearIndependent ℝ fun i ↦ E i q :=
+    (hframe.linearIndependent hq).map' _
+      (LinearMap.ker_eq_bot.2 (injective_mfderiv_subtypeVal_boundary q))
+  -- Gram–Schmidt in `T_qM` keeps the fields `C^k` along `ι` and tangent to the boundary.
+  set F : Fin n → (q : (𝓡∂ (n + 1)).boundary M) → TangentSpace (𝓡∂ (n + 1)) (q : M) :=
+    fun j q ↦ gramSchmidtNormed ℝ (fun i ↦ E i q) j
+  have hmem (j : Fin n) (q : (𝓡∂ (n + 1)).boundary M) : F j q ∈ boundaryTangentSpace q := by
+    have h : F j q ∈ Submodule.span ℝ (Set.range fun i ↦ F i q) :=
+      Submodule.subset_span (Set.mem_range_self j)
+    rw [span_gramSchmidtNormed_range, span_gramSchmidt] at h
+    refine Submodule.span_le.2 ?_ h
+    rintro _ ⟨i, rfl⟩
+    exact mfderiv_subtypeVal_mem_boundaryTangentSpace q _
+  refine ⟨fun j q ↦ (boundaryTangentEquiv q).symm ⟨F j q, hmem j q⟩, fun j ↦ ?_, ?_⟩
+  · refine contMDiffAt_of_mfderiv_subtypeVal_boundary ?_
+    simp only [← coe_boundaryTangentEquiv_apply, LinearEquiv.apply_symm_apply]
+    exact ContMDiffAt.gramSchmidtNormed_bundle j (fun i _ ↦ hE i) ((hli hq₀).linearIndepOn _)
+  · filter_upwards [t.open_baseSet.mem_nhds hq₀] with q hq i j
+    rw [boundaryInducedForm_eq_inner_boundaryTangentEquiv, LinearEquiv.apply_symm_apply,
+      LinearEquiv.apply_symm_apply, Submodule.coe_inner]
+    exact orthonormal_iff_ite.1 (gramSchmidtNormed_orthonormal (hli hq)) i j
 
 end TauCeti
