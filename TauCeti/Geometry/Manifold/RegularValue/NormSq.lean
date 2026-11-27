@@ -13,12 +13,13 @@ public import TauCeti.Geometry.Manifold.RegularValue
 
 On a real inner product space every nonzero value of `x ↦ ‖x‖²` is regular
 (`TauCeti.isRegularValue_norm_sq`): the derivative at `x` is `v ↦ 2 ⟪x, v⟫`, which is onto as soon
-as `x ≠ 0`.
+as `x ≠ 0`. The same holds for every nonzero value of `x ↦ -‖x‖²`
+(`TauCeti.isRegularValue_neg_norm_sq`), whose derivative is the negated one.
 -/
 
 public section
 
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TauCeti
 
@@ -40,5 +41,23 @@ theorem isRegularValue_norm_sq {c : ℝ} (hc : c ≠ 0) :
   simp only [FunLike.coe_smul, Pi.smul_apply, innerSL_apply_apply,
     inner_smul_right, real_inner_self_eq_norm_sq, nsmul_eq_mul, Nat.cast_ofNat]
   field_simp [hx2]
+
+/-- The negated squared norm is smooth on the flat space. -/
+theorem contMDiff_neg_norm_sq_model_space {k : ℕ∞ω} :
+    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) k fun x : E ↦ -‖x‖ ^ 2 :=
+  (contDiff_norm_sq ℝ).neg.contMDiff
+
+/-- Every nonzero value of the negated squared norm on a real inner product space is a regular
+value: its derivative at a point is the negation of that of the squared norm, which is onto at
+every point of the level `‖x‖² = -c`. -/
+theorem isRegularValue_neg_norm_sq {c : ℝ} (hc : c ≠ 0) :
+    IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) (fun x : E ↦ -‖x‖ ^ 2) c := by
+  rw [isRegularValue_iff]
+  intro x hx
+  have h := isRegularValue_iff.1 (isRegularValue_norm_sq (E := E) (neg_ne_zero.2 hc)) x
+    (neg_eq_iff_eq_neg.1 hx)
+  rw [isRegularPoint_iff_surjective_fderiv] at h ⊢
+  rw [fderiv_fun_neg]
+  exact neg_surjective.comp h
 
 end TauCeti

@@ -8,10 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.RegularDomain.Boundary
 public import TauCeti.Geometry.Manifold.Riemannian.Boundary.Weingarten.Basic
 public import TauCeti.Geometry.Manifold.RegularValue.NormSq
-import TauCeti.Analysis.InnerProductSpace.Calculus
-import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
-import TauCeti.Geometry.Manifold.Riemannian.Laplacian
+import TauCeti.Geometry.Manifold.Riemannian.Hessian.NormSq
 
 /-!
 # The closed exterior of a ball as a regular domain
@@ -20,8 +18,9 @@ Let `E` be a real inner product space of dimension `n + 1` with its flat metric,
 closed exterior `D = {x | ‖x‖² ≥ c}` of the open ball of radius `√c` is the regular sublevel
 `{-‖x‖² ≤ -c}` of `f = -‖·‖²` at its regular value `-c`, with its half-space atlas
 `TauCeti.normSqGeChartedSpace` and the metric pulled back along the inclusion `j : D → E`. Its
-boundary is the sphere of radius `√c`. With `grad f = -2x`, `|grad f| = 2√c` on the sphere and
-`Hess f = -2g`, the formulas of `TauCeti.mfderiv_inwardUnitNormal_scalarRegularSublevel` and
+boundary is the sphere of radius `√c` (`TauCeti.mem_boundary_normSqGe_iff`). With
+`grad f = -2x`, `|grad f| = 2√c` on the sphere and `Hess f = -2g`, the formulas of
+`TauCeti.mfderiv_inwardUnitNormal_scalarRegularSublevel` and
 `TauCeti.boundarySecondFundamentalForm_scalarRegularSublevel_apply` give:
 
 * `dj(ν_in) = x / √c`: the inward normal of the exterior points away from the origin
@@ -32,11 +31,10 @@ boundary is the sphere of radius `√c`. With `grad f = -2x`, `|grad f| = 2√c`
   (`TauCeti.boundaryPrincipalCurvatures_normSqGe`) and, for `n ≥ 1`, so is the mean curvature
   (`TauCeti.boundaryMeanCurvature_normSqGe`).
 
-For `c = 1` these are the closed-exterior Checks of RiemannianManifoldsWithConvexBoundary §1.4
-(`ρ = |x|² - 1`, `Hess ρ = 2g`, `|dρ| = 2`, `II = -h`;
-`TauCeti.boundarySecondFundamentalForm_normSqGe_one`) and §1.5 (principal curvatures `-1`,
-`H = -1`; `TauCeti.boundaryPrincipalCurvatures_normSqGe_one`,
-`TauCeti.boundaryMeanCurvature_normSqGe_one`).
+For the exterior of the unit ball (`c = 1`) the boundary is the unit sphere, with `II = -h`
+(`TauCeti.boundarySecondFundamentalForm_normSqGe_one`), every principal curvature `-1`
+(`TauCeti.boundaryPrincipalCurvatures_normSqGe_one`) and mean curvature `H = -1`
+(`TauCeti.boundaryMeanCurvature_normSqGe_one`).
 
 The sets are written `{x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}`: with an unannotated exponent, a numeral whose
 type is still pending inside a binder type blocks the instance search for the tangent bundle.
@@ -54,55 +52,26 @@ namespace TauCeti
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {c : ℝ}
 
-omit [FiniteDimensional ℝ E] in
-/-- The negated squared norm is smooth on the flat space. -/
-theorem contMDiff_neg_norm_sq_model_space {k : ℕ∞ω} :
-    ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) k fun x : E ↦ -‖x‖ ^ (2 : ℕ) :=
-  (contDiff_norm_sq ℝ).neg.contMDiff
-
-omit [FiniteDimensional ℝ E] in
-/-- Every nonzero value of the negated squared norm is a regular value. -/
-theorem isRegularValue_neg_norm_sq {c : ℝ} (hc : c ≠ 0) :
-    IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) (fun x : E ↦ -‖x‖ ^ (2 : ℕ)) c :=
-  (isRegularValue_neg_iff (f := fun x : E ↦ ‖x‖ ^ 2)).2 (isRegularValue_norm_sq (neg_ne_zero.2 hc))
-
 /-- On the flat space, the gradient of the negated squared norm is `-2x`. -/
 private theorem mgradient_neg_norm_sq (x : E) :
     Manifold.mgradient 𝓘(ℝ, E) (fun y : E ↦ -‖y‖ ^ (2 : ℕ)) x = -((2 : ℝ) • x) := by
-  change Manifold.mgradient 𝓘(ℝ, E) (-fun y : E ↦ ‖y‖ ^ 2) x = _
-  rw [Manifold.mgradient_neg, Manifold.mgradient_norm_sq_model_space]
-  change -((2 : ℕ) • x) = _
-  rw [← Nat.cast_smul_eq_nsmul ℝ]
-  norm_num
+  rw [← Pi.neg_def, Manifold.mgradient_neg, Manifold.mgradient_norm_sq_model_space]
+  -- The radial vector `2 • x` lies in `TangentSpace 𝓘(ℝ, E) x`, which is `E` by definition.
+  exact congrArg Neg.neg (ofNat_smul_eq_nsmul ℝ 2 x).symm
 
 /-- On the flat space, the gradient of the negated squared norm has norm `2 ‖x‖`. -/
 private theorem norm_mgradient_neg_norm_sq (x : E) :
     ‖Manifold.mgradient 𝓘(ℝ, E) (fun y : E ↦ -‖y‖ ^ (2 : ℕ)) x‖ = 2 * ‖x‖ := by
-  change ‖Manifold.mgradient 𝓘(ℝ, E) (-fun y : E ↦ ‖y‖ ^ 2) x‖ = _
-  rw [Manifold.mgradient_neg, norm_neg, Manifold.mgradient_norm_sq_model_space,
-    norm_tangentSpace_vectorSpace, NormedSpace.fromTangentSpace_apply]
-  change ‖(2 : ℕ) • x‖ = _
-  rw [← Nat.cast_smul_eq_nsmul ℝ, norm_smul]
-  simp
+  rw [← Pi.neg_def, Manifold.mgradient_neg, norm_neg,
+    Manifold.norm_mgradient_norm_sq_model_space]
 
 /-- On the flat space, the Hessian of the negated squared norm is `-2` times the inner product. -/
 private theorem hessian_neg_norm_sq (x : E) (v w : TangentSpace 𝓘(ℝ, E) x) :
     Manifold.hessian 𝓘(ℝ, E) (fun y : E ↦ -‖y‖ ^ (2 : ℕ)) x v w = -(2 * ⟪(v : E), (w : E)⟫) := by
-  have hs : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ) 2 (fun y : E ↦ ‖y‖ ^ 2) x :=
-    (contDiff_norm_sq ℝ).contMDiff.contMDiffAt
-  have h := Manifold.hessian_const_sub 0 hs v w
+  have h := Manifold.hessian_const_sub 0
+    ((contDiff_norm_sq ℝ).contMDiff.contMDiffAt (I := 𝓘(ℝ, E)) (n := 2) (x := x)) v w
   simp only [zero_sub] at h
-  have hgrad : DifferentiableAt ℝ (∇ (fun y : E ↦ ‖y‖ ^ 2)) x := by
-    have hg : (∇ (fun y : E ↦ ‖y‖ ^ 2)) = fun y ↦ (2 : ℕ) • y := by
-      ext1 y
-      rw [← Manifold.mgradient_eq_gradient, Manifold.mgradient_norm_sq_model_space]
-      rfl
-    rw [hg]
-    fun_prop
-  rw [h, Manifold.hessian_eq_iteratedFDeriv_model_space hgrad, iteratedFDeriv_two_apply]
-  simp only [Matrix.cons_val, NormedSpace.fromTangentSpace_apply]
-  rw [TauCeti.fderiv_fderiv_norm_sq_apply x v w]
-  rfl
+  rw [h, Manifold.hessian_norm_sq_model_space]
 
 variable (hc : 0 < c) (hn : finrank ℝ E = n + 1)
 
@@ -150,15 +119,19 @@ theorem isContMDiffRiemannianBundle_normSqGe :
       (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne')) hn).contMDiff,
     fun _ _ _ ↦ rfl⟩
 
+/-- The boundary of the closed exterior `{‖x‖² ≥ c}` is the sphere `‖x‖² = c`. -/
+theorem mem_boundary_normSqGe_iff (x : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) :
+    letI := normSqGeChartedSpace hc hn
+    x ∈ (𝓡∂ (n + 1)).boundary {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c} ↔ ‖(x : E)‖ ^ 2 = c := by
+  rw [boundary_scalarRegularSublevel (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne'))
+    hn le_rfl (contMDiff_neg_norm_sq_model_space (E := E) (k := 1)), mem_ofPred_eq, neg_inj]
+
 /-- A boundary point of the closed exterior `{‖x‖² ≥ c}` lies on the sphere: `‖x‖² = c`. -/
 theorem norm_sq_eq_of_mem_boundary_normSqGe
     (q : letI := normSqGeChartedSpace hc hn
       (𝓡∂ (n + 1)).boundary {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) :
-    ‖((q : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) : E)‖ ^ 2 = c := by
-  have h := (Set.ext_iff.1 (boundary_scalarRegularSublevel
-    (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne')) hn le_rfl
-    (contMDiff_neg_norm_sq_model_space (E := E) (k := 1))) q).1 q.property
-  simpa using h
+    ‖((q : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) : E)‖ ^ 2 = c :=
+  (mem_boundary_normSqGe_iff hc hn q).1 q.property
 
 /-- A boundary point of the closed exterior `{‖x‖² ≥ c}` has norm `√c`. -/
 theorem norm_eq_sqrt_of_mem_boundary_normSqGe
@@ -183,11 +156,14 @@ theorem mfderiv_inwardUnitNormal_normSqGe
     (contMDiff_neg_norm_sq_model_space (E := E) (k := ∞))
     (isRegularValue_neg_norm_sq (E := E) (neg_ne_zero.2 hc.ne')) hn q, norm_mgradient_neg_norm_sq,
     norm_eq_sqrt_of_mem_boundary_normSqGe hc hn q, mgradient_neg_norm_sq]
-  change -((2 * √c)⁻¹ • -((2 : ℝ) • ((q : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) : E))) = _
-  rw [smul_neg, neg_neg, smul_smul]
-  congr 1
-  have : √c ≠ 0 := (Real.sqrt_pos.2 hc).ne'
-  field_simp
+  have h : -((2 * √c)⁻¹ • -((2 : ℝ) • ((q : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) : E))) =
+      (√c)⁻¹ • ((q : {x : E | -‖x‖ ^ (2 : ℕ) ≤ -c}) : E) := by
+    rw [smul_neg, neg_neg, smul_smul]
+    congr 1
+    have : √c ≠ 0 := (Real.sqrt_pos.2 hc).ne'
+    field_simp
+  -- The gradient `-2x` lies in the tangent space of `E` at `q`, which is `E` by definition.
+  exact h
 
 /-- **The second fundamental form of the closed exterior.** For the closed exterior
 `{‖x‖² ≥ c}` with the pulled-back metric, the second fundamental form of the boundary sphere is
@@ -263,8 +239,7 @@ theorem boundaryMeanCurvature_normSqGe [NeZero n]
   haveI := isContMDiffRiemannianBundle_normSqGe hc hn
   boundaryMeanCurvature_eq_of_boundaryWeingarten_eq_smul (boundaryWeingarten_normSqGe hc hn q)
 
-/-- **`II = -h` on the boundary of the closed exterior of the unit ball**
-(`ρ = |x|² - 1`, `Hess ρ = 2g`, `|dρ| = 2`). -/
+/-- **`II = -h` on the boundary of the closed exterior of the unit ball.** -/
 theorem boundarySecondFundamentalForm_normSqGe_one
     (q : letI := normSqGeChartedSpace (E := E) one_pos hn
       (𝓡∂ (n + 1)).boundary {x : E | -‖x‖ ^ (2 : ℕ) ≤ -1}) :
