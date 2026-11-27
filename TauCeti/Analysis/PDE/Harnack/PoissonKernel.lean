@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import TauCeti.Analysis.PDE.GreenFunction.Ball
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Ball
-import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
 import TauCeti.Analysis.PDE.PoissonIntegral.Ball
 
 /-!
@@ -130,27 +129,6 @@ theorem ballPoissonKernel_smul_eq_mul_ballPoissonKernel_neg_smul {n : ℕ}
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {u : E → ℝ} {c x y : E} {r R : ℝ}
 
-omit [FiniteDimensional ℝ E] in
-/-- The point `ρ⁻¹ • (w - c)`, carried along a linear isometry, has norm `dist w c / ρ`. -/
-private theorem norm_inv_smul_sub {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    (e : E ≃ₗᵢ[ℝ] F) {ρ : ℝ} (hρ : 0 ≤ ρ) (w c : E) :
-    ‖e (ρ⁻¹ • (w - c))‖ = dist w c / ρ := by
-  simp [norm_smul, abs_of_nonneg hρ, dist_eq_norm, div_eq_inv_mul, -map_sub]
-
-/-- Harmonicity on the ball `B(0, s)` of `F` transports to the ball `B(c, ρ s)` of `E` along a
-linear isometry `e : E → F` and the homothety `w ↦ ρ⁻¹ • (w - c)`, and back. -/
-private theorem harmonicOnNhd_comp_inv_smul_sub_ball_iff {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] (e : E ≃ₗᵢ[ℝ] F) (c : E) {ρ : ℝ} (hρ : 0 < ρ)
-    (s : ℝ) {v : F → ℝ} :
-    HarmonicOnNhd (fun w ↦ v (e (ρ⁻¹ • (w - c)))) (ball c (ρ * s)) ↔
-      HarmonicOnNhd v (ball 0 s) := by
-  have h := harmonicOnNhd_comp_const_add_smul_ball_radius_iff c hρ.ne' s
-    (f := fun w ↦ v (e (ρ⁻¹ • (w - c))))
-  rw [Real.norm_of_nonneg hρ.le] at h
-  rw [← h, ← harmonicOnNhd_comp_linearIsometryEquiv_right_iff e,
-    LinearIsometryEquiv.preimage_ball, map_zero]
-  simp [Function.comp_def, smul_smul, inv_mul_cancel₀ hρ.ne']
-
 /-- Harnack's comparison with the centre on a closed ball `closedBall c ρ` inside the ball
 `B(c, R)` on which `u` is harmonic and nonnegative, in the normalized form with
 `t = ‖x - c‖ / ρ`. It is the unit-ball comparison transported along an isometry of `E` with
@@ -176,8 +154,9 @@ private theorem le_mul_and_mul_le_of_lt_of_lt (hn : finrank ℝ E ≠ 0)
   have hvn : ∀ z ∈ sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E))) 1, 0 ≤ v z := fun z hz ↦
     hnonneg _ (by simpa [norm_smul, abs_of_nonneg hρ.le, norm_eq_of_mem_sphere ⟨z, hz⟩] using hρR)
   -- The point of the unit ball corresponding to `x`.
+  have hzn : ‖e (ρ⁻¹ • (x - c))‖ = dist x c / ρ := by
+    rw [e.norm_map, norm_inv_smul_of_nonneg hρ.le, dist_eq_norm]
   set z := e (ρ⁻¹ • (x - c))
-  have hzn : ‖z‖ = dist x c / ρ := norm_inv_smul_sub e hρ.le x c
   have hvz : v z = u x := congrFun hvu x
   have hv0 : v 0 = u c := by simp [v]
   have h := le_mul_and_mul_le_of_harmonicOnNhd_ball_one hn hvc (hv.mono (ball_subset_ball
@@ -325,7 +304,7 @@ theorem exists_harmonicOnNhd_ball_eq_add_div_sub_pow_mul (hn : finrank ℝ E ≠
   · have h := (harmonicOnNhd_comp_inv_smul_sub_ball_iff e c hR 1).2 hK
     rwa [mul_one] at h
   · have hz' : ‖e (R⁻¹ • (z - c))‖ < 1 := by
-      rw [norm_inv_smul_sub e hR.le z c]
+      rw [e.norm_map, norm_inv_smul_of_nonneg hR.le, ← dist_eq_norm]
       exact (div_lt_one hR).2 (mem_ball.1 hz)
     exact ballPoissonKernel_pos hz' (ne_of_mem_of_not_mem (mem_ball_zero_iff.2 hz') hξ_nmem)
   · simp [dist_eq_norm, norm_smul, hξ, abs_of_nonneg hr]

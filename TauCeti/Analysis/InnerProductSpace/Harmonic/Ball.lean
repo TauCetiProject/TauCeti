@@ -31,6 +31,9 @@ harmonic near `Metric.ball x r`.
 * `TauCeti.harmonicOnNhd_comp_const_add_smul_ball_radius_iff`: ball-level affine normalization
   by `y ↦ x + c • y` for nonzero scale `c`.
 * `TauCeti.harmonicOnNhd_comp_const_add_smul_ball_iff`: the unit-ball specialization.
+* `TauCeti.harmonicOnNhd_comp_inv_smul_sub_ball_iff`: harmonicity on `Metric.ball c (ρ * s)`
+  transported to `Metric.ball 0 s` in another space, along the homothety `w ↦ ρ⁻¹ • (w - c)`
+  followed by a linear isometry equivalence.
 -/
 
 public section
@@ -81,5 +84,20 @@ theorem harmonicOnNhd_comp_const_add_smul_ball_iff (x : E) {r : ℝ} (hr : 0 < r
       HarmonicOnNhd f (Metric.ball x r) := by
   simpa [Real.norm_of_nonneg hr.le] using
     harmonicOnNhd_comp_const_add_smul_ball_radius_iff (x := x) hr.ne' 1 (f := f)
+
+/-- Harmonicity on the ball `Metric.ball 0 s` of `E'` transports to the ball
+`Metric.ball c (ρ * s)` of `E` along the homothety `w ↦ ρ⁻¹ • (w - c)` followed by a linear
+isometry equivalence `e : E ≃ₗᵢ[ℝ] E'`, and back. -/
+theorem harmonicOnNhd_comp_inv_smul_sub_ball_iff {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E'] (e : E ≃ₗᵢ[ℝ] E') (c : E) {ρ : ℝ}
+    (hρ : 0 < ρ) (s : ℝ) {v : E' → F} :
+    HarmonicOnNhd (fun w ↦ v (e (ρ⁻¹ • (w - c)))) (Metric.ball c (ρ * s)) ↔
+      HarmonicOnNhd v (Metric.ball 0 s) := by
+  have h := harmonicOnNhd_comp_const_add_smul_ball_radius_iff c hρ.ne' s
+    (f := fun w ↦ v (e (ρ⁻¹ • (w - c))))
+  rw [Real.norm_of_nonneg hρ.le] at h
+  rw [← h, ← harmonicOnNhd_comp_linearIsometryEquiv_right_iff e,
+    LinearIsometryEquiv.preimage_ball, map_zero]
+  simp [Function.comp_def, smul_smul, inv_mul_cancel₀ hρ.ne']
 
 end TauCeti
