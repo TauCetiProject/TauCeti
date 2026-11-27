@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.SpinStructure.FirstChernClass
+public import TauCeti.Topology.VectorBundle.Associated.Equiv
 import TauCeti.Topology.VectorBundle.Associated.Extension
 import TauCeti.Topology.VectorBundle.Orientation.Complex.FiberwiseEquiv
 
@@ -60,6 +61,17 @@ of spinors `ψ ↦ j ψ`. It is continuous on total spaces and commutes with Cli
 because the frames `p` of `s` and `[p, 1]` of `s.chargeConj` give the same frame of `E`
 (`TauCeti.SpinCStructure.frameAt_chargeConj_inl`).
 
+**Involutivity on bundles.** The equivalence `s.chargeConj.chargeConj ≃ s` identifies the
+associated bundles of the two structures
+(`TauCeti.PrincipalBundle.Equiv.associatedContinuousLinearEquiv`).
+Read through it, conjugating determinant lines twice is the identity
+(`TauCeti.SpinCStructure.determinantLineChargeConjEquiv_determinantLineChargeConjEquiv`), and
+charge conjugating spinors by `j` and then by `j'` is `[p, ψ] ↦ [p, j' (j ψ)]`
+(`TauCeti.SpinCStructure.chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_mk`). For the
+quaternionic structure `j² = -1`, so charge conjugation of spinors is involutive only modulo the
+central gauge transformation `-1`
+(`TauCeti.SpinCStructure.chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_eq_neg`).
+
 ## Main definitions
 
 * `TauCeti.SpinCStructure.chargeConj`: the charge conjugate of a `Spinᶜ` structure.
@@ -87,6 +99,13 @@ because the frames `p` of `s` and `[p, 1]` of `s.chargeConj` give the same frame
   spinors and its inverse are continuous on total spaces.
 * `TauCeti.SpinCStructure.cliffordMul_halfSpinorBundleChargeConjEquiv`:
   `c(v) (j ψ) = j (c(v) ψ)`.
+* `TauCeti.SpinCStructure.determinantLineChargeConjEquiv_determinantLineChargeConjEquiv`:
+  conjugating determinant lines twice is the identification induced by
+  `s.chargeConj.chargeConj ≃ s`.
+* `TauCeti.SpinCStructure.chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_mk`:
+  charge conjugating spinors twice is `[p, ψ] ↦ [p, j' (j ψ)]`.
+* `TauCeti.SpinCStructure.chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_eq_neg`: if
+  `j' ∘ j = -1`, charge conjugating spinors twice is `ψ ↦ -ψ`.
 
 ## References
 
@@ -290,6 +309,36 @@ theorem continuous_determinantLineChargeConjEquiv (s : SpinCStructure F V n) :
         (s.determinantLineChargeConjEquiv v.proj v.snd) :=
   Extend.continuous_associatedEquivOfEquivariant_symm χ hχ DeterminantModel.conj conj_smul
 
+/-- The equivalence `s.chargeConj.chargeConj ≃ s` sends `[[p, 1], 1]` to `p`. -/
+@[simp]
+theorem chargeConjChargeConjEquiv_toEquiv_inl_inl (s : SpinCStructure F V n) (x : X)
+    (p : s.P x) :
+    (chargeConjChargeConjEquiv s).toEquiv x (Extend.inl χ hχ (Extend.inl χ hχ p)) = p := by
+  rw [Extend.inl_def, Extend.inl_def, chargeConjChargeConjEquiv_toEquiv_mk, map_one, mul_one,
+    op_one, one_smul]
+
+/-- **Charge conjugation of determinant lines is involutive**: conjugating twice,
+`L(s.chargeConj.chargeConj) ≃ L(s.chargeConj) ≃ L(s)`, is the identification of determinant lines
+induced by the equivalence `s.chargeConj.chargeConj ≃ s`
+(`TauCeti.SpinCStructure.chargeConjChargeConjEquiv`). In frames both send `[[[p, 1], 1], w]` to
+`[p, w]`, since `conj (conj w) = w`. -/
+theorem determinantLineChargeConjEquiv_determinantLineChargeConjEquiv (s : SpinCStructure F V n)
+    (x : X) (z : s.chargeConj.chargeConj.determinantLine x) :
+    s.determinantLineChargeConjEquiv x (s.chargeConj.determinantLineChargeConjEquiv x z) =
+      s.chargeConjChargeConjEquiv.associatedContinuousLinearEquiv ℂ (DeterminantModel n) x z := by
+  -- Read `z` in the frame `[[p₀, 1], 1]`.
+  set p₀ := Classical.arbitrary (s.P x)
+  obtain ⟨w, rfl⟩ := (AssociatedBundle.mk_bijective (G := SpinC) (F := DeterminantModel n)
+    (P := s.chargeConj.chargeConj.P) (Extend.inl χ hχ (Extend.inl χ hχ p₀))).2 z
+  -- `s.chargeConj.chargeConj.P` unfolds to the double extension, on which the frame formulas are
+  -- stated.
+  refine ((congrArg (s.determinantLineChargeConjEquiv x)
+    (s.chargeConj.determinantLineChargeConjEquiv_inl (Extend.inl χ hχ p₀) w)).trans
+      ((s.determinantLineChargeConjEquiv_inl p₀ _).trans ?_)).trans
+    (PrincipalBundle.Equiv.associatedContinuousLinearEquiv_mk _ _ w).symm
+  rw [chargeConjChargeConjEquiv_toEquiv_inl_inl, LinearIsometryEquiv.apply_symm_apply,
+    Complex.conj_conj, LinearIsometryEquiv.symm_apply_apply]
+
 end SpinCStructure
 
 end DeterminantLine
@@ -452,6 +501,53 @@ theorem cliffordMul_halfSpinorBundleChargeConjEquiv (s : SpinCStructure F E 4) {
   -- `rw` does not unfold `chargeConj`, so the point `[p, 1]` of `s.chargeConj.P x` is explicit.
   rw [s.chargeConj.cliffordMul_mk hδ' (Extend.inl χ₄ hχ₄ p), vectorFrame_chargeConj_inl,
     Orientation.HalfSpinModel.cliffordMul_conjEquiv]
+
+section Involution
+
+variable {W'' : Type*} [NormedAddCommGroup W''] [InnerProductSpace ℂ W''] [FiniteDimensional ℂ W'']
+  {ρ'' : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W''}
+  (hρ'' : ∀ v, LinearMap.adjoint (ρ'' (ι Q v)) = -ρ'' (ι Q v))
+  (j' : W' ≃ₗᵢ⋆[ℂ] W'') (hj' : ∀ v w, j' (ρ' (ι Q v) w) = ρ'' (ι Q v) (j' w)) {ε'' : ℂ}
+  (hε' : starRingEnd ℂ ε' = ε'')
+
+/-- **Charge conjugating spinors twice, in a frame.** Charge conjugation by `j` followed by charge
+conjugation by `j'`, `W^ε(s) ≃ W'^ε'(s.chargeConj) ≃ W''^ε''(s.chargeConj.chargeConj)`, read in
+`s` through the equivalence `s.chargeConj.chargeConj ≃ s`
+(`TauCeti.SpinCStructure.chargeConjChargeConjEquiv`), is `[p, ψ] ↦ [p, j' (j ψ)]`. -/
+theorem chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_mk (s : SpinCStructure F E 4)
+    {x : X} (p : s.P x) (ψ : o.HalfSpinModel hQV b ρ hρ ε) :
+    s.chargeConjChargeConjEquiv.associatedContinuousLinearEquiv ℂ
+        (o.HalfSpinModel hQV b ρ'' hρ'' ε'') x
+        (s.chargeConj.halfSpinorBundleChargeConjEquiv o hQV b hρ' hρ'' j' hj' hε' x
+          (s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε x
+            (AssociatedBundle.mk SpinC₄ p ψ))) =
+      AssociatedBundle.mk SpinC₄ p (Orientation.HalfSpinModel.conjEquiv hρ' hρ'' j' hj' hε'
+        (Orientation.HalfSpinModel.conjEquiv hρ hρ' j hj hε ψ)) := by
+  rw [halfSpinorBundleChargeConjEquiv_mk,
+    s.chargeConj.halfSpinorBundleChargeConjEquiv_mk o hQV b hρ' hρ'' j' hj' hε'
+      (Extend.inl χ₄ hχ₄ p)]
+  exact (PrincipalBundle.Equiv.associatedContinuousLinearEquiv_mk _ _ _).trans
+    (congrArg (AssociatedBundle.mk SpinC₄ · _) (s.chargeConjChargeConjEquiv_toEquiv_inl_inl x p))
+
+/-- **Charge conjugation of spinors is involutive modulo the central gauge group.** If
+`j' ∘ j = -1`, as for the quaternionic structure `j` of the spinors, where `j' = j` and `j² = -1`,
+then charge conjugating twice, `W^ε(s) ≃ W'^ε'(s.chargeConj) ≃ W^ε(s.chargeConj.chargeConj)`, read
+in `s` through `s.chargeConj.chargeConj ≃ s`, is `ψ ↦ -ψ`. This is the action of the central gauge
+transformation `-1 = [1, -1]` of `Spinᶜ(4)`
+(`TauCeti.SpinCStructure.mk_ofCircle_smul_halfSpinorBundle`). -/
+theorem chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_eq_neg
+    (s : SpinCStructure F E 4) (j' : W' ≃ₗᵢ⋆[ℂ] W)
+    (hj' : ∀ v w, j' (ρ' (ι Q v) w) = ρ (ι Q v) (j' w)) (hε' : starRingEnd ℂ ε' = ε)
+    (hjj : ∀ w, j' (j w) = -w) {x : X} (ψ : s.halfSpinorBundle o hQV b ρ hρ ε x) :
+    s.chargeConjChargeConjEquiv.associatedContinuousLinearEquiv ℂ (o.HalfSpinModel hQV b ρ hρ ε) x
+        (s.chargeConj.halfSpinorBundleChargeConjEquiv o hQV b hρ' hρ j' hj' hε' x
+          (s.halfSpinorBundleChargeConjEquiv o hQV b hρ hρ' j hj hε x ψ)) = -ψ := by
+  obtain ⟨p, ψ, rfl⟩ := AssociatedBundle.exists_mk ψ
+  rw [chargeConjChargeConjEquiv_halfSpinorBundleChargeConjEquiv_mk,
+    Orientation.HalfSpinModel.conjEquiv_conjEquiv hρ hρ' j hj hε j' hj' hε' hjj,
+    AssociatedBundle.mk_neg]
+
+end Involution
 
 end SpinCStructure
 
