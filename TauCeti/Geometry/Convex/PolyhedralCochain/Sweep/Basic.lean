@@ -96,6 +96,33 @@ theorem notMem_recessionCone_sweep_carrier (σ : OrientedCell h (k + 1)) (n : N)
   rw [sweep_carrier]
   exact Set.notMem_recessionCone_sweep σ.nonempty (by simpa [direction_affineSpan] using hn)
 
+/-- Sweeping along two transverse lattice vectors on the same positive real ray
+gives the same oriented cell. -/
+theorem sweep_eq_of_eq_pos_smul (σ : OrientedCell h (k + 1)) {n m : N}
+    (hn : i n ∉ (affineSpan ℝ σ.carrier).direction)
+    {a : ℝ} (ha : 0 < a) (hmn : i m = a • i n) :
+    σ.sweep m (hmn.symm ▸ ((affineSpan ℝ σ.carrier).direction.smul_mem_iff ha.ne').not.mpr hn) =
+      σ.sweep n hn := by
+  ext1
+  · simp only [sweep_carrier, hmn]
+    exact Set.sweep_smul_of_pos _ _ ha
+  · simp only [sweep_orientation, hmn]
+    exact σ.orientation.contract_smul_of_pos σ.isConormal σ.finrank_quotient_direction
+      (i n) hn ha _
+
+/-- Positive integral multiples give identical oriented sweeps. -/
+theorem sweep_nsmul (σ : OrientedCell h (k + 1)) {n : N}
+    (hn : i n ∉ (affineSpan ℝ σ.carrier).direction)
+    {a : ℕ} (ha : 0 < a) :
+    σ.sweep (a • n) (by
+      simpa only [map_nsmul, Nat.cast_smul_eq_nsmul] using
+        ((affineSpan ℝ σ.carrier).direction.smul_mem_iff
+          (Nat.cast_ne_zero.mpr ha.ne' : (a : ℝ) ≠ 0)).not.mpr hn) =
+      σ.sweep n hn := by
+  apply σ.sweep_eq_of_eq_pos_smul hn (a := (a : ℝ))
+  · exact_mod_cast ha
+  · simp only [map_nsmul, Nat.cast_smul_eq_nsmul]
+
 /-- Reversing the input orientation reverses the swept cell. -/
 @[simp]
 theorem sweep_reverse (σ : OrientedCell h (k + 1)) (n : N)
