@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Field.Subfield.Defs
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 
+import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Descend
+
 /-!
 # Invertible matrices over subfields
 
@@ -19,10 +22,10 @@ and the image of `GL ι E →* GL ι L` is cut out purely by entrywise membershi
 
 ## Main results
 
-* `Matrix.GeneralLinearGroup.mem_range_map_subtype_iff`: an element of `GL ι L` lies in the range
-  of `GL ι E →* GL ι L` if and only if all of its entries lie in `E`.
 * `Matrix.GeneralLinearGroup.inv_apply_mem`: if every entry of `A : GL ι L` lies in `E`, then
   every entry of `A⁻¹` lies in `E`.
+* `Matrix.GeneralLinearGroup.mem_range_map_subtype_iff`: an element of `GL ι L` lies in the range
+  of `GL ι E →* GL ι L` if and only if all of its entries lie in `E`.
 -/
 
 public section
@@ -32,29 +35,23 @@ namespace Matrix.GeneralLinearGroup
 variable {L S ι : Type*} [Field L] [SetLike S L] [SubfieldClass S L]
   [Fintype ι] [DecidableEq ι]
 
-/-- Lifting an invertible matrix to a subfield: if every entry of `A : GL ι L` lies in a
-subfield `E`, then its determinant is nonzero in `E`, so `A` lifts to `GL ι E`. -/
-private noncomputable def liftOfMem (E : S) (A : GL ι L)
-    (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E) : GL ι E :=
-  let M : Matrix ι ι E := Matrix.of fun i j ↦ ⟨(A : Matrix ι ι L) i j, hA i j⟩
-  have hM : (SubringClass.subtype E).mapMatrix M = (A : Matrix ι ι L) := by
-    ext i j
-    simp only [M, RingHom.mapMatrix_apply, Matrix.map_apply, Matrix.of_apply,
-      SubringClass.coe_subtype]
-  have hdet : M.det ≠ 0 := by
-    intro h0
-    have hdetA : (A : Matrix ι ι L).det = 0 := by
-      rw [← hM, ← RingHom.map_det (SubringClass.subtype E) M, h0, map_zero]
-    exact A.det_ne_zero hdetA
-  Matrix.GeneralLinearGroup.mkOfDetNeZero M hdet
+private theorem det_mem (E : S) (M : Matrix ι ι L) (hM : ∀ i j, M i j ∈ E) :
+    M.det ∈ E := by
+  rw [Matrix.det_apply]
+  exact sum_mem fun σ _ ↦ zsmul_mem (prod_mem fun i _ ↦ hM (σ i) i) _
 
-/-- Pushing `liftOfMem E A hA` forward along `SubringClass.subtype E` recovers `A`. -/
-private theorem map_subtype_liftOfMem (E : S) (A : GL ι L)
-    (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E) :
-    Matrix.GeneralLinearGroup.map (SubringClass.subtype E) (liftOfMem E A hA) = A := by
-  ext i j
-  simp only [liftOfMem, Matrix.GeneralLinearGroup.map_apply, val_mkOfDetNeZero, Matrix.of_apply,
-    SubringClass.coe_subtype]
+/-- **Inverse-entry closure over a subfield.** If every entry of `A : GL ι L` lies in a subfield
+`E`, then every entry of `A⁻¹` also lies in `E`. -/
+theorem inv_apply_mem (E : S) (A : GL ι L) (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E) (i j : ι) :
+    ((A⁻¹ : GL ι L) : Matrix ι ι L) i j ∈ E := by
+  rw [Matrix.coe_units_inv, Matrix.inv_def, Matrix.smul_apply, smul_eq_mul,
+    Ring.inverse_eq_inv', Matrix.adjugate_apply]
+  refine mul_mem (inv_mem (det_mem E (A : Matrix ι ι L) hA)) (det_mem E _ fun r c ↦ ?_)
+  rw [Matrix.updateRow_apply]
+  split_ifs
+  · rw [Pi.single_apply]
+    split_ifs <;> [exact one_mem E; exact zero_mem E]
+  · exact hA r c
 
 /-- **Range of `GL ι E →* GL ι L` for a subfield.** An invertible matrix over `L` comes from a
 subfield `E` if and only if all of its entries lie in `E`. -/
@@ -66,14 +63,21 @@ theorem mem_range_map_subtype_iff (E : S) (A : GL ι L) :
     rw [Matrix.GeneralLinearGroup.map_apply, SubringClass.coe_subtype]
     exact SetLike.coe_mem _
   · intro hA
-    exact ⟨liftOfMem E A hA, map_subtype_liftOfMem E A hA⟩
-
-/-- **Inverse-entry closure over a subfield.** If every entry of `A : GL ι L` lies in a subfield
-`E`, then every entry of `A⁻¹` also lies in `E`. -/
-theorem inv_apply_mem (E : S) (A : GL ι L) (hA : ∀ i j, (A : Matrix ι ι L) i j ∈ E) (i j : ι) :
-    ((A⁻¹ : GL ι L) : Matrix ι ι L) i j ∈ E := by
-  have hmem : A⁻¹ ∈ (Matrix.GeneralLinearGroup.map (n := ι) (SubringClass.subtype E)).range :=
-    inv_mem ((mem_range_map_subtype_iff E A).mpr hA)
-  exact (mem_range_map_subtype_iff E A⁻¹).mp hmem i j
+    let H : Subgroup (GL ι L) :=
+      { carrier := {g | ∀ i j, (g : Matrix ι ι L) i j ∈ E}
+        one_mem' i j := by
+          simp only [Units.val_one, Matrix.one_apply]
+          split_ifs <;> [exact one_mem E; exact zero_mem E]
+        mul_mem' ha hb i j := by
+          rw [Units.val_mul, Matrix.mul_apply]
+          exact sum_mem fun k _ ↦ mul_mem (ha i k) (hb k j)
+        inv_mem' ha := inv_apply_mem E _ ha }
+    have hz : TauCeti.CoefficientDescent.entries (Subgroup.zpowers A).subtype ⊆
+        Set.range (SubringClass.subtype E) := by
+      intro x hx
+      obtain ⟨⟨g, hg⟩, i, j, rfl⟩ := TauCeti.CoefficientDescent.mem_entries_iff.mp hx
+      exact ⟨⟨(g : Matrix ι ι L) i j, (Subgroup.zpowers_le (H := H)).mpr hA hg i j⟩, rfl⟩
+    exact ⟨TauCeti.CoefficientDescent.descend Subtype.val_injective hz ⟨A, Subgroup.mem_zpowers A⟩,
+      TauCeti.CoefficientDescent.map_descend Subtype.val_injective hz ⟨A, Subgroup.mem_zpowers A⟩⟩
 
 end Matrix.GeneralLinearGroup

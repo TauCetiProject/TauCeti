@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Constructions
+public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Instances.Matrix
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Subfield
-public import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Map
 
+import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Descend
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
 
@@ -32,9 +33,6 @@ lifts uniquely and continuously to `Γ →ₜ* GL ι E`.
   `Matrix.GeneralLinearGroup.map (SubringClass.subtype E)` is closed in `GL ι L`.
 * `ContinuousMonoidHom.map_subtype_liftGLOfMem`: pushing `ρ.liftGLOfMem E hE` forward along
   `SubringClass.subtype E` recovers `ρ`.
-* `ContinuousMonoidHom.continuousMap_subtype_comp_liftGLOfMem`: composing `ρ.liftGLOfMem E hE`
-  with `Matrix.GeneralLinearGroup.continuousMap (SubringClass.subtype E) continuous_subtypeVal`
-  recovers `ρ`.
 * `ContinuousMonoidHom.coe_liftGLOfMem_apply`: the entries of `ρ.liftGLOfMem E hE g` coerce to
   the entries of `ρ g`.
 * `ContinuousMonoidHom.map_subtype_liftGLOfMem_matrix`: pushing the matrix of
@@ -97,19 +95,6 @@ theorem map_subtype_liftGLOfMem {Γ : Type*} [Group Γ] [TopologicalSpace Γ] [T
     (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E) (g : Γ) :
     Matrix.GeneralLinearGroup.map (SubringClass.subtype E) (ρ.liftGLOfMem E hE g) = ρ g :=
   map_descend Subtype.val_injective (entries_subset_range_subtype ρ E hE) g
-
-/-- Composing `ρ.liftGLOfMem E hE` with `Matrix.GeneralLinearGroup.continuousMap` along
-`SubringClass.subtype E` recovers `ρ`. -/
-@[simp]
-theorem continuousMap_subtype_comp_liftGLOfMem {Γ : Type*} [Group Γ] [TopologicalSpace Γ]
-    [TopologicalSpace L] (ρ : Γ →ₜ* GL ι L) (E : S)
-    (hE : ∀ g i j, (ρ g : Matrix ι ι L) i j ∈ E)
-    {hf : Continuous (SubringClass.subtype E)} :
-    (Matrix.GeneralLinearGroup.continuousMap (SubringClass.subtype E) hf).comp
-        (ρ.liftGLOfMem E hE) = ρ := by
-  ext1 g
-  simp only [ContinuousMonoidHom.coe_comp, Function.comp_apply,
-    Matrix.GeneralLinearGroup.continuousMap_apply, map_subtype_liftGLOfMem]
 
 /-- The entries of `ρ.liftGLOfMem E hE g` coerce to the entries of `ρ g`. -/
 @[simp]

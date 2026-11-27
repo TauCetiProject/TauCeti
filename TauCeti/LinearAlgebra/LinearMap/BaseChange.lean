@@ -6,13 +6,9 @@ Authors: Codex
 module
 
 public import Mathlib.LinearAlgebra.Contraction
-public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Projective
 public import Mathlib.RingTheory.Flat.FaithfullyFlat.Basic
 public import TauCeti.LinearAlgebra.Dual.BaseChange
-
-import TauCeti.LinearAlgebra.Matrix.BaseChange
 
 /-!
 # Scalar extension of linear maps and Hom spaces
@@ -21,10 +17,6 @@ The canonical map from `A ⊗[R] Hom_R(M,N)` to `Hom_A(A ⊗[R] M, A ⊗[R] N)` 
 `a ⊗ f` to `a • f.baseChange A`. It is an equivalence when `M` is finite projective;
 no finiteness condition is needed on `N` or on the commutative value algebra `A`.
 This comparison allows a scalar-extended Hom representation to act on scalar-extended vectors.
-
-Under `TensorProduct.piScalarRight` and basis coordinates `Module.Basis.equivFun`, the scalar
-extension of `Matrix.mulVecLin M` intertwines with a linear map whose matrix is
-`M.map (algebraMap E L)` (`TensorProduct.piScalarRight_equivFun_intertwining`).
 
 When the coefficient algebra is faithfully flat, extension of scalars is injective on linear
 maps (`LinearMap.baseChange_injective`). Faithful flatness therefore permits checking equality of
@@ -134,36 +126,6 @@ theorem baseChangeTensorHomEquiv_symm_baseChange (f : M →ₗ[R] N) :
   simp
 
 end LinearMap
-
-namespace TensorProduct
-
-/-- Under `TensorProduct.piScalarRight` and basis coordinates `Module.Basis.equivFun`, the
-scalar extension of `Matrix.mulVecLin M` intertwines with a linear map `f` whose matrix is
-`M.map (algebraMap E L)`. -/
-theorem piScalarRight_equivFun_intertwining {E L V W ιV ιW : Type*}
-    [CommSemiring E] [CommSemiring L] [Algebra E L]
-    [AddCommMonoid V] [Module L V] [AddCommMonoid W] [Module L W]
-    [Fintype ιV] [DecidableEq ιV] [Fintype ιW] [DecidableEq ιW]
-    (bV : Module.Basis ιV L V) (bW : Module.Basis ιW L W)
-    (f : V →ₗ[L] W) (M : Matrix ιW ιV E)
-    (hM : M.map (algebraMap E L) = LinearMap.toMatrix bV bW f)
-    (x : L ⊗[E] (ιV → E)) :
-    bW.equivFun.symm (TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x)) =
-      f (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) := by
-  apply bW.equivFun.injective
-  have hpi : TensorProduct.piScalarRight E L L ιW ((Matrix.mulVecLin M).baseChange L x) =
-      (M.map (algebraMap E L)).mulVec (TensorProduct.piScalarRight E L L ιV x) := by
-    simpa only [LinearMap.comp_apply, LinearEquiv.coe_coe, Matrix.mulVecLin_apply] using
-      LinearMap.congr_fun (Matrix.piScalarRight_comp_baseChange_mulVecLin (S := L) M) x
-  rw [LinearEquiv.apply_symm_apply, hpi, hM]
-  have hrepr : (bV.repr (bV.equivFun.symm (TensorProduct.piScalarRight E L L ιV x)) : ιV → L) =
-      TensorProduct.piScalarRight E L L ιV x := by
-    ext i
-    simp only [← Module.Basis.equivFun_apply, LinearEquiv.apply_symm_apply]
-  rw [← hrepr, LinearMap.toMatrix_mulVec_repr bV bW f, hrepr]
-  exact (Module.Basis.equivFun_apply bW _).symm
-
-end TensorProduct
 
 public section
 

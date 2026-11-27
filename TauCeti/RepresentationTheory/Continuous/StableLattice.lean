@@ -13,7 +13,7 @@ public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
 import Mathlib.LinearAlgebra.Matrix.Basis
 import Mathlib.RingTheory.Flat.TorsionFree
 import Mathlib.RingTheory.LocalRing.Module
-import TauCeti.RepresentationTheory.Continuous.GeneralLinear
+import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Framed
 
 /-!
 # Stable lattices for compact groups
@@ -146,7 +146,7 @@ theorem exists_conj_mem_integerRing_GL {Γ E ι : Type*} [Group Γ] [Topological
     [IsValuativeTopology E] [Fintype ι] [DecidableEq ι]
     (ρ : Γ →ₜ* GL ι E) :
     ∃ P : GL ι E, ∀ (g : Γ) (i j : ι), (P * ρ g * P⁻¹ : Matrix ι ι E) i j ∈ 𝒪[E] := by
-  let σ : ContinuousRep Γ E (ι → E) := ofGL ρ
+  let σ : ContinuousRep Γ E (ι → E) := ofFramed ρ
   obtain ⟨Λ, hΛ, hstab⟩ := σ.exists_stable_lattice
   have : Module.IsTorsionFree 𝒪[E] E :=
     Module.isTorsionFree_iff_algebraMap_injective.2 (IsFractionRing.injective 𝒪[E] E)
@@ -163,9 +163,8 @@ theorem exists_conj_mem_integerRing_GL {Γ E ι : Type*} [Group Γ] [Topological
     ⟨b.toMatrix e, e.toMatrix b, b.toMatrix_mul_toMatrix_flip e, e.toMatrix_mul_toMatrix_flip b⟩
   refine ⟨P, fun g i j ↦ ?_⟩
   have hσg : LinearMap.toMatrix e e (σ g) = (ρ g : Matrix ι ι E) := by
-    have hlin : σ g = Matrix.toLin' (ρ g : Matrix ι ι E) :=
-      LinearMap.ext fun v ↦ by simp only [σ, ofGL_apply, Matrix.toLin'_apply]
-    rw [hlin, LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
+    rw [show σ g = Matrix.toLin' (ρ g : Matrix ι ι E) from ofFramed_apply_eq_toLin' ρ g,
+      LinearMap.toMatrix_eq_toMatrix', LinearMap.toMatrix'_toLin']
   have hentry : (P * ρ g * P⁻¹ : Matrix ι ι E) i j = b.repr (σ g (b j)) i := by
     have hmul : (P * ρ g * P⁻¹ : Matrix ι ι E) = LinearMap.toMatrix b b (σ g) := by
       simp only [P, Units.inv_mk, Units.val_mk, ← hσg]
