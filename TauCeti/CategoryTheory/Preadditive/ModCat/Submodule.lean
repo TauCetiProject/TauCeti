@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Grp.Zero
 public import Mathlib.Algebra.Group.Subgroup.Order
 public import Mathlib.CategoryTheory.Subobject.Lattice
 public import Mathlib.Data.Fintype.Order
@@ -204,22 +203,6 @@ theorem mem_sSup_of_directedOn {s : Set (Submodule F)} (hne : s.Nonempty)
     (K := fun S : s ↦ S.val.carrier X) (hs.directed_val.mono_comp _ fun _ _ h ↦ le_def.1 h X)]
   simp
 
-/-- The zero submodule is everything exactly when the module is zero. -/
-theorem bot_eq_top_iff : (⊥ : Submodule F) = ⊤ ↔ IsZero F := by
-  constructor
-  · intro h
-    refine IsZero.of_full_of_faithful_of_isZero (additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).ι F
-      (Functor.isZero _ fun X ↦ AddCommGrpCat.isZero_iff_subsingleton.2 ⟨fun a b ↦ ?_⟩)
-    have h0 (c : F.obj.obj X) : c = 0 := AddSubgroup.mem_bot.1 <| by
-      rw [← carrier_bot, h]
-      exact AddSubgroup.mem_top c
-    rw [h0 a, h0 b]
-  · intro h
-    ext X x
-    have : Subsingleton (F.obj.obj X) := AddCommGrpCat.isZero_iff_subsingleton.1
-      (((additiveFunctor Cᵒᵖ AddCommGrpCat.{w}).ι.map_isZero h).obj X)
-    exact iff_of_true (by rw [Subsingleton.elim x 0]; exact zero_mem _) (AddSubgroup.mem_top x)
-
 /-! ### Submodules as subobjects -/
 
 variable (S : Submodule F)
@@ -235,6 +218,12 @@ variable (S : Submodule F)
   map_comp f g := by
     refine AddCommGrpCat.ext fun x ↦ Subtype.ext ?_
     exact ConcreteCategory.congr_hom (F.obj.map_comp f g) x.val
+
+/-- The submodule functor acts by restricting the ambient module's maps. -/
+@[simp]
+theorem toFunctor_map_apply {X Y : Cᵒᵖ} (f : X ⟶ Y) (x : S.carrier X) :
+    (S.toFunctor.map f x : S.carrier Y).val = (F.obj.map f).hom x :=
+  (rfl)
 
 instance : S.toFunctor.Additive where
   map_add {X Y f g} := by
@@ -410,7 +399,9 @@ theorem exists_isCoatom_of_isFinitelyGeneratedFunctor (M : ModCat.{v} C)
   obtain ⟨n, Y, p, hp⟩ := isFinitelyGeneratedFunctor_def.1 hM
   have := CompleteLattice.coatomic_of_top_compact (Submodule.isCompactElement_top p)
   obtain h | ⟨N, hN, -⟩ := eq_top_or_exists_le_coatom (⊥ : Submodule M)
-  · exact absurd (Submodule.bot_eq_top_iff.1 h) h0
+  · have : Nontrivial (Subobject M) := Subobject.nontrivial_of_not_isZero h0
+    have : Nontrivial (Submodule M) := (Submodule.orderIsoSubobject M).toEquiv.nontrivial
+    exact absurd h bot_ne_top
   · exact ⟨Submodule.orderIsoSubobject M N, (OrderIso.isCoatom_iff _ _).2 hN⟩
 
 end ModCat
