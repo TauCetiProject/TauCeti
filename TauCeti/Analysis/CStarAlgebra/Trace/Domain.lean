@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Basic
 public import TauCeti.Analysis.CStarAlgebra.Trace.Basic
+public import TauCeti.Analysis.CStarAlgebra.Trace.LowerSemicontinuous
 import TauCeti.Algebra.Star.Polarization
 
 /-!
@@ -34,6 +35,10 @@ Dixmier 1963, Lemme 3, p. 226:
   (`TauCeti.IsTrace.linearMap_mul_comm`). Polarizing the trace identity gives
   `τ(y⋆x) = τ(xy⋆)` for `x, y ∈ 𝔫_τ`, and for `x = b⋆b ∈ 𝔪_τ⁺` (`b ∈ 𝔫_τ`) both `τ(b⋆bz)`
   and `τ(zb⋆b)` equal `τ(bzb⋆)`.
+* When `τ` is densely defined (`TauCeti.IsDenselyDefined`), `𝔪_τ` is dense in `B`
+  (`TauCeti.IsDenselyDefined.dense_domain`): its closure is a subspace containing `B₊`, which
+  spans `B`. Since `𝔪_τ ⊆ 𝔫_τ`, so is `𝔫_τ`
+  (`TauCeti.IsTrace.dense_sqIntegrable_of_isDenselyDefined`).
 * A trace finite on `B₊` has `𝔪_τ = B`; for the trace of a positive tracial functional `ω` the
   extension is `ω` itself (`TauCeti.PositiveTracialFunctional.linearMap_toTrace`).
 
@@ -60,8 +65,11 @@ Dixmier 1963, Lemme 3, p. 226:
   (`TauCeti.IsTrace.linearMap_apply_of_mem_finitePart`).
 * `TauCeti.IsTrace.linearMap_star_mul_comm`, `TauCeti.IsTrace.linearMap_mul_comm`: traciality
   of the extension.
-* `TauCeti.domain_eq_top_of_lt_top`, `TauCeti.PositiveTracialFunctional.linearMap_toTrace`:
-  bounded traces.
+* `TauCeti.IsDenselyDefined.dense_domain`,
+  `TauCeti.IsTrace.dense_sqIntegrable_of_isDenselyDefined`: `𝔪_τ` and `𝔫_τ` are dense when `τ`
+  is densely defined.
+* `TauCeti.domain_eq_top_of_lt_top`, `TauCeti.mem_domain_of_lt_top`,
+  `TauCeti.PositiveTracialFunctional.linearMap_toTrace`: bounded traces.
 
 ## References
 
@@ -515,12 +523,34 @@ theorem linearMap_mul_comm (hτ : IsTrace τ) {x : B} (hx : x ∈ domain τ) (z 
 
 end IsTrace
 
+/-! ### Densely defined traces -/
+
+/-- **The domain of a densely defined trace is dense.** -/
+theorem IsDenselyDefined.dense_domain (hd : IsDenselyDefined τ) : Dense (domain τ : Set B) := by
+  -- The closure of `𝔪_τ` is a subspace containing `B₊`, which spans `B`.
+  have h : {x : B | 0 ≤ x} ⊆ (domain τ).topologicalClosure :=
+    (isDenselyDefined_iff.1 hd).trans (closure_mono finitePart_subset_domain)
+  have htop : (domain τ).topologicalClosure = ⊤ :=
+    eq_top_iff.2 (CStarAlgebra.span_nonneg (A := B) ▸ Submodule.span_le.2 h)
+  rw [← Submodule.dense_iff_topologicalClosure_eq_top] at htop
+  exact htop
+
+/-- **The square-integrable elements of a densely defined trace are dense.** -/
+theorem IsTrace.dense_sqIntegrable_of_isDenselyDefined (hτ : IsTrace τ)
+    (hd : IsDenselyDefined τ) : Dense (sqIntegrable τ) :=
+  hd.dense_domain.mono hτ.domain_subset_sqIntegrable
+
 /-! ### Bounded traces -/
 
 /-- A trace that is finite on `B₊` is defined everywhere: `𝔪_τ = B`. -/
 theorem domain_eq_top_of_lt_top (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) : domain τ = ⊤ := by
   rw [eq_top_iff, ← CStarAlgebra.span_nonneg]
   exact Submodule.span_mono fun x hx ↦ mem_finitePart.2 ⟨hx, hfin x hx⟩
+
+/-- Every element lies in the domain of a trace that is finite on `B₊`. -/
+theorem mem_domain_of_lt_top (hfin : ∀ x : B, 0 ≤ x → τ x < ∞) (x : B) : x ∈ domain τ := by
+  rw [domain_eq_top_of_lt_top hfin]
+  exact Submodule.mem_top
 
 namespace PositiveTracialFunctional
 
@@ -537,10 +567,7 @@ theorem linearMap_toTrace (ω : PositiveTracialFunctional B) (z : domain ω.toTr
   have hψ : ∀ x (hx : x ∈ finitePart ω.toTrace),
       ψ ⟨x, finitePart_subset_domain hx⟩ = (ω.toTrace x).toReal := by
     intro x hx
-    have hω := map_nonneg ω (mem_finitePart.1 hx).1
-    simp only [ψ, LinearMap.coe_comp, Function.comp_apply, Submodule.coe_subtype,
-      LinearMap.coe_ofClass, toTrace_apply, ENNReal.toReal_ofReal (Complex.nonneg_iff.mp hω).1]
-    exact Complex.eq_re_of_ofReal_le hω
+    exact ω.apply_eq_toReal_toTrace (mem_finitePart.1 hx).1
   simp [← ω.isTrace_toTrace.eq_linearMap hψ, ψ]
 
 end PositiveTracialFunctional

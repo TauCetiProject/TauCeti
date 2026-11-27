@@ -64,6 +64,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.mul_cpow_of_arg_add_mem` -- a principal power splits across a product when the
   arguments add in the principal range.
 * `TauCeti.mul_cpow_of_re_pos` -- the right-half-plane specialization.
+* `TauCeti.div_cpow_of_arg_div_add_arg_mem` -- a principal power splits across a quotient
+  `x / y` when the arguments of `x / y` and `y` add in the principal range.
 * `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
   multiplies the exponents.
 * `TauCeti.ofReal_cpow_conj` -- a principal power of a nonnegative real commutes with complex
@@ -75,8 +77,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   exponential of `(c log n) s`.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
-* `TauCeti.exists_differentiableAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
-  extends to a `k`-th root function complex differentiable at that point.
+* `TauCeti.exists_analyticAt_pow_eq` -- near a nonzero point, a prescribed `k`-th root
+  extends to a `k`-th root function analytic at that point.
 * `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
   lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.hasDerivAt_sub_div_sub_cpow` -- the derivative of `w ↦ ((w - α) / (w - γ)) ^ a` where
@@ -118,6 +120,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `y ≠ 0`; the derivative needs `x, y ∈ slitPlane ∪ {0}`; the limit holds for arbitrary `x` and `y`.
 * `Complex.cpow_sub_natCast_mul_sum_mul_pow` -- reversing a finite sum of powers:
   `z^{a−n} ∑_{k<n} f(n − 1 − k) z^k = z^{a−1} ∑_{k<n} f(k) / z^k` for `z ≠ 0`.
+* `Complex.norm_ofReal_cpow_le_add_of_re_mem_Icc` -- for a positive real base, the norm of a
+  complex power on a vertical strip is bounded by the sum of the norms at the real endpoints.
 * `Complex.norm_ofReal_cpow_le_exp` -- for `a > 0`, `‖a ^ w‖ ≤ exp (|log a| ‖w‖)`.
 * `Complex.norm_ofReal_cpow_sub_ofReal_cpow_le` -- for `b ≥ 1` and exponents with `re ≤ M`,
   `‖b ^ z - b ^ w‖ ≤ log b · b ^ M · ‖z - w‖`.
@@ -197,6 +201,19 @@ theorem mul_cpow_of_arg_add_mem {x y : ℂ}
   rw [cpow_def_of_ne_zero (mul_ne_zero hx hy), cpow_def_of_ne_zero hx,
     cpow_def_of_ne_zero hy, log_mul hx hy h, add_mul, exp_add]
 
+/-- A principal power splits across a quotient `x / y` when the arguments of `x / y` and of `y`
+add up to a value in the principal range `(-π, π]`, including when `y` is zero. -/
+theorem div_cpow_of_arg_div_add_arg_mem {x y : ℂ}
+    (h : arg (x / y) + arg y ∈ Set.Ioc (-Real.pi) Real.pi) (w : ℂ) :
+    (x / y) ^ w = x ^ w * y ^ (-w) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · rcases eq_or_ne w 0 with rfl | hw
+    · simp
+    · simp [zero_cpow hw, zero_cpow (neg_ne_zero.2 hw)]
+  have h' := mul_cpow_of_arg_add_mem h w
+  rw [div_mul_cancel₀ x hy] at h'
+  rw [cpow_neg, h', mul_inv_cancel_right₀ (cpow_ne_zero_iff.2 (Or.inl hy))]
+
 /-- A principal power splits across a product of two numbers in the open right half-plane.
 Their arguments add without crossing the branch cut. -/
 theorem mul_cpow_of_re_pos {x y : ℂ} (hx : 0 < x.re) (hy : 0 < y.re) (w : ℂ) :
@@ -267,13 +284,14 @@ theorem injOn_I_mul_cpow_inv {S : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hinj : 
   exact hinj hz hw (by rw [← hrecover z hz, ← hrecover w hw, hp])
 
 /-- **A local holomorphic branch of the `k`-th root.** Near a nonzero `z₀` with a chosen `k`-th
-root `c`, there is a `k`-th root function which is complex differentiable at `z₀` and takes the
-value `c` there, namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
-theorem exists_differentiableAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
+root `c`, there is a `k`-th root function which is analytic at `z₀` and takes the value `c` there,
+namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/
+theorem exists_analyticAt_pow_eq {z₀ c : ℂ} {k : ℕ} (hk : k ≠ 0) (hz₀ : z₀ ≠ 0)
     (hc : c ^ k = z₀) :
-    ∃ f : ℂ → ℂ, DifferentiableAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
+    ∃ f : ℂ → ℂ, AnalyticAt ℂ f z₀ ∧ f z₀ = c ∧ ∀ z, f z ^ k = z := by
   refine ⟨fun z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ), ?_, by simp [div_self hz₀], fun z ↦ ?_⟩
-  · exact ((differentiableAt_id.div_const _).cpow_const (by simp [div_self hz₀])).const_mul c
+  · exact analyticAt_const.mul
+      ((analyticAt_id.div_const).cpow analyticAt_const (by simp [div_self hz₀]))
   · rw [mul_pow, cpow_nat_inv_pow _ hk, hc, mul_div_cancel₀ _ hz₀]
 
 /-- The reciprocal-coordinate product of principal powers is holomorphic at zero,
@@ -942,6 +960,14 @@ theorem hasDerivAt_add_cpow_mul_exp_mul (b c k : ℂ) {z : ℂ} (hz : z + c ∈ 
     ((hasDerivAt_id z).const_mul k).cexp).congr_deriv ?_
   rw [id, cpow_sub _ _ (slitPlane_ne_zero hz), cpow_one]
   field_simp
+
+/-- For a positive real base `u` and `a ≤ s.re ≤ b`, the norm of `u ^ s` is bounded by the
+sum of the norms of its powers at the real endpoints `a` and `b`. -/
+theorem norm_ofReal_cpow_le_add_of_re_mem_Icc {u a b : ℝ} (hu : 0 < u) {s : ℂ}
+    (hs : s.re ∈ Set.Icc a b) :
+    ‖(u : ℂ) ^ s‖ ≤ ‖(u : ℂ) ^ (a : ℂ)‖ + ‖(u : ℂ) ^ (b : ℂ)‖ := by
+  simp only [norm_cpow_eq_rpow_re_of_pos hu, ofReal_re]
+  exact Real.rpow_le_rpow_add_rpow_of_mem_Icc hu hs
 
 /-- A real power of a positive real number grows at most exponentially in the exponent. -/
 theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :

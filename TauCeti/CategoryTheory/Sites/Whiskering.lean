@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.CategoryTheory.Sites.GlobalSections
+
 public import Mathlib.CategoryTheory.Preadditive.AdditiveFunctor
-public import Mathlib.CategoryTheory.Sites.GlobalSections
 public import Mathlib.CategoryTheory.Sites.Whiskering
 
 /-!
@@ -86,7 +87,7 @@ lemma ΓCompIsoSheafComposeCompΓ_hom_app (G : Sheaf J A) :
 /-- Followed by the identification of the global sections of `sheafCompose J F` with its sections
 over the terminal object `T`, the comparison `ΓCompIsoSheafComposeCompΓ` is `F` applied to the
 identification of global sections with sections over `T`. -/
-@[reassoc, elementwise]
+@[reassoc, elementwise nosimp]
 lemma ΓCompIsoSheafComposeCompΓ_hom_app_comp_ΓNatIsoSheafSections_hom_app (G : Sheaf J A) :
     (ΓCompIsoSheafComposeCompΓ J F hT).hom.app G ≫
         (ΓNatIsoSheafSections J B hT).hom.app ((sheafCompose J F).obj G) =

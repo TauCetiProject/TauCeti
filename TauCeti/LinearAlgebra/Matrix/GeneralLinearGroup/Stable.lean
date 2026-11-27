@@ -71,6 +71,9 @@ the centralizer of `E_∞(A)`, and with it the center of `GL_∞(A)`, is trivial
 * `TauCeti.StableGeneralLinearGroup.mem_elementarySubgroup_iff`: an element of `GL_∞(A)` is
   stably elementary exactly when it is represented by an elementary matrix of some size.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_normal`: `E_∞(A)` is normal.
+* `TauCeti.StableGeneralLinearGroup.exists_mem_elementarySubgroup_forall_mul_mul_inv_eq`: on each
+  finite stage, conjugation by an element of `GL_∞(A)` agrees with conjugation by an element of
+  `E_∞(A)`.
 * `TauCeti.StableGeneralLinearGroup.elementarySubgroup_eq_commutator`: `E_∞(A)` is the
   commutator subgroup of `GL_∞(A)`.
 * `TauCeti.StableGeneralLinearGroup.centralizer_elementarySubgroup`,
@@ -371,6 +374,26 @@ instance elementarySubgroup_normal : (elementarySubgroup A).Normal where
     rw [← of_stabilizeGL hmk e, ← of_stabilizeGL hnk g, ← map_inv, ← map_mul, ← map_mul]
     exact of_mem_elementarySubgroup_of_fromBlocksGL (fromBlocksGL_conj_mem_elementarySubgroup _
       (map_stabilizeGL_elementarySubgroup_le hmk ⟨e, he, rfl⟩))
+
+/-- **Conjugation in `GL_∞(A)` is elementary on each finite stage.** For `g ∈ GL_∞(A)` and a size
+`n`, some stably elementary `e` induces the same conjugation as `g` on the image of `GL_n(A)`:
+if `g` is represented by `w` at a size `k ≥ n`, take for `e` Whitehead's matrix `w ⊕ w⁻¹`. -/
+theorem exists_mem_elementarySubgroup_forall_mul_mul_inv_eq (g : StableGeneralLinearGroup A)
+    (n : ℕ) : ∃ e ∈ elementarySubgroup A,
+      ∀ u : GL (Fin n) A, e * of A n u * e⁻¹ = g * of A n u * g⁻¹ := by
+  obtain ⟨m, v, rfl⟩ := exists_of g
+  obtain ⟨k, hmk, hnk⟩ := exists_ge_ge m n
+  -- At size `k + k`, the image of `x ∈ GL_l(A)` for `l ≤ k` is the block matrix `x ⊕ 1`.
+  have hblock {l : ℕ} (hl : l ≤ k) (x : GL (Fin l) A) : of A l x =
+      of A (k + k) (finSumFinEquiv.reindexGL A (fromBlocksGL (stabilizeGL A hl x, 1))) := by
+    rw [← stabilizeGL_eq_reindexGL_fromBlocksGL, of_stabilizeGL, of_stabilizeGL]
+  refine ⟨of A (k + k) (finSumFinEquiv.reindexGL A
+    (fromBlocksGL (stabilizeGL A hmk v, (stabilizeGL A hmk v)⁻¹))),
+    of_mem_elementarySubgroup ((Equiv.reindexGL_mem_elementarySubgroup_iff _).2
+      (fromBlocksGL_inv_mem_elementarySubgroup _)), fun u ↦ ?_⟩
+  rw [hblock hnk u, hblock hmk v]
+  simp only [← map_inv, ← map_mul]
+  simp
 
 /-- The commutator subgroup of `GL_∞(A)` is contained in the stable elementary subgroup. -/
 theorem commutator_le_elementarySubgroup :

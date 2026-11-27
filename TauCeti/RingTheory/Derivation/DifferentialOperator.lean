@@ -55,6 +55,8 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
   multiplication by each `b` with multiplication by some `a` preserves the order, since the
   commutator of `σ ∘ D ∘ ρ` with `b` is `σ ∘ [D, a] ∘ ρ` (`smulCommutator_comp_comp`). This reads
   operators on a manifold in a chart through cutoffs.
+* `restrictScalars_mem_differentialOperators`: for a tower `R → S → A`, restricting the scalars
+  of an `S`-linear operator to `R` preserves its order over `A`.
 * `smulCommutator_pow_comp_of_mem`: the top iterated commutators of a composition multiply,
   `ad_a ^ (m + k) (P ∘ Q) = (m + k).choose m • (ad_a ^ m P ∘ ad_a ^ k Q)`. Dividing by
   factorials over a `ℚ`-algebra, this is multiplicativity of principal symbols.
@@ -489,6 +491,42 @@ theorem comp_comp_mem_differentialOperators
     exact ih (smulCommutator_mem_differentialOperators hD a)
 
 end Sandwich
+
+/-! ### Restriction of scalars -/
+
+section RestrictScalars
+
+variable {R S A M N : Type*} [CommSemiring R] [CommSemiring S] [CommSemiring A] [Algebra R S]
+  [Algebra R A] [Algebra S A]
+  [AddCommMonoid M] [Module A M] [Module S M] [Module R M] [IsScalarTower S A M]
+  [IsScalarTower R A M] [IsScalarTower R S M]
+  [AddCommGroup N] [Module A N] [Module S N] [Module R N] [IsScalarTower S A N]
+  [IsScalarTower R A N] [IsScalarTower R S N]
+
+/-- The commutator with multiplication by `a` of an `S`-linear map, viewed as an `R`-linear map,
+is its commutator as an `S`-linear map, viewed as an `R`-linear map. -/
+@[simp]
+theorem smulCommutator_restrictScalars (a : A) (D : M →ₗ[S] N) :
+    smulCommutator R a (D.restrictScalars R) = (smulCommutator S a D).restrictScalars R := by
+  ext x
+  simp
+
+/-- **Restriction of scalars preserves the order.** For a tower `R → S → A`, an `S`-linear
+differential operator of order at most `m` over `A` is also one when viewed as an `R`-linear map.
+For instance a complex-linear differential operator between spaces of sections of complex vector
+bundles, in the sense of commutators with complex-valued functions, is one as a real-linear map. -/
+theorem restrictScalars_mem_differentialOperators {D : M →ₗ[S] N} {m : ℕ}
+    (hD : D ∈ differentialOperators S A M N m) :
+    D.restrictScalars R ∈ differentialOperators R A M N m := by
+  induction m generalizing D with
+  | zero =>
+    exact mem_differentialOperators_zero_iff.2 fun a x ↦ mem_differentialOperators_zero_iff.1 hD a x
+  | succ m ih =>
+    refine mem_differentialOperators_succ_iff.2 fun a ↦ ?_
+    rw [smulCommutator_restrictScalars]
+    exact ih (smulCommutator_mem_differentialOperators hD a)
+
+end RestrictScalars
 
 /-! ### Detecting the order at points -/
 

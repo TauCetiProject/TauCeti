@@ -28,7 +28,8 @@ whose split Grothendieck group is the projective `K₀`.
   `S`-modules to finitely generated projective `R`-modules exactly when `S` itself is a finitely
   generated projective `R`-module through `f`. Necessity is seen on the regular module `S`; for
   instance along `ℤ → ℚ` the finitely generated projective `ℚ`-module `ℚ` restricts to a
-  `ℤ`-module that is not finitely generated.
+  `ℤ`-module that is not finitely generated. When it holds, restriction is an additive functor
+  between the two categories, which induces the transfer `K₀(S) → K₀(R)`.
 
 The module-level statements are the `Module.Finite` and `Module.Projective` instances on
 `TauCeti.BalancedExtension f P`, and `RingHom.isFG_restrictScalars_of_finite` together with
@@ -43,6 +44,11 @@ The module-level statements are the `Module.Finite` and `Module.Projective` inst
 * `RingHom.finiteProjectiveModulesExtendScalarsCompIso`: for a commuting square
   `g₁ ∘ f₁ = g₂ ∘ f₂` of ring homomorphisms, the natural isomorphism between extending along `f₁`
   then `g₁` and along `f₂` then `g₂`, through extension along the common composite.
+* `RingHom.finiteProjectiveModulesRestrictScalars`: when `S` is a finitely generated projective
+  `R`-module through `f`, restriction of scalars as an additive functor between the categories of
+  finitely generated projective modules.
+* `RingHom.finiteProjectiveModulesRestrictScalarsCompιIso`: followed by the inclusion into all
+  modules, it is restriction of scalars `ModuleCat.restrictScalars f` on all modules.
 
 ## Main results
 
@@ -51,6 +57,8 @@ The module-level statements are the `Module.Finite` and `Module.Projective` inst
   `TauCeti.SplitK0.of_extendScalars_obj_finiteProjectiveModulesRegular`: `[S ⊗_R R] = [S]`.
 * `TauCeti.BalancedExtension.finiteProjectiveModules_le_inverseImage_functor`: extension of
   scalars preserves finitely generated projective modules.
+* `RingHom.finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_apply`: on every element, the
+  component of the square isomorphism is `D ⊗_B (B ⊗_A P) ≃ D ⊗_A P ≃ D ⊗_C (C ⊗_A P)`.
 * `RingHom.full_finiteProjectiveModulesExtendScalars`: extension of scalars along a surjective
   ring homomorphism is full on finitely generated projective modules, and in particular reduction
   modulo a two-sided ideal is full on finitely generated projective right modules (an instance);
@@ -95,6 +103,9 @@ open TauCeti
 /-- **Extension of scalars on finitely generated projective modules.** A ring homomorphism
 `f : R →+* S` induces a functor from the finitely generated projective `R`-modules to the
 finitely generated projective `S`-modules, sending `P` to `S ⊗_R P`. -/
+-- Exposed, like `TauCeti.BalancedExtension.functor`, so that elements of the extended modules can
+-- be written as tensors in `S ⊗_R P`.
+@[expose]
 noncomputable def finiteProjectiveModulesExtendScalars :
     (finiteProjectiveModules R).FullSubcategory ⥤ (finiteProjectiveModules S).FullSubcategory :=
   (finiteProjectiveModules S).lift
@@ -206,6 +217,25 @@ theorem finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom
               eqToHom (finiteProjectiveModulesExtendScalars_comp_obj_obj f₂ g₂ P).symm := by
   simp [finiteProjectiveModulesExtendScalarsCompIso,
     Functor.FullyFaithful.whiskeringRight_preimage_app, eqToHom_map]
+
+/-- The component of `RingHom.finiteProjectiveModulesExtendScalarsCompIso` at `P` on an arbitrary
+element of `D ⊗_B (B ⊗_A P)`: it is `TauCeti.BalancedExtension.cancelBaseChange` along `f₁, g₁`,
+followed by the transport `TauCeti.BalancedExtension.congrRingHom h` and by the inverse of
+`cancelBaseChange` along `f₂, g₂`. -/
+theorem finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom_apply
+    (P : (finiteProjectiveModules A).FullSubcategory)
+    (x : BalancedExtension g₁ (BalancedExtension f₁ P.obj)) :
+    ((finiteProjectiveModulesExtendScalarsCompIso f₁ g₁ f₂ g₂ h).hom.app P).hom x =
+      (BalancedExtension.cancelBaseChange f₂ g₂).symm
+        (BalancedExtension.congrRingHom h (BalancedExtension.cancelBaseChange f₁ g₁ x)) := by
+  -- The `eqToHom`s of `finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom` act as identities.
+  calc _ = (BalancedExtension.functorComp f₂ g₂).hom.app P.obj
+        ((BalancedExtension.functorCongr h).hom.app P.obj
+          ((BalancedExtension.functorComp f₁ g₁).inv.app P.obj x)) :=
+      congr($(finiteProjectiveModulesExtendScalarsCompIso_hom_app_hom f₁ g₁ f₂ g₂ h P) x)
+    _ = _ := by
+      rw [BalancedExtension.functorComp_inv_app_apply, BalancedExtension.functorCongr_hom_app_apply,
+        BalancedExtension.functorComp_hom_app_apply]
 
 /-- The component of `RingHom.finiteProjectiveModulesExtendScalarsCompIso` at `P` sends
 `t ⊗ (s ⊗ p)` to `(t * g₁ s) ⊗ (1 ⊗ p)`; in particular it sends `1 ⊗ (1 ⊗ p)` to `1 ⊗ (1 ⊗ p)`. -/
@@ -328,6 +358,71 @@ theorem finiteProjectiveModules_le_inverseImage_restrictScalars_iff :
       ⟨(ModuleCat.isFG_iff _).mp (f.isFG_restrictScalars_of_finite hfin
           ((ModuleCat.isFG_iff M).mpr hMfin)),
         f.projective_restrictScalars_of_projective hproj M⟩
+
+/-- **Restriction of scalars on finitely generated projective modules.** A ring homomorphism
+`f : R →+* S` making `S` a finitely generated projective `R`-module induces a functor from the
+finitely generated projective `S`-modules to the finitely generated projective `R`-modules,
+sending a module to the same module with scalars restricted along `f`. -/
+noncomputable def finiteProjectiveModulesRestrictScalars
+    (hfin : letI := f.toModule; Module.Finite R S)
+    (hproj : letI := f.toModule; Module.Projective R S) :
+    (finiteProjectiveModules S).FullSubcategory ⥤ (finiteProjectiveModules R).FullSubcategory :=
+  (finiteProjectiveModules R).lift ((finiteProjectiveModules S).ι ⋙ ModuleCat.restrictScalars f)
+    fun M ↦ (f.finiteProjectiveModules_le_inverseImage_restrictScalars_iff.mpr ⟨hfin, hproj⟩)
+      M.obj M.property
+
+section RestrictScalars
+
+variable (hfin : letI := f.toModule; Module.Finite R S)
+  (hproj : letI := f.toModule; Module.Projective R S)
+
+instance : (f.finiteProjectiveModulesRestrictScalars hfin hproj).Additive := by
+  -- As for `RingHom.finiteProjectiveModulesExtendScalars`, additivity is read off the composite
+  -- with the faithful inclusion, which is the additive functor `ι ⋙ ModuleCat.restrictScalars f`.
+  have : (f.finiteProjectiveModulesRestrictScalars hfin hproj ⋙
+      (finiteProjectiveModules R).ι).Additive :=
+    inferInstanceAs ((finiteProjectiveModules S).ι ⋙ ModuleCat.restrictScalars f).Additive
+  exact Functor.additive_of_comp_faithful _ (finiteProjectiveModules R).ι
+
+@[simp]
+theorem finiteProjectiveModulesRestrictScalars_obj_obj
+    (M : (finiteProjectiveModules S).FullSubcategory) :
+    ((f.finiteProjectiveModulesRestrictScalars hfin hproj).obj M).obj =
+      (ModuleCat.restrictScalars f).obj M.obj :=
+  (rfl)
+
+@[simp]
+theorem finiteProjectiveModulesRestrictScalars_map_hom
+    {M N : (finiteProjectiveModules S).FullSubcategory} (g : M ⟶ N) :
+    ((f.finiteProjectiveModulesRestrictScalars hfin hproj).map g).hom =
+      eqToHom (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj M) ≫
+        (ModuleCat.restrictScalars f).map g.hom ≫
+          eqToHom (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj N).symm :=
+  (rfl)
+
+/-- Restriction of scalars on finitely generated projective modules, followed by the inclusion
+into all modules, is the inclusion followed by restriction of scalars on all modules. Its
+components are the identifications `RingHom.finiteProjectiveModulesRestrictScalars_obj_obj`. -/
+noncomputable def finiteProjectiveModulesRestrictScalarsCompιIso :
+    f.finiteProjectiveModulesRestrictScalars hfin hproj ⋙ (finiteProjectiveModules R).ι ≅
+      (finiteProjectiveModules S).ι ⋙ ModuleCat.restrictScalars f :=
+  ObjectProperty.liftCompιIso _ _ _
+
+@[simp]
+theorem finiteProjectiveModulesRestrictScalarsCompιIso_hom_app
+    (M : (finiteProjectiveModules S).FullSubcategory) :
+    (f.finiteProjectiveModulesRestrictScalarsCompιIso hfin hproj).hom.app M =
+      eqToHom (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj M) :=
+  (rfl)
+
+@[simp]
+theorem finiteProjectiveModulesRestrictScalarsCompιIso_inv_app
+    (M : (finiteProjectiveModules S).FullSubcategory) :
+    (f.finiteProjectiveModulesRestrictScalarsCompιIso hfin hproj).inv.app M =
+      eqToHom (f.finiteProjectiveModulesRestrictScalars_obj_obj hfin hproj M).symm :=
+  (rfl)
+
+end RestrictScalars
 
 end RingHom
 

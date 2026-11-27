@@ -43,7 +43,8 @@ the normalized real-boundary disc solver of the linear theory of holomorphic dis
 * `TauCeti.rotatingLineSubspace`: the closed subspace `X_k` of `C^{1,α}(D)`, with
   `TauCeti.mem_rotatingLineSubspace_iff`.
 * `TauCeti.augmentedConjWirtingerDerivL`: the augmented operator
-  `C^{1,α}(D, F) →L[ℝ] C^{0,α}(D, F) × F × F`.
+  `C^{1,α}(D, F) →L[ℝ] C^{0,α}(D, F) × F × F`, which commutes with postcomposition by complex-linear
+  maps (`TauCeti.augmentedConjWirtingerDerivL_compLeftL`).
 * `TauCeti.exists_mem_rotatingLineSubspace_augmentedConjWirtingerDerivL_eq`: surjectivity on
   `X_k` for `k ≥ 3`.
 * `TauCeti.injOn_augmentedConjWirtingerDerivL`: injectivity on `X_3`.
@@ -128,6 +129,23 @@ theorem augmentedConjWirtingerDerivL_apply (u : CkHolderSpaceOn 1 α (unitBallOp
     ContinuousMultilinearMap.apply_apply, Prod.mk.injEq, true_and]
   refine ⟨(u.extend_apply ⟨0, zero_mem_unitBallOpens ℂ⟩).symm, ?_⟩
   rw [iteratedFDerivL_apply, ← h]
+  simp
+
+/-- The augmented operator commutes with postcomposition by a continuous complex-linear map `L`:
+each of its three components is mapped by `L`. -/
+theorem augmentedConjWirtingerDerivL_compLeftL {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℂ G] (L : F →L[ℂ] G) (u : CkHolderSpaceOn 1 α (unitBallOpens ℂ) F) :
+    augmentedConjWirtingerDerivL α G (compLeftL (L.restrictScalars ℝ) u) =
+      (HolderSpace.compLeftL (L.restrictScalars ℝ) (conjWirtingerDerivL α (unitBallOpens ℂ) F u),
+        L (u.extend 0), L (fderiv ℝ u.extend 0 1)) := by
+  have h0 := zero_mem_unitBallOpens ℂ
+  have hgerm := extend_compLeftL_eventuallyEq (L.restrictScalars ℝ) u h0
+  rw [augmentedConjWirtingerDerivL_apply, conjWirtingerDerivL_compLeftL, hgerm.eq_of_nhds,
+    hgerm.fderiv_eq]
+  have hd : fderiv ℝ (fun y ↦ L.restrictScalars ℝ (u.extend y)) 0 =
+      L.restrictScalars ℝ ∘L fderiv ℝ u.extend 0 :=
+    (L.restrictScalars ℝ).fderiv_comp_left (u.differentiableAt_extend h0)
+  rw [hd]
   simp
 
 end augmented

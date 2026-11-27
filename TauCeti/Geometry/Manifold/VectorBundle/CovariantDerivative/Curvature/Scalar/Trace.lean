@@ -15,7 +15,9 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 
 The scalar curvature operation is the existing positive-metric scalar curvature. This file
 compares its canonical Levi-Civita connection with any smooth Levi-Civita connection of the
-same metric and identifies the trace used in metric variation.
+same metric and identifies the trace used in metric variation. The comparison rests on
+`IsLeviCivitaConnection.ricciTensor_eq_ricciTensor_leviCivitaConnection`: a smooth Levi-Civita
+connection of the installed metric has the Ricci tensor of Mathlib's Levi-Civita connection.
 
 ## References
 
@@ -29,6 +31,36 @@ public section
 open Bundle
 open scoped Manifold ContDiff
 noncomputable section
+
+namespace TauCeti.Manifold.ContMDiffNondegenerateMetric
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+  {g : ContMDiffNondegenerateMetric (I := I) (M := M)}
+  {cov : CovariantDerivative I E (TangentSpace I : M → Type _)}
+  [CovariantDerivative.ContMDiffCovariantDerivative cov ∞]
+
+/-- A smooth Levi-Civita connection of the installed positive metric has the Ricci tensor of
+Mathlib's Levi-Civita connection: the two agree on differentiable vector fields. -/
+theorem IsLeviCivitaConnection.ricciTensor_eq_ricciTensor_leviCivitaConnection
+    (hcov : g.IsLeviCivitaConnection cov)
+    (hg : ∀ y (v w : TangentSpace I y), g y v w = inner ℝ v w) (x : M) :
+    cov.ricciTensor x = (CovariantDerivative.leviCivitaConnection I M).ricciTensor x := by
+  have hcurv : cov.curvatureTensor x =
+      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x := by
+    apply CovariantDerivative.curvatureTensor_congr
+    intro σ hσ y
+    ext v
+    exact hcov.uniqueness ((g.isLeviCivitaConnection_iff_of_apply_eq_inner hg).mpr
+      (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I))
+      (hσ.mdifferentiableAt (by simp)) v
+  ext u v
+  simp only [CovariantDerivative.ricciTensor_apply, hcurv]
+
+end TauCeti.Manifold.ContMDiffNondegenerateMetric
 
 namespace Bundle.ContMDiffRiemannianMetric
 
@@ -51,18 +83,8 @@ theorem scalarCurvature_eq_trace_inverse_ricciTensor
   have hg (y : M) (v w : TangentSpace I y) : g.toNondegenerateMetric y v w = Inner.inner ℝ v w := by
     rw [g.toNondegenerateMetric_apply]
     rfl
-  have hcurv : cov.curvatureTensor x =
-      (CovariantDerivative.leviCivitaConnection I M).curvatureTensor x := by
-    apply CovariantDerivative.curvatureTensor_congr
-    intro σ hσ y
-    ext v
-    exact hcov.uniqueness
-      ((g.toNondegenerateMetric.isLeviCivitaConnection_iff_of_apply_eq_inner hg).mpr
-        (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I))
-      (hσ.mdifferentiableAt (by simp)) v
-  have hRic : cov.ricciTensor x = (CovariantDerivative.leviCivitaConnection I M).ricciTensor x := by
-    ext u v
-    simp only [CovariantDerivative.ricciTensor_apply, hcurv]
+  have hRic : cov.ricciTensor x = (CovariantDerivative.leviCivitaConnection I M).ricciTensor x :=
+    hcov.ricciTensor_eq_ricciTensor_leviCivitaConnection hg x
   have htr := ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace
     (g.toNondegenerateMetric x) (hg x) (cov.ricciTensor x).toContinuousBilinearMap
   -- Read the trace in the tangent fibre to apply the intrinsic metric contraction law.
@@ -70,6 +92,27 @@ theorem scalarCurvature_eq_trace_inverse_ricciTensor
     ((g.toNondegenerateMetric x).inverse ∘L (cov.ricciTensor x).toContinuousBilinearMap)
   rw [htr, LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap, hRic]
   rw [g.scalarCurvature_eq_scalarCurvature_leviCivitaConnection rfl,
+    CovariantDerivative.scalarCurvature_apply]
+
+/-- The scalar curvature of a positive metric which is the installed metric is the scalar curvature
+of Mathlib's Levi-Civita connection. -/
+theorem scalarCurvature_eq_scalarCurvature_leviCivitaConnection_of_apply_eq_inner
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
+    (g : ContMDiffRiemannianMetric I ∞ E (TangentSpace I : M → Type _))
+    (hg : ∀ y (v w : TangentSpace I y), g.toNondegenerateMetric y v w = Inner.inner ℝ v w)
+    (x : M) :
+    g.scalarCurvature x = (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x := by
+  have hLC : g.toNondegenerateMetric.IsLeviCivitaConnection
+      (CovariantDerivative.leviCivitaConnection I M) :=
+    (TauCeti.Manifold.ContMDiffNondegenerateMetric.isLeviCivitaConnection_iff_of_apply_eq_inner
+      hg).mpr (CovariantDerivative.isLeviCivitaConnection_leviCivitaConnection I)
+  rw [g.scalarCurvature_eq_trace_inverse_ricciTensor _ hLC]
+  -- Read the trace in the tangent fibre to apply the intrinsic metric contraction law.
+  change TauCeti.traceCLM ℝ (TangentSpace I x) ((g.toNondegenerateMetric x).inverse ∘L
+    ((CovariantDerivative.leviCivitaConnection I M).ricciTensor x).toContinuousBilinearMap) = _
+  rw [ContinuousLinearMap.traceCLM_inverse_comp_eq_metricTrace (g.toNondegenerateMetric x) (hg x),
+    LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap,
     CovariantDerivative.scalarCurvature_apply]
 
 end Bundle.ContMDiffRiemannianMetric

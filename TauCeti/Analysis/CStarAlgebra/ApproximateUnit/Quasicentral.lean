@@ -390,13 +390,13 @@ theorem IsQuasicentralApproximateUnit.map {I : TwoSidedIdeal A} {l : Filter A}
   have := hl.neBot
   refine .of_tendsto_mul_right
     (eventually_map.mpr <| hl.eventually_mem.mono fun e he =>
-      (TwoSidedIdeal.mem_map_iff_of_surjective f hf).mpr ⟨e, he, rfl⟩)
+      (TwoSidedIdeal.mem_map_iff_of_surjective hf).mpr ⟨e, he, rfl⟩)
     (eventually_map.mpr <| hl.eventually_nonneg.mono fun _ hx => map_nonneg f hx)
     (eventually_map.mpr <| hl.eventually_norm.mono fun e he =>
       (NonUnitalStarAlgHom.norm_apply_le f e).trans he)
     (fun y hy => ?_)
     (fun b => ?_)
-  · obtain ⟨x, hx, rfl⟩ := (TwoSidedIdeal.mem_map_iff_of_surjective f hf).mp hy
+  · obtain ⟨x, hx, rfl⟩ := (TwoSidedIdeal.mem_map_iff_of_surjective hf).mp hy
     rw [tendsto_map'_iff]
     simpa only [Function.comp_def, map_mul] using
       ((map_continuous f).tendsto x).comp (hl.tendsto_mul_right hx)

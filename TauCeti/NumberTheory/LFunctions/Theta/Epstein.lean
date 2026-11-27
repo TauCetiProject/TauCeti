@@ -90,7 +90,8 @@ theorem radialMellin_eq_epsteinZeta (L : Submodule ℤ (mixedSpace K)) [Discrete
         (latticeTheta L (fun _ ↦ t) - 1) := by
     rw [latticeTheta_eq_one_add L _ (fun _ ↦ ht), add_sub_cancel_left]
     convert ((summable_archGaussian L _ (fun _ ↦ ht)).subtype (· ≠ 0)).hasSum using 1 <;>
-      simp only [Function.comp_def, archGaussian_const, one_mul, mul_assoc, mul_comm t]
+      simp only [Function.comp_def, archGaussian_const, mixedGaussian_apply, one_mul, mul_assoc,
+        mul_comm t]
   have hsum : Summable fun x : {x : L // x ≠ 0} ↦
       ‖(1 : ℂ)‖ / mixedInner K x x ^ s.re := by
     refine (summable_epsteinZeta L hs).norm.congr fun x ↦ ?_

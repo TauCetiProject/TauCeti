@@ -15,17 +15,17 @@ import TauCeti.Algebra.BigOperators.AlternatingSum
 /-!
 # Dimensions of relative homology along the long exact sequence of a triple
 
-Let `B ⊆ A ⊆ X` be a triple of spaces and `V` a module over a division ring `k`, and write
-`Hᵢ(-)` for relative singular homology with coefficients in `V`. The long exact sequence of the
-triple
+Let `B ⊆ A ⊆ X` be a triple of spaces and `V` a module over a ring `k`, and write `Hᵢ(-)` for
+relative singular homology with coefficients in `V`. The long exact sequence of the triple
 
 `⋯ ⟶ Hₙ₊₁(X, A) ⟶ Hₙ(A, B) ⟶ Hₙ(X, B) ⟶ Hₙ(X, A) ⟶ ⋯ ⟶ H₀(X, A) ⟶ 0`
 
-controls the dimensions of the homology of `(X, B)` by those of `(A, B)` and `(X, A)`:
+controls the homology of `(X, B)` by that of `(A, B)` and `(X, A)`. Over a noetherian ring,
+`Hₙ(X, B)` is finitely generated when `Hₙ(A, B)` and `Hₙ(X, A)` are
+(`TauCeti.TopTriple.finite_singularHomology_totalPair`). Over a division ring the dimensions
+satisfy:
 
-* `Hₙ(X, B)` is finite-dimensional when `Hₙ(A, B)` and `Hₙ(X, A)` are
-  (`TauCeti.TopTriple.finite_singularHomology_totalPair`), and then
-  `dim Hₙ(X, B) ≤ dim Hₙ(A, B) + dim Hₙ(X, A)`
+* `dim Hₙ(X, B) ≤ dim Hₙ(A, B) + dim Hₙ(X, A)`
   (`TauCeti.TopTriple.finrank_singularHomology_totalPair_le`);
 * when the homology of `(A, B)` and `(X, A)` is finite-dimensional through degree `n`, the
   alternating sums `Sₙ(P) = dim Hₙ(P) - dim Hₙ₋₁(P) + ⋯ ± dim H₀(P)` satisfy
@@ -56,7 +56,11 @@ universe w
 
 namespace TauCeti.TopTriple
 
-variable (T : TopTriple.{w}) {k : Type*} [DivisionRing k] (V : ModuleCat.{w} k)
+variable (T : TopTriple.{w})
+
+section Ring
+
+variable {k : Type*} [Ring k] (V : ModuleCat.{w} k)
 
 /-- Exactness of `Hₙ(A, B) ⟶ Hₙ(X, B) ⟶ Hₙ(X, A)` as linear maps. -/
 private lemma exact_total (n : ℕ) :
@@ -65,13 +69,17 @@ private lemma exact_total (n : ℕ) :
   (ShortComplex.ShortExact.moduleCat_exact_iff_function_exact _).1
     (T.singularHomology_exact_total V n)
 
-/-- **Finiteness along a triple.** If `Hₙ(A, B)` and `Hₙ(X, A)` are finite-dimensional, so is
-`Hₙ(X, B)`. -/
-theorem finite_singularHomology_totalPair (n : ℕ)
+/-- **Finiteness along a triple.** Over a noetherian ring, if `Hₙ(A, B)` and `Hₙ(X, A)` are
+finitely generated, so is `Hₙ(X, B)`. -/
+theorem finite_singularHomology_totalPair [IsNoetherianRing k] (n : ℕ)
     [Module.Finite k ((innerPair.obj T).singularHomology V n : ModuleCat k)]
     [Module.Finite k ((outerPair.obj T).singularHomology V n : ModuleCat k)] :
     Module.Finite k ((totalPair.obj T).singularHomology V n : ModuleCat k) :=
   (T.exact_total V n).moduleFinite
+
+end Ring
+
+variable {k : Type*} [DivisionRing k] (V : ModuleCat.{w} k)
 
 /-- **Subadditivity of dimension along a triple.** If `Hₙ(A, B)` and `Hₙ(X, A)` are
 finite-dimensional, then `dim Hₙ(X, B) ≤ dim Hₙ(A, B) + dim Hₙ(X, A)`. -/

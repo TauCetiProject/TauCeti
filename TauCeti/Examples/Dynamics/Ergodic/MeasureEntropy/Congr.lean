@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Congr
+public import TauCeti.InformationTheory.PartitionEntropy.Finite
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Measure.Real
 
@@ -86,7 +87,7 @@ theorem countablePartitionEntropy_leftOpen :
     · rw [show leftOpen ⁻¹' {true} ∩ Set.Icc 0 1 = Set.Ico 0 (1 / 2) by
         ext x; grind [leftOpen]]
       simp
-  rw [countablePartitionEntropy_eq_ofReal_sum]
+  rw [countablePartitionEntropy_eq_ofReal_labelEntropy, labelEntropy_def]
   simp only [h, Fintype.sum_bool, negMulLog, one_div, log_inv]
   congr 1
   ring

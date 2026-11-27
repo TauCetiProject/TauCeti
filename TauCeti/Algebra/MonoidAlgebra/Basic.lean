@@ -23,6 +23,8 @@ none of the further theory built on it.
 
 * `TauCeti.single_sub_one_ne_zero_iff`: over a nontrivial ring, the difference `single g 1 - 1`
   between the basis element at `g` and the unit is nonzero exactly when `g ≠ 1`.
+* `TauCeti.one_add_single_ne_zero`: over a nontrivial semiring, `1 + single g r` is nonzero for
+  `g ≠ 1`.
 * This file tags Mathlib's `MonoidAlgebra.coeff_natCast_mul` and
   `AddMonoidAlgebra.coeff_natCast_mul` as `simp` lemmas: a natural-number constant scales every
   coefficient, `(↑n * x).coeff m = ↑n * x.coeff m`.
@@ -121,6 +123,14 @@ theorem _root_.MonoidAlgebra.exists_eq_smul_iff_dvd_coeff (x : MonoidAlgebra R M
 -- does for polynomials (`Polynomial.coeff_natCast_mul`) and power series
 -- (`PowerSeries.coeff_natCast_mul`).
 attribute [simp] MonoidAlgebra.coeff_natCast_mul AddMonoidAlgebra.coeff_natCast_mul
+
+/-- Over a nontrivial semiring, `1 + single g r` is nonzero for `g ≠ 1`: its coefficient at the
+identity is `1`. -/
+theorem one_add_single_ne_zero [Nontrivial R] [One M] {g : M} (hg : g ≠ 1) (r : R) :
+    (1 + MonoidAlgebra.single g r : MonoidAlgebra R M) ≠ 0 := by
+  intro h
+  have := congrArg (fun f => f.coeff 1) h
+  simp [MonoidAlgebra.one_def, MonoidAlgebra.coeff_single, hg.symm] at this
 
 end Semiring
 

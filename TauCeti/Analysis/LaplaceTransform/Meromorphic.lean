@@ -29,6 +29,9 @@ a pole to the right of `θ`, the rightmost real pole has negative real trailing 
 We use the local Landau theorem `TauCeti.integrableOn_cexp_neg_mul_smul_ofReal_of_ae_nonneg`
 (Widder, *The Laplace Transform*, Chapter II, Theorem 5b) at the real abscissa, and the
 meromorphic identity theorem to identify the transform with the normal form of its continuation.
+`TauCeti.exists_ae_le_exp_of_eventually_le_rpow` turns an eventual bound `f x ≤ C * x ^ θ`, as for
+arithmetic functions summed up to `x`, into the almost-everywhere bound on `f (exp u)` that the
+one-sided version takes.
 
 The dichotomy is Landau's theorem (E. Landau, *Über einen Satz von Tschebyschef*, Math. Ann. 61
 (1905)), and the one-sided form follows the comparison argument in Montgomery and Vaughan,
@@ -258,5 +261,18 @@ theorem hasLaplace_toMeromorphicNFOn_of_ae_le_exp
     h | ⟨β, hθ, hA, hp, hc, _⟩
   · exact h
   · exact (hc.not_ge (hsign β ⟨hθ, hA⟩ hp)).elim
+
+/-- Substituting `x = exp u` turns an eventual bound `f x ≤ C * x ^ θ` into an almost-everywhere
+bound `f (exp u) ≤ C * exp (θ * u)` on a ray, the hypothesis of
+`TauCeti.hasLaplace_toMeromorphicNFOn_of_ae_le_exp` and
+`TauCeti.hasLaplace_toMeromorphicNFOn_or_exists_rightmost_real_pole_of_ae_le_exp`. -/
+theorem exists_ae_le_exp_of_eventually_le_rpow {f : ℝ → ℝ} {θ C : ℝ}
+    (h : ∀ᶠ x in atTop, f x ≤ C * x ^ θ) :
+    ∃ u₀, ∀ᵐ u ∂volume.restrict (Ioi u₀), f (Real.exp u) ≤ C * Real.exp (θ * u) := by
+  obtain ⟨u₀, hu₀⟩ := eventually_atTop.mp (Real.tendsto_exp_atTop.eventually h)
+  refine ⟨u₀, ?_⟩
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
+  rw [mul_comm θ u, Real.exp_mul]
+  exact hu₀ u (le_of_lt hu)
 
 end TauCeti

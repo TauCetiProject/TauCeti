@@ -646,6 +646,15 @@ theorem componentsL_apply (i : Fin C.n) (w : C.sobolevSections μ p k) :
 theorem chartValuesL_injective : Function.Injective (C.chartValuesL μ p k) := fun w w' h ↦
   eq_of_chartValueL_ae_eq fun i ↦ by rw [← chartValuesL_apply, ← chartValuesL_apply, h]
 
+variable {C μ p k} in
+/-- Two Sobolev sections, possibly of different orders, have the same chart data exactly when their
+chart data agree in every chart. -/
+theorem chartValuesL_eq_iff {k' : ℕ} {w : C.sobolevSections μ p k}
+    {w' : C.sobolevSections μ p k'} :
+    C.chartValuesL μ p k w = C.chartValuesL μ p k' w' ↔
+      ∀ i, C.chartValueL μ p k i w = C.chartValueL μ p k' i w' := by
+  simp only [funext_iff, chartValuesL_apply]
+
 /-- Forgetting the highest derivative does not change the chart data. -/
 @[simp]
 theorem chartValuesL_lowerOrderL (w : C.sobolevSections μ p (k + 1)) :
@@ -1198,6 +1207,15 @@ theorem ae_overlap_tangentHom_iff [MeasurableSpace E] (μ : Measure E) (i i' : F
     (∀ᵐ y ∂μ.restrict (A.tangentHom.sectionChartData.overlap i i'), P y) ↔
       ∀ᵐ y ∂μ.restrict (A.overlap i i'), P y := by
   rw [sectionChartData_overlap_tangentHom]
+
+/-- The chart images of the section chart data of `V`-valued one-forms have finite measure, for
+the indices of `A`. Instance search does not identify `Fin A.n` with `Fin A.tangentHom.n`, so this
+is a separate instance. -/
+instance isFiniteMeasure_restrict_sectionChartData_image_tangentHom [MeasurableSpace E]
+    (μ : Measure E) [IsFiniteMeasureOnCompacts μ] (i : Fin A.n) :
+    IsFiniteMeasure (μ.restrict (A.tangentHom.sectionChartData.image i : Set E)) := by
+  rw [sectionChartData_image_tangentHom]
+  infer_instance
 
 /-- On the overlap of charts `i` and `i'`, the coordinate change of the chart data of `V`-valued
 one-forms is `η ↦ g ∘ η ∘ dτ`, for the coordinate change `g` of `V` and the chart transition `τ`. -/

@@ -16,10 +16,10 @@ For signed hermitian spaces `(V₁, h₁)` and `(V₂, h₂)` over a commutative
 involution `σ`, of the same sign `ε`, this file defines the isometric equivalences between them,
 their orthogonal sum on `V₁ × V₂`, and the signed hermitian space carried by a subspace on which
 the form stays nondegenerate. These are the notions in which Witt cancellation
-(`TauCeti/LinearAlgebra/SesquilinearForm/SignedHermitianSpace/Witt.lean`) is stated. The unitary
-group `U(V)` of a signed hermitian space is the isometry group `LinearMap.isometryGroup H.form` of
-its form; its elements are the isometric equivalences of `H` with itself
-(`TauCeti.SignedHermitianSpace.IsometryEquiv.ofMemIsometryGroup`).
+(`TauCeti/LinearAlgebra/SesquilinearForm/SignedHermitianSpace/Witt/Basic.lean`) is stated. The
+unitary group `U(V)` of a signed hermitian space is the isometry group
+`LinearMap.isometryGroup H.form` of its form; its elements are the isometric equivalences of `H`
+with itself (`TauCeti.SignedHermitianSpace.IsometryEquiv.ofMemIsometryGroup`).
 
 ## Main definitions
 
@@ -35,6 +35,10 @@ its form; its elements are the isometric equivalences of `H` with itself
   left-separating exactly when `W` meets its orthogonal only in `0`.
 * `TauCeti.SignedHermitianSpace.Equivalent.prod`: orthogonal sums of equivalent spaces are
   equivalent.
+* `TauCeti.signedHermitianHomAdjoint_isometryEquiv`: over a field, the adjoint of an isometric
+  equivalence is its inverse.
+* `TauCeti.SignedHermitianSpace.mem_isometryGroup_iff_signedHermitianAdjoint_eq_symm`: an
+  automorphism `g` of a finite-dimensional space lies in `U(V)` exactly when `g* = g⁻¹`.
 
 ## Attribution
 
@@ -162,6 +166,12 @@ theorem ofMemIsometryGroup_apply {e : V ≃ₗ[K] V} (he : e ∈ H.form.isometry
     ofMemIsometryGroup he x = e x :=
   (rfl)
 
+/-- The linear equivalence underlying `ofMemIsometryGroup he` is `e`. -/
+@[simp]
+theorem toLinearEquiv_ofMemIsometryGroup {e : V ≃ₗ[K] V} (he : e ∈ H.form.isometryGroup) :
+    (ofMemIsometryGroup he).toLinearEquiv = e :=
+  (rfl)
+
 /-- The linear equivalence underlying an isometric equivalence of a space with itself lies in the
 unitary group of the space. -/
 theorem toLinearEquiv_mem_isometryGroup (f : IsometryEquiv H H) :
@@ -251,6 +261,42 @@ theorem Equivalent.prod {H₁ : SignedHermitianSpace K V₁ σ ε}
     Equivalent (H₁.prod H₂) (H₃.prod H₄) :=
   h.elim fun f ↦ h'.elim fun g ↦ ⟨f.prod g⟩
 
+/-- The orthogonal sum is commutative: `H₁ ⊥ H₂ ≅ H₂ ⊥ H₁`. -/
+def IsometryEquiv.prodComm (H₁ : SignedHermitianSpace K V₁ σ ε)
+    (H₂ : SignedHermitianSpace K V₂ σ ε) : IsometryEquiv (H₁.prod H₂) (H₂.prod H₁) :=
+  { LinearEquiv.prodComm K V₁ V₂ with
+    map_app' := fun x y ↦ by simp [add_comm] }
+
+@[simp]
+theorem IsometryEquiv.prodComm_apply (H₁ : SignedHermitianSpace K V₁ σ ε)
+    (H₂ : SignedHermitianSpace K V₂ σ ε) (x : V₁ × V₂) :
+    IsometryEquiv.prodComm H₁ H₂ x = x.swap :=
+  (rfl)
+
+/-- The orthogonal sum is associative: `(H₁ ⊥ H₂) ⊥ H₃ ≅ H₁ ⊥ (H₂ ⊥ H₃)`. -/
+def IsometryEquiv.prodAssoc (H₁ : SignedHermitianSpace K V₁ σ ε)
+    (H₂ : SignedHermitianSpace K V₂ σ ε) (H₃ : SignedHermitianSpace K V₃ σ ε) :
+    IsometryEquiv ((H₁.prod H₂).prod H₃) (H₁.prod (H₂.prod H₃)) :=
+  { LinearEquiv.prodAssoc K V₁ V₂ V₃ with
+    map_app' := fun x y ↦ by simp [add_assoc] }
+
+@[simp]
+theorem IsometryEquiv.prodAssoc_apply (H₁ : SignedHermitianSpace K V₁ σ ε)
+    (H₂ : SignedHermitianSpace K V₂ σ ε) (H₃ : SignedHermitianSpace K V₃ σ ε)
+    (x : (V₁ × V₂) × V₃) :
+    IsometryEquiv.prodAssoc H₁ H₂ H₃ x = (x.1.1, (x.1.2, x.2)) :=
+  (rfl)
+
+/-! ### Isometric maps -/
+
+/-- A linear map carrying the form of a signed hermitian space to the form of another is
+injective, because the first form is nondegenerate. -/
+theorem injective_of_form_apply_eq {H₁ : SignedHermitianSpace K V₁ σ ε}
+    {H₂ : SignedHermitianSpace K V₂ σ ε} {f : V₁ →ₗ[K] V₂}
+    (hf : ∀ x y, H₂.form (f x) (f y) = H₁.form x y) : Function.Injective f :=
+  (injective_iff_map_eq_zero f).2 fun x hx ↦ H₁.separatingLeft x fun y ↦ by
+    rw [← hf, hx, map_zero, LinearMap.zero_apply]
+
 /-! ### Nondegenerate subspaces -/
 
 variable (H : SignedHermitianSpace K V σ ε)
@@ -279,5 +325,35 @@ theorem restrict_form_apply (W : Submodule K V) (hW : (H.form.domRestrict₁₂ 
   (rfl)
 
 end SignedHermitianSpace
+
+/-! ### Adjoints of isometries -/
+
+section Adjoint
+
+variable {K V V₁ V₂ : Type*} [Field K] {σ : K →+* K} {ε : ℤˣ} [AddCommGroup V] [Module K V]
+  [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂] [Module K V₂]
+
+/-- The adjoint of an isometric equivalence is its inverse. -/
+@[simp]
+theorem signedHermitianHomAdjoint_isometryEquiv {H₁ : SignedHermitianSpace K V₁ σ ε}
+    {H₂ : SignedHermitianSpace K V₂ σ ε} [FiniteDimensional K V₁]
+    (f : SignedHermitianSpace.IsometryEquiv H₁ H₂) :
+    signedHermitianHomAdjoint H₁ H₂ f.toLinearEquiv = f.symm.toLinearEquiv :=
+  signedHermitianHomAdjoint_unique H₁ H₂ fun v w ↦ by
+    simpa using f.map_app v (f.symm w)
+
+/-- An automorphism `g` of a finite-dimensional signed hermitian space lies in its unitary group
+`U(V)`, the isometry group of the form, exactly when its adjoint is its inverse: `g* = g⁻¹`. -/
+theorem SignedHermitianSpace.mem_isometryGroup_iff_signedHermitianAdjoint_eq_symm
+    (H : SignedHermitianSpace K V σ ε) [FiniteDimensional K V] {g : V ≃ₗ[K] V} :
+    g ∈ H.form.isometryGroup ↔
+      signedHermitianAdjoint H (g : Module.End K V) = (g.symm : Module.End K V) := by
+  refine ⟨fun hg ↦ ?_, fun hg ↦ LinearMap.mem_isometryGroup_iff.2 fun x y ↦ ?_⟩
+  · simpa using signedHermitianHomAdjoint_isometryEquiv (IsometryEquiv.ofMemIsometryGroup hg)
+  · have h := signedHermitianAdjoint_form_right H (g : Module.End K V) x (g y)
+    rw [hg] at h
+    simpa using h.symm
+
+end Adjoint
 
 end TauCeti

@@ -51,7 +51,9 @@ particular no rotation of the circle is (`AddCircle.not_isExpansive_addRight`).
 
 * `TauCeti.isExpansiveAction_iff`, `TauCeti.isExpansive_iff`, `TauCeti.isPositivelyExpansive_iff`:
   the defining properties, with the eliminators `TauCeti.IsExpansive.exists_lt_dist` and
-  `TauCeti.IsPositivelyExpansive.exists_lt_dist`.
+  `TauCeti.IsPositivelyExpansive.exists_lt_dist`, and their contrapositives
+  `TauCeti.IsExpansive.eq_of_forall_dist_le` and
+  `TauCeti.IsPositivelyExpansive.eq_of_forall_dist_le`.
 * `Isometry.isExpansive_iff`: an isometric permutation is expansive with constant `δ` exactly when
   distinct points are more than `δ` apart.
 -/
@@ -151,6 +153,23 @@ positively expansive with constant `δ`. -/
 theorem IsPositivelyExpansive.exists_lt_dist {T : X → X} {δ : ℝ} (h : IsPositivelyExpansive T δ)
     {x y : X} (hxy : x ≠ y) : ∃ n : ℕ, δ < dist (T^[n] x) (T^[n] y) :=
   isPositivelyExpansive_iff.1 h x y hxy
+
+/-- Two points staying within distance `δ` at every time `n : ℤ` under a permutation that is
+expansive with constant `δ` are equal. -/
+theorem IsExpansive.eq_of_forall_dist_le {T : Equiv.Perm X} {δ : ℝ} (h : IsExpansive T δ)
+    {x y : X} (hxy : ∀ n : ℤ, dist ((T ^ n) x) ((T ^ n) y) ≤ δ) : x = y := by
+  by_contra hne
+  obtain ⟨n, hn⟩ := h.exists_lt_dist hne
+  exact (hxy n).not_gt hn
+
+/-- Two points staying within distance `δ` at every time `n : ℕ` under a map that is positively
+expansive with constant `δ` are equal. -/
+theorem IsPositivelyExpansive.eq_of_forall_dist_le {T : X → X} {δ : ℝ}
+    (h : IsPositivelyExpansive T δ) {x y : X} (hxy : ∀ n : ℕ, dist (T^[n] x) (T^[n] y) ≤ δ) :
+    x = y := by
+  by_contra hne
+  obtain ⟨n, hn⟩ := h.exists_lt_dist hne
+  exact (hxy n).not_gt hn
 
 /-- Expansiveness with constant `δ` implies expansiveness with every smaller constant. -/
 theorem IsExpansive.mono {T : Equiv.Perm X} {δ δ' : ℝ} (h : IsExpansive T δ) (hδ : δ' ≤ δ) :
