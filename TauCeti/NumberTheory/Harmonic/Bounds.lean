@@ -32,7 +32,7 @@ sum `∑_{j=1}^m 1/j`.
 * `Nat.sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq`:
   `∑ k ∈ Finset.Icc 1 n, Real.log k * k ^ (-σ) ≤ Real.exp c * (Real.log n) ^ 2` for all `n : ℕ`,
   `0 ≤ c`, and `1 - c / Real.log n ≤ σ`.
-* `TauCeti.sum_inv_le_one_add_log_of_injOn`: if `d i ≤ m` on a finite set `s` and `d` is
+* `Finset.sum_inv_le_one_add_log_of_injOn`: if `d i ≤ m` on a finite set `s` and `d` is
   injective on the points of `s` where it is positive, then `∑_{i ∈ s} (d i)⁻¹ ≤ 1 + log m`.
 -/
 
@@ -110,7 +110,7 @@ theorem sum_Icc_log_mul_rpow_neg_le_exp_mul_log_sq (n : ℕ) {c σ : ℝ} (hc : 
 
 end Nat
 
-namespace TauCeti
+namespace Finset
 
 /-- A map `d` into `[0, m]` that is injective where it is positive has `∑ (d i)⁻¹ ≤ 1 + log m`
 over any finite set `s`: its positive values are distinct elements of `[1, m]`. -/
@@ -130,4 +130,4 @@ theorem sum_inv_le_one_add_log_of_injOn {ι : Type*} (s : Finset ι) (m : ℕ) (
   · simpa only [harmonic_eq_sum_Icc (n := m), Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
       using harmonic_le_one_add_log m
 
-end TauCeti
+end Finset

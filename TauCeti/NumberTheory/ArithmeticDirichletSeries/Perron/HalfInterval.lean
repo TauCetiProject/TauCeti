@@ -39,9 +39,9 @@ private theorem sum_inv_half_grid_le (m : ℕ) :
       ≤ 2 * (1 + Real.log m) := by
   rw [sum_add_distrib, two_mul]
   refine add_le_add
-    (sum_inv_le_one_add_log_of_injOn (Icc 1 m) m (fun n ↦ m - 2 * n)
+    ((Icc 1 m).sum_inv_le_one_add_log_of_injOn m (fun n ↦ m - 2 * n)
       (fun n _ ↦ Nat.sub_le ..) ?_)
-    (sum_inv_le_one_add_log_of_injOn (Icc 1 m) m (fun n ↦ 2 * n - m)
+    ((Icc 1 m).sum_inv_le_one_add_log_of_injOn m (fun n ↦ 2 * n - m)
       (fun n hn ↦ by have := (mem_Icc.mp hn).2; omega) ?_) <;>
   · intro a ha b hb hab
     simp only [coe_filter, Set.mem_ofPred_eq] at ha hb
