@@ -883,11 +883,12 @@ variable {Y F : TopCat.{u}} {s t : Set Y} {s' t' : Set ↑(Y ⊗ F)}
 variable (F) in
 /-- The map `t × F ⟶ t'`, `(x, y) ↦ (x, y)`, onto a subspace `t'` of `Y × F` with the same points
 as `t × F`. -/
-@[expose] def prodSubspaceMap (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+def prodSubspaceMap (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
     TopCat.of t ⊗ F ⟶ TopCat.of t' :=
   ofHom ⟨fun x ↦ ⟨(x.1.val, x.2), (ht _).2 x.1.property⟩, by fun_prop⟩
 
 /-- `TopCat.prodSubspaceMap` sends `(x, y)` to `(x, y)`. -/
+@[simp]
 theorem prodSubspaceMap_apply (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : ↑(TopCat.of t ⊗ F)) :
     (prodSubspaceMap F ht x).val = (x.1.val, x.2) :=
   (rfl)
@@ -895,7 +896,7 @@ theorem prodSubspaceMap_apply (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : �
 /-- The pair `(t × F, fst⁻¹(s))`, the product of the pair `(t, s)` with `F` written with the
 preimage of `s` under the first projection, is the pair `(t', s')` of subspaces of `Y × F` with the
 same points as `t × F` and `s × F`. -/
-@[expose] def prodSubspacePairIso (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+def prodSubspacePairIso (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
     (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
     TopPair.ofSubset (fst (TopCat.of t) F ⁻¹' (Subtype.val ⁻¹' s)) ≅
       TopPair.ofInclusion hst' where
@@ -909,6 +910,37 @@ same points as `t × F` and `s × F`. -/
     rfl
   hom_inv_id := by ext : 2 <;> rfl
   inv_hom_id := by ext : 2 <;> rfl
+
+/-- On the ambient spaces, `TopCat.prodSubspacePairIso` is `TopCat.prodSubspaceMap`. -/
+lemma prodSubspacePairIso_hom_fst (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) :
+    TopPair.Hom.fst (prodSubspacePairIso hst' hs ht).hom = prodSubspaceMap F ht :=
+  (rfl)
+
+/-- On the subspaces, `TopCat.prodSubspacePairIso` sends `(x, y)` to `(x, y)`. -/
+@[simp]
+lemma prodSubspacePairIso_hom_snd_apply (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t)
+    (x : ↥(fst (TopCat.of t) F ⁻¹' (Subtype.val ⁻¹' s))) :
+    (TopPair.Hom.snd (prodSubspacePairIso hst' hs ht).hom x).val = (x.val.1.val, x.val.2) :=
+  (rfl)
+
+/-- On the ambient spaces, the inverse of `TopCat.prodSubspacePairIso` sends `(x, y)` to
+`(x, y)`. -/
+@[simp]
+lemma prodSubspacePairIso_inv_fst_apply (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : t') :
+    TopPair.Hom.fst (prodSubspacePairIso hst' hs ht).inv x =
+      (⟨x.val.1, (ht _).1 x.property⟩, x.val.2) :=
+  (rfl)
+
+/-- On the subspaces, the inverse of `TopCat.prodSubspacePairIso` sends `(x, y)` to `(x, y)`. -/
+@[simp]
+lemma prodSubspacePairIso_inv_snd_apply (hst' : s' ⊆ t') (hs : ∀ x, x ∈ s' ↔ fst Y F x ∈ s)
+    (ht : ∀ x, x ∈ t' ↔ fst Y F x ∈ t) (x : s') :
+    (TopPair.Hom.snd (prodSubspacePairIso hst' hs ht).inv x).val =
+      (⟨x.val.1, (ht _).1 (hst' x.property)⟩, x.val.2) :=
+  (rfl)
 
 end ProdSubspace
 

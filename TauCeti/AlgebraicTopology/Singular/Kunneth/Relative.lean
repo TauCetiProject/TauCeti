@@ -600,6 +600,7 @@ theorem whiskerRight_singularHomologyπ_comp_singularHomologyCrossRelOfInclusion
   have h₂ := singularHomologyCross_comp_singularHomologyπ (TopCat.of t) F (Subtype.val ⁻¹' s) R S
     a b n h
   have h₃ := TopPair.singularHomologyπ_naturality (prodSubspacePairIso hst' hs ht).hom (R ⊗ S) n
+  rw [prodSubspacePairIso_hom_fst] at h₃
   unfold singularHomologyCrossRelOfInclusion
   rw [← comp_whiskerRight_assoc, h₁]
   exact ((reassoc_of% h₂) _).symm.trans (congrArg (_ ≫ ·) h₃.symm)
@@ -638,8 +639,10 @@ theorem singularHomologyCrossRelOfInclusion_comp_singularHomologyδ (htr : t ⊆
       ConcreteCategory.congr_hom (prodPreimageFstIso_hom_comp_map (TopCat.of r) F
         (Subtype.val ⁻¹' t)) _
     have hi := TopPair.ofSubsetPreimageValIso_inv_snd_apply (hst := htr) x.1
-    exact Subtype.ext (Prod.ext ((congrArg (fun z ↦ (fst (TopCat.of r) F z).val) hP).trans
-      (congrArg Subtype.val hi)) (congrArg (snd (TopCat.of r) F) hP))
+    refine Subtype.ext (((prodSubspacePairIso_hom_snd_apply htr' ht hr _).trans ?_).trans
+      (prodSubspaceMap_apply ht x).symm)
+    exact Prod.ext ((congrArg (fun z ↦ (fst (TopCat.of r) F z).val) hP).trans
+      (congrArg Subtype.val hi)) (congrArg (snd (TopCat.of r) F) hP)
   -- The connecting maps are moved from the pair `(r', t')` to the product pair (`h₁`), across the
   -- relative cross product (`h₂`), and to the pair `(r, t)` (`h₃`); the cross product is then
   -- natural in the subspace (`h₄`). The composites mix the two descriptions of absolute homology,
