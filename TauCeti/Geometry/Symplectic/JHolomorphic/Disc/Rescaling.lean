@@ -94,15 +94,6 @@ section Rescaling
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
 
-/-- Rescaling the arguments by `t ≥ 0` multiplies the distance between two derivatives by `t`. -/
-private theorem norm_fderiv_comp_smul_sub_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (f g : F → E) {t : ℝ} (ht : 0 ≤ t) (x y : F) :
-    ‖fderiv ℝ (fun x ↦ f (t • x)) x - fderiv ℝ (fun x ↦ g (t • x)) y‖ ≤
-      t * ‖fderiv ℝ f (t • x) - fderiv ℝ g (t • y)‖ := by
-  rw [fderiv_comp_smul, fderiv_comp_smul, ← smul_sub]
-  refine (ContinuousLinearMap.opNorm_smul_le t _).trans_eq ?_
-  rw [Real.norm_of_nonneg ht]
-
 /-- Rescaling by `t ≥ 0` maps the ball of radius `4` into the ball of radius `r ≥ 4 t`. -/
 private theorem smul_mem_closedBall_of_four_mul_le {r t : ℝ} (ht : 0 ≤ t) (htr : 4 * t ≤ r)
     {x : F} (hx : ‖x‖ ≤ 4) : t • x ∈ closedBall (0 : F) r := by
@@ -130,7 +121,7 @@ private theorem rescale_bounds (J : F → F →L[ℝ] F) {r A L t η : ℝ} (ht 
           rw [norm_fderiv_comp_smul, abs_of_pos ht]
       _ ≤ t * A := by gcongr; exact hA _ (hmem x hx)
       _ ≤ η := htA
-  · refine (norm_fderiv_comp_smul_sub_le J J ht.le x y).trans ?_
+  · rw [norm_fderiv_comp_smul_sub, abs_of_pos ht]
     have hxy := hL _ (hmem x hx) _ (hmem y hy)
     rw [← smul_sub, norm_smul, Real.norm_of_nonneg ht.le] at hxy
     calc t * ‖fderiv ℝ J (t • x) - fderiv ℝ J (t • y)‖ ≤ t * (L * (t * ‖x - y‖)) := by gcongr
@@ -506,10 +497,9 @@ private theorem exists_rescale_neg_cayleyCoord [FiniteDimensional ℂ F] {P : Ty
   have h₂' := h₂ _ ⟨hp', hx'⟩ _ ⟨hp, hx'⟩ (hd.trans_le (min_le_right _ _))
   rw [dist_eq_norm] at h₁' h₂'
   refine ⟨h₁'.le, ?_⟩
-  exact (norm_fderiv_comp_smul_sub_le
-    (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J p' x))
-    (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J p x)) ht.le x x).trans
-    ((mul_le_mul ht1 h₂'.le (norm_nonneg _) zero_le_one).trans_eq (one_mul e))
+  rw [norm_fderiv_comp_smul_sub (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J p' x))
+    (fun x ↦ -cayleyCoord (ContinuousLinearMap.lsmul ℝ ℂ I) (J p x)), abs_of_pos ht]
+  exact (mul_le_mul ht1 h₂'.le (norm_nonneg _) zero_le_one).trans_eq (one_mul e)
 
 /-- **Beltrami discs for a compact family of rescaled structures.** Under the hypotheses of
 `exists_rescale_neg_cayleyCoord` and for `κ > 0`, there are a factor `t > 0`, a constant `C ≥ 0`
