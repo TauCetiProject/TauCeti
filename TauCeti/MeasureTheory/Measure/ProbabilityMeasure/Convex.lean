@@ -20,7 +20,7 @@ probability measures to be stated without rebuilding the probability-measure str
 * `TauCeti.MeasureTheory.isProbabilityMeasure_smul_add_smul` proves that the underlying measure
   has total mass one.
 * `TauCeti.MeasureTheory.measureReal_smul_add_smul_apply` evaluates the real-valued mass of a
-  combination `a • μ + b • ν` of finite measures with finite weights.
+  combination `a • μ + b • ν` with finite weights on a set of finite `μ`- and `ν`-measure.
 * `TauCeti.MeasureTheory.exists_mem_eq_smul_sum`: a set of probability measures closed under
   binary mixtures contains the uniform mixture of any finitely many of its members.
 * `MeasureTheory.ProbabilityMeasure.toMeasure_convexComb` identifies the underlying measure.
@@ -53,12 +53,14 @@ theorem isProbabilityMeasure_smul_add_smul {a b : ℝ≥0∞} (hab : a + b = 1) 
     [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] : IsProbabilityMeasure (a • μ + b • ν) :=
   ⟨by simp [hab]⟩
 
-/-- **Real mass of a combination.** For finite measures `μ`, `ν` and finite weights `a`, `b`, the
-real-valued mass of a set under `a • μ + b • ν` is `a μ(s) + b ν(s)`. -/
-theorem measureReal_smul_add_smul_apply {a b : ℝ≥0∞} (ha : a ≠ ∞) (hb : b ≠ ∞) (μ ν : Measure α)
-    [IsFiniteMeasure μ] [IsFiniteMeasure ν] (s : Set α) :
+/-- **Real mass of a combination.** For finite weights `a`, `b` and a set `s` of finite `μ`- and
+`ν`-measure, the real-valued mass of `s` under `a • μ + b • ν` is `a μ(s) + b ν(s)`. -/
+theorem measureReal_smul_add_smul_apply {a b : ℝ≥0∞} {μ ν : Measure α} {s : Set α}
+    (ha : a ≠ ∞ := by finiteness) (hb : b ≠ ∞ := by finiteness) (hμ : μ s ≠ ∞ := by finiteness)
+    (hν : ν s ≠ ∞ := by finiteness) :
     (a • μ + b • ν).real s = a.toReal * μ.real s + b.toReal * ν.real s := by
-  rw [measureReal_add_apply (by simp [ENNReal.mul_eq_top, ha]) (by simp [ENNReal.mul_eq_top, hb]),
+  rw [measureReal_add_apply (by simp [ENNReal.mul_eq_top, ha, hμ])
+      (by simp [ENNReal.mul_eq_top, hb, hν]),
     measureReal_ennreal_smul_apply, measureReal_ennreal_smul_apply]
 
 /-- **Uniform finite mixtures.** In a set `C` of probability measures closed under binary
