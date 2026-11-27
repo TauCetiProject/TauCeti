@@ -69,15 +69,6 @@ variable {A : Type*} [CommRing A] [StarRing A] {ι : Type*} [Fintype ι]
 
 /-! ### Quadric measures -/
 
-/-- The value of the form of a hyperbolic plane `(e, e')` plus `T`: for `v = xe + w + te'`,
-`h(v, v) = star x * t + star t * x + w*Tw`. -/
-theorem star_dotProduct_splitGram_mulVec (T : Matrix ι ι A) (v : SplitIndex 1 ι → A) :
-    star v ⬝ᵥ splitGram 1 T *ᵥ v =
-      star (v (.inl 0)) * v (.inr (.inr 0)) + star (v (.inr (.inr 0))) * v (.inl 0) +
-        star (fun i ↦ v (.inr (.inl i))) ⬝ᵥ T *ᵥ fun i ↦ v (.inr (.inl i)) := by
-  simp [dotProduct, mulVec, Fintype.sum_sum_type, Finset.mul_sum]
-  ring
-
 variable [TopologicalSpace A] [MeasureSpace A] (P : HermitianPlace A)
 
 /-- The chart `(t, w, a) ↦ ((star t)⁻¹ τ (δ⁻¹β - w*Tw) + t a) e + w + t e'` of the quadric

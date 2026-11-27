@@ -63,7 +63,7 @@ in `src/Lib/DiscreteSeries/Bruhat/FloorMeasures.lean`; the kernel bounds follow
 public section
 
 open MeasureTheory Matrix Filter Topology ComplexConjugate
-open scoped ENNReal
+open scoped ENNReal NNReal
 
 namespace TauCeti.HermitianPlace
 
@@ -87,6 +87,17 @@ def FourierSqNormLe (J : Matrix ι ι A) (ξ : A) (ρ ρ' : Measure (ι → A)) 
   ∀ φ : (ι → A) → ℂ, Measurable φ → Integrable φ ρ → (∀ y ∉ S, φ y = 0) →
     ∫⁻ v in S', ‖∫ y, (P.ψ (ξ * (star v ⬝ᵥ J *ᵥ y)) : ℂ) * φ y ∂ρ‖ₑ ^ 2 ∂ρ' ≤
       C * ∫⁻ y, ‖φ y‖ₑ ^ 2 ∂ρ
+
+/-- Unfolding a kernel bound: the kernel `ψ(ξ · v*Jy)` multiplies square norms by at most `C` from
+`(S, ρ)` to `(S', ρ')` iff `∫_{S'} |∫ ψ(ξ · v*Jy) φ(y) dρ(y)|² dρ'(v) ≤ C · ∫ |φ|² dρ` for every
+measurable `ρ`-integrable `φ` vanishing off `S`. -/
+theorem fourierSqNormLe_iff {J : Matrix ι ι A} {ξ : A} {ρ ρ' : Measure (ι → A)}
+    {S S' : Set (ι → A)} {C : ℝ≥0∞} :
+    P.FourierSqNormLe J ξ ρ ρ' S S' C ↔
+      ∀ φ : (ι → A) → ℂ, Measurable φ → Integrable φ ρ → (∀ y ∉ S, φ y = 0) →
+        ∫⁻ v in S', ‖∫ y, (P.ψ (ξ * (star v ⬝ᵥ J *ᵥ y)) : ℂ) * φ y ∂ρ‖ₑ ^ 2 ∂ρ' ≤
+          C * ∫⁻ y, ‖φ y‖ₑ ^ 2 ∂ρ :=
+  Iff.rfl
 
 /-- A kernel bound persists for smaller sets and a larger constant. -/
 theorem FourierSqNormLe.mono {J : Matrix ι ι A} {ξ : A} {ρ ρ' : Measure (ι → A)}
@@ -256,10 +267,10 @@ omit [ContinuousStar A] in
 unit frequency `η` divides it by `mod η ^ |ι|`. -/
 private theorem lintegral_enorm_integral_comp_smul_mul_ψ (η u : Aˣ) (D : (ι → A) → ℂ) :
     ∫⁻ z, ‖∫ v, D ((u : A) • v) * P.ψ (η * (star v ⬝ᵥ z))‖ₑ =
-      (P.modulus η)⁻¹ ^ Fintype.card ι * ∫⁻ z, ‖∫ v, D v * P.ψ (star v ⬝ᵥ z)‖ₑ := by
+      ((P.modulus η)⁻¹ ^ Fintype.card ι : ℝ≥0) * ∫⁻ z, ‖∫ v, D v * P.ψ (star v ⬝ᵥ z)‖ₑ := by
   set a : Aˣ := η * star u⁻¹
   have hpt (z : ι → A) : ∫ v, D ((u : A) • v) * P.ψ (η * (star v ⬝ᵥ z)) =
-      ((P.modulus u)⁻¹ ^ Fintype.card ι).toReal • ∫ v, D v * P.ψ (star v ⬝ᵥ ((a : A) • z)) := by
+      ((P.modulus u)⁻¹ ^ Fintype.card ι : ℝ≥0) • ∫ v, D v * P.ψ (star v ⬝ᵥ ((a : A) • z)) := by
     rw [← P.integral_comp_smul u]
     refine integral_congr_ae (Eventually.of_forall fun v ↦ ?_)
     have : star ((u : A) • v) ⬝ᵥ ((a : A) • z) = η * (star v ⬝ᵥ z) := by
@@ -268,23 +279,14 @@ private theorem lintegral_enorm_integral_comp_smul_mul_ψ (η u : Aˣ) (D : (ι 
       rw [← mul_assoc, mul_assoc (η : A), ← star_mul, Units.mul_inv, star_one, mul_one]
     beta_reduce
     rw [this]
-  have hmu0 := P.modulus_units_ne_zero u
-  have hmut := P.modulus_units_ne_top u
-  have ha : (P.modulus a)⁻¹ = (P.modulus η)⁻¹ * P.modulus u := by
-    simp only [a, Units.val_mul, Units.coe_star, map_mul, P.modulus_star, P.modulus_units_inv]
-    rw [ENNReal.mul_inv (Or.inr (ENNReal.inv_ne_top.2 hmu0)) (Or.inl (P.modulus_units_ne_top η)),
-      inv_inv]
-  have hr : ‖((P.modulus u)⁻¹ ^ Fintype.card ι).toReal‖ₑ = (P.modulus u)⁻¹ ^ Fintype.card ι := by
-    rw [Real.eNorm_eq_ofReal ENNReal.toReal_nonneg, ENNReal.ofReal_toReal
-      (ENNReal.pow_ne_top (ENNReal.inv_ne_top.2 hmu0))]
-  simp_rw [hpt, eNorm_smul, hr]
-  rw [lintegral_const_mul' _ _ (ENNReal.pow_ne_top (ENNReal.inv_ne_top.2 hmu0)),
-    P.lintegral_comp_smul a (fun z ↦ ‖∫ v, D v * P.ψ (star v ⬝ᵥ z)‖ₑ), ha]
-  calc (P.modulus u)⁻¹ ^ Fintype.card ι * (((P.modulus η)⁻¹ * P.modulus u) ^ Fintype.card ι *
-        ∫⁻ z, ‖∫ v, D v * P.ψ (star v ⬝ᵥ z)‖ₑ)
-      = ((P.modulus u)⁻¹ * P.modulus u) ^ Fintype.card ι * ((P.modulus η)⁻¹ ^ Fintype.card ι *
-          ∫⁻ z, ‖∫ v, D v * P.ψ (star v ⬝ᵥ z)‖ₑ) := by ring
-    _ = _ := by rw [ENNReal.inv_mul_cancel hmu0 hmut, one_pow, one_mul]
+  have hc : (P.modulus u)⁻¹ ^ Fintype.card ι * (P.modulus a)⁻¹ ^ Fintype.card ι =
+      (P.modulus η)⁻¹ ^ Fintype.card ι := by
+    rw [← mul_pow]
+    simp [a, P.modulus_star, P.modulus_ne_zero u]
+  simp_rw [hpt, NNReal.smul_def, eNorm_smul, NNReal.eNorm_eq]
+  rw [lintegral_const_mul' _ _ ENNReal.coe_ne_top,
+    P.lintegral_comp_smul a (fun z ↦ ‖∫ v, D v * P.ψ (star v ⬝ᵥ z)‖ₑ), ← mul_assoc,
+    ← ENNReal.coe_mul, hc]
 
 /-- **Plancherel's inequality** at a place: for a unit `η` and an integrable function `f` on
 `A^ι`, `∫ |∫ ψ(η · v*w) f(w) dw|² dv ≤ (c_A / mod η) ^ |ι| · ∫ |f|²`, where
@@ -307,7 +309,8 @@ theorem lintegral_enorm_integral_sq_le (η : Aˣ) {f : (ι → A) → ℂ} (hf :
       (fun v ↦ Finset.prod_nonneg fun i _ ↦ hG0 _) (hW n) hf).trans (mul_le_mul_left ?_ _)
     have := P.lintegral_enorm_integral_comp_smul_mul_ψ η (u n) (fun v ↦ (D v : ℂ))
     simp only [D] at this ⊢
-    rw [this, div_eq_mul_inv, mul_pow, mul_comm]
+    rw [this, div_eq_mul_inv, mul_pow, mul_comm, ENNReal.coe_pow,
+      ENNReal.coe_inv (P.modulus_ne_zero η)]
     exact mul_le_mul_left (P.lintegral_enorm_integral_prod_mul_ψ_le hGc hGi hG) _
   -- As `u n → 0`, the weights tend to `D 0 = 1`, and Fatou's lemma removes them.
   have hlim (v : ι → A) : Tendsto (fun n ↦ ENNReal.ofReal (D ((u n : A) • v)) * ‖F v‖ₑ ^ 2)

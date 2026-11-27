@@ -20,8 +20,8 @@ The field `ℂ` with complex conjugation is a place (`TauCeti.HermitianPlace.com
 * `τ = 1/2` and `δ = i/2`;
 * `ν` the image of Lebesgue measure under `t ↦ it`, so that `(a, b) ↦ τδ⁻¹a + b = -ia + b`
   carries `ν × ν` to Lebesgue measure on `ℂ`;
-* the modulus `mod x = |x|²`: a complex matrix `M` scales Lebesgue measure of `ℂⁿ` by
-  `|det M|²`, the real determinant of `M` (`TauCeti.map_mulVec_addHaar_eq_smul`);
+* the modulus `mod u = |u|²` of a unit `u`: a complex matrix `M` scales Lebesgue measure of `ℂⁿ`
+  by `|det M|²`, the real determinant of `M` (`TauCeti.map_mulVec_addHaar_eq_smul`);
 * the character `ψ(x) = exp(x - conj x) = exp(2i Im x)` (`TauCeti.HermitianPlace.complexChar`);
 * the Plancherel constant `c_ℂ = π²`, attained by the Gaussian `G(v) = exp(-|v|²)`, whose
   transform `w ↦ ∫ G(v) ψ(conj v * w) dv` is `π exp(-|w|²)`
@@ -53,7 +53,7 @@ PBC), file `src/Lib/DiscreteSeries/Bruhat/ComplexPlace.lean`.
 public section
 
 open MeasureTheory Matrix Complex ComplexConjugate
-open scoped ENNReal Real
+open scoped ENNReal NNReal Real
 
 namespace TauCeti.HermitianPlace
 
@@ -71,15 +71,15 @@ theorem complexChar_apply (x : ℂ) : (complexChar x : ℂ) = Complex.exp (x - c
 theorem continuous_complexChar : Continuous complexChar :=
   Circle.exp.continuous.comp (continuous_const.mul continuous_im)
 
-/-- The modulus `x ↦ |x|²` of `ℂ`. -/
-noncomputable def complexModulus : ℂ →* ℝ≥0∞ where
-  toFun x := ‖x‖ₑ ^ 2
+/-- The modulus `u ↦ |u|²` of the units of `ℂ`. -/
+noncomputable def complexModulus : ℂˣ →* ℝ≥0 where
+  toFun u := ‖(u : ℂ)‖₊ ^ 2
   map_one' := by simp
   map_mul' x y := by simp [mul_pow]
 
-/-- `mod x = |x|²`. -/
+/-- `mod u = |u|²`. -/
 @[simp]
-theorem complexModulus_apply (x : ℂ) : complexModulus x = ‖x‖ₑ ^ 2 := (rfl)
+theorem complexModulus_apply (u : ℂˣ) : complexModulus u = ‖(u : ℂ)‖₊ ^ 2 := (rfl)
 
 /-- The imaginary axis `t ↦ it`, as an isomorphism of topological groups from `ℝ` onto the skew
 elements of `ℂ`. -/
@@ -163,7 +163,7 @@ theorem lintegral_enorm_integral_gaussian_mul_complexChar :
   norm_num [sq]
 
 /-- The complex numbers with complex conjugation are a place, with `τ = 1/2`, `δ = i/2`, `ν` the
-image of Lebesgue measure under `t ↦ it`, the modulus `mod x = |x|²`, the character
+image of Lebesgue measure under `t ↦ it`, the modulus `mod u = |u|²`, the character
 `ψ(x) = exp(x - conj x)` and the Plancherel constant `c_ℂ = π²`. -/
 noncomputable def complex : HermitianPlace ℂ where
   τ := 2⁻¹
@@ -176,11 +176,12 @@ noncomputable def complex : HermitianPlace ℂ where
     convert map_prod_imaginaryAxisEquiv using 3 with p
     simp [div_eq_mul_inv, mul_comm]
   modulus := complexModulus
-  measurable_modulus := measurable_eNorm.pow_const 2
-  modulus_star x := by simp
-  map_mulVec_fin _ M hM := by
-    simpa [← ofReal_norm, ENNReal.ofReal_pow] using
-      map_mulVec_addHaar_eq_smul (μ := volume) hM.ne_zero
+  measurable_modulus := (measurable_nnNorm.comp (comap_measurable Units.val)).pow_const 2
+  modulus_star u := by simp
+  map_mulVec_fin _ M u hM := by
+    have h := map_mulVec_addHaar_eq_smul (μ := volume) (u := M) (hM ▸ u.ne_zero)
+    rw [hM] at h
+    simpa [ENNReal.smul_def, eNorm_eq_nnNorm] using h
   ψ := complexChar
   continuous_ψ := continuous_complexChar
   plancherelConst := ENNReal.ofReal (π ^ 2)
@@ -191,13 +192,12 @@ noncomputable def complex : HermitianPlace ℂ where
   ae_isUnit := (Measure.ae_ne volume 0).mono fun _ hx ↦ isUnit_iff_ne_zero.2 hx
   exists_locallyIntegrable := ⟨fun u ↦ ‖u‖⁻¹, by
     simpa [Real.rpow_neg_one] using locallyIntegrable_norm_sub_rpow (mu := volume) (s := -1)
-      (by simp [Complex.finrank_real_complex]) (0 : ℂ), fun u ↦ by
-    simp [← ofReal_norm, ENNReal.ofReal_inv_of_pos (norm_pos_iff.2 u.ne_zero), ENNReal.inv_pow]⟩
+      (by simp [Complex.finrank_real_complex]) (0 : ℂ), fun u ↦ by simp⟩
 
 @[simp] theorem complex_τ : complex.τ = 2⁻¹ := (rfl)
 @[simp] theorem coe_complex_δ : (complex.δ : ℂ) = I / 2 := (rfl)
 @[simp] theorem complex_ν : complex.ν = (volume : Measure ℝ).map imaginaryAxisEquiv := (rfl)
-@[simp] theorem complex_modulus (x : ℂ) : complex.modulus x = ‖x‖ₑ ^ 2 := (rfl)
+@[simp] theorem complex_modulus (u : ℂˣ) : complex.modulus u = ‖(u : ℂ)‖₊ ^ 2 := (rfl)
 @[simp] theorem complex_ψ : complex.ψ = complexChar := (rfl)
 @[simp] theorem complex_plancherelConst : complex.plancherelConst = ENNReal.ofReal (π ^ 2) := (rfl)
 
