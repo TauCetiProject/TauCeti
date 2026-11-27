@@ -29,7 +29,7 @@ monomial `t^P` to itself. The twisted complexes are compared along it, by semili
 the stabilized one (`TauCeti.HeegaardRegionSystem.ReferenceDomains.stabilize`): the reference
 generator of `x ∪ {x₀}` is `x₀' ∪ {x₀}` for the reference generator `x₀'` of `x`, with the same
 reference domain `D_x`. A counted domain from `x ∪ {x₀}` to `y ∪ {x₀}` is a counted domain from `x`
-to `y`, with the same label (`TauCeti.HeegaardRegionSystem.ReferenceDomains.label_stabilize`), so
+to `y`, with the same label (`TauCeti.HeegaardRegionSystem.ReferenceDomains.stabilize_label`), so
 the twisted coefficients correspond under the ring isomorphism
 (`TauCeti.HeegaardRegionSystem.twistedHatCoefficient_stabilize`), and the identification of chains
 `x ↦ x ∪ {x₀}` with coefficients carried by the ring isomorphism
@@ -184,7 +184,7 @@ theorem stabilize_domain (x : H.Generator) :
 /-- The label of a domain from `x ∪ {x₀}` to `y ∪ {x₀}` in the stabilized diagram is its label
 from `x` to `y` in the original diagram. -/
 @[simp]
-theorem label_stabilize (x y : H.Generator) (D : Region → ℤ) :
+theorem stabilize_label (x y : H.Generator) (D : Region → ℤ) :
     (r.stabilize r₀).label (H.stabilizeGenerator r₀ x) (H.stabilizeGenerator r₀ y) D =
       r.label x y D := by
   simp [label_def]
