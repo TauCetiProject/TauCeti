@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Order.Star.Basic
 public import Mathlib.Algebra.Star.MonoidHom
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Algebra.Star.Unitary
+public import Mathlib.Logic.Small.Basic
 public import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -39,6 +40,7 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 * `Unitization.mul_inr`, `Unitization.inr_mul_eq_inr`: `A` is a two-sided ideal of
   `Unitization R A`.
 * `Unitization.inr_snd_of_fst_eq_zero`: an element with scalar part `0` lies in `A`.
+* `Unitization.instSmall`: the unitization of `w`-small types is `w`-small.
 * `Unitization.instModuleMulOpposite`: `A` is a right `Unitization R A`-module, by
   `a • x = x.fst • a + a * x.snd` (`Unitization.inr_op_smul`).
 * `Unitization.conjStar`: the element `u * x * star u` of `A`, for `u` in the unitization and
@@ -77,6 +79,8 @@ unitization are Murray–von Neumann equivalent in `A`, through the partial isom
 
 public section
 
+universe w
+
 namespace Unitization
 
 /-- A nonunital algebra `A` is a left ideal of its unitization: `x * a` lies in `A`, with value
@@ -97,6 +101,10 @@ theorem inr_mul_eq_inr {R A : Type*} [MulZeroClass R] [NonUnitalNonAssocSemiring
 theorem inr_snd_of_fst_eq_zero {R A : Type*} [Zero R] {w : Unitization R A} (h : w.fst = 0) :
     (inr w.snd : Unitization R A) = w :=
   Unitization.ext (by simp [h]) rfl
+
+/-- The unitization `R ⊕ A` is `w`-small when `R` and `A` are. -/
+instance instSmall {R A : Type*} [Small.{w} R] [Small.{w} A] : Small.{w} (Unitization R A) :=
+  small_of_injective toProd_injective
 
 section RightModule
 

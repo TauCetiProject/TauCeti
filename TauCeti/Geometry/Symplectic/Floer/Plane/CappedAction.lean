@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Capped
 public import Mathlib.Analysis.SpecialFunctions.PolarCoord
-import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import TauCeti.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.MeasureTheory.Integral.PolarCoord
 import TauCeti.Topology.MetricSpace.Annulus
@@ -189,42 +188,19 @@ private theorem mpullback_comp_endDisc_apply (φ : RoughForm I M F 2) {u : ℝ �
       (2 * π * p.endSign * Real.exp (2 * π * R) * (Real.exp (2 * π * R) * z.1)) •
         mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (p.endDisc R z) ![(1, 0), (0, 1)] := by
   set q : ℝ × ℝ := (Real.exp (2 * π * R) * z.1, 2 * π * p.endSign * z.2)
-  rw [mpullback_comp_apply_of_hasFDerivAt (p.hasFDerivAt_endDisc R z) hu]
-  -- Read the pullback along `u` as a flat form on the plane, whose tangent spaces are `ℝ × ℝ`.
-  let ψ : (ℝ × ℝ) [⋀^Fin 2]→L[ℝ] F := mpullback 𝓘(ℝ, ℝ × ℝ) I u φ (p.endDisc R z)
-  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply ψ _ _).trans ?_
-  set B := ψ.toMultilinearMap.toBilinMap
-  have hB (v w : ℝ × ℝ) : ψ ![v, w] = B v w := (MultilinearMap.toBilinMap_apply _ v w).symm
-  have h2 (v w : ℝ × ℝ) : B v w - B w v = (2 : ℝ) • B v w := by
-    rw [← ψ.toAlternatingMap.isAlt_toBilinMap.neg v w, sub_neg_eq_add, two_smul]
-  -- The polar Jacobian identity, for `B` in the real coordinates of `ℂ`.
-  have key := B.apply_exp_circleMap_sub_swap Complex.equivRealProdCLM.toLinearMap q.1 q.2
-  rw [h2, h2, smul_comm] at key
-  have key' := smul_right_injective F (two_ne_zero' ℝ) key
-  have h₁ : fderivPolarCoordSymm q (1, 0) =
-      Complex.equivRealProdCLM (Complex.exp (q.2 * Complex.I)) := by
-    rw [← equivRealProd_symm_fderivPolarCoordSymm_apply_one_zero,
-      ContinuousLinearEquiv.apply_symm_apply]
-  have h₂ : fderivPolarCoordSymm q (0, 1) =
-      Complex.equivRealProdCLM (circleMap 0 q.1 q.2 * Complex.I) := by
-    rw [← equivRealProd_symm_fderivPolarCoordSymm_apply_zero_one,
-      ContinuousLinearEquiv.apply_symm_apply]
-  have he₁ : Complex.equivRealProdCLM 1 = ((1 : ℝ), (0 : ℝ)) := by simp
-  have he₂ : Complex.equivRealProdCLM Complex.I = ((0 : ℝ), (1 : ℝ)) := by simp
-  have hq : B (fderivPolarCoordSymm q (1, 0)) (fderivPolarCoordSymm q (0, 1)) =
-      q.1 • B (1, 0) (0, 1) := by
-    rw [h₁, h₂, ← he₁, ← he₂]
-    exact key'
-  have hv : (((fderivPolarCoordSymm q).comp
+  -- The Jacobian of the end disc is that of the inverse polar map, `exp (2πR) r`, times that of
+  -- the scaling `(r, t) ↦ (exp (2πR) r, 2π ε t)`.
+  have hdet : ((fderivPolarCoordSymm q).comp
       ((Real.exp (2 * π * R) • ContinuousLinearMap.fst ℝ ℝ ℝ).prod
-        ((2 * π * p.endSign) • ContinuousLinearMap.snd ℝ ℝ ℝ))) ∘ ![(1, 0), (0, 1)]) =
-      ![Real.exp (2 * π * R) • fderivPolarCoordSymm q (1, 0),
-        (2 * π * p.endSign) • fderivPolarCoordSymm q (0, 1)] := by
-    funext i
-    fin_cases i <;> simp [← map_smul]
-  refine (congrArg ψ hv).trans ((hB _ _).trans ?_)
-  rw [map_smul, map_smul, LinearMap.smul_apply, hq, smul_smul, smul_smul]
-  exact congrArg₂ (· • ·) (by ring) (hB _ _).symm
+        ((2 * π * p.endSign) • ContinuousLinearMap.snd ℝ ℝ ℝ))).det =
+      2 * π * p.endSign * Real.exp (2 * π * R) * (Real.exp (2 * π * R) * z.1) := by
+    rw [ContinuousLinearMap.det, ContinuousLinearMap.toLinearMap_comp, LinearMap.det_comp,
+      ← ContinuousLinearMap.det, det_fderivPolarCoordSymm, LinearMap.det_finTwoProd]
+    simp only [q, ContinuousLinearMap.coe_coe, ContinuousLinearMap.prod_apply,
+      smul_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
+      smul_eq_mul, mul_one, mul_zero, sub_zero]
+    ring
+  rw [mpullback_comp_apply_eq_det_smul φ (p.hasFDerivAt_endDisc R z) hu, hdet]
 
 /-- Over the arc of angles `[0, 2π ε]`, a `2π`-periodic function integrates to `ε` times its
 integral over one period. -/
