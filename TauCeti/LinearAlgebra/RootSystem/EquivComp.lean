@@ -334,8 +334,7 @@ theorem map_coreflection_refl (P : RootPairing ι R M N) (e : ι ≃ ι₂) (i :
 theorem range_map_reflection_refl (P : RootPairing ι R M N) (e : ι ≃ ι₂) :
     Set.range (P.map e (LinearEquiv.refl R M) (LinearEquiv.refl R N)).reflection =
       Set.range P.reflection := by
-  rw [show (P.map e (LinearEquiv.refl R M) (LinearEquiv.refl R N)).reflection =
-      fun i ↦ P.reflection (e.symm i) from funext (P.map_reflection_refl e)]
+  rw [funext (P.map_reflection_refl e)]
   exact e.symm.surjective.range_comp P.reflection
 
 /-- Reindexing and keeping both spaces unchanged preserves the set of coreflections. -/
@@ -343,8 +342,7 @@ theorem range_map_reflection_refl (P : RootPairing ι R M N) (e : ι ≃ ι₂) 
 theorem range_map_coreflection_refl (P : RootPairing ι R M N) (e : ι ≃ ι₂) :
     Set.range (P.map e (LinearEquiv.refl R M) (LinearEquiv.refl R N)).coreflection =
       Set.range P.coreflection := by
-  rw [show (P.map e (LinearEquiv.refl R M) (LinearEquiv.refl R N)).coreflection =
-      fun i ↦ P.coreflection (e.symm i) from funext (P.map_coreflection_refl e)]
+  rw [funext (P.map_coreflection_refl e)]
   exact e.symm.surjective.range_comp P.coreflection
 
 end Map

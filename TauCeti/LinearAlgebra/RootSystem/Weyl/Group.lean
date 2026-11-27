@@ -77,7 +77,9 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   commuting reflections.
 * `RootPairing.weylGroup.ofIdx_reflectionPerm_self` and `RootPairing.weylGroup.ofIdx_neg` say
   negating a root index does not change the associated Weyl-group reflection.
-* `RootPairing.weylGroupFlipEquiv` identifies `P.weylGroup` with `P.flip.weylGroup`,
+* `RootPairing.weylGroup_map_autFlip` shows `Equiv.autFlip P` maps `P.weylGroup` onto
+  `P.flip.weylGroup`, `RootPairing.weylGroupFlipEquiv` identifies `P.weylGroup` with
+  `P.flip.weylGroup`,
   `RootPairing.exists_flip_weylGroup_smul_eq_coweightEquiv` realizes each coweight action of the
   Weyl group as a weight action of the flipped Weyl group,
   `RootPairing.exists_weylGroup_coweightEquiv_eq_flip_smul` is its converse, and
@@ -489,44 +491,26 @@ theorem weylGroup.ofIdx_neg (i : ι) :
   simp [indexNeg_neg]
 
 /-- `Equiv.autFlip P` maps `P.weylGroup` onto `P.flip.weylGroup`. -/
+@[simp]
+theorem weylGroup_map_autFlip :
+    P.weylGroup.map (Equiv.autFlip P : P.Aut →* P.flip.Aut) = P.flip.weylGroup := by
+  rw [weylGroup, MonoidHom.map_closure, ← Set.range_comp]
+  simp only [Function.comp_def, MonoidHom.coe_ofClass, Equiv.autFlip_reflection]
+  rfl
+
+/-- `Equiv.autFlip P` carries `P.weylGroup` onto `P.flip.weylGroup` at the membership level. -/
 theorem Equiv.autFlip_mem_weylGroup_iff (f : P.Aut) :
     Equiv.autFlip P f ∈ P.flip.weylGroup ↔ f ∈ P.weylGroup := by
-  constructor
-  · suffices ∀ g ∈ P.flip.weylGroup, (Equiv.autFlip P).symm g ∈ P.weylGroup from
-      fun hg ↦ by simpa using this _ hg
-    intro g hg
-    induction hg using weylGroup.induction with
-    | mem i =>
-      rw [← Equiv.autFlip_reflection, MulEquiv.symm_apply_apply]
-      exact reflection_mem_weylGroup P i
-    | one =>
-      rw [map_one]
-      exact one_mem _
-    | mul _ _ _ _ ihx ihy =>
-      rw [map_mul]
-      exact mul_mem ihx ihy
-  · intro hf
-    induction hf using weylGroup.induction with
-    | mem i =>
-      rw [Equiv.autFlip_reflection]
-      exact reflection_mem_weylGroup P.flip i
-    | one =>
-      rw [map_one]
-      exact one_mem _
-    | mul _ _ _ _ ihx ihy =>
-      rw [map_mul]
-      exact mul_mem ihx ihy
+  rw [← P.weylGroup_map_autFlip, Subgroup.mem_map]
+  exact ⟨fun ⟨g, hg, hgf⟩ ↦ (Equiv.autFlip P).injective hgf ▸ hg,
+    fun hf ↦ ⟨f, hf, rfl⟩⟩
 
 /-- **Isomorphism between the Weyl group and the flipped Weyl group**, sending each reflection to
 the corresponding reflection of `P.flip` and intertwining the inverse coweight action with the
 flipped weight action. -/
-noncomputable def weylGroupFlipEquiv : P.weylGroup ≃* P.flip.weylGroup where
-  toFun w := ⟨Equiv.autFlip P w, (Equiv.autFlip_mem_weylGroup_iff P w).mpr w.property⟩
-  invFun u := ⟨(Equiv.autFlip P).symm u,
-    (Equiv.autFlip_mem_weylGroup_iff P _).mp (by simp)⟩
-  left_inv w := Subtype.ext ((Equiv.autFlip P).symm_apply_apply w)
-  right_inv u := Subtype.ext ((Equiv.autFlip P).apply_symm_apply u)
-  map_mul' _ _ := Subtype.ext (map_mul _ _ _)
+noncomputable def weylGroupFlipEquiv : P.weylGroup ≃* P.flip.weylGroup :=
+  (MulEquiv.subgroupMap (Equiv.autFlip P) P.weylGroup).trans
+    (MulEquiv.subgroupCongr P.weylGroup_map_autFlip)
 
 /-- The underlying automorphism of `weylGroupFlipEquiv P w` is `Equiv.autFlip P w`. -/
 @[simp]
