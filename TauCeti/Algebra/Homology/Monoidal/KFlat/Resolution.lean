@@ -252,29 +252,6 @@ public lemma prop_sequence_obj_X (Q : ObjectProperty C) [Q.IsClosedUnderIsomorph
 
 end Sequence
 
-section KFlat
-
-variable [MonoidalCategory C] [MonoidalPreadditive C]
-  [∀ K L : CochainComplex C ℤ, HasTensor K L]
-  [HasColimitsOfShape (Discrete ℤ) C] [HasExactColimitsOfShape (Discrete ℤ) C]
-  [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
-
-/-- Every stage of the resolution is K-flat. -/
-lemma isKFlat_stage (E : C → C) (p : ∀ X, E X ⟶ X)
-    [∀ X, PreservesFiniteLimits (tensorLeft (E X))]
-    [∀ X, PreservesFiniteColimits (tensorLeft (E X))] (K : CochainComplex C ℤ) :
-    ∀ k, (stage E p K k).1.IsKFlat
-  | 0 => isKFlat_of_d_eq_zero (graded (.up ℤ) fun n ↦ E (K.cycles n)) fun _ _ ↦ rfl
-  | k + 1 => by
-    -- the next stage is the mapping cone of a morphism from the cell complex, which has zero
-    -- differentials, to the previous stage
-    have : IsKFlat (graded (.up ℤ) fun n ↦ E (boundaryPairs (stage E p K k).2 n)) :=
-      isKFlat_of_d_eq_zero _ fun _ _ ↦ rfl
-    have := isKFlat_stage E p K k
-    exact isKFlat_mappingCone _
-
-end KFlat
-
 end kFlatResolution
 
 section Resolution
@@ -307,21 +284,6 @@ resolution of `K` is quasi-isomorphic to `K`. -/
 public instance kFlatResolution.quasiIso_π [HasExactColimitsOfShape ℕ C] [∀ X, Epi (p X)] :
     QuasiIso (kFlatResolution.π E p K) :=
   kFlatResolution.quasiIso_colimit_desc E p K
-
-/-- The resolution `kFlatResolution E p K` is K-flat when the objects `E X` are flat, and
-countable coproducts and sequential colimits are exact and commute with tensoring by each
-object. -/
-public instance isKFlat_kFlatResolution [MonoidalCategory C] [MonoidalPreadditive C]
-    [∀ K L : CochainComplex C ℤ, HasTensor K L]
-    [HasExactColimitsOfShape ℕ C] [∀ X : C, PreservesColimitsOfShape ℕ (tensorRight X)]
-    [HasColimitsOfShape (Discrete ℤ) C] [HasExactColimitsOfShape (Discrete ℤ) C]
-    [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
-    [∀ X, PreservesFiniteLimits (tensorLeft (E X))]
-    [∀ X, PreservesFiniteColimits (tensorLeft (E X))] :
-    (kFlatResolution E p K).IsKFlat :=
-  have : ∀ k, ((kFlatResolution.sequence E p K).obj k).IsKFlat :=
-    kFlatResolution.isKFlat_stage E p K
-  isKFlat_of_isColimit (colimit.isColimit _)
 
 /-- The terms of the resolution `kFlatResolution E p K` are flat when the objects `E X` are flat,
 and sequential colimits are exact and commute with tensoring by each object. -/
@@ -397,6 +359,31 @@ public theorem _root_.CategoryTheory.Functor.isKFlat_map_kFlatResolution (F : C 
     (isColimitOfPreserves (F.mapHomologicalComplex (.up ℤ)) (colimit.isColimit _))
 
 end MapResolution
+
+section Resolution
+
+variable [HasColimitsOfShape ℕ C] (E : C → C) (p : ∀ X, E X ⟶ X) (K : CochainComplex C ℤ)
+
+/-- The resolution `kFlatResolution E p K` is K-flat when the objects `E X` are flat, and
+countable coproducts and sequential colimits are exact and commute with tensoring by each
+object. -/
+public instance isKFlat_kFlatResolution [MonoidalCategory C] [MonoidalPreadditive C]
+    [∀ K L : CochainComplex C ℤ, HasTensor K L]
+    [HasExactColimitsOfShape ℕ C] [∀ X : C, PreservesColimitsOfShape ℕ (tensorRight X)]
+    [HasColimitsOfShape (Discrete ℤ) C] [HasExactColimitsOfShape (Discrete ℤ) C]
+    [∀ X : C, PreservesColimitsOfShape (Discrete ℤ) (tensorRight X)]
+    [∀ X, PreservesFiniteLimits (tensorLeft (E X))]
+    [∀ X, PreservesFiniteColimits (tensorLeft (E X))] :
+    (kFlatResolution E p K).IsKFlat := by
+  have (X : C) : PreservesFiniteLimits (tensorLeft ((𝟭 C).obj (E X))) :=
+    inferInstanceAs (PreservesFiniteLimits (tensorLeft (E X)))
+  have (X : C) : PreservesFiniteColimits (tensorLeft ((𝟭 C).obj (E X))) :=
+    inferInstanceAs (PreservesFiniteColimits (tensorLeft (E X)))
+  have := (𝟭 C).isKFlat_map_kFlatResolution E p K
+  exact isKFlat_of_iso
+    ((Functor.mapHomologicalComplexIdIso C (.up ℤ)).app (kFlatResolution E p K))
+
+end Resolution
 
 /-- **K-flat resolutions of unbounded complexes.** Let `C` be an abelian monoidal category in which
 every object is a quotient of a flat object, and in which countable coproducts and sequential

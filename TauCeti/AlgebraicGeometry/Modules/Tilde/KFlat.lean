@@ -61,22 +61,13 @@ instance isKFlat_tilde_map_kFlatResolutionFunctor_obj
     IsKFlat (((tilde.functor R).mapHomologicalComplex (.up ℤ)).obj
       ((kFlatResolutionFunctor
         (forget (ModuleCat.{u} R) ⋙ ModuleCat.free R) (ModuleCat.adj R).counit).obj K)) := by
-  have : AB5OfSize.{0, 0} (Spec R).Modules := AB5OfSize_of_univLE.{0, 0, u, u} _
-  have : HasFiniteBiproducts (Spec R).Modules := Abelian.hasFiniteBiproducts
-  have : CountableAB4 (Spec R).Modules := CountableAB4.of_countableAB5 _
+  -- `Scheme.Modules` has its own category instance, so apply the site-level instance explicitly.
+  have : AB5OfSize.{0, 0} (Spec R).Modules :=
+    _root_.SheafOfModules.instAB5OfSizeSmall _
   have (X : ModuleCat.{u} R) : PreservesFiniteLimits (tensorLeft
       ((tilde.functor R).obj ((forget (ModuleCat.{u} R) ⋙ ModuleCat.free R).obj X))) :=
     preservesFiniteLimits_tensorLeft_tilde_free R X
   rw [kFlatResolutionFunctor_obj]
   exact (tilde.functor R).isKFlat_map_kFlatResolution _ _ K
-
-/-- The natural augmentation of the free cellular resolution remains a quasi-isomorphism
-after taking the associated sheaf in every degree. -/
-instance quasiIso_tilde_map_kFlatResolutionNatTrans_app
-    (K : CochainComplex (ModuleCat.{u} R) ℤ) :
-    QuasiIso (((tilde.functor R).mapHomologicalComplex (.up ℤ)).map
-      ((kFlatResolutionNatTrans
-        (forget (ModuleCat.{u} R) ⋙ ModuleCat.free R) (ModuleCat.adj R).counit).app K)) :=
-  HomologicalComplex.quasiIso_map_of_preservesHomology _ (tilde.functor R)
 
 end TauCeti.AlgebraicGeometry

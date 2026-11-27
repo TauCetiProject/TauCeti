@@ -24,7 +24,7 @@ product of unbounded complexes of modules. This is the case of
 on its elements.
 
 The native functorial cellular resolution with the free-forgetful counit is K-flat as well
-(`CochainComplex.isKFlat_free_kFlatResolutionFunctor_obj`), so its natural augmentation can be
+(`CochainComplex.isKFlat_kFlatResolutionFunctor_obj`), so its natural augmentation can be
 used without making nonfunctorial choices of covers.
 
 ## References
@@ -36,22 +36,25 @@ public section
 
 open CategoryTheory Limits
 
-namespace CochainComplex
-
 universe u
+
+namespace ModuleCat
 
 variable {R : Type u} [CommRing R]
 
-/-- The native functorial resolution by free cells is K-flat over a commutative ring. -/
-instance isKFlat_free_kFlatResolutionFunctor_obj (K : CochainComplex (ModuleCat.{u} R) ℤ) :
-    IsKFlat ((kFlatResolutionFunctor
-      (CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free R)
-      (ModuleCat.adj R).counit).obj K) := by
-  have (X : ModuleCat.{u} R) : PreservesFiniteLimits (MonoidalCategory.tensorLeft
-      ((CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free R).obj X)) :=
-    inferInstanceAs (PreservesFiniteLimits (MonoidalCategory.tensorLeft
-      ((ModuleCat.free R).obj X)))
-  exact isKFlat_kFlatResolutionFunctor_obj _ _ K
+/-- Tensoring with the free module on the elements of a module preserves finite limits.
+This instance exposes the free object through composition of the forgetful and free functors. -/
+instance preservesFiniteLimits_tensorLeft_forget_comp_free_obj (X : ModuleCat.{u} R) :
+    PreservesFiniteLimits (MonoidalCategory.tensorLeft
+      ((CategoryTheory.forget (ModuleCat.{u} R) ⋙ ModuleCat.free R).obj X)) := by
+  dsimp only [Functor.comp_obj]
+  infer_instance
+
+end ModuleCat
+
+namespace CochainComplex
+
+variable {R : Type u} [CommRing R]
 
 /-- Every possibly unbounded complex of modules over a commutative ring admits a
 quasi-isomorphism from a K-flat complex. -/

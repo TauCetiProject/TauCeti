@@ -58,9 +58,7 @@ example (f : K ⟶ L) :
 -- Arbitrarily large bases in each degree; no upper or lower support bound.
 example (I : ℤ → Type u) : IsKFlat (((tilde.functor R).mapHomologicalComplex (.up ℤ)).obj
     (graded (.up ℤ) fun n ↦ (ModuleCat.free R).obj (I n))) := by
-  have : AB5OfSize.{0, 0} (Spec R).Modules := AB5OfSize_of_univLE.{0, 0, u, u} _
-  have : HasFiniteBiproducts (Spec R).Modules := Abelian.hasFiniteBiproducts
-  have : CountableAB4 (Spec R).Modules := CountableAB4.of_countableAB5 _
+  have : AB5OfSize.{0, 0} (Spec R).Modules := SheafOfModules.instAB5OfSizeSmall _
   have (n : ℤ) : PreservesFiniteLimits (tensorLeft
       ((((tilde.functor R).mapHomologicalComplex (.up ℤ)).obj
         (graded (.up ℤ) fun n ↦ (ModuleCat.free R).obj (I n))).X n)) := by
@@ -80,15 +78,13 @@ example :
       (graded (.up ℤ) fun _ ↦ ModuleCat.of R R)) := by
   intro R
   let := AlgebraicGeometry.instAdditiveModuleCatCarrierModulesSpecFunctor (R := R)
-  have : AB5OfSize.{0, 0} (Spec R).Modules := AB5OfSize_of_univLE.{0, 0, 0, 0} _
-  have : HasFiniteBiproducts (Spec R).Modules := Abelian.hasFiniteBiproducts
-  have : CountableAB4 (Spec R).Modules := CountableAB4.of_countableAB5 _
   have : PreservesFiniteLimits (tensorLeft
       (C := (Spec R).Modules) ((tilde.functor R).obj (ModuleCat.of R R))) := by
     have : PreservesFiniteLimits (tensorLeft (𝟙_ (Spec R).Modules)) :=
       preservesFiniteLimits_of_natIso (leftUnitorNatIso _).symm
     exact preservesFiniteLimits_of_natIso
       ((curriedTensor (Spec R).Modules).mapIso tildeSelf.symm)
+  have : AB5OfSize.{0, 0} (Spec R).Modules := SheafOfModules.instAB5OfSizeSmall _
   have (n : ℤ) : PreservesFiniteLimits (tensorLeft
       ((((tilde.functor R).mapHomologicalComplex (.up ℤ)).obj
         (graded (.up ℤ) fun _ ↦ ModuleCat.of R R)).X n)) := by
