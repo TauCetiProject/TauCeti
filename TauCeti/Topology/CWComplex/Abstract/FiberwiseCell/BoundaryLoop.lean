@@ -176,19 +176,6 @@ private theorem arcReparam_zero : arcReparam 0 = 0 :=
 private theorem arcReparam_one : arcReparam 1 = 1 :=
   Subtype.ext (by norm_num [arcReparam])
 
-private theorem norm_diskSegment (t : I) :
-    ‖(diskSegment.{u} t).down.val‖ = |2 * (t : ℝ) - 1| := by
-  rw [EuclideanSpace.norm_fin_one]
-  exact congrArg abs (diskSegment_coord t)
-
-private theorem diskBoundary_one_eq_smul {w : TopCat.disk.{u} 1} {s : TopCat.diskBoundary.{u} 1}
-    (hw : w.down.val 0 ≠ 0) (hs : s.down.val 0 * |w.down.val 0| = w.down.val 0) :
-    s.down.val = ‖w.down.val‖⁻¹ • w.down.val := by
-  refine PiLp.ext fun j ↦ ?_
-  rw [Subsingleton.elim j 0, PiLp.smul_apply, smul_eq_mul, EuclideanSpace.norm_fin_one,
-    eq_inv_mul_iff_mul_eq₀ (abs_ne_zero.2 hw), mul_comm]
-  exact hs
-
 private theorem arcRetraction_fiberwiseCellAttachmentCell (x) :
     arcRetraction a (fiberwiseCellAttachmentCell _ PUnit.unit x) = a :=
   ConcreteCategory.congr_hom (fiberwiseCellAttachmentCell_desc (k := fun _ : PUnit.{u + 1} ↦ 1)
@@ -268,7 +255,7 @@ private theorem arcRetraction_comp_fiberwiseCellReattachment_comp_arcPath :
     rw [abs_of_neg hneg] at hlt
     have hg : (arcReparam t : ℝ) = 2 * t := min_eq_left (le_max_of_le_left (by linarith))
     rw [coe_arcRetraction_fiberwiseCellReattachment_of_le_norm a hχ₀ hχ₁ hh hK hle
-      (s := sphereMinus) (diskBoundary_one_eq_smul hne (by
+      (s := sphereMinus) (diskBoundary_one_eq_inv_norm_smul hne (by
         rw [sphereMinus_down_apply_zero, hc, abs_of_neg hneg]; ring)), Path.trans_apply,
       dite_eq_left (by rw [hg]; linarith)]
     refine congrArg (fun x ↦ K (x, _)) (Subtype.ext ?_)
@@ -281,7 +268,7 @@ private theorem arcRetraction_comp_fiberwiseCellReattachment_comp_arcPath :
     have hg : (arcReparam t : ℝ) = 2 * t - 1 :=
       (min_eq_right (max_le (by linarith) (by linarith))).trans (max_eq_right (by linarith))
     rw [coe_arcRetraction_fiberwiseCellReattachment_of_le_norm a hχ₀ hχ₁ hh hK hle
-      (s := spherePlus) (diskBoundary_one_eq_smul hne (by
+      (s := spherePlus) (diskBoundary_one_eq_inv_norm_smul hne (by
         rw [spherePlus_down_apply_zero, hc, abs_of_pos hpos]; ring)), Path.trans_apply,
       dite_eq_right (by rw [hg]; linarith), Path.symm_apply]
     refine congrArg (fun x ↦ K (x, _)) (Subtype.ext ?_)
@@ -394,9 +381,20 @@ private def circleLoop : Path circleOne circleOne where
   source' := Subtype.ext (congrArg Subtype.val Circle.expLoop.source)
   target' := Subtype.ext (congrArg Subtype.val Circle.expLoop.target)
 
-/-- The unit circle in `ℂ`, as the type `Circle`. -/
-private def sphereToCircle : C(sphere (0 : ℂ) 1, Circle) :=
-  ⟨fun z ↦ ⟨z.val, z.property⟩, continuous_id⟩
+/-- A point of the unit circle in `ℂ` lies in `Submonoid.unitSphere ℂ`, the carrier of `Circle`. -/
+private theorem mem_unitSphere_of_mem_sphere (z : sphere (0 : ℂ) 1) :
+    (z : ℂ) ∈ Submonoid.unitSphere ℂ := by
+  rw [← SetLike.mem_coe, Submonoid.coe_unitSphere]
+  exact z.property
+
+/-- The unit circle in `ℂ`, as the type `Circle`: the identity on the underlying complex
+numbers. -/
+private def sphereToCircle : C(sphere (0 : ℂ) 1, Circle) where
+  toFun z := ⟨z.val, mem_unitSphere_of_mem_sphere z⟩
+  continuous_toFun := continuous_subtypeVal.subtype_mk mem_unitSphere_of_mem_sphere
+
+private theorem coe_sphereToCircle_apply (z : sphere (0 : ℂ) 1) : (sphereToCircle z : ℂ) = z :=
+  (rfl)
 
 /-- The degree of the loop `H₋ · H₊⁻¹` of the boundary homotopy `circleArcHomotopy γ`: the end `-1`
 stays at `1`, so it is minus the degree of `γ`. -/
@@ -407,17 +405,22 @@ private theorem degree_circleArcHomotopy (γ : Path circleOne circleOne) :
           (circleArcHomotopy_mem γ) spherePlus).symm).map sphereToCircle.continuous) =
       -Circle.degree (γ.map sphereToCircle.continuous) := by
   rw [Path.map_trans, ← Path.map_symm, Circle.degree_trans, Circle.degree_symm,
-    Circle.degree_congr _ (Path.refl (sphereToCircle circleOne)) fun t ↦ Subtype.ext
-      (circleArcHomotopy_apply_sphereMinus γ t PUnit.unit), Circle.degree_refl, zero_add, neg_inj]
-  exact Circle.degree_congr _ _ fun t ↦
-    Subtype.ext (circleArcHomotopy_apply_spherePlus γ t PUnit.unit)
+    Circle.degree_congr _ (Path.refl (sphereToCircle circleOne)) fun t ↦ Circle.ext (by
+      simp only [Path.map_coe, Function.comp_apply, coe_sphereToCircle_apply, Path.refl_apply]
+      exact (coe_arcBoundaryTrack_apply ..).trans
+        ((circleArcHomotopy_apply_sphereMinus γ t PUnit.unit).trans coe_circleOne.symm)),
+    Circle.degree_refl, zero_add, neg_inj]
+  exact Circle.degree_congr _ _ fun t ↦ Circle.ext (by
+    simp only [Path.map_coe, Function.comp_apply, coe_sphereToCircle_apply]
+    exact (coe_arcBoundaryTrack_apply ..).trans (circleArcHomotopy_apply_spherePlus γ t PUnit.unit))
 
-/-- **A boundary homotopy alone does not determine the reattachment class.** Attach an arc at both
-of its ends to the point `1` of the unit circle `S¹ ⊆ ℂ`, with characteristic maps constant at `1`
-and `h = id`. There are two homotopies `K, K' : χ ≃ χ` of the characteristic map, both keeping the
-ends of the arc on `S¹`, whose reattachment maps are not homotopic relative to `S¹`: for `K` both
-ends stay at `1`, while for `K'` the end `1` runs once around the circle. Their boundary homotopies
-have the same endpoints, but their loops `H₋ · H₊⁻¹` have degrees `0` and `-1`. -/
+/-- **The endpoints of a boundary homotopy do not determine the reattachment class.** Attach an
+arc at both of its ends to the point `1` of the unit circle `S¹ ⊆ ℂ`, with characteristic maps
+constant at `1` and `h = id`. There are two homotopies `K, K' : χ ≃ χ` of the characteristic map,
+both keeping the ends of the arc on `S¹`, whose reattachment maps are not homotopic relative to
+`S¹`: for `K` both ends stay at `1`, while for `K'` the end `1` runs once around the circle. Their
+boundary homotopies have the same endpoints, but their loops `H₋ · H₊⁻¹` have degrees `0` and
+`-1`. -/
 theorem exists_not_homotopicRel_fiberwiseCellReattachment_sphere :
     ∃ (K K' : (ContinuousMap.const (PUnit.{1} × TopCat.disk.{0} 1) (1 : ℂ)).Homotopy
         ((ContinuousMap.const (PUnit.{1} × TopCat.disk.{0} 1) (1 : ℂ)).comp
@@ -445,8 +448,9 @@ theorem exists_not_homotopicRel_fiberwiseCellReattachment_sphere :
       (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw) (circleArcHomotopy_mem _) hE).map sphereToCircle)
   rw [degree_circleArcHomotopy, degree_circleArcHomotopy,
     Circle.degree_congr ((Path.refl circleOne).map sphereToCircle.continuous)
-      (Path.refl (sphereToCircle circleOne)) (fun _ ↦ rfl),
-    Circle.degree_congr (circleLoop.map sphereToCircle.continuous) Circle.expLoop (fun _ ↦ rfl),
+      (Path.refl (sphereToCircle circleOne)) (fun _ ↦ Circle.ext (by simp)),
+    Circle.degree_congr (circleLoop.map sphereToCircle.continuous) Circle.expLoop
+      (fun _ ↦ Circle.ext (by simp [coe_sphereToCircle_apply, circleLoop])),
     Circle.degree_refl, Circle.degree_expLoop] at hd
   norm_num at hd
 
