@@ -116,6 +116,19 @@ theorem bmAlgebra_eq_span (rel : X → X → Fin (d + 1)) :
     bmAlgebra rel = Submodule.span ℝ (Set.range (adjMat rel)) := by
   exact (rfl)
 
+/-- Defining equation for `valency`: the averaged number of pairs in class `i`. -/
+theorem valency_def [Fintype X] (rel : X → X → Fin (d + 1)) (i : Fin (d + 1)) :
+    valency rel i = (#{p : X × X | rel p.1 p.2 = i} : ℝ) / Fintype.card X :=
+  (rfl)
+
+/-- Defining equation for `intersectionNumber`: the averaged number of triples in classes
+`i`, `j`, `k`. -/
+theorem intersectionNumber_def [Fintype X] (rel : X → X → Fin (d + 1)) (i j k : Fin (d + 1)) :
+    intersectionNumber rel i j k =
+      (#{t : X × X × X | rel t.1 t.2.1 = k ∧ rel t.1 t.2.2 = i ∧ rel t.2.2 t.2.1 = j} : ℝ) /
+        #{p : X × X | rel p.1 p.2 = k} :=
+  (rfl)
+
 /-- The adjacency matrices partition `X × X`, so their sum is the all-ones matrix `J`. -/
 @[simp]
 theorem sum_adjMat (rel : X → X → Fin (d + 1)) :
@@ -173,18 +186,6 @@ theorem adjMat_mul_apply [Fintype X] (rel : X → X → Fin (d + 1)) (i j : Fin 
   rw [Matrix.mul_apply, Finset.card_filter, Nat.cast_sum]
   refine Finset.sum_congr rfl fun z _ => ?_
   by_cases h1 : rel x z = i <;> by_cases h2 : rel z y = j <;> simp [h1, h2]
-
-theorem sum_adjMat_mul_entry [Fintype X] (rel : X → X → Fin (d + 1)) (i j : Fin (d + 1)) :
-    ∑ x, ∑ y, adjMat rel i x y * adjMat rel j x y =
-      if i = j then (#{p : X × X | rel p.1 p.2 = i} : ℝ) else 0 := by
-  have h : ∀ x y, adjMat rel i x y * adjMat rel j x y = (adjMat rel i ⊙ adjMat rel j) x y :=
-    fun _ _ => rfl
-  simp_rw [h, adjMat_hadamard]
-  split_ifs with hij
-  · rw [Finset.card_filter, Nat.cast_sum, Fintype.sum_prod_type]
-    refine Finset.sum_congr rfl fun x _ => Finset.sum_congr rfl fun y _ => ?_
-    by_cases hp : rel x y = i <;> simp [hp]
-  · simp
 
 /-- The valencies of the classes sum to `|X|`. -/
 theorem sum_valency [Fintype X] (rel : X → X → Fin (d + 1)) :
@@ -331,6 +332,23 @@ theorem sum_adjMat_col (h : IsAssocScheme rel) (i : Fin (d + 1)) (y : X) :
     simp [h.rel_comm x y]
   simp_rw [hrow]
   exact h.sum_adjMat_row i y
+
+/-- Multiplying `A_i` on the right by the all-ones matrix `J` gives `v_i • J`. -/
+theorem adjMat_mul_allOnes (h : IsAssocScheme rel) (i : Fin (d + 1)) :
+    adjMat rel i * Matrix.of (fun _ _ : X => (1 : ℝ)) =
+      valency rel i • Matrix.of fun _ _ : X => (1 : ℝ) := by
+  ext x y
+  simp only [Matrix.mul_apply, Matrix.smul_apply, of_apply, mul_one, h.sum_adjMat_row i x,
+    smul_eq_mul]
+
+/-- Multiplying `A_i` on the left by the all-ones matrix `J` gives `v_i • J`. -/
+theorem allOnes_mul_adjMat (h : IsAssocScheme rel) (i : Fin (d + 1)) :
+    Matrix.of (fun _ _ : X => (1 : ℝ)) * adjMat rel i =
+      valency rel i • Matrix.of fun _ _ : X => (1 : ℝ) := by
+  ext x y
+  simp only [Matrix.mul_apply, Matrix.smul_apply, of_apply, one_mul, h.sum_adjMat_col i y,
+    smul_eq_mul]
+  rw [mul_one]
 
 /-- Every class of a symmetric association scheme has positive valency. -/
 theorem valency_pos (h : IsAssocScheme rel) (i : Fin (d + 1)) : 0 < valency rel i := by

@@ -27,6 +27,9 @@ requiring finite-dimensionality or a simultaneous eigenspace decomposition.
   vector.
 * `Finset.sum_smul_eq_card_smul_iff`: the same, with the number cast into a characteristic-zero
   domain `K` acting on the module.
+* `IsIdempotentElem.smul_eq_self_of_smul_eq_smul`,
+  `IsIdempotentElem.mul_eq_right_of_mul_eq_smul`: a nonzero vector or algebra element scaled by an
+  idempotent must have eigenvalue `1`.
 -/
 
 public section
@@ -114,3 +117,38 @@ theorem sum_smul_eq_card_smul_iff [CharZero K]
   exact sum_smul_eq_card_nsmul_iff s p hp hcomm
 
 end Finset
+
+namespace IsIdempotentElem
+
+/-- If an idempotent `a` scales a vector `x` by `c` in a torsion-free module over a domain and
+`a • x ≠ 0`, then `c = 1` so `a • x = x`. -/
+theorem smul_eq_self_of_smul_eq_smul {K A M : Type*} [Ring K] [IsDomain K] [Semiring A]
+    [AddCommGroup M] [Module K M] [Module A M] [SMulCommClass A K M]
+    [Module.IsTorsionFree K M] {a : A} (ha : IsIdempotentElem a) {x : M} {c : K}
+    (hc : a • x = c • x) (hne : a • x ≠ 0) : a • x = x := by
+  have hx : x ≠ 0 := fun h => hne (by rw [h, smul_zero])
+  have hc0 : c ≠ 0 := fun h => hne (by rw [hc, h, zero_smul])
+  have hsq : a • (a • x) = a • x := by rw [smul_smul, ha.eq]
+  rw [hc, smul_comm, hc, smul_smul] at hsq
+  have h0 : (c * c - c) • x = 0 := by rw [sub_smul, hsq, sub_self]
+  have hcc : c * c - c = 0 := (smul_eq_zero.mp h0).resolve_right hx
+  have hcc' : c * (c - 1) = 0 := by rw [mul_sub, mul_one, hcc]
+  have hc1 : c = 1 := sub_eq_zero.mp ((mul_eq_zero.mp hcc').resolve_left hc0)
+  rw [hc, hc1, one_smul]
+
+/-- If an idempotent `a` satisfies `a * b = c • b` with `a * b ≠ 0` in a torsion-free module
+over a domain, then `c = 1` so `a * b = b`. -/
+theorem mul_eq_right_of_mul_eq_smul {K A : Type*} [Ring K] [IsDomain K] [NonUnitalRing A]
+    [Module K A] [SMulCommClass K A A] [Module.IsTorsionFree K A] {a b : A}
+    (ha : IsIdempotentElem a) {c : K} (hc : a * b = c • b) (hne : a * b ≠ 0) : a * b = b := by
+  have hb : b ≠ 0 := fun h => hne (by rw [h, mul_zero])
+  have hc0 : c ≠ 0 := fun h => hne (by rw [hc, h, zero_smul])
+  have hsq : a * (a * b) = a * b := by rw [← mul_assoc, ha.eq]
+  rw [hc, mul_smul_comm, hc, smul_smul] at hsq
+  have h0 : (c * c - c) • b = 0 := by rw [sub_smul, hsq, sub_self]
+  have hcc : c * c - c = 0 := (smul_eq_zero.mp h0).resolve_right hb
+  have hcc' : c * (c - 1) = 0 := by rw [mul_sub, mul_one, hcc]
+  have hc1 : c = 1 := sub_eq_zero.mp ((mul_eq_zero.mp hcc').resolve_left hc0)
+  rw [hc, hc1, one_smul]
+
+end IsIdempotentElem

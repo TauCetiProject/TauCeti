@@ -15,8 +15,11 @@ import Mathlib.Algebra.Order.Star.Real
 import Mathlib.Analysis.Matrix.Spectrum
 import Mathlib.LinearAlgebra.Dimension.Finrank
 import TauCeti.Analysis.Matrix.Spectrum
+import TauCeti.Data.Matrix.Mul
+import TauCeti.LinearAlgebra.End.Idempotent
 import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Trace.Idempotent
+import TauCeti.RingTheory.Idempotents.Eigenvalue
 import TauCeti.RingTheory.Idempotents.LinearIndependent
 
 /-!
@@ -83,19 +86,6 @@ section Helpers
 
 variable {X : Type*} [Fintype X] {d : ℕ} {rel : X → X → Fin (d + 1)}
 
-private theorem isIdempotentElem_allOnes_inv (h : IsAssocScheme rel) :
-    IsIdempotentElem ((Fintype.card X : ℝ)⁻¹ • Matrix.of fun _ _ : X => (1 : ℝ)) := by
-  rw [IsIdempotentElem]
-  ext x y
-  simp [Matrix.mul_apply, h.card_ne_zero]
-
-private theorem allOnes_inv_ne_zero (h : IsAssocScheme rel) :
-    ((Fintype.card X : ℝ)⁻¹ • Matrix.of fun _ _ : X => (1 : ℝ)) ≠ 0 := by
-  obtain ⟨x⟩ := h.nonempty
-  intro h0
-  have hx := congrArg (fun M : Matrix X X ℝ => M x x) h0
-  simp [h.card_ne_zero] at hx
-
 private theorem allOnes_inv_mem_bmAlgebra (rel : X → X → Fin (d + 1)) :
     ((Fintype.card X : ℝ)⁻¹ • Matrix.of fun _ _ : X => (1 : ℝ)) ∈ bmAlgebra rel :=
   Submodule.smul_mem _ _ (allOnes_mem_bmAlgebra rel)
@@ -103,11 +93,7 @@ private theorem allOnes_inv_mem_bmAlgebra (rel : X → X → Fin (d + 1)) :
 private theorem adjMat_mul_allOnes_inv (h : IsAssocScheme rel) (i : Fin (d + 1)) :
     adjMat rel i * ((Fintype.card X : ℝ)⁻¹ • Matrix.of fun _ _ : X => (1 : ℝ)) =
       valency rel i • ((Fintype.card X : ℝ)⁻¹ • Matrix.of fun _ _ : X => (1 : ℝ)) := by
-  ext x y
-  rw [Matrix.mul_smul]
-  simp only [Matrix.smul_apply, Matrix.mul_apply, of_apply, mul_one, h.sum_adjMat_row i x,
-    smul_eq_mul]
-  rw [mul_comm]
+  rw [Matrix.mul_smul, h.adjMat_mul_allOnes i, smul_comm]
 
 private theorem exists_mul_allOnes_inv_eq_smul (h : IsAssocScheme rel) {M : Matrix X X ℝ}
     (hM : M ∈ bmAlgebra rel) :
@@ -256,8 +242,8 @@ private theorem exists_isOrthoFamily (h : IsAssocScheme rel) :
     ∃ P : Finset (Matrix X X ℝ), IsOrthoFamily rel P := by
   let e₀ : Matrix X X ℝ := (Fintype.card X : ℝ)⁻¹ • Matrix.of fun _ _ => 1
   have he₀_mem : e₀ ∈ bmAlgebra rel := allOnes_inv_mem_bmAlgebra rel
-  have he₀_idem : IsIdempotentElem e₀ := isIdempotentElem_allOnes_inv h
-  have he₀_ne : e₀ ≠ 0 := allOnes_inv_ne_zero h
+  have he₀_idem : IsIdempotentElem e₀ := Matrix.isIdempotentElem_card_inv_smul_allOnes
+  have he₀_ne : e₀ ≠ 0 := haveI := h.nonempty; Matrix.card_inv_smul_allOnes_ne_zero
   by_cases h1 : 1 - e₀ = 0
   · refine ⟨{e₀}, ?_⟩
     refine ⟨fun p hp => ?_, fun p hp => ?_, fun p hp => ?_, fun p hp q hq hne => ?_, ?_, ?_⟩
@@ -520,21 +506,8 @@ theorem span_eq_bmAlgebra (hE : IsPrimitiveIdempotents rel E) :
 /-- The basis of the Bose–Mesner algebra formed by a family of primitive idempotents. -/
 noncomputable def basis (hE : IsPrimitiveIdempotents rel E) :
     Module.Basis (Fin (d + 1)) ℝ (bmAlgebra rel) :=
-  Module.Basis.mk
-    (v := fun i => ⟨E i, hE.mem_bmAlgebra i⟩)
-    (LinearIndependent.of_comp (bmAlgebra rel).subtype hE.linearIndependent)
-    (by
-      rintro ⟨M, hM⟩ _
-      have hmem : M ∈ Submodule.span ℝ (Set.range E) := hE.span_eq_bmAlgebra.symm ▸ hM
-      rw [Submodule.mem_span_range_iff_exists_fun] at hmem
-      obtain ⟨c, rfl⟩ := hmem
-      have hsum : (⟨∑ i, c i • E i, hM⟩ : bmAlgebra rel) =
-          ∑ i, c i • ⟨E i, hE.mem_bmAlgebra i⟩ := by
-        ext1
-        simp
-      rw [hsum]
-      exact Submodule.sum_mem _ fun i _ =>
-        Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩))
+  (Module.Basis.span hE.linearIndependent).map
+    (LinearEquiv.ofEq _ _ hE.span_eq_bmAlgebra)
 
 @[simp]
 theorem coe_basis (hE : IsPrimitiveIdempotents rel E)
@@ -567,7 +540,7 @@ theorem trace_pos (hE : IsPrimitiveIdempotents rel E) (i : Fin (d + 1)) :
   exact Nat.cast_pos.mpr (hE.rank_pos i)
 
 /-- The zeroth primitive idempotent `E 0 = |X|⁻¹ J` has trace `1`. -/
-theorem trace_zero (hE : IsPrimitiveIdempotents rel E) :
+theorem trace_apply_zero (hE : IsPrimitiveIdempotents rel E) :
     (E 0).trace = 1 := by
   have hpos : (Fintype.card X : ℝ) ≠ 0 := fun h0 =>
     hE.ne_zero 0 (by rw [hE.apply_zero, h0, _root_.inv_zero, zero_smul])
@@ -575,10 +548,10 @@ theorem trace_zero (hE : IsPrimitiveIdempotents rel E) :
   simp [hpos]
 
 /-- The zeroth primitive idempotent has rank `1`. -/
-theorem rank_zero (hE : IsPrimitiveIdempotents rel E) :
+theorem rank_apply_zero (hE : IsPrimitiveIdempotents rel E) :
     (E 0).rank = 1 := by
   have h1 := hE.trace_eq_rank 0
-  rw [hE.trace_zero] at h1
+  rw [hE.trace_apply_zero] at h1
   exact_mod_cast h1.symm
 
 /-- The ranks of the primitive idempotents sum to `|X|`. -/
@@ -635,13 +608,13 @@ theorem eq_sum_smul (hE : IsPrimitiveIdempotents rel E)
       Finset.sum_congr rfl fun i _ => hE.mul_eq_smul hM i
 
 /-- Every adjacency matrix `A_j` satisfies `A_j * E_i = (tr (A_j * E_i) / tr (E_i)) • E_i`. -/
-theorem adjMat_mul (hE : IsPrimitiveIdempotents rel E)
+theorem adjMat_mul_eq_smul (hE : IsPrimitiveIdempotents rel E)
     (i j : Fin (d + 1)) :
     adjMat rel j * E i = ((adjMat rel j * E i).trace / (E i).trace) • E i :=
   hE.mul_eq_smul (adjMat_mem_bmAlgebra rel j) i
 
 /-- The column space of `E i` is a common eigenspace for every `M ∈ bmAlgebra rel`. -/
-theorem mulVec_of_mem_range (hE : IsPrimitiveIdempotents rel E)
+theorem mulVec_eq_smul_of_mem_range (hE : IsPrimitiveIdempotents rel E)
     {M : Matrix X X ℝ} (hM : M ∈ bmAlgebra rel) (i : Fin (d + 1)) {v : X → ℝ}
     (hv : v ∈ LinearMap.range (E i).mulVecLin) :
     M *ᵥ v = ((M * E i).trace / (E i).trace) • v := by
@@ -665,16 +638,12 @@ theorem dotProduct_eq_zero_of_mem_range (h : IsAssocScheme rel) (hE : IsPrimitiv
 
 /-- The column spaces of distinct primitive idempotents have trivial intersection. -/
 theorem disjoint_range (hE : IsPrimitiveIdempotents rel E) {i j : Fin (d + 1)} (hij : i ≠ j) :
-    Disjoint (LinearMap.range (E i).mulVecLin) (LinearMap.range (E j).mulVecLin) := by
-  rw [Submodule.disjoint_def]
-  rintro v ⟨x, rfl⟩ ⟨y, hy⟩
-  simp only [Matrix.mulVecLin_apply] at hy ⊢
-  have h1 : E i *ᵥ (E i *ᵥ x) = E i *ᵥ x := by
-    rw [Matrix.mulVec_mulVec, (hE.complete.idem i).eq]
-  have h2 : E i *ᵥ (E j *ᵥ y) = 0 := by
-    rw [Matrix.mulVec_mulVec, hE.complete.ortho hij, Matrix.zero_mulVec]
-  rw [hy] at h2
-  exact h1.symm.trans h2
+    Disjoint (LinearMap.range (E i).mulVecLin) (LinearMap.range (E j).mulVecLin) :=
+  IsIdempotentElem.disjoint_range_of_mul_eq_zero
+    (by rw [IsIdempotentElem, Module.End.mul_eq_comp, ← Matrix.mulVecLin_mul,
+      (hE.complete.idem i).eq])
+    (by rw [Module.End.mul_eq_comp, ← Matrix.mulVecLin_mul, hE.complete.ortho hij,
+      Matrix.mulVecLin_zero])
 
 /-- The column spaces of the primitive idempotents span `X → ℝ`. -/
 theorem iSup_range_eq_top (hE : IsPrimitiveIdempotents rel E) :
@@ -687,30 +656,16 @@ theorem iSup_range_eq_top (hE : IsPrimitiveIdempotents rel E) :
   rw [hv]
   exact Submodule.sum_mem _ fun i _ => Submodule.mem_iSup_of_mem i ⟨v, rfl⟩
 
-omit [DecidableEq X] in
-private theorem mul_eq_right_of_isIdempotentElem {A B : Matrix X X ℝ}
-    (hB : B ≠ 0) (hA : IsIdempotentElem A) {c : ℝ}
-    (hc : A * B = c • B) (hne : A * B ≠ 0) : A * B = B := by
-  have hsq : A * (A * B) = A * B := by rw [← Matrix.mul_assoc, hA.eq]
-  rw [hc, Matrix.mul_smul, hc, smul_smul] at hsq
-  have hc0 : c ≠ 0 := fun h0 => hne (by rw [hc, h0, zero_smul])
-  have hcc : c * c = c := by
-    by_contra hneq
-    apply hB
-    have h0 : (c * c - c) • B = 0 := by rw [sub_smul, hsq, sub_self]
-    exact (smul_eq_zero.mp h0).resolve_left (sub_ne_zero.mpr hneq)
-  rw [hc, (mul_eq_right₀ hc0).mp hcc, one_smul]
-
 private theorem eq_of_mul_ne_zero (hE : IsPrimitiveIdempotents rel E)
     {E' : Fin (d + 1) → Matrix X X ℝ} (hE' : IsPrimitiveIdempotents rel E')
     {i k : Fin (d + 1)} (hk : E' i * E k ≠ 0) : E' i = E k := by
   have hcomm : E k * E' i = E' i * E k := by
     conv_lhs => rw [hE.eq_sum_smul (hE'.mem_bmAlgebra i)]
     rw [hE.mul_sum_smul k, ← hE.mul_eq_smul (hE'.mem_bmAlgebra i) k]
-  have hEk : E' i * E k = E k := mul_eq_right_of_isIdempotentElem (hE.ne_zero k)
-    (hE'.complete.idem i) (hE.mul_eq_smul (hE'.mem_bmAlgebra i) k) hk
-  have hEi : E k * E' i = E' i := mul_eq_right_of_isIdempotentElem (hE'.ne_zero i)
-    (hE.complete.idem k) (hE'.mul_eq_smul (hE.mem_bmAlgebra k) i) (hcomm ▸ hk)
+  have hEk : E' i * E k = E k := (hE'.complete.idem i).mul_eq_right_of_mul_eq_smul
+    (hE.mul_eq_smul (hE'.mem_bmAlgebra i) k) hk
+  have hEi : E k * E' i = E' i := (hE.complete.idem k).mul_eq_right_of_mul_eq_smul
+    (hE'.mul_eq_smul (hE.mem_bmAlgebra k) i) (hcomm ▸ hk)
   exact hEi.symm.trans (hcomm.trans hEk)
 
 /-- **Uniqueness of primitive idempotents.** Any two families of primitive idempotents of the same
