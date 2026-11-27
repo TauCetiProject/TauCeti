@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+public import TauCeti.GroupTheory.Commensurable
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.Determinant
 
 /-!
-# The real projective special linear group has index two in the projective general linear group
+# In even dimension, `PSL(n, ℝ)` has index two in `PGL(n, ℝ)`
 
 In even dimension the sign of the determinant is well defined on `PGL(n, ℝ)`, since scaling a
 matrix by `λ` multiplies its determinant by the positive number `λⁿ`. This is Mathlib's
@@ -17,9 +18,10 @@ matrix by `λ` multiplies its determinant by the positive number `λⁿ`. This i
 has a real `n`-th root, so a matrix of positive determinant is a scalar multiple of a matrix of
 determinant one, and conversely the determinant of a scalar multiple of a determinant-one matrix is
 an even power. For nonempty matrices the sign is onto `{±1}`, so the image of `PSL(n, ℝ)` is a
-normal subgroup of index two. For `n = 2` this places the orientation-preserving isometries
-`PSL(2, ℝ)` of the hyperbolic plane inside `PGL(2, ℝ)`, whose other coset consists of the
-orientation-reversing ones.
+normal subgroup of index two. Since this image has finite index, finite index of a subgroup in its
+commensurator passes from `PSL(n, ℝ)` to `PGL(n, ℝ)`. For `n = 2` this places the
+orientation-preserving isometries `PSL(2, ℝ)` of the hyperbolic plane inside `PGL(2, ℝ)`, whose
+other coset consists of the orientation-reversing ones.
 
 ## Main results
 
@@ -28,6 +30,8 @@ orientation-reversing ones.
 * `Matrix.ProjGenLinGroup.signDet_surjective`: for nonempty matrices the sign is onto.
 * `Matrix.ProjGenLinGroup.index_range_toPGL`: for nonempty matrices the image of `PSL(n, ℝ)` has
   index two in `PGL(n, ℝ)`.
+* `Matrix.ProjectiveSpecialLinearGroup.isFiniteRelIndex_commensurator_map_toPGL`: if a subgroup of
+  `PSL(n, ℝ)` has finite index in its commensurator, so does its image in `PGL(n, ℝ)`.
 
 ## References
 
@@ -87,3 +91,18 @@ theorem index_range_toPGL [Nonempty n] :
   decide
 
 end Matrix.ProjGenLinGroup
+
+namespace Matrix.ProjectiveSpecialLinearGroup
+
+open Subgroup.Commensurable
+
+variable {n : Type*} [Fintype n] [DecidableEq n] [Fact (Even (Fintype.card n))]
+
+/-- If a subgroup `Γ` of `PSL(n, ℝ)` has finite index in its commensurator, then its image in
+`PGL(n, ℝ)` has finite index in its commensurator there. -/
+theorem isFiniteRelIndex_commensurator_map_toPGL {Γ : Subgroup (ProjectiveSpecialLinearGroup n ℝ)}
+    (hΓ : Γ.IsFiniteRelIndex (commensurator Γ)) :
+    (Γ.map toPGL).IsFiniteRelIndex (commensurator (Γ.map toPGL)) :=
+  isFiniteRelIndex_commensurator_map toPGL_injective hΓ
+
+end Matrix.ProjectiveSpecialLinearGroup

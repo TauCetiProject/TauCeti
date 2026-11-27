@@ -42,15 +42,18 @@ a subgroup `Γ` of `PSL(n, ℝ)`, if the commensurator of `Γ` in `PSL(n, ℝ)` 
 ## Main results
 
 * `Matrix.ProjGenLinGroup.isOpenQuotientMap_mk`: the projection `GL n R → PGL(n, R)` is an open
-  quotient map, and `PGL(n, R)` is a topological group, regular Hausdorff when `R` is Hausdorff.
+  quotient map.
+* `PGL(n, R)` is a topological group (an `IsTopologicalGroup` instance), and a `T3Space` when `R`
+  is Hausdorff.
 * `Matrix.ProjectiveSpecialLinearGroup.continuous_toPGL`: the map `PSL(n, R) → PGL(n, R)` is
   continuous.
 * `Matrix.ProjectiveSpecialLinearGroup.isOpenEmbedding_toPGL`: over `ℝ` in even dimension, the map
   `PSL(n, ℝ) → PGL(n, ℝ)` is an open embedding.
-* `Matrix.ProjectiveSpecialLinearGroup.discreteTopology_commensurator_map_toPGL` and
-  `Matrix.ProjectiveSpecialLinearGroup.isFiniteRelIndex_commensurator_map_toPGL`: discreteness of
-  the commensurator, and finite index in it, pass from a subgroup of `PSL(n, ℝ)` to its image in
-  `PGL(n, ℝ)`.
+* `Matrix.ProjectiveSpecialLinearGroup.discreteTopology_commensurator_map_toPGL`: discreteness of
+  the commensurator passes from a subgroup of `PSL(n, ℝ)` to its image in `PGL(n, ℝ)`. The
+  algebraic counterpart for finite index,
+  `Matrix.ProjectiveSpecialLinearGroup.isFiniteRelIndex_commensurator_map_toPGL`, lives in
+  `TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.ProjGenLinGroup.SignDet`.
 
 ## References
 
@@ -163,10 +166,7 @@ private theorem exists_mem_center_normScalar_smul (s : SpecialLinearGroup n ℝ)
   let z : SpecialLinearGroup n ℝ := ⟨Matrix.scalar n (|(a : ℝ)|⁻¹ * a), by simp [hr]⟩
   have hz : (z : Matrix n n ℝ) = Matrix.scalar n (|(a : ℝ)|⁻¹ * a) := rfl
   refine ⟨z, SpecialLinearGroup.mem_center_iff.mpr ⟨_, hr, rfl⟩, ?_⟩
-  rw [hc, SpecialLinearGroup.coe_mul, hz, Units.val_mul, GeneralLinearGroup.coe_scalar,
-    SpecialLinearGroup.coe_GL_coe_matrix, Matrix.scalar_apply, Matrix.scalar_apply,
-    ← Matrix.smul_one_eq_diagonal, ← Matrix.smul_one_eq_diagonal, Matrix.mul_smul,
-    Matrix.mul_smul, Matrix.mul_one, smul_smul]
+  simp [hc, hz, ← Matrix.smul_one_eq_diagonal, smul_smul]
 
 /-- The classes in `PGL(n, ℝ)` of the elements of a subset `U` of `PSL(n, ℝ)`, read in `GL n ℝ`,
 are the matrices of positive determinant whose rescaling to determinant one lies over `U`. Here
@@ -196,9 +196,8 @@ private theorem preimage_mk_image_toPGL {U : Set (ProjectiveSpecialLinearGroup n
     have hs : s ∈ (QuotientGroup.mk ⁻¹' U : Set (SpecialLinearGroup n ℝ)) := hWU ▸ hgW
     refine ⟨s, hs, (mk_eq_mk_iff.mpr ⟨Units.mk0 _ (normScalar_pos g).ne', ?_⟩).symm⟩
     ext : 1
-    rw [Units.val_mul, GeneralLinearGroup.coe_scalar, Units.val_mk0, Matrix.scalar_apply,
-      ← Matrix.smul_one_eq_diagonal, Matrix.mul_smul, Matrix.mul_one]
-    exact (SpecialLinearGroup.coe_GL_coe_matrix s).symm
+    simp [← Matrix.smul_one_eq_diagonal]
+    rfl
 
 /-- Over `ℝ` in even dimension, the map `PSL(n, ℝ) → PGL(n, ℝ)` is open. -/
 theorem isOpenMap_toPGL : IsOpenMap (toPGL : ProjectiveSpecialLinearGroup n ℝ → PGL(n, ℝ)) := by
@@ -224,13 +223,6 @@ theorem discreteTopology_commensurator_map_toPGL {Γ : Subgroup (ProjectiveSpeci
   have : DiscreteTopology ((commensurator (Γ.map toPGL)).comap toPGL) := by
     rwa [comap_commensurator_map toPGL_injective]
   exact Subgroup.discreteTopology_of_comap isOpenEmbedding_toPGL
-
-/-- If a subgroup `Γ` of `PSL(n, ℝ)` has finite index in its commensurator, then its image in
-`PGL(n, ℝ)` has finite index in its commensurator there. -/
-theorem isFiniteRelIndex_commensurator_map_toPGL {Γ : Subgroup (ProjectiveSpecialLinearGroup n ℝ)}
-    (hΓ : Γ.IsFiniteRelIndex (commensurator Γ)) :
-    (Γ.map toPGL).IsFiniteRelIndex (commensurator (Γ.map toPGL)) :=
-  isFiniteRelIndex_commensurator_map toPGL_injective hΓ
 
 end Real
 
