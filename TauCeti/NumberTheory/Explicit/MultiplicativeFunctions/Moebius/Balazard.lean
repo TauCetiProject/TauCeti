@@ -10,10 +10,8 @@ public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Moebius.Basi
 public import TauCeti.NumberTheory.Explicit.MultiplicativeFunctions.Moebius.MacLeod
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Function.Floor
-import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.NumberTheory.ZetaValues
 import TauCeti.Analysis.Calculus.Deriv.Fract
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import TauCeti.NumberTheory.ZetaValues
 
 /-!
@@ -53,6 +51,7 @@ for every real `x ≥ 1`, along with its two-range and three-range forms when ex
 
 * `TauCeti.balazardTwoKernel`, `TauCeti.balazardTwoKernelDeriv`: the `k = 2` remainder kernel
   `ε₀(t)` and its piecewise derivative `ε₀'(t)`.
+* `TauCeti.macleodFun_two_eq_sub_balazardTwoKernel`: `φ₂(t) = t - 1 - ε₀(t)` for `t ≠ 0`.
 * `TauCeti.mul_moebiusDivSum_sub_moebiusSum_eq`: Balazard's `k = 2` identity for `x m(x) - M(x)`.
 * `TauCeti.balazardKernel`, `TauCeti.balazardKernelDeriv`: Balazard's kernel `ε₁(t)` and its
   piecewise derivative `ε₁'(t) = ε₀'(t)²`.
@@ -98,6 +97,11 @@ theorem balazardTwoKernel_def (t : ℝ) :
 @[simp]
 theorem balazardTwoKernel_one : balazardTwoKernel 1 = 0 := by
   simp [balazardTwoKernel]
+
+/-- `φ₂(t) = t - 1 - ε₀(t)` for every nonzero `t : ℝ`. -/
+theorem macleodFun_two_eq_sub_balazardTwoKernel {t : ℝ} (ht : t ≠ 0) :
+    macleodFun 2 t = t - 1 - balazardTwoKernel t := by
+  rw [macleodFun_two ht, balazardTwoKernel_def]
 
 /-- The piecewise derivative of `balazardTwoKernel` away from the integers:
 `ε₀'(t) = ((2 {t} - 1) t + {t} - {t}²) / t²`. -/
@@ -183,12 +187,10 @@ theorem intervalIntegrable_balazardTwoKernelDeriv (a b : ℝ) :
       simpa only [Real.norm_eq_abs] using abs_balazardTwoKernelDeriv_le_two t)
 
 /-- **Balazard's `k = 2` identity** (Balazard 2012, equation (11)): for every real `x ≥ 1`,
-`x m(x) - M(x) = 2 - 2 / x + ∫_1^x M(x / t) (((2 {t} - 1) t + {t} - {t}²) / t²) dt`. -/
+`x m(x) - M(x) = 2 - 2 / x + ∫_1^x M(x / t) ε₀'(t) dt`. -/
 theorem mul_moebiusDivSum_sub_moebiusSum_eq {x : ℝ} (hx : 1 ≤ x) :
     x * moebiusDivSum x - moebiusSum x =
-      2 - 2 / x + ∫ t in (1 : ℝ)..x,
-        moebiusSum (x / t) *
-          (((2 * Int.fract t - 1) * t + Int.fract t - Int.fract t ^ 2) / t ^ 2) := by
+      2 - 2 / x + ∫ t in (1 : ℝ)..x, moebiusSum (x / t) * balazardTwoKernelDeriv t := by
   have hx0 : 0 < x := zero_lt_one.trans_le hx
   -- Evaluate `∫_1^x M(x / t) ε₀'(t) dt = ∑ μ(n) ε₀(x / n)` via the FTC sum-integral swap.
   have hε₀_sum :
@@ -208,13 +210,12 @@ theorem mul_moebiusDivSum_sub_moebiusSum_eq {x : ℝ} (hx : 1 ≤ x) :
       ← Finset.sum_sub_distrib]
     refine Finset.sum_congr rfl fun n hn ↦ ?_
     have hn1 : 1 ≤ n := (Finset.mem_Icc.mp hn).1
-    rw [macleodFun_two (div_ne_zero hx0.ne' (by positivity)), balazardTwoKernel_def]
+    rw [macleodFun_two_eq_sub_balazardTwoKernel (div_ne_zero hx0.ne' (by positivity))]
     ring
   rw [hdiff, ← hε₀_sum] at hmacleod2
   simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one] at hmacleod2
   have h2 : (2 : ℝ) * (1 - 1 / x) = 2 - 2 / x := by ring
   rw [h2] at hmacleod2
-  simp_rw [← balazardTwoKernelDeriv_def]
   linarith
 
 /-! ### Balazard's kernel `ε₁` and its derivative `ε₁'` -/

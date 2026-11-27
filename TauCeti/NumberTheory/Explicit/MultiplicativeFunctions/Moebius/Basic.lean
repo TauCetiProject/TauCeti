@@ -11,7 +11,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 import Mathlib.Algebra.Order.Floor.Semifield
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
-import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.NumberTheory.AbelSummation
