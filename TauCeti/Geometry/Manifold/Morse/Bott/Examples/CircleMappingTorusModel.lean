@@ -81,7 +81,9 @@ is not formalized.
   `TauCeti.BottChainData.circleMappingTorusComplex.homologyTwoLinearEquiv`,
   `TauCeti.BottChainData.isZero_homology_circleMappingTorusComplex`: the homology of the model.
 * `TauCeti.BottChainData.circleMappingTorusComplex.kleinBottleSingularHomologyLinearEquiv`: for
-  the Klein bottle over `ℤ` the homology of the model is that of the Klein bottle.
+  the Klein bottle over `ℤ` the homology of the model is that of the Klein bottle, described in
+  degrees `0` and `1` by `kleinBottleSingularHomologyLinearEquiv_zero` and
+  `kleinBottleSingularHomologyLinearEquiv_one`.
 
 ## References
 
@@ -296,27 +298,6 @@ theorem circleMappingTorusComplex_d_apply {i j : ℤ} (hij : i = j + 1)
   subst hij
   exact chainComplex_d_apply _ _ _ _ x
 
-/-- The class of a cycle `z` of the model in degree `k`, read in the explicit homology
-`ker d ⧸ range d` of `K.sc' (k + 1) k (k - 1)`, is the quotient class of `z` itself. -/
-private theorem moduleCatHomologyIso_homologyIsoSc'_homologyπ {k : ℤ}
-    (z : (circleMappingTorusComplex R ε).cycles k) :
-    ((circleMappingTorusComplex R ε).sc' (k + 1) k (k - 1)).moduleCatHomologyIso.hom.hom
-        (((circleMappingTorusComplex R ε).homologyIsoSc' (k + 1) k (k - 1) (by simp)
-          (by simp)).hom.hom (((circleMappingTorusComplex R ε).homologyπ k).hom z)) =
-      Submodule.Quotient.mk ⟨((circleMappingTorusComplex R ε).iCycles k).hom z, by simp⟩ := by
-  let K := circleMappingTorusComplex R ε
-  have hπ := congrArg (fun f ↦ ModuleCat.Hom.hom f z)
-    (K.π_homologyIsoSc'_hom_assoc (k + 1) k (k - 1) (by simp) (by simp)
-      (K.sc' (k + 1) k (k - 1)).moduleCatHomologyIso.hom)
-  have hi := congrArg (fun f ↦ ModuleCat.Hom.hom f z)
-    (K.cyclesIsoSc'_hom_iCycles (k + 1) k (k - 1) (by simp) (by simp))
-  simp only [ShortComplex.π_moduleCatCyclesIso_hom, ModuleCat.hom_comp, LinearMap.comp_apply] at hπ
-  simp only [← ShortComplex.moduleCatCyclesIso_hom_i, ModuleCat.hom_comp,
-    LinearMap.comp_apply] at hi
-  rw [hπ, ShortComplex.moduleCatLeftHomologyData_π_hom, Submodule.mkQ_apply]
-  congr 1
-  exact Subtype.ext hi
-
 section HomologyOfCycles
 
 /-! The data computing the homology of the model in degree `k` through a linear map `ψ` on the
@@ -374,7 +355,7 @@ private theorem homologyLinearEquivOfCycles_homologyπ
       ψ (((circleMappingTorusComplex R ε).iCycles k).hom z).val := by
   simp only [homologyLinearEquivOfCycles, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
     Iso.trans_hom, ModuleCat.hom_comp, LinearMap.comp_apply,
-    moduleCatHomologyIso_homologyIsoSc'_homologyπ]
+    HomologicalComplex.moduleCatHomologyIso_homologyIsoSc'_homologyπ]
   simp
   -- the class lies in the quotient of the kernel of the second map of `K.sc' (k + 1) k (k - 1)`,
   -- which is `K.d k (k - 1)` by definition, so `LinearMap.quotKerEquivOfSurjective_apply_mk`
@@ -619,6 +600,22 @@ noncomputable def circleMappingTorusComplex.kleinBottleSingularHomologyLinearEqu
       · exact isZero_homology_two_circleMappingTorusComplex_neg_one
       · exact isZero_homology_circleMappingTorusComplex (-1) (by omega) (by omega) (by omega)
     (h.iso (KleinBottle.isZero_singularHomology_of_two_le (by omega))).toLinearEquiv
+
+/-- In degree `0` the comparison with the singular homology of the Klein bottle is
+`circleMappingTorusComplex.homologyZeroLinearEquiv` followed by the inverse of
+`TauCeti.KleinBottle.singularHomologyZeroLinearEquiv`. -/
+theorem circleMappingTorusComplex.kleinBottleSingularHomologyLinearEquiv_zero :
+    kleinBottleSingularHomologyLinearEquiv 0 =
+      homologyZeroLinearEquiv ℤ (-1) ≪≫ₗ KleinBottle.singularHomologyZeroLinearEquiv.symm :=
+  (rfl)
+
+/-- In degree `1` the comparison with the singular homology of the Klein bottle is
+`circleMappingTorusComplex.homologyOneKleinBottleLinearEquiv` followed by the inverse of
+`TauCeti.KleinBottle.singularHomologyOneLinearEquiv`. -/
+theorem circleMappingTorusComplex.kleinBottleSingularHomologyLinearEquiv_one :
+    kleinBottleSingularHomologyLinearEquiv 1 =
+      homologyOneKleinBottleLinearEquiv ≪≫ₗ KleinBottle.singularHomologyOneLinearEquiv.symm :=
+  (rfl)
 
 end BottChainData
 
