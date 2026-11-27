@@ -31,6 +31,8 @@ change them.
 
 * `TauCeti.immersionSecondFundamentalFormAt_comp`:
   `B^{f ∘ ψ}_{x'}(v, w) = B^f_{ψ x'}(dψ v, dψ w)`.
+* `TauCeti.IsLocalRiemannianIsometry.immersionSecondFundamentalFormAt_comp`: the same for a local
+  Riemannian isometry `ψ`.
 * `TauCeti.IsLocalRiemannianIsometry.mfderiv_immersionShapeOperatorAt_comp`:
   `dψ (S^{f ∘ ψ}_ν v) = S^f_ν (dψ v)`.
 * `TauCeti.IsLocalRiemannianIsometry.immersionMeanCurvatureVector_comp`:
@@ -126,8 +128,7 @@ theorem immersionSecondFundamentalFormAt_comp (hf : ContMDiffAt I J 2 f (ψ x'))
       CovariantDerivative.alongMap_comp cov f U (hψ.mdifferentiableAt (by norm_num)) hf1 hU,
       ContinuousLinearMap.comp_apply, mpullback_apply, hψx.self_apply_inverse]
   have hN := orthogonalNormalSpace_comp hf1 (hψ.mdifferentiableAt (by norm_num)) hψx.bijective.2
-  rw [hL, hR]
-  congr!
+  simp only [hL, hR, hN]
 
 /-! ### Restriction of the second fundamental form to an open subset -/
 
@@ -149,6 +150,16 @@ variable [RiemannianBundle (fun y : M ↦ TangentSpace I y)]
 
 namespace IsLocalRiemannianIsometry
 
+/-- The case of `TauCeti.immersionSecondFundamentalFormAt_comp` where `ψ` is a local Riemannian
+isometry: `B^{f ∘ ψ}_{x'}(v, w) = B^f_{ψ x'}(dψ v, dψ w)`. -/
+theorem immersionSecondFundamentalFormAt_comp (hψ : IsLocalRiemannianIsometry I' I ψ)
+    (hf : ContMDiffAt I J 2 f (ψ x')) (v w : TangentSpace I' x') :
+    immersionSecondFundamentalFormAt cov (f ∘ ψ) x' v w =
+      immersionSecondFundamentalFormAt cov f (ψ x') (mfderiv I' I ψ x' v)
+        (mfderiv I' I ψ x' w) :=
+  TauCeti.immersionSecondFundamentalFormAt_comp hf (hψ.contMDiff.contMDiffAt.of_le (by simp))
+    (.of_forall hψ.isInvertible_mfderiv) v w
+
 /-- **The shape operator under precomposition with a local isometry of the source**: the
 differential of `ψ` intertwines the shape operators, `dψ (S^{f ∘ ψ}_ν v) = S^f_ν (dψ v)`. -/
 theorem mfderiv_immersionShapeOperatorAt_comp (hψ : IsLocalRiemannianIsometry I' I ψ)
@@ -158,8 +169,7 @@ theorem mfderiv_immersionShapeOperatorAt_comp (hψ : IsLocalRiemannianIsometry I
   refine ext_inner_right ℝ fun u ↦ ?_
   obtain ⟨w, rfl⟩ := hψ.mfderiv_surjective x' u
   rw [hψ.inner_mfderiv, inner_immersionShapeOperatorAt, inner_immersionShapeOperatorAt,
-    immersionSecondFundamentalFormAt_comp hf (hψ.contMDiff.contMDiffAt.of_le (by simp))
-      (.of_forall hψ.isInvertible_mfderiv)]
+    hψ.immersionSecondFundamentalFormAt_comp hf]
 
 /-- **The mean curvature vector under precomposition with a local isometry of the source**:
 `H^{f ∘ ψ}(x') = H^f(ψ x')`. -/
@@ -173,8 +183,7 @@ theorem immersionMeanCurvatureVector_comp (hψ : IsLocalRiemannianIsometry I' I 
   rw [immersionMeanCurvatureVector_eq_sum b, immersionMeanCurvatureVector_eq_sum (b.map e), hdim]
   congr 1
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [immersionSecondFundamentalFormAt_comp hf (hψ.contMDiff.contMDiffAt.of_le (by simp))
-    (.of_forall hψ.isInvertible_mfderiv), OrthonormalBasis.map_apply, he]
+  rw [hψ.immersionSecondFundamentalFormAt_comp hf, OrthonormalBasis.map_apply, he]
 
 end IsLocalRiemannianIsometry
 
