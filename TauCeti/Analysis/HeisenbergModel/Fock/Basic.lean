@@ -145,6 +145,22 @@ theorem signMatrix_mem_unitary : signMatrix ε ∈ unitary (Matrix ι ι ℂ) :=
 theorem inv_signMatrix : (signMatrix ε)⁻¹ = signMatrix ε :=
   inv_eq_left_inv signMatrix_mul_signMatrix
 
+/-- The transposed inverse of an element of `U(ε)` again preserves the form `diag(ε)`. -/
+theorem star_transpose_inv_mul_signMatrix_mul_transpose_inv (g : unitaryGroup ε) :
+    star ((g⁻¹ : GL ι ℂ) : Matrix ι ι ℂ)ᵀ * signMatrix ε * ((g⁻¹ : GL ι ℂ) : Matrix ι ι ℂ)ᵀ =
+      signMatrix ε := by
+  set M : Matrix ι ι ℂ := ((g⁻¹ : GL ι ℂ) : Matrix ι ι ℂ)
+  have hg : M * signMatrix ε * star M = signMatrix ε := by
+    simpa only [inv_signMatrix] using
+      (mem_unitaryGroupOf_iff' isUnit_signMatrix).mp (inv_mem g.property)
+  have hS : (signMatrix ε)ᵀ = signMatrix ε := by
+    rw [signMatrix_eq_diagonal, diagonal_transpose]
+  -- Transposing `M * diag(ε) * star M = diag(ε)` gives the claim for `Mᵀ`.
+  calc star Mᵀ * signMatrix ε * Mᵀ = (M * signMatrix ε * star M)ᵀ := by
+        rw [transpose_mul, transpose_mul, hS, star_eq_conjTranspose, star_eq_conjTranspose,
+          conjTranspose_transpose_eq_transpose_conjTranspose, Matrix.mul_assoc]
+    _ = signMatrix ε := by rw [hg, hS]
+
 omit [DecidableEq ι] in
 theorem star_dotProduct_signMatrix_mulVec [DecidableEq ι] (x y : ι → ℂ) :
     star x ⬝ᵥ signMatrix ε *ᵥ y = ∑ i, ((ε i : ℤ) : ℂ) * (conj (x i) * y i) := by
