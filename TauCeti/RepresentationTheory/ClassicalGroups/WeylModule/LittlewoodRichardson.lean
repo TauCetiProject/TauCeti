@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Multiplicity
-public import TauCeti.RepresentationTheory.ClassicalGroups.UnitaryTrick
+public import TauCeti.RepresentationTheory.ClassicalGroups.Unitary.Trick
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Character
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Differential
 public import TauCeti.RepresentationTheory.ClassicalGroups.WeylModule.Laurent
@@ -205,6 +205,26 @@ theorem nonempty_equiv_tprod_rationalWeylRep (l m : DominantWeight n) :
   refine Fintype.sum_congr _ _ fun ν => ?_
   simp only [char_rationalWeylRep_shift_weightOfShape_diagonal ℂ n ν.property, sum_const, card_univ,
     Fintype.card_subtype, map_nsmul, mul_smul_comm]
+
+variable {n} in
+open CategoryTheory MonoidalCategory in
+/-- The `FDRep` tensor-product form of `TauCeti.nonempty_equiv_tprod_rationalWeylRep`:
+`(rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ).ρ` is equivalent to the direct sum of
+`rationalWeylFDRep ℂ n ((weightOfShape n (ofPartition p.1.val)).shift (lam.detShift + μ.detShift))`
+indexed by `λ₀`-Yamanouchi semistandard tableaux of shape `μ₀`. -/
+theorem nonempty_equiv_tensor_rationalWeylFDRep (lam μ : DominantWeight n) :
+    Nonempty (Representation.Equiv
+      (rationalWeylFDRep ℂ n lam ⊗ rationalWeylFDRep ℂ n μ).ρ
+      (Representation.directSum fun p :
+          Σ ν : {ν : (lam.detShiftShape.card + μ.detShiftShape.card).Partition //
+              (ofPartition ν).colLen 0 ≤ n},
+            {T : BoundedSSYT n μ.detShiftShape //
+              T.val.IsYamanouchi lam.detShiftShape ∧
+                ∀ i, lam.detShiftShape.rowLen i + T.val.content i = (ofPartition ν.val).rowLen i} =>
+        (rationalWeylFDRep ℂ n
+          ((weightOfShape n (ofPartition p.fst.val)).shift (lam.detShift + μ.detShift))).ρ)) :=
+  let ⟨e⟩ := nonempty_equiv_tprod_rationalWeylRep n lam μ
+  ⟨(FDRep.tprodEquiv _ _).trans e⟩
 
 /-- **The Littlewood–Richardson rule for `GL n ℂ`, with Littlewood–Richardson tableaux.** The
 tensor product of the Weyl modules of two Young diagrams `λ` and `μ` is equivalent to the direct

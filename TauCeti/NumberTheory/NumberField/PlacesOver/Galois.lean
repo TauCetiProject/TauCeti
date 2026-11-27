@@ -18,7 +18,7 @@ import TauCeti.NumberTheory.NumberField.InfinitePlace.Action
 # Conjugate absolute values over a place
 
 Let `F / K` be a Galois extension and `v` a place of `K`. The Galois group `F ≃ₐ[K] F` acts on the
-absolute values of `F` by `σ • w = w ∘ σ⁻¹` (`AbsoluteValue.instMulActionAlgEquiv`), preserving
+absolute values of `F` by `σ • w = w ∘ σ⁻¹` (`AbsoluteValue.instMulAction`), preserving
 those that lie over `v`. This file proves that it permutes them transitively:
 
 * Above an infinite place `v` (for any Galois field extension `F / K`), any two absolute values of
@@ -111,7 +111,8 @@ theorem exists_smul_eq_of_liesOver_finitePlace [IsGalois K F] (v : FinitePlace K
   -- Transport the prime of `w₁` to the prime of `w₂` along `σ`.
   rw [← hw₂, ← hσ, Ideal.mem_pointwise_smul_iff_inv_smul_mem, hw₁]
   -- The action of `σ⁻¹` on `𝓞 F` is the restriction of its action on `F`.
-  simp only [AbsoluteValue.smul_apply, AlgEquiv.aut_inv, algebraMap_smul_eq_apply]
+  simp only [AbsoluteValue.smul_apply, AlgEquiv.smul_def, AlgEquiv.aut_inv,
+    algebraMap_smul_eq_apply]
 
 /-- Let `F / K` be a Galois extension of number fields and `v` a finite place of `K`. The absolute
 values of `F` lying over `v` form a single orbit of `F ≃ₐ[K] F`. -/

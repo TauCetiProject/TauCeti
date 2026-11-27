@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.IteratedGradient.Contraction
 public import TauCeti.Analysis.MvPolynomial.PolynomialSpace
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Analysis.Calculus.IteratedGradient.Integral

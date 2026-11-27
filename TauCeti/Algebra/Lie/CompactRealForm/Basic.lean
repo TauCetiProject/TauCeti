@@ -61,7 +61,9 @@ complex subalgebra, and `-B(x, ω y)` is bilinear rather than Hermitian.
   `TauCeti.IsLieConjugation.killingHermitianForm_lie_left`: `H_τ(⁅z, x⁆, y) = -H_τ(x, ⁅τ z, y⁆)`.
 * `TauCeti.IsLieConjugation.killingForm_realForm`: the Killing form of the real form is the
   restriction of the Killing form of `L`.
-* `TauCeti.IsCompactConjugation.killingForm_realForm_self_neg`: the Killing form of a compact real
+* `TauCeti.IsCompactConjugation.killingForm_realForm_neg`: `B(X, τ X) < 0` for `X ≠ 0` with `X`
+  and `τ X` in a real form `Fix σ`, and its case `σ = τ`,
+  `TauCeti.IsCompactConjugation.killingForm_realForm_self_neg`: the Killing form of a compact real
   form is negative definite.
 * `Module.Basis.isLieConjugation_coordConj`: the conjugation of the coordinates in a basis with
   real structure constants is a conjugation of Lie algebras.
@@ -325,15 +327,23 @@ end Complex
 
 variable [LieAlgebra ℝ L] [IsScalarTower ℝ ℂ L] (hτ : IsCompactConjugation τ)
 
+include hτ in
+/-- **The Killing form of a real form against a compact conjugation is negative.** For a
+conjugation `σ` and `X ≠ 0`, `Y` in the real form `Fix σ` with `Y = τ X`,
+`B(X, Y) = B(X, τ X) = -H_τ(X, X) < 0`. -/
+theorem killingForm_realForm_neg {σ : L →ₛₗ[starRingEnd ℂ] L} (hσ : IsLieConjugation σ)
+    {x y : hσ.realForm} (hy : (y : L) = τ x) (hx : x ≠ 0) :
+    killingForm ℝ hσ.realForm x y < 0 := by
+  have hpos := hτ.pos x (by simpa using hx)
+  rw [LinearMap.killingHermitianForm_def, ← hy, ← hσ.killingForm_realForm, ← Complex.ofReal_neg,
+    Complex.zero_lt_real] at hpos
+  linarith
+
 /-- **The Killing form of a compact real form is negative definite.** For `X` in the real form,
 `B(X, X) = -H_τ(X, X)`, and `H_τ` is positive definite. -/
 theorem killingForm_realForm_self_neg (x : hτ.realForm) (hx : x ≠ 0) :
-    killingForm ℝ hτ.realForm x x < 0 := by
-  have hpos := hτ.pos x (by simpa using hx)
-  rw [LinearMap.killingHermitianForm_def, IsLieConjugation.apply_coe_realForm,
-    ← hτ.toIsLieConjugation.killingForm_realForm, ← Complex.ofReal_neg, Complex.zero_lt_real]
-    at hpos
-  linarith
+    killingForm ℝ hτ.realForm x x < 0 :=
+  hτ.killingForm_realForm_neg hτ.toIsLieConjugation (hτ.apply_coe_realForm x).symm hx
 
 end IsCompactConjugation
 
