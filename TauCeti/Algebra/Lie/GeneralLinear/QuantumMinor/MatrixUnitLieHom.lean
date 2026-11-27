@@ -34,31 +34,41 @@ namespace Matrix.HasMatrixUnitLieRelations
 variable {ι K A : Type*} [Fintype ι] [DecidableEq ι] [CommRing K] [Ring A] [Algebra K A]
   {E : Matrix ι ι A}
 
+-- The linear extension of a family along the matrix-unit basis takes its prescribed values.
+private theorem constr_single (E : Matrix ι ι A) (i j : ι) :
+    (stdBasis K ι ι).constr K (fun i ↦ E i.1 i.2) (single i j 1) = E i j := by
+  rw [← stdBasis_eq_single]
+  exact (stdBasis K ι ι).constr_basis K (fun i ↦ E i.1 i.2) (i, j)
+
 /-- Extend a family satisfying the matrix-unit relations to the general linear Lie algebra. -/
-noncomputable def toLieHom (hE : E.HasMatrixUnitLieRelations) : Matrix ι ι K →ₗ⁅K⁆ A := by
-  let b := stdBasis K ι ι
-  let f := b.constr K fun i ↦ E i.1 i.2
-  have hf (i j : ι) : f (single i j 1) = E i j := by
-    rw [← stdBasis_eq_single]
-    exact b.constr_basis K (fun i ↦ E i.1 i.2) (i, j)
-  let bracket₁ := (LieAlgebra.ad K (Matrix ι ι K)).toLinearMap
-  let bracket₂ := (LieAlgebra.ad K A).toLinearMap
-  have h : bracket₁.compr₂ f = bracket₂.compl₁₂ f f := by
-    apply LinearMap.ext_basis b b
-    rintro ⟨i, j⟩ ⟨k, l⟩
-    simp only [bracket₁, bracket₂, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply,
-      LieHom.coe_toLinearMap, LieAlgebra.ad_apply, b, stdBasis_eq_single, Ring.lie_def,
-      single_mul_single_eq_ite, mul_one, map_sub, apply_ite, map_zero, hf]
-    by_cases hli : l = i <;>
-      simpa only [hli, ite_true, ite_false] using
-        ((hasMatrixUnitLieRelations_iff E).mp hE i j k l).symm
-  exact { f with map_lie' := fun {x y} ↦ DFunLike.congr_fun (DFunLike.congr_fun h x) y }
+noncomputable def toLieHom (hE : E.HasMatrixUnitLieRelations) : Matrix ι ι K →ₗ⁅K⁆ A where
+  __ := (stdBasis K ι ι).constr K fun i ↦ E i.1 i.2
+  map_lie' {x y} := by
+    let b := stdBasis K ι ι
+    let f := b.constr K fun i ↦ E i.1 i.2
+    let bracket₁ := (LieAlgebra.ad K (Matrix ι ι K)).toLinearMap
+    let bracket₂ := (LieAlgebra.ad K A).toLinearMap
+    have h : bracket₁.compr₂ f = bracket₂.compl₁₂ f f := by
+      apply LinearMap.ext_basis b b
+      rintro ⟨i, j⟩ ⟨k, l⟩
+      simp only [bracket₁, bracket₂, LinearMap.compr₂_apply, LinearMap.compl₁₂_apply,
+        LieHom.coe_toLinearMap, LieAlgebra.ad_apply, b, stdBasis_eq_single, Ring.lie_def,
+        single_mul_single_eq_ite, mul_one, map_sub, apply_ite, map_zero, f, constr_single]
+      by_cases hli : l = i <;>
+        simpa only [hli, ite_true, ite_false] using
+          ((hasMatrixUnitLieRelations_iff E).mp hE i j k l).symm
+    exact DFunLike.congr_fun (DFunLike.congr_fun h x) y
+
+-- The underlying linear map of the extension is the linear extension along the matrix-unit
+-- basis. This is the one place where the definition of `toLieHom` is unfolded.
+private theorem toLieHom_toLinearMap (hE : E.HasMatrixUnitLieRelations) :
+    (hE.toLieHom (K := K) : Matrix ι ι K →ₗ[K] A) = (stdBasis K ι ι).constr K fun i ↦ E i.1 i.2 :=
+  rfl
 
 /-- The extension sends each matrix unit to its prescribed value. -/
 @[simp] theorem toLieHom_single (hE : E.HasMatrixUnitLieRelations) (i j : ι) :
     hE.toLieHom (K := K) (single i j 1) = E i j := by
-  rw [← stdBasis_eq_single]
-  exact (stdBasis K ι ι).constr_basis K (fun i ↦ E i.1 i.2) (i, j)
+  rw [← LieHom.coe_toLinearMap, toLieHom_toLinearMap, constr_single]
 
 /-- The extension is the linear combination of the family with the input matrix's entries. -/
 theorem toLieHom_apply (hE : E.HasMatrixUnitLieRelations) (X : Matrix ι ι K) :
@@ -73,26 +83,23 @@ theorem toLieHom_eq (hE : E.HasMatrixUnitLieRelations) (f : Matrix ι ι K →�
   rw [toLieHom_apply, ← LieHom.coe_toLinearMap f, f.toLinearMap.apply_eq_sum_sum_smul_single]
   simp only [LieHom.coe_toLinearMap, hf]
 
-/-- Transforming matrix units by `X ↦ P * X * Q` preserves their commutator relations if
-`Q * P = 1`. Rectangular `P` and `Q` give the relations on a split summand. -/
-theorem changeOfBasis (hE : E.HasMatrixUnitLieRelations) {κ : Type*} [DecidableEq κ]
+/-- The family whose `(i, j)` entry is `hE.toLieHom (P * single i j 1 * Q)`, that is
+`∑ c, ∑ d, (P c i * Q j d) • E c d`, again satisfies the matrix-unit relations when `Q * P = 1`.
+Rectangular `P` and `Q` give the relations on a split summand. -/
+theorem change_of_basis (hE : E.HasMatrixUnitLieRelations) {κ : Type*} [DecidableEq κ]
     (P : Matrix ι κ K) (Q : Matrix κ ι K) (hQP : Q * P = 1) :
     (of fun i j : κ ↦ ∑ c, ∑ d, (P c i * Q j d) • E c d).HasMatrixUnitLieRelations := by
   let f := hE.toLieHom (K := K)
-  let S (i j : κ) := vecMulVec (P.col i) (Q.row j)
-  have hS (i j : κ) : f (S i j) = ∑ c, ∑ d, (P c i * Q j d) • E c d := by
-    rw [toLieHom_apply]
-    simp only [S, vecMulVec_apply, col_apply, row_apply]
+  let S : Matrix κ κ (Matrix ι ι K) := of fun i j ↦ vecMulVec (P.col i) (Q.row j)
   have hmul (i j k l : κ) : S i j * S k l = if j = k then S i l else 0 := by
     have hdot : Q.row j ⬝ᵥ P.col k = if j = k then 1 else 0 := by
       have hentry := congrArg (fun M : Matrix κ κ K ↦ M j k) hQP
       simpa only [Matrix.mul_apply, Matrix.one_apply, dotProduct, row_apply, col_apply] using hentry
-    simp only [S, vecMulVec_mul_vecMulVec, hdot]
+    simp only [S, of_apply, vecMulVec_mul_vecMulVec, hdot]
     split <;> simp
-  rw [hasMatrixUnitLieRelations_iff]
-  intro i j k l
-  simp only [of_apply, ← hS]
-  rw [← Ring.lie_def, ← f.map_lie, Ring.lie_def, hmul, hmul, map_sub]
-  by_cases hjk : j = k <;> by_cases hli : l = i <;> simp [hjk, hli]
+  convert (HasMatrixUnitLieRelations.of_mul_eq_ite hmul).map_of_commutator f
+    (fun x y ↦ by simpa only [Ring.lie_def] using f.map_lie x y) using 1
+  ext i j
+  simp only [of_apply, map_apply, f, toLieHom_apply, S, vecMulVec_apply, col_apply, row_apply]
 
 end Matrix.HasMatrixUnitLieRelations

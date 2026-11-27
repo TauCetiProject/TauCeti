@@ -49,17 +49,23 @@ theorem hasMatrixUnitLieRelations_iff (E : Matrix ι ι A) :
         (if b = c then E a d else 0) - (if d = a then E c b else 0) :=
   (Iff.rfl)
 
+/-- A family multiplying like matrix units, `E i j * E k l = δ_{jk} E i l`, satisfies the
+matrix-unit relations. -/
+theorem HasMatrixUnitLieRelations.of_mul_eq_ite {E : Matrix ι ι A}
+    (h : ∀ i j k l, E i j * E k l = if j = k then E i l else 0) :
+    E.HasMatrixUnitLieRelations := by
+  intro a b c d
+  rw [h a b c d, h c d a b]
+
 /-- The matrix units `single i j 1` satisfy the matrix-unit relations. -/
 theorem hasMatrixUnitLieRelations_single [Fintype ι] (R : Type*) [Ring R] :
     HasMatrixUnitLieRelations (of fun i j ↦ (single i j 1 : Matrix ι ι R)) := by
-  have key (a b c d : ι) :
-      (single a b 1 : Matrix ι ι R) * single c d 1 = if b = c then single a d 1 else 0 := by
-    split_ifs with h
-    · subst h
-      simp
-    · exact single_mul_single_of_ne (h := h) ..
-  intro a b c d
-  simp only [of_apply, key]
+  refine .of_mul_eq_ite fun a b c d ↦ ?_
+  simp only [of_apply]
+  split_ifs with h
+  · subst h
+    simp
+  · exact single_mul_single_of_ne (h := h) ..
 
 /-- The matrix-unit relations pass to the image under any additive map carrying ring commutators
 to ring commutators, such as the map of `𝔤𝔩ₙ` into its universal enveloping algebra. -/
