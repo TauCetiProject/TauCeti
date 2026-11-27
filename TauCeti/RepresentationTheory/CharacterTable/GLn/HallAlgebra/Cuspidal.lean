@@ -97,7 +97,7 @@ private theorem sum_moebius_invtRestrict_eq_one_apply (g : Module.End k V)
   simp
 
 /-- `μ` is `1` on the class of size `0`. -/
-theorem moebius_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) : moebius o = 1 := by
+theorem moebius_eq_one_of_dim_eq_zero {o : SimilarityClass k} (h : o.dim = 0) : moebius o = 1 := by
   have := Fintype.ofFinite o.rep.invtSubmodule
   have : Subsingleton (Fin o.dim → k) := by rw [h]; infer_instance
   have key := sum_moebius_invtRestrict_eq_one_apply o.rep
