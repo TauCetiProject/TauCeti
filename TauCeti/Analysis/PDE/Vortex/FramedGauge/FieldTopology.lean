@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Divisor.Basic
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Limit
 public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+public import TauCeti.Analysis.Sobolev.BesselPotential.ZeroAtInfty
 import TauCeti.Analysis.Normed.Lp.PiLp.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
@@ -59,7 +60,9 @@ The continuity of the gauge action on `A_m^k` and the resulting Hausdorff quotie
 * `TauCeti.Vortex.SobolevFieldSpace f m s`: the continuous fields of `A_m^s`, with the topology
   of `A_m^s`.
 * `TauCeti.Vortex.SobolevFieldSpace.subRef`: the coordinates of `x - x_m` in `H^s(ℂ)`, each
-  determined by its `L²` function (`TauCeti.Vortex.SobolevFieldSpace.subRef_eq_iff`).
+  determined by its `L²` function (`TauCeti.Vortex.SobolevFieldSpace.subRef_eq_iff`); for
+  `s > 1` its continuous representative is `z ↦ x(z)ⱼ - x_m(z)ⱼ`
+  (`TauCeti.Vortex.SobolevFieldSpace.toZeroAtInfty_subRef_apply`).
 * `TauCeti.Vortex.SobolevFieldSpace.toFramedFieldSpace`: a continuous field as an element of
   `A_m^s`.
 * `TauCeti.Vortex.SobolevFieldSpace.congrOrder`: the identity of fields between `A_m^s` and
@@ -201,6 +204,18 @@ theorem coeFn_toLp_inclusion_subRef (h : 0 ≤ s) (x : SobolevFieldSpace f m s) 
   obtain ⟨u, hu, hux, hae⟩ := exists_eq_subRef x j
   rw [← hux, toLp_inclusion_toBesselPotentialSpace h _ rfl]
   exact hae
+
+/-- **The Sobolev embedding of the coordinate `subRef x j`**: for `s > 1`, the continuous
+representative of `subRef x j` is the complexification of `z ↦ x(z)ⱼ - x_m(z)ⱼ`, at every
+point. -/
+theorem toZeroAtInfty_subRef_apply (hs : finrank ℝ ℂ < 2 * s) (x : SobolevFieldSpace f m s)
+    (j : Fin 4) (w : ℂ) :
+    toZeroAtInfty hs (subRef x j) w = ((x w j - referenceField f m w j : ℝ) : ℂ) := by
+  have h0 : 0 ≤ s := TauCeti.nonneg_of_finrank_lt_two_mul hs
+  have hae := (coeFn_inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 (subRef x j)).symm.trans
+    (toLp_inclusion h0 (subRef x j) ▸ coeFn_toLp_inclusion_subRef h0 x j)
+  exact congrFun ((Continuous.ae_eq_iff_eq volume (toZeroAtInfty hs _).continuous
+    (continuous_ofReal_sub x j)).1 hae) w
 
 /-- **The coordinate `subRef x j` is characterized by its `L²` function**: for `s ≥ 0`, an element
 `e ∈ H^s(ℂ)` is the coordinate `j` of `x - x_m` exactly when its `L²` function is almost

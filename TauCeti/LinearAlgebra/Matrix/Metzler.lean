@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.LinearAlgebra.Matrix.Stochastic
 
 /-!
 # Metzler matrices and Q-matrices
@@ -24,10 +25,18 @@ This is what makes the exponential `exp (t • B)` of a Metzler matrix entrywise
 `t ≥ 0`, and, for a Q-matrix, a stochastic matrix; see
 `TauCeti/Analysis/Matrix/Exponential/Metzler.lean`.
 
+The **uniformized matrix** `Matrix.uniformized Q r = 1 + r⁻¹ • Q` at a rate `r > 0` is
+row-stochastic exactly when `Q` is a Q-matrix whose total jump rates `-Q i i` are at most `r`
+(`Matrix.uniformized_mem_rowStochastic_iff`). It is the transition matrix of the discrete chain
+that jumps at the rings of a clock of rate `r`; for `t ≥ 0`, the exponential `exp (t • Q)` is the
+average of its powers under the Poisson law of mean `r t`, see
+`TauCeti/Analysis/Matrix/Exponential/Uniformization.lean`.
+
 ## Main definitions
 
 * `Matrix.IsMetzler`: every off-diagonal entry is nonnegative.
 * `Matrix.IsQMatrix`: a Metzler matrix whose rows sum to zero.
+* `Matrix.uniformized`: the matrix `1 + r⁻¹ • Q`.
 
 ## Main results
 
@@ -39,10 +48,14 @@ This is what makes the exponential `exp (t • B)` of a Metzler matrix entrywise
 * `Matrix.isQMatrix_iff_isMetzler_and_mulVec_one_eq_zero`: a matrix is a Q-matrix if and only if
   it is Metzler and kills the all-ones column vector.
 * `Matrix.IsQMatrix.eq_zero`: on at most one state, the only Q-matrix is the zero matrix.
+* `Matrix.uniformized_mem_rowStochastic_iff`: for `r > 0`, the uniformized matrix `1 + r⁻¹ • Q` is
+  row-stochastic if and only if `Q` is a Q-matrix with `-Q i i ≤ r` for every `i`.
 
 ## References
 
 * J. R. Norris, *Markov Chains*, Cambridge University Press, 1997, Section 2.1, for Q-matrices.
+* D. A. Levin and Y. Peres, *Markov Chains and Mixing Times*, second edition, American
+  Mathematical Society, 2017, Section 20.1, p. 281, for the uniformized matrix of a Q-matrix.
 -/
 
 public section
@@ -225,5 +238,80 @@ theorem IsQMatrix.apply_self_nonpos [PartialOrder R] [IsOrderedAddMonoid R] {Q :
 end AddCommGroup
 
 end IsQMatrix
+
+section Uniformized
+
+variable [DecidableEq n]
+
+section DivisionRing
+
+variable [DivisionRing R] {Q : Matrix n n R} {r : R} {i j : n}
+
+/-- The **uniformized matrix** `1 + r⁻¹ • Q` of a square matrix `Q` at a rate `r`. When `Q` is a
+Q-matrix and `r > 0` bounds every total jump rate `-Q i i`, it is the stochastic matrix of the
+discrete chain that jumps at the rings of a clock of rate `r`
+(`Matrix.uniformized_mem_rowStochastic_iff`). For `r = 0` it is the identity matrix, since
+`0⁻¹ = 0`. -/
+def uniformized (Q : Matrix n n R) (r : R) : Matrix n n R :=
+  1 + r⁻¹ • Q
+
+theorem uniformized_def (Q : Matrix n n R) (r : R) : Q.uniformized r = 1 + r⁻¹ • Q :=
+  (rfl)
+
+theorem uniformized_apply (Q : Matrix n n R) (r : R) (i j : n) :
+    Q.uniformized r i j = (1 : Matrix n n R) i j + r⁻¹ * Q i j :=
+  (rfl)
+
+@[simp]
+theorem uniformized_apply_self (Q : Matrix n n R) (r : R) (i : n) :
+    Q.uniformized r i i = 1 + r⁻¹ * Q i i := by
+  rw [uniformized_apply, one_apply_eq]
+
+@[simp]
+theorem uniformized_apply_of_ne (Q : Matrix n n R) (r : R) (hij : i ≠ j) :
+    Q.uniformized r i j = r⁻¹ * Q i j := by
+  rw [uniformized_apply, one_apply_ne hij, zero_add]
+
+@[simp]
+theorem uniformized_zero_left (r : R) : (0 : Matrix n n R).uniformized r = 1 := by
+  rw [uniformized_def, smul_zero, add_zero]
+
+/-- At the rate `r = 0` the uniformized matrix is the identity, because `0⁻¹ = 0`. -/
+@[simp]
+theorem uniformized_zero_right (Q : Matrix n n R) : Q.uniformized 0 = 1 := by
+  simp [uniformized_def]
+
+/-- For a nonzero rate `r`, the matrix `Q` is recovered from its uniformized matrix as
+`r • (K - 1)`. -/
+theorem smul_uniformized_sub_one (hr : r ≠ 0) : r • (Q.uniformized r - 1) = Q := by
+  rw [uniformized_def, add_sub_cancel_left, smul_smul, mul_inv_cancel₀ hr, one_smul]
+
+end DivisionRing
+
+/-- **The uniformized matrix is stochastic.** For a rate `r > 0`, the matrix `1 + r⁻¹ • Q` is
+row-stochastic if and only if `Q` is a Q-matrix whose total jump rates `-Q i i` are at most `r`. -/
+theorem uniformized_mem_rowStochastic_iff [Fintype n] [Field R] [LinearOrder R]
+    [IsStrictOrderedRing R] {Q : Matrix n n R} {r : R} (hr : 0 < r) :
+    Q.uniformized r ∈ rowStochastic R n ↔ Q.IsQMatrix ∧ ∀ i, -Q i i ≤ r := by
+  have hr' : 0 < r⁻¹ := inv_pos.mpr hr
+  -- A diagonal entry `1 + r⁻¹ * Q i i` is nonnegative exactly when `-Q i i ≤ r`.
+  have hdiag (i : n) : 0 ≤ Q.uniformized r i i ↔ -Q i i ≤ r := by
+    have h : 1 + r⁻¹ * Q i i = r⁻¹ * (r + Q i i) := by rw [mul_add, inv_mul_cancel₀ hr.ne']
+    rw [uniformized_apply_self, h, mul_nonneg_iff_of_pos_left hr', neg_le_iff_add_nonneg]
+  have hoff {i j : n} (hij : i ≠ j) : 0 ≤ Q.uniformized r i j ↔ 0 ≤ Q i j := by
+    rw [uniformized_apply_of_ne Q r hij, mul_nonneg_iff_of_pos_left hr']
+  -- `(1 + r⁻¹ • Q) *ᵥ 1 = 1 + r⁻¹ • (Q *ᵥ 1)`, so the rows sum to one exactly when those of `Q`
+  -- sum to zero.
+  have hrow : Q.uniformized r *ᵥ 1 = 1 ↔ Q *ᵥ 1 = 0 := by
+    rw [uniformized_def, add_mulVec, one_mulVec, smul_mulVec, add_eq_left, smul_eq_zero]
+    simp [hr.ne']
+  rw [mem_rowStochastic, isQMatrix_iff_isMetzler_and_mulVec_one_eq_zero, hrow]
+  refine ⟨fun ⟨hnn, hsum⟩ ↦ ⟨⟨isMetzler_iff.mpr fun i j hij ↦ (hoff hij).mp (hnn i j), hsum⟩,
+    fun i ↦ (hdiag i).mp (hnn i i)⟩, fun ⟨⟨hM, hsum⟩, hd⟩ ↦ ⟨fun i j ↦ ?_, hsum⟩⟩
+  rcases eq_or_ne i j with rfl | hij
+  · exact (hdiag i).mpr (hd i)
+  · exact (hoff hij).mpr (hM hij)
+
+end Uniformized
 
 end Matrix

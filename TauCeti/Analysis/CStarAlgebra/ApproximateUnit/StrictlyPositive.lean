@@ -343,13 +343,13 @@ theorem isStrictlyPositive_iff_forall_positiveLinearMap_pos {h : A} :
   have hh : 0 ≤ h := by
     rw [TauCeti.nonneg_iff_forall_mem_stateSpace]
     intro ψ hψ
-    let ω := TauCeti.stateToPositiveLinearMap hψ
+    let ω := StateSpace.toPositiveLinearMap ⟨ψ, hψ⟩
     have hω_ne : ω ≠ 0 := fun h0 => by
       have hnorm := TauCeti.norm_toStrongDual_of_mem_stateSpace hψ
       have hzero : toStrongDual ψ = 0 := ContinuousLinearMap.ext fun x => by
         simpa [ω] using DFunLike.congr_fun h0 x
       simp [hzero] at hnorm
-    exact (hpos ω hω_ne).le.trans_eq (TauCeti.stateToPositiveLinearMap_apply hψ h)
+    exact (hpos ω hω_ne).le.trans_eq (StateSpace.toPositiveLinearMap_apply ⟨ψ, hψ⟩ h)
   rw [isStrictlyPositive_iff_isIncreasingApproximateUnit_resolventApprox]
   exact Filter.IsIncreasingApproximateUnit.of_tendsto_mul_right
     (fun a => tendsto_map'_iff.mpr

@@ -8,7 +8,7 @@ module
 public import Mathlib.Topology.Algebra.Ring.Basic
 
 /-!
-# Induced and infimum topological ring structures and commutator transport
+# Induced/infimum ring topologies, commutator transport, and ring projections
 
 Mathlib provides `Topology.IsInducing.isTopologicalAddGroup`, `isTopologicalAddGroup_induced`,
 `isTopologicalAddGroup_sInf`, `isTopologicalAddGroup_iInf`, and `isTopologicalAddGroup_inf` for
@@ -24,6 +24,10 @@ centrality along surjective ring homomorphisms:
 * `TauCeti.tendsto_commutator_map_of_surjective`: composing `f : S → A` with a surjective
   nonunital, not-necessarily-associative ring homomorphism continuous at `0` preserves
   asymptotic centrality along a filter.
+
+It also states continuity of the bundled projections `RingHom.fst` and `RingHom.snd`
+(`RingHom.continuous_fst`, `RingHom.continuous_snd`), for use where continuity of a bundled ring
+homomorphism is an argument.
 -/
 
 public section
@@ -90,3 +94,17 @@ theorem tendsto_commutator_map_of_surjective {S A B G : Type*}
   exact hlim.congr fun e => by simp [map_sub, map_mul]
 
 end TauCeti
+
+/-- The first projection `A × B →+* A` is continuous, stated for the bundled ring homomorphism so
+that it matches arguments asking for continuity of a bundled ring homomorphism, such as that of
+`TauCeti.StableComponentGroup.map`. -/
+theorem RingHom.continuous_fst {A B : Type*} [NonAssocSemiring A] [TopologicalSpace A]
+    [NonAssocSemiring B] [TopologicalSpace B] : Continuous (RingHom.fst A B) :=
+  _root_.continuous_fst
+
+/-- The second projection `A × B →+* B` is continuous, stated for the bundled ring homomorphism
+so that it matches arguments asking for continuity of a bundled ring homomorphism, such as that of
+`TauCeti.StableComponentGroup.map`. -/
+theorem RingHom.continuous_snd {A B : Type*} [NonAssocSemiring A] [TopologicalSpace A]
+    [NonAssocSemiring B] [TopologicalSpace B] : Continuous (RingHom.snd A B) :=
+  _root_.continuous_snd

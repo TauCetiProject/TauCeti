@@ -80,6 +80,7 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
   `TauCeti.ascPochhammer_eval_neg_mul_ascPochhammer_eval_add_two`: the products
   `(−a)ₖ (a)ₖ = (−1)ᵏ ∏_{l<k} (a² − l²)` and `(−a)ₖ (a + 2)ₖ = (−1)ᵏ ∏_{l<k} ((a + 1)² − (l + 1)²)`.
 * `TauCeti.two_pow_mul_ascPochhammer_eval_div_two`: `2ᵏ (b/2)ₖ = ∏_{l<k} (2l + b)`.
+* `TauCeti.prod_range_sub_two_mul`: `∏_{r<k} (x − 2r) = (−2)ᵏ (−x/2)ₖ`.
 -/
 
 public section
@@ -469,6 +470,14 @@ theorem two_pow_mul_ascPochhammer_eval_div_two {K : Type*} [Field K] [NeZero (2 
     -- Only `b / 2 * 2 = b` is needed, which uses `2 ≠ 0`.
     have h2 : b / 2 * 2 = b := div_mul_cancel₀ b two_ne_zero
     linear_combination (2 ^ k * (ascPochhammer K k).eval (b / 2)) * h2
+
+/-- `∏_{r<k} (x − 2r) = (−2)ᵏ (−x/2)ₖ`, the product of an arithmetic progression with step `−2`. -/
+theorem prod_range_sub_two_mul {K : Type*} [Field K] [NeZero (2 : K)] (x : K) (k : ℕ) :
+    ∏ r ∈ Finset.range k, (x - 2 * r) = (-2) ^ k * (ascPochhammer K k).eval (-x / 2) := by
+  have h := Finset.prod_neg (s := Finset.range k) fun r : ℕ => 2 * (r : K) + -x
+  rw [Finset.card_range] at h
+  rw [neg_pow, mul_assoc, two_pow_mul_ascPochhammer_eval_div_two, ← h]
+  exact Finset.prod_congr rfl fun r _ => by ring
 
 end Ascending
 
