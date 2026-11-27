@@ -53,9 +53,9 @@ field every invertible matrix is a product of these
 * A. Weil, *Basic Number Theory*, Chapter I, §2 (the module of an automorphism of a
   finite-dimensional vector space over a locally compact field is the module of its
   determinant).
-* The same reduction to the determinant is the step `New.map_mulVec_haar_finAdele`
-  (`src/Lib/Adelic/Adeles/IdeleModulus.lean`) of grh-lean takes over the finite adeles
-  (https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC); no code of
+* grh-lean takes the same reduction to the determinant over the finite adeles in
+  `New.map_mulVec_haar_finAdele` (`src/Lib/Adelic/Adeles/IdeleModulus.lean`;
+  https://github.com/lsernau/grh-lean, Apache 2.0, Copyright 2026 Anthropic, PBC); no code of
   that file is used here.
 -/
 
@@ -171,9 +171,9 @@ section Field
 variable {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [LocallyCompactSpace K]
   [SecondCountableTopology K]
 
-/-- **The Haar character of `GL_n` is that of the determinant.** Over a locally compact field
-`K`, an invertible matrix `g` scales additive Haar measure on `ι → K` by the factor by which
-multiplication by `det g` scales additive Haar measure on `K`. -/
+/-- **The Haar character of `GL_n` is that of the determinant.** Over a locally compact second
+countable field `K`, an invertible matrix `g` scales additive Haar measure on `ι → K` by the
+factor by which multiplication by `det g` scales additive Haar measure on `K`. -/
 theorem distribHaarChar_eq_distribHaarChar_det (g : GL ι K) :
     distribHaarChar (ι → K) g = distribHaarChar K (GeneralLinearGroup.det g) := by
   -- Every invertible matrix is a product of diagonal matrices and transvections.
