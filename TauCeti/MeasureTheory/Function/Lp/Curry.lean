@@ -68,7 +68,7 @@ public section
 noncomputable section
 
 open Filter Set
-open scoped ENNReal Topology symmDiff
+open scoped ENNReal Topology
 
 namespace MeasureTheory
 
@@ -269,22 +269,11 @@ private theorem stronglyMeasurable_curryLp_indicator [Fact (1 ≤ p)] (hp : p �
   by_cases hx : x ∈ G
   · simp only [indicator_of_mem hx]
     rw [curryLp_indicator hA c hx.ne]
-    refine tendsto_indicatorConstLp_set hp ?_
     -- The truncations `A_x ∩ S k` exhaust the finite-measure section `A_x`.
-    have hdiff (k : ℕ) : ((Prod.mk x ⁻¹' A) ∩ spanningSets ν k) ∆ (Prod.mk x ⁻¹' A) =
-        (Prod.mk x ⁻¹' A) \ spanningSets ν k := by
-      rw [symmDiff_of_le inter_subset_left]
-      ext y
-      simp only [Set.mem_sdiff, mem_inter_iff]
-      tauto
-    simp_rw [hdiff]
-    have hlim := tendsto_measure_iInter_atTop (μ := ν)
-      (s := fun k ↦ (Prod.mk x ⁻¹' A) \ spanningSets ν k)
-      (fun k ↦ ((measurable_prodMk_left hA).diff
-        (measurableSet_spanningSets ν k)).nullMeasurableSet)
-      (fun i j hij ↦ sdiff_le_sdiff_left (monotone_spanningSets ν hij))
-      ⟨0, ne_top_of_le_ne_top hx.ne (measure_mono sdiff_subset)⟩
-    rwa [← sdiff_iUnion, iUnion_spanningSets, sdiff_univ, measure_empty] at hlim
+    exact TauCeti.tendsto_indicatorConstLp_of_monotone hp
+      (fun k ↦ (measurable_prodMk_left hA).inter (measurableSet_spanningSets ν k))
+      (fun i j hij ↦ inter_subset_inter_right _ (monotone_spanningSets ν hij))
+      (by rw [← inter_iUnion, iUnion_spanningSets, inter_univ]) c
   · simp only [indicator_of_notMem hx]
     rw [curryLp_of_not_memLp]
     · exact tendsto_const_nhds
@@ -488,12 +477,24 @@ theorem curryEquiv_apply [CompleteSpace E] (hp : p ≠ ∞) (F : Lp E p (μ.prod
     curryEquiv 𝕜 E μ ν hp F = curryₗᵢ 𝕜 E μ ν hp F :=
   congrFun (LinearIsometryEquiv.coe_ofSurjective _ _) F
 
+/-- The inverse of `Lp.curryEquiv` undoes `Lp.curryₗᵢ`. -/
+@[simp]
+theorem curryEquiv_symm_curryₗᵢ [CompleteSpace E] (hp : p ≠ ∞) (F : Lp E p (μ.prod ν)) :
+    (curryEquiv 𝕜 E μ ν hp).symm (curryₗᵢ 𝕜 E μ ν hp F) = F := by
+  rw [← curryEquiv_apply, LinearIsometryEquiv.symm_apply_apply]
+
+/-- `Lp.curryₗᵢ` undoes the inverse of `Lp.curryEquiv`. -/
+@[simp]
+theorem curryₗᵢ_curryEquiv_symm [CompleteSpace E] (hp : p ≠ ∞) (G : Lp (Lp E p ν) p μ) :
+    curryₗᵢ 𝕜 E μ ν hp ((curryEquiv 𝕜 E μ ν hp).symm G) = G := by
+  rw [← curryEquiv_apply, LinearIsometryEquiv.apply_symm_apply]
+
 /-- **Section formula for the inverse.** For `G ∈ Lᵖ(μ; Lᵖ(ν; E))`, for almost every `x` the
 value `G x` is represented by the section `y ↦ (Lp.curryEquiv).symm G (x, y)`. -/
 theorem ae_ae_curryEquiv_symm_apply [CompleteSpace E] (hp : p ≠ ∞) (G : Lp (Lp E p ν) p μ) :
     ∀ᵐ x ∂μ, ∀ᵐ y ∂ν, G x y = (curryEquiv 𝕜 E μ ν hp).symm G (x, y) := by
   have h := ae_ae_curryₗᵢ_apply 𝕜 hp ((curryEquiv 𝕜 E μ ν hp).symm G)
-  rwa [← curryEquiv_apply, LinearIsometryEquiv.apply_symm_apply] at h
+  rwa [curryₗᵢ_curryEquiv_symm] at h
 
 end Lp
 

@@ -52,6 +52,8 @@ constant indicator classes it intersects the supporting sets.
   linear map.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
+* `TauCeti.tendsto_indicatorConstLp_of_monotone`: for a finite exponent, the indicator classes of
+  an increasing family of measurable sets converge to the class of their union of finite measure.
 * `TauCeti.indicatorConstLp_sdiff`, `TauCeti.sum_indicatorConstLp`,
   `TauCeti.hasSum_indicatorConstLp`: indicator classes are subtractive, finitely additive, and for a
   finite exponent countably additive on pairwise disjoint sets whose union has finite measure.
@@ -245,6 +247,24 @@ theorem sum_indicatorConstLp (t : Finset ι) (hs : ∀ i, MeasurableSet (s i))
     congr 1
     rw [Finset.set_biUnion_insert]
 
+/-- For a finite exponent, the indicator classes of an increasing family of measurable sets
+converge to the indicator class of their union, provided the union has finite measure. -/
+theorem tendsto_indicatorConstLp_of_monotone [Fact (1 ≤ p)] (hp : p ≠ ∞) [Preorder ι]
+    [IsCountablyGenerated (atTop : Filter ι)] {u : Set α} {hu : MeasurableSet u} {hμu : μ u ≠ ∞}
+    {t : ι → Set α} (ht : ∀ i, MeasurableSet (t i)) {hμt : ∀ i, μ (t i) ≠ ∞} (hmono : Monotone t)
+    (htu : ⋃ i, t i = u) (c : E) :
+    Tendsto (fun i ↦ indicatorConstLp p (ht i) (hμt i) c) atTop
+      (𝓝 (indicatorConstLp p hu hμu c)) := by
+  subst htu
+  refine tendsto_indicatorConstLp_set hp ?_
+  have hdiff (i : ι) : μ (t i ∆ ⋃ j, t j) = μ (⋃ j, t j) - μ (t i) := by
+    rw [symmDiff_of_le (Set.subset_iUnion t i),
+      measure_sdiff (Set.subset_iUnion t i) (ht i).nullMeasurableSet (hμt i)]
+  simp_rw [hdiff]
+  have := ENNReal.Tendsto.sub tendsto_const_nhds (tendsto_measure_iUnion_atTop (μ := μ) hmono)
+    (.inl hμu)
+  rwa [tsub_self] at this
+
 /-- **Countable additivity of indicator classes.** For a finite exponent, the classes in `Lᵖ` of
 the indicators of countably many pairwise disjoint measurable sets whose union has finite measure
 sum to the class of the indicator of the union. -/
@@ -254,26 +274,13 @@ theorem hasSum_indicatorConstLp [Countable ι] [Fact (1 ≤ p)] (hp : p ≠ ∞)
     HasSum (fun i ↦ indicatorConstLp p (hs i)
         (ne_top_of_le_ne_top hμ (measure_mono (Set.subset_iUnion s i))) c)
       (indicatorConstLp p (MeasurableSet.iUnion hs) hμ c) := by
-  have hμt (t : Finset ι) : μ (⋃ i ∈ t, s i) ≠ ∞ :=
-    ne_top_of_le_ne_top hμ (measure_mono (Set.iUnion₂_subset fun i _ ↦ Set.subset_iUnion s i))
   have hsum := fun t : Finset ι ↦ sum_indicatorConstLp t hs
     (fun i ↦ ne_top_of_le_ne_top hμ (measure_mono (Set.subset_iUnion s i)))
     (hd.set_pairwise (t : Set ι)) c (p := p)
   simp_rw [HasSum, hsum, SummationFilter.unconditional_filter]
-  refine tendsto_indicatorConstLp_set hp ?_
-  -- The finite unions increase to the union, whose measure is finite.
-  have hsub (t : Finset ι) : ⋃ i ∈ t, s i ⊆ ⋃ i, s i := Set.iUnion₂_subset fun i _ ↦
-    Set.subset_iUnion s i
-  have hdiff (t : Finset ι) :
-      μ ((⋃ i ∈ t, s i) ∆ ⋃ i, s i) = μ (⋃ i, s i) - μ (⋃ i ∈ t, s i) := by
-    rw [symmDiff_of_le (hsub t), measure_sdiff (hsub t)
-      (t.measurableSet_biUnion fun i _ ↦ hs i).nullMeasurableSet (hμt t)]
-  simp_rw [hdiff]
-  have hlim := tendsto_measure_iUnion_atTop (μ := μ) (ι := Finset ι)
-    (s := fun t ↦ ⋃ i ∈ t, s i) fun t t' h ↦ Set.biUnion_subset_biUnion_left h
-  rw [← Set.iUnion_eq_iUnion_finset] at hlim
-  have := ENNReal.Tendsto.sub (tendsto_const_nhds (x := μ (⋃ i, s i))) hlim (Or.inl hμ)
-  rwa [tsub_self] at this
+  exact tendsto_indicatorConstLp_of_monotone hp
+    (fun t : Finset ι ↦ t.measurableSet_biUnion fun i _ ↦ hs i)
+    (fun t t' h ↦ Set.biUnion_subset_biUnion_left h) (Set.iUnion_eq_iUnion_finset s).symm c
 
 end Countable
 
