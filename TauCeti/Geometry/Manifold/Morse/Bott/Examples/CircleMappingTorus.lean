@@ -35,12 +35,14 @@ is trivial and the two trajectory families cancel already on chains.
 `e`, with coefficient frames chosen at `v` and along `e`. The cellular chains are `R × R`, the
 coefficients of `v` and `e` in degrees `0` and `1` (`TauCeti.circleCellGrading`), and the boundary
 of `e` is `ρ(g) v - v = (u - 1) v` (`TauCeti.circleCellBoundary`): `0` for trivial coefficients and
-`-2` for the sign local system.
+`-2` for the sign local system (`TauCeti.circleCellBoundary_neg_one_apply`).
 
 **The Bott differential.** The internal boundary of `C₁` is twisted by `(-1)^1`, so the Bott
 differential sends the edge of `C₁` to `(1 - u)` times its vertex
 (`TauCeti.BottChainData.differential_circleMappingTorus_apply_one`): for the Klein bottle the
-cellular boundary `-2` becomes `+2`. The total-degree pieces of the Bott complex
+cellular boundary `-2` becomes `+2`
+(`TauCeti.BottChainData.differential_circleMappingTorus_neg_one_apply_one`).
+The total-degree pieces of the Bott complex
 (`TauCeti.BottChainData.circleMappingTorusComplex`) are `R` in degree `2` (the edge of `C₁`), `R²`
 in degree `1` (the edge of `C₀`, then the vertex of `C₁`) and `R` in degree `0` (the vertex of
 `C₀`), and zero in every other degree. In these bases it is the finite complex `R → R² → R` with
@@ -54,7 +56,7 @@ in degree `1` (the edge of `C₀`, then the vertex of `C₁`) and `R` in degree 
 
 and the other homology groups vanish. For the Klein bottle over `ℤ` this is `H₀ = ℤ`,
 `H₁ = ℤ²/⟨(0, 2)⟩ = ℤ × ℤ/2` and `H₂ = 0`, the integral homology of the Klein bottle
-(`TauCeti.BottChainData.nonempty_linearEquiv_homology_circleMappingTorusComplex_singularHomology`).
+(`TauCeti.BottChainData.circleMappingTorusSingularHomologyEquivNegOne`).
 Replacing the negative line by a trivial line, `u = 1`, would instead give `H₁ = R²` and
 `H₂ = R`, the homology of the torus.
 
@@ -96,9 +98,9 @@ through chain maps are not.
   degrees `0`, `1` and `2`.
 * `TauCeti.BottChainData.isZero_homology_two_circleMappingTorusComplex_neg_one`: for the Klein
   bottle over `ℤ`, `H₂ = 0`.
-* `TauCeti.BottChainData.nonempty_linearEquiv_homology_circleMappingTorusComplex_singularHomology`:
-  in every degree, the homology of the Klein bottle model over `ℤ` is isomorphic to the singular
-  homology of the Klein bottle.
+* `TauCeti.BottChainData.circleMappingTorusSingularHomologyEquivNegOne`: in every degree, an
+  isomorphism of the homology of the Klein bottle model over `ℤ` with the singular homology of the
+  Klein bottle.
 
 ## References
 
@@ -154,6 +156,13 @@ theorem circleCellBoundary_apply (u : ℤˣ) (x : R × R) :
 @[simp]
 theorem circleCellBoundary_one : circleCellBoundary R 1 = 0 :=
   LinearMap.ext fun x ↦ by simp
+
+/-- **The boundary of the sign circle**: with coefficients of monodromy `-1`, the boundary of the
+edge is `-2` times the vertex. -/
+theorem circleCellBoundary_neg_one_apply (x : R × R) :
+    circleCellBoundary R (-1) x = ((-2 : ℤ) • x.2, 0) := by
+  simp only [circleCellBoundary_apply, Units.val_neg, Units.val_one]
+  norm_num
 
 /-- The cellular boundary of the circle squares to zero. -/
 @[simp]
@@ -234,6 +243,13 @@ theorem differential_circleMappingTorus_apply_one (x : Fin 2 → R × R) :
     (circleMappingTorus R u).differential x 1 = ((1 - (u : ℤ)) • (x 1).2, 0) := by
   rw [circleMappingTorus, differential_ofBoundary_apply]
   simp [← neg_mul, neg_sub]
+
+/-- **The rank-one shift turns `-2` into `+2`**: for the Klein bottle, the Bott differential sends
+the edge of the maximum circle to twice its vertex. -/
+theorem differential_circleMappingTorus_neg_one_apply_one (x : Fin 2 → R × R) :
+    (circleMappingTorus R (-1)).differential x 1 = ((2 : ℤ) • (x 1).2, 0) := by
+  rw [differential_circleMappingTorus_apply_one]
+  norm_num
 
 variable (R) in
 /-- The chains of the model of total degree `k`, a submodule of `Fin 2 → R × R`. -/
@@ -598,28 +614,48 @@ theorem isZero_homology_two_circleMappingTorusComplex_neg_one :
         smul_eq_mul] at h
       omega
 
-/-- **The Klein bottle model has the integral homology of the Klein bottle**: in every degree its
-homology over `ℤ` is isomorphic to the singular homology of `K`, namely `ℤ`, `ℤ × ℤ/2` and `0` in
-degrees `0`, `1` and `≥ 2`. The isomorphisms are abstract: they are not induced by chain maps
-between the model and singular chains. -/
-theorem nonempty_linearEquiv_homology_circleMappingTorusComplex_singularHomology
-    (k : ℕ) :
-    Nonempty ((circleMappingTorusComplex ℤ (-1)).homology k ≃ₗ[ℤ]
+/-- **The Klein bottle model has the integral homology of the Klein bottle**: in every degree `k`,
+the homology of the model over `ℤ` is isomorphic to the singular homology `H_k(K; ℤ)`. Both are
+`ℤ`, `ℤ × ℤ/2` and `0` in degrees `0`, `1` and `≥ 2`; in degrees `0` and `1` the isomorphism is
+`TauCeti.BottChainData.circleMappingTorusHomologyZeroEquiv` and
+`TauCeti.BottChainData.circleMappingTorusHomologyOneEquivNegOne` followed by the inverse of
+`TauCeti.KleinBottle.singularHomologyZeroLinearEquiv` and
+`TauCeti.KleinBottle.singularHomologyOneLinearEquiv`
+(`TauCeti.BottChainData.circleMappingTorusSingularHomologyEquivNegOne_zero`,
+`TauCeti.BottChainData.circleMappingTorusSingularHomologyEquivNegOne_one`). The isomorphisms are
+not induced by chain maps between the model and singular chains. -/
+noncomputable def circleMappingTorusSingularHomologyEquivNegOne :
+    (k : ℕ) → (circleMappingTorusComplex ℤ (-1)).homology k ≃ₗ[ℤ]
       ((singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj (ModuleCat.of ℤ ℤ)).obj
-        (TopCat.of KleinBottle)) := by
-  match k with
-  | 0 =>
-    exact ⟨circleMappingTorusHomologyZeroEquiv ℤ (-1) ≪≫ₗ
-      KleinBottle.singularHomologyZeroLinearEquiv.symm⟩
-  | 1 =>
-    exact ⟨circleMappingTorusHomologyOneEquivNegOne ≪≫ₗ
-      KleinBottle.singularHomologyOneLinearEquiv.symm⟩
+        (TopCat.of KleinBottle)
+  | 0 => circleMappingTorusHomologyZeroEquiv ℤ (-1) ≪≫ₗ
+      KleinBottle.singularHomologyZeroLinearEquiv.symm
+  | 1 => circleMappingTorusHomologyOneEquivNegOne ≪≫ₗ
+      KleinBottle.singularHomologyOneLinearEquiv.symm
   | n + 2 =>
-    refine ⟨(IsZero.iso ?_
-      (KleinBottle.isZero_singularHomology_of_two_le (by omega))).toLinearEquiv⟩
-    rcases n with _ | n
-    · exact isZero_homology_two_circleMappingTorusComplex_neg_one
-    · exact isZero_homology_circleMappingTorusComplex _ (by omega) (by omega) (by omega)
+    have h : IsZero ((circleMappingTorusComplex ℤ (-1)).homology ((n + 2 : ℕ) : ℤ)) := by
+      rcases n with _ | n
+      · exact isZero_homology_two_circleMappingTorusComplex_neg_one
+      · exact isZero_homology_circleMappingTorusComplex _ (by omega) (by omega) (by omega)
+    (h.iso (KleinBottle.isZero_singularHomology_of_two_le (by omega))).toLinearEquiv
+
+/-- In degree `0` the comparison with the singular homology of the Klein bottle is
+`TauCeti.BottChainData.circleMappingTorusHomologyZeroEquiv` followed by the inverse of
+`TauCeti.KleinBottle.singularHomologyZeroLinearEquiv`. -/
+theorem circleMappingTorusSingularHomologyEquivNegOne_zero :
+    circleMappingTorusSingularHomologyEquivNegOne 0 =
+      circleMappingTorusHomologyZeroEquiv ℤ (-1) ≪≫ₗ
+        KleinBottle.singularHomologyZeroLinearEquiv.symm :=
+  (rfl)
+
+/-- In degree `1` the comparison with the singular homology of the Klein bottle is
+`TauCeti.BottChainData.circleMappingTorusHomologyOneEquivNegOne` followed by the inverse of
+`TauCeti.KleinBottle.singularHomologyOneLinearEquiv`. -/
+theorem circleMappingTorusSingularHomologyEquivNegOne_one :
+    circleMappingTorusSingularHomologyEquivNegOne 1 =
+      circleMappingTorusHomologyOneEquivNegOne ≪≫ₗ
+        KleinBottle.singularHomologyOneLinearEquiv.symm :=
+  (rfl)
 
 variable (R) in
 /-- **For a trivial negative line, `H₁ = R²`**: the differential `d₂` vanishes. This is the case of
