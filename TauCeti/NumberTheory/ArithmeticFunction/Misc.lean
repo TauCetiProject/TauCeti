@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Algebra.Module.BigOperators
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
+import Mathlib.Data.Finset.NatDivisors
+import TauCeti.NumberTheory.Divisors
 
 /-!
-# Weighted hyperbola sums of Dirichlet convolutions
+# Weighted hyperbola sums and restricted divisor sums of arithmetic functions
 
 Mathlib's `ArithmeticFunction.sum_Ioc_mul_eq_sum_sum` rewrites `∑_{0<n≤N} (f * g)(n)` as a sum
 over the hyperbola `mℓ ≤ N`. This file adds the weighted form, where each term carries a weight
@@ -21,12 +23,19 @@ multiplicative (for instance `w(n) = e(nα)`). The proof follows the plan of Mat
 The file also records the elementary bound `2 ^ Ω n ≤ n`, for `n ≠ 0`, on the number `Ω n` of
 prime factors of `n` counted with multiplicity.
 
+For multiplicative `f` and fixed `k`, the sum `∑ f(d)` over the divisors `d` of `n` with
+`dᵏ ∣ n` is again multiplicative in `n`, because for coprime `m` and `n` these divisors of `m * n`
+split uniquely as products of the corresponding divisors of `m` and of `n`
+(`Nat.Coprime.divisors_filter_pow_dvd_mul`).
+
 ## Main results
 
 * `ArithmeticFunction.sum_Ioc_mul_smul_eq_sum_sum`:
   `∑_{0<n≤N} (f * g)(n) • w(n) = ∑_{0<m≤N} f(m) • ∑_{0<ℓ≤N/m} g(ℓ) • w(mℓ)`.
 * `ArithmeticFunction.two_pow_cardFactors_le`: `2 ^ Ω n ≤ n` for `n ≠ 0`, since each of the
   `Ω n` prime factors of `n`, counted with multiplicity, is at least `2`.
+* `ArithmeticFunction.IsMultiplicative.sum_divisors_filter_pow_dvd_mul`: for multiplicative `f`,
+  `n ↦ ∑_{dᵏ ∣ n} f(d)` is multiplicative.
 -/
 
 public section
@@ -81,5 +90,18 @@ theorem two_pow_cardFactors_le {n : ℕ} (hn : n ≠ 0) : 2 ^ Ω n ≤ n := by
   conv_rhs => rw [← Nat.prod_primeFactorsList hn]
   rw [cardFactors_apply]
   exact List.pow_length_le_prod _ _ fun p hp ↦ (Nat.prime_of_mem_primeFactorsList hp).two_le
+
+/-- For multiplicative `f`, the sum of `f` over the divisors `d` of `n` with `d ^ k ∣ n` is
+multiplicative in `n`. -/
+theorem IsMultiplicative.sum_divisors_filter_pow_dvd_mul {f : ArithmeticFunction R}
+    (hf : f.IsMultiplicative) (k : ℕ) {m n : ℕ} (hmn : m.Coprime n) :
+    ∑ d ∈ (m * n).divisors with d ^ k ∣ m * n, f d =
+      (∑ d ∈ m.divisors with d ^ k ∣ m, f d) * ∑ d ∈ n.divisors with d ^ k ∣ n, f d := by
+  rw [hmn.divisors_filter_pow_dvd_mul, sum_image, sum_mul_sum, sum_product]
+  · refine sum_congr rfl fun a ha ↦ sum_congr rfl fun b hb ↦ hf.map_mul_of_coprime ?_
+    exact (hmn.coprime_dvd_left (Nat.dvd_of_mem_divisors (mem_filter.1 ha).1)).coprime_dvd_right
+      (Nat.dvd_of_mem_divisors (mem_filter.1 hb).1)
+  · exact hmn.mul_injOn_divisors.mono <| coe_subset.2 <|
+      product_subset_product (filter_subset _ _) (filter_subset _ _)
 
 end ArithmeticFunction
