@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.SchurHorn
 public import TauCeti.Analysis.Matrix.Eigenvalues.Schur.Basic
+import TauCeti.RingTheory.Polynomial.Vieta
 
 /-!
 # Ky Fan's majorization of the real parts of eigenvalues
@@ -64,8 +65,7 @@ theorem re_eigenvalues_mem_convexHull_of_charpoly_eq_prod {T H : E →ₗ[𝕜] 
     linarith [inner_re_symm (𝕜 := 𝕜) x (T x)]
   -- In the triangularizing basis `e`, the diagonal entry `⟪e j, T (e j)⟫` is `α j`.
   have hdiag' (j : Fin n) : RCLike.re (α j) = RCLike.re ⟪H (e j), e j⟫_𝕜 := by
-    rw [hre, ← congrFun hdiag j, Matrix.diag_apply, toMatrix_apply, OrthonormalBasis.coe_toBasis,
-      OrthonormalBasis.coe_toBasis_repr_apply, OrthonormalBasis.repr_apply_apply]
+    simp [hre, ← hdiag, toMatrix_apply, OrthonormalBasis.repr_apply_apply]
   simpa only [hdiag'] using hH.re_inner_apply_self_mem_convexHull_eigenvalues_comp_perm hn e
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [FiniteDimensional ℂ E]
@@ -78,9 +78,10 @@ theorem re_eigenvalues_mem_convexHull {T H : E →ₗ[ℂ] E} (hH : H.IsSymmetri
     (hHT : (2 : ℂ) • H = T + adjoint T) {n : ℕ} (hn : finrank ℂ E = n) {α : Fin n → ℂ}
     (hα : Multiset.map α Finset.univ.val = T.charpoly.roots) :
     (fun j ↦ (α j).re) ∈
-      convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ hH.eigenvalues hn ∘ σ) :=
-  hH.re_eigenvalues_mem_convexHull_of_charpoly_eq_prod hHT hn <|
-    (T.exists_orthonormalBasis_isUpperTriangular_diag_iff α).mp
-      (T.exists_orthonormalBasis_isUpperTriangular_diag hα)
+      convexHull ℝ (Set.range fun σ : Equiv.Perm (Fin n) ↦ hH.eigenvalues hn ∘ σ) := by
+  simpa only [RCLike.re_to_complex] using
+    hH.re_eigenvalues_mem_convexHull_of_charpoly_eq_prod hHT hn <|
+      eq_prod_X_sub_C_of_monic_of_roots_eq T.charpoly_monic (by simp [charpoly_natDegree, hn])
+        hα.symm
 
 end LinearMap.IsSymmetric

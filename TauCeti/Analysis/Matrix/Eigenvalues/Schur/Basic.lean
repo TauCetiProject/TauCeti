@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.LinearAlgebra.Matrix.Triangular.Intertwining
 import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import TauCeti.RingTheory.Polynomial.RootEnumeration
+import TauCeti.RingTheory.Polynomial.Vieta
 
 /-!
 # Unitary Schur triangularization
@@ -338,8 +339,8 @@ theorem exists_orthonormalBasis_isUpperTriangular_diag {E : Type*} [NormedAddCom
     (hα : Multiset.map α Finset.univ.val = T.charpoly.roots) :
     ∃ e : OrthonormalBasis ι ℂ E, (toMatrix e.toBasis e.toBasis T).IsUpperTriangular ∧
       (toMatrix e.toBasis e.toBasis T).diag = α := by
-  refine (T.exists_orthonormalBasis_isUpperTriangular_diag_iff α).mpr ?_
-  rw [(IsAlgClosed.splits T.charpoly).eq_prod_roots_of_monic T.charpoly_monic, ← hα,
-    Multiset.map_map, Finset.prod_eq_multiset_prod, Function.comp_def]
+  refine (T.exists_orthonormalBasis_isUpperTriangular_diag_iff α).mpr <|
+    eq_prod_X_sub_C_of_monic_of_roots_eq T.charpoly_monic ?_ hα.symm
+  rw [← IsAlgClosed.card_roots_eq_natDegree, ← hα, Multiset.card_map, Finset.card_val]
 
 end LinearMap
