@@ -98,7 +98,6 @@ theorem unitFiltration_zero : unitFiltration S 0 = ⊤ := by
   rw [unitFiltration_def, pow_zero, Ideal.one_eq_top, Ideal.principalUnitGroup_top]
 
 /-- The depth-one step of the unit filtration is the principal unit group of the maximal ideal. -/
-@[simp]
 theorem unitFiltration_one : unitFiltration S 1 = (maximalIdeal S).principalUnitGroup := by
   rw [unitFiltration_def, pow_one]
 

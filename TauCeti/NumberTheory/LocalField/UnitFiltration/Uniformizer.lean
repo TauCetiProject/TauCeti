@@ -14,8 +14,9 @@ public import TauCeti.RingTheory.DiscreteValuationRing.UnitFiltration
 Fixing a uniformizer `π` identifies the `m`th positive graded piece of the unit filtration
 with the additive residue field: the class of `u` has coordinate `(u - 1) / π ^ m` modulo the
 maximal ideal. This file transports the general discrete-valuation-ring construction
-`TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField` to the ambient-field
-unit filtration `TauCeti.unitFiltration` via `TauCeti.unitFiltrationGradedEquivInteger`.
+`TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer` to the
+ambient-field unit filtration `TauCeti.unitFiltration` via
+`TauCeti.unitFiltrationGradedEquivInteger`.
 
 If `π' = π * a` for a unit `a` of the integer ring, then the coordinate relative to `π` is
 `a ^ m` times the coordinate relative to `π'`. Thus the identification is independent of the
@@ -52,7 +53,7 @@ variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
 noncomputable def unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (n : ℕ)
     (π : 𝒪[K]) (hπ : Irreducible π) : Additive (UnitFiltrationGraded K (n + 1)) ≃+ 𝓀[K] :=
   (unitFiltrationGradedEquivInteger (K := K) (n + 1)).toAdditive.trans <|
-    TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField n π hπ
+    TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer n π hπ
 
 /-- The uniformizer coordinate of the class of `u` is characterized by multiplying it by
 `π^(n+1)`: the result is the class of `u - 1` in the maximal-ideal graded piece. -/
@@ -78,7 +79,7 @@ theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ofMul_mk_eq_resid
         (Additive.ofMul (QuotientGroup.mk x)) =
       IsLocalRing.residue 𝒪[K] y := by
   simpa [unitFiltrationGradedSuccEquivResidueFieldOfUniformizer] using
-    TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField_eq_residue
+    IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_eq_residue
       n π hπ (unitFiltrationEquivInteger (n + 1) x) y (by simpa using hxy)
 
 /-- Coordinates attached to `π` and `π'` differ by multiplication by the residue of the
@@ -89,7 +90,7 @@ theorem unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_change (n : ℕ)
     unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π hπ x =
       IsLocalRing.residue 𝒪[K] (uniformizerChangeUnit π π' hπ hπ' : 𝒪[K]) ^ (n + 1) *
         unitFiltrationGradedSuccEquivResidueFieldOfUniformizer (K := K) n π' hπ' x :=
-  TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueField_change
+  TauCeti.IsDiscreteValuationRing.unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_change
     n π π' hπ hπ' _
 
 end TauCeti

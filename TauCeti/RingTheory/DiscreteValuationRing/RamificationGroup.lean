@@ -46,9 +46,19 @@ When `B` is a local algebra over a local ring `A` fixed by `G` with separable re
 * `TauCeti.IsDiscreteValuationRing.ramificationGroupToUnitFiltrationGraded_eq_of_irreducible` and
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible`:
   independence of the choice of uniformizer.
+* `unitFiltrationGradedZeroEquivResidueFieldUnits_ramificationGroupToUnitFiltrationGraded`,
+  `unitFiltrationGradedZeroEquivResidueFieldUnits_ramificationGroupGradedToUnitFiltrationGraded`,
+  and
+unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ramificationGroupGradedToUnitFiltrationGraded
+  (in `TauCeti.IsDiscreteValuationRing`): compatibility of `θ_i` with
+  `TauCeti.IsLocalRing.tameCharacter`, `TauCeti.IsLocalRing.tameCharacterGraded`, and
+  `TauCeti.IsLocalRing.ramificationGroupGradedToResidueField`.
 * `TauCeti.IsDiscreteValuationRing.ker_ramificationGroupToUnitFiltrationGraded` and
   `TauCeti.IsDiscreteValuationRing.ramificationGroupGradedToUnitFiltrationGraded_injective`:
   exactness of the kernels and injectivity of `θ_i` under separable residue extension.
+* `TauCeti.IsDiscreteValuationRing.mem_ramificationGroup_one_of_pow_sub_one_mem_maximalIdeal`: in
+  prime residue characteristic `p`, an element of `G_0` lies in `G_1` once a `p`-power of its
+  uniformizer ratio is congruent to `1` modulo `𝔪`.
 
 ## References
 
@@ -255,12 +265,13 @@ theorem
       TauCeti.IsLocalRing.tameCharacterGraded_mk]
 
 /-- Composing `ramificationGroupGradedToUnitFiltrationGraded (n + 1) hπ` with the uniformizer
-coordinate `unitFiltrationGradedSuccEquivResidueField n π hπ` recovers
+coordinate `unitFiltrationGradedSuccEquivResidueFieldOfUniformizer n π hπ` recovers
 `TauCeti.IsLocalRing.ramificationGroupGradedToResidueField hπ n`. -/
-theorem unitFiltrationGradedSuccEquivResidueField_ramificationGroupGradedToUnitFiltrationGraded
+theorem
+unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_ramificationGroupGradedToUnitFiltrationGraded
     (n : ℕ) {π : B} (hπ : Irreducible π)
     (τ : RamificationGroupGraded G B ((n : ℤ) + 1)) :
-    unitFiltrationGradedSuccEquivResidueField n π hπ
+    unitFiltrationGradedSuccEquivResidueFieldOfUniformizer n π hπ
         (Additive.ofMul (ramificationGroupGradedToUnitFiltrationGraded (n + 1) hπ τ)) =
       (TauCeti.IsLocalRing.ramificationGroupGradedToResidueField hπ n τ).toAdd := by
   induction τ using QuotientGroup.induction_on with
@@ -275,7 +286,7 @@ theorem unitFiltrationGradedSuccEquivResidueField_ramificationGroupGradedToUnitF
       rw [sub_mul, one_mul, mul_comm _ π, mul_coe_uniformizerRatio, hy]
       ring
     rw [ramificationGroupGradedToUnitFiltrationGraded_mk,
-      unitFiltrationGradedSuccEquivResidueField_eq_residue n π hπ _ y h1,
+      unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_eq_residue n π hπ _ y h1,
       TauCeti.IsLocalRing.ramificationGroupGradedToResidueField_mk,
       TauCeti.IsLocalRing.ramificationGroupToResidueField_apply_of_smul_sub_eq hπ hy,
       toAdd_ofAdd]

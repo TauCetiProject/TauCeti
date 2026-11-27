@@ -54,6 +54,8 @@ separable because `𝓀[L]` is finite).
   choice of uniformizer.
 * `TauCeti.smul_teichmullerLift_of_mem_ramificationGroup_zero`: `G_0` fixes every Teichmüller
   representative.
+* `TauCeti.mem_ramificationGroup_natCast_iff_smul_sub_mem`: an element of `G_0` lies in `G_n`
+  exactly when it moves a uniformizer by an element of `𝓂[L] ^ (n + 1)`.
 * `TauCeti.smul_div_mem_unitFiltration`: for `σ ∈ G_i`, every ratio `σ y / y` lies in `U(L,i)`.
 * `TauCeti.mem_ramificationGroup_one_of_valuation_pow_sub_one_lt_one`: an element of `G_0` lies in
   `G_1` once a `p`-power of `σ ϖ / ϖ` is congruent to `1`.
