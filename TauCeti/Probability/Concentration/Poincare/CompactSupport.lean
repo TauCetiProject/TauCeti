@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Concentration.Poincare.LogSobolev
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Lp
 import TauCeti.Analysis.Sobolev.SmoothCutoff
 import TauCeti.Probability.Moments.Variance
 
@@ -57,9 +58,7 @@ theorem poincareInequality_iff_forall_hasCompactSupport :
     have hmem : ∀ i ≤ 1, MemLp (iteratedFDeriv ℝ i f) 2 μ := by
       intro i hi
       interval_cases i
-      · exact hfL.congr_norm
-          (hf.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
-          (.of_forall fun x ↦ norm_iteratedFDeriv_zero.symm)
+      · exact TauCeti.memLp_iteratedFDeriv_zero_iff.2 hfL
       · exact hdf.congr_norm
           (hf.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
           (.of_forall fun x ↦ by simp only [norm_norm, norm_iteratedFDeriv_one])
@@ -74,8 +73,7 @@ theorem poincareInequality_iff_forall_hasCompactSupport :
           simp only [iteratedFDeriv_zero_eq_comp, Pi.sub_apply, Function.comp_apply,
             ← map_sub, LinearIsometryEquiv.norm_map])
     have hgL₂ (n : ℕ) : MemLp (g n) 2 μ :=
-      (hgL n 0 zero_le_one).congr_norm (hg n).1.continuous.aestronglyMeasurable
-        (.of_forall fun x ↦ norm_iteratedFDeriv_zero)
+      TauCeti.memLp_iteratedFDeriv_zero_iff.1 (hgL n 0 zero_le_one)
     -- L² continuity supplies both limits, without a sign restriction on C.
     have hvar := tendsto_variance_of_tendsto_eLpNorm_sub hfL hgL₂ hvalue
     have henergy := tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub (hmem 1 le_rfl)

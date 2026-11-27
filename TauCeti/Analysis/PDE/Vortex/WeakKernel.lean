@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.Kernel.Dimension
-public import TauCeti.Analysis.PDE.Vortex.SobolevScale
+public import TauCeti.Analysis.PDE.Vortex.Sobolev.Scale
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
 import TauCeti.MeasureTheory.Function.L2Space.Basic
 import Mathlib.Algebra.Module.Submodule.Equiv
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
 # The weak `L²` kernel of the gauge-fixed vortex operator
@@ -44,16 +46,19 @@ At an essentially bounded field these weak solutions lie in `H¹`
 the kernel of `L_x` acting weakly on `H¹(ℂ)⁴`, the kernel in the Fredholm theory of
 `L_x : H¹ → L²`.
 
-At a smooth field whose coordinates have bounded derivatives of every order:
+At a smooth field whose coordinates have bounded derivatives through order `3`, the elliptic
+bootstrap places every `u ∈ weakGaugeFixedKernel x` in `H⁴` and produces a unique `C²` classical
+representative `y ∈ gaugeFixedKernel x`, so the weak kernel is the range of
+`gaugeFixedKernelToLp x` (`range_gaugeFixedKernelToLp`) and `gaugeFixedKernelToWeak` is a
+real-linear isomorphism
+(`gaugeFixedKernelEquivWeak : gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x`), equating their
+dimensions (`finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel`).
+When the coordinates have bounded derivatives of every order:
 
 * the elliptic bootstrap places every `u ∈ weakGaugeFixedKernel x` in `sobolevFields s` for all
   `s : ℝ` (`coeFn_mem_sobolevFields_of_mem_weakGaugeFixedKernel`) and produces a unique smooth
   classical representative `y ∈ gaugeFixedKernel x`
-  (`exists_contDiff_and_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel`), so the weak
-  kernel is the range of `gaugeFixedKernelToLp x` (`range_gaugeFixedKernelToLp`) and
-  `gaugeFixedKernelToWeak` is a real-linear isomorphism
-  (`gaugeFixedKernelEquivWeak : gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x`), equating their
-  dimensions (`finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel`);
+  (`exists_contDiff_and_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel`);
 * every classical kernel element is smooth and lies in `sobolevFields s` for all `s : ℝ`
   (`contDiff_and_mem_sobolevFields_of_mem_gaugeFixedKernel`), and the classical kernel on
   `C¹ ∩ H^s` is independent of the Sobolev order `s : ℝ`
@@ -427,6 +432,18 @@ theorem gaugeFixedKernelToWeak_injective (hx : Continuous x) :
 
 /-! ### Elliptic bootstrap and equivalence of weak and classical kernels -/
 
+/-- Finite-order elliptic bootstrap for the weak kernel: at a smooth field `x` whose coordinates
+have bounded derivatives through order `k`, every `u ∈ weakGaugeFixedKernel x` lies in
+`sobolevFields (k + 1)`. -/
+private theorem coeFn_mem_sobolevFields_natCast_add_one_of_mem_weakGaugeFixedKernel (k : ℕ)
+    (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} (hu : u ∈ weakGaugeFixedKernel x) :
+    (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields ((k : ℝ) + 1) :=
+  mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hx hbound
+    (Lp.memLp u) (zero_mem _) fun η hη hηc ↦ by
+      simpa using (mem_weakGaugeFixedKernel_iff hx.continuous).1 hu η hη hηc
+
 /-- **Sobolev regularity of the weak kernel.** At a smooth field `x` whose coordinates have bounded
 iterated derivatives of each order, every `u ∈ weakGaugeFixedKernel x` lies in `sobolevFields s`
 for every real order `s`. -/
@@ -434,13 +451,10 @@ theorem coeFn_mem_sobolevFields_of_mem_weakGaugeFixedKernel (hx : ContDiff ℝ �
     (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} (hu : u ∈ weakGaugeFixedKernel x)
     (s : ℝ) :
-    (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields s := by
-  set k : ℕ := ⌈s⌉₊
-  have hk : (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields (k + 1) :=
-    mem_sobolevFields_natCast_add_one_of_integral_inner_gaugeFixedAdjoint_eq k hx
-      (fun i n _ ↦ hbound i n) (Lp.memLp u) (zero_mem _) fun η hη hηc ↦ by
-        simpa using (mem_weakGaugeFixedKernel_iff hx.continuous).1 hu η hη hηc
-  exact sobolevFields_mono (by linarith [Nat.le_ceil s]) hk
+    (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields s :=
+  sobolevFields_mono (by linarith [Nat.le_ceil s])
+    (coeFn_mem_sobolevFields_natCast_add_one_of_mem_weakGaugeFixedKernel ⌈s⌉₊ hx
+      (fun i n _ ↦ hbound i n) hu)
 
 /-- **Smooth classical representative of a weak kernel element.** At a smooth field `x` whose
 coordinates have bounded iterated derivatives of each order, every `u ∈ weakGaugeFixedKernel x`
@@ -460,23 +474,47 @@ theorem exists_contDiff_and_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKern
   exact ⟨y, hys, hyS,
     mem_gaugeFixedKernel.2 ⟨hys.of_le (by simp), memLp_of_mem_sobolevFields (hyS 0), hker⟩, huy⟩
 
+/-- At a smooth field `x` whose coordinates have bounded derivatives through order `3`, every
+`u ∈ weakGaugeFixedKernel x` agrees almost everywhere with a `C²` square-integrable classical
+solution `y ∈ gaugeFixedKernel x`. -/
+private theorem exists_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel
+    (hx : ContDiff ℝ ∞ x)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    {u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)} (hu : u ∈ weakGaugeFixedKernel x) :
+    ∃ y ∈ gaugeFixedKernel x, (u : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] y := by
+  have h4 : (u : ℂ → EuclideanSpace ℝ (Fin 4)) ∈ sobolevFields 4 := by
+    have h31 : ((3 : ℕ) : ℝ) + 1 = 4 := by norm_num
+    rw [← h31]
+    exact coeFn_mem_sobolevFields_natCast_add_one_of_mem_weakGaugeFixedKernel 3 hx hbound hu
+  obtain ⟨y, hycd, hae⟩ := exists_contDiff_ae_eq_of_mem_sobolevFields (n := 2) (by norm_num) h4
+  have hyker : ∀ z, gaugeFixedOperator x y z = 0 :=
+    (forall_integral_inner_gaugeFixedAdjoint_eq_iff (μ := volume) hx.continuous
+      (hycd.of_le one_le_two) continuous_const).1 fun η hη hηc ↦ by
+        have hEq : ∫ z, ⟪(u : ℂ → EuclideanSpace ℝ (Fin 4)) z, gaugeFixedAdjoint x η z⟫ =
+            ∫ z, ⟪y z, gaugeFixedAdjoint x η z⟫ :=
+          integral_congr_ae (hae.mono fun z hz ↦ congrArg (⟪·, gaugeFixedAdjoint x η z⟫) hz)
+        rw [← hEq, (mem_weakGaugeFixedKernel_iff hx.continuous).1 hu η hη hηc]
+        simp only [inner_zero_left, integral_zero]
+  exact ⟨y, mem_gaugeFixedKernel.2 ⟨hycd, (Lp.memLp u).ae_eq hae, hyker⟩, hae⟩
+
 /-- **Weak and classical `L²` kernels coincide.** Let `x` be a smooth field whose coordinates have
-bounded derivatives of every order. Then every weak `L²` solution of `L_x u = 0` is the `L²`
+bounded derivatives through order `3`. Then every weak `L²` solution of `L_x u = 0` is the `L²`
 class of a `C²` square-integrable classical solution: the weak kernel of `L_x` is the image of
 its classical kernel `gaugeFixedKernel x`. -/
 theorem range_gaugeFixedKernelToLp (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) :
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) :
     LinearMap.range (gaugeFixedKernelToLp x) = weakGaugeFixedKernel x := by
   refine le_antisymm ?_ fun u hu ↦ ?_
   · rintro _ ⟨y, rfl⟩
     exact gaugeFixedKernelToLp_mem_weakGaugeFixedKernel hx.continuous y
-  obtain ⟨y, -, -, hyK, huy⟩ :=
-    exists_contDiff_and_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel hx hbound hu
+  obtain ⟨y, hyK, huy⟩ :=
+    exists_mem_gaugeFixedKernel_ae_eq_of_mem_weakGaugeFixedKernel hx hbound hu
   exact ⟨⟨y, hyK⟩, Lp.ext ((coeFn_gaugeFixedKernelToLp ⟨y, hyK⟩).trans huy.symm)⟩
 
-/-- At a smooth field `x` with bounded derivatives, `gaugeFixedKernelToWeak` is surjective. -/
+/-- At a smooth field `x` with bounded derivatives through order `3`, `gaugeFixedKernelToWeak` is
+surjective. -/
 theorem gaugeFixedKernelToWeak_surjective (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) :
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) :
     Function.Surjective (gaugeFixedKernelToWeak hx.continuous) := by
   intro u
   have hu : (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) ∈
@@ -486,10 +524,10 @@ theorem gaugeFixedKernelToWeak_surjective (hx : ContDiff ℝ ∞ x)
   exact ⟨y, Subtype.ext hy⟩
 
 /-- **Elliptic identification of classical and weak kernels.** At a smooth field `x` whose
-coordinates have bounded iterated derivatives of each order, `gaugeFixedKernelToWeak` is a
+coordinates have bounded iterated derivatives through order `3`, `gaugeFixedKernelToWeak` is a
 real-linear isomorphism `gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x`. -/
 def gaugeFixedKernelEquivWeak (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) :
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) :
     gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x :=
   LinearEquiv.ofBijective (gaugeFixedKernelToWeak hx.continuous)
     ⟨gaugeFixedKernelToWeak_injective hx.continuous, gaugeFixedKernelToWeak_surjective hx hbound⟩
@@ -497,14 +535,14 @@ def gaugeFixedKernelEquivWeak (hx : ContDiff ℝ ∞ x)
 /-- `gaugeFixedKernelEquivWeak` agrees with `gaugeFixedKernelToWeak` on every element. -/
 @[simp]
 theorem gaugeFixedKernelEquivWeak_apply (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (y : gaugeFixedKernel x) :
     gaugeFixedKernelEquivWeak hx hbound y = gaugeFixedKernelToWeak hx.continuous y :=
   LinearEquiv.ofBijective_apply _ y
 
 /-- `gaugeFixedKernelEquivWeak` sends `y ∈ gaugeFixedKernel x` to its `L²` equivalence class. -/
 theorem coe_gaugeFixedKernelEquivWeak_ae_eq (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C)
     (y : gaugeFixedKernel x) :
     ((gaugeFixedKernelEquivWeak hx hbound y :
       Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) :
@@ -512,10 +550,10 @@ theorem coe_gaugeFixedKernelEquivWeak_ae_eq (hx : ContDiff ℝ ∞ x)
   rw [gaugeFixedKernelEquivWeak_apply]
   exact coe_gaugeFixedKernelToWeak_ae_eq hx.continuous y
 
-/-- At a smooth field with bounded derivatives, the weak kernel of `L_x` has the dimension of its
-classical kernel. -/
+/-- At a smooth field with bounded derivatives through order `3`, the weak kernel of `L_x` has
+the dimension of its classical kernel. -/
 theorem finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel (hx : ContDiff ℝ ∞ x)
-    (hbound : ∀ i n, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) :
+    (hbound : ∀ i, ∀ n ≤ 3, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C) :
     finrank ℝ (weakGaugeFixedKernel x) = finrank ℝ (gaugeFixedKernel x) :=
   (gaugeFixedKernelEquivWeak hx hbound).finrank_eq.symm
 
@@ -567,7 +605,7 @@ theorem finiteDimensional_weakGaugeFixedKernel_of_tendsto_normSq (hx : ContDiff 
     FiniteDimensional ℝ (weakGaugeFixedKernel x) := by
   have := finiteDimensional_of_gaugeFixedOperator_eq_zero (μ := volume) (hx.of_le (by simp)) hhol
     hlim fun _ ↦ mem_gaugeFixedKernel.1
-  exact (gaugeFixedKernelEquivWeak hx hbound).finiteDimensional
+  exact (gaugeFixedKernelEquivWeak hx fun i n _ ↦ hbound i n).finiteDimensional
 
 /-- **The exact real dimension `2 |D|` of the weak gauge-fixed kernel.** Let `x` be a smooth field
 with bounded derivatives, satisfying `∂bar_a α = 0`, `|α|² → 1` at infinity, and section zero
@@ -578,7 +616,7 @@ theorem finrank_weakGaugeFixedKernel_eq_two_mul_card (hx : ContDiff ℝ ∞ x)
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     {D : Multiset ℂ} (hD : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) :
     finrank ℝ (weakGaugeFixedKernel x) = 2 * Multiset.card D := by
-  rw [finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel hx hbound,
+  rw [finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel hx fun i n _ ↦ hbound i n,
     finrank_gaugeFixedKernel_eq_two_mul_card hx hhol hlim hD]
 
 /-- **The exact real dimension `2m` of the weak kernel under the degree-`m` end framing.** Let `x`
@@ -590,7 +628,7 @@ theorem finrank_weakGaugeFixedKernel_eq_two_mul_of_tendsto_sectionValue_mul_inv_
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
     (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
     finrank ℝ (weakGaugeFixedKernel x) = 2 * m := by
-  rw [finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel hx hbound,
+  rw [finrank_weakGaugeFixedKernel_eq_finrank_gaugeFixedKernel hx fun i n _ ↦ hbound i n,
     finrank_gaugeFixedKernel_eq_two_mul hx hhol hframe]
 
 /-! ### The weak kernel at a plane vortex -/
@@ -614,8 +652,8 @@ orders, so `gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x`. -/
 def framedGaugeFixedKernelEquivWeak (hx : Continuous x)
     (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k) :
     gaugeFixedKernel x ≃ₗ[ℝ] weakGaugeFixedKernel x :=
-  gaugeFixedKernelEquivWeak (contDiff_of_forall_mem_framedFieldSpace hx hmem)
-    (exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem)
+  gaugeFixedKernelEquivWeak (contDiff_of_forall_mem_framedFieldSpace hx hmem) fun i n _ ↦
+    exists_norm_iteratedFDeriv_le_of_forall_mem_framedFieldSpace hx hmem i n
 
 /-- `framedGaugeFixedKernelEquivWeak` agrees with `gaugeFixedKernelToWeak` on every element. -/
 @[simp]

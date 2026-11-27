@@ -11,8 +11,8 @@ public import TauCeti.Analysis.LaplaceTransform.Basic
 import Mathlib.Analysis.Complex.CauchyIntegral
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.Taylor.WindowPoleComparison
-import TauCeti.Analysis.LaplaceTransform.WindowCoefficients
-import TauCeti.Analysis.LaplaceTransform.WindowMoments
+import TauCeti.Analysis.LaplaceTransform.Window.Coefficients
+import TauCeti.Analysis.LaplaceTransform.Window.Moments
 import TauCeti.Analysis.Meromorphic.ExpansionDisc
 
 /-!

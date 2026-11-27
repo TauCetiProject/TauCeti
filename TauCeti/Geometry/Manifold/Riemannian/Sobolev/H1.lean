@@ -12,7 +12,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Total
 public import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Function.L2Space.Basic
 import TauCeti.MeasureTheory.Function.Lp.Norm
