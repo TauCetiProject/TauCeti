@@ -135,6 +135,7 @@ private theorem memLp_sub_mul_value_and_toReal_eLpNorm_le
   -- `|c u| ≤ Γ ‖u‖_∞` almost everywhere.
   have hcu : ∀ᵐ x ∂ν, ‖c x * W1p.value u x‖ ≤ Γ * U := by
     filter_upwards [hcΓ, ae_le_lpNorm_exponent_top hu] with x hcx hux
+    rw [← toReal_eLpNorm] at hux
     rw [norm_mul]
     exact mul_le_mul hcx hux (norm_nonneg _) hΓ
   have hcum : AEStronglyMeasurable (fun x => c x * W1p.value u x) ν :=
@@ -349,7 +350,7 @@ existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWith_gradi
   have hbd := HS (b := 0) (beta := 0) (k := (eLpNorm (W1p.value g) ⊤ ν).toReal)
     hΩ.measure_lt_top.ne hellΩ ha aestronglyMeasurable_zero hc (fun _ _ => by simp) hcΓ hc0
     (by simp) hfr (hGinf.mono_exponent le_top).neg hu' hu0
-    ((ae_le_lpNorm_exponent_top hg).mono fun x hx => by rwa [← Real.norm_eq_abs])
+    ((ae_le_lpNorm_exponent_top hg).mono fun x hx => by rwa [← Real.norm_eq_abs, toReal_eLpNorm])
   have huinf : MemLp (W1p.value u) ⊤ ν :=
     memLp_top_of_bound (Lp.aestronglyMeasurable _) _ (hbd.mono fun x hx => by
       rwa [Real.norm_eq_abs])
