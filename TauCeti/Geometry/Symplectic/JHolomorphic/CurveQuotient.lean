@@ -31,8 +31,11 @@ construction:
   exactly when they are related by `Γ` (`TauCeti.CoincidentBranchQuotient.mk_eq_mk_iff`);
 * `π` is an open quotient map (`TauCeti.CoincidentBranchQuotient.isOpenQuotientMap_mk`) and a
   closed map with finite fibres;
-* `u` descends to a continuous map `v : S / Γ → N` with `u = v ∘ π`
-  (`TauCeti.CoincidentBranchQuotient.lift`, `TauCeti.CoincidentBranchQuotient.lift_comp_mk`);
+* every map constant on the classes of `Γ` descends along `π`
+  (`TauCeti.CoincidentBranchQuotient.lift`), uniquely
+  (`TauCeti.CoincidentBranchQuotient.lift_unique`); in particular `u` descends to a continuous map
+  `v : S / Γ → N` with `u = v ∘ π` (`TauCeti.CoincidentBranchQuotient.curve`,
+  `TauCeti.CoincidentBranchQuotient.curve_comp_mk`);
 * `B` is a union of fibres of `π`, `π` is a local homeomorphism on `S \ B`
   (`TauCeti.CoincidentBranchQuotient.isLocalHomeomorphOn_mk`), and `π` is a covering map over the
   complement of the finite set `π(B)` (`TauCeti.CoincidentBranchQuotient.isCoveringMapOn_mk`)
@@ -58,7 +61,9 @@ pseudoholomorphic, are not constructed here.
 * `TauCeti.CoincidentBranchQuotient`: the quotient `S / Γ` of `S` by the closure `Γ` of the
   coincident-branch relation of `u`.
 * `TauCeti.CoincidentBranchQuotient.mk`: the quotient map `π : S → S / Γ`.
-* `TauCeti.CoincidentBranchQuotient.lift`: the map `v : S / Γ → N` with `u = v ∘ π`.
+* `TauCeti.CoincidentBranchQuotient.lift`: the map on `S / Γ` induced by a map on `S` that is
+  constant on the classes of `Γ`.
+* `TauCeti.CoincidentBranchQuotient.curve`: the map `v : S / Γ → N` with `u = v ∘ π`.
 
 ## Main results
 
@@ -70,8 +75,8 @@ pseudoholomorphic, are not constructed here.
 * `TauCeti.CoincidentBranchQuotient.t2Space`: `S / Γ` is Hausdorff.
 * `TauCeti.CoincidentBranchQuotient.isClosedMap_mk`,
   `TauCeti.CoincidentBranchQuotient.finite_preimage_mk`: `π` is closed with finite fibres.
-* `TauCeti.CoincidentBranchQuotient.continuous_lift`,
-  `TauCeti.CoincidentBranchQuotient.lift_comp_mk`: `u` descends to a continuous map on `S / Γ`.
+* `TauCeti.CoincidentBranchQuotient.continuous_curve`,
+  `TauCeti.CoincidentBranchQuotient.curve_comp_mk`: `u` descends to a continuous map on `S / Γ`.
 * `TauCeti.CoincidentBranchQuotient.preimage_image_mk_criticalValuePreimage`: `B` is saturated.
 * `TauCeti.CoincidentBranchQuotient.isLocalHomeomorphOn_mk`: `π` is a local homeomorphism off `B`.
 * `TauCeti.CoincidentBranchQuotient.isCoveringMapOn_mk`: `π` is a covering map over the
@@ -111,20 +116,18 @@ quotient of `S` by the closure `Γ` in `S × S` of the coincident-branch relatio
 pseudoholomorphic map from a compact connected Hausdorff Riemann surface into a Hausdorff almost
 complex manifold, `Γ` is an equivalence relation, `S / Γ` is a compact connected Hausdorff space
 (`TauCeti.CoincidentBranchQuotient.t2Space`), and `u` factors through it
-(`TauCeti.CoincidentBranchQuotient.lift_comp_mk`). -/
-@[expose]
+(`TauCeti.CoincidentBranchQuotient.curve_comp_mk`). -/
 def CoincidentBranchQuotient : Type _ :=
   Quot fun z ζ : S ↦ (z, ζ) ∈ coincidentBranchClosure I u
 
 namespace CoincidentBranchQuotient
 
-instance : TopologicalSpace (CoincidentBranchQuotient I u) :=
+@[no_expose] instance : TopologicalSpace (CoincidentBranchQuotient I u) :=
   inferInstanceAs (TopologicalSpace (Quot _))
 
 variable (I u) in
 /-- **The quotient map** `π : S → S / Γ` onto the quotient by the closure `Γ` of the
 coincident-branch relation of `u`. -/
-@[expose]
 def mk : S → CoincidentBranchQuotient I u :=
   Quot.mk _
 
@@ -140,18 +143,26 @@ theorem continuous_mk : Continuous (mk I u) :=
   continuous_quot_mk
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
-theorem surjective_mk : Function.Surjective (mk I u) :=
+theorem mk_surjective : Function.Surjective (mk I u) :=
   Quot.mk_surjective
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 theorem isQuotientMap_mk : IsQuotientMap (mk I u) :=
   isQuotientMap_quot_mk
 
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- **Induction on `S / Γ`**: a property of the points of `S / Γ` holds for all of them once it
+holds for the image under `π` of every point of `S`. -/
+@[elab_as_elim]
+theorem ind {p : CoincidentBranchQuotient I u → Prop} (h : ∀ z, p (mk I u z))
+    (q : CoincidentBranchQuotient I u) : p q :=
+  Quot.ind h q
+
 instance [CompactSpace S] : CompactSpace (CoincidentBranchQuotient I u) :=
   inferInstanceAs (CompactSpace (Quot _))
 
 instance [ConnectedSpace S] : ConnectedSpace (CoincidentBranchQuotient I u) :=
-  surjective_mk.connectedSpace continuous_mk
+  mk_surjective.connectedSpace continuous_mk
 
 /-- **The fibres of `π` are the classes of `Γ`.** For a nonconstant `C²` pseudoholomorphic map `u`
 from a compact connected Hausdorff Riemann surface into a Hausdorff almost complex manifold, two
@@ -174,37 +185,88 @@ theorem mk_eq_mk_iff_of_notMem [CompactSpace S] [PreconnectedSpace S] [T2Space S
     mk I u z = mk I u ζ ↔ GermFactorsThrough u z u ζ :=
   (mk_eq_mk_iff hu hJu hne).trans (mem_coincidentBranchClosure_iff_of_notMem hu hJu hz)
 
+/-- **Off the critical values, the fibre of `π` is the set of coincident branches.** For a
+nonconstant `C²` pseudoholomorphic map `u` from a compact connected Hausdorff Riemann surface into a
+Hausdorff almost complex manifold and a point `z` outside `B = u⁻¹(u(Crit u))`, the fibre of `π`
+through `z` consists of the points `ζ` such that the branch of `u` at `z` factors holomorphically
+through the branch of `u` at `ζ`. -/
+theorem preimage_mk_singleton_mk_of_notMem [CompactSpace S] [PreconnectedSpace S] [T2Space S]
+    [T2Space N] (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u)
+    (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u) (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) {z : S}
+    (hz : z ∉ criticalValuePreimage I u) :
+    mk I u ⁻¹' {mk I u z} = {ζ | GermFactorsThrough u z u ζ} :=
+  ext fun _ ↦ eq_comm.trans (mk_eq_mk_iff_of_notMem hu hJu hne hz)
+
 /-! ### The induced map on the quotient -/
+
+section lift
+
+variable {X : Type*}
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- **The universal property of `S / Γ`**: a map `f` on `S` taking the same value at points related
+by the closure `Γ` of the coincident-branch relation of `u` descends to a map on `S / Γ` with
+`f = lift f hf ∘ π` (`TauCeti.CoincidentBranchQuotient.lift_comp_mk`). -/
+def lift (f : S → X) (hf : ∀ z ζ, (z, ζ) ∈ coincidentBranchClosure I u → f z = f ζ) :
+    CoincidentBranchQuotient I u → X :=
+  Quot.lift f hf
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+@[simp]
+theorem lift_mk (f : S → X) (hf : ∀ z ζ, (z, ζ) ∈ coincidentBranchClosure I u → f z = f ζ)
+    (z : S) : lift f hf (mk I u z) = f z :=
+  (rfl)
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- A map constant on the classes of `Γ` factors through `S / Γ`: `f = lift f hf ∘ π`. -/
+theorem lift_comp_mk (f : S → X)
+    (hf : ∀ z ζ, (z, ζ) ∈ coincidentBranchClosure I u → f z = f ζ) : lift f hf ∘ mk I u = f :=
+  (rfl)
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- The map on `S / Γ` induced by `f` is the only map `g` with `g ∘ π = f`. -/
+theorem lift_unique (f : S → X) (hf : ∀ z ζ, (z, ζ) ∈ coincidentBranchClosure I u → f z = f ζ)
+    {g : CoincidentBranchQuotient I u → X} (hg : g ∘ mk I u = f) : g = lift f hf :=
+  mk_surjective.injective_comp_right (hg.trans (lift_comp_mk f hf).symm)
+
+omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
+/-- The map on `S / Γ` induced by a continuous map is continuous. -/
+theorem continuous_lift [TopologicalSpace X] {f : S → X}
+    (hf : ∀ z ζ, (z, ζ) ∈ coincidentBranchClosure I u → f z = f ζ) (hfc : Continuous f) :
+    Continuous (lift f hf) :=
+  continuous_quot_lift _ hfc
+
+end lift
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 variable (I) in
 /-- **The map `v : S / Γ → N` induced by `u`**, for a continuous map `u` into a Hausdorff space:
 `u` takes the same value at points related by the closure `Γ` of its coincident-branch relation,
-so it factors as `u = v ∘ π` (`TauCeti.CoincidentBranchQuotient.lift_comp_mk`). -/
-def lift [T2Space N] (hu : Continuous u) : CoincidentBranchQuotient I u → N :=
-  Quot.lift u fun _ _ h ↦ apply_eq_of_mem_coincidentBranchClosure hu h
+so it factors as `u = v ∘ π` (`TauCeti.CoincidentBranchQuotient.curve_comp_mk`). -/
+def curve [T2Space N] (hu : Continuous u) : CoincidentBranchQuotient I u → N :=
+  lift u fun _ _ h ↦ apply_eq_of_mem_coincidentBranchClosure hu h
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 @[simp]
-theorem lift_mk [T2Space N] (hu : Continuous u) (z : S) : lift I hu (mk I u z) = u z :=
+theorem curve_mk [T2Space N] (hu : Continuous u) (z : S) : curve I hu (mk I u z) = u z :=
   (rfl)
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 /-- **`u` factors through `S / Γ`**: `u = v ∘ π`. -/
-theorem lift_comp_mk [T2Space N] (hu : Continuous u) : lift I hu ∘ mk I u = u :=
+theorem curve_comp_mk [T2Space N] (hu : Continuous u) : curve I hu ∘ mk I u = u :=
   (rfl)
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 /-- The map `v : S / Γ → N` induced by `u` is continuous. -/
-theorem continuous_lift [T2Space N] (hu : Continuous u) : Continuous (lift I hu) :=
-  continuous_quot_lift _ hu
+theorem continuous_curve [T2Space N] (hu : Continuous u) : Continuous (curve I hu) :=
+  continuous_lift _ hu
 
 omit [IsManifold 𝓘(ℂ) ∞ S] [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ N] in
 /-- Points with the same image in `S / Γ` have the same image under a continuous map `u` into a
 Hausdorff space. -/
 theorem apply_eq_of_mk_eq [T2Space N] (hu : Continuous u) {z ζ : S}
     (h : mk I u z = mk I u ζ) : u z = u ζ :=
-  congrArg (lift I hu) h
+  congrArg (curve I hu) h
 
 /-- **The fibres of `π` are finite**, for a nonconstant `C¹` pseudoholomorphic map from a compact
 connected Riemann surface into a Hausdorff almost complex manifold: they lie in the fibres of
@@ -213,23 +275,22 @@ theorem finite_preimage_mk [CompactSpace S] [PreconnectedSpace S] [T2Space N]
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 1 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
     (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) (q : CoincidentBranchQuotient I u) :
     (mk I u ⁻¹' {q}).Finite := by
-  obtain ⟨z, rfl⟩ := surjective_mk q
+  obtain ⟨z, rfl⟩ := mk_surjective q
   exact (finite_preimage_singleton_of_isPseudoholomorphic hu hJu hne (u z)).subset fun _ hζ ↦
     apply_eq_of_mk_eq hu.continuous hζ
 
 /-! ### Openness and separation -/
 
-/-- **The quotient map `π : S → S / Γ` is open.** Let `u` be a nonconstant `C²` pseudoholomorphic
-map from a compact connected Hausdorff Riemann surface into a Hausdorff almost complex manifold. If
-a point `a` of an open set `W` is related to `z` by the closure `Γ` of the coincident-branch
-relation, then every point near `z` outside the finite set `B = u⁻¹(u(Crit u))` has a coincident
-branch at a point of `W`; so the saturation of `W` is a neighbourhood of `z`. -/
+/-- **The quotient map `π : S → S / Γ` is open**, for a nonconstant `C²` pseudoholomorphic map `u`
+from a compact connected Hausdorff Riemann surface into a Hausdorff almost complex manifold. -/
 theorem isOpenMap_mk [CompactSpace S] [PreconnectedSpace S] [T2Space S] [T2Space N]
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
     (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) : IsOpenMap (mk I u) := by
   intro W hW
   rw [← isQuotientMap_mk.isOpen_preimage, isOpen_iff_mem_nhds]
   rintro z ⟨a, ha, haz⟩
+  -- If `a ∈ W` is related to `z` by `Γ`, then every point near `z` outside the finite set `B` has
+  -- a coincident branch at a point of `W`, so the saturation of `W` is a neighbourhood of `z`.
   -- The points near `z` other than `z` lie outside the finite set `B`.
   have hB : ((criticalValuePreimage I u) \ {z})ᶜ ∈ 𝓝 z :=
     ((finite_criticalValuePreimage (hu.of_le one_le_two) hJu hne).sdiff).isClosed.compl_mem_nhds
@@ -248,7 +309,7 @@ complex manifold. -/
 theorem isOpenQuotientMap_mk [CompactSpace S] [PreconnectedSpace S] [T2Space S] [T2Space N]
     (hu : ContMDiff 𝓘(ℝ, ℂ) I 2 u) (hJu : IsPseudoholomorphic (ofComplexManifold ℂ S) J u)
     (hne : ∃ x₁ x₂, u x₁ ≠ u x₂) : IsOpenQuotientMap (mk I u) :=
-  ⟨surjective_mk, continuous_mk, isOpenMap_mk hu hJu hne⟩
+  ⟨mk_surjective, continuous_mk, isOpenMap_mk hu hJu hne⟩
 
 /-- **The quotient `S / Γ` is Hausdorff**, for a nonconstant `C²` pseudoholomorphic map from a
 compact connected Hausdorff Riemann surface into a Hausdorff almost complex manifold: the quotient
@@ -333,12 +394,9 @@ theorem exists_pos_forall_ncard_preimage_mk_eq [CompactSpace S] [ConnectedSpace 
     ∃ d : ℕ, 0 < d ∧ ∀ q ∉ mk I u '' criticalValuePreimage I u, (mk I u ⁻¹' {q}).ncard = d := by
   obtain ⟨d, hd, h⟩ := exists_pos_forall_ncard_setOf_germFactorsThrough_eq hu hJu hne
   refine ⟨d, hd, fun q hq ↦ ?_⟩
-  obtain ⟨z, rfl⟩ := surjective_mk q
+  obtain ⟨z, rfl⟩ := mk_surjective q
   have hz : z ∉ criticalValuePreimage I u := fun h ↦ hq (mem_image_of_mem _ h)
-  rw [← h z hz]
-  congr 1
-  ext ζ
-  exact eq_comm.trans (mk_eq_mk_iff_of_notMem hu hJu hne hz)
+  rw [preimage_mk_singleton_mk_of_notMem hu hJu hne hz, h z hz]
 
 /-- **The local degree of `π` is the local multiplicity.** Let `u` be a nonconstant `C²`
 pseudoholomorphic map from a compact connected Hausdorff Riemann surface into a Hausdorff almost
@@ -359,10 +417,7 @@ theorem exists_mem_nhds_forall_eventually_ncard_inter_preimage_mk_eq [CompactSpa
   filter_upwards [(isOpenMap_mk hu hJu hne).image_mem_nhds (h V' hV' hV'V)]
   rintro _ ⟨w, hw, rfl⟩ hwB
   have hwB' : w ∉ criticalValuePreimage I u := fun h ↦ hwB (mem_image_of_mem _ h)
-  rw [← hw hwB']
-  congr 1
-  ext y
-  exact and_congr_right fun _ ↦ eq_comm.trans (mk_eq_mk_iff_of_notMem hu hJu hne hwB')
+  rw [preimage_mk_singleton_mk_of_notMem hu hJu hne hwB', hw hwB']
 
 end CoincidentBranchQuotient
 
