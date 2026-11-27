@@ -21,10 +21,10 @@ groupoid laws give all compatibility with concatenation and reversal of paths.
 
 This file provides the categorical operations needed before constructing singular chains with
 local coefficients: constant systems, pullback along continuous maps, evaluation at a point,
-path transport, compatibility of pullback with tensor products, and the monodromy representation
-of the fundamental group. It also proves that these constructions interact in the expected way.
-In particular, a morphism of local systems induces an intertwining map on monodromy representations,
-and transport along a path identifies
+path transport, compatibility of pullback and of transport with tensor products, and the monodromy
+representation of the fundamental group. It also proves that these constructions interact in the
+expected way. In particular, a morphism of local systems induces an intertwining map on monodromy
+representations, and transport along a path identifies
 the monodromy at its endpoints.  Homotopic maps have canonically isomorphic pullback functors,
 with components given by transport along the pointwise paths of the homotopy.
 
@@ -539,6 +539,19 @@ theorem transport_naturality {x y : X} {L K : LocalCoefficientSystem.{u, v, w} R
     η.app (FundamentalGroupoid.mk y) (transport L p a) =
       transport K p (η.app (FundamentalGroupoid.mk x) a) := by
   exact η.naturality_apply p a
+
+open MonoidalCategory in
+/-- Transport in the pointwise tensor product of two local coefficient systems is the tensor
+product of the transports. -/
+@[simp]
+theorem transport_tensor_tmul {S : Type w} [CommRing S] {x y : X}
+    (L K : LocalCoefficientSystem.{w, v, w} S X) (p : Path.Homotopic.Quotient x y)
+    (a : L.obj (FundamentalGroupoid.mk x)) (b : K.obj (FundamentalGroupoid.mk x)) :
+    transport (L ⊗ K) p (a ⊗ₜ[S] b) = transport L p a ⊗ₜ[S] transport K p b := by
+  simp only [transport_apply]
+  -- A path class acts on `L ⊗ K` by the tensor product of its actions, by definition of the
+  -- pointwise monoidal structure on the functor category.
+  exact ModuleCat.MonoidalCategory.tensorHom_tmul _ _ a b
 
 /-- Pullback transport is transport along the image path. -/
 @[simp]

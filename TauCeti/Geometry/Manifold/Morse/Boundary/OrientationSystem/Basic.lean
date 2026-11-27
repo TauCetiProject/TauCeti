@@ -76,6 +76,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
 * `neg_trajectorySign_eq_ite_orientationTransport`: the sign rule for the reversed
   pseudo-gradient on a manifold that need not be orientable.
+* `trajectorySign_smul_signLocalSystemFiberEquiv_transport`: the same rule for one trajectory, with
+  the transport of `o(TM)` along it read at the orientations of its ends.
 * `IsMorseSmale.signLocalSystemFiberEquiv_twistedMorseBoundaryMap_neg`: the Morse boundary of `-f`
   with coefficients in the orientation system is the signed transpose of the integral Morse
   boundary of `f`.
@@ -283,7 +285,7 @@ open scoped Classical in
 trajectory of `X` from `p` to `q` through `y`, run backwards as a trajectory of `-X`, its sign for
 `-f` times transport in `o(TM)` along it, read at the orientations of `q` and `p`, is
 `(-1) ^ ind_f p` times its sign for `f`. -/
-private theorem trajectorySign_smul_signLocalSystemFiberEquiv_transport (hMS : hX.IsMorseSmale)
+theorem trajectorySign_smul_signLocalSystemFiberEquiv_transport (hMS : hX.IsMorseSmale)
     (q p : criticalPoints 𝓘(ℝ, E) (-f))
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f (Set.equivOfEq criticalPoints_neg p) =
       manifoldMorseIndex 𝓘(ℝ, E) f (Set.equivOfEq criticalPoints_neg q) + 1)

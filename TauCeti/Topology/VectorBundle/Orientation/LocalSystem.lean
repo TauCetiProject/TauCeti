@@ -76,6 +76,8 @@ two orientations of a fibre, and it projects to a loop whose monodromy exchanges
   functions on orientations.
 * `TauCeti.VectorBundleOrientationCover.signLocalSystemFiberEquiv`: evaluation at an orientation
   of the fibre.
+* `TauCeti.VectorBundleOrientationCover.tensorSignLocalSystemFiberEquiv`: evaluation at an
+  orientation of the fibre, on the fibre of the tensor product `K ⊗ o(E)` with a local system `K`.
 * `TauCeti.VectorBundleOrientation.signLocalSystemIso`: the trivialization given by an
   orientation.
 * `TauCeti.VectorBundleOrientationCover.signLocalSystemIsoOfFiberwise`: the isomorphism of
@@ -366,6 +368,37 @@ instance projective_signLocalSystem_obj (x : FundamentalGroupoid (TopCat.of B)) 
       ext ⟨p, hp⟩
       exact (ho ⟨fiberEquiv F E ι b ⟨p, hp⟩⟩).elim
     exact (ModuleCat.isZero_of_subsingleton _).projective
+
+section TensorFiber
+
+open MonoidalCategory
+open scoped TensorProduct
+
+-- The pointwise monoidal structure on `ModuleCat` requires the coefficient ring and
+-- the module fibres to live in the same universe.
+variable {S : Type (max uB uE uι)} [CommRing S]
+
+/-- Evaluation at an orientation `o` of `E_b` identifies the fibre over `b` of the tensor product
+`K ⊗ o(E)` of a local system `K` with the orientation local system with the fibre of `K`, by
+`TauCeti.VectorBundleOrientationCover.signLocalSystemFiberEquiv` on the second factor followed by
+`K_b ⊗ R ≃ K_b`. -/
+def tensorSignLocalSystemFiberEquiv
+    (K : LocalCoefficientSystem.{max uB uE uι, uB, max uB uE uι} S (TopCat.of B)) {b : B}
+    (o : Orientation ℝ (E b) ι) :
+    (K ⊗ signLocalSystem F E S hι).obj (FundamentalGroupoid.mk b) ≃ₗ[S]
+      K.obj (FundamentalGroupoid.mk b) :=
+  (LinearEquiv.lTensor _ (signLocalSystemFiberEquiv hι o)).trans (TensorProduct.rid S _)
+
+@[simp]
+theorem tensorSignLocalSystemFiberEquiv_tmul
+    (K : LocalCoefficientSystem.{max uB uE uι, uB, max uB uE uι} S (TopCat.of B)) {b : B}
+    (o : Orientation ℝ (E b) ι) (a : K.obj (FundamentalGroupoid.mk b))
+    (f : (signLocalSystem F E S hι).obj (FundamentalGroupoid.mk b)) :
+    tensorSignLocalSystemFiberEquiv hι K o (a ⊗ₜ[S] f) = signLocalSystemFiberEquiv hι o f • a :=
+  (congrArg (TensorProduct.rid S _) (LinearEquiv.lTensor_tmul _ _ a f)).trans
+    (TensorProduct.rid_tmul _ _)
+
+end TensorFiber
 
 variable [FiniteDimensional ℝ F]
 
