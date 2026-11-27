@@ -74,6 +74,7 @@ for every positive real `δ`.
   in `ℝ≥0∞` and an equation of real differences, provided `px`, `nx`, `py`, `ny` are finite;
   `A` and `B` may be infinite;
 * `EReal.coe_mul_le_coe_mul_iff` — multiplication by a positive real preserves and reflects `≤`;
+* `EReal.coe_mul_le_iff_le_coe_inv_mul` — a positive real factor moves across `≤` as its inverse;
 * `EReal.add_le_iff_le_ite` — `a + b ≤ c` is equivalent to `b ≤ c - a` with no finiteness
   hypothesis, once `c - a` is replaced by `⊤` when `c = ⊤` or `a = ⊥`;
 * `EReal.mul_iSup_le` — a positive finite multiple of a supremum is bounded termwise;
@@ -350,6 +351,12 @@ theorem coe_mul_le_coe_mul_iff {c : ℝ} (hc : 0 < c) (a b : EReal) :
   have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
   rw [← div_le_iff_le_mul hc' (coe_ne_top c), ← mul_div,
     mul_div_cancel (coe_ne_bot c) (coe_ne_top c) hc'.ne']
+
+/-- A positive real factor `c` moves across `≤` as its inverse: `c * a ≤ b ↔ a ≤ c⁻¹ * b`. -/
+theorem coe_mul_le_iff_le_coe_inv_mul {c : ℝ} (hc : 0 < c) {a b : EReal} :
+    (c : EReal) * a ≤ b ↔ a ≤ (c⁻¹ : ℝ) * b := by
+  rw [← coe_mul_le_coe_mul_iff (inv_pos.2 hc), ← mul_assoc, ← coe_mul, inv_mul_cancel₀ hc.ne',
+    coe_one, one_mul]
 
 /-- Unconditional form of `EReal.le_sub_iff_add_le`: `a + b ≤ c` bounds `b` by `c - a`, except
 that there is no bound when `c = ⊤` or `a = ⊥`. For each `a` this is a Galois connection between

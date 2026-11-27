@@ -516,6 +516,16 @@ lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{u} 1) :
   · exact Or.inr (diskBoundary_one_ext (h.trans spherePlus_down_apply_zero.{u}.symm))
   · exact Or.inl (diskBoundary_one_ext (h.trans sphereMinus_down_apply_zero.{u}.symm))
 
+/-- A point `s` of `S⁰` whose coordinate has the sign of the coordinate of a point `w ≠ 0` of the
+`1`-disk is the direction `‖w‖⁻¹ • w` of `w`. -/
+lemma diskBoundary_one_eq_inv_norm_smul {w : TopCat.disk.{u} 1} {s : TopCat.diskBoundary.{u} 1}
+    (hw : w.down.val 0 ≠ 0) (hs : s.down.val 0 * |w.down.val 0| = w.down.val 0) :
+    s.down.val = ‖w.down.val‖⁻¹ • w.down.val := by
+  refine PiLp.ext fun j ↦ ?_
+  rw [Subsingleton.elim j 0, PiLp.smul_apply, smul_eq_mul, EuclideanSpace.norm_fin_one,
+    eq_inv_mul_iff_mul_eq₀ (abs_ne_zero.2 hw), mul_comm]
+  exact hs
+
 /-- The two points `-e₀` and `e₀` of `S⁰` are distinct. -/
 lemma sphereMinus_ne_spherePlus : (sphereMinus : TopCat.diskBoundary.{u} 1) ≠ spherePlus := by
   intro h
