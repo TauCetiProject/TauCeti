@@ -248,51 +248,6 @@ theorem exists_holderOnWith_gradient_closure_of_sub_mem_w1p0Submodule {E : Type*
 
 
 attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace in
-/-- **Weak solvability of the Dirichlet problem with a nonnegative zero-order term on a bounded
-domain.** The Dirichlet problem `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f - div G` in `Ω`, `u = g` on `∂Ω`, with `a`
-uniformly elliptic and measurable on `Ω`, `c` measurable with `0 ≤ c ≤ Γ`, `f ∈ L²(Ω)` and
-`G ∈ L²(Ω; ℝ^{n+1})`, has exactly one weak solution on a bounded `Ω`: exactly one `u ∈ H¹(Ω)` with
-`u - g ∈ H¹₀(Ω)` and `∫_Ω ⟨a ∇u, ∇v⟩ + ∫_Ω c u v = ∫_Ω ⟨G, ∇v⟩ + ∫_Ω f v` for every
-`v ∈ H¹₀(Ω)`. The energy form is coercive on `H¹₀(Ω)` since `Ω` lies in a ball, and Lax–Milgram
-applies, by
-`UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball`. -/
-theorem UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_isBounded
-    {Ω : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    {a : EuclideanSpace ℝ (Fin (n + 1)) → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
-    {c f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
-    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))} {lam Lam Γ : ℝ}
-    (hell : UniformlyEllipticOn (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))) a lam Lam)
-    (hΩ : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))))
-    (ha : AEStronglyMeasurable a (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (hc : AEStronglyMeasurable c (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (hcΓ : ∀ x ∈ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), ‖c x‖ ≤ Γ)
-    (hc0 : ∀ x ∈ (Ω : Set (EuclideanSpace ℝ (Fin (n + 1)))), 0 ≤ c x)
-    (hf : MemLp f 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (hG : MemLp G 2 (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 1))))))
-    (g : W1p volume Ω 2) :
-    ∃! u : W1p volume Ω 2, u - g ∈ w1p0Submodule volume Ω 2 ∧
-      ∀ v : W1p0 volume Ω 2, energyFormH1 a 0 c u (v : W1p volume Ω 2) =
-        (∫ x in Ω, ⟪G x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ) +
-          ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x := by
-  -- The right-hand side as a functional on `H¹₀(Ω)`.
-  set ℓ := dirichletForcing (hf.toLp f) - divergenceForcing (hG.toLp G)
-  have hℓ : ∀ v : W1p0 volume Ω 2, ℓ v =
-      (∫ x in Ω, ⟪G x, W1p.gradient (v : W1p volume Ω 2) x⟫_ℝ) +
-        ∫ x in Ω, f x * W1p.value (v : W1p volume Ω 2) x := fun v => by
-    rw [sub_apply, divergenceForcing_toLp_apply hG,
-      dirichletForcing_apply_eq_setIntegral, sub_neg_eq_add, add_comm]
-    congr 1
-    refine integral_congr_ae ?_
-    filter_upwards [hf.coeFn_toLp] with x hx
-    rw [hx]
-  obtain ⟨R, hR⟩ := hΩ.subset_ball 0
-  obtain ⟨u, ⟨hu0, hu⟩, huniq⟩ :=
-    hell.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
-      (b := 0) (beta := 0) ha aestronglyMeasurable_const hc (fun _ _ => by simp) hcΓ hc0 hR
-      (by simpa using hell.pos) ℓ g
-  exact ⟨u, ⟨hu0, fun v => (hu v).trans (hℓ v)⟩,
-    fun u' hu' => huniq u' ⟨hu'.1, fun v => (hu'.2 v).trans (hℓ v).symm⟩⟩
-
 /-- **The Dirichlet problem with `C^{1,α}` boundary values on a `C^{1,α}` domain is uniquely
 solvable, with a gradient Hölder up to the boundary.** Let `Ω ⊆ ℝ^{n+1}` be a bounded open set with
 `C^{1,α}` boundary, given by rigid graph charts at its frontier points as in
@@ -357,7 +312,7 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_and_holderOnWi
     (hG.memLp_top hα hΩ.closure Ω.isOpen.measurableSet subset_closure).mono_exponent le_top
   obtain ⟨u, ⟨hu0, hu'⟩, huniq⟩ :=
     hellΩ.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_isBounded (c := 0)
-      (Γ := 0) hΩ ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl)
+      (gamma := 0) hΩ ha aestronglyMeasurable_const (fun _ _ => by simp) (fun _ _ => le_rfl)
       (hf.mono_exponent hq) hG2 g
   -- The weak equation against `H¹₀(Ω)` gives it against the test functions.
   have htest : ∀ φ : 𝓓(Ω, ℝ), energyFormH1 a 0 0 u (W1p.ofTestFunctionₗ volume Ω 2 φ) =
