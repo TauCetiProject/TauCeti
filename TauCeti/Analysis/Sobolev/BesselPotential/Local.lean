@@ -16,6 +16,7 @@ import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables
+import TauCeti.Analysis.Sobolev.BesselPotential.Conjugation
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 
@@ -38,7 +39,10 @@ It can be tested with a single cutoff: for `1 < p < ∞`, `T` is `H^{s,p}` near 
 (`Distribution.isLocallyMemSobolevAt_iff_exists_memSobolev_cutoffTempered`), since test functions
 multiply `H^{s,p}` into itself (`TemperedDistribution.MemSobolev.smulLeftCLM_testFunction`).
 Conversely, if `T` is `H^{s,p}` near every point of the support of `χ`, then `χ T ∈ H^{s,p}`
-(`Distribution.memSobolev_cutoffTempered_of_forall_isLocallyMemSobolevAt`).
+(`Distribution.memSobolev_cutoffTempered_of_forall_isLocallyMemSobolevAt`). A tempered
+distribution in `H^{s,p}`, and its real part, are `H^{s,p}` near every point of `Ω`
+(`TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_toDistribution`,
+`TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_re_toDistribution`).
 
 Smooth multiples preserve the notion (`Distribution.IsLocallyMemSobolevAt.smulLeftCLM`), and for
 `1 < p < ∞` each derivative costs one order (`Distribution.IsLocallyMemSobolevAt.lineDerivOp`,
@@ -422,6 +426,16 @@ theorem _root_.TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_toDistribut
   ⟨Ω, Ω.isOpen.mem_nhds hx, subset_rfl, fun φ _ ↦ by
     rw [cutoffTempered_toDistribution]
     exact hu.smulLeftCLM_testFunction hp hp_top φ⟩
+
+/-- Let `1 < p < ∞`. The real part of a tempered distribution in `H^{s,p}`, restricted to `Ω`, is
+`H^{s,p}` near every point of `Ω`. -/
+theorem _root_.TemperedDistribution.MemSobolev.isLocallyMemSobolevAt_re_toDistribution
+    (hp : 1 < p) (hp_top : p ≠ ∞) {u : 𝓢'(E, ℂ)} (hu : TemperedDistribution.MemSobolev s p u)
+    (hx : x ∈ Ω) :
+    (mapCLM (Complex.ofRealCLM ∘L Complex.reCLM)
+      (TemperedDistribution.toDistribution Ω u)).IsLocallyMemSobolevAt s p x := by
+  rw [TemperedDistribution.mapCLM_re_toDistribution]
+  exact ((hu.add (hu.conjPostcompCLM _)).smul _).isLocallyMemSobolevAt_toDistribution hp hp_top hx
 
 variable {e : OpenPartialHomeomorph E E} {U : Opens E}
   {he : ContDiffOn ℝ (⊤ : ℕ∞) e e.source} {he' : ContDiffOn ℝ (⊤ : ℕ∞) e.symm e.target}

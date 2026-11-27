@@ -30,11 +30,16 @@ sums `∑ p ≤ B k, f p` do, and for `‖g p - 1‖ ≤ C / p` the same holds f
 Along an arbitrary cofinal sequence of cutoffs only the forward implication holds, and it is
 `Filter.Tendsto.comp`. Some growth condition is needed for the converse: the primes in `(x, x²]`
 have reciprocal sum tending to `log 2`, so for cutoffs such as `B k = 2 ^ (2 ^ k)` the block
-sums do not tend to zero. The cutoffs passing at most one new prime per step are handled by
-`Nat.tendsto_prod_primesLE_comp_iff` without any growth condition.
+sums do not tend to zero (`TauCeti.exists_abs_sum_sdiff_primesLE_sq_inv_sub_log_two_le`). In
+`TauCeti/NumberTheory/LSeries/BoundaryConvergence/SquaringCutoff.lean` this gives Euler products
+that converge along the cutoffs `2 ^ 4 ^ m` but have no ordered limit. The cutoffs passing at
+most one new prime per step are handled by `Nat.tendsto_prod_primesLE_comp_iff` without any growth
+condition.
 
 ## Main results
 
+* `TauCeti.exists_abs_sum_sdiff_primesLE_sq_inv_sub_log_two_le`: the reciprocal prime sum over a
+  squaring block `(n, n ^ 2]` is `log 2 + O(1 / log n)`.
 * `TauCeti.tendsto_sum_sdiff_primesLE_inv_of_tendsto_log_div`: the reciprocal prime sums over the
   blocks `(B k, B (k + 1)]` tend to zero.
 * `TauCeti.tendsto_sum_primesLE_comp_iff_of_tendsto_log_div`: ordered sums of `f` with
@@ -84,6 +89,21 @@ theorem tendsto_sum_sdiff_primesLE_inv_of_tendsto_log_div (hB : Tendsto B atTop 
   have h := (abs_le.mp (hC (B k) (B (k + 1)) hk2 (by exact_mod_cast hlt.le))).2
   simp only [Nat.floor_natCast] at h
   linarith [le_abs_self (Real.log (Real.log (B (k + 1)) / Real.log (B k)))]
+
+/-- **Reciprocal prime sums over squaring blocks.** There is an absolute constant `C` such that
+for every natural number `n ≥ 2`, `|∑_{n < p ≤ n ^ 2} p⁻¹ - log 2| ≤ C / log n`. So along cutoffs
+that square at each step, the block sums tend to `log 2` rather than to zero. -/
+theorem exists_abs_sum_sdiff_primesLE_sq_inv_sub_log_two_le :
+    ∃ C : ℝ, ∀ n : ℕ, 2 ≤ n →
+      |(∑ p ∈ Nat.primesLE (n ^ 2) \ Nat.primesLE n, (p : ℝ)⁻¹) - Real.log 2| ≤
+        C / Real.log n := by
+  obtain ⟨C, hC⟩ := exists_abs_sum_sdiff_primesLE_inv_sub_log_div_le
+  refine ⟨C, fun n hn ↦ ?_⟩
+  have hn2 : (2 : ℝ) ≤ n := by exact_mod_cast hn
+  have hlog : Real.log n ≠ 0 := (Real.log_pos (by linarith)).ne'
+  have h := hC n ((n ^ 2 : ℕ) : ℝ) hn2 (by push_cast; nlinarith)
+  simp only [Nat.floor_natCast] at h
+  simpa [Real.log_pow, mul_div_cancel_right₀ _ hlog] using h
 
 section Comparison
 

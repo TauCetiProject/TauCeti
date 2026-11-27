@@ -13,6 +13,11 @@ public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 /-!
 # Scalar extension of images and powers of submodules
 
+For submodules of modules over a commutative algebra, `Submodule.tensorProductMap` compares
+their tensor product over the base ring with the ambient tensor product over the algebra.
+Its range is the bilinear image, using Mathlib's `TensorProduct.mapOfCompatibleSMul`,
+`TensorProduct.mapIncl`, and `TensorProduct.map₂_eq_range_lift_comp_mapIncl`.
+
 Extension of scalars commutes with taking images of submodules under linear maps, and preserves
 powers of submodules of an algebra. The latter applies, in particular, to the homogeneous pieces of
 tensor and exterior algebras, defined as powers of their generators.
@@ -30,7 +35,8 @@ generated submodule of the original module already spans that scalar extension
 (`Submodule.exists_fg_baseChange_eq_top`). A linear map of scalar factors carries one scalar
 extension of a submodule into another (`Submodule.map_mem_baseChange`), and for an algebra map
 `f : A →ₐ[R] B` the `B`-span of the image of `span A s` under `f ⊗ id` equals the `B`-span of the
-image of `s` (`Submodule.span_rTensor_image_span`).
+image of `s` (`Submodule.span_rTensor_image_span`). In particular, if a family `X` spans `M` over
+`R`, then the tensors `1 ⊗ X i` span `A ⊗[R] M` over `A` (`TauCeti.span_one_tmul_eq_top`).
 -/
 
 public section
@@ -38,6 +44,39 @@ public section
 open scoped TensorProduct Pointwise
 
 namespace Submodule
+
+section TensorProductMap
+
+variable {R K V W : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
+  [AddCommMonoid V] [Module K V] [Module R V] [IsScalarTower R K V]
+  [AddCommMonoid W] [Module K W] [Module R W] [IsScalarTower R K W]
+
+/-- The canonical `R`-linear map from the tensor product of two submodules to the tensor
+product of their ambient modules over a commutative `R`-algebra `K`, with scalars restricted
+to `R` in the codomain. -/
+def tensorProductMap (L : Submodule R V) (M : Submodule R W) :
+    L ⊗[R] M →ₗ[R] V ⊗[K] W :=
+  (TensorProduct.mapOfCompatibleSMul K R R V W).comp (TensorProduct.mapIncl L M)
+
+/-- The tensor map sends a pure submodule tensor to the corresponding ambient tensor. -/
+@[simp]
+theorem tensorProductMap_tmul (L : Submodule R V) (M : Submodule R W) (x : L) (y : M) :
+    L.tensorProductMap M (x ⊗ₜ[R] y) = (x : V) ⊗ₜ[K] (y : W) := by
+  simp [tensorProductMap, TensorProduct.mapIncl]
+
+/-- The tensor map has as image the bilinear image of the two submodules. -/
+@[simp]
+theorem range_tensorProductMap (L : Submodule R V) (M : Submodule R W) :
+    LinearMap.range (L.tensorProductMap (K := K) M) =
+      map₂ ((TensorProduct.mk K V W).restrictScalars₁₂ R R) L M := by
+  have h : TensorProduct.mapOfCompatibleSMul K R R V W =
+      TensorProduct.lift ((TensorProduct.mk K V W).restrictScalars₁₂ R R) := by
+    ext x y
+    simp
+  rw [tensorProductMap, h]
+  exact (TensorProduct.map₂_eq_range_lift_comp_mapIncl _ L M).symm
+
+end TensorProductMap
 
 section Congruence
 
@@ -233,3 +272,15 @@ theorem baseChange_pow (p : Submodule R B) (n : ℕ) :
     (Algebra.TensorProduct.includeRight : B →ₐ[R] A ⊗[R] B) (p : Set B) n)
 
 end Submodule
+
+namespace TauCeti
+
+/-- **A spanning family stays spanning after extension of scalars**: if `X` spans the
+`R`-module `M`, then the tensors `1 ⊗ X i` span `A ⊗[R] M` over `A`. -/
+theorem span_one_tmul_eq_top {R A M ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] {X : ι → M} (hX : Submodule.span R (Set.range X) = ⊤) :
+    Submodule.span A (Set.range fun i ↦ (1 : A) ⊗ₜ[R] X i) = ⊤ := by
+  have h := congrArg (Submodule.baseChange A) hX
+  rwa [Submodule.baseChange_span, Submodule.baseChange_top, ← Set.range_comp] at h
+
+end TauCeti

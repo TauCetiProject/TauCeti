@@ -103,6 +103,9 @@ At height `1 ≤ |Im s|`, a point `s` is at distance at least `1` from `1`
 `‖(s - 1)⁻¹‖ ≤ 1` (`Complex.norm_inv_sub_one_le_one`). For real `1 ≤ r`,
 `‖(r : ℂ) - 1‖ = r - 1` (`Complex.norm_ofReal_sub_one`).
 
+Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies `ε ≤ ‖w‖ ≤ 2 * ε`
+(`Complex.norm_bounds_of_abs_re_le_of_abs_im_le`).
+
 A real linear isometry from the plane maps `i` to a unit vector (`LinearIsometry.norm_map_I`).
 
 There is no ring homomorphism from `ℂ` to a semireal semiring, such as `ℝ` or any linearly
@@ -594,6 +597,16 @@ theorem add_im_ne_zero_of_abs_im_lt {s μ : ℂ} (h : |μ.im| < |s.im|) : (s + �
     rw [add_im, ← eq_neg_iff_add_eq_zero] at h0
     rw [h0, abs_neg] at h
     exact h.false
+
+/-- Any point `w` on the boundary of the square `[-ε, ε] × [-ε, ε]` satisfies
+`ε ≤ ‖w‖ ≤ 2 * ε`. -/
+theorem norm_bounds_of_abs_re_le_of_abs_im_le (w : ℂ) (ε : ℝ) (hre : |w.re| ≤ ε)
+    (him : |w.im| ≤ ε) (hside : |w.re| = ε ∨ |w.im| = ε) :
+    ε ≤ ‖w‖ ∧ ‖w‖ ≤ 2 * ε := by
+  refine ⟨?_, (norm_le_abs_re_add_abs_im w).trans (by linarith)⟩
+  rcases hside with h | h
+  · exact h ▸ abs_re_le_norm w
+  · exact h ▸ abs_im_le_norm w
 
 /-- There is no ring homomorphism from `ℂ` to a semireal semiring `R` (one in which `1 + s ≠ 0`
 for every sum of squares `s`), such as `ℝ` or any linearly ordered ring: it would send

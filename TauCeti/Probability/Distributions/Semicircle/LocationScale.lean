@@ -18,6 +18,8 @@ We give normalization, measurability in the parameters, support, integrability, 
 variance, and transport under every real affine map. For positive variance its density is
 obtained from the existing unit-radius density by `affineDensity`; no new density is defined.
 These laws provide the centre/variance normalization used for limiting spectral distributions.
+The `ProbabilityTheory.HasLaw` interface transfers the carrier, natural-power integrability,
+mean, variance, and exponential integrability to random variables with these laws.
 
 ## References
 
@@ -181,3 +183,38 @@ theorem ae_pos_semicircleReal {a : ℝ} {v : ℝ≥0} (h : 2 * Real.sqrt v ≤ a
   exact lt_of_le_of_ne (by linarith [hx.1]) (Ne.symm hx0)
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory.HasLaw
+
+open MeasureTheory TauCeti.Probability
+
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
+
+/-- A centre/variance semicircle random variable lies almost everywhere between its two edges. -/
+theorem ae_mem_Icc_semicircleReal (hX : HasLaw X (semicircleReal a v) P) :
+    ∀ᵐ ω ∂P, X ω ∈ Set.Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v) :=
+  hX.ae_iff measurableSet_Icc.mem |>.2
+    (TauCeti.Probability.ae_mem_Icc_semicircleReal a v)
+
+/-- Every natural power of a centre/variance semicircle random variable is integrable. -/
+theorem integrable_pow_semicircleReal (hX : HasLaw X (semicircleReal a v) P) (n : ℕ) :
+    Integrable (fun ω ↦ X ω ^ n) P :=
+  hX.integrable_fun_comp (TauCeti.Probability.integrable_pow_semicircleReal a v n)
+
+/-- The expectation of a centre/variance semicircle random variable is its centre. -/
+theorem integral_semicircleReal (hX : HasLaw X (semicircleReal a v) P) : ∫ ω, X ω ∂P = a := by
+  rw [hX.integral_eq, TauCeti.Probability.integral_id_semicircleReal]
+
+/-- The variance of a centre/variance semicircle random variable is its variance parameter. -/
+theorem variance_semicircleReal (hX : HasLaw X (semicircleReal a v) P) :
+    variance X P = v := by
+  rw [hX.variance_eq, TauCeti.Probability.variance_id_semicircleReal]
+
+/-- Every real exponential moment of a centre/variance semicircle random variable is integrable. -/
+theorem integrable_exp_mul_semicircleReal (hX : HasLaw X (semicircleReal a v) P) (t : ℝ) :
+    Integrable (fun ω ↦ Real.exp (t * X ω)) P := by
+  refine hX.integrable_fun_comp (f := fun x : ℝ ↦ Real.exp (t * x)) ?_
+  have ht : t ∈ integrableExpSet id (semicircleReal a v) := by simp
+  simpa only [integrableExpSet, Set.mem_ofPred_eq, id_eq] using ht
+
+end ProbabilityTheory.HasLaw

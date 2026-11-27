@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.Complex
 public import Mathlib.Geometry.Manifold.VectorBundle.MDifferentiable
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Holomorphic.PointTwist.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.PreferredChartReading
 
 /-!
 # Twisting a holomorphic vector bundle by the dual of a point
@@ -55,7 +56,7 @@ second of these twists.
   `x`.
 * `TauCeti.negPointTwistPairing`: the fibrewise pairing `𝒪(-x) × 𝒪(x) → 𝒪`.
 * `TauCeti.IsSignedTransverseZero`: the derivative estimate on the chart reading
-  (`TauCeti.negPointTwistChartReading`) making a zero of a section of a line bundle positive or
+  (`TauCeti.preferredChartReading`) making a zero of a section of a line bundle positive or
   negative, the condition under which the zero is untwisted in `L(-x)` or `L(x)`.
 
 ## Main results
@@ -176,19 +177,6 @@ section Holomorphic
 
 omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)]
 
-variable (F) in
-/-- The reading of a section `σ` of `E` in the chart of `E` at `x`, as a function of the chart
-coordinate at `x`. -/
-def negPointTwistChartReading (x : X) (σ : ∀ z, E z) (w : ℂ) : F :=
-  (trivializationAt F E x ⟨(chartAt ℂ x).symm w, σ ((chartAt ℂ x).symm w)⟩).2
-
-omit [NormedSpace ℂ F] [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [VectorBundle ℂ F E] in
-variable (F) in
-theorem negPointTwistChartReading_apply (x : X) (σ : ∀ z, E z) (w : ℂ) :
-    negPointTwistChartReading F x σ w =
-      (trivializationAt F E x ⟨(chartAt ℂ x).symm w, σ ((chartAt ℂ x).symm w)⟩).2 :=
-  (rfl)
-
 /-- The derivative condition making a zero `x` of a section `σ` of a complex line bundle with fibre
 `ℂ` *transverse of sign `s`*: the real derivative `D` of the chart reading of `σ` at `x` is within
 `‖c‖` of `u ↦ u c` (`s = false`, a positive zero) or of `u ↦ conj u c` (`s = true`, a negative
@@ -197,14 +185,14 @@ is a separate hypothesis wherever it is needed. -/
 def IsSignedTransverseZero {L : X → Type*} [∀ z, TopologicalSpace (L z)]
     [TopologicalSpace (TotalSpace ℂ L)] [FiberBundle ℂ L] (σ : ∀ z, L z) (x : X) (s : Bool) :
     Prop :=
-  ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ), HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x) ∧
+  ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ), HasFDerivAt (preferredChartReading ℂ ℂ σ x) D (chartAt ℂ x x) ∧
     ‖D - (if s then Complex.conjCLE.toContinuousLinearMap
       else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖
 
 theorem isSignedTransverseZero_iff {L : X → Type*} [∀ z, TopologicalSpace (L z)]
     [TopologicalSpace (TotalSpace ℂ L)] [FiberBundle ℂ L] {σ : ∀ z, L z} {x : X} {s : Bool} :
     IsSignedTransverseZero σ x s ↔
-      ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ), HasFDerivAt (negPointTwistChartReading ℂ x σ) D (chartAt ℂ x x) ∧
+      ∃ (D : ℂ →L[ℝ] ℂ) (c : ℂ), HasFDerivAt (preferredChartReading ℂ ℂ σ x) D (chartAt ℂ x x) ∧
         ‖D - (if s then Complex.conjCLE.toContinuousLinearMap
           else ContinuousLinearMap.id ℝ ℂ).smulRight c‖ < ‖c‖ :=
   Iff.rfl
@@ -214,28 +202,11 @@ theorem IsSignedTransverseZero.congr {L L' : X → Type*} [∀ z, TopologicalSpa
     [TopologicalSpace (TotalSpace ℂ L)] [FiberBundle ℂ L] [∀ z, TopologicalSpace (L' z)]
     [TopologicalSpace (TotalSpace ℂ L')] [FiberBundle ℂ L'] {σ : ∀ z, L z} {σ' : ∀ z, L' z}
     {x : X} {s : Bool} (h : IsSignedTransverseZero σ x s)
-    (h' : negPointTwistChartReading ℂ x σ =ᶠ[𝓝 (chartAt ℂ x x)]
-      negPointTwistChartReading ℂ x σ') :
+    (h' : preferredChartReading ℂ ℂ σ x =ᶠ[𝓝 (chartAt ℂ x x)]
+      preferredChartReading ℂ ℂ σ' x) :
     IsSignedTransverseZero σ' x s := by
   obtain ⟨D, c, hD, hDc⟩ := isSignedTransverseZero_iff.1 h
   exact isSignedTransverseZero_iff.2 ⟨D, c, hD.congr_of_eventuallyEq h'.symm, hDc⟩
-
-omit [NormedSpace ℂ F] [∀ z, AddCommGroup (E z)] [∀ z, Module ℂ (E z)] [VectorBundle ℂ F E] in
-variable (F) in
-/-- At the chart coordinate of a point `z` of the chart source, the chart reading of `σ` is `σ z`
-read in the chart of `E` at `x`. -/
-theorem negPointTwistChartReading_chartAt {x z : X} (σ : ∀ z, E z)
-    (hz : z ∈ (chartAt ℂ x).source) :
-    negPointTwistChartReading F x σ (chartAt ℂ x z) = (trivializationAt F E x ⟨z, σ z⟩).2 := by
-  rw [negPointTwistChartReading_apply, (chartAt ℂ x).left_inv hz]
-
-variable (F) in
-/-- The chart reading of a section vanishing at `x` vanishes at the chart coordinate of `x`. -/
-theorem negPointTwistChartReading_chartAt_self {x : X} {σ : ∀ z, E z} (hσx : σ x = 0) :
-    negPointTwistChartReading F x σ (chartAt ℂ x x) = 0 := by
-  rw [negPointTwistChartReading_chartAt F σ (mem_chart_source ℂ x), hσx]
-  exact congrArg Prod.snd
-    ((trivializationAt F E x).zeroSection ℂ (mem_baseSet_trivializationAt F E x))
 
 variable (F) in
 open Classical in
@@ -244,12 +215,12 @@ open Classical in
 chart reading of `σ` at the chart coordinate of `x`, so that in the chart of `E(-x)` at `x` it is
 the chart reading of `σ` divided by the centred coordinate. -/
 def negPointTwistOfZero (x : X) (σ : ∀ z, E z) (z : X) : (negPointTwistCore F E x).Fiber z :=
-  if z = x then deriv (negPointTwistChartReading F x σ) (chartAt ℂ x x)
+  if z = x then deriv (preferredChartReading ℂ F σ x) (chartAt ℂ x x)
   else (trivializationAt F E z ⟨z, σ z⟩).2
 
 variable (F) in
 @[simp] theorem negPointTwistOfZero_self (x : X) (σ : ∀ z, E z) :
-    negPointTwistOfZero F x σ x = deriv (negPointTwistChartReading F x σ) (chartAt ℂ x x) :=
+    negPointTwistOfZero F x σ x = deriv (preferredChartReading ℂ F σ x) (chartAt ℂ x x) :=
   ite_eq_left rfl
 
 variable (F) in
@@ -263,7 +234,7 @@ variable (F) in
   funext z
   by_cases h : z = x
   · subst h
-    have hr : negPointTwistChartReading F z (fun z ↦ (0 : E z)) =ᶠ[𝓝 (chartAt ℂ z z)]
+    have hr : preferredChartReading ℂ F (fun z ↦ (0 : E z)) z =ᶠ[𝓝 (chartAt ℂ z z)]
         fun _ ↦ 0 := by
       filter_upwards [(chartAt ℂ z).tendsto_symm (mem_chart_source ℂ z)
         ((trivializationAt F E z).open_baseSet.mem_nhds (mem_baseSet_trivializationAt F E z))]
@@ -290,7 +261,7 @@ variable (F) in
 theorem negPointTwistCore_localTriv_negPointTwistOfZero {x z : X} {σ : ∀ z, E z} (hσx : σ x = 0)
     (hz : z ∈ (negPointTwistCore F E x).baseSet (x, true)) :
     ((negPointTwistCore F E x).localTriv (x, true) ⟨z, negPointTwistOfZero F x σ z⟩).2 =
-      dslope (negPointTwistChartReading F x σ) (chartAt ℂ x x) (chartAt ℂ x z) := by
+      dslope (preferredChartReading ℂ F σ x) (chartAt ℂ x x) (chartAt ℂ x z) := by
   classical
   have hx : x ∈ (trivializationAt F E x).baseSet := mem_baseSet_trivializationAt F E x
   rw [mem_signedPointTwistCore_baseSet] at hz
@@ -311,8 +282,8 @@ theorem negPointTwistCore_localTriv_negPointTwistOfZero {x z : X} {σ : ∀ z, E
       negPointTwistOfZero_of_ne F h, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩,
       (trivializationAt F E z).symm_apply_apply_mk h₀]
     -- The slope of the chart reading from the chart coordinate of `x`, where it vanishes.
-    rw [dslope_of_ne _ hne, slope_def_module, negPointTwistChartReading_chartAt F σ hzs,
-      negPointTwistChartReading_chartAt_self F hσx, sub_zero,
+    rw [dslope_of_ne _ hne, slope_def_module, preferredChartReading_chartAt ℂ F σ hzs,
+      preferredChartReading_chartAt_self ℂ ℂ F hσx, sub_zero,
       ← pointTwistCoord_chartAt_symm ((chartAt ℂ x).map_source hzs), (chartAt ℂ x).left_inv hzs]
 
 /-- Off `x`, in the chart of `E(-x)` at `y`, the section `negPointTwistOfZero F x σ` is `σ` read in
@@ -386,7 +357,7 @@ theorem mdifferentiable_negPointTwistOfZero [CompleteSpace F] {x : X} {σ : ∀ 
     have hs : s ∈ 𝓝 (φ z₀) := inter_mem (chart_target_mem_nhds ℂ z₀)
       (φ.tendsto_symm (mem_chart_source ℂ z₀) (e.open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt F E z₀)))
-    have hg : DifferentiableOn ℂ (negPointTwistChartReading F z₀ σ) s := by
+    have hg : DifferentiableOn ℂ (preferredChartReading ℂ F σ z₀) s := by
       intro w hw
       have h₁ : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, F) (fun z ↦ (e ⟨z, σ z⟩).2) (φ.symm w) :=
         (e.mdifferentiableAt_section_iff 𝓘(ℂ) σ hw.2).1 (hσ _)
@@ -394,7 +365,7 @@ theorem mdifferentiable_negPointTwistOfZero [CompleteSpace F] {x : X} {σ : ∀ 
         mdifferentiableAt_atlas_symm (chart_mem_atlas ℂ z₀) hw.1
       exact (h₁.comp w h₂).differentiableAt.differentiableWithinAt
     have hd : MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ, F)
-        (fun z ↦ dslope (negPointTwistChartReading F z₀ σ) (φ z₀) (φ z)) z₀ :=
+        (fun z ↦ dslope (preferredChartReading ℂ F σ z₀) (φ z₀) (φ z)) z₀ :=
       (((Complex.differentiableOn_dslope hs).2 hg).differentiableAt hs).mdifferentiableAt.comp z₀
         (mdifferentiableAt_atlas (chart_mem_atlas ℂ z₀) (mem_chart_source ℂ z₀))
     refine hd.congr_of_eventuallyEq ?_
@@ -443,7 +414,7 @@ theorem negPointTwistOfZero_pointTwistDiv {x : X}
         (φ.continuousAt_symm (mem_chart_target ℂ z)) (φ.left_inv (mem_chart_source ℂ z))
     -- Off the chart coordinate of `x`, the slope of the chart reading of `σ` there is `t`, so `t`
     -- at the chart coordinate of `x` is the derivative of that chart reading.
-    have hs : slope (negPointTwistChartReading F z σ) (φ z) =ᶠ[𝓝[≠] φ z] t := by
+    have hs : slope (preferredChartReading ℂ F σ z) (φ z) =ᶠ[𝓝[≠] φ z] t := by
       have hb : z ∈ (negPointTwistCore F E z).baseSet (z, true) :=
         mem_signedPointTwistCore_baseSet.2 ⟨mem_baseSet_trivializationAt F E z, by simp⟩
       filter_upwards [nhdsWithin_le_nhds (chart_target_mem_nhds ℂ z),
@@ -454,7 +425,7 @@ theorem negPointTwistOfZero_pointTwistDiv {x : X}
       rw [← dslope_of_ne _ hwz, ← φ.right_inv hw,
         ← negPointTwistCore_localTriv_negPointTwistOfZero hσz hwb, hne _ hz', φ.right_inv hw,
         ht_def, signedPointTwistCore_trivializationAt_self]
-    have hd : HasDerivAt (negPointTwistChartReading F z σ) (t (φ z)) (φ z) :=
+    have hd : HasDerivAt (preferredChartReading ℂ F σ z) (t (φ z)) (φ z) :=
       hasDerivAt_iff_tendsto_slope.2 ((ht.tendsto.mono_left nhdsWithin_le_nhds).congr' hs.symm)
     rw [negPointTwistOfZero_self, hd.deriv, ht_def]
     dsimp only

@@ -434,40 +434,33 @@ theorem regularSingular_second_solution {z₀ α₁ α₂ : ℂ} {N : ℕ} {r : 
         (regularSingularSecondSolution fs gs z₀ α₂ N) := by
   have hα₁ : α₁ = α₂ + N := by linear_combination hdiff
   subst hα₁
-  obtain ⟨ha_sum, hw₁_sol, hlog_sum⟩ := regularSingularCoeff_solution_add_nat hf hg hfact
-  set a := regularSingularCoeff fs gs (α₂ + N)
-  set b := regularSingularSecondCoeff fs gs α₂ N
-  set c := regularSingularLogMultiplier fs gs α₂ N
-  have hb_sum : ∀ z, ‖z - z₀‖ < r → Summable fun s => b s * (z - z₀) ^ s := by
-    by_cases hr : 0 < r
-    · have hfr := FormalMultilinearSeries.le_radius_ofScalars_of_summable fs fun w hw0 hwr => by
-        simpa using (hf (w + z₀) (by simpa using hw0)
-          (by simpa using (eNorm_lt_ofReal_iff (x := w) (r := r)).mp hwr)).summable
-      have hgr := FormalMultilinearSeries.le_radius_ofScalars_of_summable gs fun w hw0 hwr => by
-        simpa using (hg (w + z₀) (by simpa using hw0)
-          (by simpa using (eNorm_lt_ofReal_iff (x := w) (r := r)).mp hwr)).summable
-      have hEr := FormalMultilinearSeries.le_radius_ofScalars_of_summable
-        (fun s => c * regularSingularLogForcing fs a α₂ N s) fun w _ hwr => by
-          simpa [mul_assoc] using
-            ((hlog_sum w ((eNorm_lt_ofReal_iff (x := w) (r := r)).mp hwr)).mul_left c).summable
-      have hbr := le_radius_ofScalars_of_regularSingular (ρ := α₂) (a := b) (s₀ := 0)
-        hfr hgr hEr fun s _ => by
-          have hrec := regularSingularSecondCoeff_rec hfact s
-          simp only [indicialPoly_def] at hrec
-          exact hrec
-      exact fun z hz => (FormalMultilinearSeries.summable_norm_mul_pow_of_lt_radius b
-        ((eNorm_lt_ofReal_iff.mpr hz).trans_le hbr)).of_norm
-    · exact fun z hz => False.elim (hr ((norm_nonneg _).trans_lt hz))
-  obtain ⟨hw₂_diff, _, hw₂_op⟩ :=
-    operator_second_ansatz_eq (c' := c) hf hg ha_sum hw₁_sol hlog_sum hb_sum
-  have hw₂_eq : regularSingularSecondSolution fs gs z₀ α₂ N = fun w =>
-      (w - z₀) ^ α₂ * (∑' s, b s * (w - z₀) ^ s) +
-        c * ((w - z₀) ^ (α₂ + (N : ℂ)) * ∑' s, a s * (w - z₀) ^ s) * Complex.log (w - z₀) := by
-    rw [regularSingularSecondSolution_eq, regularSingularSolution_eq]
-  rw [← hw₂_eq] at hw₂_diff hw₂_op
-  refine ⟨hb_sum, (isSolution_regularSingularEquation_iff hf hg _).mpr ⟨hw₂_diff, fun z hz => ?_⟩⟩
-  rw [hw₂_op z hz]
-  simp only [b, c, regularSingularSecondCoeff_rec hfact, zero_mul, tsum_zero, mul_zero]
+  obtain ⟨hb_sum, hw₂_diff, hw₂_sol⟩ := regularSingular_log_solution
+    (a := regularSingularCoeff fs gs (α₂ + N))
+    (b := regularSingularSecondCoeff fs gs α₂ N)
+    (c := regularSingularLogMultiplier fs gs α₂ N)
+    (w := regularSingularSecondSolution fs gs z₀ α₂ N)
+    hf hg (by simpa [indicialPoly_def] using hfact (α₂ + N)) rfl
+    (fun s hs => by
+      simpa [indicialPoly_def] using
+        indicialPoly_mul_regularSingularCoeff hs
+          (indicialPoly_add_nat_ne_zero_of_re_le hfact (by simp) hs))
+    (fun s hs => by
+      have hrec := regularSingularSecondCoeff_rec hfact s
+      rw [regularSingularLogForcing_of_lt _ _ _ hs, mul_zero, add_zero] at hrec
+      simp only [indicialPoly_def] at hrec
+      linear_combination hrec)
+    (fun s => by
+      have hrec := regularSingularSecondCoeff_rec hfact (s + N)
+      rw [regularSingularLogForcing_of_le _ _ _ (Nat.le_add_left N s), Nat.add_sub_cancel] at hrec
+      simp only [indicialPoly_def] at hrec
+      push_cast at hrec
+      rw [Finset.sum_range_succ, Nat.sub_self]
+      linear_combination hrec)
+    (by
+      funext w
+      simp only [regularSingularSecondSolution_apply, regularSingularSolution_apply, mul_assoc])
+  exact ⟨hb_sum, (isSolution_regularSingularEquation_iff hf hg _).mpr
+    ⟨hw₂_diff, fun z hz => hw₂_sol z hz.1 hz.2⟩⟩
 
 /-- **Analytic uniqueness of the second solution's coefficients**: for `0 < r` and
 `α₁ - α₂ = N ∈ ℕ`, if `b' : ℕ → ℂ` and `c' : ℂ` satisfy `b' N = 0`, the normalization

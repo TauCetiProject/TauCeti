@@ -53,6 +53,8 @@ example.
   differential of a symplectomorphism is a linear symplectomorphism of the tangent-fiber forms.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
   diffeomorphism pulls a nondegenerate form back to a nondegenerate form.
+* `IsLocalDiffeomorph.eq_zero_of_isNondegenerate_mpullback`: a two-form whose pullback along a
+  local diffeomorphism `f` is nondegenerate is nondegenerate at every point of the image of `f`.
 * `IsLocalDiffeomorph.isNondegenerate_mpullback_iff`: for a surjective
   local diffeomorphism the converse holds as well.
 * `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
@@ -241,6 +243,17 @@ theorem IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph {f : M�
   obtain ⟨u, rfl⟩ := hinv.surjective w
   simpa only [SmoothForm.eval₂_mpullback] using hv u
 
+/-- A two-form whose pullback along a local diffeomorphism `f` is nondegenerate is nondegenerate at
+every point `f x`: a tangent vector at `f x` pairing to zero with every vector is zero. -/
+theorem _root_.IsLocalDiffeomorph.eq_zero_of_isNondegenerate_mpullback {f : M₂ → M}
+    (hf : IsLocalDiffeomorph I₂ I ∞ f)
+    (h : SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ)) (x : M₂)
+    (v : TangentSpace I (f x)) (hv : ∀ w, SmoothBundleForm.eval₂ σ (f x) v w = 0) : v = 0 := by
+  rw [isNondegenerate_iff_separatingLeft] at h
+  -- The differential at `x` is onto, so `v = df u`, and `u` pairs to zero with every vector.
+  obtain ⟨u, rfl⟩ := (hf.isInvertible_mfderiv (by simp) x).surjective v
+  rw [h x u fun w ↦ by rw [SmoothForm.eval₂_mpullback]; exact hv _, map_zero]
+
 /-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
 back to a nondegenerate form exactly when the form is nondegenerate. -/
 theorem _root_.IsLocalDiffeomorph.isNondegenerate_mpullback_iff {f : M₂ → M}
@@ -248,12 +261,10 @@ theorem _root_.IsLocalDiffeomorph.isNondegenerate_mpullback_iff {f : M₂ → M}
     SmoothTwoForm.IsNondegenerate (SmoothForm.mpullback f hf.contMDiff σ) ↔
       σ.IsNondegenerate := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.isNondegenerate_mpullback_of_isLocalDiffeomorph hf⟩
-  rw [isNondegenerate_iff_separatingLeft] at h ⊢
+  rw [isNondegenerate_iff_separatingLeft]
   intro y v hv
   obtain ⟨x, rfl⟩ := hsurj y
-  -- The differential at `x` is onto, so `v = df u`, and `u` pairs to zero with every vector.
-  obtain ⟨u, rfl⟩ := (hf.isInvertible_mfderiv (by simp) x).surjective v
-  rw [h x u fun w ↦ by rw [SmoothForm.eval₂_mpullback]; exact hv _, map_zero]
+  exact hf.eq_zero_of_isNondegenerate_mpullback h x v hv
 
 /-- A surjective local diffeomorphism, such as the projection of a covering space, pulls a two-form
 back to a symplectic form exactly when the form is symplectic. -/
@@ -278,17 +289,27 @@ variable {E H Z E' H' Q : Type*}
   [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q]
   {p : Z → Q} {σ : SmoothTwoForm I Z} {η : SmoothTwoForm J Q}
 
+/-- If the derivative of `p` at `z` is surjective, `η` is nondegenerate at `p z` exactly when the
+null space of the pullback `p^* η` at `z` is the kernel of the derivative of `p` at `z`. -/
+theorem nondegenerate_bilinFormAt_iff_ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p) {z : Z}
+    (hdp : Surjective (mfderiv I J p z)) :
+    (η.bilinFormAt (p z)).Nondegenerate ↔
+      LinearMap.ker ((SmoothForm.mpullback p hp η).bilinFormAt z) = (mfderiv I J p z).ker := by
+  rw [ker_bilinFormAt_mpullback hp η hdp]
+  refine ((SmoothForm.isAlt_bilinFormAt η (p z)).isRefl.nondegenerate_iff_separatingLeft.trans
+    LinearMap.separatingLeft_iff_ker_eq_bot).trans ⟨fun h ↦ ?_, fun h ↦ ?_⟩
+  · rw [h]
+    exact Submodule.comap_bot _
+  · exact Submodule.comap_injective_of_surjective hdp (h.trans (Submodule.comap_bot _).symm)
+
 /-- For a surjective `p` with surjective derivatives, `η` is nondegenerate exactly when, at every
 point `z`, the null space of the pullback `p^* η` is the kernel of the derivative of `p`. -/
 theorem isNondegenerate_iff_forall_ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p)
     (hsurj : Surjective p) (hdp : ∀ z, Surjective (mfderiv I J p z)) :
     η.IsNondegenerate ↔ ∀ z, LinearMap.ker ((SmoothForm.mpullback p hp η).bilinFormAt z) =
-      (mfderiv I J p z).ker := by
-  simp only [ker_bilinFormAt_mpullback hp η (hdp _), ← Submodule.comap_bot,
-    isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot]
-  refine ⟨fun h z ↦ by rw [h], fun h y ↦ ?_⟩
-  obtain ⟨z, rfl⟩ := hsurj y
-  exact Submodule.comap_injective_of_surjective (hdp z) (h z)
+      (mfderiv I J p z).ker :=
+  hsurj.forall.trans
+    (forall_congr' fun z ↦ nondegenerate_bilinFormAt_iff_ker_bilinFormAt_mpullback hp (hdp z))
 
 /-- **Symplectic forms through a smooth surjection.** If `p` is a surjective smooth map with
 surjective derivatives and `p^* η = σ`, then `η` is symplectic exactly when `σ` is closed and its
