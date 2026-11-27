@@ -189,7 +189,7 @@ theorem nonempty_diffeomorph_regularFiberComponent_unitAddTorus_prod
     rw [hB']
     exact (congrArg AddSubgroup.toIntSubmodule hB).symm
   exact ⟨(hσ.quotientHamiltonianFlowStabilizerDiffeomorph hF hcomm hc hU hdim hLU).symm.trans
-    (B'.orbitRelQuotientCylinderDiffeomorph hL)⟩
+    (B'.orbitRelQuotientCylinderDiffeomorph hL ∞)⟩
 
 omit hc
 

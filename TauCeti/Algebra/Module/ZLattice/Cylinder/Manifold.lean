@@ -22,10 +22,11 @@ quotient with a cylinder as topological groups (`Module.Basis.quotientCylinderEq
 
 `E / L ≃ (ℝ / ℤ)^ι × ℝ^κ`.
 
-This file shows that this identification is a diffeomorphism, for the quotient manifold structure
-of the orbit space of translation by `L` (`TauCeti.instIsManifoldAddQuotient`) and the product of
-the torus `(ℝ / ℤ)^ι`, modelled on `ModelWithCorners.pi fun _ ↦ 𝓘(ℝ)`, with the vector space
-`ℝ^κ` (`Module.Basis.orbitRelQuotientCylinderDiffeomorph`).
+This file shows that this identification is a `C^n` diffeomorphism for every `n`, analytic
+included, for the quotient manifold structure of the orbit space of translation by `L`
+(`TauCeti.instIsManifoldAddQuotient`) and the product of the torus `(ℝ / ℤ)^ι`, modelled on
+`ModelWithCorners.pi fun _ ↦ 𝓘(ℝ)`, with the vector space `ℝ^κ`
+(`Module.Basis.orbitRelQuotientCylinderDiffeomorph`).
 
 Both directions are smooth because both are linear maps read through local diffeomorphisms: the
 orbit projection `E → E / L` is a surjective local diffeomorphism
@@ -41,7 +42,7 @@ smaller than the dimension of `E`, and the quotient is a noncompact cylinder.
 
 ## Main definitions
 
-* `Module.Basis.orbitRelQuotientCylinderDiffeomorph`: the diffeomorphism
+* `Module.Basis.orbitRelQuotientCylinderDiffeomorph`: the `C^n` diffeomorphism
   `E / L ≃ (ℝ / ℤ)^ι × ℝ^κ` of cylinder coordinates.
 
 ## Main results
@@ -75,14 +76,22 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 include hL
 
 omit [Fintype ι] [Fintype κ] in
+/-- Cylinder coordinates on the orbit space of translation by `L`: the isomorphism of topological
+groups `Module.Basis.quotientCylinderEquiv` read on the orbit space through
+`Submodule.orbitRelQuotientContinuousAddEquiv`. The two compose because the quotient `E ⧸ L` by the
+submodule and the quotient `E ⧸ L.toAddSubgroup` by its underlying subgroup are the same type, by
+structure projections. -/
+private def orbitRelQuotientCylinderEquiv :
+    AddAction.orbitRel.Quotient L E ≃ₜ+ UnitAddTorus ι × (κ → ℝ) :=
+  L.orbitRelQuotientContinuousAddEquiv.trans
+    (B.quotientCylinderEquiv (L := L.toAddSubgroup) (by rw [hL]))
+
+omit [Fintype ι] [Fintype κ] in
 /-- In cylinder coordinates, the orbit of `x` under translation by `L` is sent to the cylinder
 coordinates of `x`. -/
-private theorem orbitRelQuotientContinuousAddEquiv_trans_apply_mk (x : E) :
-    (L.orbitRelQuotientContinuousAddEquiv.trans
-        (B.quotientCylinderEquiv (L := L.toAddSubgroup) (by rw [hL])))
-        (Quotient.mk (AddAction.orbitRel L E) x) = B.cylinderCoordinates x :=
-  -- `E ⧸ L` and `E ⧸ L.toAddSubgroup` are the same quotient, by structure projections, so the two
-  -- evaluation lemmas compose directly.
+private theorem orbitRelQuotientCylinderEquiv_apply_mk (x : E) :
+    B.orbitRelQuotientCylinderEquiv hL (Quotient.mk (AddAction.orbitRel L E) x) =
+      B.cylinderCoordinates x :=
   (congrArg (B.quotientCylinderEquiv (L := L.toAddSubgroup) (by rw [hL]))
     (L.orbitRelQuotientContinuousAddEquiv_mk x)).trans
     (B.quotientCylinderEquiv_apply_mk (L := L.toAddSubgroup) _ x)
@@ -90,60 +99,53 @@ private theorem orbitRelQuotientContinuousAddEquiv_trans_apply_mk (x : E) :
 omit [Fintype ι] [Fintype κ] in
 /-- The inverse cylinder coordinates send reduced coordinates `t` and coordinates `y` to the orbit
 of the vector with coordinates `t` and `y`. -/
-private theorem orbitRelQuotientContinuousAddEquiv_trans_symm_apply [Finite ι] [Finite κ]
+private theorem orbitRelQuotientCylinderEquiv_symm_apply [Finite ι] [Finite κ]
     (t : ι → ℝ) (y : κ → ℝ) :
-    (L.orbitRelQuotientContinuousAddEquiv.trans
-        (B.quotientCylinderEquiv (L := L.toAddSubgroup) (by rw [hL]))).symm
-        (fun i ↦ (t i : UnitAddCircle), y) =
+    (B.orbitRelQuotientCylinderEquiv hL).symm (fun i ↦ (t i : UnitAddCircle), y) =
       Quotient.mk (AddAction.orbitRel L E) (B.equivFun.symm (Sum.elim t y)) :=
   (congrArg L.orbitRelQuotientContinuousAddEquiv.symm
     (B.quotientCylinderEquiv_symm_apply (L := L.toAddSubgroup) _ t y)).trans
     (L.orbitRelQuotientContinuousAddEquiv_symm_mk _)
 
-variable [DiscreteTopology L]
+variable [DiscreteTopology L] (n : ℕ∞ω)
 
 /-- Cylinder coordinates on the orbit space are smooth: composed with the orbit projection, they
 are the linear coordinate map of `B` followed by reduction modulo one on the torus factor. -/
-private theorem contMDiff_orbitRelQuotientContinuousAddEquiv_trans :
-    ContMDiff 𝓘(ℝ, E) ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, κ → ℝ)) ∞
-      (L.orbitRelQuotientContinuousAddEquiv.trans
-        (B.quotientCylinderEquiv (L := L.toAddSubgroup) (by rw [hL]))) := by
-  refine (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℝ, E)) (n := ∞)).contMDiff_comp_iff
+private theorem contMDiff_orbitRelQuotientCylinderEquiv :
+    ContMDiff 𝓘(ℝ, E) ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, κ → ℝ)) n
+      (B.orbitRelQuotientCylinderEquiv hL) := by
+  refine (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℝ, E)) (n := n)).contMDiff_comp_iff
     Quotient.mk_surjective le_rfl |>.1 ?_
-  have h : ⇑(L.orbitRelQuotientContinuousAddEquiv.trans
-        (B.quotientCylinderEquiv (L := L.toAddSubgroup) (by rw [hL]))) ∘
-        Quotient.mk (AddAction.orbitRel L E) = fun x ↦
+  have h : ⇑(B.orbitRelQuotientCylinderEquiv hL) ∘ Quotient.mk (AddAction.orbitRel L E) = fun x ↦
       ((fun i ↦ ((B.coord (.inl i) x : ℝ) : UnitAddCircle)), fun k ↦ B.coord (.inr k) x) := by
     funext x
-    rw [Function.comp_apply, B.orbitRelQuotientContinuousAddEquiv_trans_apply_mk hL]
+    rw [Function.comp_apply, B.orbitRelQuotientCylinderEquiv_apply_mk hL]
     ext i <;> simp
   rw [h]
-  exact ((AddCircle.contMDiff_coe_pi 1 ∞).comp
+  exact ((AddCircle.contMDiff_coe_pi 1 n).comp
     (ContinuousLinearMap.pi fun i ↦ (B.coord (.inl i)).toContinuousLinearMap).contMDiff).prodMk
     (ContinuousLinearMap.pi fun k ↦ (B.coord (.inr k)).toContinuousLinearMap).contMDiff
 
 /-- The inverse cylinder coordinates are smooth: composed with the covering map
 `ℝ^ι × ℝ^κ → (ℝ / ℤ)^ι × ℝ^κ`, they are the orbit projection of the vector with the given
 coordinates, a linear function of them. -/
-private theorem contMDiff_orbitRelQuotientContinuousAddEquiv_trans_symm :
-    ContMDiff ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, κ → ℝ)) 𝓘(ℝ, E) ∞
-      (L.orbitRelQuotientContinuousAddEquiv.trans
-        (B.quotientCylinderEquiv (L := L.toAddSubgroup) (by rw [hL]))).symm := by
+private theorem contMDiff_orbitRelQuotientCylinderEquiv_symm :
+    ContMDiff ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, κ → ℝ)) 𝓘(ℝ, E) n
+      (B.orbitRelQuotientCylinderEquiv hL).symm := by
   -- The covering map, reduction modulo one on the first factor, is a surjective local
   -- diffeomorphism.
   have hq : IsLocalDiffeomorph (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, κ → ℝ))
-      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, κ → ℝ)) ∞
+      ((ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, κ → ℝ)) n
       (Prod.map (fun t : ι → ℝ ↦ fun i ↦ (t i : UnitAddCircle)) (id : (κ → ℝ) → κ → ℝ)) :=
-    (AddCircle.isLocalDiffeomorph_coe_pi 1 ∞).prodMap
-      (Diffeomorph.refl 𝓘(ℝ, κ → ℝ) (κ → ℝ) ∞).isLocalDiffeomorph
+    (AddCircle.isLocalDiffeomorph_coe_pi 1 n).prodMap
+      (Diffeomorph.refl 𝓘(ℝ, κ → ℝ) (κ → ℝ) n).isLocalDiffeomorph
   have hqs : Function.Surjective
       (Prod.map (fun t : ι → ℝ ↦ fun i ↦ (t i : UnitAddCircle)) (id : (κ → ℝ) → κ → ℝ)) :=
     (Function.Surjective.piMap fun _ ↦ QuotientAddGroup.mk_surjective).prodMap
       Function.surjective_id
   refine (hq.contMDiff_comp_iff hqs le_rfl).1 ?_
   -- The vector with coordinates `(t, y)` is `∑ᵢ tᵢ B (inl i) + ∑ₖ yₖ B (inr k)`.
-  have h : ⇑(L.orbitRelQuotientContinuousAddEquiv.trans
-        (B.quotientCylinderEquiv (L := L.toAddSubgroup) (by rw [hL]))).symm ∘
+  have h : ⇑(B.orbitRelQuotientCylinderEquiv hL).symm ∘
         Prod.map (fun t : ι → ℝ ↦ fun i ↦ (t i : UnitAddCircle)) (id : (κ → ℝ) → κ → ℝ) =
       Quotient.mk (AddAction.orbitRel L E) ∘ fun p ↦
         B.equivFun.symm.toContinuousLinearMap.comp
@@ -153,7 +155,7 @@ private theorem contMDiff_orbitRelQuotientContinuousAddEquiv_trans_symm :
             (ContinuousLinearMap.pi fun j ↦ Sum.elim (fun _ ↦ 0)
               (ContinuousLinearMap.proj (R := ℝ) ·) j) p.2 := by
     funext p
-    refine (B.orbitRelQuotientContinuousAddEquiv_trans_symm_apply hL p.1 p.2).trans
+    refine (B.orbitRelQuotientCylinderEquiv_symm_apply hL p.1 p.2).trans
       (congrArg (Quotient.mk _) ?_)
     simp only [ContinuousLinearMap.comp_apply, LinearMap.coe_toContinuousLinearMap',
       LinearEquiv.coe_coe, ← map_add]
@@ -161,41 +163,40 @@ private theorem contMDiff_orbitRelQuotientContinuousAddEquiv_trans_symm :
     funext j
     cases j <;> simp
   rw [h]
-  exact (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℝ, E)) (n := ∞)).contMDiff.comp
+  exact (TauCeti.isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℝ, E)) (n := n)).contMDiff.comp
     ((ContinuousLinearMap.contMDiff _ |>.comp contMDiff_fst).add
       (ContinuousLinearMap.contMDiff _ |>.comp contMDiff_snd))
 
 omit [FiniteDimensional ℝ E] in
-/-- **Cylinder coordinates are a diffeomorphism.** If `L` is the integer span of the vectors
+/-- **Cylinder coordinates are a `C^n` diffeomorphism.** If `L` is the integer span of the vectors
 `B (inl i)` of a real basis `B` of `E` indexed by `ι ⊕ κ`, reducing the `ι`-coordinates in `B`
 modulo one and keeping the `κ`-coordinates identifies the orbit space `E / L` of translation by
-`L` with the cylinder `(ℝ / ℤ)^ι × ℝ^κ`, as smooth manifolds. The underlying isomorphism of
-topological groups is `Module.Basis.quotientCylinderEquiv`, read on the orbit space through
-`Submodule.orbitRelQuotientContinuousAddEquiv`. -/
+`L` with the cylinder `(ℝ / ℤ)^ι × ℝ^κ`, as `C^n` manifolds, for every `n` (analytic included).
+The underlying isomorphism of topological groups is `Module.Basis.quotientCylinderEquiv`, read on
+the orbit space through `Submodule.orbitRelQuotientContinuousAddEquiv`. -/
 def orbitRelQuotientCylinderDiffeomorph :
-    AddAction.orbitRel.Quotient L E ≃ₘ⟮𝓘(ℝ, E),
+    AddAction.orbitRel.Quotient L E ≃ₘ^n⟮𝓘(ℝ, E),
       (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)).prod 𝓘(ℝ, κ → ℝ)⟯ UnitAddTorus ι × (κ → ℝ) :=
   -- `E` is finite-dimensional, having a finite basis.
   have : FiniteDimensional ℝ E := Module.Finite.of_basis B
-  { toEquiv := (L.orbitRelQuotientContinuousAddEquiv.trans
-      (B.quotientCylinderEquiv (L := L.toAddSubgroup) (by rw [hL]))).toEquiv
-    contMDiff_toFun := B.contMDiff_orbitRelQuotientContinuousAddEquiv_trans hL
-    contMDiff_invFun := B.contMDiff_orbitRelQuotientContinuousAddEquiv_trans_symm hL }
+  { toEquiv := (B.orbitRelQuotientCylinderEquiv hL).toEquiv
+    contMDiff_toFun := B.contMDiff_orbitRelQuotientCylinderEquiv hL n
+    contMDiff_invFun := B.contMDiff_orbitRelQuotientCylinderEquiv_symm hL n }
 
 /-- The cylinder diffeomorphism sends the orbit of `x` to the cylinder coordinates of `x`: the
 `ι`-coordinates of `x` in `B` modulo one, and its `κ`-coordinates. -/
 @[simp]
 theorem orbitRelQuotientCylinderDiffeomorph_apply_mk (x : E) :
-    B.orbitRelQuotientCylinderDiffeomorph hL (Quotient.mk (AddAction.orbitRel L E) x) =
+    B.orbitRelQuotientCylinderDiffeomorph hL n (Quotient.mk (AddAction.orbitRel L E) x) =
       B.cylinderCoordinates x :=
-  B.orbitRelQuotientContinuousAddEquiv_trans_apply_mk hL x
+  B.orbitRelQuotientCylinderEquiv_apply_mk hL x
 
 /-- The inverse of the cylinder diffeomorphism sends reduced coordinates `t` and coordinates `y` to
 the orbit of the vector with coordinates `t` and `y` in the basis `B`. -/
 @[simp]
 theorem orbitRelQuotientCylinderDiffeomorph_symm_apply (t : ι → ℝ) (y : κ → ℝ) :
-    (B.orbitRelQuotientCylinderDiffeomorph hL).symm (fun i ↦ (t i : UnitAddCircle), y) =
+    (B.orbitRelQuotientCylinderDiffeomorph hL n).symm (fun i ↦ (t i : UnitAddCircle), y) =
       Quotient.mk (AddAction.orbitRel L E) (B.equivFun.symm (Sum.elim t y)) :=
-  B.orbitRelQuotientContinuousAddEquiv_trans_symm_apply hL t y
+  B.orbitRelQuotientCylinderEquiv_symm_apply hL t y
 
 end Module.Basis
