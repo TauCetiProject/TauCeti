@@ -6,18 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Star.StarProjection
-public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
-public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Topology.Algebra.Module.Complement
-public import Mathlib.Topology.ContinuousMap.ContinuousSqrt
-public import Mathlib.Topology.ContinuousMap.Ideals
-public import Mathlib.Topology.ContinuousMap.StarOrdered
-public import Mathlib.Topology.UnitInterval
 public import TauCeti.Analysis.CStarAlgebra.Module.AdjointPair
 public import TauCeti.Analysis.CStarAlgebra.Module.Orthogonal
 
-import Mathlib.Topology.Perfect
-import Mathlib.Topology.UrysohnsLemma
 import TauCeti.Analysis.CStarAlgebra.Module.Action
 
 /-!
@@ -37,20 +29,14 @@ fundamental characterizations without assuming completeness of `E` or closedness
 * Every orthogonally complemented submodule is automatically norm-closed, satisfies
   `F.orthogonal.orthogonal = F`, and yields an inner-product- and coefficient-preserving linear
   isometry equivalence `hF.orthogonalAddEquiv : C⋆ᵐᵒᵈ(A, F × F.orthogonal) ≃ₗᵢ[ℂ] E`.
+* For any star projection `p` in a (possibly nonunital) C⋆-algebra `A`, the right ideal
+  `CStarSubmodule.rightFixedSubmodule p = {x | p * x = x}` is orthogonally complemented in the
+  right self-module `CStarModule Aᵐᵒᵖ A`, with orthogonal projection `x ↦ p * x`.
 
-We also verify three concrete regimes:
-
-1. For any star projection `p` in a (possibly nonunital) C⋆-algebra `A`, the right ideal
-   `CStarSubmodule.rightFixedSubmodule p = {x | p * x = x}` is orthogonally complemented in the
-   right self-module `CStarModule Aᵐᵒᵖ A`, with orthogonal projection `x ↦ p * x`.
-2. Over `A = ℂ`, `F.orthogonal` and `F.IsOrthogonallyComplemented` agree with Mathlib's
-   `Submodule.orthogonal` and `Submodule.HasOrthogonalProjection`, and `hF.starProjection` agrees
-   with `F.toSubmodule.starProjection`.
-3. For any compact Hausdorff space `X` and non-isolated point `x₀ : X` (in particular `X = [0, 1]`
-   and `x₀ = 0`), the closed right ideal
-   `CStarSubmodule.vanishingAt X x₀ = {f ∈ C(X, ℂ) | f x₀ = 0}` has orthogonal complement `⊥`,
-   satisfies `J < J.orthogonal.orthogonal = ⊤`, is not orthogonally complemented, and its
-   inclusion into `C(X, ℂ)` admits no C⋆-module adjoint.
+For comparison with `Submodule.HasOrthogonalProjection` when `A = ℂ`, see
+`TauCeti.Analysis.CStarAlgebra.Module.Complemented.Complex`. For the standard counterexample of a
+non-complemented closed right ideal in `C(X, ℂ)` and `C([0, 1], ℂ)`, see
+`TauCeti.Analysis.CStarAlgebra.Module.Complemented.Counterexample`.
 
 ## Main declarations
 
@@ -65,10 +51,8 @@ We also verify three concrete regimes:
   `TauCeti.CStarSubmodule.isOrthogonallyComplemented_iff_exists_bounded_selfAdjoint_idempotent`:
   characterizations of orthogonal complementability.
 * `TauCeti.CStarSubmodule.isOrthogonallyComplemented_rightFixedSubmodule`,
-  `TauCeti.CStarSubmodule.isOrthogonallyComplemented_complex_iff`,
-  `TauCeti.CStarSubmodule.not_isOrthogonallyComplemented_vanishingAt`,
-  `TauCeti.CStarSubmodule.not_isOrthogonallyComplemented_vanishingAt_unitInterval`: concrete
-  witnesses and scalar comparison.
+  `TauCeti.CStarSubmodule.starProjection_rightFixedSubmodule`,
+  `TauCeti.CStarSubmodule.mem_orthogonal_rightFixedSubmodule`: projection right ideals.
 
 ## References
 
@@ -153,6 +137,19 @@ private lemma IsOrthogonallyComplemented.sub_projection_mem_orthogonal
     sub_eq_of_eq_add' hdecomp.symm
   exact heq ▸ Submodule.projection_apply_mem hF.isCompl_toSubmodule.symm x
 
+private lemma IsOrthogonallyComplemented.inner_sub_projection_of_mem
+    {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) {u : E} (hu : u ∈ F) (x : E) :
+    inner A u
+      (x - F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x) = 0 :=
+  inner_right_of_mem_orthogonal hu (hF.sub_projection_mem_orthogonal x)
+
+private lemma IsOrthogonallyComplemented.inner_eq_inner_projection_of_mem
+    {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) {u : E} (hu : u ∈ F) (x : E) :
+    inner A u x =
+      inner A u (F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x) := by
+  have horth := hF.inner_sub_projection_of_mem hu x
+  rwa [CStarModule.inner_sub_right, sub_eq_zero] at horth
+
 private lemma IsOrthogonallyComplemented.isAdjointPair_projection
     {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) :
     LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := A) (E := E)).flip
@@ -161,15 +158,14 @@ private lemma IsOrthogonallyComplemented.isAdjointPair_projection
       (F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule) := by
   refine CStarModule.isAdjointPair_inner_iff.mpr fun x y ↦ ?_
   let Q := F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule
-  have h1 : inner A (Q x) (y - Q y) = 0 :=
-    inner_right_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule x)
-      (hF.sub_projection_mem_orthogonal y)
-  have h2 : inner A (x - Q x) (Q y) = 0 :=
-    inner_left_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule y)
-      (hF.sub_projection_mem_orthogonal x)
-  rw [CStarModule.inner_sub_right, sub_eq_zero] at h1
-  rw [CStarModule.inner_sub_left, sub_eq_zero] at h2
-  exact h1.trans h2.symm
+  have h1 : inner A (Q x) y = inner A (Q x) (Q y) :=
+    hF.inner_eq_inner_projection_of_mem (Submodule.projection_apply_mem hF.isCompl_toSubmodule x) y
+  have h2 : inner A (Q y) x = inner A (Q y) (Q x) :=
+    hF.inner_eq_inner_projection_of_mem (Submodule.projection_apply_mem hF.isCompl_toSubmodule y) x
+  calc inner A (Q x) y = inner A (Q x) (Q y) := h1
+    _ = star (inner A (Q y) (Q x)) := (CStarModule.star_inner _ _).symm
+    _ = star (inner A (Q y) x) := by rw [h2]
+    _ = inner A x (Q y) := CStarModule.star_inner _ _
 
 private lemma sub_mem_orthogonal_of_isAdjointPair_idempotent
     {F : CStarSubmodule A E} {Q : E → E}
@@ -221,13 +217,8 @@ private lemma IsOrthogonallyComplemented.isAdjointPair_subtype_projectionOnto
       (CStarModule.innerₛₗ (A := A) (E := E)).flip F.subtype
       (F.toSubmodule.projectionOnto F.orthogonal.toSubmodule hF.isCompl_toSubmodule) := by
   refine CStarModule.isAdjointPair_inner_iff.mpr fun u x ↦ ?_
-  have horth :
-      inner A (u : E)
-        (x - F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x) = 0 :=
-    inner_right_of_mem_orthogonal u.property (hF.sub_projection_mem_orthogonal x)
-  rw [CStarModule.inner_sub_right, sub_eq_zero] at horth
   rw [subtype_apply, inner_coe]
-  exact horth
+  exact hF.inner_eq_inner_projection_of_mem u.property x
 
 /-- Characterization without analytic C⋆-algebra assumptions: `F` is orthogonally complemented if
 and only if its subtype inclusion `F.subtype : F → E` admits a (plain-function) C⋆-module adjoint
@@ -259,12 +250,8 @@ variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRi
 private lemma IsOrthogonallyComplemented.norm_projection_apply_le
     {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) (x : E) :
     ‖F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x‖ ≤ ‖x‖ := by
-  have horth :
-      inner A (F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x)
-        (x - F.toSubmodule.projection F.orthogonal.toSubmodule hF.isCompl_toSubmodule x) = 0 :=
-    inner_right_of_mem_orthogonal (Submodule.projection_apply_mem hF.isCompl_toSubmodule x)
-      (hF.sub_projection_mem_orthogonal x)
-  simpa only [add_sub_cancel] using CStarModule.norm_le_norm_add_right_of_inner_eq_zero horth
+  simpa only [add_sub_cancel] using CStarModule.norm_le_norm_add_right_of_inner_eq_zero
+    (hF.inner_sub_projection_of_mem (Submodule.projection_apply_mem hF.isCompl_toSubmodule x) x)
 
 /-- An orthogonally complemented C⋆-submodule and its orthogonal complement form topological
 complements (without assuming completeness of `E`). -/
@@ -614,198 +601,4 @@ theorem mem_orthogonal_rightFixedSubmodule {p : A} (hp : IsStarProjection p) {x 
 
 end ProjectionIdeal
 
-/-! ### Comparison with Hilbert spaces (`A = ℂ`) -/
-
-section ComplexComparison
-
-open ComplexOrder
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-
-/-- Over `A = ℂ`, `CStarSubmodule.orthogonal` agrees with Mathlib's `Submodule.orthogonal`. -/
-theorem toSubmodule_orthogonal_complex (F : CStarSubmodule ℂ E) :
-    F.orthogonal.toSubmodule = F.toSubmoduleᗮ := by
-  ext y
-  simp [Submodule.mem_orthogonal]
-
-/-- Over `A = ℂ`, orthogonal complementability of a C⋆-submodule agrees with Mathlib's
-`Submodule.HasOrthogonalProjection`. -/
-theorem isOrthogonallyComplemented_complex_iff (F : CStarSubmodule ℂ E) :
-    F.IsOrthogonallyComplemented ↔ F.toSubmodule.HasOrthogonalProjection := by
-  rw [isOrthogonallyComplemented_iff_exists_add]
-  constructor
-  · intro h
-    refine ⟨fun x ↦ ?_⟩
-    obtain ⟨y, hy, z, hz, rfl⟩ := h x
-    refine ⟨y, hy, ?_⟩
-    rw [add_sub_cancel_left, ← toSubmodule_orthogonal_complex]
-    exact hz
-  · intro h x
-    obtain ⟨y, hy, hsub⟩ := h.exists_orthogonal x
-    refine ⟨y, hy, x - y, ?_, add_sub_cancel _ _⟩
-    rw [← mem_toSubmodule, toSubmodule_orthogonal_complex]
-    exact hsub
-
-/-- Over `A = ℂ` in a complete inner product space, every closed submodule is orthogonally
-complemented. -/
-theorem isOrthogonallyComplemented_of_isClosed_complex [CompleteSpace E] (F : CStarSubmodule ℂ E)
-    (hF : IsClosed (F : Set E)) : F.IsOrthogonallyComplemented := by
-  have _ : CompleteSpace F.toSubmodule := hF.completeSpace_coe
-  exact (isOrthogonallyComplemented_complex_iff F).mpr inferInstance
-
-/-- Over `A = ℂ`, `IsOrthogonallyComplemented.starProjection` agrees with Mathlib's
-`Submodule.starProjection`. -/
-theorem starProjection_complex (F : CStarSubmodule ℂ E) [F.toSubmodule.HasOrthogonalProjection] :
-    ((isOrthogonallyComplemented_complex_iff F).mpr inferInstance).starProjection =
-      F.toSubmodule.starProjection := by
-  ext x
-  refine ((isOrthogonallyComplemented_complex_iff F).mpr
-    inferInstance).eq_starProjection_of_mem_orthogonal
-    (F.toSubmodule.starProjection_apply_mem x) ?_
-  rw [← mem_toSubmodule, toSubmodule_orthogonal_complex]
-  exact F.toSubmodule.sub_starProjection_mem_orthogonal x
-
-end ComplexComparison
-
-/-! ### Non-complemented closed right ideals in `C(X, ℂ)` and `C([0, 1], ℂ)` -/
-
-section ContinuousMapCounterexample
-
-open ComplexOrder
-
-private lemma vanishingAt_mul_mem {X : Type*} [TopologicalSpace X] (x₀ : X)
-    {f : C(X, ℂ)} (hf : f ∈ (ContinuousMap.idealOfSet ℂ ({x₀}ᶜ : Set X)).restrictScalars ℂ)
-    (g : C(X, ℂ)) :
-    f * g ∈ (ContinuousMap.idealOfSet ℂ ({x₀}ᶜ : Set X)).restrictScalars ℂ :=
-  (Submodule.restrictScalars_mem ℂ _ _).mpr
-    ((ContinuousMap.idealOfSet ℂ ({x₀}ᶜ : Set X)).mul_mem_right g
-      ((Submodule.restrictScalars_mem ℂ _ _).mp hf))
-
-/-- The right ideal `{f ∈ C(X, ℂ) | f x₀ = 0}` of continuous complex-valued functions vanishing at
-`x₀`, viewed as a C⋆-submodule of the right self-module `C(X, ℂ)`. -/
-noncomputable def vanishingAt (X : Type*) [TopologicalSpace X] (x₀ : X) :
-    CStarSubmodule C(X, ℂ)ᵐᵒᵖ C(X, ℂ) :=
-  ofRightIdeal ((ContinuousMap.idealOfSet ℂ ({x₀}ᶜ : Set X)).restrictScalars ℂ)
-    (vanishingAt_mul_mem x₀)
-
-@[simp]
-theorem mem_vanishingAt {X : Type*} [TopologicalSpace X] {x₀ : X} {f : C(X, ℂ)} :
-    f ∈ vanishingAt X x₀ ↔ f x₀ = 0 := by
-  rw [vanishingAt, mem_ofRightIdeal _ (vanishingAt_mul_mem x₀), Submodule.restrictScalars_mem,
-    ContinuousMap.mem_idealOfSet_compl_singleton]
-
-theorem isClosed_vanishingAt {X : Type*} [TopologicalSpace X] (x₀ : X) :
-    IsClosed (vanishingAt X x₀ : Set C(X, ℂ)) := by
-  rw [vanishingAt, ← coe_toSubmodule, toSubmodule_ofRightIdeal _ (vanishingAt_mul_mem x₀),
-    Submodule.coe_restrictScalars]
-  exact ContinuousMap.idealOfSet_closed ℂ ({x₀}ᶜ : Set X)
-
-theorem vanishingAt_ne_top (X : Type*) [TopologicalSpace X] (x₀ : X) :
-    vanishingAt X x₀ ≠ ⊤ := by
-  intro h
-  have h1 : (1 : C(X, ℂ)) ∈ vanishingAt X x₀ := h ▸ mem_top 1
-  rw [mem_vanishingAt, ContinuousMap.one_apply] at h1
-  exact one_ne_zero h1
-
-/-- If `X` is compact Hausdorff and `{x₀}ᶜ` is dense (i.e. `x₀` is not isolated), then the closed
-right ideal `vanishingAt X x₀` has orthogonal complement `⊥` in `C(X, ℂ)`. -/
-theorem orthogonal_vanishingAt {X : Type*} [TopologicalSpace X] [CompactSpace X] [T2Space X]
-    {x₀ : X} (hx₀ : Dense ({x₀}ᶜ : Set X)) :
-    (vanishingAt X x₀).orthogonal = ⊥ := by
-  let _ := CStarModule.distribSMul C(X, ℂ)ᵐᵒᵖ C(X, ℂ)
-  rw [eq_bot_iff]
-  intro g hg
-  have hzero : Set.EqOn g (0 : C(X, ℂ)) ({x₀}ᶜ : Set X) := by
-    intro y hy
-    have hne : x₀ ≠ y := Ne.symm (Set.mem_compl_singleton_iff.mp hy)
-    obtain ⟨φ, hφ0, hφ1, _⟩ := exists_continuous_zero_one_of_isClosed
-      (isClosed_singleton (x := x₀)) (isClosed_singleton (x := y))
-      (Set.disjoint_singleton.mpr hne)
-    let f : C(X, ℂ) := ⟨fun x ↦ (φ x : ℂ), Complex.continuous_ofReal.comp φ.continuous⟩
-    have hf : f ∈ vanishingAt X x₀ := by
-      rw [mem_vanishingAt]
-      simp [f, hφ0 rfl]
-    have hprod := (mem_orthogonal_unop_iff.mp hg) f hf
-    rw [CStarModule.unop_inner_mulOpposite] at hprod
-    have hval := congrArg (fun h : C(X, ℂ) ↦ h y) hprod
-    simpa [f, hφ1 rfl] using hval
-  exact ContinuousMap.ext fun x ↦ hzero.closure g.continuous continuous_const (hx₀ x)
-
-theorem orthogonal_orthogonal_vanishingAt {X : Type*} [TopologicalSpace X] [CompactSpace X]
-    [T2Space X] {x₀ : X} (hx₀ : Dense ({x₀}ᶜ : Set X)) :
-    (vanishingAt X x₀).orthogonal.orthogonal = ⊤ := by
-  rw [orthogonal_vanishingAt hx₀, orthogonal_bot]
-
-/-- For any compact Hausdorff space `X` and non-isolated point `x₀`, the closed right ideal
-`vanishingAt X x₀` is strictly smaller than its double orthogonal complement `⊤`. -/
-theorem lt_orthogonal_orthogonal_vanishingAt {X : Type*} [TopologicalSpace X] [CompactSpace X]
-    [T2Space X] {x₀ : X} (hx₀ : Dense ({x₀}ᶜ : Set X)) :
-    vanishingAt X x₀ < (vanishingAt X x₀).orthogonal.orthogonal := by
-  rw [orthogonal_orthogonal_vanishingAt hx₀]
-  exact lt_top_iff_ne_top.mpr (vanishingAt_ne_top X x₀)
-
-/-- For any compact Hausdorff space `X` and non-isolated point `x₀`, the closed right ideal
-`vanishingAt X x₀` is not orthogonally complemented in `C(X, ℂ)`. -/
-theorem not_isOrthogonallyComplemented_vanishingAt {X : Type*} [TopologicalSpace X]
-    [CompactSpace X] [T2Space X] {x₀ : X} (hx₀ : Dense ({x₀}ᶜ : Set X)) :
-    ¬ (vanishingAt X x₀).IsOrthogonallyComplemented := by
-  intro h
-  exact (lt_orthogonal_orthogonal_vanishingAt hx₀).ne h.orthogonal_orthogonal.symm
-
-/-- For any compact Hausdorff space `X` and non-isolated point `x₀`, the inclusion of the closed
-right ideal `vanishingAt X x₀` into `C(X, ℂ)` has no C⋆-module adjoint. -/
-theorem not_exists_adjoint_subtype_vanishingAt {X : Type*} [TopologicalSpace X] [CompactSpace X]
-    [T2Space X] {x₀ : X} (hx₀ : Dense ({x₀}ᶜ : Set X)) :
-    ¬ ∃ P : C(X, ℂ) → vanishingAt X x₀,
-      LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := C(X, ℂ)ᵐᵒᵖ) (E := vanishingAt X x₀)).flip
-        (CStarModule.innerₛₗ (A := C(X, ℂ)ᵐᵒᵖ) (E := C(X, ℂ))).flip
-        (vanishingAt X x₀).subtype P := by
-  rw [← isOrthogonallyComplemented_iff_exists_adjoint_subtype]
-  exact not_isOrthogonallyComplemented_vanishingAt hx₀
-
-/-- The closed right ideal `J = {f ∈ C([0, 1], ℂ) | f 0 = 0}` is strictly contained in `J⊥⊥ = ⊤`. -/
-theorem lt_orthogonal_orthogonal_vanishingAt_unitInterval :
-    vanishingAt unitInterval 0 < (vanishingAt unitInterval 0).orthogonal.orthogonal :=
-  lt_orthogonal_orthogonal_vanishingAt (dense_compl_singleton (0 : unitInterval))
-
-/-- The closed right ideal `J = {f ∈ C([0, 1], ℂ) | f 0 = 0}` is closed yet not orthogonally
-complemented in `C([0, 1], ℂ)`. -/
-theorem not_isOrthogonallyComplemented_vanishingAt_unitInterval :
-    ¬ (vanishingAt unitInterval 0).IsOrthogonallyComplemented :=
-  not_isOrthogonallyComplemented_vanishingAt (dense_compl_singleton (0 : unitInterval))
-
-/-- The subtype inclusion of `J = {f ∈ C([0, 1], ℂ) | f 0 = 0}` into `C([0, 1], ℂ)` admits no
-C⋆-module adjoint. -/
-theorem not_exists_adjoint_subtype_vanishingAt_unitInterval :
-    ¬ ∃ P : C(unitInterval, ℂ) → vanishingAt unitInterval 0,
-      LinearMap.IsAdjointPair
-        (CStarModule.innerₛₗ (A := C(unitInterval, ℂ)ᵐᵒᵖ) (E := vanishingAt unitInterval 0)).flip
-        (CStarModule.innerₛₗ (A := C(unitInterval, ℂ)ᵐᵒᵖ) (E := C(unitInterval, ℂ))).flip
-        (vanishingAt unitInterval 0).subtype P :=
-  not_exists_adjoint_subtype_vanishingAt (dense_compl_singleton (0 : unitInterval))
-
-end ContinuousMapCounterexample
-
 end TauCeti.CStarSubmodule
-
-namespace Submodule
-
-open ComplexOrder TauCeti.CStarSubmodule
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-
-/-- Over `A = ℂ`, the orthogonal complement of a `Submodule ℂ E` viewed as a `CStarSubmodule ℂ E`
-agrees with Mathlib's `Submodule.orthogonal`. -/
-theorem toSubmodule_orthogonal_toCStarSubmodule_complex (K : Submodule ℂ E) :
-    K.toCStarSubmodule.orthogonal.toSubmodule = Kᗮ := by
-  rw [toSubmodule_orthogonal_complex, Submodule.toSubmodule_toCStarSubmodule,
-    Submodule.restrictScalars_self]
-
-/-- Over `A = ℂ`, a `Submodule ℂ E` is orthogonally complemented as a `CStarSubmodule ℂ E` if and
-only if it satisfies `Submodule.HasOrthogonalProjection`. -/
-theorem isOrthogonallyComplemented_toCStarSubmodule_complex_iff (K : Submodule ℂ E) :
-    K.toCStarSubmodule.IsOrthogonallyComplemented ↔ K.HasOrthogonalProjection := by
-  rw [isOrthogonallyComplemented_complex_iff, Submodule.toSubmodule_toCStarSubmodule,
-    Submodule.restrictScalars_self]
-
-end Submodule

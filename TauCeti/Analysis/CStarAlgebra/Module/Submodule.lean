@@ -339,20 +339,9 @@ theorem toSubmodule_sSup [SMulCommClass ℂ A E] (S : Set (CStarSubmodule A E)) 
     { toSubmodule := sSup (toSubmodule '' S)
       smul_mem_coeff' := fun a _ hx ↦ by
         rw [Submodule.mem_carrier, SetLike.mem_coe] at hx ⊢
-        let T : Submodule ℂ E :=
-          { carrier := {y : E | a • y ∈ sSup (toSubmodule '' S)}
-            add_mem' := fun {u v} hu hv ↦ by
-              simp only [Set.mem_ofPred_eq] at hu hv ⊢
-              rw [smul_add]
-              exact Submodule.add_mem _ hu hv
-            zero_mem' := by
-              simp only [Set.mem_ofPred_eq, smul_zero]
-              exact Submodule.zero_mem _
-            smul_mem' := fun c y hy ↦ by
-              simp only [Set.mem_ofPred_eq] at hy ⊢
-              rw [← smul_comm]
-              exact Submodule.smul_mem _ c hy }
-        have hle : sSup (toSubmodule '' S) ≤ T := by
+        let _ : SMulCommClass A ℂ E := SMulCommClass.symm ℂ A E
+        have hle : sSup (toSubmodule '' S) ≤
+            (sSup (toSubmodule '' S)).comap (DistribSMul.toLinearMap ℂ E a) := by
           refine sSup_le ?_
           rintro _ ⟨F, hF, rfl⟩ y hy
           exact le_sSup (Set.mem_image_of_mem toSubmodule hF) (F.smul_mem_coeff a hy)
@@ -672,8 +661,9 @@ def rightFixedSubmodule {A : Type*} [NonUnitalRing A] [Module ℂ A] [SMulCommCl
 
 @[simp]
 theorem mem_rightFixedSubmodule {A : Type*} [NonUnitalRing A] [Module ℂ A] [SMulCommClass ℂ A A]
-    {p x : A} : x ∈ rightFixedSubmodule p ↔ p * x = x :=
-  sub_eq_zero (a := p * x) (b := x)
+    {p x : A} : x ∈ rightFixedSubmodule p ↔ p * x = x := by
+  refine (mem_ker (T := LinearMap.mulLeft ℂ p - LinearMap.id)).trans ?_
+  rw [LinearMap.sub_apply, LinearMap.mulLeft_apply, LinearMap.id_apply, sub_eq_zero]
 
 theorem isClosed_rightFixedSubmodule {A : Type*} [NonUnitalRing A] [Module ℂ A]
     [SMulCommClass ℂ A A] [TopologicalSpace A] [T2Space A] [SeparatelyContinuousMul A]

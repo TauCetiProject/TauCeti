@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.Module.Constructions
 public import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
-public import TauCeti.Analysis.CStarAlgebra.Module.Semidef
+public import TauCeti.Analysis.CStarAlgebra.Module.Basic
 public import TauCeti.Analysis.CStarAlgebra.Module.Submodule
 public import TauCeti.Topology.Algebra.Module.Orthogonal
 
@@ -20,11 +20,8 @@ Given a C⋆-submodule `F : TauCeti.CStarSubmodule A E` of a (pre-)Hilbert C⋆-
 orthogonal complement `F.orthogonal` consists of all `y : E` satisfying `⟪x, y⟫_A = 0` for all
 `x ∈ F`.
 
-We establish the algebraic and metric properties of orthogonality and `F.orthogonal`:
+We establish the algebraic and metric properties of `F.orthogonal`:
 
-* Orthogonal vectors satisfy the algebraic Pythagorean identity
-  `⟪x + y, x + y⟫_A = ⟪x, x⟫_A + ⟪y, y⟫_A`, the summand bounds `‖x‖ ≤ ‖x + y‖` and `‖y‖ ≤ ‖x + y‖`,
-  and the sub-Pythagorean bound `‖x + y‖ ^ 2 ≤ ‖x‖ ^ 2 + ‖y‖ ^ 2`.
 * `F.orthogonal` is always a norm-closed C⋆-submodule forming a self-adjoint Galois connection on
   `CStarSubmodule A E`, satisfying `F ⊓ F.orthogonal = ⊥`, `F ≤ F.orthogonal.orthogonal`, and
   `F.topologicalClosure.orthogonal = F.orthogonal`.
@@ -34,17 +31,12 @@ We establish the algebraic and metric properties of orthogonality and `F.orthogo
   and `G` are complete (in particular, `F ⊔ F.orthogonal` is closed when `E` is complete and `F`
   is closed).
 
-For orthogonal complementability (`F ⊔ F.orthogonal = ⊤`), canonical projections, characterizations
-via adjoints and self-adjoint idempotents, and concrete examples/counterexamples, see
-`TauCeti.Analysis.CStarAlgebra.Module.Complemented`.
+For orthogonal complementability (`F ⊔ F.orthogonal = ⊤`), canonical projections, and
+characterizations via adjoints and self-adjoint idempotents, see
+`TauCeti.Analysis.CStarAlgebra.Module.Complemented.Basic` (and `.Complex`, `.Counterexample`).
 
 ## Main declarations
 
-* `CStarModule.inner_add_self_of_inner_eq_zero`,
-  `CStarModule.norm_le_norm_add_right_of_inner_eq_zero`,
-  `CStarModule.norm_le_norm_add_left_of_inner_eq_zero`,
-  `CStarModule.norm_add_sq_le_of_inner_eq_zero`: Pythagorean identities and norm bounds for
-  orthogonal vectors.
 * `TauCeti.CStarSubmodule.orthogonal`: the orthogonal complement of a C⋆-submodule, with its
   Galois connection (`orthogonal_gc`), closedness (`isClosed_orthogonal`), and invariance under
   closure (`orthogonal_topologicalClosure`).
@@ -65,78 +57,6 @@ public section
 
 open MulOpposite
 open scoped WithCStarModule
-
-namespace CStarModule
-
-section Semiring
-
-variable {A E : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
-
-/-- Orthogonal vectors satisfy the algebraic Pythagorean identity
-`⟪x + y, x + y⟫_A = ⟪x, x⟫_A + ⟪y, y⟫_A`. -/
-theorem inner_add_self_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
-    inner A (x + y) (x + y) = inner A x x + inner A y y := by
-  have hleft (u v w : E) : inner A (u + v) w = inner A u w + inner A v w := by
-    rw [← star_star (r := inner A (u + v) w), star_inner, inner_add_right, star_add, star_inner,
-      star_inner]
-  have hyx : inner A y x = 0 := by rw [← star_inner, h, star_zero]
-  simp [hleft, inner_add_right, h, hyx]
-
-end Semiring
-
-section Algebraic
-
-variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
-  [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
-
-/-- Orthogonality for the C⋆-module inner product is symmetric: `⟪x, y⟫_A = 0 → ⟪y, x⟫_A = 0`. -/
-theorem isRefl_innerₛₗ : (CStarModule.innerₛₗ (A := A) (E := E)).IsRefl := fun x y h ↦ by
-  rw [innerₛₗ_apply] at h ⊢
-  rw [← star_inner, h, star_zero]
-
-end Algebraic
-
-section Norm
-
-section SeminormedCoeff
-
-variable {A E : Type*} [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
-  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
-
-/-- Sub-Pythagorean norm inequality for orthogonal vectors: if `⟪x, y⟫_A = 0`, then
-`‖x + y‖ ^ 2 ≤ ‖x‖ ^ 2 + ‖y‖ ^ 2`. -/
-theorem norm_add_sq_le_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
-    ‖x + y‖ ^ 2 ≤ ‖x‖ ^ 2 + ‖y‖ ^ 2 := by
-  rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := x + y),
-    CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := x),
-    CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := y),
-    Real.sq_sqrt (norm_nonneg _), Real.sq_sqrt (norm_nonneg _), Real.sq_sqrt (norm_nonneg _),
-    inner_add_self_of_inner_eq_zero h]
-  exact norm_add_le _ _
-
-end SeminormedCoeff
-
-variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
-  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
-
-/-- Orthogonal summands are bounded in norm by their sum: if `⟪x, y⟫_A = 0`, then
-`‖x‖ ≤ ‖x + y‖`. -/
-theorem norm_le_norm_add_right_of_inner_eq_zero [StarOrderedRing A] {x y : E}
-    (h : inner A x y = 0) : ‖x‖ ≤ ‖x + y‖ :=
-  CStarModule.norm_le_of_inner_self_le (A := A)
-    (by rw [inner_add_self_of_inner_eq_zero h]; exact le_add_of_nonneg_right inner_self_nonneg)
-
-/-- Orthogonal summands are bounded in norm by their sum: if `⟪x, y⟫_A = 0`, then
-`‖y‖ ≤ ‖x + y‖`. -/
-theorem norm_le_norm_add_left_of_inner_eq_zero [StarOrderedRing A] {x y : E}
-    (h : inner A x y = 0) : ‖y‖ ≤ ‖x + y‖ := by
-  rw [add_comm]
-  exact norm_le_norm_add_right_of_inner_eq_zero (A := A) (by rw [← star_inner, h, star_zero])
-
-end Norm
-
-end CStarModule
 
 namespace Submodule
 

@@ -41,6 +41,11 @@ Riesz theorem.
   `CStarModule.inner_map_map_iff_forall_inner_map_map_self`: complex-linear endomorphisms are
   determined by diagonal inner products `⟪x, T x⟫_A`, and a complex-linear map preserves all inner
   products iff it preserves the diagonal inner products `⟪x, x⟫_A`.
+* `CStarModule.inner_add_self_of_inner_eq_zero`, `CStarModule.isRefl_innerₛₗ`,
+  `CStarModule.norm_add_sq_le_of_inner_eq_zero`,
+  `CStarModule.norm_le_norm_add_right_of_inner_eq_zero`,
+  `CStarModule.norm_le_norm_add_left_of_inner_eq_zero`: algebraic and norm Pythagorean identities
+  and bounds for orthogonal vectors.
 * `CStarModule.isGreatest_norm_inner`: norm recovery, `‖x‖` is the largest value of
   `‖⟪y, x⟫_A‖` over the closed unit ball.
 * `CStarModule.norm_smul_le`: `‖a x‖ ≤ ‖a‖ ‖x‖`, and `CStarModule.norm_inner_smul_le`:
@@ -197,7 +202,47 @@ theorem norm_eq_of_inner_self_eq {F : Type*} [AddCommGroup F] [Module ℂ F] [SM
     ‖x‖ = ‖y‖ := by
   rw [norm_eq_sqrt_norm_inner_self (A := A), norm_eq_sqrt_norm_inner_self (A := A) (x := y), h]
 
+/-- Orthogonality for the C⋆-module inner product is symmetric: `⟪x, y⟫_A = 0 → ⟪y, x⟫_A = 0`. -/
+theorem isRefl_innerₛₗ : (CStarModule.innerₛₗ (A := A) (E := E)).IsRefl := fun x y h ↦ by
+  rw [innerₛₗ_apply] at h ⊢
+  rw [← star_inner, h, star_zero]
+
+section Semiring
+
+variable {A E : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- Orthogonal vectors satisfy the algebraic Pythagorean identity
+`⟪x + y, x + y⟫_A = ⟪x, x⟫_A + ⟪y, y⟫_A`. -/
+theorem inner_add_self_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
+    inner A (x + y) (x + y) = inner A x x + inner A y y := by
+  have hleft (u v w : E) : inner A (u + v) w = inner A u w + inner A v w := by
+    rw [← star_star (r := inner A (u + v) w), star_inner, inner_add_right, star_add, star_inner,
+      star_inner]
+  have hyx : inner A y x = 0 := by rw [← star_inner, h, star_zero]
+  simp [hleft, inner_add_right, h, hyx]
+
+end Semiring
+
 end Algebraic
+
+section NormSeminormed
+
+variable {A E : Type*} [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
+  [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [CStarModule A E]
+
+/-- Sub-Pythagorean norm inequality for orthogonal vectors: if `⟪x, y⟫_A = 0`, then
+`‖x + y‖ ^ 2 ≤ ‖x‖ ^ 2 + ‖y‖ ^ 2`. -/
+theorem norm_add_sq_le_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
+    ‖x + y‖ ^ 2 ≤ ‖x‖ ^ 2 + ‖y‖ ^ 2 := by
+  rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := x + y),
+    CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := x),
+    CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (x := y),
+    Real.sq_sqrt (norm_nonneg _), Real.sq_sqrt (norm_nonneg _), Real.sq_sqrt (norm_nonneg _),
+    inner_add_self_of_inner_eq_zero h]
+  exact norm_add_le _ _
+
+end NormSeminormed
 
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
@@ -214,6 +259,20 @@ theorem norm_le_of_inner_self_le {F : Type*} [AddCommGroup F] [Module ℂ F] [SM
     ‖x‖ ≤ ‖y‖ := by
   rw [norm_eq_sqrt_norm_inner_self (A := A), norm_eq_sqrt_norm_inner_self (A := A) (x := y)]
   exact Real.sqrt_le_sqrt (CStarAlgebra.norm_le_norm_of_le_of_nonneg h inner_self_nonneg)
+
+/-- Orthogonal summands are bounded in norm by their sum: if `⟪x, y⟫_A = 0`, then
+`‖x‖ ≤ ‖x + y‖`. -/
+theorem norm_le_norm_add_right_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
+    ‖x‖ ≤ ‖x + y‖ :=
+  CStarModule.norm_le_of_inner_self_le (A := A)
+    (by rw [inner_add_self_of_inner_eq_zero h]; exact le_add_of_nonneg_right inner_self_nonneg)
+
+/-- Orthogonal summands are bounded in norm by their sum: if `⟪x, y⟫_A = 0`, then
+`‖y‖ ≤ ‖x + y‖`. -/
+theorem norm_le_norm_add_left_of_inner_eq_zero {x y : E} (h : inner A x y = 0) :
+    ‖y‖ ≤ ‖x + y‖ := by
+  rw [add_comm]
+  exact norm_le_norm_add_right_of_inner_eq_zero (A := A) (by rw [← star_inner, h, star_zero])
 
 /-- Norm recovery: `‖x‖` is the largest value of `‖⟪y, x⟫_A‖` for `y` in the closed unit ball,
 attained at `y = ‖x‖⁻¹ x`. -/
