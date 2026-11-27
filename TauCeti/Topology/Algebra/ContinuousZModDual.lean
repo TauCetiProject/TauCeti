@@ -168,6 +168,7 @@ variable {n G}
 
 /-- An element lies in the common kernel of the continuous `ZMod n`-characters exactly when every
 such character is trivial on it. -/
+@[simp]
 theorem mem_continuousZModDualKer_iff {g : G} :
     g ∈ continuousZModDualKer n G ↔ ∀ χ : continuousZModDual n G, χ.toMul g = 1 :=
   Subgroup.mem_iInf
