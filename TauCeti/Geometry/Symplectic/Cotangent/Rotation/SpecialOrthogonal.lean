@@ -32,7 +32,10 @@ In dimension three, through the hat map `u ↦ (v ↦ u ⨯₃ v)` (`TauCeti.soT
 map is the angular momentum: `⟨μ(q, p), ξ⟩ = u ⬝ᵥ (q ⨯₃ p)` when `Ψ(ξ) = û`
 (`TauCeti.cotangentAngularMomentum`). The same statements for the orthogonal group `O(V)` of a
 Euclidean space are `TauCeti.CotangentBundle.momentMap_unitary_eq_cotangentMomentMap_comp` and
-`TauCeti.CotangentBundle.momentMap_unitary_apply_eq_inner_angularMomentum`.
+`TauCeti.CotangentBundle.momentMap_unitary_apply_eq_inner_angularMomentum`. Read in the dual of
+the Lie algebra of `SO(3)`, identified with `ℝ³` by `TauCeti.specialOrthogonalThreeDualEquiv`,
+this says `μ(q, p) = ν_(q ⨯₃ p)`. In the same coordinates a rotation `g` acts on `T*ℝ³` by
+`(q, p) ↦ (g q, p ∘ g⁻¹)`, so the angular momentum is equivariant: `(g q) ⨯₃ (g p) = g (q ⨯₃ p)`.
 
 ## Main results
 
@@ -40,7 +43,12 @@ Euclidean space are `TauCeti.CotangentBundle.momentMap_unitary_eq_cotangentMomen
   moment map of the cotangent-lifted action of `SO(n)` on `T*ℝⁿ` is the rotation moment map.
 * `momentMap_specialOrthogonalGroup_apply_eq_dotProduct_cotangentAngularMomentum`, in the
   namespace `TauCeti.CotangentBundle`: for `SO(3)` the moment map is the angular momentum
-  `q ⨯₃ p`.
+  `q ⨯₃ p`; `TauCeti.CotangentBundle.momentMap_specialOrthogonalGroup_eq` is the same statement
+  in the dual of the Lie algebra, `μ(q, p) = ν_(q ⨯₃ p)`.
+* `TauCeti.CotangentBundle.fst_modelSpaceDiffeomorph_smul`,
+  `TauCeti.CotangentBundle.snd_modelSpaceDiffeomorph_smul_apply`: the cotangent-lifted action of
+  `SO(3)` in coordinates.
+* `TauCeti.CotangentBundle.cotangentAngularMomentum_smul`: the angular momentum is equivariant.
 
 ## References
 
@@ -59,6 +67,7 @@ open LieAlgebra.Orthogonal Manifold
 open scoped Matrix Manifold Matrix.Norms.L2Operator
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
+  LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 namespace TauCeti
@@ -96,7 +105,7 @@ theorem momentMap_specialOrthogonalGroup_eq_rotationMomentMap_comp
     mvfderiv_comp_apply_of_differentiableAt L.differentiableAt hval, L.fderiv]
   simp only [L, LinearMap.coe_toContinuousLinearMap', LieModule.toEnd_apply_apply,
     LieSubalgebra.coe_bracket_of_module]
-  rw [LinearEquiv.coe_coe, coe_specialOrthogonalLieAlgebraEquiv_apply,
+  rw [LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, coe_specialOrthogonalLieAlgebraEquiv_apply,
     mvfderiv_apply_eq_mfderiv_apply]
   -- Both sides are `X *ᵥ v` for the differential `X` of the inclusion, a vector of the tangent
   -- space of the matrices at `1`, on which the matrix lemmas do not fire syntactically.
@@ -116,7 +125,87 @@ theorem momentMap_specialOrthogonalGroup_apply_eq_dotProduct_cotangentAngularMom
       (soThreeEquiv ℝ).symm (specialOrthogonalLieAlgebraEquiv (Fin 3) ξ) ⬝ᵥ
         cotangentAngularMomentum (modelSpaceDiffeomorph (Fin 3 → ℝ) z) := by
   rw [momentMap_specialOrthogonalGroup_eq_rotationMomentMap_comp, LinearMap.comp_apply,
-    LinearEquiv.coe_coe, ← rotationMomentMap_soThreeEquiv, LinearEquiv.apply_symm_apply]
+    LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, ← rotationMomentMap_soThreeEquiv,
+    LinearEquiv.apply_symm_apply]
+
+/-! ### The moment map and the action in coordinates -/
+
+section Coordinates
+
+open _root_.Matrix
+
+/-- The rotation group `SO(3)`. -/
+local notation "SO₃" => Matrix.specialOrthogonalGroup (Fin 3) ℝ
+
+/-- The cotangent bundle `T*ℝ³`. -/
+local notation "T*ℝ³" => CotangentBundle 𝓘(ℝ, Fin 3 → ℝ) (Fin 3 → ℝ)
+
+
+/-- The differential of the rotation `v ↦ g v` of `ℝ³` is `g`. -/
+private theorem mfderiv_smul_specialOrthogonalGroup (g : SO₃) (x w : Fin 3 → ℝ) :
+    mfderiv 𝓘(ℝ, Fin 3 → ℝ) 𝓘(ℝ, Fin 3 → ℝ) (fun v : Fin 3 → ℝ ↦ g • v) x w = g • w := by
+  have h : (fun v : Fin 3 → ℝ ↦ g • v) =
+      ⇑(LinearMap.toContinuousLinearMap (Matrix.toLin' (g : Matrix (Fin 3) (Fin 3) ℝ))) := by
+    funext v
+    simp [Submonoid.smul_def]
+  rw [h, (LinearMap.toContinuousLinearMap
+    (Matrix.toLin' (g : Matrix (Fin 3) (Fin 3) ℝ))).hasMFDerivAt.mfderiv, Submonoid.smul_def,
+    smul_eq_mulVec]
+  -- The map is applied to `w` in the tangent space `TangentSpace 𝓘(ℝ, ℝ³) x`, which is `ℝ³` by
+  -- definition but blocks rewriting with the matrix lemmas; there `toLin' g w = g *ᵥ w`.
+  rfl
+
+/-- In the coordinates `T*ℝ³ ≃ ℝ³ × (ℝ³)*`, the rotation `g` moves the base point `q` to `g q`. -/
+theorem fst_modelSpaceDiffeomorph_smul (g : SO₃) (z : T*ℝ³) :
+    (modelSpaceDiffeomorph (Fin 3 → ℝ) (g • z)).1 =
+      (g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ (modelSpaceDiffeomorph (Fin 3 → ℝ) z).1 := by
+  rw [modelSpaceDiffeomorph_apply, modelSpaceDiffeomorph_apply, proj_smul, Submonoid.smul_def,
+    smul_eq_mulVec]
+
+/-- In the coordinates `T*ℝ³ ≃ ℝ³ × (ℝ³)*`, the rotation `g` moves the covector `p` to
+`p ∘ g⁻¹`. -/
+theorem snd_modelSpaceDiffeomorph_smul_apply (g : SO₃) (z : T*ℝ³) (w : Fin 3 → ℝ) :
+    (modelSpaceDiffeomorph (Fin 3 → ℝ) (g • z)).2 w =
+      (modelSpaceDiffeomorph (Fin 3 → ℝ) z).2 (((g⁻¹ : SO₃) : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ w) := by
+  have h := smul_snd_apply g z w
+  rw [mfderiv_smul_specialOrthogonalGroup, Submonoid.smul_def, smul_eq_mulVec] at h
+  rw [modelSpaceDiffeomorph_apply, modelSpaceDiffeomorph_apply]
+  exact h
+
+/-- **The moment map of the cotangent-lifted rotations is the angular momentum**, read in the dual
+of the Lie algebra of `SO(3)`: `μ(q, p) = ν_(q ⨯₃ p)`. -/
+theorem momentMap_specialOrthogonalGroup_eq (z : T*ℝ³) :
+    momentMap (Matrix.specialUnitaryGroup.model (Fin 3) ℝ) SO₃ z =
+      specialOrthogonalThreeDualEquiv
+        (cotangentAngularMomentum (modelSpaceDiffeomorph (Fin 3 → ℝ) z)) := by
+  ext ξ
+  rw [momentMap_specialOrthogonalGroup_apply_eq_dotProduct_cotangentAngularMomentum,
+    specialOrthogonalThreeDualEquiv_apply, dotProduct_comm]
+
+/-- **The angular momentum is equivariant**: rotating a covector `p` at `q` by `g ∈ SO(3)` rotates
+its angular momentum, `(g q) ⨯₃ (g p) = g (q ⨯₃ p)`. -/
+theorem cotangentAngularMomentum_smul (g : SO₃) (z : T*ℝ³) :
+    cotangentAngularMomentum (modelSpaceDiffeomorph (Fin 3 → ℝ) (g • z)) =
+      (g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ
+        cotangentAngularMomentum (modelSpaceDiffeomorph (Fin 3 → ℝ) z) := by
+  rw [cotangentAngularMomentum_apply, cotangentAngularMomentum_apply]
+  -- The covector `g • p` is `p ∘ g⁻¹`, whose vector is `g` applied to that of `p`, as `g⁻¹ = gᵀ`.
+  have hsnd : (fun i ↦ (modelSpaceDiffeomorph (Fin 3 → ℝ) (g • z)).2 (Pi.single i 1)) =
+      (g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ
+        fun i ↦ (modelSpaceDiffeomorph (Fin 3 → ℝ) z).2 (Pi.single i 1) := by
+    funext i
+    have hinv : ((g⁻¹ : SO₃) : Matrix (Fin 3) (Fin 3) ℝ) = (g : Matrix (Fin 3) (Fin 3) ℝ)ᵀ := by
+      rw [← star_eq_inv, specialUnitaryGroup.coe_star, star_eq_conjTranspose,
+        conjTranspose_eq_transpose_of_trivial]
+    rw [snd_modelSpaceDiffeomorph_smul_apply, hinv, mulVec_single_one, col_transpose]
+    conv_lhs => rw [pi_eq_sum_univ' ((g : Matrix (Fin 3) (Fin 3) ℝ).row i)]
+    simp only [mulVec, dotProduct, row_apply]
+    exact (map_sum (modelSpaceDiffeomorph (Fin 3 → ℝ) z).2 _ _).trans
+      (Finset.sum_congr rfl fun j _ ↦ map_smul _ _ _)
+  rw [hsnd, fst_modelSpaceDiffeomorph_smul,
+    mulVec_cross_mulVec_of_mem_specialOrthogonalGroup g.property]
+
+end Coordinates
 
 end CotangentBundle
 

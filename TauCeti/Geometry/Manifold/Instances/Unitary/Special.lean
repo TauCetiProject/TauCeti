@@ -64,6 +64,8 @@ structure, `open scoped Matrix.Norms.L2Operator` and enable
 * `Matrix.instContMDiffSMulMulVec`: the matrices act smoothly on column vectors `n → 𝕜`.
 * `Matrix.specialUnitaryGroup.instContMDiffSMul`: a smooth action of the matrices restricts to the
   special unitary group; in particular the special unitary group acts smoothly on `n → 𝕜`.
+* `Matrix.specialUnitaryGroup.instContMDiffConstSMul`: so each element of the special unitary group
+  acts by a smooth map.
 
 ## References
 
@@ -225,5 +227,15 @@ instance instContMDiffSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E
     ContMDiffSMul (model n 𝕜) I k (specialUnitaryGroup n 𝕜) M :=
   MulAction.contMDiffSMul_compHom (f := (specialUnitaryGroup n 𝕜).subtype)
     (contMDiff_val.of_le ENat.LEInfty.out)
+
+/-- Any `C^k` action (`k ≤ ∞`) of the matrices on a manifold restricts to an action of the special
+unitary group by `C^k` maps. -/
+instance instContMDiffConstSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {k : ℕ∞ω} [ENat.LEInfty k]
+    [MulAction (Matrix n n 𝕜) M] [ContMDiffSMul 𝓘(ℝ, Matrix n n 𝕜) I k (Matrix n n 𝕜) M] :
+    ContMDiffConstSMul I k (specialUnitaryGroup n 𝕜) M :=
+  ⟨ContMDiffSMul.contMDiff_const_smul (I := model n 𝕜)⟩
 
 end Matrix.specialUnitaryGroup
