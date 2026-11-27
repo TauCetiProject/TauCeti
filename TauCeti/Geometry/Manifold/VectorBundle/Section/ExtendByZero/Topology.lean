@@ -19,7 +19,8 @@ field and at every regularity, and for the native final locally convex topology 
 On native smooth bundle tests it gives the continuous linear extension `extendByZeroCLM`, its
 compact-convergence transpose `restrictDualCLM`, extension between nested opens
 `extendByZeroToOpenCLM` with its transpose `restrictDualToOpenCLM`, the localization
-`localizeCLM` of operators with controlled supports, and the universal-open equivalence `univCLE`.
+`localizeCLM` of operators with controlled supports, the localization `cutoffRestrictCLM` of tests
+by a cutoff supported in an open subset, and the universal-open equivalence `univCLE`.
 -/
 
 public noncomputable section
@@ -605,6 +606,167 @@ theorem extendByZeroCLM_localizeCLM :
     exact hx u.property
 
 end Localization
+
+section Cutoff
+
+variable {χ : C^∞⟮I, M; ℝ⟯}
+
+omit [LocallyCompactSpace E] [T2Space M] in
+/-- The closed support of `χ s` lies in that of `χ`, hence in `U`. -/
+private theorem tsupport_smulLeftCLM_val_subset (hχ : tsupport χ ⊆ U) (s : BundleTest I F V) :
+    ((ofCompactlySupported I F V).symm (smulLeftCLM χ s)).val.tsupport ⊆ U := by
+  rw [ContMDiffSection.tsupport_def]
+  exact (tsupport_smulLeftCLM_subset χ s).trans (inter_subset_left.trans hχ)
+
+/-- The linear map `s ↦ (χ s)|_U` into the compactly supported sections over `U`. -/
+private def cutoffRestrictLinearMap (hχ : tsupport χ ⊆ U) : BundleTest I F V →ₗ[ℝ]
+    compactlySupported I F ∞ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V) :=
+  LinearMap.codRestrict _ ((restrictLinearMap I F ∞ V U).comp
+    ((compactlySupported I F ∞ V).subtype.comp
+      ((ofCompactlySupported I F V).symm.toLinearMap.comp (smulLeftCLM χ).toLinearMap)))
+    fun s ↦ by
+      -- The composite restricts the section underlying `χ s`, read through its value law.
+      change (restrictLinearMap I F ∞ V U)
+        ((ofCompactlySupported I F V).symm (smulLeftCLM χ s)).val ∈ _
+      rw [restrictLinearMap_apply]
+      exact restrict_mem_compactlySupported _ (tsupport_smulLeftCLM_val_subset hχ s)
+
+omit [LocallyCompactSpace E] [T2Space M] in
+private theorem cutoffRestrictLinearMap_val (hχ : tsupport χ ⊆ U) (s : BundleTest I F V) :
+    (cutoffRestrictLinearMap hχ s).val =
+      ((ofCompactlySupported I F V).symm (smulLeftCLM χ s)).val.restrict U := by
+  simp only [cutoffRestrictLinearMap, LinearMap.codRestrict_apply, LinearMap.comp_apply,
+    Submodule.subtype_apply, LinearEquiv.coe_toLinearMap, ContinuousLinearMap.coe_coe]
+  rw [restrictLinearMap_apply]
+
+/-- The compact set of `U` in which `χ s` lies for every test `s` supported in `K`. -/
+private def cutoffCompacts (hχ : tsupport χ ⊆ U) (K : Compacts M) : Compacts U :=
+  ⟨Subtype.val ⁻¹' ((K : Set M) ∩ tsupport χ), by
+    rw [Subtype.isCompact_iff, image_preimage_eq_of_subset fun x hx ↦ ⟨⟨x, hχ hx.2⟩, rfl⟩]
+    exact K.isCompact.inter_right (isClosed_tsupport χ)⟩
+
+/-- The localization `s ↦ (χ s)|_U` on the stage of tests supported in `K`. -/
+private def cutoffRestrictStageLinearMap (hχ : tsupport χ ⊆ U) (K : Compacts M) :
+    supportedIn I F ∞ V K →ₗ[ℝ]
+      supportedIn I F ∞ ((⟨Subtype.val, continuous_subtypeVal⟩ : C(U, M)) *ᵖ V)
+        (cutoffCompacts hχ K) :=
+  LinearMap.codRestrict _ ((compactlySupported I F ∞ _).subtype.comp
+    ((cutoffRestrictLinearMap hχ).comp
+      ((ofCompactlySupported I F V).toLinearMap.comp (ofSupportedIn K))))
+    fun s ↦ by
+      rw [mem_supportedIn]
+      -- The stage map is the localization of the underlying test, read through its value.
+      change (cutoffRestrictLinearMap hχ
+        (ofCompactlySupported I F V (ofSupportedIn K s))).val.tsupport ⊆ _
+      rw [cutoffRestrictLinearMap_val, tsupport_restrict]
+      refine preimage_mono fun x hx ↦ ?_
+      have hx' := tsupport_smulLeftCLM_subset χ _ (by rwa [ContMDiffSection.tsupport_def] at hx)
+      have hs := hx'.2
+      rw [LinearEquiv.symm_apply_apply, ← ContMDiffSection.tsupport_def, ofSupportedIn_apply] at hs
+      exact ⟨mem_supportedIn.mp s.property hs, hx'.1⟩
+
+omit [LocallyCompactSpace E] [T2Space M] in
+private theorem cutoffRestrictStageLinearMap_val (hχ : tsupport χ ⊆ U) (K : Compacts M)
+    (s : supportedIn I F ∞ V K) :
+    (cutoffRestrictStageLinearMap hχ K s).val =
+      (cutoffRestrictLinearMap hχ (ofCompactlySupported I F V (ofSupportedIn K s))).val :=
+  (rfl)
+
+omit [T2Space M] in
+private theorem continuous_cutoffRestrictStageLinearMap (hχ : tsupport χ ⊆ U) (K : Compacts M) :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    let eU := fun x : M ↦ (trivializationAt F V x).pullback c
+    let AU := fun x : M ↦ Opens.comap c ⟨(trivializationAt F V x).baseSet,
+      (trivializationAt F V x).open_baseSet⟩
+    let hAU : ∀ x, (AU x : Set U) ⊆ (eU x).baseSet := fun _ ↦ subset_rfl
+    let eM := fun x : M ↦ trivializationAt F V x
+    let AM := fun x : M ↦ (⟨(eM x).baseSet, (eM x).open_baseSet⟩ : Opens M)
+    let hAM : ∀ x, (AM x : Set M) ⊆ (eM x).baseSet := fun _ ↦ subset_rfl
+    letI := frameTopology (I := I) (n := ∞) eM AM hAM
+    letI := frameTopology (I := I) (n := ∞) eU AU hAU
+    Continuous (cutoffRestrictStageLinearMap (F := F) (V := V) hχ K) := by
+  intro c eU AU hAU eM AM hAM
+  let := frameTopology (I := I) (n := ∞) eM AM hAM
+  let := frameTopology (I := I) (n := ∞) eU AU hAU
+  have hf : Continuous (fun t : BundleTest I F V ↦ ((ofCompactlySupported I F V).symm t).val) :=
+    continuous_val_compactlySupportedTopology eM AM hAM
+  have hh := (continuous_restrict_frameTopology eM AM hAM U).comp
+    (hf.comp ((smulLeftCLM χ).continuous.comp (continuous_ofSupportedIn (I := I) (F := F)
+      (V := V) K)))
+  exact (hh.congr fun s ↦ ((cutoffRestrictStageLinearMap_val hχ K s).trans
+    (cutoffRestrictLinearMap_val hχ _)).symm).subtype_mk _
+
+omit [T2Space M] in
+/-- The localization `s ↦ (χ s)|_U` of bundle tests to an open set `U` containing the support of
+a smooth function `χ`, as a continuous linear map. Its extension by zero is `χ s`
+(`TauCeti.BundleTest.extendByZeroCLM_cutoffRestrictCLM`). -/
+def cutoffRestrictCLM (hχ : tsupport χ ⊆ U) :
+    let c : C(U, M) := ⟨Subtype.val, continuous_subtypeVal⟩
+    BundleTest I F V →L[ℝ] BundleTest I F (c *ᵖ V) := by
+  intro c
+  refine ⟨(ofCompactlySupported I F (c *ᵖ V)).toLinearMap.comp (cutoffRestrictLinearMap hχ), ?_⟩
+  let eU := fun x : M ↦ (trivializationAt F V x).pullback c
+  let AU := fun x : M ↦ Opens.comap c ⟨(trivializationAt F V x).baseSet,
+    (trivializationAt F V x).open_baseSet⟩
+  let hAU : ∀ x, (AU x : Set U) ⊆ (eU x).baseSet := fun _ ↦ subset_rfl
+  let eM := fun x : M ↦ trivializationAt F V x
+  let AM := fun x : M ↦ (⟨(eM x).baseSet, (eM x).open_baseSet⟩ : Opens M)
+  let hAM : ∀ x, (AM x : Set M) ⊆ (eM x).baseSet := fun _ ↦ subset_rfl
+  let := frameTopology (I := I) (n := ∞) eM AM hAM
+  let := frameTopology (I := I) (n := ∞) eU AU hAU
+  refine (continuous_iff_continuous_comp _).2 fun K ↦ ?_
+  have hi : Continuous (ofCompactlySupported I F (c *ᵖ V) ∘
+      ofSupportedIn (I := I) (F := F) (n := ∞) (V := c *ᵖ V) (cutoffCompacts hχ K)) :=
+    continuous_of_continuous_compactlySupportedTopology_pullback_cod
+      (ContMDiffSection.continuous_ofSupportedIn (I := I) (n := ∞) eU AU hAU _)
+  refine (hi.comp (continuous_cutoffRestrictStageLinearMap hχ K)).congr fun s ↦ ?_
+  -- Both sides are the localization of the same test; only the stage wrapper differs.
+  simp only [Function.comp_apply, LinearMap.coe_comp, LinearEquiv.coe_coe]
+  congr 1
+  exact Subtype.ext ((ofSupportedIn_apply _ _).trans (cutoffRestrictStageLinearMap_val hχ K s))
+
+omit [T2Space M] in
+/-- The localization of `s` by `χ` is `χ s` on `U`. -/
+@[simp]
+theorem cutoffRestrictCLM_apply (hχ : tsupport χ ⊆ U) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    ∀ (s : BundleTest I F V) (x : U), cutoffRestrictCLM hχ s x = χ x • s (x : M)) := by
+  intro s x
+  -- The continuous map adds continuity to the algebraic localization, which restricts `χ s`.
+  change (cutoffRestrictLinearMap hχ s).val x = _
+  rw [cutoffRestrictLinearMap_val, ContMDiffSection.restrict_apply]
+  exact smulLeftCLM_apply χ s x
+
+/-- Extending the localization of `s` by `χ` by zero gives `χ s`. -/
+@[simp]
+theorem extendByZeroCLM_cutoffRestrictCLM (hχ : tsupport χ ⊆ U) :
+    dsimp% only [ContinuousMap.coe_mk] (
+    ∀ s : BundleTest I F V,
+      extendByZeroCLM (I := I) (F := F) (V := V) (U := U) (cutoffRestrictCLM hχ s) =
+        smulLeftCLM χ s) := by
+  intro s
+  refine BundleTest.ext fun x ↦ ?_
+  by_cases hx : x ∈ U
+  · rw [extendByZeroCLM_apply_of_mem _ ⟨x, hx⟩, cutoffRestrictCLM_apply, smulLeftCLM_apply]
+    -- Both evaluations lie in the ambient fibre at `x`; only the subtype index differs.
+    rfl
+  · rw [extendByZeroCLM_apply_of_notMem _ hx, smulLeftCLM_apply,
+      image_eq_zero_of_notMem_tsupport fun h ↦ hx (hχ h), zero_smul]
+
+/-- A bundle test whose closed support lies in `U` is the extension by zero of a test on `U`. -/
+theorem exists_extendByZeroCLM_eq_of_tsupport_subset {s : TauCeti.BundleTest I F V}
+    (hs : closure {x | s x ≠ 0} ⊆ U) :
+    ∃ t, extendByZeroCLM (I := I) (F := F) (V := V) (U := U) t = s := by
+  obtain ⟨s, rfl⟩ := (ofCompactlySupported I F V).surjective s
+  have hs' : s.val.tsupport ⊆ U := by
+    simpa only [coe_ofCompactlySupported, ← ContMDiffSection.tsupport_def] using hs
+  refine ⟨ofCompactlySupported I F _ ⟨s.val.restrict U, restrict_mem_compactlySupported s hs'⟩,
+    ?_⟩
+  rw [extendByZeroCLM_ofCompactlySupported]
+  exact congrArg _
+    (Subtype.ext ((extendByZeroLinearMap_apply _).trans (extendByZero_restrict s hs')))
+
+end Cutoff
 
 /-- Continuous linear extension of native tests to a larger open subset. -/
 def extendByZeroToOpenCLM (h : U ≤ D) :
