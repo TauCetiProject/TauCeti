@@ -15,6 +15,10 @@ both `f` and `g` are diffeomorphisms. No smoothness of the factor maps or their 
 is assumed: each is recovered as a slice of the product diffeomorphism or its inverse.
 This lets one promote separation of a smooth map into separation by bundled equivalences.
 
+`Diffeomorph.prodCongrOfModels` is the product of two diffeomorphisms whose four manifolds have
+independent model vector spaces, generalizing Mathlib's `Diffeomorph.prodCongr`, where the source
+and target of the second factor share one.
+
 `Diffeomorph.prodAssocOfModels` reassociates three manifold factors with independent model
 vector spaces, generalizing Mathlib's `Diffeomorph.prodAssoc`, where the last two coincide.
 `Diffeomorph.prodAssocSymmSelf` regroups a triple product of normed spaces `E × F × E'`, carrying
@@ -24,6 +28,9 @@ The four-way exchange `((a, b), (c, d)) ↦ ((a, c), (b, d))` of a product of tw
 the diffeomorphism `Diffeomorph.prodProdProdComm`, the smooth counterpart of
 `Equiv.prodProdProdComm`. It regroups a product of relations `M₁ ⇝ N₁` and `M₂ ⇝ N₂` as a
 relation `M₁ × M₂ ⇝ N₁ × N₂`.
+
+The homeomorphism underlying Mathlib's factor swap `Diffeomorph.prodComm` is
+`Homeomorph.prodComm` (`Diffeomorph.toHomeomorph_prodComm`).
 -/
 
 public section
@@ -70,6 +77,31 @@ theorem exists_factors_of_eq_prodMap
   · simpa [hQ'] using congrArg Prod.snd (Q.apply_symm_apply (f x₀, v))
   · simpa [hQ'] using
       (Q.contMDiff.comp ((contMDiff_const (c := x₀)).prodMk contMDiff_id)).snd
+
+section prodCongrOfModels
+
+/-- The product of two diffeomorphisms, with independent model vector spaces for all four
+manifolds. -/
+def prodCongrOfModels (h₁ : M ≃ₘ^n⟮I, I'⟯ M') (h₂ : N ≃ₘ^n⟮J, J'⟯ N') :
+    (M × N) ≃ₘ^n⟮I.prod J, I'.prod J'⟯ M' × N' where
+  toEquiv := h₁.toEquiv.prodCongr h₂.toEquiv
+  contMDiff_toFun := (h₁.contMDiff.comp contMDiff_fst).prodMk (h₂.contMDiff.comp contMDiff_snd)
+  contMDiff_invFun :=
+    (h₁.symm.contMDiff.comp contMDiff_fst).prodMk (h₂.symm.contMDiff.comp contMDiff_snd)
+
+/-- The product of two diffeomorphisms acts factorwise. -/
+@[simp]
+theorem coe_prodCongrOfModels (h₁ : M ≃ₘ^n⟮I, I'⟯ M') (h₂ : N ≃ₘ^n⟮J, J'⟯ N') :
+    ⇑(h₁.prodCongrOfModels h₂) = Prod.map h₁ h₂ :=
+  (rfl)
+
+/-- The inverse of the product of two diffeomorphisms is the product of their inverses. -/
+@[simp]
+theorem prodCongrOfModels_symm (h₁ : M ≃ₘ^n⟮I, I'⟯ M') (h₂ : N ≃ₘ^n⟮J, J'⟯ N') :
+    (h₁.prodCongrOfModels h₂).symm = h₁.symm.prodCongrOfModels h₂.symm :=
+  (rfl)
+
+end prodCongrOfModels
 
 section prodAssocOfModels
 
@@ -148,5 +180,11 @@ theorem coe_prodProdProdComm :
   (rfl)
 
 end prodProdProdComm
+
+/-- The homeomorphism underlying the factor swap `M × N ≃ N × M` is the factor swap. -/
+@[simp]
+theorem toHomeomorph_prodComm :
+    (Diffeomorph.prodComm I J M N n).toHomeomorph = Homeomorph.prodComm M N :=
+  Homeomorph.ext fun _ ↦ rfl
 
 end Diffeomorph

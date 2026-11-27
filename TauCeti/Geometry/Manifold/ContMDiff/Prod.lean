@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
@@ -46,6 +47,10 @@ slice.
   has differentiable slices uniformly on that compact set for all nearby parameters.
 * `TauCeti.contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm`: reading the complex factor of
   `ℝ × ℂ × V` in real coordinates is `C^n` from the self-model of `ℝ × (ℝ × ℝ) × V`.
+* `TauCeti.contMDiff_prodMk_equivRealProdCLM_symm`: the same on `(P × (ℝ × ℝ)) × M` for a
+  manifold `M`, with the factors regrouped as `P × (ℂ × M)`.
+* `TauCeti.contMDiff_uncurry_const_mul_comp_const_mul`: `(t, x) ↦ ε * H (ε * t) x` is `C^n`
+  when `H` is.
 
 -/
 
@@ -176,8 +181,9 @@ theorem eventually_mdifferentiableAt_slice [IsManifold I' 1 M]
 
 /-- A jointly `C^n` family in the model space, fixing the base point of an extended chart at time
 zero, gives a family on the manifold, jointly `C^n` at the base point and time zero, by
-conjugating with the extended chart. -/
-theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod [I'.Boundaryless] (a : M)
+conjugating with the extended chart. The base point is an interior point, as every point of a
+boundaryless manifold is (`BoundarylessManifold.isInteriorPoint`). -/
+theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod (a : M) (ha : I'.IsInteriorPoint a)
     {φ : E' → 𝕜 → E'} (hφ : ContDiffAt 𝕜 n (fun p : E' × 𝕜 ↦ φ p.1 p.2) (extChartAt I' a a, 0))
     (hφ0 : φ (extChartAt I' a a) 0 = extChartAt I' a a) :
     ContMDiffAt (I'.prod 𝓘(𝕜, 𝕜)) I' n
@@ -194,9 +200,11 @@ theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod [I'.Boundaryless] (a : 
       (fun p : M × 𝕜 ↦ φ (extChartAt I' a p.1) p.2) (a, 0) := by
     have h := hφM.comp (a, 0) hcoord
     simpa only [Function.comp_def] using h
-  have hinv : ContMDiffAt 𝓘(𝕜, E') I' n (extChartAt I' a).symm (extChartAt I' a a) := by
-    rw [← contMDiffWithinAt_univ, ← I'.range_eq_univ]
-    exact contMDiffWithinAt_extChartAt_symm_range_self a
+  -- At an interior point the range of the model is a neighbourhood of the chart point.
+  have hinv : ContMDiffAt 𝓘(𝕜, E') I' n (extChartAt I' a).symm (extChartAt I' a a) :=
+    (contMDiffWithinAt_extChartAt_symm_range_self a).contMDiffAt
+      (Filter.mem_of_superset (isOpen_interior.mem_nhds (I'.isInteriorPoint_iff.mp ha))
+        (interior_subset.trans (extChartAt_target_subset_range a)))
   have hcomp := hinv.comp_of_eq hinner hφ0
   simpa only [Function.comp_def] using hcomp
 
@@ -231,6 +239,29 @@ theorem contMDiff_prodMap_id_prodMap_equivRealProdCLM_symm :
   contDiff_fst.contMDiff.prodMk
     ((Complex.equivRealProdCLM.symm.contDiff.comp (contDiff_fst.comp contDiff_snd)).contMDiff.prodMk
       (contDiff_snd.comp contDiff_snd).contMDiff)
+
+/-- Reading the domain point in real coordinates is smooth on a product with a manifold: the map
+`((c, z), x) ↦ (c, (z, x))` from `(P × (ℝ × ℝ)) × M` to `P × (ℂ × M)` is `C^n`. Composing with it
+turns the smoothness of a family on `P × (ℂ × M)` into smoothness in real coordinates. -/
+theorem contMDiff_prodMk_equivRealProdCLM_symm {P E H₀ X : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H₀]
+    {I : ModelWithCorners ℝ E H₀} [TopologicalSpace X] [ChartedSpace H₀ X] :
+    ContMDiff (𝓘(ℝ, P × (ℝ × ℝ)).prod I) (𝓘(ℝ, P).prod (𝓘(ℝ, ℂ).prod I)) n
+      (fun p : (P × (ℝ × ℝ)) × X ↦ (p.1.1, (Complex.equivRealProdCLM.symm p.1.2, p.2))) :=
+  (contDiff_fst.contMDiff.comp contMDiff_fst).prodMk
+    (((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_snd).contMDiff.comp
+      contMDiff_fst).prodMk contMDiff_snd)
+
+/-- Reflecting and rescaling a time-dependent function by a real constant preserves smoothness:
+if `(t, x) ↦ H t x` is `C^n` on `ℝ × M`, then so is `(t, x) ↦ ε * H (ε * t) x`. With `ε = ±1`,
+this is the Hamiltonian of a cylindrical end read in its positive end coordinate. -/
+theorem contMDiff_uncurry_const_mul_comp_const_mul {E H₀ : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H₀] {I : ModelWithCorners ℝ E H₀} {X : Type*}
+    [TopologicalSpace X] [ChartedSpace H₀ X] {Ham : ℝ → X → ℝ} (ε : ℝ)
+    (hHam : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry Ham)) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (Function.uncurry fun t x ↦ ε * Ham (ε * t) x) :=
+  (contDiff_const.mul contDiff_id).contMDiff.comp (hHam.comp
+    (((contDiff_const.mul contDiff_id).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd))
 
 end RealCoords
 

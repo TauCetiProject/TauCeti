@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.GroupTheory.Coset.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
@@ -33,8 +34,17 @@ isomorphism of groups, and under translation:
   representatives of `G ⧸ H` and of `H ⧸ K.subgroupOf H` form a transversal of `K` in `G`;
 * `Subgroup.mk_mulEquiv_out_bijective`: an isomorphism `e : G ≃* G'` carrying `H` onto `H'` carries
   the chosen representatives of `G ⧸ H` to a transversal of `H'` in `G'`;
+* `QuotientGroup.apply_out_mk`: a function invariant under right multiplication by `H` takes the
+  same value at `g` and at the chosen representative of `g H`, and
+  `QuotientGroup.finite_support_comp_inv_mul`: a left translate of such a function supported on
+  finitely many cosets is again supported on finitely many cosets.
 * `QuotientGroup.mk_out_smul` and `QuotientGroup.mk_mul_out_smul`: the representative of a
-  translated coset `g • q` lies in the coset of `g * q.out`.
+  translated coset `g • q` lies in the coset of `g * q.out`, and `QuotientGroup.inv_smul_of_mk_eq`
+  and `QuotientGroup.out_inv_smul`: the inverse of a representative of `q`, for instance
+  `q.out⁻¹`, translates `q` to the base point; `QuotientGroup.smul_mk_one_eq_mk`: the orbit map
+  of the base point is the projection `G → G ⧸ H`.
+* `QuotientGroup.outCocycle`: the element `(g • q).out⁻¹ * g * q.out` of `H` relating the two, with
+  the cocycle identity `QuotientGroup.outCocycle_mul`.
 * `QuotientGroup.iUnion_out_smul_eq` and `QuotientGroup.pairwise_disjoint_out_smul`: for an
   action on a type `α` and `V : Set α` mapped onto itself by `H`, the translates `q.out • V`
   cover `⋃ g, g • V`, and they are pairwise disjoint when every `g ∉ H` moves `V` off itself.
@@ -49,11 +59,13 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `q.out • m` over the cosets of `K` is `[H : K]` times the sum over the cosets of `H`.
 `Subgroup.finite_image_mk_of_inv_mul_mem` passes finiteness of the image of a set in `G ⧸ K` to
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
-`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
+`Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`, and
+`Subgroup.sum_comp_quotientMapOfLE` sums a function on `G / K` along that map.
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
-read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection, and
-`Subgroup.quotientEquivFin` constructs a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when
-`n ≠ 0`.
+read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection;
+`Subgroup.finiteIndex_of_surjective` and `Subgroup.index_le_of_surjective` deduce `FiniteIndex`
+and an index bound from a surjection from a finite type; and `Subgroup.quotientEquivFin` constructs
+a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when `n ≠ 0`.
 -/
 
 public section
@@ -169,6 +181,18 @@ theorem card_fiber_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G}
   -- Relative index is the cardinality of the quotient by the subgroup inside `K`.
   rfl
 
+/-- **Summing along the quotient map of a tower.** For `H ≤ K`, a function on `G / K` summed
+along `G / H → G / K` is `[K : H]` times its sum over `G / K`, since each fibre has `[K : H]`
+points (`card_fiber_quotientMapOfLE`). -/
+theorem sum_comp_quotientMapOfLE {G : Type*} [Group G] {H K : Subgroup G} [Fintype (G ⧸ H)]
+    [Fintype (G ⧸ K)] (hHK : H ≤ K) {M : Type*} [AddCommMonoid M] (F : G ⧸ K → M) :
+    ∑ q : G ⧸ H, F (quotientMapOfLE hHK q) = H.relIndex K • ∑ q : G ⧸ K, F q := by
+  classical
+  rw [← Finset.sum_fiberwise Finset.univ (quotientMapOfLE hHK), ← Finset.sum_nsmul]
+  refine Finset.sum_congr rfl fun q _ ↦ ?_
+  rw [Finset.sum_congr rfl fun p hp ↦ by rw [(Finset.mem_filter.mp hp).2], Finset.sum_const,
+    ← card_fiber_quotientMapOfLE hHK q, Nat.card_eq_fintype_card, Fintype.card_subtype]
+
 /-- **Transversals multiply along a tower.** For subgroups `K ≤ H` of `G`, the products
 `p.out * k.out` of the chosen representatives of the cosets `p ∈ G ⧸ H` and
 `k ∈ H ⧸ K.subgroupOf H` represent each coset of `K` in `G` exactly once. -/
@@ -265,6 +289,22 @@ theorem finiteIndex_of_equiv {G β : Type*} [Group G] [Finite β] (H : Subgroup 
   have : Finite (G ⧸ H) := Finite.of_equiv β e.symm
   H.finiteIndex_of_finite_quotient
 
+/-- A subgroup whose coset space admits a surjection from a finite type has finite index. -/
+@[to_additive /-- An additive subgroup whose coset space admits a surjection from a finite type
+has finite index. -/]
+theorem finiteIndex_of_surjective {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    {f : β → G ⧸ H} (hf : Function.Surjective f) : H.FiniteIndex :=
+  have : Finite (G ⧸ H) := Finite.of_surjective f hf
+  H.finiteIndex_of_finite_quotient
+
+/-- A surjection from a finite type onto `G ⧸ H` bounds `H.index` by `Nat.card β`. -/
+@[to_additive /-- A surjection from a finite type onto `G ⧸ H` bounds `H.index` by
+`Nat.card β`. -/]
+theorem index_le_of_surjective {G β : Type*} [Group G] [Finite β] (H : Subgroup G)
+    {f : β → G ⧸ H} (hf : Function.Surjective f) : H.index ≤ Nat.card β := by
+  rw [index_eq_card]
+  exact Nat.card_le_card_of_surjective f hf
+
 /-- An enumeration of the left cosets of a subgroup `H` of finite index `n ≠ 0`. -/
 @[to_additive /-- An enumeration of the left cosets of an additive subgroup `H` of finite index
 `n ≠ 0`. -/]
@@ -304,11 +344,52 @@ theorem quotientRightRelEquivQuotientLeftRel_symm_mk (x : G) :
     (quotientRightRelEquivQuotientLeftRel H).symm (x : G ⧸ H) = Quotient.mk'' x⁻¹ :=
   rfl
 
+/-- A function invariant under right multiplication by `H` takes the same value at `g` and at the
+chosen representative of the coset `g H`. -/
+@[to_additive /-- A function invariant under right addition of `H` takes the same value at `g` and
+at the chosen representative of the coset `g + H`. -/]
+theorem apply_out_mk {X : Type*} {f : G → X} (hf : ∀ g, ∀ h ∈ H, f (g * h) = f g) (g : G) :
+    f (g : G ⧸ H).out = f g := by
+  obtain ⟨h, hh⟩ := QuotientGroup.mk_out_eq_mul H g
+  rw [hh, hf g h h.property]
+
+/-- A left translate `g ↦ f (x⁻¹ g)` of a right `K`-invariant `f` supported on finitely many cosets
+is again supported on finitely many cosets. -/
+theorem finite_support_comp_inv_mul {A : Type*} [Zero A] {K : Subgroup G} {f : G → A}
+    (hf : ∀ g, ∀ k ∈ K, f (g * k) = f g)
+    (hf_fin : (Function.support fun q : G ⧸ K ↦ f q.out).Finite) (x : G) :
+    (Function.support fun q : G ⧸ K ↦ f (x⁻¹ * q.out)).Finite := by
+  have h_value (q : G ⧸ K) : f (x⁻¹ * q.out) = f (x⁻¹ • q).out := by
+    rw [← MulAction.Quotient.mk_smul_out, smul_eq_mul, QuotientGroup.apply_out_mk hf]
+  refine (hf_fin.preimage (MulAction.injective x⁻¹).injOn).subset fun q hq ↦ ?_
+  simpa [h_value] using hq
+
 /-- The chosen representative of the translate `g • q` of a left coset `q` lies in the same coset
 as `g` times the chosen representative of `q`. -/
 @[to_additive]
 theorem mk_out_smul (g : G) (q : G ⧸ H) : ((g • q).out : G ⧸ H) = (g * q.out : G) := by
   simp [← smul_eq_mul]
+
+/-- The inverse of a representative `g` of a left coset `q` translates `q` to the base point
+`⟦1⟧`. -/
+@[to_additive /-- The negative of a representative `g` of a left coset `q` translates `q` to the
+base point `⟦0⟧`. -/]
+theorem inv_smul_of_mk_eq {g : G} {q : G ⧸ H} (h : (g : G ⧸ H) = q) :
+    g⁻¹ • q = ((1 : G) : G ⧸ H) := by
+  rw [← h, MulAction.Quotient.smul_coe, smul_eq_mul, inv_mul_cancel]
+
+/-- The inverse of the chosen representative of a left coset `q` translates `q` to the base point
+`⟦1⟧`. -/
+@[to_additive (attr := simp) /-- The negative of the chosen representative of a left coset `q`
+translates `q` to the base point `⟦0⟧`. -/]
+theorem out_inv_smul (q : G ⧸ H) : q.out⁻¹ • q = ((1 : G) : G ⧸ H) :=
+  inv_smul_of_mk_eq (QuotientGroup.out_eq' q)
+
+/-- The orbit map `g ↦ g • ⟦1⟧` of the base point of `G ⧸ H` is the projection `G → G ⧸ H`. -/
+@[to_additive /-- The orbit map `g ↦ g +ᵥ ⟦0⟧` of the base point of `G ⧸ H` is the projection
+`G → G ⧸ H`. -/]
+theorem smul_mk_one_eq_mk : (fun g : G ↦ g • ((1 : G) : G ⧸ H)) = (QuotientGroup.mk : G → G ⧸ H) :=
+  funext fun g ↦ by rw [MulAction.Quotient.smul_coe, smul_eq_mul, mul_one]
 
 /-- For `h ∈ H` and a coset `k ∈ H ⧸ K.subgroupOf H`, the elements `a * (h • k).out` and
 `a * h * k.out` of `G` lie in the same left coset of `K`, for every `a ∈ G`. No inclusion `K ≤ H`
@@ -319,6 +400,41 @@ theorem mk_mul_out_smul {K : Subgroup G} (a : G) (h : H) (k : H ⧸ K.subgroupOf
   -- `(h • k).out` and `h * k.out` differ by an element of `K.subgroupOf H`, i.e. of `K`.
   simpa [QuotientGroup.eq, Subgroup.mem_subgroupOf, mul_assoc] using
     QuotientGroup.eq.mp (mk_out_smul h k)
+
+/-- The cocycle of the translation action of `G` on `G ⧸ H` relative to the chosen
+representatives: the element `(g • q).out⁻¹ * g * q.out` of `H`, so that
+`g * q.out = (g • q).out * outCocycle g q`. -/
+@[to_additive /-- The cocycle of the translation action of `G` on `G ⧸ H` relative to the chosen
+representatives: the element `-(g +ᵥ q).out + g + q.out` of `H`, so that
+`g + q.out = (g +ᵥ q).out + outCocycle g q`. -/]
+noncomputable def outCocycle (g : G) (q : G ⧸ H) : H :=
+  ⟨(g • q).out⁻¹ * g * q.out, by simpa [mul_assoc] using QuotientGroup.eq.mp (mk_out_smul g q)⟩
+
+@[to_additive (attr := simp)]
+theorem coe_outCocycle (g : G) (q : G ⧸ H) :
+    (outCocycle g q : G) = (g • q).out⁻¹ * g * q.out :=
+  (rfl)
+
+-- Not `@[simp]`: `coe_outCocycle` already rewrites the left-hand side.
+/-- Translating a chosen representative by `g` gives the chosen representative of the translated
+coset times the cocycle. -/
+@[to_additive /-- Translating a chosen representative by `g` gives the chosen
+representative of the translated coset plus the cocycle. -/]
+theorem out_mul_outCocycle (g : G) (q : G ⧸ H) :
+    (g • q).out * (outCocycle g q : G) = g * q.out := by
+  simp [mul_assoc]
+
+@[to_additive (attr := simp)]
+theorem outCocycle_one (q : G ⧸ H) : outCocycle 1 q = 1 := by
+  ext
+  simp
+
+/-- The cocycle identity. -/
+@[to_additive /-- The cocycle identity. -/]
+theorem outCocycle_mul (g h : G) (q : G ⧸ H) :
+    outCocycle (g * h) q = outCocycle g (h • q) * outCocycle h q := by
+  ext
+  simp [mul_smul, mul_assoc]
 
 section Action
 
@@ -357,4 +473,75 @@ theorem pairwise_disjoint_out_smul (hdisj : ∀ g ∉ H, Disjoint (g • V) V) :
 
 end Action
 
+/-- Reindex a `finsum` over `G ⧸ K` along left multiplication by `a : G` when the summand is
+right `K`-invariant. -/
+theorem finsum_mulLeft_eq {G M : Type*} [Group G] [AddCommMonoid M] {K : Subgroup G}
+    (a : G) (F : G → M) (hF : ∀ g : G, ∀ k ∈ K, F (g * k) = F g) :
+    (∑ᶠ q : G ⧸ K, F (a * q.out)) = ∑ᶠ q : G ⧸ K, F q.out := by
+  refine (finsum_congr fun q ↦ ?_).trans (finsum_comp_equiv (MulAction.toPerm a))
+  have hk : (a * q.out)⁻¹ * (a • q).out ∈ K :=
+    QuotientGroup.eq.1 (mk_out_smul a q).symm
+  have heq : (a • q).out = a * q.out * ((a * q.out)⁻¹ * (a • q).out) := by
+    rw [mul_inv_cancel_left]
+  rw [MulAction.toPerm_apply, heq, hF _ _ hk]
+
 end QuotientGroup
+
+namespace Subgroup
+
+/-- If a monoid homomorphism `τ : G →* G` sends every `g⁻¹` into the double coset `K * g * K`,
+then `τ` preserves `K`. -/
+theorem map_mem_iff_of_inv_mem_doubleCoset {G F : Type*} [Group G] {K : Subgroup G}
+    [FunLike F G G] [MonoidHomClass F G G] {τ : F}
+    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    τ g ∈ K ↔ g ∈ K := by
+  constructor
+  · intro h
+    obtain ⟨a, ha, b, hb, hg⟩ := hτg g
+    have hτinv : τ g⁻¹ ∈ K := by simpa [map_inv] using K.inv_mem h
+    have heq : g = a⁻¹ * τ g⁻¹ * b⁻¹ := by simp [hg, mul_assoc]
+    rw [heq]
+    exact K.mul_mem (K.mul_mem (K.inv_mem ha) hτinv) (K.inv_mem hb)
+  · intro h
+    obtain ⟨a, ha, b, hb, hg⟩ := hτg g⁻¹
+    rw [inv_inv] at hg
+    rw [hg]
+    exact K.mul_mem (K.mul_mem ha (K.inv_mem h)) hb
+
+/-- The equivalence on left cosets `G ⧸ K ≃ G ⧸ K` induced by a group automorphism `τ : G ≃* G`
+sending every `g⁻¹` into the double coset `K * g * K`. -/
+noncomputable def quotientEquivOfInvMemDoubleCoset {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) : G ⧸ K ≃ G ⧸ K :=
+  Equiv.ofBijective _
+    (mk_mulEquiv_out_bijective τ (K.map_mem_iff_of_inv_mem_doubleCoset hτg))
+
+/-- Application formula for `Subgroup.quotientEquivOfInvMemDoubleCoset`. -/
+theorem quotientEquivOfInvMemDoubleCoset_apply {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
+    K.quotientEquivOfInvMemDoubleCoset τ hτg q = ((τ q.out : G) : G ⧸ K) :=
+  (rfl)
+
+/-- `Subgroup.quotientEquivOfInvMemDoubleCoset` sends the coset of `g` to the coset of `τ g`. -/
+@[simp] theorem quotientEquivOfInvMemDoubleCoset_mk {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    K.quotientEquivOfInvMemDoubleCoset τ hτg (g : G ⧸ K) = ((τ g : G) : G ⧸ K) := by
+  rw [quotientEquivOfInvMemDoubleCoset_apply, QuotientGroup.eq, ← map_inv, ← map_mul,
+    K.map_mem_iff_of_inv_mem_doubleCoset hτg, ← QuotientGroup.eq, QuotientGroup.out_eq']
+
+/-- The inverse of `Subgroup.quotientEquivOfInvMemDoubleCoset` sends the coset of `g` to the coset
+of `τ.symm g`. -/
+@[simp] theorem quotientEquivOfInvMemDoubleCoset_symm_mk {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    (K.quotientEquivOfInvMemDoubleCoset τ hτg).symm (g : G ⧸ K) = ((τ.symm g : G) : G ⧸ K) := by
+  apply (K.quotientEquivOfInvMemDoubleCoset τ hτg).injective
+  simp
+
+/-- The chosen representative of `K.quotientEquivOfInvMemDoubleCoset τ hτg q` differs from
+`τ q.out` on the right by an element of `K`. -/
+theorem out_quotientEquivOfInvMemDoubleCoset_eq_mul {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
+    ∃ k ∈ K, (K.quotientEquivOfInvMemDoubleCoset τ hτg q).out = τ q.out * k := by
+  obtain ⟨⟨k, hk⟩, hq⟩ := QuotientGroup.mk_out_eq_mul K (τ q.out)
+  exact ⟨k, hk, by rw [quotientEquivOfInvMemDoubleCoset_apply]; exact hq⟩
+
+end Subgroup

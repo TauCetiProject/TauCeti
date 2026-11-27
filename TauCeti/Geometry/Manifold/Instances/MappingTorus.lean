@@ -46,7 +46,9 @@ has least period `d`.
 Tau Ceti's topological mapping torus `TauCeti.MappingTorus` of a homeomorphism `ψ` identifies
 `(ψ x, t + 1)` with `(x, t)`. The smooth mapping torus of `φ` is homeomorphic to the topological
 mapping torus of `φ⁻¹` (`TauCeti.SmoothMappingTorus.homeomorphMappingTorus`), compatibly with the
-projections to the circle, so the topological results for `TauCeti.MappingTorus` apply to `Y_φ`.
+projections to the circle, so the topological results for `TauCeti.MappingTorus` apply to `Y_φ`;
+for instance, `Y_φ` is path-connected when `M` is
+(`TauCeti.SmoothMappingTorus.instPathConnectedSpace`).
 
 ## Main definitions
 
@@ -93,6 +95,8 @@ projections to the circle, so the topological results for `TauCeti.MappingTorus`
   injective.
 * `TauCeti.SmoothMappingTorus.range_mfderiv_mk`: the tangent space of the fibre through `[t, x]`
   is the kernel of the differential of the projection.
+* `TauCeti.SmoothMappingTorus.mfderiv_mk_add_intCast`: the seam identity
+  `d(ι_(t + k)) = d(ι_t) ∘ dφ^k` for the differentials of the fibre inclusions `ι_t : x ↦ [t, x]`.
 
 ## References
 
@@ -299,6 +303,12 @@ theorem uncurry_mk_surjective : Function.Surjective (Function.uncurry (mk φ)) :
 theorem continuous_uncurry_mk : Continuous (Function.uncurry (mk φ)) :=
   continuous_quot_mk.comp (continuous_ofProd φ)
 
+/-- The mapping torus of a diffeomorphism of a `σ`-compact manifold is `σ`-compact: it is the
+continuous image of `ℝ × M`. -/
+instance [SigmaCompactSpace M] : SigmaCompactSpace (SmoothMappingTorus φ) := by
+  rw [← isSigmaCompact_univ_iff, ← (uncurry_mk_surjective φ).range_eq]
+  exact isSigmaCompact_range (continuous_uncurry_mk φ)
+
 /-- Two points of `ℝ × M` have the same class in the mapping torus exactly when they differ by
 the action of an integer. -/
 theorem mk_eq_mk_iff {t s : ℝ} {x y : M} :
@@ -468,6 +478,28 @@ theorem proj_flow (s : ℝ) (z : SmoothMappingTorus φ) : proj φ (flow φ s z) 
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
 
+/-- In the coordinates `(t, x)`, the suspension flow lifts to the translation
+`(t, x) ↦ (t + s, x)` of `ℝ × M`. -/
+theorem flow_comp_uncurry_mk (s : ℝ) :
+    flow φ s ∘ Function.uncurry (mk φ) = Function.uncurry (mk φ) ∘ Prod.map (· + s) id :=
+  funext fun p ↦ flow_mk φ s p.1 p.2
+
+/-- The suspension flow covers the rotation of the circle by `s`. -/
+theorem proj_comp_flow (s : ℝ) : proj φ ∘ flow φ s = (· + (s : UnitAddCircle)) ∘ proj φ :=
+  funext fun z ↦ proj_flow φ s z
+
+/-- No point of the mapping torus is a rest point of the suspension flow: the time-`1 / 2` map
+moves the projection to the base circle by `1 / 2`. -/
+theorem exists_flow_ne {φ : M ≃ₘ^n⟮I, I⟯ M} (z : SmoothMappingTorus φ) : ∃ s, flow φ s z ≠ z := by
+  refine ⟨1 / 2, fun h ↦ ?_⟩
+  have hproj := congrArg (proj φ) h
+  rw [proj_flow, add_eq_left, AddCircle.coe_eq_zero_iff] at hproj
+  obtain ⟨k, hk⟩ := hproj
+  rw [zsmul_eq_mul, mul_one] at hk
+  have h2 : ((2 * k : ℤ) : ℝ) = 1 := by push_cast; rw [hk]; norm_num
+  have h2' : 2 * k = 1 := by exact_mod_cast h2
+  omega
+
 /-- The time-`k` map of the suspension flow, for an integer `k`, returns each fibre to itself
 by `φ ^ k`. -/
 theorem flow_intCast_mk (k : ℤ) (t : ℝ) (x : M) : flow φ k (mk φ t x) = mk φ t ((φ ^ k) x) := by
@@ -626,6 +658,12 @@ theorem proj_homeomorphMappingTorus (z : SmoothMappingTorus φ) :
   obtain ⟨⟨t, x⟩, rfl⟩ := uncurry_mk_surjective φ z
   simp
 
+/-- The mapping torus of a diffeomorphism of a path-connected manifold is path-connected. -/
+instance instPathConnectedSpace [PathConnectedSpace M] :
+    PathConnectedSpace (SmoothMappingTorus φ) :=
+  (homeomorphMappingTorus φ).symm.surjective.pathConnectedSpace
+    (homeomorphMappingTorus φ).symm.continuous
+
 /-- The projection of the mapping torus to the circle is continuous. -/
 theorem continuous_proj : Continuous (proj φ) := by
   have h : proj φ = MappingTorus.proj _ ∘ homeomorphMappingTorus φ :=
@@ -690,6 +728,35 @@ theorem injective_mfderiv_mk (hn : n ≠ 0) (t : ℝ) (x : M) :
   rw [mfderiv_mk_apply φ hn, mfderiv_mk_apply φ hn] at hvw
   exact congrArg Prod.snd ((Manifold.tangentSpaceProdEquiv (t, x)).symm.injective
     (((isLocalDiffeomorph_uncurry_mk φ).isInvertible_mfderiv hn (t, x)).injective hvw))
+
+/-- The seam identity `[t + k, x] = [t, φ^k x]` for the differentials of the fibre inclusions:
+`d(ι_(t + k))_x = d(ι_t)_(φ^k x) ∘ dφ^k_x`. -/
+@[simp]
+theorem mfderiv_mk_add_intCast (hn : n ≠ 0) (t : ℝ) (k : ℤ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + k)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((φ ^ k) x) (mfderiv I I (φ ^ k) x v) := by
+  have h : mk φ (t + k) = mk φ t ∘ (φ ^ k) := funext fun y ↦ mk_add_intCast φ t k y
+  rw [h]
+  exact mfderiv_comp_apply_of_eq x ((contMDiff_mk φ t _).mdifferentiableAt hn)
+    ((φ ^ k).mdifferentiable hn x) rfl v
+
+/-- The seam identity `[t + j, x] = [t, φ^[j] x]` for the differentials of the fibre inclusions,
+for a natural number `j`. -/
+@[simp]
+theorem mfderiv_mk_add_natCast (hn : n ≠ 0) (t : ℝ) (j : ℕ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + j)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) ((⇑φ)^[j] x) (mfderiv I I (⇑φ)^[j] x v) := by
+  have h := mfderiv_mk_add_intCast φ hn t j x v
+  rwa [Int.cast_natCast, zpow_natCast, Diffeomorph.coe_pow] at h
+
+/-- The seam identity `[t + 1, x] = [t, φ x]` for the differentials of the fibre inclusions:
+`d(ι_(t + 1))_x = d(ι_t)_(φ x) ∘ dφ_x`. -/
+@[simp]
+theorem mfderiv_mk_add_one (hn : n ≠ 0) (t : ℝ) (x : M) (v : TangentSpace I x) :
+    mfderiv I (𝓘(ℝ).prod I) (mk φ (t + 1)) x v =
+      mfderiv I (𝓘(ℝ).prod I) (mk φ t) (φ x) (mfderiv I I φ x v) := by
+  have h := mfderiv_mk_add_natCast φ hn t 1 x v
+  rwa [Nat.cast_one, Function.iterate_one] at h
 
 end
 

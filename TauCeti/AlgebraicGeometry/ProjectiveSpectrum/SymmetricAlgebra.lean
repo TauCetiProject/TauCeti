@@ -7,10 +7,13 @@ module
 
 public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Proper
 public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Functor
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.FiniteType
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.GradedMap
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Grading
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Integral
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.KrullDimension
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
 
@@ -30,7 +33,9 @@ lines in a finite locally free representation `V`, use `M = V∨`.
 quasi-compactness instances require only `Module.Finite R M`; its Noetherianity instance
 also requires `IsNoetherianRing R`. The chart formula describes this morphism on the
 standard affine charts, and the standard opens of a spanning family of linear forms cover
-the projective spectrum. Its source is Jacobson whenever `Spec R` is Jacobson.
+the projective spectrum; for `M` free of rank one the standard open of the coordinate is
+already everything. Its source is Jacobson whenever `Spec R` is Jacobson. The morphism
+`Proj(Sym M) ⟶ Proj(Sym N)` induced by a graded lift `Sym N → Sym M` lies over `Spec R`.
 
 For a nonzero free module `M` over a domain, `Proj(Sym M)` is integral. Over a field `k` it is
 the projective space of lines in `M∨`, of Krull dimension at most `dim M - 1`. These are the
@@ -110,6 +115,12 @@ theorem iSup_basicOpen_ι_eq_top {κ : Type*} (v : κ → M)
   | add x y _ _ hx hy => exact add_mem hx hy
   | mul x y _ _ hx hy => exact mul_mem hx hy
 
+/-- If a single element `x` spans `M` (for instance the coordinate of projective space of
+dimension zero), the standard open `D₊(x)` is the whole of `Proj (Sym M)`. -/
+theorem basicOpen_ι_eq_top {x : M} (hx : Submodule.span R {x} = ⊤) :
+    Proj.basicOpen (homogeneousSubmodule R M) (_root_.SymmetricAlgebra.ι R M x) = ⊤ := by
+  simpa using iSup_basicOpen_ι_eq_top R M (fun _ : Unit ↦ x) (by simpa using hx)
+
 /-- The projective spectrum of a finite module is proper over the coefficient ring.
 Freeness and projectivity are not required. -/
 instance instIsProperProjToSpec [Module.Finite R M] : IsProper (projToSpec R M) := by
@@ -126,6 +137,31 @@ noncomputable instance instOverProj : (Proj (homogeneousSubmodule R M)).Over (Sp
 /-- The structure morphism of the projective spectrum of a symmetric algebra is `projToSpec`. -/
 theorem over_eq_projToSpec : Proj (homogeneousSubmodule R M) ↘ Spec (.of R) = projToSpec R M :=
   (rfl)
+
+/-- The projective morphism induced by a graded lift `Sym_R N → Sym_R M` of a linear map from `N`
+to the degree-one part of `Sym_R M` commutes with the coefficient morphisms `projToSpec`. -/
+@[reassoc (attr := simp)]
+theorem map_gradedLift_projToSpec {N : Type u} [AddCommMonoid N] [Module R N]
+    (f : N →ₗ[R] homogeneousSubmodule R M 1)
+    (hf : HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) ≤
+      (HomogeneousIdeal.irrelevant (homogeneousSubmodule R N)).map
+        (_root_.SymmetricAlgebra.gradedLift R (homogeneousSubmodule R M) f)) :
+    Proj.map (_root_.SymmetricAlgebra.gradedLift R (homogeneousSubmodule R M) f) hf ≫
+      projToSpec R N = projToSpec R M := by
+  rw [projToSpec_def, projToSpec_def, ← Proj.toSpecCoeff_def, ← Proj.toSpecCoeff_def]
+  exact Proj.map_toSpecCoeff _ _ hf
+    (_root_.SymmetricAlgebra.gradedLift_gradedZeroRingHom_algebraMap R _ f)
+
+/-- The projective morphism induced by a graded lift `Sym_R N → Sym_R M` lies over the
+coefficient ring. -/
+instance instIsOverMapGradedLift {N : Type u} [AddCommMonoid N] [Module R N]
+    (f : N →ₗ[R] homogeneousSubmodule R M 1)
+    (hf : HomogeneousIdeal.irrelevant (homogeneousSubmodule R M) ≤
+      (HomogeneousIdeal.irrelevant (homogeneousSubmodule R N)).map
+        (_root_.SymmetricAlgebra.gradedLift R (homogeneousSubmodule R M) f)) :
+    (Proj.map (_root_.SymmetricAlgebra.gradedLift R (homogeneousSubmodule R M) f) hf).IsOver
+      (Spec (.of R)) :=
+  ⟨map_gradedLift_projToSpec R M f hf⟩
 
 /-- The projective spectrum of a finite module is proper over the coefficient ring, as a scheme
 over it. -/

@@ -40,42 +40,18 @@ universe u
 noncomputable section
 
 /-- Matrix special-orthogonal transformations are multiplicatively equivalent to the
-determinant-one isometries of the standard sum-of-squares form. -/
+determinant-one isometries of the standard sum-of-squares form. This is the inverse of
+`TauCeti.standardSpecialOrthogonalGroupEquiv`, transported along
+`weightedSumSquares ℝ 1 = Matrix.toQuadraticForm' 1`. -/
 def matrixSpecialOrthogonalEquivWeightedSumSquaresOne
     (ι : Type u) [Fintype ι] [DecidableEq ι] :
     Matrix.specialOrthogonalGroup ι ℝ ≃*
       specialOrthogonalGroup
-        (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ)) := by
-  let E := TauCeti.standardOrthogonalGroupEquiv
-    ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) (n := ι)
-  have hmem (g : orthogonalGroup (Matrix.toQuadraticForm' (1 : Matrix ι ι ℝ))) :
-      (E g : Matrix ι ι ℝ) ∈ Matrix.specialOrthogonalGroup ι ℝ ↔
-        (g : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)) ∈
-          specialOrthogonalGroup (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ)) := by
-    rw [weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
-    simpa only [E, TauCeti.coe_standardOrthogonalGroupEquiv_apply] using
-      TauCeti.toMatrix_mem_specialOrthogonalGroup_iff ℝ ι
-        ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ) (g : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ))
-  refine
-    { toFun := fun A ↦ ⟨(E.symm ⟨A, A.prop.1⟩ : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ)),
-        (hmem _).mp (by simpa only [E.apply_symm_apply] using A.prop)⟩
-      invFun := fun g ↦ ⟨(E ⟨g, by
-        simpa only [weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']
-          using (mem_specialOrthogonalGroup_iff.mp g.prop).1⟩ : Matrix ι ι ℝ), (hmem _).mpr g.prop⟩
-      left_inv := ?_
-      right_inv := ?_
-      map_mul' := ?_ }
-  · intro A
-    exact Subtype.ext (congrArg (fun B : Matrix.orthogonalGroup ι ℝ ↦
-      (B : Matrix ι ι ℝ)) (E.apply_symm_apply ⟨A, A.prop.1⟩))
-  · intro g
-    exact Subtype.ext (congrArg (fun h : orthogonalGroup
-      (Matrix.toQuadraticForm' (1 : Matrix ι ι ℝ)) ↦
-        (h : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ))) (E.symm_apply_apply _))
-  · intro A B
-    exact Subtype.ext (congrArg (fun h : orthogonalGroup
-      (Matrix.toQuadraticForm' (1 : Matrix ι ι ℝ)) ↦
-        (h : (ι → ℝ) ≃ₗ[ℝ] (ι → ℝ))) (E.symm.map_mul ⟨A, A.prop.1⟩ ⟨B, B.prop.1⟩))
+        (_root_.QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ)) :=
+  (TauCeti.standardSpecialOrthogonalGroupEquiv
+      ((isUnit_of_invertible (2 : ℝ)).isSMulRegular ℝ)).symm.trans
+    (MulEquiv.subgroupCongr (by
+      rw [weightedSumSquares_eq_toQuadraticForm_diagonal, Matrix.diagonal_one']))
 
 /-- The coordinate equivalence acts by matrix-vector multiplication. -/
 @[simp]
@@ -164,7 +140,7 @@ theorem Matrix.exists_mem_specialOrthogonalGroup_mulVec_eq {ι : Type*} [Fintype
     simp [QuadraticMap.weightedSumSquares_apply, dotProduct]
   obtain ⟨g, hg⟩ := QuadraticMap.exists_specialOrthogonal_map_eq_of_nondegenerate
     (QuadraticMap.weightedSumSquares ℝ (1 : ι → ℝ))
-    (QuadraticMap.nondegenerate_weightedSumSquares fun _ ↦ isRegular_one)
+    (QuadraticMap.nondegenerate_weightedSumSquares_iff.mpr fun _ ↦ isRegular_one)
     (by rwa [Module.finrank_fintype_fun_eq_card]) (x := x) (y := y) (by rw [hQ, hQ, h])
     (by rwa [hQ, Ne, dotProduct_self_eq_zero])
   let A := (TauCeti.QuadraticMap.matrixSpecialOrthogonalEquivWeightedSumSquaresOne ι).symm g

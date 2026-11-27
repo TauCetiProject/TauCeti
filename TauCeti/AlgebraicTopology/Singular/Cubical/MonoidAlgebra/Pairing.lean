@@ -51,7 +51,8 @@ operations of the chain systems of trajectory spaces in Morse theory.
   push-forwards of chains, with the one-sided forms
   `TauCeti.cubicalChainPairing_cubicalChainModuleLinearMap_left` and
   `TauCeti.cubicalChainPairing_cubicalChainModuleLinearMap_right`.
-* `TauCeti.cubicalChainPairing_lof_point_left`: pairing with a point is a push-forward.
+* `TauCeti.cubicalChainPairing_lof_point_left`, `TauCeti.cubicalChainPairing_lof_point_right`:
+  pairing with a point on either side is a push-forward.
 * `TauCeti.cubicalChainModuleEquiv_smul_eq_cubicalChainPairing`,
   `TauCeti.op_cubicalChainModuleEquiv_smul_eq_cubicalChainPairing`: the actions of the chains of a
   monoid are the pairings of the actions on the space.
@@ -62,6 +63,13 @@ operations of the chain systems of trajectory spaces in Morse theory.
 * `TauCeti.cubicalChainSumMap_cubicalChainSumPairing_of_comp`,
   `TauCeti.cubicalChainSumMap_cubicalChainSumPairing_of_mul`: push-forward of a pairing along a
   map compatible with another pairing, or multiplicative into a topological monoid.
+* `TauCeti.cubicalChainPoint_mul_cubicalChainSumMap`,
+  `TauCeti.cubicalChainSumMap_mul_cubicalChainPoint`: multiplying a push-forward by a point chain
+  on either side is the push-forward along the pointwise product.
+* `TauCeti.cubicalChainModuleEquiv_op_smul`: read in the direct sums, the right action is the
+  pairing induced by the action.
+* `TauCeti.cubicalChainModuleEquiv_op_smul_self`: the right action of the chains of a monoid on its
+  own chains is the Pontryagin product.
 * `TauCeti.cubicalChainModuleEquiv_cubicalChainPairing`: the pairing of chain modules is the
   pairing of direct sums, read through the equivalences.
 
@@ -568,6 +576,38 @@ theorem cubicalChainSumMap_cubicalChainSumPairing_of_mul {G : Type*} [Monoid G]
   rw [cubicalChainSumMap_cubicalChainSumPairing_of_comp (f' := mulMap G) (by simpa using hf),
     cubicalChainSumPairing_mulMap]
 
+/-- **Multiplying by a point chain on the left is a push-forward**: if `q u = g * h u` in a
+topological monoid `G`, then `[g] * h_* a = q_* a`. -/
+theorem cubicalChainPoint_mul_cubicalChainSumMap {G : Type*} [Monoid G] [TopologicalSpace G]
+    [ContinuousMul G] (g : G) {h q : C(X, G)} (hq : ∀ u, q u = g * h u)
+    (a : normalizedCubicalChainAlgebra X R) :
+    cubicalChainPoint G R g * cubicalChainSumMap R h a = cubicalChainSumMap R q a := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | add a a' ha ha' => rw [map_add, mul_add, ha, ha', map_add]
+  | of n c =>
+    simp only [← DirectSum.lof_eq_of R, cubicalChainSumMap_lof, cubicalChainPoint_def,
+      cubicalChainLof_mul, NormalizedCubicalChain.mul_def,
+      ← cubicalChainLof_cast G R (Nat.zero_add n), ← map_cast, crossProduct_point_left, map_map]
+    congr 3
+    exact ContinuousMap.ext fun u ↦ by simp [hq]
+
+/-- **Multiplying by a point chain on the right is a push-forward**: if `q u = h u * g` in a
+topological monoid `G`, then `h_* a * [g] = q_* a`. -/
+theorem cubicalChainSumMap_mul_cubicalChainPoint {G : Type*} [Monoid G] [TopologicalSpace G]
+    [ContinuousMul G] (g : G) {h q : C(X, G)} (hq : ∀ u, q u = h u * g)
+    (a : normalizedCubicalChainAlgebra X R) :
+    cubicalChainSumMap R h a * cubicalChainPoint G R g = cubicalChainSumMap R q a := by
+  induction a using DirectSum.induction_on with
+  | zero => simp
+  | add a a' ha ha' => rw [map_add, add_mul, ha, ha', map_add]
+  | of n c =>
+    simp only [← DirectSum.lof_eq_of R, cubicalChainSumMap_lof, cubicalChainPoint_def,
+      cubicalChainLof_mul, NormalizedCubicalChain.mul_def,
+      ← cubicalChainLof_cast G R (Nat.add_zero n), ← map_cast, crossProduct_point_right, map_map]
+    congr 3
+    exact ContinuousMap.ext fun u ↦ by simp [hq]
+
 /-- The pairing of chain modules, read through the equivalences with the direct sums, is the
 pairing of direct sums. -/
 @[simp]
@@ -584,6 +624,25 @@ theorem cubicalChainModuleEquiv_cubicalChainPairing {H K : Type*} (f : C(X × Y,
     | lof q c' =>
       rw [cubicalChainPairing_lof_lof, cubicalChainModuleEquiv_lof, cubicalChainModuleEquiv_lof,
         cubicalChainModuleEquiv_lof, cubicalChainSumPairing_lof_lof]
+
+/-- **The right action is a pairing of direct sums**: read through the equivalence with the direct
+sum, a chain `α` of `G` acts on the right by the pairing induced by the action `Y × G → Y`. -/
+theorem cubicalChainModuleEquiv_op_smul {G : Type*} [Monoid G] [TopologicalSpace G]
+    [ContinuousMul G] [MulAction Gᵐᵒᵖ Y] [ContinuousSMul Gᵐᵒᵖ Y]
+    (α : normalizedCubicalChainAlgebra G R) (m : cubicalChainModule Y G R) :
+    cubicalChainModuleEquiv Y G R (op α • m) =
+      cubicalChainSumPairing R (actMap Y G) (cubicalChainModuleEquiv Y G R m) α := by
+  have h := op_cubicalChainModuleEquiv_smul_eq_cubicalChainPairing
+    ((cubicalChainModuleEquiv G G R).symm α) m
+  rw [LinearEquiv.apply_symm_apply] at h
+  rw [h, cubicalChainModuleEquiv_cubicalChainPairing, LinearEquiv.apply_symm_apply]
+
+/-- **The right action of the chains of a monoid on its own chains is the Pontryagin product**:
+read through the equivalence with the direct sum, `α · c = α * c`. -/
+theorem cubicalChainModuleEquiv_op_smul_self {G : Type*} [Monoid G] [TopologicalSpace G]
+    [ContinuousMul G] (c : normalizedCubicalChainAlgebra G R) (α : cubicalChainModule G G R) :
+    cubicalChainModuleEquiv G G R (op c • α) = cubicalChainModuleEquiv G G R α * c := by
+  rw [cubicalChainModuleEquiv_op_smul, actMap_self, cubicalChainSumPairing_mulMap]
 
 end SumPairing
 
@@ -656,6 +715,21 @@ theorem cubicalChainPairing_lof_point_left (f : C(X × Y, Z)) (x : X)
   | lof q c' =>
     rw [cubicalChainPairing_lof_lof, ← cubicalChainModuleLof_cast (Nat.zero_add q), ← map_cast,
       crossProduct_point_left, cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_comp,
+      LinearMap.comp_apply]
+
+/-- **Pairing with a point on the right**: pairing with the `0`-cube at `z` on the right is the
+push-forward along `y ↦ f (y, z)`. -/
+theorem cubicalChainPairing_lof_point_right (f : C(Y × Z, X)) (z : Z)
+    (m : cubicalChainModule Y H R) :
+    cubicalChainPairing H K R f m
+        (cubicalChainModuleLof Z K R 0 (ofCube Z R (SingularCube.point z))) =
+      cubicalChainModuleLinearMap R
+        (f.comp (ContinuousMap.prodMk (ContinuousMap.id Y) (ContinuousMap.const Y z))) m := by
+  induction m using cubicalChainModule.induction_on with
+  | add m m' hm hm' => simp only [map_add, LinearMap.add_apply, hm, hm']
+  | lof p c =>
+    rw [cubicalChainPairing_lof_lof, ← cubicalChainModuleLof_cast (Nat.add_zero p), ← map_cast,
+      crossProduct_point_right, cubicalChainModuleLinearMap_lof, NormalizedCubicalChain.map_comp,
       LinearMap.comp_apply]
 
 end Naturality

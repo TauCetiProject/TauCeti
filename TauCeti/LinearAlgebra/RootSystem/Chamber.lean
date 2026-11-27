@@ -44,6 +44,7 @@ Weyl-invariant.
 ## Main results
 
 * `RootPairing.isRegularWeight_smul`: regularity is invariant under the Weyl group.
+* `RootPairing.IsRegularWeight.ne_zero`: if there is a root, a regular weight is nonzero.
 * `RootPairing.smul_dominantChamber` and `RootPairing.smul_openDominantChamber`: an automorphism
   of the root pairing carries both chambers of a base to those of the transported base.
 * `RootPairing.mem_openDominantChamber_of_isRegularWeight` and
@@ -151,6 +152,13 @@ lemma isRegularWeight_smul (w : P.weylGroup) (x : M) :
 
 variable (b : P.Base)
 
+/-- Vanishing of every simple coroot functional `P.coroot' i` on `x` is equivalent to vanishing of
+the pairing `P.toLinearMap x (P.coroot i)` on `b.support`. -/
+lemma forall_mem_support_coroot'_eq_zero_iff_forall_toLinearMap_coroot_eq_zero (x : M) :
+    (∀ i ∈ b.support, P.coroot' i x = 0) ↔ ∀ i : b.support, P.toLinearMap x (P.coroot i) = 0 :=
+  ⟨fun h i ↦ (P.toLinearMap.flip_apply _ _).symm.trans (h i.val i.property),
+    fun h i hi ↦ (P.toLinearMap.flip_apply _ _).trans (h ⟨i, hi⟩)⟩
+
 section Preorder
 
 variable [Preorder R]
@@ -166,6 +174,13 @@ def openDominantChamber : Set M := {x | ∀ i ∈ b.support, 0 < P.coroot' i x}
 @[simp]
 lemma mem_dominantChamber (x : M) :
     x ∈ dominantChamber P b ↔ ∀ i ∈ b.support, 0 ≤ P.coroot' i x := Iff.rfl
+
+/-- Membership in the closed dominant chamber, with the simple roots indexed through an
+equivalence `e : κ ≃ b.support`, such as a fixed numbering of the nodes of the Dynkin diagram. -/
+lemma mem_dominantChamber_iff_forall_equiv {κ : Type*} (e : κ ≃ b.support) (x : M) :
+    x ∈ dominantChamber P b ↔ ∀ k, 0 ≤ P.coroot' (e k) x :=
+  (Subtype.forall (q := fun i : b.support ↦ 0 ≤ P.coroot' i x)).symm.trans
+    e.forall_congr_right.symm
 
 /-- Membership in the open dominant chamber. -/
 @[simp]
@@ -205,6 +220,28 @@ lemma zero_mem_dominantChamber : (0 : M) ∈ dominantChamber P b := by
 lemma add_mem_dominantChamber [IsOrderedAddMonoid R] {x y : M} (hx : x ∈ dominantChamber P b)
     (hy : y ∈ dominantChamber P b) : x + y ∈ dominantChamber P b :=
   fun i hi ↦ by simpa using add_nonneg (hx i hi) (hy i hi)
+
+/-- A weight killed by every simple coroot lies in the closed dominant chamber. -/
+lemma mem_dominantChamber_of_forall_coroot'_eq_zero {x : M}
+    (hx : ∀ i ∈ b.support, P.coroot' i x = 0) :
+    x ∈ dominantChamber P b :=
+  (mem_dominantChamber P b x).mpr fun i hi ↦ (hx i hi).ge
+
+/-- Adding a weight killed by every simple coroot preserves and reflects membership in the closed
+dominant chamber. -/
+lemma add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero {x y : M}
+    (hy : ∀ i ∈ b.support, P.coroot' i y = 0) :
+    x + y ∈ dominantChamber P b ↔ x ∈ dominantChamber P b :=
+  forall₂_congr fun i hi ↦ by simp only [map_add, hy i hi, add_zero]
+
+/-- Translating a dominant weight by a weight killed by every simple coroot pairing preserves
+dominance. -/
+lemma add_mem_dominantChamber_of_forall_toLinearMap_coroot_eq_zero {x y : M}
+    (hx : x ∈ dominantChamber P b) (hy : ∀ i : b.support, P.toLinearMap y (P.coroot i) = 0) :
+    x + y ∈ dominantChamber P b :=
+  (P.add_mem_dominantChamber_iff_of_forall_coroot'_eq_zero b
+    ((P.forall_mem_support_coroot'_eq_zero_iff_forall_toLinearMap_coroot_eq_zero b y).mpr
+      hy)).mpr hx
 
 /-- The closed dominant chamber is closed under nonnegative scaling. -/
 lemma smul_mem_dominantChamber [PosMulMono R] {t : R} (ht : 0 ≤ t) {x : M}

@@ -40,6 +40,8 @@ and the Killing coroot of `γ`.
   `h_γ(s) h_γ(s') = h_γ(s s')` for `h_γ(s) = n_γ(s) n_γ(1)⁻¹`.
 * `TauCeti.DynkinType.ChevalleyDatum.weylElement_conj_rootSubgroupPoints_self`:
   `n_γ(s) x_γ(u) n_γ(s)⁻¹ = x_{-γ}(-s⁻² u)`.
+* `TauCeti.DynkinType.ChevalleyDatum.weylElement_simpleIndex_conj_rootSubgroupPoints`:
+  `n_{αᵢ}(s) x_γ(u) n_{αᵢ}(s)⁻¹ = x_{sᵢγ}(s ^ ⟨sᵢγ, αᵢ^∨⟩ ε u)` for a simple root `αᵢ`.
 
 ## References
 
@@ -78,6 +80,25 @@ theorem weylElement_eq_corootPoints_mul (s : Aˣ) :
   simpa only [map_mul, Subgroup.coe_mul, weylElement_def, coe_rootSubgroupPoints,
     corootPoints_apply, coe_torusPoints, MulEquiv.toMonoidHom_eq_coe, ← kostantTorusMatrix_weight,
     basisMatrix_kostantTorusPoints, inv_one, Units.val_one] using h
+
+/-- **Chevalley's identity at a simple root in actual torus coordinates**:
+`nᵢ(s) = torusPoints (simpleCorootParameter i s) * nᵢ(1)` over every commutative ring. -/
+theorem weylElement_simpleIndex_eq_torusPoints_mul (i : Fin t.rank) (s : Aˣ) :
+    D.weylElement (t.simpleIndex ht i) A s =
+      D.torusPoints A (D.simpleCorootParameter i A s) *
+        D.weylElement (t.simpleIndex ht i) A 1 := by
+  rw [D.weylElement_eq_corootPoints_mul, ← D.simpleCorootPoints_eq_corootPoints,
+    D.simpleCorootPoints_eq_torusPoints]
+
+/-- Conjugating by a coroot value rescales each root parameter by `s` raised to the
+corresponding Cartan integer. -/
+theorem corootPoints_conj_rootSubgroupPoints (β : Fin t.numRoots) (s : Aˣ) (u : A) :
+    D.corootPoints γ A s * D.rootSubgroupPoints β A (ofAdd u) *
+        (D.corootPoints γ A s)⁻¹ =
+      D.rootSubgroupPoints β A (ofAdd
+        (((s ^ (t.simplyConnectedRootDatum ht).pairing β γ : Aˣ) : A) * u)) := by
+  rw [corootPoints_eq_torusPoints, D.torusPoints_conj_rootSubgroupPoints,
+    D.torusCharacter_corootParameter_coordinateRoot]
 
 /-- **Quotients of Steinberg's elements are coroot values.** For units `s` and `s'`,
 `n_γ(s) n_γ(s')⁻¹ = h_γ(s s'⁻¹)`, with `h_γ` the coroot of `γ` in the actual torus of the
@@ -131,6 +152,22 @@ theorem weylElement_conj_rootSubgroupPoints_self (s : Aˣ) (u : A) :
   apply Subtype.ext
   simpa only [map_mul, map_inv, Subgroup.coe_mul, Subgroup.coe_inv, weylElement_def,
     coe_rootSubgroupPoints, MulEquiv.toMonoidHom_eq_coe] using h
+
+/-- **Conjugation by a simple Weyl element.** For a simple root `αᵢ`, a unit `s` and every root
+`γ`, `n_{αᵢ}(s) x_γ(u) n_{αᵢ}(s)⁻¹ = x_{sᵢγ}(s ^ ⟨sᵢγ, αᵢ^∨⟩ ε u)`, where `sᵢγ` is the reflection
+of `γ` in `αᵢ` and `ε = ±1` is the sign `TauCeti.DynkinType.chevalleyWeylSign` of the pinned
+Chevalley system. -/
+theorem weylElement_simpleIndex_conj_rootSubgroupPoints (i : Fin t.rank) (s : Aˣ) (u : A) :
+    D.weylElement (t.simpleIndex ht i) A s * D.rootSubgroupPoints γ A (ofAdd u) *
+        (D.weylElement (t.simpleIndex ht i) A s)⁻¹ =
+      D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ)
+        A (ofAdd (((s ^ (t.simplyConnectedRootDatum ht).pairing
+            ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) γ)
+            (t.simpleIndex ht i) : Aˣ) : A) *
+          (((t.chevalleyWeylSign ht (t.simpleIndex ht i) γ : ℤ) : A) * u))) := by
+  rw [← D.corootPoints_conj_rootSubgroupPoints (t.simpleIndex ht i) A _ s,
+    ← D.weylElement_conj_rootSubgroupPoints i γ A u, D.weylElement_eq_corootPoints_mul _ A s]
+  group
 
 end
 

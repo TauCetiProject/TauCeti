@@ -7,15 +7,18 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.Algebra.Category.ModuleCat.Projective.Dimension
-public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence
+public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Basic
 public import TauCeti.AlgebraicTopology.Singular.Kunneth.Basic
 import Mathlib.Algebra.Category.ModuleCat.Projective
-import Mathlib.AlgebraicTopology.SingularHomology.HomologyZero
-import Mathlib.RingTheory.Flat.CategoryTheory
 import TauCeti.Algebra.Category.ModuleCat.End
+import TauCeti.Algebra.Homology.ModuleCat.FlatCycles
+import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Sequence.Left
 import TauCeti.Algebra.Homology.ShortComplex.Splitting
+import TauCeti.AlgebraicTopology.Singular.Empty
+import TauCeti.AlgebraicTopology.Singular.Point
+import TauCeti.AlgebraicTopology.Singular.Reduced
 import TauCeti.CategoryTheory.GradedObject
-import TauCeti.CategoryTheory.Monoidal.Tor
+import TauCeti.CategoryTheory.Monoidal.Tor.Basic
 
 /-!
 # The Künneth short exact sequence for singular homology
@@ -80,7 +83,10 @@ without the splitting the extension would only show that `e²` kills it.
   `TopCat.singularHomologyToTor_coefficient_naturality`: its naturality.
 * `TopCat.singularHomologyKunnethShortComplex` and
   `TopCat.singularHomologyKunnethShortComplex_shortExact`: **the Künneth short exact sequence**.
-* `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree.
+* `TopCat.mono_singularHomologyKunneth`: the Künneth map is a monomorphism in every degree when
+  the quotients `C_q(Y; N) / Z_q(Y; N)` are flat.
+* `TopCat.isIso_singularHomologyKunneth_of_flat`: it is an isomorphism in every degree when
+  the homology of the first factor is flat, with no hypothesis on `Y` or `N`.
 * `TopCat.singularHomologyKunnethUnitShortComplex` and
   `TopCat.singularHomologyKunnethUnitShortComplex_shortExact`: its form with coefficients in a
   hereditary commutative ring.
@@ -104,12 +110,59 @@ public section
 noncomputable section
 
 open CategoryTheory Limits MonoidalCategory AlgebraicTopology HomologicalComplex
+open scoped Simplicial
 
 universe w
 
 namespace TopCat
 
 variable {k : Type w} [CommRing k]
+
+section Flat
+
+variable (X Y : TopCat.{w}) (M N : ModuleCat.{w} k)
+
+/-- **The Künneth map is a monomorphism** when the quotients `C_q(Y; N) / Z_q(Y; N)` are flat,
+for instance for any projective `N` over a principal ideal domain. The flatness of the cycles
+`Z_q(Y; N)` follows automatically because `C_q(Y; N)` is flat. -/
+theorem mono_singularHomologyKunneth
+    [∀ q, Module.Flat k (cokernel (((toSSet.obj Y).chainComplex N).iCycles q) : ModuleCat.{w} k)]
+    (n : ℕ) : Mono (singularHomologyKunneth X Y M N n) := by
+  have (q : ℕ) : Module.Flat k (((toSSet.obj Y).chainComplex N).X q) :=
+    flat_singularChainComplex_X Y N
+      (fun _ ↦ flat_of_flat_cokernel_iCycles_of_even Y N 2 (by decide) (by decide)) q
+  have (q : ℕ) : Module.Flat k (((toSSet.obj Y).chainComplex N).cycles q) :=
+    ((toSSet.obj Y).chainComplex N).flat_cycles_of_flat_X_of_flat_cokernel q
+  rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
+  -- The shuffle map is a homotopy inverse of the Alexander–Whitney map.  The instances are passed
+  -- explicitly: instance search does not identify the homology instances of the general
+  -- `TopCat.singularHomologyKunneth` with those found in `ModuleCat`, which are only defeq.
+  exact @mono_comp _ _ _ _ _ _ (mono_homologyKunneth ((toSSet.obj X).chainComplex M)
+    ((toSSet.obj Y).chainComplex N) n) _ (@IsIso.mono_of_iso _ _ _ _ _
+    ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv)
+
+/-- **The Künneth theorem when one factor has flat homology.** If every homology module
+`Hₚ(X; M)` is flat, then the Künneth map
+`⨁_{p + q = n} Hₚ(X; M) ⊗ H_q(Y; N) ⟶ Hₙ(X × Y; M ⊗ N)` is an isomorphism in every degree `n`.
+No hypothesis is placed on `Y` or `N`. -/
+theorem isIso_singularHomologyKunneth_of_flat
+    [hX : ∀ p, Module.Flat k (((singularHomologyFunctor (ModuleCat.{w} k) p).obj M).obj X)]
+    (n : ℕ) : IsIso (singularHomologyKunneth X Y M N n) := by
+  have (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).X p) :=
+    flat_singularChainComplex_X X M (fun _ ↦ flat_of_flat_singularHomology_zero X M) p
+  -- `Hₚ(X; M)` is by definition the homology of the singular chain complex `C(X; M)`.
+  have (p : ℕ) : Module.Flat k (((toSSet.obj X).chainComplex M).homology p) := hX p
+  have (p : ℕ) : Module.Flat k
+      (cokernel (((toSSet.obj X).chainComplex M).iCycles p) : ModuleCat.{w} k) :=
+    ((toSSet.obj X).chainComplex M).flat_cokernel_iCycles_of_flat_homology p
+      (fun _ _ ↦ inferInstance) (fun _ _ ↦ inferInstance)
+  rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
+  -- The instances are passed explicitly, as in `TopCat.mono_singularHomologyKunneth`.
+  exact @IsIso.comp_isIso _ _ _ _ _ _ _ (isIso_homologyKunneth_of_flat_homology_left
+    ((toSSet.obj X).chainComplex M) ((toSSet.obj Y).chainComplex N) n)
+    ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv
+
+end Flat
 
 section Kunneth
 
@@ -250,18 +303,6 @@ theorem singularHomologyKunnethShortComplex_shortExact (m : ℕ) :
   ShortComplex.shortExact_of_iso (homologyKunnethShortComplexIso X Y M N m)
     (homologyKunnethShortComplex_shortExact ((toSSet.obj X).chainComplex M)
       ((toSSet.obj Y).chainComplex N) m)
-
-/-- **The Künneth map is a monomorphism** when the cycles `Z_q(Y; N)` and the quotients
-`C_q(Y; N) / Z_q(Y; N)` are projective, for instance for any projective `N` over a principal ideal
-domain. -/
-theorem mono_singularHomologyKunneth (n : ℕ) : Mono (singularHomologyKunneth X Y M N n) := by
-  rw [singularHomologyKunneth_def, ← eilenbergZilberHomotopyEquiv_inv]
-  -- The shuffle map is a homotopy inverse of the Alexander–Whitney map.  The instances are passed
-  -- explicitly: instance search does not identify the homology instances of the general
-  -- `TopCat.singularHomologyKunneth` with those found in `ModuleCat`, which are only defeq.
-  exact @mono_comp _ _ _ _ _ _ (mono_homologyKunneth ((toSSet.obj X).chainComplex M)
-    ((toSSet.obj Y).chainComplex N) n) _ (@IsIso.mono_of_iso _ _ _ _ _
-    ((eilenbergZilberHomotopyEquiv X Y M N).toHomologyIso n).isIso_inv)
 
 /-- **The Künneth short exact sequence for singular homology splits** when, in addition, the
 cycles of the singular chain complex `C(X; M)` split off its terms; for instance for projective

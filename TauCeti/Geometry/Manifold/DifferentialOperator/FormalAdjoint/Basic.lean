@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Section
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Inner
+import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 
 /-!
 # Formal adjoints of operators between sections of Riemannian bundles
@@ -35,6 +36,11 @@ at most `m` that does not enlarge supports is a differential operator of order a
 `(m + 1)`-fold commutators are formal adjoints of zero, hence zero by uniqueness. No continuity of
 the operators is assumed anywhere.
 
+For operators of order zero, which are `C^∞(M)`-linear, formal adjunction is pointwise: if `Q` is a
+formal adjoint of such a `P`, then `⟪P s x, t x⟫ = ⟪s x, Q t x⟫` at every point. Indeed
+`∫ φ (⟪P s, t⟫ - ⟪s, Q t⟫) dμ` is the integration by parts identity for `φ s`, hence zero, for
+every compactly supported smooth function `φ`.
+
 ## Main definitions
 
 * `LinearMap.IsFormalAdjoint P Q μ`: `Q` is a formal adjoint of `P` with respect to `μ`.
@@ -47,11 +53,17 @@ the operators is assumed anywhere.
 * `LinearMap.isFormalAdjoint_of_forall_inner_eq`: a pointwise adjoint, such as the fibrewise
   adjoint of a bundle map, is a formal adjoint for every measure; in particular multiplication by
   a smooth function is its own formal adjoint (`LinearMap.isFormalAdjoint_lsmul`).
+* `LinearMap.IsFormalAdjoint.withDensity`: change of density, from `μ` to `ρ μ` for a smooth
+  `ρ ≥ 0`.
 * `LinearMap.IsFormalAdjoint.unique`: uniqueness of formal adjoints.
 * `LinearMap.IsFormalAdjoint.formalAdjoint_eq`,
   `LinearMap.IsFormalAdjoint.formalAdjoint_formalAdjoint`: the formal adjoint is characterized by
   integration by parts and is an involution.
 * `LinearMap.IsFormalAdjoint.smulCommutator`: the formal adjoint of `[P, a]` is `-[Q, a]`.
+* `LinearMap.IsFormalAdjoint.smulCommutator_pow`: the formal adjoint of the `j`-fold commutator
+  `[⋯[P, a], …, a]` is the `j`-fold commutator `[⋯[Q, -a], …, -a]`.
+* `LinearMap.IsFormalAdjoint.inner_apply_eq_of_mem_differentialOperators_zero`: a formal adjoint of
+  an operator of order zero is a pointwise adjoint.
 * `LinearMap.IsFormalAdjoint.mem_differentialOperators`: a formal adjoint of a differential
   operator of order at most `m` that does not enlarge supports is a differential operator of order
   at most `m`.
@@ -268,6 +280,31 @@ theorem isFormalAdjoint_lsmul (a : C^∞⟮I, M; ℝ⟯) :
 
 end Multiplication
 
+/-! ### Change of density -/
+
+/-- **Change of density.** Let `Q` be a formal adjoint of `P` with respect to `μ`, and let
+`ρ ≥ 0` be smooth. An operator `Q'` with `ρ Q' t = Q (ρ t)` for every section `t` is a formal
+adjoint of `P` with respect to the weighted measure `ρ μ`. For `ρ > 0` this says
+`Q' t = ρ⁻¹ Q (ρ t)`. -/
+theorem IsFormalAdjoint.withDensity [OpensMeasurableSpace M] (h : P.IsFormalAdjoint Q μ)
+    {Q' : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F, V⟯} {ρ : C^∞⟮I, M; ℝ⟯} (hρ : ∀ x, 0 ≤ ρ x)
+    (hQ' : ∀ t, ρ • Q' t = Q (ρ • t)) :
+    P.IsFormalAdjoint Q' (μ.withDensity fun x ↦ ENNReal.ofReal (ρ x)) := by
+  intro s t hst
+  have hρm : Measurable fun x ↦ ENNReal.ofReal (ρ x) :=
+    ENNReal.measurable_ofReal.comp ρ.contMDiff.continuous.measurable
+  have hρt : ∀ᵐ x ∂μ, ENNReal.ofReal (ρ x) < ⊤ := .of_forall fun _ ↦ ENNReal.ofReal_lt_top
+  simp only [integral_withDensity_eq_integral_toReal_smul hρm hρt, ENNReal.toReal_ofReal (hρ _),
+    smul_eq_mul]
+  have hρst : IsCompact s.tsupport ∨ IsCompact (ρ • t).tsupport :=
+    hst.imp _root_.id fun ht ↦ ht.of_isClosed_subset (ρ • t).isClosed_tsupport
+      (ContMDiffSection.tsupport_smul_function_subset_right ρ t)
+  calc ∫ x, ρ x * ⟪P s x, t x⟫ ∂μ = ∫ x, ⟪P s x, (ρ • t) x⟫ ∂μ := by
+        simp [ContMDiffSection.smul_apply, inner_smul_right]
+    _ = ∫ x, ⟪s x, Q (ρ • t) x⟫ ∂μ := h s _ hρst
+    _ = ∫ x, ρ x * ⟪s x, Q' t x⟫ ∂μ := by
+        simp [← hQ', ContMDiffSection.smul_apply, inner_smul_right]
+
 /-! ### Uniqueness -/
 
 section Unique
@@ -373,6 +410,27 @@ theorem IsFormalAdjoint.smulCommutator (h : P.IsFormalAdjoint Q μ)
     (fun t ↦ (haV _).trans (hQs t)) (fun t ↦ (hQs _).trans (haW t))
   convert h' using 1 <;> ext <;> simp [sub_eq_neg_add]
 
+/-- **The formal adjoint of an iterated commutator.** If `Q` is a formal adjoint of `P` and neither
+enlarges supports, then the `j`-fold commutator `[⋯[Q, -a], …, -a]` is a formal adjoint of the
+`j`-fold commutator `[⋯[P, a], …, a]`. -/
+theorem IsFormalAdjoint.smulCommutator_pow (h : P.IsFormalAdjoint Q μ)
+    (hPs : ∀ s, (P s).tsupport ⊆ s.tsupport) (hQs : ∀ t, (Q t).tsupport ⊆ t.tsupport)
+    (a : C^∞⟮I, M; ℝ⟯) (j : ℕ) :
+    ((TauCeti.smulCommutator ℝ a ^ j) P).IsFormalAdjoint
+      ((TauCeti.smulCommutator ℝ (-a) ^ j) Q) μ := by
+  induction j generalizing P Q with
+  | zero => simpa using h
+  | succ j ih =>
+    rw [pow_succ, mul_apply_eq_comp, pow_succ, mul_apply_eq_comp]
+    -- The formal adjoint `-[Q, a]` of `[P, a]` is the commutator `[Q, -a]`.
+    have hneg : -TauCeti.smulCommutator ℝ a Q = TauCeti.smulCommutator ℝ (-a) Q := by
+      ext t : 1
+      simp only [LinearMap.neg_apply, smulCommutator_apply_apply, neg_smul, map_neg]
+      abel
+    exact ih (hneg ▸ h.smulCommutator hPs hQs a)
+      (tsupport_smulCommutator_section_apply_subset hPs a)
+      (tsupport_smulCommutator_section_apply_subset hQs (-a))
+
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] [SigmaCompactSpace M]
   [BorelSpace M] [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
 
@@ -399,6 +457,38 @@ theorem IsFormalAdjoint.mem_differentialOperators {m : ℕ} (h : P.IsFormalAdjoi
         simpa [neg_add_eq_sub] using tsupport_smulCommutator_section_apply_subset hQs (-a) t)
       (tsupport_differentialOperators_section_apply_subset
         (smulCommutator_mem_differentialOperators hP a))
+
+/-- **Formal adjoints of operators of order zero are pointwise adjoints.** If `P` is a
+differential operator of order zero, that is a `C^∞(M)`-linear map, and `Q` is a formal adjoint of
+`P`, then `⟪P s x, t x⟫ = ⟪s x, Q t x⟫` for all smooth sections `s`, `t` and every point `x`. -/
+theorem IsFormalAdjoint.inner_apply_eq_of_mem_differentialOperators_zero
+    (h : P.IsFormalAdjoint Q μ)
+    (hP : P ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 0)
+    (s : Cₛ^∞⟮I; F, V⟯) (t : Cₛ^∞⟮I; F', W⟯) (x : M) :
+    ⟪P s x, t x⟫ = ⟪s x, Q t x⟫ := by
+  have hcont : Continuous fun y ↦ ⟪P s y, t y⟫ - ⟪s y, Q t y⟫ :=
+    (ContMDiffSection.continuous_inner _ _).sub (ContMDiffSection.continuous_inner _ _)
+  -- The continuous function `⟪P s, t⟫ - ⟪s, Q t⟫` has zero integral against every test function
+  -- `φ`: since `P (φ s) = φ P s`, this integral is the integration by parts identity for `φ s`.
+  have hae : ∀ᵐ y ∂μ, ⟪P s y, t y⟫ - ⟪s y, Q t y⟫ = 0 := by
+    refine ae_eq_zero_of_integral_contMDiff_smul_eq_zero I hcont.locallyIntegrable
+      fun φ hφ hφc ↦ ?_
+    let ψ : C^∞⟮I, M; ℝ⟯ := ⟨φ, hφ⟩
+    have hPψ : P (ψ • s) = ψ • P s := mem_differentialOperators_zero_iff.1 hP ψ s
+    have hs := ContMDiffSection.mem_compactlySupported.1 <|
+      ContMDiffSection.smul_function_mem_compactlySupported_of_hasCompactSupport ψ hφc s
+    have hPs := ContMDiffSection.mem_compactlySupported.1 <|
+      ContMDiffSection.smul_function_mem_compactlySupported_of_hasCompactSupport ψ hφc (P s)
+    rw [← hPψ] at hPs
+    calc ∫ y, φ y • (⟪P s y, t y⟫ - ⟪s y, Q t y⟫) ∂μ
+        = ∫ y, ⟪P (ψ • s) y, t y⟫ - ⟪(ψ • s) y, Q t y⟫ ∂μ := by
+          refine integral_congr_ae (.of_forall fun y ↦ ?_)
+          simp only [hPψ, ContMDiffSection.smul_apply, real_inner_smul_left, smul_eq_mul, mul_sub]
+          simp only [ψ, ContMDiffMap.coeFn_mk]
+      _ = 0 := by
+          rw [integral_sub (ContMDiffSection.integrable_inner (.inl hPs))
+            (ContMDiffSection.integrable_inner (.inl hs)), h _ _ (.inl hs), sub_self]
+  exact sub_eq_zero.1 (congr_fun ((hcont.ae_eq_iff_eq μ continuous_const).1 hae) x)
 
 end DifferentialOperator
 

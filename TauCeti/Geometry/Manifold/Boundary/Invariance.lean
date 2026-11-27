@@ -33,6 +33,8 @@ boundary; over `ℂ` the real invariance of domain applies after restricting sca
 * `ModelWithCorners.isInteriorPoint_iff_mem_interior_range_of_finiteDimensional` and
   `ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional`: any chart
   around a point, in the atlas or not, detects whether it is an interior or a boundary point.
+* `ModelWithCorners.mem_boundary_iff_mem_frontier_range_of_finiteDimensional`: the same for
+  membership in the boundary set `I.boundary M`.
 * `ModelWithCorners.isOpen_interior_of_finiteDimensional`,
   `ModelWithCorners.isClosed_boundary_of_finiteDimensional`: the interior is open and the boundary
   is closed.
@@ -194,6 +196,16 @@ theorem isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional [FiniteDimen
     isInteriorPoint_iff_mem_interior_range_of_finiteDimensional hx, I.isClosed_range.frontier_eq]
   simp
 
+/-- A chart of `M`, in the atlas or not, reads a point of its source on the boundary exactly when
+`I` sends the reading to the frontier of its range. This is
+`ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional`, stated for the
+boundary set `I.boundary M`. -/
+theorem mem_boundary_iff_mem_frontier_range_of_finiteDimensional [FiniteDimensional 𝕜 E]
+    {e : OpenPartialHomeomorph M H} {x : M} (hx : x ∈ e.source) :
+    x ∈ I.boundary M ↔ I (e x) ∈ frontier (range I) := by
+  rw [ModelWithCorners.boundary, mem_ofPred_eq,
+    isBoundaryPoint_iff_mem_frontier_range_of_finiteDimensional hx]
+
 variable (I M)
 
 /-- The interior of a charted space modelled with corners on a finite-dimensional space is
@@ -211,6 +223,12 @@ theorem isClosed_boundary_of_finiteDimensional [FiniteDimensional 𝕜 E] :
   exact isOpen_interior_of_finiteDimensional I M
 
 end ModelWithCorners
+
+/-- The boundary of a Lindelöf charted space modelled with corners on a finite-dimensional
+space is Lindelöf, as a closed subspace. -/
+instance ModelWithCorners.lindelofSpace_boundary [FiniteDimensional 𝕜 E] [LindelofSpace M] :
+    LindelofSpace (I.boundary M) :=
+  (I.isClosed_boundary_of_finiteDimensional M).isClosedEmbedding_subtypeVal.LindelofSpace
 
 end ChartIndependence
 

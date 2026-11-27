@@ -23,7 +23,8 @@ The based path space is contractible, by truncation of paths
 quasi-isomorphism onto `R` with the action of `C_*(Ω_b B; R)` through its augmentation:
 
 * it is linear over the augmentation of the loop algebra,
-  `ε (a · m) = ε(a) ε(m)` (`TauCeti.pathFromChainAugmentation_smul`);
+  `ε (a · m) = ε(a) ε(m)` (`TauCeti.pathFromChainAugmentation_smul`), and so is the push-forward
+  along the end point map `P_b B → B` (`TauCeti.cubicalChainModuleLinearMap_endpoint_smul`);
 * it vanishes on boundaries (`TauCeti.cubicalChainModuleAugmentation_differential`) and is onto
   (`TauCeti.cubicalChainModuleAugmentation_surjective`);
 * a cycle of augmentation zero is a boundary
@@ -79,6 +80,17 @@ theorem pathFromChainAugmentation_smul (a : loopChainAlgebra B b R)
       loopChainAugmentation B b R a * cubicalChainModuleAugmentation (MoorePathFrom B b) H R m := by
   rw [loopChainAugmentation_def]
   exact cubicalChainModuleAugmentation_smul a m
+
+/-- **The end point map is linear over the augmentation of the loop chains**: pushing a chain on
+the based path space forward to `B` along the end point, `ev_* (a · m) = ε(a) ev_* m` for a chain
+`a` on the Moore loops at `b`. -/
+theorem cubicalChainModuleLinearMap_endpoint_smul {H' : Type*} (a : loopChainAlgebra B b R)
+    (m : cubicalChainModule (MoorePathFrom B b) H R) :
+    cubicalChainModuleLinearMap (G' := H') R (MoorePathFrom.endpoint B b) (a • m) =
+      loopChainAugmentation B b R a •
+        cubicalChainModuleLinearMap R (MoorePathFrom.endpoint B b) m := by
+  rw [loopChainAugmentation_def]
+  exact cubicalChainModuleLinearMap_smul_of_apply_smul _ MoorePathFrom.endpoint_leftAct a m
 
 /-- **The augmented chains on the based path space are acyclic**: a cycle of `C_*(P_b B; R)` of
 augmentation zero is a boundary. -/

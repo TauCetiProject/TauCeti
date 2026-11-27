@@ -12,7 +12,7 @@ public import Mathlib.Analysis.Meromorphic.NormalForm
 
 Mathlib's `toMeromorphicNFAt f x` modifies `f` only at `x` when `f` is meromorphic at `x` (and
 returns `0` otherwise) so that the resulting function lies in `MeromorphicNFAt · x`. This file
-supplies three basic properties of `toMeromorphicNFAt`:
+supplies basic properties of `toMeromorphicNFAt` and `toMeromorphicNFOn`:
 
 * `MeromorphicNFAt.toMeromorphicNFAt_eq_of_eqOn_compl_singleton`: if `g` is already in normal form
   at `x` and `f` agrees with `g` off `x`, then `toMeromorphicNFAt f x = g`.
@@ -21,6 +21,8 @@ supplies three basic properties of `toMeromorphicNFAt`:
 * `TauCeti.toMeromorphicNFAt_comp_add_const`, `TauCeti.toMeromorphicNFAt_comp_sub_const`:
   conversion to normal form commutes with translation in the argument, whether or not `f` is
   meromorphic at the shifted centre.
+* `TauCeti.toMeromorphicNFOn_comp_add_const`, `TauCeti.toMeromorphicNFOn_comp_sub_const`: the same
+  for conversion to normal form on a set, the set being pulled back along the translation.
 -/
 
 public section
@@ -95,5 +97,53 @@ theorem toMeromorphicNFAt_comp_sub_const (f : 𝕜 → E) (x c : 𝕜) :
 theorem toMeromorphicNFAt_comp_sub_const_apply (f : 𝕜 → E) (x c z : 𝕜) :
     toMeromorphicNFAt (f ∘ (· - c)) x z = toMeromorphicNFAt f (x - c) (z - c) :=
   congrFun (toMeromorphicNFAt_comp_sub_const f x c) z
+
+/-- Whole-space meromorphic normal forms depend only on the punctured germ at each point. -/
+theorem toMeromorphicNFOn_univ_congr_nhdsNE {f g : 𝕜 → E}
+    (h : ∀ x : 𝕜, f =ᶠ[𝓝[≠] x] g) :
+    toMeromorphicNFOn f Set.univ = toMeromorphicNFOn g Set.univ := by
+  have hm : MeromorphicOn f Set.univ ↔ MeromorphicOn g Set.univ :=
+    forall₂_congr fun x _ ↦ MeromorphicAt.meromorphicAt_congr (h x)
+  by_cases hf : MeromorphicOn f Set.univ
+  · funext x
+    rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hf (Set.mem_univ x),
+      toMeromorphicNFOn_eq_toMeromorphicNFAt (hm.mp hf) (Set.mem_univ x)]
+    exact (toMeromorphicNFAt_eventuallyEq_nhds_congr (h x)).eq_of_nhds
+  · simp [hf, mt hm.mpr hf]
+
+/-- Conversion to meromorphic normal form on a set commutes with adding a constant to the
+argument, the set being pulled back along the translation. -/
+theorem toMeromorphicNFOn_comp_add_const (f : 𝕜 → E) (U : Set 𝕜) (c : 𝕜) :
+    toMeromorphicNFOn (f ∘ (· + c)) ((· + c) ⁻¹' U) = toMeromorphicNFOn f U ∘ (· + c) := by
+  have hm : MeromorphicOn (f ∘ (· + c)) ((· + c) ⁻¹' U) ↔ MeromorphicOn f U := by
+    rw [MeromorphicOn.meromorphicOn_comp_add_const_iff_meromorphicOn, Set.add_singleton,
+      Set.image_preimage_eq _ (add_right_surjective c)]
+  by_cases hf : MeromorphicOn f U
+  · funext z
+    by_cases hz : z + c ∈ U
+    · rw [Function.comp_apply, toMeromorphicNFOn_eq_toMeromorphicNFAt (hm.2 hf) hz,
+        toMeromorphicNFOn_eq_toMeromorphicNFAt hf hz, toMeromorphicNFAt_comp_add_const_apply]
+    · rw [Function.comp_apply, toMeromorphicNFOn_eq_self_on_compl (hm.2 hf) hz,
+        toMeromorphicNFOn_eq_self_on_compl hf hz, Function.comp_apply]
+  · rw [toMeromorphicNFOn_of_not_meromorphicOn hf,
+      toMeromorphicNFOn_of_not_meromorphicOn (mt hm.1 hf), Pi.zero_comp]
+
+/-- Pointwise form of `TauCeti.toMeromorphicNFOn_comp_add_const`. -/
+@[simp]
+theorem toMeromorphicNFOn_comp_add_const_apply (f : 𝕜 → E) (U : Set 𝕜) (c z : 𝕜) :
+    toMeromorphicNFOn (f ∘ (· + c)) ((· + c) ⁻¹' U) z = toMeromorphicNFOn f U (z + c) :=
+  congrFun (toMeromorphicNFOn_comp_add_const f U c) z
+
+/-- Conversion to meromorphic normal form on a set commutes with subtracting a constant from the
+argument, the set being pulled back along the translation. -/
+theorem toMeromorphicNFOn_comp_sub_const (f : 𝕜 → E) (U : Set 𝕜) (c : 𝕜) :
+    toMeromorphicNFOn (f ∘ (· - c)) ((· - c) ⁻¹' U) = toMeromorphicNFOn f U ∘ (· - c) := by
+  simpa only [sub_eq_add_neg] using toMeromorphicNFOn_comp_add_const f U (-c)
+
+/-- Pointwise form of `TauCeti.toMeromorphicNFOn_comp_sub_const`. -/
+@[simp]
+theorem toMeromorphicNFOn_comp_sub_const_apply (f : 𝕜 → E) (U : Set 𝕜) (c z : 𝕜) :
+    toMeromorphicNFOn (f ∘ (· - c)) ((· - c) ⁻¹' U) z = toMeromorphicNFOn f U (z - c) :=
+  congrFun (toMeromorphicNFOn_comp_sub_const f U c) z
 
 end TauCeti

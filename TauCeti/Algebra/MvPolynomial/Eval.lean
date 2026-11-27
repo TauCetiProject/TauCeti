@@ -31,14 +31,30 @@ Over an ordered field, evaluating a polynomial at a coordinatewise rational map
 be cleared to a single polynomial `A` up to multiplication by a polynomial `B` that is strictly
 positive on the domain (`MvPolynomial.exists_pos_eval_eq_mul_eval_div`).
 
+When the coordinates of an evaluation lie in the base semiring of an algebra, applying a
+base-linear functional to the resulting value is again polynomial in those coordinates.
+
+Evaluation at a family `x` is surjective exactly when `x` generates the algebra, and its
+bijectivity, which says that the `x i` are polynomial generators, is preserved by algebra
+isomorphisms and by reindexing.
+
 ## Main results
 
+* `MvPolynomial.exists_eval_eq_linearMap`: a base-linear image of an evaluation at base points.
 * `MvPolynomial.pow_mul_eval_mem`: `c ^ T p(x)` lies in a subsemiring containing `c`, the
   coefficients of `p` and the `c xᵢ`, when `p` has total degree at most `T`.
 * `MvPolynomial.eval_sub_eval_mem`, `MvPolynomial.eval_sub_eval_mem_of_vars`: values at points
   whose coordinates everywhere (or on the variables of `p`) are congruent modulo an ideal `I` are
   congruent modulo `I`.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
+* `MvPolynomial.aeval_surjective_iff_adjoin_range_eq_top`: `aeval x` is surjective exactly when
+  the `x i` generate the algebra.
+* `MvPolynomial.adjoin_range_eq_of_aeval_comp_eq`: a surjective algebra homomorphism factoring
+  `aeval c` through `aeval b` preserves the generated subalgebra.
+* `MvPolynomial.bijective_aeval_algEquiv_comp_iff`: an algebra isomorphism carries polynomial
+  generators to polynomial generators.
+* `MvPolynomial.bijective_aeval_comp_equiv_iff`: reindexing a family of polynomial generators
+  along an equivalence gives polynomial generators.
 * `MvPolynomial.exists_pos_eval_eq_mul_eval_div`: clears nonzero polynomial denominators in the
   value of a polynomial at a coordinatewise rational map by a strictly positive polynomial factor.
 -/
@@ -47,7 +63,25 @@ public section
 
 namespace MvPolynomial
 
-variable {σ S subS : Type*} [CommSemiring S] [SetLike subS S] [SubsemiringClass subS S]
+variable {σ : Type*}
+
+/-- A base-linear image of a polynomial evaluation at base points is again polynomial. -/
+theorem exists_eval_eq_linearMap {R S : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
+    (f : S →ₗ[R] R) (p : MvPolynomial σ S) :
+    ∃ q : MvPolynomial σ R, ∀ x : σ → R, eval x q = f (eval (algebraMap R S ∘ x) p) := by
+  induction p using MvPolynomial.induction_on with
+  | C a => exact ⟨C (f a), fun _ ↦ by simp⟩
+  | add p q hp hq =>
+    obtain ⟨p', hp'⟩ := hp
+    obtain ⟨q', hq'⟩ := hq
+    exact ⟨p' + q', fun x ↦ by simp [hp' x, hq' x]⟩
+  | mul_X p i hp =>
+    obtain ⟨p', hp'⟩ := hp
+    refine ⟨p' * X i, fun x ↦ ?_⟩
+    simp only [map_mul, eval_X, Function.comp_apply, hp']
+    rw [mul_comm (eval _ p), ← Algebra.smul_def, map_smul, smul_eq_mul, mul_comm]
+
+variable {S subS : Type*} [CommSemiring S] [SetLike subS S] [SubsemiringClass subS S]
 
 /-- **Clearing denominators in a polynomial value.** If the coefficients of `p` lie in a
 subsemiring `s`, `p` has total degree at most `T`, and `c ∈ s` is a common denominator of the
@@ -94,6 +128,42 @@ theorem dvd_eval_sub_eval {R : Type*} [CommRing R] (p : MvPolynomial σ R) {d : 
     (h : ∀ i, d ∣ x i - t i) : d ∣ eval x p - eval t p := by
   rw [← Ideal.mem_span_singleton]
   exact eval_sub_eval_mem p fun i ↦ Ideal.mem_span_singleton.mpr (h i)
+
+/-- Evaluation at a family `x` is surjective exactly when the `x i` generate the algebra. -/
+theorem aeval_surjective_iff_adjoin_range_eq_top {R A : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] {x : σ → A} :
+    Function.Surjective (aeval (R := R) x) ↔ Algebra.adjoin R (Set.range x) = ⊤ := by
+  rw [← AlgHom.range_eq_top, Algebra.adjoin_range_eq_range_aeval]
+
+/-- If `φ : MvPolynomial B R →ₐ[R] MvPolynomial A R` is surjective and `(aeval b).comp φ = aeval c`,
+then `c` and `b` generate the same `R`-subalgebra. -/
+theorem adjoin_range_eq_of_aeval_comp_eq {R A B C : Type*} [CommSemiring R]
+    [CommSemiring C] [Algebra R C] {b : A → C} {c : B → C}
+    {φ : MvPolynomial B R →ₐ[R] MvPolynomial A R}
+    (hcomp : (aeval b).comp φ = aeval c) (hφ : Function.Surjective φ) :
+    Algebra.adjoin R (Set.range c) = Algebra.adjoin R (Set.range b) := by
+  rw [Algebra.adjoin_range_eq_range_aeval, Algebra.adjoin_range_eq_range_aeval, ← hcomp,
+    AlgHom.range_comp, (AlgHom.range_eq_top φ).2 hφ, Algebra.map_top]
+
+/-- Composing a family with an algebra isomorphism `e` does not change whether evaluation at it is
+bijective, since `aeval (e ∘ x) = e ∘ aeval x`. In particular `e` carries a family of polynomial
+generators, algebraically independent and generating, to one. -/
+theorem bijective_aeval_algEquiv_comp_iff {R A B : Type*} [CommSemiring R] [CommSemiring A]
+    [CommSemiring B] [Algebra R A] [Algebra R B] (e : A ≃ₐ[R] B) {x : σ → A} :
+    Function.Bijective (aeval (R := R) (e ∘ x)) ↔ Function.Bijective (aeval (R := R) x) := by
+  have h : (aeval (R := R) (e ∘ x) : MvPolynomial σ R → B) = e ∘ aeval x :=
+    funext fun p ↦ (comp_aeval_apply x (e : A →ₐ[R] B) p).symm
+  rw [h, e.bijective.of_comp_iff']
+
+/-- Reindexing a family along an equivalence `e` of index types does not change whether evaluation
+at it is bijective, since `aeval (x ∘ e) = aeval x ∘ rename e`. In particular a reindexed family
+of polynomial generators is again one. -/
+theorem bijective_aeval_comp_equiv_iff {R A τ : Type*} [CommSemiring R] [CommSemiring A]
+    [Algebra R A] (e : τ ≃ σ) {x : σ → A} :
+    Function.Bijective (aeval (R := R) (x ∘ e)) ↔ Function.Bijective (aeval (R := R) x) := by
+  have h : (aeval (R := R) (x ∘ e) : MvPolynomial τ R → A) = aeval x ∘ renameEquiv R e :=
+    funext fun p ↦ (aeval_rename _ _ p).symm
+  rw [h, Function.Bijective.of_comp_iff _ (renameEquiv R e).bijective]
 
 private theorem exists_pos_eval_eq_mul_eval_div_of_forall {α β K : Type*} [Field K] [LinearOrder K]
     [IsStrictOrderedRing K] {u : Set (β → K)} {N D : α → MvPolynomial β K}

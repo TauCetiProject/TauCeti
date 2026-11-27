@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Constructions.SumProd
 public import Mathlib.Topology.ClusterPt
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import Mathlib.Topology.Order.OrderClosed
 
 /-!
 # Interiors and fibres in product spaces
@@ -17,6 +18,9 @@ points have empty interior. This lets fibrewise empty-interior results apply to 
 arbitrary topological products, without countability, separation, or finite-dimensionality
 assumptions on either factor.
 In particular, graphs with values in a space without isolated points have empty interior.
+The interior of the preimage of a set under a projection is the preimage of its interior
+(`TauCeti.interior_preimage_fst`, `TauCeti.interior_preimage_snd`), so the vertical and
+horizontal lines through non-isolated points have empty interior.
 
 The file also records the underlying function of the homeomorphism between functions on a
 sum type and pairs of functions, and identifies a disjoint union of copies of one space, indexed by
@@ -24,7 +28,15 @@ a discrete space, with a product (`Homeomorph.sigmaEquivProd`).
 
 Finally, a function on a product that is eventually constant near a point has eventually constant
 slices through that point (`Filter.EventuallyEq.prodMk_right_nhds`,
-`Filter.EventuallyEq.prodMk_left_nhds`).
+`Filter.EventuallyEq.prodMk_left_nhds`). A map on `α × β`, with `α` linearly ordered, that is
+equal to `(s, t) ↦ g t` on a closed half-space `s ≤ a` or `s ≥ a` agrees with it near every point
+of the open half-space (`TauCeti.eventuallyEq_comp_snd_of_lt`,
+`TauCeti.eventuallyEq_comp_snd_of_gt`). A function on a product that is continuous at every
+point of the graph of a map over a set, where the map is continuous, restricts to a continuous map
+on that graph (`TauCeti.continuousOn_comp_prodMk_of_continuousAt`,
+`TauCeti.continuous_comp_prodMk_of_continuousAt`). A map of `X × Y` continuous on `univ ×ˢ S`
+and sending it into `univ ×ˢ S'` restricts to a continuous map `X × S → X' × S'`
+(`ContinuousOn.continuous_restrict_univ_prod`).
 -/
 
 public section
@@ -76,9 +88,53 @@ theorem Filter.EventuallyEq.prodMk_left_nhds {X Y A : Type*} [TopologicalSpace X
   rw [h.self_of_nhds]
   exact h.comp_tendsto ((Continuous.prodMk_left y).tendsto x)
 
+/-- A map `f : X × Y → X' × Y'` that is continuous on `univ ×ˢ S` and sends it into
+`univ ×ˢ S'` restricts to a continuous map `X × S → X' × S'`. -/
+theorem ContinuousOn.continuous_restrict_univ_prod {X Y X' Y' : Type*} [TopologicalSpace X]
+    [TopologicalSpace Y] [TopologicalSpace X'] [TopologicalSpace Y'] {S : Set Y} {S' : Set Y'}
+    {f : X × Y → X' × Y'} (hf : ContinuousOn f (univ ×ˢ S))
+    (hmaps : ∀ x : X × S, (f (x.1, x.2)).2 ∈ S') :
+    Continuous fun x : X × S ↦ ((f (x.1, x.2)).1, (⟨(f (x.1, x.2)).2, hmaps x⟩ : S')) := by
+  have h := hf.comp_continuous (continuous_fst.prodMk (continuous_subtypeVal.comp continuous_snd))
+    fun x ↦ ⟨mem_univ _, x.2.property⟩
+  exact (continuous_fst.comp h).prodMk ((continuous_snd.comp h).subtype_mk hmaps)
+
 namespace TauCeti
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
+
+/-- If `F` is continuous at every point `(x, u x)` with `x ∈ s` and `u` is continuous on `s`,
+then `x ↦ F (x, u x)` is continuous on `s`. -/
+theorem continuousOn_comp_prodMk_of_continuousAt {Z : Type*} [TopologicalSpace Z]
+    {F : X × Y → Z} {u : X → Y} {s : Set X} (hF : ∀ x ∈ s, ContinuousAt F (x, u x))
+    (hu : ContinuousOn u s) : ContinuousOn (fun x ↦ F (x, u x)) s :=
+  fun x hx ↦ (hF x hx).comp₂_continuousWithinAt continuousWithinAt_id (hu x hx)
+
+/-- If `F` is continuous at every point `(x, u x)` of the graph of a continuous map `u`, then
+`x ↦ F (x, u x)` is continuous. -/
+theorem continuous_comp_prodMk_of_continuousAt {Z : Type*} [TopologicalSpace Z] {F : X × Y → Z}
+    {u : X → Y} (hF : ∀ x, ContinuousAt F (x, u x)) (hu : Continuous u) :
+    Continuous fun x ↦ F (x, u x) :=
+  continuousOn_univ.1 <|
+    continuousOn_comp_prodMk_of_continuousAt (fun x _ ↦ hF x) hu.continuousOn
+
+/-- If `f (s, t) = g t` for `s ≤ a`, then `f` agrees with `(s, t) ↦ g t` near every point with
+`s < a`. -/
+theorem eventuallyEq_comp_snd_of_lt {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {f : α × Y → E} {g : Y → E} {a : α}
+    (h : ∀ s ≤ a, ∀ t, f (s, t) = g t) {z : α × Y} (hz : z.1 < a) :
+    f =ᶠ[𝓝 z] fun w ↦ g w.2 :=
+  Filter.eventually_of_mem ((isOpen_lt continuous_fst continuous_const).mem_nhds
+    (show z ∈ {w : α × Y | w.1 < a} from hz)) fun w hw ↦ h w.1 (le_of_lt hw) w.2
+
+/-- If `f (s, t) = g t` for `s ≥ a`, then `f` agrees with `(s, t) ↦ g t` near every point with
+`s > a`. -/
+theorem eventuallyEq_comp_snd_of_gt {α E : Type*} [TopologicalSpace α] [LinearOrder α]
+    [OrderClosedTopology α] {f : α × Y → E} {g : Y → E} {a : α}
+    (h : ∀ s, a ≤ s → ∀ t, f (s, t) = g t) {z : α × Y} (hz : a < z.1) :
+    f =ᶠ[𝓝 z] fun w ↦ g w.2 :=
+  Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_fst).mem_nhds
+    (show z ∈ {w : α × Y | a < w.1} from hz)) fun w hw ↦ h w.1 (le_of_lt hw) w.2
 
 /-- A subset of a product has empty interior if its vertical fibres over a dense set of base
 points have empty interior. -/
@@ -102,5 +158,27 @@ theorem _root_.Set.interior_graphOn [∀ y : Y, NeBot (𝓝[≠] y)] (s : Set X)
   refine interior_eq_empty_of_forall_interior_preimage_prodMk_eq_empty fun x ↦ ?_
   have hsub : Prod.mk x ⁻¹' s.graphOn f ⊆ {f x} := fun y hy ↦ (mem_graphOn.mp hy).2.symm
   simpa using interior_mono hsub
+
+/-- The interior of the preimage of a set under the first projection is the preimage of its
+interior. -/
+theorem interior_preimage_fst (s : Set X) :
+    interior (Prod.fst ⁻¹' s : Set (X × Y)) = Prod.fst ⁻¹' interior s :=
+  (isOpenMap_fst.preimage_interior_eq_interior_preimage continuous_fst s).symm
+
+/-- The interior of the preimage of a set under the second projection is the preimage of its
+interior. -/
+theorem interior_preimage_snd (s : Set Y) :
+    interior (Prod.snd ⁻¹' s : Set (X × Y)) = Prod.snd ⁻¹' interior s :=
+  (isOpenMap_snd.preimage_interior_eq_interior_preimage continuous_snd s).symm
+
+/-- A vertical line `{x} × Y` through a non-isolated point `x` has empty interior. -/
+theorem interior_preimage_fst_singleton (x : X) [NeBot (𝓝[≠] x)] :
+    interior (Prod.fst ⁻¹' {x} : Set (X × Y)) = ∅ := by
+  rw [interior_preimage_fst, interior_singleton, preimage_empty]
+
+/-- A horizontal line `X × {y}` through a non-isolated point `y` has empty interior. -/
+theorem interior_preimage_snd_singleton (y : Y) [NeBot (𝓝[≠] y)] :
+    interior (Prod.snd ⁻¹' {y} : Set (X × Y)) = ∅ := by
+  rw [interior_preimage_snd, interior_singleton, preimage_empty]
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Generator.Preadditive
 public import TauCeti.CategoryTheory.Preadditive.AdditiveClosure.Basic
+public import TauCeti.CategoryTheory.Preadditive.AdditiveGenerator
 
 /-!
 # Generator-cogenerators
@@ -23,12 +24,16 @@ In any category, a separator passes to the source of every epimorphism onto it, 
 to the target of every monomorphism out of it. So separators, coseparators and
 generator-cogenerators are invariant under isomorphism and pass to every object having them as a
 retract, and an equivalence of categories carries generator-cogenerators to generator-cogenerators.
+A fully faithful functor reflects separators, coseparators and generator-cogenerators: it reaches
+every morphism out of or into the image of an object.
 Since separators of `Cᵒᵖ` are the coseparators of `C`, the notion is self-dual: `op M` is a
 generator-cogenerator of `Cᵒᵖ` exactly when `M` is one of `C`.
 
 In a preadditive category with finite biproducts, separators and coseparators also pass up
 additive closures: if a separator `G` lies in `add M`, then `M` is a separator
-(`CategoryTheory.IsSeparator.of_additiveClosure`), and dually.
+(`CategoryTheory.IsSeparator.of_additiveClosure`), and dually. In particular an additive generator
+(`add M = C`) is a generator-cogenerator, since every object is a direct summand of some `Mⁿ`
+(`TauCeti.IsAdditiveGenerator.isGeneratorCogenerator`).
 
 ## Main definitions
 
@@ -45,9 +50,14 @@ additive closures: if a separator `G` lies in `add M`, then `M` is a separator
   having a separator (coseparator) as a retract is one.
 * `TauCeti.IsGeneratorCogenerator.of_retract`: an object having a generator-cogenerator as a retract
   is one.
+* `CategoryTheory.IsSeparator.of_fullyFaithful`, `CategoryTheory.IsCoseparator.of_fullyFaithful`
+  and `TauCeti.IsGeneratorCogenerator.of_fullyFaithful`: fully faithful functors reflect
+  separators, coseparators and generator-cogenerators.
 * `CategoryTheory.Equivalence.isGeneratorCogenerator_functor_obj_iff`: invariance under
   equivalences of categories.
 * `TauCeti.isGeneratorCogenerator_op_iff`: generator-cogenerators are self-dual.
+* `TauCeti.IsAdditiveGenerator.isGeneratorCogenerator`: in a preadditive category with finite
+  biproducts, an additive generator is a generator-cogenerator.
 -/
 
 public section
@@ -93,6 +103,22 @@ of `N`, then `N` is a coseparator. -/
 theorem IsCoseparator.of_retract {M N : C} (hM : IsCoseparator M) (h : Retract M N) :
     IsCoseparator N :=
   hM.of_mono h.i
+
+/-- **Fully faithful functors reflect separators**: if `F` is fully faithful and `F.obj G` is a
+separator, then so is `G`. Every morphism out of `F.obj G` is the image of a morphism out of `G`. -/
+theorem IsSeparator.of_fullyFaithful {D : Type u'} [Category.{v'} D] {F : C ⥤ D}
+    (hF : F.FullyFaithful) {G : C} (h : IsSeparator (F.obj G)) : IsSeparator G := by
+  rw [isSeparator_def] at h ⊢
+  exact fun X Y f g hfg ↦ hF.map_injective <| h _ _ fun a ↦ by
+    simpa using congr(F.map $(hfg (hF.preimage a)))
+
+/-- **Fully faithful functors reflect coseparators**: if `F` is fully faithful and `F.obj G` is a
+coseparator, then so is `G`. Every morphism into `F.obj G` is the image of a morphism into `G`. -/
+theorem IsCoseparator.of_fullyFaithful {D : Type u'} [Category.{v'} D] {F : C ⥤ D}
+    (hF : F.FullyFaithful) {G : C} (h : IsCoseparator (F.obj G)) : IsCoseparator G := by
+  rw [isCoseparator_def] at h ⊢
+  exact fun X Y f g hfg ↦ hF.map_injective <| h _ _ fun a ↦ by
+    simpa using congr(F.map $(hfg (hF.preimage a)))
 
 section Preadditive
 
@@ -154,6 +180,13 @@ theorem IsGeneratorCogenerator.of_equivalence {D : Type u'} [Category.{v'} D] {M
     (hM : IsGeneratorCogenerator M) (e : C ≌ D) : IsGeneratorCogenerator (e.functor.obj M) :=
   ⟨hM.1.of_equivalence e, hM.2.of_equivalence e⟩
 
+/-- **Fully faithful functors reflect generator-cogenerators**: if `F` is fully faithful and
+`F.obj M` is a generator-cogenerator, then so is `M`. -/
+theorem IsGeneratorCogenerator.of_fullyFaithful {D : Type u'} [Category.{v'} D] {F : C ⥤ D}
+    (hF : F.FullyFaithful) {M : C} (h : IsGeneratorCogenerator (F.obj M)) :
+    IsGeneratorCogenerator M :=
+  ⟨h.1.of_fullyFaithful hF, h.2.of_fullyFaithful hF⟩
+
 /-- **Generator-cogenerators are invariant under equivalences of categories.** -/
 theorem _root_.CategoryTheory.Equivalence.isGeneratorCogenerator_functor_obj_iff {D : Type u'}
     [Category.{v'} D] (e : C ≌ D) (M : C) :
@@ -187,5 +220,30 @@ contains a generator-cogenerator, then `M` is one. -/
 theorem IsGeneratorCogenerator.of_additiveClosure {G M : C} (hG : IsGeneratorCogenerator G)
     (h : additiveClosure M G) : IsGeneratorCogenerator M :=
   ⟨hG.1.of_additiveClosure h, hG.2.of_additiveClosure h⟩
+
+/-- **An additive generator is a separator**: every object `X` is a direct summand of some `Mⁿ`, so
+`𝟙 X` is a sum of morphisms factoring through `M`. -/
+theorem IsAdditiveGenerator.isSeparator {M : C} (hM : IsAdditiveGenerator M) : IsSeparator M := by
+  rw [Preadditive.isSeparator_iff]
+  intro X Y f hf
+  obtain ⟨n, a, b, hab⟩ := additiveClosure_iff_exists_sum_comp_eq_id.1 (hM.additiveClosure X)
+  rw [← Category.id_comp f, ← hab, Preadditive.sum_comp]
+  exact Finset.sum_eq_zero fun j _ ↦ by simp only [Category.assoc, hf, Limits.comp_zero]
+
+/-- **An additive generator is a coseparator**: every object `Y` is a direct summand of some `Mⁿ`,
+so `𝟙 Y` is a sum of morphisms factoring through `M`. -/
+theorem IsAdditiveGenerator.isCoseparator {M : C} (hM : IsAdditiveGenerator M) :
+    IsCoseparator M := by
+  rw [Preadditive.isCoseparator_iff]
+  intro X Y f hf
+  obtain ⟨n, a, b, hab⟩ := additiveClosure_iff_exists_sum_comp_eq_id.1 (hM.additiveClosure Y)
+  rw [← Category.comp_id f, ← hab, Preadditive.comp_sum]
+  exact Finset.sum_eq_zero fun j _ ↦ by rw [← Category.assoc, hf, Limits.zero_comp]
+
+/-- **An additive generator is a generator-cogenerator.** In `mod A` for an Artin algebra `A`, this
+is the first step of the Auslander correspondence. -/
+theorem IsAdditiveGenerator.isGeneratorCogenerator {M : C} (hM : IsAdditiveGenerator M) :
+    IsGeneratorCogenerator M :=
+  ⟨hM.isSeparator, hM.isCoseparator⟩
 
 end TauCeti

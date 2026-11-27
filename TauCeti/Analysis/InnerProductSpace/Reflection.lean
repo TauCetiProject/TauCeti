@@ -2,7 +2,7 @@
 Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: The Tau Ceti contributors, Jon Crall, OpenAI GPT-5.6 Thinking, Claude Opus 5,
-  OpenAI GPT-6
+  OpenAI GPT-6, Giada Franz
 -/
 module
 
@@ -10,20 +10,33 @@ public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Analysis.InnerProductSpace.Calculus
+public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Reflections in inner product spaces
 
 For a submodule `K` admitting an orthogonal projection, `Submodule.coe_reflection` expresses the
 reflection across `K`, as a bounded operator, as `2 P_K - 1`, and a linear isometry mapping `K`
-onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`). Two vectors of
+onto itself commutes with that reflection (`Submodule.reflection_apply_of_map_eq`).
+Equal-norm vectors with the same inner product against a fixed vector are related by a linear
+isometry fixing that vector (`TauCeti.exists_linearIsometryEquiv_apply_eq_self_and_apply_eq`).
+This fixed-vector isometry theorem is adapted from Giada Franz's local formalization and builds on
+Mathlib's `Submodule.reflection_sub`. Two vectors of
 the same norm with a real inner product are exchanged by the reflection in the hyperplane
 orthogonal to their difference (`Submodule.reflection_sub_of_inner_comm`). In Euclidean
 space, the reflection in the axis spanned by a basis vector `eᵢ` keeps the `i`-th coordinate and
-negates the others (`EuclideanSpace.reflection_singleton_single_apply`).
+negates the others (`EuclideanSpace.reflection_singleton_single_apply`), and the reflection in the
+hyperplane orthogonal to `eᵢ` negates the `i`-th coordinate and keeps the others
+(`EuclideanSpace.reflection_orthogonal_singleton_single_apply`).
+
+Over `ℝ`, reflecting `x` across `K` changes its squared distance to `y` by `4 ⟪P x, y⟫`, where `P`
+is the orthogonal projection onto `Kᗮ` (`Submodule.norm_reflection_sub_sq`). In finite dimension,
+a linear map preserving the inner product whose fixed vectors form a hyperplane is the reflection in
+that hyperplane (`LinearMap.reflection_fixedSubmodule_apply`).
 
 The remaining lemmas describe reflection across the hyperplane perpendicular to a vector in a real
 inner product space. They supply the reflection identities used by the half-space Green kernel,
@@ -142,6 +155,69 @@ theorem reflection_sub_of_inner_comm {v w : E} (h : ‖v‖ = ‖w‖)
 
 end Submodule
 
+namespace Submodule
+
+open scoped InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- Reflecting `x` across `K` changes its squared distance to `y` by four times the inner product
+of the `Kᗮ`-component of `x` with `y`, so the reflection brings `x` nearer to `y` exactly when that
+inner product is negative. -/
+theorem norm_reflection_sub_sq (K : Submodule ℝ F) [K.HasOrthogonalProjection] (x y : F) :
+    ‖K.reflection x - y‖ ^ 2 = ‖x - y‖ ^ 2 + 4 * ⟪Kᗮ.starProjection x, y⟫_ℝ := by
+  have hx : K.reflection x - y = (x - y) - (2 : ℝ) • Kᗮ.starProjection x := by
+    rw [reflection_apply, starProjection_orthogonal_val]
+    module
+  have hpx : ⟪Kᗮ.starProjection x, x⟫_ℝ = ‖Kᗮ.starProjection x‖ ^ 2 := by
+    simpa using Kᗮ.re_inner_starProjection_eq_normSq x
+  rw [hx, norm_sub_sq_real, inner_smul_right, norm_smul, inner_sub_left,
+    real_inner_comm (Kᗮ.starProjection x) x, real_inner_comm (Kᗮ.starProjection x) y, hpx]
+  norm_num
+  ring
+
+end Submodule
+
+namespace LinearMap
+
+open scoped InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- A linear map preserving the inner product whose fixed vectors form a hyperplane is the
+orthogonal reflection in that hyperplane. -/
+theorem reflection_fixedSubmodule_apply {f : F →ₗ[ℝ] F} (hf : ∀ v w, ⟪f v, f w⟫_ℝ = ⟪v, w⟫_ℝ)
+    (hfix : Module.finrank ℝ (F ⧸ f.fixedSubmodule) = 1) (x : F) :
+    f.fixedSubmodule.reflection x = f x := by
+  set H := f.fixedSubmodule
+  have hrank : Module.finrank ℝ Hᗮ = 1 := H.finrank_orthogonal_eq_finrank_quotient.trans hfix
+  -- `f` preserves the line `Hᗮ` and the length of its vectors, and fixes none of them but `0`.
+  have hneg : ∀ q ∈ Hᗮ, f q = -q := by
+    intro q hq
+    have hfq : f q ∈ Hᗮ := fun h hh ↦
+      calc ⟪h, f q⟫_ℝ = ⟪f h, f q⟫_ℝ := by rw [mem_fixedSubmodule_iff.1 hh]
+        _ = 0 := (hf h q).trans (hq h hh)
+    by_cases hq0 : q = 0
+    · simp [hq0]
+    obtain ⟨c, hc⟩ := exists_smul_eq_of_finrank_eq_one hrank (x := (⟨q, hq⟩ : Hᗮ))
+      (by simpa using hq0) ⟨f q, hfq⟩
+    have hc' : f q = c • q := by simpa using congrArg Subtype.val hc.symm
+    have hcc : c * c = 1 := by
+      have h := hf q q
+      rw [hc', real_inner_smul_left, real_inner_smul_right, ← mul_assoc] at h
+      exact mul_right_cancel₀ (by simpa using hq0) (h.trans (one_mul _).symm)
+    rcases mul_self_eq_one_iff.1 hcc with rfl | rfl
+    · have hqH : q ∈ H := mem_fixedSubmodule_iff.2 (by rw [hc', one_smul])
+      simpa [H.inf_orthogonal_eq_bot, hq0] using Submodule.mem_inf.2 ⟨hqH, hq⟩
+    · rw [hc', neg_one_smul]
+  have hx := H.starProjection_add_starProjection_orthogonal x
+  conv_rhs => rw [← hx]
+  rw [map_add, mem_fixedSubmodule_iff.1 (H.starProjection_apply_mem x),
+    hneg _ (Hᗮ.starProjection_apply_mem x), Submodule.reflection_apply]
+  linear_combination (norm := module) hx
+
+end LinearMap
+
 namespace EuclideanSpace
 
 /-- The reflection of Euclidean space in the coordinate axis spanned by the basis vector `eᵢ`
@@ -156,6 +232,15 @@ theorem reflection_singleton_single_apply {ι : Type*} [Fintype ι] [DecidableEq
     simp [EuclideanSpace.inner_single_left]
     ring
   · simp [EuclideanSpace.inner_single_left, h]
+
+/-- The reflection of Euclidean space in the coordinate hyperplane orthogonal to the basis vector
+`eᵢ` negates the `i`-th coordinate and keeps all the others. -/
+@[simp]
+theorem reflection_orthogonal_singleton_single_apply {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (i : ι) (w : EuclideanSpace ℝ ι) (j : ι) :
+    (ℝ ∙ EuclideanSpace.single i (1 : ℝ))ᗮ.reflection w j = if j = i then -w j else w j := by
+  rw [Submodule.reflection_orthogonal_apply, PiLp.neg_apply, reflection_singleton_single_apply]
+  split_ifs <;> simp
 
 end EuclideanSpace
 
@@ -224,13 +309,9 @@ four times the product of the two signed distances to the boundary. -/
 theorem norm_sub_reflection_orthogonal_singleton_sq {v : F} (hv : ‖v‖ = 1) (x y : F) :
     ‖y - (ℝ ∙ v)ᗮ.reflection x‖ ^ 2 =
       ‖y - x‖ ^ 2 + 4 * ⟪v, x⟫_ℝ * ⟪v, y⟫_ℝ := by
-  have heq : y - (ℝ ∙ v)ᗮ.reflection x =
-      (y - x) + (2 * ⟪v, x⟫_ℝ) • v := by
-    rw [reflection_orthogonal_singleton_apply hv]
-    abel
-  rw [heq, norm_add_sq_real, inner_smul_right, inner_sub_left, norm_smul, hv]
-  simp only [mul_one, Real.norm_eq_abs, sq_abs]
-  rw [real_inner_comm y v, real_inner_comm x v]
+  rw [norm_sub_rev y, norm_sub_rev y, (ℝ ∙ v)ᗮ.norm_reflection_sub_sq]
+  simp only [Submodule.orthogonal_orthogonal, Submodule.starProjection_singleton, hv,
+    real_inner_smul_left, RCLike.ofReal_real_eq_id, id_eq, one_pow, div_one]
   ring
 
 /-- For a point `y` of the hyperplane perpendicular to a unit vector `v`, the squared distance
@@ -432,6 +513,15 @@ namespace TauCeti
 open scoped RealInnerProductSpace ContDiff
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- Equal-norm vectors with the same inner product against `x` are related by an ambient
+linear isometry fixing `x`. -/
+theorem exists_linearIsometryEquiv_apply_eq_self_and_apply_eq (x v w : F)
+    (hnorm : ‖v‖ = ‖w‖) (hinner : ⟪x, v⟫ = ⟪x, w⟫) :
+    ∃ e : F ≃ₗᵢ[ℝ] F, e x = x ∧ e v = w := by
+  refine ⟨(ℝ ∙ (v - w))ᗮ.reflection, ?_, Submodule.reflection_sub hnorm⟩
+  apply Submodule.reflection_mem_subspace_eq_self
+  simp only [Submodule.mem_orthogonal_singleton_iff_inner_left, inner_sub_right, hinner, sub_self]
 
 /-- Reflecting in the hyperplane orthogonal to `a + b`, for vectors `a` and `b` of the same norm,
 sends `-a` to `b`. This is `Submodule.reflection_sub` for `-a` and `b`. -/

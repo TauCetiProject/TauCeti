@@ -11,6 +11,8 @@ public import Mathlib.Analysis.ODE.Gronwall
 public import TauCeti.Analysis.Calculus.TangentCone.Basic
 public import TauCeti.Analysis.Calculus.TangentCone.InnerProductSpace
 public import TauCeti.Analysis.ODE.UniformTime
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Projection.MetricProj
 
 /-!
 # Invariance of closed convex sets under ODEs: Nagumo's criterion
@@ -49,6 +51,9 @@ systems: invariance of a closed convex set of curvature operators under the reac
   `K` in the positive sense.
 * `Convex.forall_mem_posTangentConeAt_iff_forall_mapsTo_Icc`: Nagumo's criterion for an
   autonomous locally Lipschitz field and a closed convex set in a complete space.
+* `Convex.forall_mem_posTangentConeAt_iff_forall_mapsTo_Icc_of_finiteDimensional`: Nagumo's
+  criterion in a finite-dimensional real normed space, whose norm need not come from an inner
+  product, such as a space of multilinear maps with the operator norm.
 
 ## References
 
@@ -85,10 +90,8 @@ private theorem mapsTo_Icc_of_lipschitzOnWith (hKc : Convex ℝ K) (hK : IsCompl
   -- The squared distance `d t = infDist (x t) K ^ 2` has upper right Dini derivative `≤ 2 L d t`.
   have hslope (t : ℝ) (ht : t ∈ Ico a b) (r : ℝ) (hr : 2 * L * infDist (x t) K ^ 2 < r) :
       ∃ᶠ τ in 𝓝[>] t, (τ - t)⁻¹ * (infDist (x τ) K ^ 2 - infDist (x t) K ^ 2) < r := by
-    obtain ⟨p, hpK, hp⟩ := exists_norm_eq_iInf_of_complete_convex hKne hK hKc (x t)
-    have hpd : ‖x t - p‖ = infDist (x t) K := by
-      simp only [hp, infDist_eq_iInf, dist_eq_norm]
-    have hnormal := (norm_eq_iInf_iff_real_inner_le_zero hKc hpK).1 hp
+    obtain ⟨p, hpK, hpd⟩ := exists_norm_sub_eq_infDist_of_isComplete hKne hK hKc (x t)
+    have hnormal := inner_sub_sub_nonpos_of_norm_sub_eq_infDist hKc hpK hpd
     have hxU : x t ∈ U := hU t ht (mem_closedBall_self infDist_nonneg)
     have hpU : p ∈ U := hU t ht (by rw [mem_closedBall, dist_comm, dist_eq_norm, hpd])
     have hbound : 2 * ⟪x t - p, v t (x t)⟫ ≤ 2 * L * infDist (x t) K ^ 2 := by
@@ -206,3 +209,38 @@ theorem Convex.forall_mem_posTangentConeAt_iff_forall_mapsTo_Icc [CompleteSpace 
   have hfreq : ∃ᶠ τ in 𝓝[>] (0 : ℝ), α τ ∈ K :=
     (eventually_of_mem (Ioo_mem_nhdsGT hε) fun τ hτ ↦ hK' (Ioo_subset_Icc_self hτ)).frequently
   simpa [hα0] using (hα' 0 ⟨le_rfl, hε⟩).mem_posTangentConeAt hfreq
+
+/-- **Nagumo's criterion in finite dimension.** For a closed convex set `K` in a finite-dimensional
+real normed space and an autonomous locally Lipschitz field `v`, every solution of `x' = v(x)`
+which starts in `K` stays in `K` if and only if `v y` is a positive tangent vector of `K` at every
+`y ∈ K`. The norm need not come from an inner product: a continuous linear equivalence with a
+Euclidean space carries both conditions to that space. -/
+theorem Convex.forall_mem_posTangentConeAt_iff_forall_mapsTo_Icc_of_finiteDimensional
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] {K : Set F}
+    (hKc : Convex ℝ K) (hK : IsClosed K) {v : F → F} (hv : LocallyLipschitz v) :
+    (∀ y ∈ K, v y ∈ posTangentConeAt K y) ↔
+      ∀ (x : ℝ → F) (a b : ℝ), ContinuousOn x (Icc a b) →
+        (∀ t ∈ Ico a b, HasDerivWithinAt x (v (x t)) (Ici t) t) → x a ∈ K →
+          MapsTo x (Icc a b) K := by
+  let e : F ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) := .ofFinrankEq (by simp)
+  have hw : LocallyLipschitz (e ∘ v ∘ e.symm) :=
+    e.lipschitzWith.locallyLipschitz.comp (hv.comp e.symm.lipschitzWith.locallyLipschitz)
+  have hKc' : Convex ℝ (e '' K) := by simpa using hKc.linear_image e.toLinearEquiv.toLinearMap
+  have htan : (∀ y ∈ K, v y ∈ posTangentConeAt K y) ↔
+      ∀ z ∈ e '' K, (e ∘ v ∘ e.symm) z ∈ posTangentConeAt (e '' K) z := by
+    simp
+  rw [htan, hKc'.forall_mem_posTangentConeAt_iff_forall_mapsTo_Icc
+    (e.toHomeomorph.isClosed_image.mpr hK) hw]
+  constructor
+  · -- A solution `x` in `F` maps to the solution `e ∘ x` in the Euclidean space.
+    intro h x a b hx hx' ha t ht
+    obtain ⟨y, hy, hyx⟩ := h (e ∘ x) a b (e.continuous.comp_continuousOn hx)
+      (fun t ht ↦ by simpa using e.hasFDerivAt.comp_hasDerivWithinAt t (hx' t ht))
+      ⟨x a, ha, rfl⟩ ht
+    simpa [← e.injective hyx] using hy
+  · -- A solution `z` in the Euclidean space pulls back to the solution `e.symm ∘ z` in `F`.
+    intro h z a b hz hz' ha t ht
+    obtain ⟨y, hy, hya⟩ := ha
+    exact ⟨_, h (e.symm ∘ z) a b (e.symm.continuous.comp_continuousOn hz)
+      (fun t ht ↦ by simpa using e.symm.hasFDerivAt.comp_hasDerivWithinAt t (hz' t ht))
+      (by simpa [← hya] using hy) ht, by simp⟩

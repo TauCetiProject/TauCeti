@@ -27,6 +27,12 @@ many `E`-invariant measurable sets separate its classes, which is to say that th
 to a measurable injection of quotients, and Mathlib's measurable injection of a countably separated
 space into Cantor space gives the converse.
 
+Sets are compared the same way: `A ⊆ X` is **Borel reducible** to `B ⊆ Y` when `A = f ⁻¹' B` for
+a measurable `f : X → Y`. Measurability pulls back along such a reduction, and so does
+analyticity, from a Polish space. A Borel reduction of equivalence relations makes the graph of
+the first Borel reducible to the graph of the second, but not conversely: every measurable set
+that is neither empty nor everything receives every measurable set.
+
 Further facts:
 
 * a reduction to a relation with Borel graph pulls the graph back, so a smooth relation is Borel;
@@ -46,6 +52,7 @@ Further facts:
 ## Main definitions
 
 * `Setoid.BorelReducible E F`: a measurable map `f` with `E x y ↔ F (f x) (f y)`.
+* `Set.BorelReducible A B`: a measurable map `f` with `A = f ⁻¹' B`.
 * `Setoid.BorelBireducible E F`: each of `E` and `F` is Borel reducible to the other.
 * `Setoid.IsSmooth E`: `E` is Borel reducible to equality on `ℕ → Bool`.
 
@@ -55,6 +62,11 @@ Further facts:
   the preorder and its equivalence.
 * `Setoid.BorelReducible.exists_measurable_injective_quotient`,
   `Setoid.BorelReducible.lift_mk_quotient_le`: the induced injection of quotients.
+* `Set.BorelReducible.measurableSet`, `Set.BorelReducible.analyticSet`: Borel reductions of sets
+  pull back measurability, and analyticity from a Polish space.
+* `Set.borelReducible_iff_measurableSet`: the sets Borel reducible to a measurable set that is
+  neither empty nor everything are exactly the measurable sets.
+* `Setoid.BorelReducible.borelReducible_setOf`: a reduction of relations reduces their graphs.
 * `Setoid.BorelReducible.measurableSet_setOf`, `Setoid.IsSmooth.measurableSet_setOf`: reductions
   pull back Borel graphs, and smooth relations are Borel.
 * `Setoid.borelReducible_bot_bot_iff_lift_mk_le`: reductions between equalities on standard
@@ -80,6 +92,9 @@ Further facts:
   reducibility and smooth equivalence relations).
 * A. S. Kechris, *Classical Descriptive Set Theory*, Graduate Texts in Mathematics 156,
   Springer, 1995, Theorem 15.6 (the Borel isomorphism theorem).
+* G. Paolini and S. Shelah, *Torsion-free abelian groups are Borel complete*, Ann. of Math. 199
+  (2024), arXiv:2102.12371, Definition 1.2 and Remark 1.5 (Borel reducibility of sets, and its
+  comparison with Borel reducibility of equivalence relations).
 -/
 
 public section
@@ -87,6 +102,104 @@ public section
 open Cardinal Function MeasurableSpace Set
 
 universe u v w
+
+namespace Set
+
+variable {X : Type u} {Y : Type v} {Z : Type w} [MeasurableSpace X] [MeasurableSpace Y]
+  [MeasurableSpace Z] {A : Set X} {B : Set Y} {C : Set Z}
+
+/-! ### Borel reducibility of sets -/
+
+/-- A set `A` is **Borel reducible** to a set `B` when `A` is the preimage of `B` under a
+measurable map `f`, that is, `x ∈ A ↔ f x ∈ B` for every `x`. -/
+def BorelReducible (A : Set X) (B : Set Y) : Prop :=
+  ∃ f : X → Y, Measurable f ∧ A = f ⁻¹' B
+
+theorem borelReducible_iff : A.BorelReducible B ↔ ∃ f : X → Y, Measurable f ∧ A = f ⁻¹' B :=
+  Iff.rfl
+
+/-- The preimage of `B` under a measurable map is Borel reducible to `B`. -/
+theorem borelReducible_preimage {f : X → Y} (hf : Measurable f) (B : Set Y) :
+    (f ⁻¹' B).BorelReducible B :=
+  ⟨f, hf, rfl⟩
+
+@[refl]
+protected theorem BorelReducible.refl (A : Set X) : A.BorelReducible A :=
+  ⟨id, measurable_id, rfl⟩
+
+protected theorem BorelReducible.rfl : A.BorelReducible A :=
+  .refl A
+
+@[trans]
+protected theorem BorelReducible.trans (h₁ : A.BorelReducible B) (h₂ : B.BorelReducible C) :
+    A.BorelReducible C := by
+  obtain ⟨f, hf, rfl⟩ := h₁
+  obtain ⟨g, hg, rfl⟩ := h₂
+  exact ⟨g ∘ f, hg.comp hf, rfl⟩
+
+/-- A set is Borel reducible to another exactly when its complement is Borel reducible to the
+complement of the other, through the same maps. -/
+@[simp]
+theorem borelReducible_compl_iff : Aᶜ.BorelReducible Bᶜ ↔ A.BorelReducible B :=
+  exists_congr fun f => and_congr_right fun _ => by rw [preimage_compl, compl_inj_iff]
+
+protected theorem BorelReducible.compl (h : A.BorelReducible B) : Aᶜ.BorelReducible Bᶜ :=
+  borelReducible_compl_iff.2 h
+
+/-- **Borelness pulls back**: a set Borel reducible to a measurable set is measurable. -/
+theorem BorelReducible.measurableSet (h : A.BorelReducible B) (hB : MeasurableSet B) :
+    MeasurableSet A := by
+  obtain ⟨f, hf, rfl⟩ := h
+  exact hf hB
+
+/-- **Analyticity pulls back**: in a Polish space with its Borel σ-algebra, a set Borel reducible
+to an analytic subset of a second-countable Hausdorff space is analytic. -/
+theorem BorelReducible.analyticSet [t : TopologicalSpace X] [PolishSpace X] [BorelSpace X]
+    [TopologicalSpace Y] [T2Space Y] [SecondCountableTopology Y] [OpensMeasurableSpace Y]
+    (h : A.BorelReducible B) (hB : MeasureTheory.AnalyticSet B) :
+    MeasureTheory.AnalyticSet A := by
+  obtain ⟨f, hf, rfl⟩ := h
+  -- A finer Polish topology on the source makes the reduction continuous, the preimage is
+  -- analytic for it, and analytic sets stay analytic for the coarser original topology.
+  obtain ⟨t', ht', hft', ht'p⟩ := hf.exists_continuous
+  -- Both topologies on `X` are in play, so the instances are passed explicitly.
+  have h' := @MeasureTheory.AnalyticSet.preimage X Y t' _ ht'p _ B hB f hft'
+  simpa using @MeasureTheory.AnalyticSet.image_of_continuous X t' X t _ h' id
+    (continuous_id_of_le ht')
+
+/-- A set is Borel reducible to the empty set exactly when it is empty and some map into the
+target exists. -/
+theorem borelReducible_empty_iff :
+    A.BorelReducible (∅ : Set Y) ↔ A = ∅ ∧ (IsEmpty X ∨ Nonempty Y) := by
+  refine ⟨fun ⟨f, _, hA⟩ => ⟨by rw [hA, preimage_empty], ?_⟩, fun ⟨hA, hXY⟩ => ?_⟩
+  · exact (isEmpty_or_nonempty X).imp_right fun ⟨x⟩ => ⟨f x⟩
+  · subst hA
+    obtain hX | ⟨⟨y⟩⟩ := hXY
+    · exact ⟨isEmptyElim, measurable_of_empty _, (eq_empty_of_isEmpty _).symm⟩
+    · exact ⟨fun _ => y, measurable_const, (preimage_empty).symm⟩
+
+/-- A set is Borel reducible to the whole space exactly when it is the whole space and some map
+into the target exists. -/
+theorem borelReducible_univ_iff :
+    A.BorelReducible (univ : Set Y) ↔ A = univ ∧ (IsEmpty X ∨ Nonempty Y) := by
+  rw [← borelReducible_compl_iff, compl_univ, borelReducible_empty_iff, compl_empty_iff]
+
+/-- Every measurable set is Borel reducible to a set `B` that is neither empty nor the whole
+space, through a measurable map taking one value in `B` and one outside. -/
+theorem _root_.MeasurableSet.borelReducible (hA : MeasurableSet A) {y₁ y₀ : Y} (h₁ : y₁ ∈ B)
+    (h₀ : y₀ ∉ B) : A.BorelReducible B := by
+  classical
+  refine ⟨A.piecewise (fun _ => y₁) fun _ => y₀, measurable_const.piecewise hA measurable_const,
+    ext fun x => ?_⟩
+  by_cases hx : x ∈ A <;> simp [hx, h₁, h₀]
+
+/-- For a measurable set `B` that is neither empty nor the whole space, the sets Borel reducible
+to `B` are exactly the measurable sets. -/
+theorem borelReducible_iff_measurableSet (hB : MeasurableSet B) {y₁ y₀ : Y} (h₁ : y₁ ∈ B)
+    (h₀ : y₀ ∉ B) : A.BorelReducible B ↔ MeasurableSet A :=
+  ⟨fun h => h.measurableSet hB, fun hA => hA.borelReducible h₁ h₀⟩
+
+end Set
 
 namespace Setoid
 
@@ -154,16 +267,19 @@ theorem BorelReducible.mk_quotient_le {Y : Type u} [MeasurableSpace Y] {F : Seto
     (h : E.BorelReducible F) : #(Quotient E) ≤ #(Quotient F) := by
   simpa using h.lift_mk_quotient_le
 
+/-- A Borel reduction `f` of `E` to `F` makes the graph of `E` Borel reducible, as a set, to the
+graph of `F`, through `Prod.map f f`. The converse fails: the graph of `E₀` is Borel reducible to
+the diagonal of Cantor space, but `E₀` is not smooth. -/
+theorem BorelReducible.borelReducible_setOf (h : E.BorelReducible F) :
+    {p : X × X | E p.1 p.2}.BorelReducible {p : Y × Y | F p.1 p.2} := by
+  obtain ⟨f, hf, hfE⟩ := h
+  exact ⟨Prod.map f f, hf.prodMap hf, Set.ext fun p => hfE p.1 p.2⟩
+
 /-- A Borel reduction pulls a Borel graph back: if `E` is Borel reducible to `F` and the graph of
 `F` is measurable, so is the graph of `E`. -/
 theorem BorelReducible.measurableSet_setOf (h : E.BorelReducible F)
-    (hF : MeasurableSet {p : Y × Y | F p.1 p.2}) : MeasurableSet {p : X × X | E p.1 p.2} := by
-  obtain ⟨f, hf, hfE⟩ := h
-  have : {p : X × X | E p.1 p.2} = Prod.map f f ⁻¹' {p : Y × Y | F p.1 p.2} := by
-    ext p
-    exact hfE p.1 p.2
-  rw [this]
-  exact hF.preimage (hf.prodMap hf)
+    (hF : MeasurableSet {p : Y × Y | F p.1 p.2}) : MeasurableSet {p : X × X | E p.1 p.2} :=
+  h.borelReducible_setOf.measurableSet hF
 
 /-! ### Borel bireducibility -/
 

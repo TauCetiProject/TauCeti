@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Group.Equiv.Defs
 public import Mathlib.Algebra.Group.Pi.Basic
 public import Mathlib.Algebra.Group.Prod
+public import TauCeti.Algebra.Group.Equiv.Pi
 public import TauCeti.Data.Finset.Pi
+public import TauCeti.Data.Finset.Sum
 
 /-!
 # Products of monoids indexed by finite sets
@@ -20,15 +22,26 @@ For disjoint `s` and `t`, gluing a family on `s` and a family on `t` is a multip
 equivalence `MulEquiv.piFinsetUnion π h : (∀ i : s, π i) × (∀ i : t, π i) ≃* ∀ i : s ∪ t, π i`.
 Under it the restrictions to `s` and to `t` are the two projections of the product. Gluing is
 associative: this is the statement on underlying functions, `Equiv.restrict₂_piFinsetUnion_assoc`.
+For an embedding `f : ι' ↪ ι`, a family indexed by `s` with values in `π (f i)` is a family indexed
+by `s.map f`, by the multiplicative equivalence
+`MulEquiv.piFinsetMap π f s : (∀ i : s, π (f i)) ≃* ∀ j : s.map f, π j`, which commutes with
+restriction. A family indexed by a finite `s ⊆ ι ⊕ ι'` is the pair of its restrictions to
+`s.toLeft` and `s.toRight` (or, more generally, to its sets `l` and `r` of left and right
+indices), by the multiplicative equivalence
+`MulEquiv.piFinsetSum π s l r : (∀ i : s, π i) ≃* (∀ a : l, π (.inl a)) × ∀ b : r, π (.inr b)`,
+so such a family restricts to `1` on a smaller finite set exactly when both its parts do.
 
-These are the projections `Γ_J → Γ_I` and the disjoint-union identifications
-`Γ_(I ⊔ J) ≅ Γ_I × Γ_J` of the groups `Γ_I = ∏_(α ∈ I) Γ_α` attached to the finite sets `I` of
-charts of an implicit atlas, in the sense of Pardon.
+These are the projections `Γ_J → Γ_I`, the disjoint-union identifications
+`Γ_(I ⊔ J) ≅ Γ_I × Γ_J` and the injective-reindexing identifications `Γ_I ≅ Γ_(f I)` of the groups
+`Γ_I = ∏_(α ∈ I) Γ_α` attached to the finite sets `I` of charts of an implicit atlas, in the sense
+of Pardon, and the splittings `Γ_I ≅ Γ₁_(I₁) × Γ₂_(I₂)` for a product of implicit atlases.
 
 ## Main definitions
 
 * `Finset.restrict₂MonoidHom`: restriction to a smaller finite set, as a monoid homomorphism.
 * `MulEquiv.piFinsetUnion`: `Equiv.piFinsetUnion` as a multiplicative equivalence.
+* `MulEquiv.piFinsetMap`: relabelling along an embedding, as a multiplicative equivalence.
+* `MulEquiv.piFinsetSum`: `Equiv.piFinsetSum` as a multiplicative equivalence.
 
 ## Main results
 
@@ -37,6 +50,9 @@ charts of an implicit atlas, in the sense of Pardon.
 * `MulEquiv.restrict₂MonoidHom_comp_piFinsetUnion_left` and
   `MulEquiv.restrict₂MonoidHom_comp_piFinsetUnion_right`: the restrictions to the two pieces are
   the projections of the product.
+* `MulEquiv.restrict₂_piFinsetMap`: relabelling along an embedding commutes with restriction.
+* `Finset.restrict₂_eq_one_iff_piFinsetSum`: a family on a finite subset of a sum type restricts
+  to `1` exactly when both of its parts do.
 
 ## References
 
@@ -146,3 +162,100 @@ theorem restrict₂MonoidHom_comp_piFinsetUnion_right (h : Disjoint s t) :
   MonoidHom.ext fun x ↦ Equiv.restrict₂_piFinsetUnion_right π h x
 
 end MulEquiv
+
+namespace MulEquiv
+
+open Finset
+
+section Map
+
+variable {ι ι' : Type*} (π : ι → Type*) (f : ι' ↪ ι) (s t : Finset ι')
+
+/-- Relabelling a family indexed by `s` along an embedding `f`, as a family indexed by `s.map f`.
+Its inverse reads the coordinate at `i` in position `f i`. -/
+@[to_additive /-- Relabelling a family indexed by `s` along an embedding `f`, as a family indexed by
+`s.map f`. Its inverse reads the coordinate at `i` in position `f i`. -/]
+noncomputable def piFinsetMap [∀ i, Mul (π i)] : (∀ i : s, π (f i)) ≃* ∀ j : s.map f, π j :=
+  piCongrLeft (fun j : s.map f ↦ π j) (s.equivMap f)
+
+/-- The inverse of `MulEquiv.piFinsetMap` reads the coordinate at `i` in position `f i`. -/
+@[to_additive (attr := simp) /-- The inverse of `AddEquiv.piFinsetMap` reads the coordinate at `i`
+in position `f i`. -/]
+theorem piFinsetMap_symm_apply [∀ i, Mul (π i)] (g : ∀ j : s.map f, π j) (i : s) :
+    (piFinsetMap π f s).symm g i = g ⟨f i, mem_map_of_mem f i.property⟩ :=
+  piCongrLeft_symm_apply (fun j : s.map f ↦ π j) (s.equivMap f) g i
+
+/-- `MulEquiv.piFinsetMap` puts the coordinate at `i` in position `f i`. -/
+@[to_additive (attr := simp) /-- `AddEquiv.piFinsetMap` puts the coordinate at `i` in position
+`f i`. -/]
+theorem piFinsetMap_apply_mk [∀ i, Mul (π i)] (g : ∀ i : s, π (f i)) (i : s) :
+    piFinsetMap π f s g ⟨f i, mem_map_of_mem f i.property⟩ = g i := by
+  rw [← piFinsetMap_symm_apply π f s (piFinsetMap π f s g), symm_apply_apply]
+
+variable {s t}
+
+/-- Relabelling along an embedding commutes with restriction to a smaller finite set. -/
+@[to_additive (attr := simp) /-- Relabelling along an embedding commutes with restriction to a
+smaller finite set. -/]
+theorem restrict₂_piFinsetMap [∀ i, Mul (π i)] (h : s ⊆ t) (g : ∀ i : t, π (f i)) :
+    restrict₂ (map_subset_map.2 h) (piFinsetMap π f t g) =
+      piFinsetMap π f s (restrict₂ (π := fun i ↦ π (f i)) h g) := by
+  ext ⟨j, hj⟩
+  obtain ⟨i, hi, rfl⟩ := mem_map.1 hj
+  exact (piFinsetMap_apply_mk π f t g ⟨i, h hi⟩).trans
+    (piFinsetMap_apply_mk π f s (restrict₂ (π := fun i ↦ π (f i)) h g) ⟨i, hi⟩).symm
+
+end Map
+
+section Sum
+
+variable {ι ι' : Type*} (π : ι ⊕ ι' → Type*) [∀ i, Mul (π i)] (s : Finset (ι ⊕ ι')) (l : Finset ι)
+  (r : Finset ι')
+
+/-- Splitting a family on a finite `s ⊆ ι ⊕ ι'` into its restrictions to its sets `l` and `r` of
+left and right indices, such as `s.toLeft` and `s.toRight`. This is `Equiv.piFinsetSum` as a
+`MulEquiv`. -/
+@[to_additive /-- Splitting a family on a finite `s ⊆ ι ⊕ ι'` into its restrictions to its sets
+`l` and `r` of left and right indices, such as `s.toLeft` and `s.toRight`. This is
+`Equiv.piFinsetSum` as an `AddEquiv`. -/]
+def piFinsetSum (hl : ∀ a, .inl a ∈ s ↔ a ∈ l := by simp)
+    (hr : ∀ b, .inr b ∈ s ↔ b ∈ r := by simp) :
+    (∀ i : s, π i) ≃* (∀ a : l, π (.inl a)) × ∀ b : r, π (.inr b) where
+  __ := Equiv.piFinsetSum π s l r hl hr
+  map_mul' _ _ := (rfl)
+
+variable (hl : ∀ a, .inl a ∈ s ↔ a ∈ l) (hr : ∀ b, .inr b ∈ s ↔ b ∈ r)
+
+@[to_additive (attr := simp)]
+theorem coe_piFinsetSum : ⇑(piFinsetSum π s l r hl hr) = Equiv.piFinsetSum π s l r hl hr :=
+  (rfl)
+
+@[to_additive (attr := simp)]
+theorem coe_piFinsetSum_symm :
+    ⇑(piFinsetSum π s l r hl hr).symm = (Equiv.piFinsetSum π s l r hl hr).symm :=
+  (rfl)
+
+end Sum
+
+end MulEquiv
+
+namespace Finset
+
+variable {ι ι' : Type*} {π : ι ⊕ ι' → Type*} [∀ i, One (π i)]
+
+/-- A family `f` on `t ⊆ ι ⊕ ι'` restricts to `1` on `s ⊆ t` exactly when its left and right parts
+restrict to `1` on `s.toLeft` and `s.toRight`. For families of groups: the subgroup `Γ_(t \ s)`
+of `Γ_t` splits as `Γ₁_(t₁ \ s₁) × Γ₂_(t₂ \ s₂)`. -/
+@[to_additive /-- A family `f` on `t ⊆ ι ⊕ ι'` restricts to `0` on `s ⊆ t` exactly when its left
+and right parts restrict to `0` on `s.toLeft` and `s.toRight`. -/]
+theorem restrict₂_eq_one_iff_piFinsetSum {s t : Finset (ι ⊕ ι')} (h : s ⊆ t) (f : ∀ i : t, π i) :
+    restrict₂ h f = 1 ↔
+      restrict₂ (π := fun a ↦ π (.inl a)) (toLeft_subset_toLeft h)
+          ((Equiv.piFinsetSum π t t.toLeft t.toRight) f).1 = 1 ∧
+        restrict₂ (π := fun b ↦ π (.inr b)) (toRight_subset_toRight h)
+          ((Equiv.piFinsetSum π t t.toLeft t.toRight) f).2 = 1 := by
+  -- `Equiv.piFinsetSum` sends `1` to `1` by definition.
+  rw [← (Equiv.piFinsetSum π s s.toLeft s.toRight).injective.eq_iff' (b := 1) (c := 1) (rfl),
+    Equiv.piFinsetSum_restrict₂, Prod.mk_eq_one]
+
+end Finset

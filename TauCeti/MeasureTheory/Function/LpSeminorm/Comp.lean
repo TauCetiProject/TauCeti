@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
+import Mathlib.MeasureTheory.Function.LpSeminorm.SMul
+import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # Precomposition by a map with dominated pushforward
@@ -25,7 +27,9 @@ the preimage of an arbitrary set (`MeasureTheory.MeasurePreserving.eLpNorm_comp_
 
 For `p = ∞` no bound on the pushforward is needed: precomposition with a quasi-measure-preserving
 map, such as the projection `Prod.fst` from a product of σ-finite measures, preserves `L^∞`
-(`MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`).
+(`MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`). Conversely, pushing forward along
+`f ∈ Lᵖ(μ)` makes the identity lie in `Lᵖ(μ.map f)` on any Borel pseudometrizable codomain, with
+no separability assumption (`MeasureTheory.MemLp.id_map`).
 
 ## Main declarations
 
@@ -36,8 +40,12 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
   on `s`.
 * `MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`: precomposition with a
   quasi-measure-preserving map preserves `L^∞`.
-* `MeasureTheory.eLpNorm_clm_comp_le`: postcomposition with a continuous linear map scales
+* `MeasureTheory.MemLp.id_map`: if `f ∈ Lᵖ(μ)` takes values in a Borel pseudometrizable space,
+  then `id ∈ Lᵖ(μ.map f)`.
+* `ContinuousLinearMap.eLpNorm_comp_le`: postcomposition with a continuous semilinear map scales
   `eLpNorm` by at most its operator norm, with no measurability assumption.
+* `MeasureTheory.MemLp.comp_of_norm_le_mul_one_add`: over a finite measure, postcomposition with a
+  strongly measurable map of linear growth preserves `Lᵖ`.
 * `Isometry.eLpNorm_comp_of_map_zero`, `LinearIsometry.eLpNorm_comp`,
   `LinearIsometryEquiv.eLpNorm_comp`: postcomposition with an isometry fixing zero, such as a
   linear isometry, preserves `eLpNorm`.
@@ -60,17 +68,14 @@ needed: its `eLpNorm` is infinite when it is not almost everywhere strongly meas
 theorem eLpNorm_comp_le_of_map_le_smul {C : ℝ≥0∞} (hf : AEMeasurable f μ) (hmap : μ.map f ≤ C • ν)
     (p : ℝ≥0∞) :
     eLpNorm (g ∘ f) p μ ≤ C ^ (1 / p).toReal * eLpNorm g p ν := by
-  by_cases hC : C = 0
-  · have hμ : μ = 0 := (Measure.map_eq_zero_iff hf).1
-      (le_antisymm (by simpa [hC] using hmap) bot_le)
-    simp [hμ]
   by_cases hg : AEStronglyMeasurable g ν
   · rw [← eLpNorm_map_measure (hg.mono_ac (Measure.absolutelyContinuous_of_le_smul hmap)) hf]
     exact eLpNorm_le_of_measure_le_smul hmap
-  rw [eLpNorm_of_not_aestronglyMeasurable hg,
-    ENNReal.mul_top (ENNReal.rpow_pos_of_nonneg (pos_iff_ne_zero.mpr hC)
-      ENNReal.toReal_nonneg).ne']
-  exact le_top
+  rcases eq_or_ne C 0 with rfl | hC
+  · -- `μ.map f ≤ 0` forces `μ = 0`.
+    have hμ : μ = 0 := (Measure.map_eq_zero_iff hf).1 (le_antisymm (by simpa using hmap) bot_le)
+    simp [hμ]
+  simp [eLpNorm_of_not_aestronglyMeasurable hg, hC]
 
 /-- **Measure-preserving change of variables on a preimage.** If `f` is a measurable embedding
 carrying `μ` to `ν`, then the `Lᵖ` seminorm of `g ∘ f` on `f ⁻¹' s` is that of `g` on `s`. Neither
@@ -97,22 +102,50 @@ theorem MemLp.comp_quasiMeasurePreserving_top (hg : MemLp g ∞ ν)
   rw [memLp_iff, eLpNorm_exponent_top (hgm.comp_quasiMeasurePreserving hf)]
   exact (eLpNormEssSup_le_of_ae_eNorm_bound (hf.ae ae_le_eLpNormEssSup)).trans_lt hg
 
-/-- **`eLpNorm` bound for postcomposition.** A continuous linear map of the codomain scales
+/-- **Pushforward into `Lᵖ` of the law.** If `f` lies in `Lᵖ(μ)` with values in a Borel
+pseudometrizable space, then the identity lies in `Lᵖ(μ.map f)`. No separability assumption on the
+codomain is needed. -/
+theorem MemLp.id_map [TopologicalSpace.PseudoMetrizableSpace ε] [MeasurableSpace ε] [BorelSpace ε]
+    {f : α → ε} {p : ℝ≥0∞} (hf : MemLp f p μ) :
+    MemLp id p (μ.map f) :=
+  (memLp_map_measure_iff hf.aestronglyMeasurable.aestronglyMeasurable_id_map hf.aemeasurable).mpr hf
+
+/-- **`eLpNorm` bound for postcomposition.** A continuous semilinear map of the codomain scales
 `eLpNorm` by at most its operator norm. No measurability assumption is needed: a function that
 is not almost everywhere strongly measurable has infinite `eLpNorm`. -/
-theorem eLpNorm_clm_comp_le {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] {u : α → F} {p : ℝ≥0∞} (A : F →L[ℝ] G) :
+theorem _root_.ContinuousLinearMap.eLpNorm_comp_le {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜]
+    [NontriviallyNormedField 𝕜₂] [SeminormedAddCommGroup E] [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 E] [NormedSpace 𝕜₂ F] {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂] {u : α → E}
+    {p : ℝ≥0∞} (A : E →SL[σ₁₂] F) :
     eLpNorm (fun x => A (u x)) p μ ≤ ‖A‖ₑ * eLpNorm u p μ := by
   by_cases hu : AEStronglyMeasurable u μ
-  · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (A.continuous.comp_aestronglyMeasurable hu)
-      (Filter.Eventually.of_forall fun x => by
-        simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using
-          A.le_opNNNorm (u x)) p
-  · by_cases hA : A = 0
-    · simp [hA]
-    · rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top (by
-        rw [eNorm_eq_nnNorm]; exact ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hA))]
-      exact le_top
+  · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul'' p (A.continuous.comp_aestronglyMeasurable hu)
+      (.of_forall fun x => A.le_opENorm (u x))
+  by_cases hA : ‖A‖ₑ = 0
+  · -- Each `A (u x)` has norm zero, so is inseparable from `0`: the constant function `0`
+    -- approximates `A ∘ u`, which is thus strongly measurable with `eLpNorm` zero.
+    have h0 (x : α) : ‖A (u x)‖ₑ = 0 := by simpa [hA] using A.le_opENorm (u x)
+    have hm : StronglyMeasurable fun x => A (u x) := ⟨fun _ => 0, fun x => by
+      have : ‖A (u x)‖ = 0 := by simpa [eNorm_eq_nnNorm, ← NNReal.coe_eq_zero] using h0 x
+      rw [(inseparable_zero_iff_norm.2 this).nhds_eq]
+      exact tendsto_const_nhds⟩
+    simp [eLpNorm_zero_of_ae_eNorm_zero' hm.aestronglyMeasurable (.of_forall h0)]
+  rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top hA]
+  exact le_top
+
+/-- **Postcomposition with a map of linear growth.** A strongly measurable map `v` that grows at
+most linearly, `‖v x‖ ≤ C (1 + ‖x‖)`, maps `Lᵖ` into `Lᵖ` over a finite measure: for
+`u ∈ Lᵖ(μ; E)`, the function `v ∘ u` lies in `Lᵖ(μ; F)`. -/
+theorem MemLp.comp_of_norm_le_mul_one_add {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E]
+    [BorelSpace E] [NormedAddCommGroup F] [IsFiniteMeasure μ] {p : ℝ≥0∞} {u : α → E} {v : E → F}
+    {C : ℝ} (hu : MemLp u p μ) (hv : StronglyMeasurable v) (hvC : ∀ x, ‖v x‖ ≤ C * (1 + ‖x‖)) :
+    MemLp (fun a ↦ v (u a)) p μ := by
+  have hbound : MemLp (fun a ↦ C * (1 + ‖u a‖)) p μ :=
+    ((memLp_const (1 : ℝ)).add hu.norm).const_mul C
+  refine hbound.of_le (hv.aestronglyMeasurable.comp_aemeasurable hu.aemeasurable)
+    (.of_forall fun a ↦ ?_)
+  rw [Real.norm_eq_abs]
+  exact (hvC (u a)).trans (le_abs_self _)
 
 end MeasureTheory
 

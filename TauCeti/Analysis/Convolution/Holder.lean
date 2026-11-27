@@ -8,15 +8,20 @@ module
 public import Mathlib.Analysis.Convolution
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Topology.MetricSpace.Holder
+public import Mathlib.Algebra.Group.EvenFunction
+import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
 # Integrable kernels preserve bounded Hölder estimates
 
-Convolution with an integrable scalar kernel preserves both a uniform bound and a Hölder
+Convolution with an integrable scalar kernel preserves both an almost-everywhere bound and a Hölder
 constant, multiplying each by the integral of the kernel norm. This applies to truncated planar
 Cauchy and Newtonian kernels, and to the normalized smoothing kernels used to pass their
-estimates from smooth to Hölder data.
+estimates from smooth to Hölder data. An even kernel with vanishing integral sees only the second
+differences `f (x + h) + f (x - h) - 2 f x` of the function it is convolved with, so a bound
+`H ‖h‖ ^ s` on them bounds the convolution by `H` times the `s`-th moment of the kernel; this is
+how the Littlewood–Paley blocks of a function in the Zygmund class are estimated.
 -/
 
 public noncomputable section
@@ -25,6 +30,25 @@ open MeasureTheory Metric Set
 open scoped NNReal
 
 namespace TauCeti
+
+section
+
+variable {E 𝕜 F : Type*} [Sub E] [MeasurableSpace E] {μ : Measure E}
+  [NormedAddCommGroup 𝕜] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  [SMulZeroClass 𝕜 F] [IsBoundedSMul 𝕜 F]
+  {K : E → 𝕜} {f : E → F} {M : ℝ}
+
+/-- An integrable scalar kernel multiplies an almost-everywhere bound on the translated function by
+its `L¹` norm. -/
+theorem norm_integral_kernel_smul_sub_le (hK : Integrable K μ) {w : E}
+    (hM : ∀ᵐ z ∂μ, ‖f (w - z)‖ ≤ M) :
+    ‖∫ z, K z • f (w - z) ∂μ‖ ≤ (∫ z, ‖K z‖ ∂μ) * M := by
+  calc
+    _ ≤ ∫ z : E, ‖K z‖ * M ∂μ := norm_integral_le_of_norm_le (hK.norm.mul_const M)
+      (hM.mono fun z hz ↦ (norm_smul_le _ _).trans (mul_le_mul_of_nonneg_left hz (norm_nonneg _)))
+    _ = _ := integral_mul_const _ _
+
+end
 
 variable {E 𝕜 F : Type*} [NormedAddCommGroup E] [RCLike 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedSpace ℝ F]
@@ -67,16 +91,45 @@ theorem integrable_kernel_smul_sub (hK : Integrable K μ) (hf : Continuous f)
       exact mul_le_mul_of_nonneg_left (hM _) (norm_nonneg _)
 
 omit [OpensMeasurableSpace E] [SecondCountableTopologyEither E F] in
-/-- An integrable scalar kernel multiplies the uniform bound by its `L¹` norm. -/
-theorem norm_integral_kernel_smul_sub_le (hK : Integrable K μ)
-    (hM : ∀ x, ‖f x‖ ≤ M) (w : E) :
-    ‖∫ z, K z • f (w - z) ∂μ‖ ≤ (∫ z, ‖K z‖ ∂μ) * M := by
-  calc
-    _ ≤ ∫ z : E, ‖K z‖ * M ∂μ := norm_integral_le_of_norm_le (hK.norm.mul_const M)
-      (ae_of_all _ fun z ↦ by
-        rw [norm_smul]
-        exact mul_le_mul_of_nonneg_left (hM _) (norm_nonneg _))
-    _ = _ := integral_mul_const _ _
+/-- **Even kernels with vanishing integral see second differences.** Let `K` be an even integrable
+scalar kernel with `∫ K = 0` and finite `s`-th moment, and let the second differences of `f`
+satisfy `‖f (x + h) + f (x - h) - 2 f x‖ ≤ H ‖h‖ ^ s`. If `z ↦ K z • f (w - z)` is integrable,
+then `‖∫ K z • f (w - z) dz‖ ≤ H ∫ ‖z‖ ^ s ‖K z‖ dz`. -/
+theorem norm_integral_kernel_smul_sub_le_of_norm_add_add_sub_two_nsmul_le [CompleteSpace F]
+    [MeasurableNeg E] [μ.IsNegInvariant] (hK : Integrable K μ) (heven : Function.Even K)
+    (hK0 : ∫ z, K z ∂μ = 0) {H s : ℝ}
+    (hf : ∀ x h, ‖f (x + h) + f (x - h) - 2 • f x‖ ≤ H * ‖h‖ ^ s)
+    (hm : Integrable (fun z ↦ ‖z‖ ^ s * ‖K z‖) μ) {w : E}
+    (hw : Integrable (fun z ↦ K z • f (w - z)) μ) :
+    ‖∫ z, K z • f (w - z) ∂μ‖ ≤ H * ∫ z, ‖z‖ ^ s * ‖K z‖ ∂μ := by
+  -- Averaging the integral with its reflection `z ↦ -z` replaces `f (w - z)` by half the second
+  -- difference `f (w + z) + f (w - z) - 2 f w`.
+  have heven' : ∀ z, K (-z) = K z := heven
+  have hw' : Integrable (fun z ↦ K z • f (w + z)) μ := by
+    simpa [heven', sub_neg_eq_add] using hw.comp_neg
+  have hc : Integrable (fun z ↦ K z • f w) μ := hK.smul_const _
+  have hzero : ∫ z, K z • f w ∂μ = 0 := by rw [integral_smul_const, hK0, zero_smul]
+  -- Reflecting `z ↦ -z` and using that `K` is even turns `f (w - z)` into `f (w + z)`.
+  have hrefl : ∫ z, K z • f (w - z) ∂μ = ∫ z, K z • f (w + z) ∂μ := by
+    rw [← integral_neg_eq_self]
+    simp only [heven', sub_neg_eq_add]
+  have heq : (∫ z, K z • f (w - z) ∂μ) + ∫ z, K z • f (w - z) ∂μ =
+      ∫ z, K z • (f (w + z) + f (w - z) - 2 • f w) ∂μ := by
+    simp only [two_nsmul, smul_sub, smul_add]
+    have hsum : Integrable (fun z ↦ K z • f (w + z) + K z • f (w - z)) μ := hw'.add hw
+    have hcc : Integrable (fun z ↦ K z • f w + K z • f w) μ := hc.add hc
+    rw [integral_sub hsum hcc, integral_add hw' hw, integral_add hc hc, hzero, add_zero,
+      sub_zero, hrefl]
+  have hle : ‖∫ z, K z • (f (w + z) + f (w - z) - 2 • f w) ∂μ‖ ≤
+      ∫ z, H * (‖z‖ ^ s * ‖K z‖) ∂μ :=
+    norm_integral_le_of_norm_le (hm.const_mul _) (ae_of_all _ fun z ↦ by
+      rw [norm_smul]
+      nlinarith [mul_le_mul_of_nonneg_left (hf w z) (norm_nonneg (K z))])
+  have h2 : ‖(∫ z, K z • f (w - z) ∂μ) + ∫ z, K z • f (w - z) ∂μ‖ =
+      2 * ‖∫ z, K z • f (w - z) ∂μ‖ := by
+    rw [← two_smul 𝕜, norm_smul, RCLike.norm_two]
+  rw [integral_const_mul, ← heq, h2] at hle
+  linarith [norm_nonneg (∫ z, K z • f (w - z) ∂μ)]
 
 /-- An integrable scalar kernel preserves a Hölder exponent and multiplies its constant by
 its `L¹` norm. No boundedness is needed: the Hölder condition makes any two translates of the

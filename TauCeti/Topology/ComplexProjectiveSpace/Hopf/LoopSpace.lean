@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.UniversalCover.Circle.FundamentalGroup
-public import TauCeti.Analysis.Complex.Circle
+public import TauCeti.Analysis.Complex.Circle.Basic
 public import TauCeti.Topology.ComplexProjectiveSpace.Hopf.Exact
 public import TauCeti.Topology.Homotopy.HomotopyGroup.TopologicalMonoid
 public import TauCeti.Topology.Homotopy.HomotopyGroup.WeakHomotopyEquivalence
@@ -163,7 +163,8 @@ theorem exists_isWeakHomotopyEquivalence_hopfProduct (hn : n ≠ 0) :
     ∃ j : C(Circle, MooreLoopSpace (ComplexProjectiveSpace n) (mk n v)),
       j 1 = 1 ∧ (hopfProduct v j).IsWeakHomotopyEquivalence :=
   ⟨_, Path.toCircle_one _, isWeakHomotopyEquivalence_hopfProduct hn _
-    (Circle.bijective_mapOfEq_toCircle_out_symm_ofAdd_one
-      (mooreLoopSpaceFundamentalGroupMulEquiv v hn))⟩
+    (Circle.bijective_mapOfEq_toCircle_of_apply_eq_ofAdd_one
+      (mooreLoopSpaceFundamentalGroupMulEquiv v hn) _
+      (by rw [FundamentalGroup.fromPath_mk_out, MulEquiv.apply_symm_apply]))⟩
 
 end TauCeti.ComplexProjectiveSpace

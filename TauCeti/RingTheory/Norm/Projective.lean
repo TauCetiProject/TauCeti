@@ -8,9 +8,10 @@ module
 public import Mathlib.RingTheory.Ideal.Over
 public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Norm.Transitivity
-public import TauCeti.LinearAlgebra.Determinant.Projective
+public import TauCeti.LinearAlgebra.Determinant.Projective.Basic
 public import TauCeti.RingTheory.TensorProduct.Maps
--- `baseChangeTowerAlgEquiv` is used only in the proof of `Algebra.projectiveNorm_rTensor`.
+-- `baseChangeTowerAlgEquiv` and its comparison with `rTensor` are used only in the proof of
+-- `Algebra.projectiveNorm_rTensor`.
 import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
@@ -130,17 +131,15 @@ theorem Algebra.projectiveNorm_rTensor {A A' : Type*} [CommRing A] [Algebra R A]
     [Algebra R A'] (φ : A →ₐ[R] A') (x : A ⊗[R] S) :
     projectiveNorm A' (Algebra.TensorProduct.rTensor S φ x) = φ (projectiveNorm A x) := by
   let := φ.toRingHom.toAlgebra
-  have : IsScalarTower R A A' := .of_algebraMap_eq fun a ↦ (φ.commutes a).symm
+  have : IsScalarTower R A A' := .of_algHom φ
+  have hφ : IsScalarTower.toAlgHom R A A' = φ := AlgHom.ext fun a ↦ by
+    rw [IsScalarTower.toAlgHom_apply, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
+      AlgHom.coe_toRingHom]
   -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`
-  let e := (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv R A S A').symm
-  have hx : e (Algebra.TensorProduct.rTensor S φ x) = (1 : A') ⊗ₜ[A] x := by
-    induction x using TensorProduct.inductionOn with
-    | tmul a b =>
-      have : φ a = a • (1 : A') := by simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
-      simp [e, this, TensorProduct.smul_tmul, TensorProduct.smul_tmul']
-    | add x y hx hy => simp only [map_add, tmul_add, hx, hy]
-  rw [← projectiveNorm_eq_of_algEquiv e, hx, projectiveNorm_baseChange_tmul,
-    RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+  rw [← projectiveNorm_eq_of_algEquiv
+      (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv R A S A').symm, ← hφ,
+    Algebra.TensorProduct.baseChangeTowerAlgEquiv_symm_rTensor,
+    projectiveNorm_baseChange_tmul, IsScalarTower.toAlgHom_apply]
 
 end BaseChange
 
