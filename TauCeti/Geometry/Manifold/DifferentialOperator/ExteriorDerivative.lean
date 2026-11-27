@@ -224,6 +224,19 @@ theorem sectionPrincipalSymbol_mextDerivSection_comp_sectionPrincipalSymbol_mext
   -- The operator `⟨0, _⟩` is the zero element of the submodule of operators of order two.
   exact sectionPrincipalSymbol_zero hx ξ
 
+/-- The principal symbol `σ(d)(ξ) α = ξ ∧ α` of the exterior derivative vanishes exactly when the
+wedge `ξ ∧ α`, of degree `1 + k`, vanishes. -/
+theorem sectionPrincipalSymbol_mextDerivSection_eq_zero_iff (hx : I.IsInteriorPoint x)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) (α : TangentSpace I x [⋀^Fin k]→L[ℝ] Trivial M ℝ x) :
+    sectionPrincipalSymbol I hx
+        ⟨mextDerivSection I M k, mextDerivSection_mem_differentialOperators_one I M k⟩ ξ α = 0 ↔
+      ContinuousAlternatingMap.pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
+          (ContinuousLinearMap.mul ℝ ℝ).continuous₂
+          (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1) ξ) α = 0 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩ <;> ext u
+  · simpa [Function.comp_def] using congrArg (fun φ ↦ φ (u ∘ Fin.cast (Nat.add_comm 1 k).symm)) h
+  · simp [h]
+
 /-- **The symbol sequence of the de Rham complex is exact.** At a nonzero covector `ξ ∈ T_x*M`,
 the principal symbols `σ(d)(ξ) = ξ ∧ ·` of the exterior derivatives
 `Γ(Λᵏ T*M) → Γ(Λᵏ⁺¹ T*M) → Γ(Λᵏ⁺² T*M)` form an exact sequence: a `(k + 1)`-covector `β` with
@@ -238,12 +251,7 @@ theorem exact_sectionPrincipalSymbol_mextDerivSection (hx : I.IsInteriorPoint x)
           ξ) := by
   refine fun β ↦ ⟨fun hβ ↦ ?_, ?_⟩
   · -- `ξ ∧ β = 0`, so `β = ξ ∧ ι_r β` for a vector `r` with `ξ r = 1`.
-    have hw : ContinuousAlternatingMap.pairedWedge (ContinuousLinearMap.mul ℝ ℝ)
-        (ContinuousLinearMap.mul ℝ ℝ).continuous₂
-        (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1) ξ) β = 0 := by
-      ext u
-      simpa [Function.comp_def] using
-        congrArg (fun φ ↦ φ (u ∘ Fin.cast (Nat.add_comm 1 (k + 1)).symm)) hβ
+    have hw := (sectionPrincipalSymbol_mextDerivSection_eq_zero_iff hx ξ β).1 hβ
     obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hξ
     have hr : ξ ((ξ v)⁻¹ • v) = 1 := by simpa using inv_mul_cancel₀ hv
     refine ⟨ContinuousAlternatingMap.curryLeftTopological β ((ξ v)⁻¹ • v), ?_⟩
@@ -266,9 +274,8 @@ theorem injective_sectionPrincipalSymbol_mextDerivSection_zero (hx : I.IsInterio
   intro c hc
   have ha : ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1) ξ ≠ 0 :=
     fun ha ↦ hξ <| ContinuousLinearMap.ext fun v ↦ by simpa using congrArg (· ![v]) ha
-  refine (ContinuousAlternatingMap.pairedWedge_eq_zero_iff_of_ne_zero ha).1 ?_
-  ext u
-  simpa [Function.comp_def] using congrArg (fun φ ↦ φ (u ∘ Fin.cast (Nat.add_comm 1 0).symm)) hc
+  exact (ContinuousAlternatingMap.pairedWedge_eq_zero_iff_of_ne_zero ha).1
+    ((sectionPrincipalSymbol_mextDerivSection_eq_zero_iff hx ξ c).1 hc)
 
 /-- **`d` on functions is elliptic exactly in dimension at most one.** At an interior point,
 `d : Γ(Λ⁰ T*M) → Γ(Λ¹ T*M)` is elliptic exactly when `dim M ≤ 1`: its symbol `c ↦ c ξ` at a
@@ -278,33 +285,27 @@ theorem isSectionEllipticAt_mextDerivSection_zero_iff (hx : I.IsInteriorPoint x)
     IsSectionEllipticAt
         ⟨mextDerivSection I M 0, mextDerivSection_mem_differentialOperators_one I M 0⟩ x ↔
       finrank ℝ E ≤ 1 := by
+  -- `0`-covectors form a line and `1`-covectors form the dual of `E`.
+  have hrank : finrank ℝ (E [⋀^Fin 0]→L[ℝ] ℝ) = 1 ∧
+      finrank ℝ (E [⋀^Fin 1]→L[ℝ] ℝ) = finrank ℝ E :=
+    ⟨by rw [← (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E (F := ℝ)
+        (ι := Fin 0)).toLinearEquiv.finrank_eq, Module.finrank_self],
+      by rw [← (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ)
+        (0 : Fin 1)).toLinearEquiv.finrank_eq, ContinuousLinearMap.dual_finrank_eq]⟩
   refine ⟨fun h ↦ ?_, fun hE ↦ isSectionEllipticAt_iff.2 fun hx' ξ hξ ↦
     sectionPrincipalSymbol_bijective_of_injective ?_ hx'
       (injective_sectionPrincipalSymbol_mextDerivSection_zero hx' hξ)⟩
-  · -- In dimension at least two, a covector `η` independent of `ξ ≠ 0` is not `c ξ`.
+  · -- In positive dimension, ellipticity forces the two ranks `1` and `dim E` to agree.
     by_contra! hE
-    have hE' : 1 < finrank ℝ (TangentSpace I x →L[ℝ] ℝ) := by
-      rwa [ContinuousLinearMap.dual_finrank_eq]
-    have := Module.nontrivial_of_finrank_pos (zero_lt_one.trans hE')
-    obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace I x →L[ℝ] ℝ)
-    obtain ⟨η, hη⟩ := exists_linearIndependent_pair_of_one_lt_finrank hE' hξ
-    obtain ⟨c, hc⟩ := (h.sectionPrincipalSymbol_bijective hx hξ).2
-      (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1) η)
-    have hcη : c 0 • ξ + (-1 : ℝ) • η = 0 := ContinuousLinearMap.ext fun v ↦ by
-      have hv := congrArg (fun φ ↦ φ ![v]) hc
-      simp only [sectionPrincipalSymbol_mextDerivSection_apply] at hv
-      simp at hv
-      simp [← hv, mul_comm]
-    exact one_ne_zero (neg_eq_zero.1 ((LinearIndependent.pair_iff.1 hη) _ _ hcη).2)
+    have := Module.nontrivial_of_finrank_pos (zero_lt_one.trans hE)
+    have h01 := h.finrank_eq hx
+    rw [hrank.1, hrank.2] at h01
+    omega
   · -- In dimension one, `0`-covectors and `1`-covectors both form lines.
     have hpos : 0 < finrank ℝ (TangentSpace I x →L[ℝ] ℝ) :=
       Module.finrank_pos_iff_exists_ne_zero.2 ⟨ξ, hξ⟩
     rw [ContinuousLinearMap.dual_finrank_eq] at hpos
-    rw [← (ContinuousAlternatingMap.constOfIsEmptyLIE ℝ E (F := ℝ)
-        (ι := Fin 0)).toLinearEquiv.finrank_eq,
-      ← (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := ℝ)
-        (0 : Fin 1)).toLinearEquiv.finrank_eq,
-      ContinuousLinearMap.dual_finrank_eq, Module.finrank_self]
+    rw [hrank.1, hrank.2]
     exact (hE.antisymm hpos).symm
 
 end PrincipalSymbol

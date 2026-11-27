@@ -33,7 +33,7 @@ linearly independent vectors the wedge is computed on their span, of dimension `
 This is the step from the contact volume form `α ∧ (dα)ⁿ` to the top power of `dα` on the
 hyperplane `ker α`.
 
-In every degree, wedging with a covector is exact. The homotopy formula
+In every degree, wedging with a nonzero covector is exact. The homotopy formula
 `ι_r (a ∧ ψ) + a ∧ ι_r ψ = a(r) ψ`
 (`ContinuousAlternatingMap.curryLeftTopological_pairedWedge_add_pairedWedge_curryLeftTopological`)
 shows that if `a ∧ ψ = 0` and `a(r) = 1`, then `ψ = a ∧ ι_r ψ`
