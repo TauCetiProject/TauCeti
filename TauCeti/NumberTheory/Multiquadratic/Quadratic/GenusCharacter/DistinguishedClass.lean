@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.GenusCharacter.OrdinaryTwoRank
-import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.SumTwoSquares
 import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Factorization
+import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Positivity
 import TauCeti.NumberTheory.Multiquadratic.Quadratic.Discriminant
 
 /-!
