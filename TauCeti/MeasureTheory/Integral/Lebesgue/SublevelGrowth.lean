@@ -64,32 +64,6 @@ namespace TauCeti
 
 variable {α : Type*} [MeasurableSpace α] {ν : Measure α} {u : α → ℝ} {ε A : ℝ} {C : ℝ≥0∞}
 
-/-- A measurable minorant attaining the lower integral gives the upper layer-cake bound. -/
-private theorem lintegral_ofReal_rpow_le_lintegral_meas_lt_mul {f : α → ℝ} (hf : 0 ≤ᵐ[ν] f)
-    {p : ℝ} (hp : 0 < p) :
-    ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂ν ≤ ENNReal.ofReal p *
-      ∫⁻ t in Ioi (0 : ℝ), ν {x | t < f x} * ENNReal.ofReal (t ^ (p - 1)) := by
-  obtain ⟨g, hg, hgf, hint⟩ :=
-    exists_measurable_le_lintegral_eq ν (fun x ↦ (ENNReal.ofReal (f x)) ^ p)
-  let v := fun x ↦ g x ^ p⁻¹
-  have hpow (x) : v x ^ p = g x := by simp [v, ← ENNReal.rpow_mul, hp.ne']
-  have hle (x) : v x ≤ ENNReal.ofReal (f x) := by
-    calc v x ≤ ((ENNReal.ofReal (f x)) ^ p) ^ p⁻¹ :=
-          ENNReal.rpow_le_rpow (hgf x) (by positivity)
-         _ = _ := by simp [← ENNReal.rpow_mul, hp.ne']
-  calc
-    ∫⁻ x, ENNReal.ofReal (f x ^ p) ∂ν = ∫⁻ x, (ENNReal.ofReal (f x)) ^ p ∂ν := by
-      refine lintegral_congr_ae (hf.mono fun x hx ↦ ?_)
-      exact (ENNReal.ofReal_rpow_of_nonneg hx hp.le).symm
-    _ = ∫⁻ x, v x ^ p ∂ν := by simpa only [hpow] using hint
-    _ = _ := lintegral_rpow_eq_lintegral_meas_ofReal_lt_mul ν
-      (show AEMeasurable v ν by dsimp [v]; fun_prop) hp
-    _ ≤ _ := by
-      gcongr ENNReal.ofReal p * ?_
-      refine setLIntegral_mono' measurableSet_Ioi fun t ht ↦ ?_
-      refine mul_le_mul_left (measure_mono fun x hx ↦ ?_) _
-      exact (ENNReal.ofReal_lt_ofReal_iff_of_nonneg (show 0 < t from ht).le).1 (hx.trans_le (hle x))
-
 /-- **Negative powers under polynomial sublevel growth.** If `u ≥ 1` almost everywhere and
 `ν {u ≤ R} ≤ R ^ ε * C` for every `R ≥ 1`, then for `0 < A` and `ε < A`,
 `∫⁻ u ^ (-A) ∂ν ≤ A / (A - ε) * C`. -/
