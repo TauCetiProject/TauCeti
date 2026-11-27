@@ -35,7 +35,6 @@ integer coefficients is infinite cyclic, read on the cover by the fundamental cl
 
 ## Main definitions
 
-* `TauCeti.RealProjectiveSpace.coverHom`: the antipodal double cover `Sᴺ → ℝPᴺ`.
 * `TauCeti.RealProjectiveSpace.twistedHomologyTopLinearEquivOfEven`: `H_N(ℝPᴺ; sign) ≅ R` for even
   `N > 0`.
 
@@ -55,36 +54,7 @@ open CategoryTheory Metric TauCeti.LocalCoefficientSystem
 
 namespace TauCeti.RealProjectiveSpace
 
-variable (N : ℕ)
-
-/-- The antipodal double cover `Sᴺ → ℝPᴺ`, the quotient map of the unit sphere, as a morphism of
-topological spaces. -/
-def coverHom :
-    TopCat.of (sphere (0 : EuclideanSpace ℝ (Fin (N + 1))) 1) ⟶
-      TopCat.of (RealProjectiveSpace N) :=
-  TopCat.ofHom ⟨mk N, continuous_mk N⟩
-
-@[simp]
-theorem coverHom_apply (x : sphere (0 : EuclideanSpace ℝ (Fin (N + 1))) 1) :
-    coverHom N x = mk N x :=
-  (rfl)
-
-/-- The quotient map `Sᴺ → ℝPᴺ` is a covering map. -/
-theorem isCoveringMap_coverHom : IsCoveringMap (coverHom N) :=
-  isCoveringMap_mk N
-
-/-- The antipodal deck transformation is a map over `ℝPᴺ`, as a continuous map and against
-`coverHom`. -/
-theorem coverHom_comp_antipode :
-    ⇑(coverHom N) ∘ ⇑((antipode N).val : C(sphere (0 : EuclideanSpace ℝ (Fin (N + 1))) 1, _)) =
-      ⇑(coverHom N) :=
-  deck.comp_eq (antipode N)
-
-/-- The fibres of the antipodal cover `Sᴺ → ℝPᴺ`, the antipodal pairs, are finite. -/
-theorem finite_preimage_coverHom (b : RealProjectiveSpace N) : Finite (coverHom N ⁻¹' {b}) :=
-  (isQuotientCoveringMap_mk N).finite_fiber b
-
-variable (R : Type) [Ring R] {N}
+variable (R : Type) [Ring R] {N : ℕ}
 
 /-- **Top homology of even-dimensional real projective space with sign coefficients.** For even
 `N > 0` and a ring `R` in which `2` is not a right zero divisor, `H_N(ℝPᴺ; sign) ≅ R`. Reading a
@@ -99,23 +69,21 @@ def twistedHomologyTopLinearEquivOfEven (h2 : IsRightRegular (2 : R)) (hN : Even
   have hσ (x : sphere (0 : EuclideanSpace ℝ (Fin (N + 1))) 1) :
       (antipode N).val x = (-1 : ℤˣ) • x :=
     (antipode_apply N x).trans (Sphere.neg_one_smul x).symm
-  LinearEquiv.ofBijective
-    (((ContinuousMap.HomotopyEquiv.refl _).singularHomologySphereIso (ModuleCat.of R R)
-        finrank_euclideanSpace_fin (Nat.one_le_iff_ne_zero.2 hN0)).hom.hom ∘ₗ
+  (LinearEquiv.ofBijective
       ((isCoveringMap_coverHom N).signHomologyToCover R (coverHom_comp_antipode N)
-        (finite_preimage_coverHom N) N).hom)
-    (((ContinuousMap.HomotopyEquiv.refl _).singularHomologySphereIso (ModuleCat.of R R)
-        finrank_euclideanSpace_fin (Nat.one_le_iff_ne_zero.2 hN0)).toLinearEquiv.bijective.comp
+        (finite_preimage_coverHom N) N).hom
       ((isCoveringMap_coverHom N).bijective_signHomologyToCover_of_isZero R
         (coverHom_comp_antipode N)
         (involutive_of_forall_eq_neg_one_smul hσ)
         (finite_preimage_coverHom N)
-        ((isQuotientCoveringMap_mk N).ne_self_of_forall_eq_neg_one_smul
-          hσ)
-        ((isQuotientCoveringMap_mk N).eq_or_eq_of_forall_eq_neg_one_smul
-          hσ)
-        (mk_surjective N) N (isZero_singularHomology_of_even R h2 hN hN0)
-        (isZero_singularHomology_of_lt R N.lt_succ_self)))
+        ((isQuotientCoveringMap_mk N).ne_self_of_forall_eq_neg_one_smul hσ)
+        (fun e e' h ↦ (isQuotientCoveringMap_mk N).eq_or_eq_of_forall_eq_neg_one_smul hσ e e'
+          (by rwa [coverHom_apply, coverHom_apply] at h))
+        (fun b ↦ (mk_surjective N b).imp fun x hx ↦ (coverHom_apply N x).trans hx)
+        N (isZero_singularHomology_of_even R h2 hN hN0)
+        (isZero_singularHomology_of_lt R N.lt_succ_self))).trans
+    ((ContinuousMap.HomotopyEquiv.refl _).singularHomologySphereIso (ModuleCat.of R R)
+      finrank_euclideanSpace_fin (Nat.one_le_iff_ne_zero.2 hN0)).toLinearEquiv
 
 /-- The equivalence `twistedHomologyTopLinearEquivOfEven` reads a twisted class on the antipodal
 cover (`IsCoveringMap.signHomologyToCover`) and identifies the top homology of the sphere with
