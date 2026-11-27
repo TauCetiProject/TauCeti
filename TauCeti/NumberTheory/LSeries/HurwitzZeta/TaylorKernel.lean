@@ -53,7 +53,7 @@ bounds on `‖hurwitzTaylorQuot M c z‖` and Taylor remainder bounds
 * `TauCeti.hurwitzKernel`: the generating kernel `exp (-c * z) / oneSubExpNegDivSelf ℂ z`.
 * `TauCeti.analyticAt_hurwitzKernel_zero`: analyticity of `hurwitzKernel c` at `0`.
 * `TauCeti.hurwitzBernoulliCoeff`: the Taylor coefficient `(-1) ^ k * B_k(c) / k!`.
-* `TauCeti.iteratedDeriv_right_hurwitzKernel_zero`: identification of
+* `TauCeti.iteratedDeriv_hurwitzKernel_zero`: identification of
   `iteratedDeriv n (hurwitzKernel c) 0` with `(-1) ^ n * B_n(c)`.
 * `TauCeti.coeff_taylorSeries_hurwitzKernel_zero`: identification of the `k`-th formal Taylor
   coefficient of `hurwitzKernel c` at `0` with `hurwitzBernoulliCoeff k c`.
@@ -181,7 +181,7 @@ example (c : ℂ) : hurwitzBernoulliCoeff 2 c = (c ^ 2 - c + 1 / 6) / 2 := by
   simp [hurwitzBernoulliCoeff_def, Polynomial.bernoulli_def, Finset.sum_range_succ]
   ring
 
-private theorem iteratedDeriv_right_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ) (c : ℂ) :
+private theorem iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ) (c : ℂ) :
     iteratedDeriv m (hurwitzKernel c) 0 =
       Polynomial.aeval (1 - c) (Polynomial.bernoulli m) := by
   have hf := analyticAt_hurwitzKernel_zero c
@@ -216,10 +216,10 @@ private theorem iteratedDeriv_right_hurwitzKernel_zero_eq_aeval_one_sub (m : ℕ
 
 /-- The `n`-th derivative of `hurwitzKernel c` at `0` is `(-1) ^ n * B_n(c)`. -/
 @[simp]
-theorem iteratedDeriv_right_hurwitzKernel_zero (n : ℕ) (c : ℂ) :
+theorem iteratedDeriv_hurwitzKernel_zero (n : ℕ) (c : ℂ) :
     iteratedDeriv n (hurwitzKernel c) 0 =
       (-1 : ℂ) ^ n * Polynomial.aeval c (Polynomial.bernoulli n) := by
-  rw [iteratedDeriv_right_hurwitzKernel_zero_eq_aeval_one_sub]
+  rw [iteratedDeriv_hurwitzKernel_zero_eq_aeval_one_sub]
   simpa [Polynomial.aeval_comp, Algebra.smul_def] using
     congrArg (Polynomial.aeval c) (Polynomial.bernoulli_comp_one_sub_X n)
 
@@ -229,7 +229,7 @@ theorem coeff_taylorSeries_hurwitzKernel_zero (k : ℕ) (c : ℂ) :
     PowerSeries.coeff k (TauCeti.taylorSeries (hurwitzKernel c) 0) =
       hurwitzBernoulliCoeff k c := by
   rw [(analyticAt_hurwitzKernel_zero c).coeff_taylorSeries_eq_inv_factorial_smul_iteratedDeriv k,
-    smul_eq_mul, iteratedDeriv_right_hurwitzKernel_zero, hurwitzBernoulliCoeff]
+    smul_eq_mul, iteratedDeriv_hurwitzKernel_zero, hurwitzBernoulliCoeff]
   ring
 
 /-- The `k`-fold divided difference of `hurwitzKernel c` at `0` equals
