@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.AlgebraicGeometry.FormalScheme.Spf.Basic
 public import TauCeti.RingTheory.CohenMacaulay.Basic
+public import TauCeti.RingTheory.Localization.AtPrime.Basic
 
 import Mathlib.RingTheory.Flat.FaithfullyFlat.Algebra
 import Mathlib.RingTheory.Flat.Localization
@@ -321,6 +322,50 @@ theorem localizationToStalk_comp_algebraMap :
         (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal)) =
       toStalk p :=
   RingHom.ext (localizationToStalk_algebraMap_eq_toStalk p)
+
+/-- Through the identification of the stalk with `colim_{f ∉ 𝔭} A_{f}`, `localizationToStalk p`
+sends an element of `A_f` (`f ∉ 𝔭`) to its image from the completed localisation `A_{f}`. -/
+theorem localizationToStalk_away (f : BasicNeighbourhood p)
+    (y : Localization.Away f.elem) :
+    localizationToStalk p
+        ((p : PrimeSpectrum A).asIdeal.localizationAwayToAtPrime f.elem f.notMem y) =
+      (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+        (IsAdicRing.ideal_spec A).1).hom
+        (colimit.ι (completedNeighbourhoodDiagram p) f
+          (algebraMap (Localization.Away f.elem) (CompletedAway A f.elem) y)) := by
+  let lhs : Localization.Away f.elem →+* (Spf A).presheaf.stalk p :=
+    (localizationToStalk p).comp
+      ((p : PrimeSpectrum A).asIdeal.localizationAwayToAtPrime f.elem f.notMem)
+  let rhs : Localization.Away f.elem →+* (Spf A).presheaf.stalk p :=
+    ((completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+      (IsAdicRing.ideal_spec A).1).hom.hom.comp
+      (colimit.ι (completedNeighbourhoodDiagram p) f).hom).comp
+      (algebraMap (Localization.Away f.elem) (CompletedAway A f.elem))
+  refine RingHom.congr_fun
+    (IsLocalization.ringHom_ext (Submonoid.powers f.elem) (j := lhs) (k := rhs)
+      (RingHom.ext fun a ↦ ?_)) y
+  have hl : lhs (algebraMap A _ a) = toStalk p a := by
+    simp only [lhs, RingHom.comp_apply, Ideal.localizationAwayToAtPrime_algebraMap,
+      localizationToStalk_algebraMap_eq_toStalk]
+  have hr : rhs (algebraMap A _ a) =
+      (completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+        (IsAdicRing.ideal_spec A).1).hom
+        (colimit.ι (completedNeighbourhoodDiagram p) f
+          (algebraMap A (CompletedAway A f.elem) a)) :=
+    congrArg ((completedNeighbourhoodColimitIso p (IsAdicRing.ideal_spec A).2.1
+        (IsAdicRing.ideal_spec A).1).hom.hom.comp
+        (colimit.ι (completedNeighbourhoodDiagram p) f).hom)
+      (IsScalarTower.algebraMap_apply A (Localization.Away f.elem) (CompletedAway A f.elem) a).symm
+  exact hl.trans ((toStalk_eq_completedNeighbourhoodColimitIso p f a).trans hr.symm)
+
+/-- Pushing an ideal of `A` to `A_𝔭` and then along `localizationToStalk p` agrees with pushing
+it along `toStalk p`. -/
+@[simp]
+theorem map_localizationToStalk_map (J : Ideal A) :
+    (J.map (algebraMap A (Localization.AtPrime (p : PrimeSpectrum A).asIdeal))).map
+        (localizationToStalk p) =
+      J.map (toStalk p) := by
+  rw [Ideal.map_map, localizationToStalk_comp_algebraMap]
 
 /-- The stalks of the formal spectrum of a noetherian adic ring are noetherian (EGA I, Ch. 0,
 7.6.17; Ch. I, 10.1.6). -/
