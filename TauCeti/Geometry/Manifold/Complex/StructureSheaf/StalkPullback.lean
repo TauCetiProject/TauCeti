@@ -368,7 +368,7 @@ def holomorphicStalkEquivFin (c : OpenPartialHomeomorph X H)
         ((ContinuousLinearEquiv.ofFinrankEq (by simp) :
           E ≃L[ℂ] Fin (Module.finrank ℂ E) → ℂ) (c.extend I x)) :=
   c.holomorphicStalkEquivModelSpace (V := Fin (Module.finrank ℂ E) → ℂ)
-    (IsManifold.mem_maximalAtlas_of_mem_one hc) x hx
+    (IsManifold.mem_maximalAtlas_of_ne_zero one_ne_zero hc) x hx
     (ContinuousLinearEquiv.ofFinrankEq (by simp))
 
 /-- `holomorphicStalkEquivFin` is `holomorphicStalkEquivModelSpace` specialized to
@@ -376,8 +376,8 @@ def holomorphicStalkEquivFin (c : OpenPartialHomeomorph X H)
 theorem holomorphicStalkEquivFin_eq (c : OpenPartialHomeomorph X H)
     (hc : c ∈ IsManifold.maximalAtlas I 1 X) {x : X} (hx : x ∈ c.source) :
     c.holomorphicStalkEquivFin hc hx =
-      c.holomorphicStalkEquivModelSpace (IsManifold.mem_maximalAtlas_of_mem_one hc) x hx
-        (ContinuousLinearEquiv.ofFinrankEq (by simp)) := by
+      c.holomorphicStalkEquivModelSpace (IsManifold.mem_maximalAtlas_of_ne_zero one_ne_zero hc)
+        x hx (ContinuousLinearEquiv.ofFinrankEq (by simp)) := by
   rfl
 
 end FiniteDimensional

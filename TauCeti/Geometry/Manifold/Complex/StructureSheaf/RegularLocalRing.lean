@@ -100,10 +100,10 @@ theorem isRegular_map_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorph
     (hx : x ∈ e.source) {l : List ι} (hl : l.Nodup) :
     RingTheory.Sequence.IsRegular ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)
       (l.map fun i ↦ e.holomorphicLinearCoordinateGerm
-        (IsManifold.mem_maximalAtlas_of_mem_one he) x
+        (IsManifold.mem_maximalAtlas_of_ne_zero one_ne_zero he) x
         (LinearMap.toContinuousLinearMap (b.coord i)) hx) := by
   have heω : e ∈ IsManifold.maximalAtlas 𝓘(ℂ, E) ω X :=
-    IsManifold.mem_maximalAtlas_of_mem_one he
+    IsManifold.mem_maximalAtlas_of_ne_zero one_ne_zero he
   have := e.isRegularLocalRing_holomorphicStalk he hx
   have := Module.Finite.finite_basis b
   exact TauCeti.IsRegularLocalRing.isRegular_map_of_span_range_eq_maximalIdeal
@@ -119,7 +119,7 @@ theorem isRegular_ofFn_holomorphicLinearCoordinateGerm (e : OpenPartialHomeomorp
     {n : ℕ} (b : Module.Basis (Fin n) ℂ E) :
     RingTheory.Sequence.IsRegular ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)
       (List.ofFn fun i ↦ e.holomorphicLinearCoordinateGerm
-        (IsManifold.mem_maximalAtlas_of_mem_one he) x
+        (IsManifold.mem_maximalAtlas_of_ne_zero one_ne_zero he) x
         (LinearMap.toContinuousLinearMap (b.coord i)) hx) := by
   rw [List.ofFn_eq_map]
   exact e.isRegular_map_holomorphicLinearCoordinateGerm he b hx (List.nodup_finRange n)
