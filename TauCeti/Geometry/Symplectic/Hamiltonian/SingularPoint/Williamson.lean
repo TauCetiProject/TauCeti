@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SingularPoint
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Williamson.Classification
 import TauCeti.Analysis.Calculus.FDeriv.Comp
-import TauCeti.Analysis.Calculus.InverseFunctionTheorem.Comp
 
 /-!
 # The Williamson type of a nondegenerate singular point
@@ -311,23 +310,13 @@ theorem hasWilliamsonTypeAt_comp_right_iff_of_isSymplectomorphism {E' : Type*}
     {φ : E' → E} {y : E'} {e : E' ≃ₗ[ℝ] E} (he : IsSymplectomorphism ω' ω e)
     (hφ : ContDiffAt ℝ 2 φ y) (hφe : ∀ v, fderiv ℝ φ y v = e v) :
     ω'.HasWilliamsonTypeAt (F ∘ φ) y kₑ kₕ k_f ↔ ω.HasWilliamsonTypeAt F (φ y) kₑ kₕ k_f := by
-  set e' := e.toContinuousLinearEquiv
-  have hD : fderiv ℝ φ y = (e' : E' →L[ℝ] E) :=
-    ContinuousLinearMap.ext fun v ↦ by simp [e', hφe]
   by_cases hF : ContDiffAt ℝ 2 F (φ y)
   swap
-  · have hcd := hφ.contDiffAt_comp_iff (f := F)
-      (hD ▸ (hφ.differentiableAt two_ne_zero).hasFDerivAt) two_ne_zero
-    exact iff_of_false (fun h ↦ hF (hcd.1 h.isNondegeneratePoint.contDiffAt))
-      fun h ↦ hF h.isNondegeneratePoint.contDiffAt
-  have hFφ : fderiv ℝ (F ∘ φ) y = (fderiv ℝ F (φ y)).comp (e' : E' →L[ℝ] E) := by
-    rw [← hD]
-    exact fderiv_comp y (hF.differentiableAt two_ne_zero) (hφ.differentiableAt two_ne_zero)
-  rw [hasWilliamsonTypeAt_iff_of_fderiv_eq hFφ, hasWilliamsonTypeAt_iff_of_fderiv_eq rfl,
-    hasTransversalWilliamsonType_comp_iff e'
-      (by simpa only [e', LinearEquiv.toLinearEquiv_toContinuousLinearEquiv] using he) _
-      -- `↑e'` read as a linear map is `e'.toLinearEquiv` by definition.
-      fun ℓ hℓ ↦ by rw [ℓ.hessianQuadraticForm_comp_comp_of_comp_fderiv_eq_zero hF hφ hℓ, hD]; rfl]
+  · exact iff_of_false (fun h ↦ hF ((isNondegeneratePoint_comp_right_iff_of_isSymplectomorphism
+      he hφ hφe).1 h.isNondegeneratePoint).contDiffAt) fun h ↦ hF h.isNondegeneratePoint.contDiffAt
+  obtain ⟨e', he', hT, hQ⟩ := exists_isSymplectomorphism_of_comp_right he hφ hφe hF
+  rw [hasWilliamsonTypeAt_iff_of_fderiv_eq hT, hasWilliamsonTypeAt_iff_of_fderiv_eq rfl,
+    hasTransversalWilliamsonType_comp_iff e' he' _ hQ]
   exact and_congr_left' (iff_of_true (hF.comp y hφ) hF)
 
 end TauCeti.SymplecticForm

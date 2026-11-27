@@ -587,6 +587,30 @@ theorem isNondegenerateRankZeroPoint_comp_iff {G' : Type*} [NormedAddCommGroup G
     exact isNondegeneratePoint_comp_iff hg hD hF
   · exact iff_of_false (fun h ↦ hc (h0.1 h.fderiv_eq_zero)) fun h ↦ hc h.fderiv_eq_zero
 
+omit [FiniteDimensional ℝ E] in
+/-- The common core of the invariance theorems under canonical transformations: if `φ : E' → E` is
+`C²` at `y`, with differential at `y` a linear symplectomorphism `e` from `(E', ω')` to `(E, ω)`,
+and `F` is `C²` at `φ y`, then `e` is a continuous linear symplectomorphism through which the
+differential of `F ∘ φ` at `y` is that of `F` at `φ y`, and the Hessians of the functions
+`ℓ ∘ F ∘ φ` with `ℓ ∘ dF_{φ y} = 0` are those of the functions `ℓ ∘ F` pulled back along `e`. -/
+theorem exists_isSymplectomorphism_of_comp_right {E' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [FiniteDimensional ℝ E'] {ω' : SymplecticForm E'} {φ : E' → E} {y : E'}
+    {e : E' ≃ₗ[ℝ] E} (he : IsSymplectomorphism ω' ω e) (hφ : ContDiffAt ℝ 2 φ y)
+    (hφe : ∀ v, fderiv ℝ φ y v = e v) (hF : ContDiffAt ℝ 2 F (φ y)) :
+    ∃ e' : E' ≃L[ℝ] E, IsSymplectomorphism ω' ω e'.toLinearEquiv ∧
+      fderiv ℝ (F ∘ φ) y = (fderiv ℝ F (φ y)).comp (e' : E' →L[ℝ] E) ∧
+      ∀ ℓ : G →L[ℝ] ℝ, ℓ.comp (fderiv ℝ F (φ y)) = 0 →
+        hessianQuadraticForm (ℓ ∘ F ∘ φ) y =
+          (hessianQuadraticForm (ℓ ∘ F) (φ y)).comp (e'.toLinearEquiv : E' →ₗ[ℝ] E) := by
+  have hD : fderiv ℝ φ y = (e.toContinuousLinearEquiv : E' →L[ℝ] E) :=
+    ContinuousLinearMap.ext fun v ↦ by simp [hφe]
+  refine ⟨e.toContinuousLinearEquiv,
+    by simpa only [LinearEquiv.toLinearEquiv_toContinuousLinearEquiv] using he, ?_, fun ℓ hℓ ↦ ?_⟩
+  · rw [← hD]
+    exact fderiv_comp y (hF.differentiableAt two_ne_zero) (hφ.differentiableAt two_ne_zero)
+  -- `e` as a continuous linear map, read as a linear map, is `e` by definition.
+  rw [ℓ.hessianQuadraticForm_comp_comp_of_comp_fderiv_eq_zero hF hφ hℓ, hD]; rfl
+
 /-- **Invariance under canonical transformations.** Let `φ : E' → E` be `C²` at `y`, with
 differential at `y` a linear symplectomorphism `e` from `(E', ω')` to `(E, ω)`. Then `y` is a
 nondegenerate point of `F ∘ φ` for `ω'` exactly when `φ y` is a nondegenerate point of `F` for
@@ -599,22 +623,16 @@ theorem isNondegeneratePoint_comp_right_iff_of_isSymplectomorphism {E' : Type*}
     {φ : E' → E} {y : E'} {e : E' ≃ₗ[ℝ] E} (he : IsSymplectomorphism ω' ω e)
     (hφ : ContDiffAt ℝ 2 φ y) (hφe : ∀ v, fderiv ℝ φ y v = e v) :
     ω'.IsNondegeneratePoint (F ∘ φ) y ↔ ω.IsNondegeneratePoint F (φ y) := by
-  set e' := e.toContinuousLinearEquiv
-  have hD : fderiv ℝ φ y = (e' : E' →L[ℝ] E) :=
-    ContinuousLinearMap.ext fun v ↦ by simp [e', hφe]
-  have hcd := hφ.contDiffAt_comp_iff (f := F)
-    (hD ▸ (hφ.differentiableAt two_ne_zero).hasFDerivAt) two_ne_zero
   by_cases hF : ContDiffAt ℝ 2 F (φ y)
   swap
-  · exact iff_of_false (fun h ↦ hF (hcd.1 h.contDiffAt)) fun h ↦ hF h.contDiffAt
-  have hFφ : fderiv ℝ (F ∘ φ) y = (fderiv ℝ F (φ y)).comp (e' : E' →L[ℝ] E) := by
-    rw [← hD]
-    exact fderiv_comp y (hF.differentiableAt two_ne_zero) (hφ.differentiableAt two_ne_zero)
-  rw [isNondegeneratePoint_iff_of_fderiv_eq hFφ, isNondegeneratePoint_iff_of_fderiv_eq rfl,
-    isTransversallyNondegenerate_comp_iff e'
-      (by simpa only [e', LinearEquiv.toLinearEquiv_toContinuousLinearEquiv] using he) _
-      -- `↑e'` read as a linear map is `e'.toLinearEquiv` by definition.
-      fun ℓ hℓ ↦ by rw [ℓ.hessianQuadraticForm_comp_comp_of_comp_fderiv_eq_zero hF hφ hℓ, hD]; rfl]
+  · have hD : fderiv ℝ φ y = (e.toContinuousLinearEquiv : E' →L[ℝ] E) :=
+      ContinuousLinearMap.ext fun v ↦ by simp [hφe]
+    have hcd := hφ.contDiffAt_comp_iff (f := F)
+      (hD ▸ (hφ.differentiableAt two_ne_zero).hasFDerivAt) two_ne_zero
+    exact iff_of_false (fun h ↦ hF (hcd.1 h.contDiffAt)) fun h ↦ hF h.contDiffAt
+  obtain ⟨e', he', hT, hQ⟩ := exists_isSymplectomorphism_of_comp_right he hφ hφe hF
+  rw [isNondegeneratePoint_iff_of_fderiv_eq hT, isNondegeneratePoint_iff_of_fderiv_eq rfl,
+    isTransversallyNondegenerate_comp_iff e' he' _ hQ]
   exact and_congr_left' (iff_of_true (hF.comp y hφ) hF)
 
 /-- **Invariance of rank-zero points under canonical transformations.** If `φ : E' → E` is `C²` at
