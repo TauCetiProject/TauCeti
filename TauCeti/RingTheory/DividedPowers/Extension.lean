@@ -729,11 +729,9 @@ theorem isDPMorphism_mapOfFlat_iff [Module.Flat A B] {C : Type*} [CommSemiring C
 
 /-- Transitivity of flat extension for a tower of flat algebras `A → B → C`. -/
 theorem mapOfFlat_comp_dpow {C : Type*} [CommRing C] [Algebra B C] [Algebra A C]
-    [IsScalarTower A B C] [Module.Flat A B] [Module.Flat B C]
+    [IsScalarTower A B C] [Module.Flat A B] [Module.Flat B C] [Module.Flat A C]
     (hI : DividedPowers I) (n : ℕ) (c : C) :
-    ((hI.mapOfFlat B).mapOfFlat C).dpow n c =
-      (@mapOfFlat _ _ _ hI C _ _ (Module.Flat.trans A B C)).dpow n c := by
-  have : Module.Flat A C := Module.Flat.trans A B C
+    ((hI.mapOfFlat B).mapOfFlat C).dpow n c = (hI.mapOfFlat C).dpow n c := by
   have hId : (I.map (algebraMap A B)).map (algebraMap B C) = I.map (algebraMap A C) := by
     rw [Ideal.map_map, ← IsScalarTower.algebraMap_eq A B C]
   have hcomp : IsDPMorphism hI ((hI.mapOfFlat B).mapOfFlat C) (algebraMap A C) := by
