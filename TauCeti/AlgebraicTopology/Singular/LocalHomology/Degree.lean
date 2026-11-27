@@ -90,6 +90,8 @@ classes along the parts.
   `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`, and more generally
   `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
   `(g ∘ f)_*[M] = deg f • g_*[N]` for every continuous `g : N → X`.
+* `TauCeti.HomologicalOrientation.map_fundamentalClassOver_eq_degree_smul`: the same over a
+  commutative ring `k`, `f_*[M]_k = deg f • [N]_k` in `Hₙ(N; k)`.
 * `TauCeti.HomologicalOrientation.singularHomologyMap_eq_degree_smul`: a self-map of a compact
   connected oriented manifold acts on top homology by multiplication by its degree.
 * `TauCeti.HomologicalOrientation.bijective_singularHomologyMap_iff`: for compact connected `M`
@@ -627,6 +629,25 @@ theorem singularHomologyMap_eq_degree_smul [ConnectedSpace M] (f : C(M, M))
   have h := o.mapFundamentalClass_eq_degree_smul o hE hE f
   rw [mapFundamentalClass_def] at h
   exact (map_zsmul _ d _).trans ((congrArg (d • ·) h).trans (zsmul_comm _ _ _))
+
+open MonoidalCategory in
+/-- **The degree computes the image of the fundamental class over a ring**: for a map
+`f : M → N` between compact oriented `n`-manifolds with `N` preconnected and a commutative ring
+`k`, `f_*[M]_k = deg f • [N]_k` in `Hₙ(N; k)`. -/
+theorem map_fundamentalClassOver_eq_degree_smul (k : Type) [CommRing k] (f : C(M, N)) :
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat k) n).obj (𝟙_ (ModuleCat k))).map
+      (TopCat.ofHom f)).hom (o.fundamentalClassOver hE k) =
+      o.degree o' hE f • o'.fundamentalClassOver hF k := by
+  -- Change of coefficients `ℤ → k` is natural, so `f_*[M]_k` is the image of `f_*[M]`.
+  have hf := o.mapFundamentalClass_eq_degree_smul o' hE hF f
+  rw [mapFundamentalClass_def] at hf
+  rw [fundamentalClassOver_def, fundamentalClassOver_def]
+  refine (ConcreteCategory.congr_hom ((TopCat.of M).restrictScalarsHomologyMap_naturality
+    (Int.castRingHom k) (ModuleCat.uliftUnitToRestrictScalars _) (TopCat.ofHom f) n)
+    (o.fundamentalClass hE)).symm.trans ?_
+  -- `G Hₙ(N; k)` has the additive group of `Hₙ(N; k)`, so its `ℤ`-multiples are those there.
+  exact (congrArg ((TopCat.of N).restrictScalarsHomologyMap (Int.castRingHom k)
+    (ModuleCat.uliftUnitToRestrictScalars _) n).hom hf).trans (map_zsmul _ _ _)
 
 end CompactSpace
 
