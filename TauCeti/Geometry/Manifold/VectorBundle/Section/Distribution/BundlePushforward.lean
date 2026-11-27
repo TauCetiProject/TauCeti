@@ -442,16 +442,12 @@ theorem pushforward_delta (x : X) (ℓ : V (f x) →L[ℝ] W)
     (h : IsProperOnSupport ⇑(delta (I := I) (F := F) (V := (f : C(X, Y)) *ᵖ V) x ℓ) f) :
     pushforward (delta (I := I) (F := F) (V := (f : C(X, Y)) *ᵖ V) x ℓ) h =
       delta (I := J) (F := F) (V := V) (f x) ℓ := by
-  ext s
   obtain ⟨χ, hχc, hχ⟩ :=
     (isCompact_singleton (x := x)).exists_contMDiffMap_one_nhds_hasCompactSupport I
-  rw [pushforward_apply_eq_cutoffCompCLM h s hχc (hχ.filter_mono (nhdsSet_mono
-    (inter_subset_left.trans
-      (dsupport_delta_subset (I := I) (F := F) (V := (f : C(X, Y)) *ᵖ V) x ℓ))))]
-  -- The fibre of `f*V` at `x` is `V (f x)`, on which `ℓ` acts.
-  refine (delta_apply (I := I) (F := F) (V := (f : C(X, Y)) *ᵖ V) x ℓ _).trans ?_
-  refine (congrArg ℓ (cutoffCompCLM_apply χ hχc f s x)).trans ?_
-  rw [hχ.self_of_nhdsSet x (mem_singleton x), one_smul, delta_apply]
+  rw [pushforward_eq_cutoffPushforwardCLM h hχc (hχ.filter_mono (nhdsSet_mono
+    (dsupport_delta_subset (I := I) (F := F) (V := (f : C(X, Y)) *ᵖ V) x ℓ)))]
+  refine (cutoffPushforwardCLM_delta χ hχc f x ℓ).trans ?_
+  rw [hχ.self_of_nhdsSet x (mem_singleton x), one_smul]
 
 end Pushforward
 
