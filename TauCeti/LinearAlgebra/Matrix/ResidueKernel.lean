@@ -115,8 +115,7 @@ theorem residueKer_units_mul (U : GL ι R) (A : Matrix ι ι R) :
   -- the reduction of `U⁻¹` undoes the reduction of `U`
   have hU : ((U⁻¹ : GL ι R) : Matrix ι ι R).map (residue R) *
       (U : Matrix ι ι R).map (residue R) = 1 := by
-    rw [← Matrix.map_mul, ← Units.val_mul, inv_mul_cancel, Units.val_one,
-      Matrix.map_one _ (map_zero _) (map_one _)]
+    simp [← Matrix.map_mul]
   rw [← one_mulVec (A.map (residue R) *ᵥ v), ← hU, ← mulVec_mulVec, h, mulVec_zero]
 
 /-- Right multiplication by `U ∈ GL_n(R)` moves the kernel of the reduction by the reduction of
@@ -230,7 +229,7 @@ theorem associated_det_pow_finrank_residueKer (hϖ : Irreducible ϖ) {A B : Matr
     rw [← pow_add, ← pow_add, ht]
   have hprod : ϖ ^ Fintype.card ι * (ϖ ^ t * a * b) = ϖ ^ Fintype.card ι * 1 := by
     have hdet := congrArg det h
-    rw [det_mul, det_smul, det_one, mul_one, ha, hb] at hdet
+    simp only [det_mul, det_smul, det_one, mul_one, ha, hb] at hdet
     linear_combination hdet - a * b * hpow
   have hunit : IsUnit a := IsUnit.of_mul_eq_one (ϖ ^ t * b) <| by
     linear_combination mul_left_cancel₀ (pow_ne_zero _ hϖ.ne_zero) hprod
