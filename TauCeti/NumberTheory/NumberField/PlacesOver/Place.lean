@@ -80,7 +80,11 @@ theorem not_isNonarchimedean_toPlace (v : InfinitePlace L) : ¬ IsNonarchimedean
 
 end InfinitePlace
 
-namespace _root_.AbsoluteValue.Place
+end NumberField
+
+namespace AbsoluteValue.Place
+
+open NumberField
 
 variable {L : Type*} [Field L] [CharZero L]
 
@@ -115,7 +119,9 @@ theorem val_infinitePlaceEquiv_apply (w : {w : Place L // ¬ IsNonarchimedean w.
 theorem infinitePlaceEquiv_symm_apply (v : InfinitePlace L) :
     ((infinitePlaceEquiv L).symm v).val = v.toPlace := (rfl)
 
-end _root_.AbsoluteValue.Place
+end AbsoluteValue.Place
+
+namespace NumberField
 
 /-- Mathlib's action of the Galois group on the infinite places agrees with the action on
 places. -/
@@ -174,7 +180,11 @@ theorem exists_toPlace_eq {w : Place K} (hw : IsNonarchimedean w.val) :
 
 end FinitePlace
 
-namespace _root_.AbsoluteValue.Place
+end NumberField
+
+namespace AbsoluteValue.Place
+
+open NumberField
 
 variable (K : Type*) [Field K] [NumberField K]
 
@@ -196,6 +206,4 @@ theorem toPlace_finitePlaceEquiv (w : {w : Place K // IsNonarchimedean w.val}) :
 theorem finitePlaceEquiv_symm_apply (v : FinitePlace K) :
     ((finitePlaceEquiv K).symm v).val = v.toPlace := (rfl)
 
-end _root_.AbsoluteValue.Place
-
-end NumberField
+end AbsoluteValue.Place

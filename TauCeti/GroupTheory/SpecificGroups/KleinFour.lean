@@ -33,13 +33,15 @@ theorem _root_.MulEquiv.isKleinFour [IsKleinFour G] (e : G ≃* H) : IsKleinFour
   ⟨by rw [← Nat.card_congr e.toEquiv, IsKleinFour.card_four],
     by rw [← Monoid.exponent_eq_of_mulEquiv e, IsKleinFour.exponent_two]⟩
 
-namespace _root_.IsKleinFour
+end TauCeti
+
+namespace IsKleinFour
 
 variable {G : Type*} [CommGroup G] [Fintype G] [IsKleinFour G]
 
 /-- **The product of all elements of a Klein four-group is `1`**: they are `1`, `x`, `y` and
 `x * y` for any two distinct nonidentity elements `x` and `y`. -/
-@[to_additive _root_.IsAddKleinFour.sum_univ_eq_zero
+@[to_additive
   /-- **The sum of all elements of a Klein four-group is `0`**: they are `0`, `x`, `y` and `x + y`
   for any two distinct nonzero elements `x` and `y`. -/]
 theorem prod_univ_eq_one : ∏ g : G, g = 1 := by
@@ -57,6 +59,4 @@ theorem prod_univ_eq_one : ∏ g : G, g = 1 := by
   simp [Finset.prod_insert, hx, hy.2, hxy, mul_eq_one_iff_eq_inv, IsKleinFour.inv_eq_self,
     mul_mul_mul_comm x y, IsKleinFour.mul_self]
 
-end _root_.IsKleinFour
-
-end TauCeti
+end IsKleinFour
