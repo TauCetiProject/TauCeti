@@ -447,19 +447,22 @@ theorem exists_forall_integral_norm_fderiv_sq_le_of_const (h₀ : ω.Compatible 
     _ = _ := by rw [integral_const_mul]; ring
 
 /-- **The `L²` norm of a field supported in a disc, for constant data.** For an `ω`-compatible
-`J₀` and `r > 0` there is `C` such that every compactly supported `C²` covector field `θ` vanishing
-on `|ζ| ≥ r` satisfies `∫ ‖θ‖² ≤ C ∫ ‖D^* θ‖²` for the formal adjoint of the constant data `J₀`,
+`J₀` and `r > 0` there is `C` such that every `C²` covector field `θ` vanishing on `|ζ| ≥ r`
+satisfies `∫ ‖θ‖² ≤ C ∫ ‖D^* θ‖²` for the formal adjoint of the constant data `J₀`,
 `0`. The field is supported in the strip `|t| < r`, so the Poincaré inequality bounds its `L²` norm
 by its Dirichlet energy, which the energy estimate of constant data bounds by `∫ ‖D^* θ‖²`. -/
 theorem exists_integral_norm_sq_le_mul_integral_floerLinearizationAdjoint_const
     (h₀ : ω.Compatible J₀) (r : ℝ) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃θ : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 θ → HasCompactSupport θ →
+    ∃ C, 0 ≤ C ∧ ∀ ⦃θ : ℝ × ℝ → V →L[ℝ] ℝ⦄, ContDiff ℝ 2 θ →
       (∀ ζ, r ≤ ‖Complex.equivRealProdCLM.symm ζ‖ → θ ζ = 0) →
       ∫ ζ, ‖θ ζ‖ ^ 2 ≤ C * ∫ ζ, ‖ω.floerLinearizationAdjoint
         (fun _ _ ↦ J₀.toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0) (fun _ _ ↦ 0) 0 θ
           ζ‖ ^ 2 := by
   obtain ⟨C, hC, hE⟩ := exists_forall_integral_norm_fderiv_sq_le_of_const (ω := ω) h₀
-  refine ⟨(2 * r) ^ 2 * C, by positivity, fun θ hθ hθc hθ0 ↦ ?_⟩
+  refine ⟨(2 * r) ^ 2 * C, by positivity, fun θ hθ hθ0 ↦ ?_⟩
+  have hθc : HasCompactSupport θ :=
+    HasCompactSupport.intro (isCompact_setOf_norm_equivRealProdCLM_symm_le r) fun ζ hζ ↦
+      hθ0 ζ (not_le.1 hζ).le
   have hP := integral_norm_sq_le_mul_integral_norm_fderiv_sq_of_abs_snd (r := r)
     (hθ.of_le one_le_two) hθc fun ζ hζ ↦ hθ0 ζ (hζ.trans (by
       have h := Complex.abs_im_le_norm (Complex.equivRealProdCLM.symm ζ)
@@ -626,7 +629,7 @@ private theorem exists_forall_integral_sobolevDensity_covectorPullback_realChart
   -- The energy estimate and the Poincaré inequality in the chart, where `η'` vanishes off the
   -- disc `|ζ| ≤ r⁻¹`, and the change of variables back to the plane.
   have hEη := hE hη'2 hη'c
-  have hLη := hL hη'2 hη'c fun ζ hζ ↦ hη'far ζ (by linarith [inv_pos.2 hr])
+  have hLη := hL hη'2 fun ζ hζ ↦ hη'far ζ (by linarith [inv_pos.2 hr])
   have hcv := integral_norm_floerLinearizationAdjoint_covectorPullback_realChart_inv_sq_le
     (ω := ω) (J₀ := J₀) hη hc
   have iD := integrable_norm_fderiv_sq_add (μ := volume) (hη'2.of_le one_le_two) hη'c

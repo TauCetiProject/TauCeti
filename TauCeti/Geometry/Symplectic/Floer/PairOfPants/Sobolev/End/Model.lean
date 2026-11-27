@@ -431,8 +431,10 @@ theorem norm_floerConformalJetCoeff_comp_endTransferCoeff_sub_le (ω : Symplecti
     ((ContinuousLinearMap.opNorm_comp_le _ _).trans ?_)) <;>
     refine mul_le_mul_of_nonneg_right ?_ (norm_nonneg _)
   · -- The rotation `r⁻¹ (a + b L)` has norm at most `1 + ‖L‖`, since `|a|, |b| ≤ r`.
-    rw [norm_smul, norm_inv, Real.norm_of_nonneg hr.le, inv_mul_le_iff₀ hr]
-    exact ContinuousLinearMap.norm_smul_one_add_smul_le _ ha hb
+    rw [norm_smul, norm_inv, Real.norm_of_nonneg hr.le, inv_mul_le_iff₀ hr,
+      ← ContinuousLinearMap.one_def]
+    exact ContinuousLinearMap.norm_smul_one_add_smul_le _ ((Real.norm_eq_abs a).trans_le ha)
+      ((Real.norm_eq_abs b).trans_le hb)
   · rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_inv, abs_of_pos hr]
     refine mul_le_of_le_one_left (norm_nonneg _) ?_
     rwa [inv_mul_le_iff₀ hr, mul_one]

@@ -107,7 +107,7 @@ private theorem mul_norm_le_norm_covectorPullback_realChart_inv {J : ℝ × ℝ 
   have hr : 0 < ‖Complex.equivRealProdCLM.symm (TauCeti.Complex.realChart (·⁻¹) ζ)‖ ^ 2 := by
     rw [TauCeti.Complex.norm_equivRealProdCLM_symm_realChart_inv]
     positivity
-  rw [covectorPullback_apply, hJ]
+  rw [covectorPullback_apply, hJ, stdComplexLineReal_eq]
   exact J₀.mul_opNorm_le_opNorm_comp_smul_add_smul _
     (TauCeti.Complex.sq_add_sq_fderiv_realChart_inv hζ) hr
 
@@ -123,19 +123,19 @@ private theorem norm_covectorPullback_realChart_inv_le {J : ℝ × ℝ → V →
       (1 + ‖J₀.toLinearMap.toContinuousLinearMap‖) *
         ‖Complex.equivRealProdCLM.symm (TauCeti.Complex.realChart (·⁻¹) ζ)‖ ^ 2 *
         ‖η (TauCeti.Complex.realChart (·⁻¹) ζ)‖ := by
-  set a := (fderiv ℝ (TauCeti.Complex.realChart (·⁻¹)) ζ stdComplexLineReal).1
-  set b := (fderiv ℝ (TauCeti.Complex.realChart (·⁻¹)) ζ stdComplexLineReal).2
+  rw [covectorPullback_apply, hJ, stdComplexLineReal_eq]
+  set a := (fderiv ℝ (TauCeti.Complex.realChart (·⁻¹)) ζ (1, 0)).1
+  set b := (fderiv ℝ (TauCeti.Complex.realChart (·⁻¹)) ζ (1, 0)).2
   set r := ‖Complex.equivRealProdCLM.symm (TauCeti.Complex.realChart (·⁻¹) ζ)‖ ^ 2
   set N := ‖J₀.toLinearMap.toContinuousLinearMap‖
   have hab : a ^ 2 + b ^ 2 = r ^ 2 := TauCeti.Complex.sq_add_sq_fderiv_realChart_inv hζ
   have hr : 0 ≤ r := by positivity
-  have ha : |a| ≤ r := by
-    rw [← abs_of_nonneg hr]
+  have ha : ‖a‖ ≤ r := by
+    rw [Real.norm_eq_abs, ← abs_of_nonneg hr]
     exact sq_le_sq.1 (by nlinarith [sq_nonneg b])
-  have hb : |b| ≤ r := by
-    rw [← abs_of_nonneg hr]
+  have hb : ‖b‖ ≤ r := by
+    rw [Real.norm_eq_abs, ← abs_of_nonneg hr]
     exact sq_le_sq.1 (by nlinarith [sq_nonneg a])
-  rw [covectorPullback_apply, hJ]
   refine (ContinuousLinearMap.opNorm_comp_le _ _).trans ?_
   calc _ ≤ ‖η (TauCeti.Complex.realChart (·⁻¹) ζ)‖ * (r * (1 + N)) :=
         mul_le_mul_of_nonneg_left (ContinuousLinearMap.norm_smul_one_add_smul_le _ ha hb)
@@ -281,7 +281,7 @@ private theorem exists_setIntegral_norm_sq_le_mul_setIntegral_of_floerLinearizat
         exact setIntegral_le_integral (hθ.continuous.integrable_norm_sq_of_hasCompactSupport hθc)
           (ae_of_all _ fun _ ↦ by positivity)
     _ ≤ C * ((M * N) ^ 2 * ∫ ζ in A, ‖η₀ ζ‖ ^ 2) :=
-        (hP hθ hθc fun ζ hζ ↦ hθ0 ζ hζ).trans (mul_le_mul_of_nonneg_left hDθ hC)
+        (hP hθ fun ζ hζ ↦ hθ0 ζ hζ).trans (mul_le_mul_of_nonneg_left hDθ hC)
     _ = _ := by ring
 
 /-- **The `L²` norm near infinity, read in the chart at infinity.** Let `η₀` be continuous on the
