@@ -363,15 +363,6 @@ theorem QuadraticMap.Equivalent.locallyRepresents_congr
       fun place ↦ ((hQlocal.2 place).isRepresentedBy_congr
         (hRlocal.2 place)).mpr (h.2 place)⟩
 
-/-- Scaling a locally isotropic quadratic form by any scalar produces a locally isotropic form. -/
-theorem isLocallyIsotropic_smul {Q : _root_.QuadraticForm K V} (c : K) (h : Q.IsLocallyIsotropic) :
-    (c • Q).IsLocallyIsotropic := by
-  refine (isLocallyIsotropic_iff _).mpr ⟨fun v hani ↦ ?_, fun w hani ↦ ?_⟩
-  · refine ((isLocallyIsotropic_iff _).mp h).1 v fun x hx ↦ hani x ?_
-    rw [atFinitePlace_smul, _root_.smul_apply, hx, smul_zero]
-  · refine ((isLocallyIsotropic_iff _).mp h).2 w fun x hx ↦ hani x ?_
-    rw [atRealPlace_smul, _root_.smul_apply, hx, smul_zero]
-
 /-- Locally equivalent quadratic forms have the same global rank. -/
 theorem LocallyEquivalent.finrank_eq
     {Q : _root_.QuadraticForm K V} {R : _root_.QuadraticForm K W}
