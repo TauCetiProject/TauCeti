@@ -11,14 +11,15 @@ import Mathlib.Analysis.Calculus.Deriv.ZPow
 /-!
 # Derivatives of integer powers and reciprocal powers
 
-This file extends `Mathlib.Analysis.Calculus.Deriv.ZPow` with the derivative rule for `c / f y ^ m`
-(`HasDerivAt.const_div_pow`), computed via `hasDerivAt_zpow`.
+This file extends `Mathlib.Analysis.Calculus.Deriv.ZPow` with the derivative rule
+`HasDerivAt.const_div_pow` for `y ↦ c / f y ^ m`, giving derivative
+`-(m : 𝕜) * c * f' / f x ^ (m + 1)` whenever `f` has derivative `f'` at `x` and `f x ≠ 0`.
 -/
 
 public section
 
-/-- The derivative of `y ↦ c / f y ^ m` at a point `x` where `f x ≠ 0` and `f` has derivative
-`f'`, computed via `hasDerivAt_zpow`. -/
+/-- If `f` has derivative `f'` at `x` and `f x ≠ 0`, then `y ↦ c / f y ^ m` has derivative
+`-(m : 𝕜) * c * f' / f x ^ (m + 1)` at `x`. -/
 theorem HasDerivAt.const_div_pow {𝕜' 𝕜 : Type*} [NontriviallyNormedField 𝕜']
     [NontriviallyNormedField 𝕜] [NormedAlgebra 𝕜' 𝕜] {f : 𝕜' → 𝕜} {f' : 𝕜} {x : 𝕜'}
     (hf : HasDerivAt f f' x) (hfx : f x ≠ 0) (c : 𝕜) (m : ℕ) :

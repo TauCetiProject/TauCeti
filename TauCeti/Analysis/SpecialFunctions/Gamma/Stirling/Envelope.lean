@@ -20,11 +20,12 @@ periodic Bernoulli remainder representation in
 
 On the positive real axis `(0, ∞)`, the periodic Bernoulli factor
 `(-1)^{n+1} (B_{2n} - B_{2n}({u}))` is nonnegative everywhere and strictly positive on `(0, 1)`.
-Consequently every signed real Stirling remainder `(-1)^{n+1} r_n(x)` has strictly alternating
-derivatives of all orders, establishing Alzer's complete monotonicity theorem: the functions
-`F_m = r_{2m+1}` and `G_m = -r_{2m+2}` are strictly completely monotone on `(0, ∞)`. Specializing
-to order `k = 0` yields the two-sided enveloping brackets for `log Γ(x)` and the strict enveloping
-bound `|r_n(x)| < |T_n(x)|`.
+Consequently every `(-1)^{n+1}`-scaled real Stirling remainder `(-1)^{n+1} r_n(x)` has strictly
+alternating derivatives of all orders, establishing Alzer's complete monotonicity theorem: the
+functions `F_m = r_{2m+1}` and `G_m = -r_{2m+2}` are strictly completely monotone on `(0, ∞)`.
+Comparing consecutive remainders gives the enveloping derivative comparison
+`|r_n^{(k)}(x)| < |T_n^{(k)}(x)|` for all `n ≥ 1` and `k : ℕ`, and specializing to `k = 0`
+yields the two-sided enveloping brackets for `log Γ(x)` and `|r_n(x)| < |T_n(x)|`.
 
 Digamma and polygamma brackets are in
 `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Polygamma.lean`, and Stieltjes' complex sector
@@ -32,9 +33,9 @@ bounds are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`.
 
 ## Main declarations
 
-* `TauCeti.signed_iteratedDeriv_realStirlingSeriesRemainder`: signed integral representation of
-  `iteratedDeriv k (realStirlingSeriesRemainder n) x` on `(0, ∞)`.
-* `TauCeti.neg_one_pow_mul_iteratedDeriv_signed_realStirlingSeriesRemainder_pos`,
+* `neg_one_pow_mul_neg_one_pow_succ_mul_iteratedDeriv_realStirlingSeriesRemainder_eq_integral`:
+  integral representation of `(-1)^k (-1)^{n+1} r_n^{(k)}(x)` on `(0, ∞)`.
+* `TauCeti.neg_one_pow_mul_iteratedDeriv_neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos`,
   `TauCeti.neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos`,
   `TauCeti.neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos`: strict sign
   alternation for all orders `k : ℕ`.
@@ -42,6 +43,8 @@ bounds are in `TauCeti/Analysis/SpecialFunctions/Gamma/Stirling/Sector.lean`.
   `TauCeti.isCompletelyMonotoneOnIoi_neg_realStirlingSeriesRemainder_even`: Alzer's complete
   monotonicity of `F_m = r_{2m+1}` and `G_m = -r_{2m+2}` on `(0, ∞)`.
 * `TauCeti.sum_stirlingTerm_lt_log_Gamma_sub`, `TauCeti.log_Gamma_sub_lt_sum_stirlingTerm`,
+  `TauCeti.neg_one_pow_mul_neg_one_pow_succ_mul_iteratedDeriv_realStirlingSeriesRemainder_lt`,
+  `TauCeti.abs_iteratedDeriv_realStirlingSeriesRemainder_lt_abs_iteratedDeriv_stirlingTerm`,
   `TauCeti.abs_realStirlingSeriesRemainder_lt_abs_stirlingTerm`,
   `TauCeti.neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos`,
   `TauCeti.neg_one_pow_succ_mul_stirlingTerm_pos`: enveloping inequalities and strict term signs
@@ -65,10 +68,10 @@ namespace TauCeti
 
 /-! ### Alzer's complete monotonicity and enveloping theorem on `(0, ∞)` -/
 
-/-- Signed real integral representation for every iterated derivative of
-`realStirlingSeriesRemainder n` on `(0, ∞)` for `n ≥ 1`. -/
-theorem signed_iteratedDeriv_realStirlingSeriesRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
-    {x : ℝ} (hx : 0 < x) :
+/-- Integral representation of `(-1)^k (-1)^{n+1} r_n^{(k)}(x)` on `(0, ∞)` for `n ≥ 1` with
+a nonnegative periodic Bernoulli integrand. -/
+theorem neg_one_pow_mul_neg_one_pow_succ_mul_iteratedDeriv_realStirlingSeriesRemainder_eq_integral
+    {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {x : ℝ} (hx : 0 < x) :
     (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingSeriesRemainder n) x =
       (((2 * n + k - 1)! : ℝ) / ((2 * n)! : ℝ)) *
         ∫ u in Ioi (0 : ℝ),
@@ -99,24 +102,27 @@ theorem signed_iteratedDeriv_realStirlingSeriesRemainder {n : ℕ} (hn : 1 ≤ n
                     (u + x) ^ (2 * n + k))) := by ring
     _ = _ := by rw [← pow_add, Even.neg_one_pow ⟨k, rfl⟩, one_mul]
 
-/-- For every `n ≥ 1`, `k : ℕ`, and `x > 0`, the signed real Stirling remainder
+/-- For every `n ≥ 1`, `k : ℕ`, and `x > 0`, the `(-1)^{n+1}`-scaled real Stirling remainder
 `t ↦ (-1)^{n+1} r_n(t)` has strictly alternating `k`-th derivative:
 `0 < (-1)^k * ((-1)^{n+1} r_n)^{(k)}(x)`. -/
-theorem neg_one_pow_mul_iteratedDeriv_signed_realStirlingSeriesRemainder_pos {n : ℕ} (hn : 1 ≤ n)
-    (k : ℕ) {x : ℝ} (hx : 0 < x) :
+theorem neg_one_pow_mul_iteratedDeriv_neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos
+    {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {x : ℝ} (hx : 0 < x) :
     0 < (-1 : ℝ) ^ k *
       iteratedDeriv k (fun t ↦ (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n t) x := by
   rw [iteratedDeriv_const_mul_field ((-1 : ℝ) ^ (n + 1)) (realStirlingSeriesRemainder n),
-    ← mul_assoc, signed_iteratedDeriv_realStirlingSeriesRemainder hn k hx]
+    ← mul_assoc,
+    neg_one_pow_mul_neg_one_pow_succ_mul_iteratedDeriv_realStirlingSeriesRemainder_eq_integral
+      hn k hx]
   exact mul_pos (by positivity)
-    (integral_signed_bernoulli_sub_div_pow_pos hn (by omega : 2 ≤ 2 * n + k) hx)
+    (integral_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_pos
+      hn (by omega : 2 ≤ 2 * n + k) hx)
 
 /-- **Alzer's theorem (odd remainders)**: for every `m, k : ℕ` and `x > 0`,
 `0 < (-1)^k * r_{2m+1}^{(k)}(x)`. -/
 theorem neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos (m k : ℕ) {x : ℝ}
     (hx : 0 < x) :
     0 < (-1 : ℝ) ^ k * iteratedDeriv k (realStirlingSeriesRemainder (2 * m + 1)) x := by
-  have h := neg_one_pow_mul_iteratedDeriv_signed_realStirlingSeriesRemainder_pos
+  have h := neg_one_pow_mul_iteratedDeriv_neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos
     (n := 2 * m + 1) (by omega) k hx
   have hidx : 2 * m + 1 + 1 = 2 * (m + 1) := by omega
   have hpow : (-1 : ℝ) ^ (2 * m + 1 + 1) = 1 := by
@@ -128,7 +134,7 @@ theorem neg_one_pow_mul_iteratedDeriv_realStirlingSeriesRemainder_odd_pos (m k :
 theorem neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos (m k : ℕ) {x : ℝ}
     (hx : 0 < x) :
     0 < (-1 : ℝ) ^ k * iteratedDeriv k (fun t ↦ -realStirlingSeriesRemainder (2 * m + 2) t) x := by
-  have h := neg_one_pow_mul_iteratedDeriv_signed_realStirlingSeriesRemainder_pos
+  have h := neg_one_pow_mul_iteratedDeriv_neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos
     (n := 2 * m + 2) (by omega) k hx
   have hpow : (-1 : ℝ) ^ (2 * m + 2 + 1) = -1 := Odd.neg_one_pow ⟨m + 1, by omega⟩
   simpa only [hpow, neg_one_mul] using h
@@ -154,7 +160,7 @@ theorem neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos {n : ℕ} (hn : 1 �
     (hx : 0 < x) :
     0 < (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n x := by
   simpa only [pow_zero, one_mul, iteratedDeriv_zero] using
-    neg_one_pow_mul_iteratedDeriv_signed_realStirlingSeriesRemainder_pos hn 0 hx
+    neg_one_pow_mul_iteratedDeriv_neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos hn 0 hx
 
 /-- For `n ≥ 1` and `x > 0`, `stirlingTerm n x` has strict sign `(-1)^{n+1}`:
 `0 < (-1)^(n+1) * stirlingTerm n x`. -/
@@ -189,21 +195,59 @@ theorem log_Gamma_sub_lt_sum_stirlingTerm (m : ℕ) {x : ℝ} (hx : 0 < x) :
     Finset.Ico_add_one_right_eq_Icc] at h
   linarith
 
+/-- Enveloping derivative comparison on `(0, ∞)`: for every `n ≥ 1`, `k : ℕ`, and `x > 0`,
+`(-1)^k (-1)^{n+1} r_n^{(k)}(x) < (-1)^k (-1)^{n+1} T_n^{(k)}(x)`. -/
+theorem neg_one_pow_mul_neg_one_pow_succ_mul_iteratedDeriv_realStirlingSeriesRemainder_lt
+    {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {x : ℝ} (hx : 0 < x) :
+    (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingSeriesRemainder n) x <
+      (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (stirlingTerm n) x := by
+  have hsucc : realStirlingSeriesRemainder (n + 1) =
+      fun t ↦ realStirlingSeriesRemainder n t - stirlingTerm n t :=
+    funext (realStirlingSeriesRemainder_succ n)
+  have hcd_r : ContDiffAt ℝ k (realStirlingSeriesRemainder n) x :=
+    ((contDiffOn_realStirlingSeriesRemainder n).contDiffAt (isOpen_Ioi.mem_nhds hx)).of_le
+      (by exact_mod_cast le_top)
+  have hcd_T : ContDiffAt ℝ k (stirlingTerm n) x := by
+    have heq : (stirlingTerm n : ℝ → ℝ) = fun t ↦
+        ((bernoulli (2 * n) : ℝ) / ((2 * n : ℝ) * (2 * n - 1 : ℝ))) / t ^ (2 * n - 1) := by
+      ext t; simp only [stirlingTerm_def, div_eq_mul_inv, mul_inv]; ring
+    rw [heq]
+    exact contDiffAt_const.div (contDiffAt_id.pow (2 * n - 1)) (pow_ne_zero _ hx.ne')
+  have hderiv : iteratedDeriv k (realStirlingSeriesRemainder (n + 1)) x =
+      iteratedDeriv k (realStirlingSeriesRemainder n) x - iteratedDeriv k (stirlingTerm n) x := by
+    rw [hsucc, iteratedDeriv_fun_sub hcd_r hcd_T]
+  have hpos := neg_one_pow_mul_iteratedDeriv_neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos
+    (n := n + 1) (by omega) k hx
+  rw [iteratedDeriv_const_mul_field, hderiv, pow_succ (-1 : ℝ) (n + 1)] at hpos
+  linarith
+
+/-- Enveloping derivative bound on `(0, ∞)`: for every `n ≥ 1`, `k : ℕ`, and `x > 0`,
+`|r_n^{(k)}(x)| < |T_n^{(k)}(x)|`. -/
+theorem abs_iteratedDeriv_realStirlingSeriesRemainder_lt_abs_iteratedDeriv_stirlingTerm
+    {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {x : ℝ} (hx : 0 < x) :
+    |iteratedDeriv k (realStirlingSeriesRemainder n) x| <
+      |iteratedDeriv k (stirlingTerm n) x| := by
+  have h1 : 0 < (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) *
+      iteratedDeriv k (realStirlingSeriesRemainder n) x := by
+    simpa only [iteratedDeriv_const_mul_field, mul_assoc] using
+      neg_one_pow_mul_iteratedDeriv_neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos hn k hx
+  have h2 := neg_one_pow_mul_neg_one_pow_succ_mul_iteratedDeriv_realStirlingSeriesRemainder_lt
+    hn k hx
+  have habs_r : |iteratedDeriv k (realStirlingSeriesRemainder n) x| =
+      (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) *
+        iteratedDeriv k (realStirlingSeriesRemainder n) x := by
+    simpa [abs_mul] using abs_of_pos h1
+  have habs_T : |iteratedDeriv k (stirlingTerm n) x| =
+      (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (stirlingTerm n) x := by
+    simpa [abs_mul] using abs_of_pos (h1.trans h2)
+  rwa [habs_r, habs_T]
+
 /-- Enveloping bound on `(0, ∞)`: for every `n ≥ 1` and `x > 0`, the Stirling remainder is strictly
 smaller in absolute value than the first omitted term: `|r_n(x)| < |T_n(x)|`. -/
 theorem abs_realStirlingSeriesRemainder_lt_abs_stirlingTerm {n : ℕ} (hn : 1 ≤ n) {x : ℝ}
     (hx : 0 < x) :
     |realStirlingSeriesRemainder n x| < |stirlingTerm n x| := by
-  have h1 := neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos hn hx
-  have h2 := neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos (n := n + 1) (by omega) hx
-  rw [realStirlingSeriesRemainder_succ, pow_succ] at h2
-  have hlt : (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n x <
-      (-1 : ℝ) ^ (n + 1) * stirlingTerm n x := by linarith
-  have habs_r : |realStirlingSeriesRemainder n x| =
-      (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n x := by
-    simpa [abs_mul] using abs_of_pos h1
-  have habs_T : |stirlingTerm n x| = (-1 : ℝ) ^ (n + 1) * stirlingTerm n x := by
-    simpa [abs_mul] using abs_of_pos (neg_one_pow_succ_mul_stirlingTerm_pos hn hx)
-  rwa [habs_r, habs_T]
+  simpa only [iteratedDeriv_zero] using
+    abs_iteratedDeriv_realStirlingSeriesRemainder_lt_abs_iteratedDeriv_stirlingTerm hn 0 hx
 
 end TauCeti

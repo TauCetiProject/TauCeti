@@ -314,6 +314,10 @@ private theorem tendsto_stirlingSeriesRemainder_add_natCast (n : ℕ) (z : ℂ) 
   simpa using ((tendsto_stirlingSeriesRemainder_one_add_natCast z).sub hsum).congr fun N ↦ by
     simp [stirlingSeriesRemainder_def]
 
+private theorem cast_two_mul_factorial {𝕜 : Type*} [Semiring 𝕜] {n : ℕ} (hn : 1 ≤ n) :
+    ((2 * n)! : 𝕜) = 2 * (n : 𝕜) * ((2 * n - 1)! : 𝕜) := by
+  rw [← Nat.mul_factorial_pred (by omega), Nat.cast_mul, Nat.cast_mul, Nat.cast_ofNat]
+
 private theorem stirlingTerm_eq_bernoulli_smul_iteratedDeriv_log {z : ℂ} (j : ℕ) (hj : 1 ≤ j)
     {w : ℝ} (hw : (w : ℂ) + z ∈ slitPlane) :
     (bernoulli (2 * j) / ((2 * j)! : ℝ) : ℝ) •
@@ -323,8 +327,7 @@ private theorem stirlingTerm_eq_bernoulli_smul_iteratedDeriv_log {z : ℂ} (j : 
     have hidx : 2 * j - 1 - 1 = 2 * (j - 1) := by omega
     rw [hidx, pow_mul, neg_one_sq, one_pow]
   have hfac : ((2 * j)! : ℂ) = (2 * j : ℂ) * (2 * j - 1 : ℂ) * ((2 * j - 1 - 1)! : ℂ) := by
-    rw [← Nat.mul_factorial_pred (by omega : 2 * j ≠ 0),
-      ← Nat.mul_factorial_pred (by omega : 2 * j - 1 ≠ 0)]
+    rw [cast_two_mul_factorial hj, ← Nat.mul_factorial_pred (by omega : 2 * j - 1 ≠ 0)]
     push_cast [Nat.cast_sub (by omega : 1 ≤ 2 * j)]
     ring
   have hpow_eq : ((w : ℂ) + z) ^ (2 * j - 1) = (z + w) ^ (2 * j - 1) := by
@@ -347,7 +350,7 @@ private theorem div_factorial_smul_bernoulliFun_iteratedDeriv_log {n : ℕ} (hn 
   rw [Complex.iteratedDeriv_log_ofReal_add (by omega) hu, heven_pow, Complex.real_smul,
     Complex.real_smul, hodd_pow]
   push_cast
-  rw [← Nat.mul_factorial_pred (by omega : 2 * n ≠ 0), Nat.cast_mul, Nat.cast_mul, Nat.cast_ofNat]
+  rw [cast_two_mul_factorial hn]
   field_simp
 
 private theorem sum_Icc_log_ofReal_add {z : ℂ} (hz : z ∈ slitPlane) (N : ℕ) :
@@ -521,7 +524,7 @@ theorem iteratedDeriv_stirlingSeriesRemainder {n : ℕ} (hn : 1 ≤ n) (k : ℕ)
       ← integral_const_mul]
     have hne_fac : ((2 * n - 1)! : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
     refine setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ ?_
-    rw [← Nat.mul_factorial_pred (by omega : 2 * n ≠ 0), Nat.cast_mul, Nat.cast_mul, Nat.cast_ofNat]
+    rw [cast_two_mul_factorial hn]
     field_simp
   | succ k ih =>
     let g : ℝ → ℂ := fun u ↦
@@ -589,22 +592,14 @@ theorem realStirlingSeriesRemainder_eq_integral {n : ℕ} (hn : 1 ≤ n) {x : �
       ∫ u in Ioi (0 : ℝ),
         ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
           ((2 * n : ℝ) * (u + x) ^ (2 * n)) := by
-  have h0 := iteratedDeriv_realStirlingSeriesRemainder hn 0 hx
-  rw [iteratedDeriv_zero, pow_zero, one_mul, add_zero, ← integral_const_mul] at h0
-  rw [h0]
-  have hne : ((2 * n - 1)! : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
-  refine setIntegral_congr_fun measurableSet_Ioi fun _ _ ↦ ?_
-  rw [← Nat.mul_factorial_pred (by omega : 2 * n ≠ 0), Nat.cast_mul, Nat.cast_mul, Nat.cast_ofNat]
-  field_simp
+  apply Complex.ofReal_injective
+  rw [← stirlingSeriesRemainder_ofReal n hx,
+    stirlingSeriesRemainder_eq_integral hn (Complex.ofReal_mem_slitPlane.mpr hx)]
+  refine (setIntegral_congr_fun measurableSet_Ioi fun u _ ↦ ?_).trans integral_complex_ofReal
+  simp only [Complex.ofReal_div, Complex.ofReal_sub, Complex.ofReal_ratCast, Complex.ofReal_mul,
+    Complex.ofReal_ofNat, Complex.ofReal_natCast, Complex.ofReal_pow, Complex.ofReal_add]
 
 /-! ### Specialization to `stirlingRemainder` (`n = 1`) -/
-
-private theorem two_inv_mul_bernoulli_two_sub (t : ℝ) :
-    (2 : ℝ)⁻¹ * ((bernoulli 2 : ℝ) - bernoulliFun 2 (Int.fract t)) =
-      (Int.fract t - Int.fract t ^ 2) / 2 := by
-  rw [bernoulli_two, bernoulliFun_two]
-  push_cast
-  ring
 
 /-- Integral representation of all higher derivatives of the Stirling remainder on the slit plane:
 for every `j : ℕ` and `z ∈ slitPlane`,
@@ -627,8 +622,9 @@ theorem iteratedDeriv_stirlingRemainder (j : ℕ) {z : ℂ} (hz : z ∈ slitPlan
     rw [MeasureTheory.integral_const_mul]; ring
   rw [hmul]
   refine congr_arg (_ * ·) (setIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_)
-  rw [← mul_div_assoc, ← Complex.ofReal_ofNat 2, ← Complex.ofReal_inv, ← Complex.ofReal_mul,
-    two_inv_mul_bernoulli_two_sub, add_comm (t : ℂ) z]
+  rw [bernoulli_two, bernoulliFun_two]
+  push_cast
+  ring
 
 /-- For `j : ℕ` and `z ∈ slitPlane`, the `(j + 1)`-st derivative of `stirlingRemainder` coincides
 with the `j`-th derivative of `w ↦ digamma w - log w + (2 * w)⁻¹`. -/

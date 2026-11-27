@@ -25,11 +25,13 @@ form `‖r₁(z)‖ < 1 / (12 * sin (δ / 2) ^ 2 * ‖z‖)`, the sharp `1 / 12`
 
 ## Main declarations
 
-* `TauCeti.norm_iteratedDeriv_stirlingSeriesRemainder_le_real`: slit-plane derivative comparison
-  against the positive real axis at `‖z‖`.
-* `TauCeti.norm_stirlingSeriesRemainder_lt`,
+* `norm_iteratedDeriv_stirlingSeriesRemainder_le_realStirlingSeriesRemainder_div_cos_half_arg`:
+  slit-plane derivative comparison against the positive real axis at `‖z‖`.
+* `TauCeti.norm_iteratedDeriv_stirlingSeriesRemainder_lt`,
+  `TauCeti.norm_stirlingSeriesRemainder_lt`,
   `TauCeti.norm_iteratedDeriv_stirlingRemainder_lt`,
   `TauCeti.norm_stirlingRemainder_lt`,
+  `TauCeti.norm_iteratedDeriv_stirlingSeriesRemainder_lt_of_abs_arg_le`,
   `TauCeti.norm_stirlingSeriesRemainder_lt_of_abs_arg_le`,
   `TauCeti.norm_iteratedDeriv_stirlingRemainder_lt_of_abs_arg_le`,
   `TauCeti.norm_stirlingRemainder_lt_of_abs_arg_le`,
@@ -61,23 +63,34 @@ private theorem sin_half_pos_le_cos_half_arg {z : ℂ} {δ : ℝ} (hδ : 0 < δ)
 
 /-- Comparison of the slit-plane derivative `‖r_n^{(k)}(z)‖` to its positive real-axis value at
 `‖z‖`: for `n ≥ 1`, `k : ℕ`, and `z ∈ slitPlane`,
-`‖r_n^{(k)}(z)‖ ≤ ((-1)^k (-1)^{n+1} r_n^{(k)}(‖z‖)) / cos (arg z / 2) ^ (2n + k)`. -/
-theorem norm_iteratedDeriv_stirlingSeriesRemainder_le_real {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {z : ℂ}
-    (hz : z ∈ slitPlane) :
+`‖r_n^{(k)}(z)‖ ≤ |r_n^{(k)}(‖z‖)| / cos (arg z / 2) ^ (2n + k)`. -/
+theorem norm_iteratedDeriv_stirlingSeriesRemainder_le_realStirlingSeriesRemainder_div_cos_half_arg
+    {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
     ‖iteratedDeriv k (stirlingSeriesRemainder n) z‖ ≤
-      ((-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) * iteratedDeriv k (realStirlingSeriesRemainder n) ‖z‖) /
+      |iteratedDeriv k (realStirlingSeriesRemainder n) ‖z‖| /
         Real.cos (z.arg / 2) ^ (2 * n + k) := by
   have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
   have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_half_arg_pos hz
-  rw [iteratedDeriv_stirlingSeriesRemainder hn k hz,
-    signed_iteratedDeriv_realStirlingSeriesRemainder hn k hz_pos,
-    norm_mul, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul, norm_div,
-    Complex.norm_natCast, Complex.norm_natCast, mul_div_assoc]
+  have hpos : 0 < (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) *
+      iteratedDeriv k (realStirlingSeriesRemainder n) ‖z‖ := by
+    simpa only [iteratedDeriv_const_mul_field, mul_assoc] using
+      neg_one_pow_mul_iteratedDeriv_neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos
+        hn k hz_pos
+  have habs_r : |iteratedDeriv k (realStirlingSeriesRemainder n) ‖z‖| =
+      (-1 : ℝ) ^ k * (-1 : ℝ) ^ (n + 1) *
+        iteratedDeriv k (realStirlingSeriesRemainder n) ‖z‖ := by
+    simpa [abs_mul] using abs_of_pos hpos
+  rw [habs_r, iteratedDeriv_stirlingSeriesRemainder hn k hz,
+    neg_one_pow_mul_neg_one_pow_succ_mul_iteratedDeriv_realStirlingSeriesRemainder_eq_integral
+      hn k hz_pos]
+  simp only [norm_mul, norm_div, norm_pow, norm_neg, norm_one, one_pow, one_mul,
+    Complex.norm_natCast]
+  rw [mul_div_assoc]
   refine mul_le_mul_of_nonneg_left ?_ (by positivity)
   rw [div_eq_mul_inv, mul_comm _ (Real.cos (z.arg / 2) ^ (2 * n + k))⁻¹, ← integral_const_mul]
   refine (norm_integral_le_integral_norm _).trans (setIntegral_mono_on
     (integrableOn_bernoulli_sub_bernoulliFun_div_pow_Ioi n (by omega : 2 ≤ 2 * n + k) hz).norm
-    ((integrableOn_signed_bernoulli_sub_div_pow_Ioi n
+    ((integrableOn_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_Ioi n
       (by omega : 2 ≤ 2 * n + k) hz_pos).const_mul _)
     measurableSet_Ioi fun u hu ↦ ?_)
   have hu0 : 0 ≤ u := (mem_Ioi.mp hu).le
@@ -101,22 +114,28 @@ theorem norm_iteratedDeriv_stirlingSeriesRemainder_le_real {n : ℕ} (hn : 1 ≤
             (u + ‖z‖) ^ (2 * n + k)) := by
         simp only [div_eq_mul_inv, mul_inv]; ring
 
+/-- **Stieltjes' sharp sector bound** for all derivatives on the slit plane: for every `n ≥ 1`,
+`k : ℕ`, and `z ∈ slitPlane`,
+`‖r_n^{(k)}(z)‖ < |T_n^{(k)}(‖z‖)| / cos (arg z / 2) ^ (2n + k)`. -/
+theorem norm_iteratedDeriv_stirlingSeriesRemainder_lt {n : ℕ} (hn : 1 ≤ n) (k : ℕ) {z : ℂ}
+    (hz : z ∈ slitPlane) :
+    ‖iteratedDeriv k (stirlingSeriesRemainder n) z‖ <
+      |iteratedDeriv k (stirlingTerm n) ‖z‖| / Real.cos (z.arg / 2) ^ (2 * n + k) := by
+  have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
+  have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_half_arg_pos hz
+  exact lt_of_le_of_lt
+    (norm_iteratedDeriv_stirlingSeriesRemainder_le_realStirlingSeriesRemainder_div_cos_half_arg
+      hn k hz)
+    (div_lt_div_of_pos_right
+      (abs_iteratedDeriv_realStirlingSeriesRemainder_lt_abs_iteratedDeriv_stirlingTerm hn k hz_pos)
+      (pow_pos hcos_pos _))
+
 /-- **Stieltjes' sharp sector bound** on the slit plane: for every `n ≥ 1` and `z ∈ slitPlane`,
 `‖r_n(z)‖ < ‖T_n(z)‖ / cos (arg z / 2) ^ (2n)`. -/
 theorem norm_stirlingSeriesRemainder_lt {n : ℕ} (hn : 1 ≤ n) {z : ℂ} (hz : z ∈ slitPlane) :
     ‖stirlingSeriesRemainder n z‖ < ‖stirlingTerm n z‖ / Real.cos (z.arg / 2) ^ (2 * n) := by
-  have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
-  have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_half_arg_pos hz
-  have hle := norm_iteratedDeriv_stirlingSeriesRemainder_le_real hn 0 hz
-  simp only [iteratedDeriv_zero, pow_zero, one_mul, add_zero] at hle
-  have habs_r : (-1 : ℝ) ^ (n + 1) * realStirlingSeriesRemainder n ‖z‖ =
-      |realStirlingSeriesRemainder n ‖z‖| := by
-    simpa [abs_mul] using
-      (abs_of_pos (neg_one_pow_succ_mul_realStirlingSeriesRemainder_pos hn hz_pos)).symm
-  rw [habs_r] at hle
-  have hlt := abs_realStirlingSeriesRemainder_lt_abs_stirlingTerm hn hz_pos
-  rw [← norm_stirlingTerm_eq_abs_norm n z] at hlt
-  exact lt_of_le_of_lt hle (div_lt_div_of_pos_right hlt (pow_pos hcos_pos _))
+  simpa only [iteratedDeriv_zero, add_zero, ← norm_stirlingTerm_eq_abs_norm] using
+    norm_iteratedDeriv_stirlingSeriesRemainder_lt hn 0 hz
 
 /-- Sharp `1 / 12` half-angle bound for all derivatives of `TauCeti.stirlingRemainder` on the
 slit plane: for every `k : ℕ` and `z ∈ slitPlane`,
@@ -124,48 +143,40 @@ slit plane: for every `k : ℕ` and `z ∈ slitPlane`,
 theorem norm_iteratedDeriv_stirlingRemainder_lt (k : ℕ) {z : ℂ} (hz : z ∈ slitPlane) :
     ‖iteratedDeriv k stirlingRemainder z‖ <
       (k ! : ℝ) / (12 * Real.cos (z.arg / 2) ^ (k + 2) * ‖z‖ ^ (k + 1)) := by
-  have hz_pos : 0 < ‖z‖ := norm_pos_iff.mpr (slitPlane_ne_zero hz)
-  have hcos_pos : 0 < Real.cos (z.arg / 2) := Complex.cos_half_arg_pos hz
-  have hle := norm_iteratedDeriv_stirlingSeriesRemainder_le_real le_rfl k hz
-  have hpow : (-1 : ℝ) ^ (1 + 1) = 1 := by norm_num
+  have h := norm_iteratedDeriv_stirlingSeriesRemainder_lt le_rfl k hz
+  have hT1 : |iteratedDeriv k (stirlingTerm 1) ‖z‖| = (k ! : ℝ) / (12 * ‖z‖ ^ (k + 1)) := by
+    have heq : (stirlingTerm 1 : ℝ → ℝ) = fun t ↦ (12⁻¹ : ℝ) / t := by
+      ext t; rw [stirlingTerm_one]; ring
+    rw [heq, TauCeti.iteratedDeriv_const_div, abs_div, abs_mul, abs_mul, abs_pow, abs_neg,
+      abs_one, one_pow, one_mul, Nat.abs_cast, abs_of_nonneg (by positivity : (0 : ℝ) ≤ 12⁻¹),
+      abs_pow, abs_norm]
+    simp only [div_eq_mul_inv, mul_inv]
+    ring
+  rw [stirlingSeriesRemainder_one, hT1] at h
   have hidx : 2 * 1 + k = k + 2 := by omega
-  rw [hpow, mul_one, hidx, stirlingSeriesRemainder_one] at hle
-  -- Since `G₀ = -r₂` is strictly completely monotone,
-  -- `(-1)^k r₁^{(k)}(‖z‖) < (-1)^k T₁^{(k)}(‖z‖)`.
-  have hG := neg_one_pow_mul_iteratedDeriv_neg_realStirlingSeriesRemainder_even_pos 0 k hz_pos
-  have heq_r2 : (fun t : ℝ ↦ -realStirlingSeriesRemainder 2 t) =
-      fun t : ℝ ↦ (12⁻¹ : ℝ) / t - realStirlingSeriesRemainder 1 t := by
-    ext t; rw [realStirlingSeriesRemainder_succ, stirlingTerm_one]
-    simp only [div_eq_mul_inv, mul_inv]; ring
-  simp only [Nat.mul_zero, zero_add] at hG
-  have hT1_cd : ContDiffAt ℝ k (fun t : ℝ ↦ (12⁻¹ : ℝ) / t) ‖z‖ :=
-    contDiffAt_const.div contDiffAt_id hz_pos.ne'
-  rw [heq_r2, iteratedDeriv_fun_sub hT1_cd
-    (((contDiffOn_realStirlingSeriesRemainder 1).contDiffAt (isOpen_Ioi.mem_nhds hz_pos)).of_le
-      (by exact_mod_cast le_top))] at hG
-  have hT1_deriv : iteratedDeriv k (fun t : ℝ ↦ (12⁻¹ : ℝ) / t) ‖z‖ =
-      (-1 : ℝ) ^ k * ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) := by
-    rw [TauCeti.iteratedDeriv_const_div]
-    simp only [div_eq_mul_inv, mul_inv]; ring
-  rw [hT1_deriv, mul_sub, ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨k, rfl⟩, one_mul] at hG
-  calc ‖iteratedDeriv k stirlingRemainder z‖
-      ≤ ((-1 : ℝ) ^ k * iteratedDeriv k (realStirlingSeriesRemainder 1) ‖z‖) /
-          Real.cos (z.arg / 2) ^ (k + 2) := hle
-    _ < ((k ! : ℝ) / (12 * ‖z‖ ^ (k + 1))) / Real.cos (z.arg / 2) ^ (k + 2) :=
-        div_lt_div_of_pos_right (by linarith) (pow_pos hcos_pos _)
-    _ = (k ! : ℝ) / (12 * Real.cos (z.arg / 2) ^ (k + 2) * ‖z‖ ^ (k + 1)) := by
-        simp only [div_eq_mul_inv, mul_inv]; ring
+  rw [hidx] at h
+  exact h.trans_eq (by simp only [div_eq_mul_inv, mul_inv]; ring)
+
+/-- Uniform sector form of Stieltjes' bound for all derivatives: for `n ≥ 1`, `k : ℕ`, `0 < δ`,
+`|arg z| ≤ π - δ`, and `z ≠ 0`,
+`‖r_n^{(k)}(z)‖ < |T_n^{(k)}(‖z‖)| / sin (δ / 2) ^ (2n + k)`. -/
+theorem norm_iteratedDeriv_stirlingSeriesRemainder_lt_of_abs_arg_le {n : ℕ} (hn : 1 ≤ n)
+    (k : ℕ) {z : ℂ} {δ : ℝ} (hδ : 0 < δ) (hz : |z.arg| ≤ π - δ) (hz0 : z ≠ 0) :
+    ‖iteratedDeriv k (stirlingSeriesRemainder n) z‖ <
+      |iteratedDeriv k (stirlingTerm n) ‖z‖| / Real.sin (δ / 2) ^ (2 * n + k) := by
+  have hslit : z ∈ slitPlane := Complex.mem_slitPlane_of_abs_arg_le hδ hz hz0
+  obtain ⟨hsin_pos, hsin_le⟩ := sin_half_pos_le_cos_half_arg hδ hz
+  exact lt_of_lt_of_le (norm_iteratedDeriv_stirlingSeriesRemainder_lt hn k hslit)
+    (div_le_div_of_nonneg_left (abs_nonneg _) (pow_pos hsin_pos _)
+      (pow_le_pow_left₀ hsin_pos.le hsin_le _))
 
 /-- Uniform sector form of Stieltjes' bound: for `0 < δ`, `|arg z| ≤ π - δ`, `z ≠ 0`, and
 `n ≥ 1`, `‖r_n(z)‖ < ‖T_n(z)‖ / sin (δ / 2) ^ (2n)`. -/
 theorem norm_stirlingSeriesRemainder_lt_of_abs_arg_le {n : ℕ} (hn : 1 ≤ n) {z : ℂ} {δ : ℝ}
     (hδ : 0 < δ) (hz : |z.arg| ≤ π - δ) (hz0 : z ≠ 0) :
     ‖stirlingSeriesRemainder n z‖ < ‖stirlingTerm n z‖ / Real.sin (δ / 2) ^ (2 * n) := by
-  have hslit : z ∈ slitPlane := Complex.mem_slitPlane_of_abs_arg_le hδ hz hz0
-  obtain ⟨hsin_pos, hsin_le⟩ := sin_half_pos_le_cos_half_arg hδ hz
-  exact lt_of_lt_of_le (norm_stirlingSeriesRemainder_lt hn hslit)
-    (div_le_div_of_nonneg_left (norm_nonneg _) (pow_pos hsin_pos _)
-      (pow_le_pow_left₀ hsin_pos.le hsin_le _))
+  simpa only [iteratedDeriv_zero, add_zero, ← norm_stirlingTerm_eq_abs_norm] using
+    norm_iteratedDeriv_stirlingSeriesRemainder_lt_of_abs_arg_le hn 0 hδ hz hz0
 
 /-- Sharp `1 / 12` closed-sector bound for all derivatives of `TauCeti.stirlingRemainder`:
 for `0 < δ`, nonzero `z` with `|arg z| ≤ π - δ`, and every `k : ℕ`,

@@ -23,7 +23,7 @@ This file records Lebesgue integrability on `(0, ∞)` for the periodic Bernoull
 `k ≥ 2`), obtained by specializing `TauCeti.integrableOn_div_ofReal_add_pow_of_norm_le` with the
 uniform bound `|B_{2n}({u})| ≤ |B_{2n}|` (`TauCeti.abs_bernoulliFun_even_fract_le`), as well as the
 positive-real specialization `(B_{2n} - B_{2n}({u})) / (u + x)^k` (`x > 0`, `k ≥ 2`) and the
-signed kernel's integrability and strict positivity.
+integrability and strict positivity of the `(-1)^{n+1}`-scaled kernel.
 
 ## Main declarations
 
@@ -33,10 +33,11 @@ signed kernel's integrability and strict positivity.
   `(B_{2n} - B_{2n}({u})) / (u + z)^k` on `(0, ∞)` for `z ∈ slitPlane` and `k ≥ 2`.
 * `TauCeti.integrableOn_real_bernoulli_sub_bernoulliFun_div_pow_Ioi`: real-variable integrability
   of `(B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0` and `k ≥ 2`.
-* `TauCeti.integrableOn_signed_bernoulli_sub_div_pow_Ioi`: real-variable integrability of the
-  signed kernel `(-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0`, `k ≥ 2`.
-* `TauCeti.integral_signed_bernoulli_sub_div_pow_pos`: strict positivity of
-  `∫_{u > 0} (-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k` for `n ≥ 1`, `k ≥ 2`, `x > 0`.
+* `TauCeti.integrableOn_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_Ioi`:
+  real-variable integrability of `(-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)`
+  for `x > 0`, `k ≥ 2`.
+* `TauCeti.integral_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_pos`: strict positivity
+  of `∫_{u > 0} (-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k` for `n ≥ 1`, `k ≥ 2`, `x > 0`.
 -/
 
 public section
@@ -89,21 +90,21 @@ theorem integrableOn_real_bernoulli_sub_bernoulliFun_div_pow_Ioi (n : ℕ) {k : 
   simp only [Complex.reCLM_apply, ← Complex.ofReal_add, ← Complex.ofReal_pow,
     ← Complex.ofReal_div, Complex.ofReal_re]
 
-/-- Signed real-variable integrability of the periodic Bernoulli integrand
+/-- Real-variable integrability of the `(-1)^{n+1}`-scaled periodic Bernoulli integrand
 `(-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k` on `(0, ∞)` for `x > 0` and `k ≥ 2`. -/
-theorem integrableOn_signed_bernoulli_sub_div_pow_Ioi (n : ℕ) {k : ℕ} (hk : 2 ≤ k)
-    {x : ℝ} (hx : 0 < x) :
+theorem integrableOn_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_Ioi (n : ℕ) {k : ℕ}
+    (hk : 2 ≤ k) {x : ℝ} (hx : 0 < x) :
     IntegrableOn (fun u : ℝ ↦
       (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
         (u + x) ^ k) (Ioi 0) :=
   ((integrableOn_real_bernoulli_sub_bernoulliFun_div_pow_Ioi n hk hx).const_mul
     ((-1 : ℝ) ^ (n + 1))).congr (Eventually.of_forall fun _ ↦ (mul_div_assoc _ _ _).symm)
 
-/-- Strict positivity of the signed periodic Bernoulli integral on `(0, ∞)`: for `n ≥ 1`, `k ≥ 2`,
-and `x > 0`,
+/-- Strict positivity of the `(-1)^{n+1}`-scaled periodic Bernoulli integral on `(0, ∞)`: for
+`n ≥ 1`, `k ≥ 2`, and `x > 0`,
 `0 < ∫ u in Ioi (0 : ℝ), (-1)^{n+1} (B_{2n} - B_{2n}({u})) / (u + x)^k`. -/
-theorem integral_signed_bernoulli_sub_div_pow_pos {n k : ℕ} (hn : 1 ≤ n) (hk : 2 ≤ k)
-    {x : ℝ} (hx : 0 < x) :
+theorem integral_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_pos {n k : ℕ}
+    (hn : 1 ≤ n) (hk : 2 ≤ k) {x : ℝ} (hx : 0 < x) :
     0 < ∫ u in Ioi (0 : ℝ),
       (-1 : ℝ) ^ (n + 1) * ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) /
         (u + x) ^ k := by
@@ -116,7 +117,7 @@ theorem integral_signed_bernoulli_sub_div_pow_pos {n k : ℕ} (hn : 1 ≤ n) (hk
     exact div_nonneg (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg n u)
       (by positivity)
   rw [setIntegral_pos_iff_support_of_nonneg_ae hnn
-    (integrableOn_signed_bernoulli_sub_div_pow_Ioi n hk hx)]
+    (integrableOn_neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_div_pow_Ioi n hk hx)]
   have hsub : Ioo (0 : ℝ) 1 ⊆ Function.support f ∩ Ioi (0 : ℝ) := fun u hu ↦ by
     have hnum : 0 < (-1 : ℝ) ^ (n + 1) *
         ((bernoulli (2 * n) : ℝ) - bernoulliFun (2 * n) (Int.fract u)) := by
