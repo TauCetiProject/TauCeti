@@ -40,6 +40,9 @@ only finitely many rounded families have entries in `[-R, R]`.
 * `Int.fract_sub_eq_sub_iff`, `Int.fract_sub_eq_sub_add_one_iff`: the fractional part of
   `a - b` is `fract a - fract b` exactly when `fract b ≤ fract a`, and `fract a - fract b + 1`
   exactly when `fract a < fract b`.
+* `Int.fract_natCast_sub_mul_of_le`, `Int.fract_natCast_sub_mul_of_lt`,
+  `Int.fract_natCast_add_mul_of_lt`, `Int.fract_natCast_add_mul_of_le`: the fractional part of
+  the natural multiple `(j - i) * a` or `(i + j) * a`, in terms of those of `i * a` and `j * a`.
 * `Nat.cast_lt_iff_le_ceil_sub_one`: `(n : R) < a ↔ (n : R) ≤ ⌈a⌉₊ - 1` for natural `n`.
 * `TauCeti.abs_card_Ico_ceil_sub_le`: `|#[a, ⌈y⌉) - max (y - a) 0| ≤ 1` for an integer `a`.
 * `TauCeti.finite_setOf_mem_Icc_natCast_mul_eq_intCast`: for `N ≠ 0`, the points `q` of
@@ -101,6 +104,38 @@ theorem _root_.Int.fract_sub_eq_sub_add_one_iff {R : Type*} [Ring R] [LinearOrde
   · unfold Int.fract
     push_cast
     abel
+
+/-- For natural numbers `i ≤ j`, if the fractional part of `i * a` is at most that of `j * a`,
+then their difference is the fractional part of `(j - i) * a`. -/
+theorem _root_.Int.fract_natCast_sub_mul_of_le {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
+    (h : Int.fract (i * a) ≤ Int.fract (j * a)) :
+    Int.fract (↑(j - i) * a) = Int.fract (j * a) - Int.fract (i * a) := by
+  rw [Nat.cast_sub hij, sub_mul, Int.fract_sub_eq_sub_iff.2 h]
+
+/-- For natural numbers `i ≤ j`, if the fractional part of `j * a` is less than that of `i * a`,
+then their difference plus one is the fractional part of `(j - i) * a`. -/
+theorem _root_.Int.fract_natCast_sub_mul_of_lt {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorRing R] {a : R} {i j : ℕ} (hij : i ≤ j)
+    (h : Int.fract (j * a) < Int.fract (i * a)) :
+    Int.fract (↑(j - i) * a) = Int.fract (j * a) - Int.fract (i * a) + 1 := by
+  rw [Nat.cast_sub hij, sub_mul, Int.fract_sub_eq_sub_add_one_iff.2 h]
+
+/-- For natural numbers `i` and `j`, if the fractional parts of `i * a` and `j * a` sum to less
+than `1`, then their sum is the fractional part of `(i + j) * a`. -/
+theorem _root_.Int.fract_natCast_add_mul_of_lt {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorRing R] {a : R} {i j : ℕ}
+    (h : Int.fract (i * a) + Int.fract (j * a) < 1) :
+    Int.fract (↑(i + j) * a) = Int.fract (i * a) + Int.fract (j * a) := by
+  rw [Nat.cast_add, add_mul, Int.fract_add_eq_add_iff.2 h]
+
+/-- For natural numbers `i` and `j`, if the fractional parts of `i * a` and `j * a` sum to at
+least `1`, then their sum minus one is the fractional part of `(i + j) * a`. -/
+theorem _root_.Int.fract_natCast_add_mul_of_le {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] [FloorRing R] {a : R} {i j : ℕ}
+    (h : 1 ≤ Int.fract (i * a) + Int.fract (j * a)) :
+    Int.fract (↑(i + j) * a) = Int.fract (i * a) + Int.fract (j * a) - 1 := by
+  rw [Nat.cast_add, add_mul, Int.fract_add_eq_add_sub_one_iff.2 h]
 
 /-- In an ordered ring with a natural ceiling, a natural number lies strictly below `a` exactly
 when it is at most `⌈a⌉₊ - 1`. This turns a strict cutoff into an inclusive one. -/
