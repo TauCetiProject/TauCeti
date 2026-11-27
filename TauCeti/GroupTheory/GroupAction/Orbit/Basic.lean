@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Group.Subgroup.ZPowers.Basic
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.GroupAction.IterateAct
+public import TauCeti.Dynamics.ForwardOrbit
 
 /-!
 # Invariant-and-witness orbit criteria
@@ -31,8 +32,8 @@ the witness membership condition (`∀ g ∈ ws, g ∈ H`) from the covering che
 ambient elements without packing subgroup-membership proofs into the witness list.
 
 The file also identifies two orbits of cyclic actions: the orbit of `x` under the `ℕ`-action of
-`IterateMulAct f` is its forward orbit `range fun n ↦ f^[n] x`, and the orbit under
-`Subgroup.zpowers g` consists of the points `g ^ n • x`, `n : ℤ`.
+`IterateMulAct f` is its forward orbit `Function.forwardOrbit f x = range fun n ↦ f^[n] x`, and
+the orbit under `Subgroup.zpowers g` consists of the points `g ^ n • x`, `n : ℤ`.
 
 ## Main results
 
@@ -119,8 +120,9 @@ theorem minimalPeriod_conj_smul {G α : Type*} [Group G] [MulAction G α] (g c :
 @[to_additive (attr := simp) /-- The orbit of `x` under the `ℕ`-action of `IterateAddAct f` is its
 forward orbit. -/]
 theorem orbit_iterateMulAct {α : Type*} (f : α → α) (x : α) :
-    orbit (IterateMulAct f) x = Set.range fun n : ℕ ↦ f^[n] x := by
+    orbit (IterateMulAct f) x = Function.forwardOrbit f x := by
   ext y
+  rw [Function.mem_forwardOrbit]
   constructor
   · rintro ⟨⟨n⟩, rfl⟩
     exact ⟨n, (IterateMulAct.mk_smul n x).symm⟩
