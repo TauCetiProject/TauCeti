@@ -150,10 +150,8 @@ private theorem exists_norm_restrictedSolution_le {lam : ℝ} (hlam : 0 < lam) (
   set u := (euclideanInitialDataCLE hα₀ hα₁ a b c ⟨lam, hlam, ha⟩).symm d
   -- The initial values of the classical solution are bounded by the supremum norm of the datum.
   have hM (x : EuclideanSpace ℝ ι) : |u (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)| ≤ ‖toBUC d.2‖ := by
-    have hg := DFunLike.congr_fun
-      (spatialTrace_euclideanInitialDataCLE_symm_apply hα₀ hα₁ a b c ⟨lam, hlam, ha⟩ d) x
-    rw [spatialTrace_apply] at hg
-    rw [hg, ← toBUC_apply, ← Real.norm_eq_abs, ← ClosedSubmodule.norm_coe]
+    rw [euclideanInitialDataCLE_symm_apply_slabMk_zero, ← toBUC_apply, ← Real.norm_eq_abs,
+      ← ClosedSubmodule.norm_coe]
     exact BoundedContinuousFunction.norm_coe_le_norm _ x
   have h := hest T hT hTT₀ hδT a b c ha hak hbk hck u hM
   rw [parabolicOperatorL_euclideanInitialDataCLE_symm_apply] at h

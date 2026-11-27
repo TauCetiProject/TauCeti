@@ -167,6 +167,18 @@ private def lowerTwo (hα : α ≤ 1) (u : ParabolicCkHolderSpace (k + 2) α (Eu
     ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ hT :=
   equivParabolicC2HolderSpace (inclusionOfLEL hα (Nat.le_add_left 2 k) u)
 
+omit [DecidableEq ι] in
+@[simp]
+private theorem coe_lower (hα : α ≤ 1) (f : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT) :
+    ⇑(lower hα f) = ⇑f :=
+  funext fun p ↦ by simp [lower]
+
+omit [DecidableEq ι] in
+@[simp]
+private theorem coe_lowerTwo (hα : α ≤ 1)
+    (u : ParabolicCkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ hT) : ⇑(lowerTwo hα u) = ⇑u :=
+  funext fun p ↦ by simp [lowerTwo]
+
 /-- Reading the Euclidean operator of order `k` in `C_b^{α,α/2}` gives the operator of order two
 with the coefficients read in `C_b^{α,α/2}`. -/
 private theorem lower_parabolicOperatorL (hα : α ≤ 1)
@@ -213,8 +225,8 @@ private theorem initialDataL_euclidean_injective (hα₀ : 0 < α) (hα₁ : α 
       ParabolicC2HolderSpace.euclideanInitialDataCLE_apply, ← lower_parabolicOperatorL,
       ← lower_parabolicOperatorL, hP]
     refine Prod.ext rfl (CkHolderSpace.ext fun x ↦ ?_)
-    simpa [ParabolicC2HolderSpace.spatialTrace_apply, lowerTwo] using DFunLike.congr_fun hg x
-  exact ext fun p ↦ by simpa [lowerTwo] using congrArg (fun w ↦ w p) h
+    simpa [ParabolicC2HolderSpace.spatialTrace_apply] using DFunLike.congr_fun hg x
+  exact ext fun p ↦ by simpa using congrArg (fun w ↦ w p) h
 
 /-- Existence for the Cauchy problem in `C_{par,b}^{k+2+α}`: the solution in `C_b^{2+α,1+α/2}` has
 order `k + 2` by higher regularity. -/
@@ -230,7 +242,7 @@ private theorem initialDataL_euclidean_surjective (hα₀ : 0 < α) (hα₁ : α
   obtain ⟨g₂, hg₂⟩ := CkHolderSpace.exists_coe_eq_of_le hα₁.le (Nat.le_add_left 2 k) g
   have hl (w : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT) :
       ∃ W : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT, ⇑W = ⇑(lower hα₁.le w) :=
-    ⟨w, funext fun p ↦ by simp [lower]⟩
+    ⟨w, by simp⟩
   obtain ⟨V, hV⟩ := ParabolicC2HolderSpace.exists_coe_eq_euclideanInitialDataCLE_symm_apply
     (a := fun i j ↦ lower hα₁.le (a i j)) (b := fun i ↦ lower hα₁.le (b i))
     (c := lower hα₁.le c) (ha := lower_elliptic hα₁.le ha) hα₀ hα₁ k
@@ -238,13 +250,13 @@ private theorem initialDataL_euclidean_surjective (hα₀ : 0 < α) (hα₁ : α
   have hVU : lowerTwo hα₁.le V = (ParabolicC2HolderSpace.euclideanInitialDataCLE hα₀ hα₁ hT
       (fun i j ↦ lower hα₁.le (a i j)) (fun i ↦ lower hα₁.le (b i)) (lower hα₁.le c)
       (lower_elliptic hα₁.le ha)).symm (lower hα₁.le f, g₂) :=
-    ParabolicC2HolderSpace.ext fun p ↦ by simpa [lowerTwo] using congrFun hV p
+    ParabolicC2HolderSpace.ext fun p ↦ by simpa using congrFun hV p
   refine ⟨V, Prod.ext ?_ ?_⟩
   · refine ext fun p ↦ ?_
     have h := lower_parabolicOperatorL hα₁.le a b c V
     rw [hVU, ParabolicC2HolderSpace.euclideanParabolicOperatorL_euclideanInitialDataCLE_symm_apply]
       at h
-    simpa [lower] using congrArg (fun w ↦ w p) h
+    simpa using congrArg (fun w ↦ w p) h
   · refine CkHolderSpace.ext fun x ↦ ?_
     have h := congrArg (fun w ↦ w (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩)) hVU
     simp only [lowerTwo, equivParabolicC2HolderSpace_apply, inclusionOfLEL_apply,
@@ -341,6 +353,20 @@ theorem spatialTrace_euclideanInitialDataCLE_symm_apply (hα₀ : 0 < α) (hα�
   rw [euclideanInitialDataCLE_apply] at h
   simpa using congrArg Prod.snd h
 
+/-- The solution of the Cauchy problem with initial datum `g` takes the value `g x` at `(x, 0)`. -/
+@[simp]
+theorem euclideanInitialDataCLE_symm_apply_slabMk_zero (hα₀ : 0 < α) (hα₁ : α < 1)
+    (a : ι → ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+    (b : ι → ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+    (c : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT)
+    (ha : ∃ lam : ℝ, 0 < lam ∧ ∀ p (ξ : EuclideanSpace ℝ ι),
+      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ)
+    (d : ParabolicCkHolderSpace k α (EuclideanSpace ℝ ι) ℝ hT ×
+      CkHolderSpace (k + 2) α (EuclideanSpace ℝ ι) ℝ) (x : EuclideanSpace ℝ ι) :
+    (euclideanInitialDataCLE hα₀ hα₁ a b c ha).symm d (slabMk x ⟨0, left_mem_Icc.2 hT.le⟩) =
+      d.2 x := by
+  rw [← spatialTrace_apply, spatialTrace_euclideanInitialDataCLE_symm_apply]
+
 /-- **Consistency between orders.** For `m ≤ k`, the solution at order `k` with data `(f, g)` has
 the same values as the solution at order `m` with the coefficients read at order `m` and data
 `(f', g')` having the values of `(f, g)`: the order-`k` isomorphism is the restriction of the
@@ -391,10 +417,10 @@ theorem coe_euclideanInitialDataCLE_symm_eq_parabolicC2HolderSpace (hα₀ : 0 <
         (f', g')) := by
   -- The coefficients of order two are those of order `k`, read in `C_b^{α,α/2}`.
   obtain rfl : a' = fun i j ↦ lower hα₁.le (a i j) :=
-    funext fun i ↦ funext fun j ↦ HolderSpace.ext fun p ↦ by simp [lower, ← haa']
+    funext fun i ↦ funext fun j ↦ HolderSpace.ext fun p ↦ by simp [← haa']
   obtain rfl : b' = fun i ↦ lower hα₁.le (b i) :=
-    funext fun i ↦ HolderSpace.ext fun p ↦ by simp [lower, ← hbb']
-  obtain rfl : c' = lower hα₁.le c := HolderSpace.ext fun p ↦ by simp [lower, ← hcc']
+    funext fun i ↦ HolderSpace.ext fun p ↦ by simp [← hbb']
+  obtain rfl : c' = lower hα₁.le c := HolderSpace.ext fun p ↦ by simp [← hcc']
   set u := (euclideanInitialDataCLE hα₀ hα₁ a b c ha).symm (f, g)
   -- The solution of order `k`, read in `C_b^{2+α,1+α/2}`, has the data `(f', g')`.
   have h : lowerTwo hα₁.le u =
@@ -404,13 +430,11 @@ theorem coe_euclideanInitialDataCLE_symm_eq_parabolicC2HolderSpace (hα₀ : 0 <
     rw [ContinuousLinearEquiv.eq_symm_apply, ParabolicC2HolderSpace.euclideanInitialDataCLE_apply,
       ← lower_parabolicOperatorL, parabolicOperatorL_euclideanInitialDataCLE_symm_apply]
     refine Prod.ext (HolderSpace.ext fun p ↦ ?_) (CkHolderSpace.ext fun x ↦ ?_)
-    · simp [lower, hff']
-    · have hg := DFunLike.congr_fun
-        (spatialTrace_euclideanInitialDataCLE_symm_apply hα₀ hα₁ a b c ha (f, g)) x
-      rw [spatialTrace_apply] at hg
-      simpa [ParabolicC2HolderSpace.spatialTrace_apply, lowerTwo, hgg'] using hg
+    · simp [hff']
+    · rw [ParabolicC2HolderSpace.spatialTrace_apply, coe_lowerTwo, hgg']
+      exact euclideanInitialDataCLE_symm_apply_slabMk_zero hα₀ hα₁ a b c ha (f, g) x
   rw [← h]
-  exact funext fun p ↦ by simp [lowerTwo]
+  exact funext fun p ↦ by simp
 
 end Initial
 
