@@ -82,6 +82,21 @@ theorem complexSmoothConstants_smul (z : ℂ) (s : Cₛ^n⟮I; F, V⟯) :
 
 variable [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] [∀ x, IsScalarTower ℝ ℂ (V x)]
 
+omit [∀ x, IsScalarTower ℝ ℂ (V x)] in
+/-- **Splitting a section by a partition of unity.** If real-valued smooth functions `ρ i` add up
+to `1` on a set `K` containing the support of a section `σ`, then `σ` is the sum of the products
+`ρ i · σ`. This is the section version of `ContMDiffMap.eq_sum_mulLeft_ofReal`. -/
+theorem eq_sum_ofReal_smul {ι : Type*} (s : Finset ι) (ρ : ι → C^n⟮I, M; ℝ⟯) {K : Set M}
+    {σ : Cₛ^n⟮I; F, V⟯} (hσ : σ.tsupport ⊆ K) (hρ : ∀ x ∈ K, ∑ i ∈ s, ρ i x = 1) :
+    σ = ∑ i ∈ s, ContMDiffMap.ofReal (ρ i) • σ := by
+  rw [← Finset.sum_smul, ← map_sum]
+  ext x
+  rw [smul_apply_of_normedAlgebra, ContMDiffMap.ofReal_apply, ContMDiffMap.coe_sum,
+    Finset.sum_apply]
+  by_cases hx : x ∈ K
+  · rw [hρ x hx, Complex.ofReal_one, one_smul]
+  · rw [σ.eq_zero_of_notMem_tsupport fun h ↦ hx (hσ h), smul_zero]
+
 /-- A real function, viewed as a complex function, acts on sections by the real function
 action. -/
 @[simp]

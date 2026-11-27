@@ -58,7 +58,8 @@ cannot be chosen independently of the ellipticity ratio either; this is drawn ou
 * `TauCeti.PDE.uniformlyEllipticOn_meyersCoefficient`: for `μ ≤ 1`, Meyers' coefficient is
   uniformly elliptic with constants `μ (μ + n) / (n + 1)` and `1`;
   `TauCeti.PDE.uniformlyEllipticOn_meyersCoefficient_of_one_le`: for `μ ≥ 1`, with constants `1`
-  and `μ (μ + n) / (n + 1)`.
+  and `μ (μ + n) / (n + 1)`; `TauCeti.PDE.uniformlyEllipticOn_smul_meyersCoefficient`: for
+  `μ (μ + n) / (n + 1) = λ / Λ` with `0 < λ ≤ Λ`, the field `Λ a` has constants `λ` and `Λ`.
 * `TauCeti.PDE.continuous_meyersSolution`, `TauCeti.PDE.meyersSolution_pos`,
   `TauCeti.PDE.meyersSolution_smul_single_zero`: Meyers' solution is continuous, positive on the
   half-space `0 < x₀`, and equal to `t ^ μ` at `t e₀`.
@@ -74,11 +75,14 @@ cannot be chosen independently of the ellipticity ratio either; this is drawn ou
   `TauCeti.PDE.not_holderOnWith_meyersSolution`: Meyers' solution is bounded by `‖x‖ ^ μ`, and for
   `0 ≤ μ ≤ 1` it is `μ`-Hölder on `ℝ^{n+2}` but not `α`-Hölder near the origin for any `α > μ`.
 * `TauCeti.PDE.energyFormH1_meyersCoefficient_eq_zero`: an element of `H¹(Ω)` equal to Meyers'
-  solution is a weak solution of `div(a ∇u) = 0` on `Ω`.
+  solution is a weak solution of `div(a ∇u) = 0` on `Ω`, and
+  `TauCeti.PDE.energyFormH1_smul_meyersCoefficient_eq_zero`: also of `div(c a ∇u) = 0`.
 * `TauCeti.PDE.exists_w1p_value_ae_eq_meyersSolution`: on a bounded open set, Meyers' solution
   lies in `W^{1,p}` when `p (1 - μ) < n + 2`, and
   `TauCeti.PDE.exists_w1p_value_ae_eq_meyersSolution_iff`: on a bounded open set containing the
   origin, exactly then.
+* `TauCeti.PDE.toReal_mul_one_sub_lt_of_memLp_gradient_meyersSolution`: if the gradient of Meyers'
+  solution is `p`-integrable on some neighbourhood of the origin, then `p (1 - μ) < n + 2`.
 * `TauCeti.PDE.exists_meyersSolution_not_exists_w1p`: for every `p > n + 2` some `μ ∈ (0, 1)`
   gives a weak solution in `H¹(Ω)` that is not in `W^{1,p}(Ω)`.
 
@@ -232,6 +236,23 @@ theorem uniformlyEllipticOn_meyersCoefficient_of_one_le (hμ : 1 ≤ μ)
   have h := uniformlyEllipticOn_radialCoefficient_of_nonpos (α := meyersEigenvalue n μ)
     (β := 1 - meyersEigenvalue n μ) (by simp) (sub_nonpos.2 (one_le_meyersEigenvalue hμ)) Ω
   rwa [add_sub_cancel, ← meyersCoefficient_eq_radialCoefficient] at h
+
+/-- **Meyers' coefficient at prescribed ellipticity constants.** Let `0 < λ ≤ Λ` and let `μ > 0`
+satisfy `μ (μ + n) / (n + 1) = λ / Λ`. Then `Λ a`, for Meyers' coefficient `a`, is uniformly
+elliptic with constants `λ` and `Λ`. Every `λ / Λ ∈ (0, 1]` is attained by some `μ ∈ (0, 1]`
+(`TauCeti.PDE.exists_meyersEigenvalue_eq`). -/
+theorem uniformlyEllipticOn_smul_meyersCoefficient (hμ0 : 0 < μ) {lam Lam : ℝ} (hlam : 0 < lam)
+    (hLam : lam ≤ Lam) (hμ : meyersEigenvalue n μ = lam / Lam)
+    (Ω : Set (EuclideanSpace ℝ (Fin (n + 2)))) :
+    UniformlyEllipticOn Ω (Lam • meyersCoefficient μ) lam Lam := by
+  have hLam0 : 0 < Lam := hlam.trans_le hLam
+  have hμ1 : μ ≤ 1 := by
+    by_contra hμ1
+    have h1 : meyersEigenvalue n μ ≤ 1 := by rw [hμ]; exact (div_le_one hLam0).2 hLam
+    rw [meyersEigenvalue_apply, div_le_one (by positivity)] at h1
+    nlinarith
+  have := (uniformlyEllipticOn_meyersCoefficient hμ0 hμ1 Ω).const_smul hLam0
+  rwa [hμ, mul_div_cancel₀ _ hLam0.ne', mul_one] at this
 
 /-- Meyers' coefficient is strongly measurable. -/
 theorem stronglyMeasurable_meyersCoefficient :
@@ -572,6 +593,20 @@ theorem energyFormH1_meyersCoefficient_eq_zero (hμ0 : 0 < μ)
   rw [Set.mem_ofPred_eq, energyFormH1L_apply]
   exact energyFormH1_meyersCoefficient_ofTestFunctionₗ_eq_zero hμ0 u hu φ
 
+/-- **Meyers' solution solves the equation of every multiple of Meyers' coefficient.** For `μ > 0`,
+every `c` and every open `Ω ⊆ ℝ^{n+2}`, an element `u ∈ H¹(Ω)` equal to `‖x‖ ^ (μ - 1) x₀`
+almost everywhere on `Ω` satisfies `∫_Ω ⟨c a ∇u, ∇v⟩ = 0` for every `v ∈ H¹₀(Ω)`, where `a` is
+Meyers' coefficient. -/
+theorem energyFormH1_smul_meyersCoefficient_eq_zero (hμ0 : 0 < μ) (c : ℝ)
+    {Ω : Opens (EuclideanSpace ℝ (Fin (n + 2)))} (u : W1p volume Ω 2)
+    (hu : W1p.value u =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))]
+      meyersSolution μ)
+    (v : W1p0 volume Ω 2) :
+    energyFormH1 (c • meyersCoefficient μ) 0 0 u (v : W1p volume Ω 2) = 0 := by
+  have := energyFormH1_smul_coefficients (meyersCoefficient μ) 0 0 c u (v : W1p volume Ω 2)
+  rw [smul_zero, smul_zero] at this
+  rw [this, energyFormH1_meyersCoefficient_eq_zero hμ0 u hu v, mul_zero]
+
 /-- Away from the origin, the gradient of Meyers' solution has length at least
 `μ ‖x‖ ^ (μ - 1)`. -/
 private theorem mul_rpow_le_norm_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1)
@@ -733,18 +768,24 @@ theorem not_holderOnWith_meyersSolution {α : ℝ≥0} (hα : μ < α) (C : ℝ�
   rw [this] at hd
   nlinarith [Real.rpow_pos_of_pos ht0 μ]
 
-/-- If the gradient of Meyers' solution is `p`-integrable on an open set containing the origin,
-then `p (1 - μ) < n + 2`: near the origin it is bounded below by `μ ‖x‖ ^ (μ - 1)`. -/
-private theorem lt_of_memLp_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1) {p : ℝ≥0∞}
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) {Ω : Opens (EuclideanSpace ℝ (Fin (n + 2)))}
-    (h0 : (0 : EuclideanSpace ℝ (Fin (n + 2))) ∈ Ω)
-    (hmem : MemLp (radialCoordGradient μ 0) p
-      (volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 2)))))) :
+/-- **The gradient of Meyers' solution is not `p`-integrable near the origin for large `p`.** For
+`μ > 0`, if the gradient of `‖x‖ ^ (μ - 1) x₀` is `p`-integrable on a neighbourhood of the origin
+of `ℝ^{n+2}`, then `p (1 - μ) < n + 2`. For finite `p` and `μ < 1` this says
+`p < (n + 2) / (1 - μ)`: near the origin the gradient is bounded below by `μ ‖x‖ ^ (μ - 1)`. For
+`p = ∞` the conclusion is trivial, since `p.toReal = 0`. -/
+theorem toReal_mul_one_sub_lt_of_memLp_gradient_meyersSolution (hμ0 : 0 < μ) {p : ℝ≥0∞}
+    {s : Set (EuclideanSpace ℝ (Fin (n + 2)))} (hs : s ∈ 𝓝 0)
+    (hmem : MemLp (∇ (meyersSolution μ)) p (volume.restrict s)) :
     p.toReal * (1 - μ) < n + 2 := by
-  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 Ω.isOpen 0 h0
-  have hint : IntegrableOn (fun x => ‖radialCoordGradient μ 0 x‖ ^ p.toReal) (ball 0 r) :=
-    (hmem.integrable_norm_rpow hp0 hp).mono_measure (Measure.restrict_mono hball le_rfl)
+  rcases le_or_gt 1 μ with hμ1 | hμ1
+  · nlinarith [ENNReal.toReal_nonneg (a := p)]
+  rcases (ENNReal.toReal_nonneg (a := p)).eq_or_lt with hpr | hpr
+  · rw [← hpr, zero_mul]
+    positivity
+  obtain ⟨hp0, hp⟩ := ENNReal.toReal_pos_iff.1 hpr
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 hs
+  have hint : IntegrableOn (fun x => ‖∇ (meyersSolution μ) x‖ ^ p.toReal) (ball 0 r) :=
+    (hmem.integrable_norm_rpow hp0.ne' hp.ne).mono_measure (Measure.restrict_mono hball le_rfl)
   -- `‖x‖ ^ (p (μ - 1)) ≤ μ ^ (-p) ‖∇u‖ ^ p` away from the origin.
   have hpow : IntegrableOn (fun x : EuclideanSpace ℝ (Fin (n + 2)) => ‖x‖ ^ (p.toReal * (μ - 1)))
       (ball 0 r) := by
@@ -757,7 +798,7 @@ private theorem lt_of_memLp_radialCoordGradient (hμ0 : 0 < μ) (hμ1 : μ ≤ 1
       Real.rpow_mul (norm_nonneg x), Real.rpow_neg hμ0.le, le_inv_mul_iff₀ (by positivity),
       ← Real.mul_rpow hμ0.le (by positivity)]
     exact Real.rpow_le_rpow (by positivity)
-      (mul_rpow_le_norm_radialCoordGradient hμ0 hμ1 hx) hpr.le
+      (mul_rpow_le_norm_gradient_meyersSolution hμ0 hμ1.le hx) hpr.le
   have := (integrableOn_norm_rpow_ball_iff hr).1 hpow
   rw [finrank_euclideanSpace_fin] at this
   push_cast at this
@@ -834,12 +875,9 @@ theorem exists_w1p_value_ae_eq_meyersSolution_iff (hμ0 : 0 < μ) {p : ℝ≥0�
     (∃ u : W1p volume Ω p,
       W1p.value u =ᵐ[volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin (n + 2))))] meyersSolution μ) ↔
       p.toReal * (1 - μ) < n + 2 := by
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
   refine ⟨fun ⟨u, hu⟩ => ?_, exists_w1p_value_ae_eq_meyersSolution hμ0 hp hb⟩
-  rcases le_or_gt μ 1 with hμ1 | hμ1
-  · exact lt_of_memLp_radialCoordGradient hμ0 hμ1 hp0 hp h0
-      ((Lp.memLp (W1p.gradient u)).ae_eq (gradient_ae_eq_radialCoordGradient hμ0 u hu))
-  · nlinarith [ENNReal.toReal_nonneg (a := p)]
+  exact toReal_mul_one_sub_lt_of_memLp_gradient_meyersSolution hμ0 (Ω.isOpen.mem_nhds h0)
+    ((Lp.memLp (W1p.gradient u)).ae_eq (gradient_ae_eq_gradient_meyersSolution hμ0 u hu))
 
 /-- **Meyers' example: no higher integrability exponent works for all coefficients.** For every
 `p > n + 2` there is `0 < μ < 1` with the following property. For the coefficient
