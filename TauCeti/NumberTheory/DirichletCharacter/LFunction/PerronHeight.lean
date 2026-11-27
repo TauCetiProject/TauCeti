@@ -152,7 +152,7 @@ private theorem perron_error_at_height {a L u : ℝ} (ha : 0 ≤ a) (hL : 4 ≤ 
 bounding the sum of the zero-free-region, truncation and dyadic errors at the height
 `max (exp (√(log x))) q`, which lies between `max 2 q` and `√x`. The decay rate is
 `min (a / 3) 1 / 2`, and the logarithmic prefactor is `(log q) ^ 4`. -/
-theorem exists_perronHeight_mixedExponentialError {a : ℝ} (ha : 0 < a) :
+theorem exists_perron_height_mem_Icc_and_error_le {a : ℝ} (ha : 0 < a) :
     ∃ C > 0, ∀ {q x : ℝ}, exp 1 ≤ q → exp 4 ≤ x → q ≤ √x →
       let T := max (exp (√(log x))) q
       let ell := log (q * (T + 2))
