@@ -68,7 +68,7 @@ so `γ(s, ω, ψ) = L(1 - s, ω⁻¹) / L(s, ω)` with `L(s, ω) = (1 - ω(ϖ) q
 
 * `TauCeti.TateZeta.localZetaIntegral_mul_localZetaIntegral_fourierIntegral_comm`: Tate's
   symmetric identity on the strip `0 < re s + r < 1`.
-* `TauCeti.TateZeta.localZetaIntegral_functionalEquation`:
+* `TauCeti.TateZeta.localZetaIntegral_functional_equation`:
   `z(1 - s, ω⁻¹; 𝓕f) = γ(s, ω, ψ) z(s, ω; f)` on the strip, for every Haar measure `ν`.
 * `TauCeti.TateZeta.eq_gammaFactor_of_forall`, `TauCeti.TateZeta.gammaFactor_eq`: uniqueness of
   `γ` and its independence of `ν`.
@@ -226,6 +226,7 @@ theorem hasCompactSupport_gammaTestFunction : HasCompactSupport (gammaTestFuncti
     fun _ hx ↦ indicator_of_notMem hx _
 
 /-- The zeta integral of Tate's test vector is the volume of `U(K, c(ω))`, for every `s`. -/
+@[simp]
 theorem localZetaIntegral_gammaTestFunction (ν : Measure Kˣ) (s : ℂ) :
     𝔷[ν] ω (gammaTestFunction ω) s =
       ν.real (unitFiltration K (ClassFieldTheory.characterConductorExp K ω)) := by
@@ -267,9 +268,7 @@ theorem gammaFactor_eq (μ : Measure K) (ψ : AddChar K Circle) (ν : Measure K�
   have hρ := isMulLeftInvariant_eq_smul (unitsHaar K) ν
   set c := haarScalarFactor (unitsHaar K) ν
   have hc : (c : ℂ) ≠ 0 := by
-    intro h
-    have h' : c = 0 := by exact_mod_cast h
-    exact NeZero.ne (unitsHaar K) (by rw [hρ, h', zero_smul])
+    exact_mod_cast (haarScalarFactor_pos_of_isHaarMeasure (unitsHaar K) ν).ne'
   rw [gammaFactor, hρ, localZetaIntegral_def, localZetaIntegral_def, integral_smul_nnreal_measure,
     measureReal_nnreal_smul_apply, NNReal.smul_def, Complex.real_smul, Complex.ofReal_mul]
   exact mul_div_mul_left _ _ hc
@@ -280,7 +279,7 @@ variable (μ : Measure K) [μ.IsAddHaarMeasure] (ν : Measure Kˣ) [ν.IsHaarMea
 /-- **Tate's local functional equation.** For every locally constant compactly supported `f` on
 `K` and `s` in the strip `0 < re s + r < 1`, where `r` is the exponent of `ω`,
 `z(1 - s, ω⁻¹; 𝓕f) = γ(s, ω, ψ) z(s, ω; f)`, for every Haar measure `ν` on `Kˣ`. -/
-theorem localZetaIntegral_functionalEquation (hψ : Continuous ψ) (h1 : ψ ≠ 1) {f : K → ℂ}
+theorem localZetaIntegral_functional_equation (hψ : Continuous ψ) (h1 : ψ ≠ 1) {f : K → ℂ}
     (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) {s : ℂ}
     (hs₀ : 0 < s.re + characterExponent K ω) (hs₁ : s.re + characterExponent K ω < 1) :
     𝔷[ν] ω⁻¹ (𝓕[ψ, μ] f) (1 - s) = gammaFactor ω μ ψ s * 𝔷[ν] ω f s := by
@@ -358,7 +357,7 @@ theorem gammaFactor_of_unramified (hψ : Continuous ψ) (h1 : ψ ≠ 1)
       (1 - (ω ϖ : ℂ)⁻¹ * (Nat.card 𝓀[K] : ℂ) ^ (-(1 - s)))⁻¹ := by
   have hω' : unitFiltration K 0 ≤ (ω⁻¹).ker := by rwa [ContinuousMonoidHom.ker_inv]
   have hX := one_sub_apply_mul_natCard_cpow_ne_zero hϖ hs₀
-  have hFE := localZetaIntegral_functionalEquation ω μ (unitsHaar K) hψ h1
+  have hFE := localZetaIntegral_functional_equation ω μ (unitsHaar K) hψ h1
     (isLocallyConstant_indicator_integer K) (hasCompactSupport_indicator_integer K) hs₀ hs₁
   rw [fourierIntegral_indicator_integer μ hψ h1 hψ0 hμ,
     localZetaIntegral_unitsHaar_indicator_integer_of_unramified hω' hϖ

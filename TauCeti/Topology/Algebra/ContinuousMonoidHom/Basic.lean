@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.Algebra.Group.Quotient
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Algebra.Group.Subgroup.Ker
 public import TauCeti.Topology.Algebra.Group.Units
 public import TauCeti.GroupTheory.GroupAction.FixedPoints
 public import TauCeti.GroupTheory.OrderOfElement.Basic
@@ -245,9 +246,8 @@ the same kernel. -/
 into a commutative additive topological group has the same kernel. -/]
 theorem _root_.ContinuousMonoidHom.ker_inv {A E : Type*} [Group A] [TopologicalSpace A]
     [CommGroup E] [TopologicalSpace E] [IsTopologicalGroup E] (f : A →ₜ* E) :
-    (f⁻¹).ker = f.ker := by
-  ext a
-  simp [MonoidHom.mem_ker]
+    (f⁻¹).ker = f.ker :=
+  MonoidHom.ker_inv f.toMonoidHom
 
 /-- Integer powers of continuous homomorphisms into a commutative topological group are computed
 pointwise. -/

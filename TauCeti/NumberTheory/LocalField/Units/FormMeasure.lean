@@ -170,8 +170,7 @@ theorem exists_pos_forall_integral_eq_smul_integral_units (ν : Measure Kˣ) [ν
   have := (Units.isEmbedding_val₀ (G₀ := K)).secondCountableTopology
   have hρ := isMulLeftInvariant_eq_smul (unitsFormMeasure K μ) ν
   set c := haarScalarFactor (unitsFormMeasure K μ) ν
-  have hc : c ≠ 0 := fun hc ↦ NeZero.ne (unitsFormMeasure K μ) (by rw [hρ, hc, zero_smul])
-  refine ⟨c, NNReal.coe_pos.2 (pos_iff_ne_zero.2 hc), fun h ↦ ?_⟩
+  refine ⟨c, NNReal.coe_pos.2 (haarScalarFactor_pos_of_isHaarMeasure _ _), fun h ↦ ?_⟩
   rw [← integral_unitsFormMeasure μ h, hρ, integral_smul_nnreal_measure, NNReal.smul_def]
 
 end TauCeti
