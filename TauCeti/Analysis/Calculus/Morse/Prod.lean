@@ -53,8 +53,9 @@ pair of gradients. The results above transfer to it through
   gradient trajectories of the separated sum are the pairs of negative gradient trajectories of
   the summands. `IsIntegralCurve.fst_of_separatedSum` and `IsIntegralCurve.snd_of_separatedSum`
   project a trajectory of the separated sum to one factor when only the other summand is
-  differentiable everywhere, and `IsIntegralCurve.exists_eq_toLp_comp_add_of_separatedSum` finds
-  the trajectories between two points with the same second component.
+  differentiable along the curve, and
+  `IsIntegralCurve.exists_eq_toLp_comp_add_of_separatedSum` finds the trajectories between two
+  points with the same second component.
 * `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff` and `TauCeti.morseIndex_separatedSum`:
   its nondegenerate critical points are the pairs of nondegenerate critical points, with additive
   Morse index.
@@ -279,14 +280,16 @@ theorem isIntegralCurve_separatedSum_iff {z : ℝ → WithLp 2 (E × F)}
       (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
 
 /-- **The first component of a negative gradient trajectory of a separated sum** is a negative
-gradient trajectory of `f`, as soon as `g` is differentiable. No differentiability of `f` is
-needed: where `f` is not differentiable, neither is the separated sum, and both gradients vanish. -/
-theorem _root_.IsIntegralCurve.fst_of_separatedSum (hg : Differentiable ℝ g)
-    {z : ℝ → WithLp 2 (E × F)} (hz : IsIntegralCurve z fun _ w ↦ -∇ (separatedSum f g) w) :
+gradient trajectory of `f`, as soon as `g` is differentiable along the second component. No
+differentiability of `f` is needed: where `f` is not differentiable, neither is the separated sum,
+and both gradients vanish. -/
+theorem _root_.IsIntegralCurve.fst_of_separatedSum {z : ℝ → WithLp 2 (E × F)}
+    (hg : ∀ s, DifferentiableAt ℝ g (z s).snd)
+    (hz : IsIntegralCurve z fun _ w ↦ -∇ (separatedSum f g) w) :
     IsIntegralCurve (fun s ↦ (z s).fst) fun _ x ↦ -∇ f x := by
   intro s
   by_cases hf : DifferentiableAt ℝ f (z s).fst
-  · simpa [Function.comp_def, gradient_separatedSum hf (hg _)] using
+  · simpa [Function.comp_def, gradient_separatedSum hf (hg s)] using
       (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
   -- `f` is the separated sum along the slice through `z s`, up to a constant.
   have hS : ¬DifferentiableAt ℝ (separatedSum f g) (z s) := fun h ↦ hf <| by
@@ -299,13 +302,14 @@ theorem _root_.IsIntegralCurve.fst_of_separatedSum (hg : Differentiable ℝ g)
     (WithLp.fstL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
 
 /-- **The second component of a negative gradient trajectory of a separated sum** is a negative
-gradient trajectory of `g`, as soon as `f` is differentiable. -/
-theorem _root_.IsIntegralCurve.snd_of_separatedSum (hf : Differentiable ℝ f)
-    {z : ℝ → WithLp 2 (E × F)} (hz : IsIntegralCurve z fun _ w ↦ -∇ (separatedSum f g) w) :
+gradient trajectory of `g`, as soon as `f` is differentiable along the first component. -/
+theorem _root_.IsIntegralCurve.snd_of_separatedSum {z : ℝ → WithLp 2 (E × F)}
+    (hf : ∀ s, DifferentiableAt ℝ f (z s).fst)
+    (hz : IsIntegralCurve z fun _ w ↦ -∇ (separatedSum f g) w) :
     IsIntegralCurve (fun s ↦ (z s).snd) fun _ y ↦ -∇ g y := by
   intro s
   by_cases hg : DifferentiableAt ℝ g (z s).snd
-  · simpa [Function.comp_def, gradient_separatedSum (hf _) hg] using
+  · simpa [Function.comp_def, gradient_separatedSum (hf s) hg] using
       (WithLp.sndL 2 ℝ E F).hasFDerivAt.comp_hasDerivAt s (hz s)
   -- `g` is the separated sum along the slice through `z s`, up to a constant.
   have hS : ¬DifferentiableAt ℝ (separatedSum f g) (z s) := fun h ↦ hg <| by
@@ -334,7 +338,7 @@ theorem _root_.IsIntegralCurve.exists_eq_toLp_comp_add_of_separatedSum (hg : Dif
     ∃ τ, z = fun σ ↦ WithLp.toLp 2 (γ (σ + τ), b) := by
   have hfst := (WithLp.fstL 2 ℝ E F).continuous.tendsto
   have hsnd := (WithLp.sndL 2 ℝ E F).continuous.tendsto
-  obtain ⟨τ, hτ⟩ := huniq _ (hz.fst_of_separatedSum hg)
+  obtain ⟨τ, hτ⟩ := huniq _ (hz.fst_of_separatedSum fun _ ↦ hg _)
     (by simpa [Function.comp_def] using (hfst _).comp hbot)
     (by simpa [Function.comp_def] using (hfst _).comp htop)
   have hzd (σ : ℝ) : DifferentiableAt ℝ f (z σ).fst := by
