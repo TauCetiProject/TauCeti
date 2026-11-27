@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Measure.Haar.ResidueClass
+public import TauCeti.Topology.Algebra.Ring.Subring.ResidueClass
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.LinearAlgebra.Matrix.ConjTranspose
 public import Mathlib.MeasureTheory.Function.LocallyIntegrable

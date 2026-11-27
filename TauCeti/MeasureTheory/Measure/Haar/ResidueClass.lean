@@ -7,7 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.Pi
 public import Mathlib.MeasureTheory.Measure.Haar.DistribChar
-public import TauCeti.Topology.Algebra.Ring.Subring.ResidueClass
+public import TauCeti.RingTheory.Subring.ResidueClass
 
 /-!
 # Haar volume of residue classes over a subring
