@@ -659,7 +659,7 @@ private theorem setIntegral_sobolevDensity_covectorPullback_le_of_endCutoff (ω 
       hJ hKs hKt hu (isCompact_preimage_truncation _) (fun z hz ↦ contDiffAt_endCutoff R₀ q hz)
       (fun z _ ↦ abs_le.2 ⟨by linarith [endCutoff_nonneg R₀ q z], endCutoff_le_one R₀ q z⟩)
       (fun z hz ↦ mem_preimage_truncation_of_fderiv_endCutoff_ne_zero hR₀ hz) hM hB hw hwc hΛ₀
-      hΛ hη hηc hηS)
+      hΛ (hη.of_le one_le_two) hηc hηS)
 
 /-- **Patching the adjoint at one height.** Under the hypotheses of
 `exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinearizationAdjoint_of_ends`,
@@ -736,7 +736,7 @@ private theorem exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_adjoint
         (J := J') isOpen_thricePuncturedSphereReal hJ hKs hKt hu hK
         (fun z hz ↦ contDiffAt_coreCutoff R₀ hz) (fun z _ ↦ abs_coreCutoff_le_one (by linarith) z)
         (fun z hz ↦ mem_preimage_truncation_of_fderiv_coreCutoff_ne_zero (by linarith) hz) hMc
-        hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) hη hηc hηS)
+        hB hw hwc hΛ₀ (fun z hz ↦ (hΛ z hz).1) (hη.of_le one_le_two) hηc hηS)
   -- Summing the pieces.
   exact sum_add_le_mul_add_of_weight (fun q ↦ le_max_right _ _) hC₀ hΛ₀ hX hY hends hcore
 

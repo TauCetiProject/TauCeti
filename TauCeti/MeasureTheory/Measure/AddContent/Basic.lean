@@ -39,9 +39,10 @@ unlike measures, they cannot be replaced by countably additive set functions on 
   action, for instance a finite group acting on itself by left multiplication, an invariant content
   of total mass one on all subsets is normalized counting, `m s = |s| / |α|`.
 * `MeasureTheory.AddContent.map` pushes a content forward along a map, with identity and
-  composition laws. Pushforward along an equivariant map preserves invariance under a group
-  action, and invariance of a content on all subsets is invariance under pushforward by every
-  group element.
+  composition laws; `MeasureTheory.AddContent.mapNonneg` is the pushforward of a nonnegative
+  real content on all subsets, as a nonnegative content. Pushforward along an equivariant map
+  preserves invariance under a group action, and invariance of a content on all subsets is
+  invariance under pushforward by every group element.
 
 ## References
 
@@ -277,6 +278,19 @@ theorem map_map (m : AddContent G C) {f : α → β} {g : β → γ} (hf : ∀ u
     (hg : ∀ u ∈ E, g ⁻¹' u ∈ D) :
     (m.map f hf).map g hg = m.map (g ∘ f) (fun u hu ↦ hf _ (hg u hu)) :=
   AddContent.ext fun _ ↦ (rfl)
+
+/-- The pushforward of a nonnegative real content on all subsets along `r`, as a nonnegative
+content. -/
+def mapNonneg (r : α → β) (ν : {ν : AddContent ℝ (univ : Set (Set α)) // ∀ s, 0 ≤ ν s}) :
+    {ν : AddContent ℝ (univ : Set (Set β)) // ∀ s, 0 ≤ ν s} :=
+  ⟨ν.val.map r fun _ _ ↦ mem_univ _,
+    fun s ↦ (ν.property (r ⁻¹' s)).trans_eq (map_apply _ _ _ s).symm⟩
+
+@[simp]
+theorem coe_mapNonneg (r : α → β)
+    (ν : {ν : AddContent ℝ (univ : Set (Set α)) // ∀ s, 0 ≤ ν s}) :
+    (mapNonneg r ν : AddContent ℝ (univ : Set (Set β))) = ν.val.map r fun _ _ ↦ mem_univ _ :=
+  (rfl)
 
 variable {Γ : Type*} [Group Γ] [MulAction Γ α] [MulAction Γ β]
 
