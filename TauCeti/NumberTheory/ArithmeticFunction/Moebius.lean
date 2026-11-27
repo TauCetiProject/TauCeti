@@ -6,6 +6,7 @@ Authors: Arend Mellendijk, The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
+import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Algebra.Order.Ring.Abs
 import TauCeti.NumberTheory.ArithmeticFunction.Sigma.Basic
 
@@ -63,6 +64,8 @@ absolute value (`ArithmeticFunction.abs_moebius_mul_le`).
 * `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_smul_of_dvd`,
   `ArithmeticFunction.eq_sum_divisors_moebius_mul_moebius_mul_of_dvd`: specialization to the
   divisors of a fixed nonzero integer `N`.
+* `ArithmeticFunction.sum_filter_natAbs_coprime_eq_sum_divisors_smul`: expand a sum over integers
+  coprime to a modulus into sums over multiples of its divisors.
 * `ArithmeticFunction.sum_divisors_moebius_sq`: `∑_{d ∣ n} μ(d)² = 2 ^ ω(n)` for `n ≠ 0`.
 * `ArithmeticFunction.sum_Ioc_moebius_sq_le`: `∑_{L<m≤M} μ(m)² ≤ M - L`.
 * `ArithmeticFunction.abs_moebius_mul_le`: `|μ(n) a| ≤ |a|` in a ring whose linear order is
@@ -83,6 +86,24 @@ open Finset Nat
 namespace ArithmeticFunction
 
 open scoped Moebius zeta ArithmeticFunction.sigma
+
+/-- Möbius inversion for a finite sum over integers prime to `r`. The sum at divisor `d`
+is over the multiples of `d` in the original finset, including zero if present. -/
+theorem sum_filter_natAbs_coprime_eq_sum_divisors_smul {A : Type*} [AddCommGroup A]
+    (s : Finset ℤ) (f : ℤ → A) {r : ℕ} (hr : r ≠ 0) :
+    ∑ n ∈ s with n.natAbs.Coprime r, f n =
+      ∑ d ∈ r.divisors, μ d • ∑ n ∈ s with (d : ℤ) ∣ n, f n := by
+  simp_rw [sum_filter, Finset.smul_sum, smul_ite, smul_zero]
+  rw [sum_comm]
+  refine sum_congr rfl fun n _ ↦ ?_
+  rw [← sum_filter, ← sum_smul]
+  have hfilter : (r.divisors.filter fun d : ℕ ↦ (d : ℤ) ∣ n) = (n.natAbs.gcd r).divisors := by
+    rw [← Nat.divisors_filter_dvd_of_dvd hr (Nat.gcd_dvd_right n.natAbs r)]
+    ext d
+    simp only [mem_filter, Int.natCast_dvd, Nat.dvd_gcd_iff]
+    exact ⟨fun h ↦ ⟨h.1, h.2, dvd_of_mem_divisors h.1⟩, fun h ↦ ⟨h.1, h.2.1⟩⟩
+  rw [hfilter, ← coe_mul_zeta_apply, moebius_mul_coe_zeta, ArithmeticFunction.one_apply]
+  by_cases h : n.natAbs.gcd r = 1 <;> simp [Nat.Coprime, h]
 
 variable {G R : Type*}
 
