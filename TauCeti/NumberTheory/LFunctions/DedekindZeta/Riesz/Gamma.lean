@@ -10,6 +10,7 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv.Riesz
 public import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
+import TauCeti.NumberTheory.LFunctions.DedekindZeta.TrivialZeros
 
 /-!
 # The negative gamma contribution to the first Dedekind zeta Riesz formula
@@ -109,12 +110,6 @@ private theorem regularGammaLogDeriv_eq {s : ℂ} (hs : -1 < s.re) (h₀ : s ≠
 
 private theorem regularGammaLogDeriv_zero :
     regularGammaLogDeriv K 0 = logDerivFinitePart (dedekindZetaData K).gammaFactor 0 := by
-  have hord : (meromorphicOrderAt (dedekindZetaData K).gammaFactor 0).untop₀ =
-      -(↑(nrRealPlaces K) + ↑(nrComplexPlaces K) : ℤ) := by
-    rw [funext (dedekindZetaData_gammaFactor K)]
-    simpa using congrArg WithTop.untop₀
-      (meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat (nrRealPlaces K)
-        (nrComplexPlaces K) (n := 1) le_rfl)
   have ha : AnalyticAt ℂ (regularGammaLogDeriv K) 0 := by
     have hR₂ := analyticAt_logDeriv_Gammaℝ (Gammaℝ_ne_zero_of_re_pos (s := 2) (by norm_num))
     have hC₁ := analyticAt_logDeriv_Gammaℂ (Gammaℂ_ne_zero_of_re_pos (s := 1) (by norm_num))
@@ -132,7 +127,8 @@ private theorem regularGammaLogDeriv_zero :
     (isOpen_lt continuous_const continuous_re).mem_nhds
       (by norm_num : (0 : ℂ) ∈ {z | -1 < z.re})
   filter_upwards [hnear.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin] with z hz hz₀
-  rw [regularGammaLogDeriv_eq K hz hz₀, hord]
+  rw [regularGammaLogDeriv_eq K hz hz₀, meromorphicOrderAt_dedekindZetaData_gammaFactor_zero,
+    WithTop.untop₀_coe]
   push_cast
   ring
 

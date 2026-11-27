@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed
+public import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 import TauCeti.Analysis.SpecialFunctions.Gamma.LeadingCoefficient
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Analytic
-import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 
 /-!
 # Trivial zeros of the Dedekind zeta function
@@ -72,18 +72,25 @@ theorem meromorphicOrderAt_dedekindZetaC_one_sub_nat {n : ℕ} (hn : 2 ≤ n) :
     analyticOrderAt_inv_Gammaℝ_pow_mul_inv_Gammaℂ_pow_one_sub _ _ (by omega : 1 ≤ n),
     ENat.map_natCast]
 
+/-- The gamma factor of Dedekind zeta has a pole at zero of order the number of infinite
+places: each real and each complex place contributes a simple pole. -/
+theorem meromorphicOrderAt_dedekindZetaData_gammaFactor_zero :
+    meromorphicOrderAt (dedekindZetaData K).gammaFactor 0 =
+      (-((nrRealPlaces K : ℤ) + nrComplexPlaces K) : ℤ) := by
+  rw [funext (dedekindZetaData_gammaFactor K)]
+  simpa using meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat
+    (nrRealPlaces K) (nrComplexPlaces K) (n := 1) le_rfl
+
 /-- The order of Dedekind zeta at zero is the unit rank: the gamma poles contribute
 one for each infinite place, and the pole of the completed function subtracts one. -/
 theorem meromorphicOrderAt_dedekindZetaC_zero :
     meromorphicOrderAt (dedekindZetaC K) 0 =
       ((nrRealPlaces K : ℤ) + nrComplexPlaces K - 1 : ℤ) := by
-  have h := meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat
-    (nrRealPlaces K) (nrComplexPlaces K) (n := 1) le_rfl
-  rw [Nat.cast_one, sub_self, ite_eq_right Nat.not_even_one] at h
   rw [← dedekindZetaData_continuedL, (dedekindZetaData K).meromorphicOrderAt_continuedL
     (dedekindZetaData_hasMeromorphicContinuation K).meromorphic, dedekindZetaData_completed,
-    meromorphicOrderAt_completedDedekindZeta_zero, funext (dedekindZetaData_gammaFactor K), h,
-    sub_neg_eq_add, ← WithTop.coe_add]
-  congr 1
+    meromorphicOrderAt_completedDedekindZeta_zero,
+    meromorphicOrderAt_dedekindZetaData_gammaFactor_zero,
+    ← WithTop.LinearOrderedAddCommGroup.coe_sub]
+  exact congrArg _ (by ring)
 
 end TauCeti.LFunctions

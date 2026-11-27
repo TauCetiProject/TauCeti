@@ -43,32 +43,10 @@ private noncomputable abbrev clearedCompletion : ℂ → ℂ :=
 
 private noncomputable abbrev dedekindGamma : ℂ → ℂ := (dedekindZetaData K).gammaFactor
 
-private theorem clearedCompletion_eq {s : ℂ} (h₀ : s ≠ 0) (h₁ : s ≠ 1) :
-    clearedCompletion K s = s * (s - 1) * completedDedekindZeta K s := by
-  exact toMeromorphicNFOn_apply_of_analyticAt
-    (fun z ↦ (by fun_prop : AnalyticAt ℂ (fun w : ℂ ↦ w * (w - 1)) z).meromorphicAt.mul
-      (meromorphic_completedDedekindZeta K z))
-    ((by fun_prop : AnalyticAt ℂ (fun w : ℂ ↦ w * (w - 1)) s).mul
-      (analyticAt_completedDedekindZeta K h₀ h₁))
-
-private theorem clearedCompletion_ne_zero_of_one_le_re {s : ℂ} (hs : 1 ≤ s.re) :
-    clearedCompletion K s ≠ 0 := by
-  have hc : (classNumber K : ℂ) * (2 * mellinConstant K) ≠ 0 := by
-    exact mul_ne_zero (Nat.cast_ne_zero.mpr (classNumber_pos K).ne')
-      (mul_ne_zero two_ne_zero (ofReal_ne_zero.mpr (mellinConstant_ne_zero K)))
-  rcases eq_or_ne s 1 with rfl | h₁
-  · rw [clearedCompletion, toMeromorphicNFOn_mul_completedDedekindZeta_one]
-    exact hc
-  have h₀ := Complex.ne_zero_of_re_pos (zero_lt_one.trans_le hs)
-  have hn := dedekindZetaC_ne_zero_of_one_le_re K hs h₁
-  rw [dedekindZetaC_eq_mul_completedDedekindZeta K h₀ h₁] at hn
-  rw [clearedCompletion_eq K h₀ h₁]
-  exact mul_ne_zero (mul_ne_zero h₀ (sub_ne_zero.mpr h₁)) (right_ne_zero_of_mul hn)
-
 private theorem clearedCompletion_ne_zero_zero : clearedCompletion K 0 ≠ 0 := by
   simpa only [clearedCompletion, toMeromorphicNFOn_mul_completedDedekindZeta_zero,
     toMeromorphicNFOn_mul_completedDedekindZeta_one] using
-    clearedCompletion_ne_zero_of_one_le_re K (s := 1) (by simp)
+    toMeromorphicNFOn_mul_completedDedekindZeta_ne_zero_of_one_le_re K (s := 1) (by simp)
 
 private theorem logDeriv_clearedCompletion {s : ℂ} (h₀ : s ≠ 0) (h₁ : s ≠ 1)
     (hγ : dedekindGamma K s ≠ 0) (hζ : dedekindZetaC K s ≠ 0) :
@@ -84,7 +62,8 @@ private theorem logDeriv_clearedCompletion {s : ℂ} (h₀ : s ≠ 0) (h₁ : s 
       z * (z - 1) * (D ^ (z / 2) * dedekindGamma K z * dedekindZetaC K z) := by
     filter_upwards [eventually_ne_nhds h₀, eventually_ne_nhds h₁,
       haγ.continuousAt.eventually_ne hγ] with z hz₀ hz₁ hzγ
-    rw [clearedCompletion_eq K hz₀ hz₁, dedekindZetaC_eq_mul_completedDedekindZeta K hz₀ hz₁]
+    rw [clearedCompletion, toMeromorphicNFOn_mul_completedDedekindZeta_eq K hz₀ hz₁,
+      dedekindZetaC_eq_mul_completedDedekindZeta K hz₀ hz₁]
     have hneg : D ^ (-z / 2) = (D ^ (z / 2))⁻¹ := by rw [neg_div, cpow_neg]
     rw [hneg, dedekindGamma, dedekindZetaData_gammaFactor]
     rw [dedekindZetaData_gammaFactor] at hzγ
@@ -122,11 +101,7 @@ private theorem logDeriv_clearedCompletion_zero :
     logDeriv (clearedCompletion K) 0 = logDerivFinitePart (dedekindZetaC K) 0 +
       logDerivFinitePart (dedekindGamma K) 0 + log ((|discr K| : ℤ) : ℂ) / 2 - 1 := by
   have hordζ := meromorphicOrderAt_dedekindZetaC_zero K
-  have hordγ : meromorphicOrderAt (dedekindGamma K) 0 =
-      (-(↑(nrRealPlaces K) + ↑(nrComplexPlaces K)) : ℤ) := by
-    rw [dedekindGamma, funext (dedekindZetaData_gammaFactor K)]
-    simpa using meromorphicOrderAt_Gammaℝ_pow_mul_Gammaℂ_pow_one_sub_nat
-      (nrRealPlaces K) (nrComplexPlaces K) (n := 1) le_rfl
+  have hordγ := meromorphicOrderAt_dedekindZetaData_gammaFactor_zero K
   have hmζ := meromorphic_dedekindZetaC K (0 : ℂ)
   obtain ⟨f, hf, hfEq⟩ := hmζ.exists_analyticAt_logDeriv_sub_order_div
   have hmγ := (dedekindZetaData K).meromorphic_gammaFactor 0
@@ -159,7 +134,8 @@ private theorem logDeriv_clearedCompletion_one :
   have hG := (dedekindZetaData K).analyticAt_gammaFactor hγ
   have hF := analyticAt_logDeriv_dedekindZetaPoleRemoved_one K
   have hd := differentiable_toMeromorphicNFOn_mul_completedDedekindZeta K
-  have hX := (hd.analyticAt 1).logDeriv (clearedCompletion_ne_zero_of_one_le_re K (by simp))
+  have hX := (hd.analyticAt 1).logDeriv
+    (toMeromorphicNFOn_mul_completedDedekindZeta_ne_zero_of_one_le_re K (by simp))
   have hmζ := meromorphic_dedekindZetaC K 1
   have hζ := (meromorphicOrderAt_ne_top_iff_eventually_ne_zero hmζ).mp
     (by simp [meromorphicOrderAt_dedekindZetaC_one])
@@ -179,10 +155,6 @@ private theorem logDeriv_clearedCompletion_one :
     simp only [WithTop.untop₀_coe, Int.cast_neg, Int.cast_one, div_eq_mul_inv]
     ring)
   simpa [logDeriv_dedekindZetaPoleRemoved_one] using heq
-
-private theorem re_lt_one_of_clearedCompletion_eq_zero {ρ : ℂ} (hρ : clearedCompletion K ρ = 0) :
-    ρ.re < 1 :=
-  lt_of_not_ge fun h ↦ clearedCompletion_ne_zero_of_one_le_re K h hρ
 
 /-- The zero side of the first Riesz formula for Dedekind zeta. The nontrivial zeros are
 counted with their orders by `rieszZeroSeries`; the two corrections account for strictly
@@ -205,7 +177,7 @@ theorem continuousOn_dedekindZetaRieszZeroSide :
     ContinuousOn (dedekindZetaRieszZeroSide K) (Ici 1) := by
   have hZ := (orderLE_toMeromorphicNFOn_mul_completedDedekindZeta K).continuousOn_rieszZeroSeries
     (differentiable_toMeromorphicNFOn_mul_completedDedekindZeta K) (by norm_num)
-    (fun ρ hρ ↦ (re_lt_one_of_clearedCompletion_eq_zero K hρ).le)
+    (fun ρ hρ ↦ (re_lt_one_of_toMeromorphicNFOn_mul_completedDedekindZeta_eq_zero K hρ).le)
   have hlog : ContinuousOn (fun y : ℝ ↦ (Real.log y : ℂ)) (Ici 1) :=
     continuous_ofReal.comp_continuousOn (Real.continuousOn_log.mono fun y hy ↦
       (zero_lt_one.trans_le (mem_Ici.mp hy)).ne')
@@ -238,7 +210,7 @@ theorem integrableOn_and_integral_dedekindZetaRieszZeroSide_mul_cpow {s : ℂ} (
   have hΞ := orderLE_toMeromorphicNFOn_mul_completedDedekindZeta K
   have hd := differentiable_toMeromorphicNFOn_mul_completedDedekindZeta K
   have hb (ρ : ℂ) (hρ : clearedCompletion K ρ = 0) :=
-    (re_lt_one_of_clearedCompletion_eq_zero K hρ).le
+    (re_lt_one_of_toMeromorphicNFOn_mul_completedDedekindZeta_eq_zero K hρ).le
   have hZ := hΞ.integrableOn_rieszZeroSeries_mul_cpow hd (by norm_num) hb hs
   have hG := integrableOn_dedekindZetaRieszGammaCorrection_mul_cpow K (by linarith : -1 < s.re)
   obtain ⟨hO, hOeq⟩ := mellin_dedekindZetaRieszOrigin K (zero_lt_one.trans hs)
@@ -249,7 +221,7 @@ theorem integrableOn_and_integral_dedekindZetaRieszZeroSide_mul_cpow {s : ℂ} (
   simp only [Pi.add_apply] at hZG hZGO
   rw [hZGO, hZG, hOeq]
   have hZeq := hΞ.mul_integral_rieszZeroSeries_mul_cpow hd (clearedCompletion_ne_zero_zero K)
-    (clearedCompletion_ne_zero_of_one_le_re K (by simp)) hb hs
+    (toMeromorphicNFOn_mul_completedDedekindZeta_ne_zero_of_one_le_re K (by simp)) hb hs
   have hGeq := mul_integral_dedekindZetaRieszGammaCorrection K (by linarith : -1 < s.re) hs₀
   have hn := dedekindZetaC_ne_zero_of_one_le_re K hs.le hs₁
   have hXeq := logDeriv_clearedCompletion K hs₀ hs₁
