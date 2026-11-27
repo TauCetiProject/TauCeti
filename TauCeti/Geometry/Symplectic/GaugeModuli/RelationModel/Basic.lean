@@ -9,23 +9,23 @@ public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Algebra.GroupAction.OrbitRelQuotient
+public import TauCeti.RepresentationTheory.SurfaceGroup.SpecialUnitary
 public import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 public import TauCeti.Topology.Algebra.ProperAction.Basic
-import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.GroupTheory.Commutator.Basic
-import Mathlib.LinearAlgebra.Determinant
-import Mathlib.LinearAlgebra.Eigenspace.Triangularizable
 import Mathlib.LinearAlgebra.Matrix.Trace
 import Mathlib.Topology.Algebra.Group.Quotient
-import TauCeti.Algebra.Module.Submodule.GroupAction
 import TauCeti.GroupTheory.Commutator
+import TauCeti.RepresentationTheory.Irreducible
+import TauCeti.RepresentationTheory.ScalarCommutator
 
 /-!
 # The twisted `SU(r)` representation model of surface moduli
 
 Fix a rank `r : ℕ`, a complex scalar `ζ : ℂ`, and a genus `g : ℕ`. The **twisted relation set**
-`TauCeti.GaugeModuli.relationSet r ζ g` consists of the tuples `(A₁, B₁, …, A_g, B_g)` in
-`SU(r)` satisfying the punctured-surface relation
+`TauCeti.relationSet r ζ g` (defined in `TauCeti.RepresentationTheory.SurfaceGroup.SpecialUnitary`)
+consists of the tuples `(A₁, B₁, …, A_g, B_g)` in `SU(r)` satisfying the punctured-surface
+relation
 
 `⁅A₁, B₁⁆ ⋯ ⁅A_g, B_g⁆ = ζ • 1`,
 
@@ -38,10 +38,8 @@ coprime rank and degree*, §3).
 
 ## Main definitions
 
-* `TauCeti.GaugeModuli.relationSet`: the level set `{x | ∏_j ⁅(x j).1, (x j).2⁆ = ζ • 1}` of
-  `g`-tuples of pairs in `SU(r)`.
-* `TauCeti.GaugeModuli.relationModuli`: the orbit quotient of `relationSet r ζ g` by simultaneous
-  `SU(r)`-conjugation, with the quotient topology.
+* `TauCeti.GaugeModuli.relationModuli`: the orbit quotient of `TauCeti.relationSet r ζ g` by
+  simultaneous `SU(r)`-conjugation, with the quotient topology.
 * `TauCeti.GaugeModuli.relationModuliEquivPSUOrbitQuotient`: homeomorphism identifying
   `relationModuli r ζ g` with the orbit space of the induced action of
   `PSU(r) = (Matrix.specialUnitaryGroup.toPSL).range`.
@@ -57,13 +55,12 @@ coprime rank and degree*, §3).
   `TauCeti.GaugeModuli.eq_zero_of_commute_relationSet_of_trace_eq_zero`: Schur's lemma and
   vanishing of the trace-free commuting matrices (the infinitesimal stabilizer) at every solution
   when `ζ` is a primitive `r`-th root of unity.
-* `TauCeti.GaugeModuli.relationSet_stabilizer_central`,
-  `TauCeti.GaugeModuli.conjAct_smul_relationSet_eq_self_iff`,
+* `TauCeti.GaugeModuli.conjAct_smul_relationSet_eq_self_iff`,
   `TauCeti.GaugeModuli.psu_smul_relationSet_eq_self_iff`,
   `TauCeti.GaugeModuli.stabilizer_psu_relationSet_eq_bot`, and
   `TauCeti.GaugeModuli.isCancelSMul_psu_relationSet`: when `ζ` is a primitive `r`-th root of
-  unity, commuting elements of `SU(r)` are central (`relationSet_stabilizer_central`), every
-  `SU(r)`-stabilizer equals the center `μ_r` (`conjAct_smul_relationSet_eq_self_iff`), and the
+  unity, every `SU(r)`-stabilizer equals the center `μ_r`
+  (`conjAct_smul_relationSet_eq_self_iff`, via `TauCeti.relationSet_stabilizer_central`), and the
   induced `PSU(r)` action on `relationSet r ζ g` is free (`psu_smul_relationSet_eq_self_iff`,
   `stabilizer_psu_relationSet_eq_bot`, `isCancelSMul_psu_relationSet`, hence faithful whenever
   `relationSet r ζ g` is nonempty).
@@ -94,24 +91,11 @@ namespace GaugeModuli
 
 section Definitions
 
-/-- The twisted relation set: tuples `(A₁, B₁, …, A_g, B_g)` in `SU(r)` whose ordered product of
-commutators `⁅A₁, B₁⁆ ⋯ ⁅A_g, B_g⁆` equals the scalar matrix `ζ • 1`. -/
-def relationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
-    Set (Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) :=
-  {x | ((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ) = ζ • 1}
-
-@[simp]
-theorem mem_relationSet_iff {r : ℕ} {ζ : ℂ} {g : ℕ}
-    {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ} :
-    x ∈ relationSet r ζ g ↔
-      ((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 :=
-  Iff.rfl
-
 @[simp high]
 theorem mem_relationSet_zero_iff {r : ℕ} {ζ : ℂ}
     {x : Fin 0 → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ} :
     x ∈ relationSet r ζ 0 ↔ (1 : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
-  simp [relationSet]
+  simp [mem_relationSet]
 
 @[simp high]
 theorem mem_relationSet_one_iff {r : ℕ} {ζ : ℂ}
@@ -119,14 +103,14 @@ theorem mem_relationSet_one_iff {r : ℕ} {ζ : ℂ}
     x ∈ relationSet r ζ 1 ↔
       ((⁅(x 0).1, (x 0).2⁆ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
         Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
-  simp [relationSet]
+  simp [mem_relationSet]
 
 /-- Simultaneous conjugation in `SU(r)` preserves the twisted relation set. -/
 theorem conjAct_smul_mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
     (u : ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
     {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
     (hx : x ∈ relationSet r ζ g) : u • x ∈ relationSet r ζ g := by
-  rw [mem_relationSet_iff] at hx ⊢
+  rw [mem_relationSet] at hx ⊢
   set g₀ := ConjAct.ofConjAct u
   have hprod :
       (List.ofFn fun j => ⁅((u • x) j).1, ((u • x) j).2⁆).prod =
@@ -208,6 +192,14 @@ theorem isClosed_relationSet (r : ℕ) (ζ : ℂ) (g : ℕ) : IsClosed (relation
         Matrix.specialUnitaryGroup (Fin r) ℂ => (x j).2 :=
       continuous_snd.comp (continuous_apply j)
     exact ((hA.mul hB).mul hA.inv).mul hB.inv
+  have hset : relationSet r ζ g =
+      (fun x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
+          Matrix.specialUnitaryGroup (Fin r) ℂ =>
+        ((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ)) ⁻¹'
+        {ζ • 1} := by
+    ext x
+    simp [mem_relationSet]
+  rw [hset]
   exact isClosed_singleton.preimage hcont
 
 /-- The twisted relation set is compact. -/
@@ -339,7 +331,40 @@ end ActionsAndTopology
 
 section IrreducibilityAndStabilizers
 
-open scoped Pointwise in
+/-- The subgroup of `SU(r)` generated by the entries of a tuple `x`. -/
+private def entrySubgroup {r g : ℕ}
+    (x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) :
+    Subgroup (Matrix.specialUnitaryGroup (Fin r) ℂ) :=
+  Subgroup.closure (Set.range (fun j => (x j).1) ∪ Set.range (fun j => (x j).2))
+
+/-- The canonical representation of `entrySubgroup x` on `ℂ^r`. -/
+private noncomputable def entryRep {r g : ℕ}
+    (x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) :
+    Representation ℂ (entrySubgroup x) (Fin r → ℂ) :=
+  MonoidHom.comp (Matrix.toLinAlgEquiv' : Matrix (Fin r) (Fin r) ℂ ≃ₐ[ℂ] _).toMonoidHom
+    ((Matrix.specialUnitaryGroup (Fin r) ℂ).subtype.comp (entrySubgroup x).subtype)
+
+private theorem isIrreducible_entryRep {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r)
+    (hr : 0 < r) {g : ℕ}
+    {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
+    (hx : x ∈ relationSet r ζ g) : (entryRep x).IsIrreducible := by
+  have : NeZero r := ⟨hr.ne'⟩
+  have hmem (j : Fin g) : (x j).1 ∈ entrySubgroup x ∧ (x j).2 ∈ entrySubgroup x :=
+    ⟨Subgroup.subset_closure (Or.inl ⟨j, rfl⟩), Subgroup.subset_closure (Or.inr ⟨j, rfl⟩)⟩
+  let z : entrySubgroup x :=
+    (List.ofFn fun j => ⁅(⟨(x j).1, (hmem j).1⟩ : entrySubgroup x), ⟨(x j).2, (hmem j).2⟩⁆).prod
+  have hz : z ∈ commutator (entrySubgroup x) := by
+    refine Subgroup.list_prod_mem _ fun y hy => ?_
+    obtain ⟨j, rfl⟩ := List.mem_ofFn.1 hy
+    exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
+  have hzζ : entryRep x z = ζ • 1 := by
+    have hzx : (((z : Matrix.specialUnitaryGroup (Fin r) ℂ)) : Matrix (Fin r) (Fin r) ℂ) =
+        ((List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod : Matrix (Fin r) (Fin r) ℂ) := by
+      simp [z, ← (entrySubgroup x).subtype_apply, List.map_ofFn, Function.comp_def,
+        map_commutatorElement]
+    simp [entryRep, hzx, mem_relationSet.1 hx]
+  exact Representation.isIrreducible_of_mem_commutator hz (by simpa using hζ) hzζ
+
 /-- **Irreducibility of coprime twisted representations.** For a primitive `r`-th root of unity
 `ζ`, no proper nontrivial subspace of `ℂ^r` is invariant under all entries `(x j).1` and
 `(x j).2` of a solution `x ∈ relationSet r ζ g`. -/
@@ -350,68 +375,43 @@ theorem eq_bot_or_eq_top_of_invariant_relationSet {r : ℕ} {ζ : ℂ}
     (hV : ∀ j, (∀ v ∈ V, Matrix.toLin' ((x j).1 : Matrix (Fin r) (Fin r) ℂ) v ∈ V) ∧
       (∀ v ∈ V, Matrix.toLin' ((x j).2 : Matrix (Fin r) (Fin r) ℂ) v ∈ V)) :
     V = ⊥ ∨ V = ⊤ := by
-  -- Step 1: Promote invariant `SU(r)` elements into `MulAction.stabilizer GL(ℂ^r) V`.
-  let toStab (A : Matrix.specialUnitaryGroup (Fin r) ℂ)
-      (hA : ∀ v ∈ V, Matrix.toLin' (A : Matrix (Fin r) (Fin r) ℂ) v ∈ V) :
-      MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V :=
-    ⟨Matrix.SpecialLinearGroup.toLin' (toSL A), by
-      rw [MulAction.mem_stabilizer_iff]
-      refine Submodule.eq_of_le_of_finrank_eq
-        (Submodule.map_le_iff_le_comap.mpr fun v hv => ?_)
-        (LinearEquiv.finrank_map_eq (Matrix.SpecialLinearGroup.toLin' (toSL A)) V)
-      rw [Submodule.mem_comap]
-      simpa [Matrix.SpecialLinearGroup.toLin'_apply] using hA v hv⟩
-  -- Step 2: Form the commutator product `P ∈ stabilizer V`; its restricted determinant is `1`
-  -- because `ℂˣ` is abelian.
-  have hVStab : ∀ u : MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V, ∀ v ∈ V,
-      ((MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V).subtype u) v ∈ V :=
-    fun u v hv => by
-      have hu : Submodule.map (u : (Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)).toLinearMap V = V := u.property
-      exact hu.le (Submodule.mem_map_of_mem hv)
-  let res : MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V →* (V ≃ₗ[ℂ] V) :=
-    V.restrictLinearEquivHom (MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V).subtype
-      hVStab
-  let detRes : MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V →* ℂˣ :=
-    LinearEquiv.det.comp res
-  let P : MulAction.stabilizer ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) V :=
-    (List.ofFn fun j => ⁅toStab (x j).1 (hV j).1, toStab (x j).2 (hV j).2⁆).prod
-  have hdetP : (detRes P : ℂ) = 1 := by
-    have hc (u v : ℂˣ) : ⁅u, v⁆ = 1 :=
-      commutatorElement_eq_one_iff_commute.mpr (Commute.all u v)
-    have hP : detRes P = 1 := by
-      rw [map_list_prod, List.map_ofFn]
-      simp [Function.comp_def, hc]
-    simp [hP]
-  -- Step 3: Using `hx`, identify `P` on `ℂ^r` (and hence its restriction to `V`) with `ζ • 1`.
-  have hPval : ((P : (Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) : (Fin r → ℂ) →ₗ[ℂ] (Fin r → ℂ)) =
-      ζ • 1 := by
-    let φ : Matrix.specialUnitaryGroup (Fin r) ℂ →* ((Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) :=
-      Matrix.SpecialLinearGroup.toLin'.comp toSL
-    have hsub : (P : (Fin r → ℂ) ≃ₗ[ℂ] (Fin r → ℂ)) =
-        φ (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).prod := by
-      rw [← Subgroup.coe_subtype, map_list_prod, map_list_prod, List.map_ofFn, List.map_ofFn]
-      exact congrArg List.prod <| congrArg List.ofFn <| funext fun j =>
-        (map_commutatorElement _ _ _).trans (map_commutatorElement φ _ _).symm
-    rw [hsub]
-    refine LinearMap.ext fun v => ?_
-    simp [φ, Matrix.SpecialLinearGroup.toLin'_apply, mem_relationSet_iff.mp hx]
-  have hsmul : (res P : V →ₗ[ℂ] V) = ζ • 1 := by
-    refine LinearMap.ext fun v => Subtype.ext ?_
-    simpa [res, Submodule.coe_restrictLinearEquivHom_apply, Subgroup.coe_subtype] using
-      LinearMap.congr_fun hPval v.val
-  -- Step 4: Taking determinants on `V` gives `ζ ^ dim V = 1`, so `r ∣ dim V`, forcing `V = ⊥` or
-  -- `V = ⊤`.
-  have hpow : ζ ^ Module.finrank ℂ V = 1 := by
-    dsimp only [detRes] at hdetP
-    rw [MonoidHom.comp_apply, LinearEquiv.coe_det, hsmul, LinearMap.det_smul] at hdetP
-    simpa [Module.End.one_eq_id, LinearMap.det_id] using hdetP
-  have hdvd : r ∣ Module.finrank ℂ V := (hζ.pow_eq_one_iff_dvd _).mp hpow
-  have hle : Module.finrank ℂ V ≤ r := by
-    simpa [Module.finrank_fin_fun] using Submodule.finrank_le V
-  rcases Nat.eq_zero_or_pos (Module.finrank ℂ V) with h0 | hpos
-  · exact Or.inl (Submodule.finrank_eq_zero.mp h0)
-  · have hge : r ≤ Module.finrank ℂ V := Nat.le_of_dvd hpos hdvd
-    exact Or.inr <| Submodule.eq_top_of_finrank_eq (by rw [Module.finrank_fin_fun]; omega)
+  rcases Nat.eq_zero_or_pos r with rfl | hr
+  · exact Or.inl (Subsingleton.elim _ _)
+  have hirr := isIrreducible_entryRep hζ hr hx
+  have hinv : ∀ u ∈ entrySubgroup x, ∀ v ∈ V,
+      Matrix.toLin' (u : Matrix (Fin r) (Fin r) ℂ) v ∈ V := by
+    intro u hu
+    induction hu using Subgroup.closure_induction with
+    | mem y hy =>
+      rcases hy with ⟨j, rfl⟩ | ⟨j, rfl⟩
+      · exact (hV j).1
+      · exact (hV j).2
+    | one =>
+      intro v hv
+      simpa using hv
+    | mul a b _ _ ha hb =>
+      intro v hv
+      simpa [Submonoid.coe_mul, Matrix.mulVec_mulVec] using ha _ (hb v hv)
+    | inv a _ ha =>
+      intro v hv
+      have hmap : Submodule.map (Matrix.SpecialLinearGroup.toLin' (toSL a)).toLinearMap V = V :=
+        Submodule.eq_of_le_of_finrank_eq
+          (Submodule.map_le_iff_le_comap.mpr fun w hw => by
+            simpa [Matrix.SpecialLinearGroup.toLin'_apply] using ha w hw)
+          (LinearEquiv.finrank_map_eq _ V)
+      obtain ⟨w, hw, hwa⟩ := hmap.symm.le hv
+      have hw' : Matrix.toLin'
+          ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) v = w := by
+        rw [← hwa]
+        have ha1 : ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
+            (a : Matrix (Fin r) (Fin r) ℂ) = 1 :=
+          congrArg Subtype.val (inv_mul_cancel a)
+        simp [Matrix.SpecialLinearGroup.toLin'_apply, Matrix.mulVec_mulVec, ha1]
+      simpa [hw'] using hw
+  let σ : Subrepresentation (entryRep x) := ⟨V, fun u v hv => hinv u u.property v hv⟩
+  rcases hirr.eq_bot_or_eq_top σ with hbot | htop
+  · exact Or.inl (congrArg Subrepresentation.toSubmodule hbot)
+  · exact Or.inr (congrArg Subrepresentation.toSubmodule htop)
 
 /-- **Schur's lemma for the twisted relation set.** For a primitive `r`-th root of unity `ζ`,
 every complex `r × r` matrix commuting with all entries of a solution `x ∈ relationSet r ζ g` is
@@ -425,27 +425,40 @@ theorem exists_eq_smul_one_of_commute_relationSet {r : ℕ} {ζ : ℂ}
     ∃ c : ℂ, M = c • (1 : Matrix (Fin r) (Fin r) ℂ) := by
   rcases Nat.eq_zero_or_pos r with rfl | hr
   · exact ⟨0, Subsingleton.elim _ _⟩
-  have : Nonempty (Fin r) := ⟨⟨0, hr⟩⟩
-  obtain ⟨μ, hμ⟩ := Module.End.exists_eigenvalue (Matrix.toLin' M)
-  have hne : Module.End.eigenspace (Matrix.toLin' M) μ ≠ ⊥ := hμ
-  have hinv : ∀ j,
-      (∀ v ∈ Module.End.eigenspace (Matrix.toLin' M) μ,
-        Matrix.toLin' ((x j).1 : Matrix (Fin r) (Fin r) ℂ) v ∈
-          Module.End.eigenspace (Matrix.toLin' M) μ) ∧
-      (∀ v ∈ Module.End.eigenspace (Matrix.toLin' M) μ,
-        Matrix.toLin' ((x j).2 : Matrix (Fin r) (Fin r) ℂ) v ∈
-          Module.End.eigenspace (Matrix.toLin' M) μ) := fun j =>
-    ⟨Module.End.mapsTo_genEigenspace_of_comm
-        ((hM j).1.map (Matrix.toLinAlgEquiv' (R := ℂ) (n := Fin r))) μ 1,
-     Module.End.mapsTo_genEigenspace_of_comm
-        ((hM j).2.map (Matrix.toLinAlgEquiv' (R := ℂ) (n := Fin r))) μ 1⟩
-  have htop : Module.End.eigenspace (Matrix.toLin' M) μ = ⊤ :=
-    (eq_bot_or_eq_top_of_invariant_relationSet hζ hx _ hinv).resolve_left hne
-  refine ⟨μ, Matrix.toLin'.injective <| LinearMap.ext fun v => ?_⟩
-  have hv : v ∈ Module.End.eigenspace (Matrix.toLin' M) μ := by
-    rw [htop]
-    trivial
-  simpa [Matrix.toLin'_apply] using Module.End.mem_eigenspace_iff.mp hv
+  have := isIrreducible_entryRep hζ hr hx
+  have hcomm : ∀ u ∈ entrySubgroup x, Commute M (u : Matrix (Fin r) (Fin r) ℂ) := by
+    intro u hu
+    induction hu using Subgroup.closure_induction with
+    | mem y hy =>
+      rcases hy with ⟨j, rfl⟩ | ⟨j, rfl⟩
+      · exact (hM j).1
+      · exact (hM j).2
+    | one => exact Commute.one_right M
+    | mul a b _ _ ha hb => simpa [Submonoid.coe_mul] using ha.mul_right hb
+    | inv a _ ha =>
+      rw [Commute, SemiconjBy]
+      calc M * ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)
+          = ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
+              (a : Matrix (Fin r) (Fin r) ℂ) * M *
+              ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
+              have ha1 : ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
+                  Matrix (Fin r) (Fin r) ℂ) * (a : Matrix (Fin r) (Fin r) ℂ) = 1 :=
+                congrArg Subtype.val (inv_mul_cancel a)
+              rw [ha1, Matrix.one_mul]
+        _ = ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) * M *
+              ((a : Matrix (Fin r) (Fin r) ℂ) *
+                ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)) := by
+              rw [Matrix.mul_assoc _ _ M, ha.symm.eq]
+              simp only [Matrix.mul_assoc]
+        _ = ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) * M := by
+              have ha2 : (a : Matrix (Fin r) (Fin r) ℂ) *
+                  ((a⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) = 1 :=
+                congrArg Subtype.val (mul_inv_cancel a)
+              rw [ha2, Matrix.mul_one]
+  obtain ⟨c, hc⟩ := Representation.IsIrreducible.exists_forall_apply_eq_smul (ρ := entryRep x)
+    (Matrix.toLin' M) fun u v => by
+      simp [entryRep, Matrix.mulVec_mulVec, (hcomm u u.property).eq]
+  exact ⟨c, Matrix.toLin'.injective <| LinearMap.ext fun v => by simpa using hc v⟩
 
 /-- **Vanishing of the trace-free infinitesimal stabilizer.** For a primitive `r`-th root of unity
 `ζ`, every trace-free complex matrix commuting with all entries of a solution
@@ -466,29 +479,6 @@ theorem eq_zero_of_commute_relationSet_of_trace_eq_zero {r : ℕ} {ζ : ℂ}
   have hc0 : c = 0 := (mul_eq_zero.mp hc).resolve_left hr0
   simp [hc0]
 
-/-- When `ζ` is a primitive `r`-th root of unity, every element of `SU(r)` commuting with all
-entries of a solution of the twisted relation is central; see `conjAct_smul_relationSet_eq_self_iff`
-for the equality of `SU(r)`-stabilizers with the center and `psu_smul_relationSet_eq_self_iff` /
-`stabilizer_psu_relationSet_eq_bot` for freeness of the induced `PSU(r)` action (hence faithfulness
-whenever `relationSet r ζ g` is nonempty). -/
-theorem relationSet_stabilizer_central (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ r)
-    (g : ℕ) (x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
-      Matrix.specialUnitaryGroup (Fin r) ℂ) (hx : x ∈ relationSet r ζ g)
-    (u : Matrix.specialUnitaryGroup (Fin r) ℂ)
-    (hu : ∀ j, Commute u (x j).1 ∧ Commute u (x j).2) :
-    u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := by
-  have hM : ∀ j, Commute (u : Matrix (Fin r) (Fin r) ℂ) ((x j).1 : Matrix (Fin r) (Fin r) ℂ) ∧
-      Commute (u : Matrix (Fin r) (Fin r) ℂ) ((x j).2 : Matrix (Fin r) (Fin r) ℂ) := fun j =>
-    ⟨congrArg Subtype.val (hu j).1.eq, congrArg Subtype.val (hu j).2.eq⟩
-  obtain ⟨c, hc⟩ := exists_eq_smul_one_of_commute_relationSet hζ hx u hM
-  rw [Matrix.specialUnitaryGroup.mem_center_iff]
-  refine ⟨c, ?_, ?_⟩
-  · have hdet := congrArg Matrix.det hc
-    simpa [Matrix.det_smul, (mem_specialUnitaryGroup_iff.mp u.property).2] using hdet.symm
-  · rw [hc]
-    ext i j
-    by_cases hij : i = j <;> simp [Matrix.scalar_apply, hij]
-
 /-- When `ζ` is a primitive `r`-th root of unity, an element `u ∈ SU(r)` stabilizes
 `x : relationSet r ζ g` under simultaneous conjugation if and only if `u` lies in the center of
 `SU(r)`. -/
@@ -503,7 +493,7 @@ theorem conjAct_smul_relationSet_eq_self_iff {r : ℕ} {ζ : ℂ}
         (ha : ConjAct.toConjAct u • a = a) : Commute u a := by
       rw [ConjAct.smul_def, ConjAct.ofConjAct_toConjAct, mul_inv_eq_iff_eq_mul] at ha
       exact ha
-    refine relationSet_stabilizer_central r ζ hζ g x.val x.property u fun j => ?_
+    refine TauCeti.relationSet_stabilizer_central hζ x.property fun j => ?_
     have hj : ConjAct.toConjAct u • x.val j = x.val j := congrFun (congrArg Subtype.val h) j
     exact ⟨hcomm (congrArg Prod.fst hj), hcomm (congrArg Prod.snd hj)⟩
   · exact fun hu => conjAct_smul_eq_self_of_mem_center hu x
@@ -545,22 +535,11 @@ end IrreducibilityAndStabilizers
 
 section BoundaryCases
 
-/-- At genus zero, if `r ≥ 1` and `ζ ≠ 1`, the twisted relation set is empty (the empty product of
-commutators is `1 ≠ ζ • 1`). -/
-theorem relationSet_zero_eq_empty {r : ℕ} (hr : 1 ≤ r) {ζ : ℂ} (hζ : ζ ≠ 1) :
-    relationSet r ζ 0 = ∅ := by
-  ext x
-  simp only [mem_relationSet_zero_iff, Set.mem_empty_iff_false, iff_false]
-  intro h
-  have h00 := congr_fun₂ h ⟨0, hr⟩ ⟨0, hr⟩
-  simp only [Matrix.one_apply_eq, Matrix.smul_apply, smul_eq_mul, mul_one] at h00
-  exact hζ h00.symm
-
 /-- For `r ≥ 2` and a primitive `r`-th root of unity `ζ`, the genus-zero relation set is empty. -/
 theorem isEmpty_relationSet_zero {r : ℕ} (hr : 2 ≤ r) {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
     IsEmpty (relationSet r ζ 0) := by
   have hne : ζ ≠ 1 := hζ.ne_one (by omega)
-  rw [relationSet_zero_eq_empty (by omega) hne]
+  rw [TauCeti.relationSet_zero_eq_empty (by omega) hne]
   infer_instance
 
 /-- For `r ≥ 2` and a primitive `r`-th root of unity `ζ`, the genus-zero (sphere) moduli is
@@ -583,7 +562,7 @@ always a solution. -/
 theorem one_mem_relationSet (r g : ℕ) :
     (1 : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
       Matrix.specialUnitaryGroup (Fin r) ℂ) ∈ relationSet r 1 g := by
-  rw [mem_relationSet_iff, one_smul]
+  rw [mem_relationSet, one_smul]
   have hprod : (List.ofFn fun _ : Fin g =>
       ⁅(1 : Matrix.specialUnitaryGroup (Fin r) ℂ),
         (1 : Matrix.specialUnitaryGroup (Fin r) ℂ)⁆).prod = 1 := by
@@ -621,7 +600,7 @@ theorem center_mul_mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
     {x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ}
     (hx : x ∈ relationSet r ζ g) :
     (fun j => ((ε j).1.val * (x j).1, (ε j).2.val * (x j).2)) ∈ relationSet r ζ g := by
-  rw [mem_relationSet_iff] at hx ⊢
+  rw [mem_relationSet] at hx ⊢
   have hcomm (j : Fin g) :
       ⁅(ε j).1.val * (x j).1, (ε j).2.val * (x j).2⁆ = ⁅(x j).1, (x j).2⁆ := by
     rw [(Subgroup.mem_center_iff.mp (ε j).1.property (x j).1).symm,

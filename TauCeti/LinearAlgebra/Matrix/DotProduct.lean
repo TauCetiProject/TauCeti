@@ -40,7 +40,6 @@ ordered off-diagonal index pairs.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
 * `Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec`: the sesquilinear form of a compression
   `Aᴴ * M * A` is that of `M` pulled back along `A`.
-* `Matrix.star_mulVec_apply_eq_dotProduct_col`: `(star V *ᵥ w) k = star (V.col k) ⬝ᵥ w`.
 * `Matrix.dotProduct_self_nonneg`: over an ordered ring `v ⬝ᵥ v` is nonnegative.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
@@ -93,15 +92,6 @@ theorem Matrix.star_dotProduct_conjTranspose_mul_mul_mulVec {k l α : Type*} [Fi
     [Fintype l] [NonUnitalSemiring α] [StarRing α] (A : Matrix k l α) (M : Matrix k k α)
     (x y : l → α) : star x ⬝ᵥ (Aᴴ * M * A) *ᵥ y = star (A *ᵥ x) ⬝ᵥ M *ᵥ (A *ᵥ y) := by
   rw [← mulVec_mulVec, ← mulVec_mulVec, star_mulVec, dotProduct_mulVec]
-
-/-- Left-multiplying a vector `w` by `star V` computes the Hermitian dot products with the columns
-of `V`. -/
-theorem Matrix.star_mulVec_apply_eq_dotProduct_col {n R : Type*} [Fintype n]
-    [NonUnitalNonAssocSemiring R] [Star R] (V : Matrix n n R) (w : n → R) (k : n) :
-    (star V *ᵥ w) k = star (V.col k) ⬝ᵥ w := by
-  rw [mulVec_apply_eq_sum, dotProduct]
-  refine Finset.sum_congr rfl fun x _ => ?_
-  rw [star_apply, Pi.star_apply, col_apply]
 
 /-- Over an ordered ring the dot product `v ⬝ᵥ v`, a sum of squares, is nonnegative. -/
 @[simp]

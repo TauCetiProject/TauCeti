@@ -49,8 +49,6 @@ equivalence of complex vector spaces is real-linear.
 * `TauCeti.mul_smul_comm_of_starModule`: in a star module with a multiplicative star and a scalar
   tower, scalars commute with left multiplication, so no `SMulCommClass` assumption is needed
   there.
-* `TauCeti.pow_mul_mul_star_pow_of_mul_mul_star_eq_smul`: iterating `U * M * star U = c • M` gives
-  `U ^ n * M * star (U ^ n) = c ^ n • M`.
 * `LinearEquiv.restrictScalarsₛₗ`: a star-linear equivalence over `S` is `R`-linear when `R` acts
   on `S` with trivial star.
 -/
@@ -134,8 +132,6 @@ end TauCeti
 
 namespace TauCeti
 
-section StarModule
-
 variable {R A : Type*} [Star R] [Mul A] [StarMul A] [SMul R A] [StarModule R A]
   [IsScalarTower R A A]
 
@@ -147,24 +143,6 @@ theorem mul_smul_comm_of_starModule (c : R) (x y : A) : x * (c • y) = c • (x
   -- star c • (star y * star x)`, an instance of `IsScalarTower R A A`
   apply star_injective
   rw [star_mul, star_smul, smul_mul_assoc, star_smul, star_mul]
-
-end StarModule
-
-/-- If `U * M * star U = c • M`, then iterating `n` times gives
-`U ^ n * M * star (U ^ n) = c ^ n • M`. -/
-theorem pow_mul_mul_star_pow_of_mul_mul_star_eq_smul {α R : Type*} [Monoid α] [Monoid R]
-    [StarMul R] [MulAction α R] [IsScalarTower α R R] [SMulCommClass α R R]
-    {U M : R} {c : α} (h : U * M * star U = c • M) (n : ℕ) :
-    U ^ n * M * star (U ^ n) = c ^ n • M := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    calc U ^ (n + 1) * M * star (U ^ (n + 1))
-        = U * (U ^ n * M * star (U ^ n)) * star U := by
-          rw [pow_succ', star_mul]; simp only [mul_assoc]
-      _ = U * (c ^ n • M) * star U := by rw [ih]
-      _ = c ^ n • (U * M * star U) := by rw [mul_smul_comm, smul_mul_assoc]
-      _ = c ^ (n + 1) • M := by rw [h, smul_smul, pow_succ]
 
 end TauCeti
 

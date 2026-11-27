@@ -7,22 +7,20 @@ module
 
 public import TauCeti.Geometry.Symplectic.GaugeModuli.RelationModel.Basic
 public import TauCeti.RepresentationTheory.SU2.BinaryDihedral
-import TauCeti.Analysis.Matrix.UnitaryGroup.ClockShift
+import TauCeti.Analysis.Matrix.UnitaryGroup.TwistedCommutator
 import TauCeti.RepresentationTheory.SU2.Adjoint
 import TauCeti.Topology.Algebra.GroupAction.Transitive
 
 /-!
-# Genus-one coprime `SU(r)` moduli and clock–shift normal form
+# Genus-one coprime `SU(r)` moduli and twisted commutator normal form
 
 Let `ζ : ℂ` be a primitive `r`-th root of unity. At genus one, the twisted relation
 `⁅A, B⁆ = ζ • 1` in `SU(r)` is equivalent to the Weyl commutation relation `A * B = ζ • (B * A)`
-(`Matrix.coe_commutatorElement_eq_smul_one_iff`). By the clock–shift normal form
-in `TauCeti.Analysis.Matrix.UnitaryGroup.ClockShift`, rescaling the unitary clock matrix
-`C₀ = diag(1, ζ, …, ζ^{r-1})` and cyclic shift matrix `S₀` into `SU(r)` yields an explicit
-solution (`Matrix.exists_clock_shift_specialUnitaryGroup`), and every solution in `SU(r)` is
-simultaneously `SU(r)`-conjugate to this clock–shift pair
-(`Matrix.exists_specialUnitaryGroup_conj_to_clock_shift`). Consequently, the genus-one
-representation model `relationModuli r ζ 1` is a single point
+(`Matrix.coe_commutatorElement_eq_smul_one_iff`). By
+`TauCeti.Analysis.Matrix.UnitaryGroup.TwistedCommutator`, this relation admits a solution in
+`SU(r)` (`Matrix.exists_coe_commutatorElement_eq_smul_one`), and any two solutions in `SU(r)` are
+simultaneously `SU(r)`-conjugate (`Matrix.exists_conj_eq_of_coe_commutatorElement_eq_smul_one`).
+Consequently, the genus-one representation model `relationModuli r ζ 1` is a single point
 (`TauCeti.GaugeModuli.relationModuli_genus_one`), hence simply connected, and the induced
 `PSU(r)` action identifies `PSU(r)` homeomorphically with `relationSet r ζ 1`
 (`TauCeti.GaugeModuli.psuOrbitHomeomorphGenusOne`).
@@ -31,11 +29,10 @@ As immediate consequences we also deduce nonemptiness of `relationSet r ζ g` an
 `relationModuli r ζ g` for every positive genus `g ≥ 1`, triviality of the central-twist
 `H¹(T²; μ_r)` action at genus one (`TauCeti.GaugeModuli.centerTwist_smul_relationModuli_genus_one`),
 and hence non-freeness of the central-twist action for every `r ≥ 2` and primitive `ζ`
-(`TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`). Explicit rank-two checks
-confirm that the pair `(TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)`
-satisfies `⁅A, B⁆ = -1`
-(`TauCeti.GaugeModuli.binaryDihedralRotation_two_weylElement_inv_mem_relationSet`), whereas at the
-non-coprime parameter `r = 2`, `ζ = 1`, the moduli `relationModuli 2 1 1` is not a subsingleton
+(`TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`). In contrast to the
+coprime case `r = 2, ζ = -1` (whose relation set is nonempty by
+`TauCeti.relationSet_two_neg_one_one_nonempty` and whose moduli is a point), at the non-coprime
+parameter `r = 2`, `ζ = 1`, the moduli `relationModuli 2 1 1` is not a subsingleton
 (`TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`) and the `SU(2)` action admits
 non-central stabilizers
 (`TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one`).
@@ -59,10 +56,9 @@ non-central stabilizers
 * `TauCeti.GaugeModuli.centerTwist_smul_relationModuli_genus_one` and
   `TauCeti.GaugeModuli.exists_ne_one_centerTwist_smul_eq_self_genus_one`: the central-twist action
   is trivial at genus one, hence not free for any `r ≥ 2` and primitive `ζ`.
-* `TauCeti.GaugeModuli.binaryDihedralRotation_two_weylElement_inv_mem_relationSet`,
-  `TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one`, and
+* `TauCeti.GaugeModuli.exists_notMem_center_conjAct_smul_eq_self_relationSet_two_one` and
   `TauCeti.GaugeModuli.not_subsingleton_relationModuli_two_one_one`: explicit rank-two checks
-  for `ζ = -1` and the non-coprime contrast `ζ = 1`.
+  for the non-coprime contrast `ζ = 1`.
 
 ## References
 
@@ -87,11 +83,9 @@ section GenusOneTheorems
 `relationSet r ζ 1` is nonempty. -/
 theorem nonempty_relationSet_genus_one (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ r) :
     Nonempty (relationSet r ζ 1) := by
-  rcases Nat.eq_zero_or_pos r with rfl | hr
-  · exact ⟨⟨1, mem_relationSet_one_iff.mpr (Subsingleton.elim _ _)⟩⟩
-  have : NeZero r := ⟨by omega⟩
-  obtain ⟨_, _, A₀, B₀, _, _, hAB⟩ := Matrix.exists_clock_shift_specialUnitaryGroup hζ
-  exact ⟨⟨fun _ => (A₀, B₀), by simpa [mem_relationSet_one_iff] using hAB⟩⟩
+  obtain ⟨A, B, hAB⟩ :=
+    Matrix.exists_coe_commutatorElement_eq_smul_one (n := Fin r) (by simpa using hζ)
+  exact ⟨⟨fun _ => (A, B), by simpa [mem_relationSet_one_iff] using hAB⟩⟩
 
 /-- **Genus-one representation model.** For a primitive `r`-th root of unity `ζ`, the twisted
 relation `⁅A, B⁆ = ζ • 1` has a solution in `SU(r)`, unique up to simultaneous `SU(r)`-conjugation,
@@ -101,19 +95,12 @@ theorem relationModuli_genus_one (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ 
   obtain ⟨x⟩ := nonempty_relationSet_genus_one r ζ hζ
   refine ⟨⟨Quotient.mk _ x⟩, (MulAction.pretransitive_iff_subsingleton_quotient
     (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ 1)).mp ⟨fun y z => ?_⟩⟩
-  rcases Nat.eq_zero_or_pos r with rfl | hr
-  · exact ⟨1, Subsingleton.elim _ _⟩
-  have : NeZero r := ⟨by omega⟩
-  obtain ⟨_, _, A₀, B₀, hA₀, hB₀, _⟩ := Matrix.exists_clock_shift_specialUnitaryGroup hζ
-  obtain ⟨u, hu₁, hu₂⟩ := Matrix.exists_specialUnitaryGroup_conj_to_clock_shift hζ hA₀ hB₀
-    (y.val 0).1 (y.val 0).2 (mem_relationSet_one_iff.mp y.property)
-  obtain ⟨v, hv₁, hv₂⟩ := Matrix.exists_specialUnitaryGroup_conj_to_clock_shift hζ hA₀ hB₀
-    (z.val 0).1 (z.val 0).2 (mem_relationSet_one_iff.mp z.property)
-  refine ⟨ConjAct.toConjAct (v⁻¹ * u), Subtype.ext <| funext fun j => ?_⟩
+  obtain ⟨g, hg₁, hg₂⟩ := Matrix.exists_conj_eq_of_coe_commutatorElement_eq_smul_one
+    (by simpa using hζ) (mem_relationSet_one_iff.mp y.property)
+    (mem_relationSet_one_iff.mp z.property)
+  refine ⟨ConjAct.toConjAct g, Subtype.ext <| funext fun j => ?_⟩
   obtain rfl : j = 0 := Subsingleton.elim _ _
-  simp only [coe_conjAct_smul_relationSet, Pi.smul_apply, map_mul, map_inv, mul_smul]
-  exact Prod.ext (by rw [Prod.smul_fst, Prod.smul_fst, hu₁, inv_smul_eq_iff, hv₁])
-    (by rw [Prod.smul_snd, Prod.smul_snd, hu₂, inv_smul_eq_iff, hv₂])
+  simpa [ConjAct.smul_def, mul_assoc] using Prod.ext hg₁ hg₂
 
 /-- At genus one, for a primitive `r`-th root of unity `ζ`, `relationModuli r ζ 1` is simply
 connected. -/
@@ -183,7 +170,7 @@ theorem nonempty_relationSet_of_pos (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot 
       Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ :=
     Fin.cons (x₁ 0) (fun _ : Fin g' => (1, 1))
   refine ⟨⟨tuple, ?_⟩⟩
-  rw [mem_relationSet_iff]
+  rw [mem_relationSet]
   have hprod : (List.ofFn fun j : Fin (g' + 1) => ⁅(tuple j).1, (tuple j).2⁆).prod =
       ⁅(x₁ 0).1, (x₁ 0).2⁆ := by
     rw [List.ofFn_succ, List.prod_cons]
@@ -233,28 +220,6 @@ theorem exists_ne_one_centerTwist_smul_eq_self_genus_one {r : ℕ} (hr : 2 ≤ r
 end GenusOneTheorems
 
 section RankTwoChecks
-
-/-- For `r = 2`, `ζ = -1`, the pair
-`(TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)` satisfies `⁅A, B⁆ = -1` and
-hence belongs to `relationSet 2 (-1) 1`. -/
-theorem binaryDihedralRotation_two_weylElement_inv_mem_relationSet :
-    (fun _ : Fin 1 => (TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹)) ∈
-      relationSet 2 (-1) 1 := by
-  rw [mem_relationSet_one_iff]
-  have hconj :
-      TauCeti.SU2.weylElement⁻¹ * (TauCeti.SU2.binaryDihedralRotation 2)⁻¹ *
-        TauCeti.SU2.weylElement = TauCeti.SU2.binaryDihedralRotation 2 := by
-    simpa [mul_assoc] using
-      congrArg Inv.inv (TauCeti.SU2.weylElement_inv_conj_binaryDihedralRotation 2)
-  have hcomm :
-      ⁅TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹⁆ =
-        TauCeti.SU2.binaryDihedralRotation 2 ^ 2 := by
-    calc ⁅TauCeti.SU2.binaryDihedralRotation 2, TauCeti.SU2.weylElement⁻¹⁆
-        = TauCeti.SU2.binaryDihedralRotation 2 *
-            (TauCeti.SU2.weylElement⁻¹ * (TauCeti.SU2.binaryDihedralRotation 2)⁻¹ *
-              TauCeti.SU2.weylElement) := by simp [commutatorElement_def, mul_assoc]
-      _ = TauCeti.SU2.binaryDihedralRotation 2 ^ 2 := by rw [hconj, sq]
-  rw [hcomm, TauCeti.SU2.coe_binaryDihedralRotation_pow_self, neg_one_smul]
 
 /-- At the non-coprime parameter `r = 2`, `ζ = 1`, the simultaneous `SU(2)`-conjugation action on
 `relationSet 2 1 g` admits non-central stabilizers (for example
