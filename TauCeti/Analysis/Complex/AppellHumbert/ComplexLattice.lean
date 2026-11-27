@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Complex
 public import TauCeti.Analysis.Complex.AppellHumbert.Basic
+public import TauCeti.Analysis.Complex.AppellHumbert.Positive
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 import TauCeti.Analysis.SpecialFunctions.Elliptic.Period.Pair
 import TauCeti.LinearAlgebra.Complex.Determinant
@@ -62,6 +63,8 @@ the theta functions, are the same in both conventions.
 * `ZLattice.im_hermitianForm_basis_eq_one_or_eq_neg_one`: `Im H = ±1` on a basis.
 * `ZLattice.IsAppellHumbertMultiplier`, `ZLattice.appellHumbertData`: Appell–Humbert multipliers
   for `H` and their data.
+* `ZLattice.isPositive_appellHumbertData`, `ZLattice.isPositive_sigmaSignData`: the Riemann
+  forms of `(H, χ)` and `(H, ε)` are positive.
 * `ZLattice.sigmaSign`, `ZLattice.isAppellHumbertMultiplier_sigmaSign`, `ZLattice.sigmaSignData`:
   the sign `ε` and the datum `(H, ε)`, whose semicharacter, form, Riemann form and factor are
   `simp` lemmas (`ZLattice.semichar_sigmaSignData`, `ZLattice.form_sigmaSignData_apply`,
@@ -239,6 +242,11 @@ theorem riemannForm_appellHumbertData_I_mul_self_pos {u : ℂ} (hu : u ≠ 0) :
     ofReal_re]
   exact div_pos (by positivity) (covolume_pos Λ)
 
+/-- The Riemann form `E = Im H` of the Appell–Humbert datum `(H, χ)` of a lattice is positive. -/
+theorem isPositive_appellHumbertData : (appellHumbertData Λ χ hχ).IsPositive :=
+  (TauCeti.AppellHumbertData.isPositive_iff _).mpr fun _ hu ↦ by
+    simpa [smul_eq_mul] using riemannForm_appellHumbertData_I_mul_self_pos hχ hu
+
 /-- The Riemann form of the Appell–Humbert datum of a lattice is `±1` on every `ℤ`-basis. -/
 theorem riemannForm_appellHumbertData_basis_eq_one_or_eq_neg_one (b : Basis (Fin 2) ℤ Λ) :
     (appellHumbertData Λ χ hχ).riemannForm (b 0) (b 1) = 1 ∨
@@ -351,6 +359,12 @@ theorem sigmaSignData_def : sigmaSignData Λ =
   rw [sigmaSignData]
 
 variable (Λ) in
+/-- The Riemann form of the datum `(H, ε)` of a lattice is positive. -/
+theorem isPositive_sigmaSignData : (sigmaSignData Λ).IsPositive := by
+  rw [sigmaSignData_def]
+  exact isPositive_appellHumbertData _
+
+variable (Λ) in
 /-- The semicharacter of the datum `(H, ε)` is the sign `ε`. -/
 @[simp]
 theorem semichar_sigmaSignData : (sigmaSignData Λ).semichar = sigmaSign Λ := by
@@ -397,10 +411,9 @@ theorem exists_eq_appellHumbertData {D : TauCeti.AppellHumbertData Λ}
     (hD : ∀ l z, D.form l z = π / covolume Λ * (conj l * z)) :
     ∃ hχ : IsAppellHumbertMultiplier Λ D.semichar, D = appellHumbertData Λ D.semichar hχ := by
   have hE (u v : ℂ) : D.riemannForm u v = (hermitianForm Λ u v).im := by
-    rw [TauCeti.AppellHumbertData.riemannForm_apply, hD, hD,
-      ← form_sigmaSignData_apply Λ v u, ← form_sigmaSignData_apply Λ u v,
-      ← TauCeti.AppellHumbertData.riemannForm_apply, riemannForm_sigmaSignData_apply,
-      im_hermitianForm]
+    rw [TauCeti.AppellHumbertData.riemannForm_apply, hD, hD, im_hermitianForm, ← mul_sub]
+    simp [field]
+    ring
   have hχ : IsAppellHumbertMultiplier Λ D.semichar := fun l m n hn ↦
     D.semichar_add_eq_neg_one_zpow_mul l m ((hE l m).trans hn)
   refine ⟨hχ, TauCeti.AppellHumbertData.ext ?_ ?_⟩

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.AppellHumbert.ComplexLattice
-public import TauCeti.Analysis.Complex.AppellHumbert.Positive
 public import Mathlib.Analysis.SpecialFunctions.Elliptic.Weierstrass
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.GroupTheory.IndexNSmul
@@ -52,8 +51,6 @@ constant `s₂` given by Legendre's relation; nothing here uses that description
 
 ## Main results
 
-* `ZLattice.isPositive_appellHumbertData`, `ZLattice.isPositive_sigmaSignData`: the Riemann
-  forms of `(H, χ)` and `(H, ε)` are positive.
 * `ZLattice.finrank_thetaSpace_nsmul_appellHumbertData`: `dim Th_m(Λ, χ) = m` for `m ≠ 0`.
 * `PeriodPair.weierstrassPMulSq_mem_thetaSpace`,
   `PeriodPair.thetaSpace_two_eq_span_weierstrassPMulSq`: `Th_2(Λ, χ)` is spanned by `℘ f²`
@@ -102,22 +99,9 @@ open scoped Real ComplexConjugate
 
 namespace ZLattice
 
-/-! ### Positivity -/
-
 variable {Λ : Submodule ℤ ℂ} [DiscreteTopology Λ] [IsZLattice ℝ Λ]
 
 variable {χ : Λ → Circle} (hχ : IsAppellHumbertMultiplier Λ χ)
-
-/-- The Riemann form `E = Im H` of the Appell–Humbert datum `(H, χ)` of a lattice is positive. -/
-theorem isPositive_appellHumbertData : (appellHumbertData Λ χ hχ).IsPositive :=
-  (AppellHumbertData.isPositive_iff _).mpr fun _ hu ↦ by
-    simpa [smul_eq_mul] using riemannForm_appellHumbertData_I_mul_self_pos hχ hu
-
-variable (Λ) in
-/-- The Riemann form of the datum `(H, ε)` of a lattice is positive. -/
-theorem isPositive_sigmaSignData : (sigmaSignData Λ).IsPositive := by
-  rw [sigmaSignData_def]
-  exact isPositive_appellHumbertData _
 
 /-! ### The dimension of the theta spaces -/
 
@@ -125,8 +109,8 @@ theorem isPositive_sigmaSignData : (sigmaSignData Λ).IsPositive := by
 private theorem riemannForm_nsmul_appellHumbertData (m : ℕ) (x y : ℂ) :
     (m • appellHumbertData Λ χ hχ).riemannForm x y = (hermitianForm Λ ((m : ℂ) * x) y).im := by
   rw [AppellHumbertData.riemannForm_nsmul, LinearMap.smul_apply, LinearMap.smul_apply,
-    riemannForm_appellHumbertData_apply, im_hermitianForm, nsmul_eq_mul, mul_assoc,
-    ← ofReal_natCast, im_ofReal_mul, mul_div_assoc]
+    riemannForm_appellHumbertData_apply, im_hermitianForm]
+  simp [mul_assoc, mul_div_assoc]
 
 /-- **The dual lattice of degree `m`**: the dual of `Λ` for the Riemann form of `m • (H, χ)` is
 `{x | m x ∈ Λ}`, that is `m⁻¹ Λ` for `m ≠ 0`. -/
