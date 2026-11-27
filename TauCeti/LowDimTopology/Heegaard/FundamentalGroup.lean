@@ -70,6 +70,9 @@ Heegaard surface. A pushout of groups along surjections is a quotient of the cor
 * `TauCeti.HeegaardSplitting.rank_fundamentalGroup_le_genus`: its rank is at most the genus of the
   splitting.
 * `TauCeti.rank_fundamentalGroup_le_heegaardGenus`: its rank is at most the Heegaard genus.
+* `TauCeti.HeegaardSplitting.fundamentalGroup_map_inclusion_inter_left_surjective` and
+  `TauCeti.HeegaardSplitting.fundamentalGroup_map_inclusion_inter_right_surjective`: the Heegaard
+  surface carries the fundamental group of either handlebody.
 * `TauCeti.HeegaardSplitting.isPushout_fundamentalGroup`: the fundamental group of the manifold is
   the free product of those of the handlebodies amalgamated over that of the Heegaard surface.
 * `TauCeti.HeegaardSplitting.fundamentalGroup_map_inter_surjective` and
@@ -137,16 +140,18 @@ private theorem interior_union_interior_right_eq_univ {W : Set M}
       exact ⟨hpR, fun h ↦ hpL h.1⟩
   · exact .inl (hint (.inr hpR))
 
-/-- The Heegaard surface carries the fundamental group of the first handlebody. -/
-private theorem fundamentalGroup_map_inclusion_inter_left_surjective (hE : finrank ℝ E = 3)
+/-- The Heegaard surface carries the fundamental group of the first handlebody: at every point of
+`H₁ ∩ H₂`, the inclusion `H₁ ∩ H₂ → H₁` is surjective on fundamental groups. -/
+theorem fundamentalGroup_map_inclusion_inter_left_surjective (hE : finrank ℝ E = 3)
     (x : ↥(s.left ∩ s.right)) :
     Function.Surjective (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_left) x) := by
   obtain ⟨eL⟩ := s.nonempty_homeomorph_left
   exact fundamentalGroup_map_inclusion_frontier_surjective inter_subset_left eL
     (fun p ↦ (and_iff_right p.property).trans (s.coe_mem_right_iff hE eL p)) x
 
-/-- The Heegaard surface carries the fundamental group of the second handlebody. -/
-private theorem fundamentalGroup_map_inclusion_inter_right_surjective (hE : finrank ℝ E = 3)
+/-- The Heegaard surface carries the fundamental group of the second handlebody: at every point of
+`H₁ ∩ H₂`, the inclusion `H₁ ∩ H₂ → H₂` is surjective on fundamental groups. -/
+theorem fundamentalGroup_map_inclusion_inter_right_surjective (hE : finrank ℝ E = 3)
     (x : ↥(s.left ∩ s.right)) :
     Function.Surjective (FundamentalGroup.map (ContinuousMap.inclusion inter_subset_right) x) := by
   obtain ⟨eR⟩ := s.nonempty_homeomorph_right
