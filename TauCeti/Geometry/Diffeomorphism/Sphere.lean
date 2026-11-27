@@ -293,13 +293,45 @@ noncomputable def orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω) :
     Matrix.UnitaryGroup.toLinearIsometryEquiv.toMonoidHom
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` sends an orthogonal transformation to its
-restriction to the unit sphere. -/
-@[simp]
+restriction to the unit sphere. Not a simp lemma, so that `simp` keeps the reference inclusion
+folded and can apply its equations, such as those with the orthogonal retraction in
+`TauCeti.Geometry.Diffeomorphism.Sphere.OrthogonalRetraction`. -/
 theorem orthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
     (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
     orthogonalToDiffSphere n m A =
       LinearIsometryEquiv.unitSphereDiffHom m (Matrix.UnitaryGroup.toLinearIsometryEquiv A) :=
   (rfl)
+
+/-- The diffeomorphism induced by an orthogonal matrix `A` is the restriction of the linear
+isometry of `A` to the unit sphere. Not a simp lemma, for the same reason as
+`TauCeti.orthogonalToDiffSphere_apply`. -/
+theorem coe_orthogonalToDiffSphere (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ) :
+    ⇑(orthogonalToDiffSphere n m A) =
+      (Matrix.UnitaryGroup.toLinearIsometryEquiv A).unitSphereEquiv := by
+  rw [orthogonalToDiffSphere_apply, LinearIsometryEquiv.unitSphereDiffHom_apply,
+    LinearIsometryEquiv.coe_unitSphereDiffeomorph]
+
+/-- The diffeomorphism induced by an orthogonal matrix `A` acts on a point of the sphere, read in
+`ℝⁿ⁺¹`, by the linear isometry of `A`. -/
+@[simp]
+theorem coe_orthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
+    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+    (orthogonalToDiffSphere n m A x : EuclideanSpace ℝ (Fin (n + 1))) =
+      Matrix.UnitaryGroup.toLinearIsometryEquiv A x := by
+  rw [coe_orthogonalToDiffSphere, LinearIsometryEquiv.coe_unitSphereEquiv_apply]
+
+open Matrix in
+/-- In Euclidean coordinates, the diffeomorphism induced by an orthogonal matrix `A` multiplies a
+point of the sphere by `A`. -/
+theorem ofLp_orthogonalToDiffSphere_apply (n : ℕ) (m : ℕ∞ω)
+    (A : Matrix.orthogonalGroup (Fin (n + 1)) ℝ)
+    (x : sphere (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :
+    (orthogonalToDiffSphere n m A x : EuclideanSpace ℝ (Fin (n + 1))).ofLp =
+      (A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ) *ᵥ (x : EuclideanSpace ℝ (Fin (n + 1))).ofLp := by
+  rw [coe_orthogonalToDiffSphere, LinearIsometryEquiv.coe_unitSphereEquiv_apply,
+    Matrix.UnitaryGroup.toLinearIsometryEquiv_apply, WithLp.ofLp_toLp]
 
 /-- The reference inclusion `O(n + 1) → Diff(Sⁿ)` is injective, so `O(n + 1)` is realised as a
 subgroup of `Diff(Sⁿ)`. -/

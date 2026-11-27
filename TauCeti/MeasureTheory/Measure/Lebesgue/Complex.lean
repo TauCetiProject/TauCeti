@@ -44,9 +44,10 @@ Splitting complex vectors into real and imaginary blocks preserves product volum
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
 The real coordinates `(x, y) ↦ x + y i` of the plane preserve area
-(`Complex.measurePreserving_equivRealProdCLM_symm`). Since the disc `|w| ≤ r`, read in the real
-coordinates, lies in the square `‖z‖ ≤ r`, the integral of a nonnegative function over the disc is
-at most its integral over any square `‖z‖ ≤ s` with `r ≤ s`
+(`Complex.measurePreserving_equivRealProdCLM_symm`), so integrals over preimages under them are
+integrals over the plane (`Complex.setIntegral_preimage_equivRealProdCLM_symm`). Since the disc
+`|w| ≤ r`, read in the real coordinates, lies in the square `‖z‖ ≤ r`, the integral of a
+nonnegative function over the disc is at most its integral over any square `‖z‖ ≤ s` with `r ≤ s`
 (`TauCeti.setIntegral_setOf_norm_equivRealProdCLM_symm_le_le`).
 Multiplication by a complex number of modulus one is a rotation, so it preserves integrals
 (`Complex.integral_comp_mul_left_of_norm_eq_one`).
@@ -199,6 +200,15 @@ theorem measurePreserving_equivRealProdCLM_symm :
     rw [equivRealProdCLM_symm_apply, measurableEquivRealProd_symm_apply, mk_eq_add_mul_I]
   rw [heq]
   exact volume_preserving_equiv_real_prod.symm
+
+/-- An integral over the preimage of a set `s` of the plane under the real coordinates
+`(x, y) ↦ x + y i` is the integral over `s` itself, read through `Complex.equivRealProdCLM`. -/
+theorem setIntegral_preimage_equivRealProdCLM_symm {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] (f : ℝ × ℝ → E) (s : Set ℂ) :
+    ∫ z in equivRealProdCLM.symm ⁻¹' s, f z = ∫ w in s, f (equivRealProdCLM w) := by
+  simpa only [ContinuousLinearEquiv.apply_symm_apply] using
+    measurePreserving_equivRealProdCLM_symm.setIntegral_preimage_emb
+      equivRealProdCLM.symm.toHomeomorph.measurableEmbedding (fun w ↦ f (equivRealProdCLM w)) s
 
 /-- On a rectangle `s ×ℂ t`, a function of the real part integrates as `volume t` times its
 integral over `s`. -/
