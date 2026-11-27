@@ -40,7 +40,9 @@ alternating sum either, since `χ(S¹) = 0`.
 The pieces and `M` are of finite CW type, being compact boundaryless manifolds
 (`TauCeti.FiniteCWType.of_isManifold`); the statements take these instances as arguments, and since
 `TauCeti.FiniteCWType` is a proposition they apply to `eulerChar` formed with any instance. As in
-`TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities`, the manifolds lie in `Type`.
+`TauCeti.Geometry.Manifold.Morse.Bott.TwistedInequalities`, the manifolds, the pieces, the model
+space of `M` and the coefficient field lie in one universe `u`; the Euler characteristic is computed
+over `ℚ`, lifted to that universe.
 
 ## Main results
 
@@ -67,13 +69,15 @@ open Bundle Filter Module Set
 open TauCeti.VectorBundleOrientationCover TauCeti.LocalCoefficientSystem
 open scoped ContDiff Manifold
 
+universe u
+
 namespace TauCeti.IsMorseBottFamily
 
-variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   [SecondCountableTopology M] [CompactSpace M]
-  {ι : Type*} [Fintype ι] {E' H' : ι → Type*} {S : ι → Type}
+  {ι : Type*} [Fintype ι] {E' H' : ι → Type*} {S : ι → Type u}
   [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)] [∀ j, FiniteDimensional ℝ (E' j)]
   [∀ j, TopologicalSpace (H' j)] {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)}
   [∀ j, (J j).Boundaryless] [∀ j, TopologicalSpace (S j)] [∀ j, ChartedSpace (H' j) (S j)]
@@ -99,7 +103,7 @@ variable {P : ι → Type*} [∀ j, NormedAddCommGroup (P j)] [∀ j, NormedSpac
       fun j ↦ (i j).normalSpaceVectorBundle hn (hdim j)
     ∀ j, HasLocalSubbundleFrames (P j) (Fin (r j))
       ((h.isNondegenerateCriticalSubmanifold j).negativeNormalSpace hn (g j).toRiemannianMetric))
-  (K : Type) [Field K]
+  (K : Type u) [Field K]
 
 include hV
 
@@ -162,30 +166,32 @@ theorem eulerChar_eq_sum_neg_one_pow_index_mul_eulerChar [FiniteCWType M]
   have hV (j : ι) :=
     (h.isNondegenerateCriticalSubmanifold j).hasLocalSubbundleFrames_negativeNormalSpace hn
       h.contMDiff (hdim j) (g j) (h.manifoldMorseIndex_eq_index hn j)
+  -- Count dimensions over `ℚ`, lifted to the universe of the manifolds.
+  let K := ULift.{u} ℚ
   -- From some degree `N` on, all twisted Betti numbers of all pieces vanish.
   obtain ⟨N, hN⟩ := eventually_atTop.1 (eventually_all.2 fun j ↦
-    h.eventually_twistedBettiNumber_eq_zero hn hdim g hV ℚ j)
+    h.eventually_twistedBettiNumber_eq_zero hn hdim g hV K j)
   set n := finrank ℝ E + N + ∑ j, h.index j
   have hrN (j : ι) : h.index j + N ≤ n + 1 := by
     have := Finset.single_le_sum (fun j _ ↦ Nat.zero_le (h.index j)) (Finset.mem_univ j)
     omega
-  rw [eulerChar_eq_finsum_finrank_singularHomology M ℚ,
+  rw [eulerChar_eq_finsum_finrank_singularHomology M K,
     finsum_eq_sum_of_support_subset _ (s := Finset.range (n + 1)) fun k hk ↦ ?_]
   · simp only [← bettiNumber_def]
-    rw [h.sum_range_neg_one_pow_mul_bettiNumber_eq_sum_twistedBettiNumber hn hdim g hV ℚ
+    rw [h.sum_range_neg_one_pow_mul_bettiNumber_eq_sum_twistedBettiNumber hn hdim g hV K
       (by omega)]
     simp only [Nat.cast_sum, Finset.sum_filter, Nat.cast_ite, Nat.cast_zero, Finset.mul_sum,
       mul_ite, mul_zero]
     rw [Finset.sum_comm]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [sum_range_ite_neg_one_pow_mul_eq_neg_one_pow_mul_finsum
-      (t := fun m ↦ (h.twistedBettiNumber hn hdim g hV ℚ j m : ℤ)) (fun m hm ↦ by simp [hN m hm j])
+      (t := fun m ↦ (h.twistedBettiNumber hn hdim g hV K j m : ℤ)) (fun m hm ↦ by simp [hN m hm j])
       (hrN j),
-      h.finsum_neg_one_pow_mul_twistedBettiNumber hn hdim g hV ℚ j]
+      h.finsum_neg_one_pow_mul_twistedBettiNumber hn hdim g hV K j]
   · simp only [Function.mem_support, Finset.coe_range, Set.mem_Iio] at hk ⊢
     by_contra hkn
     refine hk ?_
-    rw [← bettiNumber_def, bettiNumber_eq_zero_of_finrank_lt (I := I) (M := M) ℚ (by omega),
+    rw [← bettiNumber_def, bettiNumber_eq_zero_of_finrank_lt (I := I) (M := M) K (by omega),
       Nat.cast_zero, mul_zero]
 
 end TauCeti.IsMorseBottFamily

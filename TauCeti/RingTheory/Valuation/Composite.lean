@@ -32,6 +32,8 @@ of `A`.
 * `ValuationSubring.mem_comapResidue_iff`: its elements are those of `A` with residue in `U`.
 * `ValuationSubring.nonunits_subset_comapResidue`, `ValuationSubring.comapResidue_le`: it lies
   between the nonunits of `A` and `A`.
+* `ValuationSubring.coe_mem_nonunits_comapResidue_iff`: an element of `A` is a nonunit of the
+  composite exactly when its residue is a nonunit of `U`.
 * `ValuationSubring.algebraMap_residueField_mem_of_isTrivialOn`: if the composite contains a field
   `k`, then `U` contains the residues of the elements of `k`.
 * `ValuationSubring.comapResidue_eq_self_iff`: it equals `A` exactly when `U = ⊤`.
@@ -130,6 +132,26 @@ theorem comapResidue_le : A.comapResidue U ≤ A :=
 /-- The composite contains every nonunit of `A`: their residues are `0`. -/
 theorem nonunits_subset_comapResidue : (A.nonunits : Set K) ⊆ A.comapResidue U := fun x hx ↦
   mem_comapResidue_iff.mpr ⟨nonunits_subset hx, by simp [residue_eq_zero_of_mem_nonunits A hx]⟩
+
+/-- An element of `A` is a nonunit of the composite of `A` with `U` exactly when its residue is a
+nonunit of `U`. -/
+@[simp]
+theorem coe_mem_nonunits_comapResidue_iff {a : A} :
+    (a : K) ∈ (A.comapResidue U).nonunits ↔ residue A a ∈ U.nonunits := by
+  by_cases ha : a ∈ maximalIdeal A
+  · -- both sides hold: `a` is a nonunit of `A`, and its residue is `0`
+    refine iff_of_true (nonunits_le_nonunits.mpr comapResidue_le (coe_mem_nonunits_iff.mpr ha)) ?_
+    rw [(residue_eq_zero_iff a).mpr ha]
+    exact U.nonunits.zero_mem
+  · -- `a` is a unit of `A`, so both sides say that the inverse residue lies outside `U`
+    have ha0 : (a : K) ≠ 0 := fun h ↦ ha (by simp [show a = 0 from Subtype.ext h])
+    have hinv : (a : K)⁻¹ ∈ A := by
+      simpa [ha0] using mt A.mem_nonunits_iff_or.mpr (mt coe_mem_nonunits_iff.mp ha)
+    have hres : residue A a ≠ 0 := mt (residue_eq_zero_iff a).mp ha
+    rw [mem_nonunits_iff_or, mem_nonunits_iff_or, mem_comapResidue_iff, ← residue_inv A a.property
+      hinv]
+    simp only [ha0, hres, false_or]
+    exact not_congr ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨hinv, h⟩⟩
 
 /-- If the composite of `A` with `U` contains a field `k`, then `U` contains the residues of the
 elements of `k`. -/

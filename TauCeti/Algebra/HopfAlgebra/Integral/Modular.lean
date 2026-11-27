@@ -185,6 +185,12 @@ theorem modularCharacter_antipode_antipode (hH : finrank k (leftIntegral k H) = 
   simpa only [modularCharacterAlgHom_apply] using
     (modularCharacterAlgHom hH).apply_antipode_antipode h
 
+/-- In finite dimension, unimodularity is triviality of the modular character. -/
+theorem isUnimodular_iff_modularCharacter_eq_counit [FiniteDimensional k H] :
+    IsUnimodular k H ↔ modularCharacter k H = counit := by
+  rw [isUnimodular_iff, modularCharacter_eq_counit_iff (finrank_leftIntegral k H)]
+  exact ⟨fun h => h.le, fun h => Submodule.eq_of_le_of_finrank_eq h (by simp)⟩
+
 end Hopf
 
 end TauCeti.HopfAlgebra
@@ -230,6 +236,16 @@ theorem IsRightInvariantIntegral.nakayamaAut_symm_eq_winding (hφ : φ.IsRightIn
         rw [hφ.strong_invariance rt r]
     _ = _ := by
         simp [hF.apply_mul_eq_modularCharacter ht htφ, map_sum]
+
+/-- For a unimodular finite-dimensional Hopf algebra, the inverse Nakayama automorphism of a
+nonzero right cointegral is the square of the antipode. -/
+theorem IsRightInvariantIntegral.nakayamaAut_symm_eq_antipode_antipode
+    (hφ : φ.IsRightInvariantIntegral) (h0 : φ ≠ 0) (hH : IsUnimodular k H) (y : H) :
+    (hφ.isFrobeniusFunctional h0).nakayamaAut.symm y = antipode k (antipode k y) := by
+  rw [hφ.nakayamaAut_symm_eq_winding h0 (ℛ k y),
+    isUnimodular_iff_modularCharacter_eq_counit.mp hH]
+  simpa only [map_sum, map_smul] using
+    congrArg (fun x => antipode k (antipode k x)) (sum_counit_smul (ℛ k y))
 
 /-- **The twisted trace property of a right cointegral.** For a nonzero right invariant
 functional `φ` on a finite-dimensional Hopf algebra, `φ (x * y) = ∑ α(y₁) φ (S²(y₂) * x)`, where
