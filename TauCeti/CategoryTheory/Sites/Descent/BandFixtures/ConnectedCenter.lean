@@ -191,14 +191,23 @@ def connectedAut (x : Codiscrete I × SingleObj G) : G →* Aut x :=
 /-- The forward arrow of `connectedAut x g` is `(𝟙, g)`. -/
 @[simp]
 theorem connectedAut_asIso_hom (x : Codiscrete I × SingleObj G) (g : G) :
-    (connectedAut x g).asIso.hom = (𝟙 x.1, (g : SingleObj.star G ⟶ SingleObj.star G)) :=
-  (rfl)
+    (connectedAut x g).asIso.hom = (𝟙 x.1, (g : SingleObj.star G ⟶ SingleObj.star G)) := by
+  -- The composite lands in `Aut (x.1, ⋆)`, which is `Aut x` only up to unfolding, so
+  -- `MonoidHom.comp_apply` cannot rewrite; `change` exposes the two factors instead.
+  change ((Prod.sectR x.1 (SingleObj G)).mapAut _ (Units.toAut G (toUnits g))).asIso.hom = _
+  simp only [Functor.mapAut_apply_asIso, Functor.mapIso_hom, Units.toAut_apply_asIso_hom,
+    Prod.sectR_map, val_toUnits_apply, SingleObj.toEnd_def, prod_Hom]
 
 /-- The inverse arrow of `connectedAut x g` is `(𝟙, g⁻¹)`. -/
 @[simp]
 theorem connectedAut_asIso_inv (x : Codiscrete I × SingleObj G) (g : G) :
-    (connectedAut x g).asIso.inv = (𝟙 x.1, (g⁻¹ : SingleObj.star G ⟶ SingleObj.star G)) :=
-  (rfl)
+    (connectedAut x g).asIso.inv = (𝟙 x.1, (g⁻¹ : SingleObj.star G ⟶ SingleObj.star G)) := by
+  -- The composite lands in `Aut (x.1, ⋆)`, which is `Aut x` only up to unfolding, so
+  -- `MonoidHom.comp_apply` cannot rewrite; `change` exposes the two factors instead.
+  change ((Prod.sectR x.1 (SingleObj G)).mapAut _ (Units.toAut G (toUnits g))).asIso.inv = _
+  simp only [Functor.mapAut_apply_asIso, Functor.mapIso_inv, Units.toAut_apply_asIso_inv,
+    Prod.sectR_map, Units.coe_mapEquiv, val_toUnits_apply, ← map_inv,
+    SingleObj.toEnd_def, prod_Hom]
 
 /-- `connectedAut x` is injective: an automorphism determines its group component. -/
 theorem connectedAut_injective (x : Codiscrete I × SingleObj G) :
@@ -207,14 +216,14 @@ theorem connectedAut_injective (x : Codiscrete I × SingleObj G) :
 
 /-- The group component of `connectedAut x g` is `g`. -/
 theorem connectedAut_asIso_hom_snd (x : Codiscrete I × SingleObj G) (g : G) :
-    ((connectedAut x g).asIso.hom.2 : G) = g :=
-  (rfl)
+    ((connectedAut x g).asIso.hom.2 : G) = g := by
+  rw [connectedAut_asIso_hom]
 
 /-- Every automorphism of an object of `Codiscrete I × SingleObj G` is `connectedAut` of its
 group component. -/
 theorem connectedAut_snd_asIso_hom (x : Codiscrete I × SingleObj G) (e : Aut x) :
     connectedAut x (e.asIso.hom.2 : G) = e :=
-  Aut.ext <| Iso.ext <| Prod.hom_ext (Subsingleton.elim _ _) rfl
+  Aut.ext <| Iso.ext <| Prod.hom_ext (Subsingleton.elim _ _) (connectedAut_asIso_hom_snd x _)
 
 /-- The isomorphism between two objects of `Codiscrete I × SingleObj G`: the codiscrete
 isomorphism on the first factor and the identity of the unique object on the second. -/
@@ -233,15 +242,15 @@ theorem connectedIso_hom_snd (x y : Codiscrete I × SingleObj G) :
 /-- The group component of the isomorphism between two objects is the identity element. -/
 @[simp]
 theorem connectedIso_hom_snd_eq_one (x y : Codiscrete I × SingleObj G) :
-    ((connectedIso x y).hom.2 : G) = 1 :=
-  (rfl)
+    ((connectedIso x y).hom.2 : G) = 1 := by
+  rw [connectedIso_hom_snd, eqToHom_refl, SingleObj.id_as_one]
 
 /-- The group component of the inverse of the isomorphism between two objects is the identity
 element. -/
 @[simp]
 theorem connectedIso_inv_snd_eq_one (x y : Codiscrete I × SingleObj G) :
-    ((connectedIso x y).inv.2 : G) = 1 :=
-  (rfl)
+    ((connectedIso x y).inv.2 : G) = 1 := by
+  simp only [connectedIso, eqToIso_refl, Iso.prod_inv, Iso.refl_inv, SingleObj.id_as_one]
 
 /-! ### Central sections of the constant pseudofunctor -/
 

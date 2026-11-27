@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.CategoryTheory.Sites.Descent.BandFixtures.ConnectedCenter
+public import TauCeti.GroupTheory.Perm.Centralizer
 
 /-!
 # Checks for the central sections of connected constant fixtures
@@ -42,20 +43,13 @@ theorem eval_surjective_C3 (x : Codiscrete Bool × SingleObj (Multiplicative (ZM
       (F := constant C (Codiscrete Bool × SingleObj (Multiplicative (ZMod 3)))) (𝟙 U) x) :=
   (connected_eval_surjective_iff U x).2 CommGroup.center_eq_top
 
-/-- The centre of `S₃` is trivial. -/
-theorem center_perm_fin_three_eq_bot : Subgroup.center (Equiv.Perm (Fin 3)) = ⊥ := by
-  refine eq_bot_iff.2 fun g hg ↦ Subgroup.mem_bot.2 ?_
-  have key : ∀ g : Equiv.Perm (Fin 3), (∀ h : Equiv.Perm (Fin 3), h * g = g * h) → g = 1 := by
-    decide
-  exact key g (Subgroup.mem_center_iff.1 hg)
-
 /-- **The `S₃` Check, sections.** The constant pseudofunctor with fibre
 `Codiscrete Bool × B(S₃)` has only the identity central section over every object. -/
 theorem card_sections_S3 :
     Nat.card (IntrinsicBandSections
       (constant C (Codiscrete Bool × SingleObj (Equiv.Perm (Fin 3)))) U) = 1 := by
-  rw [← Nat.card_congr (connectedSectionsEquiv C false U).toEquiv, center_perm_fin_three_eq_bot,
-    Subgroup.card_bot]
+  rw [← Nat.card_congr (connectedSectionsEquiv C false U).toEquiv,
+    Equiv.Perm.center_eq_bot (α := Fin 3) (by simp), Subgroup.card_bot]
 
 /-- **The `S₃` Check, evaluation.** The automorphism of an object of `Codiscrete Bool × B(S₃)`
 given by the transposition `(0 1)` is not the evaluation of any central section, so evaluation is
@@ -64,7 +58,8 @@ theorem not_eval_swap_S3 (x : Codiscrete Bool × SingleObj (Equiv.Perm (Fin 3)))
     ¬ ∃ s, IntrinsicBandSections.evaluation
       (F := constant C (Codiscrete Bool × SingleObj (Equiv.Perm (Fin 3)))) (𝟙 U) x s =
         connectedAut x (Equiv.swap 0 1) := by
-  rw [connected_eval_image U x, connectedAut_asIso_hom_snd, center_perm_fin_three_eq_bot]
+  rw [connected_eval_image U x, connectedAut_asIso_hom_snd,
+    Equiv.Perm.center_eq_bot (α := Fin 3) (by simp)]
   exact fun h ↦ (by decide : Equiv.swap (0 : Fin 3) 1 ≠ 1) (Subgroup.mem_bot.1 h)
 
 end TauCeti.Examples.ConnectedBandFixtures
