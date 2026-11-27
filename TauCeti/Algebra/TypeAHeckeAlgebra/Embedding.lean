@@ -82,14 +82,10 @@ variable (q) in
 `CoxeterSystem.heckeLeftMul` with quadratic coefficient `q - q⁻¹`. -/
 noncomputable def regularRep : InfiniteTypeAHeckeAlgebra R q →ₐ[R] Module.End R (W' →₀ R) :=
   lift (fun i ↦ cs'.heckeLeftMul ((q : R) - ↑q⁻¹) i) (fun i ↦ cs'.heckeLeftMul_mul_self _ i)
-    (fun i ↦ by
-      simpa only [braidWord, coxeterMatrixAInfty_eq_three (.inl rfl),
-        coxeterMatrixAInfty_eq_three (.inr rfl), prod_map_alternatingWord_three] using
-        (cs'.prod_map_heckeLeftMul_braidWord ((q : R) - ↑q⁻¹) i (i + 1)).symm)
-    (fun {i j} h ↦ by
-      simpa only [braidWord, coxeterMatrixAInfty_eq_two (.inl h),
-        coxeterMatrixAInfty_eq_two (.inr h), prod_map_alternatingWord_two] using
-        cs'.prod_map_heckeLeftMul_braidWord ((q : R) - ↑q⁻¹) i j)
+    (fun i ↦ mul_mul_eq_of_prod_map_braidWord (cs'.prod_map_heckeLeftMul_braidWord _ i (i + 1))
+      (coxeterMatrixAInfty_eq_three (.inl rfl)))
+    (fun {i j} h ↦ (commute_of_prod_map_braidWord (cs'.prod_map_heckeLeftMul_braidWord _ i j)
+      (coxeterMatrixAInfty_eq_two (.inl h))).eq)
 
 /-- The regular representation takes the generator `T i` to the left regular operator of the
 simple reflection `s i`. -/

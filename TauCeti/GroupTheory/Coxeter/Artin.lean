@@ -180,23 +180,15 @@ theorem ArtinGroup.prod_map_gen_braidWord (i i' : B) :
 
 /-- Two standard generators commute when the corresponding entry of `M` is `2`. -/
 theorem ArtinGroup.gen_mul_gen_comm {i i' : B} (h : M i i' = 2) :
-    ArtinGroup.gen M i * ArtinGroup.gen M i' = ArtinGroup.gen M i' * ArtinGroup.gen M i := by
-  have h' : M i' i = 2 := by rw [M.symmetric i' i]; exact h
-  have hb := ArtinGroup.prod_map_gen_braidWord M i i'
-  rw [CoxeterSystem.braidWord, h, CoxeterSystem.braidWord, h',
-    prod_map_alternatingWord_two, prod_map_alternatingWord_two] at hb
-  exact hb
+    ArtinGroup.gen M i * ArtinGroup.gen M i' = ArtinGroup.gen M i' * ArtinGroup.gen M i :=
+  (commute_of_prod_map_braidWord (ArtinGroup.prod_map_gen_braidWord M i i') h).eq
 
 /-- Two standard generators satisfy the length-three braid relation when the corresponding entry
 of `M` is `3`. -/
 theorem ArtinGroup.gen_braid {i i' : B} (h : M i i' = 3) :
     ArtinGroup.gen M i * ArtinGroup.gen M i' * ArtinGroup.gen M i =
-      ArtinGroup.gen M i' * ArtinGroup.gen M i * ArtinGroup.gen M i' := by
-  have h' : M i' i = 3 := by rw [M.symmetric i' i]; exact h
-  have hb := ArtinGroup.prod_map_gen_braidWord M i i'
-  rw [CoxeterSystem.braidWord, h, CoxeterSystem.braidWord, h',
-    prod_map_alternatingWord_three, prod_map_alternatingWord_three] at hb
-  exact hb.symm
+      ArtinGroup.gen M i' * ArtinGroup.gen M i * ArtinGroup.gen M i' :=
+  mul_mul_eq_of_prod_map_braidWord (ArtinGroup.prod_map_gen_braidWord M i i') h
 
 /-- The universal property of the Artin-Tits presentation: a family `f` of elements of a group
 satisfying the braid relations of `M` extends to a homomorphism out of `ArtinGroup M`. -/
