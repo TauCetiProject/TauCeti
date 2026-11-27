@@ -65,9 +65,11 @@ untwisted sign is the product of the two signs of `S¹ × γ` trivial on `S¹`, 
 ## Main results
 
 * `TauCeti.mk_sign_det_one_sub_pow_of_forall_pos`,
+  `TauCeti.mk_sign_det_one_sub_pow_of_forall_neg`,
   `TauCeti.mk_sign_det_one_sub_pow_of_trace_lt_neg_two`: the series
   `∑_{k ≥ 1} sgn det (1 - P ^ k) t ^ k` is `t / (1 - t)` when every `det (1 - P ^ k)` is positive,
-  and `t / (1 + t)` for a negative hyperbolic return map.
+  `-t / (1 - t)` when every `det (1 - P ^ k)` is negative, and `t / (1 + t)` for a negative
+  hyperbolic return map.
 * `TauCeti.X_mul_derivative_torusWeightSeries_false_zero_of_two_lt_trace`: the identity for a
   positive hyperbolic return map and the series `f_(-, 0) = 1 - t`.
 * `TauCeti.X_mul_derivative_torusWeightSeries_true_one_of_trace_lt_neg_two`: the identity for a
@@ -109,6 +111,15 @@ theorem mk_sign_det_one_sub_pow_of_forall_pos (hP : ∀ k ≠ 0, 0 < (1 - P ^ k)
   · simp
   · simp [sign_pos (hP _ k.succ_ne_zero), coeff_succ_X_mul]
 
+omit [IsStrictOrderedRing R] in
+/-- If every iterate `P ^ k`, `k ≥ 1`, has `det (1 - P ^ k) < 0`, then the signs
+`sgn det (1 - P ^ k)`, `k ≥ 1`, sum to `-∑_{k ≥ 1} t ^ k = -t / (1 - t)`. -/
+theorem mk_sign_det_one_sub_pow_of_forall_neg (hP : ∀ k ≠ 0, (1 - P ^ k).det < 0) :
+    (mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ)) = -(X * mk 1) := by
+  ext (_ | k)
+  · simp
+  · simp [sign_neg (hP _ k.succ_ne_zero), coeff_succ_X_mul]
+
 /-- For a negative hyperbolic `2 × 2` matrix `P` of determinant one (`trace P < -2`), the signs
 `sgn det (1 - P ^ k) = (-1) ^ (k + 1)`, `k ≥ 1`, sum to
 `∑_{k ≥ 1} (-1) ^ (k + 1) t ^ k = t / (1 + t)`. -/
@@ -129,17 +140,9 @@ theorem X_mul_derivative_torusWeightSeries_false_zero_of_two_lt_trace (hdet : P.
     (htr : 2 < P.trace) :
     X * d⁄dX (torusWeightSeries false 0) = torusWeightSeries false 0 *
       mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ) := by
-  have hS : (mk fun k ↦ if k = 0 then 0 else (SignType.sign (1 - P ^ k).det : ℤ)) =
-      mk fun k ↦ if k = 0 then 0 else -1 := by
-    congr 1
-    funext k
-    split_ifs with hk
-    · rfl
-    · simp [sign_neg (det_one_sub_pow_neg_of_two_lt_trace hdet htr hk)]
-  have hX : (mk fun k ↦ if k = 0 then 0 else -1 : ℤ⟦X⟧) = -(X * mk 1) := by
-    ext (_ | k) <;> simp [coeff_succ_X_mul]
   -- Both sides are `-X`, as `(1 - X) * mk 1 = 1`.
-  rw [hS, hX, torusWeightSeries_false_zero]
+  rw [mk_sign_det_one_sub_pow_of_forall_neg fun k hk ↦
+      det_one_sub_pow_neg_of_two_lt_trace hdet htr hk, torusWeightSeries_false_zero]
   simp only [map_sub, derivative_one, derivative_X]
   linear_combination X * mk_one_mul_one_sub_eq_one (S := ℤ)
 
