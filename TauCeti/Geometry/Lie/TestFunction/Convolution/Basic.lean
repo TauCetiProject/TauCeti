@@ -17,8 +17,8 @@ import Mathlib.MeasureTheory.Integral.Prod
 /-!
 # Convolution of test functions on a Lie group
 
-Let `G` be a real Lie group without boundary and `μ` a measure on `G` that is finite on compact
-sets, for instance a left Haar measure. The convolution of two test functions `a b` is
+Let `G` be a real Lie group and `μ` a measure on `G` that is finite on compact sets, for instance
+a left Haar measure. The convolution of two test functions `a b` is
 
 `(a * b) g = ∫ x, a x * b (x⁻¹ * g) ∂μ`.
 
