@@ -180,8 +180,6 @@ theorem zerothHomotopyDoubleEquiv_mk (x : X) (γ : MooreLoopSpace (MooreLoopSpac
     (zerothHomotopyEquivFundamentalGroup_mk γ)
 
 /-- The component of the constant double Moore loop is the identity of `π₂(X, x)`. -/
--- `high` priority: `simp` does not reduce the right-hand side of the general `_mk` lemma to `1`.
-@[simp high]
 theorem zerothHomotopyDoubleEquiv_mk_one (x : X) :
     zerothHomotopyDoubleEquiv x (.mk 1) = 1 := by
   rw [zerothHomotopyDoubleEquiv_mk, (fundamentalGroupHom (1 : MooreLoopSpace X x)).map_one]
