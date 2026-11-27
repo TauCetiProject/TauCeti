@@ -28,7 +28,7 @@ of variations. This file realizes the rest of the complex, for every integer `k 
 * `sobolevGaugeAdjoint f m hk y : H^(k+1)(ℂ)⁴ → H^k(ℂ)`, its formal adjoint.
 * `sobolevScaleGaugeFixedOperator f m hk y : H^(k+1)(ℂ)⁴ → H^k(ℂ)⁴`, the gauge-fixed operator
   `d₀* ⊕ d₁`. This is not `TauCeti.Vortex.sobolevGaugeFixedOperator` of
-  `TauCeti.Analysis.PDE.Vortex.SobolevRealization`, the realization `H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` with an
+  `TauCeti.Analysis.PDE.Vortex.Sobolev.Realization`, the realization `H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` with an
   `L∞` coefficient whose kernel is finite-dimensional with closed range at a vortex; no such
   Fredholm property is proved here for the operator on the Sobolev scale.
 

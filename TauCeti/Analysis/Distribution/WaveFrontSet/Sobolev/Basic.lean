@@ -376,7 +376,7 @@ theorem IsMicrolocallySobolevAt.compCLMOfContinuousLinearEquiv {s : ℝ} {T : �
     simpa using e.symm.adjoint_symm_adjoint_apply η
   set L : E ≃L[ℝ] E := e.symm.adjointEquiv
   have hLA : (L : E → E) = A := funext e.symm.adjointEquiv_apply
-  refine ⟨e.symm.transportTestFunction hOV φ, by simpa using hφ, A ⁻¹' Γ,
+  refine ⟨e.symm.transportTestFunction ℝ hOV φ, by simpa using hφ, A ⁻¹' Γ,
     hΓ.preimage A.continuous, hξ, fun t ht η hη ↦ ?_, ?_⟩
   · simpa only [mem_preimage, map_smul] using hcone t ht (A η) hη
   -- Change variables `ζ = A η` in the square integrability of `T` on `Γ`.

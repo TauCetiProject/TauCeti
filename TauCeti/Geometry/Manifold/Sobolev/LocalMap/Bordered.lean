@@ -68,8 +68,10 @@ atlas of `X` near the boundary, and the converse of the comparison with the inte
 proved for orders `k ≤ 1` in `TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Atlas`:
 `TauCeti.memWkpLocMapOnBordered_iff_of_subset_maximalAtlas` changes variables along bordered
 holomorphic chart changes through their Schwarz reflection, and
-`TauCeti.MemWkpLocMapOnBordered.memWkpLocMapOn_preimage` restricts to the interior. Orders
-`k ≥ 2` remain open.
+`TauCeti.MemWkpLocMapOnBordered.memWkpLocMapOn_preimage` restricts to the interior. Chart
+independence at orders `k ≥ 2`, for `2 < p < ∞`, is in
+`TauCeti.Geometry.Manifold.Sobolev.LocalMap.Bordered.Atlas.Higher`; the converse of the
+comparison with the interior class at orders `k ≥ 2` remains open.
 
 ## References
 

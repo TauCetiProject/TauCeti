@@ -11,6 +11,7 @@ public import TauCeti.LinearAlgebra.Exact
 public import TauCeti.RingTheory.Spectrum.Prime.FreeLocus
 
 import TauCeti.Algebra.Module.Projective.Schanuel
+import TauCeti.RingTheory.Ideal.RegularPrincipal
 
 /-!
 # Quadratic presentations
@@ -55,6 +56,8 @@ ideal `I` of a Dedekind domain, `I → R → R ⧸ I → 0` is such a presentati
 ## Main results
 
 * `TauCeti.QuadraticPresentation.fittingIdeal_eq`: `Fitt₀(N) = (det φ)`.
+* `TauCeti.QuadraticPresentation.det_mem_nonZeroDivisors_of_fittingIdeal_eq_span`: if
+  `Fitt₀(N) = (x)` with `x ∈ nonZeroDivisors R`, then `det φ ∈ nonZeroDivisors R`.
 * `TauCeti.QuadraticPresentation.baseChange_rel`: the base change of a presentation by `φ` is
   presented by the image of `φ`.
 * `TauCeti.isQuadraticallyPresented_iff_exists_linearEquiv`: `N` is quadratically presented iff
@@ -143,6 +146,15 @@ theorem fittingIdeal_eq (P : QuadraticPresentation R N) [Module.Finite R N] :
     fittingIdeal R N 0 = Ideal.span {P.rel.det} :=
   P.rel.fittingIdeal_zero_eq_span_det_of_ker_eq_range P.gen_surjective <| by
     rw [← P.range_rel_eq_ker, Matrix.toLin'_apply']
+
+/-- If the zeroth Fitting ideal of `N` equals `Ideal.span {x}` for a non-zero-divisor `x`, then the
+determinant of the relation matrix of any quadratic presentation of `N` is also a non-zero-divisor.
+-/
+theorem det_mem_nonZeroDivisors_of_fittingIdeal_eq_span [Module.Finite R N] {x : R}
+    (hx : x ∈ nonZeroDivisors R) (hfitt : fittingIdeal R N 0 = Ideal.span {x}) :
+    P.rel.det ∈ nonZeroDivisors R :=
+  Ideal.mem_nonZeroDivisors_of_span_eq_of_mem_spanSubmonoid
+    (hfitt ▸ Ideal.span_singleton_mem_spanSubmonoid hx) P.fittingIdeal_eq.symm
 
 /-- A quadratically presented module is the cokernel of its relation matrix. -/
 def cokernelEquiv : ((Fin P.size → R) ⧸ LinearMap.range (Matrix.toLin' P.rel)) ≃ₗ[R] N :=

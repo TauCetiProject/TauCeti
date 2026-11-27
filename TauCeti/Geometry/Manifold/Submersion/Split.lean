@@ -346,6 +346,14 @@ theorem _root_.ContDiffAt.isSubmersionAt_of_surjective_fderiv (hf : ContDiffAt �
   obtain ⟨U, hUu, hU, hxU⟩ := mem_nhds_iff.1 hu
   exact (hfu.mono hUu).isSubmersionAt_of_surjective_fderiv hU hxU le_rfl hs
 
+/-- A surjective continuous linear map from a finite-dimensional real or complex normed space is a
+`C^n` submersion for every `1 ≤ n`. -/
+theorem _root_.ContinuousLinearMap.isSubmersion_of_surjective {L : E →L[𝕜] F}
+    (hL : Function.Surjective L) (hn : 1 ≤ n) : IsSubmersion 𝓘(𝕜, E) 𝓘(𝕜, F) n L := by
+  have : FiniteDimensional 𝕜 F := Module.Finite.of_surjective (L : E →ₗ[𝕜] F) hL
+  exact (L.contMDiff.isSubmersionOfComplement_of_surjective_mfderiv hn fun y ↦ by
+    rwa [L.mfderiv_eq]).isSubmersion
+
 end NormedSpace
 
 end TauCeti

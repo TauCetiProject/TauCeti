@@ -54,6 +54,10 @@ import TauCeti.Topology.Discrete
 
 * `TauCeti.CycloCompletion.hasBasis_nhds_zero`, `TauCeti.CycloCompletion.hasBasis_nhds_zero_span`:
   neighborhood basis of `0` given by `RingHom.ker (proj f)` / `Ideal.span {fromPoly R S f}`.
+* `TauCeti.CycloCompletion.exists_ker_proj_le_ker_of_continuous`,
+  `TauCeti.CycloCompletion.exists_aeval_eq_zero_of_continuous`: a continuous ring map to a discrete
+  ring kills `RingHom.ker (proj f)` for some index `f`, so under a continuous algebra map to a
+  discrete algebra the image of `q` is a root of an index.
 * `TauCeti.CycloCompletion.isCompleteSeparated`: completeness and separatedness of
   `CycloCompletion R S` for its group uniformity.
 * `TauCeti.CycloCompletion.isAdic_span_cycloProd`,
@@ -159,6 +163,28 @@ instance (R : Type*) [CommRing R] (S : Set ℕ) :
 
 instance (R : Type*) [CommRing R] (S : Set ℕ) : NonarchimedeanRing (CycloCompletion R S) :=
   IsLinearTopology.nonarchimedeanRing (CycloCompletion R S)
+
+/-- A continuous ring map from `R[q]^S` to a discrete ring vanishes on the neighborhood
+`ker (proj f)` of zero for some index `f`. -/
+theorem exists_ker_proj_le_ker_of_continuous {T : Type*} [Semiring T] [TopologicalSpace T]
+    [DiscreteTopology T] (φ : CycloCompletion R S →+* T) (hφ : Continuous φ) :
+    ∃ f : cycloIndex R S, RingHom.ker (proj f) ≤ RingHom.ker φ := by
+  have h0 : φ ⁻¹' {0} ∈ 𝓝 (0 : CycloCompletion R S) :=
+    hφ.continuousAt.preimage_mem_nhds (by rw [map_zero]; exact (isOpen_discrete _).mem_nhds rfl)
+  obtain ⟨f, -, hf⟩ := (hasBasis_nhds_zero R S).mem_iff.mp h0
+  exact ⟨f, fun x hx ↦ hf hx⟩
+
+/-- Under a continuous `R`-algebra map from `R[q]^S` to a discrete algebra, the image of `q` is a
+root of some index, a product of cyclotomic polynomials of orders in `S`. -/
+theorem exists_aeval_eq_zero_of_continuous {B : Type*} [Semiring B] [Algebra R B]
+    [TopologicalSpace B] [DiscreteTopology B] (φ : CycloCompletion R S →ₐ[R] B)
+    (hφ : Continuous φ) : ∃ f : cycloIndex R S, aeval (φ (fromPoly R S X)) (f : R[X]) = 0 := by
+  obtain ⟨f, hf⟩ := exists_ker_proj_le_ker_of_continuous φ.toRingHom hφ
+  refine ⟨f, ?_⟩
+  have hmem : fromPoly R S (f : R[X]) ∈ RingHom.ker (proj f) := by
+    rw [RingHom.mem_ker, proj_fromPoly, AdjoinRoot.mk_self]
+  rw [aeval_algHom_apply, aeval_algHom_apply, aeval_X_left_apply]
+  exact hf hmem
 
 end InverseLimitTopology
 

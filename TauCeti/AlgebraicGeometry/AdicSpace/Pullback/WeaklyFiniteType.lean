@@ -77,6 +77,8 @@ then follows directly from `LocallyOfWeaklyFiniteType.of_isPullback` via composi
   `TauCeti.AdicSpace.hasPullback_of_locallyOfWeaklyFiniteType_right`: existence of `X ×_S Y` in
   `AdicSpace`, together with specializations to `+`weakly finite type, finite type, analytic bases,
   and locally noetherian analytic factors.
+* `TauCeti.AdicSpace.hasPullback_snd_comp`, `TauCeti.AdicSpace.hasPullback_fst_comp`: existence of
+  the iterated fibre products `(X ×_S Y) ×_S Z` and `X ×_S (Y ×_S Z)`.
 * `TauCeti.AdicSpace.LocallyOfWeaklyFiniteType.of_isPullback`,
   `TauCeti.AdicSpace.LocallyOfPlusWeaklyFiniteType.of_isPullback`,
   `TauCeti.AdicSpace.locallyOfFiniteType_of_isPullback`,
@@ -703,6 +705,32 @@ theorem isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_right
     {f : X ⟶ S} {g : Y ⟶ S} [HasPullback f g] (hf : IsAdic f) (hg : LocallyOfWeaklyFiniteType g)
     (hX : X.IsLocallyStablySheafy) : (pullback f g).IsLocallyStablySheafy :=
   hX.of_isPullback_of_locallyOfWeaklyFiniteType_flip (.of_hasPullback f g) hf hg
+
+/-- The iterated fibre product `(X ×_S Y) ×_S Z` exists when `f` is adic, `g`, `h` are locally of
+weakly finite type and `X` is locally stably sheafy; so does the inner `X ×_S Y`. -/
+theorem hasPullback_snd_comp {f : X ⟶ S} {g : Y ⟶ S} {h : Z ⟶ S}
+    (hf : IsAdic f) (hg : LocallyOfWeaklyFiniteType g) (hh : LocallyOfWeaklyFiniteType h)
+    (hX : X.IsLocallyStablySheafy) :
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
+    HasPullback (pullback.snd f g ≫ g) h :=
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_right hf hg hX
+  hasPullback_of_locallyOfWeaklyFiniteType_right
+    (IsAdic.isMultiplicative.comp_mem _ _
+      (IsAdic.pullback_snd_of_locallyOfWeaklyFiniteType hf hg hX) hg.isAdic) hh
+    (isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_right hf hg hX)
+
+/-- The iterated fibre product `X ×_S (Y ×_S Z)` exists when `f`, `g` are locally of weakly finite
+type, `h` is adic and `Z` is locally stably sheafy; so does the inner `Y ×_S Z`. -/
+theorem hasPullback_fst_comp {f : X ⟶ S} {g : Y ⟶ S} {h : Z ⟶ S}
+    (hf : LocallyOfWeaklyFiniteType f) (hg : LocallyOfWeaklyFiniteType g) (hh : IsAdic h)
+    (hZ : Z.IsLocallyStablySheafy) :
+    haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh hZ
+    HasPullback f (pullback.fst g h ≫ g) :=
+  haveI := hasPullback_of_locallyOfWeaklyFiniteType_left hg hh hZ
+  hasPullback_of_locallyOfWeaklyFiniteType_left hf
+    (IsAdic.isMultiplicative.comp_mem _ _
+      (IsAdic.pullback_fst_of_locallyOfWeaklyFiniteType hg hh hZ) hg.isAdic)
+    (isLocallyStablySheafy_pullback_of_locallyOfWeaklyFiniteType_left hg hh hZ)
 
 /-- **Fibre products over a locally noetherian factor inherit `IsLocallyNoetherian`** (Huber 1994,
 Proposition 3.7): if `f` is locally of weakly finite type, `g` is adic, and `Y` is both locally

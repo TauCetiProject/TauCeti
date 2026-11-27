@@ -12,6 +12,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 public import Mathlib.Analysis.Complex.Order
 public import Mathlib.NumberTheory.ArithmeticFunction.Defs
 public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
+import TauCeti.NumberTheory.NumberField.Ideal.DegreeOne
 import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
@@ -240,5 +241,44 @@ theorem exists_forall_normCoeff_nonneg_not_forall_nonneg {A B : (Ideal (𝓞 K))
   · simpa using congrFun h A
   · have := h A
     norm_num [Complex.le_def] at this
+
+/-! ### Norm fibres and coefficients in degree one -/
+
+section DegreeOne
+
+open NumberField
+
+variable {K}
+
+/-- In degree one over `ℚ`, the absolute-norm fibre at `n ≠ 0` consists solely of the principal
+ideal `(n : 𝓞 K)`. -/
+theorem normFiber_of_finrank_eq_one (hK : Module.finrank ℚ K = 1) {n : ℕ} (hn : n ≠ 0) :
+    normFiber K n =
+      {⟨Ideal.span {(n : 𝓞 K)},
+        mem_nonZeroDivisors_of_ne_zero
+          (mt Ideal.span_singleton_eq_bot.mp (Nat.cast_ne_zero.mpr hn))⟩} := by
+  ext I
+  rw [mem_normFiber, Finset.mem_singleton, Subtype.ext_iff]
+  dsimp only
+  constructor
+  · intro hI
+    rw [← hI]
+    exact (RingOfIntegers.ideal_span_absNorm_eq_self_of_finrank_eq_one hK _).symm
+  · intro hI
+    rw [hI]
+    exact RingOfIntegers.absNorm_span_natCast_of_finrank_eq_one hK n
+
+/-- **Norm coefficients in degree one.** When `Module.finrank ℚ K = 1`, the `n`-th norm coefficient
+of `f` is `f.zeroExtend (Ideal.span {(n : 𝓞 K)})` for every `n : ℕ` (including `n = 0`, where both
+sides are `0`). -/
+theorem normCoeff_apply_of_finrank_eq_one (hK : Module.finrank ℚ K = 1)
+    (f : IdealArithmeticFunction K) (n : ℕ) :
+    normCoeff K f n = f.zeroExtend (Ideal.span {(n : 𝓞 K)}) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp
+  · rw [normCoeff_eq_sum_normFiber, normFiber_of_finrank_eq_one hK hn, Finset.sum_singleton]
+    exact (f.zeroExtend_coe ⟨Ideal.span {(n : 𝓞 K)}, _⟩).symm
+
+end DegreeOne
 
 end TauCeti

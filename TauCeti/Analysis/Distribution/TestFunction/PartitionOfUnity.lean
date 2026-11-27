@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.TestFunction
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 
 /-!
 # Finite localization of test functions
@@ -27,7 +28,10 @@ infinite dimension every test function is zero (`TestFunction.eq_zero_of_not_fin
 Near a point where a complex test function `φ` does not vanish, every complex test function
 supported close enough to the point is a smooth multiple of `φ`
 (`TestFunction.exists_mem_nhds_forall_exists_contDiff_eq_mul`); this is how localization
-arguments replace one cutoff by another.
+arguments replace one cutoff by another. The multiplier is a quotient `χ / φ`, which is smooth
+when no zero of `φ` lies in the closed support of `χ`
+(`ContDiff.mul_inv_of_forall_notMem_tsupport`). In particular some cutoff equal to one near the
+point is a test-function multiple of `φ` (`TestFunction.exists_eventually_eq_one_and_mul_eq`).
 A compact set `K` in the interior of a compact set `K'` has a complex smooth cutoff supported in
 `K'` and equal to one on `K` (`ContDiffMapSupportedIn.exists_eqOn_one_of_subset_interior`).
 
@@ -192,6 +196,27 @@ theorem exists_eventually_eq_one {K : Set E} (hK : IsCompact K) (hKΩ : K ⊆ Ω
   obtain ⟨χ, hχ01, hχ1, -⟩ := exists_cutoff_tsupport_subset (n := n) hK Ω.isOpen hKΩ subset_rfl
   exact ⟨χ, hχ1, hχ01⟩
 
+/-- Every point of the domain has a test function that is equal to one near it. -/
+theorem exists_eventually_eq_one_nhds {x : E} (hx : x ∈ Ω) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ y in 𝓝 x, χ y = 1 :=
+  (exists_eventually_eq_one isCompact_singleton (singleton_subset_iff.2 hx)).imp fun _ h ↦ by
+    simpa only [nhdsSet_singleton] using h.1
+
+/-- Every point `x` of the domain has a test function equal to one on an open neighbourhood
+`B ≤ Ω` of `x`. -/
+theorem exists_opens_le_forall_eq_one {x : E} (hx : x ∈ Ω) :
+    ∃ (χ : 𝓓^{n}(Ω, ℝ)) (B : Opens E), B ≤ Ω ∧ x ∈ B ∧ ∀ y ∈ B, χ y = 1 := by
+  obtain ⟨χ, hχ⟩ := exists_eventually_eq_one_nhds (n := n) hx
+  obtain ⟨U, hU1, hU, hxU⟩ := eventually_nhds_iff.1 hχ
+  exact ⟨χ, ⟨U ∩ Ω, hU.inter Ω.isOpen⟩, fun _ hy ↦ hy.2, ⟨hxU, hx⟩, fun y hy ↦ hU1 y hy.1⟩
+
+/-- Two test functions on `Ω` have a common cutoff test function on `Ω` equal to one on a
+neighbourhood of the union of their supports. -/
+theorem exists_eventually_eq_one_nhdsSet_tsupport_union (φ ψ : 𝓓^{n}(Ω, F)) :
+    ∃ χ : 𝓓^{n}(Ω, ℝ), ∀ᶠ x in 𝓝ˢ (tsupport φ ∪ tsupport ψ), χ x = 1 :=
+  (exists_eventually_eq_one (φ.hasCompactSupport.isCompact.union ψ.hasCompactSupport.isCompact)
+    (union_subset φ.tsupport_subset ψ.tsupport_subset)).imp fun _ h ↦ h.1
+
 /-- Every point of the domain has a test function taking a prescribed value at it and supported
 in a given neighbourhood of it. -/
 theorem exists_tsupport_subset_apply_eq {x : E} {s : Set E} (hs : s ∈ 𝓝 x) (hsΩ : s ⊆ Ω)
@@ -268,15 +293,9 @@ theorem exists_mem_nhds_forall_exists_contDiff_eq_mul
   refine ⟨interior (χ ⁻¹' {1}), isOpen_interior.mem_nhds (hχ1 rfl), fun ψ hψ ↦ ?_⟩
   -- Write `ψ = φ (θ ψ)` with the function `θ = χ / φ`, which vanishes near the zeros of `φ`.
   let θ : E → ℂ := fun y ↦ (χ y : ℂ) * (φ y)⁻¹
-  have hθ : ContDiff ℝ n θ := by
-    refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-    by_cases hy : φ y = 0
-    · have hy' : y ∉ tsupport χ := fun h ↦ hχs h hy
-      refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy'] with z hz
-      simp [θ, hz]
-    · exact (Complex.ofRealCLM.contDiff.comp (hχ.of_le (mod_cast le_top))).contDiffAt.mul
-        (φ.contDiff.contDiffAt.fun_inv hy)
+  have hθ : ContDiff ℝ n θ :=
+    (Complex.ofRealCLM.contDiff.comp (hχ.of_le (mod_cast le_top))).mul_inv_of_forall_notMem_tsupport
+      φ.contDiff fun y hy h ↦ hχs (tsupport_comp_subset (map_zero _) χ h) hy
   refine ⟨fun y ↦ θ y * ψ y, hθ.mul ψ.contDiff, fun y ↦ ?_⟩
   by_cases hψy : ψ y = 0
   · simp [hψy]
@@ -284,6 +303,32 @@ theorem exists_mem_nhds_forall_exists_contDiff_eq_mul
     have hφy : φ y ≠ 0 := hχs (subset_tsupport _ (by simp [hχy]))
     simp only [θ, hχy, Complex.ofReal_one]
     field_simp
+
+/-- Near a point where a complex test function `χ` does not vanish, some test function `ρ` equal
+to one near the point is a test-function multiple `h χ` of `χ`. This is how a cutoff which merely
+does not vanish at a point is replaced by one equal to one near it. -/
+theorem exists_eventually_eq_one_and_mul_eq {χ : 𝓓^{n}(Ω, ℂ)} {x : E}
+    (hχx : χ x ≠ 0) :
+    ∃ ρ h : 𝓓^{n}(Ω, ℂ), (∀ᶠ y in 𝓝 x, ρ y = 1) ∧ ∀ y, h y * χ y = ρ y := by
+  have hxΩ : x ∈ Ω := χ.tsupport_subset (subset_tsupport _ hχx)
+  -- Near `x`, every test function is a smooth multiple of `χ`.
+  obtain ⟨U, hU, hUg⟩ := exists_mem_nhds_forall_exists_contDiff_eq_mul hχx
+  -- A cutoff `ρ` equal to one near `x` and supported in `U ∩ Ω`, so `ρ = χ g` for a smooth `g`.
+  obtain ⟨ρ, hρ1, hρU⟩ := exists_complex_cutoff_tsupport_subset (n := n)
+    isCompact_singleton isOpen_interior
+    (singleton_subset_iff.2 (mem_interior_iff_mem_nhds.2 (inter_mem hU (Ω.isOpen.mem_nhds hxΩ))))
+    (interior_subset.trans inter_subset_right)
+  rw [nhdsSet_singleton] at hρ1
+  obtain ⟨g, hg, hρg⟩ := hUg ρ (hρU.trans (interior_subset.trans inter_subset_left))
+  -- A second cutoff `ρ'` equal to one on `tsupport ρ` makes the multiplier `ρ' g` a test function.
+  obtain ⟨ρ', hρ'1, -⟩ := exists_complex_cutoff_tsupport_subset (n := n)
+    ρ.hasCompactSupport Ω.isOpen ρ.tsupport_subset subset_rfl
+  let h : 𝓓^{n}(Ω, ℂ) := ⟨fun y ↦ ρ' y * g y, ρ'.contDiff.mul hg, ρ'.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans ρ'.tsupport_subset⟩
+  refine ⟨ρ, h, hρ1, fun y ↦ ?_⟩
+  by_cases hy : ρ y = 0
+  · simp [h, hy, mul_assoc, mul_comm (g y), ← hρg y]
+  · simp [h, (hρ'1.self_of_nhdsSet y (subset_tsupport _ hy)), mul_comm (g y), ← hρg y]
 
 end TestFunction
 

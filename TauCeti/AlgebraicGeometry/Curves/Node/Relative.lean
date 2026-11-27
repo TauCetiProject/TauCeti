@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.Curves.Node.Locality
 import TauCeti.AlgebraicGeometry.Curves.SingularLocus.Base
+import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 
 /-!
 # Nodal relative curves over an arbitrary base
@@ -22,10 +23,12 @@ smooth morphisms of relative dimension one.  These are the closure properties ne
 nodal curves in families over nonaffine bases.
 
 Étale neighbourhoods of nodal relative curves are nodal
-(`TauCeti.AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne.comp_of_etale`). Conversely, for a
-curve locally of finite presentation, nodality is detected by étale surjections of the source:
-it can be checked after an étale surjection of the source
-(`TauCeti.AlgebraicGeometry.atWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective`).
+(`TauCeti.AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne.comp_of_etale`). Conversely,
+nodality can be checked after an étale surjection of the source, so it is local on the source for
+the étale topology
+(`TauCeti.AlgebraicGeometry.atWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective`),
+and more generally after a jointly surjective family of étale maps to the source
+(`TauCeti.AlgebraicGeometry.AtWorstNodalOfRelativeDimensionOne.of_etale_cover`).
 
 On an affine open `U` of a nodal relative curve over `Spec R`, the quotient of `Γ(X, U)` by the
 ideal of the singular locus is unramified over `R`
@@ -105,39 +108,28 @@ theorem affineAtWorstNodalOfRelativeDimensionOne_iff_isoSpec
     exact h.of_target_iso φ (f ≫ Y.isoSpec.hom) (by simp [φ])
   · exact fun h ↦ ⟨Γ(Y, ⊤), inferInstance, Y.isoSpec, h⟩
 
-private theorem AffineAtWorstNodalOfRelativeDimensionOne.postcomp_openImmersion
-    {R S : Type u} [CommRing R] [CommRing S] [Algebra R S]
-    {X : Scheme.{u}} {f : X ⟶ Spec (.of S)}
-    [IsOpenImmersion (Spec.map (CommRingCat.ofHom (algebraMap R S)))]
-    (h : AffineAtWorstNodalOfRelativeDimensionOne f) :
-    AffineAtWorstNodalOfRelativeDimensionOne
-      (f ≫ Spec.map (CommRingCat.ofHom (algebraMap R S))) := by
-  let _ : X.Over (Spec (.of S)) := ⟨f⟩
-  let _ : X.Over (Spec (.of R)) :=
-    ⟨f ≫ Spec.map (CommRingCat.ofHom (algebraMap R S))⟩
-  have hfS : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of S)) := h.syntomic
-  have hfR : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) :=
-    (HasRingHomProperty.respects_isOpenImmersion
-      (P := @SyntomicOfRelativeDimension 1)
-      (RingHom.locally_stableUnderCompositionWithLocalizationAwaySource
-        (isStandardSyntomicOfRelativeDimension_stableUnderCompositionWithLocalizationAway 1).left)
-      ).postcomp _ (inferInstance : IsOpenImmersion _) _ hfS
-  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of S)) := hfS
-  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hfR
-  refine AffineAtWorstNodalOfRelativeDimensionOne.mk hfR ?_
-  have hform : FormallyUnramified
-      (Spec.map (CommRingCat.ofHom (algebraMap R S))) := inferInstance
-  have : Algebra.FormallyUnramified R S := by
-    rw [HasRingHomProperty.Spec_iff (P := @FormallyUnramified)] at hform
-    exact RingHom.formallyUnramified_algebraMap.mp hform
-  have hsing := Scheme.singularLocus_eq_of_formallyUnramified_base
-    (R := R) (S := S) (X := X) rfl
-  rw [hsing]
-  simpa only [Category.assoc] using
-    MorphismProperty.comp_mem @Unramified
-      ((X.singularLocus S).subschemeι ≫ f)
-      (Spec.map (CommRingCat.ofHom (algebraMap R S)))
-      h.unramified_singularLocus inferInstance
+/-- Composing with an étale change of affine base `Spec S ⟶ Spec R` preserves the nodal-curve
+criterion: syntomicity of relative dimension one is preserved, and the singular subscheme relative
+to `R` is the one relative to `S`, since `Ω[X⁄R] = Ω[X⁄S]`. -/
+theorem AffineAtWorstNodalOfRelativeDimensionOne.comp_specAlgebraMap {R S : Type u}
+    [CommRing R] [CommRing S] [Algebra R S] [Algebra.Etale R S] {X : Scheme.{u}}
+    {f : X ⟶ Spec (.of S)} (h : AffineAtWorstNodalOfRelativeDimensionOne f) :
+    AffineAtWorstNodalOfRelativeDimensionOne (f ≫ Spec.algebraMap R S) := by
+  let : X.Over (Spec (.of S)) := ⟨f⟩
+  let : X.Over (Spec (.of R)) := ⟨f ≫ Spec.algebraMap R S⟩
+  have : SyntomicOfRelativeDimension 1 f := h.syntomic
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of S)) := h.syntomic
+  -- An étale morphism is syntomic of relative dimension zero, and dimensions add.
+  have hs : SyntomicOfRelativeDimension 1 (f ≫ Spec.algebraMap R S) :=
+    add_zero 1 ▸ inferInstanceAs (SyntomicOfRelativeDimension (1 + 0) _)
+  have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hs
+  refine AffineAtWorstNodalOfRelativeDimensionOne.mk hs ?_
+  have : Unramified ((X.singularLocus S).subschemeι ≫ f) := h.unramified_singularLocus
+  -- The singular locus in the goal carries the instances extracted from `hs`; re-elaborate it with
+  -- the instances on `X ↘ Spec R`, which the base-change lemma for singular loci expects.
+  change Unramified ((X.singularLocus R).subschemeι ≫ f ≫ Spec.algebraMap R S)
+  rw [Scheme.singularLocus_eq_of_formallyUnramified_base (R := R) (S := S) rfl, ← Category.assoc]
+  infer_instance
 
 private theorem affineAtWorstNodalOfRelativeDimensionOne_postcomp_of_isOpenImmersion
     {X Y Z : Scheme.{u}} [IsAffine Y] [IsAffine Z]
@@ -151,11 +143,13 @@ private theorem affineAtWorstNodalOfRelativeDimensionOne_postcomp_of_isOpenImmer
       e.inv ≫ i ≫ Z.isoSpec.hom := by
     rw [RingHom.algebraMap_toAlgebra]
     exact Spec.map_preimage_unop (e.inv ≫ i ≫ Z.isoSpec.hom)
-  let _ : IsOpenImmersion
-      (Spec.map (CommRingCat.ofHom (algebraMap Γ(Z, ⊤) S))) := hmap ▸ inferInstance
+  have : Etale (Spec.map (CommRingCat.ofHom (algebraMap Γ(Z, ⊤) S))) := hmap ▸ inferInstance
+  have : Algebra.Etale Γ(Z, ⊤) S := by
+    rw [HasRingHomProperty.Spec_iff (P := @Etale)] at this
+    exact RingHom.etale_algebraMap.mp this
   refine ⟨Γ(Z, ⊤), inferInstance, Z.isoSpec, ?_⟩
   simpa only [hmap, Category.assoc, Iso.hom_inv_id_assoc] using
-    he.postcomp_openImmersion (R := Γ(Z, ⊤))
+    he.comp_specAlgebraMap (R := Γ(Z, ⊤))
 
 private theorem affineAtWorstNodalOfRelativeDimensionOne_comp_of_isOpenImmersion
     {X Y Z : Scheme.{u}} [IsAffine Z]
@@ -257,6 +251,16 @@ theorem atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec
     apply (affineAtWorstNodalOfRelativeDimensionOne_iff_isoSpec f).mpr
     exact h.of_target_iso (Y.isoSpec.symm.trans e) (f ≫ Y.isoSpec.hom) (by simp)
 
+/-- Composing a nodal curve with an étale change of affine base preserves nodality of relative
+dimension one. -/
+theorem AtWorstNodalOfRelativeDimensionOne.comp_specAlgebraMap {R S : Type u}
+    [CommRing R] [CommRing S] [Algebra R S] [Algebra.Etale R S] {X : Scheme.{u}}
+    {f : X ⟶ Spec (.of S)} (h : AtWorstNodalOfRelativeDimensionOne f) :
+    AtWorstNodalOfRelativeDimensionOne (f ≫ Spec.algebraMap R S) := by
+  rw [atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _),
+    Iso.refl_hom, Category.comp_id] at h ⊢
+  exact h.comp_specAlgebraMap (R := R)
+
 /-- Being at worst nodal of relative dimension one is stable under arbitrary base change. -/
 instance AtWorstNodalOfRelativeDimensionOne.isStableUnderBaseChange :
     MorphismProperty.IsStableUnderBaseChange
@@ -313,11 +317,9 @@ theorem AtWorstNodalOfRelativeDimensionOne.comp_of_etale
   rw [← Category.assoc] at hc
   exact hc
 
-/-- For a relative curve over an arbitrary base, locally of finite presentation, nodality descends
-along an étale surjection of the source. -/
+/-- Over an arbitrary base, nodality descends along an étale surjection of the source. -/
 theorem AtWorstNodalOfRelativeDimensionOne.of_comp_surjective
-    {X Y S : Scheme.{u}} {f : Y ⟶ S} [LocallyOfFinitePresentation f]
-    (g : X ⟶ Y) [Etale g] [Surjective g]
+    {X Y S : Scheme.{u}} {f : Y ⟶ S} (g : X ⟶ Y) [Etale g] [Surjective g]
     (h : AtWorstNodalOfRelativeDimensionOne (g ≫ f)) :
     AtWorstNodalOfRelativeDimensionOne f := by
   rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top
@@ -327,29 +329,40 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_comp_surjective
     MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.val)).flip ‹_›
   have : Surjective (g ∣_ f ⁻¹ᵁ U.val) :=
     MorphismProperty.of_isPullback (isPullback_morphismRestrict g (f ⁻¹ᵁ U.val)).flip ‹_›
-  have hs : LocallyOfFinitePresentation ((f ∣_ U.val) ≫ (U.val : Scheme).isoSpec.hom) :=
-    inferInstance
   have hU := h U
   rw [morphismRestrict_comp] at hU
   have hU' := (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.val : Scheme).isoSpec).mp hU
-  -- The spectrum `Spec Γ(U, ⊤)` is only `Spec (.of Γ(U, ⊤))` up to unfolding, so the finite
-  -- presentation instance is passed explicitly.
   refine (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (U.val : Scheme).isoSpec).mpr
-    (@AffineAtWorstNodalOfRelativeDimensionOne.of_comp_surjective _ _ _ _ _ hs
-      (g ∣_ f ⁻¹ᵁ U.val) _ _ ?_)
+    (AffineAtWorstNodalOfRelativeDimensionOne.of_comp_surjective (g ∣_ f ⁻¹ᵁ U.val) ?_)
   -- As in `comp_of_etale`, the two sources of the composite agree definitionally.
   rw [← Category.assoc]
   exact hU'
 
-/-- **For curves locally of finite presentation, nodality is detected by étale surjections of the
-source.** Among relative curves over an arbitrary base locally of finite presentation, nodality
-can be checked after an étale surjection of the source. No quasi-compactness condition is imposed
-on the cover. -/
+/-- **Nodality is detected by étale surjections of the source.** Over an arbitrary base, a
+relative curve is nodal if and only if its composite with an étale surjection onto its source is.
+No quasi-compactness condition is imposed on the cover. -/
 theorem atWorstNodalOfRelativeDimensionOne_iff_comp_of_etale_of_surjective
-    {X Y S : Scheme.{u}} (f : Y ⟶ S) [LocallyOfFinitePresentation f]
-    (g : X ⟶ Y) [Etale g] [Surjective g] :
+    {X Y S : Scheme.{u}} (f : Y ⟶ S) (g : X ⟶ Y) [Etale g] [Surjective g] :
     AtWorstNodalOfRelativeDimensionOne f ↔ AtWorstNodalOfRelativeDimensionOne (g ≫ f) :=
   ⟨fun h ↦ h.comp_of_etale g, fun h ↦ h.of_comp_surjective g⟩
+
+/-- **Nodality is étale local on the source.** If a family of étale morphisms `e i : U i ⟶ X`
+jointly covers `X` and every composite `e i ≫ f` is at worst nodal of relative dimension one, then
+so is `f`. -/
+theorem AtWorstNodalOfRelativeDimensionOne.of_etale_cover
+    {X S : Scheme.{u}} (f : X ⟶ S) {ι : Type*} [Small.{u} ι] {U : ι → Scheme.{u}}
+    (e : ∀ i, U i ⟶ X)
+    [∀ i, Etale (e i)] (he : ∀ x : X, ∃ i, x ∈ Set.range (e i))
+    (h : ∀ i, AtWorstNodalOfRelativeDimensionOne (e i ≫ f)) :
+    AtWorstNodalOfRelativeDimensionOne f := by
+  have : IsZariskiLocalAtSource @Etale.{u} := HasRingHomProperty.instIsZariskiLocalAtSource
+  have : Etale (Sigma.desc e) := IsZariskiLocalAtSource.sigmaDesc fun _ ↦ inferInstance
+  have : Surjective (Sigma.desc e) := Surjective.sigmaDesc_of_union_range_eq_univ
+    (Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr (he x))
+  refine AtWorstNodalOfRelativeDimensionOne.of_comp_surjective (Sigma.desc e) ?_
+  have : Sigma.desc e ≫ f = Sigma.desc fun i ↦ e i ≫ f := Sigma.hom_ext _ _ fun i ↦ by simp
+  rw [this]
+  exact IsZariskiLocalAtSource.sigmaDesc h
 
 /-- Over an affine open `U` of a nodal relative curve over `Spec R`, the quotient of `Γ(X, U)` by
 the ideal of the singular locus is unramified over `R`: it is the ring of functions of the

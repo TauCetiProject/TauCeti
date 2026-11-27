@@ -8,12 +8,13 @@ module
 public import TauCeti.Geometry.Diffeomorphism.Group
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Smooth
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import Mathlib.Data.Set.UnionLift
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
@@ -29,6 +30,9 @@ corner points. No invertibility, finite dimensionality, or completeness is requi
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Restriction to an open subset does
 not change the values of a smooth form (`TauCeti.SmoothForm.coe_mpullback_subtype_val_apply`).
+Pullback commutes with wedge products and wedge powers
+(`TauCeti.SmoothForm.mpullback_wedge`, `TauCeti.SmoothForm.mpullback_wedgePow`); for wedge powers
+this holds pointwise along any map (`TauCeti.mpullback_wedgePow_apply`).
 A product map `Prod.map f g` pulls a form pulled back from either factor back through the
 corresponding component (`TauCeti.SmoothForm.mpullback_prodMap_mpullback_fst`,
 `TauCeti.SmoothForm.mpullback_prodMap_mpullback_snd`), and so the wedge of two such forms
@@ -325,11 +329,7 @@ evaluated on the image of `v` under the differential. -/
 theorem mpullback_apply_one (f : M → M') (hf : ContMDiff I I' ∞ f)
     (φ : SmoothForm I' M' F 1) (x : M) (v : TangentSpace I x) :
     (mpullback f hf φ).val x ![v] = φ.val (f x) ![mfderiv I I' f x v] := by
-  rw [mpullback_apply]
-  congr 1
-  ext i
-  fin_cases i
-  rfl
+  rw [coe_mpullback, TauCeti.mpullback_apply_one]
 
 /-- Pullback of smooth forms along a surjective smooth map whose derivatives are all surjective is
 injective. -/
@@ -498,6 +498,53 @@ theorem coe_mpullback_subtype_val_apply {U : TopologicalSpace.Opens M} (σ : Smo
     (x : U) : (mpullback (Subtype.val : U → M) contMDiff_subtypeVal σ).val x = σ.val x :=
   TauCeti.mpullback_subtype_val_apply σ.val x
 
+/-- Smooth vector-valued zero-forms on an open partition glue to a global smooth zero-form whose
+restriction to each piece is the prescribed form. -/
+theorem exists_zeroForm_mpullback_eq_of_partition {U : M → TopologicalSpace.Opens M}
+    (hx : ∀ x, x ∈ U x) (hU : ∀ {x y}, y ∈ U x → U y = U x)
+    (f : (V : Set.range U) → SmoothForm I V.val F 0) :
+    ∃ σ : SmoothForm I M F 0, ∀ x,
+      mpullback (Subtype.val : U x → M) contMDiff_subtypeVal σ = f ⟨U x, ⟨x, rfl⟩⟩ := by
+  let C (x : M) : Set.range U := ⟨U x, ⟨x, rfl⟩⟩
+  let g (x : M) (y : U x) := (f (C x)).val y 0
+  have hg (i j x : M) (hi : x ∈ U i) (hj : x ∈ U j) :
+      g i ⟨x, hi⟩ = g j ⟨x, hj⟩ := by
+    have hij : C i = C j := Subtype.ext ((hU hi).symm.trans (hU hj))
+    have heval (V W : Set.range U) (h : V = W) (v : V.val) (w : W.val)
+        (hvw : (v : M) = w) : (f V).val v 0 = (f W).val w 0 := by
+      subst W
+      obtain rfl : v = w := Subtype.ext hvw
+      rfl
+    exact heval _ _ hij _ _ rfl
+  have hcover : ⋃ x, (U x : Set M) = Set.univ :=
+    Set.eq_univ_of_forall fun x ↦ Set.mem_iUnion.mpr ⟨x, hx x⟩
+  let u := Set.liftCover (fun x ↦ (U x : Set M)) g hg hcover
+  have heq (x : M) (y : U x) : u y = (f (C x)).val y 0 :=
+    Set.liftCover_coe (S := fun x ↦ (U x : Set M)) (f := g) (hf := hg) (hS := hcover) y
+  have hu : ContMDiff I 𝓘(ℝ, F) ∞ u := by
+    intro x
+    let y : U x := ⟨x, hx x⟩
+    apply (contMDiffAt_subtype_iff (x := y)).1
+    exact (contMDiff_apply_zero (f (C x)) y).congr_of_eventuallyEq
+      (Filter.Eventually.of_forall fun z ↦ heq x z)
+  let σ := ofFunction (I := I) ⟨u, hu⟩
+  refine ⟨σ, fun x ↦ ?_⟩
+  apply Subtype.ext
+  funext z
+  rw [coe_mpullback_subtype_val_apply]
+  ext v
+  rw [Subsingleton.elim v 0]
+  exact (congrFun (ofFunction_apply_zero ⟨u, hu⟩) z).trans (heq x z)
+
+/-- Pulling a smooth form back along a map `f` restricted to an open subset `U` evaluates tangent
+vectors at `x ∈ U` through the differential of `f` itself. -/
+theorem mpullback_comp_subtypeVal_apply {U : TopologicalSpace.Opens M} {f : M → M'}
+    (hf : ContMDiff I I' ∞ (f ∘ (Subtype.val : U → M))) (φ : SmoothForm I' M' F k) (x : U)
+    (v : Fin k → TangentSpace I x) :
+    (mpullback _ hf φ).val x v = φ.val (f x) (fun i ↦ mfderiv I I' f x (v i)) := by
+  rw [mpullback_apply]
+  exact congrArg (φ.val (f x)) (funext fun i ↦ Manifold.mfderiv_comp_subtype_val_apply (v i))
+
 /-- Pullback along a smooth map with a smooth right inverse is injective. -/
 theorem mpullback_injective_of_rightInverse {f : M → M'} {g : M' → M}
     (hf : ContMDiff I I' ∞ f) (hg : ContMDiff I' I ∞ g) (hfg : Function.RightInverse g f) :
@@ -659,6 +706,31 @@ theorem mpullback_wedge (f : M → M') (hf : ContMDiff I I' ∞ f)
       SmoothForm.wedge (mpullback (k := k) f hf φ) (mpullback (k := l) f hf ψ) := by
   simpa only [SmoothForm.wedge_def] using
     mpullback_wedgeWith (ContinuousLinearMap.mul ℝ ℝ) f hf φ ψ
+
+omit [IsManifold I 1 M] in
+/-- Pullback along any map commutes with wedge powers pointwise: at each point, the rough pullback
+of `φ ^ m` is the `m`-th wedge power of the value of the pullback of `φ`. No smoothness of the map
+is needed. -/
+theorem _root_.TauCeti.mpullback_wedgePow_apply (f : M → M') (φ : SmoothForm I' M' ℝ k) (m : ℕ)
+    (x : M) :
+    TauCeti.mpullback I I' f (φ.wedgePow m).val x =
+      (TauCeti.mpullback I I' f φ.val x).wedgePow m := by
+  -- At each point, the pullback is precomposition with the differential `df_x`.
+  have hx : TauCeti.mpullback I I' f φ.val x =
+      (φ.val (f x)).compContinuousLinearMap (mfderiv I I' f x) := by
+    ext w
+    rw [TauCeti.mpullback_apply, ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      Function.comp_def]
+  ext v
+  rw [TauCeti.mpullback_apply, wedgePow_apply, hx,
+    ← ContinuousAlternatingMap.wedgePow_compContinuousLinearMap,
+    ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def]
+
+/-- Smooth real-valued pullback commutes with wedge powers: `f^* (φ ^ m) = (f^* φ) ^ m`. -/
+theorem mpullback_wedgePow (f : M → M') (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' ℝ k)
+    (m : ℕ) : mpullback f hf (φ.wedgePow m) = (mpullback f hf φ).wedgePow m :=
+  Subtype.ext (funext fun x ↦ by
+    rw [coe_mpullback, TauCeti.mpullback_wedgePow_apply, wedgePow_apply, coe_mpullback])
 
 /-- A product map `Prod.map f g` pulls the wedge of a form pulled back from the first factor and a
 form pulled back from the second factor back to the wedge of their pullbacks along `f` and `g`. -/

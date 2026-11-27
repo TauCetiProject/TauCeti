@@ -318,6 +318,19 @@ theorem le_of_subdivisionFace_subset
   rw [← toLinearExtension_ofSubdivisionVertex K p, ← toLinearExtension_ofSubdivisionVertex K q]
   exact toLinearExtension.monotone h
 
+omit [LinearOrder α] in
+/-- **The largest vertex of a face of the subdivision is its largest face.** In a face `s` of the
+barycentric subdivision, the largest vertex in the linear extension contains every other vertex
+as a face of `K`. -/
+theorem subdivisionFace_subset_subdivisionFace_max'
+    {s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))}
+    (hs : s ∈ orderedBarycentricSubdivision K) {p} (hp : p ∈ s) :
+    subdivisionFace K p ⊆ subdivisionFace K (s.max' ⟨p, hp⟩) := by
+  rcases ((mem_orderedBarycentricSubdivision_iff K).mp hs).2 p hp _ (s.max'_mem _) with h | h
+  · exact h
+  · exact subset_of_eq (congrArg (subdivisionFace K)
+      (le_antisymm (s.le_max' p hp) (le_of_subdivisionFace_subset K h)))
+
 /-- The barycenter of a face of `K` in the barycentric subdivision: the face itself, regarded as a
 vertex. -/
 def subdivisionBarycenter (τ : TauCeti.SetLike.Face K) :
@@ -338,24 +351,33 @@ theorem strictMono_subdivisionBarycenter : StrictMono (subdivisionBarycenter K) 
     (Subtype.ext (by simpa using congrArg (subdivisionFace K) h'))
 
 omit [LinearOrder α] in
+/-- A vertex of the barycentric subdivision can be adjoined to every face of the subdivision
+whose vertices are all faces of it. -/
+theorem insert_mem_orderedBarycentricSubdivision
+    {s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))}
+    (hs : s ∈ orderedBarycentricSubdivision K) {p}
+    (hp : ∀ w ∈ s, subdivisionFace K w ⊆ subdivisionFace K p) :
+    insert p s ∈ orderedBarycentricSubdivision K := by
+  rw [mem_orderedBarycentricSubdivision_iff] at hs ⊢
+  refine ⟨Finset.insert_nonempty _ _, fun q hq r hr ↦ ?_⟩
+  rcases Finset.mem_insert.mp hq with rfl | hqs <;> rcases Finset.mem_insert.mp hr with rfl | hrs
+  · exact Or.inl subset_rfl
+  · exact Or.inr (hp r hrs)
+  · exact Or.inl (hp q hqs)
+  · exact hs.2 q hqs r hrs
+
+omit [LinearOrder α] in
 /-- A barycenter can be adjoined to every face of the barycentric subdivision spanned by
 barycenters of proper subfaces. -/
 theorem insert_subdivisionBarycenter_mem_orderedBarycentricSubdivision
     ⦃s : Finset (LinearExtension (TauCeti.SetLike.Face K.toPreAbstractSimplicialComplex))⦄
     (hs : s ∈ orderedBarycentricSubdivision K) (ρ : TauCeti.SetLike.Face K)
     (hρ : ∀ w ∈ s, ∃ τ < ρ, subdivisionBarycenter K τ = w) :
-    insert (subdivisionBarycenter K ρ) s ∈ orderedBarycentricSubdivision K := by
-  rw [mem_orderedBarycentricSubdivision_iff] at hs ⊢
-  have hle : ∀ w ∈ s, subdivisionFace K w ⊆ ρ.val := fun w hw ↦ by
+    insert (subdivisionBarycenter K ρ) s ∈ orderedBarycentricSubdivision K :=
+  insert_mem_orderedBarycentricSubdivision K hs fun w hw ↦ by
     obtain ⟨τ, hτ, rfl⟩ := hρ w hw
-    rw [subdivisionFace_subdivisionBarycenter]
+    rw [subdivisionFace_subdivisionBarycenter, subdivisionFace_subdivisionBarycenter]
     exact SetLike.face_le_iff.mp hτ.le
-  refine ⟨Finset.insert_nonempty _ _, fun p hp q hq ↦ ?_⟩
-  rcases Finset.mem_insert.mp hp with rfl | hp <;> rcases Finset.mem_insert.mp hq with rfl | hq
-  · exact Or.inl subset_rfl
-  · exact Or.inr (hle q hq)
-  · exact Or.inl (hle p hp)
-  · exact hs.2 p hp q hq
 
 /-- The **last-vertex map** of the barycentric subdivision: the simplicial map sending a face of
 `K`, a vertex of the subdivision, to its largest vertex. -/
@@ -367,15 +389,11 @@ def lastVertexMap :
   map_face' := by
     intro s hs
     have hs' := (mem_orderedBarycentricSubdivision_iff K).mp hs
-    -- The largest vertex `M` of `s` in the linear extension is its largest face under inclusion.
-    set M := s.max' hs'.1
-    have hle : ∀ p ∈ s, subdivisionFace K p ⊆ subdivisionFace K M := fun p hp ↦ by
-      rcases hs'.2 p hp M (s.max'_mem hs'.1) with h | h
-      · exact h
-      · rw [le_antisymm (s.le_max' p hp) (le_of_subdivisionFace_subset K h)]
-    refine (K.isRelLowerSet_faces (subdivisionFace_mem K M)).2 (fun v hv ↦ ?_) (hs'.1.image _)
+    -- The largest vertex of `s` in the linear extension is its largest face under inclusion.
+    refine (K.isRelLowerSet_faces (subdivisionFace_mem K (s.max' hs'.1))).2 (fun v hv ↦ ?_)
+      (hs'.1.image _)
     obtain ⟨p, hp, rfl⟩ := Finset.mem_image.mp hv
-    exact hle p hp (Finset.max'_mem _ _)
+    exact subdivisionFace_subset_subdivisionFace_max' K hs hp (Finset.max'_mem _ _)
 
 /-- The last-vertex map sends a vertex of the subdivision to the largest vertex of its face. -/
 @[simp]

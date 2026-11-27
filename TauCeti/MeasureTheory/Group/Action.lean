@@ -8,7 +8,9 @@ module
 public import Mathlib.MeasureTheory.Group.Action
 public import Mathlib.MeasureTheory.Group.Measure
 public import Mathlib.MeasureTheory.Measure.Prod
+public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 public import Mathlib.Topology.MetricSpace.IsometricSMul
+public import Mathlib.Probability.ConditionalProbability
 
 /-!
 # Invariant measures of a scalar multiplication
@@ -16,9 +18,15 @@ public import Mathlib.Topology.MetricSpace.IsometricSMul
 General facts about `SMulInvariantMeasure`, Mathlib's class of measures invariant under a scalar
 multiplication, that do not concern ergodicity: the restriction of an invariant measure to a
 measurable set that is invariant up to null sets is again invariant
-(`SMulInvariantMeasure.restrict`), for a transitive isometric action all balls of one radius have
-the same invariant measure (`measure_ball_eq_measure_ball`), and on a finite measure space with
+(`SMulInvariantMeasure.restrict`), and so is the conditioned measure
+(`SMulInvariantMeasure.cond`); for a measure-preserving action, invariance up to null sets
+passes to every set almost everywhere equal to an almost invariant one
+(`preimage_smul_ae_eq_self_of_ae_eq`); for a transitive isometric action all balls of one radius
+have the same invariant measure (`measure_ball_eq_measure_ball`), and on a finite measure space with
 measurable singletons every atom has a finite orbit (`finite_orbit_of_measure_singleton_ne_zero`).
+For a countable group, pushing forward a measure without atoms to the orbit space gives a measure
+without atoms (`nullSingletonClass_map_quotientMk`). The product of two s-finite invariant
+measures is invariant under the diagonal action (`Measure.prod.instSMulInvariantMeasure`).
 
 For a monoid `G` carrying a right-invariant probability measure `μ`, such as normalized Haar
 measure on a compact group, the law `μ.map (· • x)` of the orbit map at `x` is the same for all
@@ -34,7 +42,7 @@ public section
 
 open Metric Set
 
-open scoped Pointwise
+open scoped Pointwise ProbabilityTheory
 
 namespace MeasureTheory
 
@@ -51,6 +59,23 @@ theorem SMulInvariantMeasure.restrict [SMulInvariantMeasure G X μ]
     rw [Measure.restrict_apply' hum, Measure.restrict_apply' hum,
       ← SMulInvariantMeasure.measure_preimage_smul g (hv.inter hum), preimage_inter]
     exact measure_congr (ae_eq_set_inter .rfl (huinv g).symm)⟩
+
+/-- Conditioning an invariant measure on a measurable event that is invariant up to null sets gives
+an invariant measure. -/
+theorem SMulInvariantMeasure.cond [SMulInvariantMeasure G X μ] {u : Set X} (hum : MeasurableSet u)
+    (huinv : ∀ g : G, (g • ·) ⁻¹' u =ᵐ[μ] u) : SMulInvariantMeasure G X μ[|u] := by
+  have := SMulInvariantMeasure.restrict hum huinv
+  -- `μ[|u]` is `(μ u)⁻¹ • μ.restrict u` by the definition of `ProbabilityTheory.cond`
+  rw [ProbabilityTheory.cond]
+  infer_instance
+
+/-- For a measure-preserving action, a set almost everywhere equal to a set that is invariant up to
+null sets under `g • ·` is also invariant up to null sets under `g • ·`. -/
+theorem preimage_smul_ae_eq_self_of_ae_eq [MeasurableConstSMul G X] [SMulInvariantMeasure G X μ]
+    {s t : Set X} (hts : t =ᵐ[μ] s) {g : G} (hs : (g • ·) ⁻¹' s =ᵐ[μ] s) :
+    (g • ·) ⁻¹' t =ᵐ[μ] t :=
+  (((measurePreserving_smul g μ).quasiMeasurePreserving.preimage_ae_eq hts).trans hs).trans
+    hts.symm
 
 end Restrict
 
@@ -85,6 +110,26 @@ theorem finite_orbit_of_measure_singleton_ne_zero {G α : Type*} [SMul G α]
   -- `{x}` lies in the preimage of `{g • x}` under `g • ·`, which has the same measure
   rw [← SMulInvariantMeasure.measure_preimage_smul g (measurableSet_singleton (g • x))]
   exact measure_mono (by simp)
+
+/-- **Points of the orbit space of a countable action are null.** If `G` is countable and `μ`
+vanishes on points of a space with measurable singletons, then the pushforward of `μ` to the orbit
+space of `G` vanishes on every point: the preimage of a point is an orbit, a countable set. This
+applies to restrictions `μ.restrict s` to a fundamental domain, so a quotient measure has no atoms,
+for instance at the elliptic points of a Fuchsian quotient. -/
+instance nullSingletonClass_map_quotientMk {G α : Type*} [Group G] [MulAction G α] [Countable G]
+    [MeasurableSpace α] [MeasurableSingletonClass α] {μ : Measure α} [NullSingletonClass μ] :
+    NullSingletonClass (μ.map (Quotient.mk (MulAction.orbitRel G α))) where
+  measure_singleton q := by
+    induction q using Quotient.inductionOn with
+    | h x =>
+      have hpre : Quotient.mk (MulAction.orbitRel G α) ⁻¹' {Quotient.mk _ x} =
+          MulAction.orbit G x := by
+        ext y
+        simp only [mem_preimage, mem_singleton_iff, Quotient.eq, MulAction.orbitRel_apply]
+      have hc : (MulAction.orbit G x).Countable := countable_range _
+      rw [Measure.map_apply measurable_quotient_mk''
+        (measurableSet_quotient.mpr (hpre ▸ hc.measurableSet)), hpre]
+      exact hc.measure_zero μ
 
 end Orbit
 
@@ -136,5 +181,22 @@ theorem eq_measure_univ_smul_map_smul_const [MeasurableSMul₂ G X] [IsProbabili
       rw [lintegral_const, smul_apply, smul_eq_mul, mul_comm]
 
 end OrbitLaw
+
+section Prod
+
+variable {M X Y : Type*} [SMul M X] [SMul M Y] [MeasurableSpace X] [MeasurableSpace Y]
+  [MeasurableConstSMul M X] [MeasurableConstSMul M Y] {μ : Measure X} {ν : Measure Y}
+
+/-- The product of two s-finite invariant measures is invariant under the diagonal action. -/
+@[to_additive /-- The product of two s-finite invariant measures is invariant under the diagonal
+additive action. -/]
+instance Measure.prod.instSMulInvariantMeasure [SFinite μ] [SFinite ν]
+    [SMulInvariantMeasure M X μ] [SMulInvariantMeasure M Y ν] :
+    SMulInvariantMeasure M (X × Y) (μ.prod ν) :=
+  ⟨fun c _ hs ↦
+    ((measurePreserving_smul c μ).prod (measurePreserving_smul c ν)).measure_preimage
+      hs.nullMeasurableSet⟩
+
+end Prod
 
 end MeasureTheory
