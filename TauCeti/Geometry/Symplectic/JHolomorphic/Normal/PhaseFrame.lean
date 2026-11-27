@@ -39,9 +39,9 @@ restricts to a linear equivalence between the two twisted kernels
 `e_c (z) = exp (2π i c z)` (`TauCeti.linearPhase`) has modulus one,
 `∂bar e_c = π i (c 1 + i c i) e_c` and `conj e_c / e_c = e_(-2c)`. It is twisted by `χ` when
 `exp (2π i c ω) = (-1) ^ χ ω` on the lattice (`TauCeti.linearPhase_mem_signTwisted`), and then
-`e_(-2c)` is `Λ`-periodic (`TauCeti.linearPhase_neg_two_smul_add`). Such a form `c` is a lift of
-the sign character, read as the unitary character `ω ↦ (-1) ^ χ ω`, to a real linear form; for a
-full lattice one is obtained by prescribing `c bᵢ = χ(bᵢ) / 2` on a `ℤ`-basis `bᵢ`, which is an
+`e_(-2c)` is `Λ`-periodic (`TauCeti.linearPhase_neg_two_smul_periodic`). Such a form `c` is a lift
+of the sign character, read as the unitary character `ω ↦ (-1) ^ χ ω`, to a real linear form; for
+a full lattice one is obtained by prescribing `c bᵢ = χ(bᵢ) / 2` on a `ℤ`-basis `bᵢ`, which is an
 `ℝ`-basis of `ℂ`.
 
 **The twisted operators as periodic operators.** Consequently, for such a lift `c`, the kernel of
@@ -75,7 +75,7 @@ of the frame.
 * `TauCeti.mul_mem_cauchyRiemannKernel_iff`: the coefficients of `D` in a new frame.
 * `TauCeti.map_frameMulEquiv_signTwisted_inf_cauchyRiemannKernel`: multiplication by a twisted
   frame identifies the twisted kernels.
-* `TauCeti.linearPhase_mem_signTwisted`, `TauCeti.linearPhase_neg_two_smul_add`,
+* `TauCeti.linearPhase_mem_signTwisted`, `TauCeti.linearPhase_neg_two_smul_periodic`,
   `TauCeti.conjWirtingerDeriv_linearPhase`: the phase of a lift of a sign character, its twisting
   and its connection form.
 * `TauCeti.signTwisted_inf_cauchyRiemannKernel_eq_bot_iff`: a twisted operator is nondegenerate
@@ -104,8 +104,8 @@ section Frame
 
 variable {ν μ : ℂ → ℂ} {e w : ℂ → ℂ}
 
-/-- Multiplication by a nowhere vanishing function `e : ℂ → ℂ`, a change of unitary frame of the
-normal line, as a real linear automorphism of the maps `ℂ → ℂ`. -/
+/-- Multiplication by a nowhere vanishing function `e : ℂ → ℂ`, a change of frame (trivialization)
+of the normal line, as a real linear automorphism of the maps `ℂ → ℂ`. -/
 def frameMulEquiv (e : ℂ → ℂ) (he : ∀ z, e z ≠ 0) : (ℂ → ℂ) ≃ₗ[ℝ] (ℂ → ℂ) :=
   (LinearEquiv.smulOfUnit ⟨e, e⁻¹, funext fun z ↦ mul_inv_cancel₀ (he z),
     funext fun z ↦ inv_mul_cancel₀ (he z)⟩).restrictScalars ℝ
@@ -182,8 +182,8 @@ def twistedKernelFrameEquiv (he : Differentiable ℝ e) (he₀ : ∀ z, e z ≠ 
     ↥(signTwisted ℝ j χ' ⊓ cauchyRiemannKernel (fun z ↦ ν z + conjWirtingerDeriv e z 1 / e z)
         (fun z ↦ μ z * conj (e z) / e z)) ≃ₗ[ℝ]
       ↥(signTwisted ℝ j (χ + χ') ⊓ cauchyRiemannKernel ν μ) :=
-  ((frameMulEquiv e he₀).submoduleMap _).trans
-    (LinearEquiv.ofEq _ _ (map_frameMulEquiv_signTwisted_inf_cauchyRiemannKernel he he₀ heχ))
+  (frameMulEquiv e he₀).ofSubmodules _ _
+    (map_frameMulEquiv_signTwisted_inf_cauchyRiemannKernel he he₀ heχ)
 
 @[simp]
 theorem coe_twistedKernelFrameEquiv_apply (he : Differentiable ℝ e) (he₀ : ∀ z, e z ≠ 0)
@@ -210,6 +210,7 @@ variable (c : ℂ →L[ℝ] ℝ)
 theorem linearPhase_apply (z : ℂ) : linearPhase c z = cexp (2 * π * I * c z) :=
   (rfl)
 
+@[simp]
 theorem linearPhase_ne_zero (z : ℂ) : linearPhase c z ≠ 0 :=
   Complex.exp_ne_zero _
 
@@ -267,9 +268,10 @@ theorem linearPhase_mem_signTwisted
   rw [linearPhase_add, linearPhase_apply c (j g), hc g, Units.smul_def, zsmul_eq_mul, mul_comm]
 
 /-- Under the same hypothesis the phase of `-2 c` is periodic along `j`. -/
-theorem linearPhase_neg_two_smul_add
-    (hc : ∀ g, cexp (2 * π * I * c (j g)) = ((hilbertSign (χ g) : ℤ) : ℂ)) (g : G) (z : ℂ) :
-    linearPhase (-2 • c) (z + j g) = linearPhase (-2 • c) z := by
+theorem linearPhase_neg_two_smul_periodic
+    (hc : ∀ g, cexp (2 * π * I * c (j g)) = ((hilbertSign (χ g) : ℤ) : ℂ)) (g : G) :
+    Function.Periodic (linearPhase (-2 • c)) (j g) := by
+  intro z
   rw [linearPhase_add, ← conj_linearPhase_div c (j g), linearPhase_apply c (j g), hc g]
   rcases Int.units_eq_one_or (hilbertSign (χ g)) with h | h <;> simp [h]
 
@@ -281,18 +283,28 @@ def phaseKernelEquiv
     (hc : ∀ g, cexp (2 * π * I * c (j g)) = ((hilbertSign (χ g) : ℤ) : ℂ)) (ν μ : ℂ → ℂ) :
     ↥(signTwisted ℝ j 0 ⊓ cauchyRiemannKernel (fun z ↦ ν z + π * I * (c 1 + I * c I))
         (fun z ↦ μ z * linearPhase (-2 • c) z)) ≃ₗ[ℝ]
-      ↥(signTwisted ℝ j χ ⊓ cauchyRiemannKernel ν μ) := by
-  have hν : (fun z ↦ ν z + π * I * (c 1 + I * c I)) =
-      fun z ↦ ν z + conjWirtingerDeriv (linearPhase c) z 1 / linearPhase c z := by
-    ext z
-    rw [conjWirtingerDeriv_linearPhase, mul_div_cancel_right₀ _ (linearPhase_ne_zero c z)]
-  have hμ : (fun z ↦ μ z * linearPhase (-2 • c) z) =
-      fun z ↦ μ z * conj (linearPhase c z) / linearPhase c z := by
-    ext z
-    rw [mul_div_assoc, conj_linearPhase_div]
-  rw [hν, hμ]
-  exact (twistedKernelFrameEquiv (χ' := 0) (differentiable_linearPhase c) (linearPhase_ne_zero c)
-    (linearPhase_mem_signTwisted c hc)).trans (LinearEquiv.ofEq _ _ (by rw [add_zero]))
+      ↥(signTwisted ℝ j χ ⊓ cauchyRiemannKernel ν μ) :=
+  (LinearEquiv.ofEq _ _ (by
+      congr 2 <;> ext z
+      · rw [conjWirtingerDeriv_linearPhase, mul_div_cancel_right₀ _ (linearPhase_ne_zero c z)]
+      · rw [mul_div_assoc, conj_linearPhase_div])).trans
+    ((twistedKernelFrameEquiv (χ' := 0) (differentiable_linearPhase c) (linearPhase_ne_zero c)
+      (linearPhase_mem_signTwisted c hc)).trans (LinearEquiv.ofEq _ _ (by rw [add_zero])))
+
+@[simp]
+theorem coe_phaseKernelEquiv_apply
+    (hc : ∀ g, cexp (2 * π * I * c (j g)) = ((hilbertSign (χ g) : ℤ) : ℂ)) (ν μ : ℂ → ℂ)
+    (w : ↥(signTwisted ℝ j 0 ⊓ cauchyRiemannKernel (fun z ↦ ν z + π * I * (c 1 + I * c I))
+        (fun z ↦ μ z * linearPhase (-2 • c) z))) :
+    (phaseKernelEquiv c hc ν μ w : ℂ → ℂ) = linearPhase c * w :=
+  (rfl)
+
+@[simp]
+theorem coe_phaseKernelEquiv_symm_apply
+    (hc : ∀ g, cexp (2 * π * I * c (j g)) = ((hilbertSign (χ g) : ℤ) : ℂ)) (ν μ : ℂ → ℂ)
+    (v : ↥(signTwisted ℝ j χ ⊓ cauchyRiemannKernel ν μ)) :
+    ((phaseKernelEquiv c hc ν μ).symm v : ℂ → ℂ) = (linearPhase c)⁻¹ * v :=
+  (rfl)
 
 /-- **Nondegeneracy of a twisted operator is that of a periodic operator.** If
 `exp (2π i c (j g)) = (-1) ^ χ g` for every `g`, then `∂bar + ν + μ conj` has no nonzero solution
