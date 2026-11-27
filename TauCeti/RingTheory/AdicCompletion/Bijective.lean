@@ -149,15 +149,9 @@ the canonical map `M → AdicCompletion I M` induces a bijection of `I`-adic com
 `AdicCompletion.bijective_comp_of_map_bijective`, linear maps from `M` to `I`-adically complete
 modules extend uniquely to its completion. -/
 theorem bijective_map_of (hI : I.FG) : Function.Bijective (map I (of I M)) := by
-  refine map_bijective_iff.mpr ⟨fun z ↦ ?_, fun n x hx ↦ ?_⟩
-  · obtain ⟨z, rfl⟩ := Submodule.mkQ_surjective _ z
-    obtain ⟨x, hx⟩ := Submodule.Quotient.mk_surjective _ (z.val 1)
-    refine ⟨x, ?_⟩
-    have hmem : of I M x - z ∈ (I ^ 1 • ⊤ : Submodule R (AdicCompletion I M)) := by
-      rw [pow_smul_top_eq_ker_eval hI, LinearMap.mem_ker, map_sub, eval_of, eval_apply, ← hx,
-        Submodule.mkQ_apply, sub_self]
-    rw [pow_one] at hmem
-    simpa only [LinearMap.comp_apply, Submodule.mkQ_apply, Submodule.Quotient.eq] using hmem
+  refine map_bijective_iff.mpr ⟨?_, fun n x hx ↦ ?_⟩
+  · rw [← LinearMap.range_eq_top, LinearMap.range_comp, Submodule.map_mkQ_eq_top, sup_comm]
+    exact range_of_sup_smul_top_eq_top hI M
   · exact of_mem_pow_smul_top_iff.mp hx
 
 end AdicCompletion
