@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Convex.Basic
-public import TauCeti.LinearAlgebra.RootSystem.AffineCartanMatrix
+public import TauCeti.LinearAlgebra.RootSystem.Affine.CartanMatrix
 public import TauCeti.LinearAlgebra.RootSystem.Chamber
 public import TauCeti.LinearAlgebra.RootSystem.CoweightLattice.Basis
 
@@ -51,6 +51,9 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
 * `RootPairing.fundamentalAlcove`: the open fundamental alcove of a base.
 * `RootPairing.closedFundamentalAlcove`: the closed fundamental alcove, cut out by the
   non-strict inequalities.
+* `RootPairing.separatingAffineRoots`: the affine roots `αⱼ - k` positive at one point and negative
+  at another; for a reduced pairing over a linearly ordered field, one for each affine root
+  hyperplane separating the two points.
 * `RootPairing.Base.affineSimpleRoot`: the affine simple roots `a₀ = 1 - θ` and `aᵢ = αᵢ`,
   indexed by the nodes of the affine Dynkin diagram, whose zero sets are the walls of the
   fundamental alcove.
@@ -70,6 +73,8 @@ open dominant chamber of the flipped pairing `P.flip`, which contains `A`.
   hyperplane and on the same side as a given point of the alcove of each of them.
 * `RootPairing.mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove`: the fundamental alcove is
   the part of the closed fundamental alcove lying on no affine root hyperplane.
+* `RootPairing.separatingAffineRoots_eq_empty_of_mem_closedFundamentalAlcove`: no affine root
+  separates two points of the closed fundamental alcove.
 * `RootPairing.convex_fundamentalAlcove`: the fundamental alcove is convex.
 * `RootPairing.mem_fundamentalAlcove_iff_forall_affineSimpleRoot_pos`: the fundamental alcove is
   the set of points at which every affine simple root is positive.
@@ -191,6 +196,12 @@ theorem neg_one_lt_root'_of_mem_fundamentalAlcove (hx : x ∈ fundamentalAlcove 
   simp only [root', root_neg_index, map_neg, LinearMap.neg_apply] at h
   linarith
 
+/-- Every root is bounded below by an integer at a point of the fundamental alcove: it is greater
+than `-1` there. -/
+theorem exists_intCast_lt_root'_of_mem_fundamentalAlcove (hx : x ∈ fundamentalAlcove P b)
+    (j : ι) : ∃ n : ℤ, (n : R) < P.root' j x :=
+  ⟨-1, by simpa using neg_one_lt_root'_of_mem_fundamentalAlcove hx j⟩
+
 /-- **The fundamental alcove is the set of points where every positive root takes a value in the
 open interval `(0, 1)`.** -/
 theorem mem_fundamentalAlcove_iff_forall_isPos :
@@ -252,6 +263,74 @@ theorem mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove :
   · exact hx.2.lt_of_ne (by simpa using h b.highestRoot 1)
 
 end Alcove
+
+/-! ### The affine roots separating two points -/
+
+section SeparatingAffineRoots
+
+variable [Preorder R]
+
+/-- The **affine roots separating `x` from `y`**: the affine roots `αⱼ - k`, encoded as pairs
+`(j, k)` of a root index and an integer, that are positive at `x` and negative at `y`. The
+definition only needs a preorder on `R`. Over a linearly ordered field, each affine root
+hyperplane `αⱼ = k` strictly separating `x` from `y` gives one of them, `(j, k)` or `(-j, -k)`
+according to the side on which `x` lies. The set counts indexed affine roots rather than
+hyperplanes: in a nonreduced pairing, where `2αⱼ` may also be a root, the affine roots `αⱼ - k`
+and `2αⱼ - 2k` have the same hyperplane. When `R` is a linearly ordered field and `P` is reduced,
+the set has exactly one element for each separating hyperplane. -/
+def separatingAffineRoots (x y : N) : Set (ι × ℤ) :=
+  {p | (p.2 : R) < P.root' p.1 x ∧ P.root' p.1 y < p.2}
+
+@[simp]
+lemma mem_separatingAffineRoots {x y : N} {p : ι × ℤ} :
+    p ∈ P.separatingAffineRoots x y ↔ (p.2 : R) < P.root' p.1 x ∧ P.root' p.1 y < p.2 :=
+  Iff.rfl
+
+/-- No affine root separates a point from itself. -/
+@[simp]
+lemma separatingAffineRoots_self (x : N) : P.separatingAffineRoots x x = ∅ :=
+  Set.eq_empty_of_forall_notMem fun _ h ↦ lt_asymm h.1 h.2
+
+end SeparatingAffineRoots
+
+section SeparatingAffineRootsAlcove
+
+variable [LinearOrder R] [IsStrictOrderedRing R] [Finite ι] [Nonempty ι] [P.IsCrystallographic]
+  [P.IsReduced] [P.IsIrreducible] {P b}
+
+/-- **No affine root separates two points of the closed fundamental alcove**, even when the two
+points lie on its walls. -/
+theorem separatingAffineRoots_eq_empty_of_mem_closedFundamentalAlcove {x y : N}
+    (hx : x ∈ closedFundamentalAlcove P b) (hy : y ∈ closedFundamentalAlcove P b) :
+    P.separatingAffineRoots x y = ∅ := by
+  refine Set.eq_empty_of_forall_notMem fun ⟨j, k⟩ ⟨hxk, hyk⟩ ↦ ?_
+  -- An affine root `αⱼ - k` positive at `x` has `k ≤ 0`, since every root is at most `1` on the
+  -- closed alcove, and `k = 0` only for a positive root `αⱼ`, since every negative root is
+  -- nonpositive there.
+  have hk : k < 1 := by
+    exact_mod_cast hxk.trans_le ((root'_le_root'_highestRoot hx.1 j).trans hx.2)
+  have hk' : k ≤ -1 ∨ k = 0 := by omega
+  let := P.indexNeg
+  rcases hk' with hk | rfl
+  · -- The root `-αⱼ` is at most `θ`, hence at most `1`, on the closed alcove.
+    have h := (root'_le_root'_highestRoot hy.1 (-j)).trans hy.2
+    simp only [root', root_neg_index, map_neg, LinearMap.neg_apply] at h
+    have hk : (k : R) ≤ -1 := by exact_mod_cast hk
+    simp only [root'] at hyk
+    linarith
+  · -- A root is nonnegative on the closed alcove when positive, and nonpositive when negative.
+    by_cases hj : b.IsPos j
+    · have h := toLinearMap_apply_nonneg_of_mem_posRootCone hy.1
+        (TauCeti.root_mem_posRootCone_of_mem_posRoots P b ((TauCeti.mem_posRoots P b j).mpr hj))
+      simp only [root', Int.cast_zero] at hyk
+      exact h.not_gt hyk
+    · have h := toLinearMap_apply_nonneg_of_mem_posRootCone hx.1
+        (TauCeti.root_mem_posRootCone_of_mem_posRoots P b
+          ((TauCeti.mem_posRoots P b (-j)).mpr ((Base.IsPos.neg_iff_not b j).mpr hj)))
+      simp only [root', root_neg_index, map_neg, LinearMap.neg_apply, Int.cast_zero] at h hxk
+      linarith
+
+end SeparatingAffineRootsAlcove
 
 end CommRing
 

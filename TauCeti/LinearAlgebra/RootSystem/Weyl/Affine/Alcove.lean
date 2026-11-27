@@ -14,24 +14,34 @@ import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
 /-!
 # The affine Weyl group acts simply transitively on the alcoves
 
-Let `b` be a base of a finite, reduced, irreducible, crystallographic root pairing `P` over an
-archimedean linearly ordered ring, with simple roots `αᵢ` and highest root `θ`. The affine root
-hyperplanes `H_{α,k} = {x | α(x) = k}` of the coweight space `N` cut it into alcoves, and the
-fundamental alcove `A` is the one cut out by the walls `αᵢ = 0` and `θ = 1`. This file proves that
+Let `b` be a base of a finite, reduced, irreducible, crystallographic root pairing `P` over a
+linearly ordered ring, with simple roots `αᵢ` and highest root `θ`. The affine root hyperplanes
+`H_{α,k} = {x | α(x) = k}` of the coweight space `N` cut it into alcoves, and the fundamental alcove
+`A` is the one cut out by the walls `αᵢ = 0` and `θ = 1`. This file proves that the reflections in
+the walls of `A`, the affine simple reflections (`RootPairing.Base.affineSimpleReflection`), move
+into the closed fundamental alcove every point at which every root is bounded below by an integer.
+Only the corollaries about every point need the ring to be archimedean: over an archimedean ring
 the affine Weyl group `W_aff` (`RootPairing.affineWeylGroup`) moves every point into the closed
 fundamental alcove, and so permutes the alcoves transitively: every alcove is `f⁻¹(A)` for some
-`f ∈ W_aff`. It then proves that `W_aff` acts freely on the alcoves, so that this `f` is unique.
+`f ∈ W_aff`. The file then proves, over any linearly ordered ring, that `W_aff` acts freely on the
+translates of `A`, so that this `f` is unique.
 
 The proof is the classical descent of Bourbaki and Humphreys, made purely combinatorial. An affine
-root is a pair `(j, k)` of a root index and an integer, standing for the affine function
-`αⱼ - k`; call it positive when it is positive on `A`, that is when `k < 0`, or `k = 0` and `αⱼ`
-is a positive root. A point `x` lies on the far side of the hyperplane of a positive affine root
-when `αⱼ(x) < k`, and only finitely many positive affine roots have this property, because the
-ring is archimedean. If `x` is not in the closed fundamental alcove, it lies on the far side of a
-wall of `A`: `αᵢ(x) < 0` for a simple root, or `θ(x) > 1`. The reflection `s` in that wall
-exchanges the two affine roots of the wall and permutes all the other positive affine roots, so
-`s x` lies on the far side of exactly one fewer hyperplane than `x`. Induction on this number
-finishes the proof.
+root is a pair `(j, k)` of a root index and an integer, standing for the affine function `αⱼ - k`;
+call it positive when it is positive on `A`, that is when `k < 0`, or `k = 0` and `αⱼ` is a positive
+root. A point `x` lies on the far side of the hyperplane of a positive affine root when `αⱼ(x) < k`,
+and only finitely many positive affine roots have this property when every root is bounded below by
+an integer at `x`, which holds at every point when the ring is archimedean. If `x` is not in the
+closed fundamental alcove, it lies on the far side of a wall of `A`: `αᵢ(x) < 0` for a simple root,
+or `θ(x) > 1`. The reflection `s` in that wall exchanges the two affine roots of the wall and
+permutes all the other positive affine roots, so `s x` lies on the far side of exactly one fewer
+hyperplane than `x`. Induction on this number finishes the proof. Only the reflections in the walls
+of `A` are used, so they already carry into the closed alcove every point at which every root is
+bounded below by an integer; such points include every point over an archimedean ring, and the
+images under the affine Weyl group of the points of `A`
+(`RootPairing.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup`). Seen from a point of `A`, the
+positive affine roots are the affine roots positive at that point, so the affine roots counted are
+those of `RootPairing.separatingAffineRoots`.
 
 For a simple wall, that `s` permutes the other positive affine roots is the fact that a simple
 reflection permutes the positive roots other than its own
@@ -40,20 +50,31 @@ For the wall `θ = 1` it is a computation with heights: reflecting in `θ` chang
 root by a multiple of the height of `θ`, and every root other than `±θ` has height strictly between
 `-ht(θ)` and `ht(θ)`.
 
-Freeness needs no archimedean hypothesis. Write an element of `W_aff` as `f = t_v ∘ w`, with `w`
-in the coweight image of the Weyl group and `v` in the coroot lattice `Q∨`
-(`RootPairing.mem_affineWeylGroup_iff`). Every root takes its values in `(-1, 1)` on `A`, so if `f`
-carries a point of `A` into `A`, every root takes a value in `(-2, 2)` at `v`. A minuscule element
-of the coroot lattice is zero (`RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`),
-so `v = 0`, and `w` then carries a point of the open dominant chamber into the dominant chamber,
-which forces `w = 1` (`TauCeti.eq_one_of_smul_mem_dominantChamber`). This replaces the usual
-gallery argument with the Coxeter generators by the free action of the finite Weyl group on the
-chambers.
+Freeness on the translates of `A` needs no archimedean hypothesis. Write an element of `W_aff`
+as `f = t_v ∘ w`, with `w` in the coweight image of the Weyl group and `v` in the coroot lattice
+`Q∨` (`RootPairing.mem_affineWeylGroup_iff`). Every root takes its values in `(-1, 1)` on `A`, so
+if `f` carries a point of `A` into `A`, every root takes a value in `(-2, 2)` at `v`. A minuscule
+element of the coroot lattice is zero
+(`RootPairing.eq_zero_of_mem_corootSpan_of_forall_abs_root'_lt_two`), so `v = 0`, and `w` then
+carries a point of the open dominant chamber into the dominant chamber, which forces `w = 1`
+(`TauCeti.eq_one_of_smul_mem_dominantChamber`). This replaces the usual gallery argument with the
+Coxeter generators by the free action of the finite Weyl group on the chambers.
 
 ## Main results
 
-* `RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`: **every point of the
-  coweight space is carried into the closed fundamental alcove by the affine Weyl group.**
+* `RootPairing.exists_mem_apply_mem_closedFundamentalAlcove_of_affineCoreflection_mem`: **a point
+  at which every root is bounded below by an integer is carried into the closed fundamental alcove
+  by the reflections in the walls of the alcove**, `s_{αᵢ,0}` and `s_{θ,1}`; and so, over an
+  archimedean ring, `RootPairing.exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove`:
+  every point is carried into it by the affine Weyl group.
+* `RootPairing.exists_wallWord_apply_mem_closedFundamentalAlcove`: such a point is carried into the
+  closed fundamental alcove by a word in the wall reflections with one letter for each affine root
+  separating it from the fundamental alcove.
+* The wall step,
+  `RootPairing.ncard_separatingAffineRoots_affineSimpleReflection_add_one_of_affineSimpleRoot_neg`:
+  the reflection in a wall separating a point from the fundamental alcove lowers the number of
+  affine root hyperplanes separating it from the alcove by exactly one, when every root is bounded
+  below by an integer at the point.
 * `RootPairing.iUnion_image_closedFundamentalAlcove_eq_univ`: the translates of the closed
   fundamental alcove under the affine Weyl group cover the coweight space.
 * `RootPairing.exists_mem_affineWeylGroup_apply_mem_fundamentalAlcove`: a point lying on no affine
@@ -65,8 +86,11 @@ chambers.
   of points lying on no such hyperplane and on the same side of each of them, is the preimage of
   the fundamental alcove under an element of the affine Weyl group.
 * `RootPairing.eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove`: **the affine Weyl
-  group acts freely on the alcoves**: an element carrying a point of the fundamental alcove into
-  the fundamental alcove is the identity.
+  group acts freely on the translates of the fundamental alcove**: an element carrying a point of
+  the fundamental alcove into the fundamental alcove is the identity.
+* `RootPairing.exists_wallWord_eq_inv_of_mem_affineWeylGroup`: the inverse of an element `f` of the
+  affine Weyl group is a word in the wall reflections with one letter for each affine root
+  separating a point of the fundamental alcove from its image under `f`.
 * `RootPairing.eq_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove` and
   `RootPairing.eq_one_of_mem_affineWeylGroup_of_mapsTo`: two elements carrying the same point into
   the fundamental alcove are equal, and the stabilizer of a nonempty fundamental alcove is trivial.
@@ -122,6 +146,80 @@ private lemma wallPerm_wall' (j₀ : ι) (c : ℤ) :
 
 end WallPerm
 
+/-! ### The reflections in the walls of the fundamental alcove -/
+
+namespace Base
+
+section WallReflection
+
+variable {P : RootPairing ι R M N} (b : P.Base) [CharZero R] [Finite ι] [Nonempty ι]
+
+/-- The **affine simple reflections** of a base `b`, the reflections in the walls of the
+fundamental alcove, the zero sets of the affine simple roots `aₖ`
+(`RootPairing.Base.affineSimpleRoot`): the affine reflection `s_{θ,1}` in the wall `θ = 1` at the
+affine node `none`, and the simple coreflection `s_{αᵢ,0}` in the wall `αᵢ = 0` at a simple node
+`some i`. -/
+noncomputable def affineSimpleReflection : Option b.support → N ≃ᵃ[R] N
+  | none => P.affineCoreflection b.highestRoot 1
+  | some i => (P.coreflection i).toAffineEquiv
+
+@[simp]
+lemma affineSimpleReflection_none :
+    b.affineSimpleReflection none = P.affineCoreflection b.highestRoot 1 :=
+  (rfl)
+
+@[simp]
+lemma affineSimpleReflection_some (i : b.support) :
+    b.affineSimpleReflection (some i) = (P.coreflection i).toAffineEquiv :=
+  (rfl)
+
+@[simp]
+lemma affineSimpleReflection_mem_affineWeylGroup (k : Option b.support) :
+    b.affineSimpleReflection k ∈ P.affineWeylGroup := by
+  rcases k with _ | i
+  · simpa using P.affineCoreflection_mem_affineWeylGroup b.highestRoot 1
+  · simpa using P.affineCoreflection_mem_affineWeylGroup i 0
+
+/-- The affine simple reflection at `k` is `x ↦ x - aₖ(x) αₖ^∨`, with `α₀^∨ = -θ^∨`. -/
+lemma affineSimpleReflection_apply (k : Option b.support) (x : N) :
+    b.affineSimpleReflection k x =
+      x - b.affineSimpleRoot k x • P.coroot (b.affineSimpleRootIndex k) := by
+  rcases k with _ | i
+  · simp only [affineSimpleReflection_none, affineCoreflection_apply_eq_sub, affineSimpleRoot_none,
+      affineSimpleRootIndex_none, coroot_reflectionPerm, coreflection_apply_self]
+    module
+  · rw [affineSimpleReflection_some, ← affineCoreflection_zero]
+    simp only [affineCoreflection_apply_eq_sub, affineSimpleRoot_some, affineSimpleRootIndex_some,
+      sub_zero]
+
+/-- The affine simple reflection at `k` negates the affine simple root `aₖ`. -/
+@[simp]
+lemma affineSimpleRoot_affineSimpleReflection (k : Option b.support) (x : N) :
+    b.affineSimpleRoot k (b.affineSimpleReflection k x) = -b.affineSimpleRoot k x := by
+  rcases k with _ | i
+  · simp only [affineSimpleReflection_none, affineSimpleRoot_none, root'_affineCoreflection_self]
+    ring
+  · rw [affineSimpleReflection_some, ← affineCoreflection_zero]
+    simp only [affineSimpleRoot_some, root'_affineCoreflection_self]
+    ring
+
+@[simp]
+lemma affineSimpleReflection_affineSimpleReflection (k : Option b.support) (x : N) :
+    b.affineSimpleReflection k (b.affineSimpleReflection k x) = x := by
+  rcases k with _ | i <;> simp
+
+/-- A word in the affine simple reflections lies in every subgroup containing them. -/
+lemma list_prod_map_affineSimpleReflection_mem {G : Subgroup (N ≃ᵃ[R] N)}
+    (hG : ∀ k, b.affineSimpleReflection k ∈ G) (ω : List (Option b.support)) :
+    (ω.map b.affineSimpleReflection).prod ∈ G :=
+  G.list_prod_mem fun _ hf ↦ by
+    obtain ⟨k, -, rfl⟩ := List.mem_map.mp hf
+    exact hG k
+
+end WallReflection
+
+end Base
+
 /-! ### Positive affine roots and the hyperplanes separating a point from the alcove -/
 
 section Separation
@@ -137,9 +235,11 @@ private def IsAffinePos (p : ι × ℤ) : Prop :=
 private def sepSet (x : N) : Set (ι × ℤ) :=
   {p | IsAffinePos b p ∧ P.root' p.1 x < p.2}
 
-/-- Only finitely many affine root hyperplanes separate a point from the fundamental alcove. -/
-private lemma sepSet_finite [Finite ι] [Archimedean R] (x : N) : (sepSet b x).Finite := by
-  choose n hn using fun j ↦ exists_int_lt (P.root' j x)
+/-- Only finitely many affine root hyperplanes separate a point from the fundamental alcove, when
+every root is bounded below by an integer at the point (always, over an archimedean ring). -/
+private lemma sepSet_finite [Finite ι] {x : N} (hx : ∀ j, ∃ n : ℤ, (n : R) < P.root' j x) :
+    (sepSet b x).Finite := by
+  choose n hn using hx
   refine (Set.finite_iUnion fun j ↦
     (Set.finite_singleton j).prod (Set.finite_Icc (n j) 0)).subset ?_
   rintro ⟨j, k⟩ ⟨hpos, hk⟩
@@ -159,16 +259,46 @@ private lemma not_isAffinePos_and (j₀ : ι) (c : ℤ) :
 
 variable [P.IsCrystallographic]
 
-/-- **The descent step.** Let `s` be the affine reflection in the hyperplane `αⱼ₀ = c`, and suppose
-that `s` permutes the positive affine roots other than the two affine roots `±(αⱼ₀ - c)` of its
-hyperplane. If that hyperplane separates `x` from the fundamental alcove, then `s x` is separated
-from the alcove by strictly fewer affine root hyperplanes than `x`. -/
-private lemma ncard_sepSet_affineCoreflection_lt [Finite ι] [Archimedean R] {j₀ : ι} {c : ℤ}
+/-- Let `s` be the affine reflection in the hyperplane `αⱼ₀ = c`, and suppose that `s` permutes
+the positive affine roots other than the two affine roots `±(αⱼ₀ - c)` of its hyperplane. If one of
+them separates `x` from the fundamental alcove, then the other hyperplanes separating `x` correspond
+under `wallPerm` to hyperplanes separating `s x`: the wall's other affine root is not positive. -/
+private lemma mapsTo_wallPerm_sepSet_sdiff {j₀ : ι} {c : ℤ}
     (hpres : ∀ p : ι × ℤ, p ≠ (j₀, c) → p ≠ (P.reflectionPerm j₀ j₀, -c) →
       (IsAffinePos b (wallPerm P j₀ c p) ↔ IsAffinePos b p))
     {x : N} {w : ι × ℤ} (hw : w = (j₀, c) ∨ w = (P.reflectionPerm j₀ j₀, -c))
     (hwx : w ∈ sepSet b x) :
-    (sepSet b (P.affineCoreflection j₀ c x)).ncard < (sepSet b x).ncard := by
+    ∀ p ∈ sepSet b x \ {w}, wallPerm P j₀ c p ∈ sepSet b (P.affineCoreflection j₀ c x) := by
+  rintro ⟨j, k⟩ ⟨hp, hpw⟩
+  have hpw : (j, k) ≠ w := Set.notMem_singleton_iff.mp hpw
+  have hp₁ : (j, k) ≠ (j₀, c) := by
+    intro h
+    rcases hw with rfl | rfl
+    · exact hpw h
+    · exact not_isAffinePos_and b j₀ c ⟨h ▸ hp.1, hwx.1⟩
+  have hp₂ : (j, k) ≠ (P.reflectionPerm j₀ j₀, -c) := by
+    rintro h
+    rcases hw with rfl | rfl
+    · exact not_isAffinePos_and b j₀ c ⟨hwx.1, h ▸ hp.1⟩
+    · exact hpw h
+  refine ⟨(hpres _ hp₁ hp₂).mpr hp.1, ?_⟩
+  have := hp.2
+  simp only [wallPerm, root'_affineCoreflection_intCast, reflectionPerm_self,
+    ← pairingIn_reflectionPerm, pairingIn_reflectionPerm_self_right, Int.cast_sub,
+    Int.cast_mul, Int.cast_neg] at this ⊢
+  linarith
+
+/-- **The descent step.** Let `s` be the affine reflection in the hyperplane `αⱼ₀ = c`, and suppose
+that `s` permutes the positive affine roots other than the two affine roots `±(αⱼ₀ - c)` of its
+hyperplane. If that hyperplane separates `x` from the fundamental alcove, then `s x` is separated
+from the alcove by exactly one fewer affine root hyperplane than `x`. -/
+private lemma ncard_sepSet_affineCoreflection_add_one [Finite ι] {j₀ : ι} {c : ℤ}
+    (hpres : ∀ p : ι × ℤ, p ≠ (j₀, c) → p ≠ (P.reflectionPerm j₀ j₀, -c) →
+      (IsAffinePos b (wallPerm P j₀ c p) ↔ IsAffinePos b p))
+    {x : N} (hx : ∀ j, ∃ n : ℤ, (n : R) < P.root' j x) {w : ι × ℤ}
+    (hw : w = (j₀, c) ∨ w = (P.reflectionPerm j₀ j₀, -c))
+    (hwx : w ∈ sepSet b x) :
+    (sepSet b (P.affineCoreflection j₀ c x)).ncard + 1 = (sepSet b x).ncard := by
   set y := P.affineCoreflection j₀ c x
   have hy : P.root' j₀ y = 2 * c - P.root' j₀ x := root'_affineCoreflection_self P j₀ c x
   -- Neither affine root of the wall separates `y` from the alcove: one of them is not positive,
@@ -201,10 +331,15 @@ private lemma ncard_sepSet_affineCoreflection_lt [Finite ι] [Archimedean R] {j�
     · rcases hw with rfl | rfl
       · exact hp₂ (wallPerm_injective P j₀ c (h.trans (wallPerm_wall' P j₀ c).symm))
       · exact hp₁ (wallPerm_injective P j₀ c (h.trans (wallPerm_wall P j₀ c).symm))
-  calc (sepSet b y).ncard ≤ (sepSet b x \ {w}).ncard :=
-        ncard_le_ncard_of_injOn _ hmaps (wallPerm_injective P j₀ c).injOn
-          ((sepSet_finite b x).sdiff)
-    _ < (sepSet b x).ncard := ncard_sdiff_singleton_lt_of_mem hwx (sepSet_finite b x)
+  have hfin := sepSet_finite b hx
+  have hle := ncard_le_ncard_of_injOn _ hmaps (wallPerm_injective P j₀ c).injOn hfin.sdiff
+  have hge : (sepSet b x \ {w}).ncard ≤ (sepSet b y).ncard :=
+    ncard_le_ncard_of_injOn _ (mapsTo_wallPerm_sepSet_sdiff b hpres hw hwx)
+    (wallPerm_injective P j₀ c).injOn
+    (sepSet_finite b (P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup
+      (P.affineCoreflection_mem_affineWeylGroup j₀ c) hx))
+  rw [← ncard_sdiff_singleton_add_one hwx hfin]
+  omega
 
 /-- A simple reflection permutes the positive affine roots other than `±αᵢ`. -/
 private lemma isAffinePos_wallPerm_simple [Finite ι] [P.IsReduced] {i : ι} (hi : i ∈ b.support)
@@ -221,6 +356,29 @@ private lemma isAffinePos_wallPerm_simple [Finite ι] [P.IsReduced] {i : ι} (hi
   · simp [hk]
 
 variable [Finite ι] [Nonempty ι] [P.IsReduced] [P.IsIrreducible]
+
+/-- Seen from a point `x` of the fundamental alcove, the affine roots positive at `x` are the
+positive affine roots, so the affine roots separating `x` from `y` are those separating `y` from
+the alcove. -/
+private lemma separatingAffineRoots_eq_sepSet {x : N} (hx : x ∈ fundamentalAlcove P b) (y : N) :
+    P.separatingAffineRoots x y = sepSet b y := by
+  ext ⟨j, k⟩
+  suffices IsAffinePos b (j, k) ↔ (k : R) < P.root' j x by
+    simp only [mem_separatingAffineRoots, sepSet, Set.mem_ofPred_eq, this]
+  refine ⟨?_, fun h ↦ ?_⟩
+  · rintro (hk | ⟨rfl, hj⟩)
+    · have hk' : k ≤ -1 := by omega
+      have : (k : R) ≤ -1 := by exact_mod_cast hk'
+      linarith [neg_one_lt_root'_of_mem_fundamentalAlcove hx j]
+    · simpa using root'_pos_of_isPos ((mem_fundamentalAlcove P b).mp hx).1 hj
+  · have hk : k < 1 := by exact_mod_cast h.trans (root'_lt_one_of_mem_fundamentalAlcove hx j)
+    have hk' : k < 0 ∨ k = 0 := by omega
+    rcases hk' with hk | rfl
+    · exact .inl hk
+    · refine .inr ⟨rfl, ?_⟩
+      by_contra hj
+      exact (root'_neg_of_not_isPos ((mem_fundamentalAlcove P b).mp hx).1 hj).not_gt
+        (by simpa using h)
 
 /-- The reflection in the wall `θ = 1` permutes the positive affine roots other than `±(θ - 1)`. -/
 private lemma isAffinePos_wallPerm_highestRoot {p : ι × ℤ} (hp₁ : p ≠ (b.highestRoot, 1))
@@ -251,34 +409,109 @@ variable [LinearOrder R] [IsStrictOrderedRing R] {P : RootPairing ι R M N} (b :
 
 /-! ### Transitivity -/
 
+/-- Descent records its wall word and one letter for each separating root removed. -/
+private lemma exists_wallWord_apply_mem_closedFundamentalAlcove_aux {x : N}
+    (hx : ∀ j, ∃ n : ℤ, (n : R) < P.root' j x) :
+    ∃ ω : List (Option b.support),
+      (ω.map b.affineSimpleReflection).prod x ∈ closedFundamentalAlcove P b ∧
+        ω.length + (sepSet b ((ω.map b.affineSimpleReflection).prod x)).ncard =
+          (sepSet b x).ncard := by
+  induction hn : (sepSet b x).ncard using Nat.strong_induction_on generalizing x with
+  | _ n ih =>
+  by_cases hxA : x ∈ closedFundamentalAlcove P b
+  · exact ⟨[], by simpa using hxA, by simpa using hn⟩
+  -- Choose a wall beyond which `x` lies; reflecting in it removes one separating root.
+  obtain ⟨k, j₀, c, hk, hpres, w, hw, hwx⟩ : ∃ (k : Option b.support) (j₀ : ι) (c : ℤ),
+      b.affineSimpleReflection k = P.affineCoreflection j₀ c ∧
+      (∀ p : ι × ℤ, p ≠ (j₀, c) → p ≠ (P.reflectionPerm j₀ j₀, -c) →
+        (IsAffinePos b (wallPerm P j₀ c p) ↔ IsAffinePos b p)) ∧
+      ∃ w, (w = (j₀, c) ∨ w = (P.reflectionPerm j₀ j₀, -c)) ∧ w ∈ sepSet b x := by
+    simp only [mem_closedFundamentalAlcove, not_and_or, not_forall, not_le] at hxA
+    rcases hxA with ⟨i, hi, hix⟩ | hθx
+    · refine ⟨some ⟨i, hi⟩, i, 0, by simp, fun p ↦ isAffinePos_wallPerm_simple b hi,
+        (i, 0), .inl rfl, ?_, ?_⟩
+      · exact .inr ⟨rfl, b.isPos_of_mem_support hi⟩
+      · simpa using hix
+    · refine ⟨none, b.highestRoot, 1, by simp, fun p ↦ isAffinePos_wallPerm_highestRoot b,
+        (P.reflectionPerm b.highestRoot b.highestRoot, -1), .inr rfl, .inl (by omega), ?_⟩
+      simpa [root'_reflectionPerm_self] using hθx
+  have hlt := ncard_sepSet_affineCoreflection_add_one b hpres hx hw hwx
+  obtain ⟨ω, hω, hlen⟩ := ih (sepSet b (P.affineCoreflection j₀ c x)).ncard (by omega)
+    (P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup
+      (P.affineCoreflection_mem_affineWeylGroup j₀ c) hx) rfl
+  refine ⟨ω ++ [k], ?_, ?_⟩
+  · simpa only [List.map_append, List.map_singleton, List.prod_append, List.prod_singleton,
+      hk, AffineEquiv.coe_mul, Function.comp_apply] using hω
+  · simp only [List.map_append, List.map_singleton, List.prod_append, List.prod_singleton,
+      List.length_append, List.length_singleton, hk, AffineEquiv.coe_mul, Function.comp_apply]
+    omega
+
+/-- A point `y` whose roots are bounded below by integers is carried into the closed fundamental
+alcove by a word in the reflections in the walls of the alcove
+(`RootPairing.Base.affineSimpleReflection`) with exactly one letter for each affine root separating
+a point `x` of the fundamental alcove from `y`. -/
+theorem exists_wallWord_apply_mem_closedFundamentalAlcove {x y : N}
+    (hx : x ∈ fundamentalAlcove P b) (hy : ∀ j, ∃ n : ℤ, (n : R) < P.root' j y) :
+    ∃ ω : List (Option b.support),
+      (ω.map b.affineSimpleReflection).prod y ∈ closedFundamentalAlcove P b ∧
+        ω.length = (P.separatingAffineRoots x y).ncard := by
+  obtain ⟨ω, hω, hcount⟩ := exists_wallWord_apply_mem_closedFundamentalAlcove_aux b hy
+  refine ⟨ω, hω, ?_⟩
+  have hend := separatingAffineRoots_eq_empty_of_mem_closedFundamentalAlcove
+    (fundamentalAlcove_subset_closedFundamentalAlcove P b hx) hω
+  rw [separatingAffineRoots_eq_sepSet b hx] at hend ⊢
+  rwa [hend, Set.ncard_empty, add_zero] at hcount
+
+/-- **The reflections in the walls of the fundamental alcove carry a point into the closed
+fundamental alcove.** If a subgroup `G` of the affine automorphisms of the coweight space contains
+the reflections `s_{αᵢ,0}` in the simple walls and the reflection `s_{θ,1}` in the wall `θ = 1`,
+then a point at which every root is bounded below by an integer is carried into the closed
+fundamental alcove by an element of `G`. Over an archimedean ring every point is such a point. -/
+theorem exists_mem_apply_mem_closedFundamentalAlcove_of_affineCoreflection_mem
+    {G : Subgroup (N ≃ᵃ[R] N)} (hG : ∀ i ∈ b.support, P.affineCoreflection i 0 ∈ G)
+    (hθ : P.affineCoreflection b.highestRoot 1 ∈ G) {x : N}
+    (hx : ∀ j, ∃ n : ℤ, (n : R) < P.root' j x) :
+    ∃ f ∈ G, f x ∈ closedFundamentalAlcove P b := by
+  obtain ⟨ω, hω, -⟩ := exists_wallWord_apply_mem_closedFundamentalAlcove_aux b hx
+  refine ⟨_, b.list_prod_map_affineSimpleReflection_mem ?_ ω, hω⟩
+  rintro (_ | ⟨i, hi⟩)
+  · exact hθ
+  · simpa using hG i hi
+
+/-- **Reflecting in a wall removes one separating hyperplane.** For a point `x` of the fundamental
+alcove and a point `y` on the far side of the wall at the node `k` of the affine Dynkin diagram,
+where the affine simple root `aₖ` is negative, and at which every root is bounded below by an
+integer, the reflection in that wall (`RootPairing.Base.affineSimpleReflection`) carries `y` to
+a point separated from `x` by exactly one fewer affine root hyperplane. -/
+theorem ncard_separatingAffineRoots_affineSimpleReflection_add_one_of_affineSimpleRoot_neg
+    {x y : N} (hx : x ∈ fundamentalAlcove P b) (hy : ∀ j, ∃ n : ℤ, (n : R) < P.root' j y)
+    {k : Option b.support} (hky : b.affineSimpleRoot k y < 0) :
+    (P.separatingAffineRoots x (b.affineSimpleReflection k y)).ncard + 1 =
+      (P.separatingAffineRoots x y).ncard := by
+  rw [separatingAffineRoots_eq_sepSet b hx, separatingAffineRoots_eq_sepSet b hx]
+  rcases k with _ | ⟨i, hi⟩
+  · have hθy : 1 < P.root' b.highestRoot y := by
+      rw [Base.affineSimpleRoot_none] at hky
+      linarith
+    simpa using ncard_sepSet_affineCoreflection_add_one b (j₀ := b.highestRoot) (c := 1)
+      (fun p ↦ isAffinePos_wallPerm_highestRoot b) hy (.inr rfl)
+      ⟨.inl (by omega), by simpa [root'_reflectionPerm_self] using hθy⟩
+  · rw [Base.affineSimpleRoot_some] at hky
+    simpa using ncard_sepSet_affineCoreflection_add_one b (j₀ := i) (c := 0)
+      (fun p ↦ isAffinePos_wallPerm_simple b hi) hy (.inl rfl)
+      ⟨.inr ⟨rfl, b.isPos_of_mem_support hi⟩, by simpa using hky⟩
+
 section Transitivity
 
 variable [Archimedean R]
 
 /-- **The affine Weyl group carries every point into the closed fundamental alcove.** -/
 theorem exists_mem_affineWeylGroup_apply_mem_closedFundamentalAlcove (x : N) :
-    ∃ f ∈ P.affineWeylGroup, f x ∈ closedFundamentalAlcove P b := by
-  -- Induction on the number of affine root hyperplanes separating `x` from the alcove.
-  induction hn : (sepSet b x).ncard using Nat.strong_induction_on generalizing x with
-  | _ n ih =>
-  by_cases hx : x ∈ closedFundamentalAlcove P b
-  · exact ⟨1, one_mem _, hx⟩
-  -- Otherwise `x` is beyond a wall `αⱼ₀ = c` of the alcove, and reflecting in it lowers `n`.
-  obtain ⟨j₀, c, hpres, w, hw, hwx⟩ : ∃ (j₀ : ι) (c : ℤ),
-      (∀ p : ι × ℤ, p ≠ (j₀, c) → p ≠ (P.reflectionPerm j₀ j₀, -c) →
-        (IsAffinePos b (wallPerm P j₀ c p) ↔ IsAffinePos b p)) ∧
-      ∃ w, (w = (j₀, c) ∨ w = (P.reflectionPerm j₀ j₀, -c)) ∧ w ∈ sepSet b x := by
-    simp only [mem_closedFundamentalAlcove, not_and_or, not_forall, not_le] at hx
-    rcases hx with ⟨i, hi, hix⟩ | hθx
-    · refine ⟨i, 0, fun p ↦ isAffinePos_wallPerm_simple b hi, (i, 0), .inl rfl, ?_, ?_⟩
-      · exact .inr ⟨rfl, b.isPos_of_mem_support hi⟩
-      · simpa using hix
-    · refine ⟨b.highestRoot, 1, fun p ↦ isAffinePos_wallPerm_highestRoot b,
-        (P.reflectionPerm b.highestRoot b.highestRoot, -1), .inr rfl, .inl (by omega), ?_⟩
-      simpa [root'_reflectionPerm_self] using hθx
-  obtain ⟨f, hf, hfx⟩ := ih _ (hn ▸ ncard_sepSet_affineCoreflection_lt b hpres hw hwx) _ rfl
-  exact ⟨f * P.affineCoreflection j₀ c, mul_mem hf (P.affineCoreflection_mem_affineWeylGroup j₀ c),
-    hfx⟩
+    ∃ f ∈ P.affineWeylGroup, f x ∈ closedFundamentalAlcove P b :=
+  exists_mem_apply_mem_closedFundamentalAlcove_of_affineCoreflection_mem b
+    (fun i _ ↦ by simpa using P.affineCoreflection_mem_affineWeylGroup i 0)
+    (by simpa using P.affineCoreflection_mem_affineWeylGroup b.highestRoot 1)
+    fun j ↦ exists_int_lt (P.root' j x)
 
 /-- The translates of the closed fundamental alcove under the affine Weyl group cover the coweight
 space. -/
@@ -335,8 +568,9 @@ theorem eq_zero_of_mem_corootSpan_of_mem_closedFundamentalAlcove {v : N}
 
 /-! ### Freeness and simple transitivity -/
 
-/-- **The affine Weyl group acts freely on the alcoves**: an element of the affine Weyl group
-carrying a point of the fundamental alcove into the fundamental alcove is the identity. -/
+/-- **The affine Weyl group acts freely on the translates of the fundamental alcove**: an element
+of the affine Weyl group carrying a point of the fundamental alcove into the fundamental alcove is
+the identity. -/
 theorem eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove {f : N ≃ᵃ[R] N}
     (hf : f ∈ P.affineWeylGroup) {x : N} (hx : x ∈ fundamentalAlcove P b)
     (hfx : f x ∈ fundamentalAlcove P b) : f = 1 := by
@@ -378,6 +612,25 @@ theorem eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove {f : N ≃�
     rw [← hw, hw1, map_one]
   ext y
   simp [AffineEquiv.apply_eq_linear_add f y, hf0, hlin]
+
+/-- The inverse of an element `f` of the affine Weyl group is a word in the wall reflections
+(`RootPairing.Base.affineSimpleReflection`) with exactly one letter for each affine root
+separating a point `x` of the fundamental alcove from `f x`. -/
+theorem exists_wallWord_eq_inv_of_mem_affineWeylGroup {f : N ≃ᵃ[R] N}
+    (hf : f ∈ P.affineWeylGroup) {x : N} (hx : x ∈ fundamentalAlcove P b) :
+    ∃ ω : List (Option b.support), (ω.map b.affineSimpleReflection).prod = f⁻¹ ∧
+      ω.length = (P.separatingAffineRoots x (f x)).ncard := by
+  obtain ⟨ω, hω, hcount⟩ := exists_wallWord_apply_mem_closedFundamentalAlcove b hx
+    (P.exists_intCast_lt_root'_apply_of_mem_affineWeylGroup hf
+      (exists_intCast_lt_root'_of_mem_fundamentalAlcove hx))
+  set g := (ω.map b.affineSimpleReflection).prod
+  have hg : g ∈ P.affineWeylGroup :=
+    b.list_prod_map_affineSimpleReflection_mem b.affineSimpleReflection_mem_affineWeylGroup ω
+  have hgf : g * f = 1 := eq_one_of_mem_affineWeylGroup_of_apply_mem_fundamentalAlcove b
+    (mul_mem hg hf) hx (mem_fundamentalAlcove_iff_mem_closedFundamentalAlcove.mpr
+      ⟨hω, P.root'_apply_ne_intCast_of_mem_affineWeylGroup (mul_mem hg hf)
+        (root'_ne_intCast_of_mem_fundamentalAlcove hx)⟩)
+  exact ⟨ω, eq_inv_of_mul_eq_one_left hgf, hcount⟩
 
 /-- Two elements of the affine Weyl group carrying the same point into the fundamental alcove are
 equal. -/
