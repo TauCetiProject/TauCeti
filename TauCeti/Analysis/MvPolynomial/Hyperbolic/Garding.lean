@@ -19,8 +19,8 @@ Gårding's theorem says that `p` is then hyperbolic in every direction `b ∈ Γ
 `Γ(p, b) = Γ`. Consequently `Γ` is convex: for `y ∈ Γ` it is the cone `Γ(p, y)`, which is
 star-convex with respect to `y`. With the derivative rule of `MvPolynomial.IsHyperbolic` it also
 gives that the directional derivative `D_b p = ∑ᵢ bᵢ ∂p/∂Xᵢ` is positive on `Γ` for every `b ∈ Γ`
-when `m ≥ 1`. The concavity of `p^{1/m}` on `Γ`, the remaining part of Gårding's theorem, is not
-proved here.
+when `m ≥ 1`. The concavity of `p^{1/m}` on `Γ`, the remaining part of Gårding's theorem, is in
+`TauCeti.Analysis.MvPolynomial.Hyperbolic.Concave` (`MvPolynomial.IsHyperbolic.concaveOn_rpow`).
 
 The model case is that of the elementary symmetric polynomials `σ_k`, hyperbolic in the direction
 `e = (1, …, 1)` with Gårding cones the cones `Γ_k` (`MvPolynomial.gardingCone_esymm`): for them
