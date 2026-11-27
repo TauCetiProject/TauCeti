@@ -304,16 +304,31 @@ theorem endAnnulusChart_apply_add_one (q : Puncture) (a b s t : ℝ) :
     endAnnulusChart q a b (s, t + 1) = endAnnulusChart q a b (s, t) := by
   simp only [endAnnulusChart_apply, endChart_add_one]
 
+/-- The signed height `±(a + (b - a) β (s))` of the end annulus chart at the parameter `s`. -/
+private def endAnnulusHeight (q : Puncture) (a b s : ℝ) : ℝ :=
+  q.endSign * (a + (b - a) * smoothTransition s)
+
+private theorem contDiff_endAnnulusHeight (q : Puncture) (a b : ℝ) {n : ℕ∞} :
+    ContDiff ℝ n (endAnnulusHeight q a b) := by
+  unfold endAnnulusHeight
+  exact contDiff_const.mul (contDiff_const.add (contDiff_const.mul smoothTransition.contDiff))
+
+/-- The end annulus chart is the end chart reparametrized in its first variable. -/
+private theorem endAnnulusChart_eq_endChart_comp (q : Puncture) (a b : ℝ) :
+    endAnnulusChart q a b = endChart q ∘ Prod.map (endAnnulusHeight q a b) id := by
+  funext z
+  rw [endAnnulusChart_apply, Function.comp_apply, Prod.map_apply', id_eq, endAnnulusHeight]
+
 /-- The end annulus chart is smooth. -/
 theorem contDiff_endAnnulusChart (q : Puncture) (a b : ℝ) {n : ℕ∞} :
-    ContDiff ℝ n (endAnnulusChart q a b) :=
-  (contDiff_endChart q n).comp ((contDiff_const.mul (contDiff_const.add (contDiff_const.mul
-    (smoothTransition.contDiff.comp contDiff_fst)))).prodMk contDiff_snd)
+    ContDiff ℝ n (endAnnulusChart q a b) := by
+  rw [endAnnulusChart_eq_endChart_comp]
+  exact (contDiff_endChart q n).comp ((contDiff_endAnnulusHeight q a b).prodMap contDiff_id)
 
 /-- The signed height of the end annulus chart lies between `a` and `b`. -/
-private theorem endSign_mul_fst_endAnnulusChart_mem (q : Puncture) {a b : ℝ} (s : ℝ) :
-    q.endSign * (q.endSign * (a + (b - a) * smoothTransition s)) ∈ uIcc a b := by
-  rw [Puncture.endSign_mul_endSign_mul]
+private theorem endSign_mul_endAnnulusHeight_mem (q : Puncture) {a b : ℝ} (s : ℝ) :
+    q.endSign * endAnnulusHeight q a b s ∈ uIcc a b := by
+  rw [endAnnulusHeight, Puncture.endSign_mul_endSign_mul]
   have h₀ := smoothTransition.nonneg s
   have h₁ := smoothTransition.le_one s
   rcases le_total a b with h | h
@@ -325,13 +340,13 @@ private theorem endSign_mul_fst_endAnnulusChart_mem (q : Puncture) {a b : ℝ} (
 /-- The end annulus chart is the clamped end chart reparametrized in its first variable. -/
 private theorem endAnnulusChart_eq_endClampChart_comp {q : Puncture} {a b : ℝ} (ha : 0 ≤ a)
     (hb : 0 ≤ b) :
-    endAnnulusChart q a b = endClampChart q ∘
-      Prod.map (fun s ↦ q.endSign * (a + (b - a) * smoothTransition s)) id := by
+    endAnnulusChart q a b = endClampChart q ∘ Prod.map (endAnnulusHeight q a b) id := by
   funext z
-  have h := endSign_mul_fst_endAnnulusChart_mem q (a := a) (b := b) z.1
-  rw [Function.comp_apply, endClampChart_of_nonneg]
-  · rfl
-  · exact le_trans (le_min ha hb) h.1
+  have h := endSign_mul_endAnnulusHeight_mem q (a := a) (b := b) z.1
+  rw [endAnnulusChart_eq_endChart_comp, Function.comp_apply, Function.comp_apply,
+    endClampChart_of_nonneg]
+  rw [Prod.map_apply']
+  exact le_trans (le_min ha hb) h.1
 
 /-- **An end annulus as a cylinder.** For a map `u` of the pair of pants `S` into a manifold `M`
 which is `C²` on `S`, and heights `a, b ≥ 0`, the composite of `u` with the end annulus chart of
@@ -345,8 +360,7 @@ theorem isLoopCylinder_comp_endAnnulusChart {u : ℝ × ℝ → M}
   contMDiff := by
     rw [endAnnulusChart_eq_endClampChart_comp ha hb, ← Function.comp_assoc]
     exact (contMDiff_comp_endClampChart hu q).comp
-      ((contDiff_const.mul (contDiff_const.add (contDiff_const.mul
-        smoothTransition.contDiff))).prodMap contDiff_id).contMDiff
+      ((contDiff_endAnnulusHeight q a b).prodMap contDiff_id).contMDiff
   apply_add_one z := by
     simp only [Function.comp_apply, endAnnulusChart_apply_add_one]
   apply_zero t := by
@@ -367,9 +381,9 @@ theorem rectangleIntegral_comp_endAnnulusChart [IsManifold I 1 M] {φ : RoughFor
       rectangleIntegral φ (u ∘ endChart q) (q.endSign * a, 0) (q.endSign * b, 1) := by
   rw [endAnnulusChart_eq_endClampChart_comp ha hb, ← Function.comp_assoc,
     rectangleIntegral_comp_prodMap_of_contDiff hφ (contMDiff_comp_endClampChart hu q)
-      (contDiff_const.mul (contDiff_const.add (contDiff_const.mul smoothTransition.contDiff)))]
-  simp only [smoothTransition.zero, smoothTransition.one, mul_zero, add_zero, mul_one,
-    add_sub_cancel]
+      (contDiff_endAnnulusHeight q a b)]
+  simp only [endAnnulusHeight, smoothTransition.zero, smoothTransition.one, mul_zero, add_zero,
+    mul_one, add_sub_cancel]
   exact rectangleIntegral_comp_endClampChart q ha hb
 
 /-! ### The truncation as its core and its end annuli -/
@@ -538,6 +552,12 @@ theorem rectangleIntegral_comp_pairOfPantsOutputCircleChart {φ : RoughForm I M 
       (contDiff_endChart _ 1).comp (contDiff_const.prodMk contDiff_id)
     exact (hu.comp_contMDiff hc.contMDiff
       endChart_inf_mk_zero_mem_thricePuncturedSphereReal).mdifferentiable one_ne_zero
+  -- The chart factors through its angular coordinate.
+  have hfac : u ∘ pairOfPantsOutputCircleChart =
+      (fun τ ↦ u (endChart .inf (0, τ))) ∘ outputCircleAngle := by
+    funext z
+    rw [Function.comp_apply, Function.comp_apply, pairOfPantsOutputCircleChart]
+  rw [hfac]
   exact rectangleIntegral_comp_eq_zero φ hγ (contDiff_outputCircleAngle (n := 1).differentiable
     one_ne_zero) a b
 

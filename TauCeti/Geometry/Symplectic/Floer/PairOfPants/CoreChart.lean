@@ -295,6 +295,10 @@ private theorem coreAngularIntegrand_add_two_pi (f : ℂ → F) (θ : ℝ) :
 `a = 1/4`) or of the input end `1` (for `a = 3/4`), at the parameter `r ∈ [0, 1]`. -/
 private def lobeAngle (a r : ℝ) : ℝ := -(2 * π * (a + r / 2))
 
+private theorem contDiff_lobeAngle {n : ℕ∞} (a : ℝ) : ContDiff ℝ n (lobeAngle a) := by
+  unfold lobeAngle
+  exact (contDiff_const.mul (contDiff_const.add (contDiff_id.div_const 2))).neg
+
 /-- The radius along the ray of a lobe, from `sin (π r) = |cos θ|` at `σ = 0` to the output
 circle at `σ = 1`. -/
 private def lobeRadius (a σ r : ℝ) : ℝ :=
@@ -442,9 +446,8 @@ private theorem contDiff_lobeRadius {n : ℕ∞} (a : ℝ) :
 
 private theorem contDiff_lobePoint {n : ℕ∞} (a : ℝ) :
     ContDiff ℝ n fun p : ℝ × ℝ ↦ lobePoint a p.1 p.2 := by
-  have hθ : ContDiff ℝ n fun p : ℝ × ℝ ↦ lobeAngle a p.2 := by
-    unfold lobeAngle
-    exact (contDiff_const.mul (contDiff_const.add (contDiff_snd.div_const 2))).neg
+  have hθ : ContDiff ℝ n fun p : ℝ × ℝ ↦ lobeAngle a p.2 :=
+    (contDiff_lobeAngle a).comp contDiff_snd
   have h := ContDiff.comp (g := fun p : ℝ × ℝ ↦ (1 / 2 : ℂ) + Complex.polarCoord.symm p)
     (f := fun p : ℝ × ℝ ↦ (lobeRadius a p.1 p.2, lobeAngle a p.2))
     (TauCeti.contDiff_add_polarCoord_symm _) ((contDiff_lobeRadius a).prodMk hθ)
@@ -749,7 +752,7 @@ private theorem contDiff_coreOutputLift {n : ℕ∞} : ContDiff ℝ n coreOutput
   exact ((contDiff_id.add harg).neg).div_const _
 
 /-- The correction of the parameter of the output loop of the core: on `[0, 1]` it runs from `0`
-to `0`, and it is `-2x` near both ends. -/
+to `0`; it is `-2x` near `0` and `2 - 2x` near `1`, so its periodization is smooth. -/
 private def coreStairCorrection (x : ℝ) : ℝ :=
   smoothTransition (6 * x - 1) + smoothTransition (6 * x - 4) - 2 * x
 
@@ -822,10 +825,12 @@ private theorem pairOfPantsCoreChart_mk_one_eq (t : ℝ) :
     simp only [lobeAngle_quarter_add_two, coreOuterRadius_add_neg_two_pi]
     rw [← periodic_circleMap (1 / 2 : ℂ), neg_add_cancel_right]
   refine (loopwiseTrans_congr (fun r hr ↦ ?_) (fun r hr ↦ ?_)).trans
-    (loopwiseTrans_eq_comp_coreStair hQ 1 t) <;>
-    rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
+    (loopwiseTrans_eq_comp_coreStair hQ 1 t)
+  · rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
       add_sub_cancel]
-  rw [show lobeAngle (3 / 4) r = lobeAngle (1 / 4) (r + 1) by rw [lobeAngle, lobeAngle]; ring]
+  · rw [coreLobe_of_mem hr, lobeChart, smoothTransition.one, lobePoint, lobeRadius, one_mul,
+      add_sub_cancel,
+      show lobeAngle (3 / 4) r = lobeAngle (1 / 4) (r + 1) by rw [lobeAngle, lobeAngle]; ring]
 
 /-- The **lift of the output loop of the core chart** to the angular coordinate of the output end:
 the end chart of the output end `∞` at height `0` and angle `pairOfPantsOutputLift t` is the output
@@ -849,10 +854,7 @@ theorem pairOfPantsOutputLift_add_one (t : ℝ) :
 
 /-- The lift of the output loop of the core is smooth. -/
 theorem contDiff_pairOfPantsOutputLift {n : ℕ∞} : ContDiff ℝ n pairOfPantsOutputLift := by
-  have hθ : ContDiff ℝ n fun r ↦ lobeAngle (1 / 4) r := by
-    unfold lobeAngle
-    exact (contDiff_const.mul (contDiff_const.add (contDiff_id.div_const 2))).neg
-  exact contDiff_coreOutputLift.comp (hθ.comp contDiff_coreStair)
+  exact contDiff_coreOutputLift.comp ((contDiff_lobeAngle _).comp contDiff_coreStair)
 
 /-! ### The Jacobian of a lobe -/
 
