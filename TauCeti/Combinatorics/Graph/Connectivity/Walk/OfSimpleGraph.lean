@@ -259,6 +259,12 @@ theorem internallyDisjoint_toGraph_iff (p q : H.Walk x y) :
     p.toGraph.InternallyDisjoint q.toGraph ↔ p.InternallyDisjoint q := by
   simp only [Graph.Walk.internallyDisjoint_def, internallyDisjoint_def, support_toGraph]
 
+/-- Converting simple-graph walks to edge-labelled walks preserves and reflects
+edge-disjointness. -/
+theorem disjoint_edges_toGraph_iff {x' y' : α} (p : H.Walk x y) (q : H.Walk x' y') :
+    p.toGraph.edges.Disjoint q.toGraph.edges ↔ p.edges.Disjoint q.edges := by
+  simp only [edges_toGraph]
+
 end Walk
 
 /-- Multigraph reachability in `Graph.ofSimpleGraph H` is simple-graph reachability in `H`. -/
@@ -300,6 +306,12 @@ theorem internallyDisjoint_toSimpleGraph_iff
     p.toSimpleGraph.InternallyDisjoint q.toSimpleGraph ↔ p.InternallyDisjoint q := by
   rw [← SimpleGraph.Walk.internallyDisjoint_toGraph_iff, toGraph_toSimpleGraph,
     toGraph_toSimpleGraph]
+
+/-- Forgetting the redundant edge labels preserves and reflects edge-disjointness. -/
+theorem disjoint_edges_toSimpleGraph_iff {x' y' : α}
+    (p : (Graph.ofSimpleGraph H).Walk x y) (q : (Graph.ofSimpleGraph H).Walk x' y') :
+    p.toSimpleGraph.edges.Disjoint q.toSimpleGraph.edges ↔ p.edges.Disjoint q.edges := by
+  simp only [edges_toSimpleGraph]
 
 end Graph.Walk
 
