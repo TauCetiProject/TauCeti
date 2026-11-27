@@ -120,8 +120,8 @@ private lemma isAlternating_erase_iff {ε : ℤˣ} {S : Finset ℤ}
     · have hmem : x ∈ ({z ∈ S | |z| < |y|} : Finset ℤ) := mem_filter.2 ⟨hx, hlt⟩
       obtain ⟨k, hk⟩ : ∃ k, #{z ∈ S | |z| < |y|} = k + 1 :=
         Nat.exists_eq_add_one.2 (card_pos.2 ⟨x, hmem⟩)
-      rw [card_erase_of_mem hmem, hk, Nat.add_sub_cancel, pow_succ, ← mul_assoc,
-        iff_false_intro (not_lt.2 hlt.le), iff_false]
+      have hcard : #({z ∈ S | |z| < |y|}.erase x) = k := by rw [card_erase_of_mem hmem]; omega
+      simp only [hcard, hk, pow_succ, ← mul_assoc, not_lt.2 hlt.le, iff_false]
       have := sign_mul_neg_one_pow_eq_or hy0 k
       have := Int.isUnit_eq_one_or ε.isUnit
       generalize y.sign * (-1) ^ k = g at *
@@ -135,6 +135,18 @@ section Split
 
 variable {β α : Type*} [DecidableEq β] [LinearOrder α] {T : Finset β} {f : β → α}
   (p : β → Prop) [DecidablePred p]
+
+/-- A subset of a pair `{a, b}` that contains `a` exactly when it contains `b` has even size. -/
+private lemma even_card_of_subset_pair {a b : β} {D : Finset β} (hab : a ≠ b) (hD : D ⊆ {a, b})
+    (h : a ∈ D ↔ b ∈ D) : Even #D := by
+  by_cases ha : a ∈ D
+  · rw [Subset.antisymm hD (insert_subset ha (singleton_subset_iff.2 (h.1 ha))), card_pair hab]
+    exact even_two
+  · rw [eq_empty_of_forall_notMem (s := D) fun x hx => by
+      rcases mem_insert.1 (hD hx) with rfl | hx'
+      · exact ha hx
+      · exact ha (h.2 (mem_singleton.1 hx' ▸ hx))]
+    simp
 
 /-- If `p` holds on all of `T`, only the largest element of `T` splits it. -/
 private lemma card_filter_split_eq_one_of_forall (hT : T.Nonempty) (hf : Set.InjOn f T)
@@ -194,15 +206,7 @@ private lemma even_card_filter_split (hf : Set.InjOn f T) (ha₀ : ∃ y ∈ T, 
     by_cases hpy : p y
     · exact iff_of_true hpy ((ha' y hy hpy).trans_lt hlt)
     · exact iff_of_false hpy (not_lt.2 (hb' y hy hpy))
-  by_cases hlt : f a < f b
-  · rw [Subset.antisymm hD (insert_subset (haD.2 hlt) (singleton_subset_iff.2 (hbD.2 hlt))),
-      card_pair hab]
-    exact even_two
-  · rw [eq_empty_of_forall_notMem (s := D) fun x hx => by
-      rcases mem_insert.1 (hD hx) with rfl | h
-      · exact hlt (haD.1 hx)
-      · exact hlt (hbD.1 (mem_singleton.1 h ▸ hx))]
-    simp
+  exact even_card_of_subset_pair hab hD (haD.trans hbD.symm)
 
 /-- In a nonempty finite set `T` ordered injectively by a key `f`, say that `x` splits `T` when
 the elements of `T` below `x` are exactly the elements other than `x` satisfying `p`. There is an
@@ -335,16 +339,8 @@ private lemma even_card_filter_isAlternatingSimplex_erase [DecidableEq V] (lab :
     simp only [mem_insert, mem_singleton, not_or] at hvuw
     exact hne (card_image_iff.1 h.1 (mem_erase.2 ⟨Ne.symm hvuw.1, hu⟩)
       (mem_erase.2 ⟨Ne.symm hvuw.2, hw⟩) huw)
-  by_cases hu' : u ∈ D
-  · rw [Subset.antisymm hD (insert_subset hu' (singleton_subset_iff.2
-      (mem_filter.2 ⟨hw, huw'.1 (mem_filter.1 hu').2⟩))), card_pair hne]
-    exact even_two
-  · rw [eq_empty_of_forall_notMem (s := D) fun v hv => by
-      rcases mem_insert.1 (hD hv) with rfl | h
-      · exact hu' hv
-      · rw [mem_singleton.1 h] at hv
-        exact hu' (mem_filter.2 ⟨hu, huw'.2 (mem_filter.1 hv).2⟩)]
-    simp
+  exact even_card_of_subset_pair hne hD ⟨fun h => mem_filter.2 ⟨hw, huw'.1 (mem_filter.1 h).2⟩,
+    fun h => mem_filter.2 ⟨hu, huw'.2 (mem_filter.1 h).2⟩⟩
 
 /-- A simplex whose labels are nonzero and never opposite has an odd number of facets that are
 alternating of a given sign exactly when it is alternating itself. -/
@@ -375,7 +371,7 @@ private lemma card_filter_subset_eq_card_filter_erase {X : Finset (Finset V)} {�
   refine card_bij (fun v _ => τ.erase v) (fun v hv => ?_)
     (fun v hv w hw h => erase_injOn τ (mem_filter.1 hv).1 (mem_filter.1 hw).1 h) fun ρ hρ => ?_
   · obtain ⟨hv, hP⟩ := mem_filter.1 hv
-    exact mem_filter.2 ⟨mem_filter.2 ⟨herase v hv, by rw [card_erase_of_mem hv, hτ]; rfl, hP⟩,
+    exact mem_filter.2 ⟨mem_filter.2 ⟨herase v hv, by rw [card_erase_of_mem hv]; omega, hP⟩,
       erase_subset v τ⟩
   · obtain ⟨hρ, hsub⟩ := mem_filter.1 hρ
     obtain ⟨-, hcard, hP⟩ := mem_filter.1 hρ
