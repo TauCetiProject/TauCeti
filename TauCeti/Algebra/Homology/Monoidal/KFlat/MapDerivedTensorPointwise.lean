@@ -141,7 +141,7 @@ def mapDerivedTensorComparison : derivedTensorOfMap F ⟶ mapDerivedTensor F :=
 
 /-- The canonical comparison intertwines the two tensor counits. -/
 @[reassoc (attr := simp)]
-lemma mapDerivedTensorComparison_fac (K L : CochainComplex C ℤ) :
+lemma mapDerivedTensorComparison_fac_app_app (K L : CochainComplex C ℤ) :
     ((F.mapDerivedTensorComparison χ).app (DerivedCategory.Q.obj K)).app
       (DerivedCategory.Q.obj L) ≫ F.mapDerivedCategory.map
         (((TauCeti.derivedTensorCounit C).app K).app L) =
@@ -158,12 +158,12 @@ lemma mapDerivedTensorComparison_unique (γ : derivedTensorOfMap F ⟶ mapDerive
     (L₂ := DerivedCategory.Q) (α := mapDerivedTensorCounit F) (W₁ := quasiIso C (.up ℤ))
     (W₂ := quasiIso C (.up ℤ)) ?_
   ext K L
-  exact (hγ K L).trans (F.mapDerivedTensorComparison_fac χ K L).symm
+  exact (hγ K L).trans (F.mapDerivedTensorComparison_fac_app_app χ K L).symm
 
 /-- On a K-flat left model whose image is K-flat, the comparison is the composite of
 ordinary cochain compatibility with the two K-flat tensor computation isomorphisms. -/
 @[simp]
-lemma mapDerivedTensorComparison_app_of_isKFlat (K L : CochainComplex C ℤ) [K.IsKFlat]
+lemma mapDerivedTensorComparison_app_app_of_isKFlat (K L : CochainComplex C ℤ) [K.IsKFlat]
     [CochainComplex.IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj K)] :
     ((F.mapDerivedTensorComparison χ).app (DerivedCategory.Q.obj K)).app
       (DerivedCategory.Q.obj L) =
@@ -176,20 +176,20 @@ lemma mapDerivedTensorComparison_app_of_isKFlat (K L : CochainComplex C ℤ) [K.
         (F.mapDerivedCategoryFactors.app (K ⊗ L)).symm ≪≫
         F.mapDerivedCategory.mapIso (CochainComplex.derivedTensorKFlatLeftIso K L).symm).hom := by
   rw [← cancel_mono (F.mapDerivedCategory.map
-    (((TauCeti.derivedTensorCounit C).app K).app L)), mapDerivedTensorComparison_fac]
+    (((TauCeti.derivedTensorCounit C).app K).app L)), mapDerivedTensorComparison_fac_app_app]
   simp [Category.assoc]
 
 /-- K-flatness of the left complex and of its image makes the canonical component invertible. -/
-instance isIso_mapDerivedTensorComparison_app_of_isKFlat (K L : CochainComplex C ℤ)
+instance isIso_mapDerivedTensorComparison_app_app_of_isKFlat (K L : CochainComplex C ℤ)
     [K.IsKFlat] [CochainComplex.IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj K)] :
     IsIso (((F.mapDerivedTensorComparison χ).app (DerivedCategory.Q.obj K)).app
       (DerivedCategory.Q.obj L)) := by
-  rw [F.mapDerivedTensorComparison_app_of_isKFlat χ K L]
+  rw [F.mapDerivedTensorComparison_app_app_of_isKFlat χ K L]
   infer_instance
 
 /-- Pointwise compatible K-flat replacements suffice for the canonical derived tensor
 comparison to be an isomorphism. No functorial choice of replacements is required. -/
-theorem isIso_mapDerivedTensorComparison_of_exists_quasiIso_isKFlat
+theorem isIso_mapDerivedTensorComparison_of_exists_quasiIso_isKFlat_and_isKFlat_map
     (h : ∀ K : CochainComplex C ℤ, ∃ (P : CochainComplex C ℤ) (f : P ⟶ K),
       QuasiIso f ∧ P.IsKFlat ∧
         CochainComplex.IsKFlat ((F.mapHomologicalComplex (.up ℤ)).obj P)) :
@@ -201,7 +201,7 @@ theorem isIso_mapDerivedTensorComparison_of_exists_quasiIso_isKFlat
     let e := (asIso (DerivedCategory.Q.map f)).prod (Iso.refl (DerivedCategory.Q.obj L))
     exact (NatTrans.isIso_app_iff_of_iso
       (uncurry.map (F.mapDerivedTensorComparison χ)) e).1
-      (isIso_mapDerivedTensorComparison_app_of_isKFlat F χ P L)
+      (isIso_mapDerivedTensorComparison_app_app_of_isKFlat F χ P L)
   have hderived (X Y : DerivedCategory C) :
       IsIso (((F.mapDerivedTensorComparison χ).app X).app Y) := by
     let e := (DerivedCategory.Q.objObjPreimageIso X).prod

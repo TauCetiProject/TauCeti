@@ -54,7 +54,7 @@ def identityCochainComparison : MonoidalCategory.curriedTensor (CochainComplex C
       (((W.obj (𝟭 _)).mapIso e).app T)).symm
 
 example : IsIso ((𝟭 C).mapDerivedTensorComparison (identityCochainComparison (C := C))) := by
-  apply isIso_mapDerivedTensorComparison_of_exists_quasiIso_isKFlat
+  apply isIso_mapDerivedTensorComparison_of_exists_quasiIso_isKFlat_and_isKFlat_map
   intro K
   obtain ⟨P, f, hf, hP⟩ := K.exists_quasiIso_isKFlat_of_hasLeftResolutions
   refine ⟨P, f, hf, hP, ?_⟩
