@@ -7,10 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Sobolev.Chart
 import Mathlib.Geometry.Manifold.PartitionOfUnity
-import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
-import TauCeti.Analysis.Sobolev.W1p.Density
-import TauCeti.Analysis.Sobolev.W1p.Multiplication
 import TauCeti.Geometry.Manifold.ContMDiff.ChartCutoff
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Volume
 
@@ -109,7 +106,6 @@ private theorem exists_eLpNorm_le_mul_eLpNorm_comp (L : E ≃L[ℝ] F) (p : M)
         x ∉ (extChartAt I p).source ∩ extChartAt I p ⁻¹' (L.symm '' V) → g x = 0) →
       eLpNorm g 2 (riemannianVolume I M) ≤
         C * eLpNorm (fun y ↦ g ((extChartAt I p).symm (L.symm y))) 2 (volume.restrict V) := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   obtain ⟨C, hC, hle⟩ :=
     exists_setLIntegral_inter_preimage_le_mul_setLIntegral_comp_extChartAt_symm (I := I) (M := M)
       L p hV hK hVK hKt
@@ -215,7 +211,7 @@ private theorem norm_mgradient_le_of_forall_eq (L : E ≃L[ℝ] F) (p : M) {r C�
     rw [hev.fderiv_eq, L.comp_right_fderiv, L.apply_symm_apply]
   refine (hgrad y hy Φ ((hϑ.differentiableAt.comp _ L.differentiableAt).congr_of_eventuallyEq
     hev)).trans ?_
-  rw [hfd, gradient, LinearIsometryEquiv.norm_map, mul_assoc, mul_comm ‖(L : E →L[ℝ] F)‖]
+  rw [hfd, norm_gradient_eq_norm_fderiv, mul_assoc, mul_comm ‖(L : E →L[ℝ] F)‖]
   gcongr
   exact ContinuousLinearMap.opNorm_comp_le _ _
 
@@ -271,7 +267,6 @@ private theorem exists_norm_ofSmooth_le (L : E ≃L[ℝ] F) (p : M) {r R C₂ : 
       (∀ x ∉ (extChartAt I p).symm '' (L.symm '' Kθ), Φ x = 0) →
       (∀ y ∈ ball (L (extChartAt I p p)) r, Φ ((extChartAt I p).symm (L.symm y)) = ϑ y) →
       ‖ofSmooth Φ‖ ≤ A * ‖W1p.ofTestFunctionₗ volume ⊤ 2 ϑ‖ := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   set φ := extChartAt I p
   set y₀ := L (φ p)
   set V := ball y₀ R
@@ -343,20 +338,18 @@ private theorem exists_contDiff_eq_comp (L : E ≃L[ℝ] F) (p : M) {r : ℝ} (h
   -- Cut `χ ∘ φ⁻¹ ∘ L⁻¹` off with a bump equal to `1` on the ball of radius `r / 4`.
   let b : ContDiffBump y₀ := ⟨r / 4, r / 2, by positivity, by linarith⟩
   have hbr : closedBall y₀ (r / 2) ⊆ ball y₀ r := closedBall_subset_ball (by linarith)
-  refine ⟨fun y ↦ b y * χ (φ.symm (L.symm y)), contDiff_iff_contDiffAt.2 fun y ↦ ?_,
-    b.hasCompactSupport.mul_right, tsupport_mul_subset_left.trans b.tsupport_eq.subset,
-    fun y hy ↦ ?_⟩
-  · by_cases hy : L.symm y ∈ φ.target
-    · have hχφ : ContDiffOn ℝ ∞ (χ ∘ φ.symm) φ.target :=
-        (hχ.comp_contMDiffOn (contMDiffOn_extChartAt_symm p)).contDiffOn
-      exact b.contDiff.contDiffAt.mul ((hχφ.contDiffAt
-        ((isOpen_extChartAt_target p).mem_nhds hy)).comp y L.symm.contDiff.contDiffAt)
-    · have hy' : y ∉ tsupport b := by
-        rw [b.tsupport_eq]
-        exact fun h ↦ hy (hrt y (hbr h))
-      refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
-      filter_upwards [(isClosed_tsupport b).isOpen_compl.mem_nhds hy'] with z hz
-      simp only [image_eq_zero_of_notMem_tsupport hz, zero_mul]
+  -- Read in `E`, the bump `b ∘ L` is supported in the chart target.
+  have hbt : tsupport (fun z ↦ b (L z)) ⊆ φ.target := by
+    refine (closure_minimal (t := L ⁻¹' closedBall y₀ (r / 2)) (fun z hz ↦ ?_)
+      (isClosed_closedBall.preimage L.continuous)).trans fun z hz ↦ ?_
+    · exact b.tsupport_eq.subset (subset_tsupport _ hz)
+    · simpa using hrt (L z) (hbr hz)
+  refine ⟨fun y ↦ b y * χ (φ.symm (L.symm y)), ?_, b.hasCompactSupport.mul_right,
+    tsupport_mul_subset_left.trans b.tsupport_eq.subset, fun y hy ↦ ?_⟩
+  · convert ((b.contDiff.comp L.contDiff).mul_comp_extChartAt_symm hbt hχ).comp
+      L.symm.contDiff using 1
+    ext y
+    simp only [Function.comp_apply, L.apply_symm_apply, φ]
   · by_cases hyb : y ∈ closedBall y₀ (r / 4)
     · simp only [b.one_of_mem_closedBall hyb, one_mul]
     · -- Off the ball of radius `r / 4`, the point `φ⁻¹ (L⁻¹ y)` is outside the support of `χ`.
@@ -406,7 +399,6 @@ private theorem exists_ball_subset_and_norm_mgradient_le (L : E ≃L[ℝ] F) (p 
         DifferentiableAt ℝ (g ∘ (extChartAt I p).symm) (L.symm y) →
         ‖mgradient I g ((extChartAt I p).symm (L.symm y))‖ ≤
           C₂ * ‖fderiv ℝ (g ∘ (extChartAt I p).symm) (L.symm y)‖ := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   set φ := extChartAt I p
   obtain ⟨C₂, hC₂, hgradp⟩ :=
     exists_eventually_norm_mgradient_le_mul_norm_fderiv_comp_extChartAt_symm (I := I) (M := M) p
@@ -538,7 +530,6 @@ private theorem exists_isOpen_forall_exists_toLp_ae_eq_mul (L : E ≃L[ℝ] F)
       fun y ↦ f ((extChartAt I p).symm (L.symm y))) :
     ∃ N : Set M, IsOpen N ∧ p ∈ N ∧ ∀ χ : M → ℝ, ContMDiff I 𝓘(ℝ) ∞ χ → tsupport χ ⊆ N →
       ∃ w : SobolevH1 I M, toLp w =ᵐ[riemannianVolume I M] fun x ↦ χ x * f x := by
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   set φ := extChartAt I p
   set y₀ := L (φ p)
   -- A coordinate ball of radius `r` inside `Ω` on which the inverse chart is defined and
@@ -623,7 +614,6 @@ theorem exists_toLp_eq_iff_forall_exists_w1p (L : E ≃L[ℝ] F)
         fun y ↦ f ((extChartAt I p).symm (L.symm y)) := by
   refine ⟨?_, exists_toLp_eq_of_forall_exists_w1p L f⟩
   rintro ⟨w, rfl⟩ p
-  have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
   obtain ⟨Ω, hpΩ, -, T, -, hT⟩ := exists_continuousLinearMap_w1p_extChartAt (I := I) (M := M) p L
   exact ⟨Ω, hpΩ, T w, hT w⟩
 

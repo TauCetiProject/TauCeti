@@ -27,6 +27,8 @@ space to a manifold.
 
 ## Main results
 
+* `ContDiff.mul_comp_extChartAt_symm`: a `C^n` function supported in the chart target, times the
+  coordinate expression of a `C^n` function, is `C^n`.
 * `ContDiffBump.contDiff_mul_comp_extChartAt_symm`: the cut-off coordinate expression is `C¹`.
 * `ContDiffBump.norm_fderiv_mul_comp_extChartAt_symm_le`: in the chart target its derivative is
   bounded by the derivative of the coordinate expression plus `G |u|`, where `G` bounds the
@@ -55,6 +57,29 @@ public section
 open Function Metric Set
 open scoped Manifold
 
+namespace ContDiff
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n : WithTop ℕ∞} {c : M} {u : M → ℝ}
+
+/-- A `C^n` function on the model space supported in the chart target, times the coordinate
+expression of a `C^n` function, is a `C^n` function on the model space. -/
+theorem mul_comp_extChartAt_symm [I.Boundaryless] [IsManifold I n M] {ψ : E → ℝ}
+    (hψ : ContDiff ℝ n ψ) (hψt : tsupport ψ ⊆ (extChartAt I c).target)
+    (hu : ContMDiff I 𝓘(ℝ) n u) :
+    ContDiff ℝ n fun y ↦ ψ y * u ((extChartAt I c).symm y) := by
+  refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
+  by_cases hy : y ∈ (extChartAt I c).target
+  · exact hψ.contDiffAt.mul ((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn
+      |>.contDiffAt ((isOpen_extChartAt_target c).mem_nhds hy))
+  · -- Off the chart target, `ψ` vanishes near `y`.
+    refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
+    filter_upwards [(isClosed_tsupport ψ).isOpen_compl.mem_nhds fun h ↦ hy (hψt h)] with z hz
+    rw [image_eq_zero_of_notMem_tsupport hz, zero_mul]
+
+end ContDiff
+
 namespace ContDiffBump
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [HasContDiffBump E]
@@ -67,18 +92,8 @@ expression of a `C¹` function, is a `C¹` function on the model space. -/
 theorem contDiff_mul_comp_extChartAt_symm [I.Boundaryless] [IsManifold I 1 M]
     (hb : closedBall (extChartAt I c c) b.rOut ⊆ (extChartAt I c).target)
     (hu : ContMDiff I 𝓘(ℝ) 1 u) :
-    ContDiff ℝ 1 fun y ↦ b y * u ((extChartAt I c).symm y) := by
-  refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-  by_cases hy : y ∈ (extChartAt I c).target
-  · exact b.contDiffAt.mul ((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn
-      |>.contDiffAt ((isOpen_extChartAt_target c).mem_nhds hy))
-  · -- Off the chart target, the bump vanishes near `y`.
-    have hy' : y ∉ tsupport b := by
-      rw [b.tsupport_eq]
-      exact fun h ↦ hy (hb h)
-    refine (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq ?_
-    filter_upwards [(isClosed_tsupport b).isOpen_compl.mem_nhds hy'] with z hz
-    rw [image_eq_zero_of_notMem_tsupport hz, zero_mul]
+    ContDiff ℝ 1 fun y ↦ b y * u ((extChartAt I c).symm y) :=
+  b.contDiff.mul_comp_extChartAt_symm (b.tsupport_eq.trans_subset hb) hu
 
 /-- The derivative of the cut-off coordinate expression at a point of the chart target is bounded
 by the derivative of the coordinate expression plus `G |u|`, where `G` bounds the derivative of
