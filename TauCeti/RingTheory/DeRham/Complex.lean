@@ -66,17 +66,6 @@ theorem complex_X (n : ℕ) : (complex A B).X n = ModuleCat.of A (Forms A B n) :
 theorem complex_d (n : ℕ) : (complex A B).d n (n + 1) = ModuleCat.ofHom (d A B n) := by
   simp only [complex, CochainComplex.of_d]
 
-/-- Pointwise evaluation of the differential of `complex A B` from degree `n` to `n + 1`. -/
-theorem complex_d_apply (n : ℕ) (ω : Forms A B n) :
-    (complex A B).d n (n + 1) ω = d A B n ω := by
-  rw [complex_d]
-  exact ModuleCat.ofHom_apply (d A B n) ω
-
-/-- Differentials of `complex A B` vanish outside adjacent degrees `i ↦ i + 1`. -/
-theorem complex_d_ne {i j : ℕ} (h : i + 1 ≠ j) : (complex A B).d i j = 0 := by
-  apply CochainComplex.of_d_ne
-  exact h
-
 end
 
 end TauCeti.DeRham

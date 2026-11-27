@@ -108,12 +108,6 @@ section Elementary
 
 variable {A}
 
-/-- An elementary form with zero coefficient vanishes. -/
-@[simp]
-theorem elementary_coeff_zero (v : Fin n → B) :
-    elementary A (0 : B) v = 0 := by
-  rw [elementary_def, zero_smul]
-
 /-- An elementary form with unit coefficient is a pure exterior product of differentials. -/
 theorem elementary_coeff_one (v : Fin n → B) :
     elementary A (1 : B) v = exteriorPower.ιMulti B n fun i => D A B (v i) := by
@@ -141,22 +135,10 @@ theorem elementary_eq_zero_of_eq (c : B) (v : Fin n → B) {i j : Fin n}
   rw [elementary_def,
     (exteriorPower.ιMulti B n).map_eq_zero_of_eq _ (congrArg (D A B) hv) hij, smul_zero]
 
-/-- In degree `0`, `exteriorPower.zeroEquiv` maps an elementary form to its coefficient. -/
-@[simp]
-theorem zeroEquiv_elementary (c : B) (v : Fin 0 → B) :
-    exteriorPower.zeroEquiv B Ω[B⁄A] (elementary A c v) = c := by
-  simp [elementary_def]
-
 /-- In degree `0`, `(exteriorPower.zeroEquiv B Ω[B⁄A]).symm c` is an elementary form. -/
 theorem elementary_zero_eq_zeroEquiv_symm (c : B) (v : Fin 0 → B) :
     elementary A c v = (exteriorPower.zeroEquiv B Ω[B⁄A]).symm c := by
   apply (exteriorPower.zeroEquiv B Ω[B⁄A]).injective
-  simp
-
-/-- In degree `1`, `exteriorPower.oneEquiv` maps an elementary form `c • dv₀` to `c • D (v 0)`. -/
-@[simp]
-theorem oneEquiv_elementary (c : B) (v : Fin 1 → B) :
-    exteriorPower.oneEquiv B Ω[B⁄A] (elementary A c v) = c • D A B (v 0) := by
   simp [elementary_def]
 
 /-- The wedge product of two elementary differential forms multiplies their coefficients and
@@ -316,16 +298,16 @@ private lemma symbolRelations_cons_algebraMap (c : B) (a : A) (w : Fin n → B) 
 theorem symbolRelations_le_ker : symbolRelations A B n ≤ LinearMap.ker (symbolMap A B n) := by
   refine symbolRelations_le (fun c e v => ?_) (fun a c v => ?_) (fun c v i x y => ?_)
     (fun c v i x y => ?_) (fun c v i a => ?_) (fun c v i j hv hij => ?_) <;>
-    simp only [LinearMap.mem_ker, map_sub, map_smul, symbolMap_sym, elementary_def]
-  · rw [add_smul, sub_sub, sub_self]
-  · rw [smul_assoc, sub_self]
-  · simp only [apply_update (fun _ => D A B), map_add, AlternatingMap.map_update_add, smul_add,
+    simp only [LinearMap.mem_ker, map_sub, map_smul, symbolMap_sym]
+  · rw [elementary_coeff_add, sub_sub, sub_self]
+  · rw [base_smul_elementary, sub_self]
+  · simp only [elementary_def, apply_update (fun _ => D A B), map_add,
+      AlternatingMap.map_update_add, smul_add, sub_sub, sub_self]
+  · simp only [elementary_def, apply_update (fun _ => D A B), Derivation.leibniz,
+      AlternatingMap.map_update_add, AlternatingMap.map_update_smul, smul_add, mul_smul,
       sub_sub, sub_self]
-  · simp only [apply_update (fun _ => D A B), Derivation.leibniz, AlternatingMap.map_update_add,
-      AlternatingMap.map_update_smul, smul_add, mul_smul, sub_sub, sub_self]
-  · simp [apply_update (fun _ => D A B)]
-  · rw [AlternatingMap.map_eq_zero_of_eq _ (fun k => D A B (v k)) (congrArg (D A B) hv) hij,
-      smul_zero]
+  · simp [elementary_def, apply_update (fun _ => D A B)]
+  · exact elementary_eq_zero_of_eq c v hij hv
 
 variable (A B n)
 
@@ -362,20 +344,6 @@ theorem induction_elementary {A B : Type*} [CommRing A] [CommRing B] [Algebra A 
   | single_add p a s _ _ ih =>
     rw [map_add, symbolMap_single, base_smul_elementary]
     exact add _ _ (elem (a • p.1) p.2) ih
-
-/-- Two additive homomorphisms out of `Forms A B n` agree once they agree on every elementary
-form `c • dv₀ ∧ ⋯ ∧ dvₙ₋₁`. -/
-theorem addMonoidHom_eq_of_elementary {A B M : Type*} [CommRing A] [CommRing B] [Algebra A B]
-    [AddZeroClass M] {n : ℕ} {F G : Type*}
-    [FunLike F (Forms A B n) M] [AddMonoidHomClass F (Forms A B n) M]
-    [FunLike G (Forms A B n) M] [AddMonoidHomClass G (Forms A B n) M]
-    (φ : F) (ψ : G)
-    (h : ∀ (c : B) (v : Fin n → B), φ (elementary A c v) = ψ (elementary A c v))
-    (ω : Forms A B n) : φ ω = ψ ω := by
-  induction ω using induction_elementary with
-  | zero => simp only [map_zero]
-  | add ω₁ ω₂ h₁ h₂ => simp only [map_add, h₁, h₂]
-  | elem c v => exact h c v
 
 end
 
@@ -734,13 +702,5 @@ variable {A B n}
 public theorem symbolQuotientEquiv_mk (s : Symbols A B n) :
     symbolQuotientEquiv A B n (Submodule.Quotient.mk s) = symbolMap A B n s := by
   simp [symbolQuotientEquiv]
-
-/-- `(symbolQuotientEquiv A B n).symm` sends an elementary form to the class of its symbol. -/
-@[simp]
-public theorem symbolQuotientEquiv_symm_elementary (c : B) (v : Fin n → B) :
-    (symbolQuotientEquiv A B n).symm (elementary A c v) =
-      Submodule.Quotient.mk (sym A c v) := by
-  apply (symbolQuotientEquiv A B n).injective
-  simp
 
 end TauCeti.DeRham

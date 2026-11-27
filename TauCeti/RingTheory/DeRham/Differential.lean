@@ -148,7 +148,7 @@ theorem d_comp_d : d A B (n + 1) ∘ₗ d A B n = 0 := by
   refine forms_hom_ext fun c v => ?_
   have h : (ιMulti B (n + 1) (Fin.cons (D A B c) fun i => D A B (v i)) :
       Forms A B (n + 1)) = elementary A 1 (Fin.cons c v) := by
-    rw [elementary_def, one_smul]
+    rw [elementary_coeff_one]
     exact congrArg _ (Fin.comp_cons (D A B) c v).symm
   simp only [LinearMap.comp_apply, LinearMap.zero_apply, d_elementary, h,
     Derivation.map_one_eq_zero]
@@ -164,10 +164,8 @@ theorem d_d (ω : Forms A B n) : d A B (n + 1) (d A B n ω) = 0 :=
 theorem oneEquiv_d_zeroEquiv_symm (b : B) :
     exteriorPower.oneEquiv B Ω[B⁄A] (d A B 0 ((exteriorPower.zeroEquiv B Ω[B⁄A]).symm b)) =
       D A B b := by
-  have h : (exteriorPower.zeroEquiv B Ω[B⁄A]).symm b = elementary A b ![] := by
-    rw [LinearEquiv.symm_apply_eq, elementary_def, map_smul, exteriorPower.zeroEquiv_ιMulti,
-      smul_eq_mul, mul_one]
-  rw [h, d_elementary, exteriorPower.oneEquiv_ιMulti, Fin.cons_zero]
+  rw [← elementary_zero_eq_zeroEquiv_symm b ![], d_elementary, exteriorPower.oneEquiv_ιMulti,
+    Fin.cons_zero]
 
 /-- The degree-`0` de Rham differential annihilates constants from the base ring `A`. -/
 @[simp]
