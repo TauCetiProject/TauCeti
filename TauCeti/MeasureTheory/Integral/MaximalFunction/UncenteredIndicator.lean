@@ -8,11 +8,13 @@ module
 public import TauCeti.MeasureTheory.Integral.MaximalFunction.Indicator
 public import TauCeti.MeasureTheory.Integral.UncenteredMaximalFunction
 -- The following are imported privately: they supply `TauCeti.setLAverage_enorm_indicator_one`,
--- `MeasureTheory.Measure.addHaar_real_ball_div_addHaar_real_ball` and
--- `Metric.measureReal_ball_pos`, used only inside proofs.
+-- `MeasureTheory.Measure.addHaar_real_ball_div_addHaar_real_ball`,
+-- `Metric.measureReal_ball_pos` and `MeasureTheory.measure_inter_div_le_one`, used only inside
+-- proofs.
 import TauCeti.MeasureTheory.Integral.Average.Indicator
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.OuterMeasure.Basic
 
 /-!
 # The uncentred maximal function of the indicator of an interval or a ball
@@ -139,6 +141,13 @@ section Ball
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
   [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
+/-- The unit ball fills the proportion `r⁻ⁿ` of the measure of any ball of radius `r > 0`. -/
+private theorem addHaar_ball_zero_one_div_addHaar_ball (y : E) {r : ℝ} (hr : 0 < r) :
+    μ (ball (0 : E) 1) / μ (ball y r) = ENNReal.ofReal ((r ^ finrank ℝ E)⁻¹) := by
+  rw [← ofReal_measureReal measure_ball_lt_top.ne, ← ofReal_measureReal measure_ball_lt_top.ne,
+    ← ENNReal.ofReal_div_of_pos (measureReal_ball_pos μ y hr),
+    μ.addHaar_real_ball_div_addHaar_real_ball y 0 hr one_pos, one_div_pow, one_div]
+
 /-- Away from the unit ball, the centred maximal function of its indicator is at most
 `(‖x‖ - 1)⁻ⁿ`: a ball about `x` meets the unit ball only if its radius `r` exceeds `‖x‖ - 1`, and
 then the unit ball fills at most the proportion `r⁻ⁿ` of it. -/
@@ -160,11 +169,7 @@ theorem maximalFunction_indicator_ball_zero_one_le {x : E} (hx : 1 < ‖x‖) :
   · calc μ (ball 0 1 ∩ ball x r) / μ (ball x r) ≤ μ (ball (0 : E) 1) / μ (ball x r) := by
           gcongr
           exact inter_subset_left
-      _ = ENNReal.ofReal ((r ^ finrank ℝ E)⁻¹) := by
-          rw [← ofReal_measureReal measure_ball_lt_top.ne,
-            ← ofReal_measureReal measure_ball_lt_top.ne,
-            ← ENNReal.ofReal_div_of_pos (measureReal_ball_pos μ x hr),
-            μ.addHaar_real_ball_div_addHaar_real_ball x 0 hr one_pos, one_div_pow, one_div]
+      _ = ENNReal.ofReal ((r ^ finrank ℝ E)⁻¹) := addHaar_ball_zero_one_div_addHaar_ball μ x hr
       _ ≤ ENNReal.ofReal (((‖x‖ - 1) ^ finrank ℝ E)⁻¹) := by
           gcongr
 
@@ -186,9 +191,7 @@ theorem ofReal_inv_pow_le_uncenteredMaximalFunction_indicator_ball_zero_one (x :
   refine le_trans ?_ (setLAverage_le_uncenteredMaximalFunction μ _ hmem)
   have hr : 0 < ‖x‖ / 2 + 1 := by positivity
   rw [setLAverage_enorm_indicator_one measurableSet_ball, inter_eq_left.2 hsub,
-    ← ofReal_measureReal measure_ball_lt_top.ne, ← ofReal_measureReal measure_ball_lt_top.ne,
-    ← ENNReal.ofReal_div_of_pos (measureReal_ball_pos μ _ hr),
-    μ.addHaar_real_ball_div_addHaar_real_ball _ 0 hr one_pos, one_div_pow, one_div]
+    addHaar_ball_zero_one_div_addHaar_ball μ _ hr]
 
 /-- **The constant `2ⁿ` comparing the uncentred and centred maximal functions is sharp.** On a
 real normed space of dimension `n` with an additive Haar measure, if the uncentred maximal
@@ -204,7 +207,7 @@ theorem two_pow_finrank_le_of_uncenteredMaximalFunction_le_mul_maximalFunction {
     have hM : maximalFunction μ ((ball (0 : E) 1).indicator (1 : E → ℝ)) 0 ≤ 1 :=
       maximalFunction_le fun r _ => by
         rw [setLAverage_enorm_indicator_one measurableSet_ball]
-        exact ENNReal.div_le_of_le_mul (by rw [one_mul]; exact measure_mono inter_subset_right)
+        exact measure_inter_div_le_one _ _
     have hcM : c * maximalFunction μ ((ball (0 : E) 1).indicator (1 : E → ℝ)) 0 ≤ c * 1 := by
       gcongr
     have h0 := (ofReal_inv_pow_le_uncenteredMaximalFunction_indicator_ball_zero_one μ 0).trans

@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.MaximalFunction
--- `TauCeti.MeasureTheory.Integral.Average.Indicator` is imported privately: it supplies
--- `TauCeti.setLAverage_enorm_indicator_one`, used only inside proofs.
+-- `TauCeti.MeasureTheory.Integral.Average.Indicator` and `TauCeti.MeasureTheory.OuterMeasure.Basic`
+-- are imported privately: they supply `TauCeti.setLAverage_enorm_indicator_one` and
+-- `MeasureTheory.measure_inter_div_le_one`, used only inside proofs.
 import TauCeti.MeasureTheory.Integral.Average.Indicator
+import TauCeti.MeasureTheory.OuterMeasure.Basic
 -- `Mathlib.Analysis.SpecialFunctions.NonIntegrable` is imported privately: it supplies
 -- `not_integrableOn_Ioi_inv`, used only inside the proof that the maximal function of the
 -- indicator is not integrable.
@@ -64,7 +66,7 @@ theorem maximalFunction_indicator_Icc_of_mem_Ioo {x : ℝ} (hx : x ∈ Ioo a b) 
     maximalFunction volume ((Icc a b).indicator (1 : ℝ → ℝ)) x = 1 := by
   refine le_antisymm (maximalFunction_le fun r _ => ?_) ?_
   · rw [setLAverage_enorm_indicator_one measurableSet_Icc]
-    exact ENNReal.div_le_of_le_mul (by rw [one_mul]; exact measure_mono inter_subset_right)
+    exact measure_inter_div_le_one _ _
   · set r := min (x - a) (b - x)
     have hr : 0 < r := lt_min (sub_pos.2 hx.1) (sub_pos.2 hx.2)
     have hsub : ball x r ⊆ Icc a b := by
