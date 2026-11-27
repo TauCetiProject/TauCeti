@@ -188,12 +188,7 @@ is bijective, so every nonzero covector is characteristic for every operator `Γ
 theorem sectionClassicalCharacteristicSet_of_finrank_ne (h : finrank ℂ V ≠ finrank ℂ W) :
     sectionClassicalCharacteristicSet m P = {p | p.snd ≠ 0} := by
   ext p
-  refine and_iff_left_of_imp fun _ hbij ↦ h ?_
-  rw [← ((trivializationAt V E p.proj).continuousLinearEquivAt ℂ p.proj
-      (FiberBundle.mem_baseSet_trivializationAt V E p.proj)).toLinearEquiv.finrank_eq,
-    ← ((trivializationAt W F p.proj).continuousLinearEquivAt ℂ p.proj
-      (FiberBundle.mem_baseSet_trivializationAt W F p.proj)).toLinearEquiv.finrank_eq]
-  exact (LinearEquiv.ofBijective _ hbij).finrank_eq
+  exact and_iff_left_of_imp fun _ hbij ↦ h (finrank_eq_of_bijective_fiber hbij)
 
 /-- **Operators of lower order are characteristic everywhere.** Unless both bundles have rank
 zero, an operator of order `m - 1` is characteristic in order `m` at every nonzero covector: its
@@ -202,20 +197,10 @@ theorem sectionClassicalCharacteristicSet_of_mem_sub_one (hVW : Nontrivial V ∨
     (hP : P ∈ sectionClassicalPseudodifferentialOperators (m - 1)) :
     sectionClassicalCharacteristicSet m P = {p | p.snd ≠ 0} := by
   ext p
-  refine and_iff_left_of_imp fun _ ↦ ?_
-  rw [sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one hP]
-  -- The zero map `E_x → F_x` is bijective only when both fibres are zero.
-  rintro ⟨hinj, hsurj⟩
-  have hE : Subsingleton (E p.proj) := ⟨fun u v ↦ hinj (by simp)⟩
-  have hF : Subsingleton (F p.proj) := ⟨fun u v ↦ by
-    obtain ⟨u', rfl⟩ := hsurj u
-    obtain ⟨v', rfl⟩ := hsurj v
-    simp⟩
-  rcases hVW with hV | hW
-  · exact not_subsingleton V ((trivializationAt V E p.proj).continuousLinearEquivAt ℂ p.proj
-      (FiberBundle.mem_baseSet_trivializationAt V E p.proj)).symm.toEquiv.subsingleton
-  · exact not_subsingleton W ((trivializationAt W F p.proj).continuousLinearEquivAt ℂ p.proj
-      (FiberBundle.mem_baseSet_trivializationAt W F p.proj)).symm.toEquiv.subsingleton
+  refine and_iff_left_of_imp fun _ hbij ↦ ?_
+  rw [sectionClassicalPrincipalSymbol_eq_zero_of_mem_sub_one hP] at hbij
+  obtain ⟨hV, hW⟩ := subsingleton_of_bijective_zero_fiber (V := V) (W := W) p.proj hbij
+  exact hVW.elim (fun _ ↦ not_subsingleton V hV) fun _ ↦ not_subsingleton W hW
 
 /-! ### Compositions -/
 

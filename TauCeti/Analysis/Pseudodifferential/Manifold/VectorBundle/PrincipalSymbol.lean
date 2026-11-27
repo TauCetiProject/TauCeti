@@ -96,6 +96,9 @@ are no nonzero covectors, every operator is elliptic and the ranks are unconstra
   `f`, evaluated at `x`.
 * `TauCeti.isSectionClassicalEllipticAt_add_iff`: ellipticity only depends on the principal symbol.
 * `TauCeti.isSectionClassicalEllipticAt_smul_iff`: ellipticity is unchanged by nonzero scalars.
+* `TauCeti.finrank_eq_of_bijective_fiber`, `TauCeti.subsingleton_of_bijective_zero_fiber`: a
+  bijective linear map between the fibres forces equal ranks, and a bijective zero map forces
+  trivial model fibres.
 * `TauCeti.IsSectionClassicalEllipticAt.finrank_eq`: in positive dimension, ellipticity at a
   point forces `rank E = rank F`.
 * `TauCeti.IsSectionClassicalEllipticAt.mem_or_subsingleton`: in positive dimension, ellipticity at
@@ -717,17 +720,38 @@ theorem isSectionClassicalElliptic_smul_iff {c : ℂ} (hc : c ≠ 0) :
     IsSectionClassicalElliptic m (c • P) ↔ IsSectionClassicalElliptic m P :=
   forall_congr' fun _ ↦ isSectionClassicalEllipticAt_smul_iff hc
 
+omit [T2Space M] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [∀ x, Module ℝ (E x)]
+  [VectorBundle ℝ V E] [∀ x, Module ℝ (F x)] [VectorBundle ℝ W F] in
+/-- A bijective linear map between the fibres `E_x → F_x` forces the model fibres to have the same
+rank. -/
+theorem finrank_eq_of_bijective_fiber {x : M} {f : E x →ₗ[ℂ] F x} (hf : Function.Bijective f) :
+    finrank ℂ V = finrank ℂ W := by
+  rw [← VectorBundle.finrank_eq ℂ V E x, ← VectorBundle.finrank_eq ℂ W F x]
+  exact (LinearEquiv.ofBijective f hf).finrank_eq
+
+omit [T2Space M] [FiniteDimensional ℂ V] [FiniteDimensional ℂ W] [∀ x, Module ℝ (E x)]
+  [VectorBundle ℝ V E] [∀ x, Module ℝ (F x)] [VectorBundle ℝ W F] in
+/-- If the zero map between the fibres `E_x → F_x` is bijective, both fibres are zero, and so are
+the model fibres. -/
+theorem subsingleton_of_bijective_zero_fiber (x : M)
+    (h : Function.Bijective (0 : E x →ₗ[ℂ] F x)) : Subsingleton V ∧ Subsingleton W := by
+  have hE : Subsingleton (E x) := ⟨fun u v ↦ h.1 (by simp)⟩
+  have hF : Subsingleton (F x) := ⟨fun u v ↦ by
+    obtain ⟨u', rfl⟩ := h.2 u
+    obtain ⟨v', rfl⟩ := h.2 v
+    simp⟩
+  exact ⟨((trivializationAt V E x).continuousLinearEquivAt ℂ x
+      (FiberBundle.mem_baseSet_trivializationAt V E x)).symm.toEquiv.subsingleton,
+    ((trivializationAt W F x).continuousLinearEquivAt ℂ x
+      (FiberBundle.mem_baseSet_trivializationAt W F x)).symm.toEquiv.subsingleton⟩
+
 /-- **Ellipticity forces equal ranks.** Over a manifold of positive dimension, if `P : Γ(E) → Γ(F)`
 is elliptic at some point, then `E` and `F` have the same rank: the principal symbol at a nonzero
 covector is a linear isomorphism between the fibres. -/
 theorem IsSectionClassicalEllipticAt.finrank_eq [Nontrivial (CoordinateSpace n)] {x : M}
     (hPx : IsSectionClassicalEllipticAt m P x) : finrank ℂ V = finrank ℂ W := by
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
-  rw [← ((trivializationAt V E x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt V E x)).toLinearEquiv.finrank_eq,
-    ← ((trivializationAt W F x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt W F x)).toLinearEquiv.finrank_eq]
-  exact (LinearEquiv.ofBijective _ (hPx _ hξ)).finrank_eq
+  exact finrank_eq_of_bijective_fiber (hPx _ hξ)
 
 /-- **Ellipticity forces the order.** Over a manifold of positive dimension, an operator between
 bundles elliptic at some point is a classical pseudodifferential operator of order `m` unless both
@@ -740,16 +764,7 @@ theorem IsSectionClassicalEllipticAt.mem_or_subsingleton [Nontrivial (Coordinate
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : TangentSpace 𝓘(ℝ, CoordinateSpace n) x →L[ℝ] ℝ)
   have h0 := isSectionClassicalEllipticAt_iff.1 hPx _ hξ
   rw [sectionClassicalPrincipalSymbol_of_notMem hP] at h0
-  -- The zero map `E_x → F_x` is bijective, so both fibres are trivial.
-  have hE : Subsingleton (E x) := ⟨fun u v ↦ h0.1 (by simp)⟩
-  have hF : Subsingleton (F x) := ⟨fun u v ↦ by
-    obtain ⟨u', rfl⟩ := h0.2 u
-    obtain ⟨v', rfl⟩ := h0.2 v
-    simp⟩
-  exact ⟨((trivializationAt V E x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt V E x)).symm.toEquiv.subsingleton,
-    ((trivializationAt W F x).continuousLinearEquivAt ℂ x
-      (FiberBundle.mem_baseSet_trivializationAt W F x)).symm.toEquiv.subsingleton⟩
+  exact subsingleton_of_bijective_zero_fiber x h0
 
 /-- In dimension zero every covector vanishes, so every operator between bundles is elliptic at
 every point, whatever the ranks of the bundles. -/
