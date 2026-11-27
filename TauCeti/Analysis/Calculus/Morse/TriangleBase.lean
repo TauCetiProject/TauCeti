@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Calculus.Morse.IntervalBase
 public import TauCeti.Analysis.Calculus.Morse.Prod
 import Mathlib.Analysis.Calculus.Deriv.Prod
+import Mathlib.Analysis.Calculus.Deriv.Shift
+import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 
 /-!
 # The ordered-triangle base of a composition of continuations
@@ -63,11 +66,17 @@ states its own hypothesis on `C`.
 * `TauCeti.triangleBasePotential`, `TauCeti.gradient_triangleBasePotential`: the potential and
   its gradient.
 * `TauCeti.gradient_triangleBasePotential_eq_zero_iff`: the zeros of the field in the triangle.
+* `TauCeti.add_pos_of_mem_triangleBase_of_gradient_ne_zero`: away from the vertices the base speed
+  `u (1 - u²) + v (1 - v²)` is positive on the triangle.
 * `TauCeti.morseIndex_triangleBasePotential_toLp_zero_zero`,
   `TauCeti.morseIndex_triangleBasePotential_toLp_one_zero`,
   `TauCeti.morseIndex_triangleBasePotential_toLp_one_one`: the vertex indices `2`, `1`, `0`.
+* `TauCeti.isCompact_triangleBase`: the triangle is compact.
 * `TauCeti.triangleBaseFlow`, `TauCeti.isIntegralCurve_triangleBaseFlow`,
   `TauCeti.triangleBaseFlow_add`: the flow.
+* `TauCeti.eq_of_isIntegralCurve_triangleBasePotential`,
+  `TauCeti.eq_triangleBaseFlow_of_isIntegralCurve`: trajectories are determined by one of their
+  points, and those through the square `[-1, 1]²` are flow lines.
 * `TauCeti.mapsTo_triangleBaseFlow`, `TauCeti.snd_triangleBaseFlow_eq_zero_iff`,
   `TauCeti.fst_triangleBaseFlow_eq_one_iff`, `TauCeti.fst_triangleBaseFlow_eq_snd_iff`: invariance
   of the triangle and of its faces.
@@ -165,6 +174,25 @@ theorem mem_triangleBase {z : WithLp 2 (ℝ × ℝ)} :
     z ∈ triangleBase ↔ 0 ≤ z.snd ∧ z.snd ≤ z.fst ∧ z.fst ≤ 1 :=
   Iff.rfl
 
+/-- The triangle is compact. -/
+theorem isCompact_triangleBase : IsCompact triangleBase := by
+  set S := {p : ℝ × ℝ | 0 ≤ p.2 ∧ p.2 ≤ p.1 ∧ p.1 ≤ 1}
+  have hS : IsCompact S :=
+    (isCompact_Icc.prod isCompact_Icc).of_isClosed_subset
+      ((isClosed_le continuous_const continuous_snd).inter
+        ((isClosed_le continuous_snd continuous_fst).inter
+          (isClosed_le continuous_fst continuous_const)))
+      fun p hp ↦ ⟨⟨hp.1.trans hp.2.1, hp.2.2⟩, ⟨hp.1, hp.2.1.trans hp.2.2⟩⟩
+  -- The triangle is the image of `S` under the continuous map `toLp 2 : ℝ × ℝ → WithLp 2 (ℝ × ℝ)`.
+  have himage : triangleBase = WithLp.toLp 2 '' S := by
+    ext z
+    refine ⟨fun hz ↦ ⟨WithLp.ofLp z, by simpa [S, mem_triangleBase] using hz, WithLp.toLp_ofLp 2 z⟩,
+      ?_⟩
+    rintro ⟨p, hp, rfl⟩
+    simpa [S, mem_triangleBase] using hp
+  rw [himage]
+  exact hS.image (WithLp.prod_continuous_toLp 2 ℝ ℝ)
+
 private theorem fst_mem_Icc_of_mem_triangleBase {z : WithLp 2 (ℝ × ℝ)} (hz : z ∈ triangleBase) :
     z.fst ∈ Icc 0 1 :=
   ⟨hz.1.trans hz.2.1, hz.2.2⟩
@@ -196,6 +224,22 @@ theorem gradient_triangleBasePotential_eq_zero_iff (hC : C ≠ 0) {z : WithLp 2 
     · exact Or.inr (Or.inl ⟨hu, hv⟩)
     · exact Or.inr (Or.inr ⟨hu, hv⟩)
   · rintro (⟨hu, hv⟩ | ⟨hu, hv⟩ | ⟨hu, hv⟩) <;> simp [hu, hv]
+
+/-- **The base speed is positive on the triangle away from its vertices.** On the triangle, the sum
+`u (1 - u²) + v (1 - v²)` of the coordinates of the field, divided by `C`, is positive away from the
+zeros of the field. -/
+theorem add_pos_of_mem_triangleBase_of_gradient_ne_zero {z : WithLp 2 (ℝ × ℝ)}
+    (hz : z ∈ triangleBase) (hgrad : ∇ (triangleBasePotential C) z ≠ 0) :
+    0 < z.fst * (1 - z.fst ^ 2) + z.snd * (1 - z.snd ^ 2) := by
+  obtain ⟨hv, hvu, hu⟩ := mem_triangleBase.1 hz
+  have h₁ : 0 ≤ z.fst * (1 - z.fst ^ 2) := mul_nonneg (hv.trans hvu) (by nlinarith)
+  have h₂ : 0 ≤ z.snd * (1 - z.snd ^ 2) := mul_nonneg hv (by nlinarith)
+  -- If the base speed vanished, so would both coordinates of the gradient.
+  refine lt_of_le_of_ne (add_nonneg h₁ h₂) fun h ↦ hgrad ?_
+  have e₁ : z.fst * (1 - z.fst ^ 2) = 0 := by linarith
+  have e₂ : z.snd * (1 - z.snd ^ 2) = 0 := by linarith
+  rw [gradient_triangleBasePotential, WithLp.toLp_eq_zero, Prod.mk_eq_zero]
+  exact ⟨by linear_combination (-C) * e₁, by linear_combination (-C) * e₂⟩
 
 /-- For `C ≠ 0` the vertex `(0, 0)`, the source when `C > 0`, is a nondegenerate critical point. -/
 theorem isNondegenerateCriticalPoint_triangleBasePotential_toLp_zero_zero (hC : C ≠ 0) :
@@ -298,6 +342,25 @@ theorem isIntegralCurve_triangleBaseFlow (C : ℝ) {z : WithLp 2 (ℝ × ℝ)} (
   unfold triangleBaseFlow triangleBasePotential
   exact (isIntegralCurve_intervalBaseFlow C hu).separatedSum (isIntegralCurve_intervalBaseFlow C hv)
     (fun _ ↦ hd _) (fun _ ↦ hd _)
+
+/-- **Uniqueness of trajectories.** Two trajectories of the triangle base field on the plane
+which agree at one time agree at all times. -/
+theorem eq_of_isIntegralCurve_triangleBasePotential {γ γ' : ℝ → WithLp 2 (ℝ × ℝ)}
+    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z))
+    (hγ' : IsIntegralCurve γ' (fun _ z ↦ -∇ (triangleBasePotential C) z)) {t₀ : ℝ}
+    (h : γ t₀ = γ' t₀) : γ = γ' :=
+  hγ.eq_of_contDiff ((contDiff_triangleBasePotential C (n := ⊤)).gradient_right le_top).neg hγ' h
+
+/-- **The trajectories through the square are flow lines.** A trajectory of the triangle base field
+which lies in the square `[-1, 1]²` at time `s₀` is, at every time `s`, the image of that point
+under the flow for time `s - s₀`. -/
+theorem eq_triangleBaseFlow_of_isIntegralCurve {γ : ℝ → WithLp 2 (ℝ × ℝ)}
+    (hγ : IsIntegralCurve γ (fun _ z ↦ -∇ (triangleBasePotential C) z)) {s₀ : ℝ}
+    (hu : (γ s₀).fst ∈ Icc (-1) 1) (hv : (γ s₀).snd ∈ Icc (-1) 1) (s : ℝ) :
+    γ s = triangleBaseFlow C (s - s₀) (γ s₀) :=
+  congrFun (eq_of_isIntegralCurve_triangleBasePotential hγ
+    (fun s ↦ (isIntegralCurve_triangleBaseFlow C hu hv (s - s₀)).comp_sub_const s s₀)
+    (t₀ := s₀) (by simp)) s
 
 /-- **The flow preserves the triangle.** -/
 theorem mapsTo_triangleBaseFlow (C s : ℝ) :

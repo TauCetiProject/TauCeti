@@ -229,7 +229,9 @@ theorem IsCartesian.exists_lift_horn_last {S : SSet.{u}} {p : X ⟶ S} {f : Edge
   have hΛ : Λ[1, 1].ι = t ≫ stdSimplex.δ 0 := by
     rw [horn_one_ι_eq_const, stdSimplex.δ_zero_eq_const, comp_const]
   have hte : t ≫ e = 𝟙 _ := by
-    rw [← cancel_mono Λ[1, 1].ι, Category.assoc, horn.ι_ι, Category.id_comp, hΛ]
+    have := horn.isIso_ι_one (1 : Fin 2) 0 (by decide)
+    rw [stdSimplex.isTerminalObj₀.hom_ext t (inv e)]
+    exact IsIso.inv_hom_id e
   have he : e ≫ Λ[1, 1].ι = stdSimplex.δ 0 := horn.ι_ι _ _ _
   have hpush := Subcomplex.unionJoin.isPushout ∂Δ[n] Λ[1, 1]
   have hE : (unionJoinIso.{u} n).hom ≫ Λ[n + 2, Fin.last (n + 2)].ι =

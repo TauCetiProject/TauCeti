@@ -5,6 +5,7 @@ Authors: Claude
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.GroupTheory.Coset.Basic
 public import Mathlib.GroupTheory.GroupAction.Quotient
@@ -472,4 +473,75 @@ theorem pairwise_disjoint_out_smul (hdisj : ∀ g ∉ H, Disjoint (g • V) V) :
 
 end Action
 
+/-- Reindex a `finsum` over `G ⧸ K` along left multiplication by `a : G` when the summand is
+right `K`-invariant. -/
+theorem finsum_mulLeft_eq {G M : Type*} [Group G] [AddCommMonoid M] {K : Subgroup G}
+    (a : G) (F : G → M) (hF : ∀ g : G, ∀ k ∈ K, F (g * k) = F g) :
+    (∑ᶠ q : G ⧸ K, F (a * q.out)) = ∑ᶠ q : G ⧸ K, F q.out := by
+  refine (finsum_congr fun q ↦ ?_).trans (finsum_comp_equiv (MulAction.toPerm a))
+  have hk : (a * q.out)⁻¹ * (a • q).out ∈ K :=
+    QuotientGroup.eq.1 (mk_out_smul a q).symm
+  have heq : (a • q).out = a * q.out * ((a * q.out)⁻¹ * (a • q).out) := by
+    rw [mul_inv_cancel_left]
+  rw [MulAction.toPerm_apply, heq, hF _ _ hk]
+
 end QuotientGroup
+
+namespace Subgroup
+
+/-- If a monoid homomorphism `τ : G →* G` sends every `g⁻¹` into the double coset `K * g * K`,
+then `τ` preserves `K`. -/
+theorem map_mem_iff_of_inv_mem_doubleCoset {G F : Type*} [Group G] {K : Subgroup G}
+    [FunLike F G G] [MonoidHomClass F G G] {τ : F}
+    (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    τ g ∈ K ↔ g ∈ K := by
+  constructor
+  · intro h
+    obtain ⟨a, ha, b, hb, hg⟩ := hτg g
+    have hτinv : τ g⁻¹ ∈ K := by simpa [map_inv] using K.inv_mem h
+    have heq : g = a⁻¹ * τ g⁻¹ * b⁻¹ := by simp [hg, mul_assoc]
+    rw [heq]
+    exact K.mul_mem (K.mul_mem (K.inv_mem ha) hτinv) (K.inv_mem hb)
+  · intro h
+    obtain ⟨a, ha, b, hb, hg⟩ := hτg g⁻¹
+    rw [inv_inv] at hg
+    rw [hg]
+    exact K.mul_mem (K.mul_mem ha (K.inv_mem h)) hb
+
+/-- The equivalence on left cosets `G ⧸ K ≃ G ⧸ K` induced by a group automorphism `τ : G ≃* G`
+sending every `g⁻¹` into the double coset `K * g * K`. -/
+noncomputable def quotientEquivOfInvMemDoubleCoset {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) : G ⧸ K ≃ G ⧸ K :=
+  Equiv.ofBijective _
+    (mk_mulEquiv_out_bijective τ (K.map_mem_iff_of_inv_mem_doubleCoset hτg))
+
+/-- Application formula for `Subgroup.quotientEquivOfInvMemDoubleCoset`. -/
+theorem quotientEquivOfInvMemDoubleCoset_apply {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
+    K.quotientEquivOfInvMemDoubleCoset τ hτg q = ((τ q.out : G) : G ⧸ K) :=
+  (rfl)
+
+/-- `Subgroup.quotientEquivOfInvMemDoubleCoset` sends the coset of `g` to the coset of `τ g`. -/
+@[simp] theorem quotientEquivOfInvMemDoubleCoset_mk {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    K.quotientEquivOfInvMemDoubleCoset τ hτg (g : G ⧸ K) = ((τ g : G) : G ⧸ K) := by
+  rw [quotientEquivOfInvMemDoubleCoset_apply, QuotientGroup.eq, ← map_inv, ← map_mul,
+    K.map_mem_iff_of_inv_mem_doubleCoset hτg, ← QuotientGroup.eq, QuotientGroup.out_eq']
+
+/-- The inverse of `Subgroup.quotientEquivOfInvMemDoubleCoset` sends the coset of `g` to the coset
+of `τ.symm g`. -/
+@[simp] theorem quotientEquivOfInvMemDoubleCoset_symm_mk {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (g : G) :
+    (K.quotientEquivOfInvMemDoubleCoset τ hτg).symm (g : G ⧸ K) = ((τ.symm g : G) : G ⧸ K) := by
+  apply (K.quotientEquivOfInvMemDoubleCoset τ hτg).injective
+  simp
+
+/-- The chosen representative of `K.quotientEquivOfInvMemDoubleCoset τ hτg q` differs from
+`τ q.out` on the right by an element of `K`. -/
+theorem out_quotientEquivOfInvMemDoubleCoset_eq_mul {G : Type*} [Group G] (K : Subgroup G)
+    (τ : G ≃* G) (hτg : ∀ g : G, ∃ a ∈ K, ∃ b ∈ K, τ g⁻¹ = a * g * b) (q : G ⧸ K) :
+    ∃ k ∈ K, (K.quotientEquivOfInvMemDoubleCoset τ hτg q).out = τ q.out * k := by
+  obtain ⟨⟨k, hk⟩, hq⟩ := QuotientGroup.mk_out_eq_mul K (τ q.out)
+  exact ⟨k, hk, by rw [quotientEquivOfInvMemDoubleCoset_apply]; exact hq⟩
+
+end Subgroup

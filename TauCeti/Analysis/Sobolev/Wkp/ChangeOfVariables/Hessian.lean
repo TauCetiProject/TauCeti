@@ -65,8 +65,10 @@ theorem (`TauCeti.Wkp.exists_norm_le_of_forall_exists_value_ae_eq`).
 * `TauCeti.Wkp.compOfLipschitzFDerivL`: precomposition with a change of variables of class
   `C^{1,1}` as a bounded operator on `W^{2,p}`, with
   `TauCeti.Wkp.firstOrder_compOfLipschitzFDerivL`, `TauCeti.Wkp.value_compOfLipschitzFDerivL_ae`,
-  `TauCeti.Wkp.compOfLipschitzFDerivL_eq_iff` and the chain rule
-  `TauCeti.Wkp.inner_iteratedGradient_compOfLipschitzFDerivL_ae`.
+  `TauCeti.Wkp.compOfLipschitzFDerivL_eq_iff`, the chain rules
+  `TauCeti.Wkp.gradient_firstOrder_compOfLipschitzFDerivL_ae` and
+  `TauCeti.Wkp.inner_iteratedGradient_compOfLipschitzFDerivL_ae`, and the inverse
+  `TauCeti.Wkp.compOfLipschitzFDerivL_compOfLipschitzFDerivL_of_rightInvOn`.
 * `TauCeti.Wkp.compOfLipschitzFDerivL_eq_compL`: for a change of variables of order two it is
   `TauCeti.Wkp.compL`.
 
@@ -422,6 +424,30 @@ theorem inner_iteratedGradient_compOfLipschitzFDerivL_ae (h : IsChangeOfVariable
           ⟪iteratedGradient 0 (lowerOrder 1 u) (Φ x), fderiv ℝ (fderiv ℝ Φ) x f g⟫_ℝ :=
   inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL h hM.locallyLipschitzOn hp u
     (firstOrder_compOfLipschitzFDerivL h hM hp u)
+
+/-- **The first-order chain rule along a change of variables of class `C^{1,1}`.** The weak
+gradient of the first-order part of `compOfLipschitzFDerivL h hM hp u` is `DΦ(x)† ∇u(Φ x)`, almost
+everywhere on `U`. -/
+theorem gradient_firstOrder_compOfLipschitzFDerivL_ae (h : IsChangeOfVariables 1 U V Φ L c)
+    (hM : LipschitzOnWith M (fderiv ℝ Φ) U) (hp : p ≠ ⊤) (u : Wkp mu V p 2) :
+    W1p.gradient (firstOrder 1 (compOfLipschitzFDerivL h hM hp u)) =ᵐ[mu.restrict U]
+      fun x => (fderiv ℝ Φ x).adjoint (W1p.gradient (firstOrder 1 u) (Φ x)) := by
+  rw [firstOrder_compOfLipschitzFDerivL]
+  exact W1p.gradient_compL_ae Φ hp h.differentiableOn h.injOn h.mapsTo h.norm_fderiv_le h.pos
+    h.le_abs_det _
+
+/-- If `Ψ` maps `V` back into `U` inverse to `Φ`, and both are changes of variables of class
+`C^{1,1}`, then precomposing with `Φ` and then with `Ψ` is the identity of `W^{2,p}(V)`. -/
+theorem compOfLipschitzFDerivL_compOfLipschitzFDerivL_of_rightInvOn
+    (h : IsChangeOfVariables 1 U V Φ L c) (hM : LipschitzOnWith M (fderiv ℝ Φ) U) {Ψ : E → E}
+    {L' c' : ℝ} {M' : ℝ≥0} (h' : IsChangeOfVariables 1 V U Ψ L' c')
+    (hM' : LipschitzOnWith M' (fderiv ℝ Ψ) V) (hΦΨ : RightInvOn Ψ Φ V) (hp : p ≠ ⊤)
+    (u : Wkp mu V p 2) :
+    compOfLipschitzFDerivL h' hM' hp (compOfLipschitzFDerivL h hM hp u) = u := by
+  refine (compOfLipschitzFDerivL_eq_iff h' hM' hp _ u).2 ?_
+  filter_upwards [h'.ae_comp (value_compOfLipschitzFDerivL_ae h hM hp u),
+    ae_restrict_mem V.isOpen.measurableSet] with y hy hyV
+  rw [hy, hΦΨ hyV]
 
 end LipschitzFDeriv
 

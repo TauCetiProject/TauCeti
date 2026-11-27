@@ -189,6 +189,15 @@ lemma horn.exists_extension_one (i : Fin 2) (σ₀ : (Λ[1, i] : SSet.{u}) ⟶ X
   subst hji
   simp [SSet.const, Subsingleton.elim (SimplexCategory.const ⦋0⦌ ⦋0⦌ 0) (𝟙 ⦋0⦌)]
 
+/-- The `1`-horn `Λ[1, i]` is the vertex `i` of `Δ[1]`: the inclusion `Δ[0] ⟶ Λ[1, i]` of its
+unique face is an isomorphism. -/
+lemma horn.isIso_ι_one (i j : Fin 2) (hij : j ≠ i) : IsIso (horn.ι.{u} i j hij) :=
+  ⟨stdSimplex.isTerminalObj₀.from _, stdSimplex.isTerminalObj₀.hom_ext _ _,
+    horn.hom_ext' fun k hk ↦ by
+      obtain rfl : k = j := by omega
+      rw [← Category.assoc, stdSimplex.isTerminalObj₀.hom_ext (horn.ι i k hk ≫ _) (𝟙 _),
+        Category.id_comp, Category.comp_id]⟩
+
 /-- A quasicategory in which all outer horns `Λ[n + 2, 0]` and `Λ[n + 2, Fin.last (n + 2)]` extend
 to `Δ[n + 2]` is a Kan complex. -/
 theorem kanComplex_of_outerHornFilling (Z : SSet.{u}) [Quasicategory Z]
