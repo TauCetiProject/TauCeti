@@ -23,6 +23,9 @@ characteristic: multiplication by `q` is injective on such torsion.
 * `TauCeti.FiniteField.odd_card_of_not_isSquare`: a finite field with a nonsquare has odd order.
 * `TauCeti.FiniteField.ringChar_ne_two_of_odd_card`: a finite field of odd order does not have
   characteristic two.
+* `TauCeti.FiniteField.natCard_ne_two_of_sq_add_self_add_one_eq_zero`,
+  `TauCeti.FiniteField.natCard_ne_three_of_sq_add_one_eq_zero`: a field with a root of
+  `X² + X + 1` is not `𝔽₂`, and one with a root of `X² + 1` is not `𝔽₃`.
 * `TauCeti.FiniteField.card_sub_one_dvd_card_sub_one`: in a finite extension `F'/F` of finite
   fields, `#F - 1 ∣ #F' - 1`.
 * `TauCeti.FiniteField.card_div_two_eq_mul_card_div_two`: in a finite extension `F'/F` of finite
@@ -57,6 +60,36 @@ theorem ringChar_ne_two_of_odd_card (hodd : Odd (Nat.card F)) : ringChar F ≠ 2
   rw [Nat.card_eq_fintype_card, Nat.odd_iff] at hodd
   intro h
   simp [FiniteField.even_card_of_char_two h] at hodd
+
+omit [Finite F] in
+/-- A field containing a root of `X² + X + 1` does not have two elements: in `𝔽₂` every element
+satisfies `x² = x`, so `x² + x + 1 = 2x + 1 = 1`. -/
+theorem natCard_ne_two_of_sq_add_self_add_one_eq_zero {ω : F} (hω : ω ^ 2 + ω + 1 = 0) :
+    Nat.card F ≠ 2 := by
+  rcases finite_or_infinite F with hF | hF
+  swap
+  · simp [Nat.card_eq_zero_of_infinite]
+  have := Fintype.ofFinite F
+  rw [Nat.card_eq_fintype_card]
+  intro h
+  have h2 : (2 : F) = 0 := by exact_mod_cast h ▸ FiniteField.cast_card_eq_zero F
+  have hp : ω ^ 2 = ω := by simpa [h] using FiniteField.pow_card ω
+  exact one_ne_zero (by linear_combination hω - hp - ω * h2 : (1 : F) = 0)
+
+omit [Finite F] in
+/-- A field containing a root of `X² + 1` does not have three elements: in `𝔽₃` every element
+satisfies `x³ = x`, and `i³ = −i` would force `i = 0`. -/
+theorem natCard_ne_three_of_sq_add_one_eq_zero {i : F} (hi : i ^ 2 + 1 = 0) :
+    Nat.card F ≠ 3 := by
+  rcases finite_or_infinite F with hF | hF
+  swap
+  · simp [Nat.card_eq_zero_of_infinite]
+  have := Fintype.ofFinite F
+  rw [Nat.card_eq_fintype_card]
+  intro h
+  have h3 : (3 : F) = 0 := by exact_mod_cast h ▸ FiniteField.cast_card_eq_zero F
+  have hp : i ^ 3 = i := by simpa [h] using FiniteField.pow_card i
+  exact one_ne_zero (by linear_combination hi - i ^ 2 * h3 + i ^ 2 * hi - i * hp : (1 : F) = 0)
 
 /-! ### The order of a finite field extension -/
 
