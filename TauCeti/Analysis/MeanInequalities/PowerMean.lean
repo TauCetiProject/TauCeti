@@ -96,25 +96,6 @@ theorem powerMean_neg {w x : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (hx : ∀ i, 0 
     exact Real.inv_rpow (sum_nonneg fun i _ ↦ mul_nonneg (hw i)
       (Real.rpow_nonneg (inv_nonneg.mpr (hx i)) r)) _
 
-private theorem powerMean_le_powerMean_of_pos {w x : ι → ℝ} (hw : ∀ i, 0 ≤ w i)
-    (hw1 : ∑ i, w i = 1) (hx : ∀ i, 0 < x i) {r s : ℝ} (hr : 0 < r) (hrs : r ≤ s) :
-    powerMean w x r ≤ powerMean w x s := by
-  have hs : 0 < s := hr.trans_le hrs
-  have hsum_pos := weighted_rpow_sum_pos hw (by rw [hw1]; exact zero_lt_one) hx r
-  have h := Real.rpow_arith_mean_le_arith_mean_rpow univ w (fun i ↦ x i ^ r)
-    (fun i _ ↦ hw i) hw1 (fun i _ ↦ (Real.rpow_pos_of_pos (hx i) r).le)
-    ((le_div_iff₀ hr).mpr (by simpa using hrs))
-  have hpow (i : ι) : (x i ^ r) ^ (s / r) = x i ^ s := by
-    rw [← Real.rpow_mul (hx i).le]
-    congr 1
-    field_simp
-  simp_rw [hpow] at h
-  have hroot := Real.rpow_le_rpow
-    (Real.rpow_nonneg hsum_pos.le (s / r)) h (inv_nonneg.mpr hs.le)
-  rw [← Real.rpow_mul hsum_pos.le] at hroot
-  have hexp : s / r * s⁻¹ = r⁻¹ := by field_simp
-  simpa only [hexp, powerMean_of_ne_zero w x hr.ne', powerMean_of_ne_zero w x hs.ne'] using hroot
-
 /-- The geometric mean commutes with taking a common real power of nonnegative entries. -/
 theorem powerMean_zero_rpow (w : ι → ℝ) {x : ι → ℝ} (hx : ∀ i, 0 ≤ x i) (s : ℝ) :
     powerMean w x 0 ^ s = powerMean w (fun i ↦ x i ^ s) 0 := by
@@ -124,43 +105,6 @@ theorem powerMean_zero_rpow (w : ι → ℝ) {x : ι → ℝ} (hx : ∀ i, 0 ≤
   intro i _
   rw [← Real.rpow_mul (hx i), ← Real.rpow_mul (hx i), mul_comm]
 
-
-private theorem powerMean_zero_le_of_pos {w x : ι → ℝ} (hw : ∀ i, 0 ≤ w i)
-    (hw1 : ∑ i, w i = 1) (hx : ∀ i, 0 < x i) {s : ℝ} (hs : 0 < s) :
-    powerMean w x 0 ≤ powerMean w x s := by
-  have h := Real.geom_mean_le_arith_mean_weighted univ w (fun i ↦ x i ^ s)
-    (fun i _ ↦ hw i) hw1 (fun i _ ↦ (Real.rpow_pos_of_pos (hx i) s).le)
-  have hp := powerMean_zero_rpow w (fun i ↦ (hx i).le) s
-  simp only [powerMean_zero] at hp
-  rw [← hp] at h
-  have hroot := Real.rpow_le_rpow
-    (Real.rpow_nonneg (prod_pos fun i _ ↦ Real.rpow_pos_of_pos (hx i) (w i)).le s)
-    h (inv_nonneg.mpr hs.le)
-  rw [← Real.rpow_mul (prod_pos fun i _ ↦ Real.rpow_pos_of_pos (hx i) (w i)).le,
-    mul_inv_cancel₀ hs.ne', Real.rpow_one] at hroot
-  simpa only [powerMean_zero, powerMean_of_ne_zero w x hs.ne'] using hroot
-
-/-- **The power-mean inequality**, for arbitrary ordered real exponents. -/
-theorem powerMean_le_powerMean {w x : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (hw1 : ∑ i, w i = 1)
-    (hx : ∀ i, 0 < x i) {r s : ℝ} (hrs : r ≤ s) : powerMean w x r ≤ powerMean w x s := by
-  have hnonneg {y : ι → ℝ} (hy : ∀ i, 0 < y i) {a b : ℝ} (ha : 0 ≤ a) (hab : a ≤ b) :
-      powerMean w y a ≤ powerMean w y b := by
-    rcases ha.eq_or_lt with rfl | ha
-    · rcases hab.eq_or_lt with rfl | hb
-      · rfl
-      · exact powerMean_zero_le_of_pos hw hw1 hy hb
-    · exact powerMean_le_powerMean_of_pos hw hw1 hy ha hab
-  have hneg {a b : ℝ} (hab : a ≤ b) (hb : b ≤ 0) : powerMean w x a ≤ powerMean w x b := by
-    have hxinv : ∀ i, 0 < (x i)⁻¹ := fun i ↦ inv_pos.mpr (hx i)
-    have h := hnonneg hxinv (neg_nonneg.mpr hb) (neg_le_neg hab)
-    have hinv := (inv_le_inv₀ (powerMean_pos hw (by rw [hw1]; exact zero_lt_one) hxinv (-a))
-      (powerMean_pos hw (by rw [hw1]; exact zero_lt_one) hxinv (-b))).mpr h
-    simpa only [← powerMean_neg hw (fun i ↦ (hx i).le), neg_neg] using hinv
-  rcases le_total 0 r with hr | hr
-  · exact hnonneg hx hr hrs
-  · rcases le_total s 0 with hs | hs
-    · exact hneg hrs hs
-    · exact (hneg hr le_rfl).trans (hnonneg hx le_rfl hs)
 
 /-- Taking the defining power recovers the weighted sum of powers. -/
 theorem powerMean_rpow {w x : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (hx : ∀ i, 0 ≤ x i)
@@ -219,19 +163,22 @@ private theorem powerMean_lt_of_nonconstant {w x : ι → ℝ} (hw : ∀ i, 0 �
     rcases ha.eq_or_lt with rfl | ha
     · exact powerMean_zero_lt_of_pos hw hw1 hy hab hne
     · exact powerMean_lt_of_pos hw hw1 hy ha hab hne
-  rcases le_total 0 r with hr | hr
+  have hnonpos {a b : ℝ} (hab : a < b) (hb : b ≤ 0) :
+      powerMean w x a < powerMean w x b := by
+    have hxinv : ∀ i, 0 < (x i)⁻¹ := fun i ↦ inv_pos.mpr (hx i)
+    have hneinv : ∃ i j, 0 < w i ∧ 0 < w j ∧ (x i)⁻¹ ≠ (x j)⁻¹ := by
+      obtain ⟨i, j, hi, hj, hij⟩ := hne
+      exact ⟨i, j, hi, hj, fun heq ↦ hij (inv_inj.mp heq)⟩
+    have h := hnonneg hxinv hneinv (neg_nonneg.mpr hb) (neg_lt_neg hab)
+    have hinv := (inv_lt_inv₀ (powerMean_pos hw hmass hxinv (-a))
+      (powerMean_pos hw hmass hxinv (-b))).mpr h
+    simpa only [← powerMean_neg hw (fun i ↦ (hx i).le), neg_neg] using hinv
+  by_cases hr : 0 ≤ r
   · exact hnonneg hx hne hr hrs
   · by_cases hs : s ≤ 0
-    · have hxinv : ∀ i, 0 < (x i)⁻¹ := fun i ↦ inv_pos.mpr (hx i)
-      have hneinv : ∃ i j, 0 < w i ∧ 0 < w j ∧ (x i)⁻¹ ≠ (x j)⁻¹ := by
-        obtain ⟨i, j, hi, hj, hij⟩ := hne
-        exact ⟨i, j, hi, hj, fun heq ↦ hij (inv_inj.mp heq)⟩
-      have h := hnonneg hxinv hneinv (neg_nonneg.mpr hs) (neg_lt_neg hrs)
-      have hinv := (inv_lt_inv₀ (powerMean_pos hw hmass hxinv (-r))
-        (powerMean_pos hw hmass hxinv (-s))).mpr h
-      simpa only [← powerMean_neg hw (fun i ↦ (hx i).le), neg_neg] using hinv
-    · exact (powerMean_le_powerMean hw hw1 hx hr).trans_lt
-        (powerMean_zero_lt_of_pos hw hw1 hx (lt_of_not_ge hs) hne)
+    · exact hnonpos hrs hs
+    · exact (hnonpos (lt_of_not_ge hr) le_rfl).trans
+        (hnonneg hx hne le_rfl (lt_of_not_ge hs))
 
 /-- A mean whose nonzero-weight entries all equal a nonnegative constant has that value. -/
 theorem powerMean_eq_of_eq_on_support {w x : ι → ℝ} (hw1 : ∑ i, w i = 1) {c : ℝ}
@@ -253,16 +200,22 @@ theorem powerMean_eq_of_eq_on_support {w x : ι → ℝ} (hw1 : ∑ i, w i = 1) 
       exact prod_eq_zero (mem_univ i) (Real.zero_rpow hi)
     · rw [← Real.rpow_sum_of_pos hc, hw1, Real.rpow_one]
   · rw [powerMean_of_ne_zero w x hr]
-    have hsum : (∑ i, w i * x i ^ r) = c ^ r := by
-      calc
-        _ = ∑ i, w i * c ^ r := by
-          apply sum_congr rfl
-          intro i _
-          by_cases hi : w i = 0
-          · simp [hi]
-          · rw [hx i hi]
-        _ = c ^ r := by rw [← sum_mul, hw1, one_mul]
+    have hsum : (∑ i, w i * x i ^ r) = c ^ r :=
+      Real.arith_mean_weighted_of_constant univ w (fun i ↦ x i ^ r) (c ^ r) hw1
+        (fun i _ hi ↦ by rw [hx i hi])
     rw [hsum, ← Real.rpow_mul hc, mul_inv_cancel₀ hr, Real.rpow_one]
+
+private theorem powerMean_eq_of_not_nonconstant {w x : ι → ℝ}
+    (hw : ∀ i, 0 ≤ w i) (hw1 : ∑ i, w i = 1) (hx : ∀ i, 0 < x i)
+    (hconst : ¬ ∃ i j, 0 < w i ∧ 0 < w j ∧ x i ≠ x j) (r s : ℝ) :
+    powerMean w x r = powerMean w x s := by
+  push Not at hconst
+  obtain ⟨j, _, hj⟩ := (sum_pos_iff_of_nonneg (fun i _ ↦ hw i)).mp
+    (show 0 < ∑ i, w i by rw [hw1]; exact zero_lt_one)
+  have hc (i : ι) (hi : w i ≠ 0) : x i = x j :=
+    hconst i j (lt_of_le_of_ne (hw i) hi.symm) hj
+  rw [powerMean_eq_of_eq_on_support hw1 (hx j).le hc r,
+    powerMean_eq_of_eq_on_support hw1 (hx j).le hc s]
 
 /-- The power-mean inequality is strict exactly when two positive-weight entries differ. -/
 theorem powerMean_lt_powerMean_iff {w x : ι → ℝ} (hw : ∀ i, 0 ≤ w i)
@@ -270,14 +223,17 @@ theorem powerMean_lt_powerMean_iff {w x : ι → ℝ} (hw : ∀ i, 0 ≤ w i)
     powerMean w x r < powerMean w x s ↔ ∃ i j, 0 < w i ∧ 0 < w j ∧ x i ≠ x j := by
   refine ⟨?_, powerMean_lt_of_nonconstant hw hw1 hx hrs⟩
   intro hlt
-  by_contra! hconst
-  obtain ⟨j, _, hj⟩ := (sum_pos_iff_of_nonneg (fun i _ ↦ hw i)).mp
-    (show 0 < ∑ i, w i by rw [hw1]; exact zero_lt_one)
-  have hc (i : ι) (hi : w i ≠ 0) : x i = x j :=
-    hconst i j (lt_of_le_of_ne (hw i) hi.symm) hj
-  rw [powerMean_eq_of_eq_on_support hw1 (hx j).le hc r,
-    powerMean_eq_of_eq_on_support hw1 (hx j).le hc s] at hlt
-  exact lt_irrefl _ hlt
+  by_contra hconst
+  exact hlt.ne (powerMean_eq_of_not_nonconstant hw hw1 hx hconst r s)
+
+/-- **The power-mean inequality**, for arbitrary ordered real exponents. -/
+theorem powerMean_le_powerMean {w x : ι → ℝ} (hw : ∀ i, 0 ≤ w i) (hw1 : ∑ i, w i = 1)
+    (hx : ∀ i, 0 < x i) {r s : ℝ} (hrs : r ≤ s) : powerMean w x r ≤ powerMean w x s := by
+  rcases hrs.eq_or_lt with rfl | hrs
+  · exact le_rfl
+  by_cases hne : ∃ i j, 0 < w i ∧ 0 < w j ∧ x i ≠ x j
+  · exact (powerMean_lt_of_nonconstant hw hw1 hx hrs hne).le
+  · exact (powerMean_eq_of_not_nonconstant hw hw1 hx hne r s).le
 
 /-- The weighted geometric mean as the exponential of the weighted logarithms. -/
 theorem powerMean_zero_eq_exp (w : ι → ℝ) {x : ι → ℝ} (hx : ∀ i, 0 < x i) :
@@ -305,7 +261,7 @@ theorem continuousAt_powerMean_zero {w x : ι → ℝ} (hw1 : ∑ i, w i = 1)
   rw [continuousAt_iff_punctured_nhds, powerMean_zero_eq_exp w hx]
   apply (Real.continuous_exp.continuousAt.tendsto.comp hlim).congr'
   filter_upwards [self_mem_nhdsWithin, hpos.filter_mono nhdsWithin_le_nhds] with r hr hpr
-  have hr0 : r ≠ 0 := hr
+  have hr0 : r ≠ 0 := Set.mem_compl_singleton_iff.mp hr
   rw [powerMean_of_ne_zero w x hr0, Real.rpow_def_of_pos hpr]
   simp only [Function.comp_apply, mul_comm]
 
