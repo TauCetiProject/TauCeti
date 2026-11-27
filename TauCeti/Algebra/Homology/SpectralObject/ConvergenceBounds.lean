@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralObject.Abutment
+public import TauCeti.Algebra.Homology.SpectralObject.PageHomology
 
 /-!
 # Convergence bounds of a spectral object
@@ -26,6 +27,30 @@ abutment vanishes from `a` down (`HasConvergenceBounds.isZero_abutmentFiltration
 abutment from `b` up (`HasConvergenceBounds.isIso_abutmentFiltrationι`), so the abutment vanishes
 when `b ≤ a` (`HasConvergenceBounds.isZero_abutment`).
 
+Under convergence bounds, the spectral sequence `X.spectralSequence coreE₂Cohomological` computes
+the graded pieces of the abutment in degree `n` on its late pages. At the position `(p, q)` with
+`p + q = n`, the object of the page `r` is `E^n(q - r + 2 ≤ q ≤ q + 1 ≤ q + r - 1)`. On every page
+`r ≥ 2` with `r ≥ q - a + 2` and `r ≥ b - q + 1`:
+
+* the canonical map `E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1) ⟶ E^n(q - r + 2 ≤ q ≤ q + 1 ≤ q + r - 1)` is
+  an isomorphism (Mathlib's `isIso_mapFourδ₁Toδ₀'`, since `H^{n+1}(⊥ ≤ q - r + 2)` vanishes), and
+  so is the canonical map `E^n(⊥ ≤ q ≤ q + 1 ≤ q + r - 1) ⟶ E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤) = X.EInfty q n`
+  (`HasConvergenceBounds.isIso_mapFourδ₄Toδ₃'`), because `H^n(⊥ ≤ q + r - 1) ⟶ H^n(⊥ ≤ ⊤)` is a
+  monomorphism (`isIso_mapFourδ₄Toδ₃'_of_mono`);
+* hence the page object maps isomorphically onto the limit object `X.EInfty q n`, the graded piece
+  of the abutment (`HasConvergenceBounds.isIso_spectralSequencePageXToEInfty`, an instance of the
+  general criterion `isIso_spectralSequencePageXToEInfty_of_mono`), and isomorphically onto the
+  objects at `(p, q)` of all later pages
+  (`HasConvergenceBounds.isIso_spectralSequencePageXToPageX`);
+* both differentials at `(p, q)` vanish (`HasConvergenceBounds.page_d_eq_zero`), as they do at any
+  position where the passage to the next page is an isomorphism
+  (`page_d_eq_zero_of_isIso_spectralSequencePageXToPageX`).
+
+The limit object `X.EInfty q n` vanishes for `q < a` and for `q ≥ b`
+(`HasConvergenceBounds.isZero_EInfty_of_lt`, `HasConvergenceBounds.isZero_EInfty_of_le`), so the
+nonzero graded pieces sit at `a ≤ q < b`, where every position stabilizes from the page
+`max 2 (b - a + 1)` on.
+
 A first-quadrant spectral object has convergence bounds `min 0 (n + 1)` and `n + 1` in every
 degree `n`, and its abutment vanishes in negative degrees; a third-quadrant one has convergence
 bounds `min m 1` and `1` in every cohomological degree `m`.
@@ -45,13 +70,22 @@ bounds `min m 1` and `1` in every cohomological degree `m`.
   filtration of the abutment is bounded by `a` and `b`.
 * `CategoryTheory.Abelian.SpectralObject.HasConvergenceBounds.isZero_abutment`: convergence bounds
   with `b ≤ a` force the abutment to vanish.
+* `CategoryTheory.Abelian.SpectralObject.HasConvergenceBounds.isIso_spectralSequencePageXToEInfty`,
+  `CategoryTheory.Abelian.SpectralObject.HasConvergenceBounds.isIso_spectralSequencePageXToPageX`,
+  `CategoryTheory.Abelian.SpectralObject.HasConvergenceBounds.page_d_eq_zero`: under convergence
+  bounds, the positions of total degree `n` stabilize on the late pages, at the graded pieces of
+  the abutment.
+* `CategoryTheory.Abelian.SpectralObject.HasConvergenceBounds.isZero_EInfty_of_lt`,
+  `CategoryTheory.Abelian.SpectralObject.HasConvergenceBounds.isZero_EInfty_of_le`: the graded
+  pieces vanish outside `[a, b)`.
 * `CategoryTheory.Abelian.SpectralObject.hasConvergenceBounds_of_isFirstQuadrant`,
   `CategoryTheory.Abelian.SpectralObject.hasConvergenceBounds_of_isThirdQuadrant`: quadrant
   spectral objects have convergence bounds in every degree.
 
 ## References
 
-* [Stacks, Tag 0BK5](https://stacks.math.columbia.edu/tag/0BK5)
+* [Stacks, Tag 0BK5](https://stacks.math.columbia.edu/tag/0BK5), Lemma 24.13, in its
+  filtered-complex form.
 -/
 
 public section
@@ -138,6 +172,85 @@ theorem isZero_abutment (h : X.HasConvergenceBounds n a b) (hba : b ≤ a) :
   (h.isZero_abutmentFiltration hba).of_iso (asIso (X.abutmentFiltrationι b n)).symm
 
 end HasConvergenceBounds
+
+section Convergence
+
+namespace HasConvergenceBounds
+
+variable {X : SpectralObject C EInt} {n a b : ℤ}
+
+/-- **The limit object is reached at the top under convergence bounds.** If `X` has convergence
+bounds `a, b` in degree `n`, then for `q + 1 ≤ j` and `b ≤ j` the canonical map
+`E^n(⊥ ≤ q ≤ q + 1 ≤ j) ⟶ E^n(⊥ ≤ q ≤ q + 1 ≤ ⊤) = X.EInfty q n` is an isomorphism. -/
+lemma isIso_mapFourδ₄Toδ₃' (h : X.HasConvergenceBounds n a b) (q j : ℤ) (hqj : q + 1 ≤ j)
+    (hj : b ≤ j) :
+    IsIso (X.mapFourδ₄Toδ₃' ⊥ q ((q + 1 : ℤ) : EInt) j ⊤ bot_le (coe_le_coe_add_one q)
+      (by simpa using hqj) le_top (n - 1) n (n + 1)) :=
+  have := h.isIso_H_map j hj
+  X.isIso_mapFourδ₄Toδ₃'_of_mono _ _ _ _ _ _ _ _ _ _ _ _ inferInstance
+
+/-- **Stabilization under convergence bounds.** If `X` has convergence bounds `a, b` in degree
+`n = p + q`, the epimorphism `X.spectralSequencePageXToEInfty` from the object at `(p, q)` on the
+page `r` onto the limit object `X.EInfty q n` is an isomorphism on every page `r ≥ 2` with
+`r ≥ q - a + 2` and `r ≥ b - q + 1`. -/
+theorem isIso_spectralSequencePageXToEInfty (h : X.HasConvergenceBounds n a b) (r : ℤ)
+    (hr : 2 ≤ r) (pq : ℤ × ℤ) (hn : n = pq.1 + pq.2) (hra : pq.2 - a + 2 ≤ r)
+    (hrb : b - pq.2 + 1 ≤ r) :
+    IsIso (X.spectralSequencePageXToEInfty r hr pq n hn (h.isZero_H_add_one _ (by lia))) :=
+  have := h.isIso_H_map (pq.2 + r - 1) (by lia)
+  X.isIso_spectralSequencePageXToEInfty_of_mono r hr pq n hn _ inferInstance
+
+/-- Under convergence bounds `a, b` in degree `n = p + q`, the canonical maps between the objects at
+`(p, q)` on the pages `r ≤ r'` are isomorphisms as soon as `r ≥ 2`, `r ≥ q - a + 2` and
+`r ≥ b - q + 1`. -/
+theorem isIso_spectralSequencePageXToPageX (h : X.HasConvergenceBounds n a b) (r r' : ℤ)
+    (hr : 2 ≤ r) (hrr' : r ≤ r') (pq : ℤ × ℤ) (hn : n = pq.1 + pq.2) (hra : pq.2 - a + 2 ≤ r)
+    (hrb : b - pq.2 + 1 ≤ r) :
+    IsIso (X.spectralSequencePageXToPageX r r' hr hrr' pq n hn (h.isZero_H_add_one _ (by lia))
+      (h.isZero_H_add_one _ (by lia))) := by
+  have := h.isIso_spectralSequencePageXToEInfty r' (hr.trans hrr') pq hn (by lia) (by lia)
+  have : IsIso (X.spectralSequencePageXToPageX r r' hr hrr' pq n hn
+      (h.isZero_H_add_one _ (by lia)) (h.isZero_H_add_one _ (by lia)) ≫
+        X.spectralSequencePageXToEInfty r' (hr.trans hrr') pq n hn
+          (h.isZero_H_add_one _ (by lia))) := by
+    rw [spectralSequencePageXToPageX_spectralSequencePageXToEInfty]
+    exact h.isIso_spectralSequencePageXToEInfty r hr pq hn hra hrb
+  exact IsIso.of_isIso_comp_right _ (X.spectralSequencePageXToEInfty r' (hr.trans hrr') pq n hn
+    (h.isZero_H_add_one _ (by lia)))
+
+/-- **Degeneration at a position under convergence bounds.** If `X` has convergence bounds `a, b`
+in degree `n = p + q`, both differentials at the position `(p, q)` vanish on every page `r ≥ 2`
+with `r ≥ q - a + 2` and `r ≥ b - q + 1`. -/
+theorem page_d_eq_zero (h : X.HasConvergenceBounds n a b) (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ)
+    (hn : n = pq.1 + pq.2) (hra : pq.2 - a + 2 ≤ r) (hrb : b - pq.2 + 1 ≤ r) {i j : ℤ × ℤ}
+    (hij : i = pq ∨ j = pq) :
+    ((X.spectralSequence coreE₂Cohomological).page r hr).d i j = 0 := by
+  have := h.isIso_spectralSequencePageXToPageX r (r + 1) hr (by lia) pq hn hra hrb
+  exact X.page_d_eq_zero_of_isIso_spectralSequencePageXToPageX r hr pq n hn _ _ hij
+
+/-- Under convergence bounds `a, b` in degree `n`, the limit object `X.EInfty q n` vanishes for
+`q < a`: it is the graded piece `F_{q+1} H^n / F_q H^n`, and `F_{q+1} H^n` vanishes. -/
+lemma isZero_EInfty_of_lt (h : X.HasConvergenceBounds n a b) {q : ℤ} (hq : q < a) :
+    IsZero (X.EInfty q n) :=
+  (IsZero.of_epi (cokernel.π _) (h.isZero_abutmentFiltration (by lia))).of_iso
+    (X.EInftyIsoCokernel q n)
+
+/-- Under convergence bounds `a, b` in degree `n`, the limit object `X.EInfty q n` vanishes for
+`b ≤ q`: it is the graded piece `F_{q+1} H^n / F_q H^n`, and both pieces are the whole abutment. -/
+lemma isZero_EInfty_of_le (h : X.HasConvergenceBounds n a b) {q : ℤ} (hq : b ≤ q) :
+    IsZero (X.EInfty q n) := by
+  have := h.isIso_abutmentFiltrationι hq
+  have := h.isIso_abutmentFiltrationι (j := q + 1) (by lia)
+  have : IsIso (X.abutmentFiltrationMap q n) := by
+    have := X.abutmentFiltrationMap_ι q n
+    rw [← IsIso.eq_comp_inv] at this
+    rw [this]
+    infer_instance
+  exact (isZero_cokernel_of_epi _).of_iso (X.EInftyIsoCokernel q n)
+
+end HasConvergenceBounds
+
+end Convergence
 
 section Quadrant
 
