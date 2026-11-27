@@ -8,25 +8,25 @@ module
 public import Mathlib.Dynamics.TopologicalEntropy.CoverEntropy
 public import TauCeti.Dynamics.Ergodic.MeasureEntropy.Basic
 public import TauCeti.InformationTheory.PartitionEntropy.RestrictLabel
-import Mathlib.Topology.UniformSpace.Compact
 import TauCeti.InformationTheory.PartitionEntropy.Finite
 
 /-!
 # Counting itineraries along dynamical covers
 
-This is the counting step of Goodwyn's inequality `h_μ(T) ≤ h_top(T)` (ArithmeticDynamics §2.7).
+This is the counting step of Goodwyn's inequality `h_μ(T) ≤ h_top(T)`.
 Let `ζ : X → ι ⊕ Unit` be a label whose `Sum.inl` values are *separated by an entourage `U`*: two
 points `U`-close to a common point never carry different `Sum.inl` values. This is the case for
 the restriction `restrictLabel a (⋃ i, F i)` of a label `a` to closed sets `F i ⊆ a ⁻¹' {i}` when
 the images `U.image (F i)` are pairwise disjoint
 (`TauCeti.isInlSeparated_restrictLabel_iUnion`), and on a compact uniform space such an entourage
-exists for pairwise disjoint closed sets (`TauCeti.exists_mem_uniformity_disjoint_image`).
+exists for pairwise disjoint closed sets (`TauCeti.exists_mem_uniformity_disjoint_image` in
+`TauCeti.Topology.UniformSpace.Compact`).
 
 Then the itineraries of length `n` of the points in one dynamical ball for `U` are determined by
 which of their entries are `Sum.inl`, so there are at most `2 ^ n` of them, and a dynamical cover
 `s` gives at most `card s * 2 ^ n` itineraries in all. By the support bound, the entropy of the
 itinerary is at most `log (card s * 2 ^ n) = n log 2 + log (card s)`
-(`TauCeti.countablePartitionEntropy_iteratedPartitionLabel_le_log_card_mul`).
+(`TauCeti.countablePartitionEntropy_iteratedPartitionLabel_le_ofReal_log_card_mul_two_pow`).
 
 ## Main definitions
 
@@ -36,11 +36,10 @@ itinerary is at most `log (card s * 2 ^ n) = n log 2 + log (card s)`
 
 * `TauCeti.IsInlSeparated.iteratedPartitionLabel_eq`: in a dynamical ball, an itinerary is
   determined by the positions of its `Sum.inl` entries.
-* `TauCeti.countablePartitionEntropy_iteratedPartitionLabel_le_log_card_mul`: for a dynamical cover
-  `s` of `X`, `H(join_n ζ) ≤ log (card s * 2 ^ n)`.
-* `TauCeti.isInlSeparated_restrictLabel_iUnion`, `TauCeti.exists_mem_uniformity_disjoint_image`:
-  restrictions to closed sets with disjoint `U`-images are separated, and on a compact uniform space
-  disjoint closed sets have such an entourage.
+* `TauCeti.countablePartitionEntropy_iteratedPartitionLabel_le_ofReal_log_card_mul_two_pow`: for a
+  dynamical cover `s` of `X`, `H(join_n ζ) ≤ log (card s * 2 ^ n)`.
+* `TauCeti.isInlSeparated_restrictLabel_iUnion`: restrictions to sets with disjoint `U`-images are
+  separated.
 
 ## References
 
@@ -73,11 +72,12 @@ theorem IsInlSeparated.iteratedPartitionLabel_eq {ζ : X → ι ⊕ Unit} {U : S
   funext k
   have hk := hl k
   simp only [iteratedPartitionLabel_apply] at hk ⊢
-  rcases hw : ζ (T^[k] z) with i | u <;> rcases hw' : ζ (T^[k] z') with j | u' <;>
-    rw [hw, hw'] at hk
+  rcases hw : ζ (T^[k] z) with i | ⟨⟩ <;> rcases hw' : ζ (T^[k] z') with j | ⟨⟩ <;>
+    rewrite [hw, hw'] at hk
   · rw [h (hz k k.isLt) (hz' k k.isLt) hw hw']
   · simp at hk
   · simp at hk
+  · rfl
 
 /-- The itineraries of length `n` of the points of `X` take at most `card s * 2 ^ n` values for a
 dynamical cover `s` by an entourage separating the `Sum.inl` values of `ζ`. -/
@@ -107,8 +107,8 @@ theorem IsInlSeparated.exists_finset_iteratedPartitionLabel {ζ : X → ι ⊕ U
 /-- **Counting step of Goodwyn's inequality.** Under a probability measure (or the zero measure),
 if `U` separates the `Sum.inl` values of a measurable label `ζ` and `s` is a dynamical cover of
 `X` by `U` at time `n`, then `H(join_n ζ) ≤ log (card s * 2 ^ n)`. -/
-theorem countablePartitionEntropy_iteratedPartitionLabel_le_log_card_mul [MeasurableSpace X]
-    {μ : Measure X} [IsZeroOrProbabilityMeasure μ] [MeasurableSpace ι]
+theorem countablePartitionEntropy_iteratedPartitionLabel_le_ofReal_log_card_mul_two_pow
+    [MeasurableSpace X] {μ : Measure X} [IsZeroOrProbabilityMeasure μ] [MeasurableSpace ι]
     [MeasurableSingletonClass ι] {T : X → X} (hT : Measurable T) {ζ : X → ι ⊕ Unit}
     (hζ : Measurable ζ) {U : SetRel X X} (h : IsInlSeparated ζ U) {n : ℕ} {s : Finset X}
     (hs : IsDynCoverOf T univ U n s) :
@@ -140,26 +140,5 @@ theorem isInlSeparated_restrictLabel_iUnion {a : X → ι} {F : ι → Set X}
   by_contra hij
   exact disjoint_left.1 (hU i j hij) (SetRel.mem_image.2 ⟨z, hmem hzi, hz⟩)
     (SetRel.mem_image.2 ⟨z', hmem hzj, hz'⟩)
-
-/-- On a compact uniform space, finitely many pairwise disjoint closed sets `F i` have an
-entourage whose images of the `F i` are pairwise disjoint. -/
-theorem exists_mem_uniformity_disjoint_image [UniformSpace X] [CompactSpace X] [Finite ι]
-    {F : ι → Set X} (hF : ∀ i, IsClosed (F i)) (hdisj : Pairwise (Function.onFun Disjoint F)) :
-    ∃ U ∈ 𝓤 X, ∀ i j, i ≠ j → Disjoint (SetRel.image U (F i)) (SetRel.image U (F j)) := by
-  have hpair (p : ι × ι) : ∃ V ∈ 𝓤 X,
-      p.1 ≠ p.2 → Disjoint (SetRel.image V (F p.1)) (SetRel.image V (F p.2)) := by
-    by_cases hp : p.1 = p.2
-    · exact ⟨univ, Filter.univ_mem, fun h ↦ (h hp).elim⟩
-    · obtain ⟨V, hV, hd⟩ :=
-        (hdisj hp).exists_uniform_thickening (hF p.1).isCompact (hF p.2)
-      -- The image under the symmetrization of `V` lies in the `V`-thickening.
-      have himage (A : Set X) : (SetRel.symmetrize V).image A ⊆ ⋃ x ∈ A, SetRel.ball V x :=
-        fun b hb ↦ by
-          obtain ⟨a, ha, hab⟩ := SetRel.mem_image.1 hb
-          exact mem_iUnion₂.2 ⟨a, ha, SetRel.mem_ball.2 hab.2⟩
-      exact ⟨_, symmetrize_mem_uniformity hV, fun _ ↦ hd.mono (himage _) (himage _)⟩
-  choose V hV hd using hpair
-  refine ⟨⋂ p, V p, Filter.iInter_mem.2 hV, fun i j hij ↦ (hd (i, j) hij).mono ?_ ?_⟩ <;>
-    exact SetRel.image_subset_image_left (iInter_subset V (i, j))
 
 end TauCeti
