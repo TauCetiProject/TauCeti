@@ -207,22 +207,15 @@ theorem localized_adjoin_two_omega (S : Submonoid ℤ) (h2 : (2 : ℤ) ∈ S) :
     (Subalgebra.toSubmodule (Algebra.adjoin ℤ {2 * ω})).localized S =
       (Subalgebra.toSubmodule
         (Algebra.adjoin ℤ {(ω : QuadraticAlgebra ℚ (-1) 0)})).localized S := by
-  ext x
-  refine ⟨fun ⟨m, hm, s, hx⟩ => ⟨m, adjoin_two_omega_le_adjoin_omega hm, s, hx⟩,
-    fun ⟨m, hm, s, hx⟩ => ?_⟩
+  -- Over `ℤ`, Mathlib's lemmas on localized submodules would otherwise use the instance
+  -- `AddCommGroup.toIntModule` on the localization, which is not the one of `localized`.
+  let : Module ℤ (LocalizedModule S (QuadraticAlgebra ℚ (-1) 0)) :=
+    OreLocalization.instModuleOfIsScalarTower
   -- Twice every element of `ℤ[i]` lies in `ℤ[2i]`, and `2` is invertible in `ℤ_S`.
-  let t : S := ⟨2, h2⟩
-  have ht : (t : ℤ) = 2 := rfl
-  refine ⟨t • m, ?_, t * s, ?_⟩
-  swap
-  · -- Over `ℤ`, Mathlib's lemmas on `IsLocalizedModule.mk'` would otherwise use the instance
-    -- `AddCommGroup.toIntModule` on the localization, which is not the one of `localized`.
-    let : Module ℤ (LocalizedModule S (QuadraticAlgebra ℚ (-1) 0)) :=
-      OreLocalization.instModuleOfIsScalarTower
-    rw [← hx]
-    exact IsLocalizedModule.mk'_cancel_left
-      (f := LocalizedModule.mkLinearMap S (QuadraticAlgebra ℚ (-1) 0)) m t s
-  rw [Submonoid.smul_def, ht, Subalgebra.mem_toSubmodule, two_smul]
-  exact add_self_mem_adjoin_two_omega hm
+  refine le_antisymm
+    ((Submodule.localized'gi _ _ _).gc.monotone_l adjoin_two_omega_le_adjoin_omega)
+    (Submodule.localized'_le_localized'_of_smul_le _ _ _ ⟨2, h2⟩ ?_)
+  rintro _ ⟨a, ha, rfl⟩
+  simpa [Submonoid.smul_def, two_smul] using add_self_mem_adjoin_two_omega ha
 
 end TauCeti.IntegralOrder.StarOrderExample
