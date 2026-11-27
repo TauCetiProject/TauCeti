@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Cell.RealProjectivePlane
+public import TauCeti.Geometry.Manifold.Morse.Cell.Examples.RealProjectivePlane
 public import TauCeti.Topology.VectorBundle.Moebius
 public import TauCeti.Topology.VectorBundle.SphereBundle.Basic
 
