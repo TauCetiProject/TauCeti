@@ -40,7 +40,12 @@ and a configuration `ω : G.edgeSet → Bool`, the weight of `ω` on `F` is
   and for dimer configurations `ω`, `ω'` agreeing off a finite set `F`, and every finite `E`
   containing the edges that share a vertex with an edge of `F`, the cylinder identity
   `w(ω' ∩ F) · μ[ω]_E = w(ω ∩ F) · μ[ω']_E` holds, `[ω]_E` being the cylinder of the
-  configurations agreeing with `ω` on `E`. This form needs no conditional probability.
+  configurations agreeing with `ω` on `E`. This form needs no conditional probability. Summed
+  over the completion set `Ω_F(ω)`, the cylinder identities give
+  `w(ω ∩ F) / Z^w_F(ω) · μ[ω]_{E ∖ F} = μ[ω]_E`
+  (`SimpleGraph.IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq`). Separately, for
+  dimer configurations `Z^w_F(ω)` only depends on `ω` near `F`
+  (`SimpleGraph.dimerPartitionFunction_congr_of_isDimerConfiguration`).
 
 **Gauge invariance.** Replacing `w(uv)` by `w(uv) g(u) g(v)` for a positive `g`
 (`SimpleGraph.gaugeWeight`) multiplies `w(ω ∩ F)` by the product of `g` over the vertices covered
@@ -96,6 +101,14 @@ theorem dimerWeight_congr (w : G.edgeSet → ℝ) {F : Finset G.edgeSet} {ω ω'
     (h : ∀ e ∈ F, ω e = ω' e) : G.dimerWeight w F ω = G.dimerWeight w F ω' := by
   simp only [dimerWeight_def]
   exact Finset.prod_congr (Finset.filter_congr fun e he => by rw [h e he]) fun _ _ => rfl
+
+/-- The weight on `F` of the gluing of a configuration `η` on `F` to `ω` off `F` does not depend
+on `ω`. -/
+theorem dimerWeight_updateFinset_congr [DecidableEq G.edgeSet] (w : G.edgeSet → ℝ)
+    (F : Finset G.edgeSet) (ω₁ ω₂ : G.edgeSet → Bool) (η : F → Bool) :
+    G.dimerWeight w F (updateFinset ω₁ F η) = G.dimerWeight w F (updateFinset ω₂ F η) :=
+  dimerWeight_congr w fun e he => by
+    rw [updateFinset_apply_of_mem he, updateFinset_apply_of_mem he]
 
 /-- For `Λ ⊆ Δ`, the weight on `Δ` is the product of the weights on `Λ` and on `Δ ∖ Λ`. -/
 theorem dimerWeight_eq_mul_sdiff [DecidableEq G.edgeSet] (w : G.edgeSet → ℝ)
@@ -161,6 +174,15 @@ theorem dimerPartitionFunction_pos {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e)
   Finset.sum_pos (fun ω' _ => dimerWeight_pos hw F ω')
     ⟨ω, (Finite.mem_toFinset _).2 (mem_dimerCompletionSet_self hω)⟩
 
+/-- For a positive weight and a dimer configuration `ω`, the Boltzmann masses
+`w(ω' ∩ F) / Z^w_F(ω)`, `ω' ∈ Ω_F(ω)`, sum to `1`. -/
+theorem sum_dimerWeight_div_dimerPartitionFunction {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e)
+    (F : Finset G.edgeSet) {ω : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) :
+    ∑ ω' ∈ (G.finite_dimerCompletionSet F ω).toFinset,
+      G.dimerWeight w F ω' / G.dimerPartitionFunction w F ω = 1 := by
+  rw [← Finset.sum_div]
+  exact div_self (dimerPartitionFunction_pos hw F hω).ne'
+
 /-- The mass of a measurable set `s` under `γ^w_F(· | ω)` is the normalized weight of the members
 of the completion set in `s`. -/
 theorem dimerBoltzmann_apply (w : G.edgeSet → ℝ) (F : Finset G.edgeSet) (ω : G.edgeSet → Bool)
@@ -183,7 +205,7 @@ theorem isProbabilityMeasure_dimerBoltzmann {w : G.edgeSet → ℝ} (hw : ∀ e,
   rw [dimerBoltzmann_apply w F ω MeasurableSet.univ]
   simp only [indicator_univ]
   rw [← ENNReal.ofReal_sum_of_nonneg fun ω' _ => div_nonneg (dimerWeight_pos hw F ω').le hZ.le,
-    ← Finset.sum_div, ← dimerPartitionFunction_def, div_self hZ.ne', ENNReal.ofReal_one]
+    sum_dimerWeight_div_dimerPartitionFunction hw F hω, ENNReal.ofReal_one]
 
 /-- For `w ≡ 1` the Boltzmann law is uniform on the completion set. -/
 theorem dimerBoltzmann_one (F : Finset G.edgeSet) (ω : G.edgeSet → Bool) :
@@ -217,6 +239,20 @@ theorem dimerPartitionFunction_eq_sum_updateFinset [DecidableEq G.edgeSet] (w : 
     G.dimerPartitionFunction w F ω = ∑ η with G.IsDimerConfiguration (updateFinset ω F η),
       G.dimerWeight w F (updateFinset ω F η) := by
   rw [dimerPartitionFunction_def, sum_dimerCompletionSet_eq_sum_updateFinset]
+
+/-- **Locality of the partition function.** For dimer configurations `ω₁`, `ω₂` agreeing on the
+edges outside `F` that share a vertex with an edge of `F`, `Z^w_F(ω₁) = Z^w_F(ω₂)`: their
+completion sets have the same restrictions to `F`. -/
+theorem dimerPartitionFunction_congr_of_isDimerConfiguration (w : G.edgeSet → ℝ)
+    (F : Finset G.edgeSet)
+    {ω₁ ω₂ : G.edgeSet → Bool} (h₁ : G.IsDimerConfiguration ω₁) (h₂ : G.IsDimerConfiguration ω₂)
+    (hF : ∀ e ∉ F, (∃ f ∈ F, ∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (f : Sym2 V)) → ω₁ e = ω₂ e) :
+    G.dimerPartitionFunction w F ω₁ = G.dimerPartitionFunction w F ω₂ := by
+  classical
+  rw [dimerPartitionFunction_eq_sum_updateFinset, dimerPartitionFunction_eq_sum_updateFinset]
+  exact Finset.sum_congr
+    (Finset.filter_congr fun η _ => isDimerConfiguration_updateFinset_congr h₁ h₂ hF η)
+    fun η _ => dimerWeight_updateFinset_congr w F ω₁ ω₂ η
 
 /-! ### Support -/
 
@@ -398,6 +434,11 @@ theorem IsDimerGibbs.measure_setOf_not_isDimerConfiguration {w : G.edgeSet → �
     μ {ω | ¬ G.IsDimerConfiguration ω} = 0 :=
   h.2.1
 
+/-- A dimer Gibbs measure is carried by dimer configurations. -/
+theorem IsDimerGibbs.ae_isDimerConfiguration {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet → Bool)}
+    (h : G.IsDimerGibbs w μ) : ∀ᵐ ω ∂μ, G.IsDimerConfiguration ω :=
+  ae_iff.2 h.measure_setOf_not_isDimerConfiguration
+
 /-- The cylinder identity `w(ω' ∩ F) · μ[ω]_E = w(ω ∩ F) · μ[ω']_E` of a dimer Gibbs measure. -/
 theorem IsDimerGibbs.cylinder {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet → Bool)}
     (h : G.IsDimerGibbs w μ) {F E : Finset G.edgeSet} {ω ω' : G.edgeSet → Bool}
@@ -407,6 +448,63 @@ theorem IsDimerGibbs.cylinder {w : G.edgeSet → ℝ} {μ : Measure (G.edgeSet �
     ENNReal.ofReal (G.dimerWeight w F ω') * μ {η | ∀ e ∈ E, η e = ω e} =
       ENNReal.ofReal (G.dimerWeight w F ω) * μ {η | ∀ e ∈ E, η e = ω' e} :=
   h.2.2 F E ω ω' hω hω' hF hE
+
+/-- **The cylinder identities, summed over a completion set.** Let `μ` be dimer Gibbs for a
+positive `w`, `ω` a dimer configuration and `E` a finite set containing every edge sharing a vertex
+with an edge of `F`. Then `w(ω ∩ F) / Z^w_F(ω) · μ[ω]_{E ∖ F} = μ[ω]_E`. -/
+theorem IsDimerGibbs.ofReal_mul_measure_setOf_forall_mem_notMem_eq {w : G.edgeSet → ℝ}
+    (hw : ∀ e, 0 < w e) {μ : Measure (G.edgeSet → Bool)} (hμ : G.IsDimerGibbs w μ)
+    {F E : Finset G.edgeSet}
+    (hE : ∀ e ∈ F, ∀ e' : G.edgeSet, (∃ v, v ∈ (e : Sym2 V) ∧ v ∈ (e' : Sym2 V)) → e' ∈ E)
+    {ω : G.edgeSet → Bool} (hω : G.IsDimerConfiguration ω) :
+    ENNReal.ofReal (G.dimerWeight w F ω / G.dimerPartitionFunction w F ω) *
+        μ {η | ∀ e ∈ E, e ∉ F → η e = ω e} = μ {η | ∀ e ∈ E, η e = ω e} := by
+  classical
+  have hZ := dimerPartitionFunction_pos hw F hω
+  have hFE (e : G.edgeSet) (he : e ∈ F) : e ∈ E :=
+    hE e he e ⟨_, Sym2.out_fst_mem _, Sym2.out_fst_mem _⟩
+  -- up to a null set, `[ω]_{E ∖ F}` is the disjoint union of the `[ω']_E`, `ω' ∈ Ω_F(ω)`
+  have hsplit : μ {η | ∀ e ∈ E, e ∉ F → η e = ω e} =
+      ∑ ω' ∈ (G.finite_dimerCompletionSet F ω).toFinset, μ {η | ∀ e ∈ E, η e = ω' e} := by
+    rw [← measure_biUnion_finset
+      (f := fun ω' : G.edgeSet → Bool => {η : G.edgeSet → Bool | ∀ e ∈ E, η e = ω' e}) ?_
+      fun ω' _ => by
+        convert SymbolicDynamics.FullShift.measurableSet_cylinder E ω' using 1
+        ext η
+        exact SymbolicDynamics.FullShift.mem_cylinder.symm]
+    · refine measure_congr (Filter.eventuallyEqSet_iff.2 ?_)
+      filter_upwards [hμ.ae_isDimerConfiguration] with η hη
+      simp only [mem_ofPred_eq, mem_iUnion, exists_prop, Finite.mem_toFinset]
+      constructor
+      · intro hηE
+        obtain ⟨ω', hω', hr⟩ : F.restrict η ∈ F.restrict '' G.dimerCompletionSet F ω :=
+          image_restrict_dimerCompletionSet_eq hη hω (fun e he ⟨f, hf, v, hve, hvf⟩ =>
+            hηE e (hE f hf e ⟨v, hvf, hve⟩) he) ▸ ⟨η, mem_dimerCompletionSet_self hη, rfl⟩
+        refine ⟨ω', hω', fun e he => ?_⟩
+        by_cases heF : e ∈ F
+        · exact (congrFun hr ⟨e, heF⟩).symm
+        · exact (hηE e he heF).trans ((mem_dimerCompletionSet.1 hω').2 e heF).symm
+      · rintro ⟨ω', hω', hηE⟩ e he heF
+        exact (hηE e he).trans ((mem_dimerCompletionSet.1 hω').2 e heF)
+    · intro ω₁ h₁ ω₂ h₂ hne
+      simp only [Finset.mem_coe, Finite.mem_toFinset, mem_dimerCompletionSet] at h₁ h₂
+      refine Set.disjoint_left.2 fun η hη₁ hη₂ => hne (funext fun e => ?_)
+      by_cases heF : e ∈ F
+      · exact (hη₁ e (hFE e heF)).symm.trans (hη₂ e (hFE e heF))
+      · exact (h₁.2 e heF).trans (h₂.2 e heF).symm
+  -- each `[ω']_E` has mass `w(ω' ∩ F) / w(ω ∩ F) · μ[ω]_E`
+  have hcyl (ω' : G.edgeSet → Bool) (hω' : ω' ∈ (G.finite_dimerCompletionSet F ω).toFinset) :
+      ENNReal.ofReal (G.dimerWeight w F ω / G.dimerPartitionFunction w F ω) *
+          μ {η | ∀ e ∈ E, η e = ω' e} =
+        ENNReal.ofReal (G.dimerWeight w F ω' / G.dimerPartitionFunction w F ω) *
+          μ {η | ∀ e ∈ E, η e = ω e} := by
+    rw [Finite.mem_toFinset, mem_dimerCompletionSet] at hω'
+    rw [div_eq_inv_mul, div_eq_inv_mul, ENNReal.ofReal_mul (inv_nonneg.2 hZ.le),
+      ENNReal.ofReal_mul (inv_nonneg.2 hZ.le), mul_assoc, mul_assoc,
+      hμ.cylinder hω hω'.1 (fun e he => (hω'.2 e he).symm) hE]
+  rw [hsplit, Finset.mul_sum, Finset.sum_congr rfl hcyl, ← Finset.sum_mul,
+    ← ENNReal.ofReal_sum_of_nonneg fun ω' _ => div_nonneg (dimerWeight_pos hw F ω').le hZ.le,
+    sum_dimerWeight_div_dimerPartitionFunction hw F hω, ENNReal.ofReal_one, one_mul]
 
 /-! ### Gauge invariance -/
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.ZMod
 public import TauCeti.NumberTheory.LSeries.GaussianTheta.Basic
 import Mathlib.NumberTheory.DirichletCharacter.Bounds
+import TauCeti.Analysis.Fourier.ZMod
 import TauCeti.Analysis.SpecialFunctions.Gaussian.PoissonSummation
 
 /-!
@@ -100,18 +101,13 @@ theorem norm_gaussianTheta_le_exp_inv (χ : DirichletCharacter ℂ N) (hχ : χ 
     ‖gaussianTheta j (fun n ↦ χ n) t‖ ≤ 3 * N * Real.exp (-(1 / (N * t))) := by
   have hN : 0 < (N : ℝ) := mod_cast NeZero.pos N
   have hv : 0 < 1 / ((N : ℝ) * t) := one_div_pos.mpr (mul_pos hN ht)
-  have hc (n : ℕ+) : ‖𝓕⁻ (χ : ZMod N → ℂ) (n : ℕ)‖ ≤ 1 := by
-    rw [ZMod.invDFT_apply, norm_smul, norm_inv, Complex.norm_natCast]
-    have hb (a : ZMod N) : ‖ZMod.stdAddChar (a * ((n : ℕ) : ZMod N)) • χ a‖ ≤ 1 := by
-      rw [norm_smul, AddChar.norm_apply, one_mul]
-      exact χ.norm_le_one a
-    have hs := (norm_sum_le Finset.univ _).trans (Finset.sum_le_sum fun a _ ↦ hb a)
-    simp only [Finset.sum_const, Finset.card_univ, ZMod.card, nsmul_eq_mul, mul_one] at hs
-    exact le_trans (mul_le_mul_of_nonneg_left hs (by positivity)) (by simp [hN.ne'])
-  rw [χ.gaussianTheta_eq_invDFT hχ j hj ht, norm_mul, norm_div, norm_pow, norm_neg,
-    norm_I, one_pow, norm_real, Real.norm_of_nonneg ht.le, one_div]
+  have hc (n : ℕ+) : ‖𝓕⁻ (χ : ZMod N → ℂ) (n : ℕ)‖ ≤ 1 :=
+    ZMod.norm_invDFT_le_of_forall_norm_le χ.norm_le_one _
+  rw [χ.gaussianTheta_eq_invDFT hχ j hj ht]
+  simp only [norm_mul, norm_div, norm_pow, norm_neg, norm_I, one_pow, norm_real,
+    Real.norm_of_nonneg ht.le]
   calc
-    _ ≤ t⁻¹ * (3 * Real.exp (-(1 / (N * t))) / (1 / (N * t))) :=
+    _ ≤ (1 / t) * (3 * Real.exp (-(1 / (N * t))) / (1 / (N * t))) :=
       mul_le_mul_of_nonneg_left (norm_gaussianTheta_le hc hv) (by positivity)
     _ = _ := by field_simp
 
