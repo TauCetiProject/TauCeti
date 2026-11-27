@@ -105,6 +105,27 @@ namespace PartialDiffeomorph
 
 open TauCeti
 
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+/-- The pullback of `β` along a map `f` restricted to an open subset `U` of `M` is, at `z ∈ U`, the
+rough pullback of `β` along `f` itself at `z`. -/
+private theorem coe_mpullback_comp_subtypeVal_apply {U : Opens M} {f : M → N}
+    (hf : ContMDiff I K ∞ (f ∘ (Subtype.val : U → M))) (z : U) :
+    (SmoothForm.mpullback _ hf β).val z = TauCeti.mpullback I K f β.val z := by
+  ext u
+  rw [SmoothForm.mpullback_comp_subtypeVal_apply]
+  -- `u` reads as a family of tangent vectors of `M` at `z`: the two tangent spaces are the same.
+  exact (mpullback_apply f β.val z u).symm
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+/-- The exterior derivative of the pullback of `β` along a map `f` restricted to an open subset `U`
+of `M` evaluates two tangent vectors at `z ∈ U` through the differential of `f` itself. -/
+private theorem mextDeriv_mpullback_comp_subtypeVal_apply_two {U : Opens M} {f : M → N}
+    (hf : ContMDiff I K ∞ (f ∘ (Subtype.val : U → M))) (z : U) (v w : TangentSpace I z) :
+    mextDeriv (SmoothForm.mpullback _ hf β).val z ![v, w] =
+      mextDeriv β.val (f z) ![mfderiv I K f z v, mfderiv I K f z w] := by
+  rw [SmoothForm.mextDeriv_mpullback_apply_two, Manifold.mfderiv_comp_subtype_val_apply,
+    Manifold.mfderiv_comp_subtype_val_apply, Function.comp_apply]
+
 /-- **Correcting a partial diffeomorphism to a contactomorphism.** Let `Ψ` be a partial
 diffeomorphism from `M` to `N`, with `M` finite-dimensional, boundaryless and Hausdorff, let `S` be
 a set of points of its source at which the one-form `α` is contact, and let `c` be positive on `S`.
@@ -131,12 +152,10 @@ theorem exists_eqOn_mpullback_eq_smul (Ψ : PartialDiffeomorph I K M N ∞) {S :
     Ψ.contMDiffOn.comp_contMDiff contMDiff_subtypeVal fun z ↦ z.property
   set α₀ := SmoothForm.mpullback (Subtype.val : U → M) contMDiff_subtypeVal α
   set α₁ := SmoothForm.mpullback _ hΨU β
-  have hΨ (z : U) : MDifferentiableAt I K Ψ z := Ψ.mdifferentiableAt (by simp) z.property
   -- As rough forms on `U`, `α₁` is the restriction of the rough form `Ψ^* β` on `M`.
-  have hα₁ : α₁.val = mpullback I I (Subtype.val : U → M) (mpullback I K Ψ β.val) := by
-    funext z
-    rw [SmoothForm.coe_mpullback]
-    exact mpullback_comp_at (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero) (hΨ z) β.val
+  have hα₁ : α₁.val = mpullback I I (Subtype.val : U → M) (mpullback I K Ψ β.val) :=
+    funext fun z ↦ (coe_mpullback_comp_subtypeVal_apply hΨU z).trans
+      (mpullback_subtype_val_apply _ z).symm
   obtain ⟨Θ, hsrc, htgt, hfix, hΘ⟩ :=
     SmoothForm.exists_partialDiffeomorph_mpullback_eq_smul_of_eq_smul (α₀ := α₀) (α₁ := α₁)
       (K := Subtype.val ⁻¹' S) (c := c ∘ Subtype.val)
@@ -152,8 +171,7 @@ theorem exists_eqOn_mpullback_eq_smul (Ψ : PartialDiffeomorph I K M N ∞) {S :
       fun z hz v hv w hw ↦ by
         have hα₀ : α₀.val z = α.val z := SmoothForm.coe_mpullback_subtype_val_apply α z
         rw [RoughForm.mem_ker, hα₀] at hv hw
-        rw [SmoothForm.mextDeriv_mpullback_apply_two, SmoothForm.mextDeriv_mpullback_apply_two,
-          Manifold.mfderiv_comp_subtype_val_apply, Manifold.mfderiv_comp_subtype_val_apply]
+        rw [mextDeriv_mpullback_comp_subtypeVal_apply_two, SmoothForm.mextDeriv_mpullback_apply_two]
         simpa only [Manifold.mfderiv_subtype_val_apply, Function.comp_apply] using
           hdβ z hz v (RoughForm.mem_ker.2 hv) w (RoughForm.mem_ker.2 hw)
   -- Read `Θ` in `M`, and correct `Ψ` to `φ = Ψ ∘ Θ`.
@@ -190,16 +208,11 @@ theorem mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul (φ : PartialDiffeomorph I
     φ.open_source.inter (SmoothForm.isOpen_setOf_isContactFormAt α)⟩
   have hφW : ContMDiff I K ∞ (φ ∘ (Subtype.val : W → M)) :=
     φ.contMDiffOn.comp_contMDiff contMDiff_subtypeVal fun z ↦ z.property.1
-  obtain ⟨αW, hαWdef⟩ : ∃ γ : SmoothForm I W ℝ 1,
-      γ = SmoothForm.mpullback Subtype.val contMDiff_subtypeVal α := ⟨_, rfl⟩
-  obtain ⟨βW, hβWdef⟩ : ∃ γ : SmoothForm I W ℝ 1, γ = SmoothForm.mpullback _ hφW β := ⟨_, rfl⟩
-  have hαW (z : W) : αW.val z = α.val z := by
-    rw [hαWdef]
-    exact SmoothForm.coe_mpullback_subtype_val_apply α z
-  have hβW (z : W) : βW.val z = TauCeti.mpullback I K φ β.val z := by
-    rw [hβWdef, SmoothForm.coe_mpullback, mpullback_comp_at
-      (contMDiff_subtypeVal.mdifferentiableAt one_ne_zero)
-      (φ.mdifferentiableAt (by simp) z.property.1), mpullback_subtype_val_apply]
+  set αW := SmoothForm.mpullback (Subtype.val : W → M) contMDiff_subtypeVal α
+  set βW := SmoothForm.mpullback _ hφW β
+  have hαW (z : W) : αW.val z = α.val z := SmoothForm.coe_mpullback_subtype_val_apply α z
+  have hβW (z : W) : βW.val z = TauCeti.mpullback I K φ β.val z :=
+    coe_mpullback_comp_subtypeVal_apply hφW z
   -- On `W`, `φ^* β` is a smooth multiple `f α` of the nowhere-vanishing form `α`.
   obtain ⟨f, ⟨hf, hfβ⟩, -⟩ := SmoothForm.existsUnique_fun_smul_of_ker_le (α := αW) (β := βW)
     (fun z ↦ by rw [hαW]; exact z.property.2.ne_zero) fun z u hu ↦ by
@@ -221,17 +234,13 @@ theorem mextDeriv_mfderiv_eq_mul_of_mpullback_eq_smul (φ : PartialDiffeomorph I
   have hd := hLeibniz v w (by rw [hαW]; exact RoughForm.mem_ker.1 hv)
     (by rw [hαW]; exact RoughForm.mem_ker.1 hw)
   -- Read both exterior derivatives in `M` and `N`.
-  have hdβW (a b : TangentSpace I z₀) : mextDeriv βW.val z₀ ![a, b] =
-      mextDeriv β.val (φ z₀) ![mfderiv I K φ z₀ a, mfderiv I K φ z₀ b] := by
-    rw [hβWdef, SmoothForm.mextDeriv_mpullback_apply_two, Manifold.mfderiv_comp_subtype_val_apply,
-      Manifold.mfderiv_comp_subtype_val_apply]
-    rfl
   have hdαW (a b : TangentSpace I z₀) :
       mextDeriv αW.val z₀ ![a, b] = mextDeriv α.val z₀ ![a, b] := by
-    rw [hαWdef, SmoothForm.mextDeriv_mpullback_apply_two, Manifold.mfderiv_subtype_val_apply,
+    rw [SmoothForm.mextDeriv_mpullback_apply_two, Manifold.mfderiv_subtype_val_apply,
       Manifold.mfderiv_subtype_val_apply]
   -- The base points `z₀` of `W` and `x` of `M` agree, and so do their tangent spaces.
-  exact (hdβW v w).symm.trans (hd.trans (congrArg (h * ·) (hdαW v w)))
+  exact (mextDeriv_mpullback_comp_subtypeVal_apply_two hφW z₀ v w).symm.trans
+    (hd.trans (congrArg (h * ·) (hdαW v w)))
 
 end PartialDiffeomorph
 

@@ -63,7 +63,7 @@ after their first-order data along the submanifold have been identified.
   `TauCeti.SmoothForm.exists_isOpen_forall_isContactFormAt_add_smul_sub_of_eq_smul`: this holds
   for forms agreeing to first order along `K`, exactly or up to a positive factor.
 * `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt`:
-  relative Gray stability for two forms joined by a segment of contact forms, the second a positive
+  relative Gray stability for two forms joined by a segment of contact forms, the second a
   multiple of the first along `K`.
 * `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_smul_of_apply_eq`,
   `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq_smul_of_eq_smul`: relative Gray
@@ -145,6 +145,14 @@ private theorem one_add_mul_sub_one_pos {s c : ℝ} (hs₀ : 0 ≤ s) (hs₁ : s
   · nlinarith [mul_nonneg hs₀ hc.le]
   · linarith
 
+/-- At a point where `α₁ = c α₀`, the interpolation `α₀ + s (α₁ - α₀)` is
+`(1 + s (c - 1)) α₀`. -/
+private theorem add_smul_sub_apply_of_eq_smul {x : M} {c : ℝ} (hval : α₁.val x = c • α₀.val x)
+    (s : ℝ) : (α₀ + s • (α₁ - α₀)).val x = (1 + s * (c - 1)) • α₀.val x := by
+  simp only [Submodule.coe_add, SetLike.val_smul, AddSubgroupClass.coe_sub, Pi.add_apply,
+    Pi.smul_apply, Pi.sub_apply, hval]
+  module
+
 /-- **Interpolations of forms agreeing to first order up to a factor are contact.** If `α₀` is
 contact at `x`, `α₁ x = c α₀ x`, and `dα₁ x = c dα₀ x` on the hyperplane `ker α₀ x`, then the form
 `α₀ + s (α₁ - α₀)` is contact at `x` whenever `1 + s (c - 1) ≠ 0`; for `c > 0` this holds for every
@@ -156,16 +164,11 @@ theorem isContactFormAt_add_smul_sub_of_eq_smul {x : M} {c s : ℝ} (hc : IsCont
     (hs : 1 + s * (c - 1) ≠ 0) :
     IsContactFormAt (α₀ + s • (α₁ - α₀)).val x := by
   -- At `x` the interpolated form is `(1 + s (c - 1)) α₀`, to first order on `ker α₀ x`.
-  refine (isContactFormAt_congr_smul hs ?_ fun v hv w hw ↦ ?_).2 hc
-  · simp only [Submodule.coe_add, SetLike.val_smul, AddSubgroupClass.coe_sub, Pi.add_apply,
-      Pi.smul_apply, Pi.sub_apply, hval]
-    module
-  · rw [← mextDerivₗ_apply I 1 (α₀ + s • (α₁ - α₀)), map_add, map_smul, map_sub]
-    simp only [Submodule.coe_add, mextDerivₗ_apply, SetLike.val_smul, AddSubgroupClass.coe_sub,
-      Pi.add_apply, Pi.smul_apply, Pi.sub_apply, ContinuousAlternatingMap.add_apply,
-      ContinuousAlternatingMap.coe_smul, ContinuousAlternatingMap.coe_sub, hd v hv w hw,
-      smul_eq_mul]
-    ring
+  refine (isContactFormAt_congr_smul hs (add_smul_sub_apply_of_eq_smul hval s)
+    fun v hv w hw ↦ ?_).2 hc
+  rw [← mextDerivₗ_apply I 1 (α₀ + s • (α₁ - α₀)), map_add, map_smul, map_sub]
+  simp [hd v hv w hw]
+  ring
 
 variable [FiniteDimensional ℝ E]
 
@@ -222,13 +225,14 @@ theorem exists_isOpen_forall_isContactFormAt_add_smul_sub {K : Set M}
 variable [I.Boundaryless] [T2Space M]
 
 /-- **Relative Gray stability along a segment of contact forms.** Let every interpolation
-`α₀ + s (α₁ - α₀)`, `s ∈ [0, 1]`, be a contact form, and let `α₁` be a positive multiple of `α₀`
-at the points of a set `K`. Then there is a smooth partial diffeomorphism `φ` of `M`, whose source
-and target are open neighbourhoods of `K`, which fixes every point of `K` and pulls `α₁` back to a
-positive multiple of `α₀` on its source. Neither `K` nor `M` need be compact. -/
+`α₀ + s (α₁ - α₀)`, `s ∈ [0, 1]`, be a contact form, and let `α₁` be a multiple of `α₀` at the
+points of a set `K`; the multiple is then positive, as the segment never passes through zero. Then
+there is a smooth partial diffeomorphism `φ` of `M`, whose source and target are open
+neighbourhoods of `K`, which fixes every point of `K` and pulls `α₁` back to a positive multiple of
+`α₀` on its source. Neither `K` nor `M` need be compact. -/
 theorem exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt {K : Set M}
-    {c : M → ℝ} (hc : ∀ x, ∀ s ∈ Icc (0 : ℝ) 1, IsContactFormAt (α₀ + s • (α₁ - α₀)).val x)
-    (hc0 : ∀ x ∈ K, 0 < c x) (hval : ∀ x ∈ K, α₁.val x = c x • α₀.val x) :
+    (hc : ∀ x, ∀ s ∈ Icc (0 : ℝ) 1, IsContactFormAt (α₀ + s • (α₁ - α₀)).val x)
+    (hval : ∀ x ∈ K, ∃ c : ℝ, α₁.val x = c • α₀.val x) :
     ∃ φ : PartialDiffeomorph I I M M ∞, K ⊆ φ.source ∧ K ⊆ φ.target ∧ (∀ x ∈ K, φ x = x) ∧
       ∀ x ∈ φ.source, ∃ g : ℝ, 0 < g ∧ TauCeti.mpullback I I φ α₁.val x = g • α₀.val x := by
   -- The segment, reparametrized by the smooth step function, is a smooth family of contact forms.
@@ -236,24 +240,21 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt {K
       (lineMapFamily α₀ α₁ (Real.smoothTransition.contDiff (n := ⊤)))).IsContactForm := by
     rw [mpullback_prodMk_lineMapFamily, isContactForm_iff_forall_isContactFormAt]
     exact fun x ↦ hc x _ ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
-  -- Along `K`, every form of the segment is a positive multiple of `α₀`, so its kernel does not
+  -- Along `K`, every form of the segment is a nonzero multiple of `α₀`, so its kernel does not
   -- move.
   have hK (x : M) (hx : x ∈ K) (u : ℝ) :
       (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id)
         (lineMapFamily α₀ α₁ (Real.smoothTransition.contDiff (n := ⊤)))).kerDistribution x =
       (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id)
         (lineMapFamily α₀ α₁ (Real.smoothTransition.contDiff (n := ⊤)))).kerDistribution x := by
-    have hpos := one_add_mul_sub_one_pos (Real.smoothTransition.nonneg u)
-      (Real.smoothTransition.le_one u) (hc0 x hx)
+    obtain ⟨c, hcx⟩ := hval x hx
+    have hu := (hc x _ ⟨Real.smoothTransition.nonneg u, Real.smoothTransition.le_one u⟩).ne_zero
+    rw [add_smul_sub_apply_of_eq_smul hcx] at hu
     ext v
-    simp only [mpullback_prodMk_lineMapFamily, mem_kerDistribution, Submodule.coe_add,
-      SetLike.val_smul, AddSubgroupClass.coe_sub, Pi.add_apply, Pi.smul_apply, Pi.sub_apply,
-      hval x hx, ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.coe_smul,
-      ContinuousAlternatingMap.coe_sub, smul_eq_mul, Real.smoothTransition.zero, zero_smul,
-      add_zero]
-    rw [show ∀ a : ℝ, a + Real.smoothTransition u * (c x * a - a) =
-      (1 + Real.smoothTransition u * (c x - 1)) * a from fun a ↦ by ring, mul_eq_zero,
-      or_iff_right hpos.ne']
+    rw [mpullback_prodMk_lineMapFamily, mpullback_prodMk_lineMapFamily, mem_kerDistribution,
+      mem_kerDistribution, add_smul_sub_apply_of_eq_smul hcx, add_smul_sub_apply_of_eq_smul hcx,
+      Real.smoothTransition.zero, zero_mul, add_zero, one_smul,
+      ContinuousAlternatingMap.smul_apply, smul_eq_zero, or_iff_right (left_ne_zero_of_smul hu)]
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ := exists_partialDiffeomorph_mpullback_eq_smul hcα hK 0 1
   refine ⟨φ, hsrc, htgt, hfix, fun x hx ↦ ?_⟩
   simpa [Real.smoothTransition.one, Real.smoothTransition.zero] using hφ x hx
@@ -283,9 +284,8 @@ theorem exists_partialDiffeomorph_mpullback_eq_smul_of_eq_smul {K : Set M} {c : 
     exact (isContactFormAt_mpullback_subtype_val_iff _ y).2 (hcN y y.property s hs)
   obtain ⟨φ, hsrc, htgt, hfix, hφ⟩ :=
     exists_partialDiffeomorph_mpullback_eq_smul_of_forall_isContactFormAt (K := Subtype.val ⁻¹' K)
-      (c := c ∘ Subtype.val) hcW (fun y hy ↦ hc0 y hy) fun y hy ↦
-        (coe_mpullback_subtype_val_apply α₁ y).trans ((hval y hy).trans
-          (congrArg (c y • ·) (coe_mpullback_subtype_val_apply α₀ y).symm))
+      hcW fun y hy ↦ ⟨c y, (coe_mpullback_subtype_val_apply α₁ y).trans ((hval y hy).trans
+          (congrArg (c y • ·) (coe_mpullback_subtype_val_apply α₀ y).symm))⟩
   -- Read `φ` in `M`.
   obtain ⟨Φ, hsrcΦ, htgtΦ, hfixΦ, hΦ⟩ :=
     exists_partialDiffeomorph_mpullback_apply_eq_of_opens (by simp) hKN φ hsrc htgt hfix
