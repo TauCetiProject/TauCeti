@@ -26,8 +26,9 @@ converges absolutely in `K` for every `x ∈ H` and defines a ring homomorphism
 `TauCeti.AnnularRing.eval₂ : AnnularRing p →+* K` sending `T ↦ t` and `U ↦ p t⁻¹`. It is the
 unique ring homomorphism bounded on `H` extending `f` and sending `T ↦ t`
 (`TauCeti.AnnularRing.eq_eval₂_of_bound`). Since `t` is a unit, it extends uniquely to
-`TauCeti.AnnularRing.localizedEval₂ : A →+* K`. When `K` is ultrametric, `eval₂` is uniformly
-bounded by `C` on `H` (`TauCeti.AnnularRing.norm_eval₂_le`).
+`TauCeti.AnnularRing.localizedEval₂ : A →+* K`. In general `eval₂` is uniformly bounded on `H`
+(`TauCeti.AnnularRing.exists_norm_eval₂_le`), and when `K` is ultrametric it is uniformly bounded
+by `C` (`TauCeti.AnnularRing.norm_eval₂_le`).
 
 We specialize this construction in two directions:
 * `TauCeti.AnnularRing.evalAlgHom` and `TauCeti.AnnularRing.localizedEvalAlgHom` as
@@ -60,6 +61,8 @@ continuous ring homomorphism extending `f` and sending `T ↦ t`
   expansions of evaluations on `H` and `H[1/T]`.
 * `TauCeti.AnnularRing.eval₂_ofPowerSeriesT`, `TauCeti.AnnularRing.eval₂_ofPowerSeriesU`:
   evaluations of power series in `T` and `U = p / T`.
+* `TauCeti.AnnularRing.exists_norm_eval₂_le`, `TauCeti.AnnularRing.norm_eval₂_le`: uniform
+  boundedness of `eval₂` on `H` (in general and in the ultrametric case).
 * `TauCeti.AnnularRing.eq_eval₂_of_bound`, `TauCeti.AnnularRing.eq_localizedEval₂_of_continuous`:
   uniqueness of bounded evaluations on `H` and `T`-adically continuous evaluations on `H[1/T]`.
 * `TauCeti.AnnularRing.evalAlgHom_toRingHom`, `TauCeti.AnnularRing.localizedEvalAlgHom_toRingHom`,
@@ -314,7 +317,7 @@ theorem norm_eval₂_le [IsUltrametricDist K] {C : ℝ} (hC : ∀ a : ℤ_[p], �
   exact (norm_term_le hC t x m).trans (mul_le_of_le_one_right hC0 (pow_le_one₀ hρ0 hρ1.le))
 
 /-- Uniform geometric-series bound on `eval₂` over `H` without ultrametricity. -/
-private theorem exists_norm_eval₂_le :
+theorem exists_norm_eval₂_le :
     ∃ M : ℝ, 0 ≤ M ∧ ∀ a : AnnularRing p, ‖eval₂ f hf t ht htinv a‖ ≤ M := by
   obtain ⟨C, hC⟩ := hf
   have hC0 : 0 ≤ C := bound_nonneg hC
