@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.Restriction
 public import TauCeti.Analysis.Distribution.SmulLeft
 public import TauCeti.Analysis.Distribution.Support
 public import TauCeti.Analysis.Distribution.TestFunction.Homotopy
@@ -84,7 +85,9 @@ whatever the regularity of `T`.
   `Distribution.dsupport_cutoffPushforwardCLM_subset`, its complex-linear extension
   `Distribution.complexPairing_cutoffPushforwardCLM`, its functoriality
   `Distribution.cutoffPushforwardCLM_id`, `Distribution.cutoffPushforwardCLM_cutoffPushforwardCLM`,
-  `Distribution.cutoffPushforwardCLM_cutoffPushforwardCLM_of_eventually_eq_one`, its value
+  `Distribution.cutoffPushforwardCLM_cutoffPushforwardCLM_of_eqOn`,
+  `Distribution.cutoffPushforwardCLM_cutoffPushforwardCLM_of_eventually_eq_one`, its restriction
+  `Distribution.restrictCLM_cutoffPushforwardCLM` to smaller open sets, its value
   `Distribution.cutoffPushforwardCLM_id_eq_smulLeftCLM` along the identity, its commutation
   `Distribution.mapCLM_cutoffPushforwardCLM` with maps of the values, the image
   `Distribution.cutoffPushforwardCLM_delta` of a point mass, and its value along a constant map
@@ -562,16 +565,41 @@ theorem cutoffPushforwardCLM_id_eq_smulLeftCLM {hid : ContDiffOn ℝ (⊤ : ℕ�
   ext x
   simp
 
+/-- **Restriction of a pushforward**: restricting the pushforward `T ∘ (χ Φ^*)` on `Ω'` to an open
+subset `Ω₁ ≤ Ω'` gives the pushforward on `Ω₁`. -/
+@[simp]
+theorem restrictCLM_cutoffPushforwardCLM {Ω₁ : Opens E'} (h : Ω₁ ≤ Ω') (T : 𝓓'(Ω, F)) :
+    (restrictCLM (cutoffPushforwardCLM χ Φ hΦ T : 𝓓'(Ω', F)) : 𝓓'(Ω₁, F)) =
+      cutoffPushforwardCLM χ Φ hΦ T := by
+  ext f
+  simp only [restrictCLM_apply, cutoffPushforwardCLM_apply]
+  congr 1
+  ext x
+  simp [monoCLM_apply, h]
+
+/-- **Functoriality of the pushforward, up to agreement on the cutoffs**: pushing `T` forward with
+the cutoff `χ` along `Φ` and then with the cutoff `χ'` along `Ψ` is pushing `T` forward with the
+cutoff `χ (χ' ∘ Φ)` along any map `B` smooth on `Ω` that agrees with `Ψ ∘ Φ` on the part of
+`supp χ` that `Φ` maps into `supp χ'`. Unlike
+`Distribution.cutoffPushforwardCLM_cutoffPushforwardCLM` this does not need `Ψ ∘ Φ` to be smooth
+on `Ω`, only `Ψ` on `Ω'`. -/
+theorem cutoffPushforwardCLM_cutoffPushforwardCLM_of_eqOn {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)}
+    {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'} {B : E → E''} {hB : ContDiffOn ℝ (⊤ : ℕ∞) B Ω}
+    (h : EqOn (Ψ ∘ Φ) B (tsupport χ ∩ Φ ⁻¹' tsupport χ')) (T : 𝓓'(Ω, F)) :
+    (cutoffPushforwardCLM χ' Ψ hΨ (cutoffPushforwardCLM χ Φ hΦ T) : 𝓓'(Ω'', F)) =
+      cutoffPushforwardCLM (cutoffCompCLM χ Φ hΦ χ') B hB T := by
+  ext f
+  simp only [cutoffPushforwardCLM_apply]
+  rw [cutoffCompCLM_cutoffCompCLM_of_eqOn h]
+
 /-- **Functoriality of the pushforward**: pushing `T` forward with the cutoff `χ` along `Φ` and
 then with the cutoff `χ'` along `Ψ` is pushing `T` forward with the cutoff `χ (χ' ∘ Φ)` along
 `Ψ ∘ Φ`. -/
 theorem cutoffPushforwardCLM_cutoffPushforwardCLM {Ψ : E' → E''} {χ' : 𝓓(Ω', ℝ)}
     {hΨ : ContDiffOn ℝ (⊤ : ℕ∞) Ψ Ω'} {hΨΦ : ContDiffOn ℝ (⊤ : ℕ∞) (Ψ ∘ Φ) Ω} (T : 𝓓'(Ω, F)) :
     (cutoffPushforwardCLM χ' Ψ hΨ (cutoffPushforwardCLM χ Φ hΦ T) : 𝓓'(Ω'', F)) =
-      cutoffPushforwardCLM (cutoffCompCLM χ Φ hΦ χ') (Ψ ∘ Φ) hΨΦ T := by
-  ext f
-  simp only [cutoffPushforwardCLM_apply]
-  rw [cutoffCompCLM_cutoffCompCLM (hΨΦ := hΨΦ)]
+      cutoffPushforwardCLM (cutoffCompCLM χ Φ hΦ χ') (Ψ ∘ Φ) hΨΦ T :=
+  cutoffPushforwardCLM_cutoffPushforwardCLM_of_eqOn (fun _ _ ↦ rfl) T
 
 /-- **Functoriality of the pushforward**: `(Ψ ∘ Φ)_* T = Ψ_* (Φ_* T)` for the pushforwards of
 `χ T`, when `χ'` is equal to one near the image under `Φ` of the part of the support of `T` in the

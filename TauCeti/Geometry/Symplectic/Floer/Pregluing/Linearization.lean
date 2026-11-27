@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Symplectic.Floer.Pregluing
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Realization
 public import TauCeti.Geometry.Symplectic.Floer.Splicing
 import TauCeti.Analysis.Normed.Operator.Surjective
-import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Analysis.Sobolev.Cylinder.GluedIndex
 import TauCeti.Topology.UniformSpace.HeineCantor
 
@@ -54,7 +53,7 @@ cylindrical datum `K = H_t dt` (`TauCeti.SymplecticForm.floerLinearization`, wit
   (`eventually_forall_norm_floerJetCoeff_preglue_sub_le`). Hence, when the coefficients of `D_u`
   and `D_v` are essentially bounded, so are those of `D_{w_R}`
   (`eventually_memLp_floerJetCoeff_preglue`), and on the Sobolev completion
-  `W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator`) the
+  `W^{1,2}(ℝ × S¹, V) → L²(ℝ × S¹, V)` (`TauCeti.SymplecticForm.floerSobolevOperator 2`) the
   operator `D_{w_R}` is within `ε` in operator norm of the operator of the glued coefficient field
   (`eventually_norm_floerSobolevOperator_preglue_sub_le`).
 * **Uniformly bounded right inverses.** On the ends, the coefficient fields of `D_u` and `D_v`
@@ -416,9 +415,8 @@ theorem eventually_setIntegral_sobolev_le_mul_setIntegral_floerLinearization_pre
     (Eventually.of_forall fun _ _ ↦ hu.differentiable one_ne_zero _) hux hdux
     (Eventually.of_forall fun _ _ ↦ hv.differentiable one_ne_zero _) hvx hdvx hε
   -- Regularity of the data and of the three maps.
-  have hx₁ : ContDiff ℝ 1 x := contDiff_one_of_hasDerivAt
-    (X := fun t ↦ ω.hamiltonianVectorField (H t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hx
+  have hx₁ : ContDiff ℝ 1 x :=
+    ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le one_le_two) hx
   have hJ' : ContDiff ℝ 1 (uncurry fun (p : ℝ × ℝ) ↦ J p.2) :=
     hJ.comp (contDiff_fst.snd.prodMk contDiff_snd)
   have hKs : ContDiff ℝ 2 (uncurry fun (_ : ℝ × ℝ) (_ : V) ↦ (0 : ℝ)) := contDiff_const
@@ -591,9 +589,8 @@ theorem eventually_memLp_floerJetCoeff_preglue (ω : SymplecticForm V)
     ∀ᶠ R in atTop, MemLp
       (ω.floerJetCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R)) ∞
         stripMeasure := by
-  have hx₁ : ContDiff ℝ 1 x := contDiff_one_of_hasDerivAt
-    (X := fun t ↦ ω.hamiltonianVectorField (H t))
-    (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hx
+  have hx₁ : ContDiff ℝ 1 x :=
+    ω.contDiff_one_of_hasDerivAt_hamiltonianVectorField (hH.of_le one_le_two) hx
   filter_upwards [ω.eventually_forall_norm_floerJetCoeff_preglue_sub_le hJ hH hJp hHp hx hxp
     (Eventually.of_forall fun _ _ ↦ hu.differentiable one_ne_zero _) hux hdux
     (Eventually.of_forall fun _ _ ↦ hv.differentiable one_ne_zero _) hvx hdvx one_pos] with R hR
@@ -629,8 +626,8 @@ theorem eventually_norm_floerSobolevOperator_preglue_sub_le (ω : SymplecticForm
       stripMeasure)
     {ε : ℝ} (hε : 0 < ε) :
     ∀ᶠ R in atTop,
-      ‖ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) -
-        (jetOperator stripMeasure (Function.uncurry (gluedCoeff
+      ‖ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) -
+        (jetOperator 2 stripMeasure (Function.uncurry (gluedCoeff
           (Function.curry (ω.floerJetCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u))
           (Function.curry (ω.floerJetCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v))
           R))).comp (H1 V).subtypeL‖ ≤ ε := by
@@ -674,12 +671,12 @@ theorem eventually_exists_rightInverse_floerSobolevOperator_preglue (ω : Symple
     (hdvx : TendstoUniformly (fun s t ↦ fderiv ℝ v (s, t))
       (fun t ↦ (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))) atBot)
     {Qu Qv : Lp V 2 stripMeasure →L[ℝ] H1 V}
-    (hQu : (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u).comp Qu =
+    (hQu : (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u).comp Qu =
       ContinuousLinearMap.id ℝ _)
-    (hQv : (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v).comp Qv =
+    (hQv : (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v).comp Qv =
       ContinuousLinearMap.id ℝ _) :
     ∀ᶠ R in atTop, ∃ Q : Lp V 2 stripMeasure →L[ℝ] H1 V,
-      (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
+      (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
           (preglue x u v R)).comp Q = ContinuousLinearMap.id ℝ _ ∧
         ‖Q‖ ≤ 8 * (‖Qu‖ + ‖Qv‖) := by
   -- If `L²` is trivial, so is every operator into it.
@@ -702,7 +699,7 @@ theorem eventually_exists_rightInverse_floerSobolevOperator_preglue (ω : Symple
   obtain ⟨Q, hQ, hQn⟩ := hR₀ R hR
   rw [← hK] at hQn
   -- `D_{w_R} Q` is within `1 / 2` of the identity, and a Neumann series corrects `Q`.
-  have hE : ‖(ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
+  have hE : ‖(ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
       (preglue x u v R)).comp Q - ContinuousLinearMap.id ℝ _‖ ≤ 1 / 2 := by
     rw [← hQ, ← ContinuousLinearMap.sub_comp]
     refine (opNorm_comp_le _ _).trans ?_
@@ -729,12 +726,13 @@ theorem eventually_surjective_floerSobolevOperator_preglue (ω : SymplecticForm 
     (hdvx : TendstoUniformly (fun s t ↦ fderiv ℝ v (s, t))
       (fun t ↦ (snd ℝ ℝ ℝ).smulRight (ω.hamiltonianVectorField (H t) (x t))) atBot)
     {Qu Qv : Lp V 2 stripMeasure →L[ℝ] H1 V}
-    (hQu : (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u).comp Qu =
+    (hQu : (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u).comp Qu =
       ContinuousLinearMap.id ℝ _)
-    (hQv : (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v).comp Qv =
+    (hQv : (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v).comp Qv =
       ContinuousLinearMap.id ℝ _) :
     ∀ᶠ R in atTop, Surjective
-      (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R)) := by
+      (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
+        (preglue x u v R)) := by
   filter_upwards [ω.eventually_exists_rightInverse_floerSobolevOperator_preglue hJ hH hJp hHp hx
     hxp hu hv hux hdux hvx hdvx hQu hQv] with R ⟨Q, hQ, _⟩
   exact fun f ↦ ⟨Q f, by simpa using DFunLike.congr_fun hQ f⟩
@@ -761,15 +759,15 @@ theorem eventually_isFredholm_and_index_floerSobolevOperator_preglue (ω : Sympl
       stripMeasure)
     (hMv : MemLp (ω.floerJetCoeff (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v) ∞
       stripMeasure)
-    (hDu : (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u).IsFredholm)
-    (hDv : (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v).IsFredholm) :
+    (hDu : (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u).IsFredholm)
+    (hDv : (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v).IsFredholm) :
     ∀ᶠ R in atTop,
-      (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
+      (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
           (preglue x u v R)).IsFredholm ∧
-        (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
+        (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2)
             (preglue x u v R)).index =
-          (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u).index +
-            (ω.floerSobolevOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v).index := by
+          (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u).index +
+            (ω.floerSobolevOperator 2 (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v).index := by
   have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
   rw [floerSobolevOperator_def] at hDu hDv
   -- Every operator within `ε` of the glued operators has the sum of the indices, for long necks.

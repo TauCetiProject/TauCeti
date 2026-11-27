@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
@@ -180,8 +181,9 @@ theorem eventually_mdifferentiableAt_slice [IsManifold I' 1 M]
 
 /-- A jointly `C^n` family in the model space, fixing the base point of an extended chart at time
 zero, gives a family on the manifold, jointly `C^n` at the base point and time zero, by
-conjugating with the extended chart. -/
-theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod [I'.Boundaryless] (a : M)
+conjugating with the extended chart. The base point is an interior point, as every point of a
+boundaryless manifold is (`BoundarylessManifold.isInteriorPoint`). -/
+theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod (a : M) (ha : I'.IsInteriorPoint a)
     {φ : E' → 𝕜 → E'} (hφ : ContDiffAt 𝕜 n (fun p : E' × 𝕜 ↦ φ p.1 p.2) (extChartAt I' a a, 0))
     (hφ0 : φ (extChartAt I' a a) 0 = extChartAt I' a a) :
     ContMDiffAt (I'.prod 𝓘(𝕜, 𝕜)) I' n
@@ -198,9 +200,11 @@ theorem contMDiffAt_extChartAt_symm_comp_extChartAt_prod [I'.Boundaryless] (a : 
       (fun p : M × 𝕜 ↦ φ (extChartAt I' a p.1) p.2) (a, 0) := by
     have h := hφM.comp (a, 0) hcoord
     simpa only [Function.comp_def] using h
-  have hinv : ContMDiffAt 𝓘(𝕜, E') I' n (extChartAt I' a).symm (extChartAt I' a a) := by
-    rw [← contMDiffWithinAt_univ, ← I'.range_eq_univ]
-    exact contMDiffWithinAt_extChartAt_symm_range_self a
+  -- At an interior point the range of the model is a neighbourhood of the chart point.
+  have hinv : ContMDiffAt 𝓘(𝕜, E') I' n (extChartAt I' a).symm (extChartAt I' a a) :=
+    (contMDiffWithinAt_extChartAt_symm_range_self a).contMDiffAt
+      (Filter.mem_of_superset (isOpen_interior.mem_nhds (I'.isInteriorPoint_iff.mp ha))
+        (interior_subset.trans (extChartAt_target_subset_range a)))
   have hcomp := hinv.comp_of_eq hinner hφ0
   simpa only [Function.comp_def] using hcomp
 

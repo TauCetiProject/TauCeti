@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Regularity.HalfSpace
+public import TauCeti.Analysis.PDE.Regularity.HalfSpace.HigherOrder
 public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.Localization
@@ -384,7 +384,7 @@ private theorem exists_value_eq_value_restrictL_of_contDiff (hν : ν ≠ 0)
   obtain ⟨w, G, hw, hwv⟩ := exists_isWeakSolutionDirichlet_value_ae_eq_indicator hM hK hsm
     hΩ₁H hu₁ hψ hψc hts hN _ _ (hψu ▸ v.property)
   obtain ⟨W3, hW3⟩ := ha.exists_value_eq_value_of_mapsTo hν hHc hH hK.lipschitzOnWith
-    (fun i j => (hsm i j).contDiffOn) (fun i j => (hK' i j).lipschitzOnWith) hw
+    (fun i j => ((hsm i j).of_le (by simp)).contDiffOn) (fun i j => (hK' i j).lipschitzOnWith) hw
   -- On `Ω ∩ V`, where `ψ = 1`, the function `ψ u` is `u`.
   have hVΩ₁ : ((Omega ⊓ V : Opens (EuclideanSpace ℝ ι)) : Set (EuclideanSpace ℝ ι)) ⊆ Ω₁ :=
     fun x hx => ⟨hx.1, subset_closure.trans hVW hx.2⟩

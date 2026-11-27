@@ -11,7 +11,9 @@ public import TauCeti.Geometry.Manifold.Instances.ComplexProjectiveSpace.Hopf
 public import TauCeti.Geometry.Symplectic.Complex.ImInner.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.Descent
 public import TauCeti.Geometry.Symplectic.Manifold.Rescale
+import TauCeti.Geometry.Contact.Sphere
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.InnerProductSpace.Complex
 import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Basic
 
@@ -148,59 +150,14 @@ theorem ker_bilinFormAt_mpullback_coe_sphere
         (mvfderiv (𝓡 (2 * n + 1))
           ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1)))
           x).toLinearMap := by
-  set D := mvfderiv (𝓡 (2 * n + 1))
-    ((↑) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 → EuclideanSpace ℂ (Fin (n + 1))) x
-  -- Tangent vectors are read in `ℂⁿ⁺¹` as vectors real-orthogonal to `x`.
-  have horth (w : TangentSpace (𝓡 (2 * n + 1)) x) :
-      ⟪(x : EuclideanSpace ℂ (Fin (n + 1))), D w⟫_ℝ = 0 :=
-    inner_coe_mvfderiv_subtypeVal_sphere x w
-  -- `Im ⟪v, w⟫_ℂ = ⟪i v, w⟫_ℝ`.
-  have him (v w : EuclideanSpace ℂ (Fin (n + 1))) : (⟪v, w⟫_ℂ).im = ⟪I • v, w⟫_ℝ := by
-    rw [EuclideanSpace.real_inner_eq_re_inner, inner_smul_left]
-    simp
-  ext u
-  simp only [LinearMap.mem_ker, Submodule.mem_comap, Submodule.mem_span_singleton,
-    ContinuousLinearMap.coe_coe, LinearMap.ext_iff, SmoothForm.bilinFormAt_apply,
-    LinearMap.zero_apply, eval₂_sphereForm]
-  constructor
-  · intro h
-    -- The component `y` of `i (D u)` orthogonal to `x` is the image of a tangent vector, and
-    -- `0 = Im ⟪D u, y⟫_ℂ = ⟪i (D u), y⟫_ℝ = ‖y‖²`.
-    set s : ℝ := ⟪(x : EuclideanSpace ℂ (Fin (n + 1))), I • D u⟫_ℝ
-    set y : EuclideanSpace ℂ (Fin (n + 1)) := I • D u - s • (x : EuclideanSpace ℂ (Fin (n + 1)))
-    have hx :
-        ⟪(x : EuclideanSpace ℂ (Fin (n + 1))), (x : EuclideanSpace ℂ (Fin (n + 1)))⟫_ℝ = 1 := by
-      rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere, one_pow]
-    have hy : ⟪(x : EuclideanSpace ℂ (Fin (n + 1))), y⟫_ℝ = 0 := by
-      rw [inner_sub_right, real_inner_smul_right, hx, mul_one, sub_self]
-    obtain ⟨w, hw⟩ := exists_mvfderiv_coe_sphere_eq (n := 2 * n + 1) x hy
-    have hyy : ⟪y, y⟫_ℝ = 0 := by
-      have h0 := h w
-      rw [hw, him] at h0
-      have hsplit : I • D u = y + s • (x : EuclideanSpace ℂ (Fin (n + 1))) := by
-        rw [sub_add_cancel]
-      rw [hsplit, inner_add_left, real_inner_smul_left, real_inner_comm, hy, mul_zero,
-        add_zero] at h0
-      exact h0
-    have hy0 : y = 0 := inner_self_eq_zero.1 hyy
-    -- So `i (D u) = s x`, and `D u = (-s) (i x)`.
-    refine ⟨-s, ?_⟩
-    have hIu : I • D u = s • (x : EuclideanSpace ℂ (Fin (n + 1))) := sub_eq_zero.1 hy0
-    calc (-s) • I • (x : EuclideanSpace ℂ (Fin (n + 1)))
-        = -(I • (s • (x : EuclideanSpace ℂ (Fin (n + 1))))) := by
-          rw [neg_smul, smul_comm]
-      _ = D u := by
-          rw [← hIu, smul_smul, Complex.I_mul_I, neg_one_smul, neg_neg]
-  · rintro ⟨t, ht⟩ w
-    -- `i (t (i x)) = (-t) x` is real-orthogonal to the tangent vectors.
-    have hIt : I • t • I • (x : EuclideanSpace ℂ (Fin (n + 1))) =
-        (-t) • (x : EuclideanSpace ℂ (Fin (n + 1))) := by
-      rw [RCLike.real_smul_eq_coe_smul (K := ℂ) t, RCLike.real_smul_eq_coe_smul (K := ℂ) (-t),
-        smul_smul, smul_smul]
-      congr 1
-      push_cast
-      linear_combination (t : ℂ) * Complex.I_sq
-    rw [← ht, him, hIt, real_inner_smul_left, horth, mul_zero]
+  -- `Im ⟪u, i v⟫_ℂ = ⟪u, v⟫_ℝ`, so this is the Hopf line of the round sphere, pulled back along
+  -- the injective differential of the inclusion.
+  have hK (u v : EuclideanSpace ℂ (Fin (n + 1))) :
+      imInnerSymplecticForm (EuclideanSpace ℂ (Fin (n + 1))) u (I • v) = ⟪u, v⟫_ℝ := by
+    simp [inner_smul_right, EuclideanSpace.real_inner_eq_re_inner]
+  refine (Submodule.comap_map_eq_of_injective
+    (injective_mvfderiv_subtypeVal_sphere x) _).symm.trans ?_
+  rw [SymplecticForm.map_ker_bilinFormAt_mpullback_coe_sphere _ (K := (I • ·)) hK x]
 
 /-- **The restriction of `Im ⟪·, ·⟫_ℂ` to the sphere is invariant under the circle** acting by
 unit scalars, which acts on `ℂⁿ⁺¹` by unitary maps. -/
@@ -224,11 +181,7 @@ theorem mpullback_smul_mpullback_coe_sphere (c : Circle) :
     refine SmoothBundleForm.ext_eval₂ fun p v w ↦ ?_
     rw [SmoothForm.eval₂_mpullback, SymplecticForm.eval₂_constSmooth_mfderiv_eq,
       SymplecticForm.fromTangentSpace_constSmooth_apply, mvfderiv_eq_fderiv, L.fderiv]
-    have hc (a b : EuclideanSpace ℂ (Fin (n + 1))) :
-        (⟪(c : ℂ) • a, (c : ℂ) • b⟫_ℂ).im = (⟪a, b⟫_ℂ).im := by
-      rw [inner_smul_left, inner_smul_right, ← mul_assoc, Complex.conj_mul', Circle.norm_coe]
-      simp
-    simpa [L] using hc _ _
+    simpa [L] using congrArg Complex.im (inner_smul_smul_of_norm_eq_one (Circle.norm_coe c) _ _)
   rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_coe_sphere L.contMDiff
     (funext fun z ↦ Circle.coe_smul_sphere c z), hL]
 
@@ -309,6 +262,17 @@ theorem isSymplectic_fubiniStudyForm : (fubiniStudyForm n).IsSymplectic :=
     ⟨(SymplecticForm.isClosed_constSmooth _).mpullback _ contMDiff_coe_sphere,
       fun x ↦ (ker_bilinFormAt_mpullback_coe_sphere x).trans (ker_mfderiv_mk x).symm⟩).smul _
     (inv_ne_zero Real.pi_ne_zero)
+
+variable (n) in
+/-- The Fubini–Study form is `C¹`, the regularity at which forms are integrated over spheres. -/
+theorem isSmoothForm_fubiniStudyForm :
+    IsSmoothForm 𝓘(ℝ, Fin n → ℂ) 1 (fubiniStudyForm n).val :=
+  (fubiniStudyForm n).isSmoothForm.of_le (by simp)
+
+variable (n) in
+/-- The Fubini–Study form is closed: its manifold exterior derivative vanishes. -/
+theorem mextDeriv_fubiniStudyForm : mextDeriv (fubiniStudyForm n).val = 0 :=
+  (SmoothForm.isClosed_def _).1 isSymplectic_fubiniStudyForm.isClosed
 
 /-! ### The Fubini–Study form and the Fubini–Study Hermitian form -/
 

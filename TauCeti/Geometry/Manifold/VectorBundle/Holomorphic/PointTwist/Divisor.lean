@@ -33,7 +33,7 @@ C.1.10, step 5:
   without changing `σ` near the other zeros (`TauCeti.exists_untwist_section_of_finset`, built
   on `TauCeti.exists_untwist_section_of_isSignedTransverseZero`), so their chart readings,
   hence their signs, are unchanged
-  (`TauCeti.negPointTwistChartReading_eventuallyEq_of_pointTwistDiv`).
+  (`TauCeti.preferredChartReading_eventuallyEq_of_pointTwistDiv`).
 * After all zeros are removed the section vanishes nowhere, and a line bundle with a nowhere-zero
   smooth section is isomorphic to the trivial bundle (`TauCeti.contMDiff_lineCoord`).
 * Twisting back with the opposite signs, cancellation (`TauCeti.signedPointTwistCancelEquiv`) and
@@ -309,7 +309,7 @@ theorem exists_contMDiff_divisorCore_equiv_of_section (l : List (X × Bool))
       (S := (l.map Prod.fst).toFinset) (by simpa using hl.1) hσ (by simpa using hZ) hT.1
     have hne : ∀ q ∈ l, q.1 ≠ x := fun q hq h ↦ hl.1 (h ▸ List.mem_map_of_mem hq)
     obtain ⟨e, he⟩ := ih hl.2 hτ (fun z ↦ by simpa using hτZ z) fun q hq ↦ (hT.2 q hq).congr
-      (negPointTwistChartReading_eventuallyEq_of_pointTwistDiv (hne q hq)
+      (preferredChartReading_eventuallyEq_of_pointTwistDiv (hne q hq)
         (hτσ q.1 (List.mem_toFinset.2 (List.mem_map_of_mem hq)))).symm
     -- `L ≅ L(±x)(∓x) ≅ 𝒪(D')(∓x)`, by cancellation and functoriality.
     refine ⟨fun z ↦ (signedPointTwistCancelEquiv ℂ L x s z).symm.trans
