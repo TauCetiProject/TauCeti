@@ -17,7 +17,9 @@ Let `f : α → α` and let `x i` be points of least periods `d i > 0`, one on e
 (`Function.periodicPairEquiv`). Indeed the least period of a point `y` on the orbit of `x i` is
 `d i`, which divides every period of `y`, and the points `f^[j] (x i)`, `j < d i`, are distinct.
 Such a choice of representatives is automatically injective
-(`Function.injective_of_existsUnique_iterate`).
+(`Function.injective_of_existsUnique_iterate`), and one always exists: choosing a point on each
+periodic orbit `Function.periodicOrbit f y` gives one
+(`Function.exists_forall_mem_periodicPts_and_existsUnique_iterate`).
 
 This is the reindexing by which a sum over the fixed points of the iterates of `f`, such as the
 fixed-point form of a zeta function, becomes a sum over periodic orbits and their iterates.
@@ -25,9 +27,11 @@ fixed-point form of a zeta function, becomes a sum over periodic orbits and thei
 
 public section
 
+universe u
+
 namespace Function
 
-variable {α ι : Type*} {f : α → α} {x : ι → α} {d : ι → ℕ}
+variable {α : Type u} {ι : Type*} {f : α → α} {x : ι → α} {d : ι → ℕ}
 
 /-- If the `x i` are periodic points of `f` and every periodic point lies on the orbit of exactly
 one `x i`, then the `x i` are pairwise distinct. -/
@@ -85,5 +89,25 @@ theorem coe_periodicPairEquiv_apply (hmin : ∀ i, minimalPeriod f (x i) = d i)
     (q : (p : ι × ℕ) × Fin (d p.1)) :
     (periodicPairEquiv hmin hd hrep q : ℕ × α) = (d q.1.1 * (q.1.2 + 1), f^[q.2] (x q.1.1)) :=
   (rfl)
+
+variable (f) in
+/-- **Representatives of the periodic orbits.** Every map `f : α → α` has a family of periodic
+points `x i`, one on each periodic orbit: every periodic point of `f` lies on the orbit of exactly
+one `x i`. The index type is the set of periodic orbits `Function.periodicOrbit f y` of the
+periodic points `y`, and `x i` is a point of the orbit `i`. Their least periods
+`minimalPeriod f (x i)` are then positive. -/
+theorem exists_forall_mem_periodicPts_and_existsUnique_iterate :
+    ∃ (ι : Type u) (x : ι → α), (∀ i, x i ∈ periodicPts f) ∧
+      ∀ y ∈ periodicPts f, ∃! i, ∃ j, f^[j] (x i) = y := by
+  let ι := {c : Cycle α // ∃ y ∈ periodicPts f, periodicOrbit f y = c}
+  choose x hx horb using fun i : ι ↦ i.property
+  refine ⟨ι, x, hx, fun y hy ↦ ⟨⟨periodicOrbit f y, y, hy, rfl⟩, ?_, ?_⟩⟩
+  · -- `y` lies on its own orbit, which is the orbit of the chosen point.
+    refine (mem_periodicOrbit_iff (hx _)).1 ?_
+    rw [horb]
+    exact self_mem_periodicOrbit hy
+  · -- An orbit through `y` is the orbit of `y`.
+    rintro i ⟨j, rfl⟩
+    exact Subtype.ext ((periodicOrbit_apply_iterate_eq (hx i) j).trans (horb i)).symm
 
 end Function
