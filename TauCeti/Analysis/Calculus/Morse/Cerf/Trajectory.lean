@@ -56,8 +56,9 @@ constant because a negative gradient trajectory of `Q` with the same limit at bo
 the first component of a trajectory of the separated sum is a trajectory of `g s` wherever it goes
 (`IsIntegralCurve.fst_of_separatedSum`), so the uniqueness holds among all trajectories, not only
 those in the slab. When `F` is finite-dimensional the two critical points above `b` have Morse
-indices `ind_Q(b) + 1` and `ind_Q(b)`
-(`TauCeti.exists_pos_eventually_morseIndex_separatedSum_toLp`), as in Cerf's normal form. These
+indices `ind_Q(b) + 1` and `ind_Q(b)`, as in Cerf's normal form; the same theorem states this for
+the pair it joins, and `TauCeti.exists_pos_eventually_morseIndex_separatedSum_toLp` states it
+without assuming `Q` differentiable away from `b`. These
 statements use the product metric of the chart coordinates; the comparison with the trajectories
 of another metric is not treated here.
 
@@ -68,7 +69,8 @@ of another metric is not treated here.
 * `TauCeti.exists_pos_eventually_setOf_fderiv_separatedSum_eq_zero_and_isIntegralCurve`: the same
   with transverse directions: the critical points of `(a, b) ↦ g s a + Q b` near the birth and
   the trajectories joining the newborn pairs.
-* `TauCeti.exists_pos_eventually_morseIndex_separatedSum_toLp`: their Morse indices.
+* `TauCeti.exists_pos_eventually_morseIndex_separatedSum_toLp`: their Morse indices, for `Q` only
+  `C²` at `b`.
 
 ## References
 
@@ -199,6 +201,19 @@ section Transverse
 variable {g : ℝ → ℝ → ℝ} {t x : ℝ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
   {Q : F → ℝ}
 
+/-- The Morse indices of the points `(p, b)` and `(q, b)` for the separated sum
+`(a, b) ↦ φ a + Q b`, when `φ''(p) < 0 < φ''(q)`. -/
+private theorem morseIndex_separatedSum_toLp_of_neg_of_pos [FiniteDimensional ℝ F] {φ : ℝ → ℝ}
+    {p q : ℝ} {b : F} (hp : ContDiffAt ℝ 2 φ p) (hq : ContDiffAt ℝ 2 φ q)
+    (hdp : deriv (deriv φ) p < 0) (hdq : 0 < deriv (deriv φ) q) (hb : ContDiffAt ℝ 2 Q b) :
+    morseIndex (separatedSum φ Q) (WithLp.toLp 2 (p, b)) = morseIndex Q b + 1 ∧
+      morseIndex (separatedSum φ Q) (WithLp.toLp 2 (q, b)) = morseIndex Q b := by
+  constructor
+  · rw [morseIndex_separatedSum hp hb, morseIndex_real_of_neg (by
+      rwa [iteratedDeriv_succ, iteratedDeriv_one]), add_comm, WithLp.toLp_snd]
+  · rw [morseIndex_separatedSum hq hb, morseIndex_real_of_pos (by
+      rwa [iteratedDeriv_succ, iteratedDeriv_one]), zero_add, WithLp.toLp_snd]
+
 /-- **The birth in the presence of transverse directions.** Let `g s` be a family of functions of
 one variable as in `TauCeti.exists_pos_eventually_setOf_deriv_eq_zero_eq_pair_and_isIntegralCurve`,
 jointly `C³` at `(t, x)` with `(g t)'(x) = 0`, `(g t)''(x) = 0` and `0 < (g t)'''(x)`, and let `Q`
@@ -207,14 +222,17 @@ be a differentiable function on a real Hilbert space `F`. Consider the separated
 every `s` close to `t` with `(g s)'(x) < 0`, there are `p < x < q` in `(x - r, x + r)` with:
 
 * the critical points of the separated sum in the slab `(x - r, x + r) × F` are the points `(p, b)`
-  and `(q, b)` with `b` a critical point of `Q`; they are nondegenerate when `b` is;
+  and `(q, b)` with `b` a critical point of `Q`, where `(g s)''(p) < 0 < (g s)''(q)`; they are
+  nondegenerate when `b` is, and when `F` is finite-dimensional and `Q` is `C²` at `b` their
+  Morse indices are `ind_Q(b) + 1` and `ind_Q(b)`;
 * there is a negative gradient trajectory `γ` of `g s` with values in `(p, q)`, from `p` to `q`,
   such that for every critical point `b` of `Q` the curve `σ ↦ (γ σ, b)` is a negative gradient
   trajectory of the separated sum, and every negative gradient trajectory of the separated sum
   from `(p, b)` to `(q, b)` is one of its time translates.
 
 The uniqueness is global: it concerns all trajectories of the separated sum in `ℝ × F`, not only
-those in the slab. -/
+those in the slab. Since one statement gives the critical points, their Morse indices and the
+trajectories joining them, all three concern the same newborn pair. -/
 theorem exists_pos_eventually_setOf_fderiv_separatedSum_eq_zero_and_isIntegralCurve
     [CompleteSpace F] (hg : ContDiffAt ℝ 3 (uncurry g) (t, x)) (h1 : deriv (g t) x = 0)
     (h2 : deriv (deriv (g t)) x = 0) (h3 : 0 < deriv (deriv (deriv (g t))) x)
@@ -224,9 +242,13 @@ theorem exists_pos_eventually_setOf_fderiv_separatedSum_eq_zero_and_isIntegralCu
       {z : WithLp 2 (ℝ × F) | z.fst ∈ Ioo (x - r) (x + r) ∧
           fderiv ℝ (separatedSum (g s) Q) z = 0} =
         {z | (z.fst = p ∨ z.fst = q) ∧ fderiv ℝ Q z.snd = 0} ∧
+      deriv (deriv (g s)) p < 0 ∧ 0 < deriv (deriv (g s)) q ∧
       (∀ b, IsNondegenerateCriticalPoint Q b →
         IsNondegenerateCriticalPoint (separatedSum (g s) Q) (WithLp.toLp 2 (p, b)) ∧
           IsNondegenerateCriticalPoint (separatedSum (g s) Q) (WithLp.toLp 2 (q, b))) ∧
+      (∀ [FiniteDimensional ℝ F] (b : F), ContDiffAt ℝ 2 Q b →
+        morseIndex (separatedSum (g s) Q) (WithLp.toLp 2 (p, b)) = morseIndex Q b + 1 ∧
+          morseIndex (separatedSum (g s) Q) (WithLp.toLp 2 (q, b)) = morseIndex Q b) ∧
       ∃ γ : ℝ → ℝ, IsIntegralCurve γ (fun _ a ↦ -∇ (g s) a) ∧ (∀ σ, γ σ ∈ Ioo p q) ∧
         Tendsto γ atBot (𝓝 p) ∧ Tendsto γ atTop (𝓝 q) ∧
         ∀ b, fderiv ℝ Q b = 0 →
@@ -262,8 +284,12 @@ theorem exists_pos_eventually_setOf_fderiv_separatedSum_eq_zero_and_isIntegralCu
   -- Along `γ` the function `g s` is differentiable, since `γ` stays in `(p, q)`.
   have hγd (σ : ℝ) : DifferentiableAt ℝ (g s) (γ σ) :=
     hdiff _ ⟨hpI.1.trans (hmem σ).1, (hmem σ).2.trans hqI.2⟩
-  refine ⟨p, q, hp, hq, ?_, fun b hb ↦ ⟨(hnd p hpI hp0 hdp.ne).separatedSum hb,
-    (hnd q hqI hq0 hdq.ne').separatedSum hb⟩, γ, hγ, hmem, hbot, htop, fun b hb ↦ ⟨?_, ?_⟩⟩
+  have hC2 (a : ℝ) (ha : a ∈ Ioo (x - r) (x + r)) : ContDiffAt ℝ 2 (g s) a :=
+    (hC a (Ioo_subset_Icc_self ha)).of_le (by norm_num)
+  refine ⟨p, q, hp, hq, ?_, hdp, hdq, fun b hb ↦ ⟨(hnd p hpI hp0 hdp.ne).separatedSum hb,
+    (hnd q hqI hq0 hdq.ne').separatedSum hb⟩,
+    fun b hb ↦ morseIndex_separatedSum_toLp_of_neg_of_pos (hC2 p hpI) (hC2 q hqI) hdp hdq hb,
+    γ, hγ, hmem, hbot, htop, fun b hb ↦ ⟨?_, ?_⟩⟩
   · -- The critical points of the separated sum in the slab.
     ext z
     constructor
@@ -288,7 +314,9 @@ In the situation of
 finite-dimensional space `F`: there is `r > 0` such that, for every `s` close to `t` with
 `(g s)'(x) < 0`, the two critical points `p < x < q` of `g s` in `(x - r, x + r)` give, above every
 point `b` at which `Q` is `C²`, points `(p, b)` and `(q, b)` of Morse indices `ind_Q(b) + 1` and
-`ind_Q(b)` for the separated sum `(a, b) ↦ g s a + Q b`. -/
+`ind_Q(b)` for the separated sum `(a, b) ↦ g s a + Q b`. Unlike that theorem, which also gives
+these indices for the pair it joins by trajectories, this one does not assume `Q` differentiable
+everywhere. -/
 theorem exists_pos_eventually_morseIndex_separatedSum_toLp [FiniteDimensional ℝ F]
     (hg : ContDiffAt ℝ 3 (uncurry g) (t, x)) (h1 : deriv (g t) x = 0)
     (h2 : deriv (deriv (g t)) x = 0) (h3 : 0 < deriv (deriv (deriv (g t))) x) :
@@ -307,11 +335,8 @@ theorem exists_pos_eventually_morseIndex_separatedSum_toLp [FiniteDimensional �
     (hC a (Ioo_subset_Icc_self ha)).of_le (by norm_num)
   have hpI : p ∈ Ioo (x - r) (x + r) := ⟨hp.1, by linarith [hp.2, hq.1, hq.2]⟩
   have hqI : q ∈ Ioo (x - r) (x + r) := ⟨by linarith [hp.1, hp.2, hq.1], hq.2⟩
-  refine ⟨p, q, hp, hq, hset, fun b hb ↦ ⟨?_, ?_⟩⟩
-  · rw [morseIndex_separatedSum (hC2 p hpI) hb, morseIndex_real_of_neg (by
-      rwa [iteratedDeriv_succ, iteratedDeriv_one]), add_comm, WithLp.toLp_snd]
-  · rw [morseIndex_separatedSum (hC2 q hqI) hb, morseIndex_real_of_pos (by
-      rwa [iteratedDeriv_succ, iteratedDeriv_one]), zero_add, WithLp.toLp_snd]
+  exact ⟨p, q, hp, hq, hset, fun b hb ↦
+    morseIndex_separatedSum_toLp_of_neg_of_pos (hC2 p hpI) (hC2 q hqI) hdp hdq hb⟩
 
 end Transverse
 
