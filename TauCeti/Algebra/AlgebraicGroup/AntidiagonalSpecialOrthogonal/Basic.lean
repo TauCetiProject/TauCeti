@@ -261,6 +261,11 @@ theorem definingHopfIdeal_toIdeal_le_ker_iff {T : Type*} [CommRing T] [Algebra R
 noncomputable abbrev coordinateHopfAlgebra : _root_.CommHopfAlgCat.{u} R :=
   CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra R l) (definingHopfIdeal R l)
 
+/-- The coordinate Hopf algebra of `SO_l^J` is the determinant-one quotient for `J_l`. -/
+theorem coordinateHopfAlgebra_eq_special :
+    coordinateHopfAlgebra R l = ConstantForm.Special.coordinateHopfAlgebra R l (formMatrix R l) :=
+  congrArg (CommHopfAlgCat.quotient _) (definingHopfIdeal_eq_special R l)
+
 /-- The quotient coordinate morphism `O(GL_l) ⟶ O(SO_l^J)`. -/
 noncomputable def coordinateMap :
     GeneralLinear.coordinateHopfAlgebra R l ⟶ coordinateHopfAlgebra R l :=
@@ -438,7 +443,11 @@ theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom 
         (coordinateHopfAlgebraBaseChangeIso R l K).hom =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l).hom ≫ coordinateMap K l := by
   rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
-  exact ConstantForm.Special.baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_hom _
+  have h :=
+    ConstantForm.Special.baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom
+      (map_formMatrix R l (algebraMap R K) (map_zero _) (map_one _))
+  rw [ConstantForm.Special.coordinateMap_def, ConstantForm.Special.coordinateMap_def] at h
+  exact h
 
 /-- The inverse base-change isomorphism of `SO_l^J` is compatible with the quotient coordinate
 morphisms. -/
@@ -448,7 +457,10 @@ theorem coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv :
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R K l).inv ≫
         CommHopfAlgCat.baseChangeMap (K := K) (coordinateMap R l) := by
   rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraBaseChangeIso]
-  exact ConstantForm.Special.mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_inv _
+  have h := ConstantForm.Special.coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv
+    (map_formMatrix R l (algebraMap R K) (map_zero _) (map_one _))
+  rw [ConstantForm.Special.coordinateMap_def, ConstantForm.Special.coordinateMap_def] at h
+  exact h
 
 /-- The finite-type coordinate Hopf algebra of `SO_l^J` commutes with base change. -/
 noncomputable def finiteTypeCoordinateHopfAlgebraBaseChangeIso :

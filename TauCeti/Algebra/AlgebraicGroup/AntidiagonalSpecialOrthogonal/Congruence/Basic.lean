@@ -147,7 +147,7 @@ and a square root `i` of `-1`, through conjugation by the inverse of the congrue
 `GL_l`. -/
 noncomputable def coordinateHopfAlgebraIsoSpecialOrthogonal (hi : i * i = -1) :
     coordinateHopfAlgebra R l ≅ SpecialOrthogonal.coordinateHopfAlgebra R l :=
-  eqToIso (congrArg (CommHopfAlgCat.quotient _) (definingHopfIdeal_eq_special R l)) ≪≫
+  eqToIso (coordinateHopfAlgebra_eq_special R l) ≪≫
     ConstantForm.Special.coordinateHopfAlgebraCongr (congrUnit l hi)
       (by rw [coe_congrUnit]; exact congrMatrix_mul_formMatrix_mul_transpose hi) ≪≫
     eqToIso (SpecialOrthogonal.coordinateHopfAlgebra_eq_special R l).symm
@@ -155,7 +155,7 @@ noncomputable def coordinateHopfAlgebraIsoSpecialOrthogonal (hi : i * i = -1) :
 /-- The coordinate isomorphism is the general determinant-one congruence for `J_l` and `1`. -/
 theorem coordinateHopfAlgebraIsoSpecialOrthogonal_def (hi : i * i = -1) :
     coordinateHopfAlgebraIsoSpecialOrthogonal l hi =
-      eqToIso (congrArg (CommHopfAlgCat.quotient _) (definingHopfIdeal_eq_special R l)) ≪≫
+      eqToIso (coordinateHopfAlgebra_eq_special R l) ≪≫
         ConstantForm.Special.coordinateHopfAlgebraCongr (congrUnit l hi)
           (by rw [coe_congrUnit]; exact congrMatrix_mul_formMatrix_mul_transpose hi) ≪≫
         eqToIso (SpecialOrthogonal.coordinateHopfAlgebra_eq_special R l).symm :=
@@ -172,7 +172,9 @@ theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_hom (hi : i
     coordinateHopfAlgebraIsoSpecialOrthogonal_def, Iso.trans_hom, Iso.trans_hom, eqToIso.hom,
     eqToIso.hom, ← Category.assoc, ← Category.assoc,
     CommHopfAlgCat.mkQuotient_comp_eqToHom (definingHopfIdeal_eq_special R l).symm,
-    ConstantForm.Special.mkQuotient_comp_coordinateHopfAlgebraCongr_hom, Category.assoc,
+    ← ConstantForm.Special.coordinateMap_def,
+    ConstantForm.Special.coordinateMap_comp_coordinateHopfAlgebraCongr_hom,
+    ConstantForm.Special.coordinateMap_def, Category.assoc,
     CommHopfAlgCat.mkQuotient_comp_eqToHom (SpecialOrthogonal.definingHopfIdeal_eq_special R l)]
 
 /-- The inverse isomorphism of coordinate Hopf algebras is induced by conjugation by the congruence
@@ -186,7 +188,9 @@ theorem coordinateMap_comp_coordinateHopfAlgebraIsoSpecialOrthogonal_inv (hi : i
     eqToIso.inv, ← Category.assoc, ← Category.assoc,
     CommHopfAlgCat.mkQuotient_comp_eqToHom
       (SpecialOrthogonal.definingHopfIdeal_eq_special R l).symm,
-    ConstantForm.Special.mkQuotient_comp_coordinateHopfAlgebraCongr_inv, Category.assoc,
+    ← ConstantForm.Special.coordinateMap_def,
+    ConstantForm.Special.coordinateMap_comp_coordinateHopfAlgebraCongr_inv,
+    ConstantForm.Special.coordinateMap_def, Category.assoc,
     CommHopfAlgCat.mkQuotient_comp_eqToHom (definingHopfIdeal_eq_special R l)]
 
 /-- **`SO_l^J` is smooth** over a ring containing `1/2` and a square root of `-1`. -/

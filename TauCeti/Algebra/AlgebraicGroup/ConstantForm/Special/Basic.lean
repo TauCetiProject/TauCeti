@@ -223,25 +223,45 @@ theorem coordinateHopfAlgebraCongr_def (P : GL (Fin n) R)
 /-- The coordinate isomorphism induced by congruence intertwines the quotient maps with the
 pullback of conjugation by `P⁻¹` on `GLₙ`. -/
 @[reassoc]
-theorem mkQuotient_comp_coordinateHopfAlgebraCongr_hom (P : GL (Fin n) R)
+theorem coordinateMap_comp_coordinateHopfAlgebraCongr_hom (P : GL (Fin n) R)
     (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
-    CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C) ≫
-        (coordinateHopfAlgebraCongr P hP).hom =
-      (GeneralLinear.conjCoordinateIso P⁻¹).hom ≫
-        CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C') :=
+    coordinateMap R n C ≫ (coordinateHopfAlgebraCongr P hP).hom =
+      (GeneralLinear.conjCoordinateIso P⁻¹).hom ≫ coordinateMap R n C' :=
   CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_hom _ _ _
 
 /-- The inverse coordinate isomorphism intertwines the quotient maps with the pullback of
 conjugation by `P` on `GLₙ`. -/
 @[reassoc]
-theorem mkQuotient_comp_coordinateHopfAlgebraCongr_inv (P : GL (Fin n) R)
+theorem coordinateMap_comp_coordinateHopfAlgebraCongr_inv (P : GL (Fin n) R)
     (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C') :
-    CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C') ≫
-        (coordinateHopfAlgebraCongr P hP).inv =
-      (GeneralLinear.conjCoordinateIso P).hom ≫
-        CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C) := by
-  rw [coordinateHopfAlgebraCongr_def, CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_inv,
-    GeneralLinear.conjCoordinateIso_inv, Iso.symm_inv]
+    coordinateMap R n C' ≫ (coordinateHopfAlgebraCongr P hP).inv =
+      (GeneralLinear.conjCoordinateIso P).hom ≫ coordinateMap R n C := by
+  rw [coordinateMap_def, coordinateMap_def, coordinateHopfAlgebraCongr_def,
+    CommHopfAlgCat.mkQuotient_comp_quotientIsoOfComapEq_inv, GeneralLinear.conjCoordinateIso_inv,
+    Iso.symm_inv]
+
+/-- Precomposing a point preserving `C'` with the coordinate isomorphism for `P C Pᵀ = C'`
+sends its ambient matrix `M` to `P⁻¹ M P`, with `P` mapped to the value algebra. -/
+theorem pointsMulEquiv_mapPointsFunctor_coordinateHopfAlgebraCongr (P : GL (Fin n) R)
+    (hP : (P : Matrix (Fin n) (Fin n) R) * C * (P : Matrix (Fin n) (Fin n) R)ᵀ = C')
+    {A : Type w} [CommRing A] [Algebra R A]
+    (f : HopfAlgebra.points (R := R) (H := coordinateHopfAlgebra R n C') (CommAlgCat.of R A)) :
+    (pointsMulEquiv R n C (A := A) ((CommHopfAlgCat.Hom.mapPointsFunctor
+        (coordinateHopfAlgebraCongr P hP).hom).app (CommAlgCat.of R A) f) : GL (Fin n) A) =
+      GeneralLinearGroup.map (algebraMap R A) P⁻¹ *
+        (pointsMulEquiv R n C' (A := A) f : GL (Fin n) A) *
+        (GeneralLinearGroup.map (algebraMap R A) P⁻¹)⁻¹ := by
+  rw [pointsMulEquiv_coe R n C' f]
+  refine (pointsMulEquiv_coe R n C _).trans ?_
+  simp only [CommHopfAlgCat.quotientPointsHom, ← coordinateMap_def]
+  refine (congrArg (GeneralLinear.pointsMulEquiv n)
+    (CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply (coordinateMap R n C)
+      (coordinateHopfAlgebraCongr P hP).hom (CommAlgCat.of R A) f).symm).trans ?_
+  rw [coordinateMap_comp_coordinateHopfAlgebraCongr_hom]
+  exact (congrArg (GeneralLinear.pointsMulEquiv n)
+    (CommHopfAlgCat.Hom.mapPointsFunctor_comp_app_apply (GeneralLinear.conjCoordinateIso P⁻¹).hom
+      (coordinateMap R n C') (CommAlgCat.of R A) f)).trans
+    (GeneralLinear.pointsMulEquiv_mapPointsFunctor_conjCoordinateIso P⁻¹ _ _)
 
 /-- Congruence of coefficient matrices induces the corresponding conjugation isomorphism
 of determinant-one group schemes. -/
@@ -272,7 +292,7 @@ theorem groupSchemeCongr_hom_comp_hopfIdealInclusion (P : GL (Fin n) R)
   simp only [groupSchemeCongr_def, GeneralLinear.hopfIdealInclusion_def, Functor.mapIso_hom,
     Iso.symm_hom, Iso.op_inv, CommHopfAlgCat.quotientSpecι_def, Category.assoc,
     eqToHom_trans_assoc, eqToHom_refl, Category.id_comp, ← Functor.map_comp_assoc, ← op_comp,
-    mkQuotient_comp_coordinateHopfAlgebraCongr_inv]
+    ← coordinateMap_def, coordinateMap_comp_coordinateHopfAlgebraCongr_inv]
 
 /-- Congruence commutes with inclusion into the full form-preserving subgroup schemes. -/
 @[reassoc]
@@ -333,23 +353,20 @@ theorem coordinateHopfAlgebraBaseChangeIso_def (hC : C.map (algebraMap R S) = C'
 /-- The base-change isomorphism intertwines the two quotient maps from the ambient general
 linear coordinate algebras. -/
 @[reassoc]
-theorem baseChangeMap_mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_hom
+theorem baseChangeMap_coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_hom
     (hC : C.map (algebraMap R S) = C') :
-    CommHopfAlgCat.baseChangeMap (K := S) (CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C)) ≫
+    CommHopfAlgCat.baseChangeMap (K := S) (coordinateMap R n C) ≫
         (coordinateHopfAlgebraBaseChangeIso hC).hom =
-      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S n).hom ≫
-        CommHopfAlgCat.mkQuotient _ (definingHopfIdeal S n C') :=
+      (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S n).hom ≫ coordinateMap S n C' :=
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _ _
 
 /-- The inverse coordinate base-change isomorphism also intertwines the ambient quotient maps. -/
 @[reassoc]
-theorem mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_inv
+theorem coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv
     (hC : C.map (algebraMap R S) = C') :
-    CommHopfAlgCat.mkQuotient _ (definingHopfIdeal S n C') ≫
-        (coordinateHopfAlgebraBaseChangeIso hC).inv =
+    coordinateMap S n C' ≫ (coordinateHopfAlgebraBaseChangeIso hC).inv =
       (GeneralLinear.coordinateHopfAlgebraBaseChangeIso R S n).inv ≫
-        CommHopfAlgCat.baseChangeMap (K := S)
-          (CommHopfAlgCat.mkQuotient _ (definingHopfIdeal R n C)) :=
+        CommHopfAlgCat.baseChangeMap (K := S) (coordinateMap R n C) :=
   CommHopfAlgCat.mkQuotient_comp_quotientBaseChangeIsoOfMapEq_inv _ _ _ _
 
 /-- The base-change isomorphism on the finite-type coordinate Hopf algebras. -/
@@ -405,7 +422,7 @@ theorem map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso_hom
         GeneralLinear.hopfIdealInclusion S n (definingHopfIdeal S n C') := by
   rw [groupSchemeBaseChangeIso_def]
   exact GeneralLinear.map_hopfIdealInclusion_comp_groupSchemeBaseChangeIso R S n _ _ _
-    (mkQuotient_comp_coordinateHopfAlgebraBaseChangeIso_inv hC)
+    (coordinateMap_comp_coordinateHopfAlgebraBaseChangeIso_inv hC)
 
 end SchemeBaseChange
 
