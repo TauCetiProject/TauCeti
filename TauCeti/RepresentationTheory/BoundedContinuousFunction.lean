@@ -1,0 +1,74 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.RepresentationTheory.Subrepresentation
+public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+
+/-!
+# Right translation of bounded continuous functions
+
+Right translation acts on bounded continuous functions by `R(g) f(x) = f(xg)`.
+It preserves the supremum norm and the subspace of functions invariant under left
+translation by a subgroup. Restricting the translating group along a homomorphism
+allows one to translate only at the finite places of an adelic group.
+-/
+
+public section
+
+namespace BoundedContinuousFunction
+
+variable (𝕜 V G : Type*) [NormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [Group G] [TopologicalSpace G] [SeparatelyContinuousMul G]
+
+/-- Right translation on bounded continuous functions. -/
+noncomputable def rightRegular : Representation 𝕜 G (G →ᵇ V) where
+  toFun g := (compContinuousCLM V 𝕜 ⟨fun x ↦ x * g, continuous_mul_const g⟩).toLinearMap
+  map_one' := by ext f x; simp
+  map_mul' g h := by ext f x; simp [mul_assoc]
+
+variable {𝕜 V G}
+
+/-- The right regular action evaluates at the right translate of its argument. -/
+@[simp]
+theorem rightRegular_apply (g : G) (f : G →ᵇ V) (x : G) :
+    rightRegular 𝕜 V G g f x = f (x * g) :=
+  (rfl)
+
+/-- Right translation preserves the supremum norm. -/
+@[simp]
+theorem norm_rightRegular (g : G) (f : G →ᵇ V) :
+    ‖rightRegular 𝕜 V G g f‖ = ‖f‖ := by
+  apply le_antisymm
+  · exact norm_compContinuous_le f _
+  · calc
+      ‖f‖ = ‖rightRegular 𝕜 V G g⁻¹ (rightRegular 𝕜 V G g f)‖ := by
+        congr 1
+        ext x
+        simp
+      _ ≤ ‖rightRegular 𝕜 V G g f‖ := norm_compContinuous_le _ _
+
+variable (𝕜 V) {H : Type*} [Monoid H] (Γ : Subgroup G) (i : H →* G)
+
+/-- Bounded continuous functions invariant under left translation by `Γ`, with right
+translation restricted along `i`. -/
+def leftInvariantSubrepresentation :
+    Subrepresentation ((rightRegular 𝕜 V G).comp i) where
+  toSubmodule :=
+    { carrier := {f | ∀ γ ∈ Γ, ∀ x, f (γ * x) = f x}
+      zero_mem' := by simp
+      add_mem' := by intro f g hf hg γ hγ x; simp [hf γ hγ x, hg γ hγ x]
+      smul_mem' := by intro c f hf γ hγ x; simp [hf γ hγ x] }
+  apply_mem_toSubmodule h f hf γ hγ x := by
+    simpa only [MonoidHom.comp_apply, rightRegular_apply, mul_assoc] using hf γ hγ (x * i h)
+
+/-- Membership is left invariance, independently of the translating homomorphism. -/
+@[simp]
+theorem mem_leftInvariantSubrepresentation_iff (f : G →ᵇ V) :
+    f ∈ leftInvariantSubrepresentation 𝕜 V Γ i ↔ ∀ γ ∈ Γ, ∀ x, f (γ * x) = f x :=
+  Iff.rfl
+
+end BoundedContinuousFunction
