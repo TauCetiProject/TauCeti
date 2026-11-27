@@ -60,10 +60,8 @@ built from the realizations `TauCeti.Vortex.sobolevGaugeFixedOperator` of `L_x` 
   (`TauCeti.SeibergWitten.mul_norm_sq_add_norm_sq_sobolevFrequencyNormalModelEquiv_symm_le`).
 
 A stability inequality alone does not give surjectivity: it is the index count at `ξ = 0`, where
-the kernel of `L_x` and the cokernel of `L_x*` cancel, that makes `T_ξ` onto. The inverse at the
-frequency `ξ = η / h` of the rescaled analysis is the compressed inverse of the frozen family at a
-single divisor value; along a curve the vortex moves with the divisor and the moving projections
-contribute commutator terms, which are not treated here.
+the kernel of `L_x` and the cokernel of `L_x*` cancel, that makes `T_ξ` onto. Here `T_ξ` is the
+full frozen-coefficient model at frequency `ξ`, with no compression or projection applied.
 
 ## Main definitions
 
@@ -107,26 +105,36 @@ def pairedFrequencyCoupling (ξ : ℂ) :
     ξ.im • (Vortex.variationComplexStructure.toContinuousLinearEquiv :
       EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))
 
+/-- The value of the normal coupling: `b_N(ξ) v = Re ξ • v - Im ξ • J' v`. -/
+@[simp]
+theorem normalFrequencyCoupling_apply (ξ : ℂ) (v : EuclideanSpace ℝ (Fin 4)) :
+    normalFrequencyCoupling ξ v = ξ.re • v - ξ.im • Vortex.targetComplexStructure v := by
+  simp [normalFrequencyCoupling]
+
+/-- The value of the paired coupling: `b_P(ξ) u = Re ξ • u + Im ξ • J u`. -/
+@[simp]
+theorem pairedFrequencyCoupling_apply (ξ : ℂ) (u : EuclideanSpace ℝ (Fin 4)) :
+    pairedFrequencyCoupling ξ u = ξ.re • u + ξ.im • Vortex.variationComplexStructure u := by
+  simp [pairedFrequencyCoupling]
+
 /-- The normal coupling is the base coupling of the normal rows on the rank-one derivative
 `w ↦ ⟪ξ, w⟫ v`. -/
-theorem normalFrequencyCoupling_apply (ξ : ℂ) (v : EuclideanSpace ℝ (Fin 4)) :
+theorem normalFrequencyCoupling_eq_normalBaseCoupling (ξ : ℂ) (v : EuclideanSpace ℝ (Fin 4)) :
     normalFrequencyCoupling ξ v = normalBaseCoupling ((innerSL ℝ ξ).smulRight v) := by
-  rw [normalBaseCoupling_smulRight_innerSL]
-  simp [normalFrequencyCoupling]
+  rw [normalBaseCoupling_smulRight_innerSL, normalFrequencyCoupling_apply]
 
 /-- The paired coupling is the base coupling of the paired rows on the rank-one derivative
 `w ↦ ⟪ξ, w⟫ u`. -/
-theorem pairedFrequencyCoupling_apply (ξ : ℂ) (u : EuclideanSpace ℝ (Fin 4)) :
+theorem pairedFrequencyCoupling_eq_pairedBaseCoupling (ξ : ℂ) (u : EuclideanSpace ℝ (Fin 4)) :
     pairedFrequencyCoupling ξ u = pairedBaseCoupling ((innerSL ℝ ξ).smulRight u) := by
-  rw [pairedBaseCoupling_smulRight_innerSL]
-  simp [pairedFrequencyCoupling]
+  rw [pairedBaseCoupling_smulRight_innerSL, pairedFrequencyCoupling_apply]
 
-/-- The couplings vanish at frequency zero. -/
+/-- The normal coupling vanishes at frequency zero. -/
 @[simp]
 theorem normalFrequencyCoupling_zero : normalFrequencyCoupling 0 = 0 := by
   simp [normalFrequencyCoupling]
 
-/-- The couplings vanish at frequency zero. -/
+/-- The paired coupling vanishes at frequency zero. -/
 @[simp]
 theorem pairedFrequencyCoupling_zero : pairedFrequencyCoupling 0 = 0 := by
   simp [pairedFrequencyCoupling]
@@ -178,14 +186,46 @@ theorem snd_sobolevFrequencyNormalModel
 
 variable {a} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
-/-- The squared `L²` norm of a class almost everywhere equal to a continuous compactly supported
-field is the integral of its squared norm. -/
-private theorem norm_sq_eq_integral_of_ae_eq {f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤}
-    {F : ℂ → EuclideanSpace ℝ (Fin 4)} (h : f =ᵐ[μ⊤] F) :
-    ‖f‖ ^ 2 = ∫ z, ‖F z‖ ^ 2 := by
-  rw [← Lp.integral_norm_sq_eq_norm_sq]
-  simp only [Opens.coe_top, Measure.restrict_univ] at h ⊢
-  exact integral_congr_ae (h.mono fun z hz ↦ by simp only [hz])
+/-- The coordinates of the element of `H¹(ℂ)⁴` given by a quadruple of test functions are the
+coordinates of their field. -/
+private theorem value_ofTestFunctionₗ_ae_eq_testField (χ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ))
+    (j : Fin 4) :
+    W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (χ j)) =ᵐ[μ⊤] fun z ↦ Vortex.testField χ z j :=
+  (W1p.value_ofTestFunctionₗ_ae (p := 2) (χ j)).mono fun z hz ↦ by simp [hz]
+
+/-- On a pair of test fields `(U, V)`, the first row of the realization is the classical normal row
+`L_x U - b_N(ξ) V` almost everywhere. -/
+theorem fst_sobolevFrequencyNormalModel_ofTestFunctionₗ_ae_eq (hax : a =ᵐ[μ⊤] x)
+    (φ ψ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
+    (sobolevFrequencyNormalModel a ξ (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j),
+        fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (ψ j))).fst =ᵐ[μ⊤]
+      frequencyNormalRow x ξ (Vortex.testField φ) (Vortex.testField ψ) := by
+  rw [fst_sobolevFrequencyNormalModel]
+  filter_upwards [Lp.coeFn_sub (Vortex.sobolevGaugeFixedOperator a _)
+      ((normalFrequencyCoupling ξ).compLpL 2 μ⊤ (Vortex.sobolevFieldValues _)),
+    Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator hax
+      ((Vortex.contDiff_testField φ).of_le (by simp)) (value_ofTestFunctionₗ_ae_eq_testField φ),
+    (normalFrequencyCoupling ξ).coeFn_compLpL (Vortex.sobolevFieldValues
+      (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (ψ j))),
+    Vortex.sobolevFieldValues_ofTestFunctionₗ_ae ψ] with z h₁ h₂ h₃ h₄
+  rw [h₁, Pi.sub_apply, h₂, h₃, h₄, frequencyNormalRow_apply, normalFrequencyCoupling_apply]
+
+/-- On a pair of test fields `(U, V)`, the second row of the realization is the classical paired
+row `L_x* V + b_P(ξ) U` almost everywhere. -/
+theorem snd_sobolevFrequencyNormalModel_ofTestFunctionₗ_ae_eq (hax : a =ᵐ[μ⊤] x)
+    (φ ψ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
+    (sobolevFrequencyNormalModel a ξ (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j),
+        fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (ψ j))).snd =ᵐ[μ⊤]
+      frequencyPairedRow x ξ (Vortex.testField φ) (Vortex.testField ψ) := by
+  rw [snd_sobolevFrequencyNormalModel]
+  filter_upwards [Lp.coeFn_add (Vortex.sobolevGaugeFixedAdjoint a _)
+      ((pairedFrequencyCoupling ξ).compLpL 2 μ⊤ (Vortex.sobolevFieldValues _)),
+    Vortex.sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint hax
+      ((Vortex.contDiff_testField ψ).of_le (by simp)) (value_ofTestFunctionₗ_ae_eq_testField ψ),
+    (pairedFrequencyCoupling ξ).coeFn_compLpL (Vortex.sobolevFieldValues
+      (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))),
+    Vortex.sobolevFieldValues_ofTestFunctionₗ_ae φ] with z h₁ h₂ h₃ h₄
+  rw [h₁, Pi.add_apply, h₂, h₃, h₄, frequencyPairedRow_apply, pairedFrequencyCoupling_apply]
 
 /-- **The energy identity of the frozen normal model on `H¹`.** For a continuous field `x` with
 `L∞` class `a` and every pair `(u, v) ∈ H¹(ℂ)⁴ × H¹(ℂ)⁴`,
@@ -199,68 +239,42 @@ theorem norm_sobolevFrequencyNormalModel_sq (hx : Continuous x) (hax : a =ᵐ[μ
   -- Both sides are continuous in `y`, and agree on the dense set of pairs of test fields.
   have hd := W1p.denseRange_ofTestFunctionₗ_top (mu := (volume : Measure ℂ)) (p := 2)
     (by norm_num)
-  refine ((DenseRange.piMap fun _ : Fin 4 ↦ hd).prodMap
-    (DenseRange.piMap fun _ : Fin 4 ↦ hd)).induction_on
-      (p := fun y ↦ ‖sobolevFrequencyNormalModel a ξ y‖ ^ 2 =
-        ‖Vortex.sobolevGaugeFixedOperator a y.1‖ ^ 2 +
-          ‖Vortex.sobolevGaugeFixedAdjoint a y.2‖ ^ 2 +
-          ‖ξ‖ ^ 2 * (‖Vortex.sobolevFieldValues y.1‖ ^ 2 +
-            ‖Vortex.sobolevFieldValues y.2‖ ^ 2)) y ?_ ?_
-  · refine isClosed_eq ((sobolevFrequencyNormalModel a ξ).continuous.norm.pow 2) ?_
+  induction y using ((DenseRange.piMap fun _ : Fin 4 ↦ hd).prodMap
+    (DenseRange.piMap fun _ : Fin 4 ↦ hd)).induction_on with
+  | hp =>
+    refine isClosed_eq ((sobolevFrequencyNormalModel a ξ).continuous.norm.pow 2) ?_
     fun_prop
-  rintro ⟨φ, ψ⟩
-  set U := Vortex.testField φ
-  set V := Vortex.testField ψ
-  have hU : ContDiff ℝ 1 U := (Vortex.contDiff_testField φ).of_le (by simp)
-  have hV : ContDiff ℝ 1 V := (Vortex.contDiff_testField ψ).of_le (by simp)
-  have hUc : HasCompactSupport U := Vortex.hasCompactSupport_testField φ
-  have hVc : HasCompactSupport V := Vortex.hasCompactSupport_testField ψ
-  have hmap (χ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
-      Pi.map (fun _ ↦ ⇑(W1p.ofTestFunctionₗ (volume : Measure ℂ) ⊤ 2)) χ =
-        fun j ↦ W1p.ofTestFunctionₗ (volume : Measure ℂ) ⊤ 2 (χ j) :=
-    funext fun j ↦ Pi.map_apply _ _ j
-  simp only [Prod.map_apply, hmap]
-  have hcoord (χ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) (j : Fin 4) :
-      W1p.value (W1p.ofTestFunctionₗ volume ⊤ 2 (χ j)) =ᵐ[μ⊤] fun z ↦ Vortex.testField χ z j :=
-    (W1p.value_ofTestFunctionₗ_ae (p := 2) (χ j)).mono fun z hz ↦ by simp [hz]
-  have hVu := Vortex.sobolevFieldValues_ofTestFunctionₗ_ae φ
-  have hVv := Vortex.sobolevFieldValues_ofTestFunctionₗ_ae ψ
-  have hLu := Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator hax hU (hcoord φ)
-  have hAv := Vortex.sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint hax hV (hcoord ψ)
-  -- The two rows of the realization are the classical rows almost everywhere.
-  have hN : (sobolevFrequencyNormalModel a ξ
-      ((fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)),
-        (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (ψ j)))).fst =ᵐ[μ⊤]
-        frequencyNormalRow x ξ U V := by
-    rw [fst_sobolevFrequencyNormalModel]
-    filter_upwards [Lp.coeFn_sub (Vortex.sobolevGaugeFixedOperator a _)
-        ((normalFrequencyCoupling ξ).compLpL 2 μ⊤ (Vortex.sobolevFieldValues _)), hLu,
-      (normalFrequencyCoupling ξ).coeFn_compLpL (Vortex.sobolevFieldValues
-        (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (ψ j))), hVv] with z h₁ h₂ h₃ h₄
-    rw [h₁, Pi.sub_apply, h₂, h₃, h₄, frequencyNormalRow_apply]
-    simp [normalFrequencyCoupling, V]
-  have hP : (sobolevFrequencyNormalModel a ξ
-      ((fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j)),
-        (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (ψ j)))).snd =ᵐ[μ⊤]
-        frequencyPairedRow x ξ U V := by
-    rw [snd_sobolevFrequencyNormalModel]
-    filter_upwards [Lp.coeFn_add (Vortex.sobolevGaugeFixedAdjoint a _)
-        ((pairedFrequencyCoupling ξ).compLpL 2 μ⊤ (Vortex.sobolevFieldValues _)), hAv,
-      (pairedFrequencyCoupling ξ).coeFn_compLpL (Vortex.sobolevFieldValues
-        (fun j ↦ W1p.ofTestFunctionₗ volume ⊤ 2 (φ j))), hVu] with z h₁ h₂ h₃ h₄
-    rw [h₁, Pi.add_apply, h₂, h₃, h₄, frequencyPairedRow_apply]
-    simp [pairedFrequencyCoupling, U]
-  have iN := (continuous_frequencyNormalRow (ξ := ξ) hx hU
-    hV.continuous).integrable_norm_sq_of_hasCompactSupport (μ := volume)
-      (hasCompactSupport_frequencyNormalRow hUc hVc)
-  have iP := (continuous_frequencyPairedRow (ξ := ξ) hx hU.continuous
-    hV).integrable_norm_sq_of_hasCompactSupport (μ := volume)
-      (hasCompactSupport_frequencyPairedRow hUc hVc)
-  rw [WithLp.prod_norm_sq_eq_of_L2, norm_sq_eq_integral_of_ae_eq hN,
-    norm_sq_eq_integral_of_ae_eq hP, ← integral_add iN iP,
-    integral_norm_sq_add_norm_sq_frequencyNormalModel hx hU hV hUc hVc,
-    norm_sq_eq_integral_of_ae_eq hLu, norm_sq_eq_integral_of_ae_eq hAv,
-    norm_sq_eq_integral_of_ae_eq hVu, norm_sq_eq_integral_of_ae_eq hVv]
+  | ih χ =>
+    obtain ⟨φ, ψ⟩ := χ
+    have hU : ContDiff ℝ 1 (Vortex.testField φ) := (Vortex.contDiff_testField φ).of_le (by simp)
+    have hV : ContDiff ℝ 1 (Vortex.testField ψ) := (Vortex.contDiff_testField ψ).of_le (by simp)
+    have hUc := Vortex.hasCompactSupport_testField φ
+    have hVc := Vortex.hasCompactSupport_testField ψ
+    have iN := (continuous_frequencyNormalRow (ξ := ξ) hx hU
+      hV.continuous).integrable_norm_sq_of_hasCompactSupport (μ := volume)
+        (hasCompactSupport_frequencyNormalRow hUc hVc)
+    have iP := (continuous_frequencyPairedRow (ξ := ξ) hx hU.continuous
+      hV).integrable_norm_sq_of_hasCompactSupport (μ := volume)
+        (hasCompactSupport_frequencyPairedRow hUc hVc)
+    have hmap (χ : Fin 4 → 𝓓((⊤ : Opens ℂ), ℝ)) :
+        Pi.map (fun _ ↦ ⇑(W1p.ofTestFunctionₗ (volume : Measure ℂ) ⊤ 2)) χ =
+          fun j ↦ W1p.ofTestFunctionₗ (volume : Measure ℂ) ⊤ 2 (χ j) :=
+      funext fun j ↦ Pi.map_apply _ _ j
+    simp only [Prod.map_apply, hmap]
+    -- Every norm is the integral of the squared norm of the corresponding classical field.
+    rw [WithLp.prod_norm_sq_eq_of_L2,
+      Lp.norm_sq_eq_integral_of_ae_eq
+        (fst_sobolevFrequencyNormalModel_ofTestFunctionₗ_ae_eq ξ hax φ ψ),
+      Lp.norm_sq_eq_integral_of_ae_eq
+        (snd_sobolevFrequencyNormalModel_ofTestFunctionₗ_ae_eq ξ hax φ ψ),
+      Lp.norm_sq_eq_integral_of_ae_eq (Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator
+        hax hU (value_ofTestFunctionₗ_ae_eq_testField φ)),
+      Lp.norm_sq_eq_integral_of_ae_eq (Vortex.sobolevGaugeFixedAdjoint_ae_eq_gaugeFixedAdjoint
+        hax hV (value_ofTestFunctionₗ_ae_eq_testField ψ)),
+      Lp.norm_sq_eq_integral_of_ae_eq (Vortex.sobolevFieldValues_ofTestFunctionₗ_ae φ),
+      Lp.norm_sq_eq_integral_of_ae_eq (Vortex.sobolevFieldValues_ofTestFunctionₗ_ae ψ)]
+    simp only [Opens.coe_top, Measure.restrict_univ]
+    rw [← integral_add iN iP, integral_norm_sq_add_norm_sq_frequencyNormalModel hx hU hV hUc hVc]
 
 /-- **Clifford coercivity on `H¹`.** For a continuous field `x` with `L∞` class `a`,
 `|ξ|² (‖u‖²_{L²} + ‖v‖²_{L²}) ≤ ‖T_ξ (u, v)‖²`. -/
@@ -301,7 +315,8 @@ private theorem sum_setIntegral_ball_value_sq_le (R : ℝ)
     (u : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
     ∑ j, ∫ z in Metric.ball (0 : ℂ) R, W1p.value (u j) z ^ 2 ≤
       ‖Vortex.sobolevFieldValues u‖ ^ 2 := by
-  rw [norm_sq_eq_integral_of_ae_eq (Vortex.sobolevFieldValues_ae_eq u)]
+  rw [Lp.norm_sq_eq_integral_of_ae_eq (Vortex.sobolevFieldValues_ae_eq u)]
+  simp only [Opens.coe_top, Measure.restrict_univ]
   have hi (j : Fin 4) : Integrable (fun z ↦ W1p.value (u j) z ^ 2) volume := by
     simpa only [Opens.coe_top, Measure.restrict_univ] using
       (Lp.memLp (W1p.value (u j))).integrable_sq
@@ -365,35 +380,24 @@ theorem exists_norm_le_mul_norm_sobolevFrequencyNormalModel (hx : ContDiff ℝ 1
 
 /-! ### Continuity in the frequency and the block sum at frequency zero -/
 
-/-- Composition with a linear map of `ℝ⁴`, as an additive map into the operators on
-`L²(ℂ; ℝ⁴)`. -/
-private def compLpLAddHom :
-    (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)) →+
-      (Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :=
-  AddMonoidHom.mk' (fun L ↦ L.compLpL 2 μ⊤) fun L L' ↦ L.add_compLpL L'
-
-private theorem continuous_compLpL :
-    Continuous fun L : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4) ↦
-      L.compLpL 2 μ⊤ :=
-  AddMonoidHomClass.continuous_of_bound compLpLAddHom 1 fun L ↦ by
-    simpa [compLpLAddHom] using L.norm_compLpL_le (p := 2) (μ := μ⊤)
-
 /-- The realization depends continuously on the frequency, in operator norm. -/
 theorem continuous_sobolevFrequencyNormalModel : Continuous (sobolevFrequencyNormalModel a) := by
-  have hN := continuous_compLpL.comp continuous_normalFrequencyCoupling
-  have hP := continuous_compLpL.comp continuous_pairedFrequencyCoupling
+  -- Composition `L ↦ L.compLpL 2 μ⊤` is a bounded linear map of `L`.
+  have hc := ((ContinuousLinearMap.id ℝ
+    (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))).compLpL₂ 2 μ⊤).continuous
+  have hN := hc.comp continuous_normalFrequencyCoupling
+  have hP := hc.comp continuous_pairedFrequencyCoupling
   -- The instance search for the operator space is slow; supply its topological group structure.
   have hG : IsTopologicalAddGroup ((Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) ×
       (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :=
     ContinuousLinearMap.isTopologicalAddGroup
-  have hS := @IsTopologicalAddGroup.to_continuousSub _ _ _ hG
-  have hA := hG.toContinuousAdd
-  have := hA
+  have := hG.toContinuousAdd
+  have := hG.to_continuousSub
   have h₁ : Continuous fun ξ ↦ (Vortex.sobolevGaugeFixedOperator a).comp
       (.fst ℝ (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)) -
         ((normalFrequencyCoupling ξ).compLpL 2 μ⊤).comp (Vortex.sobolevFieldValues.comp
           (.snd ℝ (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2))) :=
-    @Continuous.sub _ _ _ _ _ hS _ _ continuous_const (hN.clm_comp continuous_const)
+    continuous_const.sub (hN.clm_comp continuous_const)
   have h₂ : Continuous fun ξ ↦ (Vortex.sobolevGaugeFixedAdjoint a).comp
       (.snd ℝ (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2)) +
         ((pairedFrequencyCoupling ξ).compLpL 2 μ⊤).comp (Vortex.sobolevFieldValues.comp
@@ -408,14 +412,12 @@ theorem sobolevFrequencyNormalModel_zero :
     sobolevFrequencyNormalModel a 0 =
       (WithLp.prodContinuousLinearEquiv 2 ℝ _ _).symm.toContinuousLinearMap.comp
         ((Vortex.sobolevGaugeFixedOperator a).prodMap (Vortex.sobolevGaugeFixedAdjoint a)) := by
-  have h0 : (0 : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)).compLpL 2 μ⊤ = 0 :=
-    map_zero compLpLAddHom
-  have h0' (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
+  have h0 (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
       (0 : EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4)).compLp f = 0 := by
-    simpa using congrArg (fun T ↦ T f) h0
+    exact congrArg (fun T ↦ T f) (map_zero ((ContinuousLinearMap.id ℝ
+      (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace ℝ (Fin 4))).compLpL₂ 2 μ⊤))
   refine ContinuousLinearMap.ext fun y ↦ ?_
-  simp [sobolevFrequencyNormalModel, h0']
-  rfl
+  simp [sobolevFrequencyNormalModel, h0, Prod.map_def]
 
 /-! ### Fredholm property, index and inverse -/
 
