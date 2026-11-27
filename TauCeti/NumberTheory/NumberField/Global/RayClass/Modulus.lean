@@ -542,43 +542,15 @@ theorem exists_primeToSubgroup_div_eq {𝔪 : Modulus K} (x : primeToSubgroup �
     ∃ (a b : 𝓞 K) (xa xb : primeToSubgroup 𝔪),
       algebraMap (𝓞 K) K a = ((xa : Kˣ) : K) ∧ algebraMap (𝓞 K) K b = ((xb : Kˣ) : K) ∧
         xa = xb * x := by
-  obtain ⟨a, b, hb, hab⟩ :=
-    𝔪.finitePart.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
-      (fun v hv ↦ (mem_primeToSubgroup.mp x.property v hv).le)
-  by_cases hb0 : b = 0
-  · have htop : 𝔪.finitePart = ⊤ := by
-      rw [hb0, zero_sub] at hb
-      exact Ideal.eq_top_of_isUnit_mem _ (by simpa using 𝔪.finitePart.neg_mem hb) isUnit_one
-    obtain ⟨p, q, hq, hpq⟩ := IsFractionRing.div_surjective (A := 𝓞 K) ((x : Kˣ) : K)
-    have hq0 : algebraMap (𝓞 K) K q ≠ 0 :=
-      (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr (nonZeroDivisors.ne_zero hq)
-    have hpqx : algebraMap (𝓞 K) K p = algebraMap (𝓞 K) K q * ((x : Kˣ) : K) := by
-      rw [← hpq, mul_div_cancel₀ _ hq0]
-    have hp0 : algebraMap (𝓞 K) K p ≠ 0 := by
-      rw [hpqx]
-      exact mul_ne_zero hq0 (x : Kˣ).ne_zero
-    have hmem_all (y : Kˣ) : y ∈ primeToSubgroup 𝔪 :=
-      mem_primeToSubgroup.mpr fun v hv ↦
-        absurd (top_le_iff.mp (Ideal.le_of_dvd (htop ▸ hv))) v.isPrime.ne_top
-    refine ⟨p, q, ⟨Units.mk0 _ hp0, hmem_all _⟩, ⟨Units.mk0 _ hq0, hmem_all _⟩, rfl, rfl,
-      Subtype.ext (Units.ext hpqx)⟩
-  · have hxb0 : algebraMap (𝓞 K) K b ≠ 0 :=
-      (map_ne_zero_iff _ (IsFractionRing.injective (𝓞 K) K)).mpr hb0
-    let xb_u : Kˣ := Units.mk0 (algebraMap (𝓞 K) K b) hxb0
-    have hxb : xb_u ∈ primeToSubgroup 𝔪 := by
-      refine mem_primeToSubgroup.mpr fun v hv ↦ ?_
-      rw [Units.val_mk0, v.valuation_of_algebraMap]
-      refine v.intValuation_eq_one_iff.mpr fun hbv ↦ v.isPrime.ne_top ?_
-      have h1 : (1 : 𝓞 K) ∈ v.asIdeal := by
-        have hsub : b - 1 ∈ v.asIdeal := Ideal.le_of_dvd hv hb
-        simpa using v.asIdeal.sub_mem hbv hsub
-      exact Ideal.eq_top_of_isUnit_mem _ h1 isUnit_one
-    have hxa0 : algebraMap (𝓞 K) K a ≠ 0 := by
-      rw [hab]
-      exact mul_ne_zero hxb0 (x : Kˣ).ne_zero
-    let xa_u : Kˣ := Units.mk0 (algebraMap (𝓞 K) K a) hxa0
-    have hxeq : xa_u = xb_u * (x : Kˣ) := Units.ext hab
-    exact ⟨a, b, ⟨xa_u, hxeq ▸ mul_mem hxb x.property⟩, ⟨xb_u, hxb⟩, rfl, rfl, Subtype.ext hxeq⟩
+  have hx : (x : Kˣ) ∈ ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K :=
+    fun v hv ↦ mem_primeToSubgroup.mp x.property v (by simpa using hv)
+  obtain ⟨a, b, xa, xb, ha, hb, hxeq⟩ := 𝔪.finitePart.exists_unit_div_eq (K := K) ⟨(x : Kˣ), hx⟩
+  have hmem (y : ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K) :
+      (y : Kˣ) ∈ primeToSubgroup 𝔪 :=
+    mem_primeToSubgroup.mpr fun v hv ↦ y.property v (by simpa using hv)
+  exact ⟨a, b, ⟨xa, hmem xa⟩, ⟨xb, hmem xb⟩, ha, hb,
+    Subtype.ext (congrArg (Subtype.val :
+      ({v : HeightOneSpectrum (𝓞 K) | v.asIdeal ∣ 𝔪.finitePart}ᶜ).unit K → Kˣ) hxeq)⟩
 
 /-- **The trivial modulus imposes no condition.**  Its finite part is the unit ideal, which no
 prime divides, and its infinite part is empty. -/

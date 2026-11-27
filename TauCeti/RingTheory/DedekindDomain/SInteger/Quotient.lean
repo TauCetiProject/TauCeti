@@ -59,6 +59,52 @@ theorem exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one (I : Ideal 
   obtain ⟨a, ha⟩ := (Algebra.mem_denIdeal_iff K).mp hb
   exact ⟨a, b, hbI, ha.symm⟩
 
+/-- Every fraction that is a unit at all primes dividing `I` is a quotient of two elements of
+`R` whose images in `K` are also units at all primes dividing `I`. -/
+theorem exists_unit_div_eq (I : Ideal R)
+    (x : ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).unit K) :
+    ∃ (a b : R) (xa xb : ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).unit K),
+      algebraMap R K a = ((xa : Kˣ) : K) ∧ algebraMap R K b = ((xb : Kˣ) : K) ∧
+        xa = xb * x := by
+  obtain ⟨a, b, hb, hab⟩ :=
+    I.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
+      (fun v hv ↦ (x.property v (by simpa using hv)).le)
+  by_cases hb0 : b = 0
+  · have htop : I = ⊤ := by
+      rw [hb0, zero_sub] at hb
+      exact Ideal.eq_top_of_isUnit_mem _ (by simpa using I.neg_mem hb) isUnit_one
+    obtain ⟨p, q, hq, hpq⟩ := IsFractionRing.div_surjective (A := R) ((x : Kˣ) : K)
+    have hq0 : algebraMap R K q ≠ 0 :=
+      (map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr (nonZeroDivisors.ne_zero hq)
+    have hpqx : algebraMap R K p = algebraMap R K q * ((x : Kˣ) : K) := by
+      rw [← hpq, mul_div_cancel₀ _ hq0]
+    have hp0 : algebraMap R K p ≠ 0 := by
+      rw [hpqx]
+      exact mul_ne_zero hq0 (x : Kˣ).ne_zero
+    have hmem_all (y : Kˣ) : y ∈ ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).unit K :=
+      fun v hv ↦ absurd (top_le_iff.mp (Ideal.le_of_dvd (htop ▸ (by simpa using hv))))
+        v.isPrime.ne_top
+    refine ⟨p, q, ⟨Units.mk0 _ hp0, hmem_all _⟩, ⟨Units.mk0 _ hq0, hmem_all _⟩, rfl, rfl,
+      Subtype.ext (Units.ext hpqx)⟩
+  · have hxb0 : algebraMap R K b ≠ 0 :=
+      (map_ne_zero_iff _ (IsFractionRing.injective R K)).mpr hb0
+    let xb_u : Kˣ := Units.mk0 (algebraMap R K b) hxb0
+    have hxb : xb_u ∈ ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).unit K := by
+      intro v hv
+      have hv' : v.asIdeal ∣ I := by simpa using hv
+      rw [Units.val_mk0, v.valuation_of_algebraMap]
+      refine v.intValuation_eq_one_iff.mpr fun hbv ↦ v.isPrime.ne_top ?_
+      have h1 : (1 : R) ∈ v.asIdeal := by
+        have hsub : b - 1 ∈ v.asIdeal := Ideal.le_of_dvd hv' hb
+        simpa using v.asIdeal.sub_mem hbv hsub
+      exact Ideal.eq_top_of_isUnit_mem _ h1 isUnit_one
+    have hxa0 : algebraMap R K a ≠ 0 := by
+      rw [hab]
+      exact mul_ne_zero hxb0 (x : Kˣ).ne_zero
+    let xa_u : Kˣ := Units.mk0 (algebraMap R K a) hxa0
+    have hxeq : xa_u = xb_u * (x : Kˣ) := Units.ext hab
+    exact ⟨a, b, ⟨xa_u, hxeq ▸ mul_mem hxb x.property⟩, ⟨xb_u, hxb⟩, rfl, rfl, Subtype.ext hxeq⟩
+
 private def sIntegerResidue (I : Ideal R)
     (x : ({v : HeightOneSpectrum R | v.asIdeal ∣ I}ᶜ).integer K) : R ⧸ I :=
   Ideal.Quotient.mk I (I.exists_algebraMap_eq_mul_and_sub_one_mem_of_valuation_le_one
