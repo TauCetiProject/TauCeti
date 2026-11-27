@@ -32,7 +32,7 @@ Mathlib's `Mathlib.Algebra.Quaternion`.
   `(a² + b² + c² + d²) / 4`, as used for quaternions with half-integer coordinates.
 * `Quaternion.exists_pure_neg_conj`: pure imaginary `r` admits nonzero pure `q` with
   `star q * r * q = -(normSq q • r)`.
-* `LinearMap.apply_eq_map_one_mul_re_of_cyclic`, `Quaternion.re_mul_comm`,
+* `Quaternion.linearMap_apply_eq_map_one_mul_re_of_cyclic`, `Quaternion.re_mul_comm`,
   `Quaternion.re_mul_star_pos`: cyclic real functionals, real-part commutativity, and positivity
   of `(a * star a).re`.
 -/
@@ -91,17 +91,9 @@ theorem exists_pure_neg_conj (r : ℍ[ℝ]) (hr : r.re = 0) :
 /-- The real part of a product of Hamilton quaternions is commutative. -/
 theorem re_mul_comm (a b : ℍ[R]) : (a * b).re = (b * a).re := by simp only [re_mul]; ring
 
-/-- For a nonzero real quaternion `a`, `(a * star a).re > 0`. -/
-theorem re_mul_star_pos {a : ℍ[ℝ]} (ha : a ≠ 0) : 0 < (a * star a).re := by
-  rw [self_mul_star, re_coe]; exact lt_of_not_ge fun h ↦ ha (normSq_le_zero.mp h)
-
-end Quaternion
-
-namespace LinearMap
-
 /-- Every cyclic `ℝ`-linear functional on `ℍ[ℝ]` is a scalar multiple of
 `QuaternionAlgebra.re`. -/
-theorem apply_eq_map_one_mul_re_of_cyclic (τ : ℍ[ℝ] →ₗ[ℝ] ℝ)
+theorem linearMap_apply_eq_map_one_mul_re_of_cyclic (τ : ℍ[ℝ] →ₗ[ℝ] ℝ)
     (hcyc : ∀ a b : ℍ[ℝ], τ (a * b) = τ (b * a)) (q : ℍ[ℝ]) : τ q = τ 1 * q.re := by
   let qi : ℍ[ℝ] := ⟨0, 1, 0, 0⟩; let qj : ℍ[ℝ] := ⟨0, 0, 1, 0⟩; let qk : ℍ[ℝ] := ⟨0, 0, 0, 1⟩
   have hzero (x y z : ℍ[ℝ]) (h : (2 : ℝ) • x = y * z - z * y) : τ x = 0 := by
@@ -113,4 +105,8 @@ theorem apply_eq_map_one_mul_re_of_cyclic (τ : ℍ[ℝ] →ₗ[ℝ] ℝ)
     hzero qj qk qi (by ext <;> norm_num [qi, qj, qk]),
     hzero qk qi qj (by ext <;> norm_num [qi, qj, qk]), mul_comm]
 
-end LinearMap
+/-- For a nonzero real quaternion `a`, `(a * star a).re > 0`. -/
+theorem re_mul_star_pos {a : ℍ[ℝ]} (ha : a ≠ 0) : 0 < (a * star a).re := by
+  rw [self_mul_star, re_coe]; exact lt_of_not_ge fun h ↦ ha (normSq_le_zero.mp h)
+
+end Quaternion

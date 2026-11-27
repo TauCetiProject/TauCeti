@@ -6,12 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Bilinear
+public import Mathlib.Algebra.Star.Module
 public import Mathlib.Algebra.Star.StarAlgHom
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.Positive
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.Pi
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
+import TauCeti.Algebra.Star.SelfAdjoint.LinearMap
 
 /-!
 # Positive traces, the Rosati inner product, and the trace regular representation
@@ -106,6 +108,16 @@ theorem isRosatiPositive_iff_of_symmetrize [Semiring E] [Module ℝ E] [StarRing
   have hst : t (star (s * x * star x)) = t (s * x * star x) := by
     simp only [star_mul, star_star, hs.star_eq]; rw [← mul_assoc, hcyc, mul_assoc]
   rw [ht', hst]; constructor <;> intro h <;> linarith
+
+/-- For cyclic `t : E →ₗ[ℝ] ℝ`, replacing `t` by its star-symmetrization
+`(t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)` leaves `IsRosatiPositive`
+unchanged. -/
+theorem isRosatiPositive_comp_selfAdjointPart_iff [Ring E] [Module ℝ E] [StarRing E]
+    [StarModule ℝ E] {t : E →ₗ[ℝ] ℝ} (hcyc : ∀ x y : E, t (x * y) = t (y * x)) {s : E} :
+    IsRosatiPositive ((t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)) s ↔
+      IsRosatiPositive t s :=
+  isRosatiPositive_iff_of_symmetrize
+    (fun x ↦ by simpa [div_eq_inv_mul] using LinearMap.comp_selfAdjointPart_apply t x) hcyc
 
 /-- On a finite product of star algebras, `IsRosatiPositive t s` holds iff each coordinate `s i`
 is `IsRosatiPositive` for the restricted functional `t.comp (LinearMap.single ℝ B i)`. -/

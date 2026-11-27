@@ -13,7 +13,7 @@ import Mathlib.Algebra.Ring.Opposite
 # Transporting involutions along ring and algebra equivalences
 
 Transporting `star` on `A` against `star` on `M` along `φ` yields `X ↦ φ (star (φ.symm (star X)))`
-(`RingEquiv.starConjAlgEquiv`, `AlgEquiv.starConjAlgEquiv`).
+(`RingEquiv.starConjAlgEquiv`).
 -/
 
 public section
@@ -37,22 +37,3 @@ def starConjAlgEquiv (F : Type*) {A M : Type*} [CommSemiring F] [Semiring A] [St
     φ.starConjAlgEquiv F hcomm X = φ (star (φ.symm (star X))) := (rfl)
 
 end RingEquiv
-
-namespace AlgEquiv
-
-/-- Transporting `star` on `A` against `star` on `M` along `φ : A ≃ₐ[R] M` produces an
-`F`-algebra automorphism `X ↦ φ (star (φ.symm (star X)))` of `M`, once `F`-scalar compatibility
-holds. -/
-def starConjAlgEquiv {R : Type*} (F : Type*) {A M : Type*} [CommSemiring R] [CommSemiring F]
-    [Semiring A] [Algebra R A] [StarRing A] [Semiring M] [Algebra R M] [Algebra F M] [StarRing M]
-    (φ : A ≃ₐ[R] M)
-    (hcomm : ∀ z : F, φ (star (φ.symm (star (algebraMap F M z)))) = algebraMap F M z) :
-    M ≃ₐ[F] M := φ.toRingEquiv.starConjAlgEquiv F hcomm
-
-@[simp] theorem starConjAlgEquiv_apply {R : Type*} (F : Type*) {A M : Type*} [CommSemiring R]
-    [CommSemiring F] [Semiring A] [Algebra R A] [StarRing A] [Semiring M] [Algebra R M]
-    [Algebra F M] [StarRing M] (φ : A ≃ₐ[R] M)
-    (hcomm : ∀ z : F, φ (star (φ.symm (star (algebraMap F M z)))) = algebraMap F M z) (X : M) :
-    φ.starConjAlgEquiv F hcomm X = φ (star (φ.symm (star X))) := (rfl)
-
-end AlgEquiv

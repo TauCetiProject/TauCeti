@@ -166,7 +166,8 @@ private theorem exists_starAlgEquiv_trivial_star {D : Type*} [DivisionRing D] [A
   obtain ⟨τ, hc, hτ_cyc, hτ⟩ := exists_cyclic_trace_pos φ t hcyc hpos
   have ht x : t x = τ 1 * (rePart.comp (Matrix.traceLinearMap n ℝ D)) (φ x) := by
     rw [hτ x, hD_cyc τ hτ_cyc, LinearMap.comp_apply, Matrix.traceLinearMap_apply]
-  let α := φ.starConjAlgEquiv ℝ fun r ↦ by simp [Algebra.algebraMap_eq_smul_one, star_smul]
+  let α := φ.toRingEquiv.starConjAlgEquiv ℝ fun r ↦ by
+    simp [Algebra.algebraMap_eq_smul_one, star_smul]
   obtain ⟨u, huSign, hu⟩ := exists_unit_conj_star_eq_self_or_neg_of_central ℝ α fun X ↦ by simp [α]
   have hσ x : φ (star x) = (u : Matrix n n D) * (φ x)ᴴ * (↑u⁻¹ : Matrix n n D) := by
     simpa [α, Matrix.star_eq_conjTranspose] using hu (φ x)ᴴ
@@ -325,7 +326,7 @@ theorem exists_starAlgEquiv_matrix_complex {A : Type*} [Ring A] [Algebra ℝ A] 
     have hI := star_I_smul_one_eq_neg φ t' hpos'
     obtain ⟨c, hc, ht⟩ := trace_eq_mul_comp_traceLinearMap_complex φ hI t'
       (LinearMap.comp_selfAdjointPart_cyclic hcyclic) t.comp_selfAdjointPart_star hpos'
-    let α := φ.starConjAlgEquiv ℂ fun z ↦ by
+    let α := φ.toRingEquiv.starConjAlgEquiv ℂ fun z ↦ by
       have hz1 (w : ℂ) : w • (1 : Matrix n n ℂ) =
           w.re • (1 : Matrix n n ℂ) + w.im • (Complex.I • (1 : Matrix n n ℂ)) := by
         conv_lhs => rw [← Complex.re_add_im w]
@@ -342,10 +343,7 @@ theorem exists_starAlgEquiv_matrix_complex {A : Type*} [Ring A] [Algebra ℝ A] 
       (fun a ha ↦ Complex.ext rfl (by
         simp [(congrArg Complex.im (Complex.conj_eq_iff_re.mp ha.star_eq)).symm]))
       φ t' c hc ht hpos' u' (Matrix.isHermitian_iff_isSelfAdjoint.mpr hu'sa) hσ
-    exact ⟨e, fun s ↦ by
-      rw [← isRosatiPositive_iff_of_symmetrize
-          (fun x ↦ by simpa [t', div_eq_inv_mul] using LinearMap.comp_selfAdjointPart_apply t x)
-          hcyclic, hePos]; simp⟩
+    exact ⟨e, fun s ↦ by rw [← isRosatiPositive_comp_selfAdjointPart_iff hcyclic, hePos]; simp⟩
 
 /-- Existence of a star-preserving `ℝ`-algebra isomorphism `e : A ≃⋆ₐ[ℝ] Matrix n n ℍ[ℝ]`
 identifying `TauCeti.IsRosatiPositive t` with `Matrix.QuatPosDef`. -/
@@ -357,7 +355,7 @@ theorem exists_starAlgEquiv_matrix_quaternion {A : Type*} [Ring A] [Algebra ℝ 
   obtain ⟨e, he⟩ := exists_starAlgEquiv_trivial_star (QuaternionAlgebra.reₗ (-1) 0 (-1))
     Quaternion.re_mul_comm (fun _ ha ↦ Quaternion.re_mul_star_pos ha)
     (fun _ ha ↦ Quaternion.star_eq_self.mp ha)
-    (fun τ hcyc q ↦ LinearMap.apply_eq_map_one_mul_re_of_cyclic τ hcyc q)
+    Quaternion.linearMap_apply_eq_map_one_mul_re_of_cyclic
     not_pos_of_skewHermitian_quaternion φ t hcyclic hpos
   exact ⟨e, fun s ↦ by simpa using he s⟩
 

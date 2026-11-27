@@ -107,8 +107,7 @@ theorem rosatiPositiveSquareRoot {E : Type*} [Ring E] [Algebra ℝ E] [StarRing 
   have : StarModule ℝ E := starModule_of_trace_mul_star_pos t hpos
   let t' : E →ₗ[ℝ] ℝ := (t.comp (selfAdjoint.submodule ℝ E).subtype).comp (selfAdjointPart ℝ)
   have hiff (a : E) : IsRosatiPositive t' a ↔ IsRosatiPositive t a :=
-    isRosatiPositive_iff_of_symmetrize
-      (fun x ↦ by simpa [t', div_eq_inv_mul] using LinearMap.comp_selfAdjointPart_apply t x) hcyclic
+    isRosatiPositive_comp_selfAdjointPart_iff hcyclic
   obtain ⟨hsU, r, hrpos, hrsq, hrmem, hrImem, hcomm, huniq⟩ :=
     rosatiPositiveSquareRoot_of_star_invariant t' (LinearMap.comp_selfAdjointPart_cyclic hcyclic)
       (LinearMap.comp_selfAdjointPart_star t)

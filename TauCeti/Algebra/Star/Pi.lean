@@ -79,7 +79,7 @@ theorem symm_single_apply_star_single (i : ι)
 
 /-- Induced `StarRing` structure on `ULift.{0} (A i)` from a star-invariant coordinate central
 idempotent `e.symm (Pi.single i 1)`. -/
-@[expose, instance_reducible]
+@[instance_reducible]
 def coordStarRing (i : ι) (hδ : star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1)) :
     StarRing (ULift.{0} (A i)) where
   star x := ULift.up (e (star (e.symm (Pi.single i x.down))) i)
@@ -87,21 +87,17 @@ def coordStarRing (i : ι) (hδ : star (e.symm (Pi.single i 1)) = e.symm (Pi.sin
     dsimp only
     rw [e.symm_single_apply_star_single i hδ, star_star, e.apply_symm_apply, Pi.single_eq_same]
   star_mul x y := ULift.ext <| by
-    -- Unfold `coordStarRing`'s `star` and `ULift` multiplication (`rfl`) on `.down`.
-    have h : e (star (e.symm (Pi.single i (x.down * y.down)))) i =
-        e (star (e.symm (Pi.single i y.down))) i * e (star (e.symm (Pi.single i x.down))) i := by
-      rw [e.symm_single_mul, star_mul, map_mul, Pi.mul_apply]
-    exact h
+    rw [ULift.mul_down]
+    dsimp only
+    rw [ULift.mul_down, e.symm_single_mul, star_mul, map_mul, Pi.mul_apply]
   star_add x y := ULift.ext <| by
-    -- Unfold `coordStarRing`'s `star` and `ULift` addition (`rfl`) on `.down`.
-    have h : e (star (e.symm (Pi.single i (x.down + y.down)))) i =
-        e (star (e.symm (Pi.single i x.down))) i + e (star (e.symm (Pi.single i y.down))) i := by
-      rw [Pi.single_add, map_add, star_add, map_add, Pi.add_apply]
-    exact h
+    rw [ULift.add_down]
+    dsimp only
+    rw [ULift.add_down, Pi.single_add, map_add, star_add, map_add, Pi.add_apply]
 
 @[simp] theorem coordStarRing_down_star (i : ι)
     (hδ : star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1)) (x : ULift.{0} (A i)) :
-    letI := e.coordStarRing i hδ; (star x).down = e (star (e.symm (Pi.single i x.down))) i := rfl
+    letI := e.coordStarRing i hδ; (star x).down = e (star (e.symm (Pi.single i x.down))) i := (rfl)
 
 end Semiring
 
@@ -121,10 +117,10 @@ def starPiULift (e : E ≃ₐ[R] ∀ i, A i)
   let _ : ∀ i, StarRing (ULift.{0} (A i)) := fun i ↦ e.toRingEquiv.coordStarRing i (hδ i)
   StarAlgEquiv.ofAlgEquiv (e.trans (AlgEquiv.piCongrRight fun _ ↦ ULift.algEquiv.symm)) fun x ↦
     funext fun i ↦ ULift.ext <| by
-      -- Both sides evaluate `(ULift.algEquiv.symm (e _ i)).down = e _ i` definitionally.
-      have h : (star (ULift.up (e x i))).down = e (star (e.symm (Pi.single i (e x i)))) i :=
-        RingEquiv.coordStarRing_down_star e.toRingEquiv i (hδ i) (ULift.up (e x i))
-      exact (e.toRingEquiv.apply_star_eq_coord i (hδ i) x).trans h.symm
+      simp only [AlgEquiv.trans_apply, AlgEquiv.piCongrRight_apply, ULift.algEquiv_symm_apply,
+        Pi.star_apply, ULift.down_up]
+      rw [RingEquiv.coordStarRing_down_star e.toRingEquiv i (hδ i)]
+      exact e.toRingEquiv.apply_star_eq_coord i (hδ i) x
 
 @[simp] theorem starPiULift_apply_down (e : E ≃ₐ[R] ∀ i, A i)
     (hδ : ∀ i : ι, star (e.symm (Pi.single i 1)) = e.symm (Pi.single i 1)) (x : E) (i : ι) :
