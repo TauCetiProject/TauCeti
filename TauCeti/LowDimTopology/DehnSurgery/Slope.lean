@@ -371,8 +371,9 @@ theorem smul_slopeValue (g : GL (Fin 2) ℤ) {v : ℤ × ℤ} (hv : v ≠ 0) :
 
 /-- **The standard slope parametrisation is `GL₂(ℤ)`-equivariant.** Transporting a slope along a
 matrix `g : GL₂(ℤ)`, acting on classes `(p, q)` as on column vectors, moves its value by the
-Möbius transformation of the image of `g` in `GL (Fin 2) ℚ`. The pinned
-`TauCeti.FramedBoundaryTorus.value_shiftLongitude` is the case `g = [[1, -n], [0, 1]]`. -/
+Möbius transformation of the image of `g` in `GL (Fin 2) ℚ`. Through the coordinates `T.coord` of
+a framed torus, `TauCeti.FramedBoundaryTorus.value_shiftLongitude` corresponds to
+`g = [[1, -n], [0, 1]]`, that is, to `x ↦ x - n`. -/
 theorem slopeEquivStd_congr (g : GL (Fin 2) ℤ) (s : Slope (ℤ × ℤ)) :
     slopeEquivStd (Slope.congr ((LinearEquiv.finTwoArrow ℤ ℤ).symm ≪≫ₗ
         LinearMap.GeneralLinearGroup.toLinearEquiv (Matrix.GeneralLinearGroup.toLin g) ≪≫ₗ
@@ -382,7 +383,7 @@ theorem slopeEquivStd_congr (g : GL (Fin 2) ℤ) (s : Slope (ℤ × ℤ)) :
   | h v hv =>
     rw [Slope.congr_mk, slopeEquivStd_apply, slopeEquivStd_apply, Slope.value_mk, Slope.value_mk,
       smul_slopeValue g hv.ne_zero]
-    simp [Matrix.GeneralLinearGroup.toLin, LinearEquiv.finTwoArrow_apply]
+    simp [LinearMap.GeneralLinearGroup.coe_toLinearEquiv, LinearEquiv.finTwoArrow_apply]
 
 /-! ### Boundary tori and framings
 
