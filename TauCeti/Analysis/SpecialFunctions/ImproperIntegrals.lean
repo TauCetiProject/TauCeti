@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.Analysis.SpecialFunctions.Integrals.MellinWeight
+import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 import TauCeti.Topology.Algebra.Order.Field
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
@@ -56,6 +57,9 @@ zero and one.
 * `TauCeti.integrableOn_Ioi_rpow_mul_log_of_lt` and `TauCeti.integral_Ioi_rpow_mul_log_of_lt`:
   integrability and the closed form `∫ t in Ioi c, t ^ a * log t =
   c ^ (a + 1) * (1 - (a + 1) * log c) / (a + 1) ^ 2` for `a < -1` and `0 < c`.
+* `TauCeti.integrableOn_exp_neg_div_Ioi` and `TauCeti.integrableOn_exp_div_Iic`:
+  tail integrability of `exp (-t) / t` on `(a, ∞)` for `a > 0` and `exp u / u` on `(-∞, y]`
+  for `y < 0`.
 -/
 
 public section
@@ -444,41 +448,46 @@ theorem integral_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
       c ^ (a + 1) * (1 - (a + 1) * Real.log c) / (a + 1) ^ 2 := by
   have ha1 : a + 1 ≠ 0 := by linarith
   have hd : ∀ t ∈ Ici c,
-      HasDerivAt (fun x : ℝ ↦ x ^ (a + 1) * ((a + 1) * Real.log x - 1) / (a + 1) ^ 2)
-        (t ^ a * Real.log t) t := by
-    intro t (ht : c ≤ t)
-    have ht0 : 0 < t := hc.trans_le ht
-    have h1 := Real.hasDerivAt_rpow_const (p := a + 1) (Or.inl ht0.ne')
-    have h2 := ((Real.hasDerivAt_log ht0.ne').const_mul (a + 1)).sub_const 1
-    convert (h1.mul h2).div_const ((a + 1) ^ 2) using 1
+      HasDerivAt (fun x : ℝ ↦ ((a + 1) * (x ^ (a + 1) * Real.log x) - x ^ (a + 1)) / (a + 1) ^ 2)
+        (t ^ a * Real.log t) t := fun t (ht : c ≤ t) ↦ by
+    have ht0 : t ≠ 0 := (hc.trans_le ht).ne'
+    refine ((((Real.hasDerivAt_rpow_mul_log (a + 1) ht0).const_mul (a + 1)).sub
+      (Real.hasDerivAt_rpow_const (p := a + 1) (Or.inl ht0))).div_const
+      ((a + 1) ^ 2)).congr_deriv ?_
     rw [add_sub_cancel_right]
-    have ht_mul : t ^ (a + 1) * t⁻¹ = t ^ a := by
-      rw [← Real.rpow_neg_one, ← Real.rpow_add ht0, add_neg_cancel_right]
-    calc
-      t ^ a * Real.log t = (a + 1) ^ 2 * (t ^ a * Real.log t) / (a + 1) ^ 2 := by field_simp
-      _ = ((a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
-            t ^ (a + 1) * ((a + 1) * t⁻¹)) / (a + 1) ^ 2 := by
-          congr 1
-          calc
-            (a + 1) ^ 2 * (t ^ a * Real.log t)
-                = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) + (a + 1) * t ^ a := by ring
-            _ = (a + 1) * t ^ a * ((a + 1) * Real.log t - 1) +
-                  t ^ (a + 1) * ((a + 1) * t⁻¹) := by rw [← ht_mul]; ring
+    field_simp
+    ring
   have hlim_log : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * Real.log t) atTop (𝓝 0) := by
     refine (isLittleO_log_rpow_atTop (by linarith : 0 < -(a + 1))).tendsto_div_nhds_zero.congr' ?_
     filter_upwards [eventually_gt_atTop 0] with t ht
     rw [div_eq_mul_inv, ← Real.rpow_neg ht.le, neg_neg, mul_comm]
   have hlim_rpow : Tendsto (fun t : ℝ ↦ t ^ (a + 1)) atTop (𝓝 0) :=
     by simpa only [neg_neg] using tendsto_rpow_neg_atTop (by linarith : 0 < -(a + 1))
-  have ht : Tendsto (fun t : ℝ ↦ t ^ (a + 1) * ((a + 1) * Real.log t - 1) / (a + 1) ^ 2)
+  have ht : Tendsto
+      (fun t : ℝ ↦ ((a + 1) * (t ^ (a + 1) * Real.log t) - t ^ (a + 1)) / (a + 1) ^ 2)
       atTop (𝓝 0) := by
-    have h0 : (((a + 1) * 0 - 0) / (a + 1) ^ 2 : ℝ) = 0 := by simp
-    rw [← h0]
-    refine (((hlim_log.const_mul (a + 1)).sub hlim_rpow).div_const ((a + 1) ^ 2)).congr' ?_
-    filter_upwards with t
-    congr 1
-    ring
+    simpa using ((hlim_log.const_mul (a + 1)).sub hlim_rpow).div_const ((a + 1) ^ 2)
   rw [integral_Ioi_of_hasDerivAt_of_tendsto' hd (integrableOn_Ioi_rpow_mul_log_of_lt ha hc) ht]
   ring
+
+/-- `t ↦ exp (-t) / t` is integrable on `(a, ∞)` for every `a > 0`. -/
+theorem integrableOn_exp_neg_div_Ioi {a : ℝ} (ha : 0 < a) :
+    IntegrableOn (fun t : ℝ ↦ Real.exp (-t) / t) (Ioi a) := by
+  refine Integrable.mono' (g := fun t : ℝ ↦ Real.exp (-t) / a)
+    ((integrableOn_exp_neg_Ioi a).div_const a)
+    ((Real.continuous_exp.comp continuous_neg).measurable.div measurable_id).aestronglyMeasurable ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : a < t)
+  rw [Real.norm_eq_abs, abs_div, abs_of_pos (Real.exp_pos _), abs_of_pos (ha.trans ht)]
+  exact div_le_div_of_nonneg_left (Real.exp_pos _).le ha ht.le
+
+/-- `u ↦ exp u / u` is integrable on `(-∞, y]` whenever `y < 0`. -/
+theorem integrableOn_exp_div_Iic {y : ℝ} (hy : y < 0) :
+    IntegrableOn (fun u : ℝ ↦ Real.exp u / u) (Iic y) := by
+  have hcomp := (MeasurePreserving.integrableOn_comp_preimage (Measure.measurePreserving_neg _)
+    (Homeomorph.neg ℝ).measurableEmbedding).mpr (integrableOn_exp_neg_div_Ioi (neg_pos.mpr hy))
+  have hIio : IntegrableOn (fun u : ℝ ↦ Real.exp u / u) (Iio y) := by
+    simpa [Function.comp_def, div_neg] using hcomp.neg
+  rw [integrableOn_Iic_iff_integrableOn_Iio]
+  exact hIio
 
 end TauCeti

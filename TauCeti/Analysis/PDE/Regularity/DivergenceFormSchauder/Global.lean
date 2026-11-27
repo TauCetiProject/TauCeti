@@ -62,6 +62,9 @@ there and the structural constants, so the global constant does not depend on `u
 * `TauCeti.PDE.forall_frontier_chart_of_le`: the boundary charts of a `C^{1,α}` domain are also
   charts of a `C^{1,β}` domain for every `β ≤ min α 1`, so the estimate also applies with a
   coefficient exponent below the exponent of the boundary graphs.
+* `TauCeti.PDE.exists_frontier_chart_of_linearIsometryEquiv`: a boundary chart over one model space
+  gives one over any linearly isometric space, so the estimate applies to domains whose natural
+  charts live over varying spaces, such as the tangent spaces of a sphere.
 
 ## References
 
@@ -285,6 +288,52 @@ theorem forall_frontier_chart_of_le {E : Type*} [NormedAddCommGroup E] [InnerPro
   refine ⟨e, γ', h₀, r₀, K, hex, hh₀, hr₀, by rw [heq (mem_ball_self hr₀), hγ0], hγ', hK,
     fun z hz => ?_⟩
   rw [hgraph z hz, heq (mem_ball_zero_iff.2 (mem_normalCylinder.1 hz).2.2)]
+
+/-- **Changing the model space of a boundary chart.** A boundary chart at `x` whose graph lives
+over `E` gives one over `E'`, with the same cylinder and Hölder constant, for every linear isometry
+`φ : E ≃ E'`: the coordinates are followed by `φ` in the tangential variable and the graph is
+composed with `φ⁻¹`. So the global estimate
+`TauCeti.PDE.exists_holderOnWith_gradient_closure_of_forall_graph`, whose charts share one model
+space, applies to domains whose natural charts live over varying spaces, such as the tangent spaces
+of a sphere. -/
+theorem exists_frontier_chart_of_linearIsometryEquiv {E E' : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] (φ : E ≃ₗᵢ[ℝ] E')
+    {s : Set (EuclideanSpace ℝ (Fin (n + 1)))} {x : EuclideanSpace ℝ (Fin (n + 1))} {α : ℝ≥0}
+    (h : ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E)) (γ : E → ℝ) (h₀ r₀ : ℝ)
+      (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
+        HolderWith Kγ α (fderiv ℝ γ) ∧
+        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ s ↔ γ z.snd < z.fst)) :
+    ∃ (e : EuclideanSpace ℝ (Fin (n + 1)) ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E')) (γ : E' → ℝ) (h₀ r₀ : ℝ)
+      (Kγ : ℝ≥0), e x = 0 ∧ 0 < h₀ ∧ 0 < r₀ ∧ γ 0 = 0 ∧ ContDiff ℝ 1 γ ∧
+        HolderWith Kγ α (fderiv ℝ γ) ∧
+        ∀ z ∈ normalCylinder h₀ r₀, (e.symm z ∈ s ↔ γ z.snd < z.fst) := by
+  obtain ⟨e, γ, h₀, r₀, Kγ, hex, hh₀, hr₀, hγ0, hγ, hγK, hgraph⟩ := h
+  set ψ : WithLp 2 (ℝ × E) ≃ₗᵢ[ℝ] WithLp 2 (ℝ × E') :=
+    LinearIsometryEquiv.withLpProdCongr 2 (LinearIsometryEquiv.refl ℝ ℝ) φ
+  have hd : ∀ v, fderiv ℝ (γ ∘ φ.symm) v =
+      (fderiv ℝ γ (φ.symm v)).comp (φ.symm.toContinuousLinearEquiv : E' →L[ℝ] E) := fun v =>
+    φ.symm.toContinuousLinearEquiv.comp_right_fderiv
+  refine ⟨e.trans ψ.toAffineIsometryEquiv, γ ∘ φ.symm, h₀, r₀, Kγ, by simp [hex], hh₀, hr₀,
+    by simp [hγ0], hγ.comp φ.symm.contDiff, fun v w => ?_, fun z hz => ?_⟩
+  · -- Precomposition with the isometry `φ⁻¹` preserves operator norms and distances.
+    have hcomp : ‖(fderiv ℝ γ (φ.symm v) - fderiv ℝ γ (φ.symm w)).comp
+        (φ.symm.toContinuousLinearEquiv : E' →L[ℝ] E)‖ =
+        ‖fderiv ℝ γ (φ.symm v) - fderiv ℝ γ (φ.symm w)‖ :=
+      ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ φ.symm
+    have h1 := hγK (φ.symm v) (φ.symm w)
+    rw [edist_dist, edist_dist, dist_eq_norm, dist_eq_norm, ← map_sub,
+      LinearIsometryEquiv.norm_map] at h1
+    rw [hd, hd, edist_dist, edist_dist, dist_eq_norm, dist_eq_norm,
+      ← ContinuousLinearMap.sub_comp, hcomp]
+    exact h1
+  · obtain ⟨⟨t, v⟩⟩ := z
+    have hz' : WithLp.toLp 2 (t, φ.symm v) ∈ normalCylinder h₀ r₀ := by
+      simpa using hz
+    have hψ : ψ.symm (WithLp.toLp 2 (t, v)) = WithLp.toLp 2 (t, φ.symm v) := by
+      simp only [ψ, LinearIsometryEquiv.withLpProdCongr_symm_apply]
+      -- What remains is `(LinearIsometryEquiv.refl ℝ ℝ).symm t = t`, which holds by definition.
+      rfl
+    simpa [hψ] using hgraph _ hz'
 
 /-- **The global Schauder estimate for divergence-form equations with zero boundary values.** Let
 `Ω ⊆ ℝ^{n+1}` be a bounded open set with `C^{1,α}` boundary: at each point `x` of its frontier

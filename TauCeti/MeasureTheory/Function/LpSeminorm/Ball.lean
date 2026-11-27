@@ -54,6 +54,12 @@ exact form of the bounded-overlap count.
   functions on concentric balls of radii `r` and `κ r`, with the explicit constant `2 κ ^ d`.
 * `TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`: its case `κ = 2` for `lpNorm`, with the
   constant `2 ^ (d + 1)`.
+* `TauCeti.eLpNorm_restrict_le_of_forall_ball_inter_nonempty`: the local form of
+  `TauCeti.eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add`, an estimate on a set `V` from local
+  estimates on the balls meeting `V`, whose enlargements lie in a set `T`.
+* `TauCeti.eLpNorm_le_of_forall_eLpNorm_restrict_ball_le`: estimates on the balls `B(0, R/2)`
+  whose error term carries a factor `μ (B(0, R)) ^ e` with `e < 0`, which vanishes as `R → ∞`,
+  give a global estimate without that term.
 * `TauCeti.measure_ball_rpow_mul_eLpNorm_restrict_ball_le`: Hölder's inequality on a ball, scaled
   by the volume of a concentric smaller ball.
 * `TauCeti.tendsto_iSup_eLpNorm_restrict_ball_nhds_zero_of_tendsto_measure`,
@@ -247,6 +253,46 @@ theorem lintegral_rpow_le_of_forall_setLAverage_rpow_le {g k : E → ℝ≥0∞}
         rw [ENNReal.mul_rpow_of_nonneg _ _ he, hpt, ENNReal.rpow_add_of_nonneg _ _ he zero_le_one,
           ENNReal.rpow_one, mul_assoc]
 
+/-- **From balls around the origin to the whole space.** Let `μ` be an additive Haar measure on a
+noncompact space, `e < 0`, and `B, C < ∞`. If for every `R > 0` the `Lᵖ` seminorm of `g` on
+`B(0, R/2)` is at most `C (A + μ (B(0, R)) ^ e B)`, then `‖g‖_{Lᵖ} ≤ C A`: the factor
+`μ (B(0, R)) ^ e` tends to zero as `R → ∞`, and Fatou's lemma along the balls `B(0, k + 1)` passes
+the bound to the whole space. -/
+theorem eLpNorm_le_of_forall_eLpNorm_restrict_ball_le [NoncompactSpace E] {g : E → F}
+    (hg : AEStronglyMeasurable g μ) {e : ℝ} (he : e < 0) {A B C : ℝ≥0∞} (hB : B ≠ ∞)
+    (hC : C ≠ ∞) (h : ∀ R : ℝ, 0 < R → eLpNorm g p (μ.restrict (ball 0 (R / 2))) ≤
+      C * (A + μ (ball (0 : E) R) ^ e * B)) :
+    eLpNorm g p μ ≤ C * A := by
+  have hV : Tendsto (fun k : ℕ => μ (ball (0 : E) (2 * ((k : ℝ) + 1))) ^ e) atTop (𝓝 0) := by
+    have hmono : Monotone fun k : ℕ => ball (0 : E) (2 * ((k : ℝ) + 1)) :=
+      fun k l hkl => ball_subset_ball (by gcongr)
+    have hunion : (⋃ k : ℕ, ball (0 : E) (2 * ((k : ℝ) + 1))) = Set.univ := by
+      refine Set.eq_univ_of_forall fun x => Set.mem_iUnion.2 ?_
+      obtain ⟨k, hk⟩ := exists_nat_gt ‖x‖
+      exact ⟨k, mem_ball_zero_iff.2 (by linarith)⟩
+    have hvol := tendsto_measure_iUnion_atTop (μ := μ) hmono
+    rw [hunion, measure_univ_of_isAddLeftInvariant] at hvol
+    have h := (ENNReal.continuous_rpow_const (y := e)).tendsto ∞ |>.comp hvol
+    rwa [Function.comp_def, ENNReal.top_rpow_of_neg he] at h
+  have hlim : Tendsto (fun k : ℕ => C * (A + μ (ball (0 : E) (2 * ((k : ℝ) + 1))) ^ e * B))
+      atTop (𝓝 (C * A)) := by
+    have h := ENNReal.Tendsto.const_mul (a := C) ((tendsto_const_nhds (x := A)).add
+      (ENNReal.Tendsto.mul_const hV (Or.inr hB))) (Or.inr hC)
+    simpa only [zero_mul, add_zero] using h
+  refine (Lp.eLpNorm_lim_le_liminf_eLpNorm
+    (f := fun k : ℕ => (ball (0 : E) ((k : ℝ) + 1)).indicator g)
+    (fun k => hg.indicator (measurableSet_ball (x := (0 : E)) (ε := (k : ℝ) + 1))) g hg
+    (ae_of_all _ fun x => ?_)).trans ?_
+  · obtain ⟨N, hN⟩ := exists_nat_gt ‖x‖
+    refine tendsto_const_nhds.congr' ((eventually_ge_atTop N).mono fun k hk => ?_)
+    have hk' : (N : ℝ) ≤ k := by exact_mod_cast hk
+    exact (Set.indicator_of_mem (mem_ball_zero_iff.2 (by linarith)) g).symm
+  · rw [← hlim.liminf_eq]
+    refine liminf_le_liminf (Eventually.of_forall fun k => ?_)
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict measurableSet_ball.nullMeasurableSet]
+    have hk := h (2 * ((k : ℝ) + 1)) (by positivity)
+    rwa [mul_div_cancel_left₀ _ two_ne_zero] at hk
+
 section FiniteDimensional
 
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] {G₁ G₂ : Type*} [NormedAddCommGroup G₁]
@@ -358,6 +404,47 @@ theorem eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add (hp1 : 1 ≤ p) (hp : p �
         · exact ENNReal.rpow_le_self_of_one_le (one_le_pow₀ (ENNReal.one_le_ofReal.2 hκ)) hp1'
         · exact eLpNorm_add_le hp1
     _ = _ := by ring
+
+/-- **Estimates on a set from local ones on the balls meeting it.** Let `μ` be an additive Haar
+measure on a finite-dimensional real normed space `E`, let `1 ≤ p < ∞`, `1 ≤ κ` and `0 < r`, and let
+`V` and `T` be measurable. If every ball `B(y, r)` that meets `V` satisfies `B(y, κ r) ⊆ T` and
+
+`‖g‖_{Lᵖ(B(y, r))} ≤ c₁ ‖f₁‖_{Lᵖ(B(y, κ r))} + c₂ ‖f₂‖_{Lᵖ(B(y, κ r))}`,
+
+then `‖g‖_{Lᵖ(V)} ≤ 2 κ ^ dim E (c₁ ‖f₁‖_{Lᵖ(T)} + c₂ ‖f₂‖_{Lᵖ(T)})`. Nothing is assumed on the
+balls that miss `V`, and the functions need only be measurable on `V` and on `T`. This is
+`TauCeti.eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add` for the restriction of `g` to `V` and those
+of `f₁`, `f₂` to `T`. -/
+theorem eLpNorm_restrict_le_of_forall_ball_inter_nonempty (hp1 : 1 ≤ p) (hp : p ≠ ∞)
+    {V T : Set E} (hV : MeasurableSet V) (hT : MeasurableSet T) {g : E → F} {f₁ : E → G₁}
+    {f₂ : E → G₂} (hg : AEStronglyMeasurable g (μ.restrict V))
+    (hf₁ : AEStronglyMeasurable f₁ (μ.restrict T)) (hf₂ : AEStronglyMeasurable f₂ (μ.restrict T))
+    {c₁ c₂ κ r : ℝ} (hκ : 1 ≤ κ) (hr : 0 < r)
+    (hle : ∀ y, (ball y r ∩ V).Nonempty → ball y (κ * r) ⊆ T ∧
+      eLpNorm g p (μ.restrict (ball y r)) ≤
+        ENNReal.ofReal c₁ * eLpNorm f₁ p (μ.restrict (ball y (κ * r))) +
+          ENNReal.ofReal c₂ * eLpNorm f₂ p (μ.restrict (ball y (κ * r)))) :
+    eLpNorm g p (μ.restrict V) ≤ 2 * ENNReal.ofReal κ ^ finrank ℝ E *
+      (ENNReal.ofReal c₁ * eLpNorm f₁ p (μ.restrict T) +
+        ENNReal.ofReal c₂ * eLpNorm f₂ p (μ.restrict T)) := by
+  have hglobal := eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add (c₁ := c₁) (c₂ := c₂) hp1 hp
+    ((aestronglyMeasurable_indicator_iff hV).2 hg) ((aestronglyMeasurable_indicator_iff hT).2 hf₁)
+    ((aestronglyMeasurable_indicator_iff hT).2 hf₂) hκ hr (Filter.Eventually.of_forall fun y => ?_)
+  · rwa [eLpNorm_indicator_eq_eLpNorm_restrict hV.nullMeasurableSet,
+      eLpNorm_indicator_eq_eLpNorm_restrict hT.nullMeasurableSet,
+      eLpNorm_indicator_eq_eLpNorm_restrict hT.nullMeasurableSet] at hglobal
+  by_cases hy : (ball y r ∩ V).Nonempty
+  · obtain ⟨hyT, hy⟩ := hle y hy
+    -- On `B(y, κ r) ⊆ T` the functions agree with their restrictions to `T`.
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict hT.nullMeasurableSet,
+      eLpNorm_indicator_eq_eLpNorm_restrict hT.nullMeasurableSet, Measure.restrict_restrict hT,
+      Set.inter_eq_right.2 hyT]
+    exact (eLpNorm_indicator_le _ hV.nullMeasurableSet).trans hy
+  · -- A ball missing `V` does not see the restriction of `g` to `V`.
+    rw [eLpNorm_indicator_eq_eLpNorm_restrict hV.nullMeasurableSet, Measure.restrict_restrict hV,
+      Set.inter_comm, Set.not_nonempty_iff_eq_empty.1 hy, Measure.restrict_empty,
+      eLpNorm_measure_zero]
+    exact zero_le
 
 /-- **Global estimates from local ones on concentric balls.** Let `μ` be an additive Haar measure
 on a finite-dimensional real normed space `E`, let `1 ≤ p < ∞`, and let `g`, `f₁`, `f₂` be in

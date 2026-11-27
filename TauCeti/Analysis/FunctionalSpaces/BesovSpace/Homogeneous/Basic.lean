@@ -84,6 +84,8 @@ low-frequency blocks sum in `L^∞`
   `ℓ^q(ℤ, Lᵖ)`, and `TauCeti.HomogeneousBesovSpace.block` is the block `Pⱼ u` as an `Lᵖ` function.
 * `TauCeti.HomogeneousBesovSpace.tsum_eNorm_weightedBlocks`: for `q = 1` the seminorm is the sum
   of the weighted block norms.
+* `TauCeti.HomogeneousBesovSpace.block_eq_fourierMultiplierCLM`: the blocks of an `L²` element of
+  `\dot B^s_{2,q}` are its `L²` Fourier multiplier blocks.
 * `TauCeti.HomogeneousBesovSpace.exists_sum_fourierMultiplierCLM_block_eq`: the blocks of an element
   of `\dot B^s_{2,q}` are reproduced by their neighbouring blocks, acting as `L²` Fourier
   multipliers.
@@ -687,6 +689,17 @@ end Seminormed
 section L2
 
 variable {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℂ G] [CompleteSpace G]
+
+/-- **The blocks of an `L²` function.** If `u ∈ \dot B^s_{2,q}` is an `L²` function `u₀`, its block
+`Pⱼ u` is the `L²` Fourier multiplier with any symbol `m` almost everywhere equal to `ψⱼ`, applied
+to `u₀`. -/
+theorem block_eq_fourierMultiplierCLM {u : HomogeneousBesovSpace G φ s 2 q}
+    {u₀ : Lp G 2 (volume : Measure E)} (hu : u.toDistr = u₀) {j : ℤ}
+    {m : Lp ℂ ∞ (volume : Measure E)} (hm : m =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley j ξ : ℂ)) :
+    u.block j = Lp.fourierMultiplierCLM G m u₀ :=
+  Lp.toTemperedDistribution_injective <| by
+    dsimp only
+    rw [coe_block, hu, homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ hm]
 
 variable (φ) in
 /-- **The blocks are reproduced by their neighbours.** There is `L`, depending only on `φ`, such
