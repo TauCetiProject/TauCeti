@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.Quasicategory.StrictBicategory
 public import Mathlib.AlgebraicTopology.SimplicialSet.NerveAdjunction
 public import TauCeti.AlgebraicTopology.Quasicategory.HomotopyCategory
 public import TauCeti.AlgebraicTopology.SimplicialSet.HoFunctorIhom
+public import TauCeti.AlgebraicTopology.SimplicialSet.InternalHom
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.FunctorCategory
 public import TauCeti.CategoryTheory.Bicategory.Adjunction.Basic
 
@@ -42,6 +43,8 @@ two notions agree with equivalence of categories.
 * `SSet.QCat.IsCategoricalEquivalence.exists_isEquivalence`: a categorical equivalence is
   essentially surjective, every vertex of the target being joined by an equivalence to a vertex of
   the image.
+* `SSet.QCat.nonempty_iso_of_isEquivalence`: an equivalence of `Fun(X, Y)` between the vertices
+  corresponding to `f` and `g` gives an invertible `2`-morphism `f ≅ g`.
 * `CategoryTheory.Iso.nerveMap`: a natural isomorphism of functors gives an invertible natural
   transformation between their nerves, with components computed by
   `CategoryTheory.Iso.nerveMap_hom_base` and `CategoryTheory.Iso.nerveMap_inv_base`.
@@ -102,6 +105,47 @@ lemma homotopyCategoryFunctor_map {f g : X ⟶ Y} (α : f ⟶ g) :
         (ihomHoFunctor X.obj Y.obj).map α.base ≫
         eqToHom (homotopyCategoryFunctor_obj_eq_ihomHoFunctor_obj g).symm :=
   ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+-- The two private helpers below are local copies of the public lemmas of the same names added by
+-- the open TauCeti PR #46156 (in `SimplicialSet/InternalHom.lean` and in this file). They are to
+-- be replaced by those public lemmas once #46156 lands.
+
+/-- The vertex of `Fun(X, Z)` corresponding to `φ : 𝟙_ SSet ⟶ Fun(X, Z)` is the map uncurried
+from `φ`. -/
+private lemma ihomObj₀Equiv_unitHomEquiv {X Z : SSet.{u}} (φ : 𝟙_ SSet ⟶ (ihom X).obj Z) :
+    ihomObj₀Equiv X Z (unitHomEquiv _ φ) = MonoidalClosed.uncurry' φ := by
+  have h : CartesianMonoidalCategory.toUnit X ≫ φ = const (unitHomEquiv _ φ) := by
+    rw [← comp_const (CartesianMonoidalCategory.toUnit X)]
+    exact congrArg _ ((unitHomEquiv _).symm_apply_apply φ).symm
+  have hρ : CartesianMonoidalCategory.lift (𝟙 X) (CartesianMonoidalCategory.toUnit X) =
+      (ρ_ X).inv := by
+    ext <;> simp
+  rw [ihomObj₀Equiv_apply, ← h, MonoidalClosed.uncurry', MonoidalClosed.uncurry_eq,
+    ← CartesianMonoidalCategory.lift_whiskerLeft, hρ, Category.assoc]
+
+/-- The object of the hom-category `X ⟶ Y` of the bicategory of quasicategories underlying a
+`1`-morphism `f` is the class of the vertex of `Fun(X, Y)` corresponding to `f`. -/
+private lemma homEquiv_eq_mk (f : X ⟶ Y) :
+    CatEnrichedOrdinary.homEquiv f =
+      HomotopyCategory.mk ((ihomObj₀Equiv X.obj Y.obj).symm f.hom) :=
+  -- By definition, `homEquiv f` is the class of the vertex `unitHomEquiv _ (eHomEquiv SSet f)`,
+  -- and `eHomEquiv SSet f` uncurries to `f.hom`.
+  congrArg HomotopyCategory.mk
+    ((Equiv.eq_symm_apply _).2 (ihomObj₀Equiv_unitHomEquiv (eHomEquiv SSet f)))
+
+/-- An equivalence of `Fun(X, Y)` between the vertices corresponding to `f` and `g` gives an
+invertible `2`-morphism `f ≅ g` of the bicategory of quasicategories. -/
+lemma nonempty_iso_of_isEquivalence {f g : X ⟶ Y}
+    {α : Edge ((ihomObj₀Equiv X.obj Y.obj).symm f.hom) ((ihomObj₀Equiv X.obj Y.obj).symm g.hom)}
+    (hα : α.IsEquivalence) : Nonempty (f ≅ g) := by
+  have := Y.property
+  obtain ⟨φ⟩ := HomotopyCategory.nonempty_iso_mk_iff.2 ⟨α, hα⟩
+  let ψ : CatEnrichedOrdinary.homEquiv f ≅ CatEnrichedOrdinary.homEquiv g :=
+    eqToIso (homEquiv_eq_mk f) ≪≫ φ ≪≫ eqToIso (homEquiv_eq_mk g).symm
+  exact ⟨{ hom := .mk ψ.hom
+           inv := .mk ψ.inv
+           hom_inv_id := CatEnrichedOrdinary.Hom.ext _ _ ψ.hom_inv_id
+           inv_hom_id := CatEnrichedOrdinary.Hom.ext _ _ ψ.inv_hom_id }⟩
 
 /-- A map of quasicategories is a categorical equivalence when it is an equivalence in the
 bicategory of quasicategories: it admits a quasi-inverse together with invertible natural
