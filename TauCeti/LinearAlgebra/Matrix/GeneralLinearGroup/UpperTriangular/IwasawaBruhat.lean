@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Valuation.ValuationSubring
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Normalizer
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Iwahori
+public import TauCeti.LinearAlgebra.Matrix.Permutation
 
 /-!
 # The Iwasawa–Bruhat decomposition of `GL_m` over a valued field
@@ -108,9 +109,9 @@ theorem mem_map_iwahoriOne_iff {g : GL m K} :
     have hdet : IsUnit M.det := by
       refine isUnit_det_of_isUpperTriangular_map (f := IsLocalRing.residue A)
         (fun _ _ hji ↦ (IsLocalRing.residue_eq_zero_iff _).mpr (hlowM hji)) fun i ↦ ?_
-      rw [← sub_add_cancel (M i i) 1, map_add,
-        (IsLocalRing.residue_eq_zero_iff _).mpr (hdiagM i), zero_add, map_one]
-      exact isUnit_one
+      have hdiag_res : IsLocalRing.residue A (M i i) = 1 := by
+        simpa [sub_eq_zero] using (IsLocalRing.residue_eq_zero_iff _).mpr (hdiagM i)
+      simp [hdiag_res]
     refine ⟨GeneralLinearGroup.mk'' M hdet, ?_, ?_⟩
     · exact mem_upperUnitriangularCongruenceSubgroup_iff.mpr ⟨hlowM, hdiagM⟩
     · ext i j
@@ -299,26 +300,21 @@ theorem exists_eq_mul_diagGL_mul_permutationGL_mul (g : GL m K) :
   -- The pivots of the rows of `Y` give the permutation, the pivot entries the diagonal factor.
   let π : Equiv.Perm m := Equiv.ofBijective q hq.bijective_of_finite
   let t : m → Kˣ := fun i ↦ Units.mk0 (Y i (q i)) (hpiv i).1
-  let k : GL m K := (permutationGL π⁻¹)⁻¹ * (diagGL t)⁻¹ * hU.toGL * g
+  let k : GL m K := permutationGL π * (diagGL t)⁻¹ * hU.toGL * g
   refine ⟨hU.toGL⁻¹, inv_mem (UpperUnitriangularGroup.toGL_mem_upperUnitriangularGroup hU), t,
-    π⁻¹, k, ?_, by simp only [k]; group⟩
+    π⁻¹, k, ?_, by simp only [k, map_inv]; group⟩
   -- The row `π i = q i` of `k` is the row `i` of `Y` divided by its pivot entry.
   have hk (i j : m) : (k : Matrix m m K) (π i) j = (Y i (q i))⁻¹ * Y i j := by
-    have hperm (M : GL m K) :
-        ((permutationGL π⁻¹)⁻¹ * M : GL m K) (π i) j = M i j := by
-      simp [← map_inv, permutationGL_coe, Equiv.Perm.permMatrix,
-        PEquiv.toMatrix_toPEquiv_mul]
-    simp only [k, mul_assoc]
-    rw [hperm]
+    -- Transport the bundled permutation to the existing rectangular matrix row-action API.
+    simp only [k, mul_assoc, Units.val_mul, permutationGL_coe, ← Matrix.permMatrixHom_apply,
+      permMatrixHom_mul_apply, Equiv.symm_apply_apply]
     simp [← map_inv, diagGL_coe, diagonal_mul, t, Y]
   have hpos (i : m) : 0 < A.valuation (Y i (q i)) :=
     pos_iff_ne_zero.mpr ((A.valuation).ne_zero_iff.mpr (hpiv i).1)
   rw [mem_map_iwahoriOne_iff]
   refine ⟨fun r j ↦ ?_, fun r j hjr ↦ ?_, fun r ↦ ?_⟩ <;> obtain ⟨i, rfl⟩ := π.surjective r
-  · rw [hk, map_mul, map_inv₀, ← div_eq_inv_mul, div_le_one₀ (hpos i)]
-    exact (hpiv i).2.1 j
-  · rw [hk, map_mul, map_inv₀, ← div_eq_inv_mul, div_lt_one₀ (hpos i)]
-    exact (hpiv i).2.2 j hjr
+  · simpa [hk, inv_mul_le_one₀ (hpos i)] using (hpiv i).2.1 j
+  · simpa [hk, inv_mul_lt_one₀ (hpos i)] using (hpiv i).2.2 j hjr
   · rw [hk, Equiv.ofBijective_apply, inv_mul_cancel₀ (hpiv i).1, sub_self, map_zero]
     exact zero_lt_one
 

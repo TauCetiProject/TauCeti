@@ -919,8 +919,8 @@ namespace Matrix
 open Classical in
 /-- Subtracting from each row of `G` a combination of the rows below it is multiplication on the
 left by an upper-unitriangular matrix. -/
-theorem exists_isUpperUnitriangular_mul_apply {R m : Type*} [Ring R] [Fintype m] [Preorder m]
-    (G : Matrix m m R) {w : m → m → R}
+theorem exists_isUpperUnitriangular_mul_apply {R m n : Type*} [Ring R] [Fintype m] [Preorder m]
+    (G : Matrix m n R) {w : m → n → R}
     (hw : ∀ i, w i ∈ Submodule.span R (G.row '' ↑(Finset.univ.filter fun j ↦ i < j))) :
     ∃ U : Matrix m m R, U.IsUpperUnitriangular ∧ ∀ i l, (U * G) i l = G i l - w i l := by
   classical
@@ -937,8 +937,7 @@ theorem exists_isUpperUnitriangular_mul_apply {R m : Type*} [Ring R] [Fintype m]
     · by_cases hlt : i < j
       · simp [U, TauCeti.unitDiagonalMatrixOfEntries_apply_of_mem, hij, hlt]
       · simp [U, TauCeti.unitDiagonalMatrixOfEntries_apply_of_notMem, hij, hlt]
-  rw [Matrix.mul_apply, Finset.sum_congr rfl fun j _ ↦ hterm j, Finset.sum_sub_distrib,
-    Finset.sum_ite_eq, ite_eq_left (Finset.mem_univ _), ← Finset.sum_filter, ← hc i]
-  simp [Finset.sum_apply]
+  rw [← hc i]
+  simp [Matrix.mul_apply, hterm, Finset.sum_sub_distrib, Finset.sum_filter, Finset.sum_apply]
 
 end Matrix
