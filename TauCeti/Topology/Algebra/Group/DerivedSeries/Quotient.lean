@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Group.DerivedSeries
-public import TauCeti.Topology.Algebra.Group.Profinite.Basic
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # Iterated solvable quotients
@@ -18,8 +18,7 @@ the transition homomorphism `G^n → G^m`.
 
 The image of every closed derived subgroup of `G` in `G^n` is the corresponding closed derived
 subgroup of `G^n`. Compactness is unnecessary here. At levels `m ≤ n` the image is the kernel
-of the transition to `G^m`, and beyond level `n` the series is trivial. When `G` is profinite,
-its solvable quotients carry the usual profinite structure of quotients by closed normal subgroups.
+of the transition to `G^m`, and beyond level `n` the series is trivial.
 -/
 
 public section
