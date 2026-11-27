@@ -76,11 +76,9 @@ noncomputable def pointwiseCone (G : B ⟶ C) (h : i ≫ G = F) :
 @[simp]
 lemma objEquiv_pointwiseCone_coe (G : B ⟶ C) (h : i ≫ G = F) :
     (slice.objEquiv (pointwiseCone i b G h)).val = coneMap i b ≫ G := by
-  calc
-    _ = join.map (𝟙 Δ[0]) (𝟙 (comma i b)) ≫ (slice.objEquiv (cone i b)).val ≫ G :=
-      slice.objEquiv_map_app_coe (q := π i b ≫ F) (𝟙 _) G (by simp [h]) (cone i b)
-    _ = (slice.objEquiv (cone i b)).val ≫ G := by simp
-    _ = _ := congrArg (· ≫ G) (objEquiv_cone_coe i b)
+  -- The target diagram must be explicit for rewriting through the opaque slice object.
+  simpa only [pointwiseCone, join.map_id, Category.id_comp, objEquiv_cone_coe i b] using
+    (slice.objEquiv_map_app_coe (q := π i b ≫ F) (𝟙 _) G (by simp [h]) (cone i b))
 
 /-- The apex of the pointwise cone is the image of `b` under the extension. -/
 -- Not `@[simp]`: `SSet.slice.π_app` rewrites the left-hand side.
@@ -91,27 +89,14 @@ lemma π_pointwiseCone (G : B ⟶ C) (h : i ≫ G = F) :
 
 @[simp]
 lemma pointwiseCone_id : pointwiseCone i b (𝟙 B) (Category.comp_id i) = cone i b := by
-  apply slice.objEquiv.injective
-  apply Subtype.ext
-  exact (objEquiv_pointwiseCone_coe i b (𝟙 B) (Category.comp_id i)).trans
-    ((Category.comp_id _).trans (objEquiv_cone_coe i b).symm)
+  simp [pointwiseCone]
 
 /-- Transporting a pointwise cone along `H` is the pointwise cone for `G ≫ H`. -/
 @[simp]
 lemma pointwiseCone_comp (G : B ⟶ C) (h : i ≫ G = F) (H : C ⟶ D) :
     (slice.map (𝟙 _) H (by simp) : slice (π i b ≫ F) ⟶ slice (π i b ≫ F ≫ H)).app _
       (pointwiseCone i b G h) = pointwiseCone i b (G ≫ H) (by simp [← h]) := by
-  apply slice.objEquiv.injective
-  apply Subtype.ext
-  calc
-    _ = join.map (𝟙 Δ[0]) (𝟙 (comma i b)) ≫
-        (slice.objEquiv (pointwiseCone i b G h)).val ≫ H :=
-      slice.objEquiv_map_app_coe (q := π i b ≫ F ≫ H) (𝟙 _) H
-        (by simp) (pointwiseCone i b G h)
-    _ = (slice.objEquiv (pointwiseCone i b G h)).val ≫ H := by simp
-    _ = (coneMap i b ≫ G) ≫ H := congrArg (· ≫ H) (objEquiv_pointwiseCone_coe i b G h)
-    _ = coneMap i b ≫ G ≫ H := Category.assoc _ _ _
-    _ = _ := (objEquiv_pointwiseCone_coe i b (G ≫ H) _).symm
+  simp only [pointwiseCone, ← NatTrans.comp_app_apply, slice.map_comp, Category.id_comp]
 
 /-- For an empty source, the pointwise limit condition is terminality of the value
 of the extension. -/

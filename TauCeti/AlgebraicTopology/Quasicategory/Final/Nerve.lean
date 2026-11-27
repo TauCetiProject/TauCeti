@@ -45,11 +45,11 @@ theorem isFinal_nerveMap_iff (F : C ⥤ D) :
   · intro h x
     have := h (nerveEquiv.symm x)
     exact IsWeaklyContractible.of_iso
-      (F.isPullback_nerveMap_structuredArrow_coslice x).isoPullback.symm
+      (F.nerveCommaIso x).symm
   · intro h y
     obtain ⟨x, rfl⟩ := nerveEquiv.symm.surjective y
     have := h x
-    exact IsWeaklyContractible.of_iso (F.isPullback_nerveMap_structuredArrow_coslice x).isoPullback
+    exact IsWeaklyContractible.of_iso (F.nerveCommaIso x)
 
 /-- A functor whose nerve map is final is final in the ordinary sense. -/
 theorem final_of_isFinal_nerveMap (F : C ⥤ D)

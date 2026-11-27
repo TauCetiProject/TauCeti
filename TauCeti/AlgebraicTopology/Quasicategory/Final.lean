@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.Quasicategory.TerminalVertex
-public import TauCeti.AlgebraicTopology.SimplicialSet.Coslice
+public import TauCeti.AlgebraicTopology.SimplicialSet.Comma
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration.Fiber
 
 /-!
@@ -69,12 +69,12 @@ variable {K L : SSet.{u}}
 product `K ×_L L_{y/}` of `f` with the projection from the coslice under `y` is weakly
 contractible. -/
 def IsFinal (f : K ⟶ L) : Prop :=
-  ∀ y : L _⦋0⦌, IsWeaklyContractible (pullback f (coslice.π (const y : Δ[0] ⟶ L)))
+  ∀ y : L _⦋0⦌, IsWeaklyContractible (comma f y)
 
 /-- Unfolding `SSet.IsFinal`: `f` is final when all fibres `K ×_L L_{y/}` are weakly
 contractible. -/
 lemma isFinal_iff (f : K ⟶ L) :
-    IsFinal f ↔ ∀ y : L _⦋0⦌, IsWeaklyContractible (pullback f (coslice.π (const y : Δ[0] ⟶ L))) :=
+    IsFinal f ↔ ∀ y : L _⦋0⦌, IsWeaklyContractible (comma f y) :=
   Iff.rfl
 
 /-- For a final map `f : K ⟶ L`, every vertex `y` of `L` has an edge to a vertex in the image of
@@ -83,14 +83,14 @@ lemma isFinal_iff (f : K ⟶ L) :
 lemma IsFinal.exists_edge {f : K ⟶ L} (hf : IsFinal f) (y : L _⦋0⦌) :
     ∃ k : K _⦋0⦌, Nonempty (L.Edge y (f.app _ k)) := by
   have := hf y
-  obtain ⟨v⟩ := IsWeaklyContractible.nonempty (K := pullback f (coslice.π (const y : Δ[0] ⟶ L)))
+  obtain ⟨v⟩ := IsWeaklyContractible.nonempty (K := comma f y)
   -- The vertex `v` of the fibre is a vertex `k` of `K` and a cocone `Δ[0] ⋆ Δ[0] ⟶ L` under `y`
   -- whose cone point is `f k`.
   let s : (coslice (const y : Δ[0] ⟶ L)) _⦋0⦌ :=
-    (pullback.snd f (coslice.π (const y : Δ[0] ⟶ L))).app _ v
-  have hs : f.app _ ((pullback.fst f _).app _ v) = (coslice.π (const y : Δ[0] ⟶ L)).app _ s :=
-    ConcreteCategory.congr_hom (congr_app (pullback.condition (f := f)) _) v
-  refine ⟨(pullback.fst f _).app _ v, ⟨(join.coneEdgeEquiv _ y ⟨(coslice.objEquiv s).val,
+    (comma.toCoslice f y).app _ v
+  have hs : f.app _ ((comma.π f y).app _ v) = (coslice.π (const y : Δ[0] ⟶ L)).app _ s :=
+    ConcreteCategory.congr_hom (congr_app (comma.isPullback f y).w _) v
+  refine ⟨(comma.π f y).app _ v, ⟨(join.coneEdgeEquiv _ y ⟨(coslice.objEquiv s).val,
     (coslice.objEquiv s).property, ?_⟩).ofEq rfl hs.symm⟩⟩
   rw [coslice.π_app (p := const y) s]
   exact (yonedaEquiv.symm_apply_apply _).symm.trans (yonedaEquiv_symm_zero _)
@@ -189,7 +189,8 @@ lemma isWeaklyContractible_pullback_const :
 omit y in
 /-- The inclusion `Δ[0] ⟶ L` of a terminal vertex is final. -/
 lemma isFinal_const : IsFinal (const x : Δ[0] ⟶ L) :=
-  hx.isWeaklyContractible_pullback_const
+  fun y ↦ (hx.isWeaklyContractible_pullback_const y).of_iso
+    (comma.isPullback _ _).isoPullback.symm
 
 end IsTerminalVertex
 
