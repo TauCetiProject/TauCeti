@@ -12,13 +12,10 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 import Mathlib.Topology.Instances.ENNReal.Lemmas
-import TauCeti.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Holder.Localization
 import TauCeti.Analysis.Holder.MeanValue
-import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.Analysis.SpecialFunctions.Pow.Regularity
+import TauCeti.Topology.Instances.Real.Sign
 
 /-!
 # Examples of Hölder and Campanato spaces
@@ -42,11 +39,6 @@ hypotheses of the general theorems are needed.
   (`TauCeti.CkHolderSpaceOn.inclusionSuccL`), fails on this non-convex set.
 * **Boundedness.** `1/x` is smooth on `(0, 1)` but lies in no `C^{k,α}((0, 1))`, being unbounded
   (`TauCeti.not_exists_ckHolderSpaceOn_eq_inv`).
-* **The exponent of a derivative.** On the line, for `0 < β ≤ 1` and a compactly supported `C⁴`
-  cutoff `χ`, the function `χ(x) |x|^{3+β}` lies in `C_b^{3,β}`
-  (`TauCeti.exists_ckHolderSpace_coe_eq_mul_abs_rpow`): the third derivative of `|x|^{3+β}`
-  is a multiple of `sign(x) |x|^β`. For `α > β` no element of `C_b^{3,α}` agrees with
-  `|x|^{3+β}` near `0` (`TauCeti.not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow`).
 * **The dimension in Campanato's exponent.** For `n = 1` and `p = 2`, Campanato's
   characterization `𝓛^{p,n + p α} = C^{0,α}` predicts that `|x|^α` lies in `𝓛^{2,1+2α}((-1, 1))`
   (`TauCeti.campanatoSeminormPow_abs_rpow_Ioo_ne_top`) and not in `𝓛^{2,2+2α}((-1, 1))`
@@ -168,11 +160,10 @@ theorem exists_ckHolderSpaceOn_eq_sign {k : ℕ} (hk : 1 ≤ k) (α : ℝ≥0)
   have hloc : ∀ x ∈ (Ω : Set ℝ), Real.sign =ᶠ[𝓝 x] fun _ ↦ Real.sign x := by
     intro x hx
     rw [hΩ] at hx
+    refine Real.eventually_sign_eq_nhds ?_
     rcases hx with hx | hx
-    · filter_upwards [Iio_mem_nhds hx.2] with y hy
-      rw [Real.sign_of_neg hy, Real.sign_of_neg hx.2]
-    · filter_upwards [Ioi_mem_nhds hx.1] with y hy
-      rw [Real.sign_of_pos hy, Real.sign_of_pos hx.1]
+    · exact hx.2.ne
+    · exact hx.1.ne'
   have hcont : ContDiffOn ℝ k Real.sign Ω := fun x hx ↦
     (contDiffAt_const.congr_of_eventuallyEq (hloc x hx)).contDiffWithinAt
   have hderiv : ∀ i : ℕ, i ≠ 0 → ∀ x ∈ (Ω : Set ℝ), iteratedFDeriv ℝ i Real.sign x = 0 := by
@@ -289,55 +280,5 @@ theorem campanatoSeminormPow_abs_rpow_Ioo_eq_top {α : ℝ≥0} (hα : 0 < α) :
     (lt_add_of_pos_right α (by norm_num)) fun x hx y hy ↦ ?_
   rw [heq hx, heq hy]
   exact hg x hx y hy
-
-/-! ### The power `|x|^{3+β}` in `C_b^{3,·}` -/
-
-/-- **`χ |x|^{3+β}` lies in `C_b^{3,β}`.** For `0 < β ≤ 1` and a compactly supported `C⁴`
-function `χ` on the line, the map `x ↦ χ(x) |x|^{3+β}` lies in `C_b^{3,β}(ℝ)`. -/
-theorem exists_ckHolderSpace_coe_eq_mul_abs_rpow {β : ℝ≥0} (hβ₀ : 0 < β) (hβ₁ : β ≤ 1)
-    {χ : ℝ → ℝ} (hχ : ContDiff ℝ 4 χ) (hχc : HasCompactSupport χ) :
-    ∃ g : CkHolderSpace 3 β ℝ ℝ, ⇑g = fun x ↦ χ x * |x| ^ (3 + (β : ℝ)) := by
-  obtain ⟨R, hR⟩ := hχc.isCompact.isBounded.subset_ball (0 : ℝ)
-  have hf : ContDiff ℝ 3 (fun x : ℝ ↦ |x| ^ (3 + (β : ℝ))) := by
-    simpa [Real.norm_eq_abs] using contDiff_norm_rpow_of_lt (E := ℝ) (k := 3) (p := 3 + β)
-      (by push_cast; linarith [NNReal.coe_pos.2 hβ₀])
-  obtain ⟨M, -, hM⟩ := hf.contDiffOn.exists_nonneg_bound_iteratedFDeriv_of_isOpen
-    isOpen_univ (isCompact_closedBall (0 : ℝ) R) (subset_univ _)
-  obtain ⟨N, -, hN⟩ := hχc.exists_bound_iteratedFDeriv_of_contDiff (n := 4) hχ
-  obtain ⟨H, hH⟩ := memHolder_iteratedFDeriv_abs_rpow_three_add hβ₀ hβ₁
-  refine ⟨CkHolderSpace.cutoff (M := M.toNNReal) (N := N.toNNReal) hf.contDiffOn
-    (hχ.of_le (by norm_num)) isOpen_ball (convex_ball 0 R) hR hβ₁
-    (fun i hi x hx ↦ (hM i hi x (ball_subset_closedBall hx)).trans (Real.le_coe_toNNReal M))
-    (fun i hi x ↦ (hN i hi x).trans (Real.le_coe_toNNReal N)) (hH.holderOnWith _), ?_⟩
-  rw [CkHolderSpace.coe_cutoff]
-  simp only [smul_eq_mul]
-
-/-- **`|x|^{3+β}` is not `C^{3,α}` at `0` for `α > β`.** For `0 < β < α`, no element of
-`C_b^{3,α}(ℝ)` agrees with `|x|^{3+β}` near `0`: its third derivative
-`(3 + β)(2 + β)(1 + β) sign(x) |x|^β` is not `α`-Hölder at the origin. -/
-theorem not_exists_ckHolderSpace_coe_eq_of_eventuallyEq_abs_rpow {β α : ℝ≥0} (hβ : 0 < β)
-    (hβα : β < α) {g : ℝ → ℝ} (hg : g =ᶠ[𝓝 0] fun x ↦ |x| ^ (3 + (β : ℝ))) :
-    ¬ ∃ G : CkHolderSpace 3 α ℝ ℝ, ⇑G = g := by
-  rintro ⟨G, rfl⟩
-  obtain ⟨C, hC⟩ := G.memHolder_iteratedFDeriv
-  have hβ' : (0 : ℝ) < β := NNReal.coe_pos.2 hβ
-  have hαβ : (0 : ℝ) < α - β := sub_pos.2 (NNReal.coe_lt_coe.2 hβα)
-  have hc : (0 : ℝ) < (3 + β) * (2 + β) * (1 + β) := by positivity
-  have hD := hg.iteratedFDeriv ℝ 3
-  obtain ⟨t, ⟨hCt, ht⟩, htD⟩ := (((eventually_mul_rpow_lt_nhdsGT_zero hαβ C hc).and
-    eventually_mem_nhdsWithin).and (hD.filter_mono nhdsWithin_le_nhds)).exists
-  have ht : 0 < t := ht
-  -- The Hölder bound of the third derivative between `t` and `0` reads
-  -- `(3 + β)(2 + β)(1 + β) t ^ β ≤ C t ^ α`.
-  have h1 := hC.dist_le t 0
-  rw [htD, hD.self_of_nhds, iteratedFDeriv_three_abs_rpow_three_add hβ',
-    LinearIsometryEquiv.dist_map] at h1
-  simp only [Real.dist_eq, sub_zero, mul_zero, abs_of_pos ht,
-    ← Real.rpow_eq_rpow_sub_one_mul ht.le hβ'.ne',
-    abs_of_pos (mul_pos hc (Real.rpow_pos_of_pos ht (β : ℝ)))] at h1
-  have hsplit : t ^ (α : ℝ) = t ^ ((α : ℝ) - β) * t ^ (β : ℝ) := by
-    rw [← Real.rpow_add ht, sub_add_cancel]
-  rw [hsplit, ← mul_assoc] at h1
-  linarith [mul_lt_mul_of_pos_right hCt (Real.rpow_pos_of_pos ht (β : ℝ))]
 
 end TauCeti

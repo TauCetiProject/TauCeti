@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.DivergenceFormSchauder.FlatBoundary
-public import TauCeti.Analysis.PDE.Regularity.HalfSpace
+public import TauCeti.Analysis.PDE.Regularity.HalfSpace.Basic
 import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.InnerProductSpace.OrthogonalSpanSingleton
 import TauCeti.Analysis.PDE.Ellipticity.Extension
@@ -472,8 +472,7 @@ private theorem eq_smul_add_sum_of_sum_sum_eq_neg {e : E} (he : ‖e‖ = 1)
     rw [inner_add_right, real_inner_smul_right, hvt, mul_comm]
   -- The coefficient of `⟪v, e⟫` is `⟪e, A e⟫ = ∑ᵢⱼ ⟪e, bᵢ⟫ Aᵢⱼ ⟪e, bⱼ⟫`.
   have hAe : matrixBilinearForm A e e = ∑ i, ∑ j, A i j * (⟪e, b j⟫_ℝ * ⟪e, b i⟫_ℝ) := by
-    simp only [matrixBilinearForm_apply, dotProduct, Matrix.mulVec, b,
-      EuclideanSpace.inner_basisFun_real, Finset.mul_sum]
+    simp only [matrixBilinearForm_apply_eq_sum, b, EuclideanSpace.inner_basisFun_real]
     exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
   have key : matrixBilinearForm A e e * ⟪v, e⟫_ℝ = -s - ∑ i, ∑ j,
       (X i j + A i j * (⟪e, b j⟫_ℝ * ⟪t i, e⟫_ℝ + ⟪t j, b i⟫_ℝ)) := by
