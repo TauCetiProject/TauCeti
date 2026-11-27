@@ -6,22 +6,25 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Process.Stopping
+public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import TauCeti.Topology.Order.Cadlag
 
 /-!
 # Stopping times and stopped paths
 
 A stopping time remains a stopping time for a larger filtration. This transports stopping
-arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
-the stopping-time property, as does gluing two stopping times along an event measurable in both
-stopping σ-algebras (`MeasureTheory.IsStoppingTime.piecewise`); in particular, restricting a
-stopping time to an event known at that time by setting it to `⊤` outside (`piecewise_top`) yields
-a stopping time.
+arguments and localizing sequences when augmenting a filtration. Finite suprema and infima
+preserve the stopping-time property (`Finset.isStoppingTime_sup`, `Finset.isStoppingTime_inf`), as
+does gluing two stopping times along an event measurable in both stopping σ-algebras
+(`MeasureTheory.IsStoppingTime.piecewise`); in particular, restricting a stopping time to an event
+known at that time by setting it to `⊤` outside (`piecewise_top`) yields a stopping time.
 
-Stopping preserves path continuity, right continuity at each time, and the càdlàg property globally
+Stopping preserves path continuity, right continuity pointwise and globally, monotonicity,
+initial-interval and global local bounded variation, and the càdlàg property globally
 (`IsCadlag.stoppedProcess`), including when the stopping time is infinite. These pathwise facts
 require no measurability or stopping-time hypothesis and let local-martingale and optional-ray
-arguments retain the continuity, right continuity, or càdlàg regularity of stopped stages.
+arguments retain the continuity, right continuity, monotonicity, bounded variation, or càdlàg
+regularity of stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
 processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
@@ -95,11 +98,35 @@ theorem Finset.isStoppingTime_sup {κ ι Ω : Type*}
   have h := Finset.sup_induction
     (p := fun σ : Ω → WithTop ι ↦ MeasureTheory.IsStoppingTime ℱ σ)
     (MeasureTheory.isStoppingTime_const ℱ ⊥) (fun _ ha _ hb ↦ ha.max hb) hτ
-  have heq : s.sup τ = fun ω ↦ s.sup (fun j ↦ τ j ω) := funext (s.sup_apply τ)
-  exact heq ▸ h
+  exact funext (s.sup_apply τ) ▸ h
+
+/-- The finite infimum of stopping times is a stopping time.
+The empty infimum is the constant infinite time `⊤`. -/
+theorem Finset.isStoppingTime_inf {κ ι Ω : Type*}
+    [LinearOrder ι] {mΩ : MeasurableSpace Ω} {ℱ : MeasureTheory.Filtration ι mΩ}
+    (s : Finset κ) {τ : κ → Ω → WithTop ι}
+    (hτ : ∀ j ∈ s, MeasureTheory.IsStoppingTime ℱ (τ j)) :
+    MeasureTheory.IsStoppingTime ℱ (fun ω ↦ s.inf (fun j ↦ τ j ω)) := by
+  have h := Finset.inf_induction
+    (p := fun σ : Ω → WithTop ι ↦ MeasureTheory.IsStoppingTime ℱ σ)
+    (fun _ ↦ by simp only [Pi.top_apply, MeasurableSet.const]) (fun _ ha _ hb ↦ ha.min hb) hτ
+  exact funext (s.inf_apply τ) ▸ h
 
 open Filter Set
 open scoped Topology
+
+private lemma stoppedProcess_eq_or_min {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    (X : ι → Ω → E) (τ : Ω → WithTop ι) (ω : Ω) :
+    (MeasureTheory.stoppedProcess X τ · ω) = (X · ω) ∨
+      ∃ u : ι, (MeasureTheory.stoppedProcess X τ · ω) = fun t ↦ X (min t u) ω := by
+  cases hτ : τ ω with
+  | top => exact .inl (funext fun _ ↦ MeasureTheory.stoppedProcess_eq_of_le (hτ ▸ le_top))
+  | coe u =>
+    refine .inr ⟨u, funext fun t ↦ ?_⟩
+    rcases le_total t u with htu | hut
+    · rw [MeasureTheory.stoppedProcess_eq_of_le (hτ ▸ WithTop.coe_le_coe.2 htu), min_eq_left htu]
+    · rw [MeasureTheory.stoppedProcess_eq_of_ge (hτ ▸ WithTop.coe_le_coe.2 hut),
+        min_eq_right hut, hτ, WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
 
 /-- Stopping preserves continuity of a path, without any measurability or stopping-time
 assumption on the random time. At an infinite stopping time the path is unchanged. -/
@@ -135,6 +162,36 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
         (fun s hs => ?_) ?_
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut.trans hs.le)
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut)
+
+/-- Stopping preserves monotonicity of a path, without any measurability assumption on the
+random time. -/
+theorem Monotone.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι] [Preorder E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω} (hX : Monotone (X · ω)) :
+    Monotone (MeasureTheory.stoppedProcess X τ · ω) := by
+  rcases stoppedProcess_eq_or_min X τ ω with h | ⟨u, h⟩ <;> rw [h]
+  exacts [hX, fun _ _ hst ↦ hX (min_le_min_right u hst)]
+
+/-- Stopping preserves bounded variation on any initial interval `Icc ⊥ T`, without any
+measurability assumption on the random time. -/
+theorem BoundedVariationOn.stoppedProcess_Icc {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [TopologicalSpace E] [WeakPseudoEMetricSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω} {T : ι}
+    (hX : BoundedVariationOn (X · ω) (Icc ⊥ T)) :
+    BoundedVariationOn (MeasureTheory.stoppedProcess X τ · ω) (Icc ⊥ T) := by
+  rcases stoppedProcess_eq_or_min X τ ω with h | ⟨u, h⟩ <;> rw [h]
+  exacts [hX, ne_top_of_le_ne_top hX (eVariationOn.comp_le_of_monotoneOn (X · ω) (fun t ↦ min t u)
+    (fun _ _ _ _ hst ↦ min_le_min_right u hst) fun t ht ↦ ⟨bot_le, (min_le_left t u).trans ht.2⟩)]
+
+/-- Stopping preserves local bounded variation on `univ`, without any measurability assumption on
+the random time. -/
+theorem LocallyBoundedVariationOn.stoppedProcess_univ {ι Ω E : Type*} [LinearOrder ι]
+    [OrderBot ι] [TopologicalSpace E] [WeakPseudoEMetricSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω}
+    (hX : LocallyBoundedVariationOn (X · ω) univ) :
+    LocallyBoundedVariationOn (MeasureTheory.stoppedProcess X τ · ω) univ := fun _ b _ _ ↦ by
+  have hbv : BoundedVariationOn (X · ω) (Icc ⊥ b) := by
+    simpa only [univ_inter] using hX ⊥ b (mem_univ _) (mem_univ _)
+  exact hbv.stoppedProcess_Icc.mono fun _ ht ↦ ⟨bot_le, ht.2.2⟩
 
 /-- Stopping preserves the càdlàg property of a path globally, without any measurability or
 stopping-time assumption on the random time. At an infinite time the path is unchanged, and at a

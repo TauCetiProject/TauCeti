@@ -20,7 +20,10 @@ space, is strongly progressive on its original filtration. No completeness or ri
 the filtration is required, and no separability is required on the state space. In particular, the
 result applies to adapted càdlàg processes and permits use of the progressive stopped-evaluation
 API. Restricting a strongly progressive process to an event measurable at every time also preserves
-strong progressivity.
+strong progressivity, as do deterministic strongly measurable time paths, `ℱ ⊥`-strongly measurable
+initial variables, centering at `⊥`, and natural powers (`StronglyMeasurable.isStronglyProgressive`,
+`StronglyMeasurable.isStronglyProgressive_const`, `IsStronglyProgressive.sub_initialValue`,
+`IsStronglyProgressive.pow`).
 
 On each fixed horizon `T`, right-endpoint samples are taken in finite exhaustions of a countable
 dense set augmented with `T` and the right-isolated points below `T`. These approximations are
@@ -40,6 +43,42 @@ public section
 
 open MeasureTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
+
+/-- A deterministic strongly measurable path, viewed as a process independent of the sample
+variable, is strongly progressive for every filtration. -/
+theorem MeasureTheory.StronglyMeasurable.isStronglyProgressive
+    {ι Ω β : Type*} [Preorder ι] [MeasurableSpace ι] {m : MeasurableSpace Ω}
+    [TopologicalSpace β] {f : ι → β} (hf : StronglyMeasurable f) (ℱ : Filtration ι m) :
+    IsStronglyProgressive ℱ (fun t _ ↦ f t) := fun _ ↦
+  hf.comp_measurable (measurable_subtypeVal.comp measurable_fst)
+
+/-- An `ℱ ⊥`-strongly measurable random variable, viewed as a time-independent process, is
+strongly progressive for `ℱ`. -/
+theorem MeasureTheory.StronglyMeasurable.isStronglyProgressive_const
+    {ι Ω β : Type*} [Preorder ι] [OrderBot ι] [MeasurableSpace ι] {m : MeasurableSpace Ω}
+    [TopologicalSpace β] {ℱ : Filtration ι m} {ξ : Ω → β}
+    (hξ : StronglyMeasurable[ℱ ⊥] ξ) :
+    IsStronglyProgressive ℱ (fun _ ↦ ξ) := fun _ ↦
+  (hξ.mono (ℱ.mono bot_le)).comp_measurable measurable_snd
+
+/-- Centering a strongly progressive process at its initial value `⊥` preserves strong
+progressivity. -/
+theorem MeasureTheory.IsStronglyProgressive.sub_initialValue
+    {ι Ω β : Type*} [Preorder ι] [OrderBot ι] [MeasurableSpace ι] {m : MeasurableSpace Ω}
+    [TopologicalSpace β] [Sub β] [ContinuousSub β] {ℱ : Filtration ι m}
+    {u : ι → Ω → β} (hu : IsStronglyProgressive ℱ u) :
+    IsStronglyProgressive ℱ (fun t ω ↦ u t ω - u ⊥ ω) := fun t ↦
+  (hu t).sub ((hu.stronglyAdapted ⊥).isStronglyProgressive_const t)
+
+/-- Raising a strongly progressive process to a natural power preserves strong progressivity. -/
+@[to_additive const_nsmul
+/-- Taking a natural scalar multiple of a strongly progressive process preserves strong
+progressivity. -/]
+theorem MeasureTheory.IsStronglyProgressive.pow
+    {ι Ω β : Type*} [Preorder ι] [MeasurableSpace ι] {m : MeasurableSpace Ω}
+    [TopologicalSpace β] [Monoid β] [ContinuousMul β] {ℱ : Filtration ι m}
+    {u : ι → Ω → β} (hu : IsStronglyProgressive ℱ u) (n : ℕ) :
+    IsStronglyProgressive ℱ (fun t ω ↦ u t ω ^ n) := fun t ↦ (hu t).pow n
 
 /-- Restricting a progressive process to an event measurable at every time preserves
 progressivity. No topology on the time or state space is needed. -/

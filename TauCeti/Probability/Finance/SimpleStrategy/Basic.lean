@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
+public import Mathlib.Topology.EMetricSpace.BoundedVariation
 public import TauCeti.Probability.Process.Predictable.Basic
 public import TauCeti.Probability.Martingale.Basic
 public import TauCeti.Order.Interval.Set.Subdivision
+import TauCeti.Algebra.Order.Group.MinMax
+import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 /-!
 # Simple trading strategies and the self-financing formula
@@ -27,9 +30,17 @@ which is predictable when each `a j` is `ℱ (τ j)`-measurable
 
 `∫₀ᵗ a dX = ∑_{j < n} a j · (X (τ (j + 1) ⊓ t) - X (τ j ⊓ t))`  (`TauCeti.Finance.simpleGains`),
 
+which is linear in the strategy (`TauCeti.Finance.simpleGains_add`,
+`TauCeti.Finance.simpleGains_sub`, `TauCeti.Finance.simpleGains_smul`) with polarized product gains
+(`TauCeti.Finance.simpleGains_mul_eq_inv_four_mul_sub`), continuous along continuous price paths
+(`TauCeti.Finance.continuous_simpleGains`), monotone along monotone price paths when holdings are
+nonnegative (`TauCeti.Finance.monotone_simpleGains_of_monotoneOn`,
+`TauCeti.Finance.monotone_simpleGains`), of locally bounded variation along price paths of locally
+bounded variation (`TauCeti.Finance.locallyBoundedVariationOn_simpleGains`),
 an adapted process when `X` is adapted and each `a j` is `ℱ (τ j)`-measurable
-(`TauCeti.Finance.stronglyAdapted_simpleGains`), and a martingale when moreover `X` is a
-martingale and each trade has integrable gains at every time
+(`TauCeti.Finance.stronglyAdapted_simpleGains`), strongly progressive when `X` is strongly
+progressive (`TauCeti.Finance.isStronglyProgressive_simpleGains`), and a
+martingale when moreover `X` is a martingale and each trade has integrable gains at every time
 (`MeasureTheory.Martingale.simpleGains`), in particular when the positions are bounded
 (`MeasureTheory.Martingale.simpleGains_of_bdd`). At a rebalancing date the gains are the discrete
 transform `∑_{i < j} a i · (X (τ (i + 1)) - X (τ i))`
@@ -93,7 +104,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory Finset
+open MeasureTheory Finset TopologicalSpace
 
 namespace TauCeti.Finance
 
@@ -274,6 +285,22 @@ theorem simpleGains_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω �
     (ω : Ω) : simpleGains τ n (c • a) X t ω = c * simpleGains τ n a X t ω := by
   simp only [simpleGains_def, Pi.smul_apply, smul_eq_mul, mul_sum, mul_assoc]
 
+/-- The gains preserve subtraction in the strategy. -/
+@[simp]
+theorem simpleGains_sub (τ : ℕ → ι) (n : ℕ) (a₁ a₂ : ℕ → Ω → ℝ) (X : ι → Ω → ℝ) (t : ι)
+    (ω : Ω) :
+    simpleGains τ n (a₁ - a₂) X t ω = simpleGains τ n a₁ X t ω - simpleGains τ n a₂ X t ω := by
+  simp only [simpleGains_def, Pi.sub_apply, sub_mul, sum_sub_distrib]
+
+/-- Polarization identity for elementary gains: gains under a product strategy `a₁ * a₂` equal
+one quarter of the difference of gains under `(a₁ + a₂) ^ 2` and `(a₁ - a₂) ^ 2`. -/
+theorem simpleGains_mul_eq_inv_four_mul_sub (τ : ℕ → ι) (n : ℕ) (a₁ a₂ : ℕ → Ω → ℝ)
+    (X : ι → Ω → ℝ) (t : ι) (ω : Ω) :
+    simpleGains τ n (a₁ * a₂) X t ω =
+      4⁻¹ * (simpleGains τ n ((a₁ + a₂) ^ 2) X t ω - simpleGains τ n ((a₁ - a₂) ^ 2) X t ω) := by
+  have h : a₁ * a₂ = (4⁻¹ : ℝ) • ((a₁ + a₂) ^ 2 - (a₁ - a₂) ^ 2) := by ext; simp; ring
+  rw [h, simpleGains_smul, simpleGains_sub]
+
 /-- The simple holding is additive in the strategy. -/
 @[simp]
 theorem simpleHolding_add (τ : ℕ → ι) (n : ℕ) (a₁ a₂ : ℕ → Ω → ℝ) (t : ι) (ω : Ω) :
@@ -289,6 +316,46 @@ theorem simpleHolding_smul (τ : ℕ → ι) (n : ℕ) (c : ℝ) (a : ℕ → Ω
   simp only [simpleHolding_def, mul_sum]
   refine sum_congr rfl fun j _ ↦ ?_
   by_cases ht : t ∈ Set.Ioc (τ j) (τ (j + 1)) <;> simp [ht]
+
+/-- Elementary gains with nonnegative holdings along a price path monotone on `[τ 0, τ n]` are
+monotone. -/
+theorem monotone_simpleGains_of_monotoneOn (hτ : MonotoneOn τ (Set.Iic n)) {ω : Ω}
+    (ha : ∀ j < n, 0 ≤ a j ω) (hX : MonotoneOn (X · ω) (Set.Icc (τ 0) (τ n))) :
+    Monotone (simpleGains τ n a X · ω) := fun _ _ hst ↦ by
+  simp only [simpleGains_def]
+  refine sum_le_sum fun j hj ↦ ?_
+  have hj' : j < n := mem_range.1 hj
+  have hsub : Set.Icc (τ j) (τ (j + 1)) ⊆ Set.Icc (τ 0) (τ n) :=
+    Set.Icc_subset_Icc (hτ (Nat.zero_le n) hj'.le (Nat.zero_le j))
+      (hτ hj' Set.self_mem_Iic hj')
+  exact mul_le_mul_of_nonneg_left
+    ((hX.mono hsub).min_sub_min (hτ hj'.le hj' j.le_succ) hst) (ha j hj')
+
+/-- Elementary gains with nonnegative holdings along a monotone price path are monotone. -/
+theorem monotone_simpleGains (hτ : MonotoneOn τ (Set.Iic n)) {ω : Ω}
+    (ha : ∀ j < n, 0 ≤ a j ω) (hX : Monotone (X · ω)) :
+    Monotone (simpleGains τ n a X · ω) :=
+  monotone_simpleGains_of_monotoneOn hτ ha (hX.monotoneOn _)
+
+/-- Elementary gains along a price path of locally bounded variation have locally bounded
+variation. -/
+theorem locallyBoundedVariationOn_simpleGains {ω : Ω}
+    (hX : LocallyBoundedVariationOn (X · ω) Set.univ) :
+    LocallyBoundedVariationOn (simpleGains τ n a X · ω) Set.univ := by
+  have hmin (c : ι) : LocallyBoundedVariationOn (fun t ↦ X (min c t) ω) Set.univ :=
+    fun x y _ _ ↦ ne_top_of_le_ne_top (hX (min c x) (min c y) trivial trivial) <|
+      eVariationOn.comp_le_of_monotoneOn (X · ω) (min c)
+        (fun _ _ _ _ h ↦ min_le_min_left c h)
+        fun _ ⟨_, hx, hy⟩ ↦ ⟨trivial, min_le_min_left c hx, min_le_min_left c hy⟩
+  have hsum : (simpleGains τ n a X · ω) =
+      ∑ j ∈ range n, fun t ↦ a j ω * (X (min (τ (j + 1)) t) ω - X (min (τ j) t) ω) := by
+    ext t; simp [simpleGains_def]
+  rw [hsum]
+  exact sum_induction _ (LocallyBoundedVariationOn · Set.univ)
+    (fun _ _ ↦ LocallyBoundedVariationOn.add)
+    (TauCeti.locallyBoundedVariationOn_const 0 Set.univ) fun j _ ↦
+    (lipschitzWith_smul (a j ω)).comp_locallyBoundedVariationOn
+      ((hmin (τ (j + 1))).sub (hmin (τ j)))
 
 /-- Applying a function fixing zero to each height applies that function to the holding
 process, because the trading intervals are disjoint. No continuity of the function is needed. -/
@@ -335,6 +402,31 @@ theorem stronglyAdapted_simpleGains (hτ : MonotoneOn τ (Set.Iic n))
     ext ω
     rw [min_eq_right (ht.trans (hτ (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))),
       min_eq_right ht, sub_self, mul_zero]
+
+/-- The gains of a simple strategy over a partition monotone up to `n`, with each position chosen
+at the start of its interval, are strongly progressive when the price process is. -/
+theorem isStronglyProgressive_simpleGains [MeasurableSpace ι] [MeasurableInf ι]
+    (hτ : MonotoneOn τ (Set.Iic n)) (ha : ∀ j < n, StronglyMeasurable[ℱ (τ j)] (a j))
+    (hX : IsStronglyProgressive ℱ X) :
+    IsStronglyProgressive ℱ (simpleGains τ n a X) := by
+  intro t
+  let : MeasurableSpace Ω := ℱ t
+  have hmin (c : ι) : StronglyMeasurable (fun p : Set.Iic t × Ω ↦ X (min c p.1) p.2) :=
+    (hX t).comp_measurable
+      ((Measurable.subtype_mk (measurable_subtypeVal.const_inf c) :
+          Measurable fun s : Set.Iic t ↦
+            (⟨min c s.val, min_le_of_right_le s.property⟩ : Set.Iic t)).prodMap
+        measurable_id)
+  refine Finset.stronglyMeasurable_fun_sum _ fun j hj ↦ ?_
+  by_cases hjt : τ j ≤ t
+  · exact (((ha j (mem_range.1 hj)).mono (ℱ.mono hjt)).comp_measurable measurable_snd).mul
+      ((hmin (τ (j + 1))).sub (hmin (τ j)))
+  · have ht : t ≤ τ j := (not_le.1 hjt).le
+    convert stronglyMeasurable_const (b := (0 : ℝ)) using 1
+    ext ⟨s, ω⟩
+    have hs : (s : ι) ≤ τ j := s.property.trans ht
+    rw [min_eq_right (hs.trans (hτ (mem_range.1 hj).le (mem_range.1 hj) (Nat.le_succ j))),
+      min_eq_right hs, sub_self, mul_zero]
 
 /-- The gains of a simple strategy up to a trading date `τ m` are known at `τ m` when the traded
 price is known at each trading date and the holdings `a j` are chosen at `τ j`. -/

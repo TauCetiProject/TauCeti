@@ -13,12 +13,14 @@ import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Independence.Integration
 
 /-!
-# Square compensation for elementary Brownian integrals
+# Square and product compensation for elementary Brownian integrals
 
 The square of an elementary Brownian integral, minus its elapsed pathwise square
-energy, is a martingale. The heights are square integrable and known at the left
-endpoints; they need not be bounded or independent of one another. This is the
-elementary square decomposition used to identify the bracket of the completed integral.
+energy, is a martingale (`martingale_sq_simpleGains_sub`), and by polarization the product of two
+elementary Brownian integrals on a common monotone grid, minus their elapsed mutual energy, is
+likewise a martingale (`martingale_mul_simpleGains_sub`). The heights are square integrable and
+known at the left endpoints; they need not be bounded or independent of one another. This is the
+elementary square and product decomposition used to identify the bracket of the completed integral.
 
 The one-interval results also allow an integrable height for the first-order integral.
 Only filtration-relative pre-Brownian laws are needed, not path continuity or usual
@@ -153,5 +155,27 @@ theorem martingale_sq_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     · have htn : t ≤ τ n := (not_le.mp hnt).le
       simp only [min_eq_right htn, min_eq_right (htn.trans hsv), sub_self, mul_zero]
       ring
+
+/-- **Elementary Brownian product decomposition.** The product of two elementary Brownian integrals
+on a common monotone grid with square-integrable left-endpoint heights, minus their elapsed mutual
+energy, is a true martingale. -/
+theorem martingale_mul_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
+    {τ : ℕ → ℝ≥0} {n : ℕ} {a b : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Set.Iic n))
+    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
+    (hb : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (b i))
+    (ha₂ : ∀ i < n, MemLp (a i) 2 P) (hb₂ : ∀ i < n, MemLp (b i) 2 P) :
+    Martingale (fun t ω ↦ Finance.simpleGains τ n a W t ω * Finance.simpleGains τ n b W t ω -
+      ∑ i ∈ range n, a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) ℱ P := by
+  convert ((hW.martingale_sq_simpleGains_sub (a := a + b) hτ
+      (fun i hi ↦ (ha i hi).add (hb i hi)) fun i hi ↦ (ha₂ i hi).add (hb₂ i hi)).sub
+    (hW.martingale_sq_simpleGains_sub (a := a - b) hτ
+      (fun i hi ↦ (ha i hi).sub (hb i hi)) fun i hi ↦ (ha₂ i hi).sub (hb₂ i hi))).smul
+    (4⁻¹ : ℝ) using 1
+  ext t ω
+  have hsum := Finance.simpleGains_mul_eq_inv_four_mul_sub τ n a b (fun u _ ↦ (u : ℝ)) t ω
+  simp only [Finance.simpleGains_def, Pi.mul_apply, Pi.pow_apply] at hsum
+  simp only [Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Finance.simpleGains_add,
+    Finance.simpleGains_sub, hsum]
+  ring
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

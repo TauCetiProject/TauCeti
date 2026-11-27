@@ -22,7 +22,9 @@ almost everywhere along trajectories must be evaluated at the initial state.
 
 Over a separable time domain, processes with almost surely continuous paths which agree
 almost surely at each fixed time are indistinguishable. This identifies continuous versions,
-for instance of stochastic integrals determined separately at each time.
+for instance of stochastic integrals determined separately at each time. Finite products and
+sums of processes with almost surely continuous paths also remain almost surely continuous
+(`Finset.ae_continuous_prod`, `Finset.ae_continuous_sum`).
 
 The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod` and
 `Measure.eqOn_Ico_of_ae_eq`, which extends equality from a full-measure dense subset.
@@ -31,6 +33,17 @@ The main inputs are Mathlib's product-measure section theorem `ae_ae_of_ae_prod`
 public section
 
 open MeasureTheory Set
+
+/-- A finite product of processes with almost-surely continuous paths has almost-surely continuous
+paths. -/
+@[to_additive /-- A finite sum of processes with almost-surely continuous paths has almost-surely
+continuous paths. -/]
+theorem Finset.ae_continuous_prod {ι τ Ω E : Type*} [TopologicalSpace τ] {_ : MeasurableSpace Ω}
+    {P : Measure Ω} [CommMonoid E] [TopologicalSpace E] [ContinuousMul E]
+    (s : Finset ι) {U : ι → τ → Ω → E} (hc : ∀ i ∈ s, ∀ᵐ ω ∂P, Continuous (U i · ω)) :
+    ∀ᵐ ω ∂P, Continuous (fun t ↦ ∏ i ∈ s, U i t ω) :=
+  ((ae_ball_iff s.countable_toSet).2 hc).mono fun _ hω ↦
+    continuous_finsetProd s fun i hi ↦ hω i hi
 
 namespace TauCeti
 

@@ -36,6 +36,8 @@ variation, while containing any prescribed sequence of finite subsets.
   `eVariationOn.comp_inter_Icc_eq_of_monotoneOn`.
 * `eVariationOn.comp_eq_of_edist_eq`: postcomposition with a map preserving the distances between
   the values of a function does not change its variation.
+* `TauCeti.boundedVariationOn_const` and `TauCeti.locallyBoundedVariationOn_const`: constant
+  functions have (locally) bounded variation on any set.
 * `BoundedVariationOn.IccExtend`: constant extension from a closed interval preserves bounded
   variation.
 * `TauCeti.eVariationOn_id_unitInterval` and `LipschitzWith.eVariationOn_unitInterval_le`: the
@@ -69,6 +71,18 @@ variable [TopologicalSpace X] [WeakPseudoEMetricSpace X]
 @[simp] theorem eVariationOn_subtypeVal_comp {s : Set X} {f : α → s} {t : Set α} :
     eVariationOn f t = eVariationOn ((Subtype.val : s → X) ∘ f) t := by
   rfl
+
+/-- A constant function has bounded variation on any set. -/
+theorem boundedVariationOn_const (c : X) (s : Set α) : BoundedVariationOn (fun _ : α ↦ c) s := by
+  have h : eVariationOn (fun _ : α ↦ c) s = 0 :=
+    eVariationOn.constant_on fun _ ⟨_, _, h₁⟩ _ ⟨_, _, h₂⟩ ↦ h₁.symm.trans h₂
+  rw [BoundedVariationOn, h]
+  exact ENNReal.zero_ne_top
+
+/-- A constant function has locally bounded variation on any set. -/
+theorem locallyBoundedVariationOn_const (c : X) (s : Set α) :
+    LocallyBoundedVariationOn (fun _ : α ↦ c) s :=
+  (boundedVariationOn_const c s).locallyBoundedVariationOn
 
 end WeakPseudoEMetricSpace
 
