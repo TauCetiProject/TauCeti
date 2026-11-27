@@ -658,8 +658,7 @@ theorem unitGaussPoint_one_eq_gaussPoint :
     · rw [unitGaussValuation_def, weightedGaussValuation_le_iff]
       intro ν
       have h := norm_coeff_mul_pow_le_closedDiscGaussValuation (R := K) zero_lt_one le_rfl f (ν 0)
-      rw [one_pow, mul_one,
-        show Finsupp.single 0 (ν 0) = ν from (Finsupp.unique_single ν).symm] at h
+      rw [one_pow, mul_one, ← Fin.default_eq_zero, (Finsupp.unique_single ν).symm] at h
       rw [NormedField.valuation_apply]
       exact_mod_cast h
     · refine NNReal.coe_le_coe.mp ?_

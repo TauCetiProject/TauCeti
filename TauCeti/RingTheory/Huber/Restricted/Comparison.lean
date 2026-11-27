@@ -151,6 +151,27 @@ theorem norm_weightedEvalHom_le
   rw [weightedEvalHom_eq_restrictedEval₂OfBound hφc hφ ha hb]
   exact φ.norm_restrictedEval₂OfBound_le a hφ ha _
 
+private lemma norm_pow_sub_pow_le {S : Type*} [SeminormedCommRing S] [IsUltrametricDist S]
+    {x y : S} (hx : ‖x‖ ≤ 1) (hy : ‖y‖ ≤ 1) (m : ℕ) :
+    ‖x ^ m - y ^ m‖ ≤ ‖x - y‖ := by
+  simpa using TauCeti.norm_prod_sub_prod_le (s := Finset.range m)
+    (f := fun _ ↦ x) (g := fun _ ↦ y) (M := 1) (norm_nonneg _)
+    (fun _ _ ↦ hx) (fun _ _ ↦ hy) (fun _ _ ↦ le_rfl)
+
+private lemma norm_prod_pow_sub_prod_pow_le {k : ℕ} {S : Type*}
+    [SeminormedCommRing S] [IsUltrametricDist S] {a b : Fin k → S}
+    (ha : ∀ i, ‖a i‖ ≤ 1) (hb : ∀ i, ‖b i‖ ≤ 1) (ν : Fin k →₀ ℕ) :
+    ‖∏ i, a i ^ ν i - ∏ i, b i ^ ν i‖ ≤ ‖a - b‖ := by
+  rw [← Finsupp.prod_fintype ν (a · ^ ·) fun _ ↦ pow_zero _,
+    ← Finsupp.prod_fintype ν (b · ^ ·) fun _ ↦ pow_zero _, Finsupp.prod, Finsupp.prod]
+  simpa only [one_pow, mul_one] using TauCeti.norm_prod_sub_prod_le (s := ν.support)
+    (M := 1) (ε := ‖a - b‖) (norm_nonneg _)
+    (fun i hi ↦ (norm_pow_le' (a i) (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
+      (pow_le_one₀ (norm_nonneg _) (ha i)))
+    (fun i hi ↦ (norm_pow_le' (b i) (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
+      (pow_le_one₀ (norm_nonneg _) (hb i)))
+    (fun i _ ↦ (norm_pow_sub_pow_le (ha i) (hb i) (ν i)).trans (norm_le_pi_norm (a - b) i))
+
 include hφ ha in
 /-- **Huber evaluation is Lipschitz in the evaluation tuple on the closed unit ball**, with
 Lipschitz constant `C * ‖restrictedMvPowerSeriesGaussEquiv f‖`. -/
@@ -197,21 +218,6 @@ theorem norm_weightedEvalHom_sub_weightedEvalHom_le {b : Fin k → S}
   refine IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
     (mul_nonneg hC_nonneg (norm_nonneg (a - b))) fun ν ↦ ?_
   rw [weightedEvalTerm_def, weightedEvalTerm_def, ← mul_sub]
-  have hmon : ‖∏ i, a i ^ ν i - ∏ i, b i ^ ν i‖ ≤ ‖a - b‖ := by
-    rw [← Finsupp.prod_fintype ν (a · ^ ·) fun _ ↦ pow_zero _,
-      ← Finsupp.prod_fintype ν (b · ^ ·) fun _ ↦ pow_zero _, Finsupp.prod, Finsupp.prod]
-    simpa only [one_pow, mul_one] using TauCeti.norm_prod_sub_prod_le (s := ν.support)
-      (M := 1) (ε := ‖a - b‖) (norm_nonneg _)
-      (fun i hi ↦ (norm_pow_le' (a i) (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
-        (pow_le_one₀ (norm_nonneg _) (ha i)))
-      (fun i hi ↦ (norm_pow_le' (b i) (Nat.pos_of_ne_zero (Finsupp.mem_support_iff.mp hi))).trans
-        (pow_le_one₀ (norm_nonneg _) (hb₁ i)))
-      (fun i _ ↦ by
-        have hpow : ‖a i ^ ν i - b i ^ ν i‖ ≤ ‖a i - b i‖ := by
-          simpa using TauCeti.norm_prod_sub_prod_le (s := Finset.range (ν i))
-            (f := fun _ ↦ a i) (g := fun _ ↦ b i) (M := 1) (norm_nonneg _)
-            (fun _ _ ↦ ha i) (fun _ _ ↦ hb₁ i) (fun _ _ ↦ le_rfl)
-        exact hpow.trans (norm_le_pi_norm (a - b) i))
   have hcoeff : ‖φ (MvPowerSeries.coeff ν (f : MvPowerSeries (Fin k) R))‖ ≤ C * ‖f'‖ := by
     rcases hC with hf0 | hC0
     · have h0 : ‖MvPowerSeries.coeff ν (f' : MvPowerSeries (Fin k) R)‖ ≤ 0 := by
@@ -223,7 +229,8 @@ theorem norm_weightedEvalHom_sub_weightedEvalHom_le {b : Fin k → S}
       rw [← coe_restrictedMvPowerSeriesGaussEquiv f]
       simpa only [one_pow, Finsupp.prod, Finset.prod_const_one, mul_one] using
         MvPowerSeries.norm_coeff_mul_prod_le f' ν
-  exact (norm_mul_le _ _).trans (mul_le_mul hcoeff hmon (norm_nonneg _) hC_nonneg)
+  exact (norm_mul_le _ _).trans
+    (mul_le_mul hcoeff (norm_prod_pow_sub_prod_pow_le ha hb₁ ν) (norm_nonneg _) hC_nonneg)
 
 variable [CompleteSpace R]
 
