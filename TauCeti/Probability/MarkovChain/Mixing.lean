@@ -15,13 +15,16 @@ import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 /-!
 # Worst-case total variation distances for Markov chains
 
-The largest distance from a time-`t` law to a reference measure is `Kernel.tvToStationary`.
-The largest distance between two time-`t` laws is `Kernel.tvBetweenStarts`. Both use half of
-Mathlib's total variation distance, so they lie in `[0, 1]` for probability laws. Point starts
-attain the worst-case distances even when arbitrary initial distributions are allowed.
+`Kernel.tvToStationary` measures the worst-case distance from a time-`t` law to a reference
+measure, and `Kernel.tvBetweenStarts` measures the worst-case distance between two time-`t`
+laws. Both are real-valued suprema of half of Mathlib's total variation distance, with value
+zero for an empty or unbounded family. For a Markov kernel, the distance between starts lies
+in `[0, 1]`, as does the distance to a reference probability measure.
 
-Both distances are nonincreasing. The distance between starts is submultiplicative, and it
-also gives the factor by which additional steps contract the distance to an invariant law.
+For a Markov kernel on a finite state space with measurable singletons, both distances are
+nonincreasing. If the space is also nonempty, point starts attain the worst-case distances over
+all initial probability laws. The distance between starts is submultiplicative and bounds the
+factor by which additional steps contract the distance to an invariant probability measure.
 
 ## References
 
