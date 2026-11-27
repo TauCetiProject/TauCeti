@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Log
+import TauCeti.Analysis.Complex.UpperLogContinuity
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import Mathlib.Data.Set.Card
 import Mathlib.Algebra.QuadraticDiscriminant
@@ -76,6 +77,16 @@ private theorem one_add_div_normSq_pos {p q r : ℝ} (hq : 0 < (q - p) * (r - q)
     0 < 1 + (q - p) * (r - q) / normSq (w - q) :=
   add_pos_of_pos_of_nonneg one_pos (div_nonneg hq.le (normSq_nonneg _))
 
+/-- The function `(w - p) * (w - r) / (w - q)` is nonzero away from `p`, `q` and `r`. -/
+private theorem sub_mul_sub_div_sub_ne_zero {p q r : ℝ} {w : ℂ} (hp : w ≠ p) (hq : w ≠ q)
+    (hr : w ≠ r) : (w - p) * (w - r) / (w - q) ≠ 0 :=
+  div_ne_zero (mul_ne_zero (sub_ne_zero.mpr hp) (sub_ne_zero.mpr hr)) (sub_ne_zero.mpr hq)
+
+/-- The function `(w - p) * (w - r) / (w - q)` is continuous away from the pole `q`. -/
+private theorem continuousAt_sub_mul_sub_div_sub (p r : ℝ) {q : ℝ} {w : ℂ} (hq : w ≠ q) :
+    ContinuousAt (fun w : ℂ => (w - p) * (w - r) / (w - q)) w := by
+  fun_prop (disch := exact sub_ne_zero.mpr hq)
+
 /-- For `q` strictly between `p` and `r`, the map `w ↦ (w - p) * (w - r) / (w - q)` sends a point
 `w ≠ q` to the upper half-plane exactly when `w` lies in the upper half-plane. -/
 theorem im_sub_mul_sub_div_sub_pos_iff {p q r : ℝ} (hq : 0 < (q - p) * (r - q)) {w : ℂ}
@@ -114,32 +125,20 @@ half-plane with the three points `p`, `q` and `r` removed, when `q` lies strictl
 theorem continuousOn_log_sub_mul_sub_div_sub_div_pi {p q r : ℝ} (hq : 0 < (q - p) * (r - q)) :
     ContinuousOn (fun w : ℂ => log ((w - p) * (w - r) / (w - q)) / π)
       ({w : ℂ | 0 ≤ w.im} \ {(p : ℂ), (q : ℂ), (r : ℂ)}) := by
-  rintro w ⟨-, hwpqr⟩
-  simp only [mem_insert_iff, mem_singleton_iff, not_or] at hwpqr
-  obtain ⟨hwp, hwq, hwr⟩ := hwpqr
-  set G : ℂ → ℂ := fun w => (w - p) * (w - r) / (w - q)
-  have hGc : ContinuousAt G w :=
-    ((continuousAt_id.sub continuousAt_const).mul (continuousAt_id.sub continuousAt_const)).div
-      (continuousAt_id.sub continuousAt_const) (sub_ne_zero.mpr hwq)
-  have hGim (v : ℂ) (hv : v ≠ q) (hv0 : 0 ≤ v.im) : 0 ≤ (G v).im := by
-    simp only [G]
-    rw [im_sub_mul_sub_div_sub p q r hv]
-    exact mul_nonneg hv0 (one_add_div_normSq_pos hq v).le
-  have hG0 : G w ≠ 0 :=
-    div_ne_zero (mul_ne_zero (sub_ne_zero.mpr hwp) (sub_ne_zero.mpr hwr)) (sub_ne_zero.mpr hwq)
-  -- the logarithm is continuous within the closed upper half-plane at every nonzero point
-  have hlog : ContinuousWithinAt log {z : ℂ | 0 ≤ z.im} (G w) := by
-    by_cases hs : G w ∈ slitPlane
-    · exact (continuousAt_clog hs).continuousWithinAt
-    · rw [mem_slitPlane_iff, not_or, not_lt] at hs
-      exact continuousWithinAt_log_of_re_neg_of_im_zero (hs.1.lt_of_ne fun h =>
-        hG0 (Complex.ext h (not_not.mp hs.2))) (not_not.mp hs.2)
-  have hmaps : MapsTo G ({w : ℂ | 0 ≤ w.im} \ {(p : ℂ), (q : ℂ), (r : ℂ)})
-      {z : ℂ | 0 ≤ z.im} := by
+  -- `(w - p) * (w - r) / (w - q)` stays in the punctured closed upper half-plane, where the
+  -- logarithm is continuous
+  have hmaps : MapsTo (fun w : ℂ => (w - p) * (w - r) / (w - q))
+      ({w : ℂ | 0 ≤ w.im} \ {(p : ℂ), (q : ℂ), (r : ℂ)}) {z : ℂ | 0 ≤ z.im ∧ z ≠ 0} := by
     rintro v ⟨hv, hvpqr⟩
     simp only [mem_insert_iff, mem_singleton_iff, not_or] at hvpqr
-    exact hGim v hvpqr.2.1 hv
-  exact (hlog.comp hGc.continuousWithinAt hmaps).div_const _
+    obtain ⟨hvp, hvq, hvr⟩ := hvpqr
+    refine ⟨?_, sub_mul_sub_div_sub_ne_zero hvp hvq hvr⟩
+    rw [im_sub_mul_sub_div_sub p q r hvq]
+    exact mul_nonneg hv (one_add_div_normSq_pos hq v).le
+  intro w hw
+  have hwq : w ≠ q := fun h => hw.2 (by simp [h])
+  exact ((continuousOn_log_im_nonneg_ne_zero _ (hmaps hw)).comp (x := w)
+    (continuousAt_sub_mul_sub_div_sub p r hwq).continuousWithinAt hmaps).div_const _
 
 /-- The map `w ↦ log ((w - p) * (w - r) / (w - q)) / π` sends the real points other than `p`, `q`
 and `r` to the two boundary lines of the strip: to the line `z.im = 0` where
@@ -150,15 +149,15 @@ theorem mapsTo_log_sub_mul_sub_div_sub_div_pi_boundary (p q r : ℝ) :
   rintro w ⟨hw, hwpqr⟩
   simp only [mem_insert_iff, mem_singleton_iff, not_or] at hwpqr
   obtain ⟨hwp, hwq, hwr⟩ := hwpqr
-  have hwre : (w.re : ℂ) = w := Complex.ext (by simp) (by simpa using hw.symm)
+  have hwre : (w.re : ℂ) = w := conj_eq_iff_re.mp (conj_eq_iff_im.mpr hw)
   set t : ℝ := (w.re - p) * (w.re - r) / (w.re - q)
   have ht : (w - p) * (w - r) / (w - q) = (t : ℂ) := by
     rw [← hwre]
-    push_cast [t]
-    rfl
+    simp only [t]
+    push_cast
+    ring
   have ht0 : t ≠ 0 := by
-    have : (t : ℂ) ≠ 0 := ht ▸
-      div_ne_zero (mul_ne_zero (sub_ne_zero.mpr hwp) (sub_ne_zero.mpr hwr)) (sub_ne_zero.mpr hwq)
+    have : (t : ℂ) ≠ 0 := ht ▸ sub_mul_sub_div_sub_ne_zero hwp hwq hwr
     exact_mod_cast this
   simp only [mem_ofPred_eq, ht, div_ofReal_im, log_im]
   rcases ht0.lt_or_gt with h | h
@@ -175,7 +174,7 @@ private theorem eventually_sub_mul_sub_div_sub_ne_zero (p q r a : ℝ) :
     · exact self_mem_nhdsWithin
     · exact nhdsWithin_le_nhds (eventually_ne_nhds (by exact_mod_cast h))
   filter_upwards [hne p, hne q, hne r] with w hp hq hr
-  exact div_ne_zero (mul_ne_zero (sub_ne_zero.mpr hp) (sub_ne_zero.mpr hr)) (sub_ne_zero.mpr hq)
+  exact sub_mul_sub_div_sub_ne_zero hp hq hr
 
 /-- The real part of `w ↦ log ((w - p) * (w - r) / (w - q)) / π` tends to `-∞` at each of the
 zeros `p` and `r`, provided that zero is not the pole `q`. -/
@@ -184,9 +183,7 @@ theorem tendsto_log_sub_mul_sub_div_sub_div_pi_comap_re_atBot {p q r : ℝ} {a :
     Tendsto (fun w : ℂ => log ((w - p) * (w - r) / (w - q)) / π) (𝓝[≠] (a : ℂ))
       (comap re atBot) := by
   refine tendsto_comap_iff.mpr ?_
-  have hG : ContinuousAt (fun w : ℂ => (w - p) * (w - r) / (w - q)) a :=
-    ((continuousAt_id.sub continuousAt_const).mul (continuousAt_id.sub continuousAt_const)).div
-      (continuousAt_id.sub continuousAt_const) (sub_ne_zero.mpr (by exact_mod_cast haq))
+  have hG := continuousAt_sub_mul_sub_div_sub p r (w := a) (by exact_mod_cast haq)
   have hG0 : ((a : ℂ) - p) * ((a : ℂ) - r) / ((a : ℂ) - q) = 0 := by
     rcases ha with rfl | rfl <;> simp
   have hnorm : Tendsto (fun w : ℂ => ‖(w - p) * (w - r) / (w - q)‖) (𝓝[≠] (a : ℂ)) (𝓝[>] 0) :=

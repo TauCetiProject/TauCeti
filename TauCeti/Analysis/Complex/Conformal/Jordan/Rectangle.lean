@@ -162,7 +162,7 @@ private theorem exists_prevertices_mul_pos {Ω : Set ℂ} {f : ℂ → ℂ} {x�
   simp only [Set.mem_sdiff, mem_insert_iff, mem_singleton_iff, not_or] at hy₁ hy₂
   have hpre (z : ℂ) (hz : z ∈ frontier Ω) (hzy : z ≠ y₂) : ∃ a : ℝ, f a = z := by
     obtain ⟨w, hw, hfw⟩ := hfR.surjOn ⟨hz, hzy⟩
-    exact ⟨w.re, by rw [← hfw]; congr 1; exact Complex.ext (by simp) (by simpa using hw.symm)⟩
+    exact ⟨w.re, by rw [← hfw]; congr 1; exact conj_eq_iff_re.mp (conj_eq_iff_im.mpr hw)⟩
   obtain ⟨a₁, hfa₁⟩ := hpre x₁ hx₁ (Ne.symm hy₂.2.1)
   obtain ⟨a₂, hfa₂⟩ := hpre x₂ hx₂ (Ne.symm hy₂.2.2)
   obtain ⟨c, hfc₁⟩ := hpre y₁ hy₁.1 hy₁y₂
@@ -172,6 +172,10 @@ private theorem exists_prevertices_mul_pos {Ω : Set ℂ} {f : ℂ → ℂ} {x�
   exact ⟨a₁, a₂, c, hfa₁, hfa₂, hfc₁, ha₁c, ha₂c, mul_pos_of_notMem_connectedComponentIn hfc hinj
     (fun t => (hfR.mapsTo (show (t : ℂ) ∈ {z : ℂ | z.im = 0} by simp)).1) hfy hy₂' hfa₁ hfa₂
     hfc₁ ha₁c ha₂c hsep⟩
+
+/-- The open upper half-plane lies in the closed one. -/
+private theorem upperHalfPlaneSet_subset_im_nonneg : upperHalfPlaneSet ⊆ {z : ℂ | 0 ≤ z.im} :=
+  ofPred_subset_ofPred.mpr fun _ => le_of_lt
 
 /-- The inverse `invFunOn f {z | 0 ≤ z.im}` of a Carathéodory map `f` of the closed upper
 half-plane onto `closure Ω \ {y₂}`, with `f` tending to `y₂` at infinity, is continuous on
@@ -195,12 +199,10 @@ private theorem invFunOn_caratheodory {Ω : Set ℂ} {f : ℂ → ℂ} {y₂ : �
   have himage : f '' {z | 0 ≤ z.im} = closure Ω \ {y₂} := hfcl.image_eq
   have hφf : ∀ w ∈ {z : ℂ | 0 ≤ z.im}, invFunOn f {z | 0 ≤ z.im} (f w) = w :=
     fun w hw => hfcl.injOn.leftInvOn_invFunOn hw
-  have hHsub (w : ℂ) (hw : w ∈ upperHalfPlaneSet) : w ∈ {z : ℂ | 0 ≤ z.im} :=
-    le_of_lt (α := ℝ) hw
   have hφH : MapsTo (invFunOn f {z | 0 ≤ z.im}) Ω upperHalfPlaneSet := by
     intro z hz
     obtain ⟨w, hw, rfl⟩ := hfH.surjOn hz
-    rw [hφf w (hHsub w hw)]
+    rw [hφf w (upperHalfPlaneSet_subset_im_nonneg hw)]
     exact hw
   rw [Metric.cobounded_eq_cocompact] at hfy ⊢
   refine ⟨himage ▸ hfc.continuousOn_invFunOn_image_of_tendsto_cocompact hH₀ hfcl.injOn hfy
@@ -212,9 +214,9 @@ private theorem invFunOn_caratheodory {Ω : Set ℂ} {f : ℂ → ℂ} {y₂ : �
     rw [hfH.image_eq] at hinv
     refine hinv.congr fun z hz => ?_
     obtain ⟨w, hw, rfl⟩ := hfH.surjOn hz
-    rw [hφf w (hHsub w hw), hfH.injOn.leftInvOn_invFunOn hw]
+    rw [hφf w (upperHalfPlaneSet_subset_im_nonneg hw), hfH.injOn.leftInvOn_invFunOn hw]
   · obtain ⟨w, hw, rfl⟩ := hfR.surjOn hz
-    rw [hφf w (le_of_eq (α := ℝ) hw.symm)]
+    rw [hφf w hw.out.ge]
     exact hw
 
 /-- For `φ` an inverse of a bijection `f` of the upper half-plane onto `Ω`, the fibres of `Λ ∘ φ`
@@ -298,8 +300,9 @@ theorem exists_mapsTo_strip_ncard_inter_preimage_of_isJordanCurve_frontier {Ω :
       ⟨hφR ⟨hz.1, fun h => hz.2 (by simp [corners, h])⟩,
         (hmaps ⟨frontier_subset_closure hz.1, hz.2⟩).2⟩
   · rw [ncard_inter_preimage_comp hfH hφH (fun z hz => hfφ z ⟨subset_closure hz, fun h =>
-      hΩo.inter_frontier_eq.subset ⟨hz, h ▸ hy₂.1⟩⟩) (fun w hw => hφf w (le_of_lt (α := ℝ) hw)),
+      hΩo.inter_frontier_eq.subset ⟨hz, h ▸ hy₂.1⟩⟩)
+      (fun w hw => hφf w (upperHalfPlaneSet_subset_im_nonneg hw)),
       ncard_inter_preimage_log_sub_mul_sub_div_sub_div_pi hq hζ, comp_apply,
-      hφf bH (le_of_lt (α := ℝ) hbH)]
+      hφf bH (upperHalfPlaneSet_subset_im_nonneg hbH)]
 
 end TauCeti
