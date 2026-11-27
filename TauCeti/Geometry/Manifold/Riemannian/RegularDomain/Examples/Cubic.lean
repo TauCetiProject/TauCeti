@@ -76,17 +76,13 @@ theorem not_isOpen_setOf_isConvexAt_cubicEpigraph :
   let := graphEpigraphRiemannianBundle (contDiff_fun_id.pow 3)
   have := isContMDiffRiemannianBundle_graphEpigraph (contDiff_fun_id.pow 3)
   have hmem : ∀ t : ℝ, (!₂[-t, -t ^ 3] : ℝ²) ∈ graphEpigraph fun x : ℝ ↦ x ^ 3 := fun t ↦ by
-    simp only [mem_ofPred_eq, graphSub]
-    simp only [Fin.isValue, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-      sub_neg_eq_add]
-    exact le_of_eq (by ring)
+    rw [mem_graphEpigraph_iff]
+    simp [Odd.neg_pow (by decide : Odd 3)]
   have hbd : ∀ t : ℝ, (⟨!₂[-t, -t ^ 3], hmem t⟩ : graphEpigraph fun x : ℝ ↦ x ^ 3) ∈
       (𝓡∂ (1 + 1)).boundary (graphEpigraph fun x : ℝ ↦ x ^ 3) := by
     intro t
     rw [boundary_graphEpigraph, mem_ofPred_eq]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one, sub_neg_eq_add]
-    ring
+    simp [Odd.neg_pow (by decide : Odd 3)]
   let γ : ℝ → (𝓡∂ (1 + 1)).boundary (graphEpigraph fun x : ℝ ↦ x ^ 3) :=
     fun t ↦ ⟨⟨!₂[-t, -t ^ 3], hmem t⟩, hbd t⟩
   have hγ : Continuous γ := by

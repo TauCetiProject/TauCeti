@@ -22,7 +22,8 @@ Let `w : ℝ → ℝ` be smooth. In the Euclidean plane `ℝ²`, every value of 
 of length `√(1 + w'(x)²)` (`TauCeti.mgradient_graphSub`, `TauCeti.norm_mgradient_graphSub`). The
 region `M = {y ≥ w(x)} = {f ≤ 0}` above the graph of `w` is therefore a regular sublevel, a manifold
 with boundary the graph `{y = w(x)}`
-(`TauCeti.graphEpigraph`, with the atlas `TauCeti.graphEpigraphChartedSpace`;
+(`TauCeti.graphEpigraph`, `TauCeti.mem_graphEpigraph_iff`, with the atlas
+`TauCeti.graphEpigraphChartedSpace`;
 `TauCeti.boundary_graphEpigraph`), with the metric pulled back along the inclusion `j : M → ℝ²`.
 Since `Hess f(v, v') = w''(x) v₀ v'₀`, the second fundamental form of the boundary at
 `q = (x, w(x))` is
@@ -126,6 +127,10 @@ private theorem hessian_graphSub (hw : ContDiff ℝ 2 w) (p : ℝ²)
 abbrev graphEpigraph (w : ℝ → ℝ) : Set ℝ² :=
   {p : ℝ² | graphSub w p ≤ 0}
 
+/-- A point lies in the region above the graph of `w` exactly when `y ≥ w(x)`. -/
+theorem mem_graphEpigraph_iff {p : ℝ²} : p ∈ graphEpigraph w ↔ w (p 0) ≤ p 1 :=
+  sub_nonpos
+
 /-- The half-space atlas of the region `{y ≥ w(x)} = {w(x) - y ≤ 0}` above the graph of `w`:
 `TauCeti.scalarRegularSublevelChartedSpace` for `w(x) - y` at its regular value `0`. -/
 abbrev graphEpigraphChartedSpace (hw : ContDiff ℝ ∞ w) :
@@ -146,10 +151,11 @@ theorem isManifold_graphEpigraph (hw : ContDiff ℝ ∞ w) :
 theorem boundary_graphEpigraph (hw : ContDiff ℝ ∞ w) :
     letI := graphEpigraphChartedSpace hw
     (𝓡∂ (1 + 1)).boundary (graphEpigraph w) =
-      {q : graphEpigraph w | w ((q : ℝ²) 0) - (q : ℝ²) 1 = 0} :=
-  boundary_scalarRegularSublevel (isRegularValue_graphSub (hw.differentiable (by simp)) 0)
+      {q : graphEpigraph w | (q : ℝ²) 1 = w ((q : ℝ²) 0)} :=
+  (boundary_scalarRegularSublevel (isRegularValue_graphSub (hw.differentiable (by simp)) 0)
     (finrank_euclideanSpace_fin (𝕜 := ℝ) (n := 2)) le_rfl
-    (contMDiff_graphSub (hw.of_le (by simp)))
+    (contMDiff_graphSub (hw.of_le (by simp)))).trans
+    (Set.ext fun _ ↦ sub_eq_zero.trans eq_comm)
 
 /-- The metric of the region above the graph of `w` pulled back along the inclusion
 (`TauCeti.scalarRegularSublevelMetric`), as a Riemannian bundle structure. -/
