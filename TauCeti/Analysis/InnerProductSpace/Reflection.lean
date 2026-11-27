@@ -373,6 +373,16 @@ theorem linearEquiv_det_reflection_orthogonal_singleton [FiniteDimensional ℝ F
     finrank_span_singleton hv]
   simp
 
+/-- In dimension at least two, every vector `v` has a nonzero orthogonal vector. -/
+theorem exists_ne_zero_mem_orthogonal_singleton (hF : 2 ≤ Module.finrank ℝ F) (v : F) :
+    ∃ w ∈ (ℝ ∙ v)ᗮ, w ≠ 0 := by
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+  refine Submodule.exists_mem_ne_zero_of_ne_bot fun h ↦ ?_
+  have := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ v)
+  rw [h, finrank_bot] at this
+  have : Module.finrank ℝ (ℝ ∙ v) ≤ 1 := (finrank_span_le_card ({v} : Set F)).trans (by simp)
+  omega
+
 /-- In dimension at least two, every vector `v` is sent to `-v` by a linear isometry of
 determinant `1`. For nonzero `v`, take the product of the reflections in the hyperplanes
 orthogonal to `v` and to a nonzero vector orthogonal to `v`. -/
@@ -381,10 +391,7 @@ theorem exists_det_eq_one_apply_eq_neg (hF : 2 ≤ Module.finrank ℝ F) (v : F)
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
   by_cases hv : v = 0
   · exact ⟨LinearIsometryEquiv.refl ℝ F, by simp, by simp [hv]⟩
-  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p := (ℝ ∙ v)ᗮ) fun h ↦ by
-    have := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ v)
-    rw [h, finrank_bot, finrank_span_singleton hv] at this
-    omega
+  obtain ⟨w, hw, hw0⟩ := exists_ne_zero_mem_orthogonal_singleton hF v
   refine ⟨(ℝ ∙ v)ᗮ.reflection.trans (ℝ ∙ w)ᗮ.reflection, ?_, ?_⟩
   · rw [LinearIsometryEquiv.toLinearEquiv_trans, LinearEquiv.det_trans, Units.val_mul,
       linearEquiv_det_reflection_orthogonal_singleton hw0,
@@ -400,12 +407,7 @@ theorem exists_det_eq_one_apply_eq_neg (hF : 2 ≤ Module.finrank ℝ F) (v : F)
 theorem exists_det_eq_neg_one_apply_eq_self (hF : 2 ≤ Module.finrank ℝ F) (v : F) :
     ∃ r : F ≃ₗᵢ[ℝ] F, (LinearEquiv.det r.toLinearEquiv : ℝ) = -1 ∧ r v = v := by
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
-  obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p := (ℝ ∙ v)ᗮ) fun h ↦ by
-    have := Submodule.finrank_add_finrank_orthogonal (ℝ ∙ v)
-    rw [h, finrank_bot] at this
-    have := finrank_span_le_card (R := ℝ) ({v} : Set F)
-    simp only [Set.toFinset_singleton, Finset.card_singleton] at this
-    omega
+  obtain ⟨w, hw, hw0⟩ := exists_ne_zero_mem_orthogonal_singleton hF v
   refine ⟨(ℝ ∙ w)ᗮ.reflection, linearEquiv_det_reflection_orthogonal_singleton hw0,
     reflection_orthogonal_singleton_eq_self_of_inner_eq_zero ?_⟩
   rw [Submodule.mem_orthogonal_singleton_iff_inner_right] at hw

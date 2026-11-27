@@ -8,7 +8,6 @@ module
 public import TauCeti.Topology.VectorBundle.Orientation.OrientedFrame
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.Reduction.Lift
 public import TauCeti.Topology.VectorBundle.OrthonormalFrame.UnitSection
-import TauCeti.Analysis.InnerProductSpace.Reflection
 
 /-!
 # Positively oriented frames adapted to a unit section
@@ -29,9 +28,10 @@ frames are locally trivial with fibre `SO(N - 1)`, equivariantly
 (`TauCeti.OrthonormalFrameBundle.exists_trivialization_orientedSectionFrames`). Near a point, take
 a continuous local adapted frame (from `exists_trivialization_sectionFrames`); where it is not
 positively oriented, compose it with a fixed reflection `r` of `ℝᴺ` fixing `v₀`, which exists
-since `N ≥ 2` (`TauCeti.exists_det_eq_neg_one_apply_eq_self`). Orientation is locally constant,
-so the corrected frame is continuous. Hence the frames form a lift of the orthonormal frame bundle
-along `SO(N - 1) ⊆ O(N)` (`TauCeti.OrthonormalFrameBundle.orientedSectionFrameLift`): the
+since `N ≥ 2` (`Unitary.exists_det_eq_neg_one_apply_eq_self`), as in
+`TauCeti.OrthonormalFrameBundle.orientationCorrection`. Orientation is locally constant, so the
+corrected frame is continuous. Hence the frames form a lift of the orthonormal frame bundle along
+`SO(N - 1) ⊆ O(N)` (`TauCeti.OrthonormalFrameBundle.orientedSectionFrameLift`): the
 reduction of the structure group to `SO(N - 1)` given by the orientation and the section.
 
 For `N = 3` this is the `SO(2)`-reduction of the tangent bundle of an oriented Riemannian
@@ -131,36 +131,22 @@ variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [No
   {s : VectorBundleOrientation F E ι} {o : Orientation ℝ (EuclideanSpace ℝ (Fin N)) ι}
   {σ : ∀ b, E b} {v₀ : EuclideanSpace ℝ (Fin N)}
 
-/-- In dimension `N ≥ 2` some orthogonal transformation of `ℝᴺ` fixes `v₀` and is not special
-orthogonal. -/
-private theorem exists_apply_eq_self_notMem (hN : 2 ≤ N) (v₀ : EuclideanSpace ℝ (Fin N)) :
-    ∃ r : unitary (EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)),
-      (r : EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)) v₀ = v₀ ∧
-        r ∉ specialOrthogonalGroup (EuclideanSpace ℝ (Fin N)) := by
-  obtain ⟨r, hr, hrv⟩ := exists_det_eq_neg_one_apply_eq_self
-    (by rwa [finrank_euclideanSpace_fin]) v₀
-  refine ⟨Unitary.linearIsometryEquiv.symm r, by simpa using hrv, ?_⟩
-  have hdet : ((Unitary.linearIsometryEquiv.symm r : unitary _) :
-      EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)).det = -1 := by
-    rw [Unitary.coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, ← hr,
-      LinearEquiv.coe_det]
-    rfl
-  rw [notMem_specialOrthogonalGroup_iff_det_neg, hdet]
-  norm_num
-
 /-- Near every point there is a continuous local frame that is positively oriented and adapted to
-a continuous unit section: a continuous local adapted frame, composed with `r` where it is not
-positively oriented. Orientation is locally constant, so the correction is continuous. -/
+a continuous unit section: a continuous local adapted frame, composed with a reflection `r` fixing
+`v₀` where it is not positively oriented (`TauCeti.OrthonormalFrameBundle.orientationCorrection`).
+Orientation is locally constant, so the correction is continuous. -/
 private theorem exists_continuousOn_mem_orientedSectionFrames
     (hσ : Continuous fun y ↦ (⟨y, σ y⟩ : TotalSpace F E)) (hσ₁ : ∀ y, ‖σ y‖ = 1)
     (hv₀ : ‖v₀‖ = 1) (hN : 2 ≤ N) (hF : finrank ℝ F = N) (x : B) :
     ∃ U : Set B, IsOpen U ∧ x ∈ U ∧
       ∃ q : B → OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin N)), ContinuousOn q U ∧
         ∀ y ∈ U, q y ∈ orientedSectionFrames s o σ v₀ ∧ (q y).proj = y := by
-  have hι : Fintype.card ι = finrank ℝ (EuclideanSpace ℝ (Fin N)) := Fact.out
   -- A continuous local frame adapted to `σ`.
   obtain ⟨t₁, hx₁, -⟩ := exists_trivialization_sectionFrames (F := F) hσ hσ₁ hv₀ hF x
-  obtain ⟨r, hrv, hr⟩ := exists_apply_eq_self_notMem hN v₀
+  obtain ⟨r, hrv, hr⟩ := Unitary.exists_det_eq_neg_one_apply_eq_self
+    (by rwa [finrank_euclideanSpace_fin]) v₀
+  have hr' : r ∉ specialOrthogonalGroup (EuclideanSpace ℝ (Fin N)) :=
+    notMem_specialOrthogonalGroup_iff_det_neg.2 (by rw [hr]; norm_num)
   let s₁ : B → OrthonormalFrameBundle ℝ F E (EuclideanSpace ℝ (Fin N)) := fun y ↦
     (t₁.toOpenPartialHomeomorph.symm (y, 1) : sectionFrames F σ v₀)
   have hs₁S (y : B) : s₁ y ∈ sectionFrames F σ v₀ :=
@@ -169,29 +155,18 @@ private theorem exists_continuousOn_mem_orientedSectionFrames
     continuous_subtypeVal.comp_continuousOn
       (t₁.toOpenPartialHomeomorph.continuousOn_symm.comp
         (continuousOn_id.prodMk continuousOn_const) fun _ hy ↦ t₁.mem_target.2 hy)
-  -- Where the adapted frame is not positively oriented, compose it with `r`.
-  classical
-  let k : B → unitary (EuclideanSpace ℝ (Fin N) →L[ℝ] EuclideanSpace ℝ (Fin N)) := fun y ↦
-    if s₁ y ∈ orientedFrames s o then 1 else r
+  -- Where the adapted frame is not positively oriented, compose it with `r`, which fixes `v₀`.
+  let k := orientationCorrection s o s₁ r
   have hkS (y : B) : op (k y) • s₁ y ∈ orientedSectionFrames s o σ v₀ := by
-    by_cases h : s₁ y ∈ orientedFrames s o
-    · simp only [k, h, ↓reduceIte, op_one, one_smul]
-      exact ⟨hs₁S y, h⟩
-    · simp only [k, h, ite_false]
-      refine ⟨(smul_mem_sectionFrames_iff (hs₁S y)).2 hrv, ?_⟩
-      by_contra hn
-      exact (smul_mem_orientedFrames_iff hι ((notMem_orientedFrames_iff hι).1 h)).not.2 hr
-        ((notMem_orientedFrames_iff hι).1 hn)
-  -- Orientation is locally constant, so `k` is locally constant.
-  have hk : ContinuousOn k t₁.baseSet := fun y hy ↦ by
-    have hs₁y : ContinuousAt s₁ y := hs₁.continuousAt (t₁.open_baseSet.mem_nhds hy)
-    refine ((continuousAt_const (y := k y)).congr ?_).continuousWithinAt
-    by_cases h : s₁ y ∈ orientedFrames s o
-    · filter_upwards [hs₁y.preimage_mem_nhds ((isOpen_orientedFrames hι).mem_nhds h)] with z hz
-      simp only [k, h, mem_preimage.1 hz, ↓reduceIte]
-    · have h' := (notMem_orientedFrames_iff hι).1 h
-      filter_upwards [hs₁y.preimage_mem_nhds ((isOpen_orientedFrames hι).mem_nhds h')] with z hz
-      simp only [k, h, (notMem_orientedFrames_iff hι).2 (mem_preimage.1 hz), ↓reduceIte]
+    refine ⟨(smul_mem_sectionFrames_iff (hs₁S y)).2 ?_,
+      op_orientationCorrection_smul_mem_orientedFrames hr' y⟩
+    rcases orientationCorrection_eq_one_or_eq (s := s) (o := o) (q := s₁) (r := r) y with h | h
+    · simp [k, h]
+    · rw [show k y = r from h]
+      exact hrv
+  have hk : ContinuousOn k t₁.baseSet := fun y hy ↦
+    (continuousAt_orientationCorrection
+      (hs₁.continuousAt (t₁.open_baseSet.mem_nhds hy))).continuousWithinAt
   exact ⟨t₁.baseSet, t₁.open_baseSet, hx₁, fun y ↦ op (k y) • s₁ y,
     (continuous_op.comp_continuousOn hk).smul hs₁,
     fun y hy ↦ ⟨hkS y, t₁.proj_symm_apply' hy⟩⟩

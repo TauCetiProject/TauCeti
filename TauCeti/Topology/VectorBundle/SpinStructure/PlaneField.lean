@@ -20,21 +20,18 @@ the rotations `SO(2)` about `e₂` (`TauCeti.OrthonormalFrameBundle.orientedSect
 `Spinᶜ` structure of the plane field, `TauCeti.OrthonormalFrameBundle.planeFieldSpinCStructure`,
 is the extension of this reduction along the `Spinᶜ(3)` lift of the rotations about `e₂`
 (`TauCeti.axialSpinCLift`), which sends a rotation by the angle `z = exp (i θ)` to
-`[exp (θ e₀ e₁ / 2), exp (i θ / 2)]`. Its principal bundle is `P ×_{SO(2)} Spinᶜ(3)` for the
+`[exp (θ e₁ e₀ / 2), exp (i θ / 2)]` (the pair `(e₁, e₀)` is reversed because the compact
+coordinate form is positive definite). Its principal bundle is `P ×_{SO(2)} Spinᶜ(3)` for the
 adapted frames `P`, and the frame of `[p, 1]` is the adapted frame `p`
 (`TauCeti.OrthonormalFrameBundle.toFrame_planeFieldSpinCStructureInl`): it sends `e₂` to `σ` and is
 positively oriented. At the level of structure groups its determinant character is the rotation
 angle of the plane field (`TauCeti.det_axialSpinCLift`): the determinant line is associated to the
 adapted frames by the rotation angle, as is `ξ` regarded as a complex line through its
-orientation; that isomorphism of line bundles is not constructed here. The construction needs
+orientation. The construction needs
 neither a surface fibration nor a symplectic form, only the unit vector field.
 
-For a closed oriented three-manifold `Y`, a nowhere-vanishing vector field exists because the
-Euler characteristic of `Y` vanishes, and this structure is the reference `Spinᶜ` structure of `Y`
-used to study `S¹ × Y`. On the product, stabilizing `TY` by the trivial line of the circle factor
-makes `ℝ ⊕ ξ^⊥ ⊕ ξ` an almost complex bundle, sending the circle direction to `σ`; comparing the
-stabilized structure with the canonical `Spinᶜ` structure of that almost complex structure
-(`TauCeti.OrthonormalFrameBundle.canonicalSpinCStructure`) is not done here.
+For a closed oriented three-manifold the Euler characteristic vanishes, so a nowhere-vanishing
+vector field, and hence such a structure, exists.
 
 ## Main definitions
 
@@ -43,6 +40,9 @@ stabilized structure with the canonical `Spinᶜ` structure of that almost compl
 
 ## Main results
 
+* `TauCeti.OrthonormalFrameBundle.planeFieldFrameLift_P`,
+  `TauCeti.OrthonormalFrameBundle.planeFieldFrameLift_toFrame`: the adapted frame bundle consists of
+  the positively oriented frames sending `e₂` to `σ`, each its own frame.
 * `TauCeti.OrthonormalFrameBundle.toFrame_planeFieldSpinCStructureInl`,
   `TauCeti.OrthonormalFrameBundle.frameAt_planeFieldSpinCStructureInl_single_two`: the frame of the
   point `[p, 1]` over an adapted frame `p` is `p`, and it sends `e₂` to `σ`.
@@ -87,6 +87,23 @@ is the reduction of the structure group to `SO(2)` given by the oriented plane f
         (specialOrthogonalStabilizer (EuclideanSpace ℝ (Fin 3))
           (EuclideanSpace.single 2 1)).subtype) :=
   orientedSectionFrameLift s o hσ hσ₁ (by simp) (by norm_num) hF
+
+/-- The adapted frame bundle of the plane field is the bundle of positively oriented frames sending
+`e₂` to `σ`. -/
+@[simp]
+theorem planeFieldFrameLift_P :
+    (planeFieldFrameLift s o hσ hσ₁ hF).P =
+      ReductionFiber (orientedSectionFrames s o σ (EuclideanSpace.single 2 1)) :=
+  (rfl)
+
+/-- The frame of a point of the adapted frame bundle is that adapted frame itself. -/
+@[simp]
+theorem planeFieldFrameLift_toFrame
+    (p : TotalSpace
+      (specialOrthogonalStabilizer (EuclideanSpace ℝ (Fin 3)) (EuclideanSpace.single 2 1))
+      (ReductionFiber (orientedSectionFrames s o σ (EuclideanSpace.single 2 1)))) :
+    (planeFieldFrameLift s o hσ hσ₁ hF).toFrame p = ⟨p.proj, p.snd.val.frame⟩ :=
+  (rfl)
 
 /-- The frame of a point of the adapted frame bundle sends `e₂` to the unit section `σ`. -/
 theorem planeFieldFrameLift_frame_single_two {x : X}

@@ -28,7 +28,8 @@ determinant is continuous in the operator-norm topology, the special orthogonal 
 closed, and hence clopen in the orthogonal group (`TauCeti.isOpen_specialOrthogonalGroup`,
 `TauCeti.isClosed_specialOrthogonalGroup`, `TauCeti.isClopen_specialOrthogonalGroup`). In positive
 dimension the reflection in a hyperplane is an orthogonal transformation of determinant `-1`
-(`Unitary.exists_det_eq_neg_one`).
+(`Unitary.exists_det_eq_neg_one`); in dimension at least two it can be chosen to fix a given
+vector (`Unitary.exists_det_eq_neg_one_apply_eq_self`).
 -/
 
 public section
@@ -63,6 +64,17 @@ theorem exists_det_eq_neg_one (hV : 0 < Module.finrank ℝ V) :
   obtain ⟨r, hr⟩ := TauCeti.exists_det_eq_neg_one (F := V)
   refine ⟨linearIsometryEquiv.symm r, ?_⟩
   rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, ← hr, LinearEquiv.coe_det]
+  rfl
+
+/-- In dimension at least two, every vector `v` is fixed by an orthogonal transformation of
+determinant `-1`: the reflection in the hyperplane orthogonal to a nonzero vector orthogonal to
+`v`. -/
+theorem exists_det_eq_neg_one_apply_eq_self (hV : 2 ≤ Module.finrank ℝ V) (v : V) :
+    ∃ r : unitary (V →L[ℝ] V), (r : V →L[ℝ] V) v = v ∧ (r : V →L[ℝ] V).det = -1 := by
+  obtain ⟨r, hr, hrv⟩ := TauCeti.exists_det_eq_neg_one_apply_eq_self hV v
+  refine ⟨linearIsometryEquiv.symm r, by simpa using hrv, ?_⟩
+  rw [coe_symm_linearIsometryEquiv_apply, ContinuousLinearMap.det, ← hr, LinearEquiv.coe_det]
+  -- Both sides are the determinant of the linear map underlying `r`, by definition.
   rfl
 
 end Unitary

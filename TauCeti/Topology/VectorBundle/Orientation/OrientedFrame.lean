@@ -42,12 +42,17 @@ transformation `r` of determinant `-1` makes it positively oriented. Dividing by
 frame trivializes the positively oriented frames, by the construction shared by all such
 reductions (`TauCeti.OrthonormalFrameBundle.exists_trivialization_of_continuousOn_smul_mem`). This
 is the reduction of the structure group of the orthonormal frame bundle from the orthogonal group
-to the special orthogonal group given by the orientation.
+to the special orthogonal group given by the orientation. The correction of a continuous family of
+frames is `TauCeti.OrthonormalFrameBundle.orientationCorrection`, which is locally constant
+(`TauCeti.OrthonormalFrameBundle.eventually_orientationCorrection_eq`).
 
 ## Main definitions
 
 * `TauCeti.OrthonormalFrameBundle.orientedFrames s o`: the orthonormal frames transporting the
   orientation `o` of `V` to the orientation `s` of the bundle.
+* `TauCeti.OrthonormalFrameBundle.orientationCorrection`: the orthogonal transformation, `1` or a
+  fixed `r` of determinant `-1`, composing a family of frames with which makes it positively
+  oriented.
 * The instance `TauCeti.OrthonormalFrameBundle.SMulMemIff (TauCeti.specialOrthogonalGroup V)
   (orientedFrames s o)`, giving the right action of the special orthogonal group on the positively
   oriented frames.
@@ -198,57 +203,59 @@ variable {B : Type*} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [No
   (s : VectorBundleOrientation F E ι) (o : Orientation ℝ V ι)
   [Fintype ι] [CompleteSpace V] [Fact (Fintype.card ι = finrank ℝ V)]
 
-section Trivialization
+section Correction
 
-variable
-  (T : Trivialization (unitary (V →L[ℝ] V)) (proj : OrthonormalFrameBundle ℝ F E V → B))
+variable {Y : Type*} (q : Y → OrthonormalFrameBundle ℝ F E V)
   (r : unitary (V →L[ℝ] V))
 
-/-- The local frame of the trivialization `T` at `y`: the frame with fibre coordinate `1`. -/
-private abbrev localFrame (y : B) : OrthonormalFrameBundle ℝ F E V :=
-  T.toOpenPartialHomeomorph.symm (y, 1)
-
 open scoped Classical in
-/-- The correction of the local frame of `T` at `y`: `1` where it is positively oriented, and
-`r⁻¹` elsewhere. Composing the local frame with its inverse makes it positively oriented. -/
-private def correction (y : B) : unitary (V →L[ℝ] V) :=
-  if localFrame T y ∈ orientedFrames s o then 1 else r⁻¹
+/-- The orientation correction of a family of frames `q` by an orthogonal transformation `r`:
+`1` where `q y` is positively oriented, and `r` elsewhere. If `r` is not special orthogonal,
+composing `q y` with it gives a positively oriented frame
+(`TauCeti.OrthonormalFrameBundle.op_orientationCorrection_smul_mem_orientedFrames`), and for
+continuous `q` it is locally constant
+(`TauCeti.OrthonormalFrameBundle.eventually_orientationCorrection_eq`). -/
+def orientationCorrection (y : Y) : unitary (V →L[ℝ] V) :=
+  if q y ∈ orientedFrames s o then 1 else r
 
-variable {s o T r}
+variable {s o q r}
 
-/-- The local frame of `T` composed with its correction is positively oriented. -/
-private theorem smul_localFrame_mem (hr : r ∉ specialOrthogonalGroup V) (y : B) :
-    op (correction s o T r y)⁻¹ • localFrame T y ∈ orientedFrames s o := by
-  unfold correction
+omit [Fintype ι] [Fact (Fintype.card ι = finrank ℝ V)] in
+/-- The orientation correction is `1` or `r`. -/
+theorem orientationCorrection_eq_one_or_eq (y : Y) :
+    orientationCorrection s o q r y = 1 ∨ orientationCorrection s o q r y = r := by
+  unfold orientationCorrection
+  split_ifs
+  exacts [.inl rfl, .inr rfl]
+
+/-- A family of frames composed with its orientation correction by a transformation `r` that is
+not special orthogonal is positively oriented. -/
+theorem op_orientationCorrection_smul_mem_orientedFrames (hr : r ∉ specialOrthogonalGroup V)
+    (y : Y) : op (orientationCorrection s o q r y) • q y ∈ orientedFrames s o := by
+  unfold orientationCorrection
   split_ifs with h
   · simpa using h
-  · rw [inv_inv]
-    by_contra hn
+  · by_contra hn
     exact (smul_mem_orientedFrames_iff Fact.out ((notMem_orientedFrames_iff Fact.out).1 h)).not.2 hr
       ((notMem_orientedFrames_iff Fact.out).1 hn)
 
-/-- The correction is locally constant over the base set of `T`. -/
-private theorem eventually_correction_eq {y : B} (hy : y ∈ T.baseSet) :
-    ∀ᶠ z in 𝓝 y, correction s o T r z = correction s o T r y := by
-  have hσ : ContinuousAt (localFrame T) y :=
-    (T.toOpenPartialHomeomorph.continuousOn_symm.continuousAt
-      (T.open_target.mem_nhds (T.mem_target.2 hy))).comp
-      (continuousAt_id.prodMk continuousAt_const)
-  by_cases h : localFrame T y ∈ orientedFrames s o
-  · filter_upwards [hσ.preimage_mem_nhds ((isOpen_orientedFrames Fact.out).mem_nhds h)] with z hz
-    simp [correction, mem_preimage.1 hz, h]
+/-- The orientation correction of a family of frames is locally constant where the family is
+continuous, since orientation is locally constant. -/
+theorem eventually_orientationCorrection_eq [TopologicalSpace Y] {y : Y} (hq : ContinuousAt q y) :
+    ∀ᶠ z in 𝓝 y, orientationCorrection s o q r z = orientationCorrection s o q r y := by
+  by_cases h : q y ∈ orientedFrames s o
+  · filter_upwards [hq.preimage_mem_nhds ((isOpen_orientedFrames Fact.out).mem_nhds h)] with z hz
+    simp [orientationCorrection, mem_preimage.1 hz, h]
   · have h' := (notMem_orientedFrames_iff Fact.out).1 h
-    filter_upwards [hσ.preimage_mem_nhds ((isOpen_orientedFrames Fact.out).mem_nhds h')] with z hz
-    simp [correction, (notMem_orientedFrames_iff Fact.out).2 hz, h]
+    filter_upwards [hq.preimage_mem_nhds ((isOpen_orientedFrames Fact.out).mem_nhds h')] with z hz
+    simp [orientationCorrection, (notMem_orientedFrames_iff Fact.out).2 hz, h]
 
-/-- A function of the correction is continuous at the points of the base set of `T`. -/
-private theorem continuousAt_correction {X : Type*} [TopologicalSpace X]
-    (f : unitary (V →L[ℝ] V) → X) {y : B} (hy : y ∈ T.baseSet) :
-    ContinuousAt (fun z ↦ f (correction s o T r z)) y :=
-  continuousAt_const.congr
-    ((eventually_correction_eq (s := s) (o := o) (r := r) hy).mono fun _ hz ↦ congrArg f hz.symm)
+/-- The orientation correction of a family of frames is continuous where the family is. -/
+theorem continuousAt_orientationCorrection [TopologicalSpace Y] {y : Y} (hq : ContinuousAt q y) :
+    ContinuousAt (orientationCorrection s o q r) y :=
+  continuousAt_const.congr ((eventually_orientationCorrection_eq hq).mono fun _ hz ↦ hz.symm)
 
-end Trivialization
+end Correction
 
 /-- In positive rank the positively oriented frames are locally trivial with fibre the special
 orthogonal group, by trivializations equivariant for its right action: this is the principal
@@ -269,12 +276,17 @@ theorem exists_trivialization_orientedFrames [ContinuousFiberNorm F E] [Nonempty
     notMem_specialOrthogonalGroup_iff_det_neg.2 (by rw [hr]; norm_num)
   have : T.orthonormalFrameBundleFiber.IsEquivariant :=
     T.isEquivariant_orthonormalFrameBundleFiber_iff.2 fun p _ g ↦ congrArg Prod.snd (hT g p)
-  -- The local frame of `T`, corrected by `correction`, is positively oriented over `T.baseSet`.
+  -- The local frame of `T`, with fibre coordinate `1`, is continuous over `T.baseSet`.
+  have hq : ∀ y ∈ T.baseSet, ContinuousAt (fun y ↦ T.toOpenPartialHomeomorph.symm (y, 1)) y :=
+    fun _ hy ↦ (T.toOpenPartialHomeomorph.continuousOn_symm.continuousAt
+      (T.open_target.mem_nhds (T.mem_target.2 hy))).comp
+      (continuousAt_id.prodMk continuousAt_const)
+  -- The local frame of `T`, corrected by its orientation correction, is positively oriented.
   obtain ⟨t, ht, hteq⟩ := exists_trivialization_of_continuousOn_smul_mem
     (H := specialOrthogonalGroup V) subset_rfl
-    (fun y _ ↦ smul_localFrame_mem (s := s) (o := o) hr' y) T.open_baseSet
-    (fun _ hy ↦ (continuousAt_correction (s := s) (o := o) (r := r) (·⁻¹) hy).continuousWithinAt)
-    hx
+    (fun y _ ↦ op_orientationCorrection_smul_mem_orientedFrames hr' y) T.open_baseSet
+    (fun y hy ↦ (continuousAt_orientationCorrection (s := s) (o := o) (r := r)
+      (hq y hy)).continuousWithinAt) hx
   exact ⟨t, ht ▸ hx, fun g p hp ↦
     SMulMemIff.apply_smul_eq_of_apply_mk_eq fun hgp ↦ hteq g p hgp (ht ▸ hp)⟩
 
