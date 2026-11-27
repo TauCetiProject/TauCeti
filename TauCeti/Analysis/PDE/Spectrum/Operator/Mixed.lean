@@ -103,7 +103,8 @@ needed for `λ₁ > 0`.
   `TauCeti.PDE.exists_mixedOperator_apply_eq_smul_iff` (its eigenvectors).
 * `TauCeti.PDE.mixedForm`, `TauCeti.PDE.isCoercive_mixedForm` and
   `TauCeti.PDE.mixedOperator_eq_formOperator`: the shifted energy form on `H¹_Γ(Ω)`, coercive
-  under a Gårding inequality, whose form operator is the mixed realization.
+  under a Gårding inequality, whose form operator is the mixed realization; unshifted, it is the
+  energy form (`TauCeti.PDE.mixedForm_zero_apply`, `TauCeti.PDE.mixedForm_zero`).
 * `TauCeti.PDE.mixedSolutionOperator`, `TauCeti.PDE.mixedSolutionOperator_apply_eq` and
   `TauCeti.PDE.resolvent_mixedOperator_neg`: the solution operator of the shifted mixed problem,
   which returns the weak solution, and is the resolvent at `-ω` up to sign; its spectral
@@ -112,6 +113,9 @@ needed for `λ₁ > 0`.
   `TauCeti.PDE.isSymmetric_mixedSolutionOperator`,
   `TauCeti.PDE.inner_mixedSolutionOperator_self_nonneg` and
   `TauCeti.PDE.mixedSolutionOperator_injective`.
+* `TauCeti.PDE.zero_mem_resolventSet_mixedOperator` and
+  `TauCeti.PDE.resolvent_mixedOperator_zero`: for an energy form coercive on `H¹_Γ(Ω)`, the
+  realization is invertible with inverse the unshifted solution operator.
 * `TauCeti.PDE.mixedOperator_frontier`: at `Γ = ∂Ω` it is the Dirichlet realization
   `TauCeti.PDE.dirichletOperator`.
 * `TauCeti.PDE.isSelfAdjoint_mixedOperator`, `TauCeti.PDE.hasCompactResolvent_mixedOperator`,
@@ -145,6 +149,8 @@ needed for `λ₁ > 0`.
   `TauCeti.PDE.isCompactOperator_resolvent_mixedOperator_laplacian_zero_of_isLipschitzDomainWith`:
   with a Dirichlet part of positive surface measure on a bounded connected Lipschitz domain, the
   spectrum of `-Δ_Γ` is bounded away from `0` and `-Δ_Γ` has a compact self-adjoint inverse.
+* `TauCeti.PDE.isCoercive_mixedForm_laplacian_of_isLipschitzDomainWith`: on a bounded connected
+  Lipschitz domain with `Γ` of positive surface measure, `∫_Ω ∇u · ∇v` is coercive on `H¹_Γ(Ω)`.
 
 ## References
 
@@ -165,8 +171,8 @@ namespace TauCeti
 
 namespace PDE
 
-open Bornology MeasureTheory Set TopologicalSpace
-open scoped InnerProductSpace
+open Bornology Filter MeasureTheory Module Set TopologicalSpace
+open scoped InnerProductSpace NNReal
 
 variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
   {Omega : Opens (EuclideanSpace ℝ ι)} {Γ : Set (EuclideanSpace ℝ ι)}
@@ -201,11 +207,19 @@ theorem mixedForm_apply
   rw [energyFormH1_mass_sub_const hcoeff]
   ring
 
-private theorem mixedForm_zero_apply
+/-- The unshifted mixed form is the energy form `a(u, v)`. -/
+theorem mixedForm_zero_apply
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (u v : W1pVanishingOn mu Omega 2 Γ) :
     mixedForm hcoeff Γ 0 u v = energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) := by
   rw [mixedForm_apply, zero_mul, add_zero]
+
+/-- The unshifted mixed form is the energy form of `L` on `H¹_Γ(Ω)`. -/
+theorem mixedForm_zero
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    mixedForm hcoeff Γ 0 = energyFormH1LVanishingOn hcoeff Γ := by
+  ext u v
+  rw [mixedForm_zero_apply, energyFormH1LVanishingOn_apply]
 
 /-- The mixed form at `ω` is the unshifted one plus `ω ⟪J u, J v⟫` along the value map `J`. -/
 private theorem mixedForm_apply_eq_zero_add
@@ -579,6 +593,24 @@ theorem neg_mem_resolventSet_mixedOperator
   have hB := isCoercive_mixedForm hcoeff htheta hgarding
   rw [mixedOperator_eq_formOperator hcoeff hΓ hB]
   exact hB.neg_mem_resolventSet_formOperator (W1pVanishingOn.denseRange_valueL_two hΓ)
+
+/-- **`0` is a resolvent point of the mixed realization** when the energy form is coercive on
+`H¹_Γ(Ω)` and `Γ` misses `Ω`. -/
+theorem zero_mem_resolventSet_mixedOperator
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hΓ : Disjoint Γ Omega) (hB : IsCoercive (mixedForm hcoeff Γ 0)) :
+    (0 : ℝ) ∈ (mixedOperator hcoeff Γ).resolventSet := by
+  have h : -(0 : ℝ) ∈ (hB.formOperator W1pVanishingOn.valueL 0).resolventSet :=
+    hB.neg_mem_resolventSet_formOperator (W1pVanishingOn.denseRange_valueL_two hΓ)
+  rwa [← mixedOperator_eq_formOperator hcoeff hΓ hB, neg_zero] at h
+
+/-- **`A⁻¹ = S`.** When the energy form is coercive on `H¹_Γ(Ω)` and `Γ` misses `Ω`, the resolvent
+of the mixed realization at `0` is minus the mixed solution operator. -/
+theorem resolvent_mixedOperator_zero
+    (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
+    (hΓ : Disjoint Γ Omega) (hB : IsCoercive (mixedForm hcoeff Γ 0)) :
+    (mixedOperator hcoeff Γ).resolvent 0 = -mixedSolutionOperator hcoeff Γ hB := by
+  simpa only [neg_zero] using resolvent_mixedOperator_neg hcoeff hΓ hB
 
 /-- **The mixed realization is bounded below by `-ω`** under the inequality
 `θ ‖v‖²_{H¹} ≤ a(v, v) + ω ‖v‖²_{L²}` on `H¹_Γ(Ω)` with `θ ≥ 0`: `⟪A f, f⟫ ≥ -ω ‖f‖²` on its
@@ -1073,6 +1105,27 @@ section Lipschitz
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {V : Opens (WithLp 2 (ℝ × E))} {L : NNReal} [DecidableEq ι]
+
+/-- **The mixed Laplacian is coercive on a Lipschitz domain** for a boundary part of positive
+measure: let an affine isometry `e` carry the connected open set `Ω ⊆ EuclideanSpace ℝ ι` onto a
+bounded Lipschitz domain `V`, and let `Γ` meet the frontier of `Ω` in a set of positive surface
+measure. Then `∫_Ω ∇u · ∇v` is coercive on `H¹_Γ(Ω)`, by the Poincaré–Friedrichs inequality. -/
+theorem isCoercive_mixedForm_laplacian_of_isLipschitzDomainWith
+    (hV : (V : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
+    (hVb : IsBounded (V : Set (WithLp 2 (ℝ × E))))
+    (e : EuclideanSpace ℝ ι ≃ᵃⁱ[ℝ] WithLp 2 (ℝ × E))
+    (hVΩ : (V : Set (WithLp 2 (ℝ × E))) = e.symm ⁻¹' Omega)
+    (hconn : IsPreconnected (Omega : Set (EuclideanSpace ℝ ι)))
+    (hΓ : (μHE[finrank ℝ E] : Measure (EuclideanSpace ℝ ι))
+      (Γ ∩ frontier (Omega : Set (EuclideanSpace ℝ ι))) ≠ 0) :
+    IsCoercive (mixedForm (memLp_energyIntegrand_const_zero_zero (mu := volume) (Omega := Omega)
+      (1 : Matrix ι ι ℝ)) Γ 0) := by
+  rw [mixedForm_zero]
+  exact IsUniformlyEllipticAE.isCoercive_energyFormH1LVanishingOn_of_isLipschitzDomainWith
+    ((uniformlyEllipticOn_const_one_one _).isUniformlyEllipticAE
+      Omega.isOpen.measurableSet.nullMeasurableSet)
+    aestronglyMeasurable_const MemLp.zero EventuallyEq.rfl (ae_of_all _ fun _ ↦ le_rfl) _ hV hVb e
+    hVΩ hconn hΓ
 
 /-- **The spectrum of the mixed Laplacian is bounded away from `0`.** Let an affine isometry `e`
 carry the connected open set `Ω ⊆ EuclideanSpace ℝ ι` onto a bounded Lipschitz domain `V`, and let

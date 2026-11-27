@@ -36,8 +36,10 @@ every `Lᵖ`, so for a finite exponent `p ≠ 0` its `Lᵖ` seminorm is the inte
 
 In the other direction, for a measure that charges every nonempty open set
 (`MeasureTheory.Measure.IsOpenPosMeasure`), the `L^∞` seminorm bounds the value of `f` at every
-point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`). In particular, on a nonempty
-open interval `(a, b) ⊆ ℝ`, the real-valued `L^∞` norm of the identity function equals `max |a| |b|`
+point where `f` is continuous (`ContinuousAt.eNorm_le_eLpNorm_top`), and its restriction to a
+neighbourhood `s` of `x` bounds `f x` when `f` is continuous at `x` within `s`
+(`ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict`). In particular, on a nonempty open interval
+`(a, b) ⊆ ℝ`, the real-valued `L^∞` norm of the identity function equals `max |a| |b|`
 (`MeasureTheory.Measure.lpNorm_id_exponent_top_restrict_Ioo`).
 -/
 
@@ -67,23 +69,34 @@ theorem ContinuousOn.memLp_top_restrict_of_bound [SecondCountableTopologyEither 
     .of_forall fun x hx ↦ (ofReal_norm (f x)).symm.trans_le (ENNReal.ofReal_le_ofReal (hC x hx))
 
 omit [OpensMeasurableSpace X] in
-/-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
-at `x` and the measure charges every nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞}`. -/
-theorem ContinuousAt.eNorm_le_eLpNorm_top {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → E}
-    {x : X} (hf : ContinuousAt f x) : ‖f x‖ₑ ≤ eLpNorm f ∞ μ := by
-  by_cases hm : AEStronglyMeasurable f μ
+/-- **The essential supremum on a neighbourhood dominates a value at a point of continuity.** If
+`s` is a neighbourhood of `x`, `f` is continuous at `x` within `s`, and the measure charges every
+nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞(μ.restrict s)}`. -/
+theorem ContinuousWithinAt.eNorm_le_eLpNorm_top_restrict {μ : Measure X} [μ.IsOpenPosMeasure]
+    {f : X → E} {s : Set X} {x : X} (hf : ContinuousWithinAt f s x) (hs : s ∈ nhds x) :
+    ‖f x‖ₑ ≤ eLpNorm f ∞ (μ.restrict s) := by
+  by_cases hm : AEStronglyMeasurable f (μ.restrict s)
   swap
   · rw [eLpNorm_of_not_aestronglyMeasurable hm]
     exact le_top
   by_contra h
   push Not at h
-  -- Near `x`, `‖f‖ₑ` exceeds the essential supremum on a neighbourhood, of positive measure.
-  have hV := hf.eNorm.eventually_const_lt h
-  have hae : ∀ᵐ y ∂μ, ‖f y‖ₑ ≤ eLpNorm f ∞ μ := by
+  -- Near `x`, `‖f‖ₑ` exceeds the essential supremum on `s`, on a neighbourhood inside `s`.
+  have hV := (hf.continuousAt hs).eNorm.eventually_const_lt h
+  have hae : ∀ᵐ y ∂μ.restrict s, ‖f y‖ₑ ≤ eLpNorm f ∞ (μ.restrict s) := by
     rw [eLpNorm_exponent_top hm]
-    exact eNorm_ae_le_eLpNormEssSup f μ
-  have h0 : μ {y | eLpNorm f ∞ μ < ‖f y‖ₑ} = 0 := by simpa only [ae_iff, not_le] using hae
-  exact (μ.measure_pos_of_mem_nhds hV).ne' h0
+    exact eNorm_ae_le_eLpNormEssSup f _
+  have h0 : μ.restrict s {y | eLpNorm f ∞ (μ.restrict s) < ‖f y‖ₑ} = 0 := by
+    simpa only [ae_iff, not_le] using hae
+  exact (μ.measure_pos_of_mem_nhds (Filter.inter_mem hV hs)).ne'
+    (le_antisymm ((Measure.le_restrict_apply _ _).trans h0.le) zero_le)
+
+omit [OpensMeasurableSpace X] in
+/-- **The essential supremum dominates a value at a point of continuity.** If `f` is continuous
+at `x` and the measure charges every nonempty open set, then `‖f x‖ₑ ≤ ‖f‖_{L^∞}`. -/
+theorem ContinuousAt.eNorm_le_eLpNorm_top {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → E}
+    {x : X} (hf : ContinuousAt f x) : ‖f x‖ₑ ≤ eLpNorm f ∞ μ := by
+  simpa using hf.continuousWithinAt.eNorm_le_eLpNorm_top_restrict (μ := μ) Filter.univ_mem
 
 section CLMComp
 
