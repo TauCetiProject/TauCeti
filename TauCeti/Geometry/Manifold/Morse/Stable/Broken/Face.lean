@@ -54,11 +54,30 @@ Under the Morse–Smale condition and on countably many levels:
   trajectory is a limit of unbroken ones
   (`IsMorseSmale.morseBrokenTrajectoryRecords_subset_closure`).
 
-With the unbroken trajectories as the interiors `N x y`, these are the hypotheses `hj`, `hιj`,
-`hU` and `hUι` of `TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleton_units` for
-the trajectory spaces, and `hUA` follows from the injectivity of concatenation. Of its other
-hypotheses, the manifold structure and the collar of the boundary near the deeper strata come from
-the gluing of broken trajectories and are not proved here.
+With the unbroken trajectories as the interiors `N x y`, the facts above are the
+hypotheses `hj`, `hιj`, `hU` and `hUι` of
+`TauCeti.TwistingChainSystem.exists_isRepresenting_of_subsingleton_units` for the trajectory
+spaces, and `hUA` follows from the injectivity of concatenation. Of its other hypotheses, the
+charts on the unbroken trajectories hold in every index difference
+(`IsMorseSmale.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary`, in
+`TauCeti.Geometry.Manifold.Morse.Stable.Broken.Boundary`), and the charts on the boundary and its
+collar are understood in index difference at most two. There:
+
+* the boundary is empty when `ind x ≤ ind y + 1`
+  (`IsMorseSmale.morseBrokenTrajectorySpaceBoundary_eq_empty`, in
+  `TauCeti.Geometry.Manifold.Morse.Stable.Broken.TrajectorySpace`), since then every broken
+  trajectory is unbroken;
+* when `ind x ≤ ind y + 2`, every broken trajectory breaks once, into two unbroken trajectories
+  (`IsMorseSmale.exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two`), and the boundary is
+  discrete (`IsMorseSmale.discreteTopology_morseBrokenTrajectorySpaceBoundary`);
+* the boundary is collared in index difference two
+  (`IsMorseSmale.isCollared_morseBrokenTrajectorySpaceBoundary`, in
+  `TauCeti.Geometry.Manifold.Morse.Stable.Broken.Collar`).
+
+`TauCeti.Geometry.Manifold.Morse.Stable.Broken.Representing` puts these together into
+representing chain systems in index difference at most two. In larger index differences, the
+charts and the collar of the boundary near the deeper strata come from the gluing of trajectories
+broken several times and are not proved here.
 
 ## Main results
 
@@ -68,12 +87,18 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
   first break of a broken trajectory.
 * `isEmbedding_morseBrokenTrajectorySpaceConcat`, `isEmbedding_morseBrokenTrajectorySpaceComp`:
   concatenation is an embedding.
+* `range_morseBrokenTrajectorySpaceComp_compl_prod_compl`: the concatenations of pairs of
+  unbroken trajectories.
 * `image_morseBrokenTrajectorySpaceComp_compl_prod_compl`: the interior of a face.
 * `IsMorseSmale.manifoldMorseIndex_lt_of_mem_morseBrokenTrajectorySpace`: the index drops.
 * `IsMorseSmale.isClosed_range_morseBrokenTrajectorySpaceComp`: the faces are closed.
 * `IsMorseSmale.isOpenEmbedding_morseBrokenTrajectorySpaceComp_compl_prod_compl`: the interiors
   of the faces are open in the boundary.
 * `IsMorseSmale.dense_morseBrokenTrajectorySpaceComp_image_compl_prod_compl`: they are dense in it.
+* `IsMorseSmale.exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two`: in index difference at
+  most two, a broken trajectory breaks once, into two unbroken trajectories.
+* `IsMorseSmale.discreteTopology_morseBrokenTrajectorySpaceBoundary`: the broken trajectories form
+  a discrete space in index difference at most two.
 
 ## References
 
@@ -195,6 +220,23 @@ theorem isEmbedding_morseBrokenTrajectorySpaceComp (x z y : criticalPoints 𝓘(
   funext w
   exact Subtype.ext (by simp)
 
+/-- The concatenations at `z` of pairs of unbroken trajectories, as the image of the product of the
+interiors. -/
+theorem range_morseBrokenTrajectorySpaceComp_compl_prod_compl
+    (x z y : criticalPoints 𝓘(ℝ, E) f) :
+    (range fun r : ↥(hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ ×
+        ↥(hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ ↦
+      hX.morseBrokenTrajectorySpaceComp hc x z y (r.1, r.2)) =
+    hX.morseBrokenTrajectorySpaceComp hc x z y ''
+      ((hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ ×ˢ
+        (hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ) := by
+  ext w
+  constructor
+  · rintro ⟨r, rfl⟩
+    exact ⟨(r.1, r.2), ⟨r.1.property, r.2.property⟩, rfl⟩
+  · rintro ⟨p, ⟨h₁, h₂⟩, rfl⟩
+    exact ⟨(⟨p.1, h₁⟩, ⟨p.2, h₂⟩), rfl⟩
+
 /-! ### The faces of the boundary -/
 
 section Faces
@@ -295,12 +337,62 @@ theorem isOpenEmbedding_morseBrokenTrajectorySpaceComp_compl_prod_compl [Countab
   have hw := congrArg (w.val ∈ ·)
     (hX.image_morseBrokenTrajectorySpaceComp_compl_prod_compl hc hdense x z y)
   simp only [mem_sdiff, w.property, true_and, eq_iff_iff] at hw
-  rw [mem_preimage, mem_compl_iff, ← hw]
-  constructor
-  · rintro ⟨r, rfl⟩
-    exact ⟨(r.1, r.2), ⟨r.1.property, r.2.property⟩, rfl⟩
-  · rintro ⟨p, hp, he⟩
-    exact ⟨(⟨p.1, hp.1⟩, ⟨p.2, hp.2⟩), Subtype.ext he⟩
+  rw [mem_preimage, mem_compl_iff, ← hw,
+    ← hX.range_morseBrokenTrajectorySpaceComp_compl_prod_compl hc]
+  exact ⟨fun ⟨r, hr⟩ ↦ ⟨r, congrArg Subtype.val hr⟩, fun ⟨r, hr⟩ ↦ ⟨r, Subtype.ext hr⟩⟩
+
+include h hf hc in
+/-- **In index difference at most two, a broken trajectory breaks once.** When
+`ind x ≤ ind y + 2`, every point of the boundary of `L(x, y)` is the concatenation of two unbroken
+trajectories, at a critical point `z` with `ind x = ind z + 1 = ind y + 2`. -/
+theorem exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two
+    {x y : criticalPoints 𝓘(ℝ, E) f}
+    (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 2)
+    {w : hX.morseBrokenTrajectorySpace c x y}
+    (hw : w ∈ hX.morseBrokenTrajectorySpaceBoundary c x y) :
+    ∃ (z : criticalPoints 𝓘(ℝ, E) f) (a : hX.morseBrokenTrajectorySpace c x z)
+      (b : hX.morseBrokenTrajectorySpace c z y),
+      manifoldMorseIndex 𝓘(ℝ, E) f x = manifoldMorseIndex 𝓘(ℝ, E) f z + 1 ∧
+      manifoldMorseIndex 𝓘(ℝ, E) f z = manifoldMorseIndex 𝓘(ℝ, E) f y + 1 ∧
+      a ∉ hX.morseBrokenTrajectorySpaceBoundary c x z ∧
+      b ∉ hX.morseBrokenTrajectorySpaceBoundary c z y ∧
+      hX.morseBrokenTrajectorySpaceComp hc x z y (a, b) = w := by
+  obtain ⟨z, a, b, ha, hab⟩ :=
+    hX.exists_morseBrokenTrajectorySpaceComp_eq_of_mem_morseBrokenTrajectorySpaceBoundary hc hw
+  have hxz := h.manifoldMorseIndex_lt_of_mem_morseBrokenTrajectorySpace hf a.property
+  have hzy := h.manifoldMorseIndex_lt_of_mem_morseBrokenTrajectorySpace hf b.property
+  refine ⟨z, a, b, by omega, by omega, ha, ?_, hab⟩
+  rw [h.morseBrokenTrajectorySpaceBoundary_eq_empty hf (mem_criticalPoints_iff_mfderiv_eq_zero.1
+    z.property) (mem_criticalPoints_iff_mfderiv_eq_zero.1 y.property) (by omega)]
+  exact notMem_empty b
+
+include h hf hc hdense in
+/-- **In index difference at most two, the broken trajectories form a discrete space.** Every
+broken trajectory from `x` to `y` breaks once, at a critical point `z` with
+`ind x = ind z + 1 = ind y + 2`, and the face of `z` is an open copy of the product of the discrete
+spaces of trajectories from `x` to `z` and from `z` to `y`. -/
+theorem discreteTopology_morseBrokenTrajectorySpaceBoundary [Countable ι]
+    {x y : criticalPoints 𝓘(ℝ, E) f}
+    (hxy : manifoldMorseIndex 𝓘(ℝ, E) f x ≤ manifoldMorseIndex 𝓘(ℝ, E) f y + 2) :
+    DiscreteTopology (hX.morseBrokenTrajectorySpaceBoundary c x y) := by
+  refine discreteTopology_iff_isOpen_singleton.2 fun w ↦ ?_
+  obtain ⟨z, a, b, hxz, hzy, ha, hb, hw⟩ :=
+    h.exists_morseBrokenTrajectorySpaceComp_eq_of_le_add_two hc hf hxy w.property
+  -- Both factors are rigid.
+  obtain ⟨C₁⟩ := h.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary hf hc hdense
+    (x := x) (y := z) (d := 0) fun _ ↦ by omega
+  obtain ⟨C₂⟩ := h.nonempty_chartedSpace_compl_morseBrokenTrajectorySpaceBoundary hf hc hdense
+    (x := z) (y := y) (d := 0) fun _ ↦ by omega
+  have := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0))
+    ↥(hX.morseBrokenTrajectorySpaceBoundary c x z)ᶜ
+  have := ChartedSpace.discreteTopology (EuclideanSpace ℝ (Fin 0))
+    ↥(hX.morseBrokenTrajectorySpaceBoundary c z y)ᶜ
+  -- The face of `z` is open, and so is the image of a point under it.
+  have hopen := h.isOpenEmbedding_morseBrokenTrajectorySpaceComp_compl_prod_compl hc hf hdense
+    x z y
+  convert hopen.isOpenMap {(⟨a, ha⟩, ⟨b, hb⟩)} (isOpen_discrete _)
+  rw [image_singleton]
+  exact congrArg singleton (Subtype.ext hw.symm)
 
 include h hf hc hdense in
 /-- **The interiors of the faces are dense in the boundary.** A broken trajectory is the

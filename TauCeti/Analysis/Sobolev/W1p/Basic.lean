@@ -17,6 +17,7 @@ import Mathlib.Analysis.InnerProductSpace.Dual
 import TauCeti.Analysis.Sobolev.GraphStep.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.Restriction
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # First-order weak Sobolev spaces
@@ -75,7 +76,8 @@ space. The inner product is needed to interpret the gradient as a weak derivativ
   (`TauCeti.W1p.coe_ae_eq_zero_of_value_ae_eq_zero`), and likewise off a closed set
   (`TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero_of_isClosed`).
 * `TauCeti.W1p.const`: on a domain of finite measure, a constant function is an element of
-  `W^{1,p}(Ω)` with weak gradient `0`.
+  `W^{1,p}(Ω)` with weak gradient `0`, and nonzero value on a nonempty domain
+  (`TauCeti.W1p.value_const_ne_zero`).
 * `TauCeti.W1p.integralL`: the integral `∫_Ω u` as a continuous linear functional on
   `W^{1,p}(Ω)`, for `Ω` of finite measure.
 * `TauCeti.W1p.exists_value_gradient_ae_eq_of_hasWeakFDerivOn`: an `Lᵖ` function with an `Lᵖ`
@@ -1041,6 +1043,20 @@ theorem W1p.value_const_ae (c : ℝ) :
   rw [W1p.value_const]
   exact Lp.coeFn_const p _ c
 
+/-- On a nonempty open set, the value of the constant Sobolev function `c ≠ 0` is nonzero in
+`Lᵖ(Ω)`. -/
+theorem W1p.value_const_ne_zero (hΩ : (Omega : Set E).Nonempty) {c : ℝ} (hc : c ≠ 0) :
+    W1p.value (W1p.const c : W1p mu Omega p) ≠ 0 := by
+  intro h0
+  have : (ae (mu.restrict (Omega : Set E))).NeBot :=
+    ae_restrict_neBot.2 (Omega.isOpen.measure_ne_zero mu hΩ)
+  have h : ∀ᵐ _ ∂mu.restrict (Omega : Set E), c = 0 := by
+    filter_upwards [W1p.value_const_ae (mu := mu) (Omega := Omega) (p := p) c,
+      Lp.coeFn_zero ℝ p (mu.restrict (Omega : Set E))] with _ hx hx0
+    rw [← hx, h0, hx0, Pi.zero_apply]
+  obtain ⟨-, h⟩ := h.exists
+  exact hc h
+
 /-- The weak gradient of a constant Sobolev function is `0`. -/
 @[simp]
 theorem W1p.gradient_const (c : ℝ) : W1p.gradient (W1p.const c : W1p mu Omega p) = 0 :=
@@ -1078,6 +1094,11 @@ theorem W1p.integralL_const (c : ℝ) :
     W1p.integralL (W1p.const c : W1p mu Omega p) = mu.real Omega * c := by
   rw [W1p.integralL_apply, ← smul_eq_mul, ← setIntegral_const]
   exact integral_congr_ae (W1p.value_const_ae c)
+
+/-- The `L²(Ω)` pairing of the constant Sobolev function `c` with `f` is `c ∫_Ω f`. -/
+theorem W1p.inner_value_const (c : ℝ) (f : Lp ℝ 2 (mu.restrict Omega)) :
+    ⟪W1p.value (W1p.const c : W1p mu Omega 2), f⟫_ℝ = c * ∫ x in Omega, f x ∂mu := by
+  simp [mul_comm]
 
 end Const
 
