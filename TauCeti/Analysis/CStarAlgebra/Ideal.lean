@@ -45,8 +45,7 @@ algebra. When `A` has a proper involution (in particular, when `A` is a C⋆-alg
 
 * `TwoSidedIdeal.smul_mem_of_isClosed`, `AddSubgroup.smul_mem_of_isClosed_right`: closed
   two-sided ideals and closed right additive subgroups in C⋆-algebras absorb complex scalars
-  (specializing `TwoSidedIdeal.smul_mem_of_isApproximateUnit` and
-  `AddSubgroup.smul_mem_of_isClosed_right_of_tendsto`).
+  (specializing `AddSubgroup.smul_mem_of_isClosed_right_of_tendsto`).
 * `TwoSidedIdeal.star_mem_of_isClosed` and `Ideal.star_mem_of_isClosed`: closed two-sided ideals in
   C⋆-algebras are closed under `star`.
 * `TwoSidedIdeal.toSubmodule` and `TwoSidedIdeal.toNonUnitalStarSubalgebra`: bundle a closed
@@ -107,11 +106,8 @@ section CStarAlgebra
 variable {A : Type*} [NonUnitalCStarAlgebra A] (I : TwoSidedIdeal A) [hI : IsClosed (I : Set A)]
 
 /-- Every closed two-sided ideal of a C⋆-algebra is closed under complex scalar multiplication. -/
-theorem smul_mem_of_isClosed (c : ℂ) {a : A} (ha : a ∈ I) : c • a ∈ I := by
-  let _ := CStarAlgebra.spectralOrder A
-  have _ := CStarAlgebra.spectralOrderedRing A
-  exact I.smul_mem_of_isApproximateUnit
-    (CStarAlgebra.increasingApproximateUnit A).toIsApproximateUnit c ha
+theorem smul_mem_of_isClosed (c : ℂ) {a : A} (ha : a ∈ I) : c • a ∈ I :=
+  (AddSubgroup.ofClass I).smul_mem_of_isClosed_right hI (fun hx b ↦ I.mul_mem_right _ b hx) c ha
 
 /-- A closed two-sided ideal of a C⋆-algebra bundled as a complex submodule. -/
 @[expose] def toSubmodule : Submodule ℂ A where

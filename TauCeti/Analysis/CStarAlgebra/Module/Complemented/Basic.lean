@@ -81,15 +81,21 @@ decomposes as a sum of an element of `F` and an element of `F.orthogonal`. -/
 def IsOrthogonallyComplemented (F : CStarSubmodule A E) : Prop :=
   F ⊔ F.orthogonal = ⊤
 
+/-- Restatement of `IsOrthogonallyComplemented` as `F ⊔ F.orthogonal = ⊤`. -/
+theorem isOrthogonallyComplemented_iff {F : CStarSubmodule A E} :
+    F.IsOrthogonallyComplemented ↔ F ⊔ F.orthogonal = ⊤ :=
+  Iff.rfl
+
 theorem isOrthogonallyComplemented_iff_exists_add {F : CStarSubmodule A E} :
     F.IsOrthogonallyComplemented ↔ ∀ x : E, ∃ y ∈ F, ∃ z ∈ F.orthogonal, y + z = x := by
   let _ := CStarModule.distribSMul A E
-  rw [IsOrthogonallyComplemented, eq_top_iff]
+  rw [isOrthogonallyComplemented_iff, eq_top_iff]
   refine ⟨fun h x ↦ mem_sup.mp (h (mem_top x)), fun h x _ ↦ mem_sup.mpr (h x)⟩
 
 theorem isOrthogonallyComplemented_iff_isCompl {F : CStarSubmodule A E} :
     F.IsOrthogonallyComplemented ↔ IsCompl F F.orthogonal :=
-  ⟨fun h ↦ ⟨F.orthogonal_disjoint, codisjoint_iff.mpr h⟩, fun h ↦ h.codisjoint.eq_top⟩
+  ⟨fun h ↦ ⟨F.orthogonal_disjoint, codisjoint_iff.mpr (isOrthogonallyComplemented_iff.mp h)⟩,
+    fun h ↦ isOrthogonallyComplemented_iff.mpr h.codisjoint.eq_top⟩
 
 theorem IsOrthogonallyComplemented.isCompl_toSubmodule {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) : IsCompl F.toSubmodule F.orthogonal.toSubmodule where
@@ -98,13 +104,13 @@ theorem IsOrthogonallyComplemented.isCompl_toSubmodule {F : CStarSubmodule A E}
     exact disjoint_iff.mp F.orthogonal_disjoint
   codisjoint := by
     let _ := CStarModule.distribSMul A E
-    rw [codisjoint_iff, ← toSubmodule_sup, hF, toSubmodule_top]
+    rw [codisjoint_iff, ← toSubmodule_sup, isOrthogonallyComplemented_iff.mp hF, toSubmodule_top]
 
 theorem isOrthogonallyComplemented_bot : (⊥ : CStarSubmodule A E).IsOrthogonallyComplemented := by
-  simp [IsOrthogonallyComplemented]
+  simp [isOrthogonallyComplemented_iff]
 
 theorem isOrthogonallyComplemented_top : (⊤ : CStarSubmodule A E).IsOrthogonallyComplemented := by
-  simp [IsOrthogonallyComplemented]
+  simp [isOrthogonallyComplemented_iff]
 
 /-- An orthogonally complemented submodule equals its double orthogonal complement `F⊥⊥`. -/
 theorem IsOrthogonallyComplemented.orthogonal_orthogonal {F : CStarSubmodule A E}
@@ -124,8 +130,8 @@ theorem IsOrthogonallyComplemented.orthogonal_orthogonal {F : CStarSubmodule A E
 complemented. -/
 theorem IsOrthogonallyComplemented.orthogonal {F : CStarSubmodule A E}
     (hF : F.IsOrthogonallyComplemented) : F.orthogonal.IsOrthogonallyComplemented := by
-  rw [IsOrthogonallyComplemented, hF.orthogonal_orthogonal, sup_comm]
-  exact hF
+  rw [isOrthogonallyComplemented_iff, hF.orthogonal_orthogonal, sup_comm]
+  exact isOrthogonallyComplemented_iff.mp hF
 
 private lemma IsOrthogonallyComplemented.sub_projection_mem_orthogonal
     {F : CStarSubmodule A E} (hF : F.IsOrthogonallyComplemented) (x : E) :
@@ -562,17 +568,6 @@ section ProjectionIdeal
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-private lemma isAdjointPair_mul_left {p : A} (hp : IsSelfAdjoint p) :
-    LinearMap.IsAdjointPair (CStarModule.innerₛₗ (A := Aᵐᵒᵖ) (E := A)).flip
-      (CStarModule.innerₛₗ (A := Aᵐᵒᵖ) (E := A)).flip (fun x ↦ p * x) (fun x ↦ p * x) :=
-  CStarModule.isAdjointPair_inner_iff.mpr fun x y ↦ unop_injective <| by
-    simp only [CStarModule.unop_inner_mulOpposite, star_mul, hp.star_eq, mul_assoc]
-
-omit [PartialOrder A] [StarOrderedRing A] in
-private lemma mul_left_idempotent {p : A} (hp : IsIdempotentElem p) (x : A) :
-    p * (p * x) = p * x := by
-  rw [← mul_assoc, hp.eq]
-
 omit [PartialOrder A] [StarOrderedRing A] in
 private lemma range_mul_left {p : A} (hp : IsIdempotentElem p) :
     Set.range (fun x : A ↦ p * x) = (rightFixedSubmodule p : Set A) := by
@@ -584,8 +579,8 @@ complemented right ideal `rightFixedSubmodule p = {x | p * x = x}` in `CStarModu
 theorem isOrthogonallyComplemented_rightFixedSubmodule {p : A} (hp : IsStarProjection p) :
     (rightFixedSubmodule p).IsOrthogonallyComplemented :=
   isOrthogonallyComplemented_iff_exists_selfAdjoint_idempotent.mpr
-    ⟨fun x ↦ p * x, isAdjointPair_mul_left hp.isSelfAdjoint,
-      mul_left_idempotent hp.isIdempotentElem, range_mul_left hp.isIdempotentElem⟩
+    ⟨fun x ↦ p * x, CStarModule.isAdjointPair_mulLeft_of_isSelfAdjoint hp.isSelfAdjoint,
+      hp.isIdempotentElem.mul_self_mul, range_mul_left hp.isIdempotentElem⟩
 
 /-- The orthogonal projection onto the right ideal `rightFixedSubmodule p` is left multiplication
 by `p`. -/
@@ -593,8 +588,8 @@ theorem starProjection_rightFixedSubmodule {p : A} (hp : IsStarProjection p) (x 
     (isOrthogonallyComplemented_rightFixedSubmodule hp).starProjection x = p * x := by
   have h := isOrthogonallyComplemented_rightFixedSubmodule hp
   exact (congrFun (h.eq_starProjection_of_isAdjointPair_idempotent
-    (isAdjointPair_mul_left hp.isSelfAdjoint) (mul_left_idempotent hp.isIdempotentElem)
-    (range_mul_left hp.isIdempotentElem)) x).symm
+    (CStarModule.isAdjointPair_mulLeft_of_isSelfAdjoint hp.isSelfAdjoint)
+    hp.isIdempotentElem.mul_self_mul (range_mul_left hp.isIdempotentElem)) x).symm
 
 /-- The orthogonal complement of the projection right ideal `{x | p * x = x}` in the right
 self-module `CStarModule Aᵐᵒᵖ A` is `{x | p * x = 0}`. -/
