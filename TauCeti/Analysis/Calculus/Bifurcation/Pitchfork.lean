@@ -23,6 +23,7 @@ import TauCeti.Analysis.Calculus.Bifurcation
 import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.Deriv.Parity
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.IteratedDeriv.FaaDiBruno
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 
 /-!
@@ -33,8 +34,9 @@ Let `f s : E → F` be a one-parameter family of maps between real Banach spaces
 continuous linear involutions of `E` and `F` with `f s (σ x) = τ (f s x)` near `(t, 0)`. Suppose
 that the trivial zero degenerates at `s = t` in the direction of the symmetry: the kernel of
 `D = D(f t)₀` is the line through a vector `v` with `σ v = -v`, and the range of `D` is the kernel
-of a functional `φ` with `φ ∘ τ = -φ`, so that `D` is Fredholm of index zero with kernel and
-cokernel of dimension one, on which the symmetries act by `-1`. Then `(t, 0)` is a *pitchfork
+of a nonzero functional `φ` with `φ ∘ τ = -φ`, so that `D` is Fredholm of index zero with kernel
+and cokernel of dimension one, on which the symmetries act by `-1`. (The theorem assumes `κ ≠ 0`
+below rather than `φ ≠ 0`; the former forces the latter.) Then `(t, 0)` is a *pitchfork
 point* when
 
 `κ = (φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v))) · φ (∂ₛ D(f s)₀ v) ≠ 0`,
@@ -65,15 +67,15 @@ So the signed count of all zeros in `U` is `ε` on both sides of `t`, while the 
 the orbits, in which `{x₀, -x₀}` counts once, changes by `ε`
 (`TauCeti.exists_mem_nhds_finsum_sign_det_fderiv_eq_pitchfork`).
 
-This is the model of the period doubling of a torus in Taubes's count of pseudoholomorphic curves.
-There the deformation problem of a doubly covered torus is a family of Fredholm maps between
-Banach spaces of sections, equivariant under the deck transformation of the double cover, with
-the trivial zero the doubly covered torus and the orbit `{x₀, σ x₀}` a single embedded torus in
-twice its class; the change of the orbit count is what Taubes's four-twist weights of the tori
-account for. This file does not set up that deformation problem, and in infinite dimensions it
-does not compare orientations. The one-dimensional case is `TauCeti.eventually_pitchfork`; the
-fold point, where a pair of zeros of opposite signs is born, is
-`TauCeti.exists_mem_nhds_setOf_apply_eq_zero_eq_pair`.
+This is meant as the model of the period doubling of a torus in Taubes's count of
+pseudoholomorphic curves. There the deformation problem of a doubly covered torus is expected to
+be such a family of Fredholm maps between Banach spaces of sections, equivariant under the deck
+transformation of the double cover, with the trivial zero the doubly covered torus and the orbit
+`{x₀, σ x₀}` a single embedded torus in twice its class; the change of the orbit count would then
+be what Taubes's four-twist weights of the tori account for. This file does not set up that
+deformation problem, and in infinite dimensions it does not compare orientations. The
+one-dimensional case is `TauCeti.eventually_pitchfork`; the fold point, where a pair of zeros of
+opposite signs is born, is `TauCeti.exists_mem_nhds_setOf_apply_eq_zero_eq_pair`.
 
 The proof is a Lyapunov–Schmidt reduction to `TauCeti.eventually_pitchfork`. Choose `ℓ` with
 `ℓ v = 1` and `ℓ ∘ σ = -ℓ`, and `c` with `φ c = 1` and `τ c = -c`. The map
@@ -97,6 +99,8 @@ and `det M` has a constant sign near `(t, 0)`. So the Jacobian signs of the zero
 
 ## Main results
 
+* `TauCeti.exists_contDiffAt_apply_eq_smul_of_equivariant`: the Lyapunov–Schmidt reduction of an
+  equivariant family of maps between Banach spaces, with the parameter of the family included.
 * `TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork_of_equivariant`: the zeros of an
   equivariant family of maps between Banach spaces near a pitchfork point.
 * `TauCeti.exists_mem_nhds_setOf_apply_eq_zero_pitchfork`: the zeros of an odd family of maps of
@@ -149,7 +153,7 @@ private theorem exists_apply_add_smul_eq {D : E →L[ℝ] F} {v : E} (hv : D v =
   obtain ⟨h₀, hh₀⟩ : z - φ z • c ∈ LinearMap.range (D : E →ₗ[ℝ] F) := by
     rw [hrange, LinearMap.mem_ker]
     simp [hc]
-  have hh₀' : D h₀ = z - φ z • c := hh₀
+  have hh₀' : D h₀ = z - φ z • c := by simpa using hh₀
   refine ⟨h₀ + (φ z - ℓ h₀) • v, ?_⟩
   simp only [map_add, map_smul, hv, smul_zero, add_zero, hh₀', hℓ, smul_eq_mul, mul_one,
     add_sub_cancel]
@@ -169,28 +173,31 @@ private theorem bijective_prod_sub_add {Df : ℝ × E →L[ℝ] F} {D : E →L[�
       (Df - (φ.comp Df).smulRight c + (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E)).smulRight c)) := by
   have hφ (y : E) : φ (D y) = 0 := LinearMap.mem_ker.1 (hrange ▸ LinearMap.mem_range_self _ y)
   have hv : D v = 0 := LinearMap.mem_ker.1 (hker ▸ Submodule.mem_span_singleton_self v)
-  have hL₂ (a : ℝ) (h : E) :
-      (Df (a, h) - φ (Df (a, h)) • c + ℓ h • c) =
-        Df (a, 0) - φ (Df (a, 0)) • c + (D h + ℓ h • c) := by
-    rw [show (a, h) = (a, 0) + (0, h) by simp, map_add, hDf, map_add, hφ, add_zero]
+  -- The value of the map at `(a, h)`, splitting `Df (a, h) = Df (a, 0) + D h`.
+  have hval (a : ℝ) (h : E) :
+      (ContinuousLinearMap.fst ℝ ℝ E).prod
+          (Df - (φ.comp Df).smulRight c + (ℓ.comp (ContinuousLinearMap.snd ℝ ℝ E)).smulRight c)
+          (a, h) =
+        (a, Df (a, 0) - φ (Df (a, 0)) • c + (D h + ℓ h • c)) := by
+    have hsplit : Df (a, h) = Df (a, 0) + D h := by
+      rw [← hDf, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
+    simp only [ContinuousLinearMap.prod_apply, add_apply, sub_apply,
+      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd', hsplit, map_add, hφ, add_zero]
+    congr 1
     abel
   refine ⟨(injective_iff_map_eq_zero _).2 fun ⟨a, h⟩ hz ↦ ?_, fun ⟨a, z⟩ ↦ ?_⟩
   · -- Injective: the first component gives `a = 0`, and then `D h + ℓ h • c = 0`.
-    have ha : a = 0 := congrArg Prod.fst hz
-    subst ha
-    have h₂ := congrArg Prod.snd hz
-    simp only [ContinuousLinearMap.prod_apply, add_apply, sub_apply,
-      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.coe_snd', hL₂, Prod.mk_zero_zero, map_zero, zero_smul, sub_zero,
-      zero_add, Prod.snd_zero] at h₂
+    rw [hval] at hz
+    obtain rfl : a = 0 := congrArg Prod.fst hz
+    have h₂ : D h + ℓ h • c = 0 := by simpa [Prod.mk_zero_zero] using congrArg Prod.snd hz
     simpa using eq_zero_of_apply_add_smul_eq_zero hker hφ hℓ hc h₂
   · -- Onto: solve `D h + ℓ h • c = z - Df (a, 0) + φ (Df (a, 0)) • c`.
     obtain ⟨h, hh⟩ := exists_apply_add_smul_eq hv hrange hℓ hc
       (z - Df (a, 0) + φ (Df (a, 0)) • c)
-    refine ⟨(a, h), Prod.ext rfl ?_⟩
-    simp only [ContinuousLinearMap.prod_apply, add_apply, sub_apply,
-      ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.coe_snd', hL₂, hh]
+    refine ⟨(a, h), ?_⟩
+    rw [hval, hh]
+    congr 1
     abel
 
 omit [NormedSpace ℝ E] in
@@ -203,9 +210,10 @@ private theorem tendsto_prodMk_reduction {X : ℝ → ℝ → E} (hX : Continuou
     (continuousAt_fst.prodMk hX).tendsto
   rwa [hX0] at h
 
-/-- **The derivative of the reduction.** In the setting of `exists_reduction`, near `(t, 0)` the
-function `σ ↦ φ (f s (X s σ))` has derivative `φ (D(f s) u)` at `σ`, where `u` is the derivative
-of `X s` at `σ`; moreover `D(f s) u = φ (D(f s) u) • c` and `ℓ u = 1`. -/
+/-- **The derivative of the reduction.** In the setting of
+`TauCeti.exists_contDiffAt_apply_eq_smul_of_equivariant`, near `(t, 0)` the function
+`σ ↦ φ (f s (X s σ))` has derivative `φ (D(f s) u)` at `σ`, where `u` is the derivative of `X s`
+at `σ`; moreover `D(f s) u = φ (D(f s) u) • c` and `ℓ u = 1`. -/
 private theorem eventually_hasDerivAt_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
     {X : ℝ → ℝ → E} (hX : ContDiffAt ℝ 3 (uncurry X) (t, 0)) (hX0 : X t 0 = 0)
     {φ : StrongDual ℝ F} {ℓ : StrongDual ℝ E} {c : F}
@@ -296,7 +304,9 @@ private theorem deriv_deriv_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
 /-- **The cubic coefficient of the reduction.** Let `X` be a `C³` curve through `0` with velocity
 `v`, where `v` spans the kernel of `Dg(0)`, and suppose `g ∘ X` takes values on the line through
 `c`, with `φ c = 1` and `φ ∘ Dg(0) = 0`. If `Dg(0) w = D²g(0) (v, v)`, then the third derivative
-of `φ ∘ g ∘ X` at `0` is `φ (D³g(0) (v, v, v)) - 3 φ (D²g(0) (w, v))`. -/
+of `φ ∘ g ∘ X` at `0` is `φ (D³g(0) (v, v, v)) - 3 φ (D²g(0) (w, v))`. This evaluates the general
+formula `TauCeti.iteratedDeriv_three_comp_of_apply_fderiv_eq_zero` at the acceleration of the
+reduced curve. -/
 private theorem iteratedDeriv_three_reduction {g : E → F} {X : ℝ → E} (hg : ContDiffAt ℝ 3 g 0)
     (hX : ContDiffAt ℝ 3 X 0) (hX0 : X 0 = 0) {v : E} (hv : deriv X 0 = v)
     (hker : LinearMap.ker (fderiv ℝ g 0 : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
@@ -306,32 +316,26 @@ private theorem iteratedDeriv_three_reduction {g : E → F} {X : ℝ → E} (hg 
     iteratedDeriv 3 (fun a ↦ φ (g (X a))) 0 =
       φ (fderiv ℝ (fderiv ℝ (fderiv ℝ g)) 0 v v v) - 3 * φ (fderiv ℝ (fderiv ℝ g) 0 w v) := by
   have hg' : ContDiffAt ℝ 3 g (X 0) := by rwa [hX0]
-  have hφg : ContDiffAt ℝ 3 (φ ∘ g) (X 0) := φ.contDiff.contDiffAt.comp (X 0) hg'
   -- The acceleration `u` of `X` at `0` is `-w` up to a multiple of `v`: the second derivative
   -- `D²g(0) (v, v) + Dg(0) u` of `g ∘ X` lies on the line through `c` and is killed by `φ`.
   have h₂ := iteratedDeriv_vcomp_two (hg'.of_le (by norm_num)) (hX.of_le (by norm_num))
+  -- `g ∘ X` is `fun a ↦ g (X a)` by definition of composition.
   have hev' : g ∘ X =ᶠ[𝓝 (0 : ℝ)] fun a ↦ φ (g (X a)) • c := hev
-  rw [(hev'.iteratedDeriv 2).self_of_nhds,
-    iteratedDeriv_smul_const (show ContDiffAt ℝ 2 (fun a ↦ φ (g (X a))) 0 from
-      (hφg.comp 0 hX).of_le (by norm_num)), iteratedFDeriv_two_apply,
+  have hφgX : ContDiffAt ℝ 2 (fun a ↦ φ (g (X a))) 0 :=
+    (φ.contDiff.contDiffAt.comp (X 0) hg' |>.comp 0 hX).of_le (by norm_num)
+  rw [(hev'.iteratedDeriv 2).self_of_nhds, iteratedDeriv_smul_const hφgX, iteratedFDeriv_two_apply,
     hX0, hv] at h₂
   have hu : fderiv ℝ g 0 (iteratedDeriv 2 X 0 + w) = 0 := by
-    have h := congrArg φ h₂
-    rw [map_add, hφ, add_zero, map_smul, hc, smul_eq_mul, mul_one, ← hw, hφ] at h
+    have h : iteratedDeriv 2 (fun a ↦ φ (g (X a))) 0 = 0 := by
+      simpa [hφ, hc, ← hw] using congrArg φ h₂
     rw [map_add, hw, add_comm, ← h₂, h, zero_smul]
   obtain ⟨r, hr⟩ := Submodule.mem_span_singleton.1
     (hker ▸ LinearMap.mem_ker.2 hu : iteratedDeriv 2 X 0 + w ∈ ℝ ∙ v)
   have hu' : iteratedDeriv 2 X 0 = r • v - w := by rw [hr]; abel
-  -- Faà di Bruno's formula for `(φ ∘ g) ∘ X`, with the symmetric second derivative of `g`.
+  -- Faà di Bruno's formula after `φ`, with the symmetric second derivative of `g`.
   have hsymm := hg.isSymmSndFDerivAt (by simp only [minSmoothness_of_isRCLikeNormedField]; norm_num)
-  have h₃ := iteratedDeriv_vcomp_three hφg hX
-  rw [φ.iteratedFDeriv_comp_left hg' le_rfl,
-    φ.iteratedFDeriv_comp_left hg' (i := 2) (by norm_num),
-    (φ.hasFDerivAt.comp (X 0) (hg'.differentiableAt (by norm_num)).hasFDerivAt).fderiv] at h₃
-  simp only [ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
-    ContinuousLinearMap.comp_apply, iteratedFDeriv_three_apply, iteratedFDeriv_two_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, hX0, hv, hu', hφ] at h₃
-  rw [show (fun a ↦ φ (g (X a))) = (φ ∘ g) ∘ X from rfl, h₃, hsymm v (r • v - w)]
+  rw [iteratedDeriv_three_comp_of_apply_fderiv_eq_zero hg' hX (by rwa [hX0]), hX0, hv, hu',
+    hsymm v (r • v - w)]
   simp only [map_sub, map_smul, sub_apply, smul_apply, ← hw, hφ, nsmul_eq_mul, smul_eq_mul]
   ring
 
@@ -345,10 +349,11 @@ private theorem contDiffAt_apply_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t
     (ContDiffAt.comp (g := uncurry f) (f := fun q : ℝ × ℝ ↦ (q.1, uncurry X q))
       (t, (0 : ℝ)) h₁ (contDiffAt_fst.prodMk hX))
 
-/-- **The one-dimensional pitchfork of the reduction.** In the setting of `exists_reduction`, with
-cubic coefficient `0 < φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v))` and transversality
-coefficient `β = φ (∂ₛ D(f s)₀ v) ≠ 0`, the scalar family `σ ↦ φ (f s (X s σ))` has the zeros
-and derivative signs of `TauCeti.eventually_pitchfork` near `σ = 0`, for `s` near `t`. -/
+/-- **The one-dimensional pitchfork of the reduction.** In the setting of
+`TauCeti.exists_contDiffAt_apply_eq_smul_of_equivariant`, with cubic coefficient
+`0 < φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v))` and transversality coefficient
+`β = φ (∂ₛ D(f s)₀ v) ≠ 0`, the scalar family `σ ↦ φ (f s (X s σ))` has the zeros and derivative
+signs of `TauCeti.eventually_pitchfork` near `σ = 0`, for `s` near `t`. -/
 private theorem eventually_pitchfork_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
     {σ : E →L[ℝ] E} {τ : F →L[ℝ] F}
     (hfσ : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (σ p.2) = τ (f p.1 p.2)) {v : E}
@@ -412,10 +417,10 @@ private theorem eventually_pitchfork_reduction (hf : ContDiffAt ℝ 3 (uncurry f
   filter_upwards [(tendsto_sub_nhds_zero_iff.2 tendsto_id).eventually hδ] with s hs
   simpa only [F, id, add_sub_cancel] using hs
 
-/-- **The zeros near `0` are the points of the reduction.** In the setting of `exists_reduction`,
-there is `η > 0` such that for every `0 < δ < η` some neighbourhood `U` of `0` meets the zeros of
-`f s`, for `|s - t| < η`, exactly in the points `X s σ` with `|σ| < δ` and `φ (f s (X s σ)) = 0`.
--/
+/-- **The zeros near `0` are the points of the reduction.** In the setting of
+`TauCeti.exists_contDiffAt_apply_eq_smul_of_equivariant`, there is `η > 0` such that for every
+`0 < δ < η` some neighbourhood `U` of `0` meets the zeros of `f s`, for `|s - t| < η`, exactly in
+the points `X s σ` with `|σ| < δ` and `φ (f s (X s σ)) = 0`. -/
 private theorem exists_pos_forall_setOf_apply_eq_zero_eq_image {X : ℝ → ℝ → E}
     (hX : ContinuousAt (uncurry X) (t, 0)) (hX0 : X t 0 = 0) {φ : StrongDual ℝ F}
     {ℓ : StrongDual ℝ E} {c : F}
@@ -522,9 +527,10 @@ private theorem exists_mem_nhds_of_reduction {X : ℝ → ℝ → E} {φ : Stron
       tauto
 
 /-- **The pitchfork from a reduction, for a positive cubic coefficient.** In the setting of
-`exists_reduction`, with cubic coefficient `γ = φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v)) > 0`
-and transversality coefficient `β = φ (∂ₛ D(f s)₀ v) ≠ 0`, the conclusion of
-`exists_mem_nhds_of_reduction` holds with `κ = γ β` in place of `β`. -/
+`TauCeti.exists_contDiffAt_apply_eq_smul_of_equivariant`, with cubic coefficient
+`γ = φ (D³(f t)₀ (v, v, v)) - 3 φ (D²(f t)₀ (w, v)) > 0` and transversality coefficient
+`β = φ (∂ₛ D(f s)₀ v) ≠ 0`, the conclusion of `exists_mem_nhds_of_reduction` holds with `κ = γ β`
+in place of `β`. -/
 private theorem exists_mem_nhds_of_reduction_of_pos (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
     {σ : E →L[ℝ] E} {τ : F →L[ℝ] F}
     (hfσ : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (σ p.2) = τ (f p.1 p.2)) {v : E}
@@ -576,9 +582,10 @@ private theorem exists_mem_nhds_of_reduction_of_pos (hf : ContDiffAt ℝ 3 (uncu
 
 variable [CompleteSpace E] [CompleteSpace F]
 
-/-- **The Lyapunov–Schmidt chart.** In the setting of `exists_reduction`, the map
-`Φ (s, x) = (s, f s x - φ (f s x) • c + ℓ x • c)` has a `C³` local inverse `ψ` at `(t, 0)`: it
-fixes `(t, 0)`, preserves the parameter, and inverts `Φ` on both sides near `(t, 0)`. -/
+/-- **The Lyapunov–Schmidt chart.** In the setting of
+`TauCeti.exists_contDiffAt_apply_eq_smul_of_equivariant`, the map
+`Φ (s, x) = (s, f s x - φ (f s x) • c + ℓ x • c)` has a `C³` local inverse `ψ` at `(t, 0)`: it fixes
+`(t, 0)`, preserves the parameter, and inverts `Φ` on both sides near `(t, 0)`. -/
 private theorem exists_chart_inverse (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0)) (h0 : f t 0 = 0)
     {v : E} (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
     (hrange : LinearMap.range (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = LinearMap.ker (φ : F →ₗ[ℝ] ℝ))
@@ -631,8 +638,10 @@ maps between Banach spaces, jointly `C³` near `(t, 0)` with `f s 0 = 0` for `s`
 let the range of `D` be the kernel of `φ`, and let `ℓ v = 1`, `ℓ ∘ σ = -ℓ`, `φ c = 1` and
 `τ c = -c`. Then there is a jointly `C³` map `X` with `X s 0 = 0` for `s` near `t` such that,
 near `(t, 0)`, `X s σ` is the point with `ℓ (X s σ) = σ` at which `f s` takes a value on the line
-through `c`, `X s (-σ) = σ (X s σ)`, and every zero `x` of `f s` near `0` is `X s (ℓ x)`. -/
-private theorem exists_reduction (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
+through `c`, `X s (-σ) = σ (X s σ)`, and every zero `x` of `f s` near `0` is `X s (ℓ x)`. The
+zeros of `f s` near `0` thus correspond to the zeros of the scalar function `σ ↦ φ (f s (X s σ))`,
+which is odd when moreover `φ ∘ τ = -φ`. -/
+theorem exists_contDiffAt_apply_eq_smul_of_equivariant (hf : ContDiffAt ℝ 3 (uncurry f) (t, 0))
     (h0 : ∀ᶠ s in 𝓝 t, f s 0 = 0) {σ : E →L[ℝ] E} {τ : F →L[ℝ] F}
     (hfσ : ∀ᶠ p in 𝓝 (t, (0 : E)), f p.1 (σ p.2) = τ (f p.1 p.2)) {v : E}
     (hker : LinearMap.ker (fderiv ℝ (f t) 0 : E →ₗ[ℝ] F) = ℝ ∙ v) {φ : StrongDual ℝ F}
@@ -740,7 +749,7 @@ private theorem exists_mem_nhds_pitchfork_of_equivariant_of_pos
   have hℓσ (x : E) : ℓ (σ x) = -ℓ x := by simp [ℓ, hσ x]; ring
   -- Reduce to the scalar family `σ ↦ φ (f s (X s σ))`.
   obtain ⟨X, hX, hX0, hXs0, hev, N, hN, hNX⟩ :=
-    exists_reduction hf h0 hfσ hker hrange hℓ hℓσ hc hτc
+    exists_contDiffAt_apply_eq_smul_of_equivariant hf h0 hfσ hker hrange hℓ hℓσ hc hτc
   obtain ⟨U, hU, hUs⟩ := exists_mem_nhds_of_reduction_of_pos hf hfσ hker hφ hφτ hℓ hw hγ hβ hc
     hX hX0 hXs0 hev hN hNX (Q := fun _ ↦ True) (by simp)
   exact ⟨U, hU, hUs.mono fun s hs ↦ ⟨hs.2.2.2.1, fun hlt ↦
@@ -905,12 +914,12 @@ private theorem exists_mem_nhds_pitchfork_of_pos (hf : ContDiffAt ℝ 3 (uncurry
   have hoddt : ∀ᶠ x in 𝓝 (0 : E), f t (-x) = -f t x :=
     ((continuous_const.prodMk continuous_id).tendsto 0).eventually hodd
   have hw : fderiv ℝ (f t) 0 0 = fderiv ℝ (fderiv ℝ (f t)) 0 v v := by
-    rw [map_zero, fderiv_fderiv_apply_eq_zero_of_eventually_odd
-      (hf.uncurry_left.of_le (by norm_num)) hoddt]
+    rw [map_zero, fderiv_fderiv_apply_eq_zero_of_eventually_odd hoddt]
   -- Reduce to the scalar family `σ ↦ φ (f s (X s σ))`.
-  obtain ⟨X, hX, hX0, hXs0, hev, N, hN, hNX⟩ := exists_reduction hf
-    (eventually_apply_zero_eq_zero_of_eventually_odd hodd) hfσ hker hrange hℓ (by simp) hc
-    (by simp)
+  obtain ⟨X, hX, hX0, hXs0, hev, N, hN, hNX⟩ :=
+    exists_contDiffAt_apply_eq_smul_of_equivariant hf
+      (eventually_apply_zero_eq_zero_of_eventually_odd hodd) hfσ hker hrange hℓ (by simp) hc
+      (by simp)
   have hev' : ∀ᶠ p in 𝓝 (t, (0 : ℝ)), f p.1 (X p.1 p.2) = φ (f p.1 (X p.1 p.2)) • c ∧
       ℓ (X p.1 p.2) = p.2 := hev.mono fun p hp ↦ ⟨hp.1, hp.2.1⟩
   obtain ⟨ε, hε, hsgn⟩ := exists_eventually_sign_det_fderiv_eq hf hX hX0 hker hφ hℓ hc hev'
