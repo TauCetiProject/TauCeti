@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.CMField.UnitaryGroup.Basic
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Map
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.ChangeOfFrame
 import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 
 /-!
@@ -152,52 +152,39 @@ theorem isUnit_gram : IsUnit V.gram := by
 
 /-! ### Rational points -/
 
-/-- The pair `γ ↦ (x_∞⁻¹ γ x_∞, x_f⁻¹ γ x_f)` of the conjugations of `U(J)(E⁺)`, read diagonally in
-`GL_n(E_∞)` and in `GL_n(𝔸_f)`, by the two components of the frame. -/
-private def rationalEmbeddingGL :
-    unitaryGroupOf V.gram →* GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E] :=
-  ((MulAut.conj V.frame.1)⁻¹.toMonoidHom.comp
-      ((GeneralLinearGroup.map (algebraMap E (InfiniteAdeleRing E))).comp
-        (unitaryGroupOf V.gram).subtype)).prod
-    ((MulAut.conj V.frame.2)⁻¹.toMonoidHom.comp
-      ((GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E])).comp (unitaryGroupOf V.gram).subtype))
-
-private theorem rationalEmbeddingGL_apply (γ : unitaryGroupOf V.gram) :
-    V.rationalEmbeddingGL γ =
-      (V.frame.1⁻¹ * GeneralLinearGroup.map (algebraMap E (InfiniteAdeleRing E)) γ * V.frame.1,
-        V.frame.2⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) γ * V.frame.2) := by
-  simp only [rationalEmbeddingGL, MonoidHom.prod_apply, MonoidHom.coe_comp,
-    MulEquiv.coe_toMonoidHom, Subgroup.coe_subtype, Function.comp_apply, MulAut.conj_inv_apply]
-
 /-- The **rational embedding** `γ ↦ x⁻¹ γ x` of the group `U(J)(E⁺) = {γ ∈ GL_n(E) : γ* J γ = J}`
 of rational points of the unitary group of the Gram matrix in the adelic unitary group `G(s)`,
 `γ` being read diagonally in `GL_n(𝔸)`: the pair of the conjugations by the two components of the
 frame, which carry `U(J)` into `G_∞(s)` and into `G_f` as the frame pulls `J` back to `diag(s)`
 and to `1_n`. -/
 def rationalEmbedding : unitaryGroupOf V.gram →* adelicUnitaryGroup E s :=
-  V.rationalEmbeddingGL.codRestrict _ fun γ ↦ by
-    rw [rationalEmbeddingGL_apply]
-    exact ⟨inv_mul_mul_mem_unitaryGroupOf V.star_mul_gram_mul_fst
-        (map_mem_unitaryGroupOf (fun x ↦ algebraMap_star_comm x) γ.property),
-      unitaryGroupOf_one.le (inv_mul_mul_mem_unitaryGroupOf V.star_mul_gram_mul_snd
-        (map_mem_unitaryGroupOf (fun x ↦ algebraMap_star_comm x) γ.property))⟩
+  let infinite := (unitaryGroupOf.conjEquiv V.frame.1 V.star_mul_gram_mul_fst).toMonoidHom.comp
+    (unitaryGroupOf.mapHom V.gram (algebraMap E (InfiniteAdeleRing E))
+      (fun x ↦ algebraMap_star_comm x))
+  let finite := (unitaryGroupOf.conjEquiv V.frame.2 V.star_mul_gram_mul_snd).toMonoidHom.comp
+    (unitaryGroupOf.mapHom V.gram (algebraMap E 𝔸ᶠ[E]) (fun x ↦ algebraMap_star_comm x))
+  (((unitaryGroupOf _).subtype.comp infinite).prod
+    ((unitaryGroupOf _).subtype.comp finite)).codRestrict _ fun γ ↦
+      ⟨(infinite γ).property, unitaryGroupOf_one.le (finite γ).property⟩
 
 /-- The rational embedding is `γ ↦ x⁻¹ γ x`. -/
 @[simp]
 theorem coe_rationalEmbedding (γ : unitaryGroupOf V.gram) :
     (V.rationalEmbedding γ : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]) =
       (V.frame.1⁻¹ * GeneralLinearGroup.map (algebraMap E (InfiniteAdeleRing E)) γ * V.frame.1,
-        V.frame.2⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) γ * V.frame.2) :=
-  V.rationalEmbeddingGL_apply γ
+        V.frame.2⁻¹ * GeneralLinearGroup.map (algebraMap E 𝔸ᶠ[E]) γ * V.frame.2) := by
+  simp [rationalEmbedding, MonoidHom.codRestrict]
 
 /-- The rational embedding is injective. -/
 theorem rationalEmbedding_injective : Function.Injective V.rationalEmbedding := by
   intro γ δ h
-  have h₂ := congrArg (fun g ↦ (adelicUnitaryGroup.finitePart E s g : GL ι 𝔸ᶠ[E])) h
-  simp only [adelicUnitaryGroup.coe_finitePart, coe_rationalEmbedding, mul_left_inj,
-    mul_right_inj] at h₂
-  exact Subtype.ext (GeneralLinearGroup.map_injective
-    (FiniteAdeleRing.algebraMap_injective E (RingOfIntegers.not_isField E)) h₂)
+  apply (unitaryGroupOf.conjEquiv V.frame.2 V.star_mul_gram_mul_snd).injective.comp
+    (unitaryGroupOf.mapHom_injective (fun x ↦ algebraMap_star_comm x)
+      (FiniteAdeleRing.algebraMap_injective E (RingOfIntegers.not_isField E)))
+  apply Subtype.ext
+  simpa only [Function.comp_apply, unitaryGroupOf.coe_conjEquiv_apply, unitaryGroupOf.coe_mapHom,
+    coe_rationalEmbedding] using
+    congrArg (fun g : adelicUnitaryGroup E s ↦ (g : GL ι (InfiniteAdeleRing E) × GL ι 𝔸ᶠ[E]).2) h
 
 /-- The **rational points** `Γ_V` of a space with an adelic frame: the image of `U(J)(E⁺)` in the
 adelic unitary group `G(s)` under the rational embedding `γ ↦ x⁻¹ γ x`. -/

@@ -10,7 +10,7 @@ public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 /-!
 # Changes of frame and of coefficients for the unitary group of a form
 
-Let `R` be a commutative ring with an involution `star` and `A` a square matrix over `R`, with
+Let `R` be a semiring with an involution `star` and `A` a square matrix over `R`, with
 unitary group `Matrix.unitaryGroupOf A = {g ∈ GL_n(R) : star g * A * g = A}`. This file records
 the two ways of moving such a group to another one.
 
@@ -19,7 +19,8 @@ the two ways of moving such a group to another one.
   `unitaryGroupOf A ≃* unitaryGroupOf B` (`Matrix.unitaryGroupOf.conjEquiv`). This is how the
   unitary group of a hermitian matrix is read in the coordinates of a frame in which the form is
   standard, for instance an orthonormal frame.
-* **Change of coefficients.** A ring homomorphism `f : R →+* S` commuting with the involutions maps
+* **Change of coefficients.** For commutative rings `R` and `S` with involutions, a ring
+  homomorphism `f : R →+* S` commuting with the involutions maps
   `unitaryGroupOf A` to `unitaryGroupOf (A.map f)` (`Matrix.unitaryGroupOf.mapHom`), injectively
   when `f` is injective. This is how the rational points of a unitary group over a number field
   are read in a completion, or in the adeles.
