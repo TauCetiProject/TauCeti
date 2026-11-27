@@ -40,8 +40,9 @@ partial derivatives, and diagonal right-hand derivative.
   `TauCeti.gridLinearInterpolant_natCast_smul`,
   `TauCeti.gridLinearInterpolant_le_gridLinearInterpolant`.
 * `TauCeti.continuousOn_gridBilinearInterpolant`,
-  `TauCeti.hasDerivWithinAt_gridBilinearInterpolant_diag`, `TauCeti.le_gridBilinearInterpolant`,
-  `TauCeti.gridBilinearInterpolant_le`.
+  `TauCeti.hasDerivWithinAt_gridBilinearInterpolant_diag`,
+  `TauCeti.gridBilinearInterpolant_le_gridBilinearInterpolant`,
+  `TauCeti.le_gridBilinearInterpolant`, `TauCeti.gridBilinearInterpolant_le`.
 -/
 
 public section
@@ -546,6 +547,27 @@ section Order
 variable {E : Type*} [AddCommMonoid E] [PartialOrder E] [IsOrderedAddMonoid E]
   [Module ℝ E] [PosSMulMono ℝ E]
 
+/-- At `s, t ≥ 0`, `gridBilinearInterpolant τ η` is monotone in the four corners of the active
+cell. -/
+theorem gridBilinearInterpolant_le_gridBilinearInterpolant {τ η : ℝ} (hτ : 0 < τ) (hη : 0 < η)
+    {a b : ℕ → ℕ → E} {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t)
+    (h00 : a ⌊s / τ⌋₊ ⌊t / η⌋₊ ≤ b ⌊s / τ⌋₊ ⌊t / η⌋₊)
+    (h10 : a (⌊s / τ⌋₊ + 1) ⌊t / η⌋₊ ≤ b (⌊s / τ⌋₊ + 1) ⌊t / η⌋₊)
+    (h01 : a ⌊s / τ⌋₊ (⌊t / η⌋₊ + 1) ≤ b ⌊s / τ⌋₊ (⌊t / η⌋₊ + 1))
+    (h11 : a (⌊s / τ⌋₊ + 1) (⌊t / η⌋₊ + 1) ≤ b (⌊s / τ⌋₊ + 1) (⌊t / η⌋₊ + 1)) :
+    gridBilinearInterpolant τ η a s t ≤ gridBilinearInterpolant τ η b s t := by
+  have hceil {u : ℝ} {f g : ℕ → E} (h0 : f ⌊u⌋₊ ≤ g ⌊u⌋₊) (h1 : f (⌊u⌋₊ + 1) ≤ g (⌊u⌋₊ + 1)) :
+      f ⌈u⌉₊ ≤ g ⌈u⌉₊ :=
+    (ceil_eq_floor_or_add_one u).elim (· ▸ h0) (· ▸ h1)
+  have hrow {k : ℕ} (hk0 : a ⌊s / τ⌋₊ k ≤ b ⌊s / τ⌋₊ k)
+      (hk1 : a (⌊s / τ⌋₊ + 1) k ≤ b (⌊s / τ⌋₊ + 1) k) :
+      gridLinearInterpolant τ (a · k) s ≤ gridLinearInterpolant τ (b · k) s :=
+    gridLinearInterpolant_le_gridLinearInterpolant hτ hs hk0
+      (hceil (f := (a · k)) (g := (b · k)) hk0 hk1)
+  exact gridLinearInterpolant_le_gridLinearInterpolant hη ht (hrow h00 h10)
+    (hceil (f := fun k ↦ gridLinearInterpolant τ (a · k) s)
+      (g := fun k ↦ gridLinearInterpolant τ (b · k) s) (hrow h00 h10) (hrow h01 h11))
+
 /-- If `m` lies below all four corners of the active cell at `s, t ≥ 0`, then
 `m ≤ gridBilinearInterpolant τ η a s t`. -/
 theorem le_gridBilinearInterpolant {τ η : ℝ} (hτ : 0 < τ) (hη : 0 < η) {a : ℕ → ℕ → E}
@@ -553,13 +575,8 @@ theorem le_gridBilinearInterpolant {τ η : ℝ} (hτ : 0 < τ) (hη : 0 < η) {
     (h00 : m ≤ a ⌊s / τ⌋₊ ⌊t / η⌋₊) (h10 : m ≤ a (⌊s / τ⌋₊ + 1) ⌊t / η⌋₊)
     (h01 : m ≤ a ⌊s / τ⌋₊ (⌊t / η⌋₊ + 1)) (h11 : m ≤ a (⌊s / τ⌋₊ + 1) (⌊t / η⌋₊ + 1)) :
     m ≤ gridBilinearInterpolant τ η a s t := by
-  have hceil {u : ℝ} {f : ℕ → E} (hf0 : m ≤ f ⌊u⌋₊) (hf1 : m ≤ f (⌊u⌋₊ + 1)) : m ≤ f ⌈u⌉₊ :=
-    (ceil_eq_floor_or_add_one u).elim (· ▸ hf0) (· ▸ hf1)
-  have hrow {k : ℕ} (hk0 : m ≤ a ⌊s / τ⌋₊ k) (hk1 : m ≤ a (⌊s / τ⌋₊ + 1) k) :
-      m ≤ gridLinearInterpolant τ (a · k) s :=
-    le_gridLinearInterpolant hτ hs hk0 (hceil (f := (a · k)) hk0 hk1)
-  exact le_gridLinearInterpolant hη ht (hrow h00 h10)
-    (hceil (f := fun k ↦ gridLinearInterpolant τ (a · k) s) (hrow h00 h10) (hrow h01 h11))
+  simpa using gridBilinearInterpolant_le_gridBilinearInterpolant hτ hη hs ht
+    (a := fun _ _ ↦ m) h00 h10 h01 h11
 
 /-- If all four corners of the active cell at `s, t ≥ 0` are at most `M`, then so is
 `gridBilinearInterpolant τ η a s t`. -/
@@ -568,13 +585,8 @@ theorem gridBilinearInterpolant_le {τ η : ℝ} (hτ : 0 < τ) (hη : 0 < η) {
     (h00 : a ⌊s / τ⌋₊ ⌊t / η⌋₊ ≤ M) (h10 : a (⌊s / τ⌋₊ + 1) ⌊t / η⌋₊ ≤ M)
     (h01 : a ⌊s / τ⌋₊ (⌊t / η⌋₊ + 1) ≤ M) (h11 : a (⌊s / τ⌋₊ + 1) (⌊t / η⌋₊ + 1) ≤ M) :
     gridBilinearInterpolant τ η a s t ≤ M := by
-  have hceil {u : ℝ} {f : ℕ → E} (hf0 : f ⌊u⌋₊ ≤ M) (hf1 : f (⌊u⌋₊ + 1) ≤ M) : f ⌈u⌉₊ ≤ M :=
-    (ceil_eq_floor_or_add_one u).elim (· ▸ hf0) (· ▸ hf1)
-  have hrow {k : ℕ} (hk0 : a ⌊s / τ⌋₊ k ≤ M) (hk1 : a (⌊s / τ⌋₊ + 1) k ≤ M) :
-      gridLinearInterpolant τ (a · k) s ≤ M :=
-    gridLinearInterpolant_le hτ hs hk0 (hceil (f := (a · k)) hk0 hk1)
-  exact gridLinearInterpolant_le hη ht (hrow h00 h10)
-    (hceil (f := fun k ↦ gridLinearInterpolant τ (a · k) s) (hrow h00 h10) (hrow h01 h11))
+  simpa using gridBilinearInterpolant_le_gridBilinearInterpolant hτ hη hs ht
+    (b := fun _ _ ↦ M) h00 h10 h01 h11
 
 end Order
 

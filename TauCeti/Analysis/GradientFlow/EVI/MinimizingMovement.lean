@@ -248,28 +248,40 @@ private lemma isEVISolution_of_tendsto_ceil
     (.of_forall fun j ↦ hconv (τc j) (hτc j) (hτcτ₁ j)) hJc hu_lim hu_cont ⟨x₀, hx₀⟩
     fun t _ ↦ hbot (u t)
 
-/-- Extracts real energy values and bounds the energy drop `e 0 - e (⌊t / τ⌋₊ + 1)` along a
-minimizing movement sequence satisfying a priori lower and upper energy bounds. -/
+/-- Extracts real energy values and bounds the energy drop `e 0 - e (⌊t / δ⌋₊ + 1)` along a
+minimizing movement sequence satisfying a priori Moreau–Yosida lower and energy upper bounds. -/
 private theorem exists_toReal_apply_and_sub_le {X : Type*} [PseudoMetricSpace X] {φ : X → EReal}
-    {τ₀ τ : ℝ≥0} (hτ_lt : τ < τ₀) {x₁ : X} (h₀ : moreauYosida φ τ₀ x₁ ≠ ⊥)
-    {U : ℕ → X} (hU : ∀ n, U (n + 1) ∈ moreauYosidaResolvent φ τ (U n))
-    {S L t T : ℝ} (htT : t ≤ T) (hS : φ (U 0) ≤ S) (hL : (L : EReal) ≤ φ (U (⌊T / τ⌋₊ + 1))) :
-    ∃ e : ℕ → ℝ, (∀ n, φ (U n) = e n) ∧
-      0 ≤ e 0 - e (⌊t / τ⌋₊ + 1) ∧ e 0 - e (⌊t / τ⌋₊ + 1) ≤ max 0 (S - L) := by
-  have he (n : ℕ) : φ (U n) = ((φ (U n)).toReal : EReal) := (EReal.coe_toReal
-    (ne_top_of_le_ne_top (EReal.coe_ne_top S)
-      ((antitone_comp_of_forall_mem_moreauYosidaResolvent hU (Nat.zero_le n)).trans hS))
-    (ne_bot_of_le_ne_bot (moreauYosida_ne_bot_of_lt hτ_lt (edist_ne_top (U n) x₁) h₀)
-      (moreauYosida_le_self φ τ (U n)))).symm
-  have ha0 : 0 ≤ (φ (U 0)).toReal - (φ (U (⌊t / τ⌋₊ + 1))).toReal := sub_nonneg.2
+    {τ' δ : ℝ≥0} (hδ : 0 < δ) (h4 : 4 * δ ≤ τ') {W : ℕ → X}
+    (hW : ∀ n, W (n + 1) ∈ moreauYosidaResolvent φ δ (W n)) {A E t T : ℝ}
+    (hA : (A : EReal) ≤ moreauYosida φ τ' (W 0)) (hE : φ (W 0) ≤ E)
+    (ht0 : 0 ≤ t) (htT : t ≤ T) :
+    ∃ e : ℕ → ℝ, (∀ n, φ (W n) = e n) ∧
+      0 ≤ e 0 - e (⌊t / δ⌋₊ + 1) ∧
+      e 0 - e (⌊t / δ⌋₊ + 1) ≤ (E - A) * (1 + Real.exp (8 * (T + 1 + τ') / τ')) := by
+  have hδ_lt : δ < τ' := (lt_mul_left hδ (by norm_num)).trans_le h4
+  have hA_bot : moreauYosida φ τ' (W 0) ≠ ⊥ := ne_bot_of_le_ne_bot (EReal.coe_ne_bot A) hA
+  have hT0 : 0 < T + 1 := by linarith
+  have hL := (le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent hW hδ h4 hA hE (T := T + 1)
+    hT0.le (floor_div_add_one_le_ceil_div (NNReal.coe_pos.2 hδ) (by linarith) hT0)).1
+  have he (n : ℕ) : φ (W n) = ((φ (W n)).toReal : EReal) := (EReal.coe_toReal
+    (ne_top_of_le_ne_top (EReal.coe_ne_top E)
+      ((antitone_comp_of_forall_mem_moreauYosidaResolvent hW (Nat.zero_le n)).trans hE))
+    (ne_bot_of_le_ne_bot (moreauYosida_ne_bot_of_lt hδ_lt (edist_ne_top (W n) (W 0)) hA_bot)
+      (moreauYosida_le_self φ δ (W n)))).symm
+  have ha0 : 0 ≤ (φ (W 0)).toReal - (φ (W (⌊t / δ⌋₊ + 1))).toReal := sub_nonneg.2
     (EReal.coe_le_coe_iff.1 (he 0 ▸ he _ ▸
-      antitone_comp_of_forall_mem_moreauYosidaResolvent hU (Nat.zero_le _)))
-  have hLt : (L : EReal) ≤ φ (U (⌊t / τ⌋₊ + 1)) := hL.trans <|
-    antitone_comp_of_forall_mem_moreauYosidaResolvent hU <|
-      Nat.add_le_add_right (Nat.floor_mono (div_le_div_of_nonneg_right htT (NNReal.coe_nonneg τ))) 1
-  exact ⟨fun n ↦ (φ (U n)).toReal, he, ha0,
-    (sub_le_sub (EReal.coe_le_coe_iff.1 (he 0 ▸ hS))
-      (EReal.coe_le_coe_iff.1 (he _ ▸ hLt))).trans (le_max_right _ _)⟩
+      antitone_comp_of_forall_mem_moreauYosidaResolvent hW (Nat.zero_le _)))
+  have hLt : ((A - (E - A) * Real.exp (8 * (T + 1 + τ') / τ') : ℝ) : EReal) ≤
+      φ (W (⌊t / δ⌋₊ + 1)) := hL.trans <|
+    antitone_comp_of_forall_mem_moreauYosidaResolvent hW <|
+      Nat.add_le_add_right (Nat.floor_mono (div_le_div_of_nonneg_right htT (NNReal.coe_nonneg δ))) 1
+  have hsub : (φ (W 0)).toReal - (φ (W (⌊t / δ⌋₊ + 1))).toReal ≤
+      (E - A) * (1 + Real.exp (8 * (T + 1 + τ') / τ')) := by
+    calc (φ (W 0)).toReal - (φ (W (⌊t / δ⌋₊ + 1))).toReal
+        ≤ E - (A - (E - A) * Real.exp (8 * (T + 1 + τ') / τ')) :=
+          sub_le_sub (EReal.coe_le_coe_iff.1 (he 0 ▸ hE)) (EReal.coe_le_coe_iff.1 (he _ ▸ hLt))
+      _ = (E - A) * (1 + Real.exp (8 * (T + 1 + τ') / τ')) := by ring
+  exact ⟨fun n ↦ (φ (W n)).toReal, he, ha0, hsub⟩
 
 private lemma le_of_four_mul_le {a b : ℝ≥0} (h : 4 * a ≤ b) : a ≤ b :=
   (le_mul_of_one_le_left zero_le (by norm_num : (1 : ℝ≥0) ≤ 4)).trans h
@@ -312,26 +324,10 @@ private lemma dist_ceil_sq_le_of_same_init {τ' τ σ : ℝ≥0} {x₀ : X} {T A
     dist (U ⌈t / (τ : ℝ)⌉₊) (V ⌈t / (σ : ℝ)⌉₊) ^ 2 ≤
       (2 * Real.exp ((2 * |lam| + lam ^ 2 * τ') * T) + 8) *
         ((E - A) * (1 + Real.exp (8 * (T + 1 + τ') / τ'))) * ((τ : ℝ) + σ) := by
-  have hEA : 0 ≤ E - A := sub_nonneg.2 (by exact_mod_cast hA ▸ hE ▸ moreauYosida_le_self φ τ' x₀)
-  obtain ⟨eU, heU, hU0', hdropU⟩ := exists_toReal_apply_and_sub_le
-    ((lt_mul_left hτ (by norm_num)).trans_le hττ') (hA ▸ EReal.coe_ne_bot A) hU (t := t)
-    ht.2 (hU0 ▸ hE).le
-    (le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent hU hτ hττ'
-      (hU0 ▸ hA.ge) (hU0 ▸ hE.le) (T := T + 1) (by linarith [ht.1, ht.2])
-      (floor_div_add_one_le_ceil_div (NNReal.coe_pos.2 hτ) (by linarith [ht.2])
-        (by linarith [ht.1, ht.2]))).1
-  obtain ⟨eV, heV, hV0', hdropV⟩ := exists_toReal_apply_and_sub_le
-    ((lt_mul_left hσ (by norm_num)).trans_le hστ') (hA ▸ EReal.coe_ne_bot A) hV (t := t)
-    ht.2 (hV0 ▸ hE).le
-    (le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent hV hσ hστ'
-      (hV0 ▸ hA.ge) (hV0 ▸ hE.le) (T := T + 1) (by linarith [ht.1, ht.2])
-      (floor_div_add_one_le_ceil_div (NNReal.coe_pos.2 hσ) (by linarith [ht.2])
-        (by linarith [ht.1, ht.2]))).1
-  have hEL : max 0 (E - (A - (E - A) * Real.exp (8 * (T + 1 + τ') / τ'))) =
-      (E - A) * (1 + Real.exp (8 * (T + 1 + τ') / τ')) := by
-    rw [show E - (A - (E - A) * Real.exp (8 * (T + 1 + τ') / τ')) =
-      (E - A) * (1 + Real.exp (8 * (T + 1 + τ') / τ')) by ring]
-    exact max_eq_right (mul_nonneg hEA (by positivity))
+  obtain ⟨eU, heU, hU0', hdropU⟩ :=
+    exists_toReal_apply_and_sub_le hτ hττ' hU (hU0 ▸ hA.ge) (hU0 ▸ hE.le) ht.1 ht.2
+  obtain ⟨eV, heV, hV0', hdropV⟩ :=
+    exists_toReal_apply_and_sub_le hσ hστ' hV (hV0 ▸ hA.ge) (hV0 ▸ hE.le) ht.1 ht.2
   have hbd := TauCeti.dist_ceil_sq_le_of_penalizedConvex hτc hσc hτ hσ hmτ hmσ hU hV heU heV ht.1
   rw [hU0, hV0, dist_self, zero_pow two_ne_zero, mul_zero, zero_add] at hbd
   have h4τ : (4 : ℝ) * τ ≤ τ' := by exact_mod_cast hττ'
@@ -341,7 +337,7 @@ private lemma dist_ceil_sq_le_of_same_init {τ' τ σ : ℝ≥0} {x₀ : X} {T A
   have hdrop : (τ : ℝ) * (eU 0 - eU (⌊t / (τ : ℝ)⌋₊ + 1)) +
       σ * (eV 0 - eV (⌊t / (σ : ℝ)⌋₊ + 1)) ≤
       (E - A) * (1 + Real.exp (8 * (T + 1 + τ') / τ')) * (τ + σ) := by
-    rw [hEL] at hdropU hdropV; nlinarith [NNReal.coe_nonneg τ, NNReal.coe_nonneg σ]
+    nlinarith [NNReal.coe_nonneg τ, NNReal.coe_nonneg σ]
   refine hbd.trans ?_
   rw [mul_assoc (2 * Real.exp ((2 * |lam| + lam ^ 2 * τ') * T) + 8)]
   exact mul_le_mul (by gcongr) hdrop
@@ -405,7 +401,7 @@ private lemma exists_limit_const_of_penalizedConvex [CompleteSpace X]
     (tendsto_add_atTop_iff_nat 1).2 (tendsto_const_div_atTop_nhds_zero_nat (τ' / 4))
   have hlam_abs (j) : |lam| * (τc j : ℝ) ≤ 1 / 2 := ((mul_le_mul_of_nonneg_left
     (NNReal.coe_le_coe.2 (le_of_four_mul_le (hτcτ' j))) (abs_nonneg _)).trans
-      (hlamτ'r hτ'r.le le_rfl)).trans (by norm_num)
+      (hlamτ'r le_rfl)).trans (by norm_num)
   have hlam_neg (j) : (-lam) * (τc j : ℝ) ≤ 1 / 2 :=
     (mul_le_mul_of_nonneg_right (neg_le_abs lam) (NNReal.coe_nonneg _)).trans (hlam_abs j)
   choose Jc hJc0 hJc using fun j ↦ PenalizedConvex.exists_forall_mem_moreauYosidaResolvent
@@ -462,18 +458,13 @@ private theorem dist_ceil_sq_le_of_isEVISolution_of_apply_ne_top {X : Type*}
   -- Pass `τc j → 0` in `TauCeti.dist_ceil_sq_le_of_penalizedConvex` between `U` and `Jc j`.
   obtain ⟨hA, hE⟩ := moreauYosida_and_apply_eq_toReal hτ'τ₀ h₀ hu0
   set A : ℝ := (moreauYosida φ τ' (u 0)).toReal; set E : ℝ := (φ (u 0)).toReal
-  set L : ℝ := A - (E - A) * Real.exp (8 * (t + 1 + τ') / τ')
   set K : ℝ → ℝ := fun r ↦ max 0 (-2 * lam + 2 * lam ^ 2 * τ + 2 * lam ^ 2 * r)
   set R : ℝ → ℝ := fun r ↦ 2 * exp (K r * t) * dist (U 0) (u 0) ^ 2 +
-    (2 * exp (K r * t) + 8) * (τ * (eU 0 - eU (⌊t / τ⌋₊ + 1)) + r * max 0 (E - L))
+    (2 * exp (K r * t) + 8) *
+      (τ * (eU 0 - eU (⌊t / τ⌋₊ + 1)) + r * ((E - A) * (1 + Real.exp (8 * (t + 1 + τ') / τ'))))
   have hev : ∀ j, dist (U ⌈t / τ⌉₊) (Jc j ⌈t / (τc j : ℝ)⌉₊) ^ 2 ≤ R (τc j) := fun j ↦ by
-    obtain ⟨eJ, heJ, -, hdropJ⟩ := exists_toReal_apply_and_sub_le
-      ((lt_mul_left (hτc_pos j) (by norm_num)).trans_le (hτcτ' j)) (hA ▸ EReal.coe_ne_bot A)
-      (hJc j) (t := t) le_rfl (hJc0 j ▸ hE).le
-      (le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
-        (hJc j) (hτc_pos j) (hτcτ' j) (hJc0 j ▸ hA.ge) (hJc0 j ▸ hE.le) (T := t + 1)
-        (by positivity) (floor_div_add_one_le_ceil_div (NNReal.coe_pos.2 (hτc_pos j))
-          (lt_add_one t) (by positivity))).1
+    obtain ⟨eJ, heJ, -, hdropJ⟩ := exists_toReal_apply_and_sub_le (hτc_pos j) (hτcτ' j) (hJc j)
+      (hJc0 j ▸ hA.ge) (hJc0 j ▸ hE.le) ht le_rfl
     have hbd := TauCeti.dist_ceil_sq_le_of_penalizedConvex hτc
       (hconv_lt ⟨hτc_pos j, (le_of_four_mul_le (hτcτ' j)).trans_lt hτ'τ₁⟩)
       hτ (hτc_pos j) hmτ (hmτc j) hU (hJc j) heU heJ ht
@@ -481,7 +472,7 @@ private theorem dist_ceil_sq_le_of_isEVISolution_of_apply_ne_top {X : Type*}
     have hmulJ := mul_le_mul_of_nonneg_left
       (mul_le_mul_of_nonneg_left hdropJ (NNReal.coe_nonneg (τc j)))
       (by positivity : 0 ≤ 2 * exp (K (τc j) * t) + 8)
-    dsimp only [R, K, L] at hmulJ ⊢; linarith [hbd, hmulJ]
+    dsimp only [R, K] at hmulJ ⊢; linarith [hbd, hmulJ]
   rw [(dist_congr_left hd_vu).symm]
   simpa [R, K] using le_of_tendsto_of_tendsto ((tendsto_const_nhds.dist hlim).pow 2)
     (((by fun_prop : Continuous R).tendsto 0).comp (NNReal.tendsto_coe.2 hτc0)) (.of_forall hev)
@@ -533,27 +524,29 @@ private lemma first_step_dist_sq_and_toReal_le {X : Type*} [PseudoMetricSpace X]
   have hv_eq : φ v = ((φ v).toReal : EReal) := (EReal.coe_toReal hv (hbot v)).symm
   have hmin := apply_add_le_apply_add_of_mem_moreauYosidaResolvent hτ hy v
   rw [hy_eq, hv_eq] at hmin; norm_cast at hmin; push_cast at hmin
-  refine ⟨by linarith [show 0 ≤ dist x y ^ 2 / (2 * (τ : ℝ)) by positivity], fun h4 ↦ ?_⟩
+  have hnonneg : 0 ≤ dist x y ^ 2 / (2 * (τ : ℝ)) := by positivity
+  refine ⟨by linarith, fun h4 ↦ ?_⟩
   have hlow := (moreauYosida_le φ τ₀ (edist_ne_top x₁ y)).trans_eq
     (congr_arg (φ y + ·) (coe_edist_sq_div_eq_coe_dist_sq_div hτ₀ x₁ y))
   rw [hA₀, hy_eq] at hlow; norm_cast at hlow; push_cast at hlow
   have htri : dist x₁ y ^ 2 ≤ 2 * dist x₁ x ^ 2 + 2 * dist x y ^ 2 := by
     nlinarith [dist_triangle x₁ x y, dist_nonneg (x := x₁) (y := y),
       sq_nonneg (dist x₁ x - dist x y)]
+  have hsplit : (2 * dist x₁ x ^ 2 + 2 * dist x y ^ 2) / (2 * (τ₀ : ℝ)) =
+      dist x₁ x ^ 2 / τ₀ + dist x y ^ 2 / τ₀ := by ring
   have hlow' : A₀ - dist x₁ x ^ 2 / τ₀ ≤ (φ y).toReal + dist x y ^ 2 / τ₀ := by
-    linarith [div_le_div_of_nonneg_right htri (by positivity : (0 : ℝ) ≤ 2 * τ₀),
-      show (2 * dist x₁ x ^ 2 + 2 * dist x y ^ 2) / (2 * (τ₀ : ℝ)) =
-        dist x₁ x ^ 2 / τ₀ + dist x y ^ 2 / τ₀ by ring]
+    linarith [div_le_div_of_nonneg_right htri (by positivity : (0 : ℝ) ≤ 2 * τ₀)]
+  have hinv_eq : (2 * (τ : ℝ))⁻¹ = 2 * (4 * (τ : ℝ))⁻¹ := by ring
   have hinv : (4 * (τ : ℝ))⁻¹ ≤ (2 * (τ : ℝ))⁻¹ - (τ₀ : ℝ)⁻¹ := by
-    linarith [inv_anti₀ (by positivity : (0 : ℝ) < 4 * τ) (by exact_mod_cast h4 : (4 : ℝ) * τ ≤ τ₀),
-      show (2 * (τ : ℝ))⁻¹ = 2 * (4 * (τ : ℝ))⁻¹ by ring]
+    linarith [inv_anti₀ (by positivity : (0 : ℝ) < 4 * τ) (by exact_mod_cast h4 : (4 : ℝ) * τ ≤ τ₀)]
   have hres : dist x y ^ 2 / (4 * τ) ≤
       (φ v).toReal - A₀ + dist x₁ x ^ 2 / τ₀ + dist x v ^ 2 / (2 * τ) := by
     have := mul_le_mul_of_nonneg_left hinv (sq_nonneg (dist x y))
     rw [← div_eq_mul_inv, mul_sub, ← div_eq_mul_inv, ← div_eq_mul_inv] at this; linarith
   rw [div_le_iff₀ (by positivity : (0 : ℝ) < 4 * τ)] at hres
   have hne : (τ : ℝ) ≠ 0 := (NNReal.coe_pos.2 hτ).ne'
-  linarith [show dist x v ^ 2 / (2 * (τ : ℝ)) * (4 * τ) = 2 * dist x v ^ 2 by field_simp; ring]
+  have hmul_eq : dist x v ^ 2 / (2 * (τ : ℝ)) * (4 * τ) = 2 * dist x v ^ 2 := by field_simp; ring
+  linarith
 
 private lemma moreauYosida_ne_top_of_exists_ne_top {X : Type*} [PseudoMetricSpace X]
     {φ : X → EReal} (hdom : ∃ w, φ w ≠ ⊤) {σ : ℝ≥0} (hσ : 0 < σ) (a : X) :
@@ -674,25 +667,11 @@ private lemma dist_shifted_ceil_lt {X : Type*} [PseudoMetricSpace X] [CompleteSp
     dist (U (⌈s / (τ : ℝ)⌉₊ + 1)) (u s) < ε / 2 := by
   let V : ℕ → X := fun k ↦ U (k + 1)
   have hV : ∀ k, V (k + 1) ∈ moreauYosidaResolvent φ τ (V k) := fun k ↦ hU (k + 1)
-  have hτ' : τ < τ₀ / 2 := (lt_mul_left hτ (by norm_num)).trans_le hj4
-  have hA_bot : moreauYosida φ (τ₀ / 2) (V 0) ≠ ⊥ := ne_bot_of_le_ne_bot (EReal.coe_ne_bot A) hAj
   have hV0_eq : φ (V 0) = ((φ (V 0)).toReal : EReal) :=
     (EReal.coe_toReal htopj (apply_ne_bot_of_moreauYosida_ne_bot (edist_ne_top x₁ _) h₀)).symm
-  have hA_le : A ≤ (φ (V 0)).toReal := EReal.coe_le_coe_iff.1 <|
-    (hAj.trans (moreauYosida_le_self φ (τ₀ / 2) (V 0))).trans_eq hV0_eq
-  have hlow := (le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent hV hτ hj4 hAj hV0_eq.le
-    (T := T + 1) (by linarith [hs.1, hs.2])
-    (floor_div_add_one_le_ceil_div (NNReal.coe_pos.2 hτ) (by linarith [hs.2])
-      (by linarith [hs.1, hs.2]))).1
   obtain ⟨eV, heV, hdrop0, hdropB⟩ :=
-    exists_toReal_apply_and_sub_le hτ' hA_bot hV (t := s) hs.2 hV0_eq.le hlow
-  set B : ℝ := Real.exp (8 * (T + 1 + (τ₀ / 2 : ℝ≥0)) / (τ₀ / 2 : ℝ≥0))
-  have hmax : max 0 ((φ (V 0)).toReal - (A - ((φ (V 0)).toReal - A) * B)) =
-      (1 + B) * ((φ (V 0)).toReal - A) := by
-    rw [show (φ (V 0)).toReal - (A - ((φ (V 0)).toReal - A) * B) =
-      (1 + B) * ((φ (V 0)).toReal - A) by ring]
-    exact max_eq_right (mul_nonneg (by positivity) (sub_nonneg.2 hA_le))
-  rw [hmax] at hdropB
+    exists_toReal_apply_and_sub_le hτ hj4 hV hAj hV0_eq.le hs.1 hs.2
+  rw [mul_comm ((φ (V 0)).toReal - A)] at hdropB
   have hbd := hu.dist_ceil_sq_le_of_penalizedConvex hφ hτ₀ h₀ hconv hτc hτ hmτ hV heV hs.1
   have hexp : exp (max 0 (-2 * lam + 2 * lam ^ 2 * (τ : ℝ)) * s) ≤
       exp ((2 * |lam| + 2 * lam ^ 2) * T) := by
@@ -760,9 +739,9 @@ private lemma tendstoUniformlyOn_of_penalizedConvex_forall {X : Type*}
   · set s := t - (τ j : ℝ)
     have hs : s ∈ Icc 0 T := ⟨sub_nonneg.2 hlt.le, (sub_le_self t (NNReal.coe_nonneg _)).trans ht.2⟩
     have hτne := (NNReal.coe_pos.2 (hτ j)).ne'
+    have hdiv : t / (τ j : ℝ) = s / τ j + 1 := by dsimp [s]; field_simp; ring
     have hceil : ⌈t / (τ j : ℝ)⌉₊ = ⌈s / (τ j : ℝ)⌉₊ + 1 := by
-      rw [show t / (τ j : ℝ) = s / τ j + 1 by dsimp [s]; field_simp; ring,
-        Nat.ceil_add_one (div_nonneg hs.1 (NNReal.coe_nonneg _))]
+      rw [hdiv, Nat.ceil_add_one (div_nonneg hs.1 (NNReal.coe_nonneg _))]
     have huts : dist (u t) (u s) < ε / 2 := hu_unif t ht s hs <| by
       simpa [s, Real.dist_eq, abs_of_pos (NNReal.coe_pos.2 (hτ j))] using hτδ
     have hVus := dist_comm (U j (⌈s / (τ j : ℝ)⌉₊ + 1)) (u s) ▸
@@ -879,13 +858,13 @@ theorem exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex {X : Type*}
 /-- **Generation of `EVI_λ` flows under Ambrosio–Gigli Assumption 3.24** (Ambrosio–Gigli,
 Theorem 3.25). Let `φ` be a lower semicontinuous energy on a complete pseudometric space satisfying
 the pointwise interpolation condition `TauCeti.ConvexWithDistSq lam φ` (no path continuity
-required) and `φ y ≠ ⊥` whenever `φ y ≠ ⊤`. Then for every `x₀ ∈ closure {y | φ y ≠ ⊤}` there
+required) and never equal to `⊥`. Then for every `x₀ ∈ closure {y | φ y ≠ ⊤}` there
 is an `EVI_lam` solution `u` from `x₀` to which minimizing movement interpolants with converging
 initial points `U j 0 → x₀` converge uniformly on `[0, T]`, without bounded initial energy. -/
 theorem ConvexWithDistSq.exists_isEVISolution_tendstoUniformlyOn {X : Type*}
     [PseudoMetricSpace X] [CompleteSpace X] {lam : ℝ} {φ : X → EReal}
     (hφ : LowerSemicontinuous φ) (hconv : ConvexWithDistSq lam φ)
-    (hbot : ∀ y, φ y ≠ ⊤ → φ y ≠ ⊥) {x₀ : X} (hx₀ : x₀ ∈ closure {y | φ y ≠ ⊤}) :
+    (hbot : ∀ y, φ y ≠ ⊥) {x₀ : X} (hx₀ : x₀ ∈ closure {y | φ y ≠ ⊤}) :
     ∃ u : ℝ → X, u 0 = x₀ ∧ IsEVISolution lam φ u ∧
       ∀ (τ : ℕ → ℝ≥0) (U : ℕ → ℕ → X),
         (∀ᶠ j in atTop, 0 < τ j) → Tendsto τ atTop (𝓝 0) →
@@ -894,7 +873,7 @@ theorem ConvexWithDistSq.exists_isEVISolution_tendstoUniformlyOn {X : Type*}
         ∀ T : ℝ, TendstoUniformlyOn (fun j t ↦ U j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) := by
   obtain ⟨y₀, hy₀, -⟩ := Metric.mem_closure_iff.1 hx₀ 1 one_pos
   obtain ⟨τ₀, hτ₀, h₀⟩ :=
-    hconv.exists_moreauYosida_ne_bot (hφ.lowerSemicontinuousAt y₀) hy₀ (hbot y₀ hy₀) y₀
+    hconv.exists_moreauYosida_ne_bot (hφ.lowerSemicontinuousAt y₀) hy₀ (hbot y₀) y₀
   exact exists_isEVISolution_tendstoUniformlyOn_of_penalizedConvex hφ hτ₀ one_pos
     (fun _ _ _ ↦ hconv.penalizedConvex) h₀ hx₀
 
@@ -903,20 +882,19 @@ the domain of the `EVI_lam` flow equals `closure {y | φ y ≠ ⊤}`. -/
 theorem ConvexWithDistSq.eviDomain_eq_closure {X : Type*}
     [PseudoMetricSpace X] [CompleteSpace X] {lam : ℝ} {φ : X → EReal}
     (hφ : LowerSemicontinuous φ) (hconv : ConvexWithDistSq lam φ)
-    (hbot : ∀ y, φ y ≠ ⊤ → φ y ≠ ⊥) :
+    (hbot : ∀ y, φ y ≠ ⊥) :
     eviDomain lam φ = closure {y | φ y ≠ ⊤} :=
   eviDomain_eq_closure_of_subset hφ fun _ hx ↦
     let ⟨u, hu0, hu, _⟩ := hconv.exists_isEVISolution_tendstoUniformlyOn hφ hbot (subset_closure hx)
     mem_eviDomain.2 ⟨u, hu, hu0⟩
 
 /-- Under `TauCeti.ConvexWithDistSq lam φ` (pointwise interpolation, no path continuity required) on
-a complete pseudometric space, if `φ` is lower semicontinuous and satisfies `φ y ≠ ⊥` whenever
-`φ y ≠ ⊤`, then every point `x₀ ∈ closure {y | φ y ≠ ⊤}` is the initial point of an `EVI_lam`
-solution. -/
+a complete pseudometric space, if `φ` is lower semicontinuous and never equal to `⊥`, then every
+point `x₀ ∈ closure {y | φ y ≠ ⊤}` is the initial point of an `EVI_lam` solution. -/
 theorem ConvexWithDistSq.exists_isEVISolution_of_mem_closure {X : Type*}
     [PseudoMetricSpace X] [CompleteSpace X] {lam : ℝ} {φ : X → EReal}
     (hφ : LowerSemicontinuous φ) (hconv : ConvexWithDistSq lam φ)
-    (hbot : ∀ y, φ y ≠ ⊤ → φ y ≠ ⊥) {x₀ : X} (hx₀ : x₀ ∈ closure {y | φ y ≠ ⊤}) :
+    (hbot : ∀ y, φ y ≠ ⊥) {x₀ : X} (hx₀ : x₀ ∈ closure {y | φ y ≠ ⊤}) :
     ∃ u : ℝ → X, IsEVISolution lam φ u ∧ u 0 = x₀ :=
   mem_eviDomain.1 (hconv.eviDomain_eq_closure hφ hbot ▸ hx₀)
 
@@ -943,7 +921,7 @@ theorem GeodesicallyConvex.exists_isEVISolution_tendstoUniformlyOn
         (∀ᶠ j in atTop, ∀ k, J j (k + 1) ∈ moreauYosidaResolvent φ (τ j) (J j k)) →
         ∀ T : ℝ, TendstoUniformlyOn
           (fun j (t : ℝ) ↦ J j ⌈t / (τ j : ℝ)⌉₊) u atTop (Icc 0 T) :=
-  hconv.convexWithDistSq.exists_isEVISolution_tendstoUniformlyOn hφ (fun _ _ ↦ hbot _) hx₀
+  hconv.convexWithDistSq.exists_isEVISolution_tendstoUniformlyOn hφ hbot hx₀
 
 /-- **Characterization of the `EVI_λ` domain for geodesically convex energies on CAT(0) spaces**
 (Jost; Mayer, Theorem 1.13). If `φ` is lower semicontinuous, `lam`-geodesically convex, and never
@@ -952,7 +930,7 @@ initial points of `EVI_λ` solutions equals `closure {x | φ x ≠ ⊤}`. -/
 theorem GeodesicallyConvex.eviDomain_eq_closure
     (hφ : LowerSemicontinuous φ) (hconv : GeodesicallyConvex lam φ)
     (hbot : ∀ z, φ z ≠ ⊥) : eviDomain lam φ = closure {x | φ x ≠ ⊤} :=
-  hconv.convexWithDistSq.eviDomain_eq_closure hφ fun _ _ ↦ hbot _
+  hconv.convexWithDistSq.eviDomain_eq_closure hφ hbot
 
 /-- **Existence of `EVI_λ` flows on `closure {x | φ x ≠ ⊤}` for geodesically convex energies on
 CAT(0) spaces** (Jost; Mayer, Theorem 1.13). If `φ` is lower semicontinuous, `lam`-geodesically

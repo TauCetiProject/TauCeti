@@ -627,13 +627,19 @@ theorem GeodesicallyConvex.moreauYosida_ne_bot (h : GeodesicallyConvex m φ)
     (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥)
     (hmτ : 0 < 1 + m * τ) (x : X) :
     moreauYosida φ τ x ≠ ⊥ :=
-  moreauYosida_ne_bot_of_convexAlong_dist_sq_at hx₀ hx₀top hx₀bot (fun _ hv₁ ↦ by
+  moreauYosida_ne_bot_of_convexAlong_dist_sq_at hx₀ hx₀top hx₀bot (fun v₁ hv₁ ↦ by
     obtain ⟨γ, hγ, hφγ⟩ := geodesicallyConvex_def.1 h hx₀top hv₁
-    refine ⟨γ, hγ.source, hγ.target, hφγ, convexAlong_def.2 fun t ht ↦ ?_⟩
-    rw [hγ.source, hγ.target, dist_comm _ x₀, hγ.dist_source_apply ht, dist_self,
-      dist_comm _ x₀]
-    norm_cast
-    exact le_of_eq (by ring)) hmτ x
+    refine ⟨γ, hγ.source, hγ.target, hφγ, hγ.convexAlong_iff.2 fun t ht ↦ ?_⟩
+    have hsq : dist (γ t) x₀ ^ 2 =
+        (1 - t) * dist x₀ x₀ ^ 2 + t * dist v₁ x₀ ^ 2 - 2 / 2 * t * (1 - t) * dist x₀ v₁ ^ 2 := by
+      rw [dist_comm _ x₀, hγ.dist_source_apply ht, dist_self, dist_comm v₁ x₀]; ring
+    exact_mod_cast hsq.le) hmτ x
+
+private lemma exists_moreauYosida_ne_bot_of (m : ℝ) {φ : X → EReal} {x : X}
+    (h : ∀ τ : ℝ≥0, 0 < 1 + m * τ → moreauYosida φ τ x ≠ ⊥) :
+    ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ x ≠ ⊥ :=
+  let ⟨τ₀, hτ₀, hm⟩ := exists_pos_forall_one_add_mul_pos m
+  ⟨⟨τ₀, hτ₀.le⟩, hτ₀, h ⟨τ₀, hτ₀.le⟩ (hm hτ₀.le le_rfl)⟩
 
 end Existence
 
@@ -647,9 +653,7 @@ variable {X : Type*} [PseudoMetricSpace X] {m : ℝ} {τ : ℝ≥0} {φ : X → 
 theorem ConvexWithDistSq.exists_moreauYosida_ne_bot (h : ConvexWithDistSq m φ)
     (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥) (x : X) :
     ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ x ≠ ⊥ :=
-  let ⟨τ₀, hτ₀, hm⟩ := exists_pos_forall_one_add_mul_pos m
-  ⟨⟨τ₀, hτ₀.le⟩, hτ₀, h.moreauYosida_ne_bot (τ := ⟨τ₀, hτ₀.le⟩) hx₀ hx₀top hx₀bot
-    (hm hτ₀.le le_rfl) x⟩
+  exists_moreauYosida_ne_bot_of m fun _ hm ↦ h.moreauYosida_ne_bot hx₀ hx₀top hx₀bot hm x
 
 /-- **Existence of a coercive time step for geodesically convex energies.** If `φ` is
 `m`-geodesically convex on a pseudometric space, and is lower semicontinuous and finite at some
@@ -657,9 +661,7 @@ point `x₀`, then for every `x : X` there exists `τ₀ > 0` with `φ_{τ₀}(x
 theorem GeodesicallyConvex.exists_moreauYosida_ne_bot (h : GeodesicallyConvex m φ)
     (hx₀ : LowerSemicontinuousAt φ x₀) (hx₀top : φ x₀ ≠ ⊤) (hx₀bot : φ x₀ ≠ ⊥) (x : X) :
     ∃ τ₀ : ℝ≥0, 0 < τ₀ ∧ moreauYosida φ τ₀ x ≠ ⊥ :=
-  let ⟨τ₀, hτ₀, hm⟩ := exists_pos_forall_one_add_mul_pos m
-  ⟨⟨τ₀, hτ₀.le⟩, hτ₀, h.moreauYosida_ne_bot (τ := ⟨τ₀, hτ₀.le⟩) hx₀ hx₀top hx₀bot
-    (hm hτ₀.le le_rfl) x⟩
+  exists_moreauYosida_ne_bot_of m fun _ hm ↦ h.moreauYosida_ne_bot hx₀ hx₀top hx₀bot hm x
 
 /-- **Existence of resolvent steps under Assumption 3.24** (Ambrosio–Gigli, Assumption 3.24). In a
 complete pseudometric space, if `φ` is lower semicontinuous and satisfies the pointwise

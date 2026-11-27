@@ -207,7 +207,8 @@ private theorem exists_hasDerivWithinAt_exp_bilinInterp_sub {X : Type*} [PseudoM
     mul_nonneg (stepWeight_floor_mem_Icc hη hs).1 (sub_nonneg.2 (hantiV (Nat.le_succ _)))
   have h1 := add_le_add_left (mul_le_mul_of_nonneg_left hbd (exp_pos (-K * s)).le)
     ((-K * exp (-K * s)) * gridBilinearInterpolant τ η (halfDistSq U V) s s)
-  have h2 := (mul_le_mul_of_nonneg_right (exp_le_one_iff.2 (show -K * s ≤ 0 by nlinarith [hs, hK0]))
+  have hKs : -K * s ≤ 0 := by nlinarith [hs, hK0]
+  have h2 := (mul_le_mul_of_nonneg_right (exp_le_one_iff.2 hKs)
     (add_nonneg hpU hpV)).trans_eq (one_mul _)
   simp only [smul_eq_mul, sub_sub, sub_nonpos]; rw [add_comm]
   exact (h1.trans_eq (by dsimp only [K]; ring)).trans h2
