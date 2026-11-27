@@ -49,7 +49,7 @@ open TauCeti in
 character of conductor dividing `8 * m`, possibly twisted by either or both auxiliary
 Legendre characters. The four alternatives compare primitive characters, not the functions
 at the possibly imprimitive original level. -/
-theorem exists_primitive_legendre_twist_of_isQuadratic {m k q d : ℕ} [NeZero m]
+theorem exists_primitive_legendreTwist_of_isQuadratic {m k q d : ℕ} [NeZero m]
     [Fact q.Prime] [Fact d.Prime] (hq : (2 ^ k * m).Coprime q)
     (hd : (2 ^ k * m * q).Coprime d) {χ : DirichletCharacter ℂ (2 ^ k * m * q * d)}
     (hχ : χ.IsQuadratic) :
