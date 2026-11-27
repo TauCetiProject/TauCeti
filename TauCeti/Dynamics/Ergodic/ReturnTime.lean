@@ -105,7 +105,7 @@ theorem lt_positiveReturnTime_iff {T : X → X} {A : Set X} {x : X} {k : ℕ} :
   simp [Nat.one_le_iff_ne_zero, Nat.pos_iff_ne_zero]
 
 /-- The return time is at most `n ≥ 1` when the orbit visits `A` at time `n`. -/
-theorem positiveReturnTime_le {T : X → X} {A : Set X} {x : X} {n : ℕ} (hn : 0 < n)
+theorem positiveReturnTime_le_of_mem {T : X → X} {A : Set X} {x : X} {n : ℕ} (hn : 0 < n)
     (hx : T^[n] x ∈ A) : positiveReturnTime T A x ≤ n := by
   rw [positiveReturnTime_eq_hittingAfter]
   exact hittingAfter_le_of_mem (by omega) hx
