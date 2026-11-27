@@ -7,12 +7,10 @@ module
 
 public import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.SpectralFlow
 import Mathlib.Analysis.InnerProductSpace.ProdL2
-import TauCeti.Analysis.Fredholm.Spectral.CommonDomain.Conjugation
 import TauCeti.Analysis.InnerProductSpace.LinearPMap.CommonDomain
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.Analysis.Normed.Lp.ProdLp
 import TauCeti.Analysis.Normed.Operator.LinearPMap.CommonDomain.Spectrum
-import TauCeti.Analysis.ODE.TrajectoryOperator.CommonDomain.Conjugation
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -43,9 +41,9 @@ invertible for every value `c` of `λ`, since its kernel would consist of eigenv
 So `A` is conjugate to the direct sum of a path of symmetric operators on the finite-dimensional
 space `F` and a path of invertible operators, for which the formula is
 `eventually_index_familyDomainTrajectoryOperator_withLpProdMap_eq_domainSpectralFlow` in the
-namespace `TauCeti.WeakDerivStep`, and both the index and the spectral flow are unchanged by the
-conjugation (`TauCeti.WeakDerivStep.index_familyDomainTrajectoryOperator_comp_comp_symm`,
-`TauCeti.domainSpectralFlow_comp_comp_symm`).
+namespace `TauCeti.WeakDerivStep`, and the formula transports along the conjugation
+(`eventually_index_familyDomainTrajectoryOperator_eq_domainSpectralFlow_of_comp_comp_symm` in the
+namespace `TauCeti.WeakDerivStep`).
 
 These paths are the local model of the formula for general paths: a path `A` with invertible ends
 is homotopic, with fixed ends, to a staircase whose horizontal pieces `s ↦ A(s) - c ι` are
@@ -104,12 +102,14 @@ private theorem injective_eigenSum (hSymm : ∀ x y, ⟪B x, ι y⟫_ℝ = ⟪ι
   classical
   rw [← LinearMap.ker_eq_bot, eq_bot_iff]
   rintro ⟨x, hx⟩ hιx
-  replace hιx : ι x = 0 := hιx
+  rw [LinearMap.mem_ker, LinearMap.comp_apply, Submodule.subtype_apply,
+    ContinuousLinearMap.coe_coe] at hιx
   rw [eigenSum, Finset.sup_eq_iSup, Submodule.mem_iSup_finset_iff_exists_sum] at hx
   obtain ⟨μ, rfl⟩ := hx
   have hμ (c : ℝ) : B (μ c) = (c : ℝ) • ι (μ c) := by
-    have h : c • ι (μ c) - B (μ c) = 0 := (μ c).property
-    exact (sub_eq_zero.1 h).symm
+    have h := LinearMap.map_coe_ker _ (μ c)
+    rw [ContinuousLinearMap.coe_coe, sub_apply, smul_apply, sub_eq_zero] at h
+    exact h.symm
   -- Each component is killed by `ι`, hence by `c₀ • ι - B`.
   have hzero (c : ℝ) (hc : c ∈ S) : (μ c : D) = 0 := by
     have h := congrArg (fun v ↦ ⟪ι (μ c), v⟫_ℝ) hιx
@@ -127,9 +127,9 @@ private theorem apply_mem_range_eigenSum {S : Finset ℝ} {x : D} (hx : x ∈ ei
     B x ∈ LinearMap.range ((ι : D →ₗ[ℝ] H) ∘ₗ (eigenSum ι B S).subtype) := by
   have hle : eigenSum ι B S ≤ (LinearMap.range ((ι : D →ₗ[ℝ] H) ∘ₗ
       (eigenSum ι B S).subtype)).comap (B : D →ₗ[ℝ] H) := Finset.sup_le fun c hc y hy ↦ by
-    have hy' : c • ι y - B y = 0 := hy
-    exact ⟨⟨c • y, (eigenSum ι B S).smul_mem c (ker_le_eigenSum hc hy)⟩, by
-      simp [(sub_eq_zero.1 hy').symm]⟩
+    have hy' := LinearMap.mem_ker.1 hy
+    rw [ContinuousLinearMap.coe_coe, sub_apply, smul_apply, sub_eq_zero] at hy'
+    exact ⟨⟨c • y, (eigenSum ι B S).smul_mem c (ker_le_eigenSum hc hy)⟩, by simp [hy'.symm]⟩
   exact hle hx
 
 end Eigenvectors
@@ -166,8 +166,10 @@ private def eigenLift : eigenImage ι V →L[ℝ] D :=
 
 private theorem apply_eigenLift (f : eigenImage ι V) : ι (eigenLift hV f) = f := by
   have h := congrArg Subtype.val ((LinearEquiv.ofInjective _ hV).apply_symm_apply f)
-  rw [LinearEquiv.ofInjective_apply] at h
-  exact h
+  rw [LinearEquiv.ofInjective_apply, LinearMap.comp_apply, Submodule.subtype_apply,
+    ContinuousLinearMap.coe_coe] at h
+  rw [eigenLift, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+    ContinuousLinearEquiv.coe_coe, LinearEquiv.coe_toContinuousLinearEquiv', h]
 
 private theorem eigenLift_mem (f : eigenImage ι V) : eigenLift hV f ∈ V :=
   ((LinearEquiv.ofInjective _ hV).symm f).property
@@ -176,6 +178,11 @@ variable (ι V) in
 /-- The restriction `ι' : D' → Fᗮ` of `ι`. -/
 private def complEmbedding : eigenCompl ι V →L[ℝ] (eigenImage ι V)ᗮ :=
   (eigenImage ι V)ᗮ.orthogonalProjectionOnto ∘L ι ∘L (eigenCompl ι V).subtypeL
+
+private theorem isCompactOperator_complEmbedding (hι : IsCompactOperator ι) :
+    IsCompactOperator (complEmbedding ι V) := by
+  rw [complEmbedding, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
+  exact (hι.comp_clm _).clm_comp _
 
 private theorem coe_complEmbedding (d : eigenCompl ι V) :
     (complEmbedding ι V d : H) = ι d :=
@@ -265,20 +272,24 @@ private theorem comp_sub_smul_comp_splitEquiv_symm (hB : ∀ v ∈ V, B v ∈ ei
     ((eigenImage ι V).orthogonalDecomposition.toContinuousLinearEquiv : H →L[ℝ] _) ∘L
         (B - c • ι) ∘L ((splitEquiv hV).symm : _ →L[ℝ] D) =
       (eigenBlock B hV - c • 1).withLpProdMap 2 (complBlock ι B V - c • complEmbedding ι V) := by
-  refine ContinuousLinearMap.ext fun y ↦ (WithLp.ofLp_injective 2) (Prod.ext ?_ ?_) <;>
-    refine Subtype.ext ?_
-  · have hBd := apply_mem_orthogonal hB hSymm y.snd
-    have hd : ι y.snd ∈ (eigenImage ι V)ᗮ := y.snd.property
-    simp [splitEquiv_symm_apply, apply_eigenLift, coe_eigenBlock hV hB,
-      Submodule.starProjection_eq_self_iff.2 (hB _ (eigenLift_mem hV y.fst)),
+  refine ContinuousLinearMap.ext fun y ↦ ?_
+  have hBd := apply_mem_orthogonal hB hSymm y.snd
+  have hd : ι y.snd ∈ (eigenImage ι V)ᗮ := y.snd.property
+  refine (WithLp.ofLp_injective 2) (Prod.ext ?_ ?_) <;> refine Subtype.ext ?_ <;>
+    simp [splitEquiv_symm_apply, apply_eigenLift, coe_eigenBlock hV hB, coe_complBlock hB hSymm,
+      coe_complEmbedding, Submodule.starProjection_eq_self_iff.2 (hB _ (eigenLift_mem hV y.fst)),
       (Submodule.starProjection_apply_eq_zero_iff _).2 hBd,
       (Submodule.starProjection_apply_eq_zero_iff _).2 hd]
-  · have hBd := apply_mem_orthogonal hB hSymm y.snd
-    have hd : ι y.snd ∈ (eigenImage ι V)ᗮ := y.snd.property
-    simp [splitEquiv_symm_apply, apply_eigenLift, coe_complBlock hB hSymm, coe_complEmbedding,
-      Submodule.starProjection_eq_self_iff.2 (hB _ (eigenLift_mem hV y.fst)),
-      (Submodule.starProjection_apply_eq_zero_iff _).2 hBd,
-      (Submodule.starProjection_apply_eq_zero_iff _).2 hd]
+
+/-- If the shift `B - c • ι` is invertible, then so are both of its blocks. -/
+private theorem isInvertible_blocks_sub_smul (hB : ∀ v ∈ V, B v ∈ eigenImage ι V)
+    (hSymm : ∀ x y, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) {c : ℝ} (hc : (B - c • ι).IsInvertible) :
+    (eigenBlock B hV - c • 1).IsInvertible ∧
+      (complBlock ι B V - c • complEmbedding ι V).IsInvertible :=
+  ContinuousLinearMap.isInvertible_withLpProdMap_iff.1
+    (comp_sub_smul_comp_splitEquiv_symm hV hB hSymm c ▸
+      ContinuousLinearMap.isInvertible_equiv_comp.2
+        (ContinuousLinearMap.isInvertible_comp_equiv.2 hc))
 
 /-- The block `B_F - c` is symmetric. -/
 private theorem isSymmetric_eigenBlock_sub_smul (hB : ∀ v ∈ V, B v ∈ eigenImage ι V)
@@ -307,18 +318,13 @@ private theorem isInvertible_complBlock_sub_smul [CompleteSpace D]
     (hSymm : ∀ x y, ⟪B x, ι y⟫_ℝ = ⟪ι x, B y⟫_ℝ) {c₀ : ℝ}
     (h₀ : (B - c₀ • ι).IsInvertible) {c : ℝ} (hc : ∀ x, (c • ι - B) x = 0 → x ∈ V) :
     (complBlock ι B V - c • complEmbedding ι V).IsInvertible := by
-  have hcpt : IsCompactOperator (complEmbedding ι V) := by
-    rw [complEmbedding, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
-    exact (hι.comp_clm _).clm_comp _
   -- The second block of the invertible shift at `c₀` is invertible.
   have h₀' : (c₀ • complEmbedding ι V - complBlock ι B V).IsInvertible := by
-    have h := comp_sub_smul_comp_splitEquiv_symm hV hB hSymm c₀ ▸
-      (ContinuousLinearMap.isInvertible_equiv_comp.2
-        (ContinuousLinearMap.isInvertible_comp_equiv.2 h₀))
     rw [← neg_sub, ContinuousLinearMap.isInvertible_neg_iff]
-    exact (ContinuousLinearMap.isInvertible_withLpProdMap_iff.1 h).2
+    exact (isInvertible_blocks_sub_smul hV hB hSymm h₀).2
   rw [← neg_sub, ContinuousLinearMap.isInvertible_neg_iff,
-    ContinuousLinearMap.isInvertible_smul_sub_iff_injective hcpt h₀',
+    ContinuousLinearMap.isInvertible_smul_sub_iff_injective
+      (isCompactOperator_complEmbedding hι) h₀',
     injective_iff_map_eq_zero]
   intro d hd
   -- A vector of `D'` in the kernel is an eigenvector, so it lies in `V`, and `ι d ∈ F ∩ Fᗮ`.
@@ -339,35 +345,6 @@ section IndexFormula
 
 variable [CompleteSpace D] [CompleteSpace H]
 
-omit [CompleteSpace D] in
-/-- **Transport of the index formula along a change of trivialization.** If `W : D ≃ D'` and the
-isometry `U : H ≃ K` intertwine `ι` and `ι'`, and the index formula holds for the conjugated path
-`U ∘ A(s) ∘ W⁻¹`, then it holds for `A`. -/
-private theorem eventually_index_eq_domainSpectralFlow_of_comp_comp_symm {D' K : Type*}
-    [NormedAddCommGroup D'] [NormedSpace ℝ D'] [NormedAddCommGroup K] [InnerProductSpace ℝ K]
-    [CompleteSpace K] (W : D ≃L[ℝ] D') (U : H ≃ₗᵢ[ℝ] K) {ι' : D' →L[ℝ] K}
-    (hUV : ι' ∘L (W : D →L[ℝ] D') = (U : H →L[ℝ] K) ∘L ι) {A : ℝ → D →L[ℝ] H}
-    (AL : Lp (D →L[ℝ] H) ∞ μ₀) (hAL : AL =ᵐ[μ₀] A)
-    (h : ∀ AL' : Lp (D' →L[ℝ] K) ∞ μ₀,
-      AL' =ᵐ[μ₀] (fun s ↦ (U : H →L[ℝ] K) ∘L A s ∘L (W.symm : D' →L[ℝ] D)) →
-        ∀ᶠ ab in atBot ×ˢ atTop, (familyDomainTrajectoryOperator (p := 2) ι' AL').index =
-          domainSpectralFlow ι' (fun s ↦ (U : H →L[ℝ] K) ∘L A s ∘L (W.symm : D' →L[ℝ] D))
-            ab.1 ab.2) :
-    ∀ᶠ ab in atBot ×ˢ atTop, (familyDomainTrajectoryOperator (p := 2) ι AL).index =
-      domainSpectralFlow ι A ab.1 ab.2 := by
-  -- The `L∞` class of the conjugated path is the image of `AL` under `X ↦ U ∘ X ∘ W⁻¹`.
-  set L := (ContinuousLinearMap.compL ℝ D' H K (U : H →L[ℝ] K)).comp
-    ((ContinuousLinearMap.compL ℝ D' D H).flip (W.symm : D' →L[ℝ] D))
-  have hL : L.compLpL ∞ μ₀ AL =ᵐ[μ₀]
-      fun s ↦ (U : H →L[ℝ] K) ∘L A s ∘L (W.symm : D' →L[ℝ] D) := by
-    filter_upwards [L.coeFn_compLpL AL, hAL] with s h₁ h₂
-    rw [h₁, h₂]
-    rfl
-  filter_upwards [h _ hL] with ab hab
-  rw [← index_familyDomainTrajectoryOperator_comp_comp_symm W U.toContinuousLinearEquiv hUV
-    (by filter_upwards [hL, hAL] with s h₁ h₂; rw [h₁, h₂]), hab,
-    domainSpectralFlow_comp_comp_symm (fun _ ↦ U) (fun _ ↦ W) fun _ _ ↦ hUV]
-
 /-- The index formula for a path of shifts `B - λ(s) ι`, given a finite-dimensional subspace `V`
 on which `ι` is injective, which `B` maps into `ι V`, and which contains every solution of
 `B x = λ(s) • ι x`. -/
@@ -383,10 +360,6 @@ private theorem eventually_index_eq_domainSpectralFlow_of_ker_le (hι : IsCompac
         domainSpectralFlow ι (fun s ↦ B - lam s • ι) ab.1 ab.2 := by
   -- Through `W` and `U`, each shift `B - c • ι` is the block sum `Φ c`.
   have hΦ := comp_sub_smul_comp_splitEquiv_symm hV hB hSymm
-  have hblock {c : ℝ} (hc : (B - c • ι).IsInvertible) :=
-    ContinuousLinearMap.isInvertible_withLpProdMap_iff.1 (hΦ c ▸
-      ContinuousLinearMap.isInvertible_equiv_comp.2
-        (ContinuousLinearMap.isInvertible_comp_equiv.2 hc))
   -- The second block differs from its limit at `∞` by `(c₊ - λ(s)) • ι'`.
   obtain ⟨M, hM⟩ := exists_forall_norm_le_of_tendsto hlam hbot htop
   have hc (T : ℝ) : ∃ c, ∀ᵐ s ∂volume, s ∈ Ioo (-T) T → ∀ x,
@@ -398,24 +371,25 @@ private theorem eventually_index_eq_domainSpectralFlow_of_ker_le (hι : IsCompac
       Pi.smul_apply, ← sub_smul, norm_smul]
     gcongr
     exact (norm_sub_le _ _).trans (add_le_add (le_of_eq (Real.norm_eq_abs _)) (hM s))
-  have hcpt : IsCompactOperator (complEmbedding ι V) := by
-    rw [complEmbedding, ContinuousLinearMap.coe_comp, ContinuousLinearMap.coe_comp]
-    exact (hι.comp_clm _).clm_comp _
-  refine eventually_index_eq_domainSpectralFlow_of_comp_comp_symm (splitEquiv hV)
-    (eigenImage ι V).orthogonalDecomposition (withLpProdMap_comp_splitEquiv hV) AL hAL
-    fun AL' hAL' ↦ ?_
+  refine eventually_index_familyDomainTrajectoryOperator_eq_domainSpectralFlow_of_comp_comp_symm
+    (splitEquiv hV) (eigenImage ι V).orthogonalDecomposition (withLpProdMap_comp_splitEquiv hV)
+    AL hAL fun AL' hAL' ↦ ?_
   have hsplit : AL' =ᵐ[μ₀] fun s ↦ (eigenBlock B hV - lam s • 1).withLpProdMap 2
       (complBlock ι B V - lam s • complEmbedding ι V) := by
     filter_upwards [hAL'] with s hs
     rw [hs]
     exact hΦ (lam s)
   have hblk := eventually_index_familyDomainTrajectoryOperator_withLpProdMap_eq_domainSpectralFlow
-    hcpt (continuous_const.sub (hlam.smul continuous_const))
+    (isCompactOperator_complEmbedding (V := V) hι)
+    (continuous_const.sub (hlam.smul continuous_const))
     (continuous_const.sub (hlam.smul continuous_const))
     (fun s ↦ isSymmetric_eigenBlock_sub_smul hV hB hSymm (lam s))
     (fun s ↦ inner_complBlock_sub_smul hB hSymm (lam s))
     (fun s ↦ isInvertible_complBlock_sub_smul hV hι hB hSymm hBbot (hker s))
-    (hblock hBbot).1 (hblock hBtop).1 (hblock hBbot).2 (hblock hBtop).2
+    (isInvertible_blocks_sub_smul hV hB hSymm hBbot).1
+    (isInvertible_blocks_sub_smul hV hB hSymm hBtop).1
+    (isInvertible_blocks_sub_smul hV hB hSymm hBbot).2
+    (isInvertible_blocks_sub_smul hV hB hSymm hBtop).2
     (tendsto_const_nhds.sub (hbot.smul_const _)) (tendsto_const_nhds.sub (htop.smul_const _))
     (tendsto_const_nhds.sub (hbot.smul_const _)) (tendsto_const_nhds.sub (htop.smul_const _))
     hc AL' hsplit
