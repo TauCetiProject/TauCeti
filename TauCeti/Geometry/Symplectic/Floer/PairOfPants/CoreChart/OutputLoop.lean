@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.CoreChart
+-- The rotation runs along the rays of the core chart to the output circle, so this file needs the
+-- definitions of these rays and of the angles of the lobes, not only the API of the core chart.
+import all TauCeti.Geometry.Symplectic.Floer.PairOfPants.CoreChart
 import Mathlib.Analysis.SpecialFunctions.Complex.CircleMap
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Analysis.SpecialFunctions.Sqrt
@@ -31,7 +34,7 @@ the cylinder `ℝ × ℝ / ℤ` (`TauCeti.Floer.contDiff_pairOfPantsOutputRotati
 end at height `0` for `s ≥ 1` (`TauCeti.Floer.pairOfPantsOutputRotation_mk_of_one_le`). At the
 parameter `(s, t)` it is the point of the circle on the ray from `k / 2` at an angle `θ`, where
 `k` runs from `1` to `0` and `θ` from the angle of the core chart to `-2π t`. The angle of the core
-chart is read through a smooth lift, increasing by `2π` over each period.
+chart is read through a smooth lift, decreasing by `2π` over each period.
 
 For a map `u` of the pair of pants into a manifold `M`:
 
@@ -71,46 +74,6 @@ open Set Real Function Manifold TauCeti.ThricePuncturedSphere
 
 namespace TauCeti.Floer
 
-/-! ### Rays to the output circle -/
-
-/-- The distance from the point `k / 2` to the circle `‖w‖ = 2` along the ray at the angle `θ`:
-the positive root `R` of `R² + k R cos θ = 4 - k² / 4`, for `k² ≤ 16`. -/
-private def outputRayRadius (k θ : ℝ) : ℝ :=
-  (-(k * Real.cos θ) + √((k * Real.cos θ) ^ 2 + 16 - k ^ 2)) / 2
-
-/-- The point of the circle `‖w‖ = 2` on the ray at the angle `θ` from `k / 2`, in the real
-coordinates `ℝ × ℝ ≃ ℂ`. -/
-private def outputRayPoint (k θ : ℝ) : ℝ × ℝ :=
-  Complex.equivRealProdCLM (circleMap (k / 2 : ℝ) (outputRayRadius k θ) θ)
-
-private theorem outputRayPoint_add_two_pi (k θ : ℝ) :
-    outputRayPoint k (θ + 2 * π) = outputRayPoint k θ := by
-  simp only [outputRayPoint, outputRayRadius, Real.cos_add_two_pi, periodic_circleMap _ _ θ]
-
-private theorem periodic_outputRayPoint (k : ℝ) : Periodic (outputRayPoint k) (2 * π) :=
-  outputRayPoint_add_two_pi k
-
-/-- For `k² ≤ 16` the point `outputRayPoint k θ` lies on the circle `x² + y² = 4`. -/
-private theorem outputRayPoint_sq_add_sq {k : ℝ} (hk : k ^ 2 ≤ 16) (θ : ℝ) :
-    (outputRayPoint k θ).1 ^ 2 + (outputRayPoint k θ).2 ^ 2 = 4 := by
-  have hD : 0 ≤ (k * Real.cos θ) ^ 2 + 16 - k ^ 2 := by nlinarith [sq_nonneg (k * Real.cos θ)]
-  have hs := Real.sq_sqrt hD
-  have hcs := Real.cos_sq_add_sin_sq θ
-  simp only [outputRayPoint, outputRayRadius, circleMap, Complex.equivRealProdCLM_apply,
-    Complex.add_re, Complex.add_im, Complex.ofReal_re, Complex.ofReal_im, Complex.mul_re,
-    Complex.mul_im, Complex.exp_ofReal_mul_I_re, Complex.exp_ofReal_mul_I_im]
-  linear_combination (1 / 4 : ℝ) * hs +
-    ((-(k * Real.cos θ) + √((k * Real.cos θ) ^ 2 + 16 - k ^ 2)) / 2) ^ 2 * hcs
-
-/-- From the centre `0` the ray at the angle `θ` meets the circle `‖w‖ = 2` at `2 e^{iθ}`. -/
-private theorem outputRayPoint_zero (θ : ℝ) :
-    outputRayPoint 0 θ = Complex.equivRealProdCLM (2 * Complex.exp (θ * Complex.I)) := by
-  have h4 : √(16 : ℝ) = 4 := by
-    rw [show (16 : ℝ) = 4 ^ 2 by norm_num, Real.sqrt_sq (by norm_num)]
-  simp only [outputRayPoint, outputRayRadius, circleMap, zero_mul, neg_zero, zero_pow two_ne_zero,
-    zero_add, sub_zero, h4, zero_div, Complex.ofReal_zero]
-  norm_num
-
 /-! ### The output loop of the core chart -/
 
 /-- The parameter of the output loop of the core chart: the core chart runs through the point of
@@ -122,6 +85,11 @@ private def coreLoopParam (t : ℝ) : ℝ :=
 private theorem coreLoopParam_add_one (t : ℝ) : coreLoopParam (t + 1) = coreLoopParam t + 1 := by
   simp only [coreLoopParam, Int.floor_add_one, Int.fract_add_one, Int.cast_add, Int.cast_one]
   ring
+
+/-- The lifted parameter differs from its value at the fractional part by the integer part. -/
+private theorem coreLoopParam_eq_floor_add_fract (t : ℝ) :
+    coreLoopParam t = ⌊t⌋ + coreLoopParam (Int.fract t) := by
+  rw [coreLoopParam, coreLoopParam, Int.floor_fract, Int.fract_fract, Int.cast_zero, zero_add]
 
 private theorem coreLoopParam_eq {n : ℤ} {t : ℝ} (h₁ : (n : ℝ) - 1 / 6 < t) (h₂ : t < n + 1) :
     coreLoopParam t =
@@ -150,32 +118,6 @@ private theorem contDiff_coreLoopParam {m : ℕ∞} : ContDiff ℝ m coreLoopPar
   have := smoothTransition.contDiff (n := m)
   fun_prop
 
-/-- The two lobes of the output loop of the core chart are the points of the output circle on the
-rays from `1/2` at the angles `-π/2 - π r` and `-3π/2 - π r`, `r ∈ [0, 1]`. -/
-private theorem pairOfPantsCoreChart_mk_one_eq_loopwiseTrans (t : ℝ) :
-    pairOfPantsCoreChart (1, t) = loopwiseTrans (outputRayPoint 1 ∘ fun z ↦ -(π / 2) - π * z.2)
-      (outputRayPoint 1 ∘ fun z ↦ -(3 * π / 2) - π * z.2) (1, t) := by
-  rw [pairOfPantsCoreChart_mk_one]
-  refine loopwiseTrans_congr (fun r _ ↦ ?_) (fun r _ ↦ ?_)
-  · have hc : Real.cos (-(π / 2) - π * r) = -Real.sin (π * r) := by
-      rw [show -(π / 2) - π * r = -(π * r + π / 2) by ring, Real.cos_neg,
-        Real.cos_add_pi_div_two]
-    simp only [Function.comp_apply, outputRayPoint, outputRayRadius, hc]
-    congr 2
-    · push_cast
-      ring
-    · rw [show (1 * -Real.sin (π * r)) ^ 2 + 16 - 1 ^ 2 = Real.sin (π * r) ^ 2 + 15 by ring]
-      ring
-  · have hc : Real.cos (-(3 * π / 2) - π * r) = Real.sin (π * r) := by
-      rw [show -(3 * π / 2) - π * r = -((π * r + π / 2) + π) by ring, Real.cos_neg,
-        Real.cos_add_pi, Real.cos_add_pi_div_two, neg_neg]
-    simp only [Function.comp_apply, outputRayPoint, outputRayRadius, hc]
-    congr 2
-    · push_cast
-      ring
-    · rw [show (1 * Real.sin (π * r)) ^ 2 + 16 - 1 ^ 2 = Real.sin (π * r) ^ 2 + 15 by ring]
-      ring
-
 /-- **The output loop of the core chart, along a lifted angle.** The core chart runs at `s = 1`
 through the points of the output circle on the rays from `1/2` at the angles
 `-π/2 - 2π coreLoopParam t`. -/
@@ -185,24 +127,25 @@ private theorem pairOfPantsCoreChart_mk_one_eq_outputRayPoint (t : ℝ) :
   have hG : Periodic G (2 * π) := periodic_outputRayPoint 1
   rw [pairOfPantsCoreChart_mk_one_eq_loopwiseTrans, ← apply_loopwiseTrans G]
   -- Both sides only depend on the fractional part of `t`, up to a multiple of `2π` in the angle.
-  have hper : Periodic (fun t ↦ loopwiseTrans (fun z ↦ -(π / 2) - π * z.2)
-      (fun z ↦ -(3 * π / 2) - π * z.2) ((1 : ℝ), t)) 1 :=
+  have hper : Periodic (fun t ↦ loopwiseTrans (fun z ↦ lobeAngle (1 / 4) z.2)
+      (fun z ↦ lobeAngle (3 / 4) z.2) ((1 : ℝ), t)) 1 :=
     fun t ↦ loopwiseTrans_apply_add_one _ _ _ _
-  have hfr := Int.fract_nonneg t
-  have hfr₁ := Int.fract_lt_one t
   have hx := hper.sub_int_mul_eq (x := t) ⌊t⌋
   rw [mul_one, Int.self_sub_floor] at hx
-  rw [← hx, coreLoopParam,
-    show -(π / 2) - 2 * π * (⌊t⌋ + (smoothTransition (6 * Int.fract t - 1) +
-      smoothTransition (6 * Int.fract t - 4)) / 2) = -(π / 2) - π * (smoothTransition
-        (6 * Int.fract t - 1) + smoothTransition (6 * Int.fract t - 4)) - ⌊t⌋ * (2 * π) by ring,
-    hG.sub_int_mul_eq]
+  rw [← hx, coreLoopParam_eq_floor_add_fract, show ∀ c : ℝ, -(π / 2) - 2 * π * (⌊t⌋ + c) =
+    -(π / 2) - 2 * π * c - ⌊t⌋ * (2 * π) from fun c ↦ by ring, hG.sub_int_mul_eq]
+  congr 1
+  have hfr := Int.fract_nonneg t
+  have hfr₁ := Int.fract_lt_one t
+  rw [coreLoopParam, Int.floor_fract, Int.fract_fract, Int.cast_zero, zero_add]
   rcases le_or_gt (Int.fract t) (1 / 2) with h | h
   · rw [loopwiseTrans_of_le _ _ hfr h,
-      smoothTransition.zero_of_nonpos (show 6 * Int.fract t - 4 ≤ 0 by linarith), add_zero]
+      smoothTransition.zero_of_nonpos (show 6 * Int.fract t - 4 ≤ 0 by linarith)]
+    simp only [lobeAngle]
+    ring
   · rw [loopwiseTrans_of_lt _ _ h hfr₁,
       smoothTransition.one_of_one_le (show 1 ≤ 6 * Int.fract t - 1 by linarith)]
-    congr 1
+    simp only [lobeAngle]
     ring
 
 /-! ### The rotation of the output loop -/
@@ -222,7 +165,20 @@ which the circle is seen from `1/2` to `0`, and the angle from that of the core 
 def pairOfPantsOutputRotation (z : ℝ × ℝ) : ℝ × ℝ :=
   outputRayPoint (1 - smoothTransition z.1) (outputRotationAngle z)
 
+/-- The parameter `k = 1 - β s` of the point from which the rotation sees the output circle
+satisfies `k² ≤ 1`. -/
+private theorem sq_one_sub_smoothTransition_le (x : ℝ) : (1 - smoothTransition x) ^ 2 ≤ 1 := by
+  have h₀ := smoothTransition.nonneg x
+  have h₁ := smoothTransition.le_one x
+  nlinarith
+
+/-- The rotation of the output loop runs through the circle `x² + y² = 4`. -/
+private theorem pairOfPantsOutputRotation_sq_add_sq (z : ℝ × ℝ) :
+    (pairOfPantsOutputRotation z).1 ^ 2 + (pairOfPantsOutputRotation z).2 ^ 2 = 4 :=
+  outputRayPoint_sq_add_sq ((sq_one_sub_smoothTransition_le z.1).trans (by norm_num)) _
+
 /-- The rotation of the output loop is `1`-periodic in its second variable. -/
+@[simp]
 theorem pairOfPantsOutputRotation_apply_add_one (s t : ℝ) :
     pairOfPantsOutputRotation (s, t + 1) = pairOfPantsOutputRotation (s, t) := by
   have h : outputRotationAngle (s, t + 1) = outputRotationAngle (s, t) - 2 * π := by
@@ -239,9 +195,8 @@ theorem contDiff_pairOfPantsOutputRotation {n : ℕ∞} :
   have hD : ContDiff ℝ n fun z : ℝ × ℝ ↦ √(((1 - smoothTransition z.1) *
       Real.cos (outputRotationAngle z)) ^ 2 + 16 - (1 - smoothTransition z.1) ^ 2) := by
     refine ContDiff.sqrt (by fun_prop) fun z ↦ ?_
-    have h₀ := smoothTransition.nonneg z.1
-    have h₁ := smoothTransition.le_one z.1
-    nlinarith [sq_nonneg ((1 - smoothTransition z.1) * Real.cos (outputRotationAngle z))]
+    nlinarith [sq_nonneg ((1 - smoothTransition z.1) * Real.cos (outputRotationAngle z)),
+      sq_one_sub_smoothTransition_le z.1]
   have hof : ContDiff ℝ n Complex.ofReal := Complex.ofRealCLM.contDiff
   have heq : ContDiff ℝ n Complex.equivRealProdCLM := Complex.equivRealProdCLM.contDiff
   unfold pairOfPantsOutputRotation outputRayPoint outputRayRadius circleMap
@@ -250,14 +205,9 @@ theorem contDiff_pairOfPantsOutputRotation {n : ℕ∞} :
 /-- The rotation of the output loop runs through the circle `‖w‖ = 2`. -/
 theorem norm_symm_pairOfPantsOutputRotation (z : ℝ × ℝ) :
     ‖Complex.equivRealProdCLM.symm (pairOfPantsOutputRotation z)‖ = 2 := by
-  have h₀ := smoothTransition.nonneg z.1
-  have h₁ := smoothTransition.le_one z.1
-  have h := outputRayPoint_sq_add_sq (k := 1 - smoothTransition z.1) (by nlinarith)
-    (outputRotationAngle z)
-  rw [← pairOfPantsOutputRotation] at h
   rw [Complex.norm_def, Complex.normSq_apply, Complex.equivRealProdCLM_symm_apply_re,
-    Complex.equivRealProdCLM_symm_apply_im, ← sq, ← sq, h, show (4 : ℝ) = 2 ^ 2 by norm_num,
-    Real.sqrt_sq zero_le_two]
+    Complex.equivRealProdCLM_symm_apply_im, ← sq, ← sq, pairOfPantsOutputRotation_sq_add_sq,
+    show (4 : ℝ) = 2 ^ 2 by norm_num, Real.sqrt_sq zero_le_two]
 
 /-- The rotation of the output loop takes values in the pair of pants. -/
 theorem pairOfPantsOutputRotation_mem_thricePuncturedSphereReal (z : ℝ × ℝ) :
@@ -294,15 +244,13 @@ rotation of the output loop vanishes: the rotation runs through a circle, so its
 derivatives are parallel. -/
 theorem rectangleIntegral_comp_pairOfPantsOutputRotation (φ : RoughForm I M F 2) {u : ℝ × ℝ → M}
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) (a b : ℝ × ℝ) :
-    rectangleIntegral φ (u ∘ pairOfPantsOutputRotation) a b = 0 := by
-  refine rectangleIntegral_comp_eq_zero_of_sq_add_sq_eq φ
-    (contDiff_pairOfPantsOutputRotation.differentiable one_ne_zero) (r := 4) (fun z ↦ ?_)
+    rectangleIntegral φ (u ∘ pairOfPantsOutputRotation) a b = 0 :=
+  rectangleIntegral_comp_eq_zero_of_sq_add_sq_eq φ
+    (contDiff_pairOfPantsOutputRotation.differentiable one_ne_zero)
+    pairOfPantsOutputRotation_sq_add_sq
     (fun z ↦ (hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds
       (pairOfPantsOutputRotation_mem_thricePuncturedSphereReal z))).mdifferentiableAt one_ne_zero)
     a b
-  have h₀ := smoothTransition.nonneg z.1
-  have h₁ := smoothTransition.le_one z.1
-  exact outputRayPoint_sq_add_sq (by nlinarith) _
 
 /-- **The rotation of the output loop as a cylinder.** For a map `u` of the pair of pants into a
 manifold `M` which is `C²` on `S`, the composite of `u` with the rotation of the output loop is a
