@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
+public import TauCeti.Topology.Grassmannian.Map
 public import TauCeti.Topology.Grassmannian.Orthonormal
 public import TauCeti.Topology.VectorBundle.IdempotentRange
 
@@ -48,6 +50,8 @@ continuous family of projections.
 
 * `TauCeti.finiteGrassmannian.toEuclidean`: a point of the Grassmannian as a subspace of
   `EuclideanSpace 𝕜 (Fin N)`.
+* `TauCeti.finiteGrassmannian.mapEuclidean`: the image of a point under a linear automorphism
+  of `EuclideanSpace 𝕜 (Fin N)`, read on `Fin N → 𝕜` through `TauCeti.finiteGrassmannian.map`.
 * `TauCeti.finiteGrassmannian.Tautological`: the tautological bundle `γ`.
 * `TauCeti.finiteGrassmannian.TautologicalOrthogonal`: its orthogonal complement `γ⊥`.
 * `TauCeti.finiteGrassmannian.tautologicalProdOrthogonalHomeomorph`: `γ ⊕ γ⊥` is homeomorphic to
@@ -86,6 +90,56 @@ theorem toEuclidean_injective :
     Function.Injective (toEuclidean : finiteGrassmannian 𝕜 r N → _) := fun V W h ↦ by
   refine Subtype.ext <| Submodule.ext fun x ↦ ?_
   simpa using SetLike.ext_iff.1 h (WithLp.toLp 2 x)
+
+/-- The image of a point `V` of the finite Grassmannian under a linear automorphism `O` of
+`EuclideanSpace 𝕜 (Fin N)`: `TauCeti.finiteGrassmannian.map` of `O` read on `Fin N → 𝕜` through
+the coordinate identification `WithLp.linearEquiv`. In coordinates it is `O(V)`
+(`TauCeti.finiteGrassmannian.toEuclidean_mapEuclidean`). -/
+noncomputable def mapEuclidean (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (V : finiteGrassmannian 𝕜 r N) : finiteGrassmannian 𝕜 r N :=
+  V.map ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).symm ≪≫ₗ O ≪≫ₗ
+    WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).toLinearMap (LinearEquiv.injective _)
+
+/-- Read in coordinates, `V.mapEuclidean O` is the image `O(V)`. -/
+@[simp]
+theorem toEuclidean_mapEuclidean
+    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (V : finiteGrassmannian 𝕜 r N) :
+    (V.mapEuclidean O).toEuclidean =
+      V.toEuclidean.map (O : EuclideanSpace 𝕜 (Fin N) →ₗ[𝕜] _) := by
+  ext x
+  simp [mapEuclidean]
+
+/-- Moving a point of the finite Grassmannian by the identity leaves it in place. -/
+@[simp]
+theorem mapEuclidean_refl (V : finiteGrassmannian 𝕜 r N) :
+    V.mapEuclidean (LinearEquiv.refl 𝕜 _) = V := by
+  rw [mapEuclidean]
+  convert map_id V
+  exact LinearMap.ext fun x ↦ by simp
+
+/-- Moving a point of the finite Grassmannian by `O` and then by `O'` is moving it by the
+composite `O.trans O'`. -/
+theorem mapEuclidean_trans
+    (O O' : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (V : finiteGrassmannian 𝕜 r N) :
+    V.mapEuclidean (O.trans O') = (V.mapEuclidean O).mapEuclidean O' := by
+  apply toEuclidean_injective
+  simp [← Submodule.map_comp]
+
+/-- Moving a point of the finite Grassmannian by `O⁻¹` and then by `O` gives it back. -/
+@[simp]
+theorem mapEuclidean_mapEuclidean_symm
+    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (V : finiteGrassmannian 𝕜 r N) : (V.mapEuclidean O.symm).mapEuclidean O = V := by
+  rw [← mapEuclidean_trans, LinearEquiv.symm_trans_self, mapEuclidean_refl]
+
+/-- Moving a point of the finite Grassmannian by `O` and then by `O⁻¹` gives it back. -/
+@[simp]
+theorem mapEuclidean_symm_mapEuclidean
+    (O : EuclideanSpace 𝕜 (Fin N) ≃ₗ[𝕜] EuclideanSpace 𝕜 (Fin N))
+    (V : finiteGrassmannian 𝕜 r N) : (V.mapEuclidean O).mapEuclidean O.symm = V := by
+  rw [← mapEuclidean_trans, LinearEquiv.self_trans_symm, mapEuclidean_refl]
 
 /-- The transported subspace still has dimension `r`. -/
 @[simp] theorem finrank_toEuclidean (V : finiteGrassmannian 𝕜 r N) :
@@ -128,7 +182,7 @@ theorem continuous_starProjection_toEuclidean :
 /-- The range of the complementary projection is the orthogonal complement. -/
 theorem range_one_sub_starProjection_toEuclidean (V : finiteGrassmannian 𝕜 r N) :
     (1 - V.toEuclidean.starProjection).range = V.toEuclideanᗮ := by
-  rw [← Submodule.starProjection_orthogonal', Submodule.range_starProjection]
+  simp
 
 /-- The complementary projections `1 - p` depend continuously on the point of the Grassmannian. -/
 theorem continuous_one_sub_starProjection_toEuclidean :

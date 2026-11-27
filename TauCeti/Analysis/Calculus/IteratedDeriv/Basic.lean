@@ -6,6 +6,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -17,8 +18,11 @@ import Mathlib.Analysis.Calculus.Deriv.Prod
 This file collects general results about `iteratedDeriv`:
 
 * `TauCeti.iteratedDeriv_iteratedDeriv`: iterated derivatives compose additively.
-* `TauCeti.contDiff_of_derivative_tower`: a sequence of functions linked by ordinary derivatives
-  gives a smooth initial function.
+* `TauCeti.iteratedDeriv_eq_of_derivative_tower`, `TauCeti.contDiff_of_derivative_tower`: in a
+  sequence of functions linked by ordinary derivatives, the iterated derivatives of the initial
+  function are the later functions, and the initial function is smooth.
+* `ContDiffOn.hasDerivAt_and_hasDerivAt_deriv`: a function that is `C²` on an open set has
+  derivative `deriv f` there, and `deriv f` has derivative `iteratedDeriv 2 f` there.
 * `TauCeti.iteratedDeriv_const_pi`: the `k`-th iterated derivative of a constant-across-coordinates
   family `ζ ↦ fun _ : α ↦ g ζ` is the constant family of `k`-th iterated derivatives.
 * `TauCeti.iteratedDerivInr`: the `k`-th iterated derivative of `f : (σ ⊕ τ → 𝕜) → F` in the
@@ -26,6 +30,8 @@ This file collects general results about `iteratedDeriv`:
   (`TauCeti.iteratedDerivInr_apply`, `TauCeti.iteratedDerivInr_zero`,
   `TauCeti.iteratedDerivInr_sumElim`, `TauCeti.iteratedDerivInr_const_pi`) and the
   Fréchet-derivative step (`DifferentiableAt.iteratedDerivInr_succ_eq_fderiv`).
+* `ContDiff.hasDerivAt_iteratedDeriv`: the derivative of the `r`-th iterated derivative of a `C^n`
+  function, `r < n`, is its `(r + 1)`-th iterated derivative.
 -/
 
 public section
@@ -42,20 +48,33 @@ theorem iteratedDeriv_iteratedDeriv (n k : ℕ) (f : 𝕜 → E) :
     iteratedDeriv n (iteratedDeriv k f) = iteratedDeriv (n + k) f := by
   simp only [iteratedDeriv_eq_iterate, Function.iterate_add_apply]
 
+/-- In a tower of functions with the stated successive ordinary derivatives, the `k`-th iterated
+derivative of the zeroth function is the `k`-th function. -/
+theorem iteratedDeriv_eq_of_derivative_tower {F : ℕ → 𝕜 → E}
+    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) (k : ℕ) : iteratedDeriv k (F 0) = F k := by
+  -- `F` semiconjugates the successor to `deriv`, so `F k = deriv^[k] (F 0)`.
+  have h : Function.Semiconj F Nat.succ deriv := fun n => (funext fun x => (hF n x).deriv).symm
+  simpa [iteratedDeriv_eq_iterate, Nat.succ_iterate] using ((h.iterate_right k).eq 0).symm
+
 /-- A tower of functions with the stated successive ordinary derivatives gives a smooth zeroth
 function. -/
 theorem contDiff_of_derivative_tower (F : ℕ → 𝕜 → E)
     (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) : ContDiff 𝕜 ∞ (F 0) := by
-  have hiter (k : ℕ) : iteratedDeriv k (F 0) = F k := by
-    induction k with
-    | zero => exact iteratedDeriv_zero
-    | succ k ih =>
-      rw [iteratedDeriv_succ, ih]
-      exact funext (fun x ↦ (hF k x).deriv)
   apply contDiff_of_differentiable_iteratedDeriv (n := ⊤)
   intro k _
-  rw [hiter k]
+  rw [iteratedDeriv_eq_of_derivative_tower hF k]
   exact fun x ↦ (hF k x).differentiableAt
+
+/-- A function that is `C²` on an open set `s` has derivative `deriv f x` at every `x ∈ s`, and
+`deriv f` has derivative `iteratedDeriv 2 f x` there. -/
+theorem _root_.ContDiffOn.hasDerivAt_and_hasDerivAt_deriv {f : 𝕜 → E} {s : Set 𝕜} {x : 𝕜}
+    (hf : ContDiffOn 𝕜 2 f s) (hs : IsOpen s) (hx : x ∈ s) :
+    HasDerivAt f (deriv f x) x ∧ HasDerivAt (deriv f) (iteratedDeriv 2 f x) x := by
+  have hxs := hs.mem_nhds hx
+  refine ⟨((hf.contDiffAt hxs).differentiableAt (by norm_num)).hasDerivAt, ?_⟩
+  rw [iteratedDeriv_succ, iteratedDeriv_one]
+  exact (((hf.deriv_of_isOpen hs (m := 1) (by norm_num)).contDiffAt hxs).differentiableAt
+    (by norm_num)).hasDerivAt
 
 variable {σ τ F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
@@ -121,6 +140,19 @@ theorem iteratedDerivInr_const_pi {α : Type*} [Fintype α] [Unique τ] (k : ℕ
   iteratedDeriv_const_pi k _ _
 
 end TauCeti
+
+section ContDiff
+
+variable {𝕜 F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The derivative of the `r`-th iterated derivative of a `C^n` function, `r < n`, is its
+`(r + 1)`-th iterated derivative. -/
+theorem ContDiff.hasDerivAt_iteratedDeriv {f : 𝕜 → F} {n : ℕ∞ω} {r : ℕ} (hf : ContDiff 𝕜 n f)
+    (hr : r < n) (x : 𝕜) : HasDerivAt (iteratedDeriv r f) (iteratedDeriv (r + 1) f x) x := by
+  rw [iteratedDeriv_succ]
+  exact (hf.differentiable_iteratedDeriv r hr x).hasDerivAt
+
+end ContDiff
 
 section IteratedDerivInr
 

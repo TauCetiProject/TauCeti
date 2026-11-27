@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.ContinuedFractions.Determinant
 public import Mathlib.Analysis.Normed.Field.Lemmas
 import Mathlib.Tactic.LinearCombination
-import TauCeti.Analysis.SpecificLimits.Normed
+import TauCeti.Analysis.Asymptotics.Sum.Divergence
 
 /-!
 # Three-term recurrences, Casoratians, and reduction-of-order convergence of continued fractions
@@ -45,6 +45,12 @@ underlying Pincherle's theorem for explicit recurrence solutions.
 * `TauCeti.casoratian_of_recurrence`, `TauCeti.casoratian_contFrac_contsAux_b` — the Casoratian
   identities for general solutions and against the denominator continuants.
 * `TauCeti.contFrac_contsAux_b_div_sub` — the reduction-of-order telescoping sum for `Bₙ₋₁ / f(n)`.
+* `TauCeti.exists_eventuallyEq_const_mul_of_casoratian` — if `w₁` is eventually nonzero and the
+  Casoratian of `w₁` and `w` eventually vanishes, then `w` is eventually a constant multiple
+  of `w₁`.
+* `TauCeti.exists_difference_solution_eventuallyEq` — if `g` vanishes nowhere, a solution of
+  `w(n + 2) + fₙ w(n + 1) + gₙ w(n) = 0` for large `n` agrees for large `n` with a solution for
+  all `n`.
 * `TauCeti.tendsto_norm_contFrac_dens_div_atTop`,
   `TauCeti.tendsto_convs_contFrac_of_tendsto_norm_sum` — divergence of `‖Bₙ / f(n + 1)‖` and
   convergence of `(contFrac a b).convs` to `-f(1) / f(0)` from norm divergence of the
@@ -226,6 +232,54 @@ theorem contFrac_contsAux_b_div_sub {a b f : ℕ → K}
   have hcas := casoratian_contFrac_contsAux_b hf m
   field_simp
   linear_combination hcas
+
+/-! ### Proportional solutions and backward extension -/
+
+/-- If `w₁` is eventually nonzero and the Casoratian `w₁ n * w (n + 1) - w₁ (n + 1) * w n`
+eventually vanishes, then `w` is eventually a constant multiple of `w₁`. -/
+theorem exists_eventuallyEq_const_mul_of_casoratian {w₁ w : ℕ → K}
+    (hw₁0 : ∀ᶠ n in atTop, w₁ n ≠ 0)
+    (hC : ∀ᶠ n in atTop, w₁ n * w (n + 1) - w₁ (n + 1) * w n = 0) :
+    ∃ c : K, w =ᶠ[atTop] fun n ↦ c * w₁ n := by
+  obtain ⟨n₂, hn₂⟩ := eventually_atTop.1 (hw₁0.and hC)
+  refine ⟨w n₂ / w₁ n₂, eventually_atTop.2 ⟨n₂, fun m hm ↦ ?_⟩⟩
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hm
+  induction k with
+  | zero =>
+    rw [add_zero]
+    field_simp [(hn₂ n₂ le_rfl).1]
+  | succ k ih =>
+    obtain ⟨h₀, hC0⟩ := hn₂ (n₂ + k) (by omega)
+    rw [ih (by omega)] at hC0
+    rw [← add_assoc]
+    exact mul_left_cancel₀ h₀ (by linear_combination hC0)
+
+/-- **Extension of a solution backwards.** If `g` vanishes nowhere, a solution of
+`w (n + 2) + f n * w (n + 1) + g n * w n = 0` for large `n` agrees for large `n` with a solution
+for all `n`. -/
+theorem exists_difference_solution_eventuallyEq {f g w : ℕ → K}
+    (hg : ∀ n, g n ≠ 0) (hw : ∀ᶠ n in atTop, w (n + 2) + f n * w (n + 1) + g n * w n = 0) :
+    ∃ w' : ℕ → K, (∀ n, w' (n + 2) + f n * w' (n + 1) + g n * w' n = 0) ∧ w' =ᶠ[atTop] w := by
+  obtain ⟨n₀, hn₀⟩ := eventually_atTop.1 hw
+  induction n₀ generalizing w with
+  | zero => exact ⟨w, fun n ↦ hn₀ n (Nat.zero_le n), .rfl⟩
+  | succ n₀ ih =>
+    -- define the value at `n₀` by the equation and continue downwards
+    set v := Function.update w n₀ (-(w (n₀ + 2) + f n₀ * w (n₀ + 1)) / g n₀)
+    have hv : v =ᶠ[atTop] w := eventually_atTop.2 ⟨n₀ + 1, fun n hn ↦
+      Function.update_of_ne (by omega) _ _⟩
+    have hvsol (n : ℕ) (hn : n₀ ≤ n) : v (n + 2) + f n * v (n + 1) + g n * v n = 0 := by
+      rcases hn.eq_or_lt with rfl | hn
+      · simp only [v, Function.update_self, Function.update_of_ne (show n₀ + 2 ≠ n₀ by omega),
+          Function.update_of_ne (show n₀ + 1 ≠ n₀ by omega)]
+        field_simp [hg n₀]
+        ring
+      · simp only [v, Function.update_of_ne (show n + 2 ≠ n₀ by omega),
+          Function.update_of_ne (show n + 1 ≠ n₀ by omega), Function.update_of_ne
+          (show n ≠ n₀ by omega)]
+        exact hn₀ n hn
+    obtain ⟨w', hw', hw'v⟩ := ih (w := v) (eventually_atTop.2 ⟨n₀, hvsol⟩) hvsol
+    exact ⟨w', hw', hw'v.trans hv⟩
 
 end Field
 

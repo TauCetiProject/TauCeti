@@ -8,11 +8,10 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import Mathlib.Probability.Kernel.Composition.Comp
 public import Mathlib.Probability.Kernel.Composition.Prod
+public import TauCeti.Probability.Distributions.Gaussian.Conditional.BayesUpdate
 
-import TauCeti.MeasureTheory.Group.Convolution.Translation
 import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Multivariate
-import TauCeti.Probability.Distributions.Gaussian.Sum
 
 /-!
 # Variance-preserving Gaussian noising kernels
@@ -28,8 +27,10 @@ form of the `t`-step transition of the forward chain.
 * `TauCeti.Probability.noiseKernel`: the kernel `x ↦ law of √a • x + √(1 - a) • e`.
 * `TauCeti.Probability.noiseKernel_apply`: `noiseKernel a x` is the isotropic Gaussian with mean
   `√a • x` and covariance parameter `(1 - a) • 1`, for every real `a`.
+* `TauCeti.Probability.noiseKernel_eq_gaussianKernel`: `noiseKernel a` is the Gaussian
+  observation kernel `gaussianKernel √a (1 - a)`.
 * `TauCeti.Probability.noiseKernel_comp`: `noiseKernel b ∘ₖ noiseKernel a = noiseKernel (a * b)`
-  for `a ≤ 1` and `b ∈ [0, 1]`.
+  for `a ≤ 1` and `b ∈ [0, 1]`, a case of the composition law `gaussianKernel_comp`.
 * `TauCeti.Probability.noiseKernel_one` and `TauCeti.Probability.noiseKernel_zero`: the
   noiseless kernel is the identity and the pure-noise kernel forgets its input.
 * `TauCeti.Probability.stdGaussian_bind_noiseKernel`: for `a ∈ [0, 1]` the standard Gaussian law
@@ -98,6 +99,13 @@ theorem noiseKernel_apply (a : ℝ) (x : EuclideanSpace ℝ ι) :
       multivariateGaussian_zero_right, ← neg_sub a, neg_smul,
       multivariateGaussian_neg_right _ (Matrix.PosSemidef.one.smul (sub_nonneg.2 ha.le))]
 
+/-- The noising kernel with signal level `a` is the Gaussian observation kernel with signal level
+`√a` and variance `1 - a`. -/
+theorem noiseKernel_eq_gaussianKernel (a : ℝ) :
+    noiseKernel (ι := ι) a = gaussianKernel √a (1 - a) := by
+  ext1 x
+  rw [noiseKernel_apply, gaussianKernel_apply]
+
 end DecidableEq
 
 /-- Composing two noising kernels multiplies their signal levels: noising with level `a` and
@@ -106,32 +114,10 @@ for `a ≤ 0` both sides forget their input. -/
 theorem noiseKernel_comp {a b : ℝ} (ha₁ : a ≤ 1) (hb₀ : 0 ≤ b) (hb₁ : b ≤ 1) :
     noiseKernel (ι := ι) b ∘ₖ noiseKernel a = noiseKernel (a * b) := by
   classical
-  ext1 x
-  -- The second step adds the independent noise `ν = N(0, 1 - b)` to the rescaled first step.
-  set ν := (stdGaussian (EuclideanSpace ℝ ι)).map (fun e ↦ √(1 - b) • e)
-  have hbind : (noiseKernel a x).bind (noiseKernel b) =
-      (noiseKernel a x).map (fun y ↦ √b • y) ∗ ν := by
-    rw [← Measure.bind_map_add_eq_conv _ _ (by fun_prop)]
-    congr 1
-    funext y
-    rw [noiseKernel_apply_eq_map, Measure.map_map (by fun_prop) (by fun_prop)]
-    simp only [Function.comp_def]
-  have hν : ν = multivariateGaussian 0 ((1 - b) • 1) := by
-    simpa only [zero_add, smul_zero, multivariateGaussian_zero_one,
-      Real.sq_sqrt (sub_nonneg.2 hb₁)] using
-      map_add_smul_multivariateGaussian (0 : EuclideanSpace ℝ ι) Matrix.PosSemidef.one 0 √(1 - b)
-  have hmap : (noiseKernel a x).map (fun y ↦ √b • y) =
-      multivariateGaussian (√b • √a • x) ((√b ^ 2 * (1 - a)) • 1) := by
-    have := map_add_smul_multivariateGaussian (√a • x)
-      (Matrix.PosSemidef.one.smul (sub_nonneg.2 ha₁)) 0 √b
-    simp only [zero_add, smul_smul] at this
-    rw [noiseKernel_apply, this, smul_smul]
-  -- Gaussian convolution adds the means and the covariances.
-  rw [Kernel.comp_apply, hbind, hmap, hν, multivariateGaussian_conv_multivariateGaussian _ _
-    (Matrix.PosSemidef.one.smul (by positivity)) (Matrix.PosSemidef.one.smul (sub_nonneg.2 hb₁)),
-    noiseKernel_apply, add_zero, smul_smul, ← add_smul, Real.sqrt_mul' a hb₀, mul_comm √b,
-    Real.sq_sqrt hb₀]
-  congr 2
+  simp only [noiseKernel_eq_gaussianKernel]
+  rw [gaussianKernel_comp (sub_nonneg.2 ha₁) (sub_nonneg.2 hb₁), Real.sq_sqrt hb₀,
+    Real.sqrt_mul' a hb₀, mul_comm √b]
+  congr 1
   ring
 
 /-- Noising with a level in `[0, 1]` preserves the standard Gaussian law: the noising kernels are

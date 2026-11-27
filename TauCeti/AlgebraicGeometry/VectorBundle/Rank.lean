@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.LocallyConstant.Basic
 public import Mathlib.Topology.Sets.Closeds
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
+public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Free.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.AlgebraicGeometry.VectorBundle.FiniteLocallyFree
 public import TauCeti.Topology.LocallyConstant.Fiber
@@ -31,6 +32,8 @@ components.
   `FiniteLocallyFreeSheaf.rank_apply_eq_natCard`;
 * `TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.rankLocus`: the clopen locus where the rank
   takes a given value;
+* `FiniteLocallyFreeSheaf.exists_bijective_linearCombination`: near every point `x` there is a
+  local frame of `rank E x` sections, a basis of the sections over every smaller open;
 * `FiniteLocallyFreeSheaf.rank_eq_of_iso`, `FiniteLocallyFreeSheaf.rank_free_apply`,
   `FiniteLocallyFreeSheaf.rank_pullback_apply` and `FiniteLocallyFreeSheaf.rank_pullback`: the
   rank is invariant under isomorphism, is `|I|` for the free sheaf on `I`, and is preserved by
@@ -135,6 +138,29 @@ theorem rank_apply_eq_natCard (E : FiniteLocallyFreeSheaf X) {U : X.Opens} {x : 
     (hx : x ∈ U) (σ : (E.obj.over U).GeneratingSections) [IsIso σ.π] :
     E.rank x = Nat.card σ.I :=
   E.rankAt_eq hx σ
+
+/-- **Local frames.** A finite locally free sheaf `E` has a local frame of `rank E x` sections
+near every point `x`: there are an open neighbourhood `V` of `x` and sections `t i` of `E` over `V`,
+indexed by a type with `rank E x` elements, whose restrictions to every open `W ⊆ V` form a basis
+of the sections of `E` over `W`. -/
+theorem exists_bijective_linearCombination (E : FiniteLocallyFreeSheaf X) (x : X) :
+    ∃ (ι : Type u) (_ : Fintype ι), Fintype.card ι = E.rank x ∧
+      ∃ (V : X.Opens) (_ : x ∈ V) (t : ι → Γ(E.obj, V)), ∀ (W : X.Opens) (i : W ⟶ V),
+        Function.Bijective (Fintype.linearCombination Γ(X, W)
+          fun k ↦ E.obj.presheaf.map i.op (t k)) := by
+  obtain ⟨V, hx, σ, hπ, hfin⟩ := E.exists_generatingSections x
+  have := Fintype.ofFinite σ.I
+  refine ⟨σ.I, inferInstance, by rw [E.rank_apply_eq_natCard hx σ, Nat.card_eq_fintype_card],
+    V, hx, fun k ↦ (σ.s k).eval (Opposite.op (Over.mk (𝟙 V))), fun W i ↦ ?_⟩
+  have hb := TauCeti.SheafOfModules.bijective_linearCombination_of_isIso (R := X.sheaf.over V)
+    (M := E.obj.over V) σ.s (hs := hπ) (Opposite.op (Over.mk i))
+  have hres (j : σ.I) : (σ.s j).eval (Opposite.op (Over.mk i)) =
+      E.obj.presheaf.map i.op ((σ.s j).eval (Opposite.op (Over.mk (𝟙 V)))) :=
+    (PresheafOfModules.sections_property _ (Over.homMk i : Over.mk i ⟶ Over.mk (𝟙 V)).op).symm
+  have hfun : (fun j ↦ E.obj.presheaf.map i.op ((σ.s j).eval (Opposite.op (Over.mk (𝟙 V))))) =
+      fun j ↦ (σ.s j).eval (Opposite.op (Over.mk i)) := funext fun j ↦ (hres j).symm
+  rw [hfun]
+  exact hb
 
 /-- The characteristic equation of `rank`, for a basis of a module equal to the underlying module
 and with the instance arguments passed explicitly. It is used where the underlying module is only

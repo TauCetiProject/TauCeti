@@ -8,10 +8,11 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.LocalFlatDescent
 public import Mathlib.AlgebraicGeometry.Sites.Fpqc
 public import Mathlib.CategoryTheory.Sites.SubcanonicalOver
+public import TauCeti.AlgebraicGeometry.Descent.Representable
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Descent
 public import TauCeti.CategoryTheory.Monoidal.Mod.Faithful
 public import TauCeti.CategoryTheory.Sites.NonabelianCohomology.GrpObj
-public import TauCeti.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # Torsors under a group scheme
@@ -37,6 +38,13 @@ exactly the pseudo-torsors which are flat, surjective and locally of finite pres
 Torsors are stable under base change, a torsor is trivial exactly when its structure morphism has
 a section, and the empty scheme over a nonempty base is never a torsor.
 
+For `G` affine over `S`, every torsor under the sheaf of points `h_G` is the functor of points of
+a `G`-torsor affine over `S`, by fppf descent of schemes affine over the base and Zariski gluing
+(`CategoryTheory.Sheaf.Torsor.exists_isAffineHom_nonempty_representableBy`). So the functor of
+points `CategoryTheory.GrothendieckTopology.toTorsorFunctor` is an equivalence between the
+category of `G`-torsors and the category of torsors under `h_G`. No Noetherian hypothesis on `S`
+and no flatness of `G` is needed.
+
 ## Main declarations
 
 * `TauCeti.GroupScheme.isTorsor_of_isIso_leftSMul`: a pseudo-torsor which is flat, surjective and
@@ -53,11 +61,16 @@ a section, and the empty scheme over a nonempty base is never a torsor.
   structure morphism has a section.
 * `TauCeti.GroupScheme.not_isTorsor_of_isEmpty`: the empty scheme over a nonempty base is not a
   torsor.
+* `TauCeti.GroupScheme.exists_isTorsor_nonempty_toTorsor_iso`: for `G` affine over `S`, every
+  torsor under the sheaf of points of `G` is the torsor of points of a `G`-torsor affine over `S`.
+* `TauCeti.GroupScheme.isEquivalence_toTorsorFunctor`: for `G` affine over `S`, the functor of
+  points is an equivalence from `G`-torsors to torsors under the sheaf of points of `G`.
 
 ## References
 
 * [The Stacks project, Definition 78.9.3 (04TY)](https://stacks.math.columbia.edu/tag/04TY).
-* B. Poonen, *Rational points on varieties*, Section 5.12 and Section 6.5.
+* B. Poonen, *Rational points on varieties*, Section 5.12 and Section 6.5; Theorem 6.5.10 (i)
+  for the representability of torsors under an affine group scheme.
 -/
 
 public section
@@ -239,5 +252,39 @@ theorem isTorsor_pullback_obj {S' : Scheme.{u}} (p : S' ⟶ S)
       ((Scheme.fppfTopology.coversTop_over_iff X).1 h.coversTop))
     rintro Z g ⟨_, x, _, ⟨⟩, hx⟩
     exact ⟨_, Limits.pullback.lift x g hx, _, Presieve.singleton.mk, by simp⟩
+
+section Representability
+
+variable [IsAffineHom G.X.hom]
+
+/-- **Torsors under an affine group scheme are representable.** For a group scheme `G` affine over
+`S`, every torsor `P` under the sheaf of points of `G` on the big fppf site of `S` is the torsor of
+points of a `G`-torsor `X` affine over `S` (Poonen, Theorem 6.5.10 (i), here without Noetherian
+hypotheses). -/
+theorem exists_isTorsor_nonempty_toTorsor_iso
+    (P : Sheaf.Torsor ((Scheme.fppfTopology.over S).uliftYonedaGrp.{w}.obj G)) :
+    ∃ (X : Over S) (_ : ModObj G.X X) (h : (Scheme.fppfTopology.over S).IsTorsor G X),
+      IsAffineHom X.hom ∧ Nonempty (GrothendieckTopology.IsTorsor.toTorsor.{w} h ≅ P) := by
+  obtain ⟨X, hX, ⟨e⟩⟩ := P.exists_isAffineHom_nonempty_representableBy
+    (GrothendieckTopology.uliftYonedaGrpObjRepresentableBy G)
+  exact ⟨X, P.modObjOfRepresentableBy e, P.isTorsor_of_representableBy e, hX,
+    ⟨P.toTorsorIsoOfRepresentableBy e⟩⟩
+
+/-- For a group scheme `G` affine over `S`, the functor of points from `G`-torsors to torsors under
+the sheaf of points of `G` on the big fppf site of `S` is essentially surjective. -/
+instance essSurj_toTorsorFunctor :
+    ((Scheme.fppfTopology.over S).toTorsorFunctor.{w} G).EssSurj where
+  mem_essImage P := (P.toTorsorFunctor_essImage_iff).2 <| by
+    obtain ⟨X, -, ⟨e⟩⟩ := P.exists_isAffineHom_nonempty_representableBy
+      (GrothendieckTopology.uliftYonedaGrpObjRepresentableBy G)
+    exact e.isRepresentable
+
+/-- For a group scheme `G` affine over `S`, the functor of points is an equivalence between the
+category of `G`-torsors, with `G`-equivariant morphisms, and the category of torsors under the
+sheaf of points of `G` on the big fppf site of `S`. -/
+instance isEquivalence_toTorsorFunctor :
+    ((Scheme.fppfTopology.over S).toTorsorFunctor.{w} G).IsEquivalence where
+
+end Representability
 
 end TauCeti.GroupScheme

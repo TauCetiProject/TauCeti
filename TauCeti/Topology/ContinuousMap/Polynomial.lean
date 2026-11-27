@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Lagrange
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.ContinuousMap.Polynomial
 
@@ -16,9 +17,13 @@ A polynomial `P` over a topological commutative semiring `A` defines the continu
 gives the continuous function `x ↦ P.eval x • 1 : C(A, R)`. This is the same as evaluating `P` in
 the `A`-algebra `C(A, R)` at the coordinate function `x_R = ContinuousMap.id A • 1`.
 
+On a finite subset of a topological field every continuous function is a polynomial function, by
+Lagrange interpolation.
+
 ## Main results
 
 * `Polynomial.toContinuousMap_smul_one_eq_aeval`: `P.toContinuousMap • 1 = aeval x_R P`.
+* `polynomialFunctions.eq_top_of_finite`: `polynomialFunctions s = ⊤` for finite `s`.
 -/
 
 public section
@@ -40,3 +45,16 @@ theorem toContinuousMap_smul_one_eq_aeval {A R : Type*} [CommSemiring A] [Topolo
   simp [← Algebra.algebraMap_eq_smul_one, aeval_algebraMap_apply_eq_algebraMap_eval]
 
 end Polynomial
+
+/-- On a finite subset `s` of a topological field, including the empty set, every continuous
+function is a polynomial function. -/
+theorem polynomialFunctions.eq_top_of_finite {F : Type*} [Field F] [TopologicalSpace F]
+    [IsTopologicalSemiring F] {s : Set F} (hs : s.Finite) : polynomialFunctions s = ⊤ := by
+  classical
+  have := hs.fintype
+  refine eq_top_iff.mpr fun φ _ ↦ ?_
+  rw [← SetLike.mem_coe, polynomialFunctions_coe]
+  refine ⟨Lagrange.interpolate Finset.univ Subtype.val φ, ?_⟩
+  ext x
+  simpa [-Lagrange.interpolate_apply] using
+    Lagrange.eval_interpolate_at_node φ Subtype.val_injective.injOn (Finset.mem_univ x)

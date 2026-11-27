@@ -7,7 +7,13 @@ module
 
 public import Mathlib.Analysis.SpecificLimits.Normed
 public import Mathlib.RingTheory.AdicCompletion.Basic
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.Topology.Algebra.Valued.NormedValued
+public import Mathlib.Topology.Algebra.Valued.ValuedField
+public import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
+public import TauCeti.RingTheory.Valuation.AbsoluteValue
+-- Proof-only: a uniformiser of `𝒪[K]` has norm less than one.
+import Mathlib.Topology.Algebra.Valued.LocallyCompact
 
 /-!
 # Adic completeness of the ring of integers of a complete nonarchimedean field
@@ -21,6 +27,12 @@ filtration of `O` is cofinal with the balls about zero; and whenever `‖ϖ‖ <
 nonzero elements of norm less than one, each divide a power of the other, so the `ϖ`-adic
 topology does not depend on the choice of pseudouniformiser `ϖ`.
 
+When the maximal ideal of `O` is principal, for instance when `O` is a discrete valuation ring,
+its generators have norm less than one, so `O` is complete for its maximal ideal. In particular the
+valuation ring `(NormedField.valuation (K := K)).integer` of a complete discretely valued field
+carries an `IsAdicComplete` instance for its maximal ideal, which is the hypothesis of the
+ideal-adic Weierstrass preparation theorem over a complete discrete valuation ring.
+
 For a complete perfect nonarchimedean field `F` of characteristic `p` with pseudouniformiser `ϖ`,
 this is the completeness input for the ring of integers `𝒪_F` required to make the Witt vectors
 `A_inf = W(𝒪_F)` complete for their `(p, [ϖ])`-adic topology.
@@ -29,12 +41,27 @@ this is the completeness input for the ring of integers `𝒪_F` required to mak
 
 * `TauCeti.NormedField.v_eq_valuation`: `Valued.v x = NormedField.valuation x` for any ultrametric
   normed field `K`, without requiring the norm to be nontrivial.
+* `Valuation.Integers.norm_algebraMap_le_one` and `Valuation.Integers.norm_algebraMap_lt_one_iff`:
+  `O` maps into the closed unit ball, and its nonunits are exactly the elements of norm less than
+  one.
 * `Valuation.Integers.mem_span_singleton_pow_iff_norm_le`: `x ∈ (ϖ) ^ n` exactly when
   `‖x‖ ≤ ‖ϖ‖ ^ n`.
 * `Valuation.Integers.radical_span_singleton_eq_of_norm_lt_one`: any two pseudouniformisers,
   nonzero elements of norm less than one, generate ideals with the same radical.
 * `Valuation.Integers.isAdicComplete_span_singleton`: if `‖ϖ‖ < 1`, then `O` is
   `ϖ`-adically complete.
+* `Valued.integer.isAdicComplete_maximalIdeal`: if `K` is complete and `𝒪[K]` is a discrete
+  valuation ring, then `𝒪[K]` is complete for its maximal ideal, hence a Henselian local ring
+  through `TauCeti.IsAdicComplete.henselianLocalRing`.
+* `Valuation.Integers.isAdicComplete_maximalIdeal`: if the maximal ideal of `O` is principal, then
+  `O` is complete for its maximal ideal.
+
+## Absolute values
+
+* `NormedField.toValuation_toAbsoluteValue`: `NormedField.valuation` is the valuation
+  `AbsoluteValue.toValuation` attached to the norm, viewed as a nonarchimedean absolute value.
+* `Valuation.isNonarchimedean_absoluteValue`: Mathlib's absolute value `Valuation.absoluteValue`
+  of a valuation of rank at most one is nonarchimedean.
 -/
 
 public section
@@ -58,6 +85,19 @@ end NormedField
 namespace Valuation.Integers
 
 variable {K O : Type*} [NormedField K] [IsUltrametricDist K] [CommRing O] [Algebra O K]
+
+/-- Elements of the ring of integers of a nonarchimedean normed field have norm at most one. -/
+theorem norm_algebraMap_le_one (hv : (NormedField.valuation (K := K)).Integers O) (x : O) :
+    ‖algebraMap O K x‖ ≤ 1 := by
+  simpa [← NNReal.coe_le_one] using hv.map_le_one x
+
+/-- An element of the ring of integers of a nonarchimedean normed field has norm less than one
+exactly when it is not a unit. -/
+theorem norm_algebraMap_lt_one_iff (hv : (NormedField.valuation (K := K)).Integers O) {x : O} :
+    ‖algebraMap O K x‖ < 1 ↔ ¬IsUnit x := by
+  rw [hv.isUnit_iff_valuation_eq_one, NormedField.valuation_apply, ← NNReal.coe_eq_one,
+    coe_nnNorm]
+  exact ⟨ne_of_lt, (hv.norm_algebraMap_le_one x).lt_of_ne⟩
 
 /-- In the ring of integers of a nonarchimedean normed field, `x` lies in `(ϖ) ^ n` exactly when
 `‖x‖ ≤ ‖ϖ‖ ^ n`. -/
@@ -127,4 +167,62 @@ theorem isAdicComplete_span_singleton (hv : (NormedField.valuation (K := K)).Int
     exact ⟨l, fun n ↦ by simpa [dist_eq_norm] using hdist n⟩
   exact {}
 
+/-- **The ring of integers of a complete nonarchimedean field is complete for a principal maximal
+ideal.** This applies in particular when `O` is a discrete valuation ring. -/
+theorem isAdicComplete_maximalIdeal [IsLocalRing O]
+    (hv : (NormedField.valuation (K := K)).Integers O)
+    (h : (IsLocalRing.maximalIdeal O).IsPrincipal) :
+    IsAdicComplete (IsLocalRing.maximalIdeal O) O := by
+  -- A generator of the maximal ideal is not a unit, so it has norm less than one.
+  rw [← Ideal.span_singleton_generator (IsLocalRing.maximalIdeal O)]
+  exact hv.isAdicComplete_span_singleton <| hv.norm_algebraMap_lt_one_iff.2 <|
+    (IsLocalRing.mem_maximalIdeal _).1 (Submodule.IsPrincipal.generator_mem _)
+
 end Valuation.Integers
+
+namespace Valued.integer
+
+open scoped NormedField
+
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
+  [IsDiscreteValuationRing 𝒪[K]]
+
+/-- If `K` is a complete nonarchimedean field whose ring of integers `𝒪[K]` is a discrete
+valuation ring, then `𝒪[K]` is complete for its maximal ideal: the maximal ideal is generated by a
+uniformiser, which has norm less than one. In particular `𝒪[K]` is a Henselian local ring, through
+`TauCeti.IsAdicComplete.henselianLocalRing`. -/
+instance isAdicComplete_maximalIdeal : IsAdicComplete (IsLocalRing.maximalIdeal 𝒪[K]) 𝒪[K] := by
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  rw [hϖ.maximalIdeal_eq]
+  exact (Valuation.integer.integers (NormedField.valuation (K := K))
+    ).isAdicComplete_span_singleton (norm_irreducible_lt_one hϖ)
+
+end Valued.integer
+
+/-- The valuation ring of a complete nonarchimedean field is complete for its maximal ideal when it
+is a discrete valuation ring. -/
+instance Valuation.integer.isAdicComplete_maximalIdeal {K : Type*} [NormedField K]
+    [IsUltrametricDist K] [CompleteSpace K]
+    [IsDiscreteValuationRing (NormedField.valuation (K := K)).integer] :
+    IsAdicComplete (IsLocalRing.maximalIdeal (NormedField.valuation (K := K)).integer)
+      (NormedField.valuation (K := K)).integer :=
+  (Valuation.integer.integers _).isAdicComplete_maximalIdeal (IsPrincipalIdealRing.principal _)
+
+namespace NormedField
+
+open scoped NNReal
+
+variable (K : Type*) [NormedField K] [IsUltrametricDist K]
+
+/-- Mathlib's valuation of a nonarchimedean normed field is the valuation attached to its norm. -/
+theorem toValuation_toAbsoluteValue :
+    (toAbsoluteValue K).toValuation (isNonarchimedean_toAbsoluteValue K) = valuation :=
+  Valuation.ext fun x ↦ NNReal.eq (by simp [NormedField.valuation_apply])
+
+end NormedField
+
+/-- Mathlib's absolute value of a valuation of rank at most one is nonarchimedean. -/
+theorem Valuation.isNonarchimedean_absoluteValue {K Γ₀ : Type*} [DivisionRing K]
+    [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation K Γ₀) [RankLeOne v] :
+    IsNonarchimedean v.absoluteValue := fun x y ↦ by
+  simpa using v.norm_add_le x y

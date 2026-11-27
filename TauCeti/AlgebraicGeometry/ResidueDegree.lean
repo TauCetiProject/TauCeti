@@ -23,8 +23,9 @@ composite with the product of the two successive residue degrees. We also charac
 residue degree is positive and when it is one, and show that a morphism surjective on stalks, such
 as a closed immersion, has residue degree one everywhere. The comparison
 `finrank_residueField_stalk` computes this degree from the residue field of the local ring with
-any compatible base-field algebra structure. These facts supply the residue-field weights used in
-degree and pushforward constructions.
+any compatible base-field algebra structure, and `residueDegree_eq_finrank_residueField` computes
+it through any local ring isomorphic to the source stalk compatibly with the stalk map. These facts
+supply the residue-field weights used in degree and pushforward constructions.
 
 The construction follows the residue-degree convention for pushforward of cycles in the
 [Stacks Project, Tag 02R4](https://stacks.math.columbia.edu/tag/02R4). The proofs reuse
@@ -93,6 +94,30 @@ theorem residueDegree_eq_one_of_surjectiveOnStalks (f : X ⟶ Y) [SurjectiveOnSt
   obtain ⟨t, rfl⟩ := f.stalkMap_surjective x s
   refine ⟨Y.residue (f x) t, ?_⟩
   rw [← CategoryTheory.comp_apply, Scheme.residue_residueFieldMap, CategoryTheory.comp_apply]
+
+/-- The residue degree of `f` at `x` is computed by any local ring `T` over `𝒪_{Y, f x}` isomorphic
+to `𝒪_{X,x}` compatibly with the stalk map: it is the degree of the residue field of `T` over that
+of `𝒪_{Y, f x}`. -/
+theorem residueDegree_eq_finrank_residueField (f : X ⟶ Y) (x : X) {T : Type u} [CommRing T]
+    [IsLocalRing T] [Algebra (Y.presheaf.stalk (f x)) T]
+    [IsLocalHom (algebraMap (Y.presheaf.stalk (f x)) T)] (e : T ≃+* X.presheaf.stalk x)
+    (he : ∀ a, e (algebraMap _ T a) = f.stalkMap x a) :
+    f.residueDegree x = Module.finrank (IsLocalRing.ResidueField (Y.presheaf.stalk (f x)))
+      (IsLocalRing.ResidueField T) := by
+  dsimp only [residueDegree]
+  let := (f.residueFieldMap x).hom.toAlgebra
+  refine Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl _)
+    (IsLocalRing.ResidueField.mapEquiv e).symm (RingHom.ext fun a ↦ ?_)
+  obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective a
+  -- Unfold the composed ring homs and `RingEquiv.refl`, the residue-field algebra maps
+  -- (the target's is induced by `algebraMap _ T`, the source's by `f.residueFieldMap x`),
+  -- `Scheme.Hom.residueFieldMap`, and the inverse of `ResidueField.mapEquiv e`.
+  -- This exposes both maps as `ResidueField.map`; `map_residue` cannot rewrite through
+  -- the algebra-map and equivalence wrappers until these definitions are exposed.
+  change IsLocalRing.residue _ (algebraMap _ _ a) = IsLocalRing.ResidueField.map
+    (e.symm : _ →+* T) (IsLocalRing.ResidueField.map (f.stalkMap x).hom (IsLocalRing.residue _ a))
+  rw [IsLocalRing.ResidueField.map_residue, IsLocalRing.ResidueField.map_residue, ← he]
+  simp
 
 /-- For a morphism to the spectrum of a field, the residue degree at a point is the
 base-field dimension of the residue field of its local ring, with the compatible algebra

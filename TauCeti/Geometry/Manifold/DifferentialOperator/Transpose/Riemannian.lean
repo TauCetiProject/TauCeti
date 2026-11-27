@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialOperator.FirstOrder
 public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType.Basic
-public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
+public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Existence
+public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -31,11 +30,11 @@ The divergence theorem computes these transposes for operators of order at most 
 (`TauCeti.Manifold.integral_mvfderiv_mul`), so the transpose of `X + c` is
 `-X + (c - div X)` (`LinearMap.isFormalTranspose_vectorFieldDerivation_add_mulLeft`). The
 zeroth-order term `-div X` is what distinguishes the transpose from the naive `-X + c`; it vanishes
-exactly for divergence-free fields. Every operator of order at most one is of the form `X + c`
-(`LinearMap.eq_vectorFieldDerivation_add_mulLeft_of_mem_differentialOperators_one`), so it has a
-formal transpose of order at most one
-(`LinearMap.formalTranspose_riemannianVolume_mem_differentialOperators_one`). Green's second
-identity says that the Laplace–Beltrami operator is its own transpose
+exactly for divergence-free fields. Since vector fields have transposes of order at most one, every
+differential operator of order at most `m` has a formal transpose of order at most `m`
+(`LinearMap.formalTranspose_riemannianVolume_mem_differentialOperators`, from
+`LinearMap.exists_isFormalTranspose_of_forall_vectorFieldDerivation`). Green's second identity
+says that the Laplace–Beltrami operator is its own transpose
 (`LinearMap.formalTranspose_smoothLaplaceBeltrami`).
 
 The transpose depends on the density. Every smooth positive density is `e^φ dV` for a smooth
@@ -51,9 +50,14 @@ Euclidean metric, where `dV = dx` and `div ∂ₓ = 0`, taking `φ = sin` gives 
 * `LinearMap.isFormalTranspose_vectorFieldDerivation_add_mulLeft`,
   `LinearMap.formalTranspose_vectorFieldDerivation_add_mulLeft`: the transpose of `X + c` is
   `-X + (c - div X)`.
-* `LinearMap.isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators_one`,
-  `LinearMap.formalTranspose_riemannianVolume_mem_differentialOperators_one`: an operator of order
-  at most one has a formal transpose with respect to `dV`, again of order at most one.
+* `LinearMap.isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators`,
+  `LinearMap.formalTranspose_riemannianVolume_mem_differentialOperators`: a differential operator
+  of order at most `m` has a formal transpose with respect to `dV`, again of order at most `m`.
+* `LinearMap.formalTranspose_formalTranspose_riemannianVolume`,
+  `LinearMap.formalTranspose_riemannianVolume_add`,
+  `LinearMap.formalTranspose_riemannianVolume_sub`,
+  `LinearMap.formalTranspose_riemannianVolume_comp`: on differential operators, transposition with
+  respect to `dV` is an additive involution that reverses composition, `(D₁ ∘ D₂)ᵗ = D₂ᵗ ∘ D₁ᵗ`.
 * `LinearMap.isFormalTranspose_smoothLaplaceBeltrami`,
   `LinearMap.formalTranspose_smoothLaplaceBeltrami`: the Laplace–Beltrami operator is formally
   self-transpose.
@@ -89,7 +93,7 @@ variable [SigmaCompactSpace M] [MeasurableSpace M] [BorelSpace M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
 
-/-! ### Operators of order at most one -/
+/-! ### Vector fields and differential operators -/
 
 /-- **The transpose of a vector field.** With respect to the Riemannian volume, the formal
 transpose of differentiation along a smooth vector field `X` is `g ↦ -X g - (div X) g`. -/
@@ -156,24 +160,92 @@ theorem formalTranspose_vectorFieldDerivation_add_mulLeft
 
 variable {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
 
-/-- **Transposes of first-order operators.** With respect to the Riemannian volume, every operator
-of order at most one on `C^∞(M)` has a formal transpose. -/
-theorem isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators_one
-    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 1) :
-    D.IsFormalTranspose (D.formalTranspose (riemannianVolume I M)) (riemannianVolume I M) := by
-  rw [eq_vectorFieldDerivation_add_mulLeft_of_mem_differentialOperators_one hD]
-  exact (isFormalTranspose_vectorFieldDerivation_add_mulLeft _ _).isFormalTranspose_formalTranspose
+/-- The transpose of differentiation along a vector field has order at most one. -/
+private theorem exists_isFormalTranspose_vectorFieldDerivation
+    (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
+    ∃ D' ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 1,
+      (vectorFieldDerivation X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯).IsFormalTranspose D'
+        (riemannianVolume I M) :=
+  ⟨_, sub_mem (neg_mem (Derivation.mem_differentialOperators_one _))
+    (differentialOperators_le_succ 0 (mulLeft_mem_differentialOperators_zero _)),
+    isFormalTranspose_vectorFieldDerivation X⟩
 
-/-- With respect to the Riemannian volume, the formal transpose of an operator of order at most one
-has order at most one. -/
-theorem formalTranspose_riemannianVolume_mem_differentialOperators_one
-    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 1) :
+/-- **Transposes of differential operators.** With respect to the Riemannian volume, every
+differential operator on `C^∞(M)` has a formal transpose. -/
+theorem isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators {m : ℕ}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) :
+    D.IsFormalTranspose (D.formalTranspose (riemannianVolume I M)) (riemannianVolume I M) := by
+  obtain ⟨D', -, h⟩ := exists_isFormalTranspose_of_forall_vectorFieldDerivation
+    exists_isFormalTranspose_vectorFieldDerivation hD
+  exact h.isFormalTranspose_formalTranspose
+
+/-- With respect to the Riemannian volume, the formal transpose of a differential operator of
+order at most `m` has order at most `m`. -/
+theorem formalTranspose_riemannianVolume_mem_differentialOperators {m : ℕ}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) :
     D.formalTranspose (riemannianVolume I M) ∈
-      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 1 := by
-  rw [eq_vectorFieldDerivation_add_mulLeft_of_mem_differentialOperators_one hD,
-    formalTranspose_vectorFieldDerivation_add_mulLeft]
-  exact add_mem (neg_mem (Derivation.mem_differentialOperators_one _))
-    (differentialOperators_le_succ 0 (mulLeft_mem_differentialOperators_zero _))
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m := by
+  obtain ⟨D', hD', h⟩ := exists_isFormalTranspose_of_forall_vectorFieldDerivation
+    exists_isFormalTranspose_vectorFieldDerivation hD
+  rwa [h.formalTranspose_eq]
+
+/-! ### The algebra of transposes -/
+
+/-- With respect to the Riemannian volume, transposing a differential operator twice gives it
+back. -/
+theorem formalTranspose_formalTranspose_riemannianVolume {m : ℕ}
+    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) :
+    (D.formalTranspose (riemannianVolume I M)).formalTranspose (riemannianVolume I M) = D :=
+  (isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators
+    hD).formalTranspose_formalTranspose
+
+variable {D₁ D₂ : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯} {m k : ℕ}
+
+/-- With respect to the Riemannian volume, the formal transpose of a sum of differential operators
+is the sum of their formal transposes. -/
+theorem formalTranspose_riemannianVolume_add
+    (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k) :
+    (D₁ + D₂).formalTranspose (riemannianVolume I M) =
+      D₁.formalTranspose (riemannianVolume I M) + D₂.formalTranspose (riemannianVolume I M) :=
+  ((isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₁).add
+    (isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₂)
+    (tsupport_differentialOperators_apply_subset hD₁)
+    (tsupport_differentialOperators_apply_subset hD₂)
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₁))
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₂))).formalTranspose_eq
+
+/-- With respect to the Riemannian volume, the formal transpose of a difference of differential
+operators is the difference of their formal transposes. -/
+theorem formalTranspose_riemannianVolume_sub
+    (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k) :
+    (D₁ - D₂).formalTranspose (riemannianVolume I M) =
+      D₁.formalTranspose (riemannianVolume I M) - D₂.formalTranspose (riemannianVolume I M) :=
+  ((isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₁).sub
+    (isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₂)
+    (tsupport_differentialOperators_apply_subset hD₁)
+    (tsupport_differentialOperators_apply_subset hD₂)
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₁))
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₂))).formalTranspose_eq
+
+/-- **Transposition reverses composition.** With respect to the Riemannian volume, the formal
+transpose of a composition of differential operators is the composition of their formal transposes
+in the reverse order. -/
+theorem formalTranspose_riemannianVolume_comp
+    (hD₁ : D₁ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m)
+    (hD₂ : D₂ ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ k) :
+    (D₁ ∘ₗ D₂).formalTranspose (riemannianVolume I M) =
+      D₂.formalTranspose (riemannianVolume I M) ∘ₗ D₁.formalTranspose (riemannianVolume I M) :=
+  ((isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₁).comp
+    (isFormalTranspose_formalTranspose_riemannianVolume_of_mem_differentialOperators hD₂)
+    (tsupport_differentialOperators_apply_subset hD₂)
+    (tsupport_differentialOperators_apply_subset
+      (formalTranspose_riemannianVolume_mem_differentialOperators hD₁))).formalTranspose_eq
 
 /-! ### The Laplace–Beltrami operator -/
 

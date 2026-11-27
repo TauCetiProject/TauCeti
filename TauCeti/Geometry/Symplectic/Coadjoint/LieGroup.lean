@@ -59,10 +59,12 @@ the coadjoint orbit appear on `G` as follows.
   section with the cotangent moment map of the lifted action; on the orbit it is the statement
   that the inclusion of the orbit into `𝔤*` is a moment map for the KKS form.
 * **Naturality.** The forms depend additively on `ν` (`Module.Dual.leftInvariantForm_add`,
-  `Module.Dual.leftInvariantKirillovForm_add`), and a smooth homomorphism `φ : K → G` pulls `α_ν`
-  and `σ_ν` back to `α_{ν ∘ dφ}` and `σ_{ν ∘ dφ}` (`Module.Dual.mpullback_leftInvariantForm`,
-  `Module.Dual.mpullback_leftInvariantKirillovForm`). Applied to the projections of a product
-  `G × K`, this splits the Kirillov form of a product group into the forms of its factors.
+  `Module.Dual.leftInvariantKirillovForm_add`) and vanish at `ν = 0`
+  (`Module.Dual.leftInvariantForm_zero`, `Module.Dual.leftInvariantKirillovForm_zero`), and a
+  smooth homomorphism `φ : K → G` pulls `α_ν` and `σ_ν` back to `α_{ν ∘ dφ}` and `σ_{ν ∘ dφ}`
+  (`Module.Dual.mpullback_leftInvariantForm`, `Module.Dual.mpullback_leftInvariantKirillovForm`).
+  Applied to the projections of a product `G × K`, this splits the Kirillov form of a product
+  group into the forms of its factors.
 
 ## References
 
@@ -219,6 +221,18 @@ theorem leftInvariantForm_add (ν' : Module.Dual ℝ (GroupLieAlgebra I G)) :
   -- of `GroupLieAlgebra I G`; both are the model space, but `rw` cannot see this.
   rfl
 
+/-- The left-invariant one-form of the zero covector vanishes. -/
+@[simp]
+theorem leftInvariantForm_zero :
+    (0 : Module.Dual ℝ (GroupLieAlgebra I G)).leftInvariantForm = 0 := by
+  apply Subtype.ext
+  funext g
+  ext v
+  rw [leftInvariantForm_apply]
+  -- `LinearMap.zero_apply`, up to reading the translate in `TangentSpace I (g⁻¹ * g)` as an
+  -- element of `GroupLieAlgebra I G`, as in `leftInvariantForm_add`.
+  rfl
+
 /-! ### The left-invariant Kirillov form -/
 
 /-- The **left-invariant Kirillov form** `σ_ν = -dα_ν` of `ν ∈ 𝔤*` on `G`, where `α_ν` is the
@@ -324,6 +338,12 @@ theorem leftInvariantKirillovForm_add (ν' : Module.Dual ℝ (GroupLieAlgebra I 
       ν.leftInvariantKirillovForm + ν'.leftInvariantKirillovForm := by
   rw [leftInvariantKirillovForm, leftInvariantKirillovForm, leftInvariantKirillovForm,
     leftInvariantForm_add, map_add, neg_add]
+
+/-- The left-invariant Kirillov form of the zero covector vanishes. -/
+@[simp]
+theorem leftInvariantKirillovForm_zero :
+    (0 : Module.Dual ℝ (GroupLieAlgebra I G)).leftInvariantKirillovForm = 0 := by
+  rw [leftInvariantKirillovForm, leftInvariantForm_zero, map_zero, neg_zero]
 
 /-- The left-invariant Kirillov form is invariant under left translations. -/
 @[simp]

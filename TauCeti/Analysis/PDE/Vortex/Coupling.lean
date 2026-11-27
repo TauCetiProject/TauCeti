@@ -66,7 +66,7 @@ theorem dilateField_mem_framedVortexSubMulAction (ht : 0 < t)
     dilateField t x ∈ framedVortexSubMulAction (t ^ 2 * c) m := by
   obtain ⟨hs, hsol, hfr⟩ := mem_framedVortexSubMulAction.1 hx
   exact mem_framedVortexSubMulAction.2 ⟨contDiff_dilateField hs t,
-    fun z ↦ (coupledEquation_dilateField_eq_zero_iff c t ht.ne' x z).2 (hsol _),
+    fun z ↦ (coupledEquation_dilateField_apply_eq_zero_iff c t ht.ne' x z).2 (hsol _),
     tendsto_sectionValue_dilateField hfr ht⟩
 
 /-- A positive dilation preserves and reflects framed vortices, changing the coupling from `c`

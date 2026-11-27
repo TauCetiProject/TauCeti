@@ -54,14 +54,22 @@ symbol is its fibre map.
   operator.
 * `TauCeti.sectionPrincipalSymbol I hx P`: the principal symbol of `P` at `x`, a homogeneous
   function of degree `m` on `T_x*M` with values in `Hom(V_x, W_x)`.
+* `TauCeti.sectionPrincipalSymbolₗ I hx P`: for `P` of order at most one, the principal symbol at
+  `x` as a linear map on `T_x*M`.
 
 ## Main results
 
 * `TauCeti.sectionCommutatorSymbol_mvfderiv`, `TauCeti.sectionPrincipalSymbol_mvfderiv`: the values
   at differentials of functions are the iterated commutators.
+* `TauCeti.sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero`: for functions `fᵢ` vanishing
+  at `x`, the commutator symbol at their differentials is `s(x) ↦ (P (f₁ ⋯ fₘ • s))(x)`.
+* `TauCeti.exists_mvfderiv_eq_and_apply_eq`: covectors and fibre vectors at `x` are the
+  differentials of smooth functions vanishing at `x` and the value of a smooth section.
 * `TauCeti.eq_sectionCommutatorSymbol_iff`: the commutator symbol is the multilinear map with
   these values.
 * `TauCeti.sectionCommutatorSymbol_comp_perm`: the commutator symbol is symmetric.
+  For an operator of order at most two this reads `[[P, ξ], η] = [[P, η], ξ]`
+  (`TauCeti.sectionCommutatorSymbol_comm`).
 * `TauCeti.smoothSectionFiberEquiv_cotangentSymbol`: comparison with the cotangent symbol of the
   vanishing ideal, through `I_x / I_x² ≃ T_x*M` and `Γ(V) / I_x Γ(V) ≃ V_x`.
 * `TauCeti.sectionPrincipalSymbol_smul_covector`: the principal symbol is homogeneous of degree
@@ -80,7 +88,15 @@ symbol is its fibre map.
   function `g` multiplies its principal symbol at `x` by `g(x)`.
 * `TauCeti.sectionPrincipalSymbol_mvfderiv_of_order_one`: a first-order operator has
   `σ_geom(P)(df_x) s(x) = P(f s)(x) - f(x) (P s)(x)`.
+* `TauCeti.sectionCommutatorSymbol_mvfderiv_pair`: an operator of order at most two has
+  `[[P, df_x], dg_x] s(x) = ([[P, f], g] s)(x)`.
+* `TauCeti.sectionCommutatorSymbol_mvfderiv_of_order_two`: a second-order operator has
+  `[[P, df_x], dg_x] s(x) = P(f g s)(x) - f(x) P(g s)(x) - g(x) P(f s)(x) + f(x) g(x) (P s)(x)`.
+* `TauCeti.sectionPrincipalSymbol_eq_inv_two_smul_sectionCommutatorSymbol`: an operator of order
+  at most two has `σ_geom(P)(ξ) = ½ [[P, ξ], ξ]`.
 * `TauCeti.sectionPrincipalSymbol_comp`: principal symbols multiply under composition.
+* `TauCeti.sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero`: the principal symbols of a
+  complex of differential operators form a complex.
 * `TauCeti.sectionPrincipalSymbol_restrictScalars`: the principal symbol of a `C^∞(M)`-linear map,
   as an operator of order zero, is its fibre map.
 
@@ -211,6 +227,23 @@ theorem sectionPrincipalSymbol_add_covector (hx : I.IsInteriorPoint x)
   rw [sectionPrincipalSymbol_def, sectionPrincipalSymbol_def, sectionPrincipalSymbol_def, h,
     smul_add]
 
+variable (I) in
+/-- The principal symbol at `x` of an operator of order at most one, as a linear map in the
+covector. -/
+def sectionPrincipalSymbolₗ (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 1) :
+    (TangentSpace I x →L[ℝ] ℝ) →ₗ[ℝ] V x →ₗ[ℝ] W x where
+  toFun := sectionPrincipalSymbol I hx P
+  map_add' := sectionPrincipalSymbol_add_covector hx P
+  map_smul' a ξ := by simpa using sectionPrincipalSymbol_smul_covector hx P a ξ
+
+@[simp]
+theorem sectionPrincipalSymbolₗ_apply (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 1)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbolₗ I hx P ξ = sectionPrincipalSymbol I hx P ξ :=
+  (rfl)
+
 @[simp]
 theorem sectionPrincipalSymbol_neg (hx : I.IsInteriorPoint x) {m : ℕ}
     (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
@@ -241,6 +274,47 @@ theorem sectionCommutatorSymbol_mvfderiv (hx : I.IsInteriorPoint x) {m : ℕ}
   rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
   rwa [sectionCommutatorSymbol_apply, smoothSectionFiberMap_apply]
 
+/-- For smooth functions `f₁, …, fₘ` vanishing at `x`, the commutator symbol at their differentials,
+evaluated on the value at `x` of a smooth section `s`, is the value at `x` of `P` applied to the
+product `f₁ ⋯ fₘ • s`: every other term of the expanded iterated commutator carries a factor
+`fᵢ(x) = 0`. -/
+theorem sectionCommutatorSymbol_mvfderiv_of_forall_apply_eq_zero (hx : I.IsInteriorPoint x)
+    {m : ℕ} (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m)
+    {f : Fin m → C^∞⟮I, M; ℝ⟯} (hf : ∀ i, f i x = 0) (s : Cₛ^∞⟮I; F, V⟯) :
+    sectionCommutatorSymbol I hx P (fun i ↦ mvfderiv I (f i) x) (s x) =
+      (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) ((∏ i, f i) • s) x := by
+  have h := apply_eq_zero_of_mem_smoothVanishingIdeal_smul_top
+    (commutatorSymbol_apply_sub_apply_prod_smul_mem_smul_top P
+      (fun i ↦ mem_smoothVanishingIdeal_iff.2 (hf i)) s)
+  rw [ContMDiffSection.coe_sub, Pi.sub_apply, sub_eq_zero] at h
+  rw [sectionCommutatorSymbol_mvfderiv, h]
+
+/-- The commutator symbol at `x` in two covectors, evaluated on the differentials at `x` of smooth
+functions `f` and `g` and on the value at `x` of a smooth section `s`, is the value at `x` of the
+double commutator `[[P, f], g] s`. -/
+theorem sectionCommutatorSymbol_mvfderiv_pair (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
+    (f g : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) :
+    sectionCommutatorSymbol I hx P ![mvfderiv I f x, mvfderiv I g x] (s x) =
+      commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2 P ![f, g] s x := by
+  rw [← sectionCommutatorSymbol_mvfderiv hx]
+  congr 2
+  funext i
+  fin_cases i <;> rfl
+
+omit [FiniteDimensional ℝ F] in
+variable (x) in
+/-- Covectors at `x` and a vector of `V_x` are the differentials at `x` of smooth functions
+vanishing at `x` and the value at `x` of a smooth section. This is how the commutator symbol is
+tested on arbitrary covectors and fibre vectors. -/
+theorem exists_mvfderiv_eq_and_apply_eq {m : ℕ} (ξ : Fin m → TangentSpace I x →L[ℝ] ℝ)
+    (v : V x) :
+    ∃ (f : Fin m → C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯), (∀ i, f i x = 0) ∧
+      (fun i ↦ mvfderiv I (f i) x) = ξ ∧ s x = v := by
+  choose f hf0 hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
+  obtain ⟨s, hs⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
+  exact ⟨f, s, hf0, funext hf, (ContMDiffSection.evalLinearMap_apply ..).symm.trans hs⟩
+
 /-- A real multilinear map on `T_x*M` with values in `Hom(V_x, W_x)` is the commutator symbol of
 `P` at `x` as soon as it sends the differentials at `x` of smooth functions `f₁, …, fₘ` and the
 value at `x` of a smooth section `s` to the value at `x` of `[⋯[P, f₁], …, fₘ] s`. -/
@@ -253,10 +327,8 @@ theorem eq_sectionCommutatorSymbol_iff (hx : I.IsInteriorPoint x) {m : ℕ}
         commutatorSymbol ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ m P f s x := by
   refine ⟨fun h f s ↦ h ▸ sectionCommutatorSymbol_mvfderiv hx P f s, fun h ↦ ?_⟩
   ext ξ v
-  choose f _ hf using fun i ↦ exists_contMDiffMap_mvfderiv_eq (I := I) x (0 : ℝ) (ξ i)
-  obtain rfl : (fun i ↦ mvfderiv I (f i) x) = ξ := funext hf
-  obtain ⟨s, rfl⟩ := ContMDiffSection.evalLinearMap_surjective (I := I) (F := F) ∞ x v
-  rw [ContMDiffSection.evalLinearMap_apply, h, sectionCommutatorSymbol_mvfderiv]
+  obtain ⟨f, s, -, rfl, rfl⟩ := exists_mvfderiv_eq_and_apply_eq (F := F) x ξ v
+  rw [h, sectionCommutatorSymbol_mvfderiv]
 
 /-- The commutator symbol is symmetric. -/
 theorem sectionCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}
@@ -267,6 +339,16 @@ theorem sectionCommutatorSymbol_comp_perm (hx : I.IsInteriorPoint x) {m : ℕ}
     ((sectionCommutatorSymbol I hx P).domDomCongr σ)).2 fun f s ↦ by
       rw [MultilinearMap.domDomCongr_apply, ← commutatorSymbol_comp_perm _ _ σ]
       exact sectionCommutatorSymbol_mvfderiv hx P (f ∘ σ) s) ξ)
+
+/-- The commutator symbol of an operator of order at most two is symmetric in its two covectors. -/
+theorem sectionCommutatorSymbol_comm (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
+    (ξ η : TangentSpace I x →L[ℝ] ℝ) :
+    sectionCommutatorSymbol I hx P ![ξ, η] = sectionCommutatorSymbol I hx P ![η, ξ] := by
+  have h : ![η, ξ] ∘ Equiv.swap (0 : Fin 2) 1 = ![ξ, η] := by
+    funext i
+    fin_cases i <;> simp
+  rw [← sectionCommutatorSymbol_comp_perm hx P ![η, ξ] (Equiv.swap 0 1), h]
 
 /-- The commutator symbol of an operator of order at most `m + 1` vanishes at every interior point
 if the operator has order at most `m`. -/
@@ -344,6 +426,32 @@ theorem sectionPrincipalSymbol_mvfderiv_of_order_one (hx : I.IsInteriorPoint x)
         f x • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) s x := by
   rw [sectionPrincipalSymbol_mvfderiv]
   simp [smulCommutator_apply_apply, ContMDiffSection.smul_apply]
+
+/-- **The commutator symbol of a second-order operator.** For an operator `P` of order at most two,
+`[[P, df_x], dg_x] s(x) = P(f g s)(x) - f(x) P(g s)(x) - g(x) P(f s)(x) + f(x) g(x) (P s)(x)`. -/
+theorem sectionCommutatorSymbol_mvfderiv_of_order_two (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
+    (f g : C^∞⟮I, M; ℝ⟯) (s : Cₛ^∞⟮I; F, V⟯) :
+    sectionCommutatorSymbol I hx P ![mvfderiv I f x, mvfderiv I g x] (s x) =
+      (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (f • g • s) x -
+        f x • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (g • s) x -
+          g x • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) (f • s) x +
+            (f x * g x) • (P : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) s x := by
+  rw [sectionCommutatorSymbol_mvfderiv_pair, commutatorSymbol_apply_apply]
+  simp only [List.ofFn_succ, List.ofFn_zero, List.prod_cons, List.prod_nil, mul_one,
+    mul_apply_eq_comp, smulCommutator_apply_apply, Matrix.cons_val_zero, Matrix.cons_val_succ,
+    Matrix.cons_val_fin_one, ContMDiffSection.coe_sub, Pi.sub_apply,
+    ContMDiffSection.smul_apply, smul_comm g f s]
+  module
+
+/-- The principal symbol of an operator of order at most two is half its commutator symbol on the
+diagonal: `σ_geom(P)(ξ) = ½ [[P, ξ], ξ]`. -/
+theorem sectionPrincipalSymbol_eq_inv_two_smul_sectionCommutatorSymbol (hx : I.IsInteriorPoint x)
+    (P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ 2)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbol I hx P ξ = (2 : ℝ)⁻¹ • sectionCommutatorSymbol I hx P ![ξ, ξ] := by
+  rw [sectionPrincipalSymbol_def, Matrix.vec_single_eq_const, Matrix.vecCons_const,
+    Nat.factorial_two, Nat.cast_ofNat]
 
 /-- The principal symbol of an operator of order at most `m + 1` vanishes if the operator has
 order at most `m`. -/
@@ -443,6 +551,21 @@ theorem sectionPrincipalSymbol_comp (hx : I.IsInteriorPoint x) {m k : ℕ}
     field_simp
   simp only [t, ← Nat.cast_smul_eq_nsmul ℝ, LinearMap.smul_apply, LinearMap.comp_apply, map_smul,
     ContMDiffSection.coe_smul, Pi.smul_apply, smul_smul, hc]
+
+/-- **The symbols of a complex form a complex.** If the differential operators `P : Γ(W) → Γ(U)`
+and `Q : Γ(V) → Γ(W)` satisfy `P Q = 0`, then their principal symbols satisfy
+`σ(P)(ξ) σ(Q)(ξ) = 0` at every covector `ξ`. -/
+theorem sectionPrincipalSymbol_comp_sectionPrincipalSymbol_eq_zero (hx : I.IsInteriorPoint x)
+    {m k : ℕ} {P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F', W⟯ Cₛ^∞⟮I; F'', U⟯ m}
+    {Q : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F', W⟯ k}
+    (hPQ : (P : Cₛ^∞⟮I; F', W⟯ →ₗ[ℝ] Cₛ^∞⟮I; F'', U⟯) ∘ₗ
+      (Q : Cₛ^∞⟮I; F, V⟯ →ₗ[ℝ] Cₛ^∞⟮I; F', W⟯) = 0)
+    (ξ : TangentSpace I x →L[ℝ] ℝ) :
+    sectionPrincipalSymbol I hx P ξ ∘ₗ sectionPrincipalSymbol I hx Q ξ = 0 := by
+  have h0 : (⟨_, comp_mem_differentialOperators P.property Q.property⟩ :
+      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F'', U⟯ (m + k)) = 0 :=
+    Submodule.coe_eq_zero.1 hPQ
+  rw [← sectionPrincipalSymbol_comp, h0, sectionPrincipalSymbol_zero]
 
 end FiniteRank
 

@@ -60,7 +60,7 @@ theorem exists_isClosedEmbedding_normalExp_disc
     {O : Set N} (hO : IsOpen O) (hfO : range f ⊆ O) :
     let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
     letI := f.normalSpaceFiberBundle hn hdim
-    let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+    let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
     letI : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
     ∃ r : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯, (∀ x, 0 < r x) ∧
       {p : TotalSpace P ν | ‖p.snd‖ ≤ r p.proj} ⊆ f.normalExpDomain hn ∧
@@ -78,7 +78,7 @@ theorem exists_isClosedEmbedding_normalExp_disc
   let hn : (∞ : ℕ∞ω) ≠ 0 := by simp
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
-  let ν : M → Type _ := fun x ↦ f.NormalSpace x hn
+  let ν : M → Type _ := fun x ↦ f.isImmersion.NormalSpace x hn
   let : RiemannianBundle ν := ⟨f.normalRiemannianMetric hn⟩
   let : ∀ x, NormedAddCommGroup (ν x) := fun x => inferInstance
   let : ∀ x, InnerProductSpace ℝ (ν x) := fun x => inferInstance

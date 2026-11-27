@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Basic
 public import TauCeti.Geometry.Manifold.Diffeomorph.Tangent
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 
 /-!
 # Tangent maps of Riemannian isometries
@@ -23,6 +24,11 @@ used for initial velocities and velocity lifts of curves.
   isometric equivalence between tangent spaces.
 * `TauCeti.RiemannianIsometry.mfderivToLinearIsometryEquiv_symm_apply`: the inverse equivalence is
   the differential of the inverse isometry.
+* `TauCeti.RiemannianIsometry.mfderivToLinearIsometryEquiv_refl_apply`,
+  `TauCeti.RiemannianIsometry.mfderivToLinearIsometryEquiv_trans_apply`: the differential of the
+  identity is the identity, and the chain rule for a composite of isometries.
+* `TauCeti.RiemannianIsometry.continuousAt_inCoordinates_mfderivToLinearIsometryEquiv`: the
+  differentials are continuous in tangent coordinates.
 * `TauCeti.RiemannianIsometry.toDiffeomorph_tangent_apply`: the tangent-bundle lift has this
   fibrewise linear-isometry equivalence as its fibre map.
 * `TauCeti.RiemannianIsometry.mfderiv_image_ball`: the differential maps each ball of `T_x M` onto
@@ -117,6 +123,42 @@ theorem mfderivToLinearIsometryEquiv_symm_apply (Φ : RiemannianIsometry I J M N
   exact (Diffeomorph.mfderiv_apply_mfderiv_symm_apply
     Φ.toDiffeomorph (by simp) x v).symm
 
+/-- The differential of a smooth Riemannian isometry, as a linear isometric equivalence of
+tangent spaces, has the manifold differential as underlying continuous linear map. -/
+@[simp]
+theorem coe_toContinuousLinearEquiv_mfderivToLinearIsometryEquiv
+    (Φ : RiemannianIsometry I J M N) (x : M) :
+    ((Φ.mfderivToLinearIsometryEquiv x).toContinuousLinearEquiv :
+      TangentSpace I x →L[ℝ] TangentSpace J (Φ x)) = mfderiv I J Φ x :=
+  ContinuousLinearMap.ext fun v ↦ Φ.mfderivToLinearIsometryEquiv_apply x v
+
+/-- The differential of the identity isometry is the identity. -/
+theorem mfderivToLinearIsometryEquiv_refl_apply (x : M) (v : TangentSpace I x) :
+    (RiemannianIsometry.refl I M).mfderivToLinearIsometryEquiv x v = v := by
+  rw [mfderivToLinearIsometryEquiv_apply,
+    show (⇑(RiemannianIsometry.refl I M) : M → M) = id from funext (refl_apply I M), mfderiv_id,
+    ContinuousLinearMap.id_apply]
+
+section Trans
+
+variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+  {H'' : Type*} [TopologicalSpace H''] {K : ModelWithCorners ℝ G H''}
+  {P : Type*} [TopologicalSpace P] [ChartedSpace H'' P]
+  [RiemannianBundle (fun z : P ↦ TangentSpace K z)]
+
+/-- **Chain rule**: the differential of a composite of isometries is the composite of their
+differentials. -/
+theorem mfderivToLinearIsometryEquiv_trans_apply (Φ : RiemannianIsometry I J M N)
+    (Ψ : RiemannianIsometry J K N P) (x : M) (v : TangentSpace I x) :
+    (Φ.trans Ψ).mfderivToLinearIsometryEquiv x v =
+      Ψ.mfderivToLinearIsometryEquiv (Φ x) (Φ.mfderivToLinearIsometryEquiv x v) := by
+  rw [mfderivToLinearIsometryEquiv_apply, mfderivToLinearIsometryEquiv_apply,
+    mfderivToLinearIsometryEquiv_apply,
+    show (⇑(Φ.trans Ψ) : M → P) = Ψ ∘ Φ from funext (trans_apply Φ Ψ)]
+  exact mfderiv_comp_apply x (Ψ.mdifferentiableAt (Φ x)) (Φ.mdifferentiableAt x) v
+
+end Trans
+
 /-- The tangent-bundle lift of a Riemannian isometry uses its fibrewise linear isometric
 equivalence on tangent vectors. -/
 theorem toDiffeomorph_tangent_apply [IsManifold I 1 M] [IsManifold J 1 N]
@@ -125,6 +167,20 @@ theorem toDiffeomorph_tangent_apply [IsManifold I 1 M] [IsManifold J 1 N]
       TotalSpace.mk' F (Φ z.proj) (Φ.mfderivToLinearIsometryEquiv z.proj z.snd) := by
   rw [Diffeomorph.coe_tangent, mfderivToLinearIsometryEquiv_apply]
   rfl
+
+/-- **The differentials of a smooth Riemannian isometry are continuous in tangent
+coordinates**: the representation of `dΦ_x` in the tangent coordinates at `x₀` and `Φ x₀` is
+continuous in `x` at `x₀`. -/
+theorem continuousAt_inCoordinates_mfderivToLinearIsometryEquiv [IsManifold I 1 M]
+    [IsManifold J 1 N] (Φ : RiemannianIsometry I J M N) (x₀ : M) :
+    ContinuousAt (fun x ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I) F (TangentSpace J)
+      x₀ x (Φ x₀) (Φ x)
+      ((Φ.mfderivToLinearIsometryEquiv x).toContinuousLinearEquiv :
+        TangentSpace I x →L[ℝ] TangentSpace J (Φ x))) x₀ := by
+  have h := ((Φ.toDiffeomorph.contMDiff x₀).mfderiv_const (m := 0) (by simp)).continuousAt
+  refine h.congr (.of_forall fun x ↦ ?_)
+  simp only [inTangentCoordinates, coe_toDiffeomorph, id,
+    coe_toContinuousLinearEquiv_mfderivToLinearIsometryEquiv]
 
 end TauCeti.RiemannianIsometry
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 public import TauCeti.Analysis.Distribution.TestFunction.Pullback
+public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 public import Mathlib.MeasureTheory.Function.Jacobian
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
@@ -55,6 +56,8 @@ agrees with it on `e '' K`.
 * `TestFunction.postcompCLM_pushforwardCLM`, `TestFunction.monoCLM_pushforwardCLM`: the pushforward
   commutes with postcomposition by a continuous linear map, for instance with real and imaginary
   parts, and with extension by zero to larger open sets.
+* `TestFunction.pushforwardCLM_smulLeftCLMOfContDiffOn`: `e_* ((g ∘ e) φ) = g e_* φ` for `g`
+  smooth on `Ω`.
 * `TestFunction.pushforwardCLM_eq_smul_transportTestFunction`: along a continuous linear
   automorphism `L`, the pushforward is `|det L|⁻¹` times
   `ContinuousLinearEquiv.transportTestFunction`.
@@ -230,6 +233,18 @@ theorem postcompCLM_pushforwardCLM {G : Type*} [NormedAddCommGroup G] [NormedSpa
   ext y
   by_cases hy : y ∈ e.target <;> simp [hy]
 
+/-- The pushforward intertwines multiplication by `g ∘ e` with multiplication by `g`, for `g`
+smooth on `Ω`: `e_* ((g ∘ e) φ) = g e_* φ`. -/
+theorem pushforwardCLM_smulLeftCLMOfContDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ (⊤ : ℕ∞) g Ω)
+    (φ : 𝓓(U, F)) :
+    pushforwardCLM e he he' hU hUΩ (smulLeftCLMOfContDiffOn (hg.comp (he.mono hU) hUΩ) φ) =
+      smulLeftCLMOfContDiffOn hg (pushforwardCLM e he he' hU hUΩ φ) := by
+  ext y
+  by_cases hy : y ∈ e.target
+  · simp only [pushforwardCLM_apply_of_mem _ hy, smulLeftCLMOfContDiffOn_apply,
+      Function.comp_apply, e.right_inv hy, smul_comm |(fderiv ℝ e.symm y).det| (g y)]
+  · simp [hy]
+
 /-- **Change of variables against a pushed forward density**: for every additive Haar measure,
 `∫ (e_* φ) f = ∫ φ (f ∘ e)`, for a test function `φ` with values in a normed field `𝕜` that is a
 normed `ℝ`-algebra, such as `ℝ` or `ℂ`, acting on the values of `f`. No integrability of `f` is
@@ -355,7 +370,7 @@ theorem pushforwardCLM_eq_smul_transportTestFunction (L : E ≃L[ℝ] E)
     {hU : (U : Set E) ⊆ L.toHomeomorph.toOpenPartialHomeomorph.source} (hUΩ : MapsTo L U Ω)
     (φ : 𝓓(U, F)) :
     pushforwardCLM L.toHomeomorph.toOpenPartialHomeomorph hL hL' hU hUΩ φ =
-      |(L : E →L[ℝ] E).det|⁻¹ • L.transportTestFunction hUΩ φ := by
+      |(L : E →L[ℝ] E).det|⁻¹ • L.transportTestFunction ℝ hUΩ φ := by
   ext y
   -- `hUΩ` is stated for `L` rather than for its coercion to a partial homeomorphism, so the value
   -- is unfolded by unification rather than by rewriting.

@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.L2Space
-public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.MeasureTheory.Function.Lp.Linfty.Algebra
 import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
@@ -20,7 +21,17 @@ An essentially bounded operator-valued function `A : Lp (E →L[𝕜] F) ∞ μ`
 via `(ContinuousLinearMap.id 𝕜 (E →L[𝕜] F)).holderL μ ∞ p p`, proving:
 * `1`, `algebraMap`, and `A * B` laws (`operatorMultiplication_one`,
   `operatorMultiplication_algebraMap`, `operatorMultiplication_comp_operatorMultiplication`);
+* multiplication by a field of maps with essentially bounded pointwise inverses is invertible
+  (`isInvertible_operatorMultiplication_of_comp_eq_id`);
 * the `L²` adjoint `adjoint_operatorMultiplication` and `operatorMultiplicationStarAlgHom`;
+* more generally, for a continuous bilinear map `B : E →L[ℝ] F →L[ℝ] G` into real Hilbert
+  spaces, the `L²` adjoint of Hölder multiplication `f ↦ B(b, f)` by `b ∈ L^∞(μ; E)` is Hölder
+  multiplication by the pointwise adjoints `B(b x, ·)†`, that is by `adjointRealCLM ∘L B`
+  (`ContinuousLinearMap.adjoint_holderL_apply`);
+* the symmetry `⟪A f, ι ∘ g⟫ = ⟪ι ∘ f, A g⟫` on `L²` for an `ι`-symmetric symbol `A`
+  (`inner_operatorMultiplication_compLpL`, and `inner_compLpL_compLpL` for a constant one), and
+  the skew-adjointness `⟪J ∘ f, g⟫ = -⟪f, J ∘ g⟫` for a skew-adjoint `J`
+  (`inner_compLpL_eq_neg_inner_compLpL`);
 * `‖operatorMultiplication p A‖ = ‖A‖` and `isometry_operatorMultiplication` for `[SigmaFinite μ]`.
 
 Multiplication by the indicator of a measurable set `s` is the operator
@@ -142,6 +153,29 @@ theorem operatorMultiplication_comp_operatorMultiplication (A B : Lp (E →L[�
     operatorMultiplication p A ∘L operatorMultiplication p B =
       operatorMultiplication p (A * B) := by
   rw [operatorMultiplication_comp_eq_operatorMultiplication_compL_holderL, compL_holderL_eq_mul]
+
+/-- Multiplication by an essentially bounded field `G` of maps, followed by multiplication by an
+essentially bounded field `G'` with `G' x ∘ G x = id` almost everywhere, is the identity. -/
+theorem operatorMultiplication_comp_operatorMultiplication_eq_id_of_comp_eq_id {G : α → E →L[𝕜] F}
+    {G' : α → F →L[𝕜] E} (hG : MemLp G ∞ μ) (hG' : MemLp G' ∞ μ)
+    (h : ∀ᵐ x ∂μ, G' x ∘L G x = ContinuousLinearMap.id 𝕜 E) :
+    operatorMultiplication p (hG'.toLp G') ∘L operatorMultiplication p (hG.toLp G) =
+      ContinuousLinearMap.id 𝕜 (Lp E p μ) := by
+  refine ContinuousLinearMap.ext fun f ↦ Lp.ext ?_
+  filter_upwards [operatorMultiplication_ae (hG'.toLp G') (operatorMultiplication p (hG.toLp G) f),
+    operatorMultiplication_ae (hG.toLp G) f, hG.coeFn_toLp, hG'.coeFn_toLp, h]
+    with x h₁ h₂ h₃ h₄ h₅
+  rw [comp_apply, h₁, h₂, h₃, h₄, ← comp_apply, h₅, id_apply, id_apply]
+
+/-- Multiplication by an essentially bounded field `G` of maps whose pointwise inverses `G'` are
+essentially bounded is invertible on `Lᵖ`. -/
+theorem isInvertible_operatorMultiplication_of_comp_eq_id {G : α → E →L[𝕜] F}
+    {G' : α → F →L[𝕜] E} (hG : MemLp G ∞ μ) (hG' : MemLp G' ∞ μ)
+    (hG'G : ∀ᵐ x ∂μ, G' x ∘L G x = ContinuousLinearMap.id 𝕜 E)
+    (hGG' : ∀ᵐ x ∂μ, G x ∘L G' x = ContinuousLinearMap.id 𝕜 F) :
+    (operatorMultiplication p (hG.toLp G)).IsInvertible :=
+  .of_inverse (operatorMultiplication_comp_operatorMultiplication_eq_id_of_comp_eq_id hG' hG hGG')
+    (operatorMultiplication_comp_operatorMultiplication_eq_id_of_comp_eq_id hG hG' hG'G)
 
 /-- On a σ-finite space, `‖operatorMultiplication p A‖ = ‖A‖` (`1 ≤ p ≤ ∞`). -/
 @[simp] theorem norm_operatorMultiplication [SigmaFinite μ] (A : Lp (E →L[𝕜] F) ∞ μ) :
@@ -265,7 +299,46 @@ theorem inner_indicatorMultiplication_left (hs : MeasurableSet s) (f g : Lp E 2 
     indicatorMultiplication_ae (𝕜 := 𝕜) hs g] with x hf hg
   by_cases hx : x ∈ s <;> simp [hf, hg, hx]
 
+/-- Postcomposition by a skew-adjoint operator `J` (`⟪J u, v⟫ = -⟪u, J v⟫`) is skew-adjoint on
+`L²`: `⟪J ∘ f, g⟫ = -⟪f, J ∘ g⟫`. -/
+theorem inner_compLpL_eq_neg_inner_compLpL {J : E →L[𝕜] E}
+    (hJ : ∀ u v : E, ⟪J u, v⟫_𝕜 = -⟪u, J v⟫_𝕜) (f g : Lp E 2 μ) :
+    ⟪J.compLpL 2 μ f, g⟫_𝕜 = -⟪f, J.compLpL 2 μ g⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def, ← integral_neg]
+  refine integral_congr_ae ?_
+  filter_upwards [J.coeFn_compLpL f, J.coeFn_compLpL g] with x hf hg
+  rw [hf, hg, hJ]
+
 end InnerProductSpace
+
+section Symmetric
+
+variable [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F]
+  [InnerProductSpace 𝕜 F] {ι : E →L[𝕜] F}
+
+/-- If `A x` is `ι`-symmetric (`⟪A x u, ι v⟫ = ⟪ι u, A x v⟫`) for almost every `x`, multiplication
+by `A` is symmetric for the pairing of `A f` with `ι ∘ g` in `L²`:
+`⟪A f, ι ∘ g⟫ = ⟪ι ∘ f, A g⟫`. -/
+theorem inner_operatorMultiplication_compLpL {A : Lp (E →L[𝕜] F) ∞ μ}
+    (hA : ∀ᵐ x ∂μ, ∀ u v : E, ⟪A x u, ι v⟫_𝕜 = ⟪ι u, A x v⟫_𝕜) (f g : Lp E 2 μ) :
+    ⟪operatorMultiplication 2 A f, ι.compLpL 2 μ g⟫_𝕜 =
+      ⟪ι.compLpL 2 μ f, operatorMultiplication 2 A g⟫_𝕜 := by
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [operatorMultiplication_ae A f, operatorMultiplication_ae A g,
+    ι.coeFn_compLpL f, ι.coeFn_compLpL g, hA] with x hf hg hιf hιg hx
+  rw [hf, hg, hιf, hιg, hx]
+
+/-- For an `ι`-symmetric `B` (`⟪B u, ι v⟫ = ⟪ι u, B v⟫`), postcomposition by `B` is symmetric for
+the pairing of `B ∘ f` with `ι ∘ g` in `L²`: `⟪B ∘ f, ι ∘ g⟫ = ⟪ι ∘ f, B ∘ g⟫`. -/
+theorem inner_compLpL_compLpL {B : E →L[𝕜] F} (hB : ∀ u v : E, ⟪B u, ι v⟫_𝕜 = ⟪ι u, B v⟫_𝕜)
+    (f g : Lp E 2 μ) :
+    ⟪B.compLpL 2 μ f, ι.compLpL 2 μ g⟫_𝕜 = ⟪ι.compLpL 2 μ f, B.compLpL 2 μ g⟫_𝕜 := by
+  have hB' := (memLp_top_const (μ := μ) B).coeFn_toLp
+  rw [← operatorMultiplication_of_ae_eq_const (p := 2) hB']
+  exact inner_operatorMultiplication_compLpL (hB'.mono fun x hx ↦ hx ▸ hB) f g
+
+end Symmetric
 
 section Hilbert
 
@@ -312,3 +385,26 @@ def operatorMultiplicationStarAlgHom :
 end Hilbert
 
 end MeasureTheory.Lp
+
+namespace ContinuousLinearMap
+
+open MeasureTheory
+
+variable {α E F G : Type*} {mα : MeasurableSpace α} {μ : Measure α} [NormedAddCommGroup E]
+  [NormedSpace ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+  [NormedAddCommGroup G] [InnerProductSpace ℝ G] [CompleteSpace G]
+
+/-- **The adjoint of a Hölder multiplication operator.** For a continuous bilinear map
+`B : E →L[ℝ] F →L[ℝ] G` into real Hilbert spaces and `b ∈ L^∞(μ; E)`, the Hilbert space adjoint
+of multiplication `f ↦ B(b, f)` from `L²(μ; F)` to `L²(μ; G)` is multiplication by the pointwise
+adjoints `B(b x, ·)†`. -/
+@[simp] theorem adjoint_holderL_apply (B : E →L[ℝ] F →L[ℝ] G) (b : Lp E ∞ μ) (h : Lp G 2 μ) :
+    adjoint (B.holderL μ ∞ 2 2 b) h = (adjointRealCLM ∘L B).holderL μ ∞ 2 2 b h := by
+  refine ext_inner_right ℝ fun f ↦ ?_
+  rw [adjoint_inner_left, L2.inner_def, L2.inner_def, holderL_apply_apply, holderL_apply_apply]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_holder (r := 2) B b f, coeFn_holder (r := 2) (adjointRealCLM ∘L B) b h]
+    with x h₁ h₂
+  rw [h₁, h₂, comp_apply, adjointRealCLM_apply, adjoint_inner_left]
+
+end ContinuousLinearMap
