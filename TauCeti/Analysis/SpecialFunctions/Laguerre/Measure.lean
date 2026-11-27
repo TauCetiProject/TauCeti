@@ -40,7 +40,7 @@ The measure is sigma-finite for every `α`.
 
 ## Main statements
 
-* `TauCeti.sqrt_laguerreWeight`: the square root of the weight used in the Laguerre functions.
+* `Polynomial.sqrt_laguerreWeight`: the square root of the weight used in the Laguerre functions.
 * `Polynomial.laguerreMeasure_eq_smul_gammaMeasure`: the comparison with the Gamma law.
 * `Polynomial.integral_laguerreMeasure`: integration against the Laguerre measure as a weighted
   integral over `Set.Ioi 0`.
@@ -61,17 +61,6 @@ The measure is sigma-finite for every `α`.
 public section
 
 open MeasureTheory Real Set
-
-namespace TauCeti
-
-/-- On the nonnegative half-line, the square root of the Laguerre weight is the factor
-`x ^ (α / 2) * exp (-x / 2)` used to pass from Laguerre polynomials to Laguerre functions. -/
-theorem sqrt_laguerreWeight {α x : ℝ} (hx : 0 ≤ x) :
-    sqrt (x ^ α * exp (-x)) = x ^ (α / 2) * exp (-x / 2) := by
-  rw [sqrt_mul (rpow_nonneg hx α), ← exp_half]
-  rw [sqrt_eq_rpow, ← rpow_mul hx, div_eq_mul_one_div α 2]
-
-end TauCeti
 
 namespace Polynomial
 
@@ -103,6 +92,13 @@ theorem aemeasurable_laguerreWeight (α : ℝ) :
 theorem ae_pos_laguerreWeight (α : ℝ) :
     ∀ᵐ x ∂(volume.restrict (Ioi (0 : ℝ))), 0 < x ^ α * exp (-x) :=
   ae_restrict_of_forall_mem measurableSet_Ioi fun _ hx => mul_pos (rpow_pos_of_pos hx α) (exp_pos _)
+
+/-- On the nonnegative half-line, the square root of the Laguerre weight is the factor
+`x ^ (α / 2) * exp (-x / 2)` used to pass from Laguerre polynomials to Laguerre functions. -/
+theorem sqrt_laguerreWeight {α x : ℝ} (hx : 0 ≤ x) :
+    sqrt (x ^ α * exp (-x)) = x ^ (α / 2) * exp (-x / 2) := by
+  rw [sqrt_mul (rpow_nonneg hx α), ← exp_half]
+  rw [sqrt_eq_rpow, ← rpow_mul hx, div_eq_mul_one_div α 2]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {α : ℝ}
 
