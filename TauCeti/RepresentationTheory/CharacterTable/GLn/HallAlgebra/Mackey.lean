@@ -46,8 +46,6 @@ subspaces `W` of `V_a`.
   `TauCeti.HallAlgebra.blockAverage_of_dim_eq_zero_right`: with a block of size `0` the block
   average is the value at the other block; `TauCeti.HallAlgebra.blockAverage_eq_self_of_dim_eq_zero`
   is the first as an equation of functions.
-* `TauCeti.HallAlgebra.blockAverage_constOne`, `TauCeti.HallAlgebra.blockAverage_one_ofEnd`: the
-  block averages of `𝟙` and of the unit.
 
 ## References
 
@@ -166,26 +164,6 @@ theorem blockAverage_of_dim_eq_zero_right (F : HallAlgebra k) {o : SimilarityCla
     exact ofEnd_eq_of_apply_eq (LinearEquiv.prodUnique) fun p ↦ by
       simp [Subsingleton.elim p.2 0]
   simp [blockAverage, h_class]
-
-/-- The block average of `𝟙` is `𝟙`. -/
-@[simp]
-theorem blockAverage_constOne (c : SimilarityClass k) :
-    blockAverage (constOne : HallAlgebra k) c = constOne := by
-  refine ext fun c' ↦ ?_
-  have : Finite ((Fin c'.dim → k) →ₗ[k] Fin c.dim → k) := Module.finite_of_finite k
-  have := Fintype.ofFinite ((Fin c'.dim → k) →ₗ[k] Fin c.dim → k)
-  rw [← ofEnd_rep c, ← ofEnd_rep c', blockAverage_ofEnd]
-  simp
-
-/-- The block average of the unit at two classes is the product of the values of the unit. -/
-theorem blockAverage_one_ofEnd (a : Module.End k V) (b : Module.End k W) :
-    blockAverage (1 : HallAlgebra k) (ofEnd a) (ofEnd b) =
-      (1 : HallAlgebra k) (ofEnd a) * (1 : HallAlgebra k) (ofEnd b) := by
-  have : Finite (W →ₗ[k] V) := Module.finite_of_finite k
-  have := Fintype.ofFinite (W →ₗ[k] V)
-  rw [blockAverage_ofEnd]
-  simp only [one_apply, dim_ofEnd, Module.finrank_prod, Nat.add_eq_zero_iff]
-  split_ifs <;> simp_all
 
 /-! ### Mackey's formula -/
 
