@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Star.PartialIsometry
 
 This file defines projection homotopy (`TauCeti.IsHomotopicProjection`) on any topological star
 magma `[Mul S] [Star S] [TopologicalSpace S]`, together with conjugacy by a unitary in the
-identity component of `unitary S` over a topological star monoid.
+path component of the identity of `unitary S` over a topological star monoid.
 
 ## Main definitions
 
@@ -95,8 +95,8 @@ section
 variable {S : Type*} [Monoid S] [StarMul S] [TopologicalSpace S] [ContinuousMul S]
   [ContinuousStar S] {p q : S}
 
-/-- Conjugating a star projection `p` by a unitary in the identity component yields a homotopic
-projection. -/
+/-- Conjugating a star projection `p` by a unitary in the path component of the identity yields a
+homotopic projection. -/
 theorem _root_.IsStarProjection.isHomotopicProjection_conj_of_joined_one (hp : IsStarProjection p)
     {u : unitary S} (hu : Joined (1 : unitary S) u) :
     IsHomotopicProjection p ((u : S) * p * star (u : S)) := by
