@@ -29,8 +29,8 @@ and the scattering functions `a = (G_q)₂₂`, `b = (G_q)₂₁` transform as f
   `a_{q^{t₀}}(t + t₀, z) = a_q(t, z)` and `b_{q^{t₀}}(t + t₀, z) = e^{2it₀z} b_q(t, z)`;
 * `TauCeti.diracScatteringMatrix_mul_exp`: **modulation**, `G_{q e^{2iξ·}}(t, z) = G_q(t, z + ξ)`
   for `ξ ∈ ℝ`;
-* `TauCeti.diracScatteringMatrix_mul_comp_mul`: **dilation**, `G_{λ q(λ ·)}(t, z) = G_q(λt, z/λ)`
-  for real `λ` (for `λ > 0` in the roadmap; the identity holds for every real `λ`).
+* `TauCeti.diracScatteringMatrix_mul_comp_mul`: **dilation**, `G_{c q(c ·)}(t, z) = G_q(c t, z / c)`
+  for every real `c`.
 
 ## Implementation notes
 
@@ -59,6 +59,11 @@ private theorem exp_mul_exp_mul (w z z' : ℂ) (s : ℝ) :
     exp (w * (s * z)) * exp (w * (s * z')) = exp (w * (s * (z + z'))) := by
   rw [← exp_add]; ring_nf
 
+/-- `e^{2isz} = e^{isz} e^{isz}`. -/
+private theorem exp_two_mul_I_mul (z : ℂ) (s : ℝ) :
+    exp (2 * I * (s * z)) = exp (I * (s * z)) * exp (I * (s * z)) := by
+  rw [exp_mul_exp_mul]; ring_nf
+
 /-- The gauge `diag(e^{-isz}, e^{isz})` and `diag(e^{isz}, e^{-isz})` are mutually inverse. -/
 private theorem gauge_mul_gauge (z : ℂ) (s : ℝ) :
     !![exp (-I * (s * z)), 0; 0, exp (I * (s * z))] *
@@ -66,6 +71,25 @@ private theorem gauge_mul_gauge (z : ℂ) (s : ℝ) :
     !![exp (I * (s * z)), 0; 0, exp (-I * (s * z))] *
       !![exp (-I * (s * z)), 0; 0, exp (I * (s * z))] = 1 := by
   constructor <;> ext i j <;> fin_cases i <;> fin_cases j <;> simp [← exp_add]
+
+/-- Conjugating by the gauge multiplies the lower left entry by `e^{2isz}`. -/
+private theorem gauge_mul_mul_gauge_apply_one_zero (M : Matrix (Fin 2) (Fin 2) ℂ) (z : ℂ)
+    (s : ℝ) :
+    (!![exp (-I * (s * z)), 0; 0, exp (I * (s * z))] * M *
+      !![exp (I * (s * z)), 0; 0, exp (-I * (s * z))]) 1 0 = exp (2 * I * (s * z)) * M 1 0 := by
+  rw [exp_two_mul_I_mul, eta_fin_two M, mul_fin_two, mul_fin_two]
+  simp only [of_apply, cons_val_one, cons_val_zero, mul_zero, zero_mul, add_zero, zero_add]
+  ring
+
+/-- Conjugating by the gauge leaves the lower right entry unchanged. -/
+private theorem gauge_mul_mul_gauge_apply_one_one (M : Matrix (Fin 2) (Fin 2) ℂ) (z : ℂ)
+    (s : ℝ) :
+    (!![exp (-I * (s * z)), 0; 0, exp (I * (s * z))] * M *
+      !![exp (I * (s * z)), 0; 0, exp (-I * (s * z))]) 1 1 = M 1 1 := by
+  rw [eta_fin_two M, mul_fin_two, mul_fin_two]
+  simp only [neg_mul, exp_neg, of_apply, cons_val_one, cons_val_zero, mul_zero, zero_mul,
+    add_zero, zero_add]
+  field_simp
 
 /-- **Modulation.** For `ξ ∈ ℝ`, `G_{q e^{2iξ·}}(t, z) = G_q(t, z + ξ)`. -/
 theorem diracScatteringMatrix_mul_exp (q : ℝ → ℂ) (ξ t : ℝ) (z : ℂ) :
@@ -132,9 +156,9 @@ theorem diracScatteringMatrix_eq_mul (hq : IntegrableOn q (Icc a b)) (h0 : 0 ∈
   have h0' : (0 : ℝ) ∈ Icc (a - s) (b - s) := ⟨by linarith [hs.1], by linarith [hs.2]⟩
   have ht' : t - s ∈ Icc (a - s) (b - s) := ⟨by linarith [ht.1], by linarith [ht.2]⟩
   apply EquivLike.injective T
-  simp only [map_mul, T, toEuclideanCLM_diracScatteringMatrix]
-  change propagator P t 0 = T D * propagator Ps (t - s) 0 * T D' * propagator P s 0
-  rw [← propagator_mul_mul hPs h0' ht' hDD' hD'D, ← hshift, propagator_comp_add_right hP h0' ht',
+  rw [map_mul, map_mul, map_mul, toEuclideanCLM_diracScatteringMatrix,
+    toEuclideanCLM_diracScatteringMatrix, toEuclideanCLM_diracScatteringMatrix,
+    ← propagator_mul_mul hPs h0' ht' hDD' hD'D, ← hshift, propagator_comp_add_right hP h0' ht',
     sub_add_cancel, zero_add, ContinuousLinearMap.mul_def,
     propagator_comp_propagator hP hs h0 ht]
 
@@ -149,16 +173,10 @@ theorem diracScatteringB_eq_add (hq : IntegrableOn q (Icc 0 t)) (hs : s ∈ Icc 
         diracScatteringA (fun u ↦ q (s + u)) (t - s) z * diracScatteringB q s z := by
   have hqs : IntegrableOn q (Icc 0 s) := hq.mono_set (Icc_subset_Icc_right hs.2)
   rw [diracScatteringB_def, diracScatteringMatrix_eq_mul hq ⟨le_rfl, hs.1.trans hs.2⟩ hs
-    ⟨hs.1.trans hs.2, le_rfl⟩]
-  simp only [Matrix.mul_apply, Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
-    empty_val', cons_val_fin_one, mul_zero, zero_mul, add_zero, zero_add]
-  rw [diracScatteringMatrix_apply_zero_zero hqs hs.1, ← diracScatteringA_def,
-    ← diracScatteringB_def, ← diracScatteringB_def]
-  have h2' : exp (2 * I * (s * z)) = exp (I * (s * z)) * exp (I * (s * z)) := by
-    rw [exp_mul_exp_mul]; ring_nf
-  rw [h2']
-  simp only [neg_mul, exp_neg]
-  field_simp
+    ⟨hs.1.trans hs.2, le_rfl⟩, Matrix.mul_apply, Fin.sum_univ_two,
+    gauge_mul_mul_gauge_apply_one_zero, gauge_mul_mul_gauge_apply_one_one,
+    diracScatteringMatrix_apply_zero_zero hqs hs.1]
+  simp only [diracScatteringA_def, diracScatteringB_def]
 
 /-- **Concatenation of `a`.** If `q` is integrable on `[0, t]` and `s ∈ [0, t]`, then
 `a_q(t, z) = e^{2isz} b₂(t - s, z) b₁#(s, z) + a₂(t - s, z) a₁(s, z)`, where `(a₁, b₁)` are the
@@ -171,16 +189,10 @@ theorem diracScatteringA_eq_add (hq : IntegrableOn q (Icc 0 t)) (hs : s ∈ Icc 
         diracScatteringA (fun u ↦ q (s + u)) (t - s) z * diracScatteringA q s z := by
   have hqs : IntegrableOn q (Icc 0 s) := hq.mono_set (Icc_subset_Icc_right hs.2)
   rw [diracScatteringA_def, diracScatteringMatrix_eq_mul hq ⟨le_rfl, hs.1.trans hs.2⟩ hs
-    ⟨hs.1.trans hs.2, le_rfl⟩]
-  simp only [Matrix.mul_apply, Fin.sum_univ_two, of_apply, cons_val', cons_val_zero, cons_val_one,
-    empty_val', cons_val_fin_one, mul_zero, zero_mul, add_zero, zero_add]
-  rw [diracScatteringMatrix_apply_zero_one hqs hs.1, ← diracScatteringA_def,
-    ← diracScatteringB_def, ← diracScatteringA_def]
-  have h2' : exp (2 * I * (s * z)) = exp (I * (s * z)) * exp (I * (s * z)) := by
-    rw [exp_mul_exp_mul]; ring_nf
-  rw [h2']
-  simp only [neg_mul, exp_neg]
-  field_simp
+    ⟨hs.1.trans hs.2, le_rfl⟩, Matrix.mul_apply, Fin.sum_univ_two,
+    gauge_mul_mul_gauge_apply_one_zero, gauge_mul_mul_gauge_apply_one_one,
+    diracScatteringMatrix_apply_zero_one hqs hs.1]
+  simp only [diracScatteringA_def, diracScatteringB_def]
 
 /-- **Translation of the potential.** If `q` is integrable on `[0, t]`, `t ≥ 0` and `t₀ ≥ 0`, then
 the potential `q^{t₀}(u) = q(u - t₀) 1_{u ≥ t₀}` has
@@ -226,10 +238,7 @@ theorem diracScatteringA_indicator_comp_sub (hq : IntegrableOn q (Icc 0 t)) (ht 
     diracScatteringA ((Ici t₀).indicator fun u ↦ q (u - t₀)) (t + t₀) z =
       diracScatteringA q t z := by
   rw [diracScatteringA_def, diracScatteringMatrix_indicator_comp_sub hq ht ht₀,
-    diracScatteringA_def, eta_fin_two (diracScatteringMatrix q t z), mul_fin_two, mul_fin_two]
-  simp only [neg_mul, exp_neg, of_apply, cons_val_one, cons_val_zero, mul_zero,
-    zero_mul, add_zero, zero_add]
-  field_simp
+    gauge_mul_mul_gauge_apply_one_one, diracScatteringA_def]
 
 /-- **Translation of `b`.** If `q` is integrable on `[0, t]`, `t ≥ 0` and `t₀ ≥ 0`, then
 `b_{q^{t₀}}(t + t₀, z) = e^{2it₀z} b_q(t, z)` for `q^{t₀}(u) = q(u - t₀) 1_{u ≥ t₀}`. -/
@@ -238,13 +247,7 @@ theorem diracScatteringB_indicator_comp_sub (hq : IntegrableOn q (Icc 0 t)) (ht 
     diracScatteringB ((Ici t₀).indicator fun u ↦ q (u - t₀)) (t + t₀) z =
       exp (2 * I * (t₀ * z)) * diracScatteringB q t z := by
   rw [diracScatteringB_def, diracScatteringMatrix_indicator_comp_sub hq ht ht₀,
-    diracScatteringB_def]
-  have h2' : exp (2 * I * (t₀ * z)) = exp (I * (t₀ * z)) * exp (I * (t₀ * z)) := by
-    rw [exp_mul_exp_mul]; ring_nf
-  rw [eta_fin_two (diracScatteringMatrix q t z), mul_fin_two, mul_fin_two]
-  simp only [h2', neg_mul, exp_neg, of_apply, cons_val_one, cons_val_zero, mul_zero,
-    zero_mul, add_zero, zero_add]
-  ring
+    gauge_mul_mul_gauge_apply_one_zero, diracScatteringB_def]
 
 /-- **Dilation.** If `q` is integrable between `0` and `c t` for a real `c`, then
 `G_{c q(c ·)}(t, z) = G_q(c t, z / c)`. -/
