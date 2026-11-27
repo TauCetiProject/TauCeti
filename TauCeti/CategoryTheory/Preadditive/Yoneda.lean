@@ -66,7 +66,7 @@ which is moreover additive.
 * `CategoryTheory.preadditiveYoneda_additive`: the preadditive Yoneda embedding is additive.
 * `CategoryTheory.preadditiveYoneda_obj_hom_ext`: morphisms out of `(-, Y)` agreeing on `𝟙 Y`
   are equal.
-* `CategoryTheory.preadditiveYonedaHomEquiv`: maps from a representable to an additive functor
+* `CategoryTheory.preadditiveYonedaEquiv`: maps from a representable to an additive functor
   correspond to elements of its value at the representing object.
 * `CategoryTheory.exists_comp_eq_preadditiveYoneda_obj_of_epi`: lifting along an epimorphism out of
   an additive functor.
@@ -126,7 +126,7 @@ theorem preadditiveYoneda_obj_hom_ext {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}
 
 /-- The preadditive Yoneda lemma. A map from the representable functor `(-, Y)` to an
 additive functor `F` corresponds to an element of `F(Y)`. -/
-def preadditiveYonedaHomEquiv {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive] :
+def preadditiveYonedaEquiv {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive] :
     (preadditiveYoneda.obj Y ⟶ F) ≃ F.obj (op Y) where
   toFun α := α.app (op Y) (𝟙 Y)
   invFun x :=
@@ -147,17 +147,24 @@ def preadditiveYonedaHomEquiv {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Add
     simp
 
 /-- The Yoneda correspondence evaluates the natural transformation on the identity. -/
-@[simp]
-theorem preadditiveYonedaHomEquiv_apply {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive]
+theorem preadditiveYonedaEquiv_apply {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}} [F.Additive]
     (α : preadditiveYoneda.obj Y ⟶ F) :
-    preadditiveYonedaHomEquiv α = α.app (op Y) (𝟙 Y) :=
+    preadditiveYonedaEquiv α = α.app (op Y) (𝟙 Y) :=
+  (rfl)
+
+/-- Evaluating a composite under the Yoneda correspondence applies the second map to the
+element corresponding to the first map. -/
+@[simp]
+theorem preadditiveYonedaEquiv_comp {Y : C} {F G : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+    [F.Additive] [G.Additive] (α : preadditiveYoneda.obj Y ⟶ F) (β : F ⟶ G) :
+    preadditiveYonedaEquiv (α ≫ β) = β.app (op Y) (preadditiveYonedaEquiv α) :=
   (rfl)
 
 /-- The Yoneda morphism of an element `x` acts on `h : Z ⟶ Y` by applying `F(h)` to `x`. -/
 @[simp]
-theorem preadditiveYonedaHomEquiv_symm_app_apply {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
+theorem preadditiveYonedaEquiv_symm_app_apply {Y : C} {F : Cᵒᵖ ⥤ AddCommGrpCat.{v}}
     [F.Additive] (x : F.obj (op Y)) (Z : Cᵒᵖ) (h : Z.unop ⟶ Y) :
-    (preadditiveYonedaHomEquiv.symm x).app Z h = F.map h.op x :=
+    (preadditiveYonedaEquiv.symm x).app Z h = F.map h.op x :=
   (rfl)
 
 /-- The preadditive Yoneda embedding `Y ↦ (-, Y)` is an additive functor. -/
@@ -177,9 +184,9 @@ theorem exists_comp_eq_preadditiveYoneda_obj_of_epi {Y : C} {F G : Cᵒᵖ ⥤ A
     ∃ s : preadditiveYoneda.obj Y ⟶ F, s ≫ π = α := by
   obtain ⟨x, hx⟩ :=
     (AddCommGrpCat.epi_iff_surjective (π.app (op Y))).1 inferInstance (α.app (op Y) (𝟙 Y))
-  refine ⟨preadditiveYonedaHomEquiv.symm x, preadditiveYoneda_obj_hom_ext ?_⟩
-  have h : (preadditiveYonedaHomEquiv.symm x).app (op Y) (𝟙 Y) = x :=
-    preadditiveYonedaHomEquiv.apply_symm_apply x
+  refine ⟨preadditiveYonedaEquiv.symm x, preadditiveYoneda_obj_hom_ext ?_⟩
+  have h : (preadditiveYonedaEquiv.symm x).app (op Y) (𝟙 Y) = x := by
+    rw [← preadditiveYonedaEquiv_apply, Equiv.apply_symm_apply]
   exact (congrArg (π.app (op Y)) h).trans hx
 
 /-- A morphism from a sum `∐ (-, Y j)` of representable functors to `G` lifts along any

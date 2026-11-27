@@ -69,6 +69,8 @@ decomposition of the whole object.
   idempotents split in the source; in particular a fully faithful one does.
 * `CategoryTheory.Equivalence.indecomposable_functor_obj_iff`: indecomposability is invariant under
   equivalence of categories, with no idempotent completeness.
+* `TauCeti.indecomposable_op_iff`: indecomposability is invariant under passing to the opposite
+  category.
 
 ## Implementation notes
 
@@ -114,6 +116,20 @@ variable {C : Type u} [Category.{v} C]
 section HasZeroMorphisms
 
 variable [HasZeroMorphisms C]
+
+/-- An object is indecomposable in the opposite category exactly when it is indecomposable in the
+original category. -/
+@[simp]
+theorem indecomposable_op_iff [HasBinaryBiproducts C] {X : C} :
+    Indecomposable (Opposite.op X) ↔ Indecomposable X := by
+  constructor
+  · intro h
+    refine ⟨fun hX ↦ h.1 hX.op, fun Y Z e ↦ ?_⟩
+    exact (h.2 _ _ (e.symm.op ≪≫ biprod.opIso Y Z)).imp IsZero.unop IsZero.unop
+  · intro h
+    refine ⟨fun hX ↦ h.1 hX.unop, fun Y Z e ↦ ?_⟩
+    exact (h.2 _ _ ((e ≪≫ (biprod.opIso Y.unop Z.unop).symm).symm.unop)).imp
+      IsZero.op IsZero.op
 
 /-- **An object with no nontrivial idempotent endomorphism is indecomposable.** -/
 theorem indecomposable_of_idempotent_eq_zero_or_id [HasBinaryBiproducts C] {X : C} (hX : ¬ IsZero X)

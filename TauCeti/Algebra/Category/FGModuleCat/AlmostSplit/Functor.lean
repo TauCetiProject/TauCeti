@@ -7,12 +7,9 @@ module
 
 public import Mathlib.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.CategoryTheory.FinitelyPresentedFunctor.Simple
-import Mathlib.CategoryTheory.Limits.Shapes.Opposites.Products
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.AlmostSplit.SourceSink
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
-import TauCeti.Algebra.Category.ModuleCat.Algebra
-import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Semiperfect
 
 /-!
 # Simple functors on finitely generated modules over an Artin algebra
@@ -36,7 +33,6 @@ universe u v w
 namespace FGModuleCat
 
 open CategoryTheory CategoryTheory.Limits Opposite TauCeti
-open scoped ModuleCat.Algebra
 
 variable (R : Type u) {A : Type v} [CommRing R] [IsArtinianRing R] [Ring A] [Algebra R A]
   [Module.Finite R A] [Small.{w} A]
@@ -60,17 +56,8 @@ theorem isFinitelyPresentedFunctor_covariant_of_simple
   let : IsArtinianRing A := IsArtinianRing.of_finite R A
   let : HasFiniteBiproducts (FGModuleCat.{w} A)ᵒᵖ :=
     HasFiniteBiproducts.of_hasFiniteCoproducts
-  -- The opposite category has the same finite endomorphism modules, with composition reversed.
-  let (Z : (FGModuleCat.{w} A)ᵒᵖ) : Module.Finite R (Z ⟶ Z) :=
-    Module.Finite.equiv
-      ({ (opEquiv Z Z).symm with map_add' := fun _ _ ↦ rfl, map_smul' := fun _ _ ↦ rfl } :
-        (Z.unop ⟶ Z.unop) ≃ₗ[R] (Z ⟶ Z))
-  let : IsKrullSchmidt (FGModuleCat.{w} A)ᵒᵖ := isKrullSchmidt_of_module_finite R
   refine forall_isFinitelyPresentedFunctor_of_simple_iff.mpr (fun Z hZ ↦ ?_) F inferInstance
-  have hZ' : Indecomposable Z.unop := by
-    refine ⟨fun h ↦ hZ.1 h.op, fun Y W e ↦ ?_⟩
-    exact (hZ.2 (op Y) (op W) (e.symm.op ≪≫ biprod.opIso Y W)).imp IsZero.unop IsZero.unop
-  obtain ⟨Y, f, hf, -⟩ := exists_left_minimal_isLeftAlmostSplit R hZ'
+  obtain ⟨Y, f, hf, -⟩ := exists_left_minimal_isLeftAlmostSplit R (indecomposable_op_iff.mp hZ)
   exact ⟨op Y, f.op, isRightAlmostSplit_op_iff.mpr hf⟩
 
 end FGModuleCat
