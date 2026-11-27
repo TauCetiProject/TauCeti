@@ -9,15 +9,19 @@ public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.RingTheory.HopfAlgebra.Primitive
 public import TauCeti.Algebra.AlgebraicGroup.AdditiveGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Basic
+public import TauCeti.Algebra.Bialgebra.SymmetricAlgebra.Lift
+public import TauCeti.Algebra.Coalgebra.Primitive.BaseChange
 public import TauCeti.Algebra.HopfAlgebra.HopfIdeal.SchematicClosure
 
 /-!
 # A closure ideal over a non-fraction field need not be a Hopf ideal
 
-The ideal `I^♮ = A ∩ I` of `TauCeti.SchematicClosure.closureIdeal` makes sense for any algebra
-`K` over any ring `O`. It is a Hopf ideal when `K` is the fraction field of `O`
+For a Hopf `O`-algebra `B` and an ideal `I` of `K ⊗_O B`, the ideal `I^♮ = B ∩ I` of
+`TauCeti.SchematicClosure.closureIdeal` makes sense for any algebra `K` over any ring `O`. It is
+a Hopf ideal when `K` is the fraction field of `O` and the tensor square of `B ⧸ I^♮` is
+torsion-free over `O`, e.g. over a Dedekind domain
 (`TauCeti.SchematicClosure.closureIdeal_isHopfIdeal`), but not in general. This file records the
-counterexample of the roadmap: over `O = ℤ`, with `B = ℤ[x, y]` the coordinate ring of the
+standard counterexample: over `O = ℤ`, with `B = ℤ[x, y]` the coordinate ring of the
 additive group `𝔾ₐ²` and `K = ℚ(√2)`, the line `y = √2 x` is cut out by the Hopf ideal
 `I = (y − √2 x)` of `K ⊗_ℤ B`. The closure `I^♮` contains `y² − 2x²`, and it is killed both by
 the `K`-point `(1, √2)` of the line and by its Galois conjugate `(1, −√2)`. Their sum `(2, 0)`
@@ -64,20 +68,13 @@ noncomputable def lineEquation (s : K) : K ⊗[ℤ] PlaneCoordinateRing :=
 theorem lineEquation_def (s : K) : lineEquation s = (1 : K) ⊗ₜ planeY - s ⊗ₜ planeX := by
   rw [lineEquation]
 
-/-- A coordinate `1 ⊗ ι v` of the base change `K ⊗_ℤ Sym(ℤ²)` is primitive. -/
-theorem isPrimitiveElem_one_tmul_ι (v : Fin 2 → ℤ) :
-    Bialgebra.IsPrimitiveElem K ((1 : K) ⊗ₜ[ℤ] ι ℤ (Fin 2 → ℤ) v) := by
-  rw [Bialgebra.isPrimitiveElem_iff_comul_eq_tmul_add_tmul,
-    TauCeti.Coalgebra.baseChange_comul_tmul, SymmetricAlgebra.comul_ι]
-  simp [TensorProduct.tmul_add, Algebra.TensorProduct.one_def, add_comm]
-
 /-- The equation `y − s x` of the line is primitive. -/
 theorem isPrimitiveElem_lineEquation (s : K) :
     Bialgebra.IsPrimitiveElem K (lineEquation s) := by
   have h : lineEquation s = (1 : K) ⊗ₜ planeY - s • ((1 : K) ⊗ₜ[ℤ] planeX) := by
     rw [lineEquation, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
   rw [h]
-  exact (isPrimitiveElem_one_tmul_ι _).sub ((isPrimitiveElem_one_tmul_ι _).smul s)
+  exact (isPrimitiveElem_ι _).one_tmul.sub ((isPrimitiveElem_ι _).one_tmul.smul s)
 
 /-- The Hopf ideal `(y − s x)` of `K ⊗_ℤ ℤ[x, y]`: the line `y = s x` is a subgroup of `𝔾ₐ²`. -/
 noncomputable def lineHopfIdeal (s : K) : HopfIdeal K (K ⊗[ℤ] PlaneCoordinateRing) :=
@@ -122,19 +119,17 @@ theorem linePoint_planeY (s : K) : linePoint s planeY = s := by
 theorem mem_closureIdeal_lineHopfIdeal {s : K} (hs : s * s = 2) :
     planeY * planeY - 2 * (planeX * planeX) ∈
       SchematicClosure.closureIdeal K (lineHopfIdeal s).toIdeal := by
-  rw [SchematicClosure.mem_closureIdeal, lineHopfIdeal_toIdeal, Ideal.mem_span_singleton']
-  refine ⟨(1 : K) ⊗ₜ planeY + s ⊗ₜ planeX, ?_⟩
-  have hc : algebraMap K (K ⊗[ℤ] PlaneCoordinateRing) s * algebraMap K _ s = 2 := by
+  rw [SchematicClosure.closureIdeal_def, Ideal.mem_comap, lineHopfIdeal_toIdeal,
+    Ideal.mem_span_singleton']
+  let ι₂ := Algebra.TensorProduct.includeRight (R := ℤ) (A := K) (B := PlaneCoordinateRing)
+  let a := algebraMap K (K ⊗[ℤ] PlaneCoordinateRing) s
+  have hc : a * a = 2 := by
     rw [← map_mul, hs, map_ofNat]
-  have hx : s ⊗ₜ[ℤ] planeX = algebraMap K (K ⊗[ℤ] PlaneCoordinateRing) s * (1 ⊗ₜ planeX) := by
-    rw [Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.tmul_mul_tmul, mul_one,
-      one_mul, Algebra.algebraMap_self, RingHom.id_apply]
-  have hr : ∀ b : PlaneCoordinateRing,
-      (1 : K) ⊗ₜ[ℤ] b = Algebra.TensorProduct.includeRight (R := ℤ) (A := K) b := fun _ ↦ rfl
-  rw [lineEquation, hx, hr planeY, hr planeX, hr, map_sub, map_mul, map_mul, map_mul, map_ofNat]
-  linear_combination
-    (-(Algebra.TensorProduct.includeRight (R := ℤ) (A := K) planeX *
-      Algebra.TensorProduct.includeRight (R := ℤ) (A := K) planeX)) * hc
+  have hl : lineEquation s = ι₂ planeY - a * ι₂ planeX := by
+    simp [ι₂, a, lineEquation, Algebra.TensorProduct.algebraMap_apply]
+  refine ⟨ι₂ planeY + a * ι₂ planeX, ?_⟩
+  rw [hl, map_sub, map_mul, map_mul, map_mul, map_ofNat]
+  linear_combination (-(ι₂ planeX * ι₂ planeX)) * hc
 
 /-- The point `(1, s)` kills the closure of the line `y = s x`. -/
 theorem linePoint_eq_zero_of_mem_closureIdeal (s : K) {a : PlaneCoordinateRing}
@@ -165,11 +160,9 @@ theorem not_exists_hopfIdeal_closureIdeal_lineHopfIdeal {s : K} (hs : s * s = 2)
   by_cases h8 : (8 : K) = 0
   · -- If `8 = 0` in `K`, then `8 ∈ I^♮`, but the counit of `8` is `8 ≠ 0`.
     have h : ((8 : ℕ) : PlaneCoordinateRing) ∈ J := by
-      have h0 : (8 : K ⊗[ℤ] PlaneCoordinateRing) = 0 := by
-        rw [← map_ofNat (algebraMap K (K ⊗[ℤ] PlaneCoordinateRing)) 8, h8, map_zero]
-      rw [← HopfIdeal.mem_toIdeal, hJ, SchematicClosure.mem_closureIdeal, ← nsmul_one,
-        TensorProduct.tmul_smul, ← Algebra.TensorProduct.one_def, nsmul_eq_mul, mul_one,
-        Nat.cast_ofNat, h0]
+      rw [← HopfIdeal.mem_toIdeal, hJ, SchematicClosure.closureIdeal_def, Ideal.mem_comap,
+        map_natCast, ← map_natCast (algebraMap K (K ⊗[ℤ] PlaneCoordinateRing)), Nat.cast_ofNat,
+        h8, map_zero]
       exact zero_mem _
     have := J.counit_eq_zero h
     rw [Bialgebra.counit_natCast] at this
@@ -188,16 +181,13 @@ theorem not_exists_hopfIdeal_closureIdeal_lineHopfIdeal {s : K} (hs : s * s = 2)
   have hq : planeY * planeY - 2 * (planeX * planeX) ∈ J := by
     rw [← HopfIdeal.mem_toIdeal, hJ]
     exact mem_closureIdeal_lineHopfIdeal hs
-  have h := (CommHopfAlgCat.mem_quotientPointsSubgroup_iff H J A _).mp hmul _ hq
-  have hι : ∀ v : Fin 2 → ℤ,
-      (toConv (linePoint s) * toConv (linePoint (-s)) :
-        WithConv (PlaneCoordinateRing →ₐ[ℤ] K)).ofConv (ι ℤ _ v) =
-        linePoint s (ι ℤ _ v) + linePoint (-s) (ι ℤ _ v) := fun v ↦ by
-    rw [← toAdd_pointsMulEquiv_apply, map_mul, toAdd_mul, LinearMap.add_apply,
-      toAdd_pointsMulEquiv_apply, toAdd_pointsMulEquiv_apply, ofConv_toConv, ofConv_toConv]
-  change (toConv (linePoint s) * toConv (linePoint (-s)) :
-    WithConv (PlaneCoordinateRing →ₐ[ℤ] K)).ofConv _ = 0 at h
-  rw [map_sub, map_mul, map_mul, map_mul, map_ofNat, hι, hι] at h
+  -- The points of `H` with values in `A` are by definition the convolution monoid of
+  -- `ℤ`-algebra maps `ℤ[x, y] → K`, so the subgroup membership reads as a value of their product.
+  have h : (toConv (linePoint s) * toConv (linePoint (-s)) :
+      WithConv (PlaneCoordinateRing →ₐ[ℤ] K)).ofConv
+        (planeY * planeY - 2 * (planeX * planeX)) = 0 :=
+    (CommHopfAlgCat.mem_quotientPointsSubgroup_iff H J A _).mp hmul _ hq
+  rw [map_sub, map_mul, map_mul, map_mul, map_ofNat, convMul_apply_ι, convMul_apply_ι] at h
   simp only [linePoint_planeY, linePoint_planeX] at h
   norm_num at h
   exact h8 h
