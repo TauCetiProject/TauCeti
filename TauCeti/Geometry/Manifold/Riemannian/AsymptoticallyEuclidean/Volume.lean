@@ -11,6 +11,7 @@ import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Decay
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.ChangeOfVariables
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Large balls in a manifold with an asymptotically Euclidean end
@@ -101,20 +102,6 @@ variable {M : Type*} [MetricSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
   {φ : EuclideanSpace ℝ (Fin n) → M}
 
-/-- In a nontrivial finite-dimensional real normed space, the Haar measure `μ (ball x r)` of a ball
-tends to `∞` as its radius `r` tends to `∞`. -/
-private theorem tendsto_addHaar_ball_atTop {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [FiniteDimensional ℝ F] [Nontrivial F] [MeasurableSpace F] [BorelSpace F] (μ : Measure F)
-    [μ.IsAddHaarMeasure] (x : F) :
-    Tendsto (fun r : ℝ ↦ μ (ball x r)) atTop (𝓝 ∞) := by
-  have h₁ : Tendsto (fun r : ℝ ↦ ENNReal.ofReal (r ^ Module.finrank ℝ F)) atTop (𝓝 ∞) :=
-    ENNReal.tendsto_ofReal_atTop.comp (tendsto_pow_atTop Module.finrank_pos.ne')
-  have h₂ := ENNReal.Tendsto.mul_const h₁ (b := μ (ball 0 1)) (Or.inl ENNReal.top_ne_zero)
-  rw [ENNReal.top_mul (measure_ball_pos μ 0 one_pos).ne'] at h₂
-  refine h₂.congr' ?_
-  filter_upwards [eventually_gt_atTop 0] with r hr
-  rw [Measure.addHaar_ball_of_pos _ _ hr]
-
 /-- For `0 < q < 1`, the metric ball `B_r(p)` has volume at least `q ^ (n + 1) ωₙ rⁿ`, up to an
 additive constant: it contains the image of the annulus `{a < ‖x‖ < q r}`, on which the volume
 density is at least `q`. -/
@@ -197,7 +184,7 @@ theorem eventually_mul_volume_ball_le_riemannianVolume_ball
       have : Nonempty (Fin n) := ⟨⟨0, h.dim_pos⟩⟩
       infer_instance
     simpa [ENNReal.mul_top (tsub_pos_of_lt hcd).ne'] using ENNReal.Tendsto.const_mul (a := d - c)
-      (tendsto_addHaar_ball_atTop volume (0 : EuclideanSpace ℝ (Fin n)))
+      (Measure.tendsto_addHaar_ball_atTop volume (0 : EuclideanSpace ℝ (Fin n)))
       (Or.inl ENNReal.top_ne_zero)
   filter_upwards [hlim.eventually (lt_mem_nhds hK.lt_top)] with r hr
   refine ENNReal.le_of_add_le_add_right hK ?_
