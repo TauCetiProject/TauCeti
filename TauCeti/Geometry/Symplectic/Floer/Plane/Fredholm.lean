@@ -18,7 +18,6 @@ import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
 import TauCeti.Analysis.Complex.EquivRealProd
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Fredholm.SemiFredholm
 
 /-!

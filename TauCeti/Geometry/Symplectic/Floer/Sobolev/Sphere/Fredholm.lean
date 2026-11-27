@@ -12,11 +12,9 @@ import TauCeti.Analysis.Fredholm.SemiFredholm
 import TauCeti.Geometry.Manifold.Riemannian.Surface.LogCutoff.Plane
 import TauCeti.Geometry.Symplectic.Floer.Linearization.Infinity
 import TauCeti.Geometry.Symplectic.Floer.Sobolev.Cokernel
-import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
