@@ -66,6 +66,8 @@ sections the realization agrees with `D`
   smooth real Cauchy–Riemann operators differ by the zeroth-order term `(Zᵢ' - Zᵢ) uᵢ`.
 * `TauCeti.IsRealCauchyRiemannOperator.lowerOrderL_zeroOrderL`: the zeroth-order term commutes
   with forgetting the highest weak derivative.
+* `TauCeti.FiniteBundleAtlas.chartZeroOrder_apply_I_smul`: the zeroth-order term `Zᵢ` takes values
+  in complex antilinear maps.
 
 ## References
 
@@ -109,6 +111,17 @@ variable [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, ℂ)] (A : FiniteBundleAtlas �
   (hD : IsRealCauchyRiemannOperator F (ofComplexManifold ℂ M) D)
   (hDs : ContMDiffCovariantDerivativeOn F ∞ D univ)
   (μ : Measure ℂ) [μ.IsAddHaarMeasure] (p : ℝ≥0∞) [Fact (1 ≤ p)]
+
+omit [T2Space M] in
+include hD in
+/-- **The zeroth-order term is a `(0,1)`-form.** On the image of chart `i`, the zeroth-order term
+of a real Cauchy–Riemann operator takes values in complex antilinear maps. -/
+theorem FiniteBundleAtlas.chartZeroOrder_apply_I_smul {i : Fin A.n} {y : ℂ} (hy : y ∈ A.image i)
+    (u : F) (v : ℂ) :
+    A.chartZeroOrder D i y u (Complex.I • v) = -(Complex.I • A.chartZeroOrder D i y u v) := by
+  have : ∀ x, ContinuousSMul ℂ (V x) := VectorBundle.continuousSMul ℂ F V
+  rw [A.chartZeroOrder_apply_eq_coord_tangentHom hD hy]
+  exact (A.isZeroOneForm_iff_coord_tangentHom i _ hy).1 (hD.isZeroOneForm _ _) v
 
 namespace IsRealCauchyRiemannOperator
 
@@ -326,13 +339,9 @@ private theorem dataL_mem_zeroOne (w : A.sectionChartData.sobolevSections μ p 1
   refine mem_zeroOneSobolevSections_iff.2 fun i ↦ (ae_image_tangentHom_iff A μ i).2 ?_
   filter_upwards [chartValueL_dataL_ae A hD hDs μ p w i,
     ae_restrict_mem (A.image i).isOpen.measurableSet] with y h hy v
-  have hZ (u : F) : A.chartZeroOrder D i y u (Complex.I • v) =
-      -(Complex.I • A.chartZeroOrder D i y u v) := by
-    rw [A.chartZeroOrder_apply_eq_coord_tangentHom hD hy]
-    exact (A.isZeroOneForm_iff_coord_tangentHom i _ hy).1 (hD.isZeroOneForm _ _) v
   rw [h]
-  simp only [add_apply, complexAntilinearPartL_apply_I_smul, hZ, smul_add,
-    neg_add]
+  simp only [add_apply, complexAntilinearPartL_apply_I_smul,
+    A.chartZeroOrder_apply_I_smul hD hy, smul_add, neg_add]
 
 include hD in
 /-- **The realization of a smooth real Cauchy–Riemann operator** `D` as a bounded operator

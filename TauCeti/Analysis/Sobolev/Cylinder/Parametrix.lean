@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
+import TauCeti.Analysis.Sobolev.Cylinder.Frame
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 public import TauCeti.MeasureTheory.Function.Lp.Multiplication
@@ -18,7 +19,7 @@ import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 Let `D ξ = M (ξ, ∂s ξ, ∂t ξ)` be a first-order operator on the cylinder `ℝ × S¹` with an
 essentially bounded coefficient field `M`, realized from `W^{1,2}(ℝ × S¹, V)` to `L²(ℝ × S¹, W)`
-by `TauCeti.jetOperator stripMeasure`. This file proves that `D` is Fredholm as soon as it is
+by `TauCeti.jetOperator 2 stripMeasure`. This file proves that `D` is Fredholm as soon as it is
 asymptotic, as `s → -∞` and as `s → +∞`, to operators `Dneg` and `Dpos` with the same principal
 part which are invertible
 (`TauCeti.CylinderSobolev.isFredholm_jetOperator_comp_subtypeL_of_isInvertible`).
@@ -97,43 +98,26 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
 section Cutoff
 
-/-- Multiplying a test section by a `C²` function of `s` gives a test section. -/
-theorem smul_fst_mem_testSection {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {ξ : ℝ × ℝ → V}
-    (hξ : ξ ∈ testSection V) : (fun z ↦ β z.1 • ξ z) ∈ testSection V := by
-  obtain ⟨hξ2, hξp, R, hR⟩ := mem_testSection_iff.1 hξ
-  exact mem_testSection_iff.2 ⟨(hβ.comp contDiff_fst).smul hξ2, fun s t ↦ by simp [hξp],
-    R, fun s t hs ↦ by simp [hR s t hs]⟩
-
 /-- **Multiplication by a function of `s` preserves `W^{1,2}`.** For a `C²` function `β` with `β`
 and `β'` bounded, the operator of the coefficient field `cutoffCoeff V β`, which multiplies a
 section by `β(s)`, maps `H1 V` into itself. -/
 theorem jetOperator_cutoffCoeff_mem_H1 {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ}
     (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) {f : Lp (V × V × V) 2 stripMeasure}
-    (hf : f ∈ H1 V) : jetOperator stripMeasure (cutoffCoeff V β) f ∈ H1 V := by
+    (hf : f ∈ H1 V) : jetOperator 2 stripMeasure (cutoffCoeff V β) f ∈ H1 V := by
+  -- Multiplication by `β(s)` is the change of frame by `β(s) • id`.
+  have hcoeff : cutoffCoeff V β = frameJetCoeff fun w ↦ β w.1 • ContinuousLinearMap.id ℝ V :=
+    funext fun z ↦ cutoffCoeff_eq_frameJetCoeff ((hβ.differentiable (by norm_num)) z.1)
   have hN := memLp_cutoffCoeff (V := V) (hβ.of_le one_le_two) hβB hβ'B
-  refine jetClosure_subset_of_isClosed
-    (s := jetOperator stripMeasure (cutoffCoeff V β) ⁻¹'
-      (H1 V : Set (Lp (V × V × V) 2 stripMeasure)))
-    ((isClosed_jetClosure 2 _).preimage (jetOperator stripMeasure _).continuous) ?_ hf
-  rintro _ ⟨ξ, rfl⟩
-  have hmem := smul_fst_mem_testSection hβ ξ.property
-  have hξd : Differentiable ℝ (ξ : ℝ × ℝ → V) :=
-    (mem_testSection_iff.1 ξ.property).1.differentiable (by norm_num)
-  have heq : jetOperator stripMeasure (cutoffCoeff V β) (jetLp 2 (testSection V) ξ) =
-      jetLp 2 (testSection V) ⟨_, hmem⟩ := by
-    refine Lp.ext ?_
-    filter_upwards [jetOperator_jetLp_ae_eq hN ξ,
-      coeFn_jetLp 2 (S := testSection V) ⟨_, hmem⟩] with z h₁ h₂
-    rw [h₁, h₂, jet_smul_fst_eq_cutoffCoeff ((hβ.differentiable (by norm_num)) _) (hξd z)]
-  simp only [Set.mem_preimage, SetLike.mem_coe, heq]
-  exact jetLp_mem_jetClosure _
+  rw [hcoeff] at hN ⊢
+  exact jetOperator_frameJetCoeff_mem_H1 ((hβ.comp contDiff_fst).smul contDiff_const)
+    (fun _ _ ↦ rfl) hN hf
 
 /-- Multiplication by a `C²` function `β(s)` with `β` and `β'` bounded, as an operator on
 `H1 V`: the operator of the coefficient field `cutoffCoeff V β`, restricted to `H1 V`
 (`TauCeti.CylinderSobolev.coe_cutoffL`). -/
 def cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
     (hβ'B : ∀ s, |deriv β s| ≤ B) : H1 V →L[ℝ] H1 V :=
-  ((jetOperator stripMeasure (cutoffCoeff V β)).comp (H1 V).subtypeL).codRestrict (H1 V) fun x ↦
+  ((jetOperator 2 stripMeasure (cutoffCoeff V β)).comp (H1 V).subtypeL).codRestrict (H1 V) fun x ↦
     jetOperator_cutoffCoeff_mem_H1 hβ hβB hβ'B x.property
 
 /-- As an `L²` jet, `cutoffL` is the operator of the coefficient field `cutoffCoeff V β`. -/
@@ -141,8 +125,15 @@ def cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ} (hβB : ∀ s
 theorem coe_cutoffL {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
     (hβ'B : ∀ s, |deriv β s| ≤ B) (x : H1 V) :
     (cutoffL hβ hβB hβ'B x : Lp (V × V × V) 2 stripMeasure) =
-      jetOperator stripMeasure (cutoffCoeff V β) (x : Lp (V × V × V) 2 stripMeasure) :=
+      jetOperator 2 stripMeasure (cutoffCoeff V β) (x : Lp (V × V × V) 2 stripMeasure) :=
   (rfl)
+
+/-- The cutoff operator does not depend on the bound used to define it. -/
+theorem cutoffL_congr {β : ℝ → ℝ} (hβ hβ' : ContDiff ℝ 2 β) {B B' : ℝ}
+    (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) (hβB' : ∀ s, |β s| ≤ B')
+    (hβ'B' : ∀ s, |deriv β s| ≤ B') :
+    cutoffL (V := V) hβ hβB hβ'B = cutoffL hβ' hβB' hβ'B' :=
+  ContinuousLinearMap.ext fun x ↦ Subtype.ext (by rw [coe_cutoffL, coe_cutoffL])
 
 /-- Multiplication by `β(s)` with `|β| ≤ B` and `|β'| ≤ B` has norm at most `2 B` on `H1 V`. -/
 theorem norm_cutoffL_apply_le {β : ℝ → ℝ} (hβ : ContDiff ℝ 2 β) {B : ℝ} (hβB : ∀ s, |β s| ≤ B)
@@ -162,8 +153,8 @@ theorem cutoffL_add_cutoffL {γ₁ γ₂ : ℝ → ℝ} {B₁ B₂ : ℝ} (hγ�
   refine Subtype.ext (Lp.ext ?_)
   rw [Submodule.coe_add, coe_cutoffL, coe_cutoffL]
   filter_upwards [Lp.coeFn_add
-      (jetOperator stripMeasure (cutoffCoeff V γ₁) (x : Lp (V × V × V) 2 stripMeasure))
-      (jetOperator stripMeasure (cutoffCoeff V γ₂) (x : Lp (V × V × V) 2 stripMeasure)),
+      (jetOperator 2 stripMeasure (cutoffCoeff V γ₁) (x : Lp (V × V × V) 2 stripMeasure))
+      (jetOperator 2 stripMeasure (cutoffCoeff V γ₂) (x : Lp (V × V × V) 2 stripMeasure)),
     coeFn_jetOperator (memLp_cutoffCoeff (hγ₁.of_le one_le_two) hγ₁B hγ₁'B)
       (x : Lp (V × V × V) 2 stripMeasure),
     coeFn_jetOperator (memLp_cutoffCoeff (hγ₂.of_le one_le_two) hγ₂B hγ₂'B)
@@ -209,10 +200,10 @@ private theorem norm_jetOperator_le_mul_norm_restrictValue {G : ℝ × ℝ → V
     (hG : MemLp G ∞ stripMeasure) (hval : ∀ᵐ z ∂stripMeasure, ∀ a b : V, G z (0, a, b) = 0)
     {R : ℝ} (hR : ∀ᵐ z ∂stripMeasure, R < |z.1| → G z = 0) {C : ℝ} (hC₀ : 0 ≤ C)
     (hC : ∀ᵐ z ∂stripMeasure, ‖G z‖ ≤ C) (f : Lp (V × V × V) 2 stripMeasure) :
-    ‖jetOperator stripMeasure G f‖ ≤ C * ‖restrictValue R f‖ := by
+    ‖jetOperator 2 stripMeasure G f‖ ≤ C * ‖restrictValue R f‖ := by
   set rect : Set (ℝ × ℝ) := Icc (-R) R ×ˢ Icc (0 : ℝ) 1
   have hrect : MeasurableSet rect := measurableSet_Icc.prod measurableSet_Icc
-  have hae : (jetOperator stripMeasure G f : ℝ × ℝ → W) =ᵐ[stripMeasure]
+  have hae : (jetOperator 2 stripMeasure G f : ℝ × ℝ → W) =ᵐ[stripMeasure]
       rect.indicator fun z ↦ G z ((f z).1, 0, 0) := by
     filter_upwards [coeFn_jetOperator hG f, hval, hR,
       ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z h₁ h₂ h₃ h₄
@@ -254,12 +245,12 @@ private theorem isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero [FiniteDi
     {G : ℝ × ℝ → V × V × V →L[ℝ] W} (hG : MemLp G ∞ stripMeasure)
     (hval : ∀ᵐ z ∂stripMeasure, ∀ a b : V, G z (0, a, b) = 0) {R : ℝ}
     (hR : ∀ᵐ z ∂stripMeasure, R < |z.1| → G z = 0) :
-    IsCompactOperator ((jetOperator stripMeasure G).comp (H1 V).subtypeL) := by
+    IsCompactOperator ((jetOperator 2 stripMeasure G).comp (H1 V).subtypeL) := by
   have hC := ae_le_lpNorm_exponent_top hG
   have hT₀ := isCompactOperator_restrictValue_comp_subtypeL (V := V) R
   exact IsCompactOperator.of_norm_le_mul_norm
     (T₀ := ((restrictValue (V := V) R).comp (H1 V).subtypeL).toLinearMap) hT₀
-    (T := ((jetOperator stripMeasure G).comp (H1 V).subtypeL).toLinearMap) fun x ↦
+    (T := ((jetOperator 2 stripMeasure G).comp (H1 V).subtypeL).toLinearMap) fun x ↦
       norm_jetOperator_le_mul_norm_restrictValue hG hval hR lpNorm_nonneg hC x
 
 /-- A coefficient field acting on values only with `‖G z‖ ≤ ε` for `|s| > R` gives an operator on
@@ -270,16 +261,16 @@ private theorem exists_isCompactOperator_norm_jetOperator_comp_subtypeL_sub_le
     (hval : ∀ᵐ z ∂stripMeasure, ∀ a b : V, G z (0, a, b) = 0) {ε R : ℝ} (hε : 0 ≤ ε)
     (hR : ∀ᵐ z ∂stripMeasure, R < |z.1| → ‖G z‖ ≤ ε) :
     ∃ K : H1 V →L[ℝ] Lp W 2 stripMeasure, IsCompactOperator K ∧
-      ‖(jetOperator stripMeasure G).comp (H1 V).subtypeL - K‖ ≤ ε := by
+      ‖(jetOperator 2 stripMeasure G).comp (H1 V).subtypeL - K‖ ≤ ε := by
   set s : Set (ℝ × ℝ) := {z | |z.1| ≤ R}
   have hs : MeasurableSet s := measurableSet_le (continuous_abs.measurable.comp measurable_fst)
     measurable_const
   have hGn : MemLp (s.indicator G) ∞ stripMeasure := hG.indicator hs.nullMeasurableSet
   have hGf : MemLp (sᶜ.indicator G) ∞ stripMeasure := hG.indicator hs.compl.nullMeasurableSet
-  have hsplit : jetOperator stripMeasure G =
-      jetOperator stripMeasure (s.indicator G) + jetOperator stripMeasure (sᶜ.indicator G) := by
+  have hsplit : jetOperator 2 stripMeasure G =
+      jetOperator 2 stripMeasure (s.indicator G) + jetOperator 2 stripMeasure (sᶜ.indicator G) := by
     rw [← jetOperator_add hGn hGf, indicator_self_add_compl]
-  refine ⟨(jetOperator stripMeasure (s.indicator G)).comp (H1 V).subtypeL,
+  refine ⟨(jetOperator 2 stripMeasure (s.indicator G)).comp (H1 V).subtypeL,
     isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero hGn ?_ (R := R) ?_, ?_⟩
   · filter_upwards [hval] with z hz a b
     by_cases h : z ∈ s
@@ -301,14 +292,14 @@ private theorem exists_isCompactOperator_norm_jetOperator_comp_subtypeL_sub_le
 /-- **Zeroth-order operators with coefficients vanishing at infinity are compact on `W^{1,2}`.**
 If the coefficient field `G` acts on values only, `G z (0, a, b) = 0`, and tends to zero as
 `|s| → ∞`, in the sense that for every `ε > 0` there is `R` with `‖G z‖ ≤ ε` for `|s| > R`, then
-the operator `ξ ↦ (z ↦ G z (ξ z))`, that is `(jetOperator stripMeasure G).comp (H1 V).subtypeL`,
+the operator `ξ ↦ (z ↦ G z (ξ z))`, that is `(jetOperator 2 stripMeasure G).comp (H1 V).subtypeL`,
 is compact from `H1 V` to `L²`. -/
 theorem isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero [FiniteDimensional ℝ V]
     [CompleteSpace W]
     {G : ℝ × ℝ → V × V × V →L[ℝ] W} (hG : MemLp G ∞ stripMeasure)
     (hval : ∀ᵐ z ∂stripMeasure, ∀ a b : V, G z (0, a, b) = 0)
     (hlim : ∀ ε > 0, ∃ R, ∀ᵐ z ∂stripMeasure, R < |z.1| → ‖G z‖ ≤ ε) :
-    IsCompactOperator ((jetOperator stripMeasure G).comp (H1 V).subtypeL) := by
+    IsCompactOperator ((jetOperator 2 stripMeasure G).comp (H1 V).subtypeL) := by
   refine isClosed_setOfPred_isCompactOperator.closure_subset
     (Metric.mem_closure_iff.2 fun ε hε ↦ ?_)
   obtain ⟨R, hR⟩ := hlim (ε / 2) (half_pos hε)
@@ -319,13 +310,13 @@ theorem isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero [FiniteDimen
 /-- **Zeroth-order operators with coefficients supported in a band are compact on `W^{1,2}`.** If
 the coefficient field `G` acts on values only, `G z (0, a, b) = 0`, and vanishes for `s ≤ T₀` and
 for `s ≥ T₁`, then the operator `ξ ↦ (z ↦ G z (ξ z))`, that is
-`(jetOperator stripMeasure G).comp (H1 V).subtypeL`, is compact from `H1 V` to `L²`. -/
+`(jetOperator 2 stripMeasure G).comp (H1 V).subtypeL`, is compact from `H1 V` to `L²`. -/
 theorem isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero_of_le_or_le
     [FiniteDimensional ℝ V] [CompleteSpace W]
     {G : ℝ × ℝ → V × V × V →L[ℝ] W} (hG : MemLp G ∞ stripMeasure)
     (hval : ∀ᵐ z ∂stripMeasure, ∀ a b : V, G z (0, a, b) = 0) {T₀ T₁ : ℝ}
     (hout : ∀ᵐ z ∂stripMeasure, z.1 ≤ T₀ ∨ T₁ ≤ z.1 → G z = 0) :
-    IsCompactOperator ((jetOperator stripMeasure G).comp (H1 V).subtypeL) := by
+    IsCompactOperator ((jetOperator 2 stripMeasure G).comp (H1 V).subtypeL) := by
   refine isCompactOperator_jetOperator_comp_subtypeL_of_eq_zero hG hval (R := max |T₀| |T₁|) ?_
   filter_upwards [hout] with z hz hR
   refine hz ?_
@@ -345,23 +336,23 @@ isomorphism from `W^{1,2}` onto `L²`, there is `ε > 0` such that the operator 
 isomorphism for every essentially bounded `P` with `‖P z‖ ≤ ε` almost everywhere. -/
 theorem exists_pos_forall_isInvertible_jetOperator_add_comp_subtypeL [CompleteSpace V]
     {G₀ : ℝ × ℝ → V × V × V →L[ℝ] W} (hG₀ : MemLp G₀ ∞ stripMeasure)
-    (hD : ((jetOperator stripMeasure G₀).comp (H1 V).subtypeL).IsInvertible) :
+    (hD : ((jetOperator 2 stripMeasure G₀).comp (H1 V).subtypeL).IsInvertible) :
     ∃ ε > 0, ∀ {P : ℝ × ℝ → V × V × V →L[ℝ] W}, MemLp P ∞ stripMeasure →
       (∀ᵐ z ∂stripMeasure, ‖P z‖ ≤ ε) →
-      ((jetOperator stripMeasure (G₀ + P)).comp (H1 V).subtypeL).IsInvertible := by
-  set C := ‖((jetOperator stripMeasure G₀).comp (H1 V).subtypeL).inverse‖ with hCdef
+      ((jetOperator 2 stripMeasure (G₀ + P)).comp (H1 V).subtypeL).IsInvertible := by
+  set C := ‖((jetOperator 2 stripMeasure G₀).comp (H1 V).subtypeL).inverse‖ with hCdef
   have hC : 0 ≤ C := by rw [hCdef]; exact ContinuousLinearMap.opNorm_nonneg _
   refine ⟨1 / (2 * (C + 1)), by positivity, fun {P} hPm hPb ↦ hD.of_mul_norm_sub_lt le_rfl ?_⟩
   -- The difference with the invertible operator is the operator of `P`, of norm at most `ε`.
-  have hnorm : ‖(jetOperator stripMeasure (G₀ + P)).comp (H1 V).subtypeL -
-      (jetOperator stripMeasure G₀).comp (H1 V).subtypeL‖ ≤ 1 / (2 * (C + 1)) := by
+  have hnorm : ‖(jetOperator 2 stripMeasure (G₀ + P)).comp (H1 V).subtypeL -
+      (jetOperator 2 stripMeasure G₀).comp (H1 V).subtypeL‖ ≤ 1 / (2 * (C + 1)) := by
     rw [jetOperator_add hG₀ hPm, ContinuousLinearMap.add_comp,
-      add_sub_cancel_left ((jetOperator stripMeasure G₀).comp (H1 V).subtypeL)]
+      add_sub_cancel_left ((jetOperator 2 stripMeasure G₀).comp (H1 V).subtypeL)]
     refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun x ↦ ?_
     rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, ← Submodule.norm_coe x]
     exact norm_jetOperator_apply_le hPm hPb _
-  calc C * ‖(jetOperator stripMeasure (G₀ + P)).comp (H1 V).subtypeL -
-        (jetOperator stripMeasure G₀).comp (H1 V).subtypeL‖
+  calc C * ‖(jetOperator 2 stripMeasure (G₀ + P)).comp (H1 V).subtypeL -
+        (jetOperator 2 stripMeasure G₀).comp (H1 V).subtypeL‖
       ≤ C * (1 / (2 * (C + 1))) := by gcongr
     _ < 1 := by rw [mul_one_div, div_lt_one (by positivity)]; linarith
 
@@ -479,10 +470,11 @@ private theorem jetOperator_cutoffL_ae (hM : MemLp M ∞ stripMeasure)
     (hM' : MemLp M' ∞ stripMeasure)
     (hp : ∀ᵐ z ∂stripMeasure, ∀ a b : V, M z (0, a, b) = M' z (0, a, b))
     (hβ : ContDiff ℝ 2 β) (hβB : ∀ s, |β s| ≤ B) (hβ'B : ∀ s, |deriv β s| ≤ B) (y : H1 V) :
-    (jetOperator stripMeasure M (cutoffL hβ hβB hβ'B y : Lp (V × V × V) 2 stripMeasure) : ℝ × ℝ → W)
+    (jetOperator 2 stripMeasure M (cutoffL hβ hβB hβ'B y : Lp (V × V × V) 2 stripMeasure) :
+      ℝ × ℝ → W)
       =ᵐ[stripMeasure] fun z ↦
-        β z.1 • jetOperator stripMeasure M' (y : Lp (V × V × V) 2 stripMeasure) z +
-        jetOperator stripMeasure (fun z ↦ errCoeff V (β z.1) (deriv β z.1) (M z) (M' z))
+        β z.1 • jetOperator 2 stripMeasure M' (y : Lp (V × V × V) 2 stripMeasure) z +
+        jetOperator 2 stripMeasure (fun z ↦ errCoeff V (β z.1) (deriv β z.1) (M z) (M' z))
           (y : Lp (V × V × V) 2 stripMeasure) z := by
   have hE := memLp_errCoeff hβ.continuous (hβ.continuous_deriv (by norm_num)) hβB hβ'B hM hM'
   filter_upwards [coeFn_jetOperator hM (cutoffL hβ hβB hβ'B y : Lp (V × V × V) 2 stripMeasure),
@@ -497,11 +489,11 @@ private theorem smul_jetOperator_ae (hM : MemLp M ∞ stripMeasure)
     (hM' : MemLp M' ∞ stripMeasure)
     (hp : ∀ᵐ z ∂stripMeasure, ∀ a b : V, M z (0, a, b) = M' z (0, a, b))
     (hγ : ContDiff ℝ 2 γ) (hγB : ∀ s, |γ s| ≤ B) (hγ'B : ∀ s, |deriv γ s| ≤ B) (x : H1 V) :
-    (fun z ↦ γ z.1 • jetOperator stripMeasure M (x : Lp (V × V × V) 2 stripMeasure) z)
+    (fun z ↦ γ z.1 • jetOperator 2 stripMeasure M (x : Lp (V × V × V) 2 stripMeasure) z)
       =ᵐ[stripMeasure]
       fun z ↦
-        jetOperator stripMeasure M' (cutoffL hγ hγB hγ'B x : Lp (V × V × V) 2 stripMeasure) z +
-        jetOperator stripMeasure (fun z ↦ errCoeff V (γ z.1) (-deriv γ z.1) (M z) (M' z))
+        jetOperator 2 stripMeasure M' (cutoffL hγ hγB hγ'B x : Lp (V × V × V) 2 stripMeasure) z +
+        jetOperator 2 stripMeasure (fun z ↦ errCoeff V (γ z.1) (-deriv γ z.1) (M z) (M' z))
           (x : Lp (V × V × V) 2 stripMeasure) z := by
   have hE := memLp_errCoeff (b := fun s ↦ -deriv γ s) hγ.continuous
     (hγ.continuous_deriv (by norm_num)).neg hγB
@@ -523,20 +515,20 @@ private theorem comp_parametrix_sub_one (hM : MemLp M ∞ stripMeasure)
     (hpneg : ∀ᵐ z ∂stripMeasure, ∀ a b : V, M z (0, a, b) = Mneg z (0, a, b))
     (hppos : ∀ᵐ z ∂stripMeasure, ∀ a b : V, M z (0, a, b) = Mpos z (0, a, b))
     {Qneg Qpos : Lp W 2 stripMeasure →L[ℝ] H1 V}
-    (hQneg : ∀ η, jetOperator stripMeasure Mneg (Qneg η : Lp (V × V × V) 2 stripMeasure) = η)
-    (hQpos : ∀ η, jetOperator stripMeasure Mpos (Qpos η : Lp (V × V × V) 2 stripMeasure) = η)
+    (hQneg : ∀ η, jetOperator 2 stripMeasure Mneg (Qneg η : Lp (V × V × V) 2 stripMeasure) = η)
+    (hQpos : ∀ η, jetOperator 2 stripMeasure Mpos (Qpos η : Lp (V × V × V) 2 stripMeasure) = η)
     (hβneg : ContDiff ℝ 2 βneg) (hβnegB : ∀ s, |βneg s| ≤ B) (hβneg'B : ∀ s, |deriv βneg s| ≤ B)
     (hβpos : ContDiff ℝ 2 βpos) (hβposB : ∀ s, |βpos s| ≤ B) (hβpos'B : ∀ s, |deriv βpos s| ≤ B)
     (hγneg : Continuous γneg) (hγnegB : ∀ s, |γneg s| ≤ B) (hγpos : Continuous γpos)
     (hγposB : ∀ s, |γpos s| ≤ B) (hneg : βneg * γneg = γneg) (hpos : βpos * γpos = γpos)
     (h : γneg + γpos = 1) :
-    (jetOperator stripMeasure M).comp (H1 V).subtypeL ∘L
+    (jetOperator 2 stripMeasure M).comp (H1 V).subtypeL ∘L
         (cutoffL hβneg hβnegB hβneg'B ∘L Qneg ∘L mulL hγneg hγnegB +
           cutoffL hβpos hβposB hβpos'B ∘L Qpos ∘L mulL hγpos hγposB) - 1 =
-      (jetOperator stripMeasure fun z ↦
+      (jetOperator 2 stripMeasure fun z ↦
           errCoeff V (βneg z.1) (deriv βneg z.1) (M z) (Mneg z)).comp
           (H1 V).subtypeL ∘L Qneg ∘L mulL hγneg hγnegB +
-        (jetOperator stripMeasure fun z ↦
+        (jetOperator 2 stripMeasure fun z ↦
             errCoeff V (βpos z.1) (deriv βpos z.1) (M z) (Mpos z)).comp
           (H1 V).subtypeL ∘L Qpos ∘L mulL hγpos hγposB := by
   ext1 η
@@ -548,13 +540,15 @@ private theorem comp_parametrix_sub_one (hM : MemLp M ∞ stripMeasure)
     jetOperator_cutoffL_ae hM hMpos hppos hβpos hβposB hβpos'B (Qpos (mulL hγpos hγposB η))
   rw [hQneg] at eneg
   rw [hQpos] at epos
-  set A := jetOperator stripMeasure M (cutoffL hβneg hβnegB hβneg'B (Qneg (mulL hγneg hγnegB η)) :
-    Lp (V × V × V) 2 stripMeasure)
-  set A' := jetOperator stripMeasure M (cutoffL hβpos hβposB hβpos'B (Qpos (mulL hγpos hγposB η)) :
-    Lp (V × V × V) 2 stripMeasure)
-  set E := jetOperator stripMeasure (fun z ↦ errCoeff V (βneg z.1) (deriv βneg z.1) (M z) (Mneg z))
+  set A := jetOperator 2 stripMeasure M
+    (cutoffL hβneg hβnegB hβneg'B (Qneg (mulL hγneg hγnegB η)) : Lp (V × V × V) 2 stripMeasure)
+  set A' := jetOperator 2 stripMeasure M
+    (cutoffL hβpos hβposB hβpos'B (Qpos (mulL hγpos hγposB η)) : Lp (V × V × V) 2 stripMeasure)
+  set E := jetOperator 2 stripMeasure
+    (fun z ↦ errCoeff V (βneg z.1) (deriv βneg z.1) (M z) (Mneg z))
     (Qneg (mulL hγneg hγnegB η) : Lp (V × V × V) 2 stripMeasure)
-  set E' := jetOperator stripMeasure (fun z ↦ errCoeff V (βpos z.1) (deriv βpos z.1) (M z) (Mpos z))
+  set E' := jetOperator 2 stripMeasure
+    (fun z ↦ errCoeff V (βpos z.1) (deriv βpos z.1) (M z) (Mpos z))
     (Qpos (mulL hγpos hγposB η) : Lp (V × V × V) 2 stripMeasure)
   refine Lp.ext ?_
   filter_upwards [Lp.coeFn_sub (A + A') η, Lp.coeFn_add A A', Lp.coeFn_add E E', eneg, epos,
@@ -574,7 +568,7 @@ private theorem cutoffL_cutoffL (hβ : ContDiff ℝ 2 β) (hβB : ∀ s, |β s| 
   refine Subtype.ext (Lp.ext ?_)
   rw [coe_cutoffL, coe_cutoffL]
   filter_upwards [coeFn_jetOperator (memLp_cutoffCoeff (hβ.of_le one_le_two) hβB hβ'B)
-      (jetOperator stripMeasure (cutoffCoeff V γ) (x : Lp (V × V × V) 2 stripMeasure)),
+      (jetOperator 2 stripMeasure (cutoffCoeff V γ) (x : Lp (V × V × V) 2 stripMeasure)),
     coeFn_jetOperator (memLp_cutoffCoeff (hγ.of_le one_le_two) hγB hγ'B)
       (x : Lp (V × V × V) 2 stripMeasure)]
     with z h₁ h₂
@@ -585,16 +579,16 @@ private theorem cutoffL_cutoffL (hβ : ContDiff ℝ 2 β) (hβB : ∀ s, |β s| 
 private theorem mulL_jetOperator (hM : MemLp M ∞ stripMeasure) (hM' : MemLp M' ∞ stripMeasure)
     (hp : ∀ᵐ z ∂stripMeasure, ∀ a b : V, M z (0, a, b) = M' z (0, a, b))
     (hγ : ContDiff ℝ 2 γ) (hγB : ∀ s, |γ s| ≤ B) (hγ'B : ∀ s, |deriv γ s| ≤ B) (x : H1 V) :
-    mulL hγ.continuous hγB (jetOperator stripMeasure M (x : Lp (V × V × V) 2 stripMeasure)) =
-      jetOperator stripMeasure M' (cutoffL hγ hγB hγ'B x : Lp (V × V × V) 2 stripMeasure) +
-        jetOperator stripMeasure (fun z ↦ errCoeff V (γ z.1) (-deriv γ z.1) (M z) (M' z))
+    mulL hγ.continuous hγB (jetOperator 2 stripMeasure M (x : Lp (V × V × V) 2 stripMeasure)) =
+      jetOperator 2 stripMeasure M' (cutoffL hγ hγB hγ'B x : Lp (V × V × V) 2 stripMeasure) +
+        jetOperator 2 stripMeasure (fun z ↦ errCoeff V (γ z.1) (-deriv γ z.1) (M z) (M' z))
           (x : Lp (V × V × V) 2 stripMeasure) := by
   refine Lp.ext ?_
   filter_upwards [mulL_ae hγ.continuous hγB
-      (jetOperator stripMeasure M (x : Lp (V × V × V) 2 stripMeasure)),
+      (jetOperator 2 stripMeasure M (x : Lp (V × V × V) 2 stripMeasure)),
     smul_jetOperator_ae hM hM' hp hγ hγB hγ'B x, Lp.coeFn_add
-      (jetOperator stripMeasure M' (cutoffL hγ hγB hγ'B x : Lp (V × V × V) 2 stripMeasure))
-      (jetOperator stripMeasure (fun z ↦ errCoeff V (γ z.1) (-deriv γ z.1) (M z) (M' z))
+      (jetOperator 2 stripMeasure M' (cutoffL hγ hγB hγ'B x : Lp (V × V × V) 2 stripMeasure))
+      (jetOperator 2 stripMeasure (fun z ↦ errCoeff V (γ z.1) (-deriv γ z.1) (M z) (M' z))
         (x : Lp (V × V × V) 2 stripMeasure))] with z h₁ h₂ h₃
   rw [h₁, h₂, h₃, Pi.add_apply]
 
@@ -607,9 +601,9 @@ private theorem parametrix_comp_sub_one (hM : MemLp M ∞ stripMeasure)
     (hppos : ∀ᵐ z ∂stripMeasure, ∀ a b : V, M z (0, a, b) = Mpos z (0, a, b))
     {Qneg Qpos : Lp W 2 stripMeasure →L[ℝ] H1 V}
     (hQneg : ∀ x : H1 V,
-      Qneg (jetOperator stripMeasure Mneg (x : Lp (V × V × V) 2 stripMeasure)) = x)
+      Qneg (jetOperator 2 stripMeasure Mneg (x : Lp (V × V × V) 2 stripMeasure)) = x)
     (hQpos : ∀ x : H1 V,
-      Qpos (jetOperator stripMeasure Mpos (x : Lp (V × V × V) 2 stripMeasure)) = x)
+      Qpos (jetOperator 2 stripMeasure Mpos (x : Lp (V × V × V) 2 stripMeasure)) = x)
     (hβneg : ContDiff ℝ 2 βneg) (hβnegB : ∀ s, |βneg s| ≤ B) (hβneg'B : ∀ s, |deriv βneg s| ≤ B)
     (hβpos : ContDiff ℝ 2 βpos) (hβposB : ∀ s, |βpos s| ≤ B) (hβpos'B : ∀ s, |deriv βpos s| ≤ B)
     (hγneg : ContDiff ℝ 2 γneg) (hγnegB : ∀ s, |γneg s| ≤ B) (hγneg'B : ∀ s, |deriv γneg s| ≤ B)
@@ -617,13 +611,13 @@ private theorem parametrix_comp_sub_one (hM : MemLp M ∞ stripMeasure)
     (hneg : βneg * γneg = γneg) (hpos : βpos * γpos = γpos) (h : γneg + γpos = 1) :
     (cutoffL hβneg hβnegB hβneg'B ∘L Qneg ∘L mulL hγneg.continuous hγnegB +
           cutoffL hβpos hβposB hβpos'B ∘L Qpos ∘L mulL hγpos.continuous hγposB) ∘L
-        (jetOperator stripMeasure M).comp (H1 V).subtypeL - 1 =
+        (jetOperator 2 stripMeasure M).comp (H1 V).subtypeL - 1 =
       cutoffL hβneg hβnegB hβneg'B ∘L Qneg ∘L
-          (jetOperator stripMeasure fun z ↦
+          (jetOperator 2 stripMeasure fun z ↦
               errCoeff V (γneg z.1) (-deriv γneg z.1) (M z) (Mneg z)).comp
             (H1 V).subtypeL +
         cutoffL hβpos hβposB hβpos'B ∘L Qpos ∘L
-          (jetOperator stripMeasure fun z ↦
+          (jetOperator 2 stripMeasure fun z ↦
               errCoeff V (γpos z.1) (-deriv γpos z.1) (M z) (Mpos z)).comp
             (H1 V).subtypeL := by
   ext1 x
@@ -636,10 +630,10 @@ private theorem parametrix_comp_sub_one (hM : MemLp M ∞ stripMeasure)
     cutoffL_cutoffL hβpos hβposB hβpos'B hγpos hγposB hγpos'B hpos]
   have hx := cutoffL_add_cutoffL hγneg hγnegB hγneg'B hγpos hγposB hγpos'B h x
   calc _ = (cutoffL hγneg hγnegB hγneg'B x + cutoffL hγpos hγposB hγpos'B x) - x +
-        (cutoffL hβneg hβnegB hβneg'B (Qneg (jetOperator stripMeasure (fun z ↦
+        (cutoffL hβneg hβnegB hβneg'B (Qneg (jetOperator 2 stripMeasure (fun z ↦
             errCoeff V (γneg z.1) (-deriv γneg z.1) (M z) (Mneg z))
               (x : Lp (V × V × V) 2 stripMeasure))) +
-          cutoffL hβpos hβposB hβpos'B (Qpos (jetOperator stripMeasure (fun z ↦
+          cutoffL hβpos hβposB hβpos'B (Qpos (jetOperator 2 stripMeasure (fun z ↦
             errCoeff V (γpos z.1) (-deriv γpos z.1) (M z) (Mpos z))
               (x : Lp (V × V × V) 2 stripMeasure)))) := by abel
     _ = _ := by rw [hx, sub_self, zero_add]
@@ -795,7 +789,7 @@ private theorem isCompactOperator_errCoeff [FiniteDimensional ℝ V] [CompleteSp
     (hM : MemLp M ∞ stripMeasure) (hM' : MemLp M' ∞ stripMeasure)
     (hsmall : ∀ ε > 0, ∃ R, ∀ᵐ z ∂stripMeasure, R < |z.1| → χ z.1 = 0 ∨ ‖M z - M' z‖ ≤ ε) :
     IsCompactOperator
-      ((jetOperator stripMeasure fun z ↦ errCoeff V (χ z.1) (b z.1) (M z) (M' z)).comp
+      ((jetOperator 2 stripMeasure fun z ↦ errCoeff V (χ z.1) (b z.1) (M z) (M' z)).comp
       (H1 V).subtypeL) :=
   isCompactOperator_jetOperator_comp_subtypeL_of_tendsto_zero
     (memLp_errCoeff hχ hb (fun s ↦ (hχ1 s).trans (le_max_left _ _)) hbB hM hM')
@@ -808,10 +802,10 @@ private theorem isCompactOperator_errCoeff_stepDown [FiniteDimensional ℝ V] [C
     (hM : MemLp M ∞ stripMeasure) (hM' : MemLp M' ∞ stripMeasure)
     (hlim : ∀ ε > 0, ∃ R, ∀ᵐ z ∂stripMeasure, z.1 < -R → ‖M z - M' z‖ ≤ ε) {c : ℝ}
     (hc : |c| ≤ 1) :
-    IsCompactOperator ((jetOperator stripMeasure fun z ↦
+    IsCompactOperator ((jetOperator 2 stripMeasure fun z ↦
         errCoeff V (stepDown c z.1) (deriv (stepDown c) z.1)
         (M z) (M' z)).comp (H1 V).subtypeL) ∧
-      IsCompactOperator ((jetOperator stripMeasure fun z ↦ errCoeff V (stepDown c z.1)
+      IsCompactOperator ((jetOperator 2 stripMeasure fun z ↦ errCoeff V (stepDown c z.1)
         (-deriv (stepDown c) z.1) (M z) (M' z)).comp (H1 V).subtypeL) := by
   have hsmall := small_of_neg (fun s hs ↦ stepDown_eq_zero hc hs) hlim
   have hd := (contDiff_stepDown c).continuous_deriv (by norm_num)
@@ -828,10 +822,10 @@ private theorem isCompactOperator_errCoeff_stepUp [FiniteDimensional ℝ V] [Com
     (hM : MemLp M ∞ stripMeasure) (hM' : MemLp M' ∞ stripMeasure)
     (hlim : ∀ ε > 0, ∃ R, ∀ᵐ z ∂stripMeasure, R < z.1 → ‖M z - M' z‖ ≤ ε) {c : ℝ}
     (hc : |c| ≤ 1) :
-    IsCompactOperator ((jetOperator stripMeasure fun z ↦
+    IsCompactOperator ((jetOperator 2 stripMeasure fun z ↦
         errCoeff V (stepUp c z.1) (deriv (stepUp c) z.1)
         (M z) (M' z)).comp (H1 V).subtypeL) ∧
-      IsCompactOperator ((jetOperator stripMeasure fun z ↦ errCoeff V (stepUp c z.1)
+      IsCompactOperator ((jetOperator 2 stripMeasure fun z ↦ errCoeff V (stepUp c z.1)
         (-deriv (stepUp c) z.1) (M z) (M' z)).comp (H1 V).subtypeL) := by
   have hsmall := small_of_pos (fun s hs ↦ stepUp_eq_zero hc hs) hlim
   have hd := (contDiff_stepUp c).continuous_deriv (by norm_num)
@@ -859,19 +853,19 @@ the two asymptotic orbits are shown to be invertible on `W^{1,2}`. -/
 theorem isFredholm_jetOperator_comp_subtypeL_of_isInvertible [FiniteDimensional ℝ V]
     [CompleteSpace W] {M Mneg Mpos : ℝ × ℝ → V × V × V →L[ℝ] W} (hM : MemLp M ∞ stripMeasure)
     (hMneg : MemLp Mneg ∞ stripMeasure) (hMpos : MemLp Mpos ∞ stripMeasure)
-    (hDneg : ((jetOperator stripMeasure Mneg).comp (H1 V).subtypeL).IsInvertible)
-    (hDpos : ((jetOperator stripMeasure Mpos).comp (H1 V).subtypeL).IsInvertible)
+    (hDneg : ((jetOperator 2 stripMeasure Mneg).comp (H1 V).subtypeL).IsInvertible)
+    (hDpos : ((jetOperator 2 stripMeasure Mpos).comp (H1 V).subtypeL).IsInvertible)
     (hpneg : ∀ᵐ z ∂stripMeasure, ∀ a b : V, M z (0, a, b) = Mneg z (0, a, b))
     (hppos : ∀ᵐ z ∂stripMeasure, ∀ a b : V, M z (0, a, b) = Mpos z (0, a, b))
     (hlimneg : ∀ ε > 0, ∃ R, ∀ᵐ z ∂stripMeasure, z.1 < -R → ‖M z - Mneg z‖ ≤ ε)
     (hlimpos : ∀ ε > 0, ∃ R, ∀ᵐ z ∂stripMeasure, R < z.1 → ‖M z - Mpos z‖ ≤ ε) :
-    ((jetOperator stripMeasure M).comp (H1 V).subtypeL).IsFredholm := by
+    ((jetOperator 2 stripMeasure M).comp (H1 V).subtypeL).IsFredholm := by
   have hc₀ : |(0 : ℝ)| ≤ 1 := by norm_num
   have hc₁ : |(1 : ℝ)| ≤ 1 := by norm_num
   have hc₂ : |(-1 : ℝ)| ≤ 1 := by norm_num
-  set D := (jetOperator stripMeasure M).comp (H1 V).subtypeL
-  set Qneg := ((jetOperator stripMeasure Mneg).comp (H1 V).subtypeL).inverse
-  set Qpos := ((jetOperator stripMeasure Mpos).comp (H1 V).subtypeL).inverse
+  set D := (jetOperator 2 stripMeasure M).comp (H1 V).subtypeL
+  set Qneg := ((jetOperator 2 stripMeasure Mneg).comp (H1 V).subtypeL).inverse
+  set Qpos := ((jetOperator 2 stripMeasure Mpos).comp (H1 V).subtypeL).inverse
   -- The cutoffs: `γneg + γpos = 1`, and `βneg`, `βpos` are one on the supports of `γneg`, `γpos`.
   set βneg := cutoffL (V := V) (contDiff_stepDown (-1)) (abs_stepDown_le (-1))
     (abs_deriv_stepDown_le (-1))

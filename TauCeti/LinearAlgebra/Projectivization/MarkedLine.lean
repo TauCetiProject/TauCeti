@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Projectivization.Basic
 
 import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.LinearAlgebra.Projectivization.Independence
+import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.Pi
 
 /-!
@@ -48,7 +49,10 @@ which, when `φ v ≠ 0` and `φ w ≠ 0`, sends `[1 : 0]` to `[φ(v) w] = [w]`,
   the marked line (`TauCeti.ker_markedLineIncidence`). The marked line is injective when `v` and
   `w` are linearly independent and off `H` (`TauCeti.markedLine_injective`), and then so is every
   nonzero solution (`TauCeti.injective_of_mem_ker_markedLineIncidence`), so it defines a marked
-  line of `ℙ(V)`.
+  line of `ℙ(V)`. When `v` and `w` are off `H`, the image of the marked line is the plane
+  `span {v, w}` (`TauCeti.range_markedLine`), so its projectivization is the line through `p` and
+  `q`. That line meets `H` only at the marked point `0`
+  (`TauCeti.range_markedLine_inf_ker`).
 * **Transversality.** As soon as `φ v ≠ 0`, the incidence map is onto
   (`TauCeti.markedLineIncidence_surjective`), and it induces a linear isomorphism from the
   quotient of `Hom(K², V)` by the line of the marked line onto `K × V/Kv × V/Kw`
@@ -95,6 +99,8 @@ point.
   the incidence conditions are the multiples of the marked line, and the conditions are
   independent.
 * `TauCeti.markedLine_injective`: the marked line is a line.
+* `TauCeti.range_markedLine`, `TauCeti.range_markedLine_inf_ker`: its image is the plane
+  `span {v, w}`, which meets `ker φ` exactly in the span of the marked point `0`.
 * `TauCeti.existsUnique_markedLine`: there is exactly one line through `p` and `q` marked at its
   point on `H`.
 * `TauCeti.not_exists_markedLine_of_mem_projectivization`: there is none when `p` lies on `H` and
@@ -166,6 +172,39 @@ theorem markedLine_injective (hvw : LinearIndependent K ![v, w]) (hv : φ v ≠ 
     simpa [hx₁] using (mul_eq_zero.1 h₀).resolve_right hv
   ext i
   fin_cases i <;> simp [hx₀, hx₁]
+
+/-- **The marked line passes through `[v]` and `[w]`.** When neither `v` nor `w` lies in `ker φ`,
+the image of the marked line is the plane `span {v, w}`. -/
+theorem range_markedLine (hv : φ v ≠ 0) (hw : φ w ≠ 0) :
+    LinearMap.range (markedLine φ v w) = span K {v, w} := by
+  refine le_antisymm ?_ (span_le.2 ?_)
+  · rintro _ ⟨x, rfl⟩
+    exact mem_span_pair.2 ⟨x 1 * φ w, (x 0 - x 1) * φ v, by rw [markedLine_apply]; module⟩
+  · rintro u (rfl | rfl | -)
+    · exact ⟨(φ w)⁻¹ • 1, by rw [map_smul, markedLine_one, inv_smul_smul₀ hw]⟩
+    · exact ⟨(φ v)⁻¹ • Pi.single 0 1, by
+        rw [map_smul, markedLine_single_zero_one, inv_smul_smul₀ hv]⟩
+
+/-- **The marked line meets the hyperplane only at its marked point `0`.** The image of the
+marked line meets `ker φ` in the span of the value at `[0 : 1]`. -/
+theorem range_markedLine_inf_ker :
+    LinearMap.range (markedLine φ v w) ⊓ LinearMap.ker φ =
+      K ∙ markedLine φ v w (Pi.single 1 1) := by
+  refine le_antisymm (fun u hu ↦ ?_) (le_inf ?_ ?_)
+  · obtain ⟨⟨x, rfl⟩, hφx⟩ := hu
+    rw [SetLike.mem_coe, LinearMap.mem_ker, markedLine_apply] at hφx
+    rw [mem_span_singleton, markedLine_single_one_one, markedLine_apply]
+    -- The hyperplane condition says `x₀ φ(v) φ(w) = 0`.
+    have h : x 0 * φ v * φ w = 0 := by
+      simp only [map_add, map_sub, map_smul, smul_eq_mul] at hφx
+      linear_combination hφx
+    rcases mul_eq_zero.1 h with h | h
+    · rcases mul_eq_zero.1 h with h | h
+      · exact ⟨x 1, by rw [h]; module⟩
+      · exact ⟨x 1, by rw [h]; module⟩
+    · exact ⟨x 1 - x 0, by rw [h]; module⟩
+  · exact (span_singleton_le_iff_mem _ _).2 (LinearMap.mem_range_self _ _)
+  · exact (span_singleton_le_iff_mem _ _).2 apply_markedLine_single_one_one_eq_zero
 
 /-! ### The incidence conditions -/
 

@@ -122,6 +122,8 @@ homomorphisms between them.
   if and only if the complex is not acyclic.
 * `HomologicalComplex.reidemeisterTorsion_eq_det_zpow`: the torsion of an acyclic complex
   concentrated in two consecutive degrees.
+* `HomologicalComplex.reidemeisterTorsion_eq_one`: a complex with empty bases, such as the zero
+  complex, has torsion `1`.
 * `HomologicalComplex.reidemeisterTorsion_eq_mul_finprod_det`: the change of the torsion under a
   change of the chain bases.
 * `HomologicalComplex.reidemeisterTorsion_reindex`: the change of the torsion under a reordering
@@ -674,6 +676,18 @@ theorem reidemeisterTorsion_eq_det_zpow :
     rw [torsionBracket_eq_one c _ _ _ _ _ _ _ (hn _ (by omega) (by omega)), one_zpow]
 
 end TwoDegrees
+
+variable {C c} in
+/-- A complex all of whose bases are empty, such as the zero complex, has torsion `1`. -/
+theorem reidemeisterTorsion_eq_one (hn : ∀ i, n i = 0) : C.reidemeisterTorsion c = 1 := by
+  have hX (i : ℤ) : Subsingleton (C.X i) := ⟨fun x y ↦ by
+    rw [eq_zero_of_eq_zero (c := c) (hn i) x, eq_zero_of_eq_zero (c := c) (hn i) y]⟩
+  have h : C.Acyclic := fun i ↦ (C.exactAt_iff i).2 <|
+    ShortComplex.exact_of_isZero_X₂ _ (ModuleCat.isZero_of_subsingleton (C.X i))
+  rw [reidemeisterTorsion_eq_finprod (by simp [hn]) h (fun j ↦ chosenBoundaryBasis C c (j + 1) j)
+    (fun j ↦ chosenBoundaryLift C c (j + 1) j) (fun j ↦ chosenBoundaryLift_spec C c (j + 1) j)]
+  exact finprod_eq_one_of_forall_eq_one fun j ↦ by
+    rw [torsionBracket_eq_one c _ _ _ _ _ _ _ (hn _), one_zpow]
 
 section ShortExact
 

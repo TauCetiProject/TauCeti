@@ -8,6 +8,7 @@ module
 public import Mathlib.Order.Hom.PowersetCard
 public import Mathlib.SetTheory.Cardinal.Order
 import Mathlib.SetTheory.Cardinal.Arithmetic
+import TauCeti.Order.Hom.Basic
 
 /-!
 # Homogeneous sets and the partition relation
@@ -162,15 +163,8 @@ theorem isHomogeneousOn_comp_trans_iff (e : K ↪o I) {c : (Fin n ↪o I) → C}
     IsHomogeneousOn (fun s ↦ c (s.trans e)) H ↔ IsHomogeneousOn c (e '' H) := by
   refine ⟨fun h s t hs ht ↦ ?_, fun h s t hs ht ↦
     h _ _ (fun k ↦ mem_image_of_mem e (hs k)) (fun k ↦ mem_image_of_mem e (ht k))⟩
-  -- An increasing tuple with entries in `e '' H` is the image of an increasing tuple in `H`.
-  have lift (s : Fin n ↪o I) (hs : ∀ k, s k ∈ e '' H) :
-      ∃ s' : Fin n ↪o K, (∀ k, s' k ∈ H) ∧ s'.trans e = s := by
-    choose f hfH hf using hs
-    refine ⟨.ofStrictMono f fun a b hab ↦ ?_, hfH, RelEmbedding.ext hf⟩
-    rw [← e.lt_iff_lt, hf, hf]
-    exact s.strictMono hab
-  obtain ⟨s', hs', rfl⟩ := lift s hs
-  obtain ⟨t', ht', rfl⟩ := lift t ht
+  obtain ⟨s', hs', rfl⟩ := e.exists_trans_eq_of_forall_mem_image s hs
+  obtain ⟨t', ht', rfl⟩ := e.exists_trans_eq_of_forall_mem_image t ht
   exact h s' t' hs' ht'
 
 /-- **Transport of homogeneity along an order isomorphism.** -/

@@ -16,8 +16,10 @@ Let `U` be a group of automorphisms of a field extension `M / K`, of any cardina
 `x : M`. Over the fixed field `M^U`, the element `x` is integral exactly when its `U`-orbit is
 finite. Its minimal polynomial is then the product of `X - y` over that orbit, so it is
 separable, its roots are the orbit, and its degree is the index of the stabilizer of `x` in `U`.
-This is Artin's description of the minimal polynomial over the fixed field of a finite group,
-with finiteness of the group replaced by finiteness of a single orbit.
+In particular, whenever `M` is algebraic over `M^U`, the extension `M / M^U` is Galois
+(`IntermediateField.isGalois_fixedField_of_isAlgebraic`). This is Artin's description of the
+minimal polynomial over the fixed field of a finite group, with finiteness of the group replaced by
+finiteness of a single orbit.
 
 For subgroups `V ≤ U` with `[U : V]` finite, every element of `M^V` has stabilizer containing
 `V`, so its degree over `M^U` divides `[U : V]`. By the primitive element theorem `M^V / M^U` is
@@ -42,6 +44,8 @@ of moduli are shown to be finite over `ℚ`: the stabilizer of an object in a fi
   `M^U` is the index of its stabilizer in `U`.
 * `IntermediateField.isSeparable_fixedField_of_isIntegral`: every element integral over `M^U` is
   separable over it.
+* `IntermediateField.isGalois_fixedField_of_isAlgebraic`: if `M` is algebraic over `M^U` (in
+  particular whenever `M / K` is algebraic), then `M / M^U` is Galois.
 * `IntermediateField.isSeparable_extendScalars_fixedField`: for `V ≤ U`, an integral
   `M^V / M^U` is separable.
 * `IntermediateField.finiteDimensional_fixedField_of_relIndex_ne_zero` and
@@ -207,6 +211,24 @@ theorem isSeparable_fixedField_of_isIntegral (hx : IsIntegral (fixedField U) x) 
   rw [IsSeparable, ← separable_map (algebraMap (fixedField U) M),
     map_minpoly_fixedField_eq_prod_orbit hfin]
   exact separable_prod_X_sub_C_iff'.mpr fun _ _ _ _ h ↦ h
+
+variable (U) in
+/-- **Infinite Artin's theorem**: if `M` is algebraic over the fixed field `M^U` of a subgroup `U`
+of `Aut_K(M)` (in particular whenever `M / K` is algebraic), then `M / M^U` is Galois. Every
+element of `M` is integral over `M^U`, so its `U`-orbit is finite and its minimal polynomial over
+`M^U` splits as the separable product of `X - y` over that orbit. -/
+instance (priority := low) isGalois_fixedField_of_isAlgebraic
+    [Algebra.IsAlgebraic (fixedField U) M] : IsGalois (fixedField U) M where
+  to_normal :=
+    { isAlgebraic := Algebra.IsAlgebraic.isAlgebraic
+      splits' x := by
+        classical
+        have hfin := finite_orbit_of_isIntegral_fixedField
+          (U := U) (Algebra.IsIntegral.isIntegral x)
+        rw [map_minpoly_fixedField_eq_prod_orbit hfin]
+        exact Splits.prod fun y _ ↦ Splits.X_sub_C y }
+  to_isSeparable :=
+    ⟨fun x ↦ isSeparable_fixedField_of_isIntegral (Algebra.IsIntegral.isIntegral x)⟩
 
 end Orbit
 

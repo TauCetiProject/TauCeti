@@ -37,6 +37,13 @@ frames `X` and `Y` together form a `C^n` family of invertible operators `𝕜^(�
 `κ`-components of the left inverse applied to `v`. Hence the coordinate changes between frames of
 `E ⧸ V` are `C^n`, and the quotient map `E → E ⧸ V`, `(x, v) ↦ (x, [v])`, is `C^n`.
 
+Quotient bundles are functorial: fibrewise linear maps `ϕ x : E x → E' (f x)` over a base map `f`
+that carry `V` into a `C^n` subbundle `V'` of `E'`, and whose map of total spaces is `C^n`, induce a
+`C^n` map `E ⧸ V → E' ⧸ V'`, `(x, [v]) ↦ (f x, [ϕ x v])`
+(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiff_totalSpace_mapQ`). Near a point, a class is
+the class of its lift `∑ⱼ cⱼ Yⱼ` along a `C^n` frame `Y` of `E ⧸ V`, with `C^n` coordinates `cⱼ`,
+so the induced map factors through `ϕ` and the `C^n` quotient map of `E'`.
+
 The bundle is built with Mathlib's `VectorPrebundle`: its pretrivializations are those of all
 `C^n` local frames of `E ⧸ V` on open sets, and the topology on the total space is the one these
 pretrivializations generate. On each fibre it induces the quotient topology of `E x ⧸ V x`, because
@@ -60,6 +67,8 @@ a linear isomorphism between finite-dimensional spaces is a homeomorphism.
   `E → E ⧸ V` is `C^n`.
 * `TauCeti.HasLocalContMDiffSubbundleFrames.exists_contMDiffOn_mk_eq`: a `C^n` section of `E ⧸ V`
   is locally the class of a `C^n` section of `E`.
+* `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiff_totalSpace_mapQ`: a `C^n` bundle map carrying
+  `V` into `V'` induces a `C^n` map `E ⧸ V → E' ⧸ V'`.
 
 ## References
 
@@ -467,6 +476,78 @@ theorem exists_contMDiffOn_mk_eq {W : Set B} (hW : IsOpen W) {s : Π x, E x ⧸ 
   · dsimp only
     rw [trivializationAt_quotientPrebundle_apply hV hκ (p := ⟨x, s x⟩) hx.1,
       ← hY.basis_equivFun_symm hx.1, LinearEquiv.symm_apply_apply]
+
+section Map
+
+variable {EB' : Type*} [NormedAddCommGroup EB'] [NormedSpace 𝕜 EB']
+  {HB' : Type*} [TopologicalSpace HB'] {IB' : ModelWithCorners 𝕜 EB' HB'}
+  {B' : Type*} [TopologicalSpace B'] [ChartedSpace HB' B']
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] [FiniteDimensional 𝕜 F']
+  {E' : B' → Type*} [∀ x, AddCommGroup (E' x)] [∀ x, Module 𝕜 (E' x)]
+  [TopologicalSpace (TotalSpace F' E')] [∀ x, TopologicalSpace (E' x)] [FiberBundle F' E']
+  [VectorBundle 𝕜 F' E'] [ContMDiffVectorBundle n F' E' IB']
+  {ι' κ' : Type*} [Fintype ι'] [Fintype κ'] {V' : Π x, Submodule 𝕜 (E' x)}
+
+/-- **Maps of quotient bundles.** Let `ϕ x : E x → E' (f x)` be fibrewise linear maps over a base
+map `f`, sending each `V x` into `V' (f x)`, whose map of total spaces `(x, v) ↦ (f x, ϕ x v)` is
+`C^n`. Then the induced map of quotient bundles `E ⧸ V → E' ⧸ V'`, `(x, [v]) ↦ (f x, [ϕ x v])`, is
+`C^n`. -/
+theorem contMDiff_totalSpace_mapQ
+    (hV' : HasLocalContMDiffSubbundleFrames IB' n F' ι' V')
+    (hκ' : Fintype.card ι' + Fintype.card κ' = finrank 𝕜 F')
+    {f : B → B'} (ϕ : Π x, E x →ₗ[𝕜] E' (f x)) (hϕV : ∀ x, V x ≤ (V' (f x)).comap (ϕ x))
+    (hϕ : ContMDiff (IB.prod 𝓘(𝕜, F)) (IB'.prod 𝓘(𝕜, F')) n
+      (fun p : TotalSpace F E ↦ (⟨f p.proj, ϕ p.proj p.snd⟩ : TotalSpace F' E'))) :
+    letI := (hV.quotientPrebundle hκ).totalSpaceTopology
+    letI := (hV.quotientPrebundle hκ).toFiberBundle
+    letI := (hV'.quotientPrebundle hκ').totalSpaceTopology
+    letI := (hV'.quotientPrebundle hκ').toFiberBundle
+    ContMDiff (IB.prod 𝓘(𝕜, κ → 𝕜)) (IB'.prod 𝓘(𝕜, κ' → 𝕜)) n
+      (fun p : TotalSpace (κ → 𝕜) (fun x ↦ E x ⧸ V x) ↦
+        (⟨f p.proj, (V p.proj).mapQ (V' (f p.proj)) (ϕ p.proj) (hϕV p.proj) p.snd⟩ :
+          TotalSpace (κ' → 𝕜) fun x ↦ E' x ⧸ V' x)) := by
+  let := (hV.quotientPrebundle hκ).totalSpaceTopology
+  let := (hV.quotientPrebundle hκ).toFiberBundle
+  let := (hV'.quotientPrebundle hκ').totalSpaceTopology
+  let := (hV'.quotientPrebundle hκ').toFiberBundle
+  intro p₀
+  obtain ⟨hU, hp₀U, hY, hYn⟩ := hV.frame_spec hκ p₀.proj
+  set Y := hV.frame hκ p₀.proj
+  set e := trivializationAt (κ → 𝕜) (fun x ↦ E x ⧸ V x) p₀.proj
+  set eE := trivializationAt F E p₀.proj
+  have hproj : ContMDiffAt (IB.prod 𝓘(𝕜, κ → 𝕜)) IB n
+      (fun p : TotalSpace (κ → 𝕜) (fun x ↦ E x ⧸ V x) ↦ p.proj) p₀ :=
+    (Bundle.contMDiff_proj _).contMDiffAt
+  -- The coordinates of a class in the frame `Y` are `C^n` near `p₀`.
+  have hc : ContMDiffAt (IB.prod 𝓘(𝕜, κ → 𝕜)) 𝓘(𝕜, κ → 𝕜) n (fun p ↦ (e p).2) p₀ :=
+    (contMDiffAt_totalSpace_iff.1 contMDiffAt_id).2
+  -- Near `p₀`, the class `p` lifts to the vector `∑ j, (e p).2 j • Y j p.proj` of `E`.
+  have hs : ContMDiffAt (IB.prod 𝓘(𝕜, κ → 𝕜)) (IB.prod 𝓘(𝕜, F)) n
+      (fun p ↦ (⟨p.proj, ∑ j, (e p).2 j • Y j p.proj⟩ : TotalSpace F E)) p₀ := by
+    refine contMDiffAt_totalSpace_iff.2 ⟨hproj, ?_⟩
+    have hYj (j : κ) : ContMDiffAt IB 𝓘(𝕜, F) n (fun x ↦ (eE ⟨x, Y j x⟩).2) p₀.proj :=
+      (contMDiffAt_totalSpace_iff.1 ((hYn j).contMDiffAt (hU.mem_nhds hp₀U))).2
+    have hsum : ContMDiffAt (IB.prod 𝓘(𝕜, κ → 𝕜)) 𝓘(𝕜, F) n
+        (fun p ↦ ∑ j, (e p).2 j • (eE ⟨p.proj, Y j p.proj⟩).2) p₀ :=
+      ContMDiffAt.sum fun j _ ↦ (((ContinuousLinearMap.proj j :
+        (κ → 𝕜) →L[𝕜] 𝕜).contDiff.contMDiff.contMDiffAt).comp p₀ hc).smul
+          ((hYj j).comp p₀ hproj)
+    refine hsum.congr_of_eventuallyEq ?_
+    filter_upwards [hproj.continuousAt.preimage_mem_nhds
+      (eE.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt' _))] with p hp
+    have hlin (y : E p.proj) : (eE ⟨p.proj, y⟩).2 = eE.linearMapAt 𝕜 p.proj y := by
+      rw [eE.coe_linearMapAt_of_mem hp]
+    exact (hlin _).trans (by simp only [hlin, map_sum, map_smul])
+  refine (((hV'.contMDiff_totalSpace_mkQ hκ').contMDiffAt.comp p₀
+    (hϕ.contMDiffAt.comp p₀ hs))).congr_of_eventuallyEq ?_
+  filter_upwards [hproj.continuousAt.preimage_mem_nhds (hU.mem_nhds hp₀U)] with p hp
+  have hsnd : p.snd = Submodule.Quotient.mk (∑ j, (e p).2 j • Y j p.proj) := by
+    rw [trivializationAt_quotientPrebundle_apply hV hκ hp, ← hY.basis_equivFun_symm hp,
+      LinearEquiv.symm_apply_apply]
+  simp only [Function.comp_apply]
+  rw [hsnd, Submodule.mapQ_apply]
+
+end Map
 
 end HasLocalContMDiffSubbundleFrames
 
