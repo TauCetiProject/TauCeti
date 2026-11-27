@@ -141,14 +141,9 @@ private theorem not_hasApproxTangentSpace_zero_of_not_le (h₁ : finrank ℝ L�
   have hd₂' : d < infDist v (L₂ : Set V) := by
     simp only [d]; linarith [min_le_right (infDist v (T : Set V)) (infDist v (L₂ : Set V))]
   -- the closed ball of radius `d` about `v` misses `T` and `L₂`
-  have hdisj {S : Submodule ℝ V} (hS : d < infDist v (S : Set V)) :
-      closedBall v d ∩ (S : Set V) = ∅ := by
-    refine eq_empty_of_forall_notMem fun z ⟨hz, hzS⟩ ↦ ?_
-    have := infDist_le_dist_of_mem (x := v) hzS
-    rw [mem_closedBall, dist_comm] at hz
-    linarith
   have hT0 : μHE[finrank ℝ T].restrict (T : Set V) (closedBall v d) = 0 := by
-    rw [Measure.restrict_apply measurableSet_closedBall, hdisj hdT', measure_empty]
+    rw [Measure.restrict_apply measurableSet_closedBall,
+      (disjoint_closedBall_of_lt_infDist hdT').inter_eq, measure_empty]
   have hlim := h.tendsto_blowUp_apply measurableSet_ball isBounded_ball
     (measure_mono_null (frontier_ball_subset_sphere.trans sphere_subset_closedBall) hT0)
   rw [measure_mono_null ball_subset_closedBall hT0, mul_zero, hT] at hlim
@@ -160,7 +155,7 @@ private theorem not_hasApproxTangentSpace_zero_of_not_le (h₁ : finrank ℝ L�
     have hseg := Submodule.euclideanHausdorffMeasure_restrict_apply_ball hvL d
     rw [h₁] at hseg
     have hb : ball v d ∩ (L₂ : Set V) = ∅ :=
-      eq_empty_of_subset (inter_subset_inter_left _ ball_subset_closedBall) (hdisj hd₂')
+      ((disjoint_closedBall_of_lt_infDist hd₂').mono_left ball_subset_closedBall).inter_eq
     rw [blowUp_euclideanHausdorffMeasure_restrict_union hr, ← hseg,
       Measure.restrict_apply measurableSet_ball, Measure.restrict_apply measurableSet_ball,
       inter_union_distrib_left, hb, union_empty]
