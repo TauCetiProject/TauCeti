@@ -56,6 +56,8 @@ local homology is constant along convex sets in a chart
 ## Main definitions and results
 
 * `TauCeti.skeletonPairToComplSingleton`: the inclusion `(Xⁿ, Xⁿ⁻¹) ⟶ (Xⁿ, Xⁿ ∖ {x})`.
+* `TauCeti.diskInterior` and `TauCeti.isEmbedding_cellDiskHom_restrict`: the interior of the disk,
+  which the characteristic map of a cell embeds onto the open cell.
 * `TauCeti.cellLocalClass`: the local class of the cell `i` at `x`.
 * `TauCeti.isIso_singularHomologyMap_characteristicCellPairMap_comp_skeletonPairToComplSingleton`
   and `TauCeti.isIso_cellLocalClass`: the characteristic map computes the local homology at `x`,
@@ -230,11 +232,21 @@ private lemma isIso_diskBoundaryPairToDiskSphere (n : ℕ) :
   obtain ⟨s, hs⟩ := (norm_diskHomeomorphClosedBall_eq_one_iff z.val).1 z.property
   exact ⟨s, Subtype.ext hs⟩
 
-/-- The interior of the disk, in sup-norm coordinates. -/
-private def diskInterior (n : ℕ) : Set (TopCat.disk.{w} n) :=
+/-- The interior of the disk `Dⁿ`, in sup-norm coordinates: the points which
+`TauCeti.diskHomeomorphClosedBall` sends into the open unit ball, that is the points off the
+boundary sphere. The characteristic map of an `n`-cell restricts to an embedding of it onto the
+open cell (`TauCeti.isEmbedding_cellDiskHom_restrict`). -/
+def diskInterior (n : ℕ) : Set (TopCat.disk.{w} n) :=
   {z | ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ < 1}
 
-private lemma isOpen_diskInterior : IsOpen (diskInterior.{w} n) :=
+/-- A point lies in the interior of the disk exactly when its sup-norm coordinates have norm less
+than `1`. -/
+lemma mem_diskInterior_iff {z : TopCat.disk.{w} n} :
+    z ∈ diskInterior n ↔ ‖(diskHomeomorphClosedBall n z : Fin n → ℝ)‖ < 1 :=
+  Iff.rfl
+
+/-- The interior of the disk is open. -/
+lemma isOpen_diskInterior : IsOpen (diskInterior.{w} n) :=
   isOpen_lt (continuous_norm.comp (continuous_subtypeVal.comp
     (diskHomeomorphClosedBall n).continuous)) continuous_const
 
@@ -285,8 +297,9 @@ private lemma mem_cellChart_target_iff (i : cell C n) (u : ULift.{w} (Fin n → 
   rw [cellChart, OpenPartialHomeomorph.transHomeomorph_target, openCellChart_target]
   exact mem_ball_zero_iff
 
-/-- On the interior of the disk, the characteristic map is an embedding into the skeleton. -/
-private lemma isEmbedding_cellDiskHom_restrict (i : cell C n) :
+/-- On the interior of the disk, the characteristic map is an embedding into the skeleton: it is a
+homeomorphism onto the open cell. -/
+lemma isEmbedding_cellDiskHom_restrict (i : cell C n) :
     IsEmbedding ((diskInterior n).domRestrict (cellDiskHom i)) := by
   -- Read the interior of the disk as the open ball through `diskHomeomorphClosedBall`, then
   -- apply the homeomorphism of the open ball onto the open cell.

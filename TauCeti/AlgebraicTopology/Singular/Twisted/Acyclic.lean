@@ -25,6 +25,11 @@ triples `(X, U ∪ V, U)` and `(X, V, U ∩ V)` and excision of the pair `(V, U 
 (`TopPair.isIso_twistedHomologyMap_unionExcisionMap`):
 `Hₙ₊₁(X, U ∪ V) ≅ Hₙ(U ∪ V, U) ≅ Hₙ(V, U ∩ V) ≅ Hₙ(X, U ∩ V)`.
 
+A map of pairs `f : (X, A) ⟶ (X', A')` whose ambient map lands in `A'` induces zero on relative
+twisted chains and homology (`TopPair.twistedChainComplexMap_eq_zero_of_fac`,
+`TopPair.twistedHomologyMap_eq_zero_of_fac`). This is the local-coefficient form of
+`TopPair.singularHomologyMap_eq_zero_of_fac`.
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 2.1 (the long exact sequences of a pair and of a
@@ -185,5 +190,31 @@ def twistedHomologyOfSubsetUnionIso (n : ℕ) :
   twistedHomologyTotalPairOfSubsetIso L Set.inter_subset_right n
 
 end Union
+
+section Factorization
+
+variable {P Q : TopPair.{v}} (f : P ⟶ Q) (K : LocalCoefficientSystem.{u, v, max v w} R Q.fst)
+
+/-- **A map of pairs whose ambient map lands in the target subspace is zero on relative chains with
+local coefficients.** If the ambient map `X ⟶ X'` of `f : (X, A) ⟶ (X', A')` factors through
+`A'`, then `f` induces the zero map of relative twisted chain complexes. -/
+theorem twistedChainComplexMap_eq_zero_of_fac (g : P.fst ⟶ Q.snd) (hg : g ≫ Q.map = Hom.fst f) :
+    twistedChainComplexMap f K = 0 := by
+  rw [← cancel_epi (P.twistedChainComplexπ _), comp_zero,
+    twistedChainComplexπ_comp_twistedChainComplexMap]
+  generalize Hom.fst f = φ at hg ⊢
+  subst hg
+  rw [LocalCoefficientSystem.twistedChainComplexMap_comp, Category.assoc, Category.assoc,
+    twistedChainComplexMap_comp_twistedChainComplexπ, comp_zero, comp_zero]
+
+/-- **A map of pairs whose ambient map lands in the target subspace is zero on relative homology
+with local coefficients.** If the ambient map `X ⟶ X'` of `f : (X, A) ⟶ (X', A')` factors through
+`A'`, then `f` induces the zero map `Hₙ(X, A; f*K) ⟶ Hₙ(X', A'; K)`. -/
+theorem twistedHomologyMap_eq_zero_of_fac (g : P.fst ⟶ Q.snd) (hg : g ≫ Q.map = Hom.fst f)
+    (n : ℕ) : twistedHomologyMap f K n = 0 := by
+  rw [twistedHomologyMap, twistedChainComplexMap_eq_zero_of_fac f K g hg,
+    HomologicalComplex.homologyMap_zero]
+
+end Factorization
 
 end TopPair

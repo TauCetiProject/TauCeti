@@ -44,6 +44,11 @@ For the characteristic map of a `1`-cell of a CW complex this computes the cellu
 out of degree one with local coefficients
 (`TauCeti.AlgebraicTopology.Cellular.LocalCoefficients.EdgeIncidence`).
 
+The inclusion `(Dⁿ, Sⁿ⁻¹) ⟶ (Dⁿ, Dⁿ ∖ {0})` induces isomorphisms on relative homology with any local
+coefficients (`TauCeti.isIso_twistedHomologyMap_diskBoundaryPairToComplDiskCenter`): a local
+system on the disk is constant, and with constant coefficients this is the retraction of the
+punctured disk onto its boundary sphere.
+
 ## Main results
 
 * `TauCeti.twistedHomologyDiskBoundaryPairIso_one_inv_comp_twistedHomologyδ`: the connecting
@@ -214,5 +219,54 @@ theorem twistedHomologyDiskBoundaryPairIso_one_inv_comp_twistedHomologyMap_twist
   -- `(diskBoundaryPair 1).subspaceSystem` at a point of `S⁰` is by definition the fibre of the
   -- ambient system at its image in the disk.
   rfl
+
+open LocalCoefficientSystem in
+/-- **The punctured disk retracts onto its boundary, with local coefficients**: for every local
+coefficient system `L` on `Dⁿ`, the inclusion `(Dⁿ, Sⁿ⁻¹) ⟶ (Dⁿ, Dⁿ ∖ {0})` induces isomorphisms
+`Hₖ(Dⁿ, Sⁿ⁻¹; L) ≅ Hₖ(Dⁿ, Dⁿ ∖ {0}; L)` in every degree. The disk is contractible, so `L` is
+constant, and this is `TauCeti.isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter`. -/
+theorem isIso_twistedHomologyMap_diskBoundaryPairToComplDiskCenter (n : ℕ)
+    (L : LocalCoefficientSystem.{u, v, max v w} R (TopCat.disk.{v} n)) (k : ℕ) :
+    IsIso (TopPair.twistedHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n) L k) := by
+  let φ := isoConstantOfHomotopy (diskContraction n) L
+  let M := L.obj (FundamentalGroupoid.mk (diskCenter n))
+  -- The systems live on `TopCat.disk n`, which the ambient spaces of the pairs unfold to only up
+  -- to definitional equality, so instances of composites are supplied by hand.
+  have hiso (P : TopPair.{v}) {K K' : LocalCoefficientSystem.{u, v, max v w} R P.fst}
+      (e : K ≅ K') : IsIso (P.twistedHomologyCoefficientMap e.hom k) :=
+    ⟨_, TopPair.twistedHomologyCoefficientMap_hom_inv_id P e k,
+      TopPair.twistedHomologyCoefficientMap_inv_hom_id P e k⟩
+  -- With constant coefficients the map is the ordinary one.
+  have hc : IsIso (TopPair.twistedHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n)
+      ((constantFunctor _).obj M) k) := by
+    have hs : IsIso (TopPair.singularHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n) M k) :=
+      isIso_singularHomologyMap_diskBoundaryPairToComplDiskCenter M n k
+    have he := hiso (diskBoundaryPair.{v} n)
+      (pullbackConstantIso (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{v} n)).hom M)
+    have h := TopPair.twistedHomologyConstantIso_hom_pair_naturality M
+      (diskBoundaryPairToComplDiskCenter.{v} n) k
+    have : IsIso (TopPair.twistedHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n)
+        ((constantFunctor _).obj M) k ≫
+        ((TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))).twistedHomologyConstantIso
+          M k).hom) :=
+      (congrArg IsIso h).mpr (@IsIso.comp_isIso _ _ _ _ _ _ _ he
+        (@IsIso.comp_isIso _ _ _ _ _ _ _ inferInstance hs))
+    exact IsIso.of_isIso_comp_right _
+      ((TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))).twistedHomologyConstantIso
+        M k).hom
+  -- The identification of `L` with the constant system is natural in maps of pairs.
+  have := hiso (TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))) φ
+  have hp := hiso (diskBoundaryPair.{v} n)
+    ((LocalCoefficientSystem.pullback
+      (TopPair.Hom.fst (diskBoundaryPairToComplDiskCenter.{v} n)).hom).mapIso φ)
+  have h := TopPair.twistedHomologyMap_naturality (diskBoundaryPairToComplDiskCenter.{v} n)
+    (η := φ.hom) (k := k)
+  have : IsIso (TopPair.twistedHomologyMap (diskBoundaryPairToComplDiskCenter.{v} n) L k ≫
+      (TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))).twistedHomologyCoefficientMap
+        φ.hom k) :=
+    (congrArg IsIso h).mpr (@IsIso.comp_isIso _ _ _ _ _ _ _ hp hc)
+  exact IsIso.of_isIso_comp_right _
+    ((TopPair.ofSubset ({diskCenter n}ᶜ : Set (TopCat.disk.{v} n))).twistedHomologyCoefficientMap
+      φ.hom k)
 
 end TauCeti
