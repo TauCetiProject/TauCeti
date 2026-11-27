@@ -12,6 +12,7 @@ import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
@@ -108,6 +109,8 @@ the initial position of the submanifold to the later ones.
 * `TauCeti.timeDependentFlowOf_symm_of_mem`: flowing back from time `t` to time `s` undoes the flow
   from `s` to `t`, and `TauCeti.isLocalDiffeomorphAt_timeDependentFlowOf`: the time map is a local
   diffeomorphism wherever it is defined.
+* `TauCeti.isLocalDiffeomorphAt_flowOf`: the time-`t` map of the maximal flow of a `C^n` field,
+  complete or not, is a local diffeomorphism wherever it is defined.
 * `TauCeti.contMDiffAt_timeDependentFlowOf`: the time map is `C^n` at every point where it is
   defined, and `TauCeti.contMDiffAt_timeDependentFlowOf_comp` its composite with `C^n` initial
   times, final times and initial points.
@@ -1075,6 +1078,19 @@ theorem isLocalDiffeomorphAt_timeDependentFlowOf {s t : ℝ} {x : M}
   rwa [show ⇑(timeDependentFlowPartialDiffeomorph hn hX s t).toPartialEquiv =
       timeDependentFlowOf X s t from
         funext (timeDependentFlowPartialDiffeomorph_apply hn hX s t)] at hΦ
+
+include hn in
+/-- **The time maps of a flow are local diffeomorphisms.** For a `C^n` vector field `v`, `1 ≤ n`,
+the time-`t` map of its maximal flow is a `C^n` local diffeomorphism at every point whose
+trajectory is defined at time `t`. No completeness of `v` is needed. -/
+theorem isLocalDiffeomorphAt_flowOf {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent n (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) {t : ℝ} {x : M}
+    (hx : (t, x) ∈ flowDomain v) : IsLocalDiffeomorphAt I I n (flowOf v t) x := by
+  have hv1 := hv.of_le (m := 1) (by exact_mod_cast hn)
+  exact (isLocalDiffeomorphAt_timeDependentFlowOf hn (X := fun _ ↦ v) (hv.comp contMDiff_snd)
+    (timeDependentFlowOf_const_eq_flowOf_of_mem hv1 (s := 0) (by simpa using hx)).1
+    ).congr_of_eventuallyEq
+    (eventually_flowOf_eventuallyEq_timeDependentFlowOf_of_mem hv1 hx).self_of_nhds
 
 end PartialDiffeomorph
 
