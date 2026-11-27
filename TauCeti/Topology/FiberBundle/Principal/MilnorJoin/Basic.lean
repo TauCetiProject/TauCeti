@@ -8,8 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Action
 public import Mathlib.Topology.Algebra.InfiniteSum.Basic
 public import Mathlib.Topology.Homotopy.Path
-import Mathlib.Topology.Algebra.InfiniteSum.Order
-import TauCeti.Topology.Algebra.InfiniteSum.Real
+import TauCeti.Topology.Algebra.InfiniteSum.Order
 
 /-!
 # The strong-coordinate Milnor join of a topological space or group
@@ -186,7 +185,7 @@ theorem weight_le_one (i : ℕ) (p : MilnorTotalSpace G) : weight i p ≤ 1 :=
   le_hasSum (hasSum_weight p) i fun j _ ↦ weight_nonneg j p
 
 theorem exists_weight_pos (p : MilnorTotalSpace G) : ∃ i, 0 < weight i p :=
-  (hasSum_weight p).exists_pos (fun i ↦ weight_nonneg i p) zero_lt_one
+  (hasSum_weight p).exists_pos zero_lt_one
 
 @[simp] theorem iUnion_coordSet (G : Type u) : ⋃ i, coordSet G i = univ :=
   eq_univ_of_forall fun p ↦ mem_iUnion.mpr (exists_weight_pos p)

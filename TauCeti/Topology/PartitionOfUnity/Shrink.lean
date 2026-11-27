@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.PartitionOfUnity
-import TauCeti.Topology.Algebra.InfiniteSum.Real
+import TauCeti.Topology.Algebra.InfiniteSum.Order
 import TauCeti.Topology.Order.Lattice
 
 /-!
@@ -172,7 +172,7 @@ private theorem eventually_tail_lt_and_half_lt_finSup_of_hasSum_one (f : ι → 
       ∀ x ∈ W, (∀ j ∉ I, f j x < (⨆ i, f i x₀) / 4) ∧
         (⨆ i, f i x₀) / 2 < ⨆ i : I, f i x := by
   classical
-  obtain ⟨i₀, hi₀⟩ := (hsum x₀).exists_pos (fun i ↦ hnn i x₀) zero_lt_one
+  obtain ⟨i₀, hi₀⟩ := (hsum x₀).exists_pos zero_lt_one
   have : Nonempty ι := ⟨i₀⟩
   let m₀ : ℝ := ⨆ i, f i x₀
   have hm₀ : 0 < m₀ := hi₀.trans_le (le_ciSup (bddAbove_range_of_hasSum_one f hnn hsum x₀) i₀)

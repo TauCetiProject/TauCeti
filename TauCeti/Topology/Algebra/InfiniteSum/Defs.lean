@@ -27,6 +27,9 @@ constant net along a nontrivial filter converges only to that constant.
 * `HasProd.eq_prod_of_ne_finset_one`, `HasSum.eq_sum_of_ne_finset_zero`: the special case of a
   nontrivial summation filter that eventually contains every finite set (`SummationFilter.LeAtTop`),
   such as unconditional summation, where the finite product (or sum) is over `s`.
+* `HasProd.exists_ne_one`, `HasSum.exists_ne_zero`: in a T1 space, for a nontrivial summation
+  filter, an infinite product not equal to `1` (or sum not equal to `0`) has a factor (or summand)
+  not equal to `1` (or `0`).
 -/
 
 public section
@@ -63,3 +66,11 @@ finite set, a sum of a family that vanishes outside a finite set `s` equals the 
 theorem HasProd.eq_prod_of_ne_finset_one [L.LeAtTop] (ha : HasProd f a L)
     (hf : ∀ b ∉ s, f b = 1) : a = ∏ b ∈ s, f b := by
   simpa using ha.eq_prod_support_of_ne_finset_one fun b _ ↦ hf b
+
+/-- In a T1 space, for a nontrivial summation filter, an infinite product not equal to `1` has a
+factor not equal to `1`. -/
+@[to_additive /-- In a T1 space, for a nontrivial summation filter, an infinite sum not equal to
+`0` has a summand not equal to `0`. -/]
+theorem HasProd.exists_ne_one (ha : HasProd f a L) (ha1 : a ≠ 1) : ∃ b, f b ≠ 1 := by
+  by_contra! h
+  exact ha1 (tendsto_const_nhds_iff.1 (ha.congr fun t ↦ Finset.prod_eq_one fun b _ ↦ h b)).symm
