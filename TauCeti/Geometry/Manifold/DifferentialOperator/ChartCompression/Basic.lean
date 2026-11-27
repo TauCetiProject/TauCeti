@@ -614,6 +614,22 @@ theorem complexChartCompression_apply (φ ψ : 𝓓(⟨e.target, e.open_target�
     e.complexChartCompression he φ ψ D f y = φ y • D (e.complexCutoffPullback he ψ f) (e.symm y) :=
   e.complexCutoffPushforward_apply he φ _ y
 
+/-- Multiplying an operator `D` on the left by a cutoff `θ` read on `M` does not change its chart
+compression by `φ` and `ψ` when `θ = 1` on the support of `φ`. -/
+theorem complexChartCompression_mulLeft_comp_of_eq_one {φ ψ θ : 𝓓(⟨e.target, e.open_target⟩, ℝ)}
+    (hθ : ∀ y ∈ tsupport φ, θ y = 1)
+    (D : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ] C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    e.complexChartCompression he φ ψ
+        (LinearMap.mulLeft ℂ (e.complexCutoffPullback he θ 1) ∘ₗ D) =
+      e.complexChartCompression he φ ψ D := by
+  refine LinearMap.ext fun f ↦ ContMDiffMap.ext fun y ↦ ?_
+  rw [complexChartCompression_apply, complexChartCompression_apply]
+  by_cases hy : φ y = 0
+  · simp [hy]
+  have hyt : y ∈ e.target := φ.tsupport_subset (subset_tsupport _ hy)
+  simp [complexCutoffPullback_apply_of_mem he _ _ (e.map_target hyt), e.right_inv hyt,
+    hθ y (subset_tsupport _ hy)]
+
 /-- The chart compression of the complexification of a real-linear operator `D` on the
 real-valued smooth functions on `M` is the complexification of the chart compression of `D`. -/
 theorem complexChartCompression_complexifyLinearMap (φ ψ : 𝓓(⟨e.target, e.open_target⟩, ℝ))
