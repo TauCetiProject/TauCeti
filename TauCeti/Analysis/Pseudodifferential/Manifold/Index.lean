@@ -57,7 +57,19 @@ rules for this index of Atiyah and Singer, §6:
 * **A parametrix has the opposite index.** If `Q` of order `-m` satisfies `P ∘ Q - 1` of order
   `-1`, then the extension of `P ∘ Q` to `H^{s - m}(M)` is the identity plus a compact operator,
   of index `0`, so `index Q = -index P`
-  (`TauCeti.index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem`).
+  (`TauCeti.index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem`). The same holds for a
+  two-sided parametrix modulo any negative order
+  (`TauCeti.index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem_of_neg`), since then both
+  composites of the extensions are compact perturbations of the identity
+  (`TauCeti.isCompactOperator_chartSobolevExtension_comp_sub_one_of_mem`).
+* **The index is locally constant in elliptic families.** Along a family `x ↦ ∑ₖ fₖ(x) Aₖ` of
+  elliptic operators of order `m` with continuous coefficients `fₖ`, the extensions depend
+  continuously on `x` in operator norm, so the index is locally constant
+  (`TauCeti.isLocallyConstant_index_chartSobolevExtension_sum_smul`). In particular two elliptic
+  operators whose principal symbols are joined by the straight-line homotopy
+  `(1 - t) σ_m(P) + t σ_m(Q)` of symbols invertible off the zero section have the same index
+  (`TauCeti.index_chartSobolevExtension_eq_of_segment`), which is (6.2) of Atiyah and Singer for
+  straight-line homotopies.
 
 ## Main results
 
@@ -70,8 +82,13 @@ rules for this index of Atiyah and Singer, §6:
   the sum of the indices.
 * `TauCeti.IsClassicalElliptic.index_chartSobolevExtension_comp_of_bijective`: composing with an
   operator with bijective extension keeps the index.
-* `TauCeti.index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem`: a parametrix has the
+* `TauCeti.index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem`,
+  `TauCeti.index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem_of_neg`: a parametrix has the
   opposite index.
+* `TauCeti.isLocallyConstant_index_chartSobolevExtension_sum_smul`,
+  `TauCeti.index_chartSobolevExtension_eq_of_segment`: the index is locally constant along
+  continuous finite-dimensional families of elliptic operators, in particular along a
+  straight-line homotopy of elliptic principal symbols.
 * `TauCeti.index_chartSobolevExtension_eq_zero_of_mem_slitPlane`: an operator whose principal
   symbol lies in the slit plane at nonzero covectors has index `0`.
 * `TauCeti.IsClassicalElliptic.index_chartSobolevExtension_comp_of_mem_slitPlane`: composing with
@@ -82,8 +99,8 @@ rules for this index of Atiyah and Singer, §6:
 ## References
 
 * M. F. Atiyah and I. M. Singer, *The index of elliptic operators: I*, Ann. of Math. 87 (1968),
-  484–530, §6, pp. 517–519 (the index depends only on the symbol, and is invariant under change
-  of order).
+  484–530, §6, pp. 517–519 (the index depends only on the symbol, (6.2) its homotopy invariance,
+  and its invariance under change of order).
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, Springer, 1985,
   §19.2.
 -/
@@ -254,6 +271,88 @@ theorem index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem
   rw [← hcomp, ContinuousLinearMap.index_comp (hPe.isFredholm_chartSobolevExtension hP hψ hφ s)
     hQF] at h0
   omega
+
+omit [CompactSpace M] in
+/-- **A two-sided parametrix of any negative order has the opposite index.** Let `P` and `Q` be
+classical pseudodifferential operators of orders `m` and `-m` such that `Q ∘ P - 1` and
+`P ∘ Q - 1` have negative order `r`, not necessarily `-1`. Then the extension of `Q` to
+`H^{s - m}(M) → H^s(M)` has the opposite index of the extension of `P` to
+`H^s(M) → H^{s - m}(M)`. -/
+theorem index_chartSobolevExtension_eq_neg_of_comp_sub_id_mem_of_neg {r : ℝ}
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators (-m))
+    (hQP : Q ∘ₗ P - LinearMap.id ∈ classicalPseudodifferentialOperators r)
+    (hPQ : P ∘ₗ Q - LinearMap.id ∈ classicalPseudodifferentialOperators r) (hr : r < 0)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
+    (chartSobolevExtension hc' φ hc ψ Q (s - m) s).index =
+      -(chartSobolevExtension hc ψ hc' φ P s (s - m)).index :=
+  ContinuousLinearMap.index_eq_neg_of_isCompactOperator_comp_sub_one
+    (isCompactOperator_chartSobolevExtension_comp_sub_one_of_mem hP hQ hQP hr hψ hφ le_rfl
+      (by linarith))
+    (isCompactOperator_chartSobolevExtension_comp_sub_one_of_mem hQ hP hPQ hr hφ hψ (by linarith)
+      le_rfl)
+
+/-! ### Families of elliptic operators -/
+
+/-- **The index is locally constant in elliptic families.** On a compact manifold, let
+`A₁, …, A_N` be classical pseudodifferential operators of order `m` and `f₁, …, f_N` continuous
+complex functions on a topological space `X` such that `∑ₖ fₖ(x) Aₖ` is elliptic for every `x`.
+Then the index of the extension of `∑ₖ fₖ(x) Aₖ` to `H^s(M) → H^{s - m}(M)` is a locally constant
+function of `x`. -/
+theorem isLocallyConstant_index_chartSobolevExtension_sum_smul {X : Type*}
+    [TopologicalSpace X] {A : ν → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
+    (hA : ∀ k, A k ∈ classicalPseudodifferentialOperators m) {f : ν → X → ℂ}
+    (hf : ∀ k, Continuous (f k)) (he : ∀ x, IsClassicalElliptic m (∑ k, f k x • A k))
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
+    IsLocallyConstant fun x ↦
+      (chartSobolevExtension hc ψ hc' φ (∑ k, f k x • A k) s (s - m)).index := by
+  -- The extension of `∑ₖ fₖ(x) Aₖ` is `∑ₖ fₖ(x) • (extension of Aₖ)`, continuous in `x`.
+  have hext : ∀ x, chartSobolevExtension hc ψ hc' φ (∑ k, f k x • A k) s (s - m) =
+      ∑ k, f k x • chartSobolevExtension hc ψ hc' φ (A k) s (s - m) := fun x ↦
+    chartSobolevExtension_eq _ fun u ↦ by
+      simp [chartSobolevExtension_toChartSobolevSpace_of_mem (hA _) hψ le_rfl]
+  have hmem : ∀ x, ∑ k, f k x • A k ∈ classicalPseudodifferentialOperators m := fun x ↦
+    Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _ (hA k)
+  simp_rw [hext]
+  exact Continuous.isLocallyConstant_index (by fun_prop) fun x ↦
+    hext x ▸ (he x).isFredholm_chartSobolevExtension (hmem x) hψ hφ s
+
+/-- **Homotopy invariance of the index.** On a compact manifold, let `P` and `Q` be classical
+pseudodifferential operators of order `m` whose principal symbols are joined by a straight-line
+homotopy of elliptic symbols: `(1 - t) σ_m(P)(x, ξ) + t σ_m(Q)(x, ξ) ≠ 0` for every `t ∈ [0, 1]`
+and every nonzero covector `ξ`. Then the extensions of `P` and `Q` to `H^s(M) → H^{s - m}(M)` have
+the same index. -/
+theorem index_chartSobolevExtension_eq_of_segment
+    (hP : P ∈ classicalPseudodifferentialOperators m)
+    (hQ : Q ∈ classicalPseudodifferentialOperators m)
+    (h : ∀ t ∈ Set.Icc (0 : ℝ) 1, ∀ x ξ, ξ ≠ 0 →
+      (1 - t : ℂ) * classicalPrincipalSymbol m P x ξ + t * classicalPrincipalSymbol m Q x ξ ≠ 0)
+    (hψ : ∀ x, ∑ i, (c i).cutoffPullback (hc i) (ψ i) 1 x = 1)
+    (hφ : ∀ x, ∑ j, (c' j).cutoffPullback (hc' j) (φ j) 1 x = 1) (s : ℝ) :
+    (chartSobolevExtension hc ψ hc' φ P s (s - m)).index =
+      (chartSobolevExtension hc ψ hc' φ Q s (s - m)).index := by
+  -- The family `t ↦ (1 - t) P + t Q` over the unit interval, written as a sum over `Fin 2`.
+  let A : Fin 2 → C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
+      C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ := ![P, Q]
+  let f : Fin 2 → unitInterval → ℂ := ![fun t ↦ 1 - ((t : ℝ) : ℂ), fun t ↦ ((t : ℝ) : ℂ)]
+  have hA : ∀ k, A k ∈ classicalPseudodifferentialOperators m := Fin.forall_fin_two.2 ⟨hP, hQ⟩
+  have hsum : ∀ t, ∑ k, f k t • A k = (1 - ((t : ℝ) : ℂ)) • P + ((t : ℝ) : ℂ) • Q := fun t ↦ by
+    simp [Fin.sum_univ_two, f, A]
+  have he : ∀ t, IsClassicalElliptic m (∑ k, f k t • A k) := fun t ↦
+    isClassicalElliptic_iff.2 fun x ↦ isClassicalEllipticAt_iff.2 fun ξ hξ ↦ by
+    rw [hsum, classicalPrincipalSymbol_add (Submodule.smul_mem _ _ hP)
+      (Submodule.smul_mem _ _ hQ), classicalPrincipalSymbol_smul hP,
+      classicalPrincipalSymbol_smul hQ]
+    exact h t t.property x ξ hξ
+  have hf : ∀ k, Continuous (f k) := Fin.forall_fin_two.2
+    ⟨by simp only [f, Matrix.cons_val_zero]; fun_prop,
+      by simp only [f, Matrix.cons_val_one, Matrix.cons_val_fin_one]; fun_prop⟩
+  have hconst := (isLocallyConstant_index_chartSobolevExtension_sum_smul hA hf he hψ hφ
+    s).apply_eq_of_preconnectedSpace 0 1
+  simpa [hsum] using hconst
 
 /-! ### Principal symbols in the slit plane -/
 
