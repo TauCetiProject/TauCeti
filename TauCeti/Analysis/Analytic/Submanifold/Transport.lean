@@ -29,8 +29,9 @@ homeomorphism is nonempty, invertibility of its derivative forces `n = n'`.
 * `TauCeti.AnalyticOnSubmanifold.comp_openPartialHomeomorph`,
   `TauCeti.AnalyticOnSubmanifold.comp_symm_openPartialHomeomorph`: transport of analytic functions
   on submanifolds along analytic open partial homeomorphisms.
-* `TauCeti.IsAnalyticChart.preimage`, `TauCeti.IsAnalyticSubmanifold.preimage`: pullback along
-  global analytic homeomorphisms.
+* `TauCeti.IsAnalyticChart.preimage`, `TauCeti.IsAnalyticSubmanifold.preimage`,
+  `TauCeti.IsAnalyticSubmanifold.translate`: pullback along global analytic homeomorphisms and
+  translation invariance.
 * `TauCeti.IsAnalyticSubmanifold.preimage_continuousLinearEquiv`,
   `TauCeti.IsAnalyticSubmanifold.image_continuousLinearEquiv`,
   `TauCeti.AnalyticOnSubmanifold.comp_continuousLinearEquiv`,
@@ -175,6 +176,18 @@ theorem IsAnalyticSubmanifold.preimage {T : Set (Fin n' → 𝕜)} (hT : IsAnaly
   obtain ⟨y, hy⟩ := hT.nonempty
   exact hT.of_isImage (φ := e.toOpenPartialHomeomorph) he he' (subset_univ _)
     ⟨e.symm y, by simpa using hy⟩ fun _ _ ↦ Iff.rfl
+
+/-- Translating an analytic submanifold of `Fin n → 𝕜` preserves its analytic submanifold
+structure and dimension. -/
+theorem IsAnalyticSubmanifold.translate (hS : IsAnalyticSubmanifold d S) (a : Fin n → 𝕜) :
+    IsAnalyticSubmanifold d ((a + ·) '' S) := by
+  have himg : (a + ·) '' S = (Homeomorph.addLeft (-a)) ⁻¹' S := by
+    ext y
+    simp
+  rw [himg]
+  exact hS.preimage (Homeomorph.addLeft (-a))
+    (fun _ _ ↦ analyticAt_const.add analyticAt_id)
+    (fun _ _ ↦ analyticAt_const.add analyticAt_id)
 
 /-- Pulling back an analytic submanifold along a continuous linear equivalence
 `(Fin n → 𝕜) ≃L[𝕜] Fin n' → 𝕜` preserves analytic submanifolds and their dimension. -/

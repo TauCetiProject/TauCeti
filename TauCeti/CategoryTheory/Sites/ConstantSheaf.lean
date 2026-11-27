@@ -88,32 +88,6 @@ theorem toSheafify_app_const_map_apply {FD : D → D → Type*} {CD : D → Type
 
 end ConstantPresheafRestriction
 
-section ConstantSheafAdj
-
-variable {C : Type*} [Category* C] (J : GrothendieckTopology C) {D : Type*} [Category* D]
-  [HasWeakSheafify J D]
-
-/-- On a site with a terminal object `T`, the adjunction `constantSheafAdj` sends a morphism
-`φ : constantSheaf M ⟶ F` to the composition of `toSheafify` at `T` with `φ.hom.app (op T)`. -/
-lemma constantSheafAdj_homEquiv_apply {T : C} (hT : IsTerminal T) {M : D} {F : Sheaf J D}
-    (φ : (constantSheaf J D).obj M ⟶ F) :
-    (constantSheafAdj J D hT).homEquiv M F φ =
-      (toSheafify J ((Functor.const Cᵒᵖ).obj M)).app (Opposite.op T) ≫
-        φ.hom.app (Opposite.op T) := by
-  simp [constantSheafAdj, Adjunction.homEquiv_apply]
-
-/-- On a site with a terminal object `T`, the adjunction `constantSheafAdj` sends
-`(constantSheaf J D).map f` to `f` followed by `toSheafify` at `T`. -/
-lemma constantSheafAdj_homEquiv_map {T : C} (hT : IsTerminal T) {M N : D} (f : M ⟶ N) :
-    (constantSheafAdj J D hT).homEquiv M ((constantSheaf J D).obj N)
-        ((constantSheaf J D).map f) =
-      f ≫ (toSheafify J ((Functor.const Cᵒᵖ).obj N)).app (Opposite.op T) := by
-  rw [constantSheafAdj_homEquiv_apply]
-  exact (NatTrans.congr_app (toSheafify_naturality J ((Functor.const Cᵒᵖ).map f))
-    (Opposite.op T)).symm
-
-end ConstantSheafAdj
-
 end CategoryTheory
 
 namespace CategoryTheory.Functor
@@ -237,6 +211,43 @@ lemma whiskerLeft_toSheafify_comp_sheafPullbackConstantSheafIso_inv [u.Final] (X
 end
 
 end CategoryTheory.Functor
+
+namespace CategoryTheory
+universe v u vA uA
+variable {C : Type u} [Category.{v} C] (J : GrothendieckTopology C)
+  {A : Type uA} [Category.{vA} A] [HasWeakSheafify J A]
+
+/-- The constant-sheaf adjunction evaluates the sheafification hom at a terminal object. -/
+lemma constantSheafAdj_homEquiv_apply {T : C} (hT : IsTerminal T) (M : A) (F : Sheaf J A)
+    (f : (constantSheaf J A).obj M ⟶ F) :
+    (constantSheafAdj J A hT).homEquiv M F f =
+      ((sheafificationAdjunction J A).homEquiv ((Functor.const Cᵒᵖ).obj M) F f).app
+        (Opposite.op T) := by
+  rw [constantSheafAdj, Adjunction.comp_homEquiv]
+  -- The constant-presheaf adjunction has identity unit; evaluation extracts this component.
+  change 𝟙 M ≫ _ = _
+  exact Category.id_comp _
+
+/-- On a site with a terminal object `T`, the adjunction `constantSheafAdj` sends
+`(constantSheaf J A).map f` to `f` followed by `toSheafify` at `T`. -/
+lemma constantSheafAdj_homEquiv_map {T : C} (hT : IsTerminal T) {M N : A} (f : M ⟶ N) :
+    (constantSheafAdj J A hT).homEquiv M ((constantSheaf J A).obj N)
+        ((constantSheaf J A).map f) =
+      f ≫ (toSheafify J ((Functor.const Cᵒᵖ).obj N)).app (Opposite.op T) := by
+  rw [constantSheafAdj_homEquiv_apply]
+  exact (NatTrans.congr_app (toSheafify_naturality J ((Functor.const Cᵒᵖ).map f))
+    (Opposite.op T)).symm
+
+/-- The constant-sheaf adjunction is compatible with a map of terminal objects. -/
+lemma constantSheafAdj_homEquiv_comp_map {S T : C} (hS : IsTerminal S) (hT : IsTerminal T)
+    (i : S ⟶ T) (M : A) (F : Sheaf J A) (f : (constantSheaf J A).obj M ⟶ F) :
+    (constantSheafAdj J A hT).homEquiv M F f ≫ F.obj.map i.op =
+      (constantSheafAdj J A hS).homEquiv M F f := by
+  simp only [constantSheafAdj_homEquiv_apply]
+  exact (((sheafificationAdjunction J A).homEquiv
+    ((Functor.const Cᵒᵖ).obj M) F f).naturality i.op).symm.trans (Category.id_comp _)
+
+end CategoryTheory
 
 namespace CategoryTheory.Sheaf
 

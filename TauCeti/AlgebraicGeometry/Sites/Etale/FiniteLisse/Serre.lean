@@ -11,8 +11,7 @@ public import Mathlib.CategoryTheory.ObjectProperty.Extensions
 public import Mathlib.CategoryTheory.ObjectProperty.Kernels
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
-public import TauCeti.AlgebraicGeometry.Sites.Etale.ConstantSheaf
-public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
+public import TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Kernels
 public import TauCeti.CategoryTheory.Exact.Abelian
 public import TauCeti.CategoryTheory.Sites.Grothendieck
 public import TauCeti.CategoryTheory.Sites.Limits
@@ -26,21 +25,18 @@ Let `S` be a scheme and `Λ` a ring. This file proves that finite lisse étale s
 `CategoryTheory.Sheaf.containsZero_isFiniteLisse` and closure under isomorphisms, they form a weak
 Serre class in `Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)`.
 
-The core local input is `CategoryTheory.Sheaf.exists_etaleCover_map_constantSheaf` (from
-`TauCeti.AlgebraicGeometry.Sites.Etale.ConstantSheaf`): any morphism
-`(constantSheaf _ _).obj M ⟶ (constantSheaf _ _).obj N` out of a constant sheaf with finitely
-generated `Λ`-module value `M` comes étale-locally from a constant `Λ`-linear map `M ⟶ N`.
-Exactness of `constantSheaf` (`CategoryTheory.Sheaf.shortExact_map_constantSheaf`) then shows that
-its kernel and cokernel are locally constant, with finitely generated values once `Λ` is left
-Noetherian (for cokernels, over any ring).
+Closure under cokernels and kernels comes from `CategoryTheory.Sheaf.IsFiniteLisse.cokernel` and
+`CategoryTheory.Sheaf.IsFiniteLisse.kernel` in
+`TauCeti.AlgebraicGeometry.Sites.Etale.FiniteLisse.Kernels`.
 
 For an extension `0 ⟶ F ⟶ E ⟶ G ⟶ 0` with `F` and `G` finite lisse over left Noetherian `Λ`,
 pass to a common trivializing étale cover so `F` and `G` are constant on finitely generated modules
 `M` and `N`. Choose a finite presentation `0 ⟶ K ⟶ Λ^a ⟶ N ⟶ 0` (whose kernel `K` is finitely
 generated since `Λ` is left Noetherian); lift the basis of `Λ^a` étale-locally to `E`, factor the
-induced map on `const K` locally through a linear map `g : K ⟶ M`, and push out `K ⟶ Λ^a` along
-`g` to obtain a finitely generated module `P` whose constant sheaf maps isomorphically to `E` by
-the short five lemma.
+induced map on `const K` locally through a linear map `g : K ⟶ M` using
+`CategoryTheory.Sheaf.exists_mem_overPullback_map_eq_of_iso`, and push out `K ⟶ Λ^a` along `g`
+to obtain a finitely generated module `P` whose constant sheaf maps isomorphically to `E` by the
+short five lemma.
 
 ## Main results
 
@@ -50,8 +46,7 @@ the short five lemma.
   kernels over any left Noetherian ring `Λ`.
 * `CategoryTheory.Sheaf.isClosedUnderExtensions_isFiniteLisse`: finite lisse sheaves are closed
   under extensions over any left Noetherian ring `Λ`.
-* `CategoryTheory.Sheaf.IsFiniteLisse.cokernel`, `CategoryTheory.Sheaf.IsFiniteLisse.kernel`,
-  `CategoryTheory.Sheaf.IsFiniteLisse.of_shortExact`: dot-notation forms.
+* `CategoryTheory.Sheaf.IsFiniteLisse.of_shortExact`: dot-notation form for extensions.
 
 ## References
 
@@ -98,6 +93,51 @@ private lemma shortExact_pullback_outerIso {Λ : Type u} [Ring Λ] {X Y : Scheme
       e₁ (Iso.refl _) e₃ ?_ ?_)
     (Hom.shortExact_map_smallEtalePullback u hT) <;> simp
 
+/-- Any morphism `φ : const M ⟶ const N` of constant étale sheaves of `Λ`-modules on `S` with
+`M` finitely generated comes étale-locally from a constant `Λ`-linear map `M ⟶ N`. -/
+private theorem exists_etaleCover_map_constantSheaf {S : Scheme.{u}} {Λ : Type u} [Ring Λ]
+    {M N : ModuleCat.{u} Λ} [Module.Finite Λ M]
+    (φ : (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj M ⟶
+      (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj N) :
+    ∃ (ι : Type u) (U : ι → Scheme.{u}) (u : ∀ i, U i ⟶ S) (_ : ∀ i, Etale (u i)),
+      (⋃ i, Set.range (u i) = .univ) ∧
+        ∀ i, ∃ f : M ⟶ N,
+          ((u i).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) M).inv ≫
+            ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map φ ≫
+            ((u i).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) N).hom =
+              (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).map f := by
+  obtain ⟨R, hR, hRg⟩ := exists_mem_overPullback_map_eq_of_iso (J := smallEtaleTopology S)
+    φ (Y := Etale.mk (𝟙 S)) (Iso.refl _) (Iso.refl _)
+  obtain ⟨ι, U, u, hu_et, _, hgR, hcov⟩ := exists_etaleCover_of_mem_smallEtaleTopology_terminal hR
+  refine ⟨ι, U, u, hu_et, hcov, fun i ↦ ?_⟩
+  have := hu_et i
+  obtain ⟨gi, hgi⟩ := hgR i
+  obtain ⟨f, hf⟩ := hRg gi hgi
+  have hrefl (G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) :
+      (overIsoRestrict (Iso.refl (G.over (Etale.mk (𝟙 S)))) gi).hom = 𝟙 _ := by
+    ext W : 3
+    exact (overIsoRestrict_hom_hom_app (Iso.refl _) gi W).trans rfl
+  rw [hrefl, hrefl, Category.comp_id, Category.id_comp] at hf
+  let e := (Etale.mk (u i)).smallEtalePullbackIsoOver (ModuleCat.{u} Λ)
+  have hpb : ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map φ =
+      ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map
+        ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).map f) := by
+    have h₁ := e.hom.naturality φ
+    have h₂ := e.hom.naturality ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).map f)
+    have h₃ : (((Etale.mk (u i)).overSheafEquiv (ModuleCat.{u} Λ)).functor.map
+        (((smallEtaleTopology S).overPullback (ModuleCat.{u} Λ) (Etale.mk (u i))).map φ)) =
+        (((Etale.mk (u i)).overSheafEquiv (ModuleCat.{u} Λ)).functor.map
+          (((smallEtaleTopology S).overPullback (ModuleCat.{u} Λ) (Etale.mk (u i))).map
+            ((constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).map f))) :=
+      congrArg ((Etale.mk (u i)).overSheafEquiv (ModuleCat.{u} Λ)).functor.map hf
+    have heq := (h₁.trans (congrArg (e.hom.app _ ≫ ·) h₃)).trans h₂.symm
+    exact (cancel_mono (e.hom.app _)).1 heq
+  refine ⟨f, ?_⟩
+  rw [hpb]
+  dsimp only [Hom.smallEtalePullbackConstantSheafIso, Hom.smallEtalePullback]
+  rw [← Category.assoc, ← Functor.sheafPullbackConstantSheafIso_inv_naturality, Category.assoc,
+    Iso.inv_hom_id, Category.comp_id]
+
 end Helpers
 
 section Closure
@@ -133,71 +173,13 @@ private theorem exists_etaleCover_pair_constantSheaf
       (v p.1 p.2).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) M⟩,
     ⟨hcompG ≪≫ eG⟩⟩
 
-/-- Given a morphism `φ : F ⟶ G` between finite lisse sheaves on `S`, there exists a
-`Type u`-indexed jointly surjective étale cover of `S` over each piece of which `F` and `G` are
-isomorphic to constant sheaves on finitely generated `Λ`-modules and `φ` identifies with a
-constant linear map. -/
-private theorem exists_etaleCover_hom_constantSheaf
-    {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
-    (hF : F.IsFiniteLisse) (hG : G.IsFiniteLisse) (φ : F ⟶ G) :
-    ∃ (ι : Type u) (U : ι → Scheme.{u}) (u : ∀ i, U i ⟶ S) (_ : ∀ i, Etale (u i)),
-      (⋃ i, Set.range (u i) = .univ) ∧
-        ∀ i, ∃ (M N : ModuleCat.{u} Λ) (_ : Module.Finite Λ M) (_ : Module.Finite Λ N)
-          (eF : ((u i).smallEtalePullback (ModuleCat.{u} Λ)).obj F ≅
-            (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).obj M)
-          (eG : ((u i).smallEtalePullback (ModuleCat.{u} Λ)).obj G ≅
-            (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).obj N)
-          (f : M ⟶ N),
-          eF.inv ≫ ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map φ ≫ eG.hom =
-            (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).map f := by
-  obtain ⟨ι, U, u, hu_et, hu_cov, hpair⟩ := exists_etaleCover_pair_constantSheaf hF hG
-  choose M N hM hN heF heG using hpair
-  let eF (i : ι) := (heF i).some
-  let eG (i : ι) := (heG i).some
-  choose κ V v hv_et hv_cov hf using fun i ↦
-    exists_etaleCover_map_constantSheaf (S := U i) (Λ := Λ)
-      ((eF i).inv ≫ ((u i).smallEtalePullback (ModuleCat.{u} Λ)).map φ ≫ (eG i).hom)
-  refine ⟨Σ i, κ i, fun p ↦ V p.1 p.2, fun p ↦ v p.1 p.2 ≫ u p.1,
-    fun p ↦ have := hu_et p.1; have := hv_et p.1 p.2; inferInstance,
-    iUnion_range_comp_sigma hu_cov hv_cov, fun p ↦ ?_⟩
-  obtain ⟨f, hfk⟩ := hf p.1 p.2
-  let pF := (Hom.smallEtalePullbackComp (v p.1 p.2) (u p.1) (ModuleCat.{u} Λ)).app F
-  let pG := (Hom.smallEtalePullbackComp (v p.1 p.2) (u p.1) (ModuleCat.{u} Λ)).app G
-  let cF := (v p.1 p.2).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) (M p.1)
-  let cG := (v p.1 p.2).smallEtalePullbackConstantSheafIso (ModuleCat.{u} Λ) (N p.1)
-  refine ⟨M p.1, N p.1, hM p.1, hN p.1,
-    pF ≪≫ ((v p.1 p.2).smallEtalePullback (ModuleCat.{u} Λ)).mapIso (eF p.1) ≪≫ cF,
-    pG ≪≫ ((v p.1 p.2).smallEtalePullback (ModuleCat.{u} Λ)).mapIso (eG p.1) ≪≫ cG, f, ?_⟩
-  have hnat : pF.inv ≫ ((v p.1 p.2 ≫ u p.1).smallEtalePullback (ModuleCat.{u} Λ)).map φ ≫
-      pG.hom = ((v p.1 p.2).smallEtalePullback (ModuleCat.{u} Λ)).map
-        (((u p.1).smallEtalePullback (ModuleCat.{u} Λ)).map φ) :=
-    (Iso.inv_comp_eq _).2
-      ((Hom.smallEtalePullbackComp (v p.1 p.2) (u p.1) (ModuleCat.{u} Λ)).hom.naturality φ)
-  simp only [cF, cG, Iso.trans_hom, Iso.trans_inv, Functor.mapIso_hom, Functor.mapIso_inv,
-    Category.assoc, reassoc_of% hnat]
-  simpa only [Functor.map_comp, Category.assoc] using hfk
-
 /-- Over any ring `Λ`, finite lisse étale sheaves of `Λ`-modules are closed under cokernels. -/
 instance isClosedUnderCokernels_isFiniteLisse :
     ObjectProperty.IsClosedUnderCokernels
       (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) where
   cokernels_le := by
     rintro _ ⟨φ, k, hk, hF, hG⟩
-    obtain ⟨ι, U, u, hu_et, hu_cov, hφ⟩ := exists_etaleCover_hom_constantSheaf hF hG φ
-    refine IsFiniteLisse.of_etaleCover_constantSheaf u hu_cov fun i ↦ ?_
-    obtain ⟨M, N, _, _, eF, eG, f, hf⟩ := hφ i
-    have hfin : Module.Finite Λ (Limits.cokernel (C := ModuleCat.{u} Λ) f) :=
-      Module.Finite.of_surjective (cokernel.π f).hom
-        ((ModuleCat.epi_iff_surjective (cokernel.π f)).1 inferInstance)
-    refine ⟨Limits.cokernel (C := ModuleCat.{u} Λ) f, hfin, ⟨?_⟩⟩
-    have hcok_ext : cokernel (((u i).smallEtalePullback (ModuleCat.{u} Λ)).map φ) ≅
-        cokernel ((constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).map f) :=
-      cokernel.mapIso _ _ eF eG (by simp [← hf])
-    exact ((u i).smallEtalePullback (ModuleCat.{u} Λ)).mapIso
-        (hk.coconePointUniqueUpToIso (cokernelIsCokernel φ)) ≪≫
-      PreservesCokernel.iso ((u i).smallEtalePullback (ModuleCat.{u} Λ)) φ ≪≫
-      hcok_ext ≪≫
-      (PreservesCokernel.iso (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)) f).symm
+    exact (hF.cokernel hG φ).of_iso (hk.coconePointUniqueUpToIso (cokernelIsCokernel φ)).symm
 
 /-- Over a left Noetherian ring `Λ`, finite lisse étale sheaves of `Λ`-modules are closed under
 kernels. -/
@@ -206,21 +188,7 @@ instance isClosedUnderKernels_isFiniteLisse [IsNoetherianRing Λ] :
       (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))) where
   kernels_le := by
     rintro _ ⟨φ, k, hk, hF, hG⟩
-    obtain ⟨ι, U, u, hu_et, hu_cov, hφ⟩ := exists_etaleCover_hom_constantSheaf hF hG φ
-    refine IsFiniteLisse.of_etaleCover_constantSheaf u hu_cov fun i ↦ ?_
-    obtain ⟨M, N, hM, _, eF, eG, f, hf⟩ := hφ i
-    have hfin : Module.Finite Λ (Limits.kernel (C := ModuleCat.{u} Λ) f) :=
-      (ModuleCat.isFG_iff _).1 ((ModuleCat.isFG Λ).prop_of_mono (kernel.ι f)
-        ((ModuleCat.isFG_iff _).2 hM))
-    refine ⟨Limits.kernel (C := ModuleCat.{u} Λ) f, hfin, ⟨?_⟩⟩
-    have hker_ext : kernel (((u i).smallEtalePullback (ModuleCat.{u} Λ)).map φ) ≅
-        kernel ((constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)).map f) :=
-      kernel.mapIso _ _ eF eG (by simp [← hf])
-    exact ((u i).smallEtalePullback (ModuleCat.{u} Λ)).mapIso
-        (hk.conePointUniqueUpToIso (kernelIsKernel φ)) ≪≫
-      PreservesKernel.iso ((u i).smallEtalePullback (ModuleCat.{u} Λ)) φ ≪≫
-      hker_ext ≪≫
-      (PreservesKernel.iso (constantSheaf (smallEtaleTopology (U i)) (ModuleCat.{u} Λ)) f).symm
+    exact (hF.kernel hG φ).of_iso (hk.conePointUniqueUpToIso (kernelIsKernel φ)).symm
 
 /-- Given an epimorphism `g : E ⟶ const N` and a linear map `πN : Λ^a ⟶ N`, there exists an étale
 cover of `S` over each piece of which `πN` lifts along the pullback of `g` to `const (Λ^a) ⟶ u^* E`.
@@ -421,24 +389,6 @@ end Closure
 section DotNotation
 
 variable {S : Scheme.{u}} {Λ : Type u} [Ring Λ]
-  {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)}
-
-/-- The cokernel of a morphism between finite lisse étale sheaves of `Λ`-modules is finite
-lisse, over any ring `Λ`. -/
-theorem IsFiniteLisse.cokernel (hF : F.IsFiniteLisse) (hG : G.IsFiniteLisse) (φ : F ⟶ G) :
-    (Limits.cokernel φ).IsFiniteLisse :=
-  ObjectProperty.prop_cokernel
-    (P := (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))))
-    φ hF hG
-
-/-- The kernel of a morphism between finite lisse étale sheaves of `Λ`-modules over a left
-Noetherian ring `Λ` is finite lisse. -/
-theorem IsFiniteLisse.kernel [IsNoetherianRing Λ] (hF : F.IsFiniteLisse) (hG : G.IsFiniteLisse)
-    (φ : F ⟶ G) :
-    (Limits.kernel φ).IsFiniteLisse :=
-  ObjectProperty.prop_kernel
-    (P := (IsFiniteLisse : ObjectProperty (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))))
-    φ hF hG
 
 /-- The middle term of a short exact sequence of étale sheaves of `Λ`-modules over a left
 Noetherian ring `Λ` is finite lisse when both outer terms are finite lisse. -/

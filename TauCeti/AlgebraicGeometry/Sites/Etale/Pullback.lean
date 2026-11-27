@@ -27,11 +27,13 @@ weak sheafification) inverse image `f.smallEtalePullback A`:
   `smallEtalePullbackCongr`, and `smallEtalePullbackConstantSheafIso`.
 * **Étale morphism case**: for étale `j : X ⟶ Y`, `j.smallEtaleMap ⊣ j.smallEtaleBaseChange`
   yields `isRightAdjoint_smallEtalePushforward_of_etale`, `smallEtalePullbackIsoMapPushforward`,
-  and `AlgebraicGeometry.Scheme.Etale.smallEtalePullbackIsoOver`.
+  and `AlgebraicGeometry.Scheme.Etale.smallEtalePullbackIsoOver`; restriction to `Over U` is
+  therefore a left adjoint (`AlgebraicGeometry.Scheme.Etale.isLeftAdjoint_overPullback`).
 * **Geometric stalks and exactness**: `smallEtalePullbackCompSheafFiberIso` identifies stalks at
-  `s : Spec Ω ⟶ X` with stalks at `s ≫ f`, `preservesFiniteLimits_smallEtalePullback` deduces
-  left exactness from the conservative family of geometric points, and
-  `preservesFiniteColimits_smallEtalePullback` records right exactness from the adjunction.
+  `s : Spec Ω ⟶ X` with stalks at `s ≫ f`, and `preservesFiniteLimits_smallEtalePullback` deduces
+  left exactness from the conservative family of geometric points. For an étale monomorphism
+  `j`, `smallEtaleMapCompFiberIso` identifies the fibre at `s ≫ j` of an étale `X`-scheme regarded
+  over `Y` with its fibre at `s`.
 * **Local evaluation on sections**: `evalUnitSelf` pulls a section of a sheaf over an étale
   `S`-scheme `u : U ⟶ S` back to the terminal object of `U.Etale`, and
   `exists_etaleCover_of_mem_smallEtaleTopology_terminal` extracts a jointly surjective étale
@@ -374,6 +376,16 @@ noncomputable abbrev smallEtalePullbackObjIsoOver (F : Sheaf (smallEtaleTopology
       (U.overSheafEquiv A).functor.obj (F.over U) :=
   (U.smallEtalePullbackIsoOver A).app F
 
+/-- Restricting étale sheaves on `S` to `Over U` is a left adjoint, for every coefficient
+category `A`: up to `U.overSheafEquiv A`, it is the inverse image along the étale morphism
+`U ⟶ S`. In particular it preserves all colimits. -/
+instance isLeftAdjoint_overPullback :
+    ((smallEtaleTopology S).overPullback A U).IsLeftAdjoint :=
+  Functor.isLeftAdjoint_of_iso
+    (Functor.isoWhiskerRight (U.smallEtalePullbackIsoOver A) (U.overSheafEquiv A).inverse ≪≫
+      Functor.associator _ _ _ ≪≫
+      Functor.isoWhiskerLeft _ (U.overSheafEquiv A).unitIso.symm ≪≫ Functor.rightUnitor _)
+
 end Etale
 
 namespace Hom
@@ -437,6 +449,38 @@ noncomputable abbrev pointSmallEtaleComapIso :
   (pointSmallEtale s).comapIsoOfFiberIso
     f.smallEtaleBaseChange f.coverPreserving_smallEtaleBaseChange (f.pointSmallEtaleFiberCompIso s)
 
+/-- For an étale monomorphism `f` and a geometric point `s : Spec Ω ⟶ X`, lifts of `s ≫ f` to an
+étale `X`-scheme regarded over `Y` are the lifts of `s`. -/
+noncomputable def smallEtaleMapCompFiberIso [Etale f] [Mono f] :
+    f.smallEtaleMap ⋙ (pointSmallEtale (s ≫ f)).fiber ≅ (pointSmallEtale s).fiber :=
+  NatIso.ofComponents
+    (fun _ ↦ Equiv.toIso
+      { toFun t := CategoryTheory.Over.homMk t.left
+          ((cancel_mono f).1 ((Category.assoc _ _ _).trans (CategoryTheory.Over.w t)))
+        invFun t := CategoryTheory.Over.homMk t.left
+          ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ f) (CategoryTheory.Over.w t)))
+        left_inv _ := rfl
+        right_inv _ := rfl })
+    -- `(pointSmallEtale s).fiber` is `Etale.forget X ⋙ coyoneda.obj (op (Over.mk s))`, which acts
+    -- on morphisms by postcomposition, so both composites keep the underlying morphism.
+    (fun _ ↦ by ext; rfl)
+
+/-- The isomorphism `smallEtaleMapCompFiberIso` keeps the underlying morphism of a lift. -/
+@[simp]
+lemma smallEtaleMapCompFiberIso_hom_app_left [Etale f] [Mono f] (V : X.Etale)
+    (t : (pointSmallEtale (s ≫ f)).fiber.obj (f.smallEtaleMap.obj V)) :
+    dsimp% ((f.smallEtaleMapCompFiberIso s).hom.app V t).left = t.left :=
+  -- The components of `smallEtaleMapCompFiberIso` are `Over.homMk t.left _`.
+  (rfl)
+
+/-- The inverse of `smallEtaleMapCompFiberIso` keeps the underlying morphism of a lift. -/
+@[simp]
+lemma smallEtaleMapCompFiberIso_inv_app_left [Etale f] [Mono f] (V : X.Etale)
+    (t : (pointSmallEtale s).fiber.obj V) :
+    dsimp% ((f.smallEtaleMapCompFiberIso s).inv.app V t).left = t.left :=
+  -- The components of `smallEtaleMapCompFiberIso` are `Over.homMk t.left _`.
+  (rfl)
+
 end PointFiber
 
 /-- **Stalk of an inverse image sheaf.** At a geometric point `s : Spec Ω ⟶ X`, the stalk of
@@ -475,12 +519,6 @@ instance preservesFiniteLimits_smallEtalePullback
   exact f.smallEtaleBaseChange.preservesFiniteLimits_sheafPullback_of_jointlyReflectIsomorphisms.{u}
     (fun x ↦ pointSmallEtale (p x)) (fun x ↦ pointSmallEtale (p x ≫ f))
     (fun x ↦ f.pointSmallEtaleFiberCompIso (p x)) hΦ
-
-/-- Inverse image of small étale sheaves preserves finite colimits, being a left adjoint. -/
-instance preservesFiniteColimits_smallEtalePullback
-    {A : Type*} [Category* A] [(f.smallEtalePushforward A).IsRightAdjoint] :
-    PreservesFiniteColimits (f.smallEtalePullback A) where
-  preservesFiniteColimits _ _ _ := inferInstance
 
 end StalksAndExactness
 

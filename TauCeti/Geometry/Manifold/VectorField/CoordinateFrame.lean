@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
@@ -17,8 +18,8 @@ import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 The canonical trivialization of the tangent bundle at `x₀` is read off the chart at `x₀`, so the
 local frame it induces from a basis `b` of the model space is the classical coordinate frame of
 that chart.  This file identifies that frame with the pullback of constant model-space vector
-fields, shows that the chart derivative reads it back as the basis, and proves that its vector
-fields commute.
+fields, shows that the chart derivative reads it back as the basis, computes directional derivatives
+along it in coordinates, and proves that its vector fields commute.
 
 ## Main results
 
@@ -29,6 +30,9 @@ fields commute.
   vector field.
 * `TauCeti.Manifold.mfderiv_extChartAt_localFrame_trivializationAt`: the derivative of the chart
   sends the coordinate frame to the basis of the model space it is built from.
+* `Module.Basis.mvfderiv_localFrame_trivializationAt_eq_fderivWithin`: differentiating a
+  normed-space-valued map along a coordinate-frame vector equals taking the directional Fréchet
+  derivative within `range I` of its coordinate expression.
 * `TauCeti.Manifold.mlieBracket_symm_trivializationAt` and
   `TauCeti.Manifold.mlieBracket_localFrame_trivializationAt`: vector fields with constant
   coordinates commute, and so does the coordinate frame.
@@ -98,6 +102,23 @@ theorem mfderiv_extChartAt_localFrame_trivializationAt (b : Basis ι 𝕜 E) (x�
         ((trivializationAt E (TangentSpace I) x₀).localFrame b i x) = b i := by
   rw [← TangentBundle.continuousLinearMapAt_trivializationAt (by simpa using hx)]
   exact continuousLinearMapAt_localFrame b (by simpa using hx) i
+
+/-- **Differentiating along the coordinate frame.** At a point of the source of the preferred chart
+at `x₀`, the vector-valued manifold derivative of a map `g : M → F` along the `i`-th vector of the
+canonical tangent local frame induced by a basis `b` equals the Fréchet derivative within
+`range I` of the coordinate expression `g ∘ (extChartAt I x₀).symm` along `b i`. -/
+theorem _root_.Module.Basis.mvfderiv_localFrame_trivializationAt_eq_fderivWithin (b : Basis ι 𝕜 E)
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] (x₀ : M)
+    (hx : x ∈ (chartAt H x₀).source) (g : M → F) (i : ι) :
+    mvfderiv I g x ((trivializationAt E (TangentSpace I) x₀).localFrame b i x) =
+      fderivWithin 𝕜 (g ∘ (extChartAt I x₀).symm) (range I) (extChartAt I x₀ x) (b i) := by
+  have hx' : x ∈ (extChartAt I x₀).source := by rwa [extChartAt_source]
+  have hcomp := congrArg (fun L ↦ L (b i))
+    (fderivWithin_comp_extChartAt_symm (I := I) (f := g) x₀ hx')
+  rw [← symmL_basis_eq_localFrame b (by simpa using hx) i,
+    TangentBundle.symmL_trivializationAt_eq_core hx, tangentBundleCore_coordChange_achart,
+    mvfderiv_apply_eq_mfderiv_apply]
+  exact hcomp.symm
 
 end Frame
 

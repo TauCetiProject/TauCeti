@@ -421,8 +421,7 @@ variable (𝕜 X) in
 def classificationEquiv (k : ℕ) :
     Quotient ⟨ContinuousMap.Homotopic (X := X) (Y := infiniteGrassmannian 𝕜 k),
         ContinuousMap.Homotopic.equivalence⟩ ≃
-      Quotient ((isIsomorphicSetoid (FiniteRankBundleCore 𝕜 X)).comap
-        (Subtype.val : {A : FiniteRankBundleCore 𝕜 X // A.rank = k} → _)) :=
+      FiniteRankBundleCore.RankClass 𝕜 X k :=
   Equiv.ofBijective
     (Quotient.map (sa := ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩)
       (sb := (isIsomorphicSetoid (FiniteRankBundleCore 𝕜 X)).comap Subtype.val)
@@ -491,8 +490,7 @@ theorem classificationEquiv_comp (f : C(X, infiniteGrassmannian 𝕜 k)) :
   exact congrArg (Quotient.mk _) (Subtype.ext ((tautologicalCore 𝕜 k).pullback_comp g f).symm)
 /-- Naturality of `(classificationEquiv 𝕜 X k).symm` under `pullbackRankClass g k`. -/
 theorem classificationEquiv_symm_pullbackRankClass
-    (c : Quotient ((isIsomorphicSetoid (FiniteRankBundleCore 𝕜 X)).comap
-      (Subtype.val : {A : FiniteRankBundleCore 𝕜 X // A.rank = k} → _))) :
+    (c : FiniteRankBundleCore.RankClass 𝕜 X k) :
     (classificationEquiv 𝕜 X' k).symm (pullbackRankClass g k c) =
       Quotient.map (sa := ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩)
         (sb := ⟨ContinuousMap.Homotopic, ContinuousMap.Homotopic.equivalence⟩)
