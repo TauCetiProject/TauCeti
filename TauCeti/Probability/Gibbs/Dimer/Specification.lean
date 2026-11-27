@@ -9,6 +9,7 @@ public import TauCeti.Probability.Gibbs.Dimer.Basic
 public import TauCeti.Probability.Gibbs.Closed
 import TauCeti.Combinatorics.SimpleGraph.Finite
 import TauCeti.MeasureTheory.Constructions.Cylinder.Events
+import TauCeti.MeasureTheory.Constructions.Cylinder.FullShift
 import Mathlib.Topology.LocallyConstant.Basic
 
 /-!
@@ -25,7 +26,7 @@ Boltzmann laws `γ^w_F(· | ω)` (`SimpleGraph.dimerBoltzmann`), restricted to `
   `TauCeti.Subshift.measurable_updateFinset_exterior`,
   `SimpleGraph.measurable_dimerBoltzmann_apply`);
 * it is Markov (`SimpleGraph.isMarkovKernel_dimerKernel`), since `γ^w_F(· | ω)` is a probability
-  measure carried by dimer configurations;
+  measure carried by dimer configurations (`SimpleGraph.restrict_dimerSubshift_dimerBoltzmann`);
 * it is proper (`SimpleGraph.isProper_dimerKernel`), since every member of the completion set
   `Ω_F(ω)` agrees with `ω` off `F`;
 * the family is consistent, `γ^w_Λ ∘ γ^w_Δ = γ^w_Δ` for `Λ ⊆ Δ`
@@ -48,6 +49,14 @@ constant function of `ω`, so `γ^w` is quasilocal (`SimpleGraph.isQuasilocal_di
 Hence its Gibbs measures and its invariant Gibbs measures form weakly compact sets
 (`SimpleGraph.isCompact_setOf_isGibbs_dimerSpecification`,
 `SimpleGraph.isCompact_setOf_mem_gibbsInvariant_dimerSpecification`).
+
+**Gibbs measures are dimer Gibbs.** Let `ν` be a Gibbs probability measure of `γ^w`, `μ` its
+push-forward to the configurations, `F` a finite set of edges and `E` a finite set containing
+every edge that shares a vertex with an edge of `F`. By the DLR equation at `F` and the Boltzmann
+mass of a cylinder (`SimpleGraph.dimerBoltzmann_setOf_forall_mem_eq`),
+`μ[ω]_E = ∫_{[ω]_{E ∖ F}} w(ω ∩ F) / Z^w_F dν`. For dimer configurations `ω`, `ω'` agreeing off
+`F` the domains of integration agree, so `w(ω' ∩ F) · μ[ω]_E = w(ω ∩ F) · μ[ω']_E`: the
+push-forward is dimer Gibbs in cylinder form (`SimpleGraph.isDimerGibbs_map_val`).
 
 ## References
 
@@ -128,15 +137,32 @@ theorem dimerKernel_apply (w : G.edgeSet → ℝ) (F : Finset G.edgeSet) (ω : G
   rw [dimerKernel_apply_eq_comap]
   exact (MeasurableEmbedding.subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe).comap_apply _ _
 
+/-- The Boltzmann law `γ^w_F(· | ω)` is carried by the dimer configurations: restricting it to
+`𝔛(G)` does not change it. -/
+theorem restrict_dimerSubshift_dimerBoltzmann (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
+    (ω : G.edgeSet → Bool) :
+    (G.dimerBoltzmann w F ω).restrict (G.dimerSubshift Γ hΓ) = G.dimerBoltzmann w F ω := by
+  refine Measure.restrict_eq_self_of_ae_mem ?_
+  rw [ae_iff]
+  simpa using dimerBoltzmann_setOf_not_isDimerConfiguration w F ω
+
+/-- Pushing `γ^w_F(· | ω)` forward along the inclusion of `𝔛(G)` into the configurations gives
+the Boltzmann law. -/
+theorem map_val_dimerKernel (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
+    (ω : G.dimerSubshift Γ hΓ) :
+    (dimerKernel Γ hΓ w F ω).map Subtype.val = G.dimerBoltzmann w F ω.val := by
+  have hemb : MeasurableEmbedding (Subtype.val : G.dimerSubshift Γ hΓ → _) :=
+    .subtypeVal (G.dimerSubshift Γ hΓ).measurableSet_coe
+  rw [dimerKernel_apply_eq_comap, hemb.map_comap, Subtype.range_coe,
+    restrict_dimerSubshift_dimerBoltzmann]
+
 /-- Integrating against `γ^w_F(· | ω)` on `𝔛(G)` is integrating against the Boltzmann law. -/
 theorem lintegral_dimerKernel (w : G.edgeSet → ℝ) (F : Finset G.edgeSet)
     (ω : G.dimerSubshift Γ hΓ) (f : (G.edgeSet → Bool) → ℝ≥0∞) :
     ∫⁻ x, f x.val ∂dimerKernel Γ hΓ w F ω = ∫⁻ x, f x ∂G.dimerBoltzmann w F ω.val := by
   have h := lintegral_subtype_comap (μ := G.dimerBoltzmann w F ω.val)
     (G.dimerSubshift Γ hΓ).measurableSet_coe f
-  refine h.trans (congrArg (lintegral · f) (Measure.restrict_eq_self_of_ae_mem ?_))
-  rw [ae_iff]
-  simpa using dimerBoltzmann_setOf_not_isDimerConfiguration w F ω.val
+  rwa [restrict_dimerSubshift_dimerBoltzmann] at h
 
 variable (Γ hΓ) in
 /-- For a positive weight, the kernel `γ^w_F` is Markov. -/
@@ -299,5 +325,59 @@ theorem isCompact_setOf_mem_gibbsInvariant_dimerSpecification {w : G.edgeSet →
     (isQuasilocal_dimerSpecification Γ hΓ hw)
 
 end Specification
+
+/-! ### Gibbs measures of the dimer specification -/
+
+section IsGibbs
+
+variable [G.LocallyFinite] [Countable G.edgeSet] {Γ : Type*} [Group Γ] [MulAction Γ G.edgeSet]
+  {hΓ : ∀ g : Γ, ∃ φ : G ≃g G, ∀ e, g • e = φ.mapEdgeSet e}
+
+/-- **Gibbs measures of the dimer specification are dimer Gibbs.** The push-forward to the
+configurations of a Gibbs probability measure of `γ^w` on `𝔛(G)` is a probability measure carried
+by the dimer configurations and satisfies the cylinder identities
+`w(ω' ∩ F) · μ[ω]_E = w(ω ∩ F) · μ[ω']_E`. -/
+theorem isDimerGibbs_map_val {w : G.edgeSet → ℝ} (hw : ∀ e, 0 < w e)
+    {ν : Measure (G.dimerSubshift Γ hΓ)} [IsProbabilityMeasure ν]
+    (hν : (dimerSpecification Γ hΓ hw).IsGibbs ν) : G.IsDimerGibbs w (ν.map Subtype.val) := by
+  have hval : Measurable (Subtype.val : G.dimerSubshift Γ hΓ → G.edgeSet → Bool) :=
+    measurable_subtypeVal
+  refine isDimerGibbs_iff.2 ⟨inferInstance, ?_, ?_⟩
+  · rw [← compl_ofPred, Measure.map_apply hval measurableSet_setOf_isDimerConfiguration.compl]
+    convert measure_empty (μ := ν)
+    ext η
+    simpa using mem_dimerSubshift.1 η.property
+  intro F E ω ω' hω hω' hF hE
+  -- the mass of a cylinder under the push-forward, by the DLR equation at `F`
+  have key (ζ : G.edgeSet → Bool) (hζ : G.IsDimerConfiguration ζ) :
+      ν.map Subtype.val {η | ∀ e ∈ E, η e = ζ e} =
+        ∫⁻ η, {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ζ e}.indicator
+          (fun _ => ENNReal.ofReal (G.dimerWeight w F ζ /
+            G.dimerPartitionFunction w F η.val)) η.val ∂ν := by
+    have hmeas : MeasurableSet {η : G.edgeSet → Bool | ∀ e ∈ E, η e = ζ e} :=
+      SymbolicDynamics.FullShift.measurableSet_cylinder E ζ
+    rw [Measure.map_apply hval hmeas, ← hν.lintegral_kernel F (hval hmeas)]
+    refine lintegral_congr fun η => ?_
+    rw [dimerSpecification_kernel, dimerKernel_apply, image_preimage_eq_inter_range,
+      Subtype.range_coe_subtype, measure_inter_conull, dimerBoltzmann_setOf_forall_mem_eq w hE hζ
+        (mem_dimerSubshift.1 η.property)]
+    simpa [compl_ofPred] using dimerBoltzmann_setOf_not_isDimerConfiguration w F η.val
+  have hcyl : {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω' e} =
+      {θ | ∀ e ∈ E, e ∉ F → θ e = ω e} := by
+    ext θ
+    simp only [mem_ofPred_eq]
+    exact forall₂_congr fun e _ => forall_congr' fun he => by rw [hF e he]
+  rw [key ω hω, key ω' hω', hcyl, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  refine lintegral_congr fun η => ?_
+  by_cases hη : η.val ∈ {θ : G.edgeSet → Bool | ∀ e ∈ E, e ∉ F → θ e = ω e}
+  · simp only [indicator_of_mem hη]
+    rw [← ENNReal.ofReal_mul (dimerWeight_pos hw F ω').le,
+      ← ENNReal.ofReal_mul (dimerWeight_pos hw F ω).le]
+    congr 1
+    ring
+  · simp only [indicator_of_notMem hη, mul_zero]
+
+end IsGibbs
 
 end SimpleGraph

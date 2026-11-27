@@ -165,8 +165,10 @@ private noncomputable def totalColumnGradedShortComplexX₃Iso (p : ℤ) :
   let e : Q.X p ≅ K.X p :=
     (asIso ((T.πStupidTrunc (embeddingUpIntLE p)).f p)).symm ≪≫
       asIso ((K.ιStupidTrunc (embeddingUpIntGE p)).f p)
-  exact (Q.shiftIsoTotalOfIsZero p
-      (CochainComplex.isZero_stupidTruncGE_stupidTruncLE_X_of_ne K p)).symm ≪≫
+  have hQ : ∀ i, i ≠ p → IsZero (Q.X i) := fun i hi ↦
+    CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X_of_isZero T p p
+      (fun _ hj ↦ CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X K p hj) (lt_or_gt_of_ne hi)
+  exact (Q.shiftIsoTotalOfIsZero p hQ).symm ≪≫
     (CategoryTheory.shiftFunctor (CochainComplex C ℤ) (-p)).mapIso e
 
 /-- The graded piece of the column filtration in degree `p` is the column `p` shifted by
@@ -190,8 +192,10 @@ lemma ιTotal_totalColumnFiltrationGradedπ_f_self (p n : ℤ) :
       ((K.ιStupidTrunc (embeddingUpIntGE p)).f p).f (n + -p) := by
   let T := K.stupidTrunc (embeddingUpIntGE p)
   let Q : HomologicalComplex₂ C (.up ℤ) (.up ℤ) := T.stupidTrunc (embeddingUpIntLE p)
-  let e := Q.shiftIsoTotalOfIsZero p
-    (CochainComplex.isZero_stupidTruncGE_stupidTruncLE_X_of_ne K p)
+  have hQ : ∀ i, i ≠ p → IsZero (Q.X i) := fun i hi ↦
+    CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X_of_isZero T p p
+      (fun _ hj ↦ CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X K p hj) (lt_or_gt_of_ne hi)
+  let e := Q.shiftIsoTotalOfIsZero p hQ
   have hshift : e.hom.f n ≫ e.inv.f n = 𝟙 _ := by
     rw [← comp_f, Iso.hom_inv_id, id_f]
   have : IsIso ((T.πStupidTrunc (embeddingUpIntLE p)).f p) :=
@@ -202,8 +206,7 @@ lemma ιTotal_totalColumnFiltrationGradedπ_f_self (p n : ℤ) :
   simp only [totalColumnFiltrationGradedπ, comp_f, ιTotal_map_assoc,
     totalColumnGradedShortComplexX₃Iso, Iso.trans_hom, Iso.symm_hom, Functor.mapIso_hom,
     CochainComplex.shiftFunctor_map_f', asIso_hom, asIso_inv]
-  rw [← shiftIsoTotalOfIsZero_hom_f Q p
-    (CochainComplex.isZero_stupidTruncGE_stupidTruncLE_X_of_ne K p)]
+  rw [← shiftIsoTotalOfIsZero_hom_f Q p hQ]
   dsimp only [e, Q, T] at hshift hπ
   rw [reassoc_of% hshift, reassoc_of% hπ]
 

@@ -45,8 +45,6 @@ specializes to each closed fibre.
 
 ## Main definitions
 
-* `AlgebraicGeometry.Scheme.RationalMap.toHom`: a rational map from a reduced scheme to a separated
-  scheme that is defined everywhere, as a morphism.
 * `AlgebraicGeometry.Scheme.homOfFunctionField`: the morphism `X ⟶ Y` extending an `S`-morphism
   `Spec K(X) ⟶ Y`.
 * `AlgebraicGeometry.Scheme.Hom.sectionEquivOfValuationRing`: sections of a proper morphism over a
@@ -101,43 +99,6 @@ theorem PartialMap.SpecMap_stalkSpecializes_fromSpecStalkOfMem [IrreducibleSpace
     Spec.map (X.presheaf.stalkSpecializes (genericPoint_specializes x)) ≫
       g.fromSpecStalkOfMem hx = g.fromFunctionField := by
   simp only [PartialMap.fromSpecStalkOfMem, Opens.SpecMap_stalkSpecializes_fromSpecStalkOfMem_assoc]
-
-/-! ### Rational maps defined everywhere -/
-
-/-- A rational map from a reduced scheme to a separated scheme which is defined everywhere, as a
-morphism: its representative on its domain of definition `⊤`. -/
-noncomputable def RationalMap.toHom [IsReduced X] [Y.IsSeparated] (f : X ⤏ Y)
-    (hf : f.domain = ⊤) : X ⟶ Y :=
-  X.topIso.inv ≫ X.homOfLE (f.toPartialMap_domain.trans hf).ge ≫ f.toPartialMap.hom
-
-/-- On the spectrum of the stalk at a point, `RationalMap.toHom` is the representative of the
-rational map on its domain of definition. -/
-@[reassoc]
-theorem RationalMap.fromSpecStalk_toHom [IsReduced X] [Y.IsSeparated] (f : X ⤏ Y)
-    (hf : f.domain = ⊤) (x : X) :
-    X.fromSpecStalk x ≫ f.toHom hf = f.toPartialMap.fromSpecStalkOfMem
-      ((f.toPartialMap_domain.trans hf).ge (Set.mem_univ x)) := by
-  rw [toHom, PartialMap.fromSpecStalkOfMem, ← Category.assoc, ← Category.assoc]
-  congr 1
-  rw [← cancel_mono (Opens.ι _)]
-  simp
-
-/-- At the generic point, `RationalMap.toHom` is the morphism `Spec K(X) ⟶ Y` of the rational
-map. -/
-@[reassoc]
-theorem RationalMap.fromSpecStalk_genericPoint_toHom [IsIntegral X] [Y.IsSeparated] (f : X ⤏ Y)
-    (hf : f.domain = ⊤) :
-    X.fromSpecStalk (genericPoint X) ≫ f.toHom hf = f.fromFunctionField := by
-  rw [fromSpecStalk_toHom]
-  conv_rhs => rw [← f.toRationalMap_toPartialMap, fromFunctionField_toRationalMap]
-
-/-- The morphism `RationalMap.toHom` represents the rational map. -/
-@[simp]
-theorem RationalMap.toRationalMap_toHom [IsIntegral X] [Y.IsSeparated] (f : X ⤏ Y)
-    (hf : f.domain = ⊤) : (f.toHom hf).toRationalMap = f := by
-  refine eq_of_fromFunctionField_eq _ _ ?_
-  rw [Hom.toRationalMap, fromFunctionField_toRationalMap, PartialMap.fromFunctionField,
-    PartialMap.fromSpecStalkOfMem_toPartialMap, fromSpecStalk_genericPoint_toHom]
 
 /-! ### Rational maps into universally closed schemes -/
 

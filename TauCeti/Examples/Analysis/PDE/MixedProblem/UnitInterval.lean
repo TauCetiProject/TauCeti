@@ -130,13 +130,9 @@ private theorem exists_solution :
         ∀ v ∈ w1pVanishingOnSubmodule volume (intervalDomain 0 1) 2 {0},
           energyFormH1 (fun _ => 1) 0 0 u v = ∫ x in intervalDomain 0 1, W1p.value v x := by
   obtain ⟨w, hw, hg⟩ := exists_value_gradient_ae_eq
-  have hmp : MeasurePreserving lineEquiv.symm
-      (volume.restrict (intervalDomain 0 1 : Set (EuclideanSpace ℝ (Fin 1))))
-      (volume.restrict (Ioo 0 1)) :=
-    coe_intervalDomain_eq_preimage ▸
-      measurePreserving_lineEquiv_symm.restrict_preimage measurableSet_Ioo
   refine ⟨(intervalDomainEquivL 0 1 2).symm w, ?_, ?_, fun v hv => ?_⟩
-  · filter_upwards [value_intervalDomainEquivL_symm_ae w, hmp.quasiMeasurePreserving.ae hw]
+  · filter_upwards [value_intervalDomainEquivL_symm_ae w,
+      measurePreserving_lineEquiv_symm_restrict.quasiMeasurePreserving.ae hw]
       with x h1 h2
     rw [h1]
     simpa using h2

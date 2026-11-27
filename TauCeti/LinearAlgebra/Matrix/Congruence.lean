@@ -43,6 +43,9 @@ one factor after the other.
   similitude groups under multiplication and inversion.
 * `Matrix.transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul`: for a form with `J * J = -1`,
   a similitude `M J Mᵀ = r J` with unit multiplier satisfies `Mᵀ J M = r J`.
+* `Matrix.map_map_algebraMap`, `Matrix.map_transpose_mul_mul_sub_smul` and
+  `Matrix.map_transpose_mul_mul_sub`: a matrix over `R` read in an `R`-algebra, and the defect
+  `gᵀ M g - c M`, under an algebra morphism.
 
 ## References
 
@@ -182,6 +185,38 @@ theorem transpose_mul_mul_eq_smul_of_mul_mul_transpose_eq_smul [DecidableEq n]
         rw [hJM, Matrix.mul_smul, Matrix.mul_one, neg_smul, neg_neg]
 
 end Similitude
+
+section AlgebraMap
+
+variable {R A B : Type*} [CommSemiring R]
+
+/-- Reading a matrix over `R` in an `R`-algebra `A` and then mapping it by an algebra morphism
+`phi : A → B` reads it in `B`. -/
+theorem map_map_algebraMap {m n : Type*} [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
+    (phi : A →ₐ[R] B) (M : Matrix m n R) :
+    (M.map (algebraMap R A)).map phi = M.map (algebraMap R B) := by
+  rw [Matrix.map_map]
+  exact congrArg _ (funext phi.commutes)
+
+variable {n : Type*} [Fintype n] [Ring A] [Algebra R A] [Ring B] [Algebra R B]
+
+/-- **The similitude defect `gᵀ M g - c M` under an algebra morphism**: for a matrix `M` over `R`
+read in `A` and in `B`, mapping by `phi : A → B` applies `phi` to `g` and to `c`. -/
+theorem map_transpose_mul_mul_sub_smul (phi : A →ₐ[R] B) (M : Matrix n n R)
+    (g : Matrix n n A) (c : A) :
+    (gᵀ * M.map (algebraMap R A) * g - c • M.map (algebraMap R A)).map phi =
+      (g.map phi)ᵀ * M.map (algebraMap R B) * g.map phi - phi c • M.map (algebraMap R B) := by
+  rw [Matrix.map_sub _ (map_sub phi), Matrix.map_mul, Matrix.map_mul,
+    Matrix.map_smul' _ _ _ (map_mul phi), map_map_algebraMap, Matrix.transpose_map]
+
+/-- The isometry defect `gᵀ M g - M` under an algebra morphism: the case `c = 1` of
+`Matrix.map_transpose_mul_mul_sub_smul`. -/
+theorem map_transpose_mul_mul_sub (phi : A →ₐ[R] B) (M : Matrix n n R) (g : Matrix n n A) :
+    (gᵀ * M.map (algebraMap R A) * g - M.map (algebraMap R A)).map phi =
+      (g.map phi)ᵀ * M.map (algebraMap R B) * g.map phi - M.map (algebraMap R B) := by
+  simpa only [one_smul, map_one] using map_transpose_mul_mul_sub_smul phi M g 1
+
+end AlgebraMap
 
 section BasisSubstitution
 

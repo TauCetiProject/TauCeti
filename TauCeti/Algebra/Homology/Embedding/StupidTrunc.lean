@@ -26,7 +26,10 @@ any property of objects invariant under isomorphism and true for zero objects pa
 of the complex to that of the truncation (`HomologicalComplex.prop_stupidTrunc_X`). For a complex
 of complexes, such as a double complex, the truncation keeps the inner complexes exact
 (`HomologicalComplex.acyclic_stupidTrunc_X`) and vanishes in each bidegree where the complex of
-complexes does (`HomologicalComplex.isZero_stupidTrunc_X_X`).
+complexes does (`HomologicalComplex.isZero_stupidTrunc_X_X`). The brutal truncations in degrees
+`≥ n` and `≤ n` of a complex vanishing outside `[a, b]` vanish outside `[n, b]` and `[a, n]`
+(`CochainComplex.isZero_stupidTrunc_embeddingUpIntGE_X_of_isZero`,
+`CochainComplex.isZero_stupidTrunc_embeddingUpIntLE_X_of_isZero`).
 
 When `K` vanishes in degrees `> n + 1`, its top term `K.X (n + 1)` placed in degree `n + 1` is a
 subcomplex, and the two maps form the short complex `CochainComplex.topShortComplex K n`
@@ -51,6 +54,10 @@ projection onto `σ^{≤ n} K` form the short complex `CochainComplex.stupidTrun
 which is split in each degree (`CochainComplex.stupidTruncShortComplexSplitting`). For a complex of
 complexes, a double complex, it splits off the columns `> n`, which is how the total complex of a
 double complex is filtered by its columns.
+For a diagram `G` of cochain complexes, these short complexes form a short complex of diagrams
+`CategoryTheory.Functor.stupidTruncShortComplex G n`, whose maps are Mathlib's natural
+transformations `ComplexShape.Embedding.ιStupidTruncNatTrans` and
+`ComplexShape.Embedding.πStupidTruncNatTrans`.
 
 When `C` has equalizers, the kernel of `K ⟶ σ^{≤ n} K` is the brutal truncation `σ^{≥ n + 1} K`,
 the subcomplex of the terms of `K` in degrees `> n`. These subcomplexes exhaust `K`: the
@@ -67,6 +74,8 @@ sequential colimit of bounded complexes.
 * `CochainComplex.stupidTruncShortComplex K n` and
   `CochainComplex.stupidTruncShortComplexSplitting K n`: the degreewise split short complex
   `σ^{≥ n + 1} K ⟶ K ⟶ σ^{≤ n} K`.
+* `CategoryTheory.Functor.stupidTruncShortComplex G n`: the short complex
+  `σ^{≥ n + 1} G ⟶ G ⟶ σ^{≤ n} G` of a diagram `G` of cochain complexes.
 * `CochainComplex.stupidTruncGESequence K`: the sequence of brutal truncations `σ^{≥ -m} K`,
   realized as the kernels of the projections `K ⟶ σ^{≤ -m-1} K`.
 * `CochainComplex.isColimitStupidTruncGESequenceCocone K`: `K` is the colimit of this sequence.
@@ -169,6 +178,24 @@ lemma isZero_stupidTrunc_embeddingUpIntGE_X {i : ℤ} (hi : i < n) :
     IsZero ((K.stupidTrunc (ComplexShape.embeddingUpIntGE n)).X i) :=
   K.isZero_stupidTrunc_X _ i ((ComplexShape.notMem_range_embeddingUpIntGE_iff n i).2 hi)
 
+/-- If `K` vanishes in degrees `> b`, its brutal truncation in degrees `≥ n` vanishes outside
+`[n, b]`. -/
+lemma isZero_stupidTrunc_embeddingUpIntGE_X_of_isZero (b : ℤ)
+    (hK : ∀ p, b < p → IsZero (K.X p)) {i : ℤ} (hi : i < n ∨ b < i) :
+    IsZero ((K.stupidTrunc (ComplexShape.embeddingUpIntGE n)).X i) := by
+  rcases hi with hi | hi
+  · exact K.isZero_stupidTrunc_embeddingUpIntGE_X n hi
+  · exact K.isZero_stupidTrunc_X_of_isZero _ (hK i hi)
+
+/-- If `K` vanishes in degrees `< a`, its brutal truncation in degrees `≤ n` vanishes outside
+`[a, n]`. -/
+lemma isZero_stupidTrunc_embeddingUpIntLE_X_of_isZero (a : ℤ)
+    (hK : ∀ p, p < a → IsZero (K.X p)) {i : ℤ} (hi : i < a ∨ n < i) :
+    IsZero ((K.stupidTrunc (ComplexShape.embeddingUpIntLE n)).X i) := by
+  rcases hi with hi | hi
+  · exact K.isZero_stupidTrunc_X_of_isZero _ (hK i hi)
+  · exact K.isZero_stupidTrunc_embeddingUpIntLE_X n hi
+
 /-- Truncating the inclusion of `σ^{≥ p} K` in degrees `≥ q` gives an isomorphism when
 `p ≤ q`. -/
 lemma isIso_stupidTruncMap_ιStupidTruncGE {p q : ℤ} (h : p ≤ q) :
@@ -205,15 +232,6 @@ lemma stupidTruncGEMap_comp_ιStupidTrunc {p q : ℤ} (h : p ≤ q) :
       K.ιStupidTrunc (ComplexShape.embeddingUpIntGE q) := by
   have := K.isIso_stupidTruncMap_ιStupidTruncGE h
   rw [stupidTruncGEMap, Category.assoc, ← ιStupidTrunc_naturality, IsIso.inv_hom_id_assoc]
-
-/-- Truncating both below and above the same degree leaves zero terms in every other degree. -/
-lemma isZero_stupidTruncGE_stupidTruncLE_X_of_ne (i : ℤ) (hi : i ≠ n) :
-    IsZero (((K.stupidTrunc (ComplexShape.embeddingUpIntGE n)).stupidTrunc
-      (ComplexShape.embeddingUpIntLE n)).X i) := by
-  let T : CochainComplex C ℤ := K.stupidTrunc (ComplexShape.embeddingUpIntGE n)
-  rcases lt_or_gt_of_ne hi with hi | hi
-  · exact T.isZero_stupidTrunc_X_of_isZero _ (K.isZero_stupidTrunc_embeddingUpIntGE_X n hi)
-  · exact T.isZero_stupidTrunc_embeddingUpIntLE_X n hi
 
 /-- The inclusion of the brutal truncation in degrees `≥ n + 1` followed by the projection onto
 the brutal truncation in degrees `≤ n` is zero. -/
@@ -465,3 +483,32 @@ noncomputable def topShortComplexSplitting (i : ℤ) :
 end Preadditive
 
 end CochainComplex
+
+namespace CategoryTheory.Functor
+
+variable {J C : Type*} [Category* J] [Category* C] [HasZeroMorphisms C] [HasZeroObject C]
+  (G : J ⥤ CochainComplex C ℤ) (n : ℤ)
+
+/-- The short complex `σ^{≥ n + 1} G ⟶ G ⟶ σ^{≤ n} G` of brutal truncations of a diagram `G` of
+cochain complexes, whose value at each `j` is `CochainComplex.stupidTruncShortComplex (G.obj j) n`
+(`CategoryTheory.Functor.stupidTruncShortComplex_map_evaluation`). -/
+@[expose, simps]
+noncomputable def stupidTruncShortComplex : ShortComplex (J ⥤ CochainComplex C ℤ) where
+  X₁ := G ⋙ (ComplexShape.embeddingUpIntGE (n + 1)).stupidTruncFunctor C
+  X₂ := G
+  X₃ := G ⋙ (ComplexShape.embeddingUpIntLE n).stupidTruncFunctor C
+  -- `G ⋙ 𝟭 _` is `G` by definition
+  f := G.whiskerLeft ((ComplexShape.embeddingUpIntGE (n + 1)).ιStupidTruncNatTrans C)
+  g := G.whiskerLeft ((ComplexShape.embeddingUpIntLE n).πStupidTruncNatTrans C)
+  zero := by
+    ext j : 2
+    exact (G.obj j).ιStupidTruncGE_comp_πStupidTruncLE n
+
+/-- The value of the short complex of brutal truncations of a diagram `G` at `j` is the short
+complex of brutal truncations of `G.obj j`. -/
+theorem stupidTruncShortComplex_map_evaluation (j : J) :
+    (G.stupidTruncShortComplex n).map ((evaluation J _).obj j) =
+      (G.obj j).stupidTruncShortComplex n :=
+  rfl
+
+end CategoryTheory.Functor

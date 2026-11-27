@@ -39,6 +39,9 @@ duplicate `Algebra.IsUnramifiedIn`.
 * `TauCeti.eventually_isUnramifiedAt_liesOver`: almost every finite place has only
   unramified places above it.
 * `NumberField.Chebotarev.mem_ramifiedPrimes_iff`: the defining condition for membership.
+* `NumberField.Chebotarev.notMem_ramifiedPrimes_iff_isUnramifiedIn`: a prime lies outside
+  `ramifiedPrimes K L` exactly when it is unramified in `𝓞 L` in the sense of
+  `Algebra.IsUnramifiedIn`.
 * `NumberField.Chebotarev.isUnramifiedAt_of_under_eq`: a prime of `L` over a prime of `K` above
   which every prime of `L` is unramified is unramified over `K`.
 * `NumberField.Chebotarev.under_notMem_ramifiedPrimes_iff_isUnramifiedAt`: in a Galois
@@ -132,6 +135,13 @@ variable {K L}
 theorem mem_ramifiedPrimes_iff (𝔭 : HeightOneSpectrum (𝓞 K)) : 𝔭 ∈ ramifiedPrimes K L ↔
     ¬ ∀ (Q : Ideal (𝓞 L)) [Q.IsPrime] [Q.LiesOver 𝔭.asIdeal], Algebra.IsUnramifiedAt (𝓞 K) Q :=
   Set.Finite.mem_toFinset _
+
+/-- A prime of `K` lies outside `ramifiedPrimes K L` exactly when it is unramified in `𝓞 L` in the
+sense of Mathlib's `Algebra.IsUnramifiedIn`. -/
+theorem notMem_ramifiedPrimes_iff_isUnramifiedIn (𝔭 : HeightOneSpectrum (𝓞 K)) :
+    𝔭 ∉ ramifiedPrimes K L ↔ Algebra.IsUnramifiedIn (𝓞 L) 𝔭.asIdeal := by
+  rw [mem_ramifiedPrimes_iff, not_not]
+  exact ⟨fun h P _ _ ↦ h P, fun h P _ _ ↦ h P ‹_› ‹_›⟩
 
 omit [NumberField K] [NumberField L] in
 /-- A prime of `L` over a prime `p` of `K` above which every prime of `L` is unramified is
