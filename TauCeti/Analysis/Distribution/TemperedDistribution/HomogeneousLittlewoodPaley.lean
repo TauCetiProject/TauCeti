@@ -96,8 +96,8 @@ inequalities on annuli apply.
 * `TemperedDistribution.homogeneousLittlewoodPaleyBlock_toTemperedDistribution`: on `L²` the block
   `Pⱼ` is the `L²` Fourier multiplier with symbol `ψⱼ`.
 * `TemperedDistribution.exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock`:
-  almost orthogonality on `L²`, an `L²` function `Pⱼ v` has no block `Pₖ` with `|k - j| ≥ L`, so
-  on a nontrivial space it is the sum of its blocks `Pₖ` with `|k - j| < L`
+  almost orthogonality on `L²`, an `L²` function `Pⱼ v` has no block `Pₖ` with `|k - j| ≥ L`, and
+  it is the sum of its blocks `Pₖ` with `j - L ≤ k < j + L`
   (`TemperedDistribution.exists_eq_sum_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock`).
 * `exists_eLpNorm_eLpNorm_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock`: the
   vanishing of the far blocks in mixed norms, with the bound
@@ -682,29 +682,23 @@ theorem exists_eLpNorm_eLpNorm_fourierMultiplierCLM_of_eq_homogeneousLittlewoodP
     exact eLpNorm_eLpNorm_apply_le (Lp.fourierMultiplierCLM G m).continuous
       (fun f ↦ φ.eLpNorm_fourierMultiplierCLM_littlewoodPaley_le hm f hr) hx
 
-/-- **An `L²` block is the sum of its neighbouring blocks.** On a nontrivial space there is `L`
+/-- **An `L²` block is the sum of its neighbouring blocks.** There is `L`, depending only on `φ`,
 such that an `L²` function `f` that is the `j`-th block `Pⱼ v` of a tempered distribution `v` is
-the finite sum `∑_{|k - j| < L} Pₖ f` of its own blocks, where `Pₖ` is the `L²` Fourier multiplier
-with any symbol in `L^∞` almost everywhere equal to `ψₖ`. -/
-theorem exists_eq_sum_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock [Nontrivial E] :
+the finite sum `∑_{j - L ≤ k < j + L} Pₖ f` of its own blocks, where `Pₖ` is the `L²` Fourier
+multiplier with any symbol in `L^∞` almost everywhere equal to `ψₖ`. -/
+theorem exists_eq_sum_fourierMultiplierCLM_of_eq_homogeneousLittlewoodPaleyBlock :
     ∃ L : ℕ, ∀ (j : ℤ) {m : ℤ → Lp ℂ ∞ (volume : Measure E)},
       (∀ k, m k =ᵐ[volume] fun ξ ↦ (φ.littlewoodPaley k ξ : ℂ)) →
       ∀ (f : Lp G 2 (volume : Measure E)) (v : 𝓢'(E, G)),
         (f : 𝓢'(E, G)) = homogeneousLittlewoodPaleyBlock G φ j v →
-          f = ∑ k ∈ Finset.Ioo (j - L) (j + L), Lp.fourierMultiplierCLM G (m k) f := by
-  obtain ⟨L, hL⟩ :=
-    exists_fourierMultiplierCLM_eq_zero_of_eq_homogeneousLittlewoodPaleyBlock (G := G) φ
-  refine ⟨L, fun j m hm f v hv ↦ ?_⟩
-  -- The partial sums of all blocks converge to `f`, and from `N ≥ |j| + L` on they are this sum.
-  refine tendsto_nhds_unique (φ.tendsto_sum_fourierMultiplierCLM_littlewoodPaley hm f)
-    (tendsto_const_nhds.congr' ?_)
-  filter_upwards [(tendsto_natCast_atTop_atTop (R := ℤ)).eventually_ge_atTop (|j| + L)]
-    with N hN
-  refine Finset.sum_subset (fun k hk ↦ ?_) fun k _ hk ↦ hL j k hk (hm k) f v hv
-  have := le_abs_self j
-  have := neg_abs_le j
-  simp only [Finset.mem_Ioo, Finset.mem_Ioc] at hk ⊢
-  omega
+          f = ∑ k ∈ Finset.Ico (j - L) (j + L), Lp.fourierMultiplierCLM G (m k) f := by
+  obtain ⟨L, hL⟩ := exists_homogeneousLittlewoodPaleyBlock_eq_sum_Ico (F := G) φ φ
+  refine ⟨L, fun j m hm f v hv ↦ Lp.toTemperedDistribution_injective ?_⟩
+  dsimp only
+  rw [Lp.toTemperedDistribution_sum]
+  simp_rw [← homogeneousLittlewoodPaleyBlock_toTemperedDistribution φ (hm _), hv]
+  conv_lhs => rw [hL j v]
+  simp only [homogeneousLittlewoodPaleyBlock_comm φ φ j]
 
 end L2
 

@@ -326,6 +326,7 @@ theorem ae_ae_eq_setIntegral_Iio_waveSinPropagator_sub_of_tendsto {r : ℝ≥0�
 
 /-! ### The limit solves the wave equation -/
 
+omit [Nontrivial E] in
 /-- **Forcing terms made of `j`-th blocks have integrable retarded integrands.** If
 `G : ℝ → L²(E)` is integrable and each `G(s)` is the `j`-th block of a tempered distribution, then
 `s ↦ D⁻¹ sin (sD) G(s)` is integrable: on frequencies `‖ξ‖ ≈ 2^j` the operators `D⁻¹ sin (sD)` are
@@ -344,8 +345,8 @@ theorem integrable_waveSinPropagator_apply_of_eq_homogeneousLittlewoodPaleyBlock
       waveSinPropagator ℂ s (Lp.fourierMultiplierCLM ℂ (m k) (G s)) :=
     (φ.integrable_waveSinPropagator_sub_littlewoodPaley (hm k) hG 0).neg.congr
       (ae_of_all _ fun s ↦ by simp)
-  -- Each `G(s)` is the sum of its blocks `Pₖ G(s)` with `|k - j| < L`.
-  have h : (fun s ↦ waveSinPropagator ℂ s (G s)) = fun s ↦ ∑ k ∈ Finset.Ioo (j - L) (j + L),
+  -- Each `G(s)` is the sum of its blocks `Pₖ G(s)` with `j - L ≤ k < j + L`.
+  have h : (fun s ↦ waveSinPropagator ℂ s (G s)) = fun s ↦ ∑ k ∈ Finset.Ico (j - L) (j + L),
       waveSinPropagator ℂ s (Lp.fourierMultiplierCLM ℂ (m k) (G s)) := by
     ext1 s
     obtain ⟨v, hv⟩ := hblock s
@@ -353,6 +354,7 @@ theorem integrable_waveSinPropagator_apply_of_eq_homogeneousLittlewoodPaleyBlock
   rw [h]
   exact integrable_finsetSum _ fun k _ ↦ hk k
 
+omit [Nontrivial E] in
 /-- **The retarded wave integral of a forcing term given by its blocks solves the wave
 equation.** Let `F(s)` be tempered distributions whose blocks `Gⱼ(s) = Pⱼ F(s)` are `L²`
 functions, integrable in time, and let `U : ℝ → L^r` be a limit of the dyadic series
