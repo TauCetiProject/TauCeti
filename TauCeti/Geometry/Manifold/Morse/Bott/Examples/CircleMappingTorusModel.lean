@@ -296,22 +296,50 @@ theorem circleMappingTorusComplex_d_apply {i j : ℤ} (hij : i = j + 1)
   subst hij
   exact chainComplex_d_apply _ _ _ _ x
 
+/-- The class of a cycle `z` of the model in degree `k`, read in the explicit homology
+`ker d ⧸ range d` of `K.sc' (k + 1) k (k - 1)`, is the quotient class of `z` itself. -/
+private theorem moduleCatHomologyIso_homologyIsoSc'_homologyπ {k : ℤ}
+    (z : (circleMappingTorusComplex R ε).cycles k) :
+    ((circleMappingTorusComplex R ε).sc' (k + 1) k (k - 1)).moduleCatHomologyIso.hom.hom
+        (((circleMappingTorusComplex R ε).homologyIsoSc' (k + 1) k (k - 1) (by simp)
+          (by simp)).hom.hom (((circleMappingTorusComplex R ε).homologyπ k).hom z)) =
+      Submodule.Quotient.mk ⟨((circleMappingTorusComplex R ε).iCycles k).hom z, by simp⟩ := by
+  let K := circleMappingTorusComplex R ε
+  have hπ := congrArg (fun f ↦ ModuleCat.Hom.hom f z)
+    (K.π_homologyIsoSc'_hom_assoc (k + 1) k (k - 1) (by simp) (by simp)
+      (K.sc' (k + 1) k (k - 1)).moduleCatHomologyIso.hom)
+  have hi := congrArg (fun f ↦ ModuleCat.Hom.hom f z)
+    (K.cyclesIsoSc'_hom_iCycles (k + 1) k (k - 1) (by simp) (by simp))
+  simp only [ShortComplex.π_moduleCatCyclesIso_hom, ModuleCat.hom_comp, LinearMap.comp_apply] at hπ
+  simp only [← ShortComplex.moduleCatCyclesIso_hom_i, ModuleCat.hom_comp,
+    LinearMap.comp_apply] at hi
+  rw [hπ, ShortComplex.moduleCatLeftHomologyData_π_hom, Submodule.mkQ_apply]
+  congr 1
+  exact Subtype.ext hi
+
+section HomologyOfCycles
+
+/-! The data computing the homology of the model in degree `k` through a linear map `ψ` on the
+chains of total degree `k`, shared by `homologyLinearEquivOfCycles` and its cycle-class lemma. -/
+
+variable {k : ℤ} {N : Type*} [AddCommGroup N] [Module R N]
+  (ψ : (CircleMappingTorusComponent → R × R) →ₗ[R] N) (P : Submodule R N)
+  (hmem : ∀ x ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k,
+    (circleMappingTorus R ε).differential x = 0 → ψ x ∈ P)
+  (hψ : ∀ n ∈ P, ∃ x ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k,
+    (circleMappingTorus R ε).differential x = 0 ∧ ψ x = n)
+  (hker : ∀ x ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k,
+    (circleMappingTorus R ε).differential x = 0 → ψ x = 0 →
+      ∃ y ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) (k + 1),
+        (circleMappingTorus R ε).differential y = x)
+  (hbd : ∀ y ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) (k + 1),
+    ψ ((circleMappingTorus R ε).differential y) = 0)
+
 /-- The homology of the model in degree `k` is computed by a linear map `ψ` on the chains of
 total degree `k`: if `ψ` maps the cycles onto a submodule `P`, and its kernel on the cycles
 consists of the boundaries, then the homology in degree `k` is `P`, the class of a cycle `x`
 going to `ψ x` (`homologyLinearEquivOfCycles_homologyπ`). -/
-private noncomputable def homologyLinearEquivOfCycles {k : ℤ} {N : Type*} [AddCommGroup N]
-    [Module R N] (ψ : (CircleMappingTorusComponent → R × R) →ₗ[R] N) (P : Submodule R N)
-    (hmem : ∀ x ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k,
-      (circleMappingTorus R ε).differential x = 0 → ψ x ∈ P)
-    (hψ : ∀ n ∈ P, ∃ x ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k,
-      (circleMappingTorus R ε).differential x = 0 ∧ ψ x = n)
-    (hker : ∀ x ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k,
-      (circleMappingTorus R ε).differential x = 0 → ψ x = 0 →
-        ∃ y ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) (k + 1),
-          (circleMappingTorus R ε).differential y = x)
-    (hbd : ∀ y ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) (k + 1),
-      ψ ((circleMappingTorus R ε).differential y) = 0) :
+private noncomputable def homologyLinearEquivOfCycles :
     (circleMappingTorusComplex R ε).homology k ≃ₗ[R] P := by
   let K := circleMappingTorusComplex R ε
   have hcyc (x : (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k) :
@@ -339,41 +367,21 @@ private noncomputable def homologyLinearEquivOfCycles {k : ℤ} {N : Type*} [Add
     (K.sc' (k + 1) k (k - 1)).moduleCatHomologyIso).toLinearEquiv ≪≫ₗ
       Submodule.quotEquivOfEq _ _ hrange ≪≫ₗ ψ'.quotKerEquivOfSurjective hψ'
 
-private theorem homologyLinearEquivOfCycles_homologyπ {k : ℤ} {N : Type*} [AddCommGroup N]
-    [Module R N] (ψ : (CircleMappingTorusComponent → R × R) →ₗ[R] N) (P : Submodule R N)
-    (hmem : ∀ x ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k,
-      (circleMappingTorus R ε).differential x = 0 → ψ x ∈ P)
-    (hψ : ∀ n ∈ P, ∃ x ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k,
-      (circleMappingTorus R ε).differential x = 0 ∧ ψ x = n)
-    (hker : ∀ x ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) k,
-      (circleMappingTorus R ε).differential x = 0 → ψ x = 0 →
-        ∃ y ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) (k + 1),
-          (circleMappingTorus R ε).differential y = x)
-    (hbd : ∀ y ∈ (circleMappingTorus R ε).totalDegree (fun _ ↦ circleCellularGrading R) (k + 1),
-      ψ ((circleMappingTorus R ε).differential y) = 0)
+private theorem homologyLinearEquivOfCycles_homologyπ
     (z : (circleMappingTorusComplex R ε).cycles k) :
     (homologyLinearEquivOfCycles ε ψ P hmem hψ hker hbd
         (((circleMappingTorusComplex R ε).homologyπ k).hom z) : N) =
       ψ (((circleMappingTorusComplex R ε).iCycles k).hom z).val := by
-  let K := circleMappingTorusComplex R ε
-  have hπ := congrArg (fun f ↦ ModuleCat.Hom.hom f z)
-    (HomologicalComplex.π_homologyIsoSc'_hom_assoc K (k + 1) k (k - 1) (by simp) (by simp)
-      (K.sc' (k + 1) k (k - 1)).moduleCatHomologyIso.hom)
-  have hi := congrArg (fun f ↦ ModuleCat.Hom.hom f z)
-    (HomologicalComplex.cyclesIsoSc'_hom_iCycles K (k + 1) k (k - 1) (by simp) (by simp))
-  simp only [ShortComplex.π_moduleCatCyclesIso_hom, ModuleCat.hom_comp, LinearMap.comp_apply] at hπ
-  simp only [← ShortComplex.moduleCatCyclesIso_hom_i, ModuleCat.hom_comp,
-    LinearMap.comp_apply] at hi
   simp only [homologyLinearEquivOfCycles, LinearEquiv.trans_apply, Iso.toLinearEquiv_apply,
-    Iso.trans_hom, ModuleCat.hom_comp, LinearMap.comp_apply]
-  rw [hπ, ShortComplex.moduleCatLeftHomologyData_π_hom, ← hi, Submodule.mkQ_apply,
-    Submodule.quotEquivOfEq_mk]
-  refine (congrArg Subtype.val (LinearMap.quotKerEquivOfSurjective_apply_mk _ _ _)).trans ?_
-  refine (LinearMap.codRestrict_apply _ _ _).trans ?_
-  -- both sides apply `ψ` to the inclusion of the same cycle: the object `K.X k` of the complex
-  -- is by definition the submodule of chains of total degree `k`, and the second component of
-  -- `K.sc' (k + 1) k (k - 1)` is `K.d k (k - 1)`
+    Iso.trans_hom, ModuleCat.hom_comp, LinearMap.comp_apply,
+    moduleCatHomologyIso_homologyIsoSc'_homologyπ]
+  simp
+  -- the class lies in the quotient of the kernel of the second map of `K.sc' (k + 1) k (k - 1)`,
+  -- which is `K.d k (k - 1)` by definition, so `LinearMap.quotKerEquivOfSurjective_apply_mk`
+  -- applies to it only up to unfolding `HomologicalComplex.sc'`
   rfl
+
+end HomologyOfCycles
 
 /-- A chain of the model of total degree `k` vanishes once its coefficients that may be nonzero in
 total degree `k` vanish. -/
@@ -536,8 +544,9 @@ theorem circleMappingTorusComplex.homologyOneTorusLinearEquiv_homologyπ
     homologyOneTorusLinearEquiv R (((circleMappingTorusComplex R 1).homologyπ 1).hom z) =
       (((((circleMappingTorusComplex R 1).iCycles 1).hom z).val minCircle).2,
         ((((circleMappingTorusComplex R 1).iCycles 1).hom z).val maxCircle).1) := by
-  rw [homologyOneTorusLinearEquiv, LinearEquiv.trans_apply, homologyOneLinearEquiv_homologyπ,
-    LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply, Submodule.quotEquivOfEqBot_apply_mk]
+  -- apply `homologyOneLinearEquiv_homologyπ` before `simp` normalizes `1 - 1` in its target
+  simp only [homologyOneTorusLinearEquiv, LinearEquiv.trans_apply, homologyOneLinearEquiv_homologyπ]
+  simp
 
 variable (R) in
 /-- **`H₂ = R` for the torus model**, spanned by the edge of the maximum circle: the class of a
@@ -574,11 +583,11 @@ theorem circleMappingTorusComplex.homologyOneKleinBottleLinearEquiv_homologyπ
       (((((circleMappingTorusComplex ℤ (-1)).iCycles 1).hom z).val minCircle).2,
         ((((((circleMappingTorusComplex ℤ (-1)).iCycles 1).hom z).val maxCircle).1 : ℤ) :
           ZMod 2)) := by
-  rw [homologyOneKleinBottleLinearEquiv, LinearEquiv.trans_apply, homologyOneLinearEquiv_homologyπ,
-    LinearEquiv.prodCongr_apply, LinearEquiv.refl_apply, LinearEquiv.trans_apply,
-    Submodule.quotEquivOfEq_mk, AddEquiv.coe_toIntLinearEquiv, RingEquiv.toAddEquiv_eq_coe,
-    RingEquiv.coe_toAddEquiv, Ideal.Quotient.mk_eq_mk]
-  exact Prod.ext rfl (RingHom.congr_fun (Int.quotientSpanNatEquivZMod_comp_Quotient_mk 2) _)
+  -- apply `homologyOneLinearEquiv_homologyπ` and `Submodule.quotEquivOfEq_mk` before `simp`
+  -- normalizes `1 - (-1)` in their targets
+  simp only [homologyOneKleinBottleLinearEquiv, LinearEquiv.trans_apply,
+    homologyOneLinearEquiv_homologyπ, LinearEquiv.prodCongr_apply, Submodule.quotEquivOfEq_mk]
+  simp
 
 /-- **`H₂ = 0` for the Klein bottle model over `ℤ`**: the edge of the maximum circle has
 boundary twice its vertex, so no nonzero multiple of it is a cycle. -/
