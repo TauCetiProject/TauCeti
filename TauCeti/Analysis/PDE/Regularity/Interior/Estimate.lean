@@ -9,9 +9,11 @@ public import Mathlib.Topology.MetricSpace.Thickening
 public import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.PDE.Caccioppoli.LowerOrder
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
+import TauCeti.Data.ENNReal.Mul
 import TauCeti.MeasureTheory.Function.Lp.Restriction
 import TauCeti.MeasureTheory.Function.LpSeminorm.Ball
 import TauCeti.Topology.Instances.Matrix
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # The interior `H²` estimate in terms of the forcing and the solution
@@ -25,7 +27,7 @@ The interior estimate on balls
 (`TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball`) bounds the
 second weak derivatives of `u` on `B(x₀, r)` by the `L²` norms of `f`, `∇u` and `u` on
 `B(x₀, 2 r)`. This file removes `∇u` from the right-hand side: by Caccioppoli's inequality with
-lower-order terms (`TauCeti.PDE.exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder`), the
+lower-order terms (`TauCeti.PDE.exists_toReal_eLpNorm_gradient_ball_le_eLpNorm_value`), the
 gradient on `B(x₀, 2 r)` is bounded by `f` and `u` on `B(x₀, 4 r)`. The result is the classical
 form of the interior estimate,
 
@@ -50,14 +52,13 @@ dimensionless parameters `Λ / λ`, `δ β / λ`, `δ K / λ` and `δ² γ / λ`
 need not be bounded. The estimates on the balls `B(z, r)` of a fixed radius `r ∼ δ` that meet `V`
 are averaged over their centres (`TauCeti.eLpNorm_restrict_le_of_forall_ball_inter_nonempty`),
 which replaces a covering of `V` by balls with bounded overlap, and the local second derivatives
-on these balls glue to weak derivatives on `V` (`TauCeti.exists_hasWeakLineDerivOn_iSup`).
+on these balls glue to weak derivatives on `V`
+(`TauCeti.exists_hasWeakLineDerivOn_eLpNorm_le_of_forall_ball_inter_nonempty`).
 
 ## Main declarations
 
 * `TauCeti.PDE.UniformlyEllipticOn.exists_norm_le_eLpNorm_value_hasWeakLineDerivOn_gradient_ball`:
   **the interior `H²` estimate on balls** in terms of the forcing and the solution.
-* `TauCeti.PDE.exists_toReal_eLpNorm_gradient_ball_le_eLpNorm_value`: Caccioppoli's inequality on
-  balls in dimensionless form, `‖∇u‖_{L²(B(x₀, r))} ≤ C (‖u‖ / r + r ‖f‖ / λ)`.
 * `TauCeti.PDE.exists_toReal_eLpNorm_gradient_le_of_thickening`: the interior gradient
   estimate on a set at distance `δ` from the boundary.
 * **The interior `H²` estimate on a set at distance `δ` from the boundary**, in the
@@ -84,84 +85,36 @@ namespace PDE
 
 variable {ι : Type*} [Fintype ι]
 
-/-- The coefficient of `‖u‖²` in Caccioppoli's inequality from `B(x₀, 2 r)` to `B(x₀, 4 r)` is at
-most `((Q + 1) / r)²`, with `Q = 2 M² C² + 4 M² + 4 M + 1/8`, under the dimensionless bounds
-`Λ, r β, r² γ ≤ M λ`. -/
-private theorem le_sq_div_of_le_mul {Lam lam β γ r C M : ℝ} (hlam : 0 < lam) (hr : 0 < r)
-    (hΛ0 : 0 ≤ Lam) (hβ0 : 0 ≤ β) (hΛ : Lam ≤ M * lam) (hβ : r * β ≤ M * lam)
-    (hγ : r ^ 2 * γ ≤ M * lam) :
-    2 * (2 * Lam / lam) ^ 2 * (C / (4 * r - 2 * r)) ^ 2 + (2 * β / lam) ^ 2 + 4 * γ / lam +
-        2 / (4 * r) ^ 2 ≤ ((2 * M ^ 2 * C ^ 2 + 4 * M ^ 2 + 4 * M + 1 / 8 + 1) / r) ^ 2 := by
-  have hM : 0 ≤ M := nonneg_of_mul_nonneg_left (hΛ0.trans hΛ) hlam
-  have h1 : Lam / lam ≤ M := by rw [div_le_iff₀ hlam]; linarith
-  have h2 : r * β / lam ≤ M := by rw [div_le_iff₀ hlam]; linarith
-  have h3 : r ^ 2 * γ / lam ≤ M := by rw [div_le_iff₀ hlam]; linarith
-  have he : 2 * (2 * Lam / lam) ^ 2 * (C / (4 * r - 2 * r)) ^ 2 + (2 * β / lam) ^ 2 +
-      4 * γ / lam + 2 / (4 * r) ^ 2 = (2 * (Lam / lam) ^ 2 * C ^ 2 + 4 * (r * β / lam) ^ 2 +
-        4 * (r ^ 2 * γ / lam) + 1 / 8) / r ^ 2 := by
-    field_simp
-    ring
-  have hQ : 2 * (Lam / lam) ^ 2 * C ^ 2 + 4 * (r * β / lam) ^ 2 + 4 * (r ^ 2 * γ / lam) + 1 / 8 ≤
-      2 * M ^ 2 * C ^ 2 + 4 * M ^ 2 + 4 * M + 1 / 8 := by
-    have : 0 ≤ Lam / lam := by positivity
-    have : 0 ≤ r * β / lam := by positivity
-    gcongr
-  rw [he, div_pow (_ + 1) r 2, div_le_div_iff_of_pos_right (by positivity)]
-  have : 0 ≤ 2 * M ^ 2 * C ^ 2 + 4 * M ^ 2 + 4 * M + 1 / 8 := by positivity
-  nlinarith
-
-/-- Caccioppoli's inequality from `B(x₀, 2 r)` to `B(x₀, 4 r)`, in terms of the norms `G₂` of
-`∇u`, and `U₄`, `F₄` of `u` and `f`, gives `G₂ ≤ (Q + 1) U₄ / r + 6 r F₄ / λ` under the
-dimensionless bounds `Λ, r β, r² γ ≤ M λ`. -/
-private theorem le_div_mul_add_mul_of_sq_le {Lam lam β γ r C M G₂ U₄ F₄ : ℝ} (hlam : 0 < lam)
-    (hr : 0 < r) (hΛ0 : 0 ≤ Lam) (hβ0 : 0 ≤ β) (hG₂ : 0 ≤ G₂) (hU₄ : 0 ≤ U₄) (hF₄ : 0 ≤ F₄)
-    (hΛ : Lam ≤ M * lam) (hβ : r * β ≤ M * lam) (hγ : r ^ 2 * γ ≤ M * lam)
-    (hcacc : G₂ ^ 2 ≤ (2 * (2 * Lam / lam) ^ 2 * (C / (4 * r - 2 * r)) ^ 2 + (2 * β / lam) ^ 2 +
-      4 * γ / lam + 2 / (4 * r) ^ 2) * U₄ ^ 2 + 2 * (4 * r / lam) ^ 2 * F₄ ^ 2) :
-    G₂ ≤ (2 * M ^ 2 * C ^ 2 + 4 * M ^ 2 + 4 * M + 1 / 8 + 1) / r * U₄ + 6 * r / lam * F₄ := by
-  have hM : 0 ≤ M := nonneg_of_mul_nonneg_left (hΛ0.trans hΛ) hlam
-  have hP := le_sq_div_of_le_mul (C := C) hlam hr hΛ0 hβ0 hΛ hβ hγ
-  set Q := 2 * M ^ 2 * C ^ 2 + 4 * M ^ 2 + 4 * M + 1 / 8 + 1
-  have h6 : 2 * (4 * r / lam) ^ 2 ≤ (6 * r / lam) ^ 2 := by
-    rw [div_pow, div_pow, ← mul_div_assoc, div_le_div_iff_of_pos_right (by positivity)]
-    nlinarith
-  refine (pow_le_pow_iff_left₀ hG₂ (by positivity) two_ne_zero).1 ?_
-  nlinarith [mul_le_mul_of_nonneg_right hP (sq_nonneg U₄),
-    mul_le_mul_of_nonneg_right h6 (sq_nonneg F₄),
-    mul_nonneg (mul_nonneg (by positivity : (0 : ℝ) ≤ Q / r) hU₄)
-      (mul_nonneg (by positivity : (0 : ℝ) ≤ 6 * r / lam) hF₄)]
-
 /-- The arithmetic of the interior `H²` estimate in terms of the forcing and the solution: the
 interior estimate on balls with norms `F₂`, `G₂`, `U₂` of `f`, `∇u`, `u` on `B(x₀, 2 r)`, and
 Caccioppoli's inequality bounding `G₂` by the norms `F₄`, `U₄` on `B(x₀, 4 r)`, give a bound by
 `F₄ / λ + U₄ / r²` alone. -/
 private theorem le_mul_div_add_div_of_le {X Y F₂ F₄ G₂ U₂ U₄ Lam lam β γ r K C₁ C₂ M : ℝ}
-    (hlam : 0 < lam) (hr : 0 < r) (hΛ0 : 0 ≤ Lam) (hβ0 : 0 ≤ β)
-    (hC₁ : 0 ≤ C₁) (hY : 0 ≤ Y) (hG₂ : 0 ≤ G₂) (hU₂ : 0 ≤ U₂) (hF₄ : 0 ≤ F₄)
+    (hlam : 0 < lam) (hr : 0 < r) (hΛ0 : 0 ≤ Lam) (hC₁ : 0 ≤ C₁) (hC₂ : 0 ≤ C₂) (hY : 0 ≤ Y)
+    (hG₂ : 0 ≤ G₂) (hU₂ : 0 ≤ U₂) (hF₄ : 0 ≤ F₄)
     (hΛ : Lam ≤ M * lam) (hβ : r * β ≤ M * lam) (hK : r * K ≤ M * lam) (hγ : r ^ 2 * γ ≤ M * lam)
     (hF : F₂ ≤ F₄) (hU : U₂ ≤ U₄)
     (hX : X ≤ Y * (F₂ + (β + 2 * K + C₁ * Lam / r) * G₂ +
       (γ + C₁ * K / r + C₁ * Lam / r ^ 2) * U₂) / lam)
-    (hcacc : G₂ ^ 2 ≤ (2 * (2 * Lam / lam) ^ 2 * (C₂ / (4 * r - 2 * r)) ^ 2 + (2 * β / lam) ^ 2 +
-      4 * γ / lam + 2 / (4 * r) ^ 2) * U₄ ^ 2 + 2 * (4 * r / lam) ^ 2 * F₄ ^ 2) :
-    X ≤ (1 + 6 * ((3 + C₁) * M) + ((3 + C₁) * M * (2 * M ^ 2 * C₂ ^ 2 + 4 * M ^ 2 + 4 * M +
-      1 / 8 + 1) + (1 + 2 * C₁) * M)) * Y * (F₄ / lam + U₄ / r ^ 2) := by
+    (hG : G₂ ≤ C₂ * (U₄ / (2 * r) + 2 * r * F₄ / lam)) :
+    X ≤ (1 + 2 * ((3 + C₁) * M * C₂) + ((3 + C₁) * M * C₂ + (1 + 2 * C₁) * M)) * Y *
+      (F₄ / lam + U₄ / r ^ 2) := by
   have hM : 0 ≤ M := nonneg_of_mul_nonneg_left (hΛ0.trans hΛ) hlam
-  set Q := 2 * M ^ 2 * C₂ ^ 2 + 4 * M ^ 2 + 4 * M + 1 / 8 + 1
   have hU₄ : 0 ≤ U₄ := hU₂.trans hU
-  have hG := le_div_mul_add_mul_of_sq_le hlam hr hΛ0 hβ0 hG₂ hU₄ hF₄ hΛ hβ hγ hcacc
   -- The coefficients of the gradient and value terms are at most `m₁ λ / r` and `m₂ λ / r²`.
   set m₁ := (3 + C₁) * M
   set m₂ := (1 + 2 * C₁) * M
-  have hA₁ : (β + 2 * K + C₁ * Lam / r) * G₂ ≤ m₁ * Q * lam * (U₄ / r ^ 2) + 6 * m₁ * F₄ := by
+  have hA₁ : (β + 2 * K + C₁ * Lam / r) * G₂ ≤ m₁ * C₂ * lam * (U₄ / r ^ 2) + 2 * m₁ * C₂ * F₄ := by
     have : β + 2 * K + C₁ * Lam / r ≤ m₁ * lam / r := by
       rw [le_div_iff₀ hr, add_mul, add_mul, div_mul_cancel₀ _ hr.ne']
       nlinarith [mul_le_mul_of_nonneg_left hΛ hC₁]
+    have h₀ : 0 ≤ m₁ * C₂ * lam * (U₄ / r ^ 2) := by positivity
     calc (β + 2 * K + C₁ * Lam / r) * G₂ ≤ m₁ * lam / r * G₂ :=
           mul_le_mul_of_nonneg_right this hG₂
-      _ ≤ m₁ * lam / r * (Q / r * U₄ + 6 * r / lam * F₄) :=
+      _ ≤ m₁ * lam / r * (C₂ * (U₄ / (2 * r) + 2 * r * F₄ / lam)) :=
           mul_le_mul_of_nonneg_left hG (by positivity)
-      _ = _ := by field_simp
+      _ = m₁ * C₂ * lam * (U₄ / r ^ 2) / 2 + 2 * m₁ * C₂ * F₄ := by field_simp
+      _ ≤ _ := by linarith
   have hA₂ : (γ + C₁ * K / r + C₁ * Lam / r ^ 2) * U₂ ≤ m₂ * lam * (U₄ / r ^ 2) := by
     have : γ + C₁ * K / r + C₁ * Lam / r ^ 2 ≤ m₂ * lam / r ^ 2 := by
       rw [le_div_iff₀ (by positivity)]
@@ -175,20 +128,20 @@ private theorem le_mul_div_add_div_of_le {X Y F₂ F₄ G₂ U₂ U₄ Lam lam �
       _ ≤ m₂ * lam / r ^ 2 * U₄ := mul_le_mul_of_nonneg_left hU (by positivity)
       _ = _ := by ring
   have hsum : (F₂ + (β + 2 * K + C₁ * Lam / r) * G₂ + (γ + C₁ * K / r + C₁ * Lam / r ^ 2) * U₂)
-      / lam ≤ (1 + 6 * m₁ + (m₁ * Q + m₂)) * (F₄ / lam + U₄ / r ^ 2) := by
+      / lam ≤ (1 + 2 * (m₁ * C₂) + (m₁ * C₂ + m₂)) * (F₄ / lam + U₄ / r ^ 2) := by
     rw [div_le_iff₀ hlam]
-    have e : (1 + 6 * m₁ + (m₁ * Q + m₂)) * (F₄ / lam + U₄ / r ^ 2) * lam =
-        F₄ + 6 * m₁ * F₄ + m₁ * Q * lam * (U₄ / r ^ 2) + m₂ * lam * (U₄ / r ^ 2) +
-          (m₁ * Q + m₂) * F₄ + (1 + 6 * m₁) * lam * (U₄ / r ^ 2) := by
+    have e : (1 + 2 * (m₁ * C₂) + (m₁ * C₂ + m₂)) * (F₄ / lam + U₄ / r ^ 2) * lam =
+        F₄ + 2 * m₁ * C₂ * F₄ + m₁ * C₂ * lam * (U₄ / r ^ 2) + m₂ * lam * (U₄ / r ^ 2) +
+          (m₁ * C₂ + m₂) * F₄ + (1 + 2 * (m₁ * C₂)) * lam * (U₄ / r ^ 2) := by
       field_simp
       ring
     rw [e]
-    have h₁ : 0 ≤ (m₁ * Q + m₂) * F₄ := by positivity
-    have h₂ : 0 ≤ (1 + 6 * m₁) * lam * (U₄ / r ^ 2) := by positivity
+    have h₁ : 0 ≤ (m₁ * C₂ + m₂) * F₄ := by positivity
+    have h₂ : 0 ≤ (1 + 2 * (m₁ * C₂)) * lam * (U₄ / r ^ 2) := by positivity
     linarith
   calc X ≤ Y * ((F₂ + (β + 2 * K + C₁ * Lam / r) * G₂ +
         (γ + C₁ * K / r + C₁ * Lam / r ^ 2) * U₂) / lam) := by rwa [mul_div_assoc] at hX
-    _ ≤ Y * ((1 + 6 * m₁ + (m₁ * Q + m₂)) * (F₄ / lam + U₄ / r ^ 2)) :=
+    _ ≤ Y * ((1 + 2 * (m₁ * C₂) + (m₁ * C₂ + m₂)) * (F₄ / lam + U₄ / r ^ 2)) :=
         mul_le_mul_of_nonneg_left hsum hY
     _ = _ := by ring
 
@@ -239,17 +192,16 @@ theorem UniformlyEllipticOn.exists_norm_le_eLpNorm_value_hasWeakLineDerivOn_grad
           (fun x => ⟪W1p.gradient u x, y⟫_ℝ) G w := by
   obtain ⟨C₁, hC₁, hball⟩ :=
     UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball (ι := ι)
-  obtain ⟨C₂, hcacc⟩ := exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder (ι := ι)
   set M' := max M 0
-  refine ⟨1 + 6 * ((3 + C₁) * M') + ((3 + C₁) * M' * (2 * M' ^ 2 * C₂ ^ 2 + 4 * M' ^ 2 +
-    4 * M' + 1 / 8 + 1) + (1 + 2 * C₁) * M'), by positivity, ?_⟩
+  -- Caccioppoli's inequality on `B(x₀, 2 r) ⊆ B(x₀, 4 r)`, whose dimensionless parameters are at
+  -- most `4 M'`.
+  obtain ⟨C₂, hC₂, hcacc⟩ := exists_toReal_eLpNorm_gradient_ball_le_eLpNorm_value (ι := ι) (4 * M')
+  refine ⟨1 + 2 * ((3 + C₁) * M' * C₂) + ((3 + C₁) * M' * C₂ + (1 + 2 * C₁) * M'), by positivity,
+    ?_⟩
   intro mu _ Omega a b c x₀ r lam Lam β γ K f u hr hΩ ha hK hb hc hβ hγ hMΛ hMβ hMK hMγ hu y w
   have hlam := ha.pos
   have hMlam : M * lam ≤ M' * lam := mul_le_mul_of_nonneg_right (le_max_left _ _) hlam.le
-  -- The ball has positive measure, so the almost everywhere bound forces `0 ≤ β`.
-  have : (ae (mu.restrict (Metric.ball x₀ (4 * r)))).NeBot :=
-    ae_restrict_neBot.2 (Metric.measure_ball_pos mu x₀ (by positivity)).ne'
-  have hβ0 : 0 ≤ β := let ⟨_, hx⟩ := hβ.exists; (norm_nonneg _).trans hx
+  have hM'lam : 0 ≤ M' * lam := mul_nonneg (le_max_right _ _) hlam.le
   have h24 : Metric.ball x₀ (2 * r) ⊆ Metric.ball x₀ (4 * r) :=
     Metric.ball_subset_ball (by linarith)
   -- The interior estimate on `B(x₀, r)`, with the norms of `f`, `∇u` and `u` on `B(x₀, 2 r)`.
@@ -258,13 +210,20 @@ theorem UniformlyEllipticOn.exists_norm_le_eLpNorm_value_hasWeakLineDerivOn_grad
     hu y w
   refine ⟨G, ?_, hGd⟩
   -- Caccioppoli's inequality bounds `∇u` on `B(x₀, 2 r)` by `u` and `f` on `B(x₀, 4 r)`.
-  have hcU := hcacc mu (r := 2 * r) (by positivity) (by linarith) hΩ ha
-    ((continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
-      Metric.isOpen_ball.measurableSet)
-    (hb.aestronglyMeasurable.mono_measure (Measure.restrict_mono hΩ le_rfl))
-    (hc.aestronglyMeasurable.mono_measure (Measure.restrict_mono hΩ le_rfl)) hβ hγ hu
+  have hcU : (eLpNorm (W1p.gradient u) 2 (mu.restrict (Metric.ball x₀ (2 * r)))).toReal ≤
+      C₂ * ((eLpNorm (W1p.value u) 2 (mu.restrict (Metric.ball x₀ (4 * r)))).toReal / (2 * r) +
+        2 * r * (eLpNorm f 2 (mu.restrict (Metric.ball x₀ (4 * r)))).toReal / lam) := by
+    have h4 : 4 * r = 2 * (2 * r) := by ring
+    have ham : AEStronglyMeasurable a (mu.restrict (Metric.ball x₀ (4 * r))) :=
+      (continuousOn_of_continuousOn_matrixBilinearForm hK.continuousOn).aestronglyMeasurable
+        Metric.isOpen_ball.measurableSet
+    rw [h4] at hΩ ha ham hβ hγ ⊢
+    exact hcacc mu (by positivity) hΩ ha ham
+      (hb.aestronglyMeasurable.mono_measure (Measure.restrict_mono hΩ le_rfl))
+      (hc.aestronglyMeasurable.mono_measure (Measure.restrict_mono hΩ le_rfl)) hβ hγ
+      (by nlinarith) (by nlinarith) (by nlinarith) hu
   rw [mul_assoc _ ‖y‖]
-  exact le_mul_div_add_div_of_le hlam hr ha.upper_nonneg hβ0 hC₁ (by positivity)
+  exact le_mul_div_add_div_of_le hlam hr ha.upper_nonneg hC₁ hC₂ (by positivity)
     ENNReal.toReal_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg (hMΛ.trans hMlam)
     (hMβ.trans hMlam) (hMK.trans hMlam) (hMγ.trans hMlam) (Lp.toReal_eLpNorm_restrict_mono f h24 hΩ)
     (Lp.toReal_eLpNorm_restrict_mono _ h24 hΩ) hG hcU
@@ -275,27 +234,6 @@ theorem UniformlyEllipticOn.exists_norm_le_eLpNorm_value_hasWeakLineDerivOn_grad
 private theorem mul_le_of_mul_le_of_le {r δ t m : ℝ} (hr : 0 ≤ r) (hrδ : r ≤ δ)
     (h : δ * t ≤ m) (hm : 0 ≤ m) : r * t ≤ m := by
   rcases le_total 0 t with ht | ht <;> nlinarith
-
-/-- A ball `B(y, r)` that meets `V` has its enlargement `B(y, κ r)` in the `δ`-thickening of `V`
-when `(κ + 1) r ≤ δ`. -/
-private theorem ball_mul_subset_thickening {V : Set (EuclideanSpace ℝ ι)} {y : EuclideanSpace ℝ ι}
-    {r κ δ : ℝ} (hy : (Metric.ball y r ∩ V).Nonempty) (h : (κ + 1) * r ≤ δ) :
-    Metric.ball y (κ * r) ⊆ Metric.thickening δ V := by
-  obtain ⟨x, hxy, hxV⟩ := hy
-  refine (Metric.ball_subset_ball' ?_).trans (Metric.ball_subset_thickening hxV δ)
-  rw [dist_comm]
-  linarith [Metric.mem_ball.1 hxy]
-
-/-- A real bound `X ≤ c₁ A + c₂ B` between finite extended reals, with `c₁, c₂ ≥ 0`, in the form
-`X ≤ ofReal c₁ * A + ofReal c₂ * B` that the averaging over balls consumes. -/
-private theorem le_ofReal_mul_add_ofReal_mul_of_toReal_le {X A B : ℝ≥0∞} {c₁ c₂ : ℝ}
-    (hX : X ≠ ⊤) (hA : A ≠ ⊤) (hB : B ≠ ⊤) (hc₁ : 0 ≤ c₁) (hc₂ : 0 ≤ c₂)
-    (h : X.toReal ≤ c₁ * A.toReal + c₂ * B.toReal) :
-    X ≤ ENNReal.ofReal c₁ * A + ENNReal.ofReal c₂ * B := by
-  rw [← ENNReal.ofReal_toReal hX, ← ENNReal.ofReal_toReal hA, ← ENNReal.ofReal_toReal hB,
-    ← ENNReal.ofReal_mul hc₁, ← ENNReal.ofReal_mul hc₂,
-    ← ENNReal.ofReal_add (by positivity) (by positivity)]
-  exact ENNReal.ofReal_le_ofReal h
 
 /-- The output `2 κ ^ n (c₁ A + c₂ B)` of the averaging over balls, with `A`, `B` finite, is at
 most `ofReal X` for every real `X ≥ 2 κ ^ n (c₁ A + c₂ B)`. -/
@@ -346,105 +284,6 @@ private theorem add_mul_add_mul_le {W P t C₂ N : ℝ} (hW : W ≤ P) (hP : 0 �
     mul_nonneg (mul_nonneg hN hP) (sq_nonneg t), mul_nonneg hP (sq_nonneg t),
     mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right ht' hP) hC₂]
 
-/-- Weak derivatives of `g` in the direction `w` on the balls `B(z, r)` that meet `V`, with local
-`L²` bounds by `f₁` and `f₂` on the enlarged balls `B(z, κ r) ⊆ T`, glue to a weak derivative on `V`
-whose `L²(V)` norm satisfies the averaged bound. -/
-private theorem exists_hasWeakLineDerivOn_eLpNorm_le_of_forall_ball_inter_nonempty
-    {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure] {V : Opens (EuclideanSpace ℝ ι)}
-    {T : Set (EuclideanSpace ℝ ι)} (hT : MeasurableSet T) {g f₁ f₂ : EuclideanSpace ℝ ι → ℝ}
-    (hf₁ : AEStronglyMeasurable f₁ (mu.restrict T)) (hf₂ : AEStronglyMeasurable f₂ (mu.restrict T))
-    {w : EuclideanSpace ℝ ι} {r κ c₁ c₂ : ℝ} (hr : 0 < r) (hκ : 1 ≤ κ)
-    (h : ∀ z, (Metric.ball z r ∩ V).Nonempty → Metric.ball z (κ * r) ⊆ T ∧
-      ∃ G : EuclideanSpace ℝ ι → ℝ,
-        HasWeakLineDerivOn mu ⟨Metric.ball z r, Metric.isOpen_ball⟩ g G w ∧
-        eLpNorm G 2 (mu.restrict (Metric.ball z r)) ≤
-          ENNReal.ofReal c₁ * eLpNorm f₁ 2 (mu.restrict (Metric.ball z (κ * r))) +
-            ENNReal.ofReal c₂ * eLpNorm f₂ 2 (mu.restrict (Metric.ball z (κ * r)))) :
-    ∃ G : EuclideanSpace ℝ ι → ℝ, HasWeakLineDerivOn mu V g G w ∧
-      eLpNorm G 2 (mu.restrict V) ≤ 2 * ENNReal.ofReal κ ^ Fintype.card ι *
-        (ENNReal.ofReal c₁ * eLpNorm f₁ 2 (mu.restrict T) +
-          ENNReal.ofReal c₂ * eLpNorm f₂ 2 (mu.restrict T)) := by
-  choose hsub G hGd hGle using h
-  -- The balls meeting `V` cover it, and the local derivatives glue along them.
-  let Z := {z : EuclideanSpace ℝ ι // (Metric.ball z r ∩ V).Nonempty}
-  let B : Z → Opens (EuclideanSpace ℝ ι) := fun z =>
-    ⟨Metric.ball (z : EuclideanSpace ℝ ι) r, Metric.isOpen_ball⟩
-  have hB : ∀ z : Z, HasWeakLineDerivOn mu (B z) g (G z z.property) w := fun z =>
-    hGd z z.property
-  obtain ⟨G₀, hG₀, hG₀z⟩ := exists_hasWeakLineDerivOn_iSup B (fun z => G z z.property) hB
-  have hGV := hG₀.mono (Ω' := V) fun x hx =>
-    Opens.mem_iSup.2 ⟨⟨x, x, Metric.mem_ball_self hr, hx⟩, Metric.mem_ball_self hr⟩
-  refine ⟨G₀, hGV, ?_⟩
-  rw [← finrank_euclideanSpace (𝕜 := ℝ)]
-  exact eLpNorm_restrict_le_of_forall_ball_inter_nonempty one_le_two ENNReal.ofNat_ne_top
-    V.isOpen.measurableSet hT hGV.locallyIntegrableOn_deriv.aestronglyMeasurable hf₁ hf₂ hκ hr
-    fun z hz => ⟨hsub z hz, (eLpNorm_congr_ae (hG₀z ⟨z, hz⟩)).trans_le (hGle z hz)⟩
-
-/-- **Caccioppoli's inequality on balls, in dimensionless form.** Fix `M`. There is a constant `C`,
-depending only on the dimension `n` and on `M`, with the following property. Let `a` be measurable
-and uniformly elliptic on `B(x₀, 2 r) ⊆ Ω` with constants `λ ≤ Λ`, let `b`, `c` be measurable on
-`B(x₀, 2 r)` with `‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere there, and suppose that `Λ ≤ M λ`,
-`r β ≤ M λ` and `r² γ ≤ M λ`. Let `u ∈ H¹(Ω)` be a weak solution of
-
-`-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`
-
-and no boundary condition. Then
-
-`‖∇u‖_{L²(B(x₀, r))} ≤ C (‖u‖ / r + r ‖f‖ / λ)`,
-
-the norms on the right being those of `L²(B(x₀, 2 r))`. Both sides scale in the same way under the
-dilations `x ↦ x₀ + r x`. -/
-theorem exists_toReal_eLpNorm_gradient_ball_le_eLpNorm_value [DecidableEq ι] (M : ℝ) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
-      ⦃Omega : Opens (EuclideanSpace ℝ ι)⦄ ⦃a : EuclideanSpace ℝ ι → Matrix ι ι ℝ⦄
-      ⦃b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι⦄ ⦃c : EuclideanSpace ℝ ι → ℝ⦄
-      ⦃x₀ : EuclideanSpace ℝ ι⦄ ⦃r lam Lam β γ : ℝ⦄
-      ⦃f : Lp ℝ 2 (mu.restrict Omega)⦄ ⦃u : W1p mu Omega 2⦄,
-      0 < r → Metric.ball x₀ (2 * r) ⊆ Omega →
-      UniformlyEllipticOn (Metric.ball x₀ (2 * r)) a lam Lam →
-      AEStronglyMeasurable a (mu.restrict (Metric.ball x₀ (2 * r))) →
-      AEStronglyMeasurable b (mu.restrict (Metric.ball x₀ (2 * r))) →
-      AEStronglyMeasurable c (mu.restrict (Metric.ball x₀ (2 * r))) →
-      (∀ᵐ x ∂mu.restrict (Metric.ball x₀ (2 * r)), ‖b x‖ ≤ β) →
-      (∀ᵐ x ∂mu.restrict (Metric.ball x₀ (2 * r)), |c x| ≤ γ) →
-      Lam ≤ M * lam → r * β ≤ M * lam → r ^ 2 * γ ≤ M * lam →
-      (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
-        ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
-      (eLpNorm (W1p.gradient u) 2 (mu.restrict (Metric.ball x₀ r))).toReal ≤
-        C * ((eLpNorm (W1p.value u) 2 (mu.restrict (Metric.ball x₀ (2 * r)))).toReal / r +
-          r * (eLpNorm f 2 (mu.restrict (Metric.ball x₀ (2 * r)))).toReal / lam) := by
-  obtain ⟨C₂, hcacc⟩ := exists_sq_toReal_eLpNorm_gradient_ball_le_lowerOrder (ι := ι)
-  set Q := 2 * M ^ 2 * C₂ ^ 2 + 4 * M ^ 2 + 4 * M + 1 / 8 + 1
-  refine ⟨3 * max Q 0, by positivity, ?_⟩
-  intro mu _ Omega a b c x₀ r lam Lam β γ f u hr hΩ ha ham hbm hcm hβ hγ hMΛ hMβ hMγ hu
-  have hlam := ha.pos
-  have hM0 : 0 ≤ M * lam := ha.upper_nonneg.trans hMΛ
-  have hM : 0 ≤ M := nonneg_of_mul_nonneg_left hM0 hlam
-  have hQ : 1 ≤ Q := by simp only [Q]; nlinarith
-  -- The ball has positive measure, so the almost everywhere bound forces `0 ≤ β`.
-  have : (ae (mu.restrict (Metric.ball x₀ (2 * r)))).NeBot :=
-    ae_restrict_neBot.2 (Metric.measure_ball_pos mu x₀ (by positivity)).ne'
-  have hβ0 : 0 ≤ β := let ⟨_, hx⟩ := hβ.exists; (norm_nonneg _).trans hx
-  -- Caccioppoli's inequality from `B(x₀, 2 (r / 2))` to `B(x₀, 4 (r / 2))`, in real form.
-  have hcU := hcacc mu (r := r) (R := 2 * r) (by positivity) (by linarith) hΩ ha ham hbm hcm hβ hγ
-    hu
-  rw [show 2 * r - r = 4 * (r / 2) - 2 * (r / 2) by ring, show 2 * r = 4 * (r / 2) by ring] at hcU
-  have hG := le_div_mul_add_mul_of_sq_le (C := C₂) (r := r / 2) hlam (by positivity)
-    ha.upper_nonneg hβ0 ENNReal.toReal_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg hMΛ
-    (mul_le_of_mul_le_of_le (by positivity) (by linarith) hMβ hM0)
-    (mul_le_of_mul_le_of_le (by positivity) (by nlinarith) hMγ hM0) hcU
-  rw [show 4 * (r / 2) = 2 * r by ring] at hG
-  set U := (eLpNorm (W1p.value u) 2 (mu.restrict (Metric.ball x₀ (2 * r)))).toReal
-  set F := (eLpNorm f 2 (mu.restrict (Metric.ball x₀ (2 * r)))).toReal
-  have e : Q / (r / 2) * U + 6 * (r / 2) / lam * F = 2 * Q * (U / r) + 3 * (r * F / lam) := by
-    field_simp
-    ring
-  rw [e] at hG
-  rw [max_eq_left (zero_le_one.trans hQ)]
-  have hUr : 0 ≤ U / r := by positivity
-  have hFr : 0 ≤ r * F / lam := by positivity
-  nlinarith [mul_nonneg (zero_le_one.trans hQ) hUr, mul_nonneg (sub_nonneg.2 hQ) hFr]
-
 /-- **The interior gradient estimate on a set at positive distance from the boundary.** Fix `M`.
 There is a constant `C`, depending only on the dimension `n` and on `M`, with the following
 property. Let `V` be open, let `δ > 0`, and let the `δ`-thickening `V_δ` of `V`, the points at
@@ -489,7 +328,7 @@ theorem exists_toReal_eLpNorm_gradient_le_of_thickening [DecidableEq ι] (M : �
   have hM0 : 0 ≤ M * lam := ha.upper_nonneg.trans hMΛ
   -- Every ball `B(z, δ / 3)` meeting `V` has `B(z, 2 δ / 3) ⊆ V_δ`.
   have hsub : ∀ z, (Metric.ball z (δ / 3) ∩ V).Nonempty → Metric.ball z (2 * (δ / 3)) ⊆ T :=
-    fun z hz => ball_mul_subset_thickening hz (by linarith)
+    fun z hz => ball_subset_thickening_of_inter_nonempty hz (by linarith)
   -- Average Caccioppoli's inequality on these balls over their centres.
   have hest := eLpNorm_restrict_le_of_forall_ball_inter_nonempty (μ := mu) (p := 2) one_le_two
     ENNReal.ofNat_ne_top V.isOpen.measurableSet Metric.isOpen_thickening.measurableSet
@@ -506,7 +345,7 @@ theorem exists_toReal_eLpNorm_gradient_le_of_thickening [DecidableEq ι] (M : �
         (two_mul_two_pow_mul_add_le _ hC₀ ENNReal.toReal_nonneg hlam hδ)))
   -- The local estimate on a ball meeting `V`.
   have hzT := hsub z hz
-  exact le_ofReal_mul_add_ofReal_mul_of_toReal_le
+  exact ENNReal.le_ofReal_mul_add_ofReal_mul_of_toReal_le
     (Lp.eLpNorm_restrict_ne_top _ ((Metric.ball_subset_ball (by linarith)).trans (hzT.trans hΩ)))
     (Lp.eLpNorm_restrict_ne_top _ (hzT.trans hΩ)) (Lp.eLpNorm_restrict_ne_top _ (hzT.trans hΩ))
     (by positivity) (by have := ha.pos; positivity) ((hball mu hr (hzT.trans hΩ) (ha.mono_set hzT)
@@ -577,10 +416,10 @@ theorem exists_norm_le_eLpNorm_value_hasWeakLineDerivOn_gradient_of_thickening
   set c₀ := C₀ * ‖y‖ * ‖w‖
   -- The estimate on balls applies on every ball `B(z, δ / 5)` meeting `V`: `B(z, 4 δ / 5) ⊆ V_δ`.
   have hsub : ∀ z, (Metric.ball z (δ / 5) ∩ V).Nonempty → Metric.ball z (4 * (δ / 5)) ⊆ T :=
-    fun z hz => ball_mul_subset_thickening hz (by linarith)
+    fun z hz => ball_subset_thickening_of_inter_nonempty hz (by linarith)
   -- Glue the local second derivatives and average their bounds.
   obtain ⟨G₀, hGV, hglob⟩ := exists_hasWeakLineDerivOn_eLpNorm_le_of_forall_ball_inter_nonempty
-    Metric.isOpen_thickening.measurableSet
+    one_le_two ENNReal.ofNat_ne_top Metric.isOpen_thickening.measurableSet
     ((Lp.aestronglyMeasurable f).mono_measure (Measure.restrict_mono hΩ le_rfl))
     ((Lp.aestronglyMeasurable (W1p.value u)).mono_measure (Measure.restrict_mono hΩ le_rfl))
     (c₁ := c₀ / lam) (c₂ := c₀ / (δ / 5) ^ 2) (κ := 4) hr (by norm_num) fun z hz => by
@@ -590,10 +429,11 @@ theorem exists_norm_le_eLpNorm_value_hasWeakLineDerivOn_gradient_of_thickening
         (ae_restrict_of_ae_restrict_of_subset (hsub z hz) hγ) hMΛ
         (mul_le_of_mul_le_of_le hr.le hrδ hMβ hM0) (mul_le_of_mul_le_of_le hr.le hrδ hMK hM0)
         (mul_le_of_mul_le_of_le (by positivity) (pow_le_pow_left₀ hr.le hrδ 2) hMγ hM0) hu y w
-      exact ⟨hsub z hz, G, hGd, le_ofReal_mul_add_ofReal_mul_of_toReal_le (Lp.eLpNorm_ne_top _)
-        (Lp.eLpNorm_restrict_ne_top f hzΩ) (Lp.eLpNorm_restrict_ne_top _ hzΩ) (by positivity)
-        (by positivity) (hG.trans_eq (by ring))⟩
+      exact ⟨hsub z hz, G, hGd, ENNReal.le_ofReal_mul_add_ofReal_mul_of_toReal_le
+        (Lp.eLpNorm_ne_top _) (Lp.eLpNorm_restrict_ne_top f hzΩ) (Lp.eLpNorm_restrict_ne_top _ hzΩ)
+        (by positivity) (by positivity) (hG.trans_eq (by ring))⟩
   -- The glued derivative lies in `L²(V)`, with the stated norm.
+  rw [finrank_euclideanSpace] at hglob
   replace hglob := hglob.trans (two_mul_ofReal_pow_mul_add_le (Lp.eLpNorm_restrict_ne_top f hΩ)
     (Lp.eLpNorm_restrict_ne_top _ hΩ) (by norm_num) (by positivity) (by positivity)
     (two_mul_four_pow_mul_add_le _ (by positivity) ENNReal.toReal_nonneg hlam hδ))

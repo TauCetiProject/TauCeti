@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Basic.ENNReal.Operations
 import Mathlib.Basic.ENNReal.Inv
+import Mathlib.Basic.ENNReal.Real
 
 /-!
 # Bounds by products in `ℝ≥0∞`
@@ -26,6 +27,8 @@ This is the shape of estimates such as `‖B(f, g)‖ ≤ C ‖B‖ ‖f‖ ‖g
   positive `ε` vanishes.
 * `ENNReal.add_le_coe_mul`, `ENNReal.coe_mul_le_coe_mul`, `ENNReal.le_coe_mul_of_le_mul_mul`:
   bookkeeping for linear bounds `x ≤ c A` with coefficients in `ℝ≥0`.
+* `ENNReal.le_ofReal_mul_add_ofReal_mul_of_toReal_le`: a real linear bound between finite
+  extended reals, read in `ℝ≥0∞` with coefficients `ENNReal.ofReal c`.
 
 ## References
 
@@ -110,5 +113,15 @@ theorem le_coe_mul_of_le_mul_mul {x a b A : ℝ≥0∞} {C M c : ℝ≥0} (h : x
   rw [show (↑(C * M * c) : ℝ≥0∞) * A = C * M * (c * A) by push_cast; ring]
   gcongr
 
+/-- A real bound `x ≤ c₁ A + c₂ B` between finite extended reals, with `c₁, c₂ ≥ 0`, as the
+linear bound `x ≤ ofReal c₁ * A + ofReal c₂ * B` in `ℝ≥0∞`. -/
+theorem le_ofReal_mul_add_ofReal_mul_of_toReal_le {x A B : ℝ≥0∞} {c₁ c₂ : ℝ} (hx : x ≠ ∞)
+    (hA : A ≠ ∞) (hB : B ≠ ∞) (hc₁ : 0 ≤ c₁) (hc₂ : 0 ≤ c₂)
+    (h : x.toReal ≤ c₁ * A.toReal + c₂ * B.toReal) :
+    x ≤ ENNReal.ofReal c₁ * A + ENNReal.ofReal c₂ * B := by
+  rw [← ENNReal.ofReal_toReal hx, ← ENNReal.ofReal_toReal hA, ← ENNReal.ofReal_toReal hB,
+    ← ENNReal.ofReal_mul hc₁, ← ENNReal.ofReal_mul hc₂,
+    ← ENNReal.ofReal_add (by positivity) (by positivity)]
+  exact ENNReal.ofReal_le_ofReal h
 
 end ENNReal

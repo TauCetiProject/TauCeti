@@ -51,10 +51,11 @@ exact form of the bounded-overlap count.
   inequalities, whose right-hand side is a power of a mean rather than a mean.
 * `TauCeti.eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add`: the same for local estimates by two
   functions on concentric balls of radii `r` and `κ r`, with the explicit constant `2 κ ^ d`.
-* `TauCeti.eLpNorm_restrict_le_of_forall_ball_inter_nonempty`: its local form, an estimate on a
-  set `V` from local estimates on the balls meeting `V`, whose enlargements lie in a set `T`.
 * `TauCeti.lpNorm_le_of_ae_lpNorm_restrict_ball_le_add`: its case `κ = 2` for `lpNorm`, with the
   constant `2 ^ (d + 1)`.
+* `TauCeti.eLpNorm_restrict_le_of_forall_ball_inter_nonempty`: the local form of
+  `TauCeti.eLpNorm_le_of_ae_eLpNorm_restrict_ball_le_add`, an estimate on a set `V` from local
+  estimates on the balls meeting `V`, whose enlargements lie in a set `T`.
 * `TauCeti.measure_ball_rpow_mul_eLpNorm_restrict_ball_le`: Hölder's inequality on a ball, scaled
   by the volume of a concentric smaller ball.
 -/
