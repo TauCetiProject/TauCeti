@@ -76,8 +76,8 @@ theorem continuousSMul_integralClosure [Algebra.IsAlgebraic K L]
   have h : (MulAction.stabilizer Gal(L/K) x : Set Gal(L/K)) =
       MulAction.stabilizer Gal(L/K) (x : L) :=
     Set.ext fun σ ↦ MulAction.mem_stabilizer_iff.trans <| by
-      rw [Subtype.ext_iff, integralClosure.coe_smul]
-      rfl
+      rw [Subtype.ext_iff, integralClosure.coe_smul, SetLike.mem_coe,
+        MulAction.mem_stabilizer_iff]
   rw [h]
   exact stabilizer_isOpen_of_isIntegral (x : L)
 

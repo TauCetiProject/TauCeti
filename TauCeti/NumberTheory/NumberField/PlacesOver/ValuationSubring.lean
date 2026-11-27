@@ -58,14 +58,12 @@ conjugacy of the places above a given place.
 
 ## Main results
 
-* `AbsoluteValue.Place.valuationSubring_injective`: a finite place is determined by its valuation
+* `AbsoluteValue.Place.eq_of_valuationSubring_eq`: a finite place is determined by its valuation
   subring.
 * `AbsoluteValue.Place.exists_valuationSubring_eq`: for `L` algebraic over `ℚ`, every valuation
   subring of `L` other than `L` is that of a finite place.
 * `AbsoluteValue.Place.finitePlaceEquivValuationSubring`: the bijection.
 * `AbsoluteValue.Place.exists_under_eq_padic`: a place above each prime number.
-* `AbsoluteValue.Place.apply_natCast_lt_one_of_under_eq_padic`: a place above `p` is less than one
-  at `p`.
 * `AbsoluteValue.Place.exists_under_eq`, `AbsoluteValue.Place.exists_smul_eq_of_under_eq`,
   `AbsoluteValue.Place.exists_smul_eq_of_under_eq_of_surjective`: existence and conjugacy of
   places above a place.
@@ -170,7 +168,7 @@ end Center
 variable {L : Type*} [Field L] [CharZero L]
 
 /-- **A finite place is determined by its valuation subring.** -/
-theorem valuationSubring_injective {v w : Place L} (hv : IsNonarchimedean v.val)
+theorem eq_of_valuationSubring_eq {v w : Place L} (hv : IsNonarchimedean v.val)
     (hw : IsNonarchimedean w.val) (h : v.val.valuationSubring hv = w.val.valuationSubring hw) :
     v = w :=
   eq_of_isEquiv ((isEquiv_iff_valuationSubring hv hw).mpr h)
@@ -193,33 +191,16 @@ private theorem valuationSubring_smul_eq {G : Type*} [Group G] [MulSemiringActio
 theorem exists_under_eq_padic [Algebra.IsAlgebraic ℚ L] (p : ℕ) [Fact p.Prime] :
     ∃ w : Place L, w.val.under ℚ = Rat.AbsoluteValue.padic p := by
   let φ : L →ₐ[ℚ] PadicAlgCl p := IsAlgClosed.lift
-  have hu : ((NormedField.toAbsoluteValue (PadicAlgCl p)).comp
-      (φ : L →+* PadicAlgCl p).injective).under ℚ = Rat.AbsoluteValue.padic p := by
+  have hu : (NormedField.toAbsoluteValue (PadicAlgCl p)).under ℚ = Rat.AbsoluteValue.padic p := by
     ext q
-    rw [AbsoluteValue.under_apply, comp_apply, AlgHom.coe_toRingHom, φ.commutes,
-      eq_ratCast (algebraMap ℚ _),
+    rw [AbsoluteValue.under_apply, eq_ratCast (algebraMap ℚ _),
       ← map_ratCast (algebraMap ℚ_[p] (PadicAlgCl p)), Rat.AbsoluteValue.padic_eq_padicNorm,
       ← Padic.eq_padicNorm q]
     exact PadicAlgCl.norm_extends p q
-  exact ⟨⟨_, hu ▸ .padic p⟩, hu⟩
-
-/-- A place above the prime number `p` takes a value less than one at `p`. -/
-theorem apply_natCast_lt_one_of_under_eq_padic {w : Place L} {p : ℕ} [Fact p.Prime]
-    (hp : w.val.under ℚ = Rat.AbsoluteValue.padic p) : w.val (p : L) < 1 := by
-  have h1 : w.val (p : L) = Rat.AbsoluteValue.padic p (p : ℚ) := by
-    rw [← hp, AbsoluteValue.under_apply]
-    simp
-  rw [h1, Rat.AbsoluteValue.padic_eq_padicNorm]
-  exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime
-
-/-- The place of `L` obtained by restricting a place of `M` along a `ℚ`-embedding `L → M`. -/
-private def comapAlgHom {M : Type*} [Field M] [CharZero M] (f : L →ₐ[ℚ] M) (w : Place M) :
-    Place L :=
-  ⟨w.val.comp (f : L →+* M).injective, by
-    have : (w.val.comp (f : L →+* M).injective).under ℚ = w.val.under ℚ :=
-      AbsoluteValue.ext fun q ↦ by simp [AbsoluteValue.under_apply, comp_apply]
-    rw [this]
-    exact w.isStandard_under⟩
+  let w₁ : Place (PadicAlgCl p) := ⟨NormedField.toAbsoluteValue _, hu ▸ .padic p⟩
+  refine ⟨w₁.comap (φ : L →+* PadicAlgCl p), ?_⟩
+  rw [← val_under, under_comap, val_under]
+  exact hu
 
 /-- **Every proper valuation subring is that of a finite place.** For `L` algebraic over `ℚ`, a
 valuation subring of `L` other than `L` is the valuation subring of a finite place of `L`. -/
@@ -243,10 +224,12 @@ theorem exists_valuationSubring_eq [Algebra.IsAlgebraic ℚ L] {A : ValuationSub
   obtain ⟨σ, hσ⟩ := ValuationSubring.exists_algEquiv_smul_eq_of_comap_eq_of_isGalois
     (comap_eq_of_intCenter_eq (intCenter_eq_of_mem hp hpA₀ hpA'))
   have hσn : IsNonarchimedean (σ • w₀).val := by rwa [val_smul, isNonarchimedean_smul_iff]
-  refine ⟨comapAlgHom f (σ • w₀),
-    isNonarchimedean_comp hσn (f : L →+* M).injective, ?_⟩
-  rw [← hA', ← hσ, ← valuationSubring_smul_eq σ w₀ hw₀n hσn]
-  exact valuationSubring_comp hσn (f : L →+* M).injective
+  have hcomap := val_comap (σ • w₀) (f : L →+* M)
+  refine ⟨(σ • w₀).comap (f : L →+* M),
+    hcomap ▸ isNonarchimedean_comp hσn (f : L →+* M).injective, ?_⟩
+  rw [← hA', ← hσ, ← valuationSubring_smul_eq σ w₀ hw₀n hσn,
+    ← valuationSubring_comp hσn (f : L →+* M).injective]
+  congr 1
 
 variable (L) in
 /-- **Finite places are proper valuation subrings.** For `L` algebraic over `ℚ`, `w ↦ A_w` is a
@@ -254,7 +237,7 @@ bijection from the finite places of `L` onto the valuation subrings of `L` other
 noncomputable def finitePlaceEquivValuationSubring [Algebra.IsAlgebraic ℚ L] :
     {w : Place L // IsNonarchimedean w.val} ≃ {A : ValuationSubring L // A ≠ ⊤} :=
   .ofBijective (fun w ↦ ⟨w.val.val.valuationSubring w.property, valuationSubring_ne_top _ _⟩)
-    ⟨fun v w h ↦ Subtype.ext (valuationSubring_injective v.property w.property
+    ⟨fun v w h ↦ Subtype.ext (eq_of_valuationSubring_eq v.property w.property
       (congrArg Subtype.val h)),
     fun A ↦ by
       obtain ⟨w, hw, h⟩ := exists_valuationSubring_eq A.property
@@ -293,7 +276,7 @@ theorem exists_under_eq [Algebra.IsAlgebraic ℚ L] (v : Place K) :
     obtain ⟨w, hw, rfl⟩ := exists_valuationSubring_eq hAtop
     have hwK' : IsNonarchimedean (w.under K).val :=
       (isNonarchimedean_iff_of_liesOver (K := K) w.val (w.under K).val).mp hw
-    refine ⟨w, valuationSubring_injective hwK' hv ?_⟩
+    refine ⟨w, eq_of_valuationSubring_eq hwK' hv ?_⟩
     rw [← hA, ← valuationSubring_under (L := K) hw]
     congr 1
     exact val_under ..
@@ -321,7 +304,7 @@ theorem exists_smul_eq_of_under_eq [IsGalois K L] {w w' : Place L} (h : w.under 
         congr 1
         rw [← val_under, ← val_under, h]
     have hσw : IsNonarchimedean (σ • w).val := by rwa [val_smul, isNonarchimedean_smul_iff]
-    exact ⟨σ, valuationSubring_injective hσw hw' (by rw [valuationSubring_smul_eq σ w hw, hσ])⟩
+    exact ⟨σ, eq_of_valuationSubring_eq hσw hw' (by rw [valuationSubring_smul_eq σ w hw, hσ])⟩
   · have hwK : ¬ IsNonarchimedean (w.under K).val := fun h' ↦
       hw ((isNonarchimedean_iff_of_liesOver (K := K) w.val (w.under K).val).mpr h')
     let u : NumberField.InfinitePlace K := ⟨(w.under K).val, (isInfinitePlace_iff _).mpr hwK⟩

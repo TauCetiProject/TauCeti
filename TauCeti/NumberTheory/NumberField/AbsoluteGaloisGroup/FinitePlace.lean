@@ -35,6 +35,8 @@ valuation subrings are the nonzero primes, which are the maximal ideals of `O`.
 * `TauCeti.GaloisRep.finitePlaceEquivMaximalIdeal`: finite places of `F^alg` are maximal ideals of
   `O`, with `x ∈ Q_w ↔ w x < 1` (`TauCeti.GaloisRep.mem_finitePlaceEquivMaximalIdeal_iff`).
 * `TauCeti.GaloisRep.isCenteredAt_finitePlaceEquivMaximalIdeal`: `A_w` is centred at `Q_w`.
+* `TauCeti.GaloisRep.valuationSubring_finitePlaceEquivMaximalIdeal_symm_apply`: the place
+  corresponding to a maximal ideal `Q` has valuation subring `O_Q`.
 * `TauCeti.GaloisRep.finitePlaceEquivMaximalIdeal_smul`: the bijection is `G_F`-equivariant.
 
 ## References
@@ -66,8 +68,8 @@ private theorem mem_centre_iff (w : {w : Place (AlgebraicClosure F) // IsNonarch
     (b : integralClosure (𝓞 F) (AlgebraicClosure F)) :
     b ∈ centre w ↔ w.val.val (b : AlgebraicClosure F) < 1 := by
   rw [centre, asIdeal_valuationSubringEquivPrimeSpectrum_apply, Valuation.mem_centerIdeal,
-    ← ValuationSubring.mem_nonunits_iff, mem_nonunits_valuationSubring_iff]
-  rfl
+    ← ValuationSubring.mem_nonunits_iff, mem_nonunits_valuationSubring_iff,
+    Subalgebra.algebraMap_apply]
 
 /-- The centre of a finite place on `O` is a maximal ideal. -/
 private theorem isMaximal_centre (w : {w : Place (AlgebraicClosure F) // IsNonarchimedean w.val}) :
@@ -91,31 +93,33 @@ noncomputable def finitePlaceEquivMaximalIdeal :
     {w : Place (AlgebraicClosure F) // IsNonarchimedean w.val} ≃
       {Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F)) // Q.IsMaximal} :=
   .ofBijective (fun w ↦ ⟨centre w, isMaximal_centre w⟩) <| by
-    refine ⟨fun v w h ↦ Subtype.ext <| Place.valuationSubring_injective v.property w.property <|
+    refine ⟨fun v w h ↦ Subtype.ext <| Place.eq_of_valuationSubring_eq v.property w.property <|
       (valuationSubringEquivPrimeSpectrum F).injective <| PrimeSpectrum.ext <|
         congrArg Subtype.val h, fun Q ↦ ?_⟩
     have := Q.property.isPrime
     set A := (valuationSubringEquivPrimeSpectrum F).symm ⟨Q.val, this⟩ with hA
-    have hAtop : A ≠ ⊤ := by
-      intro htop
-      obtain ⟨b, hbQ, hb0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-        (Ring.ne_bot_of_isMaximal_of_not_isField Q.property
-          ((Algebra.IsIntegral.isField_iff_isField
-            (FaithfulSMul.algebraMap_injective (𝓞 F) _)).not.mp
-            (RingOfIntegers.not_isField F)))
-      have hc : A.IsCenteredAt Q.val := by
-        rw [hA, valuationSubringEquivPrimeSpectrum_symm_apply]
-        exact Ideal.isCenteredAt_valuationSubringAtPrime
-      have := (hc.algebraMap_mem_nonunits_iff b).mpr hbQ
-      rw [htop, ValuationSubring.mem_nonunits_iff_or] at this
-      refine hb0 (this.resolve_right (not_not.mpr (ValuationSubring.mem_top _)) |> fun h ↦ ?_)
-      exact FaithfulSMul.algebraMap_injective _ (AlgebraicClosure F) (h.trans (map_zero _).symm)
-    obtain ⟨w, hw, hwA⟩ := Place.exists_valuationSubring_eq hAtop
+    have hc : A.IsCenteredAt Q.val := by
+      rw [hA, valuationSubringEquivPrimeSpectrum_symm_apply]
+      exact Ideal.isCenteredAt_valuationSubringAtPrime
+    -- `Q` is nonzero since `O` is not a field, so its localization `A` is proper
+    have hQ : Q.val ≠ ⊥ := Ring.ne_bot_of_isMaximal_of_not_isField Q.property
+      ((Algebra.IsIntegral.isField_iff_isField
+        (FaithfulSMul.algebraMap_injective (𝓞 F) _)).not.mp (RingOfIntegers.not_isField F))
+    obtain ⟨w, hw, hwA⟩ := Place.exists_valuationSubring_eq <|
+      hc.ne_top_of_ne_bot (FaithfulSMul.algebraMap_injective _ _) hQ
     refine ⟨⟨w, hw⟩, Subtype.ext ?_⟩
-    change (valuationSubringEquivPrimeSpectrum F (w.val.valuationSubring hw)).asIdeal = Q.val
+    dsimp only [centre]
     rw [hwA, hA, Equiv.apply_symm_apply]
 
+/-- `Q_w` is the centre on `O` of the valuation subring of `w`. -/
+theorem coe_finitePlaceEquivMaximalIdeal_apply
+    (w : {w : Place (AlgebraicClosure F) // IsNonarchimedean w.val}) :
+    (finitePlaceEquivMaximalIdeal F w).val =
+      (valuationSubringEquivPrimeSpectrum F (w.val.val.valuationSubring w.property)).asIdeal :=
+  (rfl)
+
 /-- `Q_w` consists of the elements `x` of `O` with `w x < 1`. -/
+@[simp]
 theorem mem_finitePlaceEquivMaximalIdeal_iff
     (w : {w : Place (AlgebraicClosure F) // IsNonarchimedean w.val})
     (b : integralClosure (𝓞 F) (AlgebraicClosure F)) :
@@ -128,9 +132,18 @@ theorem isCenteredAt_finitePlaceEquivMaximalIdeal
     (w : {w : Place (AlgebraicClosure F) // IsNonarchimedean w.val}) :
     (w.val.val.valuationSubring w.property).IsCenteredAt
       (finitePlaceEquivMaximalIdeal F w).val := by
-  rw [show (finitePlaceEquivMaximalIdeal F w).val = centre w from rfl, centre,
-    asIdeal_valuationSubringEquivPrimeSpectrum_apply]
+  rw [coe_finitePlaceEquivMaximalIdeal_apply, asIdeal_valuationSubringEquivPrimeSpectrum_apply]
   exact ValuationSubring.isCenteredAt_centerIdeal _ _
+
+/-- The finite place corresponding to a maximal ideal `Q` of `O` has valuation subring `O_Q`. -/
+@[simp]
+theorem valuationSubring_finitePlaceEquivMaximalIdeal_symm_apply
+    (Q : {Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F)) // Q.IsMaximal}) :
+    ((finitePlaceEquivMaximalIdeal F).symm Q).val.val.valuationSubring
+        ((finitePlaceEquivMaximalIdeal F).symm Q).property =
+      (valuationSubringEquivPrimeSpectrum F).symm ⟨Q.val, Q.property.isPrime⟩ := by
+  rw [Equiv.eq_symm_apply, PrimeSpectrum.ext_iff, ← coe_finitePlaceEquivMaximalIdeal_apply,
+    Equiv.apply_symm_apply]
 
 /-- **The bijection is `G_F`-equivariant**: `Q_{σ • w} = σ • Q_w`. -/
 theorem finitePlaceEquivMaximalIdeal_smul (σ : AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F)

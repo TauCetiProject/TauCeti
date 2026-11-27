@@ -53,6 +53,8 @@ subfield `K` do not change the restriction to `K`.
   equivalent to containment of the base valuation subring upon restriction.
 * `ValuationSubring.isIntegral_iff_forall_comap_le`: the integral closure is the intersection of
   valuation subrings whose restrictions contain the base valuation subring.
+* `ValuationSubring.algebraMap_integralClosure_mem`: a valuation subring whose restriction
+  contains the base valuation subring contains its integral closure.
 * `Valuation.valuationSubring_ne_top_of_surjective`: for a surjective valuation from a field into
   a linearly ordered commutative group with zero `Γ₀` with `Γ₀ˣ` nontrivial, the valuation ring is
   a proper subring.
@@ -249,6 +251,13 @@ theorem isIntegral_iff_forall_comap_le [Algebra K L] (A : ValuationSubring K) {x
     Subring.mem_iInf]
   exact ⟨fun h B hB ↦ (B.mem_toSubring x).mp (h ⟨B, B.integralClosure_toSubring_le_iff.mpr hB⟩),
     fun h ⟨B, hB⟩ ↦ (B.mem_toSubring x).mpr (h B (B.integralClosure_toSubring_le_iff.mp hB))⟩
+
+/-- Every valuation subring of `L` whose restriction to `K` contains `O` contains the integral
+closure of `O` in `L`. -/
+theorem algebraMap_integralClosure_mem [Algebra K L] {O : ValuationSubring K}
+    {A : ValuationSubring L} (hA : O ≤ A.comap (algebraMap K L)) (b : integralClosure O L) :
+    algebraMap (integralClosure O L) L b ∈ A :=
+  (isIntegral_iff_forall_comap_le O).mp b.property A hA
 
 end ValuationSubring
 

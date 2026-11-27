@@ -35,6 +35,8 @@ centre `P`. For a group acting compatibly on `B` and `L`, the centre of `g • A
 * `Valuation.asIdeal_heightOneSpectrum`: the underlying ideal is the centre ideal.
 * `ValuationSubring.IsCenteredAt A P`: `A` contains `B` and `P` is its centre on `B`; it is
   `Valuation.centerIdeal` of the valuation of `A` (`ValuationSubring.IsCenteredAt.eq_centerIdeal`).
+* `ValuationSubring.IsCenteredAt.ne_top_of_ne_bot`: a valuation subring with nonzero centre on a
+  subring is proper.
 * `ValuationSubring.IsCenteredAt.smul`: the centre of `g • A` is `g • P`.
 
 The comparison of a valuation subring with the localization at its centre is in
@@ -196,6 +198,16 @@ theorem isPrime (h : A.IsCenteredAt P) : P.IsPrime :=
 theorem unique (h : A.IsCenteredAt P) (h' : A.IsCenteredAt Q) : P = Q := by
   ext b
   rw [← h.algebraMap_mem_nonunits_iff, h'.algebraMap_mem_nonunits_iff]
+
+/-- A valuation subring centred at a nonzero ideal of a ring embedded in `L` is not `L`: a nonzero
+element of the centre is a nonzero nonunit. -/
+theorem ne_top_of_ne_bot (h : A.IsCenteredAt P) (hB : Function.Injective (algebraMap B L))
+    (hP : P ≠ ⊥) : A ≠ ⊤ := by
+  rintro rfl
+  obtain ⟨b, hbP, hb0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hP
+  have hb := (h.algebraMap_mem_nonunits_iff b).mpr hbP
+  rw [mem_nonunits_iff_or, or_iff_left (not_not.mpr (mem_top _)), map_eq_zero_iff _ hB] at hb
+  exact hb0 hb
 
 section Action
 

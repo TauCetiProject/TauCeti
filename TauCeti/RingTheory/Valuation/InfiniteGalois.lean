@@ -71,13 +71,6 @@ namespace ValuationSubring
 
 variable {K L : Type*} [Field K] [Field L] [Algebra K L]
 
-/-- Every valuation subring of `L` whose restriction to `K` contains `O` contains the integral
-closure of `O` in `L`. -/
-theorem algebraMap_integralClosure_mem {O : ValuationSubring K} {A : ValuationSubring L}
-    (hA : O ≤ A.comap (algebraMap K L)) (b : integralClosure O L) :
-    algebraMap (integralClosure O L) L b ∈ A :=
-  (isIntegral_iff_forall_comap_le O).mp b.property A hA
-
 /-- **Extensions of a valuation subring are determined by their centres.** Two valuation subrings
 of an algebraic extension `L / K` with the same restriction `O` to `K`, centred at the same ideal
 of the integral closure of `O` in `L`, are equal. -/
@@ -101,8 +94,8 @@ private theorem mem_centerIdeal_algebraMap_iff {O : ValuationSubring K} {A : Val
     (o : O) : algebraMap O (integralClosure O L) o ∈ P ↔ o ∈ IsLocalRing.maximalIdeal O := by
   subst hA
   rw [← hP.algebraMap_mem_nonunits_iff, ← IsScalarTower.algebraMap_apply,
-    IsScalarTower.algebraMap_apply _ K L, ← coe_mem_nonunits_iff, mem_nonunits_comap]
-  rfl
+    IsScalarTower.algebraMap_apply _ K L, ← coe_mem_nonunits_iff, mem_nonunits_comap,
+    ValuationSubring.algebraMap_apply]
 
 variable [IsGalois K L]
 
