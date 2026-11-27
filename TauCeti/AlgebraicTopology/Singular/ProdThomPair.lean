@@ -697,17 +697,26 @@ variable {F K} [Ring K]
   (γ : ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
     (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K))
 
-/-- The scalar coordinate of a class in `Hᵣ(F, F ∖ {0}; K)` relative to the point class of `1`. -/
-def complZeroPairPointCoord : K :=
-  (asIso (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl)).inv γ
+/-- The linear coordinate on `Hᵣ(F, F ∖ {0}; K)` relative to the point class of `1`. -/
+def complZeroPairPointCoord :
+    ((TopPair.ofSubset (X := TopCat.of F) ({0}ᶜ : Set F)).singularHomology
+      (ModuleCat.of K K) (finrank ℝ F) : ModuleCat.{w} K) →ₗ[K] K :=
+  (asIso (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl)).inv.hom
+
+/-- The point-class map sends a scalar to the class with that coordinate. -/
+@[simp]
+theorem complZeroPairPointCoord_pointHom (a : K) :
+    complZeroPairPointCoord
+      (no_index (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl a)) = a :=
+  IsIso.hom_inv_id_apply (complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl) a
 
 /-- Multiplying the point class of `1` by the coordinate of `γ` recovers `γ`. -/
 @[simp]
 theorem complZeroPairPointCoord_smul_pointHom_one :
     complZeroPairPointCoord γ • complZeroPairPointHom (ModuleCat.of K K) F (finrank ℝ F) rfl 1 =
       γ := by
-  rw [← map_smul, smul_eq_mul, mul_one, complZeroPairPointCoord, asIso_inv,
-    IsIso.inv_hom_id_apply]
+  rw [← map_smul, smul_eq_mul, mul_one]
+  exact IsIso.inv_hom_id_apply _ γ
 
 /-- A class of the fibre pair generates its rank-degree homology exactly when its coordinate
 relative to the point class is a unit. -/
