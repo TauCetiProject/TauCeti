@@ -20,8 +20,10 @@ import TauCeti.Topology.VectorBundle.Riemannian.Hermitian
 
 The second fundamental form of a `C²` map is tensorial in both tangent
 arguments. Its squared Hilbert–Schmidt norm is the sum of the squares of its coefficients in
-any orthonormal tangent frame. For an immersion the squared norm is continuous, including
-at boundary and corner points of the source.
+any orthonormal tangent frame. Along an immersion that is `C^{k+2}`, the second fundamental
+form of a `C^k` field and a `C^{k+1}` field is a `C^k` field along the map, and for a `C²`
+immersion the squared norm is continuous, including at boundary and corner points of the
+source.
 
 The squared norm uses Otis Chodosh's intrinsic two-slot Hilbert–Schmidt construction,
 `TauCeti.bilinearHilbertSchmidtEnergy`, from
@@ -159,6 +161,31 @@ end Norm
 
 end Pointwise
 
+section Regularity
+
+variable [IsManifold J ∞ N] [T2Space N] {k : ℕ∞ω} [ENat.LEInfty k]
+  [IsContMDiffRiemannianBundle J k F (fun y : N ↦ TangentSpace J y)]
+  {cov : CovariantDerivative J F (TangentSpace J : N → Type _)} [ContMDiffCovariantDerivative cov k]
+  {f : M → N} {x : M}
+
+/-- **The second fundamental form is `C^k`**: at a point where `f` is `C^{k+2}` with injective
+differential, `B(X, Y)` is a `C^k` field along `f` for a `C^k` field `X` and a `C^{k+1}` field `Y`,
+a `C^k` covariant derivative and a `C^k` metric on `N`. This includes boundary and corner points
+of the source. -/
+theorem contMDiffAt_immersionSecondFundamentalForm (hf : ContMDiffAt I J (k + 1 + 1) f x)
+    (hinj : Function.Injective (mfderiv I J f x)) {X Y : Π y : M, TangentSpace I y}
+    (hX : CMDiffAt k (T% X) x) (hY : CMDiffAt (k + 1) (T% Y) x) :
+    ContMDiffAt I J.tangent k
+      (fun y ↦ TotalSpace.mk' F (f y) (immersionSecondFundamentalForm cov f X Y y)) x := by
+  have hdf : ContMDiffAt I J.tangent (k + 1)
+      (fun y ↦ TotalSpace.mk' F (f y) (mfderiv I J f y (Y y))) x := by
+    simpa only [id_eq] using hf.mfderiv_apply_sectionAlong (b := id) hY le_rfl
+  simpa only [immersionSecondFundamentalForm_def, orthogonalNormalSpace_def] using
+    hf.starProjection_orthogonal_range_mfderiv_apply le_self_add hinj
+      (cov.contMDiffAt_alongMap_apply hdf hX)
+
+end Regularity
+
 section Continuity
 
 variable [IsManifold J ∞ N] [T2Space N]
@@ -178,16 +205,9 @@ theorem continuousAt_immersionSecondFundamentalFormNormSq
   have hval (i j : Fin (Module.finrank ℝ E)) :
       ContMDiffAt I J.tangent 0
         (fun y ↦ TotalSpace.mk' F (f y) (immersionSecondFundamentalForm cov f (X i) (X j) y))
-        x := by
-    have hdf : ContMDiffAt I J.tangent 1
-        (fun y ↦ TotalSpace.mk' F (f y) (mfderiv I J f y (X j y))) x := by
-      simpa only [id_eq] using
-        hf.mfderiv_apply_sectionAlong (b := id) (hX.contMDiffAt hs hx j) (by norm_num)
-    have hder := cov.contMDiffAt_alongMap_apply (n := 0) hdf
-      ((hX.contMDiffAt hs hx i).of_le zero_le)
-    simpa only [immersionSecondFundamentalForm_def, orthogonalNormalSpace_def] using
-      hf.starProjection_orthogonal_range_mfderiv_apply
-        (show 0 + 1 ≤ (2 : ℕ∞ω) by norm_num) hinj hder
+        x :=
+    contMDiffAt_immersionSecondFundamentalForm (k := 0) (hf.of_le (by norm_num)) hinj
+      ((hX.contMDiffAt hs hx i).of_le zero_le) (by simpa using hX.contMDiffAt hs hx j)
   have : IsContinuousRiemannianBundle F (TangentSpace J : N → Type _) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := J) (n := 0)
   have hn : Continuous (fun z : TangentBundle J N ↦ ‖z.snd‖) :=
