@@ -25,9 +25,6 @@ stalk through `Spec σ`, which acts on the Galois set by `φ ↦ φ ∘ σ`.
 
 ## Main definitions
 
-* `TauCeti.FiniteEtaleScheme.toEtaleSpecFiniteEtaleFieldIso`: for `L` finite separable over `K`,
-  the finite étale `K`-scheme `Spec L`, in the small étale site of `Spec K`, is the étale point
-  `Spec L ⟶ Spec K`.
 * `TauCeti.FiniteEtaleScheme.etaleStalkGaloisModuleSheafEquiv`: the stalk of
   `galoisModuleSheaf K Ω ρ` at `Spec Ω ⟶ Spec K` is `M`.
 
@@ -69,20 +66,6 @@ noncomputable abbrev finiteEtaleFieldHom (σ : Gal(L/K)) :
   haveI : Algebra.Etale K L := Algebra.Etale.of_isSeparable K L
   CommAlgCat.FiniteEtale.ofHom (σ : L →ₐ[K] L)
 
-/-- The finite étale `K`-scheme `Spec L`, regarded in the small étale site of `Spec K`, is the
-étale point `Spec L ⟶ Spec K`. -/
-noncomputable def toEtaleSpecFiniteEtaleFieldIso :
-    (toEtale _).obj ((spec (.of K)).obj (op (finiteEtaleField K L))) ≅
-      Scheme.Etale.mk (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
-  (Scheme.Etale.forgetFullyFaithful _).preimageIso (specObjObjIso (.of K) (finiteEtaleField K L))
-
-/-- The morphism over `Spec K` underlying `toEtaleSpecFiniteEtaleFieldIso` is `specObjObjIso`. -/
-@[simp]
-theorem forget_map_toEtaleSpecFiniteEtaleFieldIso_hom :
-    (Scheme.Etale.forget _).map (toEtaleSpecFiniteEtaleFieldIso K L).hom =
-      (specObjObjIso (.of K) (finiteEtaleField K L)).hom :=
-  (Scheme.Etale.forgetFullyFaithful _).map_preimage _
-
 end FiniteSeparable
 
 variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [IsGalois K Ω]
@@ -99,7 +82,7 @@ noncomputable def etaleStalkGaloisModuleSheafEquiv :
     (etaleStalk Λ (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).obj
       (galoisModuleSheaf K Ω ρ) ≃ₗ[Λ] M :=
   ((Scheme.pointSmallEtaleSheafFiberIso _).app _ ≪≫
-    (galoisModuleSheaf K Ω ρ).obj.mapIso (toEtaleSpecFiniteEtaleFieldIso K Ω).op ≪≫
+    (galoisModuleSheaf K Ω ρ).obj.mapIso (toEtaleSpecObjIso (.of K) (finiteEtaleField K Ω)).op ≪≫
     galoisModuleSheafObjIso K Ω ρ _ ≪≫
     (ContAction.modulePresheaf ρ).mapIso
       ((specCompGaloisEquivalenceFunctorIso K Ω).app (op (finiteEtaleField K Ω))).symm.op
@@ -118,7 +101,8 @@ theorem etaleStalkGaloisModuleSheafEquiv_apply
     etaleStalkGaloisModuleSheafEquiv K Ω ρ x =
       (ContAction.modulePresheafObjEquiv ρ _
         ((galoisModuleSheafObjIso K Ω ρ ((spec (.of K)).obj (op (finiteEtaleField K Ω)))).hom
-          ((galoisModuleSheaf K Ω ρ).obj.map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom.op
+          ((galoisModuleSheaf K Ω ρ).obj.map
+            (toEtaleSpecObjIso (.of K) (finiteEtaleField K Ω)).hom.op
             ((Scheme.pointSmallEtaleSheafFiberIso (A := ModuleCat.{u} Λ)
               (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app
                 (galoisModuleSheaf K Ω ρ) x)))).val
@@ -130,15 +114,17 @@ theorem etaleStalkGaloisModuleSheafEquiv_apply
 
 /-- On sections over `Spec Ω`, the Galois action on the stalk is restriction along `Spec σ`. The
 stalk is identified with these sections through `pointSmallEtaleSheafFiberIso` and
-`toEtaleSpecFiniteEtaleFieldIso`. -/
+`toEtaleSpecObjIso`. -/
 theorem galoisStalkMap_comp_pointSmallEtaleSheafFiberIso (σ : Gal(Ω/K)) :
     (galoisStalkMap K Ω (ModuleCat.{u} Λ) σ).app (galoisModuleSheaf K Ω ρ) ≫
         (Scheme.pointSmallEtaleSheafFiberIso
           (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app (galoisModuleSheaf K Ω ρ) ≫
-          (galoisModuleSheaf K Ω ρ).obj.map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom.op =
+          (galoisModuleSheaf K Ω ρ).obj.map
+            (toEtaleSpecObjIso (.of K) (finiteEtaleField K Ω)).hom.op =
       (Scheme.pointSmallEtaleSheafFiberIso
           (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app (galoisModuleSheaf K Ω ρ) ≫
-        (galoisModuleSheaf K Ω ρ).obj.map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom.op ≫
+        (galoisModuleSheaf K Ω ρ).obj.map
+          (toEtaleSpecObjIso (.of K) (finiteEtaleField K Ω)).hom.op ≫
           (galoisModuleSheaf K Ω ρ).obj.map
             ((toEtale _).map ((spec (.of K)).map (finiteEtaleFieldHom K Ω σ).op)).op := by
   refine GrothendieckTopology.Point.presheafFiber_hom_ext _ fun Y y ↦ ?_
@@ -155,7 +141,7 @@ theorem galoisStalkMap_comp_pointSmallEtaleSheafFiberIso (σ : Gal(Ω/K)) :
   -- The Galois-translated lift is a lift of `(galoisGeometricPoint K Ω).hom`, which is
   -- `Spec.map (CommRingCat.ofHom (algebraMap K Ω))` only after unfolding the abbreviation.
   erw [Scheme.forget_map_pointSmallEtaleFiberCorepresentableBy_homEquiv_symm]
-  rw [forget_map_toEtale_map, forget_map_toEtaleSpecFiniteEtaleFieldIso_hom]
+  rw [forget_map_toEtale_map, forget_map_toEtaleSpecObjIso_hom]
   -- The composite passes through `(Scheme.Etale.forget _).obj ((toEtale _).obj X)`, which is
   -- `X.obj` only after unfolding `toEtale`.
   erw [spec_map_hom_comp_specObjObjIso_hom]
@@ -214,7 +200,7 @@ theorem etaleStalkGaloisModuleSheafEquiv_galoisStalkMap (σ : Gal(Ω/K))
   have h' := congr(ConcreteCategory.hom
     $(galoisModuleSheafObjIso_hom_naturality K Ω ρ
       ((spec (.of K)).map (finiteEtaleFieldHom K Ω σ).op))
-      ((galoisModuleSheaf K Ω ρ).obj.map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom.op
+      ((galoisModuleSheaf K Ω ρ).obj.map (toEtaleSpecObjIso (.of K) (finiteEtaleField K Ω)).hom.op
         ((Scheme.pointSmallEtaleSheafFiberIso (A := ModuleCat.{u} Λ)
           (Spec.map (CommRingCat.ofHom (algebraMap K Ω)))).hom.app (galoisModuleSheaf K Ω ρ) x)))
   simp only [ConcreteCategory.comp_apply] at h'
