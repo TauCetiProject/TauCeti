@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Geometry.Manifold.RegularValue
+import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 
 /-!
 # Regular values of the squared norm
@@ -51,13 +52,7 @@ theorem contMDiff_neg_norm_sq_model_space {k : ℕ∞ω} :
 value: its derivative at a point is the negation of that of the squared norm, which is onto at
 every point of the level `‖x‖² = -c`. -/
 theorem isRegularValue_neg_norm_sq {c : ℝ} (hc : c ≠ 0) :
-    IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) (fun x : E ↦ -‖x‖ ^ 2) c := by
-  rw [isRegularValue_iff]
-  intro x hx
-  have h := isRegularValue_iff.1 (isRegularValue_norm_sq (E := E) (neg_ne_zero.2 hc)) x
-    (neg_eq_iff_eq_neg.1 hx)
-  rw [isRegularPoint_iff_surjective_fderiv] at h ⊢
-  rw [fderiv_fun_neg]
-  exact neg_surjective.comp h
+    IsRegularValue 𝓘(ℝ, E) 𝓘(ℝ) (fun x : E ↦ -‖x‖ ^ 2) c :=
+  isRegularValue_neg_iff.2 (isRegularValue_norm_sq (neg_ne_zero.2 hc))
 
 end TauCeti
