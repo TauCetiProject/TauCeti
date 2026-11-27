@@ -30,9 +30,8 @@ theorem steinSolution_id : TauCeti.Probability.steinSolution (fun x => x) = fun 
   ext w
   have hderiv : ∀ t, HasDerivAt (fun t : ℝ => -exp (-(t ^ 2 / 2))) (t * exp (-(t ^ 2 / 2))) t :=
     fun t => by
-      convert (((hasDerivAt_pow 2 t).div_const 2).const_mul (-1)).exp.neg using 1
-      · ext; simp
-      · simp; ring
+      convert (TauCeti.Probability.hasDerivAt_exp_neg_sq_div_two t).fun_neg using 1
+      ring
   have hint : Integrable fun t : ℝ => t * exp (-(t ^ 2 / 2)) := by
     refine (integrable_mul_exp_neg_mul_sq (b := 1 / 2) (by norm_num)).congr
       (ae_of_all _ fun t => ?_)
@@ -47,6 +46,6 @@ theorem steinSolution_id : TauCeti.Probability.steinSolution (fun x => x) = fun 
     (hderiv w).continuousAt.continuousWithinAt (fun t _ => hderiv t) hint.integrableOn hlim
   rw [TauCeti.Probability.steinSolution_def, integral_id_gaussianReal]
   simp only [sub_zero, hI, neg_zero]
-  rw [mul_neg, ← exp_add, add_neg_cancel, exp_zero]
+  rw [mul_neg, exp_neg, mul_inv_cancel₀ (exp_ne_zero _)]
 
 end TauCeti.Examples.SteinSolution
