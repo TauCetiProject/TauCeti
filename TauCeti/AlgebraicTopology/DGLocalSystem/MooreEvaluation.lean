@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.DG.Twisted.Map
 public import TauCeti.AlgebraicTopology.DGLocalSystem.LoopAlgebra
-public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.TwistingChainSystem
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.ChainSystemHomotopy
 
 /-!
 # Evaluating twisting chain systems into Moore loops
@@ -28,7 +29,10 @@ collapse of a tree in `B` through the critical points. The images `θ ∘ e x y`
 `x₀` (`TauCeti.mooreLoopEvaluation`), and they are multiplicative along the composition maps
 (`TauCeti.mooreLoopEvaluation_mul`). So every twisting chain system on the `M x y` gives a twisting
 cocycle over the chains `C^□_*(Ω_{x₀} X; R)` on the Moore loop space
-(`TauCeti.TwistingChainSystem.mooreTwistingCocycle`). Applied to a representing chain system, with
+(`TauCeti.TwistingChainSystem.mooreTwistingCocycle`). All of this is natural in the target: for a
+based map `g : (X, x₀) → (X', x₁)`, collapsing through `g ∘ θ` is collapsing through `θ` and then
+applying `Ωg`, so the cocycle for `g ∘ θ` is the image of the one for `θ` under the morphism
+`C_*(Ωg)` of chain algebras. Applied to a representing chain system, with
 `e` the trajectory evaluation and `θ` the collapse of a tree through the critical points, this is
 the Barraud–Cornea cocycle: evaluate into Moore paths, then into `C_*(Ω X)`.
 
@@ -44,6 +48,10 @@ the Barraud–Cornea cocycle: evaluate into Moore paths, then into `C_*(Ω X)`.
   composition maps.
 * `TauCeti.TwistingChainSystem.mooreTwistingCocycle_m`: the entries of the cocycle over the Moore
   loops.
+* `TauCeti.mooreLoopEvaluation_comp`,
+  `TauCeti.TwistingChainSystem.map_loopChainMap_mooreTwistingCocycle` and
+  `TauCeti.TwistingChainSystem.Homotopy.loopChainMap_continuationCocycle_mooreLoopEvaluation_ν`:
+  the evaluation, the cocycle and the continuation cocycles of homotopies are natural in the target.
 
 ## References
 
@@ -116,5 +124,54 @@ theorem mooreTwistingCocycle_m (S : TwistingChainSystem ind ι R) (x y : P) :
   S.twistingCocycle_m _ x y
 
 end TwistingChainSystem
+
+/-! ### Naturality in the target -/
+
+section Target
+
+variable {X' : Type*} [TopologicalSpace X'] {x₁ : X'} (g : C(X, X')) (hg : g x₀ = x₁)
+  (hgθ : ∀ x, g.comp θ (c x) = x₁)
+
+/-- **The evaluation into Moore loops is natural in the target**: evaluating through `g ∘ θ` is
+evaluating through `θ` and then applying `Ωg`. -/
+theorem mooreLoopEvaluation_comp (x y : P) :
+    mooreLoopEvaluation he₀ he₁ hgθ x y =
+      (MooreLoopSpace.map g hg).toContinuousMap.comp (mooreLoopEvaluation he₀ he₁ hθ x y) :=
+  ContinuousMap.ext fun _ ↦ MooreLoopSpace.ext <| by simp [MoorePath.map_map]
+
+namespace TwistingChainSystem
+
+variable [Fintype P] {ι : ∀ x y z, C(M x y × M y z, M x z)}
+  (he : ∀ x z y u v, e x y (ι x z y (u, v)) =
+    (e x z u).trans (e z y v) ((he₁ x z u).trans (he₀ z y v).symm))
+
+/-- **The twisting cocycle over the Moore loops is natural in the target**: the cocycle of `S` for
+`g ∘ θ` is the image of the cocycle for `θ` under the morphism `C_*(Ωg)` of chain algebras. -/
+@[simp]
+theorem map_loopChainMap_mooreTwistingCocycle (S : TwistingChainSystem ind ι R) :
+    (S.mooreTwistingCocycle he₀ he₁ hθ he).map (loopChainMap R g hg) =
+      S.mooreTwistingCocycle he₀ he₁ hgθ he :=
+  TwistingCocycle.ext fun x y ↦ by
+    rw [TwistingCocycle.map_m, mooreTwistingCocycle_m, mooreTwistingCocycle_m, loopChainMap_apply,
+      ← LinearMap.comp_apply, ← cubicalChainSumMap_comp, mooreLoopEvaluation_comp he₀ he₁ hθ g hg]
+
+/-- **The continuation cocycle of a homotopy is natural in the target**: its entries for the
+evaluation through `g ∘ θ` are the images under `C_*(Ωg)` of its entries for the evaluation
+through `θ`. -/
+theorem Homotopy.loopChainMap_continuationCocycle_mooreLoopEvaluation_ν [DecidableEq P]
+    {S S' : TwistingChainSystem ind ι R} (T : S.Homotopy S') (x y : P) :
+    loopChainMap R g hg ((T.continuationCocycle (mooreLoopEvaluation he₀ he₁ hθ)
+        (mooreLoopEvaluation_mul he₀ he₁ hθ he)).ν x y) =
+      (T.continuationCocycle (mooreLoopEvaluation he₀ he₁ hgθ)
+        (mooreLoopEvaluation_mul he₀ he₁ hgθ he)).ν x y := by
+  rw [Homotopy.continuationCocycle_ν, Homotopy.continuationCocycle_ν, map_add,
+    loopChainMap_apply R g hg (cubicalChainSumMap R _ _), ← LinearMap.comp_apply,
+    ← cubicalChainSumMap_comp, mooreLoopEvaluation_comp he₀ he₁ hθ g hg, Matrix.one_apply,
+    Matrix.one_apply]
+  split_ifs <;> simp
+
+end TwistingChainSystem
+
+end Target
 
 end TauCeti

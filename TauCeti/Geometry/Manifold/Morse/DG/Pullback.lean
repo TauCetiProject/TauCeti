@@ -114,7 +114,8 @@ theorem _root_.TauCeti.comp_apply_criticalPoints_eq (x : criticalPoints 𝓘(ℝ
   rw [ContinuousMap.comp_apply, hθ, hg]
 
 /-- **The evaluation into Moore loops is natural in the target**: evaluating the broken
-trajectories through `g ∘ θ` is evaluating them through `θ` and then applying `Ωg`. -/
+trajectories through `g ∘ θ` is evaluating them through `θ` and then applying `Ωg`. This is
+`TauCeti.mooreLoopEvaluation_comp` for the evaluation of broken trajectories. -/
 theorem morseLoopEvaluation_comp (x y : criticalPoints 𝓘(ℝ, E) f) :
     hX.morseLoopEvaluation hf hdense (θ := g.comp θ)
         (comp_apply_criticalPoints_eq hθ g hg) x y =
@@ -125,7 +126,9 @@ variable (hc : ∀ i (x : criticalPoints 𝓘(ℝ, E) f), c i ≠ f x) {R : Type
   [Fintype (criticalPoints 𝓘(ℝ, E) f)]
 
 /-- **The Barraud–Cornea cocycle is natural in the target**: the cocycle of `S` for `g ∘ θ` is the
-image of the cocycle for `θ` under the morphism `C_*(Ωg)` of chain algebras. -/
+image of the cocycle for `θ` under the morphism `C_*(Ωg)` of chain algebras. This is
+`TauCeti.TwistingChainSystem.map_loopChainMap_mooreTwistingCocycle` for the evaluation of the
+trajectory spaces. -/
 @[simp]
 theorem map_loopChainMap_barraudCorneaCocycle {ind : criticalPoints 𝓘(ℝ, E) f → ℤ}
     (S : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R) :
@@ -138,7 +141,9 @@ theorem map_loopChainMap_barraudCorneaCocycle {ind : criticalPoints 𝓘(ℝ, E)
       hX.morseLoopEvaluation_comp hf hdense hθ g hg, ContinuousMap.comp_assoc]
 
 /-- **The continuation cocycle of a homotopy of chain systems is natural in the target**: its
-entries for `g ∘ θ` are the images of its entries for `θ` under `C_*(Ωg)`. -/
+entries for `g ∘ θ` are the images of its entries for `θ` under `C_*(Ωg)`. This is
+`TauCeti.TwistingChainSystem.Homotopy.loopChainMap_continuationCocycle_mooreLoopEvaluation_ν` for
+the evaluation of the trajectory spaces. -/
 theorem loopChainMap_barraudCorneaContinuationCocycle_ν
     [DecidableEq (criticalPoints 𝓘(ℝ, E) f)] {ind : criticalPoints 𝓘(ℝ, E) f → ℤ}
     {S S' : TwistingChainSystem ind (hX.morseBrokenTrajectorySpaceComp hc) R} (T : S.Homotopy S')
@@ -208,6 +213,10 @@ theorem twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_hom_f
       n).hom ((((hX.dgMorseComplexFunctor hf hdense hθ hc S).map e.hom).f n).hom a))
   have hR := m.twistedCochainComplexRestrictScalarsIso_hom_f_apply (loopChainMap R g hg)
     𝓖.isDGRightModule n ((((hX.dgMorseComplexFunctor hf hdense hθ hc S).map e.hom).f n).hom a)
+  -- The goal applies the `hom` of the composite isomorphism `F.mapIso e ≪≫ _ ≪≫ eqToIso _` to `a`.
+  -- By definition (`Iso.trans_hom`, `Functor.mapIso_hom`, `eqToIso.hom`,
+  -- `HomologicalComplex.comp_f`, `ModuleCat.comp_apply`), that is its three factors applied in
+  -- turn, which is the form `hC`, `hR` and `hB` are chained in below.
   refine (congrFun hC x).trans ?_
   refine (congrArg (fun v ↦ (twistedCochainComplexXEquiv (m.map (loopChainMap R g hg)).mem_graded
     (m.map (loopChainMap R g hg)).twisting 𝓖.isDGRightModule n v : _ → 𝓖) x) hR).trans ?_
@@ -264,6 +273,9 @@ def dgMorseComplexFunctorPullbackIso :
         φ n (((hX.dgMorseComplexPullbackIso hf hdense hθ g hg hc S 𝓖).hom.f n).hom a)
       have h₄ := hX.twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_hom_f hf hdense hθ g hg
         hc S 𝓖 n a
+      -- The two sides apply `((pullback ⋙ F).map φ ≫ _).f n` and `(_ ≫ G.map φ).f n` to `a`. By
+      -- definition (`Functor.comp_map`, `HomologicalComplex.comp_f`, `ModuleCat.comp_apply`), these
+      -- are the two factors applied in turn, which is the form `h₁`, `h₃` and `h₄` are stated in.
       refine h₁.trans (Eq.trans ?_ ((congrArg (φ ∘ ·) h₄).symm.trans h₃.symm))
       funext x
       exact (congrArg _ (congrFun h₂ x)).trans (DGRightModuleCat.restrictScalars_map_apply _ φ _)
@@ -309,6 +321,9 @@ theorem dgMorseComplexPullbackIso_hom_comp_dgMorseComplexIsoOfHomotopy_hom
       ((DGLocalSystem.pullback R g hg).obj 𝓖).isDGRightModule).f n).hom a)
   have h₄ := hX.twistedCochainComplexXEquiv_dgMorseComplexPullbackIso_hom_f hf hdense hθ g hg hc
     S 𝓖 n a
+  -- Each side applies a composite `(_ ≫ _).f n` to `a`. By definition
+  -- (`HomologicalComplex.comp_f`, `ModuleCat.comp_apply`), that is the two factors applied in turn,
+  -- which is the form the single-factor statements `h₁` to `h₄` are chained in.
   refine h₁.trans ((congrArg (continuationMap R 𝓖 _) h₄).trans (Eq.trans ?_ h₃.symm))
   funext y
   rw [congrFun h₂]
