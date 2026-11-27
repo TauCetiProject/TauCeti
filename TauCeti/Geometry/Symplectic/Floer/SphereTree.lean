@@ -462,21 +462,24 @@ theorem sphereTreeDimension_nonneg_iff {n : ℤ} (c : G →+ ℤ) {ind : G → �
     exact this
 
 /-- **The strata over a core of given expected dimension.** On a target where every simple sphere
-has nonnegative first Chern number, consider a stratum whose core has expected dimension `I₀`,
-with a tree of simple spheres attached whose bubbles have total class `∑ v, B v`. If the unbubbled
-problem in the total class, of expected dimension `I₀ + 2 c₁(∑ v, B v)`, has expected dimension at
-most one, the stratum has nonnegative expected dimension exactly when it has no nonconstant sphere
-bubble and the unbubbled problem has nonnegative expected dimension. This is
-`TauCeti.Floer.sphereTreeDimension_nonneg_iff` for an index affine in the class. -/
-theorem sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one {n I₀ : ℤ} (c : G →+ ℤ)
+has nonnegative first Chern number, consider a stratum whose core has expected dimension
+`I₀ = J + 2 c₁(X) - k`, with a tree of simple spheres attached whose bubbles have total class
+`∑ v, B v`. If the unbubbled problem in the total class `X + ∑ v, B v`, of expected dimension
+`J + 2 c₁(X + ∑ v, B v) - k`, has expected dimension at most one, the stratum has nonnegative
+expected dimension exactly when it has no nonconstant sphere bubble and the unbubbled problem has
+nonnegative expected dimension. This is `TauCeti.Floer.sphereTreeDimension_nonneg_iff` for an index
+affine in the class; typically `k` counts the cylinders taken modulo translation. -/
+theorem sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub {n I₀ J k : ℤ} (c : G →+ ℤ) {X : G}
     {B : ι → G} {B' : κ → G} {m : ι → ℕ} {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v))
     (hm : ∀ v, 0 < m v) (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w))
-    (hA : I₀ + 2 * c (∑ v, B v) ≤ 1) (parent : κ → Option κ) (node root : κ → P) :
+    (hI : I₀ = J + 2 * c X - k) (hA : J + 2 * c (X + ∑ v, B v) - k ≤ 1) (parent : κ → Option κ)
+    (node root : κ → P) :
     0 ≤ sphereTreeDimension n I₀ (fun w => c (B' w)) parent node root ↔
-      IsEmpty κ ∧ 0 ≤ I₀ + 2 * c (∑ v, B v) := by
-  simpa only [map_zero, mul_zero, add_zero, zero_add] using sphereTreeDimension_nonneg_iff c
-    (ind := fun A' => I₀ + 2 * c A') (fun _ _ => by rw [map_add]; ring) 0 hB hm hρ hc
-    (by simpa only [zero_add] using hA) parent node root
+      IsEmpty κ ∧ k ≤ J + 2 * c (X + ∑ v, B v) := by
+  subst hI
+  simpa only [sub_nonneg] using sphereTreeDimension_nonneg_iff c
+    (ind := fun A' => J + 2 * c A' - k) (fun _ _ => by rw [map_add]; ring) X hB hm hρ hc hA parent
+    node root
 
 end Reduction
 
@@ -813,18 +816,15 @@ theorem sphereTreeDimension_brokenPantsDimension_add_nonneg_iff (n p : ℤ) (c :
     (C₁ : Fin k₁ → G) (C₂ : Fin k₂ → G) (C₀ : Fin k₀ → G) (A : G) {B : ι → G} {B' : κ → G}
     {m : ι → ℕ} {ρ : ι → κ} (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v)
     (hρ : Function.Surjective ρ) (hc : ∀ w, 0 ≤ c (B' w))
-    (hA : g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n +
-        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) - (k₁ + k₂ + k₀) + p ≤ 1)
+    (hA : g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + p +
+        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) - (k₁ + k₂ + k₀) ≤ 1)
     (parent : κ → Option κ) (node root : κ → P) :
     0 ≤ sphereTreeDimension n (brokenPantsDimension n c g₁ g₂ g₀ C₁ C₂ C₀ A + p)
         (fun w => c (B' w)) parent node root ↔
-      IsEmpty κ ∧ (k₁ + k₂ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n +
-        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) + p := by
-  rw [brokenPantsDimension_eq, map_add c _ (∑ v, B v)]
-  rw [map_add c _ (∑ v, B v)] at hA
-  refine (sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one c hB hm hρ hc (by linarith) parent
-    node root).trans (and_congr_right fun _ => ?_)
-  constructor <;> intro hle <;> linarith
+      IsEmpty κ ∧ (k₁ + k₂ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 - g₀ (Fin.last k₀) - n + p +
+        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₀ j + ∑ v, B v) :=
+  sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c hB hm hρ hc
+    (by rw [brokenPantsDimension_eq]; ring) hA parent node root
 
 /-- **The strata of the product's rigid and one-dimensional problems.** On a target where every
 simple sphere has nonnegative first Chern number, consider the limits of pairs of pants between
@@ -921,19 +921,16 @@ theorem sphereTreeDimension_brokenFourHoledSphereDimension_add_nonneg_iff (n p :
     (C₀ : Fin k₀ → G) (A : G) {B : ι → G} {B' : κ → G} {m : ι → ℕ} {ρ : ι → κ}
     (hB : ∀ v, B v = m v • B' (ρ v)) (hm : ∀ v, 0 < m v) (hρ : Function.Surjective ρ)
     (hc : ∀ w, 0 ≤ c (B' w))
-    (hA : g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
+    (hA : g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n + p +
         2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, C₀ j + ∑ v, B v) -
-          (k₁ + k₂ + k₃ + k₀) + p ≤ 1)
+          (k₁ + k₂ + k₃ + k₀) ≤ 1)
     (parent : κ → Option κ) (node root : κ → P) :
     0 ≤ sphereTreeDimension n (brokenFourHoledSphereDimension n c g₁ g₂ g₃ g₀ C₁ C₂ C₃ C₀ A + p)
         (fun w => c (B' w)) parent node root ↔
-      IsEmpty κ ∧ (k₁ + k₂ + k₃ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
-        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, C₀ j + ∑ v, B v) + p := by
-  rw [brokenFourHoledSphereDimension_eq, map_add c _ (∑ v, B v)]
-  rw [map_add c _ (∑ v, B v)] at hA
-  refine (sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one c hB hm hρ hc (by linarith) parent
-    node root).trans (and_congr_right fun _ => ?_)
-  constructor <;> intro hle <;> linarith
+      IsEmpty κ ∧ (k₁ + k₂ + k₃ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n + p +
+        2 * c (A + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, C₀ j + ∑ v, B v) :=
+  sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c hB hm hρ hc
+    (by rw [brokenFourHoledSphereDimension_eq]; ring) hA parent node root
 
 /-- **The long-neck end of the associativity family composing the first two inputs.** At this
 end the four-holed sphere breaks into a broken pair of pants `P` with inputs `x₁`, `x₂` and a
@@ -1009,13 +1006,10 @@ theorem sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_fst_no
         (fun w => c (B' w)) parent node root ↔
       IsEmpty κ ∧ (k₁ + k₂ + k + k' + k₃ + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
         2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, D j + ∑ j, D' j + ∑ j, C₃ j +
-          ∑ j, C₀ j + ∑ v, B v) := by
-  rw [brokenPantsDimension_add_brokenPantsDimension_fst n c g₁ g₂ h h' g₃ g₀ C₁ C₂ D D' C₃ C₀
-    A₁ A₂ hh, map_add c _ (∑ v, B v)]
-  rw [map_add c _ (∑ v, B v)] at hA
-  refine (sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one c hB hm hρ hc (by linarith) parent
-    node root).trans (and_congr_right fun _ => ?_)
-  constructor <;> intro hle <;> linarith
+          ∑ j, C₀ j + ∑ v, B v) :=
+  sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c hB hm hρ hc
+    (brokenPantsDimension_add_brokenPantsDimension_fst n c g₁ g₂ h h' g₃ g₀ C₁ C₂ D D' C₃ C₀ A₁ A₂
+      hh) hA parent node root
 
 /-- **The strata at the long-neck end composing the last two inputs.** On a target where every
 simple sphere has nonnegative first Chern number, consider the limits of the associativity family
@@ -1046,13 +1040,10 @@ theorem sphereTreeDimension_brokenPantsDimension_add_brokenPantsDimension_snd_no
         (fun w => c (B' w)) parent node root ↔
       IsEmpty κ ∧ (k₁ + k₂ + k₃ + k + k' + k₀ : ℤ) ≤ g₁ 0 + g₂ 0 + g₃ 0 - g₀ (Fin.last k₀) - 2 * n +
         2 * c (A₁ + A₂ + ∑ j, C₁ j + ∑ j, C₂ j + ∑ j, C₃ j + ∑ j, D j + ∑ j, D' j +
-          ∑ j, C₀ j + ∑ v, B v) := by
-  rw [brokenPantsDimension_add_brokenPantsDimension_snd n c g₁ g₂ g₃ h h' g₀ C₁ C₂ C₃ D D' C₀
-    A₁ A₂ hh, map_add c _ (∑ v, B v)]
-  rw [map_add c _ (∑ v, B v)] at hA
-  refine (sphereTreeDimension_nonneg_iff_of_add_two_mul_le_one c hB hm hρ hc (by linarith) parent
-    node root).trans (and_congr_right fun _ => ?_)
-  constructor <;> intro hle <;> linarith
+          ∑ j, C₀ j + ∑ v, B v) :=
+  sphereTreeDimension_nonneg_iff_of_eq_add_two_mul_sub c hB hm hρ hc
+    (brokenPantsDimension_add_brokenPantsDimension_snd n c g₁ g₂ g₃ h h' g₀ C₁ C₂ C₃ D D' C₀ A₁ A₂
+      hh) hA parent node root
 
 end Associativity
 
