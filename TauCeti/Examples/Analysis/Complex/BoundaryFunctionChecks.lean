@@ -32,9 +32,9 @@ Explicit boundary functions `F*` (`TauCeti.upperHalfPlaneBoundaryFun`).
   (`upperHalfPlaneBoundaryFun_exp_neg_I_div`) and `F = P[F*]` on `ℂ₊`
   (`exp_neg_I_div_eq_upperHalfPlanePoissonIntegralFun`). Its Cayley transform is
   `g(w) = exp(-(1 - w) / (1 + w))` (`exp_neg_I_div_I_mul_one_add_div_one_sub`), with no limit at
-  `w = -1` within the disc (`not_tendsto_cayley_neg_one`) and `log|g| < 0` on the open disc
-  (`log_norm_exp_neg_one_sub_div_one_add_lt_zero`). The logarithmic bound at `i` is strict:
-  `log|F(i)| = -1` (`log_norm_exp_neg_I_div_I`) while `P[log|F*|](i) = 0`
+  `w = -1` within the disc (`not_tendsto_exp_neg_one_sub_div_one_add_neg_one`) and `log|g| < 0` on
+  the open disc (`log_norm_exp_neg_one_sub_div_one_add_lt_zero`). The logarithmic bound at `i` is
+  strict: `log|F(i)| = -1` (`log_norm_exp_neg_I_div_I`) while `P[log|F*|](i) = 0`
   (`upperHalfPlanePoissonIntegralFun_log_norm_exp_neg_I_div`).
 -/
 
@@ -158,8 +158,8 @@ theorem not_tendsto_exp_neg_I_div_zero (c : ℂ) :
     simp_rw [exp_neg_I_div_I_mul]
     have := (Real.tendsto_exp_atBot.comp
       (tendsto_neg_atTop_atBot.comp tendsto_inv_nhdsGT_zero))
-    exact (continuous_ofReal.tendsto 0).comp (by simpa [Function.comp_def] using this) |>.congr
-      fun _ ↦ rfl
+    exact (continuous_ofReal.tendsto' 0 0 ofReal_zero).comp
+      (by simpa [Function.comp_def] using this)
   have hc0 : c = 0 := tendsto_nhds_unique (hc.comp (hpath (by fun_prop) (by simp)
     fun t ht ↦ by simpa using ht)) h1
   -- along the parabola the modulus tends to `e^{-1}`
@@ -191,7 +191,7 @@ theorem exp_neg_I_div_eq_upperHalfPlanePoissonIntegralFun {z : ℂ} (hz : z ∈ 
     differentiableOn_exp_neg_I_div (fun w hw ↦ norm_exp_neg_I_div_le_one hw) hz,
     upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonIntegralFun_def]
   refine integral_congr_ae ?_
-  filter_upwards [compl_mem_ae_iff.2 (measure_singleton (μ := volume) (0 : ℝ))] with x hx
+  filter_upwards [volume.ae_ne (0 : ℝ)] with x hx
   rw [upperHalfPlaneBoundaryFun_exp_neg_I_div hx]
 
 /-- The Cayley transform of `e^{-i/z}`: at `z = i (1 + w) / (1 - w)`, `e^{-i/z}` is
@@ -202,7 +202,7 @@ theorem exp_neg_I_div_I_mul_one_add_div_one_sub (w : ℂ) :
 
 /-- The Cayley transform `g(w) = exp(-(1 - w) / (1 + w))` of `e^{-i/z}` has no limit at `w = -1`
 within the open unit disc. -/
-theorem not_tendsto_cayley_neg_one (c : ℂ) :
+theorem not_tendsto_exp_neg_one_sub_div_one_add_neg_one (c : ℂ) :
     ¬ Tendsto (fun w ↦ exp (-((1 - w) / (1 + w)))) (𝓝[Metric.ball 0 1] (-1)) (𝓝 c) := by
   intro hc
   refine not_tendsto_exp_neg_I_div_zero c
@@ -243,7 +243,7 @@ theorem upperHalfPlanePoissonIntegralFun_log_norm_exp_neg_I_div :
   rw [← upperHalfPlanePoissonIntegralFun_const 0 (z := I) (by simp),
     upperHalfPlanePoissonIntegralFun_def, upperHalfPlanePoissonIntegralFun_def]
   refine integral_congr_ae ?_
-  filter_upwards [compl_mem_ae_iff.2 (measure_singleton (μ := volume) (0 : ℝ))] with x hx
+  filter_upwards [volume.ae_ne (0 : ℝ)] with x hx
   rw [upperHalfPlaneBoundaryFun_exp_neg_I_div hx, norm_exp_neg_I_div, Real.log_exp]
   simp
 
