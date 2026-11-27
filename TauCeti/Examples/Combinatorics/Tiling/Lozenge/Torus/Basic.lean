@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Torus
+public import TauCeti.Combinatorics.Tiling.Lozenge.Torus.Basic
 public import TauCeti.Examples.Combinatorics.Tiling.Lozenge.Height
 import Mathlib.Tactic.FinCases
 
@@ -59,7 +59,8 @@ theorem isTorusTiling_edgesOfDir (j : Fin 3) : IsTorusTiling 1 1 (edgesOfDir j) 
     simp [Set.mem_vadd_set_iff_neg_vadd_mem]
 
 /-- **The `1 × 1` torus has exactly three tilings**, one of each type. -/
-example (M : Set TriEdge) : IsTorusTiling 1 1 M ↔ ∃ j : Fin 3, M = edgesOfDir j := by
+theorem isTorusTiling_one_one_iff (M : Set TriEdge) :
+    IsTorusTiling 1 1 M ↔ ∃ j : Fin 3, M = edgesOfDir j := by
   refine ⟨fun h => ?_, fun ⟨j, hj⟩ => hj ▸ isTorusTiling_edgesOfDir j⟩
   have hM := isTorusTiling_def.1 h
   have hmem := mem_iff_of_vadd_eq (by exact_mod_cast hM.2.1) (by exact_mod_cast hM.2.2)
