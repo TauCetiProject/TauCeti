@@ -92,6 +92,13 @@ theorem eval_rangeCode (O : ℕ → ℕ) (c : Code) (a n : ℕ) :
   rw [rangeCode, eval_curry]
   exact exists_eval_rangeCode.choose_spec O c a n
 
+/-- The range program halts on every input relative to any total oracle. -/
+@[simp]
+theorem dom_eval_rangeCode (O : ℕ → ℕ) (c : Code) (a : ℕ) :
+    (eval (O : ℕ →. ℕ) (c.rangeCode a)).Dom = Set.univ := by
+  ext x
+  simp [PFun.Dom]
+
 /-- The range consists of the source domain together with the fallback, which is returned
 at every pair with stage zero. -/
 @[simp]
@@ -110,34 +117,22 @@ theorem ran_eval_rangeCode (O : ℕ → ℕ) (c : Code) (a : ℕ) :
     · obtain ⟨s, hs⟩ := mem_stageLimit.1 hx
       exact ⟨Nat.pair x s, by simp [hs]⟩
 
-open Primrec in
-private theorem primrec_serializedDomStage :
-    Primrec fun q : (List ℕ × Code) × ℕ =>
-      Finset.equivBitIndices.symm (serializedStage (q.1.2.domStage fun z => q.1.1[z]?) q.2) := by
-  have hmem := primrec_mem_domStage_unpair.comp ((fst.comp fst).pair snd :
-    Primrec fun q : ((List ℕ × Code) × ℕ) × ℕ => (q.1.1, q.2))
-  have hbit := equivBitIndices_symm_filter_range snd hmem.to₂
-  have h := equivBitIndices_symm_image
-    ((fst.comp Primrec.unpair).comp snd).to₂ hbit
-  refine h.of_eq fun ⟨⟨L, c⟩, s⟩ => ?_
-  congr 1
-  ext x
-  simp only [Equiv.apply_symm_apply, Finset.mem_image, Finset.mem_filter, Finset.mem_range,
-    decide_eq_true_eq, mem_serializedStage]
-  exact ⟨fun ⟨p, ⟨hp, hm⟩, hx⟩ => ⟨p.unpair.2, by simpa [← hx], hx ▸ hm⟩,
-    fun ⟨t, ht, hm⟩ => ⟨Nat.pair x t, by simpa using And.intro ht hm, by simp⟩⟩
+/-- Relative to a set oracle, the range is the source domain with the fallback inserted. -/
+@[simp]
+theorem ran_eval_rangeCode_oracle (Z : Set ℕ) (c : Code) (a : ℕ) :
+    (eval Z.oracle (c.rangeCode a)).ran = insert a (eval Z.oracle c).Dom := by
+  simp only [Set.oracle_eq_indicator, ran_eval_rangeCode]
 
 private theorem serializedDomStage_range_map (O : ℕ → ℕ) (c : Code) {s k : ℕ}
     (hsk : s ≤ k + 1) :
     serializedStage (c.domStage fun z => ((List.range k).map O)[z]?) s =
       serializedStage (c.domStage fun z => some (O z)) s := by
-  ext x
-  simp only [mem_serializedStage]
-  refine exists_congr fun t => and_congr_right fun ht => ?_
-  have ht' : t ≤ k := by have := Nat.right_le_pair x t; omega
-  rw [domStage_eq_of_eqOn (τ := fun z => some (O z))]
+  apply serializedStage_eq_of_eqOn
+  intro t ht
+  have htk := Nat.lt_succ_iff.mp ((Set.mem_Iio.1 ht).trans_le hsk)
+  apply domStage_eq_of_eqOn
   intro z hz
-  simp [(Set.mem_Iio.1 hz).trans_le ht']
+  simp [(Set.mem_Iio.1 hz).trans_le htk]
 
 private theorem exists_eval_entryCode :
     ∃ u : Code, ∀ (O : ℕ → ℕ) (c : Code) (n : ℕ),
@@ -147,8 +142,11 @@ private theorem exists_eval_entryCode :
   let param := fun q : ℕ × ℕ × List ℕ => (q.2.2, ofNat Code q.1.unpair.1)
   have hparam : Primrec param :=
     (snd.comp snd).pair ((Primrec.ofNat Code).comp (fst.comp (Primrec.unpair.comp fst)))
-  have hnow := primrec_serializedDomStage.comp (hparam.pair (fst.comp snd))
-  have hnext := primrec_serializedDomStage.comp (hparam.pair (Primrec.succ.comp (fst.comp snd)))
+  have hstage := primrec_serializedStage
+    (A := fun p : List ℕ × Code => p.2.domStage fun z => p.1[z]?)
+    (primrec_domStage_list.comp ((fst.comp fst).pair ((snd.comp fst).pair snd)))
+  have hnow := hstage.comp (hparam.pair (fst.comp snd))
+  have hnext := hstage.comp (hparam.pair (Primrec.succ.comp (fst.comp snd)))
   have hcard := card_equivBitIndices.comp hnow
   have hpos := snd.comp (Primrec.unpair.comp (fst : Primrec (Prod.fst : ℕ × ℕ × List ℕ → ℕ)))
   have hmin := nat_leastBitIndex.comp (nat_ldiff.comp hnext hnow)
@@ -204,11 +202,24 @@ theorem ran_eval_entryCode (O : ℕ → ℕ) (c : Code) :
   · intro hx
     exact ((c.existsUnique_mem_eval_entryCode_iff O x).2 hx).exists
 
+/-- Relative to a set oracle, the entry program enumerates exactly the source domain. -/
+@[simp]
+theorem ran_eval_entryCode_oracle (Z : Set ℕ) (c : Code) :
+    (eval Z.oracle c.entryCode).ran = (eval Z.oracle c).Dom := by
+  simp only [Set.oracle_eq_indicator, ran_eval_entryCode]
+
+/-- The entry program halts at position `n` exactly when some serialized stage has more than
+`n` entries. -/
+theorem dom_eval_entryCode_iff (O : ℕ → ℕ) (c : Code) (n : ℕ) :
+    (eval (O : ℕ →. ℕ) c.entryCode n).Dom ↔
+      ∃ s, n < (serializedStage (c.domStage fun z => some (O z)) s).card := by
+  rw [eval_entryCode, entryAt_dom (monotone_serializedStage _) (serializedStage_zero _)
+    (card_fresh_serializedStage_le_one _)]
+
 /-- The entry program halts at every position precisely when the source domain is infinite. -/
 theorem forall_dom_eval_entryCode_iff (O : ℕ → ℕ) (c : Code) :
     (∀ n, (eval (O : ℕ →. ℕ) c.entryCode n).Dom) ↔ (eval (O : ℕ →. ℕ) c).Dom.Infinite := by
-  simp only [eval_entryCode, entryAt_dom (monotone_serializedStage _) (serializedStage_zero _)
-    (card_fresh_serializedStage_le_one _)]
+  simp only [dom_eval_entryCode_iff]
   rw [← stageLimit_domStage_total O c, ← stageLimit_serializedStage (c.domStage _),
     stageLimit_infinite_iff (monotone_serializedStage _)]
   exact ⟨fun h n => (h n).imp fun _ hs => hs.le,
