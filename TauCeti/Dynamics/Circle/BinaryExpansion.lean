@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Group.AddCircle
 public import Mathlib.Analysis.Real.OfDigits
 public import Mathlib.Dynamics.SymbolicDynamics.Basic
 public import Mathlib.Topology.Instances.AddCircle.Real
+public import Mathlib.Topology.UniformSpace.DiscreteUniformity
+import Mathlib.Topology.UniformSpace.HeineCantor
 
 /-!
 # Binary expansion as a factor map onto the circle
@@ -23,6 +26,8 @@ one-sided full shift on two symbols.
   `Real.ofDigits x` (`TauCeti.binaryExpansion_apply`).
 * `TauCeti.continuous_binaryExpansion`, `TauCeti.surjective_binaryExpansion`: it is a continuous
   surjection.
+* `TauCeti.uniformContinuous_binaryExpansion`: it is uniformly continuous for the product of
+  discrete uniformities on `ℕ → Fin 2`.
 * `TauCeti.semiconj_binaryExpansion`: it turns the shift into the doubling map.
 -/
 
@@ -50,6 +55,23 @@ theorem binaryExpansion_eq_comp :
 theorem continuous_binaryExpansion : Continuous binaryExpansion := by
   rw [binaryExpansion_eq_comp]
   exact (AddCircle.continuous_mk' 1).comp Real.continuous_ofDigits
+
+/-- Binary expansion is uniformly continuous for the product of discrete uniformities on
+`ℕ → Fin 2`. The uniformity `u` on `Fin 2` is an implicit argument, found by unification, since
+Mathlib has no global uniform structure on `Fin 2`. -/
+theorem uniformContinuous_binaryExpansion {u : UniformSpace (Fin 2)} [DiscreteUniformity (Fin 2)] :
+    UniformContinuous binaryExpansion := by
+  refine CompactSpace.uniformContinuous_of_continuous ?_
+  -- The topology of the discrete uniformity on `Fin 2` is Mathlib's discrete topology on `Fin 2`,
+  -- so `continuous_binaryExpansion` applies to the product of these topologies.
+  have hFin : u.toTopologicalSpace = instTopologicalSpaceFin := by
+    rw [DiscreteUniformity.eq_bot (X := Fin 2)]
+    exact UniformSpace.toTopologicalSpace_bot
+  have h : @Continuous _ _ (Pi.topologicalSpace (t₂ := fun _ ↦ u.toTopologicalSpace)) _
+      binaryExpansion := by
+    rw [hFin]
+    exact continuous_binaryExpansion
+  exact h
 
 /-- Every point of the circle has a binary expansion. -/
 theorem surjective_binaryExpansion : Function.Surjective binaryExpansion := by

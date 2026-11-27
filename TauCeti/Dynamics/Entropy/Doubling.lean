@@ -48,19 +48,6 @@ private abbrev finUniformSpace (n : ℕ) : UniformSpace (Fin n) := ⊥
 
 attribute [local instance] finUniformSpace
 
-private lemma uniformContinuous_binaryExpansion : UniformContinuous binaryExpansion := by
-  refine CompactSpace.uniformContinuous_of_continuous ?_
-  -- The topology of the discrete uniformity on `Fin 2` is Mathlib's discrete topology on `Fin 2`,
-  -- so `continuous_binaryExpansion` applies to the product of these topologies.
-  have hFin : (finUniformSpace 2).toTopologicalSpace = instTopologicalSpaceFin :=
-    UniformSpace.toTopologicalSpace_bot
-  have h : @Continuous _ _
-      (Pi.topologicalSpace (t₂ := fun _ ↦ (finUniformSpace 2).toTopologicalSpace)) _
-      binaryExpansion := by
-    rw [hFin]
-    exact continuous_binaryExpansion
-  exact h
-
 /-- Distinct points `a / 2^n`, `b / 2^n` of the circle (images of `ZMod.toAddCircle`) are
 `1/4`-separated by some iterate of the doubling map before time `n`. -/
 private lemma exists_le_dist_toAddCircle {n : ℕ} {a b : ZMod (2 ^ n)} (hab : a ≠ b) :
