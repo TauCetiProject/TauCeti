@@ -85,16 +85,19 @@ theorem lineDeriv_lift_horizontal (g : E → ℝ) (x : E') (v : E) :
       rexp (vertical x) * lineDeriv ℝ g (horizontal x) v := by
   -- Restriction to this line keeps its height fixed; constant multiplication also preserves
   -- the zero value of the total derivative at nondifferentiable points.
-  simp [lineDeriv, lift_apply, map_add, map_smul, deriv_const_mul_field]
+  simp only [lineDeriv, lift_add_smul_liftPoint, mul_zero, add_zero,
+    deriv_const_mul_field]
 
 /-- Along the vertical direction the exponential extension differentiates to itself,
 without a regularity assumption on the base function. -/
 theorem lineDeriv_lift_vertical (g : E → ℝ) (x : E') :
     lineDeriv ℝ (lift g) x (liftPoint 0 1) = lift g x := by
   have h : HasLineDerivAt ℝ (lift g) (lift g x) x (liftPoint 0 1) := by
-    -- Unfolding restricts to the vertical line: the horizontal coordinate stays fixed,
-    -- while the height is vertical x + s, so only the exponential is differentiated.
-    simpa [HasLineDerivAt, lift_apply, map_add, map_smul] using
+    -- Express the line derivative through its scalar restriction, then apply the
+    -- affine-line identity before differentiating the exponential.
+    unfold HasLineDerivAt
+    simp only [lift_add_smul_liftPoint, mul_one, smul_zero, add_zero]
+    simpa only [lift_apply, id_eq, add_zero, mul_one] using
       (((hasDerivAt_id (0 : ℝ)).const_add (vertical x)).exp.mul_const (g (horizontal x)))
   exact h.lineDeriv
 

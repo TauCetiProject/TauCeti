@@ -79,6 +79,11 @@ def liftPoint (x : E) (t : ℝ) : E' := WithLp.toLp 2 (Sum.elim x fun _ ↦ t)
 
 omit [Fintype ι] in
 @[simp]
+theorem coe_liftPoint (x : E) (t : ℝ) :
+    (liftPoint x t : (ι ⊕ Unit) → ℝ) = Sum.elim x (fun _ ↦ t) := (rfl)
+
+omit [Fintype ι] in
+@[simp]
 theorem liftPoint_apply_inl (x : E) (t : ℝ) (i : ι) : liftPoint x t (Sum.inl i) = x i := (rfl)
 
 omit [Fintype ι] in
@@ -171,17 +176,12 @@ theorem matrixBilinearForm_skewBlock (a : Matrix ι ι ℝ) (b : E) (x y : E') :
       matrixBilinearForm a (horizontal x) (horizontal y) +
         ⟪horizontal x, b⟫_ℝ * vertical y - vertical x * ⟪b, horizontal y⟫_ℝ +
         vertical x * vertical y := by
-  have hx : (x : (ι ⊕ Unit) → ℝ) =
-      Sum.elim (fun i ↦ horizontal x i) (fun _ ↦ vertical x) := by
-    funext i
-    rcases i with i | t
-    · simp
-    · cases t
-      simp [vertical_apply]
-  rw [matrixBilinearForm_apply, skewBlock]
-  -- The dependent PiLp coercion needs unfolding to match the matrix block API.
-  erw [Matrix.fromBlocks_mulVec]
-  rw [hx, sumElim_dotProduct_sumElim, dotProduct_add, dotProduct_add]
+  conv_lhs => rw [← liftPoint_horizontal_vertical x, ← liftPoint_horizontal_vertical y]
+  rw [matrixBilinearForm_apply, skewBlock, coe_liftPoint, coe_liftPoint,
+    Matrix.fromBlocks_mulVec a (fun i (_ : Unit) ↦ b i) (fun (_ : Unit) j ↦ -b j)
+      (fun (_ _ : Unit) ↦ (1 : ℝ)) (Sum.elim (horizontal y) fun _ ↦ vertical y),
+    sumElim_dotProduct_sumElim,
+    dotProduct_add, dotProduct_add]
   simp [matrixBilinearForm_apply, Matrix.mulVec, dotProduct, PiLp.inner_apply,
     horizontal_apply, vertical_apply, Finset.mul_sum,
     mul_comm, mul_left_comm, mul_assoc]
@@ -265,6 +265,13 @@ theorem lift_apply (u : E → ℝ) (x : E') :
 theorem lift_liftPoint (u : E → ℝ) (x : E) (t : ℝ) :
     lift u (liftPoint x t) = rexp t * u x := by
   simp [lift_apply]
+
+/-- Restricting the exponential extension to an affine line separates its height
+from the corresponding line in the base space. -/
+theorem lift_add_smul_liftPoint (g : E → ℝ) (x : E') (s : ℝ) (v : E) (t : ℝ) :
+    lift g (x + s • liftPoint v t) =
+      rexp (vertical x + s * t) * g (horizontal x + s • v) := by
+  simp [lift_apply, map_add, map_smul]
 
 theorem contDiffOn_lift {k : WithTop ℕ∞} {u : E → ℝ} {s : Set E}
     (hu : ContDiffOn ℝ k u s) : ContDiffOn ℝ k (lift u) (horizontal ⁻¹' s) :=
