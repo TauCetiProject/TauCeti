@@ -41,8 +41,9 @@ open-cover entropy with the entropy of that uniformity.
 ## Main results
 
 * `TauCeti.openCoverMincard_finite_iff`, `TauCeti.openCoverMincard_eq_zero_iff`,
-  `TauCeti.openCoverMincard_antitone`, `TauCeti.openCoverMincard_monotone_time`, and
-  `TauCeti.le_openCoverEntropy`: the basic API of these definitions.
+  `TauCeti.le_openCoverMincard_iff`, `TauCeti.openCoverMincard_antitone`,
+  `TauCeti.openCoverMincard_monotone_time`, `TauCeti.le_openCoverEntropy`, and
+  `TauCeti.openCoverEntropy_le_iff`: the basic API of these definitions.
 * `TauCeti.openCoverEntropy_le_coverEntropy`, `TauCeti.coverEntropy_le_openCoverEntropy`, and
   `TauCeti.openCoverEntropy_eq_coverEntropy`: on a compact uniform space the open-cover entropy
   is `coverEntropy T univ`.
@@ -90,6 +91,13 @@ theorem openCoverMincard_le_card {s : Finset (Fin n → Set X)} (hs : ∀ w ∈ 
     (hcov : ∀ x, ∃ w ∈ s, ∀ k : Fin n, T^[k] x ∈ w k) : openCoverMincard T 𝒰 n ≤ s.card :=
   (iInf₂_le s hs).trans (iInf_le (fun _ ↦ (s.card : ℕ∞)) hcov)
 
+/-- `openCoverMincard` is at least `c` exactly when every finite covering family of words of the
+join has at least `c` members. -/
+theorem le_openCoverMincard_iff {c : ℕ∞} :
+    c ≤ openCoverMincard T 𝒰 n ↔ ∀ s : Finset (Fin n → Set X), (∀ w ∈ s, ∀ k, w k ∈ 𝒰) →
+      (∀ x, ∃ w ∈ s, ∀ k : Fin n, T^[k] x ∈ w k) → c ≤ s.card := by
+  simp only [openCoverMincard_def, le_iInf_iff]
+
 /-- `openCoverMincard` is finite exactly when it is attained by a finite covering family of words
 of the join. -/
 theorem openCoverMincard_finite_iff :
@@ -114,7 +122,7 @@ theorem one_le_openCoverMincard_iff : 1 ≤ openCoverMincard T 𝒰 n ↔ Nonemp
   simp [Order.one_le_iff_ne_zero, openCoverMincard_eq_zero_iff]
 
 /-- The empty word alone covers a nonempty space, so the `0`-fold join needs one cylinder. -/
-theorem openCoverMincard_zero [Nonempty X] : openCoverMincard T 𝒰 0 = 1 := by
+@[simp] theorem openCoverMincard_zero [Nonempty X] : openCoverMincard T 𝒰 0 = 1 := by
   refine le_antisymm ?_ (one_le_openCoverMincard_iff.2 ‹_›)
   simpa using openCoverMincard_le_card (T := T) (𝒰 := 𝒰) (s := {Fin.elim0}) (by simp) (by simp)
 
@@ -128,7 +136,7 @@ is monotone in time. -/
 theorem openCoverMincard_monotone_time : Monotone fun n : ℕ ↦ openCoverMincard T 𝒰 n := by
   classical
   intro m n hmn
-  refine le_iInf₂ fun s hs ↦ le_iInf fun hcov ↦ ?_
+  refine le_openCoverMincard_iff.2 fun s hs hcov ↦ ?_
   let r : (Fin n → Set X) → Fin m → Set X := fun w k ↦ w (Fin.castLE hmn k)
   refine (openCoverMincard_le_card (s := s.image r) ?_ ?_).trans
     (by exact_mod_cast Finset.card_image_le)
@@ -144,6 +152,13 @@ theorem le_openCoverEntropy [TopologicalSpace X] (hopen : ∀ U ∈ 𝒰, IsOpen
     (hcov : ⋃₀ 𝒰 = univ) :
     expGrowthSup (fun n ↦ (openCoverMincard T 𝒰 n : ℝ≥0∞)) ≤ openCoverEntropy T :=
   le_iSup₂_of_le 𝒰 hopen (le_iSup_of_le hcov le_rfl)
+
+/-- The open-cover entropy is at most `c` exactly when the growth rate of `openCoverMincard` is
+at most `c` for every open cover. -/
+theorem openCoverEntropy_le_iff [TopologicalSpace X] {c : EReal} :
+    openCoverEntropy T ≤ c ↔ ∀ 𝒰 : Set (Set X), (∀ U ∈ 𝒰, IsOpen U) → ⋃₀ 𝒰 = univ →
+      expGrowthSup (fun n ↦ (openCoverMincard T 𝒰 n : ℝ≥0∞)) ≤ c := by
+  simp only [openCoverEntropy_def, iSup_le_iff]
 
 /-- **Lebesgue numbers.** If the balls of `V` each lie in a member of `𝒰`, a `(V, n)`-dynamical
 cover gives as many cylinders of the `n`-fold join of `𝒰` covering `X`. -/
@@ -170,7 +185,7 @@ theorem coverMincard_le_openCoverMincard {U : SetRel X X}
     (hU : ∀ W ∈ 𝒰, ∀ a ∈ W, ∀ b ∈ W, (a, b) ∈ U) (n : ℕ) :
     coverMincard T univ U n ≤ openCoverMincard T 𝒰 n := by
   classical
-  refine le_iInf₂ fun s hs ↦ le_iInf fun hcov ↦ ?_
+  refine le_openCoverMincard_iff.2 fun s hs hcov ↦ ?_
   rcases isEmpty_or_nonempty X with hX | hX
   · refine (IsDynCoverOf.coverMincard_le_card (s := ∅) ?_).trans (by simp)
     rw [univ_eq_empty_iff.2 hX]
@@ -197,7 +212,7 @@ variable [UniformSpace X]
 /-- On a compact uniform space the open-cover entropy is at most `coverEntropy T univ`. -/
 theorem openCoverEntropy_le_coverEntropy [CompactSpace X] (T : X → X) :
     openCoverEntropy T ≤ coverEntropy T univ := by
-  refine iSup₂_le fun 𝒰 hopen ↦ iSup_le fun hcov ↦ ?_
+  refine openCoverEntropy_le_iff.2 fun 𝒰 hopen hcov ↦ ?_
   obtain ⟨V, hV, hball⟩ := lebesgue_number_lemma_sUnion isCompact_univ hopen hcov.symm.subset
   refine le_trans ?_ (coverEntropyEntourage_le_coverEntropy T univ hV)
   exact expGrowthSup_monotone fun n ↦ ENat.toENNReal_le.2
