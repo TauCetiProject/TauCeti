@@ -8,17 +8,27 @@ module
 public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 
 /-!
-# Unbounded suprema of seminorms
+# Basic lemmas for seminorms
 
-Mathlib's supremum of a set of seminorms is the pointwise supremum when the set is bounded above
-(`Seminorm.sSup_apply`), and the junk value `⊥` otherwise. This file records the junk value:
-`Seminorm.sSup_of_not_bddAbove` and `Seminorm.iSup_of_not_bddAbove`, after
-`Real.sSup_of_not_bddAbove` and `Real.iSup_of_not_bddAbove`.
+This file collects basic lemmas for `Seminorm` complementing Mathlib:
+
+* `Seminorm.norm_toSeminormedAddCommGroup`: the norm of the seminormed additive commutative
+  group induced by a seminorm agrees with evaluating the seminorm.
+* `Seminorm.sSup_of_not_bddAbove` and `Seminorm.iSup_of_not_bddAbove`: Mathlib's supremum of a set
+  of seminorms is the pointwise supremum when the set is bounded above (`Seminorm.sSup_apply`),
+  and the junk value `⊥` otherwise (after `Real.sSup_of_not_bddAbove` and
+  `Real.iSup_of_not_bddAbove`).
 -/
 
 public section
 
 namespace Seminorm
+
+/-- The norm of the seminormed additive commutative group induced by `p` agrees with evaluating `p`.
+-/
+theorem norm_toSeminormedAddCommGroup {𝕜 E : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [SMul 𝕜 E]
+    (p : Seminorm 𝕜 E) (x : E) :
+    @norm E p.toAddGroupSeminorm.toSeminormedAddCommGroup.toNorm x = p x := (rfl)
 
 variable {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
 

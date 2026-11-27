@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.HahnBanach
-public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
 public import TauCeti.Analysis.Normed.Lp.Basic
+public import TauCeti.Analysis.Normed.Module.Seminorm.Basic
 
 /-!
 # Hahn–Banach extension along linear isometries and seminorm norming functionals
@@ -100,12 +100,6 @@ theorem exists_extension_norm_eq (i : E →ₗᵢ[𝕜] F) (f : StrongDual 𝕜 
 end LinearIsometry
 
 namespace Seminorm
-
-/-- The norm of the seminormed additive commutative group induced by `p` agrees with evaluating `p`.
--/
-theorem norm_toSeminormedAddCommGroup {𝕜 E : Type*} [SeminormedRing 𝕜] [AddCommGroup E] [SMul 𝕜 E]
-    (p : Seminorm 𝕜 E) (x : E) :
-    @norm E p.toAddGroupSeminorm.toSeminormedAddCommGroup.toNorm x = p x := (rfl)
 
 /-- **Hahn–Banach norming functional for a seminorm.** For any `RCLike` seminorm `p` on a vector
 space `E` and any `a : E`, there exists a linear functional `g : Module.Dual 𝕜 E` such that
