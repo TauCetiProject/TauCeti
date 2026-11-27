@@ -47,9 +47,10 @@ comparison is a quasi-isomorphism from the generators of index `q` to the chains
 in the namespace `TauCeti`). All quasi-isomorphisms are written on elements: every relative cycle
 is a relative boundary, the form of the case of the inclusion of a point,
 `BrownModel.exists_coefficientDifferential_eq_and_fibrationComparison_subtypeVal_add_eq`.
-The graded pieces are the first page of the index spectral sequence of the twisted complex and of
-the Serre spectral sequence of `E' → B`, and the comparison on them is the cell-by-cell
-computation of the relative homology of `E'` over the cells of `B`.
+The graded pieces form the zeroth page of the index spectral sequence of the twisted complex and
+of the Serre spectral sequence of `E' → B`, so a quasi-isomorphism on them is an isomorphism on the
+first pages. The comparison on them is the cell-by-cell computation of the relative homology of
+`E'` over the cells of `B`.
 
 ## Main results
 
