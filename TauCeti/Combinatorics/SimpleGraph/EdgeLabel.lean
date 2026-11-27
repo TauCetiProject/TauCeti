@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.SimpleGraph.Bipartite
+public import TauCeti.Combinatorics.SimpleGraph.SymmDiff
+import TauCeti.Combinatorics.SimpleGraph.Basic
 
 /-!
 # Involution edge labellings of simple graphs

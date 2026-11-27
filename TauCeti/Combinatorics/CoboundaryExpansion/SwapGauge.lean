@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Binary
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.ParityRetract
-public import TauCeti.Combinatorics.SimpleGraph.CutMinimal.Basic
+public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
+import TauCeti.Combinatorics.SimpleGraph.Finite
 import TauCeti.GroupTheory.Perm.Fin
 
 /-!
@@ -22,10 +23,10 @@ permutation gauges to cut-minimality and binary cochains via `Equiv.Perm.parityR
   `S := {w | Equiv.Perm.sign (β w) = -1}`, retracting the gauged edge label produces the
   cut-switched edge label of `G ∆ (⊤ : SimpleGraph V).between S Sᶜ` and yields
   `2 * #(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset ≤
-    (G.toCochain ht.mul_self).cost (Equiv.Perm.movedNorm α) β`
+    (G.toCochain ht.mul_self_eq_one).cost (Equiv.Perm.movedNorm α) β`
   (`SimpleGraph.two_mul_card_symmDiff_le_cost_movedNorm_toCochain`);
 * `SimpleGraph.isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq` characterizes cut-minimality by
-  `(G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α) = 2 * #G.edgeFinset`, and via
+  `(G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) = 2 * #G.edgeFinset`, and via
   `TauCeti.simpleGraphEquivPermFinTwo` (from `Cochain.Binary`) transports `Cochain.cost`,
   `Cochain.defect`, and `Cochain.gaugeDist` to cut-switched edge counts, `#G.oddTripleFinset`,
   and cut-minimality (`TauCeti.Cochain.cost_movedNorm_fin_two`,
@@ -64,59 +65,63 @@ theorem parityRetract_inv_mul_ite_adj_mul [DecidableEq V]
     split_ifs <;> simp
   rw [map_mul, map_mul, map_inv, Equiv.Perm.parityRetract_eq_ite_sign_eq_neg_one ht (β u),
     Equiv.Perm.parityRetract_eq_ite_sign_eq_neg_one ht (β v), hedge]
-  exact G.ite_mem_inv_mul_ite_adj_mul ht.mul_self {w | Equiv.Perm.sign (β w) = -1} u v
+  exact G.ite_mem_inv_mul_ite_adj_mul ht.mul_self_eq_one {w | Equiv.Perm.sign (β w) = -1} u v
 
-/-- Under the trivial gauge `1`, the moved-point cost of `G.toCochain ht.mul_self` equals
+/-- Under the trivial gauge `1`, the moved-point cost of `G.toCochain ht.mul_self_eq_one` equals
 `2 * #G.edgeFinset`. -/
 theorem cost_movedNorm_toCochain_one [Fintype V] [LinearOrder V] (G : SimpleGraph V)
     [Fintype G.edgeSet] {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (G.toCochain ht.mul_self).cost (Equiv.Perm.movedNorm α) 1 = 2 * #G.edgeFinset := by
-  rw [G.cost_toCochain_one (Equiv.Perm.movedNorm α) ht.mul_self, ht.movedNorm, mul_comm]
+    (G.toCochain ht.mul_self_eq_one).cost (Equiv.Perm.movedNorm α) 1 = 2 * #G.edgeFinset := by
+  rw [G.cost_toCochain_one (Equiv.Perm.movedNorm α) ht.mul_self_eq_one, ht.movedNorm, mul_comm]
 
-/-- Evaluating the moved-point cost of `G.toCochain ht.mul_self` on the `{1, t}`-valued cut gauge
-of `S` gives twice the switched edge count `#(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset`. -/
+/-- Evaluating the moved-point cost of `G.toCochain ht.mul_self_eq_one` on the `{1, t}`-valued
+cut gauge of `S` gives twice the switched edge count
+`#(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset`. -/
 theorem cost_movedNorm_toCochain_ite_mem [Fintype V] [LinearOrder V] (G : SimpleGraph V)
     [DecidableRel G.Adj] {t : Equiv.Perm α} (ht : t.IsSwap)
     (S : Set V) [DecidablePred (· ∈ S)] :
-    (G.toCochain ht.mul_self).cost (Equiv.Perm.movedNorm α) (fun v ↦ if v ∈ S then t else 1) =
+    (G.toCochain ht.mul_self_eq_one).cost (Equiv.Perm.movedNorm α)
+        (fun v ↦ if v ∈ S then t else 1) =
       2 * #(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset := by
-  rw [G.cost_toCochain_ite_mem (Equiv.Perm.movedNorm α) ht.mul_self S, ht.movedNorm, mul_comm]
+  rw [G.cost_toCochain_ite_mem (Equiv.Perm.movedNorm α) ht.mul_self_eq_one S,
+    ht.movedNorm, mul_comm]
 
-/-- Evaluating the moved-point defect of `G.toCochain ht.mul_self` gives twice
+/-- Evaluating the moved-point defect of `G.toCochain ht.mul_self_eq_one` gives twice
 `#G.oddTripleFinset`. -/
 theorem defect_movedNorm_toCochain [Fintype V] [LinearOrder V] (G : SimpleGraph V)
     [DecidableRel G.Adj] {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (G.toCochain ht.mul_self).defect (Equiv.Perm.movedNorm α) = 2 * #G.oddTripleFinset := by
-  rw [G.defect_toCochain (Equiv.Perm.movedNorm α) ht.mul_self, ht.movedNorm, mul_comm]
+    (G.toCochain ht.mul_self_eq_one).defect (Equiv.Perm.movedNorm α) = 2 * #G.oddTripleFinset := by
+  rw [G.defect_toCochain (Equiv.Perm.movedNorm α) ht.mul_self_eq_one, ht.movedNorm, mul_comm]
 
 /-- For any transposition `t` and any `Equiv.Perm α`-valued vertex gauge `β`, the moved-point cost
-of `G.toCochain ht.mul_self` under `β` is at least `2` times the edge count of `G` switched by the
-odd-sign cut `{w | Equiv.Perm.sign (β w) = -1}`. -/
+of `G.toCochain ht.mul_self_eq_one` under `β` is at least `2` times the edge count of `G` switched
+by the odd-sign cut `{w | Equiv.Perm.sign (β w) = -1}`. -/
 theorem two_mul_card_symmDiff_le_cost_movedNorm_toCochain [Fintype V] [LinearOrder V]
     (G : SimpleGraph V) [DecidableRel G.Adj] {t : Equiv.Perm α} (ht : t.IsSwap)
     (β : V → Equiv.Perm α) :
     2 * (#(G ∆ (⊤ : SimpleGraph V).between {w | Equiv.Perm.sign (β w) = -1}
       {w | Equiv.Perm.sign (β w) = -1}ᶜ).edgeFinset : ℝ) ≤
-      (G.toCochain ht.mul_self).cost (Equiv.Perm.movedNorm α) β := by
+      (G.toCochain ht.mul_self_eq_one).cost (Equiv.Perm.movedNorm α) β := by
   have hcomp : Equiv.Perm.parityRetract ht ∘ β =
       fun w ↦ if w ∈ {x | Equiv.Perm.sign (β x) = -1} then t else 1 :=
     funext fun w ↦ Equiv.Perm.parityRetract_eq_ite_sign_eq_neg_one ht (β w)
-  have hle := (G.toCochain ht.mul_self).cost_map_le (Equiv.Perm.movedNorm_parityRetract_le ht) β
+  have hle :=
+    (G.toCochain ht.mul_self_eq_one).cost_map_le (Equiv.Perm.movedNorm_parityRetract_le ht) β
   simp only [SimpleGraph.map_toCochain, Equiv.Perm.parityRetract_self] at hle
   rwa [hcomp, G.cost_movedNorm_toCochain_ite_mem ht {w | Equiv.Perm.sign (β w) = -1}] at hle
 
 /-- Whenever `G ∆ (⊤ : SimpleGraph V).between S Sᶜ` is cut-minimal, the `Equiv.Perm α` gauge
-distance of `G.toCochain ht.mul_self` equals
+distance of `G.toCochain ht.mul_self_eq_one` equals
 `2 * #(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset`. -/
 theorem gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff [Fintype V] [LinearOrder V]
     (G : SimpleGraph V) [DecidableRel G.Adj] {t : Equiv.Perm α} (ht : t.IsSwap)
     {S : Set V} [DecidablePred (· ∈ S)]
     (hS : (G ∆ (⊤ : SimpleGraph V).between S Sᶜ).IsCutMinimal) :
-    (G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α) =
+    (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) =
       2 * #(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset := by
-  refine le_antisymm ?_ (((G.toCochain ht.mul_self).le_gaugeDist_iff _).mpr fun β ↦ ?_)
-  · exact ((G.toCochain ht.mul_self).gaugeDist_le_cost _ (fun v ↦ if v ∈ S then t else 1)).trans_eq
-      (G.cost_movedNorm_toCochain_ite_mem ht S)
+  refine le_antisymm ?_ (((G.toCochain ht.mul_self_eq_one).le_gaugeDist_iff _).mpr fun β ↦ ?_)
+  · exact ((G.toCochain ht.mul_self_eq_one).gaugeDist_le_cost _
+      (fun v ↦ if v ∈ S then t else 1)).trans_eq (G.cost_movedNorm_toCochain_ite_mem ht S)
   · let T : Set V := {w | Equiv.Perm.sign (β w) = -1}
     have hcard : #(G ∆ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset ≤
         #(G ∆ (⊤ : SimpleGraph V).between T Tᶜ).edgeFinset := by
@@ -130,23 +135,23 @@ theorem gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff [Fintype V] [L
     exact hcardR.trans (G.two_mul_card_symmDiff_le_cost_movedNorm_toCochain ht β)
 
 /-- Every finite ordered graph admits a finset cut switching it to a cut-minimal graph whose
-doubled edge count equals the `Equiv.Perm α` gauge distance of `G.toCochain ht.mul_self`. -/
+doubled edge count equals the `Equiv.Perm α` gauge distance of `G.toCochain ht.mul_self_eq_one`. -/
 theorem exists_finset_isCutMinimal_and_gaugeDist_movedNorm_toCochain_eq [Fintype V] [LinearOrder V]
     (G : SimpleGraph V) [DecidableRel G.Adj] {t : Equiv.Perm α} (ht : t.IsSwap) :
     ∃ s : Finset V, (G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ).IsCutMinimal ∧
-      (G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α) =
+      (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) =
         2 * #(G ∆ (⊤ : SimpleGraph V).between (s : Set V) (s : Set V)ᶜ).edgeFinset := by
   obtain ⟨s, hs⟩ := G.exists_finset_isCutMinimal_symmDiff_top_between
   exact ⟨s, hs, G.gaugeDist_movedNorm_toCochain_eq_of_isCutMinimal_symmDiff ht hs⟩
 
 /-- **Cut-minimality via transposition gauge distance**: a finite ordered graph `G` is cut-minimal
-if and only if the `Equiv.Perm α` gauge distance of `G.toCochain ht.mul_self` equals
+if and only if the `Equiv.Perm α` gauge distance of `G.toCochain ht.mul_self_eq_one` equals
 `2 * #G.edgeFinset` (Kozlov, Section 2; Beasley, Corollary 7). -/
 theorem isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq [Fintype V] [LinearOrder V]
     (G : SimpleGraph V) [Fintype G.edgeSet]
     {t : Equiv.Perm α} (ht : t.IsSwap) :
     G.IsCutMinimal ↔
-      (G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α) = 2 * #G.edgeFinset := by
+      (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) = 2 * #G.edgeFinset := by
   classical
   constructor
   · intro hG
@@ -157,7 +162,7 @@ theorem isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq [Fintype V] [LinearOrd
   · intro h
     rw [isCutMinimal_iff_forall_finset_card_edgeFinset_le_symmDiff_top_between]
     intro s
-    have hle := ((G.toCochain ht.mul_self).gaugeDist_le_cost (Equiv.Perm.movedNorm α)
+    have hle := ((G.toCochain ht.mul_self_eq_one).gaugeDist_le_cost (Equiv.Perm.movedNorm α)
       (fun v ↦ if v ∈ (s : Set V) then t else 1)).trans_eq
       (G.cost_movedNorm_toCochain_ite_mem ht (s : Set V))
     rw [h] at hle
@@ -165,14 +170,14 @@ theorem isCutMinimal_iff_gaugeDist_movedNorm_toCochain_eq [Fintype V] [LinearOrd
     exact (card_edgeFinset_congr_of_eq rfl).trans_le
       ((Nat.le_of_mul_le_mul_left hle two_pos).trans_eq (card_edgeFinset_congr_of_eq rfl))
 
-/-- The `Equiv.Perm α` gauge distance of `G.toCochain ht.mul_self` vanishes if and only if `G` is a
-complete-graph cut. -/
+/-- The `Equiv.Perm α` gauge distance of `G.toCochain ht.mul_self_eq_one` vanishes if and only if
+`G` is a complete-graph cut. -/
 theorem gaugeDist_movedNorm_toCochain_eq_zero_iff [Fintype V] [LinearOrder V]
     (G : SimpleGraph V) {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α) = 0 ↔
+    (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) = 0 ↔
       ∃ S : Set V, G = (⊤ : SimpleGraph V).between S Sᶜ :=
-  ((G.toCochain ht.mul_self).gaugeDist_eq_zero_iff_isCoboundary _).trans
-    (G.isCoboundary_toCochain_iff ht.mul_self ht.isCycle.ne_one)
+  ((G.toCochain ht.mul_self_eq_one).gaugeDist_eq_zero_iff_isCoboundary _).trans
+    (G.isCoboundary_toCochain_iff ht.mul_self_eq_one ht.isCycle.ne_one)
 
 end SwapGauge
 
@@ -183,12 +188,12 @@ namespace TauCeti
 section PermFinTwo
 
 /-- **Ambient-degree invariance of transposition gauge distance**: the `Equiv.Perm α` gauge distance
-of `G.toCochain ht.mul_self` depends only on `G`, and coincides with the `Equiv.Perm (Fin 2)` gauge
-distance of `simpleGraphEquivPermFinTwo V G`. -/
+of `G.toCochain ht.mul_self_eq_one` depends only on `G`, and coincides with the `Equiv.Perm (Fin 2)`
+gauge distance of `simpleGraphEquivPermFinTwo V G`. -/
 theorem _root_.SimpleGraph.gaugeDist_movedNorm_toCochain_eq_fin_two
     {V α : Type*} [Fintype V] [LinearOrder V] [Fintype α] [DecidableEq α]
     (G : SimpleGraph V) {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α) =
+    (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) =
       (simpleGraphEquivPermFinTwo V G).gaugeDist (Equiv.Perm.movedNorm (Fin 2)) := by
   classical
   have hswap : (Equiv.swap (0 : Fin 2) 1).IsSwap := Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one

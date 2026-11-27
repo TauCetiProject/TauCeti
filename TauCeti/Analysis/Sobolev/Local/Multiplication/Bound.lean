@@ -34,6 +34,8 @@ infinite.
 
 * `TauCeti.le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le`: the reduction of such a
   bound to factors of finite norm.
+* `TauCeti.le_mul_mul_of_le_mul_eNorm_mul_mul`: the specialisation of such bounds to bilinear
+  maps of norm at most one.
 * `TauCeti.exists_eLpNorm_bilin_le_eLpNormWkp_one`: the order-zero bound.
 * `TauCeti.exists_eLpNormWkp_one_bilin_le`: the order-one bound. At `q = p` this is the local
   bound for the algebra property of `W^{1,p}_loc`.
@@ -79,6 +81,18 @@ theorem le_mul_eNorm_mul_eLpNormWkp_mul_eLpNormWkp_of_ne_top_imp_le {p q : ℝ�
   · filter_upwards [ae_mono (Measure.restrict_mono hVT le_rfl)
       (ae_eq_zero_of_eLpNormWkp_eq_zero hq hg0)] with z hz
     simp [hz]
+
+/-- A bound `L ≤ C ‖x‖ X Y` for an element `x` of norm at most one gives `L ≤ C X Y`. This
+specialises the local product bounds, which carry the factor `‖B‖`, to bilinear maps of norm at
+most one such as `(A, u) ↦ A u` and `(A, T) ↦ A ∘L T`. -/
+theorem le_mul_mul_of_le_mul_eNorm_mul_mul {E : Type*} [SeminormedAddCommGroup E] {x : E}
+    (hx : ‖x‖ ≤ 1) {C : ℝ≥0} {L X Y : ℝ≥0∞} (h : L ≤ C * ‖x‖ₑ * X * Y) : L ≤ C * X * Y :=
+  calc
+    L ≤ C * ‖x‖ₑ * X * Y := h
+    _ ≤ C * 1 * X * Y := by
+      gcongr
+      exact (ofReal_norm x).symm.trans_le (ENNReal.ofReal_le_one.2 hx)
+    _ = C * X * Y := by rw [mul_one]
 
 /-- **Local bound for order-zero mixed products.** Fix real normed spaces `F`, `G` and `H` with
 `G` finite-dimensional. For `p > 2`, `1 ≤ q ≤ p` and a set `U` whose closure is compact and
@@ -162,7 +176,7 @@ theorem exists_eLpNormWkp_one_bilin_le [FiniteDimensional ℝ F] [CompleteSpace 
   replace hDgq : MemLp Dg q (volume.restrict Ω) := memLp_iff.2 (lt_top_iff_ne_top.2 hDgq)
   -- `f` is locally bounded on `Ω`, so the weak Leibniz rule applies there.
   have hfloc : MemWkpLoc p Ω 1 f := memWkpLoc_of_eLpNormWkp_ne_top hf
-  have hLeib := hDf.bilin_of_memLpLoc B hp hq hqp
+  have hLeib := hDf.bilin_of_finrank_lt B (by simpa using hp) hq hqp
     ((hfloc.memLpLoc_of_holderTriple hp le_rfl).mono_exponent le_top) hDfp.memLpLoc
     hDg hgq.memLpLoc hDgq.memLpLoc
   have hint : Opens.interior K ≤ Ω := fun z hz => hUΩ (interior_subset hz)

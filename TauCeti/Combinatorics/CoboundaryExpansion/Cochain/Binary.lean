@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SimpleGraph
 public import TauCeti.GroupTheory.Perm.Basic
+import TauCeti.Data.Fin.Basic
 import TauCeti.GroupTheory.Perm.Fin
 
 /-!
@@ -40,20 +41,20 @@ section PermFinTwo
 non-adjacent pairs carry `1`. -/
 noncomputable def simpleGraphEquivPermFinTwo (V : Type*) [Fintype V] :
     SimpleGraph V ≃ Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2)) where
-  toFun G := G.toCochain (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self
+  toFun G := G.toCochain (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self_eq_one
   invFun α := α.supportGraph
   left_inv G :=
     SimpleGraph.supportGraph_toCochain G
-      (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self
+      (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self_eq_one
       (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).isCycle.ne_one
   right_inv α := by
     ext u v _
-    rcases (α u v).eq_one_or_swap_fin_two with h | h <;> simp [h]
+    rcases Equiv.Perm.eq_one_or_swap_fin_two (α u v) with h | h <;> simp [h]
 
 /-- `TauCeti.simpleGraphEquivPermFinTwo` agrees with `SimpleGraph.toCochain` at `Equiv.swap 0 1`. -/
 theorem simpleGraphEquivPermFinTwo_eq_toCochain {V : Type*} [Fintype V] (G : SimpleGraph V) :
     simpleGraphEquivPermFinTwo V G =
-      G.toCochain (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self :=
+      G.toCochain (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self_eq_one :=
   (rfl)
 
 /-- `TauCeti.simpleGraphEquivPermFinTwo` assigns `Equiv.swap 0 1` to adjacent vertices. -/
@@ -62,7 +63,7 @@ theorem simpleGraphEquivPermFinTwo_apply_of_adj {V : Type*} [Fintype V] {G : Sim
     {u v : V} (h : G.Adj u v) :
     simpleGraphEquivPermFinTwo V G u v = Equiv.swap 0 1 :=
   SimpleGraph.toCochain_apply_of_adj
-    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self h
+    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self_eq_one h
 
 /-- `TauCeti.simpleGraphEquivPermFinTwo` assigns `1` to non-adjacent vertices. -/
 @[simp, grind =]
@@ -70,14 +71,14 @@ theorem simpleGraphEquivPermFinTwo_apply_of_not_adj {V : Type*} [Fintype V] {G :
     {u v : V} (h : ¬ G.Adj u v) :
     simpleGraphEquivPermFinTwo V G u v = 1 :=
   SimpleGraph.toCochain_apply_of_not_adj
-    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self h
+    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self_eq_one h
 
 /-- Explicit `ite` evaluation of `TauCeti.simpleGraphEquivPermFinTwo` when `G.Adj` is decidable. -/
 theorem simpleGraphEquivPermFinTwo_apply {V : Type*} [Fintype V] (G : SimpleGraph V)
     [DecidableRel G.Adj] (u v : V) :
     simpleGraphEquivPermFinTwo V G u v = if G.Adj u v then Equiv.swap 0 1 else 1 :=
   G.toCochain_apply
-    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self u v
+    (Equiv.Perm.swap_isSwap_iff.mpr (Fin.zero_ne_one : (0 : Fin 2) ≠ 1)).mul_self_eq_one u v
 
 /-- The inverse of `TauCeti.simpleGraphEquivPermFinTwo` is `Cochain.supportGraph`. -/
 @[simp]
@@ -91,7 +92,7 @@ its `supportGraph` via `SimpleGraph.toCochain`. -/
 @[simp]
 theorem Cochain.toCochain_supportGraph {V : Type*} [Fintype V]
     (α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))) :
-    α.supportGraph.toCochain (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self = α :=
+    α.supportGraph.toCochain (Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one).mul_self_eq_one = α :=
   (simpleGraphEquivPermFinTwo V).apply_symm_apply α
 
 /-- Acting on `α : Cochain (TwoComplex.complete V) (Equiv.Perm (Fin 2))` by a gauge `β` switches
@@ -106,8 +107,8 @@ theorem Cochain.supportGraph_smul_fin_two {V : Type*} [Fintype V]
   have hswap : (Equiv.swap (0 : Fin 2) 1).IsSwap := Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one
   conv_lhs =>
     rw [← α.toCochain_supportGraph, hβ,
-      α.supportGraph.smul_ite_mem_toCochain hswap.mul_self {w | β w ≠ 1}]
-  exact SimpleGraph.supportGraph_toCochain _ hswap.mul_self hswap.isCycle.ne_one
+      α.supportGraph.smul_ite_mem_toCochain hswap.mul_self_eq_one {w | β w ≠ 1}]
+  exact SimpleGraph.supportGraph_toCochain _ hswap.mul_self_eq_one hswap.isCycle.ne_one
 
 /-- An `Equiv.Perm (Fin 2)`-valued `1`-cochain on `TwoComplex.complete V` is a coboundary if and
 only if its support graph is a complete-graph cut. -/
@@ -117,7 +118,7 @@ theorem Cochain.isCoboundary_fin_two_iff {V : Type*} [Fintype V]
       ∃ S : Set V, α.supportGraph = (⊤ : SimpleGraph V).between S Sᶜ := by
   have hswap : (Equiv.swap (0 : Fin 2) 1).IsSwap := Equiv.Perm.swap_isSwap_iff.mpr Fin.zero_ne_one
   conv_lhs => rw [← α.toCochain_supportGraph]
-  exact α.supportGraph.isCoboundary_toCochain_iff hswap.mul_self hswap.isCycle.ne_one
+  exact α.supportGraph.isCoboundary_toCochain_iff hswap.mul_self_eq_one hswap.isCycle.ne_one
 
 end PermFinTwo
 

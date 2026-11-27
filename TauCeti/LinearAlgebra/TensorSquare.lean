@@ -16,7 +16,7 @@ public import TauCeti.LinearAlgebra.Trace.Exact
 
 import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 import Mathlib.Tactic.FinCases
-import TauCeti.GroupTheory.Perm.Fin
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Decomposing a tensor square

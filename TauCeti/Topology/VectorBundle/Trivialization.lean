@@ -10,8 +10,10 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.VectorBundle.Basic
 public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.LinearAlgebra.Span.Defs
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.Algebra.Module.FiniteDimension
 
+import TauCeti.Topology.FiberBundle.Trivialization
 import TauCeti.Topology.VectorBundle.Smul
 
 /-!
@@ -61,13 +63,18 @@ satisfy the identity and cocycle laws over the relevant base sets
 `Bundle.Trivialization.coordChangeL_coordChangeL_apply`), equal the identity outside the overlap
 (`Bundle.Trivialization.coordChangeL_of_notMem`), and send the coordinate of a point in
 the first trivialization to its coordinate in the second
-(`Bundle.Trivialization.coordChangeL_apply_snd`); the fibrewise inverse of the second, after the
+(`Bundle.Trivialization.coordChangeL_apply_snd`); in finite dimension over a complete nontrivially
+normed field, the coordinate change between any two linear trivializations is continuous on the
+overlap as a map into `F →L[𝕜] F` (`Bundle.Trivialization.continuousOn_coordChangeL`); the
+fibrewise inverse of the second, after the
 coordinate change from the first, is the fibrewise inverse of the first
 (`Bundle.Trivialization.symmL_coordChangeL`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
 point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`). Over the base set, pulling continuous
 linear maps on the model fibre back to a fibre through a linear trivialization is injective
-(`Bundle.Trivialization.injective_comp_continuousLinearMapAt`).
+(`Bundle.Trivialization.injective_comp_continuousLinearMapAt`), and a linear map between the
+fibres of two vector bundles is determined by its readings in linear trivializations of both
+(`Bundle.Trivialization.linearMap_ext`).
 
 Transport through a preferred fibre equivalence also shows that a family spanning a fibre with
 nontrivial model has a nonzero member (`VectorBundle.exists_ne_zero_of_span_range_eq_top`).
@@ -92,7 +99,11 @@ including its zero extension off the base set
 vector bundle with finite-dimensional model fibre are closed (`VectorBundle.isClosed_submodule`).
 
 Reconstruction at equal base points agrees with the equality cast between fibres
-(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`).
+(`Bundle.Trivialization.symmL_continuousLinearMapAt_eq_cast`), and over the base set a fibre
+vector is the combination of the frame vectors `e⁻¹ bⱼ` with the coordinates of its reading in a
+basis `(bⱼ)` of the model fibre (`Bundle.Trivialization.sum_repr_smul_symmL`). Likewise a linear
+map between the fibres of two vector bundles is reassembled from its matrix entries in two
+trivializations (`Bundle.Trivialization.sum_sum_coord_smul_symm`).
 
 A vector bundle with model fibre `𝕜` is a line bundle. In a fibre `E b` a nonzero vector `v` is a
 basis, and `TauCeti.VectorBundle.lineCoord 𝕜 hv : E b ≃L[𝕜] 𝕜` is the coordinate along it, so that
@@ -263,6 +274,16 @@ variable (𝕜 : Type*) [NontriviallyNormedField 𝕜] {F : Type*} [NormedAddCom
   [NormedSpace 𝕜 F] {E : B → Type*} [TopologicalSpace (TotalSpace F E)]
   [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
 
+/-- In finite dimension over a complete nontrivially normed field, the coordinate change between
+any two linear trivializations is continuous on the overlap of their base sets as a map into
+`F →L[𝕜] F`. -/
+theorem continuousOn_coordChangeL [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
+    (e e' : Trivialization F (π F E)) [e.IsLinear 𝕜] [e'.IsLinear 𝕜] :
+    ContinuousOn (fun x ↦ (e.coordChangeL 𝕜 e' x : F →L[𝕜] F)) (e.baseSet ∩ e'.baseSet) :=
+  continuousOn_clm_apply.2 fun v ↦
+    ((e.continuousOn_coordChange e').comp (continuous_id.prodMk continuous_const).continuousOn
+      fun _ hx ↦ ⟨hx, Set.mem_univ _⟩).congr fun _ hx ↦ e.coordChangeL_apply' e' hx v
+
 section FiberBundle
 
 variable [∀ b, TopologicalSpace (E b)] [FiberBundle F E] (e : Trivialization F (π F E))
@@ -274,6 +295,17 @@ theorem symmL_continuousLinearMapAt_eq_cast {x₀ x₁ : B} (h : x₀ = x₁)
     e.symmL 𝕜 x₁ (e.continuousLinearMapAt 𝕜 x₀ v) = cast (congrArg E h) v := by
   subst x₁
   exact e.symmL_continuousLinearMapAt he v
+
+variable {𝕜} in
+/-- **A vector in a frame.** Over the base set of a linear trivialization `e`, a vector `v` of the
+fibre is the combination of the frame vectors `e⁻¹ bⱼ`, for a basis `(bⱼ)` of the model fibre, with
+the coordinates of `e v` in that basis. -/
+theorem sum_repr_smul_symmL {ι : Type*} [Fintype ι] (b : Module.Basis ι 𝕜 F) {x : B}
+    (hx : x ∈ e.baseSet) (v : E x) :
+    ∑ j, b.repr (e.continuousLinearMapAt 𝕜 x v) j • e.symmL 𝕜 x (b j) = v := by
+  calc _ = e.symmL 𝕜 x (∑ j, b.repr (e.continuousLinearMapAt 𝕜 x v) j • b j) := by
+        simp only [map_sum, map_smul]
+    _ = v := by rw [b.sum_repr, e.symmL_continuousLinearMapAt hx]
 
 theorem homeomorphTrivial_apply_eq_continuousLinearEquivAt (he : e.baseSet = Set.univ)
     (v : TotalSpace F E) :
@@ -313,6 +345,42 @@ theorem injective_comp_continuousLinearMapAt {G : Type*} [NormedAddCommGroup G] 
   intro c c' h
   ext v
   simpa [e.continuousLinearMapAt_symmL hb] using DFunLike.congr_fun h (e.symmL 𝕜 b v)
+
+/-- **Linear maps between fibres are determined in frames.** For linear trivializations `e` of `E`
+and `e'` of `E'` whose base sets contain `b`, two linear maps `E_b → E'_b` are equal when they
+agree on every vector `e⁻¹ v` after reading in `e'`. -/
+theorem linearMap_ext {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] {E' : B → Type*}
+    [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)] [∀ b, Module 𝕜 (E' b)]
+    [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E'] (e' : Trivialization F' (π F' E'))
+    [e'.IsLinear 𝕜] {b : B} (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) {A A' : E b →ₗ[𝕜] E' b}
+    (h : ∀ v, e'.continuousLinearMapAt 𝕜 b (A (e.symm b v)) =
+      e'.continuousLinearMapAt 𝕜 b (A' (e.symm b v))) :
+    A = A' := by
+  ext w
+  rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hb w, e.symmL_apply hb,
+    ← e'.symmL_continuousLinearMapAt (R := 𝕜) hb' (A _),
+    ← e'.symmL_continuousLinearMapAt (R := 𝕜) hb' (A' _), h]
+
+variable {𝕜} in
+/-- **A linear map in frames.** Over the common base set of linear trivializations `e` of `E` and
+`e'` of `E'`, a linear map `L : E_x → E'_x` is reassembled from its matrix entries
+`b'ⱼ*(e'ₓ (L (e⁻¹ₓ bₖ)))` in bases `(bₖ)` of `F` and `(b'ⱼ)` of `F'`. -/
+theorem sum_sum_coord_smul_symm {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    {E' : B → Type*} [TopologicalSpace (TotalSpace F' E')] [∀ b, AddCommMonoid (E' b)]
+    [∀ b, Module 𝕜 (E' b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F' E']
+    (e' : Trivialization F' (π F' E')) [e'.IsLinear 𝕜] {ι κ : Type*} [Fintype ι] [Fintype κ]
+    (b : Module.Basis ι 𝕜 F) (b' : Module.Basis κ 𝕜 F') {x : B} (hx : x ∈ e.baseSet)
+    (hx' : x ∈ e'.baseSet) (L : E x →ₗ[𝕜] E' x) (u : E x) :
+    ∑ j, ∑ k, (b'.coord j (e'.continuousLinearMapAt 𝕜 x (L (e.symm x (b k)))) *
+        b.coord k (e.continuousLinearMapAt 𝕜 x u)) • e'.symm x (b' j) = L u := by
+  conv_rhs => rw [← e.sum_repr_smul_symmL b hx u, map_sum]
+  simp only [map_smul]
+  conv_rhs => arg 2; ext k; rw [← e'.sum_repr_smul_symmL b' hx' (L (e.symmL 𝕜 x (b k))),
+    Finset.smul_sum]
+  rw [Finset.sum_comm]
+  refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun k _ ↦ ?_
+  rw [smul_smul, e.symmL_apply hx, e'.symmL_apply hx', Module.Basis.coord_apply,
+    Module.Basis.coord_apply, mul_comm]
 
 variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
 

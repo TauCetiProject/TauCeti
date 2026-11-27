@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Algebra.CyclicQuotient
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
 import Mathlib.Data.List.ChainOfFn
 import TauCeti.Combinatorics.SimpleGraph.Bipartite
-import TauCeti.Combinatorics.SimpleGraph.Dart
+import TauCeti.Combinatorics.SimpleGraph.Dart.Basic
 import TauCeti.RepresentationTheory.Quiver.PathAlgebra.OfArrows
 
 /-!

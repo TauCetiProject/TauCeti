@@ -47,7 +47,7 @@ theorem gaugeDist_map_zpowers_subtype {V α : Type*} [Fintype V] [LinearOrder V]
     apply MonoidHom.ext
     intro x
     apply Subtype.ext
-    rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one (sq t ▸ ht.mul_self)).mp x.property with
+    rcases (Subgroup.mem_zpowers_iff_of_sq_eq_one (sq t ▸ ht.mul_self_eq_one)).mp x.property with
       hx | hx <;>
       simp [ρ, hx]
   exact γ.gaugeDist_map_eq_of_comp_eq_id

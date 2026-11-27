@@ -8,9 +8,11 @@ module
 public import Mathlib.Algebra.Algebra.RestrictScalars
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Unit
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
-public import TauCeti.LinearAlgebra.Matrix.Idempotent
+public import TauCeti.LinearAlgebra.Matrix.Idempotent.Basic
 
+import TauCeti.Algebra.Module.LinearMap.CompHom
 import TauCeti.Algebra.Module.Projective.Semilinear
+import TauCeti.LinearAlgebra.Matrix.Idempotent.RightRange
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings
@@ -47,7 +49,9 @@ commutativity is assumed.
 * `TauCeti.BalancedExtension.piScalarRight`: extension of a finite free module,
   `S ⊗_R Rⁿ ≃ Sⁿ`.
 * `TauCeti.BalancedExtension.rangeVecMulLinearEquiv`: extension of the image of an idempotent
-  matrix, `S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`.
+  matrix on row vectors, `S ⊗_R (Rⁿ e) ≃ Sⁿ f(e)`.
+* `TauCeti.BalancedExtension.rangeMulVecBilinEquiv`: extension of the column range of an
+  idempotent matrix, `(e Rⁿ) ⊗_R S ≃ f(e) Sⁿ`.
 
 The extension of the zero module is zero by the `Subsingleton` instances of
 `TauCeti.BalancedTensorProduct`, since `TauCeti.BalancedExtension` is an `abbrev`.
@@ -55,8 +59,17 @@ The extension of the zero module is zero by the `Subsingleton` instances of
 ## Main results
 
 * `TauCeti.BalancedExtension.map_surjective`: extension of scalars preserves surjections.
+* `TauCeti.BalancedExtension.map_comp_map_of_comp_eq_id`,
+  `TauCeti.BalancedExtension.map_map_of_comp_eq_zero`: extension of scalars preserves retractions
+  and zero composites, in particular the identities of the inclusions and projections of a product.
+* `TauCeti.BalancedExtension.cancelBaseChange_comp_map`,
+  `TauCeti.BalancedExtension.congrRingHom_comp_map`: `cancelBaseChange` and `congrRingHom` are
+  natural in the module.
 * `TauCeti.BalancedExtension.includeRight_surjective`: along a surjective ring homomorphism,
   every element of `S ⊗_R P` is a tensor `1 ⊗ p`.
+* `TauCeti.BalancedExtension.exists_map_eq_of_surjective`: along a surjective ring homomorphism,
+  every `S`-linear map `S ⊗_R P → S ⊗_R P'` between extensions, with `P` projective, is
+  `map f g` for an `R`-linear `g`.
 * Extension of scalars along any `f` sends finitely generated `R`-modules to finitely generated
   `S`-modules and projective `R`-modules to projective `S`-modules (instances), hence finitely
   generated projective modules to finitely generated projective modules. No flatness or
@@ -154,7 +167,7 @@ variable {f}
 
 @[simp]
 theorem zero_tmul (p : P) : tmul f 0 p = 0 := by
-  rw [tmul_def, map_zero, BalancedTensorProduct.zero_tmul]
+  rw [tmul_def, _root_.map_zero, BalancedTensorProduct.zero_tmul]
 
 @[simp]
 theorem tmul_zero (s : S) : tmul f s (0 : P) = 0 :=
@@ -165,6 +178,21 @@ theorem add_tmul (s s' : S) (p : P) : tmul f (s + s') p = tmul f s p + tmul f s'
 
 theorem tmul_add (s : S) (p p' : P) : tmul f s (p + p') = tmul f s p + tmul f s p' :=
   BalancedTensorProduct.tmul_add ℤ R (Scalars.of f s) p p'
+
+@[simp]
+theorem tmul_neg (s : S) (p : P) : tmul f s (-p) = -tmul f s p :=
+  BalancedTensorProduct.tmul_neg ℤ R (Scalars.of f s) p
+
+theorem tmul_sub (s : S) (p p' : P) : tmul f s (p - p') = tmul f s p - tmul f s p' :=
+  BalancedTensorProduct.tmul_sub ℤ R (Scalars.of f s) p p'
+
+theorem tmul_nsmul (s : S) (n : ℕ) (p : P) : tmul f s (n • p) = n • tmul f s p := by
+  rw [tmul_def, tmul_def, ← BalancedTensorProduct.mk_apply, ← BalancedTensorProduct.mk_apply,
+    map_nsmul]
+
+theorem tmul_zsmul (s : S) (n : ℤ) (p : P) : tmul f s (n • p) = n • tmul f s p := by
+  rw [tmul_def, tmul_def, ← BalancedTensorProduct.mk_apply, ← BalancedTensorProduct.mk_apply,
+    map_zsmul]
 
 /-- The balancing relation `s ⊗ (r • p) = (s * f r) ⊗ p`. -/
 theorem tmul_smul (s : S) (r : R) (p : P) : tmul f s (r • p) = tmul f (s * f r) p := by
@@ -178,6 +206,10 @@ theorem smul_tmul (s s' : S) (p : P) : s • tmul f s' p = tmul f (s * s') p :=
 
 theorem tmul_eq_smul_one_tmul (s : S) (p : P) : tmul f s p = s • tmul f 1 p := by
   rw [smul_tmul, mul_one]
+
+/-- Scalars from `R` pass through `1 ⊗ -` along `f`: `1 ⊗ (r • p) = f r • (1 ⊗ p)`. -/
+theorem one_tmul_smul (r : R) (p : P) : tmul f 1 (r • p) = f r • tmul f 1 p := by
+  rw [tmul_smul, one_mul, tmul_eq_smul_one_tmul]
 
 /-- Induction on `S ⊗_R P` by pure tensors and addition. -/
 @[elab_as_elim]
@@ -294,6 +326,49 @@ theorem map_comp (g : P →ₗ[R] P') (g' : P' →ₗ[R] P'') :
 theorem map_add (g g' : P →ₗ[R] P') : map f (g + g') = map f g + map f g' :=
   hom_ext fun p ↦ by simp [tmul_add]
 
+@[simp]
+theorem map_zero : map f (0 : P →ₗ[R] P') = 0 :=
+  hom_ext fun p ↦ by simp
+
+/-- A retraction `r ∘ i = id` stays a retraction after extension of scalars. -/
+theorem map_comp_map_of_comp_eq_id {i : P →ₗ[R] P'} {r : P' →ₗ[R] P}
+    (hri : r ∘ₗ i = LinearMap.id) : map f r ∘ₗ map f i = LinearMap.id := by
+  rw [← map_comp, hri, map_id]
+
+/-- A retraction `r ∘ i = id` stays a retraction after extension of scalars, applied to an
+element. -/
+theorem map_map_of_comp_eq_id {i : P →ₗ[R] P'} {r : P' →ₗ[R] P}
+    (hri : r ∘ₗ i = LinearMap.id) (x : BalancedExtension f P) : map f r (map f i x) = x :=
+  LinearMap.congr_fun (map_comp_map_of_comp_eq_id hri) x
+
+/-- A zero composite `g' ∘ g = 0` stays zero after extension of scalars. -/
+theorem map_map_of_comp_eq_zero {g : P →ₗ[R] P'} {g' : P' →ₗ[R] P''} (hg : g' ∘ₗ g = 0)
+    (x : BalancedExtension f P) : map f g' (map f g x) = 0 := by
+  rw [← LinearMap.comp_apply, ← map_comp, hg, map_zero, LinearMap.zero_apply]
+
+/-! Extension of scalars preserves the identities `fst ∘ inl = id`, `snd ∘ inl = 0`,
+`fst ∘ inr = 0` and `snd ∘ inr = id` of a product. -/
+
+@[simp]
+theorem map_fst_map_inl (x : BalancedExtension f P) :
+    map f (LinearMap.fst R P P') (map f (LinearMap.inl R P P') x) = x :=
+  map_map_of_comp_eq_id (LinearMap.fst_comp_inl R P P') x
+
+@[simp]
+theorem map_snd_map_inl (x : BalancedExtension f P) :
+    map f (LinearMap.snd R P P') (map f (LinearMap.inl R P P') x) = 0 :=
+  map_map_of_comp_eq_zero (LinearMap.snd_comp_inl R P P') x
+
+@[simp]
+theorem map_fst_map_inr (x : BalancedExtension f P') :
+    map f (LinearMap.fst R P P') (map f (LinearMap.inr R P P') x) = 0 :=
+  map_map_of_comp_eq_zero (LinearMap.fst_comp_inr R P P') x
+
+@[simp]
+theorem map_snd_map_inr (x : BalancedExtension f P') :
+    map f (LinearMap.snd R P P') (map f (LinearMap.inr R P P') x) = x :=
+  map_map_of_comp_eq_id (LinearMap.snd_comp_inr R P P') x
+
 variable (f) in
 /-- The `S`-linear equivalence `S ⊗_R P ≃ S ⊗_R P'`, `s ⊗ p ↦ s ⊗ θ p`, induced by an `R`-linear
 equivalence `θ`. This is the `S`-linear form of the additive equivalence
@@ -342,6 +417,13 @@ theorem congrRingHom_trans {g h : R →+* S} (hfg : f = g) (hgh : g = h) :
     (congrRingHom (P := P) hfg).trans (congrRingHom hgh) = congrRingHom (hfg.trans hgh) := by
   subst g h
   rfl
+
+/-- Transport along an equality of ring homomorphisms is natural in the module. -/
+theorem congrRingHom_comp_map {g : R →+* S} (h : f = g) {P' : Type*} [AddCommGroup P']
+    [Module R P'] (φ : P →ₗ[R] P') :
+    (congrRingHom h).toLinearMap ∘ₗ map f φ = map g φ ∘ₗ (congrRingHom h).toLinearMap := by
+  subst g
+  simp
 
 section CentralAction
 
@@ -452,6 +534,15 @@ theorem cancelBaseChange_symm_tmul (t : T) (p : P) :
     (cancelBaseChange f g).symm (tmul (g.comp f) t p) = tmul g t (tmul f 1 p) := by
   simp [cancelBaseChange]
 
+/-- `TauCeti.BalancedExtension.cancelBaseChange` is natural in the module. -/
+theorem cancelBaseChange_comp_map {P' : Type*} [AddCommGroup P'] [Module R P'] (φ : P →ₗ[R] P') :
+    (cancelBaseChange f g).toLinearMap ∘ₗ map g (map f φ) =
+      map (g.comp f) φ ∘ₗ (cancelBaseChange f g).toLinearMap := by
+  ext x
+  induction x using induction_on with
+  | tmul s p => simp
+  | add x y hx hy => rw [tmul_add, _root_.map_add, _root_.map_add, hx, hy]
+
 end Composition
 
 section RightUnit
@@ -505,6 +596,28 @@ theorem piScalarRight_symm_apply [DecidableEq ι] (v : ι → S) :
   ext i
   simp [Pi.single_apply]
 
+/-- Transport along an equality of ring homomorphisms does not change coordinates. -/
+@[simp]
+theorem piScalarRight_congrRingHom {g : R →+* S} (h : f = g) (x : BalancedExtension f (ι → R)) :
+    piScalarRight g ι (congrRingHom h x) = piScalarRight f ι x := by
+  subst g
+  rfl
+
+/-- In coordinates, cancelling base change along `f` and then `g` applies `g` to the coordinates
+and multiplies by the outer scalar. -/
+@[simp]
+theorem piScalarRight_cancelBaseChange_tmul (g : S →+* T) (t : T)
+    (x : BalancedExtension f (ι → R)) :
+    piScalarRight (g.comp f) ι (cancelBaseChange f g (tmul g t x)) =
+      fun i ↦ t * g (piScalarRight f ι x i) := by
+  induction x using induction_on with
+  | tmul s x =>
+    ext i
+    simp [mul_assoc]
+  | add x y hx hy =>
+    ext i
+    simp only [tmul_add, _root_.map_add, hx, hy, Pi.add_apply, mul_add]
+
 end Pi
 
 section FiniteProjective
@@ -539,6 +652,22 @@ instance [Module.Projective R P] : Module.Projective S (BalancedExtension f P) :
   refine .of_lifting_property'' fun F hF ↦ ?_
   obtain ⟨h, hh⟩ := Module.projective_lifting_property_semilinear F hF (includeRight f P)
   exact ⟨lift h, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hh p⟩
+
+/-- **Maps out of the extension of a projective module lift along a surjection.** If `f` is
+surjective and `P` is projective, every `S`-linear map `S ⊗_R P → S ⊗_R P'` is the extension
+`S ⊗_R g` of an `R`-linear map `g : P → P'`. -/
+theorem exists_map_eq_of_surjective (hf : Function.Surjective f) [Module.Projective R P]
+    (φ : BalancedExtension f P →ₗ[S] BalancedExtension f P') : ∃ g : P →ₗ[R] P', map f g = φ := by
+  -- The map `p' ↦ 1 ⊗ p'` is onto (`includeRight_surjective`), so `p ↦ φ (1 ⊗ p)` lifts through
+  -- it by projectivity of `P`.
+  -- Let `R` act on `S ⊗_R P'` through `f`, so that both `p' ↦ 1 ⊗ p'` and `p ↦ φ (1 ⊗ p)` are
+  -- `R`-linear.
+  let : Module R (BalancedExtension f P') := Module.compHom _ f
+  obtain ⟨g, hg⟩ := Module.projective_lifting_property
+    ((includeRight f P').toLinearMapOfCompHom fun _ _ ↦ rfl)
+    ((φ.comp (includeRight f P)).toLinearMapOfCompHom fun _ _ ↦ rfl)
+    (by simpa using includeRight_surjective (P := P') hf)
+  exact ⟨g, hom_ext fun p ↦ by simpa using LinearMap.congr_fun hg p⟩
 
 end FiniteProjective
 
@@ -591,6 +720,37 @@ theorem rangeVecMulLinearEquiv_symm_apply (he : IsIdempotentElem e)
     (rangeVecMulLinearEquiv f he).symm w =
       ∑ i, tmul f ((w : ι → S) i) ⟨e i, e.row_mem_range_vecMulLinear i⟩ := by
   simp [rangeVecMulLinearEquiv, rangeVecMulLinearInv, Fintype.linearCombination_apply, smul_tmul]
+
+/-- **Extension of scalars on the column range of an idempotent matrix.** Along a ring homomorphism
+`f : R →+* S`, the right `S`-module extension of scalars of the column range `e R^ι` is canonically
+isomorphic to the column range `f(e) S^ι` of `e.map f`. -/
+noncomputable def rangeMulVecBilinEquiv (he : IsIdempotentElem e) :
+    BalancedExtension (RingHom.op f) (LinearMap.range (e.mulVecBilin R Rᵐᵒᵖ)) ≃ₗ[Sᵐᵒᵖ]
+      LinearMap.range ((e.map f).mulVecBilin S Sᵐᵒᵖ) :=
+  (congr (RingHom.op f) (rangeVecMulLinearTransposeMapOpEquiv e).symm).trans <|
+    (rangeVecMulLinearEquiv (RingHom.op f) he.matrix_transpose_map_op).trans <|
+      (LinearEquiv.ofEq _ _ (congrArg (fun M ↦ LinearMap.range M.vecMulLinear)
+        (transpose_map_op_map_ringHom_op e f))).trans
+        (rangeVecMulLinearTransposeMapOpEquiv (e.map f))
+
+@[simp]
+theorem coe_rangeMulVecBilinEquiv_tmul (he : IsIdempotentElem e) (s : Sᵐᵒᵖ)
+    (v : LinearMap.range (e.mulVecBilin R Rᵐᵒᵖ)) :
+    (rangeMulVecBilinEquiv f he (tmul (RingHom.op f) s v) : ι → S) =
+      fun i ↦ f ((v : ι → R) i) * s.unop := by
+  ext i
+  simp [rangeMulVecBilinEquiv, LinearEquiv.trans_apply]
+
+@[simp]
+theorem rangeMulVecBilinEquiv_symm_apply (he : IsIdempotentElem e)
+    (w : LinearMap.range ((e.map f).mulVecBilin S Sᵐᵒᵖ)) :
+    (rangeMulVecBilinEquiv f he).symm w =
+      ∑ j, tmul (RingHom.op f) (op ((w : ι → S) j)) ⟨e.col j, e.col_mem_range_mulVecBilin j⟩ := by
+  rw [LinearEquiv.symm_apply_eq]
+  have hw : (e.map f) *ᵥ (w : ι → S) = (w : ι → S) :=
+    (he.matrix_map f).mem_range_mulVecBilin_iff.mp w.property
+  ext i
+  simpa [mulVec, dotProduct] using (congrFun hw i).symm
 
 end Idempotent
 

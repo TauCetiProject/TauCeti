@@ -35,9 +35,13 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
   strict pair in order except `a < a + 1` itself.
 * `Fin.cons_comp_perm`: prepending a fixed first entry commutes with permuting the other entries,
   through the permutation `Equiv.Perm.decomposeFin.symm (0, σ)` of `Fin (n + 1)` fixing `0`.
+* `Fin.exists_perm_mem_iff_val_lt_card`: some permutation of `Fin n` carries the first `#S`
+  indices onto a given `S : Finset (Fin n)`.
 * `TauCeti.isCycleOn_finRotate`: the rotation `finRotate n` is a single cycle on all of `Fin n`.
 * `TauCeti.closure_finRotate_swap_eq_top`: the rotation `finRotate n` and the transposition `(0 1)`
   generate the permutations of `Fin n`.
+* `MonoidHom.ext_perm_fin`: a monoid homomorphism out of the permutations of `Fin n` is
+  determined by its values at `finRotate n` and `(0 1)`.
 * `Equiv.Perm.eq_one_of_rows`: a permutation of `Fin (m * n)` that fixes every point of each
   row `finProdFinEquiv (i, ·)` is the identity. Checking one row at a time keeps each
   `decide +kernel` certificate small.
@@ -48,10 +52,9 @@ This file supplements Mathlib's `Mathlib.GroupTheory.Perm.Fin`.
 * `TauCeti.sum_sign_smul_eq_sum_consFin`: reindex a signed permutation sum through ordered
   first-coordinate insertion, including dimension zero.
 * `Equiv.Perm.card_filter_val_lt`: a permutation of `Fin n` maps `min n m` indices below `m`.
-* `Equiv.Perm.eq_one_or_swap_fin_two`, `Equiv.Perm.univ_fin_two`,
-  `Equiv.Perm.eq_ite_ne_one_fin_two`, and `Equiv.Perm.apply_comp_fin_two`: every permutation of
-  `Fin 2` is the identity or the transposition, these form the set of all permutations, and a
-  swap-invariant function of a pair is permutation-invariant.
+* `Equiv.Perm.eq_ite_ne_one_fin_two`: every permutation of `Fin 2` equals `Equiv.swap 0 1` when
+  non-identity and `1` otherwise.
+* `Equiv.Perm.IsSwap.two_le`: if `Fin n` admits a transposition, then `2 ≤ n`.
 -/
 
 public section
@@ -108,6 +111,20 @@ theorem cons_comp_perm {α : Type*} {n : ℕ} (a : α) (y : Fin n → α) (σ : 
   cases i using Fin.cases <;>
     simp [Equiv.Perm.decomposeFin_symm_apply_zero, Equiv.Perm.decomposeFin_symm_apply_succ]
 
+open Finset in
+/-- For `S : Finset (Fin n)`, some permutation of `Fin n` carries the first `#S` indices onto
+`S`. -/
+theorem exists_perm_mem_iff_val_lt_card {n : ℕ} (S : Finset (Fin n)) :
+    ∃ σ : Equiv.Perm (Fin n), ∀ i, σ i ∈ S ↔ (i : ℕ) < #S := by
+  classical
+  have h₁ : Fintype.card {i : Fin n // (i : ℕ) < #S} = Fintype.card {i : Fin n // i ∈ S} := by
+    rw [Fintype.card_subtype, Fin.card_filter_val_lt, Fintype.card_coe,
+      min_eq_right (by simpa using S.card_le_univ)]
+  -- Match the indices below `#S` with `S`; the others go to its complement.
+  exact ⟨(Fintype.equivOfCardEq h₁).extendSubtype, fun i ↦
+    ⟨fun h ↦ by_contra fun hi ↦ Equiv.extendSubtype_not_mem _ i hi h,
+      fun hi ↦ Equiv.extendSubtype_mem _ i hi⟩⟩
+
 end Fin
 
 namespace TauCeti
@@ -132,6 +149,19 @@ theorem closure_finRotate_swap_eq_top : ∀ {n : ℕ} [NeZero n],
       support_finRotate 0
 
 end TauCeti
+
+namespace MonoidHom
+
+/-- A monoid homomorphism out of the permutations of `Fin n` is determined by its values at the
+generators `finRotate n` and `(0 1)`. -/
+theorem ext_perm_fin {n : ℕ} [NeZero n] {M : Type*} [Monoid M]
+    {f g : Equiv.Perm (Fin n) →* M} (h₁ : f (finRotate n) = g (finRotate n))
+    (h₂ : f (Equiv.swap 0 1) = g (Equiv.swap 0 1)) : f = g :=
+  eq_of_eqOn_dense TauCeti.closure_finRotate_swap_eq_top <| by
+    rintro x (rfl | rfl)
+    exacts [h₁, h₂]
+
+end MonoidHom
 
 namespace Equiv.Perm
 
@@ -198,56 +228,15 @@ theorem card_filter_val_lt {n m : ℕ} (σ : Perm (Fin n)) :
 
 end
 
-/-- A permutation of `Fin 2` is either the identity or the transposition. -/
-theorem eq_one_or_swap_fin_two (e : Equiv.Perm (Fin 2)) :
-    e = 1 ∨ e = Equiv.swap 0 1 := by
-  by_cases h0 : e 0 = 0
-  · left
-    apply Equiv.ext
-    intro i
-    fin_cases i
-    · exact h0
-    · apply Fin.eq_one_of_ne_zero
-      intro h1
-      exact Fin.zero_ne_one (e.injective (h1.trans h0.symm)).symm
-  · right
-    have h0' : e 0 = 1 := Fin.eq_one_of_ne_zero _ h0
-    apply Equiv.ext
-    intro i
-    fin_cases i
-    · simpa using h0'
-    · have h1 : e 1 = 0 := by
-        by_contra h
-        have h1' : e 1 = 1 := Fin.eq_one_of_ne_zero _ h
-        exact Fin.zero_ne_one (e.injective (h1'.trans h0'.symm)).symm
-      simpa using h1
-
-/-- The permutations of `Fin 2`, as a finite set, are the identity and the transposition. -/
-theorem univ_fin_two :
-    (Finset.univ : Finset (Equiv.Perm (Fin 2))) =
-    {1, Equiv.swap 0 1} := by
-  classical
-  ext e
-  simpa using e.eq_one_or_swap_fin_two
-
 /-- Every permutation of `Fin 2` equals `Equiv.swap 0 1` when non-identity and `1` otherwise. -/
 theorem eq_ite_ne_one_fin_two (σ : Equiv.Perm (Fin 2)) :
     σ = if σ ≠ 1 then Equiv.swap 0 1 else 1 := by
-  rcases σ.eq_one_or_swap_fin_two with rfl | rfl <;> decide
+  revert σ
+  decide
 
-/-- A function of a pair that is unchanged by swapping the two entries is unchanged by every
-permutation of the entries. -/
-theorem apply_comp_fin_two {α β : Type*} (σ : Equiv.Perm (Fin 2)) {f : (Fin 2 → α) → β}
-    (hf : ∀ a b, f ![a, b] = f ![b, a]) (μ : Fin 2 → α) : f (μ ∘ σ) = f μ := by
-  rcases σ.eq_one_or_swap_fin_two with rfl | rfl
-  · rfl
-  · have hswap : μ ∘ Equiv.swap 0 1 = ![μ 1, μ 0] := by
-      ext i
-      fin_cases i <;> simp
-    have hμ : μ = ![μ 0, μ 1] := by
-      ext i
-      fin_cases i <;> simp
-    rw [hswap, ← hf, ← hμ]
+/-- If `Fin n` admits a transposition, then `2 ≤ n`. -/
+theorem IsSwap.two_le {n : ℕ} {τ : Perm (Fin n)} (hτ : τ.IsSwap) : 2 ≤ n := by
+  simpa only [Fintype.card_fin] using hτ.two_le_card
 
 end Equiv.Perm
 

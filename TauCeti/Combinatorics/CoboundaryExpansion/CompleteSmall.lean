@@ -9,8 +9,8 @@ public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.SimpleGraph
 public import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.SwapGauge
-import TauCeti.Combinatorics.SimpleGraph.CutMinimal.OddTriple
-import TauCeti.Combinatorics.SimpleGraph.OddTriple.Switching
+import TauCeti.Combinatorics.SimpleGraph.CutMinimal
+import TauCeti.Combinatorics.SimpleGraph.OddTriple
 
 /-!
 # Binary and transposition-subgroup exactness and Cheeger constants on at most four vertices
@@ -39,14 +39,14 @@ namespace SimpleGraph
 
 /-- **Transposition exactness on at most four vertices**: on a vertex type of size at most four,
 every graph `G` and every transposition `t` satisfy
-`(G.toCochain ht.mul_self).defect (Equiv.Perm.movedNorm α) =
-  ((Fintype.card V - 2 : ℕ) : ℝ) * (G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α)`. -/
+`(G.toCochain ht.mul_self_eq_one).defect (Equiv.Perm.movedNorm α) = ((Fintype.card V - 2 : ℕ) : ℝ)
+* (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α)`. -/
 theorem defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four
     {V α : Type*} [Fintype V] [LinearOrder V] [Fintype α] [DecidableEq α]
     (G : SimpleGraph V) (hV : Fintype.card V ≤ 4) {t : Equiv.Perm α} (ht : t.IsSwap) :
-    (G.toCochain ht.mul_self).defect (Equiv.Perm.movedNorm α) =
+    (G.toCochain ht.mul_self_eq_one).defect (Equiv.Perm.movedNorm α) =
       ((Fintype.card V - 2 : ℕ) : ℝ) *
-        (G.toCochain ht.mul_self).gaugeDist (Equiv.Perm.movedNorm α) := by
+        (G.toCochain ht.mul_self_eq_one).gaugeDist (Equiv.Perm.movedNorm α) := by
   classical
   obtain ⟨s, hs, hval⟩ := G.exists_finset_isCutMinimal_and_gaugeDist_movedNorm_toCochain_eq ht
   rw [G.defect_movedNorm_toCochain ht, hval, ← G.oddTripleFinset_symmDiff_top_between (s : Set V),
@@ -71,7 +71,7 @@ theorem defect_zpowers_swap_eq_card_sub_two_mul_gaugeDist_of_card_le_four
     γ.defect ((Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective) =
       ((Fintype.card V - 2 : ℕ) : ℝ) *
         γ.gaugeDist ((Equiv.Perm.movedNorm α).comp (Subgroup.zpowers t).subtype_injective) := by
-  obtain ⟨G, hmap⟩ := γ.exists_map_zpowers_subtype_eq_toCochain ht.mul_self
+  obtain ⟨G, hmap⟩ := γ.exists_map_zpowers_subtype_eq_toCochain ht.mul_self_eq_one
   rw [← γ.defect_map_subtype (Equiv.Perm.movedNorm α) (Subgroup.zpowers t),
     ← γ.gaugeDist_map_zpowers_subtype ht, hmap]
   exact G.defect_movedNorm_toCochain_eq_card_sub_two_mul_gaugeDist_of_card_le_four hV ht

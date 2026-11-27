@@ -33,6 +33,8 @@ spectrum lies where their symbol equals one.
 * `UnitAddTorus.convolution_mFourier_apply`: convolution with a monomial.
 * `MeasureTheory.Integrable.convolution_sum_mul_mFourier_apply`: convolution with a trigonometric
   polynomial.
+* `MeasureTheory.Integrable.convolution_sum_mFourier_smul_apply`: convolution of an integrable
+  kernel with a trigonometric polynomial.
 * `MeasureTheory.Integrable.ae_eq_convolution_of_mFourierCoeff_eq_smul`: a function whose Fourier
   coefficients are those of `f` multiplied by `c` on a finite set `s` and vanish off `s` agrees
   almost everywhere with the convolution of `f` with the trigonometric polynomial
@@ -87,6 +89,25 @@ theorem Integrable.convolution_sum_mul_mFourier_apply (hf : Integrable f) (s : F
   simp
 
 variable [CompleteSpace E]
+
+/-- **Convolution of an integrable kernel with a trigonometric polynomial** multiplies the
+coefficients of the polynomial by those of the kernel: for integrable `K : 𝕋ᵈ → ℂ`,
+`(K ⋆ ∑ n ∈ s, mFourier n • a n) x = ∑ n ∈ s, (K̂(n) * mFourier n x) • a n`. -/
+theorem Integrable.convolution_sum_mFourier_smul_apply {K : UnitAddTorus d → ℂ}
+    (hK : Integrable K) (s : Finset (d → ℤ)) (a : (d → ℤ) → E) (x : UnitAddTorus d) :
+    (K ⋆[ContinuousLinearMap.lsmul ℂ ℂ, volume] fun y ↦ ∑ n ∈ s, mFourier n y • a n) x =
+      ∑ n ∈ s, (mFourierCoeff K n * mFourier n x) • a n := by
+  have hint (n : d → ℤ) : Integrable fun t ↦ (K t * mFourier n (x - t)) • a n :=
+    (hK.mul_bdd (c := 1) (by fun_prop : Continuous fun t ↦ mFourier n (x - t)).aestronglyMeasurable
+      (ae_of_all _ fun t ↦ by simp [norm_mFourier_apply])).smul_const (a n)
+  simp_rw [convolution_def, ContinuousLinearMap.lsmul_apply, Finset.smul_sum, smul_smul]
+  rw [integral_finsetSum _ fun n _ ↦ hint n]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  rw [integral_smul_const, mFourierCoeff_eq_integral_volume]
+  congr 1
+  simp_rw [mFourier_apply_sub, smul_eq_mul]
+  rw [← integral_mul_const]
+  exact integral_congr_ae (ae_of_all _ fun t ↦ by ring)
 
 /-- **Fourier multipliers with finitely supported symbols are convolutions.** If `f` and `g` are
 integrable on the torus, the Fourier coefficients of `g` vanish outside a finite set `s` and

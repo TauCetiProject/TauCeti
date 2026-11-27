@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.ActionAngle.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The hypotheses of the action–angle theorem cannot be dropped

@@ -25,6 +25,10 @@ A graph in which every neighbour set has extended cardinality at most `d` has no
 (`SimpleGraph.cliqueFree_add_two_of_encard_neighborSet_le`), without finiteness or decidability
 hypotheses.
 
+A vertex outside a finite set `s` has, among the vertices of `s`, as many neighbours in `G` and in
+`Gᶜ` together as `s` has vertices: the degree count behind `SimpleGraph.degree_compl`, relative to
+`s`.
+
 ## Main results
 
 * `SimpleGraph.degree_eq_of_pretransitive`: a pretransitive graph action preserves degrees.
@@ -35,6 +39,8 @@ hypotheses.
 * `SimpleGraph.cliqueFree_add_two_of_encard_neighborSet_le`,
   `SimpleGraph.cliqueFree_add_two_of_degree_le`: bounding all neighbour sets by `d` makes the
   graph `(d + 2)`-clique-free.
+* `SimpleGraph.card_filter_adj_add_card_filter_compl_adj`: the neighbours in `s` of a vertex
+  outside `s`, in `G` and in `Gᶜ`, number `#s` together.
 -/
 
 public section
@@ -110,5 +116,17 @@ theorem cliqueFree_add_two_of_degree_le {V : Type*} {G : SimpleGraph V}
     rw [← Set.coe_toFinset (G.neighborSet v), Set.encard_coe_eq_coe_finsetCard,
       Set.toFinset_card, G.card_neighborSet_eq_degree]
     exact Nat.cast_le.mpr (hdeg v)
+
+open Finset in
+/-- A vertex `v` outside `s` has `#s` neighbours in `s` in `G` and `Gᶜ` together:
+`#{w ∈ s | G.Adj v w} + #{w ∈ s | Gᶜ.Adj v w} = #s`, since `v` is adjacent to each vertex of
+`s` in exactly one of `G` and `Gᶜ`. -/
+theorem card_filter_adj_add_card_filter_compl_adj {V : Type*} {G : SimpleGraph V}
+    [DecidableEq V] [DecidableRel G.Adj] {s : Finset V} {v : V} (hv : v ∉ s) :
+    #{w ∈ s | G.Adj v w} + #{w ∈ s | Gᶜ.Adj v w} = #s := by
+  rw [← card_filter_add_card_filter_not (s := s) (G.Adj v)]
+  congr 2
+  refine filter_congr fun w hw ↦ ?_
+  simp [compl_adj, show v ≠ w from fun hvw ↦ hv (hvw ▸ hw)]
 
 end SimpleGraph

@@ -71,12 +71,7 @@ theorem sum_sq_singularValues_toEuclideanLin_sub_le_frobenius_norm_sub_sq
     ∑ i : Fin k,
         ((Matrix.toEuclideanLin A).singularValues i -
           (Matrix.toEuclideanLin B).singularValues i) ^ 2 ≤ ‖A - B‖ ^ 2 := by
-  let e := EuclideanSpace.basisFun n 𝕜
-  let f := EuclideanSpace.basisFun m 𝕜
-  have hF : ‖A - B‖ = TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜
-      (EuclideanSpace 𝕜 n) (EuclideanSpace 𝕜 m) (Matrix.toEuclideanLin (A - B)) := by
-    rw [← LinearMap.frobenius_norm_toMatrix _ e f, Matrix.toEuclideanLin_eq_toLin_orthonormal,
-      LinearMap.toMatrix_toLin]
+  have hF := (Matrix.frobenius_toEuclideanLin (A - B)).symm
   simpa only [← map_sub, ← hF] using
     LinearMap.sum_sq_singularValues_sub_le_sq_frobenius_apply_sub
       (Matrix.toEuclideanLin A) (Matrix.toEuclideanLin B) (k := k)
@@ -88,10 +83,7 @@ theorem IsHermitian.sum_sq_eigenvalues₀_sub_le_frobenius_norm_sub_sq (hA : A.I
     ∑ i, (hA.eigenvalues₀ i - hB.eigenvalues₀ i) ^ 2 ≤ ‖A - B‖ ^ 2 := by
   let e := EuclideanSpace.basisFun n 𝕜
   -- The Frobenius norm of `A - B` is the Frobenius seminorm of its Euclidean operator.
-  have hF : ‖A - B‖ = TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 _ _
-      (toEuclideanLin (A - B)) := by
-    rw [← LinearMap.frobenius_norm_toMatrix _ e e, toEuclideanLin_eq_toLin_orthonormal,
-      LinearMap.toMatrix_toLin]
+  have hF := (Matrix.frobenius_toEuclideanLin (A - B)).symm
   rw [hF, TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply e]
   -- Unfold only the sorted enumeration to use its defining operator-level API.
   simp only [IsHermitian.eigenvalues₀]

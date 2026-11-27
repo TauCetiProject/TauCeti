@@ -7,11 +7,11 @@ module
 
 public import Mathlib.RingTheory.DedekindDomain.Ideal.Lemmas
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import Mathlib.RingTheory.Ideal.Quotient.HasFiniteQuotients.Basic
 public import Mathlib.RingTheory.LocalRing.Quotient
 import Mathlib.RingTheory.Ideal.GoingUp
 import Mathlib.RingTheory.Ideal.IsPrincipalPowQuotient
-import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Powers of the maximal ideal of a discrete valuation ring
@@ -26,7 +26,8 @@ distinct, a discrete valuation ring is also infinite. Writing elements as a unit
 uniformizer `x` also shows that a ring map to a reduced semiring is injective as soon as it does
 not kill `x`, and that a ring map to a cancellative commutative semiring reflects divisibility when
 it sends `x` to a nonzero nonunit. Since a discrete valuation ring is not a field, an integral
-extension of a ring of dimension at most one in it is injective.
+extension of a ring of dimension at most one in it is injective, and a discrete valuation ring in
+which a natural number generates a positive power of the maximal ideal has characteristic zero.
 
 ## Main results
 
@@ -40,6 +41,11 @@ extension of a ring of dimension at most one in it is injective.
   elements of additive valuation `1`.
 * `TauCeti.IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow`: the quotient by `𝔪 ^ n`
   has cardinality `Nat.card (ResidueField S) ^ n`.
+* `TauCeti.IsDiscreteValuationRing.cardQuot_span_pow`,
+  `TauCeti.IsDiscreteValuationRing.cardQuot_eq_pow_iff`: for a uniformizer `ϖ`, the ideal
+  `ϖ^c S` has index `Nat.card (ResidueField S) ^ c`, and it is the only ideal of that index.
+* `TauCeti.IsDiscreteValuationRing.exists_eq_span_pow_of_cardQuot_ne_zero`: an ideal of finite
+  index is `ϖ^c S` for some `c`.
 * `TauCeti.IsDiscreteValuationRing.hasFiniteQuotients`: if the residue field is finite, so is
   the quotient by any nonzero ideal.
 * `TauCeti.IsDiscreteValuationRing.relIndex_maximalIdeal_pow_add`: `𝔪 ^ (k + e)` has index
@@ -61,6 +67,8 @@ extension of a ring of dimension at most one in it is injective.
   semiring that sends a uniformizer `x` to a nonzero nonunit reflects divisibility.
 * `TauCeti.IsDiscreteValuationRing.faithfulSMul_of_isIntegral`: an integral extension of a ring
   of dimension at most one in a discrete valuation ring is injective.
+* `TauCeti.IsDiscreteValuationRing.charZero_of_span_natCast_eq_maximalIdeal_pow`: if
+  `(n) = 𝔪 ^ e` for some `n : ℕ` and `e > 0`, the discrete valuation ring has characteristic zero.
 -/
 
 public section
@@ -70,6 +78,15 @@ open IsLocalRing
 namespace TauCeti.IsDiscreteValuationRing
 
 variable {S : Type*} [CommRing S] [IsDomain S] [_root_.IsDiscreteValuationRing S]
+
+/-- In a discrete valuation ring, every nonzero element divides a power of every non-unit. -/
+theorem exists_dvd_pow_of_ne_zero_of_not_isUnit {b π : S} (hb : b ≠ 0) (hπ : ¬IsUnit π) :
+    ∃ j, b ∣ π ^ j := by
+  obtain ⟨ϖ, hϖ⟩ := _root_.IsDiscreteValuationRing.exists_irreducible S
+  obtain ⟨j, u, rfl⟩ := _root_.IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hb hϖ
+  have hϖπ : ϖ ∣ π := Ideal.mem_span_singleton.1 <| hϖ.maximalIdeal_eq ▸
+    (IsLocalRing.mem_maximalIdeal π).2 hπ
+  exact ⟨j, (Units.mul_left_dvd).2 (pow_dvd_pow_of_dvd hϖπ j)⟩
 
 /-- Cancelling a uniformizer power from membership in the next maximal-ideal power leaves
 the coefficient in the maximal ideal. -/
@@ -103,6 +120,13 @@ theorem natCard_quotient_maximalIdeal_pow (n : ℕ) :
     (_root_.IsDiscreteValuationRing.not_a_field S), Submodule.cardQuot_apply]
   -- The residue field is defined as the quotient by the maximal ideal.
   rfl
+
+/-- In a discrete valuation ring with uniformizer `ϖ` and residue field of `q` elements, the
+ideal `ϖ^c S` has index `q ^ c`. -/
+theorem cardQuot_span_pow {ϖ : S} (hϖ : Irreducible ϖ) (c : ℕ) :
+    (Ideal.span {ϖ ^ c}).cardQuot = Nat.card (ResidueField S) ^ c := by
+  rw [← Ideal.span_singleton_pow, ← hϖ.maximalIdeal_eq, Submodule.cardQuot_apply,
+    natCard_quotient_maximalIdeal_pow]
 
 /-- **A discrete valuation ring with finite residue field has finite quotients**: a nonzero ideal
 is a power of the maximal ideal. -/
@@ -195,6 +219,24 @@ instance infinite : Infinite S :=
   not_finite_iff_infinite.mp fun _ ↦
     _root_.IsDiscreteValuationRing.not_isField S (Finite.isField_of_domain S)
 
+/-- An ideal of finite index in a discrete valuation ring with uniformizer `ϖ` is `ϖ^c S` for
+some `c`. -/
+theorem exists_eq_span_pow_of_cardQuot_ne_zero {ϖ : S} (hϖ : Irreducible ϖ) {I : Ideal S}
+    (hI : I.cardQuot ≠ 0) : ∃ c : ℕ, I = Ideal.span {ϖ ^ c} :=
+  _root_.IsDiscreteValuationRing.ideal_eq_span_pow_irreducible
+    (fun h ↦ hI (by rw [h, Submodule.cardQuot_bot])) hϖ
+
+/-- In a discrete valuation ring with uniformizer `ϖ` and residue field of `q` elements, the
+only ideal of index `q ^ c` is `ϖ^c S`. -/
+theorem cardQuot_eq_pow_iff [Finite (ResidueField S)] {ϖ : S} (hϖ : Irreducible ϖ)
+    {I : Ideal S} {c : ℕ} :
+    I.cardQuot = Nat.card (ResidueField S) ^ c ↔ I = Ideal.span {ϖ ^ c} := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ cardQuot_span_pow hϖ c⟩
+  have hq : 1 < Nat.card (ResidueField S) := Finite.one_lt_card
+  obtain ⟨n, rfl⟩ := exists_eq_span_pow_of_cardQuot_ne_zero hϖ (by rw [h]; positivity)
+  rw [cardQuot_span_pow hϖ] at h
+  rw [Nat.pow_right_injective hq h]
+
 section Map
 
 variable {T F : Type*} [FunLike F S T] {x : S}
@@ -236,5 +278,25 @@ theorem faithfulSMul_of_isIntegral {R : Type*} [CommRing R] [Ring.DimensionLEOne
     RingHom.ker_eq_comap_bot]
   exact Ring.DimensionLEOne.eq_bot_of_lt _ _ <| Ideal.IsIntegral.under_lt_under (R := R) <|
     bot_lt_iff_ne_bot.2 (_root_.IsDiscreteValuationRing.not_a_field S)
+
+/-- If a natural number generates a positive power of the maximal ideal of a discrete valuation
+ring, the ring has characteristic zero: a nonzero nonunit natural number cannot exist in prime
+characteristic. -/
+theorem charZero_of_span_natCast_eq_maximalIdeal_pow {n e : ℕ} (he : 0 < e)
+    (hne : Ideal.span {(n : S)} = maximalIdeal S ^ e) : CharZero S := by
+  have hn0 : (n : S) ≠ 0 := fun h0 ↦
+    _root_.IsDiscreteValuationRing.not_a_field S
+      ((Ideal.pow_eq_bot he.ne').mp (by simpa [h0] using hne.symm))
+  have hnu : ¬ IsUnit (n : S) := fun hu ↦
+    notMem_maximalIdeal.mpr hu (Ideal.pow_le_self he.ne' (hne ▸ Ideal.mem_span_singleton_self _))
+  rcases CharP.char_is_prime_or_zero S (ringChar S) with hq | h0
+  · have hcop : IsCoprime ((ringChar S : ℤ) : S) ((n : ℤ) : S) :=
+      (Nat.isCoprime_iff_coprime.mpr
+        (hq.coprime_iff_not_dvd.mpr (mt (ringChar.spec S n).mpr hn0))).map (Int.castRingHom S)
+    rw [Int.cast_natCast, Int.cast_natCast, CharP.cast_eq_zero S (ringChar S),
+      isCoprime_zero_left] at hcop
+    exact absurd hcop hnu
+  · have := ringChar.of_eq h0
+    exact CharP.charP_to_charZero S
 
 end TauCeti.IsDiscreteValuationRing
