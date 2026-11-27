@@ -797,6 +797,33 @@ theorem exists_norm_inv_Gamma_and_deriv_ball_add_I_le (w₀ : ℂ) :
       _ ≤ C * (1 + |y|) ^ (5 / 2 - w₀.re) * Real.exp (π * |y| / 2) := by
             rw [← mul_assoc, ← mul_assoc]; gcongr; exact le_max_right _ _
 
+/-- Reciprocal Gamma bound on the reflected left-shifted line `1 - (σ - N + i t)`, reducing
+`N - M` steps back to the vertical line `Re s = 1 + M - σ ≥ 1`. -/
+private lemma norm_inv_Gamma_one_sub_sub_natCast_le {σ K : ℝ} (hK : 0 ≤ K) {M N : ℕ}
+    (hM : σ ≤ M) (hMN : M ≤ N)
+    (hinv : ∀ s : ℂ, s.re ∈ Icc (1 + (M : ℝ) - σ) (1 + (M : ℝ) - σ) →
+      ‖(Complex.Gamma s)⁻¹‖ ≤ K * (1 + |s.im|) ^ (1 / 2 - s.re) * Real.exp (π * |s.im| / 2))
+    (t : ℝ) :
+    ‖(Complex.Gamma (1 - ((σ : ℂ) - N + t * I)))⁻¹‖ ≤
+      K * Real.exp (π * |t| / 2) / (Nat.factorial (N - M) : ℝ) := by
+  set a : ℝ := 1 + M - σ
+  have hsplit : 1 - ((σ : ℂ) - N + t * I) = ((a : ℂ) + (-t : ℝ) * I) + ((N - M : ℕ) : ℂ) := by
+    apply Complex.ext <;> simp [a, Nat.cast_sub hMN]; ring
+  rw [hsplit]
+  have hinv_t : ‖(Complex.Gamma ((a : ℂ) + (-t : ℝ) * I))⁻¹‖ ≤ K * Real.exp (π * |t| / 2) := by
+    have hb := hinv ((a : ℂ) + (-t : ℝ) * I) (by simp [a])
+    have hre : ((a : ℂ) + (-t : ℝ) * I).re = a := by simp
+    have him : ((a : ℂ) + (-t : ℝ) * I).im = -t := by simp
+    rw [hre, him, abs_neg] at hb
+    have hrpow : (1 + |t|) ^ (1 / 2 - a) ≤ 1 :=
+      Real.rpow_le_one_of_one_le_of_nonpos (by linarith [abs_nonneg t]) (by linarith)
+    calc ‖(Complex.Gamma ((a : ℂ) + (-t : ℝ) * I))⁻¹‖
+        ≤ K * (1 + |t|) ^ (1 / 2 - a) * Real.exp (π * |t| / 2) := hb
+      _ ≤ K * 1 * Real.exp (π * |t| / 2) := by gcongr
+      _ = K * Real.exp (π * |t| / 2) := by ring
+  exact (Complex.norm_inv_Gamma_add_natCast_le (by simp; linarith) (N - M)).trans
+    (div_le_div_of_nonneg_right hinv_t (by positivity))
+
 /-- Left-shift vertical-line bound for a single Gamma factor: for any noninteger real offset `σ`,
 there is `C > 0` such that for all `N ≥ ⌈σ⌉₊` and `t : ℝ`,
 `‖Γ(σ - N + i t)‖ ≤ C / (N - ⌈σ⌉₊)! * exp (-π |t| / 2)`. -/
@@ -805,14 +832,13 @@ theorem exists_norm_Gamma_sub_natCast_le {σ : ℝ} (hσ : ∀ m : ℤ, σ ≠ m
       ‖Complex.Gamma ((σ : ℂ) - N + t * I)‖ ≤
         C / (Nat.factorial (N - ⌈σ⌉₊) : ℝ) * Real.exp (-(π * |t| / 2)) := by
   set M : ℕ := ⌈σ⌉₊
-  set a : ℝ := 1 + M - σ
-  have ha1 : 1 ≤ a := by simp only [a]; linarith [Nat.le_ceil σ]
-  obtain ⟨K, hK, hinv⟩ := exists_norm_inv_Gamma_vertical_strip_le a a
+  obtain ⟨K, hK, hinv⟩ := exists_norm_inv_Gamma_vertical_strip_le (1 + M - σ) (1 + M - σ)
   have hsin : Real.sin (π * σ) ≠ 0 := fun h ↦ by
     obtain ⟨m, hm⟩ := Real.sin_eq_zero_iff.mp h
     exact hσ m (mul_left_cancel₀ pi_ne_zero (by linarith))
   refine ⟨π * (2 / |Real.sin (π * σ)|) * K, by positivity, fun N hMN t ↦ ?_⟩
   set z : ℂ := (σ : ℂ) - N + t * I
+  -- Bound `(sin (π z))⁻¹` via periodicity of `Real.sin (π * ·)` and `Complex.norm_inv_sin_le`.
   have hinv_sin : ‖(sin (π * z))⁻¹‖ ≤ 2 / |Real.sin (π * σ)| * Real.exp (-(π * |t|)) := by
     have hre : (π * z).re = π * σ - (N : ℕ) * π := by simp [z]; ring
     have hsin_eq : |Real.sin (π * z).re| = |Real.sin (π * σ)| := by
@@ -820,29 +846,13 @@ theorem exists_norm_Gamma_sub_natCast_le {σ : ℝ} (hσ : ∀ m : ℤ, σ ≠ m
     have him : |(π * z).im| = π * |t| := by simp [z, abs_mul, abs_of_pos pi_pos]
     refine (norm_inv_sin_le (abs_pos.mp (by rw [hsin_eq]; exact abs_pos.mpr hsin))).trans_eq ?_
     rw [hsin_eq, him]
+  -- Reflect `Γ(z) = π (sin (π z))⁻¹ (Γ(1 - z))⁻¹` and apply the reflected reciprocal bound.
   have href : Complex.Gamma z = π * (sin (π * z))⁻¹ * (Complex.Gamma (1 - z))⁻¹ :=
     (eq_mul_inv_iff_mul_eq₀ (Gamma_ne_zero_of_re_pos (by
       have hMN' : (M : ℝ) ≤ N := Nat.cast_le.mpr hMN
       simp [z]; linarith [Nat.le_ceil σ]))).mpr
       (by rw [← div_eq_mul_inv]; exact Gamma_mul_Gamma_one_sub z)
-  have hinvG :
-      ‖(Complex.Gamma (1 - z))⁻¹‖ ≤ K * Real.exp (π * |t| / 2) / (Nat.factorial (N - M) : ℝ) := by
-    have hsplit : 1 - z = ((a : ℂ) + (-t : ℝ) * I) + ((N - M : ℕ) : ℂ) := by
-      apply Complex.ext <;> simp [a, z, Nat.cast_sub hMN]; ring
-    rw [hsplit]
-    have hinv_t : ‖(Complex.Gamma ((a : ℂ) + (-t : ℝ) * I))⁻¹‖ ≤ K * Real.exp (π * |t| / 2) := by
-      have hb := hinv ((a : ℂ) + (-t : ℝ) * I) (by simp)
-      have hre : ((a : ℂ) + (-t : ℝ) * I).re = a := by simp
-      have him : ((a : ℂ) + (-t : ℝ) * I).im = -t := by simp
-      rw [hre, him, abs_neg] at hb
-      have hrpow : (1 + |t|) ^ (1 / 2 - a) ≤ 1 :=
-        Real.rpow_le_one_of_one_le_of_nonpos (by linarith [abs_nonneg t]) (by linarith)
-      calc ‖(Complex.Gamma ((a : ℂ) + (-t : ℝ) * I))⁻¹‖
-          ≤ K * (1 + |t|) ^ (1 / 2 - a) * Real.exp (π * |t| / 2) := hb
-        _ ≤ K * 1 * Real.exp (π * |t| / 2) := by gcongr
-        _ = K * Real.exp (π * |t| / 2) := by ring
-    exact (Complex.norm_inv_Gamma_add_natCast_le (by simp; linarith) (N - M)).trans
-      (div_le_div_of_nonneg_right hinv_t (by positivity))
+  have hinvG := norm_inv_Gamma_one_sub_sub_natCast_le hK.le (Nat.le_ceil σ) hMN hinv t
   have hexp : Real.exp (-(π * |t|)) * Real.exp (π * |t| / 2) = Real.exp (-(π * |t| / 2)) := by
     rw [← Real.exp_add]; congr 1; ring
   have hpi : ‖(π : ℂ)‖ = π := by simp [abs_of_pos pi_pos]
