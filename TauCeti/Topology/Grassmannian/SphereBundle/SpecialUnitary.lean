@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Grassmannian.StiefelFibration.SpecialUnitary
-import TauCeti.Analysis.Matrix.UnitaryGroup.Connected
 
 /-!
 # The sphere bundle `SU(n) → SU(1 + n) → S^(2n+1)`
@@ -119,7 +118,8 @@ theorem specialUnitarySphereMap_eq_specialUnitarySphereMap_iff
 
 /-- Left multiplication preserves the fibres of `A ↦ A e₀`: if `B` and `C` have the same first
 column, then so do `A B` and `A C`. -/
-theorem specialUnitarySphereMap_mul_eq_mul_of_eq (A : specialUnitaryGroup (Fin (1 + n)) 𝕜)
+theorem specialUnitarySphereMap_mul_eq_specialUnitarySphereMap_mul_of_eq
+    (A : specialUnitaryGroup (Fin (1 + n)) 𝕜)
     {B C : specialUnitaryGroup (Fin (1 + n)) 𝕜}
     (h : specialUnitarySphereMap n B = specialUnitarySphereMap n C) :
     specialUnitarySphereMap n (A * B) = specialUnitarySphereMap n (A * C) :=
@@ -195,9 +195,9 @@ theorem isPathConnected_specialUnitarySphereMap_preimage_singleton
   constructor
   · intro hB
     refine ⟨A⁻¹ * B, ?_, mul_inv_cancel_left A B⟩
-    rw [specialUnitarySphereMap_mul_eq_mul_of_eq A⁻¹ hB, inv_mul_cancel]
+    rw [specialUnitarySphereMap_mul_eq_specialUnitarySphereMap_mul_of_eq A⁻¹ hB, inv_mul_cancel]
   · rintro ⟨C, hC, rfl⟩
-    rw [specialUnitarySphereMap_mul_eq_mul_of_eq A hC, mul_one]
+    rw [specialUnitarySphereMap_mul_eq_specialUnitarySphereMap_mul_of_eq A hC, mul_one]
 
 /-! ### Local triviality -/
 
