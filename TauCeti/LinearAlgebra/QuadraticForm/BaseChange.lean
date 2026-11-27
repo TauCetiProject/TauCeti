@@ -48,6 +48,23 @@ open scoped TensorProduct
 
 universe uR uA uM uN uP
 
+section CommSemiring
+
+/-- Two quadratic isometries out of `A ⊗[R] M` are equal if they agree on every pure tensor
+`1 ⊗ₜ[R] x`. -/
+theorem QuadraticMap.Isometry.baseChange_ext
+    {R : Type uR} {A : Type uA} {M : Type uM} {N : Type uN} {P : Type uP}
+    [CommSemiring R] [CommSemiring A] [Algebra R A]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module A N]
+    [AddCommMonoid P] [Module A P]
+    {Q₁ : QuadraticMap A (A ⊗[R] M) P} {Q₂ : QuadraticMap A N P}
+    ⦃f g : Q₁ →qᵢ Q₂⦄ (h : ∀ x : M, f (1 ⊗ₜ[R] x) = g (1 ⊗ₜ[R] x)) : f = g := by
+  refine ext fun y ↦ TensorProduct.inductionOn y (fun a x ↦ ?_) (fun x y hx hy ↦ ?_)
+  · rw [← mul_one a, ← smul_eq_mul, ← TensorProduct.smul_tmul', map_smul, map_smul, h]
+  · simp [hx, hy]
+
+end CommSemiring
+
 section CommRing
 
 variable {R : Type uR} {A : Type uA} [CommRing R] [CommRing A] [Algebra R A]
@@ -69,7 +86,7 @@ def QuadraticMap.Isometry.baseChange (f : Q₁ →qᵢ Q₂) (A : Type uA)
   toLinearMap := f.toLinearMap.baseChange A
   map_app' x := by
     have h : (Q₂.baseChange A).comp (f.toLinearMap.baseChange A) = Q₁.baseChange A := by
-      apply baseChange_ext
+      apply _root_.baseChange_ext
       intro m
       simp
     exact DFunLike.congr_fun h x

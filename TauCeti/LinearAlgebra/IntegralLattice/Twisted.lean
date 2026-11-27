@@ -30,22 +30,19 @@ open scoped ComplexOrder InnerProductSpace
 
 namespace TauCeti
 
-local notation "𝒪[" ι "]" => Valuation.integer
-  (Valuation.comap (RingEquiv.toRingHom (PrimePadicIso.iso ι)) Valued.v)
-
 /-- A family of twists out of `V`, with local integral submodules for allowed twists and a
 rational coordinate pairing for the distinguished twist `1`. -/
 structure TwistedLattice {T : Type*} [One T] (S : T → Type*) (C V : Type*) [Fintype C]
     [∀ t, NormedAddCommGroup (S t)] [∀ t, InnerProductSpace ℂ (S t)]
-    [AddCommGroup V] [Module ℂ V] where
+    [AddCommMonoid V] [Module ℂ V] where
   /-- The linear map for each twist. -/
   lift (t : T) : V →ₗ[ℂ] S t
   /-- The twists allowed at each rational prime. -/
-  allowed : T → ℕ → Prop
+  allowed : T → Nat.Primes → Prop
   /-- Integral vectors in the target of a twist, defined only where the twist is allowed. -/
-  integral (t : T) (ι : PrimePadicIso) : allowed t ι.prime → Submodule 𝒪[ι] (S t)
+  integral (t : T) (ι : PrimePadicIso) : allowed t ι.primeIndex → Submodule ι.integers (S t)
   /-- Pairing vectors integral at conjugate embeddings gives an integral scalar. -/
-  norm_iso_inner_le_one (t : T) (ι : PrimePadicIso) (ht : allowed t ι.prime)
+  norm_iso_inner_le_one (t : T) (ι : PrimePadicIso) (ht : allowed t ι.primeIndex)
       {x y : S t} (hx : x ∈ integral t ι.conj (by simpa using ht))
       (hy : y ∈ integral t ι ht) :
       ‖ι.iso ⟪x, y⟫_ℂ‖ ≤ 1
@@ -61,13 +58,14 @@ structure TwistedLattice {T : Type*} [One T] (S : T → Type*) (C V : Type*) [Fi
 
 namespace TwistedLattice
 
-variable {T C V : Type*} [One T] [Fintype C] [AddCommGroup V] [Module ℂ V]
+variable {T C V : Type*} [One T] [Fintype C] [AddCommMonoid V] [Module ℂ V]
 variable {S : T → Type*} [∀ t, NormedAddCommGroup (S t)] [∀ t, InnerProductSpace ℂ (S t)]
+
 /-- The lifts, allowed twists, integral submodules at allowed twists, and rational coordinates
 with their Gram matrix determine the twisted lattice. -/
 @[ext] theorem ext {L L' : TwistedLattice S C V}
     (hlift : ∀ t, L.lift t = L'.lift t) (hallowed : L.allowed = L'.allowed)
-    (hintegral : ∀ t ι (ht : L.allowed t ι.prime) (ht' : L'.allowed t ι.prime),
+    (hintegral : ∀ t ι (ht : L.allowed t ι.primeIndex) (ht' : L'.allowed t ι.primeIndex),
       L.integral t ι ht = L'.integral t ι ht')
     (hcoord : L.coord = L'.coord) (hgram : L.gram = L'.gram) : L = L' := by
   cases L
@@ -83,25 +81,26 @@ variable (L : TwistedLattice S C V)
 
 /-- The reference submodule of vectors integral at `ι`: the intersection of the preimages of
 all integral submodules for twists allowed at that prime. -/
-noncomputable def integralVectors (ι : PrimePadicIso) : Submodule 𝒪[ι] V :=
-  ⨅ (t : T) (ht : L.allowed t ι.prime),
-    (L.integral t ι ht).comap ((L.lift t).restrictScalars 𝒪[ι])
+noncomputable def integralVectors (ι : PrimePadicIso) : Submodule ι.integers V :=
+  ⨅ (t : T) (ht : L.allowed t ι.primeIndex),
+    (L.integral t ι ht).comap ((L.lift t).restrictScalars ι.integers)
 
 /-- A vector is integral exactly when its lift is integral at every allowed twist. -/
 @[simp] theorem mem_integralVectors_iff (ι : PrimePadicIso) {x : V} :
-    x ∈ L.integralVectors ι ↔ ∀ t (ht : L.allowed t ι.prime), L.lift t x ∈ L.integral t ι ht := by
+    x ∈ L.integralVectors ι ↔
+      ∀ t (ht : L.allowed t ι.primeIndex), L.lift t x ∈ L.integral t ι ht := by
   simp only [integralVectors, Submodule.mem_iInf, Submodule.mem_comap,
     LinearMap.restrictScalars_apply]
 
 /-- The integral vectors form the largest submodule whose images in all allowed targets are
 integral. -/
-theorem le_integralVectors_iff (ι : PrimePadicIso) (M : Submodule 𝒪[ι] V) :
-    M ≤ L.integralVectors ι ↔ ∀ t (ht : L.allowed t ι.prime),
-      M.map ((L.lift t).restrictScalars 𝒪[ι]) ≤ L.integral t ι ht := by
+theorem le_integralVectors_iff (ι : PrimePadicIso) (M : Submodule ι.integers V) :
+    M ≤ L.integralVectors ι ↔ ∀ t (ht : L.allowed t ι.primeIndex),
+      M.map ((L.lift t).restrictScalars ι.integers) ≤ L.integral t ι ht := by
   simp only [integralVectors, le_iInf_iff, Submodule.map_le_iff_le_comap]
 
 /-- Integral vectors at conjugate embeddings have integral pairing after any allowed lift. -/
-theorem norm_iso_inner_lift_le_one (ι : PrimePadicIso) {t : T} (ht : L.allowed t ι.prime)
+theorem norm_iso_inner_lift_le_one (ι : PrimePadicIso) {t : T} (ht : L.allowed t ι.primeIndex)
     {x y : V} (hx : x ∈ L.integralVectors ι.conj) (hy : y ∈ L.integralVectors ι) :
     ‖ι.iso ⟪L.lift t x, L.lift t y⟫_ℂ‖ ≤ 1 :=
   L.norm_iso_inner_le_one t ι ht ((L.mem_integralVectors_iff ι.conj).mp hx t (by simpa using ht))

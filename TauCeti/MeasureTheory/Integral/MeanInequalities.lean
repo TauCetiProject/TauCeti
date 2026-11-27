@@ -11,10 +11,12 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
 public import Mathlib.Basic.Real.ConjExponents
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Integral.Average
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Integral.MeanInequalities
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Variants of Hölder's inequality
@@ -36,7 +38,8 @@ gradient of the original function.
 
 The file also records the weighted Young inequality for a pairing,
 `∫ w ⟪G, η⟫ ≤ (δ / 2) ∫ w ‖η‖² + (2 δ)⁻¹ ∫ w ‖G‖²` for a nonnegative weight `w` and `δ > 0`,
-which absorbs a pairing into a coercive term in energy estimates.
+which absorbs a pairing into a coercive term in energy estimates. Absorbing it into a weighted
+coercivity estimate `δ ∫ w ‖η‖² ≤ ∫ w ⟪G, η⟫` bounds `∫ w ‖η‖²` by `δ⁻² ∫ w ‖G‖²`.
 
 On a finite measure space, a weight `0 ≤ θ ≤ K` and a function with `‖g‖ ∈ L^{2q}` satisfy
 
@@ -44,7 +47,8 @@ On a finite measure space, a weight `0 ≤ θ ≤ K` and a function with `‖g�
 
 for Hölder conjugate exponents `q, q'`, so the weighted integral is small when the mean of `θ` is
 small. This is how the mean oscillation of the coefficients enters regularity estimates for
-divergence-form equations.
+divergence-form equations. Combined with a volume ratio `|t| = δ^N |s|`, it turns a decay estimate
+for integrals over `t ⊆ s` with such a weighted error into the same estimate for averages.
 
 For a product of `k` functions, the norm of its integral is at most the average of their `k`th
 absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
@@ -57,7 +61,13 @@ expected products without any independence assumption.
   `∫⁻ k g ≤ (∫⁻ k ^ (1 - 1/p)⁻¹) ^ (1 - 1/p) * ‖g‖_p`.
 * `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
+* `TauCeti.integral_mul_norm_sq_le_of_mul_le_integral_mul_inner` and
+  `TauCeti.integral_mul_norm_sq_le_of_mul_le_integral_mul_inner_of_le`: weighted coercivity
+  `δ ∫ w ‖η‖² ≤ ∫ w ⟪G, η⟫` bounds `∫ w ‖η‖²` by `δ⁻² ∫ w ‖G‖²`, also after changing to a
+  comparable weight (`TauCeti.integral_mul_norm_sq_le_mul_of_le`).
 * `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`: Hölder's inequality with a bounded weight.
+* `TauCeti.setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq`: the averaged form of a decay
+  estimate whose error is controlled by Hölder's inequality with a bounded weight.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
   the absolute-moment bound for an integral of a finite product.
 
@@ -191,6 +201,55 @@ theorem integral_mul_inner_le {F : Type*} [NormedAddCommGroup F] [InnerProductSp
       have := hw z
       positivity
 
+/-- **Comparing weighted `L²` integrals.** A pointwise comparison `w ≤ E W` of the nonnegative
+weight `w` with `W` integrates against `‖g‖²`: `∫ w ‖g‖² ≤ E ∫ W ‖g‖²`, provided the integral on
+the right exists. -/
+theorem integral_mul_norm_sq_le_mul_of_le {F : Type*} [NormedAddCommGroup F] {w W : β → ℝ}
+    {g : β → F} {E : ℝ} (hw : ∀ z, 0 ≤ w z) (hwW : ∀ z, w z ≤ E * W z)
+    (hW : Integrable (fun z ↦ W z * ‖g z‖ ^ 2) ν) :
+    ∫ z, w z * ‖g z‖ ^ 2 ∂ν ≤ E * ∫ z, W z * ‖g z‖ ^ 2 ∂ν := by
+  rw [← integral_const_mul]
+  refine integral_mono_of_nonneg (ae_of_all _ fun z ↦ mul_nonneg (hw z) (sq_nonneg _))
+    (hW.const_mul E) (ae_of_all _ fun z ↦ ?_)
+  simpa only [mul_assoc] using mul_le_mul_of_nonneg_right (hwW z) (sq_nonneg ‖g z‖)
+
+/-- **Coercivity bounds a weighted norm.** For a nonnegative weight `w` and `δ > 0`, the weighted
+coercivity `δ ∫ w ‖η‖² ≤ ∫ w ⟪G, η⟫` gives `∫ w ‖η‖² ≤ δ⁻² ∫ w ‖G‖²`, provided the integrals of
+`w ‖η‖²` and `w ‖G‖²` exist. -/
+theorem integral_mul_norm_sq_le_of_mul_le_integral_mul_inner {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {w : β → ℝ} {G η : β → F} (hw : ∀ z, 0 ≤ w z)
+    (hη : Integrable (fun z ↦ w z * ‖η z‖ ^ 2) ν) (hG : Integrable (fun z ↦ w z * ‖G z‖ ^ 2) ν)
+    {δ : ℝ} (hδ : 0 < δ) (h : δ * (∫ z, w z * ‖η z‖ ^ 2 ∂ν) ≤ ∫ z, w z * ⟪G z, η z⟫_ℝ ∂ν) :
+    ∫ z, w z * ‖η z‖ ^ 2 ∂ν ≤ 1 / δ ^ 2 * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by
+  have hP := integral_mul_inner_le hw hη hG hδ
+  -- `δ I ≤ δ I / 2 + J / (2 δ)`, so `δ² I ≤ J`.
+  have h₁ : δ / 2 * ∫ z, w z * ‖η z‖ ^ 2 ∂ν ≤ 1 / (2 * δ) * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by
+    linarith [h.trans hP]
+  rw [div_mul_eq_mul_div, one_mul, le_div_iff₀ (by positivity)]
+  calc (∫ z, w z * ‖η z‖ ^ 2 ∂ν) * δ ^ 2 = 2 * δ * (δ / 2 * ∫ z, w z * ‖η z‖ ^ 2 ∂ν) := by ring
+    _ ≤ 2 * δ * (1 / (2 * δ) * ∫ z, w z * ‖G z‖ ^ 2 ∂ν) := by gcongr
+    _ = ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by field_simp
+
+/-- **Coercivity with a comparable weight.** If the nonnegative weights satisfy `w ≤ E W` and
+`W ≤ E w`, then the weighted coercivity `δ ∫ W ‖η‖² ≤ ∫ W ⟪G, η⟫` with `δ > 0` gives
+`∫ w ‖η‖² ≤ E² / δ² ∫ w ‖G‖²`. This transfers an estimate proved with a convenient weight `W`,
+such as a smoothing of `w`, to the weight `w`. -/
+theorem integral_mul_norm_sq_le_of_mul_le_integral_mul_inner_of_le {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] {w W : β → ℝ} {G η : β → F} {δ E : ℝ}
+    (hδ : 0 < δ) (hE : 0 ≤ E) (hw : ∀ z, 0 ≤ w z) (hW : ∀ z, 0 ≤ W z)
+    (hwW : ∀ z, w z ≤ E * W z) (hWw : ∀ z, W z ≤ E * w z)
+    (hWη : Integrable (fun z ↦ W z * ‖η z‖ ^ 2) ν) (hWG : Integrable (fun z ↦ W z * ‖G z‖ ^ 2) ν)
+    (hwG : Integrable (fun z ↦ w z * ‖G z‖ ^ 2) ν)
+    (h : δ * (∫ z, W z * ‖η z‖ ^ 2 ∂ν) ≤ ∫ z, W z * ⟪G z, η z⟫_ℝ ∂ν) :
+    ∫ z, w z * ‖η z‖ ^ 2 ∂ν ≤ E * E / δ ^ 2 * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by
+  calc ∫ z, w z * ‖η z‖ ^ 2 ∂ν ≤ E * ∫ z, W z * ‖η z‖ ^ 2 ∂ν :=
+        integral_mul_norm_sq_le_mul_of_le hw hwW hWη
+    _ ≤ E * (1 / δ ^ 2 * (E * ∫ z, w z * ‖G z‖ ^ 2 ∂ν)) := by
+      gcongr
+      exact (integral_mul_norm_sq_le_of_mul_le_integral_mul_inner hW hWη hWG hδ h).trans
+        (by gcongr; exact integral_mul_norm_sq_le_mul_of_le hW hWw hwG)
+    _ = E * E / δ ^ 2 * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by ring
+
 /-- **Hölder's inequality with a bounded weight.** On a finite measure space, let `θ` be a
 measurable weight with `0 ≤ θ ≤ K` almost everywhere, and let `‖g‖ ∈ L^{2q}` for a pair of Hölder
 conjugate exponents `q, q'`. Then
@@ -237,6 +296,48 @@ theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
   exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (integral_nonneg fun x => by positivity)
     hθq hq.symm.inv_nonneg) (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
 
+/-- **Averaged form of a decay estimate with a Hölder-controlled error.** Let `|t| = δ^N |s|` with
+`δ > 0` and `0 < |s| < ∞`, let `θ` be measurable on `s` with `0 ≤ θ ≤ K` there, and let
+`‖g‖ ∈ L^{2q}(s)` for a pair of Hölder conjugate exponents `q, q'`. If
+
+`∫_t f ≤ C₁ δ^(N + 2) ∫_s F + C₂ (M ∫_s θ² ‖g‖² + ∫_s G)`
+
+with `C₂, M ≥ 0`, then
+
+`⨍_t f ≤ C₁ δ² ⨍_s F + C₂ δ^(-N) (M (K^(2q' - 1) ⨍_s θ)^(1/q') (⨍_s ‖g‖^(2q))^(1/q) + ⨍_s G)`.
+
+This passes a Campanato-type decay estimate with a coefficient error to averages, which are
+invariant under dilations. -/
+theorem setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq {E : Type*} [NormedAddCommGroup E]
+    {s t : Set β} {f F G θ : β → ℝ} {g : β → E} {C₁ C₂ K M δ q q' : ℝ} {N : ℕ}
+    (hs : 0 < ν.real s) (hδ : 0 < δ) (ht : ν.real t = δ ^ N * ν.real s) (hC₂ : 0 ≤ C₂)
+    (hM : 0 ≤ M) (hq : q.HolderConjugate q') (hθm : AEStronglyMeasurable θ (ν.restrict s))
+    (hθ : ∀ᵐ x ∂ν.restrict s, 0 ≤ θ x ∧ θ x ≤ K)
+    (hg : MemLp g (ENNReal.ofReal (2 * q)) (ν.restrict s))
+    (h : ∫ x in t, f x ∂ν ≤ C₁ * δ ^ (N + 2) * ∫ x in s, F x ∂ν +
+      C₂ * (M * ∫ x in s, θ x ^ 2 * ‖g x‖ ^ 2 ∂ν + ∫ x in s, G x ∂ν)) :
+    ⨍ x in t, f x ∂ν ≤ C₁ * δ ^ 2 * ⨍ x in s, F x ∂ν +
+      C₂ * δ⁻¹ ^ N * (M * ((K ^ (2 * q' - 1) * ⨍ x in s, θ x ∂ν) ^ q'⁻¹ *
+        (⨍ x in s, ‖g x‖ ^ (2 * q) ∂ν) ^ q⁻¹) + ⨍ x in s, G x ∂ν) := by
+  have : IsFiniteMeasure (ν.restrict s) :=
+    isFiniteMeasure_restrict.2 fun h => by simp [Measure.real, h] at hs
+  have hΘ := integral_sq_mul_norm_sq_le_of_ae_le hq hθm hθ hg
+  simp only [setAverage_eq, smul_eq_mul, ht]
+  set V := ν.real s
+  set Iθ := ∫ x in s, θ x ∂ν
+  set Ig := ∫ x in s, ‖g x‖ ^ (2 * q) ∂ν
+  have hsplit : (K ^ (2 * q' - 1) * (V⁻¹ * Iθ)) ^ q'⁻¹ * (V⁻¹ * Ig) ^ q⁻¹ =
+      V⁻¹ * ((K ^ (2 * q' - 1) * Iθ) ^ q'⁻¹ * Ig ^ q⁻¹) := by
+    rw [mul_left_comm (K ^ (2 * q' - 1)) V⁻¹ Iθ]
+    exact Real.mul_rpow_mul_mul_rpow_of_add_eq_one (inv_nonneg.2 hs.le)
+      hq.symm.inv_add_inv_eq_one
+  rw [hsplit]
+  refine (mul_le_mul_of_nonneg_left (h.trans (add_le_add le_rfl (mul_le_mul_of_nonneg_left
+    (add_le_add (mul_le_mul_of_nonneg_left hΘ hM) le_rfl) hC₂))) (by positivity)).trans_eq ?_
+  have hV0 : V ≠ 0 := hs.ne'
+  rw [inv_pow]
+  field_simp
+  ring
 end TauCeti
 
 namespace MeasureTheory
