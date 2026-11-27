@@ -50,21 +50,6 @@ section
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
-/-- Every element of an integral lattice `M` with basis `b` lies in the rational span of `b`. -/
-private theorem coe_mem_span_basis {V η : Type*} [AddCommGroup V] [Module ℚ V]
-    {M : AddSubgroup V} (b : Module.Basis η ℤ M) (m : M) :
-    (m : V) ∈ Submodule.span ℚ (Set.range fun r : η => (b r : V)) := by
-  have hm : m ∈ Submodule.span ℤ (Set.range b) := b.span_eq.symm ▸ trivial
-  induction hm using Submodule.span_induction with
-  | mem _ hx =>
-    obtain ⟨r, rfl⟩ := hx
-    exact Submodule.subset_span ⟨r, rfl⟩
-  | zero => exact Submodule.zero_mem _
-  | add _ _ _ _ hx hy => exact Submodule.add_mem _ hx hy
-  | smul c _ _ hx =>
-    rw [AddSubgroupClass.coe_zsmul, ← Int.cast_smul_eq_zsmul ℚ]
-    exact Submodule.smul_mem _ _ hx
-
 /-- Every Kostant root operator preserves the rational span of an integral basis `b` of `M`. -/
 private theorem root_apply_mem_span_basis
     {L ι κ V η : Type*} [LieRing L] [LieAlgebra ℚ L] [AddCommGroup V] [Module ℚ V]
@@ -78,7 +63,11 @@ private theorem root_apply_mem_span_basis
     (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))).mpr <| by
     rintro _ ⟨r, rfl⟩
     rw [SetLike.mem_coe, Submodule.mem_comap, ← coe_kostantRootOperator_apply e h ρ M hM k (b r)]
-    exact coe_mem_span_basis b _
+    have hmem : (kostantRootOperator e h ρ M hM k (b r) : V) ∈
+        (Submodule.span ℤ (Set.range b)).map M.subtype.toIntLinearMap :=
+      ⟨_, b.span_eq.symm ▸ trivial, rfl⟩
+    rw [Submodule.map_span, ← Set.range_comp] at hmem
+    exact Submodule.span_le_restrictScalars ℤ ℚ _ hmem
 
 /-- Ambient highest-weight round-trip identity for
 `exists_pow_kostantRootOperator_eq_factorial_smul`: produces a positive integer weight `N = wt j`
@@ -117,9 +106,12 @@ private theorem exists_pow_e_pow_f_eq_factorial_smul
       rw [LieSubmodule.coe_bracket, LieSubalgebra.coe_bracket_of_module, SetLike.val_smul]
       exact hwt r
   obtain ⟨r₀, hr₀⟩ := hwt_ne
-  have hhW := hsl2.toEnd_lieSubmoduleOfStable_ne_zero W hEW hFW hsl2.h_mem_toLieSubalgebra
-    (hwtW r₀) (smul_ne_zero (Int.cast_ne_zero.mpr hr₀)
-      (fun h0 => b.ne_zero r₀ (Subtype.ext (congrArg (fun x : 𝒲 => (x : V)) h0))))
+  have hhW : LieModule.toEnd ℚ (hsl2.toLieSubalgebra ℚ) 𝒲 ⟨H, hsl2.h_mem_toLieSubalgebra⟩ ≠ 0 := by
+    intro hzero
+    have hval := congrArg (fun g : Module.End ℚ 𝒲 => g (v r₀)) hzero
+    rw [LinearMap.zero_apply, LieModule.toEnd_apply_apply, hwtW r₀] at hval
+    exact smul_ne_zero (Int.cast_ne_zero.mpr hr₀)
+      (fun h0 => b.ne_zero r₀ (Subtype.ext (congrArg (fun x : 𝒲 => (x : V)) h0))) hval
   obtain ⟨j, hjpos, hP, -⟩ :=
     (hsl2.isSl2Triple_restrict (K := ℚ)).exists_pos_weight_and_hasPrimitiveVectorWith_of_span_eq_top
       hspanW hhW hwtW (hbdd_below.mono (Set.range_comp_subset_range Subtype.val wt))
@@ -130,12 +122,13 @@ private theorem exists_pow_e_pow_f_eq_factorial_smul
       (hsl2.isSl2Triple_restrict (K := ℚ)).HasPrimitiveVectorWith (v j) (N : ℚ) := by
     rwa [← Int.cast_natCast, hN_eq]
   have hpow := congrArg Subtype.val (TauCeti.pow_toEnd_e_pow_toEnd_f_self_nat hP_nat)
-  have htoEnd (T : Module.End ℚ V) : LieModule.toEnd ℚ (Module.End ℚ V) V T = T :=
-    LinearMap.ext fun x => by rw [LieModule.toEnd_apply_apply, Module.End.lie_apply]
-  rw [hsl2.coe_pow_toEnd_lieSubmoduleOfStable W hEW hFW hsl2.e_mem_toLieSubalgebra,
-    hsl2.coe_pow_toEnd_lieSubmoduleOfStable W hEW hFW hsl2.f_mem_toLieSubalgebra,
-    htoEnd E, htoEnd F, AddSubmonoidClass.coe_nsmul, ← Nat.cast_smul_eq_nsmul ℚ,
-    Nat.cast_mul] at hpow
+  have htoEnd (T : Module.End ℚ V) (hT : T ∈ hsl2.toLieSubalgebra ℚ) :
+      LieModule.toEnd ℚ (hsl2.toLieSubalgebra ℚ) V ⟨T, hT⟩ = T :=
+    LinearMap.ext fun x => by
+      rw [LieModule.toEnd_apply_apply, LieSubalgebra.coe_bracket_of_module, Module.End.lie_apply]
+  rw [LieSubmodule.coe_toEnd_pow, LieSubmodule.coe_toEnd_pow,
+    htoEnd E hsl2.e_mem_toLieSubalgebra, htoEnd F hsl2.f_mem_toLieSubalgebra,
+    AddSubmonoidClass.coe_nsmul, ← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_mul] at hpow
   exact ⟨j, N, by omega, by simpa [E, F, v] using hpow⟩
 
 /-- Internal helper for `exists_isPrimitive_kostantRootOperator_of_isSl2Triple`: produces a nonzero

@@ -314,7 +314,7 @@ noncomputable def kostantRootOperator : Module.End ℤ M :=
 
 /-- Powers of the integral root operator act by powers of the ambient representation of the root
 vector. -/
-theorem coe_pow_kostantRootOperator (k : ℕ) (v : M) :
+@[simp] theorem coe_pow_kostantRootOperator (k : ℕ) (v : M) :
     (((kostantRootOperator e h ρ M hM i ^ k) v : M) : V) =
       (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)) ^ k) (v : V) := by
   induction k with
