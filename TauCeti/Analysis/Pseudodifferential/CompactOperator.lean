@@ -241,11 +241,7 @@ private noncomputable def testFunctional (ψ : 𝓢(CoordinateSpace n, ℂ)) (ξ
 private lemma testFunctional_apply (ψ : 𝓢(CoordinateSpace n, ℂ)) (ξ : CoordinateSpace n)
     (r : ℝ) (k : ℕ) (f : H^{r}(CoordinateSpace n, W)) :
     testFunctional ψ ξ r k f = f.toDistr (testPacket ψ ξ r k) := by
-  simp only [testFunctional, ContinuousLinearMap.comp_apply,
-    BesselPotentialSpace.toDistrCLM_apply, PointwiseConvergenceCLM.evalCLM_apply]
-  -- The two sides apply the tempered distribution through different, definitionally equal
-  -- coercions to functions: that of `PointwiseConvergenceCLM.coeLMₛₗ` and the native one.
-  rfl
+  rw [testFunctional, BesselPotentialSpace.evalCLM_comp_toDistrCLM_apply]
 
 /-- The pairings with `χ_k` are uniformly bounded on `H^r`. -/
 private lemma exists_norm_testFunctional_le (ψ : 𝓢(CoordinateSpace n, ℂ))
