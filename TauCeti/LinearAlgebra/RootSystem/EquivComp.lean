@@ -140,12 +140,6 @@ theorem indexEquiv_mul_apply (f g : Aut P) (i : ι) :
     (f * g).indexEquiv i = f.indexEquiv (g.indexEquiv i) :=
   (rfl)
 
-/-- The weight-space map of a product of automorphisms is the composition of their weight-space
-maps. -/
-theorem weightMap_mul_apply (f g : Aut P) (x : M) :
-    (f * g).weightMap x = f.weightMap (g.weightMap x) :=
-  (rfl)
-
 /-- The weight-space map of `RootPairing.Equiv.reflection P i` is `P.reflection i`. -/
 theorem reflection_weightMap_apply (P : RootPairing ι R M N) (i : ι) (x : M) :
     (reflection P i).weightMap x = P.reflection i x :=

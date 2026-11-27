@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.RootSystem.BaseChange.B
 public import TauCeti.LinearAlgebra.RootSystem.OrbitSum.Basic
 public import TauCeti.LinearAlgebra.RootSystem.ZeroSumTypeA
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Algebra.Algebra.Pi
 
 /-!
 # Coordinate model for folding even type `A₂ₙ` under diagram reversal

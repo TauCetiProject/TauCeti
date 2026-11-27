@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.Algebra.Algebra.Pi
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
