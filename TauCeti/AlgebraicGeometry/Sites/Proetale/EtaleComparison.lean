@@ -58,10 +58,6 @@ namespace AlgebraicGeometry.Scheme
 
 variable (X : Scheme.{u})
 
-/-- Étale morphisms are weakly étale. -/
-private lemma etale_le_weaklyEtale : @Etale ≤ @WeaklyEtale :=
-  fun _ _ f (_ : Etale f) ↦ inferInstanceAs (WeaklyEtale f)
-
 /-- The inclusion of the small étale site of `X` into its small pro-étale site: an étale
 `X`-scheme is weakly étale. -/
 -- Exposed so that the objects and morphisms of `toProEt X` are by definition those of `X.Etale`.
