@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
+public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.LinearAlgebra.Determinant.PositivePairing
 import TauCeti.LinearAlgebra.Dimension.Submodule
 
 /-!
@@ -29,6 +31,29 @@ Unlike the dimension count alone, this gives a specific isomorphism between the 
 cokernel of `ε - Q`, determined by `J`. It identifies the determinant line
 `det (ker f) ⊗ (det (coker f))^*` of `f` with `det (ker f) ⊗ (det (ker f))^*`, which is how the
 kernel of a formal adjoint, computed through the same eigenspace, is compared with the cokernel.
+
+**Orientations.** The same orthogonality makes `β(x, [z]) = ⟪J x, z⟫` a well-defined pairing of
+`ker f` with `V ⧸ range f` (`TauCeti.kerQuotientRangePairing`), and the isomorphism above is
+positive for it: `β(x, [J x]) = ‖J x‖² > 0` for `x ≠ 0`. Any other linear map
+`φ : ker f → V ⧸ range f` with `0 < β(x, φ x)` for every `x ≠ 0` is then an isomorphism as well,
+differing from `x ↦ [J x]` by an automorphism of `ker f` of positive determinant
+(`TauCeti.det_pos_kerEquivQuotientRangeOfInnerApplyEq_symm_comp`,
+`TauCeti.bijective_of_forall_pos_kerQuotientRangePairing`). So both identify the determinant line
+of `f` with `det (ker f) ⊗ (det (ker f))^*` compatibly with orientations. For the return map of a
+periodic linear Hamiltonian equation, `ε` times the endpoint map of variation of constants gives
+such a map (`TauCeti.kerQuotientRangePairing_smul_kerTwistedLinearOperatorToQuotientRange_pos`).
+
+## Main definitions
+
+* `TauCeti.kerEquivQuotientRangeOfInnerApplyEq`: the isomorphism `x ↦ [J x]` from the kernel of
+  `ε - Q` onto its cokernel.
+* `TauCeti.kerQuotientRangePairing`: the pairing `β(x, [z]) = ⟪J x, z⟫` of the kernel with the
+  cokernel.
+
+## Main results
+
+* `TauCeti.det_pos_kerEquivQuotientRangeOfInnerApplyEq_symm_comp`: a map from the kernel to the
+  cokernel positive for `β` differs from `x ↦ [J x]` by an automorphism of positive determinant.
 -/
 
 public section
@@ -82,5 +107,65 @@ theorem kerEquivQuotientRangeOfInnerApplyEq_apply (hJ : Function.Injective J)
     (x : ker f) :
     kerEquivQuotientRangeOfInnerApplyEq hJ hQ hε hf x = Submodule.Quotient.mk (J x) :=
   (rfl)
+
+omit [FiniteDimensional ℝ V] in
+variable (J f) in
+/-- The pairing `β(x, [z]) = ⟪J x, z⟫` of the kernel of `f = ε - Q` with its cokernel
+`V ⧸ range f`, for `Q` preserving `⟪J ·, ·⟫` and `ε ^ 2 = 1`. It is well defined because `J x` is
+orthogonal to the range of `f` for `x ∈ ker f`. -/
+def kerQuotientRangePairing (hQ : ∀ x y, ⟪J (Q x), Q y⟫ = ⟪J x, y⟫) (hε : ε ^ 2 = 1)
+    (hf : ∀ x, f x = ε • x - Q x) : ker f →ₗ[ℝ] (V ⧸ range f) →ₗ[ℝ] ℝ :=
+  ((range f).liftQ (innerₗ V ∘ₗ J ∘ₗ (ker f).subtype).flip (by
+    rintro _ ⟨y, rfl⟩
+    rw [mem_ker]
+    ext x
+    exact inner_apply_apply_eq_zero_of_inner_apply_eq_of_mem_ker hQ hε hf x.property y)).flip
+
+omit [FiniteDimensional ℝ V] in
+@[simp]
+theorem kerQuotientRangePairing_mk (hQ : ∀ x y, ⟪J (Q x), Q y⟫ = ⟪J x, y⟫) (hε : ε ^ 2 = 1)
+    (hf : ∀ x, f x = ε • x - Q x) (x : ker f) (z : V) :
+    kerQuotientRangePairing J f hQ hε hf x (Submodule.Quotient.mk z) = ⟪J x, z⟫ :=
+  (rfl)
+
+omit [FiniteDimensional ℝ V] in
+/-- The pairing `β(x, [J x]) = ‖J x‖²` is positive for `x ≠ 0` in the kernel of `ε - Q`. -/
+theorem kerQuotientRangePairing_mk_apply_pos (hJ : Function.Injective J)
+    (hQ : ∀ x y, ⟪J (Q x), Q y⟫ = ⟪J x, y⟫) (hε : ε ^ 2 = 1) (hf : ∀ x, f x = ε • x - Q x)
+    {x : ker f} (hx : x ≠ 0) :
+    0 < kerQuotientRangePairing J f hQ hε hf x (Submodule.Quotient.mk (J x)) := by
+  rw [kerQuotientRangePairing_mk, real_inner_self_eq_norm_sq]
+  exact pow_pos (norm_pos_iff.2 fun h =>
+    hx (Submodule.coe_eq_zero.1 ((injective_iff_map_eq_zero J).1 hJ _ h))) 2
+
+/-- **Positive maps from the kernel to the cokernel induce the orientation of `x ↦ [J x]`.** Let
+`J` be injective, `Q` preserve `⟪J ·, ·⟫` and `ε ^ 2 = 1`, and put `f = ε - Q`. A linear map
+`φ : ker f → V ⧸ range f` with `0 < ⟪J x, φ x⟫` for every `x ≠ 0` differs from the isomorphism
+`x ↦ [J x]` by an automorphism of `ker f` of positive determinant. -/
+theorem det_pos_kerEquivQuotientRangeOfInnerApplyEq_symm_comp (hJ : Function.Injective J)
+    (hQ : ∀ x y, ⟪J (Q x), Q y⟫ = ⟪J x, y⟫) (hε : ε ^ 2 = 1) (hf : ∀ x, f x = ε • x - Q x)
+    {φ : ker f →ₗ[ℝ] V ⧸ range f}
+    (hφ : ∀ x, x ≠ 0 → 0 < kerQuotientRangePairing J f hQ hε hf x (φ x)) :
+    0 < ((kerEquivQuotientRangeOfInnerApplyEq hJ hQ hε hf).symm.toLinearMap ∘ₗ φ).det :=
+  det_pos_of_forall_pos_of_forall_pos (kerQuotientRangePairing J f hQ hε hf)
+    (kerEquivQuotientRangeOfInnerApplyEq hJ hQ hε hf)
+    (fun _ hx => kerQuotientRangePairing_mk_apply_pos hJ hQ hε hf hx) hφ
+
+/-- A linear map `φ : ker f → V ⧸ range f` with `0 < ⟪J x, φ x⟫` for every `x ≠ 0` is bijective,
+for `f = ε - Q` as in `TauCeti.kerEquivQuotientRangeOfInnerApplyEq`. -/
+theorem bijective_of_forall_pos_kerQuotientRangePairing (hJ : Function.Injective J)
+    (hQ : ∀ x y, ⟪J (Q x), Q y⟫ = ⟪J x, y⟫) (hε : ε ^ 2 = 1) (hf : ∀ x, f x = ε • x - Q x)
+    {φ : ker f →ₗ[ℝ] V ⧸ range f}
+    (hφ : ∀ x, x ≠ 0 → 0 < kerQuotientRangePairing J f hQ hε hf x (φ x)) :
+    Function.Bijective φ := by
+  set e := kerEquivQuotientRangeOfInnerApplyEq hJ hQ hε hf
+  have hT : Function.Bijective (e.symm.toLinearMap ∘ₗ φ) :=
+    (Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 (isUnit_iff_ne_zero.2
+      (det_pos_kerEquivQuotientRangeOfInnerApplyEq_symm_comp hJ hQ hε hf hφ).ne'))
+  have hφe : (φ : ker f → V ⧸ range f) = e ∘ (e.symm.toLinearMap ∘ₗ φ) := by
+    ext x
+    simp
+  rw [hφe]
+  exact e.bijective.comp hT
 
 end TauCeti

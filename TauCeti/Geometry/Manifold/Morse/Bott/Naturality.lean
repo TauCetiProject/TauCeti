@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.Map
 import TauCeti.Geometry.Manifold.Morse.Submersion
 import TauCeti.Geometry.Manifold.SmoothEmbedding.NormalSpace.VectorBundle.Map
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Negative normal bundles of Morse–Bott submanifolds along maps

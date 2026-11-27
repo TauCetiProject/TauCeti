@@ -20,16 +20,14 @@ import TauCeti.Analysis.Sobolev.Wkp.LinearIsometry
 
 Let `Ω ⊆ ℝ × E` be a bounded open set with `C²` boundary, let `1 < p < ∞`, and let
 
-`L u = tr (A ∘ D²u) + c u`
+`L u = tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u`
 
-with `A` continuous up to the boundary and elliptic there, and `c` bounded, measurable and
-`c ≤ 0`. This file proves that the Dirichlet problem `L u = f` in `Ω`, `u = 0` on `∂Ω`, is
-uniquely solvable in `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` for every `f ∈ Lᵖ(Ω)`
-(`TauCeti.existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGradient_add_mul_eq`).
-This is Gilbarg–Trudinger's Theorem 9.15 for zero boundary values and without drift, the drift
-being absent from the uniqueness theorem for strong solutions behind the a priori estimate.
-The solution is a strong solution: `u` has weak second derivatives in `Lᵖ(Ω)` and the equation
-holds almost everywhere.
+with `A` continuous up to the boundary and elliptic there, `b` bounded and measurable, and `c`
+bounded, measurable and `c ≤ 0`. This file proves that the Dirichlet problem `L u = f` in `Ω`,
+`u = 0` on `∂Ω`, is uniquely solvable in `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` for every `f ∈ Lᵖ(Ω)`
+(`TauCeti.existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_add_inner_add_mul_eq`).
+This is Gilbarg–Trudinger's Theorem 9.15 for zero boundary values. The solution is a strong
+solution: `u` has weak second derivatives in `Lᵖ(Ω)` and the equation holds almost everywhere.
 
 ## The argument
 
@@ -46,8 +44,8 @@ holds almost everywhere.
   For every `p`, Lemma 9.17 bounds `Δ` below on `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)`, so its range is
   closed; it contains the simple functions, which lie in `L^{max p 2}(Ω)`, and these are dense.
 * **The method of continuity.** Along the segment `L_t = (1 - t) Δ + t L`, `t ∈ [0, 1]`, the
-  coefficients `(1 - t) I + t A` and `t c` satisfy the same hypotheses, so Lemma 9.17 bounds each
-  `L_t` below. Compactness of `[0, 1]` makes the bound uniform
+  coefficients `(1 - t) I + t A`, `t b` and `t c` satisfy the same hypotheses, so Lemma 9.17
+  bounds each `L_t` below. Compactness of `[0, 1]` makes the bound uniform
   (`IsCompact.exists_forall_norm_le_mul_norm_apply`), and the method of continuity
   (`IsPreconnected.surjective_iff_of_forall_norm_le`) carries the surjectivity of `Δ` to `L`. The
   bound for `L` itself gives uniqueness.
@@ -233,10 +231,11 @@ private theorem exists_firstOrder_mem_w1p0Submodule_and_trace_iteratedGradient_a
   filter_upwards [hv, hu, MemLp.coeFn_toLp ((Lp.memLp f).mono_exponent hp)] with x hx hux hfx
   rw [hx, hux, hfx]
 
-/-- The a priori estimate along the segment from the Laplacian to `L u = tr (A ∘ D²u) + c u`: if
-`T₀` and `T₁` realize the two operators on `W^{2,p}(Ω)`, then for each `t ∈ [0, 1]` the operator
-`(1 - t) T₀ + t T₁`, which is the operator of the same form with coefficients
-`(1 - t) I + t A` and `t c`, is bounded below on `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` by Lemma 9.17. -/
+/-- The a priori estimate along the segment from the Laplacian to
+`L u = tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u`: if `T₀` and `T₁` realize the two operators on `W^{2,p}(Ω)`,
+then for each `t ∈ [0, 1]` the operator `(1 - t) T₀ + t T₁`, which is the operator of the same
+form with coefficients `(1 - t) I + t A`, `t b` and `t c`, is bounded below on
+`W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` by Lemma 9.17. -/
 private theorem exists_norm_le_mul_norm_lineMap_apply (hp : 1 < p) (hp_top : p ≠ ⊤)
     (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
     (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
@@ -247,6 +246,9 @@ private theorem exists_norm_le_mul_norm_lineMap_apply (hp : 1 < p) (hp_top : p �
     (hcont : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))), ContinuousWithinAt A Omega x)
     (hell : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))),
       ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
+    {b : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {β : ℝ}
+    (hb : AEStronglyMeasurable b (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (hbβ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), ‖b x‖ ≤ β)
     {c : WithLp 2 (ℝ × E) → ℝ} {γ : ℝ}
     (hc : AEStronglyMeasurable c (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
     (hcγ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), |c x| ≤ γ)
@@ -256,12 +258,13 @@ private theorem exists_norm_le_mul_norm_lineMap_apply (hp : 1 < p) (hp_top : p �
     (hT₀ : ∀ u, ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
       T₀ u x = LinearMap.trace ℝ (WithLp 2 (ℝ × E)) (iteratedGradient 1 u x))
     (hT₁ : ∀ u, ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
-      T₁ u x = traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x)
+      T₁ u x = traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) +
+        ⟪b x, iteratedGradient 0 (lowerOrder 1 u) x⟫_ℝ + c x * value 2 u x)
     {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     ∃ C : ℝ, ∀ u, firstOrder 1 u ∈ w1p0Submodule volume Omega p →
       ‖u‖ ≤ C * ‖AffineMap.lineMap T₀ T₁ t u‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_le_of_traceCLM_comp_iteratedGradient_add_mul_eq hp hp_top hΩ
-    hbdry (A := fun x => (1 - t) • ContinuousLinearMap.id ℝ _ + t • A x)
+  obtain ⟨C, hC⟩ := exists_norm_le_of_traceCLM_comp_iteratedGradient_add_inner_add_mul_eq hp
+    hp_top hΩ hbdry (A := fun x => (1 - t) • ContinuousLinearMap.id ℝ _ + t • A x)
     (fun x hx => continuousWithinAt_const.add ((hcont x hx).const_smul t))
     (fun x hx => by
       obtain ⟨lam, hlam, h⟩ := hell x hx
@@ -274,6 +277,10 @@ private theorem exists_norm_le_mul_norm_lineMap_apply (hp : 1 < p) (hp_top : p �
         real_inner_smul_left, real_inner_self_eq_norm_sq]
       nlinarith [mul_le_mul_of_nonneg_left hm₁ (sub_nonneg.2 ht.2),
         mul_le_mul_of_nonneg_left hm₂ ht.1])
+    (b := fun x => t • b x) (β := β) (hb.const_smul t)
+    (hbβ.mono fun x hx => by
+      rw [norm_smul, Real.norm_of_nonneg ht.1]
+      nlinarith [norm_nonneg (b x), ht.2])
     (c := fun x => t * c x) (γ := γ) (hc.const_mul t)
     (hcγ.mono fun x hx => by
       rw [abs_mul, abs_of_nonneg ht.1]
@@ -285,7 +292,7 @@ private theorem exists_norm_le_mul_norm_lineMap_apply (hp : 1 < p) (hp_top : p �
     Lp.coeFn_smul (1 - t) (T₀ u), Lp.coeFn_smul t (T₁ u)] with x h₀ h₁ hadd hs₀ hs₁
   simp only [add_apply, smul_apply, hadd, Pi.add_apply, hs₀, hs₁, Pi.smul_apply, h₀, h₁,
     ContinuousLinearMap.add_comp, ContinuousLinearMap.smul_comp, ContinuousLinearMap.id_comp,
-    map_add, map_smul, traceCLM_apply, smul_eq_mul]
+    map_add, map_smul, traceCLM_apply, smul_eq_mul, real_inner_smul_left]
   ring
 
 /-- The Laplacian is onto `Lᵖ(Ω)` from `W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` once it is bounded below there.
@@ -340,10 +347,11 @@ private theorem surjective_comp_subtypeL_of_forall_norm_le (hp_top : p ≠ ⊤)
 
 /-- **The Dirichlet problem in `W^{2,p}`** (Gilbarg–Trudinger, Theorem 9.15). Let
 `Ω ⊆ ℝ × E` be a bounded open set with `C²` boundary, and let `1 < p < ∞`. Let `A` be continuous
-within `Ω` and elliptic at every point of `closure Ω`, and let `c` be measurable, bounded and
-`c ≤ 0` almost everywhere. Then for every `f ∈ Lᵖ(Ω)` there is exactly one
-`u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` with `tr (A ∘ D²u) + c u = f` almost everywhere on `Ω`. -/
-theorem existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGradient_add_mul_eq
+within `Ω` and elliptic at every point of `closure Ω`, let `b` be measurable and bounded, and let
+`c` be measurable, bounded and `c ≤ 0` almost everywhere. Then for every `f ∈ Lᵖ(Ω)` there is
+exactly one `u ∈ W^{2,p}(Ω) ∩ W^{1,p}_0(Ω)` with `tr (A ∘ D²u) + ⟪b, ∇u⟫ + c u = f` almost
+everywhere on `Ω`. -/
+theorem existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_add_inner_add_mul_eq
     (hp : 1 < p) (hp_top : p ≠ ⊤)
     (hΩ : Bornology.IsBounded (Omega : Set (WithLp 2 (ℝ × E))))
     (hbdry : ∀ x ∈ frontier (Omega : Set (WithLp 2 (ℝ × E))),
@@ -354,6 +362,9 @@ theorem existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGrad
     (hcont : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))), ContinuousWithinAt A Omega x)
     (hell : ∀ x ∈ closure (Omega : Set (WithLp 2 (ℝ × E))),
       ∃ lam : ℝ, 0 < lam ∧ ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ ⟪A x ξ, ξ⟫_ℝ)
+    {b : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} {β : ℝ}
+    (hb : AEStronglyMeasurable b (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
+    (hbβ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), ‖b x‖ ≤ β)
     {c : WithLp 2 (ℝ × E) → ℝ} {γ : ℝ}
     (hc : AEStronglyMeasurable c (volume.restrict (Omega : Set (WithLp 2 (ℝ × E)))))
     (hcγ : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), |c x| ≤ γ)
@@ -362,16 +373,18 @@ theorem existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGrad
     ∃! u : Wkp (volume : Measure (WithLp 2 (ℝ × E))) Omega p 2,
       firstOrder 1 u ∈ w1p0Submodule volume Omega p ∧
       ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
-        traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) + c x * value 2 u x =
-          f x := by
+        traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L iteratedGradient 1 u x) +
+          ⟪b x, iteratedGradient 0 (lowerOrder 1 u) x⟫_ℝ + c x * value 2 u x = f x := by
   -- The operators `T₀ = Δ` and `T₁ = L` on `W^{2,p}(Ω)`.
   obtain ⟨T₀, hT₀⟩ :=
-    exists_continuousLinearMap_traceCLM_comp_add_mul_of_continuousWithinAt (p := p) hΩ
+    exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul_of_continuousWithinAt (p := p) hΩ
       (A := fun _ => ContinuousLinearMap.id ℝ (WithLp 2 (ℝ × E)))
-      (fun _ _ => continuousWithinAt_const) (c := 0) (γ := 0) aestronglyMeasurable_const
+      (fun _ _ => continuousWithinAt_const) (b := 0) (β := 0) aestronglyMeasurable_const
+      (ae_of_all _ fun _ => by simp) (c := 0) (γ := 0) aestronglyMeasurable_const
       (ae_of_all _ fun _ => by simp)
   obtain ⟨T₁, hT₁⟩ :=
-    exists_continuousLinearMap_traceCLM_comp_add_mul_of_continuousWithinAt (p := p) hΩ hcont hc hcγ
+    exists_continuousLinearMap_traceCLM_comp_add_inner_add_mul_of_continuousWithinAt (p := p) hΩ
+      hcont hb hbβ hc hcγ
   have hT₀' : ∀ u, ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))),
       T₀ u x = LinearMap.trace ℝ (WithLp 2 (ℝ × E)) (iteratedGradient 1 u x) :=
     fun u => (hT₀ u).mono fun x hx => by simpa using hx
@@ -389,7 +402,7 @@ theorem existsUnique_firstOrder_mem_w1p0Submodule_and_traceCLM_comp_iteratedGrad
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_forall_norm_le_mul_norm_apply hTc.continuousOn
     fun t ht => by
       obtain ⟨C, hC⟩ := exists_norm_le_mul_norm_lineMap_apply hp hp_top hΩ hbdry hcont hell
-        hc hcγ hc0 hT₀' hT₁ ht
+        hb hbβ hc hcγ hc0 hT₀' hT₁ ht
       exact ⟨C, fun u => hC u ((hM u).1 u.property)⟩
   -- The Laplacian is onto, and by the method of continuity so is `L`.
   have hsurj₀ : Function.Surjective (T 0) := by

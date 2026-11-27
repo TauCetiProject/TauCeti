@@ -150,15 +150,6 @@ private theorem integralTopForm_sphereAreaForm :
     integralTopForm sphereOrientation₂ sphereAreaForm.val.val = 4 * Real.pi :=
   Orientation.integralTopForm_sphereOrientation_sphereVolumeForm _
 
-/-- The unit sphere `S² ⊆ ℝ³` has an integral fundamental class with coefficients in `ℤ`. -/
-private theorem exists_isFundamentalClass_sphere :
-    ∃ ν : ((singularChains ℤ).obj (TopCat.of (sphere (0 : ℝ³) 1))).homology 2,
-      IsFundamentalClass (M := sphere (0 : ℝ³) 1) (N := ModuleCat.of ℤ ℤ) ν := by
-  have h2 : finrank ℝ (EuclideanSpace ℝ (Fin 2)) = 1 + 1 := finrank_euclideanSpace_fin
-  exact ⟨_, (isFundamentalClass_singularHomologyFunctor_map_app_iff integralCoeffIso _).2
-    (HomologicalOrientation.isFundamentalClass_fundamentalClass
-      (sphereOrientation₂.toHomologicalOrientation h2) h2)⟩
-
 variable {W H C : Type} [NormedAddCommGroup W] [NormedSpace ℝ W] [FiniteDimensional ℝ W]
   [TopologicalSpace H] {I : ModelWithCorners ℝ W H} [I.Boundaryless]
   [TopologicalSpace C] [ChartedSpace H C] [IsManifold I ∞ C] [T2Space C] [CompactSpace C]
@@ -227,7 +218,7 @@ theorem exists_closedFormHomologyPeriod_eq_mul_integralTopForm (hW : finrank ℝ
     (hμ : IsFundamentalClass (M := C) (N := ModuleCat.of ℤ ℤ) μ) :
     ∃ s : ℤ, (s = 1 ∨ s = -1) ∧
       ∀ η : closedForms I C 2, closedFormHomologyPeriod η μ = s * integralTopForm o η.val := by
-  obtain ⟨ν, hν⟩ := exists_isFundamentalClass_sphere
+  obtain ⟨ν, hν⟩ := exists_isFundamentalClass_sphere (E := ℝ³) (d := 1) finrank_euclideanSpace_fin ℤ
   obtain ⟨s₀, hs₀, hS⟩ := exists_closedFormHomologyPeriod_sphereAreaForm hν
   obtain ⟨f, hf, s, d, hs, hd, hper, hint⟩ :=
     exists_closedFormHomologyPeriod_mpullback_sphereAreaForm hW o hμ hν

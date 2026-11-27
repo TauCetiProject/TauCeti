@@ -102,8 +102,8 @@ consecutive counts one vanishes, the spectral sequence degenerates
 (`filteredSpaceSpectralSequence_page_d_eq_zero_of_forall_twistedBettiNumber_eq_zero_or_eq_zero`)
 and its graded pieces have these dimensions
 (`finrank_cokernel_abutmentFiltrationMap_of_forall_twistedBettiNumber_eq_zero_or_eq_zero`).
-These twisted statements take the manifolds and the field in any one universe, while those of
-characteristic two take them in `Type`, as the untwisted Thom isomorphism they rest on does.
+These twisted statements, like those of characteristic two, take the manifolds and the field in any
+one universe.
 Over `ℚ` a piece whose negative normal bundle is not orientable may contribute nothing even though
 its ordinary homology does not vanish, as for the critical circle of index one with Möbius negative
 normal bundle of the function `[x : y : z] ↦ (x² + y²) / (x² + y² + z²)` on the real projective
@@ -637,11 +637,11 @@ section TwoEqZero
 
 open _root_.Module (finrank)
 
-variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type u} {H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   [SecondCountableTopology M] [CompactSpace M]
-  {ι : Type*} [Fintype ι] {E' H' : ι → Type*} {S : ι → Type}
+  {ι : Type*} [Fintype ι] {E' H' : ι → Type*} {S : ι → Type u}
   [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)] [∀ j, FiniteDimensional ℝ (E' j)]
   [∀ j, TopologicalSpace (H' j)] {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)}
   [∀ j, TopologicalSpace (S j)] [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
@@ -651,7 +651,7 @@ variable {E : Type} {H : Type*} {M : Type} [NormedAddCommGroup E] [NormedSpace �
 namespace IsMorseBottFamily
 
 variable (h : IsMorseBottFamily i f) {r : ι → ℕ} (hr : ∀ j s, manifoldMorseIndex I f (i j s) = r j)
-  (K : Type) [Field K] (h2 : (2 : K) = 0)
+  (K : Type u) [Field K] (h2 : (2 : K) = 0)
 
 include h hr h2
 
@@ -782,10 +782,10 @@ end ThomPair
 
 section ThomClass
 
-variable {E M : Type} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E M : Type u} {H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] {ι : Type*} {E' H' P : ι → Type*}
-  {S : ι → Type} [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)]
+  {S : ι → Type u} [∀ j, NormedAddCommGroup (E' j)] [∀ j, NormedSpace ℝ (E' j)]
   [∀ j, FiniteDimensional ℝ (E' j)] [∀ j, TopologicalSpace (H' j)]
   {J : ∀ j, ModelWithCorners ℝ (E' j) (H' j)} [∀ j, TopologicalSpace (S j)]
   [∀ j, ChartedSpace (H' j) (S j)] [∀ j, IsManifold (J j) ∞ (S j)]
@@ -813,7 +813,7 @@ theorem
     (hc : c ∈ Ioo (a q) (a (q + 1))) (hcompact : IsCompact (f ⁻¹' Icc (a q) (a (q + 1))))
     (hcrit : ∀ x ∈ criticalPoints I f, f x ∈ Icc (a q) (a (q + 1)) → f x = c)
     (hdim : ∀ j, Module.finrank ℝ (P j) = Module.finrank ℝ E - Module.finrank ℝ (E' j))
-    {r : ι → ℕ} {K : Type} [CommRing K]
+    {r : ι → ℕ} {K : Type u} [CommRing K]
     (hK : ∀ j, letI := (i j).normalSpaceFiberBundle hn (hdim j)
       letI := (i j).normalSpaceVectorBundle hn (hdim j)
       ∃ (g : ContMDiffRiemannianMetric (J j) ∞ (P j) fun s ↦ (i j).isImmersion.NormalSpace s hn)
@@ -832,7 +832,7 @@ theorem
     Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
         ((sublevel_mono f).comp ha)).page 2).X pq ≅
       ∐ fun j : {j // (∀ s, f (i j s) = c) ∧ r j ≤ n} ↦
-        ((singularHomologyFunctor (ModuleCat.{0} K) (n - r j)).obj (ModuleCat.of K K)).obj
+        ((singularHomologyFunctor (ModuleCat.{u} K) (n - r j)).obj (ModuleCat.of K K)).obj
           (TopCat.of (S j))) := by
   subst hq
   obtain ⟨e⟩ := h.nonempty_singularHomology_sublevelPair_iso_sigma_of_isThomClass hn hdim hK

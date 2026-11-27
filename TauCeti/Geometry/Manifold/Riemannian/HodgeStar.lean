@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Riemannian.VolumeForm
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiffMap.Basic

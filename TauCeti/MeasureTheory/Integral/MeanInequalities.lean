@@ -38,7 +38,8 @@ gradient of the original function.
 
 The file also records the weighted Young inequality for a pairing,
 `∫ w ⟪G, η⟫ ≤ (δ / 2) ∫ w ‖η‖² + (2 δ)⁻¹ ∫ w ‖G‖²` for a nonnegative weight `w` and `δ > 0`,
-which absorbs a pairing into a coercive term in energy estimates.
+which absorbs a pairing into a coercive term in energy estimates. Absorbing it into a weighted
+coercivity estimate `δ ∫ w ‖η‖² ≤ ∫ w ⟪G, η⟫` bounds `∫ w ‖η‖²` by `δ⁻² ∫ w ‖G‖²`.
 
 On a finite measure space, a weight `0 ≤ θ ≤ K` and a function with `‖g‖ ∈ L^{γq}`, `γ ≥ 1`,
 satisfy
@@ -62,6 +63,10 @@ expected products without any independence assumption.
   `∫⁻ k g ≤ (∫⁻ k ^ (1 - 1/p)⁻¹) ^ (1 - 1/p) * ‖g‖_p`.
 * `TauCeti.lintegral_ofReal_rpow_mul_eNorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 * `TauCeti.integral_mul_inner_le`: the weighted Young inequality for a pairing.
+* `TauCeti.integral_mul_norm_sq_le_of_mul_le_integral_mul_inner` and
+  `TauCeti.integral_mul_norm_sq_le_of_mul_le_integral_mul_inner_of_le`: weighted coercivity
+  `δ ∫ w ‖η‖² ≤ ∫ w ⟪G, η⟫` bounds `∫ w ‖η‖²` by `δ⁻² ∫ w ‖G‖²`, also after changing to a
+  comparable weight (`TauCeti.integral_mul_norm_sq_le_mul_of_le`).
 * `TauCeti.integral_rpow_mul_norm_rpow_le_of_ae_le`: Hölder's inequality with a bounded weight,
   and its case `γ = 2`, `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`.
 * `TauCeti.setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq`: the averaged form of a decay
@@ -198,6 +203,55 @@ theorem integral_mul_inner_le {F : Type*} [NormedAddCommGroup F] [InnerProductSp
     exact integral_nonneg fun z ↦ by
       have := hw z
       positivity
+
+/-- **Comparing weighted `L²` integrals.** A pointwise comparison `w ≤ E W` of the nonnegative
+weight `w` with `W` integrates against `‖g‖²`: `∫ w ‖g‖² ≤ E ∫ W ‖g‖²`, provided the integral on
+the right exists. -/
+theorem integral_mul_norm_sq_le_mul_of_le {F : Type*} [NormedAddCommGroup F] {w W : β → ℝ}
+    {g : β → F} {E : ℝ} (hw : ∀ z, 0 ≤ w z) (hwW : ∀ z, w z ≤ E * W z)
+    (hW : Integrable (fun z ↦ W z * ‖g z‖ ^ 2) ν) :
+    ∫ z, w z * ‖g z‖ ^ 2 ∂ν ≤ E * ∫ z, W z * ‖g z‖ ^ 2 ∂ν := by
+  rw [← integral_const_mul]
+  refine integral_mono_of_nonneg (ae_of_all _ fun z ↦ mul_nonneg (hw z) (sq_nonneg _))
+    (hW.const_mul E) (ae_of_all _ fun z ↦ ?_)
+  simpa only [mul_assoc] using mul_le_mul_of_nonneg_right (hwW z) (sq_nonneg ‖g z‖)
+
+/-- **Coercivity bounds a weighted norm.** For a nonnegative weight `w` and `δ > 0`, the weighted
+coercivity `δ ∫ w ‖η‖² ≤ ∫ w ⟪G, η⟫` gives `∫ w ‖η‖² ≤ δ⁻² ∫ w ‖G‖²`, provided the integrals of
+`w ‖η‖²` and `w ‖G‖²` exist. -/
+theorem integral_mul_norm_sq_le_of_mul_le_integral_mul_inner {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] {w : β → ℝ} {G η : β → F} (hw : ∀ z, 0 ≤ w z)
+    (hη : Integrable (fun z ↦ w z * ‖η z‖ ^ 2) ν) (hG : Integrable (fun z ↦ w z * ‖G z‖ ^ 2) ν)
+    {δ : ℝ} (hδ : 0 < δ) (h : δ * (∫ z, w z * ‖η z‖ ^ 2 ∂ν) ≤ ∫ z, w z * ⟪G z, η z⟫_ℝ ∂ν) :
+    ∫ z, w z * ‖η z‖ ^ 2 ∂ν ≤ 1 / δ ^ 2 * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by
+  have hP := integral_mul_inner_le hw hη hG hδ
+  -- `δ I ≤ δ I / 2 + J / (2 δ)`, so `δ² I ≤ J`.
+  have h₁ : δ / 2 * ∫ z, w z * ‖η z‖ ^ 2 ∂ν ≤ 1 / (2 * δ) * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by
+    linarith [h.trans hP]
+  rw [div_mul_eq_mul_div, one_mul, le_div_iff₀ (by positivity)]
+  calc (∫ z, w z * ‖η z‖ ^ 2 ∂ν) * δ ^ 2 = 2 * δ * (δ / 2 * ∫ z, w z * ‖η z‖ ^ 2 ∂ν) := by ring
+    _ ≤ 2 * δ * (1 / (2 * δ) * ∫ z, w z * ‖G z‖ ^ 2 ∂ν) := by gcongr
+    _ = ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by field_simp
+
+/-- **Coercivity with a comparable weight.** If the nonnegative weights satisfy `w ≤ E W` and
+`W ≤ E w`, then the weighted coercivity `δ ∫ W ‖η‖² ≤ ∫ W ⟪G, η⟫` with `δ > 0` gives
+`∫ w ‖η‖² ≤ E² / δ² ∫ w ‖G‖²`. This transfers an estimate proved with a convenient weight `W`,
+such as a smoothing of `w`, to the weight `w`. -/
+theorem integral_mul_norm_sq_le_of_mul_le_integral_mul_inner_of_le {F : Type*}
+    [NormedAddCommGroup F] [InnerProductSpace ℝ F] {w W : β → ℝ} {G η : β → F} {δ E : ℝ}
+    (hδ : 0 < δ) (hE : 0 ≤ E) (hw : ∀ z, 0 ≤ w z) (hW : ∀ z, 0 ≤ W z)
+    (hwW : ∀ z, w z ≤ E * W z) (hWw : ∀ z, W z ≤ E * w z)
+    (hWη : Integrable (fun z ↦ W z * ‖η z‖ ^ 2) ν) (hWG : Integrable (fun z ↦ W z * ‖G z‖ ^ 2) ν)
+    (hwG : Integrable (fun z ↦ w z * ‖G z‖ ^ 2) ν)
+    (h : δ * (∫ z, W z * ‖η z‖ ^ 2 ∂ν) ≤ ∫ z, W z * ⟪G z, η z⟫_ℝ ∂ν) :
+    ∫ z, w z * ‖η z‖ ^ 2 ∂ν ≤ E * E / δ ^ 2 * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by
+  calc ∫ z, w z * ‖η z‖ ^ 2 ∂ν ≤ E * ∫ z, W z * ‖η z‖ ^ 2 ∂ν :=
+        integral_mul_norm_sq_le_mul_of_le hw hwW hWη
+    _ ≤ E * (1 / δ ^ 2 * (E * ∫ z, w z * ‖G z‖ ^ 2 ∂ν)) := by
+      gcongr
+      exact (integral_mul_norm_sq_le_of_mul_le_integral_mul_inner hW hWη hWG hδ h).trans
+        (by gcongr; exact integral_mul_norm_sq_le_mul_of_le hW hWw hwG)
+    _ = E * E / δ ^ 2 * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by ring
 
 /-- **Hölder's inequality with a bounded weight.** On a finite measure space, let `θ` be a
 measurable weight with `0 ≤ θ ≤ K` almost everywhere, let `γ ≥ 1`, and let `‖g‖ ∈ L^{γq}` for a

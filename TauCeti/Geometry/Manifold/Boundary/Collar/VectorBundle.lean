@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Boundary.Collar.Smooth
 public import TauCeti.Geometry.Manifold.VectorBundle.Pullback
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.TotallyReal.Trivialization
 public import TauCeti.Topology.VectorBundle.RealForm
 public import TauCeti.Topology.Algebra.Module.ComplexSmulI
