@@ -27,9 +27,11 @@ form extend a vector field given near a compact set to a compactly supported one
 complete one. For the same reason a compact set has a smooth bump covering indexed by a finite type
 and subordinate to any given neighbourhoods of its points
 (`IsCompact.exists_smoothBumpCovering_isSubordinate`), the input of Mathlib's Whitney embedding
-`SmoothBumpCovering.embeddingPiTangent`, and any compactly supported `C^k` vector field decomposes
-into a finite sum of `C^k` vector fields subordinate to a cover of its support
-(`HasCompactSupport.exists_subordinate_vectorField_sum`).
+`SmoothBumpCovering.embeddingPiTangent`. Hence finitely many smooth functions subordinate to any
+open cover of a compact set sum to one on it
+(`IsCompact.exists_finite_smooth_sum_eq_one_subordinate`), and any compactly supported `C^k`
+vector field decomposes into a finite sum of `C^k` vector fields subordinate to a cover of its
+support (`HasCompactSupport.exists_subordinate_vectorField_sum`).
 
 The construction, smoothing a finite sum of bump functions by `Real.smoothTransition`, follows the
 bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
@@ -109,6 +111,29 @@ theorem IsCompact.exists_smoothBumpCovering_isSubordinate {K : Set M} (hK : IsCo
     locallyFinite_of_finite _, fun x hx ↦ ?_⟩, fun i ↦ (hρ i.val).2⟩
   obtain ⟨i, hi, hxi⟩ := mem_iUnion₂.1 (ht hx)
   exact ⟨⟨i, hi⟩, mem_interior_iff_mem_nhds.1 hxi⟩
+
+variable (I) in
+/-- **Finitely many smooth functions subordinate to an open cover of a compact set.** If a compact
+subset `K` of a Hausdorff manifold modelled on a finite-dimensional space is covered by open sets
+`U i`, there are finitely many smooth functions `χ k`, each supported in some `U (j k)`, whose sum
+is one on `K`. -/
+theorem IsCompact.exists_finite_smooth_sum_eq_one_subordinate [IsManifold I ∞ M] {ι : Type*}
+    {K : Set M} (hK : IsCompact K) {U : ι → Set M} (hU : ∀ i, IsOpen (U i))
+    (hKU : K ⊆ ⋃ i, U i) :
+    ∃ (n : ℕ) (χ : Fin n → C^∞⟮I, M; ℝ⟯) (j : Fin n → ι),
+      (∀ k, tsupport (χ k) ⊆ U (j k)) ∧ ∀ x ∈ K, ∑ k, χ k x = 1 := by
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · -- With no open sets, `K` is empty and the empty family works.
+    refine ⟨0, Fin.elim0, Fin.elim0, fun k ↦ k.elim0, fun x hx ↦ ?_⟩
+    exact isEmptyElim (mem_iUnion.1 (hKU hx)).choose
+  choose! idx hidx using fun x (hx : x ∈ K) ↦ mem_iUnion.1 (hKU hx)
+  obtain ⟨κ, _, f, hf⟩ := hK.exists_smoothBumpCovering_isSubordinate I
+    (U := fun x ↦ U (idx x)) fun x hx ↦ (hU _).mem_nhds (hidx x hx)
+  let e := Fintype.equivFin κ
+  refine ⟨Fintype.card κ, fun k ↦ f.toSmoothPartitionOfUnity (e.symm k),
+    fun k ↦ idx (f.c (e.symm k)), fun k ↦ hf.toSmoothPartitionOfUnity _, fun x hx ↦ ?_⟩
+  rw [← f.toSmoothPartitionOfUnity.sum_eq_one hx, finsum_eq_sum_of_fintype]
+  exact e.symm.sum_comp fun i ↦ f.toSmoothPartitionOfUnity i x
 
 variable (I) in
 /-- Decompose a compactly supported `C^k` vector field `X` into a finite sum of compactly

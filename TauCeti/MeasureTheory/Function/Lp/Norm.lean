@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
-public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSpace.Basic
@@ -48,9 +47,6 @@ bounds.
   its integral.
 * `MeasureTheory.Lp.integral_norm_rpow_eq_norm_rpow`: for `0 < p < ∞`, the integral of the `p`-th
   power of the pointwise norm of an `Lᵖ` function is the `p`-th power of its `Lᵖ` norm.
-* `MeasureTheory.Lp.integral_norm_rpow_le_of_norm_le`,
-  `MeasureTheory.Lp.average_norm_rpow_le_of_norm_le`: a bound `‖f‖ ≤ C ‖g‖` between `Lᵖ` norms
-  bounds `∫ ‖f‖^p` by `C^p ∫ ‖g‖^p`, and the same for averages.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
   norm of an `L²` function is its squared `L²` norm.
 * `MeasureTheory.Lp.norm_sq_eq_integral_of_ae_eq`: the same for any function almost everywhere
@@ -432,36 +428,6 @@ theorem Lp.integral_norm_rpow_eq_norm_rpow {alpha F : Type*} [MeasurableSpace al
   rw [Lp.norm_def, toReal_eLpNorm,
     lpNorm_eq_integral_norm_rpow_toReal hp0 hp (Lp.aestronglyMeasurable f),
     ← Real.rpow_mul h_nonneg, inv_mul_cancel₀ (ENNReal.toReal_pos hp0 hp).ne', Real.rpow_one]
-
-/-- A bound `‖f‖ ≤ C ‖g‖` between the norms of two `Lᵖ` functions bounds the integrals of the
-`p`-th powers of their pointwise norms: `∫ ‖f‖^p ≤ C^p ∫ ‖g‖^p`, where the power `p.toReal` is `0`
-for `p = 0` and `p = ∞`. -/
-theorem Lp.integral_norm_rpow_le_of_norm_le {alpha F G : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] {p : ℝ≥0∞}
-    {f : Lp F p m} {g : Lp G p m} {C : ℝ} (hC : 0 ≤ C) (hfg : ‖f‖ ≤ C * ‖g‖) :
-    ∫ x, ‖f x‖ ^ p.toReal ∂m ≤ C ^ p.toReal * ∫ x, ‖g x‖ ^ p.toReal ∂m := by
-  rcases eq_or_ne p ∞ with rfl | hp
-  · simp
-  rcases eq_or_ne p 0 with rfl | hp0
-  · simp
-  rw [Lp.integral_norm_rpow_eq_norm_rpow hp0 hp, Lp.integral_norm_rpow_eq_norm_rpow hp0 hp,
-    ← Real.mul_rpow hC (ENNReal.toReal_nonneg.trans_eq (Lp.norm_def g).symm)]
-  exact Real.rpow_le_rpow (ENNReal.toReal_nonneg.trans_eq (Lp.norm_def f).symm) hfg
-    ENNReal.toReal_nonneg
-
-/-- A bound `‖f‖ ≤ C ‖g‖` between the norms of two `Lᵖ` functions bounds the averages of the
-`p`-th powers of their pointwise norms: `⨍ ‖f‖^p ≤ C^p ⨍ ‖g‖^p`, where the power `p.toReal` is `0`
-for `p = 0` and `p = ∞`. -/
-theorem Lp.average_norm_rpow_le_of_norm_le {alpha F G : Type*} [MeasurableSpace alpha]
-    {m : Measure alpha} [NormedAddCommGroup F] [NormedAddCommGroup G] {p : ℝ≥0∞}
-    {f : Lp F p m} {g : Lp G p m} {C : ℝ} (hC : 0 ≤ C) (hfg : ‖f‖ ≤ C * ‖g‖) :
-    ⨍ x, ‖f x‖ ^ p.toReal ∂m ≤ C ^ p.toReal * ⨍ x, ‖g x‖ ^ p.toReal ∂m := by
-  simp only [average_eq, smul_eq_mul]
-  calc (m.real Set.univ)⁻¹ * ∫ x, ‖f x‖ ^ p.toReal ∂m
-      ≤ (m.real Set.univ)⁻¹ * (C ^ p.toReal * ∫ x, ‖g x‖ ^ p.toReal ∂m) :=
-        mul_le_mul_of_nonneg_left (integral_norm_rpow_le_of_norm_le hC hfg)
-          (inv_nonneg.2 measureReal_nonneg)
-    _ = _ := by ring
 
 /-- The integral of the squared pointwise norm of an `L²` function is its squared `L²` norm. -/
 theorem Lp.integral_norm_sq_eq_norm_sq {alpha F : Type*} [MeasurableSpace alpha]

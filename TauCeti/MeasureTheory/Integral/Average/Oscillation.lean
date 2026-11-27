@@ -16,22 +16,23 @@ On a set `s` of finite measure, the `L¹` deviation of an integrable `f` from it
 `∫_s ‖f - f_s‖ ≤ 2 ∫_s ‖f - c‖`,
 
 and for `1 ≤ γ` the `γ`-th powers satisfy `∫_s ‖f - f_s‖^γ ≤ 2^γ ∫_s ‖f - c‖^γ`; the former is
-the case `γ = 1` of the latter.
+the case `γ = 1` of the latter. Divided by `μ s`, the same comparison holds for the means:
+
+`⨍_s ‖f - f_s‖ ^ γ ≤ 2 ^ γ ⨍_s ‖f - c‖ ^ γ`.
 
 These are the Bochner-integral forms of the `Lᵖ` comparison `TauCeti.eLpNorm_sub_setAverage_le`;
-the `L²` analogue, with factor `4`, is `TauCeti.setIntegral_norm_sub_setAverage_sq_le`.
-
-The mean oscillation is subadditive, and the oscillation of a perturbation `g` is at most twice
-its average size, so `⨍_s ‖(f + g) - (f + g)_s‖ ≤ ⨍_s ‖f - f_s‖ + 2 ⨍_s ‖g‖`. This compares the
-mean oscillation of a function with that of a nearby one, such as a solution of a frozen equation.
+the `L²` analogue, with factor `4`, is `TauCeti.setIntegral_norm_sub_setAverage_sq_le`. Jensen's
+inequality `(⨍_s ‖g‖) ^ γ ≤ ⨍_s ‖g‖ ^ γ` is recorded alongside.
 
 ## Main results
 
 * `TauCeti.setIntegral_norm_sub_setAverage_le_two_mul`: `∫_s ‖f - f_s‖ ≤ 2 ∫_s ‖f - c‖`.
 * `TauCeti.setIntegral_norm_sub_setAverage_rpow_le_two_rpow_mul`:
   `∫_s ‖f - f_s‖^γ ≤ 2^γ ∫_s ‖f - c‖^γ` for `1 ≤ γ`.
-* `TauCeti.setAverage_norm_add_sub_setAverage_le`:
-  `⨍_s ‖(f + g) - (f + g)_s‖ ≤ ⨍_s ‖f - f_s‖ + 2 ⨍_s ‖g‖`.
+* `TauCeti.rpow_setAverage_norm_le_setAverage_norm_rpow`: Jensen's inequality
+  `(⨍_s ‖g‖) ^ γ ≤ ⨍_s ‖g‖ ^ γ` for `γ ≥ 1`.
+* `TauCeti.setAverage_norm_sub_setAverage_rpow_le`: `⨍_s ‖f - f_s‖ ^ γ ≤ 2 ^ γ ⨍_s ‖f - c‖ ^ γ`
+  for `γ ≥ 1`.
 -/
 
 public section
@@ -85,38 +86,33 @@ theorem setIntegral_norm_sub_setAverage_le_two_mul (hs : μ s ≠ ⊤) (hf : Int
   simpa using setIntegral_norm_sub_setAverage_rpow_le_two_rpow_mul hs le_rfl hf.aestronglyMeasurable
     c (by simp_rw [Real.rpow_one]; exact (hf.sub (integrableOn_const hs)).norm)
 
-/-- **Mean oscillation of a perturbation.** For `f` and `g` integrable on `s`,
-`⨍_s ‖(f + g) - (f + g)_s‖ ≤ ⨍_s ‖f - f_s‖ + 2 ⨍_s ‖g‖`. On a set of infinite measure every
-average vanishes. -/
-theorem setAverage_norm_add_sub_setAverage_le {g : X → F} (hf : IntegrableOn f s μ)
-    (hg : IntegrableOn g s μ) :
-    ⨍ x in s, ‖f x + g x - ⨍ y in s, (f y + g y) ∂μ‖ ∂μ ≤
-      ⨍ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ∂μ + 2 * ⨍ x in s, ‖g x‖ ∂μ := by
+omit [NormedSpace ℝ F] [CompleteSpace F] in
+/-- **Jensen's inequality for a power of a mean.** For `γ ≥ 1`, if `‖g‖ ^ γ` is integrable on
+`s`, then `(⨍_s ‖g‖) ^ γ ≤ ⨍_s ‖g‖ ^ γ`. If `μ s` is `0` or `∞`, both averages are `0`. -/
+theorem rpow_setAverage_norm_le_setAverage_norm_rpow {g : X → F} {γ : ℝ} (hγ : 1 ≤ γ)
+    (hg : IntegrableOn (fun x ↦ ‖g x‖ ^ γ) s μ) :
+    (⨍ x in s, ‖g x‖ ∂μ) ^ γ ≤ ⨍ x in s, ‖g x‖ ^ γ ∂μ := by
+  have hγ0 : 0 ≤ γ := zero_le_one.trans hγ
+  have ha : 0 ≤ ⨍ x in s, ‖g x‖ ∂μ := average_nonneg fun _ ↦ norm_nonneg _
+  have h1 := ENNReal.rpow_le_rpow (enorm_setAverage_le_setLAverage μ (fun x ↦ ‖g x‖) s) hγ0
+  simp only [eNorm_norm, Real.eNorm_of_nonneg ha] at h1
+  have h := h1.trans ((rpow_laverage_le_laverage_rpow (μ := μ.restrict s)
+    (u := fun x ↦ ‖g x‖ₑ) hγ).trans_eq (ofReal_setAverage_norm_rpow hγ0 hg).symm)
+  rw [ENNReal.ofReal_rpow_of_nonneg ha hγ0] at h
+  exact (ENNReal.ofReal_le_ofReal_iff (average_nonneg fun _ ↦ by positivity)).1 h
+
+/-- **The `L^γ` mean oscillation about the average.** For `γ ≥ 1`,
+`⨍_s ‖f - f_s‖ ^ γ ≤ 2 ^ γ ⨍_s ‖f - c‖ ^ γ` for every constant `c` with `‖f - c‖ ^ γ`
+integrable on `s`, where `f_s` is the average of `f` over `s`. This is
+`TauCeti.setIntegral_norm_sub_setAverage_rpow_le_two_rpow_mul` divided by `μ s`. -/
+theorem setAverage_norm_sub_setAverage_rpow_le (hf : IntegrableOn f s μ) {γ : ℝ} (hγ : 1 ≤ γ)
+    {c : F} (hfc : IntegrableOn (fun x ↦ ‖f x - c‖ ^ γ) s μ) :
+    ⨍ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ ∂μ ≤ 2 ^ γ * ⨍ x in s, ‖f x - c‖ ^ γ ∂μ := by
   rcases eq_or_ne (μ s) ⊤ with hs | hs
-  · simp [setAverage_eq, Measure.real, hs]
-  have hif : IntegrableOn (fun x => ‖f x - ⨍ y in s, f y ∂μ‖) s μ :=
-    (hf.sub (integrableOn_const hs)).norm
-  have hig : IntegrableOn (fun x => ‖g x - ⨍ y in s, g y ∂μ‖) s μ :=
-    (hg.sub (integrableOn_const hs)).norm
-  have hsplit : ∫ x in s, ‖f x + g x - ⨍ y in s, (f y + g y) ∂μ‖ ∂μ ≤
-      ∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ∂μ + ∫ x in s, ‖g x - ⨍ y in s, g y ∂μ‖ ∂μ := by
-    rw [← integral_add hif hig]
-    refine integral_mono_of_nonneg (ae_of_all _ fun _ => norm_nonneg _) (hif.add hig)
-      (ae_of_all _ fun x => ?_)
-    have havg : ⨍ y in s, (f y + g y) ∂μ = (⨍ y in s, f y ∂μ) + ⨍ y in s, g y ∂μ :=
-      average_add hf hg
-    dsimp only
-    rw [havg, add_sub_add_comm]
-    exact norm_add_le _ _
-  have hg2 := setIntegral_norm_sub_setAverage_le_two_mul hs hg 0
-  simp only [sub_zero] at hg2
-  set m := ⨍ y in s, (f y + g y) ∂μ
-  set mf := ⨍ y in s, f y ∂μ
-  simp only [setAverage_eq, smul_eq_mul]
-  have hinv : 0 ≤ (μ.real s)⁻¹ := inv_nonneg.2 measureReal_nonneg
-  calc (μ.real s)⁻¹ * ∫ x in s, ‖f x + g x - ⨍ y in s, (f y + g y) ∂μ‖ ∂μ
-      ≤ (μ.real s)⁻¹ * (∫ x in s, ‖f x - ⨍ y in s, f y ∂μ‖ ∂μ + 2 * ∫ x in s, ‖g x‖ ∂μ) :=
-        mul_le_mul_of_nonneg_left (hsplit.trans (add_le_add_right hg2 _)) hinv
-    _ = _ := by ring
+  · simp [setAverage_eq, measureReal_def, hs]
+  rw [setAverage_eq (f := fun x ↦ ‖f x - ⨍ y in s, f y ∂μ‖ ^ γ),
+    setAverage_eq (f := fun x ↦ ‖f x - c‖ ^ γ), smul_eq_mul, smul_eq_mul, mul_left_comm]
+  exact mul_le_mul_of_nonneg_left (setIntegral_norm_sub_setAverage_rpow_le_two_rpow_mul hs hγ
+    hf.aestronglyMeasurable c hfc) (inv_nonneg.2 measureReal_nonneg)
 
 end TauCeti

@@ -26,8 +26,8 @@ non-divergence-form operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` with constant coe
 * `Matrix.contraction_add`, `Matrix.contraction_sub`, `Matrix.contraction_smul`: the
   contraction is linear in the matrix.
 * `Matrix.contraction_one`: contraction with the identity matrix is the trace.
-* `Matrix.contraction_apply_eq_traceCLM`: in general the contraction of `H` with `A` is the trace
-  of `A ∘ H`, with `A` acting on Euclidean space.
+* `Matrix.contraction_apply_eq_traceCLM`: the contraction of `H` with `A` is the trace of
+  `A ∘ H`, for `A` acting on `ℝⁿ` (`Matrix.toEuclideanCLM`).
 * `Matrix.abs_contraction_le`: if every entry of `M` is at most `ε` in absolute value,
   then the contraction of `H` with `M` is at most `n² ε ‖H‖` in absolute value.
 * `Matrix.abs_sum_sum_mul_apply_single_single_le`: the same bound for the contraction
@@ -102,8 +102,8 @@ theorem contraction_smul (c : ℝ) (A : Matrix (Fin n) (Fin n) ℝ) :
   ext H
   simp [mul_assoc, Finset.mul_sum]
 
-/-- The contraction of `H` with `A` is the trace of `A ∘ H`, with `A` acting on Euclidean space:
-`∑ᵢⱼ Aᵢⱼ ⟪H eᵢ, eⱼ⟫ = tr (A ∘ H)`. -/
+/-- The contraction of `H` with `A` is the trace of the composite `A ∘ H`, where `A` acts on `ℝⁿ`
+as `Matrix.toEuclideanCLM A`: `∑ᵢⱼ Aᵢⱼ ⟪H eᵢ, eⱼ⟫ = tr (A ∘ H)`. -/
 theorem contraction_apply_eq_traceCLM (A : Matrix (Fin n) (Fin n) ℝ)
     (H : EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :
     contraction A H =
@@ -111,7 +111,8 @@ theorem contraction_apply_eq_traceCLM (A : Matrix (Fin n) (Fin n) ℝ)
   rw [contraction_apply, TauCeti.traceCLM_apply,
     LinearMap.trace_eq_sum_inner _ (EuclideanSpace.basisFun (Fin n) ℝ)]
   refine Finset.sum_congr rfl fun i _ => ?_
-  simp [real_inner_comm, EuclideanSpace.inner_single_left, Matrix.mulVec, dotProduct]
+  simp [mulVec, dotProduct, real_inner_comm,
+    EuclideanSpace.inner_single_left]
 
 /-- Contraction with the identity matrix is the trace. -/
 theorem contraction_one :

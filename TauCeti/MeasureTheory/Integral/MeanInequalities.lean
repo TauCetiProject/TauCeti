@@ -41,16 +41,15 @@ The file also records the weighted Young inequality for a pairing,
 which absorbs a pairing into a coercive term in energy estimates. Absorbing it into a weighted
 coercivity estimate `δ ∫ w ‖η‖² ≤ ∫ w ⟪G, η⟫` bounds `∫ w ‖η‖²` by `δ⁻² ∫ w ‖G‖²`.
 
-On a finite measure space, a weight `0 ≤ θ ≤ K` and a function with `‖g‖ ∈ L^{γq}`, `γ ≥ 1`,
-satisfy
+On a finite measure space, a weight `0 ≤ θ ≤ K` and a function with `‖g‖ ∈ L^{2q}` satisfy
 
-`∫ θ^γ ‖g‖^γ ≤ (K^(γq' - 1) ∫ θ)^(1/q') (∫ ‖g‖^(γq))^(1/q)`
+`∫ θ² ‖g‖² ≤ (K^(2q' - 1) ∫ θ)^(1/q') (∫ ‖g‖^(2q))^(1/q)`
 
-for Hölder conjugate exponents `q, q'`, so the weighted integral is small when the mean of `θ` is
+for Hölder conjugate exponents `q, q'`, and the same with every exponent `γ ≥ 1` in place of `2`,
+so the weighted integral is small when the mean of `θ` is
 small. This is how the mean oscillation of the coefficients enters regularity estimates for
-elliptic equations in divergence and non-divergence form. Combined with a volume ratio
-`|t| = δ^N |s|`, it turns a decay estimate for integrals over `t ⊆ s` with such a weighted error
-into the same estimate for averages.
+divergence-form equations. Combined with a volume ratio `|t| = δ^N |s|`, it turns a decay estimate
+for integrals over `t ⊆ s` with such a weighted error into the same estimate for averages.
 
 For a product of `k` functions, the norm of its integral is at most the average of their `k`th
 absolute moments. This form of the arithmetic-geometric mean inequality gives uniform bounds on
@@ -68,7 +67,8 @@ expected products without any independence assumption.
   `δ ∫ w ‖η‖² ≤ ∫ w ⟪G, η⟫` bounds `∫ w ‖η‖²` by `δ⁻² ∫ w ‖G‖²`, also after changing to a
   comparable weight (`TauCeti.integral_mul_norm_sq_le_mul_of_le`).
 * `TauCeti.integral_rpow_mul_norm_rpow_le_of_ae_le`: Hölder's inequality with a bounded weight,
-  and its case `γ = 2`, `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le`.
+  at every exponent `γ ≥ 1`; `TauCeti.integral_sq_mul_norm_sq_le_of_ae_le` is the case `γ = 2`,
+  and `TauCeti.setAverage_rpow_mul_norm_rpow_le_of_ae_le` the form for averages.
 * `TauCeti.setAverage_le_of_setIntegral_le_add_sq_mul_norm_sq`: the averaged form of a decay
   estimate whose error is controlled by Hölder's inequality with a bounded weight.
 * `MeasureTheory.norm_integral_prod_le_inv_card_mul_sum_integral_norm_pow`:
@@ -253,12 +253,12 @@ theorem integral_mul_norm_sq_le_of_mul_le_integral_mul_inner_of_le {F : Type*}
         (by gcongr; exact integral_mul_norm_sq_le_mul_of_le hW hWw hwG)
     _ = E * E / δ ^ 2 * ∫ z, w z * ‖G z‖ ^ 2 ∂ν := by ring
 
-/-- **Hölder's inequality with a bounded weight.** On a finite measure space, let `θ` be a
-measurable weight with `0 ≤ θ ≤ K` almost everywhere, let `γ ≥ 1`, and let `‖g‖ ∈ L^{γq}` for a
-pair of Hölder conjugate exponents `q, q'`. Then
+/-- **Hölder's inequality with a bounded weight, at exponent `γ`.** On a finite measure space, let
+`θ` be a measurable weight with `0 ≤ θ ≤ K` almost everywhere, let `γ ≥ 1`, and let
+`‖g‖ ∈ L^{γq}` for a pair of Hölder conjugate exponents `q, q'`. Then
 `∫ θ^γ ‖g‖^γ ≤ (K^(γq' - 1) ∫ θ)^(1/q') (∫ ‖g‖^(γq))^(1/q)`. -/
 theorem integral_rpow_mul_norm_rpow_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
-    [IsFiniteMeasure ν] {θ : β → ℝ} {g : β → E} {K q q' γ : ℝ} (hγ : 1 ≤ γ)
+    [IsFiniteMeasure ν] {θ : β → ℝ} {g : β → E} {K γ q q' : ℝ} (hγ : 1 ≤ γ)
     (hq : q.HolderConjugate q') (hθm : AEStronglyMeasurable θ ν)
     (hθ : ∀ᵐ x ∂ν, 0 ≤ θ x ∧ θ x ≤ K) (hg : MemLp g (ENNReal.ofReal (γ * q)) ν) :
     ∫ x, θ x ^ γ * ‖g x‖ ^ γ ∂ν ≤
@@ -284,31 +284,56 @@ theorem integral_rpow_mul_norm_rpow_le_of_ae_le {E : Type*} [NormedAddCommGroup 
   have hθq : ∫ x, (θ x ^ γ) ^ q' ∂ν ≤ K ^ (γ * q' - 1) * ∫ x, θ x ∂ν := by
     rw [← integral_const_mul]
     refine integral_mono_of_nonneg (hθ.mono fun x hx => Real.rpow_nonneg
-      (Real.rpow_nonneg hx.1 _) _) (hθi.const_mul _) (hθ.mono fun x hx => ?_)
-    have h1 : 0 ≤ γ * q' - 1 := by nlinarith [hq.symm.lt]
+      (Real.rpow_nonneg hx.1 γ) q') (hθi.const_mul _) (hθ.mono fun x hx => ?_)
+    have h1 : 0 < γ * q' - 1 := by nlinarith [hq.symm.lt]
     calc (θ x ^ γ) ^ q' = θ x ^ (γ * q' - 1) * θ x := by
           rw [← Real.rpow_mul hx.1, ← Real.rpow_add_one' hx.1 (by linarith), sub_add_cancel]
       _ ≤ K ^ (γ * q' - 1) * θ x :=
-          mul_le_mul_of_nonneg_right (Real.rpow_le_rpow hx.1 hx.2 h1) hx.1
+          mul_le_mul_of_nonneg_right (Real.rpow_le_rpow hx.1 hx.2 h1.le) hx.1
   have hgq : ∫ x, (‖g x‖ ^ γ) ^ q ∂ν = ∫ x, ‖g x‖ ^ (γ * q) ∂ν :=
     integral_congr_ae (ae_of_all _ fun x => (Real.rpow_mul (norm_nonneg _) γ q).symm)
   refine hHolder.trans ?_
   rw [hgq, one_div, one_div]
   exact mul_le_mul_of_nonneg_right (Real.rpow_le_rpow (integral_nonneg_of_ae
-    (hθ.mono fun x hx => Real.rpow_nonneg (Real.rpow_nonneg hx.1 _) _)) hθq hq.symm.inv_nonneg)
+    (hθ.mono fun x hx => Real.rpow_nonneg (Real.rpow_nonneg hx.1 γ) q')) hθq hq.symm.inv_nonneg)
     (Real.rpow_nonneg (integral_nonneg fun x => by positivity) _)
+
+/-- **Hölder's inequality with a bounded weight, for averages.** Let `θ` be a measurable weight
+with `0 ≤ θ ≤ K` almost everywhere on a set `s`, let `γ ≥ 1`, and let `‖g‖ ∈ L^{γq}(s)` for a
+pair of Hölder conjugate exponents `q, q'`. Then
+`⨍_s θ^γ ‖g‖^γ ≤ (K^(γq' - 1) ⨍_s θ)^(1/q') (⨍_s ‖g‖^(γq))^(1/q)`: the normalization
+`|s|⁻¹ = |s|^(-1/q') |s|^(-1/q)` splits between the two factors. -/
+theorem setAverage_rpow_mul_norm_rpow_le_of_ae_le {E : Type*} [NormedAddCommGroup E] {s : Set β}
+    {θ : β → ℝ} {g : β → E} {K γ q q' : ℝ} (hγ : 1 ≤ γ)
+    (hq : q.HolderConjugate q') (hθm : AEStronglyMeasurable θ (ν.restrict s))
+    (hθ : ∀ᵐ x ∂ν.restrict s, 0 ≤ θ x ∧ θ x ≤ K)
+    (hg : MemLp g (ENNReal.ofReal (γ * q)) (ν.restrict s)) :
+    ⨍ x in s, θ x ^ γ * ‖g x‖ ^ γ ∂ν ≤
+      (K ^ (γ * q' - 1) * ⨍ x in s, θ x ∂ν) ^ q'⁻¹ * (⨍ x in s, ‖g x‖ ^ (γ * q) ∂ν) ^ q⁻¹ := by
+  -- On a set of infinite measure every average vanishes.
+  rcases eq_or_ne (ν s) ∞ with hs | hs
+  · simp only [setAverage_eq, measureReal_def, hs, ENNReal.toReal_top, inv_zero, zero_smul]
+    rw [mul_zero, Real.zero_rpow (inv_ne_zero hq.symm.pos.ne'), zero_mul]
+  have : IsFiniteMeasure (ν.restrict s) := isFiniteMeasure_restrict.2 hs
+  rw [setAverage_eq, setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, smul_eq_mul,
+    mul_left_comm (K ^ (γ * q' - 1)), Real.mul_rpow_mul_mul_rpow_of_add_eq_one
+      (inv_nonneg.2 measureReal_nonneg) hq.symm.inv_add_inv_eq_one]
+  exact mul_le_mul_of_nonneg_left (integral_rpow_mul_norm_rpow_le_of_ae_le hγ hq hθm hθ hg)
+    (inv_nonneg.2 measureReal_nonneg)
 
 /-- **Hölder's inequality with a bounded weight.** On a finite measure space, let `θ` be a
 measurable weight with `0 ≤ θ ≤ K` almost everywhere, and let `‖g‖ ∈ L^{2q}` for a pair of Hölder
 conjugate exponents `q, q'`. Then
-`∫ θ² ‖g‖² ≤ (K^(2q' - 1) ∫ θ)^(1/q') (∫ ‖g‖^(2q))^(1/q)`. -/
+`∫ θ² ‖g‖² ≤ (K^(2q' - 1) ∫ θ)^(1/q') (∫ ‖g‖^(2q))^(1/q)`. This is the case `γ = 2` of
+`TauCeti.integral_rpow_mul_norm_rpow_le_of_ae_le`. -/
 theorem integral_sq_mul_norm_sq_le_of_ae_le {E : Type*} [NormedAddCommGroup E]
     [IsFiniteMeasure ν] {θ : β → ℝ} {g : β → E} {K q q' : ℝ} (hq : q.HolderConjugate q')
     (hθm : AEStronglyMeasurable θ ν) (hθ : ∀ᵐ x ∂ν, 0 ≤ θ x ∧ θ x ≤ K)
     (hg : MemLp g (ENNReal.ofReal (2 * q)) ν) :
     ∫ x, θ x ^ 2 * ‖g x‖ ^ 2 ∂ν ≤
       (K ^ (2 * q' - 1) * ∫ x, θ x ∂ν) ^ q'⁻¹ * (∫ x, ‖g x‖ ^ (2 * q) ∂ν) ^ q⁻¹ := by
-  simpa only [Real.rpow_two] using integral_rpow_mul_norm_rpow_le_of_ae_le one_le_two hq hθm hθ hg
+  simpa only [Real.rpow_two] using
+    integral_rpow_mul_norm_rpow_le_of_ae_le one_le_two hq hθm hθ hg
 
 /-- **Averaged form of a decay estimate with a Hölder-controlled error.** Let `|t| = δ^N |s|` with
 `δ > 0` and `0 < |s| < ∞`, let `θ` be measurable on `s` with `0 ≤ θ ≤ K` there, and let
