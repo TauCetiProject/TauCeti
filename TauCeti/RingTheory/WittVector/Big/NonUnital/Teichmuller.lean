@@ -9,9 +9,6 @@ public import TauCeti.RingTheory.WittVector.Big.NonUnital.Frobenius
 public import TauCeti.RingTheory.WittVector.Big.NonUnital.Verschiebung
 public import TauCeti.RingTheory.WittVector.Big.Teichmuller
 
--- The comparison proof uses the kernel inclusion's definition as the subring subtype map.
-import all TauCeti.RingTheory.WittVector.Big.NonUnital
-
 /-!
 # Teichmüller representatives over nonunital rings
 
@@ -40,17 +37,9 @@ variable (S) in
 /-- The multiplicative Teichmüller map into the nonunital big Witt ring. Its coordinate at
 index one is the input whenever the truncation set is nonempty. All other coordinates vanish. -/
 def teichmuller : R →ₙ* NonUnitalBigWittVector S R :=
-  MulHom.codRestrict
+  codRestrictMulHom
     ((BigWittVector.teichmuller (R := Unitization ℤ R) S).toMulHom.comp
-      (Unitization.inrNonUnitalAlgHom ℤ R).toMulHom)
-    (NonUnitalSubring.comap (S := BigWittVector S ℤ)
-      (BigWittVector.map (R := Unitization ℤ R)
-        (Unitization.fstHom ℤ R).toRingHom).toNonUnitalRingHom ⊥) fun r ↦ by
-      rw [NonUnitalSubring.mem_comap, NonUnitalSubring.mem_bot]
-      -- Unfold the bundled composite and the augmentation to apply coefficient naturality.
-      change BigWittVector.map (R := Unitization ℤ R) (Unitization.fstHom ℤ R).toRingHom
-        (BigWittVector.teichmuller (R := Unitization ℤ R) S (Unitization.inr r)) = 0
-      simp
+      (Unitization.inrNonUnitalAlgHom ℤ R).toMulHom) fun r ↦ by simp
 
 /-- The kernel inclusion carries a Teichmüller representative to the representative of the
 coefficient in the unitization. -/
@@ -58,10 +47,7 @@ coefficient in the unitization. -/
 theorem toBigWitt_teichmuller (r : R) :
     toBigWitt (teichmuller S r) =
       BigWittVector.teichmuller S (Unitization.inr r : Unitization ℤ R) := by
-  simp only [toBigWitt, NonUnitalSubringClass.subtype_apply, teichmuller,
-    MulHom.codRestrict_apply_coe, MulHom.comp_apply, NonUnitalAlgHom.toMulHom_eq_coe,
-    NonUnitalAlgHom.coe_to_mulHom, Unitization.inrNonUnitalAlgHom_toFun]
-  rw [← MulHom.toFun_eq_coe, MonoidHom.toMulHom_coe]
+  simp [teichmuller]
 
 /-- The coordinates of the Teichmüller representative over a nonunital ring. -/
 theorem coeff_teichmuller (r : R) (n : S) :

@@ -118,6 +118,22 @@ theorem toBigWitt_codRestrict {D : Type*} [NonUnitalNonAssocSemiring D]
     toBigWitt (codRestrict f hf x) = f x :=
   (rfl)
 
+/-- A multiplicative map into the Witt ring of the unitization with zero augmentation takes
+values in the nonunital Witt ring. -/
+noncomputable def codRestrictMulHom {D : Type*} [Mul D]
+    (f : D →ₙ* BigWittVector S (Unitization ℤ R))
+    (hf : ∀ x, BigWittVector.map (R := Unitization ℤ R) (R' := ℤ)
+      ↑(Unitization.fstHom ℤ R) (f x) = 0) : D →ₙ* NonUnitalBigWittVector S R :=
+  MulHom.codRestrict f _ fun x ↦ (mem_augmentationKernel (f x)).mpr (hf x)
+
+/-- Including a codomain-restricted multiplicative value in the unitization recovers the
+original value. -/
+@[simp]
+theorem toBigWitt_codRestrictMulHom {D : Type*} [Mul D]
+    (f : D →ₙ* BigWittVector S (Unitization ℤ R)) (hf) (x : D) :
+    toBigWitt (codRestrictMulHom f hf x) = f x :=
+  (rfl)
+
 /-- The Witt coordinates of a nonunital Witt vector. -/
 noncomputable def coeff (x : NonUnitalBigWittVector S R) (n : S) : R :=
   ((toBigWitt x).coeff n).snd
