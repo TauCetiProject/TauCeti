@@ -69,12 +69,10 @@ integer indexing that Herbrand theory uses.
   group induces an automorphism of each successive quotient, and
   `TauCeti.IsLocalRing.ramificationGroupGradedConj_self` records that elements of `G_i` act
   trivially whenever `G_i / G_{i+1}` is commutative.
-* `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker`,
-  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker`, and
+* `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_ker` and
   `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_ker_of_finite`: over a Noetherian local
   ring the filtration cuts out the kernel of the action, and reaches it at a finite index once
-  some `G_{i₀}` is finite; `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_bot`,
-  `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot`, and
+  some `G_{i₀}` is finite; `TauCeti.IsLocalRing.iInf_ramificationGroup_eq_bot` and
   `TauCeti.IsLocalRing.exists_forall_ramificationGroup_eq_bot_of_finite` are the faithful case.
 * `TauCeti.IsLocalRing.mem_ramificationGroup_iff_of_adjoin_eq_top`: when `S` is generated over a
   base ring `R` whose elements `G` fixes by a set `s`, membership in `G_i` is decided on `s`
@@ -369,20 +367,6 @@ theorem exists_forall_ramificationGroup_eq_bot_of_finite (i₀ : ℤ) [FaithfulS
     ∃ N : ℤ, ∀ i : ℤ, N ≤ i → ramificationGroup G S i = ⊥ := by
   simpa only [TauCeti.MulSemiringAction.ker_toRingAut_eq_bot] using
     exists_forall_ramificationGroup_eq_ker_of_finite G S i₀
-
-/-- Once `G_0` is finite, the ramification filtration over a Noetherian local ring reaches the
-kernel of the action at a finite index. -/
-theorem exists_forall_ramificationGroup_eq_ker [Finite (ramificationGroup G S 0)] :
-    ∃ N : ℤ, ∀ i : ℤ, N ≤ i →
-      ramificationGroup G S i = MonoidHom.ker (MulSemiringAction.toRingAut G S) :=
-  exists_forall_ramificationGroup_eq_ker_of_finite G S 0
-
-/-- For a faithful action whose zeroth ramification group is finite, the ramification groups over
-a Noetherian local ring vanish from some index on. -/
-theorem exists_forall_ramificationGroup_eq_bot [FaithfulSMul G S]
-    [Finite (ramificationGroup G S 0)] :
-    ∃ N : ℤ, ∀ i : ℤ, N ≤ i → ramificationGroup G S i = ⊥ :=
-  exists_forall_ramificationGroup_eq_bot_of_finite G S 0
 
 end Separated
 

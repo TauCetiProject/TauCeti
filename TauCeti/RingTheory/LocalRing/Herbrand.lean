@@ -496,7 +496,7 @@ theorem upperRamificationGroup_eq_of_herbrandFun_lt_of_le {i : ℤ} {v : ℝ}
 groups are trivial from some index on. -/
 theorem exists_forall_upperRamificationGroup_eq_bot [IsNoetherianRing S] [FaithfulSMul G S] :
     ∃ v : ℝ, ∀ w : ℝ, v ≤ w → upperRamificationGroup G S w = ⊥ := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
+  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot_of_finite G S 0
   refine ⟨herbrandFun G S N, fun w hw ↦ ?_⟩
   rw [upperRamificationGroup_def, ramificationGroupReal_def]
   exact hN _ (Int.cast_le.1 ((le_inverseHerbrandFun_iff.2 hw).trans (Int.le_ceil _)))
