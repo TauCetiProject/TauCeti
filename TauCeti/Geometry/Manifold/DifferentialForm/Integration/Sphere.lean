@@ -792,17 +792,9 @@ theorem sphereIntegral_neg (φ : RoughForm I M F 2) (a : π_ 2 M x) :
 @[simp]
 theorem sphereIntegral_add {ψ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
     (hψ : IsSmoothForm I 0 ψ) (a : π_ 2 M x) :
-    sphereIntegral (φ + ψ) x a = sphereIntegral φ x a + sphereIntegral ψ x a := by
-  have hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 (exists_isSmoothSphere (I := I) a).choose :=
-    (exists_isSmoothSphere (I := I) a).choose_spec.1.contMDiff.of_le (by simp)
-  have hint {θ : RoughForm I M F 2} (hθ : IsSmoothForm I 0 θ) (s : ℝ) :
-      IntervalIntegrable (fun t ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I (exists_isSmoothSphere (I := I) a).choose
-        θ (s, t) ![(1, 0), (0, 1)]) MeasureTheory.volume 0 1 :=
-    ((hθ.continuous_mpullback_apply hv ![(1, 0), (0, 1)]).comp
-      (Continuous.prodMk_right s)).intervalIntegrable 0 1
-  exact rectangleIntegral_add (a := (0, 0)) (b := (1, 1)) (fun s _ ↦ hint hφ s)
-    (fun s _ ↦ hint hψ s) ((continuous_integral_mpullback hφ hv 0 1).intervalIntegrable 0 1)
-    ((continuous_integral_mpullback hψ hv 0 1).intervalIntegrable 0 1)
+    sphereIntegral (φ + ψ) x a = sphereIntegral φ x a + sphereIntegral ψ x a :=
+  rectangleIntegral_add_of_isSmoothForm hφ hψ
+    ((exists_isSmoothSphere (I := I) a).choose_spec.1.contMDiff.of_le (by simp)) _ _
 
 /-- The integral over a class of `π₂(M, x)` is linear in the form: differences of continuous
 forms. -/
