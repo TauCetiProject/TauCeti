@@ -11,6 +11,7 @@ public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Points.Kernel
 import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Coordinate
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Coinvariants.Idempotent
 import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Quotient.Kernel.Coinvariants
+import TauCeti.Algebra.Exact.Basic
 
 /-!
 # Exactness of the component-group sequence
@@ -139,5 +140,19 @@ theorem mulExact_mapComponentGroup_kernel (f : Q ⟶ G)
     exact Subgroup.mem_map.mpr ⟨_,
       CommHopfAlgCat.quotientPointsHom_mem_quotientPointsSubgroup G.obj
         (CommHopfAlgCat.kernelHopfIdeal f.hom) (CommAlgCat.of k k) n, rfl⟩
+
+/-- Precomposing the first map of a component-group exact pair with an isomorphism preserves
+exactness. -/
+theorem mulExact_comp_iso_hom {A B C : FiniteTypeCommHopfAlgCat.{u, u} k}
+    {D : Type*} [MulOneClass D] (p : A ⟶ B) (q : A ⟶ C) (iso : B ≅ C) (hcomp : p ≫ iso.hom = q)
+    (r : ConnectedComponents (PrimeSpectrum A) →* D)
+    (hex : Function.MulExact (mapComponentGroup q) r) :
+    Function.MulExact (mapComponentGroup p) r := by
+  have hsurj : Function.Surjective (mapComponentGroup iso.hom) := by
+    intro y
+    obtain ⟨E, rfl⟩ := (mapComponentGroupMulEquiv iso).surjective y
+    exact ⟨E, (mapComponentGroupMulEquiv_apply iso E).symm⟩
+  rw [← hcomp, mapComponentGroup_comp, MonoidHom.coe_comp] at hex
+  exact (Function.MulExact.comp_iff_of_surjective hsurj).mp hex
 
 end TauCeti.FiniteTypeCommHopfAlgCat

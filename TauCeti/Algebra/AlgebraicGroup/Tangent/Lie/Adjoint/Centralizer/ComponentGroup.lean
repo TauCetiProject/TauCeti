@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Exact
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup.Action
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Center
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Conjugation
 public import TauCeti.Algebra.AlgebraicGroup.Tangent.Lie.Adjoint.Centralizer.Map
 
-import TauCeti.Algebra.Exact.Basic
 import TauCeti.Algebra.Group.Subgroup.Ker
 
 /-!
@@ -270,23 +269,6 @@ theorem centralizerComponentGroupMap_rationalComponentMap (f : H ⟶ K)
           ((toBialgHom f).map_centralizerHopfIdeal_le x) (CommAlgCat.of k k) c) :=
   HopfIdeal.componentGroupMap_rationalComponentMap _ _ f _ c
 
-omit [IsAlgClosed k] in
-/-- The dual cotangent map of the identity morphism in `FiniteTypeCommHopfAlgCat` acts as the
-identity. -/
-theorem dualCotangentMap_toBialgHom_id (H : FiniteTypeCommHopfAlgCat.{u, u} k)
-    (x : Module.Dual k (Bialgebra.CotangentSpace k H)) :
-    dualCotangentMap (toBialgHom (𝟙 H)) x = x := by
-  rw [toBialgHom_id, dualCotangentMap_id, LinearMap.id_apply]
-
-omit [IsAlgClosed k] in
-/-- The dual cotangent map of a composite morphism in `FiniteTypeCommHopfAlgCat` is the
-contravariant composite of the dual cotangent maps. -/
-theorem dualCotangentMap_toBialgHom_comp {L : FiniteTypeCommHopfAlgCat.{u, u} k}
-    (f : H ⟶ K) (g : K ⟶ L) (x : Module.Dual k (Bialgebra.CotangentSpace k L)) :
-    dualCotangentMap (toBialgHom f) (dualCotangentMap (toBialgHom g) x) =
-      dualCotangentMap (toBialgHom (f ≫ g)) x := by
-  rw [toBialgHom_comp, dualCotangentMap_comp, LinearMap.comp_apply]
-
 /-- Along the identity morphism, `centralizerComponentGroupMap` is the identity modulo canonical
 transport along `d(id)(x) = x`. -/
 @[simp]
@@ -394,18 +376,6 @@ theorem centralizerComponentGroupMap_surjective_of_injective_of_injective_differ
     Function.Surjective (centralizerComponentGroupMap f x) :=
   centralizerComponentGroupMap_surjective f hf x
     ((toBialgHom f).map_centralizerHopfIdeal_eq_of_injective hinj x)
-
-private theorem mulExact_comp_iso_hom {A B C : FiniteTypeCommHopfAlgCat.{u, u} k}
-    {D : Type*} [Group D] (p : A ⟶ B) (q : A ⟶ C) (iso : B ≅ C) (hcomp : p ≫ iso.hom = q)
-    (r : ConnectedComponents (PrimeSpectrum A) →* D)
-    (hex : Function.MulExact (mapComponentGroup q) r) :
-    Function.MulExact (mapComponentGroup p) r := by
-  have hsurj : Function.Surjective (mapComponentGroup iso.hom) := by
-    intro y
-    obtain ⟨E, rfl⟩ := (mapComponentGroupMulEquiv iso).surjective y
-    exact ⟨E, (mapComponentGroupMulEquiv_apply iso E).symm⟩
-  rw [← hcomp, mapComponentGroup_comp, MonoidHom.coe_comp] at hex
-  exact (Function.MulExact.comp_iff_of_surjective hsurj).mp hex
 
 /-- Whenever the restricted coordinate map `BialgHom.centralizerMap` is faithfully flat, the
 sequence `π₀(ker f ∩ C_K(x)) → A_K(x) → A_H(df(x))` is exact at `A_K(x)`, where `ker f ∩ C_K(x)`

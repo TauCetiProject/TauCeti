@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Action
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup.Basic
 import Mathlib.Algebra.Group.Action.Hom
 import TauCeti.Algebra.Group.Subgroup.Ker
 import TauCeti.GroupTheory.GroupAction.CompHom

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup
+public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup.Basic
 public import TauCeti.Algebra.AlgebraicGroup.HopfIdeal.Conjugation
 
 /-!

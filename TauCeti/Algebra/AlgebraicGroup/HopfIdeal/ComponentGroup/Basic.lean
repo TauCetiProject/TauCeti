@@ -37,7 +37,7 @@ the rational points of `N`, viewed inside `G(k)`:
 
 These are the maps by which component groups of particular closed subgroups, such as
 centralizers, are compared under inclusion and homomorphisms. (Conjugation of closed-subgroup
-component groups lives in `TauCeti.Algebra.AlgebraicGroup.Connected.ComponentGroup.Conjugation`.)
+component groups lives in `TauCeti.Algebra.AlgebraicGroup.HopfIdeal.ComponentGroup.Conjugation`.)
 
 ## References
 
