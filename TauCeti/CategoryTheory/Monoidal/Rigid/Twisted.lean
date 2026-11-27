@@ -26,9 +26,11 @@ and the corresponding sewing map starts from that line.
 * **Swap.** The braiding turns a pairing of `X` and `Y` twisted by `V` into a pairing of `Y` and
   `X` twisted by `V` (`TauCeti.TwistedPairing.swap`), with coevaluation `η ≫ β_{Y,X}⁻¹` and
   evaluation `β_{X,Y} ≫ ε`, exactly as Mathlib's `CategoryTheory.BraidedCategory.exactPairing_swap`
-  does for `V = 𝟙` (`TauCeti.TwistedPairing.ofExactPairing_swap`). The proof is Mathlib's proof
-  of `exactPairing_swap` in `Mathlib/CategoryTheory/Monoidal/Rigid/Braided.lean`, through the
-  Yang–Baxter equation, with the twisted zigzags in place of the exact ones.
+  does for `V = 𝟙` (`TauCeti.TwistedPairing.ofExactPairing_swap`). Where Mathlib's proof of
+  `exactPairing_swap` in `Mathlib/CategoryTheory/Monoidal/Rigid/Braided.lean` uses the
+  Yang–Baxter equation, the zigzags here follow from the braid identities
+  `TauCeti.whiskerLeft_braiding_inv_comp_braiding_whiskerRight` and
+  `TauCeti.braiding_inv_whiskerRight_comp_whiskerLeft_braiding` and naturality of the braiding.
 * **Tensor product with an exact pairing.** In a symmetric monoidal category, an exact pairing of
   `X₁` and `Y₁` and a pairing of `X₂` and `Y₂` twisted by `V` give a pairing of `X₁ ⊗ X₂` and
   `Y₂ ⊗ Y₁` twisted by `V` (`TauCeti.TwistedPairing.tensor`). The evaluation contracts `Y₁ ⊗ X₁`
@@ -109,63 +111,21 @@ variable {X Y V : C}
 private theorem swap_coevaluation_evaluation_aux (P : TwistedPairing X Y V) :
     X ◁ (P.coevaluation ≫ (β_ Y X).inv) ≫ (α_ X Y X).inv ≫ ((β_ X Y).hom ≫ P.evaluation) ▷ X =
       (β_ X V).hom := by
-  -- Mathlib's proof for `exactPairing_swap`: the Yang–Baxter equation moves the two braidings
-  -- of the zigzag to the outside, where naturality turns them into braidings with `V`, leaving
-  -- the other zigzag of `P` in the middle.
-  calc
-    _ = 𝟙 _ ⊗≫ X ◁ P.coevaluation ⊗≫ (X ◁ (β_ Y X).inv ⊗≫ (β_ X Y).hom ▷ X) ⊗≫
-          P.evaluation ▷ X ⊗≫ 𝟙 _ := by
-      monoidal
-    _ = 𝟙 _ ⊗≫ X ◁ P.coevaluation ⊗≫ (𝟙 (X ⊗ X ⊗ Y) ⊗≫ (β_ X X).hom ▷ Y ⊗≫
-          X ◁ (β_ X Y).hom ⊗≫ (β_ Y X).inv ▷ X ⊗≫ Y ◁ (β_ X X).inv ⊗≫ 𝟙 ((Y ⊗ X) ⊗ X)) ⊗≫
-            P.evaluation ▷ X ⊗≫ 𝟙 _ := by
-      congr 3
-      simp only [monoidalComp, MonoidalCoherence.assoc'_iso, MonoidalCoherence.whiskerRight_iso,
-        MonoidalCoherence.refl_iso, whiskerRightIso_refl, Iso.refl_trans, Iso.symm_hom,
-        MonoidalCoherence.assoc_iso, Iso.trans_refl, Category.comp_id, Category.id_comp]
-      rw [← IsIso.eq_inv_comp]
-      repeat rw [← Category.assoc]
-      iterate 5 rw [← IsIso.comp_inv_eq]
-      simpa using yang_baxter X Y X
-    _ = 𝟙 _ ⊗≫ (X ◁ P.coevaluation ≫ (β_ X (X ⊗ Y)).hom) ⊗≫
-          ((β_ (Y ⊗ X) X).inv ≫ P.evaluation ▷ X) ⊗≫ 𝟙 _ := by
-      simp [monoidalComp, braiding_tensor_right_hom, braiding_tensor_left_inv]
-    _ = (β_ X V).hom ≫ (P.coevaluation ▷ X ≫ (α_ X Y X).hom ≫ X ◁ P.evaluation) ≫
-          (β_ V X).inv := by
-      rw [braiding_naturality_right, ← braiding_inv_naturality_right]
-      simp [monoidalComp]
-    _ = _ := by
-      rw [P.evaluation_coevaluation, Iso.hom_inv_id, Category.comp_id]
+  -- Trade the two crossings for braidings with `X ⊗ Y` and `Y ⊗ X`, which naturality turns into
+  -- braidings with `V` around the other zigzag of `P`.
+  rw [MonoidalCategory.whiskerLeft_comp, comp_whiskerRight, Category.assoc,
+    whiskerLeft_braiding_inv_comp_braiding_whiskerRight_assoc, braiding_naturality_right_assoc,
+    ← braiding_inv_naturality_right, reassoc_of% P.evaluation_coevaluation, Iso.hom_inv_id,
+    Category.comp_id]
 
 /-- The zigzag of the swap through `Y`. -/
 private theorem swap_evaluation_coevaluation_aux (P : TwistedPairing X Y V) :
     (P.coevaluation ≫ (β_ Y X).inv) ▷ Y ≫ (α_ Y X Y).hom ≫ Y ◁ ((β_ X Y).hom ≫ P.evaluation) =
       (β_ V Y).hom := by
-  calc
-    _ = 𝟙 _ ⊗≫ P.coevaluation ▷ Y ⊗≫ ((β_ Y X).inv ▷ Y ⊗≫ Y ◁ (β_ X Y).hom) ⊗≫
-          Y ◁ P.evaluation ⊗≫ 𝟙 _ := by
-      monoidal
-    _ = 𝟙 _ ⊗≫ P.coevaluation ▷ Y ⊗≫ (𝟙 ((X ⊗ Y) ⊗ Y) ⊗≫ X ◁ (β_ Y Y).hom ⊗≫
-          (β_ X Y).hom ▷ Y ⊗≫ Y ◁ (β_ Y X).inv ⊗≫ (β_ Y Y).inv ▷ X ⊗≫ 𝟙 (Y ⊗ Y ⊗ X)) ⊗≫
-            Y ◁ P.evaluation ⊗≫ 𝟙 _ := by
-      congr 3
-      simp only [monoidalComp, MonoidalCoherence.assoc_iso, MonoidalCoherence.whiskerRight_iso,
-        MonoidalCoherence.refl_iso, whiskerRightIso_refl, Iso.trans_refl,
-        MonoidalCoherence.assoc'_iso, Iso.refl_trans, Iso.symm_hom, Category.comp_id,
-        Category.id_comp]
-      iterate 2 rw [← IsIso.eq_inv_comp]
-      repeat rw [← Category.assoc]
-      iterate 4 rw [← IsIso.comp_inv_eq]
-      simpa using (yang_baxter Y X Y).symm
-    _ = 𝟙 _ ⊗≫ (P.coevaluation ▷ Y ≫ (β_ (X ⊗ Y) Y).hom) ⊗≫
-          ((β_ Y (Y ⊗ X)).inv ≫ Y ◁ P.evaluation) ⊗≫ 𝟙 _ := by
-      simp [monoidalComp, braiding_tensor_left_hom, braiding_tensor_right_inv]
-    _ = (β_ V Y).hom ≫ (Y ◁ P.coevaluation ≫ (α_ Y X Y).inv ≫ P.evaluation ▷ Y) ≫
-          (β_ Y V).inv := by
-      rw [braiding_naturality_left, ← braiding_inv_naturality_left]
-      simp [monoidalComp]
-    _ = _ := by
-      rw [P.coevaluation_evaluation, Iso.hom_inv_id, Category.comp_id]
+  rw [comp_whiskerRight, MonoidalCategory.whiskerLeft_comp, Category.assoc,
+    braiding_inv_whiskerRight_comp_whiskerLeft_braiding_assoc, braiding_naturality_left_assoc,
+    ← braiding_inv_naturality_left, reassoc_of% P.coevaluation_evaluation, Iso.hom_inv_id,
+    Category.comp_id]
 
 /-- The **swap** of a pairing of `X` and `Y` twisted by `V`: the pairing of `Y` and `X` twisted by
 `V` with coevaluation `η ≫ β_{Y,X}⁻¹` and evaluation `β_{X,Y} ≫ ε`. For an exact pairing this is
