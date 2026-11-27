@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Differential
+public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Differential.Basic
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Microlocality
 import TauCeti.Analysis.Distribution.LineDeriv
 
@@ -30,9 +30,9 @@ by entry (`TauCeti.Symbol.mapCLM_quantizeDistribution_eq_sum`).
 
 The characteristic set of the classical symbol of a differential operator of order `M` consists of
 the covectors `(x, ξ)`, `ξ ≠ 0`, at which the matrix
-`σ_M(P)(x, ξ) = ∑ i ∈ t with k i = M, (∏ₗ i ⟪ξ, m i l⟫) g i x A i` is not invertible
-(`TauCeti.ClassicalSymbol.characteristicSet_toSymbol_ofDifferentialSymbol`). The microlocal
-elliptic regularity of properly supported systems
+`σ_M(P)(x, ξ) = ∑ i ∈ t with k i = M, (∏ l, Complex.I * ⟪ξ, m i l⟫) • g i x • A i`
+is not invertible (`TauCeti.ClassicalSymbol.characteristicSet_toSymbol_ofDifferentialSymbol`).
+The microlocal elliptic regularity of properly supported systems
 (`TauCeti.Symbol.vectorWaveFrontSet_subset_quantizeDistribution_union_characteristicSet`) then
 gives **microlocal elliptic regularity for differential systems**: for every `V`-valued
 distribution `T`,
@@ -214,7 +214,8 @@ theorem vectorWaveFrontSet_sum_mapCLM_smulLeftCLM_iteratedLineDerivOp_subset
 the system `P = ∑ i ∈ t, A i g i ∂^(m i)` of order at most `M`, with constant matrices
 `A i : V →L[ℂ] W` and smooth real coefficients `g i`, every `V`-valued distribution `T` satisfies
 `WF(T) ⊆ WF(P T) ∪ Char(P)`, where `Char(P)` consists of the covectors `(x, ξ)`, `ξ ≠ 0`, at which
-the principal symbol `∑ i ∈ t with k i = M, (∏ₗ i ⟪ξ, m i l⟫) g i x A i` is not invertible. -/
+the principal symbol `∑ i ∈ t with k i = M, (∏ l, Complex.I * ⟪ξ, m i l⟫) • g i x • A i` is not
+invertible. -/
 theorem vectorWaveFrontSet_subset_sum_mapCLM_smulLeftCLM_iteratedLineDerivOp_union
     (hg : ∀ i, ContDiff ℝ ∞ (g i)) (hk : ∀ i ∈ t, k i ≤ M)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), V)) :
