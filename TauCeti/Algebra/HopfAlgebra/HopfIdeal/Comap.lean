@@ -121,21 +121,15 @@ theorem comapOfSurjective_mono (f : H →ₐc[R] K) (hf : Function.Surjective f)
   intro h hh
   exact mem_comapOfSurjective.mpr (hIJ (mem_comapOfSurjective.mp hh))
 
-/-- For a surjective morphism, inverse image of Hopf ideals reflects containment. -/
-theorem le_of_comapOfSurjective_le_comapOfSurjective (f : H →ₐc[R] K)
-    (hf : Function.Surjective f) {I J : HopfIdeal R K}
-    (hIJ : I.comapOfSurjective f hf ≤ J.comapOfSurjective f hf) : I ≤ J := by
-  intro k hk
-  obtain ⟨h, rfl⟩ := hf k
-  exact mem_comapOfSurjective.mp (hIJ (mem_comapOfSurjective.mpr hk))
-
 /-- For a surjective morphism, containment after inverse image is equivalent to containment
 before inverse image. -/
 @[simp]
 theorem comapOfSurjective_le_comapOfSurjective_iff (f : H →ₐc[R] K)
     (hf : Function.Surjective f) {I J : HopfIdeal R K} :
-    I.comapOfSurjective f hf ≤ J.comapOfSurjective f hf ↔ I ≤ J :=
-  ⟨le_of_comapOfSurjective_le_comapOfSurjective f hf, comapOfSurjective_mono f hf⟩
+    I.comapOfSurjective f hf ≤ J.comapOfSurjective f hf ↔ I ≤ J := by
+  refine ⟨fun hIJ k hk ↦ ?_, comapOfSurjective_mono f hf⟩
+  obtain ⟨h, rfl⟩ := hf k
+  exact mem_comapOfSurjective.mp (hIJ (mem_comapOfSurjective.mpr hk))
 
 /-- For a surjective morphism, inverse image of Hopf ideals reflects equality. -/
 @[simp]

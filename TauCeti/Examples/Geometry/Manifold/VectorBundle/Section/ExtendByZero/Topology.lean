@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.ExtendByZero.Topology
 public import Mathlib.Geometry.Manifold.Instances.Real
+public import TauCeti.Geometry.Manifold.Boundary.Model
 
 /-!
 # Open-extension examples for native bundle tests
@@ -67,18 +68,12 @@ theorem empty_open_extension :
 
 /-- Native extension is nonzero at the boundary point of the Euclidean half-space. -/
 theorem exists_nonzero_boundary_test_extension :
-    letI : T2Space (EuclideanHalfSpace 1) := by
-      dsimp [EuclideanHalfSpace]
-      infer_instance
     let U : Opens (EuclideanHalfSpace 1) := ⊤
     let c : C(U, EuclideanHalfSpace 1) := ⟨Subtype.val, continuous_subtypeVal⟩
     ∃ s : TauCeti.BundleTest (modelWithCornersEuclideanHalfSpace 1) ℝ (c *ᵖ (Bundle.Trivial
       (EuclideanHalfSpace 1) ℝ)),
       TauCeti.BundleTest.extendByZeroCLM (I := modelWithCornersEuclideanHalfSpace 1) (F := ℝ)
         (V := Bundle.Trivial (EuclideanHalfSpace 1) ℝ) s 0 = 1 := by
-  let : T2Space (EuclideanHalfSpace 1) := by
-    dsimp [EuclideanHalfSpace]
-    infer_instance
   intro U c
   let x : U := ⟨0, Set.mem_univ _⟩
   obtain ⟨s, hs⟩ := TauCeti.BundleTest.exists_apply_eq (I := modelWithCornersEuclideanHalfSpace 1)

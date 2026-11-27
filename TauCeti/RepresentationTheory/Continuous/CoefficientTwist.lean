@@ -8,7 +8,8 @@ module
 public import Mathlib.FieldTheory.Finite.Basic
 public import Mathlib.LinearAlgebra.Charpoly.BaseChange
 public import TauCeti.LinearAlgebra.TensorProduct.Along
-public import TauCeti.RepresentationTheory.Continuous.ContinuousRep
+public import TauCeti.RepresentationTheory.Continuous.ContinuousRep.Basic
+public import TauCeti.RepresentationTheory.Continuous.Reduction
 public import TauCeti.Topology.Algebra.Ring.Frobenius
 
 /-!
@@ -29,6 +30,14 @@ applied to the coefficients. Twisting by the identity gives back `ρ`, and twist
 then by `τ` is twisting by `σ.trans τ = τ ∘ σ`, up to isomorphism. Over `ZMod p` the Frobenius
 twist is the identity.
 
+Base change to an `A`-algebra `B` commutes with coefficient twists: if `σ` induces `τ` on `B`,
+the base change of `ρ^σ` is the twist by `τ` of the base change of `ρ`. In particular, over a
+topological local ring `A`, reduction commutes with coefficient twists: if `σ` induces `τ` on the
+residue field, the raw reduction of `ρ^σ` is the twist `(red ρ)^τ` of the raw reduction
+`red ρ`. So an automorphism acting trivially on the residue field, such as an element of an
+inertia group, fixes the raw reduction up to isomorphism, and a lift of the `p`-power Frobenius
+of a perfect residue field sends it to its Frobenius twist `(red ρ)^{(p)}`.
+
 ## Implementation notes
 
 `ContinuousRep.baseChange` takes the coefficient ring map as an `[Algebra A B]` instance. Base
@@ -36,10 +45,13 @@ change along an automorphism `σ` of `A` cannot use an instance: an instance `Al
 `σ` would compete with `Algebra.id`, and on `A ⊗[A] M` the `A`-module structure acting on the left
 factor would compete with the one acting through the base ring. The carrier is therefore the type
 synonym `TauCeti.TensorAlong f M` of `B ⊗[A] M` for `f.toAlgebra`, which carries only its
-`B`-module structure on the left factor and its `B`-module topology. All constructions are
-`ContinuousRep.baseChange` and its isomorphisms `baseChangeSelfIso`, `baseChangeTransIso` and
-`baseChangeOfCharacterIso` with `f.toAlgebra` installed locally, so the twist is literally the base
-change along `σ`.
+`B`-module structure on the left factor and its `B`-module topology. The extensions of scalars
+and their isomorphisms are `ContinuousRep.baseChange` and its isomorphisms `Iso.baseChange`,
+`baseChangeSelfIso`, `baseChangeTransIso` and `baseChangeOfCharacterIso` with `f.toAlgebra`
+installed locally, so the twist is literally the base change along `σ`. The one exception is the
+comparison of extension of scalars along `algebraMap A B` with `ContinuousRep.baseChange` for a
+given `[Algebra A B]`: the two `A`-module structures on `B` agree only propositionally, so this
+isomorphism is the explicit `B`-linear equivalence `TensorAlong.algebraMapEquiv`.
 
 ## Main definitions
 
@@ -52,6 +64,16 @@ change along `σ`.
   twist by the identity, and composition of twists.
 * `TauCeti.ContinuousRep.coeffTwistOfCharacterIso`: the twist of a character line is the line of
   the twisted character.
+* `TauCeti.ContinuousRep.baseChangeAlongCoeffTwistIso`: if `f ∘ σ = τ ∘ f`, extension of
+  scalars along `f` takes the twist by `σ` to the twist by `τ`.
+* `TauCeti.ContinuousRep.baseChangeIsoBaseChangeAlongAlgebraMap`: extension of scalars along
+  `algebraMap A B` is `ContinuousRep.baseChange`.
+* `TauCeti.ContinuousRep.baseChangeCoeffTwistIso`: if `σ` induces `τ` on an `A`-algebra `B`, the
+  base change to `B` of the twist by `σ` is the twist by `τ` of the base change.
+* `TauCeti.ContinuousRep.reductionCoeffTwistIso`: the raw reduction of `ρ^σ` is the twist of the
+  raw reduction by the automorphism `τ` that `σ` induces on the residue field;
+  `TauCeti.ContinuousRep.reductionCoeffTwistIsoReduction` and
+  `TauCeti.ContinuousRep.reductionCoeffTwistIsoFrobTwist` treat `τ = id` and `τ` the Frobenius.
 
 ## Main statements
 
@@ -247,6 +269,82 @@ theorem baseChangeAlongOfCharacterIso_tmul (b : B) (a : A) :
 end OfCharacter
 
 end BaseChangeAlongIso
+
+section IsoBaseChangeAlong
+
+variable {Γ A B M N : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommSemiring A] [TopologicalSpace A]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalSemiring B] [AddCommMonoid M] [Module A M]
+  [TopologicalSpace M] [IsModuleTopology A M] [Module.Finite A M] [AddCommMonoid N] [Module A N]
+  [TopologicalSpace N] [IsModuleTopology A N] [Module.Finite A N]
+  (f : A →+* B) (hf : Continuous f)
+
+/-- **Extension of scalars along `f` of an isomorphism** of continuous representations, by
+`Iso.baseChange`. -/
+def Iso.baseChangeAlong {ρ : ContinuousRep Γ A M} {ρ' : ContinuousRep Γ A N} (e : Iso ρ ρ') :
+    Iso (ρ.baseChangeAlong f hf) (ρ'.baseChangeAlong f hf) := by
+  along_instances f hf A B M
+  let : TopologicalSpace (B ⊗[A] N) := moduleTopology B _
+  have : IsModuleTopology B (B ⊗[A] N) := ⟨rfl⟩
+  exact e.baseChange B
+
+@[simp]
+theorem Iso.baseChangeAlong_tmul {ρ : ContinuousRep Γ A M} {ρ' : ContinuousRep Γ A N}
+    (e : Iso ρ ρ') (b : B) (m : M) :
+    e.baseChangeAlong f hf (TensorAlong.tmul b m) = TensorAlong.tmul b (e m) := by
+  along_instances f hf A B M
+  let : TopologicalSpace (B ⊗[A] N) := moduleTopology B _
+  have : IsModuleTopology B (B ⊗[A] N) := ⟨rfl⟩
+  rw [TensorAlong.tmul_def, TensorAlong.tmul_def]
+  exact Iso.baseChange_tmul B e b m
+
+/-- **Extension of scalars along equal ring homomorphisms** gives isomorphic representations,
+through the identity on pure tensors. -/
+def baseChangeAlongCongrIso (ρ : ContinuousRep Γ A M) {f' : A →+* B} (hf' : Continuous f')
+    (h : f = f') : Iso (ρ.baseChangeAlong f hf) (ρ.baseChangeAlong f' hf') := by
+  cases h
+  exact Iso.refl _
+
+@[simp]
+theorem baseChangeAlongCongrIso_tmul (ρ : ContinuousRep Γ A M) {f' : A →+* B}
+    (hf' : Continuous f') (h : f = f') (b : B) (m : M) :
+    ρ.baseChangeAlongCongrIso f hf hf' h (TensorAlong.tmul b m) = TensorAlong.tmul b m := by
+  cases h
+  exact Iso.refl_apply _
+
+end IsoBaseChangeAlong
+
+section AlgebraMap
+
+variable {Γ A B M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommSemiring A] [TopologicalSpace A]
+  [AddCommMonoid M] [Module A M] [TopologicalSpace M] [IsModuleTopology A M] [Module.Finite A M]
+  [CommRing B] [TopologicalSpace B] [IsTopologicalSemiring B] [Algebra A B] [ContinuousSMul A B]
+  [TopologicalSpace (B ⊗[A] M)] [IsModuleTopology B (B ⊗[A] M)] (ρ : ContinuousRep Γ A M)
+
+/-- **Extension of scalars along `algebraMap A B` is `ContinuousRep.baseChange`**: an
+isomorphism `B ⊗[A] M ≅ B ⊗[A, algebraMap A B] M` that is the identity on pure tensors, by
+`TensorAlong.algebraMapEquiv`. -/
+def baseChangeIsoBaseChangeAlongAlgebraMap :
+    Iso (ρ.baseChange B) (ρ.baseChangeAlong (algebraMap A B) (continuous_algebraMap A B)) :=
+  .ofEquiv (.mk (TensorAlong.algebraMapEquiv A B M) fun g => LinearMap.ext fun x => by
+    induction x using TensorProduct.inductionOn with
+    | tmul b m =>
+      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, coe_toRepresentation,
+        baseChange_apply, LinearMap.baseChange_tmul, TensorAlong.algebraMapEquiv_tmul,
+        baseChangeAlong_apply_tmul]
+    | add x y hx hy => rw [map_add, map_add, hx, hy])
+
+@[simp]
+theorem baseChangeIsoBaseChangeAlongAlgebraMap_tmul (b : B) (m : M) :
+    ρ.baseChangeIsoBaseChangeAlongAlgebraMap (b ⊗ₜ[A] m) = TensorAlong.tmul b m := by
+  rw [baseChangeIsoBaseChangeAlongAlgebraMap, Iso.ofEquiv_apply]
+  exact TensorAlong.algebraMapEquiv_tmul b m
+
+@[simp]
+theorem baseChangeIsoBaseChangeAlongAlgebraMap_symm_tmul (b : B) (m : M) :
+    ρ.baseChangeIsoBaseChangeAlongAlgebraMap.symm (TensorAlong.tmul b m) = b ⊗ₜ[A] m := by
+  rw [← ρ.baseChangeIsoBaseChangeAlongAlgebraMap_tmul b m, Iso.symm_apply_apply]
+
+end AlgebraMap
 
 section IdIso
 
@@ -528,6 +626,228 @@ theorem trace_frobTwist_apply (g : Γ) :
   rw [frobTwist_eq_coeffTwist, trace_coeffTwist_apply, frobeniusEquiv_def]
 
 end FrobTwistCharpoly
+
+section BaseChangeAlongCoeffTwist
+
+variable {Γ A B M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [TopologicalSpace A]
+  [IsTopologicalSemiring A] [CommRing B] [TopologicalSpace B] [IsTopologicalSemiring B]
+  [AddCommMonoid M] [Module A M] [TopologicalSpace M] [IsModuleTopology A M] [Module.Finite A M]
+  (σ : A ≃+* A) (hσ : Continuous σ) (f : A →+* B) (hf : Continuous f) (τ : B ≃+* B)
+  (hτ : Continuous τ) (ρ : ContinuousRep Γ A M)
+
+/-- **Extension of scalars commutes with coefficient twists**: if `f ∘ σ = τ ∘ f`, extending
+`ρ^σ` along `f` is the twist by `τ` of extending `ρ` along `f`. -/
+def baseChangeAlongCoeffTwistIso (h : ∀ a, f (σ a) = τ (f a)) :
+    Iso ((ρ.coeffTwist σ hσ).baseChangeAlong f hf) ((ρ.baseChangeAlong f hf).coeffTwist τ hτ) :=
+  (ρ.baseChangeAlongCompIso (σ : A →+* A) f hσ hf).trans <|
+    (ρ.baseChangeAlongCongrIso (f.comp (σ : A →+* A)) (hf.comp hσ) (hτ.comp hf)
+      (RingHom.ext h : f.comp (σ : A →+* A) = (τ : B →+* B).comp f)).trans
+      (ρ.baseChangeAlongCompIso f (τ : B →+* B) hf hτ).symm
+
+/-- `baseChangeAlongCoeffTwistIso` sends `b ⊗ (a ⊗ m)` to `(f a * b) ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem baseChangeAlongCoeffTwistIso_tmul (h : ∀ a, f (σ a) = τ (f a)) (b : B) (a : A) (m : M) :
+    ρ.baseChangeAlongCoeffTwistIso σ hσ f hf τ hτ h (TensorAlong.tmul b (TensorAlong.tmul a m)) =
+      TensorAlong.tmul (f a * b) (TensorAlong.tmul 1 m) := by
+  -- `erw`, not `rw`: the composite is type-correct only up to unfolding. `coeffTwist` unfolds to
+  -- `baseChangeAlong`, and its continuity proofs, such as `hσ : Continuous σ` and the proof of
+  -- `Continuous (τ ∘ f)`, are used where `Continuous (σ : A →+* A)` and
+  -- `Continuous ((τ : B →+* B).comp f)` are expected. These types agree only after unfolding the
+  -- coercions, so the keyed matching of `rw` fails on `Iso.trans_apply` and the `_tmul` lemmas.
+  rw [baseChangeAlongCoeffTwistIso]
+  erw [Iso.trans_apply, Iso.trans_apply, baseChangeAlongCompIso_tmul,
+    baseChangeAlongCongrIso_tmul, baseChangeAlongCompIso_symm_tmul]
+
+/-- The inverse of `baseChangeAlongCoeffTwistIso` sends `c ⊗ (b ⊗ m)` to `(τ b * c) ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem baseChangeAlongCoeffTwistIso_symm_tmul (h : ∀ a, f (σ a) = τ (f a)) (c b : B) (m : M) :
+    (ρ.baseChangeAlongCoeffTwistIso σ hσ f hf τ hτ h).symm
+        (TensorAlong.tmul c (TensorAlong.tmul b m)) =
+      TensorAlong.tmul (τ b * c) (TensorAlong.tmul 1 m) := by
+  have key : (TensorAlong.tmul c (TensorAlong.tmul b m) :
+      TensorAlong (τ : B →+* B) (TensorAlong f M)) =
+        TensorAlong.tmul ((τ : B →+* B) b * c) (TensorAlong.tmul 1 m) := by
+    rw [← TensorAlong.tmul_smul, TensorAlong.smul_tmul', mul_one]
+  rw [key, RingEquiv.coe_toRingHom,
+    ← Iso.symm_apply_apply (ρ.baseChangeAlongCoeffTwistIso σ hσ f hf τ hτ h)
+      (TensorAlong.tmul (τ b * c) (TensorAlong.tmul 1 m)),
+    baseChangeAlongCoeffTwistIso_tmul, map_one, one_mul]
+
+end BaseChangeAlongCoeffTwist
+
+section BaseChangeCoeffTwist
+
+variable {Γ A B M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [TopologicalSpace A]
+  [IsTopologicalSemiring A] [AddCommMonoid M] [Module A M] [TopologicalSpace M]
+  [IsModuleTopology A M] [Module.Finite A M] [CommRing B] [TopologicalSpace B]
+  [IsTopologicalSemiring B] [Algebra A B] [ContinuousSMul A B] [TopologicalSpace (B ⊗[A] M)]
+  [IsModuleTopology B (B ⊗[A] M)] (σ : A ≃+* A) (hσ : Continuous σ)
+  [TopologicalSpace (B ⊗[A] TensorAlong (σ : A →+* A) M)]
+  [IsModuleTopology B (B ⊗[A] TensorAlong (σ : A →+* A) M)] (τ : B ≃+* B) (hτ : Continuous τ)
+  (ρ : ContinuousRep Γ A M)
+
+/-- **Base change commutes with coefficient twists**: if the continuous automorphism `σ` of `A`
+induces `τ` on the `A`-algebra `B`, `algebraMap (σ a) = τ (algebraMap a)`, then the base change
+to `B` of `ρ^σ` is isomorphic to the twist by `τ` of the base change of `ρ`. This is
+`baseChangeAlongCoeffTwistIso` for `algebraMap A B`. -/
+def baseChangeCoeffTwistIso (h : ∀ a, algebraMap A B (σ a) = τ (algebraMap A B a)) :
+    Iso ((ρ.coeffTwist σ hσ).baseChange B) ((ρ.baseChange B).coeffTwist τ hτ) :=
+  (ρ.coeffTwist σ hσ).baseChangeIsoBaseChangeAlongAlgebraMap.trans <|
+    (ρ.baseChangeAlongCoeffTwistIso σ hσ _ (continuous_algebraMap A B) τ hτ h).trans <|
+      ρ.baseChangeIsoBaseChangeAlongAlgebraMap.symm.baseChangeAlong (τ : B →+* B) hτ
+
+/-- `baseChangeCoeffTwistIso` sends `c ⊗ (a ⊗ m)` to `(algebraMap a * c) ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem baseChangeCoeffTwistIso_tmul (h : ∀ a, algebraMap A B (σ a) = τ (algebraMap A B a))
+    (c : B) (a : A) (m : M) :
+    ρ.baseChangeCoeffTwistIso σ hσ τ hτ h (c ⊗ₜ TensorAlong.tmul a m) =
+      TensorAlong.tmul (algebraMap A B a * c) ((1 : B) ⊗ₜ[A] m) := by
+  -- `erw`, not `rw`, for the reason given in `baseChangeAlongCoeffTwistIso_tmul`.
+  rw [baseChangeCoeffTwistIso]
+  erw [Iso.trans_apply, Iso.trans_apply, baseChangeIsoBaseChangeAlongAlgebraMap_tmul,
+    baseChangeAlongCoeffTwistIso_tmul, Iso.baseChangeAlong_tmul,
+    baseChangeIsoBaseChangeAlongAlgebraMap_symm_tmul]
+
+/-- The inverse of `baseChangeCoeffTwistIso` sends `c ⊗ (d ⊗ m)` to `(τ d * c) ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem baseChangeCoeffTwistIso_symm_tmul
+    (h : ∀ a, algebraMap A B (σ a) = τ (algebraMap A B a)) (c d : B) (m : M) :
+    (ρ.baseChangeCoeffTwistIso σ hσ τ hτ h).symm (TensorAlong.tmul c (d ⊗ₜ[A] m)) =
+      (τ d * c) ⊗ₜ TensorAlong.tmul 1 m := by
+  have key : (TensorAlong.tmul c (d ⊗ₜ[A] m) : TensorAlong (τ : B →+* B) (B ⊗[A] M)) =
+      TensorAlong.tmul ((τ : B →+* B) d * c) (1 ⊗ₜ[A] m) := by
+    rw [← TensorAlong.tmul_smul, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  rw [key, RingEquiv.coe_toRingHom,
+    ← Iso.symm_apply_apply (ρ.baseChangeCoeffTwistIso σ hσ τ hτ h) ((τ d * c) ⊗ₜ _),
+    baseChangeCoeffTwistIso_tmul, map_one, one_mul]
+
+end BaseChangeCoeffTwist
+
+section Reduction
+
+open IsLocalRing
+
+variable {Γ A M : Type*} [Monoid Γ] [TopologicalSpace Γ] [CommRing A] [IsLocalRing A]
+  [TopologicalSpace A] [IsTopologicalRing A] [AddCommGroup M] [Module A M] [TopologicalSpace M]
+  [IsModuleTopology A M] [Module.Finite A M] [TopologicalSpace (ResidueField A)]
+  [IsTopologicalRing (ResidueField A)] [ContinuousSMul A (ResidueField A)]
+  [TopologicalSpace (ResidueField A ⊗[A] M)]
+  [IsModuleTopology (ResidueField A) (ResidueField A ⊗[A] M)]
+  (σ : A ≃+* A) (hσ : Continuous σ)
+  [TopologicalSpace (ResidueField A ⊗[A] TensorAlong (σ : A →+* A) M)]
+  [IsModuleTopology (ResidueField A) (ResidueField A ⊗[A] TensorAlong (σ : A →+* A) M)]
+  (ρ : ContinuousRep Γ A M)
+
+/-- **The reduction of a coefficient twist is the twist of the reduction**: if the continuous
+automorphism `σ` of `A` induces `τ` on the residue field, `residue (σ a) = τ (residue a)`, then
+the raw reduction of `ρ^σ` is isomorphic to the twist `(red ρ)^τ` of the raw reduction `red ρ`
+of `ρ`. This is `baseChangeCoeffTwistIso` for the residue field. -/
+def reductionCoeffTwistIso (τ : ResidueField A ≃+* ResidueField A) (hτ : Continuous τ)
+    (h : ∀ a, residue A (σ a) = τ (residue A a)) :
+    Iso (ρ.coeffTwist σ hσ).reduction (ρ.reduction.coeffTwist τ hτ) :=
+  ρ.baseChangeCoeffTwistIso σ hσ τ hτ fun a => by
+    simpa only [ResidueField.algebraMap_eq] using h a
+
+/-- `reductionCoeffTwistIso` sends `c ⊗ (a ⊗ m)` to `(ā c) ⊗ (1 ⊗ m)`, where `ā` is the residue
+of `a`. -/
+@[simp]
+theorem reductionCoeffTwistIso_tmul (τ : ResidueField A ≃+* ResidueField A) (hτ : Continuous τ)
+    (h : ∀ a, residue A (σ a) = τ (residue A a)) (c : ResidueField A) (a : A) (m : M) :
+    ρ.reductionCoeffTwistIso σ hσ τ hτ h (c ⊗ₜ TensorAlong.tmul a m) =
+      TensorAlong.tmul (residue A a * c) ((1 : ResidueField A) ⊗ₜ[A] m) := by
+  rw [reductionCoeffTwistIso, baseChangeCoeffTwistIso_tmul, ResidueField.algebraMap_eq]
+
+/-- The inverse of `reductionCoeffTwistIso` sends `c ⊗ (d ⊗ m)` to `(τ d * c) ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem reductionCoeffTwistIso_symm_tmul (τ : ResidueField A ≃+* ResidueField A)
+    (hτ : Continuous τ) (h : ∀ a, residue A (σ a) = τ (residue A a)) (c d : ResidueField A)
+    (m : M) :
+    (ρ.reductionCoeffTwistIso σ hσ τ hτ h).symm (TensorAlong.tmul c (d ⊗ₜ[A] m)) =
+      (τ d * c) ⊗ₜ TensorAlong.tmul 1 m := by
+  rw [reductionCoeffTwistIso, baseChangeCoeffTwistIso_symm_tmul]
+
+/-- **The reduction of `ρ^σ` is the twist by the residue automorphism of `σ`**: the automorphism
+of the residue field induced by `σ` is `ResidueField.mapEquiv σ`, so the raw reduction of `ρ^σ`
+is the twist of `red ρ` by it. -/
+def reductionCoeffTwistMapEquivIso (hσ' : Continuous (ResidueField.mapEquiv σ)) :
+    Iso (ρ.coeffTwist σ hσ).reduction (ρ.reduction.coeffTwist (ResidueField.mapEquiv σ) hσ') :=
+  ρ.reductionCoeffTwistIso σ hσ _ hσ' fun a => by
+    rw [ResidueField.mapEquiv_apply, ResidueField.map_residue, RingEquiv.coe_toRingHom]
+
+/-- `reductionCoeffTwistMapEquivIso` sends `c ⊗ (a ⊗ m)` to `(ā c) ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem reductionCoeffTwistMapEquivIso_tmul (hσ' : Continuous (ResidueField.mapEquiv σ))
+    (c : ResidueField A) (a : A) (m : M) :
+    ρ.reductionCoeffTwistMapEquivIso σ hσ hσ' (c ⊗ₜ TensorAlong.tmul a m) =
+      TensorAlong.tmul (residue A a * c) ((1 : ResidueField A) ⊗ₜ[A] m) :=
+  ρ.reductionCoeffTwistIso_tmul σ hσ _ hσ' _ c a m
+
+/-- The inverse of `reductionCoeffTwistMapEquivIso` sends `c ⊗ (d ⊗ m)` to
+`(ResidueField.mapEquiv σ d * c) ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem reductionCoeffTwistMapEquivIso_symm_tmul (hσ' : Continuous (ResidueField.mapEquiv σ))
+    (c d : ResidueField A) (m : M) :
+    (ρ.reductionCoeffTwistMapEquivIso σ hσ hσ').symm (TensorAlong.tmul c (d ⊗ₜ[A] m)) =
+      (ResidueField.mapEquiv σ d * c) ⊗ₜ TensorAlong.tmul 1 m :=
+  ρ.reductionCoeffTwistIso_symm_tmul σ hσ _ hσ' _ c d m
+
+/-- **Automorphisms acting trivially on the residue field fix the reduction**: if
+`residue (σ a) = residue a` for all `a`, for instance for `σ` in an inertia group, the raw
+reduction of `ρ^σ` is isomorphic to that of `ρ`. -/
+def reductionCoeffTwistIsoReduction (h : ∀ a, residue A (σ a) = residue A a) :
+    Iso (ρ.coeffTwist σ hσ).reduction ρ.reduction :=
+  (ρ.reductionCoeffTwistIso σ hσ (RingEquiv.refl _) continuous_id h).trans
+    ρ.reduction.coeffTwistReflIso
+
+/-- `reductionCoeffTwistIsoReduction` sends `c ⊗ (a ⊗ m)` to `(ā c) ⊗ m`. -/
+@[simp]
+theorem reductionCoeffTwistIsoReduction_tmul (h : ∀ a, residue A (σ a) = residue A a)
+    (c : ResidueField A) (a : A) (m : M) :
+    ρ.reductionCoeffTwistIsoReduction σ hσ h (c ⊗ₜ TensorAlong.tmul a m) =
+      (residue A a * c) ⊗ₜ[A] m := by
+  -- `erw`, not `rw`: the twist by `RingEquiv.refl` is formed with the continuity proof
+  -- `continuous_id`, which is a proof of continuity of `RingEquiv.refl` only after unfolding.
+  rw [reductionCoeffTwistIsoReduction]
+  erw [Iso.trans_apply, reductionCoeffTwistIso_tmul, coeffTwistReflIso_tmul]
+  rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+
+/-- The inverse of `reductionCoeffTwistIsoReduction` sends `c ⊗ m` to `c ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem reductionCoeffTwistIsoReduction_symm_tmul (h : ∀ a, residue A (σ a) = residue A a)
+    (c : ResidueField A) (m : M) :
+    (ρ.reductionCoeffTwistIsoReduction σ hσ h).symm (c ⊗ₜ[A] m) = c ⊗ₜ TensorAlong.tmul 1 m := by
+  have key := ρ.reductionCoeffTwistIsoReduction_tmul σ hσ h c 1 m
+  rw [map_one, one_mul] at key
+  rw [← key, Iso.symm_apply_apply]
+
+/-- **Frobenius lifts reduce to the Frobenius twist**: if `σ` lifts the `p`-power Frobenius of
+the perfect residue field, `residue (σ a) = (residue a) ^ p`, then the raw reduction of `ρ^σ` is
+isomorphic to the Frobenius twist `(red ρ)^{(p)}` of the raw reduction. -/
+def reductionCoeffTwistIsoFrobTwist (p : ℕ) [ExpChar (ResidueField A) p]
+    [PerfectRing (ResidueField A) p] (h : ∀ a, residue A (σ a) = residue A a ^ p) :
+    Iso (ρ.coeffTwist σ hσ).reduction (ρ.reduction.frobTwist p) :=
+  ρ.reductionCoeffTwistIso σ hσ _ _ fun a => (h a).trans (frobeniusEquiv_def _ p _).symm
+
+/-- `reductionCoeffTwistIsoFrobTwist` sends `c ⊗ (a ⊗ m)` to `(ā c) ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem reductionCoeffTwistIsoFrobTwist_tmul (p : ℕ) [ExpChar (ResidueField A) p]
+    [PerfectRing (ResidueField A) p] (h : ∀ a, residue A (σ a) = residue A a ^ p)
+    (c : ResidueField A) (a : A) (m : M) :
+    ρ.reductionCoeffTwistIsoFrobTwist σ hσ p h (c ⊗ₜ TensorAlong.tmul a m) =
+      TensorAlong.tmul (residue A a * c) ((1 : ResidueField A) ⊗ₜ[A] m) :=
+  ρ.reductionCoeffTwistIso_tmul σ hσ _ _ _ c a m
+
+/-- The inverse of `reductionCoeffTwistIsoFrobTwist` sends `c ⊗ (d ⊗ m)` to
+`(d ^ p * c) ⊗ (1 ⊗ m)`. -/
+@[simp]
+theorem reductionCoeffTwistIsoFrobTwist_symm_tmul (p : ℕ) [ExpChar (ResidueField A) p]
+    [PerfectRing (ResidueField A) p] (h : ∀ a, residue A (σ a) = residue A a ^ p)
+    (c d : ResidueField A) (m : M) :
+    (ρ.reductionCoeffTwistIsoFrobTwist σ hσ p h).symm (TensorAlong.tmul c (d ⊗ₜ[A] m)) =
+      (d ^ p * c) ⊗ₜ TensorAlong.tmul 1 m :=
+  (ρ.reductionCoeffTwistIso_symm_tmul σ hσ _ _ _ c d m).trans <| by rw [frobeniusEquiv_def]
+
+end Reduction
 
 end ContinuousRep
 

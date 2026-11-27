@@ -7,6 +7,8 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import TauCeti.Analysis.Complex.ModularForms.LevelOne.JInputs
+import TauCeti.Analysis.Complex.ModularForms.LevelOne.ModularInvariantBound
+import TauCeti.Analysis.Polynomial.CoeffBound
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Ideal.ClassNumber
 public import TauCeti.NumberTheory.BinaryQuadraticForm.Root
 import TauCeti.Analysis.Complex.Fuchsian.LevelOne.Sphere
@@ -64,6 +66,11 @@ of the order of discriminant `-n` over `K`; neither statement is proved here.
 * `TauCeti.BinaryQuadraticForm.map_star_hilbertClassPolynomial`: it is invariant under complex
   conjugation of the coefficients, so its coefficients are real
   (`im_coeff_hilbertClassPolynomial`).
+* `TauCeti.BinaryQuadraticForm.norm_j_root_le`: the root `τ` of a reduced form
+  `a x² + b x y + c y²` of discriminant `-D` satisfies `|j(τ)| ≤ e^{π √D / a} + 2114567 / 1000`.
+* `TauCeti.BinaryQuadraticForm.norm_coeff_hilbertClassPolynomial_le`: hence every coefficient of
+  the Hilbert class polynomial of discriminant `-n` has absolute value at most
+  `∏ (1 + e^{π √n / a} + 2114567 / 1000)`, over the primitive reduced forms of discriminant `-n`.
 
 ## References
 
@@ -71,6 +78,9 @@ of the order of discriminant `-n` over `K`; neither statement is proved here.
   class) and §13 (the class equation and its roots).
 * B. H. Gross and D. B. Zagier, *On singular moduli*, J. Reine Angew. Math. **355** (1985),
   191–220.
+* A. V. Sutherland, *Computing Hilbert class polynomials with the Chinese Remainder Theorem*,
+  Math. Comp. 80 (2011), Appendix 1, Lemma 8 — the bound on singular moduli and on the
+  coefficients of the Hilbert class polynomial.
 -/
 
 public section
@@ -267,5 +277,34 @@ theorem map_star_hilbertClassPolynomial :
 @[simp]
 theorem im_coeff_hilbertClassPolynomial (k : ℕ) : ((hilbertClassPolynomial n).coeff k).im = 0 := by
   rw [← Complex.conj_eq_iff_im, ← coeff_map, map_star_hilbertClassPolynomial]
+
+/-! ### Size of the singular moduli and of the coefficients -/
+
+open scoped Real in
+/-- **The size of the singular modulus of a reduced form.** The root
+`τ = (-b + i √D) / (2 a)` of a reduced positive definite form `a x² + b x y + c y²` of
+discriminant `-D` satisfies `|j(τ)| ≤ e^{π √D / a} + 2114567 / 1000`. -/
+theorem norm_j_root_le {D : ℕ} [NeZero D] (f : posDef D) (hf : IsReducedForm f.val) :
+    ‖j (root f)‖ ≤ Real.exp (π * √D / f.val.a) + 2114567 / 1000 := by
+  have h3 := ModularGroup.three_le_four_mul_im_sq_of_mem_fd ((isReducedForm_iff_root_mem f).1 hf).1
+  have him : √3 / 2 ≤ (root f).im := by
+    nlinarith [Real.sq_sqrt (show (0 : ℝ) ≤ 3 by norm_num), Real.sqrt_nonneg 3, (root f).im_pos]
+  have ha : (0 : ℝ) < f.val.a := Int.cast_pos.2 (mem_posDef.1 f.property).2
+  refine (TauCeti.ModularForm.norm_j_le him).trans_eq ?_
+  rw [im_root]
+  congr 2
+  field_simp
+
+open scoped Real in
+/-- **The size of the coefficients of the Hilbert class polynomial.** Every coefficient of the
+Hilbert class polynomial of discriminant `-n` has absolute value at most
+`∏ (1 + e^{π √n / a} + 2114567 / 1000)`, the product over the primitive reduced forms
+`a x² + b x y + c y²` of discriminant `-n`. -/
+theorem norm_coeff_hilbertClassPolynomial_le (k : ℕ) :
+    ‖(hilbertClassPolynomial n).coeff k‖ ≤ ∏ f : primitiveReducedForms n,
+      (1 + (Real.exp (π * √n / (f : BinaryQuadraticForm ℤ).a) + 2114567 / 1000)) := by
+  refine Polynomial.norm_coeff_prod_X_sub_C_le _ _ (fun f _ ↦ ?_) k
+  rw [singularModulus_mk]
+  exact norm_j_root_le _ ((mem_primitiveReducedForms (NeZero.ne n)).1 f.property).2.1
 
 end TauCeti.BinaryQuadraticForm

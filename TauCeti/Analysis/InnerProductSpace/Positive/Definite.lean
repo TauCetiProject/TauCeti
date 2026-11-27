@@ -49,7 +49,14 @@ half-space.
   symmetric (`ContinuousLinearMap.isSymmetric_two_inv_smul_add_adjoint`), which has the same real
   quadratic form as `A` (`ContinuousLinearMap.re_inner_two_inv_smul_add_adjoint_apply`).
 * `ContinuousLinearMap.posDef_toMatrix_symmPart`: over the reals, the matrix of the symmetric part
-  of a positive-definite operator in an orthonormal basis is positive definite.
+  of a positive-definite operator in an orthonormal basis is positive definite, and
+  `ContinuousLinearMap.det_two_inv_smul_add_adjoint_pos`: so its determinant is positive.
+* `ContinuousLinearMap.norm_conj_symmPart_sub_id_le`: over the reals, after the change of
+  variables `e` with `e e† = (A + A†) / 2` and `‖e⁻¹‖ ≤ λ^{-1/2}`, the symmetric part of `a` becomes
+  `e⁻¹ ((a + a†) / 2) e⁻†`, within `‖a - A‖ / λ` of the identity;
+  `ContinuousLinearMap.norm_conj_symmPart_sub_id_le_of_norm_sub_le` is the form used with
+  `‖a - A‖ ≤ δ λ`, and `ContinuousLinearMap.continuous_conj_symmPart` gives the continuity of
+  `X ↦ N ((X + X†) / 2) N†`.
 * `TauCeti.exists_linearEquiv_inner_eq_of_posDef`: a symmetric positive-definite bilinear form on a
   finite-dimensional real vector space transfers along a linear equivalence to the inner product of
   any real inner product space of the same dimension.
@@ -270,5 +277,78 @@ theorem posDef_toMatrix_symmPart {V : Type*} [NormedAddCommGroup V] [InnerProduc
     _ = star x ⬝ᵥ (LinearMap.toMatrix b.toBasis b.toBasis (S : V →ₗ[ℝ] V) *ᵥ x) := by
         simp only [dotProduct, Matrix.mulVec, star_trivial,
           LinearMap.toMatrix_orthonormalBasis_apply, coe_coe, ← hS, hxv, real_inner_comm v]
+
+/-- The determinant of the symmetric part `(A + A†) / 2` of a positive definite endomorphism `A`
+of a finite-dimensional real inner product space is positive. -/
+theorem det_two_inv_smul_add_adjoint_pos {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] {A : V →L[ℝ] V}
+    (hA : ∀ ξ, ξ ≠ 0 → 0 < ⟪A ξ, ξ⟫_ℝ) : 0 < ((2⁻¹ : ℝ) • (A + A.adjoint)).det := by
+  rw [ContinuousLinearMap.det, ← LinearMap.det_toMatrix (stdOrthonormalBasis ℝ V).toBasis]
+  exact (posDef_toMatrix_symmPart hA _).det_pos
+
+section ConjSymmPart
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [CompleteSpace V]
+
+/-- After the change of variables `e` with `e e† = (A + A†) / 2` and `‖e⁻¹‖ ≤ λ^{-1/2}`, the
+symmetric part of `a` becomes `e⁻¹ ((a + a†) / 2) e⁻†`, which lies within `‖a - A‖ / λ` of the
+identity. -/
+theorem norm_conj_symmPart_sub_id_le (a : V →L[ℝ] V) {lam : ℝ} (hlam : 0 < lam)
+    {A : V →L[ℝ] V} (e : V ≃L[ℝ] V)
+    (hee : (e : V →L[ℝ] V) ∘L (e : V →L[ℝ] V).adjoint = (2⁻¹ : ℝ) • (A + A.adjoint))
+    (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) :
+    ‖(e.symm : V →L[ℝ] V) ∘L ((2⁻¹ : ℝ) • (a + a.adjoint)) ∘L (e.symm : V →L[ℝ] V).adjoint -
+      ContinuousLinearMap.id ℝ V‖ ≤ lam⁻¹ * ‖a - A‖ := by
+  set N : V →L[ℝ] V := (e.symm : V →L[ℝ] V)
+  set M : V →L[ℝ] V := (e : V →L[ℝ] V)
+  have hNM : N ∘L M = ContinuousLinearMap.id ℝ V := by ext x; simp [N, M]
+  -- `e⁻¹ ((A + A†) / 2) e⁻† = e⁻¹ e e† e⁻† = 1`.
+  have hid : N ∘L ((2⁻¹ : ℝ) • (A + A.adjoint)) ∘L N.adjoint = ContinuousLinearMap.id ℝ V := by
+    rw [← hee]
+    calc N ∘L (M ∘L M.adjoint) ∘L N.adjoint = (N ∘L M) ∘L (N ∘L M).adjoint := by
+          rw [ContinuousLinearMap.adjoint_comp]; simp only [ContinuousLinearMap.comp_assoc]
+      _ = _ := by rw [hNM, ContinuousLinearMap.adjoint_id, ContinuousLinearMap.id_comp]
+  set B := a - A
+  have hsub : N ∘L ((2⁻¹ : ℝ) • (a + a.adjoint)) ∘L N.adjoint - ContinuousLinearMap.id ℝ V =
+      N ∘L ((2⁻¹ : ℝ) • (B + B.adjoint)) ∘L N.adjoint := by
+    rw [← hid, ← ContinuousLinearMap.comp_sub, ← ContinuousLinearMap.sub_comp, ← smul_sub,
+      show a + a.adjoint - (A + A.adjoint) = B + B.adjoint by simp only [B, map_sub]; abel]
+  have hN : ‖N‖ ≤ (√lam)⁻¹ := N.opNorm_le_bound (by positivity) he
+  have hX : ‖(2⁻¹ : ℝ) • (B + B.adjoint)‖ ≤ ‖B‖ := by
+    rw [norm_smul, Real.norm_of_nonneg (by norm_num)]
+    calc 2⁻¹ * ‖B + B.adjoint‖ ≤ 2⁻¹ * (‖B‖ + ‖B‖) := by
+          gcongr
+          exact (norm_add_le _ _).trans_eq (by rw [LinearIsometryEquiv.norm_map])
+      _ = ‖B‖ := by ring
+  rw [hsub]
+  calc ‖N ∘L ((2⁻¹ : ℝ) • (B + B.adjoint)) ∘L N.adjoint‖
+      ≤ ‖N‖ * (‖(2⁻¹ : ℝ) • (B + B.adjoint)‖ * ‖N‖) := by
+        refine (N.opNorm_comp_le _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
+        exact (ContinuousLinearMap.opNorm_comp_le _ _).trans_eq
+          (by rw [LinearIsometryEquiv.norm_map])
+    _ ≤ (√lam)⁻¹ * (‖B‖ * (√lam)⁻¹) := by gcongr
+    _ = lam⁻¹ * ‖B‖ := by
+        rw [mul_comm ‖B‖, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt hlam.le]
+
+/-- In the setting of `ContinuousLinearMap.norm_conj_symmPart_sub_id_le`, if `‖a - A‖ ≤ δ λ`, then
+the transformed coefficient `e⁻¹ ((a + a†) / 2) e⁻†` lies within `δ` of the identity. -/
+theorem norm_conj_symmPart_sub_id_le_of_norm_sub_le {a A : V →L[ℝ] V} {lam δ : ℝ}
+    (hlam : 0 < lam) (e : V ≃L[ℝ] V)
+    (hee : (e : V →L[ℝ] V) ∘L (e : V →L[ℝ] V).adjoint = (2⁻¹ : ℝ) • (A + A.adjoint))
+    (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖) (h : ‖a - A‖ ≤ δ * lam) :
+    ‖(e.symm : V →L[ℝ] V) ∘L ((2⁻¹ : ℝ) • (a + a.adjoint)) ∘L (e.symm : V →L[ℝ] V).adjoint -
+      ContinuousLinearMap.id ℝ V‖ ≤ δ :=
+  (a.norm_conj_symmPart_sub_id_le hlam e hee he).trans
+    ((inv_mul_le_iff₀ hlam).2 (by rwa [mul_comm]))
+
+/-- The coefficient `N ((X + X†) / 2) N†` of an equation `tr (X D²u) = f` after a linear change of
+variables depends continuously on `X`. -/
+theorem continuous_conj_symmPart (N : V →L[ℝ] V) :
+    Continuous fun X : V →L[ℝ] V ↦ N ∘L ((2⁻¹ : ℝ) • (X + X.adjoint)) ∘L N.adjoint :=
+  continuous_const.clm_comp
+    (((continuous_id.add ContinuousLinearMap.adjoint.continuous).const_smul (2⁻¹ : ℝ)).clm_comp
+      continuous_const)
+
+end ConjSymmPart
 
 end ContinuousLinearMap
