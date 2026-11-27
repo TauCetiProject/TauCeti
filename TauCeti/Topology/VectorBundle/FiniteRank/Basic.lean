@@ -152,6 +152,20 @@ variable {A D C : FiniteRankBundleCore 𝕜 B}
     (f ≫ g).fiberMap x = (g.fiberMap x).comp (f.fiberMap x) :=
   CoordinateHom.fiberMap_comp g f x
 
+/-- The inverse of an isomorphism of cores undoes it on every fibre. -/
+@[simp] theorem _root_.CategoryTheory.Iso.fiberMap_hom_inv_id_apply (e : A ≅ D) (x : B)
+    (v : Fin A.rank → 𝕜) :
+    e.inv.fiberMap x (e.hom.fiberMap x v) = v := by
+  rw [← ContinuousLinearMap.comp_apply, ← fiberMap_comp, e.hom_inv_id, fiberMap_id,
+    ContinuousLinearMap.id_apply]
+
+/-- An isomorphism of cores undoes its inverse on every fibre. -/
+@[simp] theorem _root_.CategoryTheory.Iso.fiberMap_inv_hom_id_apply (e : A ≅ D) (x : B)
+    (v : Fin D.rank → 𝕜) :
+    e.hom.fiberMap x (e.inv.fiberMap x v) = v := by
+  rw [← ContinuousLinearMap.comp_apply, ← fiberMap_comp, e.inv_hom_id, fiberMap_id,
+    ContinuousLinearMap.id_apply]
+
 /-- Evaluating the fibre map of `eqToHom h` casts the coordinate index along the rank equality. -/
 @[simp] theorem fiberMap_eqToHom_apply (h : A = D) (x : B)
     (v : Fin A.rank → 𝕜) (i : Fin D.rank) :

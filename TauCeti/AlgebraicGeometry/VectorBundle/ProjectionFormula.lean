@@ -21,7 +21,7 @@ right adjoint to tensoring with its dual `E^∨`, and tensoring with `f^* E` is 
 tensoring with `f^* E^∨`, the dual of `f^* E`
 (`TauCeti.AlgebraicGeometry.FiniteLocallyFreeSheaf.pullbackDualIso`). Their left adjoints
 `T ↦ f^* (E^∨ ⊗ T)` and `T ↦ f^* E^∨ ⊗ f^* T` agree because pullback commutes with tensoring by
-the quasi-coherent sheaf `E^∨` (`AlgebraicGeometry.Scheme.Modules.pullbackTensorLeftIso`), so the
+the quasi-coherent sheaf `E^∨` (`CategoryTheory.Functor.Monoidal.commTensorLeft`), so the
 right adjoints agree too.
 
 For the closed subscheme `ι : Z ⟶ X` cut out by an ideal sheaf, the case `N = 𝒪_Z` identifies
@@ -64,7 +64,7 @@ def pushforwardTensorLeftIso :
   -- dual of `f^* E`.
   let e : tensorLeft (dual E).obj ⋙ Scheme.Modules.pullback f ≅
       Scheme.Modules.pullback f ⋙ tensorLeft (dual ((pullback f).obj E)).obj :=
-    Scheme.Modules.pullbackTensorLeftIso f (dual E).obj ≪≫
+    (Functor.Monoidal.commTensorLeft (Scheme.Modules.pullback f) (dual E).obj).symm ≪≫
       Functor.isoWhiskerLeft (Scheme.Modules.pullback f) ((curriedTensor X.Modules).mapIso d)
   ((tensorLeftAdjunction E.obj (dual E).obj).comp
       (Scheme.Modules.pullbackPushforwardAdjunction f)).rightAdjointUniq

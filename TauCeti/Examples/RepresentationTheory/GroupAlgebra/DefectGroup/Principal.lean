@@ -35,15 +35,15 @@ theorem isDefectGroup_blockOneS₃_iff_sylow {D : Subgroup S₃} :
   isDefectGroup_iff_sylow_of_augmentation_ne_zero blockOneS₃.property
     (by rw [augmentation_blockOneS₃]; exact one_ne_zero)
 
+/-- `|S₃|₂ = 2¹`: the exponent of `2` in `|S₃| = 3! = 6` is `1`, as `2 ∣ 6` while `2 ^ 2 ∤ 6`. -/
+theorem factorization_card_two : (Nat.card S₃).factorization 2 = 1 := by
+  rw [Nat.card_perm, Nat.card_fin, Nat.factorization_def _ Nat.prime_two]
+  exact multiplicity_eq_of_dvd_of_not_dvd (by decide) (by decide)
+
 /-- The subgroup `⟨τ⟩` has order `2 = |S₃|₂`. -/
 theorem card_zpowers_τ : Nat.card (Subgroup.zpowers τ) = 2 ^ (Nat.card S₃).factorization 2 := by
-  have hτ : Nat.card (Subgroup.zpowers τ) = 2 := by
-    rw [Nat.card_zpowers, orderOf_eq_prime (p := 2) (by decide) (by decide)]
-  -- `|S₃| = 3! = 6`, and `2 ∣ 6` while `2 ^ 2 ∤ 6`.
-  have hS₃ : (Nat.card S₃).factorization 2 = 1 := by
-    rw [Nat.card_perm, Nat.card_fin, Nat.factorization_def _ Nat.prime_two]
-    exact multiplicity_eq_of_dvd_of_not_dvd (by decide) (by decide)
-  rw [hτ, hS₃, pow_one]
+  rw [Nat.card_zpowers, orderOf_eq_prime (p := 2) (by decide) (by decide), factorization_card_two,
+    pow_one]
 
 /-- `⟨τ⟩` is a defect group of `1 + ρ + ρ²`: it is a Sylow `2`-subgroup. -/
 theorem isDefectGroup_blockOneS₃_zpowers_τ :

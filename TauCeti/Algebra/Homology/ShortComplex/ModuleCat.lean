@@ -19,8 +19,10 @@ For a short complex `X₁ ⟶ X₂ ⟶ X₃` of modules, its homology is the ker
 modulo the range of the first.  The projection of Mathlib's explicit left homology data
 `S.moduleCatLeftHomologyData` from the kernel onto the homology is surjective, and identifies two
 elements exactly when their difference is in the range of the first map
-(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  This file also records
-two finiteness consequences of that description:
+(`CategoryTheory.ShortComplex.moduleCatLeftHomologyData_π_hom_eq_iff`).  When the third term is
+torsion-free, a vector with a regular multiple in that range is a cycle
+(`CategoryTheory.ShortComplex.mem_ker_g_of_smul_mem_range_f`).  This file also records two
+finiteness consequences of that description:
 
 * over a ring for which the middle module is noetherian, the homology is finitely generated;
 * over a ring satisfying the strong rank condition, when the middle term is finite, the
@@ -56,6 +58,17 @@ theorem finite_homology {k : Type u} [Ring k] (S : ShortComplex (ModuleCat.{v} k
   have : Module.Finite k S.moduleCatLeftHomologyData.H :=
     inferInstanceAs (Module.Finite k (LinearMap.ker S.g.hom ⧸ LinearMap.range S.moduleCatToCycles))
   .equiv S.moduleCatHomologyIso.toLinearEquiv.symm
+
+/-- If the next term of a short complex of modules is torsion-free, a vector a regular multiple of
+which is a boundary is a cycle. -/
+theorem mem_ker_g_of_smul_mem_range_f {R : Type u} [Ring R] {S : ShortComplex (ModuleCat.{v} R)}
+    [Module.IsTorsionFree R S.X₃] {x : S.X₂} {r : R} (hr : IsRegular r)
+    (hx : r • x ∈ LinearMap.range S.f.hom) : x ∈ LinearMap.ker S.g.hom := by
+  obtain ⟨y, hy⟩ := hx
+  have : r • S.g.hom x = 0 := by
+    rw [← map_smul, ← hy]
+    exact S.moduleCat_zero_apply y
+  exact hr.smul_eq_zero_iff_right.1 this
 
 variable {k : Type u} [Ring k] [StrongRankCondition k]
 

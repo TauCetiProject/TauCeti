@@ -7,14 +7,21 @@ module
 
 public import TauCeti.RingTheory.FormalGroup.Araki
 import TauCeti.RingTheory.FormalGroup.Hazewinkel.NSMul
+import TauCeti.RingTheory.FormalGroup.Hazewinkel.LeadingDifference
 import Mathlib.Algebra.CharP.Quotient
 
 /-!
-# Araki and Hazewinkel coefficients in characteristic `p`
+# Araki coefficients of Hazewinkel's law
 
 The Araki coefficients of Hazewinkel's integral formal group law reduce to its
 Hazewinkel parameters modulo `p`. This follows by comparing the recursive Araki
 expansion with Ravenel's modulo-`p` formula for the Hazewinkel `p`-series.
+
+Over every commutative ring the Araki coefficients are triangular in the parameters: if `v` and
+`w` agree below `n`, then `aₙ(F_v) - aₙ(F_w) = (1 - p ^ (p ^ n - 1)) (vₙ - wₙ)`
+(`TauCeti.arakiCoeff_hazewinkelIntegralFormalGroup_sub`). Over a `ℚ`-algebra this follows from
+Hazewinkel's and Araki's recursions for the logarithm; it then holds over every commutative ring
+because it holds for the universal pair of families over a polynomial ring over `ℤ`.
 -/
 
 public section
@@ -79,5 +86,73 @@ theorem natCast_dvd_arakiCoeff_hazewinkelIntegralFormalGroup_sub (v : ℕ+ → R
     FormalGroup.map_arakiCoeff]
   simp only [map_hazewinkelIntegralFormalGroup]
   exact arakiCoeff_hazewinkelIntegralFormalGroup_of_charP _ n
+
+/-- The triangularity formula over the integers: for the universal pair of families over
+`ℤ[xᵢ, yᵢ]` that agree below `n`. -/
+private theorem arakiCoeff_hazewinkelIntegralFormalGroup_sub_universal (n : ℕ+) :
+    let v : ℕ+ → MvPolynomial (ℕ+ ⊕ ℕ+) ℤ := fun i ↦ .X (.inl i)
+    let w : ℕ+ → MvPolynomial (ℕ+ ⊕ ℕ+) ℤ := fun i ↦ if i < n then .X (.inl i) else .X (.inr i)
+    (hazewinkelIntegralFormalGroup p v).arakiCoeff hp.out n -
+        (hazewinkelIntegralFormalGroup p w).arakiCoeff hp.out n =
+      (1 - (p : MvPolynomial (ℕ+ ⊕ ℕ+) ℤ) ^ (p ^ (n : ℕ) - 1)) * (v n - w n) := by
+  intro v w
+  -- embed `ℤ[xᵢ, yᵢ]` into `ℚ[xᵢ, yᵢ]`, where the laws are given by Hazewinkel's logarithms
+  set ι := MvPolynomial.map (σ := ℕ+ ⊕ ℕ+) (Int.castRingHom ℚ)
+  have hι : Function.Injective ι := MvPolynomial.map_injective _ Int.cast_injective
+  have hvw : ∀ i < n, ι (v i) = ι (w i) := fun i hi ↦ by simp [v, w, hi]
+  have hlog (u : ℕ+ → MvPolynomial (ℕ+ ⊕ ℕ+) ℤ) (k : ℕ) :
+      coeff (p ^ k) ((hazewinkelIntegralFormalGroup p u).map ι).log =
+        hazewinkelLogCoeff p (ι ∘ u) k := by
+    rw [map_hazewinkelIntegralFormalGroup, hazewinkelIntegralFormalGroup_eq_hazewinkelFormalGroup,
+      log_hazewinkelFormalGroup, coeff_hazewinkelLog_pow _ hp.out.one_lt]
+  -- Araki's coefficients are triangular in the logarithm ...
+  have ha := FormalGroup.arakiCoeff_sub_arakiCoeff _ hp.out
+    ((isPTypical_hazewinkelIntegralFormalGroup p v).map ι) _
+    ((isPTypical_hazewinkelIntegralFormalGroup p w).map ι) (n := n) fun k hk ↦ by
+      rw [hlog, hlog]
+      exact hazewinkelLogCoeff_congr (N := k) (fun i hi ↦ hvw i (by rw [← PNat.coe_lt_coe]; omega))
+        le_rfl
+  rw [hlog, hlog] at ha
+  -- ... and the logarithm is triangular in the parameters, with leading coefficient `1 / p`
+  have hl := hazewinkelLogCoeff_sub_of_forall_lt (p := p) (v := ι ∘ v) (w := ι ∘ w) n hvw
+  have hpinv (x : MvPolynomial (ℕ+ ⊕ ℕ+) ℚ) :
+      (p : MvPolynomial (ℕ+ ⊕ ℕ+) ℚ) * ((p : ℚ)⁻¹ • x) = x := by
+    rw [← nsmul_eq_mul, ← Nat.cast_smul_eq_nsmul ℚ,
+      smul_inv_smul₀ (Nat.cast_ne_zero.2 hp.out.ne_zero)]
+  have hpow := pow_sub_one_mul (pow_ne_zero (n : ℕ) hp.out.ne_zero) (p : MvPolynomial (ℕ+ ⊕ ℕ+) ℚ)
+  apply hι
+  rw [map_sub, FormalGroup.map_arakiCoeff, FormalGroup.map_arakiCoeff, ha, hl]
+  simp only [map_mul, map_sub, map_one, map_pow, map_natCast, Function.comp_apply]
+  linear_combination (1 - (p : MvPolynomial (ℕ+ ⊕ ℕ+) ℚ) ^ (p ^ (n : ℕ) - 1)) *
+      hpinv (ι (v n) - ι (w n)) + (p : ℚ)⁻¹ • (ι (v n) - ι (w n)) * hpow
+
+/-- **Araki's generators are triangular in Hazewinkel's.** If `v` and `w` agree below `n`, then
+`aₙ(F_v) - aₙ(F_w) = (1 - p ^ (p ^ n - 1)) (vₙ - wₙ)`. For `n = 1` this says
+`a₁ = (1 - p ^ (p - 1)) v₁`. -/
+theorem arakiCoeff_hazewinkelIntegralFormalGroup_sub {v w : ℕ+ → R} {n : ℕ+}
+    (h : ∀ i < n, v i = w i) :
+    (hazewinkelIntegralFormalGroup p v).arakiCoeff hp.out n -
+        (hazewinkelIntegralFormalGroup p w).arakiCoeff hp.out n =
+      (1 - (p : R) ^ (p ^ (n : ℕ) - 1)) * (v n - w n) := by
+  -- specialize the universal pair of families along `xᵢ ↦ vᵢ`, `yᵢ ↦ wᵢ`
+  set g := MvPolynomial.eval₂Hom (Int.castRingHom R) (Sum.elim v w)
+  have e := congrArg g (arakiCoeff_hazewinkelIntegralFormalGroup_sub_universal (p := p) n)
+  have hv : (g ∘ fun i ↦ MvPolynomial.X (.inl i)) = v := funext fun i ↦ by simp [g]
+  have hw : (g ∘ fun i ↦ if i < n then MvPolynomial.X (.inl i) else MvPolynomial.X (.inr i)) =
+      w := funext fun i ↦ by by_cases hi : i < n <;> simp [g, hi, h]
+  simp only [map_sub, map_mul, map_one, map_pow, map_natCast, FormalGroup.map_arakiCoeff,
+    map_hazewinkelIntegralFormalGroup, hv, hw] at e
+  simpa [g] using e
+
+/-- The Araki coefficient `aₖ(F_v)` only depends on `v₁, …, vₖ`. -/
+theorem arakiCoeff_hazewinkelIntegralFormalGroup_congr {v w : ℕ+ → R} {k : ℕ}
+    (h : ∀ i : ℕ+, (i : ℕ) ≤ k → v i = w i) :
+    (hazewinkelIntegralFormalGroup p v).arakiCoeff hp.out k =
+      (hazewinkelIntegralFormalGroup p w).arakiCoeff hp.out k := by
+  rcases k with _ | k
+  · simp
+  have e := arakiCoeff_hazewinkelIntegralFormalGroup_sub (p := p) (n := k.succPNat)
+    fun i hi ↦ h i (by rw [← PNat.coe_lt_coe, Nat.succPNat_coe] at hi; omega)
+  rwa [h _ (by simp), sub_self, mul_zero, sub_eq_zero, Nat.succPNat_coe] at e
 
 end TauCeti

@@ -12,25 +12,41 @@ public import TauCeti.Geometry.Symplectic.Flux.Endpoint
 public import TauCeti.Geometry.Symplectic.Flux.Hamiltonian
 public import TauCeti.Geometry.Symplectic.Flux.Hamiltonian.Velocity
 public import TauCeti.Geometry.Symplectic.Flux.OrderedFlow
+public import TauCeti.Geometry.Symplectic.Flux.PathClass
 public import TauCeti.Geometry.Symplectic.Flux.Reparam
 
 import TauCeti.Analysis.Calculus.IntervalIntegral.ParametricPrimitive
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 
 /-!
-# Symplectic isotopies of zero flux end at Hamiltonian diffeomorphisms
+# Symplectic isotopies of zero flux are homotopic to Hamiltonian isotopies
 
-Let `σ` be a symplectic form on a compact connected boundaryless finite-dimensional manifold `M`.
-A Hamiltonian diffeotopy has zero flux (`TauCeti.Diffeotopy.IsHamiltonian.flux_eq_zero`), so the
-Hamiltonian group `Ham(M, σ)` (`TauCeti.SmoothForm.hamiltonianGroup`) lies in the kernel of the
-endpoint flux `G_σ → H¹_dR(M) / Γ_σ` (`TauCeti.endpointFlux`) on the group `G_σ` of final maps of
-diffeotopies preserving `σ`. This file proves the converse: if a diffeotopy `φ_t` all of whose maps
-preserve `σ` has zero flux, then `φ₁` is the final map of a Hamiltonian diffeotopy
-(`TauCeti.Diffeotopy.final_mem_hamiltonianGroup_of_flux_eq_zero`). Hence the kernel of the endpoint
-flux is exactly `Ham(M, σ)` (`TauCeti.ker_endpointFlux`). Since the endpoint flux is onto
+Let `σ` be a symplectic form on a compact connected boundaryless finite-dimensional manifold `M`,
+and let `G_σ` be the group of diffeomorphisms preserving it. A Hamiltonian diffeotopy has zero flux
+(`TauCeti.Diffeotopy.IsHamiltonian.flux_eq_zero`), and the flux is invariant under homotopy
+relative to both time ends (`TauCeti.Diffeotopy.Homotopic.flux_eq`). This file proves the converse:
+a diffeotopy `φ_t` all of whose maps preserve `σ` has zero flux exactly when it is homotopic,
+relative to both time ends and through diffeomorphisms preserving `σ`, to a Hamiltonian diffeotopy
+(`TauCeti.Diffeotopy.flux_eq_zero_iff_exists_isHamiltonian_homotopicWith`). On the group of path
+classes of symplectic isotopies (`TauCeti.Diffeotopy.PathClass G_σ`), this says that the kernel of
+the flux homomorphism (`TauCeti.pathClassFlux`) consists exactly of the classes of Hamiltonian
+diffeotopies (`TauCeti.mem_ker_pathClassFlux_iff`). The statement concerns path classes: the flux
+of a translation loop of the two-torus is nonzero, so it is not homotopic to a Hamiltonian
+diffeotopy, although it ends at the identity
+(`TauCeti.not_homotopic_torusTranslationDiffeotopy_of_isHamiltonian`).
+
+On final maps, a diffeotopy preserving `σ` with zero flux ends at a Hamiltonian diffeomorphism
+(`TauCeti.Diffeotopy.final_mem_hamiltonianGroup_of_flux_eq_zero`). So the Hamiltonian group
+`Ham(M, σ)` (`TauCeti.SmoothForm.hamiltonianGroup`) is the kernel of the endpoint flux
+`G_σ → H¹_dR(M) / Γ_σ` (`TauCeti.endpointFlux`) on the group of final maps of diffeotopies
+preserving `σ` (`TauCeti.ker_endpointFlux`). Since the endpoint flux is onto
 (`TauCeti.endpointFlux_surjective`), this gives the exact sequence
 
-`1 → Ham(M, σ) → G_σ → H¹_dR(M) / Γ_σ → 0`.
+`1 → Ham(M, σ) → G_σ → H¹_dR(M) / Γ_σ → 0`,
+
+that is, an isomorphism `G_σ ⧸ Ham(M, σ) ≃* H¹_dR(M) / Γ_σ`
+(`TauCeti.quotientHamiltonianGroupEquiv`). In particular `Ham(M, σ) = G_σ` when
+`H¹_dR(M) = 0` (`TauCeti.hamiltonianGroup_eq_isotopyStabilizer`).
 
 The proof corrects `φ_t` by symplectic flows. Its velocity fields `X_t` are symplectic, and their
 classes `[ι_(X_t) σ]` are written in a basis `[ι_(Y i) σ]` of `H¹_dR(M)`, given by complete
@@ -39,27 +55,43 @@ symplectic vector fields `Y i`, as `∑ i, a i t [ι_(Y i) σ]`. The coordinates
 combinations of line integrals of `ι_(X_t) σ` along finitely many smooth loops
 (`TauCeti.deRhamCohomology.exists_apply_mk_eq_sum_pathIntegral`), and these integrals are smooth
 in `t` (`TauCeti.contDiff_pathIntegral_interior_eulerianField`). To read velocity fields at all real
-times, `φ_t` is first reparametrized to be stationary near both time ends, which changes neither
-its final map nor its flux. With `A i t = ∫₀ᵗ a i`, the ordered flow
-`ψ_t = ψ^(Y 0)_(A 0 t) ∘ ⋯ ∘ ψ^(Y (k-1))_(A (k-1) t)` makes `ψ_t⁻¹ ∘ φ_t` a Hamiltonian diffeotopy
+times, `φ_t` is first reparametrized to be stationary near both time ends, which is a homotopy
+through its own time slices (`TauCeti.Diffeotopy.reparam_homotopicWith`). With `A i t = ∫₀ᵗ a i`,
+the ordered flow `ψ_t = ψ^(Y 0)_(A 0 t) ∘ ⋯ ∘ ψ^(Y (k-1))_(A (k-1) t)` makes `ψ_t⁻¹ ∘ φ_t` a
+Hamiltonian diffeotopy
 (`Diffeotopy.exists_isHamiltonianVectorField_velocity_trans_symm_orderedGlobalFlowDiffeotopy`). A
 Hamiltonian diffeotopy has zero flux, so the flux `∑ i, A i 1 [ι_(Y i) σ]` of `ψ` equals that of
-`φ`, which vanishes. Then every `A i 1` vanishes, `ψ₁` is the identity, and
-`φ₁ = (ψ_t⁻¹ ∘ φ_t)₁` is Hamiltonian.
+`φ`, which vanishes. Then every `A i 1` vanishes, and scaling the times `A i t` by `1 - s` contracts
+`ψ_t` to the constant diffeotopy through symplectic ordered flows
+(`TauCeti.Diffeotopy.homotopicWith_orderedGlobalFlowDiffeotopy_refl`). Hence
+`φ_t = ψ_t ∘ (ψ_t⁻¹ ∘ φ_t)` is homotopic through `G_σ` to the Hamiltonian diffeotopy
+`ψ_t⁻¹ ∘ φ_t`.
 
 ## Main results
 
 * `TauCeti.exists_contDiff_isHamiltonianVectorField_eulerianField_sub_sum`: the velocity fields of
   a smooth family of symplectomorphisms differ from `∑ i, a i t Y i` by Hamiltonian vector fields,
   with coordinates `a i` smooth in time.
+* `TauCeti.Diffeotopy.exists_isHamiltonian_homotopicWith_of_flux_eq_zero`,
+  `TauCeti.Diffeotopy.flux_eq_zero_iff_exists_isHamiltonian_homotopicWith`: a symplectic isotopy
+  has zero flux exactly when it is homotopic, relative to both time ends and through
+  symplectomorphisms, to a Hamiltonian isotopy.
+* `TauCeti.mem_ker_pathClassFlux_iff`: the kernel of the flux on path classes consists of the
+  classes of Hamiltonian isotopies.
 * `TauCeti.Diffeotopy.final_mem_hamiltonianGroup_of_flux_eq_zero`: a diffeotopy preserving `σ` at
   every time with zero flux ends at a Hamiltonian diffeomorphism.
 * `TauCeti.ker_endpointFlux`: the kernel of the endpoint flux is the Hamiltonian group.
+* `TauCeti.quotientHamiltonianGroupEquiv`: the endpoint flux identifies `G_σ ⧸ Ham(M, σ)` with
+  `H¹_dR(M) / Γ_σ`.
+* `TauCeti.hamiltonianGroup_eq_isotopyStabilizer`: if `H¹_dR(M) = 0`, then `Ham(M, σ) = G_σ`.
 
 ## References
 
 * Dusa McDuff and Dietmar Salamon, *Introduction to Symplectic Topology*, 3rd ed., Oxford
   University Press, 2017, Section 10.2 (Theorem 10.2.5 and its proof).
+* Augustin Banyaga, *Sur la structure du groupe des difféomorphismes qui préservent une forme
+  symplectique*, Commentarii Mathematici Helvetici 53 (1978), 174–227, Propositions II.3.1 and
+  II.3.3.
 * Augustin Banyaga, *The Structure of Classical Diffeomorphism Groups*, Kluwer, 1997,
   Chapter 3.
 -/
@@ -157,24 +189,26 @@ variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 namespace Diffeotopy
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
-/-- A diffeotopy preserving `σ` at every time is homotopic, relative to both time ends, to a
-diffeotopy whose motion on `[0, 1]` is the restriction of a smooth family `φ_u`, `u ∈ ℝ`, of
-diffeomorphisms preserving `σ`. This is `TauCeti.Diffeotopy.exists_homotopic_timeSlice_eq_comp`,
-whose time slices `φ_{c u}` are time slices of `Φ` and so preserve `σ`. -/
-private theorem exists_homotopic_apply_eq {σ : SmoothForm I M ℝ 2} {Φ : Diffeotopy I ∞ M}
+/-- A diffeotopy preserving `σ` at every time is homotopic through diffeomorphisms preserving `σ`,
+relative to both time ends, to a diffeotopy whose motion on `[0, 1]` is the restriction of a smooth
+family `φ_u`, `u ∈ ℝ`, of diffeomorphisms preserving `σ`. This is the reparametrization
+`TauCeti.Diffeotopy.exists_reparam_timeSlice_eq_comp`, whose time slices `φ_{c u}` are time slices
+of `Φ` and so preserve `σ`. -/
+private theorem exists_homotopicWith_apply_eq {σ : SmoothForm I M ℝ 2} {Φ : Diffeotopy I ∞ M}
     (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ) :
-    ∃ (Φ' : Diffeotopy I ∞ M) (φ : ℝ → M ≃ M), Φ'.Homotopic Φ ∧
+    ∃ (Φ' : Diffeotopy I ∞ M) (φ : ℝ → M ≃ M), HomotopicWith (diffeomorphStabilizer σ) Φ' Φ ∧
       (∀ t, Φ'.timeSlice t ∈ diffeomorphStabilizer σ) ∧
       (∀ (s : unitInterval) (y : M), φ s y = Φ' (s, y)) ∧
       ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ φ p.1 p.2) ∧
       ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ (φ p.1).symm p.2) ∧
       ∀ u, mpullback I I (φ u) (σ : RoughForm I M ℝ 2) = σ := by
-  obtain ⟨Φ', c, hhom, -, hslice, hφ, hφ'⟩ := Φ.exists_homotopic_timeSlice_eq_comp le_rfl
+  obtain ⟨ρ, c, hρ₀, hρ₁, -, hslice, hφ, hφ'⟩ := Φ.exists_reparam_timeSlice_eq_comp le_rfl
   have hφ_coe (u : ℝ) : ⇑(Φ.timeSlice (c u)).toEquiv = Φ.timeSlice (c u) :=
     Diffeomorph.coe_toEquiv _
   have hφ_symm (u : ℝ) (y : M) : (Φ.timeSlice (c u)).toEquiv.symm y = Φ.symm (c u, y) := by
     rw [← symm_timeSlice_apply, ← Diffeomorph.coe_toEquiv, Diffeomorph.symm_toEquiv]
-  refine ⟨Φ', fun u ↦ (Φ.timeSlice (c u)).toEquiv, hhom, fun t ↦ hslice t ▸ hΦ _,
+  refine ⟨Φ.reparam ρ, fun u ↦ (Φ.timeSlice (c u)).toEquiv,
+    reparam_homotopicWith (mem_sliceSubgroup.2 hΦ) hρ₀ hρ₁, fun t ↦ hslice t ▸ hΦ _,
     fun s y ↦ ?_, hφ.congr fun p ↦ ?_, hφ'.congr fun p ↦ hφ_symm p.1 p.2, fun u ↦ ?_⟩
   · rw [hφ_coe, ← hslice, timeSlice_apply]
   · rw [hφ_coe, timeSlice_apply]
@@ -183,18 +217,26 @@ private theorem exists_homotopic_apply_eq {σ : SmoothForm I M ℝ 2} {Φ : Diff
 
 variable [CompactSpace M] [PreconnectedSpace M]
 
-/-- **Symplectic isotopies of zero flux end at Hamiltonian diffeomorphisms.** On a compact
-connected boundaryless manifold with a symplectic form `σ`, if every map `φ_t` of a diffeotopy
-preserves `σ` and its flux vanishes, then `φ₁` lies in the Hamiltonian group `Ham(M, σ)`. -/
-theorem final_mem_hamiltonianGroup_of_flux_eq_zero (σ : closedForms I M 2)
-    (hσ : SmoothTwoForm.IsNondegenerate σ.val) {Φ : Diffeotopy I ∞ M}
-    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ.val)
-    (h : Φ.flux σ (final_mem_diffeomorphStabilizer hΦ) = 0) :
-    Φ.final ∈ hamiltonianGroup σ.val := by
+/-- **Correcting a symplectic isotopy by a contractible ordered flow.** On a compact connected
+boundaryless manifold with a symplectic form `σ`, let `φ_t` be a diffeotopy preserving `σ` at every
+time and with zero flux, whose motion on `[0, 1]` is the restriction of a smooth family `φ_u`,
+`u ∈ ℝ`, of diffeomorphisms preserving `σ`. Then there is a diffeotopy `ψ_t`, contractible to the
+constant diffeotopy through diffeomorphisms preserving `σ` relative to both time ends, such that the
+corrected isotopy `ψ_t⁻¹ ∘ φ_t` is Hamiltonian. Here `ψ_t` is the ordered flow of complete
+symplectic fields `Y i`, whose classes form a basis of `H¹_dR(M)`, along the integrals `A i t` of
+the cohomology coordinates of the velocity fields of `φ_t`; zero flux makes every total time
+`A i 1` vanish. -/
+private theorem exists_homotopicWith_refl_isHamiltonian_trans_symm (σ : closedForms I M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) {Φ : Diffeotopy I ∞ M} {φ : ℝ → M ≃ M}
+    (hΦσ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ.val)
+    (hφΦ : ∀ (s : unitInterval) (y : M), φ s y = Φ (s, y))
+    (hφ : ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ φ p.1 p.2))
+    (hφ' : ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ (φ p.1).symm p.2))
+    (hφσ : ∀ u, mpullback I I (φ u) (σ.val : RoughForm I M ℝ 2) = σ.val)
+    (h : Φ.flux σ (final_mem_diffeomorphStabilizer hΦσ) = 0) :
+    ∃ Ψ : Diffeotopy I ∞ M, HomotopicWith (diffeomorphStabilizer σ.val) Ψ (refl I ∞ M) ∧
+      (Φ.trans Ψ.symm).IsHamiltonian σ.val := by
   have hσc : σ.val.IsClosed := (isClosed_def _).2 ((mem_closedForms I σ.val).1 σ.property)
-  -- Replace `Φ` by a homotopic diffeotopy `Φ'`, read at all real times as the family `φ`.
-  obtain ⟨Φ', φ, hhom, hΦ'σ, hφΦ', hφ, hφ', hφσ⟩ := exists_homotopic_apply_eq hΦ
-  have hΦ'flux := (hhom.flux_eq σ (final_mem_diffeomorphStabilizer hΦ'σ) _).trans h
   -- A basis `[ι_(Y i) σ]` of `H¹_dR(M)` by complete symplectic vector fields `Y i`, and the
   -- smooth coordinates `a i` of the velocity classes of `φ` in it.
   let b := Module.finBasis ℝ (deRhamCohomology I M 1)
@@ -215,32 +257,77 @@ theorem final_mem_hamiltonianGroup_of_flux_eq_zero (σ : closedForms I M 2)
   set Ψ := orderedGlobalFlowDiffeotopy le_top (fun i ↦ Yv i) (fun i ↦ (Yv i).contMDiff) hYc A hA
     hA₀
   have hΨσ := timeSlice_orderedGlobalFlowDiffeotopy_mem_diffeomorphStabilizer hσc hYmem hYc A hA hA₀
-  -- The velocity fields of `φ'_t` differ from `∑ i, A i'(t) Y i` by Hamiltonian vector fields, so
-  -- the corrected isotopy `ψ_t⁻¹ ∘ φ'_t` is Hamiltonian.
-  have hHσ : ∀ t, (Φ'.trans Ψ.symm).timeSlice t ∈ diffeomorphStabilizer σ.val :=
-    timeSlice_trans_mem_diffeomorphStabilizer hΦ'σ (timeSlice_symm_mem_diffeomorphStabilizer hΨσ)
-  have hcorr : (Φ'.trans Ψ.symm).IsHamiltonian σ.val := by
+  -- The velocity fields of `φ_t` differ from `∑ i, A i'(t) Y i` by Hamiltonian vector fields, so
+  -- the corrected isotopy `ψ_t⁻¹ ∘ φ_t` is Hamiltonian.
+  have hHσ : ∀ t, (Φ.trans Ψ.symm).timeSlice t ∈ diffeomorphStabilizer σ.val :=
+    timeSlice_trans_mem_diffeomorphStabilizer hΦσ (timeSlice_symm_mem_diffeomorphStabilizer hΨσ)
+  have hcorr : (Φ.trans Ψ.symm).IsHamiltonian σ.val := by
     refine isHamiltonian_iff_forall_isHamiltonianVectorField_velocity.2 ⟨hHσ, fun t ↦ ?_⟩
     obtain ⟨f, hf, hfX⟩ := hHam t
-    have hvel (x : M) : Φ'.velocity t x = eulerianField I φ t x :=
-      Φ'.velocity_eq_eulerianField (by simp) hφΦ'
+    have hvel (x : M) : Φ.velocity t x = eulerianField I φ t x :=
+      Φ.velocity_eq_eulerianField (by simp) hφΦ
         ((hφ.comp (contMDiff_id.prodMk contMDiff_const)).mdifferentiableAt (by simp))
     obtain ⟨g, hg, hgX⟩ :=
       exists_isHamiltonianVectorField_velocity_trans_symm_orderedGlobalFlowDiffeotopy hσc hYmem
-        hYc A hA hA₀ Φ' t hf (by simpa only [hvel, hderiv] using hfX)
+        hYc A hA hA₀ Φ t hf (by simpa only [hvel, hderiv] using hfX)
     exact ⟨g, hg.mdifferentiable (by simp), hgX⟩
-  -- So `ψ` has the zero flux of `φ'`, and it is a loop.
+  -- So `ψ` has the zero flux of `φ`, every total time `A i 1` vanishes, and `ψ` contracts.
   have hΨflux : Ψ.flux σ (final_mem_diffeomorphStabilizer hΨσ) = 0 := by
     have h0 := hcorr.flux_eq_zero (final_mem_diffeomorphStabilizer hHσ)
-    rwa [flux_trans Φ' Ψ.symm σ (final_mem_diffeomorphStabilizer hΦ'σ)
+    rwa [flux_trans Φ Ψ.symm σ (final_mem_diffeomorphStabilizer hΦσ)
       (final_mem_diffeomorphStabilizer (timeSlice_symm_mem_diffeomorphStabilizer hΨσ)),
-      flux_symm Ψ σ (final_mem_diffeomorphStabilizer hΨσ), hΦ'flux, add_zero, neg_eq_zero] at h0
-  have hΨfinal : Ψ.final = Diffeomorph.refl I M ∞ :=
-    final_orderedGlobalFlowDiffeotopy_eq_refl_of_flux_eq_zero σ hYmem hYc A hA hA₀
-      (by simpa only [Yv, Subtype.coe_eta, hY] using b.linearIndependent) _ hΨflux
-  refine mem_hamiltonianGroup.2 ⟨Φ'.trans Ψ.symm, hcorr, ?_⟩
-  rw [final_trans, final_symm, hΨfinal, hhom.final_eq, Diffeomorph.symm_refl,
-    Diffeomorph.trans_refl]
+      flux_symm Ψ σ (final_mem_diffeomorphStabilizer hΨσ), h, add_zero, neg_eq_zero] at h0
+  exact ⟨Ψ, homotopicWith_orderedGlobalFlowDiffeotopy_refl hσc hYmem hYc A hA hA₀
+    (apply_one_eq_zero_of_flux_orderedGlobalFlowDiffeotopy_eq_zero σ hYmem hYc A hA hA₀
+      (by simpa only [Yv, Subtype.coe_eta, hY] using b.linearIndependent) _ hΨflux), hcorr⟩
+
+/-- **Symplectic isotopies of zero flux are homotopic to Hamiltonian isotopies.** On a compact
+connected boundaryless manifold with a symplectic form `σ`, if every map `φ_t` of a diffeotopy
+preserves `σ` and its flux vanishes, then `φ_t` is homotopic, relative to both time ends and through
+diffeomorphisms preserving `σ`, to a Hamiltonian diffeotopy. -/
+theorem exists_isHamiltonian_homotopicWith_of_flux_eq_zero (σ : closedForms I M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) {Φ : Diffeotopy I ∞ M}
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ.val)
+    (h : Φ.flux σ (final_mem_diffeomorphStabilizer hΦ) = 0) :
+    ∃ Ψ : Diffeotopy I ∞ M, Ψ.IsHamiltonian σ.val ∧
+      HomotopicWith (diffeomorphStabilizer σ.val) Φ Ψ := by
+  -- Replace `Φ` by a diffeotopy `Φ'`, homotopic to it through `G_σ` and read at all real times as
+  -- the family `φ`, and correct `Φ'` by a contractible ordered flow `Ψ`.
+  obtain ⟨Φ', φ, hhom, hΦ'σ, hφΦ', hφ, hφ', hφσ⟩ := exists_homotopicWith_apply_eq hΦ
+  obtain ⟨Ψ, hΨ, hcorr⟩ := exists_homotopicWith_refl_isHamiltonian_trans_symm σ hσ hΦ'σ hφΦ' hφ
+    hφ' hφσ ((hhom.homotopic.flux_eq σ (final_mem_diffeomorphStabilizer hΦ'σ) _).trans h)
+  -- Then `φ'_t = ψ_t ∘ (ψ_t⁻¹ ∘ φ'_t)` is homotopic through `G_σ` to `ψ_t⁻¹ ∘ φ'_t`.
+  have key := hΨ.mul_congr
+    (HomotopicWith.refl (mem_sliceSubgroup.2 hcorr.timeSlice_mem_diffeomorphStabilizer))
+  rw [← one_def, one_mul, mul_def, trans_assoc, symm_trans_self, trans_refl] at key
+  exact ⟨_, hcorr, hhom.symm.trans key le_rfl⟩
+
+/-- **Flux vanishes exactly on the path classes of Hamiltonian isotopies.** On a compact connected
+boundaryless manifold with a symplectic form `σ`, a diffeotopy all of whose maps `φ_t` preserve `σ`
+has zero flux exactly when it is homotopic, relative to both time ends and through diffeomorphisms
+preserving `σ`, to a Hamiltonian diffeotopy. -/
+theorem flux_eq_zero_iff_exists_isHamiltonian_homotopicWith (σ : closedForms I M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) {Φ : Diffeotopy I ∞ M}
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ.val) :
+    Φ.flux σ (final_mem_diffeomorphStabilizer hΦ) = 0 ↔
+      ∃ Ψ : Diffeotopy I ∞ M, Ψ.IsHamiltonian σ.val ∧
+        HomotopicWith (diffeomorphStabilizer σ.val) Φ Ψ := by
+  refine ⟨exists_isHamiltonian_homotopicWith_of_flux_eq_zero σ hσ hΦ, ?_⟩
+  rintro ⟨Ψ, hΨ, hhom⟩
+  rw [hhom.homotopic.flux_eq σ _
+    (final_mem_diffeomorphStabilizer hΨ.timeSlice_mem_diffeomorphStabilizer)]
+  exact hΨ.flux_eq_zero _
+
+/-- **Symplectic isotopies of zero flux end at Hamiltonian diffeomorphisms.** On a compact
+connected boundaryless manifold with a symplectic form `σ`, if every map `φ_t` of a diffeotopy
+preserves `σ` and its flux vanishes, then `φ₁` lies in the Hamiltonian group `Ham(M, σ)`. -/
+theorem final_mem_hamiltonianGroup_of_flux_eq_zero (σ : closedForms I M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) {Φ : Diffeotopy I ∞ M}
+    (hΦ : ∀ t, Φ.timeSlice t ∈ diffeomorphStabilizer σ.val)
+    (h : Φ.flux σ (final_mem_diffeomorphStabilizer hΦ) = 0) :
+    Φ.final ∈ hamiltonianGroup σ.val := by
+  obtain ⟨Ψ, hΨ, hhom⟩ := exists_isHamiltonian_homotopicWith_of_flux_eq_zero σ hσ hΦ h
+  exact mem_hamiltonianGroup.2 ⟨Ψ, hΨ, hhom.final_eq.symm⟩
 
 end Diffeotopy
 
@@ -256,6 +343,61 @@ theorem ker_endpointFlux (σ : closedForms I M 2) (hσ : SmoothTwoForm.IsNondege
   obtain ⟨Φ, hΦ, hfin, h0⟩ := mem_ker_endpointFlux_iff.1 hφ
   exact Subgroup.mem_subgroupOf.2
     (hfin ▸ Diffeotopy.final_mem_hamiltonianGroup_of_flux_eq_zero σ hσ hΦ h0)
+
+/-- **The kernel of the flux on path classes.** On a compact connected boundaryless manifold with a
+symplectic form `σ`, a path class of symplectic isotopies has trivial flux exactly when it is the
+class of a Hamiltonian diffeotopy. -/
+theorem mem_ker_pathClassFlux_iff (σ : closedForms I M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val)
+    {γ : Diffeotopy.PathClass (diffeomorphStabilizer σ.val) le_rfl} :
+    γ ∈ (pathClassFlux σ).ker ↔ ∃ Ψ : Diffeotopy.sliceSubgroup (diffeomorphStabilizer σ.val),
+      (Ψ : Diffeotopy I ∞ M).IsHamiltonian σ.val ∧ Diffeotopy.PathClass.mk _ le_rfl Ψ = γ := by
+  obtain ⟨Φ, rfl⟩ := Diffeotopy.PathClass.mk_surjective γ
+  rw [MonoidHom.mem_ker, pathClassFlux_mk, ofAdd_eq_one,
+    Diffeotopy.flux_eq_zero_iff_exists_isHamiltonian_homotopicWith σ hσ
+      (Diffeotopy.mem_sliceSubgroup.1 Φ.property)]
+  constructor
+  · rintro ⟨Ψ, hΨ, hhom⟩
+    exact ⟨⟨Ψ, Diffeotopy.mem_sliceSubgroup.2 hΨ.timeSlice_mem_diffeomorphStabilizer⟩, hΨ,
+      Diffeotopy.PathClass.mk_eq_mk_iff.2 hhom.symm⟩
+  · rintro ⟨Ψ, hΨ, hmk⟩
+    exact ⟨Ψ, hΨ, (Diffeotopy.PathClass.mk_eq_mk_iff.1 hmk).symm⟩
+
+/-- **The flux exact sequence.** On a compact connected boundaryless manifold with a symplectic
+form `σ`, the endpoint flux identifies the quotient of the group `G_σ` of final maps of
+diffeotopies preserving `σ` by the Hamiltonian group with `H¹_dR(M) / Γ_σ`. This is the exact
+sequence `1 → Ham(M, σ) → G_σ → H¹_dR(M) / Γ_σ → 0`, read through the first isomorphism theorem.
+The isomorphism sends the class of `φ` to its endpoint flux
+(`TauCeti.quotientHamiltonianGroupEquiv_mk`). -/
+def quotientHamiltonianGroupEquiv (σ : closedForms I M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) :
+    isotopyStabilizer σ.val ⧸ (hamiltonianGroup σ.val).subgroupOf (isotopyStabilizer σ.val) ≃*
+      Multiplicative (deRhamCohomology I M 1 ⧸ fluxGroup σ) :=
+  (QuotientGroup.quotientMulEquivOfEq (ker_endpointFlux σ hσ).symm).trans
+    (QuotientGroup.quotientKerEquivOfSurjective _ (endpointFlux_surjective hσ))
+
+/-- The flux isomorphism `G_σ ⧸ Ham(M, σ) ≃* H¹_dR(M) / Γ_σ` sends the class of `φ` to the endpoint
+flux of `φ`. -/
+@[simp]
+theorem quotientHamiltonianGroupEquiv_mk (σ : closedForms I M 2)
+    (hσ : SmoothTwoForm.IsNondegenerate σ.val) (φ : isotopyStabilizer σ.val) :
+    quotientHamiltonianGroupEquiv σ hσ φ = endpointFlux σ φ := by
+  simp only [quotientHamiltonianGroupEquiv, MulEquiv.trans_apply,
+    QuotientGroup.quotientMulEquivOfEq_mk]
+  exact QuotientGroup.kerLift_mk _ _
+
+/-- **`Ham(M, σ) = G_σ` when `H¹_dR(M) = 0`.** On a compact
+connected boundaryless manifold with `H¹_dR(M) = 0` and a symplectic form `σ`, the Hamiltonian
+group `Ham(M, σ)` is the whole group `G_σ` of final maps of diffeotopies preserving `σ`: every
+flux vanishes, so every symplectic isotopy is homotopic to a Hamiltonian one. -/
+theorem hamiltonianGroup_eq_isotopyStabilizer [Subsingleton (deRhamCohomology I M 1)]
+    {σ : SmoothTwoForm I M} (hσ : σ.IsSymplectic) :
+    hamiltonianGroup σ = isotopyStabilizer σ := by
+  refine le_antisymm hamiltonianGroup_le_isotopyStabilizer fun φ hφ ↦ ?_
+  obtain ⟨Φ, hΦ, rfl⟩ := mem_isotopyStabilizer.1 hφ
+  exact Diffeotopy.final_mem_hamiltonianGroup_of_flux_eq_zero
+    ⟨σ, (mem_closedForms I σ).2 ((isClosed_def σ).1 hσ.isClosed)⟩
+    hσ.isNondegenerate hΦ (Subsingleton.elim _ _)
 
 end Kernel
 

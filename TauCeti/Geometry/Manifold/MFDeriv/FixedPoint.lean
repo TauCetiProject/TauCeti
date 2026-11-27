@@ -98,7 +98,12 @@ preserves it, whether or not the diffeomorphism preserves an orientation
 Lefschetz signs form a geometric sequence (`TauCeti.fixedPointSign_iterate_succ`): if `f` is
 differentiable at `x` and `x` is a nondegenerate fixed point of `f^[k + 1]`, then
 `sgn det (1 - D ^ (k + 1)) = sgn det (1 - D) * ((-1) ^ i₋) ^ k`, where `i₋` counts the real
-eigenvalues of `D` below `-1`.
+eigenvalues of `D` below `-1`. The signs themselves are read off the eigenvalues
+(`TauCeti.fixedPointSign_iterate`): if `f` is differentiable at the fixed point `x` and
+`fixedPointDet I f^[k] x ≠ 0`, the Lefschetz sign of `f^[k]` at `x` is
+`(-1) ^ i₊ * (-1) ^ ((k + 1) * i₋)`, where `i₊` counts the real eigenvalues of `D` above `1`, both
+with algebraic multiplicity. At a nondegenerate fixed point it is `(-1) ^ i₊`
+(`TauCeti.IsNondegenerateFixedPt.fixedPointSign_eq`).
 
 ## Main definitions
 
@@ -119,6 +124,8 @@ eigenvalues of `D` below `-1`.
   conjugation by a diffeomorphism.
 * `TauCeti.IsNondegenerateFixedPt.eventually_not_isFixedPt`: on a manifold modelled on a
   finite-dimensional space over a complete field, nondegenerate fixed points are isolated.
+* `TauCeti.IsNondegenerateFixedPt.exists_pos_forall_mem_closedBall_isFixedPt_eq`: on a metric
+  manifold, some closed ball around a nondegenerate fixed point contains no other fixed point.
 * `IsCompact.finite_of_isNondegenerateFixedPt`: on a manifold modelled on a finite-dimensional
   space over a complete field, a compact set of nondegenerate fixed points is finite.
 * `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold modelled on a
@@ -153,6 +160,8 @@ eigenvalues of `D` below `-1`.
   space, `det (1 - df_x) ≠ 0` at a nondegenerate fixed point `x`.
 * `TauCeti.isNondegenerateFixedPt_iff_det_id_sub_ne_zero`: in finite dimensions, a fixed point at
   which `f` is differentiable is nondegenerate exactly when `det (1 - df_x) ≠ 0`.
+* `TauCeti.isNondegenerateFixedPt_iterate_apply_iterate_iff`: in finite dimensions, the points of
+  a periodic orbit of period `n` are all nondegenerate fixed points of `f^[n]` or none is.
 * `TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`: `det (1 - df_x)` at a fixed
   point can be computed in any chart.
 * `TauCeti.isNondegenerateFixedPt_iff_injective_sub_id_of_hasFDerivWithinAt`: so can
@@ -174,6 +183,11 @@ eigenvalues of `D` below `-1`.
 * `TauCeti.fixedPointSign_iterate_succ`: at a fixed point `x` where `f` is differentiable, the
   Lefschetz signs of the iterates `f^[k + 1]` at which `x` is nondegenerate form a geometric
   sequence.
+* `TauCeti.fixedPointSign_iterate`, `TauCeti.IsNondegenerateFixedPt.fixedPointSign_eq`: on a
+  finite-dimensional real model, at a fixed point where `f` is differentiable with fixed-point
+  derivative `D`, the Lefschetz sign of `f^[k]` is `(-1) ^ i₊ * (-1) ^ ((k + 1) * i₋)` when
+  `fixedPointDet I f^[k] x ≠ 0`, and that of a nondegenerate fixed point is `(-1) ^ i₊`, for the
+  numbers `i₊` and `i₋` of real eigenvalues of `D` in `(1, ∞)` and `(-∞, -1)`.
 
 ## References
 
@@ -319,6 +333,16 @@ theorem eventually_not_isFixedPt (h : IsNondegenerateFixedPt I f x) :
   filter_upwards [htends.eventually hne, hsource, hfsource] with y hy hys _ hfix
   apply hy
   rw [(extChartAt I x).left_inv hys, hfix.eq, sub_self]
+
+/-- **A closed ball isolating a nondegenerate fixed point.** On a metric manifold modelled on a
+finite-dimensional space over a complete field, a nondegenerate fixed point `x` of `g` is the only
+fixed point of `g` in some closed ball of positive radius around `x`. -/
+theorem exists_pos_forall_mem_closedBall_isFixedPt_eq {X : Type*} [PseudoMetricSpace X]
+    [ChartedSpace H X] {g : X → X} {x : X} (h : IsNondegenerateFixedPt I g x) :
+    ∃ r > 0, ∀ y ∈ Metric.closedBall x r, IsFixedPt g y → y = x := by
+  obtain ⟨r, hr, hr'⟩ := (nhdsWithin_hasBasis Metric.nhds_basis_closedBall _).eventually_iff.1
+    h.eventually_not_isFixedPt
+  exact ⟨r, hr, fun y hy hyfix ↦ by_contra fun hyx ↦ hr' ⟨hy, hyx⟩ hyfix⟩
 
 end IsNondegenerateFixedPt
 
@@ -701,6 +725,18 @@ theorem isNondegenerateFixedPt_iff_det_id_sub_ne_zero [FiniteDimensional 𝕜 E]
   exact ⟨fun h v hv ↦ h.eq_zero_of_mfderiv_apply_eq (sub_eq_zero.1 hv).symm,
     fun h ↦ ⟨x.property, hf, fun v hv ↦ h v (sub_eq_zero.2 hv.symm)⟩⟩
 
+/-- **Nondegeneracy is constant along a periodic orbit.** If `x` is a periodic point of period `n`
+of a map `f` differentiable at every point of the orbit of `x`, then every point `f^[j] x` of the
+orbit is a nondegenerate fixed point of `f^[n]` exactly when `x` is. -/
+theorem isNondegenerateFixedPt_iterate_apply_iterate_iff [FiniteDimensional 𝕜 E] {n : ℕ}
+    (hx : IsPeriodicPt f n x) (hf : ∀ m, MDifferentiableAt I I f (f^[m] x)) (j : ℕ) :
+    IsNondegenerateFixedPt I f^[n] (f^[j] x) ↔ IsNondegenerateFixedPt I f^[n] x := by
+  have hfj : MDifferentiableAt I I f^[n] (f^[j] x) :=
+    mdifferentiableAt_iterate fun m _ ↦ by rw [← iterate_add_apply]; exact hf _
+  rw [isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨f^[j] x, (hx.apply_iterate j).eq⟩ hfj,
+    isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x, hx.eq⟩ (mdifferentiableAt_iterate
+      fun m _ ↦ hf m), det_id_sub_fixedPointDerivative_apply_iterate hx hf j]
+
 /-- **Nondegeneracy gives a nonzero determinant.** At a nondegenerate fixed point `x` of a self-map
 `f` of a finite-dimensional normed space, with its trivial chart, `det (1 - df_x) ≠ 0`. -/
 theorem IsNondegenerateFixedPt.det_one_sub_fderiv_ne_zero [FiniteDimensional 𝕜 E] {f : E → E}
@@ -1031,6 +1067,42 @@ theorem fixedPointSign_iterate_succ [FiniteDimensional ℝ E] (hx : IsFixedPt f 
     fixedPointDet_iterate hx hf, fixedPointDet_eq_det_id_sub_fixedPointDerivative hx,
     ← Module.End.one_eq_id, D.sign_det_one_sub_pow_succ k hk]
   simp [D, pow_mul']
+
+/-- **The Lefschetz signs of the iterates from the eigenvalues.** Let `x` be a fixed point of `f`,
+at which `f` is differentiable with fixed-point derivative `D`, and suppose
+`fixedPointDet I f^[k] x ≠ 0`. Then the Lefschetz sign of `f^[k]` at `x` is
+`(-1) ^ i₊ * (-1) ^ ((k + 1) * i₋)`, where `i₊` and `i₋` count the real roots of the characteristic
+polynomial of `D` in `(1, ∞)` and in `(-∞, -1)`, with multiplicity. -/
+theorem fixedPointSign_iterate [FiniteDimensional ℝ E] (hx : IsFixedPt f x)
+    (hf : MDifferentiableAt I I f x) {k : ℕ} (h : fixedPointDet I f^[k] x ≠ 0) :
+    fixedPointSign I f^[k] x =
+      (-1) ^ ((fixedPointDerivative I f ⟨x, hx⟩).charpoly.roots.filter (1 < ·)).card *
+        (-1) ^ ((k + 1) *
+          ((fixedPointDerivative I f ⟨x, hx⟩).charpoly.roots.filter (· < -1)).card) := by
+  -- The tangent space is the model space `E`.
+  have : FiniteDimensional ℝ (TangentSpace I x) := ‹FiniteDimensional ℝ E›
+  set D := fixedPointDerivative I f ⟨x, hx⟩
+  have hk : (1 - D ^ k).det ≠ 0 := by
+    rwa [fixedPointDet_iterate hx hf, ← Module.End.one_eq_id] at h
+  rw [fixedPointSign_eq_sign h, fixedPointDet_iterate hx hf, ← Module.End.one_eq_id,
+    D.sign_det_one_sub_pow k hk]
+  simp
+
+/-- **The Lefschetz sign from the eigenvalues.** At a nondegenerate fixed point `x` of `f`, on a
+manifold modelled on a finite-dimensional real space, the Lefschetz sign is `(-1) ^ i₊`, where
+`i₊` counts the real roots of the characteristic polynomial of the fixed-point derivative in
+`(1, ∞)`, with multiplicity. -/
+theorem IsNondegenerateFixedPt.fixedPointSign_eq [FiniteDimensional ℝ E]
+    (h : IsNondegenerateFixedPt I f x) :
+    fixedPointSign I f x =
+      (-1) ^ ((fixedPointDerivative I f ⟨x, h.isFixedPt⟩).charpoly.roots.filter (1 < ·)).card := by
+  -- The tangent space is the model space `E`.
+  have : FiniteDimensional ℝ (TangentSpace I x) := ‹FiniteDimensional ℝ E›
+  have hdet := h.fixedPointDet_ne_zero
+  rw [fixedPointDet_eq_det_id_sub_fixedPointDerivative h.isFixedPt, ← Module.End.one_eq_id] at hdet
+  rw [h.fixedPointSign_eq_sign, fixedPointDet_eq_det_id_sub_fixedPointDerivative h.isFixedPt,
+    ← Module.End.one_eq_id, LinearMap.sign_det_one_sub _ hdet]
+  simp
 
 end Sign
 

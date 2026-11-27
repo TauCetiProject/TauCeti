@@ -69,15 +69,19 @@ isotropic points.
   by `σ(a)` and `c` by `a σ(a)`.
 * `Matrix.siegelTransvection_eq_mul` and `Matrix.det_siegelTransvection`: two-factor product for
   isotropic `u`, and determinant one when `B(u, w) = B(w, u) = 0`.
-* `Matrix.siegelTransvection_mul_siegelTransvection` and
-  `Matrix.siegelTransvection_mul_siegelTransvection_neg_eq_one`: the Heisenberg multiplication law
-  and explicit right inverse `S(u, -w, -c - ε B(w, w))`.
+* `Matrix.siegelTransvection_mul_siegelTransvection`,
+  `Matrix.siegelTransvection_mul_siegelTransvection_neg_eq_one`, and
+  `Matrix.siegelTransvection_mul_siegelTransvection_mul_neg_mul_neg_eq_unitaryTransvection`: the
+  Heisenberg multiplication law, explicit right inverse `S(u, -w, -c - ε B(w, w))`, and commutator
+  identity `τ_{u, ε (B(w₂, w₁) - B(w₁, w₂))}`.
 * `Matrix.mul_siegelTransvection`: the conjugation law `g S(u, w, c) = S(g u, g w, c) g`.
 * `Matrix.transpose_map_siegelTransvection_mul`,
   `Matrix.transpose_map_siegelTransvection_mul_mul`, and
   `Matrix.transpose_map_siegelTransvection_mul_mul_self`: `σ(S(u, w, c))ᵀ Q` and, when
   `B(u, u) = B(u, w) = 0`, the isometry defect and the condition `c + ε σ(c) + ε B(w, w) = 0` for
   `S(u, w, c)` to preserve `B`.
+* `Matrix.siegelTransvection_mulVec_eq_self_of_mulVec_eq`: over a field, if `S(u, w, c)` sends `x`
+  to `y` with `B(u, x) ≠ 0`, it fixes every vector orthogonal to `u`, `x`, and `y`.
 
 ## References
 
@@ -205,6 +209,31 @@ theorem siegelTransvection_mul_siegelTransvection_neg_eq_one (hu : (σ ∘ u) �
   simp [mulVec_neg]
   ring
 
+/-- **The Heisenberg commutator law.** If `B(u, u) = 0` and `u` is orthogonal on both sides to `w₁`
+and `w₂`, multiplying `S(u, w₁, c₁) * S(u, w₂, c₂)` by the explicit inverses of the two factors
+yields the unitary transvection `τ_{u, ε (B(w₂, w₁) - B(w₁, w₂))}`. -/
+theorem siegelTransvection_mul_siegelTransvection_mul_neg_mul_neg_eq_unitaryTransvection
+    (hu : (σ ∘ u) ⬝ᵥ (Q *ᵥ u) = 0) {w₁ w₂ : n → R}
+    (huw₁ : (σ ∘ u) ⬝ᵥ (Q *ᵥ w₁) = 0) (hw₁u : (σ ∘ w₁) ⬝ᵥ (Q *ᵥ u) = 0)
+    (huw₂ : (σ ∘ u) ⬝ᵥ (Q *ᵥ w₂) = 0) (hw₂u : (σ ∘ w₂) ⬝ᵥ (Q *ᵥ u) = 0) (c₁ c₂ : R) :
+    Q.siegelTransvection σ ε u w₁ c₁ * Q.siegelTransvection σ ε u w₂ c₂ *
+        Q.siegelTransvection σ ε u (-w₁) (-c₁ - ε * ((σ ∘ w₁) ⬝ᵥ (Q *ᵥ w₁))) *
+        Q.siegelTransvection σ ε u (-w₂) (-c₂ - ε * ((σ ∘ w₂) ⬝ᵥ (Q *ᵥ w₂))) =
+      Q.unitaryTransvection σ u
+        (ε * ((σ ∘ w₂) ⬝ᵥ (Q *ᵥ w₁) - (σ ∘ w₁) ⬝ᵥ (Q *ᵥ w₂))) := by
+  have huw₁' : (σ ∘ u) ⬝ᵥ (Q *ᵥ (-w₁)) = 0 := by simp [mulVec_neg, huw₁]
+  have huw₂' : (σ ∘ u) ⬝ᵥ (Q *ᵥ (-w₂)) = 0 := by simp [mulVec_neg, huw₂]
+  have hsum_u : (σ ∘ (w₁ + w₂)) ⬝ᵥ (Q *ᵥ u) = 0 := by
+    rw [comp_add_dotProduct_mulVec, hw₁u, hw₂u, add_zero]
+  have hw₁₂ : w₁ + w₂ + -w₁ = w₂ := by abel
+  rw [siegelTransvection_mul_siegelTransvection hu huw₂ hw₁u,
+    siegelTransvection_mul_siegelTransvection hu huw₁' hsum_u, hw₁₂,
+    siegelTransvection_mul_siegelTransvection hu huw₂' hw₂u, add_neg_cancel,
+    siegelTransvection_zero_eq_unitaryTransvection]
+  congr 1
+  simp only [comp_add_dotProduct_mulVec, mulVec_neg, dotProduct_neg]
+  ring
+
 /-- **The conjugation law.** A matrix `g` preserving the form, `σ(g)ᵀ Q g = Q`, conjugates
 `S(u, w, c)` to `S(g u, g w, c)`: `g * S(u, w, c) = S(g u, g w, c) * g`. -/
 theorem mul_siegelTransvection {g : Matrix n n R} (hg : (g.map σ)ᵀ * Q * g = Q) (w : n → R)
@@ -272,6 +301,31 @@ theorem transpose_map_siegelTransvection_mul_mul_self (hσ : Function.Involutive
     (hc : c + ε * σ c + ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ w)) = 0) :
     ((Q.siegelTransvection σ ε u w c).map σ)ᵀ * Q * Q.siegelTransvection σ ε u w c = Q := by
   rw [transpose_map_siegelTransvection_mul_mul hσ hQ hu huw, hc, zero_smul, add_zero]
+
+section Field
+
+variable {K n : Type*} [Field K] [Fintype n] [DecidableEq n] {Q : Matrix n n K} {σ : K →+* K}
+  {ε : K}
+
+/-- If a Siegel transformation `S(u, w, c)` sends `x` to `y` with `B(u, x) ≠ 0`, then it fixes
+every vector `z` orthogonal to `u`, `x`, and `y`. -/
+theorem siegelTransvection_mulVec_eq_self_of_mulVec_eq {u w x y z : n → K} {c : K}
+    (hux : (σ ∘ u) ⬝ᵥ (Q *ᵥ x) ≠ 0) (hgx : Q.siegelTransvection σ ε u w c *ᵥ x = y)
+    (huz : (σ ∘ u) ⬝ᵥ (Q *ᵥ z) = 0) (hxz : (σ ∘ x) ⬝ᵥ (Q *ᵥ z) = 0)
+    (hyz : (σ ∘ y) ⬝ᵥ (Q *ᵥ z) = 0) :
+    Q.siegelTransvection σ ε u w c *ᵥ z = z := by
+  have hbw : ((σ ∘ u) ⬝ᵥ (Q *ᵥ x)) • w =
+      y - x + (ε * ((σ ∘ w) ⬝ᵥ (Q *ᵥ x)) - c * ((σ ∘ u) ⬝ᵥ (Q *ᵥ x))) • u := by
+    rw [← hgx, siegelTransvection_mulVec]
+    module
+  have hpair := congrArg (fun t ↦ (σ ∘ t) ⬝ᵥ (Q *ᵥ z)) hbw
+  simp only [TauCeti.map_comp_smul, map_comp_add, map_comp_sub, smul_dotProduct, add_dotProduct,
+    sub_dotProduct, smul_eq_mul, huz, hxz, hyz, mul_zero, sub_zero, add_zero] at hpair
+  have hwz : (σ ∘ w) ⬝ᵥ (Q *ᵥ z) = 0 :=
+    (mul_eq_zero.mp hpair).resolve_left ((map_ne_zero σ).mpr hux)
+  simp [siegelTransvection_mulVec, huz, hwz]
+
+end Field
 
 end Matrix
 

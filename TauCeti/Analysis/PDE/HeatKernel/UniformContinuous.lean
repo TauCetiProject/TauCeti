@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.HeatKernel.BoundedContinuous
 public import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
 public import TauCeti.Topology.ContinuousMap.Bounded.UniformContinuous
 public import TauCeti.Analysis.Holder.UniformContinuous
-import TauCeti.Analysis.Holder.MeanValue
+import TauCeti.Analysis.Holder.Iterated
 
 /-!
 # Heat regularization of bounded uniformly continuous data
@@ -140,21 +140,11 @@ theorem denseRange_toBUC (hα : α ≤ 1) :
   refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
   obtain ⟨h, hsmooth, hdist, -, hbdd⟩ := exists_contDiff_bounded_derivatives_approximation w hε
   choose C hC using hbdd
-  have hle (n : ℕ) : (n : WithTop ℕ∞) ≤ ∞ := mod_cast le_top
-  have hholder : MemHolder α (_root_.iteratedFDeriv ℝ (k + 1) (h.val : E → F)) :=
-    ⟨_, holderWith_of_norm_le_of_norm_fderiv_le (N₀ := (C (k + 1)).toNNReal)
-      (N₁ := (C (k + 2)).toNNReal) hα
-      ((hsmooth.of_le (hle (k + 2))).differentiable_iteratedFDeriv
-        (mod_cast (by omega : k + 1 < k + 2)))
-      (fun x ↦ (hC (k + 1) x).trans (Real.le_coe_toNNReal _))
-      (fun x ↦ by
-        rw [norm_fderiv_iteratedFDeriv]
-        exact (hC (k + 2) x).trans (Real.le_coe_toNNReal _))⟩
-  have hk : ContDiff ℝ (k + 1 : ℕ) (h.val : E → F) := hsmooth.of_le (hle (k + 1))
-  refine ⟨toBUC (ofContDiff (h.val : E → F) hk (fun i _ ↦ ⟨C i, hC i⟩) hholder), ⟨_, rfl⟩, ?_⟩
-  have heq : toBUC (ofContDiff (h.val : E → F) hk (fun i _ ↦ ⟨C i, hC i⟩) hholder) = h :=
-    Subtype.ext <| BoundedContinuousFunction.ext fun x ↦ by
-      rw [toBUC_apply, coe_ofContDiff]
+  obtain ⟨G, hG⟩ := exists_coe_eq_of_contDiff hα (k + 1) (hsmooth.of_le (mod_cast le_top))
+    fun i _ ↦ ⟨C i, hC i⟩
+  refine ⟨toBUC G, ⟨_, rfl⟩, ?_⟩
+  have heq : toBUC G = h :=
+    Subtype.ext <| BoundedContinuousFunction.ext fun x ↦ by rw [toBUC_apply, hG]
   rw [heq, dist_comm, dist_eq_norm]
   exact hdist
 

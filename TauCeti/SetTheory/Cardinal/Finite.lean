@@ -56,6 +56,8 @@ ring.
   type is `0`.
 * `Nat.card_range_eq_card_range_of_comp_eq`: `Nat.card (Set.range f) = Nat.card (Set.range f')`
   when `e' ∘ f = f' ∘ e` with `e` surjective and `e'` injective on the range of `f`.
+* `TauCeti.finite_iff_of_natCard_eq`: nonempty types with equal `Nat.card` are either both finite or
+  both infinite.
 * `TauCeti.finite_of_natCast_card_ne_zero`: a type whose cardinality has a nonzero cast in an
   additive monoid with one is finite, since `Nat.card` vanishes on infinite types.
 * `TauCeti.finite_of_natCard_eq_pow` and `TauCeti.one_lt_of_natCard_eq_pow`: a type `α` with
@@ -164,6 +166,12 @@ theorem nonempty_equiv_of_enatCard_eq {α β : Type*} [Countable α] [Countable 
     have := hinf
     have : Infinite β := ENat.card_eq_top.1 (by rw [← h]; simp)
     exact nonempty_equiv_of_countable
+
+/-- Nonempty types with equal `Nat.card` are either both finite or both infinite. -/
+theorem finite_iff_of_natCard_eq {α β : Type*} [Nonempty α] [Nonempty β]
+    (h : Nat.card α = Nat.card β) : Finite α ↔ Finite β :=
+  ⟨fun _ ↦ Nat.finite_of_card_ne_zero (h ▸ Nat.card_pos.ne'),
+    fun _ ↦ Nat.finite_of_card_ne_zero (h.symm ▸ Nat.card_pos.ne')⟩
 
 /-- A type is finite if its cardinality has a nonzero cast. -/
 theorem finite_of_natCast_card_ne_zero {α R : Type*} [AddMonoidWithOne R]

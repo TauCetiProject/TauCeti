@@ -51,6 +51,8 @@ tensoring with a module in any universe (`LinearMap.IsPure.lTensor_injective`).
   into a flat module is flat.
 * `Ideal.pure_iff_isPure_subtype`: an ideal is pure in Mathlib's sense (`R ⧸ I` flat) exactly
   when its inclusion into `R` is a pure map.
+* `Ideal.subtype_rTensor_injective_of_pure`: consequently, for a pure ideal `I` the map
+  `I ⊗[R] M → R ⊗[R] M` is injective for every module `M`.
 
 ## References
 
@@ -323,3 +325,9 @@ theorem Submodule.isPure_subtype_iff_flat {R N : Type*} [CommRing R] [AddCommGro
 theorem Ideal.pure_iff_isPure_subtype {R : Type*} [CommRing R] (I : Ideal R) :
     I.Pure ↔ (Submodule.subtype I).IsPure :=
   (Submodule.isPure_subtype_iff_flat I).symm
+
+/-- For a pure ideal `I`, the map `I ⊗[R] M → R ⊗[R] M` is injective for every module `M`: that is,
+`Tor₁(R ⧸ I, M) = 0`. -/
+theorem Ideal.subtype_rTensor_injective_of_pure {R : Type*} [CommRing R] (I : Ideal R) [I.Pure]
+    (M : Type*) [AddCommGroup M] [Module R M] : Function.Injective (I.subtype.rTensor M) :=
+  ((Ideal.pure_iff_isPure_subtype I).1 inferInstance).rTensor_injective M

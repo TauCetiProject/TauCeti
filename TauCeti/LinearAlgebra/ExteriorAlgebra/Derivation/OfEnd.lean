@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Grading
 public import Mathlib.LinearAlgebra.ExteriorPower.Basic
 public import TauCeti.Algebra.Lie.Derivation.Basic
 import TauCeti.Algebra.BigOperators.Ring.List
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Derivation.Basic
 
 /-!
@@ -39,6 +41,8 @@ the Clifford algebra of `𝔤`.
 * `ExteriorAlgebra.derivationOfEnd_ιMulti`: the derivation rule on a decomposable wedge.
 * `ExteriorAlgebra.derivationOfEnd_mem_exteriorPower`: the induced derivation preserves each
   exterior power `⋀ᵏ M`.
+* `ExteriorAlgebra.derivationOfEnd_decompose`: it commutes with the projections onto the exterior
+  powers.
 * `ExteriorAlgebra.LieAction.instLieRingModule`, `ExteriorAlgebra.LieAction.lie_def`: for a Lie
   module `M` over `L`, the scoped action of `L` on `⋀ M` by the derivations
   `derivationOfEnd R M (LieModule.toEnd R L M x)`.
@@ -124,6 +128,16 @@ theorem derivationOfEnd_mem_exteriorPower (f : Module.End R M) {k : ℕ} {x : Ex
     (derivationOfEnd R M f : Module.End R (ExteriorAlgebra R M)) x ∈ ⋀[R]^k M :=
   liftTwistedDerivation_mem_exteriorPower _ _ _ _ _ _ (r := 0)
     (fun m ↦ by simp) (fun s ↦ by simp) (fun m ↦ by simp) hx
+
+/-- **The derivation induced by `f` commutes with the projections onto the exterior powers.** -/
+theorem derivationOfEnd_decompose (f : Module.End R M) (x : ExteriorAlgebra R M) (k : ℕ) :
+    (derivationOfEnd R M f : Module.End R (ExteriorAlgebra R M))
+        (DirectSum.decompose (fun i : ℕ ↦ ⋀[R]^i M) x k) =
+      DirectSum.decompose (fun i : ℕ ↦ ⋀[R]^i M)
+        ((derivationOfEnd R M f : Module.End R (ExteriorAlgebra R M)) x) k :=
+  DirectSum.map_decompose_shift (fun i : ℕ ↦ ⋀[R]^i M) (fun i : ℕ ↦ ⋀[R]^i M)
+    (derivationOfEnd R M f : Module.End R (ExteriorAlgebra R M)).toAddMonoidHom id
+    Function.injective_id (fun _ _ hy ↦ derivationOfEnd_mem_exteriorPower f hy) k x
 
 namespace LieAction
 

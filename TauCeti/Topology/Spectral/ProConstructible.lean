@@ -50,6 +50,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 * `IsCompact.isProConstructible` — a quasi-compact open subset is pro-constructible. It is
   in fact clopen for the constructible topology, which is what makes the two previous families
   interact.
+* `Topology.IsConstructible.isProConstructible` — on a compact quasi-separated space a
+  constructible subset is pro-constructible.
 * `TauCeti.IsProConstructible.inter`, `.iInter`, `.sInter`, `.union`, `.iUnion` — the calculus of
   pro-constructible subsets. Arbitrary intersections and finite unions are allowed.
 * `TauCeti.IsProConstructible.preimage` — pro-constructibility is stable under preimage along a
@@ -174,6 +176,12 @@ topology, since it and its complement both belong to the defining subbasis. -/
 theorem _root_.IsCompact.isProConstructible {s : Set X} (hcomp : IsCompact s) (hopen : IsOpen s) :
     IsProConstructible s :=
   isProConstructible_iff_isClosed.2 (hcomp.isClosed_constructibleTopology_of_isOpen hopen)
+
+/-- On a compact quasi-separated space (for instance a spectral space) a constructible subset is
+pro-constructible: it is even clopen for the constructible topology. -/
+theorem _root_.Topology.IsConstructible.isProConstructible [CompactSpace X]
+    [QuasiSeparatedSpace X] {s : Set X} (hs : IsConstructible s) : IsProConstructible s :=
+  isProConstructible_iff_isClosed.2 hs.isClopen_constructibleTopology.1
 
 /-- A closed subset of a prespectral space is pro-constructible. -/
 theorem _root_.IsClosed.isProConstructible [PrespectralSpace X] {s : Set X} (hs : IsClosed s) :

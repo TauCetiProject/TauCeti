@@ -8,7 +8,6 @@ module
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.UnitaryLift
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.SpinC.Basic
 import TauCeti.Analysis.CStarAlgebra.Basic
-import TauCeti.Analysis.Normed.Module.QuadraticMap
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Four
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Neg
 import TauCeti.Topology.Algebra.Quaternion.Unitary
@@ -40,7 +39,8 @@ structure `J₀`, along a unitary frame, are continuous as well
 * `OrthonormalBasis.continuous_spinCUnitary`: the lift `U(2) → Spinᶜ(Q)` along a frame is
   continuous.
 * `OrthonormalBasis.continuous_centralizerSpinCLift` and `TauCeti.continuous_unitarySpinCLift`:
-  the lifts of the unitary group of a complex structure are continuous.
+  the lifts of the unitary group of a complex structure are continuous; the latter is bundled as
+  the continuous homomorphism `TauCeti.unitarySpinCLiftContinuousMonoidHom`.
 
 ## References
 
@@ -114,12 +114,21 @@ variable {J₀ : unitary (EuclideanSpace ℝ (Fin 4) →L[ℝ] EuclideanSpace �
 /-- The `Spinᶜ` lift of the unitary group of `ℝ⁴` is continuous. -/
 @[fun_prop]
 theorem continuous_unitarySpinCLift : Continuous (unitarySpinCLift hJ₀ e h₀ h₂) := by
-  have hQ (v : EuclideanSpace ℝ (Fin 4)) :
-      (-LinearMap.BilinMap.toQuadraticMap (innerₗ (EuclideanSpace ℝ (Fin 4)))) v = -‖v‖ ^ 2 := by
-    simp
-  rw [unitarySpinCLift_eq_comp hJ₀ e h₀ h₂ hQ
-    (QuadraticForm.nondegenerate_of_eq_neg_norm_sq hQ).ne_zero]
+  rw [unitarySpinCLift_eq_comp hJ₀ e h₀ h₂ negNormSqForm_apply negNormSqForm_ne_zero]
   exact ((EuclideanSpace.basisFun (Fin 4) ℝ).continuous_realSpinCGroupEquiv_symm _ _ _).comp
     (e.continuous_centralizerSpinCLift hJ₀ h₀ h₂ _ _)
+
+/-- The lift `TauCeti.unitarySpinCLift` of `U(ℝ⁴, J₀) ⊆ SO(4)` to `Spinᶜ(4)`, as a continuous
+homomorphism. It is exposed so that its underlying homomorphism is `TauCeti.unitarySpinCLift` by
+definition, which is what the extension of structure group along it is stated with. -/
+@[expose] noncomputable def unitarySpinCLiftContinuousMonoidHom :
+    Subgroup.centralizer {J₀} →ₜ*
+      spinCGroup (realCliffordForm 4 0) (nondegenerate_realCliffordForm 4 0).ne_zero :=
+  ⟨unitarySpinCLift hJ₀ e h₀ h₂, continuous_unitarySpinCLift hJ₀ e h₀ h₂⟩
+
+@[simp]
+theorem unitarySpinCLiftContinuousMonoidHom_apply (g : Subgroup.centralizer {J₀}) :
+    unitarySpinCLiftContinuousMonoidHom hJ₀ e h₀ h₂ g = unitarySpinCLift hJ₀ e h₀ h₂ g :=
+  (rfl)
 
 end TauCeti

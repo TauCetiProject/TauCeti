@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Dual
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+public import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!

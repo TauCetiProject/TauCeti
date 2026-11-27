@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Determinant
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteRank.Basic
-import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Hom.Basic
 
 /-!
 # Smooth and holomorphic determinant line bundles and top-degree alternating forms

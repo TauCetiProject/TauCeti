@@ -11,6 +11,7 @@ import Mathlib.Topology.Compactification.OnePoint.Sphere
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Topology.CellularSet.InverseSet.Sphere
 import TauCeti.Topology.Compactness.Normed
+import TauCeti.Topology.Sphere.Stereographic
 import TauCeti.Topology.Compactification.OnePoint.Collapse
 
 /-!
@@ -34,6 +35,14 @@ and is injective off `C`; so `C` is the only inverse set of a map of an `m`-cell
 is cellular by M. Brown's theorem on inverse sets
 (`TauCeti.isCellularSet_closedBall_inter_preimage`).
 
+Conversely, the sphere `Sᵐ` has such a cover: the complement of any point of `Sᵐ` is homeomorphic
+to `ℝᵐ` (`TauCeti.nonempty_homeomorph_sphere_compl_singleton`), so the complements of two antipodal
+points, the poles, cover `Sᵐ` (`TauCeti.exists_two_euclidean_opens_sphere`). Hence for `m > 0` a
+space is homeomorphic to `Sᵐ` exactly when it is compact, Hausdorff and covered by two open sets
+homeomorphic to `ℝᵐ` (`TauCeti.nonempty_homeomorph_sphere_iff_exists_two_euclidean_opens`). The
+examples at the end of the file show that neither `m > 0` nor compactness can be dropped: a point
+is covered twice by `ℝ⁰` but is not `S⁰`, and `ℝᵐ` is covered twice by itself but is not compact.
+
 ## Main results
 
 * `TauCeti.IsCellularSet.nonempty_homeomorph_onePoint`: if the complement of an open set `U` of a
@@ -41,6 +50,9 @@ is cellular by M. Brown's theorem on inverse sets
   compactification of `U`.
 * `TauCeti.nonempty_homeomorph_sphere_of_two_euclidean_opens`: a compact Hausdorff space covered
   by two open sets homeomorphic to `ℝᵐ`, `m > 0`, is homeomorphic to `Sᵐ`.
+* `TauCeti.nonempty_homeomorph_sphere_iff_exists_two_euclidean_opens`: for `m > 0`, a space is
+  homeomorphic to `Sᵐ` if and only if it is compact, Hausdorff and covered by two open sets
+  homeomorphic to `ℝᵐ`.
 
 ## References
 
@@ -154,5 +166,67 @@ theorem nonempty_homeomorph_sphere_of_two_euclidean_opens [CompactSpace X] [T2Sp
     linarith [hS ⟨x, hxV⟩ hx]
   obtain ⟨A, hA, hAU⟩ := exists_isCellularSet_image_eq_compl hU eU hκ hUκ hne
   exact hA.nonempty_homeomorph_onePoint hU hκ hAU
+
+/-! ### The converse: the sphere is covered by two Euclidean open sets -/
+
+section Converse
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **Recognition of the topological sphere.** A space `X` is homeomorphic to the sphere `Sᵐ`,
+`m > 0`, if and only if it is a compact Hausdorff space covered by two open sets, each
+homeomorphic to a real normed space `E` of dimension `m`. Here `Sᵐ` is the unit sphere of any real
+normed space of dimension `m + 1`.
+
+The reverse direction is `TauCeti.nonempty_homeomorph_sphere_of_two_euclidean_opens`; the forward
+direction carries over the cover of `Sᵐ` by the complements of its two poles
+(`TauCeti.exists_two_euclidean_opens_sphere`). -/
+theorem nonempty_homeomorph_sphere_iff_exists_two_euclidean_opens (hE : 0 < finrank ℝ E)
+    (hEF : finrank ℝ F = finrank ℝ E + 1) :
+    Nonempty (X ≃ₜ sphere (0 : F) 1) ↔ CompactSpace X ∧ T2Space X ∧
+      ∃ U V : Set X, IsOpen U ∧ IsOpen V ∧ U ∪ V = univ ∧ Nonempty (U ≃ₜ E) ∧
+        Nonempty (V ≃ₜ E) := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos hE
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+  refine ⟨fun ⟨φ⟩ ↦ ⟨φ.symm.compactSpace, φ.isEmbedding.t2Space, ?_⟩,
+    fun ⟨_, _, U, V, hU, hV, hUV, ⟨eU⟩, ⟨eV⟩⟩ ↦
+      nonempty_homeomorph_sphere_of_two_euclidean_opens hU hV hUV eU eV hE hEF⟩
+  obtain ⟨U, V, hU, hV, hUV, ⟨eU⟩, ⟨eV⟩⟩ := exists_two_euclidean_opens_sphere (E := E) hEF
+  exact ⟨φ ⁻¹' U, φ ⁻¹' V, hU.preimage φ.continuous, hV.preimage φ.continuous,
+    by rw [← preimage_union, hUV, preimage_univ], ⟨(φ.sets rfl).trans eU⟩,
+    ⟨(φ.sets rfl).trans eV⟩⟩
+
+/-- Dimension `0` must be excluded from `TauCeti.nonempty_homeomorph_sphere_of_two_euclidean_opens`:
+a point is covered twice by its only open set `univ ≃ₜ ℝ⁰`, but it is not `S⁰`, which has the two
+points `±1`. -/
+example :
+    (∃ U V : Set Unit, IsOpen U ∧ IsOpen V ∧ U ∪ V = univ ∧
+      Nonempty (U ≃ₜ EuclideanSpace ℝ (Fin 0)) ∧ Nonempty (V ≃ₜ EuclideanSpace ℝ (Fin 0))) ∧
+    IsEmpty (Unit ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) := by
+  have e : (univ : Set Unit) ≃ₜ EuclideanSpace ℝ (Fin 0) :=
+    (Homeomorph.Set.univ Unit).trans (Homeomorph.homeomorphOfUnique _ _)
+  refine ⟨⟨univ, univ, isOpen_univ, isOpen_univ, union_self _, ⟨e⟩, ⟨e⟩⟩, ⟨fun φ ↦ ?_⟩⟩
+  have : Nontrivial (EuclideanSpace ℝ (Fin 1)) :=
+    Module.nontrivial_of_finrank_pos (R := ℝ) (by simp)
+  obtain ⟨p⟩ : Nonempty (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) :=
+    ((NormedSpace.sphere_nonempty (x := (0 : EuclideanSpace ℝ (Fin 1)))).2 zero_le_one).to_subtype
+  exact ne_neg_of_mem_unit_sphere ℝ p (φ.symm.injective (Subsingleton.elim _ _))
+
+/-- Compactness cannot be dropped from
+`TauCeti.nonempty_homeomorph_sphere_of_two_euclidean_opens`: `ℝᵐ`, `m > 0`, is covered twice by
+itself, but it is not compact, so it is not `Sᵐ`. -/
+example {m : ℕ} (hm : 0 < m) :
+    (∃ U V : Set (EuclideanSpace ℝ (Fin m)), IsOpen U ∧ IsOpen V ∧ U ∪ V = univ ∧
+      Nonempty (U ≃ₜ EuclideanSpace ℝ (Fin m)) ∧ Nonempty (V ≃ₜ EuclideanSpace ℝ (Fin m))) ∧
+    IsEmpty (EuclideanSpace ℝ (Fin m) ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin (m + 1))) 1) := by
+  have e := Homeomorph.Set.univ (EuclideanSpace ℝ (Fin m))
+  refine ⟨⟨univ, univ, isOpen_univ, isOpen_univ, union_self _, ⟨e⟩, ⟨e⟩⟩, ?_⟩
+  rw [← not_nonempty_iff, nonempty_homeomorph_sphere_iff_exists_two_euclidean_opens
+    (E := EuclideanSpace ℝ (Fin m)) (by simpa using hm) (by simp)]
+  have : Nontrivial (EuclideanSpace ℝ (Fin m)) :=
+    Module.nontrivial_of_finrank_pos (R := ℝ) (by simpa using hm)
+  exact fun ⟨h, _⟩ ↦ (noncompact_univ (EuclideanSpace ℝ (Fin m))) h.isCompact_univ
+
+end Converse
 
 end TauCeti
