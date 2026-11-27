@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Neumann.Kernel
 public import TauCeti.Analysis.PDE.Neumann.SecondEigenvalue
 public import TauCeti.Analysis.PDE.Spectrum.Interval
 public import TauCeti.Analysis.Sobolev.W1p.ConnectedComponents
+import TauCeti.Algebra.Group.Indicator
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.LocallyConstant.ConnectedComponents
 

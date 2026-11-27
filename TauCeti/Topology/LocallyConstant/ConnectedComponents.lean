@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
 public import Mathlib.Algebra.Notation.Indicator
 public import Mathlib.Topology.LocallyConstant.Basic
+import TauCeti.Algebra.Group.Indicator
 
 /-!
 # Functions given by their values on the connected components of a set
@@ -93,22 +94,6 @@ theorem _root_.IsLocallyConstant.apply_eq_of_isPreconnected_of_subset {g : X →
     refine Topology.IsInducing.subtypeVal.isPreconnected_image.1 ?_
     rwa [image_preimage_eq_of_subset (Subtype.range_coe.symm ▸ hts)]
   exact hg.apply_eq_of_isPreconnected hpre (x := ⟨y, hts hy⟩) (y := ⟨z, hts hz⟩) hy hz
-
-omit [TopologicalSpace X] in
-/-- On the first of two disjoint sets `U` and `V`, the function `U.indicator f + V.indicator g` is
-`f`. -/
-theorem _root_.Disjoint.indicator_add_indicator_apply_of_mem_left [AddZeroClass β] {U V : Set X}
-    (hd : Disjoint U V) (f g : X → β) {x : X} (hx : x ∈ U) :
-    (U.indicator f + V.indicator g) x = f x := by
-  rw [Pi.add_apply, indicator_of_mem hx, indicator_of_notMem (hd.notMem_of_mem_left hx), add_zero]
-
-omit [TopologicalSpace X] in
-/-- On the second of two disjoint sets `U` and `V`, the function `U.indicator f + V.indicator g`
-is `g`. -/
-theorem _root_.Disjoint.indicator_add_indicator_apply_of_mem_right [AddZeroClass β] {U V : Set X}
-    (hd : Disjoint U V) (f g : X → β) {x : X} (hx : x ∈ V) :
-    (U.indicator f + V.indicator g) x = g x := by
-  rw [Pi.add_apply, indicator_of_mem hx, indicator_of_notMem (hd.notMem_of_mem_right hx), zero_add]
 
 /-- If `s` is the union of disjoint open sets `U` and `V`, the function equal to `c` on `U` and to
 `d` on `V` is locally constant on `s`. -/

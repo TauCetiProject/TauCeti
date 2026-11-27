@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.Topology.Connected.Clopen
 public import TauCeti.Topology.LocallyConstant.ConnectedComponents
+import TauCeti.Algebra.Group.Indicator
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.MeasureTheory.Measure.OpenPos
 import TauCeti.Analysis.Sobolev.LipschitzDomain.ConnectedComponents
