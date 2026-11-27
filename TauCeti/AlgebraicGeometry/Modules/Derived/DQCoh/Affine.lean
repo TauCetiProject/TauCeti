@@ -63,8 +63,12 @@ private lemma quasiIso_map_moduleSpecΓFunctor_iff {K L : CochainComplex (Spec A
         _).map f) := by
   rw [← quasiIso_map_iff_of_preservesHomology _ (forget₂ (ModuleCat.{u} A) AddCommGrpCat),
     ← quasiIso_map_iff_of_preservesHomology _ (forget₂ (ModuleCat.{u} Γ(Spec A, ⊤)) AddCommGrpCat)]
-  -- after forgetting the scalars, both functors take the sections over `⊤`, by definition
-  rfl
+  let e := Functor.mapHomologicalComplexCompIso
+    (eqToIso (moduleSpecΓFunctor_comp_forget₂ A)) (.up ℤ) ≪≫
+    (Functor.mapHomologicalComplexCompIso
+      (Iso.refl (Scheme.Modules.sectionsFunctor (⊤ : (Spec A).Opens) ⋙
+        forget₂ (ModuleCat.{u} Γ(Spec A, ⊤)) AddCommGrpCat)) (.up ℤ)).symm
+  exact quasiIso_iff_of_arrow_mk_iso _ _ (Arrow.isoMk (e.app K) (e.app L) (e.hom.naturality f).symm)
 
 /-- On complexes, exactness of global sections does not depend on the ring over which they are
 viewed as modules. -/
@@ -75,8 +79,10 @@ private lemma exactAt_map_moduleSpecΓFunctor_iff (K : CochainComplex (Spec A).M
   rw [HomologicalComplex.exactAt_iff, HomologicalComplex.exactAt_iff,
     ← ShortComplex.exact_map_iff_of_faithful _ (forget₂ (ModuleCat.{u} A) AddCommGrpCat),
     ← ShortComplex.exact_map_iff_of_faithful _ (forget₂ (ModuleCat.{u} Γ(Spec A, ⊤)) AddCommGrpCat)]
-  -- after forgetting the scalars, both functors take the sections over `⊤`, by definition
-  rfl
+  -- Mapping the short complex twice agrees with mapping the composite; the scalar comparison
+  -- then identifies the composites, without unfolding either global-section functor.
+  exact ShortComplex.exact_iff_of_iso
+    ((K.sc m).mapNatIso (eqToIso (moduleSpecΓFunctor_comp_forget₂ A)))
 
 /-- **Global sections compute derived global sections on `M~`.** For a complex `P` of `A`-modules
 and a quasi-isomorphism `P~ ⟶ I` into a K-injective complex, the map `P = Γ(P~) ⟶ Γ(I)` is a
@@ -166,24 +172,6 @@ private lemma isZero_of_isZero_derivedModuleSpecΓFunctor_obj {K : DerivedCatego
       (ExactAt.of_isZero ((HomologicalComplex.eval _ _ m).map_isZero (isZero_zero _)))).2 (hJ' m)
   exact (Q.map_isZero (isZero_zero _)).of_iso (asIso (Q.map (0 : J ⟶ 0))) |>.of_iso eK.symm
 
-/-- **The counit of the derived adjunction is an isomorphism on `D_QCoh`**: for `K` in
-`D_QCoh(𝒪_{Spec A})`, the map `RΓ(Spec A, K)~ ⟶ K` is an isomorphism. -/
-theorem isIso_tildeDerivedAdjunction_counit_app {K : DerivedCategory (Spec A).Modules}
-    (hK : DQCoh (Spec A) K) : IsIso ((tildeDerivedAdjunction A).counit.app K) := by
-  -- derived global sections invert the counit, by the triangle identity
-  have : IsIso ((derivedModuleSpecΓFunctor A).map ((tildeDerivedAdjunction A).counit.app K)) :=
-    isIso_of_hom_comp_eq_id _ ((tildeDerivedAdjunction A).right_triangle_components K)
-  -- the cone of the counit lies in `D_QCoh` and has vanishing derived global sections
-  obtain ⟨Z, g, h, hT⟩ :=
-    Pretriangulated.distinguished_cocone_triangle ((tildeDerivedAdjunction A).counit.app K)
-  have hZ : DQCoh (Spec A) Z := (DQCoh (Spec A)).ext_of_isTriangulatedClosed₃ _ hT
-    (DQCoh.mapDerivedCategory_tildeFunctor_obj A _) hK
-  have hRZ : IsZero ((derivedModuleSpecΓFunctor A).obj Z) :=
-    (Pretriangulated.Triangle.isZero₃_iff_isIso₁ _
-      ((derivedModuleSpecΓFunctor A).map_distinguished _ hT)).2 this
-  exact (Pretriangulated.Triangle.isZero₃_iff_isIso₁ _ hT).1
-    (isZero_of_isZero_derivedModuleSpecΓFunctor_obj hZ hRZ)
-
 /-- The unit `𝟭 ⟶ RΓ(Spec A, (-)~)` of the derived adjunction is an isomorphism. -/
 instance isIso_tildeDerivedAdjunction_unit : IsIso (tildeDerivedAdjunction A).unit :=
   NatIso.isIso_of_isIso_app _
@@ -201,12 +189,31 @@ instance : (tilde.functor A).mapDerivedCategory.Full :=
 instance : (tilde.functor A).mapDerivedCategory.Faithful :=
   (fullyFaithfulMapDerivedCategoryTildeFunctor A).faithful
 
+/-- **The counit of the derived adjunction is an isomorphism on `D_QCoh`**: for `K` in
+`D_QCoh(𝒪_{Spec A})`, the map `RΓ(Spec A, K)~ ⟶ K` is an isomorphism. -/
+theorem isIso_tildeDerivedAdjunction_counit_app {K : DerivedCategory (Spec A).Modules}
+    (hK : DQCoh (Spec A) K) : IsIso ((tildeDerivedAdjunction A).counit.app K) := by
+  -- derived global sections invert the counit, by the triangle identity
+  have : IsIso ((derivedModuleSpecΓFunctor A).map ((tildeDerivedAdjunction A).counit.app K)) :=
+    by infer_instance
+  -- the cone of the counit lies in `D_QCoh` and has vanishing derived global sections
+  obtain ⟨Z, g, h, hT⟩ :=
+    Pretriangulated.distinguished_cocone_triangle ((tildeDerivedAdjunction A).counit.app K)
+  have hZ : DQCoh (Spec A) Z := (DQCoh (Spec A)).ext_of_isTriangulatedClosed₃ _ hT
+    (DQCoh.mapDerivedCategory_tildeFunctor_obj A _) hK
+  have hRZ : IsZero ((derivedModuleSpecΓFunctor A).obj Z) :=
+    (Pretriangulated.Triangle.isZero₃_iff_isIso₁ _
+      ((derivedModuleSpecΓFunctor A).map_distinguished _ hT)).2 this
+  exact (Pretriangulated.Triangle.isZero₃_iff_isIso₁ _ hT).1
+    (isZero_of_isZero_derivedModuleSpecΓFunctor_obj hZ hRZ)
+
 /-- The essential image of `D(A) ⥤ D(𝒪_{Spec A})`, induced by `M ↦ M~`, is `D_QCoh(𝒪_{Spec A})`. -/
 theorem DQCoh.mem_essImage_mapDerivedCategory_tildeFunctor_iff
     (K : DerivedCategory (Spec A).Modules) :
     (tilde.functor A).mapDerivedCategory.essImage K ↔ DQCoh (Spec A) K :=
   ⟨fun ⟨_, ⟨e⟩⟩ ↦ (DQCoh (Spec A)).prop_of_iso e (DQCoh.mapDerivedCategory_tildeFunctor_obj A _),
-    fun hK ↦ ⟨_, ⟨@asIso _ _ _ _ _ (isIso_tildeDerivedAdjunction_counit_app hK)⟩⟩⟩
+    fun hK ↦ (tildeDerivedAdjunction A).isIso_counit_app_iff_mem_essImage.1
+      (isIso_tildeDerivedAdjunction_counit_app hK)⟩
 
 variable (A) in
 /-- The derived adjunction `M ↦ M~ ⊣ RΓ(Spec A, -)`, restricted to `D_QCoh(𝒪_{Spec A})`, into which
@@ -227,7 +234,7 @@ private instance (M : DerivedCategory (ModuleCat.{u} A)) :
     unfold tildeDerivedAdjunctionDQCoh
     rw [Adjunction.map_restrictFullyFaithful_unit_app]
     infer_instance
-  exact this
+  simpa only [Functor.id_map] using this
 
 /-- The counit of the restricted derived adjunction is that of the derived adjunction on
 `D_QCoh(𝒪_{Spec A})`, hence an isomorphism. -/

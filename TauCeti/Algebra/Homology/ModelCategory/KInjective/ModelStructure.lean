@@ -123,6 +123,24 @@ lemma fibration_iff {X Y : CochainComplex C ℤ} (f : X ⟶ Y) :
     Fibration f ↔ degreewiseEpiWithInjectiveKernel f ∧ (kernel f).IsKInjective := by
   rw [HomotopicalAlgebra.fibration_iff, fibrations_eq, rlp_monomorphisms_inf_quasiIso_iff]
 
+/-- A degreewise epimorphism with injective kernels whose source vanishes in sufficiently negative
+degrees is a fibration of the injective model structure on unbounded complexes: its kernel is a
+bounded below complex of injective objects, hence K-injective. -/
+theorem fibration_of_degreewiseEpiWithInjectiveKernel
+    {X Y : CochainComplex C ℤ}
+    (p : X ⟶ Y) (hp : degreewiseEpiWithInjectiveKernel p) (d : ℤ) [X.IsStrictlyGE d] :
+    Fibration p := by
+  rw [modelCategoryInjective.fibration_iff]
+  refine ⟨hp, ?_⟩
+  have (n : ℤ) : Injective ((kernel p).X n) :=
+    Injective.of_iso (asIso (kernelComparison p (HomologicalComplex.eval _ _ n))).symm (hp n).2
+  have : (kernel p).IsStrictlyGE d := by
+    rw [isStrictlyGE_iff]
+    intro i hi
+    rw [IsZero.iff_id_eq_zero, ← cancel_mono ((kernel.ι p).f i)]
+    apply (X.isZero_of_isStrictlyGE d i).eq_of_tgt
+  exact isKInjective_of_injective _ d
+
 /-- A cochain complex is fibrant for the injective model structure if and only if it is a
 K-injective complex of injective objects. -/
 lemma isFibrant_iff (X : CochainComplex C ℤ) :

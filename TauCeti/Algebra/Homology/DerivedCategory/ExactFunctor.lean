@@ -43,6 +43,17 @@ lemma isLeftDerivedFunctor_mapDerivedCategory :
   Functor.isLeftDerivedFunctor_of_inverts (HomotopyCategory.quasiIso C₁ (.up ℤ)) _
     F.mapDerivedCategoryFactorsh
 
+/-- Postcomposition of the functor induced by an exact functor is still its left derived
+functor, with the postcomposed comparison on homotopy categories. -/
+lemma isLeftDerivedFunctor_mapDerivedCategory_comp {E : Type*} [Category* E]
+    (H : DerivedCategory C₂ ⥤ E) :
+    (F.mapDerivedCategory ⋙ H).IsLeftDerivedFunctor
+      ((Functor.associator _ _ _).inv ≫
+        Functor.whiskerRight F.mapDerivedCategoryFactorsh.hom H)
+      (HomotopyCategory.quasiIso C₁ (.up ℤ)) :=
+  Functor.isLeftDerivedFunctor_of_inverts (HomotopyCategory.quasiIso C₁ (.up ℤ)) _
+    ((Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight F.mapDerivedCategoryFactorsh H)
+
 /-- The homology of the functor induced by an exact functor `F` on derived categories is `F`
 applied to homology. -/
 noncomputable def mapDerivedCategoryCompHomologyFunctorIso (n : ℤ) :

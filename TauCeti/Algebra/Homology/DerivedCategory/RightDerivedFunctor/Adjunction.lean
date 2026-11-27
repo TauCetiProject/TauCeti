@@ -56,22 +56,14 @@ variable {C : Type u} [Category.{v} C] [Abelian C] {D : Type u'} [Category.{v'} 
   {F : D ⥤ C} {G : C ⥤ D} [F.Additive] [G.Additive] [PreservesFiniteLimits F]
   [PreservesFiniteColimits F] (adj : F ⊣ G)
 
-private lemma isLeftDerivedFunctor_mapDerivedCategory_comp_rightDerivedFunctor :
-    (F.mapDerivedCategory ⋙ G.rightDerivedFunctor).IsLeftDerivedFunctor
-      ((Functor.associator _ _ _).inv ≫
-        Functor.whiskerRight F.mapDerivedCategoryFactorsh.hom G.rightDerivedFunctor)
-      (HomotopyCategory.quasiIso D (.up ℤ)) :=
-  Functor.isLeftDerivedFunctor_of_inverts (HomotopyCategory.quasiIso D (.up ℤ)) _
-    ((Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight F.mapDerivedCategoryFactorsh G.rightDerivedFunctor)
+attribute [local instance] Functor.isLeftDerivedFunctor_mapDerivedCategory
+  Functor.isLeftDerivedFunctor_mapDerivedCategory_comp
+  Functor.isRightDerivedFunctor_rightDerivedFunctor_comp
 
 /-- **The derived adjunction of an exact left adjoint.** If `F : D ⥤ C` is exact and left adjoint
 to `G`, then the functor `F.mapDerivedCategory` induced by `F` on unbounded derived categories is
 left adjoint to the right derived functor `G.rightDerivedFunctor`. -/
 def mapDerivedCategoryRightDerivedFunctor : F.mapDerivedCategory ⊣ G.rightDerivedFunctor :=
-  have := F.isLeftDerivedFunctor_mapDerivedCategory
-  have := isLeftDerivedFunctor_mapDerivedCategory_comp_rightDerivedFunctor (F := F) (G := G)
-  have := G.isRightDerivedFunctor_rightDerivedFunctor_comp F.mapDerivedCategory
   (adj.mapHomotopyCategory (.up ℤ)).derived (HomotopyCategory.quasiIso D (.up ℤ))
     (HomotopyCategory.quasiIso C (.up ℤ)) F.mapDerivedCategoryFactorsh.hom
     G.rightDerivedFunctorUnith
@@ -85,9 +77,6 @@ lemma mapDerivedCategoryRightDerivedFunctor_unit_app (K : HomotopyCategory D (.u
       G.rightDerivedFunctor.map (F.mapDerivedCategoryFactorsh.hom.app K) =
       Qh.map ((adj.mapHomotopyCategory (.up ℤ)).unit.app K) ≫
         G.rightDerivedFunctorUnith.app ((F.mapHomotopyCategory (.up ℤ)).obj K) := by
-  have := F.isLeftDerivedFunctor_mapDerivedCategory
-  have := isLeftDerivedFunctor_mapDerivedCategory_comp_rightDerivedFunctor (F := F) (G := G)
-  have := G.isRightDerivedFunctor_rightDerivedFunctor_comp F.mapDerivedCategory
   exact (adj.mapHomotopyCategory (.up ℤ)).derivedη_fac_app (HomotopyCategory.quasiIso D (.up ℤ))
     F.mapDerivedCategoryFactorsh.hom G.rightDerivedFunctorUnith K
 
@@ -100,9 +89,6 @@ lemma mapDerivedCategoryRightDerivedFunctor_counit_app (L : HomotopyCategory C (
       adj.mapDerivedCategoryRightDerivedFunctor.counit.app (Qh.obj L) =
       F.mapDerivedCategoryFactorsh.hom.app ((G.mapHomotopyCategory (.up ℤ)).obj L) ≫
         Qh.map ((adj.mapHomotopyCategory (.up ℤ)).counit.app L) := by
-  have := F.isLeftDerivedFunctor_mapDerivedCategory
-  have := isLeftDerivedFunctor_mapDerivedCategory_comp_rightDerivedFunctor (F := F) (G := G)
-  have := G.isRightDerivedFunctor_rightDerivedFunctor_comp F.mapDerivedCategory
   exact (adj.mapHomotopyCategory (.up ℤ)).derivedε_fac_app (HomotopyCategory.quasiIso C (.up ℤ))
     F.mapDerivedCategoryFactorsh.hom G.rightDerivedFunctorUnith L
 

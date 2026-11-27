@@ -8,10 +8,11 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.AlgebraicGeometry.Group.Affine
 public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.Kernels
-public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
+public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
@@ -71,6 +72,13 @@ instance (R : CommRingCat.{u}) : (moduleSpecΓFunctor (R := R)).IsRightAdjoint :
 instance (A : CommRingCat.{u}) : (moduleSpecΓFunctor (R := A)).Additive :=
   (moduleSpecΓFunctor (R := A)).additive_of_preserves_binary_products
 
+/-- After forgetting scalars, affine global sections valued in `R`-modules agree with sections
+valued in modules over the ring of global functions. -/
+lemma moduleSpecΓFunctor_comp_forget₂ (A : CommRingCat.{u}) :
+    moduleSpecΓFunctor (R := A) ⋙ forget₂ (ModuleCat.{u} A) AddCommGrpCat =
+      Scheme.Modules.sectionsFunctor (⊤ : (Spec A).Opens) ⋙
+        forget₂ (ModuleCat.{u} Γ(Spec A, ⊤)) AddCommGrpCat := (rfl)
+
 /-- An epimorphism between quasicoherent sheaves on an affine scheme is surjective on global
 sections. -/
 theorem moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent
@@ -102,13 +110,11 @@ theorem shortExact_map_moduleSpecΓFunctor_of_isQuasicoherent
     {S : ShortComplex (Spec R).Modules} (hS : S.ShortExact)
     [S.X₂.IsQuasicoherent] [S.X₃.IsQuasicoherent] :
     (S.map (moduleSpecΓFunctor (R := R))).ShortExact := by
-  have h := (Functor.preservesFiniteLimits_iff_forall_exact_map_and_mono
-    (moduleSpecΓFunctor (R := R))).mp inferInstance S hS
   have : Epi S.g := hS.epi_g
-  have hΓ : Epi ((moduleSpecΓFunctor (R := R)).map S.g) :=
+  have : Epi ((moduleSpecΓFunctor (R := R)).map S.g) :=
     (ModuleCat.epi_iff_surjective _).mpr
       (moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent S.g)
-  exact { exact := h.1, mono_f := h.2, epi_g := hΓ }
+  exact hS.map_of_epi (moduleSpecΓFunctor (R := R))
 
 /-- Taking global sections on `Spec R` preserves an exact short complex in `(Spec R).Modules` as
 soon as its first two terms are quasicoherent; no condition on `S.X₃` is required. -/
@@ -117,7 +123,6 @@ theorem exact_map_moduleSpecΓFunctor_of_isQuasicoherent
     [S.X₁.IsQuasicoherent] [S.X₂.IsQuasicoherent] :
     (S.map (moduleSpecΓFunctor (R := R))).Exact := by
   let F := moduleSpecΓFunctor (R := R)
-  have : F.Additive := F.additive_of_preserves_binary_products
   have : (Abelian.image S.f).IsQuasicoherent :=
     inferInstanceAs (Limits.kernel (Limits.cokernel.π S.f)).IsQuasicoherent
   have : Epi (F.map (Abelian.factorThruImage S.f)) :=

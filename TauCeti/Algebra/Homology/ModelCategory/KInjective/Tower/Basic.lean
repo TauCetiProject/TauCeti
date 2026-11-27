@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Functor.OfSequence
+public import Mathlib.Algebra.Homology.HomotopyCategory.KInjective
 public import Mathlib.Algebra.Homology.Factorizations.CM5a
 public import TauCeti.Algebra.Homology.Embedding.CochainComplex
-public import TauCeti.Algebra.Homology.ModelCategory.KInjective.ModelStructure
-public import TauCeti.CategoryTheory.LiftingProperties.OfOpSequence
 
 /-!
-# Towers of injective resolutions and their limits
+# Towers of injective resolutions
 
 Let `C` be an abelian category with enough injectives, and let `⋯ ⟶ T 2 ⟶ T 1 ⟶ T 0` be a
 tower of cochain complexes in `C` given by chain maps `u n : T (n + 1) ⟶ T n`, where `T n`
@@ -23,25 +23,13 @@ injective kernels and commute with the `u n` (`CochainComplex.towerResolution`).
 Mathlib's factorization `CochainComplex.Plus.modelCategoryQuillen.cm5a` of bounded below
 complexes, applied to the composite `T (n + 1) ⟶ T n ⟶ I n`.
 
-The limit of a tower of degreewise epimorphisms with injective kernels between bounded below
-complexes of injective objects is a K-injective complex of injective objects
-(`CochainComplex.isKInjective_of_isLimit_ofOpSequence`), with no boundedness of the limit: such
-morphisms are fibrations of the injective model structure on unbounded complexes, and lifting
-properties pass to limits of towers (`CategoryTheory.hasLiftingProperty_π_app_zero_of_isLimit`).
-
-This is Spaltenstein's construction of K-injective replacements of unbounded complexes. Applied to
-the canonical truncations `τ^{≥ -n} K` of a complex `K`, the limit is a K-injective complex with a
-compatible map from `K`; whether that map is a quasi-isomorphism depends on how the limit interacts
-with cohomology, which is where geometric input enters.
+Applied to the canonical truncations `τ^{≥ -n} K`, this construction gives a resolved truncation
+tower and its cone from `K`. The limit results are in
+`TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower.Limit`; they use the injective model
+structure on unbounded complexes.
 
 ## Main declarations
 
-* `CochainComplex.modelCategoryInjective.fibration_of_degreewiseEpiWithInjectiveKernel`: degreewise
-  epimorphisms with injective kernels from bounded below complexes are fibrations of the injective
-  model structure.
-* `CochainComplex.isKInjective_of_isLimit_ofOpSequence`: limits of towers of degreewise
-  epimorphisms with injective kernels between bounded below complexes of injective objects are
-  K-injective complexes of injective objects.
 * `CochainComplex.towerResolution`, `CochainComplex.towerResolutionι`,
   `CochainComplex.towerResolutionπ`: the resolution of a tower of bounded below complexes.
 * `CochainComplex.truncGETower`, `CochainComplex.truncGETowerCone`: the tower of resolutions of the
@@ -58,62 +46,13 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits Opposite HomotopicalAlgebra ZeroObject
+open CategoryTheory Limits Opposite ZeroObject
 
 universe v u
 
 namespace CochainComplex
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
-
-open modelCategoryInjective in
-/-- A degreewise epimorphism with injective kernels whose source vanishes in sufficiently negative
-degrees is a fibration of the injective model structure on unbounded complexes: its kernel is a
-bounded below complex of injective objects, hence K-injective. -/
-theorem modelCategoryInjective.fibration_of_degreewiseEpiWithInjectiveKernel
-    {X Y : CochainComplex C ℤ}
-    (p : X ⟶ Y) (hp : degreewiseEpiWithInjectiveKernel p) (d : ℤ) [X.IsStrictlyGE d] :
-    Fibration p := by
-  rw [modelCategoryInjective.fibration_iff]
-  refine ⟨hp, ?_⟩
-  have (n : ℤ) : Injective ((kernel p).X n) :=
-    Injective.of_iso (asIso (kernelComparison p (HomologicalComplex.eval _ _ n))).symm (hp n).2
-  have : (kernel p).IsStrictlyGE d := by
-    rw [isStrictlyGE_iff]
-    intro i hi
-    rw [IsZero.iff_id_eq_zero, ← cancel_mono ((kernel.ι p).f i)]
-    apply (X.isZero_of_isStrictlyGE d i).eq_of_tgt
-  exact isKInjective_of_injective _ d
-
-open modelCategoryInjective in
-/-- **Limits of towers of injective complexes.** Let `p n : X (n + 1) ⟶ X n` be degreewise
-epimorphisms with injective kernels between complexes of injective objects, each vanishing in
-sufficiently negative degrees. Then a limit of the tower is a K-injective complex of injective
-objects, although it need not vanish in any degree. -/
-theorem isKInjective_of_isLimit_ofOpSequence {X : ℕ → CochainComplex C ℤ}
-    (p : ∀ n, X (n + 1) ⟶ X n) (hp : ∀ n, degreewiseEpiWithInjectiveKernel (p n))
-    (hX : ∀ n, ∃ d : ℤ, (X n).IsStrictlyGE d) (hX₀ : ∀ i, Injective ((X 0).X i))
-    {c : Cone (Functor.ofOpSequence p)} (hc : IsLimit c) :
-    (∀ i, Injective (c.pt.X i)) ∧ c.pt.IsKInjective := by
-  rw [← modelCategoryInjective.isFibrant_iff, HomotopicalAlgebra.isFibrant_iff,
-    HomotopicalAlgebra.fibration_iff, modelCategoryInjective.fibrations_eq]
-  intro A B i hi
-  have (n : ℕ) : HasLiftingProperty i (p n) := by
-    obtain ⟨d, _⟩ := hX (n + 1)
-    have := modelCategoryInjective.fibration_of_degreewiseEpiWithInjectiveKernel (p n) (hp n) d
-    rw [HomotopicalAlgebra.fibration_iff, modelCategoryInjective.fibrations_eq] at this
-    exact this i hi
-  have h₀ : HasLiftingProperty i (terminal.from (X 0)) := by
-    obtain ⟨d, _⟩ := hX 0
-    have : IsFibrant (X 0) :=
-      (modelCategoryInjective.isFibrant_iff _).2 ⟨hX₀, isKInjective_of_injective _ d⟩
-    rw [HomotopicalAlgebra.isFibrant_iff, HomotopicalAlgebra.fibration_iff,
-      modelCategoryInjective.fibrations_eq] at this
-    exact this i hi
-  have := hasLiftingProperty_π_app_zero_of_isLimit i p hc
-  rw [show terminal.from c.pt = c.π.app (op 0) ≫ terminal.from (X 0) from terminal.hom_ext _ _]
-  exact @HasLiftingProperty.of_comp_right _ _ _ _ _ _ _ (terminal.from (X 0)) (c.π.app (op 0)) i
-    h₀ this
 
 section TowerResolution
 
@@ -207,15 +146,6 @@ lemma towerResolutionι_comp_towerResolutionπ (n : ℕ) :
       u n ≫ towerResolutionι b hb T u n :=
   (exists_towerLevel_succ b hb T u n (towerLevel b hb T u n)).choose_spec.choose_spec.2
 
-/-- The limit of the resolution of a tower of bounded below complexes is a K-injective complex of
-injective objects. -/
-theorem isKInjective_of_isLimit_towerResolution
-    {c : Cone (Functor.ofOpSequence (towerResolutionπ b hb T u))} (hc : IsLimit c) :
-    (∀ i, Injective (c.pt.X i)) ∧ c.pt.IsKInjective :=
-  isKInjective_of_isLimit_ofOpSequence _
-    (degreewiseEpiWithInjectiveKernel_towerResolutionπ b hb T u)
-    (fun n ↦ ⟨b n - 1, inferInstance⟩) inferInstance hc
-
 end TowerResolution
 
 section TruncGETower
@@ -251,11 +181,6 @@ instance (n : ℕ) (i : ℤ) : Injective (((truncGETower K).obj (op n)).X i) :=
 instance (n : ℕ) : ((truncGETower K).obj (op n)).IsKInjective :=
   isKInjective_of_injective _ (-(n : ℤ) - 1)
 
-/-- A limit of the resolved truncation tower is a K-injective complex of injective objects. -/
-theorem isKInjective_of_isLimit_truncGETower {c : Cone (truncGETower K)} (hc : IsLimit c) :
-    (∀ i, Injective (c.pt.X i)) ∧ c.pt.IsKInjective :=
-  isKInjective_of_isLimit_towerResolution _ _ _ _ hc
-
 /-- The map `K ⟶ Iₙ` from `K` to the `n`-th term of `CochainComplex.truncGETower K`: the
 truncation `K ⟶ τ^{≥ -n} K` followed by the resolution of `τ^{≥ -n} K`. -/
 def truncGETowerι (n : ℕ) : K ⟶ (truncGETower K).obj (op n) :=
@@ -265,24 +190,23 @@ def truncGETowerι (n : ℕ) : K ⟶ (truncGETower K).obj (op n) :=
 lemma truncGETowerι_eq (n : ℕ) :
     K.truncGETowerι n = K.πTruncGE (-(n : ℤ)) ≫ K.truncGETowerResolutionι n := (rfl)
 
+/-- The resolutions of successive truncations commute with the tower transition. -/
+@[reassoc]
+lemma truncGETowerResolutionι_comp_map (n : ℕ) :
+    K.truncGETowerResolutionι (n + 1) ≫
+        (truncGETower K).map (homOfLE (Nat.le_succ n)).op =
+      K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia) ≫
+        K.truncGETowerResolutionι n := by
+  rw [Functor.ofOpSequence_map_homOfLE_succ]
+  exact towerResolutionι_comp_towerResolutionπ _ _ _ _ n
+
 /-- The maps `K ⟶ Iₙ` are compatible with the transitions of `CochainComplex.truncGETower K`. -/
 @[reassoc]
 lemma truncGETowerι_comp_map (n : ℕ) :
     K.truncGETowerι (n + 1) ≫ (truncGETower K).map (homOfLE (Nat.le_succ n)).op =
       K.truncGETowerι n := by
-  rw [Functor.ofOpSequence_map_homOfLE_succ]
-  -- state the compatibility using the resolving complexes before passing to tower objects
-  have h : (K.πTruncGE (-((n + 1 : ℕ) : ℤ)) ≫
-      towerResolutionι (fun n : ℕ ↦ -(n : ℤ)) Nat.mono_cast.neg
-      (fun n ↦ K.truncGE (-(n : ℤ)))
-        (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) (n + 1)) ≫
-      towerResolutionπ (fun n : ℕ ↦ -(n : ℤ)) Nat.mono_cast.neg
-      (fun n ↦ K.truncGE (-(n : ℤ)))
-        (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n =
-      K.truncGETowerι n := by
-    rw [Category.assoc, towerResolutionι_comp_towerResolutionπ, πTruncGE_truncGETransition_assoc]
-    rfl
-  exact h
+  rw [truncGETowerι_eq, truncGETowerι_eq, Category.assoc,
+    truncGETowerResolutionι_comp_map, πTruncGE_truncGETransition_assoc]
 
 /-- The cone over `CochainComplex.truncGETower K` with point `K`, given by the maps
 `CochainComplex.truncGETowerι`. -/

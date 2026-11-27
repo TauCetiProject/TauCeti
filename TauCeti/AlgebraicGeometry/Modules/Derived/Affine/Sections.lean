@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.Basic
-public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
-public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower
+public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower.Limit
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsHomology
 public import TauCeti.AlgebraicGeometry.Modules.AffineGlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.Exactness
 import TauCeti.Algebra.Homology.HomologySequenceLemmas
 
 /-!
@@ -167,15 +167,17 @@ private lemma GoodTower.restrict {X Y : Scheme.{u}} (f : Y ⟶ X) [IsOpenImmersi
     {D : ℕᵒᵖ ⥤ CochainComplex X.Modules ℤ} (hD : GoodTower D) :
     GoodTower (D ⋙ (Scheme.Modules.restrictFunctor f).mapHomologicalComplex _) where
   isStrictlyGE k := by
-    obtain ⟨a, _⟩ := hD.isStrictlyGE k
-    exact ⟨a, (isStrictlyGE_iff _ a).2 fun i hi ↦
-      (Scheme.Modules.restrictFunctor f).map_isZero ((D.obj (op k)).isZero_of_isStrictlyGE a i hi)⟩
+    obtain ⟨a, ha⟩ := hD.isStrictlyGE k
+    have := ha
+    exact ⟨a, inferInstanceAs (CochainComplex.IsStrictlyGE
+      (((Scheme.Modules.restrictFunctor f).mapHomologicalComplex (.up ℤ)).obj
+        (D.obj (op k))) a)⟩
   injective k i :=
     have := hD.injective k i
     (Scheme.Modules.restrictFunctor f).injective_obj _
   isQuasicoherent k i :=
     have := hD.isQuasicoherent k i
-    (Scheme.Modules.isQuasicoherent Y).prop_of_iso
+    (SheafOfModules.isQuasicoherent Y.ringCatSheaf).prop_of_iso
       (((D.obj (op k)).sc i).mapHomologyIso (Scheme.Modules.restrictFunctor f)).symm
       (@_root_.AlgebraicGeometry.Scheme.Modules.isQuasicoherent_restrictFunctor _ _ f _ _ this)
   isSplitEpi k i :=
@@ -197,12 +199,12 @@ private lemma goodTower_truncGETower (hK : ∀ i, (K.homology i).IsQuasicoherent
   isQuasicoherent k i := by
     have hι := (quasiIsoAt_iff_isIso_homologyMap _ _).1 (QuasiIso.quasiIsoAt
       (f := K.truncGETowerResolutionι k) i)
-    refine (Scheme.Modules.isQuasicoherent X).prop_of_iso (@asIso _ _ _ _ _ hι) ?_
+    refine (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso (@asIso _ _ _ _ _ hι) ?_
     by_cases hi : -(k : ℤ) ≤ i
     · have hπ := (quasiIsoAt_iff_isIso_homologyMap _ _).1 (K.quasiIsoAt_πTruncGE _ i hi)
-      exact (Scheme.Modules.isQuasicoherent X).prop_of_iso (@asIso _ _ _ _ _ hπ) (hK i)
+      exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso (@asIso _ _ _ _ _ hπ) (hK i)
     · have : (K.truncGE (-(k : ℤ))).ExactAt i := (K.truncGE _).exactAt_of_isGE (-(k : ℤ)) i
-      exact (Scheme.Modules.isQuasicoherent X).prop_of_isZero this.isZero_homology
+      exact (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_isZero this.isZero_homology
   isSplitEpi := K.isSplitEpi_truncGETower_map_f
 
 end Truncation
@@ -335,6 +337,35 @@ theorem quasiIso_map_sectionsFunctor_of_isKInjective [IsAffine X]
   rw [quasiIsoAt_iff_isIso_homologyMap, (G.mapHomotopy h).symm.homologyMap_eq]
   exact (quasiIsoAt_iff_isIso_homologyMap _ _).1 inferInstance
 
+/-- **Cohomology of global sections of a K-injective complex.** On an affine scheme, for a
+K-injective complex with quasi-coherent cohomology, taking global sections commutes with
+cohomology in every degree. The comparison is obtained through a sufficiently high level of the
+resolved truncation tower. -/
+noncomputable def sectionsHomologyIsoOfIsKInjective [IsAffine X] [K.IsKInjective]
+    (hK : ∀ i, (K.homology i).IsQuasicoherent) (j : ℤ) :
+    (((Scheme.Modules.sectionsFunctor (⊤ : X.Opens)).mapHomologicalComplex _).obj K).homology j ≅
+      (Scheme.Modules.sectionsFunctor (⊤ : X.Opens)).obj (K.homology j) := by
+  let G := Scheme.Modules.sectionsFunctor (⊤ : X.Opens)
+  have := quasiIso_toLimit hK
+  let e := Classical.choose ((CochainComplex.IsKInjective.quasiIso_iff (toLimit K)).1 inferInstance)
+  have he := Classical.choose_spec
+    ((CochainComplex.IsKInjective.quasiIso_iff (toLimit K)).1 inferInstance)
+  have : QuasiIso ((G.mapHomologicalComplex _).map (toLimit K)) := by
+    rw [← he]
+    exact (G.mapHomotopyEquiv e).quasiIso_hom
+  let n := max (1 - j).toNat (-j).toNat
+  have := (goodTower_truncGETower hK).preservesLeftHomologyOf n j
+  have := (quasiIsoAt_iff_isIso_homologyMap _ _).1
+    (QuasiIso.quasiIsoAt (f := (G.mapHomologicalComplex _).map (toLimit K)) j)
+  have := (quasiIsoAt_iff_isIso_homologyMap _ _).1
+    (quasiIsoAt_map_limitπ hK j (n := n) (le_max_left _ _))
+  have := (quasiIsoAt_iff_isIso_homologyMap _ _).1 (K.quasiIsoAt_truncGETowerι n j (by lia))
+  -- Complex homology in degree j is the homology of its short complex at j by definition.
+  exact asIso (homologyMap ((G.mapHomologicalComplex _).map (toLimit K)) j) ≪≫
+    asIso (homologyMap ((G.mapHomologicalComplex _).map (limit.π (truncGETower K) (op n))) j) ≪≫
+    (((truncGETower K).obj (op n)).sc j).mapHomologyIso G ≪≫
+    G.mapIso (asIso (homologyMap (K.truncGETowerι n) j)).symm
+
 /-- **Exactness is detected by global sections of K-injective complexes.** Let `X` be an affine
 scheme and `K` a K-injective complex of `𝒪_X`-modules with quasi-coherent cohomology sheaves. If
 the complex of global sections `Γ(X, K)`, which computes `RΓ(X, K)`, is exact in degree `m`, then
@@ -344,30 +375,11 @@ theorem exactAt_of_exactAt_map_sectionsFunctor [IsAffine X] [K.IsKInjective]
     (h : (((Scheme.Modules.sectionsFunctor (⊤ : X.Opens)).mapHomologicalComplex _).obj
       K).ExactAt m) :
     K.ExactAt m := by
-  let G := Scheme.Modules.sectionsFunctor (⊤ : X.Opens)
-  have := quasiIso_toLimit hK
-  obtain ⟨e, he⟩ := (CochainComplex.IsKInjective.quasiIso_iff (toLimit K)).1 inferInstance
-  have : QuasiIso ((G.mapHomologicalComplex _).map (toLimit K)) := by
-    rw [← he]
-    exact (G.mapHomotopyEquiv e).quasiIso_hom
-  let n := max (1 - m).toNat (-m).toNat
-  have := quasiIsoAt_map_limitπ hK m (n := n) (le_max_left _ _)
-  -- the global sections of `Iₙ` are exact in degree `m`, hence so are the global sections of the
-  -- cohomology sheaf `Hᵐ(Iₙ)`, which therefore vanishes
-  have : QuasiIsoAt ((G.mapHomologicalComplex _).map (toLimit K) ≫
-      (G.mapHomologicalComplex _).map (limit.π (truncGETower K) (op n))) m := inferInstance
-  have hI : ((G.mapHomologicalComplex _).obj ((truncGETower K).obj (op n))).ExactAt m :=
-    (exactAt_iff_of_quasiIsoAt (((G.mapHomologicalComplex _).map (toLimit K) ≫
-      (G.mapHomologicalComplex _).map (limit.π (truncGETower K) (op n)))) m).1 h
-  have := (goodTower_truncGETower hK).preservesLeftHomologyOf n m
-  have := (goodTower_truncGETower hK).isQuasicoherent n m
-  have : Subsingleton Γ(((truncGETower K).obj (op n)).homology m, ⊤) :=
-    ModuleCat.isZero_iff_subsingleton.1
-      (hI.isZero_homology.of_iso ((((truncGETower K).obj (op n)).sc m).mapHomologyIso G).symm)
-  have := K.quasiIsoAt_truncGETowerι n m (by lia)
-  exact (exactAt_iff_of_quasiIsoAt (K.truncGETowerι n) m).2
-    ((exactAt_iff_isZero_homology _ _).2
-      (_root_.AlgebraicGeometry.Scheme.Modules.isZero_of_subsingleton_sections_top _))
+  have : (K.homology m).IsQuasicoherent := hK m
+  have : Subsingleton Γ(K.homology m, ⊤) := ModuleCat.isZero_iff_subsingleton.1
+    (h.isZero_homology.of_iso (sectionsHomologyIsoOfIsKInjective hK m).symm)
+  exact (exactAt_iff_isZero_homology _ _).2
+    (_root_.AlgebraicGeometry.Scheme.Modules.isZero_of_subsingleton_sections_top _)
 
 end Main
 

@@ -52,7 +52,8 @@ noncomputable def tildeDerivedAdjunction :
   tilde.adjunction.mapDerivedCategoryRightDerivedFunctor
 
 /-- On a complex of modules, the derived unit followed by the derived-functor comparison is
-sheafification's unit followed by the comparison to derived global sections. -/
+the unit `K ⟶ Γ(K~)` of `M ↦ M~ ⊣ Γ` on homotopy categories followed by the comparison
+`Γ(K~) ⟶ RΓ(K~)`. -/
 @[reassoc]
 lemma tildeDerivedAdjunction_unit_app (K : HomotopyCategory (ModuleCat.{u} A) (.up ℤ)) :
     (tildeDerivedAdjunction A).unit.app (Qh.obj K) ≫
@@ -63,7 +64,8 @@ lemma tildeDerivedAdjunction_unit_app (K : HomotopyCategory (ModuleCat.{u} A) (.
   tilde.adjunction.mapDerivedCategoryRightDerivedFunctor_unit_app K
 
 /-- On a complex of sheaves, the comparison to derived global sections followed by the derived
-counit is the sheafification comparison followed by the ordinary counit. -/
+counit is the identification of `M ↦ M~` on derived and homotopy categories followed by the
+counit `Γ(K)~ ⟶ K` on homotopy categories. -/
 @[reassoc]
 lemma tildeDerivedAdjunction_counit_app (K : HomotopyCategory (Spec A).Modules (.up ℤ)) :
     (tilde.functor A).mapDerivedCategory.map

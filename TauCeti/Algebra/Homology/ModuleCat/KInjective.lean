@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Category.ModuleCat.Tower.KInjective
 public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
-public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower
+public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower.Basic
 
 /-!
 # Unbounded K-injective replacements of module complexes

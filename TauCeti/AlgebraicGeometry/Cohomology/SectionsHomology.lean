@@ -10,11 +10,8 @@ public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 public import TauCeti.AlgebraicGeometry.Cohomology.Affine
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.WeakSerre
-import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Images
-public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Images
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
-public import TauCeti.Topology.Sheaves.Exact
 
 /-!
 # Global sections and the cohomology sheaves of a complex
@@ -28,8 +25,6 @@ form that `Γ(X, -)` preserves the homology of the short complex `K.sc m`, so th
 
 * `Scheme.Modules.shortExact_map_sectionsFunctor`: global sections of a short exact sequence of
   `𝒪_X`-modules whose last map is surjective on global sections are short exact.
-* `Scheme.Modules.exactAt_of_forall_isAffineOpen`: exactness of a complex of `𝒪_X`-modules follows
-  from exactness of the global sections of its restrictions to all affine opens.
 * `Scheme.Modules.preservesLeftHomologyOf_sectionsFunctor`: for a short complex
   `S = (M₁ ⟶ M₂ ⟶ M₃)`, global sections preserve the homology of `S` as soon as the kernel and
   the image of `M₁ ⟶ ker(M₂ ⟶ M₃)` have vanishing first cohomology.
@@ -43,9 +38,9 @@ form that `Γ(X, -)` preserves the homology of the short complex `K.sc m`, so th
   preserve the homology of every `K.sc m`. On an affine scheme this applies to a bounded below
   complex of injective modules whose cohomology sheaves are quasi-coherent.
 
-The proof of the second statement is the usual dimension shifting along the short exact
-sequences `0 ⟶ Zⁱ ⟶ Kⁱ ⟶ Bⁱ⁺¹ ⟶ 0` and `0 ⟶ Bⁱ ⟶ Zⁱ ⟶ Hⁱ ⟶ 0`, by induction on `i` starting
-below the lowest nonzero term.
+The proof of `subsingleton_cohomology_cycles_and_image_toCycles` is dimension shifting along the
+short exact sequences `0 ⟶ Zⁱ ⟶ Kⁱ ⟶ Bⁱ⁺¹ ⟶ 0` and `0 ⟶ Bⁱ ⟶ Zⁱ ⟶ Hⁱ ⟶ 0`, by induction on
+`i` starting below the lowest nonzero term.
 
 These statements are the bounded below input to the computation of the cohomology of unbounded
 complexes with quasi-coherent cohomology on affine schemes, in
@@ -69,13 +64,14 @@ namespace TauCeti.AlgebraicGeometry.Scheme.Modules
 
 variable {X : Scheme.{u}}
 
-/-- Global sections of a short exact sequence of `𝒪_X`-modules whose last map is surjective on
-global sections form a short exact sequence of modules. -/
+/-- Sections over an open of a short exact sequence of `𝒪_X`-modules whose last map is
+surjective on those sections form a short exact sequence of modules. -/
 theorem shortExact_map_sectionsFunctor {S : ShortComplex X.Modules} (hS : S.ShortExact)
-    (hg : Function.Surjective (S.g.app ⊤)) :
-    (S.map (Scheme.Modules.sectionsFunctor (⊤ : X.Opens))).ShortExact :=
-  have := hS.mono_f
-  ModuleCat.shortComplex_shortExact _ (exact_sections hS) (sections_injective S.f) hg
+    {U : X.Opens} (hg : Function.Surjective (S.g.app U)) :
+    (S.map (Scheme.Modules.sectionsFunctor U)).ShortExact := by
+  have : Epi ((Scheme.Modules.sectionsFunctor U).map S.g) :=
+    (ModuleCat.epi_iff_surjective _).2 hg
+  exact hS.map_of_epi (Scheme.Modules.sectionsFunctor U)
 
 /-- **Global sections preserve the homology of a short complex with acyclic boundaries.** For a
 short complex `S = (M₁ ⟶ M₂ ⟶ M₃)` of `𝒪_X`-modules, if the kernel and the image of the map
@@ -121,9 +117,9 @@ theorem preservesLeftHomologyOf_sectionsFunctor_of_isQuasicoherent [IsAffine X]
     image.isoStrongEpiMono (factorThruImage S.toCycles) (image.ι S.toCycles ≫ S.iCycles)
       (by simp)
   have : (kernel S.toCycles).IsQuasicoherent :=
-    (Scheme.Modules.isQuasicoherent X).prop_of_iso eK.symm inferInstance
+    (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso eK.symm inferInstance
   have : (image S.toCycles).IsQuasicoherent :=
-    (Scheme.Modules.isQuasicoherent X).prop_of_iso eI.symm inferInstance
+    (SheafOfModules.isQuasicoherent X.ringCatSheaf).prop_of_iso eI.symm inferInstance
   -- the kernel and the image of `S.toCycles` are quasi-coherent
   exact preservesLeftHomologyOf_sectionsFunctor S
     (Scheme.Modules.subsingleton_cohomology_succ_of_isAffine (kernel S.toCycles) 0)
@@ -192,32 +188,5 @@ theorem preservesLeftHomologyOf_sectionsFunctor_sc (a : ℤ) [K.IsStrictlyGE a]
     (subsingleton_cohomology_of_iso (K.kernelToCyclesIso _ j (by simp)).symm _) (h.2 j (by simp) 0)
 
 end Complex
-
-section Local
-
-/-- **Exactness is local on affine opens.** A complex of `𝒪_X`-modules is exact in degree `j` as
-soon as the complexes of global sections of its restrictions to all affine opens are exact in
-degree `j`. The converse fails: global sections are not exact. -/
-theorem exactAt_of_forall_isAffineOpen (F : CochainComplex X.Modules ℤ) (j : ℤ)
-    (h : ∀ U : X.Opens, IsAffineOpen U →
-      (((Scheme.Modules.sectionsFunctor (⊤ : U.toScheme.Opens)).mapHomologicalComplex _).obj
-        (((Scheme.Modules.restrictFunctor U.ι).mapHomologicalComplex _).obj F)).ExactAt j) :
-    F.ExactAt j := by
-  rw [HomologicalComplex.exactAt_iff' F (j - 1) j (j + 1) (by simp) (by simp)]
-  refine (toSheaf X).reflects_exact_of_faithful _ (TopCat.Sheaf.exact_of_isBasis
-    (B := {V | ∃ U : X.Opens, IsAffineOpen U ∧ U.ι ''ᵁ ⊤ = V}) ?_ ?_)
-  · convert X.isBasis_affineOpens using 1
-    ext V
-    exact ⟨by rintro ⟨U, hU, rfl⟩; rwa [Scheme.Opens.ι_image_top], fun hV ↦ ⟨V, hV, by simp⟩⟩
-  · rintro _ ⟨U, hU, rfl⟩ s hs
-    have := h U hU
-    rw [HomologicalComplex.exactAt_iff' _ (j - 1) j (j + 1) (by simp) (by simp),
-      ShortComplex.moduleCat_exact_iff] at this
-    -- the sections over `⊤` of the restriction to `U` are, by definition of restriction, the
-    -- sections over the image of `⊤`, with the same maps
-    exact this s hs
-
-
-end Local
 
 end TauCeti.AlgebraicGeometry.Scheme.Modules

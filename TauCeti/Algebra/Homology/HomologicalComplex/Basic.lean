@@ -766,6 +766,8 @@ lemma quasiIsoAt_map_of_preservesLeftHomologyOf {C D ι : Type*} [Category* C] [
     [F.PreservesLeftHomologyOf (L.sc i)] [QuasiIsoAt f i] :
     QuasiIsoAt ((F.mapHomologicalComplex c).map f) i := by
   rw [quasiIsoAt_iff] at *
+  -- Evaluating the mapped complex at its three adjacent degrees gives the same short complex
+  -- as mapping `K.sc i`: both constructions apply F to the same objects and differentials.
   have : (F.mapShortComplex.obj ((shortComplexFunctor C c i).obj K)).HasHomology :=
     ‹((F.mapHomologicalComplex c).obj K).HasHomology i›
   have : (F.mapShortComplex.obj ((shortComplexFunctor C c i).obj L)).HasHomology :=

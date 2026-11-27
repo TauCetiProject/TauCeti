@@ -12,8 +12,9 @@ public import Mathlib.CategoryTheory.Limits.IsLimit
 public import Mathlib.CategoryTheory.Preadditive.FunctorCategory
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.LinearAlgebra.Quotient.Basic
+import Mathlib.Order.SuccPred.Nat
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
-import Mathlib.CategoryTheory.Limits.Constructions.EventuallyConstant
+import TauCeti.CategoryTheory.Limits.Constructions.EventuallyConstant
 
 /-!
 # `lim` and `lim¹` of towers of modules
@@ -388,19 +389,9 @@ theorem limπ_surjective (h : ∀ n, Function.Surjective (F.transition n)) (n : 
 projection `lim A → Aₙ` with `N ≤ n`: the tower is constant from `N` on. -/
 theorem limπ_bijective_of_le (N : ℕ) (h : ∀ k, N ≤ k → Function.Bijective (F.transition k))
     {n : ℕ} (hn : N ≤ n) : Function.Bijective (F.limπ n) := by
-  -- the tower is eventually constant from `N` on
-  have hF : F.IsEventuallyConstantTo (op N) := fun j f ↦ by
-    obtain ⟨k⟩ := j
-    have hk : N ≤ k := leOfHom f.unop
-    rw [Subsingleton.elim f (homOfLE hk).op]
-    induction k, hk using Nat.le_induction with
-    | base => rw [show homOfLE (le_refl N) = 𝟙 N from rfl, op_id, F.map_id]; infer_instance
-    | succ k hk ih =>
-      rw [← homOfLE_comp hk (Nat.le_succ k), op_comp, F.map_comp]
-      have := (ConcreteCategory.isIso_iff_bijective (F.map (homOfLE (Nat.le_succ k)).op)).2
-        (h k hk)
-      have := ih (homOfLE hk).op
-      infer_instance
+  have hF : F.IsEventuallyConstantTo (op N) :=
+    Functor.isEventuallyConstantTo_of_isIso_map_succ (F := F) (m := N) fun k hk ↦
+      (ConcreteCategory.isIso_iff_bijective _).2 (h k hk)
   have := hF.isIso_π_of_isLimit' F.isLimitLimCone (op n) (homOfLE hn).op
   rw [← F.limCone_π_app]
   exact (ConcreteCategory.isIso_iff_bijective _).1 this
