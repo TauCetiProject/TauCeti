@@ -41,46 +41,6 @@ namespace TauCeti
 
 open ContCohomology
 
-variable {p : ℕ} [Fact p.Prime] (k : ℕ)
-  [DistribMulAction (Multiplicative ℤ_[p]) (ZMod (p ^ k))]
-  [ContinuousSMul (Multiplicative ℤ_[p]) (ZMod (p ^ k))]
-  (htriv : ∀ (g : Multiplicative ℤ_[p]) (a : ZMod (p ^ k)), g • a = a)
-
-/-- With trivial coefficients, first continuous cohomology of `ℤ_[p]` modulo `p ^ k`
-is the coefficient ring, by evaluation of a character at the additive generator `1`. -/
-noncomputable def padicIntH1ZModPowEquiv :
-    H1 (Multiplicative ℤ_[p]) (ZMod (p ^ k)) ≃ₗ[ZMod (p ^ k)] ZMod (p ^ k) :=
-  (h1EquivContinuousZModHom htriv).trans (PadicInt.continuousZModDualEquiv k)
-
-/-- The cohomology equivalence evaluates the continuous character associated with a class
-at the additive generator `1`. -/
-@[simp] theorem padicIntH1ZModPowEquiv_apply (c : H1 (Multiplicative ℤ_[p]) (ZMod (p ^ k))) :
-    padicIntH1ZModPowEquiv k htriv c =
-      Multiplicative.toAdd ((H1EquivOfSmulEqSelf htriv c).toMul
-        (Multiplicative.ofAdd (1 : ℤ_[p]))) := by
-  simp [padicIntH1ZModPowEquiv]
-
-/-- The class of a continuous one-cocycle maps to its value at the additive generator `1`. -/
-theorem padicIntH1ZModPowEquiv_apply_mk (c : Z1 (Multiplicative ℤ_[p]) (ZMod (p ^ k))) :
-    padicIntH1ZModPowEquiv k htriv (c : H1 (Multiplicative ℤ_[p]) (ZMod (p ^ k))) =
-      (c : Multiplicative ℤ_[p] → ZMod (p ^ k)) (Multiplicative.ofAdd (1 : ℤ_[p])) := by
-  simp [Z1EquivOfSmulEqSelf_apply]
-
-/-- The class with parameter `a` has character `x ↦ (x mod p ^ k) * a`. -/
--- Pre-simplification preserves the exponent presentation before normalizing the arguments.
-@[simp↓]
-theorem padicIntH1ZModPowEquiv_symm_character (a : ZMod (p ^ k)) (x : ℤ_[p]) :
-    Multiplicative.toAdd ((H1EquivOfSmulEqSelf htriv
-      ((padicIntH1ZModPowEquiv k htriv).symm a)).toMul (Multiplicative.ofAdd x)) =
-      PadicInt.toZModPow k x * a := by
-  simp [padicIntH1ZModPowEquiv]
-
-end TauCeti
-
-namespace TauCeti
-
-open ContCohomology
-
 section Module
 
 variable {p : ℕ} [Fact p.Prime] {A : Type*} [AddCommGroup A] [Module ℤ_[p] A]
@@ -135,6 +95,48 @@ noncomputable def padicIntH1LinearEquiv : H1 (Multiplicative ℤ_[p]) A ≃ₗ[�
     (padicIntH1LinearEquiv htriv).symm a = (padicIntH1Equiv htriv).symm a := (rfl)
 
 end Module
+
+section ZModPow
+
+variable {p : ℕ} [Fact p.Prime] (k : ℕ)
+  [DistribMulAction (Multiplicative ℤ_[p]) (ZMod (p ^ k))]
+  [ContinuousSMul (Multiplicative ℤ_[p]) (ZMod (p ^ k))]
+  (htriv : ∀ (g : Multiplicative ℤ_[p]) (a : ZMod (p ^ k)), g • a = a)
+
+/-- With trivial coefficients, first continuous cohomology of `ℤ_[p]` modulo `p ^ k`
+is the coefficient ring, by evaluation of a character at the additive generator `1`. This is
+`padicIntH1Equiv` for `ZMod (p ^ k)`, a `ℤ_[p]`-module through the truncation map. -/
+noncomputable def padicIntH1ZModPowEquiv :
+    H1 (Multiplicative ℤ_[p]) (ZMod (p ^ k)) ≃ₗ[ZMod (p ^ k)] ZMod (p ^ k) :=
+  letI := (PadicInt.toZModPow (p := p) k).toModule
+  haveI : ContinuousSMul ℤ_[p] (ZMod (p ^ k)) :=
+    MulAction.continuousSMul_compHom (PadicInt.continuous_toZModPow k)
+  (padicIntH1Equiv htriv).toLinearEquiv (ZMod.map_smul _)
+
+/-- The cohomology equivalence evaluates the continuous character associated with a class
+at the additive generator `1`. -/
+@[simp] theorem padicIntH1ZModPowEquiv_apply (c : H1 (Multiplicative ℤ_[p]) (ZMod (p ^ k))) :
+    padicIntH1ZModPowEquiv k htriv c =
+      Multiplicative.toAdd ((H1EquivOfSmulEqSelf htriv c).toMul
+        (Multiplicative.ofAdd (1 : ℤ_[p]))) := by
+  simp [padicIntH1ZModPowEquiv]
+
+/-- The class of a continuous one-cocycle maps to its value at the additive generator `1`. -/
+theorem padicIntH1ZModPowEquiv_apply_mk (c : Z1 (Multiplicative ℤ_[p]) (ZMod (p ^ k))) :
+    padicIntH1ZModPowEquiv k htriv (c : H1 (Multiplicative ℤ_[p]) (ZMod (p ^ k))) =
+      (c : Multiplicative ℤ_[p] → ZMod (p ^ k)) (Multiplicative.ofAdd (1 : ℤ_[p])) := by
+  simp
+
+/-- The class with parameter `a` has character `x ↦ (x mod p ^ k) * a`. -/
+-- Pre-simplification preserves the exponent presentation before normalizing the arguments.
+@[simp↓]
+theorem padicIntH1ZModPowEquiv_symm_character (a : ZMod (p ^ k)) (x : ℤ_[p]) :
+    Multiplicative.toAdd ((H1EquivOfSmulEqSelf htriv
+      ((padicIntH1ZModPowEquiv k htriv).symm a)).toMul (Multiplicative.ofAdd x)) =
+      PadicInt.toZModPow k x * a := by
+  simp [padicIntH1ZModPowEquiv, RingHom.toModule_smul]
+
+end ZModPow
 
 /-- Modulo `9`, the class with value `5` at the additive generator is nonzero and its
 character takes the value `1` at the p-adic integer `2`. -/

@@ -44,8 +44,8 @@ section PadicIntH1
 
 open TauCeti TauCeti.ContCohomology
 
-/-! `ℤ_p` also acts on itself and on `ℚ_p` by translation (Mathlib's `Multiplicative.smul`), so
-the hypotheses below name the action they refer to. -/
+/-! `ℤ_p` also acts on itself by translation (Mathlib's `Multiplicative.smul`), so the
+`ℤ_p`-coefficient check names the action it refers to. -/
 
 /-- For the trivial action of `ℤ_p`, `H¹(ℤ_p, ℤ_p) = ℤ_p`. -/
 noncomputable example [i : DistribMulAction (Multiplicative ℤ_[p]) ℤ_[p]]
@@ -70,7 +70,6 @@ example [i : DistribMulAction (Multiplicative ℤ_[p]) ℚ_[p]]
     Multiplicative.toAdd ((H1EquivOfSmulEqSelf htriv
       ((padicIntH1Equiv htriv).symm (p : ℚ_[p])⁻¹)).toMul (Multiplicative.ofAdd x)) =
       (x : ℚ_[p]) / p := by
-  rw [padicIntH1Equiv_symm_character, Algebra.smul_def, PadicInt.algebraMap_apply,
-    div_eq_mul_inv]
+  simp [Algebra.smul_def, div_eq_mul_inv]
 
 end PadicIntH1
