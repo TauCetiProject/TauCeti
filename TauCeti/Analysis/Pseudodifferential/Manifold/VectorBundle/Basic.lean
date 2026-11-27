@@ -597,6 +597,26 @@ theorem comp_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional 
   simp only [map_sum, LinearMap.sum_apply, LinearMap.comp_apply,
     sectionEntry_apply_eq_cutoffFrameCoeff]
 
+/-- **Conjugation by operators of order `0`.** If the bundles `E` and `F` have finite-dimensional
+fibres, `P : Γ(E) → Γ(F)` is a classical pseudodifferential operator of order `m`, and
+`B : Γ(G) → Γ(E)` and `A : Γ(F) → Γ(G')` are ones of order `0`, then `A ∘ P ∘ B : Γ(G) → Γ(G')` is
+a classical pseudodifferential operator of order `m`. -/
+theorem comp_comp_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional ℂ V]
+    [FiniteDimensional ℂ W] {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U']
+    {G' : M → Type*} [TopologicalSpace (TotalSpace U' G')] [∀ x, AddCommGroup (G' x)]
+    [∀ x, Module ℝ (G' x)] [∀ x, Module ℂ (G' x)] [∀ x, TopologicalSpace (G' x)]
+    [FiberBundle U' G'] [VectorBundle ℝ U' G'] [VectorBundle ℂ U' G']
+    [ContMDiffVectorBundle ∞ U' G' 𝓘(ℝ, CoordinateSpace n)] {m : ℝ}
+    {B : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); U, G⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯}
+    {P : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); V, E⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯}
+    {A : Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); W, F⟯ →ₗ[ℂ] Cₛ^∞⟮𝓘(ℝ, CoordinateSpace n); U', G'⟯}
+    (hA : A ∈ sectionClassicalPseudodifferentialOperators 0)
+    (hP : P ∈ sectionClassicalPseudodifferentialOperators m)
+    (hB : B ∈ sectionClassicalPseudodifferentialOperators 0) :
+    A ∘ₗ P ∘ₗ B ∈ sectionClassicalPseudodifferentialOperators m := by
+  simpa using comp_mem_sectionClassicalPseudodifferentialOperators hA
+    (comp_mem_sectionClassicalPseudodifferentialOperators hP hB)
+
 /-- **Powers.** If `P : Γ(E) → Γ(E)` is a classical pseudodifferential operator of order `m` on a
 bundle with finite-dimensional fibre, then `P ^ k` has order `k * m`. -/
 theorem pow_mem_sectionClassicalPseudodifferentialOperators [FiniteDimensional ℂ V] {m : ℝ}
