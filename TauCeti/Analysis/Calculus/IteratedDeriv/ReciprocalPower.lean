@@ -16,7 +16,7 @@ import Mathlib.Data.Nat.Choose.Basic
 
 The normalized iterated derivatives of a shifted reciprocal power are binomial coefficients
 scaled by powers of the displacement from the singularity. The normalization uses the variable
-`t = z - s` for a Taylor expansion about `z`.
+`t = z - s` for a Taylor expansion about `z`. The simple-pole case `j = 0` is stated separately.
 -/
 
 public section
@@ -55,5 +55,15 @@ theorem neg_one_pow_mul_iteratedDeriv_div_factorial_const_div_sub_pow
   have hsq : (-1 : 𝕜) ^ k * (-1) ^ k = 1 := by rw [← mul_pow]; norm_num
   linear_combination (↑((k + j).choose j) * c / (z - ρ) ^ (k + j + 1) : 𝕜) *
     ((k.factorial : 𝕜) * (k.factorial : 𝕜)⁻¹ * hsq + mul_inv_cancel₀ hk)
+
+/-- The degree-`k` coefficient of `t ↦ c / (z - t - ρ)` at `0` is `c / (z - ρ) ^ (k + 1)`.
+This is the case `j = 0` of
+`TauCeti.neg_one_pow_mul_iteratedDeriv_div_factorial_const_div_sub_pow`. -/
+theorem neg_one_pow_mul_iteratedDeriv_const_div_sub_div_factorial
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] (k : ℕ) (c z ρ : 𝕜) :
+    (-1 : 𝕜) ^ k * iteratedDeriv k (fun s ↦ c / (s - ρ)) z / (k.factorial : 𝕜) =
+      c / (z - ρ) ^ (k + 1) := by
+  simpa [mul_div_assoc] using
+    neg_one_pow_mul_iteratedDeriv_div_factorial_const_div_sub_pow 0 k c z ρ
 
 end TauCeti

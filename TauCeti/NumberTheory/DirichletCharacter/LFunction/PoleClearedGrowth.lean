@@ -11,6 +11,7 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.NumberTheory.DirichletCharacter.Conductor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.StripGrowth
 import TauCeti.NumberTheory.LSeries.DirichletEulerLog
+import TauCeti.NumberTheory.PrimeFactors.Bounds
 import TauCeti.NumberTheory.LSeries.RiemannZeta.Growth
 
 /-!
@@ -31,50 +32,6 @@ public section
 
 open Complex Real
 
-namespace DirichletCharacter
-
-/-- On `Re s ≥ -d`, the product of the deleted Euler factors for primes dividing `q` has
-norm at most `q^(d+1)`. The character need not be primitive. -/
-theorem norm_prod_one_sub_mul_prime_cpow_le_pow {m q : ℕ} [NeZero q]
-    (χ : DirichletCharacter ℂ m) (d : ℕ) {s : ℂ} (hs : -(d : ℝ) ≤ s.re) :
-    ‖∏ p ∈ q.primeFactors, (1 - χ p * (p : ℂ) ^ (-s))‖ ≤ (q : ℝ) ^ (d + 1) := by
-  rw [norm_prod]
-  calc
-    _ ≤ ∏ p ∈ q.primeFactors, (p : ℝ) ^ (d + 1) := by
-      refine Finset.prod_le_prod₀ (fun _ _ ↦ norm_nonneg _) fun p hp ↦ ?_
-      have hp₂ : (2 : ℝ) ≤ p := by exact_mod_cast (Nat.prime_of_mem_primeFactors hp).two_le
-      have hpow : (p : ℝ) ^ (-s).re ≤ (p : ℝ) ^ d := by
-        rw [← Real.rpow_natCast, neg_re]
-        exact Real.rpow_le_rpow_of_exponent_le (by linarith) (by linarith)
-      calc
-        _ ≤ 1 + ‖χ p * (p : ℂ) ^ (-s)‖ := by
-          simpa only [norm_one] using norm_sub_le (1 : ℂ) (χ p * (p : ℂ) ^ (-s))
-        _ ≤ 1 + (p : ℝ) ^ d := by
-          rw [norm_mul, norm_natCast_cpow_of_pos (Nat.prime_of_mem_primeFactors hp).pos]
-          gcongr
-          exact (mul_le_of_le_one_left (by positivity) (χ.norm_le_one p)).trans hpow
-        _ ≤ (p : ℝ) ^ (d + 1) := by
-          rw [pow_succ]
-          have h := one_le_pow₀ (by linarith : (1 : ℝ) ≤ p) (n := d)
-          nlinarith [mul_le_mul_of_nonneg_left hp₂ (by positivity : 0 ≤ (p : ℝ) ^ d)]
-    _ ≤ _ := by
-      rw [Finset.prod_pow, ← Nat.cast_prod]
-      gcongr
-      exact_mod_cast Nat.le_of_dvd (NeZero.pos q) (Nat.prod_primeFactors_dvd q)
-
-/-- The pole-cleared L-function of a principal character is the pole-cleared zeta function
-with the Euler factors at primes dividing the level removed. This identity includes `s = 1`. -/
-theorem entireLFunction_one_eq_zeta_mul_prod (q : ℕ) [NeZero q] (s : ℂ) :
-    (1 : DirichletCharacter ℂ q).entireLFunction s =
-      LFunctionTrivChar₁ 1 s * ∏ p ∈ q.primeFactors, (1 - (p : ℂ) ^ (-s)) := by
-  obtain rfl | hs := eq_or_ne s 1
-  · simp [entireLFunction_one, LFunctionTrivChar₁, cpow_neg_one]
-  rw [entireLFunction_one, LFunctionTrivChar₁_apply_of_ne_one q hs,
-    LFunctionTrivChar_eq_mul_riemannZeta hs, LFunctionTrivChar₁_one_apply_of_ne_one hs]
-  ring
-
-end DirichletCharacter
-
 namespace TauCeti
 
 open DirichletCharacter
@@ -82,10 +39,11 @@ open DirichletCharacter
 private theorem norm_entireLFunction_one_le {q d : ℕ} [NeZero q] {s : ℂ} (hs : -(d : ℝ) ≤ s.re) :
     ‖(1 : DirichletCharacter ℂ q).entireLFunction s‖ ≤
       ‖LFunctionTrivChar₁ 1 s‖ * (q : ℝ) ^ (d + 1) := by
-  rw [entireLFunction_one_eq_zeta_mul_prod, norm_mul]
+  rw [entireLFunction_one_eq_LFunctionTrivChar₁_one_mul_prod, norm_mul]
   apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
-  simpa only [MulChar.one_apply (isUnit_of_subsingleton _), one_mul] using
-    (1 : DirichletCharacter ℂ 1).norm_prod_one_sub_mul_prime_cpow_le_pow (q := q) d hs
+  simpa only [one_mul] using
+    norm_prod_primeFactors_one_sub_mul_cpow_neg_le_pow (N := q) (fun _ ↦ 1)
+      (fun _ ↦ norm_one.le) d hs
 
 private theorem norm_entireLFunction_ne_one_le {q d : ℕ} [NeZero q]
     (χ : DirichletCharacter ℂ q) (hχ : χ ≠ 1) {s : ℂ} (hs : -(d : ℝ) ≤ s.re) :
@@ -96,7 +54,8 @@ private theorem norm_entireLFunction_ne_one_le {q d : ℕ} [NeZero q]
       (.inl (mt χ.primitiveCharacter_eq_one_iff.mp hχ)))
   rw [entireLFunction_of_ne_one hχ, he, norm_mul]
   exact mul_le_mul_of_nonneg_left
-    (χ.primitiveCharacter.norm_prod_one_sub_mul_prime_cpow_le_pow (q := q) d hs)
+    (norm_prod_primeFactors_one_sub_mul_cpow_neg_le_pow (N := q) (fun p ↦ χ.primitiveCharacter p)
+      (fun p ↦ χ.primitiveCharacter.norm_le_one p) d hs)
     (norm_nonneg (χ.primitiveCharacter.LFunction s))
 
 /-- Uniform polynomial growth of the pole-cleared L-functions for all characters on a fixed
