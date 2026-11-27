@@ -26,8 +26,16 @@ import TauCeti.LinearAlgebra.SesquilinearForm.Complex
 # Root chains of `GL n` Hecke polynomials
 
 This file isolates the linear-algebraic and polynomial core of the root-chain lemma for
-spherical Hecke polynomials of `GL_N` in unitary representations (cf. Tadić's classification of
-the unitary dual).
+spherical Hecke polynomials of `GL_N` in unitary representations (cf. Bernstein and Tadić on
+the classification of the unitary dual of `GL_N`).
+
+## References
+
+* J. Bernstein, *P-invariant distributions on GL(N) and the classification of unitary
+  representations of GL(N) (non-Archimedean case)*, Lecture Notes in Math. 1041, Springer, 1984,
+  pp. 50–102.
+* M. Tadić, *Classification of unitary representations in irreducible representations of general
+  linear group (non-Archimedean case)*, Ann. Sci. Éc. Norm. Supér. (4) 19 (1986), 335–382.
 
 ## Provenance
 
