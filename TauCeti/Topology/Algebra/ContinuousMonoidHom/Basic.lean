@@ -249,6 +249,19 @@ theorem _root_.ContinuousMonoidHom.zpow_apply {A E : Type*} [Monoid A] [Topologi
     (⟨⟨fun g : A →ₜ* E ↦ g a, by simp [ContinuousMonoidHom.one_toFun]⟩,
       fun g h ↦ ContinuousMonoidHom.mul_apply g h a⟩ : (A →ₜ* E) →* E) f n
 
+/-- Finite products of continuous homomorphisms into a commutative topological monoid are computed
+pointwise. -/
+@[to_additive (attr := simp) /-- Finite sums of continuous additive homomorphisms into a
+commutative additive topological monoid are computed pointwise. -/]
+theorem _root_.ContinuousMonoidHom.finset_prod_apply {ι A E : Type*} [Monoid A]
+    [TopologicalSpace A] [CommMonoid E] [TopologicalSpace E] [ContinuousMul E]
+    (s : Finset ι) (f : ι → A →ₜ* E) (a : A) :
+    (∏ i ∈ s, f i) a = ∏ i ∈ s, f i a := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp [ContinuousMonoidHom.one_toFun]
+  | insert i s his ih => simp [his, ih]
+
 -- The three definitions below are exposed: downstream, `TopRep.res` objects taken along them have
 -- to be definitionally the ones taken along the bare `Subgroup.subtype`, `Subgroup.inclusion` and
 -- `QuotientGroup.mk'`. For `subgroupInclusion h` with `h : H ≤ S` this is what lets the identity

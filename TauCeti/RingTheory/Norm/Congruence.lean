@@ -79,8 +79,9 @@ theorem Algebra.norm_eq_one_of_isUnit_of_sub_one_mem_span_natCast {m : ℕ} (hm 
   rcases Int.isUnit_iff.mp (ha.map (Algebra.norm ℤ)) with h1 | hneg
   · exact h1
   · have hc := Algebra.intCast_norm_eq_of_sub_mem_span_natCast (a := a) (b := 1) h
-    rw [hneg, map_one, Int.cast_neg, Int.cast_one, neg_eq_iff_add_eq_zero, one_add_one_eq_two,
-      ← Nat.cast_two, ZMod.natCast_eq_zero_iff] at hc
-    exact absurd (Nat.le_of_dvd (by decide) hc) (not_le_of_gt hm)
+    have h2 : ((2 : ℕ) : ZMod m) = 0 := by
+      simpa [hneg, neg_eq_iff_add_eq_zero, one_add_one_eq_two] using hc
+    rw [ZMod.natCast_eq_zero_iff] at h2
+    exact absurd (Nat.le_of_dvd (by decide) h2) (not_le_of_gt hm)
 
 end IntCongruence

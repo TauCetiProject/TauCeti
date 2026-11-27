@@ -437,8 +437,8 @@ theorem algebraic_add (v₁ v₂ : ℤ) :
 
 theorem algebraic_neg (v : ℤ) :
     (algebraic E (-v) : WeightSpace p E) = (algebraic E v)⁻¹ := by
-  refine ContinuousMonoidHom.ext fun y ↦ ?_
-  simp [algebraic_apply]
+  unfold algebraic
+  exact zpow_neg (α := WeightSpace p E) _ v
 
 end Algebraic
 

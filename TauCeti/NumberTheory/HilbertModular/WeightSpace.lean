@@ -101,14 +101,6 @@ homomorphism `((ℤ_p ⊗[ℤ] 𝓞 K)ˣ × ℤ_pˣ) →ₜ* Rˣ`. -/
 abbrev ArithmeticWeight (R : Type*) [Monoid R] [TopologicalSpace R] : Type _ :=
   ((PadicIntegralAlgebra K p)ˣ × ℤ_[p]ˣ) →ₜ* Rˣ
 
-/-- Compatibility of `w.coprod t` with a continuous homomorphism `f : R →ₜ* S` on the
-coefficients. -/
-theorem unitsMap_comp_coprod {R S : Type*} [CommMonoid R] [CommMonoid S] [TopologicalSpace R]
-    [TopologicalSpace S] [ContinuousMul R] [ContinuousMul S] (f : R →ₜ* S)
-    (w : GeometricWeight K p R) (t : WeightSpace p R) :
-    f.unitsMap.comp (w.coprod t) = (f.unitsMap.comp w).coprod (f.unitsMap.comp t) :=
-  ContinuousMonoidHom.comp_coprod f.unitsMap w t
-
 end Weights
 
 section InverseNorm
@@ -161,20 +153,6 @@ theorem unitsMap_comp_inverseNormPullback {R S : Type*} [Monoid R] [Monoid S]
 section CommMonoid
 
 variable {R : Type*} [CommMonoid R] [TopologicalSpace R] [ContinuousMul R]
-
-/-- Pullback along `inverseNormHom` as a group homomorphism from arithmetic weights to geometric
-weights. -/
-noncomputable def inverseNormPullbackHom :
-    ArithmeticWeight K p R →* GeometricWeight K p R where
-  toFun := inverseNormPullback K p
-  map_one' := ContinuousMonoidHom.ext fun _ ↦ rfl
-  map_mul' _ _ := ContinuousMonoidHom.ext fun _ ↦ rfl
-
-@[simp]
-theorem coe_inverseNormPullbackHom :
-    (inverseNormPullbackHom K p (R := R) : ArithmeticWeight K p R → GeometricWeight K p R) =
-      inverseNormPullback K p :=
-  (rfl)
 
 /-- The geometric weight attached to `(w, t)` is `κ(x) = w(x) ^ 2 * t(N_p(x))⁻¹`. -/
 theorem inverseNormPullback_coprod (w : GeometricWeight K p R) (t : WeightSpace p R) :
@@ -237,14 +215,12 @@ theorem inverseNormPullback_coprod_globalUnitInclusion_of_isTotallyPositive
     inverseNormPullback K p (w.coprod t) (PadicIntegralAlgebra.globalUnitInclusion K p η) =
       w (PadicIntegralAlgebra.globalUnitInclusion K p η) ^ 2 := by
   refine inverseNormPullback_coprod_globalUnitInclusion_of_norm_eq_one K p w t ?_
-  have hne : ((η : 𝓞 K) : K) ≠ 0 :=
-    (η.isUnit.map (algebraMap (𝓞 K) K : 𝓞 K →* K)).ne_zero
-  have hpos : (0 : ℚ) < Algebra.norm ℚ ((η : 𝓞 K) : K) :=
-    NumberField.norm_pos_of_isTotallyPositive hne hη
-  rw [← Algebra.coe_norm_int] at hpos
-  rcases Int.isUnit_iff.mp (η.isUnit.map (Algebra.norm ℤ)) with h1 | hneg
-  · exact h1
-  · exact absurd hpos (by rw [hneg]; norm_num)
+  have hpos : 0 < Algebra.norm ℤ (η : 𝓞 K) := by
+    rw [← Int.cast_pos (R := ℚ), Algebra.coe_norm_int]
+    exact NumberField.norm_pos_of_isTotallyPositive
+      (η.isUnit.map (algebraMap (𝓞 K) K : 𝓞 K →* K)).ne_zero hη
+  rw [← abs_of_pos hpos]
+  exact Int.isUnit_iff_abs_eq.mp (η.isUnit.map (Algebra.norm ℤ))
 
 /-- On a global unit of norm `-1`, the pullback of `(w, t)` picks up the central sign factor
 `t(-1)⁻¹`. -/
@@ -310,12 +286,7 @@ variable {K p E} in
 theorem algebraicGeometricWeight_apply (k : (K →+* E) → ℤ)
     (x : (PadicIntegralAlgebra K p)ˣ) :
     algebraicGeometricWeight K p E k x = ∏ σ : K →+* E, embeddingChar K p E σ x ^ k σ := by
-  rw [algebraicGeometricWeight]
-  exact (map_prod
-    (⟨⟨fun f : GeometricWeight K p E ↦ f x, by simp [ContinuousMonoidHom.one_toFun]⟩,
-      fun f g ↦ ContinuousMonoidHom.mul_apply f g x⟩ : GeometricWeight K p E →* Eˣ)
-    (fun σ ↦ embeddingChar K p E σ ^ k σ) Finset.univ).trans
-    (Finset.prod_congr rfl fun σ _ ↦ ContinuousMonoidHom.zpow_apply _ _ _)
+  simp [algebraicGeometricWeight]
 
 @[simp]
 theorem algebraicGeometricWeight_zero : algebraicGeometricWeight K p E 0 = 1 := by
