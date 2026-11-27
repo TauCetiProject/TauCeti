@@ -140,11 +140,14 @@ theorem nonempty_gr_iso (p : ℤ) :
 although their filtrations have isomorphic graded pieces (`nonempty_gr_iso`). -/
 theorem not_nonempty_iso : ¬ Nonempty (zmodFourFiltration.X ≅ kleinFiltration.X) := by
   rintro ⟨e⟩
-  have h : (2 : ℤ) • e.toLinearEquiv (1 : ZMod 4) = 0 := by
-    generalize e.toLinearEquiv (1 : ZMod 4) = x
-    revert x
-    decide
-  rw [← map_zsmul, LinearEquiv.map_eq_zero_iff] at h
+  -- The underlying objects of `ofSubmodules` filtrations are `ModuleCat.of ℤ (ZMod 4)` and
+  -- `ModuleCat.of ℤ (ZMod 2 × ZMod 2)` by definition, so `e` is a linear equivalence between them.
+  let f : ZMod 4 ≃ₗ[ℤ] ZMod 2 × ZMod 2 := e.toLinearEquiv
+  -- `ℤ/2 ⊕ ℤ/2` has characteristic two, so `2 • f 1 = f 1 + f 1 = 0`.
+  have h : f ((2 : ℤ) • 1) = 0 := by
+    rw [map_zsmul, two_zsmul]
+    exact CharTwo.add_self_eq_zero _
+  rw [LinearEquiv.map_eq_zero_iff] at h
   exact absurd h (by decide)
 
 end TauCeti.Examples.ZModFourFiltration

@@ -55,8 +55,14 @@ theorem cokernel_π_grIsoOfAntitone_hom (p : ℤ) :
       ModuleCat.ofHom ((F (p + 1)).comap (F p).subtype).mkQ := by
   -- Mathlib identifies the cokernel projection with the quotient map by the range of
   -- `F^{p+1} ⟶ F^p`, which `Submodule.quotEquivOfEq` then carries to the quotient by `F (p + 1)`.
-  exact (Category.assoc _ _ _).symm.trans
-    ((ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom _ =≫ _).trans rfl)
+  refine (Category.assoc _ _ _).symm.trans
+    ((ModuleCat.cokernel_π_cokernelIsoRangeQuotient_hom _ =≫ _).trans ?_)
+  ext x
+  -- On an element `x`, both sides are the class of `x`: the left side unfolds to
+  -- `Submodule.quotEquivOfEq _ _ _ (Submodule.Quotient.mk x)`, the class of `x` by Mathlib's
+  -- `Submodule.quotEquivOfEq_mk`, itself proved by `rfl`. Rewriting with it does not apply, as the
+  -- source of the left side is the step of `ofAntitone F hF`, which is `F p` only up to unfolding.
+  rfl
 
 /-- In the filtration of a module by an antitone family `F` of submodules, the cardinality of a
 step is the product of the cardinalities of the next step and of the graded piece:
