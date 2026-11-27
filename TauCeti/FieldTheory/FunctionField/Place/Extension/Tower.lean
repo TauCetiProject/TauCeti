@@ -43,6 +43,9 @@ exactly when it holds for both steps.
   separable on each step of the tower.
 * `TauCeti.Place.isSeparable_residueField_restrict_trans`: conversely, residue extensions that are
   separable on both steps of the tower compose to a separable residue extension.
+* `TauCeti.Place.isSeparable_algebraMap_residueField_restrict`: a separable element of the
+  intermediate residue field stays separable over the bottom residue field after mapping up,
+  using Mathlib's `IsSeparable.map`.
 
 ## Mathematical context
 
@@ -256,6 +259,35 @@ private theorem isSeparable_residueField_restrict_iff (P : Place k₂ F₂) :
       ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField _ _,
     Algebra.isSeparable_tower_bot_of_isSeparable _ _ P.ResidueField⟩,
     fun ⟨_, _⟩ ↦ .trans _ (P.restrict k₁ F₁).ResidueField _⟩
+
+/-- An element of the intermediate residue field that is separable over the bottom residue
+field has separable image in the top residue field. -/
+theorem isSeparable_algebraMap_residueField_restrict (P : Place k₂ F₂)
+    {x : (P.restrict k₁ F₁).ResidueField}
+    (hx : IsSeparable ((P.restrict k₁ F₁).restrict k₀ F₀).ResidueField x) :
+    IsSeparable
+      (@restrict k₀ k₂ F₀ F₂ _ _ _ _ _ _ _ _ _ _ _ P (Algebra.IsIntegral.trans F₁)).ResidueField
+      (algebraMap (P.restrict k₁ F₁).ResidueField P.ResidueField x) := by
+  let _ : Algebra.IsIntegral F₀ F₂ := Algebra.IsIntegral.trans F₁
+  let Q := P.restrict k₁ F₁
+  let R := Q.restrict k₀ F₀
+  let _ : Algebra R.integers P.integers :=
+    ((algebraMap Q.integers P.integers).comp (algebraMap R.integers Q.integers)).toAlgebra
+  let _ : IsLocalHom (algebraMap R.integers P.integers) := RingHom.isLocalHom_comp _ _
+  let _ : IsScalarTower R.integers Q.integers P.integers :=
+    IsScalarTower.of_algebraMap_eq fun _ ↦ rfl
+  let f := IsScalarTower.toAlgHom R.ResidueField Q.ResidueField P.ResidueField
+  let e := RingEquiv.cast (R := fun S : Place k₀ F₀ ↦ S.ResidueField)
+    (restrict_restrict (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P)
+  have he : (algebraMap (P.restrict k₀ F₀).ResidueField P.ResidueField).comp e =
+      (RingEquiv.refl P.ResidueField : P.ResidueField →+* P.ResidueField).comp
+        (algebraMap R.ResidueField P.ResidueField) := by
+    have hcomp := algebraMap_comp_cast_restrict_restrict
+      (k₀ := k₀) (F₀ := F₀) (k₁ := k₁) (F₁ := F₁) P
+    rw [← hcomp]
+    ext y
+    exact congrArg (algebraMap R.ResidueField P.ResidueField) (e.symm_apply_apply y)
+  exact (hx.map f f.injective).of_equiv_equiv e (.refl _) he
 
 variable (k₀ F₀) in
 /-- **Separability of residue extensions passes to the top of a tower**: if the residue extension
