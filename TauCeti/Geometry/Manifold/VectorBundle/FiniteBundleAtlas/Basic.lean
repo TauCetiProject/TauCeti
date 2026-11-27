@@ -480,12 +480,12 @@ theorem ofBaseSet_self
 
 /-- The charts of `A.ofBaseSet h`, taken as an atlas of a third bundle `V''`, are the charts of
 `A` taken as an atlas of `V''`. -/
+@[simp]
 theorem ofBaseSet_ofBaseSet {F'' : Type*} [TopologicalSpace F''] {V'' : M → Type*}
     [TopologicalSpace (TotalSpace F'' V'')] [∀ x, TopologicalSpace (V'' x)] [FiberBundle F'' V'']
     (h' : ∀ i, closure ((A.ofBaseSet h).dom i) ⊆
-      (trivializationAt F'' V'' ((A.ofBaseSet h).center i)).baseSet)
-    (h'' : ∀ i, closure (A.dom i) ⊆ (trivializationAt F'' V'' (A.center i)).baseSet) :
-    (A.ofBaseSet h).ofBaseSet h' = A.ofBaseSet h'' :=
+      (trivializationAt F'' V'' ((A.ofBaseSet h).center i)).baseSet) :
+    (A.ofBaseSet h).ofBaseSet h' = A.ofBaseSet h' :=
   (rfl)
 
 variable (A) in

@@ -118,14 +118,15 @@ end Prod
 omit [∀ x, Zero (V x)] in
 /-- The product atlas on the charts of `A.ofBaseSet h₁` is the atlas of the product bundle on the
 charts of `A`. -/
+@[simp]
 theorem ofBaseSet_prod {F₁ : Type*} [TopologicalSpace F₁] {V₁ : M → Type*}
     [TopologicalSpace (TotalSpace F₁ V₁)] [∀ x, TopologicalSpace (V₁ x)] [FiberBundle F₁ V₁]
     [∀ x, Zero (V₁ x)]
     (h₁ : ∀ i, closure (A.dom i) ⊆ (trivializationAt F₁ V₁ (A.center i)).baseSet)
     (h : ∀ i, closure ((A.ofBaseSet h₁).dom i) ⊆
-      (trivializationAt F' V' ((A.ofBaseSet h₁).center i)).baseSet)
-    (h' : ∀ i, closure (A.dom i) ⊆ (trivializationAt (F₁ × F') (V₁ ×ᵇ V') (A.center i)).baseSet) :
-    (A.ofBaseSet h₁).prod h = A.ofBaseSet h' :=
+      (trivializationAt F' V' ((A.ofBaseSet h₁).center i)).baseSet) :
+    (A.ofBaseSet h₁).prod h =
+      A.ofBaseSet (V' := V₁ ×ᵇ V') fun i ↦ subset_inter (h₁ i) (h i) :=
   (rfl)
 
 /-- A section of `V ×ᵇ V'` read in a chart of `A.prod h` is the pair of its components read in the

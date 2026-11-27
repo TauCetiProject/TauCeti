@@ -308,8 +308,8 @@ theorem isCoeffMap_ofBaseSet_bundleMap {Ψ : ∀ x, W x →L[ℝ] V x}
       fun x ↦ TotalSpace.mk' (G →L[ℝ] F) (E := fun x ↦ W x →L[ℝ] V x) x (Ψ x)) :
     (A.ofBaseSet h).sectionChartData.IsCoeffMap A.sectionChartData fun t x ↦ Ψ x (t x) := by
   have := (A.ofBaseSet h).isCoeffMap_bundleMap A.closure_dom_subset_baseSet hΨ
-  rwa [ofBaseSet_ofBaseSet (A := A) (h := h) A.closure_dom_subset_baseSet
-    A.closure_dom_subset_baseSet, ofBaseSet_self] at this
+  rwa [ofBaseSet_ofBaseSet (A := A) (h := h) A.closure_dom_subset_baseSet,
+    ofBaseSet_self] at this
 
 /-- A smooth bundle morphism `Ψ : W → V` acts on one-forms by its chart readings, from the atlas
 `A.ofBaseSet h` of `W` back to the atlas `A` of `V`. -/
@@ -319,8 +319,8 @@ theorem isCoeffMap_ofBaseSet_tangentHomMap {Ψ : ∀ x, W x →L[ℝ] V x}
     (A.ofBaseSet h).tangentHom.sectionChartData.IsCoeffMap A.tangentHom.sectionChartData
       fun θ x ↦ (Ψ x).comp (θ x) := by
   have := (A.ofBaseSet h).isCoeffMap_tangentHomMap A.closure_dom_subset_baseSet hΨ
-  rwa [ofBaseSet_ofBaseSet (A := A) (h := h) A.closure_dom_subset_baseSet
-    A.closure_dom_subset_baseSet, ofBaseSet_self] at this
+  rwa [ofBaseSet_ofBaseSet (A := A) (h := h) A.closure_dom_subset_baseSet,
+    ofBaseSet_self] at this
 
 end FiniteBundleAtlas
 

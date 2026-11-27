@@ -123,12 +123,12 @@ theorem index_sobolevL_eq_add_of_bundleEquiv (A : FiniteBundleAtlas ℂ M F V)
     (hD.sobolevL A hDs volume p).index =
       (hD₁.sobolevL (A.ofBaseSet h₁) hD₁s volume p).index +
         (hD₂.sobolevL (A.ofBaseSet h₂) hD₂s volume p).index := by
-  have hW : ∀ i, closure (A.dom i) ⊆
+  have hprod := index_sobolevL_prod (A := A.ofBaseSet h₁) (h := h₂) hD₁ hD₂ hD₁s hD₂s p hp hp_top
+  rw [FiniteBundleAtlas.ofBaseSet_prod A h₁ h₂,
+    FiniteBundleAtlas.ofBaseSet_ofBaseSet (A := A) (h := h₁) h₂] at hprod
+  set hW : ∀ i, closure (A.dom i) ⊆
       (trivializationAt (F₁ × F₂) (V₁ ×ᵇ V₂) (A.center i)).baseSet :=
     fun i ↦ subset_inter (h₁ i) (h₂ i)
-  have hprod := index_sobolevL_prod (A := A.ofBaseSet h₁) (h := h₂) hD₁ hD₂ hD₁s hD₂s p hp hp_top
-  rw [FiniteBundleAtlas.ofBaseSet_prod A h₁ h₂ hW,
-    FiniteBundleAtlas.ofBaseSet_ofBaseSet (A := A) (h := h₁) h₂ h₂] at hprod
   rw [← index_sobolevL_sectionTransport volume p hΦ A hW hD hDs hp_top]
   exact (index_sobolevL_eq (A.ofBaseSet hW) (hD₁.prod hD₂) (hD₁s.sectionProdMap hD₂s)
     (hD.transport_of_contMDiff hΦ) (hDs.sectionTransport_of_contMDiff hΦ) hp hp_top).trans hprod
@@ -172,17 +172,20 @@ private theorem index_sobolevL_trivial_succ {m : ℕ}
 /-- **The index on a trivial bundle** (McDuff–Salamon, proof of Theorem C.1.10, step 1). On a
 closed surface, the realization `W^{1,p} → Lᵖ`, `1 < p < ∞`, of a smooth real Cauchy–Riemann
 operator on the trivial bundle with fibre `ℂᵐ` has `m` times the index of the realization of
-`∂bar` on complex functions, on the charts of the same atlas. -/
+`∂bar` on complex functions, on the charts of the same atlas (`hB` defaults to
+`TauCeti.FiniteBundleAtlas.closure_dom_subset_baseSet_trivial`). -/
 theorem index_sobolevL_trivial_pi (m : ℕ)
     (B : FiniteBundleAtlas ℂ M (Fin m → ℂ) (Trivial M (Fin m → ℂ)))
     {D : (Π x : M, Trivial M (Fin m → ℂ) x) →
       Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] Trivial M (Fin m → ℂ) x}
     (hD : IsRealCauchyRiemannOperator (Fin m → ℂ) (ofComplexManifold ℂ M) D)
     (hDs : ContMDiffCovariantDerivativeOn (Fin m → ℂ) ∞ D univ)
-    (hp : 1 < p) (hp_top : p ≠ ⊤) :
+    (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (hB : ∀ i, closure (B.dom i) ⊆ (trivializationAt ℂ (Trivial M ℂ) (B.center i)).baseSet :=
+      B.closure_dom_subset_baseSet_trivial ℂ) :
     (hD.sobolevL B hDs volume p).index =
       m * ((ofComplexManifold ℂ M).isRealCauchyRiemannOperator_dbarFunction.sobolevL
-        (B.ofBaseSet (B.closure_dom_subset_baseSet_trivial ℂ))
+        (B.ofBaseSet hB)
         ((ofComplexManifold ℂ M).contMDiffCovariantDerivativeOn_dbarFunction le_rfl)
         volume p).index := by
   induction m with
@@ -199,11 +202,9 @@ theorem index_sobolevL_trivial_pi (m : ℕ)
     rw [Nat.cast_zero, zero_mul]
     omega
   | succ m ih =>
-    rw [index_sobolevL_trivial_succ B hD hDs hp hp_top, ih,
+    rw [index_sobolevL_trivial_succ B hD hDs hp hp_top, ih _ _ _ hB,
       FiniteBundleAtlas.ofBaseSet_ofBaseSet (A := B)
-        (h := B.closure_dom_subset_baseSet_trivial (Fin m → ℂ))
-        (FiniteBundleAtlas.closure_dom_subset_baseSet_trivial _ ℂ)
-        (B.closure_dom_subset_baseSet_trivial ℂ)]
+        (h := B.closure_dom_subset_baseSet_trivial (Fin m → ℂ)) hB]
     push_cast
     ring
 
@@ -239,10 +240,9 @@ theorem index_sobolevL_eq_mul_add_of_bundleEquiv_trivialProd {m : ℕ}
     (A.closure_dom_subset_baseSet_trivial (Fin m → ℂ)) h₂ hΦ hD hDs
     (ofComplexManifold ℂ M).isRealCauchyRiemannOperator_dbarFunction
     ((ofComplexManifold ℂ M).contMDiffCovariantDerivativeOn_dbarFunction le_rfl) hD₂ hD₂s hp hp_top,
-    index_sobolevL_trivial_pi m _ _ _ hp hp_top,
+    index_sobolevL_trivial_pi m _ _ _ hp hp_top (A.closure_dom_subset_baseSet_trivial ℂ),
     FiniteBundleAtlas.ofBaseSet_ofBaseSet (A := A)
       (h := A.closure_dom_subset_baseSet_trivial (Fin m → ℂ))
-      (FiniteBundleAtlas.closure_dom_subset_baseSet_trivial _ ℂ)
       (A.closure_dom_subset_baseSet_trivial ℂ)]
 
 end IsRealCauchyRiemannOperator
