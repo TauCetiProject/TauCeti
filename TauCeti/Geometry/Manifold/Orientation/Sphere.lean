@@ -282,8 +282,13 @@ theorem det_mfderiv_unitSphereEquiv_neg {e : E ≃ₗᵢ[ℝ] E}
   let f' : EuclideanSpace ℝ (Fin n) ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) := f.toLinearEquiv
   have h := (Orientation.map_eq_neg_iff_det_neg (O u) f' (by simp)).1
     (ho.trans (congrArg (fun q ↦ -O q) heu))
-  rwa [show (f' : EuclideanSpace ℝ (Fin n) →ₗ[ℝ] EuclideanSpace ℝ (Fin n)) = _ from
-    congrArg ContinuousLinearMap.toLinearMap hf] at h
+  -- The linear map underlying `f'` is that of the continuous linear equivalence `f`, which `hf`
+  -- identifies with the differential.
+  have hf' : (f' : EuclideanSpace ℝ (Fin n) →ₗ[ℝ] EuclideanSpace ℝ (Fin n)) =
+      (mfderiv (𝓡 n) (𝓡 n) e.unitSphereEquiv u).toLinearMap := by
+    rw [← hf]
+    rfl
+  rwa [hf'] at h
 
 /-- The antipodal map `u ↦ -u` pulls the volume form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the
 sphere back to `(-1)^(n+1)` times itself: it is the restriction of `-1`, of determinant

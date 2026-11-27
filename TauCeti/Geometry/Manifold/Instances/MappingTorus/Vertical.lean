@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Distribution.Submersion
 public import TauCeti.Geometry.Manifold.Instances.MappingTorus
 public import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.ContMDiff.MFDeriv
 
 /-!
 # The vertical distribution of a smooth mapping torus
@@ -104,20 +105,10 @@ variable [IsManifold I ∞ M] (φ : M ≃ₘ⟮I, I⟯ M)
 `t`: on `ℝ × M` they form the constant vector field `(0, w)` along `t ↦ (t, x)`. -/
 theorem continuous_mfderiv_mk (x : M) (w : TangentSpace I x) :
     Continuous fun t : ℝ ↦ (⟨mk φ t x, mfderiv I (𝓘(ℝ).prod I) (mk φ t) x w⟩ :
-      TangentBundle (𝓘(ℝ).prod I) (SmoothMappingTorus φ)) := by
-  have hc : Continuous fun t : ℝ ↦ (⟨(t, x), (0, w)⟩ :
-      TangentBundle (𝓘(ℝ).prod I) (ℝ × M)) :=
-    (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ)) (M := ℝ) (I' := I) (M' := M)
-      (n := 0)).continuous.comp
-      ((Bundle.Trivialization.continuous_zeroSection ℝ (E := TangentSpace 𝓘(ℝ, ℝ) (M := ℝ))).prodMk
-        (continuous_const (y := (⟨x, w⟩ : TangentBundle I M))))
-  refine ((contMDiff_uncurry_mk φ).continuous_tangentMap (by simp)).comp hc |>.congr fun t ↦ ?_
-  rw [Function.comp_apply, tangentMap, mfderiv_mk_apply φ (by simp),
-    Manifold.tangentSpaceProdEquiv_symm_apply]
-  simp only [Function.uncurry_apply_pair]
-  -- The two sides differ only by implicit fibre-type arguments of the tangent bundle, which agree
-  -- definitionally.
-  rfl
+      TangentBundle (𝓘(ℝ).prod I) (SmoothMappingTorus φ)) :=
+  -- `tangentMap I _ (mk φ t) ⟨x, w⟩` unfolds by `rfl` to the stated point of the tangent bundle.
+  ((contMDiff_uncurry_mk φ).contMDiff_tangentMap_family (n := 0) (by simp)).continuous.comp
+    (continuous_id.prodMk (continuous_const (y := (⟨x, w⟩ : TangentBundle I M))))
 
 end Vertical
 
