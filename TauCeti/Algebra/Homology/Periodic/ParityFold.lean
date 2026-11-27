@@ -116,6 +116,24 @@ theorem parityFold_d_apply (r s : ZMod 2) (x : (C.parityFold S).X r) (j : parity
   simp only [parityFold, ModuleCat.hom_ofHom]
   exact LinearMap.sum_apply _ _ x
 
+/-- The component in degree `k` of the differential of the parity fold only sees the component of
+`x` in degree `k + 1`. -/
+theorem parityFold_d_apply_of_eq_add_one {r s : ZMod 2} (x : (C.parityFold S).X r)
+    (i : parityFoldDegrees S r) (k : parityFoldDegrees S s) (hik : (i : ℤ) = k + 1) :
+    ((C.parityFold S).d r s).hom x k = (C.d i k).hom (x i) := by
+  rw [parityFold_d_apply, Finset.sum_eq_single i (fun i' _ hi' ↦ by
+    rw [d_eq_zero_of_ne C fun h ↦ hi' (Subtype.ext (by omega)), ModuleCat.hom_zero,
+      LinearMap.zero_apply]) (by simp)]
+
+/-- The component in degree `k` of the differential of the parity fold vanishes when `k + 1 ∉ S`. -/
+theorem parityFold_d_apply_of_add_one_notMem {r s : ZMod 2} (x : (C.parityFold S).X r)
+    (k : parityFoldDegrees S s) (hk : (k : ℤ) + 1 ∉ S) :
+    ((C.parityFold S).d r s).hom x k = 0 := by
+  rw [parityFold_d_apply]
+  exact Finset.sum_eq_zero fun i _ ↦ by
+    rw [d_eq_zero_of_ne C fun h ↦ hk (h ▸ (Finset.mem_filter.1 i.property).1), ModuleCat.hom_zero,
+      LinearMap.zero_apply]
+
 /-- The component in degree `j` of the differential of the parity fold on a vector concentrated in
 one degree `i`. -/
 theorem parityFold_d_single_apply {r s : ZMod 2} (i : parityFoldDegrees S r) (z : C.X i)
@@ -219,18 +237,13 @@ private theorem exactAt_of_parityFold_exactAt {r : ZMod 2} (hP : (C.parityFold S
   obtain ⟨y, hy⟩ := (parityFold_exactAt_iff_forall r).1 hP (Pi.single ⟨j, hj⟩ z)
     (parityFold_d_single_eq_zero C S ⟨j, hj⟩ z hz)
   have hz' := congrFun hy ⟨j, hj⟩
-  rw [Pi.single_eq_same, parityFold_d_apply] at hz'
-  rw [← LinearMap.mem_range]
-  rw [← hz']
-  refine Submodule.sum_mem _ fun i _ ↦ ?_
-  have key : ∀ (a : ℤ), a = j + 1 → ∀ u : C.X a,
-      (C.d a j).hom u ∈ LinearMap.range (C.d (j + 1) j).hom := by
-    rintro a rfl u
-    exact ⟨u, rfl⟩
-  by_cases hi : (i : ℤ) = j + 1
-  · exact key _ hi _
-  · rw [d_eq_zero_of_ne C hi]
-    exact Submodule.zero_mem _
+  rw [Pi.single_eq_same] at hz'
+  by_cases h : j + 1 ∈ S
+  · rw [parityFold_d_apply_of_eq_add_one C S y ⟨j + 1, mem_parityFoldDegrees_add_one hj h⟩ ⟨j, hj⟩
+      rfl] at hz'
+    exact ⟨_, hz'⟩
+  · rw [parityFold_d_apply_of_add_one_notMem C S y ⟨j, hj⟩ h] at hz'
+    exact ⟨0, by rw [map_zero, hz']⟩
 
 /-- If `C` vanishes outside `S` and is exact in every degree of `S` of parity `r`, then the parity
 fold is exact in parity `r`. -/
@@ -241,10 +254,9 @@ private theorem parityFold_exactAt_of_exactAt (hS : ∀ j ∉ S, IsZero (C.X j))
   -- Every component of `x` is a cycle of `C`.
   have hcyc (j : parityFoldDegrees S r) : (C.d j (j - 1)).hom (x j) = 0 := by
     by_cases hj : (j : ℤ) - 1 ∈ S
-    · have := congrFun hx ⟨j - 1, mem_parityFoldDegrees_sub_one j.property hj⟩
-      rwa [parityFold_d_apply, Finset.sum_eq_single j (fun i _ hij ↦ by
-        rw [d_eq_zero_of_ne C fun h ↦ hij (Subtype.ext (by dsimp only at h; omega)),
-          ModuleCat.hom_zero, LinearMap.zero_apply]) (by simp)] at this
+    · exact (parityFold_d_apply_of_eq_add_one C S x j
+        ⟨j - 1, mem_parityFoldDegrees_sub_one j.property hj⟩ (sub_add_cancel _ _).symm).symm.trans
+        (congrFun hx _)
     · exact (ModuleCat.subsingleton_of_isZero (hS _ hj)).elim _ _
   -- Hence a boundary of `C`, and `x` is the boundary of the sum of the vectors it comes from.
   have hlift (j : parityFoldDegrees S r) : ∃ w : C.X (j + 1), (C.d (j + 1) j).hom w = x j := by
