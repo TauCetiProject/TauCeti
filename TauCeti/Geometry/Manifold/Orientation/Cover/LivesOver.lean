@@ -21,7 +21,10 @@ shows that `[M]_or` lives over the fundamental class of `M` at every point `b`: 
 
 is nonzero
 (`TauCeti.Manifold.OrientationCover.livesOverFundamentalClass_id_twistedFundamentalClass`).
-This is the case of a point fibre of the notion
+More generally, for any map `p : M → N` and any `b` in its range, the localization
+`Hₙ₊₁(M; o(TM)) → Hₙ₊₁(M, M ∖ p⁻¹(b); o(TM))` of `[M]_or` is nonzero
+(`TauCeti.Manifold.OrientationCover.livesOverFundamentalClass_twistedFundamentalClass`).
+These are instances of the notion
 `TauCeti.LocalCoefficientSystem.LivesOverFundamentalClass`, which is stated with coefficients
 twisted by the orientation system precisely so that it applies over a base with no integral
 fundamental class, such as `ℝP²`, where `Hₙ₊₁(M; ℤ) = 0`
@@ -30,16 +33,19 @@ fundamental class, such as `ℝP²`, where `Hₙ₊₁(M; ℤ) = 0`
 The proof reads `[M]_or` on the cover. Reading functions on the fibres of `π` as formal sums of
 sheets carries `[M]_or` to the class of `[M']` in the homology of `M` twisted by the permutation
 local system `ℤ[π⁻¹ x]`, and localization commutes with this change of coefficients. Relative to
-the complement of `b`, the twisted homology of `M` with coefficients in `ℤ[π⁻¹ x]` is the relative
-singular homology of `(M', M' ∖ π⁻¹(b))`, compatibly with the absolute comparison
-(`IsCoveringMap.singularHomologyπ_comp_singularPairHomologyPermutationIso_hom`). So the
+the complement of the fibre `p⁻¹(b)`, the twisted homology of `M` with coefficients in `ℤ[π⁻¹ x]`
+is the relative singular homology of `(M', M' ∖ π⁻¹(p⁻¹(b)))`, compatibly with the absolute
+comparison (`IsCoveringMap.singularHomologyπ_comp_singularPairHomologyPermutationIso_hom`). So the
 localization of `[M]_or` at `b` vanishes only if the image of `[M']` in
-`Hₙ₊₁(M', M' ∖ π⁻¹(b); ℤ)` does, and then so does its further image in the local homology
-`Hₙ₊₁(M', M' ∖ {x}; ℤ)` at a point `x` over `b`. That image is the local orientation of `M'` at
-`x`, which is nonzero.
+`Hₙ₊₁(M', M' ∖ π⁻¹(p⁻¹(b)); ℤ)` does, and then so does its further image in the local homology
+`Hₙ₊₁(M', M' ∖ {x}; ℤ)` at a point `x` over `p⁻¹(b)`. That image is the local orientation of `M'`
+at `x`, which is nonzero.
 
 ## Main results
 
+* `TauCeti.Manifold.OrientationCover.livesOverFundamentalClass_twistedFundamentalClass`: the
+  orientation-twisted fundamental class lives over the fundamental class along any map, at every
+  point of its range.
 * `TauCeti.Manifold.OrientationCover.livesOverFundamentalClass_id_twistedFundamentalClass`: the
   orientation-twisted fundamental class lives over the fundamental class at every point.
 
@@ -65,13 +71,16 @@ variable {E M : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDi
   (hE : finrank ℝ E = n + 1) [CompactSpace M]
 
 /-- The image of the fundamental class `[M']` of the orientation cover in the relative homology
-`Hₙ₊₁(M', M' ∖ π⁻¹(b); ℤ)` is nonzero: its further image in the local homology at a point over `b`
-is a local orientation. -/
-private theorem singularHomologyπ_coverFundamentalClass_ne_zero (b : M) :
-    ((TopPair.ofSubset (projHom (E := E) M ⁻¹' ((id : M → M) ⁻¹' {b})ᶜ)).singularHomologyπ
+`Hₙ₊₁(M', M' ∖ π⁻¹(p⁻¹(b)); ℤ)` is nonzero for a map `p : M → N` and a point `b` in its range: its
+further image in the local homology at a point of the cover over `p⁻¹(b)` is a local
+orientation. -/
+private theorem singularHomologyπ_coverFundamentalClass_ne_zero {N : Type*} (p : M → N) {b : N}
+    (hb : b ∈ Set.range p) :
+    ((TopPair.ofSubset (projHom (E := E) M ⁻¹' (p ⁻¹' {b})ᶜ)).singularHomologyπ
       (ModuleCat.of ℤ ℤ) (n + 1)).hom (coverFundamentalClass M hE) ≠ 0 := by
+  obtain ⟨a, rfl⟩ := hb
   obtain ⟨x, hx⟩ := VectorBundleOrientationCover.surjective_proj (F := E)
-    (E := (TangentSpace 𝓘(ℝ, E) : M → Type)) (Fintype.card_fin _) b
+    (E := (TangentSpace 𝓘(ℝ, E) : M → Type)) (Fintype.card_fin _) a
   -- The cover has a fundamental class with coefficients in `ℤ`, transported from `ULift ℤ`.
   have hfund : IsFundamentalClass (coverFundamentalClass M hE) := by
     rw [coverFundamentalClass_def, uliftIntHomologyIso_hom]
@@ -80,23 +89,24 @@ private theorem singularHomologyπ_coverFundamentalClass_ne_zero (b : M) :
   have hloc := hfund.singularHomologyToLocalHomology_ne_zero hE x
   intro h
   apply hloc
-  -- The complement of the fibre over `b` lies in the complement of `x`, so the local image at `x`
-  -- factors through the relative class over the complement of the fibre.
+  -- The complement of the fibre over `p⁻¹(b)` lies in the complement of `x`, so the local image at
+  -- `x` factors through the relative class over the complement of the fibre.
   have hsub : Set.MapsTo (𝟙 (TopCat.of (OrientationCover 𝓘(ℝ, E) M)))
-      (projHom (E := E) M ⁻¹' ((id : M → M) ⁻¹' {b})ᶜ) {x}ᶜ := fun y hy hyx ↦
-    hy (by obtain rfl : y = x := hyx; exact hx)
+      (projHom (E := E) M ⁻¹' (p ⁻¹' {p a})ᶜ) {x}ᶜ := fun y hy hyx ↦
+    hy (by obtain rfl : y = x := hyx; exact congrArg p hx)
   rw [singularHomologyToLocalHomology_eq_singularHomologyπ,
     ← TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id (ModuleCat.of ℤ ℤ) hsub]
   exact (congrArg (ModuleCat.Hom.hom (TopPair.singularHomologyMap (TopPair.ofSubsetMap _ hsub)
     (ModuleCat.of ℤ ℤ) (n + 1))) h).trans (map_zero _)
 
-/-- **The twisted fundamental class lives over the fundamental class at every point**: the
-localization `Hₙ₊₁(M; o(TM)) → Hₙ₊₁(M, M ∖ {b}; o(TM))` sends the orientation-twisted fundamental
-class `[M]_or` to a nonzero class, for every point `b` of `M`. This holds whether or not `M` is
-orientable. -/
-theorem livesOverFundamentalClass_id_twistedFundamentalClass (b : M) :
+/-- **The twisted fundamental class lives over the fundamental class along any map**: for a map
+`p : M → N` and a point `b` in its range, the localization
+`Hₙ₊₁(M; o(TM)) → Hₙ₊₁(M, M ∖ p⁻¹(b); o(TM))` sends the orientation-twisted fundamental class
+`[M]_or` to a nonzero class. This holds whether or not `M` is orientable. -/
+theorem livesOverFundamentalClass_twistedFundamentalClass {N : Type*} (p : M → N) {b : N}
+    (hb : b ∈ Set.range p) :
     ((isCoveringMap_projHom E M).signLocalSystem ℤ _
-      VectorBundleOrientationCover.proj_comp_deck).LivesOverFundamentalClass (id : M → M) b
+      VectorBundleOrientationCover.proj_comp_deck).LivesOverFundamentalClass p b
         (twistedFundamentalClass M hE) := by
   refine LivesOverFundamentalClass.of_twistedHomologyCoefficientMap
     ((isCoveringMap_projHom E M).signLocalSystemToPermutation ℤ
@@ -105,19 +115,29 @@ theorem livesOverFundamentalClass_id_twistedFundamentalClass (b : M) :
   have hcover := congrArg ((isCoveringMap_projHom E M).singularHomologyPermutationIso ℤ
     (n + 1)).hom.hom (singularHomologyPermutationIso_inv_twistedFundamentalClass hE)
   rw [← ModuleCat.comp_apply, Iso.inv_hom_id, ModuleCat.id_apply] at hcover
-  -- Relative to the complement of `b`, the homology of `M` twisted by the permutation system is
-  -- the relative homology of the cover, so a vanishing localization would kill the image of `[M']`.
+  -- Relative to the complement of the fibre, the homology of `M` twisted by the permutation system
+  -- is the relative homology of the cover, so a vanishing localization would kill the image of
+  -- `[M']`.
   refine (LocalCoefficientSystem.livesOverFundamentalClass_iff
-    ((isCoveringMap_projHom E M).permutationLocalSystem ℤ)
-      (id : M → M) b _).2 fun h ↦ ?_
-  refine singularHomologyπ_coverFundamentalClass_ne_zero hE b <|
+    ((isCoveringMap_projHom E M).permutationLocalSystem ℤ) p b _).2 fun h ↦ ?_
+  refine singularHomologyπ_coverFundamentalClass_ne_zero hE p hb <|
     (ModuleCat.mono_iff_injective ((isCoveringMap_projHom E M).singularPairHomologyPermutationIso
-      ℤ ((id : M → M) ⁻¹' {b})ᶜ (n + 1)).hom).1 inferInstance ?_
+      ℤ (p ⁻¹' {b})ᶜ (n + 1)).hom).1 inferInstance ?_
   exact (congrArg (fun φ ↦ φ.hom (coverFundamentalClass M hE))
     ((isCoveringMap_projHom E M).singularHomologyπ_comp_singularPairHomologyPermutationIso_hom ℤ
-      ((id : M → M) ⁻¹' {b})ᶜ (n + 1))).trans <|
+      (p ⁻¹' {b})ᶜ (n + 1))).trans <|
     ((congrArg _ hcover.symm).trans h).trans (map_zero (ModuleCat.Hom.hom
-      ((isCoveringMap_projHom E M).singularPairHomologyPermutationIso ℤ ((id : M → M) ⁻¹' {b})ᶜ
+      ((isCoveringMap_projHom E M).singularPairHomologyPermutationIso ℤ (p ⁻¹' {b})ᶜ
         (n + 1)).hom)).symm
+
+/-- **The twisted fundamental class lives over the fundamental class at every point**: the
+localization `Hₙ₊₁(M; o(TM)) → Hₙ₊₁(M, M ∖ {b}; o(TM))` sends the orientation-twisted fundamental
+class `[M]_or` to a nonzero class, for every point `b` of `M`. This holds whether or not `M` is
+orientable. -/
+theorem livesOverFundamentalClass_id_twistedFundamentalClass (b : M) :
+    ((isCoveringMap_projHom E M).signLocalSystem ℤ _
+      VectorBundleOrientationCover.proj_comp_deck).LivesOverFundamentalClass (id : M → M) b
+        (twistedFundamentalClass M hE) :=
+  livesOverFundamentalClass_twistedFundamentalClass hE id ⟨b, rfl⟩
 
 end TauCeti.Manifold.OrientationCover
