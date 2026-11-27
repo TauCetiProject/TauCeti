@@ -51,11 +51,6 @@ open SardExample
 
 /-! ### The identity of `ℝ` -/
 
-/-- The derivative of the identity of `ℝ` is Fredholm. -/
-theorem isFredholm_fderiv_id (x : ℝ) : (fderiv ℝ (id : ℝ → ℝ) x).IsFredholm := by
-  rw [fderiv_id]
-  exact .id
-
 /-- The derivative of the identity of `ℝ` has index `0`. -/
 theorem index_fderiv_id (x : ℝ) : (fderiv ℝ (id : ℝ → ℝ) x).index = 0 := by
   rw [fderiv_id, ContinuousLinearMap.index_id]
@@ -64,15 +59,9 @@ theorem index_fderiv_id (x : ℝ) : (fderiv ℝ (id : ℝ → ℝ) x).index = 0 
 critical image is empty (`TauCeti.SardExample.criticalPoints_id`). -/
 example : IsMeagre ((id : ℝ → ℝ) '' (univ ∩ {x | ¬ Surjective (fderiv ℝ id x)})) :=
   isMeagre_image_criticalPoints_of_isFredholm (n := 1) (fun _ _ ↦ contDiff_id.contDiffAt)
-    (fun x _ ↦ isFredholm_fderiv_id x) fun x _ ↦ by simp
+    (fun _ _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _) fun x _ ↦ by simp
 
 /-! ### The line `t ↦ (t, 0)` in the plane -/
-
-/-- The derivative of the line `t ↦ (t, 0)` is Fredholm, as is every operator between
-finite-dimensional spaces. -/
-theorem isFredholm_fderiv_line (t : ℝ) :
-    (fderiv ℝ (fun s : ℝ ↦ (s, (0 : ℝ))) t).IsFredholm :=
-  ContinuousLinearMap.isFredholm_of_finiteDimensional _
 
 /-- The derivative of the line `t ↦ (t, 0)` has index `1 - 2 = -1`. -/
 theorem index_fderiv_line (t : ℝ) : (fderiv ℝ (fun s : ℝ ↦ (s, (0 : ℝ))) t).index = -1 := by
@@ -119,19 +108,15 @@ example : IsMeagre ((fun s : ℝ ↦ (s, (0 : ℝ))) ''
     (univ ∩ {t | ¬ Surjective (fderiv ℝ (fun s : ℝ ↦ (s, (0 : ℝ))) t)})) :=
   isMeagre_image_criticalPoints_of_isFredholm (n := 1)
     (fun _ _ ↦ (contDiff_prodMk_left (0 : ℝ)).contDiffAt)
-    (fun t _ ↦ isFredholm_fderiv_line t) fun t _ ↦ by simp [index_fderiv_line]
+    (fun _ _ ↦ ContinuousLinearMap.isFredholm_of_finiteDimensional _)
+    fun t _ ↦ by simp [index_fderiv_line]
 
 /-! ### The zero map `ℝ³ → ℝ` -/
-
-/-- The derivative of the zero map `ℝ³ → ℝ` is the zero operator. -/
-theorem fderiv_zero_map (x : EuclideanSpace ℝ (Fin 3)) :
-    fderiv ℝ (fun _ : EuclideanSpace ℝ (Fin 3) ↦ (0 : ℝ)) x = 0 :=
-  fderiv_const_apply 0
 
 /-- The derivative of the zero map `ℝ³ → ℝ` has index `3 - 1 = 2`. -/
 theorem index_fderiv_zero_map (x : EuclideanSpace ℝ (Fin 3)) :
     (fderiv ℝ (fun _ : EuclideanSpace ℝ (Fin 3) ↦ (0 : ℝ)) x).index = 2 := by
-  rw [fderiv_zero_map, ContinuousLinearMap.index_zero]
+  rw [fderiv_const_apply, ContinuousLinearMap.index_zero]
   simp
 
 /-- The derivative of the zero map `ℝ³ → ℝ` has kernel of dimension `3`, which is not its index:
@@ -139,7 +124,7 @@ its cokernel has dimension `1`. -/
 theorem finrank_ker_fderiv_zero_map (x : EuclideanSpace ℝ (Fin 3)) :
     finrank ℝ (LinearMap.ker (fderiv ℝ (fun _ : EuclideanSpace ℝ (Fin 3) ↦ (0 : ℝ)) x :
       EuclideanSpace ℝ (Fin 3) →ₗ[ℝ] ℝ)) = 3 := by
-  rw [fderiv_zero_map, ContinuousLinearMap.toLinearMap_zero, LinearMap.ker_zero, finrank_top,
+  rw [fderiv_const_apply, ContinuousLinearMap.toLinearMap_zero, LinearMap.ker_zero, finrank_top,
     finrank_euclideanSpace_fin]
 
 /-- The derivative of the zero map `ℝ³ → ℝ` has cokernel of dimension `1`. -/
