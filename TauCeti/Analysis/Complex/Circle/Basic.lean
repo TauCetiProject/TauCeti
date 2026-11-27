@@ -127,7 +127,7 @@ theorem coe_homeomorphSphere_symm_apply (z : sphere (0 : ℂ) 1) :
 
 /-- `Circle.homeomorphSphere` sends `1` to the point `1` of the unit sphere of `ℂ`. -/
 @[simp]
-theorem homeomorphSphere_one : homeomorphSphere 1 = ⟨1, by simp⟩ :=
+theorem homeomorphSphere_one : homeomorphSphere 1 = 1 :=
   Subtype.ext coe_one
 
 /-- The unit sphere `sphere (0 : ℂ) 1` is path-connected, being homeomorphic to `Circle`. -/

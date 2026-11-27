@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Field.UnitBall
 public import Mathlib.Topology.Homotopy.Path
 public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.Attachment
@@ -332,42 +333,36 @@ end Arc
 
 section Circle
 
-/-- The base point `1` of the unit circle in `ℂ`. -/
-private abbrev circleOne : sphere (0 : ℂ) 1 := ⟨1, by simp⟩
-
-private theorem coe_circleOne : (circleOne : ℂ) = 1 :=
-  (rfl)
-
 /-- The characteristic map of the arc that is constant at `1`. -/
 private abbrev circleArcChar : C(PUnit.{1} × TopCat.disk.{0} 1, ℂ) := ContinuousMap.const _ 1
 
 /-- The straight-line homotopy from the constant characteristic map to itself whose end `1` runs
 along the loop `γ` and whose end `-1` stays at `1`: `(t, x) ↦ 1 + ((1 + x) / 2) (γ t - 1)`. -/
-private def circleArcHomotopy (γ : Path circleOne circleOne) :
+private def circleArcHomotopy (γ : Path (1 : sphere (0 : ℂ) 1) 1) :
     circleArcChar.Homotopy (circleArcChar.comp (ContinuousMap.fst.prodMk ContinuousMap.snd)) where
   toFun q := 1 + ((1 + q.2.2.down.val 0) / 2 : ℝ) • ((γ q.1 : ℂ) - 1)
   continuous_toFun := by fun_prop
-  map_zero_left x := by simp [coe_circleOne]
-  map_one_left x := by simp [coe_circleOne]
+  map_zero_left x := by simp [Metric.unitSphere.coe_one]
+  map_one_left x := by simp [Metric.unitSphere.coe_one]
 
-private theorem circleArcHomotopy_apply (γ : Path circleOne circleOne)
+private theorem circleArcHomotopy_apply (γ : Path (1 : sphere (0 : ℂ) 1) 1)
     (q : I × (PUnit.{1} × TopCat.disk.{0} 1)) :
     circleArcHomotopy γ q = 1 + ((1 + q.2.2.down.val 0) / 2 : ℝ) • ((γ q.1 : ℂ) - 1) :=
   (rfl)
 
-private theorem circleArcHomotopy_apply_sphereMinus (γ : Path circleOne circleOne) (t : I)
+private theorem circleArcHomotopy_apply_sphereMinus (γ : Path (1 : sphere (0 : ℂ) 1) 1) (t : I)
     (p : PUnit.{1}) :
     circleArcHomotopy γ (t, (p, TopCat.diskBoundaryInclusion 1 sphereMinus)) = 1 := by
   rw [circleArcHomotopy_apply, sphereMinus_coord]
   norm_num
 
-private theorem circleArcHomotopy_apply_spherePlus (γ : Path circleOne circleOne) (t : I)
+private theorem circleArcHomotopy_apply_spherePlus (γ : Path (1 : sphere (0 : ℂ) 1) 1) (t : I)
     (p : PUnit.{1}) :
     circleArcHomotopy γ (t, (p, TopCat.diskBoundaryInclusion 1 spherePlus)) = γ t := by
   rw [circleArcHomotopy_apply, spherePlus_coord]
   norm_num
 
-private theorem circleArcHomotopy_mem (γ : Path circleOne circleOne) (t : I) (p : PUnit.{1})
+private theorem circleArcHomotopy_mem (γ : Path (1 : sphere (0 : ℂ) 1) 1) (t : I) (p : PUnit.{1})
     (s : TopCat.diskBoundary.{0} 1) :
     circleArcHomotopy γ (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1 := by
   rcases eq_sphereMinus_or_eq_spherePlus s with rfl | rfl
@@ -378,20 +373,21 @@ private theorem circleArcHomotopy_mem (γ : Path circleOne circleOne) (t : I) (p
 
 /-- The degree of the loop `H₋ · H₊⁻¹` of the boundary homotopy `circleArcHomotopy γ`: the end `-1`
 stays at `1`, so it is minus the degree of `γ`. -/
-private theorem degree_circleArcHomotopy (γ : Path circleOne circleOne) :
-    Circle.degree (((arcBoundaryTrack circleOne (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
+private theorem degree_circleArcHomotopy (γ : Path (1 : sphere (0 : ℂ) 1) 1) :
+    Circle.degree (((arcBoundaryTrack (1 : sphere (0 : ℂ) 1) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl)
       (fun _ _ hw ↦ hw) (circleArcHomotopy_mem γ) sphereMinus).trans
-        (arcBoundaryTrack circleOne (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw)
+        (arcBoundaryTrack (1 : sphere (0 : ℂ) 1) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw)
           (circleArcHomotopy_mem γ) spherePlus).symm).map
             Circle.homeomorphSphere.symm.continuous) =
       -Circle.degree (γ.map Circle.homeomorphSphere.symm.continuous) := by
   rw [Path.map_trans, ← Path.map_symm, Circle.degree_trans, Circle.degree_symm,
-    Circle.degree_congr _ (Path.refl (Circle.homeomorphSphere.symm circleOne)) fun t ↦
+    Circle.degree_congr _ (Path.refl (Circle.homeomorphSphere.symm 1)) fun t ↦
       Circle.ext (by
         simp only [Path.map_coe, Function.comp_apply, Circle.coe_homeomorphSphere_symm_apply,
           Path.refl_apply]
         exact (coe_arcBoundaryTrack_apply ..).trans
-          ((circleArcHomotopy_apply_sphereMinus γ t PUnit.unit).trans coe_circleOne.symm)),
+          ((circleArcHomotopy_apply_sphereMinus γ t PUnit.unit).trans
+            Metric.unitSphere.coe_one.symm)),
     Circle.degree_refl, zero_add, neg_inj]
   exact Circle.degree_congr _ _ fun t ↦ Circle.ext (by
     simp only [Path.map_coe, Function.comp_apply, Circle.coe_homeomorphSphere_symm_apply]
@@ -411,30 +407,32 @@ theorem exists_not_homotopicRel_fiberwiseCellReattachment_sphere :
       (hK : ∀ t p s, K (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1)
       (hK' : ∀ t p s, K' (t, (p, TopCat.diskBoundaryInclusion 1 s)) ∈ sphere (0 : ℂ) 1),
       ¬ (fiberwiseCellReattachment (k := fun _ : PUnit.{1} ↦ 1)
-          (fun _ ↦ ContinuousMap.const _ ⟨1, by simp⟩) (fun _ ↦ ContinuousMap.const _ ⟨1, by simp⟩)
+          (fun _ ↦ ContinuousMap.const _ 1) (fun _ ↦ ContinuousMap.const _ 1)
           (fun _ ↦ ContinuousMap.const _ 1) (fun _ ↦ ContinuousMap.const _ 1) (fun _ _ _ ↦ rfl)
           (fun _ _ _ ↦ rfl) (fun _ ↦ ContinuousMap.snd) (fun _ _ _ hw ↦ hw) (fun _ ↦ K)
           (fun _ ↦ hK)).hom.HomotopicRel
         (fiberwiseCellReattachment (k := fun _ : PUnit.{1} ↦ 1)
-          (fun _ ↦ ContinuousMap.const _ ⟨1, by simp⟩) (fun _ ↦ ContinuousMap.const _ ⟨1, by simp⟩)
+          (fun _ ↦ ContinuousMap.const _ 1) (fun _ ↦ ContinuousMap.const _ 1)
           (fun _ ↦ ContinuousMap.const _ 1) (fun _ ↦ ContinuousMap.const _ 1) (fun _ _ _ ↦ rfl)
           (fun _ _ _ ↦ rfl) (fun _ ↦ ContinuousMap.snd) (fun _ _ _ hw ↦ hw) (fun _ ↦ K')
           (fun _ ↦ hK')).hom
         (range (fiberwiseCellAttachmentIncl (k := fun _ : PUnit.{1} ↦ 1)
           (fun _ ↦ ContinuousMap.const (PUnit.{1} × TopCat.diskBoundary.{0} 1)
-            (⟨1, by simp⟩ : sphere (0 : ℂ) 1)))) := by
-  refine ⟨circleArcHomotopy (Path.refl circleOne),
+            (1 : sphere (0 : ℂ) 1)))) := by
+  refine ⟨circleArcHomotopy (Path.refl (1 : sphere (0 : ℂ) 1)),
     circleArcHomotopy ((Circle.expLoop.map Circle.homeomorphSphere.continuous).cast
       Circle.homeomorphSphere_one.symm Circle.homeomorphSphere_one.symm),
     circleArcHomotopy_mem _, circleArcHomotopy_mem _, fun hE ↦ ?_⟩
   have hd := Circle.degree_eq_of_homotopic
-    ((homotopic_arcBoundaryTrack_trans_symm_of_homotopicRel_fiberwiseCellReattachment circleOne
-      (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw) (circleArcHomotopy_mem _) (fun _ _ ↦ rfl)
-      (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw) (circleArcHomotopy_mem _) hE).map
+    ((homotopic_arcBoundaryTrack_trans_symm_of_homotopicRel_fiberwiseCellReattachment
+      (1 : sphere (0 : ℂ) 1) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw)
+      (circleArcHomotopy_mem _) (fun _ _ ↦ rfl) (fun _ _ ↦ rfl) (fun _ _ hw ↦ hw)
+      (circleArcHomotopy_mem _) hE).map
         Circle.homeomorphSphere.symm)
   rw [degree_circleArcHomotopy, degree_circleArcHomotopy,
-    Circle.degree_congr ((Path.refl circleOne).map Circle.homeomorphSphere.symm.continuous)
-      (Path.refl (Circle.homeomorphSphere.symm circleOne)) (fun _ ↦ Circle.ext (by simp)),
+    Circle.degree_congr
+      ((Path.refl (1 : sphere (0 : ℂ) 1)).map Circle.homeomorphSphere.symm.continuous)
+      (Path.refl (Circle.homeomorphSphere.symm 1)) (fun _ ↦ Circle.ext (by simp)),
     Circle.degree_congr (((Circle.expLoop.map Circle.homeomorphSphere.continuous).cast
         Circle.homeomorphSphere_one.symm Circle.homeomorphSphere_one.symm).map
           Circle.homeomorphSphere.symm.continuous) Circle.expLoop (fun _ ↦ Circle.ext (by simp)),
