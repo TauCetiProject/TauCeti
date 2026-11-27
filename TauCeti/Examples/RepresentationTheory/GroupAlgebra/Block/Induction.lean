@@ -10,6 +10,7 @@ public import TauCeti.Examples.RepresentationTheory.GroupAlgebra.DefectGroup.Pri
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.Induction
 public import TauCeti.RepresentationTheory.GroupAlgebra.Block.PGroup
 import TauCeti.Algebra.Group.Subgroup.Centralizer
+import TauCeti.Algebra.Group.Subgroup.ZPowers
 
 /-!
 # Block induction and the Brauer correspondent on `𝔽₂[S₃]`
@@ -34,10 +35,8 @@ open _root_.MonoidAlgebra TauCeti.GroupAlgebraBlockExamples TauCeti.PrincipalBlo
 abbrev D : Subgroup S₃ := Subgroup.zpowers τ
 
 /-- The elements of `D = ⟨τ⟩` are `1` and `τ`. -/
-theorem mem_D_iff {g : S₃} : g ∈ D ↔ g = 1 ∨ g = τ := by
-  classical
-  rw [mem_zpowers_iff_mem_range_orderOf, ← Nat.card_zpowers, card_zpowers_τ, factorization_card_two]
-  simpa [Finset.range_add_one] using or_comm
+theorem mem_D_iff {g : S₃} : g ∈ D ↔ g = 1 ∨ g = τ :=
+  Subgroup.mem_zpowers_iff_of_sq_eq_one (by decide)
 
 /-- `D = ⟨τ⟩` is a `2`-group. -/
 theorem isPGroup_D : IsPGroup 2 D :=
