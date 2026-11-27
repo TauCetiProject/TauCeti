@@ -229,10 +229,7 @@ theorem isZero_holomorphicSectionCechCohomology_twistSumCore {p : ℕ}
     IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) (κ → ℂ)
       (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber p) := by
   classical
-  -- The identity of the cohomology of the sum is the sum of maps factoring through the summands.
-  have htotal := IsBilimit.total (twistSumCechBiconeIsBilimit n k p)
-  refine (IsZero.iff_id_eq_zero _).2 (htotal.symm.trans (Finset.sum_eq_zero fun l _ ↦ ?_))
-  rw [(h l).eq_of_tgt ((twistSumCechBicone n k p).π l) 0, zero_comp]
+  exact (twistSumCechBiconeIsBilimit n k p).isLimit.isZero_pt (Functor.isZero _ fun j ↦ h j.as)
 
 /-- **`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.** The first Čech cohomology of the sheaf
 of holomorphic sections of the split bundle `⨁ₗ 𝒪(k l)` on the complex projective line vanishes

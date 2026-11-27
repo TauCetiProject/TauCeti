@@ -15,8 +15,9 @@ Let `ℓ : ℂℙ¹ → ℂℙᵐ⁺¹` be the coordinate line `[v₀ : v₁] �
 (`Projectivization.coordLine`). The pullback `ℓ* TℂPᵐ⁺¹` of the tangent bundle
 (`Projectivization.CoordLineTangentSpace`) is holomorphically the split bundle `𝒪(2) ⊕ 𝒪(1)ᵐ`
 (`Projectivization.coordLineTangentDiffeomorph`), so the sheaves of holomorphic sections of the two
-bundles are isomorphic (`Projectivization.coordLineTangentSectionIso`). All the twists `2, 1, …, 1`
-are at least `-1`, so the first Čech cohomology of the split bundle vanishes
+bundles are isomorphic (`Projectivization.coordLineTangentSectionIso`), and so are their Čech
+cohomologies in every degree (`Projectivization.coordLineTangentCechCohomologyIso`). All the
+twists `2, 1, …, 1` are at least `-1`, so the first Čech cohomology of the split bundle vanishes
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le`), and
 hence `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`).
@@ -75,14 +76,37 @@ theorem coordLineTangentSectionIso_inv_app_apply
 
 variable (m)
 
+/-- **`Hᵖ(ℂℙ¹, ℓ* TℂPᵐ⁺¹) ≅ Hᵖ(ℂℙ¹, 𝒪(2) ⊕ 𝒪(1)ᵐ)`.** The Čech cohomology of the pullback of
+the tangent bundle of `ℂPᵐ⁺¹` along the coordinate line is that of the split bundle
+`𝒪(2) ⊕ 𝒪(1)ᵐ`, in every degree: the image of `Projectivization.coordLineTangentSectionIso`. -/
+def coordLineTangentCechCohomologyIso (p : ℕ) :
+    holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+        (CoordLineTangentSpace ℂ m) p ≅
+      holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+        (twistSumCore (𝕜 := ℂ) (n := 1) (lineTwist m)).Fiber p :=
+  (Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) p).mapIso
+    ((sheafToPresheaf _ _).mapIso (coordLineTangentSectionIso m))
+
+@[simp]
+theorem coordLineTangentCechCohomologyIso_hom (p : ℕ) :
+    (coordLineTangentCechCohomologyIso m p).hom =
+      (Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) p).map
+        (coordLineTangentSectionIso m).hom.hom :=
+  (rfl)
+
+@[simp]
+theorem coordLineTangentCechCohomologyIso_inv (p : ℕ) :
+    (coordLineTangentCechCohomologyIso m p).inv =
+      (Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) p).map
+        (coordLineTangentSectionIso m).inv.hom :=
+  (rfl)
+
 /-- **`H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`.** The first Čech cohomology of the sheaf of holomorphic sections of
 the pullback of the tangent bundle of `ℂPᵐ⁺¹` along the coordinate line vanishes. -/
 theorem isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace :
     IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
       (CoordLineTangentSpace ℂ m) 1) :=
   (isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le
-    (Fin.cases (by simp) fun _ ↦ by simp)).of_iso
-      ((Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) 1).mapIso
-        ((sheafToPresheaf _ _).mapIso (coordLineTangentSectionIso m)))
+    (Fin.cases (by simp) fun _ ↦ by simp)).of_iso (coordLineTangentCechCohomologyIso m 1)
 
 end Projectivization
