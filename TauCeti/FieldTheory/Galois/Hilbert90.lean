@@ -32,6 +32,9 @@ trace, which also has codimension one because the trace of a separable extension
 * `TauCeti.exists_smul_div_eq_iff_norm_eq_one`: Hilbert's Theorem 90 for a cyclic Galois
   extension, together with its converse.
 * `TauCeti.exists_apply_sub_eq_iff_trace_eq_zero`: its additive form.
+* `TauCeti.exists_ne_zero_mul_apply_eq_of_apply_mul_self_eq_one`: the form for an involution `τ`
+  of a commutative ring that moves some element: if `τ x * x = 1`, then `x * τ y = y` for some
+  `y ≠ 0`, so `x = y / τ y` when the ring is a field.
 
 ## References
 
@@ -120,5 +123,27 @@ theorem exists_apply_sub_eq_iff_trace_eq_zero {g : L ≃ₐ[K] L}
   obtain ⟨y, hy⟩ : x ∈ LinearMap.range D :=
     (Submodule.eq_of_le_of_finrank_eq hle (by omega)).symm ▸ LinearMap.mem_ker.2 hx
   exact ⟨y, by rwa [hD] at hy⟩
+
+section Involution
+
+variable {R : Type*} [CommRing R]
+
+/-- **Hilbert's Theorem 90 for an involution.** Let `τ` be an involutive ring endomorphism of a
+commutative ring `R` that moves some element `d`. If `τ x * x = 1`, then `x * τ y = y` for some
+nonzero `y`; over a field this says `x = y / τ y`. One can take `y = 1 + x`, or `y = d - τ d` when
+`x = -1`. -/
+theorem exists_ne_zero_mul_apply_eq_of_apply_mul_self_eq_one {τ : R →+* R}
+    (hτ : ∀ z, τ (τ z) = z) {d : R} (hd : τ d ≠ d) {x : R} (hx : τ x * x = 1) :
+    ∃ y ≠ 0, x * τ y = y := by
+  by_cases hx₁ : x = -1
+  · subst hx₁
+    refine ⟨d - τ d, sub_ne_zero.2 hd.symm, ?_⟩
+    rw [map_sub, hτ]
+    ring
+  · refine ⟨1 + x, fun h ↦ hx₁ (eq_neg_of_add_eq_zero_right h), ?_⟩
+    rw [map_add, map_one]
+    linear_combination hx
+
+end Involution
 
 end TauCeti
