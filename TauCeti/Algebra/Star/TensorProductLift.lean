@@ -31,6 +31,8 @@ star version of Mathlib's `Algebra.TensorProduct.map`.
 * `Algebra.TensorProduct.mapNonUnitalStarAlgHom`: the star homomorphism `a ⊗ b ↦ f a ⊗ g b`,
   with `Algebra.TensorProduct.mapNonUnitalStarAlgHom_id` and
   `Algebra.TensorProduct.mapNonUnitalStarAlgHom_comp`.
+* `Algebra.TensorProduct.commNonUnitalStarAlgHom`: the flip `a ⊗ b ↦ b ⊗ a` as a star
+  homomorphism `A ⊗[R] B → B ⊗[R] A`.
 -/
 
 public section
@@ -255,5 +257,59 @@ theorem mapNonUnitalStarAlgHom_comp {C' D' : Type*} [NonUnitalSemiring C'] [Modu
     | tmul a b => simp
 
 end Map
+
+section Comm
+
+variable {R A B : Type*} [CommSemiring R] [NonUnitalSemiring A] [Module R A]
+  [NonUnitalSemiring B] [Module R B]
+
+private theorem comm_mul [SMulCommClass R A A] [IsScalarTower R A A] [SMulCommClass R B B]
+    [IsScalarTower R B B] (x y : A ⊗[R] B) :
+    TensorProduct.comm R A B (x * y) =
+      TensorProduct.comm R A B x * TensorProduct.comm R A B y := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' hx hx' => simp only [add_mul, map_add, hx, hx']
+  | tmul a b =>
+    induction y using TensorProduct.inductionOn with
+    | add y y' hy hy' => simp only [mul_add, map_add, hy, hy']
+    | tmul a' b' => simp [tmul_mul_tmul]
+
+private theorem comm_star [StarRing R] [StarRing A] [StarRing B] [StarModule R A]
+    [StarModule R B] (x : A ⊗[R] B) :
+    TensorProduct.comm R A B (star x) = star (TensorProduct.comm R A B x) := by
+  induction x using TensorProduct.inductionOn with
+  | add x x' hx hx' => simp only [star_add, map_add, hx, hx']
+  | tmul a b => simp
+
+variable (R A B) [SMulCommClass R A A] [IsScalarTower R A A] [SMulCommClass R B B]
+  [IsScalarTower R B B] [StarRing R] [StarRing A] [StarRing B] [StarModule R A] [StarModule R B]
+
+/-- **The flip of a tensor product** as a non-unital star algebra homomorphism
+`A ⊗[R] B → B ⊗[R] A`, `a ⊗ b ↦ b ⊗ a`. Its underlying linear map is `TensorProduct.comm`; this
+is the non-unital star version of Mathlib's `Algebra.TensorProduct.comm`. -/
+noncomputable def commNonUnitalStarAlgHom : A ⊗[R] B →⋆ₙₐ[R] B ⊗[R] A where
+  __ := TensorProduct.comm R A B
+  map_zero' := map_zero _
+  map_mul' := comm_mul
+  map_star' := comm_star
+
+@[simp]
+theorem commNonUnitalStarAlgHom_tmul (a : A) (b : B) :
+    commNonUnitalStarAlgHom R A B (a ⊗ₜ b) = b ⊗ₜ a :=
+  (rfl)
+
+/-- The underlying function of `commNonUnitalStarAlgHom R A B` is `TensorProduct.comm R A B`. -/
+theorem coe_commNonUnitalStarAlgHom :
+    ⇑(commNonUnitalStarAlgHom R A B) = TensorProduct.comm R A B :=
+  (rfl)
+
+/-- Flipping twice is the identity. -/
+@[simp]
+theorem commNonUnitalStarAlgHom_comp_commNonUnitalStarAlgHom :
+    (commNonUnitalStarAlgHom R B A).comp (commNonUnitalStarAlgHom R A B) =
+      NonUnitalStarAlgHom.id R (A ⊗[R] B) :=
+  NonUnitalStarAlgHom.ext fun x ↦ TensorProduct.comm_comm R B A x
+
+end Comm
 
 end Algebra.TensorProduct
