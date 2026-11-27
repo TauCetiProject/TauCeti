@@ -120,8 +120,7 @@ private theorem measureEntropy_eq_iSup_sigma (hT : MeasurePreserving T μ μ) :
   simp only [iSup_subtype]
 
 /-- **Lower bound for mixtures.** For a map preserving the probability measures `μ` and `ν`,
-`a h_μ(T) + (1 - a) h_ν(T) ≤ h_{a μ + (1 - a) ν}(T)`: rates of finite labels `ξ` for `μ` and `η`
-for `ν` are bounded by the rates of their join, which add up to its rate for the mixture. -/
+`a h_μ(T) + (1 - a) h_ν(T) ≤ h_{a μ + (1 - a) ν}(T)`. -/
 theorem le_measureEntropy_smul_add_smul (ha : a ≤ 1) (hμ : MeasurePreserving T μ μ)
     (hν : MeasurePreserving T ν ν) :
     a * measureEntropy μ T + (1 - a) * measureEntropy ν T ≤
