@@ -9,8 +9,10 @@ public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.Topology.Algebra.Module.Compact
 public import TauCeti.Algebra.Module.Lattice
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
+public import TauCeti.Topology.Algebra.Group.LocallyConstant
 public import TauCeti.Topology.Algebra.Module.GeneralLinearGroup
 public import TauCeti.Topology.Algebra.Module.ModuleTopology
+import TauCeti.NumberTheory.LocalField.Topology
 
 /-!
 # Lattices over a nonarchimedean local field
@@ -42,6 +44,13 @@ topological commutative ring.
 * `Module.Basis.isOpen_span_range`: the `𝒪[E]`-span of a finite `E`-basis is open.
 * `Submodule.IsFullLattice.isOpen`, `Submodule.IsFullLattice.isClosed`,
   `Submodule.IsFullLattice.isCompact`: a lattice is open, closed and compact.
+* `Submodule.exists_isFullLattice_superset_of_isCompact`,
+  `Submodule.exists_isFullLattice_subset_of_mem_nhds`: every compact subset of `V` lies in a
+  lattice, and every neighbourhood of `0` contains one.
+* `Submodule.exists_isFullLattice_forall_periodic`: a locally constant compactly supported
+  function is invariant under translation by some lattice.
+* `Submodule.exists_eq_sum_indicator_sub`: a compactly supported function with a lattice `M` of
+  periods is a finite sum of multiples of indicators of cosets of `M`.
 * `Submodule.IsFullLattice.isModuleTopology`: the subspace topology on a lattice is its
   `𝒪[E]`-module topology.
 * `Submodule.IsFullLattice.isOpen_setOf_mapsTo`, `Submodule.IsFullLattice.isCompact_setOf_mapsTo`:
@@ -99,6 +108,23 @@ theorem IsFullLattice.isOpen : IsOpen (L : Set V) := by
 theorem IsFullLattice.isClosed : IsClosed (L : Set V) := by
   have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
   exact AddSubgroup.isClosed_of_isOpen L.toAddSubgroup (IsFullLattice.isOpen L)
+
+omit L [IsFullLattice E L] in
+/-- **Every compact set lies in a lattice.** -/
+theorem exists_isFullLattice_superset_of_isCompact [FiniteDimensional E V] {C : Set V}
+    (hC : IsCompact C) : ∃ L : Submodule 𝒪[E] V, L.IsFullLattice E ∧ C ⊆ L := by
+  have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+  -- Finitely many translates `c + L₀` of the lattice `L₀` spanned by a basis cover `C`, and `C`
+  -- lies in the lattice spanned by `L₀` and the centres `c`.
+  let b := Module.finBasis E V
+  obtain ⟨T, -, hCT⟩ := hC.elim_nhds_subcover (fun c ↦ (· - c) ⁻¹' (span 𝒪[E] (range b) : Set V))
+    fun c _ ↦ (b.isOpen_span_range.preimage (continuous_sub_right c)).mem_nhds (by simp)
+  refine ⟨span 𝒪[E] (range b ∪ T), isFullLattice_span ((finite_range b).union T.finite_toSet)
+    (eq_top_iff.2 (b.span_eq ▸ span_mono subset_union_left)), fun x hx ↦ ?_⟩
+  obtain ⟨c, hcT, hxc⟩ := mem_iUnion₂.1 (hCT hx)
+  -- `x = c + (x - c)` with `c` a centre and `x - c` in the span of the basis.
+  rw [← sub_add_cancel x c]
+  exact add_mem (span_mono subset_union_left hxc) (subset_span (subset_union_right hcT))
 
 /-- **A lattice carries the module topology.** The subspace topology on a lattice `L ⊆ V` is its
 `𝒪[E]`-module topology. -/
@@ -167,6 +193,42 @@ theorem IsFullLattice.isOpen_stabilizer :
   rw [h]
   exact ((IsFullLattice.isOpen_setOf_mapsTo L).preimage hc.1).inter
     ((IsFullLattice.isOpen_setOf_mapsTo L).preimage hc.2)
+
+omit L [IsFullLattice E L] in
+/-- **Coset expansion.** A compactly supported function with a lattice `M` of periods is a finite
+sum of the indicators of cosets `a + M`, each multiplied by the value `f a`; the sum runs over one
+representative `a` of each coset meeting the support. -/
+theorem exists_eq_sum_indicator_sub (M : Submodule 𝒪[E] V) [M.IsFullLattice E]
+    {X : Type*} [AddCommMonoid X] {f : V → X} (hper : ∀ u ∈ M, Function.Periodic f u)
+    (hfc : HasCompactSupport f) :
+    ∃ s : Finset V, ∀ x, f x = ∑ a ∈ s, (M : Set V).indicator (fun _ ↦ f a) (x - a) := by
+  classical
+  have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+  obtain ⟨T, -, hT⟩ := hfc.isCompact.elim_nhds_subcover (fun c ↦ (· - c) ⁻¹' (M : Set V))
+    fun c _ ↦ ((IsFullLattice.isOpen M).preimage (continuous_sub_right c)).mem_nhds
+      (by simp)
+  -- One representative for each coset of `M` meeting the support.
+  let q : V → V ⧸ M.toAddSubgroup := QuotientAddGroup.mk
+  have hq {a b : V} : q a = q b ↔ a - b ∈ M := by
+    rw [QuotientAddGroup.eq_iff_sub_mem, Submodule.mem_toAddSubgroup]
+  refine ⟨(T.image q).image Quotient.out, fun x ↦ ?_⟩
+  by_cases hx : ∃ a ∈ (T.image q).image Quotient.out, x - a ∈ M
+  · obtain ⟨a, ha, hxa⟩ := hx
+    rw [Finset.sum_eq_single a (fun b hb hba ↦ indicator_of_notMem (fun hxb ↦ hba ?_) _)
+      (absurd ha), indicator_of_mem hxa]
+    · simpa using hper _ hxa a
+    -- Two representatives in the same coset are equal.
+    obtain ⟨u, -, rfl⟩ := Finset.mem_image.1 ha
+    obtain ⟨u', -, rfl⟩ := Finset.mem_image.1 hb
+    refine congrArg Quotient.out ((QuotientAddGroup.out_eq' u').symm.trans
+      ((hq.2 ?_).trans (QuotientAddGroup.out_eq' u)))
+    simpa using sub_mem hxa hxb
+  · push Not at hx
+    rw [Finset.sum_eq_zero fun a ha ↦ indicator_of_notMem (hx a ha) _]
+    by_contra hfx
+    obtain ⟨c, hcT, hxc⟩ := mem_iUnion₂.1 (hT (subset_tsupport f hfx))
+    refine hx (q c).out (Finset.mem_image_of_mem _ (Finset.mem_image_of_mem _ hcT)) ?_
+    exact hq.1 ((hq.2 hxc).trans (QuotientAddGroup.out_eq' (q c)).symm)
 
 end ValuativeTopology
 
@@ -295,6 +357,35 @@ theorem IsFullLattice.isCompact_stabilizer :
     simp [T, e, LinearEquiv.smul_def, ← TauCeti.coe_generalLinearContinuousMulEquiv_apply]
   rw [h]
   exact (Submonoid.units_isCompact (IsFullLattice.isCompact_setOf_mapsTo L)).image e.continuous
+
+omit L [IsFullLattice E L] in
+/-- **Every neighbourhood of `0` contains a lattice.** -/
+theorem exists_isFullLattice_subset_of_mem_nhds [FiniteDimensional E V] {N : Set V}
+    (hN : N ∈ nhds (0 : V)) : ∃ L : Submodule 𝒪[E] V, L.IsFullLattice E ∧ (L : Set V) ⊆ N := by
+  -- Small scalars map the compact lattice `L₀` spanned by a basis into `N` (tube lemma), and
+  -- `a • L₀` is a lattice for `a ≠ 0`.
+  let L₀ := span 𝒪[E] (range (Module.finBasis E V))
+  have hL₀ : L₀.IsFullLattice E :=
+    isFullLattice_span (finite_range _) (Module.finBasis E V).span_eq
+  have hev : ∀ᶠ a in nhds (0 : E), ∀ v ∈ (L₀ : Set V), a • v ∈ N :=
+    (IsFullLattice.isCompact L₀).eventually_forall_of_forall_eventually fun v _ ↦
+      (continuous_smul.tendsto ((0 : E), v)).eventually (by simpa using hN)
+  obtain ⟨a, ha, ha0⟩ := ((hev.filter_mono (nhdsWithin_le_nhds (s := {0}ᶜ))).and
+    (self_mem_nhdsWithin (s := {(0 : E)}ᶜ))).exists
+  refine ⟨Units.mk0 a ha0 • L₀, IsFullLattice.smul E L₀ _, fun x hx ↦ ?_⟩
+  obtain ⟨v, hv, rfl⟩ := (mem_smul_pointwise_iff_exists _ _ _).1 hx
+  exact ha v hv
+
+/-- **Uniform local constancy.** A locally constant function with compact support on `V` is
+invariant under translation by some lattice. -/
+theorem exists_isFullLattice_forall_periodic [FiniteDimensional E V] {X : Type*} [Zero X]
+    {f : V → X} (hf : IsLocallyConstant f) (hfc : HasCompactSupport f) :
+    ∃ L : Submodule 𝒪[E] V, L.IsFullLattice E ∧ ∀ u ∈ L, Function.Periodic f u := by
+  have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
+  obtain ⟨L, hL, hLW⟩ := exists_isFullLattice_subset_of_mem_nhds (E := E)
+    ((TauCeti.isOpen_addRightTranslationStabilizer_of_hasCompactSupport hf hfc).mem_nhds
+      (zero_mem _))
+  exact ⟨L, hL, fun u hu ↦ TauCeti.mem_addRightTranslationStabilizer.1 (hLW hu)⟩
 
 end LocalField
 
