@@ -28,7 +28,7 @@ import TauCeti.LinearAlgebra.Matrix.PartialIsometry
 import TauCeti.LinearAlgebra.Trace.Idempotent
 
 /-!
-# Rectangular matrix operations, positivity, and trace duality
+# Rectangular matrix operations and positivity by quadratic forms
 
 We record associativity and conjugate-transpose identities for rectangular C⋆-matrices, together
 with their conversion to ordinary matrices.
@@ -42,8 +42,7 @@ this order exactly when its finite quadratic forms are positive in `A`:
 No self-adjointness hypothesis is needed for the converse: positivity of all the quadratic forms
 already forces `M` to be self-adjoint, by polarization over `ℂ`. The criterion is the standard way
 to recognise positive matrices over a C⋆-algebra, for instance Gram matrices of vectors in a
-Hilbert C⋆-module. We also show that a diagonal matrix in `CStarMatrix n n A` has operator norm
-equal to the supremum norm of its diagonal and expose linear trace duality on `CStarMatrix`.
+Hilbert C⋆-module.
 
 The file also collects basic algebraic API for `CStarMatrix` that Mathlib lacks: entries of finite
 sums and of `1 × 1` matrices, entrywise images under sums and scalar multiples of linear maps,

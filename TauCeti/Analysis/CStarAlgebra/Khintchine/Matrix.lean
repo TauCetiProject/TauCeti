@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Expect
-public import TauCeti.Analysis.CStarAlgebra.Schatten
+public import TauCeti.Analysis.CStarAlgebra.Matrix.Schatten
 public import TauCeti.Analysis.CStarAlgebra.SquareFunction
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Basic
 public import TauCeti.Analysis.Normed.Module.RademacherSum.Moment
@@ -29,7 +29,7 @@ Pisier established the explicit universal lower constant `(√3)⁻¹` (with upp
 prove this by combining:
 1. Rectangular Schatten realization of `columnSquare`/`rowSquare` and infimal convolution `⊓`
    (`rowColumnSumSeminorm`).
-2. Column/row trace-pairing duality from `TauCeti.Analysis.CStarAlgebra.Schatten` lifted to
+2. Column/row trace-pairing duality from `TauCeti.Analysis.CStarAlgebra.Matrix.Schatten` lifted to
    `rowColumnSumGauge 1`.
 3. `Seminorm.exists_dual_apply_eq_and_norm_le`, `CStarMatrix.existsUnique_sum_trace_mul_eq`, and
    `TauCeti.exists_rademacherCoeff_eq_and_norm_le` for `(√3)⁻¹`, plus sign-cube Bessel duality for
