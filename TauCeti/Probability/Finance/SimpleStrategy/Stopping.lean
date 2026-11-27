@@ -87,7 +87,8 @@ theorem exists_simpleHolding_simpleGains_dyadicCeilTime_Ioc
             (by simpa only [hp0, hp_end] using hu),
           indicator_of_notMem (fun h : u ∈ Ioc s t ↦ hu ⟨h.1, le_min h.2 huT⟩), ite_self]
     · -- Gain identity at `T`: telescope over the projected dyadic grid.
-      rw [simpleGains_def]
+      rw [simpleGains_def, stoppedProcess]
+      dsimp only [N, p, ζ, σ]
       exact sum_dyadicProjIcc_telescope hst hsT k (τ ω) (ξ ω) (X · ω)
   · -- Case `T < s`: the interval `(s, t]` lies past the horizon `T`, so the zero strategy works.
     have hTs : T < s := lt_of_not_ge hsT

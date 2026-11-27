@@ -11,6 +11,7 @@ import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.OuterMeasure.AE
 import TauCeti.Probability.BrownianMotion.Integral.Continuous
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Localization
+import TauCeti.Probability.BrownianMotion.Integral.Progressive
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
@@ -28,9 +29,8 @@ This file constructs the continuous, strongly progressive Brownian Itô integral
 `LocallyBrownianIntegrable` integrand against an almost surely continuous filtered pre-Brownian
 motion on a raw filtration, characterizes the domain of Itô integrability, handles strongly
 progressive inputs via predictable representatives, proves that every strongly progressive Itô
-integral is a continuous local martingale, compares raw-filtration integrals under filtration
-enlargements, and extends stopping compatibility, interval restrictions, and the bounded
-left-measurable multiplier rule to the full local domain.
+integral is a continuous local martingale, and extends stopping compatibility, interval
+restrictions, and the bounded left-measurable multiplier rule to the full local domain.
 
 Closed-level raw energy localizers `τ n := nnvolume.energyLocalizer H (n + 1)` reduce a locally
 Brownian-integrable integrand `H` to `BrownianIntegrable` cutoffs `Hloc n` without augmenting the
@@ -55,7 +55,6 @@ strongly progressive, almost surely continuous process `I` satisfying `IsItoInte
 * `TauCeti.Probability.IsFilteredPreBrownianReal.itoIntegral_localMartingale`: against an almost
   surely continuous filtered pre-Brownian motion, every strongly progressive Itô integral is a
   local martingale.
-* `itoIntegral_congr_filtration`: uniqueness comparison under filtration enlargements.
 * `TauCeti.Probability.IsFilteredPreBrownianReal.isItoIntegral_stoppedProcess`,
   `isItoIntegral_stoppedProcess_Ioc`, `isItoIntegral_stoppedProcess_sub`,
   `isItoIntegral_ite_Ioc_mul`, and `IsItoIntegral.mul_ite_Ioc`: stopping compatibility, `(σ, τ]` and
@@ -268,25 +267,17 @@ theorem exists_isItoIntegral_of_isStronglyProgressive
       IsItoIntegral ℱ P W H' I ∧ IsStronglyProgressive ℱ I ∧
       Locally (fun Y ↦ Martingale Y ℱ P) ℱ I P := by
   have := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨H', hH'pred, hprod_real⟩ := hH.exists_isStronglyPredictable_ae_prod P
+  have henergy (n : ℕ) : ∀ᵐ ω ∂P,
+      (∫⁻ t, ‖H t ω‖ₑ ^ 2 ∂((volume.restrict (Ioc 0 (n : ℝ))).comap
+        ((↑) : ℝ≥0 → ℝ))) < ∞ := by
+    filter_upwards [hfin] with ω hω
+    rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
+    exact (hω n).aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.mp (hω n)
+  obtain ⟨H', hH'loc, hprod_real⟩ := hH.exists_locallyBrownianIntegrable_ae_prod (P := P) henergy
   have hprod (T : ℝ≥0) :
       Function.uncurry H' =ᵐ[(timeMeasure T).prod P] Function.uncurry H := by
-    have hmp : MeasurePreserving (Prod.map ((↑) : ℝ≥0 → ℝ) id)
-        ((timeMeasure T).prod P) ((volume.restrict (Ioc 0 (T : ℝ))).prod P) :=
-      (measurePreserving_coe_timeMeasure T).prod (MeasurePreserving.id P)
-    exact (hmp.quasiMeasurePreserving.ae_eq_comp (hprod_real T)).mono fun ⟨t, ω⟩ h ↦ by
-      simpa only [Function.comp_apply, Prod.map_apply, id_eq, Real.toNNReal_coe,
-        Function.uncurry_apply_pair] using h
-  have hH'loc : LocallyBrownianIntegrable ℱ P H' := by
-    refine locallyBrownianIntegrable_iff_nat.mpr ⟨hH'pred, fun n ↦ ?_⟩
-    have hswap :
-        (fun p : Ω × ℝ≥0 ↦ H' p.2 p.1) =ᵐ[P.prod (timeMeasure n)]
-          fun p : Ω × ℝ≥0 ↦ H p.2 p.1 :=
-      (Measure.measurePreserving_swap (μ := P)
-        (ν := timeMeasure n)).quasiMeasurePreserving.ae_eq_comp (hprod n)
-    filter_upwards [hfin, Measure.ae_ae_of_ae_prod hswap] with ω hω heq
-    rw [← NNReal.coe_natCast n, NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def]
-    exact (hω n).ae_eq (Filter.EventuallyEq.symm heq)
+    have h := hprod_real T
+    rwa [NNReal.comap_volume_restrict_Ioc, ← timeMeasure_def] at h
   obtain ⟨I, hIito, hIprog, hIloc⟩ := hW.exists_isItoIntegral hcont hH'loc
   exact ⟨H', I, hH'loc, hprod, hIito, hIprog, hIloc⟩
 
@@ -299,16 +290,6 @@ theorem itoIntegral_localMartingale (hW : IsFilteredPreBrownianReal ℱ W P)
     Locally (fun Y ↦ Martingale Y ℱ P) ℱ I P :=
   let ⟨_, hJito, _, hJloc⟩ := hW.exists_isItoIntegral hcont hI.locallyBrownianIntegrable
   hProg.locally_martingale_of_indist hJloc (isItoIntegral_unique hW hJito hI)
-
-/-- **Filtration-enlargement comparison for Itô integrals.** If `ℱ ≤ 𝒢` and `W` remains filtered
-pre-Brownian relative to `𝒢`, any `ℱ`-Itô integral and any `𝒢`-Itô integral of the same integrand
-are indistinguishable. -/
-theorem itoIntegral_congr_filtration {𝒢 : Filtration ℝ≥0 mΩ}
-    (hW𝒢 : IsFilteredPreBrownianReal 𝒢 W P) (hℱ𝒢 : ℱ ≤ 𝒢)
-    {H I J : ℝ≥0 → Ω → ℝ}
-    (hI : IsItoIntegral ℱ P W H I) (hJ : IsItoIntegral 𝒢 P W H J) :
-    I ≡ᵐ[P] J :=
-  isItoIntegral_unique hW𝒢 (hI.mono_filtration hℱ𝒢) hJ
 
 /-- Clipping two predictable processes to `(s, t]` and multiplying by a bounded `ℱ s`-measurable
 random variable `ξ` scales their time-product `L²` distance by at most `max Cξ 0`. -/

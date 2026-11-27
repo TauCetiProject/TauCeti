@@ -299,14 +299,14 @@ theorem dyadicProjIcc_le_dyadicCeilTime {s b : ℝ≥0} (hsb : s ≤ b) {k j : �
         congrArg Subtype.val (Set.projIcc_of_right_le hsb hbj)
       exact hbu (hpeq ▸ h.le)
     have hj_le : (j : ℝ≥0) / (2 : ℝ≥0) ^ k ≤ dyadicProjIcc s b hsb k j := by
-      rw [dyadicProjIcc, Set.coe_projIcc, min_eq_right hjb.le]
+      rw [dyadicProjIcc_def, min_eq_right hjb.le]
       exact le_max_right _ _
     have hdiv : (((j + 1 : ℕ) : ℝ≥0) / (2 : ℝ≥0) ^ k : WithTop ℝ≥0) ≤ dyadicCeilTime k u :=
       le_dyadicCeilTime_of_div_lt k j (lt_of_le_of_lt (WithTop.coe_le_coe.mpr hj_le) h)
     have hs_lt : (s : WithTop ℝ≥0) < dyadicCeilTime k u :=
       lt_of_le_of_lt (WithTop.coe_le_coe.mpr (le_dyadicProjIcc hsb k j)) h
     have hnext : dyadicProjIcc s b hsb k (j + 1) ≤ max s (((j + 1 : ℕ) : ℝ≥0) / 2 ^ k) := by
-      rw [dyadicProjIcc, Set.coe_projIcc]
+      rw [dyadicProjIcc_def]
       exact max_le_max_left s (min_le_right _ _)
     exact (WithTop.coe_le_coe.mpr hnext).trans (by
       rw [WithTop.coe_max]
@@ -328,14 +328,10 @@ theorem sum_dyadicProjIcc_telescope {s t T : ℝ≥0} (hst : s ≤ t) (hsT : s �
             f (min (dyadicProjIcc s (min t T) (le_min hst hsT) k j) T)) =
       c * (f (min t (min (T : WithTop ℝ≥0) (dyadicCeilTime k u)).untopA) -
         f (min s (min (T : WithTop ℝ≥0) (dyadicCeilTime k u)).untopA)) := by
-  let b : ℝ≥0 := min t T
+  set p : ℕ → ℝ≥0 := dyadicProjIcc s (min t T) (le_min hst hsT) k
+  set b : ℝ≥0 := min t T
+  set σ : WithTop ℝ≥0 := dyadicCeilTime k u
   have hsb : s ≤ b := le_min hst hsT
-  let p : ℕ → ℝ≥0 := dyadicProjIcc s b hsb k
-  let σ : WithTop ℝ≥0 := dyadicCeilTime k u
-  change ∑ j ∈ Finset.range (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1),
-      (if (p j : WithTop ℝ≥0) < σ then c else 0) * (f (min (p (j + 1)) T) - f (min (p j) T)) =
-    c * (f (min t (min (T : WithTop ℝ≥0) σ).untopA) -
-      f (min s (min (T : WithTop ℝ≥0) σ).untopA))
   have hbT : b ≤ T := min_le_right t T
   have hp0 : p 0 = s := dyadicProjIcc_zero hsb k
   have hp_end : p (⌊b * (2 : ℝ≥0) ^ k⌋₊ + 1) = b := dyadicProjIcc_end hsb k

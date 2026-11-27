@@ -9,12 +9,12 @@ public import TauCeti.Probability.BrownianMotion.Integral.Ito.L2
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Basic
+import TauCeti.Probability.BrownianMotion.Integral.Process
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Finance.SimpleStrategy.Approximation
 import TauCeti.Probability.Finance.SimpleStrategy.Energy
 import TauCeti.Probability.Finance.SimpleStrategy.Refinement
 import TauCeti.Probability.Martingale.ContinuousLimit
-import TauCeti.Probability.Martingale.LpLimit
 
 /-!
 # Existence of the Itô integral for square-integrable integrands and the Itô isometry
@@ -39,12 +39,11 @@ constructs the Itô integral of `H` against `W` and proves the Itô isometry.
 The integral is the limit of the elementary integrals of bounded simple holdings approximating
 `H` in `L²` of Lebesgue time times `P` on every finite horizon. By the elementary isometry
 `TauCeti.Probability.IsFilteredPreBrownianReal.eLpNorm_simpleGains`, these elementary integrals
-are Cauchy in `L²(P)` at every time. Their fixed-time limit is a martingale, and, when `W` has
-continuous paths, the continuous martingale completion
-`MeasureTheory.exists_continuous_martingale_of_cauchySeq_Lp` selects a predictable version with
-almost surely continuous paths. Square integrability and the Itô isometry follow directly from
-the fixed-time `L²` identification `ae_eq_l2Integral_of_isItoIntegral` and `eLpNorm_l2Integral`,
-while `IsItoIntegral.martingale` uses `ae_eq_of_tendstoInMeasure`.
+are Cauchy in `L²(P)` at every time. When `W` has continuous paths, the continuous martingale
+completion `MeasureTheory.exists_continuous_martingale_of_cauchySeq_Lp` selects a predictable
+version with almost surely continuous paths. Square integrability, the martingale property, and
+the Itô isometry follow directly from the fixed-time `L²` identification
+`ae_eq_l2Integral_of_isItoIntegral`, `exists_martingale_l2Integral`, and `eLpNorm_l2Integral`.
 
 Neither usual conditions on the filtration nor path continuity of `W` are needed for the
 isometry and the martingale property; only existence uses continuous paths. Adaptedness is
@@ -108,16 +107,20 @@ private theorem eLpNorm_elementaryIntegrand_sub (hW : IsFilteredPreBrownianReal 
   rw [hG, hK]
   exact hW.eLpNorm_simpleGains hρ.monotoneOn hc hc₂ t
 
-/-- Bounded elementary integrands approximating a Brownian-integrable integrand on every finite
-horizon have elementary martingales which are Cauchy in `L²(P)` at every time. -/
-private theorem _root_.TauCeti.BrownianIntegrable.exists_elementaryIntegrand_cauchySeq
-    (hH : BrownianIntegrable ℱ P H) (hW : IsFilteredPreBrownianReal ℱ W P) :
-    ∃ (K : ℕ → ElementaryIntegrand ℱ)
-      (hmem : ∀ k t, MemLp ((K k).integral W t) 2 P),
-      (∀ k, Martingale ((K k).integral W) ℱ P) ∧
-      (∀ t, CauchySeq fun k ↦ (hmem k t).toLp ((K k).integral W t)) ∧
-      ∀ t, Tendsto (fun k ↦ eLpNorm (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
-        ((timeMeasure t).prod P)) atTop (𝓝 0) := by
+/-- Shared continuous-martingale completion returning both the constructed Itô integral and a
+sequence of `ElementaryIntegrand`s whose elementary integrals converge almost surely uniformly on
+every finite horizon. -/
+private theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
+    (hH : BrownianIntegrable ℱ P H) (hW : IsFilteredPreBrownianReal ℱ W P)
+    (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) :
+    ∃ (I : ℝ≥0 → Ω → ℝ) (K : ℕ → ElementaryIntegrand ℱ),
+      IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧ Martingale I ℱ P ∧
+      (∀ T : ℝ≥0, Tendsto (fun k ↦ eLpNorm
+        (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
+          ((timeMeasure T).prod P)) atTop (𝓝 0)) ∧
+      ∀ᵐ ω ∂P, ∀ T : ℝ≥0,
+        TendstoUniformlyOn (fun k t ↦ (K k).integral W t ω)
+          (I · ω) atTop (Iic T) := by
   have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
   obtain ⟨n, τ, a, C, -, hτ, ha, haC, hKH⟩ := hH.exists_seq_simpleHolding_tendsto_eLpNorm
   let K (k : ℕ) : ElementaryIntegrand ℱ :=
@@ -139,50 +142,34 @@ private theorem _root_.TauCeti.BrownianIntegrable.exists_elementaryIntegrand_cau
   have hK (k : ℕ) (t : ℝ≥0) : MemLp (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2)
       2 ((timeMeasure t).prod P) :=
     (K k).brownianIntegrable.memLp_timeMeasure t
-  refine ⟨K, hmem, fun k ↦ (K k).martingale_integral hW.martingale, fun t ↦ ?_, hKH'⟩
-  -- The elementary integrals at `t` are exactly as far apart as their holdings.
-  have hH₂ := hH.memLp_timeMeasure t
-  have hconv : Tendsto (fun k ↦ (hK k t).toLp _) atTop (𝓝 (hH₂.toLp _)) :=
-    (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ (fun k ↦ hK k t) _ hH₂).2 (hKH' t)
-  have hdist (k l : ℕ) : dist ((hmem k t).toLp _) ((hmem l t).toLp _) =
-      dist ((hK k t).toLp _) ((hK l t).toLp _) := by
-    rw [dist_eq_norm, dist_eq_norm, ← MemLp.toLp_sub, ← MemLp.toLp_sub, Lp.norm_toLp,
-      Lp.norm_toLp, eLpNorm_elementaryIntegrand_sub hW (K k) (K l) t]
-  have hcau := hconv.cauchySeq
-  rw [Metric.cauchySeq_iff] at hcau ⊢
-  intro ε hε
-  obtain ⟨N, hN⟩ := hcau ε hε
-  exact ⟨N, fun k hk l hl ↦ hdist k l ▸ hN k hk l hl⟩
-
-/-- Shared continuous-martingale completion returning both the constructed Itô integral and a
-sequence of `ElementaryIntegrand`s whose elementary integrals converge almost surely uniformly on
-every finite horizon. -/
-private theorem _root_.TauCeti.BrownianIntegrable.exists_isItoIntegral_approx
-    (hH : BrownianIntegrable ℱ P H) (hW : IsFilteredPreBrownianReal ℱ W P)
-    (hWc : ∀ᵐ ω ∂P, Continuous fun t ↦ W t ω) :
-    ∃ (I : ℝ≥0 → Ω → ℝ) (K : ℕ → ElementaryIntegrand ℱ),
-      IsItoIntegral ℱ P W H I ∧ IsStronglyPredictable ℱ I ∧ Martingale I ℱ P ∧
-      (∀ T : ℝ≥0, Tendsto (fun k ↦ eLpNorm
-        (fun p : ℝ≥0 × Ω ↦ (K k).toProcess p.1 p.2 - H p.1 p.2) 2
-          ((timeMeasure T).prod P)) atTop (𝓝 0)) ∧
-      ∀ᵐ ω ∂P, ∀ T : ℝ≥0,
-        TendstoUniformlyOn (fun k t ↦ (K k).integral W t ω)
-          (I · ω) atTop (Iic T) := by
-  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨K, hmem, hmart, hcau, hKH⟩ := hH.exists_elementaryIntegrand_cauchySeq hW
-  obtain ⟨I, hI, hIp, hIlim, -, φ, hφ, hIc⟩ := exists_continuous_martingale_of_cauchySeq_Lp hmart
-    (fun k ↦ hWc.mono fun ω hω ↦ (K k).continuous_integral hω) hmem hcau
+  have hcau (t : ℝ≥0) : CauchySeq fun k ↦ (hmem k t).toLp ((K k).integral W t) := by
+    -- The elementary integrals at `t` are exactly as far apart as their holdings.
+    have hH₂ := hH.memLp_timeMeasure t
+    have hconv : Tendsto (fun k ↦ (hK k t).toLp _) atTop (𝓝 (hH₂.toLp _)) :=
+      (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' _ (fun k ↦ hK k t) _ hH₂).2 (hKH' t)
+    have hdist (k l : ℕ) : dist ((hmem k t).toLp _) ((hmem l t).toLp _) =
+        dist ((hK k t).toLp _) ((hK l t).toLp _) := by
+      rw [dist_eq_norm, dist_eq_norm, ← MemLp.toLp_sub, ← MemLp.toLp_sub, Lp.norm_toLp,
+        Lp.norm_toLp, eLpNorm_elementaryIntegrand_sub hW (K k) (K l) t]
+    have hcau := hconv.cauchySeq
+    rw [Metric.cauchySeq_iff] at hcau ⊢
+    intro ε hε
+    obtain ⟨N, hN⟩ := hcau ε hε
+    exact ⟨N, fun k hk l hl ↦ hdist k l ▸ hN k hk l hl⟩
+  obtain ⟨I, hI, hIp, hIlim, -, φ, hφ, hIc⟩ :=
+    exists_continuous_martingale_of_cauchySeq_Lp (fun k ↦ (K k).martingale_integral hW.martingale)
+      (fun k ↦ hWc.mono fun ω hω ↦ (K k).continuous_integral hω) hmem hcau
   refine ⟨I, fun k ↦ K (φ k),
     ⟨hH.isStronglyPredictable, hIc.mono fun ω hω ↦ hω.1, fun t ↦
       ⟨fun k ↦ (K k).n, fun k ↦ (K k).dates, fun k ↦ (K k).positions,
         fun k ↦ (K k).monotone_dates.monotoneOn _, fun k ↦ (K k).measurable_positions,
         ElementaryIntegrand.tendsto_measure_le_lintegral_of_tendsto_eLpNorm
-          (fun _ ↦ hH.isStronglyPredictable) (hKH t),
+          (fun _ ↦ hH.isStronglyPredictable) (hKH' t),
         by
           simpa only [ElementaryIntegrand.integral_eq_simpleGains] using
             tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hIlim t).2⟩⟩,
     hIp, hI,
-    fun T ↦ (hKH T).comp hφ.tendsto_atTop,
+    fun T ↦ (hKH' T).comp hφ.tendsto_atTop,
     hIc.mono fun ω hω ↦ hω.2⟩
 
 /-- **Existence of the Itô integral for square-integrable integrands.** Against a pre-Brownian
@@ -223,16 +210,10 @@ Neither path continuity of the integrator nor usual conditions on the filtration
 theorem IsItoIntegral.martingale (hI : IsItoIntegral ℱ P W H I)
     (hW : IsFilteredPreBrownianReal ℱ W P) (hH : BrownianIntegrable ℱ P H)
     (hIa : StronglyAdapted ℱ I) : Martingale I ℱ P := by
-  have : IsProbabilityMeasure P := (hW.hasLaw_eval 0).isProbabilityMeasure
-  obtain ⟨K, hmem, hmart, hcau, hKH⟩ := hH.exists_elementaryIntegrand_cauchySeq hW
-  obtain ⟨Z, hZ, hZlim⟩ := exists_martingale_of_cauchySeq_Lp hmart hmem hcau
-  exact hZ.congr hIa fun t ↦ (hI.ae_eq_of_tendstoInMeasure hW
-    (fun k ↦ (K k).monotone_dates.monotoneOn _) (fun k ↦ (K k).measurable_positions)
-    (ElementaryIntegrand.tendsto_measure_le_lintegral_of_tendsto_eLpNorm
-      (fun _ ↦ hH.isStronglyPredictable) (hKH t))
-    (by
-      simpa only [ElementaryIntegrand.integral_eq_simpleGains] using
-        tendstoInMeasure_of_tendsto_eLpNorm two_ne_zero (hZlim t).2)).symm
+  obtain ⟨Z, hZ, hZeq, -⟩ :=
+    hW.exists_martingale_l2Integral (H := Function.uncurry H) hH.memLp_predictableMeasure
+  exact hZ.congr hIa fun t ↦
+    ((hW.ae_eq_l2Integral_of_isItoIntegral hH hI t).trans (hZeq t).symm).symm
 
 /-- An Itô integral of a Brownian-integrable integrand against a pre-Brownian motion relative to
 the filtration is square integrable at every time. -/

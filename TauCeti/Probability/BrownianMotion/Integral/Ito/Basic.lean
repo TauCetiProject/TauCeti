@@ -15,6 +15,7 @@ public import TauCeti.Probability.StochasticIntegral.Elementary
 import TauCeti.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.MeasureTheory.Function.Lp.Iterated
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Norm
 import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 import TauCeti.Probability.BrownianMotion.Integral.Energy.Bound
@@ -152,11 +153,8 @@ theorem IsItoIntegral.locallyBrownianIntegrable (hI : IsItoIntegral ℱ P W H I)
       simp only [Pi.zero_apply, sub_zero, zero_sub, eNorm_neg] at htri
       refine htri.trans_lt (ENNReal.mul_lt_top (by norm_num) (ENNReal.add_lt_top.mpr ⟨?_, hK_fin⟩))
       simpa only [eNorm_sub_rev] using hlt.trans ENNReal.one_lt_top
-    have hH_eLp : eLpNorm (fun t ↦ H t ω) 2 (timeMeasure n) < ∞ := by
-      have hm := (hI.isStronglyPredictable.mono ℱ.predictable_le_prod).of_uncurry_right (y := ω)
-      rw [← TauCeti.eLpNorm_two_sq_eq_lintegral hm.aestronglyMeasurable] at hH_fin
-      exact lt_of_not_ge fun htop ↦ by simp [top_le_iff.mp htop] at hH_fin
-    exact hH_eLp
+    have hm := (hI.isStronglyPredictable.mono ℱ.predictable_le_prod).of_uncurry_right (y := ω)
+    exact hm.aestronglyMeasurable.memLp_two_iff_lintegral_enorm_sq_lt_top.mpr hH_fin
   -- Step 2: convergence of the approximation errors in probability forces the bad set to be null.
   rw [ae_iff]
   exact le_antisymm

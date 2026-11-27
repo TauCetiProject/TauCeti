@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
 public import TauCeti.MeasureTheory.Function.Lp.ExtendByZero
 public import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 
 /-!
 # Lebesgue time measure on a finite nonnegative horizon
@@ -44,19 +43,6 @@ noncomputable def timeMeasure (T : ℝ≥0) : Measure ℝ≥0 :=
 theorem timeMeasure_def (T : ℝ≥0) :
     timeMeasure T = (Measure.comap ((↑) : ℝ≥0 → ℝ) volume).restrict (Ioc 0 T) :=
   (rfl)
-
-/-- The coercion `ℝ≥0 → ℝ` is measure-preserving from `timeMeasure T` to Lebesgue measure on
-`(0, T]`. -/
-theorem measurePreserving_coe_timeMeasure (T : ℝ≥0) :
-    MeasurePreserving ((↑) : ℝ≥0 → ℝ) (timeMeasure T) (volume.restrict (Ioc 0 (T : ℝ))) where
-  measurable := NNReal.continuous_coe.measurable
-  map_eq := by
-    rw [timeMeasure_def, ← NNReal.comap_volume_restrict_Ioc,
-      NNReal.isClosedEmbedding_coe.measurableEmbedding.map_comap,
-      Measure.restrict_restrict
-        NNReal.isClosedEmbedding_coe.measurableEmbedding.measurableSet_range]
-    congr 1
-    exact inter_eq_right.mpr fun x hx ↦ ⟨⟨x, hx.1.le⟩, rfl⟩
 
 /-- The mass of a measurable time set is its real Lebesgue mass within the horizon. -/
 theorem timeMeasure_apply (T : ℝ≥0) {s : Set ℝ≥0} (hs : MeasurableSet s) :
