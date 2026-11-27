@@ -27,6 +27,8 @@ is needed):
   Copying a gauge across each cluster gives the upper bound. The lower bound averages over the
   sections choosing one vertex in each cluster (`Finset.ciInf_add_sum_eq_card_sq_mul_ciInf_sum`),
   without assuming that gauges are constant on clusters or that the infimum is attained;
+* `Cochain.cost_replicate_comp`: a gauge constant on each cluster has cost multiplied by
+  `(Fintype.card ι) ^ 2`;
 * `Cochain.defect_div_gaugeDist_replicate`: hence the expansion ratio is multiplied by
   `Fintype.card ι`, and `TauCeti.h1_complete_lex_le_card_mul_div` bounds the Cheeger constant of
   `complete (V ×ₗ ι)` by `Fintype.card ι` times the ratio of any cochain on `complete V` at
@@ -69,6 +71,23 @@ variable {ι : Type*} [Fintype ι]
 @[simp, grind =] theorem replicate_apply (α : Cochain (complete V) G) (x y : V ×ₗ ι) :
     α.replicate ι x y = α (ofLex x).1 (ofLex y).1 :=
   comapComplete_apply α _ x y
+
+/-- On increasing pairs, replication uses the seed between distinct clusters and gives the
+identity within a cluster. -/
+theorem replicate_ofLt [LinearOrder V] [LinearOrder ι] (f : V → V → G) :
+    (ofLt (complete V) f).replicate ι =
+      ofLt (complete (V ×ₗ ι)) fun x y =>
+        if (ofLex x).1 = (ofLex y).1 then 1 else f (ofLex x).1 (ofLex y).1 := by
+  apply ext_of_lt
+  intro x y hxy hadj
+  rw [replicate_apply, ofLt_apply_of_lt _ hadj hxy]
+  have h : (ofLex x).1 < (ofLex y).1 ∨ (ofLex x).1 = (ofLex y).1 := by
+    rcases Prod.Lex.toLex_lt_toLex.mp hxy with h | ⟨h, -⟩
+    · exact Or.inl h
+    · exact Or.inr h
+  rcases h with h | h
+  · rw [ite_eq_right h.ne, ofLt_apply_of_lt _ ((adj_complete _ _).mpr h.ne) h]
+  · rw [ite_eq_left h, h, apply_self]
 
 @[simp] theorem replicate_one : (1 : Cochain (complete V) G).replicate ι = 1 :=
   comapComplete_one _
@@ -124,6 +143,18 @@ norm, even when no optimal gauge exists. -/
     E.ciInf_add_sum_eq_card_sq_mul_ciInf_sum (fun _ he => ne_of_lt (mem_filter.mp he).2)
       (fun e g h => ℓ (g⁻¹ * α e.1 e.2 * h)) c hc hc_const, gaugeDist_def]
   simp_rw [cost_complete, E]
+
+/-- A gauge pulled back along the cluster projection has cost multiplied by `(Fintype.card ι) ^ 2`:
+edges inside a cluster carry `1`, and each base edge is copied once for every pair of cluster
+points. -/
+theorem cost_replicate_comp (ℓ : GroupNorm G) (α : Cochain (complete V) G) (β : V → G) :
+    (α.replicate ι).cost ℓ (β ∘ fun x => (ofLex x).1) =
+      (Fintype.card ι : ℝ) ^ 2 * α.cost ℓ β := by
+  rw [cost_complete, cost_complete, Fintype.sum_filter_lt_lex (V := V) (ι := ι)]
+  simp only [Function.comp_apply, replicate_apply, ofLex_toLex, apply_self, mul_one,
+    inv_mul_cancel, map_one_eq_zero, sum_const_zero, zero_add, sum_const, card_univ,
+    nsmul_eq_mul, ← Finset.mul_sum]
+  rw [← mul_assoc, ← pow_two]
 
 /-- Balanced replication multiplies the expansion ratio `defect / gaugeDist` by `Fintype.card ι`.
 No hypothesis is needed: when `ι` is empty or `α` has gauge distance zero, both sides vanish. -/

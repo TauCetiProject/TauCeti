@@ -14,7 +14,6 @@ import Mathlib.Data.Nat.Factors
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
-import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
 import TauCeti.Combinatorics.CoboundaryExpansion.GraphCochain
@@ -39,7 +38,7 @@ the complete complex, so `h1Err (complete V)` depends only on `Fintype.card V`
 
 On the complete complex:
 
-* `TauCeti.Cochain.gaugeDistErr_ofLt_lex_seed`: the `k = 4` seed `TauCeti.Sym3.seed`, replicated
+* `TauCeti.Cochain.gaugeDistErr_replicate_seed`: the `k = 4` seed `TauCeti.Sym3.seed`, replicated
   along `Fin 4 ×ₗ ι`, has no cheaper gauge in any degree: its cross-degree distance is
   `2 * (card ι) ^ 2`, while its defect is `8 * (card ι) ^ 3`;
 * `TauCeti.h1Err_complete`: hence `h1Err (complete V) = card V / 3` whenever `3 ≤ card V`. When
@@ -74,15 +73,6 @@ namespace Cochain
 section CrossDegree
 
 variable {V : Type*} [Fintype V] [LinearOrder V] {X : TwoComplex V} {n m : ℕ}
-
-/-- The cross-degree cost of an `ofLt` cochain on the complete complex reads the defining function
-on the increasing pairs. -/
-theorem costErr_ofLt_complete (f : V → V → Perm (Fin n)) (β : V → Perm (Fin m)) :
-    (ofLt (complete V) f).costErr β =
-      ∑ p ∈ univ.filter (fun p : V × V => p.1 < p.2), distErr (f p.1 p.2) (β p.1 * (β p.2)⁻¹) := by
-  rw [costErr_complete]
-  exact sum_congr rfl fun p hp => by
-    rw [ofLt_apply_of_lt _ ((adj_complete _ _).mpr (mem_filter.mp hp).2.ne) (mem_filter.mp hp).2]
 
 /-- In equal nonzero degree, the cross-degree cost is the moved-point cost divided by the
 degree. -/
@@ -185,11 +175,10 @@ theorem gaugeDistErr_ofLt_seed : (ofLt (complete (Fin 4)) Sym3.seed).gaugeDistEr
 /-- Replicating the `k = 4` seed along `Fin 4 ×ₗ ι`, with `1` inside clusters, multiplies its
 cross-degree distance by `(card ι) ^ 2`: no gauge of any degree is cheaper than the replicated
 identity gauge. -/
-theorem gaugeDistErr_ofLt_lex_seed (ι : Type*) [Fintype ι] [LinearOrder ι] :
-    (ofLt (complete (Fin 4 ×ₗ ι)) fun x y =>
-        if (ofLex x).1 = (ofLex y).1 then 1 else Sym3.seed (ofLex x).1 (ofLex y).1).gaugeDistErr =
+theorem gaugeDistErr_replicate_seed (ι : Type*) [Fintype ι] [LinearOrder ι] :
+    ((ofLt (complete (Fin 4)) Sym3.seed).replicate ι).gaugeDistErr =
       2 * (Fintype.card ι : ℝ) ^ 2 := by
-  simp only [gaugeDistErr_def, costErr_ofLt_complete]
+  simp only [replicate_ofLt, gaugeDistErr_def, costErr_ofLt_complete]
   exact ciInf₂_sum_distErr_lex_fin_four_of_eq_setOf_isSwap _ Sym3.seed_zero_of_pos
     Sym3.insert_seed_eq_setOf_isSwap
 
@@ -203,11 +192,11 @@ seed replicated along `Fin 4 ×ₗ Fin q`, with defect `8 q ^ 3` and cross-degre
 private theorem h1Err_complete_le_of_card_eq_four_mul {q : ℕ} (hq : 0 < q)
     (hV : Fintype.card V = 4 * q) : h1Err (complete V) ≤ (Fintype.card V : ℝ) / 3 := by
   rw [h1Err_complete_eq_of_card_eq (W := Fin 4 ×ₗ Fin q) (by simp [hV])]
-  have hD := Cochain.gaugeDistErr_ofLt_lex_seed (Fin q)
+  have hD := Cochain.gaugeDistErr_replicate_seed (Fin q)
   rw [Fintype.card_fin] at hD
   have hpos : (0 : ℝ) < 2 * (q : ℝ) ^ 2 := by positivity
   refine (h1Err_le_div (n := 1) (hD ▸ hpos)).trans_eq ?_
-  rw [hD, Cochain.defect_ofLt_lex, Sym3.defect_ofLt_seed, Fintype.card_fin, hV]
+  rw [hD, Cochain.defect_replicate, Sym3.defect_ofLt_seed, Fintype.card_fin, hV]
   have hq' : (q : ℝ) ≠ 0 := by positivity
   push_cast
   field_simp
