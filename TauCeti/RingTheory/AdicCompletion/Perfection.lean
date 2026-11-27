@@ -33,8 +33,9 @@ is bijective, and it allows a larger ideal that is not a defining ideal. If `A` 
 complete with `p ∈ I`, monoid maps `M →* A` correspond to monoid maps `M →* A ⧸ I` through
 `Perfection.liftMonoidHom` and `Perfection.quotientMulEquiv`; and if `I ≤ J` with `x ^ p ∈ I` for
 every `x ∈ J`, monoid maps `M →* A ⧸ I` correspond to monoid maps `M →* A ⧸ J`, since Frobenius
-factors through `A ⧸ J → A ⧸ I` (`Ideal.bijective_factor_comp_monoidHom`). The main example of
-such a `J` is the ideal of elements with divided powers of a `p`-adically complete ring.
+factors through `A ⧸ J → A ⧸ I` (`Ideal.bijective_factor_comp_monoidHom`). Here `p ∈ J` suffices
+in place of `p ∈ I`: then `p ^ p ∈ I`, and `A` is also complete along `I ⊔ (p)`. The main example
+of such a `J` is the ideal of elements with divided powers of a `p`-adically complete ring.
 
 ## Main definitions
 
@@ -48,9 +49,9 @@ such a `J` is the ideal of elements with divided powers of a `p`-adically comple
 * `PreTilt.isAdicComplete_span_singleton`,
   `PreTilt.isAdicComplete_span_singleton_of_pow_dvd`: `PreTilt A p` is `(ϖ♭)`-adically complete when
   `ϖ♭.untilt ∣ p` (or `ϖ♭.untilt ^ k ∣ p` for `k ≠ 0`) and `A` is `(ϖ♭.untilt)`-adically complete.
-* `IsAdicComplete.bijective_mk_comp_monoidHom`: for `A` complete along `I ∋ p` and `J ⊇ I` with
-  `x ^ p ∈ I` for `x ∈ J`, every monoid map `M →* A ⧸ J` from a monoid on which `x ↦ x ^ p` is
-  bijective lifts uniquely to a monoid map `M →* A`.
+* `IsAdicComplete.bijective_mk_comp_monoidHom`: for `A` complete along `I` and `J ⊇ I` with
+  `p ∈ J` and `x ^ p ∈ I` for `x ∈ J`, every monoid map `M →* A ⧸ J` from a monoid on which
+  `x ↦ x ^ p` is bijective lifts uniquely to a monoid map `M →* A`.
 
 ## References
 
@@ -261,16 +262,22 @@ private theorem bijective_mk_comp_monoidHom_self (hpI : (p : S) ∈ I) :
   ext x
   simp [e]
 
-/-- **Monoid maps out of a perfect monoid into a complete ring.** Let `S` be `I`-adically complete
-with `p ∈ I`, and let `J ⊇ I` be an ideal with `x ^ p ∈ I` for every `x ∈ J`. For a commutative
+/-- **Monoid maps out of a perfect monoid into a complete ring.** Let `S` be `I`-adically complete,
+and let `J ⊇ I` be an ideal containing `p` with `x ^ p ∈ I` for every `x ∈ J`. For a commutative
 monoid `M` on which `x ↦ x ^ p` is bijective, composition with `S → S ⧸ J` is a bijection from
 monoid maps `M →* S` to monoid maps `M →* S ⧸ J`: every monoid map `M →* S ⧸ J` has exactly one
 multiplicative lift to `S`. For `J = I` the lift takes values in Teichmüller representatives
 (`Perfection.teichmuller₀`). -/
-theorem bijective_mk_comp_monoidHom (hpI : (p : S) ∈ I) (hIJ : I ≤ J)
+theorem bijective_mk_comp_monoidHom (hpJ : (p : S) ∈ J) (hIJ : I ≤ J)
     (hJ : ∀ x ∈ J, x ^ p ∈ I) :
     Function.Bijective fun f : M →* S ↦ (Ideal.Quotient.mk J : S →* S ⧸ J).comp f := by
-  convert (Ideal.bijective_factor_comp_monoidHom hpI hJ hIJ).comp
+  -- `p ^ p ∈ I`, so `S` is also complete along `I ⊔ (p)`, which contains `p` and lies in `J`.
+  have : IsAdicComplete (I ⊔ span {(p : S)}) S := .sup_of_pow_le (k := p) <| by
+    rw [span_singleton_pow, span_singleton_le_iff_mem]
+    exact hJ _ hpJ
+  have hpI : (p : S) ∈ I ⊔ span {(p : S)} := mem_sup_right (mem_span_singleton_self _)
+  convert (Ideal.bijective_factor_comp_monoidHom hpI (fun x hx ↦ mem_sup_left (hJ x hx))
+    (sup_le hIJ ((span_singleton_le_iff_mem _).mpr hpJ))).comp
     (bijective_mk_comp_monoidHom_self (M := M) hpI) using 1
   funext f
   ext x

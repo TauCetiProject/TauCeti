@@ -49,7 +49,7 @@ The ideal `I` may be enlarged to an ideal `J ⊇ I` with `x ^ p ∈ I` for every
 `A ⧸ I → A ⧸ J` (`Ideal.bijective_factor_comp_ringHom`). So every ring homomorphism
 `k →+* A ⧸ J` still has exactly one lift `𝕎 k →+* A`
 (`TauCeti.WittVector.existsUnique_mk_comp_eq_comp_constantCoeff`). Here `p ∈ I` is not needed:
-`p ∈ J`, so `p ^ p ∈ I`, and `A` is also complete along `I ⊔ (p)`.
+`p ∈ J`, so `p ^ p ∈ I`, and `A` is also complete along `I ⊔ (p)` (`IsAdicComplete.sup_of_pow_le`).
 For `I = (p)`, an example of such a `J` is the ideal of elements with divided powers.
 
 Uniqueness holds under the weaker hypothesis that `A` is `I`-adically Hausdorff: two ring
@@ -346,15 +346,12 @@ theorem existsUnique_mk_comp_eq_comp_constantCoeff {J : Ideal A} (hIJ : I ≤ J)
   -- `p ∈ J` because `k` has characteristic `p`, so `p ^ p ∈ I`, and `A` is also complete along
   -- `I ⊔ (p)`, which contains `p`.
   have hpJ : (p : A) ∈ J := Ideal.natCast_mem_of_ringHom_charP p φ
-  have : IsAdicComplete (I ⊔ Ideal.span {(p : A)}) A :=
-    IsAdicComplete.of_pow_le_of_pow_le (I := I) (k := 1 + p) (l := 1)
-      (Ideal.sup_pow_add_le_pow_sup_pow.trans <| sup_le (pow_one I).le <| by
-        rw [Ideal.span_singleton_pow, Ideal.span_le, Set.singleton_subset_iff]
-        exact hJ _ hpJ)
-      ((pow_one I).le.trans le_sup_left)
+  have : IsAdicComplete (I ⊔ Ideal.span {(p : A)}) A := .sup_of_pow_le (k := p) <| by
+    rw [Ideal.span_singleton_pow, Ideal.span_singleton_le_iff_mem]
+    exact hJ _ hpJ
   exact existsUnique_mk_comp_eq_comp_constantCoeff_of_mem
     (Ideal.mem_sup_right (Ideal.mem_span_singleton_self _))
-    (sup_le hIJ (Ideal.span_le.mpr (Set.singleton_subset_iff.mpr hpJ)))
+    (sup_le hIJ ((Ideal.span_singleton_le_iff_mem _).mpr hpJ))
     (fun x hx ↦ Ideal.mem_sup_left (hJ x hx)) φ
 
 /-- **The `𝕎 k`-algebra structure over `k`**: if `π : A →+* k` is surjective and `A` is complete
