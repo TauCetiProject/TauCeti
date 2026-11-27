@@ -13,8 +13,9 @@ import Mathlib.Data.Nat.Choose.Cast
 /-!
 # The functional equation of the exponential for substituted series
 
-For series `a` and `b` without constant term in any number of variables over a `ℚ`-algebra,
-`exp (a + b) = exp a * exp b`, where `exp g` is the substitution `(PowerSeries.exp A).subst g`.
+For substitutable series `a` and `b` (nilpotent constant terms) in any number of variables over a
+`ℚ`-algebra, `exp (a + b) = exp a * exp b`, where `exp g` is the substitution
+`(PowerSeries.exp A).subst g`.
 The universal case `exp (X₀ + X₁) = exp X₀ * exp X₁` in two variables is the identity
 `(m + n).choose m / (m + n)! = 1 / m! * 1 / n!` between coefficients; substituting `a` and `b` for
 `X₀` and `X₁` gives the general case.
@@ -37,10 +38,9 @@ namespace PowerSeries
 
 variable {A σ : Type*} [CommRing A] [Algebra ℚ A]
 
-/-- **The functional equation of the exponential.** For multivariate series `a` and `b` without
-constant term, `exp (a + b) = exp a * exp b`. -/
-theorem subst_exp_add {a b : MvPowerSeries σ A} (ha : MvPowerSeries.constantCoeff a = 0)
-    (hb : MvPowerSeries.constantCoeff b = 0) :
+/-- **The functional equation of the exponential.** For multivariate series `a` and `b` that can
+be substituted (their constant terms are nilpotent), `exp (a + b) = exp a * exp b`. -/
+theorem subst_exp_add {a b : MvPowerSeries σ A} (ha : HasSubst a) (hb : HasSubst b) :
     (exp A).subst (a + b) = (exp A).subst a * (exp A).subst b := by
   -- The universal case in two variables, compared coefficient by coefficient.
   have h_univ : (exp A).subst (MvPowerSeries.X 0 + MvPowerSeries.X 1 : MvPowerSeries (Fin 2) A) =
@@ -53,7 +53,7 @@ theorem subst_exp_add {a b : MvPowerSeries σ A} (ha : MvPowerSeries.constantCoe
     rw [Nat.cast_add_choose ℚ]
     field_simp
   have hab : MvPowerSeries.HasSubst ![a, b] :=
-    MvPowerSeries.hasSubst_of_constantCoeff_zero (by simp [Fin.forall_fin_two, ha, hb])
+    MvPowerSeries.hasSubst_of_constantCoeff_nilpotent fun s ↦ by fin_cases s; exacts [ha, hb]
   -- Substituting `a` for `X₀` and `b` for `X₁` commutes with the exponential.
   have h_comm (F : MvPowerSeries (Fin 2) A) (hF : MvPowerSeries.constantCoeff F = 0) :
       ((exp A).subst F).subst ![a, b] = (exp A).subst (F.subst ![a, b]) :=

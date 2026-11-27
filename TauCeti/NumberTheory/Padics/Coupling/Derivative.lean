@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.RingTheory.MvPowerSeries.Derivative
 public import Mathlib.Topology.MetricSpace.Ultra.Basic
-public import TauCeti.NumberTheory.Padics.CouplingNormalForm
+public import TauCeti.NumberTheory.Padics.Coupling.NormalForm
 
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Analysis.Normed.Ring.Lemmas
@@ -23,13 +23,13 @@ import TauCeti.RingTheory.MvPowerSeries.NormCoeff
 
 Let `Γ_e = ∑_{(τ, i)} z_(τ,i) ^ p ^ e * z_(pr_e τ, i)` be the couplings and
 `Ξ_λ = ∑_{e ∈ S} ∑_{j ≥ 0} λ_{e j} Γ_e ^ p ^ j` the coupling series of
-`TauCeti/NumberTheory/Padics/CouplingNormalForm.lean`. The derivative of `Γ_e` in `z_y` is
+`TauCeti/NumberTheory/Padics/Coupling/NormalForm.lean`. The derivative of `Γ_e` in `z_y` is
 `p ^ e` times a polynomial plus the *partner power sum*
 `P_{e,y} = ∑_{x : (pr_e x₁, x₂) = y} z_x ^ p ^ e` (`MvPowerSeries.pderiv_coupling`). The
 derivative of `Γ_e ^ p ^ j` carries a factor `p ^ j`, so modulo `p` only the terms with `j = 0` and
 their partner power sums survive once `e ≥ 1`.
 
-Over an ultrametric normed field `K`, with `‖λ_{e j}‖ ≤ 1` and `0 ∉ S`:
+Over an ultrametric normed commutative ring `K` with `‖1‖ = 1`, with `‖λ_{e j}‖ ≤ 1` and `0 ∉ S`:
 
 * `MvPowerSeries.norm_coeff_pderiv_couplingSum_sub_le`: the coefficients of
   `∂Ξ_λ/∂z_y - ∑_{e ∈ S} λ_{e 0} P_{e,y}` have norm at most `‖p‖`;
@@ -72,6 +72,10 @@ noncomputable def partnerPowerSum (p : ℕ) (pr : ℕ → Φ → Φ) (e : ℕ) (
 
 variable {R} {p : ℕ} {pr : ℕ → Φ → Φ}
 
+/-- Definitional unfolding of `MvPowerSeries.partnerPowerSum`. -/
+theorem partnerPowerSum_def (e : ℕ) (y : Φ × c) :
+    partnerPowerSum R p pr e y = ∑ x with (pr e x.1, x.2) = y, X x ^ p ^ e := by rfl
+
 /-- The derivative of the coupling `Γ_e` in `z_y` is `p ^ e` times a polynomial plus the partner
 power sum `P_{e,y}`. -/
 theorem pderiv_coupling (e : ℕ) (y : Φ × c) :
@@ -93,6 +97,7 @@ theorem le_order_partnerPowerSum (e : ℕ) (y : Φ × c) :
 
 /-- The coefficient of the partner power sum `P_{e,y}` at `d`: the number of `x` with
 `(pr_e x₁, x₂) = y` and `d = single x (p ^ e)`. -/
+@[simp]
 theorem coeff_partnerPowerSum (e : ℕ) (y : Φ × c) (d : Φ × c →₀ ℕ) :
     coeff d (partnerPowerSum R p pr e y) =
       ∑ x with (pr e x.1, x.2) = y, if d = single x (p ^ e) then 1 else 0 := by
@@ -118,8 +123,16 @@ end CommRing
 
 section Normed
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] {Φ c : Type*} [Fintype Φ] [Fintype c]
-  {p : ℕ} {pr : ℕ → Φ → Φ} {S : Set ℕ} {l : ℕ → ℕ → K}
+variable {K : Type*} [NormedCommRing K] [NormOneClass K] [IsUltrametricDist K] {Φ c : Type*}
+  [Fintype Φ] [Fintype c] {p : ℕ} {pr : ℕ → Φ → Φ} {S : Set ℕ} {l : ℕ → ℕ → K}
+
+omit [IsUltrametricDist K] in
+/-- `‖p ^ n * q‖ ≤ ‖p‖` for `n ≠ 0` and `‖q‖ ≤ 1`, when `‖p‖ ≤ 1`. -/
+private theorem norm_natCast_pow_mul_le (hp₁ : ‖(p : K)‖ ≤ 1) {n : ℕ} (hn : n ≠ 0) {q : K}
+    (hq : ‖q‖ ≤ 1) : ‖(p : K) ^ n * q‖ ≤ ‖(p : K)‖ :=
+  (norm_mul_le _ _).trans ((mul_le_mul ((norm_pow_le _ n).trans
+    (pow_le_of_le_one (norm_nonneg _) hp₁ hn)) hq (norm_nonneg _) (norm_nonneg _)).trans_eq
+    (mul_one _))
 
 /-- The coefficients of the coupling `Γ_e` have norm at most `1`. -/
 theorem norm_coeff_coupling_le_one (e : ℕ) (d : Φ × c →₀ ℕ) :
@@ -144,10 +157,8 @@ theorem norm_coeff_pderiv_coupling_sub_le {e : ℕ} (he : e ≠ 0) (y : Φ × c)
       (norm_coeff_pderiv_le (norm_coeff_X_le_one x) y) t).trans_eq (one_mul 1))
       (norm_coeff_X_le_one _) t).trans_eq (one_mul 1)
   have hp₁ : ‖(p : K)‖ ≤ 1 := IsUltrametricDist.norm_natCast_le_one K p
-  rw [pderiv_coupling, add_sub_cancel_right, map_nsmul, nsmul_eq_mul, norm_mul, Nat.cast_pow,
-    norm_pow]
-  exact (mul_le_mul (pow_le_of_le_one (norm_nonneg _) hp₁ he) (hQ d) (norm_nonneg _)
-    (norm_nonneg _)).trans_eq (mul_one _)
+  rw [pderiv_coupling, add_sub_cancel_right, map_nsmul, nsmul_eq_mul, Nat.cast_pow]
+  exact norm_natCast_pow_mul_le hp₁ he (hQ d)
 
 /-- For `e ≠ 0` and `‖λ_j‖ ≤ 1`, the coefficients of the derivative in `z_y` of the term
 `λ_j Γ_e ^ p ^ j`, minus `λ_0 P_{e,y}` when `j = 0`, have norm at most `‖p‖`. -/
@@ -159,16 +170,15 @@ theorem norm_coeff_pderiv_smul_coupling_pow_sub_le {e : ℕ} (he : e ≠ 0) {a :
   have hΓ := norm_coeff_coupling_le_one (K := K) (c := c) (p := p) (pr := pr) e
   rw [Derivation.map_smul]
   rcases Nat.eq_zero_or_pos j with rfl | hj
-  · rw [ite_eq_left rfl, pow_zero, pow_one, ← smul_sub, coeff_smul, norm_mul]
-    exact (mul_le_mul (ha 0) (norm_coeff_pderiv_coupling_sub_le he y d) (norm_nonneg _)
-      zero_le_one).trans_eq (one_mul _)
+  · rw [ite_eq_left rfl, pow_zero, pow_one, ← smul_sub, coeff_smul]
+    exact (norm_mul_le _ _).trans ((mul_le_mul (ha 0) (norm_coeff_pderiv_coupling_sub_le he y d)
+      (norm_nonneg _) zero_le_one).trans_eq (one_mul _))
   · rw [ite_eq_right hj.ne', sub_zero, Derivation.leibniz_pow, coeff_smul, map_nsmul, nsmul_eq_mul,
-      smul_eq_mul, norm_mul, norm_mul, Nat.cast_pow, norm_pow]
-    have h_rest := norm_coeff_mul_le_mul (norm_coeff_pow_le_one hΓ (p ^ j - 1))
-      (norm_coeff_pderiv_le hΓ y) d
-    refine (mul_le_mul (ha j) (mul_le_mul (pow_le_of_le_one (norm_nonneg _) hp₁
-      hj.ne') h_rest (norm_nonneg _) (norm_nonneg _)) (by positivity)
-      zero_le_one).trans_eq (by ring)
+      smul_eq_mul, Nat.cast_pow]
+    have h_rest := (norm_coeff_mul_le_mul (norm_coeff_pow_le_one hΓ (p ^ j - 1))
+      (norm_coeff_pderiv_le hΓ y) d).trans_eq (one_mul 1)
+    exact (norm_mul_le _ _).trans ((mul_le_mul (ha j) (norm_natCast_pow_mul_le hp₁ hj.ne' h_rest)
+      (norm_nonneg _) zero_le_one).trans_eq (one_mul _))
 
 /-- **The derivative of the coupling series modulo `p`.** If `0 ∉ S`, `1 < p` and `‖λ_{e j}‖ ≤ 1`,
 the coefficients of `∂Ξ_λ/∂z_y - ∑_{e ∈ S} λ_{e 0} P_{e,y}` have norm at most `‖p‖`. -/
@@ -191,7 +201,7 @@ theorem norm_coeff_pderiv_couplingSum_sub_le (hp : 1 < p) (hS : 0 ∉ S)
   simpa only [Function.comp_apply] using norm_coeff_pderiv_smul_coupling_pow_sub_le (p := p)
     (pr := pr) (fun h ↦ hS (h ▸ he)) (hl e) j y d
 
-omit [IsUltrametricDist K] in
+omit [NormOneClass K] [IsUltrametricDist K] in
 /-- The coefficient of `∑_{e ∈ S} λ_{e 0} P_{e,y}` at `d`. -/
 theorem coeff_tsum_smul_partnerPowerSum (hp : 1 < p) (y : Φ × c) (d : Φ × c →₀ ℕ) :
     coeff d (∑' e : S, l e 0 • partnerPowerSum K p pr e y) =

@@ -430,7 +430,8 @@ theorem HasNormalForm.of_norm_coeff_sub_le {r : ℝ}
   have h_exp : (PowerSeries.exp K).subst ((ϖ ^ (p + 1) / p) • Ξ') =
       (PowerSeries.exp K).subst ((ϖ ^ (p + 1) / p) • (Ξ' - couplingSum p S pr l)) *
         (PowerSeries.exp K).subst ((ϖ ^ (p + 1) / p) • couplingSum p S pr l) := by
-    rw [← PowerSeries.subst_exp_add (by simp [hG]) (by simp [constantCoeff_couplingSum hp]),
+    rw [← PowerSeries.subst_exp_add (.of_constantCoeff_zero (by simp [hG]))
+      (.of_constantCoeff_zero (by simp [constantCoeff_couplingSum hp])),
       ← smul_add, sub_add_cancel]
   refine ⟨_, fun d ↦ ?_, by rw [hF, h_exp, mul_assoc]⟩
   simpa using norm_coeff_mul_le_mul hW (fun t ↦ PowerSeries.norm_coeff_subst_exp_smul_le_one hr hG
