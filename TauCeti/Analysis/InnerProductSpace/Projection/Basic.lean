@@ -186,6 +186,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   plus a multiple of `‖D (P.starProjection w)‖`.
 * `LinearIsometryEquiv.conjStarAlgEquiv_starProjection`: conjugating `P_V` by a linear isometry
   equivalence `e` gives the orthogonal projection onto `e(V)`.
+* `Submodule.ker_one_sub_starProjection_comp`: the kernel of `(1 - P_W) ∘L T` is
+  `W.comap T`.
 * `Submodule.starProjection_orthogonal_ker_one_sub_mul`: the orthogonal projection onto
   `(ker ((1 - P_U) * P_V))ᗮ` is `P_V - P_{U ⊓ V}`.
 -/
@@ -671,6 +673,15 @@ theorem apply_mem_of_commute_starProjection {U : Submodule 𝕜 E} [U.HasOrthogo
 
 end Commute
 
+/-- The kernel of `(1 - P_W) ∘L T` is the preimage `W.comap T`. -/
+theorem ker_one_sub_starProjection_comp {F : Type*} [AddCommMonoid F] [Module 𝕜 F]
+    [TopologicalSpace F] (W : Submodule 𝕜 E) [W.HasOrthogonalProjection] (T : F →L[𝕜] E) :
+    ((1 - W.starProjection) ∘L T).ker = W.comap (T : F →ₗ[𝕜] E) := by
+  ext x
+  simp only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply,
+    _root_.sub_apply, one_apply_eq_self, Submodule.mem_comap, sub_eq_zero]
+  exact eq_comm.trans W.starProjection_eq_self_iff
+
 /-- The orthogonal projection onto `(ker ((1 - P_U) * P_V))ᗮ` is `P_V - P_{U ⊓ V}`. -/
 theorem starProjection_orthogonal_ker_one_sub_mul [CompleteSpace E]
     (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection]
@@ -686,17 +697,11 @@ theorem starProjection_orthogonal_ker_one_sub_mul [CompleteSpace E]
     isStarProjection_starProjection.sub_of_mul_eq_left isStarProjection_starProjection hcomp'
   have hr_eq : r = (1 - (U ⊓ V).starProjection) * V.starProjection := by
     rw [sub_mul, one_mul, hcomp']
-  have hker_one_sub : ∀ (W : Submodule 𝕜 E) [W.HasOrthogonalProjection],
-      ((1 - W.starProjection) * V.starProjection).ker =
-        W.comap (V.starProjection : E →ₗ[𝕜] E) := by
-    intro W _
-    rw [ContinuousLinearMap.mul_def, ContinuousLinearMap.toLinearMap_comp, LinearMap.ker_comp,
-      ← W.starProjection_orthogonal', Wᗮ.ker_starProjection, W.orthogonal_orthogonal]
   have hker : x.ker = r.ker := by
-    rw [hr_eq, hker_one_sub U, hker_one_sub (U ⊓ V), Submodule.comap_inf,
-      inf_of_le_left fun ξ _ => V.starProjection_apply_mem ξ]
+    simp only [x, hr_eq, ContinuousLinearMap.mul_def, ker_one_sub_starProjection_comp,
+      Submodule.comap_inf]
+    exact (inf_of_le_left fun ξ _ => V.starProjection_apply_mem ξ).symm
   obtain ⟨hr_has, hr_eq_proj⟩ := isStarProjection_iff_eq_starProjection_range.mp hr
-  have : CompleteSpace x.ker := x.isClosed_ker.isComplete.completeSpace_coe
   have hker_r : r.ker = r.rangeᗮ := by
     conv_lhs => rw [hr_eq_proj]
     exact Submodule.ker_starProjection r.range

@@ -24,6 +24,8 @@ submodules directly, without passing through the underlying `Submodule`.
   submodule (and the intersection of two) in a complete space is complete.
 * `Submodule.toSubmodule_closure`: the underlying submodule of `s.closure` is
   `s.topologicalClosure`.
+* `Submodule.closure_iSup`: taking the topological closure of submodules commutes with
+  arbitrary suprema.
 -/
 
 public section
@@ -68,5 +70,13 @@ variable {R M : Type*} [Semiring R] [AddCommMonoid M] [TopologicalSpace M] [Modu
 theorem toSubmodule_closure (s : Submodule R M) :
     s.closure.toSubmodule = s.topologicalClosure :=
   (rfl)
+
+/-- Taking the topological closure of submodules commutes with arbitrary suprema. -/
+theorem closure_iSup {ι : Sort*} (s : ι → Submodule R M) :
+    (⨆ i, s i).closure = ⨆ i, (s i).closure :=
+  le_antisymm
+    (closure_le.2 <| iSup_le fun i => closure_le.1 <| le_sSup (Set.mem_range_self i))
+    (sSup_le <| Set.forall_mem_range.2 fun i =>
+      closure_le.2 <| (le_iSup s i).trans (closure_le.1 le_rfl))
 
 end Submodule

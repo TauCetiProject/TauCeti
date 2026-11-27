@@ -37,9 +37,8 @@ orthogonal projection onto `(ker u)ᗮ`, or merely some star projection.
   `u u†` is the orthogonal projection onto the closure of the range of `u`, and
   `ContinuousLinearMap.IsPartialIsometry.isClosed_range`: that range is closed.
 * `ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self`,
-  `ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_star_mul_self`,
   `LinearMap.isPartialIsometry_iff_isStarProjection_adjoint_comp_self`: a map is a partial isometry
-  iff `u† u` (or `star u * u` for endomorphisms) is a star projection.
+  iff `u† u` is a star projection.
 * `ContinuousLinearMap.isPartialIsometry_adjoint_iff`, `LinearMap.isPartialIsometry_adjoint_iff`:
   the adjoint of a partial isometry is a partial isometry.
 * `ContinuousLinearMap.isPartialIsometry_iff_starMul`, `LinearMap.isPartialIsometry_iff_starMul`:
@@ -178,11 +177,6 @@ theorem isPartialIsometry_iff_isStarProjection_adjoint_comp_self :
     rw [← inner_self_eq_zero (𝕜 := 𝕜), ← adjoint_inner_right, hPy, inner_zero_right]
   rw [hy, map_sub, sub_eq_zero] at huy
   simpa only [comp_apply] using huy
-
-/-- A bounded endomorphism is a partial isometry iff `star u * u` is a star projection. -/
-theorem isPartialIsometry_iff_isStarProjection_star_mul_self {u : E →L[𝕜] E} :
-    u.IsPartialIsometry ↔ IsStarProjection (star u * u) := by
-  rw [isPartialIsometry_iff_isStarProjection_adjoint_comp_self, star_eq_adjoint, mul_def]
 
 /-- The initial projection `u† u` of a bounded partial isometry is a star projection. -/
 theorem IsPartialIsometry.isStarProjection_adjoint_comp_self (hu : u.IsPartialIsometry) :

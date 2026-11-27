@@ -128,9 +128,8 @@ theorem trans (hpq : ProjectionEquivalent M p q) (hqr : ProjectionEquivalent M q
       _ = w * (star w * w) * star w := by rw [hvq, ← hwq]
       _ = (w * star w) * (w * star w) := by simp only [mul_assoc]
       _ = r := by rw [hwr, hr.isIdempotentElem.eq]
-  refine ⟨w * v, mul_mem hwM hvM, ?_, hwvp, hwvr⟩
-  rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_star_mul_self, hwvp]
-  exact hp
+  exact ⟨w * v, mul_mem hwM hvM, ContinuousLinearMap.isPartialIsometry_iff_starMul.2
+    (TauCeti.isPartialIsometry_iff_isStarProjection_star_mul_self.2 (hwvp ▸ hp)), hwvp, hwvr⟩
 
 /-- Equivalent projections vanish simultaneously. -/
 theorem eq_zero_iff (h : ProjectionEquivalent M p q) : p = 0 ↔ q = 0 := by
@@ -163,9 +162,9 @@ theorem add {p₁ p₂ q₁ q₂ : H →L[ℂ] H} (hp₁₂ : p₁ * p₂ = 0) (
     rw [hortho.star_add_mul_add, hv₁p, hv₂p]
   have hadd_q : (v₁ + v₂) * star (v₁ + v₂) = q₁ + q₂ := by
     rw [hortho.add_mul_star_add, hv₁q, hv₂q]
-  refine ⟨v₁ + v₂, add_mem hv₁M hv₂M, ?_, hadd_p, hadd_q⟩
-  rw [ContinuousLinearMap.isPartialIsometry_iff_isStarProjection_star_mul_self, hadd_p]
-  exact hp₁.add hp₂ hp₁₂
+  exact ⟨v₁ + v₂, add_mem hv₁M hv₂M, ContinuousLinearMap.isPartialIsometry_iff_starMul.2
+    (TauCeti.isPartialIsometry_iff_isStarProjection_star_mul_self.2
+      (hadd_p ▸ hp₁.add hp₂ hp₁₂)), hadd_p, hadd_q⟩
 
 /-- Equivalent projections in `M` have the same central support. -/
 theorem centralSupport_eq (h : ProjectionEquivalent M p q) :

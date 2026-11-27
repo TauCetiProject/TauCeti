@@ -268,12 +268,7 @@ private theorem starProjection_closure_span_orbit_mem_commutant (M : VonNeumannA
   have hK_eq :
       (orbitSpan M a).topologicalClosure =
         (⨆ ξ, (O ξ).closure : ClosedSubmodule ℂ H).toSubmodule := by
-    have gc : GaloisConnection (Submodule.closure : Submodule ℂ H → ClosedSubmodule ℂ H)
-        ClosedSubmodule.toSubmodule := fun _ _ => Submodule.closure_le
-    have hcl : (orbitSpan M a).closure = ⨆ ξ, (O ξ).closure := by
-      rw [hW_eq]
-      exact gc.l_iSup
-    exact congrArg ClosedSubmodule.toSubmodule hcl
+    rw [← Submodule.toSubmodule_closure, hW_eq, Submodule.closure_iSup]
   rw [Submodule.starProjection_inj.2 hK_eq]
   refine starProjection_topologicalClosure_iSup_mem (fun ξ => (O ξ).closure) fun ξ => ?_
   rw [Submodule.starProjection_inj.2 (Submodule.toSubmodule_closure (O ξ)),
