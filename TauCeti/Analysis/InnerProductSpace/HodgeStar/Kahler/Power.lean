@@ -71,6 +71,9 @@ line `span {x, J x}`.
   family.
 * `TauCeti.AlmostComplexStructure.apply_mem_span_range_of_isCalibratedFrame_kahlerPowerForm`: the
   span of a calibrated frame is a complex subspace.
+* `AlmostComplexStructure.exists_basis_orientation_eq_and_isCalibratedFrame_kahlerPowerForm`:
+  a complex-linear injection from a space of dimension `2r` carries some basis positive for the
+  complex orientation to a frame calibrated by `ω ^ r / r!`.
 * `TauCeti.AlmostComplexStructure.kahlerPowerForm_compContinuousLinearMap`: naturality under
   complex-linear isometries.
 
@@ -481,6 +484,59 @@ theorem apply_mem_span_range_of_isCalibratedFrame_kahlerPowerForm {r : ℕ} {v :
   exact Submodule.sum_mem _ fun k _ ↦ Submodule.smul_mem _ _
     (J.complexRealFrame_apply_mem (S := (Submodule.span ℝ (Set.range v)).comap J.toLinearMap)
       hJmem k)
+
+/-- **Complex subspaces carry calibrated frames.** Let `L` be an injective linear map, from a real
+vector space `U` of dimension `2r` with an almost complex structure `j`, intertwining `j` with `J`.
+Some basis of `U` that is positive for the complex orientation of `j` is carried by `L` to a frame
+calibrated by `ω ^ r / r!`. -/
+theorem exists_basis_orientation_eq_and_isCalibratedFrame_kahlerPowerForm {U : Type*}
+    [AddCommGroup U] [Module ℝ U] [FiniteDimensional ℝ U] (j : AlmostComplexStructure U) {r : ℕ}
+    (hr : finrank ℝ U = 2 * r) {L : U →ₗ[ℝ] V} (hL : Function.Injective L)
+    (hLj : ∀ u, L (j u) = J (L u)) :
+    ∃ b : Basis (Fin (2 * r)) ℝ U, b.orientation = j.orientation hr ∧
+      (J.kahlerPowerForm r).IsCalibratedFrame (L ∘ b) := by
+  -- The image `S` of `L` is a `J`-invariant subspace of dimension `2r`; choose a family `w` in
+  -- it that is orthonormal for the Hermitian metric of `J`, and pull it back to `U`.
+  set S := LinearMap.range L
+  have hS : ∀ x ∈ S, J x ∈ S := by
+    rintro _ ⟨u, rfl⟩
+    exact ⟨j u, hLj u⟩
+  have hJS (v w : S) : ⟪J.restrict S hS v, J.restrict S hS w⟫ = ⟪v, w⟫ := by
+    simpa only [Submodule.coe_inner, coe_restrict_apply] using hJ v w
+  obtain ⟨w, hw, hJw⟩ := exists_orthonormal_forall_inner_apply_eq_zero hJS
+    ((LinearMap.finrank_range_of_inj hL).trans hr).ge
+  set e := LinearEquiv.ofInjective L hL
+  set u : Fin r → U := fun i ↦ e.symm (w i)
+  have hLu (i : Fin r) : L (u i) = w i := congrArg Subtype.val (e.apply_symm_apply (w i))
+  -- The frame `(u₀, j u₀, u₁, j u₁, …)` of `U` is carried to the frame of `w`.
+  set ε : Fin (2 * r) ≃ Fin r × Fin 2 := (finCongr (Nat.mul_comm 2 r)).trans finProdFinEquiv.symm
+  set c : Fin (2 * r) → U := (fun p : Fin r × Fin 2 ↦ ![u p.1, j (u p.1)] p.2) ∘ ε
+  have hframe : L ∘ c = J.complexRealFrame fun i ↦ (w i : V) := by
+    rw [complexRealFrame_eq_comp]
+    funext k
+    simp only [Function.comp_apply, c]
+    generalize ε k = p
+    obtain ⟨i, a⟩ := p
+    fin_cases a <;> simp [hLu, hLj]
+  have hcal : (J.kahlerPowerForm r).IsCalibratedFrame (J.complexRealFrame fun i ↦ (w i : V)) :=
+    isCalibratedFrame_kahlerPowerForm_complexRealFrame hJ (hw.comp_linearIsometry S.subtypeₗᵢ)
+      fun i i' ↦ by simpa only [Submodule.coe_inner, coe_restrict_apply] using hJw i i'
+  -- This frame is a basis of `U`, positive since it is adapted to `j`.
+  have hli : LinearIndependent ℝ c :=
+    LinearIndependent.of_comp L (hframe ▸ hcal.orthonormal.linearIndependent)
+  set b := basisOfLinearIndependentOfCardEqFinrank' _ hli (by simp [hr])
+  have hb : ⇑b = c := coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
+  refine ⟨b, ?_, by rwa [hb, hframe]⟩
+  have hB (i : Fin r) : b.reindex ε (i, 1) = j (b.reindex ε (i, 0)) := by
+    simp [hb, c]
+  have hb' : (b.reindex ε).reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm r 2))) = b :=
+    Basis.eq_of_apply_eq fun k ↦ by
+      simp only [Basis.reindex_apply]
+      congr 1
+      ext
+      simp [ε]
+      omega
+  rw [← j.orientation_reindex hB hr (Nat.mul_comm r 2), hb']
 
 /-- **Naturality of the normalized Kähler powers**: a complex-linear isometric equivalence pulls
 the normalized Kähler powers back to the normalized Kähler powers. In particular they are

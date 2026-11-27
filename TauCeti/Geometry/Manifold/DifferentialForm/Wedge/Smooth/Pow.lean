@@ -51,6 +51,10 @@ def wedgePow (φ : SmoothForm I M ℝ k) : (m : ℕ) → SmoothForm I M ℝ (k *
       (isSmoothForm_ofFunction_iff.mpr contMDiff_const).mem_smoothBundleForms⟩
   | m + 1 => wedge (wedgePow φ m) φ
 
+/-- The empty wedge power is the constant function `1`. -/
+theorem wedgePow_zero (φ : SmoothForm I M ℝ k) :
+    (φ.wedgePow 0).val = RoughForm.ofFunction I fun _ ↦ (1 : ℝ) := (rfl)
+
 /-- The successor wedge power is the previous power wedged with the form. -/
 theorem wedgePow_succ (φ : SmoothForm I M ℝ k) (m : ℕ) :
     φ.wedgePow (m + 1) = wedge (φ.wedgePow m) φ := (rfl)

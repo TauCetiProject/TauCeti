@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
-public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Basic
+public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Smooth.Pow
 import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 import Mathlib.LinearAlgebra.Isomorphisms
 
@@ -33,6 +33,7 @@ dimensionality, separation, or completeness of the model space.
 ## Main declarations
 
 * `TauCeti.SmoothForm.wedge_mem_closedForms`: the wedge of closed forms is closed.
+* `TauCeti.SmoothForm.wedgePow_mem_closedForms`: so is every wedge power of a closed form.
 * `TauCeti.SmoothForm.wedge_mem_exactForms_of_left_mem`,
   `TauCeti.SmoothForm.wedge_mem_exactForms_of_right_mem`: the wedge of an exact form with a
   closed form, in either order, is exact.
@@ -124,6 +125,18 @@ theorem wedge_mem_closedForms {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M �
   rw [mem_closedForms_iff_mextDerivₗ_eq_zero] at hφ hψ ⊢
   rw [mextDerivₗ_wedge, hφ, hψ]
   simp only [map_zero, LinearMap.zero_apply, smul_zero, add_zero]
+
+/-- Every wedge power of a closed smooth form is closed. -/
+theorem wedgePow_mem_closedForms {φ : SmoothForm I M ℝ k} (hφ : φ ∈ closedForms I M k) :
+    ∀ m, φ.wedgePow m ∈ closedForms I M (k * m)
+  | 0 => by
+    -- The empty power is the constant function `1`, whose differential vanishes.
+    rw [mem_closedForms, wedgePow_zero]
+    funext x
+    simp
+  | m + 1 => by
+    rw [wedgePow_succ]
+    exact wedge_mem_closedForms (wedgePow_mem_closedForms hφ m) hφ
 
 /-- The wedge of an exact smooth form with a closed smooth form is exact. -/
 theorem wedge_mem_exactForms_of_left_mem {φ : SmoothForm I M ℝ k} {ψ : SmoothForm I M ℝ l}
