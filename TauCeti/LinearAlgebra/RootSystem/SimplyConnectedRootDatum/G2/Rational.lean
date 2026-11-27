@@ -47,6 +47,27 @@ theorem mem_posRoots_rational_g2_iff (ht : G2.Valid) (k : Fin G2.numRoots) :
   rw [hpos]
   exact mem_posRoots_g2_iff k
 
+/-- The positive roots of G₂ indexed by the six rows of its commutator table. -/
+def g2PositiveRootEquiv (ht : G2.Valid) :
+    posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) ≃ Fin 6 where
+  toFun γ := ⟨γ.val.val, (mem_posRoots_rational_g2_iff ht γ.val).mp γ.property⟩
+  invFun i := ⟨Fin.castAdd 6 i, (mem_posRoots_rational_g2_iff ht _).mpr i.isLt⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+/-- Reindexing a positive G₂ root preserves its numerical index. -/
+@[simp]
+theorem g2PositiveRootEquiv_apply_val (ht : G2.Valid)
+    (γ : posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)) :
+    (g2PositiveRootEquiv ht γ).val = γ.val.val := by rfl
+
+/-- Casting a positive G₂ table index back to the full root set recovers the root. -/
+@[simp]
+theorem castAdd_g2PositiveRootEquiv (ht : G2.Valid)
+    (γ : posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)) :
+    Fin.castAdd 6 (g2PositiveRootEquiv ht γ) = γ.val :=
+  Fin.ext (g2PositiveRootEquiv_apply_val ht γ)
+
 /-- **Negative roots of `G₂`.** The root at index `6 + l` of the native root table is the negative
 of the root at index `l`, by `TauCeti.DynkinType.g2Root_addNat`. -/
 theorem root_natAdd_g2 (ht : G2.Valid) (l : Fin 6) :

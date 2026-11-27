@@ -146,31 +146,34 @@ private theorem collect_punctured_G2 {ht : G2.Valid} (D : ChevalleyDatum G2 ht)
     chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
       D.isNilpotent_representation_rootGenerator γ.val A
   let S := Finset.univ.erase (pin (ht := ht) i)
+  let e := g2PositiveRootEquiv ht
   have hcomm (α) (_ : α ∈ S) (β) (_ : β ∈ S) (hne : α ≠ β) :
       ⁅(X α).range, (X β).range⁆ ≤
-        ⨆ γ ∈ {γ ∈ S | max α.val.val β.val.val < γ.val.val}, (X γ).range := by
-    let a := g2PositiveRootEquiv ht α
-    let b := g2PositiveRootEquiv ht β
-    have hab : a ≠ b := (g2PositiveRootEquiv ht).injective.ne hne
+        ⨆ γ ∈ {γ ∈ S | max (e α) (e β) < e γ}, (X γ).range := by
+    let a := e α
+    let b := e β
+    have hab : a ≠ b := e.injective.ne hne
     have hbound := commutator_range_chevalleyRootSubgroup_g2_le D.representation D.lattice
       D.representation_mem_lattice D.isNilpotent_representation_rootGenerator A a b hab
     rw [castAdd_g2PositiveRootEquiv, castAdd_g2PositiveRootEquiv] at hbound
     refine hbound.trans (iSup₂_le fun k hk => ?_)
+    let γ := e.symm k
+    have hγval : γ.val = Fin.castAdd 6 k := by
+      rw [← castAdd_g2PositiveRootEquiv ht γ, ← e.apply_symm_apply k]
     have hk' : max α.val.val β.val.val < k.val := by
-      simpa only [Fin.lt_def, Fin.val_max, a, b, g2PositiveRootEquiv_apply_val] using hk
-    let γ : {γ // γ ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)} :=
-      ⟨Fin.castAdd 6 k, (mem_posRoots_rational_g2_iff ht _).mpr k.isLt⟩
+      simpa only [Fin.lt_def, Fin.val_max, a, b, e, g2PositiveRootEquiv_apply_val] using hk
     have hγ : γ ≠ pin i := by
       intro heq
       have heq' := congrArg (fun x => x.val.val) heq
       have hi : i.val < 2 := i.isLt
       have hne' : α.val.val ≠ β.val.val := by
-        simpa only [a, b, g2PositiveRootEquiv_apply_val] using Fin.val_injective.ne hab
-      simp only [γ, pin, val_simpleIndex, Fin.val_castAdd] at heq'
+        simpa only [a, b, e, g2PositiveRootEquiv_apply_val] using Fin.val_injective.ne hab
+      simp only [hγval, pin, val_simpleIndex, Fin.val_castAdd] at heq'
       omega
-    exact le_iSup_of_le γ (le_iSup_of_le
+    refine le_iSup_of_le γ (le_iSup_of_le
       (Finset.mem_filter.mpr ⟨Finset.mem_erase.mpr ⟨hγ, Finset.mem_univ _⟩, by
-        simpa only [γ, Fin.val_castAdd] using hk'⟩) le_rfl)
+        simpa only [γ, e.apply_symm_apply] using hk⟩) ?_)
+    simp only [X, hγval, le_refl]
   exact collect_punctured_of_commutator_bound D A i _ hcomm l hl hall g hg
 
 private theorem collect_punctured (A : Type v) [CommRing A] (i : Fin t.rank)

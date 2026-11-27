@@ -33,27 +33,6 @@ attribute [local instance high] Algebra.toModule
 
 variable {t : DynkinType} {ht : t.Valid} {V : Type*} [AddCommGroup V] [Module ℚ V]
 
-/-- The positive roots of G₂ indexed by the six rows of its commutator table. -/
-def g2PositiveRootEquiv (ht : G2.Valid) :
-    posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) ≃ Fin 6 where
-  toFun γ := ⟨γ.val.val, (mem_posRoots_rational_g2_iff ht γ.val).mp γ.property⟩
-  invFun i := ⟨Fin.castAdd 6 i, (mem_posRoots_rational_g2_iff ht _).mpr i.isLt⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-
-/-- Reindexing a positive G₂ root preserves its numerical index. -/
-@[simp]
-theorem g2PositiveRootEquiv_apply_val (ht : G2.Valid)
-    (γ : posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)) :
-    (g2PositiveRootEquiv ht γ).val = γ.val.val := by rfl
-
-/-- Casting a positive G₂ table index back to the full root set recovers the root. -/
-@[simp]
-theorem castAdd_g2PositiveRootEquiv (ht : G2.Valid)
-    (γ : posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht)) :
-    Fin.castAdd 6 (g2PositiveRootEquiv ht γ) = γ.val :=
-  Fin.ext (g2PositiveRootEquiv_apply_val ht γ)
-
 -- Reindex the native G₂ collection theorem by positive roots rather than its six-row table.
 private theorem exists_prod_of_mem_iSup_G2 {ht : G2.Valid}
     (ρ : _root_.UniversalEnvelopingAlgebra ℚ (G2.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
