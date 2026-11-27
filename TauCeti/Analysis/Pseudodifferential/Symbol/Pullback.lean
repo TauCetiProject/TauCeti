@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency.Basic
 import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import TauCeti.Analysis.Normed.Operator.CompactFamily
 import TauCeti.Analysis.Pseudodifferential.Symbol.Map

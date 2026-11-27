@@ -7,13 +7,15 @@ module
 
 public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.Algebra.Group.Units.Hom
+public import Mathlib.RingTheory.Ideal.Maps
 import Mathlib.Algebra.Group.Commute.Units
 
 /-!
-# Frobenius on units
+# Frobenius on units and prime ideals
 
 Let `A` be a commutative semiring of exponential characteristic `p`. Frobenius is a local
-homomorphism, since `a` is a unit as soon as `a ^ p` is. The `p ^ n`-power Frobenius
+homomorphism, since `a` is a unit as soon as `a ^ p` is, and every prime ideal is its own preimage
+under Frobenius, since `a ^ p` lies in a prime exactly when `a` does. The `p ^ n`-power Frobenius
 `iterateFrobenius A p n` is a ring homomorphism, so it acts on the units of `A` through
 `Units.map`, and that action is the `p ^ n`-th power map. This file records that, pointwise and
 coordinatewise along a family, because the coordinatewise form is what a split torus of a
@@ -25,6 +27,7 @@ Nothing here is about the fixed locus of the Frobenius; for the subring and subf
 ## Main results
 
 * `TauCeti.isLocalHom_frobenius`: Frobenius is a local homomorphism.
+* `Ideal.IsPrime.comap_frobenius`: a prime ideal is its own preimage under Frobenius.
 * `TauCeti.map_iterateFrobenius_unit_eq_pow`: `Units.map (iterateFrobenius A p n) u = u ^ p ^ n`.
 * `TauCeti.map_iterateFrobenius_units_eq_pow`: the same coordinatewise along a family of units.
 -/
@@ -53,3 +56,8 @@ theorem map_iterateFrobenius_units_eq_pow {ι : Type*} (s : ι → Aˣ) :
   funext fun i => by simp
 
 end TauCeti
+
+/-- A prime ideal is its own preimage under Frobenius, since `a ^ p ∈ J` exactly when `a ∈ J`. -/
+theorem Ideal.IsPrime.comap_frobenius {A : Type*} [CommSemiring A] (p : ℕ) [ExpChar A p]
+    {J : Ideal A} (hJ : J.IsPrime) : J.comap (frobenius A p) = J :=
+  Ideal.ext fun _ ↦ hJ.pow_mem_iff_mem p (expChar_pos A p)

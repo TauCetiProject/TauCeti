@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.Matrix.Rank
 public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.Data.Matrix.Block
 public import TauCeti.LinearAlgebra.Matrix.StarProjection
+public import TauCeti.LinearAlgebra.Matrix.Trace.Basic
 
 /-!
 # Murray–von Neumann equivalence of matrix projections
@@ -49,6 +50,8 @@ spectral order (`Matrix.conjTranspose_mul_self_eq_zero`).
   sums and by entrywise star ring homomorphisms.
 * `Matrix.IsMurrayVonNeumannEquivalent.add`: equivalence is compatible with orthogonal sums
   `p + q` of projections in a single matrix algebra.
+* `Matrix.IsMurrayVonNeumannEquivalent.sum_map_eq`: an additive map `f` with
+  `f (a * b) = f (b * a)` has the same diagonal sum on equivalent projections.
 * `IsStarProjection.isMurrayVonNeumannEquivalent_fromBlocks_zero`,
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_comm` and
   `Matrix.isMurrayVonNeumannEquivalent_fromBlocks_assoc`: padding by a zero block, and
@@ -346,6 +349,15 @@ theorem IsMurrayVonNeumannEquivalent.add {p q : Matrix m m R} {p' q' : Matrix n 
   · rw [conjTranspose_add, Matrix.mul_add, Matrix.add_mul, Matrix.add_mul, hvp', hwq',
       mul_conjTranspose_eq_zero_of_mul_eq_zero hq.isSelfAdjoint hvr hwr hpq,
       mul_conjTranspose_eq_zero_of_mul_eq_zero hp.isSelfAdjoint hwr hvr hqp, add_zero, zero_add]
+
+/-- An additive map `f` with `f (a * b) = f (b * a)`, such as a tracial functional, has the same
+diagonal sum on Murray–von Neumann equivalent projections of any sizes. -/
+theorem IsMurrayVonNeumannEquivalent.sum_map_eq {M F : Type*} [AddCommMonoid M] [FunLike F R M]
+    [AddMonoidHomClass F R M] (f : F) (hf : ∀ a b, f (a * b) = f (b * a)) {p : Matrix m m R}
+    {q : Matrix n n R} (h : IsMurrayVonNeumannEquivalent p q) :
+    ∑ i, f (p i i) = ∑ k, f (q k k) := by
+  obtain ⟨-, -, v, rfl, rfl⟩ := h
+  exact sum_map_mul_comm f hf vᴴ v
 
 end NonUnitalSemiring
 

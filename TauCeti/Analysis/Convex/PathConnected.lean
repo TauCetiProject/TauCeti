@@ -21,6 +21,9 @@ Mathlib's `Convex.locallyPathConnectedSpace` proves this for locally convex spac
 neighbourhoods of zero exist in every real topological vector space, so local convexity is not
 needed. This covers, for instance, convex subsets of the spaces `Lᵖ` with `0 < p < 1`, which are
 not locally convex.
+
+A set closed under scaling by every `t ∈ [0, 1]` is preconnected
+(`TauCeti.isPreconnected_of_forall_smul_mem`): it is empty, or it is star-convex about the origin.
 -/
 
 public section
@@ -40,3 +43,17 @@ theorem Convex.locallyPathConnectedSpace' (hs : Convex ℝ s) : LocallyPathConne
     simpa only [add_zero] using hW.2.starConvex.add_left x.val
   exact ((hs.starConvex x.property).inter hW').isPathConnected ⟨x.property, 0, mem_of_mem_nhds hW.1,
       add_zero _⟩
+
+namespace TauCeti
+
+/-- A set closed under scaling by every `t ∈ [0, 1]` is preconnected: it is empty, or it contains
+the origin and is star-convex about it (`starConvex_zero_iff`). -/
+theorem isPreconnected_of_forall_smul_mem (hs : ∀ x ∈ s, ∀ t ∈ Icc (0 : ℝ) 1, t • x ∈ s) :
+    IsPreconnected s := by
+  rcases s.eq_empty_or_nonempty with rfl | ⟨x, hx⟩
+  · exact isPreconnected_empty
+  have h0 : (0 : E) ∈ s := by simpa using hs x hx 0 ⟨le_rfl, zero_le_one⟩
+  exact (StarConvex.isPathConnected (starConvex_zero_iff.2 fun y hy t ht₀ ht₁ ↦
+    hs y hy t ⟨ht₀, ht₁⟩) h0).isConnected.isPreconnected
+
+end TauCeti

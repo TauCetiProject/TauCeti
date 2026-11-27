@@ -18,7 +18,7 @@ initial map suffice. These criteria let a construction of an almost-split sequen
 only one of its two lifting properties.
 
 Minimality is stated explicitly: an endomorphism fixing the specified map is invertible.
-This agrees with the convention in `TauCeti.CategoryTheory.AlmostSplit.Irreducible`.
+This agrees with the convention in `TauCeti.CategoryTheory.AlmostSplit.Irreducible.Basic`.
 No finite-length or locality hypothesis is needed when minimality is supplied. If the opposite
 end has a local endomorphism ring, non-splitness already implies minimality, so a single
 almost-split lifting property suffices. Conversely, the maps of an almost-split sequence are
@@ -26,6 +26,10 @@ always minimal, since its ends have local endomorphism rings by
 `TauCeti.IsLeftAlmostSplit.isLocalRing_end` and `TauCeti.IsRightAlmostSplit.isLocalRing_end`.
 
 The pushout argument uses `TauCeti.shortExact_cobaseChange`.
+
+Minimality is invariant under composing with an isomorphism (`TauCeti.right_minimal_iso_comp`
+and `TauCeti.left_minimal_comp_iso`), so a minimal map stays minimal after its source or target
+is replaced by an isomorphic object.
 
 ## References
 
@@ -184,5 +188,23 @@ theorem IsRightAlmostSplit.exists_iso_of_minimal {X X' Y : C}
   have : IsSplitEpi a := IsSplitEpi.mk' ⟨inv (b ≫ a) ≫ b, by simp [Category.assoc]⟩
   have : IsIso a := isIso_of_mono_of_isSplitEpi a
   exact ⟨asIso a, hag⟩
+
+/-- **Right minimality is invariant under an isomorphism.** If every endomorphism `φ` of `Y` with
+`φ ≫ g = g` is invertible, then so is every endomorphism `u` of `Y'` with `u ≫ e ≫ g = e ≫ g`,
+for an isomorphism `e : Y' ⟶ Y`. -/
+theorem right_minimal_iso_comp {Y' Y Z : C} {g : Y ⟶ Z}
+    (hmin : ∀ φ : Y ⟶ Y, φ ≫ g = g → IsIso φ) (e : Y' ⟶ Y) [IsIso e] :
+    ∀ u : Y' ⟶ Y', u ≫ e ≫ g = e ≫ g → IsIso u := fun u hu ↦ by
+  have := hmin (inv e ≫ u ≫ e) (by simp [hu])
+  simpa using (inferInstance : IsIso (e ≫ (inv e ≫ u ≫ e) ≫ inv e))
+
+/-- **Left minimality is invariant under an isomorphism.** If every endomorphism `φ` of `Y` with
+`f ≫ φ = f` is invertible, then so is every endomorphism `u` of `Y'` with `(f ≫ e) ≫ u = f ≫ e`,
+for an isomorphism `e : Y ⟶ Y'`. -/
+theorem left_minimal_comp_iso {Z Y Y' : C} {f : Z ⟶ Y}
+    (hmin : ∀ φ : Y ⟶ Y, f ≫ φ = f → IsIso φ) (e : Y ⟶ Y') [IsIso e] :
+    ∀ u : Y' ⟶ Y', (f ≫ e) ≫ u = f ≫ e → IsIso u := fun u hu ↦ by
+  have := hmin (e ≫ u ≫ inv e) (by simp [reassoc_of% hu])
+  simpa using (inferInstance : IsIso (inv e ≫ (e ≫ u ≫ inv e) ≫ e))
 
 end TauCeti

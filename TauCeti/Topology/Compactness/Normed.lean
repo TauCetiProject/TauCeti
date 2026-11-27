@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.Analysis.Normed.Group.Real
 import TauCeti.Topology.Compactness.Compact
 import TauCeti.Topology.UniformSpace.HeineCantor
 
@@ -25,10 +26,17 @@ It also gives a norm-ball version of the tube lemma for properties near a compac
   fiber.
 * `IsCompact.exists_pos_forall_norm_sub_le`: a function continuous at the points of the graph of a
   map over a compact set is uniformly continuous there, in the fibre direction.
+* `IsCompact.exists_forall_norm_le_of_eventually_eq_zero`: a function continuous on `K × X`, with
+  `K` compact, vanishing outside `K × L` for a compact `L ⊆ X`, is bounded on `K × X`.
 * `TauCeti.exists_nonneg_forall_notMem_norm_lt`: in a compact space covered by open sets `U` and
   `V`, the coordinates of the points of `U` outside `V` are bounded.
+* `TauCeti.eventually_principal_closedBall_prod_cocompact_iff`: a statement holds eventually
+  along `𝓟 (closedBall 0 s) ×ˢ cocompact E` exactly when it holds on a region `‖p‖ ≤ s`,
+  `‖z‖ ≥ R`.
 * `TauCeti.not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop`: a family whose values at
   one point of `S` have norms tending to infinity has images of `S` in no fixed compact set.
+* `TauCeti.tendsto_comap_fst_cocompact_of_eq_zero`: a map on `ℝ × X` vanishing for `|s| > R`
+  tends to zero as `|s| → ∞`, uniformly in the second coordinate.
 -/
 
 public section
@@ -74,6 +82,22 @@ theorem IsCompact.exists_pos_forall_norm_sub_le {M E G : Type*} [PseudoMetricSpa
   rw [← dist_eq_norm]
   exact (h p hp y (by rw [dist_eq_norm]; linarith)).le
 
+/-- A function `Y` continuous on `K × X`, with `K` compact, and vanishing at `(t, x)` for `x`
+outside a compact subset of `X`, is bounded on `K × X`. -/
+theorem IsCompact.exists_forall_norm_le_of_eventually_eq_zero {K : Set P} (hK : IsCompact K)
+    {Y : P × X → H} (hY : ContinuousOn Y (K ×ˢ univ))
+    (hYc : ∀ᶠ p in comap Prod.snd (cocompact X), Y p = 0) :
+    ∃ C, ∀ t ∈ K, ∀ x, ‖Y (t, x)‖ ≤ C := by
+  obtain ⟨s, hs, hsY⟩ := mem_comap.1 hYc
+  obtain ⟨L, hL, hLs⟩ := mem_cocompact.1 hs
+  obtain ⟨C, hC⟩ := (hK.prod hL).exists_bound_of_continuousOn
+    (hY.mono (prod_mono subset_rfl (subset_univ L)))
+  refine ⟨max C 0, fun t ht x ↦ ?_⟩
+  by_cases hx : x ∈ L
+  · exact (hC (t, x) ⟨ht, hx⟩).trans (le_max_left _ _)
+  · rw [show Y (t, x) = 0 from hsY (hLs hx), norm_zero]
+    exact le_max_right _ _
+
 namespace TauCeti
 
 /-- In a compact space covered by open sets `U` and `V`, the points of `U` outside `V` have
@@ -87,6 +111,24 @@ theorem exists_nonneg_forall_notMem_norm_lt [CompactSpace X] {U V : Set X} (hV :
   obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn eU.continuous.continuousOn
   exact ⟨max C 0 + 1, by positivity, fun x hx ↦ (hC x hx).trans_lt (by linarith [le_max_left C 0])⟩
 
+/-- A statement holds eventually along `𝓟 (closedBall 0 s) ×ˢ cocompact E` exactly when it holds
+on a region `‖p‖ ≤ s`, `‖z‖ ≥ R`. -/
+theorem eventually_principal_closedBall_prod_cocompact_iff {E : Type*} [SeminormedAddGroup E]
+    [ProperSpace E] {s : ℝ} {q : H × E → Prop} :
+    (∀ᶠ w in 𝓟 (Metric.closedBall (0 : H) s) ×ˢ cocompact E, q w) ↔
+      ∃ R, ∀ w : H × E, ‖w.1‖ ≤ s → R ≤ ‖w.2‖ → q w := by
+  constructor
+  · intro h
+    obtain ⟨pa, hpa, pb, hpb, hq⟩ := eventually_prod_iff.1 h
+    obtain ⟨R, -, hR⟩ :=
+      hasBasis_cobounded_norm.eventually_iff.mp (Metric.cobounded_eq_cocompact (α := E) ▸ hpb)
+    exact ⟨R, fun w hw₁ hw₂ ↦ hq (eventually_principal.1 hpa w.1 (mem_closedBall_zero_iff.2 hw₁))
+      (hR (Set.mem_ofPred.mpr hw₂))⟩
+  · rintro ⟨R, hR⟩
+    exact eventually_prod_iff.2 ⟨fun p ↦ ‖p‖ ≤ s,
+      eventually_principal.2 fun p hp ↦ mem_closedBall_zero_iff.1 hp, fun z ↦ R ≤ ‖z‖,
+      tendsto_norm_cocompact_atTop.eventually_ge_atTop R, fun hp _ hz ↦ hR (_, _) hp hz⟩
+
 /-- **Unbounded values violate every image bound.** If the norms of the values `u i z` at one point
 `z ∈ S` tend to infinity, then no compact set contains the images `u i '' S` for every `i`. -/
 theorem not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop {ι α E : Type*}
@@ -95,5 +137,17 @@ theorem not_exists_isCompact_forall_mapsTo_of_tendsto_norm_atTop {ι α E : Type
     ¬ ∃ K : Set E, IsCompact K ∧ ∀ i, MapsTo (u i) S K :=
   not_exists_isCompact_forall_mapsTo_of_tendsto_cocompact hz
     ((tendsto_norm_atTop_iff_cobounded.1 hu).mono_right Metric.cobounded_le_cocompact)
+
+/-- A map on `ℝ × X` vanishing for `|s| > R` tends to zero along both ends `|s| → ∞`, uniformly
+in the second coordinate. -/
+theorem tendsto_comap_fst_cocompact_of_eq_zero {X W : Type*} [Zero W] [TopologicalSpace W]
+    {u : ℝ × X → W} {R : ℝ} (hR : ∀ z, R < |z.1| → u z = 0) :
+    Tendsto u (comap Prod.fst (cocompact ℝ)) (𝓝 0) := by
+  refine tendsto_const_nhds.congr' ?_
+  have hev : ∀ᶠ z : ℝ × X in comap Prod.fst (cocompact ℝ), R < |z.1| :=
+    tendsto_comap.eventually ((tendsto_norm_cocompact_atTop.eventually_gt_atTop R).mono
+      fun s hs ↦ by rwa [Real.norm_eq_abs] at hs)
+  filter_upwards [hev] with z hz
+  exact (hR z hz).symm
 
 end TauCeti

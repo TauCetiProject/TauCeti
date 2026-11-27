@@ -10,6 +10,7 @@ public import TauCeti.Order.Partition.Finpartition
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Order.Partition.Equipartition
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import TauCeti.Data.Finset.Basic
 import TauCeti.Order.Partition.Equipartition
 
 /-!
@@ -176,18 +177,14 @@ theorem isRegularPair_fillDiagonal_self {ε : ℝ} {A : Finset V} (hA : A ∈ P.
   have hAcard : 1 < #A := by
     have : ε * (#A : ℝ) ≤ #A := mul_le_of_le_one_left (by positivity) (le_of_not_ge hlarge)
     exact_mod_cast hsize.trans_le this
-  have hsupp {s t : Finset V} (hs : 1 < #s) (ht : t.Nonempty) :
-      ((s ×ˢ t).filter fun p ↦ p.1 ≠ p.2).Nonempty := by
-    obtain ⟨y, hy⟩ := ht
-    obtain ⟨x, hx, hxy⟩ := exists_mem_ne hs y
-    exact ⟨(x, y), mem_filter.2 ⟨mem_product.2 ⟨hx, hy⟩, hxy⟩⟩
   apply isRegularPair_iff.2
   intro c s hs t ht hs' ht'
   have hs₂ : 1 < #s := by exact_mod_cast hsize.trans_le hs'
   have ht₂ : 1 < #t := by exact_mod_cast hsize.trans_le ht'
-  rw [S.pairColorDensity_fillDiagonal_self P hA hs ht (hsupp hs₂ (card_pos.1 (by omega))) c,
+  rw [S.pairColorDensity_fillDiagonal_self P hA hs ht
+      (filter_ne_product_nonempty hs₂ (card_pos.1 (by omega))) c,
     S.pairColorDensity_fillDiagonal_self P hA (Subset.refl A) (Subset.refl A)
-      (hsupp hAcard (card_pos.1 (by omega))) c]
+      (filter_ne_product_nonempty hAcard (card_pos.1 (by omega))) c]
   simp [hε.le]
 
 /-- Cleanup converts regularity of all off-diagonal cell pairs into regularity of the entire

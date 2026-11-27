@@ -115,6 +115,19 @@ theorem IsFrobeniusFunctional.eq_zero_of_forall_right
     (hφ : φ.IsFrobeniusFunctional) {b : A} (h : ∀ a, φ (a * b) = 0) : b = 0 :=
   (isFrobeniusFunctional_iff.mp hφ).2 b h
 
+/-- Multiplication by a unit preserves Frobenius functionals. -/
+theorem IsFrobeniusFunctional.comp_mulLeft_unit {k A : Type*}
+    [CommSemiring k] [Semiring A] [Algebra k A]
+    {φ : A →ₗ[k] k} (hφ : φ.IsFrobeniusFunctional) (u : Aˣ) :
+    (φ.comp (LinearMap.mulLeft k (u : A))).IsFrobeniusFunctional := by
+  refine isFrobeniusFunctional_iff.mpr ⟨fun a ha => ?_, fun b hb => ?_⟩
+  · have h : (u : A) * a = 0 := hφ.eq_zero_of_forall_left fun b => by
+      simpa only [comp_apply, mulLeft_apply, mul_assoc] using ha b
+    simpa using congrArg (fun x => (↑u⁻¹ : A) * x) h
+  · exact hφ.eq_zero_of_forall_right fun a => by
+      simpa [← mul_assoc] using
+        hb ((↑u⁻¹ : A) * a)
+
 /-- A Frobenius functional on `A` is a Frobenius functional on `Aᵐᵒᵖ`, through `unop`. -/
 theorem IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctional) :
     (φ ∘ₗ (MulOpposite.opLinearEquiv k (M := A)).symm.toLinearMap).IsFrobeniusFunctional := by
@@ -126,16 +139,17 @@ theorem IsFrobeniusFunctional.op (hφ : φ.IsFrobeniusFunctional) :
 
 end CommSemiring
 
-section CommRing
+section Ring
 
-variable {k : Type v} [CommRing k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
+variable {k : Type v} [CommSemiring k] {A : Type u} [Ring A] [Algebra k A] {φ : A →ₗ[k] k}
 
 /-- Two elements pairing identically from the right against a Frobenius functional are equal. -/
 theorem IsFrobeniusFunctional.eq_of_forall_apply_mul_eq
     (hφ : φ.IsFrobeniusFunctional) {x y : A} (h : ∀ b, φ (b * x) = φ (b * y)) : x = y :=
-  sub_eq_zero.mp <| hφ.eq_zero_of_forall_right fun b => by rw [mul_sub, map_sub, h, sub_self]
+  sub_eq_zero.mp <| hφ.eq_zero_of_forall_right fun b => by
+    rw [mul_sub, sub_eq_add_neg, map_add, h, ← map_add, add_neg_cancel, map_zero]
 
-end CommRing
+end Ring
 
 section Projective
 
@@ -222,6 +236,27 @@ theorem IsFrobeniusFunctional.toDualEquiv_one (hφ : φ.IsFrobeniusFunctional) :
     hφ.toDualEquiv 1 = φ := by
   ext b
   simp
+
+/-- Any two Frobenius functionals differ by left multiplication by a unit. -/
+theorem IsFrobeniusFunctional.exists_unit_apply_eq_apply_mul {k A : Type*}
+    [Field k] [Ring A] [Algebra k A] [FiniteDimensional k A] {φ ψ : A →ₗ[k] k}
+    (hφ : φ.IsFrobeniusFunctional) (hψ : ψ.IsFrobeniusFunctional) :
+    ∃ u : Aˣ, ∀ x : A, ψ x = φ ((u : A) * x) := by
+  let a := hφ.toDualEquiv.symm ψ
+  have ha (x : A) : φ (a * x) = ψ x := by
+    simpa only [toDualEquiv_apply_apply] using
+      DFunLike.congr_fun (hφ.toDualEquiv.apply_symm_apply ψ) x
+  have he : (fun x : A => a * x) = hφ.toDualEquiv.symm ∘ hψ.toDualEquiv := by
+    funext x
+    apply hφ.toDualEquiv.injective
+    ext y
+    simp only [Function.comp_apply, LinearEquiv.apply_symm_apply,
+      toDualEquiv_apply_apply, mul_assoc, ha]
+  have hu : IsUnit a := IsUnit.isUnit_iff_mulLeft_bijective.mpr <| by
+    rw [he]
+    exact hφ.toDualEquiv.symm.bijective.comp hψ.toDualEquiv.bijective
+  obtain ⟨u, hu⟩ := hu
+  exact ⟨u, fun x => by rw [hu]; exact (ha x).symm⟩
 
 /-- **Frobenius functionals and the dual module.** A finite-dimensional algebra carries a Frobenius
 functional if and only if its regular right module is isomorphic to the dual `Module.Dual k A`,

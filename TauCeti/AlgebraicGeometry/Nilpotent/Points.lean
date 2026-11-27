@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Nilpotent.AdjointQuotient
-import TauCeti.AlgebraicGeometry.Scheme.SpecOver
+public import TauCeti.AlgebraicGeometry.Scheme.SpecOver
 
 /-!
 # Points of the nilpotent cone
@@ -59,6 +59,15 @@ noncomputable def nilpotentConePointEquiv :
         dsimp only
         rw [Ideal.Quotient.liftₐ_comp, Equiv.symm_apply_apply] }
 
+/-- Lifting the linear coordinates of a cone point gives its algebra homomorphism
+precomposed with the coordinate-ring quotient map. -/
+@[simp]
+theorem lift_nilpotentConePointEquiv
+    (f : {f : Spec (.of A) ⟶ nilpotentCone k H // f.IsOver (Spec (.of k))}) :
+    SymmetricAlgebra.lift (nilpotentConePointEquiv k H f).val =
+      (TauCeti.AlgebraicGeometry.specOverHomEquivAlgHom f).comp (Ideal.Quotient.mkₐ k I) := by
+  exact Equiv.apply_symm_apply SymmetricAlgebra.lift _
+
 /-- The cone inclusion evaluates polynomial functions by the symmetric algebra lift of the
 point's linear coordinates, then transports the point to the tangent scheme. -/
 @[reassoc]
@@ -67,8 +76,7 @@ theorem nilpotentConePointEquiv_comp_ι
     f.val ≫ nilpotentConeι k H = Spec.map (CommRingCat.ofHom
       (SymmetricAlgebra.lift (nilpotentConePointEquiv k H f).val).toRingHom) ≫
         (lieAlgebraSchemeIso k H).inv := by
-  rw [nilpotentConePointEquiv, Equiv.trans_apply]
-  simp only [Equiv.coe_fn_mk, Equiv.apply_symm_apply]
+  rw [lift_nilpotentConePointEquiv]
   rw [AlgHom.toRingHom_eq_coe, AlgHom.comp_toRingHom, CommRingCat.ofHom_comp, Spec.map_comp,
     TauCeti.AlgebraicGeometry.spec_map_specOverHomEquivAlgHom, nilpotentConeι_eq,
     ← Ideal.Quotient.mkₐ_toRingHom k I, Category.assoc]

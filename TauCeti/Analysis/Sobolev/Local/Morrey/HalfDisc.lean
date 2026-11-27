@@ -56,6 +56,8 @@ the open half-disc for every `p` (`TauCeti.memWkpLoc_sqrt_im_ball_inter_im_pos`)
 * `TauCeti.halfPlanePreciseRepresentative`: the representative up to the real axis.
 * `TauCeti.MemWkpLoc.continuousOn_halfPlanePreciseRepresentative` and
   `TauCeti.MemWkpLoc.ae_eq_halfPlanePreciseRepresentative`: it is a continuous representative.
+* `TauCeti.MemWkpLoc.memWkpLoc_top_inter_setOf_im_nonneg`: for `p > 2`, `W^{k+1,p}` up to the
+  axis embeds in `W^{k,∞}` up to the axis.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_halfPlanePreciseRepresentative_of_isCompact`: Hölder
   continuity with exponent `1 - 2 / p` on compact subsets of `Ω ∩ {0 ≤ im}`; the endpoint `p = ∞`
   is `TauCeti.MemWkpLoc.exists_lipschitzOnWith_halfPlanePreciseRepresentative_of_isCompact`.
@@ -65,6 +67,8 @@ the open half-disc for every `p` (`TauCeti.memWkpLoc_sqrt_im_ball_inter_im_pos`)
 * `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg`: for `p > 2`, a map in
   `MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` has a representative that is `Cᵏ` on an open neighbourhood
   of `Ω ∩ {0 ≤ im}`.
+* `TauCeti.MemWkpLoc.contDiffOn_of_continuousOn_inter_setOf_im_nonneg`: for `p > 2`, a continuous
+  map in `MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` is `Cᵏ` on `Ω ∩ {0 ≤ im}`.
 * `TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact_inter_setOf_im_nonneg`: the
   `k`-th derivative of such a representative is Hölder continuous with exponent `1 - 2 / p` on
   compact subsets of `Ω ∩ {0 ≤ im}`.
@@ -142,6 +146,29 @@ theorem MemWkpLoc.continuousOn_halfPlanePreciseRepresentative (hp : 2 < p)
     ContinuousOn (halfPlanePreciseRepresentative u) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
   ((hu.planarReflection_higherReflectionCoeff_reflectionCore (one_le_two.trans hp.le))
     |>.continuousOn_preciseRepresentative hp).mono Ω.inter_setOf_im_nonneg_subset_reflectionCore
+
+/-- **`W^{1,p}` is locally bounded up to the real axis.** For `2 < p`, a map in
+`MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` is locally `L^∞` on `Ω ∩ {0 ≤ im}`, including near the axis: it
+agrees almost everywhere with the continuous representative
+`TauCeti.halfPlanePreciseRepresentative u`. -/
+theorem MemWkpLoc.memLpLoc_top_inter_setOf_im_nonneg (hp : 2 < p)
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) 1 u) :
+    MemLpLoc ⊤ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) u :=
+  (hu.continuousOn_halfPlanePreciseRepresentative hp).memLpLoc.congr_ae
+    (hu.ae_eq_halfPlanePreciseRepresentative (one_le_two.trans hp.le)).symm
+
+/-- **Sobolev embedding into `W^{k,∞}` up to the real axis.** For `2 < p`, a map in
+`MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` is in `MemWkpLoc ∞ (Ω ∩ {0 ≤ im}) k`: each weak derivative
+of order at most `k` is in `W^{1,p}` up to the axis, hence locally bounded there. -/
+theorem MemWkpLoc.memWkpLoc_top_inter_setOf_im_nonneg {k : ℕ} (hp : 2 < p)
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u) :
+    MemWkpLoc ⊤ ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) k u := by
+  induction k generalizing F with
+  | zero => exact memWkpLoc_zero_iff.2 (hu.memLpLoc_top_inter_setOf_im_nonneg hp)
+  | succ k ih =>
+    obtain ⟨-, D, hD, hDk⟩ := memWkpLoc_succ_iff.1 hu
+    exact memWkpLoc_succ_iff.2 ⟨(hu.of_le (by omega)).memLpLoc_top_inter_setOf_im_nonneg hp,
+      D, hD, ih hDk⟩
 
 /-- **Morrey's embedding up to the real axis.** For `2 < p ≤ ∞`, the representative
 `TauCeti.halfPlanePreciseRepresentative u` of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) 1` is Hölder
@@ -318,6 +345,19 @@ theorem MemWkpLoc.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg (hp : 2 < p)
       ContDiffOn ℝ k g V ∧ u =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g := by
   obtain ⟨V, hUV, hVΩ, -, g, hg, -, hug⟩ := hu.exists_planarReflection_contDiffOn_ae_eq hp
   exact ⟨V, hUV, hVΩ, g, hg, hug⟩
+
+/-- **Continuous representatives are `Cᵏ` up to the real axis.** For `2 < p`, a map
+`u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` that is continuous on `Ω ∩ {0 ≤ im}` is `Cᵏ` on
+`Ω ∩ {0 ≤ im}`, including at the points of the real axis: it agrees on `Ω ∩ {0 ≤ im}` with the
+`Cᵏ` representative of `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg`, since
+`Ω ∩ {0 ≤ im}` lies in the closure of its interior. -/
+theorem MemWkpLoc.contDiffOn_of_continuousOn_inter_setOf_im_nonneg (hp : 2 < p)
+    (hu : MemWkpLoc p ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) (k + 1) u)
+    (hc : ContinuousOn u ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) :
+    ContDiffOn ℝ k u ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
+  obtain ⟨V, hUV, -, g, hg, hug⟩ := hu.exists_contDiffOn_ae_eq_inter_setOf_im_nonneg hp
+  exact (hg.mono hUV).congr (Measure.eqOn_of_ae_eq hug hc (hg.continuousOn.mono hUV)
+    (subset_closure_interior_inter_setOf_im_nonneg Ω.isOpen))
 
 /-- **Morrey's embedding at higher order up to the real axis.** If `2 < p ≤ ∞`, `g` is `Cᵏ` on an
 open set `V` and agrees almost everywhere on `Ω ∩ {0 ≤ im}` with
