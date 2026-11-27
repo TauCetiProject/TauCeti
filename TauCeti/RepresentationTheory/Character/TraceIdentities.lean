@@ -7,8 +7,8 @@ module
 
 public import TauCeti.RepresentationTheory.Semisimplification
 public import TauCeti.RepresentationTheory.OfGL
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
-import TauCeti.RingTheory.Semisimple.Trace.Realization
+import TauCeti.LinearAlgebra.Matrix.Trace.Realization
+import TauCeti.RingTheory.TraceFunctional.Newton
 import TauCeti.RingTheory.TraceFunctional.Identities
 import TauCeti.RepresentationTheory.Subrepresentation.Semisimple
 import Mathlib.RingTheory.SimpleModule.IsAlgClosed
@@ -89,11 +89,28 @@ private lemma eval_linearExtension_eq_zero {T : G → k}
     (B : MvPolynomial k[G] k)
     (hB : ∀ ρ : k[G] →ₐ[k] Matrix n n k, eval (fun x : k[G] ↦ (ρ x).trace) B = 0) :
     eval (linearExtension T) B = 0 := by
-  -- Apply `h_identities` to `B` with each variable `X (∑ c g • g)` replaced by `∑ c g • X g`.
-  refine (comp_aeval_apply _ (aeval T) B).symm.trans
-    (h_identities _ fun ρ ↦ (comp_aeval_apply _ (aeval fun g : G ↦ (ρ g).val.trace) B).trans ?_)
-  simpa [Finsupp.sum, lift_apply] using
-    hB (MonoidAlgebra.lift k (Matrix n n k) G ((Units.coeHom (Matrix n n k)).comp ρ))
+  let S : k[G] →ₗ[k] MvPolynomial G k :=
+    Finsupp.lift _ k G X ∘ₗ (coeffLinearEquiv k).toLinearMap
+  have hT : (aeval T).toLinearMap ∘ₗ S = linearExtension T := by
+    ext g
+    simp [S, linearExtension]
+  have hρ (ρ : G →* GL n k) :
+      (aeval fun g ↦ (ρ g).val.trace).toLinearMap ∘ₗ S =
+        traceLinearMap n k k ∘ₗ
+          (MonoidAlgebra.lift k (Matrix n n k) G
+            ((Units.coeHom (Matrix n n k)).comp ρ)).toLinearMap := by
+    ext g
+    simp [S]
+  have hcomp (f : G → k) :
+      eval ((aeval f).toLinearMap ∘ₗ S) B = eval f (aeval S B) := by
+    simpa only [LinearMap.coe_comp, Function.comp_def, AlgHom.toLinearMap_apply,
+      aeval_eq_eval] using (comp_aeval_apply S (aeval f) B).symm
+  rw [← hT, hcomp]
+  refine h_identities _ fun ρ ↦ ?_
+  rw [← hcomp, hρ]
+  simpa only [LinearMap.coe_comp, Function.comp_def, AlgHom.toLinearMap_apply,
+    traceLinearMap_apply] using hB (MonoidAlgebra.lift k (Matrix n n k) G
+      ((Units.coeHom (Matrix n n k)).comp ρ))
 
 end
 
@@ -113,8 +130,8 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
   let I : Ideal k[G] := t.traceRadical t_comm
   let τ : k[G] ⧸ I →ₗ[k] k := t.quotientTrace t_comm
   have hτ (x : k[G]) : τ (mk I x) = t x := t.quotientTrace_mk t_comm x
-  have τ_nat (l : k) (x : k[G] ⧸ I) (hx : ∀ m : ℕ, x ^ (m + 1) = l ^ m • x) :
-      ∃ j : ℕ, τ x = j * l :=
+  have τ_nat (l : k) (x : k[G] ⧸ I) (hx : x * x = l • x) :
+      ∃ j : ℕ, j ≤ Fintype.card n ∧ τ x = j * l :=
     τ.exists_nat_mul_of_integralNewtonPolynomial_eq_zero hx
       (t.eval_integralNewtonPolynomial_quotientTrace_eq_zero t_comm h_alg x)
   have : Module.Finite k (k[G] ⧸ I) :=
@@ -122,10 +139,7 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
   have : IsArtinianRing (k[G] ⧸ I) := IsArtinianRing.of_finite k _
   have : IsSemisimpleRing (k[G] ⧸ I) :=
     t.isSemisimpleRing_quotient_traceRadical t_comm fun x hx ↦ by
-      obtain ⟨j, hj⟩ := τ_nat 0 x fun m ↦ by
-        cases m with
-        | zero => simp
-        | succ m => simp [pow_succ, mul_assoc, hx]
+      obtain ⟨j, -, hj⟩ := τ_nat 0 x (by simpa using hx)
       simpa using hj
   have hτone : τ 1 = Fintype.card n := by
     have h := h_alg (X 1 - ∑ _ : n, 1) fun ρ ↦ by simp
@@ -140,7 +154,8 @@ private lemma exists_matrix_trace [IsAlgClosed k] [CharZero k] {T : G → k}
           (Matrix.single (0 : Fin (d i)) (0 : Fin (d i)) (1 : k)) :
             Π j, Matrix (Fin (d j)) (Fin (d j)) k) := by
         simp [IsIdempotentElem, ← Pi.single_mul]
-      simpa using τ_nat 1 _ (by simp [(hi.map e.symm).pow_succ_eq]))
+      obtain ⟨j, -, hj⟩ := τ_nat 1 _ (by simpa using (hi.map e.symm).eq)
+      exact ⟨j, by simpa using hj⟩)
     (by simpa using hτone)
   let φ' := φ.comp e.toAlgHom
   have hφ' (x : k[G] ⧸ I) : (φ' x).trace = τ x := by simpa [φ'] using hφ (e x)

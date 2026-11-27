@@ -5,12 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.Matrix.Trace
-public import Mathlib.Algebra.Algebra.Pi
-import Mathlib.LinearAlgebra.Matrix.Reindex
+public import TauCeti.LinearAlgebra.Matrix.Trace.Pi
 import TauCeti.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.Trace.Basic
-import TauCeti.LinearAlgebra.Matrix.Trace.Pi
 
 /-!
 # Realizing an integral tracial form by matrices

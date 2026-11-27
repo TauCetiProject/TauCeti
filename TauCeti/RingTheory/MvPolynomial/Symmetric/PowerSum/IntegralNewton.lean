@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
-public import Mathlib.LinearAlgebra.BilinearMap
 import Mathlib.Tactic.Ring
 
 /-!
@@ -16,10 +15,10 @@ import Mathlib.Tactic.Ring
 `P₀,ₘ = 1`, `Pⱼ₊₁,ₘ = Xₘ Pⱼ,₁ - j Pⱼ,ₘ₊₁`.
 At power sums, `Pⱼ,₁` evaluates to `j!` times the elementary symmetric function.
 Unlike `esymmPsumPoly`, this family uses no division and is defined over every commutative ring;
-the extra index also evaluates geometric power sequences as falling products. These formulas
-apply to linear forms on idempotents and square-zero elements. This family recovers factorially
-scaled elementary symmetric functions from power sums, whereas `newtonMvPolynomial` expresses
-power sums in elementary symmetric functions.
+the extra index supports the geometric-power evaluations in
+`TauCeti.RingTheory.TraceFunctional.Newton`. This family recovers factorially scaled elementary
+symmetric functions from power sums, whereas `newtonMvPolynomial` expresses power sums in
+elementary symmetric functions.
 
 ## Main declarations
 
@@ -27,13 +26,11 @@ power sums in elementary symmetric functions.
   `TauCeti.integralNewtonPolynomial_succ` define and characterize the recurrence.
 * `TauCeti.map_integralNewtonPolynomial` changes its coefficient ring.
 * `Multiset.eval_integralNewtonPolynomial` evaluates it at power sums.
-* `LinearMap.eval_integralNewtonPolynomial_of_geometric` evaluates geometric power sequences;
-  `LinearMap.exists_nat_mul_of_integralNewtonPolynomial_eq_zero` extracts natural multiplicities.
 
 ## Provenance
 
-`TauCeti.integralNewtonPolynomial` and its evaluation lemmas adapt `New.newtonPoly`,
-`New.eval_newtonPoly` and the geometric-power calculation in
+`TauCeti.integralNewtonPolynomial` and its multiset evaluation adapt `New.newtonPoly` and
+`New.eval_newtonPoly` in
 `src/Lib/GaloisRep/Pseudocharacter/Pseudorepresentations.lean` in grh-lean
 (https://github.com/lsernau/grh-lean, commit `72fead1`, Apache 2.0,
 Copyright 2026 Anthropic, PBC). The commutative-ring generality is new here.
@@ -115,39 +112,5 @@ lemma _root_.Multiset.eval_integralNewtonPolynomial (s : Multiset k) :
     simp only [Multiset.map_cons, Multiset.sum_cons, add_pow_eval, ih]
     simp [Nat.factorial_succ, Multiset.sum_map_mul_left, Multiset.esymm, mul_assoc]
     ring
-
-/-- Let `τ` be a linear form on a `k`-algebra `A` and `y : A` with `y ^ (m + 1) = l ^ m • y` for all
-`m`. At the values `τ (y ^ i)`, the Newton polynomial `integralNewtonPolynomial (j + 1) (m + 1)`
-takes the value `l ^ m` times the product of `τ y - i * l` over `i ≤ j`. -/
-lemma _root_.LinearMap.eval_integralNewtonPolynomial_of_geometric
-    {A : Type*} [Semiring A] [Algebra k A]
-    (τ : A →ₗ[k] k) {l : k} {y : A} (hy : ∀ m : ℕ, y ^ (m + 1) = l ^ m • y) (j : ℕ) :
-    ∀ m : ℕ, eval (fun i : ℕ ↦ τ (y ^ i)) (integralNewtonPolynomial (j + 1) (m + 1)) =
-      l ^ m * ∏ i ∈ range (j + 1), (τ y - i * l) := by
-  induction j with
-  | zero => simp [integralNewtonPolynomial_succ, integralNewtonPolynomial_zero, hy]
-  | succ j ih =>
-    intro m
-    -- unfold one step: `X (m + 1) * integralNewtonPolynomial (j + 1) 1 - (j + 1) •
-    -- integralNewtonPolynomial (j + 1) (m + 2)`;
-    -- `ih` at `0` and at `m + 1` turns both into products
-    rw [integralNewtonPolynomial_succ (j + 1), map_sub, map_mul, map_nsmul, eval_X, ih 0,
-      ih (m + 1), hy, map_smul, prod_range_succ _ (j + 1), smul_eq_mul, nsmul_eq_mul]
-    ring
-
-/-- Let `τ` be a linear form on a `k`-algebra `A` and `y : A` with `y ^ (m + 1) = l ^ m • y` for all
-`m`. If `integralNewtonPolynomial (d + 1) 1` vanishes at `i ↦ τ (y ^ i)`, then
-`τ y = j * l` for some natural number `j`. -/
-lemma _root_.LinearMap.exists_nat_mul_of_integralNewtonPolynomial_eq_zero
-    [NoZeroDivisors k] {A : Type*} [Semiring A] [Algebra k A]
-    (τ : A →ₗ[k] k) {l : k} {y : A} (hy : ∀ m : ℕ, y ^ (m + 1) = l ^ m • y) {d : ℕ}
-    (h_zero : eval (fun i : ℕ ↦ τ (y ^ i)) (integralNewtonPolynomial (d + 1) 1) = 0) :
-    ∃ j : ℕ, τ y = j * l := by
-  nontriviality k
-  -- at `m = 0` the Newton polynomial is the product of the `τ y - i * l`, `i ≤ d`, so one vanishes
-  have h_prod : ∏ i ∈ range (d + 1), (τ y - i * l) = 0 := by
-    simpa using (τ.eval_integralNewtonPolynomial_of_geometric hy d 0).symm.trans h_zero
-  obtain ⟨i, -, hi⟩ := prod_eq_zero_iff.mp h_prod
-  exact ⟨i, sub_eq_zero.mp hi⟩
 
 end TauCeti
