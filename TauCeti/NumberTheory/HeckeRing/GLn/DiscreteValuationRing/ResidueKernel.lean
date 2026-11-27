@@ -29,8 +29,8 @@ reduction `kⁿ → kⁿ` of an integral representative of `g`, written `ker g` 
   satisfy `g g'⁻¹ ∈ K₀`, that is `K₀ g = K₀ g'`, exactly when the reductions of their integral
   representatives have the same kernel; that kernel has dimension `j` for `g ∈ D_j`
   (`Matrix.finrank_residueKer_eq_of_associated_det`).
-* `HeckeRing.GLn.exists_residueKer_diagonal_mul_eq`: every `j`-dimensional subspace of `kⁿ` is
-  that kernel for some `η_j u` with `u ∈ K₀`.
+* `HeckeRing.GLn.exists_residueKer_minusculeDiagLift_mul_eq`: every `j`-dimensional subspace of
+  `kⁿ` is that kernel for some `η_j u` with `u ∈ K₀`.
 
 Together, `K₀ g ↦ ker g` is a bijection from the single cosets `K₀ g ⊆ K₀ η_j K₀` to the
 `j`-dimensional subspaces of `kⁿ`, with representatives `η_j u`. The number of left cosets
@@ -79,58 +79,10 @@ theorem mul_inv_mem_integralGL_iff_residueKer_eq {ι : Type*} [Fintype ι] [Deci
 
 variable {π : Kˣ} {n : ℕ}
 
-/-- The integral matrix `diag(ϖ^{(j)}, 1^{(n - j)})` with image `η_j` in `GL_n(K)`. -/
-def minusculeDiagLift (ϖ : R) (n j : ℕ) : Matrix (Fin n) (Fin n) R :=
-  diagonal fun i ↦ if (i : ℕ) < j then ϖ else 1
-
-omit [IsDomain R] [IsDiscreteValuationRing R] in
-/-- The defining equation of `minusculeDiagLift`. -/
-theorem minusculeDiagLift_def (ϖ : R) (n j : ℕ) :
-    minusculeDiagLift ϖ n j = diagonal (fun i : Fin n ↦ if (i : ℕ) < j then ϖ else 1) :=
-  (rfl)
-
-/-- The integral matrix `diag(1^{(j)}, ϖ^{(n - j)})` with image `π η_j⁻¹`. -/
-def minusculeDiagLiftCompl (ϖ : R) (n j : ℕ) : Matrix (Fin n) (Fin n) R :=
-  diagonal fun i ↦ if (i : ℕ) < j then 1 else ϖ
-
-omit [IsDomain R] [IsDiscreteValuationRing R] in
-/-- The defining equation of `minusculeDiagLiftCompl`. -/
-theorem minusculeDiagLiftCompl_def (ϖ : R) (n j : ℕ) :
-    minusculeDiagLiftCompl ϖ n j = diagonal (fun i : Fin n ↦ if (i : ℕ) < j then 1 else ϖ) :=
-  (rfl)
-
-omit [IsDomain R] [IsDiscreteValuationRing R] in
-/-- The integral minuscule diagonal and its complementary diagonal multiply to `ϖ • 1`. -/
-@[simp]
-theorem minusculeDiagLift_mul_minusculeDiagLiftCompl (ϖ : R) (n j : ℕ) :
-    minusculeDiagLift ϖ n j * minusculeDiagLiftCompl ϖ n j = ϖ • 1 := by
-  ext a b
-  by_cases hab : a = b
-  · subst hab
-    by_cases ha : (a : ℕ) < j <;> simp [minusculeDiagLift_def, minusculeDiagLiftCompl_def, ha]
-  · simp [minusculeDiagLift_def, minusculeDiagLiftCompl_def, hab]
-
-omit [IsDomain R] [IsDiscreteValuationRing R] in
-/-- The determinant of the integral minuscule diagonal with `j ≤ n` is `ϖ ^ j`. -/
-@[simp]
-theorem det_minusculeDiagLift (ϖ : R) {n j : ℕ} (hj : j ≤ n) :
-    (minusculeDiagLift ϖ n j).det = ϖ ^ j := by
-  simp [minusculeDiagLift_def, Finset.prod_ite, Fin.card_filter_val_lt, hj]
-
-omit [IsDomain R] [IsDiscreteValuationRing R] in
-/-- Mapping the integral minuscule diagonal to `K` gives `minusculeDiag π n j`. -/
-theorem map_minusculeDiagLift (hπ : algebraMap R K ϖ = π) (n j : ℕ) :
-    (minusculeDiagLift ϖ n j).map (algebraMap R K) =
-      (minusculeDiag π n j : Matrix (Fin n) (Fin n) K) := by
-  rw [minusculeDiagLift_def, minusculeDiag_def, diagGL_coe, diagonal_map (map_zero _)]
-  congr 1
-  funext i
-  split_ifs <;> simp [hπ]
-
 /-- **Representatives of the single cosets of `K₀ η_j K₀`.** For every subspace `W` of `kⁿ` of
 dimension `j`, the integral representative `diag(ϖ^{(j)}, 1^{(n - j)}) u` of `η_j u` has
 reduction with kernel `W` for some `u ∈ GL_n(R)`. -/
-theorem exists_residueKer_diagonal_mul_eq (hϖ : Irreducible ϖ) {j : ℕ}
+theorem exists_residueKer_minusculeDiagLift_mul_eq (hϖ : Irreducible ϖ) {j : ℕ}
     {W : Submodule (ResidueField R) (Fin n → ResidueField R)}
     (hW : finrank (ResidueField R) W = j) :
     ∃ U : GL (Fin n) R,
@@ -171,7 +123,7 @@ theorem mem_doubleCoset_minusculeDiag_iff (hϖ : Irreducible ϖ) (hπ : algebraM
       (associated_mul_unit_left _ _ (isUnits_det_units v))
   · rintro ⟨A, B, hA, h, hdet⟩
     -- `D u` has the kernel of `Ā` for some `u`, and then `A = v (D u)` for some `v`
-    obtain ⟨u, hu⟩ := exists_residueKer_diagonal_mul_eq hϖ
+    obtain ⟨u, hu⟩ := exists_residueKer_minusculeDiagLift_mul_eq hϖ
       (finrank_residueKer_eq_of_associated_det hϖ h hdet)
     have hDu : D * (u : Matrix (Fin n) (Fin n) R) * ((u⁻¹ : GL (Fin n) R) * D') = ϖ • 1 := by
       simp [Matrix.mul_assoc, hDD']
