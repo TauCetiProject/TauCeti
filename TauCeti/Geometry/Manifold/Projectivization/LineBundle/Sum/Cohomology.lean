@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Cohomology
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Sum
-import TauCeti.CategoryTheory.Limits.Shapes.Biproduct.Basic
 
 /-!
 # Čech cohomology of split bundles `⨁ₗ 𝒪(k l)` on complex projective space
@@ -216,10 +215,10 @@ theorem isZero_holomorphicSectionCechCohomology_twistSumCore {p : ℕ}
     IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin n → ℂ) (κ → ℂ)
       (twistSumCore (𝕜 := ℂ) (n := n) k).Fiber p) := by
   classical
-  exact Bicone.isZero_pt_of_isLimit (isBilimitOfPreserves (sheafToPresheaf
+  exact (isBilimitOfPreserves (sheafToPresheaf
     (Opens.grothendieckTopology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ)))) _ ⋙
     Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin (n + 1) → ℂ))) (ModuleCat.{0} ℂ) p)
-      (twistSumSheafBiconeIsBilimit k)).isLimit h
+      (twistSumSheafBiconeIsBilimit k)).isLimit.isZero_pt (Functor.isZero _ fun ⟨l⟩ ↦ h l)
 
 /-- **`H¹(ℂℙ¹, ⨁ₗ 𝒪(k l)) = 0` when every `k l ≥ -1`.** The first Čech cohomology of the sheaf of
 holomorphic sections of the split bundle `⨁ₗ 𝒪(k l)` on the complex projective line vanishes as
