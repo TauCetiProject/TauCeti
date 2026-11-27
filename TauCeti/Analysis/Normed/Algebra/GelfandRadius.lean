@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.ConvergenceRadius
 public import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
+public import Mathlib.Analysis.Normed.Group.Quotient
 public import Mathlib.Analysis.Normed.Group.Ultra
 public import Mathlib.Analysis.Normed.Unbundled.SmoothingSeminorm
 public import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
@@ -49,6 +50,12 @@ In any seminormed commutative ring `A`, `gelfandRadius` agrees with Mathlib's sm
 ## Main results
 
 * `IsIdempotentElem.gelfandRadius_eq_one`: a nonzero idempotent has Gelfand radius one.
+* `IsNilpotent.gelfandRadius_eq_zero`: a nilpotent element has Gelfand radius zero.
+* `Commute.gelfandRadius_add_le_of_isNilpotent` and
+  `Commute.gelfandRadius_add_eq_of_isNilpotent`: perturbing by a commuting nilpotent preserves the
+  Gelfand radius.
+* `TauCeti.gelfandRadius_quotient_mk_eq_of_le_nilradical`: quotienting a seminormed commutative
+  ring by an ideal of nilpotent elements preserves the Gelfand radius.
 * `IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse`: a lower bound on the Gelfand radius
   of elements of the corner `p R p`.
 * `TauCeti.summable_norm_smul_sub_pow_of_le_radius`: absolute convergence of a formal power series
@@ -76,6 +83,27 @@ public section
 
 open Filter Topology
 open scoped ENNReal NNReal
+
+/-- A nilpotent element of a seminormed ring has Gelfand radius zero. -/
+theorem IsNilpotent.gelfandRadius_eq_zero {A : Type*} [SeminormedRing A] {z : A}
+    (hz : IsNilpotent z) : gelfandRadius z = 0 := by
+  obtain ⟨m, hm⟩ := hz
+  refine le_antisymm ?_ (gelfandRadius_nonneg z)
+  calc gelfandRadius z ≤ ‖z ^ (m + 1)‖ ^ ((m + 1 : ℕ) : ℝ)⁻¹ :=
+        gelfandRadius_le_norm_pow z (Nat.succ_ne_zero m)
+    _ = 0 := by rw [_root_.pow_succ, hm, zero_mul, norm_zero, Real.zero_rpow (by positivity)]
+
+/-- Adding a commuting nilpotent element does not increase the Gelfand radius. -/
+theorem Commute.gelfandRadius_add_le_of_isNilpotent {A : Type*} [SeminormedRing A] {a z : A}
+    (h : Commute a z) (hz : IsNilpotent z) : gelfandRadius (a + z) ≤ gelfandRadius a := by
+  simpa only [hz.gelfandRadius_eq_zero, add_zero] using h.gelfandRadius_add_le
+
+/-- Adding a commuting nilpotent element preserves the Gelfand radius. -/
+theorem Commute.gelfandRadius_add_eq_of_isNilpotent {A : Type*} [SeminormedRing A] {a z : A}
+    (h : Commute a z) (hz : IsNilpotent z) : gelfandRadius (a + z) = gelfandRadius a := by
+  refine le_antisymm (h.gelfandRadius_add_le_of_isNilpotent hz) ?_
+  have hcomm : Commute (a + z) (-z) := (h.add_left (Commute.refl z)).neg_right
+  simpa only [add_neg_cancel_right] using hcomm.gelfandRadius_add_le_of_isNilpotent hz.neg
 
 /-- A nonzero idempotent has Gelfand radius one: all its positive powers are equal to it, so
 `‖p ^ k‖ ^ (1 / k) = ‖p‖ ^ (1 / k)` tends to one. No normalization of the norm is needed. -/
@@ -326,5 +354,49 @@ theorem gelfandRadius_le_spectralValue_of_aeval_eq_zero {B A : Type*} [Seminorme
   refine le_trans ?_ (le_ciSup (Finite.bddAbove_range _) ⟨j, hjd⟩)
   exact Real.rpow_le_rpow (gelfandRadius_nonneg _) (hBA _)
     (one_div_nonneg.mpr (sub_nonneg.mpr (Nat.cast_le.mpr hjd.le)))
+
+/-- The quotient map onto `A ⧸ I` does not increase the Gelfand radius. -/
+theorem gelfandRadius_quotient_mk_le {A : Type*} [SeminormedCommRing A] (I : Ideal A) (f : A) :
+    gelfandRadius (Ideal.Quotient.mk I f) ≤ gelfandRadius f :=
+  gelfandRadius_le_of_norm_pow_le 1 fun n ↦ by
+    simpa only [← map_pow, one_mul] using Ideal.Quotient.norm_mk_le I (f ^ n)
+
+/-- If `I ≤ nilradical A` in a seminormed commutative ring `A`, then the Gelfand radius of `f : A`
+is bounded above by the Gelfand radius of its residue in `A ⧸ I`. -/
+theorem gelfandRadius_le_quotient_mk_of_le_nilradical {A : Type*} [SeminormedCommRing A]
+    {I : Ideal A} (hI : I ≤ nilradical A) (f : A) :
+    gelfandRadius f ≤ gelfandRadius (Ideal.Quotient.mk I f) := by
+  refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
+  have hr0 : 0 < r := (gelfandRadius_nonneg _).trans_lt hr
+  have hev : ∀ᶠ n : ℕ in Filter.atTop, ‖Ideal.Quotient.mk I f ^ n‖ ^ (n : ℝ)⁻¹ < r :=
+    (tendsto_order.1 (tendsto_gelfandRadius (Ideal.Quotient.mk I f))).2 r hr
+  obtain ⟨k, hk_lt, hk1⟩ := (hev.and (Filter.eventually_ge_atTop 1)).exists
+  have hk0 : 0 < (k : ℝ) := Nat.cast_pos.mpr hk1
+  have hk_pow : ‖Ideal.Quotient.mk I (f ^ k)‖ < r ^ k := by
+    rw [map_pow]
+    have hlt := pow_lt_pow_left₀ hk_lt (by positivity) (by omega : k ≠ 0)
+    rwa [← Real.rpow_natCast _ k, ← Real.rpow_mul (norm_nonneg _),
+      inv_mul_cancel₀ hk0.ne', Real.rpow_one] at hlt
+  obtain ⟨y, hy, hy_norm⟩ :=
+    Ideal.Quotient.norm_mk_lt (Ideal.Quotient.mk I (f ^ k)) (sub_pos.mpr hk_pow)
+  have hy_lt : ‖y‖ < r ^ k := by linarith
+  have hz_nil : IsNilpotent (f ^ k - y) :=
+    mem_nilradical.mp (hI (Ideal.Quotient.eq.mp hy.symm))
+  have hpow : gelfandRadius f ^ k < r ^ k := by
+    calc gelfandRadius f ^ k = gelfandRadius (f ^ k) :=
+          (gelfandRadius_pow_of_ne_zero f (by omega)).symm
+      _ = gelfandRadius (y + (f ^ k - y)) := by rw [add_sub_cancel]
+      _ ≤ gelfandRadius y := (Commute.all y _).gelfandRadius_add_le_of_isNilpotent hz_nil
+      _ ≤ ‖y‖ := gelfandRadius_le_norm y
+      _ < r ^ k := hy_lt
+  exact ((pow_lt_pow_iff_left₀ (gelfandRadius_nonneg f) hr0.le (by omega)).mp hpow).le
+
+/-- Quotienting a seminormed commutative ring by an ideal of nilpotent elements preserves the
+Gelfand radius. -/
+theorem gelfandRadius_quotient_mk_eq_of_le_nilradical {A : Type*} [SeminormedCommRing A]
+    {I : Ideal A} (hI : I ≤ nilradical A) (f : A) :
+    gelfandRadius (Ideal.Quotient.mk I f) = gelfandRadius f :=
+  le_antisymm (gelfandRadius_quotient_mk_le I f)
+    (gelfandRadius_le_quotient_mk_of_le_nilradical hI f)
 
 end TauCeti

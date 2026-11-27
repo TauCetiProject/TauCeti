@@ -88,8 +88,8 @@ theorem exists_pos_norm_coeff_modByMonic_le_mul_norm_aeval (K : Type*) [Nontrivi
   by_cases hi : i < d
   · let c : Fin d → B := degreeLTEquiv B d ⟨r, hr_lt⟩
     have hΦ_c : Φ c = aeval a q := by
-      change ev ((degreeLTEquiv B d).symm (degreeLTEquiv B d ⟨r, hr_lt⟩)) = aeval a q
-      rw [LinearEquiv.symm_apply_apply]
+      simp only [Φ, c, ev, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+        LinearEquiv.symm_apply_apply, Submodule.coe_subtype, AlgHom.toLinearMap_apply]
       exact _root_.minpoly.aeval_modByMonic_minpoly q a
     calc
       ‖r.coeff i‖ = ‖c ⟨i, hi⟩‖ := by dsimp only [c]; rw [degreeLTEquiv_apply]

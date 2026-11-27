@@ -63,6 +63,9 @@ In particular:
   canonical complete uniform supremum-normed seminormed / Banach algebra model of an affinoid
   algebra, its induced `1`-Lipschitz continuous algebra homomorphisms, and isometry criteria.
 * `TauCeti.IsAffinoidAlgebra.exists_norm_le_mul_supSeminorm`: [BGR, §6.2.4, Theorem 1].
+* `TauCeti.IsAffinoidAlgebra.continuous_supSeminorm` and
+  `TauCeti.IsAffinoidAlgebra.isClosed_nilradical`: continuity of `supSeminorm K` and closedness
+  of `nilradical A` for any `K`-algebra norm with summable geometric series.
 * `TauCeti.IsAffinoidAlgebra.supSeminorm_eq_gelfandRadius`: equality of `supSeminorm K` and
   `gelfandRadius` for any complete `K`-algebra norm on an affinoid algebra (not assumed reduced).
 * `TauCeti.IsAffinoidAlgebra.supNormContinuousAlgEquiv` and `TauCeti.IsAffinoidAlgebra.isUniform`:
@@ -510,8 +513,7 @@ theorem exists_pos_lipschitzWith_ofSupNorm [CompleteSpace A] [IsReduced A] :
   refine ⟨max ‖f‖₊ 1, zero_lt_one.trans_le (le_max_right _ _), ?_⟩
   have hcoe : ⇑f = ofSupNorm := by
     ext x
-    change ((algEquiv hA).symm x) = x.ofSupNorm
-    rw [coe_algEquiv_symm]
+    simp [f, e, ContinuousLinearEquiv.coe_coe]
   rw [← hcoe]
   exact f.lipschitzWith.weaken (le_max_left _ _)
 
@@ -533,15 +535,24 @@ theorem exists_norm_le_mul_supSeminorm {A : Type*} [NormedCommRing A] [NormedAlg
   simpa only [SupNormModel.ofSupNorm_toSupNorm, SupNormModel.norm_def] using
     hlip.norm_le_mul SupNormModel.ofSupNorm_zero (SupNormModel.toSupNorm f)
 
-private theorem gelfandRadius_eq_zero_of_isNilpotent {A : Type*} [NormedRing A] {z : A}
-    (hz : IsNilpotent z) : gelfandRadius z = 0 := by
-  obtain ⟨m, hm⟩ := hz
-  refine tendsto_nhds_unique (tendsto_gelfandRadius z)
-    (tendsto_const_nhds.congr' ?_)
-  filter_upwards [Filter.eventually_ge_atTop (max m 1)] with n hn
-  have hzn : z ^ n = 0 := pow_eq_zero_of_le ((le_max_left m 1).trans hn) hm
-  have hn1 : 1 ≤ n := (le_max_right m 1).trans hn
-  rw [hzn, norm_zero, Real.zero_rpow (inv_ne_zero (Nat.cast_ne_zero.mpr (by omega)))]
+/-- For any `K`-algebra norm on an affinoid `K`-algebra `A` with summable geometric series,
+`supSeminorm K : A → ℝ` is continuous. -/
+theorem continuous_supSeminorm {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
+    [HasSummableGeomSeries A] (hA : IsAffinoidAlgebra K A) :
+    Continuous (supSeminorm K : A → ℝ) :=
+  (continuous_norm.comp (SupNormModel.lipschitzWith_toSupNorm (hA := hA)).continuous).congr
+    fun _ ↦ SupNormModel.norm_def _
+
+/-- The nilradical of an affinoid `K`-algebra `A` is closed for any `K`-algebra norm on `A` with
+summable geometric series. -/
+theorem isClosed_nilradical {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
+    [HasSummableGeomSeries A] (hA : IsAffinoidAlgebra K A) :
+    IsClosed (nilradical A : Set A) := by
+  have hset : (nilradical A : Set A) = (supSeminorm K) ⁻¹' {0} := by
+    ext a
+    simp [mem_nilradical, hA.supSeminorm_eq_zero_iff]
+  rw [hset]
+  exact isClosed_singleton.preimage hA.continuous_supSeminorm
 
 private theorem supSeminorm_eq_gelfandRadius_of_isReduced {A : Type*} [NormedCommRing A]
     [NormedAlgebra K A] [CompleteSpace A] [IsReduced A] (hA : IsAffinoidAlgebra K A) (f : A) :
@@ -560,54 +571,14 @@ or reduced), `supSeminorm K f` coincides with the Gelfand spectral radius `gelfa
 theorem supSeminorm_eq_gelfandRadius {A : Type*} [NormedCommRing A] [NormedAlgebra K A]
     [CompleteSpace A] (hA : IsAffinoidAlgebra K A) (f : A) :
     supSeminorm K f = gelfandRadius f := by
-  have hcont : Continuous (supSeminorm K : A → ℝ) := by
-    have h : (supSeminorm K : A → ℝ) = fun a ↦ ‖SupNormModel.toSupNorm (_hA := hA) a‖ := by
-      ext a
-      simp
-    rw [h]
-    exact continuous_norm.comp SupNormModel.lipschitzWith_toSupNorm.continuous
-  have hclosed : IsClosed (nilradical A : Set A) := by
-    have hset : (nilradical A : Set A) = (supSeminorm K) ⁻¹' {0} := by
-      ext a
-      simp [mem_nilradical, hA.supSeminorm_eq_zero_iff]
-    rw [hset]
-    exact isClosed_singleton.preimage hcont
+  have : IsClosed (nilradical A : Set A) := hA.isClosed_nilradical
   let : NormedCommRing (A ⧸ nilradical A) := Ideal.Quotient.normedCommRing (nilradical A)
   let : NormedAlgebra K (A ⧸ nilradical A) := Ideal.Quotient.normedAlgebra (nilradical A) K
   have : CompleteSpace (A ⧸ nilradical A) := Submodule.Quotient.completeSpace (nilradical A)
-  have hred : supSeminorm K f = gelfandRadius (Ideal.Quotient.mk (nilradical A) f) := by
-    rw [← supSeminorm_mk_nilradical (K := K) f]
-    exact supSeminorm_eq_gelfandRadius_of_isReduced (A := A ⧸ nilradical A)
-      (hA.quotient (nilradical A)) _
-  refine le_antisymm ((AlgHom.id K A).supSeminorm_apply_le_gelfandRadius f) ?_
-  rw [hred]
-  refine le_of_forall_gt_imp_ge_of_dense fun r hr ↦ ?_
-  have hr0 : 0 < r := (gelfandRadius_nonneg _).trans_lt hr
-  have hev : ∀ᶠ n : ℕ in Filter.atTop,
-      ‖Ideal.Quotient.mk (nilradical A) f ^ n‖ ^ (n : ℝ)⁻¹ < r :=
-    (tendsto_order.1 (tendsto_gelfandRadius (Ideal.Quotient.mk (nilradical A) f))).2 r hr
-  obtain ⟨k, hk_lt, hk1⟩ := (hev.and (Filter.eventually_ge_atTop 1)).exists
-  have hk0 : 0 < (k : ℝ) := Nat.cast_pos.mpr hk1
-  have hk_pow : ‖Ideal.Quotient.mk (nilradical A) (f ^ k)‖ < r ^ k := by
-    rw [map_pow]
-    have hlt := pow_lt_pow_left₀ hk_lt (by positivity) (by omega : k ≠ 0)
-    rwa [← Real.rpow_natCast _ k, ← Real.rpow_mul (norm_nonneg _),
-      inv_mul_cancel₀ hk0.ne', Real.rpow_one] at hlt
-  obtain ⟨y, hy, hy_norm⟩ :=
-    Ideal.Quotient.exists_norm_mk_lt (Ideal.Quotient.mk (nilradical A) (f ^ k))
-      (sub_pos.mpr hk_pow)
-  have hy_lt : ‖y‖ < r ^ k := by linarith
-  have hz_nil : IsNilpotent (f ^ k - y) := by
-    rw [← mem_nilradical, ← Ideal.Quotient.eq_zero_iff_mem, map_sub, hy, sub_self]
-  have hpow : gelfandRadius f ^ k < r ^ k := by
-    calc gelfandRadius f ^ k = gelfandRadius (f ^ k) :=
-          (gelfandRadius_pow_of_ne_zero f (by omega)).symm
-      _ = gelfandRadius (y + (f ^ k - y)) := by rw [add_sub_cancel]
-      _ ≤ gelfandRadius y + gelfandRadius (f ^ k - y) := (Commute.all y _).gelfandRadius_add_le
-      _ = gelfandRadius y := by rw [gelfandRadius_eq_zero_of_isNilpotent hz_nil, add_zero]
-      _ ≤ ‖y‖ := gelfandRadius_le_norm y
-      _ < r ^ k := hy_lt
-  exact ((pow_lt_pow_iff_left₀ (gelfandRadius_nonneg f) hr0.le (by omega)).mp hpow).le
+  rw [← supSeminorm_mk_nilradical (K := K) f,
+    supSeminorm_eq_gelfandRadius_of_isReduced (A := A ⧸ nilradical A)
+      (hA.quotient (nilradical A)),
+    gelfandRadius_quotient_mk_eq_of_le_nilradical le_rfl f]
 
 /-- For any reduced affinoid `K`-algebra `A` over a complete nontrivially normed ultrametric field
 `K` carrying a complete `K`-algebra norm, the identity map to `hA.SupNormModel` is a topological
@@ -617,14 +588,12 @@ noncomputable def supNormContinuousAlgEquiv {A : Type*} [NormedCommRing A] [Norm
     A ≃A[K] hA.SupNormModel where
   toAlgEquiv := SupNormModel.algEquiv hA
   continuous_toFun := by
-    change Continuous (SupNormModel.algEquiv hA)
-    rw [SupNormModel.coe_algEquiv]
-    exact SupNormModel.lipschitzWith_toSupNorm.continuous
+    simpa only [AlgEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, EquivLike.coe_coe,
+      SupNormModel.coe_algEquiv] using (SupNormModel.lipschitzWith_toSupNorm (hA := hA)).continuous
   continuous_invFun := by
     obtain ⟨_, _, hlip⟩ := SupNormModel.exists_pos_lipschitzWith_ofSupNorm (hA := hA)
-    change Continuous (SupNormModel.algEquiv hA).symm
-    rw [SupNormModel.coe_algEquiv_symm]
-    exact hlip.continuous
+    simpa only [Equiv.invFun_as_coe, AlgEquiv.toEquiv_eq_coe, AlgEquiv.symm_toEquiv_eq_symm,
+      EquivLike.coe_coe, SupNormModel.coe_algEquiv_symm] using hlip.continuous
 
 /-- `supNormContinuousAlgEquiv` has `SupNormModel.toSupNorm` as its underlying function. -/
 @[simp]
