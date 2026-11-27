@@ -57,6 +57,9 @@ No boundedness or boundary regularity of `Ω` is assumed.
 * `TauCeti.W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn`: the same on an open
   subdomain `V ≤ Ω`, for any `u ∈ W^{1,p}(V)` whose weak gradient agrees on `V` with that of a
   function on `Ω` whose gradient components are weakly differentiable.
+* `TauCeti.W1p.exists_lowerOrder_eq_and_iteratedGradient_ae_eq_of_forall_hasWeakLineDerivOn`: if
+  `u ∈ W^{1,p}(Ω)` has weak derivatives in `W^{1,p}(Ω)` in every direction, then it is the
+  first-order part of an element of `W^{2,p}(Ω)` whose weak Hessian is given by their gradients.
 * `TauCeti.Wkp.norm_iteratedGradient_one_le_sum`: the `Lᵖ` norm of the weak Hessian is at most
   the sum of the `Lᵖ` norms of the derivatives `∂ᵢ ⟪∇u, eⱼ⟫`.
 * `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq`: the weak Hessian is symmetric.
@@ -761,6 +764,33 @@ theorem Wkp.iteratedGradient_lineDerivL_ae (v : E) (j : ℕ) (u : Wkp mu Omega p
   filter_upwards [(ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).coeFn_compLp
     (Wkp.iteratedGradient (j + 1) u)] with x hx
   rw [hx, ContinuousLinearMap.apply_apply]
+
+/-- **Second order from weak derivatives in `W^{1,p}`.** If `v ∈ W^{1,p}(Ω)` has, in every direction
+`w`, a weak derivative `d w ∈ W^{1,p}(Ω)`, then `v` is the first-order part of an element of
+`W^{2,p}(Ω)` whose weak Hessian in the direction `w` is the weak gradient of `d w`. -/
+theorem W1p.exists_lowerOrder_eq_and_iteratedGradient_ae_eq_of_forall_hasWeakLineDerivOn
+    (v : W1p mu Omega p) (d : E → W1p mu Omega p)
+    (hd : ∀ w, HasWeakLineDerivOn mu Omega (W1p.value v) (W1p.value (d w)) w) :
+    ∃ V : Wkp mu Omega p 2, Wkp.lowerOrder 1 V = v ∧ ∀ w, ∀ᵐ x ∂mu.restrict Omega,
+      Wkp.iteratedGradient 1 V x w = W1p.gradient (d w) x := by
+  let b := stdOrthonormalBasis ℝ E
+  have hdv (w : E) : (fun x => ⟪W1p.gradient v x, w⟫_ℝ) =ᵐ[mu.restrict Omega] W1p.value (d w) :=
+    (W1p.hasWeakLineDerivOn_inner_gradient v w).ae_eq (hd w)
+  obtain ⟨V, hV⟩ := W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn v b fun i j =>
+    ⟨(innerSL ℝ (b i)).compLp (W1p.gradient (d (b j))),
+      (((W1p.hasWeakLineDerivOn_inner_gradient (d (b j)) (b i)).congr_ae (hdv (b j)).symm)
+        |>.congr_ae_deriv) (by
+          filter_upwards [(innerSL ℝ (b i)).coeFn_compLp (W1p.gradient (d (b j)))] with x hx
+          rw [hx, innerSL_apply_apply, real_inner_comm])⟩
+  -- The weak derivative of `V` in the direction `w` is `d w`.
+  have hlin (w : E) : Wkp.lineDerivL w 1 V = d w := by
+    refine W1p.ext_value (Lp.ext ?_)
+    have h1 := Wkp.hasWeakLineDerivOn_lineDerivL w 1 V
+    rw [← Wkp.value_lowerOrder_one, hV] at h1
+    simpa only [Wkp.value_one] using h1.ae_eq (hd w)
+  refine ⟨V, hV, fun w => ?_⟩
+  filter_upwards [Wkp.iteratedGradient_lineDerivL_ae w 0 V] with x h1
+  rw [← h1, Wkp.iteratedGradient_zero, hlin w]
 
 /-! ### Symmetry of the weak Hessian -/
 

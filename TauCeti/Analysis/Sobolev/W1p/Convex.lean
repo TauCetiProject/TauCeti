@@ -49,6 +49,9 @@ continuous, is shown to be locally Lipschitz. If the weak gradient is essentiall
 Hölder on the `ρ / 2`-thickening with every exponent at most one
 (`TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le`). Boundedness on the
 `ρ / 2`-thickening is derived in the proof from `u ∈ Lᵖ` and the local Lipschitz estimate.
+On a bounded convex domain, a weak gradient that agrees almost everywhere with a field `α`-Hölder on
+the closure is bounded, so `u` itself has a representative `α`-Hölder on the closure
+(`TauCeti.W1p.exists_holderOnWith_closure_ae_eq_of_gradient_ae_eq`).
 
 For `p` above the dimension `n`, **Morrey's inequality holds up to the boundary of a bounded
 convex domain** `Ω`: the precise representative of `u ∈ W^{1,p}(Ω)` is Hölder continuous
@@ -78,6 +81,8 @@ then gives the Hölder bound.
   components of the weak gradient.
 * `TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le`: Hölder bounds
   on thickenings from an essential bound on the weak gradient.
+* `TauCeti.W1p.exists_holderOnWith_closure_ae_eq_of_gradient_ae_eq`: on a bounded convex domain, a
+  gradient Hölder up to the boundary gives a representative Hölder up to the boundary.
 * `TauCeti.W1p.exists_holderOnWith_preciseRepresentative_of_convex`: Morrey's inequality on a
   bounded convex domain, for the precise representative.
 * `TauCeti.W1p.exists_holderOnWith_closure_ae_eq_of_convex`: a representative Hölder continuous
@@ -292,6 +297,33 @@ theorem W1p.exists_holderOnWith_preciseRepresentative_of_ae_norm_gradient_le {p 
       (mem_ball_comm.1 (mem_ball.2 hxy))
   · linarith [Real.le_coe_toNNReal (2 * B), hv x hx, hv y hy, dist_le_norm_add_norm
       (preciseRepresentative μ (W1p.value u) x) (preciseRepresentative μ (W1p.value u) y)]
+
+/-- **A Hölder gradient gives a Hölder function up to the boundary.** On a bounded open convex set
+`Ω`, an element of `W^{1,p}(Ω)` whose weak gradient agrees almost everywhere with a field that is
+`α`-Hölder on `closure Ω`, `0 < α ≤ 1`, agrees almost everywhere with a function that is `α`-Hölder
+on `closure Ω`: the gradient is bounded, so the precise representative is Lipschitz on `Ω`, and it
+extends to the closure. -/
+theorem W1p.exists_holderOnWith_closure_ae_eq_of_gradient_ae_eq {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α ≤ 1) (hconv : Convex ℝ (Ω : Set E))
+    (hb : Bornology.IsBounded (Ω : Set E)) (u : W1p μ Ω p) {G : E → E} {C : ℝ≥0}
+    (hG : HolderOnWith C α G (closure (Ω : Set E)))
+    (hGu : (W1p.gradient u : E → E) =ᵐ[μ.restrict Ω] G) :
+    ∃ g : E → ℝ, (∃ C : ℝ≥0, HolderOnWith C α g (closure (Ω : Set E))) ∧
+      (W1p.value u : E → ℝ) =ᵐ[μ.restrict Ω] g := by
+  have hc := hb.isCompact_closure
+  obtain ⟨M, hM⟩ := hc.exists_bound_of_continuousOn (hG.continuousOn hα)
+  have hbd : ∀ᵐ x ∂μ.restrict Ω, ‖W1p.gradient u x‖ ≤ M.toNNReal := by
+    filter_upwards [hGu, ae_restrict_mem Ω.isOpen.measurableSet] with x h1 hx
+    rw [h1]
+    exact (hM x (subset_closure hx)).trans (Real.le_coe_toNNReal M)
+  obtain ⟨g, hgeq, hgH⟩ := (W1p.lipschitzOnWith_preciseRepresentative_of_ae_norm_gradient_le u
+    le_rfl hconv subset_rfl hbd).holderOnWith.exists_eqOn_holderOnWith_closure one_pos
+  obtain ⟨Mg, hMg⟩ := hc.exists_bound_of_continuousOn (hgH.continuousOn one_pos)
+  refine ⟨g, ⟨_, (holderOnWith_one.1 hgH).holderOnWith_of_norm_le (M := Mg.toNNReal)
+    (fun x hx => (hMg x hx).trans (Real.le_coe_toNNReal Mg)) hα1⟩, ?_⟩
+  filter_upwards [W1p.ae_eq_preciseRepresentative u, ae_restrict_mem Ω.isOpen.measurableSet]
+    with x h hx
+  rw [h, hgeq hx]
 
 /-- The precise representative of a `W^{1,∞}` class is locally Lipschitz on its open domain: it
 is Lipschitz on every ball contained in the domain. -/

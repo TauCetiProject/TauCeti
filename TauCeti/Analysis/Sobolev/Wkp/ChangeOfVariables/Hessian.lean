@@ -8,11 +8,14 @@ module
 public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.Rademacher
+import TauCeti.Analysis.Holder.FDeriv
 import TauCeti.Analysis.Holder.Jet.Bounds
+import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.Sobolev.Leibniz
 import TauCeti.Analysis.Sobolev.Wkp.ClosedGraph
 import TauCeti.MeasureTheory.Function.Jacobian
 import TauCeti.Topology.EMetricSpace.Lipschitz
+import TauCeti.Topology.MetricSpace.Holder
 
 /-!
 # The weak Hessian under a change of variables with Lipschitz derivative
@@ -62,6 +65,9 @@ theorem (`TauCeti.Wkp.exists_norm_le_of_forall_exists_value_ae_eq`).
 * `TauCeti.Wkp.inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL`: the chain rule for the weak
   Hessian along a change of variables with locally Lipschitz derivative.
 * `TauCeti.Wkp.inner_iteratedGradient_compL_ae`: its case of a change of variables of order two.
+* `TauCeti.Wkp.exists_holderOnWith_iteratedGradient_compL`: along a change of variables of order
+  two with Hölder derivatives, a weak Hessian and weak gradient with Hölder representatives give a
+  weak Hessian of `u ∘ Φ` with a Hölder representative.
 * `TauCeti.Wkp.compOfLipschitzFDerivL`: precomposition with a change of variables of class
   `C^{1,1}` as a bounded operator on `W^{2,p}`, with
   `TauCeti.Wkp.firstOrder_compOfLipschitzFDerivL`, `TauCeti.Wkp.value_compOfLipschitzFDerivL_ae`,
@@ -229,6 +235,58 @@ theorem inner_iteratedGradient_compL_ae (h : IsChangeOfVariables 2 U V Φ L c) (
   -- `DΦ` is `C¹` on the open set `U`, hence locally Lipschitz there.
   exact inner_iteratedGradient_ae_of_firstOrder_eq_w1pCompL (h.mono one_le_two)
     (h.contDiffOn_fderiv.locallyLipschitzOn_of_isOpen U.isOpen) hp u (firstOrder_compL h hp u)
+
+/-- **A Hölder weak Hessian along a change of variables.** Let `Φ` be a change of variables of
+order two from `U` into `V`, `1 ≤ p < ∞`, and let `u ∈ W^{2,p}(V)` have weak Hessian and weak
+gradient equal almost everywhere on `V` to fields `G` and `P` that are `α`-Hölder on a set `S`,
+`0 < α`. If `Φ` maps a compact set `K` into `S`, is Lipschitz on `K` and has `α`-Hölder first and
+second derivatives on `K`, then the weak Hessian of `u ∘ Φ` agrees almost everywhere on `U` with a
+field that is `α`-Hölder on `K`: by the chain rule `inner_iteratedGradient_compL_ae`,
+`⟪D²(u ∘ Φ) h, g⟫ = ⟪G(Φ ·) (DΦ h), DΦ g⟫ + ⟪P(Φ ·), D²Φ h g⟫`. -/
+theorem exists_holderOnWith_iteratedGradient_compL {α : ℝ≥0} (hα : 0 < α)
+    (h : IsChangeOfVariables 2 U V Φ L c) (hp : p ≠ ⊤) (u : Wkp mu V p 2) {S K : Set E}
+    (hK : IsCompact K) (hΦK : MapsTo Φ K S) {LΦ : ℝ≥0} (hΦL : LipschitzOnWith LΦ Φ K)
+    (hDΦ : ∀ e : E, ∃ C : ℝ≥0, HolderOnWith C α (fun x => fderiv ℝ Φ x e) K)
+    {KT : ℝ≥0} (hD2 : HolderOnWith KT α (fderiv ℝ (fderiv ℝ Φ)) K)
+    {G : E → E →L[ℝ] E} {P : E → E} {CG CP : ℝ≥0} (hG : HolderOnWith CG α G S)
+    (hP : HolderOnWith CP α P S)
+    (hGae : (iteratedGradient 1 u : E → E →L[ℝ] E) =ᵐ[mu.restrict V] G)
+    (hPae : (W1p.gradient (lowerOrder 1 u) : E → E) =ᵐ[mu.restrict V] P) :
+    ∃ G' : E → E →L[ℝ] E, (∃ C : ℝ≥0, HolderOnWith C α G' K) ∧
+      (iteratedGradient 1 (compL h u) : E → E →L[ℝ] E) =ᵐ[mu.restrict U] G' := by
+  let b := stdOrthonormalBasis ℝ E
+  let Q : E → E → E → ℝ := fun x f g => ⟪G (Φ x) (fderiv ℝ Φ x f), fderiv ℝ Φ x g⟫_ℝ +
+    ⟪P (Φ x), fderiv ℝ (fderiv ℝ Φ) x f g⟫_ℝ
+  -- The entries of the chain-rule Hessian in the basis are `α`-Hölder on `K`.
+  have hQ (k l : Fin (Module.finrank ℝ E)) :
+      ∃ C : ℝ≥0, HolderOnWith C α (fun x => Q x (b k) (b l)) K := by
+    obtain ⟨Ck, hCk⟩ := hDΦ (b k)
+    obtain ⟨Cl, hCl⟩ := hDΦ (b l)
+    obtain ⟨C₁, h₁⟩ := (ContinuousLinearMap.id ℝ (E →L[ℝ] E)).exists_holderOnWith_comp₂_of_isCompact
+      hK hα (hG.comp_lipschitzOnWith hΦL hΦK) hCk
+    obtain ⟨C₂, h₂⟩ := (innerSL ℝ).exists_holderOnWith_comp₂_of_isCompact hK hα h₁ hCl
+    obtain ⟨C₃, h₃⟩ := (innerSL ℝ).exists_holderOnWith_comp₂_of_isCompact hK hα
+      (hP.comp_lipschitzOnWith hΦL hΦK) ((hD2.clm_apply_of_norm_le_one
+        (b.orthonormal.1 k).le).clm_apply_of_norm_le_one (b.orthonormal.1 l).le)
+    have h := h₂.add h₃
+    simp only [innerSL_apply_apply, ContinuousLinearMap.id_apply] at h
+    exact ⟨C₂ + C₃, h⟩
+  choose CQ hCQ using hQ
+  refine ⟨fun x => ∑ k, ∑ l, Q x (b k) (b l) • (innerSL ℝ (b k)).smulRight (b l),
+    ⟨_, HolderOnWith.sum fun k _ => HolderOnWith.sum fun l _ =>
+      ((ContinuousLinearMap.toSpanSingleton ℝ
+        ((innerSL ℝ (b k)).smulRight (b l))).lipschitzWith.comp_holderOnWith (hCQ k l))⟩, ?_⟩
+  filter_upwards [inner_iteratedGradient_compL_ae h hp u, h.ae_comp hGae, h.ae_comp hPae]
+    with x h1 h2 h3
+  refine ContinuousLinearMap.ext fun f => ext_inner_right ℝ fun g => ?_
+  rw [h1 f g, iteratedGradient_zero, h2, h3]
+  conv_lhs => rw [← b.sum_repr' f, ← b.sum_repr' g]
+  simp only [Q, map_sum, map_smul, sum_apply, smul_apply,
+    inner_sum, sum_inner, real_inner_smul_left, real_inner_smul_right,
+    ContinuousLinearMap.smulRight_apply, innerSL_apply_apply]
+  simp only [Finset.mul_sum, ← Finset.sum_add_distrib]
+  rw [Finset.sum_comm]
+  exact Finset.sum_congr rfl fun k _ => Finset.sum_congr rfl fun l _ => by ring
 
 /-! ### Changes of variables of class `C^{1,1}` -/
 
