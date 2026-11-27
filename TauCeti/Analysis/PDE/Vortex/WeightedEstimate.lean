@@ -74,7 +74,11 @@ mass near one at a fixed distance from every zero (`one_sub_lt_normSq_of_forall_
 and a smooth substitute `Φ` for `d_D`, the soft minimum of the regularized distances
 `√(b + |z - a|²)` to the zeros (`TauCeti.softMinDist`). For `b` large, `Φ` is nearly flat where it
 is small, which covers a neighbourhood of every zero of fixed size, and the localization angle is
-taken to be a function of `Φ`.
+taken to be a function of `Φ`. As for the radial weight, the coercivity statement allows every
+weight whose logarithmic gradient is at most that of `exp(c Φ)`, including its truncations
+(`exists_pos_forall_mul_integral_sq_mul_norm_sq_le_gaugeFixedOperator_of_softMinDist`); this is
+what `TauCeti.Analysis.PDE.Vortex.RightInverse` uses to extend these estimates to the weak right
+inverse.
 
 The last part of the file gains one derivative. A weighted form of the Gårding inequality,
 `∫ G(w y) ≤ 2 ∫ w² |L_x y|² + (2 c² + K) ∫ w² |y|²` for weights with `|dw| ≤ |c| w`, where `G` is
@@ -104,9 +108,10 @@ All in the namespace `TauCeti.Vortex`:
 * `exists_integral_exp_mul_norm_sq_le_mul_integral_exp_mul_norm_sq_gaugeFixedOperator` and
   `exists_integral_exp_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral_exp_mul_norm_sq`:
   the global weighted estimates for `η` and `L_x* η` in terms of `L_x L_x* η`.
-* `exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le_gaugeFixedOperator`:
+* `exists_pos_forall_mul_integral_sq_mul_norm_sq_le_gaugeFixedOperator_of_softMinDist`:
   weighted coercivity `δ ∫ V² |η|² ≤ ∫ V² ⟪L_x L_x* η, η⟫` for the smooth weight `V = exp(c Φ)`
-  centred on the zeros, with `b`, `δ` depending only on the degree `m` and `c`.
+  centred on the zeros, and for every weight with logarithmic gradient at most that of `exp(c Φ)`,
+  with `b`, `δ` depending only on the degree `m` and `c`.
 * `exists_integral_exp_mul_infDist_sq_mul_norm_sq_le_mul_integral_gaugeFixedOperator` and
   `exists_integral_exp_mul_infDist_sq_mul_norm_sq_gaugeFixedAdjoint_le_mul_integral`: the same
   estimates with weights `exp(c d_D)` centred on the zeros, with constants depending only on `m`
@@ -656,18 +661,21 @@ private theorem le_mass_of_lt_abs_softMinDist_sub (hx : ContDiff ℝ ∞ x)
 /-- **Weighted coercivity of `L_x L_x*` with weights centred on the zeros.** For every degree `m`
 and `|c| < 1/2` there are `b > 0` and `δ > 0` such that every smooth vortex `x` with the
 degree-`m` end framing and zero divisor `D` satisfies `δ ∫ V² |η|² ≤ ∫ V² ⟪L_x L_x* η, η⟫` for
-every test field `η`, where `V = exp (c Φ)` and `Φ = softMinDist b D.toFinset` is the smooth
-distance to the zeros. The constants do not depend on the vortex. -/
-theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le_gaugeFixedOperator
+every test field `η` and every nonnegative `C²` weight `V` whose logarithmic gradient is at most
+`|c| ‖dΦ‖`, where `Φ = softMinDist b D.toFinset` is the smooth distance to the zeros. The weight
+`exp (c Φ)` is allowed, and so are bounded weights such as `W / (1 + ε W)` for `W = exp (c Φ)`
+and `ε > 0`. The constants do not depend on the vortex. -/
+theorem exists_pos_forall_mul_integral_sq_mul_norm_sq_le_gaugeFixedOperator_of_softMinDist
     (m : ℕ) {c : ℝ} (hc : |c| < 1 / 2) :
     ∃ b > 0, ∃ δ > 0, ∀ (x : ℂ → EuclideanSpace ℝ (Fin 4)) (D : Multiset ℂ),
       ContDiff ℝ ∞ x → (∀ z, equation x z = 0) →
       Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1) →
       IsZeroMultiplicity (sectionValue x) (fun z ↦ D.count z) →
+      ∀ V : ℂ → ℝ, ContDiff ℝ 2 V → (∀ z, 0 ≤ V z) →
+      (∀ z, ‖fderiv ℝ V z‖ ≤ |c| * ‖fderiv ℝ (softMinDist b D.toFinset) z‖ * V z) →
       ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
-      δ * (∫ z, Real.exp (c * softMinDist b D.toFinset z) ^ 2 * ‖η z‖ ^ 2 ∂μ) ≤
-        ∫ z, Real.exp (c * softMinDist b D.toFinset z) ^ 2 *
-          ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ := by
+      δ * (∫ z, V z ^ 2 * ‖η z‖ ^ 2 ∂μ) ≤
+        ∫ z, V z ^ 2 * ⟪gaugeFixedOperator x (gaugeFixedAdjoint x η) z, η z⟫ ∂μ := by
   -- The weight is nearly flat near every zero, where the uniform spectral gap absorbs its
   -- gradient. Where the angle `θ₀ (Φ - s₀)` is nonzero, the exterior mass `a > c²` absorbs it.
   have hc2 : c ^ 2 < 1 / 4 := by nlinarith [sq_abs c, abs_nonneg c]
@@ -688,13 +696,13 @@ theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le_gau
     exists_contDiff_angle_cutoff (E := ℝ) (by positivity : 0 ≤ r₁) hε
   obtain ⟨b, hb, hflat⟩ := exists_pos_forall_norm_fderiv_softMinDist_le (E := ℂ) m (r₁ + R₂) hε
   refine ⟨b, hb, min (mm / 2) (a - c ^ 2), lt_min (by positivity) (by linarith),
-    fun x D hx hsol hframe hD η hη hηc ↦ ?_⟩
+    fun x D hx hsol hframe hD V hV hV₀ hdV η hη hηc ↦ ?_⟩
   set Φ : ℂ → ℝ := softMinDist b D.toFinset
   have hΦ : ContDiff ℝ ∞ Φ := contDiff_softMinDist hb _
   set s₀ : ℝ := √b + ρ
-  set V : ℂ → ℝ := fun z ↦ Real.exp (c * Φ z)
   set θ : ℂ → ℝ := fun z ↦ θ₀ (Φ z - s₀)
-  have hV : ContDiff ℝ 2 V := (contDiff_const.mul (hΦ.of_le (by simp))).exp
+  have hdV₂ (z : ℂ) : ‖fderiv ℝ V z‖ ^ 2 ≤ c ^ 2 * ‖fderiv ℝ Φ z‖ ^ 2 * V z ^ 2 := by
+    simpa only [mul_pow, sq_abs] using pow_le_pow_left₀ (norm_nonneg _) (hdV z) 2
   have hθ : ContDiff ℝ 2 θ := (hθ₀.of_le (by simp)).comp ((hΦ.of_le (by simp)).sub contDiff_const)
   -- The angle has gradient at most `ε` and is `π / 2` near every point with `R₂ < Φ - s₀`.
   obtain ⟨hθd, hθout⟩ := norm_fderiv_comp_sub_le_and_eventuallyEq s₀ (hθ₀.differentiable (by simp))
@@ -708,15 +716,16 @@ theorem exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le_gau
       (by simp only [C]; linarith) (by simp only [a]; linarith)
       (lt_of_not_ge fun h ↦ hz (by simp [θ, hθ₀R (Φ z - s₀) h])))
     (min_mul_sq_le_sub_norm_fderiv_sq (S := {z | Φ z - s₀ ≤ R₂}) (hV.differentiable (by simp))
-      (hθ.differentiable (by simp)) (fun z ↦ (Real.exp_pos _).le) (fun z ↦ ?_) (fun z hz ↦ ?_)
+      (hθ.differentiable (by simp)) hV₀ (fun z ↦ ?_) (fun z hz ↦ ?_)
       (fun z hz ↦ hθout z (lt_of_not_ge hz)) hθd hm.le) hη hηc
-  · exact norm_fderiv_exp_mul_softMinDist_sq_le hb _ c z
+  · exact (hdV₂ z).trans (mul_le_mul_of_nonneg_right (mul_le_of_le_one_right (sq_nonneg c)
+      (pow_le_one₀ (norm_nonneg _) (norm_fderiv_softMinDist_le_one hb _ z))) (sq_nonneg _))
   · -- Where `θ` is not `π / 2`, `Φ ≤ √b + r₁ + R₂` and the gradient of `Φ` is at most `ε`.
     have hΦS : ‖fderiv ℝ Φ z‖ ≤ ε := hflat _ (card_toFinset_le_of_tendsto hframe hD) z (by
       simp only [Set.mem_ofPred_eq, s₀, r₁] at hz ⊢; linarith)
-    rw [norm_fderiv_exp_mul_softMinDist hb, mul_pow, mul_pow, sq_abs]
-    exact mul_le_mul_of_nonneg_right ((mul_le_of_le_one_left (sq_nonneg _) (by linarith)).trans
-      (sq_le_div_sixteen_of_le_sqrt_div_four (norm_nonneg _) hm.le hΦS)) (sq_nonneg _)
+    exact (hdV₂ z).trans (mul_le_mul_of_nonneg_right ((mul_le_of_le_one_left (sq_nonneg _)
+      (by linarith)).trans (sq_le_div_sixteen_of_le_sqrt_div_four (norm_nonneg _) hm.le hΦS))
+      (sq_nonneg _))
 
 /-- **The weighted estimate for `L_x L_x*` with weights centred on the zeros, uniformly over the
 moduli space.** For every degree `m` and `|c| < 1/2` there is `K` such that every smooth plane
@@ -744,7 +753,7 @@ theorem exists_integral_exp_mul_infDist_sq_mul_norm_sq_le_mul_integral_gaugeFixe
         K * ∫ z, Real.exp (c * Metric.infDist z (D.toFinset : Set ℂ)) ^ 2 *
           ‖gaugeFixedOperator x (gaugeFixedAdjoint x η) z‖ ^ 2 ∂μ := by
   obtain ⟨b, hb, δ, hδ, hW⟩ :=
-    exists_pos_forall_mul_integral_exp_mul_softMinDist_sq_mul_norm_sq_le_gaugeFixedOperator
+    exists_pos_forall_mul_integral_sq_mul_norm_sq_le_gaugeFixedOperator_of_softMinDist
       (μ := μ) m hc
   set E : ℝ := Real.exp (|c| * (√b + Real.log m)) ^ 2
   refine ⟨E * E / δ ^ 2, by positivity, fun x D hx hsol hframe hD η hη hηc ↦ ?_⟩
@@ -766,7 +775,9 @@ theorem exists_integral_exp_mul_infDist_sq_mul_norm_sq_le_mul_integral_gaugeFixe
     (hV.integrable_sq_mul_norm_sq_of_hasCompactSupport hη.continuous hηc)
     (hV.integrable_sq_mul_norm_sq_of_hasCompactSupport hGc hGs)
     (hw.integrable_sq_mul_norm_sq_of_hasCompactSupport hGc hGs)
-    (hW x D hx hsol hframe hD η hη hηc)
+    (hW x D hx hsol hframe hD _ ((contDiff_const.mul (contDiff_softMinDist hb _)).exp)
+      (fun z ↦ (Real.exp_pos _).le) (fun z ↦ (norm_fderiv_exp_mul_softMinDist hb _ c z).le) η hη
+      hηc)
 
 /-- **The weighted estimate for `L_x*` with weights centred on the zeros, uniformly over the
 moduli space.** For every degree `m` and `|c| < 1/2` there is `K` such that every smooth plane

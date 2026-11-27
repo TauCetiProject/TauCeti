@@ -23,7 +23,8 @@ norm of its derivative is `|c| ‖z‖ / √(b + ‖z‖²)` times the weight, s
 times the weight, and by an arbitrarily small multiple of the weight on a fixed ball once `b` is
 large. The usual choice is `b = 1`, and changing `b` changes the weight by at most a constant
 factor. The truncated weights `W / (1 + ε W)`, `ε > 0`, are smooth, lie between `0` and
-`min W (1 / ε)`, and have logarithmic gradient at most that of `W`.
+`min W (1 / ε)`, and have logarithmic gradient at most that of `W`; the last holds for every
+positive weight `W` (`norm_fderiv_div_one_add_mul_le`).
 
 The weights `exp(c √(b + ‖z‖²))` and `exp(-c √(b + ‖z‖²))` are reciprocal, so either can be moved
 across the `L²` pairing: `|⟪e, f⟫| ≤ ‖exp(-c ρ) e‖₂ ‖exp(c ρ) f‖₂`
@@ -130,6 +131,33 @@ theorem exp_div_one_add_mul_exp_le_one_div (c : ℝ) {ε : ℝ} (hε : 0 < ε) (
   rw [div_le_div_iff₀ (by positivity) hε]
   linarith [mul_comm (Real.exp (c * √(b + ‖z‖ ^ 2))) ε]
 
+omit [InnerProductSpace ℝ E] in
+/-- **Truncation keeps a bound on the logarithmic gradient.** If a positive weight `W`,
+differentiable at `z`, satisfies `‖dW z‖ ≤ g W z`, then so does its truncation `W / (1 + ε W)`,
+`ε ≥ 0`: `‖d(W / (1 + ε W)) z‖ ≤ g W z / (1 + ε W z)`. -/
+theorem norm_fderiv_div_one_add_mul_le [NormedSpace ℝ E] {W : E → ℝ} {z : E}
+    (hW : DifferentiableAt ℝ W z) (hW₀ : 0 < W z) {ε : ℝ} (hε : 0 ≤ ε) {g : ℝ}
+    (hdW : ‖fderiv ℝ W z‖ ≤ g * W z) :
+    ‖fderiv ℝ (fun t ↦ W t / (1 + ε * W t)) z‖ ≤ g * (W z / (1 + ε * W z)) := by
+  have hd : 0 < 1 + ε * W z := by positivity
+  have hg : 0 ≤ g := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans hdW) hW₀
+  -- `W / (1 + ε W)` is `W` composed with `s ↦ s / (1 + ε s)`, of derivative `1 / (1 + ε s)²`.
+  have hs : HasDerivAt (fun s : ℝ ↦ s / (1 + ε * s)) (1 / (1 + ε * W z) ^ 2) (W z) := by
+    have h := (hasDerivAt_id' (W z)).div (((hasDerivAt_id' (W z)).const_mul ε).const_add 1)
+      hd.ne'
+    convert h using 1
+    field_simp
+    ring
+  have hVd : HasFDerivAt (fun t ↦ W t / (1 + ε * W t))
+      ((1 / (1 + ε * W z) ^ 2) • fderiv ℝ W z) z := hs.comp_hasFDerivAt z hW.hasFDerivAt
+  rw [hVd.fderiv, norm_smul, Real.norm_of_nonneg (by positivity)]
+  calc 1 / (1 + ε * W z) ^ 2 * ‖fderiv ℝ W z‖ ≤ 1 / (1 + ε * W z) ^ 2 * (g * W z) := by gcongr
+    _ = g * (W z / (1 + ε * W z)) * (1 / (1 + ε * W z)) := by field_simp
+    _ ≤ g * (W z / (1 + ε * W z)) := by
+      refine mul_le_of_le_one_right (by positivity) ?_
+      rw [div_le_one hd]
+      nlinarith [mul_nonneg hε hW₀.le]
+
 /-- The truncated radial exponential weight `W / (1 + ε W)`, `W = exp(c √(b + ‖z‖²))`, `ε ≥ 0`,
 has logarithmic gradient at most that of `W`, namely `|c| ‖z‖ / √(b + ‖z‖²)`. -/
 theorem norm_fderiv_exp_div_one_add_mul_exp_le (c : ℝ) (hb : 0 < b) {ε : ℝ} (hε : 0 ≤ ε)
@@ -137,29 +165,11 @@ theorem norm_fderiv_exp_div_one_add_mul_exp_le (c : ℝ) (hb : 0 < b) {ε : ℝ}
     ‖fderiv ℝ (fun t : E ↦ Real.exp (c * √(b + ‖t‖ ^ 2)) /
         (1 + ε * Real.exp (c * √(b + ‖t‖ ^ 2)))) z‖ ≤
       |c| * (‖z‖ / √(b + ‖z‖ ^ 2)) *
-        (Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2)))) := by
-  set W : E → ℝ := fun t ↦ Real.exp (c * √(b + ‖t‖ ^ 2))
-  have hW : 0 < W z := Real.exp_pos _
-  have hd : 0 < 1 + ε * W z := by positivity
-  -- `W / (1 + ε W)` is `W` composed with `s ↦ s / (1 + ε s)`, of derivative `1 / (1 + ε s)²`.
-  have hg : HasDerivAt (fun s : ℝ ↦ s / (1 + ε * s)) (1 / (1 + ε * W z) ^ 2) (W z) := by
-    have h := (hasDerivAt_id' (W z)).div (((hasDerivAt_id' (W z)).const_mul ε).const_add 1)
-      hd.ne'
-    convert h using 1
-    field_simp
-    ring
-  have hWd : HasFDerivAt W (fderiv ℝ W z) z :=
-    ((contDiff_exp_mul_sqrt_add_norm_sq (n := 1) c hb).differentiable (by simp) z).hasFDerivAt
-  have hVd : HasFDerivAt (fun t ↦ W t / (1 + ε * W t))
-      ((1 / (1 + ε * W z) ^ 2) • fderiv ℝ W z) z := hg.comp_hasFDerivAt z hWd
-  rw [hVd.fderiv, norm_smul, Real.norm_of_nonneg (by positivity),
-    norm_fderiv_exp_mul_sqrt_add_norm_sq c hb]
-  set d := 1 + ε * W z
-  rw [show 1 / d ^ 2 * (|c| * W z * (‖z‖ / √(b + ‖z‖ ^ 2))) =
-    |c| * (‖z‖ / √(b + ‖z‖ ^ 2)) * (W z / d) * (1 / d) by field_simp]
-  refine mul_le_of_le_one_right (by positivity) ?_
-  rw [div_le_one hd]
-  nlinarith [mul_nonneg hε hW.le]
+        (Real.exp (c * √(b + ‖z‖ ^ 2)) / (1 + ε * Real.exp (c * √(b + ‖z‖ ^ 2)))) :=
+  norm_fderiv_div_one_add_mul_le
+    ((contDiff_exp_mul_sqrt_add_norm_sq (n := 1) c hb).differentiable (by simp) z)
+    (Real.exp_pos _) hε
+    ((norm_fderiv_exp_mul_sqrt_add_norm_sq c hb z).trans_le (le_of_eq (by ring)))
 
 omit [InnerProductSpace ℝ E] in
 /-- Changing the regularization parameter changes the radial exponential weight by at most the
