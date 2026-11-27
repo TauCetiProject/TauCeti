@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.SpecialFunctions.BinaryEntropy
 public import TauCeti.InformationTheory.PartitionEntropy
-import Mathlib.MeasureTheory.Measure.Real
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
+import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
@@ -17,14 +18,14 @@ For probability measures `μ`, `ν` and `a ∈ [0, 1]` (in `ℝ≥0∞`), write 
 for their mixture. For a countable label `ξ`, concavity of `negMulLog` gives
 `a H_μ(ξ) + (1 - a) H_ν(ξ) ≤ H_m(ξ)`. For a measurable `ξ`, subadditivity of `negMulLog`
 (`Real.negMulLog_add_le`) with `negMulLog (x * y) = y negMulLog x + x negMulLog y` gives the
-reverse inequality up to the bounded error `negMulLog a + negMulLog (1 - a)`.
+reverse inequality up to the bounded error `binEntropy a = negMulLog a + negMulLog (1 - a)`.
 
 ## Main results
 
-* `TauCeti.mul_add_mul_le_countablePartitionEntropy_mixture`:
+* `TauCeti.mul_add_mul_le_countablePartitionEntropy_smul_add_smul`:
   `a H_μ(ξ) + (1 - a) H_ν(ξ) ≤ H_m(ξ)`.
-* `TauCeti.countablePartitionEntropy_mixture_le`:
-  `H_m(ξ) ≤ a H_μ(ξ) + (1 - a) H_ν(ξ) + negMulLog a + negMulLog (1 - a)`.
+* `TauCeti.countablePartitionEntropy_smul_add_smul_le`:
+  `H_m(ξ) ≤ a H_μ(ξ) + (1 - a) H_ν(ξ) + binEntropy a`.
 
 ## References
 
@@ -43,7 +44,7 @@ variable {X ι : Type*} {mX : MeasurableSpace X} {μ ν : Measure X} {a : ℝ≥
 
 /-- **Concavity.** The entropy of a label under a mixture is at least the mixture of its
 entropies: `a H_μ(ξ) + (1 - a) H_ν(ξ) ≤ H_{a μ + (1 - a) ν}(ξ)`. -/
-theorem mul_add_mul_le_countablePartitionEntropy_mixture (ha : a ≤ 1) (ξ : X → ι) :
+theorem mul_add_mul_le_countablePartitionEntropy_smul_add_smul (ha : a ≤ 1) (ξ : X → ι) :
     a * countablePartitionEntropy μ ξ + (1 - a) * countablePartitionEntropy ν ξ ≤
       countablePartitionEntropy (a • μ + (1 - a) • ν) ξ := by
   have ha' : a ≠ ∞ := ha.trans_lt ENNReal.one_lt_top |>.ne
@@ -61,20 +62,18 @@ theorem mul_add_mul_le_countablePartitionEntropy_mixture (ha : a ≤ 1) (ξ : X 
           (1 - a).toReal * negMulLog (ν.real (ξ ⁻¹' {i}))) := by
         simp [ENNReal.ofReal_add, ENNReal.ofReal_mul, mul_nonneg, hp, hq, ha']
     _ ≤ ENNReal.ofReal (negMulLog ((a • μ + (1 - a) • ν).real (ξ ⁻¹' {i}))) := by
-        rw [measureReal_add_apply (by simp [ENNReal.mul_eq_top, ha'])
-          (by simp [ENNReal.mul_eq_top]), measureReal_ennreal_smul_apply,
-          measureReal_ennreal_smul_apply]
+        rw [TauCeti.MeasureTheory.measureReal_smul_add_smul_apply ha' (by simp)]
         exact ENNReal.ofReal_le_ofReal (concaveOn_negMulLog.2 hp0 hq0
           ENNReal.toReal_nonneg ENNReal.toReal_nonneg hsum)
 
 variable [MeasurableSpace ι] [MeasurableSingletonClass ι] [Countable ι]
 
 /-- **Bounded defect.** The entropy of a measurable label under a mixture exceeds the mixture of
-its entropies by at most `negMulLog a + negMulLog (1 - a)`. -/
-theorem countablePartitionEntropy_mixture_le (ha : a ≤ 1) {ξ : X → ι} (hξ : Measurable ξ) :
+its entropies by at most the binary entropy `binEntropy a = negMulLog a + negMulLog (1 - a)`. -/
+theorem countablePartitionEntropy_smul_add_smul_le (ha : a ≤ 1) {ξ : X → ι} (hξ : Measurable ξ) :
     countablePartitionEntropy (a • μ + (1 - a) • ν) ξ ≤
       a * countablePartitionEntropy μ ξ + (1 - a) * countablePartitionEntropy ν ξ +
-        ENNReal.ofReal (negMulLog a.toReal + negMulLog (1 - a).toReal) := by
+        ENNReal.ofReal (binEntropy a.toReal) := by
   have ha' : a ≠ ∞ := ha.trans_lt ENNReal.one_lt_top |>.ne
   have hα0 : 0 ≤ a.toReal := ENNReal.toReal_nonneg
   have hβ0 : 0 ≤ (1 - a).toReal := ENNReal.toReal_nonneg
@@ -94,9 +93,7 @@ theorem countablePartitionEntropy_mixture_le (ha : a ≤ 1) {ξ : X → ι} (hξ
           (1 - a).toReal * negMulLog (ν.real (ξ ⁻¹' {i})) +
           (negMulLog a.toReal * μ.real (ξ ⁻¹' {i}) +
             negMulLog (1 - a).toReal * ν.real (ξ ⁻¹' {i})) := by
-      rw [measureReal_add_apply (by simp [ENNReal.mul_eq_top, ha'])
-        (by simp [ENNReal.mul_eq_top]), measureReal_ennreal_smul_apply,
-        measureReal_ennreal_smul_apply]
+      rw [TauCeti.MeasureTheory.measureReal_smul_add_smul_apply ha' (by simp)]
       refine (negMulLog_add_le (mul_nonneg hα0 hp0) (mul_nonneg hβ0 hq0)).trans_eq ?_
       rw [negMulLog_mul, negMulLog_mul]
       ring
@@ -112,7 +109,8 @@ theorem countablePartitionEntropy_mixture_le (ha : a ≤ 1) {ξ : X → ι} (hξ
   refine (tsum_le_tsum hcell).trans_eq ?_
   rw [tsum_add, tsum_add, tsum_add, ENNReal.tsum_mul_left,
     ENNReal.tsum_mul_left, ENNReal.tsum_mul_left, ENNReal.tsum_mul_left, hA, hB, mul_one, mul_one,
-    ← ENNReal.ofReal_add hα hβ]
+    ← ENNReal.ofReal_add hα hβ, ENNReal.toReal_sub_of_le ha ENNReal.one_ne_top,
+    ENNReal.toReal_one, ← binEntropy_eq_negMulLog_add_negMulLog_one_sub]
   simp only [countablePartitionEntropy_def]
 
 end TauCeti

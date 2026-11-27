@@ -16,8 +16,9 @@ import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Convex
 For probability measures `μ`, `ν` and `a ∈ [0, 1]` (in `ℝ≥0∞`), write `m = a • μ + (1 - a) • ν`
 for their mixture. For a measurable countable label `ξ`, the entropy `H_m(ξ)` lies between
 `a H_μ(ξ) + (1 - a) H_ν(ξ)` and that value plus the bounded error
-`c(a) = negMulLog a + negMulLog (1 - a)` (`TauCeti.mul_add_mul_le_countablePartitionEntropy_mixture`
-and `TauCeti.countablePartitionEntropy_mixture_le`). Applied to itineraries and divided by `n`,
+`binEntropy a = negMulLog a + negMulLog (1 - a)`
+(`TauCeti.mul_add_mul_le_countablePartitionEntropy_smul_add_smul` and
+`TauCeti.countablePartitionEntropy_smul_add_smul_le`). Applied to itineraries and divided by `n`,
 the error disappears, so entropy rates are affine in the measure:
 `h_m(T, ξ) = a h_μ(T, ξ) + (1 - a) h_ν(T, ξ)` when `T` preserves `μ` and `ν`. Taking suprema
 gives `h_m(T) ≤ a h_μ(T) + (1 - a) h_ν(T)`.
@@ -27,9 +28,9 @@ The reverse inequality for the Kolmogorov–Sinai entropy needs a single label t
 
 ## Main results
 
-* `TauCeti.partitionEntropyRate_mixture`:
+* `TauCeti.partitionEntropyRate_smul_add_smul`:
   `h_m(T, ξ) = a h_μ(T, ξ) + (1 - a) h_ν(T, ξ)`.
-* `TauCeti.measureEntropy_mixture_le`: `h_m(T) ≤ a h_μ(T) + (1 - a) h_ν(T)`.
+* `TauCeti.measureEntropy_smul_add_smul_le`: `h_m(T) ≤ a h_μ(T) + (1 - a) h_ν(T)`.
 
 ## References
 
@@ -50,13 +51,13 @@ variable {X ι : Type*} {mX : MeasurableSpace X} {μ ν : Measure X} {a : ℝ≥
 /-- **Affinity of entropy rates.** For a map preserving the probability measures `μ` and `ν` and
 a measurable countable label `ξ`, the entropy rate under the mixture `a • μ + (1 - a) • ν` is
 `a h_μ(T, ξ) + (1 - a) h_ν(T, ξ)`. -/
-theorem partitionEntropyRate_mixture (ha : a ≤ 1) (hμ : MeasurePreserving T μ μ)
+theorem partitionEntropyRate_smul_add_smul (ha : a ≤ 1) (hμ : MeasurePreserving T μ μ)
     (hν : MeasurePreserving T ν ν) {ξ : X → ι} (hξ : Measurable ξ) :
     partitionEntropyRate (a • μ + (1 - a) • ν) T ξ =
       a * partitionEntropyRate μ T ξ + (1 - a) * partitionEntropyRate ν T ξ := by
   have ha' : a ≠ ∞ := ha.trans_lt ENNReal.one_lt_top |>.ne
   have := MeasureTheory.isProbabilityMeasure_smul_add_smul (add_tsub_cancel_of_le ha) μ ν
-  set c := ENNReal.ofReal (negMulLog a.toReal + negMulLog (1 - a).toReal)
+  set c := ENNReal.ofReal (binEntropy a.toReal)
   have hb := measurable_iteratedPartitionLabel hμ.measurable hξ
   set g : ℕ → ℝ≥0∞ := fun n ↦
     a * (countablePartitionEntropy μ (iteratedPartitionLabel T ξ n) / n) +
@@ -78,20 +79,20 @@ theorem partitionEntropyRate_mixture (ha : a ≤ 1) (hμ : MeasurePreserving T �
     (tendsto_of_tendsto_of_tendsto_of_le_of_le hg hgc (fun n ↦ ?_) (fun n ↦ ?_))
   · rw [← hsplit]
     exact ENNReal.div_le_div_right
-      (mul_add_mul_le_countablePartitionEntropy_mixture ha _) _
+      (mul_add_mul_le_countablePartitionEntropy_smul_add_smul ha _) _
   · refine (ENNReal.div_le_div_right
-      (countablePartitionEntropy_mixture_le ha (hb n)) _).trans_eq ?_
+      (countablePartitionEntropy_smul_add_smul_le ha (hb n)) _).trans_eq ?_
     rw [ENNReal.add_div, hsplit, div_eq_mul_inv]
 
 /-- **Upper bound for mixtures.** For a map preserving the probability measures `μ` and `ν`,
 `h_{a μ + (1 - a) ν}(T) ≤ a h_μ(T) + (1 - a) h_ν(T)`. -/
-theorem measureEntropy_mixture_le (ha : a ≤ 1) (hμ : MeasurePreserving T μ μ)
+theorem measureEntropy_smul_add_smul_le (ha : a ≤ 1) (hμ : MeasurePreserving T μ μ)
     (hν : MeasurePreserving T ν ν) :
     measureEntropy (a • μ + (1 - a) • ν) T ≤
       a * measureEntropy μ T + (1 - a) * measureEntropy ν T := by
   refine measureEntropy_le_iff.2 fun ξ hξ hfin ↦ ?_
-  rw [partitionEntropyRate_mixture ha hμ hν hξ]
-  have hlow := mul_add_mul_le_countablePartitionEntropy_mixture (μ := μ) (ν := ν) ha ξ
+  rw [partitionEntropyRate_smul_add_smul ha hμ hν hξ]
+  have hlow := mul_add_mul_le_countablePartitionEntropy_smul_add_smul (μ := μ) (ν := ν) ha ξ
   refine add_le_add ?_ ?_
   · rcases eq_or_ne a 0 with rfl | ha0
     · simp
