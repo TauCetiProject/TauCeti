@@ -44,9 +44,15 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
   original components in each fibre.
 * `TauCeti.mem_coarsenGrading_iff`: an element lies in the coarsened piece of degree `k` exactly
   when its components outside the fibre over `k` vanish.
+* `TauCeti.coarsenGrading_span_image_fiber`: coarsening the spans of the fibres of a degree
+  function gives the spans of the fibres of the composite degree function.
 * `LinearMap.IsHomogeneous.coarsenGrading` and
   `LinearMap.IsHomogeneous.coarsenGrading_zero`: homogeneity of linear maps under
-  coarsened gradings.
+  coarsened gradings, with the criterion `LinearMap.isHomogeneous_coarsenGrading_iff`, and its
+  converse `LinearMap.IsHomogeneous.of_coarsenGrading` along an injective map, and
+  `LinearMap.isHomogeneous_coarsenGrading_span_iff` for the coarsened spans of fibres.
+* `TauCeti.smul_mem_coarsenGrading`: a scalar action shifting the degree by `r` shifts the
+  coarsened degree by `f r`.
 * `TauCeti.parityGrading_zero`, `TauCeti.parityGrading_one`, `TauCeti.parityGrading_one_eq_bot_iff`,
   `TauCeti.eq_bot_of_parityGrading_one_eq_bot_of_odd`, `TauCeti.parityGrading_trivialGrading_one`,
   and `TauCeti.parityGrading_one_eq_bot_iff_of_isHomogeneous_zero`: the even and odd pieces and
@@ -268,37 +274,94 @@ instance instModuleFreeCoarsenGrading (k : κ) [∀ i : {i : ι // f i = k}, Mod
     Module.Free R (coarsenGrading ℳ f k) :=
   Module.Free.of_equiv (coarsenGradingEquiv ℳ f k)
 
+omit [DecidableEq ι] [Decomposition ℳ] in
+/-- Coarsening the spans of the fibres of a degree function `deg` on a family of vectors `v` along
+`f` gives the spans of the fibres of `f ∘ deg`. This applies to the grading of a module with a
+basis by degrees of the basis vectors (`Module.Basis.isInternal_span_image_fiber`). -/
+theorem coarsenGrading_span_image_fiber {ι' : Type*} (v : ι' → M) (deg : ι' → ι) :
+    coarsenGrading (fun i ↦ Submodule.span R (v '' {j | deg j = i})) f =
+      fun k ↦ Submodule.span R (v '' {j | f (deg j) = k}) := by
+  funext k
+  refine le_antisymm (coarsenGrading_le_iff.2 fun i hi ↦ Submodule.span_mono ?_)
+    (Submodule.span_le.2 ?_)
+  · rintro _ ⟨j, hj, rfl⟩
+    exact ⟨j, (congrArg f hj).trans hi, rfl⟩
+  · rintro _ ⟨j, hj, rfl⟩
+    exact hj ▸ mem_coarsenGrading_of_mem f (Submodule.subset_span ⟨j, rfl, rfl⟩)
+
 end Coarsen
 
 section Homogeneous
 
-variable {N : Type*} [AddCommMonoid N] [Module R N] [AddMonoid ι] [AddMonoid κ]
+variable {S N : Type*} [Semiring S] [Module S M] [AddCommMonoid N] [Module R N] [Module S N]
+  [AddMonoid ι] [AddMonoid κ]
+
+omit [AddMonoid ι] in
+/-- A linear map is homogeneous of degree `d` for two coarsened gradings exactly when it maps each
+piece `ℳ i` into the coarsened piece of degree `f i + d`. The map may be linear over another
+semiring `S` than the pieces. -/
+theorem _root_.LinearMap.isHomogeneous_coarsenGrading_iff {g : M →ₗ[S] N}
+    {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N} {f : ι → κ} {d : κ} :
+    LinearMap.IsHomogeneous g (TauCeti.coarsenGrading ℳ f) (TauCeti.coarsenGrading 𝒩 f) d ↔
+      ∀ i, ∀ x ∈ ℳ i, g x ∈ TauCeti.coarsenGrading 𝒩 f (f i + d) :=
+  ⟨fun hg _ _ hx ↦ hg.map_mem (mem_coarsenGrading_of_mem f hx), fun h ↦
+    LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ coarsenGrading_induction hx
+      (fun i hi y hy ↦ hi ▸ h i y hy) (by simp) fun _ _ hy hz ↦ by
+        simpa only [map_add] using add_mem hy hz⟩
 
 /-- A linear map that is homogeneous of degree `q` for two gradings is homogeneous of degree
 `f q` for the gradings coarsened along an additive homomorphism `f`. -/
 theorem _root_.LinearMap.IsHomogeneous.coarsenGrading {F : Type*} [FunLike F ι κ]
-    [AddHomClass F ι κ] {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
+    [AddHomClass F ι κ] {g : M →ₗ[S] N} {ℳ : ι → Submodule R M}
     {𝒩 : ι → Submodule R N} {q : ι} (hg : LinearMap.IsHomogeneous g ℳ 𝒩 q) (f : F) :
     LinearMap.IsHomogeneous g (TauCeti.coarsenGrading ℳ f) (TauCeti.coarsenGrading 𝒩 f) (f q) :=
-  LinearMap.isHomogeneous_def.2 fun k x hx ↦ by
-    have hle : TauCeti.coarsenGrading ℳ f k ≤
-        (TauCeti.coarsenGrading 𝒩 f (k + f q)).comap g :=
-      coarsenGrading_le_iff.2 fun i hi y hy ↦ by
-        simpa [hi, map_add] using mem_coarsenGrading_of_mem f (hg.map_mem hy)
-    exact hle hx
+  LinearMap.isHomogeneous_coarsenGrading_iff.2 fun _ _ hx ↦ by
+    simpa only [map_add] using mem_coarsenGrading_of_mem f (hg.map_mem hx)
 
 /-- A degree-zero homogeneous linear map remains homogeneous of degree zero after coarsening along
 any map `f : ι → κ` of index types. -/
-theorem _root_.LinearMap.IsHomogeneous.coarsenGrading_zero {g : M →ₗ[R] N} {ℳ : ι → Submodule R M}
-    {𝒩 : ι → Submodule R N} (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0) (f : ι → κ) :
+theorem _root_.LinearMap.IsHomogeneous.coarsenGrading_zero {g : M →ₗ[S] N}
+    {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N} (hg : LinearMap.IsHomogeneous g ℳ 𝒩 0)
+    (f : ι → κ) :
     LinearMap.IsHomogeneous g (TauCeti.coarsenGrading ℳ f) (TauCeti.coarsenGrading 𝒩 f) 0 :=
-  LinearMap.isHomogeneous_def.2 fun k x hx ↦ by
-    have hle : TauCeti.coarsenGrading ℳ f k ≤
-        (TauCeti.coarsenGrading 𝒩 f (k + 0)).comap g :=
-      coarsenGrading_le_iff.2 fun i hi y hy ↦ by
-        simpa only [add_zero, Submodule.mem_comap, ← hi] using
-          mem_coarsenGrading_of_mem f (by simpa only [add_zero] using hg.map_mem hy)
-    exact hle hx
+  LinearMap.isHomogeneous_coarsenGrading_iff.2 fun _ _ hx ↦ by
+    simpa only [add_zero] using
+      mem_coarsenGrading_of_mem f (by simpa only [add_zero] using hg.map_mem hx)
+
+/-- A linear map that is homogeneous of degree `f q` for gradings coarsened along an injective
+additive homomorphism `f` is homogeneous of degree `q` for the original gradings, since coarsening
+along `f` merges no pieces. -/
+theorem _root_.LinearMap.IsHomogeneous.of_coarsenGrading {F : Type*} [FunLike F ι κ]
+    [AddHomClass F ι κ] {g : M →ₗ[S] N} {ℳ : ι → Submodule R M} {𝒩 : ι → Submodule R N} {q : ι}
+    {f : F} (hf : Function.Injective f)
+    (hg : LinearMap.IsHomogeneous g (TauCeti.coarsenGrading ℳ f) (TauCeti.coarsenGrading 𝒩 f)
+      (f q)) :
+    LinearMap.IsHomogeneous g ℳ 𝒩 q :=
+  LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ by
+    simpa only [← map_add, coarsenGrading_apply_of_injective 𝒩 hf] using
+      hg.map_mem (mem_coarsenGrading_of_mem f hx)
+
+omit [AddMonoid ι] in
+/-- A linear map out of the coarsening along `f` of the spans of the fibres of a degree function
+`deg` on vectors `v` is homogeneous of degree `d` exactly when it maps each `v j` into the piece
+of degree `f (deg j) + d`. -/
+theorem _root_.LinearMap.isHomogeneous_coarsenGrading_span_iff [LinearMap.CompatibleSMul M N R S]
+    {ι' : Type*} {g : M →ₗ[S] N} {v : ι' → M} {deg : ι' → ι} {𝒩 : κ → Submodule R N}
+    {f : ι → κ} {d : κ} :
+    LinearMap.IsHomogeneous g
+        (TauCeti.coarsenGrading (fun i ↦ Submodule.span R (v '' {j | deg j = i})) f) 𝒩 d ↔
+      ∀ j, g (v j) ∈ 𝒩 (f (deg j) + d) := by
+  rw [coarsenGrading_span_image_fiber, LinearMap.isHomogeneous_span_iff]
+  exact ⟨fun h j ↦ h _ _ ⟨j, rfl, rfl⟩, by rintro h _ _ ⟨j, rfl, rfl⟩; exact h j⟩
+
+/-- If the action of `a` maps each piece `ℳ i` into `ℳ (i + r)`, it maps the piece of degree `k`
+of the coarsening along an additive homomorphism `f` into the piece of degree `k + f r`. -/
+theorem smul_mem_coarsenGrading {A F : Type*} [Monoid A] [DistribMulAction A M]
+    [SMulCommClass A R M] [FunLike F ι κ] [AddHomClass F ι κ] {ℳ : ι → Submodule R M} {a : A}
+    {r : ι} (ha : ∀ i, ∀ x ∈ ℳ i, a • x ∈ ℳ (i + r)) (f : F) {k : κ} {x : M}
+    (hx : x ∈ TauCeti.coarsenGrading ℳ f k) : a • x ∈ TauCeti.coarsenGrading ℳ f (k + f r) :=
+  ((LinearMap.isHomogeneous_def (f := DistribSMul.toLinearMap R M a)).2 ha).coarsenGrading f
+    |>.map_mem hx
 
 end Homogeneous
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LowDimTopology.Heegaard.BasepointChange
+public import TauCeti.LowDimTopology.Heegaard.Grading
 public import TauCeti.LowDimTopology.Heegaard.HatDifferential
 public import TauCeti.LowDimTopology.Heegaard.RelativeGrading
 public import TauCeti.LowDimTopology.Heegaard.StrongAdmissibility
@@ -84,6 +85,9 @@ differential vanishes and the hat chain complex is `𝔽₂²` with zero differe
   `TauCeti.HeegaardRegionSystem.coe_relativeGrading_circleTimesSphere_one`: with the basepoint
   in a bigon, the periodic Maslov indices are the even integers, and the relative grading of
   `p₀` over `p₁` is one modulo two.
+* `TauCeti.HeegaardRegionSystem.exists_isMaslovGradingMod_circleTimesSphere_one` and
+  `TauCeti.HeegaardRegionSystem.not_exists_isMaslovGrading_circleTimesSphere_one`: with the
+  basepoint in a bigon, the generators carry a Maslov grading modulo two but no Maslov grading.
 * `TauCeti.HeegaardRegionSystem.weaklyAdmissibleAt_circleTimesSphere_one` and
   `TauCeti.HeegaardRegionSystem.stronglyAdmissible_circleTimesSphere_one`: with the basepoint in
   a bigon, the diagram is weakly and strongly admissible at both generators.
@@ -482,6 +486,33 @@ theorem circleTimesSphereGenerator_bijective (r : Fin 3) :
     Function.Bijective (circleTimesSphereGenerator r) :=
   ⟨fun a b h => by simpa using congrFun (congrArg (circleTimesSphere r).point h) 0,
     fun x => ⟨_, circleTimesSphereGenerator_snd_zero r x⟩⟩
+
+/-- With the basepoint in the bigon `B₁`, the generators carry a Maslov grading modulo two, the
+relative `ℤ / 2` grading of this diagram: every generator is joined to `p₀` by a domain, and the
+periodic Maslov indices are the even integers. -/
+theorem exists_isMaslovGradingMod_circleTimesSphere_one :
+    ∃ gr, (circleTimesSphere 1).IsMaslovGradingMod (AddSubgroup.zmultiples 2) ![0, 1, 1] gr := by
+  obtain ⟨gr, hgr⟩ := exists_coe_sub_eq_of_maslovIndex_sub_two_mul_sum_mem (χ := ![0, 1, 1])
+    (x₀ := circleTimesSphereGenerator 1 0) (Λ := AddSubgroup.zmultiples 2) fun E hE => by
+      rw [← periodicMaslovIndices_circleTimesSphere_one 0]
+      exact maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide) _
+        E hE
+  refine ⟨gr, ⟨fun {x _ _} hD => ?_⟩⟩
+  obtain ⟨a, rfl⟩ := (circleTimesSphereGenerator_bijective 1).2 x
+  fin_cases a
+  · exact hgr (isDomainBetween_zero _) hD
+  · exact hgr (isDomainBetween_circleTimesSphere_single_two 1) hD
+
+/-- With the basepoint in the bigon `B₁`, the generators carry no Maslov grading, since the
+periodic domain `A + 2 B₂` has Maslov index two. -/
+theorem not_exists_isMaslovGrading_circleTimesSphere_one :
+    ¬∃ gr, (circleTimesSphere 1).IsMaslovGrading ![0, 1, 1] gr := by
+  rw [exists_isMaslovGrading_iff_forall_periodicMaslovIndices_eq_bot
+    (maslovIndex_sub_two_mul_sum_mem_periodicMaslovIndices_of_subsingleton () (by decide))]
+  intro h
+  have h2 := h (circleTimesSphereGenerator 1 0)
+  rw [periodicMaslovIndices_circleTimesSphere_one, AddSubgroup.zmultiples_eq_bot] at h2
+  norm_num at h2
 
 /-- With the basepoint in the annulus, the domains counted by the hat differential from `p₀` to
 `p₁` are the two bigons. -/

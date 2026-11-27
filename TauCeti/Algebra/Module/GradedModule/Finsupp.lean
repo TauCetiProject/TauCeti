@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Module.GradedModule.Coarsen
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import Mathlib.LinearAlgebra.Finsupp.Supported
 
@@ -21,7 +22,8 @@ decomposition, including when several basis vectors have the same degree. This c
 also applies after a linear change of coordinates, via `InternalGrading.map`.
 
 Each piece is itself free: `InternalGrading.finsuppPieceBasis A g p` is its basis formed by the
-basis vectors of the indices of degree `p`.
+basis vectors of the indices of degree `p`. Coarsening the grading along a map `f` of index types
+gives the grading by `f ∘ g` (`InternalGrading.mem_coarsenGrading_finsupp_piece_iff`).
 
 The construction uses Mathlib's `Finsupp.supported` submodules and
 `DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top`.
@@ -109,5 +111,20 @@ theorem coe_finsuppPieceBasis {p : ι} (i : {i // g i = p}) :
 theorem finsuppPieceBasis_repr_apply {p : ι} (x : (finsupp A g).piece p) (i : {i // g i = p}) :
     (finsuppPieceBasis A g p).repr x i = (x : I →₀ A) i :=
   (rfl)
+
+/-- Coarsening the grading by `g` along a map `f : ι → κ` grades by `f ∘ g`: a finitely supported
+function lies in the coarsened piece of degree `k` exactly when every nonzero coordinate has an
+assigned degree in the fibre of `f` over `k`. -/
+@[simp]
+theorem mem_coarsenGrading_finsupp_piece_iff {κ : Type*} {f : ι → κ} {k : κ} {c : I →₀ A} :
+    c ∈ coarsenGrading (finsupp A g).piece f k ↔ ∀ i, c i ≠ 0 → f (g i) = k := by
+  have h : (finsupp A g).piece =
+      fun p ↦ Submodule.span A ((fun i ↦ Finsupp.single i (1 : A)) '' {i | g i = p}) :=
+    funext fun p ↦ (finsupp_piece A g p).trans (Finsupp.supported_eq_span_single _ _)
+  rw [h, coarsenGrading_span_image_fiber]
+  dsimp only
+  rw [← Finsupp.supported_eq_span_single,
+    Finsupp.mem_supported]
+  simp [Set.subset_def]
 
 end TauCeti.InternalGrading
