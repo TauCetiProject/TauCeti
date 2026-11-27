@@ -82,9 +82,8 @@ theorem discreteSeriesGKModule_ρ_apply_coe (k : ℕ) (μ : ℂ) (g : Matrix.ort
   (GKModule.submodule_ρ_apply_coe (M := CompactWeightModule.gkModule (k : ℂ) μ)
     (N := discreteSeriesGKSubmodule k μ) g v).trans (by rw [CompactWeightModule.gkModule_ρ])
 
-/-- **`D_k(μ)` is an irreducible `(𝔤𝔩₂(ℂ), O(2))`-module** for `k ≥ 1`: a
-`(𝔤𝔩₂(ℂ), O(2))`-submodule is a Lie submodule of `D_k(μ)` stable under the reflection
-`A = diag(1, -1)`, hence `⊥` or everything by `TauCeti.eq_bot_or_eq_discreteSeries`. -/
+/-- **`D_k(μ)` is an irreducible `(𝔤𝔩₂(ℂ), O(2))`-module** for `k ≥ 1`: its only
+`(𝔤𝔩₂(ℂ), O(2))`-submodules are `⊥` and `⊤`. -/
 theorem isIrreducible_discreteSeriesGKModule {k : ℕ} (hk : 1 ≤ k) (μ : ℂ) :
     (discreteSeriesGKModule k μ).IsIrreducible := by
   refine GKModule.IsIrreducible.mk fun N hN ↦ ?_

@@ -93,7 +93,7 @@ theorem subset_lieSpan {s : Set V} {hs : ∀ (g : K), ∀ v ∈ s, M.ρ g v ∈ 
 theorem lieSpan_le {s : Set V} {hs : ∀ (g : K), ∀ v ∈ s, M.ρ g v ∈ LieSubmodule.lieSpan k 𝔤 s}
     {N : GKSubmodule M} : lieSpan M s hs ≤ N ↔ s ⊆ N := by
   rw [← toLieSubmodule_le_toLieSubmodule, toLieSubmodule_lieSpan, LieSubmodule.lieSpan_le]
-  rfl
+  simp only [Set.subset_def, SetLike.mem_coe, mem_toLieSubmodule]
 
 end GKSubmodule
 
@@ -119,8 +119,8 @@ theorem IsIrreducible.nontrivial (hM : M.IsIrreducible) : Nontrivial V := by
   by_contra! h
   exact (bot_ne_top (α := GKSubmodule M)) (GKSubmodule.ext fun v ↦ by simp [h v])
 
-/-- **An irreducible `(𝔤, K)`-module is finitely generated over `𝔤`**: a finite spanning set
-of the finite-dimensional span of the `K`-orbit of a nonzero vector generates it. -/
+/-- **An irreducible `(𝔤, K)`-module is finitely generated over `𝔤`**: it is generated as a
+`𝔤`-module by a finite set. -/
 theorem IsIrreducible.exists_lieSpan_eq_top (hM : M.IsIrreducible) :
     ∃ s : Finset V, LieSubmodule.lieSpan k 𝔤 (s : Set V) = ⊤ := by
   obtain ⟨v, hv⟩ := (nontrivial_iff_exists_ne (0 : V)).1 hM.nontrivial
