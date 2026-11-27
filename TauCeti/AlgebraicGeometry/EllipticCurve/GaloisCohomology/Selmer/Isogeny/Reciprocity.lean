@@ -127,16 +127,8 @@ theorem sum_toRatAddCircle_localTateKerWeilPairing_eq_zero_of_mem_selmerGroup_re
           (φ.kerRes (τ (.inl v)) a) (φ.dualKerRes (τ (.inl v)) b)) = 0 := by
   have ha' := (φ.mem_selmerGroup_relaxedAt_iff τ S).1 ha
   have hb' := (φ.dual.mem_selmerGroup_relaxedAt_iff τ S).1 hb
-  let S' : Finset (GlobalNumberFields.Place K) := S.map ⟨Sum.inl, Sum.inl_injective⟩
-  have h :=
-    φ.sum_toRatAddCircle_localTateKerWeilPairing_add_sum_infiniteTateKerWeilPairing_eq_zero a b
-      (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S'
-      (fun v hv ↦ ha'.1 v (by simpa [S'] using hv))
-      (fun v hv ↦ hb'.1 v (by simpa [S'] using hv))
-      (fun w _ ↦ ha'.2 w) (fun w _ ↦ hb'.2 w)
-  have hL : S'.toLeft = S := by ext v; simp [S']
-  have hR : S'.toRight = ∅ := by ext w; simp [S']
-  rwa [hL, hR, Finset.sum_empty, add_zero] at h
+  exact φ.sum_toRatAddCircle_localTateKerWeilPairing_eq_zero a b
+    (fun v ↦ τ (.inl v)) (fun w ↦ τ (.inr w)) S ha'.1 hb'.1 ha'.2 hb'.2
 
 /-- **Global Selmer reciprocity in `ℚ/ℤ` against `Sel_φ̂`.** If `a` belongs to the `S`-relaxed
 `φ`-Selmer group and `b ∈ φ.dual.selmerGroup τ`, then the sum over `v ∈ S` of their
