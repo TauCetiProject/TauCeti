@@ -200,26 +200,29 @@ theorem exists_homotopyEquiv_torusRho₁₂TypeD_torusBoundedRho₁₂TypeD [Cha
   refine ⟨Matrix.of fun _ y ↦
       if y = 0 then oneStrandChord R genusOne.pair (by decide : (0 : Fin 4) < 1)
       else if y = 1 then oneStrandIdem R genusOne.pair (Set.rangeFactorization genusOne.pair 0)
-      else 0, ?_,
+      else 0, ?memF,
     Matrix.of fun x _ ↦
       if x = 1 then oneStrandIdem R genusOne.pair (Set.rangeFactorization genusOne.pair 0)
       else if x = 2 then oneStrandChord R genusOne.pair (by decide : (1 : Fin 4) < 2)
-      else 0, ?_, ?_, ?_, ?_,
+      else 0, ?memG, ?cycleF, ?cycleG, ?FG,
     !![0, 0, 0; 0, 0, 0;
-      oneStrandIdem R genusOne.pair (Set.rangeFactorization genusOne.pair 1), 0, 0], ?_, ?_⟩
-  -- Each condition is an identity between explicit matrices over the torus algebra, checked
-  -- entrywise.
-  all_goals first
-    | (rw [TypeDStructure.mem_morphisms_iff]
-       intro x y
-       fin_cases x <;> fin_cases y <;>
-         simp [genusOne_pair_zero, genusOne_pair_one, genusOne_pair_two])
-    | (refine Matrix.ext fun x y ↦ ?_
-       simp only [TypeDStructure.morphismDifferential_apply, Matrix.add_apply, Matrix.mul_apply]
-       fin_cases x <;> fin_cases y <;>
-         simp [Fin.sum_univ_three, genusOne_pair_zero, genusOne_pair_one, genusOne_pair_two,
-           add_self_eq_zero_of_charTwo R,
-           oneStrandChord_mul_oneStrandChord_of_ne _ _ _ (by decide : (2 : Fin 4) ≠ 0)])
+      oneStrandIdem R genusOne.pair (Set.rangeFactorization genusOne.pair 1), 0, 0], ?memH, ?dH⟩
+  -- `F`, `G` and `H` respect the idempotents, checked entrywise.
+  case memF | memG | memH =>
+    rw [TypeDStructure.mem_morphisms_iff]
+    intro x y
+    fin_cases x <;> fin_cases y <;> simp [genusOne_pair_zero, genusOne_pair_one, genusOne_pair_two]
+  -- The cycle conditions, `F G = 1` and `∂H = G F + 1` are identities between explicit matrices
+  -- over the torus algebra, checked entrywise. In `∂H = G F + 1`, the entry `(y₂, y₁)` of `G F`
+  -- is `ρ₂ ρ₁ = 0`, and its entry `(x, x)`, `ι₀`, cancels against the identity in characteristic
+  -- two.
+  case cycleF | cycleG | FG | dH =>
+    refine Matrix.ext fun x y ↦ ?_
+    simp only [TypeDStructure.morphismDifferential_apply, Matrix.add_apply, Matrix.mul_apply]
+    fin_cases x <;> fin_cases y <;>
+      simp [Fin.sum_univ_three, genusOne_pair_zero, genusOne_pair_one, genusOne_pair_two,
+        add_self_eq_zero_of_charTwo R,
+        oneStrandChord_mul_oneStrandChord_of_ne _ _ _ (by decide : (2 : Fin 4) ≠ 0)]
 
 /-! ### The chains of the unknot complements with negative framing -/
 

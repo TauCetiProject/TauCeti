@@ -1051,8 +1051,8 @@ theorem coe_typeABoxTensorDifferential_apply [CharP R 2] (hMm : Mm.IsStrictlyUni
   (rfl)
 
 /-- The box tensor differential vanishes on `M ⊗ N` when it vanishes on all row vectors. -/
-theorem typeABoxTensorDifferential_eq_zero [CharP R 2] (hMm : Mm.IsStrictlyUnital ι)
-    (hι : ∀ s, d (ι s) = 0) (h : N.typeABoxDifferential Mm = 0) :
+theorem typeABoxTensorDifferential_eq_zero_of_typeABoxDifferential_eq_zero [CharP R 2]
+    (hMm : Mm.IsStrictlyUnital ι) (hι : ∀ s, d (ι s) = 0) (h : N.typeABoxDifferential Mm = 0) :
     N.typeABoxTensorDifferential hMm hι = 0 :=
   LinearMap.ext fun φ => Subtype.ext (by simp [h])
 

@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.SquareZero
 public import TauCeti.LowDimTopology.Bordered.Torus.TypeA
 public import TauCeti.LowDimTopology.Bordered.Torus.TypeD
-public import TauCeti.LowDimTopology.Bordered.TypeA.Basic
 import TauCeti.Algebra.BigOperators.Fin
 
 /-!
@@ -28,15 +26,14 @@ structures of `TauCeti.LowDimTopology.Bordered.Torus.TypeD`. The box tensor prod
 
 The type `A` modules are the one-generator modules of three points `k < i < j` of
 `TauCeti.StrandsAlgebra.threePointTypeA`, whose operations read the coordinates of their inputs.
-First, for any type `D` structure `N` the box tensor product over the idempotents is free on the
-generators of `N` at the idempotent `I(i)` of the module
-(`TauCeti.StrandsAlgebra.finrank_typeABoxTensor_threePointTypeA`). Second, if the coefficients
-of `N` have no component along the idempotent
-`I(i)`, and none along the chord `ρ_ij` read by the first input of the higher operations
-(`TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_first`) or along the
-chord `ρ_ki` read by the last
-(`TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_last`), then the box
-tensor differential vanishes.
+By `TauCeti.LowDimTopology.Bordered.TypeA.OneStrand`, if the coefficients of a type `D` structure
+`N` have no component along the idempotent `I(i)`, and none along the chord `ρ_ij` read by the
+first input of the higher operations
+(`TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_left`) or
+along the chord `ρ_ki` read by the last
+(`TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_right`),
+then the box tensor differential vanishes, and the homology is free on the generators of `N` at
+`I(i)` (`TauCeti.StrandsAlgebra.finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero`).
 
 Over the torus algebra, write `M₀` for `TauCeti.StrandsAlgebra.torusRho₂Rho₁TypeA`, with
 `m_{n+3}(x, ρ₂, ρ₁₂, …, ρ₁₂, ρ₁) = x` and its generator at `ι₁`, and `M_∞` for
@@ -53,9 +50,11 @@ So both pairings with the chains have vanishing differential:
   `HF̂(S³)`.
 
 The framing `0`, which gives `S¹ × S²`, needs the bounded model
-`TauCeti.StrandsAlgebra.torusBoundedRho₁₂TypeD` of `δ¹ x = ρ₁₂ ⊗ x`, since `M₀` and
-`δ¹ x = ρ₁₂ ⊗ x` are both unbounded and their box tensor differential is an infinite sum. In
-`M₀ ⊠ torusBoundedRho₁₂TypeD` the two paths from `y₁` to `y₂` contribute `m₂(y₁, ι₁)` and
+`TauCeti.StrandsAlgebra.torusBoundedRho₁₂TypeD` of `δ¹ x = ρ₁₂ ⊗ x`. The naive pairing of `M₀`
+with `δ¹ x = ρ₁₂ ⊗ x` is zero, since the generator `x` sits at `ι₀` and the generator of `M₀` at
+`ι₁`; as neither side is bounded, the box tensor product need not be invariant under homotopy
+equivalence, and the bounded model, homotopy equivalent to `δ¹ x = ρ₁₂ ⊗ x`, gives the correct
+rank. In `M₀ ⊠ torusBoundedRho₁₂TypeD` the two paths from `y₁` to `y₂` contribute `m₂(y₁, ι₁)` and
 `m₃(y₁, ρ₂, ρ₁)`, both `y₁`, which cancel in characteristic two:
 
 * `M₀ ⊠ torusBoundedRho₁₂TypeD` has homology of rank `2`, the generators `y₁` and `y₂`
@@ -71,11 +70,6 @@ curves, and the pairing theorem itself, are not part of this file.
 
 ## Main results
 
-* `TauCeti.StrandsAlgebra.finrank_typeABoxTensor_threePointTypeA`: the box tensor product with the
-  module of three points is free on the generators at its idempotent.
-* `TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_first`,
-  `TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_last`: conditions on the
-  coefficients for the box tensor differential to vanish.
 * `TauCeti.StrandsAlgebra.finrank_homology_torusRho₂Rho₁TypeA_torusChainTypeD`,
   `TauCeti.StrandsAlgebra.finrank_homology_torusRho₃Rho₂TypeA_torusChainTypeD`,
   `TauCeti.StrandsAlgebra.finrank_homology_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD`,
@@ -99,72 +93,6 @@ namespace TauCeti
 namespace StrandsAlgebra
 
 open PointedMatchedCircle
-
-/-! ### Box tensor products with the module of three points -/
-
-section ThreePoint
-
-variable {R α β : Type*} [CommRing R] [CharP R 2] [LinearOrder α] [Fintype α] [DecidableEq β]
-  {M : α → β} {k i j : α} {hki : k < i} {hij : i < j} {hM : M k = M j}
-  {hbetween : ∀ m, k < m → m < j → m = i} {X : Type*} [Fintype X]
-  {N : TypeDStructure (matchedSummandDifferential R M 1) (oneStrandIdem R M) X}
-
-/-- An element of `X → R` lies in the box tensor product with the module of three points `k < i < j`
-exactly when it vanishes on the generators away from the idempotent `I(i)` of the module. -/
-theorem mem_typeABoxTensor_threePointTypeA_iff {φ : X → R} :
-    φ ∈ N.typeABoxTensor (threePointTypeA R M hki hij hM hbetween) ↔
-      ∀ x, N.idem x ≠ ⟨M i, i, rfl⟩ → φ x = 0 := by
-  simp only [TypeDStructure.mem_typeABoxTensor_iff, threePointTypeA_act_one_oneStrandIdem]
-  refine forall_congr' fun x ↦ ?_
-  split_ifs with h <;> simp [h, eq_comm]
-
-/-- **The box tensor product with the module of three points** `k < i < j` is free on the
-generators of the type `D` structure at the idempotent `I(i)` of the module. -/
-theorem finrank_typeABoxTensor_threePointTypeA :
-    Module.finrank R (N.typeABoxTensor (threePointTypeA R M hki hij hM hbetween)) =
-      Fintype.card {x // N.idem x = ⟨M i, i, rfl⟩} := by
-  have : Nontrivial R := CharP.nontrivial_of_char_ne_one (by decide : (2 : ℕ) ≠ 1)
-  classical
-  -- The box tensor product is the joint kernel of the evaluations away from `I(i)`.
-  have h : N.typeABoxTensor (threePointTypeA R M hki hij hM hbetween) =
-      ⨅ x ∈ {x | N.idem x = ⟨M i, i, rfl⟩}ᶜ, LinearMap.ker (LinearMap.proj x) := by
-    ext φ
-    rw [mem_typeABoxTensor_threePointTypeA_iff]
-    simp
-  rw [h, (LinearMap.iInfKerProjEquiv R (fun _ : X ↦ R) disjoint_compl_right
-    (by simp)).finrank_eq, Module.finrank_fintype_fun_eq_card]
-  -- The set `{x | N.idem x = ⟨M i, i, rfl⟩}`, as a type, is the subtype of the statement.
-  rfl
-
-variable [DecidableEq X]
-
-/-- **The box tensor differential with the module of three points vanishes** when no coefficient of
-the type `D` structure has a component along the idempotent `I(i)` or along the chord `ρ_ij`, which
-the first input of every higher operation reads. -/
-theorem typeABoxDifferential_threePointTypeA_eq_zero_of_first
-    (hI : ∀ x y, oneStrandIdemCoord R M ⟨M i, i, rfl⟩ (N.coeff x y) = 0)
-    (hρ : ∀ x y, oneStrandChordCoord R M hij (N.coeff x y) = 0) :
-    N.typeABoxDifferential (threePointTypeA R M hki hij hM hbetween) = 0 :=
-  N.typeABoxDifferential_eq_zero_of_forall_act_eq_zero _ fun n x ↦ LinearMap.ext fun y ↦ by
-    match n with
-    | 0 => simp
-    | 1 => simp [threePointTypeA_act_one_apply, hI]
-    | n + 2 => simp [threePointTypeA_act_add_two_apply, hρ]
-
-/-- **The box tensor differential with the module of three points vanishes** when no coefficient of
-the type `D` structure has a component along the idempotent `I(i)` or along the chord `ρ_ki`, which
-the last input of every higher operation reads. -/
-theorem typeABoxDifferential_threePointTypeA_eq_zero_of_last
-    (hI : ∀ x y, oneStrandIdemCoord R M ⟨M i, i, rfl⟩ (N.coeff x y) = 0)
-    (hρ : ∀ x y, oneStrandChordCoord R M hki (N.coeff x y) = 0) :
-    N.typeABoxDifferential (threePointTypeA R M hki hij hM hbetween) = 0 :=
-  N.typeABoxDifferential_eq_zero_of_forall_act_eq_zero _ fun n x ↦ LinearMap.ext fun y ↦ by
-    match n with
-    | 0 => simp
-    | 1 => simp [threePointTypeA_act_one_apply, hI]
-    | n + 2 => simp [threePointTypeA_act_add_two_apply, hρ]
-
-end ThreePoint
 
 /-! ### The pairings over the torus algebra -/
 
@@ -202,6 +130,19 @@ private theorem typeABoxDifferential_torusBoundedRho₁₂TypeD_apply
     fun x y h ↦ by fin_cases x <;> fin_cases y <;> simp_all,
     (by decide : (Finset.univ.sup fun x : Fin 3 ↦ (x : ℕ)) = 2)]
 
+/-- The coefficients of `torusBoundedRho₁₂TypeD` have no component along the idempotent `ι₀` of the
+point `2`. -/
+private theorem oneStrandIdemCoord_two_torusBoundedRho₁₂TypeD_coeff (x y : Fin 3) :
+    oneStrandIdemCoord R genusOne.pair ⟨genusOne.pair 2, 2, rfl⟩
+      ((torusBoundedRho₁₂TypeD R).coeff x y) = 0 := by
+  fin_cases x <;> fin_cases y <;> simp [Subtype.ext_iff, genusOne_pair_one, genusOne_pair_two]
+
+/-- The coefficients of `torusBoundedRho₁₂TypeD` have no component along `ρ₃`. -/
+private theorem oneStrandChordCoord_two_three_torusBoundedRho₁₂TypeD_coeff (x y : Fin 3) :
+    oneStrandChordCoord R genusOne.pair (by decide : (2 : Fin 4) < 3)
+      ((torusBoundedRho₁₂TypeD R).coeff x y) = 0 := by
+  fin_cases x <;> fin_cases y <;> simp
+
 variable [CharP R 2]
 
 /-- The box tensor differential of `torusRho₂Rho₁TypeA` with the chain `torusChainTypeD n`
@@ -210,7 +151,7 @@ operation of the module reads. -/
 theorem typeABoxDifferential_torusRho₂Rho₁TypeA_torusChainTypeD (n : ℕ) :
     (torusChainTypeD R n).typeABoxDifferential (torusRho₂Rho₁TypeA R) = 0 := by
   rw [torusRho₂Rho₁TypeA_eq_threePointTypeA]
-  exact typeABoxDifferential_threePointTypeA_eq_zero_of_first
+  exact typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_left
     (oneStrandIdemCoord_torusChainTypeD_coeff R n _)
     (oneStrandChordCoord_one_two_torusChainTypeD_coeff R n)
 
@@ -220,7 +161,7 @@ operation of the module reads. -/
 theorem typeABoxDifferential_torusRho₃Rho₂TypeA_torusChainTypeD (n : ℕ) :
     (torusChainTypeD R n).typeABoxDifferential (torusRho₃Rho₂TypeA R) = 0 := by
   rw [torusRho₃Rho₂TypeA_eq_threePointTypeA]
-  exact typeABoxDifferential_threePointTypeA_eq_zero_of_last
+  exact typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_right
     (oneStrandIdemCoord_torusChainTypeD_coeff R n _)
     (oneStrandChordCoord_one_two_torusChainTypeD_coeff R n)
 
@@ -237,16 +178,14 @@ theorem typeABoxDifferential_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD :
       Subtype.ext_iff, genusOne_pair_one, CharTwo.add_self_eq_zero]
 
 /-- The box tensor differential of `torusRho₃Rho₂TypeA` with `torusBoundedRho₁₂TypeD` vanishes:
-no path of coefficients starts with `ρ₃` and ends with `ρ₂`, and the module reads no idempotent
-coefficient `ι₁`. -/
+no coefficient of `torusBoundedRho₁₂TypeD` lies along the idempotent `ι₀` of the module, or along
+`ρ₃`, which the first input of every higher operation of the module reads. -/
 theorem typeABoxDifferential_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD :
     (torusBoundedRho₁₂TypeD R).typeABoxDifferential (torusRho₃Rho₂TypeA R) = 0 := by
-  refine LinearMap.ext fun φ ↦ funext fun z ↦ ?_
-  rw [typeABoxDifferential_torusBoundedRho₁₂TypeD_apply, torusRho₃Rho₂TypeA_eq_threePointTypeA]
-  fin_cases z <;>
-    simp [Finset.sum_range_succ, Fintype.sum_finTwoArrow, Fintype.sum_finThreeArrow,
-      Fin.sum_univ_three, threePointTypeA_act_one_apply, threePointTypeA_act_add_two_apply,
-      Subtype.ext_iff, genusOne_pair_one, genusOne_pair_two, CharTwo.add_self_eq_zero]
+  rw [torusRho₃Rho₂TypeA_eq_threePointTypeA]
+  exact typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_left
+    (oneStrandIdemCoord_two_torusBoundedRho₁₂TypeD_coeff R)
+    (oneStrandChordCoord_two_three_torusBoundedRho₁₂TypeD_coeff R)
 
 /-- **The pairing of `torusRho₂Rho₁TypeA` with the chain `torusChainTypeD n` has homology of rank
 `n + 1`**, the rank of `HF̂` of the lens space `L(n + 1, 1)`. -/
@@ -256,9 +195,9 @@ theorem finrank_homology_torusRho₂Rho₁TypeA_torusChainTypeD (n : ℕ)
       (torusChainTypeD R n).typeABoxTensorDifferential (isStrictlyUnital_torusRho₂Rho₁TypeA R)
         (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) = 0) :
     Module.finrank R (LinearMap.homology _ hd) = n + 1 := by
-  rw [(LinearMap.homologyEquivOfEqZero _ hd (TypeDStructure.typeABoxTensorDifferential_eq_zero _ _
-    (typeABoxDifferential_torusRho₂Rho₁TypeA_torusChainTypeD R n))).finrank_eq,
-    torusRho₂Rho₁TypeA_eq_threePointTypeA, finrank_typeABoxTensor_threePointTypeA]
+  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
+    (torusRho₂Rho₁TypeA_eq_threePointTypeA R)
+    (typeABoxDifferential_torusRho₂Rho₁TypeA_torusChainTypeD R n) hd]
   -- The generators at `ι₁` are the `γₗ`.
   refine (Fintype.card_congr ((Equiv.subtypeEquivRight fun x ↦ ?_).trans
     (Equiv.optionIsSomeEquiv _))).trans (Fintype.card_fin _)
@@ -272,9 +211,9 @@ theorem finrank_homology_torusRho₃Rho₂TypeA_torusChainTypeD (n : ℕ)
       (torusChainTypeD R n).typeABoxTensorDifferential (isStrictlyUnital_torusRho₃Rho₂TypeA R)
         (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) = 0) :
     Module.finrank R (LinearMap.homology _ hd) = 1 := by
-  rw [(LinearMap.homologyEquivOfEqZero _ hd (TypeDStructure.typeABoxTensorDifferential_eq_zero _ _
-    (typeABoxDifferential_torusRho₃Rho₂TypeA_torusChainTypeD R n))).finrank_eq,
-    torusRho₃Rho₂TypeA_eq_threePointTypeA, finrank_typeABoxTensor_threePointTypeA]
+  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
+    (torusRho₃Rho₂TypeA_eq_threePointTypeA R)
+    (typeABoxDifferential_torusRho₃Rho₂TypeA_torusChainTypeD R n) hd]
   -- The only generator at `ι₀` is `x`.
   refine (Fintype.card_congr (Equiv.subtypeEquivRight fun x ↦ ?_)).trans
     (Fintype.card_subtype_eq none)
@@ -291,9 +230,9 @@ theorem finrank_homology_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD
         (isStrictlyUnital_torusRho₂Rho₁TypeA R)
         (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) = 0) :
     Module.finrank R (LinearMap.homology _ hd) = 2 := by
-  rw [(LinearMap.homologyEquivOfEqZero _ hd (TypeDStructure.typeABoxTensorDifferential_eq_zero _ _
-    (typeABoxDifferential_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD R))).finrank_eq,
-    torusRho₂Rho₁TypeA_eq_threePointTypeA, finrank_typeABoxTensor_threePointTypeA]
+  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
+    (torusRho₂Rho₁TypeA_eq_threePointTypeA R)
+    (typeABoxDifferential_torusRho₂Rho₁TypeA_torusBoundedRho₁₂TypeD R) hd]
   -- The generators at `ι₁` are `y₁` and `y₂`.
   refine (Fintype.card_congr (Equiv.subtypeEquivRight fun x ↦ ?_)).trans
     (by decide : Fintype.card {x : Fin 3 // x ≠ 1} = 2)
@@ -309,9 +248,9 @@ theorem finrank_homology_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD
         (isStrictlyUnital_torusRho₃Rho₂TypeA R)
         (fun _ ↦ matchedSummandDifferential_apply_of_le_one le_rfl _) = 0) :
     Module.finrank R (LinearMap.homology _ hd) = 1 := by
-  rw [(LinearMap.homologyEquivOfEqZero _ hd (TypeDStructure.typeABoxTensorDifferential_eq_zero _ _
-    (typeABoxDifferential_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD R))).finrank_eq,
-    torusRho₃Rho₂TypeA_eq_threePointTypeA, finrank_typeABoxTensor_threePointTypeA]
+  rw [finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
+    (torusRho₃Rho₂TypeA_eq_threePointTypeA R)
+    (typeABoxDifferential_torusRho₃Rho₂TypeA_torusBoundedRho₁₂TypeD R) hd]
   -- The only generator at `ι₀` is `x`.
   refine (Fintype.card_congr (Equiv.subtypeEquivRight fun x ↦ ?_)).trans
     (Fintype.card_subtype_eq (1 : Fin 3))

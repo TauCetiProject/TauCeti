@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded
+public import TauCeti.Algebra.Homology.SquareZero
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.OneStrand
+public import TauCeti.LowDimTopology.Bordered.TypeA.Basic
 import Mathlib.Data.Fin.Tuple.Take
 import TauCeti.Data.Fin.Tuple.Basic
 import TauCeti.Data.List.OfFn
@@ -35,6 +37,16 @@ idempotents (`TauCeti.StrandsAlgebra.isStrictlyUnital_threePointTypeA`). Its ope
 vanishes, while `m₂` and every `m_{n+3}` are nonzero
 (`TauCeti.StrandsAlgebra.threePointTypeA_act_one_oneStrandIdem`,
 `TauCeti.StrandsAlgebra.threePointTypeA_act_cons_snoc`), so it is not a differential module.
+
+**Box tensor products.** For a type `D` structure `N` over the one-strand algebra, the box tensor
+product with the module of three points is free on the generators of `N` at the idempotent `I(i)`
+(`TauCeti.StrandsAlgebra.finrank_typeABoxTensor_threePointTypeA`). Its differential vanishes when
+no coefficient of `N` has a component along `I(i)`, nor along the chord `ρ_ij` read by the first
+input of the higher operations, or along the chord `ρ_ki` read by the last
+(`TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_left`,
+`TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_right`); its
+homology is then free on the same generators
+(`TauCeti.StrandsAlgebra.finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero`).
 
 For the genus-one pointed matched circle, whose points `0, 1, 2, 3` are matched as `{0, 2}` and
 `{1, 3}`, the triples `(1, 2, 3)` and `(0, 1, 2)` give the operations
@@ -68,12 +80,20 @@ The proof runs by induction on the word, read as a list.
 * `TauCeti.StrandsAlgebra.threePointTypeA_act_cons_snoc`:
   `m_{n+3}(x, ρ_ij, ρ_kj, …, ρ_kj, ρ_ki) = x`.
 * `TauCeti.StrandsAlgebra.isStrictlyUnital_threePointTypeA`: it is strictly unital.
+* `TauCeti.StrandsAlgebra.finrank_typeABoxTensor_threePointTypeA`: the box tensor product with a
+  type `D` structure is free on the generators at the idempotent `I(i)`.
+* `TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_left`,
+  `TauCeti.StrandsAlgebra.typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_right`:
+  conditions on the coefficients for the box tensor differential to vanish.
+* `TauCeti.StrandsAlgebra.finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero`: the
+  rank of the homology of the box tensor product when its differential vanishes.
 
 ## References
 
 * R. Lipshitz, P. S. Ozsváth and D. P. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer.
   Math. Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687),
-  §2.1 (`A∞` modules over `𝔽₂`) and Chapter 11 (the type `A` modules of solid tori).
+  §2.1 (`A∞` modules over `𝔽₂`), Chapter 2 (the box tensor product) and Chapter 11 (the type `A`
+  modules of solid tori).
 -/
 
 public section
@@ -456,6 +476,88 @@ theorem isStrictlyUnital_threePointTypeA :
   split_ifs <;> first | omega | simp
 
 end Module
+
+/-! ### Box tensor products with the module of three points -/
+
+section BoxTensor
+
+variable {R α β : Type*} [CommRing R] [CharP R 2] [LinearOrder α] [Fintype α] [DecidableEq β]
+  {M : α → β} {k i j : α} {hki : k < i} {hij : i < j} {hM : M k = M j}
+  {hbetween : ∀ m, k < m → m < j → m = i} {X : Type*} [Fintype X]
+  {N : TypeDStructure (matchedSummandDifferential R M 1) (oneStrandIdem R M) X}
+
+/-- An element of `X → R` lies in the box tensor product with the module of three points `k < i < j`
+exactly when it vanishes on the generators away from the idempotent `I(i)` of the module. -/
+theorem mem_typeABoxTensor_threePointTypeA_iff {φ : X → R} :
+    φ ∈ N.typeABoxTensor (threePointTypeA R M hki hij hM hbetween) ↔
+      ∀ x, N.idem x ≠ ⟨M i, i, rfl⟩ → φ x = 0 := by
+  simp only [TypeDStructure.mem_typeABoxTensor_iff, threePointTypeA_act_one_oneStrandIdem]
+  refine forall_congr' fun x ↦ ?_
+  split_ifs with h <;> simp [h, eq_comm]
+
+/-- **The box tensor product with the module of three points** `k < i < j` is free on the
+generators of the type `D` structure at the idempotent `I(i)` of the module. -/
+theorem finrank_typeABoxTensor_threePointTypeA :
+    Module.finrank R (N.typeABoxTensor (threePointTypeA R M hki hij hM hbetween)) =
+      Fintype.card {x // N.idem x = ⟨M i, i, rfl⟩} := by
+  have : Nontrivial R := CharP.nontrivial_of_char_ne_one (by decide : (2 : ℕ) ≠ 1)
+  classical
+  -- The box tensor product is the joint kernel of the evaluations away from `I(i)`.
+  have h : N.typeABoxTensor (threePointTypeA R M hki hij hM hbetween) =
+      ⨅ x ∈ {x | N.idem x = ⟨M i, i, rfl⟩}ᶜ, LinearMap.ker (LinearMap.proj x) := by
+    ext φ
+    rw [mem_typeABoxTensor_threePointTypeA_iff]
+    simp
+  rw [h, (LinearMap.iInfKerProjEquiv R (fun _ : X ↦ R) disjoint_compl_right
+    (by simp)).finrank_eq, Module.finrank_fintype_fun_eq_card]
+  -- The set `{x | N.idem x = ⟨M i, i, rfl⟩}`, as a type, is the subtype of the statement; the two
+  -- `Fintype` instances agree by `Fintype.card_congr`.
+  exact Fintype.card_congr (Equiv.refl _)
+
+variable [DecidableEq X]
+
+/-- **The box tensor differential with the module of three points vanishes** when no coefficient of
+the type `D` structure has a component along the idempotent `I(i)` or along the chord `ρ_ij`, which
+the first (leftmost) input of every higher operation reads. -/
+theorem typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_left
+    (hI : ∀ x y, oneStrandIdemCoord R M ⟨M i, i, rfl⟩ (N.coeff x y) = 0)
+    (hρ : ∀ x y, oneStrandChordCoord R M hij (N.coeff x y) = 0) :
+    N.typeABoxDifferential (threePointTypeA R M hki hij hM hbetween) = 0 :=
+  N.typeABoxDifferential_eq_zero_of_forall_act_eq_zero _ fun n x ↦ LinearMap.ext fun y ↦ by
+    match n with
+    | 0 => simp
+    | 1 => simp [threePointTypeA_act_one_apply, hI]
+    | n + 2 => simp [threePointTypeA_act_add_two_apply, hρ]
+
+/-- **The box tensor differential with the module of three points vanishes** when no coefficient of
+the type `D` structure has a component along the idempotent `I(i)` or along the chord `ρ_ki`, which
+the last (rightmost) input of every higher operation reads. -/
+theorem typeABoxDifferential_threePointTypeA_eq_zero_of_coord_eq_zero_right
+    (hI : ∀ x y, oneStrandIdemCoord R M ⟨M i, i, rfl⟩ (N.coeff x y) = 0)
+    (hρ : ∀ x y, oneStrandChordCoord R M hki (N.coeff x y) = 0) :
+    N.typeABoxDifferential (threePointTypeA R M hki hij hM hbetween) = 0 :=
+  N.typeABoxDifferential_eq_zero_of_forall_act_eq_zero _ fun n x ↦ LinearMap.ext fun y ↦ by
+    match n with
+    | 0 => simp
+    | 1 => simp [threePointTypeA_act_one_apply, hI]
+    | n + 2 => simp [threePointTypeA_act_add_two_apply, hρ]
+
+/-- **The homology of the box tensor product with the module of three points** `k < i < j`, when
+its differential vanishes, is free on the generators of the type `D` structure at the idempotent
+`I(i)` of the module. It is stated for any module `Mm` equal to the module of three points, so that
+it applies to modules defined as one, whose strict unitality enters the differential. -/
+theorem finrank_homology_threePointTypeA_of_typeABoxDifferential_eq_zero
+    {Mm : UngradedAInfinityRightModule (matchedSummandDifferential R M 1) R}
+    {hMm : Mm.IsStrictlyUnital (oneStrandIdem R M)}
+    {hι : ∀ s, matchedSummandDifferential R M 1 (oneStrandIdem R M s) = 0}
+    (hMm' : Mm = threePointTypeA R M hki hij hM hbetween) (h : N.typeABoxDifferential Mm = 0)
+    (hd : N.typeABoxTensorDifferential hMm hι ∘ₗ N.typeABoxTensorDifferential hMm hι = 0) :
+    Module.finrank R (LinearMap.homology _ hd) = Fintype.card {x // N.idem x = ⟨M i, i, rfl⟩} := by
+  rw [(LinearMap.homologyEquivOfEqZero _ hd
+    (TypeDStructure.typeABoxTensorDifferential_eq_zero_of_typeABoxDifferential_eq_zero _ _
+      h)).finrank_eq, hMm', finrank_typeABoxTensor_threePointTypeA]
+
+end BoxTensor
 
 
 end StrandsAlgebra
