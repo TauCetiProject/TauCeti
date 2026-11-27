@@ -36,6 +36,8 @@ times that of the Euclidean ball of radius `r`, since that ball contains the cub
   volume of `ℝⁿ⁺¹` with the product of the volumes of `ℝ` and `ℝⁿ`.
 * `TauCeti.measurePreserving_euclideanPlaneEquivProd`: the coordinates of the Euclidean plane
   identify its volume with the product of Lebesgue measures on `ℝ × ℝ`.
+* `TauCeti.coe_euclideanPlaneCLEquivProd`: these coordinates are the underlying map of the
+  continuous linear coordinates `TauCeti.euclideanPlaneCLEquivProd`.
 -/
 
 public section
@@ -189,5 +191,17 @@ theorem euclideanPlaneEquivProd_symm_apply (z : ℝ × ℝ) :
 theorem measurePreserving_euclideanPlaneEquivProd :
     MeasurePreserving euclideanPlaneEquivProd :=
   (volume_preserving_finTwoArrow ℝ).comp (volume_preserving_symm_measurableEquiv_toLp (Fin 2))
+
+/-- The continuous linear coordinates of the Euclidean plane are its measurable coordinates
+`TauCeti.euclideanPlaneEquivProd`. -/
+theorem coe_euclideanPlaneCLEquivProd :
+    ⇑euclideanPlaneCLEquivProd = euclideanPlaneEquivProd :=
+  funext fun _ => by simp
+
+/-- The inverse of the continuous linear coordinates of the Euclidean plane is that of its
+measurable coordinates `TauCeti.euclideanPlaneEquivProd`. -/
+theorem coe_euclideanPlaneCLEquivProd_symm :
+    ⇑euclideanPlaneCLEquivProd.symm = euclideanPlaneEquivProd.symm :=
+  funext fun _ => by simp
 
 end TauCeti
