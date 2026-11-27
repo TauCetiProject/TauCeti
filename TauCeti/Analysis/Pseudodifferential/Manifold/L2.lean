@@ -151,13 +151,19 @@ theorem chartSobolevRealization_apply {y : (chartSobolevRealization hμ hc ψ h�
   -- rewritten here; `domainOperator_apply` applies through the definitional unfolding instead.
   LinearMap.domainOperator_apply _ _ _ hx
 
+/-- The image in `L²(M, μ)` of an element of `H^m(M)` lies in the domain of the realization. -/
+theorem chartSobolevToLp_mem_domain_chartSobolevRealization (x : chartSobolevSpace hc ψ m) :
+    chartSobolevToLp μ hc ψ hμ hψ hm x ∈ (chartSobolevRealization hμ hc ψ hψ P hm).domain := by
+  rw [chartSobolevRealization_def]
+  exact LinearMap.apply_mem_domain_domainOperator _ _ _ x
+
 /-- Smooth functions lie in the domain of the realization. -/
 theorem toLp_mem_domain_chartSobolevRealization
     (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
     ContinuousMap.toLp 2 μ ℂ (u : C(M, ℂ)) ∈
       (chartSobolevRealization hμ hc ψ hψ P hm).domain := by
-  rw [chartSobolevRealization_def, ← chartSobolevToLp_toChartSobolevSpace hc ψ hμ hψ hm u]
-  exact LinearMap.apply_mem_domain_domainOperator _ _ _ _
+  rw [← chartSobolevToLp_toChartSobolevSpace hc ψ hμ hψ hm u]
+  exact chartSobolevToLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm _
 
 /-- **On smooth functions the realization is `P`.** For a classical pseudodifferential operator
 `P` of order `m`, the realization of `P` sends the class of a smooth function `u` in `L²` to the
@@ -339,8 +345,7 @@ theorem IsClassicalElliptic.adjoint_chartSobolevRealization (hPe : IsClassicalEl
         P hm) ⟨f, hf⟩ ⟨_, toLp_mem_domain_chartSobolevRealization hμ hc ψ hψ P hm u⟩
       rw [chartSobolevRealization_toLp hμ hc ψ hψ P hm hP u] at h
       exact h.symm
-  rw [chartSobolevRealization_def]
-  exact LinearMap.apply_mem_domain_domainOperator _ _ _ x
+  exact chartSobolevToLp_mem_domain_chartSobolevRealization hμ hc ψ hψ Q hm x
 
 /-- **Formally self-adjoint elliptic operators have self-adjoint realizations.** On a compact
 manifold modelled on `ℝⁿ` with `n ≠ 0`, with a finite measure `μ` that has a smooth positive
