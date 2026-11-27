@@ -7,9 +7,9 @@ module
 
 public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Jacobian
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+public import TauCeti.LinearAlgebra.Complex.Module
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import TauCeti.Algebra.Star.SelfAdjoint.BaseChange
-import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Lebesgue measure on skew-Hermitian matrices
@@ -47,6 +47,13 @@ variable (p : ℕ)
 def skewHermitianLebesgue : Measure (skewAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℂ)) :=
   (hermitianLebesgue p).map (skewAdjointEquivSelfAdjoint (-Units.mk0 I I_ne_zero)
     (neg_mem Complex.val_mk0_I_mem_skewAdjoint)).symm
+
+/-- Defining formula for `TauCeti.skewHermitianLebesgue`: the image of
+`TauCeti.hermitianLebesgue p` under `H ↦ i H`. -/
+theorem skewHermitianLebesgue_def :
+    skewHermitianLebesgue p =
+      (hermitianLebesgue p).map (skewAdjointEquivSelfAdjoint (-Units.mk0 I I_ne_zero)
+        (neg_mem Complex.val_mk0_I_mem_skewAdjoint)).symm := (rfl)
 
 instance isAddHaarMeasure_skewHermitianLebesgue : (skewHermitianLebesgue p).IsAddHaarMeasure :=
   (skewAdjointEquivSelfAdjoint _ _).symm.toContinuousLinearEquiv.isAddHaarMeasure_map _
