@@ -7,16 +7,15 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Prod
 public import TauCeti.Analysis.CStarAlgebra.MaxTensor.Product.Map
-import TauCeti.Analysis.CStarAlgebra.Quotient
+public import TauCeti.Analysis.CStarAlgebra.TensorProduct.Prod
 
 /-!
 # The maximal C*-tensor product distributes over direct sums
 
 For C*-algebras `A`, `A'` and `B`, the star homomorphism `(fst ⊗ id, snd ⊗ id)` is a star
 isomorphism `TauCeti.MaxTensorProduct.prodLeft : (A × A') ⊗max B ≃ (A ⊗max B) × (A' ⊗max B)`.
-It is isometric by the norm formula `‖x‖_max = max ‖x₁‖_max ‖x₂‖_max`
-(`TauCeti.maxTensorNorm_prod`), and surjective since its range is closed and contains the dense
-set of pairs of elements of `A ⊗[ℂ] B` and `A' ⊗[ℂ] B`.
+It is the instance of `TauCeti.CStarTensorProduct.prodLeft` for the norm formula
+`‖x‖_max = max ‖x₁‖_max ‖x₂‖_max` (`TauCeti.maxTensorNorm_prod`).
 
 ## Main declarations
 
@@ -68,41 +67,34 @@ theorem prodLeftHom_of_tmul (a : A × A') (b : B) :
       (of (maxCStarTensorNorm A B) (a.1 ⊗ₜ b), of (maxCStarTensorNorm A' B) (a.2 ⊗ₜ b)) := by
   simp
 
-/-- `TauCeti.MaxTensorProduct.prodLeftHom` is isometric. -/
-theorem norm_prodLeftHom (u : MaxTensorProduct (A × A') B) : ‖prodLeftHom A A' B u‖ = ‖u‖ := by
-  refine induction_on u (isClosed_eq (continuous_norm.comp (map_continuous _)) continuous_norm)
-    fun x ↦ ?_
-  simp only [prodLeftHom_apply, Prod.norm_mk, map_of, norm_of, maxCStarTensorNorm_apply]
-  exact (maxTensorNorm_prod x).symm
-
-/-- `TauCeti.MaxTensorProduct.prodLeftHom` is bijective: isometric, with closed dense range. -/
-theorem prodLeftHom_bijective : Function.Bijective (prodLeftHom A A' B) := by
-  refine ⟨(AddMonoidHomClass.isometry_of_norm _ norm_prodLeftHom).injective,
-    NonUnitalStarAlgHom.surjective_of_denseRange ?_⟩
-  refine ((denseRange_of (N := maxCStarTensorNorm A B)).prodMap
-    (denseRange_of (N := maxCStarTensorNorm A' B))).mono ?_
-  rintro _ ⟨⟨y, z⟩, rfl⟩
-  refine ⟨of _ (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl ℂ A A')
-    (NonUnitalStarAlgHom.id ℂ B) y + mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr ℂ A A')
-    (NonUnitalStarAlgHom.id ℂ B) z), ?_⟩
-  simp [map_of]
-
 variable (A A' B) in
 /-- **Distributivity of the maximal tensor product over direct sums**: the star isomorphism
-`(A × A') ⊗max B ≃ (A ⊗max B) × (A' ⊗max B)` sending `(a, a') ⊗ b` to `(a ⊗ b, a' ⊗ b)`. -/
+`(A × A') ⊗max B ≃ (A ⊗max B) × (A' ⊗max B)` sending `(a, a') ⊗ b` to `(a ⊗ b, a' ⊗ b)`, the
+instance of `TauCeti.CStarTensorProduct.prodLeft` for the norm formula
+`TauCeti.maxTensorNorm_prod`. -/
 def prodLeft : MaxTensorProduct (A × A') B ≃⋆ₐ[ℂ] MaxTensorProduct A B × MaxTensorProduct A' B :=
-  StarAlgEquiv.ofBijective (prodLeftHom A A' B) prodLeftHom_bijective
+  CStarTensorProduct.prodLeft fun x ↦ by simpa using maxTensorNorm_prod x
 
 @[simp]
 theorem prodLeft_apply (u : MaxTensorProduct (A × A') B) :
     prodLeft A A' B u = prodLeftHom A A' B u :=
-  (rfl)
+  induction_on u (isClosed_eq (map_continuous _) (map_continuous _)) fun x ↦ by
+    simp [prodLeft, map_of]
+
+/-- `TauCeti.MaxTensorProduct.prodLeftHom` is bijective. -/
+theorem prodLeftHom_bijective : Function.Bijective (prodLeftHom A A' B) := by
+  rw [show ⇑(prodLeftHom A A' B) = prodLeft A A' B from funext fun u ↦ (prodLeft_apply u).symm]
+  exact (prodLeft A A' B).bijective
+
+/-- `TauCeti.MaxTensorProduct.prodLeftHom` is isometric. -/
+theorem norm_prodLeftHom (u : MaxTensorProduct (A × A') B) : ‖prodLeftHom A A' B u‖ = ‖u‖ :=
+  NonUnitalStarAlgHom.norm_map _ prodLeftHom_bijective.injective u
 
 /-- The isomorphism sends `(a, a') ⊗ b` to `(a ⊗ b, a' ⊗ b)`. -/
 theorem prodLeft_of_tmul (a : A × A') (b : B) :
     prodLeft A A' B (of (maxCStarTensorNorm (A × A') B) (a ⊗ₜ b)) =
-      (of (maxCStarTensorNorm A B) (a.1 ⊗ₜ b), of (maxCStarTensorNorm A' B) (a.2 ⊗ₜ b)) :=
-  prodLeftHom_of_tmul a b
+      (of (maxCStarTensorNorm A B) (a.1 ⊗ₜ b), of (maxCStarTensorNorm A' B) (a.2 ⊗ₜ b)) := by
+  rw [prodLeft_apply, prodLeftHom_of_tmul]
 
 /-- On the algebraic tensor products, the inverse isomorphism sends `(y, z)` to
 `(inl ⊗ id) y + (inr ⊗ id) z`. -/
@@ -112,7 +104,7 @@ theorem prodLeft_symm_of (y : A ⊗[ℂ] B) (z : A' ⊗[ℂ] B) :
         (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl ℂ A A') (NonUnitalStarAlgHom.id ℂ B) y +
           mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr ℂ A A') (NonUnitalStarAlgHom.id ℂ B)
             z) :=
-  (prodLeft A A' B).symm_apply_eq.2 (by simp [map_of])
+  CStarTensorProduct.prodLeft_symm_of _ y z
 
 /-- The inverse isomorphism sends `(y, z)` to `(inl ⊗ id) y + (inr ⊗ id) z`. -/
 @[simp]

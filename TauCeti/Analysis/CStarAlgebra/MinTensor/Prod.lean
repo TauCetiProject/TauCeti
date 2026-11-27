@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.CStarAlgebra.MinTensor.Product
+public import TauCeti.Analysis.CStarAlgebra.TensorProduct.Prod
 import Mathlib.Algebra.Star.Orthogonal
 import Mathlib.Analysis.CStarAlgebra.GelfandDuality
-import TauCeti.Analysis.CStarAlgebra.Quotient
 import TauCeti.Analysis.CStarAlgebra.SpatialNorm.Map
 
 /-!
@@ -25,9 +25,8 @@ The inequality `≥` is functoriality (`TauCeti.minTensorNorm_mapNonUnitalStarAl
 star-orthogonal there (`Algebra.TensorProduct.isStarOrtho_mapNonUnitalStarAlgHom_inl_inr`). A
 spatial tensor homomorphism `σ ⊗ τ` keeps them star-orthogonal, so the norm of its value at `x` is
 the maximum of the norms of the two summands, which are the values of `(σ ∘ inl) ⊗ τ` at `x₁` and
-of `(σ ∘ inr) ⊗ τ` at `x₂`. The isomorphism is isometric by the norm formula, and surjective since
-its range is closed and contains the dense set of pairs of elements of `A ⊗[ℂ] B` and
-`A' ⊗[ℂ] B`.
+of `(σ ∘ inr) ⊗ τ` at `x₂`. The isomorphism is the instance of
+`TauCeti.CStarTensorProduct.prodLeft` for this norm formula.
 
 ## Main declarations
 
@@ -100,41 +99,34 @@ theorem prodLeftHom_of_tmul (a : A × A') (b : B) :
       (of (minCStarTensorNorm A B) (a.1 ⊗ₜ b), of (minCStarTensorNorm A' B) (a.2 ⊗ₜ b)) := by
   simp
 
-/-- `TauCeti.MinTensorProduct.prodLeftHom` is isometric. -/
-theorem norm_prodLeftHom (u : MinTensorProduct (A × A') B) : ‖prodLeftHom A A' B u‖ = ‖u‖ := by
-  refine induction_on u (isClosed_eq (continuous_norm.comp (map_continuous _)) continuous_norm)
-    fun x ↦ ?_
-  simp only [prodLeftHom_apply, Prod.norm_mk, map_of, norm_of, minCStarTensorNorm_apply]
-  exact (minTensorNorm_prod x).symm
-
-/-- `TauCeti.MinTensorProduct.prodLeftHom` is bijective: isometric, with closed dense range. -/
-theorem prodLeftHom_bijective : Function.Bijective (prodLeftHom A A' B) := by
-  refine ⟨(AddMonoidHomClass.isometry_of_norm _ norm_prodLeftHom).injective,
-    NonUnitalStarAlgHom.surjective_of_denseRange ?_⟩
-  refine ((denseRange_of (N := minCStarTensorNorm A B)).prodMap
-    (denseRange_of (N := minCStarTensorNorm A' B))).mono ?_
-  rintro _ ⟨⟨y, z⟩, rfl⟩
-  refine ⟨of _ (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl ℂ A A')
-    (NonUnitalStarAlgHom.id ℂ B) y + mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr ℂ A A')
-    (NonUnitalStarAlgHom.id ℂ B) z), ?_⟩
-  simp
-
 variable (A A' B) in
 /-- **Distributivity of the minimal tensor product over direct sums**: the star isomorphism
-`(A × A') ⊗min B ≃ (A ⊗min B) × (A' ⊗min B)` sending `(a, a') ⊗ b` to `(a ⊗ b, a' ⊗ b)`. -/
+`(A × A') ⊗min B ≃ (A ⊗min B) × (A' ⊗min B)` sending `(a, a') ⊗ b` to `(a ⊗ b, a' ⊗ b)`, the
+instance of `TauCeti.CStarTensorProduct.prodLeft` for the norm formula
+`TauCeti.minTensorNorm_prod`. -/
 def prodLeft : MinTensorProduct (A × A') B ≃⋆ₐ[ℂ] MinTensorProduct A B × MinTensorProduct A' B :=
-  StarAlgEquiv.ofBijective (prodLeftHom A A' B) prodLeftHom_bijective
+  CStarTensorProduct.prodLeft fun x ↦ by simpa using minTensorNorm_prod x
 
 @[simp]
 theorem prodLeft_apply (u : MinTensorProduct (A × A') B) :
     prodLeft A A' B u = prodLeftHom A A' B u :=
-  (rfl)
+  induction_on u (isClosed_eq (map_continuous _) (map_continuous _)) fun x ↦ by
+    simp [prodLeft, map_of]
+
+/-- `TauCeti.MinTensorProduct.prodLeftHom` is bijective. -/
+theorem prodLeftHom_bijective : Function.Bijective (prodLeftHom A A' B) := by
+  rw [show ⇑(prodLeftHom A A' B) = prodLeft A A' B from funext fun u ↦ (prodLeft_apply u).symm]
+  exact (prodLeft A A' B).bijective
+
+/-- `TauCeti.MinTensorProduct.prodLeftHom` is isometric. -/
+theorem norm_prodLeftHom (u : MinTensorProduct (A × A') B) : ‖prodLeftHom A A' B u‖ = ‖u‖ :=
+  NonUnitalStarAlgHom.norm_map _ prodLeftHom_bijective.injective u
 
 /-- The isomorphism sends `(a, a') ⊗ b` to `(a ⊗ b, a' ⊗ b)`. -/
 theorem prodLeft_of_tmul (a : A × A') (b : B) :
     prodLeft A A' B (of (minCStarTensorNorm (A × A') B) (a ⊗ₜ b)) =
-      (of (minCStarTensorNorm A B) (a.1 ⊗ₜ b), of (minCStarTensorNorm A' B) (a.2 ⊗ₜ b)) :=
-  prodLeftHom_of_tmul a b
+      (of (minCStarTensorNorm A B) (a.1 ⊗ₜ b), of (minCStarTensorNorm A' B) (a.2 ⊗ₜ b)) := by
+  rw [prodLeft_apply, prodLeftHom_of_tmul]
 
 /-- On the algebraic tensor products, the inverse isomorphism sends `(y, z)` to
 `(inl ⊗ id) y + (inr ⊗ id) z`. -/
@@ -144,7 +136,7 @@ theorem prodLeft_symm_of (y : A ⊗[ℂ] B) (z : A' ⊗[ℂ] B) :
         (mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inl ℂ A A') (NonUnitalStarAlgHom.id ℂ B) y +
           mapNonUnitalStarAlgHom (NonUnitalStarAlgHom.inr ℂ A A') (NonUnitalStarAlgHom.id ℂ B)
             z) :=
-  (prodLeft A A' B).symm_apply_eq.2 (by simp)
+  CStarTensorProduct.prodLeft_symm_of _ y z
 
 /-- The inverse isomorphism sends `(y, z)` to `(inl ⊗ id) y + (inr ⊗ id) z`. -/
 @[simp]
