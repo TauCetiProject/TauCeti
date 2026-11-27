@@ -58,6 +58,9 @@ Derivatives are taken for the Frobenius norm on matrices; matrix norms are only 
   of the chart is the congruence by `D⁻ᴴ`.
 * `Matrix.unitaryGroupOf.det_codRestrict_mulLeft_comp_fderiv_cayleyChart`: its determinant is
   `|det D|^(-2 n)`.
+* `Matrix.unitaryGroupOf.cayleyChartSource`: the open set of the `S` with `1 - A⁻¹ S / 2`
+  invertible, on which the chart is continuous and injective
+  (`Matrix.unitaryGroupOf.continuousOn_cayleyChart`, `Matrix.unitaryGroupOf.injOn_cayleyChart`).
 
 ## Provenance
 
@@ -314,6 +317,56 @@ theorem det_codRestrict_mulLeft_comp_fderiv_cayleyChart (hA : A.IsHermitian) (hA
   simp
 
 end Calculus
+
+section Source
+
+/-- The **source of the Cayley chart**: the skew-Hermitian `S` with `1 - A⁻¹ S / 2` invertible. -/
+def cayleyChartSource (A : Matrix n n ℂ) : Set (skewAdjoint.submodule ℝ (Matrix n n ℂ)) :=
+  {S | IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ)))}
+
+/-- Membership in the source of the Cayley chart. -/
+theorem mem_cayleyChartSource :
+    S ∈ cayleyChartSource A ↔ IsUnit (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))) :=
+  Iff.rfl
+
+/-- The source of the Cayley chart contains `0`, where the chart is `1`. -/
+theorem zero_mem_cayleyChartSource : 0 ∈ cayleyChartSource A := by
+  simp [mem_cayleyChartSource]
+
+/-- The source of the Cayley chart is open. -/
+theorem isOpen_cayleyChartSource : IsOpen (cayleyChartSource A) := by
+  have : cayleyChartSource A =
+      (fun S : skewAdjoint.submodule ℝ (Matrix n n ℂ) ↦
+        (1 - (2 : ℂ)⁻¹ • (A⁻¹ * (S : Matrix n n ℂ))).det) ⁻¹' {0}ᶜ := by
+    ext S
+    simp [mem_cayleyChartSource, isUnit_iff_isUnit_det]
+  rw [this]
+  exact isOpen_compl_singleton.preimage (by fun_prop)
+
+/-- The Cayley chart is continuous on its source. -/
+theorem continuousOn_cayleyChart : ContinuousOn (cayleyChart A) (cayleyChartSource A) := by
+  -- The derivative is taken for the Frobenius norm, whose topology is the topology of entries.
+  open scoped Matrix.Norms.Frobenius in
+  exact fun _ hS ↦ (differentiableAt_cayleyChart hS).continuousAt.continuousWithinAt
+
+/-- At a point of the source of the chart, `1 + φ(S)` is invertible. -/
+theorem isUnit_one_add_cayleyChart (hA : A.IsHermitian) (hA' : IsUnit A)
+    (hS : S ∈ cayleyChartSource A) : IsUnit (1 + cayleyChart A S) := by
+  simpa using (cayleyChartEquiv hA hA' ⟨S, hS⟩).property
+
+/-- The Cayley chart is injective on its source. -/
+theorem injOn_cayleyChart (hA : A.IsHermitian) (hA' : IsUnit A) :
+    Set.InjOn (cayleyChart A) (cayleyChartSource A) := fun S hS S' hS' h ↦ by
+  have := (cayleyChartEquiv hA hA').injective (a₁ := ⟨S, hS⟩) (a₂ := ⟨S', hS'⟩)
+    (Subtype.ext <| unitaryGroupOf.ext <| by simpa using h)
+  exact congrArg Subtype.val this
+
+/-- The Cayley chart at a point of its source is invertible. -/
+theorem isUnit_cayleyChart (hA : A.IsHermitian) (hA' : IsUnit A) (hS : S ∈ cayleyChartSource A) :
+    IsUnit (cayleyChart A S) :=
+  ⟨((cayleyChartEquiv hA hA' ⟨S, hS⟩).val : GL n ℂ), coe_cayleyChartEquiv_apply hA hA' ⟨S, hS⟩⟩
+
+end Source
 
 end unitaryGroupOf
 

@@ -36,6 +36,14 @@ vanishing on a subset of `G` of positive measure is zero
 `haarProb G` with normalized restricted additive Haar measure
 (`MeasureTheory.Measure.haarProb_eq_smul_comap`) with the nullity in `M_n(R)`.
 
+Over `ℝ`, the real points of a complex polynomial that does not vanish at some real point form a
+null set (`MvPolynomial.measure_setOf_eval_ofReal_eq_zero`): they are the zero set of the real
+polynomial `(Re P)² + (Im P)²`, whose coefficients are built from the real and imaginary parts of
+those of `P`. In coordinates this applies to determinants of affine families of complex matrices
+on a finite-dimensional real vector space: if `det (M + L S)` does not vanish identically, it
+vanishes only on an additive-Haar-null set of `S`
+(`MeasureTheory.Measure.addHaar_setOf_det_add_eq_zero`).
+
 ## Main results
 
 * `MvPolynomial.measure_setOf_eval_algebraMap_eq_zero`: the `R`-points of the zero locus of a
@@ -43,6 +51,10 @@ vanishing on a subset of `G` of positive measure is zero
 * `Matrix.measure_setOf_eval_algebraMap_eq_zero`: the same on `M_n(R)`.
 * `Matrix.haarProb_setOf_eval_algebraMap_eq_zero`: the zero set on a compact open matrix group of
   a nonzero polynomial over `E` is Haar-null.
+* `MvPolynomial.measure_setOf_eval_ofReal_eq_zero`: the real points of a complex polynomial that
+  does not vanish at some real point are null for every σ-finite translation-invariant measure.
+* `MeasureTheory.Measure.addHaar_setOf_det_add_eq_zero`: the zero set of `S ↦ det (M + L S)`, for
+  `L` real linear on a finite-dimensional space and not identically zero, is additive-Haar-null.
 
 ## References
 
@@ -80,6 +92,45 @@ theorem measure_setOf_eval_algebraMap_eq_zero (μ : Measure (ι → R)) [SigmaFi
     μ {x | eval (algebraMap R E ∘ x) P = 0} = 0 := by
   obtain ⟨Q, hQ, hPQ⟩ := exists_ne_zero_eval_algebraMap_eq_zero_iff_eval_eq_zero R P hP
   simpa only [hPQ] using measure_setOf_eval_eq_zero μ Q hQ
+
+/-- **Null real zero loci of complex polynomials.** The real points of a complex polynomial in
+finitely many variables that does not vanish at some real point form a null set, for every
+σ-finite translation-invariant measure on `ℝ^ι`. -/
+theorem measure_setOf_eval_ofReal_eq_zero (μ : Measure (ι → ℝ)) [SigmaFinite μ]
+    [μ.IsAddLeftInvariant] (P : MvPolynomial ι ℂ)
+    (hP : ∃ x₀ : ι → ℝ, eval (fun i ↦ (x₀ i : ℂ)) P ≠ 0) :
+    μ {x | eval (fun i ↦ (x i : ℂ)) P = 0} = 0 := by
+  -- At a real point every monomial is real, so `|P(x)|²` is the value of the real polynomial
+  -- `Q = (Re P)² + (Im P)²`, where `Re P` and `Im P` take the real and imaginary parts of the
+  -- coefficients.
+  have hmon (x : ι → ℝ) (d : ι →₀ ℕ) :
+      ∏ i ∈ d.support, (x i : ℂ) ^ d i = ((∏ i ∈ d.support, x i ^ d i : ℝ) : ℂ) := by
+    push_cast
+    rfl
+  set Q : MvPolynomial ι ℝ := (∑ d ∈ P.support, monomial d (P.coeff d).re) ^ 2 +
+    (∑ d ∈ P.support, monomial d (P.coeff d).im) ^ 2
+  have hQ (x : ι → ℝ) : eval x Q = Complex.normSq (eval (fun i ↦ (x i : ℂ)) P) := by
+    have hre : (eval (fun i ↦ (x i : ℂ)) P).re =
+        eval x (∑ d ∈ P.support, monomial d (P.coeff d).re) := by
+      rw [eval_eq]
+      simp only [hmon, Complex.re_sum, Complex.re_mul_ofReal, _root_.map_sum, eval_monomial,
+        Finsupp.prod]
+    have him : (eval (fun i ↦ (x i : ℂ)) P).im =
+        eval x (∑ d ∈ P.support, monomial d (P.coeff d).im) := by
+      rw [eval_eq]
+      simp only [hmon, Complex.im_sum, Complex.im_mul_ofReal, _root_.map_sum, eval_monomial,
+        Finsupp.prod]
+    simp only [Q, map_add, map_pow, Complex.normSq_apply, ← hre, ← him]
+    ring
+  obtain ⟨x₀, hx₀⟩ := hP
+  have hQ0 : Q ≠ 0 := fun h ↦ hx₀ <| by
+    have := hQ x₀
+    rwa [h, map_zero, eq_comm, Complex.normSq_eq_zero] at this
+  have hset : {x : ι → ℝ | eval (fun i ↦ (x i : ℂ)) P = 0} = {x | eval x Q = 0} := by
+    ext x
+    simp [hQ]
+  rw [hset]
+  exact measure_setOf_eval_eq_zero μ Q hQ0
 
 end MvPolynomial
 
@@ -155,3 +206,44 @@ theorem mvPolynomial_eq_zero_of_haarProb_ne_zero (f : G →* Matrix n n R) (hf :
 end Group
 
 end Matrix
+
+namespace MeasureTheory.Measure
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [FiniteDimensional ℝ E] [TopologicalSpace E]
+  [IsTopologicalAddGroup E] [ContinuousSMul ℝ E] [T2Space E] [MeasurableSpace E] [BorelSpace E]
+  {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **Null zero sets of determinants of affine matrix families.** Let `L` be a real linear map
+from a finite-dimensional real vector space `E` to the complex `n × n` matrices and `M` a matrix.
+If `det (M + L S)` does not vanish identically, its zero set is null for every additive Haar
+measure on `E`. -/
+theorem addHaar_setOf_det_add_eq_zero (μ : Measure E) [μ.IsAddHaarMeasure] (M : Matrix n n ℂ)
+    (L : E →ₗ[ℝ] Matrix n n ℂ) (h : ∃ S₀, (M + L S₀).det ≠ 0) :
+    μ {S | (M + L S).det = 0} = 0 := by
+  -- In the coordinates `x` of a basis `b` of `E`, `det (M + L S)` is the value at the real point
+  -- `x` of the complex polynomial `det (M + ∑ i, X i • L (b i))`.
+  let b := Module.finBasis ℝ E
+  let e : E ≃L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) := b.equivFun.toContinuousLinearEquiv
+  let P : MvPolynomial (Fin (Module.finrank ℝ E)) ℂ :=
+    ((M.map MvPolynomial.C) + ∑ i, (MvPolynomial.X i : MvPolynomial _ ℂ) •
+      (L (b i)).map MvPolynomial.C).det
+  have hP (S : E) : MvPolynomial.eval (fun i ↦ (e S i : ℂ)) P = (M + L S).det := by
+    have hL : L S = ∑ i, (b.repr S i : ℂ) • L (b i) := by
+      conv_lhs => rw [← b.sum_repr S, _root_.map_sum]
+      refine Finset.sum_congr rfl fun i _ ↦ ?_
+      rw [map_smul, Complex.coe_smul]
+    rw [RingHom.map_det, hL]
+    congr 1
+    ext j k
+    simp [e, Matrix.add_apply, Matrix.sum_apply]
+  have hν : (μ.map e).IsAddHaarMeasure := e.isAddHaarMeasure_map μ
+  obtain ⟨S₀, hS₀⟩ := h
+  have key := MvPolynomial.measure_setOf_eval_ofReal_eq_zero (μ.map e) P
+    ⟨e S₀, by simpa [hP] using hS₀⟩
+  rw [show μ.map e = μ.map e.toHomeomorph.toMeasurableEquiv from rfl,
+    MeasurableEquiv.map_apply] at key
+  convert key using 2
+  ext S
+  simp [hP]
+
+end MeasureTheory.Measure
