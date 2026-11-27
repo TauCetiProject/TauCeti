@@ -9,7 +9,6 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Fibers
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Model.NumericalType
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.Picard.DegreeZero
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Specialization
-import TauCeti.RingTheory.DiscreteValuationRing.Basic
 
 /-!
 # Specialization of line bundles to the Picard group of a numerical type
