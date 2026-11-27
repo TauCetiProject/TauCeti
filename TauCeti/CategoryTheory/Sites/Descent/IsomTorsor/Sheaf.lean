@@ -232,8 +232,10 @@ def sheafHomTorsorEquiv
     (T : (Over U)ᵒᵖ) :
     ((F.map T.unop.hom.op.toLoc).toFunctor.obj x ⟶
       (F.map T.unop.hom.op.toLoc).toFunctor.obj y) ≃
-        (b.sheafHomTorsor x y h).sheaf.obj.obj T := by
-  rw [sheafHomTorsor_sheaf, sheafHom_obj, presheafHom_obj]
+        (b.sheafHomTorsor x y h).sheaf.obj.obj T :=
+  -- The sections of `sheafHomTorsor` are definitionally those of `presheafHom`,
+  -- as recorded by `sheafHomTorsor_sheaf`, `sheafHom_obj` and `presheafHom_obj`.
+  Equiv.refl _
 
 /-- The identification sends a local morphism to the same section of the torsor. -/
 @[simp]

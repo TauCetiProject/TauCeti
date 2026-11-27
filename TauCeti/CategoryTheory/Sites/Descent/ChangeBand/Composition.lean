@@ -124,6 +124,19 @@ private lemma chartComp_chart {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
   rw [Equiv.symm_apply_apply, Equiv.symm_apply_apply]
   exact congrArg (fun r ↦ b.chart φ r (a * c)) (presheafHomComp_app_apply x y z T (p, q))
 
+omit [HasWeakSheafify (J.over U) (Type v')]
+  [(J.over U).WEqualsLocallyBijective (Type v')] in
+private lemma exists_homAct_eq {x y : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
+    (p p' : (F.presheafHom x y).obj T) :
+    ∃ g, b.homAct p' ((abelianSheafToGrpSheafObjEquiv
+      ((J.overPullback AddCommGrpCat U).obj A) T).symm g) = p := by
+  obtain ⟨g, hg⟩ := MulAction.exists_smul_eq
+    (((abelianSheafToGrpSheaf (J.over U)).obj
+      ((J.overPullback AddCommGrpCat U).obj A)).obj.obj T)
+    (b.sourceEquiv x y T p') (b.sourceEquiv x y T p)
+  rw [sheafHomTorsorEquiv_smul] at hg
+  exact ⟨g, (b.sourceEquiv x y T).injective hg⟩
+
 private lemma chartComp_change {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     (p p' : (F.presheafHom x y).obj T) (q q' : (F.presheafHom y z).obj T)
     (s : (b.extendedTorsor φ x y).sheaf.obj.obj T)
@@ -131,25 +144,11 @@ private lemma chartComp_change {x y z : F.obj (.mk (op U))} {T : (Over U)ᵒᵖ}
     b.chartComp φ p q s t = b.chartComp φ p' q' s t := by
   obtain ⟨a, rfl⟩ := (b.chart φ p').surjective s
   obtain ⟨c, rfl⟩ := (b.chart φ q').surjective t
-  obtain ⟨⟨g, p₀⟩, hg⟩ := (b.sourceTorsor x y).bijective T |>.2
-    (b.sourceEquiv x y T p', b.sourceEquiv x y T p)
-  obtain ⟨p₀, rfl⟩ := (b.sourceEquiv x y T).surjective p₀
-  dsimp only at hg
-  rw [sheafHomTorsorEquiv_smul] at hg
-  obtain ⟨hg₁, hg₂⟩ := Prod.ext_iff.mp hg
-  obtain rfl := (b.sourceEquiv x y T).injective hg₁
-  obtain rfl := (b.sourceEquiv x y T).injective hg₂
-  obtain ⟨⟨h, q₀⟩, hh⟩ := (b.sourceTorsor y z).bijective T |>.2
-    (b.sourceEquiv y z T q', b.sourceEquiv y z T q)
-  obtain ⟨q₀, rfl⟩ := (b.sourceEquiv y z T).surjective q₀
-  dsimp only at hh
-  rw [sheafHomTorsorEquiv_smul] at hh
-  obtain ⟨hh₁, hh₂⟩ := Prod.ext_iff.mp hh
-  obtain rfl := (b.sourceEquiv y z T).injective hh₁
-  obtain rfl := (b.sourceEquiv y z T).injective hh₂
+  obtain ⟨g, rfl⟩ := b.exists_homAct_eq p' p
+  obtain ⟨h, rfl⟩ := b.exists_homAct_eq q' q
   have hc := b.sheafHomTorsor_smul_comp_smul
     (IsGerbe.exists_covering_iso (J := J) x y) (IsGerbe.exists_covering_iso (J := J) y z)
-    (b.sourceEquiv x y T p₀) (b.sourceEquiv y z T q₀) g h
+    (b.sourceEquiv x y T p) (b.sourceEquiv y z T q) g h
   simp only [sheafHomTorsorEquiv_smul, Equiv.symm_apply_apply] at hc
   rw [chartComp_chart, hc, chart_action, chart_action, chart_action, chartComp_chart]
   congr 1
@@ -709,18 +708,34 @@ instance changeBandFiberGroupoid : Groupoid.{v'} (b.ChangeBandFiber φ U) where
 
 namespace ChangeBandFiber
 
-/-- The fibre identity is evaluation of the extended identity section. -/
-lemma id_def (x : b.ChangeBandFiber φ U) :
-    𝟙 x = (b.changeBandId φ x.obj).hom.app (op (Over.mk (𝟙 U))) PUnit.unit := (rfl)
+/-- Arrows of the changed-band fibre as terminal sections of the extended Hom torsor.
+The groupoid defines its Hom types to be these sections, so this is the identity equivalence. -/
+def homEquiv (x y : b.ChangeBandFiber φ U) :
+    let P := b.sheafHomTorsor x.obj y.obj
+      (IsGerbe.exists_covering_iso (J := J) x.obj y.obj)
+    let ψ := (abelianSheafToGrpSheaf (J.over U)).map
+      ((J.overPullback AddCommGrpCat U).map φ)
+    (x ⟶ y) ≃ (P.map ψ).sheaf.obj.obj (op (Over.mk (𝟙 U))) :=
+  Equiv.refl _
 
-/-- Fibre composition is evaluation of composition on the extended sheaves. -/
-lemma comp_def {x y z : b.ChangeBandFiber φ U} (s : x ⟶ y) (t : y ⟶ z) :
-    s ≫ t = (b.changeBandComp φ x.obj y.obj z.obj).hom.app (op (Over.mk (𝟙 U))) (s, t) := (rfl)
+/-- The fibre identity corresponds to the extended identity section. -/
+@[simp]
+lemma homEquiv_id (x : b.ChangeBandFiber φ U) :
+    homEquiv b φ x x (𝟙 x) =
+      (b.changeBandId φ x.obj).hom.app (op (Over.mk (𝟙 U))) PUnit.unit := (rfl)
 
-/-- Fibre inversion is evaluation of inversion on the extended sheaves. -/
-lemma inv_def {x y : b.ChangeBandFiber φ U} (s : x ⟶ y) :
-    inv s = (b.changeBandInv φ x.obj y.obj).hom.app (op (Over.mk (𝟙 U))) s :=
-  (Groupoid.inv_eq_inv s).symm
+/-- Fibre composition corresponds to composition of extended torsor sections. -/
+@[simp]
+lemma homEquiv_comp {x y z : b.ChangeBandFiber φ U} (s : x ⟶ y) (t : y ⟶ z) :
+    homEquiv b φ x z (s ≫ t) = (b.changeBandComp φ x.obj y.obj z.obj).hom.app
+      (op (Over.mk (𝟙 U))) (homEquiv b φ x y s, homEquiv b φ y z t) := (rfl)
+
+/-- Fibre inversion corresponds to inversion of extended torsor sections. -/
+@[simp]
+lemma homEquiv_inv {x y : b.ChangeBandFiber φ U} (s : x ⟶ y) :
+    homEquiv b φ y x (inv s) = (b.changeBandInv φ x.obj y.obj).hom.app
+      (op (Over.mk (𝟙 U))) (homEquiv b φ x y s) :=
+  congrArg (homEquiv b φ y x) (Groupoid.inv_eq_inv s).symm
 
 end ChangeBandFiber
 
@@ -752,26 +767,26 @@ instance changeBandFiberMulAction (x y : b.ChangeBandFiber φ U) :
   letI : MulAction _ (x ⟶ y) := (P.map ψ).mulAction T
   MulAction.compHom _ e.toMonoidHom
 
-/-- A fibre translation is the extended torsor action through the coefficient equivalence. -/
-lemma ChangeBandFiber.smul_def {x y : b.ChangeBandFiber φ U}
+/-- The arrow equivalence intertwines the positive coefficient action and the torsor action. -/
+@[simp]
+lemma ChangeBandFiber.homEquiv_smul {x y : b.ChangeBandFiber φ U}
     (a : Multiplicative (B.obj.obj (op U))) (s : x ⟶ y) :
-    let P := b.sheafHomTorsor x.obj y.obj (IsGerbe.exists_covering_iso (J := J) x.obj y.obj)
-    let ψ := (abelianSheafToGrpSheaf (J.over U)).map
-      ((J.overPullback AddCommGrpCat U).map φ)
-    let T := op (Over.mk (𝟙 U))
-    letI := (P.map ψ).mulAction T
-    a • s = (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat U).obj B) T a) • s :=
-  (rfl)
+    ChangeBandFiber.homEquiv b φ x y (a • s) =
+      (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat U).obj B)
+        (op (Over.mk (𝟙 U))) a) • ChangeBandFiber.homEquiv b φ x y s := (rfl)
 
 /-- The two positive translations add under composition in the changed-band fibre. -/
 lemma changeBandFiber_smul_comp_smul {x y z : b.ChangeBandFiber φ U}
     (s : x ⟶ y) (t : y ⟶ z) (a c : Multiplicative (B.obj.obj (op U))) :
     (a • s) ≫ (c • t) = (a * c) • (s ≫ t) := by
-  let : MulAction (coefficient (B := B) (op (Over.mk (𝟙 U)))) (x ⟶ z) :=
-    (b.extendedTorsor φ x.obj z.obj).mulAction _
-  exact (b.changeBandComp_smul φ x.obj y.obj z.obj (op (Over.mk (𝟙 U)))
-    (abelianSheafToGrpSheafObjEquiv _ _ a) (abelianSheafToGrpSheafObjEquiv _ _ c) s t).trans
-      (congrArg (fun d ↦ d • (s ≫ t)) (map_mul _ a c).symm)
+  apply (ChangeBandFiber.homEquiv b φ x z).injective
+  rw [ChangeBandFiber.homEquiv_comp, ChangeBandFiber.homEquiv_smul,
+    ChangeBandFiber.homEquiv_smul, b.changeBandComp_smul φ,
+    ChangeBandFiber.homEquiv_smul, ChangeBandFiber.homEquiv_comp]
+  exact congrArg (fun d ↦ d • (b.changeBandComp φ x.obj y.obj z.obj).hom.app _
+    (ChangeBandFiber.homEquiv b φ x y s, ChangeBandFiber.homEquiv b φ y z t))
+    (map_mul (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat U).obj B)
+      (op (Over.mk (𝟙 U)))) a c).symm
 
 /-- Composition of representatives at the terminal slice object multiplies their coefficients. -/
 @[simp]
@@ -784,21 +799,27 @@ lemma changeBandFiber_smul_toMap_comp_smul_toMap {x y z : b.ChangeBandFiber φ U
     let ψ := (abelianSheafToGrpSheaf (J.over U)).map
       ((J.overPullback AddCommGrpCat U).map φ)
     let T := op (Over.mk (𝟙 U))
-    let s : x ⟶ y := (P x y |>.toMap ψ).hom.app T p
-    let t : y ⟶ z := (P y z |>.toMap ψ).hom.app T q
-    let r : x ⟶ z := (P x z |>.toMap ψ).hom.app T (p ≫ q)
+    let s := (ChangeBandFiber.homEquiv b φ x y).symm ((P x y |>.toMap ψ).hom.app T p)
+    let t := (ChangeBandFiber.homEquiv b φ y z).symm ((P y z |>.toMap ψ).hom.app T q)
+    let r := (ChangeBandFiber.homEquiv b φ x z).symm
+      ((P x z |>.toMap ψ).hom.app T (p ≫ q))
     (a • s) ≫ (c • t) = (a * c) • r := by
   intro P ψ T s t r
   rw [b.changeBandFiber_smul_comp_smul]
-  exact congrArg (fun v : x ⟶ z ↦ (a * c) • v) (b.changeBandComp_toMap_toMap φ T p q)
+  congr 1
+  apply (ChangeBandFiber.homEquiv b φ x z).injective
+  rw [ChangeBandFiber.homEquiv_comp, Equiv.apply_symm_apply, Equiv.apply_symm_apply,
+    Equiv.apply_symm_apply]
+  exact b.changeBandComp_toMap_toMap φ T p q
 
 /-- Inversion negates translations in the changed-band fibre. -/
 lemma ChangeBandFiber.inv_smul {x y : b.ChangeBandFiber φ U}
     (a : Multiplicative (B.obj.obj (op U))) (s : x ⟶ y) :
     inv (a • s) = a⁻¹ • inv s := by
-  rw [ChangeBandFiber.inv_def, ChangeBandFiber.smul_def, b.changeBandInv_smul φ,
-    ChangeBandFiber.smul_def, ChangeBandFiber.inv_def]
-  exact congrArg (fun d ↦ d • (b.changeBandInv φ x.obj y.obj).hom.app _ s)
+  apply (homEquiv b φ y x).injective
+  rw [homEquiv_inv, homEquiv_smul, b.changeBandInv_smul φ, homEquiv_smul, homEquiv_inv]
+  exact congrArg (fun d ↦ d • (b.changeBandInv φ x.obj y.obj).hom.app _
+    (homEquiv b φ x y s))
     (map_inv (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat U).obj B)
       (op (Over.mk (𝟙 U)))) a).symm
 
@@ -809,11 +830,12 @@ lemma toChangeBandFiber_obj_obj (x : F.obj (.mk (op U))) :
 
 /-- The comparison on arrows is the torsor extension map at the terminal slice object. -/
 @[simp]
-lemma toChangeBandFiber_map {x y : F.obj (.mk (op U))} (p : x ⟶ y) :
+lemma ChangeBandFiber.homEquiv_toChangeBandFiber_map {x y : F.obj (.mk (op U))} (p : x ⟶ y) :
     let P := b.sheafHomTorsor x y (IsGerbe.exists_covering_iso (J := J) x y)
     let ψ := (abelianSheafToGrpSheaf (J.over U)).map
       ((J.overPullback AddCommGrpCat U).map φ)
-    (b.toChangeBandFiber φ).map p = (P.toMap ψ).hom.app (op (Over.mk (𝟙 U)))
+    homEquiv b φ ((b.toChangeBandFiber φ).obj x) ((b.toChangeBandFiber φ).obj y)
+      ((b.toChangeBandFiber φ).map p) = (P.toMap ψ).hom.app (op (Over.mk (𝟙 U)))
       (F.presheafHomObjHomEquiv p) := (rfl)
 
 /-- A coefficient translates a compared arrow by the same positive coefficient in its
@@ -824,8 +846,11 @@ lemma smul_toChangeBandFiber_map {x y : F.obj (.mk (op U))} (p : x ⟶ y)
     let ψ := (abelianSheafToGrpSheaf (J.over U)).map
       ((J.overPullback AddCommGrpCat U).map φ)
     let T := op (Over.mk (𝟙 U))
-    a • (b.toChangeBandFiber φ).map p =
+    ChangeBandFiber.homEquiv b φ ((b.toChangeBandFiber φ).obj x) ((b.toChangeBandFiber φ).obj y)
+      (a • (b.toChangeBandFiber φ).map p) =
       (abelianSheafToGrpSheafObjEquiv ((J.overPullback AddCommGrpCat U).obj B) T a) •
-        (P.toMap ψ).hom.app T (F.presheafHomObjHomEquiv p) := (rfl)
+        (P.toMap ψ).hom.app T (F.presheafHomObjHomEquiv p) := by
+  -- The comparison sends `x` to `⟨x⟩`; `homEquiv` is the identity and the action is `compHom`.
+  rfl
 
 end CategoryTheory.Pseudofunctor.AbelianBanding
