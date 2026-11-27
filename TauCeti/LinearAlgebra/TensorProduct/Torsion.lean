@@ -40,8 +40,7 @@ set generating `G` modulo torsion spans `A ⊗[ℤ] G` over `A`
 
 Over a commutative ring without zero divisors, the tensor product of a nontrivial flat module with
 a nontrivial torsion-free module is nontrivial
-(`TauCeti.nontrivial_tensorProduct_of_flat_left_of_isTorsionFree`,
-`TauCeti.nontrivial_tensorProduct_of_flat_right_of_isTorsionFree`).
+(`TauCeti.nontrivial_tensorProduct_of_flat_left_of_isTorsionFree`).
 
 ## References
 
@@ -226,16 +225,6 @@ theorem nontrivial_tensorProduct_of_flat_left_of_isTorsionFree
     [Nontrivial M] : Nontrivial (P ⊗[R] M) :=
   let ⟨_, hm₀⟩ := exists_ne (0 : M)
   TensorProduct.nontrivial_of_linearMap_injective_of_flat_left R P M
-    (LinearMap.toSpanSingleton R M _) (smul_left_injective R hm₀)
-
-/-- The tensor product of a nontrivial torsion-free module with a nontrivial flat module over a
-commutative ring without zero divisors is nontrivial. -/
-theorem nontrivial_tensorProduct_of_flat_right_of_isTorsionFree
-    {R M P : Type*} [CommRing R] [IsCancelMulZero R] [AddCommGroup M] [Module R M]
-    [Module.IsTorsionFree R M] [Nontrivial M] [AddCommMonoid P] [Module R P]
-    [Module.Flat R P] [Nontrivial P] : Nontrivial (M ⊗[R] P) :=
-  let ⟨_, hm₀⟩ := exists_ne (0 : M)
-  TensorProduct.nontrivial_of_linearMap_injective_of_flat_right R M P
     (LinearMap.toSpanSingleton R M _) (smul_left_injective R hm₀)
 
 end TauCeti
