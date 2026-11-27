@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.OrderOfVanishing.Noetherian
-public import TauCeti.Algebra.Module.Injective.Cogenerator
+public import TauCeti.Algebra.Module.Injective.Cogenerator.Basic
 public import TauCeti.LinearAlgebra.Matrix.RowLattice
 public import TauCeti.RingTheory.DiscreteValuationRing.Length
 import TauCeti.Algebra.Module.Injective.PrincipalIdealRing
