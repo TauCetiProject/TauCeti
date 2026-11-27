@@ -19,6 +19,7 @@ import Mathlib.Algebra.Polynomial.Roots
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.Algebra.MvPolynomial.Funext
+import TauCeti.Topology.Constructions.Cofinite
 
 /-!
 # The polynomial Zariski topology on coordinate spaces
@@ -242,31 +243,21 @@ theorem mem_evalPrimeSpectrum_asIdeal (x : σ → R) (p : MvPolynomial σ R) :
     p ∈ (evalPrimeSpectrum x).asIdeal ↔ MvPolynomial.eval x p = 0 :=
   Iff.rfl
 
-end TauCeti
-
-namespace MvPolynomial
-
-open TauCeti
-
 /-- Pulling back a `PrimeSpectrum.basicOpen` along `TauCeti.evalPrimeSpectrum` recovers the
 polynomial nonvanishing locus. -/
-theorem evalPrimeSpectrum_preimage_basicOpen (p : MvPolynomial σ R) :
+theorem preimage_evalPrimeSpectrum_basicOpen (p : MvPolynomial σ R) :
     evalPrimeSpectrum ⁻¹' (PrimeSpectrum.basicOpen p : Set (PrimeSpectrum (MvPolynomial σ R))) =
       {x : σ → R | MvPolynomial.eval x p ≠ 0} := by
   ext x
   simp
 
-end MvPolynomial
-
-namespace TauCeti
-
-private theorem preimage_evalPrimeSpectrum_basicOpen_eq :
+private theorem image_preimage_evalPrimeSpectrum_basicOpen :
     (evalPrimeSpectrum (σ := σ) (R := R) ⁻¹' ·) ''
         Set.range (fun p : MvPolynomial σ R ↦ (PrimeSpectrum.basicOpen p : Set _)) =
       {U | ∃ p : MvPolynomial σ R, U = {x | MvPolynomial.eval x p ≠ 0}} := by
   ext U
-  simp only [mem_image, mem_range, exists_exists_eq_and,
-    MvPolynomial.evalPrimeSpectrum_preimage_basicOpen, mem_ofPred_eq]
+  simp only [mem_image, mem_range, exists_exists_eq_and, preimage_evalPrimeSpectrum_basicOpen,
+    mem_ofPred_eq]
   simp only [eq_comm]
 
 /-- Over a nontrivial commutative semiring without zero divisors, the polynomial Zariski topology
@@ -277,7 +268,7 @@ theorem polynomialTopology_eq_induced_evalPrimeSpectrum :
       TopologicalSpace.induced (evalPrimeSpectrum (σ := σ) (R := R))
         PrimeSpectrum.zariskiTopology := by
   rw [PrimeSpectrum.isTopologicalBasis_basic_opens.eq_generateFrom, induced_generateFrom_eq,
-    preimage_evalPrimeSpectrum_basicOpen_eq, polynomialTopology_eq_generateFrom]
+    image_preimage_evalPrimeSpectrum_basicOpen, polynomialTopology_eq_generateFrom]
 
 end TauCeti
 
@@ -294,7 +285,8 @@ form a topological basis of the polynomial Zariski topology. -/
 theorem isTopologicalBasis_polynomialTopology :
     @TopologicalSpace.IsTopologicalBasis (σ → R) (polynomialTopology σ R)
       {U | ∃ p : MvPolynomial σ R, U = {x | MvPolynomial.eval x p ≠ 0}} := by
-  rw [← preimage_evalPrimeSpectrum_basicOpen_eq, polynomialTopology_eq_induced_evalPrimeSpectrum]
+  rw [← image_preimage_evalPrimeSpectrum_basicOpen,
+    polynomialTopology_eq_induced_evalPrimeSpectrum]
   exact (PrimeSpectrum.isTopologicalBasis_basic_opens (R := MvPolynomial σ R)).induced
     (evalPrimeSpectrum (σ := σ) (R := R))
 
@@ -479,6 +471,8 @@ theorem polynomialTopology_eq_cofinite :
   rcases subsingleton_or_nontrivial R with hR | hR
   · exact Subsingleton.elim _ _
   have : IsDomain R := NoZeroDivisors.to_isDomain R
+  have hinj : Function.Injective (fun x : σ → R ↦ x default) := fun x y h ↦
+    funext fun i ↦ by rw [Unique.eq_default i]; exact h
   apply le_antisymm
   · intro U hU
     let := polynomialTopology σ R
@@ -488,26 +482,25 @@ theorem polynomialTopology_eq_cofinite :
       exact (hU hne).isClosed
     · rw [Set.not_nonempty_iff_eq_empty.mp hne]
       exact isOpen_empty
-  · rw [polynomialTopology_eq_generateFrom, TopologicalSpace.le_generateFrom_iff_subset_isOpen]
-    rintro _ ⟨p, rfl⟩ hne
-    have hp : p ≠ 0 := by
-      rintro rfl
-      obtain ⟨x, hx⟩ := hne
-      simp at hx
+  · rw [← hinj.induced_cofinite, polynomialTopology_eq_generateFrom,
+      TopologicalSpace.le_generateFrom_iff_subset_isOpen]
+    rintro _ ⟨p, rfl⟩
+    by_cases hp : p = 0
+    · subst hp
+      simp
     have hq : MvPolynomial.uniqueAlgEquiv R σ p ≠ 0 :=
       fun h ↦ hp ((MvPolynomial.uniqueAlgEquiv R σ).injective (by simpa using h))
-    have hinj : Function.Injective (fun x : σ → R ↦ x default) := fun x y h ↦
-      funext fun i ↦ by rw [Unique.eq_default i]; exact h
-    have hcompl : ({x : σ → R | MvPolynomial.eval x p ≠ 0} : Set (σ → R))ᶜ =
+    have hpre : {x : σ → R | MvPolynomial.eval x p ≠ 0} =
         (fun x : σ → R ↦ x default) ⁻¹'
-          {r : R | (MvPolynomial.uniqueAlgEquiv R σ p).IsRoot r} := by
+          {r : R | ¬(MvPolynomial.uniqueAlgEquiv R σ p).IsRoot r} := by
       ext x
       have heval : Polynomial.eval (x default) (MvPolynomial.uniqueAlgEquiv R σ p) =
           MvPolynomial.eval x p :=
         MvPolynomial.eval₂_uniqueAlgEquiv (φ := RingHom.id R) (a := x)
-      simp only [mem_compl_iff, mem_ofPred_eq, not_not, mem_preimage, Polynomial.IsRoot, heval]
-    rw [hcompl]
-    exact (Polynomial.finite_setOfPred_isRoot hq).preimage hinj.injOn
+      simp only [mem_ofPred_eq, mem_preimage, Polynomial.IsRoot, heval]
+    rw [hpre]
+    refine ⟨{r : R | ¬(MvPolynomial.uniqueAlgEquiv R σ p).IsRoot r}, fun _ ↦ ?_, rfl⟩
+    simpa only [compl_ofPred, not_not] using Polynomial.finite_setOfPred_isRoot hq
 
 end TauCeti
 

@@ -11,7 +11,6 @@ public import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 public import Mathlib.LinearAlgebra.AffineSpace.AffineSubspace.Basic
 public import Mathlib.LinearAlgebra.Basis.Defs
 public import Mathlib.LinearAlgebra.Dual.Defs
-import Mathlib.Algebra.MvPolynomial.Monad
 import Mathlib.Algebra.MvPolynomial.Rename
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.LinearAlgebra.Dual.Basis
@@ -19,6 +18,7 @@ import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.Topology.WithTopology
+import TauCeti.Topology.Constructions.Cofinite
 
 /-!
 # The polynomial Zariski topology on modules
@@ -40,13 +40,14 @@ topology; over a Noetherian commutative ring, every finitely generated module is
 
 Over an infinite integral domain `R`, restricting to the affine line `t ↦ (1 - t) • x + t • y`
 shows that every `R`-module `M` is an irreducible space (without any finiteness or basis
-hypothesis). Surjective linear and affine maps therefore pull back nonempty open sets to dense
-sets, and every nonempty affine subspace `A : AffineSubspace R M` is irreducible, so any open set
-meeting `A` cuts out an open dense subset of `A`. Whenever every linear functional extends along a
-linear map (in particular for split injections over any commutative semiring, or any injective
-linear map over a field `k`), the map induces the polynomial Zariski topology on its domain, so
-every injective linear map over a field — in particular every submodule inclusion — is a topological
-embedding and every nonempty affine subspace is homeomorphic to its direction.
+hypothesis). Continuous maps with dense range (in particular, surjective linear and affine maps)
+therefore pull back nonempty open sets to dense sets, and every nonempty affine subspace
+`A : AffineSubspace R M` is irreducible, so any open set meeting `A` cuts out an open dense subset
+of `A`. Whenever every linear functional extends along a linear map (in particular for split
+injections over any commutative semiring, or any injective linear map over a field `k`), the map
+induces the polynomial Zariski topology on its domain, so every injective linear map over a field —
+in particular every submodule inclusion — is a topological embedding and every nonempty affine
+subspace is homeomorphic to its direction.
 
 ## Main definitions
 
@@ -80,8 +81,7 @@ embedding and every nonempty affine subspace is homeomorphic to its direction.
   `TauCeti.noetherianSpace_modulePolynomialTopology`: cofinite characterization in rank one and
   Noetherianity for finitely generated modules over Noetherian commutative rings.
 * `TauCeti.irreducibleSpace_modulePolynomialTopology`,
-  `TauCeti.dense_preimage_modulePolynomialTopology_of_surjective_linearMap`,
-  `TauCeti.dense_preimage_modulePolynomialTopology_of_surjective_affineMap`,
+  `TauCeti.dense_preimage_modulePolynomialTopology`,
   `AffineSubspace.isIrreducible_modulePolynomialTopology`, and
   `AffineSubspace.dense_preimage_val_modulePolynomialTopology`: irreducibility of modules
   and affine subspaces over infinite integral domains and pullback/intersection density.
@@ -492,31 +492,13 @@ end AffineEquiv
 
 namespace TauCeti
 
-private theorem induced_cofinite {α β : Type*} {f : α → β} (hf : Function.Injective f) :
-    TopologicalSpace.induced f TopologicalSpace.cofinite = TopologicalSpace.cofinite := by
-  ext U
-  let : TopologicalSpace β := TopologicalSpace.cofinite
-  rw [isOpen_induced_iff]
-  simp only [isOpen_mk]
-  constructor
-  · rintro ⟨V, hV, rfl⟩ ⟨x, hx⟩
-    rw [← preimage_compl]
-    exact (hV ⟨f x, hx⟩).preimage hf.injOn
-  · intro hU
-    by_cases hne : U.Nonempty
-    · refine ⟨(f '' Uᶜ)ᶜ, fun _ ↦ ?_, ?_⟩
-      · simpa only [compl_compl] using (hU hne).image f
-      · rw [preimage_compl, hf.preimage_image, compl_compl]
-    · rw [not_nonempty_iff_eq_empty.mp hne]
-      exact ⟨∅, by simp, preimage_empty⟩
-
 /-- On a commutative ring `R` without zero divisors viewed as a module over itself, the polynomial
 Zariski topology coincides with the cofinite topology. -/
 theorem modulePolynomialTopology_self_eq_cofinite [NoZeroDivisors R] :
     modulePolynomialTopology R R = TopologicalSpace.cofinite := by
   let e : R ≃ₗ[R] (Unit → R) := (LinearEquiv.funUnique Unit R R).symm
   rw [← e.induced_modulePolynomialTopology, modulePolynomialTopology_pi Unit,
-    polynomialTopology_eq_cofinite, induced_cofinite e.injective]
+    polynomialTopology_eq_cofinite, e.injective.induced_cofinite]
 
 /-- For any `x, y : M`, the affine line `t ↦ (1 - t) • x + t • y` is continuous for the polynomial
 Zariski topologies. -/
@@ -610,31 +592,18 @@ theorem irreducibleSpace_modulePolynomialTopology {M : Type*} [AddCommMonoid M] 
     exact ⟨(1 - t) • x + t • y, mem_univ _, htU, htV⟩⟩
   exact ⟨⟨0⟩⟩
 
-/-- A surjective linear map between modules over an infinite integral domain pulls back every
-nonempty polynomial-Zariski open set to a dense set. -/
-theorem dense_preimage_modulePolynomialTopology_of_surjective_linearMap {M N : Type*}
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    {f : M →ₗ[R] N} (hf : Function.Surjective f) {U : Set N}
-    (hU : IsOpen[modulePolynomialTopology R N] U) (hne : U.Nonempty) :
+/-- A continuous map with dense range between modules over an infinite integral domain pulls back
+every nonempty polynomial-Zariski open set to a dense set. -/
+theorem dense_preimage_modulePolynomialTopology {M N : Type*}
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {f : M → N}
+    (hc : @Continuous M N (modulePolynomialTopology R M) (modulePolynomialTopology R N) f)
+    (hf : @DenseRange N (modulePolynomialTopology R N) M f)
+    {U : Set N} (hU : IsOpen[modulePolynomialTopology R N] U) (hne : U.Nonempty) :
     @Dense M (modulePolynomialTopology R M) (f ⁻¹' U) := by
   let := modulePolynomialTopology R M
   let := modulePolynomialTopology R N
   have := irreducibleSpace_modulePolynomialTopology (R := R) (M := M)
-  exact (hU.preimage f.continuous_modulePolynomialTopology).dense
-    (hf.denseRange.exists_mem_open hU hne)
-
-/-- A surjective affine map between modules over an infinite integral domain pulls back every
-nonempty polynomial-Zariski open set to a dense set. -/
-theorem dense_preimage_modulePolynomialTopology_of_surjective_affineMap {M N : Type*}
-    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-    {f : M →ᵃ[R] N} (hf : Function.Surjective f) {U : Set N}
-    (hU : IsOpen[modulePolynomialTopology R N] U) (hne : U.Nonempty) :
-    @Dense M (modulePolynomialTopology R M) (f ⁻¹' U) := by
-  let := modulePolynomialTopology R M
-  let := modulePolynomialTopology R N
-  have := irreducibleSpace_modulePolynomialTopology (R := R) (M := M)
-  exact (hU.preimage f.continuous_modulePolynomialTopology).dense
-    (hf.denseRange.exists_mem_open hU hne)
+  exact (hU.preimage hc).dense (hf.exists_mem_open hU hne)
 
 end Infinite
 
@@ -659,8 +628,11 @@ theorem irreducibleSpace_modulePolynomialTopology {M : Type*} [AddCommGroup M]
   let := modulePolynomialTopology R A.direction
   let := modulePolynomialTopology R M
   have := TauCeti.irreducibleSpace_modulePolynomialTopology (R := R) (M := A.direction)
+  have he : (Subtype.val ∘ e : A.direction → M) = fun v ↦ A.direction.subtype v + p₀ := by
+    ext
+    simp [e]
   have hcont : Continuous (e : A.direction → A) := by
-    rw [continuous_induced_rng]
+    rw [continuous_induced_rng, he]
     exact A.direction.subtype.continuous_modulePolynomialTopology_add_const p₀
   exact e.surjective.irreducibleSpace hcont
 
@@ -681,12 +653,11 @@ theorem dense_preimage_val_modulePolynomialTopology {M : Type*} [AddCommGroup M]
     @Dense A (TopologicalSpace.induced Subtype.val (modulePolynomialTopology R M))
       ((Subtype.val : A → M) ⁻¹' U) := by
   let := modulePolynomialTopology R M
-  have hAne : (A : Set M).Nonempty := ⟨hne.choose, hne.choose_spec.1⟩
+  obtain ⟨x, hxA, hxU⟩ := hne
+  have hAne : (A : Set M).Nonempty := ⟨x, hxA⟩
   have := A.irreducibleSpace_modulePolynomialTopology hAne
   have hopen : IsOpen ((Subtype.val : A → M) ⁻¹' U) := hU.preimage continuous_subtype_val
-  have hpre : ((Subtype.val : A → M) ⁻¹' U).Nonempty :=
-    ⟨⟨hne.choose, hne.choose_spec.1⟩, hne.choose_spec.2⟩
-  exact hopen.dense hpre
+  exact hopen.dense ⟨⟨x, hxA⟩, hxU⟩
 
 end AffineSubspace
 
