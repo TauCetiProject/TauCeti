@@ -53,7 +53,7 @@ For `h = 0` it is `Δ = 2^{4g} · disc_{2g+2}(f)` (`Model.Δ_of_h_eq_zero`).
 
 * `two_pow_mul_universalΔ`: the integrality of the discriminant.
 * `Model.two_pow_mul_Δ`: `2^{4(g+1)} · Δ = disc_{2g+2}(4f + h²)` over every commutative ring.
-* `Model.Δ_map`: compatibility with ring homomorphisms.
+* `Model.map_Δ`: compatibility with ring homomorphisms.
 * `Model.Δ_of_h_eq_zero`: `Δ(f, 0) = 2^{4g} · disc_{2g+2}(f)`.
 
 ## Implementation notes
@@ -149,7 +149,7 @@ theorem natDegree_weierstrassForm_le (W : Model R g) :
   · exact natDegree_pow_le.trans (by linarith [W.natDegree_h_le])
 
 @[simp]
-theorem weierstrassForm_map (W : Model R g) (φ : R →+* S) :
+theorem map_weierstrassForm (W : Model R g) (φ : R →+* S) :
     (W.map φ).weierstrassForm = W.weierstrassForm.map φ := by
   simp [weierstrassForm_def, Polynomial.map_add, Polynomial.map_mul, Polynomial.map_pow]
 
@@ -169,7 +169,7 @@ theorem coeffs_inr (W : Model R g) (j : Fin (g + 2)) : W.coeffs (.inr j) = W.h.c
   (rfl)
 
 @[simp]
-theorem coeffs_map (W : Model R g) (φ : R →+* S) : (W.map φ).coeffs = φ ∘ W.coeffs := by
+theorem map_coeffs (W : Model R g) (φ : R →+* S) : (W.map φ).coeffs = φ ∘ W.coeffs := by
   ext (i | j) <;> simp
 
 /-- The **universal model** of genus `g`, over `ℤ[f₀, …, f_{2g+2}, h₀, …, h_{g+1}]`, whose
@@ -215,7 +215,7 @@ theorem map_universal_eq_iff {W : Model R g}
     (universal g).map φ = W ↔ φ = MvPolynomial.aeval (R := ℤ) W.coeffs := by
   refine ⟨fun hφ ↦ MvPolynomial.ringHom_ext (fun _ ↦ by simp) fun v ↦ ?_, fun hφ ↦ ?_⟩
   · simp only [RingHom.coe_coe, MvPolynomial.aeval_X]
-    rw [← hφ, coeffs_map, Function.comp_apply, coeffs_universal]
+    rw [← hφ, map_coeffs, Function.comp_apply, coeffs_universal]
   · rw [hφ, map_universal]
 
 /-! ### The integrality of the discriminant -/
@@ -283,12 +283,11 @@ private theorem exists_isIntegral_algebraMap_leadingCoeff_pow_mul_discr {D L : T
   set P := (GK.roots.map GK.derivative.eval).prod
   set s : L := (-1) ^ ((2 * k + 2) * (2 * k + 1) / 2)
   have hres : s * c * algebraMap D L G.discr = c ^ (2 * k + 1) * P := by
-    have h1 := Polynomial.resultant_deriv (f := GK) (natDegree_pos_iff_degree_pos.mp (by omega))
-    have h2 := resultant_eq_prod_eval GK GK.derivative (2 * k + 1)
-      ((natDegree_derivative_le GK).trans (by omega)) hsplit
-    rw [hGK, show 2 * k + 2 - 1 = 2 * k + 1 by omega] at h1
-    rwa [hGK, h1, leadingCoeff_map_of_injective hinj,
-      discr_map_of_natDegree_eq _ (by rw [hGK, hG])] at h2
+    have h := leadingCoeff_pow_mul_prod_roots_eval_derivative
+      (natDegree_pos_iff_degree_pos.mp (by omega)) hsplit
+    rw [hGK, show 2 * k + 2 - 1 = 2 * k + 1 by omega, leadingCoeff_map_of_injective hinj,
+      discr_map_of_natDegree_eq _ (by rw [hGK, hG])] at h
+    exact h.symm
   -- Each of the `2k + 2` factors of `P` is `4` times an element made integral by `c ^ (2k + 1)`.
   set Q := (GK.roots.map fun r ↦ c ^ (2 * k + 1) * (GK.derivative.eval r / 4)).prod
   have hPQ : c ^ ((2 * k + 2) * (2 * k + 1)) * P = 2 ^ (4 * (k + 1)) * Q := by
@@ -434,8 +433,8 @@ theorem Δ_universal (g : ℕ) : (universal g).Δ = universalΔ g := by
 
 /-- The discriminant commutes with every ring homomorphism. -/
 @[simp]
-theorem Δ_map (W : Model R g) (φ : R →+* S) : (W.map φ).Δ = φ W.Δ := by
-  rw [Δ_def, Δ_def, coeffs_map]
+theorem map_Δ (W : Model R g) (φ : R →+* S) : (W.map φ).Δ = φ W.Δ := by
+  rw [Δ_def, Δ_def, map_coeffs]
   exact (MvPolynomial.comp_aeval_apply _ φ.toIntAlgHom _).symm
 
 /-- The discriminant of a model is `2 ^ (-4(g + 1))` times the binary-form discriminant of its
@@ -446,7 +445,7 @@ theorem two_pow_mul_Δ (W : Model R g) :
   rw [map_mul, map_pow, map_ofNat, ← Δ_def] at h
   rw [h]
   conv_rhs => rw [← W.map_universal]
-  rw [weierstrassForm_map, formDiscr_map, RingHom.coe_coe]
+  rw [map_weierstrassForm, formDiscr_map, RingHom.coe_coe]
 
 /-- **The discriminant of `y² = f(x)`** is `2 ^ (4g)` times the binary-form discriminant of `f` of
 degree `2g + 2`. -/
@@ -456,9 +455,11 @@ theorem Δ_of_h_eq_zero {W : Model R g} (hW : W.h = 0) :
   let V : Model (MvPolynomial (Fin (2 * g + 3)) ℤ) g :=
     ⟨universalPoly (2 * g + 2), 0, (natDegree_universalPoly _).le, by simp⟩
   have hV : V.Δ = 2 ^ (4 * g) * V.f.formDiscr (2 * g + 2) := by
+    -- The cross term of `V` is the literal `0` in its definition.
+    have hV0 : V.h = 0 := rfl
     refine mul_left_cancel₀ (pow_ne_zero (4 * (g + 1)) two_ne_zero) ?_
-    rw [two_pow_mul_Δ, weierstrassForm_def, show V.h = 0 from rfl, zero_pow two_ne_zero,
-      add_zero, ← C_ofNat, formDiscr_C_mul, ← mul_assoc, ← pow_add,
+    rw [two_pow_mul_Δ, weierstrassForm_def, hV0, zero_pow two_ne_zero, add_zero, ← C_ofNat,
+      formDiscr_C_mul, ← mul_assoc, ← pow_add,
       show (4 : MvPolynomial (Fin (2 * g + 3)) ℤ) = 2 ^ 2 by norm_num, ← pow_mul]
     congr 2
     omega
@@ -466,7 +467,7 @@ theorem Δ_of_h_eq_zero {W : Model R g} (hW : W.h = 0) :
     ext : 1
     · exact map_universalPoly_of_natDegree_le W.natDegree_f_le
     · simp [V, hW]
-  rw [← hW', Δ_map, hV, map_mul, map_pow, map_ofNat, map_f, formDiscr_map]
+  rw [← hW', map_Δ, hV, map_mul, map_pow, map_ofNat, map_f, formDiscr_map]
 
 end Model
 
@@ -500,7 +501,7 @@ discriminant of degree `4` vanishes, but the discriminant of the model is `1`: t
 reduction at `2`. -/
 example : ((⟨X ^ 3, 1, by compute_degree!, by simp⟩ : Model ℤ 1).map
     (Int.castRingHom (ZMod 2))).Δ = 1 := by
-  rw [Δ_map, Δ_X_pow_three_one]
+  rw [map_Δ, Δ_X_pow_three_one]
   decide
 
 /-- The genus-two model `y² + y = x⁵` has discriminant `3125 = 5⁵`. Its Weierstrass form
@@ -511,7 +512,8 @@ private theorem Δ_X_pow_five_one :
   have h5 : (4 * X ^ 5 + 1 ^ 2 : ℤ[X]).natDegree = 6 - 1 := by compute_degree!
   -- Reversing the coefficients turns `4x⁵ + 1` into the binomial `x⁵ + 4`.
   have hrev : (4 * X ^ 5 + 1 ^ 2 : ℤ[X]).reverse = X ^ 5 - C (-4) := by
-    rw [reverse, show (4 * X ^ 5 + 1 ^ 2 : ℤ[X]).natDegree = 5 from h5]
+    have h5' : (4 * X ^ 5 + 1 ^ 2 : ℤ[X]).natDegree = 5 := by omega
+    rw [reverse, h5']
     ext i
     simp only [coeff_reflect, coeff_add, coeff_sub, coeff_X_pow, coeff_C]
     rcases le_or_gt i 5 with hi | hi
@@ -529,7 +531,7 @@ private theorem Δ_X_pow_five_one :
 of the model is `1`: the curve stays smooth modulo `2`. -/
 example : ((⟨X ^ 5, 1, by compute_degree!, by simp⟩ : Model ℤ 2).map
     (Int.castRingHom (ZMod 2))).Δ = 1 := by
-  rw [Δ_map, Δ_X_pow_five_one]
+  rw [map_Δ, Δ_X_pow_five_one]
   decide
 
 end Examples
