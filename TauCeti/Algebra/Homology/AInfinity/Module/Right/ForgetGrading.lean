@@ -191,14 +191,10 @@ theorem stasheffSum_eq_ungradedStasheff [CharP R 2] (n : ℕ) (x : M) (e : ℤ) 
       ungradedStasheffComp MM.ungradedAct n (fun i : Fin n => b i) x +
         ungradedStasheffDiff MM.ungradedAct d n (fun i : Fin n => b i) x +
         ungradedStasheffMul MM.ungradedAct n (fun i : Fin n => b i) x := by
-  -- In characteristic two every sign `(-1) ^ k` is `1`.
-  have hsign (k : ℤ) : negOnePowCast R k = 1 := by
-    rcases Int.even_or_odd k with hk | hk
-    · exact negOnePowCast_even hk
-    · rw [negOnePowCast_odd hk]
-      exact neg_eq_of_add_eq_zero_left (add_self_eq_zero_of_charTwo R 1)
+  -- In characteristic two every sign `(-1) ^ k` acts trivially.
   rw [stasheffSum_def]
-  simp only [hsign, one_smul]
+  simp only [← negOnePow_smul_eq_negOnePowCast_smul,
+    negOnePow_smul_eq_self_of_neg_one_eq_one (R := R) (CharTwo.neg_eq 1)]
   rw [add_assoc]
   congr 1
   · -- The composite terms agree on the nose.

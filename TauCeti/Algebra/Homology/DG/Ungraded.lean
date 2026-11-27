@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Twisted.Continuation
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Basic
+import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
 # Ungraded differential algebras and modules, and matrices over them
@@ -159,12 +160,8 @@ theorem isUngradedDGAlgebra [CharP R 2] (h : IsNonUnitalDGAlgebra 𝒜 d) :
     induction a using DirectSum.Decomposition.inductionOn 𝒜 with
     | zero => simp
     | homogeneous a =>
-      rw [h.leibniz a.property b]
-      congr 1
-      rcases Int.units_eq_one_or (Int.negOnePow _) with hs | hs <;> rw [hs]
-      · exact one_smul _ _
-      · rw [Units.neg_smul, one_smul]
-        exact neg_eq_of_add_eq_zero_left (add_self_eq_zero_of_charTwo R _)
+      rw [h.leibniz a.property b,
+        negOnePow_smul_eq_self_of_neg_one_eq_one (R := R) (CharTwo.neg_eq 1)]
     | add a a' ha ha' =>
       rw [add_mul, map_add, ha, ha', map_add, add_mul, add_mul]
       abel
