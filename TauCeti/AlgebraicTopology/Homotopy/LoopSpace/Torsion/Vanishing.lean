@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.ReducedHomology
+public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Torsion.Basic
 public import TauCeti.AlgebraicTopology.Homotopy.TorsionVanishing
 public import TauCeti.Topology.PathSpace.Moore.Comparison.HomotopyGroup
 import TauCeti.Algebra.Module.Torsion.Int
@@ -164,10 +164,15 @@ theorem isTorsion'_homotopyGroup_of_isTorsion'_singularHomology_doubleLoopSpace
     (hX : ∀ i, Module.IsTorsion' (((singularChains ℤ).obj
       (TopCat.of (Ω (Ω X x) (Path.refl x)))).homology (i + 1)) S)
     (n : ℕ) : Module.IsTorsion' (Additive (π_ (n + 3) X x)) S :=
-  -- Instance search does not find this through the semiring structure of `ℤ` that `S` carries.
-  haveI : IsLocalization S (Localization S) := Localization.isLocalization
-  isTorsion'_homotopyGroup_of_subsingleton_singularHomology_doubleLoopSpace S x (Localization S)
-    (fun i ↦ (isTorsion'_singularChains_int_homology_iff S _ _ (i + 1)).1 (hX i)) n
+  have := (pathConnectedSpace_doubleLoopSpace_iff x).2 ‹_›
+  have : Subsingleton ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
+      (TopCat.of (Ω (Ω X x) (Path.refl x)))) :=
+    ModuleCat.isZero_iff_subsingleton.mp (isZero_reducedSingularHomologyFunctor_zero _ _)
+  isTorsion'_homotopyGroup_of_forall_isTorsion'_reducedSingularHomology_doubleLoopSpace x S (n + 1)
+    fun
+    | 0, _ => fun _ ↦ ⟨1, Subsingleton.elim _ _⟩
+    | i + 1, _ => ((reducedSingularHomologySuccIso (ModuleCat.of ℤ ℤ) i).app
+        (TopCat.of (Ω (Ω X x) (Path.refl x)))).toLinearEquiv.toAddEquiv.isTorsion'_iff.2 (hX i)
 
 /-- **The reduced homology of the double loop space is not `S`-torsion.** Let `S` be a submonoid
 of `ℤ` not containing `0`. If `π₂(X, x)` is nontrivial, or if some homotopy group `πₙ₊₃(X, x)` has
@@ -177,26 +182,13 @@ theorem exists_not_isTorsion'_reducedSingularHomology_doubleLoopSpace (hS : (0 :
     (h : Nontrivial (π_ 2 X x) ∨ ∃ n, ¬ Module.IsTorsion' (Additive (π_ (n + 3) X x)) S) :
     ∃ i, ¬ Module.IsTorsion' ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) i).obj
       (TopCat.of (Ω (Ω X x) (Path.refl x)))) S := by
-  -- If `π₂(X, x)` is nontrivial, `H~₀(Ω²X; ℤ)` contains a copy of `ℤ`, on which only `0` acts by
-  -- zero.
-  have h₀ (h2 : Nontrivial (π_ 2 X x)) : ¬ Module.IsTorsion'
-      ((reducedSingularHomologyFunctor (ModuleCat.of ℤ ℤ) 0).obj
-        (TopCat.of (Ω (Ω X x) (Path.refl x)))) S := fun hT ↦ by
+  rcases h with _ | ⟨n, hn⟩
+  · refine ⟨0, fun hT ↦ ?_⟩
     obtain ⟨f, hf⟩ := exists_injective_doubleLoopSpaceReducedHomology₀ (R := ℤ) x
-    obtain ⟨⟨s, hs⟩, hs1⟩ := @hT (f 1)
-    have hfs : f s = f 0 := by
-      rw [map_zero, ← hs1, Submonoid.smul_def]
-      simpa using map_zsmul f s 1
-    exact hS (hf hfs ▸ hs)
-  rcases h with h | ⟨n, hn⟩
-  · exact ⟨0, h₀ h⟩
-  · by_contra! hT
-    have : Subsingleton (π_ 2 X x) := not_nontrivial_iff_subsingleton.1 fun h ↦ h₀ h (hT 0)
-    -- In positive degrees reduced and ordinary homology agree.
-    exact hn (isTorsion'_homotopyGroup_of_isTorsion'_singularHomology_doubleLoopSpace S x
-      (fun i ↦ ((reducedSingularHomologySuccIso (ModuleCat.of ℤ ℤ) i).app
-        (TopCat.of (Ω (Ω X x) (Path.refl x)))).toLinearEquiv.toAddEquiv.isTorsion'_iff.1
-        (hT (i + 1))) n)
+    exact hS (f.toAddMonoidHom.zero_mem_of_injective_of_isTorsion' hf hT)
+  · obtain ⟨k, _, y, hy⟩ :=
+      exists_forall_smul_ne_zero_reducedSingularHomology_doubleLoopSpace x S (n + 1) hn
+    exact ⟨k, Module.not_isTorsion'_iff.2 ⟨y, hy⟩⟩
 
 /-- **The reduced homology of the double loop space is not torsion.** If `π₂(X, x)` is
 nontrivial, or if some homotopy group `πₙ₊₃(X, x)` has an element of infinite order, then the
