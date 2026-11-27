@@ -142,7 +142,7 @@ theorem diagGL_mem_map_iwahoriOne_iff {t : m → Kˣ} :
 
 /-- Conjugating an upper-triangular element of `I₁` by a dominant diagonal matrix keeps it in
 `I₁`. -/
-theorem diagGL_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular {t : m → Kˣ}
+theorem diagGL_mul_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular {t : m → Kˣ}
     (ht : Monotone fun i ↦ A.valuation (t i : K)) {u : GL m K}
     (hu : u ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)))
     (hutri : (u : Matrix m m K).IsUpperTriangular) :
@@ -163,7 +163,7 @@ theorem diagGL_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular {t : m → Kˣ}
 
 /-- Conjugating a lower-triangular element of `I₁` by the inverse of a dominant diagonal matrix
 keeps it in `I₁`. -/
-theorem diagGL_inv_mul_mem_map_iwahoriOne_of_isLowerTriangular {t : m → Kˣ}
+theorem diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular {t : m → Kˣ}
     (ht : Monotone fun i ↦ A.valuation (t i : K)) {l : GL m K}
     (hl : l ∈ (iwahoriOne m A).map (GeneralLinearGroup.map (algebraMap A K)))
     (hltri : (l : Matrix m m K).IsLowerTriangular) :
@@ -205,17 +205,15 @@ theorem exists_upperTriangular_mul_conj_mem_map_iwahoriOne {t : m → Kˣ}
       ((iwahoriOne_le_iwahori : iwahoriOne m A ≤ iwahori m A) hxA)
   have huA_tri := UpperUnitriangularGroup.mem_iff.mp huA_ut
   let f := GeneralLinearGroup.map (n := m) (algebraMap A K)
-  have huA_I1 : uA ∈ iwahoriOne m A := by
-    rw [iwahoriOne, mem_upperUnitriangularCongruenceSubgroup_iff]
-    refine ⟨fun i j hji ↦ ?_, fun i ↦ ?_⟩
-    · simp [huA_tri.isUpperTriangular hji]
-    · simp [huA_tri.apply_diag i]
+  have huA_I1 : uA ∈ iwahoriOne m A :=
+    upperUnitriangularCongruenceSubgroup_mono bot_le
+      (by rwa [upperUnitriangularCongruenceSubgroup_bot])
   refine ⟨f uA, Subgroup.mem_map_of_mem f huA_I1, fun i j hji ↦ ?_, ?_⟩
   · simp [f, huA_tri.isUpperTriangular hji]
   · have hl_mem : (f uA)⁻¹ * f xA ∈ (iwahoriOne m A).map f := by
       rw [← map_inv, ← map_mul]
       exact Subgroup.mem_map_of_mem f (Subgroup.mul_mem _ (Subgroup.inv_mem _ huA_I1) hxA)
-    refine diagGL_inv_mul_mem_map_iwahoriOne_of_isLowerTriangular A ht hl_mem fun i j hij ↦ ?_
+    refine diagGL_inv_mul_mul_mem_map_iwahoriOne_of_isLowerTriangular A ht hl_mem fun i j hij ↦ ?_
     rw [← map_inv, ← map_mul, GeneralLinearGroup.map_apply]
     simp [hlA_lt hij]
 

@@ -11,12 +11,12 @@ public import Mathlib.Topology.Algebra.Valued.ValuationTopology
 # Continuity of valuation-preserving ring endomorphisms
 
 A ring endomorphism of a valued ring that preserves the valuation is continuous for the valuation
-topology (`TauCeti.Valued.continuous_of_valuation_eq`).
+topology (`Valued.continuous_of_valuation_eq`).
 -/
 
 public section
 
-namespace TauCeti.Valued
+namespace Valued
 
 /-- A ring endomorphism of a valued ring that preserves the valuation is continuous. -/
 theorem continuous_of_valuation_eq {R Γ₀ : Type*} [Ring R] [LinearOrderedCommGroupWithZero Γ₀]
@@ -34,4 +34,4 @@ theorem continuous_of_valuation_eq {R Γ₀ : Type*} [Ring R] [LinearOrderedComm
       ((Valuation.restrict_le_iff _).mpr hsub.ge)
   simpa [hr] using hy
 
-end TauCeti.Valued
+end Valued

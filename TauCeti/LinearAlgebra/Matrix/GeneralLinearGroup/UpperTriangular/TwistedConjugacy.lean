@@ -15,7 +15,7 @@ public import Mathlib.Topology.Algebra.Valued.ValuationTopology
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.IwasawaBruhat
 -- `TauCeti.mem_map_iwahoriOne_iff_valued`, `isOpen_map_iwahoriOne`, `isCompact_map_iwahoriOne`.
 import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.Iwahori
--- `TauCeti.Valued.continuous_of_valuation_eq`.
+-- `Valued.continuous_of_valuation_eq`.
 import TauCeti.Topology.Algebra.Valued.RingHom
 -- `Matrix.GeneralLinearGroup.map_surjective`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Lift
@@ -140,7 +140,7 @@ private lemma widen_twistedConj {t : m → Kˣ}
     have htpow : Monotone fun i : m ↦ (valSubring K).valuation ((t ^ j) i : K) := fun _ _ hle ↦ by
       simpa [Pi.pow_apply, Units.val_pow_eq_pow_val, map_pow] using pow_le_pow_left' (htA hle) j
     have hres :=
-      diagGL_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular (valSubring K) htpow hu hutri
+      diagGL_mul_mul_inv_mem_map_iwahoriOne_of_isUpperTriangular (valSubring K) htpow hu hutri
     rw [conjI1_mem_iff]
     simpa [zpow_natCast] using hres
   have hz_mem (j : ℕ) (hj : j ≤ b + 1) : z ∈ conjI1 t (j - 1) := by

@@ -43,8 +43,8 @@ theorem coe_leAddSubgroup {Γ₀ : Type*} [LinearOrderedCommGroupWithZero Γ₀]
     (γ : Γ₀) : (v.leAddSubgroup γ : Set R) = {x | v x ≤ γ} :=
   Set.ext fun _ ↦ mem_leAddSubgroup_iff
 
-/-- If `v a ≤ v b` in a field, then `v (a * c * b⁻¹) ≤ v c`. -/
-theorem map_mul_mul_inv_le {K Γ₀ : Type*} [Field K] [LinearOrderedCommGroupWithZero Γ₀]
+/-- If `v a ≤ v b` in a division ring, then `v (a * c * b⁻¹) ≤ v c`. -/
+theorem map_mul_mul_inv_le {K Γ₀ : Type*} [DivisionRing K] [LinearOrderedCommGroupWithZero Γ₀]
     (v : Valuation K Γ₀) {a b c : K} (hab : v a ≤ v b) :
     v (a * c * b⁻¹) ≤ v c := by
   rcases eq_or_ne b 0 with rfl | hb
