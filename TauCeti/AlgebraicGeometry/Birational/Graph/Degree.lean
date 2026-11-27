@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Birational.Composition
 public import TauCeti.AlgebraicGeometry.Birational.Graph.Basic
 public import TauCeti.AlgebraicGeometry.Birational.TopologicalDegree.Birationality
-public import TauCeti.AlgebraicGeometry.Morphisms.Dominant
 
 /-!
 # The topological degree of the second projection of a graph
@@ -25,9 +24,6 @@ map is `f^*` followed by the isomorphism `π_1^* : K(X) → K(Γ_f)`.
 
 ## Main results
 
-* `AlgebraicGeometry.Scheme.RationalMap.comp_graphSnd_eq_of_comp_graphFst`: a morphism into
-  `Γ_f` whose composite with `π_1` lands in the domain of definition of `f` has composite with
-  `π_2` given by `f` on that domain.
 * `AlgebraicGeometry.Scheme.RationalMap.toRationalMap_graphSnd`: `π_2 = f ∘ π_1` as rational maps.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_graphFst`: `π_1` has topological
   degree `1`.
@@ -48,49 +44,6 @@ variable {X Y : Scheme.{u}} (f : X ⤏ Y)
 section Reduced
 
 variable [IsReduced X] [Y.IsSeparated] [QuasiCompact f.domain.ι]
-
-/-- For `X` reduced, `Y` separated and the inclusion of the domain of definition `U` of `f`
-quasi-compact, let `a : T ⟶ Γ_f` be a morphism with `π_1 ∘ a` landing in `U`, through
-`b : T ⟶ U`. Then `π_2 ∘ a` is `f_U ∘ b`, for the representative `f_U` of `f` on `U`. -/
-theorem comp_graphSnd_eq_of_comp_graphFst {T : Scheme.{u}} (a : T ⟶ graph f)
-    (b : T ⟶ f.toPartialMap.domain.toScheme) (h : b ≫ f.toPartialMap.domain.ι = a ≫ graphFst f) :
-    a ≫ graphSnd f = b ≫ f.toPartialMap.hom := by
-  have : QuasiCompact f.toPartialMap.domain.ι := by rwa [f.toPartialMap_domain]
-  have : f.IsOver (terminal.from X) (terminal.from Y) :=
-    ⟨⟨f.representative, inferInstance, f.toRationalMap_representative⟩⟩
-  set e := graphIsoGraphClosure f (terminal.from X) (terminal.from Y)
-  set p := graphClosureFst (terminal.from X) (terminal.from Y) f.toPartialMap.domain
-    f.toPartialMap.hom (f.toPartialMap.over _ _)
-  set q := graphClosureSnd (terminal.from X) (terminal.from Y) f.toPartialMap.domain
-    f.toPartialMap.hom (f.toPartialMap.over _ _)
-  have hc : (a ≫ e.hom) ≫ p = b ≫ f.toPartialMap.domain.ι := by
-    rw [Category.assoc, graphIsoGraphClosure_hom_graphClosureFst]
-    exact h.symm
-  -- `a ≫ e.hom` lands in the preimage of the domain of definition
-  have hr : Set.range (a ≫ e.hom).base ⊆ Set.range (p ⁻¹ᵁ f.toPartialMap.domain).ι.base := by
-    rintro _ ⟨t, rfl⟩
-    rw [Opens.range_ι, SetLike.mem_coe, Hom.mem_preimage, ← Hom.comp_apply, hc, Hom.comp_apply]
-    exact (b t).property
-  set c := IsOpenImmersion.lift (p ⁻¹ᵁ f.toPartialMap.domain).ι (a ≫ e.hom) hr
-  have hb : c ≫ (p ∣_ f.toPartialMap.domain) = b := by
-    rw [← cancel_mono f.toPartialMap.domain.ι, Category.assoc, morphismRestrict_ι,
-      IsOpenImmersion.lift_fac_assoc, hc]
-  have hq : (p ∣_ f.toPartialMap.domain) ≫ f.toPartialMap.hom =
-      (p ⁻¹ᵁ f.toPartialMap.domain).ι ≫ q :=
-    graphClosureFst_restrict_comp
-  calc a ≫ graphSnd f = (a ≫ e.hom) ≫ q := by
-        rw [Category.assoc, graphIsoGraphClosure_hom_graphClosureSnd]
-    _ = c ≫ (p ⁻¹ᵁ f.toPartialMap.domain).ι ≫ q := by rw [IsOpenImmersion.lift_fac_assoc]
-    _ = b ≫ f.toPartialMap.hom := by rw [← hq, ← Category.assoc, hb]
-
-/-- The first projection `π_1 : Γ_f → X` is dominant: it maps the factorization of `γ_f` through
-`Γ_f` onto the dense domain of the representative of `f`. -/
-instance isDominant_graphFst : IsDominant (graphFst f) := by
-  have := Opens.isDominant_ι f.representative.dense_domain
-  have : IsDominant (toGraph f ≫ graphFst f) := by
-    rw [toGraphClosure_graphClosureFst]
-    infer_instance
-  exact IsDominant.of_comp (toGraph f) (graphFst f)
 
 /-- **The second projection is `f` after the first**: `π_2 = f ∘ π_1` as rational maps, for `X`
 reduced, `Γ_f` integral (for instance `X` integral and Noetherian), `Y` separated and the

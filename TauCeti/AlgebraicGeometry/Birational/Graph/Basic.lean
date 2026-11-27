@@ -92,6 +92,10 @@ Noetherian and `Y` separated, so all the hypotheses above hold.
   separated base `S`, `π_1` is proper when `Y` is proper over `S`, an isomorphism over the domain
   of definition of `f` when `Y` is separated and the inclusion of that domain is quasi-compact,
   and a modification when `Y` is proper over `S` and that inclusion is quasi-compact.
+* `AlgebraicGeometry.Scheme.RationalMap.isDominant_graphFst`: `π_1` is dominant.
+* `AlgebraicGeometry.Scheme.RationalMap.comp_graphSnd_eq_of_comp_graphFst`: a morphism into
+  `Γ_f` whose composite with `π_1` lands in the domain of definition of `f` has composite with
+  `π_2` given by `f` on that domain.
 * `AlgebraicGeometry.Scheme.RationalMap.surjective_graphSnd`: `π_2` is surjective for dominant `f`
   over a base `S` over which `X` is proper.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalKrullDim_graph`: over a field `K`, for `X`
@@ -313,6 +317,41 @@ instance isIso_graphFst_restrict [Y.IsSeparated] [QuasiCompact f.domain.ι] :
     infer_instance
   exact IsIso.comp_isIso' (isPullback_morphismRestrict _ _).isIso_fst_of_isIso h
 
+/-- For `X` reduced, `Y` separated and the inclusion of the domain of definition `U` of `f`
+quasi-compact, let `a : T ⟶ Γ_f` be a morphism with `π_1 ∘ a` landing in `U`, through
+`b : T ⟶ U`. Then `π_2 ∘ a` is `f_U ∘ b`, for the representative `f_U` of `f` on `U`. -/
+theorem comp_graphSnd_eq_of_comp_graphFst [Y.IsSeparated] [QuasiCompact f.domain.ι]
+    {T : Scheme.{u}} (a : T ⟶ graph f) (b : T ⟶ f.toPartialMap.domain.toScheme)
+    (h : b ≫ f.toPartialMap.domain.ι = a ≫ graphFst f) :
+    a ≫ graphSnd f = b ≫ f.toPartialMap.hom := by
+  have : QuasiCompact f.toPartialMap.domain.ι := by rwa [f.toPartialMap_domain]
+  have : f.IsOver (terminal.from X) (terminal.from Y) :=
+    ⟨⟨f.representative, inferInstance, f.toRationalMap_representative⟩⟩
+  set e := graphIsoGraphClosure f (terminal.from X) (terminal.from Y)
+  set p := graphClosureFst (terminal.from X) (terminal.from Y) f.toPartialMap.domain
+    f.toPartialMap.hom (f.toPartialMap.over _ _)
+  set q := graphClosureSnd (terminal.from X) (terminal.from Y) f.toPartialMap.domain
+    f.toPartialMap.hom (f.toPartialMap.over _ _)
+  have hc : (a ≫ e.hom) ≫ p = b ≫ f.toPartialMap.domain.ι := by
+    rw [Category.assoc, graphIsoGraphClosure_hom_graphClosureFst]
+    exact h.symm
+  -- `a ≫ e.hom` lands in the preimage of the domain of definition
+  have hr : Set.range (a ≫ e.hom).base ⊆ Set.range (p ⁻¹ᵁ f.toPartialMap.domain).ι.base := by
+    rintro _ ⟨t, rfl⟩
+    rw [Opens.range_ι, SetLike.mem_coe, Hom.mem_preimage, ← Hom.comp_apply, hc, Hom.comp_apply]
+    exact (b t).property
+  set c := IsOpenImmersion.lift (p ⁻¹ᵁ f.toPartialMap.domain).ι (a ≫ e.hom) hr
+  have hb : c ≫ (p ∣_ f.toPartialMap.domain) = b := by
+    rw [← cancel_mono f.toPartialMap.domain.ι, Category.assoc, morphismRestrict_ι,
+      IsOpenImmersion.lift_fac_assoc, hc]
+  have hq : (p ∣_ f.toPartialMap.domain) ≫ f.toPartialMap.hom =
+      (p ⁻¹ᵁ f.toPartialMap.domain).ι ≫ q :=
+    graphClosureFst_restrict_comp
+  calc a ≫ graphSnd f = (a ≫ e.hom) ≫ q := by
+        rw [Category.assoc, graphIsoGraphClosure_hom_graphClosureSnd]
+    _ = c ≫ (p ⁻¹ᵁ f.toPartialMap.domain).ι ≫ q := by rw [IsOpenImmersion.lift_fac_assoc]
+    _ = b ≫ f.toPartialMap.hom := by rw [← hq, ← Category.assoc, hb]
+
 /-- **The first projection of the graph is a modification**, for `X` reduced, when `Y` is proper
 over a separated base `S` over which `f` is defined and the inclusion of the domain of definition
 of `f` is quasi-compact: it is proper, and an isomorphism over that dense open. -/
@@ -323,6 +362,16 @@ theorem isModification_graphFst (sX : X ⟶ S) (sY : Y ⟶ S) [S.IsSeparated] [f
   have := isModification_graphClosureFst (hg := f.toPartialMap.over sX sY) f.dense_domain
   rw [← graphIsoGraphClosure_hom_graphClosureFst f sX sY]
   infer_instance
+
+omit [IsReduced X] in
+/-- The first projection `π_1 : Γ_f → X` is dominant: it maps the factorization of `γ_f` through
+`Γ_f` onto the dense domain of the representative of `f`. -/
+instance isDominant_graphFst : IsDominant (graphFst f) := by
+  have := Opens.isDominant_ι f.representative.dense_domain
+  have : IsDominant (toGraph f ≫ graphFst f) := by
+    rw [toGraphClosure_graphClosureFst]
+    infer_instance
+  exact IsDominant.of_comp (toGraph f) (graphFst f)
 
 /-- **The dimension of the graph.** Over a field `K`, for `X` reduced and irreducible, `Y`
 separated and `f : X ⤏ Y` a `K`-rational map with `X` and `Y` locally of finite type over `K`,
