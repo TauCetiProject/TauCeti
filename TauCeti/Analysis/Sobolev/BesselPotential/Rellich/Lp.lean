@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
 public import TauCeti.Analysis.Sobolev.BesselPotential.MatrixMultiplier
 import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.Distribution
 import TauCeti.Analysis.Sobolev.BesselPotential.ImaginaryOrder
@@ -18,7 +17,7 @@ import TauCeti.Analysis.Sobolev.BesselPotential.Kernel
 import TauCeti.Analysis.Sobolev.BesselPotential.Operator
 import TauCeti.Analysis.Sobolev.BesselPotential.OrderInterpolation
 import TauCeti.Analysis.Sobolev.BesselPotential.SobolevEmbedding
-import TauCeti.MeasureTheory.Function.Lp.Operator.Compact
+import TauCeti.MeasureTheory.Function.Lp.Operator.Convolution
 
 /-!
 # The Rellich theorem for Bessel-potential spaces `H^{s,p}`
@@ -46,11 +45,14 @@ side, which is not available for `p ≠ 2`. Multiplication by `φ` is the bounde
   continuous compactly supported cutoffs with `χₙ φ → φ` uniformly, the kernels
   `gₙ (x - y) χₙ(y) φ y` are continuous and compactly supported, so they give compact operators
   (`TauCeti.isCompactOperator_integralOperatorLp_of_continuousOn`), and by Schur's test they
-  converge to the given one in operator norm.
+  converge to the given one in operator norm
+  (`TauCeti.isCompactOperator_integralOperatorLp_convMulKernel_of_tendsto`).
 * **Orders `2k`.** The Bessel potential `J² = 1 - (2π)⁻² Δ` commutes with `φ` up to lower order
   terms whose coefficients are again Schwartz functions:
   `J² (φ u) = φ J² u - (2π)⁻² ∑ᵢ (∂ᵢ² φ u + 2 ∂ᵢ φ ∂ᵢ u)` and
-  `φ J² w = J² (φ w) + (2π)⁻² ∑ᵢ (2 ∂ᵢ (∂ᵢ φ w) - ∂ᵢ² φ w)`, for an orthonormal basis of `E`.
+  `φ J² w = J² (φ w) + (2π)⁻² ∑ᵢ (2 ∂ᵢ (∂ᵢ φ w) - ∂ᵢ² φ w)`, for an orthonormal basis of `E`
+  (`TemperedDistribution.besselPotential_two_smulLeftCLM`,
+  `TemperedDistribution.smulLeftCLM_besselPotential_two`).
   The first identity moves compactness from the order `t` to `t + 2`, the second to `t - 2`, for
   all multipliers at once, since `J²` is an isomorphism `H^{t + 2,p} ≃ H^{t,p}`.
 * **All real orders.** If `2k ≤ s`, the operator into `H^{r,p}` factors through the even order
@@ -74,189 +76,13 @@ public section
 noncomputable section
 
 open MeasureTheory TemperedDistribution Filter Set Function
-open scoped ENNReal NNReal SchwartzMap BesselPotentialSpace Topology Pointwise
+open scoped ENNReal NNReal SchwartzMap BesselPotentialSpace Topology
 
 namespace BesselPotentialSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-! ### Convolution after multiplication on `Lᵖ` -/
-
-section Convolution
-
-variable (F) in
-/-- The kernel `(x, y) ↦ g (x - y) ψ y` of `w ↦ g ⋆ (ψ w)`, acting on `F` by scalars. -/
-private def convKernel (g ψ : E → ℂ) (x y : E) : F →L[ℂ] F :=
-  (g (x - y) * ψ y) • ContinuousLinearMap.id ℂ F
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem enorm_convKernel_le (g ψ : E → ℂ) (x y : E) :
-    ‖convKernel F g ψ x y‖ₑ ≤ ‖g (x - y)‖ₑ * ‖ψ y‖ₑ := by
-  have h : ‖convKernel F g ψ x y‖ ≤ ‖g (x - y)‖ * ‖ψ y‖ := calc
-    ‖convKernel F g ψ x y‖ ≤ ‖g (x - y) * ψ y‖ * ‖ContinuousLinearMap.id ℂ F‖ := by
-      rw [convKernel]
-      exact norm_smul_le (g (x - y) * ψ y) (ContinuousLinearMap.id ℂ F)
-    _ ≤ ‖g (x - y) * ψ y‖ * 1 := by gcongr; exact ContinuousLinearMap.norm_id_le
-    _ = ‖g (x - y)‖ * ‖ψ y‖ := by rw [mul_one, norm_mul]
-  rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _)]
-  exact ENNReal.ofReal_le_ofReal h
-
-private theorem aestronglyMeasurable_convKernel {g ψ : E → ℂ}
-    (hg : AEStronglyMeasurable g volume) (hψ : Continuous ψ) :
-    AEStronglyMeasurable (uncurry (convKernel F g ψ)) (volume.prod volume) := by
-  have h₁ : AEStronglyMeasurable (fun z : E × E ↦ g (z.1 - z.2)) (volume.prod volume) :=
-    hg.comp_quasiMeasurePreserving (quasiMeasurePreserving_sub volume volume)
-  have h₂ : AEStronglyMeasurable (fun z : E × E ↦ ψ z.2) (volume.prod volume) :=
-    (hψ.comp continuous_snd).aestronglyMeasurable
-  exact (h₁.mul h₂).smul aestronglyMeasurable_const
-
-private theorem ae_lintegral_enorm_convKernel_le {g ψ : E → ℂ} {C I : ℝ≥0}
-    (hψ : ∀ y, ‖ψ y‖ ≤ C) (hg : ∫⁻ z, ‖g z‖ₑ ≤ I) :
-    ∀ᵐ x ∂(volume : Measure E), ∫⁻ y, ‖convKernel F g ψ x y‖ₑ ≤ ((C * I : ℝ≥0) : ℝ≥0∞) :=
-  Eventually.of_forall fun x ↦ calc
-    ∫⁻ y, ‖convKernel F g ψ x y‖ₑ ≤ ∫⁻ y, ‖g (x - y)‖ₑ * C :=
-      lintegral_mono fun y ↦ (enorm_convKernel_le g ψ x y).trans
-        (mul_le_mul_right (eNorm_le_coe.2 (by exact_mod_cast hψ y)) _)
-    _ = (∫⁻ z, ‖g z‖ₑ) * C := by
-      rw [lintegral_mul_const' _ _ ENNReal.coe_ne_top,
-        lintegral_sub_left_eq_self (fun z ↦ ‖g z‖ₑ) x]
-    _ ≤ I * C := by gcongr
-    _ = ((C * I : ℝ≥0) : ℝ≥0∞) := by push_cast; ring
-
-private theorem ae_lintegral_enorm_convKernel_le' {g ψ : E → ℂ} {C I : ℝ≥0}
-    (hψ : ∀ y, ‖ψ y‖ ≤ C) (hg : ∫⁻ z, ‖g z‖ₑ ≤ I) :
-    ∀ᵐ y ∂(volume : Measure E), ∫⁻ x, ‖convKernel F g ψ x y‖ₑ ≤ ((C * I : ℝ≥0) : ℝ≥0∞) :=
-  Eventually.of_forall fun y ↦ calc
-    ∫⁻ x, ‖convKernel F g ψ x y‖ₑ ≤ ∫⁻ x, ‖g (x - y)‖ₑ * C :=
-      lintegral_mono fun x ↦ (enorm_convKernel_le g ψ x y).trans
-        (mul_le_mul_right (eNorm_le_coe.2 (by exact_mod_cast hψ y)) _)
-    _ = (∫⁻ z, ‖g z‖ₑ) * C := by
-      rw [lintegral_mul_const' _ _ ENNReal.coe_ne_top,
-        lintegral_sub_right_eq_self (fun z ↦ ‖g z‖ₑ) y]
-    _ ≤ I * C := by gcongr
-    _ = ((C * I : ℝ≥0) : ℝ≥0∞) := by push_cast; ring
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem convKernel_eq_zero {g ψ : E → ℂ} {x y : E}
-    (h : (x, y) ∉ (tsupport g + tsupport ψ) ×ˢ tsupport ψ) : convKernel F g ψ x y = 0 := by
-  by_cases hy : y ∈ tsupport ψ
-  · have hx : x - y ∉ tsupport g := fun hx ↦ h ⟨by simpa using add_mem_add hx hy, hy⟩
-    simp [convKernel, image_eq_zero_of_notMem_tsupport hx]
-  · simp [convKernel, image_eq_zero_of_notMem_tsupport hy]
-
-/-- **Convolution after multiplication is compact on `Lᵖ`.** For an integrable `g` and a continuous
-compactly supported `ψ`, the operator `w ↦ g ⋆ (ψ w)` on `Lᵖ(E, F)`, with kernel `g (x - y) ψ y`,
-is compact. Its kernel is the limit in Schur norm of the continuous compactly supported kernels
-`gₙ (x - y) ψ y`, for continuous compactly supported `gₙ → g` in `L¹`. -/
-private theorem isCompactOperator_integralOperatorLp_convKernel [FiniteDimensional ℂ F]
-    {g ψ : E → ℂ} (hg : Integrable g) (hψ : Continuous ψ) (hψc : HasCompactSupport ψ)
-    {hK : AEStronglyMeasurable (uncurry (convKernel F g ψ)) (volume.prod volume)} {A B : ℝ≥0}
-    {hA : ∀ᵐ x ∂(volume : Measure E), ∫⁻ y, ‖convKernel F g ψ x y‖ₑ ≤ A}
-    {hB : ∀ᵐ y ∂(volume : Measure E), ∫⁻ x, ‖convKernel F g ψ x y‖ₑ ≤ B} :
-    IsCompactOperator (TauCeti.integralOperatorLp (convKernel F g ψ) p hK hA hB) := by
-  have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
-  obtain ⟨C₀, hC₀⟩ := hψ.bounded_above_of_compact_support hψc
-  have hC : ∀ y, ‖ψ y‖ ≤ C₀.toNNReal := fun y ↦ (hC₀ y).trans (Real.le_coe_toNNReal C₀)
-  -- Continuous compactly supported approximations `gₙ` of `g` in `L¹`.
-  have happrox (n : ℕ) := hg.exists_hasCompactSupport_lintegral_sub_le
-    (ε := (((n : ℝ≥0) + 1)⁻¹ : ℝ≥0)) (by simp)
-  choose g' hg'c hg'g hg'cont hg'int using happrox
-  have hfin (n : ℕ) : ∫⁻ z, ‖g' n z‖ₑ ≤ (∫⁻ z, ‖g' n z‖ₑ).toNNReal :=
-    (ENNReal.coe_toNNReal (hg'int n).hasFiniteIntegral.ne).ge
-  have hsub (n : ℕ) : ∫⁻ z, ‖(g - g' n) z‖ₑ ≤ (((n : ℝ≥0) + 1)⁻¹ : ℝ≥0) := hg'g n
-  -- The approximating operators are compact, and converge to the given one in norm.
-  refine isCompactOperator_of_tendsto (l := atTop)
-    (F := fun n ↦ TauCeti.integralOperatorLp (convKernel F (g' n) ψ) p
-      (aestronglyMeasurable_convKernel (hg'cont n).aestronglyMeasurable hψ)
-      (ae_lintegral_enorm_convKernel_le hC (hfin n))
-      (ae_lintegral_enorm_convKernel_le' hC (hfin n))) ?_ (Eventually.of_forall fun n ↦ ?_)
-  · rw [tendsto_iff_norm_sub_tendsto_zero]
-    refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-      (by simpa using (tendsto_one_div_add_atTop_nhds_zero_nat).const_mul (C₀.toNNReal : ℝ))
-    have hfun : (fun x y ↦ convKernel F g ψ x y - convKernel F (g' n) ψ x y) =
-        convKernel F (g - g' n) ψ := by
-      funext x y
-      simp only [convKernel, Pi.sub_apply, sub_mul, sub_smul]
-    have hK' := aestronglyMeasurable_convKernel (F := F) (hg.sub (hg'int n)).aestronglyMeasurable hψ
-    have hA' := ae_lintegral_enorm_convKernel_le (F := F) hC (hsub n)
-    have hB' := ae_lintegral_enorm_convKernel_le' (F := F) hC (hsub n)
-    rw [← hfun] at hK' hA' hB'
-    rw [norm_sub_rev, TauCeti.integralOperatorLp_sub (hK := hK') (hA := hA') (hB := hB')]
-    refine TauCeti.norm_integralOperatorLp_le_max.trans_eq ?_
-    simp
-  · exact TauCeti.isCompactOperator_integralOperatorLp_of_continuousOn
-      ((hg'c n).isCompact.add hψc.isCompact) hψc.isCompact
-      (((((hg'cont n).comp continuous_sub).mul (hψ.comp continuous_snd)).smul
-        continuous_const).continuousOn) fun x y h ↦ convKernel_eq_zero h
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A continuous function `ψ` tending to `0` at infinity is uniformly approximated by the
-continuous compactly supported functions `χ ψ`, for continuous cutoffs `0 ≤ χ ≤ 1` equal to `1`
-where `‖ψ‖ ≥ ε`. -/
-private theorem exists_hasCompactSupport_norm_sub_le [ProperSpace E] {ψ : E → ℂ}
-    (hψ : Continuous ψ) (hψ0 : Tendsto ψ (cocompact E) (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
-    ∃ ψ' : E → ℂ, Continuous ψ' ∧ HasCompactSupport ψ' ∧ (∀ y, ‖ψ' y‖ ≤ ‖ψ y‖) ∧
-      ∀ y, ‖ψ y - ψ' y‖ ≤ ε := by
-  obtain ⟨K, hKc, hK⟩ := mem_cocompact.1 (hψ0 (Metric.ball_mem_nhds (0 : ℂ) hε))
-  obtain ⟨χ, hχ1, -, hχc, hχI⟩ := exists_continuous_one_zero_of_isCompact hKc isClosed_empty
-    (disjoint_empty _)
-  refine ⟨fun x ↦ (χ x : ℂ) * ψ x, (Complex.continuous_ofReal.comp χ.continuous).mul hψ,
-    (hχc.comp_left Complex.ofReal_zero).mul_right, fun y ↦ ?_, fun y ↦ ?_⟩
-  · rw [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hχI y).1]
-    exact mul_le_of_le_one_left (norm_nonneg _) (hχI y).2
-  · by_cases hy : y ∈ K
-    · simp [hχ1 hy, hε.le]
-    · have h₁ : ψ y - (χ y : ℂ) * ψ y = ((1 - χ y : ℝ) : ℂ) * ψ y := by push_cast; ring
-      rw [h₁, norm_mul, Complex.norm_real, Real.norm_eq_abs,
-        abs_of_nonneg (sub_nonneg.2 (hχI y).2)]
-      refine (mul_le_of_le_one_left (norm_nonneg _) (by linarith [(hχI y).1])).trans ?_
-      exact (mem_ball_zero_iff.1 (hK hy)).le
-
-/-- **Convolution after multiplication is compact on `Lᵖ`**, for a multiplier vanishing at
-infinity: for an integrable `g` and a bounded continuous `ψ` tending to `0` at infinity, the
-operator `w ↦ g ⋆ (ψ w)` on `Lᵖ(E, F)` is compact. It is the limit in Schur norm of the operators
-for the compactly supported multipliers `χₙ ψ`, where `χₙ` is a continuous cutoff equal to `1`
-where `‖ψ‖ ≥ 1 / (n + 1)`. -/
-private theorem isCompactOperator_integralOperatorLp_convKernel_of_tendsto
-    [FiniteDimensional ℂ F] {g ψ : E → ℂ} (hg : Integrable g) (hψ : Continuous ψ) {C : ℝ≥0}
-    (hC : ∀ y, ‖ψ y‖ ≤ C) (hψ0 : Tendsto ψ (cocompact E) (𝓝 0))
-    {hK : AEStronglyMeasurable (uncurry (convKernel F g ψ)) (volume.prod volume)} {A B : ℝ≥0}
-    {hA : ∀ᵐ x ∂(volume : Measure E), ∫⁻ y, ‖convKernel F g ψ x y‖ₑ ≤ A}
-    {hB : ∀ᵐ y ∂(volume : Measure E), ∫⁻ x, ‖convKernel F g ψ x y‖ₑ ≤ B} :
-    IsCompactOperator (TauCeti.integralOperatorLp (convKernel F g ψ) p hK hA hB) := by
-  have : CompleteSpace F := FiniteDimensional.completeSpace ℂ F
-  have hfin : ∫⁻ z, ‖g z‖ₑ ≤ (∫⁻ z, ‖g z‖ₑ).toNNReal :=
-    (ENNReal.coe_toNNReal hg.hasFiniteIntegral.ne).ge
-  have happrox (n : ℕ) := exists_hasCompactSupport_norm_sub_le hψ hψ0
-    (by positivity : (0 : ℝ) < (((n : ℝ≥0) + 1)⁻¹ : ℝ≥0))
-  choose ψ' hψ'cont hψ'c hψ'ψ hsub using happrox
-  have hψ'le (n : ℕ) (y : E) : ‖ψ' n y‖ ≤ C := (hψ'ψ n y).trans (hC y)
-  refine isCompactOperator_of_tendsto (l := atTop)
-    (F := fun n ↦ TauCeti.integralOperatorLp (convKernel F g (ψ' n)) p
-      (aestronglyMeasurable_convKernel hg.aestronglyMeasurable (hψ'cont n))
-      (ae_lintegral_enorm_convKernel_le (hψ'le n) hfin)
-      (ae_lintegral_enorm_convKernel_le' (hψ'le n) hfin)) ?_ (Eventually.of_forall fun n ↦
-        isCompactOperator_integralOperatorLp_convKernel hg (hψ'cont n) (hψ'c n))
-  set I : ℝ≥0 := (∫⁻ z, ‖g z‖ₑ).toNNReal
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun n ↦ ?_)
-    (by simpa using (tendsto_one_div_add_atTop_nhds_zero_nat).mul_const (I : ℝ))
-  have hfun : (fun x y ↦ convKernel F g ψ x y - convKernel F g (ψ' n) x y) =
-      convKernel F g (fun y ↦ ψ y - ψ' n y) := by
-    funext x y
-    simp only [convKernel, mul_sub, sub_smul]
-  have hK' := aestronglyMeasurable_convKernel (F := F) (ψ := fun y ↦ ψ y - ψ' n y)
-    hg.aestronglyMeasurable (hψ.sub (hψ'cont n))
-  have hA' := ae_lintegral_enorm_convKernel_le (F := F) (fun y ↦ hsub n y) hfin
-  have hB' := ae_lintegral_enorm_convKernel_le' (F := F) (fun y ↦ hsub n y) hfin
-  rw [← hfun] at hK' hA' hB'
-  rw [norm_sub_rev, TauCeti.integralOperatorLp_sub (hK := hK') (hA := hA') (hB := hB')]
-  refine TauCeti.norm_integralOperatorLp_le_max.trans_eq ?_
-  simp
-
-end Convolution
 
 /-! ### The case of order `0` -/
 
@@ -270,16 +96,18 @@ integral operator with kernel `G_{-r} (x - y) φ y` applied to the `Lᵖ` functi
 private theorem toLp_inclusion_smulLeftCLMOfOneLt_eq (hp : 1 < p)
     (hp_top : p ≠ ∞) {φ : 𝓢(E, ℂ)} {C : ℝ≥0} (hC : ∀ y, ‖φ y‖ ≤ C) {r : ℝ} (hr : r < 0)
     {hK : AEStronglyMeasurable
-      (uncurry (convKernel F (fun z ↦ (TauCeti.besselKernel (-r) z : ℂ)) φ)) (volume.prod volume)}
+      (uncurry (TauCeti.convMulKernel F (fun z ↦ (TauCeti.besselKernel (-r) z : ℂ)) φ))
+      (volume.prod volume)}
     {A B : ℝ≥0}
     {hA : ∀ᵐ x ∂(volume : Measure E),
-      ∫⁻ y, ‖convKernel F (fun z ↦ (TauCeti.besselKernel (-r) z : ℂ)) φ x y‖ₑ ≤ A}
+      ∫⁻ y, ‖TauCeti.convMulKernel F (fun z ↦ (TauCeti.besselKernel (-r) z : ℂ)) φ x y‖ₑ ≤ A}
     {hB : ∀ᵐ y ∂(volume : Measure E),
-      ∫⁻ x, ‖convKernel F (fun z ↦ (TauCeti.besselKernel (-r) z : ℂ)) φ x y‖ₑ ≤ B}
+      ∫⁻ x, ‖TauCeti.convMulKernel F (fun z ↦ (TauCeti.besselKernel (-r) z : ℂ)) φ x y‖ₑ ≤ B}
     (u : H^{0, p}(E, F)) :
     (inclusion hr.le (smulLeftCLMOfOneLt hp hp_top φ u)).toLp =
-      TauCeti.integralOperatorLp (convKernel F (fun z ↦ (TauCeti.besselKernel (-r) z : ℂ)) φ) p
-        hK hA hB u.toLp := by
+      TauCeti.integralOperatorLp
+        (TauCeti.convMulKernel F (fun z ↦ (TauCeti.besselKernel (-r) z : ℂ)) φ) p hK hA hB
+        u.toLp := by
   have hu : u.toDistr = (u.toLp : 𝓢'(E, F)) := by
     rw [← u.bessel_toDistr_eq_toLp, besselPotential_zero, ContinuousLinearMap.id_apply]
   obtain ⟨v, hv, -⟩ := Lp.exists_smulLeftCLM_toTemperedDistribution_eq_and_norm_le
@@ -301,7 +129,7 @@ private theorem toLp_inclusion_smulLeftCLMOfOneLt_eq (hp : 1 < p)
   congr 1
   refine integral_congr_ae ?_
   filter_upwards [hvφ] with y hy
-  simp [convKernel, hy, mul_smul, smul_comm (φ y)]
+  simp [hy, mul_smul, smul_comm (φ y)]
 
 /-- **The Rellich theorem at order `0`.** For a Schwartz function `φ` and `r < 0`, `u ↦ φ u` is
 compact from `H^{0,p} = Lᵖ` to `H^{r,p}`: in the `Lᵖ` coordinates of the two spaces it is
@@ -316,11 +144,11 @@ private theorem isCompactOperator_inclusion_comp_smulLeftCLMOfOneLt_zero (hp : 1
   have hg : Integrable g := (TauCeti.integrable_besselKernel (neg_pos.2 hr)).ofReal
   have hfin : ∫⁻ z, ‖g z‖ₑ ≤ (∫⁻ z, ‖g z‖ₑ).toNNReal :=
     (ENNReal.coe_toNNReal hg.hasFiniteIntegral.ne).ge
-  set T := TauCeti.integralOperatorLp (convKernel F g φ) p
-    (aestronglyMeasurable_convKernel hg.aestronglyMeasurable φ.continuous)
-    (ae_lintegral_enorm_convKernel_le hC hfin) (ae_lintegral_enorm_convKernel_le' hC hfin)
+  have hAB := TauCeti.ae_lintegral_enorm_convMulKernel_le (F := F) hC hfin
+  set T := TauCeti.integralOperatorLp (TauCeti.convMulKernel F g φ) p
+    (TauCeti.aestronglyMeasurable_convMulKernel hg.aestronglyMeasurable φ.continuous) hAB.1 hAB.2
   have hT : IsCompactOperator T :=
-    isCompactOperator_integralOperatorLp_convKernel_of_tendsto hg φ.continuous hC
+    TauCeti.isCompactOperator_integralOperatorLp_convMulKernel_of_tendsto hg φ.continuous hC
       φ.tendsto_cocompact
   have heq : (inclusion hr.le ∘L smulLeftCLMOfOneLt hp hp_top φ :
       H^{0, p}(E, F) →L[ℂ] H^{r, p}(E, F)) =
@@ -338,55 +166,6 @@ private theorem isCompactOperator_inclusion_comp_smulLeftCLMOfOneLt_zero (hp : 1
   exact (hT.comp_clm _).clm_comp _
 
 end OrderZero
-
-/-! ### Moving the multiplier past `J²` -/
-
-section Leibniz
-
-open scoped LineDeriv Laplacian Real
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem lineDerivOp_smulLeftCLM_schwartzMap (φ : 𝓢(E, ℂ)) (u : 𝓢'(E, F)) (v : E) :
-    ∂_{v} (smulLeftCLM F (φ : E → ℂ) u) =
-      smulLeftCLM F ((∂_{v} φ : 𝓢(E, ℂ)) : E → ℂ) u + smulLeftCLM F (φ : E → ℂ) (∂_{v} u) := by
-  rw [TemperedDistribution.lineDerivOp_smulLeftCLM φ.hasTemperateGrowth]
-  congr 3
-
-/-- The commutator of `J² = 1 - (2π)⁻² Δ` with multiplication by a Schwartz function `φ`, with
-the derivatives on `u`: `J² (φ u) = φ J² u - (2π)⁻² ∑ᵢ (∂ᵢ² φ u + 2 ∂ᵢ φ ∂ᵢ u)`. -/
-private theorem besselPotential_two_smulLeftCLM {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (φ : 𝓢(E, ℂ)) (u : 𝓢'(E, F)) :
-    besselPotential E F 2 (smulLeftCLM F (φ : E → ℂ) u) =
-      smulLeftCLM F (φ : E → ℂ) (besselPotential E F 2 u) - ((((2 * π) ^ 2)⁻¹ : ℝ) : ℂ) •
-        ∑ i, (smulLeftCLM F ((∂_{b i} (∂_{b i} φ) : 𝓢(E, ℂ)) : E → ℂ) u +
-          (smulLeftCLM F ((∂_{b i} φ : 𝓢(E, ℂ)) : E → ℂ)
-            (∂_{b i} u) +
-          smulLeftCLM F ((∂_{b i} φ : 𝓢(E, ℂ)) : E → ℂ)
-            (∂_{b i} u))) := by
-  rw [besselPotential_two_eq_sub_laplacian, besselPotential_two_eq_sub_laplacian,
-    RCLike.real_smul_eq_coe_smul (K := ℂ), RCLike.real_smul_eq_coe_smul (K := ℂ)]
-  simp only [laplacian_eq_sum b, map_sub, map_smul, map_sum,
-    lineDerivOp_smulLeftCLM_schwartzMap, LineDeriv.lineDerivOp_add, Finset.sum_add_distrib,
-    smul_add]
-  module
-
-/-- The commutator of `J²` with multiplication by `φ`, with the derivatives outside:
-`φ J² w = J² (φ w) + (2π)⁻² ∑ᵢ (2 ∂ᵢ (∂ᵢ φ w) - ∂ᵢ² φ w)`. -/
-private theorem smulLeftCLM_besselPotential_two {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) (φ : 𝓢(E, ℂ)) (w : 𝓢'(E, F)) :
-    smulLeftCLM F (φ : E → ℂ) (besselPotential E F 2 w) =
-      besselPotential E F 2 (smulLeftCLM F (φ : E → ℂ) w) + ((((2 * π) ^ 2)⁻¹ : ℝ) : ℂ) •
-        ∑ i, ((∂_{b i}
-          (smulLeftCLM F ((∂_{b i} φ : 𝓢(E, ℂ)) : E → ℂ) w) +
-          ∂_{b i}
-            (smulLeftCLM F ((∂_{b i} φ : 𝓢(E, ℂ)) : E → ℂ) w)) -
-          smulLeftCLM F ((∂_{b i} (∂_{b i} φ) : 𝓢(E, ℂ)) : E → ℂ) w) := by
-  rw [besselPotential_two_smulLeftCLM b]
-  simp only [lineDerivOp_smulLeftCLM_schwartzMap, Finset.sum_sub_distrib, Finset.sum_add_distrib,
-    smul_sub, smul_add]
-  abel
-
-end Leibniz
 
 /-! ### Raising and lowering the order by two -/
 

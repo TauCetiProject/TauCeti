@@ -73,13 +73,11 @@ theorem exists_norm_toBesselPotentialSpaceCLM_le_of_eq_smul_comp {e : OpenPartia
       hΦ hΨ (fun k hk _ ↦ hΦb k hk) (fun k hk _ ↦ hΨb k hk)
     exact ⟨‖T‖, fun u ↦ by
       simpa [T] using T.le_opNorm (SchwartzMap.toBesselPotentialSpaceCLM s p u)⟩
-  · let T : H^{s, p}(E, F) →L[ℂ] H^{s, p}(E, F) :=
-      mapCLM (TemperedDistribution.smulLeftCLM F (φ : E → ℂ))
-        (fun u ↦ u.memSobolev_toDistr.smulLeftCLM_schwartzMap hp hp_top φ)
+  · let T : H^{s, p}(E, F) →L[ℂ] H^{s, p}(E, F) := smulLeftCLMOfOneLt hp hp_top φ
     refine ⟨‖T‖, fun u ↦ ?_⟩
     have h : T (SchwartzMap.toBesselPotentialSpaceCLM s p u) =
         SchwartzMap.toBesselPotentialSpaceCLM s p (SchwartzMap.smulLeftCLM F (φ : E → ℂ) u) :=
-      ext (by simp [T, smulLeftCLM_toTemperedDistributionCLM_eq])
+      ext (by simp [T, toDistr_smulLeftCLMOfOneLt, smulLeftCLM_toTemperedDistributionCLM_eq])
     rw [← h]
     exact T.le_opNorm _
 
