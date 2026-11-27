@@ -7,9 +7,9 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.L2.Product
 public import TauCeti.Analysis.OperatorIdeal.Family.HilbertSchmidt
+import TauCeti.Analysis.InnerProductSpace.L2.Star
 import TauCeti.MeasureTheory.Function.Lp.Duality
 import TauCeti.MeasureTheory.Function.Lp.Iterated
-import TauCeti.MeasureTheory.Function.Lp.Star
 
 /-!
 # Integral operators with square-integrable kernels
@@ -34,7 +34,6 @@ linear embedding of `L²(μ ⊗ ν)` into the Hilbert–Schmidt operators.
 
 ## Main declarations
 
-* `HilbertBasis.star`: the complex conjugate of a Hilbert basis of `L²`.
 * `TauCeti.integralOperatorL2`: the integral operator of a kernel in `L²(μ ⊗ ν)`, as a bounded
   bilinear map.
 * `TauCeti.ae_integrable_kernel_mul`, `TauCeti.coeFn_integralOperatorL2`: the defining integral
@@ -50,14 +49,14 @@ linear embedding of `L²(μ ⊗ ν)` into the Hilbert–Schmidt operators.
 * `TauCeti.integralOperatorL2HS`: the kernel-to-operator map as a linear isometry into the
   normed Hilbert–Schmidt ideal.
 * `TauCeti.integralOperatorL2_prodMul_star`: the kernel `w ⊗ star u` gives the rank-one operator
-  `f ↦ ⟪u, f⟫ w`, whose Hilbert–Schmidt norm is therefore `‖u‖₂ ‖w‖₂`.
+  `f ↦ ⟪u, f⟫ w`, whose Hilbert–Schmidt norm `‖u‖₂ ‖w‖₂` is
+  `ContinuousLinearMap.hilbertSchmidtNorm_smulRight_innerSL`.
 
 ## Implementation notes
 
-The roadmap target asks for σ-finite standard Borel spaces with separable `L²` spaces and
-countable bases. Neither standard Borel structure nor separability is used: σ-finiteness of the
-factors is what `HilbertBasis.prod` needs, and the bilinear map itself only needs `ν` to be
-s-finite.
+Only σ-finiteness of the factors is assumed, which is what `HilbertBasis.prod` needs; the bounded
+bilinear map itself only needs `ν` to be s-finite. No standard Borel structure, separability of
+the `L²` spaces or countability of the bases is required.
 
 ## References
 
@@ -65,6 +64,8 @@ s-finite.
   (6.8)–(6.13) and Lemma 6.10.
 * M. Reed and B. Simon, *Methods of Modern Mathematical Physics I: Functional Analysis*, revised
   edition, Academic Press, 1980, Theorem VI.23.
+* Riemann–Masullo formalization, https://github.com/mccorvie/riemann-masullo (6dfe34ef2e),
+  `RiemannMasullo/AppC_LCTVS/Sec3b.lean`, for an earlier formal statement of these results.
 -/
 
 public section
@@ -76,54 +77,6 @@ open scoped ENNReal InnerProductSpace ComplexConjugate
 
 variable {α β 𝕜 : Type*} [RCLike 𝕜] {mα : MeasurableSpace α} {mβ : MeasurableSpace β}
   {μ : Measure α} {ν : Measure β}
-
-/-! ### Complex conjugation on `L²` -/
-
-namespace MeasureTheory.Lp
-
-/-- Conjugating both arguments of the `L²` inner product swaps them. -/
-theorem inner_star_star (f g : Lp 𝕜 2 ν) : ⟪star f, star g⟫_𝕜 = ⟪g, f⟫_𝕜 := by
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_star f, coeFn_star g] with y hf hg
-  simp [hf, hg, RCLike.inner_apply, mul_comm]
-
-/-- Conjugating the first argument of the `L²` inner product gives the bilinear pairing
-`∫ f g`, which is symmetric. -/
-theorem inner_star_left_comm (f g : Lp 𝕜 2 ν) : ⟪star f, g⟫_𝕜 = ⟪star g, f⟫_𝕜 := by
-  rw [L2.inner_def, L2.inner_def]
-  refine integral_congr_ae ?_
-  filter_upwards [coeFn_star f, coeFn_star g] with y hf hg
-  simp [hf, hg, RCLike.inner_apply, mul_comm]
-
-end MeasureTheory.Lp
-
-namespace HilbertBasis
-
-variable {ι : Type*}
-
-/-- The pointwise complex conjugate of a Hilbert basis of `L²(ν)` is again a Hilbert basis. -/
-protected def star (b : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν)) : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν) :=
-  HilbertBasis.mkOfOrthogonalEqBot (v := fun i ↦ star (b i))
-    (by
-      classical
-      have hb := orthonormal_iff_ite.1 b.orthonormal
-      refine orthonormal_iff_ite.2 fun i j ↦ ?_
-      rw [inner_star_star, hb j i]
-      simp only [eq_comm])
-    (by
-      refine (Submodule.eq_bot_iff _).2 fun h hh ↦ ?_
-      rw [Submodule.mem_orthogonal] at hh
-      rw [← star_star h, star_eq_zero]
-      refine b.eq_zero_of_forall_inner_eq_zero fun i ↦ ?_
-      rw [inner_star_left_comm]
-      exact hh _ (Submodule.subset_span ⟨i, rfl⟩))
-
-@[simp]
-theorem star_apply (b : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν)) (i : ι) : b.star i = star (b i) := by
-  rw [HilbertBasis.star, HilbertBasis.coe_mkOfOrthogonalEqBot]
-
-end HilbertBasis
 
 /-! ### The integral operator -/
 
@@ -277,6 +230,15 @@ theorem inner_integralOperatorL2 [SFinite μ] (K : Lp 𝕜 2 (μ.prod ν)) (h : 
         simp only [hp, hs, RCLike.inner_apply, map_mul, RCLike.conj_conj]
         ring
 
+/-- **Rank-one kernels.** The kernel `(x, y) ↦ w x * conj (u y)` gives the rank-one operator
+`f ↦ ⟪u, f⟫ w`. -/
+theorem integralOperatorL2_prodMul_star [SFinite μ] (w : Lp 𝕜 2 μ) (u : Lp 𝕜 2 ν) :
+    integralOperatorL2 μ ν (prodMul w (star u)) = (innerSL 𝕜 u).smulRight w := by
+  ext1 f
+  refine ext_inner_left 𝕜 fun h ↦ ?_
+  rw [inner_integralOperatorL2, inner_prodMul, ContinuousLinearMap.smulRight_apply,
+    innerSL_apply_apply, inner_smul_right, inner_star_star, mul_comm]
+
 /-! ### The Hilbert–Schmidt norm -/
 
 section HilbertSchmidt
@@ -285,6 +247,7 @@ variable [SigmaFinite μ] [SigmaFinite ν]
 
 /-- **The Hilbert–Schmidt energy of an integral operator** is the squared `L²` norm of its kernel,
 in every Hilbert basis of the source. -/
+@[simp]
 theorem hilbertSchmidtEnergy_integralOperatorL2 {ι : Type*} (K : Lp 𝕜 2 (μ.prod ν))
     (b : HilbertBasis ι 𝕜 (Lp 𝕜 2 ν)) :
     (integralOperatorL2 μ ν K).hilbertSchmidtEnergy b = ‖K‖ₑ ^ 2 := by
@@ -324,7 +287,7 @@ theorem integralOperatorL2_injective :
 variable (μ ν) in
 /-- **The kernel-to-operator map as a linear isometry** from `L²(μ ⊗ ν)` into the Hilbert–Schmidt
 ideal `𝓛₂(L²(ν), L²(μ))`, normed by the Hilbert–Schmidt norm. -/
-@[expose] def integralOperatorL2HS : Lp 𝕜 2 (μ.prod ν) →ₗᵢ[𝕜]
+def integralOperatorL2HS : Lp 𝕜 2 (μ.prod ν) →ₗᵢ[𝕜]
     ((OperatorIdealFamily.hilbertSchmidt 𝕜).operatorGauge (Lp 𝕜 2 ν) (Lp 𝕜 2 μ)).Carrier where
   toFun K := ⟨integralOperatorL2 μ ν K, integralOperatorL2_mem_hilbertSchmidt K⟩
   map_add' K L := by ext1; simp
@@ -337,24 +300,7 @@ ideal `𝓛₂(L²(ν), L²(μ))`, normed by the Hilbert–Schmidt norm. -/
 @[simp]
 theorem integralOperatorL2HS_apply (K : Lp 𝕜 2 (μ.prod ν)) :
     (integralOperatorL2HS μ ν K).toContinuousLinearMap = integralOperatorL2 μ ν K :=
-  rfl
-
-omit [SigmaFinite ν] in
-/-- **Rank-one kernels.** The kernel `(x, y) ↦ w x * conj (u y)` gives the rank-one operator
-`f ↦ ⟪u, f⟫ w`. -/
-theorem integralOperatorL2_prodMul_star (w : Lp 𝕜 2 μ) (u : Lp 𝕜 2 ν) :
-    integralOperatorL2 μ ν (prodMul w (star u)) = (innerSL 𝕜 u).smulRight w := by
-  ext1 f
-  refine ext_inner_left 𝕜 fun h ↦ ?_
-  rw [inner_integralOperatorL2, inner_prodMul, ContinuousLinearMap.smulRight_apply,
-    innerSL_apply_apply, inner_smul_right, inner_star_star, mul_comm]
-
-/-- The rank-one operator `f ↦ ⟪u, f⟫ w` between `L²` spaces has Hilbert–Schmidt norm
-`‖u‖ * ‖w‖`. -/
-theorem hilbertSchmidtNorm_smulRight_innerSL (u : Lp 𝕜 2 ν) (w : Lp 𝕜 2 μ) :
-    ((innerSL 𝕜 u).smulRight w).hilbertSchmidtNorm = ‖u‖ * ‖w‖ := by
-  rw [← integralOperatorL2_prodMul_star, hilbertSchmidtNorm_integralOperatorL2, norm_prodMul,
-    mul_comm, norm_star]
+  (rfl)
 
 end HilbertSchmidt
 
