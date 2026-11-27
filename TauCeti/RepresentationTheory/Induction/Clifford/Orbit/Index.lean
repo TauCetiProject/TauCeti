@@ -175,8 +175,7 @@ theorem conjSubmoduleHom_isotypicComponent (g : G) (σ : Subrepresentation (ρ.c
   obtain ⟨τ, rfl⟩ := Subrepresentation.subrepresentationSubmoduleOrderIso.surjective S
   simp only [Set.mem_preimage, Set.mem_ofPred_eq, conjSubmoduleHom_symm,
     Subrepresentation.subrepresentationSubmoduleOrderIso_apply, conjSubmoduleHom_asSubmodule]
-  rw [← nonempty_linearEquiv_conjSubrep_iff ρ g, conjSubrep_conjSubrep, mul_inv_cancel,
-    conjSubrep_one]
+  rw [← nonempty_linearEquiv_conjSubrep_iff ρ g, conjSubrep_conjSubrep_inv]
 
 /-- Translation sends isotypic components of the restriction to isotypic components. -/
 theorem conjSubmoduleHom_mem_isotypicComponents (g : G)
@@ -228,20 +227,25 @@ theorem conjSubrepIsotypicComponent_eq_smul [ρ.IsIrreducible]
     conjSubrepIsotypicComponent ρ σ hσ g = g • conjSubrepIsotypicComponent ρ σ hσ 1 := by
   rw [smul_conjSubrepIsotypicComponent, mul_one]
 
-/-- **`G` permutes the isotypic components transitively.** -/
-theorem isPretransitive_isotypicComponents [ρ.IsIrreducible]
-    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ) :
+/-- **`G` permutes the isotypic components transitively.** If there is no isotypic component
+there is nothing to prove; otherwise one component gives a minimal `N`-stable subspace `σ`, and
+every component is that of a translate of `σ` (`isotypicComponents_eq_range`). -/
+instance isPretransitive_isotypicComponents [ρ.IsIrreducible] :
     MulAction.IsPretransitive G
       (isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) := by
+  refine ⟨fun c₀ d₀ ↦ ?_⟩
+  obtain ⟨S, hS, -⟩ := c₀.prop
+  obtain ⟨σ, rfl⟩ := Subrepresentation.subrepresentationSubmoduleOrderIso.surjective S
+  have hσ := Subrepresentation.isSimpleModule_asSubmodule_iff.mp hS
   have hrange : ∀ c : isotypicComponents k[N] _,
       ∃ g, c = conjSubrepIsotypicComponent ρ σ hσ g := by
     rintro ⟨c, hc⟩
     rw [isotypicComponents_eq_range ρ hσ] at hc
     obtain ⟨g, rfl⟩ := hc
     exact ⟨g, Subtype.ext (coe_conjSubrepIsotypicComponent ρ σ hσ g).symm⟩
-  refine ⟨fun c d ↦ ?_⟩
-  obtain ⟨g, rfl⟩ := hrange c
-  obtain ⟨h, rfl⟩ := hrange d
+  obtain ⟨g, hg⟩ := hrange c₀
+  obtain ⟨h, hh⟩ := hrange d₀
+  rw [hg, hh]
   exact ⟨h * g⁻¹, by rw [smul_conjSubrepIsotypicComponent, inv_mul_cancel_right]⟩
 
 variable [FiniteDimensional k V]
@@ -266,7 +270,6 @@ noncomputable def isotypicComponentsEquivQuotientInertia [ρ.IsIrreducible]
     (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) :
     isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype)) ≃
       G ⧸ inertia (FDRep.of σ.toRepresentation) :=
-  haveI := isPretransitive_isotypicComponents ρ hσ
   (TauCeti.quotientStabilizerEquiv G (conjSubrepIsotypicComponent ρ σ hσ 1)).symm.trans
     (Subgroup.quotientEquivOfEq (stabilizer_conjSubrepIsotypicComponent_one ρ σ hσ))
 
@@ -276,10 +279,9 @@ theorem isotypicComponentsEquivQuotientInertia_symm_mk [ρ.IsIrreducible]
     (σ : Subrepresentation (ρ.comp N.subtype)) (hσ : IsAtom σ) (g : G) :
     (isotypicComponentsEquivQuotientInertia ρ σ hσ).symm (QuotientGroup.mk g) =
       conjSubrepIsotypicComponent ρ σ hσ g := by
-  have := isPretransitive_isotypicComponents ρ hσ
   rw [conjSubrepIsotypicComponent_eq_smul, ← TauCeti.quotientStabilizerEquiv_mk,
     isotypicComponentsEquivQuotientInertia, Equiv.symm_trans_apply, Equiv.symm_symm]
-  congr 1
+  rw [(Equiv.symm_apply_eq _).mpr (Subgroup.quotientEquivOfEq_mk _ g).symm]
 
 /-- Under the Clifford orbit equivalence, the component of the translate by `g` corresponds to
 the coset of `g`. -/

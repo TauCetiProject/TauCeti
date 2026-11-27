@@ -343,6 +343,15 @@ theorem coe_conjSubrepLinearEquiv_apply (g : G) (e : σ.asSubmodule ≃ₗ[k[N]]
       asModuleConjEquiv ρ g (e (conjSubrepMap ρ g⁻¹ (fun _ hv ↦ mem_conjSubrep_iff.mp hv) x)) :=
   (rfl)
 
+/-- The inverse of the translated equivalence sends `y` to `ρ g (e.symm (ρ g⁻¹ y))`. -/
+@[simp]
+theorem coe_conjSubrepLinearEquiv_symm_apply (g : G) (e : σ.asSubmodule ≃ₗ[k[N]] τ.asSubmodule)
+    (y : (conjSubrep ρ g τ).asSubmodule) :
+    ((conjSubrepLinearEquiv ρ g e).symm y : Representation.asModule (ρ.comp N.subtype)) =
+      asModuleConjEquiv ρ g
+        (e.symm (conjSubrepMap ρ g⁻¹ (fun _ hv ↦ mem_conjSubrep_iff.mp hv) y)) :=
+  (rfl)
+
 variable (ρ) in
 /-- Translating two `N`-subrepresentations by the same `g` does not change whether they are
 isomorphic as representations of `N`. -/
@@ -350,13 +359,10 @@ theorem nonempty_linearEquiv_conjSubrep_iff (g : G) (σ τ : Subrepresentation (
     Nonempty ((conjSubrep ρ g σ).asSubmodule ≃ₗ[k[N]] (conjSubrep ρ g τ).asSubmodule) ↔
       Nonempty (σ.asSubmodule ≃ₗ[k[N]] τ.asSubmodule) := by
   refine ⟨fun ⟨e⟩ ↦ ?_, fun ⟨e⟩ ↦ ⟨conjSubrepLinearEquiv ρ g e⟩⟩
-  have hσ : conjSubrep ρ g⁻¹ (conjSubrep ρ g σ) = σ := by
-    rw [conjSubrep_conjSubrep, inv_mul_cancel, conjSubrep_one]
-  have hτ : conjSubrep ρ g⁻¹ (conjSubrep ρ g τ) = τ := by
-    rw [conjSubrep_conjSubrep, inv_mul_cancel, conjSubrep_one]
-  exact ⟨(LinearEquiv.ofEq _ _ (congrArg Subrepresentation.asSubmodule hσ)).symm.trans
-    ((conjSubrepLinearEquiv ρ g⁻¹ e).trans
-      (LinearEquiv.ofEq _ _ (congrArg Subrepresentation.asSubmodule hτ)))⟩
+  exact ⟨(LinearEquiv.ofEq _ _
+      (congrArg Subrepresentation.asSubmodule (conjSubrep_inv_conjSubrep g σ))).symm.trans
+    ((conjSubrepLinearEquiv ρ g⁻¹ e).trans (LinearEquiv.ofEq _ _
+      (congrArg Subrepresentation.asSubmodule (conjSubrep_inv_conjSubrep g τ))))⟩
 
 end Hom
 

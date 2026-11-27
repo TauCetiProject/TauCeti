@@ -152,6 +152,18 @@ theorem conjSubrep_conjSubrep (g h : G) (σ : Subrepresentation (ρ.comp N.subty
     rw [toSubmodule_conjSubrep, toSubmodule_conjSubrep, toSubmodule_conjSubrep,
       ← Submodule.map_comp, ← Module.End.mul_eq_comp, ← map_mul]
 
+/-- Translating back by `g⁻¹` undoes translating by `g`. Not a `simp` lemma: `simp` already
+proves it from `conjSubrep_conjSubrep` and `conjSubrep_eq_self_of_mem`. -/
+theorem conjSubrep_inv_conjSubrep (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
+    conjSubrep ρ g⁻¹ (conjSubrep ρ g σ) = σ := by
+  rw [conjSubrep_conjSubrep, inv_mul_cancel, conjSubrep_one]
+
+/-- Translating by `g` undoes translating back by `g⁻¹`. Not a `simp` lemma, for the same reason
+as `conjSubrep_inv_conjSubrep`. -/
+theorem conjSubrep_conjSubrep_inv (g : G) (σ : Subrepresentation (ρ.comp N.subtype)) :
+    conjSubrep ρ g (conjSubrep ρ g⁻¹ σ) = σ := by
+  rw [conjSubrep_conjSubrep, mul_inv_cancel, conjSubrep_one]
+
 @[simp]
 theorem conjSubrep_bot (g : G) : conjSubrep ρ g (⊥ : Subrepresentation (ρ.comp N.subtype)) = ⊥ :=
   Subrepresentation.toSubmodule_injective <| by
@@ -172,8 +184,8 @@ def conjSubrepOrderIso (g : G) :
     Subrepresentation (ρ.comp N.subtype) ≃o Subrepresentation (ρ.comp N.subtype) where
   toFun := conjSubrep ρ g
   invFun := conjSubrep ρ g⁻¹
-  left_inv σ := by rw [conjSubrep_conjSubrep, inv_mul_cancel, conjSubrep_one]
-  right_inv σ := by rw [conjSubrep_conjSubrep, mul_inv_cancel, conjSubrep_one]
+  left_inv := conjSubrep_inv_conjSubrep g
+  right_inv := conjSubrep_conjSubrep_inv g
   map_rel_iff' {σ τ} := by
     simp only [Equiv.coe_fn_mk, ← Subrepresentation.toSubmodule_le_toSubmodule,
       toSubmodule_conjSubrep]
