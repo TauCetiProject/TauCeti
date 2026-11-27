@@ -29,11 +29,18 @@ Along a single end, a map `g` continuous on `α × β` is eventually bounded alo
 `x ↦ (x, F i x)` of a family converging uniformly on a compact set `s` to a limit continuous on `s`
 (`IsCompact.exists_eventually_forall_norm_le_of_tendstoUniformlyOn`): the graphs converge uniformly
 to the compact graph of the limit, near which `g` is bounded.
+
+A sequence of maps continuous on a compact set `K` and converging uniformly on `K` is uniformly
+bounded on `K` (`TendstoUniformlyOn.exists_forall_norm_le_of_isCompact`): far out, every term is
+within `2` of one fixed term, and the finitely many remaining terms are bounded.
+
+On the cylinder, a continuous map `f` of period one in `t` that, far out on each end, does not
+depend on `s` is bounded (`TauCeti.exists_forall_norm_le_of_periodic_of_eventually_eq`).
 -/
 
 public section
 
-open Filter Set
+open Filter Set Topology Function
 
 namespace TauCeti
 
@@ -64,6 +71,25 @@ theorem exists_forall_norm_le_of_tendstoUniformlyOn {β E : Type*} [TopologicalS
       (hRp R (le_max_right _ _) t ht)
   · linarith [hC (s, t) ⟨⟨hs.le, hs'.le⟩, ht⟩]
 
+/-- A continuous function on the cylinder, of period one in `t`, which far out on each end does not
+depend on `s`, is bounded. -/
+theorem exists_forall_norm_le_of_periodic_of_eventually_eq {E : Type*}
+    [SeminormedAddCommGroup E] {f : ℝ × ℝ → E} (hf : Continuous f)
+    (hper : ∀ s t, f (s, t + 1) = f (s, t)) {gm gp : ℝ → E}
+    (hm : ∀ᶠ s in atBot, ∀ t, f (s, t) = gm t) (hp : ∀ᶠ s in atTop, ∀ t, f (s, t) = gp t) :
+    ∃ C, ∀ z, ‖f z‖ ≤ C := by
+  have hlim {l : Filter ℝ} {g : ℝ → E} (h : ∀ᶠ s in l, ∀ t, f (s, t) = g t) :
+      TendstoUniformlyOn (fun s t ↦ f (s, t)) g l (Icc 0 1) :=
+    (tendstoUniformlyOn_const g l _).congr (h.mono fun s hs t _ ↦ (hs t).symm)
+  obtain ⟨C, hC⟩ := exists_forall_norm_le_of_tendstoUniformlyOn isCompact_Icc hf.continuousOn
+    (hlim hm) (hlim hp)
+  refine ⟨C, fun ⟨s, t⟩ ↦ ?_⟩
+  -- Reduce `t` modulo `1` to `[0, 1)`.
+  obtain ⟨t', ht', heq⟩ :=
+    (show Periodic (fun t ↦ f (s, t)) 1 from hper s).exists_mem_Ico₀ one_pos t
+  rw [show f (s, t) = f (s, t') from heq]
+  exact hC s t' (Ico_subset_Icc_self ht')
+
 end TauCeti
 
 /-- If `F i → f` uniformly on a compact set `s`, with `f` continuous on `s`, then a continuous map
@@ -81,3 +107,25 @@ theorem IsCompact.exists_eventually_forall_norm_le_of_tendstoUniformlyOn {ι α 
   have h₁ := hi x hx
   rw [dist_eq_norm'] at h₁
   linarith [hC _ (mem_image_of_mem _ hx), norm_le_insert' (g (x, F i x)) (g (x, f x))]
+
+/-- A sequence of maps continuous on a compact set `K` that converges uniformly on `K` is uniformly
+bounded on `K`. No continuity of the limit is needed. -/
+theorem TendstoUniformlyOn.exists_forall_norm_le_of_isCompact {α E : Type*} [TopologicalSpace α]
+    [SeminormedAddCommGroup E] {F : ℕ → α → E} {f : α → E} {K : Set α}
+    (h : TendstoUniformlyOn F f atTop K) (hK : IsCompact K) (hF : ∀ n, ContinuousOn (F n) K) :
+    ∃ C, ∀ n, ∀ x ∈ K, ‖F n x‖ ≤ C := by
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (Metric.tendstoUniformlyOn_iff.1 h 1 one_pos)
+  choose B hB using fun n => hK.exists_bound_of_continuousOn (hF n)
+  set S := ∑ n ∈ Finset.range (N + 1), |B n|
+  have hle (m : ℕ) (hm : m ≤ N) (x : α) (hx : x ∈ K) : ‖F m x‖ ≤ S :=
+    (hB m x hx).trans ((le_abs_self _).trans (Finset.single_le_sum (fun n _ => abs_nonneg (B n))
+      (Finset.mem_range.2 (by omega))))
+  refine ⟨S + 2, fun n x hx => ?_⟩
+  rcases le_or_gt n N with hn | hn
+  · linarith [hle n hn x hx]
+  -- Far out, `F n x` is within `2` of `F N x`, through the limit `f x`.
+  have h₁ := hN n hn.le x hx
+  have h₂ := hN N le_rfl x hx
+  have h₃ := dist_triangle_left (F n x) (F N x) (f x)
+  rw [dist_eq_norm] at h₃
+  linarith [norm_le_insert' (F n x) (F N x), hle N le_rfl x hx]

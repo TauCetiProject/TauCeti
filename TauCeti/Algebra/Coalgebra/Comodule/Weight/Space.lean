@@ -128,6 +128,15 @@ theorem Hom.map_groupLikeWeightSpace_le (f : Hom R C M N) (c : GroupLike R C) :
   rintro _ ⟨m, hm, rfl⟩
   exact f.map_mem_groupLikeWeightSpace hm
 
+/-- An injective comodule morphism carries a nonzero weight vector to a nonzero weight vector of
+the same weight. -/
+theorem hasNonzeroWeightVector_of_injective (f : Hom R C M N) (hf : Function.Injective f)
+    (hM : HasNonzeroWeightVector R C M) : HasNonzeroWeightVector R C N := by
+  obtain ⟨v, c, hv, hc, hvc⟩ := hasNonzeroWeightVector_iff.mp hM
+  exact hasNonzeroWeightVector_iff.mpr ⟨f v, c, fun h ↦ hv (hf (h.trans (map_zero f).symm)), hc,
+    _root_.GroupLike.mem_weightSpace.mp (f.map_mem_groupLikeWeightSpace (c := ⟨c, hc⟩)
+      (_root_.GroupLike.mem_weightSpace.mpr hvc))⟩
+
 /-- A comodule has a nonzero weight vector exactly when one of its group-like weight spaces is
 nonzero. -/
 theorem hasNonzeroWeightVector_iff_exists_groupLikeWeightSpace_ne_bot :

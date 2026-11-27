@@ -54,10 +54,9 @@ on the product fields `(ξ^L, α)` and `(η^L, β)`, where `ξ^L` is the left-in
 `(g, a)`, whose derivative along `(η^L, β)` is `β ξ`, and the bracket of the two fields is
 `(⁅ξ, η⁆^L, 0)`.
 
-Pulling the left-trivialized forms back along `id × f` for a smooth map `f : N → 𝔤*` gives the
-one-form `⟨f, θ⟩` on `G × N`, which sends `(v, u)` at `(g, n)` to `f n (θ_g v)`
-(`TauCeti.CotangentBundle.mpullback_prodMap_leftTrivialization_liouvilleForm_apply`), and the
-two-form `-d⟨f, θ⟩`, which pairs `(v, u)` and `(w, u')` at `(g, n)` to
+Pulling the left-trivialized symplectic form back along `id × f` for a smooth map `f : N → 𝔤*`
+gives the two-form `-d⟨f, θ⟩` on `G × N`, where the one-form `⟨f, θ⟩` sends `(v, u)` at `(g, n)`
+to `f n (θ_g v)`. It pairs `(v, u)` and `(w, u')` at `(g, n)` to
 `df_n u' (θ_g v) - df_n u (θ_g w) + f n ⁅θ_g v, θ_g w⁆`
 (`TauCeti.CotangentBundle.eval₂_mpullback_prodMap_leftTrivialization_symplecticForm`). With
 `f (η, v) = ν + η + μ_V v` on `N = 𝔪* × V` this is the form `-d⟨ν + η + μ_V(v), θ⟩` on
@@ -80,15 +79,22 @@ two-form `-d⟨f, θ⟩`, which pairs `(v, u)` and `(w, u')` at `(g, n)` to
   relates `Φ (g, a)` to `Φ (g h, Ad*_{h⁻¹} a)`.
 * `TauCeti.CotangentBundle.momentMap_leftTrivialization`: the cotangent moment map of left
   multiplication is `(g, a) ↦ Ad*_g a`.
+* `TauCeti.CotangentBundle.fundamentalVectorField_leftTrivialization`: the fundamental vector
+  field of `ξ` at `(g, a)` is `(ξ^R(g), 0)`.
+* `TauCeti.CotangentBundle.coadjointRepresentation_proj_inv_momentMap`: the left-trivialized value
+  of a covector `z` over `g` is `Ad*_{g⁻¹} μ(z)`.
+* `TauCeti.CotangentBundle.eq_of_proj_eq_of_momentMap_eq`: a covector of `T*G` is determined by
+  its base point and its moment map.
+* `TauCeti.CotangentBundle.exists_momentMap_eq_and_proj_eq`: every pair of a base point and a
+  value of the moment map is realized by a covector of `T*G`.
 * `TauCeti.CotangentBundle.mpullback_leftTrivialization_liouvilleForm_apply`: the Liouville form is
   `⟨a, θ⟩`.
 * `TauCeti.CotangentBundle.eval₂_mpullback_leftTrivialization_symplecticForm`: the symplectic form
   pairs `(v, α)` and `(w, β)` to `β (θ v) - α (θ w) + a ⁅θ v, θ w⁆`.
 * `TauCeti.CotangentBundle.isSymplectic_mpullback_leftTrivialization_symplecticForm`: this form is
   symplectic on `G × 𝔤*`.
-* `TauCeti.CotangentBundle.mpullback_prodMap_leftTrivialization_liouvilleForm_apply`,
-  `TauCeti.CotangentBundle.eval₂_mpullback_prodMap_leftTrivialization_symplecticForm`: the
-  one-form `⟨f, θ⟩` and the two-form `-d⟨f, θ⟩` on `G × N`, the pullbacks along `id × f`.
+* `TauCeti.CotangentBundle.eval₂_mpullback_prodMap_leftTrivialization_symplecticForm`: the
+  two-form `-d⟨f, θ⟩` on `G × N`, the pullback along `id × f`.
 
 ## References
 
@@ -293,6 +299,63 @@ theorem momentMap_leftTrivialization (p : G × (E →L[ℝ] ℝ)) :
   -- `TangentSpace I 1`, which is only definitionally the model space `E`.
   rfl
 
+/-- The fundamental vector field of `ξ` for the cotangent lift of left multiplication, read in the
+left trivialization: at `(g, a)` it is `(ξ^R(g), 0)`, as `h • Φ (g, a) = Φ (h g, a)`. -/
+theorem fundamentalVectorField_leftTrivialization (ξ : GroupLieAlgebra I G)
+    (p : G × (E →L[ℝ] ℝ)) :
+    fundamentalVectorField (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ξ (leftTrivialization I G p) =
+      mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (leftTrivialization I G) p
+        ((mulRightInvariantVectorField ξ p.1, 0) : E × (E →L[ℝ] ℝ)) := by
+  obtain ⟨k, a⟩ := p
+  -- `h • Φ (k, a) = Φ (h k, a)`, so the orbit map of `Φ (k, a)` at `1` is that of `Φ (1, a)` at
+  -- `k`, which is `Φ` composed with the slice `x ↦ (x, a)`.
+  have hfun : (fun h : G ↦ h • leftTrivialization I G (1, a)) =
+      leftTrivialization I G ∘ fun x : G ↦ (x, a) := by
+    funext h
+    simp [← leftTrivialization_mul]
+  have hs : MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun x : G ↦ (x, a)) k :=
+    mdifferentiableAt_id.prodMk mdifferentiableAt_const
+  have hΦ : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
+      (leftTrivialization I G) (k, a) :=
+    ((leftTrivialization I G).contMDiff _).mdifferentiableAt (by simp)
+  have h := mfderiv_smul_mulRightInvariantVectorField (I' := I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) ξ k
+    (leftTrivialization I G (1, a))
+  rw [← leftTrivialization_mul, mul_one, hfun, mfderiv_comp_apply k hΦ hs, mfderiv_prod_left] at h
+  -- `ContinuousLinearMap.inl` is `v ↦ (v, 0)` by definition. Its codomain, the product of the
+  -- coordinate tangent spaces, is the tangent space of the product only by definition, so
+  -- `ContinuousLinearMap.inl_apply` cannot be rewritten here.
+  exact h.symm
+
+/-- **The left-trivialized value from the moment map.** The covector `z` over `g` translates to the
+identity as `Ad*_{g⁻¹} μ(z)`, the second component of `Φ⁻¹ z`. -/
+theorem coadjointRepresentation_proj_inv_momentMap (z : CotangentBundle I G) :
+    Lie.coadjointRepresentation ℝ I G z.proj⁻¹ (momentMap I G z) =
+      (((leftTrivialization I G).symm z).2 : E →ₗ[ℝ] ℝ) := by
+  obtain ⟨p, rfl⟩ : ∃ p, leftTrivialization I G p = z :=
+    ⟨_, (leftTrivialization I G).apply_symm_apply z⟩
+  rw [momentMap_leftTrivialization, proj_leftTrivialization, Diffeomorph.symm_apply_apply]
+  exact Representation.inv_self_apply _ _ _
+
+/-- A covector of `T*G` is determined by its base point and its moment map for the cotangent lift
+of left multiplication. -/
+theorem eq_of_proj_eq_of_momentMap_eq {z z' : CotangentBundle I G} (hπ : z.proj = z'.proj)
+    (hμ : momentMap I G z = momentMap I G z') : z = z' := by
+  have h := coadjointRepresentation_proj_inv_momentMap z
+  rw [hπ, hμ, coadjointRepresentation_proj_inv_momentMap] at h
+  rw [← (leftTrivialization I G).apply_symm_apply z, ← (leftTrivialization I G).apply_symm_apply z']
+  exact congrArg _ (Prod.ext hπ (ContinuousLinearMap.coe_injective h.symm))
+
+/-- Every point `g` of `G` is the base point of a covector with any prescribed moment map `c` for
+the cotangent lift of left multiplication, namely the left translate of `Ad*_{g⁻¹} c`. -/
+theorem exists_momentMap_eq_and_proj_eq [FiniteDimensional ℝ E]
+    (c : Module.Dual ℝ (GroupLieAlgebra I G)) (g : G) :
+    ∃ z : CotangentBundle I G, momentMap I G z = c ∧ z.proj = g := by
+  refine ⟨leftTrivialization I G
+    (g, LinearMap.toContinuousLinearMap (Lie.coadjointRepresentation ℝ I G g⁻¹ c : E →ₗ[ℝ] ℝ)),
+    ?_, proj_leftTrivialization _⟩
+  rw [momentMap_leftTrivialization]
+  exact Representation.self_inv_apply _ _ _
+
 /-! ### The canonical forms in the left trivialization -/
 
 /-- **The Liouville form in the left trivialization** is `⟨a, θ⟩`: it sends a tangent vector
@@ -305,23 +368,6 @@ theorem mpullback_leftTrivialization_liouvilleForm_apply (p : G × (E →L[ℝ] 
     (fun q ↦ proj_leftTrivialization q)
     (((leftTrivialization I G).contMDiff p).mdifferentiableAt (by simp)), mfderiv_fst]
   exact leftTrivialization_snd_apply p (v 0).1
-
-/-- **The one-form `⟨f, θ⟩` on `G × N`.** Pulling the left-trivialized Liouville form back along
-`id × f` for a smooth map `f : N → 𝔤*` gives the one-form that sends a tangent vector `(v, u)` at
-`(g, n)` to `f n (θ v)`, where `θ = d(L_{g⁻¹})_g`. -/
-theorem mpullback_prodMap_leftTrivialization_liouvilleForm_apply {EN HN : Type*}
-    [NormedAddCommGroup EN] [NormedSpace ℝ EN] [TopologicalSpace HN]
-    {IN : ModelWithCorners ℝ EN HN} {N : Type*} [TopologicalSpace N] [ChartedSpace HN N]
-    [IsManifold IN 1 N] {f : N → E →L[ℝ] ℝ} (hf : ContMDiff IN 𝓘(ℝ, E →L[ℝ] ℝ) ∞ f) (p : G × N)
-    (v : Fin 1 → TangentSpace (I.prod IN) p) :
-    (SmoothForm.mpullback (Prod.map id f) (contMDiff_id.prodMap hf)
-      (SmoothForm.mpullback (leftTrivialization I G) (leftTrivialization I G).contMDiff
-        (liouvilleForm I G))).val p v = f p.2 (mfderiv I I (p.1⁻¹ * ·) p.1 (v 0).1) := by
-  rw [SmoothForm.coe_mpullback, mpullback_apply, mpullback_leftTrivialization_liouvilleForm_apply,
-    mfderiv_prodMap mdifferentiableAt_id ((hf p.2).mdifferentiableAt (by simp)), mfderiv_id]
-  -- `ContinuousLinearMap.prodMap` acts componentwise and `Prod.map id f p = (p.1, f p.2)`, both
-  -- definitionally.
-  rfl
 
 /-- The canonical symplectic form of `T*G`, read in the left trivialization, is a symplectic form
 on `G × 𝔤*`. -/

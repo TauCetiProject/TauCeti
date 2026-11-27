@@ -142,6 +142,13 @@ theorem torusMatrix_mul (z w : Circle) :
   ext i
   fin_cases i <;> simp [mul_comm]
 
+/-- Negating the point of the circle negates the torus matrix: `diag (-z, (-z)⁻¹) = -diag (z, z⁻¹)`.
+-/
+@[simp]
+theorem torusMatrix_neg (z : Circle) : torusMatrix (-z) = -torusMatrix z := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [inv_neg]
+
 @[simp]
 theorem star_torusMatrix (z : Circle) : star (torusMatrix z) = torusMatrix z⁻¹ := by
   have hz : star (z : ℂ) = ((z : ℂ))⁻¹ := by simpa using (Circle.coe_inv_eq_conj z).symm

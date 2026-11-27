@@ -41,6 +41,8 @@ computation appears; inverses come from the group of points.
   vector exactly when its constant lift commutes with the tangent point.
 * `Derivation.adDerivation_eq_self_of_isCentralPoint`: universally central points
   act trivially on tangent vectors.
+* `Derivation.adDerivation_eq_self_of_isCocomm`: over a cocommutative Hopf algebra every point
+  acts trivially on tangent vectors.
 * `Derivation.adRepresentation`: the adjoint action, as a representation of
   the convolution group of points on the tangent space.
 
@@ -96,7 +98,7 @@ private lemma conj_comp_mul'
     AlgHom.toConv_toLinearMap_comp_mul' (g⁻¹).ofConv]
   rw [mul_add, add_mul, WithConv.mulTensor_convMul, WithConv.mulTensor_convMul,
     WithConv.mulTensor_convMul, WithConv.mulTensor_convMul, mul_one,
-    ← AlgHom.toLinearMap_convMul, mul_inv_cancel, AlgHom.toLinearMap_convOne]
+    WithConv.algHom_toConv_mul_toConv_inv]
 
 /-- The Leibniz rule for a conjugated derivation, in scalar-action form. -/
 private lemma conj_ofConv_mul
@@ -174,6 +176,15 @@ lemma toConv_coe_adDerivation
         toConv (↑d : A →ₗ[R] Bialgebra.CounitAlgebra R A B) *
         toConv ((g⁻¹).ofConv.toLinearMap) := by
   rw [coe_adDerivation_linearMap, toConv_ofConv]
+
+/-- Over a cocommutative Hopf algebra the adjoint action is trivial: the convolution semiring is
+commutative, so the conjugate `g ⋆ d ⋆ g⁻¹` collapses to `d`. -/
+theorem adDerivation_eq_self_of_isCocomm [IsCocomm R A]
+    (g : WithConv (A →ₐ[R] Bialgebra.CounitAlgebra R A B))
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) : adDerivation B g d = d := by
+  ext a
+  rw [adDerivation_apply, mul_comm (toConv g.ofConv.toLinearMap), mul_assoc,
+    WithConv.algHom_toConv_mul_toConv_inv, mul_one, ofConv_toConv, Derivation.coeFn_coe]
 
 variable (B) in
 /-- The adjoint action of the group of points on the tangent space, as a

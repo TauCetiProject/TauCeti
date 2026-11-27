@@ -14,6 +14,9 @@ public import TauCeti.Geometry.Symplectic.Liouville.ContactType
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Log
+import TauCeti.Geometry.Contact.ClosedOrbit.Rescale
+import TauCeti.Geometry.Contact.Pullback
+import TauCeti.Geometry.Contact.Transition
 
 /-!
 # Graphs over the boundary of a Liouville domain
@@ -65,6 +68,15 @@ in some set, then the contact form `j_f^* α = f ι^* α` has a closed Reeb orbi
 This is how Corollary E brings a closed characteristic of the hypersurface `Σ_α = j_f(S)` back to
 a closed Reeb orbit of the contact form `f ι^* α` on `Σ`, contractible in the ambient manifold.
 
+Every contact form `β` defining the contact structure `ker ι^* α`, with either coorientation, is
+of this form up to a nonzero constant factor on each component of `S`: when `S` is compact,
+`c β = f ι^* α` for a locally constant `c` and a smooth `f > 1`
+(`TauCeti.SmoothForm.exists_isLocallyConstant_smul_eq_smul`), and this rescaling only changes the
+speed and possibly the direction of the Reeb orbits. So if the graph of every smooth `f > 1` is a
+regular level of a `C²` function and carries a closed characteristic contractible in `V`, every
+such `β` has a closed Reeb orbit whose loop on `Σ` is contractible in `M`; see
+`IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_kerDistribution_eq`.
+
 ## Main definitions
 
 * `TauCeti.liouvilleGraph Z ι f`: the map `s ↦ φ_{log f(s)}(ι s)`.
@@ -90,6 +102,10 @@ a closed Reeb orbit of the contact form `f ι^* α` on `Σ`, contractible in the
 * `IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic`
   in `TauCeti`: a contractible closed characteristic of a graph which is a regular level comes
   from a closed Reeb orbit `γ` of `f ι^* α` whose loop `ι ∘ γ` is contractible in `M`.
+* `IsLiouvilleDomain.exists_isMIntegralCurve_reebVectorField_of_kerDistribution_eq` in
+  `TauCeti`: if the graphs of all smooth `f > 1` are regular levels of `C²` functions and carry
+  contractible closed characteristics, every one-form with the kernel of `ι^* α` has a closed Reeb
+  orbit whose loop on `Σ` is contractible in `M`.
 
 ## References
 
@@ -400,8 +416,8 @@ theorem exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacte
   have hα : (SmoothForm.mpullback j hj α).IsContactForm :=
     (h.isRestrictedContactType_liouvilleGraph hZ hc hιd hιs hιW hfd fun s ↦ (hf₀ s).ne')
       |>.isContactType.isContactForm_mpullback h.isNondegenerate hj hjs hdim
-  have hαneg : (SmoothForm.mpullback j hj (-α)).IsContactForm := by
-    rwa [map_neg, SmoothForm.isContactForm_neg_iff]
+  have hαneg : (SmoothForm.mpullback j hj (-α)).IsContactForm :=
+    (SmoothForm.isContactForm_mpullback_neg_iff hj α).2 hα
   have hdθ (s : S) : mextDeriv (-α).val (j s) = -ω.val (j s) := by
     rw [NegMemClass.coe_neg, mextDeriv_neg, h.mextDeriv_eq, Pi.neg_apply]
   have hKj (s : S) : (mfderiv J I j s).range = (mvfderiv I K (j s)).ker := by
@@ -430,6 +446,70 @@ theorem exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacte
   refine ⟨_, hιℓ, fun t ↦ congrArg ι (hji ((hℓ t).trans ?_))⟩
   rw [hgδ, hδeq]
   simp
+
+/-- **Closed Reeb orbits of every contact form defining the contact structure of the boundary.**
+Let `ι` be a smooth injective immersion of a compact manifold `S`, of one dimension less than `M`,
+into the frontier of a Liouville domain `W` with complete Liouville field `Z`, and let `β` be a
+smooth one-form on `S` with the same kernel as the contact form `ι^* α`, such as any contact form
+defining the same contact structure, with either coorientation. Suppose that the Liouville graph of
+every smooth function `f > 1` over `ι` is a regular level `K⁻¹(c)` of a `C²` function `K`, carrying
+a closed characteristic contractible in `V`. Then `β` has a closed Reeb orbit `γ` whose loop
+`ι ∘ γ` on the boundary of `W`, run at another speed, is contractible in `M`.
+
+This is the reduction, in the proof of Corollary E of Barraud–Damian–Humilière–Oancea, of the
+contact forms defining the contact structure of `∂W` to the forms `f ι^* α` with `f > 1`: up to a
+nonzero constant factor on each component of `S`, `β` is the restriction of `α` to the graph of such
+an `f`. -/
+theorem exists_isMIntegralCurve_reebVectorField_of_kerDistribution_eq
+    (h : IsLiouvilleDomain ω α W) (hZ : RoughForm.interior Z ω.val = α.val)
+    (hc : IsCompleteVectorField Z) (hι : ContMDiff J I (⊤ : ℕ∞) ι) (hιi : Injective ι)
+    (hιs : ∀ s, Injective (mfderiv J I ι s)) (hιW : ∀ s, ι s ∈ frontier W)
+    (hdim : Module.finrank ℝ E' + 1 = Module.finrank ℝ E) {V : Set M}
+    (hV : ∀ f : S → ℝ, ContMDiff J 𝓘(ℝ) (⊤ : ℕ∞) f → (∀ s, 1 < f s) →
+      ∃ (K : M → ℝ) (c : ℝ), ContMDiff I 𝓘(ℝ) 2 K ∧ IsRegularValue I 𝓘(ℝ) K c ∧
+        {x | K x = c} = range (liouvilleGraph Z ι f) ∧ ω.HasContractibleClosedCharacteristic V K c)
+    {β : SmoothForm J S ℝ 1}
+    (hβ : β.kerDistribution = (SmoothForm.mpullback ι hι α).kerDistribution) :
+    ∃ γ : ℝ → S, IsMIntegralCurve γ β.reebVectorField ∧ (∃ τ, τ ≠ 0 ∧ Periodic γ τ) ∧
+      ∃ (T : ℝ) (ψ : ℝ ≃ₜ ℝ), 0 < T ∧
+        ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = ι (γ (ψ t)) := by
+  have hZs := h.contMDiff_of_interior_eq hZ
+  have hιd : MDifferentiable J I ι := hι.mdifferentiable (by simp)
+  -- `ι^* α` is a contact form, since `ι` is the Liouville graph of the constant `1`.
+  have hα₀ : (SmoothForm.mpullback ι hι α).IsContactForm := by
+    have h₁ := h.isRestrictedContactType_liouvilleGraph hZ hc hιd hιs hιW (f := fun _ ↦ 1)
+      mdifferentiable_const fun _ ↦ one_ne_zero
+    rw [liouvilleGraph_one] at h₁
+    exact h₁.isContactType.isContactForm_mpullback h.isNondegenerate hι hιs hdim
+  -- Up to a locally constant factor `c`, `β` is `f ι^* α` with `f > 1`, the restriction of `α` to
+  -- the graph of `f`, which carries a closed Reeb orbit `γ`.
+  obtain ⟨c, f, hcl, hc₀, hf, hf₁, hcf⟩ :=
+    SmoothForm.exists_isLocallyConstant_smul_eq_smul hα₀.apply_ne_zero hβ 1
+  have hf₀ (s : S) : 0 < f s := one_pos.trans (hf₁ s)
+  obtain ⟨K, k, hK, hreg, hlevel, hVK⟩ := hV f hf hf₁
+  obtain ⟨γ, hγ, ⟨τ, hτ, hγτ⟩, T, ψ, hT, g, hg, hgγ⟩ :=
+    h.exists_isMIntegralCurve_reebVectorField_of_hasContractibleClosedCharacteristic hZ hc hι hιi
+      hιs hιW hf hf₀ hdim hK hreg hlevel hVK
+  set θ := SmoothForm.mpullback (liouvilleGraph Z ι f)
+    (contMDiff_liouvilleGraph le_top hZs hc hι hf fun s ↦ (hf₀ s).ne') α with hθdef
+  have hθ (s : S) : θ.val s = f s • (SmoothForm.mpullback ι hι α).val s := by
+    rw [hθdef, SmoothForm.coe_mpullback, SmoothForm.coe_mpullback]
+    exact mpullback_liouvilleGraph_apply (hZs.of_le (by simp)) α.mdifferentiable h.mextDeriv_eq
+      hZ (hc.mem_flowDomain _ _) (hιd s) ((hf s).mdifferentiableAt (by simp)) (hf₀ s)
+  have hθc : θ.IsContactForm :=
+    (SmoothForm.isContactForm_iff_of_eq_smul (hf.of_le (by simp)) (fun s ↦ (hf₀ s).ne') hθ).2 hα₀
+  have hβθ (s : S) : β.val s = (c s)⁻¹ • θ.val s := by
+    rw [hθ, ← hcf, smul_smul, inv_mul_cancel₀ (hc₀ s), one_smul]
+  have : FiniteDimensional ℝ E' :=
+    SmoothForm.finiteDimensional_of_isContactForm_mpullback hι hα₀ (γ 0)
+  -- Run at the constant speed `c (γ 0)`, `γ` is a closed Reeb orbit of `β = c⁻¹ θ`.
+  have hδ := hθc.isMIntegralCurve_comp_mul_reebVectorField_of_eq_smul
+    (hcl.comp fun a : ℝ ↦ a⁻¹) hβθ hγ
+  simp only [Function.comp_apply, inv_inv] at hδ
+  have ha := hc₀ (γ 0)
+  refine ⟨γ ∘ (· * c (γ 0)), hδ, ⟨τ / c (γ 0), div_ne_zero hτ ha, hγτ.mul_const' _⟩, T,
+    ψ.trans (Homeomorph.mulRight₀ (c (γ 0))⁻¹ (inv_ne_zero ha)), hT, g, hg, fun t ↦ ?_⟩
+  simp [hgγ, ha]
 
 end ClosedCharacteristic
 

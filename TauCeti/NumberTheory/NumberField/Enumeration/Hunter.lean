@@ -142,17 +142,13 @@ theorem det_gram_t2Vector {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis 
   let M : Matrix ι ι ℂ := of fun i k ↦ e k (b i)
   -- The determinant of the embedding matrix squares to the discriminant.
   have hM : M.det ^ 2 = (discr K : ℂ) := by
-    have hdiscr : Algebra.discr ℚ (fun i ↦ (b i : K)) = (discr K : ℚ) :=
-      discr_eq_of_integralBasis b
-    have h := Algebra.discr_eq_det_embeddingsMatrixReindex_pow_two ℚ ℂ (fun i ↦ (b i : K))
-      (e.trans (RingHom.equivRatAlgHom K ℂ))
-    have hMe : Algebra.embeddingsMatrixReindex ℚ ℂ (fun i ↦ (b i : K))
-        (e.trans (RingHom.equivRatAlgHom K ℂ)) = M := by
+    classical
+    have hMt : Mᵀ = ((algebraMap (𝓞 ℂ) ℂ).mapMatrix
+        (of fun σ τ : K →+* ℂ ↦ RingOfIntegers.mapRingHom σ (b (e.symm τ)))).submatrix e e := by
       ext i k
-      simp [M, Algebra.embeddingsMatrixReindex, Algebra.embeddingsMatrix,
-        RingHom.equivRatAlgHom_apply]
-    rw [hdiscr, eq_ratCast, Rat.cast_intCast, hMe] at h
-    exact h.symm
+      simp [M]
+    rw [← det_transpose, hMt, det_submatrix_equiv_self, ← RingHom.map_det, ← map_pow,
+      sq_det_mapRingHom_basis_eq_discr (NumberField.Embeddings.card K ℂ) b e.symm, map_intCast]
   -- Over `ℂ`, the Gram determinant is `‖det M‖ ^ 2`: read the `T₂` vectors in the standard
   -- orthonormal basis of the Euclidean space, enumerated by `ι` through `e`.
   have hG : Complex.ofRealHom.mapMatrix (gram ℝ fun i ↦ t2Vector K (b i)) =

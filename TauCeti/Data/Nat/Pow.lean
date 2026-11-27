@@ -19,7 +19,8 @@ natural numbers with no prime divisor other than `p`.
 
 A difference `q ^ n - q ^ i` of two powers of one base `q` with `i ≤ n` factors as
 `q ^ i * (q ^ (n - i) - 1)`. For positive bases `b < a` and `n ≥ 3`, we also bound differences
-`a ^ n - b ^ n` of powers of two bases below by `(a + b) * a ^ (n - 2)`.
+`a ^ n - b ^ n` of powers of two bases below by `(a + b) * a ^ (n - 2)`. Finally, a bound
+`p ^ (a * k) ≤ C * p ^ (b * k)` holding for every `k` forces `a ≤ b` when `1 < p`.
 
 ## Main results
 
@@ -34,6 +35,8 @@ A difference `q ^ n - q ^ i` of two powers of one base `q` with `i ≤ n` factor
 * `Nat.pow_sub_pow_eq_pow_mul_pow_sub_one`: `q ^ n - q ^ i = q ^ i * (q ^ (n - i) - 1)` for
   `i ≤ n`.
 * `Nat.add_mul_pow_sub_two_lt_pow_sub_pow`: the strict lower bound above.
+* `Nat.le_of_forall_pow_mul_le_mul_pow`: if `p ^ (a * k) ≤ C * p ^ (b * k)` for every `k`, where
+  `1 < p`, then `a ≤ b`; exponential growth rates are compared by their exponents.
 -/
 
 public section
@@ -93,5 +96,26 @@ theorem add_mul_pow_sub_two_lt_pow_sub_pow {a b n : ℕ} (hb : 0 < b) (hba : b <
     rw [mul_comm (a ^ (n - 2)) (b ^ 2), ← add_mul,
       Nat.sub_add_cancel (Nat.pow_le_pow_left hba.le 2), ha, mul_comm]
   omega
+
+/-- If `1 < p` and either `D < e` or `D < j`, then `D < (p ^ e + 1) * p ^ j`. -/
+theorem lt_add_one_mul_pow_of_lt {p D e j : ℕ} (hp : 1 < p) (h : D < e ∨ D < j) :
+    D < (p ^ e + 1) * p ^ j := by
+  rcases h with he | hj
+  · exact lt_of_lt_of_le (he.trans ((Nat.lt_pow_self hp).trans (Nat.lt_succ_self _)))
+      (Nat.le_mul_of_pos_right _ (Nat.pow_pos (zero_lt_one.trans hp)))
+  · exact lt_of_lt_of_le (hj.trans (Nat.lt_pow_self hp))
+      (Nat.le_mul_of_pos_left _ (Nat.succ_pos _))
+
+/-- **Exponential growth rates are compared by their exponents**: if
+`p ^ (a * k) ≤ C * p ^ (b * k)` for every `k`, where `1 < p`, then `a ≤ b`. -/
+theorem le_of_forall_pow_mul_le_mul_pow {p a b C : ℕ} (hp : 1 < p)
+    (h : ∀ k, p ^ (a * k) ≤ C * p ^ (b * k)) : a ≤ b := by
+  by_contra hab
+  have hlt : C * p ^ (b * C) < p ^ (a * C) :=
+    calc C * p ^ (b * C) < p ^ C * p ^ (b * C) :=
+          Nat.mul_lt_mul_of_pos_right (Nat.lt_pow_self hp) (Nat.pow_pos (by omega))
+      _ = p ^ ((b + 1) * C) := by rw [← pow_add, add_mul, one_mul, add_comm]
+      _ ≤ p ^ (a * C) := Nat.pow_le_pow_right (by omega) (Nat.mul_le_mul_right _ (by omega))
+  exact (h C).not_gt hlt
 
 end Nat
