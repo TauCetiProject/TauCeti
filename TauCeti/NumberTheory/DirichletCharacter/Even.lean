@@ -31,6 +31,8 @@ the `n`-th cyclotomic field it is the subgroup attached to the maximal real subf
 * `DirichletCharacter.two_mul_card_apply_neg_one_mul_apply_neg_one_eq`: if one of two levels
   exceeds two, exactly half of the pairs of characters at these levels have a given product
   parity.
+* `DirichletCharacter.two_mul_card_apply_neg_one_eq`: above level two, exactly half of the
+  characters have a given parity.
 * `DirichletCharacter.card_apply_neg_one_mul_apply_neg_one_eq_of_le_two`: if neither level
   exceeds two, the only pair of characters has product parity `1`.
 * `DirichletCharacter.two_mul_sum_even`: twice a sum over the even characters is the sum of
@@ -41,6 +43,9 @@ the `n`-th cyclotomic field it is the subgroup attached to the maximal real subf
   twice a sum over the even characters.
 * `DirichletCharacter.two_mul_sum_even_apply`, `DirichletCharacter.sum_even_apply`: orthogonality
   for the even characters, which detect `a = ±1` rather than `a = 1`.
+* `DirichletCharacter.two_mul_card_even`, `DirichletCharacter.card_even_ne_one`: above level
+  two half of the `φ(n)` characters are even, and `φ(n) / 2 - 1` are even and nontrivial, when
+  the values have enough roots of unity.
 * `DirichletCharacter.sum_even_ne_one_apply`: at an odd prime level `q`, the sum of `χ a` over
   the even nontrivial characters is `0` at `a = 0`, `(q - 1) / 2 - 1` at `a = ±1` and `-1`
   otherwise.
@@ -145,6 +150,21 @@ theorem two_mul_card_apply_neg_one_mul_apply_neg_one_eq {a b : ℕ} [NeZero a] [
     ← card_eq_totient_of_hasEnoughRootsOfUnity R a, ← card_eq_totient_of_hasEnoughRootsOfUnity R b,
     ← Nat.card_prod, ← Subgroup.card_ker_mul_card_of_surjective hsurj, hcard, mul_comm]
 
+/-- Above level two, exactly half of the Dirichlet characters have a prescribed parity
+`ε = ±1`. -/
+theorem two_mul_card_apply_neg_one_eq [NeZero n]
+    [HasEnoughRootsOfUnity R (Monoid.exponent (ZMod n)ˣ)] (hn : 2 < n) {ε : R}
+    (hε : ε = 1 ∨ ε = -1) :
+    2 * Nat.card {χ : DirichletCharacter R n // χ (-1) = ε} = n.totient := by
+  have : HasEnoughRootsOfUnity R (Monoid.exponent (ZMod 1)ˣ) := by
+    rw [Monoid.exp_eq_one_iff.2 inferInstance]
+    infer_instance
+  have h := two_mul_card_apply_neg_one_mul_apply_neg_one_eq (R := R) (b := 1) (Or.inl hn) hε
+  rw [Nat.totient_one, mul_one] at h
+  rw [← h, Nat.card_congr ((Equiv.prodUnique _ (DirichletCharacter R 1)).symm.subtypeEquiv
+    fun χ ↦ ?_)]
+  simp [Subsingleton.elim (-1 : ZMod 1) 1]
+
 /-- If neither of two levels exceeds `2`, there is a single pair of Dirichlet characters at these
 levels, and it is even: the pairs of product parity `ε` number one when `ε = 1` and none
 otherwise. -/
@@ -205,6 +225,52 @@ theorem sum_even_eq_totient_div_two_mul (hn : 2 < n) {f : DirichletCharacter R n
   have h2 : (2 : R) * ((n.totient / 2 : ℕ) : R) = n.totient := by
     rw [← Nat.cast_two, ← Nat.cast_mul, Nat.two_mul_div_two_of_even (Nat.totient_even hn)]
   rw [h, ← mul_assoc, h2]
+
+open scoped Classical in
+/-- Above level two exactly half of the `φ(n)` Dirichlet characters of level `n` are even, when
+the values have enough roots of unity. -/
+theorem two_mul_card_even (hn : 2 < n) :
+    2 * #{χ : DirichletCharacter R n | χ.Even} = n.totient := by
+  -- Count the pairs of even product parity at the levels `n` and `1`, whose only character is
+  -- trivial.
+  have : NeZero n := ⟨by omega⟩
+  have := subsingleton_of_le_two (R := R) (n := 1) one_le_two
+  have : Unique (DirichletCharacter R 1) := uniqueOfSubsingleton 1
+  have : HasEnoughRootsOfUnity R (Monoid.exponent (ZMod 1)ˣ) := by
+    rw [Monoid.exp_eq_one_iff.mpr inferInstance]
+    infer_instance
+  have h := two_mul_card_apply_neg_one_mul_apply_neg_one_eq (R := R) (a := n) (b := 1)
+    (Or.inl hn) (Or.inl rfl)
+  rw [Nat.totient_one, mul_one] at h
+  rw [← h, ← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+  refine congrArg _ (Nat.card_congr ((Equiv.prodUnique _ _).subtypeEquiv fun q ↦ ?_)).symm
+  rw [Subsingleton.elim q.2 1, MulChar.one_apply isUnit_one.neg, mul_one, Equiv.prodUnique_apply]
+  -- `χ.Even` is by definition `χ (-1) = 1`.
+  exact Iff.rfl
+
+open scoped Classical in
+/-- There are `φ(n) / 2 - 1` even nontrivial Dirichlet characters of level `n`, when the values
+have enough roots of unity. At the levels `0`, `1` and `2` every unit is `±1`, so the trivial
+character is the only even one. -/
+theorem card_even_ne_one :
+    #{χ : DirichletCharacter R n | χ.Even ∧ χ ≠ 1} = n.totient / 2 - 1 := by
+  rcases le_or_gt n 2 with hn | hn
+  · have hφ : n.totient / 2 = 0 := by
+      interval_cases n <;> simp
+    rw [hφ, card_eq_zero, filter_eq_empty_iff]
+    refine fun χ _ h ↦ h.2 (MulChar.ext fun u ↦ ?_)
+    rw [MulChar.one_apply u.isUnit]
+    have hu : (u : ZMod n) = 1 ∨ (u : ZMod n) = -1 := by
+      interval_cases n
+      · rcases Int.units_eq_one_or u with rfl | rfl
+        exacts [Or.inl rfl, Or.inr rfl]
+      all_goals simp [Subsingleton.elim u 1]
+    rcases hu with hu | hu
+    · rw [hu, map_one]
+    · rw [hu, h.1]
+  · have h := two_mul_card_even (R := R) hn
+    rw [← filter_filter, filter_ne', card_erase_of_mem (by simp [DirichletCharacter.Even,
+      MulChar.one_apply isUnit_one.neg]), ← h, Nat.mul_div_cancel_left _ two_pos]
 
 variable [NeZero n]
 

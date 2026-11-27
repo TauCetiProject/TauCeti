@@ -52,6 +52,8 @@ and to deduce `TauCeti.character_ind` from `Subgroup.indClassFun_eq_natCard_inv_
   `Subgroup.indClassFun_eq_sum_of_smul_eq_self_mem`: only the cosets `g` fixes contribute, so the
   coset sum may be taken over any finite set of cosets containing the fixed ones.  This is what
   turns the formula into a finite explicit computation for a concrete group.
+* `Subgroup.indClassFun_apply_of_notMem`: induction from a normal subgroup is supported on the
+  subgroup.
 * `Function.indTerm_eq_of_mk_eq_of_conj`: a summand depends only on its coset representative when
   the inducing function is invariant under conjugation in the subgroup.
 * `Subgroup.indClassFun_conj` and `Subgroup.indClassFun_mem_classFunction`: induction preserves
@@ -65,6 +67,11 @@ and to deduce `TauCeti.character_ind` from `Subgroup.indClassFun_eq_natCard_inv_
 * `Subgroup.natCard_nsmul_indClassFun`: for a conjugation-invariant function `f`, the additive
   group-sum form `|S| • (Ind f)(g) = ∑_{x ∈ G} f(x⁻¹gx)`, and its averaged corollary
   `Subgroup.indClassFun_eq_natCard_inv_mul_sum`.
+* `Subgroup.indClassFun_apply_eq_zero_of_notMem`: induction from a normal subgroup vanishes
+  outside the subgroup.
+* `Subgroup.indClassFun_comp_subtype_apply_of_normal`: inducing the restriction of a
+  conjugation-invariant function to a normal subgroup multiplies it by the index on the subgroup
+  and gives zero outside it.
 * `Subgroup.indClassFun_comp_subtype_smul`: the **projection formula**,
   `Ind_S^G ((Res_S f) • ψ) = f • Ind_S^G ψ` for a conjugation-invariant scalar function `f`
   and a function `ψ` with additive coefficients. `Subgroup.indClassFun_comp_subtype_mul`
@@ -238,6 +245,16 @@ theorem indClassFun_eq_sum_of_smul_eq_self_mem (S : Subgroup G) [S.FiniteIndex]
   refine ((Finset.sum_subset (Finset.subset_univ T) fun t _ ht => ?_).trans rfl).symm
   refine Function.indTerm_eq_zero_of_smul_mk_ne f fun hfix => ht (hT t ?_)
   rwa [QuotientGroup.out_eq'] at hfix
+
+/-- **An induced class function from a normal subgroup vanishes off the subgroup.**  For `g ∉ S`
+no conjugate `t⁻¹ g t` lies in the normal subgroup `S`, so every summand of the coset formula is
+zero. -/
+theorem indClassFun_apply_of_notMem (S : Subgroup G) [S.FiniteIndex] [S.Normal] (f : S → k)
+    {g : G} (hg : g ∉ S) : indClassFun S f g = 0 := by
+  let := Fintype.ofFinite (G ⧸ S)
+  refine Finset.sum_eq_zero fun t _ => Function.indTerm_eq_zero_of_smul_mk_ne f fun ht => hg ?_
+  have hconj := (TauCeti.smul_quotientGroup_mk_eq_self_iff S g t.out).mp ht
+  simpa [mul_assoc] using ‹S.Normal›.conj_mem _ hconj t.out
 
 /-! ### Additivity -/
 
@@ -460,6 +477,33 @@ theorem natCard_nsmul_indClassFun (S : Subgroup G) [Fintype G] {f : S → k}
         rw [← e.symm.sum_comp (fun x => Function.indTerm f g x), Fintype.sum_prod_type]
     -- the remaining step only unfolds the summand
     _ = _ := rfl
+
+/-- Induction from a finite-index normal subgroup vanishes outside it, even for an inducing
+function that is not conjugation-invariant. -/
+theorem indClassFun_apply_eq_zero_of_notMem (N : Subgroup G) [N.Normal] [N.FiniteIndex]
+    (f : N → k) {g : G} (hg : g ∉ N) : N.indClassFun f g = 0 := by
+  classical
+  rw [N.indClassFun_apply]
+  refine Finset.sum_eq_zero fun q _ => dite_eq_right fun h => hg ?_
+  simpa [mul_assoc] using (inferInstance : N.Normal).conj_mem _ h q.out
+
+/-- Inducing the restriction of a conjugation-invariant function to a normal subgroup of finite
+index multiplies it by the index on the subgroup and gives zero outside it. -/
+theorem indClassFun_comp_subtype_apply_of_normal (N : Subgroup G) [N.Normal] [N.FiniteIndex]
+    {f : G → k} (hf : ∀ g c, f (c * g * c⁻¹) = f g) (g : G) :
+    open Classical in
+    N.indClassFun (fun n : N => f n) g = if g ∈ N then N.index • f g else 0 := by
+  classical
+  let := Fintype.ofFinite (G ⧸ N)
+  rw [N.indClassFun_apply]
+  have hmem (c : G) : c⁻¹ * g * c ∈ N ↔ g ∈ N := by
+    rw [mul_assoc, (inferInstance : N.Normal).mem_comm_iff]
+    simp [mul_assoc]
+  split_ifs with hg
+  · have hterm (c : G) : f (c⁻¹ * g * c) = f g := by simpa using hf g c⁻¹
+    simp only [hmem, hg, dite_true, hterm, Finset.sum_const, Finset.card_univ, N.index_eq_card,
+      Nat.card_eq_fintype_card]
+  · simp [hmem, hg]
 
 end Subgroup
 

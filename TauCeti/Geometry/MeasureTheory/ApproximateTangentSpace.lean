@@ -116,16 +116,23 @@ theorem blowUp_apply_ball (hr : 0 < r) (ρ : ℝ) :
   ext y
   simp [norm_smul, abs_of_pos hr, dist_eq_norm, inv_mul_lt_iff₀ hr]
 
-/-- The dilation `y ↦ r⁻¹ • (y - x)` of a blow-up, as a measurable equivalence. -/
-private noncomputable def dilation (x : E) {r : ℝ} (hr : r ≠ 0) : E ≃ᵐ E :=
-  ((Homeomorph.subRight x).trans (Homeomorph.smulOfNeZero r⁻¹ (inv_ne_zero hr))).toMeasurableEquiv
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- For `r ≠ 0`, the dilation `y ↦ r⁻¹ • (y - x)` along which `μ.blowUp k x r` pushes `μ` forward,
+as a homeomorphism of `E`; its inverse is `z ↦ r • z + x`. -/
+noncomputable def blowUpDilation (x : E) {r : ℝ} (hr : r ≠ 0) : E ≃ₜ E :=
+  (Homeomorph.subRight x).trans (Homeomorph.smulOfNeZero r⁻¹ (inv_ne_zero hr))
 
-private theorem coe_dilation (hr : r ≠ 0) : ⇑(dilation x hr) = fun y ↦ r⁻¹ • (y - x) := rfl
+omit [MeasurableSpace E] [BorelSpace E] in
+@[simp]
+theorem coe_blowUpDilation (hr : r ≠ 0) : ⇑(blowUpDilation x hr) = fun y ↦ r⁻¹ • (y - x) :=
+  (rfl)
 
-private theorem coe_dilation_symm (hr : r ≠ 0) :
-    ⇑(dilation x hr).symm = fun z ↦ r • z + x := by
+omit [MeasurableSpace E] [BorelSpace E] in
+@[simp]
+theorem coe_blowUpDilation_symm (hr : r ≠ 0) :
+    ⇑(blowUpDilation x hr).symm = fun z ↦ r • z + x := by
   ext z
-  simp [dilation]
+  simp [blowUpDilation]
 
 /-- **The defining identity of blow-ups.** For `r ≠ 0`, a blow-up gives a measurable set `s` the
 mass `(ENNReal.ofReal r)⁻¹ ^ k * μ (x + r • s)`, that is `r ^ (-k) μ (x + r • s)` for `r > 0`. -/
@@ -142,8 +149,10 @@ theorem blowUp_apply_vadd_smul (hr : r ≠ 0) {s : Set E} (hs : MeasurableSet s)
 theorem integral_blowUp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] (hr : 0 < r)
     (f : E → G) :
     ∫ y, f y ∂μ.blowUp k x r = (r ^ k)⁻¹ • ∫ y, f (r⁻¹ • (y - x)) ∂μ := by
-  rw [blowUp_def, integral_smul_measure, ← coe_dilation hr.ne', integral_map_equiv]
-  simp [ENNReal.toReal_inv, ENNReal.toReal_ofReal hr.le, coe_dilation]
+  have he := (blowUpDilation x hr.ne').isOpenEmbedding.measurableEmbedding
+  rw [coe_blowUpDilation] at he
+  rw [blowUp_def, integral_smul_measure, he.integral_map]
+  simp [ENNReal.toReal_inv, ENNReal.toReal_ofReal hr.le]
 
 omit [BorelSpace E] in
 @[simp]
@@ -164,8 +173,12 @@ theorem blowUp_smul {R : Type*} [SMul R ℝ≥0∞] [IsScalarTower R ℝ≥0∞ 
 /-- The blow-up of a restriction is the restriction of the blow-up to the blown-up set. -/
 theorem blowUp_restrict (hr : r ≠ 0) (s : Set E) :
     (μ.restrict s).blowUp k x r = (μ.blowUp k x r).restrict ((fun z ↦ r • z + x) ⁻¹' s) := by
-  rw [blowUp_def, blowUp_def, restrict_smul, ← coe_dilation hr, MeasurableEquiv.restrict_map,
-    ← coe_dilation_symm hr, ← preimage_comp, MeasurableEquiv.symm_comp_self, preimage_id]
+  have he := (blowUpDilation x hr).isOpenEmbedding.measurableEmbedding
+  rw [coe_blowUpDilation] at he
+  rw [blowUp_def, blowUp_def, restrict_smul, he.restrict_map]
+  congr 3
+  ext y
+  simp [smul_smul, mul_inv_cancel₀ hr]
 
 /-- At positive scales, the blow-ups of a locally finite measure are locally finite. -/
 theorem isLocallyFiniteMeasure_blowUp [IsLocallyFiniteMeasure μ] (hr : 0 < r) :
@@ -174,8 +187,8 @@ theorem isLocallyFiniteMeasure_blowUp [IsLocallyFiniteMeasure μ] (hr : 0 < r) :
   obtain ⟨U, hyU, hU, hμU⟩ := μ.exists_isOpen_measure_lt_top (r • y + x)
   have hV : IsOpen ((fun z ↦ r • z + x) ⁻¹' U) := hU.preimage (by fun_prop)
   refine ⟨_, hV.mem_nhds hyU, ?_⟩
-  rw [blowUp_apply hV.measurableSet, ← coe_dilation hr.ne', ← coe_dilation_symm hr.ne',
-    ← preimage_comp, MeasurableEquiv.symm_comp_self, preimage_id]
+  rw [blowUp_apply hV.measurableSet, ← coe_blowUpDilation hr.ne', ← coe_blowUpDilation_symm hr.ne',
+    ← preimage_comp, Homeomorph.symm_comp_self, preimage_id]
   exact ENNReal.mul_lt_top (by simp [hr]) hμU
 
 end BlowUp

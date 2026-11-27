@@ -196,8 +196,8 @@ the closed unit ball agrees with the `O`-linear tensor lift of `PowerSeries.map 
 ∘ amiceTransform`, with `O` acting on `K⟦X⟧` through `j`. -/
 theorem amiceTransform_extendCoefficients_baseChange (j : O →ₐ[ℤ_[p]] K)
     (hj : ∀ a, ‖j a‖ ≤ 1) (z : O ⊗[ℤ_[p]] D(ℤ_[p], ℤ_[p])) :
-    let := Module.compHom K⟦X⟧ (j : O →+* K)
-    let := IsScalarTower.of_algHom_compHom (R := ℤ_[p]) (M := K⟦X⟧) j
+    let := Module.compHom K⟦X⟧ j.toRingHom
+    let := j.isScalarTower_compHom (M := K⟦X⟧)
     (extendCoefficients (j : O →+* K) hj (baseChangeLinearEquiv O z)).amiceTransform =
       LinearMap.liftBaseChange O
         ((PowerSeries.mapAlgHom (Algebra.ofId ℤ_[p] K)).toLinearMap ∘ₗ

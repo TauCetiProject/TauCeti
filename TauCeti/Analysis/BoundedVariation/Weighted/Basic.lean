@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -131,12 +131,45 @@ theorem contDiff_gaussianWeight {n : WithTop ℕ∞} : ContDiff ℝ n (gaussianW
   rw [h]
   exact ((contDiff_norm_sq ℝ).div_const _).add contDiff_const
 
+/-- The Gaussian weight has derivative `⟨x, ·⟩` at `x`. -/
+theorem hasFDerivAt_gaussianWeight (x : E) :
+    HasFDerivAt (gaussianWeight E) (innerSL ℝ x) x := by
+  have h : gaussianWeight E = fun x =>
+      ‖x‖ ^ 2 / 2 + (Module.finrank ℝ E : ℝ) / 2 * Real.log (2 * Real.pi) :=
+    funext gaussianWeight_def
+  rw [h]
+  have h2 : HasFDerivAt (fun x : E => ‖x‖ ^ 2) (2 • innerSL ℝ x) x :=
+    (hasStrictFDerivAt_norm_sq x).hasFDerivAt
+  convert (h2.mul_const (1 / 2 : ℝ)).add_const
+    ((Module.finrank ℝ E : ℝ) / 2 * Real.log (2 * Real.pi)) using 1
+  · funext y; ring
+  · ext v; simp
+
+/-- The derivative of the Gaussian weight at `x` is `⟨x, ·⟩`. -/
+@[simp]
+theorem fderiv_gaussianWeight (x : E) : fderiv ℝ (gaussianWeight E) x = innerSL ℝ x :=
+  (hasFDerivAt_gaussianWeight x).fderiv
+
+/-- The Gaussian density `e^{−W}` is continuous. -/
+theorem continuous_exp_neg_gaussianWeight : Continuous fun x => Real.exp (-gaussianWeight E x) :=
+  (contDiff_gaussianWeight (n := 0)).continuous.neg.rexp
+
 /-- The Gaussian density on the sphere of radius `r` about the origin is
 `(2π)^{−n/2} e^{−r²/2}`. -/
 theorem exp_neg_gaussianWeight_of_norm_eq {r : ℝ} {x : E} (hx : ‖x‖ = r) :
     Real.exp (-gaussianWeight E x) =
       (2 * Real.pi) ^ (-(Module.finrank ℝ E : ℝ) / 2) * Real.exp (-(r ^ 2 / 2)) := by
   rw [gaussianWeight_def, hx, Real.rpow_def_of_pos (by positivity), ← Real.exp_add]
+  congr 1
+  ring
+
+open scoped RealInnerProductSpace in
+/-- Translating the argument of the Gaussian density by `v` multiplies it by
+`e^{−⟨y, v⟩ − ‖v‖² / 2}`. -/
+theorem exp_neg_gaussianWeight_add (y v : E) :
+    Real.exp (-gaussianWeight E (y + v)) =
+      Real.exp (-(⟪y, v⟫ + ‖v‖ ^ 2 / 2)) * Real.exp (-gaussianWeight E y) := by
+  rw [← Real.exp_add, gaussianWeight_def, gaussianWeight_def, norm_add_sq_real]
   congr 1
   ring
 

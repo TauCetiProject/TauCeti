@@ -74,7 +74,9 @@ satisfy `2 δ ∫_{1/6}^{5/6} (t (1 - t²))⁻¹ dt < π / 12`.
   `Φ_{Γ₁} = Φ_{Γ₂} = I` but `Φ_{Γ₂ * Γ₁} = S`: continuation maps do not compose strictly.
 
 The maps here are the mod-two continuation maps; the integral continuation maps, with their signs,
-and the chain homotopy between `I` and `S` are not treated.
+are not treated. On the integral Morse complex with differential `I - S`, the exchange `S` is chain
+homotopic to the identity through `K = -I`
+(`TauCeti.IsAdaptedPseudoGradient.circleCosTwoExchangeHomotopy`).
 
 ## References
 
@@ -223,13 +225,11 @@ theorem mem_morseContinuationSlice_circleCylinderField_iff {p q x : AddCircle (2
   · rintro ⟨Θ, hΘ, hx, hp, hq⟩
     set c := intervalBaseTimeCoordinate (1 / 2)
     have hτ₀ : Tendsto (fun s ↦ intervalBaseOrbit 1 (s + c)) atBot (𝓝[>] 0) :=
-      tendsto_nhdsWithin_iff.2 ⟨(tendsto_intervalBaseOrbit_atBot one_pos).comp
-        (tendsto_atBot_add_const_right _ c tendsto_id),
-        .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo 1 (s + c)).1⟩
+      (tendsto_intervalBaseOrbit_atBot_nhdsGT one_pos).comp
+        (tendsto_atBot_add_const_right _ c tendsto_id)
     have hτ₁ : Tendsto (fun s ↦ intervalBaseOrbit 1 (s + c)) atTop (𝓝[<] 1) :=
-      tendsto_nhdsWithin_iff.2 ⟨(tendsto_intervalBaseOrbit_atTop one_pos).comp
-        (tendsto_atTop_add_const_right _ c tendsto_id),
-        .of_forall fun s ↦ (intervalBaseOrbit_mem_Ioo 1 (s + c)).2⟩
+      (tendsto_intervalBaseOrbit_atTop_nhdsLT one_pos).comp
+        (tendsto_atTop_add_const_right _ c tendsto_id)
     refine ⟨_, isMIntegralCurve_circleCylinderField hΘ c, ?_,
       (hp.comp hτ₀).prodMk_nhds (tendsto_nhdsWithin_iff.1 hτ₀).1,
       (hq.comp hτ₁).prodMk_nhds (tendsto_nhdsWithin_iff.1 hτ₁).1⟩

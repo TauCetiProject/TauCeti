@@ -221,16 +221,12 @@ theorem exists_contMDiffAt_mk_eq (P₀ : W.Point) :
     ∃ s : W.Point → Fin 3 → ℂ, ContMDiffAt 𝓘(ℂ) 𝓘(ℂ, Fin 3 → ℂ) ω s P₀ ∧
       ∀ᶠ P in 𝓝 P₀, ∃ h : W.Nonsingular (s P),
         Point.mk ((nonsingularLift_iff (s P)).mpr h) = P := by
-  obtain ⟨i, hi⟩ := exists_mem_affineOpen P₀.toProjectivization
-  have hU := (isOpen_affineOpen (K := ℂ) i).mem_nhds hi
-  refine ⟨fun P ↦ Fin.insertNth (α := fun _ ↦ ℂ) i 1 (affineChart i P.toProjectivization),
-    ((contMDiffOn_insertNth_affineChart i ω).contMDiffAt hU).comp P₀
-      ((isSmoothEmbedding_toProjectivization W ω).contMDiff P₀), ?_⟩
-  filter_upwards [continuous_toProjectivization.continuousAt.preimage_mem_nhds hU] with P hP
-  have h : Projectivization.mk ℂ _ (Fin.insertNth_one_ne_zero i _) = P.toProjectivization :=
-    (affineChart_symm_apply i _).symm.trans ((affineChart i).left_inv (by rwa [affineChart_source]))
-  exact ⟨(exists_toProjectivization_eq_mk_iff _ _).mp ⟨P, h.symm⟩,
-    toProjectivization_injective ((toProjectivization_mk _).trans h)⟩
+  obtain ⟨s, hs, hev⟩ := Projectivization.exists_contMDiffAt_eventually_eq_mk
+    ((isSmoothEmbedding_toProjectivization W ω).contMDiff P₀)
+  refine ⟨s, hs, ?_⟩
+  filter_upwards [hev] with P ⟨hP, h⟩
+  exact ⟨(exists_toProjectivization_eq_mk_iff _ _).mp ⟨P, h⟩,
+    toProjectivization_injective ((toProjectivization_mk _).trans h.symm)⟩
 
 omit [W.IsElliptic] in
 /-- The local parameter `-X / Y` is the negative of the coordinate `X / Y` of the affine chart

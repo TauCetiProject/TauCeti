@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Basic.Real.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Clifford.Basic
-import TauCeti.Algebra.BrauerGroup.Quaternion
-import TauCeti.Data.Nat.Choose.Lucas
+import Mathlib.FieldTheory.IsRealClosed.Real
+import TauCeti.LinearAlgebra.QuadraticForm.Witt.RealClosed
 
 /-!
 # The Clifford invariant of a real sum of squares
@@ -16,8 +16,9 @@ import TauCeti.Data.Nat.Choose.Lucas
 Over any field in which two is invertible, the sum of `n` squares `n⟨1⟩ = ⟨1, …, 1⟩` has Clifford
 invariant `[(-1,-1)]^C(n+1,4)` (`TauCeti.RegularFormClass.cliffordInvariant_natCast`). Over `ℝ`
 the class `[(-1,-1)]` of Hamilton's quaternions has order two in the Brauer group, so the
-invariant is trivial exactly when `C(n+1,4)` is even. By Lucas' theorem `C(n+1,4)` has the parity
-of `⌊(n+1)/4⌋`, so the invariant is periodic of period eight in `n`: it is trivial for
+invariant is trivial exactly when `C(n+1,4)` is even. Specializing the general real-closed
+signature formula (`TauCeti.RegularFormClass.cliffordInvariant_eq_ite_signature`) to `n⟨1⟩` of
+signature `n`, the invariant is periodic of period eight in `n`: it is trivial for
 `n ≡ 0, 1, 2, 7 (mod 8)` and is the class of `ℍ` for `n ≡ 3, 4, 5, 6 (mod 8)`.
 
 For `n = 1, …, 8` this is the list `1, 1, [ℍ], [ℍ], [ℍ], [ℍ], 1, 1` of Brauer classes of the
@@ -29,12 +30,12 @@ of the file tests the first one on `⟨-1,-1,-1⟩`.
 
 ## Main results
 
-* `TauCeti.RegularFormClass.cliffordInvariant_natCast_eq_pow_iff_real`: over `ℝ`,
-  `c(n⟨1⟩) = [(-1,-1)]^k` exactly when `⌊(n+1)/4⌋ ≡ k (mod 2)`.
 * `TauCeti.RegularFormClass.cliffordInvariant_natCast_eq_one_iff_real`: over `ℝ`, `c(n⟨1⟩)` is
   trivial exactly when `n ≡ 0, 1, 2, 7 (mod 8)`.
 * `TauCeti.RegularFormClass.cliffordInvariant_natCast_eq_quaternionClass_iff_real`: over `ℝ`,
   `c(n⟨1⟩) = [(-1,-1)]` exactly when `n ≡ 3, 4, 5, 6 (mod 8)`.
+* `TauCeti.RegularFormClass.cliffordInvariant_natCast_eq_pow_iff_real`: over `ℝ`,
+  `c(n⟨1⟩) = [(-1,-1)]^k` exactly when `⌊(n+1)/4⌋ ≡ k (mod 2)`.
 * `TauCeti.RegularFormClass.cliffordInvariant_ofNat_eq_one_iff_real` and
   `TauCeti.RegularFormClass.cliffordInvariant_ofNat_eq_quaternionClass_iff_real`: the same
   criteria on numerals `n ≥ 2`.
@@ -53,25 +54,11 @@ namespace RegularFormClass
 
 open BrauerGroup
 
-/-- Over `ℝ`, `c(n⟨1⟩) = [(-1,-1)]^k` exactly when `⌊(n+1)/4⌋ ≡ k (mod 2)`: the class of `ℍ` has
-order two, and by Lucas' theorem at the prime `2` the exponent `C(n+1,4)` of
-`TauCeti.RegularFormClass.cliffordInvariant_natCast` has the parity of `⌊(n+1)/4⌋`. -/
-theorem cliffordInvariant_natCast_eq_pow_iff_real (n k : ℕ) :
-    cliffordInvariant (n : RegularFormClass ℝ) = quaternionClass (-1) (-1) ^ k ↔
-      (n + 1) / 4 ≡ k [MOD 2] := by
-  have h2 : orderOf (quaternionClass (-1 : ℝˣ) (-1)) = 2 := by
-    simpa [quaternionClass_def] using Quaternion.orderOf_mk_eq_two
-  have hc : (n + 1).choose 4 ≡ (n + 1) / 4 [MOD 2] := by
-    simpa using Choose.choose_pow_mul_modEq_choose_div_nat (p := 2) (n + 1) 2 1
-  rw [cliffordInvariant_natCast, pow_eq_pow_iff_modEq, h2]
-  exact ⟨hc.symm.trans, hc.trans⟩
-
 /-- **The Clifford invariant of a real sum of squares is trivial exactly when
 `n ≡ 0, 1, 2, 7 (mod 8)`.** -/
 theorem cliffordInvariant_natCast_eq_one_iff_real (n : ℕ) :
     cliffordInvariant (n : RegularFormClass ℝ) = 1 ↔ n % 8 ∈ ({0, 1, 2, 7} : Finset ℕ) := by
-  rw [← pow_zero (quaternionClass (-1 : ℝˣ) (-1)), cliffordInvariant_natCast_eq_pow_iff_real,
-    Nat.ModEq]
+  rw [cliffordInvariant_eq_one_iff_signature, signature_natCast]
   simp only [Finset.mem_insert, Finset.mem_singleton]
   omega
 
@@ -80,10 +67,23 @@ theorem cliffordInvariant_natCast_eq_one_iff_real (n : ℕ) :
 theorem cliffordInvariant_natCast_eq_quaternionClass_iff_real (n : ℕ) :
     cliffordInvariant (n : RegularFormClass ℝ) = quaternionClass (-1) (-1) ↔
       n % 8 ∈ ({3, 4, 5, 6} : Finset ℕ) := by
-  rw [← pow_one (quaternionClass (-1 : ℝˣ) (-1)), cliffordInvariant_natCast_eq_pow_iff_real,
-    Nat.ModEq]
+  rw [cliffordInvariant_eq_neg_one_neg_one_iff_signature, signature_natCast]
   simp only [Finset.mem_insert, Finset.mem_singleton]
   omega
+
+/-- Over `ℝ`, `c(n⟨1⟩) = [(-1,-1)]^k` exactly when `⌊(n+1)/4⌋ ≡ k (mod 2)`. -/
+theorem cliffordInvariant_natCast_eq_pow_iff_real (n k : ℕ) :
+    cliffordInvariant (n : RegularFormClass ℝ) = quaternionClass (-1) (-1) ^ k ↔
+      (n + 1) / 4 ≡ k [MOD 2] := by
+  rcases k.even_or_odd with hk | hk
+  · rw [(quaternionClass_neg_one_neg_one_pow_eq_one_iff k).mpr hk,
+      cliffordInvariant_natCast_eq_one_iff_real, Nat.ModEq, Nat.even_iff.mp hk]
+    simp only [Finset.mem_insert, Finset.mem_singleton]
+    omega
+  · rw [(quaternionClass_neg_one_neg_one_pow_eq_self_iff k).mpr hk,
+      cliffordInvariant_natCast_eq_quaternionClass_iff_real, Nat.ModEq, Nat.odd_iff.mp hk]
+    simp only [Finset.mem_insert, Finset.mem_singleton]
+    omega
 
 /-- **The Clifford invariant of a real sum of squares is trivial exactly when
 `n ≡ 0, 1, 2, 7 (mod 8)`**, for a numeral `n ≥ 2`. -/
@@ -118,13 +118,11 @@ example :
     cliffordInvariant (Quotient.mk (regularFormSetoid ℝ) ⟨3, ![-1, -1, -1]⟩) ≠
       hasseInvariant (Quotient.mk (regularFormSetoid ℝ) ⟨3, ![-1, -1, -1]⟩) *
         quaternionClass (-1) (-1) ^ Nat.choose 4 4 := by
-  have hne : quaternionClass (-1 : ℝˣ) (-1) ≠ 1 := by
-    simpa [quaternionClass_def] using Quaternion.mk_ne_one
   have hs : hasseInvariant (Quotient.mk (regularFormSetoid ℝ) ⟨3, ![-1, -1, -1]⟩) =
       quaternionClass (-1 : ℝˣ) (-1) := by
     simp [Fin.prod_univ_succ, ← sq]
   rw [hs, Nat.choose_self, pow_one, ← sq, quaternionClass_sq, cliffordInvariant_mk_ternary]
-  simpa using hne
+  simpa using quaternionClass_neg_one_neg_one_ne_one
 
 end RegularFormClass
 

@@ -65,11 +65,13 @@ is multiplicative in the ideal, so the horizontal blocks together contribute
 ## Main results
 
 * `TauCeti.Iwasawa.torsionBy_elementary_eq_bot`,
+  `TauCeti.Iwasawa.eq_zero_of_finite_quotSMulTop_elementary`,
   `TauCeti.Iwasawa.resultant_ne_zero_of_finite_quotSMulTop_elementary` and
-  `TauCeti.Iwasawa.natCard_quotSMulTop_elementary`: the kernel and the cokernel of multiplication
-  by `G` on an elementary module.
-* `TauCeti.Iwasawa.resultant_charPoly_ne_zero_of_finite_quotSMulTop`: if `M ⧸ GM` is finite, then
-  `Res(F_M, G) ≠ 0`.
+  `TauCeti.Iwasawa.natCard_quotSMulTop_elementary`: the kernel, free-rank vanishing, and cokernel
+  of multiplication by `G` on an elementary module.
+* `TauCeti.Iwasawa.resultant_charPoly_ne_zero_of_finite_quotSMulTop` and
+  `TauCeti.Iwasawa.finite_quotSMulTop_iff_resultant_charPoly_ne_zero`: `M ⧸ GM` finite implies
+  `Res(F_M, G) ≠ 0`, and for torsion `M` and distinguished `G` the converse holds as well.
 * `TauCeti.Iwasawa.finite_torsionBy_of_finite_quotSMulTop`: if `M ⧸ GM` is finite, then so is
   `M[G]`.
 * `TauCeti.Iwasawa.natCard_quotSMulTop_div_natCard_torsionBy`: the Euler quotient
@@ -90,6 +92,25 @@ open IsLocalRing PowerSeries Submodule
 open scoped Pointwise Polynomial PowerSeries
 
 namespace TauCeti.Iwasawa
+
+/-- Over an infinite `I`-adically complete coefficient ring `O`, if a polynomial `G` distinguished
+at `I` has positive degree and finite cokernel on `Elementary O ϖ r m F n`, then the free rank `r`
+is zero. -/
+theorem eq_zero_of_finite_quotSMulTop_elementary {O : Type*} [CommRing O] [Infinite O]
+    {I : Ideal O} [IsAdicComplete I O] {ϖ : O} {r a b : ℕ} {m : Fin a → ℕ} {F : Fin b → O[X]}
+    {n : Fin b → ℕ} {G : O[X]} (hG : G.IsDistinguishedAt I) (hd : 0 < G.natDegree)
+    (hfin : Finite (QuotSMulTop (G : O⟦X⟧) (Elementary O ϖ r m F n))) : r = 0 := by
+  by_contra hr
+  let i₀ : Fin r := ⟨0, Nat.pos_of_ne_zero hr⟩
+  let π : Elementary O ϖ r m F n →ₗ[O⟦X⟧] O⟦X⟧ :=
+    (LinearMap.proj i₀).comp (LinearMap.fst O⟦X⟧ _ _)
+  have hsurj : Function.Surjective π := fun y ↦ ⟨(Pi.single i₀ y, 0), by simp [π]⟩
+  have hspan : (G : O⟦X⟧) • (⊤ : Submodule O⟦X⟧ O⟦X⟧) = Ideal.span {(G : O⟦X⟧)} := by
+    rw [← ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top]
+  have hinf := hG.isWeierstrassFactorizationAt.infinite_quotient hd
+  rw [← hspan] at hinf
+  exact not_finite_iff_infinite.mpr hinf
+    (Finite.of_surjective _ (QuotSMulTop.map_surjective _ hsurj))
 
 variable {O : Type*} [CommRing O] [IsDomain O] [IsDiscreteValuationRing O]
   [IsAdicComplete (maximalIdeal O) O] {G : O[X]}
@@ -190,6 +211,25 @@ theorem resultant_charPoly_ne_zero_of_finite_quotSMulTop
     ((hf.finite_quotSMulTop_iff TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing _).1
       hfin)
 
+/-- For a finitely generated torsion `O⟦X⟧`-module `M` and a polynomial `G` distinguished at
+`maximalIdeal O`, the cokernel `M ⧸ GM` is finite if and only if `Res(F_M, G) ≠ 0`. -/
+theorem finite_quotSMulTop_iff_resultant_charPoly_ne_zero (hM : Module.IsTorsion O⟦X⟧ M)
+    (hG : G.IsDistinguishedAt (maximalIdeal O)) :
+    Finite (QuotSMulTop (G : O⟦X⟧) M) ↔ (charPoly O M).resultant G ≠ 0 := by
+  refine ⟨resultant_charPoly_ne_zero_of_finite_quotSMulTop, fun hres ↦ ?_⟩
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible O
+  obtain ⟨r, a, b, m, F, n, -, hFn, f, hf⟩ := exists_isPseudoIsomorphism_elementary (M := M) hϖ
+  obtain rfl : r = 0 := eq_zero_of_isTorsion_elementary (hf.isTorsion_iff.mp hM)
+  have hF (j : Fin b) := (hFn j).1
+  rw [hf.charPoly_eq_prod hϖ hF fun j ↦ (hFn j).2.1] at hres
+  have hdim := TauCeti.PowerSeries.ringKrullDim_of_isDiscreteValuationRing (R := O)
+  rw [hf.finite_quotSMulTop_iff hdim]
+  refine Nat.finite_of_card_ne_zero ?_
+  rw [natCard_quotSMulTop_elementary hϖ m hF n hG hres]
+  have hq : Finite (O ⧸ Ideal.span {(∏ j, F j ^ n j).resultant G}) :=
+    Ring.HasFiniteQuotients.finiteQuotient (mt Ideal.span_singleton_eq_bot.mp hres)
+  exact mul_ne_zero (pow_ne_zero _ Nat.card_pos.ne') Nat.card_pos.ne'
+
 /-- **Finite invariants.** Let `G` be a monic polynomial. If `M ⧸ GM` is finite, then so is
 `M[G]`. -/
 theorem finite_torsionBy_of_finite_quotSMulTop (hG : G.Monic)
@@ -228,18 +268,7 @@ theorem natCard_quotSMulTop_div_natCard_torsionBy (hG : G.IsDistinguishedAt (max
       rw [Polynomial.coe_one, QuotSMulTop, one_smul, Submodule.Quotient.subsingleton_iff]
     simp
   · -- If `deg G > 0` then the free part `O⟦X⟧ʳ` has infinite cokernel, so `r = 0`.
-    obtain rfl : r = 0 := by
-      by_contra hr
-      let i₀ : Fin r := ⟨0, Nat.pos_of_ne_zero hr⟩
-      let π : Elementary O ϖ r m F n →ₗ[O⟦X⟧] O⟦X⟧ :=
-        (LinearMap.proj i₀).comp (LinearMap.fst O⟦X⟧ _ _)
-      have hsurj : Function.Surjective π := fun y ↦ ⟨(Pi.single i₀ y, 0), by simp [π]⟩
-      have hspan : (G : O⟦X⟧) • (⊤ : Submodule O⟦X⟧ O⟦X⟧) = Ideal.span {(G : O⟦X⟧)} := by
-        rw [← ideal_span_singleton_smul, smul_eq_mul, Ideal.mul_top]
-      have := hG.isWeierstrassFactorizationAt.infinite_quotient hd
-      rw [← hspan] at this
-      exact not_finite_iff_infinite.2 this
-        (Finite.of_surjective _ (QuotSMulTop.map_surjective _ hsurj))
+    obtain rfl := eq_zero_of_finite_quotSMulTop_elementary hG hd hE
     rw [natCard_quotSMulTop_elementary hϖ m hF n hG hres]
     simp
 

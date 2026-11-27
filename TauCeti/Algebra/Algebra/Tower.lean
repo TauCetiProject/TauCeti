@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.RestrictScalars
+public import Mathlib.Algebra.Module.Torsion.Basic
+public import Mathlib.RingTheory.Ideal.Maps
 
 /-!
 # Algebra towers: restriction of scalars and reversing a tower
@@ -35,10 +37,14 @@ operators over an `RCLike` field, with the structure an instance provides in a c
   structure is `Algebra.restrictScalars R S A`.
 * `AlgEquiv.toRingEquiv_algebraMap_of_tower`: an `S`-algebra isomorphism fixes the image of `R`,
   stated as a compatibility of the underlying ring isomorphism along `RingEquiv.refl R`.
-* `IsScalarTower.of_algHom_compHom`: pulling back a `K`-module along `j : O →ₐ[R] K` preserves the
-  scalar tower over `R`.
+* `AlgHom.isScalarTower_compHom`: restricting a module action along an `R`-algebra homomorphism
+  preserves the scalar tower with `R`.
 * `IsScalarTower.linearMap_eq_restrictScalars_comp`: in a tower `R → S → A`, the structure map
   `R → A` is the composite of `R → S` and `S → A` as `R`-linear maps.
+* `Submodule.annihilator_restrictScalars_span`: extending an `A`-submodule `N` by an `A`-algebra
+  `R` preserves its `A`-annihilator.
+* `Module.IsTorsionBySet.span`: if `s ⊆ A` annihilates `N`, it also annihilates the `R`-span of
+  `N`.
 -/
 
 public section
@@ -77,17 +83,16 @@ theorem AlgEquiv.toRingEquiv_algebraMap_of_tower (e : A ≃ₐ[S] B) (c : R) :
     e.toRingEquiv (algebraMap R A c) = algebraMap R B (RingEquiv.refl R c) :=
   (e.restrictScalars R).commutes c
 
-/-- Pulling back a `K`-module structure on `M` along an `R`-algebra homomorphism `j : O →ₐ[R] K`
-preserves the scalar tower over `R`. -/
-theorem IsScalarTower.of_algHom_compHom {R O K M : Type*} [CommSemiring R] [Semiring O]
-    [Semiring K] [Algebra R O] [Algebra R K] [AddCommMonoid M] [Module R M] [Module K M]
-    [IsScalarTower R K M] (j : O →ₐ[R] K) :
-    letI := Module.compHom M (j : O →+* K)
-    IsScalarTower R O M :=
-  letI := Module.compHom M (j : O →+* K)
-  IsScalarTower.of_algebraMap_smul fun r m ↦ by
-    change j (algebraMap R O r) • m = r • m
-    rw [j.commutes, algebraMap_smul]
+/-- Restricting a module action along an `R`-algebra homomorphism preserves the scalar tower with
+`R`. -/
+theorem AlgHom.isScalarTower_compHom {R A B M : Type*} [CommSemiring R] [Semiring A] [Semiring B]
+    [Algebra R A] [Algebra R B] [AddCommMonoid M] [Module R M] [Module B M] [IsScalarTower R B M]
+    (f : A →ₐ[R] B) :
+    let : Module A M := Module.compHom M f.toRingHom
+    IsScalarTower R A M := by
+  let : Module A M := Module.compHom M f.toRingHom
+  exact IsScalarTower.of_algebraMap_smul fun r m ↦ by
+    simp [MulAction.compHom_smul_def, algebraMap_smul]
 
 variable (R S A) in
 /-- In a tower `R → S → A`, the structure map `R → A` is the composite of `R → S` and `S → A`, as
@@ -96,3 +101,38 @@ theorem IsScalarTower.linearMap_eq_restrictScalars_comp :
     Algebra.linearMap R A = (Algebra.linearMap S A).restrictScalars R ∘ₗ Algebra.linearMap R S := by
   ext
   simp
+
+/-- Extending an `A`-submodule `N` to its `R`-span along an `A`-algebra `R` preserves its
+`A`-annihilator. -/
+@[simp]
+theorem Submodule.annihilator_restrictScalars_span {A R M : Type*} [CommSemiring A] [Semiring R]
+    [Algebra A R] [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower A R M]
+    (N : Submodule A M) :
+    ((Submodule.span R (N : Set M)).restrictScalars A).annihilator = N.annihilator := by
+  refine le_antisymm (Submodule.annihilator_mono fun x hx ↦ Submodule.subset_span hx) ?_
+  intro a ha
+  rw [Submodule.mem_annihilator]
+  intro x hx
+  rw [Submodule.restrictScalars_mem] at hx
+  induction hx using Submodule.span_induction with
+  | mem y hy => exact Submodule.mem_annihilator.mp ha y hy
+  | zero => exact smul_zero a
+  | add y z _ _ hy hz => rw [smul_add, hy, hz, add_zero]
+  | smul r y _ hy =>
+    rw [← algebraMap_smul R a (r • y), smul_smul, Algebra.commutes, ← smul_smul,
+      algebraMap_smul, hy, smul_zero]
+
+/-- If a set `s ⊆ A` annihilates an `A`-submodule `N`, then it also annihilates the `R`-span of
+`N` in any scalar tower `A → R → M`. -/
+theorem Module.IsTorsionBySet.span {A R M : Type*} [CommSemiring A] [Semiring R] [Algebra A R]
+    [AddCommMonoid M] [Module A M] [Module R M] [IsScalarTower A R M]
+    (N : Submodule A M) {s : Set A} (hs : Module.IsTorsionBySet A N s) :
+    Module.IsTorsionBySet A (Submodule.span R (N : Set M)) s := by
+  rw [Module.isTorsionBySet_iff_subset_annihilator] at hs ⊢
+  intro a ha
+  have ha' : a ∈ ((Submodule.span R (N : Set M)).restrictScalars A).annihilator := by
+    rw [Submodule.annihilator_restrictScalars_span]
+    exact hs ha
+  rw [SetLike.mem_coe, Module.mem_annihilator]
+  rintro ⟨x, hx⟩
+  exact Subtype.ext (Submodule.mem_annihilator.mp ha' x hx)

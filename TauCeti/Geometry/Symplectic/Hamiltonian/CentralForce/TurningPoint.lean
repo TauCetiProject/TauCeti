@@ -27,7 +27,9 @@ isotropic oscillator in `TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Ra
   turning points, `U_ℓ'(rᵢ) ≠ 0`, with `U_ℓ < E` in between, the radicand `2 m (E - U_ℓ)` dominates
   a multiple of `(r - r₁) (r₂ - r)`, and both quadratures converge
   (`TauCeti.intervalIntegrable_div_absRadialMomentum`,
-  `TauCeti.intervalIntegrable_div_sq_mul_absRadialMomentum`).
+  `TauCeti.intervalIntegrable_div_sq_mul_absRadialMomentum`). The time integrand `m / |p_r|` is
+  positive where `U_ℓ < E` (`TauCeti.div_absRadialMomentum_pos`), so the radial period is positive
+  (`TauCeti.radialPeriod_pos`).
 * **Time and angle.** Along an integral curve `(r(t), p_r(t))` of the reduced Hamiltonian vector
   field with energy `E`, suppose the radius moves from one of `r₁`, `r₂` to the other during
   `[t₁, t₂]` and stays strictly between them meanwhile, where `U_ℓ < E`. The energy is conserved and
@@ -77,6 +79,13 @@ theorem absRadialMomentum_eq_abs (hm : m ≠ 0) {r p : ℝ} (hr : 0 < r)
   congr 1
   field_simp
   ring
+
+/-- Where the effective potential is below `E`, the integrand `m / |p_r|` of the time quadrature is
+positive. -/
+theorem div_absRadialMomentum_pos (hm : 0 < m) {r : ℝ} (hr : effectivePotential m ℓ U r < E) :
+    0 < m / absRadialMomentum m U ℓ E r := by
+  rw [absRadialMomentum_eq_sqrt hm.ne']
+  exact div_pos hm (sqrt_pos.2 (mul_pos (by positivity) (sub_pos.2 hr)))
 
 /-! ### Convergence of the quadratures at simple turning points -/
 
@@ -132,6 +141,22 @@ theorem intervalIntegrable_div_sq_mul_absRadialMomentum (hm : 0 < m) (hr₁ : 0 
         fun r hr ↦ by have := hr₁.trans_le hr.1; positivity
   convert h using 2 with r
   rw [div_mul_div_comm, mul_assoc, mul_comm ℓ m, mul_div_mul_left _ _ hm.ne']
+
+/-- **The radial period is positive.** Under the hypotheses of
+`TauCeti.intervalIntegrable_div_absRadialMomentum`, the radial period, twice the time quadrature
+`∫_{r₁}^{r₂} m dr / |p_r|`, is positive. -/
+theorem radialPeriod_pos (hm : 0 < m) (hr₁ : 0 < r₁) (h₁₂ : r₁ < r₂)
+    (hU : ContinuousOn U (Icc r₁ r₂))
+    (hlt : ∀ r ∈ Ioo r₁ r₂, effectivePotential m ℓ U r < E)
+    (hd₁ : effectivePotential m ℓ U r₁ = E →
+      ∃ d₁ ≠ 0, HasDerivWithinAt (effectivePotential m ℓ U) d₁ (Ici r₁) r₁)
+    (hd₂ : effectivePotential m ℓ U r₂ = E →
+      ∃ d₂ ≠ 0, HasDerivWithinAt (effectivePotential m ℓ U) d₂ (Iic r₂) r₂) :
+    0 < radialPeriod m U ℓ E r₁ r₂ := by
+  rw [radialPeriod_def]
+  exact mul_pos two_pos (intervalIntegral_pos_of_pos_on
+    (intervalIntegrable_div_absRadialMomentum hm hr₁ h₁₂ hU hlt hd₁ hd₂)
+    (fun r hr ↦ div_absRadialMomentum_pos hm (hlt r hr)) h₁₂)
 
 end Convergence
 

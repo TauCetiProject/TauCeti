@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
+import Mathlib.Analysis.Calculus.Deriv.Pow
 import TauCeti.Analysis.Calculus.FDeriv.Smul
 
 /-!
@@ -19,6 +21,10 @@ scalar factor may take values in a normed algebra over the parameter field.
 At a point where the scalar factor `u` is nonzero and `u' = u c`, multiplication by `u` is a gauge
 transformation: `HasDerivAt.hasDerivAt_iff_hasDerivAt_smul` states that `η' = u⁻¹ w - c η`
 exactly when `(u η)' = w`.
+
+`TauCeti.hasDerivAt_add_smul_add_sq_smul` differentiates a quadratic polynomial
+`t ↦ u + t • v + t ^ 2 • w` with vector coefficients at `0`: its derivative there is `v`. This is
+how a first variation is read off from an exact quadratic expansion along a line.
 -/
 
 public section
@@ -70,3 +76,15 @@ theorem HasDerivAt.hasDerivAt_iff_hasDerivAt_smul {u : 𝕜 → 𝕜'} {c : 𝕜
       abel
 
 end Gauge
+
+namespace TauCeti
+
+/-- A quadratic polynomial `t ↦ u + t • v + t ^ 2 • w` with vector coefficients has derivative `v`
+at `0`. -/
+theorem hasDerivAt_add_smul_add_sq_smul {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (u v w : F) :
+    HasDerivAt (fun t : 𝕜 ↦ u + t • v + t ^ 2 • w) v 0 := by
+  convert ((hasDerivAt_const (0 : 𝕜) u).add ((hasDerivAt_id (0 : 𝕜)).smul_const v)).add
+    (((hasDerivAt_id (0 : 𝕜)).pow 2).smul_const w) using 1 <;> simp [Pi.add_def]
+
+end TauCeti

@@ -17,6 +17,10 @@ import TauCeti.Analysis.Normed.Operator.ClosedRange
 
 An estimate `‖x‖ ≤ C * ‖T x‖ + ‖K x‖`, with `K` compact, forces the kernel of `T` to be
 finite dimensional; in particular a compact operator bounded below has finite-dimensional domain.
+The compact operator may be replaced by any map `f`, not necessarily linear, sending the closed unit
+ball into a compact set with `‖x - y‖ ≤ C * dist (f x) (f y)` on the ball
+(`FiniteDimensional.of_norm_sub_le_mul_dist`); this is how a space of functionals represented by
+chosen, compactly bounded fields is shown to be finite-dimensional.
 If the domain is complete, the estimate also makes `T` bounded below on any closed subspace
 disjoint from its kernel, and the range of `T` is closed over any
 nontrivially normed field. The closed-range step needs no complement of the kernel: by the
@@ -138,6 +142,38 @@ theorem _root_.IsCompactOperator.finiteDimensional_of_norm_le_mul_norm [Complete
       simpa [norm_smul] using (hbound x).trans (mul_le_mul_of_nonneg_right hk.le (norm_nonneg _))
   rw [ContinuousLinearMap.toLinearMap_zero, LinearMap.ker_zero] at this
   exact Submodule.topEquiv.finiteDimensional
+
+/-- **A nonlinear compact estimate.** A normed space is finite-dimensional if some map `f`, not
+necessarily linear, sends its closed unit ball into a compact set and satisfies
+`‖x - y‖ ≤ C * dist (f x) (f y)` there: points of the ball whose images lie in one small ball of a
+finite cover of the compact set are close, so the closed unit ball is totally bounded. -/
+theorem _root_.FiniteDimensional.of_norm_sub_le_mul_dist [CompleteSpace 𝕜] {Y : Type*}
+    [PseudoMetricSpace Y] {f : E → Y} {K : Set Y} (hK : IsCompact K)
+    (hfK : ∀ x, ‖x‖ ≤ 1 → f x ∈ K)
+    (hf : ∀ x y, ‖x‖ ≤ 1 → ‖y‖ ≤ 1 → ‖x - y‖ ≤ C * dist (f x) (f y)) :
+    FiniteDimensional 𝕜 E := by
+  refine .of_totallyBounded_nhds_zero 𝕜 (Metric.closedBall_mem_nhds 0 one_pos)
+    (Metric.totallyBounded_of_finite_discretization fun ε hε ↦ ?_)
+  have hx (x : Metric.closedBall (0 : E) 1) : ‖(x : E)‖ ≤ 1 := mem_closedBall_zero_iff.1 x.property
+  -- Cover `K` by finitely many balls of radius `δ`, and send `x` to the centre of one containing
+  -- `f x`.
+  set δ := ε / (2 * (|C| + 1)) with hδ
+  obtain ⟨t, ht, hKt⟩ := Metric.totallyBounded_iff.1 hK.totallyBounded δ (by positivity)
+  choose F hF using fun x : Metric.closedBall (0 : E) 1 ↦ by
+    simpa using hKt (hfK _ (hx x))
+  have := ht.fintype
+  refine ⟨ULift (Fin (Fintype.card t)), inferInstance,
+    fun x ↦ ULift.up (Fintype.equivFin t ⟨F x, (hF x).1⟩), fun x y hxy ↦ ?_⟩
+  have hFxy : F x = F y :=
+    congrArg Subtype.val ((Fintype.equivFin t).injective (ULift.up_injective hxy))
+  have hd : dist (f x) (f y) < 2 * δ := by
+    linarith [dist_triangle_right (f x) (f y) (F y), hFxy ▸ (hF x).2, (hF y).2]
+  rw [dist_eq_norm]
+  calc ‖(x : E) - y‖ ≤ C * dist (f x) (f y) := hf _ _ (hx x) (hx y)
+    _ ≤ (|C| + 1) * dist (f x) (f y) :=
+        mul_le_mul_of_nonneg_right (by linarith [le_abs_self C]) dist_nonneg
+    _ < (|C| + 1) * (2 * δ) := by gcongr
+    _ = ε := by rw [hδ]; field_simp
 
 section CompleteDomain
 
