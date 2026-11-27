@@ -902,20 +902,11 @@ private theorem discSource_apply_zero (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ �
 `w ↦ w ξ`. -/
 private theorem discMap_discSource_zero (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖ ≤ 1) (w : ℂ) :
     discMap ξ ⇑(discSource ℓ (0 : F → F →L[ℝ] F) ξ).val w = w • ξ := by
-  have hd0 : ∀ x, fderiv ℝ (0 : F → F →L[ℝ] F) x = 0 := fun x ↦ fderiv_const_apply 0
+  have hs := (smallness_pos (F := F)).le
   have hK : SmallCoeff F (0 : F → F →L[ℝ] F) :=
     ⟨rfl, fun _ _ ↦ differentiableAt_const _,
-      fun x _ ↦ by
-        rw [hd0]
-        exact ContinuousLinearMap.opNorm_le_bound _ smallness_pos.le fun v ↦ by
-          simp only [zero_apply, norm_zero]
-          exact mul_nonneg smallness_pos.le (norm_nonneg v),
-      fun x _ y _ ↦ by
-        rw [hd0, hd0, sub_zero]
-        have h : 0 ≤ smallness F * ‖x - y‖ := mul_nonneg smallness_pos.le (norm_nonneg _)
-        exact ContinuousLinearMap.opNorm_le_bound _ h fun v ↦ by
-          simp only [zero_apply, norm_zero]
-          exact mul_nonneg h (norm_nonneg v)⟩
+      fun _ _ ↦ by simpa [ContinuousLinearMap.opNorm_zero] using hs,
+      fun _ _ _ _ ↦ by simpa [ContinuousLinearMap.opNorm_zero] using mul_nonneg hs (norm_nonneg _)⟩
   have h0 : discSource ℓ (0 : F → F →L[ℝ] F) ξ = 0 := by
     refine discSource_eq hℓ hξ hK (mem_closedBall_self radius_pos.le)
       (Subtype.ext (HolderSpace.ext fun z ↦ ?_))
@@ -924,9 +915,8 @@ private theorem discMap_discSource_zero (hℓ : ‖ℓ‖ ≤ 1) (hξ : ‖ξ‖
       simp
     · rw [mem_supportedHolderSubmodule_iff.mp (fixedPointMap _ _ _ _).property z hz]
       simp
-  have hc : ⇑(discSource ℓ (0 : F → F →L[ℝ] F) ξ).val = (0 : ℂ → F) := by
-    rw [h0]
-    rfl
+  have hc : ⇑(discSource ℓ (0 : F → F →L[ℝ] F) ξ).val = (0 : ℂ → F) :=
+    funext fun z ↦ by simp [h0]
   simp [hc, discMap, cauchyTransform_zero]
 
 end Contraction
