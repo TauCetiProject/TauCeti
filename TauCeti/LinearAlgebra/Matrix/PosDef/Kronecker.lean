@@ -14,14 +14,14 @@ public import Mathlib.LinearAlgebra.Matrix.PosDef
 The block-diagonal product `1 ⊗ₖ A` preserves positive definiteness over any star ring with
 an additive order. Both index types may be infinite, since positive definiteness tests only
 finitely supported vectors. This covers orthogonal sums of copies of one rational Gram matrix.
-The symmetry result needs only multiplication, and the finite identity for the quadratic expression
-holds over a nonassociative semiring with an arbitrary star operation.
+The symmetry result needs only multiplication, and the finite pairing identity holds over a
+nonassociative semiring.
 
 ## Main results
 
 * `Matrix.IsSymm.kronecker`: the Kronecker product of symmetric matrices is symmetric.
-* `Matrix.star_dotProduct_one_kronecker_mulVec`: for finite index types, the quadratic expression
-  for `1 ⊗ₖ A` decomposes into the expressions for `A` on its blocks.
+* `Matrix.dotProduct_one_kronecker_mulVec`: for finite index types, the pairing for `1 ⊗ₖ A`
+  decomposes into the pairings for `A` on its blocks.
 * `Matrix.finsupp_sum_one_kronecker`: the finitely supported quadratic expression for `1 ⊗ₖ A`
   decomposes into the expressions for `A` on its blocks.
 * `Matrix.PosDef.one_kronecker`: if `A` is positive definite, so is `1 ⊗ₖ A`.
@@ -40,11 +40,11 @@ theorem IsSymm.kronecker [Mul R] {A : Matrix m m R} {B : Matrix n n R}
     (hA : A.IsSymm) (hB : B.IsSymm) : (A ⊗ₖ B).IsSymm := by
   rw [IsSymm, ← kroneckerMap_transpose, hA.eq, hB.eq]
 
-/-- The quadratic expression for `1 ⊗ₖ A` is the sum of those for `A` on the blocks. -/
-theorem star_dotProduct_one_kronecker_mulVec [NonAssocSemiring R] [Star R]
-    [Fintype m] [DecidableEq m] [Fintype n] (A : Matrix n n R) (x : m × n → R) :
-    star x ⬝ᵥ (((1 : Matrix m m R) ⊗ₖ A) *ᵥ x) =
-      ∑ i, star (fun j => x (i, j)) ⬝ᵥ (A *ᵥ fun j => x (i, j)) := by
+/-- Pairing two vectors against `1 ⊗ₖ A` sums the pairings against `A` on the blocks. -/
+theorem dotProduct_one_kronecker_mulVec [NonAssocSemiring R]
+    [Fintype m] [DecidableEq m] [Fintype n] (A : Matrix n n R) (x y : m × n → R) :
+    x ⬝ᵥ (((1 : Matrix m m R) ⊗ₖ A) *ᵥ y) =
+      ∑ i, (fun j ↦ x (i, j)) ⬝ᵥ (A *ᵥ fun j ↦ y (i, j)) := by
   simp [dotProduct, mulVec, Fintype.sum_prod_type, Matrix.one_apply, ite_mul, Finset.sum_ite_eq]
 
 /-- The finitely supported quadratic expression for `1 ⊗ₖ A` is the sum of those for `A`

@@ -39,6 +39,13 @@ theorem add_kroneckerTMul' {R α β l m n p : Type*} [CommSemiring R] [AddCommMo
     (A₁ + A₂) ⊗ₖₜ[R] B = A₁ ⊗ₖₜ[R] B + A₂ ⊗ₖₜ[R] B :=
   kroneckerMap_add_left _ TensorProduct.add_tmul _ _ _
 
+/-- Entrywise application of a multiplicative map commutes with a Kronecker product. -/
+@[simp]
+theorem map_kronecker {R S l m n p F : Type*} [Mul R] [Mul S] [FunLike F R S]
+    [MulHomClass F R S] (A : Matrix l m R) (B : Matrix n p R) (f : F) :
+    (A ⊗ₖ B).map f = A.map f ⊗ₖ B.map f :=
+  Matrix.ext fun ⟨i, k⟩ ⟨j, l⟩ ↦ map_mul f (A i j) (B k l)
+
 variable {R l m : Type*} [Semiring R] [Fintype l] [DecidableEq l] [Fintype m] [DecidableEq m]
 
 omit [Fintype l] [Fintype m] [DecidableEq m] in
