@@ -61,7 +61,11 @@ square chart partition is local
   distributional sections of `V`, with `TauCeti.SobolevSection.toBundleDistribution_apply` and
   `TauCeti.SobolevSection.toBundleDistribution_eq_ofSection`.
 * `TauCeti.SobolevSection.toBundleDistribution_injective`: injectivity.
-* `TauCeti.SobolevSection.memSobolev_toBundleDistribution`: the image of `W^{k,2}(V)` is `H^k`.
+* `TauCeti.SobolevSection.memSobolev_toBundleDistribution`: for `μ = volume`, the distributional
+  sections of elements of `W^{k,2}(V)` are `H^k` with respect to every square chart partition of
+  `V →L |Λ|`.
+* `TauCeti.SobolevSection.exists_wkp_comp_coord`: a covector applied to the chart data of an
+  element of `W^{k,p}(V)` is `W^{k,p}` on the chart image.
 
 ## References
 
@@ -124,6 +128,26 @@ private theorem localRep_ae_eq {w : SobolevSection A μ p k} {s t : ∀ x, V x}
       rw [A.localRep_center, A.localRep_center, A.image_extChartAt_center]
       exact (hs i).symm.trans (ht i)) α
 
+omit [IsManifold 𝓘(ℝ, E) 1 M] in
+/-- A covector `v` applied to the chart data of an element of `W^{k,p}(V)` is the value of a
+`W^{k,p}` function on the chart image: the combination `∑ₐ v(bₐ) wᵢₐ` of its components. -/
+theorem exists_wkp_comp_coord {w : SobolevSection A μ p k} {s : ∀ x, V x} {i : Fin A.n}
+    (hs : A.sectionChartData.chartValueL μ p k i w =ᵐ[μ.restrict (A.image i)] A.coord i s)
+    (v : F →L[ℝ] ℝ) :
+    ∃ u : Wkp μ (A.image i) p k,
+      (Wkp.value k u : E → ℝ) =ᵐ[μ.restrict (A.image i)] fun y ↦ v (A.coord i s y) := by
+  refine ⟨∑ a, v (Module.finBasis ℝ F a) • (w : A.sectionChartData.SobolevData μ p k) i a, ?_⟩
+  have hsmul (a : Fin (Module.finrank ℝ F)) := Lp.coeFn_smul (v (Module.finBasis ℝ F a))
+    (Wkp.value k ((w : A.sectionChartData.SobolevData μ p k) i a))
+  filter_upwards [Wkp.value_finsetSum_ae k Finset.univ fun a ↦
+      v (Module.finBasis ℝ F a) • (w : A.sectionChartData.SobolevData μ p k) i a,
+    ae_all_iff.2 hsmul, A.sectionChartData.chartValueL_apply_ae μ p k i w, hs]
+    with y h1 h2 h3 h4
+  refine h1.trans ?_
+  rw [← h4, h3, map_sum]
+  refine Finset.sum_congr rfl fun a _ ↦ ?_
+  rw [Wkp.value_smul, h2 a, Pi.smul_apply, smul_eq_mul, map_smul, smul_eq_mul, mul_comm]
+
 end Readings
 
 variable [IsManifold 𝓘(ℝ, E) ∞ M] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] [T2Space M]
@@ -180,17 +204,16 @@ theorem toBundleDistribution_apply {w : SobolevSection A μ p k} {s : ∀ x, V x
 
 /-! ### Injectivity and Sobolev regularity of the distributional section -/
 
--- The chart `baseSetChart` at the centre of chart `i` of `A`, for the dual-density bundle.
-local macro "𝒸" i:term:max : term =>
-  `(baseSetChart ($(Lean.mkIdent `F) →L[ℝ] ℝ) 𝓘(ℝ, $(Lean.mkIdent `E))
-    (fun x ↦ $(Lean.mkIdent `V) x →L[ℝ] DensityBundle 𝓘(ℝ, $(Lean.mkIdent `E)) $(Lean.mkIdent `M) x)
-    (FiniteBundleAtlas.center $(Lean.mkIdent `A) $i))
+variable (A) in
+/-- The chart `baseSetChart` of the dual-density bundle at the centre of chart `i` of `A`. -/
+private abbrev centreChart (i : Fin A.n) : OpenPartialHomeomorph M E :=
+  baseSetChart (F →L[ℝ] ℝ) 𝓘(ℝ, E) (fun x ↦ V x →L[ℝ] DensityBundle 𝓘(ℝ, E) M x) (A.center i)
 
 omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] [T2Space M] in
 /-- The chart domains of `A` lie in the sources of the charts `baseSetChart` at their centres for
 the dual-density bundle. -/
-private theorem dom_subset_baseSetChart_source (i : Fin A.n) : A.dom i ⊆ (𝒸 i).source :=
+private theorem dom_subset_baseSetChart_source (i : Fin A.n) : A.dom i ⊆ (centreChart A i).source :=
   fun x hx ↦ by
     rw [baseSetChart_source, hom_trivializationAt_baseSet, TauCeti.Density.trivializationAt_eq,
       Trivialization.density_baseSet, TangentBundle.trivializationAt_baseSet]
@@ -202,17 +225,18 @@ omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
 /-- The image of the domain of chart `i` in the chart `baseSetChart` at its centre is the chart
 image, which therefore lies in the target of `baseSetChart`. -/
 private theorem image_baseSetChart_dom (i : Fin A.n) :
-    (𝒸 i) '' A.dom i = A.image i ∧ (A.image i : Set E) ⊆ (𝒸 i).target := by
-  have h : (𝒸 i) '' A.dom i = A.image i := by
+    (centreChart A i) '' A.dom i = A.image i ∧ (A.image i : Set E) ⊆ (centreChart A i).target := by
+  have h : (centreChart A i) '' A.dom i = A.image i := by
     rw [← A.image_extChartAt_center (𝕜 := ℝ), coe_baseSetChart]
   exact ⟨h, h ▸ image_subset_iff.2 fun z hz ↦
-    (𝒸 i).map_source (dom_subset_baseSetChart_source i hz)⟩
+    (centreChart A i).map_source (dom_subset_baseSetChart_source i hz)⟩
 
 omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
   [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] [T2Space M] in
 /-- The chart `baseSetChart` at the centre of chart `i` is the preferred extended chart there. -/
 private theorem baseSetChart_eq_extChartAt (i : Fin A.n) :
-    ∀ x ∈ (𝒸 i).source, (𝒸 i) x = extChartAt 𝓘(ℝ, E) (A.center i) x := fun _ _ ↦ by
+    ∀ x ∈ (centreChart A i).source, (centreChart A i) x = extChartAt 𝓘(ℝ, E) (A.center i) x :=
+  fun _ _ ↦ by
   rw [coe_baseSetChart]
 
 omit [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] [T2Space M] in
@@ -220,9 +244,9 @@ omit [FiniteDimensional ℝ F] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, E)] [T2S
 the target of the chart `baseSetChart` there. -/
 private theorem locallyIntegrableOn_localRep_center {s : ∀ x, V x}
     (hs : LocallyIntegrableSection 𝓘(ℝ, E) F s) (i : Fin A.n) :
-    LocallyIntegrableOn (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i)) (𝒸 i).target
+    LocallyIntegrableOn (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i)) (centreChart A i).target
       (Module.finBasis ℝ E).addHaar :=
-  hs.locallyIntegrableOn_target (𝒸 i) (baseSetChart_source_subset _ _)
+  hs.locallyIntegrableOn_target (centreChart A i) (baseSetChart_source_subset _ _)
     (baseSetChart_eq_extChartAt i)
 
 /-- In the chart `baseSetChart` at the centre of chart `i` and the preferred frame of the
@@ -231,9 +255,9 @@ integrable section is the regular distribution of `v` applied to its reading at 
 private theorem chartComponent_center [SigmaCompactSpace M] {s : ∀ x, V x}
     (hs : LocallyIntegrableSection 𝓘(ℝ, E) F s) (i : Fin A.n) (v : F →L[ℝ] ℝ) :
     (trivializationAt (F →L[ℝ] ℝ) (fun x ↦ V x →L[ℝ] DensityBundle 𝓘(ℝ, E) M x)
-        (A.center i)).chartComponent (𝒸 i) (contMDiffOn_baseSetChart _ _)
+        (A.center i)).chartComponent (centreChart A i) (contMDiffOn_baseSetChart _ _)
         (baseSetChart_source_subset _ _) (BundleDistribution.ofSection 𝓘(ℝ, E) F s) v =
-      Distribution.ofFun ⟨(𝒸 i).target, (𝒸 i).open_target⟩
+      Distribution.ofFun ⟨(centreChart A i).target, (centreChart A i).open_target⟩
         (fun y ↦ (v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y) : ℂ))
         (Module.finBasis ℝ E).addHaar ⊤ :=
   chartComponent_ofSection _ _ _ (baseSetChart_eq_extChartAt i) hs v
@@ -251,7 +275,8 @@ theorem toBundleDistribution_injective : Function.Injective (toBundleDistributio
     set v := LinearMap.toContinuousLinearMap ((Module.finBasis ℝ F).coord j)
     have hloc := (Complex.ofRealCLM.comp v).locallyIntegrableOn_comp
       (locallyIntegrableOn_localRep_center hsl i)
-    have h := Distribution.ofFun_injective (Ω := ⟨(𝒸 i).target, (𝒸 i).open_target⟩) (f' := 0) hloc
+    have h := Distribution.ofFun_injective
+      (Ω := ⟨(centreChart A i).target, (centreChart A i).open_target⟩) (f' := 0) hloc
       locallyIntegrableOn_zero ((chartComponent_center hsl i v).symm.trans (by
         rw [hw, Bundle.Trivialization.chartComponent_zero, Distribution.ofFun_zero]))
     filter_upwards [(hac.restrict _).ae_le
@@ -260,6 +285,8 @@ theorem toBundleDistribution_injective : Function.Injective (toBundleDistributio
     simpa [v] using hy
   refine eq_of_ae_eq_coord (w' := 0) hs fun i ↦ ?_
   rw [ZeroMemClass.coe_zero, map_zero]
+  -- The chart count `A.sectionChartData.n` of the section chart data is `A.n` by definition
+  -- (`TauCeti.FiniteBundleAtlas.sectionChartData`), so `i` indexes a chart of `A`.
   filter_upwards [Lp.coeFn_zero F p _, ae_all_iff.2 (hz (show Fin A.n from i))] with y h0 hy
   refine h0.trans ?_
   rw [Pi.zero_apply, eq_comm]
@@ -287,11 +314,11 @@ theorem memSobolev_toBundleDistribution {κ : Type*} [Fintype κ]
     ⟨_, Measure.isAddLeftInvariant_eq_smul (Module.finBasis ℝ E).addHaar volume⟩
   set g : E → ℝ := fun y ↦ c₀ * v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y)
   have hloc : LocallyIntegrableOn (fun y ↦ v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y))
-      (𝒸 i).target volume :=
+      (centreChart A i).target volume :=
     (v.locallyIntegrableOn_comp (locallyIntegrableOn_localRep_center hsl i)).of_isAddHaarMeasure
       volume
   rw [chartComponent_center hsl i v, hc₀,
-    Distribution.ofFun_smul_measure (Ω := ⟨(𝒸 i).target, (𝒸 i).open_target⟩)
+    Distribution.ofFun_smul_measure (Ω := ⟨(centreChart A i).target, (centreChart A i).open_target⟩)
       (fun y ↦ (v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y) : ℂ)) volume c₀,
     ← Distribution.ofFun_smul]
   have hg : ((c₀ : ℝ) • fun y ↦ (v (FirstJetBundle.localRep 𝓘(ℝ, E) F s (A.center i) y) : ℂ)) =
@@ -299,23 +326,14 @@ theorem memSobolev_toBundleDistribution {κ : Type*} [Fintype κ]
     funext y
     simp [g, Complex.real_smul]
   rw [hg, Distribution.isLocallySobolevAt_ofFun_iff_exists_wkp k (hloc.smul (c₀ : ℝ))]
+  obtain ⟨u, hu⟩ := exists_wkp_comp_coord (hs i) ((c₀ : ℝ) • v)
   refine ⟨A.image i, by
     rw [← SetLike.mem_coe, ← (image_baseSetChart_dom i).1]
     exact mem_image_of_mem _ hi, (image_baseSetChart_dom i).2,
-    ∑ a, (c₀ * v (Module.finBasis ℝ F a)) • (w : A.sectionChartData.SobolevData volume 2 k) i a,
-    ?_⟩
-  have hsmul (a : Fin (Module.finrank ℝ F)) := Lp.coeFn_smul (c₀ * v (Module.finBasis ℝ F a))
-    (Wkp.value k ((w : A.sectionChartData.SobolevData volume 2 k) i a))
-  filter_upwards [Wkp.value_finsetSum_ae k Finset.univ fun a ↦
-      (c₀ * v (Module.finBasis ℝ F a)) • (w : A.sectionChartData.SobolevData volume 2 k) i a,
-    ae_all_iff.2 hsmul, A.sectionChartData.chartValueL_apply_ae volume 2 k i w, hs i]
-    with y h1 h2 h3 h4
-  simp only [g]
-  refine h1.trans ?_
-  rw [A.localRep_center, ← h4, h3, map_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun a _ ↦ ?_
-  rw [Wkp.value_smul, h2 a, Pi.smul_apply, smul_eq_mul, map_smul, smul_eq_mul]
-  ring
+    u, ?_⟩
+  filter_upwards [hu] with y hy
+  rw [hy, smul_apply, smul_eq_mul]
+  simp only [g, A.localRep_center]
 
 end SobolevSection
 
