@@ -56,7 +56,9 @@ theorem Flat.exact_of_isWeakCokernel [F.Flat] {X Y Z : C} {f : X ⟶ Y} {q : Y �
     simp only [← ConcreteCategory.comp_apply, ← Functor.map_comp, h, Functor.map_zero,
       AddCommGrpCat.zero_apply]
 
-private theorem flat_of_exists_exact [HasFiniteBiproducts C]
+/-- A module over a category with finite biproducts is flat if every arrow extends to a pair
+with zero composite that the module sends to an exact sequence. -/
+theorem Flat.of_exists_exact [HasFiniteBiproducts C]
     (h : ∀ ⦃X Y : C⦄ (f : X ⟶ Y), ∃ (Z : C) (q : Y ⟶ Z), f ≫ q = 0 ∧
       Function.Exact (F.obj.map q.op) (F.obj.map f.op)) : F.Flat where
   isTrivialRelation {X n Y} β y hy := by
@@ -87,11 +89,11 @@ private theorem flat_of_exists_exact [HasFiniteBiproducts C]
 
 /-- Flatness is equivalent to the existence of a weak cokernel for each arrow whose image under
 the module is exact, provided the source has finite biproducts and weak cokernels. -/
-theorem flat_iff_exists_exact_weakCokernel [HasFiniteBiproducts C] [HasWeakKernels Cᵒᵖ]
+theorem flat_iff_exists_isWeakCokernel_exact [HasFiniteBiproducts C] [HasWeakKernels Cᵒᵖ]
     (F : ModCat.{w} C) :
     F.Flat ↔ ∀ ⦃X Y : C⦄ (f : X ⟶ Y), ∃ (Z : C) (q : Y ⟶ Z), IsWeakCokernel f q ∧
       Function.Exact (F.obj.map q.op) (F.obj.map f.op) := by
-  refine ⟨?_, fun h ↦ flat_of_exists_exact fun _ _ f ↦ ?_⟩
+  refine ⟨?_, fun h ↦ Flat.of_exists_exact fun _ _ f ↦ ?_⟩
   · intro hF X Y f
     obtain ⟨Z, q, hq⟩ := exists_isWeakCokernel f
     exact ⟨Z, q, hq, Flat.exact_of_isWeakCokernel hq⟩
@@ -105,7 +107,7 @@ theorem flat_iff_exact_of_isWeakCokernel [HasFiniteBiproducts C] [HasWeakKernels
     F.Flat ↔ ∀ ⦃X Y Z : C⦄ (f : X ⟶ Y) (q : Y ⟶ Z), IsWeakCokernel f q →
       Function.Exact (F.obj.map q.op) (F.obj.map f.op) := by
   refine ⟨fun _ _ _ _ _ _ hq ↦ Flat.exact_of_isWeakCokernel hq, fun h ↦ ?_⟩
-  apply (flat_iff_exists_exact_weakCokernel F).mpr
+  apply (flat_iff_exists_isWeakCokernel_exact F).mpr
   intro X Y f
   obtain ⟨Z, q, hq⟩ := exists_isWeakCokernel f
   exact ⟨Z, q, hq, h f q hq⟩
@@ -139,7 +141,7 @@ theorem flat_iff_preservesFiniteLimits [HasFiniteBiproducts C] [HasCokernels C] 
     let {X Y : Cᵒᵖ} (f : X ⟶ Y) : PreservesLimit (parallelPair f 0) F.obj :=
       Flat.preservesLimit_parallelPair_zero f
     exact F.obj.preservesFiniteLimits_of_preservesKernels
-  · apply (flat_iff_exists_exact_weakCokernel F).mpr
+  · apply (flat_iff_exists_isWeakCokernel_exact F).mpr
     intro X Y f
     let S := (ShortComplex.mk (kernel.ι f.op) f.op (kernel.condition f.op)).map F.obj
     have he : S.Exact := S.exact_of_f_is_kernel (isLimitOfHasKernelOfPreservesLimit F.obj f.op)

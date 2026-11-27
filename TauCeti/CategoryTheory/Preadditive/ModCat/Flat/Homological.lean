@@ -40,7 +40,7 @@ theorem flat_iff_isHomological (F : ModCat.{w} C) : F.Flat ↔ F.obj.IsHomologic
   · let S := (shortComplexOfDistTriangle T hT).map F.obj
     exact S.ab_exact_iff_function_exact.mpr
       (Flat.exact_of_isWeakCokernel (isWeakCokernel_of_distTriang hT))
-  · apply (flat_iff_exists_exact_weakCokernel F).mpr
+  · apply (flat_iff_exists_isWeakCokernel_exact F).mpr
     intro X Y f
     obtain ⟨Z, q, k, hT⟩ := distinguished_cocone_triangle₁ f.op
     let T := Triangle.mk q f.op k
