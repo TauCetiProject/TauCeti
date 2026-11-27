@@ -174,9 +174,8 @@ theorem forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_iff [Fintype ι]
 
 /-- Transversality of the hyperplane `ℓ = 0` to a smooth projective zero locus depends only on
 the hyperplane, not on the nonzero multiple of `ℓ` cutting it out. -/
-theorem forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_smul_iff [Finite ι]
-    (hrank : ∀ L ∈ complexProjectiveZeroLocus p, (jacobiMatrixAt p L.rep).mulVec.Surjective)
-    {t : ℂ} (ht : t ≠ 0) (ℓ : Fin (n + 1) → ℂ) :
+theorem forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_smul_iff {t : ℂ} (ht : t ≠ 0)
+    (ℓ : Fin (n + 1) → ℂ) :
     (∀ L ∈ complexProjectiveZeroLocus
         (Sum.elim p (Matrix.replicateRow Unit (t • ℓ)).toMvPolynomial),
       (jacobiMatrixAt (Sum.elim p (Matrix.replicateRow Unit (t • ℓ)).toMvPolynomial)
@@ -184,16 +183,24 @@ theorem forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_smul_iff [Finite ι]
       ∀ L ∈ complexProjectiveZeroLocus (Sum.elim p (Matrix.replicateRow Unit ℓ).toMvPolynomial),
         (jacobiMatrixAt (Sum.elim p (Matrix.replicateRow Unit ℓ).toMvPolynomial)
           L.rep).mulVec.Surjective := by
-  have := Fintype.ofFinite ι
-  rw [forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_iff hrank,
-    forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_iff hrank]
-  refine forall₂_congr fun L _ ↦ ?_
-  have hrange : t • ℓ ∈ range (· ᵥ* jacobiMatrixAt p L.rep) ↔
-      ℓ ∈ range (· ᵥ* jacobiMatrixAt p L.rep) := by
-    refine ⟨fun ⟨c, hc⟩ ↦ ⟨t⁻¹ • c, ?_⟩, fun ⟨c, hc⟩ ↦ ⟨t • c, ?_⟩⟩
-    · simp only [Matrix.smul_vecMul, hc, smul_smul, inv_mul_cancel₀ ht, one_smul]
-    · simp only [Matrix.smul_vecMul, hc]
-  rw [smul_dotProduct, smul_eq_mul, mul_eq_zero, or_iff_right ht, hrange]
+  set P : (Fin (n + 1) → ℂ) → Prop := fun ℓ ↦
+    ∀ L ∈ complexProjectiveZeroLocus (Sum.elim p (Matrix.replicateRow Unit ℓ).toMvPolynomial),
+      (jacobiMatrixAt (Sum.elim p (Matrix.replicateRow Unit ℓ).toMvPolynomial)
+        L.rep).mulVec.Surjective
+  -- Rescaling `ℓ` by `s ≠ 0` keeps its zero set and rescales the last row of the Jacobian.
+  suffices key : ∀ {s : ℂ}, s ≠ 0 → ∀ ℓ, P ℓ → P (s • ℓ) by
+    refine ⟨fun h ↦ ?_, key ht ℓ⟩
+    simpa only [smul_smul, inv_mul_cancel₀ ht, one_smul] using key (inv_ne_zero ht) (t • ℓ) h
+  intro s hs ℓ h L hL y
+  simp only [P, complexProjectiveZeroLocus_sumElim, mem_inter_iff,
+    mem_complexProjectiveZeroLocus_replicateRow_toMvPolynomial_iff, smul_dotProduct, smul_eq_mul,
+    mul_eq_zero, hs, false_or] at h hL
+  obtain ⟨v, hv⟩ := h L hL (Sum.elim (y ∘ Sum.inl) fun u ↦ s⁻¹ * y (Sum.inr u))
+  refine ⟨v, funext fun i ↦ ?_⟩
+  rcases i with i | i
+  · simpa [Matrix.fromRows_mulVec] using congrFun hv (Sum.inl i)
+  · simpa [Matrix.fromRows_mulVec, Matrix.replicateRow_smul, Matrix.smul_mulVec, hs,
+      eq_inv_mul_iff_mul_eq₀] using congrFun hv (Sum.inr i)
 
 /-- **The cone over the dual variety is null.** For a smooth projective zero locus `X` of a family
 `p` of homogeneous polynomials, the linear forms `ℓ` that are combinations of the gradients of the
@@ -274,7 +281,7 @@ theorem ae_forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_insertNth [Finite
     rintro ⟨t, a⟩ ⟨ht, ha⟩
     refine ⟨t • i.insertNth 1 a, ⟨?_, by simpa using ht⟩, ?_⟩
     · simpa only [mem_ofPred_eq, P,
-        forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_smul_iff hrank ht] using ha
+        forall_mem_mulVec_surjective_jacobiMatrixAt_sumElim_smul_iff ht] using ha
     · ext j <;> simp [h, mul_div_cancel_left₀ _ (show t ≠ 0 from ht)]
   have hdim : Module.finrank ℝ (Fin (n + 1) → ℂ) ≤ Module.finrank ℝ (ℂ × (Fin n → ℂ)) := by
     simp [Module.finrank_prod, Module.finrank_pi_fintype, Complex.finrank_real_complex]

@@ -6,8 +6,8 @@ Authors: Claude
 module
 
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
-public import Mathlib.LinearAlgebra.Matrix.Rank
 public import Mathlib.LinearAlgebra.Matrix.ToLin
+import TauCeti.LinearAlgebra.Matrix.Rank
 import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
@@ -29,11 +29,12 @@ Sums of partitioned matrices are computed blockwise (`Matrix.fromCols_add`,
 It also identifies the row-partitioned matrix `(0; 1)`, reindexed along an equivalence
 `e : ι ≃ n₁ ⊕ n₂`, with the frame of the standard basis columns `e⁻¹ (inr j)` of `ι`.
 
-Over a field, `A.mulVec` is surjective exactly when the rows of `A` are linearly independent.
-Stacking one more row `r` under a matrix `A` of full row rank therefore keeps the row rank full
-exactly when `r` is not a combination `c ᵥ* A` of the rows of `A`. For a Jacobian matrix this is
-the transversality test for a hyperplane section: the hyperplane `ℓ = 0` is transverse to the
-zero set exactly where `ℓ` is not a combination of the gradients of the equations.
+Over a field, `A.mulVec` is surjective exactly when the rows of `A` are linearly independent
+(`Matrix.mulVec_surjective_iff_linearIndependent_row`). Stacking one more row `r` under a matrix
+`A` of full row rank therefore keeps the row rank full exactly when `r` is not a combination
+`c ᵥ* A` of the rows of `A`. For a Jacobian matrix this is the transversality test for a
+hyperplane section: the hyperplane `ℓ = 0` is transverse to the zero set exactly where `ℓ` is not
+a combination of the gradients of the equations.
 
 ## Main declarations
 
@@ -46,8 +47,6 @@ zero set exactly where `ℓ` is not a combination of the gradients of the equati
 * `Matrix.fromCols_add` and `Matrix.fromRows_add`: sums of partitioned matrices are blockwise.
 * `Matrix.fromRows_zero_one_submatrix_equiv`: reindexed along `e : ι ≃ n₁ ⊕ n₂`, the matrix
   `(0; 1)` is the frame of the standard basis columns `e⁻¹ (inr j)`.
-* `Matrix.mulVec_surjective_iff_linearIndependent_row`: over a field, `A.mulVec` is surjective
-  exactly when the rows of `A` are linearly independent.
 * `Matrix.mulVec_surjective_fromRows_replicateRow_iff`: if `A` has full row rank, the matrix
   `(A; r)` has full row rank exactly when `r` is not of the form `c ᵥ* A`.
 -/
@@ -110,15 +109,6 @@ section Field
 
 variable {K m n : Type*} [Field K] [Fintype n]
 
-/-- Over a field, `A.mulVec` is surjective exactly when the rows of `A` are linearly
-independent. -/
-theorem mulVec_surjective_iff_linearIndependent_row [Finite m] {A : Matrix m n K} :
-    A.mulVec.Surjective ↔ LinearIndependent K A.row := by
-  have := Fintype.ofFinite m
-  refine ⟨fun h ↦ ?_, fun h ↦ h.mulVec_surjective⟩
-  rw [linearIndependent_iff_card_eq_finrank_span, Set.finrank, finrank_span_range_row]
-  exact (mulVec_surjective_iff_rank_eq_card.mp h).symm
-
 /-- Stacking a row `r` under a matrix `A` whose `mulVec` is surjective keeps `mulVec` surjective
 exactly when `r` is not a linear combination `c ᵥ* A` of the rows of `A`. -/
 theorem mulVec_surjective_fromRows_replicateRow_iff [Fintype m] {A : Matrix m n K}
@@ -126,13 +116,12 @@ theorem mulVec_surjective_fromRows_replicateRow_iff [Fintype m] {A : Matrix m n 
     (A.fromRows (replicateRow Unit r)).mulVec.Surjective ↔ r ∉ Set.range (· ᵥ* A) := by
   rw [mulVec_surjective_iff_linearIndependent_row] at hA ⊢
   have hrow : (A.fromRows (replicateRow Unit r)).row = Sum.elim A.row fun _ ↦ r := by
-    ext (i | i) j <;> rfl
+    ext (i | i) j <;> simp
   rw [hrow, linearIndependent_sum]
   simp only [Sum.elim_comp_inl, Sum.elim_comp_inr, Set.range_const, hA, true_and,
     linearIndependent_unique_iff (v := fun _ : Unit ↦ r)]
   have hspan : (Set.range fun c : m → K ↦ c ᵥ* A) = Submodule.span K (Set.range A.row) := by
-    rw [← range_vecMulLinear]
-    rfl
+    rw [← range_vecMulLinear, LinearMap.coe_range, coe_vecMulLinear]
   rw [hspan, SetLike.mem_coe, Submodule.disjoint_span_singleton]
   exact ⟨fun ⟨hr, h⟩ hmem ↦ hr (h hmem), fun h ↦ ⟨fun hr ↦ h (hr ▸ zero_mem _),
     fun hmem ↦ (h hmem).elim⟩⟩
