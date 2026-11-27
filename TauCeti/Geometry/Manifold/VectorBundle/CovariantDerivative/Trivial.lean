@@ -25,7 +25,8 @@ On the trivial line bundle, every connection is `d + ω` for the connection form
 (`CovariantDerivative.apply_eq_mvfderiv_add_smul_one`). On a Riemannian manifold, the connection
 `d + ⟪Y, ·⟫` (`CovariantDerivative.trivialAddInner`) has connection form metric-dual to a vector
 field `Y`; it is compatible with the standard fibre metric only for `Y = 0`
-(`CovariantDerivative.isMetricCompatible_trivialAddInner_iff`).
+(`CovariantDerivative.isMetricCompatible_trivialAddInner_iff`), where it is the flat connection
+`d`, which is metric (`CovariantDerivative.isMetricCompatible_trivial`).
 
 ## References
 
@@ -110,6 +111,19 @@ theorem apply_eq_mvfderiv_add_smul_one (cov : CovariantDerivative I ℝ (Bundle.
   simp only [ContinuousLinearMap.smulRight_apply, Pi.one_apply, mvfderiv_apply_eq_mfderiv_apply]
   exact mul_one _
 
+/-- The canonical connection `d` on the trivial line bundle is compatible with its standard fibre
+metric: `d(στ) = (dσ) τ + σ dτ`. -/
+theorem isMetricCompatible_trivial [IsManifold I 1 M] :
+    (trivial (I := I) (M := M) ℝ).IsMetricCompatible := by
+  rw [isMetricCompatible_iff]
+  rintro x X σ τ - hσ hτ
+  have hσ' := ((Trivial.mdifferentiableAt_mk_iff (b := id) (f := σ)).1 hσ).2
+  have hτ' := ((Trivial.mdifferentiableAt_mk_iff (b := id) (f := τ)).1 hτ).2
+  simp only [trivial_apply, Real.inner_apply]
+  rw [mvfderiv_fun_mul hσ' hτ']
+  simp only [add_apply, smul_apply, smul_eq_mul]
+  ring
+
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
 
 /-- The connection `d + ⟪Y, ·⟫` on the trivial line bundle, whose connection form is the one-form
@@ -157,14 +171,9 @@ theorem isMetricCompatible_trivialAddInner_iff (Y : Π x : M, TangentSpace I x) 
     rw [mvfderiv_const, zero_apply] at hv
     rw [Pi.zero_apply, inner_zero_right, real_inner_comm]
     linarith
-  · rintro rfl x X σ τ - hσ hτ
-    have hσ' := ((Trivial.mdifferentiableAt_mk_iff (b := id) (f := σ)).1 hσ).2
-    have hτ' := ((Trivial.mdifferentiableAt_mk_iff (b := id) (f := τ)).1 hτ).2
-    simp only [trivialAddInner_apply, Pi.zero_apply, map_zero, smul_zero, add_zero,
-      Real.inner_apply]
-    rw [mvfderiv_fun_mul hσ' hτ']
-    simp only [add_apply, smul_apply, smul_eq_mul]
-    ring
+  · rintro rfl
+    rw [trivialAddInner_zero, ← isMetricCompatible_iff]
+    exact isMetricCompatible_trivial
 
 variable [FiniteDimensional ℝ E]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]

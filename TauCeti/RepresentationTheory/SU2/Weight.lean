@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.SU2.SymmetricPower
-import Mathlib.Analysis.Real.Pi.Irrational
 import TauCeti.Algebra.GroupWithZero.Units.Basic
+import TauCeti.Analysis.SpecialFunctions.Complex.Exp.ZpowInjective
 import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
@@ -157,22 +157,11 @@ This is the separating element the proofs below run on, not part of the interfac
 they prove are stated for the whole torus. -/
 private noncomputable def genericTorus : Circle := Circle.exp 1
 
-/-- **The powers of `genericTorus` are pairwise distinct.**  An equality
-`exp(i)^m = exp(i)^n` says `m - n` is an integer multiple of `2π`, which forces `m = n` since `π`
-is irrational. -/
+/-- **The powers of `genericTorus` are pairwise distinct**, since `π` is irrational
+(`Complex.exp_I_zpow_injective`). -/
 private theorem coe_genericTorus_zpow_injective :
     Function.Injective fun m : ℤ => (genericTorus : ℂ) ^ m := by
-  intro m n hmn
-  have h : (genericTorus ^ m : Circle) = genericTorus ^ n :=
-    Subtype.ext (by simpa only [Circle.coe_zpow] using hmn)
-  rw [genericTorus, ← Circle.exp_intCast_mul, ← Circle.exp_intCast_mul, mul_one, mul_one] at h
-  obtain ⟨k, hk⟩ := Circle.exp_eq_exp.1 h
-  rcases eq_or_ne k 0 with rfl | hk0
-  · have hmn' : (m : ℝ) = (n : ℝ) := by simpa using hk
-    exact_mod_cast hmn'
-  · refine absurd ?_ ((irrational_pi.intCast_mul (m := 2 * k) (by omega)).ne_int (m - n))
-    push_cast
-    linear_combination -hk
+  simpa [genericTorus, Circle.coe_exp] using Complex.exp_I_zpow_injective
 
 /-- The generic torus element separates the weights of `Symᵈ(ℂ²)`: it acts on the `d + 1` weight
 vectors by `d + 1` pairwise distinct scalars. -/

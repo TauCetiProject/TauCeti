@@ -54,6 +54,11 @@ Riemann form and semicharacter (`TauCeti.AppellHumbertData.exp_mul_mem_thetaSpac
 `B` is not required to be Hermitian: the classical factors used to write theta functions as
 Fourier series are of this more general shape.
 
+**The canonical multiplier.** For a form `B` with Riemann form `E` and a complex linear
+endomorphism `b` of `V` with `E (b u, w) + E (u, b w) = E (u, w)` and `E (b l, m)` integral on `L`,
+the canonical multiplier `χ_b (l) = exp (πi E (l, b l))` is a semicharacter for `B`, which gives the
+datum `(B, χ_b)` (`TauCeti.AppellHumbertData.ofCanonicalSemichar`).
+
 The data form an additive group (`B` adds, `χ` multiplies), which corresponds to the tensor product
 of line bundles; on theta functions, products and powers land in the theta functions of the sum
 and of the multiple (`TauCeti.AppellHumbertData.mul_mem_thetaSpace_add`,
@@ -76,6 +81,8 @@ lattice `ℤ + τℤ` with `Im τ ≠ 0` and an integer `k`, the level-`k` facto
 * `TauCeti.AppellHumbertData.le_dualSubmodule`: `E` is integral on `L`.
 * `TauCeti.AppellHumbertData.thetaSpace`: the theta functions of a datum.
 * `TauCeti.AppellHumbertData.ofHermitian`: the datum of a Hermitian form and a semicharacter.
+* `TauCeti.AppellHumbertData.ofCanonicalSemichar`: the datum of a form and its canonical
+  multiplier.
 
 ## Provenance
 
@@ -101,6 +108,10 @@ so that `E = Im H`, and the semicharacter is a map
 structure, the cocycle law `TauCeti.AppellHumbertData.factor_cocycle`, the integrality
 statement in `(-1) ^ E` form and the Hermitian constructor
 `TauCeti.AppellHumbertData.ofHermitian` are new here.
+`TauCeti.AppellHumbertData.ofCanonicalSemichar` is adapted from `New.ThetaTori.canonicalMultiplier`
+and `New.ThetaTori.isAppellHumbert_canonicalMultiplier` (file
+`src/Lib/Shimura/ComplexTheta/DimensionFormula.lean`) in grh-lean, at the same commit; the
+semicharacter is stated with the Riemann form `E = Im H` and as a map `L → U(1)`.
 
 ## References
 
@@ -622,6 +633,90 @@ theorem riemannForm_ofHermitian_apply (u v : V) :
 theorem factor_ofHermitian (l : L) (z : V) :
     (ofHermitian H hH h_int α hα).factor l z = α l * exp (π * H z l + π * H l l / 2) := by
   rw [factor_def, form_ofHermitian_apply, form_ofHermitian_apply, semichar_ofHermitian]
+
+/-! ### The datum of the canonical multiplier -/
+
+/-- The **Appell–Humbert datum of the canonical multiplier.** Let `B` be a form, real linear in its
+first and complex linear in its second variable, with symmetric real part, and let
+`E (u, v) = Im (B (v, u) - B (u, v)) / 2π` be its Riemann form. Let `b` be a complex linear
+endomorphism of `V` with `E (b u, w) + E (u, b w) = E (u, w)` and `E (b l, m) ∈ ℤ` for `l, m ∈ L`.
+Then `χ_b (l) = exp (πi E (l, b l))` is a semicharacter for `B`, and `(B, χ_b)` is an
+Appell–Humbert datum, whose Riemann form is `E`
+(`TauCeti.AppellHumbertData.riemannForm_ofCanonicalSemichar_apply`). -/
+noncomputable def ofCanonicalSemichar (B : V →L[ℝ] V →L[ℂ] ℂ)
+    (hB : ∀ u v, (B u v).re = (B v u).re) (b : V →L[ℂ] V)
+    (hadj : ∀ u w, (B w (b u) - B (b u) w).im / (2 * π) + (B (b w) u - B u (b w)).im / (2 * π) =
+      (B w u - B u w).im / (2 * π))
+    (hint : ∀ l m : L, ∃ k : ℤ, (B m (b l) - B (b l) m).im / (2 * π) = k) :
+    AppellHumbertData L where
+  form := B
+  re_form_comm := hB
+  semichar l := Circle.exp (π * ((B (b l) l - B l (b l)).im / (2 * π)))
+  semichar_add_eq_circleExp_mul_mul l m := by
+    -- With `E` the Riemann form of `B`,
+    -- `E (l + m, b (l + m)) = E (l, b l) + E (m, b m) + E (l, m) - 2 E (b l, m)`.
+    set E : V → V → ℝ := fun u v ↦ (B v u - B u v).im / (2 * π)
+    obtain ⟨k, hk⟩ := hint l m
+    have hk' : E (b l) m = k := by simpa only [E] using hk
+    have h_adj : E (b l) m + E l (b m) = E l m := by simpa only [E] using hadj l m
+    have hE_add_left (u u' v : V) : E (u + u') v = E u v + E u' v := by
+      simp only [E, map_add, _root_.add_apply, Complex.sub_im, Complex.add_im]
+      ring
+    have hE_add_right (u v v' : V) : E u (v + v') = E u v + E u v' := by
+      simp only [E, map_add, _root_.add_apply, Complex.sub_im, Complex.add_im]
+      ring
+    have hE_swap (u v : V) : E v u = -E u v := by
+      simp only [E, ← neg_div, ← Complex.neg_im, neg_sub]
+    have h_quad : E (l + m) (b (l + m)) = E l (b l) + E m (b m) + E l m - 2 * k := by
+      simp only [map_add, hE_add_left, hE_add_right]
+      rw [hE_swap (b l) m]
+      linarith [hk', h_adj]
+    have h_im : (B m l - B l m).im / 2 = π * E l m := by
+      simp only [E]
+      field_simp
+    -- The semicharacter being defined is `l ↦ Circle.exp (π * E l (b l))` by definition, so the
+    -- goal unfolds to this statement in terms of `E`.
+    change Circle.exp (π * E (l + m) (b (l + m))) =
+      Circle.exp ((B m l - B l m).im / 2) * Circle.exp (π * E l (b l)) *
+        Circle.exp (π * E m (b m))
+    rw [h_im, h_quad, ← Circle.exp_add, ← Circle.exp_add,
+      show π * (E l (b l) + E m (b m) + E l m - 2 * k) =
+        π * E l m + π * E l (b l) + π * E m (b m) + -(2 * π * k) by ring, Circle.exp_add,
+      Circle.exp_neg, Circle.exp_two_pi_mul_int, inv_one, mul_one]
+
+section CanonicalSemichar
+
+variable (B : V →L[ℝ] V →L[ℂ] ℂ) (hB : ∀ u v, (B u v).re = (B v u).re) (b : V →L[ℂ] V)
+  (hadj : ∀ u w, (B w (b u) - B (b u) w).im / (2 * π) + (B (b w) u - B u (b w)).im / (2 * π) =
+    (B w u - B u w).im / (2 * π))
+  (hint : ∀ l m : L, ∃ k : ℤ, (B m (b l) - B (b l) m).im / (2 * π) = k)
+
+/-- The form of the datum of the canonical multiplier is `B`. -/
+@[simp]
+theorem form_ofCanonicalSemichar : (ofCanonicalSemichar B hB b hadj hint).form = B := (rfl)
+
+/-- The semicharacter of the datum of the canonical multiplier is
+`χ_b (l) = exp (πi Im (B (b l, l) - B (l, b l)) / 2π)`. -/
+@[simp]
+theorem semichar_ofCanonicalSemichar_apply (l : L) :
+    (ofCanonicalSemichar B hB b hadj hint).semichar l =
+      Circle.exp (π * ((B (b l) l - B l (b l)).im / (2 * π))) := (rfl)
+
+/-- The Riemann form of the datum of the canonical multiplier is that of `B`,
+`E (u, v) = Im (B (v, u) - B (u, v)) / 2π`. -/
+@[simp]
+theorem riemannForm_ofCanonicalSemichar_apply (u v : V) :
+    (ofCanonicalSemichar B hB b hadj hint).riemannForm u v = (B v u - B u v).im / (2 * π) := by
+  rw [riemannForm_apply, form_ofCanonicalSemichar]
+
+/-- The semicharacter of the datum of the canonical multiplier is `χ_b (l) = exp (πi E (l, b l))`,
+for its Riemann form `E`. -/
+theorem semichar_ofCanonicalSemichar_eq_circleExp (l : L) :
+    (ofCanonicalSemichar B hB b hadj hint).semichar l =
+      Circle.exp (π * (ofCanonicalSemichar B hB b hadj hint).riemannForm l (b l)) := by
+  rw [semichar_ofCanonicalSemichar_apply, riemannForm_ofCanonicalSemichar_apply]
+
+end CanonicalSemichar
 
 end AppellHumbertData
 

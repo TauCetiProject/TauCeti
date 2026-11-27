@@ -13,15 +13,21 @@ public import Mathlib.LinearAlgebra.TensorProduct.Finiteness
 /-!
 # Scalar extension of images and powers of submodules
 
+For submodules of modules over a commutative algebra, `Submodule.tensorProductMap` compares
+their tensor product over the base ring with the ambient tensor product over the algebra.
+Its range is the bilinear image, using Mathlib's `TensorProduct.mapOfCompatibleSMul`,
+`TensorProduct.mapIncl`, and `TensorProduct.map₂_eq_range_lift_comp_mapIncl`.
+
 Extension of scalars commutes with taking images of submodules under linear maps, and preserves
 powers of submodules of an algebra. The latter applies, in particular, to the homogeneous pieces of
 tensor and exterior algebras, defined as powers of their generators.
 
 For submodules `p` and `q`, every element of `(p ⊔ q) ⊗[R] M` is the sum of images of elements of
 `p ⊗[R] M` and `q ⊗[R] M` under the maps induced by the inclusions
-(`Submodule.exists_eq_rTensor_inclusion_add`). For an ideal `I` and a submodule `J`, the image of
-`M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in `I • (M ⊗[R] J)`
-(`LinearMap.range_lTensor_inclusion_smul_le`), and likewise on the right
+(`Submodule.exists_eq_rTensor_inclusion_add`). Equivalences of the factors that preserve the
+underlying vectors do not change the inclusion of `p ⊗[R] q` (`TensorProduct.mapIncl_congr`). For
+an ideal `I` and a submodule `J`, the image of `M ⊗[R] (I • J)` in `M ⊗[R] J` is contained in
+`I • (M ⊗[R] J)` (`LinearMap.range_lTensor_inclusion_smul_le`), and likewise on the right
 (`LinearMap.range_rTensor_inclusion_smul_le`).
 
 Multiplication of tensor products of submodules is compatible with multiplication in each
@@ -39,6 +45,39 @@ public section
 open scoped TensorProduct Pointwise
 
 namespace Submodule
+
+section TensorProductMap
+
+variable {R K V W : Type*} [CommSemiring R] [CommSemiring K] [Algebra R K]
+  [AddCommMonoid V] [Module K V] [Module R V] [IsScalarTower R K V]
+  [AddCommMonoid W] [Module K W] [Module R W] [IsScalarTower R K W]
+
+/-- The canonical `R`-linear map from the tensor product of two submodules to the tensor
+product of their ambient modules over a commutative `R`-algebra `K`, with scalars restricted
+to `R` in the codomain. -/
+def tensorProductMap (L : Submodule R V) (M : Submodule R W) :
+    L ⊗[R] M →ₗ[R] V ⊗[K] W :=
+  (TensorProduct.mapOfCompatibleSMul K R R V W).comp (TensorProduct.mapIncl L M)
+
+/-- The tensor map sends a pure submodule tensor to the corresponding ambient tensor. -/
+@[simp]
+theorem tensorProductMap_tmul (L : Submodule R V) (M : Submodule R W) (x : L) (y : M) :
+    L.tensorProductMap M (x ⊗ₜ[R] y) = (x : V) ⊗ₜ[K] (y : W) := by
+  simp [tensorProductMap, TensorProduct.mapIncl]
+
+/-- The tensor map has as image the bilinear image of the two submodules. -/
+@[simp]
+theorem range_tensorProductMap (L : Submodule R V) (M : Submodule R W) :
+    LinearMap.range (L.tensorProductMap (K := K) M) =
+      map₂ ((TensorProduct.mk K V W).restrictScalars₁₂ R R) L M := by
+  have h : TensorProduct.mapOfCompatibleSMul K R R V W =
+      TensorProduct.lift ((TensorProduct.mk K V W).restrictScalars₁₂ R R) := by
+    ext x y
+    simp
+  rw [tensorProductMap, h]
+  exact (TensorProduct.map₂_eq_range_lift_comp_mapIncl _ L M).symm
+
+end TensorProductMap
 
 section Congruence
 
@@ -193,6 +232,17 @@ theorem _root_.LinearMap.range_rTensor_inclusion_smul_le (I : Ideal R) (J : Subm
   rw [← (TensorProduct.comm R M _).apply_symm_apply u, LinearMap.rTensor_comm]
   exact smul_top_le_comap_smul_top I (TensorProduct.comm R M J).toLinearMap
     (LinearMap.range_lTensor_inclusion_smul_le I J ⟨_, rfl⟩)
+
+/-- Linear equivalences `p ≃ p'` and `q ≃ q'` of submodules that preserve the underlying vectors,
+such as the transports `LinearEquiv.ofEq` along equalities of submodules, do not change the
+inclusion of `p ⊗ q` into `M ⊗ N`. -/
+theorem _root_.TensorProduct.mapIncl_congr {p p' : Submodule R M} {q q' : Submodule R N}
+    (e₁ : p ≃ₗ[R] p') (e₂ : q ≃ₗ[R] q') (h₁ : ∀ v, (e₁ v : M) = v) (h₂ : ∀ w, (e₂ w : N) = w)
+    (x : p ⊗[R] q) :
+    TensorProduct.mapIncl p' q' (TensorProduct.congr e₁ e₂ x) = TensorProduct.mapIncl p q x := by
+  induction x using TensorProduct.inductionOn with
+  | tmul a b => simp [h₁, h₂]
+  | add x y hx hy => simp only [map_add, hx, hy]
 
 end Inclusion
 

@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Submersion
+public import TauCeti.Analysis.Distribution.TestFunction.FourierSeries
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Basic
 public import TauCeti.Analysis.Distribution.WaveFrontSet.Pullback.Cone
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Analysis.Distribution.TestFunction.FourierAtom
 import TauCeti.Analysis.Distribution.WaveFrontSet.ChangeOfVariables
 import TauCeti.Analysis.Distribution.WaveFrontSet.EllipticRegularity
 import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
@@ -55,12 +58,30 @@ linear section of `A` (`ContinuousLinearMap.linearSection_add_linearCoord_snd`).
   the range of `Aᵀ`, where `sᵀ Aᵀ η = η` and the Fourier transform of `ρ` is its positive integral,
   rapid decay of either side gives rapid decay of the other.
 
+## Pullback along a surjective linear map
+
+For a surjective linear map `A`, the wave front set of `A^* T` lies in
+`Aᵀ Γ = {(x, Aᵀ η) | (A x, η) ∈ Γ}` (`TauCeti.pullbackLinearCone`) whenever that of `T` lies in
+`Γ`. The localized Fourier transform of `A^* T` with a cutoff `φ` is the lattice series
+
+`A^* T (φ e_ξ) = ∑ m, (covolume L)⁻¹ 𝓕 φ (ξ + Aᵀ m) T (χ e_(-m))`,
+
+for a cutoff `χ` equal to one on `A '' supp φ` and a lattice `L` none of whose nonzero vectors
+translates `supp χ` into a set meeting it. This is the Fourier series of the fibre integral
+`A_♯ (φ e_ξ)` in the modulations of `χ`: by the defining identity of fibre integration, its Fourier
+coefficients are `𝓕 φ (ξ + Aᵀ m)`.
+
 ## Main results
 
 * `Distribution.isMicrolocallySmoothAt_compCLMOfSubmersion_iff`: `f^* T` is microlocally smooth at
   `(x, ξ)`, `ξ ≠ 0`, exactly when `T` is microlocally smooth at `(f x, η)` for every `η` with
   `Df(x)ᵀ η = ξ`.
 * `Distribution.waveFrontSet_compCLMOfSubmersion`: the wave front set of `f^* T`.
+* `TauCeti.pullbackLinearCone`: the cone `Aᵀ Γ`.
+* `Distribution.waveFrontSet_compCLMOfSubmersion_linear_subset`: `WF(T) ⊆ Γ` implies
+  `WF(A^* T) ⊆ Aᵀ Γ`.
+* `Distribution.localFourier_compCLMOfSubmersion_linear_eq_tsum`: the lattice series of the
+  localized Fourier transform of `A^* T`.
 
 ## References
 
@@ -366,9 +387,8 @@ theorem isMicrolocallySmoothAt_compCLMOfSubmersion_iff (T : 𝓓'(Ω', ℂ)) {x 
     simp only [comp_apply, Θ.right_inv hz] at h
     rw [← h]
     exact hfΩ (hΘΩ (Θ.map_target hz))
-  have hAsurj' : ∀ z ∈ V, Function.Surjective (fderiv ℝ A z) := fun _ _ ↦ by
-    rw [A.fderiv]
-    exact hAsurj
+  have hAsurj' : ∀ z ∈ V, Function.Surjective (fderiv ℝ A z) := fun z _ ↦
+    ContinuousLinearMap.surjective_fderiv_of_surjective hAsurj z
   -- On `U`, `f^* T` is the pullback along `Θ` of `A^* T`, and microlocal smoothness transforms
   -- along `Θ` and along `A`.
   rw [← isMicrolocallySmoothAt_restrictCLM_iff hUΩ hxU,
@@ -409,5 +429,96 @@ theorem waveFrontSet_compCLMOfSubmersion (T : 𝓓'(Ω', ℂ)) :
     exact (isMicrolocallySmoothAt_compCLMOfSubmersion_iff μ ν hf hfΩ hsurj T hx hinj).1 h η rfl
 
 end Submersion
+
+end Distribution
+
+/-! ### Pullback along a surjective linear map -/
+
+namespace TauCeti
+
+variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+
+/-- The pullback `Aᵀ Γ = {(x, Aᵀ η) | (A x, η) ∈ Γ}` of a set `Γ` of covectors on `E'` along a
+linear map `A : E →L[ℝ] E'`. It contains the wave front set of the pullback along `A` of a
+distribution with wave front set in `Γ`
+(`Distribution.waveFrontSet_compCLMOfSubmersion_linear_subset`). -/
+def pullbackLinearCone (A : E →L[ℝ] E') (Γ : Set (E' × E')) : Set (E × E) :=
+  {p | ∃ η, (A p.1, η) ∈ Γ ∧ (A†) η = p.2}
+
+@[simp]
+theorem mem_pullbackLinearCone {A : E →L[ℝ] E'} {Γ : Set (E' × E')} {p : E × E} :
+    p ∈ pullbackLinearCone A Γ ↔ ∃ η, (A p.1, η) ∈ Γ ∧ (A†) η = p.2 :=
+  Iff.rfl
+
+theorem pullbackLinearCone_mono {A : E →L[ℝ] E'} {Γ Γ' : Set (E' × E')} (h : Γ ⊆ Γ') :
+    pullbackLinearCone A Γ ⊆ pullbackLinearCone A Γ' :=
+  fun _ ⟨η, hη, hη'⟩ ↦ ⟨η, h hη, hη'⟩
+
+end TauCeti
+
+namespace Distribution
+
+open TauCeti
+open scoped FourierTransform
+
+variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+  [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E']
+  {A : E →L[ℝ] E'} {Ω : Opens E} {Ω' : Opens E'} {hf : ContDiffOn ℝ ∞ A Ω}
+  {hsurj : ∀ x ∈ Ω, Function.Surjective (fderiv ℝ A x)}
+
+/-- **The wave front set of a pullback along a linear map.** If the wave front set of `T` lies in
+`Γ`, that of its pullback along `A` lies in `Aᵀ Γ = {(x, Aᵀ η) | (A x, η) ∈ Γ}`. -/
+theorem waveFrontSet_compCLMOfSubmersion_linear_subset (μ : Measure E) [μ.IsAddHaarMeasure]
+    (ν : Measure E') [ν.IsAddHaarMeasure] (hAΩ : MapsTo A Ω Ω') {T : 𝓓'(Ω', ℂ)}
+    {Γ : Set (E' × E')} (hT : T.waveFrontSet ⊆ Γ) :
+    (compCLMOfSubmersion μ ν A hf hAΩ hsurj T).waveFrontSet ⊆ pullbackLinearCone A Γ := by
+  rw [waveFrontSet_compCLMOfSubmersion]
+  rintro ⟨x, ξ⟩ hmem
+  obtain ⟨-, η, hη, hξ⟩ := mem_covectorPullback.1 hmem
+  exact ⟨η, hT hη, by simpa only [A.fderiv] using hξ⟩
+
+/-- **The localized Fourier transform of a pullback along a linear map as a lattice series.** Let
+`χ` be equal to one on the image under `A` of the support of `φ`, and let the translates of
+`tsupport χ` by the lattice `L` meet it only for the translation `0`. Then
+
+`A^* T (φ e_ξ) = ∑ m ∈ L*, (covolume L)⁻¹ 𝓕 φ (ξ + Aᵀ m) T (χ e_(-m))`. -/
+theorem localFourier_compCLMOfSubmersion_linear_eq_tsum (hAΩ : MapsTo A Ω Ω') (T : 𝓓'(Ω', ℂ))
+    {φ : 𝓓(Ω, ℂ)} {χ : 𝓓(Ω', ℂ)} (hχ : EqOn χ 1 (A '' tsupport φ)) (L : Submodule ℤ E')
+    [DiscreteTopology L] [IsZLattice ℝ L]
+    (hL : ∀ y ∈ tsupport χ, ∀ ℓ ∈ L, y + ℓ ∈ tsupport χ → ℓ = 0) (ξ : E) :
+    (compCLMOfSubmersion volume volume A hf hAΩ hsurj T).localFourier φ ξ =
+      ∑' m : ZLattice.dual L, (ZLattice.covolume L : ℂ)⁻¹ *
+        (𝓕 (φ : E → ℂ) (ξ + (A†) m) * T.localFourier χ (-m)) := by
+  -- The fibre integral `g` of `ψ = φ e_ξ`, a complex test function on `Ω'`.
+  set ψ := bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ) (TauCeti.contDiff_fourierAtom ξ) φ
+  have hψφ : tsupport ψ ⊆ tsupport φ := fun x hx ↦ by
+    simp only [ψ, bilinLeftCLM_apply, ContinuousLinearMap.mul_apply'] at hx
+    exact tsupport_mul_subset_left hx
+  obtain ⟨g, hgK, hg⟩ := exists_integral_mul_eq_integral_mul_comp volume volume hf hAΩ hsurj ψ
+  have h1 : (compCLMOfSubmersion volume volume A hf hAΩ hsurj T).localFourier φ ξ =
+      T.complexPairing g := by
+    rw [localFourier_def]
+    exact complexPairing_compCLMOfSubmersion volume volume hf hAΩ hsurj T fun h hh _ _ ↦
+      hg _ (continuous_ofReal.comp hh.continuous).continuousOn
+  -- The Fourier coefficients of `g` are `𝓕 φ (ξ + Aᵀ m)`.
+  have hcoeff (m : E') : 𝓕 (g : E' → ℂ) m = 𝓕 (φ : E → ℂ) (ξ + (A†) m) := by
+    have hcont : Continuous fun y : E' ↦ (𝐞 (-⟪y, m⟫) : ℂ) := by fun_prop
+    rw [add_comm, ← TestFunction.fourier_bilinLeftCLM_fourierAtom φ ξ, Real.fourier_eq,
+      Real.fourier_eq]
+    simp only [Circle.smul_def]
+    calc ∫ y, (𝐞 (-⟪y, m⟫) : ℂ) * g y = ∫ y, g y * (𝐞 (-⟪y, m⟫) : ℂ) :=
+          integral_congr_ae (Eventually.of_forall fun y ↦ mul_comm _ _)
+      _ = ∫ x, ψ x * (𝐞 (-⟪A x, m⟫) : ℂ) := hg _ hcont.continuousOn
+      _ = ∫ x, (𝐞 (-⟪x, (A†) m⟫) : ℂ) * ψ x :=
+          integral_congr_ae (Eventually.of_forall fun x ↦ by
+            dsimp only
+            rw [ContinuousLinearMap.adjoint_inner_right, mul_comm])
+  have hsupp : EqOn (χ : E' → ℂ) 1 (support g) :=
+    fun y hy ↦ hχ (image_mono hψφ (hgK (subset_tsupport _ hy)))
+  rw [h1, ← (hasSum_fourier_mul_localFourier T χ L hL hsupp).tsum_eq]
+  congr 1 with m
+  rw [hcoeff, mul_assoc]
 
 end Distribution

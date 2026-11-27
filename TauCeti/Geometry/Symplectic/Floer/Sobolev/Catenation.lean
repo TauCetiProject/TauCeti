@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Fredholm
-import TauCeti.Analysis.Sobolev.Cylinder.GluedIndex
+import TauCeti.Analysis.Sobolev.Cylinder.Glued.Index
 import TauCeti.Analysis.SpecialFunctions.SmoothSegmentPath
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Floer.Continuation
