@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
 public import TauCeti.Analysis.Contour.Residue.Basic
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Contour.Residue.ChangeOfVariables
@@ -121,6 +122,32 @@ private lemma differentiableAt_cpow_neg_mul_Gamma_mul_Gamma_add {c p s : ℂ} (h
   (differentiable_cpow_neg hc s).mul ((differentiableAt_Gamma s hs).mul
     ((differentiableAt_Gamma (s + p) hsp).comp s (differentiableAt_id.add_const p)))
 
+/-- Combines a vertical-line `c ^ (-s)` bound with two Stirling vertical Gamma bounds. -/
+private lemma norm_cpow_neg_mul_Gamma_mul_Gamma_add_le {c p s : ℂ} {A C₁ C₂ K₁ K₂ y : ℝ}
+    (hcpow : ‖c ^ (-s)‖ ≤ A * Real.exp (|c.arg| * |y|))
+    (hG₁ : ‖Gamma s‖ ≤ C₁ * (1 + |y|) ^ K₁ * Real.exp (-(π * |y| / 2)))
+    (hG₂ : ‖Gamma (s + p)‖ ≤ C₂ * (1 + |y|) ^ K₂ * Real.exp (-(π * |y| / 2))) :
+    ‖c ^ (-s) * (Gamma s * Gamma (s + p))‖ ≤
+      A * C₁ * C₂ * ((1 + |y|) ^ (K₁ + K₂) * Real.exp (-((π - |c.arg|) * |y|))) := by
+  have h0 : 0 ≤ ‖Gamma s‖ * ‖Gamma (s + p)‖ := mul_nonneg (norm_nonneg _) (norm_nonneg _)
+  have h1 : 0 ≤ A * Real.exp (|c.arg| * |y|) := (norm_nonneg _).trans hcpow
+  have h2 : 0 ≤ C₁ * (1 + |y|) ^ K₁ * Real.exp (-(π * |y| / 2)) := (norm_nonneg _).trans hG₁
+  have hexp : Real.exp (|c.arg| * |y|) * Real.exp (-(π * |y| / 2)) * Real.exp (-(π * |y| / 2)) =
+      Real.exp (-((π - |c.arg|) * |y|)) := by
+    rw [← Real.exp_add, ← Real.exp_add]
+    exact congrArg Real.exp (by ring)
+  rw [norm_mul, norm_mul]
+  calc ‖c ^ (-s)‖ * (‖Gamma s‖ * ‖Gamma (s + p)‖)
+      ≤ (A * Real.exp (|c.arg| * |y|)) *
+          ((C₁ * (1 + |y|) ^ K₁ * Real.exp (-(π * |y| / 2))) *
+            (C₂ * (1 + |y|) ^ K₂ * Real.exp (-(π * |y| / 2)))) :=
+          mul_le_mul hcpow (mul_le_mul hG₁ hG₂ (norm_nonneg _) h2) h0 h1
+    _ = A * C₁ * C₂ * (((1 + |y|) ^ K₁ * (1 + |y|) ^ K₂) *
+          (Real.exp (|c.arg| * |y|) * Real.exp (-(π * |y| / 2)) *
+            Real.exp (-(π * |y| / 2)))) := by ring
+    _ = A * C₁ * C₂ * ((1 + |y|) ^ (K₁ + K₂) * Real.exp (-((π - |c.arg|) * |y|))) := by
+        rw [← Real.rpow_add (by positivity), hexp]
+
 /-- On any vertical strip `x ∈ [a, b]` and for `c ≠ 0`, the integrand
 `c ^ (-s) * (Γ(s) * Γ(s + p))` at `s = x + i T` is `O((1 + |T|)^K exp (-(π - |arg c|) |T|))`
 once `|T| ≥ T₀`. -/
@@ -141,17 +168,7 @@ theorem exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_le {c p : ℂ} (hc : c ≠ 
     abs_neg] at hcpow
   have hcpow' : ‖c ^ (-((x : ℂ) + T * I))‖ ≤ max Cz 0 * Real.exp (|c.arg| * |T|) :=
     hcpow.trans (mul_le_mul_of_nonneg_right (le_max_left Cz 0) (Real.exp_pos _).le)
-  rw [norm_mul, norm_mul]
-  calc ‖c ^ (-((x : ℂ) + T * I))‖ * (‖Gamma (x + T * I)‖ * ‖Gamma (x + T * I + p)‖)
-      ≤ (max Cz 0 * Real.exp (|c.arg| * |T|)) *
-          ((C₁ * (1 + |T|) ^ K₁ * Real.exp (-(π * |T| / 2))) *
-            (C₂ * (1 + |T|) ^ K₂ * Real.exp (-(π * |T| / 2)))) := by gcongr
-    _ = max Cz 0 * C₁ * C₂ * (((1 + |T|) ^ K₁ * (1 + |T|) ^ K₂) *
-          (Real.exp (|c.arg| * |T|) * Real.exp (-(π * |T| / 2)) *
-            Real.exp (-(π * |T| / 2)))) := by ring
-    _ = max Cz 0 * C₁ * C₂ * ((1 + |T|) ^ (K₁ + K₂) * Real.exp (-((π - |c.arg|) * |T|))) := by
-        rw [← Real.rpow_add (by positivity), ← Real.exp_add, ← Real.exp_add]
-        congr 2; congr 1; ring
+  exact norm_cpow_neg_mul_Gamma_mul_Gamma_add_le hcpow' hG₁ hG₂
 
 /-- For `c ∈ Complex.slitPlane` and any abscissa `σ` avoiding the poles of `Γ(s)` and `Γ(s + p)`,
 the vertical Mellin–Barnes integrand `y ↦ c^{-(σ + i y)} Γ(σ + i y) Γ(σ + i y + p)` is
@@ -179,17 +196,7 @@ theorem integrable_cpow_neg_mul_Gamma_mul_Gamma_add {c p : ℂ} (hc : c ∈ slit
   have hb₁ := hG₁ y
   have hb₂ := hG₂ y
   rw [show ((σ : ℂ) + p) + y * I = (σ : ℂ) + y * I + p by ring, add_re, ofReal_re] at hb₂
-  rw [norm_mul, norm_mul]
-  calc ‖c ^ (-((σ : ℂ) + y * I))‖ * (‖Gamma (σ + y * I)‖ * ‖Gamma (σ + y * I + p)‖)
-      ≤ (‖c‖ ^ (-σ) * Real.exp (|c.arg| * |y|)) *
-          ((C₁ * (1 + |y|) ^ (σ - 1 / 2) * Real.exp (-(π * |y| / 2))) *
-            (C₂ * (1 + |y|) ^ (σ + p.re - 1 / 2) * Real.exp (-(π * |y| / 2)))) := by gcongr
-    _ = ‖c‖ ^ (-σ) * C₁ * C₂ * (((1 + |y|) ^ (σ - 1 / 2) * (1 + |y|) ^ (σ + p.re - 1 / 2)) *
-          (Real.exp (|c.arg| * |y|) * Real.exp (-(π * |y| / 2)) *
-            Real.exp (-(π * |y| / 2)))) := by ring
-    _ = ‖c‖ ^ (-σ) * C₁ * C₂ * ((1 + |y|) ^ K * Real.exp (-((π - |c.arg|) * |y|))) := by
-        rw [← Real.rpow_add (by positivity), ← Real.exp_add, ← Real.exp_add]
-        congr 2; congr 1; ring
+  exact norm_cpow_neg_mul_Gamma_mul_Gamma_add_le hcpow hb₁ hb₂
 
 /-! ### Residues at the two simple-pole lattices -/
 
@@ -238,12 +245,6 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat {c p : ℂ} (k : �
     show -(-(k : ℂ) - p) = p + k by ring, show -(k : ℂ) - p = -p - k by ring]
   ring
 
-/-- For `p ∉ ℤ`, `sin (π * p) ≠ 0`. -/
-private lemma sin_pi_mul_ne_zero_of_forall_ne_intCast {p : ℂ} (hp : ∀ m : ℤ, p ≠ m) :
-    sin (π * p) ≠ 0 :=
-  sin_ne_zero_iff.mpr fun m h ↦
-    hp m (mul_left_cancel₀ (ofReal_ne_zero.mpr pi_ne_zero) (by linear_combination h))
-
 /-- For `p ∉ ℤ` and `c ≠ 0`, the residue of `s ↦ c ^ (-s) * (Γ(s) * Γ(s + p))` at `s = -k` is
 `(π / sin (π * p))` times the `k`-th term of `₀F₁(; 1 - p; c)`. -/
 theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat_eq_regularizedHGFunCoeff
@@ -252,8 +253,9 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat_eq_regularizedHGFunCoef
       π / sin (π * p) * (regularizedHGFunCoeff 0 {1 - p} k * c ^ k) := by
   have hp_sub : ∀ m : ℕ, p - k ≠ -m := fun m h ↦
     hp ((k : ℤ) - m) (by push_cast; linear_combination h)
-  have hrefl :=
-    neg_one_pow_div_factorial_mul_Gamma_sub_natCast (sin_pi_mul_ne_zero_of_forall_ne_intCast hp) k
+  have hsin_ne : sin (π * p) ≠ 0 :=
+    sin_pi_mul_ne_zero (x := p) (not_exists.mpr fun m hm ↦ hp m hm.symm)
+  have hrefl := neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin_ne k
   rw [residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_nat hc k hp_sub,
     regularizedHGFunCoeff_zero_singleton, mul_right_comm, hrefl]
   ring
@@ -273,7 +275,7 @@ theorem residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat_eq_regularizedHGFun
     simp
   have hsin_ne : sin (π * (-p)) ≠ 0 := by
     rw [mul_neg, sin_neg, neg_ne_zero]
-    exact sin_pi_mul_ne_zero_of_forall_ne_intCast hp
+    exact sin_pi_mul_ne_zero (x := p) (not_exists.mpr fun m hm ↦ hp m hm.symm)
   have hrefl := neg_one_pow_div_factorial_mul_Gamma_sub_natCast hsin_ne k
   rw [mul_neg, sin_neg, sub_neg_eq_add] at hrefl
   rw [residue_cpow_neg_mul_Gamma_mul_Gamma_add_neg_sub_nat k hp_neg,
@@ -452,16 +454,23 @@ private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_sub_natCast_le
   -- 1. Exponential-in-`|y|` and `‖c‖ ^ N` bound on `‖c ^ (-s)‖`.
   have hcpow : ‖c ^ (-s)‖ ≤ ‖c‖ ^ δ * ‖c‖ ^ N * Real.exp (|c.arg| * |y|) := by
     refine (norm_cpow_le_mul_exp_arg c (-s)).trans_eq ?_
-    have hre : (-s).re = δ + (N : ℝ) := by simp [s]
-    have him : |(-s).im| = |y| := by simp [s]
+    have hre : (-s).re = δ + (N : ℝ) := by
+      simp only [s, neg_re, add_re, ofReal_re, mul_re, ofReal_im, I_re, I_im]
+      ring
+    have him : |(-s).im| = |y| := by
+      simp only [s, neg_im, add_im, ofReal_im, mul_im, ofReal_re, I_re, I_im,
+        mul_one, mul_zero, add_zero, zero_add, abs_neg]
     rw [hre, him, Real.rpow_add (norm_pos_iff.mpr hc0), Real.rpow_natCast]
   -- 2. Left-shift Gamma bounds on `‖Γ(s)‖` (with `1 / N!`) and `‖Γ(s + p)‖`.
-  have hb₁ : ‖Gamma s‖ ≤ C₁ / (N ! : ℝ) * Real.exp (-(π * |y| / 2)) := by
+  have hb₁ : ‖Gamma s‖ ≤ C₁ / (N ! : ℝ) * (1 + |y|) ^ (0 : ℝ) * Real.exp (-(π * |y| / 2)) := by
+    rw [Real.rpow_zero, mul_one]
     have h := hG₁ (N := N) (hceil₀ ▸ Nat.zero_le N) y
     rw [hceil₀, Nat.sub_zero] at h
     refine h.trans_eq' (congrArg (fun z ↦ ‖Gamma z‖) ?_)
     simp only [s]; push_cast; ring
-  have hb₂ : ‖Gamma (s + p)‖ ≤ C₂ * Real.exp (π * |p.im| / 2) * Real.exp (-(π * |y| / 2)) := by
+  have hb₂ : ‖Gamma (s + p)‖ ≤
+      (C₂ * Real.exp (π * |p.im| / 2)) * (1 + |y|) ^ (0 : ℝ) * Real.exp (-(π * |y| / 2)) := by
+    rw [Real.rpow_zero, mul_one]
     have h := hG₂ hMN (y + p.im)
     rw [show ((p.re - δ : ℝ) : ℂ) - N + (y + p.im : ℝ) * I = s + p by
       dsimp [s]; conv_rhs => rw [← re_add_im p]
@@ -478,18 +487,10 @@ private lemma exists_norm_cpow_neg_mul_Gamma_mul_Gamma_add_sub_natCast_le
       _ ≤ C₂ * (Real.exp (π * |p.im| / 2) * Real.exp (-(π * |y| / 2))) :=
           mul_le_mul (div_le_self hC₂.le hfac1) hexp_tri (Real.exp_pos _).le hC₂.le
       _ = C₂ * Real.exp (π * |p.im| / 2) * Real.exp (-(π * |y| / 2)) := by ring
-  -- 3. Combine the factors and merge the `exp (· * |y|)` exponents.
-  rw [norm_mul, norm_mul]
-  calc ‖c ^ (-s)‖ * (‖Gamma s‖ * ‖Gamma (s + p)‖)
-      ≤ (‖c‖ ^ δ * ‖c‖ ^ N * Real.exp (|c.arg| * |y|)) *
-          ((C₁ / (N ! : ℝ) * Real.exp (-(π * |y| / 2))) *
-            (C₂ * Real.exp (π * |p.im| / 2) * Real.exp (-(π * |y| / 2)))) := by gcongr
-    _ = ‖c‖ ^ δ * (C₁ * (C₂ * Real.exp (π * |p.im| / 2))) * (‖c‖ ^ N / (N ! : ℝ)) *
-          Real.exp (-((π - |c.arg|) * |y|)) := by
-        rw [show Real.exp (-((π - |c.arg|) * |y|)) = Real.exp (|c.arg| * |y|) *
-            (Real.exp (-(π * |y| / 2)) * Real.exp (-(π * |y| / 2))) by
-          rw [← Real.exp_add, ← Real.exp_add]; congr 1; ring]
-        ring
+  -- 3. Combine the factors using `norm_cpow_neg_mul_Gamma_mul_Gamma_add_le`.
+  have hcomb := norm_cpow_neg_mul_Gamma_mul_Gamma_add_le hcpow hb₁ hb₂
+  rw [add_zero, Real.rpow_zero, one_mul] at hcomb
+  exact hcomb.trans_eq (by ring)
 
 /-- For a fixed offset `δ ∈ (0, 1)` with `p.re - δ ∉ ℤ`, the vertical integral along
 `Re s = -N - δ` tends to `0` as `N → ∞`, with bound `O(‖c‖ ^ N / N!)`. -/

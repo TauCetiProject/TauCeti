@@ -269,9 +269,10 @@ namespace Complex
 
 /-- The real part of the complex sine is `Real.sin z.re * Real.cosh z.im`. -/
 theorem sin_re (z : ℂ) : (sin z).re = Real.sin z.re * Real.cosh z.im := by
-  conv_lhs => rw [← re_add_im z]
-  rw [sin_add, sin_mul_I, cos_mul_I]
-  simp [sin_ofReal_re, cosh_ofReal_re]
+  rw [sin_eq]
+  simp only [add_re, mul_re, mul_im, I_re, I_im, sin_ofReal_re, sin_ofReal_im,
+    cos_ofReal_im, cosh_ofReal_re, cosh_ofReal_im, sinh_ofReal_im]
+  ring
 
 /-- The modulus of `Complex.sin z` is at least `|Real.sin z.re| * Real.cosh z.im`, the magnitude
 of its real part. -/
