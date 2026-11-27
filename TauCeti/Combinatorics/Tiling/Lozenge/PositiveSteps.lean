@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Basic
+public import TauCeti.Combinatorics.Tiling.Lozenge.Region.Height
 public import Mathlib.Combinatorics.SimpleGraph.Walk.Operations
 
 /-!
@@ -17,7 +17,9 @@ three positive directions `e₁ = (1, 0)`, `e₂ = (0, 1)`, `e₃ = (1, 1)`. Eve
 dart and its reverse is positive. The number of positive steps of a walk, `positiveSteps p`, is
 additive under concatenation, and a walk and its reverse together have as many positive steps as
 the walk has darts. The least number of positive steps of a walk from `u` to `v` is the oriented
-distance `ρ_R(u, v)` of Thurston's tileability criterion.
+distance `ρ_R(u, v)` of Thurston's tileability criterion. A height function on `R` rises by at most
+one along a positive step and does not rise along the other steps, so along a walk from `u` to `v`
+it rises by at most the number of positive steps: `H(v) − H(u) ≤ positiveSteps p`.
 
 ## Main definitions
 
@@ -39,6 +41,12 @@ distance `ρ_R(u, v)` of Thurston's tileability criterion.
   `positiveSteps` vanishes on the empty walk and is additive under concatenation.
 * `TauCeti.positiveSteps_add_positiveSteps_reverse`: `positiveSteps p` plus `positiveSteps` of
   the reversed walk is the length of `p`.
+* `TauCeti.IsHeightFunctionOn.sub_le_ite_isPositiveStep`: along a dart of `regionGraph R`, a
+  height function on `R` rises by at most `1` if the dart is a positive step and by at most `0`
+  otherwise.
+* `TauCeti.IsHeightFunctionOn.sub_le_positiveSteps`: along a walk `p` from `u` to `v`,
+  `H(v) − H(u) ≤ positiveSteps p`; `TauCeti.IsHeightFunctionOn.neg_positiveSteps_reverse_le_sub`
+  bounds the drop by the positive steps of the reversed walk.
 
 ## References
 
@@ -155,5 +163,45 @@ theorem positiveSteps_add_positiveSteps_reverse (p : (regionGraph R).Walk u v) :
     have := ite_isPositiveStep_add_ite_isPositiveStep_of_regionGraph_adj hab
     simp [SimpleGraph.Walk.reverse_cons, ← ih]
     omega
+
+/-! ### Height functions along walks -/
+
+namespace IsHeightFunctionOn
+
+variable {H : ℤ × ℤ → ℤ}
+
+/-- **Heights along a dart.** Along a dart `u → u'` of `regionGraph R`, a height function on `R`
+rises by at most `1` if the dart is a positive step and by at most `0` otherwise. -/
+theorem sub_le_ite_isPositiveStep (hH : IsHeightFunctionOn R H) (h : (regionGraph R).Adj u u') :
+    H u' - H u ≤ if IsPositiveStep u u' then 1 else 0 := by
+  obtain ⟨e, he, hend⟩ := regionGraph_adj.1 h
+  have hi := isHeightFunctionOn_def.1 hH e he
+  rw [TriEdge.endpoints_def, Sym2.eq_iff] at hend
+  rcases hend with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
+  · have hp : IsPositiveStep e.v e.target := ⟨e.k, by cases e; simp⟩
+    simp only [hp, ↓reduceIte]
+    omega
+  · split_ifs <;> omega
+
+/-- **Heights along a walk.** Along a walk `p` from `u` to `v` in `regionGraph R`, a height
+function on `R` rises by at most the number of positive steps of `p`. -/
+theorem sub_le_positiveSteps (hH : IsHeightFunctionOn R H) (p : (regionGraph R).Walk u v) :
+    H v - H u ≤ positiveSteps p := by
+  induction p with
+  | nil => simp
+  | @cons a b _ hab p ih =>
+    have := hH.sub_le_ite_isPositiveStep hab
+    rw [positiveSteps_cons]
+    push_cast
+    split_ifs at this ⊢ <;> omega
+
+/-- Along a walk `p` from `u` to `v` in `regionGraph R`, a height function on `R` drops by at most
+the number of positive steps of the reversed walk. -/
+theorem neg_positiveSteps_reverse_le_sub (hH : IsHeightFunctionOn R H)
+    (p : (regionGraph R).Walk u v) : -(positiveSteps p.reverse : ℤ) ≤ H v - H u := by
+  have := hH.sub_le_positiveSteps p.reverse
+  omega
+
+end IsHeightFunctionOn
 
 end TauCeti

@@ -49,11 +49,15 @@ derivatives `ξ_s`, `ξ_t` of `ξ` in place of its classical derivatives. Agreem
 `TauCeti.SymplecticForm.floerOperator` is proved only on jets of differentiable sections
 (`TauCeti.SymplecticForm.floerSection_ae_eq_of_ae_eq_jet`). When the reference map is itself a
 Floer cylinder or strip, `F(w) = 0`, these zeros are the weak solutions of the Floer equation near
-`w`; that they are classical solutions is elliptic regularity, which is not proved here. The Floer
-section is the map to which the implicit function theorem and the Sard–Smale theorem are applied in
-the transversality theory of Floer cylinders and strips. For a reference map with `F(w)` in `Lᵖ`,
-such as a pre-glued map, the Floer section plus the constant `F(w)` agrees with `ξ ↦ F(w + ξ)` on
-jets of differentiable sections, and has the same derivative.
+`w`. By the pointwise formula `TauCeti.SymplecticForm.floerSection_apply_ae`, such a zero
+satisfies the Floer equation for `u = w + ξ` almost everywhere. On the cylinder, for periodic `w`,
+`J` of class `C^ℓ` and `Ks`, `Kt` of class `C^(ℓ+1)`, with `J(z, u z)² = -1`, elliptic regularity
+makes `u` of class `C^ℓ` (`TauCeti.SymplecticForm.contDiff_add_continuousValue_of_ae_floer`); on
+the strip it is not proved here. The Floer section is the map to which the implicit function
+theorem and the Sard–Smale theorem are applied in the transversality theory of Floer cylinders and
+strips. For a reference map with `F(w)` in `Lᵖ`, such as a pre-glued map, the Floer section plus the
+constant `F(w)` agrees with `ξ ↦ F(w + ξ)` on jets of differentiable sections, and has the same
+derivative.
 
 ## Main definitions
 

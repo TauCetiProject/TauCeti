@@ -168,18 +168,6 @@ theorem sum_range_eq_zero_of_ne_one {R : Type*} [CommRing R] [IsDomain R] {N : �
         (fun a _ ↦ ZMod.natCast_zmod_val a) (by intros; rfl)
     _ = 0 := χ.sum_eq_zero_of_ne_one hχ
 
-/-- Any nonprincipal Dirichlet character at a nonzero level has level at least `3`, since
-`(ZMod 1)ˣ` and `(ZMod 2)ˣ` are trivial. -/
-theorem three_le_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
-    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ N := by
-  match N, NeZero.ne N, χ, hχ with
-  | 1, _, χ, hχ => exact absurd χ.level_one hχ
-  | 2, _, χ, hχ =>
-    refine absurd (MulChar.ext fun u ↦ ?_) hχ
-    rw [(by decide : ∀ u : (ZMod 2)ˣ, (u : ZMod 2) = 1) u]
-    simp
-  | _ + 3, _, _, _ => omega
-
 /-- A character which factors through `d` takes the same value on level-units congruent modulo
 `d`. -/
 theorem apply_eq_apply_of_factorsThrough {R : Type*} [CommMonoidWithZero R] {N d : ℕ}
@@ -271,6 +259,13 @@ theorem subsingleton_of_le_two {R : Type*} [CommMonoidWithZero R] {n : ℕ} [NeZ
     obtain rfl | rfl : n = 1 ∨ n = 2 := by have := NeZero.ne n; omega
     all_goals infer_instance
   exact ⟨fun χ ψ ↦ MulChar.ext fun u ↦ by rw [Subsingleton.elim u 1]; simp⟩
+
+/-- Any nonprincipal Dirichlet character at a nonzero level has level at least `3`, since
+`(ZMod 1)ˣ` and `(ZMod 2)ˣ` are trivial. -/
+theorem three_le_level_of_ne_one {R : Type*} [CommMonoidWithZero R] {N : ℕ} [NeZero N]
+    {χ : DirichletCharacter R N} (hχ : χ ≠ 1) : 3 ≤ N := by
+  by_contra! h
+  exact hχ ((subsingleton_of_le_two (by omega)).elim χ 1)
 
 /-- **Character separation within a coset.** If `χ` does not factor through `d ∣ N`, then every
 unit `u` has a partner `u'` with the same reduction modulo `d` but a different character value —
