@@ -57,6 +57,9 @@ vector spaces has exactly this underlying presheaf of types, which gives its she
 
 * `TauCeti.holomorphicSectionSheaf.existsUnique_gluing`: holomorphic sections that agree on
   overlaps glue uniquely; restriction is `TauCeti.holomorphicSectionSheaf.map_apply`.
+* `TauCeti.holomorphicSectionSheaf.sum_hom_app_apply` and
+  `TauCeti.holomorphicSectionSheaf.comp_hom_app_apply`: finite sums and composites of morphisms of
+  sheaves of holomorphic sections act pointwise on values.
 * `TauCeti.holomorphicSectionSheaf.prodBiconeIsBilimit`: the sheaf of sections of a direct sum
   `V₁ ×ᵇ V₂` is the biproduct of the two sheaves of sections.
 * `TauCeti.holomorphicSectionSheaf.prodIso`: the resulting isomorphism with `⊞`. Finite direct

@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Cohomology.S
 public import TauCeti.Geometry.Manifold.Projectivization.LineBundle.Tangent
 
 /-!
-# The first cohomology of the tangent bundle of `ℂPᵐ⁺¹` along the coordinate line vanishes
+# The first cohomology of the tangent bundle of `ℂPᵐ⁺¹` along a line vanishes
 
 Let `ℓ : ℂℙ¹ → ℂℙᵐ⁺¹` be the coordinate line `[v₀ : v₁] ↦ [v₀ : v₁ : 0 : ⋯ : 0]`
 (`Projectivization.coordLine`). The pullback `ℓ* TℂPᵐ⁺¹` of the tangent bundle
@@ -21,9 +21,17 @@ are at least `-1`, so the first Čech cohomology of the split bundle vanishes
 hence `H¹(ℂℙ¹, ℓ* TℂPᵐ⁺¹) = 0`
 (`Projectivization.isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace`).
 
+More generally, let `ℓ' : ℂℙ¹ → ℂPᵐ⁺¹` be any line, `[v] ↦ [f v]` for an injective linear map
+`f : ℂ² → ℂᵐ⁺²`. Its pullback `ℓ'* TℂPᵐ⁺¹` is again `𝒪(2) ⊕ 𝒪(1)ᵐ`
+(`Projectivization.exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist`),
+so `H¹(ℂℙ¹, ℓ'* TℂPᵐ⁺¹) = 0` as well
+(`Projectivization.isZero_holomorphicSectionCechCohomology_one_pullback_map_tangentSpace`). This is
+the vanishing of `H¹(C, u* TℂPⁿ)` on the line component `u` of a genus-zero stable map in the class
+of a line.
+
 The group `H¹(ℂℙ¹, u* TX)` is the cokernel of the linearized Cauchy–Riemann operator of a
 holomorphic sphere `u` in a complex manifold `X` with its integrable complex structure, so its
-vanishing says that the coordinate line is a regular holomorphic sphere in `ℂPᵐ⁺¹`. That
+vanishing says that every line is a regular holomorphic sphere in `ℂPᵐ⁺¹`. That
 identification of the cokernel is not made here.
 
 ## References
@@ -84,5 +92,34 @@ theorem isZero_holomorphicSectionCechCohomology_one_coordLineTangentSpace :
     (Fin.cases (by simp) fun _ ↦ by simp)).of_iso
       ((Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) 1).mapIso
         ((sheafToPresheaf _ _).mapIso (coordLineTangentSectionIso m)))
+
+
+variable {m} in
+/-- **`H¹(ℂℙ¹, ℓ'* TℂPᵐ⁺¹) = 0` for every line `ℓ'`.** Let `ℓ'` be an analytic map
+`ℂℙ¹ → ℂPᵐ⁺¹` sending `[v]` to `[f v]` for an injective linear map `f : ℂ² → ℂᵐ⁺²`, a line of
+`ℂPᵐ⁺¹`. The first Čech cohomology of the sheaf of holomorphic sections of the pullback
+`ℓ'* TℂPᵐ⁺¹` of the tangent bundle vanishes: `ℓ'* TℂPᵐ⁺¹ ≅ 𝒪(2) ⊕ 𝒪(1)ᵐ`
+(`Projectivization.exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist`),
+and `H¹(ℂℙ¹, 𝒪(k)) = 0` for `k ≥ -1`. -/
+theorem isZero_holomorphicSectionCechCohomology_one_pullback_map_tangentSpace
+    (f : (Fin 2 → ℂ) →ₗ[ℂ] Fin (m + 2) → ℂ) (hf : Function.Injective f)
+    (ℓ' : C^ω⟮𝓘(ℂ, Fin 1 → ℂ), ℙ ℂ (Fin 2 → ℂ); 𝓘(ℂ, Fin (m + 1) → ℂ),
+      ℙ ℂ (Fin (m + 2) → ℂ)⟯)
+    (hℓ' : ∀ x, ℓ' x = map f hf x) :
+    IsZero (holomorphicSectionCechCohomology 𝓘(ℂ, Fin 1 → ℂ) (Fin (m + 1) → ℂ)
+      ((ℓ' : ℙ ℂ (Fin 2 → ℂ) → ℙ ℂ (Fin (m + 2) → ℂ)) *ᵖ
+        (TangentSpace 𝓘(ℂ, Fin (m + 1) → ℂ))) 1) := by
+  obtain ⟨e, he⟩ :=
+    exists_continuousLinearEquiv_pullback_map_tangentSpace_twistSumCore_lineTwist f hf ℓ' hℓ'
+  refine (isZero_holomorphicSectionCechCohomology_one_twistSumCore_of_neg_one_le
+    (k := lineTwist m) fun l ↦ ?_).of_iso
+    ((Topology.cechCohomology (TopCat.of (ℙ ℂ (Fin 2 → ℂ))) (ModuleCat.{0} ℂ) 1).mapIso
+      ((sheafToPresheaf _ _).mapIso (holomorphicSectionSheaf.isoOfLinearEquiv
+        (fun x ↦ (e x).toLinearEquiv) he (contMDiff_bundle_symm e he))))
+  refine Fin.cases ?_ (fun l ↦ ?_) l
+  · rw [lineTwist_zero]
+    norm_num
+  · rw [lineTwist_succ]
+    norm_num
 
 end Projectivization
