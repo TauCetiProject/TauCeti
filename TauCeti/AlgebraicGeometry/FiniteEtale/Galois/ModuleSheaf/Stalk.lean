@@ -25,8 +25,9 @@ stalk through `Spec σ`, which acts on the Galois set by `φ ↦ φ ∘ σ`.
 
 ## Main definitions
 
-* `TauCeti.FiniteEtaleScheme.toEtaleSpecFiniteEtaleFieldIso`: the finite étale `K`-scheme
-  `Spec Ω`, in the small étale site of `Spec K`, is the étale geometric point `Spec Ω ⟶ Spec K`.
+* `TauCeti.FiniteEtaleScheme.toEtaleSpecFiniteEtaleFieldIso`: for `L` finite separable over `K`,
+  the finite étale `K`-scheme `Spec L`, in the small étale site of `Spec K`, is the étale point
+  `Spec L ⟶ Spec K`.
 * `TauCeti.FiniteEtaleScheme.etaleStalkGaloisModuleSheafEquiv`: the stalk of
   `galoisModuleSheaf K Ω ρ` at `Spec Ω ⟶ Spec K` is `M`.
 
@@ -52,37 +53,43 @@ namespace TauCeti.FiniteEtaleScheme
 
 open TauCeti.AlgebraicGeometry.Scheme
 
+section FiniteSeparable
+
+variable (K L : Type u) [Field K] [Field L] [Algebra K L] [FiniteDimensional K L]
+  [Algebra.IsSeparable K L]
+
+/-- `L`, finite and separable over `K`, as a finite étale `K`-algebra. -/
+noncomputable abbrev finiteEtaleField : CommAlgCat.FiniteEtale.{u} K :=
+  haveI : Algebra.Etale K L := Algebra.Etale.of_isSeparable K L
+  CommAlgCat.FiniteEtale.of K L
+
+/-- `σ` as an endomorphism of the finite étale `K`-algebra `L`. -/
+noncomputable abbrev finiteEtaleFieldHom (σ : Gal(L/K)) :
+    finiteEtaleField K L ⟶ finiteEtaleField K L :=
+  haveI : Algebra.Etale K L := Algebra.Etale.of_isSeparable K L
+  CommAlgCat.FiniteEtale.ofHom (σ : L →ₐ[K] L)
+
+/-- The finite étale `K`-scheme `Spec L`, regarded in the small étale site of `Spec K`, is the
+étale point `Spec L ⟶ Spec K`. -/
+noncomputable def toEtaleSpecFiniteEtaleFieldIso :
+    (toEtale _).obj ((spec (.of K)).obj (op (finiteEtaleField K L))) ≅
+      Scheme.Etale.mk (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
+  (Scheme.Etale.forgetFullyFaithful _).preimageIso (specObjObjIso (.of K) (finiteEtaleField K L))
+
+/-- The morphism over `Spec K` underlying `toEtaleSpecFiniteEtaleFieldIso` is `specObjObjIso`. -/
+@[simp]
+theorem forget_map_toEtaleSpecFiniteEtaleFieldIso_hom :
+    (Scheme.Etale.forget _).map (toEtaleSpecFiniteEtaleFieldIso K L).hom =
+      (specObjObjIso (.of K) (finiteEtaleField K L)).hom :=
+  (Scheme.Etale.forgetFullyFaithful _).map_preimage _
+
+end FiniteSeparable
+
 variable (K Ω : Type u) [Field K] [Field Ω] [Algebra K Ω] [IsSepClosed Ω] [IsGalois K Ω]
   [FiniteDimensional K Ω]
 
 variable {Λ : Type u} [CommRing Λ] {M : Type u} [AddCommGroup M] [Module Λ M]
   (ρ : Representation Λ Gal(Ω/K) M)
-
-/-- `Ω`, finite and separable over `K`, as a finite étale `K`-algebra. -/
-noncomputable abbrev finiteEtaleField : CommAlgCat.FiniteEtale.{u} K :=
-  haveI : Algebra.Etale K Ω := Algebra.Etale.of_isSeparable K Ω
-  CommAlgCat.FiniteEtale.of K Ω
-
-/-- `σ` as an endomorphism of the finite étale `K`-algebra `Ω`. -/
-noncomputable abbrev finiteEtaleFieldHom (σ : Gal(Ω/K)) :
-    finiteEtaleField K Ω ⟶ finiteEtaleField K Ω :=
-  haveI : Algebra.Etale K Ω := Algebra.Etale.of_isSeparable K Ω
-  CommAlgCat.FiniteEtale.ofHom (σ : Ω →ₐ[K] Ω)
-
-/-- The finite étale `K`-scheme `Spec Ω`, regarded in the small étale site of `Spec K`, is the
-étale geometric point `Spec Ω ⟶ Spec K`. -/
-noncomputable def toEtaleSpecFiniteEtaleFieldIso :
-    (toEtale _).obj ((spec (.of K)).obj (op (finiteEtaleField K Ω))) ≅
-      Scheme.Etale.mk (Spec.map (CommRingCat.ofHom (algebraMap K Ω))) :=
-  (Scheme.Etale.forgetFullyFaithful _).preimageIso (specObjObjIso (.of K) (finiteEtaleField K Ω))
-
-omit [IsSepClosed Ω] in
-/-- The morphism over `Spec K` underlying `toEtaleSpecFiniteEtaleFieldIso` is `specObjObjIso`. -/
-@[simp]
-theorem forget_map_toEtaleSpecFiniteEtaleFieldIso_hom :
-    (Scheme.Etale.forget _).map (toEtaleSpecFiniteEtaleFieldIso K Ω).hom =
-      (specObjObjIso (.of K) (finiteEtaleField K Ω)).hom :=
-  (Scheme.Etale.forgetFullyFaithful _).map_preimage _
 
 /-- **The stalk of the étale sheaf of a Galois representation.** For `Ω` finite over `K`, the stalk
 of `galoisModuleSheaf K Ω ρ` at the geometric point `Spec Ω ⟶ Spec K` is `M`: the point is étale,
