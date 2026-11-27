@@ -11,7 +11,6 @@ public import Mathlib.Data.Nat.Dist
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.Order.Archimedean.Basic
 import Mathlib.Data.Int.Order.Units
-import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.Linarith
 import TauCeti.Data.ZMod.Units
 
@@ -30,6 +29,7 @@ integers of arbitrarily large absolute value avoid them.
 
 ## Main results
 
+* `Int.progressionTerm`: the term at a nonnegative index.
 * `Int.exists_nat_add_mul_pos_odd`: a positive odd term at a nonnegative index.
 * `Int.not_dvd_one_add_max_abs_mul`: `d ∤ 1 + max |d| 2 * k` for a non-unit `d`.
 * `IsCoprime.exists_isCoprime_add_mul`: a progression `a + ℤ * b` with `a` and `b` coprime
@@ -43,6 +43,18 @@ integers of arbitrarily large absolute value avoid them.
 public section
 
 namespace Int
+
+/-- The term with zero-based index `i` of the progression starting at `n` with difference `d`. -/
+def progressionTerm (n d : ℤ) (i : ℕ) : ℤ := n + i * d
+
+theorem progressionTerm_def (n d : ℤ) (i : ℕ) : n.progressionTerm d i = n + i * d := (rfl)
+
+@[simp] theorem progressionTerm_zero (n d : ℤ) : n.progressionTerm d 0 = n := by
+  simp [progressionTerm]
+
+theorem progressionTerm_succ (n d : ℤ) (i : ℕ) :
+    n.progressionTerm d (i + 1) = n.progressionTerm d i + d := by
+  simp [progressionTerm, add_mul, add_assoc]
 
 /-- A progression with positive step contains a positive odd term at a nonnegative index if its
 initial term or its step is odd. -/
