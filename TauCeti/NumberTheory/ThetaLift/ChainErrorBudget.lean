@@ -14,9 +14,10 @@ import Mathlib.Tactic.Ring
 # Error budget for the Frobenius inequality of a theta chain
 
 The errors from rank matching, division, type primes, source slopes, local gain, source losses,
-and the two frame corrections fit into a single bound. The source spread contributes one
-logarithmic factor, and its coefficient in the frame inequality contributes a second. A third
-factor of `x ^ ε` absorbs the constants before the Frobenius comparison.
+and the two frame corrections fit into a single bound. The source spread contributes one factor
+of `x ^ ε` (from the bound on `La`), and its logarithmic coefficient `log (1 + x ^ c)` in the
+frame inequality contributes a second. A third factor of `x ^ ε` absorbs the constants before
+the Frobenius comparison.
 
 The decomposition into arithmetic and frame errors follows Levent Alpöge's
 `Formalism.LFunctionChainParameters.LErr.ErrText` and `CErr` in
@@ -124,11 +125,20 @@ private theorem thetaChainBudget_absorb {C c y : ℝ} (hC : 0 ≤ C) (hc : 0 ≤
     mul_nonneg (zero_le_one.trans hprod) (sq_nonneg y)]
 
 /-- The nine errors of the Frobenius-restricted theta-chain inequality have total at most
-`x ^ (3 * ε)` times the sum of the top-place and per-lift budgets. Here `P` is the number of top
-places, `A_top` sums their top weights, `m` is the chain length, and `k` is the initial rank.
-`La` is the logarithm of the reference weight times the root discriminant. `D` is the inverse
-of the good-row fraction and `F` is the scaled frame defect. `E₇` is the source loss bound
-and `U` is the source spread bound. -/
+`x ^ (3 * ε)` times the sum of the top-place and per-lift budgets,
+`P * a * (1 + m ^ 2 / k) + m * (B + N)`.
+
+The scale is `x`, and `y = x ^ ε` is the scale factor that absorbs logarithms and constants.
+`P` is the number of top places, `A_top` sums their top weights, and `a` is the top weight of a
+single place, with `A_top ≤ 2 * P * a`. `m` is the chain length, `k` is the initial rank, `b` is
+the row unit and `b'` is the source slope bound. `B` and `N` are the per-lift budgets `B₀` and
+`N_c`, and `X` is the extra colength `X''`. `La` is the logarithm of the reference weight times
+the root discriminant. `D` is the inverse of the good-row fraction, `F` is the scaled frame
+defect and `c` is the frame exponent `c_H`. `C` is the constant of the pointwise inequality.
+The local names `E₇` and `U` are the source loss bound and the source spread bound.
+
+The hypotheses are the size conditions of the chain; `hlarge` is the large-scale threshold,
+saying that `x ^ ε` dominates the constants `C` and `c`. -/
 theorem thetaChainErrorBudget_le {x ε c C P A_top a b b' m k La B N X D F : ℝ}
     (hx : 0 ≤ x) (hc : 0 ≤ c) (hC : 0 ≤ C) (hP : 1 ≤ P) (hb : 1 ≤ b) (hba : b ≤ a)
     (hm : 0 ≤ m) (hk : 0 < k) (hA_top : 0 ≤ A_top) (hBN : 0 ≤ B + N) (hN : 0 ≤ N)
