@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Positive
 public import TauCeti.Analysis.OperatorIdeal.Family.DixmierTrace.Linear
 import Mathlib.Analysis.PSeries
-import TauCeti.Analysis.OperatorIdeal.Family.TraceClass.Examples
+import TauCeti.Analysis.OperatorIdeal.Family.TraceClass.Diagonal
 import Mathlib.Data.Nat.Log
 import Mathlib.NumberTheory.Harmonic.Bounds
 
