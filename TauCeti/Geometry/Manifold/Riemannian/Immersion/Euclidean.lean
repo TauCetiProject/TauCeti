@@ -227,6 +227,7 @@ theorem inner_immersionSecondFundamentalFormAt_subtypeVal_sphere (x : sphere (0 
 
 /-- **The second fundamental form of the unit sphere** in a Euclidean space, with its round metric:
 `B_x(v, w) = -⟪v, w⟫ x`. -/
+@[simp]
 theorem immersionSecondFundamentalFormAt_subtypeVal_sphere (x : sphere (0 : E) 1)
     (v w : TangentSpace (𝓡 n) x) :
     (immersionSecondFundamentalFormAt (leviCivitaConnection 𝓘(ℝ, E) E)
@@ -246,6 +247,7 @@ theorem immersionSecondFundamentalFormAt_subtypeVal_sphere (x : sphere (0 : E) 1
 
 /-- **The shape operator of the unit sphere** in the direction of a vector `ν` at `x` is
 `S_ν = -⟪x, ν⟫ id`. -/
+@[simp]
 theorem immersionShapeOperatorAt_subtypeVal_sphere (x : sphere (0 : E) 1)
     (ν : TangentSpace 𝓘(ℝ, E) (x : E)) :
     immersionShapeOperatorAt (I := 𝓡 n) (leviCivitaConnection 𝓘(ℝ, E) E)
@@ -267,6 +269,7 @@ theorem immersionShapeOperatorAt_subtypeVal_sphere_self (x : sphere (0 : E) 1) :
     inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere x), neg_smul, one_smul]
 
 /-- **The principal curvatures of the unit sphere** in the direction `ν` all equal `-⟪x, ν⟫`. -/
+@[simp]
 theorem immersionPrincipalCurvatures_subtypeVal_sphere (x : sphere (0 : E) 1)
     (ht : (leviCivitaConnection 𝓘(ℝ, E) E).IsTorsionFree) {m : ℕ}
     (hm : finrank ℝ (EuclideanSpace ℝ (Fin n)) = m) (ν : TangentSpace 𝓘(ℝ, E) (x : E))
