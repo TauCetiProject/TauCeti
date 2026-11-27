@@ -9,6 +9,7 @@ public import TauCeti.Analysis.BoundedVariation.Weighted.Gaussian
 public import TauCeti.Analysis.BoundedVariation.Compactness
 import Mathlib.MeasureTheory.Measure.TightNormed
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Order.Filter.AtTopBot
 
 /-!
 # Compactness for sets of bounded weighted perimeter
@@ -113,30 +114,18 @@ theorem exists_subseq_forall_tendsto_withDensity_symmDiff_of_weightedPerimeter_l
     ∃ t : ι → Set E, (∀ i, MeasurableSet (t i)) ∧ ∃ φ : ℕ → ℕ, StrictMono φ ∧
       ∀ i, Tendsto (fun j => volume.withDensity (fun x => ENNReal.ofReal (Real.exp (-W x)))
         (s i (φ j) ∆ t i)) atTop (𝓝 0) := by
-  classical
-  have := Fintype.ofFinite ι
   set ν := volume.withDensity fun x => ENNReal.ofReal (Real.exp (-W x))
-  -- Extract a further subsequence for one index at a time.
-  suffices H : ∀ u : Finset ι, ∃ t : ι → Set E, (∀ i, MeasurableSet (t i)) ∧ ∃ φ : ℕ → ℕ,
-      StrictMono φ ∧ ∀ i ∈ u, Tendsto (fun j => ν (s i (φ j) ∆ t i)) atTop (𝓝 0) by
-    obtain ⟨t, ht, φ, hφ, h⟩ := H Finset.univ
-    exact ⟨t, ht, φ, hφ, fun i => h i (Finset.mem_univ i)⟩
-  intro u
-  induction u using Finset.induction_on with
-  | empty => exact ⟨fun _ => ∅, fun _ => .empty, id, strictMono_id, by simp⟩
-  | insert a u ha ih =>
-    obtain ⟨t, ht, φ, hφ, h⟩ := ih
-    obtain ⟨ta, hta, ψ, hψ, ha'⟩ :=
-      exists_subseq_tendsto_withDensity_symmDiff_of_weightedPerimeter_le hW
-        (fun n => hs a (φ n)) fun n => hP a (φ n)
-    refine ⟨Function.update t a ta, fun i => ?_, φ ∘ ψ, hφ.comp hψ, fun i hi => ?_⟩
-    · rcases eq_or_ne i a with rfl | hia
-      · simpa using hta
-      · simpa [hia] using ht i
-    · rcases Finset.mem_insert.1 hi with rfl | hi
-      · simpa using ha'
-      · rw [Function.update_of_ne (ne_of_mem_of_not_mem hi ha)]
-        exact (h i hi).comp hψ.tendsto_atTop
+  have := Fintype.ofFinite ι
+  obtain ⟨φ, hφ, h⟩ := extraction_forall_mem_finset (s := Finset.univ)
+    (P := fun i ψ ↦ ∃ t, MeasurableSet t ∧ Tendsto (fun j => ν (s i (ψ j) ∆ t)) atTop (𝓝 0))
+    (fun i _ ψ _ ↦ by
+      obtain ⟨t, ht, ψ', hψ', h⟩ :=
+        exists_subseq_tendsto_withDensity_symmDiff_of_weightedPerimeter_le hW
+          (fun n => hs i (ψ n)) fun n => hP i (ψ n)
+      exact ⟨ψ', hψ', t, ht, h⟩)
+    fun _ _ _ _ hψ' ⟨t, ht, h⟩ ↦ ⟨t, ht, h.comp hψ'.tendsto_atTop⟩
+  choose t ht h using fun i ↦ h i (Finset.mem_univ i)
+  exact ⟨t, ht, φ, hφ, h⟩
 
 /-- **Compactness for bounded Gaussian perimeter.** Every sequence of null-measurable sets with
 Gaussian perimeters `P_γ(s n) ≤ M` has a subsequence converging in `L¹(γ)` to a measurable set
