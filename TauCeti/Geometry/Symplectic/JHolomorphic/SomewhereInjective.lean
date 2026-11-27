@@ -107,7 +107,8 @@ theorem IsInjectivePoint.notMem_criticalValuePreimage {x : S}
     (hx : IsInjectivePoint 𝓘(ℝ, ℂ) I u x) : x ∉ criticalValuePreimage I u := fun hB ↦ by
   obtain ⟨y, hy0, hyx⟩ := mem_criticalValuePreimage.1 hB
   have h0 : mfderiv 𝓘(ℝ, ℂ) I u x = 0 := hx.eq_of_apply_eq hyx ▸ hy0
-  exact one_ne_zero (α := ℂ) (hx.injective_mfderiv (by rw [h0]; rfl))
+  exact one_ne_zero (α := ℂ) <| hx.injective_mfderiv <| (DFunLike.congr_fun h0 (1 : ℂ)).trans <|
+    (zero_apply _).trans (map_zero _).symm
 
 /-- On a closed curve whose coincident-branch classes off `B = u⁻¹(u(Crit u))` all have one
 element, the branch of `u` at a point factors holomorphically through the branch of `u` at no
