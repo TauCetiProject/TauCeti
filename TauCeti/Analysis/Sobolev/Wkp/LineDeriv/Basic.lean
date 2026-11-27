@@ -756,37 +756,6 @@ theorem Wkp.iteratedGradient_lineDerivL_eq_zero_of_eq_zero (v : E) {j : ℕ}
   exact ((ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).compLpₗ p
     (mu.restrict Omega)).map_zero
 
-/-- A directional component of the gradient of an order-`k + 1` Sobolev function
-has an order-`k` Sobolev representative. -/
-theorem Wkp.exists_value_ae_eq_gradient_inner (k : ℕ) {u : W1p mu Omega p}
-    (U : Wkp mu Omega p (k + 1)) (hU : Wkp.value (k + 1) U = W1p.value u) (v : E) :
-    ∃ D : Wkp mu Omega p k, Wkp.value k D =ᵐ[mu.restrict Omega]
-      fun x ↦ ⟪W1p.gradient u x, v⟫_ℝ := by
-  obtain ⟨D, hD⟩ := Wkp.exists_hasWeakLineDerivOn_value k U v
-  rw [hU] at hD
-  exact ⟨D, hD.ae_eq (W1p.hasWeakLineDerivOn_inner_gradient u v)⟩
-
-/-- Sobolev representatives for a unit normal derivative and all orthogonal derivatives
-give a Sobolev representative for every directional derivative. -/
-theorem Wkp.exists_hasWeakLineDerivOn_of_normal_and_tangential (k : ℕ)
-    {e : E} (he : ‖e‖ = 1) {q : E → ℝ} {N : Wkp mu Omega p k}
-    (hN : HasWeakLineDerivOn mu Omega q (Wkp.value k N) e)
-    (hT : ∀ τ : E, ⟪τ, e⟫_ℝ = 0 → ∃ T : Wkp mu Omega p k,
-      HasWeakLineDerivOn mu Omega q (Wkp.value k T) τ) (v : E) :
-    ∃ D : Wkp mu Omega p k, HasWeakLineDerivOn mu Omega q (Wkp.value k D) v := by
-  let P := (ℝ ∙ e)ᗮ.starProjection
-  obtain ⟨T, hT⟩ := hT (P v) (by simp [P])
-  have hsplit : P v + ⟪e, v⟫_ℝ • e = v := by
-    simpa only [Submodule.starProjection_singleton, he, one_pow, RCLike.ofReal_real_eq_id,
-      id_eq, div_one, add_comm, P] using
-      (ℝ ∙ e).starProjection_add_starProjection_orthogonal v
-  have hd := hT.add_direction (hN.smul_direction ⟪e, v⟫_ℝ)
-  rw [hsplit] at hd
-  refine ⟨T + ⟪e, v⟫_ℝ • N, hd.congr_ae_deriv ?_⟩
-  filter_upwards [Wkp.value_add_ae k T (⟪e, v⟫_ℝ • N), Wkp.value_smul_ae k ⟪e, v⟫_ℝ N]
-    with x h₁ h₂
-  simp only [h₁, h₂, Pi.add_apply]
-
 /-- Almost-everywhere pointwise form of `TauCeti.Wkp.iteratedGradient_lineDerivL`. -/
 theorem Wkp.iteratedGradient_lineDerivL_ae (v : E) (j : ℕ) (u : Wkp mu Omega p (j + 2)) :
     ∀ᵐ x ∂mu.restrict Omega,

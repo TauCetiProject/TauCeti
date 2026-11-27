@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Regularity.Boundary.ScalarBootstrap
-import TauCeti.Analysis.PDE.Regularity.Interior.Localization
+import TauCeti.Analysis.PDE.Regularity.Interior.Basic
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.Sobolev.W1p.Localization
 
@@ -56,21 +56,9 @@ The classical proof (Evans, §6.3.2, Theorem 4) localizes the global theorem on 
 * The global theorem on `H` gives `L²` second derivatives of `ψ u`, which agrees with `u` on
   `Ω ∩ V`.
 
-The `H³` statement localizes the global `H³` theorem on the half-space
-(`TauCeti.PDE.UniformlyEllipticOn.exists_value_eq_value_of_mapsTo`) in the same way, with two
-changes.
-
-* The field `a` is replaced, near `closure V`, by a field `a'` with smooth entries that is
-  uniformly elliptic on `H` and equal to `λ I` far away
-  (`TauCeti.PDE.UniformlyEllipticOn.exists_contDiff_eqOn_inter`), as the half-space theorem
-  requires.
-* The forcing of the equation for `ψ u`,
-  `ψ F - ⟨∇u, a' ∇ψ⟩ - ⟨∇ψ, a' ∇u⟩ - u div(a' ∇ψ)`, must now lie in `H¹(H)`. It is a combination of
-  `F`, the first derivatives of `u` and `u` with smooth compactly supported multipliers, so it lies
-  in `H¹(Ω ∩ W)` because `u` is already `H²` there by the first part
-  (`TauCeti.PDE.exists_value_ae_eq_localizedForcing`). It vanishes off `tsupport ψ`,
-  and `tsupport ψ ∩ H ⊆ Ω ∩ W`, so its extension by zero lies in `H¹(H)`
-  (`TauCeti.Wkp.exists_value_ae_eq_indicator_of_isClosed`).
+The `H³` statement is the `k = 1` instance of the finite-order flat-boundary theorem
+`TauCeti.PDE.UniformlyEllipticOn.exists_value_succ_succ_eq_value_restrictL_of_mapsTo`
+in `Regularity/Boundary/ScalarBootstrap.lean`.
 
 ## Main declarations
 

@@ -12,6 +12,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.RCLike
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
 
 /-!
 # Extending a uniformly elliptic field to the whole space
@@ -335,31 +336,37 @@ open scoped BigOperators
 variable {K : Set (EuclideanSpace ℝ ι)} {A : Matrix ι ι ℝ}
 local notation "E" => EuclideanSpace ℝ ι
 
-/-- A smooth matrix field constant off a compact set has bounded Lipschitz bilinear forms. -/
-theorem exists_lipschitzWith_and_norm_bound_of_eqOn_const (hK : IsCompact K)
-    (hconst : EqOn a (fun _ ↦ A) Kᶜ) (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j)) :
-    ∃ L : ℝ≥0, ∃ M : ℝ, LipschitzWith L (fun x ↦ matrixBilinearForm (a x)) ∧
-      ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M := by
-  let d (i j : ι) (x : E) := a x i j - A i j
-  have hc (i j : ι) : HasCompactSupport (d i j) := by
-    refine hK.of_isClosed_subset isClosed_closure (closure_minimal ?_ hK.isClosed)
-    intro x hx
-    by_contra h
-    exact hx (by simp [d, hconst h])
-  have hd (i j : ι) : ContDiff ℝ ∞ (d i j) := (hsm i j).sub contDiff_const
-  choose L hL using fun i j ↦ (hd i j).lipschitzWith_of_hasCompactSupport (hc i j) (by simp)
-  choose M hM using fun i j ↦ (hc i j).exists_bound_of_continuous (hd i j).continuous
-  have heq (i j : ι) : (fun x ↦ a x i j) = fun x ↦ d i j x + A i j :=
-    funext fun x ↦ (sub_add_cancel (a x i j) (A i j)).symm
-  have hlip (i j : ι) : LipschitzWith (L i j) (fun x ↦ a x i j) := by
-    rw [heq]
-    simpa using (hL i j).add (LipschitzWith.const (A i j))
-  refine ⟨∑ i, ∑ j, L i j, ∑ i, ∑ j, (M i j + |A i j|),
-    lipschitzWith_matrixBilinearForm_of_forall hlip, fun x ↦ ?_⟩
-  refine (norm_matrixBilinearForm_le_sum_abs (a x)).trans
-    (Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ ?_)
-  rw [congrFun (heq i j) x]
-  exact (abs_add_le _ _).trans (add_le_add (hM i j x) le_rfl)
+/-- A smooth matrix field constant off a compact set has a common bound for its derivatives
+of orders two through any fixed order. -/
+theorem exists_coefficient_derivative_bound
+    (hK : IsCompact K) (hconst : EqOn a (fun _ ↦ A) Kᶜ)
+    (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j)) (k : ℕ) :
+    ∃ C : ℝ, ∀ i j, ∀ r, 2 ≤ r → r ≤ k + 1 → ∀ x,
+      ‖iteratedFDeriv ℝ r (fun y ↦ a y i j) x‖ ≤ C := by
+  classical
+  choose C hC using fun (i j : ι) (r : Fin (k + 1)) ↦
+    ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl (i := r.val + 1)
+      ((hsm i j).of_le (by simp) : ContDiff ℝ (r.val + 1) (fun x ↦ a x i j))
+      (by omega) hK (b := A i j) (L := 0) (fun x hx ↦ by
+        simpa using congrArg (fun B ↦ B i j) (hconst hx))
+  refine ⟨∑ i, ∑ j, ∑ s : Fin (k + 1), |C i j s|, fun i j r hr hrk x ↦ ?_⟩
+  have hs : r - 1 < k + 1 := by omega
+  have h := hC i j ⟨r - 1, hs⟩ x
+  -- Expose the finite index in the chosen bound so the natural-number rewrite applies.
+  change ‖iteratedFDeriv ℝ (r - 1 + 1) (fun y ↦ a y i j) x‖ ≤ C i j ⟨r - 1, hs⟩ at h
+  rw [Nat.sub_add_cancel (by omega : 1 ≤ r)] at h
+  apply (h.trans (le_abs_self _)).trans
+  calc
+    |C i j ⟨r - 1, hs⟩| ≤ ∑ s : Fin (k + 1), |C i j s| :=
+      Finset.single_le_sum (f := fun s : Fin (k + 1) ↦ |C i j s|)
+        (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ (⟨r - 1, hs⟩ : Fin (k + 1)))
+    _ ≤ ∑ t : ι, ∑ s : Fin (k + 1), |C i t s| :=
+      Finset.single_le_sum (f := fun t : ι ↦ ∑ s : Fin (k + 1), |C i t s|)
+        (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abs_nonneg _) (Finset.mem_univ j)
+    _ ≤ ∑ t : ι, ∑ v : ι, ∑ s : Fin (k + 1), |C t v s| :=
+      Finset.single_le_sum (f := fun t : ι ↦ ∑ v : ι, ∑ s : Fin (k + 1), |C t v s|)
+        (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abs_nonneg _)
+        (Finset.mem_univ i)
 
 end CompactPerturbation
 

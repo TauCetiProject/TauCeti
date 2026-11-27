@@ -951,15 +951,6 @@ theorem hasWeakFDerivOn_iteratedGradient_toOrderL {j k : ℕ} (h : j + 2 ≤ k)
   rw [← lowerOrder_toOrderL h u]
   exact hasWeakFDerivOn_iteratedGradient j (toOrderL h u)
 
-/-- Finite sums of functions represented in the same Sobolev space have a Sobolev representative. -/
-theorem exists_value_ae_eq_sum (k : ℕ) {ι : Type*} [Fintype ι] {g : ι → E → ℝ}
-    (hg : ∀ i, ∃ G : Wkp mu Omega p k, value k G =ᵐ[mu.restrict Omega] g i) :
-    ∃ G : Wkp mu Omega p k, value k G =ᵐ[mu.restrict Omega] fun x ↦ ∑ i, g i x := by
-  choose G hG using hg
-  refine ⟨∑ i, G i, ?_⟩
-  filter_upwards [value_finsetSum_ae k Finset.univ G, ae_all_iff.2 hG] with x hx hGx
-  simp only [hx, hGx]
-
 end Wkp
 
 end TauCeti

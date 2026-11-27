@@ -193,7 +193,7 @@ Let `ν' = ν / ‖ν‖²` and let `P` be the orthogonal projection onto the su
 orthogonal to `ν`. If each product `aⁱʲ ∂ⱼu` has a weak derivative `Gᵢⱼ` in the tangential
 direction `P eᵢ`, then `∑ⱼ ⟪ν', a eⱼ⟫ ∂ⱼu` has the weak derivative `-(f + ∑ᵢⱼ Gᵢⱼ)` in the
 direction `ν`. -/
-theorem hasWeakLineDerivOn_sum_smul_inner_gradient
+private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
     (ha : ∀ p q, ContinuousOn (fun x => matrixBilinearForm (a x) p q) Omega)
     {f : Lp ℝ 2 (mu.restrict Omega)} {U : W1p mu Omega 2}
     (hU : ∀ φ : 𝓓(Omega, ℝ), energyFormH1 a 0 0 U (W1p.ofTestFunctionₗ mu Omega 2 φ) =

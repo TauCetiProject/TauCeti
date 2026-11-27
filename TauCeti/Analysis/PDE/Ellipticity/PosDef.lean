@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import TauCeti.Analysis.PDE.Ellipticity.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
-import Mathlib.Analysis.Calculus.ContDiff.Defs
 
 /-!
 # Uniform ellipticity of continuous positive-definite matrix fields on compact sets
@@ -86,24 +85,22 @@ theorem exists_uniformlyEllipticOn_of_isCompact_of_posDef {K : Set X} (hK : IsCo
   simpa only [Matrix.toQuadraticForm'_apply, star_trivial] using
     (hpos x hx).dotProduct_mulVec_pos hξ'
 
-open scoped ContDiff
-
 section CompactPatch
 variable {Omega U : TopologicalSpace.Opens (EuclideanSpace ℝ ι)} {lam : ℝ}
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
 local notation "E" => EuclideanSpace ℝ ι
 
-/-- A positive lower bound for a smooth coefficient field gives uniform ellipticity on
+/-- A positive lower bound for a continuous coefficient field gives uniform ellipticity on
 a relatively compact chart patch; compactness supplies the upper bound. -/
 theorem exists_uniformlyEllipticOn_inter_of_isCompact_closure {W : TopologicalSpace.Opens E}
     (hW : IsCompact (closure (W : Set E))) (hWU : closure (W : Set E) ⊆ U)
     (hlam : 0 < lam) (ha : ∀ x ∈ (Omega : Set E) ∩ U, ∀ v : E,
       lam * ‖v‖ ^ 2 ≤ matrixBilinearForm (a x) v v)
-    (hsmooth : ∀ i j, ContDiffOn ℝ ∞ (fun x ↦ a x i j) U) :
+    (hcont : ∀ i j, ContinuousOn (fun x ↦ a x i j) U) :
     ∃ Lam, UniformlyEllipticOn ((Omega : Set E) ∩ W) a lam Lam := by
   classical
   choose C hC using fun i j ↦ hW.exists_bound_of_continuousOn
-    ((hsmooth i j).continuousOn.mono hWU)
+    ((hcont i j).mono hWU)
   let M := ∑ i, ∑ j, C i j
   refine ⟨max lam M, UniformlyEllipticOn.of_bounds hlam (le_max_left _ _) ?_ ?_⟩
   · intro x hx v

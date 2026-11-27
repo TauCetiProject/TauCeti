@@ -10,7 +10,7 @@ import TauCeti.Analysis.PDE.Ellipticity.PosDef
 import TauCeti.Analysis.InnerProductSpace.HalfSpace
 import TauCeti.Analysis.PDE.Regularity.HigherOrder
 import TauCeti.Analysis.Sobolev.W1p.Localization
-import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.PDE.Regularity.Interior.Localization
 
 /-!
 # All-order local regularity at a flat Dirichlet boundary
@@ -67,38 +67,6 @@ omit [Fintype ι] [DecidableEq ι] in
 private theorem mem_iff_mem_of_inter_eq (hΩU : (Omega : Set E) ∩ U = (H : Set E) ∩ U)
     {x : E} (hx : x ∈ (U : Set E)) : x ∈ Omega ↔ x ∈ H := by
   simpa only [← SetLike.mem_coe, mem_inter_iff, hx, and_true] using Set.ext_iff.1 hΩU x
-
-omit [DecidableEq ι] in
-/-- A smooth matrix field constant off a compact set has a common bound for its derivatives
-of orders two through any fixed order. -/
-private theorem exists_coefficient_derivative_bound {K : Set E} {A : Matrix ι ι ℝ}
-    (hK : IsCompact K) (hconst : EqOn a (fun _ ↦ A) Kᶜ)
-    (hsm : ∀ i j, ContDiff ℝ ∞ (fun x ↦ a x i j)) (k : ℕ) :
-    ∃ C : ℝ, ∀ i j, ∀ r, 2 ≤ r → r ≤ k + 1 → ∀ x,
-      ‖iteratedFDeriv ℝ r (fun y ↦ a y i j) x‖ ≤ C := by
-  classical
-  choose C hC using fun (i j : ι) (r : Fin (k + 1)) ↦
-    ContDiff.exists_bound_iteratedFDeriv_of_eqOn_compl (i := r.val + 1)
-      ((hsm i j).of_le (by simp) : ContDiff ℝ (r.val + 1) (fun x ↦ a x i j))
-      (by omega) hK (b := A i j) (L := 0) (fun x hx ↦ by
-        simpa using congrArg (fun B ↦ B i j) (hconst hx))
-  refine ⟨∑ i, ∑ j, ∑ s : Fin (k + 1), |C i j s|, fun i j r hr hrk x ↦ ?_⟩
-  have hs : r - 1 < k + 1 := by omega
-  have h := hC i j ⟨r - 1, hs⟩ x
-  change ‖iteratedFDeriv ℝ (r - 1 + 1) (fun y ↦ a y i j) x‖ ≤ C i j ⟨r - 1, hs⟩ at h
-  rw [Nat.sub_add_cancel (by omega : 1 ≤ r)] at h
-  apply (h.trans (le_abs_self _)).trans
-  calc
-    |C i j ⟨r - 1, hs⟩| ≤ ∑ s : Fin (k + 1), |C i j s| :=
-      Finset.single_le_sum (f := fun s : Fin (k + 1) ↦ |C i j s|)
-        (fun _ _ ↦ abs_nonneg _) (Finset.mem_univ (⟨r - 1, hs⟩ : Fin (k + 1)))
-    _ ≤ ∑ t : ι, ∑ s : Fin (k + 1), |C i t s| :=
-      Finset.single_le_sum (f := fun t : ι ↦ ∑ s : Fin (k + 1), |C i t s|)
-        (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abs_nonneg _) (Finset.mem_univ j)
-    _ ≤ ∑ t : ι, ∑ v : ι, ∑ s : Fin (k + 1), |C t v s| :=
-      Finset.single_le_sum (f := fun t : ι ↦ ∑ v : ι, ∑ s : Fin (k + 1), |C t v s|)
-        (fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ Finset.sum_nonneg fun _ _ ↦ abs_nonneg _)
-        (Finset.mem_univ i)
 
 private theorem exists_value_eq_value_restrictL_of_mapsTo_of_order
     (hν : ν ≠ 0) (hHc : Convex ℝ (H : Set E))
@@ -351,7 +319,7 @@ theorem exists_value_eq_value_restrictL_allOrders_of_halfSpace
     exact and_congr_left fun hx ↦ mem_iff_mem_of_inter_eq hΩU (hWsub hx)
   obtain ⟨_, haW⟩ :=
     exists_uniformlyEllipticOn_inter_of_isCompact_closure (W := W) hW hWU hlam
-      ha hsmooth
+      ha (fun i j ↦ (hsmooth i j).continuousOn)
   have huW (v : W1p0 mu (Omega ⊓ W) 2) :
       energyFormH1 a 0 0 (W1p.restrictL inf_le_left u) (v : W1p mu (Omega ⊓ W) 2) =
         ∫ x in Omega ⊓ W, f x * W1p.value (v : W1p mu (Omega ⊓ W) 2) x ∂mu := by
