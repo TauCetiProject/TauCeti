@@ -23,9 +23,6 @@ into `O[G]` along a subgroup inclusion `H ≤ G`:
   assuming `#H` is a unit.
 * `MonoidHom.charEval_charIdempotent`: over a domain in which `#H` is a unit,
   `ψ(e_χ) = δ_{χψ}`.
-* `MonoidHom.charEval_mapDomainAlgHom_charIdempotent`: for a finite subgroup `H ≤ G` with `#H` a
-  unit in the domain `O`, the pushed-forward idempotent `e_χ ∈ O[G]` evaluates to `1` on
-  characters extending `χ` and to `0` on all other characters of `G`.
 * `MonoidHom.charEval_mapDomainAlgHom_charIdempotent_mul_eq_zero`: over a domain `O`, if `ψ`
   vanishes on `x` whenever it restricts to `χ`, then `ψ(e_χ * x) = 0`.
 -/
@@ -67,17 +64,6 @@ theorem charEval_charIdempotent [IsDomain O] [DecidableEq (H →* Oˣ)]
   · subst h
     exact charEval_charIdempotent_self (Nat.card_eq_fintype_card (α := H) ▸ hH) χ
   · exact charEval_charIdempotent_of_ne h
-
-omit [Fintype H] in
-/-- For a finite subgroup `H ≤ G` whose order is a unit in the domain `O`, the embedded character
-idempotent of `χ : H →* Oˣ` in `O[G]` evaluates to `1` at extensions of `χ` and to `0` at all
-other characters of `G`. -/
-theorem charEval_mapDomainAlgHom_charIdempotent [IsDomain O] (H : Subgroup G) [Fintype H]
-    [DecidableEq (H →* Oˣ)] (hH : IsUnit (Nat.card H : O)) (χ : H →* Oˣ) (ψ : G →* Oˣ) :
-    ψ.charEval (MonoidAlgebra.mapDomainAlgHom O O H.subtype (TauCeti.charIdempotent χ)) =
-      if ψ.comp H.subtype = χ then 1 else 0 := by
-  simp only [MonoidAlgebra.mapDomainAlgHom_apply, charEval_mapDomain,
-    charEval_charIdempotent hH, eq_comm]
 
 omit [Fintype H] in
 /-- Over a domain `O`, if `ψ : G →* Oˣ` vanishes on `x : O[G]` whenever `ψ` restricts to `χ` on
