@@ -78,6 +78,13 @@ identities. It is a finite form of `∑_{j ≥ 0} t^(j²+j) / ((1 - t) ⋯ (1 - 
 noncomputable def rogersRamanujanSumTwo (t : R) (n : ℕ) : R :=
   ∑ j ∈ range (n + 1), t ^ (j ^ 2 + j) * gaussianBinomial t (n - j) j
 
+/-- Two powers of `t` agree in front of `[m k]_t` once their exponents agree for `k ≤ m`. -/
+private theorem pow_mul_gaussianBinomial_congr (t : R) {m k x y : ℕ} (hxy : k ≤ m → x = y) :
+    t ^ x * gaussianBinomial t m k = t ^ y * gaussianBinomial t m k := by
+  rcases le_or_gt k m with hkm | hkm
+  · rw [hxy hkm]
+  · rw [gaussianBinomial_eq_zero_of_lt t hkm, mul_zero, mul_zero]
+
 /-- The recurrence shared by both left sums: with weights `t^(j² + a j)` the sums
 `∑_{j ≤ n} t^(j² + a j) [n-j j]_t` satisfy `F (n + 2) = F (n + 1) + t^(n+1+a) F n`. -/
 private theorem sum_pow_mul_gaussianBinomial_add_two (t : R) (a n : ℕ) :
@@ -92,13 +99,16 @@ private theorem sum_pow_mul_gaussianBinomial_add_two (t : R) (a n : ℕ) :
           t ^ (n + 1 + a) * (t ^ (i ^ 2 + a * i) * gaussianBinomial t (n - i) i) := by
     have hi := mem_range.1 hi
     rw [show n + 2 - (i + 1) = n - i + 1 by omega, show n + 1 - (i + 1) = n - i by omega,
-      gaussianBinomial_succ_succ', mul_add, add_comm, ← mul_assoc, ← mul_assoc, ← pow_add,
-      ← pow_add]
-    rcases le_or_gt i (n - i) with hle | hlt
-    · obtain ⟨d, rfl⟩ : ∃ d, n = i + i + d := ⟨n - i - i, by omega⟩
-      rw [show i + i + d - i - i = d by omega,
-        show (i + 1) ^ 2 + a * (i + 1) + d = i + i + d + 1 + a + (i ^ 2 + a * i) by ring]
-    · rw [gaussianBinomial_eq_zero_of_lt t hlt, mul_zero, mul_zero]
+      gaussianBinomial_succ_succ', mul_add,
+      add_comm (t ^ ((i + 1) ^ 2 + a * (i + 1)) *
+        (t ^ (n - i - i) * gaussianBinomial t (n - i) i))]
+    congr 1
+    -- Both sides are a single power of `t` times `[n-i i]_t`; the exponents agree for `i ≤ n - i`.
+    simp only [← mul_assoc, ← pow_add]
+    refine pow_mul_gaussianBinomial_congr t fun hle ↦ ?_
+    obtain ⟨d, rfl⟩ : ∃ d, n = i + i + d := ⟨n - i - i, by omega⟩
+    rw [show i + i + d - i - i = d by omega]
+    ring
   rw [sum_range_succ' _ (n + 2), sum_range_succ _ (n + 1), sum_range_succ' _ (n + 1), mul_sum,
     sum_congr rfl hterm, sum_add_distrib,
     gaussianBinomial_eq_zero_of_lt t (by omega : n + 2 - (n + 1 + 1) < n + 1 + 1), mul_zero,
