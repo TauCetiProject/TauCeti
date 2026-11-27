@@ -110,6 +110,8 @@ embeddings into block-diagonal matrices.
 * `CStarMatrix.diagonalNonUnitalStarAlgHom`: the diagonal embedding `b ↦ diag(b, …, b)` of `B`
   in `M_n(B)`, with `CStarMatrix.norm_diagonalNonUnitalStarAlgHom_le` and
   `CStarMatrix.norm_map_toSpanSingleton_le`: `‖[xᵢⱼ • a]‖ ≤ ‖x‖ ‖a‖` for a scalar matrix `x`.
+* `CStarMatrix.diagonalStarAlgHom`: the diagonal embedding `d ↦ diag(d₁, …, dₙ)` of `n → A` in
+  `M_n(A)`, as a star algebra homomorphism.
 * `CStarMatrix.blockDiagonalSingle`: the corner embedding of `M_{n i}(B)` as the `i`-th diagonal
   block of `M_{Σ i, n i}(B)`, with `CStarMatrix.sum_blockDiagonalSingle`: a block-diagonal matrix
   is the sum of its corner embeddings.
@@ -267,6 +269,27 @@ theorem diagonalNonUnitalStarAlgHom_apply (b : B) (i j : n) :
   Matrix.diagonal_apply ..
 
 end Diagonal
+
+section DiagonalStarAlgHom
+
+variable (R n A : Type*) [Fintype n] [DecidableEq n] [CommSemiring R] [Semiring A] [StarRing A]
+  [Algebra R A]
+
+/-- The diagonal embedding `d ↦ diag(d₁, …, dₙ)` of `n → A` in `CStarMatrix n n A`, as a star
+algebra homomorphism: `Matrix.diagonalAlgHom` commutes with `star` by
+`Matrix.diagonal_conjTranspose`. -/
+def diagonalStarAlgHom : (n → A) →⋆ₐ[R] CStarMatrix n n A where
+  toAlgHom := Matrix.diagonalAlgHom R
+  map_star' d := congrArg ofMatrix (Matrix.diagonal_conjTranspose d).symm
+
+variable {R n A}
+
+@[simp]
+theorem diagonalStarAlgHom_apply (d : n → A) (i j : n) :
+    diagonalStarAlgHom R n A d i j = if i = j then d i else 0 :=
+  Matrix.diagonal_apply ..
+
+end DiagonalStarAlgHom
 
 section Algebraic
 
