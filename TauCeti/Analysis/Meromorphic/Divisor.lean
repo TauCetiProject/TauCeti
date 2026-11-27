@@ -30,6 +30,9 @@ of support finite and bounds sums over their subsets by the corresponding closed
 * `MeromorphicOn.inter_support_analyticOrderNatAt_subset_support_divisor`,
   `AnalyticOnNhd.support_divisor_eq`, and `AnalyticOnNhd.support_divisor_univ_eq` — support
   relations between `analyticOrderNatAt f` and `MeromorphicOn.divisor f`.
+* `AnalyticOnNhd.divisor_closedBall_apply` and `AnalyticOnNhd.finsum_subtype_eq_finsum_divisor` —
+  on a closed ball where `f` is analytic, the divisor records the orders of the zeros in the ball,
+  so order-weighted sums over those zeros are divisor sums.
 * `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
 * `AnalyticAt.notMem_divisor_support_of_ne_zero`, `AnalyticAt.apply_eq_zero_of_divisor_ne_zero` —
   such a point is off the divisor support, so any support point where `f` is analytic is a zero.
@@ -192,6 +195,35 @@ theorem AnalyticOnNhd.support_divisor_univ_eq {𝕜 E : Type*} [NontriviallyNorm
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} (hf : AnalyticOnNhd 𝕜 f Set.univ) :
     (MeromorphicOn.divisor f Set.univ).support = Function.support (analyticOrderNatAt f) := by
   rw [hf.support_divisor_eq, Set.univ_inter]
+
+/-- On a closed ball where `f` is analytic, the divisor of `f` is the order of vanishing
+`analyticOrderNatAt f` at the zeros of `f` in the ball, and zero elsewhere. -/
+theorem AnalyticOnNhd.divisor_closedBall_apply {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {z₀ : 𝕜} {r : ℝ}
+    (hf : AnalyticOnNhd 𝕜 f (Metric.closedBall z₀ r)) (z : 𝕜)
+    [Decidable (‖z - z₀‖ ≤ r ∧ f z = 0)] :
+    MeromorphicOn.divisor f (Metric.closedBall z₀ r) z =
+      if ‖z - z₀‖ ≤ r ∧ f z = 0 then (analyticOrderNatAt f z : ℤ) else 0 := by
+  have hmem : z ∈ Metric.closedBall z₀ r ↔ ‖z - z₀‖ ≤ r := by
+    rw [Metric.mem_closedBall, dist_eq_norm]
+  split_ifs with hz
+  · exact hf.meromorphicOn.divisor_eq_analyticOrderNatAt (hf z (hmem.2 hz.1)) (hmem.2 hz.1)
+  · by_cases hzr : ‖z - z₀‖ ≤ r
+    · exact (hf z (hmem.2 hzr)).divisor_apply_eq_zero fun h ↦ hz ⟨hzr, h⟩
+    · exact Function.locallyFinsuppWithin.apply_eq_zero_of_notMem _ (mt hmem.1 hzr)
+
+/-- On a closed ball where `f` is analytic, a sum over the zeros of `f` in the ball, each weighted
+by its order of vanishing, is the corresponding sum against the divisor of `f` on the ball. -/
+theorem AnalyticOnNhd.finsum_subtype_eq_finsum_divisor {𝕜 E R : Type*}
+    [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [Ring R] {f : 𝕜 → E}
+    {z₀ : 𝕜} {r : ℝ} (hf : AnalyticOnNhd 𝕜 f (Metric.closedBall z₀ r)) (w : 𝕜 → R) :
+    ∑ᶠ ρ : {z : 𝕜 // ‖z - z₀‖ ≤ r ∧ f z = 0}, (analyticOrderNatAt f ρ.val : R) * w ρ.val =
+      ∑ᶠ ρ, (MeromorphicOn.divisor f (Metric.closedBall z₀ r) ρ : R) * w ρ := by
+  classical
+  refine (finsum_subtype_eq_finsum_cond (f := fun z ↦ (analyticOrderNatAt f z : R) * w z) _).trans
+    (finsum_congr fun ρ ↦ ?_)
+  rw [finsum_eq_if, hf.divisor_closedBall_apply]
+  split_ifs <;> simp
 
 /-- Equal divisors determine equal meromorphic orders at a point where both orders are finite.
 The two functions may take values in different normed spaces over the same field. -/

@@ -227,18 +227,15 @@ theorem exists_norm_LFunctionTrivChar₁_one_le_rpow_of_norm_sub_le (σ₀ R : �
   refine ⟨max C 1 * (|R| + 1) ^ max B 0, max B 0,
     mul_pos (lt_max_of_lt_right one_pos) (Real.rpow_pos_of_pos (by positivity) _),
     fun s₀ w hs₀ hw ↦ ?_⟩
-  have hre := abs_re_le_norm (w - s₀)
-  rw [sub_re, hs₀, abs_le] at hre
-  have him := (abs_sub_abs_le_abs_sub w.im s₀.im).trans ((sub_im w s₀ ▸ abs_im_le_norm _).trans hw)
-  calc ‖LFunctionTrivChar₁ 1 w‖ ≤ C * (|w.im| + 2) ^ B := hC w (by linarith) (by linarith)
-    _ ≤ max C 1 * (|w.im| + 2) ^ max B 0 := by
-        gcongr
-        · exact le_max_left _ _
-        · linarith [abs_nonneg w.im]
-        · exact le_max_left _ _
-    _ ≤ max C 1 * ((|R| + 1) * (|s₀.im| + 2)) ^ max B 0 := by
-        gcongr
-        nlinarith [abs_nonneg s₀.im, le_abs_self R, abs_nonneg R]
-    _ = _ := by rw [Real.mul_rpow (by positivity) (by positivity), mul_assoc]
+  have hstrip (s : ℂ) (ha : σ₀ - R ≤ s.re) (hb : s.re ≤ σ₀ + R) :
+      ‖LFunctionTrivChar₁ 1 s‖ ≤ max C 1 * (1 * (|s.im| + 2)) ^ max B 0 := by
+    rw [one_mul]
+    refine (hC s ha hb).trans ?_
+    gcongr
+    · exact le_max_left _ _
+    · linarith [abs_nonneg s.im]
+    · exact le_max_left _ _
+  simpa only [one_mul] using le_mul_rpow_mul_rpow_of_norm_sub_le
+    (zero_le_one.trans (le_max_right _ _)) zero_le_one (le_max_right _ _) hstrip hs₀ hw
 
 end TauCeti
