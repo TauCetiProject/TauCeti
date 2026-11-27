@@ -99,6 +99,11 @@ open CStarTensorProduct
 
 variable {A B}
 
+/-- `‖a ⊗ b‖ = ‖a‖ ‖b‖` in `MinTensorProduct A B`. -/
+theorem norm_of_tmul (a : A) (b : B) :
+    ‖of (minCStarTensorNorm A B) (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
+  rw [norm_of, minCStarTensorNorm_apply, minTensorNorm_tmul]
+
 /-! ### The spatial realization -/
 
 section Spatial
@@ -235,12 +240,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [Complet
   (A : NonUnitalStarSubalgebra ℂ (E →L[ℂ] E)) (B : NonUnitalStarSubalgebra ℂ (F →L[ℂ] F))
 
 variable [IsClosed (A : Set (E →L[ℂ] E))] [IsClosed (B : Set (F →L[ℂ] F))]
-
-/-- For closed concrete operator algebras, the norm of `x` in the spatial tensor product
-`A ⊗_min B` is its minimal norm. -/
-theorem norm_toMinTensor_eq_minTensorNorm (x : A ⊗[ℂ] B) :
-    ‖toMinTensor A B x‖ = minTensorNorm A B x := by
-  rw [norm_toMinTensor, minTensorNorm_eq_spatialNorm]
 
 /-- The star homomorphism `MinTensorProduct A B → A ⊗_min B` extending the identity of
 `A ⊗[ℂ] B`, for closed concrete operator algebras. -/

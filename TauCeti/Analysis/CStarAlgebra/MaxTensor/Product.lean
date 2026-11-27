@@ -82,6 +82,11 @@ open CStarTensorProduct
 
 variable {A B}
 
+/-- `‖a ⊗ b‖ = ‖a‖ ‖b‖` in `MaxTensorProduct A B`. -/
+theorem norm_of_tmul (a : A) (b : B) :
+    ‖of (maxCStarTensorNorm A B) (a ⊗ₜ b)‖ = ‖a‖ * ‖b‖ := by
+  rw [norm_of, maxCStarTensorNorm_apply, maxTensorNorm_tmul]
+
 variable {C : Type (max u v)} [NonUnitalCStarAlgebra C] (φ : A →⋆ₙₐ[ℂ] C) (ψ : B →⋆ₙₐ[ℂ] C)
   (h : ∀ a b, Commute (φ a) (ψ b))
 

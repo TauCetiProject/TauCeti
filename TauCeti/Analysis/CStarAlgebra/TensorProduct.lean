@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.RingTheory.TensorProduct.Basic
 public import Mathlib.Algebra.Star.TensorProduct
+public import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
 
@@ -60,11 +61,9 @@ variable (A : Type u) (B : Type v) [NonUnitalCStarAlgebra A] [NonUnitalCStarAlge
 /-- A **C*-norm** on the algebraic tensor product `A ⊗[ℂ] B`: a norm that is submultiplicative,
 star-invariant and satisfies the C*-identity `N (x⋆ x) = N x ^ 2`. Its completion is the
 C*-tensor product `TauCeti.CStarTensorProduct N`. -/
-structure CStarTensorNorm extends AddGroupNorm (A ⊗[ℂ] B) where
+structure CStarTensorNorm extends RingNorm (A ⊗[ℂ] B) where
   /-- A C*-norm is absolutely homogeneous. -/
   smul' (c : ℂ) (x : A ⊗[ℂ] B) : toFun (c • x) = ‖c‖ * toFun x
-  /-- A C*-norm is submultiplicative. -/
-  mul_le' (x y : A ⊗[ℂ] B) : toFun (x * y) ≤ toFun x * toFun y
   /-- A C*-norm is star-invariant. -/
   star' (x : A ⊗[ℂ] B) : toFun (star x) = toFun x
   /-- A C*-norm satisfies the C*-identity. -/
@@ -75,7 +74,7 @@ namespace CStarTensorNorm
 variable {A B}
 
 instance : FunLike (CStarTensorNorm A B) (A ⊗[ℂ] B) ℝ where
-  coe N := N.toFun
+  coe N := N.toRingNorm
   coe_injective N N' h := by
     cases N
     cases N'
@@ -150,7 +149,7 @@ instance : NonUnitalNormedRing (CStarTensorAlgebra N) where
   __ : NonUnitalRing (CStarTensorAlgebra N) := inferInstance
   norm_mul_le x y := by
     rw [norm_def, norm_def, norm_def, map_mul]
-    exact N.mul_le' _ _
+    exact map_mul_le_mul N.toRingNorm _ _
 
 /-- The star operation is isometric for a C*-norm. -/
 instance : NormedStarGroup (CStarTensorAlgebra N) where

@@ -37,7 +37,9 @@ supremum: the minimal norm is the norm of `(π ⊗ ρ) x` for **every** pair of 
 representations, on Hilbert spaces in any universes
 (`TauCeti.minTensorNorm_eq_norm_spatialTensorHom`), and it bounds `‖(π ⊗ ρ) x‖` for every pair of
 representations (`TauCeti.norm_spatialTensorHom_le_minTensorNorm`). For closed concrete operator
-algebras it is the spatial norm (`NonUnitalStarSubalgebra.minTensorNorm_eq_spatialNorm`). Hence
+algebras it is the spatial norm (`NonUnitalStarSubalgebra.minTensorNorm_eq_spatialNorm`), that
+is, the norm in the spatial tensor product `A ⊗_min B`
+(`NonUnitalStarSubalgebra.norm_toMinTensor_eq_minTensorNorm`). Hence
 the minimal norm is **functorial**: star homomorphisms `φ : A → A'` and `ψ : B → B'` give
 `‖(φ ⊗ ψ) x‖_min ≤ ‖x‖_min` (`TauCeti.minTensorNorm_mapNonUnitalStarAlgHom_le`), with equality for
 injective `φ` and `ψ` (`TauCeti.minTensorNorm_mapNonUnitalStarAlgHom`), and it is invariant under
@@ -236,6 +238,12 @@ spatial norm relative to the given representations. -/
 theorem minTensorNorm_eq_spatialNorm (x : A ⊗[ℂ] B) : minTensorNorm A B x = A.spatialNorm B x := by
   rw [spatialNorm_def, spatialTensorHom_def]
   exact minTensorNorm_eq_norm_spatialTensorHom Subtype.val_injective Subtype.val_injective x
+
+/-- For closed concrete operator algebras, the norm of `x` in the spatial tensor product
+`A ⊗_min B` is its minimal norm. -/
+theorem norm_toMinTensor_eq_minTensorNorm (x : A ⊗[ℂ] B) :
+    ‖toMinTensor A B x‖ = minTensorNorm A B x := by
+  rw [norm_toMinTensor, minTensorNorm_eq_spatialNorm]
 
 /-- For closed concrete operator algebras `A ⊆ B(E)` and `B ⊆ B(F)`, the minimal norm dominates
 the spatial norm relative to the given representations. -/
