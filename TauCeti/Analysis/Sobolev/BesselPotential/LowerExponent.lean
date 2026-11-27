@@ -10,6 +10,7 @@ import TauCeti.Analysis.Distribution.Sobolev
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.Sobolev.BesselPotential.OrderInterpolation
+import TauCeti.Data.ENNReal.Holder
 
 /-!
 # Schwartz multipliers lower the exponent of `H^{s,p}`
@@ -86,8 +87,7 @@ theorem MemSobolev.smulLeftCLM_schwartzMap_zero_of_le [NormedSpace ℂ F] [Compl
     MemSobolev 0 q (TemperedDistribution.smulLeftCLM F (φ : E → ℂ) f) := by
   obtain ⟨f', rfl⟩ := memSobolev_zero_iff.1 hf
   -- The exponent `r` with `1 / r = 1 / q - 1 / p`.
-  have : ENNReal.HolderTriple (q⁻¹ - p⁻¹)⁻¹ p q :=
-    ⟨by rw [inv_inv, tsub_add_cancel_of_le (ENNReal.inv_le_inv.2 hqp)]⟩
+  have := ENNReal.HolderTriple.of_le hqp
   have hmem : MemLp (fun x ↦ φ x • f' x) q volume :=
     (φ.memLp (q⁻¹ - p⁻¹)⁻¹).smul (Lp.memLp f')
   refine memSobolev_zero_iff.2 ⟨hmem.toLp _, ?_⟩
