@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Adjunctions
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 public import Mathlib.CategoryTheory.Monoidal.Closed.Braided
+public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.CategoryTheory.Sites.Point.IsMonoidalW
 public import TauCeti.AlgebraicGeometry.Sites.Etale.ModuleSheaf
 public import TauCeti.AlgebraicGeometry.Sites.Etale.Over.Sheafify
@@ -45,6 +46,9 @@ the sheafification of the sectionwise extension of scalars, it is
   `TauCeti.AlgebraicGeometry.Scheme.etaleStalk Λ s` is monoidal.
 * `CategoryTheory.Sheaf.IsFiniteLisse.tensor`: the tensor product of two finite lisse sheaves is
   finite lisse.
+* `CategoryTheory.Sheaf.isFiniteLisse_tensorUnit`: the unit, the constant sheaf `Λ`, is finite
+  lisse, so that finite lisse sheaves form a monoidal subcategory
+  (`CategoryTheory.Sheaf.isMonoidal_isFiniteLisse`).
 
 ## References
 
@@ -106,5 +110,26 @@ theorem IsFiniteLisse.tensor {F G : Sheaf (smallEtaleTopology S) (ModuleCat.{u} 
   IsLocallyConstantIn.tensor (R := fun M : ModuleCat.{u} Λ ↦ Module.Finite Λ M)
     (fun (M N : ModuleCat.{u} Λ) (_ : Module.Finite Λ M) (_ : Module.Finite Λ N) ↦
       inferInstanceAs (Module.Finite Λ (TensorProduct Λ M N))) hF hG
+
+/-- The unit of the tensor product of étale sheaves of `Λ`-modules, the sheafification of the
+constant presheaf `Λ`, is the constant sheaf `Λ`. -/
+noncomputable def tensorUnitIsoConstantSheaf :
+    𝟙_ (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) ≅
+      (constantSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)).obj (𝟙_ (ModuleCat.{u} Λ)) :=
+  Functor.Monoidal.εIso (presheafToSheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) ≪≫
+    (presheafToSheaf _ _).mapIso (NatIso.ofComponents fun _ ↦ Iso.refl _)
+
+/-- The unit of the tensor product of étale sheaves of `Λ`-modules is finite lisse. -/
+theorem isFiniteLisse_tensorUnit :
+    (𝟙_ (Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ))).IsFiniteLisse :=
+  haveI : Module.Finite Λ (𝟙_ (ModuleCat.{u} Λ)) := inferInstanceAs (Module.Finite Λ Λ)
+  (isFiniteLisse_constantSheaf _).of_iso tensorUnitIsoConstantSheaf.symm
+
+/-- Finite lisse étale sheaves of `Λ`-modules form a monoidal subcategory. -/
+instance isMonoidal_isFiniteLisse :
+    (ObjectProperty.IsMonoidal fun F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ) ↦
+      F.IsFiniteLisse) where
+  prop_unit := isFiniteLisse_tensorUnit
+  prop_tensor _ _ hF hG := hF.tensor hG
 
 end CategoryTheory.Sheaf
