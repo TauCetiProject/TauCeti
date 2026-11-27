@@ -46,10 +46,16 @@ theorem IsSimpleModule.exists_linearEquiv_quot_of_charpoly_lsmul_X {K V : Type*}
   have := hp.finite_quotient
   have := hp.finite_adjoinRoot
   have := hp.free_adjoinRoot
-  -- In `AdjoinRoot p`, the scalar `X` acts by multiplication by the adjoined root.
-  have hroot : (Algebra.lsmul K K (K[X] ⧸ Ideal.span {p}) (X : K[X])).charpoly = p :=
-    AdjoinRoot.charpoly_lmul_root hp
+  have hroot : Algebra.lsmul K K (K[X] ⧸ Ideal.span {p}) (X : K[X]) =
+      Algebra.lmul K (AdjoinRoot p) (AdjoinRoot.root p) := by
+    refine LinearMap.ext fun x ↦ ?_
+    have hsmul : (X : K[X]) • x = Ideal.Quotient.mk (Ideal.span {p}) X * x :=
+      Algebra.smul_def (X : K[X]) x
+    -- `AdjoinRoot p` is the quotient and its root is the quotient image of `X`.
+    exact (Algebra.lsmul_apply K K _ (X : K[X]) x).trans
+      (hsmul.trans (LinearMap.mul_apply' (R := K) (AdjoinRoot.root p) x).symm)
   rw [e'.charpoly_lsmul_eq (X : K[X]), hroot]
+  exact AdjoinRoot.charpoly_lmul_root hp
 
 /-- Two finite-dimensional semisimple `K[X]`-modules are isomorphic if multiplication by `X`
 has the same characteristic polynomial on both modules. -/
