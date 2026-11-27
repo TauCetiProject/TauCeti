@@ -38,9 +38,9 @@ For the `p`-th power map of a ring in which `p` vanishes this colimit is the per
 ## Main results
 
 * `RingHom.IterateColimit.mk_eq_mk_iff`: `mk φ n x = mk φ n y` iff `φᵏ x = φᵏ y` for some `k`.
-* `RingHom.IterateColimit.injective_of_iff`, `RingHom.IterateColimit.bijective_of_iff`: the map
+* `RingHom.IterateColimit.of_injective_iff`, `RingHom.IterateColimit.of_bijective_iff`: the map
   from `R` to the colimit is injective, resp. bijective, exactly when `φ` is.
-* `RingHom.IterateColimit.injective_map_iff`, `RingHom.IterateColimit.surjective_map_iff`:
+* `RingHom.IterateColimit.map_injective_iff`, `RingHom.IterateColimit.map_surjective_iff`:
   criteria for the induced map of colimits to be injective or surjective.
 -/
 
@@ -90,14 +90,22 @@ theorem mk_zero : mk φ 0 = of φ :=
 
 variable {φ}
 
+/-- `mk φ n x` is the class of the pair `⟨n, x⟩` in the quotient defining the direct limit; this
+is Mathlib's `DirectLimit.Ring.of_apply`. It connects `mk` with Mathlib's lemmas about these
+classes, such as `DirectLimit.exists_eq_mk` and `Quotient.eq`. -/
+theorem mk_def (n : ℕ) (x : R) : mk φ n x = ⟦⟨n, x⟩⟧ := by
+  rw [mk, DirectLimit.Ring.of_apply]
+
 /-- Every element of the iterate colimit is `mk φ n x` for some stage `n` and `x : R`. -/
-theorem exists_eq_mk (z : φ.IterateColimit) : ∃ (n : ℕ) (x : R), z = mk φ n x :=
-  DirectLimit.exists_eq_mk _ z
+theorem exists_eq_mk (z : φ.IterateColimit) : ∃ (n : ℕ) (x : R), z = mk φ n x := by
+  obtain ⟨n, x, rfl⟩ := DirectLimit.exists_eq_mk _ z
+  exact ⟨n, x, (mk_def n x).symm⟩
 
 /-- Two elements of the iterate colimit come from a common stage. -/
 theorem exists_eq_mk₂ (z w : φ.IterateColimit) :
-    ∃ (n : ℕ) (x y : R), z = mk φ n x ∧ w = mk φ n y :=
-  DirectLimit.exists_eq_mk₂ _ z w
+    ∃ (n : ℕ) (x y : R), z = mk φ n x ∧ w = mk φ n y := by
+  obtain ⟨n, x, y, rfl, rfl⟩ := DirectLimit.exists_eq_mk₂ _ z w
+  exact ⟨n, x, y, (mk_def n x).symm, (mk_def n y).symm⟩
 
 /-- The class of `φᵏ x` in the `(n + k)`-th copy of `R` is the class of `x` in the `n`-th. -/
 @[simp]
@@ -118,7 +126,8 @@ exactly when they agree after applying some power of `φ`. -/
 theorem mk_eq_mk_iff {n : ℕ} {x y : R} :
     mk φ n x = mk φ n y ↔ ∃ k : ℕ, φ^[k] x = φ^[k] y := by
   refine ⟨fun h ↦ ?_, fun ⟨k, hk⟩ ↦ ?_⟩
-  · obtain ⟨i, hx, hy, hxy⟩ := Quotient.eq.1 h
+  · rw [mk_def, mk_def] at h
+    obtain ⟨i, hx, hy, hxy⟩ := Quotient.eq.1 h
     exact ⟨i - n, by simpa only [transition_apply] using hxy⟩
   · rw [← mk_add_iterate n k x, ← mk_add_iterate n k y, hk]
 
@@ -162,6 +171,7 @@ theorem lift_of (g : ℕ → R →+* S) (hg : ∀ n x, g (n + 1) (φ x) = g n x)
   (rfl)
 
 /-- Ring maps out of the iterate colimit agree once they agree on every stage. -/
+@[ext]
 theorem hom_ext {g₁ g₂ : φ.IterateColimit →+* S} (h : ∀ n, g₁.comp (mk φ n) = g₂.comp (mk φ n)) :
     g₁ = g₂ :=
   DirectLimit.Ring.hom_ext _ h
@@ -177,8 +187,8 @@ def ringEquiv : φ.IterateColimit ≃+* φ.IterateColimit :=
   RingEquiv.ofRingHom
     (lift φ (fun n ↦ (mk φ n).comp φ) fun n x ↦ by simp)
     (lift φ (fun n ↦ mk φ (n + 1)) fun n x ↦ by simp)
-    (hom_ext fun n ↦ by ext x; simp)
-    (hom_ext fun n ↦ by ext x; simp)
+    (by ext n x; simp)
+    (by ext n x; simp)
 
 @[simp]
 theorem ringEquiv_mk (n : ℕ) (x : R) : ringEquiv φ (mk φ n x) = mk φ n (φ x) :=
@@ -198,19 +208,19 @@ theorem ringEquiv_symm_of (x : R) : (ringEquiv φ).symm (of φ x) = mk φ 1 x :=
   ringEquiv_symm_mk 0 x
 
 /-- `of φ` is injective exactly when `φ` is. -/
-theorem injective_of_iff : Function.Injective (of φ) ↔ Function.Injective φ := by
+theorem of_injective_iff : Function.Injective (of φ) ↔ Function.Injective φ := by
   refine ⟨fun h x y hxy ↦ h (of_eq_of_iff.2 ⟨1, hxy⟩), fun h x y hxy ↦ ?_⟩
   obtain ⟨k, hk⟩ := of_eq_of_iff.1 hxy
   exact (h.iterate k) hk
 
 /-- **An invertible endomorphism needs no colimit**: `of φ` is bijective exactly when `φ` is. -/
-theorem bijective_of_iff : Function.Bijective (of φ) ↔ Function.Bijective φ := by
-  refine ⟨fun h ↦ ⟨injective_of_iff.1 h.1, fun x ↦ ?_⟩, fun h ↦ ⟨injective_of_iff.2 h.1, ?_⟩⟩
+theorem of_bijective_iff : Function.Bijective (of φ) ↔ Function.Bijective φ := by
+  refine ⟨fun h ↦ ⟨of_injective_iff.1 h.1, fun x ↦ ?_⟩, fun h ↦ ⟨of_injective_iff.2 h.1, ?_⟩⟩
   · -- `mk φ 1 x` comes from some `y`, and then `x = φ y` because `φ` is injective.
     obtain ⟨y, hy⟩ := h.2 (mk φ 1 x)
     rw [of_eq_mk 1, Function.iterate_one, mk_eq_mk_iff] at hy
     obtain ⟨k, hk⟩ := hy
-    exact ⟨y, (injective_of_iff.1 h.1).iterate k hk⟩
+    exact ⟨y, (of_injective_iff.1 h.1).iterate k hk⟩
   · intro z
     obtain ⟨n, x, rfl⟩ := exists_eq_mk z
     obtain ⟨y, rfl⟩ := (h.2.iterate n) x
@@ -239,13 +249,15 @@ theorem map_of (g : R →+* S) (hg : Function.Semiconj g φ ψ) (x : R) :
   (rfl)
 
 @[simp]
-theorem map_id : map φ φ (RingHom.id R) (Function.Semiconj.id_left) = RingHom.id _ :=
-  hom_ext fun n ↦ by ext; simp
+theorem map_id : map φ φ (RingHom.id R) (Function.Semiconj.id_left) = RingHom.id _ := by
+  ext n x
+  simp
 
 theorem map_comp (g : R →+* S) (hg : Function.Semiconj g φ ψ) (h : S →+* T)
     (hh : Function.Semiconj h ψ χ) :
-    map φ χ (h.comp g) (hh.comp_left hg) = (map ψ χ h hh).comp (map φ ψ g hg) :=
-  hom_ext fun n ↦ by ext; simp
+    map φ χ (h.comp g) (hh.comp_left hg) = (map ψ χ h hh).comp (map φ ψ g hg) := by
+  ext n x
+  simp
 
 /-- The induced map of colimits commutes with the automorphisms induced by `φ` and `ψ`. -/
 theorem map_ringEquiv (g : R →+* S) (hg : Function.Semiconj g φ ψ) (z : φ.IterateColimit) :
@@ -256,7 +268,7 @@ theorem map_ringEquiv (g : R →+* S) (hg : Function.Semiconj g φ ψ) (z : φ.I
 /-- **Injectivity of the induced map of colimits.** The map induced by `g` is injective exactly
 when any two elements of `R` that `g` identifies after some power of `ψ` are already identified
 by some power of `φ`. -/
-theorem injective_map_iff (g : R →+* S) (hg : Function.Semiconj g φ ψ) :
+theorem map_injective_iff (g : R →+* S) (hg : Function.Semiconj g φ ψ) :
     Function.Injective (map φ ψ g hg) ↔
       ∀ x y, (∃ k, ψ^[k] (g x) = ψ^[k] (g y)) → ∃ k, φ^[k] x = φ^[k] y := by
   refine ⟨fun h x y hxy ↦ of_eq_of_iff.1 (h ?_), fun h z w hzw ↦ ?_⟩
@@ -267,7 +279,7 @@ theorem injective_map_iff (g : R →+* S) (hg : Function.Semiconj g φ ψ) :
 
 /-- **Surjectivity of the induced map of colimits.** The map induced by `g` is surjective exactly
 when some power of `ψ` carries each element of `S` into the image of `g`. -/
-theorem surjective_map_iff (g : R →+* S) (hg : Function.Semiconj g φ ψ) :
+theorem map_surjective_iff (g : R →+* S) (hg : Function.Semiconj g φ ψ) :
     Function.Surjective (map φ ψ g hg) ↔ ∀ y, ∃ k x, ψ^[k] y = g x := by
   refine ⟨fun h y ↦ ?_, fun h z ↦ ?_⟩
   · -- If `of ψ y = mk ψ n (g x)`, then `ψⁿ⁺ᵏ y = g (φᵏ x)` for some `k`.

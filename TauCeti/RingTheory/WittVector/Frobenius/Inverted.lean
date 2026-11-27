@@ -34,10 +34,12 @@ These are the same conditions under which `W(f)` is an isomorphism up to bounded
 element of `W(A)` dies in `W(A)[1/F]` only if one power of `F` kills all of its coordinates at once.
 Consequently `W(A)[1/F] → W(A ⧸ I)[1/F]` is an isomorphism for a nilpotent ideal `I`, for instance
 the nilradical of a noetherian ring, and `W(f)[1/F]` is an isomorphism whenever `f` has an inverse
-up to a power of the Frobenius, as a finite universal homeomorphism of schemes of characteristic
-`p` does. For a perfect ring `A`, inverting `F` changes nothing, and this characterizes perfect
-rings. Finally, since `F ∘ V = p`, the Frobenius becomes invertible once `p` is: the localization
-`W(A)[1/F][1/p]` is `W(A)[1/p]`.
+up to a power of the Frobenius: a ring map `g` in the other direction with `g ∘ f` and `f ∘ g` both
+equal to `x ↦ x ^ p ^ N`. A universal homeomorphism need not have such an inverse: the quotient by
+a nil ideal of unbounded exponent is one, yet its `W(f)[1/F]` is not injective. For a perfect ring
+`A`, inverting `F` changes nothing, and this characterizes perfect rings. Finally, since
+`F ∘ V = p`, the Frobenius becomes invertible once `p` is: the localization `W(A)[1/F][1/p]` is
+`W(A)[1/p]`.
 
 ## Main definitions
 
@@ -48,14 +50,14 @@ rings. Finally, since `F ∘ V = p`, the Frobenius becomes invertible once `p` i
 
 * `WittVector.FrobeniusInverted.of_eq_zero_iff_coeff_pow`: a Witt vector vanishes in
   `W(A)[1/F]` iff one power `p ^ k` kills all of its coordinates.
-* `WittVector.FrobeniusInverted.bijective_of_iff_perfectRing`: `W(A) → W(A)[1/F]` is bijective
+* `WittVector.FrobeniusInverted.of_bijective_iff_perfectRing`: `W(A) → W(A)[1/F]` is bijective
   iff `A` is perfect.
-* `WittVector.FrobeniusInverted.injective_map_iff`,
-  `WittVector.FrobeniusInverted.surjective_map_iff`,
-  `WittVector.FrobeniusInverted.bijective_map_iff`: the criteria above.
-* `WittVector.FrobeniusInverted.bijective_map_of_isNilpotent`: inverting `F` does not see a
+* `WittVector.FrobeniusInverted.map_injective_iff`,
+  `WittVector.FrobeniusInverted.map_surjective_iff`,
+  `WittVector.FrobeniusInverted.map_bijective_iff`: the criteria above.
+* `WittVector.FrobeniusInverted.map_bijective_of_isNilpotent`: inverting `F` does not see a
   nilpotent ideal.
-* `WittVector.FrobeniusInverted.bijective_map_of_comp_eq_pow`: `W(f)[1/F]` is bijective if `f`
+* `WittVector.FrobeniusInverted.map_bijective_of_comp_eq_pow`: `W(f)[1/F]` is bijective if `f`
   has an inverse up to the `p ^ N`-th power map.
 * `WittVector.FrobeniusInverted.isLocalization_away_natCast`: inverting `p` in `W(A)[1/F]`
   inverts `p` in `W(A)`.
@@ -106,15 +108,16 @@ theorem map_of (f : A →+* B) (x : 𝕎 A) :
   RingHom.IterateColimit.map_of _ _ x
 
 @[simp]
-theorem map_id : map (RingHom.id A) = RingHom.id (FrobeniusInverted p A) :=
-  RingHom.IterateColimit.hom_ext fun n ↦ by ext; simp
+theorem map_id : map (RingHom.id A) = RingHom.id (FrobeniusInverted p A) := by
+  ext n x
+  simp
 
 theorem map_comp (f : A →+* B) (g : B →+* C) :
-    map (p := p) (g.comp f) = (map g).comp (map f) :=
-  RingHom.IterateColimit.hom_ext fun n ↦ by
-    ext x
-    simp only [RingHom.comp_apply, map_mk]
-    exact congrArg _ (WittVector.ext fun n ↦ by simp only [map_coeff, RingHom.comp_apply])
+    map (p := p) (g.comp f) = (map g).comp (map f) := by
+  have h : WittVector.map (p := p) (g.comp f) = (WittVector.map g).comp (WittVector.map f) :=
+    RingHom.ext fun x ↦ WittVector.ext fun n ↦ by simp only [map_coeff, RingHom.comp_apply]
+  simp only [map, h]
+  exact RingHom.IterateColimit.map_comp _ _ _ _
 
 /-- `W(f)[1/F]` commutes with the Frobenius automorphisms of `W(A)[1/F]` and `W(B)[1/F]`. -/
 theorem map_ringEquiv (f : A →+* B) (z : FrobeniusInverted p A) :
@@ -122,9 +125,9 @@ theorem map_ringEquiv (f : A →+* B) (z : FrobeniusInverted p A) :
   RingHom.IterateColimit.map_ringEquiv _ _ z
 
 /-- `W(f)[1/F]` is surjective when `f` is. -/
-theorem surjective_map (f : A →+* B) (hf : Function.Surjective f) :
+theorem map_surjective (f : A →+* B) (hf : Function.Surjective f) :
     Function.Surjective (map (p := p) f) :=
-  (RingHom.IterateColimit.surjective_map_iff _ _).2 fun y ↦
+  (RingHom.IterateColimit.map_surjective_iff _ _).2 fun y ↦
     let ⟨x, hx⟩ := WittVector.map_surjective f hf y
     ⟨0, x, hx.symm⟩
 
@@ -143,9 +146,9 @@ variable (p A) in
 /-- **Inverting the Frobenius of a perfect ring changes nothing**, and only perfect rings have this
 property: in characteristic `p`, the map `W(A) → W(A)[1/F]` is bijective exactly when `A` is
 perfect. -/
-theorem bijective_of_iff_perfectRing [CharP A p] :
+theorem of_bijective_iff_perfectRing [CharP A p] :
     Function.Bijective (of (frobenius : 𝕎 A →+* 𝕎 A)) ↔ PerfectRing A p := by
-  rw [RingHom.IterateColimit.bijective_of_iff, frobenius_eq_map_frobenius]
+  rw [RingHom.IterateColimit.of_bijective_iff, frobenius_eq_map_frobenius]
   refine ⟨fun h ↦ ⟨⟨fun a b hab ↦ ?_, fun b ↦ ?_⟩⟩, fun h ↦ ?_⟩
   · -- Compare zeroth coordinates of Teichmüller representatives.
     have := h.1 (a₁ := teichmuller p a) (a₂ := teichmuller p b) <| by
@@ -160,9 +163,9 @@ theorem bijective_of_iff_perfectRing [CharP A p] :
 /-- **Injectivity of `W(f)[1/F]`.** For a map `f : A →+* B` with `A` of characteristic `p`,
 `W(f)[1/F]` is injective exactly when the kernel of `f` is a nil ideal of bounded exponent:
 `a ^ p ^ c = 0` for a single `c` and all `a ∈ ker f`. -/
-theorem injective_map_iff [CharP A p] (f : A →+* B) :
+theorem map_injective_iff [CharP A p] (f : A →+* B) :
     Function.Injective (map (p := p) f) ↔ ∃ c : ℕ, ∀ a ∈ RingHom.ker f, a ^ p ^ c = 0 := by
-  refine (RingHom.IterateColimit.injective_map_iff _ _).trans
+  refine (RingHom.IterateColimit.map_injective_iff _ _).trans
     ⟨fun h ↦ ?_, fun ⟨c, hc⟩ x y ⟨k, hk⟩ ↦ ⟨c + k, ?_⟩⟩
   · -- If no single exponent works, choose `a c ∈ ker f` with `a c ^ p ^ c ≠ 0`; the Witt vector
     -- with coordinates `a` dies under `W(f)` but is not killed by any power of `F`.
@@ -185,9 +188,9 @@ theorem injective_map_iff [CharP A p] (f : A →+* B) :
 /-- **Surjectivity of `W(f)[1/F]`.** For a map `f : A →+* B` with `B` of characteristic `p`,
 `W(f)[1/F]` is surjective exactly when a uniform `p`-power of every element of `B` lies in the
 image of `f`. -/
-theorem surjective_map_iff [CharP B p] (f : A →+* B) :
+theorem map_surjective_iff [CharP B p] (f : A →+* B) :
     Function.Surjective (map (p := p) f) ↔ ∃ c : ℕ, ∀ b, b ^ p ^ c ∈ f.range := by
-  refine (RingHom.IterateColimit.surjective_map_iff _ _).trans ⟨fun h ↦ ?_, fun ⟨c, hc⟩ y ↦ ?_⟩
+  refine (RingHom.IterateColimit.map_surjective_iff _ _).trans ⟨fun h ↦ ?_, fun ⟨c, hc⟩ y ↦ ?_⟩
   · -- If no single exponent works, choose `b c` with `b c ^ p ^ c ∉ f(A)`; no power of `F`
     -- carries the Witt vector with coordinates `b` into the image of `W(f)`.
     by_contra! hne
@@ -206,17 +209,17 @@ theorem surjective_map_iff [CharP B p] (f : A →+* B) :
 /-- **Bijectivity of `W(f)[1/F]`.** For a map `f : A →+* B` of rings of characteristic `p`,
 `W(f)[1/F]` is an isomorphism exactly when the kernel of `f` is a nil ideal of bounded exponent and
 a uniform `p`-power of every element of `B` lies in the image of `f`. -/
-theorem bijective_map_iff [CharP A p] [CharP B p] (f : A →+* B) :
+theorem map_bijective_iff [CharP A p] [CharP B p] (f : A →+* B) :
     Function.Bijective (map (p := p) f) ↔
       (∃ c : ℕ, ∀ a ∈ RingHom.ker f, a ^ p ^ c = 0) ∧ ∃ c : ℕ, ∀ b, b ^ p ^ c ∈ f.range := by
-  rw [Function.Bijective, injective_map_iff, surjective_map_iff]
+  rw [Function.Bijective, map_injective_iff, map_surjective_iff]
 
 /-- **Inverting the Frobenius does not see nilpotents.** In characteristic `p`, for a nilpotent
 ideal `I` (for instance the nilradical of a noetherian ring), the map
 `W(A)[1/F] → W(A ⧸ I)[1/F]` is an isomorphism. -/
-theorem bijective_map_of_isNilpotent [CharP A p] {I : Ideal A} (hI : IsNilpotent I) :
+theorem map_bijective_of_isNilpotent [CharP A p] {I : Ideal A} (hI : IsNilpotent I) :
     Function.Bijective (map (p := p) (Ideal.Quotient.mk I)) := by
-  refine ⟨(injective_map_iff _).2 ?_, surjective_map _ Ideal.Quotient.mk_surjective⟩
+  refine ⟨(map_injective_iff _).2 ?_, map_surjective _ Ideal.Quotient.mk_surjective⟩
   obtain ⟨m, hm⟩ := hI
   refine ⟨m, fun a ha ↦ ?_⟩
   rw [Ideal.mk_ker] at ha
@@ -226,12 +229,13 @@ theorem bijective_map_of_isNilpotent [CharP A p] {I : Ideal A} (hI : IsNilpotent
 
 /-- **Maps invertible up to Frobenius.** If `f : A →+* B` has an inverse `g` up to the
 `p ^ N`-th power map, `g (f a) = a ^ p ^ N` and `f (g b) = b ^ p ^ N`, then `W(f)[1/F]` is an
-isomorphism. This is the affine form of the invariance of Frobenius-inverted Witt vector
-cohomology under finite universal homeomorphisms. -/
-theorem bijective_map_of_comp_eq_pow [CharP A p] [CharP B p] (f : A →+* B) (g : B →+* A) (N : ℕ)
+isomorphism. The hypothesis supplies the uniform exponent `N` that `map_bijective_iff` requires. A
+ring map inducing a universal homeomorphism of spectra need not have such an inverse, for instance
+the quotient by a nil ideal of unbounded exponent (see `map_injective_iff`). -/
+theorem map_bijective_of_comp_eq_pow [CharP A p] [CharP B p] (f : A →+* B) (g : B →+* A) (N : ℕ)
     (hgf : ∀ a, g (f a) = a ^ p ^ N) (hfg : ∀ b, f (g b) = b ^ p ^ N) :
     Function.Bijective (map (p := p) f) :=
-  (bijective_map_iff f).2
+  (map_bijective_iff f).2
     ⟨⟨N, fun a ha ↦ by rw [← hgf, RingHom.mem_ker.1 ha, map_zero]⟩, ⟨N, fun b ↦ ⟨g b, hfg b⟩⟩⟩
 
 end CharP
