@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Analysis.Calculus.Morse.GradientFlow
+import TauCeti.Analysis.Calculus.Morse.OneDimensional
 
 /-!
 # Nondegenerate critical points of separated sums
@@ -59,6 +60,9 @@ pair of gradients. The results above transfer to it through
 * `TauCeti.isNondegenerateCriticalPoint_separatedSum_iff` and `TauCeti.morseIndex_separatedSum`:
   its nondegenerate critical points are the pairs of nondegenerate critical points, with additive
   Morse index.
+* `TauCeti.morseIndex_separatedSum_toLp_of_neg` and `TauCeti.morseIndex_separatedSum_toLp_of_pos`:
+  adding a real variable at a local maximum of a nondegenerate one-variable function raises the
+  Morse index by one, and adding it at a local minimum leaves it unchanged.
 
 ## References
 
@@ -437,6 +441,24 @@ theorem morseIndex_separatedSum [FiniteDimensional ℝ E] [FiniteDimensional ℝ
     morseIndex_def]
   exact (QuadraticMap.Equivalent.sigNeg_eq
     ⟨QuadraticMap.isometryEquivOfCompLinearEquiv _ e.toLinearEquiv⟩).symm
+
+/-- **Adding a real variable at a nondegenerate maximum raises the Morse index by one.** If
+`φ : ℝ → ℝ` is `C²` at `p` with `φ''(p) < 0`, then the Morse index of the separated sum
+`(a, b) ↦ φ a + g b` at `(p, b)` is `ind_g(b) + 1`. -/
+theorem morseIndex_separatedSum_toLp_of_neg [FiniteDimensional ℝ F] {φ : ℝ → ℝ} {p : ℝ} {b : F}
+    (hp : ContDiffAt ℝ 2 φ p) (hdp : deriv (deriv φ) p < 0) (hb : ContDiffAt ℝ 2 g b) :
+    morseIndex (separatedSum φ g) (WithLp.toLp 2 (p, b)) = morseIndex g b + 1 := by
+  rw [morseIndex_separatedSum hp hb, morseIndex_real_of_neg (by
+    rwa [iteratedDeriv_succ, iteratedDeriv_one]), add_comm, WithLp.toLp_snd]
+
+/-- **Adding a real variable at a nondegenerate minimum preserves the Morse index.** If
+`φ : ℝ → ℝ` is `C²` at `q` with `0 < φ''(q)`, then the Morse index of the separated sum
+`(a, b) ↦ φ a + g b` at `(q, b)` is `ind_g(b)`. -/
+theorem morseIndex_separatedSum_toLp_of_pos [FiniteDimensional ℝ F] {φ : ℝ → ℝ} {q : ℝ} {b : F}
+    (hq : ContDiffAt ℝ 2 φ q) (hdq : 0 < deriv (deriv φ) q) (hb : ContDiffAt ℝ 2 g b) :
+    morseIndex (separatedSum φ g) (WithLp.toLp 2 (q, b)) = morseIndex g b := by
+  rw [morseIndex_separatedSum hq hb, morseIndex_real_of_pos (by
+    rwa [iteratedDeriv_succ, iteratedDeriv_one]), zero_add, WithLp.toLp_snd]
 
 end Critical
 

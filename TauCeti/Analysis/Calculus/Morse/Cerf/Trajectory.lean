@@ -201,19 +201,6 @@ section Transverse
 variable {g : ℝ → ℝ → ℝ} {t x : ℝ} {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
   {Q : F → ℝ}
 
-/-- The Morse indices of the points `(p, b)` and `(q, b)` for the separated sum
-`(a, b) ↦ φ a + Q b`, when `φ''(p) < 0 < φ''(q)`. -/
-private theorem morseIndex_separatedSum_toLp_of_neg_of_pos [FiniteDimensional ℝ F] {φ : ℝ → ℝ}
-    {p q : ℝ} {b : F} (hp : ContDiffAt ℝ 2 φ p) (hq : ContDiffAt ℝ 2 φ q)
-    (hdp : deriv (deriv φ) p < 0) (hdq : 0 < deriv (deriv φ) q) (hb : ContDiffAt ℝ 2 Q b) :
-    morseIndex (separatedSum φ Q) (WithLp.toLp 2 (p, b)) = morseIndex Q b + 1 ∧
-      morseIndex (separatedSum φ Q) (WithLp.toLp 2 (q, b)) = morseIndex Q b := by
-  constructor
-  · rw [morseIndex_separatedSum hp hb, morseIndex_real_of_neg (by
-      rwa [iteratedDeriv_succ, iteratedDeriv_one]), add_comm, WithLp.toLp_snd]
-  · rw [morseIndex_separatedSum hq hb, morseIndex_real_of_pos (by
-      rwa [iteratedDeriv_succ, iteratedDeriv_one]), zero_add, WithLp.toLp_snd]
-
 /-- **The birth in the presence of transverse directions.** Let `g s` be a family of functions of
 one variable as in `TauCeti.exists_pos_eventually_setOf_deriv_eq_zero_eq_pair_and_isIntegralCurve`,
 jointly `C³` at `(t, x)` with `(g t)'(x) = 0`, `(g t)''(x) = 0` and `0 < (g t)'''(x)`, and let `Q`
@@ -288,7 +275,8 @@ theorem exists_pos_eventually_setOf_fderiv_separatedSum_eq_zero_and_isIntegralCu
     (hC a (Ioo_subset_Icc_self ha)).of_le (by norm_num)
   refine ⟨p, q, hp, hq, ?_, hdp, hdq, fun b hb ↦ ⟨(hnd p hpI hp0 hdp.ne).separatedSum hb,
     (hnd q hqI hq0 hdq.ne').separatedSum hb⟩,
-    fun b hb ↦ morseIndex_separatedSum_toLp_of_neg_of_pos (hC2 p hpI) (hC2 q hqI) hdp hdq hb,
+    fun b hb ↦ ⟨morseIndex_separatedSum_toLp_of_neg (hC2 p hpI) hdp hb,
+      morseIndex_separatedSum_toLp_of_pos (hC2 q hqI) hdq hb⟩,
     γ, hγ, hmem, hbot, htop, fun b hb ↦ ⟨?_, ?_⟩⟩
   · -- The critical points of the separated sum in the slab.
     ext z
@@ -335,8 +323,8 @@ theorem exists_pos_eventually_morseIndex_separatedSum_toLp [FiniteDimensional �
     (hC a (Ioo_subset_Icc_self ha)).of_le (by norm_num)
   have hpI : p ∈ Ioo (x - r) (x + r) := ⟨hp.1, by linarith [hp.2, hq.1, hq.2]⟩
   have hqI : q ∈ Ioo (x - r) (x + r) := ⟨by linarith [hp.1, hp.2, hq.1], hq.2⟩
-  exact ⟨p, q, hp, hq, hset, fun b hb ↦
-    morseIndex_separatedSum_toLp_of_neg_of_pos (hC2 p hpI) (hC2 q hqI) hdp hdq hb⟩
+  exact ⟨p, q, hp, hq, hset, fun b hb ↦ ⟨morseIndex_separatedSum_toLp_of_neg (hC2 p hpI) hdp hb,
+    morseIndex_separatedSum_toLp_of_pos (hC2 q hqI) hdq hb⟩⟩
 
 end Transverse
 
