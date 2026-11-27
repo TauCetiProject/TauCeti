@@ -23,13 +23,15 @@ of order `m` extends as a bounded operator `H^s(M) → H^t(M)`, `t ≤ s - m`
 
 `Q(σ) = ∑ᵢ Op_{cᵢ}(χ(η) θᵢ(y) σ(cᵢ⁻¹ y, ⟪η, ·⟫ ∘ dcᵢ))`
 
-(`TauCeti.principalSymbolQuantization`), a linear right inverse of the principal symbol map, is
-continuous for the `C^∞` topology of homogeneous symbols on compact sets of positions times the
-unit sphere of frequencies, read in charts, and the operator norm of `H^s(M) → H^t(M)`. As a
-consequence, a continuous family `σ_y` of principal symbols, for instance a homotopy of elliptic
-symbols, lifts to a family of classical pseudodifferential operators `P_y` with `σ_m(P_y) = σ_y`,
-continuous in the operator norm, which starts at any prescribed operator `P₀` with principal symbol
-`σ_{y₀}`: take `P_y = Q(σ_y) + P₀ - Q(σ_{y₀})`.
+(`TauCeti.principalSymbolQuantization`), where the chart quantization `Op_{cᵢ}` is localized by
+cutoffs `ρᵢ` and `θᵢ`, is continuous for the `C^∞` topology of homogeneous symbols on compact sets
+of positions times the unit sphere of frequencies, read in charts, and the operator norm of
+`H^s(M) → H^t(M)`. This linear map inverts the principal symbol map, `σ_m(Q(σ)) = σ`, when
+`θᵢ = 1` on the support of `ρᵢ` and the `ρᵢ ∘ cᵢ` add up to `1`. As a consequence, a continuous
+family `σ_y` of principal symbols, for instance a homotopy of elliptic symbols, lifts to a family of
+classical pseudodifferential operators `P_y` with `σ_m(P_y) = σ_y`, continuous in the operator
+norm, which starts at any prescribed operator `P₀` with principal symbol `σ_{y₀}`: take
+`P_y = Q(σ_y) + P₀ - Q(σ_{y₀})`.
 
 ## The argument
 
@@ -98,30 +100,6 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (CoordinateSpa
   {φ : ∀ j, 𝓓(⟨(c' j).target, (c' j).open_target⟩, ℝ)} {s t : ℝ}
 
 include he
-
-/-- A chart quantization is `φ · Op(a) w` read through the chart, for the reading `w` of its
-input: multiplying the pullback of `Op(a) w` through a cutoff `θ` equal to `1` on the support of
-`φ` by `φ`, read on `M`, gives the chart quantization `Op_e(a)` localized by `φ` and `ψ`. -/
-private theorem mulLeft_complexCutoffPullback_eq_chartQuantization
-    {φ₀ ψ₀ θ : 𝓓(⟨e.target, e.open_target⟩, ℝ)} (hθ : ∀ y ∈ tsupport φ₀, θ y = 1)
-    (a : ClassicalSymbol n ℂ ℂ m) (u : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯) :
-    LinearMap.mulLeft ℂ (ContMDiffMap.ofReal (e.cutoffPullback he φ₀ 1))
-        (e.complexCutoffPullback he θ (ContMDiffMap.ofContDiff
-          (quantizeSchwartzValue a.toSymbol.coefficient (e.cutoffPushforwardSchwartz he ψ₀ u))
-          (a.toSymbol.contDiff_quantizeSchwartzValue _))) =
-      e.chartQuantization he φ₀ ψ₀ a u := by
-  ext p
-  simp only [LinearMap.mulLeft_apply, ContMDiffMap.coe_mul, Pi.mul_apply,
-    ContMDiffMap.ofReal_apply]
-  by_cases hp : p ∈ e.source
-  · rw [complexCutoffPullback_apply_of_mem he _ _ hp, cutoffPullback_one_apply_of_mem he _ hp,
-      chartQuantization_apply_of_mem he φ₀ ψ₀ a u (cutoffPushforwardSchwartz_apply he ψ₀ u) hp,
-      ContMDiffMap.coe_ofContDiff]
-    by_cases hφ : φ₀ (e p) = 0
-    · simp [hφ]
-    · rw [hθ _ (subset_tsupport _ hφ), one_smul, Complex.real_smul]
-  · rw [cutoffPullback_apply_of_notMem he _ _ hp, chartQuantization_apply_of_notMem he φ₀ ψ₀ a u hp]
-    simp
 
 /-- The reading in a chart `e'` through `φ'` of a chart quantization `Op_e(a) u` is bounded in `H^t`
 by `C q₀(a) ‖w‖_{H^s}`, for the reading `w` of `u` in `e` and any seminorm `q₀` bounding the
@@ -218,8 +196,8 @@ theorem exists_norm_chartReading_chartQuantization_le (φ₀ ψ₀ : 𝓓(⟨e.t
           exact (hC j a haK u).trans (mul_le_mul_of_nonneg_left
             (mul_le_mul_of_nonneg_left hw (apply_nonneg _ _)) (hC0 j))
     _ = (((∑ j, C j) * |D|).toNNReal • q₀) a.toSymbol * ‖chartReading hc ψ s u‖ := by
-        rw [smul_apply, NNReal.smul_def, smul_eq_mul, Real.coe_toNNReal _ hC', Finset.sum_mul,
-          Finset.sum_mul, Finset.sum_mul]
+        rw [smul_apply, NNReal.smul_def, smul_eq_mul, Real.coe_toNNReal _ hC']
+        simp only [Finset.sum_mul]
         exact Finset.sum_congr rfl fun j _ ↦ by ring
 
 /-- **The extension of a chart quantization is bounded by a seminorm of its symbol.** With the
@@ -252,11 +230,6 @@ theorem continuous_chartSobolevExtension_chartQuantization [IsManifold 𝓘(ℝ,
       chartSobolevExtension hc ψ hc' φ (e.chartQuantization he φ₀ ψ₀ (a y)) s t := by
   obtain ⟨q, hq, hqa⟩ := exists_norm_chartSobolevExtension_chartQuantization_le (hc' := hc')
     (φ := φ) he φ₀ ψ₀ K hψ ht
-  have hest (b : ClassicalSymbol n ℂ ℂ m) :
-      ∃ C, ∀ u, ‖chartReading hc' φ t (e.chartQuantization he φ₀ ψ₀ b u)‖ ≤
-        C * ‖chartReading hc ψ s u‖ :=
-    exists_norm_chartReading_apply_le
-      (e.chartQuantization_mem_classicalPseudodifferentialOperators he φ₀ ψ₀ b) hψ ht
   -- `‖Op_e(a y) - Op_e(a y₀)‖ ≤ q(a y - a y₀)`, since `Op_e(a y) - Op_e(a y₀) = Op_e(a y - a y₀)`
   -- and `a y - a y₀` vanishes outside `K`.
   have hdiff (y y₀ : X) :
@@ -267,7 +240,10 @@ theorem continuous_chartSobolevExtension_chartQuantization [IsManifold 𝓘(ℝ,
         e.chartQuantization he φ₀ ψ₀ (a y - a y₀) :=
       sub_eq_of_eq_add (e.chartQuantization_eq_add he φ₀ ψ₀ (by
         rw [ClassicalSymbol.toSymbol_sub, Symbol.coefficient_sub, sub_add_cancel]))
-    rw [← chartSobolevExtension_sub (hest _) (hest _), hsub, ← ClassicalSymbol.toSymbol_sub]
+    rw [← chartSobolevExtension_sub_of_mem
+      (e.chartQuantization_mem_classicalPseudodifferentialOperators he φ₀ ψ₀ _)
+      (e.chartQuantization_mem_classicalPseudodifferentialOperators he φ₀ ψ₀ _) hψ ht, hsub,
+      ← ClassicalSymbol.toSymbol_sub]
     exact hqa _ fun x hx ξ ↦ by
       rw [ClassicalSymbol.toSymbol_sub, Symbol.coefficient_sub, Pi.sub_apply, haK y x hx ξ,
         haK y₀ x hx ξ, sub_zero]
@@ -404,13 +380,8 @@ theorem exists_classicalPrincipalSymbol_eq_and_continuous_chartSobolevExtension 
   · ext x ξ
     rw [classicalPrincipalSymbol_sub (add_mem (hQ _) hP₀) (hQ _),
       classicalPrincipalSymbol_add (hQ _) hP₀, hQσ, hQσ, hP₀σ, add_sub_cancel_right]
-  · have hest {P : C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯ →ₗ[ℂ]
-        C^∞⟮𝓘(ℝ, CoordinateSpace n), M; 𝓘(ℝ, ℂ), ℂ⟯}
-        (hP : P ∈ classicalPseudodifferentialOperators m) :
-        ∃ C, ∀ u, ‖chartReading hc' φ t (P u)‖ ≤ C * ‖chartReading hc ψ s u‖ :=
-      exists_norm_chartReading_apply_le hP hψ ht
-    simp_rw [chartSobolevExtension_sub (hest (add_mem (hQ _) hP₀)) (hest (hQ _)),
-      chartSobolevExtension_add (hest (hQ _)) (hest hP₀)]
+  · simp_rw [chartSobolevExtension_sub_of_mem (add_mem (hQ _) hP₀) (hQ _) hψ ht,
+      chartSobolevExtension_add_of_mem (hQ _) hP₀ hψ ht]
     exact ((hQc hψ ht hσ).add continuous_const).sub continuous_const
 
 end TauCeti
