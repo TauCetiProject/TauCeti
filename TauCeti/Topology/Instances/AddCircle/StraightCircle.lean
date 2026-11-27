@@ -8,6 +8,7 @@ module
 public import TauCeti.Topology.Instances.AddCircle.Torus
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
+import TauCeti.LinearAlgebra.Matrix.Range
 
 /-!
 # Straight circles in a torus and their intersections
@@ -25,14 +26,15 @@ read off from the kernel of the integer matrix `A` with columns `u` and `v`, act
 `Fin 2 → G` by `Matrix.smulVecHom`: a point `(σ, τ)` of that kernel has
 `(u i • σ)ᵢ = ((-v i) • τ)ᵢ`, a point of both circles. When both circles are injective this is an
 isomorphism from the kernel onto the intersection (`TauCeti.straightCircleInfEquiv`). On the torus
-`Fin 2 → AddCircle p`, `p ≠ 0`, the kernel of `A` has `|det A|` points
+`Fin 2 → AddCircle p`, for `p ≠ 0` in a topological field `K` of characteristic zero such as `ℝ`,
+the kernel of `A` has `|det A|` points
 (`Matrix.natCard_ker_smulVecHom`), so two straight circles of primitive directions `u` and `v`
 meet in exactly `|u₀ v₁ - u₁ v₀|` points (`TauCeti.natCard_straightCircle_inf`), finitely many
 exactly when the directions are not parallel (`TauCeti.finite_straightCircle_inf_iff`). When
 `det A ≠ 0` the kernel is moreover `ℤ² / A ℤ²` (`Matrix.quotientRangeEquivKerSmulVecHom`), which
 identifies the intersection with `ℤ² / ⟨u, v⟩` (`TauCeti.straightCircleInfQuotientEquiv`). The
-class of an intersection point `z` is the class of the integer vector `s u + t v`, for real `s`
-and `t` such that `z` is the image of `p s u` and also of `-p t v`
+class of an intersection point `z` is the class of the integer vector `s u + t v`, for `s` and `t`
+in `K` such that `z` is the image of `p s u` and also of `-p t v`
 (`TauCeti.straightCircleInfQuotientEquiv_apply`): going from `0` to `z` along the first circle and
 back along the second one moves through the lattice vector `p (s u + t v)`, and such a loop closes
 up whenever `s u + t v` is an integer vector
@@ -186,7 +188,7 @@ end Inf
 
 section AddCircle
 
-variable (p : ℝ)
+variable {K : Type*} [Field K] [CharZero K] [TopologicalSpace K] [IsTopologicalAddGroup K] (p : K)
 
 /-- **Two straight circles in a two-torus meet in `|det|` points.** In the torus
 `Fin 2 → AddCircle p`, `p ≠ 0`, the straight circles of directions `u` and `v` with coprime
@@ -198,8 +200,7 @@ theorem natCard_straightCircle_inf (hp : p ≠ 0) {u v : Fin 2 → ℤ} (hu : Is
         (straightCircleHom (AddCircle p) v).range) = (u 0 * v 1 - u 1 * v 0).natAbs := by
   rw [Nat.card_congr (straightCircleInfEquiv (straightCircleHom_injective hu)
     (straightCircleHom_injective hv)).toEquiv, Matrix.natCard_ker_smulVecHom p _ hp,
-    Matrix.det_transpose, Matrix.det_fin_two]
-  simp
+    Matrix.det_transpose_of_fin_two]
 
 /-- A straight circle of the torus `Fin 2 → AddCircle p` meets another one in finitely many points
 exactly when their directions are not parallel. -/
@@ -209,37 +210,28 @@ theorem finite_straightCircle_inf_iff {u v : Fin 2 → ℤ} (hu : IsCoprime (u 0
         (straightCircleHom (AddCircle p) v).range) ↔ u 0 * v 1 - u 1 * v 0 ≠ 0 := by
   rw [(straightCircleInfEquiv (straightCircleHom_injective hu)
     (straightCircleHom_injective hv)).toEquiv.finite_iff, Matrix.finite_ker_smulVecHom_iff,
-    Matrix.det_transpose, Matrix.det_fin_two]
-  simp
+    Matrix.det_transpose_of_fin_two]
 
+omit [CharZero K] [TopologicalSpace K] [IsTopologicalAddGroup K] in
 /-- **Lattice displacements close up.** If `s u + t v = n` is an integer vector, the points of the
 torus `ι → AddCircle p` reached from `0` by moving `p s` along the straight circle of direction `u`
 and `p t` along the one of direction `v` add up to `[p n] = 0`. -/
-theorem straightCircleHom_add_straightCircleHom_eq_zero {u v n : ι → ℤ} {s t : ℝ}
+theorem straightCircleHom_add_straightCircleHom_eq_zero {u v n : ι → ℤ} {s t : K}
     (hn : ∀ i, s * u i + t * v i = n i) :
-    straightCircleHom (AddCircle p) u ((s * p : ℝ) : AddCircle p) +
-      straightCircleHom (AddCircle p) v ((t * p : ℝ) : AddCircle p) = 0 := by
+    straightCircleHom (AddCircle p) u ((s * p : K) : AddCircle p) +
+      straightCircleHom (AddCircle p) v ((t * p : K) : AddCircle p) = 0 := by
   ext i
-  have hi : (u i : ℝ) * (s * p) + v i * (t * p) = n i • p := by
+  have hi : (u i : K) * (s * p) + v i * (t * p) = n i • p := by
     rw [zsmul_eq_mul, ← hn i]
     ring
   simp only [Pi.add_apply, straightCircleHom_apply, Pi.zero_apply, ← AddCircle.coe_zsmul,
     ← AddCircle.coe_add]
   rw [zsmul_eq_mul, zsmul_eq_mul, hi, AddCircle.coe_zsmul, AddCircle.coe_period, smul_zero]
 
-/-- The lattice spanned by the columns `u` and `v` of an integer `2 × 2` matrix is the range of the
-matrix. -/
-private theorem range_mulVecLin_transpose_of (u v : Fin 2 → ℤ) :
-    LinearMap.range (Matrix.of ![u, v])ᵀ.mulVecLin = Submodule.span ℤ {u, v} := by
-  have hcol : (Matrix.of ![u, v])ᵀ.col = ![u, v] := by
-    ext j i
-    fin_cases j <;> rfl
-  rw [Matrix.range_mulVecLin, hcol, Matrix.range_cons_cons_empty]
-
 /-- **The intersection of two straight circles as a quotient lattice.** In the torus
 `Fin 2 → AddCircle p`, `p ≠ 0`, the intersection of the straight circles of directions `u` and
 `v` with coprime coordinates and `u₀ v₁ - u₁ v₀ ≠ 0` is isomorphic to `ℤ² / ⟨u, v⟩`. The class of
-a point is the class of `s u + t v` for real `s` and `t` with `p (s u + t v) ∈ p ℤ²` such that
+a point is the class of `s u + t v` for `s` and `t` in `K` with `p (s u + t v) ∈ p ℤ²` such that
 the point is the image of `p s u` (`TauCeti.straightCircleInfQuotientEquiv_apply`). -/
 def straightCircleInfQuotientEquiv (hp : p ≠ 0) {u v : Fin 2 → ℤ} (hu : IsCoprime (u 0) (u 1))
     (hv : IsCoprime (v 0) (v 1)) (hdet : u 0 * v 1 - u 1 * v 0 ≠ 0) :
@@ -247,11 +239,12 @@ def straightCircleInfQuotientEquiv (hp : p ≠ 0) {u v : Fin 2 → ℤ} (hu : Is
       (Fin 2 → ℤ) ⧸ (Submodule.span ℤ {u, v}).toAddSubgroup :=
   (straightCircleInfEquiv (straightCircleHom_injective hu) (straightCircleHom_injective hv)).trans
     ((Matrix.quotientRangeEquivKerSmulVecHom p _
-      (by rwa [Matrix.det_transpose, Matrix.det_fin_two]) hp).symm.trans
-      (QuotientAddGroup.quotientAddEquivOfEq (by rw [range_mulVecLin_transpose_of])))
+      (by rwa [Matrix.det_transpose_of_fin_two]) hp).symm.trans
+      (QuotientAddGroup.quotientAddEquivOfEq (by
+        rw [Matrix.range_mulVecLin_transpose_of_cons_cons])))
 
 /-- **The class of an intersection point is its lattice displacement.** Let `z` be a point of the
-straight circles of directions `u` and `v` in `Fin 2 → AddCircle p`, and let `s`, `t` be real and
+straight circles of directions `u` and `v` in `Fin 2 → AddCircle p`, and let `s`, `t` be in `K` and
 `n` integral with `s u + t v = n`. If `z` is the image of `p s u`, its class in `ℤ² / ⟨u, v⟩` is
 that of `n`. The image of `-p t v` is then `z` as well: the loop from `0` to `z` along the first
 circle and back along the second one lifts to the path from `0` to `p s u` and on to
@@ -259,21 +252,21 @@ circle and back along the second one lifts to the path from `0` to `p s u` and o
 theorem straightCircleInfQuotientEquiv_apply (hp : p ≠ 0) {u v : Fin 2 → ℤ}
     (hu : IsCoprime (u 0) (u 1)) (hv : IsCoprime (v 0) (v 1)) (hdet : u 0 * v 1 - u 1 * v 0 ≠ 0)
     (z : ↥((straightCircleHom (AddCircle p) u).range ⊓ (straightCircleHom (AddCircle p) v).range))
-    {s t : ℝ} {n : Fin 2 → ℤ} (hn : ∀ i, s * u i + t * v i = n i)
-    (hz : straightCircleHom (AddCircle p) u ((s * p : ℝ) : AddCircle p) = z) :
+    {s t : K} {n : Fin 2 → ℤ} (hn : ∀ i, s * u i + t * v i = n i)
+    (hz : straightCircleHom (AddCircle p) u ((s * p : K) : AddCircle p) = z) :
     straightCircleInfQuotientEquiv p hp hu hv hdet z = QuotientAddGroup.mk n := by
-  have hdet' : (Matrix.of ![u, v])ᵀ.det ≠ 0 := by rwa [Matrix.det_transpose, Matrix.det_fin_two]
+  have hdet' : (Matrix.of ![u, v])ᵀ.det ≠ 0 := by rwa [Matrix.det_transpose_of_fin_two]
   -- The image of `-p t v` is `z` too, since `p (s u + t v) = p n` lies in `p ℤ²`.
-  have hτ : straightCircleHom (AddCircle p) v (-((t * p : ℝ) : AddCircle p)) = z := by
+  have hτ : straightCircleHom (AddCircle p) v (-((t * p : K) : AddCircle p)) = z := by
     rw [map_neg, ← hz]
     exact (eq_neg_of_add_eq_zero_left (straightCircleHom_add_straightCircleHom_eq_zero p hn)).symm
   -- The kernel point `[(s p, t p)]` is the image of the class of `n`.
   have hQ : Matrix.quotientRangeEquivKerSmulVecHom p _ hdet' hp (QuotientAddGroup.mk n) =
       straightCircleInfEquiv (straightCircleHom_injective hu)
         (straightCircleHom_injective hv) z := by
-    have := Matrix.invertibleOfIsUnitDet _ (Matrix.isUnit_det_map_intCast (K := ℝ) hdet')
-    have hA : ((Matrix.of ![u, v])ᵀ.map ((↑) : ℤ → ℝ)) *ᵥ ![s * p, t * p] =
-        p • (n · : Fin 2 → ℝ) := by
+    have := Matrix.invertibleOfIsUnitDet _ (Matrix.isUnit_det_map_intCast (K := K) hdet')
+    have hA : ((Matrix.of ![u, v])ᵀ.map ((↑) : ℤ → K)) *ᵥ ![s * p, t * p] =
+        p • (n · : Fin 2 → K) := by
       ext k
       simp only [Matrix.mulVec, dotProduct, Fin.sum_univ_two, Matrix.map_apply,
         Matrix.transpose_apply, Matrix.of_apply, Matrix.cons_val_zero, Matrix.cons_val_one,

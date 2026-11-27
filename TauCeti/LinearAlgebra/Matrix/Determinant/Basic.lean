@@ -42,6 +42,8 @@ differences of the remaining columns.
 * `Matrix.det_eq_add_of_row_eq_add`: additivity of the determinant in one row, for matrices that
   agree in every other row.
 * `Matrix.det_sum_unique`: the determinant of a matrix on `m ⊕ n`, for singletons `m` and `n`.
+* `Matrix.det_transpose_of_fin_two`: the determinant of the `2 × 2` matrix with columns `u` and `v`
+  is `u₀ v₁ - u₁ v₀`.
 * `Matrix.sum_neg_one_pow_mul_det_submatrix_succAbove_eq_zero`: the alternating sum of the maximal
   minors of a matrix with `n + 2` rows and `n + 1` columns whose rows sum to `1` vanishes.
 * `Matrix.det_eq_det_of_col_zero_eq_one`: a square matrix whose first column is constant `1` has
@@ -94,6 +96,12 @@ end Matrix
 namespace Matrix
 
 variable {R : Type*} [CommRing R] {n : ℕ}
+
+/-- The determinant of the `2 × 2` matrix with columns `u` and `v` is `u₀ v₁ - u₁ v₀`. -/
+theorem det_transpose_of_fin_two (u v : Fin 2 → R) :
+    (of ![u, v])ᵀ.det = u 0 * v 1 - u 1 * v 0 := by
+  rw [det_transpose, det_fin_two]
+  rfl
 
 /-- **The alternating sum of the maximal minors of a matrix whose rows sum to one vanishes.** If
 every row of a matrix `B` with `n + 2` rows and `n + 1` columns sums to `1`, then deleting the row

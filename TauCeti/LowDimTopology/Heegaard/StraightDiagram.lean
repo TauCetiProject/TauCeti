@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.ZMod.QuotientGroup
 public import Mathlib.Topology.Instances.AddCircle.Real
 public import TauCeti.Topology.Instances.AddCircle.StraightCircle
+import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 
 /-!
 # Genus-one Heegaard diagrams with straight attaching circles
@@ -36,11 +37,15 @@ by multiples of `u` and `v`. Here `ε` is defined as `ε(x, y) = E (y - x)` for 
 the displacement of the loop through `0` and `y - x`. Consequently:
 
 * `ε(x, y) + ε(y, w) = ε(x, w)` (`TauCeti.straightDiagramEpsilon_add_straightDiagramEpsilon`);
-* `ε(x, y) = 0` only for `x = y` (`TauCeti.straightDiagramEpsilon_eq_zero_iff`), so distinct
-  generators lie in distinct spin^c structures and no Whitney disc joins two of them;
+* `ε(x, y) = 0` in `ℤ² / ⟨u, v⟩` only for `x = y` (`TauCeti.straightDiagramEpsilon_eq_zero_iff`);
 * `y ↦ ε(x, y)` is a bijection from the generators onto `ℤ² / ⟨u, v⟩`
-  (`TauCeti.bijective_straightDiagramEpsilon`): each spin^c structure of the represented manifold
-  carries exactly one generator.
+  (`TauCeti.straightDiagramEpsilon_bijective`).
+
+These are statements about classes in `ℤ² / ⟨u, v⟩` only. Informally, through the identification
+of `ℤ² / ⟨u, v⟩` with `H₁` of the represented manifold and Ozsváth and Szabó's correspondence
+between `ε` and spin^c structures, they say that distinct generators lie in distinct spin^c
+structures, so that no Whitney disc joins two of them, and that each spin^c structure carries
+exactly one generator; neither the identification nor the correspondence is formalized here.
 
 These are the geometric counterparts, for these diagrams, of the statements about the incidence
 data `TauCeti.HeegaardRegionSystem.lensSpace` proved in
@@ -66,7 +71,7 @@ worked out at the end: in the second, the generator `y = [(1/3, 0)]` has
 * `TauCeti.straightDiagramEpsilon_eq`: `ε(x, y)` is the class of the lattice displacement of a
   loop along `α` from `x` to `y` and back along `β`.
 * `TauCeti.straightDiagramEpsilon_add_straightDiagramEpsilon`,
-  `TauCeti.straightDiagramEpsilon_eq_zero_iff`, `TauCeti.bijective_straightDiagramEpsilon`: `ε`
+  `TauCeti.straightDiagramEpsilon_eq_zero_iff`, `TauCeti.straightDiagramEpsilon_bijective`: `ε`
   is additive and sorts the generators bijectively into the classes of `ℤ² / ⟨u, v⟩`.
 
 ## References
@@ -141,6 +146,7 @@ theorem straightDiagramEpsilon_add_straightDiagramEpsilon (x y w : straightDiagr
   rw [straightDiagramEpsilon, straightDiagramEpsilon, straightDiagramEpsilon, ← map_add,
     sub_add_sub_cancel']
 
+@[simp]
 theorem neg_straightDiagramEpsilon (x y : straightDiagramGenerators u v) :
     -straightDiagramEpsilon hu hv hdet x y = straightDiagramEpsilon hu hv hdet y x := by
   rw [straightDiagramEpsilon, straightDiagramEpsilon, ← map_neg, neg_sub]
@@ -153,7 +159,7 @@ theorem straightDiagramEpsilon_eq_zero_iff {x y : straightDiagramGenerators u v}
 
 /-- **One generator in each class.** For every generator `x`, `y ↦ ε(x, y)` is a bijection from
 the generators onto `ℤ² / ⟨u, v⟩`. -/
-theorem bijective_straightDiagramEpsilon (x : straightDiagramGenerators u v) :
+theorem straightDiagramEpsilon_bijective (x : straightDiagramGenerators u v) :
     Function.Bijective (straightDiagramEpsilon hu hv hdet x) :=
   (straightCircleInfQuotientEquiv 1 one_ne_zero hu hv hdet).bijective.comp
     (Equiv.subRight x).bijective
@@ -194,8 +200,9 @@ def lensQuotientEquiv :
 
 @[simp]
 theorem lensQuotientEquiv_mk (n : Fin 2 → ℤ) :
-    lensQuotientEquiv p q (QuotientAddGroup.mk n) = n 1 :=
-  (rfl)
+    lensQuotientEquiv p q (QuotientAddGroup.mk n) = n 1 := by
+  rw [lensQuotientEquiv, AddEquiv.trans_apply, QuotientAddGroup.quotientAddEquivOfEq_mk]
+  exact (QuotientAddGroup.quotientKerEquivOfSurjective_apply_mk _ _ n).trans (by simp)
 
 variable {p q}
 
@@ -210,11 +217,11 @@ theorem natCard_straightDiagramGenerators_lens (hpq : IsCoprime q p) :
 straight attaching circles of directions `(1, 0)` and `(q, p)`, `p ≠ 0` and `q` coprime to `p`, and
 any generator `x`, the classes `ε(x, y) ∈ ℤ/p` of the generators `y` are the elements of `ℤ/p`, each
 exactly once. -/
-theorem bijective_lensQuotientEquiv_straightDiagramEpsilon (hpq : IsCoprime q p) (hp : p ≠ 0)
+theorem lensQuotientEquiv_comp_straightDiagramEpsilon_bijective (hpq : IsCoprime q p) (hp : p ≠ 0)
     (x : straightDiagramGenerators ![1, 0] ![q, (p : ℤ)]) :
     Function.Bijective (lensQuotientEquiv p q ∘
       straightDiagramEpsilon isCoprime_one_left (by simpa using hpq) (by simpa using hp) x) :=
-  (lensQuotientEquiv p q).bijective.comp (bijective_straightDiagramEpsilon _ _ _ x)
+  (lensQuotientEquiv p q).bijective.comp (straightDiagramEpsilon_bijective _ _ _ x)
 
 end Lens
 
@@ -258,7 +265,8 @@ theorem lensQuotientEquiv_straightDiagramEpsilon_three
     · rw [hy]
       ext i
       fin_cases i <;> simp
-  rw [← neg_straightDiagramEpsilon _ _ _ 0 y, h]
-  exact ⟨rfl, rfl⟩
+  rw [← neg_straightDiagramEpsilon _ _ _ 0 y, h, ← QuotientAddGroup.mk_neg, lensQuotientEquiv_mk,
+    lensQuotientEquiv_mk]
+  decide
 
 end TauCeti

@@ -57,6 +57,8 @@ vanishing on the range is a dot product with such a `z`.
 ## Main result
 
 * `Matrix.col_mem_range_mulVecLin`: every column of `L` lies in the range of `L.mulVecLin`.
+* `Matrix.range_mulVecLin_transpose_of_cons_cons`: the column range of the matrix with columns
+  `u` and `v` is the span of `u` and `v`.
 * `Matrix.row_mem_range_vecMulLinear`: every row of `e` lies in the range of `e.vecMulLinear`.
 * `Matrix.col_mem_range_mulVecBilin`: every column of `M` lies in the range of
   `M.mulVecBilin R Rᵐᵒᵖ`.
@@ -114,6 +116,12 @@ theorem col_mem_range_mulVecLin (L : Matrix m ι R) (j : ι) :
     L.col j ∈ LinearMap.range L.mulVecLin := by
   classical
   exact ⟨Pi.single j 1, by rw [mulVecLin_apply, mulVec_single_one]⟩
+
+/-- The column range of the matrix with the two columns `u` and `v` is the span of `u` and `v`. -/
+theorem range_mulVecLin_transpose_of_cons_cons (u v : m → R) :
+    LinearMap.range (of ![u, v])ᵀ.mulVecLin = Submodule.span R {u, v} := by
+  rw [range_mulVecLin, col_transpose, ← range_cons_cons_empty u v ![]]
+  rfl
 
 /-- If every column of `L'` lies in the range of `L`, then `L' = L * G` for some `G`.
 The index type of the columns of `L'` need not be finite. -/
