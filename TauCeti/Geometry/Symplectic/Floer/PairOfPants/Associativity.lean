@@ -39,10 +39,17 @@ stated, and `N`, `N'` are the neck data of the two compositions
 * for `L > 2` it is `H_i(t) dt` far out on every input end `i` and `Hout(t) dt` far out on the
   output end, in the end coordinates of the configuration at `τ`, for every `τ`
   (`TauCeti.Floer.associativityPerturbation_cylindricalEndLift_of_pos`,
-  `TauCeti.Floer.associativityPerturbation_cylindricalEndLift_inf_of_le`);
+  `TauCeti.Floer.associativityPerturbation_cylindricalEndLift_inf_of_le`); there the neck data
+  vanish, and the family is the datum `Σ_τ` of the moving input ends on the part `s > 0` of every
+  input end and the part `s ≤ -1` of the output end
+  (`associativityPerturbation_add_mul_cylindricalEndLift_eq_puncturedSpherePerturbation`,
+  `associativityPerturbation_cylindricalEndLift_inf_eq_puncturedSpherePerturbation`, in the
+  namespace `TauCeti.Floer`);
 * for `L > 4` it is `C^n` jointly in the neck length `L`, `τ`, the domain point and the target
   point, away from the three moving input punctures
-  (`TauCeti.Floer.contMDiffAt_associativityPerturbation`);
+  (`TauCeti.Floer.contMDiffAt_associativityPerturbation`, and
+  `TauCeti.Floer.contDiffAt_uncurry_associativityPerturbation` for its components on a normed
+  space target, in real coordinates on the domain);
 * for `L > 4` its integrated curvature along any map is bounded uniformly in `τ` and `L`, by
   `∑ i, B i + Bout + 2 (BG + BG')` for bounds `B i`, `Bout`, `BG`, `BG'` of the Hamiltonians
   (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_associativityPerturbation_le`,
@@ -53,8 +60,10 @@ stated, and `N`, `N'` are the neck data of the two compositions
 So the two ends of the family are the plumbed data of the two compositions, which break into the
 two composed products as the neck length `L` grows, and its curvature bound is the input to
 energy bounds for its Floer solutions that are uniform over the family. The energy identity is in
-`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Associativity`; the moduli spaces over the
-family and their boundary are not treated here.
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Associativity`, and the semi-Fredholm
+estimate of the linearized operator of each member of the family in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Associativity.SemiFredholm`; the moduli spaces over
+the family and their boundary are not treated here.
 
 ## References
 
@@ -213,7 +222,7 @@ private theorem associativityPerturbation_eq_right (hL : 0 ≤ L) (hτ : 1 ≤ �
   exact key
 
 /-- For `L ≥ 0` the plumbing factor `e^{-2πL} / 4` lies in `(0, 1 / 3]`. -/
-private theorem associativityFactor_mem (hL : 0 ≤ L) :
+theorem associativityFactor_mem (hL : 0 ≤ L) :
     0 < Real.exp (-(2 * π * L)) / 4 ∧ 3 * (Real.exp (-(2 * π * L)) / 4) ≤ 1 := by
   have : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [pi_pos])
   exact ⟨by positivity, by linarith⟩
@@ -287,6 +296,54 @@ theorem associativityPerturbation_cylindricalEndLift_inf_of_le (hL : 2 < L) (τ 
     simpa using plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le
       (Hb := associativityRightReceiving H Hout G') (q := one) (by decide) hL
       (by simpa using hHout) (smoothTransition (τ - 1)) hz x v
+
+/-- **On the input ends the family is the datum of the moving input ends.** For `L > 2` and every
+`τ`, on the part `s > 0` of the input end `i` of the configuration at `τ`, the family is the datum
+`Σ_τ` of the moving input ends: both are `β(s - 1) H_i(t) dt` in the end coordinates, so the neck
+data vanish there. -/
+theorem associativityPerturbation_add_mul_cylindricalEndLift_eq_puncturedSpherePerturbation
+    (hL : 2 < L) (τ : ℝ) {i : Fin 3} (hH : Periodic (H i) 1) {z : ℂ} (hz : 0 < z.re) (x : M) :
+    associativityPerturbation H Hout G G' L τ
+        (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
+          associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z) x =
+      puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout
+        (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i +
+          associativityScale (Real.exp (-(2 * π * L)) / 4) τ i * zero.cylindricalEndLift z) x := by
+  obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+  have hd : associativityScale (Real.exp (-(2 * π * L)) / 4) τ i *
+      deriv zero.cylindricalEndLift z ≠ 0 :=
+    mul_ne_zero (associativityScale_ne_zero hf₀ τ i) (zero.deriv_cylindricalEndLift_ne_zero z)
+  -- Every tangent vector of the sphere is the image of a tangent vector of the end.
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  obtain ⟨v, rfl⟩ : ∃ v', v = associativityScale (Real.exp (-(2 * π * L)) / 4) τ i *
+      (deriv zero.cylindricalEndLift z * v') :=
+    ⟨v / (associativityScale (Real.exp (-(2 * π * L)) / 4) τ i *
+      deriv zero.cylindricalEndLift z), by rw [← mul_assoc, mul_div_cancel₀ v hd]⟩
+  rw [associativityPerturbation_cylindricalEndLift_of_pos hL τ hH hz,
+    puncturedSpherePerturbation_cylindricalEndLift_of_pos
+      (pairwise_add_le_norm_associativityCenter_sub hf₀.le hf₃ τ)
+      (norm_associativityCenter_add_le hf₀.le (by linarith) τ) hH
+      (associativityScale_ne_zero hf₀ τ i) hz]
+
+/-- **On the output end the family is the datum of the moving input ends.** For `L > 2` and every
+`τ`, on the part `s ≤ -1` of the output end, the family is the datum `Σ_τ` of the moving input
+ends: both are `β(-s - 1) Hout(t) dt` in the end coordinates, so the neck data vanish there. -/
+theorem associativityPerturbation_cylindricalEndLift_inf_eq_puncturedSpherePerturbation
+    (hL : 2 < L) (τ : ℝ) (hHout : Periodic Hout 1) {z : ℂ} (hz : z.re ≤ -1) (x : M) :
+    associativityPerturbation H Hout G G' L τ (inf.cylindricalEndLift z) x =
+      puncturedSpherePerturbation (associativityCenter (Real.exp (-(2 * π * L)) / 4) τ)
+        (associativityScale (Real.exp (-(2 * π * L)) / 4) τ) H Hout (inf.cylindricalEndLift z)
+        x := by
+  obtain ⟨hf₀, hf₃⟩ := associativityFactor_mem (show 0 ≤ L by linarith)
+  -- Every tangent vector of the sphere is the image of a tangent vector of the end.
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  obtain ⟨v, rfl⟩ : ∃ v', v = deriv inf.cylindricalEndLift z * v' :=
+    ⟨v / deriv inf.cylindricalEndLift z,
+      (mul_div_cancel₀ v (inf.deriv_cylindricalEndLift_ne_zero z)).symm⟩
+  rw [associativityPerturbation_cylindricalEndLift_inf_of_le hL τ hHout hz,
+    puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
+      (norm_associativityCenter_add_le hf₀.le (by linarith) τ) hHout hz]
 
 /-! ### Smoothness -/
 
@@ -391,6 +448,42 @@ theorem contMDiffAt_associativityPerturbation {n : ℕ∞} (hH : ∀ i, Periodic
   exact (hS.add hN).add hN'
 
 end Manifold
+
+section SmoothProd
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Fin 3 → ℝ → V → ℝ}
+  {Hout G G' : ℝ → V → ℝ}
+
+/-- Off the three input punctures of the configuration at `τ`, the components of the associativity
+family on a normed space are `C^n` jointly in the domain point, in real coordinates, and the target
+point, for period-one `C^n` Hamiltonians and neck length `L > 4`. -/
+theorem contDiffAt_uncurry_associativityPerturbation {n : ℕ∞} (hH : ∀ i, Periodic (H i) 1)
+    (hHs : ∀ i, ContDiff ℝ n (uncurry (H i))) (hHout : Periodic Hout 1)
+    (hHouts : ContDiff ℝ n (uncurry Hout)) (hG : Periodic G 1) (hGs : ContDiff ℝ n (uncurry G))
+    (hG' : Periodic G' 1) (hG's : ContDiff ℝ n (uncurry G')) (hL : 4 < L) {z : ℝ × ℝ}
+    (hz : ∀ i, Complex.equivRealProdCLM.symm z ≠
+      associativityCenter (Real.exp (-(2 * π * L)) / 4) τ i) (x : V) (v : ℂ) :
+    ContDiffAt ℝ n
+      (uncurry fun z x ↦
+        associativityPerturbation H Hout G G' L τ (Complex.equivRealProdCLM.symm z) x v)
+      (z, x) := by
+  have h := contMDiffAt_associativityPerturbation (I := 𝓘(ℝ, V)) hH
+    (fun i ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs i).contMDiff) hHout
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHouts.contMDiff) hG
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hGs.contMDiff) hG'
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hG's.contMDiff) hL hz x
+  -- Freeze the neck length and the parameter.
+  have hg : ContMDiffAt 𝓘(ℝ, ℂ × V) (𝓘(ℝ, ℝ × ℝ).prod (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V))) n
+      (fun p : ℂ × V ↦ ((L, τ), (p.1, p.2))) (Complex.equivRealProdCLM.symm z, x) :=
+    contMDiffAt_const.prodMk (contDiff_fst.contMDiff.prodMk contDiff_snd.contMDiff).contMDiffAt
+  have hp : ContDiffAt ℝ n
+      (fun p : ℂ × V ↦ associativityPerturbation H Hout G G' L τ p.1 p.2)
+      (Complex.equivRealProdCLM.symm z, x) := (h.comp _ hg).contDiffAt
+  exact (hp.comp (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
+    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
+      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+
+end SmoothProd
 
 end TauCeti.Floer
 
