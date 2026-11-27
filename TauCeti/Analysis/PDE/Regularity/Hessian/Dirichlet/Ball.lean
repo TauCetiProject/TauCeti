@@ -290,8 +290,7 @@ private theorem contraction_iteratedGradientCongr_symm_one [FiniteDimensional �
         Matrix.toEuclideanCLM (𝕜 := ℝ) A ∘L (g : V →L[ℝ] EuclideanSpace ℝ (Fin (n + 1)))) ∘L
           H) := by
   rw [Matrix.contraction_apply_eq_traceCLM, TauCeti.traceCLM_apply, TauCeti.traceCLM_apply,
-    LinearIsometryEquiv.trace_comp_iteratedGradientCongr_symm_one]
-  rfl
+    LinearIsometryEquiv.trace_comp_iteratedGradientCongr_symm_one, LinearIsometryEquiv.symm_symm]
 
 /-- **The constant-coefficient Dirichlet problem on a ball of `ℝ^{n+1}`, with a uniform estimate.**
 Let `1 < p < ∞` and `0 < λ`. There is a constant `C ≥ 0`, depending only on `n`, `p`, `λ` and
