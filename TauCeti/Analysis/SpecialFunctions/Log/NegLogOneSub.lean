@@ -17,8 +17,8 @@ import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 This file bounds the quadratic remainder `-log (1 - x) - x`, then specializes the estimate to
 `x = y ^ (-s)`. The sharp factor `2` in the denominator comes from reading Mathlib's complex
-logarithm bound along the reals. It also records the coarser estimate
-`-log (1 - x) ≤ x + 2 x ^ 2` for `0 ≤ x ≤ 1/2`, and the real series `∑ xⁿ / n = -log (1 - x)`
+logarithm bound along the reals. It also records the coarser estimates
+`-log (1 - x) ≤ x + 2 x ^ 2 ≤ 2 x` for `0 ≤ x ≤ 1/2`, and the real series `∑ xⁿ / n = -log (1 - x)`
 together with its exact domain of summability and truncated power-series remainder bounds.
 
 ## Main results
@@ -31,6 +31,7 @@ together with its exact domain of summability and truncated power-series remaind
   `1 ≤ s`, it is at most `y⁻²` (in particular `-log (1 - x⁻¹) - x⁻¹ ≤ (x ^ 2)⁻¹` for `2 ≤ x`).
 * `Real.neg_log_one_sub_le_add_two_mul_sq`: for `x ≤ 1/2`, `-log (1 - x)` is at most
   `x + 2 x ^ 2`.
+* `Real.neg_log_one_sub_le_two_mul`: for `0 ≤ x ≤ 1/2`, `-log (1 - x)` is at most `2 x`.
 * `Real.log_one_sub_neg`: `log (1 - x) < 0` for `0 < x < 1`.
 * `Real.neg_log_one_sub_nonneg`: `0 ≤ -log (1 - x)` for `0 ≤ x ≤ 1`.
 * `Real.neg_log_one_sub_le_iff`: for `x < 1`, `-log (1 - x) ≤ c ↔ x ≤ 1 - exp (-c)`.
@@ -148,6 +149,11 @@ theorem neg_log_one_sub_le_add_two_mul_sq {x : ℝ} (hx : x ≤ 1 / 2) :
   refine h.trans ?_
   rw [div_le_iff₀ h1]
   nlinarith [mul_nonneg (sq_nonneg x) (by linarith : 0 ≤ 1 - 2 * x)]
+
+/-- For `0 ≤ x ≤ 1/2`, `-log (1 - x) ≤ 2 x`, since `x + 2 x ^ 2 ≤ 2 x` there. -/
+theorem neg_log_one_sub_le_two_mul {x : ℝ} (hx0 : 0 ≤ x) (hx : x ≤ 1 / 2) :
+    -log (1 - x) ≤ 2 * x := by
+  nlinarith [neg_log_one_sub_le_add_two_mul_sq hx, mul_nonneg hx0 (by linarith : 0 ≤ 1 - 2 * x)]
 
 /-- For `0 < x < 1`, the logarithm `log (1 - x)` is negative. -/
 theorem log_one_sub_neg {x : ℝ} (hx0 : 0 < x) (hx1 : x < 1) : log (1 - x) < 0 :=
