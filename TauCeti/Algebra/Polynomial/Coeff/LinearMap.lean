@@ -13,9 +13,9 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 /-!
 # Vanishing coefficients for a family of linear maps into polynomials
 
-Let `V` be a finite-dimensional vector space over a division ring `F`, and let `T ℓ : V → F[X]` be
-linear maps for `ℓ < M`. If `∑_{ℓ < M} K ℓ < dim V`, then some nonzero `v ∈ V` makes the first `K ℓ`
-coefficients of `T ℓ v` vanish for every `ℓ < M`
+Let `V` be a vector space over a division ring `F`, and let `T ℓ : V → F[X]` be linear maps for
+`ℓ < M`. If `∑_{ℓ < M} K ℓ < dim V`, which forces `V` to be finite-dimensional, then some nonzero
+`v ∈ V` makes the first `K ℓ` coefficients of `T ℓ v` vanish for every `ℓ < M`
 (`Polynomial.exists_ne_zero_forall_coeff_eq_zero`): the conditions are fewer than the unknowns, so
 the linear map `v ↦ ((T ℓ v).coeff r)_{ℓ < M, r < K ℓ}` has a nonzero kernel.
 
@@ -30,10 +30,12 @@ namespace Polynomial
 /-- If the unknowns outnumber the linear conditions, `∑_{ℓ < M} K ℓ < dim V`, then some nonzero
 `v` makes the first `K ℓ` coefficients of `T ℓ v` vanish for every `ℓ < M`. -/
 theorem exists_ne_zero_forall_coeff_eq_zero {F V : Type*} [DivisionRing F] [AddCommGroup V]
-    [Module F V] [FiniteDimensional F V] (T : ℕ → V →ₗ[F] F[X]) {M : ℕ} (K : ℕ → ℕ)
+    [Module F V] (T : ℕ → V →ₗ[F] F[X]) {M : ℕ} (K : ℕ → ℕ)
     (hK : ∑ ℓ ∈ Finset.range M, K ℓ < Module.finrank F V) :
     ∃ v : V, v ≠ 0 ∧ ∀ ℓ < M, ∀ r < K ℓ, (T ℓ v).coeff r = 0 := by
   classical
+  -- `V` is finite-dimensional, since its `finrank` is positive.
+  have : FiniteDimensional F V := Module.finite_of_finrank_pos (by omega)
   let Φ : V →ₗ[F] ((Σ ℓ : Fin M, Fin (K ℓ)) → F) :=
     LinearMap.pi fun k => lcoeff F (k.2 : ℕ) ∘ₗ T k.1
   have hdim : Module.finrank F ((Σ ℓ : Fin M, Fin (K ℓ)) → F) < Module.finrank F V := by
