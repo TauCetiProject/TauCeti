@@ -44,8 +44,9 @@ with `C` and the threshold `δ` depending only on `n`, `p`, `λ` and `Λ`
 vanishing mean oscillation the threshold is reached below some radius `r₀`, and on every ball of
 radius `R ≤ r₀`
 `‖D²u‖_{Lᵖ(B_{R/2})} ≤ C (‖f‖_{Lᵖ(B_R)} + R⁻² ‖u‖_{Lᵖ(B_R)})`
-(`TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`). The restriction `p > 2` is that of
-the whole-space estimate for coefficients of small mean oscillation; the interior estimate treats
+(`TauCeti.PDE.exists_lpNorm_iteratedGradient_ball_le_of_memVMO`). The restriction `p > 2` comes
+from the localization below, which passes through `W^{2,2}_0`; the whole-space estimate for
+coefficients of small mean oscillation holds for every `1 < p < ∞`. The interior estimate treats
 the principal part alone.
 
 Averaging the `p`-th powers of the interior estimates over all centres turns them into the estimate
@@ -193,8 +194,8 @@ private theorem exists_lpNorm_iteratedGradient_le_of_mem_wkp0Submodule (hp : 2 <
         lpNorm (Wkp.iteratedGradient 1 w) p (volume.restrict U) ≤
           C * lpNorm F p (volume.restrict U) := by
   obtain ⟨C, δ, hδ, hCZ⟩ :=
-    exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le (n := n) hp hp_top
-      lam Lam
+    exists_eLpNorm_iteratedGradient_le_of_sum_mul_inner_eq_of_setAverage_le (n := n) (s := 2)
+      (ENNReal.one_lt_two.trans hp) hp_top ENNReal.one_lt_two lam Lam
   refine ⟨C, δ, hδ, fun {a} ha haΛ hosc {U} hUfin w hw0 hwp {F} hF heq => ?_⟩
   have : IsFiniteMeasure (volume.restrict (U : Set (EuclideanSpace ℝ (Fin (n + 1))))) :=
     isFiniteMeasure_restrict.2 hUfin
