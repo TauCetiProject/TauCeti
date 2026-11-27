@@ -19,8 +19,9 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 This file extends Mathlib's improper-integral estimates with an asymptotic estimate for weighted
 integrals, an Abelian limit for the averages `ε ∫_1^∞ t ^ (-ε - 1) g t`, integrability of
 `(x ^ 2 + c ^ 2)⁻¹` for `c ≠ 0`, integrability at infinity of `(t (1 + log t) ^ 2)⁻¹`, and the
-closed forms `∫_A^∞ dy / y² = 1 / A` and `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a` as
-Lebesgue integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` and `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)` as
+closed forms `∫_A^∞ dy / y² = 1 / A`, `∫_{-∞}^0 e^{a s} ds = ∫_0^∞ e^{-a s} ds = 1 / a`,
+`∫_c^∞ e^{a s} ds = -e^{a c} / a` and `∫_c^∞ t ^ a dt = -c ^ (a + 1) / (a + 1)` as Lebesgue
+integrals, and `∫_0^∞ e^{-a s} ds = 1 / a` and `∫_c^∞ dx / x^(k+1) = 1 / (k c^k)` as
 Bochner integrals.
 
 It also evaluates the power-weighted sine integral on the positive half-line for exponents between
@@ -43,6 +44,10 @@ zero and one.
 * `TauCeti.lintegral_Iic_ofReal_exp_mul`, `TauCeti.lintegral_Ioi_ofReal_exp_neg_mul`:
   `∫⁻ s in Iic 0, ofReal (exp (a s)) = ∫⁻ s in Ioi 0, ofReal (exp (-a s)) = ofReal a⁻¹`
   for `0 < a`.
+* `TauCeti.lintegral_Ioi_ofReal_exp_mul`: `∫⁻ s in Ioi c, ofReal (exp (a s)) =
+  ofReal (-exp (a c) / a)` for `a < 0`.
+* `TauCeti.lintegral_Ioi_ofReal_rpow_of_lt`: `∫⁻ t in Ioi c, ofReal (t ^ a) =
+  ofReal (-c ^ (a + 1) / (a + 1))` for `a < -1` and `0 < c`.
 * `TauCeti.integral_Ioi_exp_neg_mul`: the Bochner integral `∫ s in Ioi 0, exp (-a s) = a⁻¹`
   for `0 < a`.
 
@@ -410,11 +415,17 @@ theorem lintegral_Iic_ofReal_exp_mul {a : ℝ} (ha : 0 < a) :
     (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Iic ha]
   simp
 
+/-- `∫_c^∞ e^{a s} ds = -e^{a c} / a` for `a < 0`, as a Lebesgue integral. -/
+theorem lintegral_Ioi_ofReal_exp_mul {a : ℝ} (ha : a < 0) (c : ℝ) :
+    ∫⁻ s in Ioi c, ENNReal.ofReal (Real.exp (a * s)) =
+      ENNReal.ofReal (-Real.exp (a * c) / a) := by
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi ha c)
+    (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi ha]
+
 /-- `∫_0^∞ e^{-a s} ds = 1 / a` for `0 < a`, as a Lebesgue integral. -/
 theorem lintegral_Ioi_ofReal_exp_neg_mul {a : ℝ} (ha : 0 < a) :
     ∫⁻ s in Ioi 0, ENNReal.ofReal (Real.exp (-a * s)) = ENNReal.ofReal a⁻¹ := by
-  rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_neg_of_pos ha) 0)
-    (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_neg_of_pos ha)]
+  rw [lintegral_Ioi_ofReal_exp_mul (neg_neg_of_pos ha)]
   simp
 
 /-- `∫_0^∞ e^{-a s} ds = 1 / a` for `0 < a`, as a Bochner integral. -/
@@ -422,6 +433,14 @@ theorem integral_Ioi_exp_neg_mul {a : ℝ} (ha : 0 < a) :
     ∫ s in Ioi 0, Real.exp (-a * s) = a⁻¹ := by
   rw [integral_exp_mul_Ioi (neg_neg_of_pos ha)]
   simp
+
+/-- `∫_c^∞ t ^ a dt = -c ^ (a + 1) / (a + 1)` for `a < -1` and `0 < c`, as a Lebesgue
+integral. -/
+theorem lintegral_Ioi_ofReal_rpow_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
+    ∫⁻ t in Ioi c, ENNReal.ofReal (t ^ a) = ENNReal.ofReal (-c ^ (a + 1) / (a + 1)) := by
+  rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_Ioi_rpow_of_lt ha hc)
+    ((ae_restrict_iff' measurableSet_Ioi).2 (ae_of_all _ fun t ht =>
+      (Real.rpow_pos_of_pos (hc.trans ht) _).le)), integral_Ioi_rpow_of_lt ha hc]
 
 /-- For `a < -1` and `0 < c`, the function `t ↦ t ^ a * log t` is integrable on `(c, ∞)`. -/
 theorem integrableOn_Ioi_rpow_mul_log_of_lt {a c : ℝ} (ha : a < -1) (hc : 0 < c) :
