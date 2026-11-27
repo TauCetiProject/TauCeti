@@ -178,6 +178,34 @@ private theorem mul_star_self_mul_cfcₙ (x : A) (k : ℝ → ℝ)
     _ = _ := cfcₙ_mul _ _ (hf := hsk) (hf0 := by simp [hk0]) (hg := hsk)
         (hg0 := by simp [hk0])
 
+/-- For `y_i = x k_i(x⋆x)`, `‖y_1 - y_2‖ = ‖H_1(x⋆x) - H_2(x⋆x)‖` with `H_i(t) = √t k_i(t)`. -/
+private theorem dist_mul_cfcₙ (x : A) {k₁ k₂ : ℝ → ℝ}
+    (hk₁ : ContinuousOn k₁ (quasispectrum ℝ (star x * x))) (hk₁0 : k₁ 0 = 0)
+    (hk₂ : ContinuousOn k₂ (quasispectrum ℝ (star x * x))) (hk₂0 : k₂ 0 = 0) :
+    dist (x * cfcₙ k₁ (star x * x)) (x * cfcₙ k₂ (star x * x)) =
+      dist (cfcₙ (fun t ↦ √t * k₁ t) (star x * x)) (cfcₙ (fun t ↦ √t * k₂ t) (star x * x)) := by
+  set a := star x * x
+  have hs : ContinuousOn (fun t : ℝ ↦ √t) (quasispectrum ℝ a) :=
+    Real.continuous_sqrt.continuousOn
+  have hsub : x * cfcₙ k₁ a - x * cfcₙ k₂ a = x * cfcₙ (fun t ↦ k₁ t - k₂ t) a := by
+    rw [cfcₙ_sub k₁ k₂ a, mul_sub]
+  have hHsub : cfcₙ (fun t ↦ √t * k₁ t) a - cfcₙ (fun t ↦ √t * k₂ t) a =
+      cfcₙ (fun t ↦ √t * (k₁ t - k₂ t)) a := by
+    rw [← cfcₙ_sub (fun t ↦ √t * k₁ t) (fun t ↦ √t * k₂ t) a (hf := hs.mul hk₁)
+      (hf0 := by simp [hk₁0]) (hg := hs.mul hk₂) (hg0 := by simp [hk₂0])]
+    exact cfcₙ_congr fun t _ ↦ by ring
+  have key := star_mul_self_mul_cfcₙ x (fun t ↦ k₁ t - k₂ t) (hk₁.sub hk₂) (by simp [hk₁0, hk₂0])
+  rw [← hsub, ← hHsub] at key
+  rw [dist_eq_norm, dist_eq_norm]
+  have hsa : IsSelfAdjoint (cfcₙ (fun t ↦ √t * k₁ t) a - cfcₙ (fun t ↦ √t * k₂ t) a) :=
+    IsSelfAdjoint.sub (cfcₙ_predicate _ a) (cfcₙ_predicate _ a)
+  have h1 := congrArg norm key
+  nth_rewrite 1 [← hsa.star_eq] at h1
+  rw [CStarRing.norm_star_mul_self, CStarRing.norm_star_mul_self] at h1
+  nlinarith [norm_nonneg (x * cfcₙ k₁ a - x * cfcₙ k₂ a),
+    norm_nonneg (cfcₙ (fun t ↦ √t * k₁ t) a - cfcₙ (fun t ↦ √t * k₂ t) a),
+    mul_self_eq_mul_self_iff.1 h1]
+
 /-- The functions `H ε t = √t h(t) / √(max t ε)` converge to `h` uniformly on a set of
 nonnegative reals as `ε → 0`, for `h` continuous at `0` with `h 0 = 0`. -/
 private theorem tendstoUniformlyOn_sqrt_mul_div {s : Set ℝ} (hs : ∀ t ∈ s, 0 ≤ t)
@@ -241,24 +269,8 @@ theorem exists_star_mul_self_eq_and_mul_star_self_eq (x : A) (h : ℝ → ℝ)
     tendsto_cfcₙ_fun (hσ ▸ hunia) (.of_forall hHb) (.of_forall hH0)
   set u : ℕ → A := fun n ↦ x * cfcₙ (k n) a
   -- `‖u m - u n‖ = ‖H_m(a) - H_n(a)‖`, so `u` is Cauchy.
-  have hdist : ∀ m n, dist (u m) (u n) = dist (cfcₙ (H m) a) (cfcₙ (H n) a) := fun m n ↦ by
-    have hkmn : ContinuousOn (fun t ↦ k m t - k n t) (quasispectrum ℝ a) := (hk m).sub (hk n)
-    have hsub : u m - u n = x * cfcₙ (fun t ↦ k m t - k n t) a := by
-      simp only [u]
-      rw [cfcₙ_sub (k m) (k n) a, mul_sub]
-    have hHsub : cfcₙ (H m) a - cfcₙ (H n) a = cfcₙ (fun t ↦ √t * (k m t - k n t)) a := by
-      rw [← cfcₙ_sub (H m) (H n) a]
-      exact cfcₙ_congr fun t _ ↦ by simp only [H]; ring
-    have key := star_mul_self_mul_cfcₙ x _ hkmn (by simp [hk0])
-    rw [← hsub, ← hHsub] at key
-    rw [dist_eq_norm, dist_eq_norm]
-    have hsa : IsSelfAdjoint (cfcₙ (H m) a - cfcₙ (H n) a) :=
-      IsSelfAdjoint.sub (cfcₙ_predicate _ a) (cfcₙ_predicate _ a)
-    have h1 := congrArg norm key
-    nth_rewrite 1 [← hsa.star_eq] at h1
-    rw [CStarRing.norm_star_mul_self, CStarRing.norm_star_mul_self] at h1
-    nlinarith [norm_nonneg (u m - u n), norm_nonneg (cfcₙ (H m) a - cfcₙ (H n) a),
-      mul_self_eq_mul_self_iff.1 h1]
+  have hdist : ∀ m n, dist (u m) (u n) = dist (cfcₙ (H m) a) (cfcₙ (H n) a) := fun m n ↦
+    dist_mul_cfcₙ x (hk m) (hk0 m) (hk n) (hk0 n)
   have hu : CauchySeq u := Metric.cauchySeq_iff.2 fun δ hδ ↦
     (Metric.cauchySeq_iff.1 hwa.cauchySeq δ hδ).imp fun N hN m hm n hn ↦
       (hdist m n) ▸ hN m hm n hn
