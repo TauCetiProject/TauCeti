@@ -98,11 +98,7 @@ target point along the graph of a map `u` which is `C¹` on `S`, at every `μ �
 and that there `u` solves the Floer equation, with loops in each end chart converging uniformly to
 continuous loops `x_q` and slice defects tending uniformly to zero. Then the realization
 `D_u : W^{1,2}_0(S, V) → L²(S, V)` of the linearized Floer operator of the data at `μ` depends
-continuously on `μ ∈ P` in the operator norm.
-
-Off the compact truncation `S_R` the data do not depend on `μ ∈ P`, and on `S_R` their
-coefficient fields are jointly continuous in `(μ, z)` at each `(μ, z)` with `μ ∈ P`, so the
-coefficient fields depend continuously on `μ ∈ P` in `L^∞(S)`. -/
+continuously on `μ ∈ P` in the operator norm. -/
 theorem continuousOn_floerConformalSobolevOperator_pairOfPants_family {E : Type*}
     [NormedAddCommGroup E] [NormedSpace ℝ E] (ω : SymplecticForm V)
     {H : Puncture → ℝ → V → ℝ} (hH : ∀ q, Periodic (H q) 1)
