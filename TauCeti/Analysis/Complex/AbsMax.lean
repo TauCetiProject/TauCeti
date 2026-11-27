@@ -53,7 +53,7 @@ boundary line to which it sends each frontier point, although such a map jumps a
 * `Complex.norm_le_of_forall_mem_sphere_norm_mul_le`
 * `ContinuousOn.bddAbove_range_norm_sphere`
 * `DiffContOnCl.norm_le_iSup_norm_sphere_of_mem_closedBall`
-* `Complex.re_nonpos_of_forall_mem_frontier_diff_re_nonpos`
+* `Complex.re_nonpos_of_forall_mem_frontier_sdiff_re_nonpos`
 * `Complex.exists_eqOn_add_ofReal_of_forall_mem_frontier_im_eq`
 -/
 
@@ -212,7 +212,7 @@ nonpositive on `closure U \ F`.
 The bound on `U` cannot be dropped: on the unit disc the real part of `(1 + z) / (1 - z)` is
 positive, although it vanishes on the unit circle away from `1`. The proof applies the maximum
 modulus principle to `(∏ c ∈ F, (w - c)) * exp (n * f w)` and lets `n` tend to infinity. -/
-theorem Complex.re_nonpos_of_forall_mem_frontier_diff_re_nonpos {f : ℂ → ℂ} {U F : Set ℂ}
+theorem Complex.re_nonpos_of_forall_mem_frontier_sdiff_re_nonpos {f : ℂ → ℂ} {U F : Set ℂ}
     (hU : Bornology.IsBounded U) (hF : F.Finite) (hd : DifferentiableOn ℂ f U)
     (hc : ContinuousOn f (closure U \ F)) (hb : BddAbove ((fun z => (f z).re) '' U))
     (hfr : ∀ z ∈ frontier U \ F, (f z).re ≤ 0) {z : ℂ} (hz : z ∈ closure U \ F) :
@@ -274,7 +274,7 @@ theorem Complex.exists_eqOn_add_ofReal_of_forall_mem_frontier_im_eq {u v : ℂ �
     have hre (w : ℂ) : (ε * (u w - v w)).re = ε.im * -((u w).im - (v w).im) := by
       rcases hε with rfl | rfl <;> simp
     have hε1 : |ε.im| = 1 := by rcases hε with rfl | rfl <;> simp
-    refine Complex.re_nonpos_of_forall_mem_frontier_diff_re_nonpos hUb hF
+    refine Complex.re_nonpos_of_forall_mem_frontier_sdiff_re_nonpos hUb hF
       ((hu.sub hv).const_mul ε) ((huc.sub hvc).const_mul ε) ⟨C, ?_⟩ (fun w hw => ?_) hz
     · rintro _ ⟨w, hw, rfl⟩
       simp only [Pi.sub_apply]
