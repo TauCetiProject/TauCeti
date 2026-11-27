@@ -82,6 +82,8 @@ of `μ`, that is, continuity of `Function.uncurry fun x y ↦ μ x y`, which cal
 explicitly (`ContinuousLinearMap.pairingFlip_eq_flip`). Forgetting continuity via
 `ContinuousLinearMap.toLinearMap₁₂` commutes with `flip` and `bilinearComp`
 (`ContinuousLinearMap.toLinearMap₁₂_flip`, `ContinuousLinearMap.toLinearMap₁₂_bilinearComp`).
+For a form `B : V →L[𝕜] V →L[𝕜] 𝕜`, the latter reads `ContinuousLinearMap.toBilinForm_bilinearComp`:
+the continuous pull-back of `B`, read as a bilinear form, is the pull-back of the bilinear form.
 -/
 
 public section
@@ -486,6 +488,20 @@ theorem toLinearMap₁₂_bilinearComp (L : E →SL[σ₁₃] F →SL[σ₂₃] 
       bilinearComp_apply, coe_coe]
 
 end ToLinearMap₁₂BilinearComp
+
+section ToBilinFormBilinearComp
+
+variable {𝕜 V W : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup V] [NormedSpace 𝕜 V]
+  [SeminormedAddCommGroup W] [NormedSpace 𝕜 W]
+
+/-- Forgetting continuity commutes with pulling a form back: the continuous pull-back
+`B.bilinearComp f g` of a form `B`, read as a bilinear form, is the pull-back
+`B.toBilinForm.compl₁₂ f g` of the bilinear form of `B`. -/
+theorem toBilinForm_bilinearComp (B : V →L[𝕜] V →L[𝕜] 𝕜) (f g : W →L[𝕜] V) :
+    (B.bilinearComp f g).toBilinForm = B.toBilinForm.compl₁₂ (f : W →ₗ[𝕜] V) (g : W →ₗ[𝕜] V) :=
+  LinearMap.ext₂ fun _ _ ↦ by simp
+
+end ToBilinFormBilinearComp
 
 end ContinuousLinearMap
 
