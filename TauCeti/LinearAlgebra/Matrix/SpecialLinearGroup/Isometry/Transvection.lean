@@ -48,8 +48,7 @@ as the model for this file.
   `Matrix.exists_mem_specialIsometryGroup_coe_eq_siegelTransvection`: admissible unitary
   transvections `τ_{v,a}` and Siegel transformations `S(u, w, c)` lie in the special isometry
   group.
-* `Matrix.exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection_iff`,
-  `Matrix.exists_coe_eq_unitaryTransvection_iff`, and
+* `Matrix.exists_coe_eq_unitaryTransvection_iff` and
   `Matrix.exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff`: for a nondegenerate
   `ε`-Hermitian `Q`, `τ_{v,a}` and `S(u, w, c)` are isometries exactly when their parameters
   satisfy `a + ε σ(a) = 0` and `c + ε σ(c) + ε h(w, w) = 0`.
@@ -336,19 +335,6 @@ theorem exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff
   have h := mem_specialIsometryGroup_iff.mp hg
   rw [hcg, transpose_map_siegelTransvection_mul_mul hσ hQ hu huw, add_eq_left, smul_eq_zero] at h
   exact h.resolve_right (vecMulVec_mulVec_comp_vecMul_ne_zero hσ.injective hdet hu0)
-
-/-- **The scalar condition for a unitary transvection to be an isometry.** If `σ` is an
-involution and `Q` is a nondegenerate `ε`-Hermitian matrix, then for any nonzero isotropic vector
-`v`, the transvection `τ_{v,a}` lies in `Q.specialIsometryGroup σ` exactly when
-`a + ε σ(a) = 0`. -/
-theorem exists_mem_specialIsometryGroup_coe_eq_unitaryTransvection_iff
-    (hσ : Function.Involutive σ) (hQ : (Q.map σ)ᵀ = ε • Q) (hdet : Q.det ≠ 0)
-    {v : n → K} (hv0 : v ≠ 0) (hv : (σ ∘ v) ⬝ᵥ (Q *ᵥ v) = 0) (a : K) :
-    (∃ g ∈ Q.specialIsometryGroup σ,
-      (g : Matrix n n K) = Q.unitaryTransvection σ v a) ↔ a + ε * σ a = 0 := by
-  simpa [siegelTransvection_zero_eq_unitaryTransvection] using
-    exists_mem_specialIsometryGroup_coe_eq_siegelTransvection_iff hσ hQ hdet hv0 hv (w := 0)
-      (by simp) a
 
 end Field
 

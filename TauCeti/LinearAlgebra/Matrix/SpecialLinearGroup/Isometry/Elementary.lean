@@ -95,22 +95,6 @@ theorem mk_mem_elementaryUnitaryGroup_of_coe_eq_unitaryTransvection {g : Special
     exact unitaryTransvectionSubgroup_le_elementaryUnitaryGroup ⟨_, hp⟩
       ((mem_unitaryTransvectionSubgroup_mk_iff hv0 hp).mpr ⟨a, hga⟩)
 
-/-- On a transitive isotropic-point action, a normal subgroup containing the unitary transvection
-subgroup of one isotropic point contains the entire elementary unitary group. -/
-theorem elementaryUnitaryGroup_le_of_normal
-    [MulAction.IsPretransitive (Q.specialIsometryGroup σ) (Q.isotropicPoints σ)]
-    {N : Subgroup (Q.specialIsometryGroup σ)} [N.Normal] (p₀ : Q.isotropicPoints σ)
-    (hp₀ : Q.unitaryTransvectionSubgroup σ p₀ ≤ N) :
-    Q.elementaryUnitaryGroup σ ≤ N := by
-  rw [elementaryUnitaryGroup_eq_iSup]
-  refine iSup_le fun p ↦ ?_
-  obtain ⟨g, rfl⟩ := MulAction.exists_smul_eq (Q.specialIsometryGroup σ) p₀ p
-  rw [Q.unitaryTransvectionSubgroup_smul]
-  rintro x hx
-  rw [Subgroup.mem_smul_pointwise_iff_exists] at hx
-  obtain ⟨y, hy, rfl⟩ := hx
-  exact ‹N.Normal›.conj_mem y (hp₀ hy) g
-
 /-- An admissible unitary transvection along an isotropic vector `v` gives an element of
 `Q.elementaryUnitaryGroup σ` with matrix `Q.unitaryTransvection σ v a`. -/
 theorem exists_mem_elementaryUnitaryGroup_coe_eq_unitaryTransvection

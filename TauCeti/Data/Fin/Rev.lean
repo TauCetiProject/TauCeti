@@ -19,9 +19,6 @@ graph, indexed by `Fin 2`, are told apart.
 
 On `Fin (n + 1)` the reversal is `j ↦ n - j`, so a condition on the indices `j` and `n - j` can be
 restated over the natural numbers `m ≤ n` with `m = n - j`: `Fin.forall_imp_sub_iff_forall_le`.
-For `1 : Fin (n + 1)`, we have `(1 : Fin (n + 1)).rev ≠ 0` when `2 ≤ n` (`Fin.rev_one_ne_zero`),
-`(1 : Fin (n + 1)).rev ≠ Fin.last n` when `n ≠ 0` (`Fin.rev_one_ne_last`), and
-`1 ≠ (1 : Fin (n + 1)).rev` when `n ≠ 0` and `n ≠ 2` (`Fin.one_ne_rev`).
 
 Cast into an additive commutative group with one, the reversal of `i : Fin n` is `n - 1 - i`:
 `Fin.natCast_val_rev`.
@@ -41,28 +38,6 @@ namespace Fin
 theorem fin_two_eq_or_eq_rev (i j : Fin 2) : j = i ∨ j = i.rev := by
   revert i j
   decide
-
-/-- For `n ≠ 0` and `n ≠ 2`, the index `1 : Fin (n + 1)` is distinct from its reverse. -/
-theorem one_ne_rev {n : ℕ} (hn0 : n ≠ 0) (hn2 : n ≠ 2) :
-    (1 : Fin (n + 1)) ≠ (1 : Fin (n + 1)).rev := by
-  have h1 : ((1 : Fin (n + 1)) : ℕ) = 1 := by
-    rw [Fin.val_one', Nat.mod_eq_of_lt (by omega)]
-  simp only [ne_eq, Fin.ext_iff, Fin.val_rev, h1]
-  omega
-
-/-- For `2 ≤ n`, the reverse of `1 : Fin (n + 1)` is nonzero. -/
-theorem rev_one_ne_zero {n : ℕ} (hn : 2 ≤ n) : (1 : Fin (n + 1)).rev ≠ 0 := by
-  have h1 : ((1 : Fin (n + 1)) : ℕ) = 1 := by
-    rw [Fin.val_one', Nat.mod_eq_of_lt (by omega)]
-  simp only [ne_eq, Fin.ext_iff, Fin.val_rev, Fin.val_zero, h1]
-  omega
-
-/-- For `n ≠ 0`, the reverse of `1 : Fin (n + 1)` is distinct from `Fin.last n`. -/
-theorem rev_one_ne_last {n : ℕ} (hn0 : n ≠ 0) : (1 : Fin (n + 1)).rev ≠ Fin.last n := by
-  have h1 : ((1 : Fin (n + 1)) : ℕ) = 1 := by
-    rw [Fin.val_one', Nat.mod_eq_of_lt (by omega)]
-  simp only [ne_eq, Fin.ext_iff, Fin.val_rev, Fin.val_last, h1]
-  omega
 
 /-- Reindex a condition on the indices `j : Fin (n + 1)` and their reversals `n - j` by the
 natural numbers `m = n - j ≤ n`. -/

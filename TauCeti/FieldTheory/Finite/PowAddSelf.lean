@@ -11,6 +11,8 @@ import Mathlib.FieldTheory.Finite.Basic
 import Mathlib.GroupTheory.Index
 import TauCeti.Algebra.GroupWithZero.Units.Finite
 import TauCeti.Algebra.Ring.Hom
+import TauCeti.Algebra.Ring.Parity
+import TauCeti.FieldTheory.Finite.Card
 import TauCeti.SetTheory.Cardinal.Finite
 
 /-!
@@ -119,15 +121,10 @@ hypothesis `q ≠ 0` is needed: over `ℚ`, where `Nat.card ℚ = 0 = 0 ^ 2`, th
 theorem natCard_pow_add_self_eq {q : ℕ} (hq : q ≠ 0) (hK : Nat.card K = q ^ 2) {c : K}
     (hc : c ^ q = c) : Nat.card {b : K // b ^ q + b = c} = q := by
   have := finite_of_natCard_eq_pow hq hK
-  have := Fintype.ofFinite K
   -- `q` divides the order `p ^ m` of `K`, so it is a power `p ^ n` of the characteristic `p`.
-  obtain ⟨p, hchar, m, hprime, hcard⟩ := _root_.FiniteField.card' K
-  let : CharP K p := hchar
-  let : Fact p.Prime := ⟨hprime⟩
-  have hdvd : q ∣ p ^ (m : ℕ) := by
-    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
-    exact dvd_pow_self q two_ne_zero
-  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
+  obtain ⟨p, hchar, n, hprime, rfl⟩ :=
+    exists_charP_prime_pow_of_dvd_natCard (K := K) (hK ▸ dvd_pow_self q two_ne_zero)
+  have : ExpChar K p := .prime hprime
   exact natCard_pow_pow_add_self_eq hK hc
 
 /-- In a field `K` with `Nat.card K = q ^ 2`, every `c` with `c ^ q = c` is of the form
@@ -149,25 +146,11 @@ the condition forces `c = ε`, and `b = 0` works. -/
 theorem exists_add_neg_one_pow_mul_pow_eq {q : ℕ} (hK : Nat.card K = q ^ 2) (k : ℕ)
     {c : K} (hc : c ^ q = (-1) ^ k * c) : ∃ b : K, b + (-1) ^ k * b ^ q = c := by
   rcases eq_or_ne q 0 with rfl | hq0
-  · refine ⟨0, ?_⟩
-    have hsq : (-1 : K) ^ k * (-1 : K) ^ k = 1 := by
-      rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
-    have hc' : (-1 : K) ^ k * c = 1 := by simpa using hc.symm
-    have hck : (-1 : K) ^ k = c := by
-      calc
-        (-1 : K) ^ k = (-1 : K) ^ k * ((-1 : K) ^ k * c) := by rw [hc', mul_one]
-        _ = ((-1 : K) ^ k * (-1 : K) ^ k) * c := by rw [mul_assoc]
-        _ = c := by rw [hsq, one_mul]
-    simpa using hck
+  · exact ⟨0, by simpa using congrArg ((-1 : K) ^ k * ·) hc⟩
   have := finite_of_natCard_eq_pow hq0 hK
-  have := Fintype.ofFinite K
-  obtain ⟨p, hchar, m, hprime, hcard⟩ := _root_.FiniteField.card' K
-  let : CharP K p := hchar
-  let : Fact p.Prime := ⟨hprime⟩
-  have hdvd : q ∣ p ^ (m : ℕ) := by
-    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
-    exact dvd_pow_self q two_ne_zero
-  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
+  obtain ⟨p, _, n, hprime, rfl⟩ :=
+    exists_charP_prime_pow_of_dvd_natCard (K := K) (hK ▸ dvd_pow_self q two_ne_zero)
+  have : ExpChar K p := .prime hprime
   obtain ⟨b, hb⟩ := exists_pow_add_self_eq hK (one_pow (p ^ n))
   simpa only [iterateFrobenius_def] using
     TauCeti.exists_add_neg_one_pow_mul_apply_eq (σ := iterateFrobenius K p n)
@@ -183,14 +166,9 @@ theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero {q : ℕ}
   rcases eq_or_ne q 0 with rfl | hq0
   · exact ⟨-(-1 : K) ^ k, neg_ne_zero.mpr (by simp), by simp⟩
   have := finite_of_natCard_eq_pow hq0 hK
-  have := Fintype.ofFinite K
-  obtain ⟨p, hchar, m, hprime, hcard⟩ := _root_.FiniteField.card' K
-  let : CharP K p := hchar
-  let : Fact p.Prime := ⟨hprime⟩
-  have hdvd : q ∣ p ^ (m : ℕ) := by
-    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
-    exact dvd_pow_self q two_ne_zero
-  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
+  obtain ⟨p, _, n, hprime, rfl⟩ :=
+    exists_charP_prime_pow_of_dvd_natCard (K := K) (hK ▸ dvd_pow_self q two_ne_zero)
+  have : ExpChar K p := .prime hprime
   simpa only [iterateFrobenius_def] using
     TauCeti.exists_ne_zero_add_neg_one_pow_mul_apply_eq_zero (σ := iterateFrobenius K p n)
       (k := k) fun _ ↦ by

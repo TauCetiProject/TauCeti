@@ -20,6 +20,8 @@ characteristic: multiplication by `q` is injective on such torsion.
 
 * `TauCeti.FiniteField.natCard_coprime_of_natCast_ne_zero`: if `(n : K) ≠ 0`, then `Nat.card K`
   and `n` are coprime.
+* `TauCeti.FiniteField.exists_charP_prime_pow_of_dvd_natCard`: every divisor of `Nat.card K` is
+  a power `p ^ n` of the prime characteristic `p` of `K`.
 * `TauCeti.FiniteField.odd_card_of_not_isSquare`: a finite field with a nonsquare has odd order.
 * `TauCeti.FiniteField.ringChar_ne_two_of_odd_card`: a finite field of odd order does not have
   characteristic two.
@@ -41,6 +43,16 @@ theorem natCard_coprime_of_natCast_ne_zero {K : Type*} [Field K] [Finite K] {n :
   obtain ⟨k, hp, hcard⟩ := FiniteField.card K (ringChar K)
   rw [Nat.card_eq_fintype_card, hcard]
   exact Nat.Coprime.pow_left _ (hp.coprime_iff_not_dvd.2 fun h ↦ hn ((ringChar.spec K n).2 h))
+
+/-- Every divisor of the cardinality of a finite field `K` is a power `p ^ n` of its prime
+characteristic `p`. -/
+theorem exists_charP_prime_pow_of_dvd_natCard {K : Type*} [Field K] [Finite K] {q : ℕ}
+    (hq : q ∣ Nat.card K) : ∃ (p : ℕ) (_ : CharP K p) (n : ℕ), p.Prime ∧ q = p ^ n := by
+  let := Fintype.ofFinite K
+  obtain ⟨p, hchar, _, hprime, hcard⟩ := FiniteField.card' K
+  rw [Nat.card_eq_fintype_card, hcard] at hq
+  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hq
+  exact ⟨p, hchar, n, hprime, rfl⟩
 
 variable {F : Type*} [Field F] [Finite F]
 
