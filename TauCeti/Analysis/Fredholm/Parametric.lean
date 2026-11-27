@@ -724,6 +724,13 @@ theorem finiteDimensional_ker_coprod [FiniteDimensional 𝕜 D₁.ker]
     (LinearMap.quotKerEquivRange (parameterProj D₁ D₂).toLinearMap).symm.finiteDimensional
   exact Module.Finite.of_submodule_quotient (parameterProj D₁ D₂).ker
 
+/-- The kernel of `D₁` is finite-dimensional when the kernel of the extended operator
+`D₁.coprod D₂` is, since `ContinuousLinearMap.kerCoprodHom` embeds the former into the latter. -/
+theorem finiteDimensional_ker_of_finiteDimensional_ker_coprod
+    [FiniteDimensional 𝕜 (D₁.coprod D₂).ker] : FiniteDimensional 𝕜 D₁.ker :=
+  FiniteDimensional.of_injective (kerCoprodHom D₁ D₂ : D₁.ker →ₗ[𝕜] (D₁.coprod D₂).ker)
+    (kerCoprodHom_injective D₁ D₂)
+
 /-- The cokernel of the parameter projection is finite dimensional as soon as that of `D₁` is;
 surjectivity of the total linearization is not needed. -/
 theorem finiteDimensional_quotient_range_parameterProj

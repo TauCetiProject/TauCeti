@@ -14,6 +14,7 @@ public import TauCeti.Topology.Algebra.Module.Equiv.Pi
 
 import Mathlib.LinearAlgebra.Matrix.Charpoly.Coeff
 import Mathlib.Topology.Algebra.Polynomial
+import Mathlib.Topology.Instances.Matrix
 import TauCeti.LinearAlgebra.Determinant.Basic
 import TauCeti.LinearAlgebra.Matrix.Charpoly.DetSign
 import TauCeti.LinearAlgebra.Pi
@@ -63,6 +64,9 @@ the affine cofactor pullback, `ContinuousLinearEquiv.sum_fderiv_affineFluxPullba
 * `ContinuousLinearEquiv.det_symm_comp_comp_comp`: composing with endomorphisms on either side
   multiplies the relative determinant by their determinants.
 * `ContinuousLinearEquiv.sum_cofactor_comp_apply_single`: the cofactor contraction identity.
+* `LinearMap.det_pos_of_forall_det_one_sub_smul_add_smul_ne_zero`: an endomorphism of a
+  finite-dimensional real vector space joined to the identity by a segment of nonsingular
+  endomorphisms has positive determinant.
 -/
 
 public section
@@ -322,3 +326,33 @@ theorem det_negCoord_ring [Finite ι] [DecidableEq ι] [TopologicalSpace R] [Con
 end PiDet
 
 end ContinuousLinearEquiv
+
+namespace LinearMap
+
+/-- **Positivity of a determinant along a segment from the identity.** Let `f` be an
+endomorphism of a finite-dimensional real vector space. If no endomorphism
+`(1 - t) • id + t • f` with `t ∈ [0, 1]` on the segment from the identity to `f` is singular,
+then `det f > 0`: the determinant along the segment is continuous in `t`, equal to `1` at `t = 0`,
+and never `0`. So two isomorphisms `g, g' : V ≃ W` joined by a segment of isomorphisms
+`(1 - t) • g + t • g'` induce the same orientation, as `g⁻¹ ∘ g'` satisfies the hypothesis. -/
+theorem det_pos_of_forall_det_one_sub_smul_add_smul_ne_zero {V : Type*} [AddCommGroup V]
+    [Module ℝ V] [FiniteDimensional ℝ V] (f : V →ₗ[ℝ] V)
+    (h : ∀ t ∈ Set.Icc (0 : ℝ) 1, LinearMap.det ((1 - t) • LinearMap.id + t • f) ≠ 0) :
+    0 < LinearMap.det f := by
+  let b := Module.finBasis ℝ V
+  -- In the matrix of a fixed basis, the determinant along the segment is continuous in `t`.
+  have hc : Continuous fun t : ℝ ↦ LinearMap.det ((1 - t) • LinearMap.id + t • f) := by
+    have hm : ∀ t : ℝ, LinearMap.det ((1 - t) • LinearMap.id + t • f) =
+        ((1 - t) • (1 : Matrix (Fin _) (Fin _) ℝ) + t • LinearMap.toMatrix b b f).det := by
+      intro t
+      rw [← LinearMap.det_toMatrix b, map_add, map_smul, map_smul, LinearMap.toMatrix_id]
+    simp_rw [hm]
+    exact Continuous.matrix_det (by fun_prop)
+  by_contra hneg
+  obtain ⟨t, ht, ht0⟩ : ∃ t ∈ Set.Icc (0 : ℝ) 1,
+      LinearMap.det ((1 - t) • LinearMap.id + t • f) = 0 :=
+    intermediate_value_Icc' zero_le_one hc.continuousOn
+      ⟨by simpa using not_lt.1 hneg, by simp⟩
+  exact h t ht ht0
+
+end LinearMap

@@ -141,8 +141,7 @@ of the original operator finite-dimensional. -/
 theorem finiteDimensional_ker_of_isInvertible_prod_coprod
     (h : ((T.coprod D₂).prod q).IsInvertible) : FiniteDimensional 𝕜 T.ker :=
   have := finite_ker_of_isInvertible_prod h
-  FiniteDimensional.of_injective (kerCoprodHom T D₂ : T.ker →ₗ[𝕜] (T.coprod D₂).ker)
-    (kerCoprodHom_injective T D₂)
+  finiteDimensional_ker_of_finiteDimensional_ker_coprod T D₂
 
 omit [FiniteDimensional 𝕜 G] in
 /-- **The index read in a kernel chart.** If `(D₂, q)` is a kernel chart of `T`, with
