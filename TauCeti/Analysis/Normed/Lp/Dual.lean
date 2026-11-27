@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
+public import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Analysis.Normed.Operator.Mul
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Dual
@@ -31,6 +32,15 @@ and more generally of any continuous linear map from ℓ¹ to a normed space, is
 norms of its values on the unit coordinate vectors
 (`ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`, in `TauCeti.Analysis.Normed.Lp.Basic`).
 
+More generally, for a family of normed spaces `E i`, the pairing `∑' i, φ i (x i)` identifies the
+`ℓᵖ` sum of the duals `E i*` isometrically with the continuous dual of the `ℓ^q` sum of the `E i`
+(`lp.strongDualEquiv`), again for `q < ∞`, including `(ℓ¹(ι, E))* = ℓ∞(ι, E*)`. The inverse sends
+a functional `Φ` to its coordinate functionals `Φ ∘ eᵢ`, the restrictions of `Φ` along the
+coordinate inclusions. For constant fibres `E i = X` this is `(ℓ^q(ι, X))* = ℓᵖ(ι, X*)`, and for
+`E i = 𝕜` it agrees with `lp.dualEquiv` (`lp.strongDualEquiv_symm_apply_eq_toSpanSingleton`).
+These spaces are the Bochner spaces of a counting measure, and the identification is the atomic
+case of the duality of Bochner spaces.
+
 ## Main declarations
 
 * `ContinuousLinearMap.sum_norm_lp_single_rpow_le`: for `p < ∞`, the coordinate values of a
@@ -49,10 +59,20 @@ norms of its values on the unit coordinate vectors
 * `ContinuousLinearMap.norm_rpow_eq_tsum_norm_lp_single_rpow`: for `1 < q < ∞`, the `p`-th
   power of the norm of a functional on `ℓ^q` is the sum of the `p`-th powers of the norms of its
   coordinate values.
+* `ContinuousLinearMap.memℓp_comp_singleContinuousLinearMap`: the coordinate functionals of a
+  functional on `ℓ^q(ι, E)` form an `ℓᵖ` family.
+* `ContinuousLinearMap.norm_le_opNorm_of_forall_eq_comp_singleContinuousLinearMap`: that family
+  has norm at most the norm of the functional.
+* `lp.strongDualEquiv`: the isometric equivalence `ℓᵖ(ι, E*) ≃ₗᵢ (ℓ^q(ι, E))*`.
+* `ContinuousLinearMap.norm_rpow_eq_tsum_norm_comp_singleContinuousLinearMap_rpow`: for
+  `1 < q < ∞`, the `p`-th power of the norm of a functional on `ℓ^q(ι, E)` is the sum of the
+  `p`-th powers of the norms of its coordinate functionals.
 
 ## References
 
 * F. Albiac and N. J. Kalton, *Topics in Banach Space Theory*, Chapter 1.
+* T. Hytönen, J. van Neerven, M. Veraar and L. Weis, *Analysis in Banach Spaces, Volume I*,
+  Springer, 2016, Proposition 1.3.3.
 -/
 
 public section
@@ -290,5 +310,183 @@ theorem norm_rpow_eq_tsum_norm_lp_single_rpow (hp : p ≠ ∞) (hq : q ≠ ∞)
   rw [← (lp.dualEquiv 𝕜 ι p q hq).symm.norm_map f,
     lp.norm_rpow_eq_tsum (ENNReal.toReal_pos (ENNReal.HolderConjugate.ne_zero p q) hp)]
   simp only [lp.dualEquiv_symm_apply]
+
+end ContinuousLinearMap
+
+/-! ### The dual of an `ℓᵖ` sum of normed spaces -/
+
+namespace ContinuousLinearMap
+
+variable {𝕜 ι : Type*} {E : ι → Type*} [RCLike 𝕜] [∀ i, NormedAddCommGroup (E i)]
+  [∀ i, NormedSpace 𝕜 (E i)] [DecidableEq ι] {p q : ℝ≥0∞} [Fact (1 ≤ q)] [p.HolderConjugate q]
+
+/-- Testing a functional `Φ` on `ℓ^q(ι, E)` against the vectors `cᵢ vᵢ`, with `vᵢ` in the closed
+unit balls, gives a scalar pairing `c ↦ ∑ i ∈ s, cᵢ Φ(eᵢ vᵢ)` of norm at most `‖Φ‖` on `ℓ^q`. -/
+private theorem norm_sum_mul_apply_lp_single_le (Φ : StrongDual 𝕜 (lp E q)) (s : Finset ι)
+    {v : ∀ i, E i} (hv : ∀ i, ‖v i‖ ≤ 1) (c : lp (fun _ : ι ↦ 𝕜) q) :
+    ‖∑ i ∈ s, c i * Φ (lp.single q i (v i))‖ ≤ ‖Φ‖ * ‖c‖ := by
+  have hΦ : ∑ i ∈ s, c i * Φ (lp.single q i (v i)) = Φ (∑ i ∈ s, lp.single q i (c i • v i)) := by
+    simp [map_sum, lp.single_smul]
+  -- Compare the coordinate norms of the two sequences inside the real sequence space `ℓ^q`.
+  have hle : ‖∑ i ∈ s, lp.single q i (c i • v i)‖ ≤ ‖c‖ := by
+    rw [← lp.norm_normSeq, ← lp.norm_normSeq c]
+    refine lp.norm_le_norm_of_exponent_le (zero_lt_one.trans_le (Fact.out : 1 ≤ q)).ne' le_rfl
+      fun j ↦ ?_
+    have hcoord : (∑ i ∈ s, lp.single q i (c i • v i)) j = if j ∈ s then c j • v j else 0 := by
+      simp only [lp.coeFn_sum, Finset.sum_apply, lp.coeFn_single]
+      exact Finset.sum_pi_single j (fun i ↦ c i • v i) s
+    rw [lp.normSeq_apply, lp.normSeq_apply, norm_norm, norm_norm, hcoord]
+    split_ifs
+    · exact (norm_smul_le _ _).trans (mul_le_of_le_one_right (norm_nonneg _) (hv j))
+    · simp
+  rw [hΦ]
+  exact Φ.le_opNorm_of_le hle
+
+/-- For every `s > 1`, the norms of the coordinate functionals `Φ ∘ eᵢ` of a functional `Φ` on
+`ℓ^q(ι, E)` form an `ℓᵖ` family of norm at most `s ‖Φ‖`. -/
+private theorem exists_memℓp_norm_comp_singleContinuousLinearMap_le
+    (Φ : StrongDual 𝕜 (lp E q)) {s : ℝ} (hs : 1 < s) :
+    ∃ h : Memℓp (fun i ↦ ‖Φ.comp (lp.singleContinuousLinearMap 𝕜 E q i)‖) p,
+      ‖(⟨_, h⟩ : lp (fun _ : ι ↦ ℝ) p)‖ ≤ s * ‖Φ‖ := by
+  set φ := fun i ↦ Φ.comp (lp.singleContinuousLinearMap 𝕜 E q i)
+  -- Choose unit-ball vectors `v i` on which `φ i` attains its norm up to the factor `s`.
+  have hex (i : ι) : ∃ v : E i, ‖v‖ ≤ 1 ∧ ‖φ i‖ ≤ s * ‖φ i v‖ := by
+    rcases (norm_nonneg (φ i)).eq_or_lt with h | h
+    · exact ⟨0, by simp, by simp [← h]⟩
+    obtain ⟨v, hv, hφv⟩ := (φ i).exists_lt_apply_of_lt_opNorm
+      (div_lt_self h hs)
+    exact ⟨v, hv.le, (div_lt_iff₀' (zero_lt_one.trans hs)).1 hφv |>.le⟩
+  choose v hv hφv using hex
+  exact lp.exists_memℓp_and_norm_le_of_forall_norm_sum_mul_le (q := q)
+    (fun i ↦ Φ (lp.single q i (v i))) (zero_lt_one.trans hs).le (norm_nonneg Φ)
+    (fun i ↦ by simpa [φ] using hφv i) fun t c ↦ Φ.norm_sum_mul_apply_lp_single_le t hv c
+
+/-- For Hölder conjugate exponents `p` and `q`, the coordinate functionals `Φ ∘ eᵢ` of a
+continuous linear functional `Φ` on `ℓ^q(ι, E)` form an `ℓᵖ` family. -/
+theorem memℓp_comp_singleContinuousLinearMap (Φ : StrongDual 𝕜 (lp E q)) :
+    Memℓp (fun i ↦ Φ.comp (lp.singleContinuousLinearMap 𝕜 E q i)) p :=
+  memℓp_norm_iff.1 (Φ.exists_memℓp_norm_comp_singleContinuousLinearMap_le one_lt_two).1
+
+/-- For Hölder conjugate exponents `p` and `q`, an `ℓᵖ` family `φ` whose entries are the
+coordinate functionals `Φ ∘ eᵢ` of a continuous linear functional `Φ` on `ℓ^q(ι, E)` has norm at
+most `‖Φ‖`. -/
+theorem norm_le_opNorm_of_forall_eq_comp_singleContinuousLinearMap
+    (Φ : StrongDual 𝕜 (lp E q)) (φ : lp (fun i ↦ StrongDual 𝕜 (E i)) p)
+    (hφ : ∀ i, φ i = Φ.comp (lp.singleContinuousLinearMap 𝕜 E q i)) : ‖φ‖ ≤ ‖Φ‖ := by
+  have hle (s : ℝ) (hs : 1 < s) : ‖φ‖ ≤ s * ‖Φ‖ := by
+    obtain ⟨h, hnorm⟩ := Φ.exists_memℓp_norm_comp_singleContinuousLinearMap_le (p := p) hs
+    exact (lp.norm_eq_of_forall_norm_eq fun i ↦ by simp [hφ i]).trans_le hnorm
+  have hlim : Filter.Tendsto (fun s : ℝ ↦ s * ‖Φ‖) (nhdsWithin 1 (Set.Ioi 1)) (nhds ‖Φ‖) :=
+    ((continuous_id.mul continuous_const : Continuous fun s : ℝ ↦ s * ‖Φ‖).tendsto' 1 ‖Φ‖
+      (one_mul _)).mono_left nhdsWithin_le_nhds
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
+
+end ContinuousLinearMap
+
+namespace lp
+
+variable {𝕜 ι : Type*} {E : ι → Type*} [RCLike 𝕜] [∀ i, NormedAddCommGroup (E i)]
+  [∀ i, NormedSpace 𝕜 (E i)] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q]
+
+omit [Fact (1 ≤ p)] [Fact (1 ≤ q)] [p.HolderConjugate q] in
+/-- Pairing a family of functionals with a vector supported in one coordinate. -/
+private theorem tsum_apply_pi_single [DecidableEq ι] (φ : ∀ j, StrongDual 𝕜 (E j)) (i : ι)
+    (x : E i) : ∑' j, φ j (Pi.single i x j) = φ i x := by
+  rw [tsum_eq_single i fun j hj ↦ by simp [Pi.single_eq_of_ne hj], Pi.single_eq_same]
+
+variable (𝕜 E p q) in
+/-- **The dual of an `ℓᵖ` sum of normed spaces.** For Hölder conjugate exponents `p` and `q` with
+`q < ∞`, the pairing `(φ, x) ↦ ∑' i, φ i (x i)` identifies the `ℓᵖ` sum of the duals `E i*`
+isometrically with the continuous dual of the `ℓ^q` sum of the `E i`. -/
+def strongDualEquiv (hq : q ≠ ∞) :
+    lp (fun i ↦ StrongDual 𝕜 (E i)) p ≃ₗᵢ[𝕜] StrongDual 𝕜 (lp E q) := by
+  classical
+  have hid (i : ι) :
+      ‖ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 (E i))‖ ≤ ((1 : NNReal) : ℝ) := by
+    simpa only [NNReal.coe_one] using ContinuousLinearMap.norm_id_le
+  let P : lp (fun i ↦ StrongDual 𝕜 (E i)) p →L[𝕜] StrongDual 𝕜 (lp E q) :=
+    dualPairing (𝕜 := 𝕜) p q (fun i ↦ ContinuousLinearMap.id 𝕜 (StrongDual 𝕜 (E i))) hid
+  have hP (φ : lp (fun i ↦ StrongDual 𝕜 (E i)) p) (i : ι) :
+      (P φ).comp (singleContinuousLinearMap 𝕜 E q i) = φ i := by
+    ext x
+    simpa [P, dualPairing_apply, lp.coeFn_single] using tsum_apply_pi_single (⇑φ) i x
+  have hnorm (φ : lp (fun i ↦ StrongDual 𝕜 (E i)) p) : ‖P φ‖ = ‖φ‖ := by
+    refine le_antisymm ((P.le_opNorm φ).trans ?_)
+      ((P φ).norm_le_opNorm_of_forall_eq_comp_singleContinuousLinearMap φ fun i ↦ (hP φ i).symm)
+    simpa using mul_le_mul_of_nonneg_right (norm_dualPairing (p := p) (q := q) _ hid)
+      (norm_nonneg φ)
+  refine LinearIsometryEquiv.ofSurjective { P.toLinearMap with norm_map' := hnorm } fun Φ ↦ ?_
+  refine ⟨⟨fun i ↦ Φ.comp (singleContinuousLinearMap 𝕜 E q i),
+    Φ.memℓp_comp_singleContinuousLinearMap⟩, ext_continuousLinearMap hq fun i ↦ ?_⟩
+  exact hP _ i
+
+/-- The forward duality map is the series pairing `∑' i, φ i (x i)`. -/
+theorem strongDualEquiv_apply (hq : q ≠ ∞) (φ : lp (fun i ↦ StrongDual 𝕜 (E i)) p)
+    (x : lp E q) : strongDualEquiv 𝕜 E p q hq φ x = ∑' i, φ i (x i) :=
+  (rfl)
+
+variable [DecidableEq ι]
+
+/-- On a vector supported in one coordinate, the functional of a family `φ` applies `φ i`. -/
+@[simp]
+theorem strongDualEquiv_apply_single (hq : q ≠ ∞) (φ : lp (fun i ↦ StrongDual 𝕜 (E i)) p)
+    (i : ι) (x : E i) : strongDualEquiv 𝕜 E p q hq φ (lp.single q i x) = φ i x := by
+  simpa [strongDualEquiv_apply, lp.coeFn_single] using tsum_apply_pi_single (⇑φ) i x
+
+/-- The inverse duality map records the coordinate functionals `Φ ∘ eᵢ`. -/
+@[simp]
+theorem strongDualEquiv_symm_apply (hq : q ≠ ∞) (Φ : StrongDual 𝕜 (lp E q)) (i : ι) :
+    (strongDualEquiv 𝕜 E p q hq).symm Φ i = Φ.comp (singleContinuousLinearMap 𝕜 E q i) := by
+  ext x
+  have h := congrArg (fun g : StrongDual 𝕜 (lp E q) ↦ g (lp.single q i x))
+    ((strongDualEquiv 𝕜 E p q hq).apply_symm_apply Φ)
+  simpa only [ContinuousLinearMap.comp_apply, singleContinuousLinearMap_apply,
+    strongDualEquiv_apply_single] using h
+
+/-- A family supported in the coordinate `i`, with entry `g`, corresponds to the functional
+`g ∘ evalᵢ`. -/
+@[simp]
+theorem strongDualEquiv_lp_single (hq : q ≠ ∞) (i : ι) (g : StrongDual 𝕜 (E i)) :
+    strongDualEquiv 𝕜 E p q hq (lp.single p i g) = g.comp (evalCLM 𝕜 E q i) := by
+  refine ext_continuousLinearMap hq fun j ↦ ContinuousLinearMap.ext fun x ↦ ?_
+  by_cases hij : j = i
+  · subst hij
+    simp [evalCLM_apply]
+  · simp [evalCLM_apply, Ne.symm hij]
+
+/-- Composing a functional `g` on `E i` with the coordinate evaluation at `i` corresponds to the
+family supported in the coordinate `i`, with entry `g`. -/
+@[simp]
+theorem strongDualEquiv_symm_comp_evalCLM (hq : q ≠ ∞) (i : ι) (g : StrongDual 𝕜 (E i)) :
+    (strongDualEquiv 𝕜 E p q hq).symm (g.comp (evalCLM 𝕜 E q i)) = lp.single p i g :=
+  (strongDualEquiv 𝕜 E p q hq).symm_apply_eq.2 (strongDualEquiv_lp_single hq i g).symm
+
+omit [DecidableEq ι] in
+/-- For the scalar fibres `E i = 𝕜`, the coordinate functionals of `Φ` are the multiplications by
+its scalar coordinates under `lp.dualEquiv`. -/
+theorem strongDualEquiv_symm_apply_eq_toSpanSingleton (hq : q ≠ ∞)
+    (Φ : StrongDual 𝕜 (lp (fun _ : ι ↦ 𝕜) q)) (i : ι) :
+    (strongDualEquiv 𝕜 (fun _ : ι ↦ 𝕜) p q hq).symm Φ i =
+      ContinuousLinearMap.toSpanSingleton 𝕜 ((dualEquiv 𝕜 ι p q hq).symm Φ i) := by
+  classical
+  ext
+  simp
+
+end lp
+
+namespace ContinuousLinearMap
+
+variable {𝕜 ι : Type*} {E : ι → Type*} [RCLike 𝕜] [∀ i, NormedAddCommGroup (E i)]
+  [∀ i, NormedSpace 𝕜 (E i)] [DecidableEq ι] {p q : ℝ≥0∞} [Fact (1 ≤ q)] [p.HolderConjugate q]
+
+/-- For Hölder conjugate exponents `1 < p, q < ∞`, the `p`-th power of the norm of a functional
+`Φ` on `ℓ^q(ι, E)` is the sum of the `p`-th powers of the norms of its coordinate functionals. -/
+theorem norm_rpow_eq_tsum_norm_comp_singleContinuousLinearMap_rpow (hp : p ≠ ∞) (hq : q ≠ ∞)
+    (Φ : StrongDual 𝕜 (lp E q)) :
+    ‖Φ‖ ^ p.toReal = ∑' i, ‖Φ.comp (lp.singleContinuousLinearMap 𝕜 E q i)‖ ^ p.toReal := by
+  have : Fact (1 ≤ p) := ⟨ENNReal.HolderConjugate.one_le p q⟩
+  rw [← (lp.strongDualEquiv 𝕜 E p q hq).symm.norm_map Φ,
+    lp.norm_rpow_eq_tsum (ENNReal.toReal_pos (ENNReal.HolderConjugate.ne_zero p q) hp)]
+  simp only [lp.strongDualEquiv_symm_apply]
 
 end ContinuousLinearMap
