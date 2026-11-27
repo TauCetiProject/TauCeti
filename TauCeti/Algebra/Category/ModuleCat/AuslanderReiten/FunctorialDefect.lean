@@ -19,8 +19,8 @@ modules after composing the covariant defect with the stable translate `D Tr`. M
 short exact sequences give commutative squares of these natural isomorphisms.
 
 The component formula uses `Function.Exact.dualContravariantDefectEquivCovariantDefect` and
-`TauCeti.stableTranslateObjIsoMatlisDualTranspose`. The defect functors expose their object
-definitions so that their morphisms can be applied directly to quotient classes and linear forms.
+`TauCeti.stableTranslateObjIsoMatlisDualTranspose`. The map formulas use the object equalities
+to identify the sources and targets with the corresponding cokernels and duals.
 
 ## References
 
@@ -48,12 +48,33 @@ variable {L M : ModuleCat.{max u v} A} (f : L ⟶ M)
 
 /-- The covariant defect functor of `f` sends a module `Y` to the cokernel of
 `Hom(f, Y)` and acts on morphisms by postcomposition. -/
-@[expose]
 def covariantDefectFunctor : ModuleCat.{max u v} A ⥤ ModuleCat.{max u v} R where
   obj Y := of R (covariantDefect R f.hom Y)
   map g := ofHom (homCokernelMap R f.hom g.hom)
   map_id _ := by simp
   map_comp g h := by simp [homCokernelMap_comp]
+
+/-- The object of the covariant defect functor is the cokernel of precomposition with `f`. -/
+@[simp]
+theorem covariantDefectFunctor_obj (Y : ModuleCat.{max u v} A) :
+    (covariantDefectFunctor R f).obj Y = of R (covariantDefect R f.hom Y) :=
+  (rfl)
+
+/-- The covariant defect functor acts by postcomposition on cokernels. -/
+@[simp]
+theorem covariantDefectFunctor_map {Y Y' : ModuleCat.{max u v} A} (a : Y ⟶ Y') :
+    (covariantDefectFunctor R f).map a =
+      eqToHom (covariantDefectFunctor_obj R f Y) ≫ ofHom (homCokernelMap R f.hom a.hom) ≫
+        eqToHom (covariantDefectFunctor_obj R f Y').symm :=
+  (rfl)
+
+/-- On a quotient class, the covariant defect functor postcomposes its representative. -/
+theorem covariantDefectFunctor_map_mk {Y Y' : ModuleCat.{max u v} A} (a : Y ⟶ Y')
+    (x : L →ₗ[A] Y) :
+    (eqToHom (covariantDefectFunctor_obj R f Y).symm ≫ (covariantDefectFunctor R f).map a ≫
+      eqToHom (covariantDefectFunctor_obj R f Y')).hom (Submodule.Quotient.mk x) =
+      Submodule.Quotient.mk (a.hom ∘ₗ x) := by
+  exact homCokernelMap_mk f.hom a.hom x
 
 instance : (covariantDefectFunctor R f).Additive where
   map_add := by
@@ -77,7 +98,6 @@ theorem isZero_covariantDefectFunctor_obj (I : ModuleCat.{max u v} A) [Injective
   exact ModuleCat.isZero_of_subsingleton (of R (covariantDefect R f.hom I))
 
 /-- The covariant defect of a monomorphism, acting on modules modulo maps through injectives. -/
-@[expose]
 def stableCovariantDefect :
     (ExactStructure.abelian (ModuleCat.{max u v} A)).InjectiveStableCategory ⥤
       ModuleCat.{max u v} R :=
@@ -101,7 +121,8 @@ theorem stableCovariantDefect_obj
 @[simp]
 theorem stableCovariantDefect_map {Y Y' : ModuleCat.{max u v} A} (a : Y ⟶ Y') :
     (stableCovariantDefect R f).map ((ExactStructure.abelian _).injectiveStableFunctor.map a) =
-      ofHom (homCokernelMap R f.hom a.hom) :=
+      eqToHom (stableCovariantDefect_obj R f _) ≫ ofHom (homCokernelMap R f.hom a.hom) ≫
+        eqToHom (stableCovariantDefect_obj R f _).symm :=
   (rfl)
 
 end Covariant
@@ -113,7 +134,6 @@ variable {M N : ModuleCat.{max u v} A} (g : M ⟶ N)
 
 /-- The dual contravariant defect functor of `g` sends a module `X` to the `Q`-valued dual of the
 cokernel of `Hom(X, g)`. On morphisms it acts by the dual of precomposition. -/
-@[expose]
 def dualContravariantDefectFunctor : ModuleCat.{max u v} A ⥤ ModuleCat.{max u v} R where
   obj X := of R (contravariantDefect R g.hom X →ₗ[R] Q)
   map a := ofHom ((contravariantDefectComap R g.hom a.hom).lcomp R Q)
@@ -123,6 +143,32 @@ def dualContravariantDefectFunctor : ModuleCat.{max u v} A ⥤ ModuleCat.{max u 
   map_comp a b := by
     ext χ x
     simp [lcomp_apply', contravariantDefectComap_comp]
+
+/-- The object of the dual contravariant defect functor is the dual of the defining cokernel. -/
+@[simp]
+theorem dualContravariantDefectFunctor_obj (X : ModuleCat.{max u v} A) :
+    (dualContravariantDefectFunctor R Q g).obj X =
+      of R (contravariantDefect R g.hom X →ₗ[R] Q) :=
+  (rfl)
+
+/-- The dual contravariant defect functor acts by dualizing precomposition. -/
+@[simp]
+theorem dualContravariantDefectFunctor_map {X X' : ModuleCat.{max u v} A} (a : X ⟶ X') :
+    (dualContravariantDefectFunctor R Q g).map a =
+      eqToHom (dualContravariantDefectFunctor_obj R Q g X) ≫
+        ofHom ((contravariantDefectComap R g.hom a.hom).lcomp R Q) ≫
+          eqToHom (dualContravariantDefectFunctor_obj R Q g X').symm :=
+  (rfl)
+
+/-- On a linear form, the dual contravariant defect functor composes with the defect comap. -/
+@[simp↓]
+theorem dualContravariantDefectFunctor_map_apply {X X' : ModuleCat.{max u v} A} (a : X ⟶ X')
+    (χ : contravariantDefect R g.hom X →ₗ[R] Q) :
+    (eqToHom (dualContravariantDefectFunctor_obj R Q g X).symm ≫
+      (dualContravariantDefectFunctor R Q g).map a ≫
+        eqToHom (dualContravariantDefectFunctor_obj R Q g X')).hom χ =
+      χ ∘ₗ contravariantDefectComap R g.hom a.hom :=
+  (rfl)
 
 instance : (dualContravariantDefectFunctor R Q g).Additive where
   map_add := by
@@ -148,7 +194,6 @@ theorem isZero_dualContravariantDefectFunctor_obj (P : ModuleCat.{max u v} A) [P
 
 /-- The dual contravariant defect of an epimorphism, acting on modules modulo maps through
 projectives. -/
-@[expose]
 def stableDualContravariantDefect :
     (ExactStructure.abelian (ModuleCat.{max u v} A)).ProjectiveStableCategory ⥤
       ModuleCat.{max u v} R :=
@@ -175,7 +220,9 @@ theorem stableDualContravariantDefect_obj
 theorem stableDualContravariantDefect_map {X X' : ModuleCat.{max u v} A} (a : X ⟶ X') :
     (stableDualContravariantDefect R Q g).map
         ((ExactStructure.abelian _).projectiveStableFunctor.map a) =
-      ofHom ((contravariantDefectComap R g.hom a.hom).lcomp R Q) :=
+      eqToHom (stableDualContravariantDefect_obj R Q g _) ≫
+        ofHom ((contravariantDefectComap R g.hom a.hom).lcomp R Q) ≫
+          eqToHom (stableDualContravariantDefect_obj R Q g _).symm :=
   (rfl)
 
 end Contravariant
@@ -217,7 +264,9 @@ theorem defectFormulaEquiv_apply {X : ModuleCat.{max u v} A} (P : FiniteProjecti
           ((moduleCat_exact_iff_function_exact S).1 hS.exact) χ) :=
   (rfl)
 
-private theorem defectFormulaEquiv_naturality {X Y : ModuleCat.{max u v} A}
+/-- The presentation defect formula commutes with a module morphism lifted to the chosen
+finite projective presentations. -/
+theorem defectFormulaEquiv_naturality {X Y : ModuleCat.{max u v} A}
     (P : FiniteProjectivePresentation X) (P' : FiniteProjectivePresentation Y) (a : X ⟶ Y)
     {a₀ : P.P₀ →ₗ[A] P'.P₀} {a₁ : P.P₁ →ₗ[A] P'.P₁}
     (h₀ : P'.π ∘ₗ a₀ = a.hom ∘ₗ P.π) (h₁ : a₀ ∘ₗ P.p = P'.p ∘ₗ a₁)
@@ -233,7 +282,7 @@ private theorem defectFormulaEquiv_naturality {X Y : ModuleCat.{max u v} A}
 
 /-- The component of the stable defect formula is the presentation formula, transported
 along the canonical comparison between the stable translate and `D Tr X`. -/
-def stableDefectFormulaApp (X : FinitelyPresentedStableModule.{u, max u v} A) :
+private def stableDefectFormulaApp (X : FinitelyPresentedStableModule.{u, max u v} A) :
     letI := hS.epi_g
     letI := hS.mono_f
     ((ObjectProperty.ι _ ⋙ stableDualContravariantDefect R Q S.g).obj X) ≅
@@ -243,14 +292,23 @@ def stableDefectFormulaApp (X : FinitelyPresentedStableModule.{u, max u v} A) :
   (hS.defectFormulaEquiv (FinitelyPresentedStableModule.presentation X)).toModuleIso ≪≫
     (stableCovariantDefect R S.f).mapIso (stableTranslateObjIsoMatlisDualTranspose X).symm
 
-/-- The forward map of the stable defect formula at a module. -/
-theorem stableDefectFormulaApp_hom (X : FinitelyPresentedStableModule.{u, max u v} A) :
+@[reassoc]
+private theorem stableDefectFormulaApp_hom_comp (X : FinitelyPresentedStableModule.{u, max u v} A) :
     letI := hS.mono_f
-    (hS.stableDefectFormulaApp (R := R) (Q := Q) X).hom =
-      (hS.defectFormulaEquiv (FinitelyPresentedStableModule.presentation X)).toModuleIso.hom ≫
+    (hS.stableDefectFormulaApp (R := R) (Q := Q) X).hom ≫
         (stableCovariantDefect R S.f).map
-          (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) X).inv :=
-  (rfl)
+          (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) X).hom =
+      (hS.defectFormulaEquiv (FinitelyPresentedStableModule.presentation X)).toModuleIso.hom := by
+  let _ := hS.mono_f
+  let F := stableCovariantDefect R S.f
+  let e := F.mapIso (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) X)
+  let P := FinitelyPresentedStableModule.presentation X
+  let p : of R (contravariantDefect R S.g.hom X.obj.as →ₗ[R] Q) ⟶
+      F.obj ((ExactStructure.abelian _).injectiveStableFunctor.obj (matlisDualTranspose R Q P)) :=
+    (hS.defectFormulaEquiv P).toModuleIso.hom
+  have h : (p ≫ e.inv) ≫ e.hom = p := by
+    rw [Category.assoc, e.inv_hom_id, Category.comp_id]
+  exact h
 
 /-- **Auslander's defect formula on the stable category.** For a short exact sequence
 `δ : 0 → L → M → N → 0`, the dual of its contravariant defect on finitely presented
@@ -276,28 +334,35 @@ def stableDefectFormula :
     exists_lift_projective_presentation P.exact.linearMap_comp_eq_zero P'.exact P'.surjective a.hom
   have h := congrArg (stableCovariantDefect R S.f).map
     (stableTranslateObjIsoMatlisDualTranspose_naturality (R := R) (E := Q) a h₀ h₁)
+  dsimp only [Functor.comp_obj, ObjectProperty.ι_obj] at *
   simp only [Functor.comp_map, ObjectProperty.ι_map, ObjectProperty.homMk_hom]
-  rw [stableDefectFormulaApp_hom, stableDefectFormulaApp_hom]
   -- Postcompose with the comparison isomorphism to read the square on module representatives.
   apply (cancel_mono ((stableCovariantDefect R S.f).map
     (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) Y).hom)).1
   simp only [Functor.map_comp] at h
-  -- The stable defect objects reduce to the same module on representatives at default
-  -- transparency. Use `erw` to match associativity through those object definitions.
-  erw [Category.assoc, Category.assoc, Category.assoc, h,
-    ← Functor.map_comp, Iso.inv_hom_id, Functor.map_id, Category.comp_id,
-    Category.assoc, ← Functor.map_comp_assoc, Iso.inv_hom_id, Functor.map_id, Category.id_comp,
-    stableDualContravariantDefect_map, stableCovariantDefect_map]
+  simp only [Category.assoc, h, stableDefectFormulaApp_hom_comp,
+    stableDefectFormulaApp_hom_comp_assoc, stableDualContravariantDefect_map,
+    stableCovariantDefect_map]
   ext χ
   exact hS.defectFormulaEquiv_naturality P P' a h₀ h₁ χ
 
-/-- The component of the natural isomorphism is the bundled defect formula at the chosen
-presentation, composed with the inverse comparison to the stable translate. -/
+private theorem stableDefectFormula_hom_app_eq (X : FinitelyPresentedStableModule.{u, max u v} A) :
+    (hS.stableDefectFormula (R := R) (Q := Q)).hom.app X = (hS.stableDefectFormulaApp X).hom :=
+  (rfl)
+
+/-- The forward component is the presentation defect formula composed with the inverse of
+the comparison between the stable translate and the chosen `D Tr X`. -/
 @[simp]
-theorem stableDefectFormula_app (X : FinitelyPresentedStableModule.{u, max u v} A) :
-    (hS.stableDefectFormula (R := R) (Q := Q)).app X =
-      hS.stableDefectFormulaApp X := by
-  rw [stableDefectFormula, NatIso.ofComponents.app]
+theorem stableDefectFormula_hom_app (X : FinitelyPresentedStableModule.{u, max u v} A) :
+    letI := hS.epi_g
+    letI := hS.mono_f
+    (hS.stableDefectFormula (R := R) (Q := Q)).hom.app X =
+      eqToHom (stableDualContravariantDefect_obj R Q S.g X.obj) ≫
+        (hS.defectFormulaEquiv (FinitelyPresentedStableModule.presentation X)).toModuleIso.hom ≫
+          eqToHom (stableCovariantDefect_obj R S.f _).symm ≫
+            (stableCovariantDefect R S.f).map
+              (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) X).inv :=
+  (rfl)
 
 section SequenceNaturality
 
@@ -357,7 +422,11 @@ the last component of the morphism of short exact sequences. -/
 theorem stableDualContravariantDefectNatTrans_app
     (X : (ExactStructure.abelian (ModuleCat.{max u v} A)).ProjectiveStableCategory) :
     (hS.stableDualContravariantDefectNatTrans (R := R) (Q := Q) hS' b).app X =
-      ofHom ((contravariantDefectMap R (congrArg Hom.hom b.comm₂₃.symm) X.as).lcomp R Q) :=
+      letI := hS.epi_g
+      letI := hS'.epi_g
+      eqToHom (stableDualContravariantDefect_obj R Q S'.g X) ≫
+        ofHom ((contravariantDefectMap R (congrArg Hom.hom b.comm₂₃.symm) X.as).lcomp R Q) ≫
+          eqToHom (stableDualContravariantDefect_obj R Q S.g X).symm :=
   (rfl)
 
 /-- The map of covariant defects on an object is precomposition with the first component
@@ -366,11 +435,17 @@ of the morphism of short exact sequences. -/
 theorem stableCovariantDefectNatTrans_app
     (Y : (ExactStructure.abelian (ModuleCat.{max u v} A)).InjectiveStableCategory) :
     (hS.stableCovariantDefectNatTrans (R := R) hS' b).app Y =
-      ofHom (covariantDefectMap R (congrArg Hom.hom b.comm₁₂.symm) Y.as) :=
+      letI := hS.mono_f
+      letI := hS'.mono_f
+      eqToHom (stableCovariantDefect_obj R S'.f Y) ≫
+        ofHom (covariantDefectMap R (congrArg Hom.hom b.comm₁₂.symm) Y.as) ≫
+          eqToHom (stableCovariantDefect_obj R S.f Y).symm :=
   (rfl)
 
 include hS hS' in
-private theorem defectFormulaEquiv_naturality_sequence {X : ModuleCat.{max u v} A}
+/-- The presentation defect formula commutes with the maps of defects induced by a morphism
+of short exact sequences. -/
+theorem defectFormulaEquiv_naturality_sequence {X : ModuleCat.{max u v} A}
     (P : FiniteProjectivePresentation X) (χ : contravariantDefect R S'.g.hom X →ₗ[R] Q) :
     hS.defectFormulaEquiv P
         (χ ∘ₗ contravariantDefectMap R (congrArg Hom.hom b.comm₂₃.symm) X) =
@@ -401,19 +476,15 @@ theorem stableDefectFormula_naturality :
   apply NatTrans.ext
   funext X
   let _ := hS.mono_f
-  let e := stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) X
-  let F := stableCovariantDefect R S.f
-  let η := hS.stableCovariantDefectNatTrans (R := R) hS' b
-  have h := η.naturality e.hom
+  have h := (hS.stableCovariantDefectNatTrans (R := R) hS' b).naturality
+    (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) X).hom
+  dsimp only [Functor.comp_obj, ObjectProperty.ι_obj] at *
   -- Postcompose with the comparison at the common stable translate and use naturality of η.
-  apply (cancel_mono (F.map e.hom)).1
-  simp only [NatTrans.comp_app, Functor.whiskerLeft_app, ← Iso.app_hom, stableDefectFormula_app,
-    stableDefectFormulaApp_hom]
-  erw [Category.assoc, Category.assoc, ← Functor.map_comp, Iso.inv_hom_id, Functor.map_id,
-    Category.comp_id]
-  erw [Category.assoc, Category.assoc, ← h, ← Functor.map_comp_assoc,
-    Iso.inv_hom_id, Functor.map_id, Category.id_comp]
-  rw [stableDualContravariantDefectNatTrans_app, stableCovariantDefectNatTrans_app]
+  apply (cancel_mono ((stableCovariantDefect R S.f).map
+    (stableTranslateObjIsoMatlisDualTranspose (R := R) (E := Q) X).hom)).1
+  simp only [NatTrans.comp_app, Functor.whiskerLeft_app, stableDefectFormula_hom_app_eq,
+    Category.assoc, ← h, stableDefectFormulaApp_hom_comp, stableDefectFormulaApp_hom_comp_assoc]
+  simp only [stableDualContravariantDefectNatTrans_app, stableCovariantDefectNatTrans_app]
   ext χ
   exact hS.defectFormulaEquiv_naturality_sequence hS' b _ χ
 
