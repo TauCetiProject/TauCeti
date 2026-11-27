@@ -86,4 +86,40 @@ lemma πTruncGE_truncGETransition [HasZeroObject A] (K : CochainComplex A ℤ)
   rw [truncGETransition, ← Category.assoc, πTruncGE_naturality, Category.assoc,
     IsIso.hom_inv_id, Category.comp_id]
 
+section TruncGETransition
+
+variable [HasZeroObject A] (K : CochainComplex A ℤ) [∀ i, K.HasHomology i]
+
+/-- Transitioning between equal truncation bounds is the identity. -/
+@[simp]
+lemma truncGETransition_self (a : ℤ) : K.truncGETransition a a le_rfl = 𝟙 _ := by
+  have : Epi (K.πTruncGE a) :=
+    inferInstanceAs (Epi (HomologicalComplex.πTruncGE K (ComplexShape.embeddingUpIntGE a)))
+  apply (cancel_epi (K.πTruncGE a)).1
+  simp
+
+/-- Transitions between truncation bounds compose. -/
+@[reassoc (attr := simp)]
+lemma truncGETransition_comp (a b d : ℤ) (hab : a ≤ b) (hbd : b ≤ d) :
+    K.truncGETransition a b hab ≫ K.truncGETransition b d hbd =
+      K.truncGETransition a d (hab.trans hbd) := by
+  have : Epi (K.πTruncGE a) :=
+    inferInstanceAs (Epi (HomologicalComplex.πTruncGE K (ComplexShape.embeddingUpIntGE a)))
+  apply (cancel_epi (K.πTruncGE a)).1
+  simp
+
+/-- Transitions between truncation bounds are natural in the complex. -/
+@[reassoc]
+lemma truncGETransition_naturality {L : CochainComplex A ℤ} [∀ i, L.HasHomology i]
+    (f : K ⟶ L) (a b : ℤ) (hab : a ≤ b) :
+    K.truncGETransition a b hab ≫ truncGEMap f b =
+      truncGEMap f a ≫ L.truncGETransition a b hab := by
+  have : Epi (K.πTruncGE a) :=
+    inferInstanceAs (Epi (HomologicalComplex.πTruncGE K (ComplexShape.embeddingUpIntGE a)))
+  apply (cancel_epi (K.πTruncGE a)).1
+  simp only [πTruncGE_truncGETransition_assoc, πTruncGE_naturality_assoc,
+    πTruncGE_naturality, πTruncGE_truncGETransition]
+
+end TruncGETransition
+
 end CochainComplex

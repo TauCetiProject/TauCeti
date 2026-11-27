@@ -752,3 +752,25 @@ lemma cyclesComparison_homologyπ :
     HomologicalComplex.cyclesMap φ i ≫ f)
     ((L.sc i).homologyπ_comp_mapHomologyIso_hom H)
 end HomologicalComplex
+
+namespace HomologicalComplex
+
+/-- A functor preserving the homology of the short complexes in degree `i` of two homological
+complexes sends a map between them which is a quasi-isomorphism in degree `i` to a
+quasi-isomorphism in degree `i`. -/
+lemma quasiIsoAt_map_of_preservesLeftHomologyOf {C D ι : Type*} [Category* C] [Category* D]
+    [HasZeroMorphisms C] [HasZeroMorphisms D] {c : ComplexShape ι} (F : C ⥤ D)
+    [F.PreservesZeroMorphisms] {K L : HomologicalComplex C c} (f : K ⟶ L) (i : ι) [K.HasHomology i]
+    [L.HasHomology i] [((F.mapHomologicalComplex c).obj K).HasHomology i]
+    [((F.mapHomologicalComplex c).obj L).HasHomology i] [F.PreservesLeftHomologyOf (K.sc i)]
+    [F.PreservesLeftHomologyOf (L.sc i)] [QuasiIsoAt f i] :
+    QuasiIsoAt ((F.mapHomologicalComplex c).map f) i := by
+  rw [quasiIsoAt_iff] at *
+  have : (F.mapShortComplex.obj ((shortComplexFunctor C c i).obj K)).HasHomology :=
+    ‹((F.mapHomologicalComplex c).obj K).HasHomology i›
+  have : (F.mapShortComplex.obj ((shortComplexFunctor C c i).obj L)).HasHomology :=
+    ‹((F.mapHomologicalComplex c).obj L).HasHomology i›
+  exact ShortComplex.quasiIso_map_of_preservesLeftHomology F ((shortComplexFunctor C c i).map f)
+
+
+end HomologicalComplex

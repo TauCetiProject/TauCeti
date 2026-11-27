@@ -13,7 +13,6 @@ public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.WeakSerre
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Images
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.Topology.Sheaves.Exact
 
@@ -50,7 +49,7 @@ below the lowest nonzero term.
 
 These statements are the bounded below input to the computation of the cohomology of unbounded
 complexes with quasi-coherent cohomology on affine schemes, in
-`TauCeti.AlgebraicGeometry.Modules.Derived.AffineSections`.
+`TauCeti.AlgebraicGeometry.Modules.Derived.Affine.Sections`.
 
 ## References
 
@@ -93,21 +92,17 @@ theorem preservesLeftHomologyOf_sectionsFunctor (S : ShortComplex X.Modules)
   have hK := (ShortComplex.exact_kernel S.toCycles).shortExact_factorThruImage
   have hI := ShortComplex.shortExact_image_ι_cokernel_π S.toCycles
   have hsurj : Function.Surjective ((cokernel.π S.toCycles).app ⊤) := sections_surjective hI h₂
-  have hexact : (ShortComplex.mk (G.map S.toCycles) (G.map (cokernel.π S.toCycles))
-      (by rw [← G.map_comp, cokernel.condition, G.map_zero])).Exact := by
-    rw [ShortComplex.moduleCat_exact_iff]
-    intro s hs
-    obtain ⟨r, rfl⟩ := (exact_sections hI s).1 hs
-    obtain ⟨t, rfl⟩ := sections_surjective hK h₁ r
-    refine ⟨t, ?_⟩
-    -- the maps of global sections are the components of the morphisms over `⊤`
-    change (S.toCycles).app ⊤ t =
-      (image.ι S.toCycles).app ⊤ ((factorThruImage S.toCycles).app ⊤ t)
-    rw [← ConcreteCategory.comp_apply, ← Scheme.Modules.Hom.comp_app, image.fac]
+  have : Epi (G.map (factorThruImage S.toCycles)) :=
+    (ModuleCat.epi_iff_surjective _).2 (sections_surjective hK h₁)
+  have hI' := shortExact_map_sectionsFunctor hI hsurj
+  have := hI'.epi_g
   have hcok : IsColimit ((CokernelCofork.ofπ (cokernel.π S.toCycles)
       (cokernel.condition S.toCycles)).map G) :=
-    have : Epi (G.map (cokernel.π S.toCycles)) := (ModuleCat.epi_iff_surjective _).2 hsurj
-    hexact.gIsCokernel
+    isCokernelEpiComp hI'.exact.gIsCokernel
+      (G.map (factorThruImage S.toCycles)) (by
+        -- Expose the mapped short complex's first map so G.map_comp applies.
+        change G.map S.toCycles = G.map _ ≫ G.map _
+        rw [← G.map_comp, image.fac])
   have : PreservesColimit (parallelPair S.toCycles 0) G :=
     preservesColimit_of_preserves_colimit_cocone (cokernelIsCokernel S.toCycles)
       ((CokernelCofork.isColimitMapCoconeEquiv _ _).symm hcok)
@@ -115,15 +110,20 @@ theorem preservesLeftHomologyOf_sectionsFunctor (S : ShortComplex X.Modules)
   exact Functor.PreservesLeftHomologyOf.mk' G S.leftHomologyData
 
 /-- **Global sections preserve the homology of quasi-coherent short complexes on affine schemes.**
-On an affine scheme, global sections preserve the homology of a short complex of quasi-coherent
-modules: its kernel and image sheaves are quasi-coherent, hence have no higher cohomology. -/
+On an affine scheme, global sections preserve the homology of a short complex whose first two
+terms are quasi-coherent: the kernel and image of its first map are quasi-coherent and acyclic. -/
 theorem preservesLeftHomologyOf_sectionsFunctor_of_isQuasicoherent [IsAffine X]
-    (S : ShortComplex X.Modules) [S.X₁.IsQuasicoherent] [S.X₂.IsQuasicoherent]
-    [S.X₃.IsQuasicoherent] :
+    (S : ShortComplex X.Modules) [S.X₁.IsQuasicoherent] [S.X₂.IsQuasicoherent] :
     (Scheme.Modules.sectionsFunctor (⊤ : X.Opens)).PreservesLeftHomologyOf S := by
-  have : S.cycles.IsQuasicoherent :=
-    (Scheme.Modules.isQuasicoherent X).prop_of_isLimit_kernelFork S.cyclesIsKernel
-      (inferInstanceAs S.X₂.IsQuasicoherent) (inferInstanceAs S.X₃.IsQuasicoherent)
+  let eK : kernel S.toCycles ≅ kernel S.f :=
+    (kernelCompMono S.toCycles S.iCycles).symm ≪≫ kernelIsoOfEq S.toCycles_i
+  let eI : image S.toCycles ≅ image S.f :=
+    image.isoStrongEpiMono (factorThruImage S.toCycles) (image.ι S.toCycles ≫ S.iCycles)
+      (by simp)
+  have : (kernel S.toCycles).IsQuasicoherent :=
+    (Scheme.Modules.isQuasicoherent X).prop_of_iso eK.symm inferInstance
+  have : (image S.toCycles).IsQuasicoherent :=
+    (Scheme.Modules.isQuasicoherent X).prop_of_iso eI.symm inferInstance
   -- the kernel and the image of `S.toCycles` are quasi-coherent
   exact preservesLeftHomologyOf_sectionsFunctor S
     (Scheme.Modules.subsingleton_cohomology_succ_of_isAffine (kernel S.toCycles) 0)

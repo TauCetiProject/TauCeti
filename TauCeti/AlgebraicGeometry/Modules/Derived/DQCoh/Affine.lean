@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.Modules.Derived.AffineGlobalSections
-public import TauCeti.AlgebraicGeometry.Modules.Derived.AffineSections
+public import TauCeti.AlgebraicGeometry.Modules.Derived.Affine.GlobalSections
+public import TauCeti.AlgebraicGeometry.Modules.Derived.Affine.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Derived.DQCoh.Basic
 
 /-!
@@ -28,7 +28,7 @@ on unbounded complexes.
   On complexes, its functor is `M ↦ M~` applied termwise (`DQCoh.affineEquivFunctorFactors`).
 
 The input is the computation of global sections of K-injective complexes with quasi-coherent
-cohomology in `TauCeti.AlgebraicGeometry.Modules.Derived.AffineSections`, which rests on the
+cohomology in `TauCeti.AlgebraicGeometry.Modules.Derived.Affine.Sections`, which rests on the
 vanishing of the cohomology of quasi-coherent sheaves on affine schemes.
 
 ## References
@@ -94,7 +94,7 @@ private lemma quasiIso_map_moduleSpecΓFunctor_of_tilde (P : CochainComplex (Mod
   · have h (i : ℤ) : ((((tilde.functor A).mapHomologicalComplex _).obj P).X i).IsQuasicoherent :=
       inferInstanceAs ((tilde.functor A).obj _).IsQuasicoherent
     exact @Scheme.Modules.preservesLeftHomologyOf_sectionsFunctor_of_isQuasicoherent _ _ _
-      (h _) (h _) (h _)
+      (h _) (h _)
 
 variable [HasDerivedCategory.{w} (Spec A).Modules] [HasDerivedCategory.{w'} (ModuleCat.{u} A)]
 
@@ -107,7 +107,6 @@ instance isIso_tildeDerivedAdjunction_unit_app (M : DerivedCategory (ModuleCat.{
       IsIso ((tildeDerivedAdjunction A).unit.app (Qh.obj K)) from
     (NatTrans.isIso_app_iff_of_iso _ (Qh.objObjPreimageIso M)).1 (h _)
   intro K
-  have hfac := tilde.adjunction.mapDerivedCategoryRightDerivedFunctor_unit_app K
   -- the unit of `M ↦ M~ ⊣ Γ` is an isomorphism, also on complexes
   have h₁ : IsIso (Qh.map ((tilde.adjunction.mapHomotopyCategory (.up ℤ)).unit.app K)) := by
     -- every object of the homotopy category is the class of its underlying complex
@@ -136,7 +135,7 @@ instance isIso_tildeDerivedAdjunction_unit_app (M : DerivedCategory (ModuleCat.{
     infer_instance
   have : IsIso ((tildeDerivedAdjunction A).unit.app (Qh.obj K) ≫ (derivedModuleSpecΓFunctor A).map
       ((tilde.functor A).mapDerivedCategoryFactorsh.hom.app K)) := by
-    rw [tildeDerivedAdjunction, hfac]
+    rw [tildeDerivedAdjunction_unit_app]
     infer_instance
   exact IsIso.of_isIso_comp_right _ ((derivedModuleSpecΓFunctor A).map
     ((tilde.functor A).mapDerivedCategoryFactorsh.hom.app K))
@@ -264,6 +263,12 @@ lemma DQCoh.affineEquiv_functor_obj_obj (M : DerivedCategory (ModuleCat.{u} A)) 
 lemma DQCoh.affineEquiv_inverse_obj (K : (DQCoh (Spec A)).FullSubcategory) :
     (DQCoh.affineEquiv A).inverse.obj K = (derivedModuleSpecΓFunctor A).obj K.obj :=
   (rfl)
+
+/-- The inverse of the affine equivalence is naturally derived global sections, restricted to
+complexes with quasi-coherent cohomology. -/
+noncomputable def DQCoh.affineEquivInverseIso :
+    (DQCoh.affineEquiv A).inverse ≅ (DQCoh (Spec A)).ι ⋙ derivedModuleSpecΓFunctor A :=
+  Iso.refl _
 
 variable (A) in
 /-- On complexes, the equivalence `DQCoh.affineEquiv A` followed by the inclusion of

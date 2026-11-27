@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Functor.Derived.Adjunction
 public import TauCeti.Algebra.Homology.DerivedCategory.ExactFunctor
-public import TauCeti.Algebra.Homology.Adjunction
+public import TauCeti.Algebra.Homology.HomotopyCategory.Adjunction
 public import TauCeti.Algebra.Homology.DerivedCategory.RightDerivedFunctor.Basic
 
 /-!

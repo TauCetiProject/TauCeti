@@ -53,9 +53,6 @@ theorem exists_quasiIso_isKInjective :
       QuasiIso i ∧ I.IsKInjective := by
   let C : TauCeti.ComplexTower.{max v u} R (ComplexShape.up ℤ) := K.truncGETower
   have hsplit := K.isSplitEpi_truncGETower_map_f
-  have (n : ℕ) : IsKInjective (C.obj (op n)) :=
-    inferInstanceAs (IsKInjective (towerResolution (fun n ↦ K.truncGE (-(n : ℤ)))
-      (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) n))
   have hsurj (j : ℤ) : Function.Surjective (C.term j).shift := by
     apply TauCeti.ModuleTower.shift_surjective
     intro n

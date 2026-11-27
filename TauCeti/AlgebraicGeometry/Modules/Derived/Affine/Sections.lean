@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Milnor.Basic
-public import TauCeti.Algebra.Homology.HomologicalComplex.DegreewiseQuasiIso
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.ModelCategory.KInjective.Tower
 public import TauCeti.AlgebraicGeometry.Cohomology.Flasque
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsHomology
@@ -115,12 +115,9 @@ private lemma GoodTower.surjective_transition {X : Scheme.{u}}
     Function.Surjective ((ComplexTower.term (sectionsTower D) i).transition k) := by
   have := hD.isSplitEpi k i
   rw [ModuleTower.transition_def]
-  -- a section of the transition gives a section on global sections
-  refine fun y ↦ ⟨(section_ ((D.map (homOfLE (Nat.le_succ k)).op).f i)).app ⊤ y, ?_⟩
-  -- the transition of the tower of global sections is the component over `⊤` of the transition
-  change ((section_ _ ≫ (D.map (homOfLE (Nat.le_succ k)).op).f i).app ⊤) y = y
-  rw [IsSplitEpi.id]
-  rfl
+  exact (ModuleCat.epi_iff_surjective
+    ((Scheme.Modules.sectionsFunctor (⊤ : X.Opens)).map
+      ((D.map (homOfLE (Nat.le_succ k)).op).f i))).1 inferInstance
 
 /-- The projections of a limit of a good tower are surjective on global sections. -/
 private lemma GoodTower.surjective_π_app {X : Scheme.{u}} {D : ℕᵒᵖ ⥤ CochainComplex X.Modules ℤ}
@@ -195,12 +192,11 @@ variable {X : Scheme.{u}} {K : CochainComplex X.Modules ℤ}
 truncations of `K` is good. -/
 private lemma goodTower_truncGETower (hK : ∀ i, (K.homology i).IsQuasicoherent) :
     GoodTower (truncGETower K) where
-  isStrictlyGE k := ⟨-k - 1, inferInstanceAs ((towerResolution _ _ k).IsStrictlyGE (-k - 1))⟩
-  injective k i := inferInstanceAs (Injective ((towerResolution _ _ k).X i))
+  isStrictlyGE k := ⟨-k - 1, inferInstance⟩
+  injective k i := inferInstance
   isQuasicoherent k i := by
     have hι := (quasiIsoAt_iff_isIso_homologyMap _ _).1 (QuasiIso.quasiIsoAt
-      (f := towerResolutionι (fun n ↦ K.truncGE (-(n : ℤ)))
-        (fun n ↦ K.truncGETransition (-((n + 1 : ℕ) : ℤ)) (-(n : ℤ)) (by lia)) k) i)
+      (f := K.truncGETowerResolutionι k) i)
     refine (Scheme.Modules.isQuasicoherent X).prop_of_iso (@asIso _ _ _ _ _ hι) ?_
     by_cases hi : -(k : ℤ) ≤ i
     · have hπ := (quasiIsoAt_iff_isIso_homologyMap _ _).1 (K.quasiIsoAt_πTruncGE _ i hi)
@@ -285,11 +281,11 @@ private def toLimit : K ⟶ limit (truncGETower K) :=
 @[reassoc]
 private lemma toLimit_π (n : ℕ) :
     toLimit K ≫ limit.π (truncGETower K) (op n) = K.truncGETowerι n :=
-  limit.lift_π K.truncGETowerCone (op n)
+  (limit.lift_π K.truncGETowerCone (op n)).trans (K.truncGETowerCone_π_app n)
 
 /-- The limit of the tower of resolutions of the truncations of `K` is K-injective. -/
 private instance : (limit (truncGETower K)).IsKInjective :=
-  (isKInjective_of_isLimit_towerResolution _ _ (limit.isLimit _)).2
+  (K.isKInjective_of_isLimit_truncGETower (limit.isLimit _)).2
 
 /-- If the cohomology sheaves of `K` are quasi-coherent, then the limit of the tower of resolutions
 of its truncations is a K-injective replacement of `K`. -/
