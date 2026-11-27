@@ -94,8 +94,6 @@ theorem rowSum_def (P : GTPattern n) (j : ℕ) :
 
 @[simp] theorem rowSum_zero (P : GTPattern n) : P.rowSum 0 = 0 := by simp [rowSum_def]
 @[simp] theorem rowSum_one (P : GTPattern n) : P.rowSum 1 = P 0 1 := by simp [rowSum_def]
-@[simp] theorem rowSum_two (P : GTPattern n) : P.rowSum 2 = P 0 2 + P 1 2 := by
-  simp [rowSum_def, Finset.sum_range_succ]
 
 @[simp] theorem rowSum_eq_zero_of_lt (P : GTPattern n) {j : ℕ} (hj : n < j) : P.rowSum j = 0 := by
   simp [rowSum_def, P.entry_eq_zero_of_lt hj]

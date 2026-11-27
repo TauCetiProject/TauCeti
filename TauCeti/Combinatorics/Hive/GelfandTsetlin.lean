@@ -75,7 +75,6 @@ onto the full weight-`(γ - λ)` fibre over `μ` (`fixedIntegerHiveEquivGTPatter
   `TauCeti.Hive.gt_completion_of_uniform_input_gap`, `TauCeti.Hive.exists_stable_gt_equiv`:
   automatic completion and full fibre equivalence in the stable range.
 * `TauCeti.Hive.isGTCompletable_two_iff`, `TauCeti.Hive.hiveCount_two_productBoundary`,
-  `TauCeti.Hive.hiveCount_three_productBoundary_eq_card_gtPattern_of_gap_bounds`,
   `TauCeti.Hive.hiveCount_three_zero_adjoint_zero`: low-rank classifications and concrete counts.
 
 ## References
@@ -271,7 +270,10 @@ theorem gtCompletion_succ_right (lam : DominantWeight n) (P : GTPattern n) (i : 
 theorem gtCompletion_shift_dominantWeight (lam : DominantWeight n) (m : ℤ) (P : GTPattern n)
     (i : ℕ) {j : ℕ} (hj : j ≤ n) :
     gtCompletion (lam.shift m) P i j = gtCompletion lam P i j + j * m := by
-  rw [gtCompletion_def, gtCompletion_def, lam.prefixSum_shift m hj]; ring
+  rw [gtCompletion_def, gtCompletion_def, TauCeti.prefixSum_eq_sum_castLE hj,
+    TauCeti.prefixSum_eq_sum_castLE hj]
+  simp only [DominantWeight.shift_apply, Finset.sum_add_distrib, Finset.sum_const, Finset.card_univ,
+    Fintype.card_fin, nsmul_eq_mul]; ring
 
 theorem gtCompletion_shift_gtPattern (lam : DominantWeight n) (P : GTPattern n) (m : ℤ) {i j : ℕ}
     (hij : i ≤ j) (hj : j ≤ n) :
@@ -1097,41 +1099,6 @@ theorem hiveCount_three_zero_adjoint_zero :
   simp only [gtCompletion_zero_dominantWeight, Nat.reduceAdd, Finset.sum_range_zero,
     Finset.sum_range_one, zero_add, h03, hP01] at h00 h01
   omega
-
-/-- **Rank-`3` full-fibre criterion**: when `μ₀ - (γ₀ - λ₀) ≤ λ₀ - λ₁`, `μ₀ - (γ₀ - λ₀) ≤ λ₁ - λ₂`,
-and `μ₀ + μ₁ - ((γ₀ - λ₀) + (γ₁ - λ₁)) ≤ λ₁ - λ₂`, every Gelfand–Tsetlin pattern in the rank-`3`
-weight-`(γ - λ)` fibre over `μ` satisfies `IsGTCompletable lam P`, so
-`hiveCount (productBoundary lam μ γ)` equals the full fibre cardinality
-`Nat.card {P : GTPattern 3 // P.topRow = μ.val ∧ P.rowWeight = γ.val - lam.val}`. -/
-theorem hiveCount_three_productBoundary_eq_card_gtPattern_of_gap_bounds (lam μ γ : DominantWeight 3)
-    (h00 : μ.val 0 - (γ.val 0 - lam.val 0) ≤ lam.val 0 - lam.val 1)
-    (h01 : μ.val 0 - (γ.val 0 - lam.val 0) ≤ lam.val 1 - lam.val 2)
-    (h11 : μ.val 0 + μ.val 1 - ((γ.val 0 - lam.val 0) + (γ.val 1 - lam.val 1)) ≤
-      lam.val 1 - lam.val 2) :
-    hiveCount (productBoundary lam μ γ) =
-      Nat.card {P : GTPattern 3 // P.topRow = μ.val ∧ P.rowWeight = γ.val - lam.val} := by
-  rw [hiveCount_productBoundary_eq_card_gtPattern]
-  refine Nat.card_congr (Equiv.subtypeEquivRight fun P =>
-    ⟨fun ⟨ht, hw, _⟩ => ⟨ht, hw⟩, fun ⟨ht, hw⟩ => ⟨ht, hw, ?_⟩⟩)
-  have h01' : P 0 1 = γ.val 0 - lam.val 0 := by
-    simpa [P.rowWeight_apply_zero] using congrFun hw 0
-  have h03 : P 0 3 = μ.val 0 := by simpa [P.topRow_apply] using congrFun ht 0
-  have h13 : P 1 3 = μ.val 1 := by simpa [P.topRow_apply] using congrFun ht 1
-  have h2 : P 0 2 + P 1 2 = (γ.val 0 - lam.val 0) + (γ.val 1 - lam.val 1) := by
-    have hp := P.prefixSum_rowWeight (j := 2) (by decide)
-    rw [P.rowSum_two, hw, TauCeti.prefixSum_succ (by decide),
-      TauCeti.prefixSum_succ (by decide), TauCeti.prefixSum_zero, zero_add,
-      Pi.sub_apply, Pi.sub_apply] at hp
-    exact hp.symm
-  have hlo : γ.val 0 - lam.val 0 ≤ P 0 2 :=
-    h01' ▸ P.entry_le_entry_succ_row (by decide) (by decide)
-  have hhi : P 0 2 ≤ μ.val 0 := h03 ▸ P.entry_le_entry_succ_row (by decide) (by decide)
-  rw [isGTCompletable_iff_sum_sub_le]
-  intro i j hij hj
-  rcases (by omega : (i = 0 ∧ j = 0) ∨ (i = 0 ∧ j = 1) ∨ (i = 1 ∧ j = 1)) with
-    ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ <;>
-  · simp [Finset.sum_range_succ]
-    omega
 
 end LowRankAndChecks
 
