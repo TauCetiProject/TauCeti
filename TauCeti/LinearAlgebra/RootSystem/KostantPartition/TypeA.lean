@@ -15,7 +15,8 @@ import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 # The type-A Kostant partition function as an interval-matrix count
 
 Let `b` be a base of Cartan type `Aₙ` of a finite reduced crystallographic root pairing, its simple
-roots `α₀, …, α_{n-1}` labelled by the Bourbaki nodes. The positive roots are then the sums
+roots `α₀, …, α_{n-1}` labelled by `Fin n` in Bourbaki order (label `i` is Bourbaki node `i + 1`).
+The positive roots are then the sums
 `α_i + ⋯ + α_{j-1}` for `0 ≤ i < j ≤ n`, that is the roots `e_i - e_j` of the classical model, and
 the column of simple-root coefficients of `e_i - e_j` is the indicator of the interval of nodes
 `i ≤ k < j`. These columns are the columns of the interval matrix `TauCeti.intervalMatrix (n + 1)`,
@@ -110,9 +111,17 @@ noncomputable def typeAPosRootEquiv : PositiveInterval (n + 1) ≃ posRootsFinse
     ((typeAIndexEquiv n).subtypeEquiv fun q ↦ (isPos_typeAIndexEquiv_iff q).symm)).trans
     ((pinnedIndexEquiv he).symm.subtypeEquiv (isPos_pinnedIndexEquiv_symm_iff he))
 
+/-- The root index of an interval is transported back from the pinned type-A datum. -/
+private lemma coe_typeAPosRootEquiv (p : PositiveInterval (n + 1)) :
+    (typeAPosRootEquiv he p : ι) =
+      (pinnedIndexEquiv he).symm (typeAIndexEquiv n ⟨p.val, p.property.ne⟩) := by
+  simp [typeAPosRootEquiv, Equiv.subtypeSubtypeEquivSubtype,
+    Equiv.subtypeSubtypeEquivSubtypeInter, Equiv.subtypeSubtypeEquivSubtypeExists,
+    Equiv.subtypeEquivRight_symm_apply]
+
 private lemma pinnedIndexEquiv_typeAPosRootEquiv (p : PositiveInterval (n + 1)) :
-    pinnedIndexEquiv he (typeAPosRootEquiv he p) = typeAIndexEquiv n ⟨p.val, p.property.ne⟩ :=
-  (pinnedIndexEquiv he).apply_symm_apply _
+    pinnedIndexEquiv he (typeAPosRootEquiv he p) = typeAIndexEquiv n ⟨p.val, p.property.ne⟩ := by
+  rw [coe_typeAPosRootEquiv, Equiv.apply_symm_apply]
 
 /-- **The positive roots of type `Aₙ` are the intervals of simple roots.** The column of
 simple-root coefficients of the positive root labelled by the interval `(i, j)` is the column

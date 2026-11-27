@@ -99,6 +99,16 @@ theorem sum_zsmul_root_injective : Injective fun c : b.support → ℤ ↦ ∑ k
     b.toWeightBasisInt.equivFun.symm.injective <| Subtype.ext <| by
       rw [coe_toWeightBasisInt_equivFun_symm, coe_toWeightBasisInt_equivFun_symm, h]
 
+/-- Integer combinations of the simple roots, labelled along `r`, determine their coefficients. -/
+theorem sum_zsmul_root_comp_injective {κ : Type*} [Fintype κ] (r : κ ≃ b.support) :
+    Injective fun c : κ → ℤ ↦ ∑ k, c k • P.root (r k) := by
+  intro c c' (h : ∑ k, c k • P.root (r k) = ∑ k, c' k • P.root (r k))
+  rw [← r.symm.sum_comp, ← r.symm.sum_comp fun k ↦ c' k • P.root (r k)] at h
+  simp_rw [Equiv.apply_symm_apply] at h
+  have := b.sum_zsmul_root_injective h
+  funext k
+  simpa using congrFun this (r k)
+
 /-! ### The column of a root -/
 
 /-- The column of simple-root coefficients of the root with index `i`. -/

@@ -86,17 +86,6 @@ private lemma mem_posRoots_of_extendPosRoots_ne_zero {d : ι' → ℕ} {i : ι}
   by_contra h
   exact hi (by simp [extendPosRoots, mem_posRootsFinset, h])
 
-omit [Finite ι] in
-/-- Integer combinations of the simple roots, labelled along `r`, determine their coefficients. -/
-private lemma sum_zsmul_root_comp_injective [Fintype κ] (r : κ ≃ b.support) :
-    Injective fun c : κ → ℤ ↦ ∑ k, c k • P.root (r k) := by
-  intro c c' (h : ∑ k, c k • P.root (r k) = ∑ k, c' k • P.root (r k))
-  rw [← r.symm.sum_comp, ← r.symm.sum_comp fun k ↦ c' k • P.root (r k)] at h
-  simp_rw [Equiv.apply_symm_apply] at h
-  have := b.sum_zsmul_root_injective h
-  funext k
-  simpa using congrFun this (r k)
-
 /-! ### Kostant partitions and vector partitions -/
 
 variable [Fintype κ] [Fintype ι']
@@ -136,7 +125,7 @@ noncomputable def kostantPartitionEquivVectorPartitions
     (hA : ∀ k p, A k p = b.rootCoefficients (s p) (r k)) (c : κ → ℤ) :
     {d : ι → ℕ // IsKostantPartition P b (∑ k, c k • P.root (r k)) d} ≃ A.vectorPartitions c where
   toFun d := ⟨fun p ↦ d.val (s p), mem_vectorPartitions.mpr <|
-    sum_zsmul_root_comp_injective r <| by
+    b.sum_zsmul_root_comp_injective r <| by
       simp only
       rw [← sum_posRootsFinset_smul_root_eq hA]
       exact ((isKostantPartition_iff P b _ _).mp d.property).2⟩

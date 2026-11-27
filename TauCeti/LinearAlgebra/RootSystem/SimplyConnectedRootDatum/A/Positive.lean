@@ -30,7 +30,7 @@ The arguments follow the type `C` file
 ## Main definitions
 
 * `TauCeti.DynkinType.typeASimpleSupportEquiv`: the labelling of the simple roots of the pinned base
-  by the Bourbaki nodes.
+  by `Fin n` in Bourbaki order (label `i` is Bourbaki node `i + 1`).
 
 ## Main results
 
@@ -63,21 +63,22 @@ variable {n : ℕ}
 local notation "P" => typeASimplyConnectedRootDatum n
 local notation "b" => typeASimplyConnectedBase n
 
-/-- The simple roots of the pinned base of type `Aₙ`, labelled by the Bourbaki nodes: the node `i`
-carries the simple root `e_i - e_{i+1}` at the root index `typeASimpleIndex n i`. -/
+/-- The simple roots of the pinned base of type `Aₙ`, labelled by `Fin n` in Bourbaki order.
+Label `i` is Bourbaki node `i + 1` and carries the simple root `e_i - e_{i+1}` at the root index
+`typeASimpleIndex n i`. -/
 def typeASimpleSupportEquiv (n : ℕ) : Fin n ≃ (typeASimplyConnectedBase n).support where
   toFun i := ⟨typeASimpleIndex n i, by simp⟩
   invFun j := ⟨j, mem_typeASimplyConnectedBase_support.mp j.property⟩
   left_inv _ := Fin.ext (by simp)
   right_inv _ := Subtype.ext (Fin.ext (by simp))
 
-/-- The node `i` labels the simple root at the root index `typeASimpleIndex n i`. -/
+/-- Label `i` (Bourbaki node `i + 1`) gives the root index `typeASimpleIndex n i`. -/
 @[simp]
 theorem coe_typeASimpleSupportEquiv (i : Fin n) :
     (typeASimpleSupportEquiv n i : Fin (n * (n + 1))) = typeASimpleIndex n i :=
   (rfl)
 
-/-- **The labelling of the pinned base by the Bourbaki nodes realizes the Cartan matrix `Aₙ`.** -/
+/-- The labelling of the pinned base by `Fin n` in Bourbaki order realizes `CartanMatrix.A n`. -/
 theorem cartanMatrix_typeASimpleSupportEquiv (i j : Fin n) :
     (b).cartanMatrix (typeASimpleSupportEquiv n i) (typeASimpleSupportEquiv n j) =
       CartanMatrix.A n i j := by
