@@ -152,12 +152,8 @@ instance : IsScalarTower R (ofPrime k F p).integers F :=
 instance : IsScalarTower k R (ofPrime k F p).integers :=
   IsScalarTower.of_algebraMap_eq fun c => Subtype.ext (IsScalarTower.algebraMap_apply k R F c)
 
-instance : IsLocalization.AtPrime ((ofPrime k F p).integers) p.asIdeal := by
-  have hloc (O : ValuationSubring F) [Algebra R O] [IsScalarTower R O F]
-      (hO : O = (p.valuation F).valuationSubring) : IsLocalization.AtPrime O p.asIdeal := by
-    subst O
-    exact HeightOneSpectrum.isLocalization_valuationSubring (K := F) p
-  exact hloc _ (by rw [integers_def, valuation_ofPrime])
+instance : IsLocalization.AtPrime ((ofPrime k F p).integers) p.asIdeal :=
+  p.isLocalization_of_eq_valuationSubring (by rw [integers_def, valuation_ofPrime])
 
 variable {k F p}
 

@@ -791,16 +791,11 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation_of_isCompact
               ⋃ a, Θ a '' (h.isNondegenerateCriticalSubmanifold a).negativeDiscBundle hn (P a)
                 (g a).toRiemannianMetric ε}) := by
   -- The pieces on the level `c` lie in the compact band, so they are finitely many and compact.
-  have hsub (a : {a // ∀ s, f (i a s) = c}) : range (i a) ⊆ f ⁻¹' Icc (c - δ) (c + δ) := by
-    rintro _ ⟨s, rfl⟩
-    rw [mem_preimage, a.property s]
-    exact ⟨by linarith, by linarith⟩
+  have hc : c ∈ Icc (c - δ) (c + δ) := ⟨by linarith, by linarith⟩
   have (a : ι) : Nonempty (S a) := h.nonempty a
-  have : Finite {a // ∀ s, f (i a s) = c} :=
-    ((h.finite_setOf_range_subset hcompact).subset (t := {a | ∀ s, f (i a s) = c})
-      fun a ha ↦ hsub ⟨a, ha⟩).to_subtype
+  have := h.finite_subtype_of_forall_apply_eq hcompact hc fun _ ↦ id
   have (a : {a // ∀ s, f (i a s) = c}) : CompactSpace (S a) :=
-    h.compactSpace_of_range_subset hcompact (hsub a)
+    h.compactSpace_of_forall_apply_eq hcompact hc a.property
   obtain ⟨Θ, hΘz, hΘi, hΘf, ε₀, hε₀, hmain⟩ :=
     SmoothEmbedding.exists_sublevel_union_iUnion_negativeDiscBundle_deformation
       (ι := {a // ∀ s, f (i a s) = c}) (S := fun a ↦ S a) (P := fun a ↦ P a) (J := fun a ↦ J a)

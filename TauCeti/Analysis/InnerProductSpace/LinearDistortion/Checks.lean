@@ -12,8 +12,10 @@ public import TauCeti.Analysis.InnerProductSpace.SingularValues.Planar
 # Checks for the outer and inner distortion of a linear map
 
 Worked examples for `Orientation.outerDistortion` (`q_O`) and `Orientation.innerDistortion`
-(`q_I`) on a real inner product plane `E` with an orthonormal basis `e`, oriented by `e` on both
-sides, writing `toLin e e M` for the operator with matrix `M` in that basis:
+(`q_I`), mostly on a real inner product plane `E` with an orthonormal basis `e`, oriented by `e`
+on both sides, writing `toLin e e M` for the operator with matrix `M` in that basis. The
+dimension-`3` Checks use an orthonormal basis `f` of a `3`-dimensional space `F` in the same way,
+and the dimension-`1` Check an oriented line `L`:
 
 * `diag(2, 1)` has `‖A‖ = 2`, `J(A) = 2` and `ℓ(A) = 1`, so `q_O(A) = 4 / 2 = 2` and
   `q_I(A) = 2 / 1 = 2`;
@@ -24,7 +26,10 @@ sides, writing `toLin e e M` for the operator with matrix `M` in that basis:
 * `R ∘ R = id` has `q_I(id) = 1`, larger than `q_I(R) q_I(R) = 0`: submultiplicativity of `q_I`
   needs `J ≥ 0`;
 * `-id` has `q_O(-id) = 1` on the plane, and `q_O(-id) = ∞` on an oriented space of dimension `3`;
-* the projection `diag(1, 0)` has `J = 0`, so `q_O = ∞` and `q_I = 0`.
+* the projection `diag(1, 0)` has `J = 0`, so `q_O = ∞` and `q_I = 0`;
+* in dimension `3`, `diag(2, 1, 1)` has `q_O = 4 = q_I²`, `diag(1, 1, 1/2)` has `q_I = 4 = q_O²`,
+  and `diag(3, 2, 1)` has `q_O = 9/2`, `q_I = 6`, with `q_I < q_O²` and `q_O < q_I²`;
+* in dimension `1`, `a · id` with `a > 0` has `q_O = q_I = 1`.
 -/
 
 public section
@@ -138,5 +143,121 @@ example :
         (toLin e.toBasis e.toBasis (diagonal ![(1 : ℝ), 0])) = 0 := by
   exact ⟨Orientation.outerDistortion_of_nonpos _ _ (by simp) (by simp),
     Orientation.innerDistortion_of_nonpos _ _ (by simp)⟩
+
+section Three
+
+/-! ### Checks in dimension three -/
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  [Fact (finrank ℝ F = 3)] (f : OrthonormalBasis (Fin 3) ℝ F)
+
+omit [Fact (finrank ℝ F = 3)] in
+/-- The singular values of `diag(d₀, d₁, d₂)` with `d₀ ≥ d₁ ≥ d₂ ≥ 0` are `d₀, d₁, d₂`. -/
+theorem singularValues_toLin_diagonal_fin_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 ≤ d₂) (h₁₂ : d₂ ≤ d₁)
+    (h₀₁ : d₁ ≤ d₀) :
+    (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])).singularValues 0 = d₀ ∧
+      (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])).singularValues 1 = d₁ ∧
+      (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])).singularValues 2 = d₂ := by
+  have h₁ : 0 ≤ d₁ := h₂.trans h₁₂
+  have h₀ : 0 ≤ d₀ := h₁.trans h₀₁
+  have hanti : Antitone fun k ↦ ‖![d₀, d₁, d₂] (Equiv.refl (Fin 3) k)‖ := by
+    intro i j hij
+    fin_cases i <;> fin_cases j <;>
+      simp_all [Real.norm_eq_abs, abs_of_nonneg, Fin.le_def, h₁₂.trans h₀₁]
+  have h := singularValues_toLin_diagonal f ![d₀, d₁, d₂] (Equiv.refl _) hanti
+  exact ⟨by simpa [abs_of_nonneg h₀] using h 0, by simpa [abs_of_nonneg h₁] using h 1,
+    by simpa [abs_of_nonneg h₂] using h 2⟩
+
+/-- The outer and inner distortion of `diag(d₀, d₁, d₂)` with `d₀ ≥ d₁ ≥ d₂ > 0`:
+`q_O = d₀³ / (d₀ d₁ d₂)` and `q_I = d₀ d₁ d₂ / d₂³`. -/
+theorem outerDistortion_innerDistortion_toLin_diagonal_fin_three {d₀ d₁ d₂ : ℝ} (h₂ : 0 < d₂)
+    (h₁₂ : d₂ ≤ d₁) (h₀₁ : d₁ ≤ d₀) :
+    f.toBasis.orientation.outerDistortion f.toBasis.orientation
+        (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])) =
+        ENNReal.ofReal (d₀ ^ 3 / (d₀ * d₁ * d₂)) ∧
+      f.toBasis.orientation.innerDistortion f.toBasis.orientation
+        (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])) = d₀ * d₁ * d₂ / d₂ ^ 3 := by
+  have hJ : f.toBasis.orientation.orientedJacobian f.toBasis.orientation
+      (toLin f.toBasis f.toBasis (diagonal ![d₀, d₁, d₂])) = d₀ * d₁ * d₂ := by
+    simp [Fin.prod_univ_succ, mul_assoc]
+  have hJpos : 0 < d₀ * d₁ * d₂ := by
+    have : 0 < d₁ := h₂.trans_le h₁₂
+    have : 0 < d₀ := this.trans_le h₀₁
+    positivity
+  obtain ⟨h0, -, h2⟩ := singularValues_toLin_diagonal_fin_three f h₂.le h₁₂ h₀₁
+  constructor
+  · rw [Orientation.outerDistortion_of_pos _ _ (by rwa [hJ]), hJ,
+      norm_toContinuousLinearMap_eq_singularValues_zero, h0]
+  · rw [Orientation.innerDistortion_of_pos _ _ (by rwa [hJ]), hJ, minimalStretch_def,
+      finrank_eq_card_basis f.toBasis, Fintype.card_fin]
+    exact congrArg (fun x ↦ d₀ * d₁ * d₂ / x ^ 3) h2
+
+/-- `diag(2, 1, 1)` has `q_O = 8 / 2 = 4` and `q_I = 2 / 1 = 2`, so `q_O = q_I²`: the case
+`σ₁ = σ₂` of equality in `q_O ≤ q_I²` (singular values indexed from `0`). -/
+example :
+    f.toBasis.orientation.outerDistortion f.toBasis.orientation
+        (toLin f.toBasis f.toBasis (diagonal ![(2 : ℝ), 1, 1])) = 4 ∧
+      f.toBasis.orientation.innerDistortion f.toBasis.orientation
+        (toLin f.toBasis f.toBasis (diagonal ![(2 : ℝ), 1, 1])) = 2 ∧
+      f.toBasis.orientation.outerDistortion f.toBasis.orientation
+          (toLin f.toBasis f.toBasis (diagonal ![(2 : ℝ), 1, 1])) =
+        ENNReal.ofReal (f.toBasis.orientation.innerDistortion f.toBasis.orientation
+          (toLin f.toBasis f.toBasis (diagonal ![(2 : ℝ), 1, 1])) ^ 2) := by
+  obtain ⟨hO, hI⟩ := outerDistortion_innerDistortion_toLin_diagonal_fin_three f
+    (d₀ := 2) (d₁ := 1) (d₂ := 1) one_pos le_rfl one_le_two
+  rw [hO, hI]
+  norm_num
+
+/-- `diag(1, 1, 1/2)` has `q_O = 1 / (1/2) = 2` and `q_I = (1/2) / (1/8) = 4`, so `q_I = q_O²`:
+the case `σ₀ = σ₁` of equality in `q_I ≤ q_O²` (singular values indexed from `0`). -/
+example :
+    f.toBasis.orientation.outerDistortion f.toBasis.orientation
+        (toLin f.toBasis f.toBasis (diagonal ![(1 : ℝ), 1, 1 / 2])) = 2 ∧
+      f.toBasis.orientation.innerDistortion f.toBasis.orientation
+        (toLin f.toBasis f.toBasis (diagonal ![(1 : ℝ), 1, 1 / 2])) = 4 ∧
+      ENNReal.ofReal (f.toBasis.orientation.innerDistortion f.toBasis.orientation
+          (toLin f.toBasis f.toBasis (diagonal ![(1 : ℝ), 1, 1 / 2]))) =
+        f.toBasis.orientation.outerDistortion f.toBasis.orientation
+          (toLin f.toBasis f.toBasis (diagonal ![(1 : ℝ), 1, 1 / 2])) ^ 2 := by
+  obtain ⟨hO, hI⟩ := outerDistortion_innerDistortion_toLin_diagonal_fin_three f
+    (d₀ := 1) (d₁ := 1) (d₂ := 1 / 2) (by norm_num) (by norm_num) le_rfl
+  rw [hO, hI, ← ENNReal.ofReal_pow (by norm_num)]
+  norm_num
+
+/-- `diag(3, 2, 1)` has `q_O = 27 / 6 = 9/2` and `q_I = 6`, and both comparisons are strict:
+`6 < (9/2)²` and `9/2 < 6²`. -/
+example :
+    f.toBasis.orientation.outerDistortion f.toBasis.orientation
+        (toLin f.toBasis f.toBasis (diagonal ![(3 : ℝ), 2, 1])) = ENNReal.ofReal (9 / 2) ∧
+      f.toBasis.orientation.innerDistortion f.toBasis.orientation
+        (toLin f.toBasis f.toBasis (diagonal ![(3 : ℝ), 2, 1])) = 6 ∧
+      ENNReal.ofReal (f.toBasis.orientation.innerDistortion f.toBasis.orientation
+          (toLin f.toBasis f.toBasis (diagonal ![(3 : ℝ), 2, 1]))) <
+        f.toBasis.orientation.outerDistortion f.toBasis.orientation
+          (toLin f.toBasis f.toBasis (diagonal ![(3 : ℝ), 2, 1])) ^ 2 ∧
+      f.toBasis.orientation.outerDistortion f.toBasis.orientation
+          (toLin f.toBasis f.toBasis (diagonal ![(3 : ℝ), 2, 1])) <
+        ENNReal.ofReal (f.toBasis.orientation.innerDistortion f.toBasis.orientation
+          (toLin f.toBasis f.toBasis (diagonal ![(3 : ℝ), 2, 1])) ^ 2) := by
+  obtain ⟨hO, hI⟩ := outerDistortion_innerDistortion_toLin_diagonal_fin_three f
+    (d₀ := 3) (d₁ := 2) (d₂ := 1) one_pos one_le_two (by norm_num)
+  have hO' : ENNReal.ofReal ((3 : ℝ) ^ 3 / (3 * 2 * 1)) = ENNReal.ofReal (9 / 2) := by norm_num
+  rw [hO, hI, hO', ← ENNReal.ofReal_pow (by norm_num)]
+  refine ⟨rfl, by norm_num, ?_, ?_⟩ <;>
+    exact (ENNReal.ofReal_lt_ofReal_iff (by norm_num)).mpr (by norm_num)
+
+end Three
+
+/-- In dimension `1`, `A = a · id` with `a > 0` has `q_O(A) = q_I(A) = 1`, and the exponent
+`n - 1` of the comparison is `0`. -/
+example {L : Type*} [NormedAddCommGroup L] [InnerProductSpace ℝ L] [FiniteDimensional ℝ L]
+    [Fact (finrank ℝ L = 1)] (o : Orientation ℝ L (Fin 1)) {a : ℝ} (ha : 0 < a) :
+    o.outerDistortion o (a • LinearMap.id) = 1 ∧ o.innerDistortion o (a • LinearMap.id) = 1 := by
+  have hid : (LinearIsometryEquiv.refl ℝ L : L →ₗ[ℝ] L) = LinearMap.id :=
+    LinearMap.ext fun _ ↦ by simp
+  rw [o.outerDistortion_smul o (by simpa using ha), o.innerDistortion_smul o (by simpa using ha)]
+  refine ⟨o.outerDistortion_id, ?_⟩
+  rw [← hid]
+  exact o.innerDistortion_linearIsometryEquiv o _ (by rw [hid, Orientation.orientedJacobian_id])
 
 end TauCeti.LinearDistortionChecks

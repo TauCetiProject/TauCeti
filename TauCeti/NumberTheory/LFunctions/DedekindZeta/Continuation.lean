@@ -6,17 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LFunctions.Continued.Basic
+public import TauCeti.NumberTheory.LFunctions.Data.DedekindZeta
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Basic
-public import TauCeti.NumberTheory.LFunctions.DedekindZeta.Card.Basic
-import TauCeti.Analysis.Meromorphic.NormalForm
 
 /-!
 # Card continuation, zero behavior, and reflection symmetry of Dedekind zeta
 
-Identifying the continued function `(TauCeti.LFunctions.dedekindZetaData K).continuedL` of the
-Dedekind zeta card with `TauCeti.LFunctions.dedekindZetaC K` connects `dedekindZetaC K` with the
-generic card-continuation API and complements
-`TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed`.
+This module complements `TauCeti.NumberTheory.LFunctions.DedekindZeta.Completed` and
+`TauCeti.NumberTheory.LFunctions.Data.DedekindZeta` with the punctured-germ relations between
+`TauCeti.LFunctions.dedekindZetaC K` and `TauCeti.LFunctions.completedDedekindZeta K`, the
+vanishing order and leading coefficient at `s = 0`, the normal-form value at `s = 1`, and
+reflection symmetry under complex conjugation.
 
 Because the reciprocal archimedean factor `|d_K|^(-s/2) Γ_ℝ(s)⁻¹^r₁ Γ_ℂ(s)⁻¹^r₂` is entire and
 vanishes at `s = 0` to order `r₁ + r₂ ≥ 1` while `completedDedekindZeta K` has a simple pole at `0`,
@@ -27,12 +27,9 @@ when the unit rank is positive, whereas in unit rank `0` (`ℚ` and imaginary qu
 
 ## Main results
 
-* `TauCeti.LFunctions.dedekindZetaData_continuedL`:
-  `(dedekindZetaData K).continuedL = dedekindZetaC K`.
 * `TauCeti.LFunctions.dedekindZetaC_eventuallyEq_mul_completedDedekindZeta`,
   `TauCeti.LFunctions.completedDedekindZeta_eventuallyEq_mul_dedekindZetaC`,
-  `TauCeti.LFunctions.completedDedekindZeta_eq_mul_dedekindZetaC`,
-  `TauCeti.LFunctions.dedekindZetaC_eq_mul_completedDedekindZeta_of_ne_zero_or_rank_pos`:
+  `TauCeti.LFunctions.completedDedekindZeta_eq_mul_dedekindZetaC`:
   relation between `dedekindZetaC K` and `completedDedekindZeta K`.
 * `TauCeti.LFunctions.meromorphicOrderAt_dedekindZetaC_zero`,
   `TauCeti.LFunctions.analyticOrderAt_dedekindZetaC_zero`,
@@ -60,30 +57,17 @@ namespace TauCeti.LFunctions
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-! ### Identification with `(dedekindZetaData K).continuedL` -/
-
-variable (K) in
-/-- Identifying the continued uncompleted function of `dedekindZetaData K` with
-`dedekindZetaC K`. -/
-@[simp]
-theorem dedekindZetaData_continuedL : (dedekindZetaData K).continuedL = dedekindZetaC K := by
-  have hnf : MeromorphicNFOn (dedekindZetaData K).completed univ := by
-    rw [dedekindZetaData_completed]
-    exact meromorphicNFOn_completedDedekindZeta K
-  rw [(dedekindZetaData_hasDirichletAgreement K).continuedL_eq_meromorphicContinuation hnf,
-    dedekindZetaC_def]
-  congr 1
-  funext s
-  rw [funext (dedekindZetaData_coeff K), ← dedekindZeta_eq_LSeries_normCoeff_one K s]
+/-! ### Relation between `dedekindZetaC` and `completedDedekindZeta` -/
 
 private theorem uncompletedProduct_dedekindZetaData (s : ℂ) :
     (dedekindZetaData K).uncompletedProduct s =
       ((|discr K| : ℤ) : ℂ) ^ (-s / 2) *
         (Gammaℝ s)⁻¹ ^ nrRealPlaces K * (Gammaℂ s)⁻¹ ^ nrComplexPlaces K *
         completedDedekindZeta K s := by
-  rw [AnalyticLFunctionData.uncompletedProduct_def, dedekindZetaData_conductor_cast,
-    dedekindZetaData_completed, AnalyticLFunctionData.invGammaFactor_def,
-    dedekindZetaData_gammaFactor, mul_inv, inv_pow, inv_pow]
+  rw [AnalyticLFunctionData.uncompletedProduct_def, dedekindZetaData_conductor,
+    Int.abs_eq_natAbs, Int.cast_natCast, dedekindZetaData_completed,
+    AnalyticLFunctionData.invGammaFactor_def, dedekindZetaData_gammaFactor, mul_inv, inv_pow,
+    inv_pow]
   ring
 
 variable (K) in
@@ -107,8 +91,8 @@ theorem completedDedekindZeta_eventuallyEq_mul_dedekindZetaC (s : ℂ) :
       ((|discr K| : ℤ) : ℂ) ^ (z / 2) *
         Gammaℝ z ^ nrRealPlaces K * Gammaℂ z ^ nrComplexPlaces K *
         dedekindZetaC K z := by
-  simpa only [dedekindZetaData_completed, dedekindZetaData_conductor_cast,
-    dedekindZetaData_gammaFactor, dedekindZetaData_continuedL, mul_assoc] using
+  simpa only [dedekindZetaData_completed, dedekindZetaData_conductor, Int.abs_eq_natAbs,
+    Int.cast_natCast, dedekindZetaData_gammaFactor, dedekindZetaData_continuedL, mul_assoc] using
     AnalyticLFunctionData.completed_eventuallyEq_mul_continuedL
       (dedekindZetaData_hasMeromorphicContinuation K).meromorphic s
 
@@ -122,12 +106,18 @@ theorem completedDedekindZeta_eq_mul_dedekindZetaC {s : ℂ}
       ((|discr K| : ℤ) : ℂ) ^ (s / 2) *
         Gammaℝ s ^ nrRealPlaces K * Gammaℂ s ^ nrComplexPlaces K *
         dedekindZetaC K s := by
-  simpa only [dedekindZetaData_completed, dedekindZetaData_conductor_cast,
-    dedekindZetaData_gammaFactor, dedekindZetaData_continuedL, mul_assoc] using
+  simpa only [dedekindZetaData_completed, dedekindZetaData_conductor, Int.abs_eq_natAbs,
+    Int.cast_natCast, dedekindZetaData_gammaFactor, dedekindZetaData_continuedL, mul_assoc] using
     (dedekindZetaData_hasMeromorphicContinuation K).completed_eq_mul_continuedL
       (by simpa [dedekindZetaData_gammaFactor] using hγ)
 
 /-! ### Vanishing order and leading coefficient at `s = 0` -/
+
+private theorem rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces
+    (K : Type*) [Field K] [NumberField K] :
+    NumberField.Units.rank K + 1 = nrRealPlaces K + nrComplexPlaces K := by
+  rw [NumberField.Units.rank_add_one K, Nat.card_eq_fintype_card,
+    InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces K]
 
 variable (K) in
 /-- **Vanishing order of the Dedekind zeta function at `s = 0`**: `dedekindZetaC K` has meromorphic
@@ -148,7 +138,7 @@ theorem meromorphicOrderAt_dedekindZetaC_zero :
   rw [dedekindZetaData_gammaR, dedekindZetaData_gammaC, hcount _ ⟨0, by norm_num⟩,
     hcount _ ⟨0, by norm_num⟩]
   norm_cast
-  rw [← NumberField.Units.rank_add_one K]
+  rw [← rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K]
   push_cast
   ring
 
@@ -188,7 +178,7 @@ private theorem uncompletedProduct_div_pow_rank_eq (K : Type*) [Field K] [Number
         (s * Gammaℂ s)⁻¹ ^ nrComplexPlaces K * (s * completedDedekindZeta K s) =
       (dedekindZetaData K).uncompletedProduct s / s ^ NumberField.Units.rank K := by
   have hspow : s ^ NumberField.Units.rank K * s = s ^ (nrRealPlaces K + nrComplexPlaces K) := by
-    rw [← pow_succ, NumberField.Units.rank_add_one K]
+    rw [← pow_succ, rank_add_one_eq_nrRealPlaces_add_nrComplexPlaces K]
   rw [uncompletedProduct_dedekindZetaData, div_eq_mul_inv]
   simp only [mul_inv, mul_pow]
   calc
@@ -217,7 +207,9 @@ theorem tendsto_dedekindZetaC_div_pow_rank_zero :
     have ha : AnalyticAt ℂ
         (fun z : ℂ ↦ (((dedekindZetaData K).conductor : ℕ) : ℂ) ^ (-z / 2)) 0 :=
       (dedekindZetaData K).analyticAt_conductor_cpow (by fun_prop)
-    simpa only [dedekindZetaData_conductor_cast, neg_zero, zero_div, cpow_zero] using
+    have h0 : (((dedekindZetaData K).conductor : ℕ) : ℂ) = ((|discr K| : ℤ) : ℂ) := by
+      rw [dedekindZetaData_conductor, ← Int.cast_natCast, Int.natCast_natAbs]
+    simpa only [h0, neg_zero, zero_div, cpow_zero] using
       ha.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
   have hΓℝ : Tendsto (fun s : ℂ ↦ (s * Gammaℝ s)⁻¹ ^ nrRealPlaces K) (𝓝[≠] 0)
       (𝓝 ((2 : ℂ)⁻¹ ^ nrRealPlaces K)) :=
@@ -259,27 +251,8 @@ variable (K) in
 `s = 1`. -/
 @[simp]
 theorem dedekindZetaC_one : dedekindZetaC K 1 = 0 :=
-  (meromorphicNFOn_dedekindZetaC K (mem_univ 1))
-    |>.apply_eq_zero_of_meromorphicOrderAt_ne_zero (by
-      rw [meromorphicOrderAt_dedekindZetaC_one]
-      decide)
-
-/-- Away from `0` (including at `s = 1`, where both sides take the canonical normal-form value
-`0`), or at `s = 0` when `K` has positive unit rank (where both sides vanish), `dedekindZetaC K s`
-equals `|d_K|^(-s/2) Γ_ℝ(s)⁻¹^r₁ Γ_ℂ(s)⁻¹^r₂ Λ_K(s)`. -/
-theorem dedekindZetaC_eq_mul_completedDedekindZeta_of_ne_zero_or_rank_pos {s : ℂ}
-    (hs : s ≠ 0 ∨ 0 < NumberField.Units.rank K) :
-    dedekindZetaC K s =
-      ((|discr K| : ℤ) : ℂ) ^ (-s / 2) *
-        (Gammaℝ s)⁻¹ ^ nrRealPlaces K * (Gammaℂ s)⁻¹ ^ nrComplexPlaces K *
-        completedDedekindZeta K s := by
-  rcases eq_or_ne s 0 with rfl | h0
-  · have hr : 0 < NumberField.Units.rank K := hs.resolve_left (not_not.mpr rfl)
-    rw [dedekindZetaC_zero_of_rank_pos hr, completedDedekindZeta_zero, mul_zero]
-  · by_cases h1 : s = 1
-    · subst h1
-      rw [dedekindZetaC_one, completedDedekindZeta_one, mul_zero]
-    · exact dedekindZetaC_eq_mul_completedDedekindZeta K h0 h1
+  not_not.mp ((meromorphicNFOn_dedekindZetaC K (mem_univ 1)).meromorphicOrderAt_eq_zero_iff.not.mp
+    (by rw [meromorphicOrderAt_dedekindZetaC_one]; decide))
 
 /-! ### Reflection symmetry -/
 

@@ -77,6 +77,16 @@ theorem toChartGerm_mem_orderGE (x : X) (s : differentialSections D ⊤) :
   rw [meromorphicGerms.mem_orderGE, order_toChartGerm]
   exact (isDifferentialSectionAt_toOneForm s x).neg_le_order
 
+/-- If the `1`-form of a section `s` agrees with a `1`-form `θ` on a punctured neighbourhood of
+`x`, the coordinate germ of `s` at `x` is the germ of the coefficient of `θ`. -/
+theorem toChartGerm_eq_mk {x : X} {s : differentialSections D ⊤} {θ : OneForm X}
+    (hθ : θ.MeromorphicAt x) (h : ∀ᶠ y in 𝓝[≠] x, toOneForm D s y = θ y) :
+    toChartGerm D x s =
+      meromorphicGerms.mk (θ.coeff (chartAt ℂ x)) ((OneForm.meromorphicAt_def _ _).1 hθ) :=
+  Subtype.ext <| by
+    rw [coe_toChartGerm, meromorphicGerms.coe_mk]
+    exact Germ.coe_eq.2 (OneForm.coeff_chartAt_eventuallyEq h)
+
 /-- The inclusion `Ω_D ⟶ Ω_E` for `D ≤ E` does not change coordinate germs, although it changes
 the normalized values at the new poles. -/
 theorem toChartGerm_differentialSheafMapOfLE {E : WeilDivisor X} (h : D ≤ E) (x : X)

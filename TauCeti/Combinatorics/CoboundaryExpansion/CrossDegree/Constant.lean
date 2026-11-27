@@ -17,8 +17,7 @@ import Mathlib.Tactic.Positivity
 import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Replication
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
-import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
-import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
+import TauCeti.Combinatorics.CoboundaryExpansion.GraphCochain
 import TauCeti.Combinatorics.SimpleGraph.Staircase
 import TauCeti.GroupTheory.Perm.DistErr.Invariance
 
@@ -251,7 +250,8 @@ private theorem h1Err_complete_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 
     rcases eq_or_ne m 1 with rfl | hm
     · rw [Cochain.costErr_eq_cost_div]
       exact div_le_div_of_nonneg_right
-        (G.two_mul_card_edgeFinset_le_cost (SimpleGraph.isCutMinimal_staircase q t) β)
+        (G.two_mul_card_edgeFinset_le_cost ⟨0, 1, by decide, rfl⟩
+          (SimpleGraph.isCutMinimal_staircase q t) β)
         (Nat.cast_nonneg _)
     · rw [Cochain.costErr_ofLt_complete]
       refine le_trans ?_ (card_div_four_le_sum_distErr_three_of_ne _
@@ -266,7 +266,8 @@ private theorem h1Err_complete_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 
   refine (h1Err_le_div (n := 1) (hpos.trans_le hD)).trans ?_
   refine (div_le_div_of_nonneg_left (div_nonneg (α.defect_nonneg _) (Nat.cast_nonneg _)) hpos
     hD).trans_eq ?_
-  rw [SimpleGraph.defect_ofLt_ite_adj, SimpleGraph.card_oddTriangleFinset_staircase, hV]
+  rw [SimpleGraph.defect_ofLt_ite_adj _ _ (swap_mul_self 0 1),
+    Perm.IsSwap.movedNorm ⟨0, 1, by decide, rfl⟩, SimpleGraph.card_oddTriangleFinset_staircase, hV]
   have hE' : (#G.edgeFinset : ℝ) ≠ 0 := by linarith
   push_cast
   field_simp

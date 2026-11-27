@@ -10,7 +10,10 @@ public import Mathlib.Probability.Kernel.Composition.MeasureCompProd
 import Mathlib.Probability.Distributions.Gaussian.CharFun
 import Mathlib.Probability.Distributions.Gaussian.Fernique
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
+import TauCeti.MeasureTheory.Group.Convolution.Translation
+import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Multivariate
+import TauCeti.Probability.Distributions.Gaussian.Sum.Multivariate
 import TauCeti.Probability.Kernel.Randomization
 
 /-!
@@ -29,7 +32,11 @@ conditionals of denoising diffusion models. It is the isotropic case of the cond
 jointly Gaussian vectors in `TauCeti.Probability.Distributions.Gaussian.Conditional.Basic`; here
 the two joint laws are compared directly through their characteristic functions.
 
-The file also computes the second moments of the displacement `Y - X`: the mean squared distance
+The file also proves the composition law of these kernels: observing `N(c • x, v)` and then
+`N(c' • y, v')` is observing `N((c' * c) • x, c' ^ 2 * v + v')`. This is the law of the
+transitions between two noise levels of a Gaussian noising path.
+
+It also computes the second moments of the displacement `Y - X`: the mean squared distance
 from `x` to its observation, and the quadratic transport cost of the coupling
 `μ₀ ⊗ₘ gaussianKernel c v` of a law and its Gaussian noising.
 
@@ -40,6 +47,8 @@ from `x` to its observation, and the quadratic transport cost of the coupling
 ## Main results
 
 * `TauCeti.Probability.gaussianKernel_apply` — `gaussianKernel c v x = N(c • x, v)`.
+* `TauCeti.Probability.gaussianKernel_comp` — the composition law
+  `gaussianKernel c' v' ∘ₖ gaussianKernel c v = gaussianKernel (c' * c) (c' ^ 2 * v + v')`.
 * `TauCeti.Probability.compProd_gaussianKernel_eq_swap` — the Bayes update, as an equality of
   joint laws.
 * `TauCeti.Probability.integral_norm_sub_sq_gaussianKernel` — the mean squared displacement of
@@ -86,6 +95,31 @@ theorem gaussianKernel_apply (c v : ℝ) (x : EuclideanSpace ℝ ι) :
 
 instance (c v : ℝ) : IsMarkovKernel (gaussianKernel (ι := ι) c v) :=
   ⟨fun x ↦ by rw [gaussianKernel_apply]; infer_instance⟩
+
+/-- **Composition of Gaussian observation kernels.** Observing `N(c • x, v)` and then
+`N(c' • y, v')` is observing `N((c' * c) • x, c' ^ 2 * v + v')`: the first noise is rescaled by
+`c'` and the two independent noises add. Neither variance may be negative, since a negative
+variance parameter gives a point mass. -/
+theorem gaussianKernel_comp {c v c' v' : ℝ} (hv : 0 ≤ v) (hv' : 0 ≤ v') :
+    gaussianKernel (ι := ι) c' v' ∘ₖ gaussianKernel c v =
+      gaussianKernel (c' * c) (c' ^ 2 * v + v') := by
+  ext1 x
+  -- The second step adds the independent noise `N(0, v')` to the rescaled first step.
+  have hbind : (gaussianKernel c v x).bind (gaussianKernel c' v') =
+      (gaussianKernel c v x).map (fun y ↦ c' • y) ∗ multivariateGaussian 0 (v' • 1) := by
+    rw [← Measure.bind_map_add_eq_conv _ _ (by fun_prop)]
+    congr 1
+    funext y
+    exact gaussianKernel_apply_eq_map c' v' y
+  have hS : (v • (1 : Matrix ι ι ℝ)).PosSemidef := Matrix.PosSemidef.one.smul hv
+  have hmap : (gaussianKernel c v x).map (fun y ↦ c' • y) =
+      multivariateGaussian (c' • c • x) (c' ^ 2 • v • (1 : Matrix ι ι ℝ)) := by
+    simpa only [zero_add, gaussianKernel_apply] using
+      map_add_smul_multivariateGaussian (c • x) hS 0 c'
+  -- Gaussian convolution adds the means and the covariances.
+  rw [Kernel.comp_apply, hbind, hmap, multivariateGaussian_conv_multivariateGaussian _ _
+    (hS.smul (sq_nonneg c')) (Matrix.PosSemidef.one.smul hv'), gaussianKernel_apply, add_zero,
+    smul_smul, smul_smul, ← add_smul]
 
 /-- The two joint laws of the Bayes update, as affine images of products of isotropic Gaussians:
 `(x, e) ↦ (x, c • x + e)` with `x ~ N(m, u)`, `e ~ N(0, v)`, and

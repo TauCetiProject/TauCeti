@@ -8,10 +8,16 @@ module
 public import Mathlib.Data.Matrix.Composition
 public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
+public import Mathlib.RingTheory.Spectrum.Prime.RingHom
+public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Componentwise
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Algebra.Homology.ModuleCat.Finrank
+import TauCeti.LinearAlgebra.Basis.ExtendedIdeal
 import TauCeti.LinearAlgebra.Basis.Semilinear
 import TauCeti.LinearAlgebra.Basis.SmulTower
+import TauCeti.LinearAlgebra.Matrix.ToLin
+import TauCeti.RingTheory.Artinian.EquivPi
+import TauCeti.RingTheory.Norm.Quotient
 
 /-!
 # The torsion of the restriction of scalars of a based complex
@@ -42,13 +48,23 @@ outer index keeps the boundary vectors before the lifts, so no reordering sign a
 
 Torsions of finite covers are compared with norms of torsions in this way: over the Novikov
 series on `H`, restricting scalars to a finite-index subgroup `K` in the basis of coset monomials
-produces differentials of the same block form, and the theorem here is the corresponding statement
-over fields.
+produces differentials of the same block form. Their torsions live in total rings of fractions,
+finite products of fields, and are taken componentwise
+(`HomologicalComplex.componentwiseReidemeisterTorsion`). For a finite free algebra `B` over `A`
+and reduced Artinian rings `QA` and `QB` over them, with `QB` free over `QA` on the image of a
+basis of `B`, the componentwise torsion of the restriction of scalars in `QA` is the norm of the
+componentwise torsion in `QB`, provided distinct primes of `QB` lie over distinct primes of `QA`
+(`HomologicalComplex.norm_componentwiseReidemeisterTorsion`). Then every residue field of `QA` has
+a single residue field of `QB` above it, finite over it, and the formula is the statement over
+fields in each component.
 
 ## Main results
 
 * `HomologicalComplex.norm_reidemeisterTorsion`: the torsion of the restriction of scalars of a
   based complex along a finite field extension is the norm of its torsion.
+* `HomologicalComplex.norm_componentwiseReidemeisterTorsion`: the componentwise torsion of the
+  restriction of scalars is the norm of the componentwise torsion, when each residue field of `QA`
+  has a single residue field of `QB` above it.
 
 ## References
 
@@ -65,6 +81,8 @@ open CategoryTheory Module
 open scoped ModuleCat.Algebra
 
 namespace HomologicalComplex
+
+section Field
 
 variable {F L : Type*} [Field F] [Field L] [Algebra F L] {m : ℕ} (β : Basis (Fin m) F L)
   {C : ChainComplex (ModuleCat L) ℤ} {n : ℤ → ℕ} (c : ∀ i, Basis (Fin (n i)) L (C.X i))
@@ -260,5 +278,77 @@ theorem norm_reidemeisterTorsion :
     (hasFiniteMulSupport_torsionBracket hn h b s hs)).symm
   rw [torsionBracket_towerBoundaryBasis hd (h (j + 1)) (hD (j + 1))]
   exact (map_zpow₀ N _ _).symm
+
+end Field
+
+section Componentwise
+
+/-! ### Componentwise torsion -/
+
+attribute [local instance] Ideal.Quotient.field
+
+variable {A B : Type*} [CommRing A] [CommRing B] [Algebra A B] {m : ℕ} {β : Basis (Fin m) A B}
+  {QA QB : Type*} [CommRing QA] [CommRing QB] [Algebra A QA] [Algebra B QB] [Algebra QA QB]
+  [Algebra A QB] [IsScalarTower A QA QB] [IsScalarTower A B QB] {β' : Basis (Fin m) QA QB}
+
+variable [IsArtinianRing QA] [IsReduced QA] [IsArtinianRing QB] [IsReduced QB]
+  {C : ChainComplex (ModuleCat B) ℤ} {n : ℤ → ℕ} {c : ∀ i, Basis (Fin (n i)) B (C.X i)}
+  {D : ChainComplex (ModuleCat A) ℤ} {e : ∀ i, Basis (Fin (n i * m)) A (D.X i)}
+  (hd : ∀ i, LinearMap.toMatrix (e (i + 1)) (e i) (D.d (i + 1) i).hom =
+    Matrix.reindex finProdFinEquiv finProdFinEquiv (Matrix.comp _ _ _ _ A
+      ((LinearMap.toMatrix (c (i + 1)) (c i) (C.d (i + 1) i).hom).map (Algebra.leftMulMatrix β))))
+
+include hd in
+/-- **Restriction of scalars of the componentwise torsion.** Let `B` be an `A`-algebra with an
+ordered basis `β a`, `a : Fin m`, and let `(D, e)` be the restriction of scalars of a based complex
+`(C, c)` over `B` to `A`, based by the vectors `β a • c i k` as in
+`HomologicalComplex.norm_reidemeisterTorsion`. Let `QA` and `QB` be reduced Artinian algebras over
+`A` and `B`, such as total rings of fractions, with `QB` a `QA`-algebra that is free on the image
+`β'` of `β`. If distinct primes of `QB` lie over distinct primes of `QA`, then the componentwise
+torsion of `D` in `QA` is the norm of the componentwise torsion of `C` in `QB`.
+
+Under this hypothesis, over each residue field `QA ⧸ p` the ring `QB ⧸ p QB` is a single residue
+field of `QB`, finite over `QA ⧸ p`, and in that component the formula is
+`HomologicalComplex.norm_reidemeisterTorsion`. In particular a component of the torsion of `D`
+vanishes exactly when the component of the torsion of `C` above it does. -/
+theorem norm_componentwiseReidemeisterTorsion (hβ' : ∀ a, β' a = algebraMap B QB (β a))
+    (hQ : Function.Injective (PrimeSpectrum.comap (algebraMap QA QB))) :
+    Algebra.norm QA (C.componentwiseReidemeisterTorsion c (algebraMap B QB)) =
+      D.componentwiseReidemeisterTorsion e (algebraMap A QA) := by
+  refine eq_componentwiseReidemeisterTorsion_iff.2 fun p ↦ ?_
+  obtain rfl | hm := Nat.eq_zero_or_pos m
+  · -- For `m = 0` the ring `QB` and all terms of `D` are zero, and both sides are `1`.
+    rw [reidemeisterTorsion_eq_one fun i ↦ mul_zero (n i), Algebra.norm_eq_matrix_det β',
+      Matrix.det_isEmpty, map_one]
+  have : Module.Free QA QB := .of_basis β'
+  -- The extension `p QB` is a proper ideal: `QB ⧸ p QB` has the basis `β'.quotient p` of size
+  -- `m > 0`. Hence it is a maximal ideal, the unique prime of `QB` over `p`.
+  have hJ : (p.asIdeal.map (algebraMap QA QB)).IsMaximal :=
+    IsArtinianRing.isMaximal_map_of_injective_comap _ hQ fun h ↦
+      (β'.quotient p.asIdeal).ne_zero ⟨0, hm⟩ <| by
+        rw [Basis.quotient_apply, Ideal.Quotient.eq_zero_iff_mem, h]
+        trivial
+  have hC : Ideal.Quotient.mk (p.asIdeal.map (algebraMap QA QB))
+      (C.componentwiseReidemeisterTorsion c (algebraMap B QB)) =
+      (C.matrixBaseChange c ((Ideal.Quotient.mk _).comp (algebraMap B QB))).reidemeisterTorsion
+        (C.matrixBaseChangeBasis c _) :=
+    mk_componentwiseReidemeisterTorsion C c _ ⟨_, hJ⟩
+  rw [← TauCeti.Algebra.norm_quotient_mk, hC]
+  -- In the component over `p`, `D` is the restriction of scalars of the component of `C` over
+  -- `p QB`, based by the reduction of `β`.
+  refine norm_reidemeisterTorsion (β := β'.quotient p.asIdeal) fun i ↦ ?_
+  rw [toMatrix_matrixBaseChange_d, toMatrix_matrixBaseChange_d, hd]
+  ext x y
+  simp only [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.comp_apply, Matrix.map_apply,
+    RingHom.comp_apply,
+    Algebra.leftMulMatrix_map β' (β'.quotient p.asIdeal) (Ideal.Quotient.mk _)
+      (Ideal.Quotient.mk _)
+      (fun r ↦ (Ideal.Quotient.algebraMap_quotient_map_quotient r).symm)
+      (Basis.quotient_apply β' _),
+    Algebra.leftMulMatrix_map β β' (algebraMap A QA) (algebraMap B QB)
+      (fun r ↦ by rw [← IsScalarTower.algebraMap_apply, IsScalarTower.algebraMap_apply A QA QB])
+      hβ']
+
+end Componentwise
 
 end HomologicalComplex

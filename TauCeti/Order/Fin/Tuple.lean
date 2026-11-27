@@ -6,14 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Order.Fin.Tuple
 public import Mathlib.Order.PiLex
 
 /-!
 # Order properties on tuples
 
-This file complements `Mathlib.Order.Fin.Tuple` with the `Fin.snoc` analogue of
-`Fin.pi_lex_lt_cons_cons`: comparing two appended dependent tuples lexicographically compares
-their prefixes first, and compares their last entries when the prefixes are equal.
+This file complements `Mathlib.Order.Fin.Tuple` with results on `Fin.snoc`.
+
+## Main results
+
+* `Fin.pi_lex_lt_snoc_snoc`: the `Fin.snoc` analogue of `Fin.pi_lex_lt_cons_cons`: comparing two
+  appended dependent tuples lexicographically compares their prefixes first, and compares their
+  last entries when the prefixes are equal.
+* `OrderEmbedding.snoc`: an increasing tuple `s : Fin n ↪o α` extended by a point above all of its
+  entries, the increasing-tuple form of `Fin.snoc`.
 -/
 
 public section
@@ -34,3 +41,31 @@ theorem pi_lex_lt_snoc_snoc {n : ℕ} {α : Fin (n + 1) → Type*}
     lt_self_iff_false, funext_iff, false_imp_iff, true_imp_iff, and_true]
 
 end Fin
+
+namespace OrderEmbedding
+
+variable {α : Type*} [Preorder α] {n : ℕ}
+
+/-- The increasing tuple `s` extended by a point `a` lying above all of its entries: the
+increasing-tuple form of `Fin.snoc`. -/
+def snoc (s : Fin n ↪o α) (a : α) (h : ∀ k, s k < a) : Fin (n + 1) ↪o α :=
+  .ofStrictMono (Fin.snoc s a) <| by
+    simpa [Fin.insertNth_last'] using
+      (Fin.strictMono_insertNth_iff (Fin.last n) a s).2 ⟨s.strictMono, fun k _ ↦ h k,
+        fun k hk ↦ absurd hk (Fin.castSucc_lt_last k).not_ge⟩
+
+@[simp]
+theorem coe_snoc (s : Fin n ↪o α) (a : α) (h : ∀ k, s k < a) :
+    ⇑(s.snoc a h) = Fin.snoc s a :=
+  (rfl)
+
+@[simp]
+theorem snoc_castSucc (s : Fin n ↪o α) (a : α) (h : ∀ k, s k < a) (k : Fin n) :
+    s.snoc a h k.castSucc = s k := by
+  simp
+
+@[simp]
+theorem snoc_last (s : Fin n ↪o α) (a : α) (h : ∀ k, s k < a) : s.snoc a h (Fin.last n) = a := by
+  simp
+
+end OrderEmbedding

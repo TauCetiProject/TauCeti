@@ -20,7 +20,8 @@ for `p = ∞`.
 
 The file also records exhaustion of an extended nonnegative function by its positive level sets,
 and the absorption step of elliptic estimates: a finite quantity bounded by `b` plus half of itself
-is at most `2 b`.
+is at most `2 b`. Finally, an upper bound `x ≤ y` may be checked against the finite values above
+`y`, dually to Mathlib's `ENNReal.le_of_forall_nnreal_lt`.
 
 ## Main declarations
 
@@ -37,6 +38,7 @@ is at most `2 b`.
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`, `ENNReal.toReal_inv_sub_toReal_inv_le_one`,
   `ENNReal.toReal_inv_sub_toReal_inv_lt_one`: bounds in `[0, 1]` and `[0, 1)` on the reciprocal
   exponent gap `p.toReal⁻¹ - q.toReal⁻¹`.
+* `ENNReal.inv_lt_inv_add_inv_of_le`: `b⁻¹ < c⁻¹ + a⁻¹` for `0 < a ≤ b` and finite `c`.
 * `ENNReal.natCast_lt_natCast_mul_iff`: `(n : ℝ≥0∞) < k * p ↔ (n : ℝ) * p.toReal⁻¹ < k` for
   `p ≠ 0`.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
@@ -55,6 +57,8 @@ is at most `2 b`.
   nonzero.
 * `ENNReal.inv_mul_inv_mul_cancel`: the Hölder exponent `(c * (p * c)⁻¹)⁻¹` of `c` factors in
   `L^(p * c)` is `p`, for `c` finite and nonzero.
+* `ENNReal.le_of_forall_nnreal_gt`: `x ≤ y` follows from `x ≤ r` for every finite `r > y`, the
+  dual of Mathlib's `ENNReal.le_of_forall_nnreal_lt`.
 -/
 
 public section
@@ -266,6 +270,14 @@ theorem exists_le_lt_lt_add {a b ν : ℝ≥0∞} (ha : a ≤ 1) (hν : ν < 1) 
     (lt_min hν (add_comm ν b ▸ ENNReal.lt_add_right hν.ne_top hb))
   exact ⟨t, h.trans h₁.le, (h₂.trans_le (min_le_left _ _)).le, h₁, h₂.trans_le (min_le_right _ _)⟩
 
+/-- **Every finite exponent clears a supercritical one.** If `a ≤ b` and `a ≠ 0`, then
+`b⁻¹ < c⁻¹ + a⁻¹` for every finite `c`. Read with `a = n` the dimension, `b = p` and `c = q`, this
+is the Rellich–Kondrachov condition `1/p < 1/q + 1/n` for one derivative when `p ≥ n`. -/
+theorem inv_lt_inv_add_inv_of_le {a b c : ℝ≥0∞} (hab : a ≤ b) (ha : a ≠ 0) (hc : c ≠ ∞) :
+    b⁻¹ < c⁻¹ + a⁻¹ :=
+  (ENNReal.inv_le_inv.2 hab).trans_lt
+    (add_comm a⁻¹ c⁻¹ ▸ ENNReal.lt_add_right (ENNReal.inv_ne_top.2 ha) (ENNReal.inv_ne_zero.2 hc))
+
 /-- Cancelling a finite nonzero denominator `m` against the factor `n` of a product:
 `ofReal (d ^ n / n) / m * ofReal (n * a) = ofReal (a * d ^ n / m)`. -/
 theorem ofReal_pow_div_natCast_div_mul_ofReal_natCast_mul {n : ℕ} {d a : ℝ} {m : ℝ≥0∞}
@@ -284,5 +296,13 @@ theorem inv_mul_inv_mul_cancel {c : ℝ≥0∞} (hc₀ : c ≠ 0) (hc : c ≠ �
     (c * (p * c)⁻¹)⁻¹ = p := by
   rw [ENNReal.mul_inv (.inr hc) (.inr hc₀), mul_left_comm, ENNReal.mul_inv_cancel hc₀ hc, mul_one,
     inv_inv]
+
+/-- An upper bound in `ℝ≥0∞` may be checked against the finite values above it: `x ≤ y` follows
+from `x ≤ r` for every `r : ℝ≥0` with `y < r`. This is the dual of
+`ENNReal.le_of_forall_nnreal_lt`. -/
+theorem le_of_forall_nnreal_gt {x y : ℝ≥0∞} (h : ∀ r : ℝ≥0, y < r → x ≤ r) : x ≤ y :=
+  le_of_forall_gt_imp_ge_of_dense fun b hb ↦ by
+    obtain ⟨r, hyr, hrb⟩ := lt_iff_exists_nnreal_btwn.1 hb
+    exact (h r hyr).trans hrb.le
 
 end ENNReal

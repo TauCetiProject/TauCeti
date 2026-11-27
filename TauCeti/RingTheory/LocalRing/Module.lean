@@ -18,6 +18,7 @@ public import TauCeti.LinearAlgebra.Unimodular
 public import TauCeti.RingTheory.LocalRing.Residue
 import Mathlib.Algebra.Module.Shrink
 import TauCeti.Algebra.Module.Projective.Schanuel
+import TauCeti.RingTheory.Ideal.Operations
 
 /-!
 # Generators of modules over a local ring
@@ -49,6 +50,8 @@ Splitting off these summands one at a time shows that `M` is free.
 * `TauCeti.IsLocalRing.exists_basis_of_linearIndependent_residue_coord`: a family of `n`
   elements of a free module of rank `n` whose coordinates have linearly independent residues is a
   basis.
+* `TauCeti.IsLocalRing.span_eq_top_iff_span_image_residue_eq_top`: a set of vectors of `R ^ ι`,
+  `ι` finite, spans exactly when its reduction spans over the residue field.
 * `TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul`: a finite module over a local
   ring `(R, 𝔪, k)` is a quotient of `R ^ dim_k (k ⊗ M)` by a submodule of `𝔪 • R ^ dim_k (k ⊗ M)`.
 * `TauCeti.IsLocalRing.exists_linearMap_quotient_eq_one`: an element of a module `M` outside
@@ -137,6 +140,42 @@ theorem exists_basis_of_linearIndependent_residue_coord {ι κ : Type*} [Fintype
     exact isUnit_of_map_unit (_root_.IsLocalRing.residue R) _ this
   refine ⟨(b.map (Matrix.toLinearEquiv b A hA)).reindex e.symm, fun k ↦ ?_⟩
   simp [A, Matrix.toLin_self, Module.Basis.sum_repr]
+
+/-- **Spanning in `R ^ ι` is detected on the residue field.** Over a local ring `R` with residue
+field `k` and a finite index type `ι`, a set `s` of vectors of `ι → R` spans `ι → R` if and only
+if the reductions `residue R ∘ v`, `v ∈ s`, span `ι → k` over `k`. The analogue for families of
+square matrices is `IsLocalRing.span_range_eq_top_of_span_range_map_residue_eq_top`. -/
+theorem span_eq_top_iff_span_image_residue_eq_top {ι : Type*} [Finite ι] {s : Set (ι → R)} :
+    Submodule.span R s = ⊤ ↔ Submodule.span (_root_.IsLocalRing.ResidueField R)
+      ((_root_.IsLocalRing.residue R ∘ ·) '' s) = ⊤ := by
+  classical
+  have := Fintype.ofFinite ι
+  -- Coordinatewise reduction is semilinear and onto, and carries `span R s` onto the span of the
+  -- reductions (`Submodule.map_span`).
+  let F : (ι → R) →ₛₗ[_root_.IsLocalRing.residue R] (ι → _root_.IsLocalRing.ResidueField R) :=
+    { toFun := (_root_.IsLocalRing.residue R ∘ ·)
+      map_add' := fun _ _ ↦ by ext; simp
+      map_smul' := fun _ _ ↦ by ext; simp }
+  have hF : (Submodule.span R s).map F = Submodule.span (_root_.IsLocalRing.ResidueField R)
+      ((_root_.IsLocalRing.residue R ∘ ·) '' s) := Submodule.map_span F s
+  refine ⟨fun hs ↦ ?_, fun hs ↦ ?_⟩
+  · rw [← hF, hs, Submodule.map_top, LinearMap.range_eq_top]
+    exact _root_.IsLocalRing.residue_surjective.comp_left
+  -- Nakayama (`IsLocalRing.map_mkQ_eq_top`): it suffices to span modulo `𝔪 • (ι → R)`, and a
+  -- vector with the same reduction as one of `span R s` differs from it by a vector with
+  -- coordinates in `𝔪`.
+  rw [← _root_.IsLocalRing.map_mkQ_eq_top, Submodule.eq_top_iff']
+  intro z
+  obtain ⟨u, rfl⟩ := Submodule.Quotient.mk_surjective _ z
+  obtain ⟨v, hv, huv⟩ : F u ∈ (Submodule.span R s).map F := by
+    rw [hF, hs]
+    exact Submodule.mem_top
+  refine ⟨v, hv, ?_⟩
+  rw [Submodule.mkQ_apply, Submodule.Quotient.eq, (Pi.basisFun R ι).mem_smul_top_iff]
+  intro i
+  rw [Pi.basisFun_repr, ← _root_.IsLocalRing.residue_eq_zero_iff, Pi.sub_apply, map_sub,
+    sub_eq_zero]
+  exact congrFun huv i
 
 variable (R M) in
 /-- **Minimal generators of a finite module over a local ring.** If `M` is a finite module over a
