@@ -7,14 +7,24 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.Sobolev.Trace.Reflection.Basic
+public import TauCeti.Analysis.InnerProductSpace.HyperplaneReflection
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Integrable
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Isometry
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Subharmonic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
 import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
+import TauCeti.Analysis.PDE.PoissonIntegral.Ball
 
 /-!
-# The Schwarz reflection principle for weakly harmonic functions
+# The Schwarz reflection principle
+
+This file proves the Schwarz reflection principle for harmonic functions in two forms: a weak form,
+for functions vanishing on the hyperplane in the Sobolev sense, and the classical form, for
+functions continuous up to the hyperplane.
+
+## The weak form
 
 Let `H = normalHalfSpace a = {x | a < x.fst}` in the Euclidean product `ℝ × E`, let
 `ρ (t, y) = (2a - t, y)` be the reflection in its boundary hyperplane `{a} × E`, and let `U` be an
@@ -35,9 +45,20 @@ whole ball. Estimates for harmonic functions on balls, such as the Campanato dec
 `TauCeti.Analysis.InnerProductSpace.Harmonic.Decay`, can then be applied on balls centred on the
 flat boundary.
 
+## The classical form
+
+Let `ρ` be the reflection in the hyperplane `⟪y, ν⟫ = c` of a finite-dimensional real inner product
+space, `ν ≠ 0`, and let `Ω` be an open set with `ρ Ω ⊆ Ω`. If `v` is harmonic on the part of `Ω`
+above the hyperplane, continuous up to the hyperplane from above, and zero on the part of `Ω` in the
+hyperplane, then its odd reflection, equal to `v` on and above the hyperplane and to `-v ∘ ρ` below
+it, is harmonic on `Ω` (`TauCeti.harmonicOnNhd_ite_neg_comp_hyperplaneReflection`). Nothing is
+assumed of `v` near the hyperplane beyond continuity, which is the form in which classical
+solutions of the Dirichlet problem, given by Perron's method or a Poisson integral, are known to
+attain zero boundary values on a flat boundary portion.
+
 ## The argument
 
-For a test function `φ` on `U`, change variables by `ρ` in the second term:
+For the weak form, given a test function `φ` on `U`, change variables by `ρ` in the second term:
 `∫ Δφ (w - w ∘ ρ) = ∫ Δψ w` with `ψ = φ - φ ∘ ρ`, since the Laplacian commutes with the isometry
 `ρ`. Integrating by parts on `U` gives `-∫ ⟪∇ψ, G⟫`, and it remains to show this vanishes. Now
 `ψ` vanishes on the hyperplane, because `ρ` fixes it pointwise, but `ψ` is not supported in `H`,
@@ -48,6 +69,15 @@ so weak harmonicity on `U ∩ H` does not apply to it directly. Instead it appli
 (`TauCeti.tendsto_integral_mul_fderiv_normalCutoff_apply`). This is the cutoff argument of
 Brezis, Lemma 9.2, used in `TauCeti.Analysis.Sobolev.Trace.Reflection` for the even reflection.
 
+For the classical form it suffices, by locality, to show that the odd reflection `w` of `v` is
+harmonic on a ball `B` centred on the hyperplane, with closure in `Ω`. The function `w` is
+continuous on the closed ball and odd under `ρ`. Let `h` be the harmonic function on `B` with
+boundary values `w` (`TauCeti.exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere`). Then
+`-h ∘ ρ` solves the same Dirichlet problem, so `h` is odd by uniqueness, and vanishes on the
+hyperplane. On the upper half of `B`, `h` and `v` are harmonic, continuous up to the boundary and
+agree on it, so they agree by the maximum principle
+(`TauCeti.eqOn_closure_of_laplacian_eq_of_eqOn_frontier`); by oddness `h = w` on all of `B`.
+
 ## Main declarations
 
 * `TauCeti.WeaklyHarmonicOn.sub_comp_normalReflection`: the odd reflection of a function weakly
@@ -56,6 +86,8 @@ Brezis, Lemma 9.2, used in `TauCeti.Analysis.Sobolev.Trace.Reflection` for the e
 * `TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace`: if such a function
   also vanishes off `H`, it agrees almost everywhere on `U ∩ H` with a harmonic function on `U`
   that is odd under `ρ`, and its weak gradient agrees there with the classical gradient.
+* `TauCeti.harmonicOnNhd_ite_neg_comp_hyperplaneReflection`: the classical form, the odd reflection
+  of a harmonic function continuous up to the hyperplane and zero on it is harmonic.
 
 ## References
 
@@ -271,5 +303,187 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace
         ((hh.contDiffOn.of_le one_le_two).mono hUH)).congr_ae hwh.symm
     filter_upwards [hh'.ae_eq hG] with x hx
     exact innerSL_inj.1 hx
+
+/-! ### The classical reflection principle -/
+
+section Classical
+
+open Metric
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+  {ν : F} {c : ℝ} {v : F → ℝ}
+
+omit [FiniteDimensional ℝ F] in
+/-- The odd reflection of a function continuous on the closed upper half of a ball centred on the
+hyperplane and zero on the hyperplane is continuous on the closed ball and odd under `ρ`. -/
+private theorem continuousOn_ite_neg_comp_hyperplaneReflection (hν : ν ≠ 0) {x : F}
+    (hx : ⟪x, ν⟫_ℝ = c) {r : ℝ} (hvc : ContinuousOn v (closedBall x r ∩ {y | c ≤ ⟪y, ν⟫_ℝ}))
+    (hv0 : ∀ y ∈ closedBall x r, ⟪y, ν⟫_ℝ = c → v y = 0) :
+    ContinuousOn (fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (hyperplaneReflection ν c y))
+        (closedBall x r) ∧
+      ∀ y ∈ closedBall x r,
+        (if c ≤ ⟪hyperplaneReflection ν c y, ν⟫_ℝ then v (hyperplaneReflection ν c y)
+          else -v (hyperplaneReflection ν c (hyperplaneReflection ν c y))) =
+        -(if c ≤ ⟪y, ν⟫_ℝ then v y else -v (hyperplaneReflection ν c y)) := by
+  set ρ := hyperplaneReflection ν c
+  have hρν : ∀ y, ⟪ρ y, ν⟫_ℝ = 2 * c - ⟪y, ν⟫_ℝ := inner_hyperplaneReflection hν c
+  have hinner : Continuous fun y : F ↦ ⟪y, ν⟫_ℝ := continuous_id.inner continuous_const
+  refine ⟨?_, fun y hy ↦ ?_⟩
+  · -- Above the hyperplane the reflection is `v`, below it `-v ∘ ρ`, and both are `0` on it.
+    have hup : ContinuousOn (fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (ρ y))
+        (closedBall x r ∩ {y | c ≤ ⟪y, ν⟫_ℝ}) :=
+      hvc.congr fun y hy ↦ by simp [show c ≤ ⟪y, ν⟫_ℝ from hy.2]
+    have hdown : ContinuousOn (fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (ρ y))
+        (closedBall x r ∩ {y | ⟪y, ν⟫_ℝ ≤ c}) := by
+      refine (hvc.comp ρ.continuous.continuousOn
+        fun y (hy : y ∈ closedBall x r ∩ {y | ⟪y, ν⟫_ℝ ≤ c}) ↦
+          ⟨(hyperplaneReflection_mem_closedBall_iff hx).2 hy.1, ?_⟩).neg.congr
+        fun y (hy : y ∈ closedBall x r ∩ {y | ⟪y, ν⟫_ℝ ≤ c}) ↦ ?_
+      · change c ≤ ⟪ρ y, ν⟫_ℝ
+        rw [hρν]
+        linarith [show ⟪y, ν⟫_ℝ ≤ c from hy.2]
+      · rcases (show ⟪y, ν⟫_ℝ ≤ c from hy.2).lt_or_eq with h | h
+        · simp [not_le.2 h]
+        · simp [h.ge, hyperplaneReflection_eq_self_of_inner_eq h, hv0 y hy.1 h, ρ]
+    refine (hup.union_of_isClosed hdown (isClosed_closedBall.inter
+      (isClosed_le continuous_const hinner)) (isClosed_closedBall.inter
+      (isClosed_le hinner continuous_const))).mono fun y hy ↦ ?_
+    rcases le_total c ⟪y, ν⟫_ℝ with h | h
+    · exact Or.inl ⟨hy, h⟩
+    · exact Or.inr ⟨hy, h⟩
+  · rcases lt_trichotomy ⟪y, ν⟫_ℝ c with h | h | h
+    · simp [show c ≤ ⟪ρ y, ν⟫_ℝ by rw [hρν]; linarith, not_le.2 h, ρ]
+    · simp [hyperplaneReflection_eq_self_of_inner_eq h, h.ge, hv0 y hy h, ρ]
+    · simp [show ¬c ≤ ⟪ρ y, ν⟫_ℝ by rw [hρν]; linarith, h.le, ρ]
+
+/-- **An odd harmonic function with odd boundary values.** For boundary values `w` continuous on a
+closed ball centred on the hyperplane and odd under `ρ`, the Dirichlet problem on the ball has a
+solution that is odd under `ρ`. -/
+private theorem exists_harmonicOnNhd_ball_eqOn_sphere_of_odd (hν : ν ≠ 0) {x : F}
+    (hx : ⟪x, ν⟫_ℝ = c) {r : ℝ} (hr : 0 < r) {w : F → ℝ} (hwc : ContinuousOn w (closedBall x r))
+    (hodd : ∀ y ∈ closedBall x r, w (hyperplaneReflection ν c y) = -w y) :
+    ∃ H : F → ℝ, HarmonicOnNhd H (ball x r) ∧ ContinuousOn H (closedBall x r) ∧
+      EqOn H w (sphere x r) ∧ ∀ y ∈ closedBall x r, H y = -H (hyperplaneReflection ν c y) := by
+  borelize F
+  have : Nontrivial F := nontrivial_of_ne ν 0 hν
+  set ρ := hyperplaneReflection ν c
+  have hcl : closure (ball x r) = closedBall x r := closure_ball x hr.ne'
+  obtain ⟨H, hH, hHc, hHw⟩ := exists_harmonicOnNhd_ball_continuousOn_closedBall_eqOn_sphere
+    (hwc.mono sphere_subset_closedBall)
+  -- `-H ∘ ρ` solves the same Dirichlet problem, so it is `H` by uniqueness.
+  have hH₂ : HarmonicOnNhd (fun y ↦ -H (ρ y)) (ball x r) := by
+    have h := (harmonicOnNhd_comp_affineIsometryEquiv_right_iff ρ (f := H) (s := ball x r)).2 hH
+    rw [show ρ ⁻¹' ball x r = ball x r from
+      Set.ext fun y ↦ hyperplaneReflection_mem_ball_iff hx] at h
+    exact h.neg
+  have h := eqOn_closure_of_laplacian_eq_of_eqOn_frontier isOpen_ball isBounded_ball
+    hH.contDiffOn hH₂.contDiffOn (by rwa [hcl])
+    (by
+      rw [hcl]
+      exact (hHc.comp ρ.continuous.continuousOn fun y hy ↦
+        (hyperplaneReflection_mem_closedBall_iff hx).2 hy).neg)
+    (fun y hy ↦ by rw [(hH y hy).2.self_of_nhds, (hH₂ y hy).2.self_of_nhds]) (fun y hy ↦ ?_)
+  · rw [hcl] at h
+    exact ⟨H, hH, hHc, hHw, h⟩
+  rw [frontier_ball x hr.ne'] at hy
+  have hρx : ρ x = x := hyperplaneReflection_eq_self_of_inner_eq hx
+  have hρy : ρ y ∈ sphere x r := by
+    rw [mem_sphere, ← mem_sphere.1 hy, ← hρx, ρ.dist_map, hρx]
+  rw [hHw hy, hHw hρy, hodd y (sphere_subset_closedBall hy), neg_neg]
+
+/-- **The Schwarz reflection principle on a ball centred on the hyperplane.** This is the case of
+`TauCeti.harmonicOnNhd_ite_neg_comp_hyperplaneReflection` that the general case reduces to, with
+continuity assumed up to the sphere. -/
+private theorem harmonicOnNhd_ite_neg_comp_hyperplaneReflection_ball (hν : ν ≠ 0) {x : F}
+    (hx : ⟪x, ν⟫_ℝ = c) {r : ℝ} (hv : HarmonicOnNhd v (ball x r ∩ {y | c < ⟪y, ν⟫_ℝ}))
+    (hvc : ContinuousOn v (closedBall x r ∩ {y | c ≤ ⟪y, ν⟫_ℝ}))
+    (hv0 : ∀ y ∈ closedBall x r, ⟪y, ν⟫_ℝ = c → v y = 0) :
+    HarmonicOnNhd (fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (hyperplaneReflection ν c y))
+      (ball x r) := by
+  borelize F
+  have : Nontrivial F := nontrivial_of_ne ν 0 hν
+  rcases le_or_gt r 0 with hr | hr
+  · exact fun y hy ↦ absurd hy (by simp [ball_eq_empty.2 hr])
+  set ρ := hyperplaneReflection ν c
+  set w : F → ℝ := fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (ρ y) with hw
+  have hρν : ∀ y, ⟪ρ y, ν⟫_ℝ = 2 * c - ⟪y, ν⟫_ℝ := inner_hyperplaneReflection hν c
+  have hinner : Continuous fun y : F ↦ ⟪y, ν⟫_ℝ := continuous_id.inner continuous_const
+  -- The Dirichlet problem with the boundary values of `w` has an odd solution `H`, which
+  -- therefore vanishes on the hyperplane.
+  obtain ⟨hwc, hodd⟩ := continuousOn_ite_neg_comp_hyperplaneReflection hν hx hvc hv0
+  obtain ⟨H, hH, hHc, hHw, hHodd⟩ :=
+    exists_harmonicOnNhd_ball_eqOn_sphere_of_odd hν hx hr hwc hodd
+  have hH0 : ∀ y ∈ closedBall x r, ⟪y, ν⟫_ℝ = c → H y = 0 := fun y hy h ↦ by
+    have := hHodd y hy
+    rw [hyperplaneReflection_eq_self_of_inner_eq h] at this
+    linarith
+  -- Above the hyperplane `H = v`, by uniqueness on the half-ball.
+  have hUcl : closure (ball x r ∩ {y | c < ⟪y, ν⟫_ℝ}) ⊆ closedBall x r ∩ {y | c ≤ ⟪y, ν⟫_ℝ} :=
+    (closure_inter_subset_inter_closure _ _).trans
+      (inter_subset_inter closure_ball_subset_closedBall (closure_setOf_lt_inner_subset ν c))
+  have h := eqOn_closure_of_laplacian_eq_of_eqOn_frontier
+    (isOpen_ball.inter (isOpen_lt continuous_const hinner))
+    (isBounded_ball.subset inter_subset_left) (hH.contDiffOn.mono inter_subset_left)
+    hv.contDiffOn (hHc.mono (hUcl.trans inter_subset_left)) (hvc.mono hUcl)
+    (fun y hy ↦ by rw [(hH y hy.1).2.self_of_nhds, (hv y hy).2.self_of_nhds]) (fun y hy ↦ ?_)
+  swap
+  · have hyc := hUcl (frontier_subset_closure hy)
+    rcases frontier_inter_subset _ _ hy with ⟨hs, -⟩ | ⟨-, hf⟩
+    · rw [frontier_ball x hr.ne'] at hs
+      rw [hHw hs]
+      simp [show c ≤ ⟪y, ν⟫_ℝ from hyc.2]
+    · have h := (frontier_lt_subset_eq continuous_const hinner hf).symm
+      rw [hH0 y hyc.1 h, hv0 y hyc.1 h]
+  -- Hence `H = w` on the ball, and `w` is harmonic there.
+  have hHw' : EqOn H w (ball x r) := by
+    intro y hy
+    rcases lt_trichotomy ⟪y, ν⟫_ℝ c with h' | h' | h'
+    · rw [hHodd y (ball_subset_closedBall hy), h (subset_closure
+        ⟨(hyperplaneReflection_mem_ball_iff hx).2 hy, by rw [mem_ofPred, hρν]; linarith⟩)]
+      simp [hw, not_le.2 h', ρ]
+    · rw [hH0 y (ball_subset_closedBall hy) h']
+      simp [hw, h'.ge, hv0 y (ball_subset_closedBall hy) h']
+    · rw [h (subset_closure ⟨hy, h'⟩)]
+      simp [hw, h'.le]
+  exact fun y hy ↦
+    (harmonicAt_congr_nhds (eventuallyEq_of_mem (isOpen_ball.mem_nhds hy) hHw')).1 (hH y hy)
+
+/-- **The Schwarz reflection principle.** Let `ρ` be the reflection in the hyperplane
+`⟪y, ν⟫ = c`, let `Ω` be an open set with `ρ Ω ⊆ Ω`, and let `v` be harmonic on the part of `Ω`
+above the hyperplane, continuous up to the hyperplane from above, and zero on the part of `Ω` in
+the hyperplane. Then the odd reflection of `v`, equal to `v` on and above the hyperplane and to
+`-v ∘ ρ` below it, is harmonic on `Ω`. Unlike
+`TauCeti.WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_of_inf_normalHalfSpace`, nothing is assumed of
+`v` near the hyperplane beyond continuity. -/
+theorem harmonicOnNhd_ite_neg_comp_hyperplaneReflection (hν : ν ≠ 0) {Ω : Set F}
+    (hΩ : IsOpen Ω) (hρΩ : ∀ y ∈ Ω, hyperplaneReflection ν c y ∈ Ω)
+    (hv : HarmonicOnNhd v (Ω ∩ {y | c < ⟪y, ν⟫_ℝ}))
+    (hvc : ContinuousOn v (Ω ∩ {y | c ≤ ⟪y, ν⟫_ℝ}))
+    (hv0 : ∀ y ∈ Ω, ⟪y, ν⟫_ℝ = c → v y = 0) :
+    HarmonicOnNhd (fun y ↦ if c ≤ ⟪y, ν⟫_ℝ then v y else -v (hyperplaneReflection ν c y)) Ω := by
+  have hinner : Continuous fun y : F ↦ ⟪y, ν⟫_ℝ := continuous_id.inner continuous_const
+  intro x hx
+  rcases lt_trichotomy ⟪x, ν⟫_ℝ c with h | h | h
+  · -- Below the hyperplane the odd reflection is `-v ∘ ρ` near `x`.
+    have hρx : c < ⟪hyperplaneReflection ν c x, ν⟫_ℝ := by
+      rw [inner_hyperplaneReflection hν]
+      linarith
+    refine (harmonicAt_congr_nhds (eventuallyEq_of_mem
+      ((isOpen_lt hinner continuous_const).mem_nhds h) fun y (hy : ⟪y, ν⟫_ℝ < c) ↦ ?_)).2
+      ((harmonicAt_comp_affineIsometryEquiv_right_iff (hyperplaneReflection ν c)).2
+        (hv _ ⟨hρΩ x hx, hρx⟩)).neg
+    simp [not_le.2 hy]
+  · -- On the hyperplane, reflect on a ball centred at `x`.
+    obtain ⟨r, hr, hrΩ⟩ := nhds_basis_closedBall.mem_iff.1 (hΩ.mem_nhds hx)
+    exact harmonicOnNhd_ite_neg_comp_hyperplaneReflection_ball hν h
+      (hv.mono (inter_subset_inter_left _ (ball_subset_closedBall.trans hrΩ)))
+      (hvc.mono (inter_subset_inter_left _ hrΩ)) (fun y hy ↦ hv0 y (hrΩ hy)) x (mem_ball_self hr)
+  · -- Above the hyperplane the odd reflection is `v` near `x`.
+    refine (harmonicAt_congr_nhds (eventuallyEq_of_mem
+      ((isOpen_lt continuous_const hinner).mem_nhds h) fun y (hy : c < ⟪y, ν⟫_ℝ) ↦ ?_)).2
+      (hv x ⟨hx, h⟩)
+    simp [hy.le]
+
+end Classical
 
 end TauCeti
