@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Geometry.Convex.Cone.Basic
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic
+import TauCeti.Analysis.Convex.Cone.Orthant
 import TauCeti.Analysis.Polynomial.RootLocation
 
 /-!
@@ -39,6 +40,8 @@ fully nonlinear elliptic equations such as the complex Hessian equations require
 * `MvPolynomial.IsHyperbolic.convex_gardingCone`, `MvPolynomial.IsHyperbolic.add_mem_gardingCone`:
   `Γ` is a convex cone.
 * `MvPolynomial.IsHyperbolic.gardingConvexCone`: `Γ` as a `ConvexCone`.
+* `MvPolynomial.IsHyperbolic.setOf_forall_pos_subset_iff`: `Γ` contains the positive orthant if
+  and only if every coordinate vector `eᵢ` lies in its closure.
 * `MvPolynomial.IsHyperbolic.eval_sum_smul_pderiv_pos`: `D_b p > 0` on `Γ` for `b ∈ Γ`, `m ≥ 1`.
 
 ## Implementation notes
@@ -361,7 +364,7 @@ theorem add_mem_gardingCone (hp : IsHyperbolic p m a) {y : σ → ℝ} (hx : x �
     one_smul] at h
 
 /-- The Gårding cone `Γ(p, a)` of a hyperbolic polynomial, as a convex cone. -/
-@[expose] def gardingConvexCone (hp : IsHyperbolic p m a) : ConvexCone ℝ (σ → ℝ) where
+def gardingConvexCone (hp : IsHyperbolic p m a) : ConvexCone ℝ (σ → ℝ) where
   carrier := gardingCone p a
   smul_mem' _ hc _ hx := smul_mem_gardingCone hp.isHomogeneous hx hc
   add_mem' _ hx _ hy := hp.add_mem_gardingCone hx hy
@@ -370,7 +373,23 @@ theorem add_mem_gardingCone (hp : IsHyperbolic p m a) {y : σ → ℝ} (hx : x �
 @[simp]
 theorem coe_gardingConvexCone (hp : IsHyperbolic p m a) :
     (hp.gardingConvexCone : Set (σ → ℝ)) = gardingCone p a :=
-  rfl
+  (rfl)
+
+/-- Membership in `IsHyperbolic.gardingConvexCone` is membership in the Gårding cone. -/
+@[simp]
+theorem mem_gardingConvexCone (hp : IsHyperbolic p m a) {x : σ → ℝ} :
+    x ∈ hp.gardingConvexCone ↔ x ∈ gardingCone p a :=
+  .rfl
+
+/-- **The positive orthant and the Gårding cone.** For `p` hyperbolic in the direction `a`, the
+Gårding cone `Γ(p, a)` contains the positive orthant `Γ_n` if and only if every coordinate
+vector `eᵢ` lies in its closure. -/
+theorem setOf_forall_pos_subset_iff [Finite σ] [DecidableEq σ] (hp : IsHyperbolic p m a) :
+    {x : σ → ℝ | ∀ i, 0 < x i} ⊆ gardingCone p a ↔
+      ∀ i, (Pi.single i 1 : σ → ℝ) ∈ closure (gardingCone p a) :=
+  hp.coe_gardingConvexCone ▸ ConvexCone.setOf_forall_pos_subset_iff
+    (hp.coe_gardingConvexCone ▸ isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne')
+    (hp.coe_gardingConvexCone ▸ ⟨a, self_mem_gardingCone hp.isHomogeneous hp.eval_pos.ne'⟩)
 
 /-- **Gårding's theorem, positivity of the derivatives.** For `p` hyperbolic of degree `m ≥ 1` in
 the direction `a` and `b ∈ Γ(p, a)`, the directional derivative `D_b p = ∑ᵢ bᵢ ∂p/∂Xᵢ` is positive

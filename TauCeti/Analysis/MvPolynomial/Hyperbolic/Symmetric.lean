@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
-public import TauCeti.Analysis.Convex.Cone.Orthant
 public import TauCeti.Analysis.MvPolynomial.Hyperbolic.Garding
+import TauCeti.Algebra.BigOperators.Perm
 
 /-!
 # Gårding cones in the direction `e = (1, …, 1)`
@@ -22,17 +22,10 @@ its coordinates are equal, to a multiple of `σ_1(x)` by a positive constant. If
 is `-s • e` with `s ≥ 0`, which is not in `Γ` since `p(-s • e + s • e) = p(0) = 0`
 (`MvPolynomial.smul_notMem_gardingCone`).
 
-Without symmetry, `Γ` contains the positive orthant `Γ_n` exactly when every coordinate vector
-`eᵢ` lies in the closure of `Γ` (`MvPolynomial.IsHyperbolic.setOf_forall_pos_subset_iff`). This
-holds for every open nonempty convex cone (`ConvexCone.setOf_forall_pos_subset_iff`), and `Γ` is
-one by Gårding's theorem (`MvPolynomial.IsHyperbolic.gardingConvexCone`).
-
 ## Main results
 
 * `MvPolynomial.IsHyperbolic.sum_pos_of_mem_gardingCone`: for symmetric `p` of degree `m ≥ 1`,
   `σ_1 > 0` on `Γ(p, e)`.
-* `MvPolynomial.IsHyperbolic.setOf_forall_pos_subset_iff`: `Γ_n ⊆ Γ(p, e)` if and only if every
-  `eᵢ` lies in the closure of `Γ(p, e)`.
 
 ## References
 
@@ -45,19 +38,6 @@ public section
 namespace MvPolynomial.IsHyperbolic
 
 variable {σ : Type*} [Fintype σ] {p : MvPolynomial σ ℝ} {m : ℕ}
-
-/-- The coordinates of the sum `∑_π x ∘ π` over all permutations `π` are equal. -/
-private theorem sum_perm_apply_eq [DecidableEq σ] (x : σ → ℝ) (i j : σ) :
-    ∑ π : Equiv.Perm σ, x (π i) = ∑ π : Equiv.Perm σ, x (π j) := by
-  exact Fintype.sum_equiv (Equiv.mulRight (Equiv.swap i j)) _ _ fun π ↦ by
-    simp [Equiv.Perm.mul_apply]
-
-/-- The coordinates of the sum `∑_π x ∘ π` over all permutations `π` add up to the number of
-permutations times `σ_1(x)`. -/
-private theorem sum_sum_perm_apply [DecidableEq σ] (x : σ → ℝ) :
-    ∑ i, ∑ π : Equiv.Perm σ, x (π i) = Fintype.card (Equiv.Perm σ) * ∑ i, x i := by
-  rw [Finset.sum_comm]
-  simp [Equiv.sum_comp]
 
 /-- **A symmetric Gårding cone lies in the half-space `σ_1 > 0`.** For a symmetric polynomial `p`
 of degree `m ≥ 1`, hyperbolic in the direction `e = (1, …, 1)`, every point of the Gårding cone
@@ -83,25 +63,14 @@ theorem sum_pos_of_mem_gardingCone (hp : IsHyperbolic p m 1) (hm : 1 ≤ m) (hsy
   -- All coordinates of `y` equal `y i₀`, which has the sign of `σ_1(x)`.
   have hyc : y = y i₀ • (1 : σ → ℝ) := by
     ext i
-    simp [hyi, sum_perm_apply_eq x i i₀]
+    simp [hyi, Equiv.Perm.sum_apply_eq_sum_apply x i i₀]
   have hsum : (Fintype.card σ : ℝ) * y i₀ = Fintype.card (Equiv.Perm σ) * ∑ i, x i := by
-    rw [← sum_sum_perm_apply, hyi]
-    simp_rw [sum_perm_apply_eq x _ i₀]
+    rw [← nsmul_eq_mul (Fintype.card (Equiv.Perm σ)), ← Equiv.Perm.sum_sum_apply, hyi]
+    simp_rw [Equiv.Perm.sum_apply_eq_sum_apply x _ i₀]
     rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
   have hy₀ : y i₀ ≤ 0 := by
     have hcard : (0 : ℝ) < Fintype.card σ := by exact_mod_cast Fintype.card_pos_iff.2 ⟨i₀⟩
     nlinarith [show (0 : ℝ) < Fintype.card (Equiv.Perm σ) by exact_mod_cast Fintype.card_pos]
   exact smul_notMem_gardingCone hp.isHomogeneous (by omega) hy₀ (hyc ▸ hy)
-
-omit [Fintype σ] in
-/-- **The positive orthant and the Gårding cone.** For `p` hyperbolic in the direction
-`e = (1, …, 1)`, the Gårding cone `Γ(p, e)` contains the positive orthant `Γ_n` if and only if
-every coordinate vector `eᵢ` lies in its closure. -/
-theorem setOf_forall_pos_subset_iff [Finite σ] [DecidableEq σ] (hp : IsHyperbolic p m 1) :
-    {x : σ → ℝ | ∀ i, 0 < x i} ⊆ gardingCone p 1 ↔
-      ∀ i, (Pi.single i 1 : σ → ℝ) ∈ closure (gardingCone p 1) :=
-  hp.coe_gardingConvexCone ▸ ConvexCone.setOf_forall_pos_subset_iff
-    (hp.coe_gardingConvexCone ▸ isOpen_gardingCone hp.isHomogeneous hp.eval_pos.ne')
-    (hp.coe_gardingConvexCone ▸ ⟨1, self_mem_gardingCone hp.isHomogeneous hp.eval_pos.ne'⟩)
 
 end MvPolynomial.IsHyperbolic
