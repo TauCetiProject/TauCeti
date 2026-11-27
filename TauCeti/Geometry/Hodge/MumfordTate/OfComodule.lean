@@ -31,7 +31,8 @@ The proof compares the two morphisms on the generic matrix after the injective m
 `S → ℂ ⊗[ℝ] S ≅ ℂ[ℤ²]`. On the side of `V`, a vector of `V^{p,n-p}` has coaction
 `v ⊗ X^{(-p,p-n)}` over `ℂ[ℤ²]`, so the coefficient matrix of `ℂ ⊗[ℝ] V` in `e` is the sum over
 `p` of the matrices of the Hodge projections times `X^{(-p,p-n)}`, which is the matrix
-`TauCeti.Hodge.HodgeStructureOn.splitCoordinateMatrix` defining `h`.
+`TauCeti.Hodge.HodgeStructureOn.splitCoordinateMatrix` defining `h`
+(`TauCeti.DeligneTorus.coefficientMatrix_baseChange_map_splittingBialgEquiv`).
 
 ## References
 
@@ -49,6 +50,36 @@ namespace TauCeti.DeligneTorus
 variable {V : Type*} [AddCommGroup V] [Module ℝ V] [Comodule ℝ S V] [Module.Finite ℝ V] {n : ℤ}
   (hV : ∀ p q, p + q ≠ n → hodgeComponent V p q = ⊥) {d : ℕ} (e : Module.Basis (Fin d) ℝ V)
 
+/-- **The matrix coefficients of a pure representation of `S`, read in `ℂ[ℤ²]`.** For a real
+representation `V` of `S` pure of weight `n` with a basis `e`, the coefficient matrix of
+`ℂ ⊗[ℝ] V` in the complexification of `e`, mapped along the splitting `ℂ ⊗[ℝ] S ≅ ℂ[ℤ²]`, is the
+matrix `∑ p, P p * X^{(-p, p - n)}` of the Hodge projections `P p` of the Hodge structure formed
+by the Hodge components of `V`. -/
+theorem coefficientMatrix_baseChange_map_splittingBialgEquiv :
+    letI := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
+    (Comodule.coefficientMatrix (C := ℂ ⊗[ℝ] S) (e.baseChange ℂ)).map splittingBialgEquiv =
+      (Hodge.HodgeStructureOn.ofDecomposition
+        (isHodgeDecomposition_hodgeComponent hV)).splitCoordinateMatrix (e.baseChange ℂ) := by
+  set hs := Hodge.HodgeStructureOn.ofDecomposition (isHodgeDecomposition_hodgeComponent hV)
+  let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
+  -- the splitting `ℂ ⊗[ℝ] S ≅ ℂ[ℤ²]`, as a coalgebra map
+  let f : ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
+    (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
+  let _ := Comodule.Corestrict (R := ℂ) (C := ℂ ⊗[ℝ] S) (M := ℂ ⊗[ℝ] V) f
+  change (Comodule.coefficientMatrix (C := ℂ ⊗[ℝ] S) (e.baseChange ℂ)).map f = _
+  rw [← Comodule.coefficientMatrix_corestrict]
+  refine Matrix.ext fun i j ↦ ?_
+  rw [Hodge.HodgeStructureOn.splitCoordinateMatrix_apply, Comodule.coefficientMatrix_apply,
+    Comodule.matrixCoefficient_def]
+  conv_lhs => rw [← hs.sum_proj_hodgeSupport (e.baseChange ℂ j)]
+  rw [map_sum, map_sum, map_sum]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  have hp : hs.proj p (e.baseChange ℂ j) ∈ hodgeComponent V p (n - p) := by
+    simpa [hs] using hs.proj_mem p (e.baseChange ℂ j)
+  rw [hodgeComponent_def, DiagonalizableGroup.mem_weightSpace, neg_sub] at hp
+  rw [Comodule.corestrict_coact_apply, hp]
+  simp
+
 /-- **From a representation of `S` to a Hodge structure and back, on coordinate rings.** For a
 real representation `V` of `S` pure of weight `n` with a basis `e`, the coordinate morphism
 `S → GL_{d,ℝ}` of the Hodge structure formed by the Hodge components of `V`, in the
@@ -57,28 +88,7 @@ theorem realCoordinateBialgHom_ofDecomposition :
     (Hodge.HodgeStructureOn.ofDecomposition
         (isHodgeDecomposition_hodgeComponent hV)).realCoordinateBialgHom
       e.complexificationConjugation_toEquiv_baseChange = Comodule.coordinateBialgHom e := by
-  set hs := Hodge.HodgeStructureOn.ofDecomposition (isHodgeDecomposition_hodgeComponent hV)
   let _ := Comodule.baseChange (R := ℝ) (H := S) (M := V) ℂ
-  -- the splitting `ℂ ⊗[ℝ] S ≅ ℂ[ℤ²]`, as a coalgebra map
-  let f : ℂ ⊗[ℝ] S →ₗc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)) :=
-    (splittingBialgEquiv : ℂ ⊗[ℝ] S →ₐc[ℂ] MonoidAlgebra ℂ (Multiplicative (ℤ × ℤ)))
-  -- the matrix coefficients of the complexified representation, read in `ℂ[ℤ²]`
-  have hcoeff : (Comodule.coefficientMatrix (C := ℂ ⊗[ℝ] S) (e.baseChange ℂ)).map f =
-      hs.splitCoordinateMatrix (e.baseChange ℂ) := by
-    let _ := Comodule.Corestrict (R := ℂ) (C := ℂ ⊗[ℝ] S) (M := ℂ ⊗[ℝ] V) f
-    rw [← Comodule.coefficientMatrix_corestrict]
-    refine Matrix.ext fun i j ↦ ?_
-    rw [Hodge.HodgeStructureOn.splitCoordinateMatrix_apply, Comodule.coefficientMatrix_apply,
-      Comodule.matrixCoefficient_def]
-    conv_lhs => rw [← hs.sum_proj_hodgeSupport (e.baseChange ℂ j)]
-    rw [map_sum, map_sum, map_sum]
-    refine Finset.sum_congr rfl fun p _ ↦ ?_
-    have hp : hs.proj p (e.baseChange ℂ j) ∈ hodgeComponent V p (n - p) := by
-      simpa [hs] using hs.proj_mem p (e.baseChange ℂ j)
-    rw [hodgeComponent_def, DiagonalizableGroup.mem_weightSpace, neg_sub] at hp
-    rw [Comodule.corestrict_coact_apply, hp,
-      TensorProduct.map_tmul, TensorProduct.lid_tmul, Module.Basis.coord_apply,
-      LinearMap.id_apply, MonoidAlgebra.smul_single', mul_one]
   have hinj : Function.Injective fun s : S ↦
       splittingBialgEquiv ((1 : ℂ) ⊗ₜ[ℝ] s) :=
     splittingBialgEquiv.injective.comp
@@ -87,9 +97,10 @@ theorem realCoordinateBialgHom_ofDecomposition :
   simp only [BialgHom.coe_toAlgHom]
   rw [Hodge.HodgeStructureOn.one_tmul_realCoordinateBialgHom,
     Hodge.HodgeStructureOn.complexCoordinateBialgHom_one_tmul_X,
-    BialgEquiv.apply_symm_apply, Comodule.coordinateBialgHom_X, ← hcoeff,
+    BialgEquiv.apply_symm_apply, Comodule.coordinateBialgHom_X,
+    ← coefficientMatrix_baseChange_map_splittingBialgEquiv hV,
     Comodule.coefficientMatrix_baseChange]
-  simp only [Matrix.map_apply, TensorProduct.mk_apply, f, BialgHom.coe_toCoalgHom, BialgHom.coe_coe]
+  simp only [Matrix.map_apply, TensorProduct.mk_apply]
 
 /-- **From a representation of `S` to a Hodge structure and back.** The representation of `S`
 on `V` read off, through the basis `e`, from the Hodge structure formed by the Hodge components
