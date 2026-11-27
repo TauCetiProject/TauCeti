@@ -263,8 +263,11 @@ theorem simpleReflectionCharacterMap_eq_neg_one_of_rank_eq_one (hr : t.rank = 1)
     D.simpleReflectionCharacterMap i = -1 :=
   LinearMap.ext fun χ => D.weightLatticeEmbedding_injective (funext fun j => by
     obtain rfl : j = i := Fin.ext (by omega)
-    simp [D.weightLatticeEmbedding_simpleReflectionCharacterMap,
-      RootPairing.reflection_apply, t.coroot'_simpleIndex_apply ht]; ring)
+    simp only [D.weightLatticeEmbedding_simpleReflectionCharacterMap, RootPairing.reflection_apply,
+      t.coroot'_simpleIndex_apply ht, root_simpleIndex, zsmul_eq_mul, Pi.sub_apply, Pi.mul_apply,
+      Pi.intCast_apply, Int.cast_eq, cartanMatrix_apply_same, LinearMap.neg_apply,
+      one_apply_eq_self, map_neg, Pi.neg_apply]
+    ring)
 
 /-- Conjugation by `D.weylElement (t.simpleIndex ht i) A 1` has character map
 `D.simpleReflectionCharacterMap i` on `D.torusPoints A`. -/

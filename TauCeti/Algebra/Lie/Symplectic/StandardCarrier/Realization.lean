@@ -55,8 +55,6 @@ theorem for data with the same weight lattice applies to it.
 * `TauCeti.SpStd.chevalleyDatumPointsEquiv_map` and
   `TauCeti.SpStd.chevalleyDatumPointsEquiv_frobenius`: naturality in the value ring and
   compatibility with Frobenius.
-* `TauCeti.SpStd.chevalleyDatum_rootSubgroupPoints_injective`: injectivity of every root
-  subgroup of the datum.
 
 ## References
 
@@ -273,19 +271,6 @@ theorem chevalleyDatumPointsEquiv_symm_frobenius (p k : ℕ) (A : Type v) [CommR
     (chevalleyDatumPointsEquiv n ht A).symm (frobenius n p k A g) =
       (chevalleyDatum n ht).frobenius p k A ((chevalleyDatumPointsEquiv n ht A).symm g) := by
   rw [MulEquiv.symm_apply_eq, chevalleyDatumPointsEquiv_frobenius, MulEquiv.apply_symm_apply]
-
-/-! ## Injectivity of every root subgroup -/
-
-/-- **Every root subgroup of the standard symplectic datum of type `C_(n+1)` is injective**, at
-every root of `C_(n+1)` and over every commutative ring. -/
-theorem chevalleyDatum_rootSubgroupPoints_injective (γ : Fin (DynkinType.C (n + 1)).numRoots)
-    (A : Type v) [CommRing A] :
-    Function.Injective ((chevalleyDatum n ht).rootSubgroupPoints γ A) := by
-  refine (chevalleyDatum n ht).rootSubgroupPoints_injective_of_simple A (fun i => ?_) γ
-  intro u v huv
-  exact rootSubgroupPoints_injective n (.inl i) A (by
-    simpa only [chevalleyDatumPointsEquiv_rootSubgroupPoints_simpleIndex] using
-      congrArg (chevalleyDatumPointsEquiv n ht A) huv)
 
 end
 

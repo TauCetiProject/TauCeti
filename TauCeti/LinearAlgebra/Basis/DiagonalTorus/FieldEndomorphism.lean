@@ -12,7 +12,9 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Basic
 # Field endomorphisms intertwined with characters of a split torus
 
 Consequences of the pinning equation `f (ξ(s) * u) = η(s) * f u` for characters `ξ, η` of `𝔾ₘ^κ`:
-`AddMonoidHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul` and
+`AddMonoidHom.multiplierSubring` and `AddMonoidHom.multiplierRingHom` (the subring of left
+multipliers on which a unital additive map acts multiplicatively, and its restricted ring
+homomorphism), `AddMonoidHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul` and
 `RingHom.exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_eq` (over an infinite field, positive
 rational proportionality `d • η = m • ξ`), `AddMonoidHom.toRingHomOfTorusCharacter`
 (upgrading a unital additive map `f` with `f 1 = 1` and the intertwining equation to a ring
@@ -31,6 +33,40 @@ public section
 open TauCeti
 
 namespace AddMonoidHom
+
+/-- The subring of left multipliers `x` on which a unital additive homomorphism `h : R →+ S`
+(`h 1 = 1`) acts multiplicatively on all right factors, `h (x * y) = h x * h y`. -/
+def multiplierSubring {R S : Type*} [Ring R] [Ring S] (h : R →+ S) (hh1 : h 1 = 1) :
+    Subring R where
+  carrier := {x : R | ∀ y : R, h (x * y) = h x * h y}
+  one_mem' y := by rw [one_mul, hh1, one_mul]
+  mul_mem' {x₁ x₂} hx₁ hx₂ y := by rw [mul_assoc, hx₁, hx₂, hx₁, mul_assoc]
+  zero_mem' y := by rw [zero_mul, map_zero, zero_mul]
+  add_mem' {x₁ x₂} hx₁ hx₂ y := by rw [add_mul, map_add, hx₁, hx₂, map_add, add_mul]
+  neg_mem' {x} hx y := by rw [neg_mul, map_neg, hx, map_neg, neg_mul]
+
+/-- Membership in `h.multiplierSubring hh1` is left-multiplicativity
+`∀ y, h (x * y) = h x * h y`. -/
+@[simp] theorem mem_multiplierSubring {R S : Type*} [Ring R] [Ring S] (h : R →+ S)
+    (hh1 : h 1 = 1) {x : R} :
+    x ∈ h.multiplierSubring hh1 ↔ ∀ y : R, h (x * y) = h x * h y :=
+  Iff.rfl
+
+/-- Restriction of a unital additive homomorphism `h : R →+ S` to its multiplier subring
+`h.multiplierSubring hh1` as a ring homomorphism. -/
+def multiplierRingHom {R S : Type*} [Ring R] [Ring S] (h : R →+ S) (hh1 : h 1 = 1) :
+    h.multiplierSubring hh1 →+* S where
+  toFun x := h x.val
+  map_one' := hh1
+  map_mul' x y := x.property y.val
+  map_zero' := h.map_zero
+  map_add' x y := h.map_add x.val y.val
+
+/-- Pointwise evaluation of `h.multiplierRingHom hh1`. -/
+@[simp] theorem multiplierRingHom_apply {R S : Type*} [Ring R] [Ring S] (h : R →+ S)
+    (hh1 : h 1 = 1) (x : h.multiplierSubring hh1) :
+    h.multiplierRingHom hh1 x = h x.val :=
+  (rfl)
 
 /-- **Intertwining a nonzero additive endomorphism of an infinite field with split-torus characters
 forces positive rational proportionality.** -/
@@ -55,15 +91,8 @@ theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul {κ K : Type*} [Fint
   · exact ⟨d, 1, hd, Nat.one_pos, by rw [hz, hξ, smul_zero, smul_zero]⟩
   obtain ⟨i₀, hi₀⟩ := Function.ne_iff.mp hξ; let a : ℕ := (ξ i₀).natAbs
   have ha : 0 < a := Int.natAbs_pos.mpr hi₀; have had : 0 < a * d := Nat.mul_pos ha hd
-  let E : Subring K := {
-    carrier := {x : K | ∀ y : K, h (x * y) = h x * h y}, one_mem' := fun y => by simp [hh1]
-    mul_mem' := fun h₁ h₂ y => by rw [mul_assoc, h₁, h₂, h₁, mul_assoc]
-    zero_mem' := fun _ => by simp
-    add_mem' := fun h₁ h₂ y => by rw [add_mul, map_add, h₁, h₂, map_add, add_mul]
-    neg_mem' := fun hx y => by rw [neg_mul, map_neg, hx, map_neg, neg_mul] }
-  let g : E →+* K := {
-    toFun := fun x => h x.val, map_one' := hh1, map_mul' := fun x y => x.property y.val
-    map_zero' := h.map_zero, map_add' := fun x y => h.map_add x.val y.val }
+  let E := h.multiplierSubring hh1
+  let g := h.multiplierRingHom hh1
   let sOf (u : Kˣ) : κ → Kˣ := Pi.mulSingle i₀ (if 0 ≤ ξ i₀ then u else u⁻¹)
   have hsOf (u : Kˣ) : torusCharacter (sOf u) ξ = u ^ a := by
     rw [torusCharacter_mulSingle]; split_ifs with h0
@@ -71,8 +100,12 @@ theorem exists_pos_nsmul_eq_nsmul_of_map_torusCharacter_mul {κ K : Type*} [Fint
     · rw [inv_zpow', ← zpow_natCast, Int.ofNat_natAbs_of_nonpos (le_of_not_ge h0)]
   have : Infinite E := E.infinite_of_pow_mem ha fun x => by
     by_cases hx : x = 0; · rw [hx, zero_pow ha.ne']; exact E.zero_mem
-    intro y; simpa [hsOf (Units.mk0 x hx)] using
+    refine (mem_multiplierSubring h hh1).mpr fun y => ?_
+    simpa [hsOf (Units.mk0 x hx)] using
       (hhscale (sOf (Units.mk0 x hx)) y).trans (congrArg (· * h y) (hhtorus _).symm)
+  -- Split on the sign of `z`: if `z ≤ 0`, then `g x ^ (a * d) * (x : K) ^ (a * (-z).toNat) = 1`
+  -- on all nonzero `x ∈ E`, contradicting `not_forall_map_pow_mul_map_pow_eq_one` for the infinite
+  -- subring `E`; if `z > 0`, then `m := z.toNat > 0` directly witnesses `d • η = m • ξ`.
   rcases le_or_gt z 0 with hzle | hzpos
   · refine (RingHom.not_forall_map_pow_mul_map_pow_eq_one g E.subtype (.inl had.ne')
       (n := a * (-z).toNat) fun x hx => ?_).elim

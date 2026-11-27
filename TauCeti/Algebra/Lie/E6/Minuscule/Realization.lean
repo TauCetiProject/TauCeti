@@ -52,8 +52,6 @@ subgroups.
 * `TauCeti.E6Minuscule.chevalleyDatumPointsEquiv_map` and
   `TauCeti.E6Minuscule.chevalleyDatumPointsEquiv_frobenius`: naturality in the value ring and
   intertwining of the Frobenius maps.
-* `TauCeti.E6Minuscule.chevalleyDatum_rootSubgroupPoints_injective`: injectivity of every root
-  subgroup of the datum.
 
 The organization follows `TauCeti.Algebra.Lie.E6.DoubledMinuscule.Realization`, the realization
 of the doubled E₆ datum, and `TauCeti.Algebra.AlgebraicGroup.Chevalley.Geck.Realization`.
@@ -293,16 +291,6 @@ theorem chevalleyDatumPointsEquiv_symm_frobenius (p k : ℕ) (A : Type v)
     (chevalleyDatumPointsEquiv A).symm (frobenius p k A g) =
       chevalleyDatum.frobenius p k A ((chevalleyDatumPointsEquiv A).symm g) := by
   rw [MulEquiv.symm_apply_eq, chevalleyDatumPointsEquiv_frobenius, MulEquiv.apply_symm_apply]
-
-/-- **Every root subgroup of the minuscule datum is injective**, at all seventy-two roots of `E₆`
-and over every commutative ring, including nonreduced rings. -/
-theorem chevalleyDatum_rootSubgroupPoints_injective (γ : Fin DynkinType.E6.numRoots)
-    (A : Type v) [CommRing A] :
-    Function.Injective (chevalleyDatum.rootSubgroupPoints γ A) := by
-  refine chevalleyDatum.rootSubgroupPoints_injective_of_simple A (fun i u v huv => ?_) γ
-  exact rootSubgroupPoints_injective (.inl i) A (by
-    simpa only [chevalleyDatumPointsEquiv_rootSubgroupPoints_simpleIndex] using
-      congrArg (chevalleyDatumPointsEquiv A) huv)
 
 end
 

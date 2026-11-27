@@ -56,7 +56,10 @@ private theorem simpleDivPowMat_pow (i : Fin t.rank) (n : ℕ) :
   have hend : ∀ m, D.simpleDivPowEnd i 1 ^ m = m.factorial • D.simpleDivPowEnd i m := Nat.rec
     (by simp [simpleDivPowEnd]) fun m ih => by
       rw [pow_succ, ih, smul_mul_assoc, simpleDivPowEnd, simpleDivPowEnd, mul_integralDividedPower,
-        smul_smul, Nat.choose_succ_self_right, Nat.factorial_succ, mul_comm]; rfl
+        smul_smul, Nat.choose_succ_self_right, Nat.factorial_succ, mul_comm]
+      -- Both sides are `(m + 1)! • integralDividedPower ... (m + 1)`, differing only in the
+      -- proof-irrelevant lattice-invariance proof inside `simpleDivPowEnd i (m + 1)`.
+      rfl
   simpa only [simpleDivPowMat, map_pow, map_nsmul]
     using congrArg (LinearMap.toMatrixAlgEquiv D.basis) (hend n)
 

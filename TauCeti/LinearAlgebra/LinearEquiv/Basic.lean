@@ -120,9 +120,9 @@ theorem exists_eq_smulOfUnit_of_unique {R ι : Type*} [CommSemiring R] [Unique �
   let φ := LinearEquiv.funUnique ι R R
   let e' : R ≃ₗ[R] R := (φ.symm.trans e).trans φ
   have h1 (f : R →ₗ[R] R) (x : R) : f x = f 1 * x := by
-    have h := LinearMap.congr_fun
-      (LinearEquiv.symm_apply_apply (LinearMap.ringLmapEquivSelf (R := R) (M := R) (S := R)) f) x
-    simpa [mul_comm] using h.symm
+    calc f x = f (x • 1) := by rw [smul_eq_mul, mul_one]
+      _ = x • f 1 := f.map_smul x 1
+      _ = f 1 * x := by rw [smul_eq_mul, mul_comm]
   refine ⟨⟨e' 1, e'.symm 1, ?_, ?_⟩, ?_⟩
   · rw [← coe_toLinearMap, ← h1]; exact e'.apply_symm_apply 1
   · rw [← coe_toLinearMap, ← h1]; exact e'.symm_apply_apply 1

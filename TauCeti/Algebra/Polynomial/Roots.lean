@@ -257,6 +257,11 @@ private theorem not_forall_map_pow_mul_map_pow_eq_one_of_ne_zero {R S : Type*} [
   simp only [P, Q, eval_mul, eval_sub, eval_pow, eval_add, eval_X, eval_one]
   by_cases hc0 : c = 0; · simp [hc0]
   by_cases hcn1 : c ^ n + 1 = 0; · simp [hcn1]
+  -- When `c ≠ 0` and `c ^ n + 1 ≠ 0`, `g c ^ d * g' c ^ n = 1` gives the linking identity
+  -- `g (c ^ d + 1) = g c ^ d * g' (c ^ n + 1)` (`hlink`); substituting this into
+  -- `g ((c ^ n + 1) ^ d * (c ^ d + 1) ^ n)` collapses `g (c ^ n + 1) ^ d * g' (c ^ n + 1) ^ n`
+  -- to `1`, leaving `g (c ^ (d * n))`. Injectivity of `g` then forces `Q.eval c = 0`, so `P`
+  -- vanishes everywhere.
   have hlink : g c ^ d * g' (c ^ n + 1) = g (c ^ d + 1) := by
     simp [mul_add, h c hc0, add_comm]
   have hgeq : g ((c ^ n + 1) ^ d * (c ^ d + 1) ^ n) = g (c ^ (d * n)) := by

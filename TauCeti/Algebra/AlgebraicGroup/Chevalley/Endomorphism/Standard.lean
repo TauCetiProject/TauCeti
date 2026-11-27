@@ -24,7 +24,10 @@ based (`isBased_frobenius`). Over an infinite field `K`, `hF : D.IsStandard F` h
 character map `hF.characterMap`, root permutation `hF.rootPerm` with positive proportionality
 (`IsStandard.exists_pos_nsmul_characterMap_coordinateRoot`) and root-permutation rigidity
 (`IsStandard.rootPerm_eq_of_isCharacterMap`), and additive root-parameter maps `hF.rootParamHom`
-(`IsStandard.rootSubgroupPoints_rootParamHom`); with `[RootableBy Kˣ ℕ]`, it induces `hF.rootUnit`
+(`IsStandard.rootSubgroupPoints_rootParamHom`), while a based `F` maps `D.positivePoints K` onto
+itself (`IsBased.map_positivePoints_eq`); with `[RootableBy Kˣ ℕ]`, `F` maps
+`D.rootTorusSubgroup K` (and, when based, `D.borelSubgroup K`) onto itself
+(`IsStandard.map_rootTorusSubgroup_eq`, `IsBased.map_borelSubgroup_eq`), and induces `hF.rootUnit`
 and `hF.fieldEnd` (bundled as the field automorphism `hF.fieldEquiv`) satisfying
 `F (x_α(u)) = x_{hF.rootPerm α}(hF.rootUnit α * hF.fieldEnd α u)`
 (`IsStandard.map_rootSubgroupPoints`) and field-endomorphism rigidity
@@ -466,6 +469,23 @@ theorem IsBased.rootPerm_mem_posRoots (hF : D.IsBased F) {α : Fin t.numRoots}
   (((Set.toFinite _).injOn_iff_bijOn_of_mapsTo fun _ hα => hF.rootPerm_mem_posRoots hα).mp
     hF.isStandard.rootPerm.injective.injOn).image_eq
 
+/-- Over an infinite field, a based endomorphism maps `D.positivePoints K` onto itself. -/
+theorem IsBased.map_positivePoints_eq (hF : D.IsBased F) :
+    (D.positivePoints K).map F = D.positivePoints K := by
+  refine le_antisymm hF.map_positivePoints_le (D.positivePoints_le_iff.mpr fun β hβ u => ?_)
+  have hα : hF.isStandard.rootPerm.symm β ∈
+      posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
+    obtain ⟨α, hα, hβα⟩ := hF.image_rootPerm_posRoots.symm ▸ hβ
+    rw [hF.isStandard.rootPerm.symm_apply_eq.mpr hβα.symm]
+    exact hα
+  have hmem : D.rootSubgroupPoints β K u ∈
+      (D.rootSubgroupPoints (hF.isStandard.rootPerm.symm β) K).range.map F := by
+    rw [hF.isStandard.map_range_rootSubgroupPoints, Equiv.apply_symm_apply]
+    exact ⟨u, rfl⟩
+  exact Subgroup.map_mono
+    (show (D.rootSubgroupPoints (hF.isStandard.rootPerm.symm β) K).range ≤ D.positivePoints K from
+      by rintro _ ⟨v, rfl⟩; exact D.rootSubgroupPoints_mem_positivePoints K hα v) hmem
+
 /-- For a based endomorphism, `rootPerm α` is positive iff `α` is positive. -/
 -- Note: `@[simp]` is on `isPos_rootPerm_iff` because `TauCeti.mem_posRoots` simplifies
 -- `∈ posRoots ...` to `(t.rationalBase ht).IsPos`.
@@ -535,6 +555,34 @@ theorem IsBased.rootPerm_mem_posRoots_iff (hF : D.IsBased F) {α : Fin t.numRoot
 /-! ## Scaling units and field endomorphisms over an infinite field with divisible units -/
 
 variable [RootableBy Kˣ ℕ]
+
+/-- Over an infinite field with divisible units, a standard endomorphism maps
+`D.rootTorusSubgroup K` onto itself. -/
+theorem IsStandard.map_rootTorusSubgroup_eq (hF : D.IsStandard F) :
+    (D.rootTorusSubgroup K).map F = D.rootTorusSubgroup K := by
+  refine le_antisymm hF.map_rootTorusSubgroup_le ((D.rootTorusSubgroup_le_iff K _).mpr ⟨?_, ?_⟩)
+  · intro β u
+    have hmem : D.rootSubgroupPoints β K u ∈
+        (D.rootSubgroupPoints (hF.rootPerm.symm β) K).range.map F := by
+      rw [hF.map_range_rootSubgroupPoints, Equiv.apply_symm_apply]
+      exact ⟨u, rfl⟩
+    exact Subgroup.map_mono
+      (show (D.rootSubgroupPoints (hF.rootPerm.symm β) K).range ≤ D.rootTorusSubgroup K from
+        by rintro _ ⟨v, rfl⟩; exact D.rootSubgroupPoints_mem_rootTorusSubgroup _ K v) hmem
+  · intro s
+    have hmem : D.torusPoints K s ∈ (D.torusPoints K).range.map F := by
+      rw [hF.map_range_torusPoints_eq]
+      exact ⟨s, rfl⟩
+    exact Subgroup.map_mono
+      (show (D.torusPoints K).range ≤ D.rootTorusSubgroup K from
+        by rintro _ ⟨s', rfl⟩; exact D.torusPoints_mem_rootTorusSubgroup K s') hmem
+
+/-- Over an infinite field with divisible units, a based endomorphism maps
+`D.borelSubgroup K` onto itself. -/
+theorem IsBased.map_borelSubgroup_eq (hF : D.IsBased F) :
+    (D.borelSubgroup K).map F = D.borelSubgroup K := by
+  rw [D.borelSubgroup_def, Subgroup.map_sup, hF.map_positivePoints_eq,
+    hF.isStandard.map_range_torusPoints_eq]
 
 private theorem IsStandard.rootParamHom_one_ne_zero (hF : D.IsStandard F) (α) :
     hF.rootParamHom α 1 ≠ 0 := fun h0 => by
