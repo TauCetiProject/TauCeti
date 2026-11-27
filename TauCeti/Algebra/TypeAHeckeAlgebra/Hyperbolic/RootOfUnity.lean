@@ -10,7 +10,6 @@ public import TauCeti.Algebra.TypeAHeckeAlgebra.WenzlParam.RootOfUnity
 import TauCeti.Algebra.TypeAHeckeAlgebra.Hyperbolic.ExceptionalLine
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic.Bounds
 import Mathlib.Tactic.FieldSimp
-import Mathlib.Tactic.LinearCombination
 
 /-!
 # Root-of-unity hyperbolic Markov trace parameters
@@ -111,10 +110,10 @@ theorem hyperbolicProjParam_rootOfUnity {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < 
 theorem hyperbolicWenzlProjParam_rootOfUnity {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
     hyperbolicWenzlProjParam (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) =
       wenzlParam (k : ℤ) (exp (-(2 * π * I / l))) := by
-  have hsum := wenzlParam_add_wenzlParam_neg_exp_two_pi_mul_I_div hl hk₀ hkl
-  rw [hyperbolicWenzlProjParam_eq_one_sub, hyperbolicProjParam_rootOfUnity hl hk₀ hkl]
-  simp only [wenzlParam_exp_neg]
-  linear_combination -hsum
+  rw [rootOfUnity_alpha_eq,
+    hyperbolicWenzlProjParam_mul_add_pi_mul_I_div_two (rootOfUnity_cosh_ne_zero hl)
+      (rootOfUnity_sinh_ne_zero hk₀ hkl),
+    neg_two_mul_pi_mul_I_div]
 
 /-- **Complementary state `l - k` at the roots of unity (Wenzl convention).** Replacing `k` by
 `l - k` in `{1, ..., l - 1}` exchanges Wenzl's parameter with the native parameter at `k`. -/
@@ -237,11 +236,10 @@ theorem IsMarkovTrace.map_hyperbolicGen_rootOfUnity_eq_iff_wenzl {l k : ℕ} (hl
     τ (hyperbolicGen (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) n) =
         τ ↑(hyperbolicGen (((k : ℂ) / l + 1 / 2) * π * I) (π * I / l) n)⁻¹ ↔
       ηW = wenzlParam (k : ℤ) (exp (-(2 * π * I / l))) := by
-  rw [hτ.map_hyperbolicGen_rootOfUnity_eq_iff hl hk₀ hkl (η := 1 - ηW)
-      (by rw [sub_sub_cancel, hz]) n,
-    ← hyperbolicProjParam_rootOfUnity hl hk₀ hkl, ← hyperbolicWenzlProjParam_rootOfUnity hl hk₀ hkl,
-    hyperbolicWenzlProjParam_eq_one_sub]
-  constructor <;> intro h <;> linear_combination -h
+  rw [rootOfUnity_alpha_eq,
+    hτ.map_hyperbolicGen_line_eq_iff_wenzl hz (rootOfUnity_cosh_ne_zero hl)
+      (rootOfUnity_sinh_ne_zero hk₀ hkl) n,
+    neg_two_mul_pi_mul_I_div]
 
 end InfiniteTypeAHeckeAlgebra
 
