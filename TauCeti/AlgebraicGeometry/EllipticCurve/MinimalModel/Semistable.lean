@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Basic
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
-public import TauCeti.RingTheory.DedekindDomain.LocalizationAtPrime
+public import TauCeti.RingTheory.DedekindDomain.Localization.AtPrime
 -- Proof-only: of two coprime elements of a local ring, one is a unit.
 import TauCeti.RingTheory.LocalRing.Basic
 -- Proof-only: the integral model of an equation read over the fraction field.

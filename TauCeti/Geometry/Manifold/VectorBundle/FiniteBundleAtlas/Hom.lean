@@ -10,6 +10,7 @@ public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
+import TauCeti.Topology.VectorBundle.Hom
 
 /-!
 # Finite bundle atlases of derived bundles
@@ -50,6 +51,8 @@ compact space (`TauCeti.FiniteBundleAtlas.exists_closure_dom_subset_baseSet`).
 * `TauCeti.FiniteBundleAtlas.coord_prod`, `TauCeti.FiniteBundleAtlas.coord_hom`,
   `TauCeti.FiniteBundleAtlas.coord_hom_apply`, `TauCeti.FiniteBundleAtlas.coord_tangentHom`: the
   chart readings of sections of the derived bundles.
+* `TauCeti.FiniteBundleAtlas.coord_tangentHom_prod`: a one-form with values in `V ×ᵇ V'` is read
+  in the charts of `A.prod h` as the `prod` of the readings of its components.
 * `TauCeti.FiniteBundleAtlas.coord_hom_eq_coordChange`,
   `TauCeti.FiniteBundleAtlas.coord_tangentHom_eq_coordChange`: on an overlap, the readings of a
   section of the hom bundle in two charts differ by the coordinate changes of both bundles, which
@@ -179,6 +182,20 @@ theorem coord_hom (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x) (y : E) :
   rw [coord_def (A.hom h) i, hom_trivializationAt_apply]
   rfl
 
+/-- **Hom sections act chartwise over the base sets.** At every point `y` whose preimage under
+chart `i` lies in the base sets of the trivializations of `V₁` and `V₂` at the centre of the chart,
+applying the chart reading of a section `φ` of the hom bundle to the chart reading of a section `s`
+of `V₁` gives the chart reading of the section `x ↦ φ x (s x)` of `V₂`. -/
+theorem coord_hom_apply_of_mem_baseSet (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x)
+    (s : ∀ x, V₁ x) {y : E} (h₁ : (A.chart i).symm y ∈ (A.triv i).baseSet)
+    (h₂ : (A.chart i).symm y ∈ (trivializationAt F₂ V₂ (A.center i)).baseSet) :
+    (A.hom h).coord i φ y (A.coord i s y) = (A.ofBaseSet h).coord i (fun x ↦ φ x (s x)) y := by
+  rw [coord_hom, ContinuousLinearMap.inCoordinates_eq h₁ h₂, coord_def, coord_def (A.ofBaseSet h) i]
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    Trivialization.continuousLinearEquivAt_symm_apply, Trivialization.symm_apply_apply_mk _ h₁,
+    Trivialization.continuousLinearEquivAt_apply]
+  rfl
+
 /-- **Hom sections act chartwise.** On the image of a chart, applying the chart reading of a
 section `φ` of the hom bundle to the chart reading of a section `s` of `V₁` gives the chart reading
 of the section `x ↦ φ x (s x)` of `V₂`. -/
@@ -186,14 +203,8 @@ theorem coord_hom_apply (i : Fin A.n) (φ : ∀ x, V₁ x →L[𝕜] V₂ x) (s 
     (hy : y ∈ A.image i) :
     (A.hom h).coord i φ y (A.coord i s y) = (A.ofBaseSet h).coord i (fun x ↦ φ x (s x)) y := by
   have hdom := A.symm_mem_dom hy
-  have h₁ := A.dom_subset_baseSet i hdom
-  have h₂ : (A.chart i).symm y ∈ (trivializationAt F₂ V₂ (A.center i)).baseSet :=
-    h i (subset_closure hdom)
-  rw [coord_hom, ContinuousLinearMap.inCoordinates_eq h₁ h₂, coord_def, coord_def (A.ofBaseSet h) i]
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-    Trivialization.continuousLinearEquivAt_symm_apply, Trivialization.symm_apply_apply_mk _ h₁,
-    Trivialization.continuousLinearEquivAt_apply]
-  rfl
+  exact A.coord_hom_apply_of_mem_baseSet h i φ s (A.dom_subset_baseSet i hdom)
+    (h i (subset_closure hdom))
 
 /-- **Change of chart for hom sections.** On the overlap of charts `i` and `i'`, the reading in
 chart `i'` of a section of the hom bundle is its reading in chart `i` at the transition point,
@@ -323,6 +334,27 @@ theorem coord_tangentHom_eq_coordChange {i i' : Fin A.n}
     (h := A.closure_dom_subset_source)]
   exact A.tangent.coord_hom_eq_coordChange A.closure_dom_subset_baseSet ω
     (A.tangent.mem_overlap.2 (A.mem_overlap.1 hy))
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℝ F'] {V' : M → Type*}
+  [TopologicalSpace (TotalSpace F' V')] [∀ x, AddCommGroup (V' x)] [∀ x, Module ℝ (V' x)]
+  [∀ x, TopologicalSpace (V' x)] [FiberBundle F' V'] [VectorBundle ℝ F' V']
+  [∀ x, IsTopologicalAddGroup (V' x)] [∀ x, ContinuousSMul ℝ (V' x)]
+
+/-- On the image of a chart, a one-form with values in `V ×ᵇ V'` is read in the chart of
+`A.prod h` as the pair of the readings of its two components in the charts of `A` and of
+`A.ofBaseSet h`. -/
+theorem coord_tangentHom_prod
+    (h : ∀ i, closure (A.dom i) ⊆ (trivializationAt F' V' (A.center i)).baseSet) (i : Fin A.n)
+    (ω : ∀ x, TangentSpace 𝓘(ℝ, E) x →L[ℝ] (V ×ᵇ V') x) {y : E} (hy : y ∈ A.image i) :
+    (A.prod h).tangentHom.coord i ω y =
+      (A.tangentHom.coord i (fun x ↦ (ContinuousLinearMap.fst ℝ (V x) (V' x)).comp (ω x)) y).prod
+        ((A.ofBaseSet h).tangentHom.coord i
+          (fun x ↦ (ContinuousLinearMap.snd ℝ (V x) (V' x)).comp (ω x)) y) := by
+  have hx := A.symm_mem_dom hy
+  refine ((A.prod h).coord_tangentHom i ω y).trans ?_
+  rw [A.coord_tangentHom, ((A.ofBaseSet h).coord_tangentHom i _ y : _)]
+  exact ContinuousLinearMap.inCoordinates_prod_eq (A.dom_subset_baseSet i hx)
+    (h i (subset_closure hx)) _
 
 end TangentHom
 

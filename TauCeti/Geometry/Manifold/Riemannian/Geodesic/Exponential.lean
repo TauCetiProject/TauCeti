@@ -10,7 +10,7 @@ import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
-import TauCeti.Topology.Order.Interval
+import TauCeti.Topology.Order.Interval.Basic
 
 /-!
 # The Riemannian exponential map

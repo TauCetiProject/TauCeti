@@ -7,6 +7,7 @@ module
 
 public import TauCeti.ModelTheory.BackAndForth.Game.Infinite
 public import TauCeti.ModelTheory.BackAndForth.Karp
+public import TauCeti.ModelTheory.BackAndForth.LinearOrder
 public import TauCeti.ModelTheory.Order
 public import TauCeti.Order.SuccPred.Iterate
 public import TauCeti.Order.SuccPred.Sum
@@ -46,8 +47,6 @@ strategy would make them potentially isomorphic.
 
 ## Main results
 
-* `TauCeti.sameAtomicType_order_iff`: in the language of orders, two tuples have the same atomic
-  type exactly when they have the same equalities and order relations between their entries.
 * `TauCeti.bfEquiv_omega0_of_succOrder_of_predOrder`: nonempty discrete linear orders without
   endpoints are back-and-forth equivalent at level `ω`.
 * `TauCeti.elementarilyEquivalent_of_succOrder_of_predOrder`: nonempty discrete linear orders
@@ -75,27 +74,7 @@ universe w w' o
 
 namespace TauCeti
 
-open FirstOrder FirstOrder.Language Order
-
-section Atomic
-
-variable {M : Type w} {N : Type w'} [LE M] [LE N]
-variable [Language.order.Structure M] [Language.order.OrderedStructure M]
-variable [Language.order.Structure N] [Language.order.OrderedStructure N]
-
-/-- In the language of orders, two tuples have the same atomic type exactly when they have the
-same equalities and the same order relations between their entries. -/
-theorem sameAtomicType_order_iff {n : ℕ} (a : Fin n → M) (b : Fin n → N) :
-    SameAtomicType (L := Language.order) a b ↔
-      (∀ i j, a i = a j ↔ b i = b j) ∧ ∀ i j, a i ≤ a j ↔ b i ≤ b j := by
-  rw [sameAtomicType_iff]
-  refine and_congr_right fun _ => ⟨fun h i j => ?_, fun h k r f => ?_⟩
-  · simpa [relMap_leSymb] using h leSymb ![i, j]
-  · obtain ⟨⟩ := r
-    rw [order.relation_eq_leSymb .le, relMap_leSymb, relMap_leSymb]
-    exact h (f 0) (f 1)
-
-end Atomic
+open FirstOrder FirstOrder.Language _root_.Order
 
 section Discrete
 

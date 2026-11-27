@@ -16,7 +16,7 @@ public import Mathlib.LinearAlgebra.Matrix.Trace
 -- `ConjClasses` occurs in the statements below.
 public import Mathlib.Algebra.Group.Conj
 -- `TauCeti.GL2NonSplitTorusHom` occurs in the elliptic conjugacy criterion below.
-public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonSplitTorus.Basic
 -- Non-public: `Nat.card_units`, `Nat.card_sum` and `Nat.card_prod` are used only in the final
 -- count.
 import Mathlib.Algebra.GroupWithZero.Units.Fintype

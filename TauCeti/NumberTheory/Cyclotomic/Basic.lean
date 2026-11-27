@@ -16,6 +16,11 @@ field `ℚ(μ_n)` becomes a cyclotomic extension of each of its cyclotomic subfi
 `m ∣ n`, so that Mathlib's power basis `IsPrimitiveRoot.powerBasis` applies to the relative
 extension `ℚ(μ_n) / ℚ(μ_m)`. Mathlib's degree formula `IsCyclotomicExtension.finrank` does not
 apply there, since `Φ_n` need not be irreducible over `ℚ(μ_m)`.
+
+An intermediate field that is a `{1}`-cyclotomic extension of the base is `⊥`:
+`IntermediateField.eq_bot_of_isCyclotomicExtension_one`. The compositum of an `m`-th and an `n`-th
+cyclotomic extension with `m` and `n` coprime is an `mn`-th cyclotomic extension:
+`IntermediateField.isCyclotomicExtension_sup_of_coprime`.
 -/
 
 public section
@@ -35,3 +40,28 @@ theorem tower_top {S : Set ℕ} (A B C : Type*) [CommRing A] [CommRing B] [CommR
   exact hle (h.2 x)
 
 end IsCyclotomicExtension
+
+/-- An intermediate field that is a `{1}`-cyclotomic extension of the base field is `⊥`. -/
+theorem IntermediateField.eq_bot_of_isCyclotomicExtension_one {F E : Type*} [Field F] [Field E]
+    [Algebra F E] (K : IntermediateField F E) [IsCyclotomicExtension {1} F K] : K = ⊥ :=
+  eq_bot_iff.mpr fun x hx ↦ by
+    obtain ⟨a, ha⟩ : (⟨x, hx⟩ : K) ∈ (⊥ : Subalgebra F K) :=
+      IsCyclotomicExtension.singleton_one F K ▸ Algebra.mem_top
+    exact ⟨a, congrArg Subtype.val ha⟩
+
+/-- The compositum of an `m`-th and an `n`-th cyclotomic extension, for coprime `m` and `n`, is an
+`mn`-th cyclotomic extension. -/
+theorem IntermediateField.isCyclotomicExtension_sup_of_coprime {F E : Type*} [Field F] [Field E]
+    [Algebra F E] {F₁ F₂ : IntermediateField F E} {m n : ℕ} [IsCyclotomicExtension {m} F F₁]
+    [IsCyclotomicExtension {n} F F₂] (h : m.Coprime n) :
+    IsCyclotomicExtension {m * n} F (F₁ ⊔ F₂ : IntermediateField F E) := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · obtain rfl := (Nat.coprime_zero_left n).mp h
+    rwa [eq_bot_of_isCyclotomicExtension_one F₂, sup_bot_eq, zero_mul]
+  rcases eq_or_ne n 0 with rfl | hn
+  · obtain rfl := (Nat.coprime_zero_right m).mp h
+    rwa [eq_bot_of_isCyclotomicExtension_one F₁, bot_sup_eq, mul_zero]
+  have : NeZero m := ⟨hm⟩
+  have : NeZero n := ⟨hn⟩
+  rw [← h.lcm_eq_mul]
+  exact isCyclotomicExtension_lcm_sup F E m n F₁ F₂

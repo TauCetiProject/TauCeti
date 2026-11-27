@@ -120,6 +120,14 @@ instance preservesFiniteLimits_cechComplexFunctor [HasFiniteLimits A] :
     PreservesFiniteLimits (cechComplexFunctor (A := A) U) where
   preservesFiniteLimits _ _ _ := inferInstance
 
+/-- With exact products of the shape of degree `n`, the degree `n` term of the Čech complex
+preserves finite colimits. -/
+instance preservesFiniteColimits_cechComplexFunctor_comp_eval (n : ℕ) [HasFiniteColimits A]
+    [HasExactLimitsOfShape (Discrete (Fin (n + 1) → ι)) A] :
+    PreservesFiniteColimits
+      (cechComplexFunctor (A := A) U ⋙ HomologicalComplex.eval A (ComplexShape.up ℕ) n) where
+  preservesFiniteColimits _ _ _ := preservesColimitsOfShape_of_natIso (cechEvalIso U n).symm
+
 section FiniteColimits
 
 variable [HasFiniteColimits A]

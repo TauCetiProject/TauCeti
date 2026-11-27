@@ -8,6 +8,8 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Kronecker
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Degree
 
+import TauCeti.CategoryTheory.Linear.Int
+
 /-!
 # Evaluating cohomology classes on fundamental classes
 
@@ -45,10 +47,17 @@ coefficients (`TopCat.singularKroneckerEquiv`), and `Hₙ(N; ℤ)` is freely gen
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_id_singularCohomologyMap`:
   `⟨f^* c, [N]⟩ = ⟨c, f_*[N]⟩`.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_comp`: `⟨c, (g ∘ f)_*[N]⟩ = ⟨g^* c, f_*[N]⟩`.
+* `TauCeti.HomologicalOrientation.evalFundamentalClass_singularCohomologyChainCoefficientMap`: for
+  a class `v` on chains with coefficients in `ℤ`, the pairing with `f_*[N]` is `⟨f^* v, [N]⟩`
+  with `[N]` read in `Hₙ(N; ℤ)`.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_eq_of_homotopic`: homotopic maps give the
   same pairing.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_neg`: reversing the orientation negates the
   pairing.
+* `evalFundamentalClass_singularCohomologyChainCoefficientMap_eq_singularKronecker`, in the
+  namespace `TauCeti.HomologicalOrientation`: for an integral class with chain coefficients the
+  unit `ℤ` of `ModuleCat ℤ`, the pairing is the Kronecker pairing with `f_*[N]` read with chain
+  coefficients `ℤ`.
 * `TauCeti.HomologicalOrientation.evalFundamentalClass_id_singularCohomologyMap_eq_degree_smul`:
   for a map `f : N → P` of compact oriented `n`-manifolds with `P` preconnected,
   `⟨f^* c, [N]⟩ = deg f • ⟨c, [P]⟩`, and more generally
@@ -131,6 +140,36 @@ theorem evalFundamentalClass_id_singularCohomologyMap (f : C(N, X))
       o.evalFundamentalClass hn M f c := by
   simpa using (o.evalFundamentalClass_comp hn M f (ContinuousMap.id N) c).symm
 
+/-- **The pairing for classes on chains with coefficients in `ℤ`.** For a class `v ∈ Hⁿ(X; M)`
+built on singular chains with coefficients in `ℤ` rather than `ULift ℤ`, evaluating `v` on
+`f_*[N]` after changing the chain coefficients along `ULift ℤ ≅ ℤ` is the Kronecker pairing
+`⟨f^* v, [N]⟩` with the fundamental class read in `Hₙ(N; ℤ)` through
+`TauCeti.uliftIntHomologyIso`. -/
+theorem evalFundamentalClass_singularCohomologyChainCoefficientMap (f : C(N, X))
+    (v : (TopCat.of X).singularCohomology (ModuleCat.of ℤ ℤ) ℤ M n) :
+    o.evalFundamentalClass hn M f
+        ((TopCat.of X).singularCohomologyChainCoefficientMap ℤ M uliftIntIso.hom n v) =
+      ((TopCat.of N).singularKronecker ℤ n (TopCat.singularCohomologyMap (TopCat.ofHom f) n v)).hom
+        ((uliftIntHomologyIso (TopCat.of N) n).hom.hom (o.fundamentalClass hn)) := by
+  symm
+  -- term-mode steps: the homology objects are written through `SSet.homology` on one side and
+  -- `singularHomologyFunctor` on the other, so `rw` cannot form the motives
+  refine (congrArg (fun g ↦ ModuleCat.Hom.hom g
+    ((uliftIntHomologyIso (TopCat.of N) n).hom.hom (o.fundamentalClass hn)))
+    (TopCat.singularKronecker_naturality (TopCat.ofHom f) ℤ n v)).trans ?_
+  refine Eq.trans ?_ (o.evalFundamentalClass_apply hn _ _ _).symm
+  refine Eq.trans ?_ (congrArg (fun g ↦ ModuleCat.Hom.hom g (o.mapFundamentalClass hn f))
+    (TopCat.singularKronecker_singularCohomologyChainCoefficientMap _ ℤ uliftIntIso.hom n
+      v)).symm
+  refine Eq.trans ?_ (congrArg (fun g ↦
+      (g ≫ (TopCat.of X).singularKronecker ℤ n v).hom (o.mapFundamentalClass hn f))
+    (uliftIntHomologyIso_hom (TopCat.of X) n))
+  refine Eq.trans ?_ (congrArg (fun x ↦ ModuleCat.Hom.hom
+    ((uliftIntHomologyIso (TopCat.of X) n).hom ≫ (TopCat.of X).singularKronecker ℤ n v) x)
+    (o.mapFundamentalClass_def hn f)).symm
+  exact (congrArg (fun g ↦ (g ≫ (TopCat.of X).singularKronecker ℤ n v).hom
+    (o.fundamentalClass hn)) (homologyMap_comp_uliftIntHomologyIso_hom (TopCat.ofHom f) n)).symm
+
 /-- **Homotopy invariance of the pairing**: homotopic maps give the same evaluation. -/
 theorem evalFundamentalClass_eq_of_homotopic {f g : C(N, X)} (h : f.Homotopic g) :
     o.evalFundamentalClass hn M f = o.evalFundamentalClass hn M g := by
@@ -172,6 +211,38 @@ theorem evalFundamentalClass_id_bijective [ConnectedSpace N] [CategoryTheory.Inj
   rw [h]
   exact (LinearEquiv.bijective _).comp ((LinearEquiv.bijective _).comp
     (ModuleCat.hom_bijective.comp ((TopCat.of N).singularKroneckerEquiv ℤ n).bijective))
+
+section UnitCoefficients
+
+open MonoidalCategory
+
+/- Cohomology with chain coefficients the unit object `ℤ` of `ModuleCat ℤ`, as in the cup pairing
+`TopCat.singularCupPairing`, is taken with the `ℤ`-linear structure `ModuleCat.instLinear` of a
+category of modules; instance search would otherwise find the structure
+`Linear.preadditiveIntLinear` of a preadditive category, which `evalFundamentalClass` carries. -/
+attribute [local instance 1100] ModuleCat.instLinear
+
+/-- **Evaluation on `f_*[N]` with chain coefficients `ℤ`**: for an integral class `c ∈ Hⁿ(X; ℤ)`
+with chain coefficients `ℤ`, evaluating its image under the coefficient isomorphism
+`TauCeti.uliftIntIso` on `f_*[N]` is the Kronecker pairing of `c` with `f_*[N]` read with chain
+coefficients `ℤ`. The two sides use the `ℤ`-linear structures of a preadditive category and of a
+category of modules, which agree (`TopCat.singularKronecker_eqToHom`). -/
+theorem evalFundamentalClass_singularCohomologyChainCoefficientMap_eq_singularKronecker
+    (f : C(N, X))
+    (c : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{0} ℤ)) ℤ (ModuleCat.of ℤ ℤ) n) :
+    o.evalFundamentalClass hn (ModuleCat.of ℤ ℤ) f
+        ((TopCat.of X).singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) uliftIntIso.hom n
+          c) =
+      ((TopCat.of X).singularKronecker ℤ n c).hom
+        ((((singularHomologyFunctor (ModuleCat.{0} ℤ) n).map uliftIntIso.hom).app
+          (TopCat.of X)).hom (o.mapFundamentalClass hn f)) := by
+  have h := TopCat.singularKronecker_eqToHom (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ ℤ)
+    ModuleCat.instLinear Linear.preadditiveIntLinear (Subsingleton.elim _ _) (TopCat.of X) n
+    ((TopCat.of X).singularCohomologyChainCoefficientMap ℤ (ModuleCat.of ℤ ℤ) uliftIntIso.hom n c)
+  rw [TopCat.singularKronecker_singularCohomologyChainCoefficientMap] at h
+  exact ConcreteCategory.congr_hom h (o.mapFundamentalClass hn f)
+
+end UnitCoefficients
 
 section Degree
 

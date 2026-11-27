@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.CharP.Lemmas
 public import Mathlib.Algebra.Ring.Regular
 public import Mathlib.FieldTheory.Finite.Basic
+import TauCeti.Algebra.Ring.FrobeniusLift
 
 /-!
 # δ-rings
@@ -168,6 +169,21 @@ theorem IsFrobeniusLift.mk_eq {f : A →+* A} (hf : IsFrobeniusLift p f) (x : A)
     Ideal.Quotient.mk (Ideal.span {(p : A)}) (f x) =
       Ideal.Quotient.mk (Ideal.span {(p : A)}) (x ^ p) :=
   (isFrobeniusLift_iff_mk_eq f).mp hf x
+
+/-- The `n`-th iterate of a Frobenius lift `f` satisfies `f^[n] x ≡ x ^ p ^ n` modulo `p`. -/
+theorem IsFrobeniusLift.mk_pow_apply {f : A →+* A} (hf : IsFrobeniusLift p f) (n : ℕ) (x : A) :
+    Ideal.Quotient.mk (Ideal.span {(p : A)}) ((f ^ n) x) =
+      Ideal.Quotient.mk (Ideal.span {(p : A)}) x ^ p ^ n := by
+  rw [← map_pow, Ideal.Quotient.eq, Ideal.mem_span_singleton]
+  exact dvd_pow_apply_sub_pow_pow hf.dvd_sub_pow n x
+
+/-- Modulo `p`, the product `x · f(x) ⋯ f^(r - 1)(x)` of the iterates of a Frobenius lift `f` is
+`x ^ (1 + p + ⋯ + p ^ (r - 1))`. -/
+theorem IsFrobeniusLift.mk_prod_pow_apply {f : A →+* A} (hf : IsFrobeniusLift p f) (x : A)
+    (r : ℕ) :
+    Ideal.Quotient.mk (Ideal.span {(p : A)}) (∏ s ∈ Finset.range r, (f ^ s) x) =
+      Ideal.Quotient.mk (Ideal.span {(p : A)}) x ^ ∑ s ∈ Finset.range r, p ^ s := by
+  rw [map_prod, Finset.prod_congr rfl fun s _ => hf.mk_pow_apply s x, Finset.prod_pow_eq_pow_sum]
 
 /-- A ring endomorphism is a Frobenius lift as soon as it lifts the `p`-th power map modulo `p`
 on a set generating its source as a ring: the elements `x` with `p ∣ f x - x ^ p` form a

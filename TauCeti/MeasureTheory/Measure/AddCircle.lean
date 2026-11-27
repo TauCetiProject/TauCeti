@@ -9,6 +9,8 @@ public import Mathlib.Analysis.Fourier.AddCircle
 public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Topology.Algebra.InfiniteSum.Automorphize
 
+import TauCeti.Algebra.Group.ZMultiples
+
 /-!
 # Densities on the additive circle
 
@@ -29,6 +31,10 @@ This is how wrapped laws on the circle obtain their densities.
 Reading the circle in the symmetric chart `(-T/2, T/2]`, on which the distance to `0` is `|x|`,
 also bounds the integral of a radial function `h ↦ g ‖h‖` by twice the integral of `g` over the
 half line (`AddCircle.lintegral_comp_norm_le`).
+
+Mathlib's translation action of `ℝ` on `AddCircle T`, `t +ᵥ x = t + x` (`AddCircle.vadd_eq_add`),
+is jointly measurable and preserves every additively left-invariant measure, such as circle
+volume and the normalized Haar measure (`AddCircle.instVAddInvariantMeasureReal`).
 -/
 
 public section
@@ -39,6 +45,24 @@ open MeasureTheory Set
 open scoped ENNReal
 
 namespace AddCircle
+
+/-- Mathlib's translation action of `ℝ` on `AddCircle T` adds the image of `t` in the circle. -/
+@[simp]
+protected theorem vadd_eq_add {T : ℝ} (t : ℝ) (x : AddCircle T) :
+    t +ᵥ x = (t : AddCircle T) + x :=
+  QuotientAddGroup.induction_on x fun y ↦ by
+    rw [AddAction.Quotient.vadd_coe, vadd_eq_add, QuotientAddGroup.mk_add]
+
+/-- The translation action of `ℝ` on `AddCircle T` is jointly measurable. -/
+instance instMeasurableVAdd₂Real {T : ℝ} : MeasurableVAdd₂ ℝ (AddCircle T) :=
+  ⟨continuous_vadd.measurable⟩
+
+/-- The translation action of `ℝ` on `AddCircle T` preserves every additively left-invariant
+measure. -/
+instance instVAddInvariantMeasureReal {T : ℝ} {μ : Measure (AddCircle T)}
+    [μ.IsAddLeftInvariant] : VAddInvariantMeasure ℝ (AddCircle T) μ :=
+  ⟨fun t s _ ↦ by
+    simpa only [AddCircle.vadd_eq_add] using measure_preimage_add μ (t : AddCircle T) s⟩
 
 variable {T : ℝ} [hT : Fact (0 < T)]
 
@@ -115,11 +139,9 @@ variable {M : Type*} [TopologicalSpace M] [AddCommMonoid M]
 function over the translates of that point by multiples of the period. -/
 theorem automorphize_coe (f : ℝ → M) (x : ℝ) :
     QuotientAddGroup.automorphize f (x : AddCircle T) = ∑' k : ℤ, f (x + k • T) := by
-  let e : ℤ ≃ (AddSubgroup.zmultiples T).op :=
-    (AddSubgroup.zmultiplesEquivInt hT.out.ne').symm.toEquiv.trans (AddSubgroup.equivOp _)
-  rw [QuotientAddGroup.automorphize_mk, ← e.tsum_eq]
-  refine tsum_congr fun k ↦ congrArg f ?_
-  simp [e, AddSubgroup.vadd_def, AddSubgroup.coe_zmultiplesEquivInt_symm_apply]
+  rw [QuotientAddGroup.automorphize_mk, ← (TauCeti.intEquivOpZMultiples
+    (not_isOfFinAddOrder_of_isAddTorsionFree hT.out.ne')).tsum_eq]
+  simp
 
 /-- Reducing a real law with density `f` modulo `T` gives the circle law whose density
 relative to circle volume is the periodization of `f`.
