@@ -196,9 +196,9 @@ theorem posSemidef_exp_neg_mul_sq_norm {c : ℝ} (hc : 0 ≤ c) :
     Matrix.PosSemidef fun a b : V => Real.exp (-(c * ‖a - b‖ ^ 2)) := by
   refine (congrArg Matrix.PosSemidef ?_).mp (posSemidef_cexp_neg_mul_sq_norm (V := V) hc).map_re
   ext a b
-  -- The complex kernel takes the real values `exp (-c‖a - b‖²)`.
-  exact (congrArg (Complex.re ∘ Complex.exp) (Complex.ofReal_neg _).symm).trans
-    (Complex.exp_ofReal_re _)
+  -- The complex kernel takes the real values `exp (-c‖a - b‖²)`. It is a bare function rather
+  -- than a `Matrix.of` term, so `Matrix.map_apply` does not match: unfold `Matrix.map` instead.
+  simp only [Matrix.map, Matrix.of_apply, ← Complex.ofReal_neg, Complex.exp_ofReal_re]
 
 end General
 

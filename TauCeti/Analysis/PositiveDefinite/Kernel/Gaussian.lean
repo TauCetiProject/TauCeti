@@ -20,12 +20,20 @@ kernels of kernel methods in statistics and machine learning:
 * the Laplace kernel `laplaceKernel σ x y = exp (-‖x - y‖ / σ)`;
 * the inverse multiquadric kernel `imqKernel c β x y = (c² + ‖x - y‖²) ^ (-β)`.
 
-All three are scale mixtures `∫ exp (-t ‖x - y‖²) dρ(t)` of Gaussians, which is how one proves
-that they are positive semidefinite and characteristic (Wendland, Theorems 7.13–7.15). This file
-proves the positive semidefiniteness of the Gaussian kernel, the real part of the complex
-Gaussian kernel of `TauCeti.posSemidef_cexp_neg_mul_sq_norm`, and records the elementary
-properties of all three kernels. The value `σ = 0` is the junk value: then `x / 0 = 0` makes the
-Gaussian and Laplace kernels the constant kernel `1`.
+In the parameter ranges of the literature, `σ ≠ 0` for the Gaussian kernel, `σ > 0` for the
+Laplace kernel, and `c ≠ 0` and `β > 0` for the inverse multiquadric kernel, all three are scale
+mixtures `∫ exp (-t ‖x - y‖²) dρ(t)` of Gaussians, which is how one proves that they are positive
+semidefinite and characteristic (Wendland, Theorems 7.13–7.15). This file does not prove these
+facts in general. It proves the positive semidefiniteness of the Gaussian kernel, for every `σ`,
+as the real part of the complex Gaussian kernel of `TauCeti.posSemidef_cexp_neg_mul_sq_norm`, and
+records the elementary properties of all three kernels.
+
+The definitions accept every parameter value, and outside these ranges they are other kernels.
+For `σ = 0`, `x / 0 = 0` makes the Gaussian and Laplace kernels the constant kernel `1`. For
+`β = 0` the inverse multiquadric kernel is the constant kernel `1`. For `d ≥ 1` the following are
+not positive semidefinite: the Laplace kernel `exp (‖x - y‖ / |σ|)` for `σ < 0`; the multiquadric
+kernel `(c² + ‖x - y‖²) ^ |β|`, which is `imqKernel c β` for `β < 0`; and `imqKernel 0 β` for
+`β > 0`, which vanishes on the diagonal.
 
 ## Main definitions
 
@@ -108,7 +116,8 @@ theorem posSemidef_gaussianKernel (σ : ℝ) : Matrix.PosSemidef (gaussianKernel
 
 /-! ### The Laplace kernel -/
 
-/-- The Laplace kernel `exp (-‖x - y‖ / σ)` on `ℝᵈ` with bandwidth `σ`. -/
+/-- The Laplace kernel `exp (-‖x - y‖ / σ)` on `ℝᵈ` with bandwidth `σ`. It is the Laplace kernel of
+the literature for `σ > 0`; for `σ = 0` it is the constant `1`. -/
 noncomputable def laplaceKernel (σ : ℝ) (x y : EuclideanSpace ℝ (Fin d)) : ℝ :=
   Real.exp (-‖x - y‖ / σ)
 
@@ -145,7 +154,9 @@ theorem continuous_laplaceKernel (σ : ℝ) :
 
 /-! ### The inverse multiquadric kernel -/
 
-/-- The inverse multiquadric kernel `(c² + ‖x - y‖²) ^ (-β)` on `ℝᵈ`. -/
+/-- The inverse multiquadric kernel `(c² + ‖x - y‖²) ^ (-β)` on `ℝᵈ`. It is the inverse
+multiquadric kernel of the literature for `c ≠ 0` and `β > 0`; for `β < 0` it is the multiquadric
+kernel, and for `β = 0` the constant `1`. -/
 noncomputable def imqKernel (c β : ℝ) (x y : EuclideanSpace ℝ (Fin d)) : ℝ :=
   (c ^ 2 + ‖x - y‖ ^ 2) ^ (-β)
 
