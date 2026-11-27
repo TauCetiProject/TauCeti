@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.EnergyForm.HyperplaneReflection
 public import TauCeti.Analysis.PDE.Regularity.SmallMeanOscillation
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.InnerProductSpace.Transvection
+import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.PDE.EnergyForm.Antisymmetric
 import TauCeti.Analysis.PDE.EnergyForm.ChangeOfVariables
 import TauCeti.Analysis.PDE.Ellipticity.ConormalShear
@@ -284,10 +285,12 @@ theorem exists_eLpNorm_gradient_le_of_setAverage_reflectPrincipal_le {p : ℝ≥
   refine ⟨2 * C, δ, hδ, ?_⟩
   intro H ν c₀ a hν hH ham hbd hosc u G hu0 hu hgp hG2 hGp
   obtain ⟨hG'p, hG'le⟩ :=
-    memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection
+    memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection
       (one_le_two.trans hp.le) H.isOpen.measurableSet MeasurableSet.univ
-      (mapsTo_univ (hyperplaneReflection ν c₀) univ) (ℝ ∙ ν)ᗮ.reflection (by rwa [univ_inter])
-  simp only [Measure.restrict_univ, univ_inter] at hG'p hG'le
+      (mapsTo_univ (hyperplaneReflection ν c₀) univ) (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry
+      (by rwa [univ_inter])
+  simp only [Measure.restrict_univ, univ_inter, LinearIsometryEquiv.coe_toLinearIsometry]
+    at hG'p hG'le
   have hwgp := memLp_gradient_sub_compHyperplaneReflectionL ν c₀ hgp
   -- The reflected coefficient is measurable and bounded.
   have hãm : AEStronglyMeasurable (reflectPrincipal ν c₀ a) volume := by
@@ -877,9 +880,10 @@ private theorem exists_eLpNorm_gradient_ball_inter_le_of_reflection {p : ℝ≥0
     one_le_two hw0 ((Lp.memLp (W1p.value w)).mono_measure hle)
     ((Lp.memLp (W1p.gradient w)).mono_measure hle)
   obtain ⟨hGrp, hGrle⟩ :=
-    memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection
+    memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection
       (one_le_two.trans hp.le) H.isOpen.measurableSet measurableSet_ball hBρ
-      (ℝ ∙ ν)ᗮ.reflection hGp
+      (ℝ ∙ ν)ᗮ.reflection.toLinearIsometry hGp
+  simp only [LinearIsometryEquiv.coe_toLinearIsometry] at hGrp hGrle
   -- The interior estimate for the odd reflection on `B`; its coefficient is within `δ₀` of `A`.
   have hosc (c : E) (r : ℝ) (_ : 0 < r) (_ : r ≤ 4 * R) :
       ∃ A' : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ,
@@ -914,22 +918,13 @@ private theorem exists_eLpNorm_gradient_ball_inter_le_of_reflection {p : ℝ≥0
 
 /-! ### Transporting a half-ball problem along the shear -/
 
-/-- A continuous linear map `L` with `‖L‖ ≤ κ` maps the ball `B(y, r / κ)` into `B(L y, r)`.
-Applied to the shear and to its inverse. -/
-private theorem mapsTo_ball_div_of_opNorm_le (L : E →L[ℝ] E) {κ : ℝ≥0} (hκ : 0 < (κ : ℝ))
-    (hL : ‖L‖ ≤ κ) (y : E) (r : ℝ) : MapsTo L (ball y (r / κ)) (ball (L y) r) :=
-  fun x hx => by
-    have h := (L.lipschitzWith.weaken (by exact_mod_cast hL)).mapsTo_ball
-      (by exact_mod_cast hκ.ne') y (r / κ) hx
-    rwa [mul_div_cancel₀ r hκ.ne'] at h
-
 /-- **A half-ball problem along the shear.** Let `Φ x = x + ⟪ν, x⟫ s` with `⟪ν, s⟫ = 0` and
 `‖Φ‖ ≤ κ`, with inverse `T`, and let `y₀` lie on the boundary hyperplane of `H`. If
 `w ∈ H¹(B(y₀, R))` vanishes off `H` and solves `-∂ᵢ(aⁱʲ ∂ⱼw) = -div G` in `B(y₀, R) ∩ H`, then
 `w ∘ Φ`, on the ball `B(T y₀, R / κ)` that `Φ` maps into `B(y₀, R)`, vanishes off `H` and solves
 the transformed equation in `B(T y₀, R / κ) ∩ H`. -/
 private theorem exists_shear_ball {H : Opens E} {ν y₀ s : E} {c₀ R : ℝ} {κ : ℝ≥0}
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hνs : ⟪ν, -s⟫_ℝ = 0) (hκ : 0 < (κ : ℝ))
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hνs : ⟪ν, -s⟫_ℝ = 0)
     (hΦ : ‖transvectionL ν (-(-s))‖ ≤ κ) {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     {G : E → E} (w : W1p volume (⟨ball y₀ R, isOpen_ball⟩ : Opens E) 2)
     (hw0 : ∀ᵐ x ∂volume.restrict (ball y₀ R), x ∉ H → W1p.value w x = 0)
@@ -965,7 +960,7 @@ private theorem exists_shear_ball {H : Opens E} {ν y₀ s : E} {c₀ R : ℝ} {
   have hB₁U' : B₁ ≤ U' := fun x hx => by
     simp only [U', B₁, Opens.mem_mk, mem_preimage] at hx ⊢
     simpa only [transvectionL_neg_transvectionL hνs] using
-      mapsTo_ball_div_of_opNorm_le _ hκ hΦ (transvectionL ν (-s) y₀) R hx
+      ContinuousLinearMap.mapsTo_ball_div_of_opNorm_le _ hΦ (transvectionL ν (-s) y₀) R hx
   have hmapsH : MapsTo (transvectionL ν (-(-s))) ((U' ⊓ H : Opens E) : Set E) (B ⊓ H : Opens E) :=
     fun x hx => ⟨hU'B hx.1, (hHΦ x).2 hx.2⟩
   have hmapsH' : MapsTo (transvectionL ν (-s)) ((B ⊓ H : Opens E) : Set E) (U' ⊓ H : Opens E) :=
@@ -1007,7 +1002,7 @@ inverse `Φ`. If `g₁ = Φ* (g ∘ Φ)` almost everywhere on `B(T y₀, r)`, th
 `B(y₀, r / κ) ∩ H`, which `T` maps into `B(T y₀, r) ∩ H`, so
 `‖g‖_{Lᵖ(B(y₀, r / κ) ∩ H)} ≤ κ ‖g₁‖_{Lᵖ(B(T y₀, r) ∩ H)}`. -/
 private theorem eLpNorm_ball_div_inter_le_of_ae_eq_adjoint {H : Opens E} {ν y₀ s : E} {c₀ r : ℝ}
-    {κ : ℝ≥0} (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hνs : ⟪ν, -s⟫_ℝ = 0) (hκ : 0 < (κ : ℝ))
+    {κ : ℝ≥0} (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hνs : ⟪ν, -s⟫_ℝ = 0)
     (hT : ‖transvectionL ν (-s)‖ ≤ κ) {g g₁ : E → E}
     (hg₁ : g₁ =ᵐ[volume.restrict (ball (transvectionL ν (-s) y₀) r)]
       fun x => (transvectionL ν (-(-s))).adjoint (g (transvectionL ν (-(-s)) x))) (p : ℝ≥0∞) :
@@ -1015,7 +1010,8 @@ private theorem eLpNorm_ball_div_inter_le_of_ae_eq_adjoint {H : Opens E} {ν y�
       κ * eLpNorm g₁ p (volume.restrict (ball (transvectionL ν (-s) y₀) r ∩ H)) := by
   have hmapsT : MapsTo (transvectionL ν (-s)) (ball y₀ (r / κ) ∩ H)
       (ball (transvectionL ν (-s) y₀) r ∩ H) := fun y hy =>
-    ⟨mapsTo_ball_div_of_opNorm_le _ hκ hT y₀ r hy.1, (transvectionL_mem_iff hH hνs y).2 hy.2⟩
+    ⟨ContinuousLinearMap.mapsTo_ball_div_of_opNorm_le _ hT y₀ r hy.1,
+      (transvectionL_mem_iff hH hνs y).2 hy.2⟩
   have hBm := (measurableSet_ball (x := transvectionL ν (-s) y₀) (ε := r)).inter
     H.isOpen.measurableSet
   have hTa : ‖(transvectionL ν (-s)).adjoint‖ ≤ κ := by rwa [LinearIsometryEquiv.norm_map]
@@ -1081,11 +1077,12 @@ private theorem exists_eLpNorm_gradient_ball_inter_le_of_isSymm {p : ℝ≥0∞}
   have hmaps : MapsTo (transvectionL ν (-(-s))) (ball (transvectionL ν (-s) y₀) (R / κ) ∩ H)
       (ball y₀ R ∩ H) := fun x hx =>
     ⟨by simpa only [transvectionL_neg_transvectionL hνs] using
-      mapsTo_ball_div_of_opNorm_le _ hκ hΦ (transvectionL ν (-s) y₀) R hx.1, (hHΦ x).2 hx.2⟩
+      ContinuousLinearMap.mapsTo_ball_div_of_opNorm_le _ hΦ (transvectionL ν (-s) y₀) R hx.1,
+      (hHΦ x).2 hx.2⟩
   have hBm := (measurableSet_ball (x := y₀) (ε := R)).inter H.isOpen.measurableSet
   have hΦmp := measurePreserving_transvectionL volume (inner_neg_right_eq_zero hνs)
   -- The sheared problem.
-  obtain ⟨w₁, hw0₁, hweq₁, hv₁, hg₁⟩ := exists_shear_ball hH hνs hκ hΦ w hw0 hweq
+  obtain ⟨w₁, hw0₁, hweq₁, hv₁, hg₁⟩ := exists_shear_ball hH hνs hΦ w hw0 hweq
   have hgle (q : ℝ≥0∞) : eLpNorm (W1p.gradient w₁) q
       (volume.restrict (ball (transvectionL ν (-s) y₀) (R / κ) ∩ H)) ≤
         κ * eLpNorm (W1p.gradient w) q (volume.restrict (ball y₀ R ∩ H)) :=
@@ -1112,7 +1109,7 @@ private theorem exists_eLpNorm_gradient_ball_inter_le_of_isSymm {p : ℝ≥0∞}
   -- Back along the shear, from `B(T y₀, R/(2κ))` to `B(y₀, θ R)`, `θ = 1/(2κ²)`.
   have hθR : (2 * (κ : ℝ) ^ 2)⁻¹ * R = R / κ / 2 / κ := by field_simp
   rw [hθR]
-  have hlow := eLpNorm_ball_div_inter_le_of_ae_eq_adjoint hH hνs hκ hT
+  have hlow := eLpNorm_ball_div_inter_le_of_ae_eq_adjoint hH hνs hT
     (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball (half_le_self hR₁.le)) hg₁) p
   have hV := Measure.addHaar_ball_div_rpow_le volume y₀ (transvectionL ν (-s) y₀) hR hκ1
     (e := p.toReal⁻¹ - 2⁻¹) (by

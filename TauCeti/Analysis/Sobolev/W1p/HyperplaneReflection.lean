@@ -701,7 +701,9 @@ theorem W1p.memLp_sub_compHyperplaneReflectionL (hp : p ≠ ⊤) (hν : ν ≠ 0
     (W1p.gradient_sub_compHyperplaneReflectionL_ae hp hU u).trans
       (sub_comp_hyperplaneReflection_ae_eq_indicator hUm hU (map_zero R) hg0)
   obtain ⟨hgp, hgle⟩ :=
-    memLp_indicator_sub_indicator_linearIsometryEquiv_comp_hyperplaneReflection hq hHm hUm hU R hg
+    memLp_indicator_sub_indicator_linearIsometry_comp_hyperplaneReflection hq hHm hUm hU
+      R.toLinearIsometry hg
+  simp only [LinearIsometryEquiv.coe_toLinearIsometry] at hgp hgle
   exact ⟨(memLp_indicator_sub_indicator_comp_hyperplaneReflection hHm hUm hU hv hv).ae_eq
       hval.symm, hgp.ae_eq hgrad.symm, (eLpNorm_congr_ae hgrad).trans_le hgle⟩
 
