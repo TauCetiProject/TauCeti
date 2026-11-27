@@ -20,8 +20,6 @@ detected on `n`-th powers, then divisibility by `w` is also detected on `n`-th p
 
 * `TauCeti.dvd_of_pow_dvd_pow`: if `w ^ n ∈ R⁰` (`n ≠ 0`) and `(w ^ n) ^ n ∣ u ^ n → w ^ n ∣ u`
   for all `u`, then `w ^ n ∣ z ^ n → w ∣ z`.
-* `TauCeti.pow_dvd_of_pow_mul_dvd_pow`, `TauCeti.pow_dvd_of_pow_mul_pow_dvd_pow`: if `π ∈ R⁰`
-  and `π ^ p ∣ a ^ p → π ∣ a`, then `π ^ (s * p ^ m) ∣ a ^ p ^ m → π ^ s ∣ a`.
 -/
 
 public section
@@ -50,38 +48,6 @@ theorem dvd_of_pow_dvd_pow {R : Type*} [CommRing R] {w z : R} {n : ℕ} (hn : n 
     exact mul_dvd_mul_right hz _
   exact (dvd_cancel_right_mem_nonZeroDivisors
     (pow_mem ((pow_mem_nonZeroDivisors_iff hn).mp hw) (n - 1))).mp hd
-
-/-- If `π` is a nonzerodivisor and `π ^ p ∣ a ^ p → π ∣ a`, then `π ^ (s * p) ∣ a ^ p → π ^ s ∣ a`.
--/
-theorem pow_dvd_of_pow_mul_dvd_pow {R : Type*} [CommRing R] {π : R} {p : ℕ} (hπ : π ∈ R⁰)
-    (hroot : ∀ a : R, π ^ p ∣ a ^ p → π ∣ a) (s : ℕ) (a : R) (ha : π ^ (s * p) ∣ a ^ p) :
-    π ^ s ∣ a := by
-  induction s generalizing a with
-  | zero => simp
-  | succ s ih =>
-    have hsplit : π ^ ((s + 1) * p) = π ^ p * π ^ (s * p) := by
-      rw [Nat.succ_mul, pow_add, mul_comm]
-    rw [hsplit] at ha
-    obtain ⟨b, rfl⟩ := hroot a ((dvd_mul_right (π ^ p) _).trans ha)
-    rw [mul_pow] at ha
-    have hb : π ^ (s * p) ∣ b ^ p := by
-      obtain ⟨c, hc⟩ := ha
-      refine ⟨c, (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ p)).mp ?_⟩
-      simpa only [mul_assoc] using hc
-    rw [pow_succ']
-    exact mul_dvd_mul_left π (ih b hb)
-
-/-- Iterating `pow_dvd_of_pow_mul_dvd_pow` along `p`-th powers:
-`π ^ (s * p ^ m) ∣ a ^ p ^ m → π ^ s ∣ a`. -/
-theorem pow_dvd_of_pow_mul_pow_dvd_pow {R : Type*} [CommRing R] {π : R} {p : ℕ} (hπ : π ∈ R⁰)
-    (hroot : ∀ a : R, π ^ p ∣ a ^ p → π ∣ a) (m s : ℕ) (a : R)
-    (ha : π ^ (s * p ^ m) ∣ a ^ p ^ m) : π ^ s ∣ a := by
-  induction m generalizing s a with
-  | zero => simpa using ha
-  | succ m ih =>
-    have h1 : π ^ (s * p * p ^ m) ∣ (a ^ p) ^ p ^ m := by
-      rwa [mul_assoc, ← pow_succ', ← pow_mul, ← pow_succ']
-    exact pow_dvd_of_pow_mul_dvd_pow hπ hroot s a (ih (s * p) (a ^ p) h1)
 
 end TauCeti
 

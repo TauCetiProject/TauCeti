@@ -10,7 +10,6 @@ public import TauCeti.RingTheory.Perfectoid.Basic
 public import TauCeti.RingTheory.Perfectoid.Untilt
 
 import TauCeti.Algebra.Ring.NonZeroDivisors
-import TauCeti.RingTheory.AdicCompletion.Principal
 
 /-!
 # Perfectoid Tate rings from integral perfectoid rings
@@ -147,87 +146,27 @@ theorem isPerfectoidTateRing_of_bijective_frobeniusModPow
   let : IsTateRing A := isTateRing_of_hasBasis h
   let : CompleteSpace A := completeSpace_of_hasBasis h hπ
   let : T2Space A := t2Space_of_hasBasis h hπ
-  rcases subsingleton_or_nontrivial A with hA | hA
-  · exact isPerfectoidTateRing_of_subsingleton p A
-  have hroot : ∀ a : A₀, π ^ p ∣ a ^ p → π ∣ a := (frobeniusModPow_injective_iff hdvd).mp hbij.1
-  have hsurj : ∀ a : A₀, ∃ b : A₀, π ^ p ∣ a - b ^ p :=
-    (frobeniusModPow_surjective_iff hdvd).mp hbij.2
-  have : IsUniform A := isUniform_of_dvd_of_pow_dvd_pow h hp.out.one_lt hπ hroot
-  have : Nontrivial A₀ := by
-    by_contra hnot
-    rw [not_nontrivial_iff_subsingleton] at hnot
-    exact not_subsingleton A (algebraMap A₀ A).codomain_trivial
-  have hπp : π ∣ (p : A₀) := (dvd_pow_self π hp.out.ne_zero).trans hdvd
-  have : IsAdicComplete (span {(p : A₀)}) A₀ := .span_singleton_of_dvd hπp
-  have : Fact ¬IsUnit (p : A₀) :=
-    ⟨IsAdicComplete.not_isUnit_of_mem (I := span {π}) (mem_span_singleton.mpr hπp)⟩
-  -- Replace `π` by an associated untilt `ϖ.untilt` with a `p`-th root `w₁`.
-  obtain ⟨ϖ, -, hass⟩ := PreTilt.exists_associated_untilt hdvd hsurj
-  have ⟨u, hu⟩ := hass
-  set w0 : A₀ := ϖ.untilt
-  set w1 : A₀ := ((frobeniusEquiv (PreTilt A₀ p) p).symm ϖ).untilt
-  have hw1_pow : w1 ^ p = w0 := by
-    simpa [w0, w1] using PreTilt.untilt_iterate_frobeniusEquiv_symm_succ_pow ϖ 0
-  have hw0_pow_dvd : w0 ^ p ∣ π ^ p := by
-    rw [← hu, mul_pow]
-    exact ⟨(u⁻¹ : A₀ˣ) ^ p, by rw [mul_assoc, ← mul_pow, Units.mul_inv, one_pow, mul_one]⟩
-  have hw0_dvd : w0 ^ p ∣ (p : A₀) := hw0_pow_dvd.trans hdvd
-  have hspan : span {w0} = span {π} := by rw [← hu, span_singleton_mul_right_unit u.isUnit]
-  have : IsAdicComplete (span {w0}) A₀ := hspan.symm ▸ inferInstance
-  have hs0 : ∀ a : A₀, ∃ b : A₀, w0 ^ p ∣ a - b ^ p := fun a ↦
-    (hsurj a).imp fun _ hb ↦ hw0_pow_dvd.trans hb
-  have hrange_le : (algebraMap A₀ A).range ≤ powerBoundedSubring A := fun _ hx ↦
-    mem_powerBoundedSubring.mpr
-      ((isBounded_range_algebraMap_of_hasBasis h).isPowerBounded_of_mem hx)
-  let ϖPB : powerBoundedSubring A := ⟨algebraMap A₀ A w0, hrange_le ⟨w0, rfl⟩⟩
-  have hϖPB_pu : IsPseudoUniformizer (ϖPB : A) := by
-    have hpu := isPseudoUniformizer_algebraMap_of_hasBasis h
-    refine isPseudoUniformizer_iff.mpr ⟨?_, ?_⟩
-    · dsimp only [ϖPB]
-      rw [← hu, map_mul]
-      exact hpu.isUnit.mul (u.isUnit.map _)
-    · dsimp only [ϖPB]
-      rw [← hu, map_mul, mul_comm]
-      exact ((isBounded_range_algebraMap_of_hasBasis h).isPowerBounded_of_mem
-        ⟨(u : A₀), rfl⟩).isTopologicallyNilpotent_mul hpu.isTopologicallyNilpotent
-  have hϖPB_dvd : ϖPB ^ p ∣ (p : powerBoundedSubring A) := by
-    obtain ⟨c, hc⟩ := hw0_dvd
-    refine ⟨⟨algebraMap A₀ A c, hrange_le ⟨c, rfl⟩⟩, Subtype.ext ?_⟩
-    simp only [Subring.coe_natCast, Subring.coe_mul, Subring.coe_pow, ϖPB, ← map_pow, ← map_mul,
-      ← hc, map_natCast]
-  have hw1_unit : IsUnit (algebraMap A₀ A w1) :=
-    (isUnit_pow_iff hp.out.ne_zero).mp (by rw [← map_pow, hw1_pow]; exact hϖPB_pu.isUnit)
-  -- Every `x ∈ A°` has `w0 * x = a ∈ A₀`, which is congruent to a `p`-th power `y₀ ^ p`
-  -- mod `w0 * p`; dividing by `w1` gives `y = y₀ / w1 ∈ A°` with `w0 ^ p ∣ x - y ^ p` in `A°`.
-  refine IsPerfectoidTateRing.of_surjective ϖPB hϖPB_pu hϖPB_dvd fun x ↦ ?_
-  have hwx : algebraMap A₀ A w0 * (x : A) ∈ (algebraMap A₀ A).range := by
-    simpa [w0] using (isPowerBounded_iff_forall_untilt_mul_mem_range h hπ hroot hass).mp
-      (mem_powerBoundedSubring.mp x.property) 0
-  obtain ⟨a, ha⟩ := hwx
-  obtain ⟨f, c, hfc⟩ := PreTilt.exists_mul_natCast_dvd_sub_untilt hw0_dvd hs0 a
-  set y0 : A₀ := ((frobeniusEquiv (PreTilt A₀ p) p).symm f).untilt
-  have hy0_pow : y0 ^ p = f.untilt := by
-    simpa [y0] using PreTilt.untilt_iterate_frobeniusEquiv_symm_succ_pow f 0
-  set y : A := (↑hw1_unit.unit⁻¹ : A) * algebraMap A₀ A y0
-  have hyp : y ^ p = (x : A) - (p : A) * algebraMap A₀ A c := by
-    apply hϖPB_pu.isUnit.mul_left_cancel
-    have h1 : algebraMap A₀ A w0 * y ^ p = algebraMap A₀ A f.untilt := by
-      rw [← hw1_pow, map_pow, ← mul_pow, ← hy0_pow, map_pow]
-      congr 1
-      exact hw1_unit.unit.mul_inv_cancel_left (algebraMap A₀ A y0)
-    dsimp only [ϖPB]
-    rw [h1, mul_sub, ← ha, ← mul_assoc, mul_right_comm (algebraMap A₀ A w0),
-      ← map_natCast (algebraMap A₀ A), ← map_mul, ← map_mul, ← map_sub]
-    congr 1
-    linear_combination -hfc
-  have hy_pb : y ∈ powerBoundedSubring A := by
-    refine mem_powerBoundedSubring.mpr (IsPowerBounded.of_pow hp.out.ne_zero ?_)
-    rw [hyp]
-    exact mem_powerBoundedSubring.mp
-      (sub_mem x.property (mul_mem (natCast_mem _ p) (hrange_le ⟨c, rfl⟩)))
-  refine ⟨⟨y, hy_pb⟩, hϖPB_dvd.trans ⟨⟨algebraMap A₀ A c, hrange_le ⟨c, rfl⟩⟩, Subtype.ext ?_⟩⟩
-  simp only [AddSubgroupClass.coe_sub, Subring.coe_pow, Subring.coe_mul, Subring.coe_natCast]
-  linear_combination -hyp
+  let ϖ : (algebraMap A₀ A).range := ⟨algebraMap A₀ A π, π, rfl⟩
+  have hϖp : ϖ ^ p ∣ (p : (algebraMap A₀ A).range) := by
+    obtain ⟨c, hc⟩ := hdvd
+    exact ⟨⟨algebraMap A₀ A c, c, rfl⟩, Subtype.ext (by
+      simpa only [Subring.coe_natCast, Subring.coe_pow, Subring.coe_mul, ϖ, ← map_pow, ← map_mul,
+        map_natCast] using congrArg (algebraMap A₀ A) hc)⟩
+  have hbij' : Function.Bijective (frobeniusModPow p hϖp) := by
+    refine ⟨(frobeniusModPow_injective_iff hϖp).mpr ?_,
+      (frobeniusModPow_surjective_iff hϖp).mpr ?_⟩
+    · rintro ⟨_, a, rfl⟩ ⟨⟨_, c, rfl⟩, hc⟩
+      have hca : a ^ p = π ^ p * c := IsLocalization.injective A (Submonoid.powers_le.mpr hπ) <| by
+        simpa [ϖ, map_pow, map_mul] using congrArg Subtype.val hc
+      obtain ⟨d, hd⟩ := (frobeniusModPow_injective_iff hdvd).mp hbij.1 a ⟨c, hca⟩
+      exact ⟨⟨algebraMap A₀ A d, d, rfl⟩, Subtype.ext (by simp [ϖ, hd])⟩
+    · rintro ⟨_, a, rfl⟩
+      obtain ⟨b, c, hbc⟩ := (frobeniusModPow_surjective_iff hdvd).mp hbij.2 a
+      refine ⟨⟨algebraMap A₀ A b, b, rfl⟩, ⟨algebraMap A₀ A c, c, rfl⟩, Subtype.ext ?_⟩
+      simpa [ϖ, map_sub, map_pow, map_mul] using congrArg (algebraMap A₀ A) hbc
+  exact IsPerfectoidTateRing.of_bijective_frobeniusModPow
+    (isOpen_range_algebraMap_of_hasBasis h) (isBounded_range_algebraMap_of_hasBasis h)
+    (isPseudoUniformizer_algebraMap_of_hasBasis h) hϖp hbij'
 
 end Roots
 

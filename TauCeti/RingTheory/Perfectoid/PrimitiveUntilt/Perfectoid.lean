@@ -98,9 +98,7 @@ private structure PrimitiveWitness (ξ : WittVector p P.plus) where
     (WittVector p P.plus ⧸ Ideal.span {ξ})⁰
 
 private noncomputable def primitiveWitness (hξ : ξ.IsPrimitive) : PrimitiveWitness ξ :=
-  have h := P.isRingOfIntegralElements.exists_isPseudoUniformizer_pow_dvd hp.out.one_lt
-    (ξ.coeff 0)
-    (hξ.isTopologicallyNilpotent_coeff_zero.map (φ := P.plus.subtype) continuous_subtypeVal)
+  have h := hξ.exists_isPseudoUniformizer_pow_dvd_coeff_zero
   let ϖ := h.choose
   have hϖ := h.choose_spec.1
   have hξ₀p := h.choose_spec.2
