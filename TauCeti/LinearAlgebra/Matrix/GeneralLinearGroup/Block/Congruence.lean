@@ -8,7 +8,8 @@ module
 -- `TauCeti.upperTriangularCongruenceSubgroup`, `TauCeti.parahoricSubgroup`,
 -- `TauCeti.unitriangularSubgroup`, and `Matrix.GeneralLinearGroup.map_surjective`.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Congruence
--- `TauCeti.BlockTriangularGroup.diagBlocks` reads off the diagonal blocks.
+-- `TauCeti.BlockTriangularGroup.diagBlocks` reads off the diagonal blocks, and
+-- `TauCeti.sumIsRightLeviEquiv` splits them for two blocks.
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Block
 
 /-!
@@ -25,7 +26,7 @@ Over the valuation ring `O` of a nonarchimedean local field with uniformizer `ϖ
 
 * for the identity ranking of a linearly ordered `m`, `P_id(ϖ^b, ϖ^c)` is the Iwahori level
   `Iw(b, c)` of matrices upper triangular modulo `ϖ^c` with diagonal congruent to `1` modulo
-  `ϖ^b` (`TauCeti.blockCongruenceSubgroup_id`);
+  `ϖ^b` (`TauCeti.blockCongruenceSubgroup_id_eq_inf`);
 * for the two blocks of `m ⊕ n` ranked by `Sum.isRight`, so that `g = (A B; C D)`,
   `P(ϖ^b, ϖ^c)` consists of the `g` with `C ≡ 0 mod ϖ^c` and `A ≡ 1`, `D ≡ 1 mod ϖ^b`
   (`TauCeti.mem_blockCongruenceSubgroup_isRight_iff`); for `m = n` it is the Siegel level
@@ -49,9 +50,9 @@ diamond quotient `P(0, c) ⧸ P(b, c) ≃ GL_n(O ⧸ ϖ^b) × GL_n(O ⧸ ϖ^b)` 
 * `TauCeti.blockCongruenceSubgroup lev J K`: the subgroup `P_lev(J, K)` of `GL_m(R)`.
 * `TauCeti.mem_blockCongruenceSubgroup_iff`: membership through the entries.
 * `TauCeti.blockCongruenceSubgroup_mono`: the subgroups grow with both ideals.
-* `TauCeti.blockCongruenceSubgroup_top_left`: `P_lev(⊤, K)` is the parahoric congruence subgroup
-  `TauCeti.parahoricSubgroup` of the dual ranking.
-* `TauCeti.blockCongruenceSubgroup_id`: the identity ranking gives the Iwahori levels.
+* `TauCeti.blockCongruenceSubgroup_top_left_eq_parahoricSubgroup`: `P_lev(⊤, K)` is the parahoric
+  congruence subgroup `TauCeti.parahoricSubgroup` of the dual ranking.
+* `TauCeti.blockCongruenceSubgroup_id_eq_inf`: the identity ranking gives the Iwahori levels.
 * `TauCeti.BlockCongruenceSubgroup.diagBlocks`: the diagonal blocks modulo `J`, with kernel
   `P_lev(J, K)` (`TauCeti.BlockCongruenceSubgroup.ker_diagBlocks`), surjective for `J` in the
   Jacobson radical (`TauCeti.BlockCongruenceSubgroup.diagBlocks_surjective`).
@@ -93,16 +94,6 @@ def blockCongruenceSubgroup (J K : Ideal R) : Subgroup (GL m R) :=
 
 variable {lev} {J J' K K' : Ideal R}
 
-omit [Fintype m] in
-/-- An entry reduces modulo `J` to the corresponding entry of the identity matrix exactly when it
-is congruent to it modulo `J`. -/
-private theorem mk_eq_one_apply_iff {x : R} {i j : m} :
-    Ideal.Quotient.mk J x = (1 : Matrix m m (R ⧸ J)) i j ↔ x - (1 : Matrix m m R) i j ∈ J := by
-  have h1 : (1 : Matrix m m (R ⧸ J)) i j = Ideal.Quotient.mk J ((1 : Matrix m m R) i j) := by
-    simp only [Matrix.one_apply]
-    split_ifs <;> simp
-  rw [h1, Ideal.Quotient.eq]
-
 /-- Membership in the block congruence subgroup `P_lev(J, K)`: the entries below the diagonal
 blocks lie in `K ⊓ J`, and the diagonal blocks are congruent to identity matrices modulo `J`. -/
 @[simp]
@@ -113,7 +104,8 @@ theorem mem_blockCongruenceSubgroup_iff {g : GL m R} :
   simp only [blockCongruenceSubgroup, Subgroup.mem_inf, Subgroup.mem_comap,
     mem_blockTriangularGroup_iff, mem_unitriangularSubgroup, blockUnitriangular_iff,
     BlockTriangular, GeneralLinearGroup.map_apply, Ideal.Quotient.eq_zero_iff_mem,
-    mk_eq_one_apply_iff, Submodule.mem_inf]
+    ← Matrix.map_one (Ideal.Quotient.mk J) (map_zero _) (map_one _), Matrix.map_apply,
+    Ideal.Quotient.eq, Submodule.mem_inf]
   grind
 
 /-- Membership in the block congruence subgroup `P_lev(J, K)` for `K ≤ J`: the entries below the
@@ -141,7 +133,7 @@ theorem blockCongruenceSubgroup_mono (hJ : J ≤ J') (hK : K ≤ K') :
 /-- Modulo the unit ideal for the diagonal blocks, the block congruence subgroup is the parahoric
 congruence subgroup of the dual ranking: the invertible matrices that are block upper triangular
 for `lev` modulo `K`. -/
-theorem blockCongruenceSubgroup_top_left :
+theorem blockCongruenceSubgroup_top_left_eq_parahoricSubgroup :
     blockCongruenceSubgroup lev ⊤ K = parahoricSubgroup (OrderDual.toDual ∘ lev) K := by
   ext g
   simp
@@ -196,7 +188,9 @@ theorem ker_diagBlocks (hKJ : K ≤ J) :
     BlockTriangularGroup.mem_ker_diagBlocks_iff, Subgroup.mem_subgroupOf,
     mem_blockCongruenceSubgroup_iff_of_le hKJ]
   simp only [MonoidHom.codRestrict_apply, MonoidHom.domRestrict_apply,
-    GeneralLinearGroup.map_apply, mk_eq_one_apply_iff]
+    GeneralLinearGroup.map_apply,
+    ← Matrix.map_one (Ideal.Quotient.mk J) (map_zero _) (map_one _), Matrix.map_apply,
+    Ideal.Quotient.eq]
   exact ⟨fun h ↦ ⟨hg.1, h⟩, fun h ↦ h.2⟩
 
 /-- For `K ≤ J`, the block congruence subgroup `P_lev(J, K)` is normal in `P_lev(⊤, K)`. -/
@@ -205,7 +199,8 @@ theorem normal_subgroupOf (hKJ : K ≤ J) :
   ker_diagBlocks (lev := lev) hKJ ▸ (diagBlocks lev hKJ).normal_ker
 
 /-- If `J` lies in the Jacobson radical, the diagonal blocks modulo `J` are arbitrary: every
-element of the Levi factor over `R ⧸ J` is attained by a block diagonal matrix over `R`. -/
+element of the Levi factor over `R ⧸ J` is the diagonal blocks modulo `J` of some element of
+`P_lev(⊤, K)`. -/
 theorem diagBlocks_surjective [Finite α] (hKJ : K ≤ J) (hJ : J ≤ Ring.jacobson R) :
     Function.Surjective (diagBlocks lev hKJ) := by
   have := Fintype.ofFinite α
@@ -271,7 +266,7 @@ variable {m : Type*} [Fintype m] [LinearOrder m] {J K : Ideal R}
 /-- For the identity ranking of a linearly ordered index type, the block congruence subgroup
 `P_id(J, K)` is the Iwahori level: the invertible matrices that are upper triangular modulo `K`
 and upper unitriangular modulo `J`. -/
-theorem blockCongruenceSubgroup_id :
+theorem blockCongruenceSubgroup_id_eq_inf :
     blockCongruenceSubgroup (id : m → m) J K =
       upperTriangularCongruenceSubgroup m K ⊓ upperUnitriangularCongruenceSubgroup m J := by
   ext g
@@ -303,45 +298,6 @@ theorem mem_blockCongruenceSubgroup_isRight_iff (hKJ : K ≤ J) {g : GL (m ⊕ n
           ∀ i j, ((g : Matrix (m ⊕ n) (m ⊕ n) R).toBlocks₂₂ - 1) i j ∈ J := by
   rw [mem_blockCongruenceSubgroup_iff_of_le hKJ]
   simp [Sum.forall, toBlocks₁₁, toBlocks₂₁, toBlocks₂₂, Matrix.one_apply]
-
-variable (m n) in
-/-- The Levi factor of the ranking `Sum.isRight` of `m ⊕ n` is `GL_m × GL_n`: the diagonal block of
-`false` is indexed by the left summand and that of `true` by the right summand. -/
-def sumIsRightLeviEquiv (S : Type*) [CommRing S] :
-    ((a : Bool) → GL {i : m ⊕ n // i.isRight = a} S) ≃* GL m S × GL n S where
-  toFun h :=
-    (GeneralLinearGroup.reindex S
-        ((Equiv.subtypeEquivRight fun _ ↦ Sum.isRight_eq_false).trans Equiv.sumIsLeft) (h false),
-      GeneralLinearGroup.reindex S Equiv.sumIsRight (h true))
-  invFun p
-    | false => (GeneralLinearGroup.reindex S
-        ((Equiv.subtypeEquivRight fun _ ↦ Sum.isRight_eq_false).trans Equiv.sumIsLeft)).symm p.1
-    | true => (GeneralLinearGroup.reindex S Equiv.sumIsRight).symm p.2
-  left_inv _ := funext fun
-    | false => MulEquiv.symm_apply_apply _ _
-    | true => MulEquiv.symm_apply_apply _ _
-  right_inv _ := Prod.ext (MulEquiv.apply_symm_apply _ _) (MulEquiv.apply_symm_apply _ _)
-  map_mul' _ _ := Prod.ext (map_mul _ _ _) (map_mul _ _ _)
-
-/-- The first component of `sumIsRightLeviEquiv` is the block of `false`, indexed by `m`. -/
-@[simp]
-theorem coe_sumIsRightLeviEquiv_apply_fst {S : Type*} [CommRing S]
-    (h : (a : Bool) → GL {i : m ⊕ n // i.isRight = a} S) (i j : m) :
-    ((sumIsRightLeviEquiv m n S h).1 : Matrix m m S) i j =
-      ((h false : GL {i : m ⊕ n // i.isRight = false} S) :
-        Matrix {i : m ⊕ n // i.isRight = false} {i : m ⊕ n // i.isRight = false} S)
-        ⟨Sum.inl i, rfl⟩ ⟨Sum.inl j, rfl⟩ :=
-  (rfl)
-
-/-- The second component of `sumIsRightLeviEquiv` is the block of `true`, indexed by `n`. -/
-@[simp]
-theorem coe_sumIsRightLeviEquiv_apply_snd {S : Type*} [CommRing S]
-    (h : (a : Bool) → GL {i : m ⊕ n // i.isRight = a} S) (i j : n) :
-    ((sumIsRightLeviEquiv m n S h).2 : Matrix n n S) i j =
-      ((h true : GL {i : m ⊕ n // i.isRight = true} S) :
-        Matrix {i : m ⊕ n // i.isRight = true} {i : m ⊕ n // i.isRight = true} S)
-        ⟨Sum.inr i, rfl⟩ ⟨Sum.inr j, rfl⟩ :=
-  (rfl)
 
 namespace BlockCongruenceSubgroup
 
