@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Symbol.WeakParameter.FormalComposition
 public import TauCeti.Analysis.Pseudodifferential.Symbol.WeakParameter.Resolvent
+public import TauCeti.Analysis.Pseudodifferential.Symbol.WeakParameter.AsymptoticSum
+import TauCeti.Algebra.BigOperators.NatAntidiagonal
 
 /-!
-# The formal parametrix of `1 - r p` in the weakly parametric calculus
+# The parametrix of `1 - r p` in the weakly parametric calculus
 
 Let `p` be a symbol of order `d` with values in the endomorphisms of a Banach space `V`, the
 symbol of an operator `A` whose resolvent `(A - λ)⁻¹` is to be approximated, and suppose that `p`
@@ -54,9 +56,35 @@ in the parameter.
 
 The recursions adapt `TauCeti.ParameterSymbol.leftInverseTerms` and
 `TauCeti.ParameterSymbol.rightInverseTerms` of the strongly parametric calculus to the weakly
-parametric one. Since their frequency orders `-j` decrease to `-∞`, each sequence can be summed
-asymptotically (`TauCeti.WeakParameterSymbol.exists_asymptoticSum`) to a weakly
-parameter-dependent symbol of frequency order `0`.
+parametric one.
+
+The formal equations turn into parametrix identities with remainders. For `N, K ≥ 1` the first `K`
+composition terms of the truncation `Bₙ = ∑_{j < N} qⱼ` with `1 - r p` add up to `1 + r σ(r)`,
+where `σ` is weakly parameter-dependent of frequency order `d - min N K`: the terms with
+`j + k < min N K` add up to the identity, and every other term is `r` times a symbol of frequency
+order `d - (j + k)`, from the recursion when `k = 0`. Since the frequency orders `-j` decrease to
+`-∞`, the terms can also be summed asymptotically
+(`TauCeti.WeakParameterSymbol.exists_asymptoticSum`) to a weakly parameter-dependent symbol `b` of
+frequency order `0`; then the first `K` composition terms of `b` with `1 - r p` add up to
+`1 + ρ(r) + r σ(r)` with `ρ` of frequency order `-K` and `σ` of frequency order `d - K`. In both
+identities the remainder is stated with the factor `r` in front, as in the recursion: the symbol
+`1 - r p` itself grows like `‖r‖`.
+
+* `TauCeti.WeakParameterSymbol.leftNormalizedResolventParametrix p hp N`,
+  `TauCeti.WeakParameterSymbol.rightNormalizedResolventParametrix p hp N`: the truncations
+  `Bₙ = ∑_{j < N} qⱼ` of the formal left and right parametrices.
+* `exists_sum_coefficient_sharpTerm_leftNormalizedResolventParametrix_eq_add` and
+  `exists_sum_coefficient_sharpTerm_rightNormalizedResolventParametrix_eq_add`, in the namespace
+  `TauCeti.WeakParameterSymbol`: `∑_{k < K} sharpTerm Bₙ(r) (1 - r p) k = 1 + r σ(r)` and
+  `∑_{k < K} sharpTerm (1 - r p) Bₙ(r) k = 1 + r σ'(r)`, with `σ, σ'` of frequency order
+  `d - min N K`.
+* `TauCeti.WeakParameterSymbol.IsAsymptoticSum.exists_sum_coefficient_toSymbol_sharpTerm_eq_add`,
+  `TauCeti.WeakParameterSymbol.IsAsymptoticSum.exists_sum_coefficient_sharpTerm_toSymbol_eq_add`:
+  the same for asymptotic sums `b` of all the left, respectively right, terms, with remainders
+  `ρ(r) + r σ(r)`.
+
+The truncated parametrices follow `TauCeti.ParameterSymbol.leftParametrix` and
+`TauCeti.ParameterSymbol.rightParametrix`.
 
 ## References
 
@@ -280,6 +308,384 @@ theorem sum_coefficient_sharpTerm_rightNormalizedResolventTerms {μ : ℝ} {r : 
   simp
 
 end Right
+
+/-! ### Truncated parametrices -/
+
+section Truncated
+
+variable {p : Symbol n V V d} {hp : p.IsParameterElliptic R}
+
+/-- The first `K ≥ 1` composition terms of the value `c(r)` of a weakly parameter-dependent symbol
+with a symbol `a` with coefficient `1 - r p` add up to `c(r)` minus `r` times those of `c` with
+`p`: the constant `1` only contributes to the term without derivatives. -/
+private theorem sum_coefficient_sharpTerm_toSymbol_of_coefficient_eq_one_sub_smul {μ μ' : ℝ}
+    (c : WeakParameterSymbol n R V V d μ') {r : ℂ} (hr : r ∈ R) {a : Symbol n V V μ}
+    (ha : a.coefficient = fun q ↦ 1 - r • p.coefficient q) {K : ℕ} (hK : K ≠ 0)
+    (q : CoordinateSpace n × CoordinateSpace n) :
+    ∑ k ∈ range K, ((c.toSymbol hr).sharpTerm a k).coefficient q =
+      c.coefficient q r - r • ∑ k ∈ range K,
+        (c.sharpTerm (ofSymbol p : WeakParameterSymbol n R V V d d) k).coefficient q r := by
+  have hk (k : ℕ) : ((c.toSymbol hr).sharpTerm a k).coefficient q =
+      ((c.toSymbol hr).sharpTerm (Symbol.const (1 : V →L[ℂ] V)) k).coefficient q -
+        r • (c.sharpTerm (ofSymbol p : WeakParameterSymbol n R V V d d) k).coefficient q r := by
+    rw [← coefficient_toSymbol _ hr, toSymbol_sharpTerm, toSymbol_ofSymbol,
+      Symbol.coefficient_sharpTerm_eq_add_right (coefficient_eq_const_add_smul ha),
+      Symbol.coefficient_sharpTerm_eq_sum_right (univ : Finset Unit) (fun _ ↦ -r) (fun _ ↦ p)
+        (b₀ := (-r) • p) (by simp)]
+    simp [sub_eq_add_neg]
+  obtain ⟨K, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hK
+  simp_rw [hk, sum_sub_distrib, ← smul_sum]
+  rw [sum_range_succ']
+  simp [Symbol.sharpTerm_const_succ, Symbol.coefficient_sharpTerm_zero, Symbol.coefficient_const,
+    ContinuousLinearMap.one_def]
+
+/-- The first `K ≥ 1` composition terms of a symbol `a` with coefficient `1 - r p` with the value
+`c(r)` of a weakly parameter-dependent symbol add up to `c(r)` minus `r` times those of `p` with
+`c`: the constant `1` only contributes to the term without derivatives. -/
+private theorem sum_coefficient_sharpTerm_of_coefficient_eq_one_sub_smul_toSymbol {μ μ' : ℝ}
+    (c : WeakParameterSymbol n R V V d μ') {r : ℂ} (hr : r ∈ R) {a : Symbol n V V μ}
+    (ha : a.coefficient = fun q ↦ 1 - r • p.coefficient q) {K : ℕ} (hK : K ≠ 0)
+    (q : CoordinateSpace n × CoordinateSpace n) :
+    ∑ k ∈ range K, (a.sharpTerm (c.toSymbol hr) k).coefficient q =
+      c.coefficient q r - r • ∑ k ∈ range K,
+        ((ofSymbol p : WeakParameterSymbol n R V V d d).sharpTerm c k).coefficient q r := by
+  have hk (k : ℕ) : (a.sharpTerm (c.toSymbol hr) k).coefficient q =
+      ((Symbol.const (1 : V →L[ℂ] V)).sharpTerm (c.toSymbol hr) k).coefficient q -
+        r • ((ofSymbol p : WeakParameterSymbol n R V V d d).sharpTerm c k).coefficient q r := by
+    rw [← coefficient_toSymbol _ hr, toSymbol_sharpTerm, toSymbol_ofSymbol,
+      Symbol.coefficient_sharpTerm_eq_add_left (coefficient_eq_const_add_smul ha),
+      Symbol.coefficient_sharpTerm_eq_sum_left (univ : Finset Unit) (fun _ ↦ -r) (fun _ ↦ p)
+        (a₀ := (-r) • p) (by simp)]
+    simp [sub_eq_add_neg]
+  obtain ⟨K, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hK
+  simp_rw [hk, sum_sub_distrib, ← smul_sum]
+  rw [sum_range_succ']
+  simp [Symbol.const_sharpTerm_succ, Symbol.coefficient_sharpTerm_zero, Symbol.coefficient_const,
+    ContinuousLinearMap.one_def]
+
+/-- The orders of the remainder terms of the truncated parametrices: for `k = L - j + l`, so that
+`j + k ≥ L`, the frequency order `d - (j + k)` is at most `d - L`. -/
+private theorem remainderTerms_order_le (L j l : ℕ) :
+    d - ((j + (L - j + l) : ℕ) : ℝ) ≤ d - (L : ℝ) := by
+  have : (L : ℝ) ≤ ((j + (L - j + l) : ℕ) : ℝ) := by exact_mod_cast (by omega : L ≤ j + (L - j + l))
+  linarith
+
+/-- The weakly parameter-dependent symbols `σⱼₖ` of frequency order `d - (j + k)` with
+`sharpTerm qⱼ(r) (1 - r p) k = r σⱼₖ(r)` for `j + k ≥ 1`, where `qⱼ` are the terms of the formal
+left parametrix: `-sharpTerm qⱼ p k` for `k ≥ 1`, and for `k = 0` the sum
+`∑_{i < j} sharpTerm qᵢ p (j - i)` that the recursion composes with the resolvent to obtain `qⱼ`. -/
+private def leftRemainderTerms (p : Symbol n V V d) (hp : p.IsParameterElliptic R) :
+    (j k : ℕ) → WeakParameterSymbol n R V V d (d - ((j + k : ℕ) : ℝ))
+  | j, k + 1 => inclusion (le_of_eq (by push_cast; ring)) le_rfl
+      (-(leftNormalizedResolventTerms p hp j).sharpTerm
+        (ofSymbol p : WeakParameterSymbol n R V V d d) (k + 1))
+  | j + 1, 0 => inclusion (le_of_eq (by simp)) le_rfl
+      (∑ i : Fin (j + 1), inclusion (leftNormalizedResolventTerms_order_le j i) le_rfl
+        ((leftNormalizedResolventTerms p hp i).sharpTerm
+          (ofSymbol p : WeakParameterSymbol n R V V d d) (j + 1 - i)))
+  | 0, 0 => 0
+
+/-- For `j + k ≥ 1`, the composition term of the value `qⱼ(r)` of a term of the formal left
+parametrix with a symbol with coefficient `1 - r p` is `r σⱼₖ(r)`. -/
+private theorem coefficient_sharpTerm_leftNormalizedResolventTerms_eq_smul {μ : ℝ} {r : ℂ}
+    (hr : r ∈ R) {a : Symbol n V V μ} (ha : a.coefficient = fun q ↦ 1 - r • p.coefficient q)
+    {j k : ℕ} (hjk : j + k ≠ 0) (q : CoordinateSpace n × CoordinateSpace n) :
+    (((leftNormalizedResolventTerms p hp j).toSymbol hr).sharpTerm a k).coefficient q =
+      r • (leftRemainderTerms p hp j k).coefficient q r := by
+  rcases k with _ | k
+  · obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by simpa using hjk)
+    rw [Symbol.coefficient_sharpTerm_zero, ha, coefficient_toSymbol,
+      coefficient_leftNormalizedResolventTerms_succ, ContinuousLinearMap.comp_assoc,
+      coefficient_resolvent_comp q hr, ContinuousLinearMap.comp_smul,
+      ContinuousLinearMap.comp_id]
+    simp [leftRemainderTerms, coefficient_sum, Fin.sum_univ_eq_sum_range (fun i ↦
+      ((leftNormalizedResolventTerms p hp i).sharpTerm
+        (ofSymbol p : WeakParameterSymbol n R V V d d) (j + 1 - i)).coefficient q r)]
+  · have hσ : (leftRemainderTerms p hp j (k + 1)).coefficient q r =
+        -((leftNormalizedResolventTerms p hp j).sharpTerm
+          (ofSymbol p : WeakParameterSymbol n R V V d d) (k + 1)).coefficient q r := by
+      simp [leftRemainderTerms]
+    rw [hσ, coefficient_sharpTerm_of_coefficient_eq_one_sub_smul ha k.succ_ne_zero, Pi.smul_apply,
+      ← coefficient_toSymbol _ hr, toSymbol_sharpTerm, toSymbol_ofSymbol, smul_neg, neg_smul]
+
+variable (p hp) in
+/-- The sum `Bₙ = ∑_{j < N} qⱼ` of the first `N` terms of the formal left parametrix of `1 - r p`,
+a weakly parameter-dependent symbol of frequency order `0`. -/
+def leftNormalizedResolventParametrix (N : ℕ) : WeakParameterSymbol n R V V d 0 :=
+  ∑ j ∈ range N,
+    inclusion (neg_nonpos.2 (Nat.cast_nonneg j)) le_rfl (leftNormalizedResolventTerms p hp j)
+
+@[simp]
+theorem leftNormalizedResolventParametrix_zero : leftNormalizedResolventParametrix p hp 0 = 0 := by
+  simp [leftNormalizedResolventParametrix]
+
+theorem leftNormalizedResolventParametrix_succ (N : ℕ) :
+    leftNormalizedResolventParametrix p hp (N + 1) = leftNormalizedResolventParametrix p hp N +
+      inclusion (neg_nonpos.2 (Nat.cast_nonneg N)) le_rfl
+        (leftNormalizedResolventTerms p hp N) := by
+  simp [leftNormalizedResolventParametrix, sum_range_succ]
+
+@[simp]
+theorem coefficient_leftNormalizedResolventParametrix (N : ℕ) :
+    (leftNormalizedResolventParametrix p hp N).coefficient =
+      ∑ j ∈ range N, (leftNormalizedResolventTerms p hp j).coefficient := by
+  simp [leftNormalizedResolventParametrix, coefficient_sum]
+
+/-- The truncated left parametrix with at least one term is the normalized resolvent
+`(1 - r p)⁻¹` up to a weakly parameter-dependent symbol of frequency order `-1`. -/
+theorem exists_coefficient_leftNormalizedResolventParametrix_eq_normalizedResolvent_add (N : ℕ) :
+    ∃ e : WeakParameterSymbol n R V V d (-1),
+      (leftNormalizedResolventParametrix p hp (N + 1)).coefficient =
+        (normalizedResolvent p hp).coefficient + e.coefficient := by
+  refine ⟨∑ j ∈ range N, inclusion (by push_cast; linarith [Nat.cast_nonneg (α := ℝ) j]) le_rfl
+    (leftNormalizedResolventTerms p hp (j + 1)), ?_⟩
+  funext q r
+  simp [sum_range_succ', add_comm, coefficient_sum]
+
+/-- At a parameter `r ∈ R`, the composition terms of the value of the truncated left parametrix
+with a symbol `a` are the sums of those of the values of its terms. -/
+theorem coefficient_sharpTerm_leftNormalizedResolventParametrix {μ : ℝ} {r : ℂ} (hr : r ∈ R)
+    (a : Symbol n V V μ) (N k : ℕ) (q : CoordinateSpace n × CoordinateSpace n) :
+    (((leftNormalizedResolventParametrix p hp N).toSymbol hr).sharpTerm a k).coefficient q =
+      ∑ j ∈ range N,
+        (((leftNormalizedResolventTerms p hp j).toSymbol hr).sharpTerm a k).coefficient q := by
+  rw [Symbol.coefficient_sharpTerm_eq_sum_left (range N) (fun _ ↦ 1)
+    (fun j ↦ (leftNormalizedResolventTerms p hp j).toSymbol hr)
+    (funext fun q ↦ by simp) a k]
+  simp
+
+/-- **The truncated left parametrix of `1 - r p`.** Let `p` be parameter-elliptic on `R`, and
+`N, K ≥ 1`. There is a weakly parameter-dependent symbol `σ` of frequency order `d - min N K`
+such that at every parameter `r ∈ R` the first `K` composition terms of the value `Bₙ(r)` of the
+sum `Bₙ = ∑_{j < N} qⱼ` of the first `N` terms of the formal left parametrix with any symbol `a`
+with coefficient `1 - r p` add up to the identity plus `r σ(r)`:
+
+`∑_{k < K} sharpTerm Bₙ(r) a k = 1 + r σ(r)`.
+
+The remainder is stated with the factor `r` in front, since `1 - r p` itself grows like
+`‖r‖`. -/
+theorem exists_sum_coefficient_sharpTerm_leftNormalizedResolventParametrix_eq_add {N K : ℕ}
+    (hN : N ≠ 0) (hK : K ≠ 0) :
+    ∃ σ : WeakParameterSymbol n R V V d (d - ((min N K : ℕ) : ℝ)),
+      ∀ {μ : ℝ} {r : ℂ} (hr : r ∈ R) {a : Symbol n V V μ},
+        a.coefficient = (fun q ↦ 1 - r • p.coefficient q) →
+        ∀ q : CoordinateSpace n × CoordinateSpace n,
+          ∑ k ∈ range K,
+            (((leftNormalizedResolventParametrix p hp N).toSymbol hr).sharpTerm a k).coefficient q =
+            ContinuousLinearMap.id ℂ V + r • σ.coefficient q r := by
+  have hM : min N K ≠ 0 := by omega
+  -- The terms `sharpTerm qⱼ a k` with `j + k ≥ min N K`, each `r` times a symbol of frequency
+  -- order `d - (j + k) ≤ d - min N K`.
+  refine ⟨∑ j ∈ range N, ∑ l ∈ range (K - (min N K - j)),
+    inclusion (remainderTerms_order_le (min N K) j l) le_rfl
+      (leftRemainderTerms p hp j (min N K - j + l)), fun {μ} {r} hr {a} ha q ↦ ?_⟩
+  simp_rw [coefficient_sharpTerm_leftNormalizedResolventParametrix hr]
+  rw [sum_comm, Nat.sum_range_sum_range_eq_add _ (min_le_left N K) (min_le_right N K),
+    Nat.sum_range_sum_range_sub_eq (g := fun j k ↦
+      (((leftNormalizedResolventTerms p hp j).toSymbol hr).sharpTerm a k).coefficient q)
+      (fun L ↦ sum_coefficient_sharpTerm_leftNormalizedResolventTerms hr ha L q) hM]
+  have hterm : ∀ j ∈ range N, ∀ l ∈ range (K - (min N K - j)),
+      (((leftNormalizedResolventTerms p hp j).toSymbol hr).sharpTerm a
+        (min N K - j + l)).coefficient q =
+        r • (leftRemainderTerms p hp j (min N K - j + l)).coefficient q r :=
+    fun j _ l _ ↦ coefficient_sharpTerm_leftNormalizedResolventTerms_eq_smul hr ha (by omega) q
+  rw [sum_congr rfl fun j hj ↦ sum_congr rfl (hterm j hj)]
+  simp [coefficient_sum, smul_sum]
+
+/-- **A left parametrix of `1 - r p` in the weakly parametric calculus.** Let `p` be
+parameter-elliptic on `R`, and let `b` be an asymptotic sum of the terms `qⱼ` of the formal left
+parametrix of `1 - r p` (which exists by `TauCeti.WeakParameterSymbol.exists_asymptoticSum`), a
+weakly parameter-dependent symbol of frequency order `0` equal to the normalized resolvent
+`(1 - r p)⁻¹` up to order `-1`. For every `K ≥ 1` there are weakly parameter-dependent symbols `ρ`
+of frequency order `-K` and `σ` of frequency order `d - K` such that at every parameter `r ∈ R`
+the first `K` composition terms of `b(r)` with any symbol `a` with coefficient `1 - r p` add up to
+
+`∑_{k < K} sharpTerm b(r) a k = 1 + ρ(r) + r σ(r)`. -/
+theorem IsAsymptoticSum.exists_sum_coefficient_toSymbol_sharpTerm_eq_add
+    {b : WeakParameterSymbol n R V V d (-((0 : ℕ) : ℝ))}
+    (hb : b.IsAsymptoticSum (leftNormalizedResolventTerms p hp)) {K : ℕ} (hK : K ≠ 0) :
+    ∃ (ρ : WeakParameterSymbol n R V V d (-(K : ℝ)))
+      (σ : WeakParameterSymbol n R V V d (d - (K : ℝ))),
+      ∀ {μ : ℝ} {r : ℂ} (hr : r ∈ R) {a : Symbol n V V μ},
+        a.coefficient = (fun q ↦ 1 - r • p.coefficient q) →
+        ∀ q : CoordinateSpace n × CoordinateSpace n,
+          ∑ k ∈ range K, ((b.toSymbol hr).sharpTerm a k).coefficient q =
+            ContinuousLinearMap.id ℂ V + ρ.coefficient q r + r • σ.coefficient q r := by
+  obtain ⟨c, hc⟩ := isAsymptoticSum_iff.1 hb K
+  obtain ⟨σ, hσ⟩ := exists_sum_coefficient_sharpTerm_leftNormalizedResolventParametrix_eq_add
+    (hp := hp) hK hK
+  refine ⟨c, inclusion (by simp) le_rfl σ - ∑ k ∈ range K,
+    inclusion (by linarith [Nat.cast_nonneg (α := ℝ) k]) le_rfl
+      (c.sharpTerm (ofSymbol p : WeakParameterSymbol n R V V d d) k), fun {μ} {r} hr {a} ha q ↦ ?_⟩
+  have hbc : (b.toSymbol hr).coefficient =
+      ((leftNormalizedResolventParametrix p hp K).toSymbol hr).coefficient +
+        (c.toSymbol hr).coefficient := by
+    funext q
+    simp [← hc]
+  simp_rw [Symbol.coefficient_sharpTerm_eq_add_left hbc, Pi.add_apply, sum_add_distrib,
+    hσ hr ha q, sum_coefficient_sharpTerm_toSymbol_of_coefficient_eq_one_sub_smul c hr ha hK q]
+  simp [coefficient_sum, smul_sub]
+  abel
+
+/-! ### The truncated right parametrix -/
+
+/-- The weakly parameter-dependent symbols `σⱼₖ` of frequency order `d - (j + k)` with
+`sharpTerm (1 - r p) qⱼ(r) k = r σⱼₖ(r)` for `j + k ≥ 1`, where `qⱼ` are the terms of the formal
+right parametrix: `-sharpTerm p qⱼ k` for `k ≥ 1`, and for `k = 0` the sum
+`∑_{i < j} sharpTerm p qᵢ (j - i)` that the recursion composes with the resolvent to obtain `qⱼ`. -/
+private def rightRemainderTerms (p : Symbol n V V d) (hp : p.IsParameterElliptic R) :
+    (j k : ℕ) → WeakParameterSymbol n R V V d (d - ((j + k : ℕ) : ℝ))
+  | j, k + 1 => inclusion (le_of_eq (by push_cast; ring)) le_rfl
+      (-(ofSymbol p : WeakParameterSymbol n R V V d d).sharpTerm
+        (rightNormalizedResolventTerms p hp j) (k + 1))
+  | j + 1, 0 => inclusion (le_of_eq (by simp)) le_rfl
+      (∑ i : Fin (j + 1), inclusion (rightNormalizedResolventTerms_order_le j i) le_rfl
+        ((ofSymbol p : WeakParameterSymbol n R V V d d).sharpTerm
+          (rightNormalizedResolventTerms p hp i) (j + 1 - i)))
+  | 0, 0 => 0
+
+/-- For `j + k ≥ 1`, the composition term of a symbol with coefficient `1 - r p` with the value
+`qⱼ(r)` of a term of the formal right parametrix is `r σⱼₖ(r)`. -/
+private theorem coefficient_sharpTerm_rightNormalizedResolventTerms_eq_smul {μ : ℝ} {r : ℂ}
+    (hr : r ∈ R) {a : Symbol n V V μ} (ha : a.coefficient = fun q ↦ 1 - r • p.coefficient q)
+    {j k : ℕ} (hjk : j + k ≠ 0) (q : CoordinateSpace n × CoordinateSpace n) :
+    (a.sharpTerm ((rightNormalizedResolventTerms p hp j).toSymbol hr) k).coefficient q =
+      r • (rightRemainderTerms p hp j k).coefficient q r := by
+  rcases k with _ | k
+  · obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (by simpa using hjk)
+    rw [Symbol.coefficient_sharpTerm_zero, ha, coefficient_toSymbol,
+      coefficient_rightNormalizedResolventTerms_succ, ← ContinuousLinearMap.comp_assoc,
+      comp_coefficient_resolvent q hr, ContinuousLinearMap.smul_comp,
+      ContinuousLinearMap.id_comp]
+    simp [rightRemainderTerms, coefficient_sum, Fin.sum_univ_eq_sum_range (fun i ↦
+      ((ofSymbol p : WeakParameterSymbol n R V V d d).sharpTerm
+        (rightNormalizedResolventTerms p hp i) (j + 1 - i)).coefficient q r)]
+  · have hσ : (rightRemainderTerms p hp j (k + 1)).coefficient q r =
+        -((ofSymbol p : WeakParameterSymbol n R V V d d).sharpTerm
+          (rightNormalizedResolventTerms p hp j) (k + 1)).coefficient q r := by
+      simp [rightRemainderTerms]
+    rw [hσ, coefficient_sharpTerm_of_coefficient_eq_one_sub_smul_left ha k.succ_ne_zero,
+      Pi.smul_apply, ← coefficient_toSymbol _ hr, toSymbol_sharpTerm, toSymbol_ofSymbol, smul_neg,
+      neg_smul]
+
+variable (p hp) in
+/-- The sum `Bₙ = ∑_{j < N} qⱼ` of the first `N` terms of the formal right parametrix of
+`1 - r p`, a weakly parameter-dependent symbol of frequency order `0`. -/
+def rightNormalizedResolventParametrix (N : ℕ) : WeakParameterSymbol n R V V d 0 :=
+  ∑ j ∈ range N,
+    inclusion (neg_nonpos.2 (Nat.cast_nonneg j)) le_rfl (rightNormalizedResolventTerms p hp j)
+
+@[simp]
+theorem rightNormalizedResolventParametrix_zero :
+    rightNormalizedResolventParametrix p hp 0 = 0 := by
+  simp [rightNormalizedResolventParametrix]
+
+theorem rightNormalizedResolventParametrix_succ (N : ℕ) :
+    rightNormalizedResolventParametrix p hp (N + 1) = rightNormalizedResolventParametrix p hp N +
+      inclusion (neg_nonpos.2 (Nat.cast_nonneg N)) le_rfl
+        (rightNormalizedResolventTerms p hp N) := by
+  simp [rightNormalizedResolventParametrix, sum_range_succ]
+
+@[simp]
+theorem coefficient_rightNormalizedResolventParametrix (N : ℕ) :
+    (rightNormalizedResolventParametrix p hp N).coefficient =
+      ∑ j ∈ range N, (rightNormalizedResolventTerms p hp j).coefficient := by
+  simp [rightNormalizedResolventParametrix, coefficient_sum]
+
+/-- The truncated right parametrix with at least one term is the normalized resolvent
+`(1 - r p)⁻¹` up to a weakly parameter-dependent symbol of frequency order `-1`. -/
+theorem exists_coefficient_rightNormalizedResolventParametrix_eq_normalizedResolvent_add (N : ℕ) :
+    ∃ e : WeakParameterSymbol n R V V d (-1),
+      (rightNormalizedResolventParametrix p hp (N + 1)).coefficient =
+        (normalizedResolvent p hp).coefficient + e.coefficient := by
+  refine ⟨∑ j ∈ range N, inclusion (by push_cast; linarith [Nat.cast_nonneg (α := ℝ) j]) le_rfl
+    (rightNormalizedResolventTerms p hp (j + 1)), ?_⟩
+  funext q r
+  simp [sum_range_succ', add_comm, coefficient_sum]
+
+/-- At a parameter `r ∈ R`, the composition terms of a symbol `a` with the value of the truncated
+right parametrix are the sums of those with the values of its terms. -/
+theorem coefficient_sharpTerm_rightNormalizedResolventParametrix {μ : ℝ} {r : ℂ} (hr : r ∈ R)
+    (a : Symbol n V V μ) (N k : ℕ) (q : CoordinateSpace n × CoordinateSpace n) :
+    (a.sharpTerm ((rightNormalizedResolventParametrix p hp N).toSymbol hr) k).coefficient q =
+      ∑ j ∈ range N,
+        (a.sharpTerm ((rightNormalizedResolventTerms p hp j).toSymbol hr) k).coefficient q := by
+  rw [Symbol.coefficient_sharpTerm_eq_sum_right (range N) (fun _ ↦ 1)
+    (fun j ↦ (rightNormalizedResolventTerms p hp j).toSymbol hr)
+    (funext fun q ↦ by simp) a k]
+  simp
+
+/-- **The truncated right parametrix of `1 - r p`.** Let `p` be parameter-elliptic on `R`, and
+`N, K ≥ 1`. There is a weakly parameter-dependent symbol `σ` of frequency order `d - min N K`
+such that at every parameter `r ∈ R` the first `K` composition terms of any symbol `a` with
+coefficient `1 - r p` with the value `Bₙ(r)` of the sum `Bₙ = ∑_{j < N} qⱼ` of the first `N` terms
+of the formal right parametrix add up to the identity plus `r σ(r)`:
+
+`∑_{k < K} sharpTerm a Bₙ(r) k = 1 + r σ(r)`. -/
+theorem exists_sum_coefficient_sharpTerm_rightNormalizedResolventParametrix_eq_add {N K : ℕ}
+    (hN : N ≠ 0) (hK : K ≠ 0) :
+    ∃ σ : WeakParameterSymbol n R V V d (d - ((min N K : ℕ) : ℝ)),
+      ∀ {μ : ℝ} {r : ℂ} (hr : r ∈ R) {a : Symbol n V V μ},
+        a.coefficient = (fun q ↦ 1 - r • p.coefficient q) →
+        ∀ q : CoordinateSpace n × CoordinateSpace n,
+          ∑ k ∈ range K, (a.sharpTerm
+              ((rightNormalizedResolventParametrix p hp N).toSymbol hr) k).coefficient q =
+            ContinuousLinearMap.id ℂ V + r • σ.coefficient q r := by
+  have hM : min N K ≠ 0 := by omega
+  -- The terms `sharpTerm a qⱼ k` with `j + k ≥ min N K`, each `r` times a symbol of frequency
+  -- order `d - (j + k) ≤ d - min N K`.
+  refine ⟨∑ j ∈ range N, ∑ l ∈ range (K - (min N K - j)),
+    inclusion (remainderTerms_order_le (min N K) j l) le_rfl
+      (rightRemainderTerms p hp j (min N K - j + l)), fun {μ} {r} hr {a} ha q ↦ ?_⟩
+  simp_rw [coefficient_sharpTerm_rightNormalizedResolventParametrix hr]
+  rw [sum_comm, Nat.sum_range_sum_range_eq_add _ (min_le_left N K) (min_le_right N K),
+    Nat.sum_range_sum_range_sub_eq (g := fun j k ↦
+      (a.sharpTerm ((rightNormalizedResolventTerms p hp j).toSymbol hr) k).coefficient q)
+      (fun L ↦ sum_coefficient_sharpTerm_rightNormalizedResolventTerms hr ha L q) hM]
+  have hterm : ∀ j ∈ range N, ∀ l ∈ range (K - (min N K - j)),
+      (a.sharpTerm ((rightNormalizedResolventTerms p hp j).toSymbol hr)
+        (min N K - j + l)).coefficient q =
+        r • (rightRemainderTerms p hp j (min N K - j + l)).coefficient q r :=
+    fun j _ l _ ↦ coefficient_sharpTerm_rightNormalizedResolventTerms_eq_smul hr ha (by omega) q
+  rw [sum_congr rfl fun j hj ↦ sum_congr rfl (hterm j hj)]
+  simp [coefficient_sum, smul_sum]
+
+/-- **A right parametrix of `1 - r p` in the weakly parametric calculus.** Let `p` be
+parameter-elliptic on `R`, and let `b` be an asymptotic sum of the terms `qⱼ` of the formal right
+parametrix of `1 - r p`, a weakly parameter-dependent symbol of frequency order `0` equal to the
+normalized resolvent `(1 - r p)⁻¹` up to order `-1`. For every `K ≥ 1` there are weakly
+parameter-dependent symbols `ρ` of frequency order `-K` and `σ` of frequency order `d - K` such
+that at every parameter `r ∈ R` the first `K` composition terms of any symbol `a` with coefficient
+`1 - r p` with `b(r)` add up to
+
+`∑_{k < K} sharpTerm a b(r) k = 1 + ρ(r) + r σ(r)`. -/
+theorem IsAsymptoticSum.exists_sum_coefficient_sharpTerm_toSymbol_eq_add
+    {b : WeakParameterSymbol n R V V d (-((0 : ℕ) : ℝ))}
+    (hb : b.IsAsymptoticSum (rightNormalizedResolventTerms p hp)) {K : ℕ} (hK : K ≠ 0) :
+    ∃ (ρ : WeakParameterSymbol n R V V d (-(K : ℝ)))
+      (σ : WeakParameterSymbol n R V V d (d - (K : ℝ))),
+      ∀ {μ : ℝ} {r : ℂ} (hr : r ∈ R) {a : Symbol n V V μ},
+        a.coefficient = (fun q ↦ 1 - r • p.coefficient q) →
+        ∀ q : CoordinateSpace n × CoordinateSpace n,
+          ∑ k ∈ range K, (a.sharpTerm (b.toSymbol hr) k).coefficient q =
+            ContinuousLinearMap.id ℂ V + ρ.coefficient q r + r • σ.coefficient q r := by
+  obtain ⟨c, hc⟩ := isAsymptoticSum_iff.1 hb K
+  obtain ⟨σ, hσ⟩ := exists_sum_coefficient_sharpTerm_rightNormalizedResolventParametrix_eq_add
+    (hp := hp) hK hK
+  refine ⟨c, inclusion (by simp) le_rfl σ - ∑ k ∈ range K,
+    inclusion (by linarith [Nat.cast_nonneg (α := ℝ) k]) le_rfl
+      ((ofSymbol p : WeakParameterSymbol n R V V d d).sharpTerm c k), fun {μ} {r} hr {a} ha q ↦ ?_⟩
+  have hbc : (b.toSymbol hr).coefficient =
+      ((rightNormalizedResolventParametrix p hp K).toSymbol hr).coefficient +
+        (c.toSymbol hr).coefficient := by
+    funext q
+    simp [← hc]
+  simp_rw [Symbol.coefficient_sharpTerm_eq_add_right hbc, Pi.add_apply, sum_add_distrib,
+    hσ hr ha q, sum_coefficient_sharpTerm_of_coefficient_eq_one_sub_smul_toSymbol c hr ha hK q]
+  simp [coefficient_sum, smul_sub]
+  abel
+
+end Truncated
 
 end WeakParameterSymbol
 
