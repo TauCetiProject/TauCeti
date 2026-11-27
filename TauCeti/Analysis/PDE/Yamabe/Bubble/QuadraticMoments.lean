@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Yamabe.Bubble.Moments
-public import TauCeti.MeasureTheory.Integral.Radial
+public import TauCeti.MeasureTheory.Integral.Radial.Basic
 
 /-!
 # Quadratic moments of Yamabe bubbles
