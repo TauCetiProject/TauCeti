@@ -8,9 +8,11 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
+import Mathlib.Analysis.Complex.Angle
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
@@ -56,6 +58,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
   `arg (z - 1) + arg (z + 1) ∈ (-π, π]`.
 * `Complex.arg_eq_pi_div_two_sub_arctan_of_im_pos`: in the open upper half-plane,
   `arg w = π / 2 - arctan (re w / im w)`.
+* `Complex.pi_div_two_sub_arg_le_div`: for `0 ≤ z.re` and `0 < z.im`,
+  `π / 2 - arg z ≤ re z / im z`.
 * `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `Complex.exp_arg_mul_I`: `exp (i arg z) = z / |z|` for `z ≠ 0`.
@@ -84,6 +88,8 @@ In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
 * `Complex.abs_arg_le_pi_div_two_mul_norm_sub_one`: on the unit circle, `|arg z| ≤ (π / 2) ‖z - 1‖`.
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
+* `TauCeti.continuousAt_abs_arg`: `|arg z|`, the unoriented angle with `1`, is continuous away
+  from the origin, across the negative real axis too.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
 * `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
@@ -172,6 +178,13 @@ theorem arg_eq_pi_div_two_sub_arctan_of_im_pos {w : ℂ} (hw : 0 < w.im) :
   rw [Real.arctan_eq_of_tan_eq (x := π / 2 - w.arg) ?_ ⟨by linarith, by linarith⟩]
   · ring
   · rw [Real.tan_pi_div_two_sub, tan_arg, inv_div]
+
+/-- If `0 ≤ z.re` and `0 < z.im`, then `arg z` falls short of `π / 2` by at most
+`re z / im z`. -/
+theorem pi_div_two_sub_arg_le_div {z : ℂ} (hre : 0 ≤ z.re) (him : 0 < z.im) :
+    π / 2 - z.arg ≤ z.re / z.im := by
+  rw [arg_eq_pi_div_two_sub_arctan_of_im_pos him, sub_sub_cancel]
+  exact Real.arctan_le_self (div_nonneg hre him.le)
 
 /-- Every complex number `c` is rotated onto the nonpositive real axis by the square of a unit:
 `c ω² = -‖c‖`. -/
@@ -501,6 +514,16 @@ theorem ContDiff.contDiffAt_comp_arg {E : Type*} [NormedAddCommGroup E] [NormedS
 namespace TauCeti
 
 open Complex Metric Set
+
+/-- The absolute value of the argument, the unoriented angle with `1`, is continuous away from
+`0`, across the negative real axis too, where the argument itself jumps. -/
+theorem continuousAt_abs_arg {w : ℂ} (hw : w ≠ 0) : ContinuousAt (fun z : ℂ => |z.arg|) w := by
+  have hangle : ContinuousAt (fun z : ℂ => InnerProductGeometry.angle z 1) w :=
+    (InnerProductGeometry.continuousAt_angle (x := (w, (1 : ℂ))) hw one_ne_zero).comp
+      (f := fun z : ℂ => (z, (1 : ℂ))) (by fun_prop)
+  refine hangle.congr ?_
+  filter_upwards [isOpen_ne.mem_nhds hw] with z hz
+  exact angle_one_right hz
 
 /-- In polar coordinates about `v`, rotated and scaled by `b`, the open sector
 `{|arg ((z - v) / b)| < α}` of half-opening `α`, cut off by the punctured ball of radius `δ`, is

@@ -11,6 +11,9 @@ public import TauCeti.AlgebraicGeometry.RelativeSpec.Basic
 public import TauCeti.AlgebraicGeometry.Sites.SmallAffineZariski
 public import TauCeti.RingTheory.Perfect.Colimit
 
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
+import TauCeti.AlgebraicGeometry.Morphisms.Separated
+
 /-!
 # Perfection of schemes
 
@@ -43,7 +46,11 @@ The universal property makes the perfection functorial: a morphism `f : X ⟶ Y`
 a universal homeomorphism `X^perf ⟶ X ×_Y Y^perf` followed by the base change of `f` along
 `Y^perf ⟶ Y`, so the perfection preserves every property of morphisms that is stable under base
 change and composition and holds for universal homeomorphisms. When `f` is étale, the base change
-`X ×_Y Y^perf` is already perfect and the perfection square of `f` is cartesian.
+`X ×_Y Y^perf` is already perfect and the perfection square of `f` is cartesian. Conversely, since
+`f^perf ≫ (Y^perf ⟶ Y) = (X^perf ⟶ X) ≫ f`, the perfection reflects every such property that
+moreover descends along universal homeomorphisms: quasi-compactness, quasi-separatedness,
+separatedness, universal closedness, universal injectivity, surjectivity and being a universal
+homeomorphism.
 
 ## Main definitions
 
@@ -90,6 +97,17 @@ change and composition and holds for universal homeomorphisms. When `f` is étal
   for universal homeomorphisms. In particular the perfection of a quasi-compact, quasi-separated,
   affine, separated, integral or universally closed morphism, or of a universal homeomorphism, has
   the same property (Bhatt–Scholze 2017, Lemma 3.4 (i)–(vii), one direction).
+* `AlgebraicGeometry.Scheme.Hom.perfection_mem_iff`: such a property that also descends along
+  a class of morphisms containing the universal homeomorphisms holds for `f` exactly when it holds
+  for `f^perf`.
+* `AlgebraicGeometry.Scheme.Hom.quasiCompact_perfection_iff`,
+  `AlgebraicGeometry.Scheme.Hom.quasiSeparated_perfection_iff`,
+  `AlgebraicGeometry.Scheme.Hom.isSeparated_perfection_iff`,
+  `AlgebraicGeometry.Scheme.Hom.universallyClosed_perfection_iff` and
+  `AlgebraicGeometry.Scheme.Hom.isUniversalHomeomorphism_perfection_iff`: `f` is quasi-compact,
+  quasi-separated, separated, universally closed or a universal homeomorphism exactly when `f^perf`
+  is (Bhatt–Scholze 2017, Lemma 3.4 (i), (ii), (iv), (vi), (vii)); likewise for surjectivity and
+  universal injectivity.
 * `AlgebraicGeometry.Scheme.Hom.isIso_perfectionToPullback_iff`: the comparison morphism is an
   isomorphism exactly when `X ×_Y Y^perf` is perfect.
 * `AlgebraicGeometry.Scheme.Hom.isPullback_perfection_iff`: the perfection square of `f` is
@@ -771,6 +789,87 @@ instance [Etale f] : Etale (f.perfection p hX hY) := by
 instance [IsOpenImmersion f] : IsOpenImmersion (f.perfection p hX hY) := by
   rw [← perfectionToPullback_snd]
   infer_instance
+
+/-! ### Properties reflected by the perfection -/
+
+/-- **The perfection reflects properties of morphisms that hold for universal homeomorphisms, are
+stable under composition and descend along universal homeomorphisms**, in the sense that `P g`
+follows from `P (π ≫ g)` whenever `π` lies in a class `W` of morphisms containing the universal
+homeomorphisms. Since both structure morphisms of the perfections are universal homeomorphisms and
+`f^perf ≫ (Y^perf ⟶ Y) = (X^perf ⟶ X) ≫ f`, the property passes from `f^perf` to
+`(X^perf ⟶ X) ≫ f`, and then descends to `f`. -/
+theorem of_perfection_mem (P W : MorphismProperty Scheme.{u}) [P.IsStableUnderComposition]
+    [P.HasOfPrecompProperty W] (hP : @IsUniversalHomeomorphism ≤ P)
+    (hW : @IsUniversalHomeomorphism ≤ W) (h : P (f.perfection p hX hY)) : P f := by
+  refine P.of_precomp (W' := W) (X.fromPerfection p hX) f (hW _ _ _ inferInstance) ?_
+  rw [← perfection_fromPerfection f p hX hY]
+  exact P.comp_mem _ _ h (hP _ _ _ inferInstance)
+
+/-- **A property of morphisms holds for `f` exactly when it holds for its perfection**, provided it
+holds for universal homeomorphisms, is stable under base change and composition, and descends along
+a class `W` of morphisms containing the universal homeomorphisms. -/
+theorem perfection_mem_iff (P W : MorphismProperty Scheme.{u}) [P.IsStableUnderBaseChange]
+    [P.IsStableUnderComposition] [P.HasOfPrecompProperty W] (hP : @IsUniversalHomeomorphism ≤ P)
+    (hW : @IsUniversalHomeomorphism ≤ W) :
+    P (f.perfection p hX hY) ↔ P f :=
+  ⟨f.of_perfection_mem p hX hY P W hP hW,
+    f.perfection_mem_of_isUniversalHomeomorphism_le p hX hY P hP⟩
+
+/-- The perfection of `f` is quasi-compact exactly when `f` is (Bhatt–Scholze 2017, Lemma 3.4
+(i)). -/
+@[simp]
+theorem quasiCompact_perfection_iff : QuasiCompact (f.perfection p hX hY) ↔ QuasiCompact f :=
+  f.perfection_mem_iff p hX hY @QuasiCompact @Surjective (fun _ _ _ _ ↦ inferInstance)
+    fun _ _ _ _ ↦ inferInstance
+
+/-- The perfection of `f` is quasi-separated exactly when `f` is (Bhatt–Scholze 2017, Lemma 3.4
+(ii)). -/
+@[simp]
+theorem quasiSeparated_perfection_iff :
+    QuasiSeparated (f.perfection p hX hY) ↔ QuasiSeparated f :=
+  f.perfection_mem_iff p hX hY @QuasiSeparated (@QuasiCompact ⊓ @Surjective)
+    (fun _ _ _ _ ↦ inferInstance) fun _ _ _ _ ↦ ⟨inferInstance, inferInstance⟩
+
+/-- The perfection of `f` is separated exactly when `f` is (Bhatt–Scholze 2017, Lemma 3.4 (iv)). -/
+@[simp]
+theorem isSeparated_perfection_iff : IsSeparated (f.perfection p hX hY) ↔ IsSeparated f :=
+  f.perfection_mem_iff p hX hY @IsSeparated (@UniversallyClosed ⊓ @Surjective)
+    (fun _ _ _ _ ↦ inferInstance) fun _ _ _ _ ↦ ⟨inferInstance, inferInstance⟩
+
+/-- The perfection of `f` is universally closed exactly when `f` is (Bhatt–Scholze 2017,
+Lemma 3.4 (vi)). -/
+@[simp]
+theorem universallyClosed_perfection_iff :
+    UniversallyClosed (f.perfection p hX hY) ↔ UniversallyClosed f :=
+  f.perfection_mem_iff p hX hY @UniversallyClosed @Surjective (fun _ _ _ _ ↦ inferInstance)
+    fun _ _ _ _ ↦ inferInstance
+
+/-- The perfection of `f` is universally injective exactly when `f` is. -/
+@[simp]
+theorem universallyInjective_perfection_iff :
+    UniversallyInjective (f.perfection p hX hY) ↔ UniversallyInjective f :=
+  f.perfection_mem_iff p hX hY @UniversallyInjective @Surjective (fun _ _ _ _ ↦ inferInstance)
+    fun _ _ _ _ ↦ inferInstance
+
+/-- The perfection of `f` is surjective exactly when `f` is. -/
+@[simp]
+theorem surjective_perfection_iff : Surjective (f.perfection p hX hY) ↔ Surjective f :=
+  -- Instance search finds neither this parent of Mathlib's `IsMultiplicative @Surjective` nor
+  -- Mathlib's `HasOfPrecompProperty @Surjective P`, even with the universe fixed.
+  have : MorphismProperty.IsStableUnderComposition @Surjective.{u} :=
+    ⟨fun _ _ _ _ ↦ inferInstance⟩
+  have : MorphismProperty.HasOfPrecompProperty @Surjective.{u} @Surjective.{u} :=
+    ⟨fun π g _ _ ↦ .of_comp π g⟩
+  f.perfection_mem_iff p hX hY @Surjective.{u} @Surjective.{u} (fun _ _ _ _ ↦ inferInstance)
+    fun _ _ _ _ ↦ inferInstance
+
+/-- The perfection of `f` is a universal homeomorphism exactly when `f` is (Bhatt–Scholze 2017,
+Lemma 3.4 (vii)). -/
+@[simp]
+theorem isUniversalHomeomorphism_perfection_iff :
+    IsUniversalHomeomorphism (f.perfection p hX hY) ↔ IsUniversalHomeomorphism f :=
+  f.perfection_mem_iff p hX hY @IsUniversalHomeomorphism @Surjective le_rfl
+    fun _ _ _ _ ↦ inferInstance
 
 end Hom
 

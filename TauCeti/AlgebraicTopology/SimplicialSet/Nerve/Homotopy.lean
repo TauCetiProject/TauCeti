@@ -7,20 +7,20 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homotopy
 public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.NatTrans
 
 /-!
 # Simplicial homotopies of nerves
 
-A natural transformation `η : F₀ ⟶ F₁` between functors `C ⥤ D` induces a simplicial map
-`nerve C ⊗ Δ[1] ⟶ nerve D` whose endpoints are `nerveMap F₀` and `nerveMap F₁`
-(`CategoryTheory.NatTrans.nerveHomotopy`), with vertical edge track `η.app c` and left/right
-whiskering compatibilities (backed by the universe-polymorphic simplex action
-`CategoryTheory.NatTrans.mapNerveCylinderObj`). In particular, an initial or terminal object of `C`
-gives a contracting homotopy on `nerve C` (`CategoryTheory.Limits.IsInitial.nerveHomotopy`,
-`CategoryTheory.Limits.IsTerminal.nerveHomotopy`); weak contractibility of `nerve C` from these
-homotopies is in `TauCeti.AlgebraicTopology.SimplicialSet.Nerve.WeaklyContractible`. These
-simplicial homotopies realize via `TauCeti.AlgebraicTopology.SimplicialSet.Realization.Prism` to
-topological homotopies and contractibility of classifying spaces in
+Building on `CategoryTheory.NatTrans.nerveHomotopy` in
+`TauCeti.AlgebraicTopology.SimplicialSet.Nerve.NatTrans`, this file adds the universe-polymorphic
+cylinder action `CategoryTheory.NatTrans.mapNerveCylinderObj`, left and right whiskering lemmas
+(`CategoryTheory.NatTrans.whiskerLeft_nerveHomotopy_h`,
+`CategoryTheory.NatTrans.whiskerRight_nerveHomotopy_h`), and contracting homotopies on the nerve of
+a category with an initial or terminal object (`CategoryTheory.Limits.IsInitial.nerveHomotopy`,
+`CategoryTheory.Limits.IsTerminal.nerveHomotopy`). Weak contractibility of `nerve C` from these
+homotopies is in `TauCeti.AlgebraicTopology.SimplicialSet.Nerve.WeaklyContractible`, and
+cross-universe topological homotopies are in
 `TauCeti.AlgebraicTopology.SimplicialSet.Nerve.ClassifyingSpace`.
 
 ## References
@@ -72,44 +72,31 @@ end
 
 section
 variable {B C D E : Type u} [Category.{v} B] [Category.{v} C] [Category.{v} D] [Category.{v} E]
-private def nerveHomotopyMap {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) : nerve C ⊗ Δ[1] ⟶ nerve D where
-  app _ := ↾fun p ↦ η.mapNerveCylinderObj p.1 (SSet.stdSimplex.objEquiv p.2)
-  naturality _ _ _ := rfl
-/-- A natural transformation `η : F₀ ⟶ F₁` induces a simplicial homotopy from `nerveMap F₀` to
-`nerveMap F₁`. -/
-noncomputable def nerveHomotopy {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) :
-    SSet.Homotopy (nerveMap F₀) (nerveMap F₁) :=
-  SSet.Homotopy.mk' (nerveHomotopyMap η)
-    (by ext ⟨m⟩ σ : 4; induction m using SimplexCategory.rec with | _ m =>
-        exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq (Category.comp_id _))
-    (by ext ⟨m⟩ σ : 4; induction m using SimplexCategory.rec with | _ m =>
-        exact Functor.hext (fun _ ↦ rfl) fun _ _ _ ↦ heq_of_eq (Category.comp_id _))
-lemma nerveHomotopy_h_app {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) (n : SimplexCategoryᵒᵖ)
-    (p : (nerve C ⊗ Δ[1]).obj n) :
-    η.nerveHomotopy.h.app n p = η.mapNerveCylinderObj p.1 (SSet.stdSimplex.objEquiv p.2) := (rfl)
-@[simp] lemma nerveHomotopy_h_verticalEdge {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) (c : C) :
-    dsimp% η.nerveHomotopy.h.app (op ⦋1⦌)
-        (SSet.verticalEdge (X := nerve C) (nerveEquiv.symm c)) =
-      ComposableArrows.mk₁ (η.app c) := by
-  let v : (nerve C) _⦋0⦌ := nerveEquiv.symm c
-  have h₁ : (SSet.verticalEdge v).1 = ComposableArrows.mk₁ (𝟙 c) :=
-    (SSet.verticalEdge_fst v).trans (nerve.σ_zero_nerveEquiv_symm c)
-  let η₁ : (nerve (C ⥤ D)) _⦋1⦌ := ComposableArrows.mk₁ η
-  have h₂ : (nerve (C ⥤ D)).map (SSet.stdSimplex.objEquiv (SSet.verticalEdge v).2).op η₁ = η₁ := by
-    rw [SSet.objEquiv_verticalEdge_snd, CategoryTheory.op_id, CategoryTheory.Functor.map_id]
-    exact types_id_apply _ _
-  refine ((nerveHomotopy_h_app η (op ⦋1⦌) (SSet.verticalEdge v)).trans
-    (η.mapNerveCylinderObj_def _ _)).trans ((congrArg (· ⋙ evaluationUncurried C D)
-      (congrArg₂ Functor.prod' h₁ h₂)).trans (ComposableArrows.ext₁ rfl rfl ?_))
-  dsimp [η₁, evaluationUncurried, ComposableArrows.mk₁, ComposableArrows.Mk₁.obj,
-    ComposableArrows.Mk₁.map, ComposableArrows.hom]; simp
+
+/-- `η.nerveHomotopy.h` agrees with the universe-polymorphic `mapNerveCylinderObj` action. -/
+lemma nerveHomotopy_h_app_eq_mapNerveCylinderObj {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁)
+    (n : SimplexCategoryᵒᵖ) (p : (nerve C ⊗ Δ[1] : SSet.{max u v}).obj n) :
+    η.nerveHomotopy.h.app n p = η.mapNerveCylinderObj p.1 (SSet.stdSimplex.objEquiv p.2) := by
+  rw [nerveHomotopy_h_app]
+  dsimp only [mapNerveCylinderObj]
+  rcases n with ⟨m⟩; induction m using SimplexCategory.rec with | _ m =>
+  refine Functor.hext (fun _ ↦ rfl) fun i j g ↦ heq_of_eq ?_
+  dsimp [evaluationUncurried, Functor.uncurry]
+  exact (((ComposableArrows.mk₁ η).map (homOfLE ((SSet.stdSimplex.asOrderHom p.2).monotone
+    (leOfHom g)))).naturality (p.1.map g)).symm
+
 @[simp] lemma whiskerLeft_nerveHomotopy_h (K : B ⥤ C) {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) :
     (Functor.whiskerLeft K η).nerveHomotopy.h = nerveMap K ▷ Δ[1] ≫ η.nerveHomotopy.h := by
-  ext n p : 4
+  refine NatTrans.ext (funext fun n ↦ ConcreteCategory.hom_ext _ _ fun p ↦ ?_)
+  simp only [nerveHomotopy_h_app_eq_mapNerveCylinderObj, NatTrans.comp_app,
+    ConcreteCategory.comp_apply]
   exact whiskerLeft_mapNerveCylinderObj K η p.1 (SSet.stdSimplex.objEquiv p.2)
+
 @[simp] lemma whiskerRight_nerveHomotopy_h {F₀ F₁ : C ⥤ D} (η : F₀ ⟶ F₁) (G : D ⥤ E) :
     (Functor.whiskerRight η G).nerveHomotopy.h = η.nerveHomotopy.h ≫ nerveMap G := by
-  ext n p : 4
+  refine NatTrans.ext (funext fun n ↦ ConcreteCategory.hom_ext _ _ fun p ↦ ?_)
+  simp only [nerveHomotopy_h_app_eq_mapNerveCylinderObj, NatTrans.comp_app,
+    ConcreteCategory.comp_apply]
   exact whiskerRight_mapNerveCylinderObj η G p.1 (SSet.stdSimplex.objEquiv p.2)
 end
 end NatTrans

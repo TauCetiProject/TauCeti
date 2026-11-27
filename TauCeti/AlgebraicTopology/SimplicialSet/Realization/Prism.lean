@@ -57,8 +57,10 @@ coupling of `s` with the distribution `(1 - t, t)` on `Fin 2`, which is natural 
 * `SSet.prodStdSimplex₁.prism`: the triangulation `Δᵖ × I → |Δ[p] ⊗ Δ[1]|` of the prism, natural
   in `Δ[p]` (`SSet.prodStdSimplex₁.prism_naturality`), with ends `ι₀` and `ι₁`.
 * `SSet.toTopCylinder X`: the triangulation `|X| × I → |X ⊗ Δ[1]|` of the realized cylinder.
+* `SSet.toTopCylinder_toTopObjMk_verticalEdge`: over a vertex `v`, the triangulation traces the
+  vertical edge `{v} × Δ[1]`, so a realized homotopy moves `v` along the image of that edge.
 * `SSet.Homotopy.toTop`: the realization of a simplicial homotopy, with vertex track given by
-  `SSet.Homotopy.toTop_toTopPoint` and `SSet.Homotopy.toTop_toTopObjMk_zero`.
+  `SSet.Homotopy.toTop_toTopPoint`.
 * `SSet.contractibleSpace_toTop_of_homotopy`, `SSet.contractibleSpace_toTop_of_homotopy_id_const`:
   contracting simplicial homotopies realize to contractible spaces.
 * `SSet.toTopHomotopyEquiv`: the realization of a simplicial homotopy equivalence.
@@ -621,7 +623,10 @@ lemma toTopCylinder_toTopObjMk_of_prism {p n : ℕ} (x : X _⦋p⦌) (s : StdSim
   exact Prod.ext (verticalEdge_fst v).symm <| stdSimplex.objEquiv.injective <|
     (Equiv.apply_symm_apply _ _).trans (objEquiv_verticalEdge_snd v).symm
 
-lemma toTopCylinder_toTopObjMk_zero (v : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) (t : I) :
+/-- Over a vertex `v` of `X`, the triangulation of the realized cylinder traces the vertical edge
+`{v} × Δ[1]`: at time `t` it is the point of `SSet.verticalEdge v` with barycentric coordinates
+`(1 - t, t)`. -/
+lemma toTopCylinder_toTopObjMk_verticalEdge (v : X _⦋0⦌) (w : StdSimplex ℝ (Fin 1)) (t : I) :
     toTopCylinder X (toTopObjMk v w, t) =
       toTopObjMk (verticalEdge v) (StdSimplex.homeomorphI.symm t) := by
   rw [toTopObjMk_eq_toTopPoint, toTopCylinder_toTopPoint]
@@ -702,11 +707,6 @@ lemma Homotopy.toTop_toTopPoint {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (v : 
     H.toTop (t, toTopPoint v) =
       toTopObjMk (H.h.app (Opposite.op ⦋1⦌) (verticalEdge v)) (StdSimplex.homeomorphI.symm t) := by
   rw [Homotopy.toTop_apply, toTopCylinder_toTopPoint, toTop_map_toTopObjMk]
-
-lemma Homotopy.toTop_toTopObjMk_zero {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (v : X _⦋0⦌)
-    (w : StdSimplex ℝ (Fin 1)) : H.toTop (t, toTopObjMk v w) =
-      toTopObjMk (H.h.app (Opposite.op ⦋1⦌) (verticalEdge v)) (StdSimplex.homeomorphI.symm t) := by
-  rw [Homotopy.toTop_apply, toTopCylinder_toTopObjMk_zero, toTop_map_toTopObjMk]
 
 private lemma contractibleSpace_toTop_of_topHomotopy (x : X _⦋0⦌)
     (H : ContinuousMap.Homotopy (toTop.map (𝟙 X)).hom

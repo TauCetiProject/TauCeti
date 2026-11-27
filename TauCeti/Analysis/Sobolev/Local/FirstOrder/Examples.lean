@@ -121,7 +121,10 @@ theorem memW1pLoc_norm_inv_smul_iff {E : Type*} [NormedAddCommGroup E] [InnerPro
   let D : E → E →L[ℝ] E := fun x => ‖x‖ ^ (-1 : ℝ) • ContinuousLinearMap.id ℝ E +
     ((-1 * ‖x‖ ^ ((-1 : ℝ) - 2)) • innerSL ℝ x).smulRight x
   have hweak : HasWeakFDerivOn μ Ω (fun x : E => ‖x‖⁻¹ • x) D := by
-    convert hasWeakFDerivOn_norm_rpow_neg_one_smul_self (μ := μ) hd1 Ω using 1
+    have hp : -max 1 (Module.finrank ℝ E : ℝ) < -1 := by
+      have : (1 : ℝ) < Module.finrank ℝ E := by exact_mod_cast hd1
+      linarith [le_max_right (1 : ℝ) (Module.finrank ℝ E)]
+    convert hasWeakFDerivOn_norm_rpow_smul_self (μ := μ) hp Ω using 1
     funext x
     rw [Real.rpow_neg_one]
   constructor

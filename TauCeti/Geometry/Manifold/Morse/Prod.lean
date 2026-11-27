@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.Morse.Lemma
+import Mathlib.Data.Set.Card.Arithmetic
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.Morse.Submersion
 import TauCeti.Geometry.Manifold.RegularValue
@@ -62,6 +63,9 @@ for `g` at `y` combine to a Morse chart for the separated sum at `(x, y)`.
   Morse index of the separated sum, in the product charts with values in `E × E'`.
 * `TauCeti.IsMorse.comp_fst_add_comp_snd_chartedSpaceProd`: the separated sum of Morse functions
   is Morse in these charts.
+* `TauCeti.criticalCount_comp_fst_add_comp_snd_chartedSpaceProd`: the critical counts of the
+  separated sum are the convolution of those of `f` and `g`, so its Morse polynomial is the product
+  of theirs.
 * `TauCeti.criticalPoints_comp_snd` and `TauCeti.manifoldMorseIndex_comp_snd`: the critical
   points of `(x, y) ↦ g y` on `M × N` are the points over critical points of `g`, and its Morse
   index at `(x, y)` is that of `g` at `y`.
@@ -407,6 +411,45 @@ theorem IsMorse.comp_fst_add_comp_snd_chartedSpaceProd (hf : IsMorse 𝓘(ℝ, E
     IsMorse 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) := by
   rw [modelWithCornersSelf_prod]
   exact hf.comp_fst_add_comp_snd hg
+
+/-- **The critical counts of a separated sum are a convolution**, in the product charts with
+values in `E × E'`, for `C²` functions `f` and `g`: the critical points of index `k` of
+`f ∘ Prod.fst + g ∘ Prod.snd` are the pairs of critical points of `f` of index `i` and of `g` of
+index `j`, for `i + j = k`. So the Morse polynomial `∑ₖ cₖ tᵏ` of the separated sum is the product
+of those of `f` and `g`. -/
+theorem criticalCount_comp_fst_add_comp_snd_chartedSpaceProd [FiniteDimensional ℝ E]
+    [FiniteDimensional ℝ E'] (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) 2 f)
+    (hg : ContMDiff 𝓘(ℝ, E') 𝓘(ℝ) 2 g) (k : ℕ) :
+    criticalCount 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) k =
+      ∑ ij ∈ Finset.antidiagonal k,
+        criticalCount 𝓘(ℝ, E) f ij.1 * criticalCount 𝓘(ℝ, E') g ij.2 := by
+  -- The critical points of index `k` are the disjoint union, over the pairs `(i, j)` with
+  -- `i + j = k`, of the products of the critical points of index `i` of `f` and `j` of `g`.
+  have hset : {z ∈ criticalPoints 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) |
+      manifoldMorseIndex 𝓘(ℝ, E × E') (f ∘ Prod.fst + g ∘ Prod.snd) z = k} =
+      ⋃ ij ∈ (Finset.antidiagonal k : Set (ℕ × ℕ)),
+        {x ∈ criticalPoints 𝓘(ℝ, E) f | manifoldMorseIndex 𝓘(ℝ, E) f x = ij.1} ×ˢ
+          {y ∈ criticalPoints 𝓘(ℝ, E') g | manifoldMorseIndex 𝓘(ℝ, E') g y = ij.2} := by
+    ext z
+    simp only [mem_ofPred_eq, mem_iUnion, Finset.mem_coe, Finset.mem_antidiagonal, mem_prod,
+      exists_prop, Prod.exists,
+      criticalPoints_comp_fst_add_comp_snd_chartedSpaceProd
+        (hf.mdifferentiable (by norm_num)) (hg.mdifferentiable (by norm_num)),
+      manifoldMorseIndex_comp_fst_add_comp_snd_chartedSpaceProd (hf z.1) (hg z.2)]
+    constructor
+    · rintro ⟨⟨h₁, h₂⟩, rfl⟩
+      exact ⟨_, _, rfl, ⟨h₁, rfl⟩, h₂, rfl⟩
+    · rintro ⟨i, j, rfl, ⟨h₁, rfl⟩, h₂, rfl⟩
+      exact ⟨⟨h₁, h₂⟩, rfl⟩
+  rw [criticalCount_def, hset, (Finset.finite_toSet _).encard_biUnion, finsum_mem_coe_finset]
+  · simp_rw [encard_prod, criticalCount_def]
+  · -- Two pairs `(i, j)` and `(i', j')` with the same sum `k` differ in their first entries.
+    rintro ⟨i, j⟩ hij ⟨i', j'⟩ hij' hne
+    rw [Finset.mem_coe, Finset.mem_antidiagonal] at hij hij'
+    refine disjoint_left.2 fun z hz hz' ↦ hne ?_
+    have hi : i = i' := hz.1.2.symm.trans hz'.1.2
+    simp only [Prod.mk.injEq]
+    omega
 
 end TauCeti
 
