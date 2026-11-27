@@ -15,13 +15,14 @@ import TauCeti.Combinatorics.SimpleGraph.Clique.Basic
 
 Write `p_G(t) = det(tI - A)` for the characteristic polynomial of the adjacency matrix `A` of a
 finite simple graph `G` on `n` vertices, over a commutative ring, and `a_j` for its coefficient of
-`t^(n - j)`. By Mathlib's `Matrix.charpoly_coeff_eq_sum_minors`, `a_j` is `(-1)^j` times the sum
-of the principal minors of `A` of order `j`. The principal minors of small order are read off the
-graph: those of order `1` vanish, one of order `2` is `-1` on an edge and `0` otherwise, and one of
-order `3` is `2` on a triangle and `0` otherwise. Consequently `a₁ = 0`, `a₂ = -m` with `m` the
-number of edges, and `a₃ = -2t` with `t` the number of triangles. The first two hold on every
-nonempty vertex type and the third for `n ≥ 3`: the index `n - j` is truncated in `ℕ`, and for the
-graph `K₂` the coefficient at the truncated index `n - 3 = 0` is `a₂ = -1`, not `-2t = 0`.
+`t^(n - j)`. By Mathlib's `Matrix.charpoly_coeff_eq_sum_minors`, for `j ≤ n` the coefficient `a_j`
+is `(-1)^j` times the sum of the principal minors of `A` of order `j`. The principal minors of small
+order are read off the graph: those of order `1` vanish, one of order `2` is `-1` on an edge and `0`
+otherwise, and one of order `3` is `2` on a triangle and `0` otherwise. Consequently `a₁ = 0`,
+`a₂ = -m` with `m` the number of edges, and `a₃ = -2t` with `t` the number of triangles. The first
+two hold on every nonempty vertex type and the third for `n ≥ 3`: the index `n - j` is truncated in
+`ℕ`, and for the graph `K₂` the coefficient at the truncated index `n - 3 = 0` is `a₂ = -1`, not
+`-2t = 0`.
 
 The minors are first computed along a family `f : Fin k → V` of vertices, which need not be
 injective, and then for the principal submatrix on a set `s` of `k` vertices.
@@ -121,15 +122,6 @@ theorem det_submatrix_adjMatrix_of_card_eq_three {s : Finset V} (hs : #s = 3) :
 /-! ### The first coefficients -/
 
 variable [Fintype V]
-
-/-- Summing a constant over the `k`-sets of vertices that are cliques counts the `k`-cliques. -/
-private theorem sum_powersetCard_ite_isClique (k : ℕ) (c : R) :
-    ∑ s ∈ (univ : Finset V).powersetCard k, (if G.IsClique (s : Set V) then c else 0) =
-      #(G.cliqueFinset k) • c := by
-  rw [← sum_filter, sum_const]
-  congr 2
-  ext s
-  simp [mem_cliqueFinset_iff, isNClique_iff, and_comm]
 
 /-- The coefficient of `t^(n - 1)` in the characteristic polynomial of a graph on a nonempty
 vertex type vanishes. -/

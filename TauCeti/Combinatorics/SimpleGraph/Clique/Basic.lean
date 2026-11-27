@@ -21,13 +21,16 @@ gadgets attached to a graph.
 
 The range of an injective family of vertices is a clique exactly when the family is pairwise
 adjacent, which turns a statement about a clique enumerated by an index type into one about its
-members. On a finite vertex type, the `2`-cliques are the edges: there are as many of them as
-edges. Both are used to count the principal minors of an adjacency matrix.
+members. On a finite vertex type, summing a constant over the `k`-sets of vertices that are cliques
+counts the `k`-cliques, and the `2`-cliques are the edges: there are as many of them as edges.
+These are used to count the principal minors of an adjacency matrix.
 
 ## Main results
 
 * `SimpleGraph.isClique_range_iff_pairwise`: the range of an injective family is a clique exactly
   when its members are pairwise adjacent.
+* `SimpleGraph.sum_powersetCard_ite_isClique`: summing a constant over the `k`-sets of vertices
+  that are cliques counts the `k`-cliques.
 * `SimpleGraph.card_cliqueFinset_two`: a finite graph has as many `2`-cliques as edges.
 * `SimpleGraph.exists_isNClique_three_mem_iff`: a vertex lies in a triangle exactly when it has
   two adjacent neighbours.
@@ -82,6 +85,16 @@ family are pairwise adjacent. -/
 theorem isClique_range_iff_pairwise {ι : Type*} {f : ι → V} (hf : Function.Injective f) :
     G.IsClique (Set.range f) ↔ Pairwise fun i j ↦ G.Adj (f i) (f j) := by
   rw [← Set.image_univ, isClique_iff, hf.injOn.pairwise_image, Set.pairwise_univ]
+
+/-- Summing a constant over the `k`-sets of vertices that are cliques counts the `k`-cliques. -/
+theorem sum_powersetCard_ite_isClique [Fintype V] [DecidableEq V] [DecidableRel G.Adj]
+    {M : Type*} [AddCommMonoid M] (k : ℕ) (c : M) :
+    ∑ s ∈ (Finset.univ : Finset V).powersetCard k, (if G.IsClique (s : Set V) then c else 0) =
+      #(G.cliqueFinset k) • c := by
+  rw [← Finset.sum_filter, Finset.sum_const]
+  congr 2
+  ext s
+  simp [mem_cliqueFinset_iff, isNClique_iff, and_comm]
 
 /-- A finite graph has as many `2`-cliques as edges: an edge `s(a, b)` corresponds to the
 `2`-clique `{a, b}`. -/
