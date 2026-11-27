@@ -29,12 +29,13 @@ subspaces of `L²(M, μ)` (`TauCeti.chartSobolevToLp`), with `H⁰(M) = L²(M, �
 A classical pseudodifferential operator `P` of order `m ≥ 0` extends to a bounded operator
 `H^m(M) → H⁰(M)` (`TauCeti.chartSobolevExtension`). Read in `L²(M, μ)`, this is an unbounded
 operator with domain `H^m(M)`, its **realization in `L²`**
-(`TauCeti.chartSobolevRealization`): a function `f ∈ L²` lies in its domain when `f ∈ H^m(M)`,
-and its value is then the extension of `P` applied to `f`. It is the partial operator
-`LinearMap.domainOperator` of the pair formed by the injection `H^m(M) → L²(M, μ)` and
-the extension of `P`; rewrite with `TauCeti.chartSobolevRealization_def` to use the graph and
-domain lemmas of `domainOperator`, and evaluate with `TauCeti.chartSobolevRealization_apply`. On
-smooth functions it is `P` (`TauCeti.chartSobolevRealization_toLp`), and its domain is dense
+(`TauCeti.chartSobolevRealization`): a function `f ∈ L²` lies in its domain exactly when
+`f ∈ H^m(M)` (`TauCeti.mem_domain_chartSobolevRealization_iff`), and its value is then the
+extension of `P` applied to `f`. It is the partial operator `LinearMap.domainOperator` of the
+pair formed by the injection `H^m(M) → L²(M, μ)` and the extension of `P`; rewrite with
+`TauCeti.chartSobolevRealization_def` to use the graph and domain lemmas of `domainOperator`, and
+evaluate with `TauCeti.chartSobolevRealization_apply`. On smooth functions it is `P`
+(`TauCeti.chartSobolevRealization_toLp`), and its domain is dense
 (`TauCeti.dense_domain_chartSobolevRealization`).
 
 * **Formal adjoints.** If `Q` is a classical pseudodifferential operator of order `m` and a formal
@@ -151,11 +152,18 @@ theorem chartSobolevRealization_apply {y : (chartSobolevRealization hμ hc ψ h�
   -- rewritten here; `domainOperator_apply` applies through the definitional unfolding instead.
   LinearMap.domainOperator_apply _ _ _ hx
 
+/-- **The domain of the realization is `H^m(M)`.** An element of `L²(M, μ)` lies in the domain of
+the realization exactly when it is the image of an element of `H^m(M)`. -/
+theorem mem_domain_chartSobolevRealization_iff {f : Lp ℂ 2 μ} :
+    f ∈ (chartSobolevRealization hμ hc ψ hψ P hm).domain ↔
+      ∃ x, chartSobolevToLp μ hc ψ hμ hψ hm x = f := by
+  rw [chartSobolevRealization_def]
+  exact LinearMap.mem_domain_domainOperator_iff _ _ _
+
 /-- The image in `L²(M, μ)` of an element of `H^m(M)` lies in the domain of the realization. -/
 theorem chartSobolevToLp_mem_domain_chartSobolevRealization (x : chartSobolevSpace hc ψ m) :
-    chartSobolevToLp μ hc ψ hμ hψ hm x ∈ (chartSobolevRealization hμ hc ψ hψ P hm).domain := by
-  rw [chartSobolevRealization_def]
-  exact LinearMap.apply_mem_domain_domainOperator _ _ _ x
+    chartSobolevToLp μ hc ψ hμ hψ hm x ∈ (chartSobolevRealization hμ hc ψ hψ P hm).domain :=
+  (mem_domain_chartSobolevRealization_iff hμ hc ψ hψ P hm).2 ⟨x, rfl⟩
 
 /-- Smooth functions lie in the domain of the realization. -/
 theorem toLp_mem_domain_chartSobolevRealization
