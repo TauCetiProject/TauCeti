@@ -169,11 +169,14 @@ theorem sixteen_dvd_admissiblePairModulus (B : ℝ) (q : ℕ) : 16 ∣ admissibl
 theorem dvd_admissiblePairModulus (B : ℝ) (q : ℕ) : q ∣ admissiblePairModulus B q :=
   (Nat.dvd_lcm_left _ _).trans (dvd_mul_left _ _)
 
-/-- Every odd prime at most `B` divides the progression modulus. -/
-theorem prime_dvd_admissiblePairModulus {B : ℝ} (q : ℕ) {p : ℕ} (hp : p.Prime) (hp2 : p ≠ 2)
-    (hpB : (p : ℝ) ≤ B) : p ∣ admissiblePairModulus B q :=
-  (Finset.dvd_prod_of_mem id (mem_primesLE_erase_two_iff.mpr ⟨hp, hp2, hpB⟩)).trans
-    ((Nat.dvd_lcm_right _ _).trans (dvd_mul_left _ _))
+/-- Every prime at most `B` divides the progression modulus. -/
+theorem prime_dvd_admissiblePairModulus {B : ℝ} (q : ℕ) {p : ℕ} (hp : p.Prime)
+    (hpB : (p : ℝ) ≤ B) : p ∣ admissiblePairModulus B q := by
+  by_cases hp2 : p = 2
+  · subst p
+    exact (by decide : 2 ∣ 16).trans (sixteen_dvd_admissiblePairModulus B q)
+  · exact (Finset.dvd_prod_of_mem id (mem_primesLE_erase_two_iff.mpr ⟨hp, hp2, hpB⟩)).trans
+      ((Nat.dvd_lcm_right _ _).trans (dvd_mul_left _ _))
 
 /-- At fixed `q ≡ 3 (mod 8)`, admissibility at dyadic bound `3` cuts out one reduced
 residue class modulo `admissiblePairModulus B q`, which is `16` times the lcm of `q` and the
