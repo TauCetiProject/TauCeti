@@ -45,8 +45,7 @@ variable (φ : A →+* B) [Group G] [ContinuousConstSMul G G] (μ : HaarMeasureW
 @[simp]
 theorem integral_map_mapCoeff (f : compactlySupported A G A) :
     (μ.map (φ : A →+ B)).integral (compactlySupported.mapCoeff φ f) = φ (μ.integral f) :=
-  (congrArg _ (compactlySupported.ext (compactlySupported.mapCoeff_apply φ f))).trans
-    (integral_comp_commSL μ φ φ.toSemilinearMap f)
+  integral_comp_commSL μ φ φ.toSemilinearMap f
 
 variable [T2Space G] [IsTopologicalGroup G]
 

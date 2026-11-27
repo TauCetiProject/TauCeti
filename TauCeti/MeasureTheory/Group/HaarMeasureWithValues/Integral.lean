@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Group.HaarMeasureWithValues.Basic
 public import TauCeti.Topology.Algebra.Group.LocallyConstant.CompactSupport
+public import TauCeti.Topology.LocallyConstant.CompactSupport.MapCoeff
 
 /-!
 # Integration against a Haar measure with values in a ring
@@ -309,17 +310,16 @@ theorem eq_integral_of_apply_compactOpenIndicator [T2Space G]
 @[simp]
 theorem integral_comp_commSL {B N : Type*} [CommSemiring B] [AddCommMonoid N] [Module B N]
     (σ : A →+* B) (φ : M →ₛₗ[σ] N) (f : compactlySupported A G M) :
-    (μ.map (σ : A →+ B)).integral ⟨(f : LocallyConstant G M).map φ, mem_compactlySupported.2
-      ((mem_compactlySupported.1 f.property).comp_left (map_zero φ))⟩ = φ (μ.integral f) :=
+    (μ.map (σ : A →+ B)).integral (compactlySupported.map φ f) = φ (μ.integral f) :=
   integralAux_comp_left μ _ (map_apply μ _) φ (mem_compactlySupported.1 f.property)
-    ((mem_compactlySupported.1 f.property).comp_left (map_zero φ)) fun _ ↦ rfl
+    (mem_compactlySupported.1 (compactlySupported.map φ f).property)
+    (compactlySupported.map_apply φ f)
 
 /-- **Naturality.** Integration commutes with `A`-linear maps `φ : M → N`. -/
 @[simp]
 theorem integral_comp_comm {N : Type*} [AddCommMonoid N] [Module A N] (φ : M →ₗ[A] N)
     (f : compactlySupported A G M) :
-    μ.integral ⟨(f : LocallyConstant G M).map φ, mem_compactlySupported.2
-      ((mem_compactlySupported.1 f.property).comp_left (map_zero φ))⟩ = φ (μ.integral f) := by
+    μ.integral (compactlySupported.map φ f) = φ (μ.integral f) := by
   have hμ : μ.map (RingHom.id A : A →+ A) = μ := ext fun K ↦ map_apply μ _ K
   simpa only [hμ] using integral_comp_commSL μ (RingHom.id A) φ f
 

@@ -10,21 +10,22 @@ public import TauCeti.Topology.LocallyConstant.CompactSupport
 /-!
 # Change of coefficients for locally constant functions with compact support
 
-Let `X` be a topological space and `φ : A →+* B` a homomorphism of semirings. Composing with `φ`
-sends a locally constant function `f : X → A` with compact support to `φ ∘ f`, which again has
-compact support since `φ 0 = 0`. This is a `φ`-semilinear map
-`C_c^∞(X, A) → C_c^∞(X, B)` (`LocallyConstant.compactlySupported.mapCoeff`), functorial in `φ`,
-sending the indicator `1_K • m` of a compact open set to `1_K • φ m`.
+Let `X` be a topological space, `σ : A →+* B` a homomorphism of semirings and `φ : M → N` a
+`σ`-semilinear map. Composing with `φ` sends a locally constant function `f : X → M` with compact
+support to `φ ∘ f`, which again has compact support since `φ 0 = 0`. This is a `σ`-semilinear map
+`C_c^∞(X, M) → C_c^∞(X, N)` (`LocallyConstant.compactlySupported.map`). Taking `φ = σ` gives the
+change of coefficients `C_c^∞(X, A) → C_c^∞(X, B)` (`LocallyConstant.compactlySupported.mapCoeff`),
+functorial in `σ` and sending the indicator `1_K • m` of a compact open set to `1_K • σ m`.
 
 ## Main definitions
 
+* `LocallyConstant.compactlySupported.map φ`: the pushforward `C_c^∞(X, M) → C_c^∞(X, N)`,
+  `f ↦ φ ∘ f`, along a semilinear map `φ`.
 * `LocallyConstant.compactlySupported.mapCoeff φ`: the change of coefficients
   `C_c^∞(X, A) → C_c^∞(X, B)`, `f ↦ φ ∘ f`.
 
 ## Main results
 
-* `LocallyConstant.map_compactOpenIndicator`: composing the indicator `1_K • m` with a map
-  preserving `0` gives the indicator `1_K • f m`.
 * `LocallyConstant.compactlySupported.mapCoeff_compactOpenIndicator`: changing coefficients of
   `1_K • m` gives `1_K • φ m`.
 * `LocallyConstant.compactlySupported.mapCoeff_id`,
@@ -35,34 +36,41 @@ public section
 
 open TopologicalSpace
 
-namespace LocallyConstant
+namespace LocallyConstant.compactlySupported
 
-variable {X M N : Type*} [TopologicalSpace X]
+variable {X : Type*} [TopologicalSpace X] {A B C : Type*} [Semiring A] [Semiring B] [Semiring C]
 
-/-- Composing the indicator `1_K • m` of a compact open set with a map `f` preserving `0` gives the
-indicator `1_K • f m`. -/
-@[simp]
-theorem map_compactOpenIndicator [T2Space X] [Zero M] [Zero N] {f : M → N} (hf : f 0 = 0)
-    (K : CompactOpens X) (m : M) :
-    (compactOpenIndicator K m).map f = compactOpenIndicator K (f m) :=
-  ext fun x => by by_cases hx : x ∈ K <;> simp [hx, hf]
+section Map
 
-namespace compactlySupported
+variable {M N : Type*} [AddCommMonoid M] [Module A M] [AddCommMonoid N] [Module B N]
+  {σ : A →+* B}
 
-variable {A B C : Type*} [Semiring A] [Semiring B] [Semiring C]
-
-/-- Change of coefficients of test functions: `f ↦ φ ∘ f`, a `φ`-semilinear map
-`C_c^∞(X, A) → C_c^∞(X, B)`. -/
-noncomputable def mapCoeff (φ : A →+* B) :
-    compactlySupported A X A →ₛₗ[φ] compactlySupported B X B where
-  toFun f := ⟨(f : LocallyConstant X A).map φ,
-    mem_compactlySupported.2 ((mem_compactlySupported.1 f.property).comp_left (map_zero φ))⟩
+/-- Pushforward of test functions along a `σ`-semilinear map `φ : M → N`: `f ↦ φ ∘ f`, a
+`σ`-semilinear map `C_c^∞(X, M) → C_c^∞(X, N)`. -/
+noncomputable def map (φ : M →ₛₗ[σ] N) :
+    compactlySupported A X M →ₛₗ[σ] compactlySupported B X N where
+  toFun f := ⟨(f : LocallyConstant X M).map φ, map_mem_compactlySupported f.property (map_zero φ)⟩
   map_add' f g := by
     ext x
     simp
   map_smul' c f := by
     ext x
     simp
+
+/-- The value of `φ ∘ f` at `x` is `φ (f x)`. -/
+@[simp]
+theorem map_apply (φ : M →ₛₗ[σ] N) (f : compactlySupported A X M) (x : X) :
+    (map φ f : LocallyConstant X N) x = φ ((f : LocallyConstant X M) x) :=
+  (rfl)
+
+end Map
+
+/-- Change of coefficients of test functions: `f ↦ φ ∘ f`, a `φ`-semilinear map
+`C_c^∞(X, A) → C_c^∞(X, B)`. -/
+@[expose]
+noncomputable def mapCoeff (φ : A →+* B) :
+    compactlySupported A X A →ₛₗ[φ] compactlySupported B X B :=
+  map φ.toSemilinearMap
 
 /-- The value of `φ ∘ f` at `x` is `φ (f x)`. -/
 @[simp]
@@ -87,6 +95,4 @@ theorem mapCoeff_comp (ψ : B →+* C) (φ : A →+* B) (f : compactlySupported 
     mapCoeff (ψ.comp φ) f = mapCoeff ψ (mapCoeff φ f) :=
   (rfl)
 
-end compactlySupported
-
-end LocallyConstant
+end LocallyConstant.compactlySupported
