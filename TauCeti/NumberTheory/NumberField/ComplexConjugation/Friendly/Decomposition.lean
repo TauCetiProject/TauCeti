@@ -122,14 +122,7 @@ theorem exists_smul_eq_of_complexConj_smul_under_eq [IsGalois ℚ L]
   obtain ⟨τ, hτ⟩ :=
     Ideal.exists_smul_eq_of_isGaloisGroup (Q.under (𝓞 E)) (σ • Q) Q (L ≃ₐ[E] L)
   refine ⟨τ.restrictScalars ℚ * σ, ?_, fun x ↦ ?_⟩
-  · -- `τ` acts on ideals of `𝓞 L` as its restriction of scalars
-    have hτℚ : MulSemiringAction.toRingHom _ (𝓞 L) (τ.restrictScalars ℚ) =
-        MulSemiringAction.toRingHom _ (𝓞 L) τ := by
-      refine RingHom.ext fun z ↦ ?_
-      apply FaithfulSMul.algebraMap_injective (𝓞 L) L
-      simp only [MulSemiringAction.toRingHom_apply, algebraMap_smul_eq_apply,
-        AlgEquiv.restrictScalars_apply]
-    rw [mul_smul, Ideal.pointwise_smul_def, hτℚ, ← Ideal.pointwise_smul_def, hτ]
+  · rw [mul_smul, AlgEquiv.restrictScalars_smul_ideal, hτ]
   · rw [AlgEquiv.mul_apply, hσ, AlgEquiv.restrictScalars_apply, hEKL]
     exact τ.commutes (c x)
 
