@@ -428,11 +428,15 @@ theorem exists_lift_of_milnorTriangle {X : ℕ ⥤ T} [HasCoproduct X.obj] {M : 
     ∃ u : E.obj (op M), ∀ n, E.map (Sigma.ι X.obj n ≫ ψ).op u = x n := by
   obtain ⟨u, hu⟩ := (E ⋙ AddCommGrpCat.toIntModule.{s}).milnorObjToLim_surjective ht
     ⟨x, (ModuleTower.mem_lim (X.op ⋙ E ⋙ AddCommGrpCat.toIntModule.{s})).2 fun n ↦ by
-      rw [ModuleTower.transition_def]; exact hx n⟩
-  exact ⟨u, fun n ↦
-    ((E ⋙ AddCommGrpCat.toIntModule.{s}).coe_milnorObjToLim_apply ht u n).symm.trans <|
-      congrArg (fun v : ModuleTower.lim (X.op ⋙ (E ⋙ AddCommGrpCat.toIntModule.{s})) ↦
-        v.val n) hu⟩
+      rw [ModuleTower.transition_def, Functor.comp_map, Functor.comp_map,
+        AddCommGrpCat.toIntModule_map_apply]
+      exact hx n⟩
+  refine ⟨u, fun n ↦ ?_⟩
+  have hcoord := congrArg
+    (fun v : ModuleTower.lim (X.op ⋙ E ⋙ AddCommGrpCat.toIntModule.{s}) ↦ v.val n) hu
+  rw [(E ⋙ AddCommGrpCat.toIntModule.{s}).coe_milnorObjToLim_apply ht u n,
+    Functor.comp_map] at hcoord
+  exact (AddCommGrpCat.toIntModule_map_apply (E.map (Sigma.ι X.obj n ≫ ψ).op) u).symm.trans hcoord
 
 end AddCommGrpValued
 

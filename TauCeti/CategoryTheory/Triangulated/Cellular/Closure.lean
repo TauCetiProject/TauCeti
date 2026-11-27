@@ -182,9 +182,9 @@ theorem inCellClosure_empty_iff (R : T) :
 
 /-- The cellular closure of `G` is contained in the localizing closure of its range. -/
 theorem inCellClosure_le_localizingClosure (G : I → T) :
-    InCellClosure G ≤ ObjectProperty.localizingClosure (fun X ↦ ∃ i, G i = X) := fun _ hR ↦
+    InCellClosure G ≤ (ObjectProperty.ofObj G).localizingClosure := fun _ hR ↦
   hR.induction_on
-    (fun i ↦ ObjectProperty.le_localizingClosure _ _ ⟨i, rfl⟩)
+    (fun i ↦ ObjectProperty.le_localizingClosure _ _ (ObjectProperty.ofObj_apply G i))
     (fun e hA ↦ ObjectProperty.prop_of_iso _ e hA)
     (fun _ f hf ↦ ObjectProperty.prop_colimit _ (Discrete.functor f) fun ⟨j⟩ ↦ hf j)
     (fun t ht h₁ h₂ ↦ ObjectProperty.ext_of_isTriangulatedClosed₃ _ t ht h₁ h₂)

@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.Triangulated.Cellular.Closure
 public import TauCeti.CategoryTheory.Triangulated.HomotopyColimit
 
+import Mathlib.CategoryTheory.Limits.EssentiallySmall
 import Mathlib.CategoryTheory.Preadditive.Yoneda.Limits
 import Mathlib.CategoryTheory.Triangulated.Opposite.Pretriangulated
 import TauCeti.Algebra.Category.Grp.Products
@@ -136,8 +137,7 @@ theorem exists_inCellClosure_bijective_map_op (G : I → T) (hG : ∀ i, IsCompa
   let stage : ℕ → ApproxStage G E :=
     Nat.rec (approxStageZero G E hE) fun _ s ↦ (approxStep G E hE s).next
   let X : ℕ ⥤ T := Functor.ofSequence fun n ↦ (approxStep G E hE (stage n)).mor
-  have : HasCoproductsOfShape ℕ T :=
-    hasColimitsOfShape_of_equivalence (Discrete.equivalence Equiv.ulift.{v})
+  have : HasCoproductsOfShape ℕ T := hasCoproductsOfShape_of_small.{v} T ℕ
   have : PreservesLimitsOfShape (Discrete ℕ) E :=
     have := hE (ULift.{v} ℕ)
     preservesLimitsOfShape_of_equiv (Discrete.equivalence Equiv.ulift.{v}) E

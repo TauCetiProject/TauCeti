@@ -251,13 +251,14 @@ lemma sigmaComparison_comp_map_sequenceDifference {D : Type*} [Category* D] [Pre
     sigmaComparison F X.obj ≫ F.map X.sequenceDifference =
       (X ⋙ F).sequenceDifference ≫ sigmaComparison F X.obj := by
   refine Limits.Sigma.hom_ext _ _ fun n ↦ ?_
+  -- `Sigma.ι (fun b ↦ F.obj (X.obj b)) n` and `Sigma.ι (X ⋙ F).obj n` are definitionally equal
+  -- by `Functor.comp_obj` and eta, which `rw` cannot bridge across the dependent `HasCoproduct`
+  -- instance; `change` aligns both sides with `(X ⋙ F).obj`.
   change Sigma.ι (X ⋙ F).obj n ≫ _ = Sigma.ι (X ⋙ F).obj n ≫ _
-  simp only [ι_sequenceDifference_assoc, Preadditive.sub_comp, Category.assoc]
-  change Sigma.ι (fun b ↦ F.obj (X.obj b)) n ≫ _ =
-    Sigma.ι (fun b ↦ F.obj (X.obj b)) n ≫ sigmaComparison F X.obj -
-      F.map (X.map (homOfLE (n.le_add_right 1))) ≫
-        Sigma.ι (fun b ↦ F.obj (X.obj b)) (n + 1) ≫ sigmaComparison F X.obj
-  simp [map_ι_comp_map_sequenceDifference]
+  have hι (k : ℕ) : Sigma.ι (X ⋙ F).obj k ≫ sigmaComparison F X.obj = F.map (Sigma.ι X.obj k) :=
+    ι_comp_sigmaComparison F X.obj k
+  rw [ι_sequenceDifference_assoc, Preadditive.sub_comp, Category.assoc, hι, hι,
+    Functor.comp_map, ← Category.assoc, hι, map_ι_comp_map_sequenceDifference]
 
 end SequenceDifference
 

@@ -9,8 +9,8 @@ public import Mathlib.CategoryTheory.Triangulated.Subcategory
 public import TauCeti.CategoryTheory.Preadditive.Compact
 
 import Mathlib.Algebra.FiveLemma
-import Mathlib.CategoryTheory.Triangulated.Yoneda
 import TauCeti.Algebra.DirectSum.Exact
+import TauCeti.CategoryTheory.Triangulated.MapBijective
 
 /-!
 # Triangulated subcategory of compact objects
@@ -60,8 +60,7 @@ theorem IsCompactForCoproducts.of_distTriang₃ {t : Triangle T} (ht : t ∈ dis
   have hex {s : Triangle T} (hs : s ∈ distTriang T) (W : T) :
       Function.Exact (Preadditive.leftComp W s.mor₂).toIntLinearMap
         (Preadditive.leftComp W s.mor₁).toIntLinearMap :=
-    fun g ↦ ⟨(ShortComplex.ab_exact_iff _).1 (preadditiveYoneda_map_distinguished s hs W) g,
-      fun ⟨h, hh⟩ ↦ hh ▸ (comp_distTriang_mor_zero₁₂_assoc _ hs h).trans zero_comp⟩
+    by simpa only [AddMonoidHom.coe_toIntLinearMap] using Triangle.exact_leftComp hs W
   exact LinearMap.bijective_of_surjective_of_bijective_of_bijective_of_injective
     (DirectSum.lmap (R := ℤ) fun j ↦
       (Preadditive.leftComp (f j) (-t.mor₁⟦(1 : ℤ)⟧')).toIntLinearMap)

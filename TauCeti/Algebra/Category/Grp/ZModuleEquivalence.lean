@@ -49,6 +49,11 @@ theorem toIntModule_map {A B : AddCommGrpCat.{w}} (f : A ⟶ B) :
     toIntModule.map f = ModuleCat.ofHom f.hom.toIntLinearMap :=
   rfl
 
+/-- `AddCommGrpCat.toIntModule.map f` acts on elements as `f`. -/
+theorem toIntModule_map_apply {A B : AddCommGrpCat.{w}} (f : A ⟶ B) (x : A) :
+    toIntModule.map f x = f x :=
+  rfl
+
 /-- Composing `AddCommGrpCat.toIntModule` with the forgetful functor to `AddCommGrpCat` is
 naturally isomorphic to the identity functor. -/
 def toIntModuleCompForget₂Iso :
