@@ -21,8 +21,8 @@ for `k > n` the cone is empty (`TauCeti.hessianCone_eq_empty`).
 
 Gårding's inequality (`MvPolynomial.IsHyperbolic.mul_rpow_mul_rpow_le_eval_sum_smul_pderiv`) for
 `σ_{k+1}` is the tangent inequality
-(`TauCeti.mul_esymm_rpow_mul_esymm_rpow_le_sum_mul_eval_update_zero_esymm`): for `μ ∈ Γ_{k+1}` and
-`ν` in the closure of `Γ_{k+1}`,
+(`TauCeti.mul_esymm_rpow_mul_esymm_rpow_le_sum_mul_eval_update_zero_esymm`): for `μ` and `ν` in
+the closure of `Γ_{k+1}`,
 
 `(k + 1) σ_{k+1}(ν)^{1/(k+1)} σ_{k+1}(μ)^{k/(k+1)} ≤ ∑ᵢ νᵢ σ_{k;i}(μ)`,
 
@@ -63,11 +63,12 @@ theorem concaveOn_esymm_rpow (n k : ℕ) :
   · rw [hessianCone_eq_empty hkn]
     exact ⟨convex_empty, fun _ hx ↦ hx.elim⟩
 
-/-- **The tangent inequality for `σ_{k+1}^{1/(k+1)}`.** For `μ` in the Hessian cone `Γ_{k+1}` and
-`ν` in its closure, `(k + 1) σ_{k+1}(ν)^{1/(k+1)} σ_{k+1}(μ)^{1 - 1/(k+1)} ≤ ∑ᵢ νᵢ σ_{k;i}(μ)`,
+/-- **The tangent inequality for `σ_{k+1}^{1/(k+1)}`.** For `μ` and `ν` in the closure of the
+Hessian cone `Γ_{k+1}`, `(k + 1) σ_{k+1}(ν)^{1/(k+1)} σ_{k+1}(μ)^{1 - 1/(k+1)} ≤ ∑ᵢ νᵢ σ_{k;i}(μ)`,
 where `σ_{k;i}(μ)` is `σ_k` of `μ` with its `i`-th entry set to zero. -/
 theorem mul_esymm_rpow_mul_esymm_rpow_le_sum_mul_eval_update_zero_esymm (k : ℕ)
-    {μ ν : Fin n → ℝ} (hμ : μ ∈ hessianCone n (k + 1)) (hν : ν ∈ closure (hessianCone n (k + 1))) :
+    {μ ν : Fin n → ℝ} (hμ : μ ∈ closure (hessianCone n (k + 1)))
+    (hν : ν ∈ closure (hessianCone n (k + 1))) :
     ((k + 1 : ℕ) : ℝ) * eval ν (esymm (Fin n) ℝ (k + 1)) ^ ((k + 1 : ℕ) : ℝ)⁻¹ *
         eval μ (esymm (Fin n) ℝ (k + 1)) ^ (1 - ((k + 1 : ℕ) : ℝ)⁻¹) ≤
       ∑ i, ν i * eval (Function.update μ i 0) (esymm (Fin n) ℝ k) := by
