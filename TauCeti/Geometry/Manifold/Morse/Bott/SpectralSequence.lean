@@ -1023,9 +1023,8 @@ theorem
     -- The pieces in the compact band are finitely many, so the coproduct exists.
     haveI : Finite {j // (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧
         Fintype.card (κ j) ≤ n} :=
-      ((h.finite_setOf_range_subset (ha.isCriticalBand pq.2).isCompact).subset
-        (t := {j | (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧ Fintype.card (κ j) ≤ n})
-        fun _ hj ↦ range_subset_iff.2 fun s ↦ Ioc_subset_Icc_self (hj.1 s)).to_subtype
+      h.finite_subtype_of_forall_mem_Icc (ha.isCriticalBand pq.2).isCompact
+        fun _ hj s ↦ Ioc_subset_Icc_self (hj.1 s)
     Nonempty (((filteredSpaceSpectralSequence (Y := TopCat.of M) (ModuleCat.of K K)
         ((sublevel_mono f).comp ha.monotone)).page 2).X pq ≅
       (∐ fun j : {j // (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧
@@ -1087,9 +1086,8 @@ theorem nonempty_subquotientPresentation_sigma_twistedHomology_cokernel_abutment
     -- The pieces in the compact band are finitely many, so the coproduct exists.
     haveI : Finite {j // (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧
         Fintype.card (κ j) ≤ n} :=
-      ((h.finite_setOf_range_subset (ha.isCriticalBand pq.2).isCompact).subset
-        (t := {j | (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧ Fintype.card (κ j) ≤ n})
-        fun _ hj ↦ range_subset_iff.2 fun s ↦ Ioc_subset_Icc_self (hj.1 s)).to_subtype
+      h.finite_subtype_of_forall_mem_Icc (ha.isCriticalBand pq.2).isCompact
+        fun _ hj s ↦ Ioc_subset_Icc_self (hj.1 s)
     Nonempty (SubquotientPresentation (C := ModuleCat.{u} K)
       (∐ fun j : {j // (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧
           Fintype.card (κ j) ≤ n} ↦
@@ -1235,9 +1233,8 @@ theorem nonempty_cokernel_abutmentFiltrationMap_iso_sigma_twistedHomology_of_for
     -- The pieces in the compact band are finitely many, so the coproduct exists.
     haveI : Finite {j // (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧
         Fintype.card (κ j) ≤ n} :=
-      ((h.finite_setOf_range_subset (ha.isCriticalBand pq.2).isCompact).subset
-        (t := {j | (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧ Fintype.card (κ j) ≤ n})
-        fun _ hj ↦ range_subset_iff.2 fun s ↦ Ioc_subset_Icc_self (hj.1 s)).to_subtype
+      h.finite_subtype_of_forall_mem_Icc (ha.isCriticalBand pq.2).isCompact
+        fun _ hj s ↦ Ioc_subset_Icc_self (hj.1 s)
     Nonempty (cokernel ((filteredSpaceSpectralObject (Y := TopCat.of M) (ModuleCat.of K K)
         ((sublevel_mono f).comp ha.monotone)).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) ≅
       ∐ fun j : {j // (∀ s, f (i j s) ∈ Ioc (a pq.2) (a (pq.2 + 1))) ∧
