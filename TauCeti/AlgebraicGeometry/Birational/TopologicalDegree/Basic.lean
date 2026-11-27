@@ -29,6 +29,10 @@ with the junk value.
 * `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_id` and
   `AlgebraicGeometry.Scheme.RationalMap.topologicalDegree_comp`: `e(id) = 1` and
   `e(g ∘ f) = e(f)·e(g)`.
+* `AlgebraicGeometry.Scheme.Hom.toRationalMap_comp` and
+  `AlgebraicGeometry.Scheme.Hom.topologicalDegree_comp`: the rational map of a composite of
+  morphisms with dominant first factor is the composite of their rational maps, so the topological
+  degree is multiplicative for dominant morphisms.
 
 ## References
 
@@ -99,5 +103,21 @@ theorem RationalMap.topologicalDegree_comp (f : X ⤏ Y) [f.IsDominant] (g : Y �
       Subfield.relfinrank_map_map, Subfield.relfinrank_top_right, topologicalDegree_def]
   rw [topologicalDegree_def, functionFieldMap_comp, CommRingCat.hom_comp,
     ← Subfield.relfinrank_mul_finrank_top hle, htransport, ← topologicalDegree_def, mul_comm]
+
+omit [IsIntegral Z] in
+/-- The rational map of a composite `a ≫ b` of morphisms, with `a` dominant, is the composite of
+their rational maps. -/
+theorem Hom.toRationalMap_comp (a : X ⟶ Y) [IsDominant a] (b : Y ⟶ Z) :
+    (a ≫ b).toRationalMap = a.toRationalMap.comp b.toRationalMap := by
+  rw [RationalMap.comp_toRationalMap]
+  rfl
+
+/-- **Multiplicativity of the topological degree for morphisms**: `e(a ≫ b) = e(a)·e(b)` for
+dominant morphisms `a : X ⟶ Y` and `b : Y ⟶ Z` of integral schemes. -/
+theorem Hom.topologicalDegree_comp (a : X ⟶ Y) [IsDominant a] (b : Y ⟶ Z) [IsDominant b] :
+    (a ≫ b).toRationalMap.topologicalDegree =
+      a.toRationalMap.topologicalDegree * b.toRationalMap.topologicalDegree := by
+  rw [RationalMap.topologicalDegree_congr (Hom.toRationalMap_comp a b),
+    RationalMap.topologicalDegree_comp]
 
 end AlgebraicGeometry.Scheme
