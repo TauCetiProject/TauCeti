@@ -27,7 +27,8 @@ Artin steps alone (`TauCeti.BraidWord.not_artinEquiv_cancel_nil`).
 
 ## Main definitions
 
-* `TauCeti.BraidWordGroup n`: braid words on `n` strands modulo `WordEquiv`, as a group.
+* `TauCeti.BraidWordGroup n`: braid words on `n` strands modulo `WordEquiv`, as a group, with
+  `TauCeti.BraidWordGroup.lift` for functions invariant under the moves.
 * `TauCeti.BraidWordGroup.toBraidMulEquiv`: **braid words modulo moves are the braid group.**
 
 ## References
@@ -42,32 +43,9 @@ namespace TauCeti
 
 open BraidGroup
 
-namespace BraidWord
-
-variable {n : ℕ}
-
-/-- An Artin step preserves the length of a word. -/
-theorem ArtinStep.length_eq {w w' : BraidWord n} (h : ArtinStep w w') : w.length = w'.length := by
-  cases h <;> simp
-
-/-- Artin moves preserve the length of a word. -/
-theorem ArtinEquiv.length_eq {w w' : BraidWord n} (h : ArtinEquiv w w') :
-    w.length = w'.length :=
-  h.induction ArtinStep.length_eq (fun _ ↦ rfl) (fun _ ih ↦ ih.symm)
-    (fun _ _ ih ih' ↦ ih.trans ih')
-
-/-- **Free cancellation is needed**: the word `σ₀ σ₀⁻¹` and the empty word both represent the
-trivial braid on two strands, but Artin moves alone do not relate them. -/
-theorem not_artinEquiv_cancel_nil : ¬ ArtinEquiv ([(0, 1), (0, -1)] : BraidWord 2) [] :=
-  fun h ↦ by simpa using h.length_eq
-
-end BraidWord
-
-/-- The moves `TauCeti.BraidWord.WordEquiv`, as a setoid on braid words. -/
-@[expose] def BraidWord.wordSetoid (n : ℕ) : Setoid (BraidWord n) :=
-  ⟨BraidWord.WordEquiv, BraidWord.WordEquiv.equivalence⟩
-
 /-- Braid words modulo Artin relations and free cancellation, a group under concatenation. -/
+-- Exposed because the bodies of the `Mul` and `Inv` instances below are exposed, and they are
+-- maps of this quotient. Downstream code uses `mk`, `lift` and `induction_on`.
 @[expose] def BraidWordGroup (n : ℕ) : Type :=
   Quotient (BraidWord.wordSetoid n)
 
@@ -76,7 +54,7 @@ namespace BraidWordGroup
 variable {n : ℕ}
 
 /-- The class of a braid word. -/
-@[expose] def mk (w : BraidWord n) : BraidWordGroup n :=
+def mk (w : BraidWord n) : BraidWordGroup n :=
   Quotient.mk (BraidWord.wordSetoid n) w
 
 theorem mk_surjective : Function.Surjective (mk (n := n)) :=
@@ -86,6 +64,19 @@ theorem mk_surjective : Function.Surjective (mk (n := n)) :=
 theorem induction_on {motive : BraidWordGroup n → Prop} (x : BraidWordGroup n)
     (h : ∀ w, motive (mk w)) : motive x :=
   Quotient.inductionOn x h
+
+/-- A function on braid words which is invariant under the moves, as a function on their
+classes. -/
+def lift {α : Sort*} (f : BraidWord n → α) (hf : ∀ w w', BraidWord.WordEquiv w w' → f w = f w') :
+    BraidWordGroup n → α :=
+  Quotient.lift (s := BraidWord.wordSetoid n) f hf
+
+/-- The lift of `f` takes the class of `w` to `f w`. -/
+@[simp]
+theorem lift_mk {α : Sort*} (f : BraidWord n → α)
+    (hf : ∀ w w', BraidWord.WordEquiv w w' → f w = f w') (w : BraidWord n) :
+    lift f hf (mk w) = f w :=
+  (rfl)
 
 /-- Two words have the same class exactly when they are related by the moves. -/
 theorem mk_eq_mk_iff {w w' : BraidWord n} : mk w = mk w' ↔ BraidWord.WordEquiv w w' :=
@@ -133,8 +124,7 @@ instance : Group (BraidWordGroup n) where
 
 /-- The braid represented by a class of words. -/
 def toBraid : BraidWordGroup n →* BraidGroup n where
-  toFun := Quotient.lift (s := BraidWord.wordSetoid n) BraidWord.toBraid fun _ _ h ↦
-    BraidWord.WordEquiv.toBraid_eq h
+  toFun := lift BraidWord.toBraid fun _ _ h ↦ BraidWord.WordEquiv.toBraid_eq h
   map_one' := BraidWord.toBraid_nil
   map_mul' x y := by
     induction x using induction_on with | h u =>
@@ -157,6 +147,15 @@ noncomputable def toBraidMulEquiv : BraidWordGroup n ≃* BraidGroup n :=
 
 @[simp] theorem toBraidMulEquiv_mk (w : BraidWord n) : toBraidMulEquiv (mk w) = w.toBraid :=
   (rfl)
+
+/-- The equivalence is the represented braid. -/
+@[simp] theorem coe_toBraidMulEquiv : ⇑(toBraidMulEquiv (n := n)) = ⇑toBraid :=
+  (rfl)
+
+/-- The inverse equivalence sends the braid represented by a word to the class of that word. -/
+@[simp] theorem toBraidMulEquiv_symm_toBraid (w : BraidWord n) :
+    toBraidMulEquiv.symm w.toBraid = mk w :=
+  toBraidMulEquiv.symm_apply_eq.mpr rfl
 
 end BraidWordGroup
 
