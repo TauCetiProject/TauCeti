@@ -158,6 +158,27 @@ namespace Matrix.GeneralLinearGroup
 variable {ι n O L : Type*} [Fintype n] [DecidableEq n]
 
 /-- Let the `T i` span `M_n(O)` and let `a ∈ GL_n(L)` conjugate every `(T i).map f` into the
+image of `M_n(O)`. Then `a` conjugates every `x.map f` into the image of `M_n(O)`. -/
+theorem inv_mul_map_mul_mem_range_of_span_eq_top [Semiring O] [CommSemiring L] (f : O →+* L)
+    {T : ι → Matrix n n O} (hT : span O (Set.range T) = ⊤) (a : GL n L)
+    (ha : ∀ i, ((a⁻¹ : GL n L) : Matrix n n L) * (T i).map f * a ∈ Set.range (Matrix.map · f))
+    (x : Matrix n n O) :
+    ((a⁻¹ : GL n L) : Matrix n n L) * x.map f * a ∈ Set.range (Matrix.map · f) := by
+  induction (hT ▸ mem_top : x ∈ span O (Set.range T)) using span_induction with
+  | mem x hx =>
+    obtain ⟨i, rfl⟩ := hx
+    exact ha i
+  | zero => exact ⟨0, by simp⟩
+  | add x y _ _ hx hy =>
+    obtain ⟨x', hx'⟩ := hx
+    obtain ⟨y', hy'⟩ := hy
+    exact ⟨x' + y', by
+      simp [Matrix.map_add f (map_add f), Matrix.mul_add, Matrix.add_mul, hx', hy']⟩
+  | smul c x _ hx =>
+    obtain ⟨x', hx'⟩ := hx
+    exact ⟨c • x', by simp [Matrix.map_smul', hx']⟩
+
+/-- Let the `T i` span `M_n(O)` and let `a ∈ GL_n(L)` conjugate every `(T i).map f` into the
 image of `M_n(O)`. Then every product of an entry of `a⁻¹` and an entry of `a` lies in the image
 of `f`. -/
 theorem inv_apply_mul_apply_mem_range_of_span_eq_top [Semiring O] [CommSemiring L] (f : O →+* L)
@@ -165,28 +186,9 @@ theorem inv_apply_mul_apply_mem_range_of_span_eq_top [Semiring O] [CommSemiring 
     (ha : ∀ i, ((a⁻¹ : GL n L) : Matrix n n L) * (T i).map f * a ∈ Set.range (Matrix.map · f))
     (i j k l : n) :
     ((a⁻¹ : GL n L) : Matrix n n L) i j * (a : Matrix n n L) k l ∈ Set.range f := by
-  -- Conjugation by `a` maps every matrix over `O` into the image of `M_n(O)`.
-  have hconj (x : Matrix n n O) :
-      ((a⁻¹ : GL n L) : Matrix n n L) * x.map f * a ∈ Set.range (Matrix.map · f) := by
-    induction (hT ▸ mem_top : x ∈ span O (Set.range T)) using span_induction with
-    | mem x hx =>
-      obtain ⟨i, rfl⟩ := hx
-      exact ha i
-    | zero => exact ⟨0, by simp⟩
-    | add x y _ _ hx hy =>
-      obtain ⟨x', hx'⟩ := hx
-      obtain ⟨y', hy'⟩ := hy
-      exact ⟨x' + y', by
-        simp [Matrix.map_add f (map_add f), Matrix.mul_add, Matrix.add_mul, hx', hy']⟩
-    | smul c x _ hx =>
-      obtain ⟨x', hx'⟩ := hx
-      exact ⟨c • x', by simp [Matrix.map_smul', hx']⟩
   -- Entry `(i, l)` of the conjugate of the matrix unit `single j k 1` is the product.
-  obtain ⟨y, hy⟩ := hconj (single j k 1)
-  refine ⟨y i l, ?_⟩
-  have hyil := congrFun₂ hy i l
-  simp only [Matrix.map_apply] at hyil
-  rw [hyil, map_single, map_one, mul_single_one_mul_apply]
+  obtain ⟨y, hy⟩ := inv_mul_map_mul_mem_range_of_span_eq_top f hT a ha (single j k 1)
+  exact ⟨y i l, by simpa using congrFun₂ hy i l⟩
 
 /-- Let `f : O →+* L` be an injective ring homomorphism from a Bézout domain. If every product of
 an entry of `a⁻¹` and an entry of `a ∈ GL_n(L)` lies in the image of `f`, then `a = α • k.map f`
@@ -220,14 +222,12 @@ theorem exists_eq_smul_map_of_inv_apply_mul_apply_mem_range [Semiring O] [IsDoma
   set D : Matrix n n O := Matrix.of fun i j ↦ ∑ kl : n × n, r kl * p i j kl.1 kl.2
   have hBα (i j : n) : B i j * α = f (D i j) := by
     simp [D, α, Finset.mul_sum, map_sum, hp, mul_left_comm]
+  have hfd : f d = B i₀ j₀ * α := by rw [hBα, ← hr]; rfl
   -- `p i j k l = D i j * c k l`, after cancelling `d` in `O`.
   have hpDc (i j k l : n) : p i j k l = D i j * c k l := by
     refine mul_right_cancel₀ hd0 (hf ?_)
-    calc f (p i j k l * d) = B i j * A k l * f d := by rw [map_mul, hp]
-      _ = B i j * α * (B i₀ j₀ * A k l) := by
-        simp only [← hr, map_sum, map_mul, hp, α, Finset.mul_sum, Finset.sum_mul]
-        exact Finset.sum_congr rfl fun _ _ ↦ by ring
-      _ = f (D i j * c k l * d) := by rw [hBα, ← hp, ← hc, map_mul, map_mul, map_mul, mul_assoc]
+    calc f (p i j k l * d) = B i j * α * (B i₀ j₀ * A k l) := by rw [map_mul, hp, hfd]; ring
+      _ = f (D i j * c k l * d) := by simp [mul_assoc, ← hBα, hc, hp]
   -- Left multiplication by all entries of `B` is injective on `L`, since `(A * B) i₀ i₀ = 1`.
   have hcancel {x y : L} (hxy : ∀ i j, B i j * x = B i j * y) : x = y := by
     have h1 : (A * B) i₀ i₀ = 1 := by simp [hAB]
