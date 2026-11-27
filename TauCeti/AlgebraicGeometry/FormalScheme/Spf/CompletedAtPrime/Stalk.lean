@@ -80,9 +80,8 @@ For maximal-ideal-adic completion comparisons and discrete and complete local sp
   `TauCeti.FormalScheme.Spf.quotientMap_stalkToCompletedAtPrime_bijective_of_isOpen`,
   `TauCeti.FormalScheme.Spf.quotientMap_algebraMap_completedAtPrime_bijective_of_isOpen`: quotient
   bijections modulo open ideals.
-* `TauCeti.FormalScheme.Spf.flat_stalkToCompletedAtPrime`,
-  `TauCeti.FormalScheme.Spf.faithfullyFlat_stalkToCompletedAtPrime`: for noetherian `A`, the map
-  `O_{Spf A, p} → Â_𝔭` is flat and faithfully flat.
+* `TauCeti.FormalScheme.Spf.faithfullyFlat_stalkToCompletedAtPrime`: for noetherian `A`, the map
+  `O_{Spf A, p} → Â_𝔭` is faithfully flat.
 * `TauCeti.FormalScheme.Spf.ringKrullDim_completedAtPrime_eq_stalk`,
   `TauCeti.FormalScheme.Spf.isRegularLocalRing_completedAtPrime_iff_stalk`,
   `TauCeti.FormalScheme.Spf.isCohenMacaulay_completedAtPrime_iff_stalk`: for noetherian `A`,
@@ -183,11 +182,6 @@ theorem faithfullyFlat_stalkToCompletedAtPrime [IsNoetherianRing A] :
       (ConcreteCategory.bijective_of_isIso (colimitIso p).inv))
     (faithfullyFlat_colimitToCompletedAtPrime p)
 
-/-- For a noetherian adic ring `A`, the map `O_{Spf A, p} → Â_𝔭` is flat. -/
-theorem flat_stalkToCompletedAtPrime [IsNoetherianRing A] :
-    (stalkToCompletedAtPrime p).Flat :=
-  (faithfullyFlat_stalkToCompletedAtPrime p).flat
-
 /-! ### Dimension, regularity, and Cohen–Macaulay property of the stalk -/
 
 /-- The map `O_{Spf A, p} → Â_𝔭` as an algebra structure, used to apply results about flat local
@@ -200,7 +194,7 @@ attribute [local instance] stalkAlgebra
 
 private theorem flat_stalkAlgebra [IsNoetherianRing A] :
     Module.Flat ((Spf A).presheaf.stalk p) (CompletedAtPrime p) :=
-  flat_stalkToCompletedAtPrime p
+  (faithfullyFlat_stalkToCompletedAtPrime p).flat
 
 /-- For a noetherian adic ring `A`, the completed localisation `Â_𝔭` has the Krull dimension of the
 stalk `O_{Spf A, p}`. -/

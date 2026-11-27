@@ -283,7 +283,6 @@ theorem ideal_map_le_maximalIdeal_localization {I : Ideal A} (hI : IsAdic I) :
 instance isLocalRing_completedAtPrime : IsLocalRing (CompletedAtPrime p) :=
   TauCeti.AdicCompletion.isLocalRing_of_le
     (ideal_map_le_maximalIdeal_localization p (IsAdicRing.ideal_spec A).2.1)
-    ((IsAdicRing.ideal_spec A).1.map _)
 
 /-- The canonical completion map `A_𝔭 → Â_𝔭` is a local homomorphism. -/
 instance isLocalHom_algebraMap_completedAtPrime :
