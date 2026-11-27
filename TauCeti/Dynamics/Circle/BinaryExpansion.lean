@@ -37,7 +37,6 @@ noncomputable def binaryExpansion (x : ℕ → Fin 2) : UnitAddCircle :=
   (Real.ofDigits x : UnitAddCircle)
 
 /-- Binary expansion is the class of `Real.ofDigits x` in the circle. -/
-@[simp]
 theorem binaryExpansion_apply (x : ℕ → Fin 2) :
     binaryExpansion x = (Real.ofDigits x : UnitAddCircle) :=
   (rfl)
@@ -78,6 +77,6 @@ theorem semiconj_binaryExpansion :
     ring
   have hzero : ((((x 0 : ℕ) : ℝ)) : UnitAddCircle) = 0 :=
     (AddCircle.coe_eq_zero_iff 1).mpr ⟨((x 0 : ℕ) : ℤ), by simp⟩
-  simp [← AddCircle.coe_nsmul, hx, hzero]
+  simp [binaryExpansion_apply, ← AddCircle.coe_nsmul, hx, hzero]
 
 end TauCeti

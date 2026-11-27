@@ -136,9 +136,6 @@ theorem coverEntropy_two_nsmul_unitAddCircle :
 /-- **Check.** The `liminf` topological entropy of the doubling map of the circle is `log 2`. -/
 theorem coverEntropyInf_two_nsmul_unitAddCircle :
     coverEntropyInf (fun z : UnitAddCircle ↦ 2 • z) univ = ENNReal.log 2 :=
-  le_antisymm (coverEntropyInf_le_coverEntropy _ _ |>.trans_eq
-    coverEntropy_two_nsmul_unitAddCircle)
-    (log_two_le_netEntropyInfEntourage.trans
-      (netEntropyInfEntourage_le_coverEntropyInf _ _ mem_uniformity_dist_lt_eighth))
+  (coverEntropyInf_eq_coverEntropy _ (mapsTo_univ _ _)).trans coverEntropy_two_nsmul_unitAddCircle
 
 end TauCeti
