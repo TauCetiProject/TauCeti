@@ -313,8 +313,9 @@ theorem adaptedQDerivative_mul (p r : R[X]) :
 end CommRing
 
 /-- The adapted Jackson derivative commutes with coefficient ring homomorphisms. -/
-theorem map_adaptedQDerivative [CommRing R] [CommRing S] (φ : R →+* S) (q : R) (p : R[X]) :
-    (adaptedQDerivative q p).map φ = adaptedQDerivative (φ q) (p.map φ) := by
-  ext n; simp [coeff_map]
+@[simp]
+theorem adaptedQDerivative_map [CommRing R] [CommRing S] (φ : R →+* S) (q : R) (p : R[X]) :
+    adaptedQDerivative (φ q) (p.map φ) = (adaptedQDerivative q p).map φ := by
+  ext n; simp
 
 end Polynomial

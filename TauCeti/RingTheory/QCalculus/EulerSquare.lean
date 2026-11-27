@@ -9,6 +9,7 @@ public import TauCeti.RingTheory.QCalculus.Series
 import Mathlib.RingTheory.PowerSeries.Expand
 import Mathlib.RingTheory.PowerSeries.PiTopology
 import Mathlib.Tactic.Ring
+import TauCeti.RingTheory.PowerSeries.CoeffProd
 import TauCeti.RingTheory.PowerSeries.Order
 import TauCeti.RingTheory.PowerSeries.ProdOneSubXPow
 
@@ -60,43 +61,41 @@ theorem eulerOddProd_eq_tprod [TopologicalSpace R] [DiscreteTopology R] :
   obtain rfl := DiscreteTopology.eq_bot (α := R)
   rfl
 
-/-- Multiplying by factors `1 + X ^ (2 * i + 1)` with `k < 2 * i + 1` does not change the
-`k`-th coefficient. -/
-private theorem coeff_mul_prod_one_add_X_pow_eq (k : ℕ) (t : Finset ℕ)
-    (ht : ∀ i ∈ t, k < 2 * i + 1) (f : R⟦X⟧) :
-    coeff k (f * ∏ i ∈ t, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) = coeff k f := by
-  classical
-  induction t using Finset.induction_on generalizing f with
-  | empty => simp
-  | insert a t ha ih =>
-    rw [Finset.prod_insert ha, ← mul_assoc, ih (fun i hi ↦ ht i (Finset.mem_insert_of_mem hi)),
-      mul_add, mul_one, map_add, coeff_mul_X_pow',
-      ite_eq_right (Nat.not_le.mpr (ht a (Finset.mem_insert_self a t))), add_zero]
+variable (R) in
+/-- The family `i ↦ 1 + X ^ (2 * i + 1)` is multipliable in the coefficientwise topology on
+`R⟦X⟧`. -/
+theorem multipliable_one_add_X_pow_two_mul_add_one [TopologicalSpace R] :
+    Multipliable fun i : ℕ ↦ (1 + (X : R⟦X⟧) ^ (2 * i + 1)) := by
+  nontriviality R
+  apply WithPiTopology.multipliable_one_add_of_tendsto_order_atTop_nhds_top
+  refine ENat.tendsto_nhds_top_iff_natCast_lt.mpr fun n ↦ Filter.eventually_atTop.mpr ⟨n, ?_⟩
+  intro m hm
+  rw [order_X_pow]
+  norm_cast
+  omega
+
+/-- Under the discrete topology on `R`, `i ↦ 1 + X ^ (2 * i + 1)` has infinite product
+`eulerOddProd R`. -/
+theorem hasProd_eulerOddProd [TopologicalSpace R] [DiscreteTopology R] :
+    HasProd (fun i : ℕ ↦ (1 + (X : R⟦X⟧) ^ (2 * i + 1))) (eulerOddProd R) := by
+  rw [eulerOddProd_eq_tprod]
+  exact (multipliable_one_add_X_pow_two_mul_add_one R).hasProd
 
 /-- **Stabilization of `eulerOddProd`**: the `k`-th coefficient equals that of the finite product
 over `i < N` whenever `k < 2 * N + 1`. -/
 theorem coeff_eulerOddProd_eq_prod_of_lt (k : ℕ) {N : ℕ} (hN : k < 2 * N + 1) :
     coeff k (eulerOddProd R) =
       coeff k (∏ i ∈ range N, (1 + (X : R⟦X⟧) ^ (2 * i + 1))) := by
-  nontriviality R
   let : TopologicalSpace R := ⊥
   have : DiscreteTopology R := ⟨rfl⟩
-  have hm : Multipliable fun i : ℕ ↦ (1 + (X : R⟦X⟧) ^ (2 * i + 1)) := by
-    apply WithPiTopology.multipliable_one_add_of_tendsto_order_atTop_nhds_top
-    refine ENat.tendsto_nhds_top_iff_natCast_lt.mpr fun n ↦ Filter.eventually_atTop.mpr ⟨n, ?_⟩
-    intro m hm
-    rw [order_X_pow]
-    norm_cast
-    omega
-  have hprod := hm.hasProd
+  have hprod := hasProd_eulerOddProd (R := R)
   rw [HasProd, WithPiTopology.tendsto_iff_coeff_tendsto] at hprod
   have ht := hprod k
   rw [nhds_discrete, Filter.tendsto_pure] at ht
   obtain ⟨s₀, hs₀⟩ := Filter.eventually_atTop.mp ht
   have hs := hs₀ (s₀ ∪ range N) Finset.subset_union_left
-  rw [← eulerOddProd_eq_tprod] at hs
   rw [← hs, ← Finset.prod_sdiff (Finset.subset_union_right (s₁ := s₀) (s₂ := range N)), mul_comm]
-  exact coeff_mul_prod_one_add_X_pow_eq k ((s₀ ∪ range N) \ range N)
+  exact PowerSeries.coeff_mul_prod_one_add_X_pow_of_lt
     (fun i hi ↦ by
       simp only [Finset.mem_sdiff, Finset.mem_union, Finset.mem_range, not_lt] at hi
       omega) _

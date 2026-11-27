@@ -105,8 +105,9 @@ theorem qDerivative_one_apply (f : A⟦X⟧) : qDerivative (1 : A) f = d⁄dX f 
   congrArg (· f) qDerivative_one_eq_derivative
 
 /-- The `q`-derivative commutes with coefficient ring homomorphisms. -/
-theorem map_qDerivative (φ : A →+* B) (q : A) (f : A⟦X⟧) :
-    map φ (qDerivative q f) = qDerivative (φ q) (map φ f) := by ext n; simp [map_sum]
+@[simp]
+theorem qDerivative_map (φ : A →+* B) (q : A) (f : A⟦X⟧) :
+    qDerivative (φ q) (map φ f) = map φ (qDerivative q f) := by ext n; simp [map_sum]
 
 /-- **Twisted Leibniz rule** for the `q`-derivative:
 `D_q (f * g) = D_q f * g + f(q X) * D_q g`. -/
@@ -202,8 +203,9 @@ polynomials. -/
 @[simp] theorem adaptedQDerivative_base_one : adaptedQDerivative (1 : A) = 0 := by ext f n; simp
 
 /-- The adapted Jackson derivative commutes with coefficient ring homomorphisms. -/
-theorem map_adaptedQDerivative (φ : A →+* B) (q : A) (f : A⟦X⟧) :
-    map φ (adaptedQDerivative q f) = adaptedQDerivative (φ q) (map φ f) := by ext n; simp
+@[simp]
+theorem adaptedQDerivative_map (φ : A →+* B) (q : A) (f : A⟦X⟧) :
+    adaptedQDerivative (φ q) (map φ f) = map φ (adaptedQDerivative q f) := by ext n; simp
 
 /-- **Twisted Leibniz rule** for the adapted Jackson derivative:
 `D'_q (f * g) = D'_q f * g + f(q X) * D'_q g`. -/

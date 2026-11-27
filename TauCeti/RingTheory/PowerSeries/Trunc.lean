@@ -156,12 +156,7 @@ theorem coeff_sum_finset_C_mul_X_pow (s : Finset ℕ) (c : ℕ → R) (a : ℕ) 
   classical
   rw [map_sum]
   simp only [coeff_C_mul_X_pow]
-  split_ifs with ha
-  · rw [Finset.sum_eq_single_of_mem a ha (fun _ _ hlj ↦ ite_eq_right hlj.symm), ite_eq_left rfl]
-  · refine Finset.sum_eq_zero fun j hj ↦ ?_
-    split_ifs with hja
-    · exact absurd (hja ▸ hj) ha
-    · rfl
+  exact Finset.sum_ite_eq s a c
 
 /-- A power series has the same `m`-truncation as its finite expansion `∑_{i < m} aᵢ Xⁱ` along its
 own coefficients `aᵢ`. -/
