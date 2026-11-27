@@ -448,6 +448,14 @@ theorem floerLinearizationCoeff_congr_data (ω : SymplecticForm V)
     ω.floerLinearizationCoeff J Ks Kt u z = ω.floerLinearizationCoeff J' Ks' Kt' u z := by
   rw [floerLinearizationCoeff, floerLinearizationCoeff, hJ, hKs, hKt]
 
+/-- The zeroth-order part of the linearized operator at `z` only depends on the germ of the map at
+`z`. -/
+theorem floerLinearizationCoeff_congr_of_eventuallyEq (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) {u u' : ℝ × ℝ → V} {z : ℝ × ℝ}
+    (h : u =ᶠ[nhds z] u') :
+    ω.floerLinearizationCoeff J Ks Kt u z = ω.floerLinearizationCoeff J Ks Kt u' z := by
+  rw [floerLinearizationCoeff, floerLinearizationCoeff, h.eq_of_nhds, h.fderiv_eq]
+
 /-- The zeroth-order part of the linearized Floer operator, evaluated on a vector. -/
 theorem floerLinearizationCoeff_apply (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (z : ℝ × ℝ) (v : V) :
@@ -645,6 +653,50 @@ theorem continuousAt_floerLinearizationCoeff_family (ω : SymplecticForm V)
       (fun z ↦ Ks (q.1, z)) (fun z ↦ Kt (q.1, z)) u q.2) p :=
   (ω.contDiffAt_floerLinearizationCoeff_family (n := 0) (by simpa using hJ) (by simpa using hKs)
     (by simpa using hKt) (by simpa using hu)).continuousAt
+
+/-- **Continuity of the zeroth-order part along families of data and maps.** For a family of data
+`(J_μ, K_{s,μ}, K_{t,μ})` and a family of maps `u_μ` with parameter `μ ∈ P`, the zeroth-order part
+of the linearized Floer operator of the data at `μ` along `u_μ`, at `z`, is continuous jointly in
+`(μ, z)` at `p` when the data are `C¹` (with `C²` Hamiltonians) jointly in `μ`, `z` and the target
+point at `(p, u_{p.1} p.2)`, and the maps are `C¹` jointly in `μ` and `z` at `p`. -/
+theorem continuousAt_floerLinearizationCoeff_family_map (ω : SymplecticForm V)
+    {J : P × (ℝ × ℝ) → V → V →L[ℝ] V} {Ks Kt : P × (ℝ × ℝ) → V → ℝ} {u : P → ℝ × ℝ → V}
+    {p : P × (ℝ × ℝ)} (hJ : ContDiffAt ℝ 1 (Function.uncurry J) (p, u p.1 p.2))
+    (hKs : ContDiffAt ℝ 2 (Function.uncurry Ks) (p, u p.1 p.2))
+    (hKt : ContDiffAt ℝ 2 (Function.uncurry Kt) (p, u p.1 p.2))
+    (hu : ContDiffAt ℝ 1 (Function.uncurry u) p) :
+    ContinuousAt (fun q : P × (ℝ × ℝ) ↦ ω.floerLinearizationCoeff (fun z ↦ J (q.1, z))
+      (fun z ↦ Ks (q.1, z)) (fun z ↦ Kt (q.1, z)) (u q.1) q.2) p := by
+  have hu₀ : ContDiffAt ℝ 0 (Function.uncurry u) p := hu.of_le zero_le_one
+  have hgraph : ContinuousAt (fun q ↦ (q, Function.uncurry u q)) p :=
+    continuousAt_id.prodMk hu.continuousAt
+  have h2 : (2 : WithTop ℕ∞) = 1 + 1 := one_add_one_eq_two.symm
+  have hXs := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) (h2 ▸ hKs)
+  have hXt := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) (h2 ▸ hKt)
+  have hdJ : ContinuousAt (fun q ↦ fderiv ℝ (J q) (Function.uncurry u q)) p :=
+    (hJ.fderiv (f := fun q y ↦ J q y) hu₀ (by simp)).continuousAt
+  have hdXs : ContinuousAt
+      (fun q ↦ fderiv ℝ (ω.hamiltonianVectorField (Ks q)) (Function.uncurry u q)) p :=
+    (hXs.fderiv (f := fun q y ↦ ω.hamiltonianVectorField (Ks q) y) hu₀ (by simp)).continuousAt
+  have hdXt : ContinuousAt
+      (fun q ↦ fderiv ℝ (ω.hamiltonianVectorField (Kt q)) (Function.uncurry u q)) p :=
+    (hXt.fderiv (f := fun q y ↦ ω.hamiltonianVectorField (Kt q) y) hu₀ (by simp)).continuousAt
+  have hXtu : ContinuousAt (fun q ↦ ω.hamiltonianVectorField (Kt q) (Function.uncurry u q)) p :=
+    ContinuousAt.comp (f := fun q ↦ (q, Function.uncurry u q)) hXt.continuousAt hgraph
+  have hJu : ContinuousAt (fun q ↦ J q (Function.uncurry u q)) p :=
+    ContinuousAt.comp (f := fun q ↦ (q, Function.uncurry u q)) hJ.continuousAt hgraph
+  -- The slice velocity `∂t u_μ z` is the derivative of the joint map in the direction `(0, i)`.
+  have hd : ContinuousAt (fun q : P × (ℝ × ℝ) ↦ fderiv ℝ (u q.1) q.2 stdComplexLineImag) p := by
+    refine ((hu.continuousAt_fderiv one_ne_zero).clm_apply
+      (continuousAt_const (y := ((0 : P), stdComplexLineImag)))).congr ?_
+    filter_upwards [hu.eventually (by simp)] with q hq
+    have h := fderiv_slice_right (f := Function.uncurry u) (a := q.1) (b := q.2)
+      (hq.differentiableAt one_ne_zero)
+    simp only [Function.uncurry_apply_pair] at h
+    simp [h]
+  have hflip : ContinuousAt (fun q ↦ (fderiv ℝ (J q) (Function.uncurry u q)).flip) p :=
+    (flipₗᵢ ℝ V V V).continuous.continuousAt.comp hdJ
+  exact ((hflip.clm_apply (hd.sub hXtu)).sub hdXs).sub (hJu.clm_comp hdXt)
 
 /-- The zeroth-order part of the linearized Floer operator is continuous on `K` when the data are
 `C¹` (and the Hamiltonians `C²`) at the points `(z, u z)` with `z ∈ K`, and `u` is `C¹` on `K`. -/
