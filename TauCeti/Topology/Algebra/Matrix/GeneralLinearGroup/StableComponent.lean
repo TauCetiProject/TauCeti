@@ -47,6 +47,8 @@ of complex matrices out of this file.
   families of homomorphisms compatible with stabilization and trivial on identity components.
 * `TauCeti.StableComponentGroup.map`: the homomorphism induced by a continuous ring
   homomorphism.
+* `TauCeti.StableComponentGroup.mapEquiv`: the isomorphism induced by a ring isomorphism that is
+  a homeomorphism.
 * `TauCeti.AlgebraicK1.toStableComponentGroup`: the comparison `K₁(A) → GL_∞(A) / GL_∞(A)₀`.
 
 ## Main results
@@ -346,6 +348,37 @@ the one induced by `g.comp f`. -/
 theorem map_map (f : A →+* B) (hf : Continuous f) (g : B →+* C) (hg : Continuous g)
     (x : StableComponentGroup A) : map g hg (map f hf x) = map (g.comp f) (hg.comp hf) x := by
   rw [map_comp, MonoidHom.comp_apply]
+
+/-- The isomorphism of stable component groups induced by a ring isomorphism `e : A ≃+* B` which
+is a homeomorphism, applying `e` to the entries of invertible matrices. -/
+def mapEquiv (e : A ≃+* B) (he : Continuous (e : A →+* B))
+    (he' : Continuous (e.symm : B →+* A)) :
+    StableComponentGroup A ≃* StableComponentGroup B where
+  toFun := map e he
+  invFun := map e.symm he'
+  left_inv x := by
+    obtain ⟨n, u, rfl⟩ := exists_mk x
+    rw [map_map, map_mk]
+    exact congrArg _ (Units.ext (by ext; simp))
+  right_inv x := by
+    obtain ⟨n, u, rfl⟩ := exists_mk x
+    rw [map_map, map_mk]
+    exact congrArg _ (Units.ext (by ext; simp))
+  map_mul' := map_mul _
+
+/-- The isomorphism induced by a ring isomorphism is the homomorphism it induces. -/
+@[simp]
+theorem mapEquiv_apply (e : A ≃+* B) (he : Continuous (e : A →+* B))
+    (he' : Continuous (e.symm : B →+* A)) (x : StableComponentGroup A) :
+    mapEquiv e he he' x = map e he x :=
+  (rfl)
+
+/-- The inverse of the isomorphism induced by `e` is the homomorphism induced by `e.symm`. -/
+@[simp]
+theorem mapEquiv_symm_apply (e : A ≃+* B) (he : Continuous (e : A →+* B))
+    (he' : Continuous (e.symm : B →+* A)) (x : StableComponentGroup B) :
+    (mapEquiv e he he').symm x = map e.symm he' x :=
+  (rfl)
 
 end Map
 
