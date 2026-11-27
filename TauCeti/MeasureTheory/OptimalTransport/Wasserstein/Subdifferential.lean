@@ -94,6 +94,8 @@ holds with the parameter `min m 0`.
   satisfying the global subgradient inequality with the term `(m / 2) W₂(μ, ν)²`.
 * `TauCeti.ConvexAlongGeneralizedGeodesics.mem_wassersteinSubdifferential_iff`: the same
   characterization for an energy that is `m`-convex along every generalized geodesic based at `μ`.
+* `TauCeti.IsCoupling.integral_inner_sub_congr_ae`: the pairing of a field with the displacement
+  of a coupling only depends on the field almost everywhere.
 * `StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy` and
   `StrongConvexOn.nonempty_wassersteinSubdifferential_potentialEnergy`: the gradient of an
   `m`-strongly convex potential is a subgradient of its potential energy.
@@ -390,6 +392,17 @@ theorem ConvexAlongGeneralizedGeodesics.mem_wassersteinSubdifferential_iff {m : 
   have ht' := h t ht (c t) (by rw [hlaw t ht, generalizedGeodesic_eq_map_snd, hsnd])
   rwa [hsnd, ← WassersteinSpace.dist_sq_eq_integral hγ] at ht'
 
+omit [CompleteSpace E] [BorelSpace E] [SecondCountableTopology E] in
+/-- The pairing `∫ ⟪f x, y - x⟫ dγ(x, y)` against a coupling `γ` of `ρ` and `ρ'` depends only on
+the class of `f` modulo `ρ`-almost everywhere equality. -/
+theorem IsCoupling.integral_inner_sub_congr_ae {ρ ρ' : Measure E} {γ : Measure (E × E)}
+    {f g : E → E} (hγ : IsCoupling γ ρ ρ') (hfg : f =ᵐ[ρ] g) :
+    ∫ z, ⟪f z.1, z.2 - z.1⟫ ∂γ = ∫ z, ⟪g z.1, z.2 - z.1⟫ ∂γ := by
+  refine integral_congr_ae ?_
+  filter_upwards [hγ.measurePreserving_fst.quasiMeasurePreserving.ae_eq_comp hfg] with z hz
+  simp only [Function.comp_apply] at hz
+  rw [hz]
+
 section PotentialEnergy
 
 variable {V : E → ℝ} {m C : ℝ}
@@ -420,11 +433,8 @@ theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_potentialEnergy
   have hgrad : MemLp (gradient V) 2 ((μ : ProbabilityMeasure E) : Measure E) :=
     (Lp.memLp ξ).ae_eq hξ
   -- Replace `ξ` by `∇V`, and every term by an integral against `γ`.
-  have hpair : ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ = ∫ z, ⟪gradient V z.1, z.2 - z.1⟫ ∂γ := by
-    refine integral_congr_ae ?_
-    filter_upwards [hγc.measurePreserving_fst.quasiMeasurePreserving.ae_eq_comp hξ] with z hz
-    simp only [Function.comp_apply] at hz
-    rw [hz]
+  have hpair : ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ = ∫ z, ⟪gradient V z.1, z.2 - z.1⟫ ∂γ :=
+    hγc.integral_inner_sub_congr_ae hξ
   have hinner : Integrable (fun z : E × E ↦ ⟪gradient V z.1, z.2 - z.1⟫) γ := by
     refine (hγc.integrable_inner_sub_comp_fst hγ₂ hgrad).neg.congr (.of_forall fun z ↦ ?_)
     rw [Pi.neg_apply, ← inner_neg_left, neg_sub, real_inner_comm]
@@ -497,11 +507,8 @@ theorem _root_.StrongConvexOn.mem_wassersteinSubdifferential_interactionEnergy
   have hγ₂ := integrable_norm_sub_sq_of_hasFiniteMoment (hγc.fst_eq ▸ μ.hasFiniteMoment)
     (hγc.snd_eq ▸ ν.hasFiniteMoment)
   have hpair : ∫ z, ⟪ξ z.1, z.2 - z.1⟫ ∂γ =
-      ∫ z, ⟪interactionGradient w ((μ : ProbabilityMeasure E) : Measure E) z.1, z.2 - z.1⟫ ∂γ := by
-    refine integral_congr_ae ?_
-    filter_upwards [hγc.measurePreserving_fst.quasiMeasurePreserving.ae_eq_comp hξ] with z hz
-    simp only [Function.comp_apply] at hz
-    rw [hz]
+      ∫ z, ⟪interactionGradient w ((μ : ProbabilityMeasure E) : Measure E) z.1, z.2 - z.1⟫ ∂γ :=
+    hγc.integral_inner_sub_congr_ae hξ
   have hd : MemLp (fun z : E × E ↦ z.1 - z.2) 2 γ :=
     (memLp_two_iff_integrable_sq_norm (by fun_prop)).2 hγ₂
   have hD := integral_norm_sub_sq_prod hd
