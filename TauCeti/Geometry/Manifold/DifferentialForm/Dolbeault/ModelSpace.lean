@@ -344,7 +344,7 @@ theorem sum_wedgeWith_dz_apply {M : Type*} [TopologicalSpace M]
   simp only [Submodule.coe_sum, Finset.sum_apply, ContinuousAlternatingMap.sum_apply,
     cast_apply, coe_wedgeWith, RoughForm.wedgeWith_apply', hw, hβ,
     ContinuousAlternatingMap.smul_apply]
-  exact h.sum_wedgeWith_holCurry v
+  exact h.sum_pairedWedge_holCurry_apply v
 
 end Coordinates
 

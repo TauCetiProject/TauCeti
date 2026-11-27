@@ -22,7 +22,8 @@ bundled as a continuous complex-bilinear map in the vector and the form.
 with alternation of a conjugate-linear family.
 
 `ContinuousAlternatingMap.IsOfType.holCurry` gives the type shift on each fibre, and
-`ContinuousAlternatingMap.IsOfType.sum_wedgeWith_holCurry` is the coordinate Euler identity.
+`ContinuousAlternatingMap.IsOfType.sum_pairedWedge_holCurry_apply` is the coordinate Euler
+identity.
 -/
 
 public section
@@ -102,7 +103,7 @@ theorem IsOfType.holCurry {p q : ℕ} {φ : E [⋀^Fin (k + 1)]→L[ℝ] F}
 
 /-- The coordinate wedges of the holomorphic contractions of a type `(p,q)` alternating map
 sum to `2 p` times that map. -/
-theorem IsOfType.sum_wedgeWith_holCurry {ι : Type*} [DecidableEq ι] [Fintype ι]
+theorem IsOfType.sum_pairedWedge_holCurry_apply {ι : Type*} [DecidableEq ι] [Fintype ι]
     {p q : ℕ} {φ : (ι → ℂ) [⋀^Fin (k + 1)]→L[ℝ] F}
     (hφ : φ.IsOfType (I • ContinuousLinearMap.id ℝ (ι → ℂ)) p q) :
     ∀ v : Fin (k + 1) → ι → ℂ,
