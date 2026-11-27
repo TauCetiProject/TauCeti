@@ -271,6 +271,12 @@ lemma exteriorMap_comp (f : P ⟶ Q) (g : Q ⟶ R) :
     exteriorMap (f ≫ g) = (exteriorMap g).comp (exteriorMap f) :=
   exteriorMap_ext (by simp) (by simp)
 
+@[simp]
+lemma exteriorMap_comp_apply (f : P ⟶ Q) (g : Q ⟶ R)
+    (x : ExteriorAlgebra P.alg (Fin P.rank → P.alg)) :
+    exteriorMap (f ≫ g) x = exteriorMap g (exteriorMap f x) :=
+  RingHom.congr_fun (exteriorMap_comp f g) x
+
 variable (k) in
 /-- The functor `(A, Aⁿ) ↦ ⋀_A Aⁿ` from Hodge pairs to abelian groups, sending a morphism to
 `exteriorMap`. Its values are lifted to the universe `max u w`, so that it serves as a coefficient
@@ -285,7 +291,7 @@ for functors with values in any universe containing that of the algebras. -/
     simp
   map_comp f g := by
     ext x
-    simp [exteriorMap_comp]
+    simp
 
 lemma exterior_obj (P : HodgePair.{u} k) :
     (exterior.{w} k).obj P =
@@ -401,6 +407,10 @@ Hodge pair over `k`, with the same free module and the same morphisms. -/
     HodgePair.{u} K ⥤ HodgePair.{u} k where
   obj P := ⟨CommAlgCat.restrictScalarsObj f P.alg, P.rank⟩
   map g := ⟨(CommAlgCat.restrictScalarsMap f (CommAlgCat.ofHom g.alg)).hom, g.lin⟩
+
+lemma restrictScalars_obj_alg (f : k →+* K) (P : HodgePair.{u} K) :
+    ((restrictScalars f).obj P).alg = CommAlgCat.restrictScalarsObj f P.alg :=
+  (rfl)
 
 lemma restrictScalars_obj_rank (f : k →+* K) (P : HodgePair.{u} K) :
     ((restrictScalars f).obj P).rank = P.rank :=
