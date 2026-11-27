@@ -124,9 +124,11 @@ instance instIsThin : Quiver.IsThin (PointedConnectedCover x₀) := fun c d ↦ 
 functoriality of `π₁`. -/
 theorem subgroup_le_of_hom {c d : PointedConnectedCover x₀} (f : c ⟶ d) :
     c.subgroup ≤ d.subgroup :=
-  IsCoveringMap.range_le_of_continuousMap_comp_eq c.obj.isCoveringMap_proj.continuous
-    d.obj.isCoveringMap_proj.continuous c.val.property d.val.property (hom_left_apply f)
-      (proj_comp_hom_left f)
+  FundamentalGroup.range_mapOfEq_le_of_comp_eq (f := f.hom.hom.left.hom)
+    (g := ⟨d.obj.proj, d.obj.isCoveringMap_proj.continuous⟩)
+    (k := ⟨c.obj.proj, c.obj.isCoveringMap_proj.continuous⟩)
+    (ContinuousMap.ext fun e ↦ congrFun (proj_comp_hom_left f) e) (hom_left_apply f)
+      d.val.property c.val.property
 
 variable (x₀) in
 /-- The recovered subgroup, as a functor from pointed connected covers to the poset of subgroups
