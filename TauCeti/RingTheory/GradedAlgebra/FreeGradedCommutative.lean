@@ -17,6 +17,7 @@ public import TauCeti.Data.Multiset.Sort
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import TauCeti.RingTheory.GradedAlgebra.PositivePart
 public import TauCeti.RingTheory.GradedAlgebra.Supercommutativity.Basic
+import TauCeti.Algebra.DirectSum.Internal
 
 /-!
 # Free graded-commutative algebras
@@ -49,6 +50,10 @@ and `e²` to `v` in the graded-commutative algebra `𝔽₂[u, v]/(u²)`, `|u| =
 * `TauCeti.IsFreeGradedCommutative.indecomposablesBasis`: when `2` is invertible and every
   generator has positive degree, the basis of the indecomposables `A⁺ ⧸ A⁺ · A⁺` given by the
   classes of the generators, so that the indecomposables of `ΛV` are `V`.
+* `TauCeti.IsFreeGradedCommutative.homogeneousIndecomposablesBasis`: under the same hypotheses,
+  the basis of the degree-`p` indecomposables given by the classes of the generators of degree
+  `p`, so that the degree-`p` indecomposables of `ΛV` are `Vᵖ`
+  (`TauCeti.IsFreeGradedCommutative.homogeneousSubmodule_eq_span`).
 
 ## Main results
 
@@ -591,6 +596,43 @@ theorem indecomposablesBasis_apply (hx : IsFreeGradedCommutative 𝒜 x deg)
     (hdeg : ∀ i, 0 < deg i) (i : ι) :
     hx.indecomposablesBasis hdeg i = Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩ :=
   Module.Basis.mk_apply ..
+
+/-- **The degree-`p` indecomposables of `ΛV` are `Vᵖ`**: when `2` is invertible in `K`, the
+degree-`p` indecomposables of a free graded-commutative algebra on generators of positive degree
+are spanned by the classes of the generators of degree `p`. -/
+theorem homogeneousSubmodule_eq_span (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hdeg : ∀ i, 0 < deg i) (p : ℤ) :
+    Indecomposables.homogeneousSubmodule 𝒜 p =
+      Submodule.span K (hx.indecomposablesBasis hdeg '' {i | (deg i : ℤ) = p}) := by
+  classical
+  let b := hx.indecomposablesBasis hdeg
+  let w : ι → ℤ := fun i => deg i
+  let := (b.isInternal_span_image_fiber w).chooseDecomposition
+  let := (Indecomposables.isInternal_homogeneousSubmodule (𝒜 := 𝒜)).chooseDecomposition
+  -- The span of the generators of degree `q` lies in the degree-`q` indecomposables, and both
+  -- families are internal direct sum decompositions of the indecomposables.
+  refine (congrFun (DirectSum.Decomposition.eq_of_subset
+    (fun q => Submodule.span K (b '' {i | w i = q})) (Indecomposables.homogeneousSubmodule 𝒜)
+    fun q => Submodule.span_le.2 ?_) p).symm
+  rintro _ ⟨i, rfl, rfl⟩
+  rw [indecomposablesBasis_apply]
+  exact Indecomposables.mk_mem_homogeneousSubmodule (hx.mem i)
+
+/-- The basis of the degree-`p` indecomposables of a free graded-commutative algebra on generators
+of positive degree given by the classes of the generators of degree `p`, when `2` is invertible
+in `K`. -/
+noncomputable def homogeneousIndecomposablesBasis (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hdeg : ∀ i, 0 < deg i) (p : ℤ) :
+    Module.Basis {i // (deg i : ℤ) = p} K (Indecomposables.homogeneousSubmodule 𝒜 p) :=
+  ((hx.indecomposablesBasis hdeg).spanImageFiber (fun i => (deg i : ℤ)) p).map
+    (LinearEquiv.ofEq _ _ (hx.homogeneousSubmodule_eq_span hdeg p).symm)
+
+@[simp]
+theorem homogeneousIndecomposablesBasis_apply (hx : IsFreeGradedCommutative 𝒜 x deg)
+    (hdeg : ∀ i, 0 < deg i) (p : ℤ) (i : {i // (deg i : ℤ) = p}) :
+    (hx.homogeneousIndecomposablesBasis hdeg p i : Indecomposables 𝒜) =
+      Indecomposables.mk 𝒜 ⟨x i, hx.mem_positivePart (hdeg i)⟩ := by
+  simp [homogeneousIndecomposablesBasis]
 
 end Indecomposables
 
