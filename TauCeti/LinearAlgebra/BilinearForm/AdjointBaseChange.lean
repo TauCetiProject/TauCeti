@@ -64,7 +64,7 @@ theorem baseChange_tensor_adjoint [StarRing R] [StarAddMonoid A] [TrivialStar A]
   intro ρ
   induction c using TensorProduct.inductionOn with
   | tmul a b =>
-    rw [TensorProduct.star_tmul, star_trivial, TauCeti.BialgebraModule.tensorPairAction_tmul_apply,
+    simp only [ρ, TensorProduct.star_tmul, star_trivial,
       TauCeti.BialgebraModule.tensorPairAction_tmul_apply, LinearMap.BilinForm.smul_left,
       LinearMap.BilinForm.smul_right,
       B.baseChange_rightModule_adjoint b (h b)]

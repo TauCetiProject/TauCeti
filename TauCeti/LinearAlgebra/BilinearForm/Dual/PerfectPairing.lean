@@ -21,6 +21,11 @@ An integral pairing gives an inclusion of the original lattice into its dual aft
 extension. The pairing map into the linear dual represents this inclusion. In the nondegenerate
 case this gives the perfect-pairing criterion for self-duality and the Gram determinant formula
 for the relative index.
+
+## References
+
+* The Gram determinant proof adapts Andrew Yang's dual-basis computation in Mathlib's
+  `NumberField.absNorm_differentIdeal`.
 -/
 
 public section
@@ -102,10 +107,8 @@ section Int
 
 variable {M : Type*} [AddCommGroup M] [Module ℤ M]
 
-/-- The relative index of the unit-tensor lattice in its rational dual is the absolute Gram
-determinant. The argument uses the dual-basis computation in Andrew Yang's
-`NumberField.absNorm_differentIdeal` in Mathlib, expressed here in the integral bases via
-`dualSubmoduleEquivDual`. -/
+/-- For an integral pairing with nondegenerate rational extension, the relative index of the
+unit-tensor lattice in its rational dual is the absolute Gram determinant. -/
 theorem relIndex_dualSubmodule_range_mk_one_eq_natAbs_det (B : LinearMap.BilinForm ℤ M)
     (hB : (B.baseChange ℚ).Nondegenerate) {ι : Type*} [Fintype ι] [DecidableEq ι]
     (b : Basis ι ℤ M) :
@@ -126,15 +129,17 @@ theorem relIndex_dualSubmodule_range_mk_one_eq_natAbs_det (B : LinearMap.BilinFo
       ((b.dualBasis.map e.symm).det fun i ↦ Submodule.inclusion hND (b.map u i)).natAbs :=
     AddSubgroup.relIndex_eq_natAbs_det N.toAddSubgroup D.toAddSubgroup hND (b.map u)
       (b.dualBasis.map e.symm)
-  dsimp only
-  rw [hindex, Basis.det_apply, Basis.toMatrix_map]
   have hm : e.symm.symm ∘ (fun i ↦ Submodule.inclusion hND (b.map u i)) = B ∘ b := by
     funext i
     simpa only [Function.comp_apply, LinearEquiv.symm_symm, Basis.map_apply, LinearMap.comp_apply,
       LinearEquiv.coe_toLinearMap] using congr($hcomp (b i))
-  rw [hm, ← LinearMap.toMatrix_eq_basisToMatrix, Basis.toMatrix_dualBasis_eq_transpose_toMatrix₂,
-    Matrix.det_transpose]
-  rw [LinearMap.BilinForm.toMatrix]
+  have hmatrix : (b.dualBasis.map e.symm).toMatrix
+      (fun i ↦ Submodule.inclusion hND (b.map u i)) = (B.toMatrix b).transpose := by
+    rw [Basis.toMatrix_map, hm, ← LinearMap.toMatrix_eq_basisToMatrix,
+      Basis.toMatrix_dualBasis_eq_transpose_toMatrix₂]
+    ext i j
+    simp only [Matrix.transpose_apply, LinearMap.toMatrix₂_apply, toMatrix_apply]
+  simpa only [Basis.det_apply, hmatrix, Matrix.det_transpose] using hindex
 
 /-- A nondegenerate integral form on a finite module has positive dual-lattice index. -/
 theorem relIndex_dualSubmodule_range_mk_one_pos [Module.Finite ℤ M]

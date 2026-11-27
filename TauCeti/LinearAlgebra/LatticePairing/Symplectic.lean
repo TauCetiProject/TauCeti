@@ -21,14 +21,10 @@ The rational dual lattice is an `O`-submodule. The index of the original lattice
 is the absolute Gram determinant of the integral pairing, and the completion at `p` is
 self-dual exactly when `p` does not divide this index.
 
-The extended order acts via `BialgebraModule.tensorPairAction`. The rational dual uses Mathlib's
-`LinearMap.BilinForm.dualSubmodule` and the full-lattice result
-`LinearMap.BilinForm.isFullLattice_dualSubmodule`. The square-index formula uses the alternating
-elementary-divisor theorem
-`LinearMap.BilinForm.IsAlt.exists_basis_toMatrix_eq_fromBlocks_pos_of_nondegenerate`.
-The local criterion uses `dualSubmodule_range_mk_eq_self_iff_isPerfPair` and the perfect-pairing
-determinant criterion `Module.Basis.isPerfPair_of_isUnit_det` and
-`Module.Basis.isUnit_det_of_isPerfPair`.
+The extended order acts via `BialgebraModule.tensorPairAction`, and the rational dual uses
+Mathlib's `LinearMap.BilinForm.dualSubmodule`. The lemmas `SymplecticOLattice.dualIndex_eq_prod_sq`
+and `SymplecticOLattice.isSquare_dualIndex` describe the square index, and
+`SymplecticOLattice.isSelfDualAt_iff_not_dvd_dualIndex` gives the local criterion.
 
 ## References
 
