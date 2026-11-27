@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.MaximalFunction
+-- `TauCeti.MeasureTheory.Integral.Average.Indicator` is imported privately: it supplies
+-- `TauCeti.setLAverage_enorm_indicator_one`, used only inside proofs.
+import TauCeti.MeasureTheory.Integral.Average.Indicator
 -- `Mathlib.Analysis.SpecialFunctions.NonIntegrable` is imported privately: it supplies
 -- `not_integrableOn_Ioi_inv`, used only inside the proof that the maximal function of the
 -- indicator is not integrable.
@@ -55,21 +58,12 @@ open scoped ENNReal
 
 variable {a b : ℝ}
 
-/-- The average of the indicator of `[a, b]` over a ball is the proportion of the ball that the
-interval covers. -/
-private theorem setLAverage_ball_indicator_Icc (x r : ℝ) :
-    ⨍⁻ y in ball x r, ‖(Icc a b).indicator (1 : ℝ → ℝ) y‖ₑ =
-      volume (Icc a b ∩ ball x r) / ENNReal.ofReal (2 * r) := by
-  simp_rw [eNorm_indicator_eq_indicator_eNorm, Pi.one_apply, eNorm_one]
-  rw [setLAverage_eq, lintegral_indicator_const measurableSet_Icc, one_mul,
-    Measure.restrict_apply measurableSet_Icc, Real.volume_ball]
-
 /-- Inside the interval, the maximal function of its indicator is `1`: small balls lie in the
 interval, and no average of the indicator exceeds `1`. -/
 theorem maximalFunction_indicator_Icc_of_mem_Ioo {x : ℝ} (hx : x ∈ Ioo a b) :
     maximalFunction volume ((Icc a b).indicator (1 : ℝ → ℝ)) x = 1 := by
   refine le_antisymm (maximalFunction_le fun r _ => ?_) ?_
-  · rw [setLAverage_ball_indicator_Icc, ← Real.volume_ball x r]
+  · rw [setLAverage_enorm_indicator_one measurableSet_Icc]
     exact ENNReal.div_le_of_le_mul (by rw [one_mul]; exact measure_mono inter_subset_right)
   · set r := min (x - a) (b - x)
     have hr : 0 < r := lt_min (sub_pos.2 hx.1) (sub_pos.2 hx.2)
@@ -82,7 +76,8 @@ theorem maximalFunction_indicator_Icc_of_mem_Ioo {x : ℝ} (hx : x ∈ Ioo a b) 
     calc (1 : ℝ≥0∞) = volume (Icc a b ∩ ball x r) / ENNReal.ofReal (2 * r) := by
           rw [inter_eq_right.2 hsub, Real.volume_ball,
             ENNReal.div_self (by simpa using hr) ENNReal.ofReal_ne_top]
-      _ ≤ _ := (setLAverage_ball_indicator_Icc x r).symm.le.trans
+      _ ≤ _ := Eq.trans_le
+          (by rw [setLAverage_enorm_indicator_one measurableSet_Icc, Real.volume_ball])
           (setLAverage_le_maximalFunction _ _ x hr)
 
 /-- To the right of the interval, the maximal function of its indicator is
@@ -95,11 +90,11 @@ theorem maximalFunction_indicator_Icc_of_right_le (hab : a ≤ b) {x : ℝ} (hx 
   · -- A degenerate interval is a null set, so both sides vanish.
     rw [sub_self, zero_div, ENNReal.ofReal_zero]
     refine le_antisymm (maximalFunction_le fun r _ => ?_) zero_le
-    rw [setLAverage_ball_indicator_Icc, Icc_self,
+    rw [setLAverage_enorm_indicator_one measurableSet_Icc, Icc_self,
       measure_mono_null inter_subset_left (Real.volume_singleton), ENNReal.zero_div]
   have hxa : 0 < x - a := by linarith
   refine le_antisymm (maximalFunction_le fun r _ => ?_) ?_
-  · rw [setLAverage_ball_indicator_Icc]
+  · rw [setLAverage_enorm_indicator_one measurableSet_Icc, Real.volume_ball]
     refine ENNReal.div_le_of_le_mul ?_
     rw [← ENNReal.ofReal_mul (by positivity)]
     have hsub : Icc a b ∩ ball x r ⊆ Icc (max a (x - r)) b := by
@@ -124,7 +119,8 @@ theorem maximalFunction_indicator_Icc_of_right_le (hab : a ≤ b) {x : ℝ} (hx 
           rw [Real.volume_Ioo, ENNReal.ofReal_div_of_pos (by positivity)]
       _ ≤ volume (Icc a b ∩ ball x (x - a)) / ENNReal.ofReal (2 * (x - a)) := by
           gcongr
-      _ ≤ _ := (setLAverage_ball_indicator_Icc x (x - a)).symm.le.trans
+      _ ≤ _ := Eq.trans_le
+          (by rw [setLAverage_enorm_indicator_one measurableSet_Icc, Real.volume_ball])
           (setLAverage_le_maximalFunction _ _ x hxa)
 
 /-- The maximal function of the indicator of `[a, b]` is symmetric about the midpoint of the
