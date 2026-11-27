@@ -71,8 +71,13 @@ space structure.
 * `LinearMap.BilinForm.exists_relativeSpectralSubspace_Ioi_eq_iff`: likewise, the positive
   spectral subspaces are the subspaces of dimension the positive index of inertia on which `q` is
   positive definite.
-* `LinearMap.BilinForm.exists_relativeSpectralSubspace_Iio_ne_iff`: the negative spectral subspace
-  depends on `g` exactly when the negative index of inertia is neither `0` nor `dim V`.
+* `LinearMap.BilinForm.exists_ne_negDef_finrank_eq`: shearing a subspace on which `q` is negative
+  definite towards a `q`-orthogonal vector outside it with `q (p, p) ≥ 0` gives another such
+  subspace of the same dimension.
+* `LinearMap.BilinForm.exists_relativeSpectralSubspace_Iio_ne_iff` and
+  `LinearMap.BilinForm.exists_relativeSpectralSubspace_Ioi_ne_iff`: the negative spectral subspace
+  depends on `g` exactly when the negative index of inertia is neither `0` nor `dim V`, and
+  likewise for the positive spectral subspace and the positive index of inertia.
 * `LinearMap.IsSelfAdjoint.iSup_eigenspace_eq_top`: an endomorphism self-adjoint for a positive
   definite form is diagonalizable.
 * `ContinuousLinearEquiv.map_relativeSpectralSubspace_bilinearComp`: pulling continuous forms back
@@ -395,7 +400,7 @@ omit [FiniteDimensional ℝ V] in
 let `n ∈ N` be nonzero, and let `p ∉ N` be `q`-orthogonal to `N` with `0 ≤ q p p`. For small
 `t > 0`, the image of `N` under `x ↦ x + t q (n, x) p` is a subspace of the same dimension, other
 than `N`, on which `q` is negative definite. -/
-private theorem exists_ne_of_negDef (hq : q.IsSymm) {N : Submodule ℝ V}
+theorem exists_ne_negDef_finrank_eq (hq : q.IsSymm) {N : Submodule ℝ V}
     (hN : ∀ v ∈ N, v ≠ 0 → q v v < 0) {n p : V} (hn : n ∈ N) (hn0 : n ≠ 0) (hp : p ∉ N)
     (hxp : ∀ x ∈ N, q x p = 0) (hpp : 0 ≤ q p p) :
     ∃ W : Submodule ℝ V, W ≠ N ∧ (∀ v ∈ W, v ≠ 0 → q v v < 0) ∧ finrank ℝ W = finrank ℝ N := by
@@ -464,7 +469,7 @@ private theorem exists_ne_relativeSpectralSubspace_Iio (hg : g.IsSymm)
     have h := apply_self_le_mul_apply_self_of_mem_relativeSpectralSubspace hg hpos hq.neg 0
       (Ω := -Ici 0) (by simp) (by simpa [relativeSpectralSubspace_neg] using hp)
     simpa using h
-  obtain ⟨W, hW, hWneg, hWr⟩ := exists_ne_of_negDef hq
+  obtain ⟨W, hW, hWneg, hWr⟩ := exists_ne_negDef_finrank_eq hq
     (fun v hv hv0 ↦ apply_self_neg_of_mem_relativeSpectralSubspace_Iio hg hpos hq hv hv0) hn hn0
     (fun hpN ↦ hp0 (Submodule.disjoint_def.mp hNP.disjoint p hpN hp))
     (fun x hx ↦ (apply_eq_zero_of_mem_relativeSpectralSubspace hg hq (Iio_disjoint_Ici le_rfl) hx
@@ -495,6 +500,19 @@ theorem exists_relativeSpectralSubspace_Iio_ne_iff (hg : g.IsSymm)
       (fun h ↦ h₁ (by rw [← hN, h, finrank_top]))
     obtain ⟨g', hg', hpos', rfl⟩ := (exists_relativeSpectralSubspace_Iio_eq_iff hq).mpr ⟨hWneg, hWr⟩
     exact ⟨g', hg', hpos', hW⟩
+
+/-- **The positive spectral subspace depends on the positive definite form.** For a symmetric
+bilinear form `q` on a finite-dimensional real space and a positive definite symmetric `g`, some
+other positive definite symmetric `g'` has a different positive spectral subspace of `q` exactly
+when the positive index of inertia of `q` is neither `0` nor the dimension of the space. -/
+theorem exists_relativeSpectralSubspace_Ioi_ne_iff (hg : g.IsSymm)
+    (hpos : ∀ v, v ≠ 0 → 0 < g v v) (hq : q.IsSymm) :
+    (∃ g' : LinearMap.BilinForm ℝ V, g'.IsSymm ∧ (∀ v, v ≠ 0 → 0 < g' v v) ∧
+        g'.relativeSpectralSubspace q (Ioi 0) ≠ g.relativeSpectralSubspace q (Ioi 0)) ↔
+      sigPos q.toQuadraticMap ≠ 0 ∧ sigPos q.toQuadraticMap ≠ finrank ℝ V := by
+  have h := exists_relativeSpectralSubspace_Iio_ne_iff hg hpos hq.neg
+  simp only [relativeSpectralSubspace_neg, neg_Iio, neg_zero] at h
+  simpa using h
 
 end Realization
 
