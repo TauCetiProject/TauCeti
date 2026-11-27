@@ -26,13 +26,16 @@ and, for a real parameter `ε`, the function
 
 `f = -(|z₀|² - |z₂|²) / (|z₀|² + |z₁|² + |z₂|²) - ε (|a|² - |b|²) / (|a|² + |b|²)`
 
-is invariant. For `0 < ε < 1` it is the moment map of this action for the restriction of the
-Kähler form `2π (ω_FS + ε ω_FS)` of `ℂP² × ℂP¹`; that identification is not proved here. This file
-works in homogeneous coordinates: `B` is the set `TauCeti.blownUpPlane` of pairs of nonzero
-vectors `(z, w) ∈ ℂ³ × ℂ²` with `z₀ w₁ = z₂ w₀`, which is invariant under independent rescaling of
-`z` and `w` (`TauCeti.smul_mem_blownUpPlane_iff`), and `f` is `TauCeti.blownUpPlaneHeight ε`,
-which is invariant under the same rescalings (`TauCeti.blownUpPlaneHeight_smul`) and under the
-circle action (`TauCeti.blownUpPlaneHeight_circleAction`).
+is invariant. For `0 < ε`, up to normalization and sign conventions, it is expected to be a moment
+map of this action for the restriction to `B` of the Kähler form `pr₁^* ω_FS + ε pr₂^* ω_FS` of
+`ℂP² × ℂP¹`; that identification is not proved here and plays no role below.
+
+This file works in homogeneous coordinates: `B` is the set `TauCeti.blownUpPlane` of pairs of
+nonzero vectors `(z, w) ∈ ℂ³ × ℂ²` with `z₀ w₁ = z₂ w₀`, which is invariant under independent
+rescaling of `z` and `w` (`TauCeti.smul_mem_blownUpPlane_iff`), and `f` is
+`TauCeti.blownUpPlaneHeight ε`, which is invariant under the same rescalings
+(`TauCeti.blownUpPlaneHeight_smul`) and under the circle action
+(`TauCeti.blownUpPlaneHeight_circleAction`).
 
 The fixed points of the action are the two poles `([0 : 1 : 0], [1 : 0])` and
 `([0 : 1 : 0], [0 : 1])` of `E` and the points `([1 : 0 : 0], [1 : 0])` and
@@ -84,7 +87,7 @@ namespace TauCeti
 /-- The plane blown up at `[0 : 1 : 0]`, in homogeneous coordinates: the pairs `(z, w)` of nonzero
 vectors of `ℂ³` and `ℂ²` with `z₀ w₁ = z₂ w₀`, that is `([z₀ : z₁ : z₂], [w₀ : w₁])` lies on the
 incidence surface in `ℂP² × ℂP¹`. -/
-def blownUpPlane : Set ((Fin 3 → ℂ) × (Fin 2 → ℂ)) :=
+@[expose] def blownUpPlane : Set ((Fin 3 → ℂ) × (Fin 2 → ℂ)) :=
   {p | p.1 ≠ 0 ∧ p.2 ≠ 0 ∧ p.1 0 * p.2 1 = p.1 2 * p.2 0}
 
 theorem mem_blownUpPlane_iff {p : (Fin 3 → ℂ) × (Fin 2 → ℂ)} :
@@ -93,47 +96,61 @@ theorem mem_blownUpPlane_iff {p : (Fin 3 → ℂ) × (Fin 2 → ℂ)} :
 
 /-- The blown-up plane is invariant under rescaling of either homogeneous coordinate vector. -/
 @[simp]
-theorem smul_mem_blownUpPlane_iff {c d : ℂ} (hc : c ≠ 0) (hd : d ≠ 0)
-    {p : (Fin 3 → ℂ) × (Fin 2 → ℂ)} : (c • p.1, d • p.2) ∈ blownUpPlane ↔ p ∈ blownUpPlane := by
+theorem smul_mem_blownUpPlane_iff {c d : ℂ} (hc : c ≠ 0) (hd : d ≠ 0) {z : Fin 3 → ℂ}
+    {w : Fin 2 → ℂ} : (c • z, d • w) ∈ blownUpPlane ↔ (z, w) ∈ blownUpPlane := by
   simp only [mem_blownUpPlane_iff, ne_eq, smul_eq_zero, hc, hd, false_or, Pi.smul_apply,
     smul_eq_mul]
   refine and_congr_right fun _ ↦ and_congr_right fun _ ↦ ?_
-  rw [show c * p.1 0 * (d * p.2 1) = c * d * (p.1 0 * p.2 1) by ring,
-    show c * p.1 2 * (d * p.2 0) = c * d * (p.1 2 * p.2 0) by ring,
+  rw [show c * z 0 * (d * w 1) = c * d * (z 0 * w 1) by ring,
+    show c * z 2 * (d * w 0) = c * d * (z 2 * w 0) by ring,
     mul_right_inj' (mul_ne_zero hc hd)]
 
 /-- The circle-invariant height on the blown-up plane in homogeneous coordinates,
 `-(|z₀|² - |z₂|²) / (|z₀|² + |z₁|² + |z₂|²) - ε (|w₀|² - |w₁|²) / (|w₀|² + |w₁|²)`. -/
-noncomputable def blownUpPlaneHeight (ε : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) : ℝ :=
+@[expose] noncomputable def blownUpPlaneHeight (ε : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) : ℝ :=
   -(‖p.1 0‖ ^ 2 - ‖p.1 2‖ ^ 2) / (‖p.1 0‖ ^ 2 + ‖p.1 1‖ ^ 2 + ‖p.1 2‖ ^ 2) -
     ε * (‖p.2 0‖ ^ 2 - ‖p.2 1‖ ^ 2) / (‖p.2 0‖ ^ 2 + ‖p.2 1‖ ^ 2)
 
 variable {ε : ℝ}
 
+theorem blownUpPlaneHeight_def (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
+    blownUpPlaneHeight ε p =
+      -(‖p.1 0‖ ^ 2 - ‖p.1 2‖ ^ 2) / (‖p.1 0‖ ^ 2 + ‖p.1 1‖ ^ 2 + ‖p.1 2‖ ^ 2) -
+        ε * (‖p.2 0‖ ^ 2 - ‖p.2 1‖ ^ 2) / (‖p.2 0‖ ^ 2 + ‖p.2 1‖ ^ 2) :=
+  rfl
+
 /-- The height does not depend on the choice of homogeneous coordinates. -/
 @[simp]
-theorem blownUpPlaneHeight_smul {c d : ℂ} (hc : c ≠ 0) (hd : d ≠ 0)
-    (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
-    blownUpPlaneHeight ε (c • p.1, d • p.2) = blownUpPlaneHeight ε p := by
+theorem blownUpPlaneHeight_smul {c d : ℂ} (hc : c ≠ 0) (hd : d ≠ 0) (z : Fin 3 → ℂ)
+    (w : Fin 2 → ℂ) : blownUpPlaneHeight ε (c • z, d • w) = blownUpPlaneHeight ε (z, w) := by
   have key : ∀ (r : ℝ), r ≠ 0 → ∀ x y : ℝ, (r * x) / (r * y) = x / y :=
     fun r hr x y ↦ mul_div_mul_left x y hr
-  simp only [blownUpPlaneHeight, Pi.smul_apply, smul_eq_mul, norm_mul, mul_pow]
-  rw [show -(‖c‖ ^ 2 * ‖p.1 0‖ ^ 2 - ‖c‖ ^ 2 * ‖p.1 2‖ ^ 2) =
-      ‖c‖ ^ 2 * -(‖p.1 0‖ ^ 2 - ‖p.1 2‖ ^ 2) by ring,
-    show ‖c‖ ^ 2 * ‖p.1 0‖ ^ 2 + ‖c‖ ^ 2 * ‖p.1 1‖ ^ 2 + ‖c‖ ^ 2 * ‖p.1 2‖ ^ 2 =
-      ‖c‖ ^ 2 * (‖p.1 0‖ ^ 2 + ‖p.1 1‖ ^ 2 + ‖p.1 2‖ ^ 2) by ring,
-    show ε * (‖d‖ ^ 2 * ‖p.2 0‖ ^ 2 - ‖d‖ ^ 2 * ‖p.2 1‖ ^ 2) =
-      ‖d‖ ^ 2 * (ε * (‖p.2 0‖ ^ 2 - ‖p.2 1‖ ^ 2)) by ring,
-    show ‖d‖ ^ 2 * ‖p.2 0‖ ^ 2 + ‖d‖ ^ 2 * ‖p.2 1‖ ^ 2 =
-      ‖d‖ ^ 2 * (‖p.2 0‖ ^ 2 + ‖p.2 1‖ ^ 2) by ring,
+  simp only [blownUpPlaneHeight_def, Pi.smul_apply, smul_eq_mul, norm_mul, mul_pow]
+  rw [show -(‖c‖ ^ 2 * ‖z 0‖ ^ 2 - ‖c‖ ^ 2 * ‖z 2‖ ^ 2) = ‖c‖ ^ 2 * -(‖z 0‖ ^ 2 - ‖z 2‖ ^ 2)
+      by ring,
+    show ‖c‖ ^ 2 * ‖z 0‖ ^ 2 + ‖c‖ ^ 2 * ‖z 1‖ ^ 2 + ‖c‖ ^ 2 * ‖z 2‖ ^ 2 =
+      ‖c‖ ^ 2 * (‖z 0‖ ^ 2 + ‖z 1‖ ^ 2 + ‖z 2‖ ^ 2) by ring,
+    show ε * (‖d‖ ^ 2 * ‖w 0‖ ^ 2 - ‖d‖ ^ 2 * ‖w 1‖ ^ 2) = ‖d‖ ^ 2 * (ε * (‖w 0‖ ^ 2 - ‖w 1‖ ^ 2))
+      by ring,
+    show ‖d‖ ^ 2 * ‖w 0‖ ^ 2 + ‖d‖ ^ 2 * ‖w 1‖ ^ 2 = ‖d‖ ^ 2 * (‖w 0‖ ^ 2 + ‖w 1‖ ^ 2) by ring,
     key _ (by positivity), key _ (by positivity)]
 
 /-- The circle action `([z₀ : z₁ : z₂], [w₀ : w₁]) ↦ ([e^{it} z₀ : z₁ : e^{-it} z₂],
 [e^{it} w₀ : e^{-it} w₁])` on homogeneous coordinates of the blown-up plane. -/
-noncomputable def blownUpPlaneCircleAction (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
+@[expose] noncomputable def blownUpPlaneCircleAction (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
     (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![exp (t * I) * p.1 0, p.1 1, exp (-(t * I)) * p.1 2],
     ![exp (t * I) * p.2 0, exp (-(t * I)) * p.2 1])
+
+@[simp]
+theorem blownUpPlaneCircleAction_fst (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
+    (blownUpPlaneCircleAction t p).1 = ![exp (t * I) * p.1 0, p.1 1, exp (-(t * I)) * p.1 2] :=
+  rfl
+
+@[simp]
+theorem blownUpPlaneCircleAction_snd (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
+    (blownUpPlaneCircleAction t p).2 = ![exp (t * I) * p.2 0, exp (-(t * I)) * p.2 1] :=
+  rfl
 
 @[simp]
 theorem blownUpPlaneCircleAction_zero (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
@@ -166,29 +183,69 @@ theorem blownUpPlaneCircleAction_mem_blownUpPlane {p : (Fin 3 → ℂ) × (Fin 2
 @[simp]
 theorem blownUpPlaneHeight_circleAction (t : ℝ) (p : (Fin 3 → ℂ) × (Fin 2 → ℂ)) :
     blownUpPlaneHeight ε (blownUpPlaneCircleAction t p) = blownUpPlaneHeight ε p := by
-  simp [blownUpPlaneHeight, blownUpPlaneCircleAction, norm_exp]
+  simp [blownUpPlaneHeight_def, norm_exp]
 
 /-! ### The four affine charts around the fixed points -/
 
 /-- The chart `(u, v) ↦ ([u : 1 : u v], [1 : v])` of the blown-up plane around the lower pole
 `([0 : 1 : 0], [1 : 0])` of the exceptional sphere, which is `u = 0` in this chart. -/
-def blownUpPlaneLowerPoleChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
+@[expose] def blownUpPlaneLowerPoleChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![q.1, 1, q.1 * q.2], ![1, q.2])
 
 /-- The chart `(s, w) ↦ ([s w : 1 : w], [s : 1])` of the blown-up plane around the upper pole
 `([0 : 1 : 0], [0 : 1])` of the exceptional sphere, which is `w = 0` in this chart. -/
-def blownUpPlaneUpperPoleChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
+@[expose] def blownUpPlaneUpperPoleChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![q.1 * q.2, 1, q.2], ![q.1, 1])
 
 /-- The chart `(x, y) ↦ ([1 : x : y], [1 : y])` of the blown-up plane around the minimum
 `([1 : 0 : 0], [1 : 0])` of the height. -/
-def blownUpPlaneMinChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
+@[expose] def blownUpPlaneMinChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![1, q.1, q.2], ![1, q.2])
 
 /-- The chart `(x, y) ↦ ([x : y : 1], [x : 1])` of the blown-up plane around the maximum
 `([0 : 0 : 1], [0 : 1])` of the height. -/
-def blownUpPlaneMaxChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
+@[expose] def blownUpPlaneMaxChart (q : ℂ × ℂ) : (Fin 3 → ℂ) × (Fin 2 → ℂ) :=
   (![q.1, q.2, 1], ![q.1, 1])
+
+@[simp]
+theorem blownUpPlaneLowerPoleChart_fst (q : ℂ × ℂ) :
+    (blownUpPlaneLowerPoleChart q).1 = ![q.1, 1, q.1 * q.2] :=
+  rfl
+
+@[simp]
+theorem blownUpPlaneLowerPoleChart_snd (q : ℂ × ℂ) :
+    (blownUpPlaneLowerPoleChart q).2 = ![1, q.2] :=
+  rfl
+
+@[simp]
+theorem blownUpPlaneUpperPoleChart_fst (q : ℂ × ℂ) :
+    (blownUpPlaneUpperPoleChart q).1 = ![q.1 * q.2, 1, q.2] :=
+  rfl
+
+@[simp]
+theorem blownUpPlaneUpperPoleChart_snd (q : ℂ × ℂ) :
+    (blownUpPlaneUpperPoleChart q).2 = ![q.1, 1] :=
+  rfl
+
+@[simp]
+theorem blownUpPlaneMinChart_fst (q : ℂ × ℂ) :
+    (blownUpPlaneMinChart q).1 = ![1, q.1, q.2] :=
+  rfl
+
+@[simp]
+theorem blownUpPlaneMinChart_snd (q : ℂ × ℂ) :
+    (blownUpPlaneMinChart q).2 = ![1, q.2] :=
+  rfl
+
+@[simp]
+theorem blownUpPlaneMaxChart_fst (q : ℂ × ℂ) :
+    (blownUpPlaneMaxChart q).1 = ![q.1, q.2, 1] :=
+  rfl
+
+@[simp]
+theorem blownUpPlaneMaxChart_snd (q : ℂ × ℂ) :
+    (blownUpPlaneMaxChart q).2 = ![q.1, 1] :=
+  rfl
 
 theorem blownUpPlaneLowerPoleChart_mem_blownUpPlane (q : ℂ × ℂ) :
     blownUpPlaneLowerPoleChart q ∈ blownUpPlane :=
@@ -216,9 +273,18 @@ theorem exists_eq_smul_blownUpPlaneLowerPoleChart {p : (Fin 3 → ℂ) × (Fin 2
     (hp : p ∈ blownUpPlane) (h₁ : p.1 1 ≠ 0) (h₂ : p.2 0 ≠ 0) :
     ∃ q : ℂ × ℂ, ∃ c d : ℂ, c ≠ 0 ∧ d ≠ 0 ∧
       p = (c • (blownUpPlaneLowerPoleChart q).1, d • (blownUpPlaneLowerPoleChart q).2) := by
-  refine ⟨(p.1 0 / p.1 1, p.2 1 / p.2 0), p.1 1, p.2 0, h₁, h₂, Prod.ext ?_ ?_⟩ <;> funext i <;>
-    fin_cases i <;> simp [blownUpPlaneLowerPoleChart] <;> field_simp
-  linear_combination -hp.2.2
+  refine ⟨(p.1 0 / p.1 1, p.2 1 / p.2 0), p.1 1, p.2 0, h₁, h₂,
+    Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_)⟩ <;> fin_cases i
+  · simp
+    field_simp
+  · simp
+  · -- the coordinate `z₂ = z₀ w₁ / w₀` is where the incidence relation enters
+    simp
+    field_simp
+    linear_combination -hp.2.2
+  · simp
+  · simp
+    field_simp
 
 /-- Every point of the blown-up plane with `z₁ ≠ 0` and `w₁ ≠ 0` is a rescaling of a point of the
 upper pole chart. -/
@@ -226,9 +292,18 @@ theorem exists_eq_smul_blownUpPlaneUpperPoleChart {p : (Fin 3 → ℂ) × (Fin 2
     (hp : p ∈ blownUpPlane) (h₁ : p.1 1 ≠ 0) (h₂ : p.2 1 ≠ 0) :
     ∃ q : ℂ × ℂ, ∃ c d : ℂ, c ≠ 0 ∧ d ≠ 0 ∧
       p = (c • (blownUpPlaneUpperPoleChart q).1, d • (blownUpPlaneUpperPoleChart q).2) := by
-  refine ⟨(p.2 0 / p.2 1, p.1 2 / p.1 1), p.1 1, p.2 1, h₁, h₂, Prod.ext ?_ ?_⟩ <;> funext i <;>
-    fin_cases i <;> simp [blownUpPlaneUpperPoleChart] <;> field_simp
-  linear_combination hp.2.2
+  refine ⟨(p.2 0 / p.2 1, p.1 2 / p.1 1), p.1 1, p.2 1, h₁, h₂,
+    Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_)⟩ <;> fin_cases i
+  · -- the coordinate `z₀ = z₂ w₀ / w₁` is where the incidence relation enters
+    simp
+    field_simp
+    linear_combination hp.2.2
+  · simp
+  · simp
+    field_simp
+  · simp
+    field_simp
+  · simp
 
 /-- Every point of the blown-up plane with `z₀ ≠ 0` and `w₀ ≠ 0` is a rescaling of a point of the
 chart around the minimum. -/
@@ -236,9 +311,18 @@ theorem exists_eq_smul_blownUpPlaneMinChart {p : (Fin 3 → ℂ) × (Fin 2 → �
     (hp : p ∈ blownUpPlane) (h₁ : p.1 0 ≠ 0) (h₂ : p.2 0 ≠ 0) :
     ∃ q : ℂ × ℂ, ∃ c d : ℂ, c ≠ 0 ∧ d ≠ 0 ∧
       p = (c • (blownUpPlaneMinChart q).1, d • (blownUpPlaneMinChart q).2) := by
-  refine ⟨(p.1 1 / p.1 0, p.1 2 / p.1 0), p.1 0, p.2 0, h₁, h₂, Prod.ext ?_ ?_⟩ <;> funext i <;>
-    fin_cases i <;> simp [blownUpPlaneMinChart] <;> field_simp
-  linear_combination hp.2.2
+  refine ⟨(p.1 1 / p.1 0, p.1 2 / p.1 0), p.1 0, p.2 0, h₁, h₂,
+    Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_)⟩ <;> fin_cases i
+  · simp
+  · simp
+    field_simp
+  · simp
+    field_simp
+  · simp
+  · -- the coordinate `w₁ = z₂ w₀ / z₀` is where the incidence relation enters
+    simp
+    field_simp
+    linear_combination hp.2.2
 
 /-- Every point of the blown-up plane with `z₂ ≠ 0` and `w₁ ≠ 0` is a rescaling of a point of the
 chart around the maximum. -/
@@ -246,45 +330,60 @@ theorem exists_eq_smul_blownUpPlaneMaxChart {p : (Fin 3 → ℂ) × (Fin 2 → �
     (hp : p ∈ blownUpPlane) (h₁ : p.1 2 ≠ 0) (h₂ : p.2 1 ≠ 0) :
     ∃ q : ℂ × ℂ, ∃ c d : ℂ, c ≠ 0 ∧ d ≠ 0 ∧
       p = (c • (blownUpPlaneMaxChart q).1, d • (blownUpPlaneMaxChart q).2) := by
-  refine ⟨(p.1 0 / p.1 2, p.1 1 / p.1 2), p.1 2, p.2 1, h₁, h₂, Prod.ext ?_ ?_⟩ <;> funext i <;>
-    fin_cases i <;> simp [blownUpPlaneMaxChart] <;> field_simp
-  linear_combination -hp.2.2
+  refine ⟨(p.1 0 / p.1 2, p.1 1 / p.1 2), p.1 2, p.2 1, h₁, h₂,
+    Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_)⟩ <;> fin_cases i
+  · simp
+    field_simp
+  · simp
+    field_simp
+  · simp
+  · -- the coordinate `w₀ = z₀ w₁ / z₂` is where the incidence relation enters
+    simp
+    field_simp
+    linear_combination -hp.2.2
+  · simp
 
 /-- In the lower pole chart the circle acts linearly with weights `1` normal to the exceptional
-sphere and `-2` along it: up to rescaling of `w`, the point `(u, v)` moves to
-`(e^{it} u, e^{-2it} v)`. -/
+sphere and `-2` along it: up to rescaling of the `ℂ²` coordinate vector by `e^{it}`, the point
+`(u, v)` moves to `(e^{it} u, e^{-2it} v)`. -/
 theorem blownUpPlaneCircleAction_lowerPoleChart (t : ℝ) (q : ℂ × ℂ) :
     blownUpPlaneCircleAction t (blownUpPlaneLowerPoleChart q) =
       ((blownUpPlaneLowerPoleChart (exp (t * I) * q.1, exp (-(2 * t * I)) * q.2)).1,
         exp (t * I) •
           (blownUpPlaneLowerPoleChart (exp (t * I) * q.1, exp (-(2 * t * I)) * q.2)).2) := by
-  refine Prod.ext ?_ ?_ <;> funext i <;> fin_cases i <;>
-    simp only [blownUpPlaneCircleAction, blownUpPlaneLowerPoleChart, Fin.isValue,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, Matrix.cons_val_fin_one, mul_one,
-      Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Pi.smul_apply, smul_eq_mul]
-  · rw [show exp (t * I) * q.1 * (exp (-(2 * t * I)) * q.2) =
-      exp (t * I) * exp (-(2 * t * I)) * (q.1 * q.2) by ring, ← exp_add]
-    ring_nf
-  · rw [← mul_assoc, ← exp_add]
-    ring_nf
+  have he : exp (-(t * I)) = exp (t * I) * exp (-(2 * t * I)) := by
+    rw [← exp_add]
+    congr 1
+    ring
+  refine Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_) <;> fin_cases i
+  · simp
+  · simp
+  · simp [he]
+    ring
+  · simp
+  · simp [he]
+    ring
 
 /-- In the upper pole chart the circle acts linearly with weights `2` along the exceptional
-sphere and `-1` normal to it: up to rescaling of `w`, the point `(s, w)` moves to
-`(e^{2it} s, e^{-it} w)`. -/
+sphere and `-1` normal to it: up to rescaling of the `ℂ²` coordinate vector by `e^{-it}`, the point
+`(s, w)` moves to `(e^{2it} s, e^{-it} w)`. -/
 theorem blownUpPlaneCircleAction_upperPoleChart (t : ℝ) (q : ℂ × ℂ) :
     blownUpPlaneCircleAction t (blownUpPlaneUpperPoleChart q) =
       ((blownUpPlaneUpperPoleChart (exp (2 * t * I) * q.1, exp (-(t * I)) * q.2)).1,
         exp (-(t * I)) •
           (blownUpPlaneUpperPoleChart (exp (2 * t * I) * q.1, exp (-(t * I)) * q.2)).2) := by
-  refine Prod.ext ?_ ?_ <;> funext i <;> fin_cases i <;>
-    simp only [blownUpPlaneCircleAction, blownUpPlaneUpperPoleChart, Fin.isValue,
-      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, Matrix.cons_val_fin_one, mul_one,
-      Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Pi.smul_apply, smul_eq_mul]
-  · rw [show exp (2 * t * I) * q.1 * (exp (-(t * I)) * q.2) =
-      exp (2 * t * I) * exp (-(t * I)) * (q.1 * q.2) by ring, ← exp_add]
-    ring_nf
-  · rw [← mul_assoc, ← exp_add]
-    ring_nf
+  have he : exp (t * I) = exp (-(t * I)) * exp (2 * t * I) := by
+    rw [← exp_add]
+    congr 1
+    ring
+  refine Prod.ext (funext fun i ↦ ?_) (funext fun i ↦ ?_) <;> fin_cases i
+  · simp [he]
+    ring
+  · simp
+  · simp
+  · simp [he]
+    ring
+  · simp
 
 /-! ### The height in the charts -/
 
@@ -292,23 +391,49 @@ theorem blownUpPlaneHeight_lowerPoleChart (q : ℂ × ℂ) :
     blownUpPlaneHeight ε (blownUpPlaneLowerPoleChart q) =
       -(‖q.1‖ ^ 2 - ‖q.1‖ ^ 2 * ‖q.2‖ ^ 2) / (‖q.1‖ ^ 2 + 1 + ‖q.1‖ ^ 2 * ‖q.2‖ ^ 2) -
         ε * (1 - ‖q.2‖ ^ 2) / (1 + ‖q.2‖ ^ 2) := by
-  simp [blownUpPlaneHeight, blownUpPlaneLowerPoleChart, mul_pow]
+  simp [blownUpPlaneHeight_def, mul_pow]
+
+/-- The height in the lower pole chart, as a function of the two chart coordinates. -/
+theorem blownUpPlaneHeight_comp_lowerPoleChart :
+    blownUpPlaneHeight ε ∘ blownUpPlaneLowerPoleChart = fun q ↦
+      -(‖q.1‖ ^ 2 - ‖q.1‖ ^ 2 * ‖q.2‖ ^ 2) / (‖q.1‖ ^ 2 + 1 + ‖q.1‖ ^ 2 * ‖q.2‖ ^ 2) -
+        ε * (1 - ‖q.2‖ ^ 2) / (1 + ‖q.2‖ ^ 2) :=
+  funext blownUpPlaneHeight_lowerPoleChart
 
 theorem blownUpPlaneHeight_upperPoleChart (q : ℂ × ℂ) :
     blownUpPlaneHeight ε (blownUpPlaneUpperPoleChart q) =
       -(‖q.1‖ ^ 2 * ‖q.2‖ ^ 2 - ‖q.2‖ ^ 2) / (‖q.1‖ ^ 2 * ‖q.2‖ ^ 2 + 1 + ‖q.2‖ ^ 2) -
         ε * (‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + 1) := by
-  simp [blownUpPlaneHeight, blownUpPlaneUpperPoleChart, mul_pow]
+  simp [blownUpPlaneHeight_def, mul_pow]
+
+/-- The height in the upper pole chart, as a function of the two chart coordinates. -/
+theorem blownUpPlaneHeight_comp_upperPoleChart :
+    blownUpPlaneHeight ε ∘ blownUpPlaneUpperPoleChart = fun q ↦
+      -(‖q.1‖ ^ 2 * ‖q.2‖ ^ 2 - ‖q.2‖ ^ 2) / (‖q.1‖ ^ 2 * ‖q.2‖ ^ 2 + 1 + ‖q.2‖ ^ 2) -
+        ε * (‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + 1) :=
+  funext blownUpPlaneHeight_upperPoleChart
 
 theorem blownUpPlaneHeight_minChart (q : ℂ × ℂ) :
     blownUpPlaneHeight ε (blownUpPlaneMinChart q) =
       -(1 - ‖q.2‖ ^ 2) / (1 + ‖q.1‖ ^ 2 + ‖q.2‖ ^ 2) - ε * (1 - ‖q.2‖ ^ 2) / (1 + ‖q.2‖ ^ 2) := by
-  simp [blownUpPlaneHeight, blownUpPlaneMinChart]
+  simp [blownUpPlaneHeight_def]
+
+/-- The height in the chart around the minimum, as a function of the two chart coordinates. -/
+theorem blownUpPlaneHeight_comp_minChart :
+    blownUpPlaneHeight ε ∘ blownUpPlaneMinChart = fun q ↦
+      -(1 - ‖q.2‖ ^ 2) / (1 + ‖q.1‖ ^ 2 + ‖q.2‖ ^ 2) - ε * (1 - ‖q.2‖ ^ 2) / (1 + ‖q.2‖ ^ 2) :=
+  funext blownUpPlaneHeight_minChart
 
 theorem blownUpPlaneHeight_maxChart (q : ℂ × ℂ) :
     blownUpPlaneHeight ε (blownUpPlaneMaxChart q) =
       -(‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + ‖q.2‖ ^ 2 + 1) - ε * (‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + 1) := by
-  simp [blownUpPlaneHeight, blownUpPlaneMaxChart]
+  simp [blownUpPlaneHeight_def]
+
+/-- The height in the chart around the maximum, as a function of the two chart coordinates. -/
+theorem blownUpPlaneHeight_comp_maxChart :
+    blownUpPlaneHeight ε ∘ blownUpPlaneMaxChart = fun q ↦
+      -(‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + ‖q.2‖ ^ 2 + 1) - ε * (‖q.1‖ ^ 2 - 1) / (‖q.1‖ ^ 2 + 1) :=
+  funext blownUpPlaneHeight_maxChart
 
 /-- The height at the lower pole of the exceptional sphere is `-ε`. -/
 @[simp]
@@ -429,8 +554,7 @@ chart, is `-2 ‖v₁‖² + 4 ε ‖v₂‖²`. -/
 theorem hessianQuadraticForm_blownUpPlaneHeight_comp_lowerPoleChart (v : ℂ × ℂ) :
     hessianQuadraticForm (blownUpPlaneHeight ε ∘ blownUpPlaneLowerPoleChart) 0 v =
       -2 * ‖v.1‖ ^ 2 + 4 * ε * ‖v.2‖ ^ 2 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneLowerPoleChart = _ from
-    funext blownUpPlaneHeight_lowerPoleChart, hessianQuadraticForm_comp_norm_sq_prod_zero
+  rw [blownUpPlaneHeight_comp_lowerPoleChart, hessianQuadraticForm_comp_norm_sq_prod_zero
     contDiffAt_lowerProfile hasDerivAt_lowerProfile_fst hasDerivAt_lowerProfile_snd]
   ring
 
@@ -438,8 +562,7 @@ theorem hessianQuadraticForm_blownUpPlaneHeight_comp_lowerPoleChart (v : ℂ × 
 the height. -/
 theorem isNondegenerateCriticalPoint_blownUpPlaneHeight_comp_lowerPoleChart (hε : ε ≠ 0) :
     IsNondegenerateCriticalPoint (blownUpPlaneHeight ε ∘ blownUpPlaneLowerPoleChart) 0 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneLowerPoleChart = _ from
-    funext blownUpPlaneHeight_lowerPoleChart]
+  rw [blownUpPlaneHeight_comp_lowerPoleChart]
   exact isNondegenerateCriticalPoint_comp_norm_sq_prod_zero contDiffAt_lowerProfile
     hasDerivAt_lowerProfile_fst hasDerivAt_lowerProfile_snd (by norm_num) (by simpa using hε)
 
@@ -447,8 +570,7 @@ theorem isNondegenerateCriticalPoint_blownUpPlaneHeight_comp_lowerPoleChart (hε
 decreases normal to the sphere. -/
 theorem morseIndex_blownUpPlaneHeight_comp_lowerPoleChart (hε : 0 ≤ ε) :
     morseIndex (blownUpPlaneHeight ε ∘ blownUpPlaneLowerPoleChart) 0 = 2 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneLowerPoleChart = _ from
-    funext blownUpPlaneHeight_lowerPoleChart, morseIndex_comp_norm_sq_prod_zero
+  rw [blownUpPlaneHeight_comp_lowerPoleChart, morseIndex_comp_norm_sq_prod_zero
     contDiffAt_lowerProfile hasDerivAt_lowerProfile_fst hasDerivAt_lowerProfile_snd]
   simp [hε, Complex.finrank_real_complex]
 
@@ -457,8 +579,7 @@ chart, is `-4 ε ‖v₁‖² + 2 ‖v₂‖²`. -/
 theorem hessianQuadraticForm_blownUpPlaneHeight_comp_upperPoleChart (v : ℂ × ℂ) :
     hessianQuadraticForm (blownUpPlaneHeight ε ∘ blownUpPlaneUpperPoleChart) 0 v =
       -4 * ε * ‖v.1‖ ^ 2 + 2 * ‖v.2‖ ^ 2 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneUpperPoleChart = _ from
-    funext blownUpPlaneHeight_upperPoleChart, hessianQuadraticForm_comp_norm_sq_prod_zero
+  rw [blownUpPlaneHeight_comp_upperPoleChart, hessianQuadraticForm_comp_norm_sq_prod_zero
     contDiffAt_upperProfile hasDerivAt_upperProfile_fst hasDerivAt_upperProfile_snd]
   ring
 
@@ -466,8 +587,7 @@ theorem hessianQuadraticForm_blownUpPlaneHeight_comp_upperPoleChart (v : ℂ × 
 the height. -/
 theorem isNondegenerateCriticalPoint_blownUpPlaneHeight_comp_upperPoleChart (hε : ε ≠ 0) :
     IsNondegenerateCriticalPoint (blownUpPlaneHeight ε ∘ blownUpPlaneUpperPoleChart) 0 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneUpperPoleChart = _ from
-    funext blownUpPlaneHeight_upperPoleChart]
+  rw [blownUpPlaneHeight_comp_upperPoleChart]
   exact isNondegenerateCriticalPoint_comp_norm_sq_prod_zero contDiffAt_upperProfile
     hasDerivAt_upperProfile_fst hasDerivAt_upperProfile_snd (by simpa using hε) one_ne_zero
 
@@ -475,8 +595,7 @@ theorem isNondegenerateCriticalPoint_blownUpPlaneHeight_comp_upperPoleChart (hε
 decreases along the sphere. -/
 theorem morseIndex_blownUpPlaneHeight_comp_upperPoleChart (hε : 0 < ε) :
     morseIndex (blownUpPlaneHeight ε ∘ blownUpPlaneUpperPoleChart) 0 = 2 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneUpperPoleChart = _ from
-    funext blownUpPlaneHeight_upperPoleChart, morseIndex_comp_norm_sq_prod_zero
+  rw [blownUpPlaneHeight_comp_upperPoleChart, morseIndex_comp_norm_sq_prod_zero
     contDiffAt_upperProfile hasDerivAt_upperProfile_fst hasDerivAt_upperProfile_snd]
   simp [hε, Complex.finrank_real_complex]
 
@@ -484,8 +603,7 @@ theorem morseIndex_blownUpPlaneHeight_comp_upperPoleChart (hε : 0 < ε) :
 theorem hessianQuadraticForm_blownUpPlaneHeight_comp_minChart (v : ℂ × ℂ) :
     hessianQuadraticForm (blownUpPlaneHeight ε ∘ blownUpPlaneMinChart) 0 v =
       2 * ‖v.1‖ ^ 2 + 4 * (1 + ε) * ‖v.2‖ ^ 2 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneMinChart = _ from
-    funext blownUpPlaneHeight_minChart, hessianQuadraticForm_comp_norm_sq_prod_zero
+  rw [blownUpPlaneHeight_comp_minChart, hessianQuadraticForm_comp_norm_sq_prod_zero
     contDiffAt_minProfile hasDerivAt_minProfile_fst hasDerivAt_minProfile_snd]
   ring
 
@@ -493,8 +611,7 @@ theorem hessianQuadraticForm_blownUpPlaneHeight_comp_minChart (v : ℂ × ℂ) :
 height. -/
 theorem isNondegenerateCriticalPoint_blownUpPlaneHeight_comp_minChart (hε : ε ≠ -1) :
     IsNondegenerateCriticalPoint (blownUpPlaneHeight ε ∘ blownUpPlaneMinChart) 0 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneMinChart = _ from
-    funext blownUpPlaneHeight_minChart]
+  rw [blownUpPlaneHeight_comp_minChart]
   refine isNondegenerateCriticalPoint_comp_norm_sq_prod_zero contDiffAt_minProfile
     hasDerivAt_minProfile_fst hasDerivAt_minProfile_snd one_ne_zero fun h ↦ hε ?_
   linarith
@@ -502,8 +619,7 @@ theorem isNondegenerateCriticalPoint_blownUpPlaneHeight_comp_minChart (hε : ε 
 /-- For `-1 ≤ ε`, the height has Morse index `0` at `([1 : 0 : 0], [1 : 0])`. -/
 theorem morseIndex_blownUpPlaneHeight_comp_minChart (hε : -1 ≤ ε) :
     morseIndex (blownUpPlaneHeight ε ∘ blownUpPlaneMinChart) 0 = 0 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneMinChart = _ from
-    funext blownUpPlaneHeight_minChart, morseIndex_comp_norm_sq_prod_zero
+  rw [blownUpPlaneHeight_comp_minChart, morseIndex_comp_norm_sq_prod_zero
     contDiffAt_minProfile hasDerivAt_minProfile_fst hasDerivAt_minProfile_snd]
   have : ¬ 2 + 2 * ε < 0 := by linarith
   simp [this]
@@ -512,8 +628,7 @@ theorem morseIndex_blownUpPlaneHeight_comp_minChart (hε : -1 ≤ ε) :
 theorem hessianQuadraticForm_blownUpPlaneHeight_comp_maxChart (v : ℂ × ℂ) :
     hessianQuadraticForm (blownUpPlaneHeight ε ∘ blownUpPlaneMaxChart) 0 v =
       -4 * (1 + ε) * ‖v.1‖ ^ 2 - 2 * ‖v.2‖ ^ 2 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneMaxChart = _ from
-    funext blownUpPlaneHeight_maxChart, hessianQuadraticForm_comp_norm_sq_prod_zero
+  rw [blownUpPlaneHeight_comp_maxChart, hessianQuadraticForm_comp_norm_sq_prod_zero
     contDiffAt_maxProfile hasDerivAt_maxProfile_fst hasDerivAt_maxProfile_snd]
   ring
 
@@ -521,8 +636,7 @@ theorem hessianQuadraticForm_blownUpPlaneHeight_comp_maxChart (v : ℂ × ℂ) :
 height. -/
 theorem isNondegenerateCriticalPoint_blownUpPlaneHeight_comp_maxChart (hε : ε ≠ -1) :
     IsNondegenerateCriticalPoint (blownUpPlaneHeight ε ∘ blownUpPlaneMaxChart) 0 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneMaxChart = _ from
-    funext blownUpPlaneHeight_maxChart]
+  rw [blownUpPlaneHeight_comp_maxChart]
   refine isNondegenerateCriticalPoint_comp_norm_sq_prod_zero contDiffAt_maxProfile
     hasDerivAt_maxProfile_fst hasDerivAt_maxProfile_snd (fun h ↦ hε ?_) (by norm_num)
   linarith
@@ -530,8 +644,7 @@ theorem isNondegenerateCriticalPoint_blownUpPlaneHeight_comp_maxChart (hε : ε 
 /-- For `-1 < ε`, the height has Morse index `4` at `([0 : 0 : 1], [0 : 1])`. -/
 theorem morseIndex_blownUpPlaneHeight_comp_maxChart (hε : -1 < ε) :
     morseIndex (blownUpPlaneHeight ε ∘ blownUpPlaneMaxChart) 0 = 4 := by
-  rw [show blownUpPlaneHeight ε ∘ blownUpPlaneMaxChart = _ from
-    funext blownUpPlaneHeight_maxChart, morseIndex_comp_norm_sq_prod_zero
+  rw [blownUpPlaneHeight_comp_maxChart, morseIndex_comp_norm_sq_prod_zero
     contDiffAt_maxProfile hasDerivAt_maxProfile_fst hasDerivAt_maxProfile_snd]
   have : -2 - 2 * ε < 0 := by linarith
   simp [this, Complex.finrank_real_complex]
