@@ -8,7 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Dirichlet
 public import TauCeti.NumberTheory.ArithmeticDirichletSeries.Perron.Formula
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.NumberTheory.Harmonic.Bounds
+import TauCeti.NumberTheory.Harmonic.Bounds
 import TauCeti.NumberTheory.LSeries.Continuity
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.NearOne
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDeriv.VonMangoldt
@@ -33,24 +33,6 @@ namespace TauCeti
 
 open Complex Finset ArithmeticFunction
 open scoped Real LSeries.notation
-
-/-- A map `d` into `[0, m]` that is injective where it is positive has `∑ (d n)⁻¹ ≤ 1 + log m`
-over `[1, m]`: its positive values are distinct elements of `[1, m]`. -/
-private theorem sum_inv_le_one_add_log_of_injOn (m : ℕ) (d : ℕ → ℕ)
-    (hd : ∀ n ∈ Icc 1 m, d n ≤ m) (hi : Set.InjOn d ↑((Icc 1 m).filter (fun n ↦ 0 < d n))) :
-    (∑ n ∈ Icc 1 m, (d n : ℝ)⁻¹) ≤ 1 + Real.log m := by
-  rw [← sum_filter_add_sum_filter_not _ (fun n ↦ 0 < d n)]
-  have hz : (∑ n ∈ (Icc 1 m).filter (fun n ↦ ¬0 < d n), (d n : ℝ)⁻¹) = 0 := by
-    apply sum_eq_zero
-    intro n hn
-    simp [Nat.eq_zero_of_not_pos (mem_filter.mp hn).2]
-  rw [hz, add_zero, ← sum_image (f := fun j : ℕ ↦ (j : ℝ)⁻¹) hi]
-  refine (sum_le_sum_of_subset_of_nonneg (t := Icc 1 m) ?_ (fun n _ _ ↦ by positivity)).trans ?_
-  · intro j hj
-    obtain ⟨n, hn, rfl⟩ := mem_image.mp hj
-    exact mem_Icc.mpr ⟨(mem_filter.mp hn).2, hd n (mem_filter.mp hn).1⟩
-  · simpa only [harmonic_eq_sum_Icc (n := m), Rat.cast_sum, Rat.cast_inv, Rat.cast_natCast]
-      using harmonic_le_one_add_log m
 
 private theorem sum_inv_half_grid_le (m : ℕ) :
     ∑ n ∈ Icc 1 m, (((m - 2 * n : ℕ) : ℝ)⁻¹ + ((2 * n - m : ℕ) : ℝ)⁻¹)
