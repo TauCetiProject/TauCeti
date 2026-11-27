@@ -27,7 +27,7 @@ Conversely, for `1 ≤ p < ∞` every tempered distribution `u` with `‖u g‖ 
 Schwartz functions `g` is an `Lᵠ` function of norm at most `B`
 (`TemperedDistribution.exists_eq_toTemperedDistribution_and_norm_le`). For `1 < p` the bound
 extends `u` from the dense Schwartz functions to a continuous linear functional on `Lᵖ(μ)`
-(`SchwartzMap.exists_strongDual_apply_toLp_eq`), and the dual of `Lᵖ(μ)` is `Lᵠ(μ)`
+(`SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le`), and the dual of `Lᵖ(μ)` is `Lᵠ(μ)`
 (`MeasureTheory.Lp.dualEquiv`). For `p = 1` the measure `μ` need not be finite, and the dual of
 `L¹` is only available for finite measures (`MeasureTheory.Lp.dualOneEquiv`). So `u` is first
 weighted: for a weight `0 < w ≤ 1`, integrable for `μ`, such that `w` and `1 / w` have temperate
@@ -109,8 +109,8 @@ private theorem exists_eq_toTemperedDistribution_and_norm_le_of_one_lt (hp : 1 <
     ∃ h : Lp ℂ q μ, (h : 𝓢'(E, ℂ)) = u ∧ ‖h‖ ≤ B := by
   have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   -- Extend `u` from the dense Schwartz functions to a functional `Λ` on `Lᵖ`.
-  obtain ⟨Λ, hΛ, hΛu⟩ :=
-    SchwartzMap.exists_strongDual_apply_toLp_eq hp_top (u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) hB hu
+  obtain ⟨Λ, hΛu, hΛ⟩ :=
+    SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le hp_top (u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) hB hu
   -- `Λ` is integration against some `h ∈ Lᵠ`, which represents `u`.
   refine ⟨(Lp.dualEquiv ℂ μ q p hp hp_top).symm Λ, ?_, by simpa using hΛ⟩
   ext g
@@ -174,7 +174,8 @@ private theorem exists_eq_toTemperedDistribution_and_norm_le_of_one (u : 𝓢'(E
     hw.1.continuous.nnNorm.measurable.coe_nnreal_ennreal.aemeasurable
     (Filter.Eventually.of_forall fun x ↦ by simpa [w] using (hw₀1 x).1.ne')
   -- `g ↦ u (w g)` is bounded on `L¹(ν)`, so it is integration against some `h ∈ L^∞(ν)`.
-  obtain ⟨Λ, hΛ, hΛu⟩ := SchwartzMap.exists_strongDual_apply_toLp_eq (μ := ν) ENNReal.one_ne_top
+  obtain ⟨Λ, hΛu, hΛ⟩ :=
+    SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le (μ := ν) ENNReal.one_ne_top
     ((u : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) ∘ₗ (SchwartzMap.smulLeftCLM ℂ w).toLinearMap) hB fun g ↦ by
       refine (hu (SchwartzMap.smulLeftCLM ℂ w g)).trans_eq ?_
       rw [SchwartzMap.norm_toLp, SchwartzMap.norm_toLp, SchwartzMap.smulLeftCLM_apply hw]

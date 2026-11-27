@@ -23,8 +23,9 @@ two classes coincide (`SchwartzMap.toLp_top_eq_toLpTop`).
 
 Schwartz functions are dense in `Lᵖ(μ)` for `p < ∞` (`SchwartzMap.denseRange_toLpCLM`), so a
 linear functional on them bounded by a multiple of the `Lᵖ` norm extends to a continuous linear
-functional on `Lᵖ(μ)` with the same bound (`SchwartzMap.exists_strongDual_apply_toLp_eq`). They are
-not dense in `L^∞(μ)`. On bounded continuous functions, for any temperate measure `μ`
+functional on `Lᵖ(μ)` with the same bound
+(`SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le`). They are not dense in `L^∞(μ)`. On
+bounded continuous functions, for any temperate measure `μ`
 positive on nonempty open sets, a bounded continuous function lies in the `L^∞(μ)` closure of the
 Schwartz functions exactly when it vanishes at infinity along `cocompact E`
 (`BoundedContinuousFunction.toLpTop_mem_closure_range_schwartz_toLp_top_iff`): uniform limits of
@@ -36,8 +37,8 @@ approximant (`Continuous.exists_schwartzMap_norm_sub_le`).
 
 * `SchwartzMap.toLp_top_eq_toLpTop`: `g.toLp ∞ μ` agrees with
   `BoundedContinuousFunction.toLpTop μ 𝕜 g.toBoundedContinuousFunction`.
-* `SchwartzMap.exists_strongDual_apply_toLp_eq`: a linear functional on the Schwartz functions
-  bounded in `Lᵖ(μ)`, `p < ∞`, extends to `Lᵖ(μ)`.
+* `SchwartzMap.exists_strongDual_apply_toLp_eq_and_norm_le`: a linear functional on the Schwartz
+  functions bounded in `Lᵖ(μ)`, `p < ∞`, extends to `Lᵖ(μ)` with the same bound.
 * `Continuous.exists_schwartzMap_norm_sub_le`: a continuous function vanishing at infinity can be
   uniformly approximated by Schwartz functions.
 * `BoundedContinuousFunction.toLpTop_mem_closure_range_schwartz_toLp_top_iff`: a bounded continuous
@@ -75,9 +76,9 @@ variable [FiniteDimensional ℝ E] {μ : Measure E} [μ.HasTemperateGrowth] {p :
 /-- **Extension from the Schwartz functions.** A linear functional `S` on the Schwartz functions
 with `‖S g‖ ≤ B ‖g‖_p`, `p < ∞`, extends from the dense Schwartz functions to a continuous linear
 functional on `Lᵖ(μ)` of norm at most `B`. -/
-theorem exists_strongDual_apply_toLp_eq (hp_top : p ≠ ∞) (S : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) {B : ℝ}
+theorem exists_strongDual_apply_toLp_eq_and_norm_le (hp_top : p ≠ ∞) (S : 𝓢(E, ℂ) →ₗ[ℂ] ℂ) {B : ℝ}
     (hB : 0 ≤ B) (hS : ∀ g : 𝓢(E, ℂ), ‖S g‖ ≤ B * ‖g.toLp p μ‖) :
-    ∃ Λ : StrongDual ℂ (Lp ℂ p μ), ‖Λ‖ ≤ B ∧ ∀ g : 𝓢(E, ℂ), Λ (g.toLp p μ) = S g := by
+    ∃ Λ : StrongDual ℂ (Lp ℂ p μ), (∀ g : 𝓢(E, ℂ), Λ (g.toLp p μ) = S g) ∧ ‖Λ‖ ≤ B := by
   have := Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts μ
   set e : 𝓢(E, ℂ) →ₗ[ℂ] Lp ℂ p μ := (toLpCLM ℂ ℂ p μ).toLinearMap
   have he : DenseRange e := by
@@ -87,8 +88,8 @@ theorem exists_strongDual_apply_toLp_eq (hp_top : p ≠ ∞) (S : 𝓢(E, ℂ) �
     rw [DenseRange, hcoe]
     exact denseRange_toLpCLM hp_top
   have hS' : ∀ g, ‖S g‖ ≤ B * ‖e g‖ := fun g ↦ by simpa [e] using hS g
-  refine ⟨S.extendOfNorm e, (S.extendOfNorm e).opNorm_le_bound hB
-    (LinearMap.norm_extendOfNorm_apply_le he B hS'), fun g ↦ ?_⟩
+  refine ⟨S.extendOfNorm e, fun g ↦ ?_, (S.extendOfNorm e).opNorm_le_bound hB
+    (LinearMap.norm_extendOfNorm_apply_le he B hS')⟩
   simpa [e] using LinearMap.extendOfNorm_eq he ⟨B, hS'⟩ g
 
 end SchwartzMap
