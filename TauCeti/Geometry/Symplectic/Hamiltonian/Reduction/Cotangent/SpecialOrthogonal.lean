@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Reduction.ReducedSpace
 
 import TauCeti.Geometry.Lie.Subgroup.Stabilizer
-import TauCeti.LinearAlgebra.Matrix.CrossProduct
+import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Frame
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.UnitaryGroup
 import TauCeti.Topology.Algebra.ProperAction.Basic
@@ -66,7 +66,7 @@ public section
 
 noncomputable section
 
-open Module Matrix
+open Module Matrix TauCeti.Matrix.SpecialOrthogonalGroup
 open scoped Manifold ContDiff Matrix.Norms.L2Operator
 
 attribute [local instance] Matrix.l2OpNormedAlgebraReal
@@ -125,28 +125,15 @@ theorem stabilizer_specialOrthogonalGroup_eq_bot {z : T*ℝ³}
     rw [cotangentAngularMomentum_apply, h, map_zero, LinearMap.zero_apply])
   generalize (modelSpaceDiffeomorph (Fin 3 → ℝ) z).1 = q at hgq hqℓ hq0
   generalize cotangentAngularMomentum (modelSpaceDiffeomorph (Fin 3 → ℝ) z) = ℓ at hz hgℓ hqℓ
-  -- `g` fixes the rows of the matrix `B` with rows `q`, `ℓ` and `q ⨯₃ ℓ`, so `B gᵀ = B`.
-  have hgqℓ : (g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ (q ⨯₃ ℓ) = q ⨯₃ ℓ := by
-    rw [← mulVec_cross_mulVec_of_mem_specialOrthogonalGroup g.property, hgq, hgℓ]
-  let B : Matrix (Fin 3) (Fin 3) ℝ := ![q, ℓ, q ⨯₃ ℓ]
-  have hB : B * (g : Matrix (Fin 3) (Fin 3) ℝ)ᵀ = B * 1 := by
-    rw [mul_one]
-    ext i j
-    have hrow : (B * (g : Matrix (Fin 3) (Fin 3) ℝ)ᵀ) i j =
-        ((g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ B i) j := by
-      simp [Matrix.mul_apply, mulVec, dotProduct, mul_comm]
-    rw [hrow]
-    fin_cases i
-    · exact congrFun hgq j
-    · exact congrFun hgℓ j
-    · exact congrFun hgqℓ j
-  -- Since `q ⊥ ℓ`, the determinant of `B` is the triple product `|q|² |ℓ|² ≠ 0`.
-  have hdet : IsUnit B.det := by
-    rw [isUnit_iff_ne_zero, ← triple_product_eq_det, cross_cross_eq_smul_sub_smul',
-      dotProduct_sub, dotProduct_smul, dotProduct_smul, hqℓ, smul_zero, sub_zero, smul_eq_mul]
-    exact mul_ne_zero (mt dotProduct_self_eq_zero.1 hz) (mt dotProduct_self_eq_zero.1 hq0)
-  have hgT := ((Matrix.isUnit_iff_isUnit_det B).2 hdet).mul_left_cancel hB
-  exact Subtype.ext (by simpa using congrArg Matrix.transpose hgT)
+  -- `g` fixes the frame `(q, ℓ, q ⨯₃ ℓ)`, so it fixes its matrix: `g * ofFrame q ℓ = ofFrame q ℓ`.
+  have hB : (g : Matrix (Fin 3) (Fin 3) ℝ) * ofFrame q ℓ = 1 * ofFrame q ℓ := by
+    rw [← ofFrame_mulVec_mulVec g.property, hgq, hgℓ, one_mul]
+  -- Since `q ⊥ ℓ`, the determinant of the frame matrix is `|q ⨯₃ ℓ|² = |q|² |ℓ|² ≠ 0`.
+  have hdet : IsUnit (ofFrame q ℓ).det := by
+    rw [isUnit_iff_ne_zero, det_ofFrame, cross_dot_cross, hqℓ, dotProduct_comm ℓ q, hqℓ,
+      mul_zero, sub_zero]
+    exact mul_ne_zero (mt dotProduct_self_eq_zero.1 hq0) (mt dotProduct_self_eq_zero.1 hz)
+  exact Subtype.ext (((Matrix.isUnit_iff_isUnit_det _).2 hdet).mul_right_cancel hB)
 
 /-! ### The level at a nonzero angular momentum -/
 

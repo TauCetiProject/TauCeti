@@ -34,8 +34,9 @@ map is the angular momentum: `⟨μ(q, p), ξ⟩ = u ⬝ᵥ (q ⨯₃ p)` when `
 Euclidean space are `TauCeti.CotangentBundle.momentMap_unitary_eq_cotangentMomentMap_comp` and
 `TauCeti.CotangentBundle.momentMap_unitary_apply_eq_inner_angularMomentum`. Read in the dual of
 the Lie algebra of `SO(3)`, identified with `ℝ³` by `TauCeti.specialOrthogonalThreeDualEquiv`,
-this says `μ(q, p) = ν_(q ⨯₃ p)`. In the same coordinates a rotation `g` acts on `T*ℝ³` by
-`(q, p) ↦ (g q, p ∘ g⁻¹)`, so the angular momentum is equivariant: `(g q) ⨯₃ (g p) = g (q ⨯₃ p)`.
+this says `μ(q, p) = ν_(q ⨯₃ p)`. In the coordinates `T*ℝⁿ ≃ ℝⁿ × (ℝⁿ)*` a rotation `g` acts by
+`(q, p) ↦ (g q, p ∘ g⁻¹)`, so in dimension three the angular momentum is equivariant:
+`(g q) ⨯₃ (g p) = g (q ⨯₃ p)`.
 
 ## Main results
 
@@ -47,7 +48,7 @@ this says `μ(q, p) = ν_(q ⨯₃ p)`. In the same coordinates a rotation `g` a
   in the dual of the Lie algebra, `μ(q, p) = ν_(q ⨯₃ p)`.
 * `TauCeti.CotangentBundle.fst_modelSpaceDiffeomorph_smul`,
   `TauCeti.CotangentBundle.snd_modelSpaceDiffeomorph_smul_apply`: the cotangent-lifted action of
-  `SO(3)` in coordinates.
+  `SO(n)` in coordinates.
 * `TauCeti.CotangentBundle.cotangentAngularMomentum_smul`: the angular momentum is equivariant.
 
 ## References
@@ -128,49 +129,54 @@ theorem momentMap_specialOrthogonalGroup_apply_eq_dotProduct_cotangentAngularMom
     LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom, ← rotationMomentMap_soThreeEquiv,
     LinearEquiv.apply_symm_apply]
 
-/-! ### The moment map and the action in coordinates -/
+/-! ### The action in coordinates -/
 
 section Coordinates
 
 open _root_.Matrix
+
+/-- The differential of the rotation `v ↦ g v` of `ℝⁿ` is `g`. -/
+private theorem mfderiv_smul_specialOrthogonalGroup (g : Matrix.specialOrthogonalGroup n ℝ)
+    (x w : n → ℝ) :
+    mfderiv 𝓘(ℝ, n → ℝ) 𝓘(ℝ, n → ℝ) (fun v : n → ℝ ↦ g • v) x w = g • w := by
+  have h : (fun v : n → ℝ ↦ g • v) =
+      ⇑(LinearMap.toContinuousLinearMap (Matrix.toLin' (g : Matrix n n ℝ))) := by
+    funext v
+    simp [Submonoid.smul_def]
+  rw [h, (LinearMap.toContinuousLinearMap
+    (Matrix.toLin' (g : Matrix n n ℝ))).hasMFDerivAt.mfderiv, Submonoid.smul_def,
+    smul_eq_mulVec]
+  -- The map is applied to `w` in the tangent space `TangentSpace 𝓘(ℝ, ℝⁿ) x`, which is `ℝⁿ` by
+  -- definition but blocks rewriting with the matrix lemmas; there `toLin' g w = g *ᵥ w`.
+  rfl
+
+/-- In the coordinates `T*ℝⁿ ≃ ℝⁿ × (ℝⁿ)*`, the rotation `g` moves the base point `q` to `g q`. -/
+theorem fst_modelSpaceDiffeomorph_smul (g : Matrix.specialOrthogonalGroup n ℝ)
+    (z : CotangentBundle 𝓘(ℝ, n → ℝ) (n → ℝ)) :
+    (modelSpaceDiffeomorph (n → ℝ) (g • z)).1 =
+      (g : Matrix n n ℝ) *ᵥ (modelSpaceDiffeomorph (n → ℝ) z).1 := by
+  rw [modelSpaceDiffeomorph_apply, modelSpaceDiffeomorph_apply, proj_smul, Submonoid.smul_def,
+    smul_eq_mulVec]
+
+/-- In the coordinates `T*ℝⁿ ≃ ℝⁿ × (ℝⁿ)*`, the rotation `g` moves the covector `p` to
+`p ∘ g⁻¹`. -/
+theorem snd_modelSpaceDiffeomorph_smul_apply (g : Matrix.specialOrthogonalGroup n ℝ)
+    (z : CotangentBundle 𝓘(ℝ, n → ℝ) (n → ℝ)) (w : n → ℝ) :
+    (modelSpaceDiffeomorph (n → ℝ) (g • z)).2 w =
+      (modelSpaceDiffeomorph (n → ℝ) z).2
+        (((g⁻¹ : Matrix.specialOrthogonalGroup n ℝ) : Matrix n n ℝ) *ᵥ w) := by
+  have h := smul_snd_apply g z w
+  rw [mfderiv_smul_specialOrthogonalGroup, Submonoid.smul_def, smul_eq_mulVec] at h
+  rw [modelSpaceDiffeomorph_apply, modelSpaceDiffeomorph_apply]
+  exact h
+
+/-! ### The moment map and the action in coordinates for `SO(3)` -/
 
 /-- The rotation group `SO(3)`. -/
 local notation "SO₃" => Matrix.specialOrthogonalGroup (Fin 3) ℝ
 
 /-- The cotangent bundle `T*ℝ³`. -/
 local notation "T*ℝ³" => CotangentBundle 𝓘(ℝ, Fin 3 → ℝ) (Fin 3 → ℝ)
-
-
-/-- The differential of the rotation `v ↦ g v` of `ℝ³` is `g`. -/
-private theorem mfderiv_smul_specialOrthogonalGroup (g : SO₃) (x w : Fin 3 → ℝ) :
-    mfderiv 𝓘(ℝ, Fin 3 → ℝ) 𝓘(ℝ, Fin 3 → ℝ) (fun v : Fin 3 → ℝ ↦ g • v) x w = g • w := by
-  have h : (fun v : Fin 3 → ℝ ↦ g • v) =
-      ⇑(LinearMap.toContinuousLinearMap (Matrix.toLin' (g : Matrix (Fin 3) (Fin 3) ℝ))) := by
-    funext v
-    simp [Submonoid.smul_def]
-  rw [h, (LinearMap.toContinuousLinearMap
-    (Matrix.toLin' (g : Matrix (Fin 3) (Fin 3) ℝ))).hasMFDerivAt.mfderiv, Submonoid.smul_def,
-    smul_eq_mulVec]
-  -- The map is applied to `w` in the tangent space `TangentSpace 𝓘(ℝ, ℝ³) x`, which is `ℝ³` by
-  -- definition but blocks rewriting with the matrix lemmas; there `toLin' g w = g *ᵥ w`.
-  rfl
-
-/-- In the coordinates `T*ℝ³ ≃ ℝ³ × (ℝ³)*`, the rotation `g` moves the base point `q` to `g q`. -/
-theorem fst_modelSpaceDiffeomorph_smul (g : SO₃) (z : T*ℝ³) :
-    (modelSpaceDiffeomorph (Fin 3 → ℝ) (g • z)).1 =
-      (g : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ (modelSpaceDiffeomorph (Fin 3 → ℝ) z).1 := by
-  rw [modelSpaceDiffeomorph_apply, modelSpaceDiffeomorph_apply, proj_smul, Submonoid.smul_def,
-    smul_eq_mulVec]
-
-/-- In the coordinates `T*ℝ³ ≃ ℝ³ × (ℝ³)*`, the rotation `g` moves the covector `p` to
-`p ∘ g⁻¹`. -/
-theorem snd_modelSpaceDiffeomorph_smul_apply (g : SO₃) (z : T*ℝ³) (w : Fin 3 → ℝ) :
-    (modelSpaceDiffeomorph (Fin 3 → ℝ) (g • z)).2 w =
-      (modelSpaceDiffeomorph (Fin 3 → ℝ) z).2 (((g⁻¹ : SO₃) : Matrix (Fin 3) (Fin 3) ℝ) *ᵥ w) := by
-  have h := smul_snd_apply g z w
-  rw [mfderiv_smul_specialOrthogonalGroup, Submonoid.smul_def, smul_eq_mulVec] at h
-  rw [modelSpaceDiffeomorph_apply, modelSpaceDiffeomorph_apply]
-  exact h
 
 /-- **The moment map of the cotangent-lifted rotations is the angular momentum**, read in the dual
 of the Lie algebra of `SO(3)`: `μ(q, p) = ν_(q ⨯₃ p)`. -/

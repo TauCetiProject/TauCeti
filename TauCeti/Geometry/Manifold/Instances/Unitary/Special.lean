@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.L2OpNorm
+public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Lie.Subgroup.Transport
 public import TauCeti.Geometry.Manifold.Instances.Unitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
@@ -59,6 +60,8 @@ structure, `open scoped Matrix.Norms.L2Operator` and enable
 * `Matrix.specialUnitaryGroup.contMDiffWithinAt_iff`, `Matrix.specialUnitaryGroup.contMDiffAt_iff`,
   `Matrix.specialUnitaryGroup.contMDiffOn_iff`, `Matrix.specialUnitaryGroup.contMDiff_iff`:
   smoothness of maps into the special unitary group, tested after coercion to the matrices.
+* `Matrix.specialUnitaryGroup.toUnitsSmoothHom`: the inclusion into the invertible matrices, as a
+  smooth homomorphism.
 * `Matrix.specialUnitaryGroup.isSmoothEmbedding_inclusion_unitaryGroup`: the inclusion into the
   unitary group is a smooth embedding.
 * `Matrix.instContMDiffSMulMulVec`: the matrices act smoothly on column vectors `n → 𝕜`.
@@ -196,6 +199,24 @@ theorem contMDiff_iff :
 
 end SmoothnessIff
 
+variable (n 𝕜) in
+/-- The inclusion of the special unitary group into the group of invertible matrices, as a smooth
+homomorphism. -/
+def toUnitsSmoothHom :
+    ContMDiffMonoidMorphism (model n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞ (specialUnitaryGroup n 𝕜)
+      (Matrix n n 𝕜)ˣ where
+  toMonoidHom := Unitary.toUnits.comp
+    (Submonoid.inclusion (specialUnitaryGroup_le_unitaryGroup (n := n) (α := 𝕜)))
+  contMDiff_toFun :=
+    -- Composed with the open embedding `Units.val`, the map is the inclusion into the matrices.
+    ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val contMDiff_val
+
+/-- The invertible matrix attached to an element of the special unitary group is that element. -/
+@[simp]
+theorem val_toUnitsSmoothHom_apply (g : specialUnitaryGroup n 𝕜) :
+    ((toUnitsSmoothHom n 𝕜 g : (Matrix n n 𝕜)ˣ) : Matrix n n 𝕜) = g :=
+  (rfl)
+
 /-- The inclusion of the special unitary group into the unitary group is a smooth embedding, for
 the native smooth structures of both groups. -/
 theorem isSmoothEmbedding_inclusion_unitaryGroup :
@@ -236,6 +257,6 @@ instance instContMDiffConstSMul {E : Type*} [NormedAddCommGroup E] [NormedSpace 
     {k : ℕ∞ω} [ENat.LEInfty k]
     [MulAction (Matrix n n 𝕜) M] [ContMDiffSMul 𝓘(ℝ, Matrix n n 𝕜) I k (Matrix n n 𝕜) M] :
     ContMDiffConstSMul I k (specialUnitaryGroup n 𝕜) M :=
-  ⟨ContMDiffSMul.contMDiff_const_smul (I := model n 𝕜)⟩
+  ContMDiffSMul.contMDiffConstSMul (model n 𝕜)
 
 end Matrix.specialUnitaryGroup
