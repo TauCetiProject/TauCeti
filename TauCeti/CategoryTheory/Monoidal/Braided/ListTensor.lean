@@ -338,6 +338,14 @@ lemma listTensorPermIso_of_eq {l l' : List ι} (h : l = l') (h' : l.Perm l') :
   subst h
   simp
 
+/-- A reordering followed by the transport along an equality of lists is a reordering. -/
+@[reassoc]
+lemma listTensorPermIso_hom_eqToHom {l₁ l₂ l₃ : List ι} (h : l₁.Perm l₂) (e : l₂ = l₃) :
+    (listTensorPermIso X h).hom ≫ eqToHom (congrArg (listTensor X) e) =
+      (listTensorPermIso X (h.trans (.of_eq e))).hom := by
+  subst e
+  simp
+
 /-- Reordering the tail of a list. -/
 @[simp]
 lemma listTensorPermIso_cons (a : ι) {l l' : List ι} (h : l.Perm l') :

@@ -123,6 +123,19 @@ noncomputable def ofFamily (X : CategoryOfOperators.{w} C) {Y : Fin X.base.len �
   base := 𝟙 X.base
   app j := (id X).app j ≫ φ j
 
+@[simp]
+lemma ofFamily_base (X : CategoryOfOperators.{w} C) {Y : Fin X.base.len → C}
+    (φ : ∀ j, X.obj j ⟶ Y j) : (ofFamily X φ).base = 𝟙 X.base :=
+  rfl
+
+/-- The components of `ofFamily X φ`. Not a `simp` lemma: `simp` already reduces the projections
+of the reducible `ofFamily`. -/
+lemma ofFamily_app (X : CategoryOfOperators.{w} C) {Y : Fin X.base.len → C}
+    (φ : ∀ j, X.obj j ⟶ Y j) (j : Fin X.base.len) :
+    (ofFamily X φ).app j =
+      (listTensorPermIso X.obj (.of_eq (FinPointed.fiber_id j))).hom ≫ (ρ_ (X.obj j)).hom ≫ φ j :=
+  Category.assoc _ _ _
+
 private lemma ext' {X Y : CategoryOfOperators.{w} C} {f g : Hom X Y} (h : f.base = g.base)
     (h' : ∀ j, f.app j = (listTensorPermIso X.obj (.of_eq (by rw [h]))).hom ≫ g.app j) :
     f = g := by
@@ -142,10 +155,8 @@ lemma id_comp {X Y : CategoryOfOperators.{w} C} (f : Hom X Y) : (id X).comp f = 
   rw [← listTensorMap_comp_assoc,
     ← listTensorPermIso_flatMap_left_hom_assoc X.obj (fun j ↦ .of_eq (FinPointed.fiber_id j)),
     reassoc_of% listTensorFlatMapIso_hom_listTensorMap_rightUnitor X.obj (f.base.fiber l),
-    ← eqToIso.hom, ← listTensorPermIso_of_eq X.obj (List.flatMap_singleton' _)
-      (.of_eq (List.flatMap_singleton' _)),
-    listTensorPermIso_hom_listTensorPermIso_hom_assoc,
-    listTensorPermIso_hom_listTensorPermIso_hom_assoc]
+    listTensorPermIso_hom_eqToHom_assoc X.obj _ (List.flatMap_singleton' _)]
+  simp only [listTensorPermIso_hom_listTensorPermIso_hom_assoc]
 
 private lemma comp_ofFamily_app' {X Y : CategoryOfOperators.{w} C} {Z : Fin Y.base.len → C}
     (f : Hom X Y) (φ : ∀ j, Y.obj j ⟶ Z j) (j : Fin Y.base.len) :
@@ -162,10 +173,8 @@ private lemma comp_ofFamily_app' {X Y : CategoryOfOperators.{w} C} {Z : Fin Y.ba
       fun a _ b _ h ↦ f.base.disjoint_fiber h,
     reassoc_of% hρ,
     reassoc_of% listTensorFlatMapIso_singleton_hom_rightUnitor_hom X.obj f.base.fiber j,
-    ← eqToIso.hom, ← listTensorPermIso_of_eq X.obj (List.flatMap_singleton _ _)
-      (.of_eq (List.flatMap_singleton _ _)),
-    listTensorPermIso_hom_listTensorPermIso_hom_assoc,
-    listTensorPermIso_hom_listTensorPermIso_hom_assoc]
+    listTensorPermIso_hom_eqToHom_assoc X.obj _ (List.flatMap_singleton _ _)]
+  simp only [listTensorPermIso_hom_listTensorPermIso_hom_assoc]
 
 lemma comp_id {X Y : CategoryOfOperators.{w} C} (f : Hom X Y) : f.comp (id Y) = f := by
   rw [← ofFamily_id]
@@ -182,8 +191,7 @@ lemma assoc {X Y Z W : CategoryOfOperators.{w} C} (f : Hom X Y) (g : Hom Y Z) (h
     listTensorFlatMapIso_hom_naturality_assoc,
     ← listTensorPermIso_flatMap_right_hom_assoc X.obj f.base.fiber _
       fun a _ b _ h ↦ f.base.disjoint_fiber h,
-    ← eqToIso.hom, ← listTensorPermIso_of_eq X.obj List.flatMap_assoc.symm
-      (.of_eq List.flatMap_assoc.symm)]
+    listTensorPermIso_hom_eqToHom_assoc X.obj _ List.flatMap_assoc.symm]
   simp only [listTensorPermIso_hom_listTensorPermIso_hom_assoc]
 
 end Hom
@@ -353,7 +361,7 @@ noncomputable def ι (n : FinPointed.{w}) :
   map_comp {Y Y' Y''} φ ψ := by
     refine hom_ext (Category.comp_id _).symm fun j ↦ ?_
     rw [comp_ofFamily_app]
-    simp [Hom.ofFamily]
+    simp
 
 @[simp]
 lemma ι_map_base {n : FinPointed.{w}} {Y Y' : Fin n.len → C} (φ : Y ⟶ Y') :
@@ -365,7 +373,7 @@ lemma ι_map_app {n : FinPointed.{w}} {Y Y' : Fin n.len → C} (φ : Y ⟶ Y')
     (j : Fin n.len) :
     ((ι C n).map φ).app j =
       (listTensorPermIso Y (.of_eq (FinPointed.fiber_id j))).hom ≫ (ρ_ (Y j)).hom ≫ φ j := by
-  simp [ι, Hom.ofFamily]
+  simp [ι]
 
 /-- The families over `⟨n⟩` lie over `⟨n⟩`. -/
 lemma ι_comp_toFinPointed (n : FinPointed.{w}) :
