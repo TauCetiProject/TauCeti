@@ -24,7 +24,10 @@ unless `u * x = 1` (`TauCeti.exists_unit_conj_of_mul_ne_one`). The rational func
 `x / (1 - x)²`, `x² / (1 - x)³` and `x / (1 - x)³` of the Tate coordinates satisfy the linear
 relation `TauCeti.div_one_sub_sq_add_sq_div_one_sub_cube`. A square root in a field extension of a
 non-square of the base field does not lie in the base field
-(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`).
+(`TauCeti.notMem_range_algebraMap_of_sq_eq_of_not_isSquare`). In a field, if `a + b = q` and `a`,
+`b` vanish together, then `-a⁻¹ + -b⁻¹ + a⁻¹ b⁻¹ q = 0`
+(`TauCeti.neg_inv_add_neg_inv_add_neg_inv_mul_neg_inv_mul_eq_zero`); this is the identity making
+the quasi-reflections with parameters `s` and `star s` inverse to each other.
 -/
 
 public section

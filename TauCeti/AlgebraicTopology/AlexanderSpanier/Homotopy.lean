@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialObject.ChainHomotopy
 public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.AlgebraicTopology.AlexanderSpanier.Basic
+import TauCeti.Algebra.Homology.ModuleCat.Basic
 import TauCeti.Data.Fin.Basic
 
 /-!
@@ -310,18 +311,9 @@ theorem cohomologyMap_homologyπ_eq_of_forall_nhds {f g : C(X, Y)} {n : ℕ}
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • φ (y ∘ Fin.succAbove i) = 0) :
     (cohomologyMap R M f n).hom (((cochainComplex R Y M).homologyπ n).hom z) =
       (cohomologyMap R M g n).hom (((cochainComplex R Y M).homologyπ n).hom z) := by
-  have hnat (k : C(X, Y)) :
-      (cohomologyMap R M k n).hom (((cochainComplex R Y M).homologyπ n).hom z) =
-        ((cochainComplex R X M).homologyπ n).hom
-          ((HomologicalComplex.cyclesMap (cochainComplexMap R M k) n).hom z) :=
-    (ConcreteCategory.congr_hom
-      (HomologicalComplex.homologyπ_naturality (cochainComplexMap R M k) n) z)
-  rw [hnat, hnat]
-  have hi (k : C(X, Y)) : ((cochainComplex R X M).iCycles n).hom
-      ((HomologicalComplex.cyclesMap (cochainComplexMap R M k) n).hom z) =
-        cochainClass R X M n fun x ↦ φ (k ∘ x) := by
-    rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
-      hz, cochainComplexMap_f_cochainClass]
+  rw [HomologicalComplex.moduleCat_homologyMap_homologyπ,
+    HomologicalComplex.moduleCat_homologyMap_homologyπ]
+  have hi (k : C(X, Y)) := iCycles_cyclesMap_apply_of_eq_cochainClass k hz
   have hP := isLocallyZero_prism (R := R) h
   cases n with
   | zero =>

@@ -37,18 +37,21 @@ section Coalgebra
 
 variable (R A : Type*) [CommSemiring R] [AddCommMonoid A] [Module R A] [Coalgebra R A]
 
-/-- Evaluation at a group-like element is a character of the convolution dual. -/
-noncomputable def evalGroupLike (u : GroupLike R A) : ConvolutionDual R A →ₐ[R] R :=
-  AlgHom.ofLinearMap
-    ((Module.Dual.eval R A u.val).comp (WithConv.linearEquiv R _).toLinearMap)
-    (by simpa only [LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
-      WithConv.linearEquiv_apply, Module.Dual.eval_apply, LinearMap.convOne_apply,
-      Algebra.algebraMap_self_apply] using u.isGroupLikeElem_val.counit_eq_one)
-    (fun f g ↦ u.isGroupLikeElem_val.ofConv_convMul_apply f g)
+/-- Evaluation at a group-like element is a character of the coefficient-valued convolution
+algebra. -/
+noncomputable def evalGroupLike {S : Type*} [CommSemiring S] [Algebra R S]
+    (u : GroupLike R A) : WithConv (A →ₗ[R] S) →ₐ[S] S where
+  toFun f := f.ofConv u.val
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  map_one' := by simp [LinearMap.convOne_apply]
+  map_mul' f g := u.isGroupLikeElem_val.ofConv_convMul_apply f g
+  commutes' s := by simp
 
 /-- The character associated to a group-like element evaluates the underlying functional. -/
 @[simp, grind =]
-theorem evalGroupLike_apply (u : GroupLike R A) (f : ConvolutionDual R A) :
+theorem evalGroupLike_apply {S : Type*} [CommSemiring S] [Algebra R S]
+    (u : GroupLike R A) (f : WithConv (A →ₗ[R] S)) :
     evalGroupLike R A u f = f.ofConv u.val := (rfl)
 
 variable [Module.Finite R A] [Module.Projective R A]
@@ -95,7 +98,7 @@ private theorem characterGroupLike_apply (f : ConvolutionDual R A →ₐ[R] R)
 convolution dual, by evaluation. -/
 noncomputable def groupLikeEquivAlgHom :
     GroupLike R A ≃ (ConvolutionDual R A →ₐ[R] R) where
-  toFun := evalGroupLike R A
+  toFun := evalGroupLike R A (S := R)
   invFun := characterGroupLike R A
   left_inv u := by
     apply GroupLike.val_injective

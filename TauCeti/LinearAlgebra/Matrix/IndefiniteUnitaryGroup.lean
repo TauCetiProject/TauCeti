@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Orthogonal.Basic
 public import TauCeti.Algebra.Star.Pi
 public import TauCeti.LinearAlgebra.Matrix.ConjTranspose
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 public import TauCeti.LinearAlgebra.Matrix.UnitaryTransvection
 import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Basic
@@ -21,7 +22,8 @@ import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 # The indefinite unitary group `U(p, q)`
 
 Let `R` be a commutative ring with an involution `star`. For a square matrix `A` over `R`, the
-**unitary group of `A`**, `Matrix.unitaryGroupOf A`, is the subgroup of `GL n R` of the
+**unitary group of `A`**, `Matrix.unitaryGroupOf A` (defined, with its basic API, in
+`TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Form`), is the subgroup of `GL n R` of the
 matrices `g` with `star g * A * g = A`: the invertible matrices preserving the sesquilinear form
 `⟨z, w⟩ = star z ⬝ᵥ A *ᵥ w` of Gram matrix `A`, conjugate-linear in the first slot.
 
@@ -44,9 +46,8 @@ The basic structure of these groups is recorded here.
   (Over `ℝ` or `ℂ` and for Hermitian `A`, membership is also equivalent, by polarization, to the
   preservation of the values `⟨z, z⟩` alone; that statement, with the topological facts, is in
   `TauCeti.Analysis.Matrix.IndefiniteUnitaryGroup`.)
-* For invertible `A`, every matrix preserving the form is invertible, with inverse
-  `A⁻¹ * star g * A` (`Matrix.unitaryGroupOf.ofMatrix`), and its determinant is a unitary
-  scalar. For `U(p, q)` the inverse is `J * star g * J`.
+* For invertible `A`, the determinant of an element of `unitaryGroupOf A` is a unitary scalar.
+  For `U(p, q)` the inverse `A⁻¹ * star g * A` of `g` is `J * star g * J`.
 * The block-diagonal matrices `diag(A, D)` with `A ∈ U(p)` and `D ∈ U(q)` form a subgroup of
   `U(p, q)` isomorphic to `U(p) × U(q)` (`TauCeti.Matrix.indefiniteUnitaryGroup.fromBlocksHom`). It
   is the stabilizer of the coordinate subspace `p → R` spanned by the positive basis vectors: an
@@ -62,10 +63,6 @@ The basic structure of these groups is recorded here.
 
 ## Main definitions
 
-* `Matrix.unitaryGroupOf A`: the group of invertible matrices preserving the sesquilinear
-  form of Gram matrix `A`.
-* `Matrix.unitaryGroupOf.ofMatrix`: the element of `unitaryGroupOf A` defined by a matrix
-  preserving the form, for invertible `A`.
 * `Matrix.unitaryGroupOf.scalarHom`: the embedding `λ ↦ λ • 1` of the unitary scalars.
 * `Matrix.unitaryGroupOf.reflection`: the reflection in a non-isotropic vector, for a Hermitian
   Gram matrix `A`.
@@ -81,7 +78,6 @@ The basic structure of these groups is recorded here.
 * `Matrix.specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf`: the determinant-one elements
   of `unitaryGroupOf A` are the special isometry group of the form.
 * `Matrix.mem_unitaryGroupOf_iff'`: membership as the equation `g * A⁻¹ * star g = A⁻¹`.
-* `Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`.
 * `Matrix.star_mem_unitaryGroupOf_iff_of_mul_self_eq_one`: for an involution `A` (`A * A = 1`),
   `unitaryGroupOf A` is stable under conjugate transposition.
 * `Matrix.det_mem_unitary_of_mem_unitaryGroupOf`: `star (det g) * det g = 1`.
@@ -126,56 +122,15 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 section CommRing
 
-variable {R : Type*} [CommRing R] [StarRing R]
-
-/-- The **unitary group of a sesquilinear form**: the invertible matrices `g` with
-`star g * A * g = A`, that is the invertible matrices preserving the form
-`⟨z, w⟩ = star z ⬝ᵥ A *ᵥ w` of Gram matrix `A`. For `A = 1` this is the unitary group, and for
-`A = diag(1, …, 1, -1, …, -1)` it is the indefinite unitary group
-`TauCeti.Matrix.indefiniteUnitaryGroup`. -/
-def unitaryGroupOf (A : Matrix n n R) : Subgroup (GL n R) where
-  carrier := {g | star (g : Matrix n n R) * A * g = A}
-  one_mem' := by simp
-  mul_mem' {a b} ha hb := by
-    simp only [Set.mem_ofPred_eq, Units.val_mul, star_mul] at *
-    calc _ = star (b : Matrix n n R) * (star (a : Matrix n n R) * A * a) * b := by
-          simp only [Matrix.mul_assoc]
-      _ = _ := by rw [ha, hb]
-  inv_mem' {a} ha := by
-    simp only [Set.mem_ofPred_eq] at *
-    calc _ = star (↑a⁻¹ : Matrix n n R) * (star (a : Matrix n n R) * A * a) * ↑a⁻¹ := by
-          rw [ha]
-      _ = star ((a : Matrix n n R) * ↑a⁻¹) * A * ((a : Matrix n n R) * ↑a⁻¹) := by
-          simp only [star_mul, Matrix.mul_assoc]
-      _ = _ := by simp
-
-variable {A : Matrix n n R}
-
-/-- Membership in `unitaryGroupOf A` is the equation `star g * A * g = A`. -/
-theorem mem_unitaryGroupOf_iff {g : GL n R} :
-    g ∈ unitaryGroupOf A ↔ star (g : Matrix n n R) * A * g = A :=
-  Iff.rfl
-
-omit [DecidableEq n] in
-/-- An isometry `x` of the form `A`, that is `star x * A * x = A`, does not change the Gram
-matrix of a family of vectors: `(x F)ᴴ A (x F) = Fᴴ A F`. -/
-theorem conjTranspose_mul_mul_mul_of_star_mul_mul_eq {m : Type*} {x : Matrix n n R}
-    (hx : star x * A * x = A) (F : Matrix n m R) : (x * F)ᴴ * A * (x * F) = Fᴴ * A * F := by
-  conv_rhs => rw [← hx]
-  simp only [conjTranspose_mul, star_eq_conjTranspose, Matrix.mul_assoc]
-
-/-- Two elements of `unitaryGroupOf A` are equal when their matrices are. -/
-@[ext]
-theorem unitaryGroupOf.ext {g h : unitaryGroupOf A}
-    (H : ((g : GL n R) : Matrix n n R) = ((h : GL n R) : Matrix n n R)) : g = h :=
-  Subtype.ext <| Units.ext H
+variable {R : Type*} [CommRing R] [StarRing R] {A : Matrix n n R}
 
 /-- **`unitaryGroupOf A` is the group of isometries of the form**: `g ∈ unitaryGroupOf A` exactly
 when `⟨g x, g y⟩ = ⟨x, y⟩` for all `x` and `y`, where `⟨x, y⟩ = star x ⬝ᵥ A *ᵥ y`. -/
 theorem mem_unitaryGroupOf_iff_forall_dotProduct {g : GL n R} :
     g ∈ unitaryGroupOf A ↔ ∀ x y : n → R,
       star ((g : Matrix n n R) *ᵥ x) ⬝ᵥ A *ᵥ (g *ᵥ y) = star x ⬝ᵥ A *ᵥ y := by
-  refine ⟨fun h => comp_mulVec_dotProduct_mulVec_mulVec (σ := starRingEnd R) h, fun h => ?_⟩
+  refine ⟨fun h => comp_mulVec_dotProduct_mulVec_mulVec (σ := starRingEnd R)
+    (mem_unitaryGroupOf_iff.1 h), fun h => mem_unitaryGroupOf_iff.2 ?_⟩
   simp only [← star_dotProduct_conjTranspose_mul_mul_mulVec, ← star_eq_conjTranspose] at h
   ext i j
   simpa [mulVec_single_one, Pi.star_single] using h (Pi.single i 1) (Pi.single j 1)
@@ -190,15 +145,6 @@ theorem specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf :
     rw [mem_specialIsometryGroup_iff, Subgroup.mem_comap, mem_unitaryGroupOf_iff,
       SpecialLinearGroup.coe_GL_coe_matrix, transpose_map_starRingEnd, ← star_eq_conjTranspose]
 
-/-- **The inverse of an element of `unitaryGroupOf A`**, for invertible `A`, is
-`A⁻¹ * star g * A`. -/
-theorem val_inv_of_mem_unitaryGroupOf (hA : IsUnit A) {g : GL n R} (hg : g ∈ unitaryGroupOf A) :
-    (↑g⁻¹ : Matrix n n R) = A⁻¹ * star (g : Matrix n n R) * A :=
-  Units.inv_eq_of_mul_eq_one_left <| by
-    have h := mem_unitaryGroupOf_iff.mp hg
-    simp only [Matrix.mul_assoc] at h ⊢
-    rw [h, nonsing_inv_mul _ ((isUnit_iff_isUnit_det A).mp hA)]
-
 /-- For invertible `A`, membership in `unitaryGroupOf A` is equivalent to the equation
 `g * A⁻¹ * star g = A⁻¹`. -/
 theorem mem_unitaryGroupOf_iff' (hA : IsUnit A) {g : GL n R} :
@@ -207,7 +153,8 @@ theorem mem_unitaryGroupOf_iff' (hA : IsUnit A) {g : GL n R} :
   set M : Matrix n n R := (g : Matrix n n R)
   have hd : IsUnit A.det := (isUnit_iff_isUnit_det A).mp hA
   have hA' : IsUnit A⁻¹ := (isUnit_nonsing_inv_iff).mpr hA
-  calc g ∈ unitaryGroupOf A ↔ A⁻¹ * (star M * A * M) = A⁻¹ * A := hA'.mul_right_inj.symm
+  calc g ∈ unitaryGroupOf A ↔ A⁻¹ * (star M * A * M) = A⁻¹ * A :=
+        mem_unitaryGroupOf_iff.trans hA'.mul_right_inj.symm
     _ ↔ A⁻¹ * star M * A * M = 1 := by simp only [nonsing_inv_mul _ hd, Matrix.mul_assoc]
     _ ↔ M * (A⁻¹ * star M * A) = 1 := mul_eq_one_comm
     _ ↔ M * A⁻¹ * star M * A = A⁻¹ * A := by simp only [nonsing_inv_mul _ hd, Matrix.mul_assoc]
@@ -237,20 +184,6 @@ theorem det_mem_unitary_of_mem_unitaryGroupOf (hA : IsUnit A) {g : GL n R}
   exact ((isUnit_iff_isUnit_det A).mp hA).mul_eq_right.mp h
 
 namespace unitaryGroupOf
-
-/-- A matrix preserving the form of an invertible Gram matrix `A` is invertible, with inverse
-`A⁻¹ * star M * A`: this is the element of `unitaryGroupOf A` it defines. -/
-noncomputable def ofMatrix (hA : IsUnit A) (M : Matrix n n R) (hM : star M * A * M = A) :
-    unitaryGroupOf A :=
-  have h : A⁻¹ * star M * A * M = 1 := by
-    simp only [Matrix.mul_assoc] at hM ⊢
-    rw [hM, nonsing_inv_mul _ ((isUnit_iff_isUnit_det A).mp hA)]
-  ⟨⟨M, A⁻¹ * star M * A, mul_eq_one_comm.mp h, h⟩, hM⟩
-
-@[simp]
-theorem val_ofMatrix (hA : IsUnit A) (M : Matrix n n R) (hM : star M * A * M = A) :
-    ((ofMatrix hA M hM : GL n R) : Matrix n n R) = M :=
-  (rfl)
 
 variable (A) in
 /-- The embedding `λ ↦ λ • 1` of the unitary scalars in `unitaryGroupOf A`. For the indefinite
@@ -318,7 +251,8 @@ noncomputable def reflection (hA : A.IsHermitian) (v : n → K) (hv : star v ⬝
       A.unitaryTransvection (starRingEnd K) v (-(2 / (star v ⬝ᵥ A *ᵥ v))) = 1 := by
     rw [unitaryTransvection_mul_unitaryTransvection_eq]
     exact (congrArg _ ha).trans unitaryTransvection_zero
-  ⟨⟨_, _, hM, hM⟩, star_unitaryTransvection_mul_mul_self_of_eq_zero hA (by rwa [hstar])⟩
+  ⟨⟨_, _, hM, hM⟩, mem_unitaryGroupOf_iff.mpr <|
+    star_unitaryTransvection_mul_mul_self_of_eq_zero hA (by rwa [hstar])⟩
 
 @[simp]
 theorem val_reflection (hA : A.IsHermitian) (v : n → K)
