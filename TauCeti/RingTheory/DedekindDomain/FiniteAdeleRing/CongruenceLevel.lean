@@ -281,8 +281,9 @@ open Matrix.GeneralLinearGroup in
 matrix of `GL₂(Ô)` with entry `b`: the case `Ô ⊆ 𝔸_f` of
 `Matrix.GeneralLinearGroup.map_upperRightHom`. -/
 theorem integralGL_upperRightHom (b : integralAdeles R K) :
-    integralGL K (Fin 2) (upperRightHom b) = upperRightHom (b : 𝔸ᶠ[R, K]) :=
-  Matrix.GeneralLinearGroup.ext fun i j ↦ by fin_cases i <;> fin_cases j <;> simp
+    integralGL K (Fin 2) (upperRightHom b) = upperRightHom (b : 𝔸ᶠ[R, K]) := by
+  rw [integralGL_def]
+  exact map_upperRightHom _ b
 
 open Matrix.GeneralLinearGroup in
 /-- The unipotent matrix `[[1, b], [0, 1]]` lies in `K₁(N)` for every integral `b` and every

@@ -36,7 +36,9 @@ These are the cases `Ô ⊆ 𝔸_f` of the general statements for a subalgebra
 
 ## Main declarations
 
-* `IsDedekindDomain.FiniteAdeleRing.integralGL`: the inclusion `GL_n(Ô) → GL_n(𝔸_f)`.
+* `IsDedekindDomain.FiniteAdeleRing.integralGL`: the inclusion `GL_n(Ô) → GL_n(𝔸_f)`, which is
+  `Matrix.GeneralLinearGroup.map` along `Ô ⊆ 𝔸_f`
+  (`IsDedekindDomain.FiniteAdeleRing.integralGL_def`).
 * `IsDedekindDomain.FiniteAdeleRing.mem_range_integralGL_iff`: its range is the set of matrices
   whose entries and inverse entries are integral.
 * `IsDedekindDomain.FiniteAdeleRing.isOpenEmbedding_integralGL`: it is an open embedding.
@@ -66,6 +68,12 @@ variable (ι : Type*) [Fintype ι] [DecidableEq ι]
 size `n`. -/
 def integralGL : GL ι (integralAdeles R K) →* GL ι 𝔸ᶠ[R, K] :=
   Matrix.GeneralLinearGroup.map (integralAdeles R K).val.toRingHom
+
+/-- The inclusion `GL_n(Ô) → GL_n(𝔸_f)` is `Matrix.GeneralLinearGroup.map` along `Ô ⊆ 𝔸_f`, so the
+general lemmas about `Matrix.GeneralLinearGroup.map` apply to it. -/
+theorem integralGL_def :
+    integralGL K ι = Matrix.GeneralLinearGroup.map (integralAdeles R K).val.toRingHom :=
+  (rfl)
 
 variable {K ι}
 
