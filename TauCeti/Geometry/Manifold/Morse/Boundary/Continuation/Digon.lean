@@ -68,10 +68,10 @@ is **transverse** (`TauCeti.IsTransverseContinuationFamily`) when, for all suffi
 and sufficiently positive `b`, this family of transition maps is a Morse–Smale family of pairs
 (`TauCeti.IsAdaptedPseudoGradient.IsParametrizedMorseSmalePair`). This is a condition on the
 whole family, not on each continuation `V λ` separately. For a transverse family whose transition
-maps are differentiable jointly in the parameter and the point, the digon trajectories between
-critical points whose indices rise by at least one are finitely many
-(`TauCeti.IsContinuationFamily.finite_morseDigonSlice`), which is the finiteness hypothesis of the
-digon identity above.
+maps are continuous jointly in the parameter and the point, and differentiable at the digon
+trajectories, the digon trajectories between critical points whose indices rise by at least one
+are finitely many (`TauCeti.IsContinuationFamily.finite_morseDigonSlice`), which is the finiteness
+hypothesis of the digon identity above.
 
 ## Main declarations
 
@@ -408,15 +408,18 @@ include hV hC hVs h₀ hf₀ h₁ hf₁ in
 /-- **Rigid digon trajectories are finitely many.** Let `V` be a family of `C¹` continuation fields
 from `X₀` to `X₁` at rate `C > 0`, between Morse–Smale pseudo-gradients adapted to Morse functions
 `f₀` and `f₁`. Suppose that the family is transverse, and that for all sufficiently negative `a`
-and sufficiently positive `b` the transition maps `φ^λ_{a, b}` are differentiable jointly in `λ`
-and the point. Then between critical points `p` of `f₀` and `q` of `f₁` with
+and sufficiently positive `b` the transition maps `(λ, y) ↦ φ^λ_{a, b} y` are continuous jointly
+in `λ` and the point, and differentiable at the digon trajectories through them from `p` to `q`.
+Then between critical points `p` of `f₀` and `q` of `f₁` with
 `ind q ≥ ind p + 1` there are finitely many digon trajectories. These are the finiteness
 hypotheses of `eventually_morseBoundary_comp_morseDegreeOneMap_morseDigonSlice_add_eq_iff`, so the
 coefficients of the mod-two digon homotopy count finite sets. -/
-theorem finite_morseDigonSlice (htr : IsTransverseContinuationFamily C V hX₀ hX₁)
-    (hΦ : ∀ᶠ a in atBot, ∀ᶠ b in atTop, MDifferentiable (𝓘(ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E)
-      (Function.uncurry fun l ↦ timeDependentFlowOf (continuationSpaceField C (V l)) a b))
-    {p q : M}
+theorem finite_morseDigonSlice (htr : IsTransverseContinuationFamily C V hX₀ hX₁) {p q : M}
+    (hΦ : ∀ᶠ a in atBot, ∀ᶠ b in atTop, Continuous
+        (Function.uncurry fun l ↦ timeDependentFlowOf (continuationSpaceField C (V l)) a b) ∧
+        ∀ z ∈ morseDigonTransitionSlice C V hX₀ hX₁ a b p q,
+          MDifferentiableAt (𝓘(ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E)
+            (Function.uncurry fun l ↦ timeDependentFlowOf (continuationSpaceField C (V l)) a b) z)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1 ≤ manifoldMorseIndex 𝓘(ℝ, E) f₁ q) :
     (morseDigonSlice V p q).Finite := by
   obtain ⟨σ, hσ⟩ := exists_intervalBaseOrbit_eq hC.ne' (by norm_num : (1 / 2 : ℝ) ∈ Ioo 0 1)
@@ -427,7 +430,8 @@ theorem finite_morseDigonSlice (htr : IsTransverseContinuationFamily C V hX₀ h
   obtain ⟨b, hbij, htrb, hΦb⟩ := (ha.1.and (ha.2.1.and ha.2.2)).exists
   refine Finite.of_finite_image ?_ (hbij p q).injOn
   rw [(hbij p q).image_eq, morseDigonTransitionSlice_eq_parametrizedPairSlice]
-  exact htrb.finite_parametrizedPairSlice h₀ h₁ hf₀ hf₁ hΦb hind
+  exact htrb.finite_parametrizedPairSlice h₀ h₁ hf₀ hf₁ hΦb.1
+    (fun z hz ↦ hΦb.2 z (by rwa [morseDigonTransitionSlice_eq_parametrizedPairSlice])) hind
 
 end IsContinuationFamily
 

@@ -30,8 +30,8 @@ parameters. The homotopy `K = TauCeti.morseDegreeOneMap f₀ hf₁ (morseDigonSl
 `+1`, counts them modulo two. As for the continuation map, the definitions take no hypothesis on
 `V`; they are the trajectory counts only when the slices are finite, which holds for transverse
 families of `C¹` continuation fields between Morse–Smale pseudo-gradients of Morse functions whose
-transition maps are differentiable jointly in the parameter and the point
-(`TauCeti.IsContinuationFamily.finite_morseDigonSlice`).
+transition maps are continuous jointly in the parameter and the point, and differentiable at the
+digon trajectories (`TauCeti.IsContinuationFamily.finite_morseDigonSlice`).
 
 **The ends of the one-dimensional digon trajectory spaces.** When `ind p = ind q`, the digon
 trajectories from `p` to `q` are expected to form a one-dimensional space with four kinds of ends:

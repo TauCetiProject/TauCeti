@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Pair
 public import TauCeti.Geometry.Manifold.TangentCone.Prod
+public import TauCeti.LinearAlgebra.Quotient.Basic
 
 /-!
 # The Morse–Smale condition for a one-parameter family of pairs
@@ -30,8 +31,8 @@ derivative and the tangent space of `W^s_{X₁}(b)` span the tangent space of `M
 transversality condition of a one-parameter family. The pairs `(X₀, (Φ λ)^* X₁)` need not be
 Morse–Smale, since the derivative in the parameter direction contributes, and the parametrized
 intersection has expected dimension `ind a - ind b + 1`, one more than for a single pair. For a
-Morse–Smale family, with `(λ, y) ↦ Φ λ y` differentiable, and Morse–Smale pseudo-gradients `X₀` and
-`X₁`:
+Morse–Smale family, with `(λ, y) ↦ Φ λ y` continuous and differentiable at the points of the
+parametrized intersections, and Morse–Smale pseudo-gradients `X₀` and `X₁`:
 
 * **Index bound.** The parametrized intersection is empty unless `ind b ≤ ind a + 1`
   (`IsParametrizedMorseSmalePair.manifoldMorseIndex_le_add_one`,
@@ -215,15 +216,6 @@ private theorem finrank_quotient_span_mtangentConeAt_stableSet {y : M}
     (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₁.flow.stableSet b) y))
   omega
 
-/-- A linear map restricted to `W`, followed by the quotient by `S`, is onto when the image of `W`
-and `S` span the target. -/
-private theorem surjective_mkQ_comp_comp_subtype {R F G : Type*} [Ring R] [AddCommGroup F]
-    [Module R F] [AddCommGroup G] [Module R G] {d : F →ₗ[R] G} {W : Submodule R F}
-    {S : Submodule R G}
-    (h : W.map d ⊔ S = ⊤) : Surjective (S.mkQ ∘ₗ d ∘ₗ W.subtype) :=
-  LinearMap.range_eq_top.1 <| by
-    simpa [LinearMap.range_comp, Submodule.map_mkQ_eq_top, sup_comm] using h
-
 /-- Transversality makes the derivative of `(λ, y) ↦ Φ λ y` on `ℝ × T W^u(a)`, followed by the
 quotient by `T W^s(b)`, onto. -/
 private theorem surjective_mkQ_comp_mfderiv_comp_subtype
@@ -234,7 +226,8 @@ private theorem surjective_mkQ_comp_mfderiv_comp_subtype
         ((mfderiv (𝓘(ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) (uncurry Φ) z).toLinearMap : ℝ × E →ₗ[ℝ] E) ∘ₗ
         ((⊤ : Submodule ℝ ℝ).prod
           (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX₀.flow.unstableSet a) z.2))).subtype) :=
-  surjective_mkQ_comp_comp_subtype (h.map_sup_span_mtangentConeAt_eq_top hz)
+  Submodule.surjective_mkQ_comp_comp_subtype_of_map_sup_eq_top
+    (h.map_sup_span_mtangentConeAt_eq_top hz)
 
 /-- **The index rises by at most one along a Morse–Smale family.** If the parametrized
 intersection from `a` to `b` is nonempty, then the index of `b` for `f₁` is at most the index of
@@ -335,19 +328,21 @@ theorem isClosed_parametrizedPairSlice (h : IsParametrizedMorseSmalePair hX₀ h
   exact hz'
 
 /-- **Rigid parametrized intersections are finite.** For a Morse–Smale family of Morse–Smale
-pseudo-gradients, with `(λ, y) ↦ Φ λ y` differentiable, if the index of `q` for `f₁` is at least
-the index of `p` for `f₀` plus one, then the parametrized intersection from `p` to `q` is finite.
+pseudo-gradients, with `(λ, y) ↦ Φ λ y` continuous and differentiable at the points of the
+parametrized intersection from `p` to `q`, if the index of `q` for `f₁` is at least the index of
+`p` for `f₀` plus one, then this parametrized intersection is finite.
 For the transition maps of a family of continuations, these are the trajectories of index `-1`
 counted by the digon homotopy. -/
 theorem finite_parametrizedPairSlice (h : IsParametrizedMorseSmalePair hX₀ hX₁ Φ)
     (h₀ : hX₀.IsMorseSmale) (h₁ : hX₁.IsMorseSmale) (hf₀ : IsMorse 𝓘(ℝ, E) f₀)
-    (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hΦ : MDifferentiable (𝓘(ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) (uncurry Φ))
+    (hf₁ : IsMorse 𝓘(ℝ, E) f₁) (hΦc : Continuous (uncurry Φ))
+    (hΦ : ∀ z ∈ hX₀.parametrizedPairSlice hX₁ Φ p q,
+      MDifferentiableAt (𝓘(ℝ).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) (uncurry Φ) z)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f₀ p + 1 ≤ manifoldMorseIndex 𝓘(ℝ, E) f₁ q) :
     (hX₀.parametrizedPairSlice hX₁ Φ p q).Finite :=
   ((isCompact_Icc.prod isCompact_univ).of_isClosed_subset
-    (h.isClosed_parametrizedPairSlice h₀ h₁ hf₀ hf₁ hΦ.continuous hind)
-    fun _ hz ↦ ⟨hz.1, trivial⟩).finite
-      (h.isDiscrete_parametrizedPairSlice hf₀ (fun z _ ↦ hΦ z) hind)
+    (h.isClosed_parametrizedPairSlice h₀ h₁ hf₀ hf₁ hΦc hind)
+    fun _ hz ↦ ⟨hz.1, trivial⟩).finite (h.isDiscrete_parametrizedPairSlice hf₀ hΦ hind)
 
 /-- **The ends of one-dimensional parametrized intersections are once broken.** Let the family be
 Morse–Smale, `X₀` and `X₁` Morse–Smale, `(λ, y) ↦ Φ λ y` continuous, and `ind p = ind q`, for `f₀`
