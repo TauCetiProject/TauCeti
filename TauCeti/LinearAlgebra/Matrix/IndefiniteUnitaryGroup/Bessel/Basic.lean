@@ -46,6 +46,11 @@ products of the frame with its image under `γ`.
 * `TauCeti.isHermitian_middleGram`: `middleGram N` is hermitian when `star N = N`.
 * `Matrix.frameGram_one`: the frame Gram matrix of `1` has the single entry `T z z`.
 * `TauCeti.det_eq_one_of_mem_besselU`: elements of the unipotent Bessel group have determinant `1`.
+* `TauCeti.mem_besselU_iff_forall_le`: membership in the unipotent Bessel group, entry by entry.
+* `TauCeti.splitGram_mul_apply_inl`, `TauCeti.splitGram_mul_apply_eStar`: the Gram matrix of the
+  split form exchanges the rows `e_a` and `e*_a`.
+* `TauCeti.exists_eq_inl_of_splitLevel_lt`, `TauCeti.exists_besselFrame_eq_of_besselFloor_lt`: the
+  basis vectors of small level, or of small floor and level, are frame vectors.
 
 ## References
 
@@ -166,7 +171,8 @@ def besselFloor : BesselIndex ϱ κ → ℕ :=
 @[simp] lemma besselFloor_inl (a : Fin ϱ) : besselFloor (κ := κ) (.inl a) = a := (rfl)
 @[simp] lemma besselFloor_x (i : κ) :
     besselFloor (ϱ := ϱ) (.inr (.inl (.inl i))) = ϱ + 1 := (rfl)
-@[simp] lemma besselFloor_z : besselFloor (BesselIndex.z ϱ κ) = ϱ := (rfl)
+@[simp] lemma besselFloor_z (u : Unit) :
+    besselFloor (ϱ := ϱ) (κ := κ) (.inr (.inl (.inr u))) = ϱ := (rfl)
 @[simp] lemma besselFloor_eStar (a : Fin ϱ) : besselFloor (κ := κ) (.inr (.inr a)) = a := (rfl)
 
 /-- The indices of the frame `(e₀, …, e_{ϱ-1}, z)`. -/
@@ -178,6 +184,108 @@ def besselFrame : Fin (ϱ + 1) → BesselIndex ϱ κ := Fin.snoc Sum.inl (Bessel
   simp [besselFrame]
 
 end LevelFloorFrame
+
+/-! ### Floors, levels and the frame -/
+
+section Index
+
+variable {ϱ : ℕ} {κ : Type*}
+
+/-- The floor of a basis vector is at most one more than its level. -/
+theorem besselFloor_le_splitLevel_add_one (i : BesselIndex ϱ κ) :
+    besselFloor i ≤ splitLevel i + 1 := by
+  rcases i with a | (i | ⟨⟩) | a
+  · simp
+  · simp
+  · simp
+  · simp only [besselFloor_eStar, splitLevel_eStar]; omega
+
+/-- Every floor is at most `ϱ + 1`. -/
+theorem besselFloor_le (i : BesselIndex ϱ κ) : besselFloor i ≤ ϱ + 1 := by
+  rcases i with a | (i | ⟨⟩) | a
+  · simp only [besselFloor_inl]; omega
+  · simp
+  · simp
+  · simp only [besselFloor_eStar]; omega
+
+/-- The frame vector `f_b` has level `b`. -/
+@[simp]
+theorem splitLevel_besselFrame (b : Fin (ϱ + 1)) : splitLevel (besselFrame (κ := κ) b) = b := by
+  induction b using Fin.lastCases <;> simp
+
+/-- The frame vector `f_b` has floor `b`. -/
+@[simp]
+theorem besselFloor_besselFrame (b : Fin (ϱ + 1)) : besselFloor (besselFrame (κ := κ) b) = b := by
+  induction b using Fin.lastCases <;> simp
+
+/-- Distinct indices give distinct frame vectors. -/
+theorem besselFrame_injective : Function.Injective (besselFrame (ϱ := ϱ) (κ := κ)) :=
+  fun b b' h ↦ Fin.ext <| by simpa using congrArg splitLevel h
+
+/-- A frame vector of index below `ϱ` is `e_b`. -/
+theorem besselFrame_eq_inl {b : Fin (ϱ + 1)} (hb : (b : ℕ) < ϱ) :
+    besselFrame (κ := κ) b = .inl ⟨b, hb⟩ :=
+  besselFrame_castSucc (κ := κ) ⟨b, hb⟩
+
+/-- A basis vector of level below `b ≤ ϱ` is one of the `e_c`. -/
+theorem exists_eq_inl_of_splitLevel_lt {i : BesselIndex ϱ κ} {b : ℕ} (hi : splitLevel i < b)
+    (hb : b ≤ ϱ) : ∃ c : Fin ϱ, i = .inl c := by
+  rcases i with a | (i | ⟨⟩) | a
+  · exact ⟨a, rfl⟩
+  · simp at hi; omega
+  · simp at hi; omega
+  · simp only [splitLevel_eStar] at hi; omega
+
+/-- A basis vector of floor and level below `l ≤ ϱ + 1` is a frame vector `f_b` with `b < l`. -/
+theorem exists_besselFrame_eq_of_besselFloor_lt {j : BesselIndex ϱ κ} {l : ℕ}
+    (hf : besselFloor j < l) (hj : splitLevel j < l) (hl : l ≤ ϱ + 1) :
+    ∃ b : Fin (ϱ + 1), (b : ℕ) < l ∧ besselFrame b = j := by
+  rcases j with a | (i | ⟨⟩) | a
+  · exact ⟨a.castSucc, by simpa using hf, by simp⟩
+  · simp at hf; omega
+  · exact ⟨Fin.last ϱ, by simpa using hj, by simp⟩
+  · simp only [splitLevel_eStar] at hj; omega
+
+end Index
+
+/-! ### Rows of the split form -/
+
+section SplitGramRows
+
+variable {R : Type*} [CommRing R] {ϱ : ℕ} {μ : Type*} (T : Matrix μ μ R)
+
+/-- The row `e_a` of the Gram matrix of the split form is the basis row `e*_a`. -/
+theorem splitGram_apply_inl [DecidableEq μ] (a : Fin ϱ) (k : SplitIndex ϱ μ) :
+    splitGram ϱ T (.inl a) k =
+      (1 : Matrix (SplitIndex ϱ μ) (SplitIndex ϱ μ) R) (.inr (.inr a)) k := by
+  rcases k with b | j | b <;> simp [Matrix.one_apply]
+
+/-- The row `e*_a` of the Gram matrix of the split form is the basis row `e_a`. -/
+theorem splitGram_apply_eStar [DecidableEq μ] (a : Fin ϱ) (k : SplitIndex ϱ μ) :
+    splitGram ϱ T (.inr (.inr a)) k =
+      (1 : Matrix (SplitIndex ϱ μ) (SplitIndex ϱ μ) R) (.inl a) k := by
+  rcases k with b | j | b <;> simp [Matrix.one_apply]
+
+variable [Fintype μ]
+
+/-- The row `e_a` of `J M` is the row `e*_a` of `M`, for the Gram matrix `J` of the split form. -/
+theorem splitGram_mul_apply_inl (M : Matrix (SplitIndex ϱ μ) (SplitIndex ϱ μ) R) (a : Fin ϱ)
+    (k : SplitIndex ϱ μ) : (splitGram ϱ T * M) (.inl a) k = M (.inr (.inr a)) k := by
+  simp [Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply]
+
+/-- The row `e*_a` of `J M` is the row `e_a` of `M`, for the Gram matrix `J` of the split form. -/
+theorem splitGram_mul_apply_eStar (M : Matrix (SplitIndex ϱ μ) (SplitIndex ϱ μ) R) (a : Fin ϱ)
+    (k : SplitIndex ϱ μ) : (splitGram ϱ T * M) (.inr (.inr a)) k = M (.inl a) k := by
+  simp [Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply]
+
+/-- A row of the middle block of `J M` is the corresponding combination, by `T`, of the rows of the
+middle block of `M`, for the Gram matrix `J` of the split form. -/
+theorem splitGram_mul_apply_middle (M : Matrix (SplitIndex ϱ μ) (SplitIndex ϱ μ) R) (i : μ)
+    (k : SplitIndex ϱ μ) :
+    (splitGram ϱ T * M) (.inr (.inl i)) k = ∑ j, T i j * M (.inr (.inl j)) k := by
+  simp [Matrix.mul_apply, Fintype.sum_sum_type]
+
+end SplitGramRows
 
 end TauCeti
 
@@ -229,6 +337,14 @@ def besselU : Subgroup (unitaryGroupOf (splitGram ϱ T)) :=
       ((g : GL (BesselIndex ϱ κ) R) :
         Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R).BlockUnitriangular splitLevel := by
   simp only [besselU, Subgroup.mem_subgroupOf, mem_unitriangularSubgroup]
+
+/-- An isometry lies in the unipotent Bessel group exactly when it agrees with the identity matrix
+at every entry `(i, j)` with `level j ≤ level i`. -/
+theorem mem_besselU_iff_forall_le {g : unitaryGroupOf (splitGram ϱ T)} :
+    g ∈ besselU ϱ T ↔ ∀ i j : BesselIndex ϱ κ, splitLevel j ≤ splitLevel i →
+      ((g : GL (BesselIndex ϱ κ) R) : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) i j =
+        (1 : Matrix (BesselIndex ϱ κ) (BesselIndex ϱ κ) R) i j := by
+  rw [mem_besselU, blockUnitriangular_iff_forall_le]
 
 /-- The isometries of the split form of `T` that fix each vector of the frame. -/
 def frameFixingSubgroup : Subgroup (unitaryGroupOf (splitGram ϱ T)) :=

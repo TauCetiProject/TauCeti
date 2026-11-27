@@ -78,7 +78,8 @@ The basic structure of these groups is recorded here.
 * `Matrix.specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf`: the determinant-one elements
   of `unitaryGroupOf A` are the special isometry group of the form.
 * `Matrix.mem_unitaryGroupOf_iff'`: membership as the equation `g * A⁻¹ * star g = A⁻¹`.
-* `Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`.
+* `Matrix.val_inv_of_mem_unitaryGroupOf`: the inverse of `g` is `A⁻¹ * star g * A`;
+  `Matrix.mul_val_inv_eq_star_mul_of_mem_unitaryGroupOf`: `A * g⁻¹ = star g * A`.
 * `Matrix.star_mem_unitaryGroupOf_iff_of_mul_self_eq_one`: for an involution `A` (`A * A = 1`),
   `unitaryGroupOf A` is stable under conjugate transposition.
 * `Matrix.det_mem_unitary_of_mem_unitaryGroupOf`: `star (det g) * det g = 1`.
@@ -185,6 +186,15 @@ theorem specialIsometryGroup_starRingEnd_eq_comap_unitaryGroupOf :
       ext; simp [starRingEnd_apply]
     rw [mem_specialIsometryGroup_iff, Subgroup.mem_comap, mem_unitaryGroupOf_iff,
       SpecialLinearGroup.coe_GL_coe_matrix, h]
+
+/-- For an element `g` of `unitaryGroupOf A`, `A * g⁻¹ = star g * A`; no invertibility of `A` is
+needed. -/
+theorem mul_val_inv_eq_star_mul_of_mem_unitaryGroupOf {g : GL n R} (hg : g ∈ unitaryGroupOf A) :
+    A * (↑g⁻¹ : Matrix n n R) = star (g : Matrix n n R) * A := by
+  calc A * (↑g⁻¹ : Matrix n n R) = star (g : Matrix n n R) * A * g * (↑g⁻¹ : Matrix n n R) := by
+        rw [mem_unitaryGroupOf_iff.mp hg]
+    _ = star (g : Matrix n n R) * A := by
+        rw [Matrix.mul_assoc _ (g : Matrix n n R), Units.mul_inv, Matrix.mul_one]
 
 /-- **The inverse of an element of `unitaryGroupOf A`**, for invertible `A`, is
 `A⁻¹ * star g * A`. -/

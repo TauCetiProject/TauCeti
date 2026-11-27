@@ -44,7 +44,8 @@ how membership in the big cell is read off a Bruhat normal form.
 ## Main definitions
 
 * `Matrix.BlockUnitriangular`: block triangular with identity diagonal blocks, characterized by
-  `Matrix.blockUnitriangular_iff`.
+  `Matrix.blockUnitriangular_iff`, and for a linear order of the blocks by
+  `Matrix.blockUnitriangular_iff_forall_le`.
 
 ## Main results
 
@@ -61,6 +62,8 @@ how membership in the big cell is read off a Bruhat normal form.
   `D`.
 * `Matrix.det_submatrix_castLE_mul_mul`: for `Fin n`-indexed matrices, the leading principal
   minors of `L * M * U` are those of `M` for lower unitriangular `L` and upper unitriangular `U`.
+* `Matrix.det_submatrix_mul_of_apply_eq_one_apply`: right multiplication by a matrix whose
+  columns on a finite family of indices are unitriangular keeps the minor on that family.
 * `Matrix.exists_blockUnitriangular_mul_blockTriangular`: block row reduction.
 * `Matrix.exists_blockLDU`: a block `LDU` factorization exists when the leading blocks on the
   strict initial segments have unit determinants.
@@ -123,6 +126,16 @@ theorem blockUnitriangular_of_apply_eq_one_apply_of_not_lt {α : Type*} [Preorde
   refine ⟨fun r s hsr => ?_, fun r s hrs => h r s (by rw [hrs]; exact lt_irrefl _)⟩
   rw [h r s (not_lt_of_gt hsr), one_apply_ne]
   exact fun hrs => (ne_of_lt hsr) (congrArg b hrs.symm)
+
+/-- For a linear order of the blocks, a matrix is block unitriangular exactly when it agrees with
+the identity matrix at every entry whose column block does not come after its row block. -/
+theorem blockUnitriangular_iff_forall_le {α : Type*} [LinearOrder α] {b : m → α} :
+    M.BlockUnitriangular b ↔ ∀ i j, b j ≤ b i → M i j = (1 : Matrix m m R) i j := by
+  refine ⟨fun h i j hji => ?_, fun h => blockUnitriangular_of_apply_eq_one_apply_of_not_lt
+    fun r s hrs => h r s (not_lt.mp hrs)⟩
+  rcases hji.lt_or_eq with hlt | heq
+  · rw [h.1 hlt, one_apply_ne fun hij => hlt.ne (congrArg b hij.symm)]
+  · exact h.2 heq.symm
 
 /-- Restricting a block unitriangular matrix along an injective map of indices keeps it block
 unitriangular for the restricted ranking. -/
@@ -407,6 +420,29 @@ theorem det_submatrix_castLE_eq_det_toSquareBlockProp {n l : ℕ} (M : Matrix (F
   rw [← det_submatrix_equiv_self (Fin.castLEquiv h)]
   refine congrArg det (ext fun i j => ?_)
   simp [toSquareBlockProp_def]
+
+/-- **Minors of a product with a unitriangular family of columns.** Let `f` pick out finitely many
+indices, ordered by a linear order on its domain. If each column `f b` of `A` agrees with the
+identity matrix outside the rows `f a` with `a < b`, then the minor of `M * A` on the rows and
+columns `f` is that of `M`. -/
+theorem det_submatrix_mul_of_apply_eq_one_apply {ι : Type*} [Fintype ι]
+    [DecidableEq ι] [LinearOrder ι] (M A : Matrix m m R) {f : ι → m}
+    (hf : Function.Injective f)
+    (hA : ∀ k b, (∀ a, f a = k → b ≤ a) → A k (f b) = (1 : Matrix m m R) k (f b)) :
+    ((M * A).submatrix f f).det = (M.submatrix f f).det := by
+  -- The columns `f b` of `A` vanish outside the rows `f a`, so the block of `M * A` on `f` is the
+  -- product of the blocks of `M` and `A`, and the block of `A` is unitriangular.
+  have h_block : (M * A).submatrix f f = M.submatrix f f * A.submatrix f f := by
+    ext a b
+    rw [submatrix_apply, Matrix.mul_apply, Matrix.mul_apply]
+    refine (Fintype.sum_of_injective f hf _ _ (fun k hk => ?_) fun _ => rfl).symm
+    rw [hA k b fun a h => (hk ⟨a, h⟩).elim, one_apply_ne fun h => hk ⟨b, h.symm⟩, mul_zero]
+  have h_tri : (A.submatrix f f).BlockUnitriangular id :=
+    blockUnitriangular_of_apply_eq_one_apply_of_not_lt fun a b hab => by
+      have hba : b ≤ a := not_lt.mp hab
+      rw [submatrix_apply, hA (f a) b fun a' h => hba.trans (hf h).ge, ← submatrix_one f hf,
+        submatrix_apply]
+  rw [h_block, det_mul, h_tri.det_eq_one, mul_one]
 
 /-- **Leading principal minors of `L * M * U`.** For a lower unitriangular `L` and an upper
 unitriangular `U`, the leading principal minors of `L * M * U` are those of `M`. -/
