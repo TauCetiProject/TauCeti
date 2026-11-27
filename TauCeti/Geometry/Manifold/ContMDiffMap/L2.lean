@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.RCLike.Lemmas
+public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.ContinuousFunctions
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -17,7 +18,8 @@ import TauCeti.MeasureTheory.Function.L2Space
 Let `M` be a compact Hausdorff manifold modelled on a finite-dimensional real space and `μ` a
 finite Borel measure on `M`. A smooth function on `M` with values in `𝕜 = ℝ` or `ℂ` is continuous,
 hence square-integrable, so it has a class in `L²(M, μ)`; for `𝕜 = ℂ` this is the complex-linear
-map `ContMDiffMap.toL2`. This file proves that these classes are dense
+map `ContMDiffMap.toL2`, and the `L²` inner product of two such classes is the integral of the
+pointwise inner product (`ContMDiffMap.inner_toL2`). This file proves that these classes are dense
 (`ContMDiffMap.denseRange_toLp`, and `ContMDiffMap.denseRange_toL2` for `ℂ`): they form a
 `𝕜`-subspace, and a function in `L²(M, μ)` orthogonal to it has zero integral against every
 real-valued smooth function, and therefore vanishes almost everywhere by the fundamental lemma of
@@ -57,6 +59,14 @@ omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
 theorem toL2_apply (u : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
     toL2 μ u = ContinuousMap.toLp 2 μ ℂ (u : C(M, ℂ)) :=
   (rfl)
+
+omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] [T2Space M] in
+/-- The `L²` inner product of the classes of two complex-valued smooth functions is the integral
+of their pointwise inner product. -/
+theorem inner_toL2 (u v : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) :
+    ⟪toL2 μ u, toL2 μ v⟫_ℂ = ∫ x, ⟪u x, v x⟫_ℂ ∂μ := by
+  rw [toL2_apply, toL2_apply, ContinuousMap.inner_toLp]
+  simp [RCLike.inner_apply]
 
 /-- **Smooth functions are dense in `L²`.** On a compact Hausdorff manifold modelled on a
 finite-dimensional real space, the classes in `L²(M, μ)` of the `𝕜`-valued smooth functions are

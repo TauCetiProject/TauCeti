@@ -40,7 +40,10 @@ along `ν`, this derivative is a transvection, of Jacobian determinant one
 and invariant along `ν`). For `γ` invariant along `ν` the derivative of the inverse shear at
 `shearAlong γ ν y` inverts it (`TauCeti.fderiv_shearAlong_neg_comp_fderiv`,
 `TauCeti.fderiv_comp_fderiv_shearAlong_neg`). Its second
-derivative is `D²γ(h, k) ν`. The second-order chain rule through it
+derivative is `D²γ(h, k) ν` (`TauCeti.fderiv_fderiv_shearAlong`), so for `‖ν‖ ≤ 1` it is bounded
+and Hölder wherever `D²γ` is, with the same constants
+(`TauCeti.norm_fderiv_fderiv_shearAlong_le`, `TauCeti.holderOnWith_fderiv_fderiv_shearAlong`).
+The second-order chain rule through it
 (`TauCeti.fderiv_fderiv_comp_shearAlong_apply`) reads
 
 `D²(w ∘ φ)(y)(h, k) = D²w(φ y)(h + Dγ(y) h ν, k + Dγ(y) k ν) + D²γ(y)(h, k) Dw(φ y) ν`,
@@ -279,6 +282,35 @@ theorem fderiv_fderiv_shearAlong_apply {y : E} (hγ : ContDiffAt ℝ 2 γ y) (h 
   have h0 : fderiv ℝ (fun z : E => z) = fun _ => ContinuousLinearMap.id ℝ E :=
     funext fun _ => fderiv_fun_id
   simp [h0]
+
+/-- The second derivative of the shear `shearAlong γ ν`, as a bilinear map:
+`(h, k) ↦ D²γ(y)(h, k) ν`. -/
+theorem fderiv_fderiv_shearAlong {y : E} (hγ : ContDiffAt ℝ 2 γ y) :
+    fderiv ℝ (fderiv ℝ (shearAlong γ ν)) y =
+      ((StrongDual.smulRightL ℝ E E).flip ν).comp (fderiv ℝ (fderiv ℝ γ) y) := by
+  ext h k
+  simp [fderiv_fderiv_shearAlong_apply hγ]
+
+/-- For `‖ν‖ ≤ 1`, the second derivative of the shear `shearAlong γ ν` has norm at most that of
+`D²γ`. -/
+theorem norm_fderiv_fderiv_shearAlong_le (hν : ‖ν‖ ≤ 1) {y : E} (hγ : ContDiffAt ℝ 2 γ y) :
+    ‖fderiv ℝ (fderiv ℝ (shearAlong γ ν)) y‖ ≤ ‖fderiv ℝ (fderiv ℝ γ) y‖ := by
+  rw [fderiv_fderiv_shearAlong hγ]
+  exact (ContinuousLinearMap.norm_smulRightL_flip_comp_le _ _).trans
+    (mul_le_of_le_one_left (by positivity) hν)
+
+/-- For `‖ν‖ ≤ 1`, the second derivative of the shear `shearAlong γ ν` is Hölder on `s` with the
+exponent and constant of `D²γ`. -/
+theorem holderOnWith_fderiv_fderiv_shearAlong (hν : ‖ν‖ ≤ 1) {s : Set E} {α K : ℝ≥0}
+    (hγ : ∀ y ∈ s, ContDiffAt ℝ 2 γ y) (hK : HolderOnWith K α (fderiv ℝ (fderiv ℝ γ)) s) :
+    HolderOnWith K α (fderiv ℝ (fderiv ℝ (shearAlong γ ν))) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  have hd := hK.dist_le hx hy
+  rw [dist_eq_norm] at hd
+  rw [dist_eq_norm, fderiv_fderiv_shearAlong (hγ x hx), fderiv_fderiv_shearAlong (hγ y hy),
+    ← ContinuousLinearMap.comp_sub]
+  exact (ContinuousLinearMap.norm_smulRightL_flip_comp_le _ _).trans
+    ((mul_le_of_le_one_left (by positivity) hν).trans hd)
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 

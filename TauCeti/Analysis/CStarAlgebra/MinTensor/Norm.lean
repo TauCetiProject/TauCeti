@@ -29,7 +29,9 @@ only at `0` (a pair of faithful representations, which exists by the Gelfand–N
 has injective spatial tensor homomorphism), and it is a cross norm, `‖a ⊗ b‖_min = ‖a‖ ‖b‖`
 (`TauCeti.minTensorNorm_tmul`). For closed concrete operator algebras it dominates the spatial
 norm of the given representations (`NonUnitalStarSubalgebra.spatialNorm_le_minTensorNorm`), hence
-so does the maximal norm (`NonUnitalStarSubalgebra.spatialNorm_le_maxTensorNorm`).
+so does the maximal norm (`NonUnitalStarSubalgebra.spatialNorm_le_maxTensorNorm`). If a star
+homomorphism `Φ` carries `A ⊗[ℂ] B` bijectively onto a C*-algebra, the minimal norm is `‖Φ x‖`
+(`TauCeti.minTensorNorm_eq_norm_of_bijective`).
 
 By representation independence of the spatial norm (Takesaki I, Theorem IV.4.9;
 `TauCeti.norm_spatialTensorLinearMap_map_le`), a pair of faithful representations attains the
@@ -221,6 +223,14 @@ theorem minTensorNorm_comm (x : A ⊗[ℂ] B) :
   rw [minTensorNorm_eq_norm_spatialTensorHom hρ hπ, minTensorNorm_eq_norm_spatialTensorHom hπ hρ,
     NonUnitalStarAlgHom.spatialTensorHom_apply, NonUnitalStarAlgHom.spatialTensorHom_apply,
     TensorProduct.map_comm, norm_spatialTensorLinearMap_comm]
+
+/-- If a star homomorphism `Φ` carries `A ⊗[ℂ] B` bijectively onto a C*-algebra, the minimal norm
+is `‖Φ x‖`. -/
+theorem minTensorNorm_eq_norm_of_bijective {D : Type*} [NonUnitalCStarAlgebra D]
+    {Φ : A ⊗[ℂ] B →⋆ₙₐ[ℂ] D} (hΦ : Function.Bijective Φ) (x : A ⊗[ℂ] B) :
+    minTensorNorm A B x = ‖Φ x‖ :=
+  supTensorNorm_eq_norm_of_bijective _ hΦ
+    ((exists_tensorHom_spatial_injective_and_norm_tensorHom_spatial_tmul A B).imp fun _ h ↦ h.1) x
 
 end TauCeti
 

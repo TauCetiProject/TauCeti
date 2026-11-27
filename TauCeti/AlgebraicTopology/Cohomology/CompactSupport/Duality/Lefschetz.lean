@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.RelativeFundament
 import Mathlib.Algebra.FiveLemma
 import TauCeti.AlgebraicTopology.Cohomology.Collar
 import TauCeti.AlgebraicTopology.Cohomology.Manifold
+import TauCeti.AlgebraicTopology.Singular.Collar
 import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 import TauCeti.AlgebraicTopology.Singular.LocalHomology.BoundaryFundamentalClass
 import TauCeti.CategoryTheory.Linear.Int
@@ -306,19 +307,6 @@ private lemma bijective_capFundamentalClassOn_interiorCompl {t : ℝ} (ht : 0 < 
   funext α
   rw [Function.comp_apply, ← ConcreteCategory.comp_apply, compactSupportCohomologyι_dualityMap]
 
-omit [CompactSpace X] [T2Space M] in
-include hιf hc in
-/-- The map `H_q(M; L) ⟶ H_q(X; L)` induced by the interior is bijective. -/
-private lemma bijective_singularHomologyMap_interiorHom (q : ℕ) :
-    Function.Bijective
-      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
-        (interiorHom hι)) := by
-  have : TopCat.ofHom (hc.homotopyEquivOfRangeEq hι.isEmbedding hιf).toFun = interiorHom hι :=
-    TopCat.hom_ext (ContinuousMap.ext fun x ↦
-      congrFun (hc.coe_homotopyEquivOfRangeEq hι.isEmbedding hιf) x)
-  rw [← this, ← ContinuousMap.HomotopyEquiv.singularHomologyIso_hom]
-  exact ConcreteCategory.bijective_of_isIso _
-
 end Proof
 
 /-- **Lefschetz duality.** Let `X` be a compact Hausdorff space and `ι : M → X` an open embedding
@@ -341,7 +329,10 @@ theorem bijective_capFundamentalClassRel (p q : ℕ) (h : p + q = n) :
     (TopPair.singularCohomologyMap
       (TopPair.ofSubsetMap (𝟙 (TopCat.of X)) (compl_range_subset_compl_collarCompl hι hιf hc ht))
       p))]
-  convert (bijective_singularHomologyMap_interiorHom hι hιf L hc q).comp
+  have := hc.isIso_singularHomologyMap_of_rangeEq hι.isEmbedding hιf L q
+  convert (ConcreteCategory.bijective_of_isIso
+      (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).map
+        (interiorHom hι))).comp
     ((o.bijective_capFundamentalClassOn_interiorCompl hn hι hιf L hc ht p q h).comp
       (ConcreteCategory.bijective_of_isIso (TopPair.singularCohomologyMap
         (R := ModuleCat.of ℤ (ULift.{0} ℤ)) (k := ℤ) (M := L) (TopPair.ofSubsetMap (interiorHom hι)

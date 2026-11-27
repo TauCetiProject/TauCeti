@@ -28,7 +28,8 @@ unit of `R` (`WittVector.isUnit_iff_isUnit_coeff_zero`); the inverse is Mathlib'
 Consequently `p` lies in the Jacobson radical of `𝕎 R` (`WittVector.p_mem_jacobson`). Over a
 perfect ring, where `p ^ n 𝕎 R` consists of the Witt vectors whose first `n` coordinates vanish,
 `x` is `p ^ n` times a unit exactly when `x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit
-(`WittVector.associated_p_pow_iff`).
+(`WittVector.associated_p_pow_iff`), and over a perfect domain `p` is a prime element, since
+`𝕎 R ⧸ (p) ≅ R` (`WittVector.prime_p`).
 
 ## Main results
 
@@ -48,6 +49,7 @@ perfect ring, where `p ^ n 𝕎 R` consists of the Witt vectors whose first `n` 
 * `WittVector.p_mem_jacobson`: in characteristic `p`, `p` lies in the Jacobson radical of `𝕎 R`.
 * `WittVector.associated_p_pow_iff`: over a perfect ring, `x` is `p ^ n` times a unit iff
   `x₀ = ⋯ = x_{n-1} = 0` and `xₙ` is a unit.
+* `WittVector.prime_p`: over a perfect domain, `p` is a prime element of `𝕎 R`.
 
 ## References
 
@@ -183,6 +185,12 @@ theorem associated_p_pow_iff [PerfectRing R p] {x : 𝕎 R} {n : ℕ} :
     rw [hcoeff, isUnit_pow_iff (pow_ne_zero _ hp.out.ne_zero), ← isUnit_iff_isUnit_coeff_zero]
       at hn
     exact associated_mul_unit_right ((p : 𝕎 R) ^ n) y hn
+
+/-- Over a perfect domain of characteristic `p`, `p` is a prime element of `𝕎 R`: the quotient
+`𝕎 R ⧸ (p)` is `R` (`WittVector.quotientPEquiv`). -/
+theorem prime_p [IsDomain R] [PerfectRing R p] : Prime (p : 𝕎 R) := by
+  rw [← Ideal.span_singleton_prime (p_ne_zero p R), ← Ideal.Quotient.isDomain_iff_prime]
+  exact quotientPEquiv.toMulEquiv.isDomain
 
 end CharP
 
