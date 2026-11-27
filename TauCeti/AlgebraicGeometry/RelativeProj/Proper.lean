@@ -86,14 +86,7 @@ theorem relativeProjToBase_iff_forall_isAffineOpen (P : MorphismProperty Scheme.
       ∀ U : X.Opens, IsAffineOpen U → P (Proj.toSpecCoeff (A.gradedSectionsGrading U)) := by
   rw [IsZariskiLocalAtTarget.iff_of_iSup_eq_top (P := P) _ (iSup_affineOpens_eq_top X),
     Subtype.forall]
-  refine forall₂_congr fun U hU ↦ ?_
-  -- Over `U`, the chart `Proj (⨁ n, Γ(Aₙ, U))` and the preimage of `U` are both pullbacks of the
-  -- structure morphism along `U ⟶ X`, so the restriction is the chart's coefficient morphism up to
-  -- isomorphisms on both sides.
-  have h := A.isPullback_relativeProjCover ⟨U, hU⟩
-  have h' := isPullback_morphismRestrict A.relativeProjToBase U
-  rw [← P.cancel_left_of_respectsIso (h.isoIsPullback _ _ h').hom,
-    h.isoIsPullback_hom_fst _ _ h', P.cancel_right_of_respectsIso]
+  exact forall₂_congr fun _ hU ↦ A.relativeProjToBase_morphismRestrict_iff P hU
 
 /-- **The relative `Proj` is separated** over the base. -/
 instance isSeparated_relativeProjToBase : IsSeparated A.relativeProjToBase :=

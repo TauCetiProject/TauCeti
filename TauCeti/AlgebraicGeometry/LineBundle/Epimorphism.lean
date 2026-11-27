@@ -11,8 +11,9 @@ import Mathlib.RingTheory.PicardGroup
 /-!
 # Epimorphisms of line bundles
 
-An invertible sheaf has no proper invertible quotient. On stalks this is the fact that a
-surjective linear map between invertible modules is bijective.
+An invertible sheaf has no proper invertible quotient. On stalks,
+`Module.Invertible.bijective_of_surjective` gives bijectivity of a surjective linear map between
+invertible modules.
 -/
 
 public section
@@ -34,7 +35,13 @@ theorem Hom.isIso_of_epi_of_isInvertible {X : Scheme.{u}} {M N : X.Modules}
       .congr (nonempty_linearEquiv_stalk_of_isInvertible L x).some
     exact Module.Invertible.bijective_of_surjective (f := φ.stalkₗ x) (φ.stalkₗ_surjective_of_epi x)
   let ψ := (TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf X).map φ
-  refine Hom.isIso_iff_isIso_app.mpr fun U ↦ (ConcreteCategory.isIso_iff_bijective _).mpr ?_
-  exact TopCat.Presheaf.app_bijective_of_stalkFunctor_map_bijective ψ U fun x _ ↦ hb x
+  have : IsIso ψ := (TopCat.Presheaf.isIso_iff_stalkFunctor_map_iso ψ).mpr fun x ↦ by
+    rw [TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf_map_hom,
+      ConcreteCategory.isIso_iff_bijective]
+    exact hb x
+  have : IsIso ((toPresheaf X).map φ) := by
+    rw [toPresheaf_map, ← TauCeti.AlgebraicGeometry.Scheme.Modules.toSheaf_map_hom]
+    exact (TopCat.Sheaf.forget Ab X).map_isIso ψ
+  exact isIso_of_reflects_iso φ (toPresheaf X)
 
 end AlgebraicGeometry.Scheme.Modules
