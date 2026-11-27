@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Torus
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Geometry.Symplectic.Complex.CoordinateSpace
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Topology.Covering.Pi
+public import Mathlib.Topology.Covering.AddCircle
 import TauCeti.Algebra.AddCircle
 
 /-!
@@ -62,6 +64,7 @@ nonsqueezing theorem embeds a ball.
 * `TauCeti.mpullback_complexPiTorusCover_torusSymplecticForm`: `π^* ω_T = ω₀`.
 * `TauCeti.isSymplectic_torusSymplecticForm`: `ω_T` is symplectic.
 * `TauCeti.complexPiTorusCover_eq_complexPiTorusCover_iff`: the fibres of the covering map.
+* `TauCeti.isCoveringMap_complexPiTorusCover`: it is a covering map.
 * `TauCeti.injOn_complexPiTorusCover`, `TauCeti.injOn_complexPiTorusCover_ball`: injectivity on
   sets whose real and imaginary parts vary by less than the periods, and on small balls.
 * `TauCeti.eval₂_torusSymplecticForm_mfderiv_complexPiTorusCover`: the covering map, and hence
@@ -130,6 +133,16 @@ theorem complexPiTorusCover_eq_complexPiTorusCover_iff {z w : ι → ℂ} :
   simp only [funext_iff, Sum.forall, complexPiTorusCover_apply_inl,
     complexPiTorusCover_apply_inr, AddCircle.coe_eq_coe_iff_exists_zsmul]
   exact ⟨fun h j ↦ ⟨h.1 j, h.2 j⟩, fun h ↦ ⟨fun j ↦ (h j).1, fun j ↦ (h j).2⟩⟩
+
+/-- The map `π` is a covering map: it is the product of the quotient maps `ℝ → ℝ ⧸ p ℤ`,
+read in the real and imaginary parts of the coordinates. -/
+theorem isCoveringMap_complexPiTorusCover [Finite ι] : IsCoveringMap (complexPiTorusCover p) := by
+  have := Fintype.ofFinite ι
+  have h : complexPiTorusCover p =
+      (Pi.map fun i (t : ℝ) ↦ (t : AddCircle (p i))) ∘ (complexToRealPi ι).toHomeomorph :=
+    funext fun z ↦ funext fun i ↦ by cases i <;> simp
+  rw [h, IsCoveringMap.comp_homeomorph_iff]
+  exact IsCoveringMap.piMap fun i ↦ AddCircle.isCoveringMap_coe (p i)
 
 variable [Fintype ι] [∀ i, Fact (0 < p i)]
 

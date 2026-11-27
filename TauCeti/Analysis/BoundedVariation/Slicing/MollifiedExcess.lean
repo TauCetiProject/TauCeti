@@ -12,7 +12,7 @@ public import TauCeti.Analysis.BoundedVariation.Slicing.Excess
 import TauCeti.Analysis.BoundedVariation.Convolution
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Distribution.TestFunction.Convolution
-import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence
+import TauCeti.Analysis.Sobolev.WeakDeriv.Divergence.Trace
 import TauCeti.Analysis.Real.Sqrt
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 

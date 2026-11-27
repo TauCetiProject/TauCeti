@@ -39,6 +39,8 @@ then `H^1(K^1) = ℤ` would inject into `H^1(K)`, which vanishes because `K` is 
 
 * `TauCeti.Examples.NatRecipeNeedsClass.filtrationFunctor`: the functor `EInt ⥤ CochainComplex`
   of the filtration `0 ⊆ K^1 ⊆ K`.
+* `TauCeti.Examples.NatRecipeNeedsClass.not_isZero_H_zero_of_eq`: `H^0(a ≤ b) ≠ 0` for any
+  filtration of `K` with `F_a = K^1` and `F_b = K`.
 * `TauCeti.Examples.NatRecipeNeedsClass.not_isZero_H_one_two`: `H^0(1 ≤ 2) ≠ 0`.
 * `TauCeti.Examples.NatRecipeNeedsClass.not_hasSpectralSequence`,
   `TauCeti.Examples.NatRecipeNeedsClass.not_isFirstQuadrant`: the two classes fail.
@@ -90,29 +92,38 @@ theorem not_isZero_homology_degreeOne : ¬ IsZero (degreeOne.homology 1) := fun 
     (h.of_iso (singleObjHomologySelfIso (ComplexShape.up ℤ) 1 (ModuleCat.of ℤ ℤ)).symm))
   exact zero_ne_one (Subsingleton.elim (0 : ℤ) 1)
 
+/-- `H^n(F_b) = 0` for a filtration `F` of `K` with `F_b = K`: the complex `K` is contractible. -/
+theorem isZero_homology_filtrationFunctor_obj_of_eq_top {F : ℤ → Subobject idComplex}
+    (hF : Monotone F) {b : ℤ} (hb : F b = ⊤) (n : ℤ) :
+    IsZero (((CochainComplex.filtrationFunctor F hF).obj (b : EInt)).homology n) :=
+  ((exactAt_iff_isZero_homology _ _).1
+    ((mappingCone.homotopyToZeroOfId degreeOne).acyclic n)).of_iso
+      (homologyMapIso (filtrationFunctorObjIsoOfEqMk _ _ _ (hb.trans (Subobject.top_eq_id _))) n)
+
+/-- **`H^0(a ≤ b) ≠ 0`** for a filtration `F` of `K` with `F_a = K^1` and `F_b = K`: it is
+`H^0(K/K^1) = ℤ`. -/
+theorem not_isZero_H_zero_of_eq {F : ℤ → Subobject idComplex} (hF : Monotone F) {a b : ℤ}
+    (hab : a ≤ b) (ha : F a = Subobject.mk (mappingCone.inr (𝟙 degreeOne))) (hb : F b = ⊤) :
+    ¬ IsZero (((CochainComplex.spectralObject (CochainComplex.filtrationFunctor F hF)).H 0).obj
+      (mk₁ (eIntHomOfLE hab))) := fun h => by
+  set f := eIntHomOfLE hab
+  have hS := TauCeti.cokernelSequence_shortExact ((CochainComplex.filtrationFunctor F hF).map f)
+  -- `H^0` of the quotient vanishes, so `H^1` of the subcomplex injects into `H^1` of `K`.
+  have hQ : IsZero ((cokernel ((CochainComplex.filtrationFunctor F hF).map f)).homology 0) :=
+    h.of_iso (spectralObjectHIsoCokernel _ f 0).symm
+  have : Mono (homologyMap ((CochainComplex.filtrationFunctor F hF).map f) 1) :=
+    (hS.homology_exact₁ 0 1 (by simp)).mono_g (hQ.eq_of_src _ _)
+  exact not_isZero_homology_degreeOne ((IsZero.of_mono (homologyMap
+    ((CochainComplex.filtrationFunctor F hF).map f) 1)
+      (isZero_homology_filtrationFunctor_obj_of_eq_top hF hb 1)).of_iso
+      (homologyMapIso (filtrationFunctorObjIsoOfEqMk _ _ _ ha) 1).symm)
+
 /-- **`H^0(1 ≤ 2) ≠ 0`** for the spectral object of the filtration `0 ⊆ K^1 ⊆ K`: it is
 `H^0(K/K^1) = ℤ`. -/
 theorem not_isZero_H_one_two :
-    ¬ IsZero ((spectralObject.H 0).obj (mk₁ (homOfLE coe_one_le_coe_two))) := fun h => by
-  set f : ((1 : ℤ) : EInt) ⟶ ((2 : ℤ) : EInt) := homOfLE coe_one_le_coe_two
-  have hS := TauCeti.cokernelSequence_shortExact (filtrationFunctor.map f)
-  -- `H^0` of the quotient vanishes, so `H^1` of the subcomplex injects into `H^1` of `K`.
-  have hQ : IsZero ((cokernel (filtrationFunctor.map f)).homology 0) :=
-    h.of_iso (spectralObjectHIsoCokernel filtrationFunctor f 0).symm
-  have : Mono (homologyMap (filtrationFunctor.map f) 1) :=
-    (hS.homology_exact₁ 0 1 (by simp)).mono_g (hQ.eq_of_src _ _)
-  have h1 : filtration 1 = Subobject.mk (mappingCone.inr (𝟙 degreeOne)) := by
-    simp [filtration]
-  have h2 : filtration 2 = Subobject.mk (𝟙 idComplex) := by
-    simp [filtration, Subobject.top_eq_id]
-  -- `K` is contractible, so `H^1(K) = 0`.
-  have hK : IsZero ((filtrationFunctor.obj ((2 : ℤ) : EInt)).homology 1) :=
-    ((exactAt_iff_isZero_homology _ _).1
-      ((mappingCone.homotopyToZeroOfId degreeOne).acyclic 1)).of_iso
-        (homologyMapIso (filtrationFunctorObjIsoOfEqMk _ _ _ h2) 1)
-  exact not_isZero_homology_degreeOne ((IsZero.of_mono (homologyMap
-    (filtrationFunctor.map f) 1) hK).of_iso
-      (homologyMapIso (filtrationFunctorObjIsoOfEqMk _ _ _ h1) 1).symm)
+    ¬ IsZero ((spectralObject.H 0).obj (mk₁ (homOfLE coe_one_le_coe_two))) :=
+  not_isZero_H_zero_of_eq monotone_filtration (by norm_num) (by simp [filtration])
+    (by simp [filtration])
 
 /-- **The class `HasSpectralSequence coreE₂CohomologicalNat` fails** for the spectral object of
 `0 ⊆ K^1 ⊆ K`: at `(1, 0)` on the page `2` nothing enters from `ℕ × ℕ`, and the class would make
