@@ -5,22 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Compactness.SigmaCompact
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Rescale
-public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Volume
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
+import TauCeti.Topology.MetricSpace.Annulus
 
 /-!
 # Finite-ended asymptotically Euclidean manifolds
 
 This module extends `TauCeti.IsFiniteEndedAsymptoticallyEuclidean` (from
 `TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic`) with topological, compact
-truncation, scaling, and infinite-volume results.
+truncation, compact exhaustion, and scaling results.
 
 Note that `IsFiniteEndedAsymptoticallyEuclidean.isCompact_compl_iUnion` controls only the complement
 of the initial cover at radii `R`; cutting the ends at larger radii `R' ≥ R` need not leave a
 compact complement on an incomplete manifold, so compact truncation is proved separately under a
-compact-collar or Riemannian completeness hypothesis.
+compact-collar or Riemannian completeness hypothesis. On a complete Riemannian manifold of positive
+order, truncating the ends at radii `R a + k` yields a `CompactExhaustion M`.
 
 ## Main results
 
@@ -36,13 +38,10 @@ compact-collar or Riemannian completeness hypothesis.
   `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.mono_radius_of_completeSpace`: cutting the ends at
   larger radii preserves compactness of the complement under a compact-collar or completeness
   hypothesis.
+* `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.compactExhaustion`: on a complete Riemannian
+  manifold of positive order, cutting the ends at radii `R a + k` gives a `CompactExhaustion M`.
 * `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.rescale`: constant metric rescaling `g ↦ c • g`
   preserves finite-ended asymptotically Euclidean structures.
-* `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.riemannianVolume_univ_eq_top`: every finite-ended
-  asymptotically Euclidean manifold of positive order has infinite Riemannian volume.
-* `TauCeti.IsFiniteEndedAsymptoticallyEuclidean.not_compactSpace`: no compact `C¹` manifold with
-  a continuous Riemannian metric admits a finite-ended asymptotically Euclidean structure of
-  positive order.
 
 ## References
 
@@ -56,8 +55,8 @@ public section
 
 noncomputable section
 
-open Bundle MeasureTheory Metric Set TopologicalSpace
-open scoped ContDiff ENNReal Manifold Pointwise Topology
+open Bornology Bundle Filter Metric Set TopologicalSpace
+open scoped ContDiff Manifold Pointwise Topology
 
 namespace TauCeti
 
@@ -169,6 +168,80 @@ theorem mono_radius_of_completeSpace {M : Type*} [PseudoEMetricSpace M] [Charted
           (R' a)).closure, isClosed_closure.isComplete⟩,
       subset_closure⟩
 
+/-- A complete finite-ended asymptotically Euclidean manifold of positive order admits a compact
+exhaustion whose `k`-th stage is the complement of the end exteriors at radii `R a + k`. -/
+def compactExhaustion {M : Type*} [MetricSpace M] [ChartedSpace H M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+    [CompleteSpace M] [IsManifold I ∞ M] {φ : ι → EuclideanSpace ℝ (Fin n) → M}
+    (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) (ht : 0 < t) : CompactExhaustion M where
+  toFun k := (⋃ a, φ a '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a + k))ᶜ)ᶜ
+  isCompact' k :=
+    have : IsManifold I 1 M := IsManifold.of_le (n := ∞) (by simp)
+    (h.mono_radius_of_completeSpace fun a ↦ le_add_of_nonneg_right
+      (Nat.cast_nonneg k)).isCompact_compl_iUnion
+  subset_interior_succ' k := by
+    have := h.finite
+    rw [interior_compl, compl_subset_compl, closure_iUnion_of_finite]
+    refine iUnion_mono fun a p hp ↦ ?_
+    have hpre : (φ a)⁻¹' (ball p 1)ᶜ ∈ cobounded (EuclideanSpace ℝ (Fin n)) :=
+      ((h.isAsymptoticallyEuclideanEnd a).tendsto_cobounded ht) (isBounded_def.1 isBounded_ball)
+    obtain ⟨R₀, -, hR₀⟩ :=
+      (hasBasis_cobounded_compl_closedBall (0 : EuclideanSpace ℝ (Fin n))).mem_iff.1 hpre
+    let A : Set (EuclideanSpace ℝ (Fin n)) :=
+      {z | R a + ((k + 1 : ℕ) : ℝ) ≤ ‖z‖ ∧ ‖z‖ ≤ R₀}
+    have hA_comp : IsCompact A := by
+      simpa only [A, sub_zero] using
+        isCompact_setOf_le_norm_sub_le (0 : EuclideanSpace ℝ (Fin n)) (R a + ((k + 1 : ℕ) : ℝ)) R₀
+    have hAk : A ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a + k))ᶜ := fun z hz ↦ by
+      simp only [mem_compl_iff, mem_closedBall_zero_iff, not_le]
+      have hk : (k : ℝ) < ((k + 1 : ℕ) : ℝ) := by exact_mod_cast Nat.lt_succ_self k
+      linarith [hz.1]
+    have hAR : A ⊆ (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a))ᶜ :=
+      hAk.trans (compl_subset_compl.2 (closedBall_subset_closedBall
+        (le_add_of_nonneg_right (Nat.cast_nonneg k))))
+    have hφA_closed : IsClosed (φ a '' A) :=
+      (hA_comp.image_of_continuousOn
+        ((h.isAsymptoticallyEuclideanEnd a).contMDiffOn.continuousOn.mono hAR)).isClosed
+    have hp_cl : p ∈ closure (φ a '' A) := by
+      rw [mem_closure_iff_nhds]
+      intro U hU
+      obtain ⟨q, ⟨hqU, hqb⟩, z, hz, rfl⟩ :=
+        mem_closure_iff_nhds.1 hp (U ∩ ball p 1) (inter_mem hU (ball_mem_nhds p one_pos))
+      have hzR₀ : ‖z‖ ≤ R₀ := by
+        by_contra hlt
+        rw [not_le] at hlt
+        exact hR₀ (by simpa using hlt) hqb
+      have hz_gt : R a + ((k + 1 : ℕ) : ℝ) < ‖z‖ := by simpa using hz
+      exact ⟨φ a z, hqU, z, ⟨hz_gt.le, hzR₀⟩, rfl⟩
+    rw [hφA_closed.closure_eq] at hp_cl
+    exact image_mono hAk hp_cl
+  iUnion_eq' := by
+    classical
+    have := h.finite
+    let : Fintype ι := Fintype.ofFinite ι
+    ext p
+    simp only [mem_iUnion, mem_compl_iff, mem_univ, iff_true, not_exists]
+    have hfa (a : ι) : ∃ r : ℝ, ∀ s, r ≤ s → p ∉ φ a '' (closedBall 0 s)ᶜ :=
+      eventually_atTop.1
+        ((h.isAsymptoticallyEuclideanEnd a).eventually_notMem_image_compl_closedBall p)
+    choose f hf using hfa
+    choose g hg using fun a ↦ exists_nat_ge (f a - R a)
+    refine ⟨Finset.univ.sup g, fun a ↦ hf a _ ?_⟩
+    have hga : (g a : ℝ) ≤ (Finset.univ.sup g : ℕ) :=
+      Nat.cast_le.2 (Finset.le_sup (Finset.mem_univ a))
+    linarith [hg a]
+
+/-- The `k`-th stage of `IsFiniteEndedAsymptoticallyEuclidean.compactExhaustion` is the
+complement of the union of the end exteriors at radii `R a + k`. -/
+@[simp]
+theorem compactExhaustion_apply {M : Type*} [MetricSpace M] [ChartedSpace H M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
+    [CompleteSpace M] [IsManifold I ∞ M] {φ : ι → EuclideanSpace ℝ (Fin n) → M}
+    (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) (ht : 0 < t) (k : ℕ) :
+    h.compactExhaustion ht k =
+      (⋃ a, φ a '' (closedBall (0 : EuclideanSpace ℝ (Fin n)) (R a + k))ᶜ)ᶜ := by
+  rfl
+
 /-- Constant metric rescaling `g ↦ c • g` preserves finite-ended asymptotically Euclidean
 structures, rescaling each excised radius by `√c` and each parametrization by
 `y ↦ toWithMetric _ (φ a ((√c)⁻¹ • y))`. -/
@@ -212,30 +285,6 @@ theorem rescale (m : ℕ∞ω) [IsManifold I 1 M]
         rw [hU, ← WithMetric.coe_homeomorph_symm g_c,
           ← (WithMetric.homeomorph g_c).symm.image_compl]
         exact h.isCompact_compl_iUnion.image (WithMetric.homeomorph g_c).symm.continuous }
-
-/-- Every finite-ended asymptotically Euclidean manifold of positive order `t > 0` has infinite
-Riemannian volume. -/
-theorem riemannianVolume_univ_eq_top [IsManifold I 1 M]
-    [MeasurableSpace M] [BorelSpace M]
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-    (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) (ht : 0 < t) :
-    let _ := h.finiteDimensional
-    let _ := h.lindelofSpace
-    riemannianVolume I M univ = ⊤ := by
-  have : FiniteDimensional ℝ E := h.finiteDimensional
-  have : LindelofSpace M := h.lindelofSpace
-  obtain ⟨a⟩ := h.nonempty
-  exact top_unique
-    (((h.isAsymptoticallyEuclideanEnd a).riemannianVolume_image_eq_top ht).symm.trans_le
-      (measure_mono (subset_univ _)))
-
-/-- No compact `C¹` manifold with a continuous Riemannian metric admits a finite-ended
-asymptotically Euclidean structure of positive order `t > 0`. -/
-theorem not_compactSpace [IsManifold I 1 M]
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-    (h : IsFiniteEndedAsymptoticallyEuclidean I t R φ) (ht : 0 < t) : ¬ CompactSpace M := by
-  obtain ⟨a⟩ := h.nonempty
-  exact (h.isAsymptoticallyEuclideanEnd a).not_compactSpace ht
 
 end IsFiniteEndedAsymptoticallyEuclidean
 

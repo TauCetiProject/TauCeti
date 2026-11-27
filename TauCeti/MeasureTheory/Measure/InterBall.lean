@@ -71,9 +71,6 @@ over the parts of `S` in the balls about a point tend to `0` with the radius
   the measures of the concentric balls of smaller radius.
 * `MeasureTheory.Measure.lowerSemicontinuous_measure_eball`: for every measure on an extended
   metric space, the measure of an open ball is a lower semicontinuous function of its centre.
-* `MeasureTheory.Measure.measure_compl_closedBall`: the complement of any closed ball has
-  infinite measure for a locally-compact-finite measure giving infinite measure to the whole
-  space.
 * `TauCeti.tendsto_measure_ball_nhdsGT_zero`: shrinking balls about `z` have measures tending to
   `μ {z}`.
 * `MeasureTheory.IntegrableOn.tendsto_integral_ball_nhdsLT`: as `r → R⁻`, the integral over
@@ -263,15 +260,8 @@ theorem measure_ball_le_of_forall_lt (μ : Measure X) {x : X} {ρ : ℝ} {B : �
   rw [← ENNReal.ofReal_toReal hr.ne_top, eball_ofReal]
   exact h _ (ENNReal.toReal_lt_of_lt_ofReal hr)
 
-/-- In a proper pseudometric space, the complement of any closed ball has infinite measure for any
-locally-compact-finite measure giving infinite measure to the whole space. -/
-theorem measure_compl_closedBall [ProperSpace X] [OpensMeasurableSpace X] (μ : Measure X)
-    [IsFiniteMeasureOnCompacts μ] (hμ : μ univ = ⊤) (x : X) (r : ℝ) :
-    μ (closedBall x r)ᶜ = ⊤ := by
-  rw [measure_compl isClosed_closedBall.measurableSet measure_closedBall_lt_top.ne, hμ,
-    ENNReal.top_sub measure_closedBall_lt_top.ne]
-
 end MeasureTheory.Measure
+
 
 namespace TauCeti
 

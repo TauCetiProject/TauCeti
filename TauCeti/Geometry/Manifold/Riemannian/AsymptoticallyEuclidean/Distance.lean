@@ -305,7 +305,7 @@ private theorem edist_image_radial_le {M : Type*} [PseudoEMetricSpace M] [Charte
   have h1 : 1 ≤ R₀ / ‖x‖ := (one_le_div hx_pos).2 hxR₀.le
   have hseg (z : EuclideanSpace ℝ (Fin n)) (hz : z ∈ segment ℝ x y) :
       R < ‖z‖ ∧ ‖z‖ ≤ R₁ := by
-    obtain ⟨hlo, hhi⟩ := norm_mem_segment_smul_bounds h1 hz
+    obtain ⟨hlo, hhi⟩ := norm_mem_Icc_of_mem_segment_smul h1 hz
     refine ⟨hxR.trans_le hlo, hhi.trans ?_⟩
     rw [div_mul_cancel₀ _ hx_pos.ne']
     exact hR₀

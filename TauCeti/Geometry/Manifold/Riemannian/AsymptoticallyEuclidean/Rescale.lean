@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Conformal
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Normed.Module.Ball.Exterior
 import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 
 /-!
@@ -49,7 +50,7 @@ public section
 noncomputable section
 
 open Bundle Filter Metric Module Set TopologicalSpace
-open scoped ContDiff Manifold Matrix RealInnerProductSpace Topology
+open scoped ContDiff Manifold Matrix Pointwise RealInnerProductSpace Topology
 
 namespace TauCeti
 
@@ -111,6 +112,14 @@ end Rescale
 
 namespace IsAsymptoticallyEuclideanEnd
 
+/-- The inverse dilation `s⁻¹ • ·` (`0 < s`) maps `(closedBall 0 (s * R))ᶜ` into
+`(closedBall 0 R)ᶜ`. -/
+private theorem mapsTo_inv_smul_compl_closedBall {s R : ℝ} (hs : 0 < s) :
+    MapsTo (s⁻¹ • ·) (closedBall (0 : EuclideanSpace ℝ (Fin n)) (s * R))ᶜ
+      (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := by
+  rw [mapsTo_iff_image_subset, image_smul, smul_compl_closedBall (inv_ne_zero hs.ne'),
+    smul_zero, Real.norm_of_nonneg (inv_nonneg.2 hs.le), inv_mul_cancel_left₀ hs.ne']
+
 /-- Invertibility of `mfderiv` of `z ↦ toWithMetric (rescaledMetric I M m hc) (φ (s⁻¹ • z))` on the
 dilated exterior ball. -/
 private theorem isInvertible_mfderiv_rescale (m : ℕ∞ω) [IsManifold I 1 M]
@@ -127,9 +136,8 @@ private theorem isInvertible_mfderiv_rescale (m : ℕ∞ω) [IsManifold I 1 M]
   have hs : 0 < s := Real.sqrt_pos.2 hc
   let A : EuclideanSpace ℝ (Fin n) ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ EuclideanSpace ℝ (Fin n) :=
     Diffeomorph.smulAdd ∞ s⁻¹ 0 (inv_ne_zero hs.ne')
-  have hmaps : s⁻¹ • x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := by
-    simpa only [mem_compl_iff, mem_closedBall_zero_iff, not_le, norm_smul,
-      Real.norm_of_nonneg (inv_nonneg.2 hs.le), ← lt_inv_mul_iff₀ hs] using hx
+  have hmaps : s⁻¹ • x ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ :=
+    mapsTo_inv_smul_compl_closedBall hs hx
   have hAx : A x = s⁻¹ • x := by simp [A]
   have hφ : MDifferentiableAt (𝓡 n) I φ (A x) :=
     (h.contMDiffOn.contMDiffAt
@@ -162,9 +170,8 @@ private theorem norm_iteratedFDeriv_rescale_le (m : ℕ∞ω) [FiniteDimensional
       max C 0 * Real.sqrt c ^ t * ‖y‖ ^ (-t - k) := by
   set s : ℝ := Real.sqrt c
   have hs : 0 < s := Real.sqrt_pos.2 hc
-  have hmaps : s⁻¹ • y ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := by
-    simpa only [mem_compl_iff, mem_closedBall_zero_iff, not_le, norm_smul,
-      Real.norm_of_nonneg (inv_nonneg.2 hs.le), ← lt_inv_mul_iff₀ hs] using hy
+  have hmaps : s⁻¹ • y ∈ (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ :=
+    mapsTo_inv_smul_compl_closedBall hs hy
   have heq_fun :
       (fun w ↦ (pullbackMetricCoeff I
         (fun z ↦ WithMetric.toWithMetric (rescaledMetric I M m hc) (φ (s⁻¹ • z))) w - 1) i j) =
@@ -209,9 +216,8 @@ theorem rescale (m : ℕ∞ω) [IsManifold I 1 M]
   have hs : 0 < s := Real.sqrt_pos.2 hc
   have hmaps : MapsTo (s⁻¹ • ·)
       (closedBall (0 : EuclideanSpace ℝ (Fin n)) (s * R))ᶜ
-      (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ := fun y hy ↦ by
-    simpa only [mem_compl_iff, mem_closedBall_zero_iff, not_le, norm_smul,
-      Real.norm_of_nonneg (inv_nonneg.2 hs.le), ← lt_inv_mul_iff₀ hs] using hy
+      (closedBall (0 : EuclideanSpace ℝ (Fin n)) R)ᶜ :=
+    mapsTo_inv_smul_compl_closedBall hs
   obtain ⟨C, hC⟩ := h.exists_norm_iteratedFDeriv_le
   -- Assemble the end conditions by transporting smoothness, injectivity, invertible differential,
   -- `C²` regularity, and decay bounds along the dilation `s⁻¹ • ·`.

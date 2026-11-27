@@ -131,8 +131,6 @@ gives a set of measure one.
   additive Haar measure to its multiple by `|r ^ n|⁻¹`.
 * `MeasureTheory.Measure.map_affine_addHaar_eq_smul`: an invertible affine map `x ↦ c + A x` pushes
   an additive Haar measure to its multiple by `|det A|⁻¹`.
-* `MeasureTheory.Measure.addHaar_compl_closedBall`: the complement of any closed ball has infinite
-  measure in a nontrivial proper real normed space.
 * `MeasureTheory.lintegral_comp_linearMap`: for an invertible real linear map `f : E →ₗ[ℝ] E`,
   `∫⁻ x, g (f x) ∂μ = ENNReal.ofReal |(LinearMap.det f)⁻¹| * ∫⁻ x, g x ∂μ`.
 * `MeasureTheory.Measure.eLpNorm_ball_le_mul_rpow`: Hölder's inequality on a ball, with the volume
@@ -778,16 +776,6 @@ theorem map_affine_addHaar_eq_smul
     _ = ENNReal.ofReal |(LinearMap.det (A : E →ₗ[ℝ] E))⁻¹| • μ := by
       rw [Measure.map_smul _ ((by fun_prop : Measurable fun y : E ↦ c + y).aemeasurable),
         map_add_left_eq_self]
-
-/-- In a nontrivial proper real normed space, the complement of any closed ball has infinite
-measure for any additive Haar measure. -/
-@[simp]
-theorem addHaar_compl_closedBall
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E] [Nontrivial E]
-    [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
-    (x : E) (r : ℝ) :
-    mu (closedBall x r)ᶜ = ⊤ :=
-  mu.measure_compl_closedBall (measure_univ_of_isAddLeftInvariant mu) x r
 
 end MeasureTheory.Measure
 
