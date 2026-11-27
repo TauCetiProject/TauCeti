@@ -85,10 +85,10 @@ example :
       ((Orthogonal.so' (Fin 2) (Fin 3) ℝ).restrictNegConjTranspose
         fun _ ↦ Orthogonal.conjTranspose_mem_so').toLieHom.fixedSubalgebra.toSubmodule = ⊥ :=
   (Orthogonal.restrictedRootSpace_zero_inf_fixedSubalgebra_splitCartanSubmodule_eq_bot_iff
-    (Fin.castSucc_injective 2)).mpr fun j hj j' hj' ↦ by
-      rw [Set.mem_compl_iff, Fin.range_castSucc] at hj hj'
-      simp only [Set.mem_ofPred_eq, not_lt] at hj hj'
-      exact Fin.ext (by have := j.isLt; have := j'.isLt; omega)
+    (Fin.castSucc_injective 2)).mpr <|
+      (Orthogonal.isCartanSubalgebra_splitCartanSubalgebra_iff (by simp)
+        (Fin.castSucc_injective 2)).mp <|
+        Orthogonal.isCartanSubalgebra_splitCartanSubalgebra_castSucc (by norm_num)
 
 /-- The inclusion `Fin 2 → Fin 4`, whose range misses `2` and `3`. -/
 abbrev soTwoFourEmbedding : Fin 2 → Fin 4 := Fin.castLE (by norm_num)
@@ -97,7 +97,7 @@ abbrev soTwoFourEmbedding : Fin 2 → Fin 4 := Fin.castLE (by norm_num)
 example : ((Orthogonal.so' (Fin 2) (Fin 4) ℝ).restrictNegConjTranspose
       fun _ ↦ Orthogonal.conjTranspose_mem_so').IsMaximalAbelianInP
       (Orthogonal.splitCartanSubmodule soTwoFourEmbedding) :=
-  Orthogonal.isMaximalAbelianInP_splitCartanSubmodule_of_injective (Fin.castLE_injective _)
+  Orthogonal.isMaximalAbelianInP_splitCartanSubmodule (Fin.castLE_injective _)
 
 /-- `𝔰𝔬(2, 4)` with `𝔞` the span of `H_1`, `H_2`: `𝔪 ≠ 0`, since `E_(2, 3) - E_(3, 2)` in the
 second block lies in it. -/

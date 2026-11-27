@@ -30,7 +30,7 @@ split** (`LieAlgebra.Orthogonal.isCartanSubalgebra_splitCartanSubalgebra`, with 
 
 For every injective `e`, a symmetric element of `𝔰𝔬(p, q)` commuting with every `H_i` is still a
 combination of the `H_i`, so `𝔞` is maximal abelian in `𝔭`
-(`LieAlgebra.Orthogonal.isMaximalAbelianInP_splitCartanSubmodule_of_injective`). With two indices
+(`LieAlgebra.Orthogonal.isMaximalAbelianInP_splitCartanSubmodule`). With two indices
 `a ≠ b` outside the range of `e`, the skew-symmetric `E_(a, b) - E_(b, a)`
 (`LieAlgebra.Orthogonal.splitCompactElement`) commutes with every `H_i`, so `𝔪 ≠ 0` and `𝔞` is not
 a Cartan subalgebra: `𝔞` is a Cartan subalgebra exactly when at most one index lies outside the
@@ -40,12 +40,11 @@ range of `e` (`LieAlgebra.Orthogonal.isCartanSubalgebra_splitCartanSubalgebra_if
 
 * `LieAlgebra.Orthogonal.splitCartanSubmodule_le_cartanP`: `𝔞 ⊆ 𝔭`.
 * `LieAlgebra.Orthogonal.restrictedRootSpace_zero_splitCartanSubmodule`: `𝔤_0 = 𝔞`.
-* `LieAlgebra.Orthogonal.isMaximalAbelianInP_splitCartanSubmodule`: `𝔞` is maximal abelian in `𝔭`.
+* `LieAlgebra.Orthogonal.isMaximalAbelianInP_splitCartanSubmodule`: `𝔞` is maximal abelian in `𝔭`
+  for every injective `e`.
 * `LieAlgebra.Orthogonal.restrictedRootSpace_zero_inf_fixedSubalgebra_splitCartanSubmodule`:
   `𝔪 = 0`.
 * `LieAlgebra.Orthogonal.isCartanSubalgebra_splitCartanSubalgebra`: `𝔞` is a Cartan subalgebra.
-* `LieAlgebra.Orthogonal.isMaximalAbelianInP_splitCartanSubmodule_of_injective`: `𝔞` is maximal
-  abelian in `𝔭` for every injective `e`.
 * `restrictedRootSpace_zero_inf_fixedSubalgebra_splitCartanSubmodule_eq_bot_iff`:
   `𝔪 = 0` exactly when at most one index lies outside the range of `e`.
 * `LieAlgebra.Orthogonal.isCartanSubalgebra_splitCartanSubalgebra_iff`: the same criterion for `𝔞`
@@ -186,47 +185,51 @@ theorem lie_eq_zero_of_mem_splitCartanSubmodule (he : Function.Injective e) {x y
   simpa using congrArg Subtype.val
     (trivial_lie_zero (splitCartanSubalgebra e) (splitCartanSubalgebra e) ⟨x, hx⟩ ⟨y, hy⟩)
 
-/-- The entries of an element `M` of `𝔰𝔬(p, q)` commuting with every `H_i` vanish outside the
-`(i, e i)` and `(e i, i)` positions, when at most one index of `q` lies outside the range of
-`e`. -/
-private theorem entries_eq_zero_of_commute
-    (hc : (Set.range e)ᶜ.Subsingleton)
-    {M : Matrix (p ⊕ q) (p ⊕ q) ℝ} (hM : M ∈ so' p q ℝ)
-    (hcomm : ∀ i a b, ((splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ) * M) a b =
-        (M * (splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ)) a b) :
-    (∀ j j', M (.inr j) (.inr j') = 0) ∧ (∀ i i', M (.inl i) (.inl i') = 0) ∧
-      ∀ i j, j ≠ e i → M (.inl i) (.inr j) = 0 := by
-  -- the entries of `M` in rows of a block `{i, e i}` and columns outside it vanish
-  have hrow (i : p) (b : p ⊕ q) (hb1 : b ≠ .inl i) (hb2 : b ≠ .inr (e i)) :
-      M (.inr (e i)) b = 0 ∧ M (.inl i) b = 0 := by
-    have h1 := hcomm i (.inl i) b
-    have h2 := hcomm i (.inr (e i)) b
-    rw [coe_splitCartanElement_mul_apply, mul_coe_splitCartanElement_apply] at h1 h2
-    exact ⟨by simpa [hb1, hb2] using h1, by simpa [hb1, hb2] using h2⟩
-  have hinr (j j' : q) : M (.inr j) (.inr j') = 0 := by
-    by_cases hj : j ∈ Set.range e
-    · obtain ⟨i, rfl⟩ := hj
-      by_cases hj' : j' = e i
-      · rw [hj']
-        exact congrFun (diag_eq_zero_of_mem_so' hM) _
-      · exact (hrow i (.inr j') Sum.inr_ne_inl (by simpa using hj')).1
-    by_cases hj' : j' ∈ Set.range e
-    · obtain ⟨i, rfl⟩ := hj'
-      rw [apply_inr_inr_of_mem_so' hM, neg_eq_zero]
-      by_cases hji : j = e i
-      · rw [hji]
-        exact congrFun (diag_eq_zero_of_mem_so' hM) _
-      · exact (hrow i (.inr j) Sum.inr_ne_inl (by simpa using hji)).1
-    rw [hc hj hj']
-    exact congrFun (diag_eq_zero_of_mem_so' hM) _
-  have hinl (i i' : p) : M (.inl i) (.inl i') = 0 := by
+/-- If `X` commutes with `H_i`, its entries in the rows `i` and `e i` vanish outside the columns
+`i` and `e i`. -/
+private theorem apply_eq_zero_of_lie_splitCartanElement_eq_zero {X : so' p q ℝ} {i : p}
+    (hX : ⁅splitCartanElement e i, X⁆ = 0) {b : p ⊕ q} (hb1 : b ≠ .inl i)
+    (hb2 : b ≠ .inr (e i)) :
+    (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inr (e i)) b = 0 ∧
+      (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) b = 0 := by
+  have hcomm (a : p ⊕ q) :
+      ((splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ) * X) a b =
+        (X * (splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ)) a b := by
+    have := congrArg (fun Y : so' p q ℝ ↦ (Y : Matrix (p ⊕ q) (p ⊕ q) ℝ) a b) hX
+    simpa only [LieSubalgebra.coe_bracket, Ring.lie_def, ZeroMemClass.coe_zero, Matrix.zero_apply,
+      Matrix.sub_apply, sub_eq_zero] using this
+  have h1 := hcomm (.inl i)
+  have h2 := hcomm (.inr (e i))
+  rw [coe_splitCartanElement_mul_apply, mul_coe_splitCartanElement_apply] at h1 h2
+  exact ⟨by simpa [hb1, hb2] using h1, by simpa [hb1, hb2] using h2⟩
+
+/-- An element `X` of `𝔰𝔬(p, q)` commuting with every `H_i` and vanishing on the lower right block
+is `∑ᵢ X_(i, e i) H_i`. -/
+private theorem eq_sum_smul_splitCartanElement_of_apply_inr_inr {X : so' p q ℝ}
+    (hX : ∀ i, ⁅splitCartanElement e i, X⁆ = 0)
+    (hinr : ∀ j j', (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inr j) (.inr j') = 0) :
+    X = ∑ i, (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inr (e i)) • splitCartanElement e i := by
+  have hinl (i i' : p) : (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inl i') = 0 := by
     by_cases hii : i' = i
     · rw [hii]
-      exact congrFun (diag_eq_zero_of_mem_so' hM) _
-    · exact (hrow i (.inl i') (by simpa using hii) Sum.inl_ne_inr).2
-  have hinlr (i : p) (j : q) (hj : j ≠ e i) : M (.inl i) (.inr j) = 0 :=
-    (hrow i (.inr j) Sum.inr_ne_inl (by simpa using hj)).2
-  exact ⟨hinr, hinl, hinlr⟩
+      exact congrFun (diag_eq_zero_of_mem_so' X.property) _
+    · exact (apply_eq_zero_of_lie_splitCartanElement_eq_zero (hX i) (by simpa using hii)
+        Sum.inl_ne_inr).2
+  have hinlr (i : p) (j : q) : (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inr j) =
+      ((∑ k, (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl k) (.inr (e k)) • splitCartanElement e k :
+        so' p q ℝ) : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inr j) := by
+    rw [coe_sum_smul_splitCartanElement_apply_inl_inr]
+    split_ifs with hj
+    · rw [hj]
+    · exact (apply_eq_zero_of_lie_splitCartanElement_eq_zero (hX i) Sum.inr_ne_inl
+        (by simpa using hj)).2
+  refine Subtype.ext (Matrix.ext fun a b ↦ ?_)
+  rcases a with i | j <;> rcases b with i' | j'
+  · simp [Matrix.sum_apply, hinl]
+  · exact hinlr i j'
+  · exact (apply_inr_inl_of_mem_so' X.property i' j).trans <| (hinlr i' j).trans
+      (apply_inr_inl_of_mem_so' (SetLike.coe_mem _) i' j).symm
+  · simp [Matrix.sum_apply, hinr]
 
 /-- **The centralizer of the `H_i`.** If at most one index of `q` lies outside the range of `e`,
 an element `X` of `𝔰𝔬(p, q)` commuting with every `H_i` is `∑ᵢ X_(i, e i) H_i`. -/
@@ -234,29 +237,44 @@ theorem eq_sum_smul_splitCartanElement
     (hc : (Set.range e)ᶜ.Subsingleton) {X : so' p q ℝ}
     (hX : ∀ i, ⁅splitCartanElement e i, X⁆ = 0) :
     X = ∑ i, (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inr (e i)) • splitCartanElement e i := by
-  obtain ⟨M, hM⟩ := X
-  have hcomm (i : p) (a b : p ⊕ q) :
-      ((splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ) * M) a b =
-        (M * (splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ)) a b := by
-    have := congrArg (fun Y : so' p q ℝ ↦ (Y : Matrix (p ⊕ q) (p ⊕ q) ℝ) a b) (hX i)
-    simp only [LieSubalgebra.coe_bracket, Ring.lie_def, ZeroMemClass.coe_zero, Matrix.zero_apply,
-      Matrix.sub_apply, sub_eq_zero] at this
-    exact this
-  obtain ⟨hinr, hinl, hinlr⟩ := entries_eq_zero_of_commute hc hM hcomm
-  have hinlr' (i : p) (j : q) : M (.inl i) (.inr j) =
-      ((∑ k, M (.inl k) (.inr (e k)) • splitCartanElement e k : so' p q ℝ) :
-        Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inr j) := by
-    rw [coe_sum_smul_splitCartanElement_apply_inl_inr]
-    split_ifs with hj
-    · rw [hj]
-    · exact hinlr i j hj
-  refine Subtype.ext (Matrix.ext fun a b ↦ ?_)
-  rcases a with i | j <;> rcases b with i' | j'
-  · simp [Matrix.sum_apply, hinl]
-  · exact hinlr' i j'
-  · exact (apply_inr_inl_of_mem_so' hM i' j).trans <| (hinlr' i' j).trans
-      (apply_inr_inl_of_mem_so' (SetLike.coe_mem _) i' j).symm
-  · simp [Matrix.sum_apply, hinr]
+  refine eq_sum_smul_splitCartanElement_of_apply_inr_inr hX fun j j' ↦ ?_
+  have hM := X.property
+  -- the entries of the lower right block in a row `e i` vanish outside the column `e i`
+  have hrow (i : p) (b : q) (hb : b ≠ e i) :
+      (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inr (e i)) (.inr b) = 0 :=
+    (apply_eq_zero_of_lie_splitCartanElement_eq_zero (hX i) Sum.inr_ne_inl (by simpa using hb)).1
+  by_cases hj : j ∈ Set.range e
+  · obtain ⟨i, rfl⟩ := hj
+    by_cases hj' : j' = e i
+    · rw [hj']
+      exact congrFun (diag_eq_zero_of_mem_so' hM) _
+    · exact hrow i j' hj'
+  by_cases hj' : j' ∈ Set.range e
+  · obtain ⟨i, rfl⟩ := hj'
+    rw [apply_inr_inr_of_mem_so' hM, neg_eq_zero]
+    by_cases hji : j = e i
+    · rw [hji]
+      exact congrFun (diag_eq_zero_of_mem_so' hM) _
+    · exact hrow i j hji
+  rw [hc hj hj']
+  exact congrFun (diag_eq_zero_of_mem_so' hM) _
+
+/-- **The centralizer of the `H_i` in `𝔭`.** For every `e`, an element `X` of `𝔭 ⊆ 𝔰𝔬(p, q)`
+commuting with every `H_i` is `∑ᵢ X_(i, e i) H_i`. -/
+theorem eq_sum_smul_splitCartanElement_of_mem_cartanP {X : so' p q ℝ}
+    (hXp : X ∈ ((so' p q ℝ).restrictNegConjTranspose
+      fun _ ↦ conjTranspose_mem_so').cartanP)
+    (hX : ∀ i, ⁅splitCartanElement e i, X⁆ = 0) :
+    X = ∑ i, (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inr (e i)) • splitCartanElement e i := by
+  rw [LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff,
+    conjTranspose_eq_transpose_of_trivial] at hXp
+  -- the lower right block is both symmetric and skew-symmetric
+  refine eq_sum_smul_splitCartanElement_of_apply_inr_inr hX fun j j' ↦ ?_
+  have h1 := apply_inr_inr_of_mem_so' X.property j' j
+  have h2 : (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inr j') (.inr j) =
+      (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inr j) (.inr j') := by
+    simpa using congrFun (congrFun hXp (.inr j)) (.inr j')
+  linarith
 
 /-- **The centralizer `𝔤_0` of `𝔞` is `𝔞`** when `e` is injective and at most one index of `q`
 lies outside its range. -/
@@ -270,16 +288,15 @@ theorem restrictedRootSpace_zero_splitCartanSubmodule (he : Function.Injective e
     hX ⟨_, splitCartanElement_mem_splitCartanSubmodule e i⟩]
   exact (mem_splitCartanSubmodule_iff e).mpr ⟨_, rfl⟩
 
-/-- **`𝔞` is a maximal abelian subspace of `𝔭`** when `e` is injective and at most one index of
-`q` lies outside its range. -/
-theorem isMaximalAbelianInP_splitCartanSubmodule (he : Function.Injective e)
-    (hc : (Set.range e)ᶜ.Subsingleton) :
+/-- **`𝔞` is a maximal abelian subspace of `𝔭`** for every injective `e`. -/
+theorem isMaximalAbelianInP_splitCartanSubmodule (he : Function.Injective e) :
     ((so' p q ℝ).restrictNegConjTranspose fun _ ↦ conjTranspose_mem_so').IsMaximalAbelianInP
       (splitCartanSubmodule e) := by
   refine LieEquiv.isMaximalAbelianInP_iff.mpr ⟨⟨splitCartanSubmodule_le_cartanP e,
     fun _ hx _ hy ↦ lie_eq_zero_of_mem_splitCartanSubmodule he hx hy⟩, fun 𝔟 h𝔟 hle Y hY ↦ ?_⟩
-  rw [← restrictedRootSpace_zero_splitCartanSubmodule he hc, mem_restrictedRootSpace_zero]
-  exact fun H ↦ h𝔟.2 _ (hle H.property) Y hY
+  rw [eq_sum_smul_splitCartanElement_of_mem_cartanP (h𝔟.1 hY) fun i ↦
+    h𝔟.2 _ (hle (splitCartanElement_mem_splitCartanSubmodule e i)) Y hY]
+  exact (mem_splitCartanSubmodule_iff e).mpr ⟨_, rfl⟩
 
 /-- **`𝔪 = 0`** when `e` is injective and at most one index of `q` lies outside its range. -/
 theorem restrictedRootSpace_zero_inf_fixedSubalgebra_splitCartanSubmodule
@@ -287,7 +304,7 @@ theorem restrictedRootSpace_zero_inf_fixedSubalgebra_splitCartanSubmodule
     (splitCartanSubmodule e).restrictedRootSpace 0 ⊓
       ((so' p q ℝ).restrictNegConjTranspose
         fun _ ↦ conjTranspose_mem_so').toLieHom.fixedSubalgebra.toSubmodule = ⊥ :=
-  ((isMaximalAbelianInP_splitCartanSubmodule he hc).restrictedRootSpace_zero_eq_iff
+  ((isMaximalAbelianInP_splitCartanSubmodule he).restrictedRootSpace_zero_eq_iff
     two_ne_zero.isUnit (LieSubalgebra.restrictNegConjTranspose_involutive _ _)).mp
       (restrictedRootSpace_zero_splitCartanSubmodule he hc)
 
@@ -317,73 +334,6 @@ theorem isCartanSubalgebra_splitCartanSubalgebra_castSucc {n : ℕ} (hn : 1 ≤ 
       rw [Set.mem_compl_iff, Fin.range_castSucc] at hj hj'
       simp only [Set.mem_ofPred_eq, not_lt] at hj hj'
       exact Fin.ext (by have := j.isLt; have := j'.isLt; omega)
-
-/-- An element `M` of `𝔰𝔬(p, q)` commuting with every `H_i` and lying in `𝔭` (that is,
-symmetric) vanishes outside the `(i, e i)` and `(e i, i)` positions, for every `e`. -/
-private theorem entries_eq_zero_of_commute_of_symm
-    {M : Matrix (p ⊕ q) (p ⊕ q) ℝ} (hM : M ∈ so' p q ℝ) (hsymm : Mᵀ = M)
-    (hcomm : ∀ i a b, ((splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ) * M) a b =
-        (M * (splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ)) a b) :
-    (∀ j j', M (.inr j) (.inr j') = 0) ∧ (∀ i i', M (.inl i) (.inl i') = 0) ∧
-      ∀ i j, j ≠ e i → M (.inl i) (.inr j) = 0 := by
-  have hrow (i : p) (b : p ⊕ q) (hb1 : b ≠ .inl i) (hb2 : b ≠ .inr (e i)) :
-      M (.inl i) b = 0 := by
-    have h := hcomm i (.inr (e i)) b
-    rw [coe_splitCartanElement_mul_apply, mul_coe_splitCartanElement_apply] at h
-    simpa [hb1, hb2] using h
-  refine ⟨fun j j' ↦ ?_, fun i i' ↦ ?_, fun i j hj ↦ hrow i (.inr j) Sum.inr_ne_inl
-    (by simpa using hj)⟩
-  · have h1 := apply_inr_inr_of_mem_so' hM j' j
-    have h2 : M (.inr j') (.inr j) = M (.inr j) (.inr j') := by
-      simpa using congrFun (congrFun hsymm (.inr j)) (.inr j')
-    linarith
-  · by_cases hii : i' = i
-    · rw [hii]
-      exact congrFun (diag_eq_zero_of_mem_so' hM) _
-    · exact hrow i (.inl i') (by simpa using hii) Sum.inl_ne_inr
-
-/-- **The centralizer of the `H_i` in `𝔭`.** For every `e`, an element `X` of `𝔭 ⊆ 𝔰𝔬(p, q)`
-commuting with every `H_i` is `∑ᵢ X_(i, e i) H_i`. -/
-theorem eq_sum_smul_splitCartanElement_of_mem_cartanP {X : so' p q ℝ}
-    (hXp : X ∈ ((so' p q ℝ).restrictNegConjTranspose
-      fun _ ↦ conjTranspose_mem_so').cartanP)
-    (hX : ∀ i, ⁅splitCartanElement e i, X⁆ = 0) :
-    X = ∑ i, (X : Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inr (e i)) • splitCartanElement e i := by
-  rw [LieSubalgebra.mem_cartanP_restrictNegConjTranspose_iff,
-    conjTranspose_eq_transpose_of_trivial] at hXp
-  obtain ⟨M, hM⟩ := X
-  have hcomm (i : p) (a b : p ⊕ q) :
-      ((splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ) * M) a b =
-        (M * (splitCartanElement e i : Matrix (p ⊕ q) (p ⊕ q) ℝ)) a b := by
-    have := congrArg (fun Y : so' p q ℝ ↦ (Y : Matrix (p ⊕ q) (p ⊕ q) ℝ) a b) (hX i)
-    simp only [LieSubalgebra.coe_bracket, Ring.lie_def, ZeroMemClass.coe_zero, Matrix.zero_apply,
-      Matrix.sub_apply, sub_eq_zero] at this
-    exact this
-  obtain ⟨hinr, hinl, hinlr⟩ := entries_eq_zero_of_commute_of_symm hM hXp hcomm
-  have hinlr' (i : p) (j : q) : M (.inl i) (.inr j) =
-      ((∑ k, M (.inl k) (.inr (e k)) • splitCartanElement e k : so' p q ℝ) :
-        Matrix (p ⊕ q) (p ⊕ q) ℝ) (.inl i) (.inr j) := by
-    rw [coe_sum_smul_splitCartanElement_apply_inl_inr]
-    split_ifs with hj
-    · rw [hj]
-    · exact hinlr i j hj
-  refine Subtype.ext (Matrix.ext fun a b ↦ ?_)
-  rcases a with i | j <;> rcases b with i' | j'
-  · simp [Matrix.sum_apply, hinl]
-  · exact hinlr' i j'
-  · exact (apply_inr_inl_of_mem_so' hM i' j).trans <| (hinlr' i' j).trans
-      (apply_inr_inl_of_mem_so' (SetLike.coe_mem _) i' j).symm
-  · simp [Matrix.sum_apply, hinr]
-
-/-- **`𝔞` is a maximal abelian subspace of `𝔭`** for every injective `e`. -/
-theorem isMaximalAbelianInP_splitCartanSubmodule_of_injective (he : Function.Injective e) :
-    ((so' p q ℝ).restrictNegConjTranspose fun _ ↦ conjTranspose_mem_so').IsMaximalAbelianInP
-      (splitCartanSubmodule e) := by
-  refine LieEquiv.isMaximalAbelianInP_iff.mpr ⟨⟨splitCartanSubmodule_le_cartanP e,
-    fun _ hx _ hy ↦ lie_eq_zero_of_mem_splitCartanSubmodule he hx hy⟩, fun 𝔟 h𝔟 hle Y hY ↦ ?_⟩
-  rw [eq_sum_smul_splitCartanElement_of_mem_cartanP (h𝔟.1 hY) fun i ↦
-    h𝔟.2 _ (hle (splitCartanElement_mem_splitCartanSubmodule e i)) Y hY]
-  exact (mem_splitCartanSubmodule_iff e).mpr ⟨_, rfl⟩
 
 /-- The element `E_(a, b) - E_(b, a)` of the lower right block of `𝔰𝔬(p, q)`, for `a b : q`. -/
 def splitCompactElement (a b : q) : so' p q ℝ :=
@@ -465,7 +415,7 @@ theorem isCartanSubalgebra_splitCartanSubalgebra_iff
   rw [LieEquiv.IsMaximalAbelianInP.isCartanSubalgebra_iff
       (isCartanInvolution_restrictNegConjTranspose_so' hpq)
       (by rw [splitCartanSubalgebra_toSubmodule he]
-          exact isMaximalAbelianInP_splitCartanSubmodule_of_injective he),
+          exact isMaximalAbelianInP_splitCartanSubmodule he),
     splitCartanSubalgebra_toSubmodule he,
     restrictedRootSpace_zero_inf_fixedSubalgebra_splitCartanSubmodule_eq_bot_iff he]
 
