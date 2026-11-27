@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Group.FundamentalDomain
 public import Mathlib.NumberTheory.NumberField.Discriminant.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.Basic
 public import TauCeti.NumberTheory.NumberField.Global.Adeles.BorelSpace
+import TauCeti.MeasureTheory.Group.FundamentalDomain
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
@@ -198,31 +199,13 @@ theorem measurableSet_adeleFundamentalDomain : MeasurableSet (adeleFundamentalDo
   (measurableSet_infiniteAdeleFundamentalDomain K).prod
     (FiniteAdeleRing.isClosed_integralAdeles (𝓞 K) K).measurableSet
 
-/-- A measurable set containing exactly one translate `a - φ x` of every point `a` is a
-fundamental domain, for every measure, for the subgroup `S` swept out by the map `φ`. -/
-private theorem isAddFundamentalDomain_of_existsUnique_sub {A α : Type*} [AddCommGroup α]
-    [MeasurableSpace α] (φ : A → α) {S : AddSubgroup α} (hS : ∀ g, g ∈ S ↔ ∃ x, φ x = g)
-    {s : Set α} (hs : MeasurableSet s) (h : ∀ a, ∃! x, a - φ x ∈ s) (μ : Measure α) :
-    IsAddFundamentalDomain S s μ := by
-  refine .mk' hs.nullMeasurableSet fun a ↦ ?_
-  obtain ⟨x, hx, hxu⟩ := h a
-  refine ⟨⟨-φ x, neg_mem ((hS _).2 ⟨x, rfl⟩)⟩, ?_, ?_⟩
-  · simpa only [AddSubgroup.mk_vadd, vadd_eq_add, neg_add_eq_sub] using hx
-  · rintro ⟨g, hg⟩ hg'
-    obtain ⟨y, hy⟩ := (hS _).1 (neg_mem hg)
-    have hy' : a - φ y ∈ s := by
-      rw [hy, sub_neg_eq_add, add_comm]
-      exact hg'
-    obtain rfl := hxu y hy'
-    exact Subtype.ext (show g = -φ y by rw [hy, neg_neg])
-
 /-- **`F × Ô` is a fundamental domain for `K` acting on its adeles**, for every measure on the
 adeles. -/
 theorem isAddFundamentalDomain_adeleFundamentalDomain (μ : Measure 𝔸[K]) :
     IsAddFundamentalDomain (AdeleRing.principalSubgroup (𝓞 K) K) (adeleFundamentalDomain K) μ :=
-  isAddFundamentalDomain_of_existsUnique_sub (algebraMap K 𝔸[K]) (fun _ ↦ Iff.rfl)
-    (measurableSet_adeleFundamentalDomain K)
-    (existsUnique_sub_algebraMap_mem_adeleFundamentalDomain K) μ
+  .of_existsUnique_sub (algebraMap K 𝔸[K]) (fun _ ↦ Iff.rfl)
+    (measurableSet_adeleFundamentalDomain K).nullMeasurableSet
+    (existsUnique_sub_algebraMap_mem_adeleFundamentalDomain K)
 
 /-- The fundamental domain `F × Ô` is relatively compact: it lies in the product of the closed
 fundamental parallelepiped of `𝓞_K` with `Ô`, which is compact. -/
@@ -292,10 +275,9 @@ theorem isAddFundamentalDomain_pi_adeleFundamentalDomain [Countable ι]
     IsAddFundamentalDomain
       (AddSubgroup.pi Set.univ fun _ : ι ↦ AdeleRing.principalSubgroup (𝓞 K) K)
       (Set.univ.pi fun _ ↦ adeleFundamentalDomain K) μ := by
-  refine isAddFundamentalDomain_of_existsUnique_sub
-    ((algebraMap K 𝔸[K]).toAddMonoidHom.compLeft ι) (fun g ↦ ?_)
-    (MeasurableSet.univ_pi fun _ ↦ measurableSet_adeleFundamentalDomain K)
-    (existsUnique_sub_algebraMap_mem_pi_adeleFundamentalDomain K) μ
+  refine .of_existsUnique_sub ((algebraMap K 𝔸[K]).toAddMonoidHom.compLeft ι) (fun g ↦ ?_)
+    (MeasurableSet.univ_pi fun _ ↦ measurableSet_adeleFundamentalDomain K).nullMeasurableSet
+    (existsUnique_sub_algebraMap_mem_pi_adeleFundamentalDomain K)
   refine (AddSubgroup.mem_pi _).trans ⟨fun hg ↦ ?_, fun ⟨x, hx⟩ i _ ↦ ⟨x i, congrFun hx i⟩⟩
   choose x hx using fun i ↦ hg i trivial
   exact ⟨x, funext hx⟩
