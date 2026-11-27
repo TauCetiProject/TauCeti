@@ -75,6 +75,12 @@ open CategoryTheory Limits
 
 universe v u
 
+/-- The degree map `ComplexShape.π` for first-quadrant cochain bicomplexes is addition,
+so its fibers are finite by finiteness of the additive antidiagonals of `ℕ`. -/
+instance ComplexShape.finite_preimage_π_up_nat (n : ℕ) :
+    Finite (ComplexShape.π (.up ℕ) (.up ℕ) (.up ℕ) ⁻¹' {n}) :=
+  inferInstanceAs (Finite ((fun i : ℕ × ℕ ↦ i.1 + i.2) ⁻¹' {n}))
+
 namespace HomologicalComplex₂
 
 variable {C : Type u} [Category.{v} C] [Preadditive C]
@@ -83,11 +89,7 @@ variable {C : Type u} [Category.{v} C] [Preadditive C]
 finite coproducts exist. -/
 instance hasTotal_up_nat [HasFiniteCoproducts C]
     (K : HomologicalComplex₂ C (ComplexShape.up ℕ) (ComplexShape.up ℕ)) :
-    K.HasTotal (ComplexShape.up ℕ) := fun n ↦
-  have : Finite (ComplexShape.π (ComplexShape.up ℕ) (ComplexShape.up ℕ)
-      (ComplexShape.up ℕ) ⁻¹' {n}) :=
-    inferInstanceAs (Finite ((fun i : ℕ × ℕ ↦ i.1 + i.2) ⁻¹' {n}))
-  inferInstance
+    K.HasTotal (ComplexShape.up ℕ) := fun _ ↦ inferInstance
 
 variable (K : HomologicalComplex₂ C (ComplexShape.up ℕ) (ComplexShape.up ℕ))
   [K.HasTotal (ComplexShape.up ℕ)] {E : CochainComplex C ℕ} (η : E ⟶ K.X 0)
