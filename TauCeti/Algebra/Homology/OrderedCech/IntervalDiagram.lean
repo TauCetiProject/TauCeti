@@ -10,6 +10,7 @@ public import Mathlib.Order.Interval.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 public import TauCeti.Algebra.Homology.OrderedCech.Cone
+public import TauCeti.Algebra.Homology.TotalComplex.Additive
 public import TauCeti.Algebra.Homology.TotalComplex.Basic
 public import TauCeti.Order.Extension.Linear
 
@@ -74,7 +75,8 @@ The two results are Pardon's Lemmas A.7.4 and A.7.3.
 * `TauCeti.IntervalDiagram.flagComplex`, `TauCeti.IntervalDiagram.flagComplexι`: the flag complex
   and its summand inclusions.
 * `TauCeti.IntervalDiagram.total`, `TauCeti.IntervalDiagram.totalMap`: the total and the maps
-  induced on it by maps of interval diagrams.
+  induced on it by maps of interval diagrams, together the functor
+  `TauCeti.IntervalDiagram.totalFunctor`.
 * `TauCeti.IntervalDiagram.topι`: the inclusion of `A[⊤, ⊤]` in the total.
 
 ## Main results
@@ -413,6 +415,11 @@ lemma flagComplexMap_comp (α : A ⟶ B) (β : B ⟶ E) :
   ext
   simp
 
+@[simp]
+lemma flagComplexMap_zero : flagComplexMap (0 : A ⟶ B) = 0 := by
+  ext
+  simp
+
 end ComplexMap
 
 section Total
@@ -451,6 +458,29 @@ lemma totalMap_id (A : IntervalDiagram S (ChainComplex D ℕ)) : totalMap (𝟙 
 lemma totalMap_comp (α : A ⟶ B) (β : B ⟶ E) :
     totalMap (α ≫ β) = totalMap α ≫ totalMap β := by
   simp [totalMap, HomologicalComplex₂.total.map_comp]
+
+@[simp]
+lemma totalMap_zero : totalMap (0 : A ⟶ B) = 0 := by
+  rw [totalMap, flagComplexMap_zero, HomologicalComplex₂.total.map_zero]
+
+variable (S D) in
+/-- **The total of interval diagrams of chain complexes, as a functor**: an interval diagram goes
+to its total (`IntervalDiagram.total`), and a map of interval diagrams to the induced chain map of
+totals (`IntervalDiagram.totalMap`). Applied to a diagram of presheaves of chain complexes, after
+`CategoryTheory.Functor.flip`, it forms the totals pointwise. -/
+-- The body is exposed so that its values and maps are definitionally the totals and the maps of
+-- totals (`totalFunctor_obj`, `totalFunctor_map`).
+@[expose, simps]
+def totalFunctor : IntervalDiagram S (ChainComplex D ℕ) ⥤ ChainComplex D ℕ where
+  obj := total
+  map := totalMap
+
+instance : (totalFunctor S D).PreservesZeroMorphisms where
+  map_zero _ _ := totalMap_zero
+
+/-- The total of an interval diagram whose values are all zero is zero. -/
+lemma isZero_total (h : ∀ I, IsZero (A.obj I)) : IsZero A.total :=
+  (totalFunctor S D).map_isZero (Functor.isZero A h)
 
 end Total
 
@@ -612,6 +642,18 @@ lemma topι_f (A : IntervalDiagram S (ChainComplex D ℕ)) (q : ℕ) :
       A.flagComplexι (IsFlag.singleton (toLinearExtension (⊤ : S))) (card_singleton _)).f q ≫
         HomologicalComplex₂.ιTotal A.flagComplex (ComplexShape.down ℕ) 0 q q (zero_add q) :=
   (rfl)
+
+/-- The inclusion of the top value in the total is natural in the interval diagram. -/
+@[reassoc (attr := simp)]
+lemma topι_totalMap {A B : IntervalDiagram S (ChainComplex D ℕ)} (α : A ⟶ B) :
+    A.topι ≫ totalMap α = α.app (op (NonemptyInterval.pure ⊤)) ≫ B.topι := by
+  -- `topι` is `topFlagι` followed by the inclusion of column `0` in the total.
+  have h : topFlagι A ≫ (flagComplexMap α).f 0 =
+      α.app (op (NonemptyInterval.pure ⊤)) ≫ topFlagι B := by
+    simp [topFlagι]
+  ext q : 1
+  simp only [HomologicalComplex.comp_f, topι, Category.assoc, ιTotal_totalMap]
+  rw [← HomologicalComplex.comp_f_assoc, h, HomologicalComplex.comp_f_assoc]
 
 end Top
 
