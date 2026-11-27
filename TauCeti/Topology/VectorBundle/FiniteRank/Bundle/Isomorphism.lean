@@ -61,54 +61,73 @@ theorem isIso_iff_bijective (f : E ⟶ F) :
     ContinuousLinearEquiv.bijective _
   exact (hL.of_comp_iff' _).trans (hR.of_comp_iff _)
 
+private noncomputable def constStratumMap (E : FiniteRankBundle.{w} 𝕜 X) (n : ℕ)
+    (hn : E.rank = LocallyConstant.const X n) : C(X, {x : X // E.rank x = n}) :=
+  ⟨fun x ↦ ⟨x, congrFun (congrArg DFunLike.coe hn) x⟩, continuous_id.subtype_mk _⟩
+
+private abbrev constStratumPullback (E : FiniteRankBundle.{w} 𝕜 X) (n : ℕ)
+    (hn : E.rank = LocallyConstant.const X n) : X → Type w :=
+  (constStratumMap E n hn : X → _) *ᵖ (E.StratumFiber n)
+
+private instance instAddCommGroupConstStratumPullback (E : FiniteRankBundle.{w} 𝕜 X) (n : ℕ)
+    (hn : E.rank = LocallyConstant.const X n) (x : X) :
+    AddCommGroup (constStratumPullback E n hn x) :=
+  E.addCommGroupFiber x
+
+private instance instModuleConstStratumPullback (E : FiniteRankBundle.{w} 𝕜 X) (n : ℕ)
+    (hn : E.rank = LocallyConstant.const X n) (x : X) :
+    @Module 𝕜 (constStratumPullback E n hn x) _
+      (instAddCommGroupConstStratumPullback E n hn x).toAddCommMonoid :=
+  E.moduleFiber x
+
+private noncomputable instance instFiberBundleConstStratumPullback (E : FiniteRankBundle.{w} 𝕜 X)
+    (n : ℕ) (hn : E.rank = LocallyConstant.const X n) :
+    FiberBundle (Fin n → 𝕜) (constStratumPullback E n hn) :=
+  FiberBundle.pullback (constStratumMap E n hn)
+
+private noncomputable instance instVectorBundleConstStratumPullback (E : FiniteRankBundle.{w} 𝕜 X)
+    (n : ℕ) (hn : E.rank = LocallyConstant.const X n) :
+    @VectorBundle 𝕜 X (Fin n → 𝕜) (constStratumPullback E n hn) _
+      (fun x ↦ (instAddCommGroupConstStratumPullback E n hn x).toAddCommMonoid)
+      (instModuleConstStratumPullback E n hn) _ _ _ _ _
+      (instFiberBundleConstStratumPullback E n hn) :=
+  VectorBundle.pullback 𝕜 (constStratumMap E n hn)
+
 private noncomputable def ofBundleConstWitness (E : FiniteRankBundle.{w} 𝕜 X) (n : ℕ)
     (hn : E.rank = LocallyConstant.const X n) :
     Σ' (V : X → Type w) (i1 : ∀ x, AddCommGroup (V x)) (i2 : ∀ x, Module 𝕜 (V x))
         (i3 : ∀ x, TopologicalSpace (V x)) (i4 : TopologicalSpace (TotalSpace (Fin n → 𝕜) V))
         (i5 : FiberBundle (Fin n → 𝕜) V) (i6 : VectorBundle 𝕜 (Fin n → 𝕜) V),
       @ofBundle 𝕜 _ X _ n V i1 i2 i3 i4 i5 i6 ≅ E := by
-  have hnx (x : X) : E.rank x = n := congrFun (congrArg DFunLike.coe hn) x
-  let toStratum : C(X, {x : X // E.rank x = n}) :=
-    ⟨fun x ↦ ⟨x, hnx x⟩, continuous_id.subtype_mk _⟩
-  let hts : TopologicalSpace (TotalSpace (Fin n → 𝕜) ((toStratum : X → _) *ᵖ (E.StratumFiber n))) :=
-    inferInstance
-  let hfb : FiberBundle (Fin n → 𝕜) ((toStratum : X → _) *ᵖ (E.StratumFiber n)) :=
-    FiberBundle.pullback toStratum
-  let hvb : VectorBundle 𝕜 (Fin n → 𝕜) ((toStratum : X → _) *ᵖ (E.StratumFiber n)) :=
-    VectorBundle.pullback 𝕜 toStratum
-  letI : ∀ x, AddCommGroup (((toStratum : X → _) *ᵖ (E.StratumFiber n)) x) :=
-    fun x ↦ E.addCommGroupFiber x
-  let B := @ofBundle 𝕜 _ X _ n ((toStratum : X → _) *ᵖ (E.StratumFiber n))
-    _ (fun x ↦ E.moduleFiber x) (fun x ↦ E.topologicalSpaceFiber x) hts hfb hvb
+  let B := ofBundle 𝕜 n (constStratumPullback E n hn)
   let hB : TotalSpace Unit B.Fiber ≃ₜ
-      TotalSpace (Fin n → 𝕜) ((toStratum : X → _) *ᵖ (E.StratumFiber n)) :=
-    @ofBundleHomeomorph 𝕜 _ X _ n ((toStratum : X → _) *ᵖ (E.StratumFiber n))
-      _ (fun x ↦ E.moduleFiber x) (fun x ↦ E.topologicalSpaceFiber x) hts hfb hvb
+      TotalSpace (Fin n → 𝕜) (constStratumPullback E n hn) :=
+    ofBundleHomeomorph 𝕜 n (constStratumPullback E n hn)
   have hfwd : Continuous fun p : TotalSpace Unit B.Fiber ↦
       (⟨p.proj, p.snd⟩ : TotalSpace Unit E.Fiber) := by
     refine ((E.isOpenEmbedding_stratum n).continuous.comp
-      ((Pullback.continuous_lift (Fin n → 𝕜) (E.StratumFiber n) toStratum).comp
+      ((Pullback.continuous_lift (Fin n → 𝕜) (E.StratumFiber n) (constStratumMap E n hn)).comp
         hB.continuous)).congr fun p ↦ ?_
-    rw [Function.comp_apply, Function.comp_apply,
-      @ofBundleHomeomorph_apply 𝕜 _ X _ n ((toStratum : X → _) *ᵖ (E.StratumFiber n))
-        _ (fun x ↦ E.moduleFiber x) (fun x ↦ E.topologicalSpaceFiber x) hts hfb hvb p,
+    rw [Function.comp_apply, Function.comp_apply, ofBundleHomeomorph_apply,
       totalSpaceHomeomorph_apply]
+    -- `Pullback.lift` and `(E.isOpenEmbedding_stratum n)` preserve the underlying fibre point
+    -- `p.snd : (ofBundle ...).Fiber p.proj = E.Fiber p.proj` definitionally.
     rfl
   have hbwd : Continuous fun p : TotalSpace Unit E.Fiber ↦
       (⟨p.proj, p.snd⟩ : TotalSpace Unit B.Fiber) := by
     have hstr : Continuous fun p : TotalSpace Unit E.Fiber ↦
-        (⟨⟨p.proj, hnx p.proj⟩, p.snd⟩ : TotalSpace (Fin n → 𝕜) (E.StratumFiber n)) :=
+        (⟨constStratumMap E n hn p.proj, p.snd⟩ :
+          TotalSpace (Fin n → 𝕜) (E.StratumFiber n)) :=
       ((E.continuous_mk_iff_rankStrata E.continuous_proj fun p ↦ p.snd).1 continuous_id n).comp
-        (continuous_id.subtype_mk fun p ↦ hnx p.proj)
+        (continuous_id.subtype_mk fun p ↦ (constStratumMap E n hn p.proj).property)
     have hpb : Continuous fun p : TotalSpace Unit E.Fiber ↦
-        (⟨p.proj, p.snd⟩ : TotalSpace (Fin n → 𝕜) ((toStratum : X → _) *ᵖ (E.StratumFiber n))) :=
+        (⟨p.proj, p.snd⟩ : TotalSpace (Fin n → 𝕜) (constStratumPullback E n hn)) :=
       Bundle.Pullback.continuous_iff.2 ⟨E.continuous_proj, hstr⟩
     exact (hB.symm.continuous.comp hpb).congr fun p ↦ by
       rw [Function.comp_apply]
-      exact @ofBundleHomeomorph_symm_apply 𝕜 _ X _ n ((toStratum : X → _) *ᵖ (E.StratumFiber n))
-        _ (fun x ↦ E.moduleFiber x) (fun x ↦ E.topologicalSpaceFiber x) hts hfb hvb ⟨p.proj, p.snd⟩
-  exact ⟨(toStratum : X → _) *ᵖ (E.StratumFiber n), _, fun x ↦ E.moduleFiber x,
-    fun x ↦ E.topologicalSpaceFiber x, hts, hfb, hvb,
+      exact ofBundleHomeomorph_symm_apply 𝕜 n (constStratumPullback E n hn) ⟨p.proj, p.snd⟩
+  exact ⟨constStratumPullback E n hn, inferInstance, inferInstance, inferInstance,
+    inferInstance, inferInstance, inferInstance,
     isoMk (fun x ↦ LinearEquiv.refl 𝕜 (E.Fiber x)) hfwd hbwd⟩
 
 /-- A variable-rank vector bundle is isomorphic to `ofBundle 𝕜 n V` for some constant-rank

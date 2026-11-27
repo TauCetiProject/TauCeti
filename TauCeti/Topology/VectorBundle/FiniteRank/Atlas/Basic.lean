@@ -294,7 +294,9 @@ noncomputable def reconstructionHomeomorph :
     reconstructionHomeomorph 𝕜 r E p =
       ⟨r p.proj, ⟨⟨p.proj, rfl⟩,
         pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.snd⟩⟩ := by
-  -- The sigma equivalence applies the existing reconstruction on the selected stratum.
+  rw [reconstructionHomeomorph, Homeomorph.trans_apply,
+    (ofBundles 𝕜 r E).totalSpaceHomeomorph_symm_apply]
+  refine (Homeomorph.sigmaCongrRight_apply _ _).trans ?_
   exact congrArg (Sigma.mk (r p.proj))
     (pointIndexedCoreHomeomorph_apply 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) _)
 
@@ -305,6 +307,9 @@ by the canonical inclusion of that stratum into the reconstructed total space. -
     (reconstructionHomeomorph 𝕜 r E).symm ⟨n, p⟩ =
       (ofBundles 𝕜 r E).totalSpaceHomeomorph
         ⟨n, ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) (E n) p.proj).symm p.snd⟩⟩ := by
+  rw [reconstructionHomeomorph, Homeomorph.symm_trans_apply]
+  refine (congrArg (ofBundles 𝕜 r E).totalSpaceHomeomorph
+    (Homeomorph.sigmaCongrRight_symm_apply _ _)).trans ?_
   exact congrArg (fun q => (ofBundles 𝕜 r E).totalSpaceHomeomorph ⟨n, q⟩)
     (pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin n → 𝕜) (E n) p)
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Algebra.Module.Equiv.Basic
+public import TauCeti.Topology.FiberBundle.TotalSpace
 public import TauCeti.Topology.Homeomorph.Sigma
 public import TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Basic
 public import TauCeti.Topology.VectorBundle.ULift
@@ -54,21 +55,6 @@ variable (V : FiniteRankBundle.{w} 𝕜 X)
     (V.ulift : FiniteRankBundle.{max w w'} 𝕜 X).Fiber x =
       ULift.{w'} (V.Fiber x) := by rfl
 
-/-- On `V.ulift`, the preferred stratum chart equivalence at `x` factors through
-`ContinuousLinearEquiv.ulift`. -/
-@[simp] theorem continuousLinearEquivAt_ulift (x : X) :
-    VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank x) → 𝕜)
-      ((V.ulift : FiniteRankBundle.{max w w'} 𝕜 X).StratumFiber (V.rank x))
-      ⟨x, rfl⟩ =
-      (ContinuousLinearEquiv.ulift : ULift.{w'} (V.Fiber x) ≃L[𝕜] V.Fiber x).trans
-        (VectorBundle.continuousLinearEquivAt 𝕜 (Fin (V.rank x) → 𝕜)
-          (V.StratumFiber (V.rank x)) ⟨x, rfl⟩) := by
-  refine DFunLike.ext _ _ fun v ↦ ?_
-  rw [VectorBundle.continuousLinearEquivAt_apply, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.ulift_apply, VectorBundle.continuousLinearEquivAt_apply]
-  exact congrArg Prod.snd (trivializationAt_ulift_apply (Fin (V.rank x) → 𝕜)
-    (V.StratumFiber (V.rank x)) ⟨x, rfl⟩ ⟨⟨x, rfl⟩, v⟩)
-
 /-- On `V.ulift`, the preferred fibre equivalence at `x` factors through
 `ContinuousLinearEquiv.ulift`. -/
 @[simp] theorem fiberContinuousLinearEquiv_ulift (x : X) :
@@ -76,10 +62,14 @@ variable (V : FiniteRankBundle.{w} 𝕜 X)
       (ContinuousLinearEquiv.ulift : ULift.{w'} (V.Fiber x) ≃L[𝕜] V.Fiber x).trans
         (V.fiberContinuousLinearEquiv x) := by
   refine DFunLike.ext _ _ fun v ↦ ?_
-  rw [fiberContinuousLinearEquiv_apply, ContinuousLinearEquiv.trans_apply,
-    ContinuousLinearEquiv.ulift_apply, fiberContinuousLinearEquiv_apply]
-  exact congrArg Prod.snd (trivializationAt_ulift_apply (Fin (V.rank x) → 𝕜)
-    (V.StratumFiber (V.rank x)) ⟨x, rfl⟩ ⟨⟨x, rfl⟩, v⟩)
+  have h := DFunLike.congr_fun
+    (TauCeti.continuousLinearEquivAt_ulift (𝕜 := 𝕜) (Fin (V.rank x) → 𝕜)
+      (V.StratumFiber (V.rank x)) ⟨x, rfl⟩) v
+  rw [VectorBundle.continuousLinearEquivAt_apply, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.ulift_apply, VectorBundle.continuousLinearEquivAt_apply] at h
+  rw [FiniteRankBundle.fiberContinuousLinearEquiv_apply, ContinuousLinearEquiv.trans_apply,
+    ContinuousLinearEquiv.ulift_apply, FiniteRankBundle.fiberContinuousLinearEquiv_apply]
+  exact h
 
 /-- The glued total space of `V.ulift` is homeomorphic over `X` to `TotalSpace Unit V.Fiber` via
 `ULift.down` on fibres. -/
@@ -120,14 +110,15 @@ variable (𝕜 X) in
           ULift.{w'} (W.Fiber x) ≃L[𝕜] W.Fiber x).symm.toLinearMap.comp
         ((f.fiberMap x).comp (ContinuousLinearEquiv.ulift :
           ULift.{w'} (V.Fiber x) ≃L[𝕜] V.Fiber x).toLinearMap)
-      continuous_totalSpaceMap := (W.uliftTotalSpaceHomeomorph.symm.continuous.comp
-        (f.totalSpaceMap.continuous.comp V.uliftTotalSpaceHomeomorph.continuous)).congr
-        fun p ↦ by
-          simp only [Function.comp_apply, uliftTotalSpaceHomeomorph_apply,
-            FiniteRankBundle.Hom.totalSpaceMap_mk, uliftTotalSpaceHomeomorph_symm_apply,
-            LinearMap.comp_apply, LinearEquiv.coe_coe, ContinuousLinearEquiv.coe_toLinearEquiv,
-            ContinuousLinearEquiv.ulift_symm_apply]
-          rw [ContinuousLinearEquiv.ulift_apply] }
+      continuous_totalSpaceMap :=
+        continuous_totalSpace_conj V.uliftTotalSpaceHomeomorph.continuous
+          W.uliftTotalSpaceHomeomorph.symm.continuous
+          V.uliftTotalSpaceHomeomorph_apply W.uliftTotalSpaceHomeomorph_symm_apply
+          (fun p ↦ by
+            simp only [LinearMap.comp_apply, LinearEquiv.coe_coe,
+              ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.ulift_symm_apply]
+            rfl)
+          f.continuous_totalSpaceMap }
   map_id _ := hom_ext fun _ ↦ LinearMap.ext fun v ↦ ULift.ext (by
     simp only [fiberMap_id, LinearMap.comp_apply, LinearEquiv.coe_coe,
       ContinuousLinearEquiv.coe_toLinearEquiv, LinearMap.id_apply,

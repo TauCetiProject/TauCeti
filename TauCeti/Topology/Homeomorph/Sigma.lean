@@ -21,19 +21,19 @@ namespace Homeomorph
 variable {ι : Type*} {X Y : ι → Type*} [∀ i, TopologicalSpace (X i)] [∀ i, TopologicalSpace (Y i)]
 
 /-- An indexed family of homeomorphisms induces a homeomorphism on disjoint unions. -/
-@[expose] def sigmaCongrRight (e : ∀ i, X i ≃ₜ Y i) : (Σ i, X i) ≃ₜ Σ i, Y i where
+def sigmaCongrRight (e : ∀ i, X i ≃ₜ Y i) : (Σ i, X i) ≃ₜ Σ i, Y i where
   toEquiv := Equiv.sigmaCongrRight fun i ↦ (e i).toEquiv
   continuous_toFun := continuous_sigma fun i ↦ continuous_sigmaMk.comp (e i).continuous
   continuous_invFun := continuous_sigma fun i ↦ continuous_sigmaMk.comp (e i).symm.continuous
 
 @[simp] theorem sigmaCongrRight_apply (e : ∀ i, X i ≃ₜ Y i) (p : Σ i, X i) :
-    sigmaCongrRight e p = ⟨p.1, e p.1 p.2⟩ := by rfl
+    sigmaCongrRight e p = ⟨p.1, e p.1 p.2⟩ := (rfl)
 @[simp] theorem sigmaCongrRight_toEquiv (e : ∀ i, X i ≃ₜ Y i) :
-    (sigmaCongrRight e).toEquiv = Equiv.sigmaCongrRight fun i ↦ (e i).toEquiv := by rfl
+    (sigmaCongrRight e).toEquiv = Equiv.sigmaCongrRight fun i ↦ (e i).toEquiv := (rfl)
 @[simp] theorem sigmaCongrRight_symm (e : ∀ i, X i ≃ₜ Y i) :
     (sigmaCongrRight e).symm = sigmaCongrRight fun i ↦ (e i).symm := Homeomorph.ext fun ⟨_, _⟩ ↦ rfl
 theorem sigmaCongrRight_symm_apply (e : ∀ i, X i ≃ₜ Y i) (p : Σ i, Y i) :
-    (sigmaCongrRight e).symm p = ⟨p.1, (e p.1).symm p.2⟩ := by rfl
+    (sigmaCongrRight e).symm p = ⟨p.1, (e p.1).symm p.2⟩ := (rfl)
 @[simp] theorem sigmaCongrRight_refl :
     sigmaCongrRight (fun i ↦ Homeomorph.refl (X i)) = Homeomorph.refl (Σ i, X i) :=
   Homeomorph.ext fun ⟨_, _⟩ ↦ rfl
