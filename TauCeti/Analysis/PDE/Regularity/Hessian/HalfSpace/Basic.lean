@@ -357,14 +357,8 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_comp_eq_of_normalHa
   -- `{a / c < x.fst}` onto `{a < x.fst}` and turns the equation into Poisson's equation.
   obtain ⟨e, c, hee, he, hH⟩ := exists_continuousLinearEquiv_preimage_normalHalfSpace hlam hA
   set v := Wkp.compAffineEquiv volume e 0 (by simpa using hH a) 2 u
-  have hD : Wkp.iteratedGradient 1 v =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict
-      (normalHalfSpace (E := E) (a / c))] fun x =>
-      (e : _ →L[ℝ] _).adjoint ∘L Wkp.iteratedGradient 1 u (e x) ∘L (e : _ →L[ℝ] _) := by
-    simpa using Wkp.iteratedGradient_one_compAffineEquiv_ae volume e 0 (by simpa using hH a) u
-  have h0 : Wkp.firstOrder 1 v ∈ w1p0Submodule volume (normalHalfSpace (a / c)) p := by
-    rw [Wkp.firstOrder_compAffineEquiv, ← wkp0Submodule_one]
-    rw [← wkp0Submodule_one] at hu
-    exact Wkp.compAffineEquiv_mem_wkp0Submodule volume e 0 _ 1 hu
+  have hD := Wkp.iteratedGradient_one_compAffineEquiv_zero_ae volume e (by simpa using hH a) u
+  have h0 := Wkp.firstOrder_compAffineEquiv_mem_w1p0Submodule volume e 0 (by simpa using hH a) 1 hu
   refine Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp e hee he (hH a) hD ?_
     fun g hg => hC (a / c) v g h0 hg
   filter_upwards [hf, Wkp.adjoint_iteratedGradient_one_ae_eq u] with x h1 h2

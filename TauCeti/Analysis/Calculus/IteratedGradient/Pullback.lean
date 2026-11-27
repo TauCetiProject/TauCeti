@@ -123,7 +123,7 @@ theorem iteratedGradientPullback_comp {E'' : Type*} [NormedAddCommGroup E'']
       rw [comp_apply, iteratedGradientPullback_succ_apply, iteratedGradientPullback_succ_apply,
         iteratedGradientPullback_succ_apply, ih]
       ext v
-      rfl
+      simp only [comp_apply]
 
 /-- Scaling the linear map by `c` scales the index-`j` pullback by `c ^ (j + 1)`, matching the
 derivative order `j + 1`. -/
@@ -259,8 +259,8 @@ theorem iteratedGradientPullbackEquiv_refl (j : ℕ) :
       ContinuousLinearEquiv.refl ℝ (TauCeti.IteratedGradient E j) :=
   ext <| funext fun G ↦ by
     rw [iteratedGradientPullbackEquiv_apply, coe_refl,
-      ContinuousLinearMap.iteratedGradientPullback_id]
-    rfl
+      ContinuousLinearMap.iteratedGradientPullback_id, ContinuousLinearMap.id_apply,
+      ContinuousLinearEquiv.refl_apply]
 
 /-- Pullback of iterated gradients as a continuous linear equivalence is contravariant:
 `(e₁.trans e₂).iteratedGradientPullbackEquiv j =
@@ -293,8 +293,8 @@ theorem iteratedGradientChain_comp_right (e : E ≃L[ℝ] E') (f : E' → ℝ) (
       have hfun : TauCeti.iteratedGradientChain (f ∘ e) j =
           (e.iteratedGradientPullbackEquiv j) ∘ (TauCeti.iteratedGradientChain f j ∘ e) :=
         funext ih
-      rw [hfun, (e.iteratedGradientPullbackEquiv j).comp_fderiv, e.comp_right_fderiv]
-      rfl
+      rw [hfun, (e.iteratedGradientPullbackEquiv j).comp_fderiv, e.comp_right_fderiv,
+        ContinuousLinearMap.iteratedGradientPullback_succ_apply, coe_iteratedGradientPullbackEquiv]
 
 /-- Classical iterated gradients transform by `ContinuousLinearMap.iteratedGradientPullback` along
 an invertible affine map `y ↦ e y + b`, without any differentiability hypothesis. -/

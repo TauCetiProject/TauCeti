@@ -9,11 +9,13 @@ public import TauCeti.Analysis.Calculus.GraphFlattening.Basic
 public import TauCeti.Analysis.Sobolev.W1p.BoundaryPart
 public import TauCeti.Analysis.Sobolev.W1p.ChangeOfVariables
 public import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
+public import TauCeti.Analysis.Sobolev.Wkp.ChangeOfVariables.Affine
 import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.Dynamics.Ergodic.MeasurePreserving
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 
 /-!
 # Changes of variables in the spaces `W^{1,p}_Γ(Ω)`
@@ -78,8 +80,9 @@ Under the dilation by `r ≠ 0`, the dilate `u (r • ·)` of `u ∈ W^{1,p}_{r 
   `TauCeti.W1p.compMeasurePreservingL_mem_w1pVanishingOnSubmodule_iff` for homeomorphisms.
 * `TauCeti.W1p.compMeasurePreservingL_graphFlattening_mem_w1pVanishingOnSubmodule_iff`: for
   `p < ∞`, invariance of `W^{1,p}_Γ` under the shears flattening Lipschitz graphs.
-* `TauCeti.W1p.compContinuousLinearEquivL_mem_w1pVanishingOnSubmodule`: precomposition with a
-  linear automorphism `e` maps `W^{1,p}_Γ(V)` into `W^{1,p}_{e⁻¹(Γ)}(e⁻¹(V))`, for `p < ∞`.
+* `TauCeti.Wkp.compAffineEquiv_mem_w1pVanishingOnSubmodule`: precomposition with an invertible
+  affine map `x ↦ B x + b` maps `W^{1,p}_Γ(V)` into `W^{1,p}_{(B · + b)⁻¹(Γ)}(U)` for every
+  `1 ≤ p ≤ ∞`.
 * `W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_continuousLinearEquiv`,
   in the namespace `TauCeti`: a Poincaré–Friedrichs inequality `‖u‖_p ≤ C ‖∇u‖_p` on
   `W^{1,p}_{e⁻¹(Γ)}(e⁻¹(V))` gives one with constant `‖e‖ C` on `W^{1,p}_Γ(V)`, for a linear
@@ -211,15 +214,35 @@ theorem W1p.compL_affine_mem_w1pVanishingOnSubmodule_iff {L c : ℝ} (hp : p ≠
 
 /-! ### Poincaré–Friedrichs constants under linear changes of variables -/
 
-/-- **Linear changes of variables preserve vanishing on a boundary part.** For `p < ∞`, a linear
-automorphism `e` of `E` and `U = e⁻¹(V)`, precomposition with `e` maps `W^{1,p}_Γ(V)` into
-`W^{1,p}_{e⁻¹(Γ)}(U)`. -/
-theorem W1p.compContinuousLinearEquivL_mem_w1pVanishingOnSubmodule (hp : p ≠ ⊤) (e : E ≃L[ℝ] E)
-    (hUV : (U : Set E) = e ⁻¹' V) {u : W1p mu V p} (hu : u ∈ w1pVanishingOnSubmodule mu V p Γ) :
-    W1p.compContinuousLinearEquivL hp e hUV u ∈ w1pVanishingOnSubmodule mu U p (e ⁻¹' Γ) := by
-  rw [W1p.compContinuousLinearEquivL_eq_compL]
-  exact W1p.compL_mem_w1pVanishingOnSubmodule e hp _ _ _ _ _ _ e.contDiff
-    e.toHomeomorph.isProperMap hu
+/-- **Affine changes of variables preserve vanishing on a boundary part**, for every exponent
+`1 ≤ p ≤ ∞`: for a continuous linear equivalence `B : E ≃L[ℝ] E'`, `b : E'`, and
+`U = (fun x => B x + b) ⁻¹' V`, precomposition along `x => B x + b` maps `W^{1,p}_Γ(V)` into
+`W^{1,p}_{(fun x => B x + b)⁻¹(Γ)}(U)`. -/
+theorem Wkp.compAffineEquiv_mem_w1pVanishingOnSubmodule {E' : Type*}
+    [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+    [MeasurableSpace E'] [BorelSpace E'] {nu : Measure E'} [nu.IsAddHaarMeasure]
+    {V : Opens E'} (mu : Measure E) [mu.IsAddHaarMeasure] (B : E ≃L[ℝ] E') (b : E')
+    (hUV : (U : Set E) = (fun x => B x + b) ⁻¹' V) {Γ : Set E'} {u : W1p nu V p}
+    (hu : u ∈ w1pVanishingOnSubmodule nu V p Γ) :
+    (Wkp.compAffineEquiv mu B b hUV 1 u : W1p mu U p) ∈
+      w1pVanishingOnSubmodule mu U p ((fun x => B x + b) ⁻¹' Γ) := by
+  have hΦc : ContDiff ℝ ∞ (fun x => B x + b) := (B : E →L[ℝ] E').contDiff.add contDiff_const
+  have hΦp : IsProperMap (fun x => B x + b) :=
+    ((B.toHomeomorph).trans (Homeomorph.addRight b)).isProperMap
+  let T : W1p nu V p →L[ℝ] W1p mu U p :=
+    (Wkp.compAffineEquiv (ν := nu) (p := p) mu B b hUV 1).toContinuousLinearMap
+  refine map_mem_w1pVanishingOnSubmodule_of_compOfIsProperMap hΦc hΦp T (fun φ => ?_) hu
+  refine W1p.ext_value (Lp.ext ?_)
+  let φV : Wkp nu V p 1 := W1p.restrictL (le_top : V ≤ ⊤) (W1p.ofTestFunctionₗ nu ⊤ p φ)
+  have h1 := Wkp.value_compAffineEquiv_ae (ν := nu) mu B b hUV 1 φV
+  have hqmp := Measure.quasiMeasurePreserving_continuousLinearEquiv_add_restrict mu nu B b
+    (hUV ▸ mapsTo_preimage _ _)
+  filter_upwards [h1,
+    hqmp.ae (W1p.value_restrictL_ofTestFunctionₗ_ae (mu := nu) (p := p) (le_top : V ≤ ⊤) φ),
+    W1p.value_restrictL_ofTestFunctionₗ_ae (mu := mu) (p := p) (le_top : U ≤ ⊤) _]
+    with x hx1 hx2 hx3
+  change (W1p.value (Wkp.compAffineEquiv (ν := nu) (p := p) mu B b hUV 1 φV) : E → ℝ) x = _
+  rw [← Wkp.value_one, hx1, Wkp.value_one, hx2, hx3, TestFunction.compOfIsProperMap_apply]
 
 /-- A bound `‖u‖_p ≤ b` with `b ≤ 0` forces `u = 0`, so `u` satisfies every bound of
 Poincaré type. -/
@@ -230,24 +253,35 @@ private theorem W1p.norm_value_le_mul_norm_gradient_of_norm_value_le_of_nonpos {
     W1p.ext_value (by rw [W1p.value_zero]; exact norm_le_zero_iff.1 (h.trans hb))
   simp [W1p.value_zero, W1p.gradient_zero]
 
-/-- **Poincaré–Friedrichs constants under linear changes of variables.** Let `1 ≤ p < ∞`, let
+/-- **Poincaré–Friedrichs constants under linear changes of variables.** Let `1 ≤ p ≤ ∞`, let
 `e` be a linear automorphism of `E`, and let `U = e⁻¹(V)`. If `‖w‖_{Lᵖ(U)} ≤ C ‖∇w‖_{Lᵖ(U)}` for
 every `w ∈ W^{1,p}_{e⁻¹(Γ)}(U)`, then `‖u‖_{Lᵖ(V)} ≤ ‖e‖ C ‖∇u‖_{Lᵖ(V)}` for every
 `u ∈ W^{1,p}_Γ(V)`. For a linear isometry the constant is unchanged. -/
 theorem W1p.norm_value_le_mul_norm_gradient_of_mem_w1pVanishingOnSubmodule_of_continuousLinearEquiv
-    (hp : p ≠ ⊤) (e : E ≃L[ℝ] E) (hUV : (U : Set E) = e ⁻¹' V) {C : ℝ}
+    (e : E ≃L[ℝ] E) (hUV : (U : Set E) = e ⁻¹' V) {C : ℝ}
     (hC : ∀ w ∈ w1pVanishingOnSubmodule mu U p (e ⁻¹' Γ),
       ‖W1p.value w‖ ≤ C * ‖W1p.gradient w‖)
     {u : W1p mu V p} (hu : u ∈ w1pVanishingOnSubmodule mu V p Γ) :
     ‖W1p.value u‖ ≤ ‖(e : E →L[ℝ] E)‖ * C * ‖W1p.gradient u‖ := by
   -- With `w = u ∘ e` and `K = |det e| ^ (-1/p)`: `‖w‖ = K ‖u‖` and `‖∇w‖ ≤ ‖e‖ K ‖∇u‖`.
-  set w := W1p.compContinuousLinearEquivL (mu := mu) hp e hUV u
-  have hgrad := W1p.norm_gradient_compContinuousLinearEquivL_le hp e hUV u
-  have h := hC w (W1p.compContinuousLinearEquivL_mem_w1pVanishingOnSubmodule hp e hUV hu)
-  rw [W1p.norm_value_compContinuousLinearEquivL hp e hUV u] at h
-  set K := |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| ^ (1 / p).toReal
+  set w : W1p mu U p := Wkp.compAffineEquiv mu e 0 (by simpa using hUV) 1 u
+  have hval : ‖W1p.value w‖ =
+      |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖W1p.value u‖ := by
+    simpa [w, Wkp.value_one u, Wkp.value_one w] using
+      Wkp.norm_value_compAffineEquiv e 0 (by simpa using hUV) 1 u
+  have hgrad : ‖W1p.gradient w‖ ≤ ‖(e : E →L[ℝ] E)‖ *
+      (|LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal * ‖W1p.gradient u‖) := by
+    simpa [w, Wkp.iteratedGradient_zero u, Wkp.iteratedGradient_zero w, pow_one, mul_assoc] using
+      Wkp.norm_iteratedGradient_compAffineEquiv_le e 0 (by simpa using hUV) 0 u
+  have hw : w ∈ w1pVanishingOnSubmodule mu U p (e ⁻¹' Γ) := by
+    have hmem := Wkp.compAffineEquiv_mem_w1pVanishingOnSubmodule (nu := mu) mu e 0
+      (by simpa using hUV) hu
+    rwa [show ((fun x => e x + 0) ⁻¹' Γ) = e ⁻¹' Γ by simp] at hmem
+  have h := hC w hw
+  rw [hval] at h
+  set K := |LinearMap.det (e : E →ₗ[ℝ] E)|⁻¹ ^ (1 / p).toReal
   have hK : 0 < K := Real.rpow_pos_of_pos
-    (abs_pos.2 (inv_ne_zero (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)) _
+    (inv_pos.2 (abs_pos.2 (LinearEquiv.isUnit_det' e.toLinearEquiv).ne_zero)) _
   rcases le_or_gt 0 C with hC0 | hC0
   · refine le_of_mul_le_mul_left ?_ hK
     calc K * ‖W1p.value u‖ ≤ C * (‖(e : E →L[ℝ] E)‖ * (K * ‖W1p.gradient u‖)) :=

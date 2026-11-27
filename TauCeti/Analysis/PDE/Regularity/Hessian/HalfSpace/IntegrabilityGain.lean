@@ -342,15 +342,8 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfS
       =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) (a / c))]
       fun x => Wkp.value 2 u (e x) := by
     simpa using Wkp.value_compAffineEquiv_ae volume e 0 (by simpa using hH a) 2 u
-  have hwD : Wkp.iteratedGradient 1 w
-      =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict (normalHalfSpace (E := E) (a / c))]
-      fun x => (e : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)).adjoint ∘L
-        Wkp.iteratedGradient 1 u (e x) ∘L (e : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) := by
-    simpa using Wkp.iteratedGradient_one_compAffineEquiv_ae volume e 0 (by simpa using hH a) u
-  have hw0 : Wkp.firstOrder 1 w ∈ w1p0Submodule volume (normalHalfSpace (a / c)) p := by
-    rw [Wkp.firstOrder_compAffineEquiv, ← wkp0Submodule_one]
-    rw [← wkp0Submodule_one] at hu
-    exact Wkp.compAffineEquiv_mem_wkp0Submodule volume e 0 _ 1 hu
+  have hwD := Wkp.iteratedGradient_one_compAffineEquiv_zero_ae volume e (by simpa using hH a) u
+  have hw0 := Wkp.firstOrder_compAffineEquiv_mem_w1p0Submodule volume e 0 (by simpa using hH a) 1 hu
   -- It solves `tr (B D²w) = f ∘ e` with `B(y) = e⁻¹ ((b + b†) / 2)(e y) e⁻†` close to `1`.
   obtain ⟨v', hv', -⟩ := hid (a / c)
     (b := fun y => (e.symm : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
@@ -371,10 +364,7 @@ theorem exists_wkp_value_ae_eq_of_traceCLM_comp_eq_of_norm_sub_le_of_normalHalfS
   have hHe : (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) =
       (fun y => e.symm y + 0) ⁻¹'
         (normalHalfSpace (E := E) (a / c) : Set (WithLp 2 (ℝ × E))) := by
-    ext y
-    simp only [mem_preimage, add_zero, SetLike.mem_coe]
-    have h := Set.ext_iff.1 (hH a) (e.symm y)
-    simpa [SetLike.mem_coe] using h.symm
+    simpa using e.toLinearEquiv.eq_preimage_symm_add_neg 0 (by simpa using hH a)
   set v := Wkp.compAffineEquiv volume e.symm 0 hHe 2 v'
   have hq' := e.symm.quasiMeasurePreserving_restrict (volume : Measure (WithLp 2 (ℝ × E)))
     (fun y hy => by simpa only [mem_preimage, add_zero] using hHe.subset hy)
